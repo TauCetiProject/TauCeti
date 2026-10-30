@@ -117,7 +117,7 @@ noncomputable def typeE₈StoredClassNumberCertificate : StoredClassNumberCertif
     rw [reps_typeE₈StoredGenusCertificate, List.map_singleton, List.sum_singleton,
       ← typeE₈RootLattice_def, card_isometry_typeE₈RootLattice, Nat.cast_ofNat]
   classNumber := 1
-  classNumber_eq := by rw [reps_typeE₈StoredGenusCertificate, List.length_singleton]
+  classNumber_eq_length_reps := by rw [reps_typeE₈StoredGenusCertificate, List.length_singleton]
 
 /-- The certificate of the class number column of the `E₈` record extends the certificate of its
 stored columns. -/

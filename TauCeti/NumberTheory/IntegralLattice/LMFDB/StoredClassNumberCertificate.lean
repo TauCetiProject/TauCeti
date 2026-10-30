@@ -84,7 +84,7 @@ structure StoredClassNumberCertificate (n : ℕ) extends StoredGenusCertificate 
   /-- The label component `class_number`. -/
   classNumber : ℕ
   /-- The stored class number is the number of stored representatives. -/
-  classNumber_eq : classNumber = reps.length
+  classNumber_eq_length_reps : classNumber = reps.length
 
 namespace StoredClassNumberCertificate
 
@@ -92,7 +92,7 @@ variable {n : ℕ}
 
 /-- A certificate of the class number column is determined by its certificate of the stored
 columns: the mass and the class number are pinned down by `mass_eq` and
-`classNumber_eq`. -/
+`classNumber_eq_length_reps`. -/
 @[ext]
 theorem ext {c c' : StoredClassNumberCertificate n}
     (h : c.toStoredGenusCertificate = c'.toStoredGenusCertificate) : c = c' := by
@@ -115,7 +115,7 @@ theorem classNumber_eq_classNumber_lattice : c.classNumber = c.lattice.classNumb
   have h := (sum_inv_natCard_isometry_eq_mass_iff c.isPosDef.finite_genusClasses
     (fun M hM ↦ (hM.isPosDef_iff.mp c.isPosDef).finite_isometry) c.sameGenus_repLattice
     c.pairwise_isEmpty_isometry_repLattice).mp hsum
-  rwa [Nat.card_eq_fintype_card, Fintype.card_fin, ← c.classNumber_eq] at h
+  rwa [Nat.card_eq_fintype_card, Fintype.card_fin, ← c.classNumber_eq_length_reps] at h
 
 /-- **The stored representatives exhaust the genus**: every lattice in the genus of the stored
 lattice, in any rational vector space, is isometric to the lattice of a stored representative. -/
@@ -123,7 +123,7 @@ theorem exists_mem_reps_nonempty_isometry {W : Type*} [AddCommGroup W] [Module �
     {M : IntegralLattice W} (hM : c.lattice.SameGenus M) :
     ∃ H ∈ c.reps, Nonempty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.1 H.2) M) :=
   c.exists_mem_reps_nonempty_isometry_of_length_eq
-    (c.classNumber_eq.symm.trans c.classNumber_eq_classNumber_lattice) hM
+    (c.classNumber_eq_length_reps.symm.trans c.classNumber_eq_classNumber_lattice) hM
 
 /-- **The stored representatives are a set of representatives for the classes of the genus**:
 every lattice in the genus of the stored lattice, in any rational vector space, is isometric to
