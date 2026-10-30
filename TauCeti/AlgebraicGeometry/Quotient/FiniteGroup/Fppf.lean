@@ -93,9 +93,9 @@ theorem existsUnique_fppfYoneda_comp_eq
   rw [← GrothendieckTopology.yonedaEquiv_naturality,
     ← GrothendieckTopology.yonedaEquiv_naturality]
   refine hsep.ext fun Z i ⟨g⟩ ↦ ?_
-  rw [← types_comp_apply (F.obj.map _) (F.obj.map _), ← types_comp_apply (F.obj.map _)
-    (F.obj.map _), ← F.obj.map_comp, ← F.obj.map_comp, ← op_comp, ← op_comp, Sigma.ι_comp_desc,
-    Sigma.ι_comp_desc, op_id, F.obj.map_id, types_id_apply,
-    GrothendieckTopology.yonedaEquiv_naturality, hf]
+  -- restrict along the component of `g`, then use Yoneda naturality and invariance
+  simp only [← Functor.map_comp_apply, ← op_comp, Sigma.ι_comp_desc, op_id,
+    Functor.map_id_apply]
+  rw [GrothendieckTopology.yonedaEquiv_naturality, hf]
 
 end TauCeti.AffineInvariantQuotient
