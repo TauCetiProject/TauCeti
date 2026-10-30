@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Simple.Resolution
-public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module
+public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module.Basic
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Preadditive.Biproducts

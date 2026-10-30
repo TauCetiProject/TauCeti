@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module
+public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Projective
 
 /-!

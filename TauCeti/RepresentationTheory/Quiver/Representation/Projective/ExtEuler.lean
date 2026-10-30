@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Basic
 public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.EulerForm
-public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module
+public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module.Basic
 
 /-!
 # The Ext-Euler characteristic of a vertex projective is the quiver Euler form
@@ -31,7 +31,7 @@ honest path count, and that the vertex space of `Y` at `i` is finite-dimensional
 
 The vertex projective enters as a module rather than a representation, because it is the module
 category that carries `Ext`; `TauCeti.indecProjModule` and its universal property are in
-`TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module`.
+`TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module.Basic`.
 
 ## Main results
 
@@ -73,7 +73,7 @@ variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q] [Finite Q]
 space at `i`**: all of its higher `Ext` vanishes, and its `Hom` space is that vertex space. Only the
 space at `i` is asked for, so a target that is infinite-dimensional elsewhere is admitted; for one
 that is finite-dimensional overall the `Hom`-space instance of
-`TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module` makes
+`TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module.Basic` makes
 `TauCeti.isEulerAdmissible_of_projective` apply with no hypothesis at all. -/
 theorem isEulerAdmissible_indecProjModule (i : Q) (Y : ModuleCat (pathAlgebra k Q))
     (hY : FiniteDimensional k (((quiverRepFunctor k Q).obj Y).obj ((Paths.of Q).obj i))) :
