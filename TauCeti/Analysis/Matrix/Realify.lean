@@ -26,24 +26,6 @@ namespace Matrix
 
 variable {n : Type*} {𝕜 : Type*} [RCLike 𝕜]
 
-/-- The quadratic form of a realified matrix is the real part of its original quadratic
-form, evaluated at the split real and imaginary coordinates. -/
-theorem dotProduct_realify_mulVec [Fintype n] (A : Matrix n n 𝕜) (z : n → 𝕜) :
-    Sum.elim (fun i ↦ RCLike.re (z i)) (fun i ↦ RCLike.im (z i)) ⬝ᵥ
-        A.realify *ᵥ Sum.elim (fun i ↦ RCLike.re (z i)) (fun i ↦ RCLike.im (z i)) =
-      RCLike.re (star z ⬝ᵥ A *ᵥ z) := by
-  simp only [dotProduct, mulVec, Fintype.sum_sum_type, RCLike.mul_re, RCLike.mul_im,
-    Sum.elim_inl, Sum.elim_inr, realify_apply_inl_inl, realify_apply_inl_inr,
-    realify_apply_inr_inl, realify_apply_inr_inr, Pi.star_apply, map_sum,
-    RCLike.star_def, RCLike.conj_re, RCLike.conj_im]
-  simp_rw [Finset.mul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro i _
-  simp_rw [Finset.mul_sum, ← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro j _
-  ring
-
 /-- Realification preserves and reflects positive semidefiniteness. -/
 @[simp]
 theorem posSemidef_realify_iff [Finite n] {A : Matrix n n 𝕜} :

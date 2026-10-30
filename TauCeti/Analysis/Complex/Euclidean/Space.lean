@@ -13,9 +13,9 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 # Real coordinates of complex vectors
 
 `complexToRealEuclidean` identifies a finite complex vector with its real and imaginary
-coordinate blocks. It uses the product topology on complex vectors and the Euclidean
-topology on the real coordinates, so it also supplies a measurable equivalence for
-transporting measures between these carriers.
+coordinate blocks as a real continuous linear equivalence. It uses the product topology
+on complex vectors and the Euclidean topology on the real coordinates, so both directions
+are measurable for the Borel structures.
 -/
 
 public section

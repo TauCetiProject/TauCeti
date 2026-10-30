@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.EuclideanSpace
+public import TauCeti.Analysis.Complex.Euclidean.Space
 public import TauCeti.Analysis.Matrix.Realify
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 
