@@ -45,6 +45,8 @@ sets are geodesics, which is how the Dirichlet polygon of a Fuchsian group arise
   points implies interior membership.
 * `TauCeti.exists_smul_mem_dirichletDomain`: for a properly discontinuous isometric action on a
   proper space, every orbit meets it.
+* `TauCeti.locallyFinite_smul_dirichletDomain`: for such an action, the translates of the
+  Dirichlet domain form a locally finite family.
 * `TauCeti.dirichletDomain_inter_dirichletDomain_smul_subset`: the Dirichlet domains of two
   points of one orbit meet only in points equidistant from them.
 * `TauCeti.isFundamentalDomain_dirichletDomain`: it is a fundamental domain when the centre has
@@ -269,6 +271,20 @@ theorem exists_smul_mem_dirichletDomain (p x : X) : ∃ g : G, g • x ∈ diric
         · exact (hmemS.mp hgS).trans (not_le.mp (hmemS.not.mp hh)).le
     _ = dist (g⁻¹ • x) (h • p) := by
         rw [← dist_smul g (g⁻¹ • x), smul_inv_smul, mul_smul]
+
+/-- **The translates of a Dirichlet domain are locally finite.** For a properly discontinuous
+isometric action on a proper space, the translates `g • D` of the Dirichlet domain `D` of any
+centre form a locally finite family. No hypothesis on the stabilizer of the centre is needed. -/
+theorem locallyFinite_smul_dirichletDomain (p : X) :
+    LocallyFinite fun g : G ↦ g • dirichletDomain G p := by
+  intro z
+  refine ⟨ball z 1, ball_mem_nhds z one_pos,
+    (finite_dirichletCompetitors p (isBounded_ball (x := z) (r := 1))).subset ?_⟩
+  rintro g ⟨_, ⟨x, hx, rfl⟩, hxz⟩
+  -- `g • x` lies in the ball and is at least as close to `g • p` as to `p`
+  refine ⟨g • x, hxz, ?_⟩
+  rw [dist_smul]
+  exact dist_le_dist_smul_of_mem_dirichletDomain hx g
 
 /-- The translates of a Dirichlet domain cover the whole space. -/
 theorem iUnion_smul_dirichletDomain (p : X) : ⋃ g : G, g • dirichletDomain G p = univ := by

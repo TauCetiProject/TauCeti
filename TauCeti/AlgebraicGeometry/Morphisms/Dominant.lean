@@ -8,9 +8,14 @@ module
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Stalk
+public import Mathlib.AlgebraicGeometry.PullbackCarrier
 
 /-!
-# Dominant morphisms of irreducible schemes and rational functions
+# Dominant morphisms and rational functions
+
+Base change along a morphism with an open underlying map preserves dominance
+(`IsDominant.pullback_fst_of_isOpenMap`). This applies in particular to étale morphisms,
+without reducedness or irreducibility assumptions.
 
 A morphism `f : X ⟶ Y` of schemes is dominant (`AlgebraicGeometry.IsDominant`) when its image is
 dense. Between irreducible schemes this says exactly that `f` sends the generic point of `X` to the
@@ -68,6 +73,14 @@ open CategoryTheory TopologicalSpace
 namespace AlgebraicGeometry
 
 universe u
+
+open CategoryTheory.Limits in
+/-- Base change of a dominant morphism along a morphism whose underlying map is open is
+dominant. No flatness or reducedness assumption is needed. -/
+theorem IsDominant.pullback_fst_of_isOpenMap {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S)
+    [IsDominant g] (hf : IsOpenMap f) : IsDominant (pullback.fst f g) := by
+  rw [isDominant_iff, DenseRange, Scheme.Pullback.range_fst]
+  exact g.denseRange.preimage hf
 
 variable {X Y Z : Scheme.{u}} [IrreducibleSpace X] [IrreducibleSpace Y]
 

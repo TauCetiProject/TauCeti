@@ -33,6 +33,8 @@ from the diamond operator and is not part of the diagonal slash.
   scaling matrix used by `V_d`.
 * `TauCeti.slash_natDiagGL_d_one_eq_smul_levelRaise`: the rational diagonal slash is
   `d ^ (k - 1)` times the degeneracy map.
+* `TauCeti.hasSum_slash_natDiagGL_d_one`: the expansion of the slash at any period `N`, for a
+  raw `N`-periodic function.
 * `ModularForm.qExpansion_slash_natDiagGL_d_one`: the resulting power-series identity.
 * The corresponding `_coeff` lemmas give the divisibility-conditional coefficient formula.
 
@@ -56,7 +58,7 @@ public noncomputable section
 
 open Matrix Matrix.SpecialLinearGroup UpperHalfPlane Function HeckeRing.GLn CongruenceSubgroup
 
-open scoped MatrixGroups ModularForm Pointwise
+open scoped MatrixGroups ModularForm Pointwise Manifold
 
 namespace TauCeti
 
@@ -82,6 +84,34 @@ lemma slash_natDiagGL_d_one_apply [NeZero d] (k : ℤ) (f : ℍ → ℂ) (τ : �
     (f ∣[k] (natDiagGL 2 ![d, 1] : GL (Fin 2) ℚ)) τ =
       (d : ℂ) ^ (k - 1) * f (scaleGL d • τ) := by
   rw [ModularForm.rat_slash, map_natDiagGL_d_one_eq_scaleGL, slash_scaleGL_apply]
+
+/-- **The expansion of the rational diagonal slash at any period.** Slashing an `N`-periodic `f`
+by `diag(d, 1)` spreads its expansion at period `N` along `d ℕ`, scaled by `d ^ (k - 1)`. Unlike
+`ModularForm.qExpansion_slash_natDiagGL_d_one`, this needs no group containing the translate,
+only the analytic hypotheses on `f`. -/
+theorem hasSum_slash_natDiagGL_d_one [NeZero d] (k : ℤ) {N : ℕ} (hN : 0 < N) {f : ℍ → ℂ}
+    (hfper : Periodic (f ∘ ofComplex) N) (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f)
+    (τ : ℍ) :
+    HasSum (fun j : ℕ ↦ (if d ∣ j then (d : ℂ) ^ (k - 1) * (qExpansion N f).coeff (j / d)
+        else 0) • Function.Periodic.qParam N (τ : ℂ) ^ j)
+      ((f ∣[k] (natDiagGL 2 ![d, 1] : GL (Fin 2) ℚ)) τ) := by
+  have hd : 0 < d := Nat.pos_of_ne_zero (NeZero.ne d)
+  have hN' : (0 : ℝ) < N := Nat.cast_pos.mpr hN
+  rw [slash_natDiagGL_d_one_apply]
+  have hs := (UpperHalfPlane.hasSum_qExpansion hN' hfper hfhol hfbdd (scaleGL d • τ)).mul_left
+    ((d : ℂ) ^ (k - 1))
+  have hq : Function.Periodic.qParam N ((scaleGL d • τ : ℍ) : ℂ) =
+      Function.Periodic.qParam N (τ : ℂ) ^ d := by
+    rw [coe_scaleGL_smul]
+    simp only [Function.Periodic.qParam, ← Complex.exp_nat_mul]
+    congr 1
+    ring
+  rw [hq] at hs
+  have hinj : Injective fun j : ℕ ↦ d * j := fun _ _ h ↦ Nat.eq_of_mul_eq_mul_left hd h
+  refine (hinj.hasSum_iff fun x hx ↦ ?_).mp (hs.congr_fun fun j ↦ ?_)
+  · have hnd : ¬d ∣ x := fun ⟨j, hj⟩ ↦ hx ⟨j, hj.symm⟩
+    simp [hnd]
+  · simp [Dvd.intro j rfl, pow_mul, hd.ne', mul_assoc]
 
 /-- **The rational diagonal slash is a scaled degeneracy map.** The target group hypothesis is
 exactly the one needed to package `τ ↦ f (dτ)` as `V_d f`; the equality itself is pointwise and

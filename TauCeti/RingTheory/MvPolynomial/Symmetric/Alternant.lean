@@ -66,6 +66,8 @@ sign appears: that is the dual Pieri rule.
 * `TauCeti.psum_mul_alternant`: the power-sum multiplication rule `p_r · a_α = ∑_j a_{α + r e_j}`.
 * `TauCeti.hsymm_mul_alternant`: the complete-homogeneous multiplication rule
   `h_r · a_α = ∑_{|γ| = r} a_{α + γ}`.
+* `TauCeti.sum_monomial_mul_alternant`: the multiplication rule for a symmetric polynomial
+  `f = ∑_i c_i x^{d_i}`, `f · a_α = ∑_i c_i · a_{α + d_i}`.
 * `TauCeti.esymm_mul_alternant`: the elementary-symmetric multiplication rule
   `e_r · a_α = ∑_{|T| = r} a_{α + 1_T}`.
 
@@ -264,6 +266,33 @@ theorem hsymm_mul_alternant (r : ℕ) (α : σ → ℕ) :
   refine Finset.sum_congr rfl fun γ _ => ?_
   rw [← Finset.prod_mul_distrib]
   exact Finset.prod_congr rfl fun i _ => by rw [← pow_add, Nat.add_comm]
+
+/-- **The multiplication rule for alternants and symmetric polynomials**: if
+`f = ∑_i c_i x^{d_i}` is symmetric, multiplying `a_α` by `f` gives the sum of the alternants
+obtained from `α` by adding each exponent vector `d_i`, weighted by its coefficient,
+`f · a_α = ∑_i c_i · a_{α + d_i}`.
+
+The monomials need not be distinct, so the identity applies directly to a symmetric polynomial
+given as a generating function, such as a Schur polynomial as a sum over tableaux. -/
+theorem sum_monomial_mul_alternant {ι : Type*} (s : Finset ι) (d : ι → σ →₀ ℕ) (c : ι → R)
+    (hf : (∑ i ∈ s, monomial (d i) (c i)).IsSymmetric) (α : σ → ℕ) :
+    (∑ i ∈ s, monomial (d i) (c i)) * alternant σ R α =
+      ∑ i ∈ s, c i • alternant σ R fun j => α j + d i j := by
+  -- Renaming the symmetric factor along `τ` attaches its exponents to the variables `X (τ j)`.
+  have key : ∀ τ : Perm σ,
+      (∑ i ∈ s, monomial (d i) (c i)) * ∏ j, (X (τ j) : MvPolynomial σ R) ^ α j =
+        ∑ i ∈ s, c i • ∏ j, (X (τ j) : MvPolynomial σ R) ^ (α j + d i j) := by
+    intro τ
+    rw [← hf τ, map_sum, sum_mul]
+    refine sum_congr rfl fun i _ => ?_
+    rw [monomial_eq, Finsupp.prod_fintype _ _ fun _ => pow_zero _, map_mul, rename_C, map_prod,
+      smul_eq_C_mul, mul_assoc, ← prod_mul_distrib]
+    simp only [map_pow, rename_X, pow_add, mul_comm]
+  simp only [alternant_eq_sum, mul_sum, smul_sum]
+  rw [sum_comm]
+  refine sum_congr rfl fun τ _ => ?_
+  rw [mul_smul_comm, key, smul_sum]
+  exact sum_congr rfl fun i _ => smul_comm _ _ _
 
 /-- **The elementary-symmetric multiplication rule for alternants**: multiplying `a_α` by the
 elementary symmetric polynomial `e_r = ∑_{|T| = r} ∏_{i ∈ T} X_i` gives the sum of the alternants

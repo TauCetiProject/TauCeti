@@ -32,6 +32,7 @@ section FiniteExtension
 
 variable (K : Type*) [Field K] [Algebra ℚ_[2] K] [FiniteDimensional ℚ_[2] K]
 
+omit [FiniteDimensional ℚ_[2] K] in
 /-- The local dyadic cyclotomic character of an odd-degree extension of `ℚ₂` has full image. -/
 theorem range_localCyclotomicCharacter_of_odd_finrank
     (hodd : Odd (Module.finrank ℚ_[2] K)) :
@@ -95,6 +96,7 @@ theorem IsDyadicOddCase.odd_finrank (hcase : IsDyadicOddCase K) :
     Odd (Module.finrank ℚ_[2] K) :=
   ((isDyadicOddCase_iff (K := K)).mp hcase).2
 
+omit [FiniteDimensional ℚ_[2] K] in
 /-- In the odd dyadic case, the image of the local cyclotomic character is all of `ℤ₂ˣ`. -/
 theorem range_localCyclotomicCharacter_of_degree_odd (hcase : IsDyadicOddCase K) :
     (localCyclotomicCharacter 2 K).range = ⊤ :=

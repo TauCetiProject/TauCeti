@@ -52,6 +52,8 @@ positive root is a nonnegative integer combination of the simple coroots.
   indecomposable positive roots: those that are not the sum of two positive roots.
 * `RootPairing.Base.isPos_flip_iff` says a root is positive for a base exactly when its
   coroot is positive for that base, and `TauCeti.posRoots_flip` restates it for the sets.
+* `TauCeti.mem_posRootCone_iff_exists_nat_of_bijOn` describes `Q⁺` by nonnegative integer
+  coefficients indexed by any finite type in bijection with the simple roots.
 * `TauCeti.mem_posRoots_iff_root_mem_posRootCone` says the positive roots are exactly the roots
   lying in `Q⁺`,
   `TauCeti.isPointed_posRootCone` says `Q⁺` is pointed,
@@ -72,6 +74,8 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`, and `RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support` says every
   coroot functional takes an integer value on a weight on which the simple ones do.
+* `RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone` says a member of `Q⁺` is nonnegative
+  at a point of the coweight space where every simple root is nonnegative.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
   nonnegative integer combination of the simple coroots, and
   `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
@@ -94,6 +98,18 @@ own.
 -/
 
 public section
+
+namespace RootPairing
+
+/-- Negating a root index negates its root vector. -/
+lemma root_neg_index {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) (i : ι) :
+    letI := P.indexNeg;
+    P.root (-i) = -P.root i := by
+  let := P.indexNeg
+  simp only [indexNeg_neg, root_reflectionPerm, reflection_apply_self]
+
+end RootPairing
 
 namespace TauCeti
 
@@ -311,6 +327,23 @@ theorem mem_posRootCone {v : M} :
     Submodule.mem_span_image_finset_iff_exists_fun']
   exact exists_congr fun _ => eq_comm
 
+omit [CharZero R] in
+/-- Membership in the positive root cone, spelled out in coordinates indexed by a finite type `κ`
+whose map `e` to the root indices is a bijection onto the simple roots. -/
+theorem mem_posRootCone_iff_exists_nat_of_bijOn {κ : Type*} [Fintype κ] {e : κ → ι}
+    (he : Set.BijOn e Set.univ b.support) {v : M} :
+    v ∈ posRootCone P b ↔ ∃ c : κ → ℕ, v = ∑ i, c i • P.root (e i) := by
+  constructor
+  · intro hv
+    obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
+    refine ⟨fun i ↦ f (e i), (Finset.sum_nbij e (fun i _ ↦ he.mapsTo trivial) ?_ ?_
+      fun _ _ ↦ rfl).symm⟩
+    · simpa only [Finset.coe_univ] using he.injOn
+    · simpa only [Finset.coe_univ] using he.surjOn
+  · rintro ⟨c, rfl⟩
+    exact (posRootCone P b).sum_mem fun i _ ↦ (posRootCone P b).nsmul_mem
+      (AddSubmonoid.subset_closure ⟨e i, he.mapsTo trivial, rfl⟩) _
+
 /-- Every positive root lies in the positive root cone. -/
 theorem root_mem_posRootCone_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :
     P.root i ∈ posRootCone P b :=
@@ -392,6 +425,17 @@ theorem _root_.RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support {x : 
   | smul z n _ hn =>
     obtain ⟨m, hm⟩ := hn
     exact ⟨z * m, by simp [hm]⟩
+
+omit [CharZero R] in
+variable {P b} in
+/-- An element of the positive root cone is nonnegative at a point where every simple root is
+nonnegative. -/
+theorem _root_.RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone [Preorder R]
+    [IsOrderedAddMonoid R] {x : N} (hx : ∀ i ∈ b.support, 0 ≤ P.root' i x) {v : M}
+    (hv : v ∈ posRootCone P b) : 0 ≤ P.toLinearMap v x := by
+  obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
+  simp only [map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
+  exact Finset.sum_nonneg fun i hi ↦ nsmul_nonneg (hx i hi) _
 
 /-- **The positive root cone is pointed**: the only member whose negative is again a member is
 zero. Expanding a member and its negative in the simple roots, the total coefficient vector is

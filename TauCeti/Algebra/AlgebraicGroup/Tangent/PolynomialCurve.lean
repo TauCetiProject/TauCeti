@@ -54,12 +54,12 @@ variable [_root_.Bialgebra R H]
 at the identity sending a coordinate function `h` to the coefficient of `t` in `γ h`. The
 hypothesis says that `γ` passes through the identity at `t = 0`.
 
-It is the derivation attached by `derivationToDualNumberEquivLift` to the dual-number point
+It is the derivation attached by `derivationToTrivSqZeroExtEquivLift` to the dual-number point
 obtained by substituting `t = ε` into `γ`. -/
 noncomputable def curveVelocity (γ : H →ₐ[R] R[X])
     (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) :
     Derivation R H (CounitAlgebra R H R) :=
-  (derivationToDualNumberEquivLift R H (CounitAlgebra R H R)).symm
+  (derivationToTrivSqZeroExtEquivLift R H (CounitAlgebra R H R)).symm
     ⟨(aeval DualNumber.eps).comp γ, AlgHom.ext fun h ↦ (DualNumber.fst_aeval_eps (γ h)).trans
       ((coeff_zero_eq_aeval_zero (γ h)).trans (DFunLike.congr_fun hγ h))⟩
 
@@ -70,7 +70,7 @@ noncomputable def curveVelocity (γ : H →ₐ[R] R[X])
 theorem curveVelocity_apply (γ : H →ₐ[R] R[X])
     (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (h : H) :
     curveVelocity γ hγ h = (γ h).coeff 1 :=
-  (derivationToDualNumberEquivLift_symm_apply ..).trans (DualNumber.snd_aeval_eps (γ h))
+  (derivationToTrivSqZeroExtEquivLift_symm_apply ..).trans (DualNumber.snd_aeval_eps (γ h))
 
 /-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
 `t` in its pullback.
