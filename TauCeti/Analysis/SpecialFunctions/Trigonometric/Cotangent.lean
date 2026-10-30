@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
+import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Summable
 
 /-!
@@ -29,6 +30,7 @@ Away from the real axis, `π cot (π u)` tends to `-π i` as `Im u → ∞`, and
 
 * `Complex.cot_neg`, `Complex.cot_zero`: the cotangent is odd, with junk value `0` at `0`.
 * `TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast`: the expansion over `ℤ`.
+* `TauCeti.hasSum_pi_mul_cot_pi_mul_add_pi_mul_I`: the `q`-expansion in the upper half-plane.
 * `TauCeti.norm_pi_mul_cot_pi_mul_add_pi_mul_I_le`,
   `TauCeti.norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le`: the exponential approach to `∓ π i`.
 -/
@@ -85,6 +87,21 @@ theorem hasSum_one_div_sub_intCast_add_one_div_intCast {w : ℂ} (hw : w ∈ int
   · refine tsum_congr fun n ↦ ?_
     simp only [f, Int.cast_neg, Int.cast_natCast, sub_neg_eq_add]
     ring
+
+/-- **The `q`-expansion of the cotangent in the upper half-plane**: if `0 < Im w`, then
+`π cot (π w) + π i = -2π i ∑_{k ≥ 1} e^(2π i k w)`. This is Mathlib's `pi_mul_cot_pi_q_exp` with
+the constant term separated from the series. -/
+theorem hasSum_pi_mul_cot_pi_mul_add_pi_mul_I {w : ℂ} (hw : 0 < w.im) :
+    HasSum (fun k : ℕ+ ↦ -2 * π * I * cexp (2 * π * I * w) ^ (k : ℕ))
+      (π * cot (π * w) + π * I) := by
+  set q := cexp (2 * π * I * w) with hqdef
+  have hq : ‖q‖ < 1 := UpperHalfPlane.norm_exp_two_pi_I_lt_one ⟨w, hw⟩
+  have hq1 : 1 - q ≠ 0 := sub_ne_zero.mpr fun h ↦ by simp [← h] at hq
+  rw [hasSum_pnat_iff (f := fun k : ℕ ↦ -2 * π * I * q ^ k)]
+  convert (hasSum_geometric_of_norm_lt_one hq).mul_left (-2 * π * I) using 1
+  rw [cot_pi_eq_exp_ratio, ← hqdef]
+  field_simp
+  linear_combination (1 + q) * I_sq
 
 /-- **The cotangent tends to `-i` in the upper half-plane**: if `0 < t ≤ Im u`, then
 `‖π cot (π u) + π i‖ ≤ 2π e^(-2π Im u) / (1 - e^(-2π t))`. -/

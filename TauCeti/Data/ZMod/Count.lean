@@ -30,6 +30,7 @@ of its numbers of roots modulo the prime powers exactly dividing `n`, by `ZMod.e
 ## Main results
 
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
+* `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
 * `ZMod.card_filter_forall_natCast_val`: counting independent conditions on coprime factors.
 * `ZMod.natCard_aeval_eq_zero_eq_prod_primeFactors`: the number of roots of an integer polynomial
   modulo `n` is multiplicative over the prime-power factorization of `n`.
@@ -86,6 +87,23 @@ theorem mul_card_filter_natCast_val [NeZero m] [NeZero n] (hmn : m ∣ n)
   calc m * (#{y : ZMod m | Q y} * #{x : ZMod n | (x.val : ZMod m) = 0})
       = m * #{x : ZMod n | (x.val : ZMod m) = 0} * #{y : ZMod m | Q y} := by ring
     _ = n * #{y : ZMod m | Q y} := by rw [← h2]
+
+/-- **Summing a function of the reduction modulo a divisor.** For `m ∣ n`, a function of the
+reduction modulo `m` summed over the residues modulo `n` is `n / m` times its sum over the residues
+modulo `m`: every fibre of the reduction has `n / m` elements. -/
+theorem sum_comp_natCast_val {M : Type*} [AddCommMonoid M] [NeZero m] [NeZero n] (hmn : m ∣ n)
+    (f : ZMod m → M) : ∑ x : ZMod n, f (x.val : ZMod m) = (n / m) • ∑ y : ZMod m, f y := by
+  classical
+  have hsurj : Function.Surjective fun x : ZMod n ↦ (x.val : ZMod m) := fun y ↦ by
+    obtain ⟨x, hx⟩ := castHom_surjective hmn y
+    exact ⟨x, by dsimp only; rwa [natCast_val, ← castHom_apply]⟩
+  have hfib (y : ZMod m) : #{x : ZMod n | (x.val : ZMod m) = y} = n / m := by
+    have h := mul_card_filter_natCast_val hmn (· = y)
+    simp only [Finset.filter_eq', Finset.mem_univ, ↓reduceIte, Finset.card_singleton,
+      mul_one] at h
+    exact Nat.eq_div_of_mul_eq_right (NeZero.ne m) h
+  rw [Finset.sum_comp, Finset.image_univ_of_surjective hsurj, Finset.smul_sum]
+  exact Finset.sum_congr rfl fun y _ ↦ by rw [hfib]
 
 /-- **All residues but zero have a representative the modulus does not divide.** A representative
 is smaller than the modulus, so the modulus divides it exactly when it vanishes. -/
