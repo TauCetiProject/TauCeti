@@ -27,7 +27,9 @@ at `x`, and reparametrisations of the `ℝ`-coordinate of a metric on `M × ℝ`
 `2`, glued to the first along `1 < t < 2`, where both are the same product metric, and the window
 `[0, 3]` is compressed into `[0, 1]`. The compression is a reparametrisation which is a translation
 near both ends: an affine rescaling of `t` would replace `dt²` by a multiple and destroy the product
-ends. Hence concordance is an equivalence relation on metrics of positive scalar curvature.
+ends. The same compression turns a metric of positive scalar curvature which is `g₀ + dt²` where
+`t ≤ 0` and `g₁ + dt²` where `t ≥ L` into a concordance. Hence concordance is an equivalence
+relation on metrics of positive scalar curvature.
 
 Concordances can equivalently be taken on the manifold with boundary `M × [0, 1]`: a *collared
 concordance* is a metric of positive scalar curvature on `M × [0, 1]` which is `g₀ + dt²` near
@@ -65,6 +67,8 @@ the product ends: it is pulled back to `M × ℝ` along `(x, t) ↦ (x, θ t)` f
   when it has positive scalar curvature.
 * `Bundle.ContMDiffRiemannianMetric.IsConcordance.reparamTime_one_sub` and
   `Bundle.ContMDiffRiemannianMetric.Concordant.symm`: reversal of concordances.
+* `Bundle.ContMDiffRiemannianMetric.concordant_of_inner_eq_cylinder_of_le`: a metric of positive
+  scalar curvature on `M × ℝ` with product ends outside a window `[0, L]` gives a concordance.
 * `Bundle.ContMDiffRiemannianMetric.Concordant.trans`: concatenation of concordances.
 * `Bundle.ContMDiffRiemannianMetric.equivalence_concordant`: concordance is an equivalence relation
   on metrics of positive scalar curvature.
@@ -118,6 +122,18 @@ theorem cylinder_inner (p : M × ℝ) (v w : TangentSpace (I.prod 𝓘(ℝ)) p) 
   -- The standard metric of `ℝ` is the inner product of `ℝ`, read through the identification
   -- `NormedSpace.fromTangentSpace` of each tangent space of `ℝ` with `ℝ`, which is the identity.
   exact congrArg (_ + ·) (Real.inner_apply _ _)
+
+/-- The cylinder metric `g + dt²` at `(x, s)` and at `(x, t)` is the same bilinear form. -/
+theorem cylinder_inner_mk (x : M) (s t : ℝ) :
+    g.cylinder.inner (x, s) = g.cylinder.inner (x, t) := by
+  ext v w
+  refine (cylinder_inner g (x, s) v w).trans (Eq.trans ?_ (cylinder_inner g (x, t) v w).symm)
+  rw [TauCeti.Manifold.tangentSpaceProdEquiv_apply (x, s) v,
+    TauCeti.Manifold.tangentSpaceProdEquiv_apply (x, s) w,
+    TauCeti.Manifold.tangentSpaceProdEquiv_apply (x, t) v,
+    TauCeti.Manifold.tangentSpaceProdEquiv_apply (x, t) w]
+  -- `NormedSpace.fromTangentSpace` is the identity of `ℝ` at every point.
+  rfl
 
 variable [FiniteDimensional ℝ E] [T2Space M]
 
@@ -301,56 +317,60 @@ theorem Concordant.symm (h : Concordant g₀ g₁) : Concordant g₁ g₀ :=
 theorem concordant_comm : Concordant g₀ g₁ ↔ Concordant g₁ g₀ :=
   ⟨Concordant.symm, Concordant.symm⟩
 
-/-- The smooth increasing map `t ↦ t + 2 s(3t - 1)` of `ℝ`, with `s` the smooth transition from
-`0` to `1` on `[0, 1]`. It is the identity on `t ≤ 1/3` and the translation by `2` on `t ≥ 2/3`,
-so it compresses the window `[0, 3]` of a glued pair of concordances into `[0, 1]`. -/
-private def stretch (t : ℝ) : ℝ :=
-  t + 2 * Real.smoothTransition (3 * t - 1)
+/-- The smooth map `t ↦ t + (L - 1) s(3t - 1)` of `ℝ`, with `s` the smooth transition from `0`
+to `1` on `[0, 1]`. It is the identity on `t ≤ 1/3` and the translation by `L - 1` on `t ≥ 2/3`, so
+for `1 ≤ L` it is increasing and compresses a window `[0, L]` into `[0, 1]`. -/
+private def stretch (L t : ℝ) : ℝ :=
+  t + (L - 1) * Real.smoothTransition (3 * t - 1)
 
-private theorem contDiff_stretch : ContDiff ℝ ∞ stretch :=
+private theorem contDiff_stretch (L : ℝ) : ContDiff ℝ ∞ (stretch L) :=
   contDiff_id.add (contDiff_const.mul
     ((Real.smoothTransition.contDiff (n := ⊤)).comp (by fun_prop)))
 
-private theorem hasDerivAt_stretch (t : ℝ) :
-    HasDerivAt stretch (1 + 2 * (deriv Real.smoothTransition (3 * t - 1) * 3)) t := by
+private theorem hasDerivAt_stretch (L t : ℝ) :
+    HasDerivAt (stretch L) (1 + (L - 1) * (deriv Real.smoothTransition (3 * t - 1) * 3)) t := by
   have h : HasDerivAt (fun t : ℝ ↦ 3 * t - 1) 3 t := by
     simpa using ((hasDerivAt_id t).const_mul 3).sub_const 1
   exact (hasDerivAt_id t).add
     ((Real.smoothTransition.contDiffAt (n := 1)).differentiableAt one_ne_zero
-      |>.hasDerivAt.comp t h |>.const_mul 2)
+      |>.hasDerivAt.comp t h |>.const_mul (L - 1))
 
-private theorem deriv_stretch_ne_zero (t : ℝ) : deriv stretch t ≠ 0 := by
-  rw [(hasDerivAt_stretch t).deriv]
+private theorem deriv_stretch_ne_zero {L : ℝ} (hL : 1 ≤ L) (t : ℝ) : deriv (stretch L) t ≠ 0 := by
+  rw [(hasDerivAt_stretch L t).deriv]
   have := Real.smoothTransition.monotone.deriv_nonneg (x := 3 * t - 1)
+  have : 0 ≤ L - 1 := by linarith
   positivity
 
-private theorem stretch_eventuallyEq_of_lt {t : ℝ} (ht : t < 1 / 3) : stretch =ᶠ[𝓝 t] id := by
+private theorem stretch_eventuallyEq_of_lt (L : ℝ) {t : ℝ} (ht : t < 1 / 3) :
+    stretch L =ᶠ[𝓝 t] id := by
   filter_upwards [eventually_lt_nhds ht] with s hs
   simp [stretch, Real.smoothTransition.zero_of_nonpos (by linarith : 3 * s - 1 ≤ 0)]
 
-private theorem stretch_eventuallyEq_of_gt {t : ℝ} (ht : 2 / 3 < t) :
-    stretch =ᶠ[𝓝 t] (· + 2) := by
+private theorem stretch_eventuallyEq_of_gt (L : ℝ) {t : ℝ} (ht : 2 / 3 < t) :
+    stretch L =ᶠ[𝓝 t] (· + (L - 1)) := by
   filter_upwards [eventually_gt_nhds ht] with s hs
   simp [stretch, Real.smoothTransition.one_of_one_le (by linarith : 1 ≤ 3 * s - 1)]
 
-/-- A metric of positive scalar curvature on `M × ℝ` which is `g₀ + dt²` where `t ≤ 0` and
-`g₂ + dt²` where `t ≥ 3` gives a concordance from `g₀` to `g₂`, after compressing the window
-`[0, 3]` into `[0, 1]` by `stretch`. -/
-private theorem concordant_of_window_three (hG : G.HasPositiveScalarCurvature)
+/-- **Compressing a long concordance.** A metric of positive scalar curvature on `M × ℝ` which is
+`g₀ + dt²` where `t ≤ 0` and `g₁ + dt²` where `t ≥ L` gives a concordance from `g₀` to `g₁`. The
+window `[0, max L 1]` is compressed into `[0, 1]` by a reparametrisation of `t` which is a
+translation near both ends, so that the product ends survive. -/
+theorem concordant_of_inner_eq_cylinder_of_le {L : ℝ} (hG : G.HasPositiveScalarCurvature)
     (h₀ : ∀ p : M × ℝ, p.2 ≤ 0 → G.inner p = g₀.cylinder.inner p)
-    (h₃ : ∀ p : M × ℝ, 3 ≤ p.2 → G.inner p = g₂.cylinder.inner p) : Concordant g₀ g₂ := by
-  refine ⟨G.reparamTime contDiff_stretch deriv_stretch_ne_zero,
+    (h₁ : ∀ p : M × ℝ, L ≤ p.2 → G.inner p = g₁.cylinder.inner p) : Concordant g₀ g₁ := by
+  set L' := max L 1
+  refine ⟨G.reparamTime (contDiff_stretch L') (deriv_stretch_ne_zero (le_max_right L 1)),
     hG.reparamTime _ _, fun p hp ↦ ?_, fun p hp ↦ ?_⟩
-  · -- Near `t ≤ 0`, `stretch` is the identity.
-    have hψ := stretch_eventuallyEq_of_lt (show p.2 < 1 / 3 by linarith)
+  · -- Near `t ≤ 0`, `stretch L'` is the identity.
+    have hψ := stretch_eventuallyEq_of_lt L' (show p.2 < 1 / 3 by linarith)
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
     exact h₀ p hp
-  · -- Near `t ≥ 1`, `stretch` is the translation by `2`.
-    have hψ := stretch_eventuallyEq_of_gt (show 2 / 3 < p.2 by linarith)
+  · -- Near `t ≥ 1`, `stretch L'` is the translation by `L' - 1`.
+    have hψ := stretch_eventuallyEq_of_gt L' (show 2 / 3 < p.2 by linarith)
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
-    exact h₃ _ (by simp; linarith)
+    exact h₁ _ (by simp only; linarith [le_max_left L 1])
 
 /-- **Concatenation of concordances**: concordance is transitive. Translate a concordance from
 `g₁` to `g₂` to the window `[2, 3]`, glue it to a concordance from `g₀` to `g₁` along `1 < t < 2`,
@@ -371,7 +391,8 @@ theorem Concordant.trans (h₁ : Concordant g₀ g₁) (h₂ : Concordant g₁ g
   have hV : IsOpen {p : M × ℝ | 1 < p.2} := isOpen_lt continuous_const continuous_snd
   have hUV : {p : M × ℝ | p.2 < 2} ∪ {p | 1 < p.2} = univ :=
     eq_univ_of_forall fun p ↦ (lt_or_ge p.2 2).imp id fun hp ↦ by simp; linarith
-  refine concordant_of_window_three (G := G₁.piecewise G₂' hU hV hUV fun p hp ↦ by
+  refine concordant_of_inner_eq_cylinder_of_le (L := 3)
+    (G := G₁.piecewise G₂' hU hV hUV fun p hp ↦ by
       rw [h₁.inner_of_one_le p hp.2.le, hG₂'₁ p hp.1.le])
     ((hasPositiveScalarCurvature_iff _).2 fun p ↦ ?_)
     (fun p hp ↦ (piecewise_inner_of_mem_left (show p.2 < 2 by linarith)).trans
@@ -691,21 +712,22 @@ theorem IsConcordance.exists_isCollaredConcordance (h : IsConcordance G g₀ g�
     reparamTime_inner_eq_cylinder_inner _ _ (h.inner_of_nonpos _ (by simpa using hq)) (hd q.2)
   have hG'₁ (q : M × ℝ) (hq : 2 ≤ q.2) : G'.inner q = g₁.cylinder.inner q :=
     reparamTime_inner_eq_cylinder_inner _ _ (h.inner_of_one_le _ (by simp; linarith)) (hd q.2)
-  -- `stretch` maps `[0, 1]` onto `[0, 3]`, as the identity near `0` and the translation by `2`
+  -- `stretch 3` maps `[0, 1]` onto `[0, 3]`, as the identity near `0` and the translation by `2`
   -- near `1`.
-  refine ⟨(G'.reparamTime contDiff_stretch deriv_stretch_ne_zero).restrictIcc 0 1,
+  refine ⟨(G'.reparamTime (contDiff_stretch 3)
+      (deriv_stretch_ne_zero (by norm_num))).restrictIcc 0 1,
     ((h.hasPositiveScalarCurvature.reparamTime _ _).reparamTime _ _).restrictIcc,
     1 / 3, by norm_num, fun p hp ↦ restrictIcc_inner_congr ?_,
     fun p hp ↦ restrictIcc_inner_congr ?_⟩
-  · have hψ := stretch_eventuallyEq_of_lt hp
+  · have hψ := stretch_eventuallyEq_of_lt 3 hp
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
     exact hG'₀ _ p.2.2.2
   · have hp' : 2 / 3 < (p.2 : ℝ) := by linarith
-    have hψ := stretch_eventuallyEq_of_gt hp'
+    have hψ := stretch_eventuallyEq_of_gt 3 hp'
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
-    exact hG'₁ _ (by simp [p.2.2.1])
+    exact hG'₁ _ (by simp only; linarith [p.2.2.1])
 
 /-- **Collared concordances give concordances.** If there is a collared concordance from `g₀` to
 `g₁`, then `g₀` and `g₁` are concordant. -/
