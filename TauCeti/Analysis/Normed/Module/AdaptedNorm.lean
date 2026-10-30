@@ -40,7 +40,8 @@ section Seminormed
 variable {M : Type*} [SeminormedAddCommGroup M] [Module R M]
 
 /-- The supremum of the scalar-action ratios. Under a uniform action bound it is finite;
-when the scalar norm is normalized at one, it is an equivalent norm on the module. -/
+when the scalar norm is normalized at one, it is an equivalent seminorm on the module.
+It is a norm when the original seminorm separates points. -/
 noncomputable def adaptedNorm (x : M) : ℝ := ⨆ a : R, ‖a • x‖ / ‖a‖
 
 variable {R} {C : ℝ≥0}
