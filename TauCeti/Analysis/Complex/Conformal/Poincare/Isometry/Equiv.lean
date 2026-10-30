@@ -25,8 +25,7 @@ The main constructions are:
 * `PoincareDisc.starIsometryEquiv`, for the conjugation `z ↦ conj z`, which is a Poincaré
   isometry without being a disc automorphism: it is the orientation-reversing symmetry.
 
-This advances the conformal-mapping roadmap's L2 targets for the Poincaré metric and the disc
-automorphism group. It reuses Tau Ceti's disc-automorphism and hyperbolic-distance invariance
+This file reuses Tau Ceti's disc-automorphism and hyperbolic-distance invariance
 API.
 -/
 

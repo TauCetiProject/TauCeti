@@ -28,8 +28,7 @@ its value at a Moebius image.  This is the construction Schwarz's lemma is appli
 the contraction estimate here, the infinitesimal estimate in `SchwarzPick/Derivative.lean`, the
 equality case in `SchwarzPick/Rigidity.lean` and the automorphism classification.
 
-This advances the conformal-mapping roadmap's L2 Schwarz--Pick target.  It reuses Mathlib's
-Schwarz lemma and Tau Ceti's unit-disc Moebius API.
+It reuses Mathlib's Schwarz lemma and Tau Ceti's unit-disc Moebius API.
 -/
 
 public section

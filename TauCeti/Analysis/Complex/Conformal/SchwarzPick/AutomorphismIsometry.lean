@@ -25,10 +25,6 @@ The proof is a direct computation from Tau Ceti's Moebius derivative
 `hasDerivAt_unitDiscMoebiusFormula` and the Pythagorean identity
 `‖1 - conj a * z‖ ^ 2 - ‖z - a‖ ^ 2 = (1 - ‖z‖ ^ 2) * (1 - ‖a‖ ^ 2)`, which forces the metric
 factors to cancel exactly rather than merely bound one another.
-
-This advances the conformal-mapping roadmap's **L2 Schwarz--Pick / disc-automorphism** target
-(`TauCetiRoadmap/ConformalMapping/README.md`: the hyperbolic/Poincaré metric on `𝔻` and the
-automorphism group `Aut(𝔻)`).
 -/
 
 public section

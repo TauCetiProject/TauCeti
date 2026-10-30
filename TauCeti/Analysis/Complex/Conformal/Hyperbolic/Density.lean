@@ -56,9 +56,8 @@ comparison of the hyperbolic distance with the pseudo-hyperbolic expression,
   hyperbolic and Euclidean metrics are infinitesimally equal there.
 * `TauCeti.integral_one_sub_sq_inv_eq_hyperbolicDist_zero` — the radial form of the density.
 
-This carries the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
-`𝔻`" (see `ConformalMapping/README.md`) onto its infinitesimal side, and reuses Tau Ceti's
-pseudo-hyperbolic and hyperbolic-distance API throughout. Mathlib has the hyperbolic
+These results describe the infinitesimal side of the hyperbolic metric on `𝔻`, and reuse
+Tau Ceti's pseudo-hyperbolic and hyperbolic-distance API throughout. Mathlib has the hyperbolic
 metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane/Metric.lean`), but records no
 density statement for it.
 -/

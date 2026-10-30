@@ -97,11 +97,10 @@ is stated for a Banach target. The sheaf, the germ dictionary
 the identity theorem `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq` needing no
 completeness.
 
-The *source* is `ℂ` rather than a Riemann surface, in accordance with the generality bar of
-`ConformalMapping/README.md`, which fixes the scalar domain for the conformal layers L0–L6, and
-because the consumer `Conformal/Continuation/Basic.lean` continues germs along paths in `ℂ`. A
-Riemann surface source would need a holomorphic atlas to even state the predicate, which the
-pinned Mathlib has for complex manifolds but which this area does not use anywhere else.
+The *source* is `ℂ` rather than a Riemann surface because the consumer
+`Conformal/Continuation/Basic.lean` continues germs along paths in `ℂ`. A Riemann surface source
+would need a holomorphic atlas to even state the predicate, which the pinned Mathlib has for complex
+manifolds but which this area does not use anywhere else.
 
 ## Relation to Mathlib
 

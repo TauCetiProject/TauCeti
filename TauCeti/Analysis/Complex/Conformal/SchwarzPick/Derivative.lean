@@ -22,9 +22,7 @@ it into itself, then at every point `z` of the disc
 (hyperbolic) metric `|dz| / (1 - |z| ^ 2)`.  The bundled `Complex.UnitDisc` form is
 `norm_deriv_div_one_sub_norm_sq_le_unitDisc`.
 
-This advances the conformal-mapping roadmap's **L2 Schwarz--Pick** target
-(`TauCetiRoadmap/ConformalMapping/README.md`, the L2 hyperbolic/Poincaré-metric contraction),
-complementing Tau Ceti's finite Schwarz--Pick estimate `pseudoHyperbolicExpr_map_le`.  It
+This complements Tau Ceti's finite Schwarz--Pick estimate `pseudoHyperbolicExpr_map_le`.  It
 reuses Mathlib's Schwarz lemma (`Complex.norm_deriv_le_one_of_mapsTo_ball`) and Tau Ceti's
 unit-disc Moebius API.
 -/

@@ -49,9 +49,7 @@ Together with `TauCeti.pseudoHyperbolicExpr_unitDiscStandardAutomorphismEquiv`, 
 standard automorphisms *are* pseudo-hyperbolic isometries, these results identify the isometry
 group of the pseudo-hyperbolic expression among the holomorphic self-maps of the disc.
 
-This advances the conformal-mapping roadmap's L2 target (Schwarz lemma extensions:
-Schwarz--Pick and the disc automorphism group `Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`; see
-`ConformalMapping/README.md`).  It reuses Mathlib's Schwarz-lemma equality case and Tau Ceti's
+It reuses Mathlib's Schwarz-lemma equality case and Tau Ceti's
 unit-disc Moebius and disc-automorphism API rather than re-deriving either.
 -/
 

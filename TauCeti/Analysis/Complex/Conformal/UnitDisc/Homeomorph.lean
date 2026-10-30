@@ -13,9 +13,8 @@ public import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Basic
 This file packages the standard unit-disc automorphisms from
 `TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Basic` as homeomorphisms of
 `Complex.UnitDisc`.  The underlying map is the existing equivalence
-`unitDiscStandardAutomorphismEquiv`; this file adds the continuity API needed before treating
-the disc automorphisms as a topological automorphism group in the Schwarz--Pick layer of the
-conformal-mapping roadmap.
+`unitDiscStandardAutomorphismEquiv`; this file adds the continuity API needed to treat
+the disc automorphisms as a topological automorphism group.
 -/
 
 public section

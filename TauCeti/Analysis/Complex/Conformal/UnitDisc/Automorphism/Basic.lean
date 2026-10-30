@@ -17,8 +17,8 @@ This file adds the rotation factor in the standard disc-automorphism formula
 unit disc.  The previous Moebius file supplies the factor sending `a` to `0`; this file
 composes it with Mathlib's `Circle` action on `Complex.UnitDisc`.
 
-This advances the conformal-mapping roadmap's L2 disc-automorphism target.  It reuses
-Mathlib's `Circle` action on `Complex.UnitDisc` and Tau Ceti's `unitDiscMoebiusEquiv`.
+It reuses Mathlib's `Circle` action on `Complex.UnitDisc` and Tau Ceti's
+`unitDiscMoebiusEquiv`.
 -/
 
 public section

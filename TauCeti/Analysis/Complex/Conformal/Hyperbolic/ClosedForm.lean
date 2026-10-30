@@ -59,9 +59,8 @@ are the plain ones here. The Cayley transform itself is not used: the disc formu
 directly from the defect identity, which is shorter than transporting the half-plane ones and
 avoids the `im`-versus-defect bookkeeping.
 
-This advances the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on `𝔻`"
-(see `ConformalMapping/README.md`), completing the basic API of `hyperbolicDist` with the closed
-forms that the geometric statements of `Conformal/Poincare/` are usually quoted in.
+These closed forms complete the basic API of `hyperbolicDist`; they are the forms in which the
+geometric statements of `Conformal/Poincare/` are usually quoted.
 -/
 
 public section

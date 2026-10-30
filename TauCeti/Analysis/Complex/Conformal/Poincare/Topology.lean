@@ -50,8 +50,7 @@ radius is strictly less than one, so it is a closed subset of a compact subset o
 * `TauCeti.PoincareDisc.instProperSpace` — the Poincaré disc is a proper metric space, hence
   complete and locally compact.
 
-This carries the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
-`𝔻`" (see `ConformalMapping/README.md`) onto its topological side: with the homeomorphism in
+These results describe the topological side of the Poincaré metric: with the homeomorphism in
 hand, the hyperbolic metric may be used interchangeably with the Euclidean one for topological
 purposes, and completeness is what makes the Poincaré disc a usable model of the hyperbolic
 plane. It reuses Tau Ceti's pseudo-hyperbolic and hyperbolic-distance API. Mathlib has the

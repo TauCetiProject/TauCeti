@@ -95,16 +95,15 @@ radius, so transport through it still leaves both to be computed. Those transfor
 point.
 
 Two immediate consequences are recorded: hyperbolic balls are convex for the *Euclidean* structure
-(`TauCeti.convex_sep_ball_hyperbolicDist_lt`), a fact with no hyperbolic proof at this stage of the
-development, since geodesic convexity is a different statement; and the balls of the metric space
+(`TauCeti.convex_sep_ball_hyperbolicDist_lt`), a fact obtained here from Euclidean geometry alone;
+geodesic convexity is a different statement; and the balls of the metric space
 `TauCeti.PoincareDisc` are characterised in Euclidean terms
 (`TauCeti.PoincareDisc.mem_ball_iff`).
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, everything below is stated for `ℂ`. The statements are not
-merely specialised but genuinely two-dimensional: the identity above is the complex-analytic
+Everything below is stated for `ℂ`. The statements are not merely specialised but genuinely
+two-dimensional: the identity above is the complex-analytic
 Apollonius computation, and its conclusion — that a Moebius sublevel set is a disc — has no
 analogue in a general normed space.
 
@@ -135,9 +134,7 @@ analogue in a general normed space.
   `TauCeti.PoincareDisc.mem_sphere_iff` — the balls, closed balls and spheres of the Poincaré
   metric space, read on the Euclidean disc.
 
-This carries the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on `𝔻`"
-(see `ConformalMapping/README.md`) onto its metric geometry, completing the basic ball API of that
-metric.
+Together these complete the basic ball API of the hyperbolic metric on `𝔻`.
 
 The closest formal precedent anywhere is Mathlib's *upper half-plane* model,
 `Mathlib/Analysis/Complex/UpperHalfPlane/Metric.lean`, which does carry the analogous ball

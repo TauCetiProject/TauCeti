@@ -77,13 +77,11 @@ at the origin: it is the origin statement applied to
   the base point: every geodesic line is `TauCeti.PoincareDisc.geodesicLine (γ 0) u` for a unique
   direction.
 
-This advances the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on `𝔻`"
-(see `ConformalMapping/README.md`), completing the geodesic description that
-`Poincare/Geodesic.lean` began. It reuses Tau Ceti's pseudo-hyperbolic, hyperbolic-distance and
-disc-automorphism API throughout, and `TauCeti/Analysis/Convex/Segment.lean` — itself built on
-Mathlib's `segment` and `SameRay` — for the Euclidean side. Mathlib's hyperbolic geometry on
-the upper half-plane (`Analysis/Complex/UpperHalfPlane`) has no geodesics, so nothing here
-duplicates it.
+This completes the description of the geodesics that `Poincare/Geodesic.lean` began. It reuses
+Tau Ceti's pseudo-hyperbolic, hyperbolic-distance and disc-automorphism API throughout, and
+`TauCeti/Analysis/Convex/Segment.lean` — itself built on Mathlib's `segment` and `SameRay` — for
+the Euclidean side. Mathlib's hyperbolic geometry on the upper half-plane
+(`Analysis/Complex/UpperHalfPlane`) has no geodesics, so nothing here duplicates it.
 -/
 
 public section
