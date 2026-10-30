@@ -60,12 +60,12 @@ coordinates of `e` the dual vector `Module.Basis.toDual` attaches to `v` is `u �
 `⟪J v, u⟫`: the inner product is conjugate-linear in its first argument and `J` is
 conjugate-linear, so the two conjugations cancel and the pairing is `𝕜`-bilinear. -/
 @[simp]
-theorem toBasis_toDual_apply (v u : V) : e.toBasis.toDual v u = ⟪conjugation e v, u⟫_𝕜 := by
-  have hb : ∀ i : ι, e.toBasis.toDual v (e i) = ⟪conjugation e v, e i⟫_𝕜 := fun i ↦ by
+theorem toBasis_toDual_apply (v u : V) : e.toBasis.toDual v u = ⟪e.conjugation v, u⟫_𝕜 := by
+  have hb : ∀ i : ι, e.toBasis.toDual v (e i) = ⟪e.conjugation v, e i⟫_𝕜 := fun i ↦ by
     have h := Module.Basis.toDual_apply_left e.toBasis v i
     rw [OrthonormalBasis.coe_toBasis] at h
     rw [h, OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.repr_apply_apply,
-      inner_conjugation_left_basis]
+      OrthonormalBasis.inner_conjugation_left_basis]
   conv_lhs => rw [← e.sum_repr' u]
   conv_rhs => rw [← e.sum_repr' u]
   rw [map_sum, inner_sum]
@@ -85,7 +85,7 @@ argument against `v` through the bilinear form `⟪J v, -⟫` of the basis and s
 result. -/
 @[simp]
 theorem tensorSquareEquivEnd_tmul_apply (v w u : V) :
-    tensorSquareEquivEnd e (v ⊗ₜ[𝕜] w) u = ⟪conjugation e v, u⟫_𝕜 • w := by
+    tensorSquareEquivEnd e (v ⊗ₜ[𝕜] w) u = ⟪e.conjugation v, u⟫_𝕜 • w := by
   rw [tensorSquareEquivEnd, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
     LinearEquiv.refl_apply, dualTensorHomEquivOfBasis_apply, dualTensorHom_apply,
     Module.Basis.toDualEquiv_apply, toBasis_toDual_apply]
@@ -102,6 +102,6 @@ theorem tensorSquareEquivEnd_symm_apply (A : V →ₗ[𝕜] V) :
     _ = ∑ i, tensorSquareEquivEnd e (e i ⊗ₜ[𝕜] A (e i)) u := by
         rw [map_sum]
         exact Finset.sum_congr rfl fun i _ ↦ by
-          rw [tensorSquareEquivEnd_tmul_apply, conjugation_basis, map_smul]
+          rw [tensorSquareEquivEnd_tmul_apply, OrthonormalBasis.conjugation_basis, map_smul]
 
 end TauCeti

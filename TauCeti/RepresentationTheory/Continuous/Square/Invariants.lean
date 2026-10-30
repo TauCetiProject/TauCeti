@@ -62,7 +62,7 @@ ambient `TauCeti` names are brought in by `open`, following
 
 The statements that do not name a contraction take no orthonormal basis: a finite-dimensional
 inner product space has `stdOrthonormalBasis`, and the bounds do not depend on which basis is
-used. The conjugate representation appears only through `TauCeti.conjCLM`, never through a
+used. The conjugate representation appears only through `OrthonormalBasis.conjCLM`, never through a
 statement about its irreducibility or its character.
 
 ## References
@@ -94,15 +94,16 @@ omit [DecidableEq ι] in
 two conjugations cancel against the unitarity of `π`, which is the identity that makes the
 contraction of an invariant tensor an intertwiner. -/
 theorem inner_conjugation_apply_conjCLM (hπ : IsUnitary π) (g : G) (v u : V) :
-    ⟪conjugation e (π g v), conjCLM e (π g) u⟫_𝕜 = ⟪conjugation e v, u⟫_𝕜 := by
-  rw [conjCLM_apply, inner_conjugation_conjugation, hπ.inner_map_map]
-  conv_rhs => rw [← conjugation_conjugation e u]
-  rw [inner_conjugation_conjugation]
+    ⟪e.conjugation (π g v), e.conjCLM (π g) u⟫_𝕜 = ⟪e.conjugation v, u⟫_𝕜 := by
+  rw [OrthonormalBasis.conjCLM_apply, OrthonormalBasis.inner_conjugation_conjugation,
+    hπ.inner_map_map]
+  conv_rhs => rw [← e.conjugation_conjugation u]
+  rw [OrthonormalBasis.inner_conjugation_conjugation]
 
 /-- Contracting the tensor square commutes with the action, up to conjugating the argument: the
 contraction of `(π g ⊗ π g) t` at `{}^J(π g) u` is `π g` of the contraction of `t` at `u`. -/
 theorem tensorSquareEquivEnd_tprod_apply (hπ : IsUnitary π) (g : G) (t : V ⊗[𝕜] V) (u : V) :
-    tensorSquareEquivEnd e (tprod π π g t) (conjCLM e (π g) u)
+    tensorSquareEquivEnd e (tprod π π g t) (e.conjCLM (π g) u)
       = π g (tensorSquareEquivEnd e t u) := by
   induction t with
   | tmul v w =>
@@ -114,7 +115,7 @@ theorem tensorSquareEquivEnd_tprod_apply (hπ : IsUnitary π) (g : G) (t : V ⊗
 /-- **The contraction of an invariant tensor intertwines** the conjugate representation with `π`. -/
 theorem tensorSquareEquivEnd_conjCLM_of_mem_invariants (hπ : IsUnitary π) {t : V ⊗[𝕜] V}
     (ht : t ∈ (tprod π π).invariants) (g : G) (u : V) :
-    tensorSquareEquivEnd e t (conjCLM e (π g) u) = π g (tensorSquareEquivEnd e t u) := by
+    tensorSquareEquivEnd e t (e.conjCLM (π g) u) = π g (tensorSquareEquivEnd e t u) := by
   conv_lhs => rw [← (mem_invariants t).mp ht g]
   exact tensorSquareEquivEnd_tprod_apply e π hπ g t u
 
@@ -179,7 +180,7 @@ theorem exists_smul_eq_of_mem_invariants_tprod (hπ : IsUnitary π)
   set E : V ≃ₗ[𝕜] V := LinearEquiv.ofBijective (tensorSquareEquivEnd b t) hbij
   have hEapply : ∀ x : V, E x = tensorSquareEquivEnd b t x := fun _ ↦ (rfl)
   -- `E` transports the action of `π` back to the action of the conjugate representation.
-  have hEsymm : ∀ (g : G) (u : V), E.symm (π g u) = conjCLM b (π g) (E.symm u) := by
+  have hEsymm : ∀ (g : G) (u : V), E.symm (π g u) = b.conjCLM (π g) (E.symm u) := by
     intro g u
     refine E.injective ?_
     rw [E.apply_symm_apply, hEapply,
