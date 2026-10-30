@@ -138,18 +138,17 @@ theorem separatingLeft_of_toMatrix_mul_eq_smul {B : LinearMap.BilinForm R M} (b 
 
 end Domain
 
-section Dual
+section CollectedBasis
 
 open LinearMap (BilinForm)
 
-variable {R M₁ M₂ ι κ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
-  [Module R M₂] [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+variable {R : Type*} [CommSemiring R]
 
 /-- **The Gram matrix of an orthogonal sum.** If `M` is the internal direct sum of submodules
 `P i` which are pairwise orthogonal for `B`, the Gram matrix of `B` in the basis collected from
 bases `d i` of the `P i` is block diagonal, with blocks the Gram matrices of the restrictions of
 `B` to the `P i`. -/
-theorem toMatrix_collectedBasis {M o : Type*} [AddCommGroup M] [Module R M] [Fintype o]
+theorem toMatrix_collectedBasis {M o : Type*} [AddCommMonoid M] [Module R M] [Fintype o]
     [DecidableEq o] {B : BilinForm R M} {P : o → Submodule R M} (hP : DirectSum.IsInternal P)
     (horth : ∀ i i', i ≠ i' → ∀ x ∈ P i, ∀ y ∈ P i', B x y = 0) {α : o → Type*}
     [∀ i, Fintype (α i)] [∀ i, DecidableEq (α i)] (d : ∀ i, Basis (α i) R (P i)) :
@@ -166,7 +165,7 @@ theorem toMatrix_collectedBasis {M o : Type*} [AddCommGroup M] [Module R M] [Fin
 /-- If two forms are pairwise orthogonal across a family of submodules `P i` of which `M` is the
 internal direct sum, and their Gram matrices in bases `d i` of the `P i` multiply to `c • 1`, then
 so do their Gram matrices in the collected basis. -/
-theorem toMatrix_collectedBasis_mul_toMatrix_collectedBasis {M o : Type*} [AddCommGroup M]
+theorem toMatrix_collectedBasis_mul_toMatrix_collectedBasis {M o : Type*} [AddCommMonoid M]
     [Module R M] [Fintype o] [DecidableEq o] {B D : BilinForm R M} {P : o → Submodule R M}
     (hP : DirectSum.IsInternal P) (hB : ∀ i i', i ≠ i' → ∀ x ∈ P i, ∀ y ∈ P i', B x y = 0)
     (hD : ∀ i i', i ≠ i' → ∀ x ∈ P i, ∀ y ∈ P i', D x y = 0) {α : o → Type*}
@@ -177,6 +176,15 @@ theorem toMatrix_collectedBasis_mul_toMatrix_collectedBasis {M o : Type*} [AddCo
   simp only [hd]
   have := Matrix.blockDiagonal'_smul c (1 : ∀ i, Matrix (α i) (α i) R)
   rwa [Matrix.blockDiagonal'_one] at this
+
+end CollectedBasis
+
+section Dual
+
+open LinearMap (BilinForm)
+
+variable {R M₁ M₂ ι κ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
+  [Module R M₂] [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
 
 /-- If two forms are pairwise orthogonal across a family of submodules `N i` of which `M` is the
 internal direct sum, finitely many of them nonzero, and their Gram matrices in some basis of each
