@@ -150,6 +150,18 @@ theorem hasSymplecticTangentImages_of_surjective
     rw [LinearMap.range_eq_top.2 (hf x)]
     exact SymplecticForm.isSymplectic_top
 
+variable (hσ) in
+include hσ in
+/-- A local diffeomorphism, such as a diffeomorphism, pulls a nondegenerate form back to a
+nondegenerate form. -/
+theorem isNondegenerate_mpullback_of_isLocalDiffeomorph [IsManifold J ∞ N]
+    (hf : IsLocalDiffeomorph J I ∞ f) :
+    SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ) := by
+  have hinv (x : N) := hf.isInvertible_mfderiv (by simp) (x := x)
+  exact (isNondegenerate_mpullback_iff (hσ := hσ) hf.contMDiff).2
+    ⟨hasSymplecticTangentImages_of_surjective fun x ↦ (hinv x).surjective,
+      fun x ↦ (hinv x).injective⟩
+
 /-! ### Reparametrization and transport -/
 
 section Reparametrization
