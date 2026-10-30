@@ -117,9 +117,9 @@ theorem existsUnique_unitSupported_mahlerPrimitive (F : ℤ_[p]⟦X⟧)
     (hF : psiSeries p F = 0) :
     ∃! G : ℤ_[p]⟦X⟧, psiSeries p G = 0 ∧ mahlerDerivation ℤ_[p] G = F := by
   refine ⟨inverseMahler p F, ⟨psiSeries_inverseMahler F, ?_⟩, ?_⟩
-  · rw [mahlerDerivation_inverseMahler, hF, zero_subst, sub_zero]
+  · rw [mahlerDerivation_inverseMahler, hF, subst_zero, sub_zero]
   · rintro G ⟨hG, hGF⟩
-    simpa only [hGF, hG, zero_subst, sub_zero] using (inverseMahler_mahlerDerivation G).symm
+    simpa only [hGF, hG, subst_zero, sub_zero] using (inverseMahler_mahlerDerivation G).symm
 
 /-- The inverse Mahler operator kills constants. -/
 @[simp]
@@ -132,7 +132,7 @@ theorem inverseMahler_one : inverseMahler p 1 = 0 := by
 theorem inverseMahler_one_add_X : inverseMahler p (1 + X) = 1 + X := by
   have h := inverseMahler_mahlerDerivation (p := p) (1 + X)
   rw [Derivation.map_add, Derivation.map_one_eq_zero, mahlerDerivation_X, zero_add,
-    psiSeries_one_add_X, zero_subst, sub_zero] at h
+    psiSeries_one_add_X, subst_zero, sub_zero] at h
   exact h
 
 -- A nonzero unit-supported input has a nonzero primitive. A zero operator fails this check.
