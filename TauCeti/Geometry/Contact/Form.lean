@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 public import TauCeti.Geometry.Manifold.Distribution
 
@@ -73,7 +72,7 @@ public section
 
 noncomputable section
 
-open Set Filter Bundle VectorField
+open Set Filter Bundle
 open scoped Manifold Topology
 
 namespace TauCeti
@@ -112,6 +111,8 @@ theorem isContactFormAt_neg_iff {α : RoughForm I M ℝ 1} {x : M} :
   have := hvw w (by simpa using hw)
   simpa [mextDeriv_neg] using this
 
+/-- Reversing the coorientation, `α ↦ -α`, preserves being a contact form: `-α` is a smooth
+contact form exactly when `α` is. -/
 @[simp]
 theorem isContactForm_neg_iff [IsManifold I 1 M] {α : RoughForm I M ℝ 1} :
     IsContactForm (-α) ↔ IsContactForm α :=
@@ -223,10 +224,26 @@ theorem standardReebField_apply (p : ℝ × ℝ × ℝ) :
     standardReebField p = ((0, 0, 1) : ℝ × ℝ × ℝ) :=
   (rfl)
 
-/-- The form `dz - x dy` takes the value `1` on its Reeb vector field `∂_z`. -/
+/-- The `x`-coordinate of the Reeb vector field of `dz - x dy` is `0`. -/
+@[simp]
+theorem standardReebField_fst (p : ℝ × ℝ × ℝ) : (standardReebField p).1 = 0 :=
+  (rfl)
+
+/-- The `y`-coordinate of the Reeb vector field of `dz - x dy` is `0`. -/
+@[simp]
+theorem standardReebField_snd_fst (p : ℝ × ℝ × ℝ) : (standardReebField p).2.1 = 0 :=
+  (rfl)
+
+/-- The `z`-coordinate of the Reeb vector field of `dz - x dy` is `1`. -/
+@[simp]
+theorem standardReebField_snd_snd (p : ℝ × ℝ × ℝ) : (standardReebField p).2.2 = 1 :=
+  (rfl)
+
+/-- The form `dz - x dy` takes the value `1` on its Reeb vector field `∂_z`. `simp` proves this
+from `TauCeti.standardContactForm_apply` and the coordinate lemmas of `standardReebField`. -/
 theorem standardContactForm_apply_standardReebField (p : ℝ × ℝ × ℝ) :
     standardContactForm p ![standardReebField p] = 1 := by
-  simp [standardReebField]
+  simp
 
 /-- The contraction of the Reeb vector field `∂_z` with the exterior derivative of `dz - x dy`
 vanishes. -/
