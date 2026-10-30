@@ -48,7 +48,8 @@ most `e (k + 1) 2 ^ (-k) μ(Ω)`. The finitely many terms with `k < n - 1` are b
 * `TauCeti.W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient`: the bound on
   `W^{1,n}_0(Ω)`.
 * `TauCeti.setLIntegral_exp_norm_div_rpow_le`: Trudinger's inequality for compactly supported
-  `C¹` functions.
+  `C¹` functions, and `TauCeti.setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le`, its form
+  with an upper bound for `‖Du‖_{Lⁿ}` in place of the norm itself.
 * `TauCeti.W1p.setLIntegral_exp_abs_value_div_rpow_le`: Trudinger's inequality on
   `W^{1,n}_0(Ω)`.
 
@@ -338,6 +339,52 @@ theorem setLIntegral_exp_norm_div_rpow_le (hu : ContDiff ℝ 1 u) (h2u : HasComp
       ring
   rw [Measure.restrict_apply_univ, ENNReal.toReal_mul, ENNReal.toReal_ofReal hK] at h
   simpa only [K, mul_assoc] using h
+
+omit [Nontrivial E] in
+/-- **Trudinger's inequality with a bound on the derivative.** Let `n ≥ 2` be the dimension. If
+`u` is `C¹` with compact support inside a measurable set `Ω` and `‖Du‖_{Lⁿ} ≤ A` for some
+`A > 0`, then
+
+`∫_Ω exp ((‖u‖ / (c A)) ^ (n / (n - 1))) ≤ e (nⁿ + 5) μ(Ω)`,
+
+with `c` as in `TauCeti.setLIntegral_exp_norm_div_rpow_le`. Since the bound `A` need not be the
+norm of `Du` itself, a single exponent serves a whole family of functions. -/
+theorem setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (hu : ContDiff ℝ 1 u)
+    (h2u : HasCompactSupport u) (hΩ : MeasurableSet Ω) (hsupp : tsupport u ⊆ Ω)
+    (hn : 2 ≤ finrank ℝ E) {A : ℝ} (hA : 0 < A)
+    (hDu : eLpNorm (fderiv ℝ u) (finrank ℝ E) μ ≤ ENNReal.ofReal A) :
+    ∫⁻ x in Ω, ENNReal.ofReal (Real.exp ((‖u x‖ /
+        ((2 * Real.exp 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) * (finrank ℝ E : ℝ)⁻¹ *
+          μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) * A)) ^
+        ((finrank ℝ E : ℝ) / (finrank ℝ E - 1)))) ∂μ ≤
+      ENNReal.ofReal (Real.exp 1 * (finrank ℝ E ^ finrank ℝ E + 5)) * μ Ω := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  have hn' : (2 : ℝ) ≤ finrank ℝ E := by exact_mod_cast hn
+  set c : ℝ := (2 * Real.exp 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) * (finrank ℝ E : ℝ)⁻¹ *
+    μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹)
+  have hc : 0 < c := by
+    have : 0 < μ.real (ball 0 1) :=
+      ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+    positivity
+  have hq : 0 ≤ (finrank ℝ E : ℝ) / (finrank ℝ E - 1) := div_nonneg (by linarith) (by linarith)
+  have hSA : (eLpNorm (fderiv ℝ u) (finrank ℝ E) μ).toReal ≤ A :=
+    ENNReal.toReal_le_of_le_ofReal hA.le hDu
+  refine (setLIntegral_mono' hΩ fun x _ ↦ ?_).trans
+    (setLIntegral_exp_norm_div_rpow_le hu h2u hΩ hsupp hn)
+  gcongr ENNReal.ofReal (Real.exp ?_)
+  rcases ENNReal.toReal_nonneg.eq_or_lt with hS0 | hSpos
+  · -- If `Du` vanishes in `Lⁿ`, it vanishes identically, so the compactly supported `u` is zero.
+    have h0 : eLpNorm (fderiv ℝ u) (finrank ℝ E) μ = 0 :=
+      ((ENNReal.toReal_eq_zero_iff _).1 hS0.symm).resolve_right fun h ↦
+        ENNReal.ofReal_ne_top (top_le_iff.1 (h ▸ hDu))
+    rw [← eLpNorm_norm _ (hu.continuous_fderiv one_ne_zero).aestronglyMeasurable] at h0
+    have hD := (Continuous.ae_eq_iff_eq μ (hu.continuous_fderiv one_ne_zero).norm
+      continuous_zero).1 ((eLpNorm_eq_zero_iff (by simp; omega)).1 h0)
+    obtain ⟨z, hz⟩ := (ne_univ_iff_exists_notMem _).1 h2u.isCompact.ne_univ
+    rw [is_const_of_fderiv_eq_zero (hu.differentiable one_ne_zero)
+      (fun y ↦ norm_eq_zero.1 (congrFun hD y)) x z, image_eq_zero_of_notMem_tsupport hz]
+    simp
+  · gcongr
 
 end CompactSupport
 

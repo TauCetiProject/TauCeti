@@ -51,7 +51,7 @@ theorem exists_eq_tmul_one_of_isIdempotentElem
       (Algebra.TensorProduct.lid k A).toRingEquiv).connectedSpace_iff.mpr inferInstance
   have hcomponent : p c = LinearMap.tensorComponent f (F e) :=
     (LinearMap.tensorComponent_map f p.toLinearMap LinearMap.id e).symm
-  rcases eq_zero_or_eq_one_of_isIdempotentElem (he.map F) with h | h
+  rcases (he.map F).eq_zero_or_eq_one_of_preconnectedSpace with h | h
   · have hc : p c = 0 := by rw [hcomponent, h, map_zero]
     exact h.trans (by simp [hc])
   · have hc : p c = 1 := by

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.NoncentralChiSquared.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Distributions.Beta.Measurability
 import TauCeti.Probability.Distributions.Gamma.Beta
 
@@ -175,7 +176,7 @@ theorem isProbabilityMeasure_noncentralBetaMeasure_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ isProbabilityMeasure_noncentralBetaMeasure h.1 h.2 l⟩
   by_contra hab
   rw [noncentralBetaMeasure_of_not hab] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- The noncentral Beta law is a finite measure for every choice of parameters. -/
 instance isFiniteMeasure_noncentralBetaMeasure (a b : ℝ) (l : ℝ≥0) :
@@ -306,6 +307,19 @@ theorem absolutelyContinuous_noncentralBetaMeasure (ha : 0 < a) (b : ℝ) (l : �
 theorem nullSingletonClass_noncentralBetaMeasure (ha : 0 < a) (b : ℝ) (l : ℝ≥0) :
     NullSingletonClass (noncentralBetaMeasure a b l) :=
   ⟨fun x ↦ absolutelyContinuous_noncentralBetaMeasure ha b l (measure_singleton x)⟩
+
+/-- Every noncentral Beta law gives zero mass to each nonzero point; only first shape zero has an
+atom, and it sits at zero. -/
+theorem noncentralBetaMeasure_singleton_of_ne_zero {x : ℝ} (hx : x ≠ 0) (a b : ℝ) (l : ℝ≥0) :
+    noncentralBetaMeasure a b l {x} = 0 := by
+  by_cases h : 0 ≤ a ∧ 0 < b
+  · rw [noncentralBetaMeasure_apply h.1 h.2, ENNReal.tsum_eq_zero]
+    intro j
+    rcases (add_nonneg h.1 j.cast_nonneg).eq_or_lt' with hj | hj
+    · simp [hj, hx.symm]
+    · rw [noncentralBetaComponent_of_pos hj, betaMeasure_eq_withDensity_ofReal]
+      simp [withDensity_absolutelyContinuous _ _ (measure_singleton x)]
+  · simp [noncentralBetaMeasure_of_not h]
 
 /-- Every valid law other than the Dirac law at `a = l = 0` dominates a positive-weight Beta
 component with positive first shape. -/

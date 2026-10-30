@@ -39,7 +39,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- Continuity, the rescaled ODE, and the initial value for the second coordinate of a product
 flow. This packages the chain-rule calculation used to compare a canonical coordinate path with a

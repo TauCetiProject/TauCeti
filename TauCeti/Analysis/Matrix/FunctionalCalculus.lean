@@ -173,9 +173,10 @@ theorem continuousOn_matrix_cfc {f : ℝ → ℝ} (hf : Continuous f) :
     ContinuousOn (cfc f : Matrix n n 𝕜 → Matrix n n 𝕜) {A | A.IsHermitian} := by
   -- Mathlib's continuity of `cfc` in its operator variable needs the isometric calculus, which
   -- matrices carry for the scoped `ℓ²` operator norm; that norm induces the entrywise topology.
-  -- The lemma is stated over `ℝ`, so it also needs `Matrix n n 𝕜` as a normed `ℝ`-algebra.
+  -- The lemma is stated over `ℝ`, so it also needs `Matrix n n 𝕜` as a normed `ℝ`-algebra; we
+  -- extend the existing `ℝ`-algebra structure rather than restricting scalars, to avoid a diamond.
   open scoped Matrix.Norms.L2Operator in
-  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
+  let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
   exact ContinuousOn.cfc_of_mem_nhdsSet (s := Set.univ) (t := {A : Matrix n n 𝕜 | A.IsHermitian})
     f univ_mem continuousOn_id (fun _ hA ↦ Matrix.IsHermitian.isSelfAdjoint hA) hf.continuousOn
 

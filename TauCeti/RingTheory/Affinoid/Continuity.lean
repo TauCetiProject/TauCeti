@@ -7,11 +7,13 @@ module
 
 public import TauCeti.RingTheory.Affinoid.FiniteQuotient
 public import Mathlib.Analysis.Normed.Operator.Banach
+public import TauCeti.RingTheory.Huber.PowerBounded
 
 import TauCeti.Analysis.Normed.Algebra.AutomaticContinuity
 import TauCeti.RingTheory.Ideal.KrullIntersection
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.Normed
+import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
@@ -21,6 +23,7 @@ Every algebra homomorphism from a noetherian ultrametric Banach algebra into an 
 algebra carrying a complete compatible ultrametric algebra norm is continuous. No continuity
 of a Tate presentation is assumed. Finite quotients by powers of all maximal ideals separate
 the target, including its nilpotents; continuity into these quotients closes the graph.
+Consequently such homomorphisms also preserve power-boundedness.
 
 ## References
 
@@ -63,5 +66,15 @@ theorem continuous_algHom (hA : IsAffinoidAlgebra K A)
     ((hq.tendsto y).comp huy) ((hqf.tendsto x).comp hu)
   exact Ideal.Quotient.eq_zero_iff_mem.mp (by
     simpa only [q, map_sub, Ideal.Quotient.mkₐ_eq_mk] using sub_eq_zero.mpr heq)
+
+/-- Every homomorphism from a noetherian ultrametric Banach algebra to a completely normed
+affinoid algebra maps power-bounded elements to power-bounded elements. -/
+theorem isPowerBounded_map (hA : IsAffinoidAlgebra K A)
+    {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B]
+    [CompleteSpace B] [IsNoetherianRing B] (f : B →ₐ[K] A) {b : B}
+    (hb : Huber.IsPowerBounded b) : Huber.IsPowerBounded (f b) :=
+  have := Huber.IsTateRing.of_normedAlgebra K B
+  have := Huber.IsTateRing.of_normedAlgebra K A
+  hb.map_of_isTateRing (f := (f : B →+* A)) (hA.continuous_algHom f).continuousAt
 
 end TauCeti.IsAffinoidAlgebra
