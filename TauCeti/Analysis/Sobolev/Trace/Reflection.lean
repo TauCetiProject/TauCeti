@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Trace.HalfSpace
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -53,6 +54,13 @@ Dominated convergence then passes to the limit.
   that is zero on the boundary.
 * `TauCeti.HasWeakFDerivOn.add_comp_normalReflection`: the even reflection of a weakly
   differentiable function on the half-space is weakly differentiable on the whole space.
+* `TauCeti.HasWeakLineDerivOn.top_of_normalHalfSpace`: in a direction tangent to the boundary,
+  the extension by zero of a weakly differentiable function on the half-space is weakly
+  differentiable on the whole space.
+* `TauCeti.HasWeakFDerivOn.hasWeakLineDerivOn_sub_comp_normalReflection`: in a direction tangent
+  to the boundary, the odd reflection is weakly differentiable on the whole space.
+* `TauCeti.HasWeakFDerivOn.comp_normalReflection`: precomposition with the reflection on the
+  whole space.
 
 ## References
 
@@ -707,6 +715,68 @@ theorem HasWeakFDerivOn.add_comp_normalReflection {a : ℝ}
   convert h using 1
   funext x
   rw [Pi.add_apply, ← inner_add_right, ← hv, innerSL_apply_apply]
+
+/-- **Extension by zero in a tangential direction.** Let `w` have weak derivative `w'` on the
+half-space `{x | a < x.fst}` in a direction `v` tangent to the boundary hyperplane, with `w` and
+`w'` vanishing off the half-space and locally integrable on the whole space. Then `w'` is a weak
+derivative of `w` in the direction `v` on the whole space. No boundary condition on `w` is needed:
+integration by parts in a tangential direction produces no boundary term. -/
+theorem HasWeakLineDerivOn.top_of_normalHalfSpace {a : ℝ} {v : WithLp 2 (ℝ × E)}
+    {w w' : WithLp 2 (ℝ × E) → ℝ} (h : HasWeakLineDerivOn volume (normalHalfSpace a) w w' v)
+    (hv : v.fst = 0) (hwl : LocallyIntegrable w) (hw'l : LocallyIntegrable w')
+    (hw0 : ∀ x ∉ normalHalfSpace (E := E) a, w x = 0)
+    (hw'0 : ∀ x ∉ normalHalfSpace (E := E) a, w' x = 0) :
+    HasWeakLineDerivOn volume ⊤ w w' v := by
+  refine (hasWeakLineDerivOn_iff (hwl.locallyIntegrableOn _) (hw'l.locallyIntegrableOn _)).2
+    fun φ hφ hφc _ => ?_
+  have hC := integral_fderiv_mul_eq_neg_of_halfSpace h hwl hw'l
+    (fun x hx => hw0 x (by simpa using hx)) (fun x hx => hw'0 x (by simpa using hx)) hφ hφc
+    (Or.inl hv)
+  simpa only [(hφ.differentiable (by simp) _).lineDeriv_eq_fderiv, smul_eq_mul] using hC
+
+/-- **Odd reflection in a tangential direction.** Let `w` have weak gradient `G` on the
+half-space `{x | a < x.fst}`, with `w` and `G` vanishing off the half-space and locally integrable
+on the whole space. Then, in every direction `d` tangent to the boundary hyperplane, the odd
+reflection `x ↦ w x - w (ρ x)` is weakly differentiable on the whole space, with weak derivative
+`x ↦ ⟪G x - R (G (ρ x)), d⟫`. No boundary condition on `w` is assumed; in the normal direction
+the odd reflection is weakly differentiable only when `w` has zero trace. -/
+theorem HasWeakFDerivOn.hasWeakLineDerivOn_sub_comp_normalReflection {a : ℝ}
+    {w : WithLp 2 (ℝ × E) → ℝ} {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    (hw : HasWeakFDerivOn volume (normalHalfSpace a) w fun x => innerSL ℝ (G x))
+    (hwl : LocallyIntegrable w) (hGl : LocallyIntegrable G)
+    (hw0 : ∀ x ∉ normalHalfSpace (E := E) a, w x = 0)
+    (hG0 : ∀ x ∉ normalHalfSpace (E := E) a, G x = 0) {d : WithLp 2 (ℝ × E)} (hd : d.fst = 0) :
+    HasWeakLineDerivOn volume ⊤ (fun x => w x - w (normalReflection E a x))
+      (fun x => inner ℝ (G x - normalLinearReflection E (G (normalReflection E a x))) d) d := by
+  -- The odd reflection is twice the extension by zero minus the even reflection.
+  have hz := (hw.hasWeakLineDerivOn d).top_of_normalHalfSpace hd hwl (hGl.inner_const d) hw0
+    fun x hx => by simp [hG0 x hx]
+  have h := (hz.const_smul 2).sub
+    ((hw.add_comp_normalReflection hwl hGl hw0 hG0).hasWeakLineDerivOn d)
+  convert h using 1
+  · funext x
+    simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
+    ring
+  · funext x
+    simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, innerSL_apply_apply, inner_sub_left,
+      inner_add_left]
+    ring
+
+/-- **Precomposition with the reflection on the whole space.** If `w` has weak gradient `G` on
+the whole space, then `w ∘ ρ` has weak gradient `x ↦ R (G (ρ x))`, where `ρ` is the reflection in
+`{a} × E` and `R` its linear part. -/
+theorem HasWeakFDerivOn.comp_normalReflection {a : ℝ} {w : WithLp 2 (ℝ × E) → ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    (hw : HasWeakFDerivOn volume ⊤ w fun x => innerSL ℝ (G x)) :
+    HasWeakFDerivOn volume ⊤ (fun x => w (normalReflection E a x))
+      fun x => innerSL ℝ (normalLinearReflection E (G (normalReflection E a x))) := by
+  have h := hw.comp_measurePreserving (U := ⊤) (measurePreserving_normalReflection a)
+    (normalReflection E a).isometry.lipschitzWith.locallyLipschitz.locallyLipschitzOn
+    (mapsTo_univ _ _)
+  refine h.congr_ae_deriv (Eventually.of_forall fun x => ?_)
+  ext d
+  simp only [ContinuousLinearMap.comp_apply, (hasFDerivAt_normalReflection a x).fderiv]
+  simp
 
 end HalfSpace
 
