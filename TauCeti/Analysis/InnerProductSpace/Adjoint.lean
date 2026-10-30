@@ -36,6 +36,10 @@ endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For 
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
 
+Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
+(`LinearMap.toContinuousLinearMap_star`) and its normality
+(the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
+
 -/
 
 public section
@@ -152,5 +156,23 @@ theorem adjoint_apply_mem_of_forall_mem_orthogonal {A : E →ₗ[𝕜] F} {T : S
     (hA : ∀ x ∈ Tᗮ, A x = 0) (y : F) : adjoint A y ∈ T :=
   T.orthogonal_orthogonal ▸ Submodule.orthogonal_le (fun x hx ↦ hA x hx)
     (A.orthogonal_ker ▸ mem_range_self _ y)
+
+/-- Passing a finite-dimensional operator to continuous linear maps preserves its adjoint. -/
+theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →ₗ[𝕜] E) :
+    (star T).toContinuousLinearMap = star T.toContinuousLinearMap := by
+  rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
+    LinearMap.adjoint_toContinuousLinearMap]
+
+/-- A finite-dimensional linear operator remains normal when regarded as continuous. -/
+instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →ₗ[𝕜] E) [IsStarNormal T] :
+    IsStarNormal T.toContinuousLinearMap where
+  star_comm_self := by
+    rw [← toContinuousLinearMap_star]
+    -- The endomorphism algebra equivalence is the multiplicative version of this conversion.
+    exact (star_comm_self (x := T)).map (Module.End.toContinuousLinearMap (𝕜 := 𝕜) E)
 
 end LinearMap
