@@ -64,17 +64,9 @@ theorem RingTheory.Sequence.IsWeaklyRegular.of_subsingleton [Subsingleton M] (rs
 /-- An element `b` is regular on `M ⧸ a M` exactly when `a c = b m` forces `m ∈ a M`. -/
 theorem TauCeti.isSMulRegular_quotSMulTop_iff {a b : R} :
     IsSMulRegular (QuotSMulTop a M) b ↔
-      ∀ m c : M, a • c = b • m → m ∈ a • (⊤ : Submodule R M) := by
-  rw [isSMulRegular_iff_right_eq_zero_of_smul]
-  refine ⟨fun h m c hc ↦ ?_, fun h q hq ↦ ?_⟩
-  · refine (Submodule.Quotient.mk_eq_zero _).1 (h _ ?_)
-    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, ← hc]
-    exact Submodule.smul_mem_pointwise_smul _ a ⊤ trivial
-  · induction q using Submodule.Quotient.induction_on with | H m => ?_
-    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
-      Submodule.mem_smul_pointwise_iff_exists] at hq
-    obtain ⟨c, -, hc⟩ := hq
-    exact (Submodule.Quotient.mk_eq_zero _).2 (h m c hc)
+      ∀ m c : M, a • c = b • m → m ∈ a • (⊤ : Submodule R M) :=
+  (isSMulRegular_quotient_iff_mem_of_smul_mem _ b).trans <| forall_congr' fun m ↦ by
+    simp [Submodule.mem_smul_pointwise_iff_exists (b • m)]
 
 /-- If `a, b` is a weakly `M`-regular sequence, then `bʲ` is regular on `M ⧸ aⁿ M`. -/
 theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow {a b : R}
