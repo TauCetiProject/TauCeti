@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Bilinear
+public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
@@ -61,6 +62,15 @@ theorem traceRadical_restrictScalars_eq_ker :
 theorem mem_traceRadical_iff_left {x : A} :
     x ∈ τ.traceRadical hτ ↔ ∀ y, τ (y * x) = 0 := by
   simp only [mem_traceRadical, hτ x]
+
+/-- It suffices to test the trace pairing on any coefficient basis. -/
+theorem mem_traceRadical_iff_basis {ι : Type*} (b : Module.Basis ι R A) {x : A} :
+    x ∈ τ.traceRadical hτ ↔ ∀ i, τ (x * b i) = 0 := by
+  rw [mem_traceRadical]
+  refine ⟨fun hx i ↦ hx _, fun hx y ↦ ?_⟩
+  let f := τ ∘ₗ LinearMap.mulLeft R x
+  have hf : f = 0 := b.ext fun i ↦ by simpa [f] using hx i
+  exact LinearMap.congr_fun hf y
 
 /-- The trace itself vanishes on its radical. -/
 theorem traceRadical_le_ker : (τ.traceRadical hτ).restrictScalars R ≤ ker τ := by

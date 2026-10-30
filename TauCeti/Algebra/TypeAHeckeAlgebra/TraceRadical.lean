@@ -10,13 +10,14 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
 public import TauCeti.RingTheory.TraceFunctional.Radical
 
 /-!
-# Finite trace radicals of Hecke Markov traces
+# Finite trace radicals of Hecke traces
 
-Restrict a Markov trace on the infinite Hecke algebra to the independently presented finite
-algebra through `TypeAHeckeAlgebra.toInfinite`. Its multiplication pairing has a two-sided
-radical `IsMarkovTrace.finiteRadical`. Membership can be checked against the PBW basis.
-The quotient functional supplied by `LinearMap.traceRadicalQuotient` is normalized, tracial
-and algebraically nondegenerate; this makes no positivity assertion.
+Restrict a tracial functional on the infinite Hecke algebra to the independently presented
+finite algebra through `TypeAHeckeAlgebra.toInfinite`. Its multiplication pairing has a two-sided
+radical `finiteRadical`. Membership can be checked against the standard basis `T_w`
+(`TypeAHeckeAlgebra.basisTw`). The quotient functional `finiteQuotientTrace` is tracial and
+algebraically nondegenerate, and is normalized for a Markov trace; this makes no positivity
+assertion.
 
 Under a tower map, the preimage of the later radical is contained in the earlier radical.
 The opposite inclusion, needed to induce forward maps of these quotients, is not asserted
@@ -38,69 +39,107 @@ open TypeAHeckeAlgebra
 variable {R : Type*} [CommRing R] {q : Rˣ} {z : R}
   {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
 
-namespace IsMarkovTrace
+/-- Restriction to a finite presentation preserves traciality. -/
+theorem comp_toInfinite_mul_comm (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ)
+    (x y : TypeAHeckeAlgebra R q n) :
+    (τ ∘ₗ (toInfinite R q n).toLinearMap) (x * y) =
+      (τ ∘ₗ (toInfinite R q n).toLinearMap) (y * x) := by
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, map_mul, hτ]
 
 /-- The two-sided trace radical on the finite `n`-strand presentation. -/
-def finiteRadical (hτ : IsMarkovTrace z τ) (n : ℕ) : Ideal (TypeAHeckeAlgebra R q n) :=
-  (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadical
-    (fun x y ↦ by simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-      map_mul, hτ.map_mul_comm])
+def finiteRadical (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
+    Ideal (TypeAHeckeAlgebra R q n) :=
+  (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadical (comp_toInfinite_mul_comm hτ n)
 
-/-- Identify the finite radical with the general trace radical, allowing the generic quotient
-functional and its nondegeneracy theorem to be used on this finite presentation. -/
-theorem finiteRadical_def (hτ : IsMarkovTrace z τ) (n : ℕ) :
-    hτ.finiteRadical n = (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadical
-      (fun x y ↦ by simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-        map_mul, hτ.map_mul_comm]) := (rfl)
+/-- Identify the finite radical with the general trace radical. -/
+theorem finiteRadical_def (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
+    finiteRadical hτ n = (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadical
+      (comp_toInfinite_mul_comm hτ n) := (rfl)
 
 /-- An element belongs to the finite radical exactly when it pairs to zero with all elements
 of that finite presentation, not with all elements of the infinite algebra. -/
 @[simp]
-theorem mem_finiteRadical (hτ : IsMarkovTrace z τ) {n : ℕ}
+theorem mem_finiteRadical (hτ : ∀ x y, τ (x * y) = τ (y * x)) {n : ℕ}
     {x : TypeAHeckeAlgebra R q n} :
-    x ∈ hτ.finiteRadical n ↔ ∀ y, τ (toInfinite R q n (x * y)) = 0 := by
-  rw [finiteRadical, LinearMap.mem_traceRadical]
-  rfl
+    x ∈ finiteRadical hτ n ↔ ∀ y, τ (toInfinite R q n (x * y)) = 0 := by
+  simp only [finiteRadical_def, LinearMap.mem_traceRadical, LinearMap.comp_apply,
+    AlgHom.toLinearMap_apply]
 
-instance (hτ : IsMarkovTrace z τ) (n : ℕ) : (hτ.finiteRadical n).IsTwoSided :=
+instance (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
+    (finiteRadical hτ n).IsTwoSided :=
   inferInstanceAs ((τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadical _).IsTwoSided
 
-/-- It suffices to test the finite trace pairing on the PBW basis. -/
-theorem mem_finiteRadical_iff_Tw (hτ : IsMarkovTrace z τ) {n : ℕ}
+/-- It suffices to test the finite trace pairing on the standard basis `T_w`. -/
+theorem mem_finiteRadical_iff_Tw (hτ : ∀ x y, τ (x * y) = τ (y * x)) {n : ℕ}
     {W : Type*} [Group W] (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W)
     {x : TypeAHeckeAlgebra R q n} :
-    x ∈ hτ.finiteRadical n ↔ ∀ w, τ (toInfinite R q n (x * Tw q cs w)) = 0 := by
-  rw [mem_finiteRadical]
-  refine ⟨fun hx w ↦ hx _, fun hx y ↦ ?_⟩
-  let f := τ ∘ₗ (toInfinite R q n).toLinearMap ∘ₗ LinearMap.mulLeft R x
-  have hf : f = 0 := (basisTw q cs).ext fun w ↦ by simpa [f] using hx w
-  exact LinearMap.congr_fun hf y
+    x ∈ finiteRadical hτ n ↔ ∀ w, τ (toInfinite R q n (x * Tw q cs w)) = 0 := by
+  simpa only [finiteRadical_def, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    coe_basisTw] using
+    (τ ∘ₗ (toInfinite R q n).toLinearMap).mem_traceRadical_iff_basis
+      (comp_toInfinite_mul_comm hτ n) (basisTw q cs) (x := x)
 
 /-- Pulling back a later finite radical along a tower map lands in the earlier radical. -/
-theorem comap_finiteRadical_strandIncl_le (hτ : IsMarkovTrace z τ) (n : ℕ) :
-    Ideal.comap (strandIncl R q n) (hτ.finiteRadical (n + 1)) ≤ hτ.finiteRadical n := by
-  intro x hx
-  rw [mem_finiteRadical]
-  rw [Ideal.mem_comap, mem_finiteRadical] at hx
-  intro y
-  simpa only [← map_mul, toInfinite_strandIncl] using hx (strandIncl R q n y)
+theorem comap_finiteRadical_strandIncl_le (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
+    Ideal.comap (strandIncl R q n) (finiteRadical hτ (n + 1)) ≤ finiteRadical hτ n := by
+  rw [finiteRadical_def, finiteRadical_def]
+  exact LinearMap.comap_traceRadical_le _ _ (strandIncl R q n)
+    (LinearMap.ext fun x ↦ by simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+      toInfinite_strandIncl])
 
-end IsMarkovTrace
+/-- The tracial functional induced on the finite trace-radical quotient. -/
+def finiteQuotientTrace (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
+    TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ n →ₗ[R] R :=
+  (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient (comp_toInfinite_mul_comm hτ n)
+
+/-- The finite quotient trace agrees with the original trace on representatives. -/
+@[simp]
+theorem finiteQuotientTrace_mk (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ)
+    (x : TypeAHeckeAlgebra R q n) :
+    finiteQuotientTrace hτ n (Ideal.Quotient.mk (finiteRadical hτ n) x) =
+      τ (toInfinite R q n x) := by
+  exact (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient_mk
+    (comp_toInfinite_mul_comm hτ n) x
+
+/-- The finite quotient preserves the value at the identity. -/
+@[simp]
+theorem finiteQuotientTrace_one (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
+    finiteQuotientTrace hτ n 1 = τ 1 := by
+  simpa only [map_one] using finiteQuotientTrace_mk hτ n 1
+
+/-- The finite quotient of a Markov trace is normalized. -/
+theorem IsMarkovTrace.finiteQuotientTrace_one (hτ : IsMarkovTrace z τ) (n : ℕ) :
+    finiteQuotientTrace hτ.map_mul_comm n 1 = 1 := by
+  rw [InfiniteTypeAHeckeAlgebra.finiteQuotientTrace_one, hτ.map_one]
+
+/-- The finite quotient functional is tracial. -/
+theorem finiteQuotientTrace_mul_comm (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ)
+    (x y : TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ n) :
+    finiteQuotientTrace hτ n (x * y) = finiteQuotientTrace hτ n (y * x) := by
+  exact (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient_mul_comm
+    (comp_toInfinite_mul_comm hτ n) x y
+
+/-- The finite quotient multiplication pairing is algebraically nondegenerate. -/
+theorem finiteQuotientTrace_nondegenerate (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ)
+    (x : TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ n)
+    (hx : ∀ y, finiteQuotientTrace hτ n (x * y) = 0) : x = 0 := by
+  exact (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient_nondegenerate
+    (comp_toInfinite_mul_comm hτ n) x hx
 
 /-- At the index-character parameter, the finite radical is the kernel of that character
 pulled back to the finite presentation. -/
 theorem finiteRadical_indexCharacter (n : ℕ) :
-    (isMarkovTrace_indexCharacter (R := R) (q := q)).finiteRadical n =
+    finiteRadical (isMarkovTrace_indexCharacter (R := R) (q := q)).map_mul_comm n =
       RingHom.ker ((indexCharacter R q).comp (toInfinite R q n)) := by
-  rw [IsMarkovTrace.finiteRadical]
+  rw [finiteRadical_def]
   exact AlgHom.traceRadical_eq_ker ((indexCharacter R q).comp (toInfinite R q n))
 
 /-- At the sign-character parameter, the finite radical is the kernel of that character
 pulled back to the finite presentation. -/
 theorem finiteRadical_signCharacter (n : ℕ) :
-    (isMarkovTrace_signCharacter (R := R) (q := q)).finiteRadical n =
+    finiteRadical (isMarkovTrace_signCharacter (R := R) (q := q)).map_mul_comm n =
       RingHom.ker ((signCharacter R q).comp (toInfinite R q n)) := by
-  rw [IsMarkovTrace.finiteRadical]
+  rw [finiteRadical_def]
   exact AlgHom.traceRadical_eq_ker ((signCharacter R q).comp (toInfinite R q n))
 
 end TauCeti.InfiniteTypeAHeckeAlgebra
