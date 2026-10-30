@@ -10,7 +10,6 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Factorization
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.ReflectionPair
 import TauCeti.LinearAlgebra.QuadraticForm.Real
 import TauCeti.Topology.Algebra.QuadraticForm.LevelSet
 
@@ -94,22 +93,6 @@ private theorem exists_joinedIn_ι_mul_ι_mul_ι_eq_smul_ι [TopologicalSpace V]
   · exact ⟨a, h, 1, .inl rfl, _, hw, by rw [ι_mul_ι_mul_ι, map_one, one_mul]⟩
   · exact ⟨-a, h, -1, .inr rfl, _, hw, by
       rw [map_neg, mul_neg, ι_mul_ι_mul_ι, map_neg, map_one, neg_one_mul]⟩
-
-/-- Two orthogonal vectors whose norms have the same sign rescale to two orthogonal vectors of the
-same norm `1` or `-1`. -/
-private theorem exists_isOrtho_of_mul_pos {e f : V} (hef : Q.IsOrtho e f) (h : 0 < Q e * Q f) :
-    ∃ e' f' : V, (Q e' = 1 ∨ Q e' = -1) ∧ Q f' = Q e' ∧ Q.IsOrtho e' f' := by
-  refine ⟨(√|Q e|)⁻¹ • e, (√|Q f|)⁻¹ • f, ?_, ?_, ?_⟩
-  · rw [QuadraticMap.map_inv_sqrt_abs_smul]
-    rcases (mul_pos_iff.mp h) with ⟨he, -⟩ | ⟨he, -⟩
-    · exact .inl (by rw [abs_of_pos he, div_self he.ne'])
-    · exact .inr (by rw [abs_of_neg he, div_neg, div_self he.ne])
-  · rw [QuadraticMap.map_inv_sqrt_abs_smul, QuadraticMap.map_inv_sqrt_abs_smul]
-    rcases (mul_pos_iff.mp h) with ⟨he, hf⟩ | ⟨he, hf⟩
-    · rw [abs_of_pos he, abs_of_pos hf, div_self he.ne', div_self hf.ne']
-    · rw [abs_of_neg he, abs_of_neg hf, div_neg, div_neg, div_self he.ne, div_self hf.ne]
-  · rw [QuadraticMap.isOrtho_def, QuadraticMap.map_add Q, QuadraticMap.polar_smul_left,
-      QuadraticMap.polar_smul_right, hef.polar_eq_zero, smul_zero, smul_zero, add_zero]
 
 variable [ContinuousMul (CliffordAlgebra Q)]
 
@@ -241,7 +224,7 @@ are nonzero of the same sign, that is, when it is definite on some plane. -/
 theorem pathConnectedSpace_spinGroup_of_isOrtho {e f : V} (hef : Q.IsOrtho e f)
     (h : 0 < Q e * Q f) : PathConnectedSpace (spinGroup Q) := by
   let _ := IsModuleTopology.toContinuousAdd ℝ V
-  obtain ⟨e, f, he, hf, hef⟩ := exists_isOrtho_of_mul_pos hef h
+  obtain ⟨e, f, he, hf, hef⟩ := QuadraticMap.exists_isOrtho_of_mul_pos hef h
   have he0 : Q e ≠ 0 := by rcases he with h | h <;> rw [h] <;> norm_num
   have hQ : Q ≠ 0 := fun h ↦ he0 (by simp [h])
   -- `ι e * ι e = Q e` is joined to `ι e * ι (-e) = -Q e`, so `-1` is joined to `1`.

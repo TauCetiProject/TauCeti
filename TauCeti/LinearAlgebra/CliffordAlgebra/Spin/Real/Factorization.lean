@@ -60,14 +60,6 @@ private theorem prod_map_ι_eq_smul_prod_map_ι_normalize (l : List V) (hl : ∀
     congr 1
     field_simp
 
-/-- The rescaled vector `(√|Q v|)⁻¹ • v` of a vector of nonzero norm has norm `1` or `-1`. -/
-private theorem apply_normalize_eq_one_or_neg_one {v : V} (hv : Q v ≠ 0) :
-    Q ((√|Q v|)⁻¹ • v) = 1 ∨ Q ((√|Q v|)⁻¹ • v) = -1 := by
-  rw [QuadraticMap.map_inv_sqrt_abs_smul]
-  rcases hv.lt_or_gt with h | h
-  · exact .inr (by rw [abs_of_neg h, div_neg, div_self hv])
-  · exact .inl (by rw [abs_of_pos h, div_self hv])
-
 /-- **Real Spin elements are products of unit vectors.** Every element of the Spin group of a real
 quadratic form is the Clifford product of an even number of vectors of norm `1` or `-1` whose
 norms multiply to `1`. -/
@@ -81,7 +73,7 @@ theorem exists_normalized_list_of_spinGroup (x : spinGroup Q) :
   set c := (l.map fun v ↦ √|Q v|).prod
   have hL : ∀ v ∈ L, Q v = 1 ∨ Q v = -1 := by
     simpa only [L, List.forall_mem_map] using
-      fun v hv ↦ apply_normalize_eq_one_or_neg_one (hl0 v hv)
+      fun v hv ↦ QuadraticMap.map_inv_sqrt_abs_smul_eq_one_or_neg_one (hl0 v hv)
   have hLlen : Even L.length := by rwa [List.length_map]
   have hc : 0 < c := List.prod_pos fun r hr ↦ by
     obtain ⟨v, hv, rfl⟩ := List.mem_map.mp hr
@@ -99,9 +91,8 @@ theorem exists_normalized_list_of_spinGroup (x : spinGroup Q) :
   have hcs : c * c * s = 1 := by
     apply algebraMap_injective Q
     have h := spinGroup.coe_star_mul_self x
-    rw [hxL, star_smul, smul_mul_smul_comm, star_mul_self_eq_neg_one_pow_smul_reverse_mul_self,
-      reverse_prod_map_ι_mul_prod_map_ι, hLlen.neg_one_pow, one_smul, Algebra.smul_def,
-      ← map_mul] at h
+    rw [hxL, star_smul, smul_mul_smul_comm, star_prod_map_ι_mul_prod_map_ι, hLlen.neg_one_pow,
+      one_mul, Algebra.smul_def, ← map_mul] at h
     rw [h, map_one]
   have hs : s = 1 := by
     rcases mul_self_eq_one_iff.mp hss with h | h

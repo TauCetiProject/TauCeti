@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.UnitLevel
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # Paths to normalized reflection-pair lifts
@@ -29,8 +28,6 @@ place reflection-pair lifts in the identity path component of the compact real S
   path from the identity to its reflection-pair lift.
 * `CliffordAlgebra.joined_one_spinReflectionPair_realCliffordForm_zero` joins every normalized
   reflection-pair lift to the identity in the positive-definite real form of dimension at least two.
-* `CliffordAlgebra.joined_of_coe_eq_prod_mul_ι_mul_prod` moves one factor of a Spin element written
-  as a product of vectors along a path in its level set.
 
 ## References
 
@@ -73,29 +70,6 @@ theorem joined_one_spinReflectionPair_of_joined (v w : M) (hv : Q v = 1) (hw : Q
     continuous_spinReflectionPair (fun _ ↦ v) Subtype.val (fun _ ↦ hv) (fun u ↦ u.2)
       continuous_const continuous_subtype_val
   simpa only [f, spinReflectionPair_self] using h.map hf
-
-/-- **Moving one factor of a product of vectors.** Let a Spin element be a product
-`P₁ * ι b * P₂` of vectors whose norms multiply to one, with `P₁` and `P₂` products of vectors.
-Moving the factor `b` to `b'` along a path inside its level set `{v | Q v = Q b}` keeps the product
-in the Spin group, and so joins the element to `P₁ * ι b' * P₂`. -/
-theorem joined_of_coe_eq_prod_mul_ι_mul_prod {l₁ l₂ : List M} {b b' : M}
-    (hl : Even (l₁.length + l₂.length + 1)) (hQ : (l₁.map Q).prod * Q b * (l₂.map Q).prod = 1)
-    (h : JoinedIn {v | Q v = Q b} b b') {x y : spinGroup Q}
-    (hx : (x : CliffordAlgebra Q) = (l₁.map (ι Q)).prod * ι Q b * (l₂.map (ι Q)).prod)
-    (hy : (y : CliffordAlgebra Q) = (l₁.map (ι Q)).prod * ι Q b' * (l₂.map (ι Q)).prod) :
-    Joined x y := by
-  have hmem (v : {v : M // Q v = Q b}) :
-      (l₁.map (ι Q)).prod * ι Q v * (l₂.map (ι Q)).prod ∈ spinGroup Q := by
-    have h := prod_map_ι_mem_spinGroup (Q := Q) (l := l₁ ++ v.1 :: l₂)
-      (by rwa [List.length_append, List.length_cons, ← Nat.add_assoc])
-      (by rw [List.map_append, List.prod_append, List.map_cons, List.prod_cons, v.2, ← mul_assoc,
-        hQ])
-    rwa [List.map_append, List.prod_append, List.map_cons, List.prod_cons, ← mul_assoc] at h
-  let f : {v : M // Q v = Q b} → spinGroup Q := fun v ↦ ⟨_, hmem v⟩
-  have hf : Continuous f := continuous_induced_rng.mpr <|
-    (continuous_const.mul ((continuous_ι Q).comp continuous_subtype_val)).mul continuous_const
-  convert h.joined_subtype.map hf using 1
-  exacts [Subtype.ext hx, Subtype.ext hy]
 
 /-- In dimension at least two, every normalized reflection-pair lift for the positive-definite real
 Clifford form is joined to the identity in the Spin group. -/

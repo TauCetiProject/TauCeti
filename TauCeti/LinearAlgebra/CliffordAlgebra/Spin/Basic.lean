@@ -70,8 +70,7 @@ theorem prod_map_ι_mem_spinGroup {l : List M} (hl : Even l.length) (hQ : (l.map
     List.prod_isUnit_iff.mp (hQ ▸ isUnit_one) (Q v) (List.mem_map_of_mem hv)
   have hP := isUnit_prod_map_ι (Q := Q) (hQ ▸ isUnit_one)
   have hstar : star (l.map (ι Q)).prod * (l.map (ι Q)).prod = 1 := by
-    rw [star_mul_self_eq_neg_one_pow_smul_reverse_mul_self, reverse_prod_map_ι_mul_prod_map_ι,
-      hl.neg_one_pow, hQ, one_smul, map_one]
+    rw [star_prod_map_ι_mul_prod_map_ι, hl.neg_one_pow, hQ, one_mul, map_one]
   refine spinGroup.mem_iff.mpr ⟨⟨⟨hP.unit, mem_lipschitzGroup_of_coe_eq_prod_map_ι l hunit rfl,
     rfl⟩, hP.mem_unitary_of_star_mul_self hstar⟩, ?_⟩
   rw [← Subalgebra.mem_toSubmodule, CliffordAlgebra.even_toSubmodule]
