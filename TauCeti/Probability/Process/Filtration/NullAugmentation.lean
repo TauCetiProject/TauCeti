@@ -103,9 +103,11 @@ end Preorder
 
 /-- The usual right-continuous augmentations agree under equivalent measures. -/
 theorem rightCont_nullAugment_apply_eq_of_absolutelyContinuous
-    [LinearOrder ι] [DenselyOrdered ι] [NoMaxOrder ι] (ℱ : Filtration ι m)
+    [PartialOrder ι] (ℱ : Filtration ι m)
     {P Q : Measure Ω} (hPQ : P ≪ Q) (hQP : Q ≪ P) (i : ι) :
     (ℱ.nullAugment P).rightCont i = (ℱ.nullAugment Q).rightCont i := by
-  simp only [rightCont_eq, ℱ.nullAugment_apply_eq_of_absolutelyContinuous hPQ hQP]
+  let := Preorder.topology ι
+  have : OrderTopology ι := ⟨rfl⟩
+  simp only [rightCont_apply, ℱ.nullAugment_apply_eq_of_absolutelyContinuous hPQ hQP]
 
 end MeasureTheory.Filtration

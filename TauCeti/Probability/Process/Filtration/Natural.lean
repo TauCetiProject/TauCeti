@@ -75,7 +75,7 @@ end Preorder
 /-- The usual augmented natural filtrations of a process and its deterministic
 translation agree under equivalent measures. This does not apply to a random drift. -/
 theorem rightCont_nullAugment_natural_add_deterministic
-    [LinearOrder ι] [DenselyOrdered ι] [NoMaxOrder ι]
+    [PartialOrder ι]
     (W : ι → Ω → ℝ) (hW : ∀ i, StronglyMeasurable (W i)) (d : ι → ℝ)
     {P Q : Measure Ω} (hPQ : P ≪ Q) (hQP : Q ≪ P) (i : ι) :
     ((natural (fun j ω => W j ω + d j)
