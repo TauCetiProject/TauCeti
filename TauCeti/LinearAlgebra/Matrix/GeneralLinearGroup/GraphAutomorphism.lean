@@ -191,6 +191,18 @@ theorem inverseTranspose_typeAGraphConjugator (r : ℕ) :
   simp only [typeAGraphConjugator, map_mul, inverseTranspose_diagGL,
     inverseTranspose_permutationGL, typeAGraphSign_inv]
 
+/-- The inverse of the native signed reversal matrix is its transpose. -/
+theorem typeAGraphConjugator_inv_eq_transpose (r : ℕ) :
+    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)⁻¹ =
+      (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)ᵀ := by
+  have h := congrArg
+    (fun g : GeneralLinearGroup (Fin (r + 1)) A ↦
+      (g : Matrix (Fin (r + 1)) (Fin (r + 1)) A))
+    (inverseTranspose_typeAGraphConjugator (A := A) r)
+  rw [GeneralLinearGroup.coe_inverseTranspose] at h
+  simpa only [transpose_transpose, GeneralLinearGroup.coe_inv] using
+    congrArg Matrix.transpose h
+
 private theorem typeAGraphAutomorphism_eq_iff_gl (r : ℕ) (g h : GL (Fin (r + 1)) A) :
     typeAGraphAutomorphism r A g = h ↔
       h * typeAGraphConjugator r A * (Matrix.GeneralLinearGroup.inverseTranspose g)⁻¹ =

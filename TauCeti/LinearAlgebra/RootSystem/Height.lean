@@ -26,6 +26,8 @@ a base is determined by the indices of its simple roots.
 ## Main results
 
 * `RootPairing.Base.ext`: a base is determined by its support, the indices of its simple roots.
+* `RootPairing.pairingIn_eq_sum_of_root_eq_sum` reads the Cartan integers of an integral
+  combination of roots off those of its summands.
 * `TauCeti.apply_root_eq_height_zsmul` says that an additive map taking the constant value `c`
   on the simple roots takes the value `ht(α) • c` on every root.
 * `TauCeti.sum_mul_height_eq_zero_of_sum_zsmul_root_eq_zero` says that height respects integral
@@ -55,6 +57,21 @@ theorem ext {b b' : P.Base} (h : b.support = b'.support) : b = b' := by
   rfl
 
 end RootPairing.Base
+
+namespace RootPairing
+
+/-- **The Cartan integers of an integral combination of roots** are the matching combination of
+Cartan integers: if `αᵢ = ∑ₖ fₖ αₖ` then `⟨αᵢ, αₗ^∨⟩ = ∑ₖ fₖ ⟨αₖ, αₗ^∨⟩`. -/
+theorem pairingIn_eq_sum_of_root_eq_sum {ι R M N : Type*} [CommRing R] [CharZero R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
+    [P.IsCrystallographic] {s : Finset ι} {i : ι} {f : ι → ℤ}
+    (h : P.root i = ∑ k ∈ s, f k • P.root k) (l : ι) :
+    P.pairingIn ℤ i l = ∑ k ∈ s, f k * P.pairingIn ℤ k l :=
+  FaithfulSMul.algebraMap_injective ℤ R <| by
+    simp_rw [algebraMap_pairingIn, map_sum, map_mul, algebraMap_pairingIn,
+      ← root_coroot'_eq_pairing, h, map_sum, map_zsmul, zsmul_eq_mul, eq_intCast]
+
+end RootPairing
 
 namespace TauCeti
 
