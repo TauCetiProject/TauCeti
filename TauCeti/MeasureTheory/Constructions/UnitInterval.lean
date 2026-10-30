@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.UniformOn
+import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.MeasureTheory.Function.Floor
 
 /-!
@@ -50,6 +51,9 @@ top cell `[(m-1)/m, 1] = Set.Ici ((m-1)/m)`.
 * `TauCeti.unitInterval.measurable_cellIdx` — the index depends measurably on the point;
 * `TauCeti.unitInterval.measurableSet_preimage_cellIdx` — every cell is measurable;
 * `TauCeti.unitInterval.volume_preimage_cellIdx` — every cell has volume `1/m`;
+* `TauCeti.unitInterval.cellIdx_mul_div` — the `m * n` cells refine the `m` cells;
+* `TauCeti.unitInterval.tendsto_cellIdx_div` — the left endpoint `cellIdx m x / m` of the cell
+  of `x` tends to `x` as `m → ∞`;
 * `TauCeti.unitInterval.measurePreserving_cellFin` — the cell index carries `volume` to the uniform
   measure on `Fin m`;
 * `TauCeti.unitInterval.integral_pi_comp_cellIdx_eq_inv_smul_sum` — a function of the cell indices
@@ -70,9 +74,9 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set
+open MeasureTheory Set Filter
 
-open scoped ENNReal unitInterval
+open scoped ENNReal unitInterval Topology
 
 namespace TauCeti
 
@@ -169,6 +173,58 @@ theorem volume_preimage_cellIdx (hi : i < m) :
       field_simp
       linarith
   rw [hgoal, one_div, ENNReal.ofReal_inv_of_pos hmR, ENNReal.ofReal_natCast]
+
+/-- Cells of the `m * n`-fold equipartition refine those of the `m`-fold one: the `m * n`-fold
+cell containing `x` lies in the `m`-fold cell numbered by its index divided by `n`. -/
+theorem cellIdx_mul_div {n : ℕ} (hn : 0 < n) (x : I) :
+    cellIdx (m * n) x / n = cellIdx m x := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · simp [cellIdx]
+  have hfloor : ⌊((m * n : ℕ) : ℝ) * (x : ℝ)⌋₊ / n = ⌊(m : ℝ) * (x : ℝ)⌋₊ := by
+    rw [← Nat.floor_div_natCast]
+    congr 1
+    have hnR : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
+    push_cast
+    field_simp
+  have htop : (m * n - 1) / n = m - 1 := by
+    obtain ⟨a, rfl⟩ : ∃ a, m = a + 1 := ⟨m - 1, by omega⟩
+    rw [add_one_mul, Nat.add_sub_cancel]
+    exact Nat.div_eq_of_lt_le (by omega) (by rw [add_one_mul]; omega)
+  rw [cellIdx, cellIdx, Monotone.map_min (f := (· / n)) fun _ _ h => Nat.div_le_div_right h,
+    hfloor, htop]
+
+/-- The left endpoint `cellIdx m x / m` of the cell containing `x` lies below `x`. -/
+theorem cellIdx_div_le (m : ℕ) (x : I) : (cellIdx m x : ℝ) / m ≤ x := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · simpa using x.2.1
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  rw [div_le_iff₀ hmR, mul_comm]
+  calc (cellIdx m x : ℝ) ≤ ⌊(m : ℝ) * (x : ℝ)⌋₊ := by exact_mod_cast min_le_left _ _
+    _ ≤ m * x := Nat.floor_le (mul_nonneg hmR.le x.2.1)
+
+/-- The point `x` lies below the right endpoint `(cellIdx m x + 1) / m` of its cell. -/
+theorem le_cellIdx_add_one_div (hm : 0 < m) (x : I) :
+    (x : ℝ) ≤ ((cellIdx m x : ℝ) + 1) / m := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  rw [le_div_iff₀ hmR]
+  rcases le_total ⌊(m : ℝ) * (x : ℝ)⌋₊ (m - 1) with h | h
+  · rw [cellIdx, min_eq_left h]
+    linarith [Nat.lt_floor_add_one ((m : ℝ) * (x : ℝ))]
+  · rw [cellIdx, min_eq_right h, Nat.cast_sub hm, Nat.cast_one, sub_add_cancel]
+    nlinarith [x.2.2]
+
+/-- As the number of cells grows, the left endpoints of the cells containing `x` converge to
+`x`. -/
+theorem tendsto_cellIdx_div (x : I) :
+    Tendsto (fun m : ℕ => (cellIdx m x : ℝ) / m) atTop (𝓝 (x : ℝ)) := by
+  have hlow : Tendsto (fun m : ℕ => (x : ℝ) - 1 / m) atTop (𝓝 (x : ℝ)) := by
+    simpa using tendsto_const_nhds.sub (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlow tendsto_const_nhds ?_
+    (Eventually.of_forall fun m => cellIdx_div_le m x)
+  filter_upwards [eventually_gt_atTop 0] with m hm
+  have h := le_cellIdx_add_one_div hm x
+  rw [add_div] at h
+  linarith
 
 /-- The index of the cell containing `x`, as an element of `Fin m`. Positivity of `m`, carried by
 `NeZero`, is what makes `cellIdx m x` a valid index. -/
