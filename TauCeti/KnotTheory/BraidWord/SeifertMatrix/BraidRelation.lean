@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.List.AppendCons
 public import TauCeti.KnotTheory.BraidWord.ArtinEquivalence
 public import TauCeti.KnotTheory.BraidWord.SeifertMatrix.Basic
 
@@ -75,27 +76,17 @@ section BraidRelation
 
 variable (u v : BraidWord n) (a b : Fin (n - 1) × ℤˣ)
 
-/-- Two braid words which differ only in the three letters following `u` have the same letter at
-every other position. -/
-private theorem getElem?_append_cons_cons_cons_of_ne (a' b' c c' : Fin (n - 1) × ℤˣ) {k : ℕ}
-    (h₀ : k ≠ u.length) (h₁ : k ≠ u.length + 1) (h₂ : k ≠ u.length + 2) :
-    (u ++ a :: b :: c :: v)[k]? = (u ++ a' :: b' :: c' :: v)[k]? := by
-  rcases lt_or_ge k u.length with hk | hk
-  · rw [List.getElem?_append_left hk, List.getElem?_append_left hk]
-  · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hk
-    rw [List.getElem?_append_right hk, List.getElem?_append_right hk, Nat.add_sub_cancel_left]
-    match m, h₀, h₁, h₂ with
-    | m + 3, _, _, _ => simp
-
 private theorem levelAt_append_cons_cons_cons_of_ne (a' b' c c' : Fin (n - 1) × ℤˣ) {k : ℕ}
     (h₀ : k ≠ u.length) (h₁ : k ≠ u.length + 1) (h₂ : k ≠ u.length + 2) :
     (u ++ a :: b :: c :: v).levelAt k = (u ++ a' :: b' :: c' :: v).levelAt k := by
-  rw [levelAt_def, levelAt_def, getElem?_append_cons_cons_cons_of_ne u v _ _ _ _ _ _ h₀ h₁ h₂]
+  rw [levelAt_def, levelAt_def,
+    List.getElem?_append_cons_cons_cons_of_ne u v _ _ _ _ _ _ h₀ h₁ h₂]
 
 private theorem signAt_append_cons_cons_cons_of_ne (a' b' c c' : Fin (n - 1) × ℤˣ) {k : ℕ}
     (h₀ : k ≠ u.length) (h₁ : k ≠ u.length + 1) (h₂ : k ≠ u.length + 2) :
     (u ++ a :: b :: c :: v).signAt k = (u ++ a' :: b' :: c' :: v).signAt k := by
-  rw [signAt_def, signAt_def, getElem?_append_cons_cons_cons_of_ne u v _ _ _ _ _ _ h₀ h₁ h₂]
+  rw [signAt_def, signAt_def,
+    List.getElem?_append_cons_cons_cons_of_ne u v _ _ _ _ _ _ h₀ h₁ h₂]
 
 variable (c : Fin (n - 1) × ℤˣ)
 
