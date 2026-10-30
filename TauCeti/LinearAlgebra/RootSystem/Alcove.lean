@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Convex.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # The fundamental alcove of a base
@@ -29,17 +28,18 @@ the walls meet.
 The main theorem identifies `A` with the set of points where every positive root takes a value
 strictly between `0` and `1`. One inclusion is the definition, as the simple roots and `θ` are
 positive. For the other, a positive root `α` is a nonnegative combination of the simple roots, so
-`α(x) > 0` on `A`, and `θ - α` lies in the positive root cone `Q⁺`
-(`RootPairing.Base.root_highestRoot_sub_mem_posRootCone`), so `α(x) ≤ θ(x) < 1`. Consequently
-every root, positive or negative, takes values in an open interval between consecutive integers on
-`A`, and this interval depends only on the sign of the root. So `A` meets none of the hyperplanes
-`H_{α,k}`, and a point lies in `A` exactly when it lies on the same side as `A` of every one of
-them: `A` is one of the alcoves, a cell of the affine root-hyperplane arrangement.
+`α(x) > 0` on `A` (`RootPairing.root'_pos_of_isPos`), and `θ - α` lies in the positive root cone
+`Q⁺` (`RootPairing.Base.root_highestRoot_sub_mem_posRootCone`), so `α(x) ≤ θ(x) < 1`
+(`RootPairing.root'_le_root'_highestRoot`). Consequently every root, positive or negative, takes
+values in an open interval between consecutive integers on `A`, and this interval depends only on
+the sign of the root. So `A` meets none of the hyperplanes `H_{α,k}`, and a point lies in `A`
+exactly when it lies on the same side as `A` of every one of them: `A` is one of the alcoves, a
+cell of the affine root-hyperplane arrangement.
 
 The alcove is convex, as an intersection of open half-spaces. Over a linearly ordered field it is
-nonempty: the simple roots take arbitrary prescribed values at some point of `N`, and the point at
-which each of them takes the value `1 / (n + 1)`, where `n` is the sum of the coefficients of `θ`,
-lies in `A`.
+nonempty: the simple roots take arbitrary prescribed values at some point of `N`
+(`RootPairing.Base.exists_forall_root'_eq`), and the point at which each of them takes the value
+`1 / (n + 1)`, where `n` is the sum of the coefficients of `θ`, lies in `A`.
 
 The alcove lives on the coweight space because the roots act on it, as in the classical setting
 where `N = Hom(ℤΦ, ℝ)` contains the coroot lattice. Over the same space the dominant chamber is the
@@ -53,10 +53,6 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 
 * `RootPairing.fundamentalAlcove_subset_openDominantChamber`: the fundamental alcove lies in the
   open dominant chamber of `P.flip`.
-* `RootPairing.root'_pos_of_isPos`, `RootPairing.root'_neg_of_not_isPos`: where the simple roots
-  are positive, so are the positive roots, and the negative roots are negative.
-* `RootPairing.root'_le_root'_highestRoot`: where the simple roots are nonnegative, the highest
-  root takes the largest value of all roots.
 * `RootPairing.mem_fundamentalAlcove_iff_forall_isPos`: **the fundamental alcove is the set of
   points where every positive root takes a value in the open interval `(0, 1)`.**
 * `RootPairing.exists_intCast_lt_root'_lt`: on the fundamental alcove each root takes its values in
@@ -67,8 +63,6 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
   root-hyperplane arrangement**: a point lies in it exactly when it lies on no affine root
   hyperplane and on the same side as a given point of the alcove of each of them.
 * `RootPairing.convex_fundamentalAlcove`: the fundamental alcove is convex.
-* `RootPairing.Base.exists_forall_root'_eq`: over a field the simple roots take arbitrary
-  prescribed values at some point of the coweight space.
 * `RootPairing.fundamentalAlcove_nonempty`: over a linearly ordered field the fundamental alcove
   is nonempty.
 
@@ -105,6 +99,7 @@ def fundamentalAlcove : Set N :=
   {x | (∀ i ∈ b.support, 0 < P.root' i x) ∧ P.root' b.highestRoot x < 1}
 
 /-- Membership in the fundamental alcove. -/
+@[simp]
 lemma mem_fundamentalAlcove {x : N} :
     x ∈ fundamentalAlcove P b ↔
       (∀ i ∈ b.support, 0 < P.root' i x) ∧ P.root' b.highestRoot x < 1 :=
@@ -117,57 +112,6 @@ lemma fundamentalAlcove_subset_openDominantChamber :
   (mem_openDominantChamber P.flip b.flip x).mpr fun i hi ↦ by simpa using hx.1 i (by simpa using hi)
 
 end Definition
-
-/-! ### Values of the roots on the dominant side -/
-
-section Values
-
-variable {P b} {x : N}
-
-/-- An element of the positive root cone is nonnegative at a point where every simple root is
-nonnegative. -/
-theorem toLinearMap_apply_nonneg_of_mem_posRootCone [Preorder R] [IsOrderedAddMonoid R]
-    (hx : ∀ i ∈ b.support, 0 ≤ P.root' i x) {v : M} (hv : v ∈ posRootCone P b) :
-    0 ≤ P.toLinearMap v x := by
-  obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
-  simp only [map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
-  exact Finset.sum_nonneg fun i hi ↦ nsmul_nonneg (hx i hi) _
-
-variable [CharZero R]
-
-/-- **A positive root is positive wherever the simple roots are.** This is the root-side
-counterpart of `RootPairing.coroot'_pos_of_mem_posRoots`; it needs no reducedness, as a positive
-root is a nonnegative combination of the simple roots. -/
-theorem root'_pos_of_isPos [PartialOrder R] [IsOrderedAddMonoid R]
-    (hx : ∀ i ∈ b.support, 0 < P.root' i x) {j : ι} (hj : b.IsPos j) : 0 < P.root' j x := by
-  obtain ⟨f, -, hf⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b j).mpr hj)
-  -- some simple root occurs in the expansion, because a root is never zero
-  obtain ⟨k, hk, hfk⟩ : ∃ k ∈ b.support, f k ≠ 0 := by
-    by_contra! H
-    exact P.ne_zero j (hf.trans (Finset.sum_eq_zero fun k hk ↦ by simp [H k hk]))
-  simp only [root', hf, map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
-  exact Finset.sum_pos' (fun i hi ↦ nsmul_nonneg (hx i hi).le _)
-    ⟨k, hk, nsmul_pos (hx k hk) hfk⟩
-
-/-- **A negative root is negative wherever the simple roots are positive.** -/
-theorem root'_neg_of_not_isPos [PartialOrder R] [IsOrderedAddMonoid R]
-    (hx : ∀ i ∈ b.support, 0 < P.root' i x) {j : ι} (hj : ¬ b.IsPos j) : P.root' j x < 0 := by
-  let := P.indexNeg
-  simpa [root', root_neg_index] using root'_pos_of_isPos hx ((Base.IsPos.neg_iff_not b j).mpr hj)
-
-variable [Finite ι] [Nonempty ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
-  [P.IsIrreducible]
-
-/-- **The highest root takes the largest value of all roots** at a point where every simple root
-is nonnegative, since `θ - α` is a nonnegative combination of the simple roots for every root
-`α`. -/
-theorem root'_le_root'_highestRoot [Preorder R] [IsOrderedAddMonoid R]
-    (hx : ∀ i ∈ b.support, 0 ≤ P.root' i x) (j : ι) : P.root' j x ≤ P.root' b.highestRoot x := by
-  have h := toLinearMap_apply_nonneg_of_mem_posRootCone hx
-    (b.root_highestRoot_sub_mem_posRootCone j)
-  rwa [map_sub, LinearMap.sub_apply, sub_nonneg] at h
-
-end Values
 
 /-! ### The fundamental alcove as a cell of the affine root-hyperplane arrangement -/
 
@@ -260,18 +204,6 @@ section Field
 
 variable {ι R M N : Type*} [Field R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} (b : P.Base)
-
-/-- **The simple roots take arbitrary prescribed values** at some point of the coweight space:
-they are linearly independent and the pairing is perfect. -/
-theorem Base.exists_forall_root'_eq (c : ι → R) : ∃ x : N, ∀ i ∈ b.support, P.root' i x = c i := by
-  have hli := b.linearIndepOn_root.linearIndependent
-  obtain ⟨φ, hφ⟩ := LinearMap.exists_extend ((Module.Basis.span hli).constr R fun i ↦ c i)
-  refine ⟨P.flip.toPerfPair.symm φ, fun i hi ↦ ?_⟩
-  have h := LinearMap.congr_fun hφ (Module.Basis.span hli ⟨i, hi⟩)
-  rw [Module.Basis.constr_basis, LinearMap.comp_apply, Submodule.subtype_apply,
-    Module.Basis.span_apply] at h
-  rw [← h, ← LinearMap.flip_apply (m := P.root i), ← flip_toLinearMap,
-    ← LinearMap.toPerfPair_apply, LinearEquiv.apply_symm_apply]
 
 variable [LinearOrder R] [IsStrictOrderedRing R]
 
