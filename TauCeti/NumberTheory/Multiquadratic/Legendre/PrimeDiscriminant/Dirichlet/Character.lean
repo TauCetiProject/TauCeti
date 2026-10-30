@@ -7,13 +7,15 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Character
 public import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Basic
 
 /-!
 # Primitive Dirichlet characters of prime discriminants
 
-A prime discriminant `P` determines a real quadratic Dirichlet character of level `|P|`. This
-file bundles the previously unbundled function `primeDiscriminantCharFun P` as
-`primeDiscriminantChar P hP` and proves that its conductor is exactly `|P|`.
+A prime discriminant `P` determines a real quadratic Dirichlet character of level `|P|`, the
+Kronecker character `TauCeti.kroneckerChar` of `P`. This file names it `primeDiscriminantChar P hP`,
+identifies its values with the function `primeDiscriminantCharFun P`, and proves that its conductor
+is exactly `|P|`.
 
 For the three even prime discriminants this is Mathlib's `ZMod.χ₄`, `ZMod.χ₈`, or `ZMod.χ₈'`.
 For an odd prime discriminant `p*`, it is the quadratic character of `ZMod p`, equivalently the
@@ -43,50 +45,17 @@ public section
 
 namespace TauCeti.Multiquadratic
 
-/-- **The real quadratic Dirichlet character attached to a prime discriminant.** At `-4`, `8`,
-and `-8` this is respectively `ZMod.χ₄`, `ZMod.χ₈`, and `ZMod.χ₈'`; at an odd prime
-discriminant `p*` it is the quadratic character modulo `p`. -/
-noncomputable def primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P) :
-    DirichletCharacter ℤ P.natAbs := by
-  letI : NeZero P.natAbs := ⟨Int.natAbs_ne_zero.mpr hP.ne_zero⟩
-  exact
-    { toFun := fun a => primeDiscriminantCharFun P a.val
-      map_one' := by
-        rw [← primeDiscriminantCharFun_one P]
-        apply primeDiscriminantCharFun_mod_right'
-        apply (ZMod.intCast_eq_intCast_iff' _ _ _).mp
-        exact_mod_cast ZMod.natCast_zmod_val (1 : ZMod P.natAbs)
-      map_mul' := fun a b => by
-        rw [← primeDiscriminantCharFun_mul_right]
-        apply primeDiscriminantCharFun_mod_right'
-        apply (ZMod.intCast_eq_intCast_iff' _ _ _).mp
-        calc
-          ((((a * b).val : ℕ) : ℤ) : ZMod P.natAbs) =
-              ((a * b).val : ℕ) := by norm_cast
-          _ = a * b := ZMod.natCast_zmod_val _
-          _ = (a.val : ZMod P.natAbs) * (b.val : ZMod P.natAbs) := by
-            rw [ZMod.natCast_zmod_val, ZMod.natCast_zmod_val]
-          _ = ((a.val : ℤ) : ZMod P.natAbs) * ((b.val : ℤ) : ZMod P.natAbs) := by
-            norm_cast
-          _ = (((a.val : ℤ) * (b.val : ℤ) : ℤ) : ZMod P.natAbs) := by
-            rw [Int.cast_mul]
-      map_nonunit' := fun a ha => by
-        rw [primeDiscriminantCharFun_eq_zero_iff hP]
-        intro hcop
-        apply ha
-        have hcopNat : Nat.Coprime a.val P.natAbs := by
-          simpa only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast] using hcop
-        have hunit : IsUnit (a.val : ZMod P.natAbs) :=
-          (ZMod.isUnit_iff_coprime _ _).2 hcopNat
-        rwa [ZMod.natCast_zmod_val] at hunit }
+/-- **The real quadratic Dirichlet character attached to a prime discriminant.** It is the
+Kronecker character `(P / ·)` of level `|P|`. At `-4`, `8`, and `-8` this is respectively
+`ZMod.χ₄`, `ZMod.χ₈`, and `ZMod.χ₈'`; at an odd prime discriminant `p*` it is the quadratic
+character modulo `p`. -/
+def primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P) : DirichletCharacter ℤ P.natAbs :=
+  kroneckerChar ℤ P (hP.isFundamentalDiscr.emod_four_eq_zero_or_one.imp id id) hP.ne_zero
 
 /-- The bundled character evaluates to the unbundled prime-discriminant character on integers. -/
 @[simp] theorem primeDiscriminantChar_apply_int (P : ℤ) (hP : IsPrimeDiscriminant P) (n : ℤ) :
-    primeDiscriminantChar P hP n = primeDiscriminantCharFun P n := by
-  let _ : NeZero P.natAbs := ⟨Int.natAbs_ne_zero.mpr hP.ne_zero⟩
-  apply primeDiscriminantCharFun_mod_right'
-  apply (ZMod.intCast_eq_intCast_iff' _ _ _).mp
-  exact_mod_cast ZMod.natCast_zmod_val (n : ZMod P.natAbs)
+    primeDiscriminantChar P hP n = primeDiscriminantCharFun P n :=
+  (kroneckerChar_intCast _ _ n).trans (primeDiscriminantCharFun_eq_kroneckerSym hP n).symm
 
 /-- The character attached to a prime discriminant is nontrivial. -/
 theorem primeDiscriminantChar_ne_one (P : ℤ) (hP : IsPrimeDiscriminant P) :
@@ -104,25 +73,8 @@ theorem primeDiscriminantChar_ne_one (P : ℤ) (hP : IsPrimeDiscriminant P) :
 
 /-- The Dirichlet character attached to a prime discriminant is quadratic. -/
 theorem isQuadratic_primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P) :
-    (primeDiscriminantChar P hP).IsQuadratic := by
-  let _ : NeZero P.natAbs := ⟨Int.natAbs_ne_zero.mpr hP.ne_zero⟩
-  intro a
-  by_cases ha : IsUnit a
-  · have haunit : IsUnit ((a.val : ℕ) : ZMod P.natAbs) := by
-      simpa only [ZMod.natCast_zmod_val] using ha
-    have hcop : IsCoprime (a.val : ℤ) P := by
-      simpa only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast] using
-        (ZMod.isUnit_iff_coprime a.val P.natAbs).mp haunit
-    have hval : primeDiscriminantChar P hP a =
-        primeDiscriminantCharFun P (a.val : ℤ) := by
-      calc
-        _ = primeDiscriminantChar P hP (a.val : ZMod P.natAbs) :=
-          congrArg _ (ZMod.natCast_zmod_val a).symm
-        _ = _ := by simpa only [Int.cast_natCast] using
-          primeDiscriminantChar_apply_int P hP (a.val : ℤ)
-    rw [hval]
-    exact Or.inr (primeDiscriminantCharFun_eq_one_or_eq_neg_one hP hcop)
-  · exact Or.inl (MulChar.map_nonunit _ ha)
+    (primeDiscriminantChar P hP).IsQuadratic :=
+  kroneckerChar_isQuadratic _ _
 
 /-- **The Dirichlet character of a prime discriminant is primitive.** Its conductor is exactly
 the absolute value of the prime discriminant. -/

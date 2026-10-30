@@ -178,14 +178,11 @@ theorem baseChange (hI : IsBorelOver R H I) :
         ((smoothCommHopfAlgProperty_iff _).mpr inferInstance))
   · let _ : Algebra R k := ((algebraMap S k).comp (algebraMap R S)).toAlgebra
     let _ : IsScalarTower R S k := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-    let e : FiniteTypeCommHopfAlgCat.baseChange (K := k)
-          ⟨CommHopfAlgCat.baseChange (K := S) H,
-            (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩ ≅
-        FiniteTypeCommHopfAlgCat.baseChange (K := k)
-          ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ :=
-      ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso (E := S) R k H)
+    let e := FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := S) R k
+      ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩
     rw [CommHopfAlgCat.baseChangeHopfIdeal_baseChangeHopfIdeal]
-    exact (hI.geometricFiber k).comapOfIso e
+    simpa only [e, FiniteTypeCommHopfAlgCat.toBialgHom,
+      FiniteTypeCommHopfAlgCat.baseChangeTowerIso_hom_hom] using (hI.geometricFiber k).comapOfIso e
 
 end BaseChange
 

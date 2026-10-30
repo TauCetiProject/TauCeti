@@ -28,14 +28,17 @@ a character group can collapse for want of roots of unity — over `ℝ` the gro
 trivial character, while its abelianization is itself — and it can also grow, since over `ℝ × ℝ`
 the group `ZMod 2` has four characters rather than two.
 
+In particular a finite group has a nontrivial linear character exactly when it is not perfect, and
+a perfect group has none at all; the count is what turns a computation of the abelianization into a
+complete list of linear characters.
+
 ## Main statements
 
 * `TauCeti.card_monoidHom_eq_card_abelianization`: **the linear characters of a finite group are
   counted by its abelianization.**
-
-In particular a finite group has a nontrivial linear character exactly when it is not perfect, and
-a perfect group has none at all; the count is what turns a computation of the abelianization into a
-complete list of linear characters.
+* `CommGroup.card_monoidHom_not_le_ker`: for a finite commutative group `G` and a subgroup `H`,
+  the characters of `G` that are nontrivial on `H` are `#G - #(G ⧸ H)` in number, since those
+  trivial on `H` are the characters of `G ⧸ H` (Mathlib's `CommGroup.card_domRestrictHom_ker`).
 
 ## References
 
@@ -57,3 +60,23 @@ theorem card_monoidHom_eq_card_abelianization (G M : Type*) [Group G] [Finite G]
   exact Nat.card_congr Abelianization.lift
 
 end TauCeti
+
+namespace CommGroup
+
+variable {G : Type*} (M : Type*) [CommGroup G] [Finite G] [CommMonoid M]
+  [HasEnoughRootsOfUnity M (Monoid.exponent G)]
+
+/-- **The characters nontrivial on a subgroup.** If `M` has enough roots of unity, the
+homomorphisms `G →* Mˣ` of a finite commutative group that are not trivial on a subgroup `H` are
+`#G - #(G ⧸ H)` in number: those trivial on `H` are the characters of `G ⧸ H`. -/
+theorem card_monoidHom_not_le_ker (H : Subgroup G) :
+    Nat.card {φ : G →* Mˣ // ¬H ≤ φ.ker} = Nat.card G - Nat.card (G ⧸ H) := by
+  classical
+  have := Fintype.ofFinite (G →* Mˣ)
+  have hle : Nat.card {φ : G →* Mˣ // H ≤ φ.ker} = Nat.card (G ⧸ H) := by
+    rw [← card_domRestrictHom_ker M H]
+    exact Nat.card_congr (Equiv.subtypeEquivRight fun φ ↦ by simp [IsConcreteLE.le_iff])
+  rw [← card_monoidHom_of_hasEnoughRootsOfUnity G M, ← hle, Nat.card_eq_fintype_card,
+    Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Fintype.card_subtype_compl]
+
+end CommGroup

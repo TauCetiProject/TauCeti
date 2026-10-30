@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.SpectralMapping
 
 /-!
 # Resolvents of self-adjoint partial linear maps across a spectral gap

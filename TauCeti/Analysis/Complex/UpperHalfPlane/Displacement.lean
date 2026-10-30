@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
+import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 import TauCeti.Topology.MetricSpace.IsometricSMul
@@ -73,6 +74,10 @@ by both kinds of element, except by dilations with `s` close to `0`.
   distance it moves any point.
 * `Matrix.SpecialLinearGroup.abs_trace_commutatorElement_sub_two_le`: the trace of a commutator is
   controlled by the distances its two factors move a common point.
+* `Matrix.ProjectiveSpecialLinearGroup.dist_smul_le_dist_smul_of_smul_eq_self`: two elements fixing
+  a common point compare their displacements in the same way at every point.
+* `Matrix.ProjectiveSpecialLinearGroup.isBounded_setOf_dist_smul_le_of_smul_eq_self`: a nontrivial
+  element fixing a point moves only a bounded set of points a bounded distance.
 
 ## References
 
@@ -369,3 +374,59 @@ theorem one_add_two_mul_sq_le_cosh_dist_smul {g : SL(2, ℝ)} (h₀₀ : g 0 0 =
   nlinarith [sq_nonneg (z.re ^ 2 + z.im ^ 2 - g 0 1 ^ 2), mul_pos hr hy]
 
 end Matrix.SpecialLinearGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
+/-- **Elements fixing a common point compare their displacements uniformly.** If
+`g, k ∈ PSL(2, ℝ)` fix `w ∈ ℍ` and `g` moves some point `y₀ ≠ w` at most as far as `k` does, then
+`g` moves every point of `ℍ` at most as far as `k` does. Indeed each of them moves `y` a distance
+`δ` with `cosh δ = 1 + κ sinh² (dist y w)`, for a constant `κ` depending only on the element
+(`Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self`). -/
+theorem dist_smul_le_dist_smul_of_smul_eq_self {g k : PSL(2, ℝ)} {w y₀ : ℍ} (hg : g • w = w)
+    (hk : k • w = w) (hy₀ : y₀ ≠ w) (h : dist (g • y₀) y₀ ≤ dist (k • y₀) y₀) (y : ℍ) :
+    dist (g • y) y ≤ dist (k • y) y := by
+  obtain ⟨A, rfl⟩ := QuotientGroup.mk_surjective g
+  obtain ⟨B, rfl⟩ := QuotientGroup.mk_surjective k
+  simp only [UpperHalfPlane.pslMk_smul] at hg hk h ⊢
+  have hA := SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self hg
+  have hB := SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self hk
+  have hs₀ : 0 < Real.sinh (dist y₀ w) ^ 2 := pow_pos (Real.sinh_pos_iff.2 (dist_pos.2 hy₀)) 2
+  have h₀ : Real.cosh (dist (A • y₀) y₀) ≤ Real.cosh (dist (B • y₀) y₀) :=
+    Real.cosh_le_cosh.2 (by simpa only [abs_dist] using h)
+  rw [hA, hB] at h₀
+  have h₁ : Real.cosh (dist (A • y) y) ≤ Real.cosh (dist (B • y) y) := by
+    rw [hA, hB]
+    have := le_of_mul_le_mul_right (by linarith) hs₀
+    nlinarith [sq_nonneg (Real.sinh (dist y w))]
+  simpa only [abs_dist] using Real.cosh_le_cosh.1 h₁
+
+/-- **A nontrivial element fixing a point moves far points far.** If `g ≠ 1` in `PSL(2, ℝ)` fixes
+`w ∈ ℍ`, then the points moved a distance at most `ε` by `g` form a bounded set. Indeed `g` moves
+`y` a distance `δ` with `cosh δ = 1 + κ sinh² (dist y w)` for a constant `κ > 0`
+(`Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self`). -/
+theorem isBounded_setOf_dist_smul_le_of_smul_eq_self {g : PSL(2, ℝ)} (hg₁ : g ≠ 1) {w : ℍ}
+    (hg : g • w = w) (ε : ℝ) : Bornology.IsBounded {y : ℍ | dist (g • y) y ≤ ε} := by
+  obtain ⟨A, rfl⟩ := QuotientGroup.mk_surjective g
+  have hκ := SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self
+    ((UpperHalfPlane.pslMk_smul A w).symm.trans hg)
+  set κ := (4 - (A : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2) / 2
+  -- `κ > 0`, since `g` moves every point other than `w`
+  obtain ⟨y₀, hy₀⟩ := exists_ne w
+  have hne : (A : PSL(2, ℝ)) • y₀ ≠ y₀ := fun h ↦
+    hg₁ (eq_one_of_smul_eq_self_of_smul_eq_self hg h hy₀)
+  have h₁ := Real.one_lt_cosh.2 (dist_ne_zero.2 hne)
+  rw [UpperHalfPlane.pslMk_smul, hκ y₀] at h₁
+  have hκ₀ : 0 < κ := pos_of_mul_pos_left (by linarith) (sq_nonneg _)
+  refine (Metric.isBounded_closedBall (x := w) (r := √((Real.cosh ε - 1) / κ))).subset
+    fun y hy ↦ ?_
+  rw [Set.mem_ofPred_eq, UpperHalfPlane.pslMk_smul] at hy
+  have hc : Real.cosh (dist (A • y) y) ≤ Real.cosh ε :=
+    Real.cosh_le_cosh.2 (by rw [abs_dist]; exact hy.trans (le_abs_self ε))
+  rw [hκ y] at hc
+  have hd : dist y w ≤ Real.sinh (dist y w) := Real.self_le_sinh_iff.2 dist_nonneg
+  have h := Real.abs_le_sqrt (x := dist y w) (y := (Real.cosh ε - 1) / κ) (by
+    rw [le_div_iff₀ hκ₀]
+    nlinarith [mul_le_mul_of_nonneg_left (pow_le_pow_left₀ dist_nonneg hd 2) hκ₀.le])
+  rwa [abs_dist] at h
+
+end Matrix.ProjectiveSpecialLinearGroup

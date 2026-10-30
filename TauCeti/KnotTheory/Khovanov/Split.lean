@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Bilinear
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.Logic.Equiv.Bool
 public import TauCeti.KnotTheory.Khovanov.CircleTensor
+public import TauCeti.Logic.Basic
 
 /-!
 # Split maps on circle tensors
@@ -21,6 +23,13 @@ This construction retains all unaffected circles and makes no choice of circle o
 coefficient formula is the transpose of the merge formula with both labellings complemented.
 Composition is contravariant: successive splittings correspond to composition of the maps
 collapsing the output circles. Empty fibres give deaths, dual to the births of the merge map.
+
+The pairing is the Frobenius form of the algebra `⨂ R[ε]`: it reads the `X ⊗ ⋯ ⊗ X` coordinate of
+the product. Consequently the split map along `f` satisfies the projection formula
+`Δ_f (m_f x * z) = x * Δ_f z`, the Frobenius identity `Δ(a b) = (a ⊗ 1) Δ(b)` for fibres. This
+reduces composites of merges and splits to multiplication by merged splits of the unit; in
+particular, merging and splitting around a commuting square of circle correspondences agree when
+those splits of the unit agree.
 
 ## References
 
@@ -76,6 +85,19 @@ theorem circleDuality_circleBasis (l k : ι → Bool) :
     cases l i <;> cases k i <;> simp
   simp_rw [hf]
   simp [Finset.prod_boole, funext_iff]
+
+/-- The circle pairing is the Frobenius form of the algebra `⨂ R[ε]`: it pairs `x` and `y` by
+reading the coordinate of `x * y` along the labelling with `X` on every circle. This is the
+tensor product of the original counits. -/
+theorem circleDuality_apply_eq_repr_mul (x y : CircleTensor R ι) :
+    circleDuality R ι x y = (circleBasis R ι).repr (x * y) fun _ ↦ true := by
+  have := LinearMap.ext_basis (circleBasis R ι) (circleBasis R ι)
+    (B := (circleDuality R ι).toLinearMap)
+    (B' := (Algebra.lmul R (CircleTensor R ι)).toLinearMap.compr₂
+      ((Finsupp.lapply fun _ ↦ true) ∘ₗ (circleBasis R ι).repr.toLinearMap)) fun l k ↦ by
+    rw [LinearEquiv.coe_coe, circleDuality_circleBasis]
+    simp [tprod_mul_tprod]
+  exact DFunLike.congr_fun (DFunLike.congr_fun this x) y
 
 /-- The split map along `f`, adjoint to multiplication along its fibres. It maps the tensor
 on `τ` to the tensor on `σ`; a two-element fibre splits that circle. -/
@@ -157,6 +179,87 @@ theorem fiberwiseSplit_equiv (e : σ ≃ τ) :
   have he : (l = fun i ↦ k (e.symm i)) ↔ l ∘ e = k := e.eq_comp_symm l k
   simp only [Equiv.symm_symm, he]
 
+/-- **The projection formula.** The split map along `f : σ → τ` is linear over the algebra of
+the circles `σ`, which acts on the tensor over `τ` through multiplication along `f`. For a single
+splitting this is the Frobenius identity `Δ(a b) = (a ⊗ 1) Δ(b)`. -/
+theorem fiberwiseSplit_fiberwiseMul_mul (f : σ → τ) (x : CircleTensor R σ)
+    (z : CircleTensor R τ) :
+    fiberwiseSplit f (fiberwiseMul (A := fun _ ↦ R[ε]) f x * z) = x * fiberwiseSplit f z := by
+  apply (circleDuality R σ).injective
+  refine LinearMap.ext fun w ↦ ?_
+  calc circleDuality R σ (fiberwiseSplit f (fiberwiseMul f x * z)) w
+      = circleDuality R τ z (fiberwiseMul (A := fun _ ↦ R[ε]) f (x * w)) := by
+        rw [circleDuality_fiberwiseSplit, circleDuality_apply_eq_repr_mul,
+          circleDuality_apply_eq_repr_mul, map_mul (fiberwiseMul f)]
+        congr 2
+        ring
+    _ = circleDuality R σ (x * fiberwiseSplit f z) w := by
+        rw [← circleDuality_fiberwiseSplit, circleDuality_apply_eq_repr_mul,
+          circleDuality_apply_eq_repr_mul]
+        congr 2
+        ring
+
+section Square
+
+variable {ρ : Type*} [Fintype ρ] [DecidableEq σ]
+
+/-- **Splitting along a surjection is multiplication by the split of `1`.** By the projection
+formula, splitting `x` along a surjection `f` multiplies the split of `1` by `x`, transported to the
+split circles by merging along a section of `f`. -/
+theorem fiberwiseSplit_eq_fiberwiseMul_surjInv_mul [DecidableEq ρ] {f : ρ → σ}
+    (hf : Function.Surjective f) (x : CircleTensor R σ) :
+    fiberwiseSplit f x =
+      fiberwiseMul (A := fun _ ↦ R[ε]) (Function.surjInv hf) x * fiberwiseSplit f 1 := by
+  conv_lhs => rw [← fiberwiseMul_fiberwiseMul_surjInv hf x, ← mul_one (fiberwiseMul f _)]
+  exact fiberwiseSplit_fiberwiseMul_mul f _ 1
+
+/-- **Splitting and then merging along a factorization.** Split along a surjection `f` and then
+merge along `g = h ∘ f`, which merges every circle split off by `f` back together. The result is
+multiplication by the merge of the split of `1`, after merging along `h`. -/
+theorem fiberwiseMul_fiberwiseSplit [DecidableEq υ] {f : ρ → σ} (hf : Function.Surjective f)
+    {g : ρ → υ} {h : σ → υ} (hgh : h ∘ f = g) (x : CircleTensor R σ) :
+    fiberwiseMul (A := fun _ ↦ R[ε]) g (fiberwiseSplit f x) =
+      fiberwiseMul (A := fun _ ↦ R[ε]) h x *
+        fiberwiseMul (A := fun _ ↦ R[ε]) g (fiberwiseSplit f 1) := by
+  classical
+  have hsec : g ∘ Function.surjInv hf = h := by
+    rw [← hgh, Function.comp_assoc, Function.comp_surjInv, Function.comp_id]
+  rw [fiberwiseSplit_eq_fiberwiseMul_surjInv_mul hf, map_mul, ← AlgHom.comp_apply,
+    fiberwiseMul_comp, hsec]
+
+/-- **The Frobenius relation for a commuting square of circle correspondences.** Let
+`f ∘ f' = g ∘ g'`, with `f'` surjective, and suppose that splitting `1` along `f'` and merging
+along `g'` gives the split of `1` along `g`. Then merging along `f` and splitting along `g` is
+splitting along `f'` and merging along `g'`. -/
+theorem fiberwiseSplit_fiberwiseMul_of_comp_eq [Fintype υ] [DecidableEq υ] {f' : ρ → σ}
+    (hf' : Function.Surjective f') {g' : ρ → υ} {f : σ → τ} {g : υ → τ}
+    (hcomm : f ∘ f' = g ∘ g')
+    (hone : fiberwiseMul (A := fun _ ↦ R[ε]) g' (fiberwiseSplit f' 1) =
+      fiberwiseSplit (R := R) g 1) (x : CircleTensor R σ) :
+    fiberwiseSplit g (fiberwiseMul (A := fun _ ↦ R[ε]) f x) =
+      fiberwiseMul (A := fun _ ↦ R[ε]) g' (fiberwiseSplit f' x) := by
+  classical
+  have hf : f = g ∘ (g' ∘ Function.surjInv hf') := by
+    rw [← Function.comp_assoc, ← hcomm, Function.comp_assoc, Function.comp_surjInv,
+      Function.comp_id]
+  rw [fiberwiseSplit_eq_fiberwiseMul_surjInv_mul hf', map_mul, hone, ← AlgHom.comp_apply,
+    fiberwiseMul_comp]
+  -- Merging along `f` factors through `g`, so the projection formula for `g` applies.
+  rw [hf, ← fiberwiseMul_comp, AlgHom.comp_apply, ← fiberwiseSplit_fiberwiseMul_mul, mul_one]
+
+end Square
+
+/-- Merging and then splitting through a set of circles depends on that set only up to a
+bijection compatible with both correspondences. -/
+theorem fiberwiseSplit_comp_fiberwiseMul_equiv_comp [Fintype υ] {τ' : Type*} [Fintype τ']
+    [DecidableEq τ'] (e : τ ≃ τ') (f : σ → τ) (g : υ → τ) :
+    fiberwiseSplit (R := R) (e ∘ g) ∘ₗ (fiberwiseMul (A := fun _ ↦ R[ε]) (e ∘ f)).toLinearMap =
+      fiberwiseSplit g ∘ₗ (fiberwiseMul (A := fun _ ↦ R[ε]) f).toLinearMap := by
+  rw [← fiberwiseSplit_comp, ← fiberwiseMul_comp, AlgHom.comp_toLinearMap,
+    toLinearMap_fiberwiseMul_equiv, fiberwiseSplit_equiv, ← reindex_symm]
+  refine LinearMap.ext fun x ↦ ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
+
 /-- Splitting `1` into two circles gives `1 ⊗ X + X ⊗ 1`; splitting `X` gives `X ⊗ X`.
 The two output circles are indexed by `Bool`, and the input by `Unit`. -/
 theorem fiberwiseSplit_const_circleBasis (b : Bool) :
@@ -174,7 +277,55 @@ theorem fiberwiseSplit_const_circleBasis (b : Bool) :
   rw [hl]
   generalize l false = b₀, l true = b₁
   cases b <;> cases b₀ <;> cases b₁ <;>
-    simp [Fintype.univ_bool, Finset.filter_insert, Finset.filter_singleton]
+    simp [Fintype.univ_bool, Finset.filter_insert, Finset.filter_singleton,
+      -circleBasis_const_false]
+
+/-- Splitting along a surjection whose only non-singleton fibre is `{p, q}` obeys
+`Δ X = X ⊗ X` and `Δ 1 = X ⊗ 1 + 1 ⊗ X` on the circles `p` and `q`; every other circle retains
+the label of its image. -/
+theorem fiberwiseSplit_circleBasis_of_eq_iff [DecidableEq σ] {f : σ → τ}
+    (hf : Function.Surjective f) {p q : σ} (hpq : p ≠ q)
+    (hfeq : ∀ a b, f a = f b ↔ a = b ∨ (a = p ∨ a = q) ∧ (b = p ∨ b = q)) (l : τ → Bool) :
+    fiberwiseSplit f (circleBasis R τ l) =
+      if l (f p) then circleBasis R σ fun i ↦ l (f i)
+      else circleBasis R σ (Function.update (fun i ↦ l (f i)) p true) +
+        circleBasis R σ (Function.update (fun i ↦ l (f i)) q true) := by
+  have hfq : f q = f p := (hfeq q p).mpr (Or.inr ⟨Or.inr rfl, Or.inl rfl⟩)
+  refine (circleBasis R σ).ext_elem fun k ↦ ?_
+  -- At most one of the two output circles carries `1`.
+  have hcount : (∀ j, #{i | f i = j ∧ (!k i) = true} ≤ 1) ↔ (k p || k q) = true := by
+    refine ⟨fun h ↦ ?_, fun h j ↦ card_le_one.mpr fun a ha b hb ↦ ?_⟩
+    · by_contra hk
+      simp only [Bool.or_eq_true, not_or, Bool.not_eq_true] at hk
+      exact hpq (card_le_one.mp (h (f p)) p (by simp [hk.1]) q (by simp [hfq, hk.2]))
+    · simp only [mem_filter, mem_univ, true_and] at ha hb
+      rcases (hfeq a b).mp (ha.1.trans hb.1.symm) with hab | ⟨rfl | rfl, rfl | rfl⟩ <;> simp_all
+  -- The input is `X` exactly when both outputs are, and every other circle keeps its label.
+  have hlabel : (l = fun j ↦ !decide (∃ i, f i = j ∧ (!k i) = true)) ↔
+      (∀ i, i ≠ p → i ≠ q → l (f i) = k i) ∧ l (f p) = (k p && k q) := by
+    rw [funext_iff, hf.forall, forall_iff_forall_ne_ne_and p q, hfq, and_self]
+    refine and_congr (forall_congr' fun i ↦ imp_congr_right fun hip ↦ imp_congr_right fun hiq ↦ ?_)
+      ?_
+    · simp [hfeq, hip, hiq]
+    · simp [hfeq, or_and_right, exists_or]
+  have hk (u : σ → Bool) : u = k ↔ (∀ i, i ≠ p → i ≠ q → u i = k i) ∧ u p = k p ∧ u q = k q := by
+    rw [funext_iff, forall_iff_forall_ne_ne_and p q]
+  have hupd (r : σ) (hr : r = p ∨ r = q) :
+      (∀ i, i ≠ p → i ≠ q → Function.update (fun i ↦ l (f i)) r true i = k i) ↔
+        ∀ i, i ≠ p → i ≠ q → l (f i) = k i :=
+    forall_congr' fun i ↦ imp_congr_right fun hip ↦ imp_congr_right fun hiq ↦ by
+      rw [Function.update_of_ne (by rcases hr with rfl | rfl <;> assumption)]
+  rw [circleBasis_repr_fiberwiseSplit]
+  simp only [hcount, Module.Basis.repr_self, Finsupp.single_apply, hlabel, hk, hupd p (.inl rfl),
+    hupd q (.inr rfl), apply_ite (circleBasis R σ).repr,
+    apply_ite (fun x : (σ → Bool) →₀ R ↦ x k), map_add, Finsupp.add_apply,
+    Function.update_self, Function.update_of_ne hpq, Function.update_of_ne hpq.symm, hfq]
+  -- What remains depends only on the agreement away from `p` and `q` and on three labels.
+  by_cases hagree : ∀ i, i ≠ p → i ≠ q → l (f i) = k i
+  · simp only [eq_true hagree, true_and]
+    generalize k p = a, k q = b, l (f p) = d
+    cases a <;> cases b <;> cases d <;> simp
+  · simp [eq_false hagree]
 
 end Semiring
 

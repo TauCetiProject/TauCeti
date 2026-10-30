@@ -25,6 +25,9 @@ a `g` on the left loses no norm, `‖g * q‖ = ‖g‖ * ‖q‖`, and if `q` i
 assumed. When the norm of `R` is multiplicative, the extra condition says only that the
 distinguished coefficient is a unit.
 
+Norm-preserving coefficient homomorphisms preserve distinguishedness and multiplicative
+distinguishedness, so these divisor hypotheses survive isometric coefficient extension.
+
 ## Main definitions
 
 * `TauCeti.PowerSeries.IsMulDistinguished`: `g` is distinguished of degree `s` at `c`, and its
@@ -40,6 +43,8 @@ distinguished coefficient is a unit.
 * `TauCeti.PowerSeries.IsMulDistinguished.gaussNorm_mul`: left multiplication by a
   multiplicatively distinguished series multiplies the Gauss norm of a restricted series by the
   Gauss norm of the divisor.
+* `TauCeti.PowerSeries.gaussNorm_X_sub_C_mul`: in particular `‖(X - a) * q‖ = c * ‖q‖` at the
+  radius `c` when `‖a‖ ≤ c`.
 * `TauCeti.PowerSeries.isMulDistinguished_monomial` and
   `TauCeti.PowerSeries.isMulDistinguished_X_sub_C`: monomials with multiplicative-unit
   coefficient, and `X - b` for `b` in the closed disc of radius `c`.
@@ -49,7 +54,7 @@ distinguished coefficient is a unit.
 ## References
 
 * F. Martin, *Overconvergent subanalytic subsets in the framework of Berkovich spaces*,
-  J. Eur. Math. Soc. 18 (2016), Definition 1.24, Lemma 1.26 and Corollary 1.28.
+  J. Eur. Math. Soc. 18 (2016), Definitions 1.20 and 1.24, Lemma 1.26 and Corollary 1.28.
 -/
 
 public section
@@ -59,6 +64,17 @@ namespace TauCeti.PowerSeries
 section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {s k : ℕ} {g q : PowerSeries R}
+
+variable {S : Type*} [SeminormedRing S] in
+/-- A norm-preserving coefficient homomorphism preserves distinguishedness, with the same
+radius and degree. Neither completeness nor surjectivity is required. -/
+theorem IsDistinguished.map (hf : IsDistinguished c s g) (φ : R →+* S)
+    (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsDistinguished c s (PowerSeries.map φ g) := by
+  have hn : (PowerSeries.map φ g).gaussNorm norm c = g.gaussNorm norm c := by
+    simp only [PowerSeries.gaussNorm_eq, PowerSeries.coeff_map, hφ]
+  exact ⟨by simpa only [PowerSeries.coeff_map, hφ, hn] using hf.norm_coeff_mul_pow_eq,
+    fun n hn' ↦ by simpa only [PowerSeries.coeff_map, hφ, hn] using
+      hf.norm_coeff_mul_pow_lt n hn'⟩
 
 variable (c s g) in
 /-- `g` is **multiplicatively distinguished of degree `s`** at the radius `c` when it is
@@ -135,6 +151,16 @@ theorem IsMulDistinguished.normOneClass (hg : IsMulDistinguished c s g) : NormOn
   have := hg.nontrivial
   ⟨hg.isNormMulUnit_coeff.norm_one⟩
 
+variable {S : Type*} [SeminormedRing S] in
+/-- A norm-preserving coefficient homomorphism preserves multiplicative distinguishedness,
+even without a multiplicative coefficient norm or a surjectivity hypothesis. -/
+theorem IsMulDistinguished.map (hf : IsMulDistinguished c s g) (φ : R →+* S)
+    (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsMulDistinguished c s (PowerSeries.map φ g) := by
+  have : NormOneClass R := hf.normOneClass
+  refine ⟨hf.toIsDistinguished.map φ hφ, ?_⟩
+  rw [PowerSeries.coeff_map]
+  exact hf.isNormMulUnit_coeff.map φ.toMonoidHom hφ
+
 /-- A monomial whose coefficient is a multiplicative unit is multiplicatively distinguished of
 its degree at a positive radius, over a nontrivial ring. -/
 theorem isMulDistinguished_monomial [Nontrivial R] (hc : 0 < c) {a : R} (ha : IsNormMulUnit a)
@@ -175,6 +201,15 @@ theorem IsMulDistinguished.gaussNorm_mul (hg : IsMulDistinguished c s g) (hc : 0
   · simp [PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
   obtain ⟨k, hk⟩ := exists_isDistinguished hc hq hq0
   exact hg.toIsDistinguished.gaussNorm_mul hk hc (hg.isNormMulUnit_coeff.norm_mul _)
+
+/-- Multiplying a restricted series by `X - a`, for `a` in the closed disc of radius `c > 0`,
+multiplies its Gauss norm at `c` by `c`. -/
+theorem gaussNorm_X_sub_C_mul [NormOneClass R] (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c)
+    (hq : q.IsRestricted c) :
+    ((PowerSeries.X - PowerSeries.C a) * q).gaussNorm norm c = c * q.gaussNorm norm c := by
+  have hd := isMulDistinguished_X_sub_C hc ha
+  rw [hd.gaussNorm_mul hc hq, ← hd.norm_coeff_mul_pow_eq]
+  simp
 
 end NormedRing
 

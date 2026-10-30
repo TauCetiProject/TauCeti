@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Reverse
+public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
 
 /-!
@@ -15,6 +16,7 @@ import Mathlib.Algebra.Polynomial.Eval.Degree
 This file records auxiliary results relating Mathlib's polynomial derivative APIs, computing
 iterated derivatives after a linear change of variables, and controlling degrees of derivatives
 under coefficient maps.
+The roots of all nonzero iterated derivatives of a polynomial form a finite set.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
 and every scalar multiple of it is locally nilpotent.
@@ -39,6 +41,22 @@ iterates preserve the degree of a polynomial and have trivial kernel.
 
 public section
 
+namespace Polynomial
+
+open Set
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- The roots of the nonzero derivatives of `p`, of every order, form a finite set. -/
+theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
+    {z | ∃ k, derivative^[k] p ≠ 0 ∧ (derivative^[k] p).IsRoot z}.Finite := by
+  have hk : {k | derivative^[k] p ≠ 0}.Finite := (finite_Iic p.natDegree).subset
+    fun k hk ↦ not_lt.1 fun h ↦ hk (iterate_derivative_eq_zero h)
+  exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
+    fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
+
+end Polynomial
+
 namespace TauCeti
 
 open Polynomial
@@ -60,16 +78,22 @@ theorem _root_.Polynomial.exists_iterate_smul_derivative'_apply_eq_zero [CommSem
     LinearMap.smul_apply, Module.End.pow_apply, Derivation.coeFn_coe, coe_derivative',
     iterate_derivative_eq_zero (Nat.lt_succ_self _), smul_zero]
 
+/-- The `k`-th derivative of `p (a X + b)` is `a ^ k p⁽ᵏ⁾ (a X + b)`. -/
+theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X_add_C [CommSemiring R] (p : R[X])
+    (a b : R) (k : ℕ) :
+    derivative^[k] (p.comp (C a * X + C b)) =
+      C (a ^ k) * (derivative^[k] p).comp (C a * X + C b) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    simp [Function.iterate_succ_apply', ih, derivative_comp, derivative_pow, pow_succ, C_mul]
+    ring
+
 /-- The `k`-th derivative of `p (a X)` is `a ^ k p⁽ᵏ⁾ (a X)`. -/
 theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : R[X]) (a : R)
     (k : ℕ) :
     derivative^[k] (p.comp (C a * X)) = C (a ^ k) * (derivative^[k] p).comp (C a * X) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [Function.iterate_succ_apply', ih, derivative_C_mul, derivative_comp, derivative_C_mul_X,
-      Function.iterate_succ_apply', pow_succ, C_mul]
-    ring
+  simpa using p.iterate_derivative_comp_C_mul_X_add_C a 0 k
 
 /-- **Reciprocal-polynomial identity.** A polynomial `p` of degree at most `2 g` which is its own
 reflection at `2 g`, that is `X ^ (2 g) p (1 / X) = p (X)`, satisfies `p' (1) = g p (1)`. -/

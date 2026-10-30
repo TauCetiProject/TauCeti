@@ -142,8 +142,8 @@ theorem not_isOpen_ker_orthogonalSpinorNorm_of_indiscreteTopology (Q : Quadratic
   refine ⟨Set.Nonempty.ne_empty ⟨1, one_mem _⟩, fun h ↦ hv ?_⟩
   have hmem : QuadraticMap.reflectionOrthogonal Q v ∈ (orthogonalSpinorNorm Q hQ).ker :=
     SetLike.mem_coe.mp (h ▸ Set.mem_univ _)
-  rw [MonoidHom.mem_ker, orthogonalSpinorNorm_reflectionOrthogonal, squareClassHom_apply,
-    ofAdd_eq_one, squareClass_eq_zero_iff] at hmem
+  rw [MonoidHom.mem_ker, orthogonalSpinorNorm_reflectionOrthogonal,
+    squareClassHom_eq_one_iff] at hmem
   simpa using isSquare_units_val_iff.mpr hmem
 
 end Indiscrete

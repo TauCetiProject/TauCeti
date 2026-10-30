@@ -217,37 +217,6 @@ section Weights
 -- The closed-subgroup weight criterion takes the base ring in the universe of the torus index.
 variable (R : Type) [CommRing R]
 
-/-- The entrywise weight-space criterion
-`TauCeti.HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus` for the quotient by
-`generatedDefiningIdeal R`, stated for any Hopf algebra `G` equal to that quotient. The generated
-coordinate Hopf algebra is such a `G` by `generatedCoordinateHopfAlgebra_def`, whose body is not
-exposed, so the criterion is transported along that equation. -/
-private theorem mem_adjointWeightSpace_iff_of_eq {G : CommHopfAlgCat R}
-    (hG : CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R 27)
-      (generatedDefiningIdeal R) = G)
-    (π : G ⟶ (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 6))).obj)
-    (hπ : CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R 27)
-        (generatedDefiningIdeal R) ≫ eqToHom hG ≫ π =
-      GeneralLinear.weightTorusCoordinateMap (R := R) e6MinusculeWeight)
-    [Module.Finite R (Bialgebra.CotangentSpace R G)]
-    [Module.Projective R (Bialgebra.CotangentSpace R G)]
-    (α : Multiplicative (Fin 6 →₀ ℤ)) (x : Module.Dual R (Bialgebra.CotangentSpace R G)) :
-    x ∈ Derivation.adjointWeightSpace π.hom α ↔
-      ∀ a b, SplitTorus.weightCharacter (e6MinusculeWeight a - e6MinusculeWeight b) ≠ α →
-        GeneralLinear.tangentMatrix 27
-          (derivationComp (B := R) (CommHopfAlgCat.mkQuotient
-              (GeneralLinear.coordinateHopfAlgebra R 27) (generatedDefiningIdeal R) ≫
-            eqToHom hG).hom (Derivation.cotangentLinearEquiv (B := R) x)) a b = 0 := by
-  subst hG
-  rw [eqToHom_refl, Category.id_comp] at hπ
-  rw [eqToHom_refl, Category.comp_id, CommHopfAlgCat.hom_mkQuotient]
-  have hπ' : π.hom.comp (Bialgebra.Quotient.mkBialgHom (generatedDefiningIdeal R).toIdeal) =
-      (GeneralLinear.weightTorusCoordinateMap (R := R) e6MinusculeWeight).hom := by
-    rw [← CommHopfAlgCat.hom_mkQuotient, ← _root_.CommHopfAlgCat.hom_comp, hπ]
-  simpa only [HopfIdeal.quotientLieHom_apply] using
-    HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus (generatedDefiningIdeal R)
-      e6MinusculeWeight π.hom hπ' α x
-
 variable [Module.Projective R
   (Bialgebra.CotangentSpace R (generatedCoordinateHopfAlgebra R))]
 
@@ -266,7 +235,9 @@ theorem mem_adjointWeightSpace_generatedWeightTorusCoordinateMap_iff
   rw [generatedCoordinateMap_def, Category.assoc,
     GeneralLinear.weightTorusBaseChangeCoordinateMap_eq, weightTable_weight] at hπ
   rw [generatedCoordinateMap_def]
-  exact mem_adjointWeightSpace_iff_of_eq R (generatedCoordinateHopfAlgebra_def R).symm _ hπ α x
+  exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus_of_eq
+    (generatedDefiningIdeal R) e6MinusculeWeight (generatedCoordinateHopfAlgebra_def R)
+    _ (by simp) _ (by simpa only [Category.assoc] using hπ) α x
 
 /-- **Each normalized root vector has its signed simple-root character.** The tangent vector of
 the `k`th numbered root subgroup lies in the adjoint weight space of

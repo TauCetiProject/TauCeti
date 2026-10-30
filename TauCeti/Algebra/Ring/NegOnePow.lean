@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.Ring.NegOnePow
-public import Mathlib.Algebra.Module.Defs
 
 /-!
 # Powers of negative one in a ground ring
@@ -25,6 +23,7 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
   induce the same scalar action on a module.
 * `TauCeti.negOnePow_smul_negOnePow_smul`: the unit-valued sign acts as an involution.
+* `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
 * `Int.negOnePow_sub_sub_one`, `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity
   identities behind the sign cancellations of twisted differentials.
 -/
@@ -115,6 +114,20 @@ theorem negOnePow_smul_negOnePow_smul (e : ℤ) (a : A) : e.negOnePow • e.negO
 end NegOnePowSMul
 
 section Parity
+
+/-- The product of an integer and one minus that integer is even, so its sign is one. -/
+@[simp]
+theorem _root_.Int.negOnePow_mul_one_sub (n : ℤ) :
+    (n * (1 - n)).negOnePow = 1 := by
+  rw [Int.negOnePow_eq_one_iff]
+  simpa only [← mul_neg, neg_sub] using n.even_mul_pred_self.neg
+
+/-- The product of an integer and two minus that integer has the same parity as the integer. -/
+@[simp]
+theorem _root_.Int.negOnePow_mul_two_sub (n : ℤ) :
+    (n * (2 - n)).negOnePow = n.negOnePow := by
+  simp only [mul_sub, mul_comm n 2, Int.negOnePow_sub, Int.negOnePow_two_mul,
+    Int.negOnePow_mul_self, one_mul]
 
 /-- Reversing a difference and shifting it by one flips the sign:
 `(-1) ^ (a - b - 1) = -(-1) ^ (b - a)`. -/

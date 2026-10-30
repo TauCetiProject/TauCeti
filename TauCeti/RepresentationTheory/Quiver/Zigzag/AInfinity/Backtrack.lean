@@ -47,7 +47,7 @@ is the identity, so the morphism is an `A∞` isomorphism and the deformation is
 The signs are those of Tau Ceti's Keller/Getzler--Jones conventions, in which the arity-four
 morphism equation carries no relative sign between the two outer terms of `δψ`. Liu--Wang's quartic
 operation for affine `D₄`, with equal values on the four rotations of its walk, is an instance;
-see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD4`.
+see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Four`.
 
 ## Main definitions
 

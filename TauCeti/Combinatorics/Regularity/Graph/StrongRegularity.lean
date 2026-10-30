@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Regularity.Graph.InducedCount
 public import TauCeti.Combinatorics.Regularity.Graph.SeededRegularity
 public import TauCeti.Combinatorics.Regularity.Partition.Energy
 public import Mathlib.Order.PartialSups
 import Mathlib.Tactic.Linarith
+import TauCeti.Combinatorics.Regularity.Graph.SteppedInducedCount
 
 /-!
 # Strong graph regularity
@@ -32,6 +34,16 @@ iteration stops within `⌊1 / ε⌋₊ + 1` rounds. Since every round refines e
 partition keeps almost refining the starting partition, and its number of parts never drops below
 the requested minimum.
 
+A strong regularity witness predicts every labelled induced three-vertex pattern from the densities
+of its coarse partition (`SimpleGraph.StrongRegular.inducedGraphCount3_estimate`). With
+`τ = F #P.parts`, the error is at most `(15 τ + 3 √ε) (card α) ^ 3 + 6 m (card α) ^ 2` when every
+coarse part has at most `m` vertices. The fine partition counts the copies with vertices in three
+distinct fine parts up to `15 τ (card α) ^ 3`, by the counting lemma for a uniform equipartition.
+Passing through the stepped predictions of the fine and coarse partitions, which include the
+assignments with a repeated part, the energy gap costs `3 √ε (card α) ^ 3`
+(`SimpleGraph.abs_steppedInducedGraphCount3_sub_le`). The copies and assignments meeting some part
+twice cost `3 m (card α) ^ 2` once for each partition.
+
 The number of parts is bounded independently of the graph. As the schedule `F` is arbitrary, the
 bound for one round is a maximum over all smaller partition sizes
 (`TauCeti.strongRegularityStepBound`), which makes it monotone, and the final bound
@@ -44,6 +56,8 @@ bound for one round is a maximum over all smaller partition sizes
 * `SimpleGraph.StrongRegular`: strong regularity witnesses.
 * `SimpleGraph.exists_strong_regular`: every equipartition `P₀` is almost refined by the coarse
   partition of a strong regularity witness with at least a requested number of parts.
+* `SimpleGraph.StrongRegular.inducedGraphCount3_estimate`: the induced counting lemma for strong
+  regularity witnesses.
 
 ## References
 
@@ -197,5 +211,33 @@ theorem exists_strong_regular (P₀ : Finpartition (univ : Finset α)) (hP₀ : 
       rwa [div_lt_iff₀ hε, mul_comm] at hN
     linarith [G.weightedEnergy_le_one Q]
   exact ⟨P, Q, ⟨hQP, hP, hQ, hPG, hQG.mono (min_le_right _ _), hclose, hQcard⟩, hPP₀, hlP⟩
+
+variable {G} in
+/-- **Induced counting lemma for strong regularity.** Let `(P, Q)` be a strong regularity witness
+for `G` with `τ = F #P.parts > 0`, and suppose every part of `P` has at most `m` vertices. Then for
+every graph `J` on `Fin 3`, the number of labelled induced copies of `J` in `G` differs from the
+coarse prediction `J.coarseInducedGraphEstimate3 G P` by at most
+`(15 τ + 3 √ε) (card α) ^ 3 + 6 m (card α) ^ 2`. Only the refinement, the equitability and
+uniformity of `Q`, and the energy gap are used. -/
+theorem StrongRegular.inducedGraphCount3_estimate (J : SimpleGraph (Fin 3)) [DecidableRel J.Adj]
+    {P Q : Finpartition (univ : Finset α)} {ε : ℝ} {F : ℕ → ℝ} {l₀ : ℕ}
+    (h : G.StrongRegular P Q ε F l₀) (hF : 0 < F #P.parts) {m : ℕ}
+    (hm : ∀ A ∈ P.parts, #A ≤ m) :
+    |(J.inducedGraphCount3 G : ℝ) - J.coarseInducedGraphEstimate3 G P| ≤
+      (15 * F #P.parts + 3 * √ε) * card α ^ 3 + 6 * m * card α ^ 2 := by
+  have hmQ : ∀ B ∈ Q.parts, #B ≤ m := fun B hB ↦ by
+    obtain ⟨A, hA, hBA⟩ := h.refines hB
+    exact (card_le_card hBA).trans (hm A hA)
+  -- Compare the count with the coarse prediction of `Q`, then pass through the stepped
+  -- predictions of `Q` and `P` to the coarse prediction of `P`.
+  have h₁ := J.inducedGraphCount3_le_coarseInducedGraphEstimate3_add G h.equitQ hF h.regQ hmQ
+  have h₂ := J.coarseInducedGraphEstimate3_sub_le_inducedGraphCount3 G h.equitQ hF h.regQ
+  have h₃ := J.coarseInducedGraphEstimate3_le_steppedInducedGraphCount3 G Q
+  have h₄ := J.steppedInducedGraphCount3_le_coarseInducedGraphEstimate3_add G Q hmQ
+  have h₅ := abs_le.1 (J.abs_steppedInducedGraphCount3_sub_le G h.refines h.energyClose)
+  have h₆ := J.coarseInducedGraphEstimate3_le_steppedInducedGraphCount3 G P
+  have h₇ := J.steppedInducedGraphCount3_le_coarseInducedGraphEstimate3_add G P hm
+  rw [abs_le]
+  constructor <;> linarith [h₅.1, h₅.2]
 
 end SimpleGraph
