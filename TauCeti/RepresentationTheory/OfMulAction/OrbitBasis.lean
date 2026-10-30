@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.OfMulAction.Invariants
+public import TauCeti.RepresentationTheory.OfMulAction
 public import TauCeti.GroupTheory.GroupAction.Orbit.Card
 
 /-!
@@ -13,8 +13,8 @@ public import TauCeti.GroupTheory.GroupAction.Orbit.Card
 
 For an action on a finite type, normalized orbit sums form a basis of the invariant
 subspace of the rational permutation representation. The acting group need not be finite.
-This basis is the orbit-sum basis `TauCeti.ofMulActionOrbitSumBasis` over `ℚ`, rescaled by the
-reciprocal orbit sizes.
+This basis is the orbit-sum basis `TauCeti.invariantOrbitSumBasis` rescaled by the reciprocal
+orbit sizes.
 The coordinate of an invariant vector is its constant orbit coefficient times the orbit size.
 The corresponding projection sums the original coefficients on each orbit. For a cyclic action,
 it agrees with averaging over any positive period, including a nonminimal period.
@@ -22,7 +22,7 @@ it agrees with averaging over any positive period, including a nonminimal period
 ## Main declarations
 
 * `TauCeti.ofMulActionOrbitBasis`: the basis of normalized orbit sums.
-* `TauCeti.ofMulActionOrbitBasis_eq_inv_smul_ofMulActionOrbitSumBasis`: the orbit averages are
+* `TauCeti.ofMulActionOrbitBasis_eq_inv_smul_invariantOrbitSumBasis`: the orbit averages are
   the orbit sums divided by the orbit sizes.
 * `TauCeti.ofMulActionOrbitProjection`: projection onto the actual invariant subspace.
 * `TauCeti.ofMulActionOrbitBasis_repr_projection`: projection coordinates as native
@@ -44,14 +44,14 @@ variable [Fintype I]
 permutation representation. No finiteness assumption on the acting group is needed. -/
 def ofMulActionOrbitBasis :
     Basis (orbitRel.Quotient Γ I) ℚ (ofMulAction ℚ Γ I).invariants :=
-  (ofMulActionOrbitSumBasis ℚ Γ I).unitsSMul fun O ↦
-    Units.mk0 (Nat.card O.orbit : ℚ)⁻¹ (inv_ne_zero (Nat.cast_ne_zero.mpr O.card_orbit_ne_zero))
+  (invariantOrbitSumBasis ℚ Γ I).unitsSMul fun O ↦
+    (Units.mk0 (Nat.card O.orbit : ℚ) (Nat.cast_ne_zero.mpr O.card_orbit_ne_zero))⁻¹
 
 variable {Γ I} in
 /-- The normalized orbit average of an orbit `O` is the orbit sum of `O` divided by the size
 of `O`. -/
-theorem ofMulActionOrbitBasis_eq_inv_smul_ofMulActionOrbitSumBasis (O : orbitRel.Quotient Γ I) :
-    ofMulActionOrbitBasis Γ I O = (Nat.card O.orbit : ℚ)⁻¹ • ofMulActionOrbitSumBasis ℚ Γ I O :=
+theorem ofMulActionOrbitBasis_eq_inv_smul_invariantOrbitSumBasis (O : orbitRel.Quotient Γ I) :
+    ofMulActionOrbitBasis Γ I O = (Nat.card O.orbit : ℚ)⁻¹ • invariantOrbitSumBasis ℚ Γ I O :=
   Basis.unitsSMul_apply O
 
 /-- The coordinate of a fixed vector is its coefficient at an orbit representative,
@@ -59,9 +59,9 @@ multiplied by the size of that orbit. -/
 theorem ofMulActionOrbitBasis_repr (w : (ofMulAction ℚ Γ I).invariants)
     (O : orbitRel.Quotient Γ I) :
     (ofMulActionOrbitBasis Γ I).repr w O = (Nat.card O.orbit : ℚ) * w.val.coeff O.out := by
-  have h := ofMulActionOrbitSumBasis_repr_mk w O.out
-  rw [Quotient.out_eq'] at h
-  simp [ofMulActionOrbitBasis, Basis.repr_unitsSMul, h, Units.smul_def]
+  have h := invariantOrbitSumBasis_repr_mk w O.out
+  rw [Quotient.out_eq] at h
+  simp [ofMulActionOrbitBasis, h]
 
 /-- The orbit coordinate can be computed at any member of the orbit. -/
 theorem ofMulActionOrbitBasis_repr_of_mem (w : (ofMulAction ℚ Γ I).invariants)
@@ -80,8 +80,8 @@ size on its orbit, and zero coefficient elsewhere. -/
 theorem ofMulActionOrbitBasis_coeff (O : orbitRel.Quotient Γ I) (i : I) :
     ((ofMulActionOrbitBasis Γ I O).val).coeff i =
       if Quotient.mk (orbitRel Γ I) i = O then (Nat.card O.orbit : ℚ)⁻¹ else 0 := by
-  simp [ofMulActionOrbitBasis_eq_inv_smul_ofMulActionOrbitSumBasis, coeff_ofMulActionOrbitSumBasis,
-    Quotient.mk'']
+  simp [ofMulActionOrbitBasis_eq_inv_smul_invariantOrbitSumBasis, Set.indicator_apply,
+    orbitRel.Quotient.mem_orbit]
 
 open Classical in
 /-- An orbit-average basis vector is the normalized sum of its ambient basis vectors. -/

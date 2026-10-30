@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 import Mathlib.NumberTheory.NumberField.Units.Basic
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # The ray class group of `ℚ` modulo `(n)·∞`
@@ -218,7 +219,7 @@ theorem ratModulus_dvd_ratModulus_iff {d : ℕ} {hd : d ≠ 0} :
     ratModulus d hd ∣ ratModulus n hn ↔ d ∣ n := by
   rw [Modulus.dvd_iff, ratModulus_finitePart, ratModulus_finitePart, ratModulus_infinitePart,
     ratModulus_infinitePart, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
-    Rat.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.Subset.refl _)]
+    NumberField.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.Subset.refl _)]
 
 /-- **The transition map from `(n)·∞` to `(d)·∞` is reduction modulo `d` on `(ZMod n)ˣ`.** -/
 theorem ratModulusEquivZMod_classMap {d : ℕ} {hd : d ≠ 0} (h : ratModulus d hd ∣ ratModulus n hn)
@@ -276,7 +277,7 @@ theorem ratFiniteModulus_dvd_ratModulus_iff {d : ℕ} {hd : d ≠ 0} :
     ratFiniteModulus d hd ∣ ratModulus n hn ↔ d ∣ n := by
   rw [Modulus.dvd_iff, ratFiniteModulus_finitePart, ratModulus_finitePart,
     ratFiniteModulus_infinitePart, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
-    Rat.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.empty_subset _)]
+    NumberField.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.empty_subset _)]
 
 /-- The modulus `(n)` divides `(n)·∞`. -/
 theorem ratFiniteModulus_dvd_ratModulus : ratFiniteModulus n hn ∣ ratModulus n hn :=
