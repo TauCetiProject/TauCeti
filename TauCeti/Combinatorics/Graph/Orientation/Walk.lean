@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Orientation.Basic
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
-public import TauCeti.Combinatorics.Network.Walk
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Bidirected
 
 /-!
 # Walks following a multigraph orientation
@@ -114,6 +113,20 @@ private theorem toOriented_congr {p q : G.Walk x y} (h : p = q)
   subst q
   rfl
 
+/-- The directed walk of a single traversal is its chosen oriented arrow. -/
+@[simp]
+theorem _root_.Graph.IsLink.toOriented_toWalk {e : β} (h : G.IsLink e x y)
+    (hp : h.toWalk.FollowsOrientation o) (hx : x ∈ V(G)) :
+    h.toWalk.toOriented hp hx = (ArrowWalk.nil _).cons
+      (⟨⟨e, h.edge_mem⟩,
+        Subtype.ext (h.followsOrientation_toWalk_iff.1 hp).1,
+        Subtype.ext (h.followsOrientation_toWalk_iff.1 hp).2⟩ : o.Hom _ _) := by
+  refine (toOriented_congr h.toWalk_eq_cons hp
+    ((followsOrientation_cons h .nil).2
+      ⟨(h.followsOrientation_toWalk_iff.1 hp).1,
+        (h.followsOrientation_toWalk_iff.1 hp).2, followsOrientation_nil _⟩) hx).trans ?_
+  simp only [toOriented_cons, toOriented_nil, Quiver.Path.comp_nil]
+
 /-- Conversion to directed walks commutes with concatenation. -/
 @[simp]
 theorem toOriented_append (p : G.Walk x y) (q : G.Walk y z)
@@ -138,27 +151,56 @@ namespace Orientation
 
 variable (o : G.Orientation)
 
+/-- Include the chosen oriented arrows into the bidirected arrow family. The abbreviation keeps
+its identity vertex map reducible, so transported walks retain their endpoint types. -/
+abbrev toBidirected : @Prefunctor V(G) ⟨o.Hom⟩ V(G) ⟨G.BidirectedHom⟩ :=
+  @Prefunctor.mk V(G) ⟨o.Hom⟩ V(G) ⟨G.BidirectedHom⟩ id fun a ↦ ⟨a.edge.1, a.isLink⟩
+
+@[simp]
+theorem toBidirected_obj (x : V(G)) :
+    @Prefunctor.obj V(G) ⟨o.Hom⟩ V(G) ⟨G.BidirectedHom⟩ o.toBidirected x = x := (rfl)
+
+@[simp]
+theorem toBidirected_map {x y : V(G)} (a : o.Hom x y) :
+    @Prefunctor.map V(G) ⟨o.Hom⟩ V(G) ⟨G.BidirectedHom⟩ o.toBidirected x y a =
+      ⟨a.edge.1, a.isLink⟩ := (rfl)
+
+/-- A single oriented arrow follows the orientation as an undirected traversal. -/
+-- Prefer the arrow fact to expanding the endpoint equalities for an arbitrary traversal.
+@[simp high]
+theorem Hom.followsOrientation_toWalk {o : G.Orientation} {x y : V(G)} (a : o.Hom x y) :
+    a.isLink.toWalk.FollowsOrientation o := by
+  simp [congrArg Subtype.val a.tail_eq, congrArg Subtype.val a.head_eq]
+
+/-- Converting a single oriented arrow's underlying traversal recovers that arrow. -/
+-- Retain the original arrow rather than rebuilding it with the general single-edge lemma.
+@[simp high]
+theorem Hom.toOriented_toWalk {o : G.Orientation} {x y : V(G)} (a : o.Hom x y) :
+    a.isLink.toWalk.toOriented a.followsOrientation_toWalk x.2 = (ArrowWalk.nil _).cons a := by
+  refine (IsLink.toOriented_toWalk a.isLink a.followsOrientation_toWalk x.2).trans ?_
+  exact congrArg (fun a ↦ (ArrowWalk.nil _).cons a) (Hom.ext (Subtype.ext rfl))
+
 /-- Forget the directions of a directed walk, retaining each traversed edge identity. -/
-def forgetWalk (o : G.Orientation) {x : V(G)} : {y : V(G)} → ArrowWalk o.Hom x y → G.Walk x y
-  | _, @Quiver.Path.nil _ .(_) _ => .nil
-  | _, @Quiver.Path.cons _ .(_) _ _ _ p a => (o.forgetWalk p).append a.isLink.toWalk
+def forgetWalk (o : G.Orientation) {x y : V(G)} (p : ArrowWalk o.Hom x y) : G.Walk x y :=
+  ArrowWalk.toGraphWalk
+    (@Prefunctor.mapPath V(G) ⟨o.Hom⟩ V(G) ⟨G.BidirectedHom⟩ o.toBidirected x y p)
 
 variable {x y z : V(G)}
 
 @[simp]
-theorem forgetWalk_nil (x : V(G)) : o.forgetWalk (ArrowWalk.nil x) = .nil := (rfl)
+theorem forgetWalk_nil (x : V(G)) : o.forgetWalk (ArrowWalk.nil x) = .nil := by
+  simp [forgetWalk]
 
 @[simp]
 theorem forgetWalk_cons (p : ArrowWalk o.Hom x y) (a : o.Hom y z) :
-    o.forgetWalk (p.cons a) = (o.forgetWalk p).append a.isLink.toWalk := (rfl)
+    o.forgetWalk (p.cons a) = (o.forgetWalk p).append a.isLink.toWalk := by
+  simp [forgetWalk]
 
 /-- Forgetting directions commutes with composition. -/
 @[simp]
 theorem forgetWalk_comp (p : ArrowWalk o.Hom x y) (q : ArrowWalk o.Hom y z) :
     o.forgetWalk (p.comp q) = (o.forgetWalk p).append (o.forgetWalk q) := by
-  induction q with
-  | nil => simp
-  | cons q a ih => simp [ih, Walk.append_assoc]
+  simp [forgetWalk, Prefunctor.mapPath_comp]
 
 /-- Every directed walk follows the orientation after directions are forgotten. -/
 @[simp]
@@ -167,28 +209,26 @@ theorem followsOrientation_forgetWalk (p : ArrowWalk o.Hom x y) :
   induction p with
   | nil => simp
   | cons p a ih =>
-    simp [IsLink.toWalk_eq_cons, ih, congrArg Subtype.val a.tail_eq,
-      congrArg Subtype.val a.head_eq]
+    rw [forgetWalk_cons]
+    exact (Walk.followsOrientation_append _ _).2 ⟨ih, a.followsOrientation_toWalk⟩
 
 /-- Forgetting directions retains the length. -/
 @[simp]
 theorem length_forgetWalk (p : ArrowWalk o.Hom x y) : (o.forgetWalk p).length = p.length := by
-  induction p with
-  | nil => simp
-  | cons p a ih => simp [ih]
+  simp [forgetWalk]
 
 /-- Forgetting directions retains the vertex sequence. -/
 @[simp]
 theorem support_forgetWalk (p : ArrowWalk o.Hom x y) :
     (o.forgetWalk p).support = p.vertices.unattach := by
-  induction p with
-  | nil => simp
-  | cons p a ih => simp [ih, IsLink.toWalk_eq_cons]
+  rw [forgetWalk, ArrowWalk.support_toGraphWalk,
+    ArrowWalk.vertices_mapPath_of_obj_eq_id o.toBidirected rfl]
 
 /-- Forgetting directions retains the edge sequence. -/
 @[simp]
 theorem edges_forgetWalk (p : ArrowWalk o.Hom x y) :
     (o.forgetWalk p).edges = p.arrows.map (fun a ↦ a.2.2.edge.1) := by
+  simp only [forgetWalk, ArrowWalk.edges_toGraphWalk]
   induction p with
   | nil => simp
   | cons p a ih => simp [ih]
@@ -197,30 +237,24 @@ theorem edges_forgetWalk (p : ArrowWalk o.Hom x y) :
 @[simp]
 theorem isPath_forgetWalk_iff (p : ArrowWalk o.Hom x y) :
     (o.forgetWalk p).IsPath ↔ p.IsPath := by
-  rw [Walk.isPath_def, support_forgetWalk, List.unattach,
-    List.nodup_map_iff Subtype.val_injective, ArrowWalk.isPath_def]
+  rw [forgetWalk, ArrowWalk.isPath_toGraphWalk_iff, ArrowWalk.isPath_def,
+    ArrowWalk.vertices_mapPath_of_obj_eq_id o.toBidirected rfl, ArrowWalk.isPath_def]
 
 /-- Forgetting directions preserves and reflects cycles. Each edge has only one directed arrow,
 so no additional distinct-edge condition is needed. -/
 @[simp]
 theorem isCycle_forgetWalk_iff {x : V(G)} (p : ArrowWalk o.Hom x x) :
     (o.forgetWalk p).IsCycle ↔ p.IsCycle := by
-  have hinj : Function.Injective (fun a : o.TotalHom ↦ a.2.2.edge.1) := by
-    intro a b hab
-    apply o.totalHomEquiv.injective
-    simp only [totalHomEquiv_apply]
-    exact Subtype.ext hab
-  have htail : (o.forgetWalk p).support.tail.Nodup ↔ p.vertices.tail.Nodup := by
-    rw [support_forgetWalk, List.unattach, ← List.map_tail,
-      List.nodup_map_iff Subtype.val_injective]
-  simp only [Walk.isCycle_def, edges_forgetWalk, List.nodup_map_iff hinj,
-    htail, ne_eq, Walk.eq_nil_iff_nil, ← Walk.length_eq_zero_iff, length_forgetWalk]
-  constructor
-  · rintro ⟨hne, -, htail⟩
-    exact (ArrowWalk.isCycle_def p).2 ⟨Nat.pos_of_ne_zero hne, htail⟩
-  · intro h
-    have hc := (ArrowWalk.isCycle_def p).1 h
-    exact ⟨Nat.ne_of_gt hc.1, h.nodup_arrows, hc.2⟩
+  have hcycle :
+      (ArrowWalk.IsCycle (Q := G.BidirectedHom)
+        (@Prefunctor.mapPath V(G) ⟨o.Hom⟩ V(G) ⟨G.BidirectedHom⟩ o.toBidirected x x p)) ↔
+      p.IsCycle := by
+    simp only [ArrowWalk.isCycle_def, Prefunctor.length_mapPath,
+      ArrowWalk.vertices_mapPath_of_obj_eq_id o.toBidirected rfl]
+  rw [forgetWalk, ArrowWalk.isCycle_toGraphWalk_iff, hcycle,
+    ← ArrowWalk.edges_toGraphWalk, ← forgetWalk, edges_forgetWalk,
+    List.nodup_map_iff o.totalHom_edge_val_injective]
+  exact and_iff_left_of_imp ArrowWalk.IsCycle.nodup_arrows
 
 end Orientation
 
@@ -233,7 +267,7 @@ variable {o : G.Orientation} {x y : α}
 theorem forgetWalk_toOriented (p : G.Walk x y) (hp : p.FollowsOrientation o)
     (hx : x ∈ V(G)) : o.forgetWalk (p.toOriented hp hx) = p := by
   induction p with
-  | nil => rfl
+  | nil => simp
   | cons e h p ih => simp [ih, IsLink.toWalk_eq_cons]
 
 /-- Converting the underlying walk of a directed walk recovers the directed walk. -/
@@ -241,23 +275,16 @@ theorem forgetWalk_toOriented (p : G.Walk x y) (hp : p.FollowsOrientation o)
 theorem toOriented_forgetWalk {x y : V(G)} (p : ArrowWalk o.Hom x y) :
     (o.forgetWalk p).toOriented (o.followsOrientation_forgetWalk p) x.2 = p := by
   induction p with
-  | nil => rfl
+  | nil =>
+    exact (toOriented_congr (o.forgetWalk_nil _) _ (followsOrientation_nil _) _).trans
+      (toOriented_nil _)
   | cons p a ih =>
-    have ha : a.isLink.toWalk.FollowsOrientation o := by
-      simp [IsLink.toWalk_eq_cons, congrArg Subtype.val a.tail_eq,
-        congrArg Subtype.val a.head_eq]
     refine (toOriented_congr (o.forgetWalk_cons p a) _
-      ((followsOrientation_append _ _).2 ⟨o.followsOrientation_forgetWalk p, ha⟩) _).trans ?_
-    rw [toOriented_append _ _ (o.followsOrientation_forgetWalk p) ha, ih]
-    have hone : a.isLink.toWalk.toOriented ha _ = (ArrowWalk.nil _).cons a := by
-      refine (toOriented_congr a.isLink.toWalk_eq_cons ha
-        ((followsOrientation_cons a.isLink .nil).2
-          ⟨congrArg Subtype.val a.tail_eq, congrArg Subtype.val a.head_eq,
-            followsOrientation_nil _⟩) _).trans ?_
-      simp only [toOriented_cons, toOriented_nil, Quiver.Path.comp_nil]
-      congr 1
-    rw [hone]
-    rfl
+      ((followsOrientation_append _ _).2
+        ⟨o.followsOrientation_forgetWalk p, a.followsOrientation_toWalk⟩) _).trans ?_
+    rw [toOriented_append _ _ (o.followsOrientation_forgetWalk p) a.followsOrientation_toWalk,
+      ih, Orientation.Hom.toOriented_toWalk]
+    simp only [@Quiver.Path.comp_cons _ ⟨o.Hom⟩, @Quiver.Path.comp_nil _ ⟨o.Hom⟩]
 
 /-- Conversion to a directed walk retains length. -/
 @[simp]
