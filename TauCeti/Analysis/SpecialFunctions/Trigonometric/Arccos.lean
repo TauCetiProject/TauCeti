@@ -16,24 +16,31 @@ family for `Real.arcsin` — `Real.arcsin_le_iff_le_sin`, `Real.le_arcsin_iff_si
 inequality between an angle and an `arcsin` into one between a real number and a `sin`. This file
 supplies the counterpart for `Real.arccos`, and reads it off as a description of the sublevel and
 superlevel sets of `Real.cos` on one period. Since `arccos` is antitone, the comparisons swap
-sides: `arccos x ≤ y ↔ cos y ≤ x` where the `arcsin` family has `arcsin x ≤ y ↔ x ≤ sin y`.
+sides: they have the shape `arccos x ≤ y ↔ cos y ≤ x` where the `arcsin` family has
+`arcsin x ≤ y ↔ x ≤ sin y`.
 
 ## Main results
 
-* `Real.arccos_le_iff_cos_le`, `Real.le_arccos_iff_le_cos`, `Real.arccos_lt_iff_cos_lt` and
-  `Real.lt_arccos_iff_lt_cos` — the four comparisons for an angle `y` in `[0, π]`. Each needs
-  only a one-sided bound on `x`: on the other side `arccos` is constant at an endpoint of
-  `[0, π]` and `cos y` cannot cross `x`, so both sides of the comparison agree.
-* `Real.arccos_le_iff_cos_le'`, `Real.le_arccos_iff_le_cos'`, `Real.arccos_lt_iff_cos_lt'` and
-  `Real.lt_arccos_iff_lt_cos'` — the same four with nothing at all assumed of `x`. Exactly as for
-  Mathlib's primed `arcsin` lemmas, the remaining degenerate range of `x` is covered at the price
-  of excluding the one endpoint of `[0, π]` at which the comparison would then fail.
-* `Real.lt_cos_iff_mem_Ioo` and `Real.le_cos_iff_mem_Icc` — since `cos` is even, the comparisons
-  extend to the full period `[-π, π]`: `{t ∈ [-π, π] | x < cos t} = (-arccos x, arccos x)` and its
-  closed companion. On one period centred at `0`, the angles at which `cos` exceeds a threshold
-  form the symmetric interval of half-width `arccos x`.
-* `Real.lt_cos_of_mem_Icc` — the unimodality corollary: `cos` has no interior minimum on `[-π, π]`,
-  so a strict lower bound holding at both ends of a subinterval holds throughout it.
+* `Real.arccos_le_iff_cos_le` and `Real.lt_arccos_iff_lt_cos` — for `-1 ≤ x` and an angle
+  `y ∈ [0, π]`, `arccos x ≤ y ↔ cos y ≤ x` and `y < arccos x ↔ x < cos y`. No upper bound on `x`
+  is needed: for `1 ≤ x`, `arccos x = 0` and `cos y ≤ x`, so the two sides of each agree.
+* `Real.le_arccos_iff_le_cos` and `Real.arccos_lt_iff_cos_lt` — for `x ≤ 1` and an angle
+  `y ∈ [0, π]`, `y ≤ arccos x ↔ x ≤ cos y` and `arccos x < y ↔ cos y < x`. No lower bound on `x`
+  is needed: for `x ≤ -1`, `arccos x = π` and `x ≤ cos y`, so the two sides of each agree.
+* `Real.arccos_le_iff_cos_le'` and `Real.lt_arccos_iff_lt_cos'` — the same two comparisons with
+  nothing assumed of `x`, for an angle `y ∈ [0, π)`.
+* `Real.le_arccos_iff_le_cos'` and `Real.arccos_lt_iff_cos_lt'` — the same two comparisons with
+  nothing assumed of `x`, for an angle `y ∈ (0, π]`. Exactly as for Mathlib's primed `arcsin`
+  lemmas, the primed forms cover the remaining degenerate range of `x` at the price of excluding
+  the one endpoint of `[0, π]` at which the comparison would then fail.
+* `Real.lt_cos_iff_mem_Ioo` — since `cos` is even, the comparisons extend to the full period
+  `[-π, π]`: for `-1 ≤ x` and `t ∈ [-π, π]`, `x < cos t ↔ t ∈ (-arccos x, arccos x)`.
+* `Real.le_cos_iff_mem_Icc` — the closed companion: for `x ≤ 1` and `t ∈ [-π, π]`,
+  `x ≤ cos t ↔ t ∈ [-arccos x, arccos x]`. On one period centred at `0`, the angles at which `cos`
+  reaches a threshold thus form the symmetric interval of half-width `arccos x`.
+* `Real.lt_cos_of_mem_Icc` — the unimodality corollary: `cos` has no interior minimum on
+  `[-π, π]`. For `-π ≤ a`, `b ≤ π` and `θ ∈ [a, b]`, if `k < cos a` and `k < cos b` then
+  `k < cos θ`; nothing is assumed of `k`.
 -/
 
 public section
