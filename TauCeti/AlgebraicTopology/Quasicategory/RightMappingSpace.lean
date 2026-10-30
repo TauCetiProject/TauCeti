@@ -185,20 +185,16 @@ theorem mem_rightMappingSpace_iff {n : ℕ} (σ : X _⦋n + 1⦌) :
 
 namespace rightMappingSpace
 
-/-- The coface map `δ 0 : ⦋0⦌ ⟶ ⦋1⦌` picks the last vertex. -/
-private theorem δ_zero_eq_const :
-    (δ (0 : Fin 2) : ⦋0⦌ ⟶ ⦋1⦌) = SimplexCategory.const ⦋0⦌ ⦋0 + 1⦌ (Fin.last _) :=
-  Hom.ext_zero_left _ _ rfl
-
 /-- The vertices of the right mapping space `Hom^R_X(x, y)` are the edges from `x` to `y`. -/
 def obj₀Equiv : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌ ≃ Edge x y where
   toFun σ := Edge.mk (σ.1 : X _⦋1⦌)
     (by simpa [const_eq_id] using ((mem_rightMappingSpace_iff (n := 0) _).1 σ.2).1)
     (by
-      simpa [SimplicialObject.δ, δ_zero_eq_const] using
+      simpa [SimplicialObject.δ, SimplexCategory.δ_zero_eq_const] using
         ((mem_rightMappingSpace_iff (n := 0) _).1 σ.2).2)
   invFun e := ⟨e.edge, (mem_rightMappingSpace_iff (n := 0) _).2
-    ⟨by simp [const_eq_id], by simpa [SimplicialObject.δ, δ_zero_eq_const] using e.tgt_eq⟩⟩
+    ⟨by simp [const_eq_id],
+      by simpa [SimplicialObject.δ, SimplexCategory.δ_zero_eq_const] using e.tgt_eq⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
