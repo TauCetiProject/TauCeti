@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Binary.Golay.Basic
+public import TauCeti.InformationTheory.Coding.A1
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 public import Mathlib.Data.List.GetD
@@ -74,8 +74,14 @@ noncomputable abbrev a1TwentyFourthGlueModule : FiniteQuadraticModule :=
   FiniteQuadraticModule.pi fun _ : Fin 24 ↦ (A 1).glueAlphabet (isSimplyLaced_A 1)
 
 /-- The marked block `00000101001100110101111` of the `A₁²⁴` glue pattern `[1(…)]`. -/
-@[expose] def a1TwentyFourthBlock : List ℕ :=
+def a1TwentyFourthBlock : List ℕ :=
   [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1]
+
+/-- The digits of the marked block in their table order. -/
+theorem a1TwentyFourthBlock_eq :
+    a1TwentyFourthBlock =
+      [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1] := by
+  rfl
 
 /-- **The Conway--Sloane glue pattern `[1(00000101001100110101111)]` of the `A₁²⁴` row.** -/
 def a1TwentyFourthPattern : GluePattern :=
@@ -83,14 +89,27 @@ def a1TwentyFourthPattern : GluePattern :=
 
 /-- **The coordinate permutation of the `A₁²⁴` comparison**, from destination (Golay)
 coordinates to source (table) coordinates: Golay coordinate `j` reads table coordinate `p j`. -/
--- Exposed so that the coordinate permutation evaluates in the finite checks below.
-@[expose] def a1TwentyFourthDestinationToSource : Equiv.Perm (Fin 24) where
+def a1TwentyFourthDestinationToSource : Equiv.Perm (Fin 24) where
   toFun :=
     ![0, 1, 2, 6, 5, 13, 10, 15, 17, 4, 18, 19, 11, 7, 14, 12, 3, 8, 23, 20, 22, 9, 21, 16]
   invFun :=
     ![0, 1, 2, 16, 9, 4, 3, 13, 17, 21, 6, 12, 15, 5, 14, 7, 23, 8, 10, 11, 19, 22, 20, 18]
   left_inv := by decide
   right_inv := by decide
+
+/-- The table coordinate read by each Golay coordinate. -/
+theorem a1TwentyFourthDestinationToSource_apply (j : Fin 24) :
+    a1TwentyFourthDestinationToSource j =
+      ![0, 1, 2, 6, 5, 13, 10, 15, 17, 4, 18, 19, 11, 7, 14, 12, 3, 8, 23, 20, 22, 9, 21, 16]
+        j := by
+  rfl
+
+/-- The Golay coordinate corresponding to each table coordinate. -/
+theorem a1TwentyFourthDestinationToSource_symm_apply (j : Fin 24) :
+    a1TwentyFourthDestinationToSource.symm j =
+      ![0, 1, 2, 16, 9, 4, 3, 13, 17, 21, 6, 12, 15, 5, 14, 7, 23, 8, 10, 11, 19, 22, 20, 18]
+        j := by
+  rfl
 
 /-- **The `A₁²⁴` glue words as binary words.**  The `j`-th coordinate of the image of a glue
 word `w` is `w (p j)`; a coordinate permutation preserves the quadratic form of a coordinate
@@ -128,55 +147,22 @@ theorem a1TwentyFourthGlueSubgroup_def :
         decodeGlueWord (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1) l = some w} :=
   (rfl)
 
-/-- The glue word whose labels are the digits of a list, read modulo two. -/
-private def ofDigits (l : List ℕ) : a1TwentyFourthGlueModule :=
-  fun i ↦ ((l.getD i 0 : ℕ) : ZMod 2)
-
 /-- The binary word obtained from a digit list by the coordinate change of the comparison. -/
 private def transportDigits (l : List ℕ) : Fin 24 → ZMod 2 :=
   fun j ↦ ((l.getD (a1TwentyFourthDestinationToSource j) 0 : ℕ) : ZMod 2)
 
 private theorem a1TwentyFourthGolayIsometry_ofDigits (l : List ℕ) :
-    a1TwentyFourthGolayIsometry (ofDigits l) = transportDigits l := by
+    a1TwentyFourthGolayIsometry (typeAGlueWordOfDigits 1 24 l) = transportDigits l := by
   funext j
-  rw [a1TwentyFourthGolayIsometry_apply]
+  rw [a1TwentyFourthGolayIsometry_apply, typeAGlueWordOfDigits_apply]
   rfl
-
-private theorem encodeGlueWord_eq (w : a1TwentyFourthGlueModule) :
-    encodeGlueWord (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1) w =
-      List.ofFn fun i ↦ ZMod.val (n := 2) (w i) := by
-  refine List.ext_getElem (by simp) fun i hi _ ↦ ?_
-  simp only [List.getElem_ofFn]
-  exact (getElem_encodeGlueWord _ _ w ⟨i, by simpa using hi⟩).trans
-    (congrArg Fin.val (glueLabelEquiv_A_symm_apply 1 (isSimplyLaced_A 1) _))
-
-private theorem ofDigits_encodeGlueWord (w : a1TwentyFourthGlueModule) :
-    ofDigits (encodeGlueWord (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1) w) = w := by
-  funext i
-  rw [encodeGlueWord_eq, ofDigits, List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn]
-  exact ZMod.natCast_zmod_val (n := 2) (w i)
 
 /-- Every expanded table word is a valid word over `ℤ/2` of length twenty-four. -/
 private theorem forall_mem_expand_ofFn_val_ofDigits :
     ∀ l ∈ a1TwentyFourthPattern.expand,
       List.ofFn (fun i : Fin 24 ↦ (((l.getD i 0 : ℕ) : ZMod 2)).val) = l := by
-  rw [a1TwentyFourthPattern, GluePattern.expand_cyclic]
+  rw [a1TwentyFourthPattern, a1TwentyFourthBlock_eq, GluePattern.expand_cyclic]
   decide
-
-/-- The decoded table words are exactly the words read off from the expanded digit lists. -/
-private theorem decoded_eq_image_ofDigits :
-    {w | ∃ l ∈ a1TwentyFourthPattern.expand,
-        decodeGlueWord (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1) l = some w} =
-      ofDigits '' a1TwentyFourthPattern.expand := by
-  ext w
-  simp only [Set.mem_ofPred_eq, decodeGlueWord_eq_some_iff, Set.mem_image, Finset.mem_coe]
-  constructor
-  · rintro ⟨l, hl, rfl⟩
-    exact ⟨_, hl, ofDigits_encodeGlueWord w⟩
-  · rintro ⟨l, hl, rfl⟩
-    refine ⟨l, hl, ?_⟩
-    rw [encodeGlueWord_eq]
-    exact (forall_mem_expand_ofFn_val_ofDigits l hl).symm
 
 /-- The `k`-th table word: the leading label followed by the block rotated by `k`. -/
 private def tableWord (k : ℕ) : List ℕ :=
@@ -199,6 +185,8 @@ private theorem tableWord_transportDigits_mulVec_eq_zero (k : Fin 23) :
   rw [Fin.sum_univ_add]
   simp only [Fin.natAdd_eq_addNat, BinaryGolay.generator_castAdd, BinaryGolay.generator_addNat,
     BinaryGolay.block_apply]
+  simp only [transportDigits, tableWord, a1TwentyFourthBlock_eq,
+    a1TwentyFourthDestinationToSource_apply]
   fin_cases r <;> fin_cases k <;> decide
 
 /-- Every transported table word satisfies the Golay parity checks. -/
@@ -212,10 +200,12 @@ private theorem forall_mem_expand_transportDigits_mem_code :
   rw [← hbw, ← hn]
   have hper : tableWord (n % 23) = tableWord n := by
     simp only [tableWord, ← List.rotate_mod (l := a1TwentyFourthBlock) (n := n)]
+    rw [a1TwentyFourthBlock_eq]
     rfl
-  rw [show [1] ++ a1TwentyFourthBlock.rotate n ++ [] = tableWord (n % 23) by
+  have htable : [1] ++ a1TwentyFourthBlock.rotate n ++ [] = tableWord (n % 23) := by
     rw [hper, tableWord]
-    simp]
+    simp
+  rw [htable]
   exact tableWord_transportDigits_mulVec_eq_zero ⟨n % 23, Nat.mod_lt _ (by norm_num)⟩
 
 /-- Each systematic Golay generator is a sum of at most four transported table words. -/
@@ -249,8 +239,10 @@ private theorem generator_rows :
     funext r
     refine Fin.addCases (m := 12) (n := 12) (fun i ↦ ?_) (fun i ↦ ?_) r
     · rw [BinaryGolay.generator_castAdd]
+      simp only [tableWord, a1TwentyFourthBlock_eq]
       fin_cases i <;> decide
     · rw [Fin.natAdd_eq_addNat, BinaryGolay.generator_addNat, BinaryGolay.block_apply]
+      simp only [tableWord, a1TwentyFourthBlock_eq]
       fin_cases i <;> decide
 
 /-- **The `A₁²⁴` table glue is the extended binary Golay code.**  The coordinate permutation
@@ -262,12 +254,15 @@ theorem map_a1TwentyFourthGlueSubgroup_eq_extendedBinaryGolay :
       BinaryGolay.code.toAddSubgroup := by
   have himage : ((a1TwentyFourthGolayIsometry.toAddEquiv :
         a1TwentyFourthGlueModule →+ (typeAStandardQuadraticModule 1).coordinatePower (Fin 24)) ''
-      (ofDigits '' a1TwentyFourthPattern.expand) :
+      (typeAGlueWordOfDigits 1 24 '' a1TwentyFourthPattern.expand) :
         Set ((typeAStandardQuadraticModule 1).coordinatePower (Fin 24))) =
       transportDigits '' a1TwentyFourthPattern.expand := by
     rw [Set.image_image]
     exact Set.image_congr fun l _ ↦ a1TwentyFourthGolayIsometry_ofDigits l
-  rw [a1TwentyFourthGlueSubgroup_def, decoded_eq_image_ofDigits, AddMonoidHom.map_closure, himage]
+  have hdecoded := decoded_typeA_eq_image_ofDigits 1 24 _
+    forall_mem_expand_ofFn_val_ofDigits
+  simp only [Finset.mem_coe] at hdecoded
+  rw [a1TwentyFourthGlueSubgroup_def, hdecoded, AddMonoidHom.map_closure, himage]
   refine le_antisymm ((AddSubgroup.closure_le _).mpr ?_) fun x hx ↦ ?_
   · rintro _ ⟨l, hl, rfl⟩
     -- Membership in the coordinate-power carrier is membership in the Golay submodule.
@@ -301,87 +296,6 @@ theorem map_a1TwentyFourthGlueSubgroup_eq_extendedBinaryGolay :
 
 /-! ### Order and Lagrangian property -/
 
-/-- In the standard `A₁` discriminant alphabet, the quadratic value of a residue is a quarter of
-its canonical representative. -/
-private theorem quadratic_typeAStandardQuadraticModule_one (a : ZMod 2) :
-    (typeAStandardQuadraticModule 1).quadratic a =
-      (((a.val : ℚ) / 4 : ℚ) : AddCircle (1 : ℚ)) := by
-  have ha : (((a.val : ℤ) : ZMod 2)) = a := by exact_mod_cast ZMod.natCast_rightInverse a
-  conv_lhs => rw [← ha]
-  rw [typeAStandardQuadraticModule_quadratic_intCast]
-  have hlt : a.val < 2 := a.isLt
-  interval_cases hval : a.val <;> norm_num
-
-/-- The quadratic value of a binary word in the `A₁` coordinate power is a quarter of its
-Hamming weight. -/
-@[simp↓]
-theorem coordinatePower_typeAStandardQuadraticModule_one_quadratic {ι : Type*} [Fintype ι]
-    (x : ι → ZMod 2) :
-    ((typeAStandardQuadraticModule 1).coordinatePower ι).quadratic x =
-      (((hammingNorm x : ℚ) / 4 : ℚ) : AddCircle (1 : ℚ)) := by
-  calc
-    _ = ∑ i, (typeAStandardQuadraticModule 1).quadratic (x i) :=
-      FiniteQuadraticModule.coordinatePower_quadratic (typeAStandardQuadraticModule 1) ι x
-    _ = ∑ i, ((((x i).val : ℚ) / 4 : ℚ) : AddCircle (1 : ℚ)) :=
-      Finset.sum_congr rfl fun i _ ↦ by rw [quadratic_typeAStandardQuadraticModule_one]
-    _ = (((∑ i, ((x i).val : ℚ) / 4) : ℚ) : AddCircle (1 : ℚ)) :=
-      (map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ)))
-        (fun i ↦ ((x i).val : ℚ) / 4) Finset.univ).symm
-    _ = _ := by
-      have hval : ∀ a : ZMod 2, (a.val : ℚ) = if a ≠ 0 then (1 : ℚ) else 0 := by
-        decide
-      congr 1
-      rw [← Finset.sum_div, show ∑ i, ((x i).val : ℚ) = (hammingNorm x : ℚ) by
-        simp only [hval, Finset.sum_boole, hammingNorm]]
-
-/-- A binary additive code is quadratically isotropic in the `A₁` coordinate alphabet exactly
-when all of its Hamming weights are divisible by four. -/
-@[simp]
-theorem isIsotropic_coordinatePower_typeAStandardQuadraticModule_one_iff
-    {ι : Type*} [Fintype ι] (C : AdditiveCode (ZMod 2) ι) :
-    ((typeAStandardQuadraticModule 1).coordinatePower ι).IsIsotropic C ↔
-      ∀ x ∈ C, 4 ∣ hammingNorm x := by
-  have hpoint (x : ι → ZMod 2) :
-      ((typeAStandardQuadraticModule 1).coordinatePower ι).quadratic x = 0 ↔
-        4 ∣ hammingNorm x := by
-    have hden : ((4 : ℕ) : ℚ) = 4 := by norm_num
-    rw [coordinatePower_typeAStandardQuadraticModule_one_quadratic, ← hden,
-      ← Int.cast_natCast (hammingNorm x),
-      AddCircle.coe_intCast_div_natCast_eq_zero_iff (by norm_num : (4 : ℕ) ≠ 0)]
-    exact Int.natCast_dvd_natCast
-  constructor
-  · intro h x hx
-    exact (hpoint x).mp
-      (((typeAStandardQuadraticModule 1).coordinatePower ι).isIsotropic_def.mp h x hx)
-  · intro h
-    apply ((typeAStandardQuadraticModule 1).coordinatePower ι).isIsotropic_def.mpr
-    exact fun x hx ↦ (hpoint x).mpr (h x hx)
-
-/-- **The extended binary Golay code is quadratically isotropic in the `A₁` alphabet**: every
-codeword has weight divisible by four, so the sum of the quarter-norm values vanishes. -/
-theorem isIsotropic_a1TwentyFourthGolay :
-    ((typeAStandardQuadraticModule 1).coordinatePower (Fin 24)).IsIsotropic
-      BinaryGolay.code.toAddSubgroup := by
-  rw [isIsotropic_coordinatePower_typeAStandardQuadraticModule_one_iff]
-  exact fun x hx ↦ BinaryCode.isDoublyEven_iff.mp BinaryGolay.isDoublyEven_code x hx
-
-/-- **The extended binary Golay code is a quadratic Lagrangian** of the `A₁²⁴` glue-word
-module: it is isotropic and has order `4096`, the square root of the order of the alphabet
-product. -/
-theorem isLagrangian_extendedBinaryGolay :
-    ((typeAStandardQuadraticModule 1).coordinatePower (Fin 24)).IsLagrangian
-      BinaryGolay.code.toAddSubgroup := by
-  apply FiniteQuadraticModule.IsIsotropic.isLagrangian_of_card_sq_eq
-    ((typeAStandardQuadraticModule 1).coordinatePower (Fin 24)) isIsotropic_a1TwentyFourthGolay
-    (FiniteQuadraticModule.IsNondegenerate.coordinatePower
-      (isNondegenerate_typeAStandardQuadraticModule 1) (Fin 24))
-  -- Unfolding the specialized type-`A` carrier exposes the concrete binary word space.
-  change Nat.card BinaryGolay.code.toAddSubgroup ^ 2 = Nat.card (Fin 24 → ZMod 2)
-  have hcard : Nat.card (Submodule.toAddSubgroup BinaryGolay.code) = 4096 :=
-    BinaryGolay.natCard_code
-  rw [hcard]
-  norm_num [Nat.card_pi]
-
 /-- **The `A₁²⁴` table glue subgroup has order `4096 = 2¹²`.** -/
 theorem natCard_a1TwentyFourthGlueSubgroup : Nat.card a1TwentyFourthGlueSubgroup = 4096 := by
   have h := Nat.card_congr
@@ -395,6 +309,6 @@ theorem isLagrangian_a1TwentyFourthGlueSubgroup :
     a1TwentyFourthGlueModule.IsLagrangian a1TwentyFourthGlueSubgroup := by
   rw [← a1TwentyFourthGolayIsometry.isLagrangian_map_iff,
     map_a1TwentyFourthGlueSubgroup_eq_extendedBinaryGolay]
-  exact isLagrangian_extendedBinaryGolay
+  exact BinaryGolay.isLagrangian_typeA1
 
 end TauCeti
