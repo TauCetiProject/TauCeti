@@ -57,10 +57,23 @@ theorem integratedOperator_twistedInvolution (f : C_c(G, A)) :
           ⟪v, P.coefficient (f g⁻¹) (P.group g⁻¹ w)⟫_ℂ ∂μ := by
       apply integral_congr_ae
       filter_upwards [] with g
-      rw [inner_conj_symm, twistedInvolution_apply, map_smul, smul_apply,
-        ← P.covariance, inner_smul_left, Complex.conj_ofReal, P.isUnitary.inner_map_left,
-        map_star, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
-      exact (RCLike.real_smul_eq_coe_mul _ _).symm
+      rw [inner_conj_symm]
+      calc
+        ⟪P.coefficient (α.twistedInvolution f g) (P.group g v), w⟫_ℂ =
+            (Measure.modularCharacter g : ℝ) •
+              ⟪P.coefficient (α g (star (f g⁻¹))) (P.group g v), w⟫_ℂ := by
+          simp only [twistedInvolution_apply, map_smul, smul_apply]
+          exact inner_smul_real_left _ _ _
+        _ = (Measure.modularCharacter g : ℝ) •
+              ⟪P.group g (P.coefficient (star (f g⁻¹)) v), w⟫_ℂ := by
+          rw [P.covariance]
+        _ = (Measure.modularCharacter g : ℝ) •
+              ⟪P.coefficient (star (f g⁻¹)) v, P.group g⁻¹ w⟫_ℂ := by
+          rw [P.isUnitary.inner_map_left]
+        _ = (Measure.modularCharacter g : ℝ) •
+              ⟪v, P.coefficient (f g⁻¹) (P.group g⁻¹ w)⟫_ℂ := by
+          simp only [map_star, ContinuousLinearMap.star_eq_adjoint,
+            ContinuousLinearMap.adjoint_inner_left]
     _ = ∫ g, ⟪v, P.coefficient (f g) (P.group g w)⟫_ℂ ∂μ :=
       integral_modularCharacter_smul_inv_eq_self (μ := μ)
         (f := fun g => ⟪v, P.coefficient (f g) (P.group g w)⟫_ℂ)
