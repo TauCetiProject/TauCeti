@@ -22,6 +22,13 @@ the component of a dominant straight path is the path crystal `B(λ)`.
 This file sets up this decomposition, using Mathlib's connected components of simple graphs and
 the direct sums `TauCeti.NormalCrystal.sigma` of `TauCeti.RepresentationTheory.Crystal.Sigma`.
 
+Strict morphisms and strict isomorphisms of crystals are homomorphisms and isomorphisms of crystal
+graphs (`TauCeti.NormalCrystal.StrictHom.toGraphHom`,
+`TauCeti.NormalCrystal.StrictIso.toGraphIso`), so a strict isomorphism `ψ` acts on connected
+components, through `SimpleGraph.Iso.connectedComponentEquiv`, carrying the component of a vertex
+`x` to the component of `ψ x`. Restricting `ψ` to these two components is again a strict
+isomorphism (`TauCeti.NormalCrystal.StrictIso.componentIso`): components transport, as crystals.
+
 ## Main definitions
 
 * `TauCeti.NormalCrystal.graph`: the undirected, uncoloured crystal graph.
@@ -32,6 +39,8 @@ the direct sums `TauCeti.NormalCrystal.sigma` of `TauCeti.RepresentationTheory.C
 * `TauCeti.NormalCrystal.StrictHom.toGraphHom`, `TauCeti.NormalCrystal.StrictIso.toGraphIso`:
   strict morphisms and strict isomorphisms of crystals as maps of crystal graphs, so that they act
   on connected components.
+* `TauCeti.NormalCrystal.StrictIso.componentIso`: the strict isomorphism of two components
+  induced by a strict isomorphism of the ambient crystals.
 
 ## Main results
 
@@ -223,6 +232,56 @@ def StrictIso.toGraphIso (ψ : StrictIso c d) : c.graph ≃g d.graph where
 theorem StrictIso.coe_toGraphIso (ψ : StrictIso c d) : ⇑ψ.toGraphIso = ψ := (rfl)
 
 end Maps
+
+/-! ### Components of a strict isomorphism -/
+
+section Iso
+
+variable {c : NormalCrystal P b B} {d : NormalCrystal P b B'} (ψ : StrictIso c d)
+
+/-- **A strict isomorphism restricts to its components**: for every connected component `C` of
+`c.graph`, the component crystals `c.component C` and
+`d.component (ψ.toGraphIso.connectedComponentEquiv C)` are strictly isomorphic, through Mathlib's
+equivalence `SimpleGraph.ConnectedComponent.isoEquivSupp` of their vertex sets. -/
+def StrictIso.componentIso (C : c.graph.ConnectedComponent) :
+    StrictIso (c.component C) (d.component (ψ.toGraphIso.connectedComponentEquiv C)) where
+  toEquiv := SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C
+  wt_toFun x := ψ.wt_apply x.1
+  e_toFun i x := by
+    -- `isoEquivSupp` sends a vertex to its image, so the value below is `ψ x`; the same fact for
+    -- the isomorphism is `StrictIso.componentIso_apply`.
+    have hFx : ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun x).1
+        = ψ x.1 := rfl
+    cases h : c.e i x.1 with
+    | none =>
+      have h₁ : (d.component (ψ.toGraphIso.connectedComponentEquiv C)).e i
+          ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun x) = none := by
+        rw [component_eq_restrict, ← Option.unattach_eq_none_iff]
+        simp only [unattach_restrict_e, hFx, ψ.e_apply, h, Option.map_none]
+      have h₂ : (c.component C).e i x = none := by
+        rw [component_eq_restrict, ← Option.unattach_eq_none_iff]
+        simp only [unattach_restrict_e, h]
+      rw [h₁, h₂, Option.map_none]
+    | some z =>
+      have hz : z ∈ C.supp := C.mem_supp_of_adj_mem_supp x.2 (c.graph_adj_of_e_eq_some h)
+      have h₂ : (c.component C).e i x = some ⟨z, hz⟩ := by
+        rw [component_eq_restrict]
+        exact restrict_e_eq_some_iff.2 h
+      have h₁ : (d.component (ψ.toGraphIso.connectedComponentEquiv C)).e i
+          ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun x)
+            = some ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun
+              ⟨z, hz⟩) := by
+        rw [component_eq_restrict, restrict_e_eq_some_iff]
+        simp only [hFx, ψ.e_apply, h, Option.map_some, Option.some.injEq]
+        rfl
+      rw [h₁, h₂, Option.map_some]
+
+/-- The underlying map of `StrictIso.componentIso` sends a vertex `x` of `C` to `ψ x.1`. -/
+@[simp]
+theorem StrictIso.componentIso_apply (C : c.graph.ConnectedComponent) (x : C) :
+    (ψ.componentIso C x).1 = ψ x.1 := (rfl)
+
+end Iso
 
 /-! ### Decomposition into components -/
 
