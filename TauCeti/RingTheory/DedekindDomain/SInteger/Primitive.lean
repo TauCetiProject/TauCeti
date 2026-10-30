@@ -108,7 +108,9 @@ theorem isPrimitive_iff_exists_sum_mul_eq_one [Fintype ι] :
 theorem IsPrimitive.unit_smul (h : S.IsPrimitive x) (u : S.unit K) :
     S.IsPrimitive (((u : Kˣ) : K) • x) := by
   let w := unitEquivUnitsInteger S K u
-  have hw : ((u : Kˣ) : K) • x = fun i ↦ (w : S.integer K) • x i := rfl
+  have hw : ((u : Kˣ) : K) • x = fun i ↦ (w : S.integer K) • x i := by
+    funext i
+    rw [Pi.smul_apply, Subalgebra.smul_def, val_unitEquivUnitsInteger_apply_coe]
   refine ⟨fun i ↦ mul_mem (w : S.integer K).2 (h.1 i), ?_⟩
   rw [hw, ← smul_set_range, Submodule.span_smul_eq_of_isUnit _ _ w.isUnit]
   exact h.2

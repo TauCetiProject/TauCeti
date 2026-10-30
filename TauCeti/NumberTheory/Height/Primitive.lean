@@ -76,20 +76,13 @@ theorem _root_.Set.isPrimitive_iff_finitePlace [Finite ι] (S : Set (HeightOneSp
   · obtain ⟨i, hi⟩ := exists_eq_ciSup_of_finite (f := fun i ↦ FinitePlace.mk v (x i))
     exact ⟨i, hi.trans (h v hv)⟩
 
-/-- The product over the finite places of the local sup norms of a tuple, reindexed by the
-height one primes of `𝓞 K`. -/
-private theorem finprod_iSup_eq (x : ι → K) :
-    ∏ᶠ w : FinitePlace K, ⨆ i, w (x i)
-      = ∏ᶠ v : HeightOneSpectrum (𝓞 K), ⨆ i, FinitePlace.mk v (x i) :=
-  (finprod_comp_equiv (FinitePlace.equivHeightOneSpectrum (K := K)).symm).symm
-
 /-- **The height of a nonzero tuple whose local sup norms at the finite places outside `S` are
 all `1` is the product of its local sup norms over the infinite places and the places of `S`.** -/
 theorem mulHeight_eq_prod_of_forall_iSup_eq_one (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hx : x ≠ 0) (h : ∀ v ∉ S, ⨆ i, FinitePlace.mk v (x i) = 1) :
     mulHeight x = (∏ v : InfinitePlace K, (⨆ i, v (x i)) ^ v.mult)
       * ∏ v ∈ S, ⨆ i, FinitePlace.mk v (x i) := by
-  rw [NumberField.mulHeight_eq hx, finprod_iSup_eq]
+  rw [NumberField.mulHeight_eq hx, ← FinitePlace.finprod_comp_mk]
   congr 1
   refine finprod_eq_finsetProd_of_mulSupport_subset _ fun v hv ↦ ?_
   by_contra hvS
@@ -105,7 +98,7 @@ theorem mulHeight_le_prod (S : Finset (HeightOneSpectrum (𝓞 K))) (hx : x ≠ 
     mulHeight x ≤ (∏ v : InfinitePlace K, (⨆ i, v (x i)) ^ v.mult)
       * ∏ v ∈ S, ⨆ i, FinitePlace.mk v (x i) := by
   classical
-  rw [NumberField.mulHeight_eq hx, finprod_iSup_eq]
+  rw [NumberField.mulHeight_eq hx, ← FinitePlace.finprod_comp_mk]
   refine mul_le_mul_of_nonneg_left ?_
     (Finset.prod_nonneg fun v _ ↦ pow_nonneg (Real.iSup_nonneg fun i ↦ apply_nonneg _ _) _)
   set F : HeightOneSpectrum (𝓞 K) → ℝ := fun v ↦ ⨆ i, FinitePlace.mk v (x i)
