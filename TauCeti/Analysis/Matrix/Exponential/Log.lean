@@ -62,12 +62,14 @@ theorem IsHermitian.posDef_exp {X : Matrix n n 𝕜} (hX : X.IsHermitian) : (exp
     (Matrix.isUnit_exp X).isStrictlyPositive hX.isSelfAdjoint.exp_nonneg
 
 /-- The logarithm of the exponential of a Hermitian matrix is the matrix itself. -/
+@[simp, grind =]
 theorem IsHermitian.cfc_log_exp {X : Matrix n n 𝕜} (hX : X.IsHermitian) :
     cfc Real.log (exp X) = X := by
   let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
   exact CFC.log_exp X hX.isSelfAdjoint
 
 /-- The exponential of the logarithm of a positive definite matrix is the matrix itself. -/
+@[simp, grind =]
 theorem PosDef.exp_cfc_log {P : Matrix n n 𝕜} (hP : P.PosDef) : exp (cfc Real.log P) = P := by
   let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
   exact CFC.exp_log P (isStrictlyPositive_iff_posDef.2 hP)
