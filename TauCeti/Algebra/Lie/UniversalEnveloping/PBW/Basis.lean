@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Sort
+public import TauCeti.Data.Finsupp.Multiset
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Evaluation
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Ordered
 
@@ -25,6 +26,8 @@ modules; the enveloping algebra need not be commutative.
 
 * `Module.Basis.pbwBasis`: the ordered monomial basis of the enveloping algebra.
 * `Module.Basis.pbwBasis_eq_prod_pow`: its value as the increasing product of generator powers.
+* `Module.Basis.mem_pbwFiltration_iff_pbwBasis_repr`: the basis is adapted to the PBW filtration,
+  which in degree `k` is spanned by the basis vectors of total degree at most `k`.
 * `Module.Basis.pbwEquiv`: the linear equivalence with multivariate polynomials.
 
 ## References
@@ -105,6 +108,37 @@ theorem pbwBasis_apply (n : ι →₀ ℕ) :
 @[simp]
 theorem pbwBasis_zero : b.pbwBasis 0 = 1 := by
   rw [pbwBasis_apply_aux, pbwBasisMonomial_zero]
+
+/-- The ordered PBW monomials of word length at most `k` are exactly the PBW basis vectors whose
+exponent vectors have total degree at most `k`. -/
+theorem orderedPBWMonomials_eq_image_pbwBasis (k : ℕ) :
+    orderedPBWMonomials R L b k = b.pbwBasis '' {n | n.degree ≤ k} := by
+  ext a
+  rw [mem_orderedPBWMonomials_iff]
+  constructor
+  · rintro ⟨word, hword, hk, rfl⟩
+    refine ⟨Multiset.toFinsupp (word : Multiset ι), ?_, ?_⟩
+    · rw [Set.mem_ofPred_eq, ← Finsupp.card_toMultiset_eq_degree,
+        Multiset.toFinsupp_toMultiset]
+      exact hk
+    · rw [pbwBasis_apply_aux, b.pbwBasisMonomial_toFinsupp hword]
+  · rintro ⟨n, hn, rfl⟩
+    refine ⟨_, Multiset.pairwise_sort _ _, ?_, (b.pbwBasis_apply n).symm⟩
+    rwa [Multiset.length_sort, Finsupp.card_toMultiset_eq_degree]
+
+/-- **The PBW basis is adapted to the PBW filtration.** Filtration degree `k` is spanned by the PBW
+basis vectors of total degree at most `k`. -/
+theorem span_image_pbwBasis_eq_pbwFiltration (k : ℕ) :
+    Submodule.span R (b.pbwBasis '' {n | n.degree ≤ k}) = pbwFiltration R L k := by
+  rw [← orderedPBWMonomials_eq_image_pbwBasis b, span_orderedPBWMonomials_eq_pbwFiltration R L (⇑b)
+    b.span_eq]
+
+/-- An element has PBW filtration degree at most `k` exactly when its PBW coordinates are
+supported on exponent vectors of total degree at most `k`. -/
+theorem mem_pbwFiltration_iff_pbwBasis_repr {k : ℕ} {a : U} :
+    a ∈ pbwFiltration R L k ↔ ∀ n ∈ (b.pbwBasis.repr a).support, n.degree ≤ k := by
+  rw [← span_image_pbwBasis_eq_pbwFiltration b, Basis.mem_span_image]
+  simp [Set.subset_def]
 
 /-- PBW evaluation sends each ordered basis vector to the corresponding polynomial monomial. -/
 @[simp]
@@ -210,3 +244,19 @@ theorem map_pbwBasis (b : Basis ι R L) (c : Basis κ R M)
   simp only [pbwMonomial_def, List.map_map, Function.comp_def, h]
 
 end Module.Basis
+
+namespace TauCeti.UniversalEnvelopingAlgebra
+
+variable (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- Relabelling the indices of an exponent vector along an order embedding relabels its ordered
+PBW monomial. -/
+theorem pbwMonomial_sort_toMultiset_mapDomain {ι₁ ι₂ : Type*} [LinearOrder ι₁]
+    [LinearOrder ι₂] (g : ι₁ ↪o ι₂) (e : ι₂ → L) (n : ι₁ →₀ ℕ) :
+    pbwMonomial R L e ((n.mapDomain g).toMultiset.sort (· ≤ ·)) =
+      pbwMonomial R L (e ∘ g) (n.toMultiset.sort (· ≤ ·)) := by
+  rw [← Finsupp.toMultiset_map, ← Multiset.map_sort g n.toMultiset (· ≤ ·) (· ≤ ·)
+    (fun _ _ _ _ ↦ g.le_iff_le.symm)]
+  simp only [pbwMonomial_def, List.map_map, Function.comp_def]
+
+end TauCeti.UniversalEnvelopingAlgebra

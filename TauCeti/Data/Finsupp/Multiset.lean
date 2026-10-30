@@ -6,17 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Multiset
+public import Mathlib.Data.Finsupp.Weight
 
 /-!
-# Multisets of exponent vectors with unit steps
+# Multisets of exponent vectors
 
 Mathlib's `Finsupp.toMultiset` sends an exponent vector `e : α →₀ ℕ` to the multiset in which
-each `a` occurs `e a` times. This file computes it on exponent vectors built from unit steps
-`Finsupp.single a 1`: adding one unit step conses its index, and a sum of unit steps along a
-finite family is the multiset of values of the family.
+each `a` occurs `e a` times. Its cardinality is the total degree of `e`. This file also computes it
+on exponent vectors built from unit steps `Finsupp.single a 1`: adding one unit step conses its
+index, and a sum of unit steps along a finite family is the multiset of values of the family.
 
 ## Main results
 
+* `Finsupp.card_toMultiset_eq_degree`: `card (toMultiset e) = e.degree`.
 * `Finsupp.toMultiset_add_single_one`: `toMultiset (e + single a 1) = a ::ₘ toMultiset e`.
 * `Finsupp.toMultiset_sum_single_one`: `toMultiset (∑ i ∈ s, single (p i) 1) = s.val.map p`.
 -/
@@ -25,10 +27,18 @@ public section
 
 namespace Finsupp
 
+/-- The number of letters of the monomial with exponent vector `d` is its total degree. This is
+not a `simp` lemma: `Finsupp.card_toMultiset` already rewrites the left-hand side to
+`d.sum fun _ => id`, so tagging it would leave it out of simp-normal form. -/
+theorem card_toMultiset_eq_degree {α : Type*} (d : α →₀ ℕ) :
+    Multiset.card d.toMultiset = d.degree := by
+  rw [card_toMultiset, degree_apply]
+  rfl
+
 /-- Adding one unit step at `a` to an exponent vector conses `a` onto its multiset. -/
 theorem toMultiset_add_single_one {α : Type*} (e : α →₀ ℕ) (a : α) :
     toMultiset (e + single a 1) = a ::ₘ toMultiset e := by
-  simp [toMultiset_add, add_comm, one_nsmul]
+  simp [toMultiset_add, add_comm]
 
 /-- The multiset of a sum of unit steps along a family `p` indexed by a finset `s` is the
 multiset of the values of `p` on `s`. -/
