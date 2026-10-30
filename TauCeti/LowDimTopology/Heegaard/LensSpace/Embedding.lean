@@ -197,7 +197,9 @@ theorem coe_rightCover_apply_one (e : ℤ) (x : SolidTorus) :
       (√(1 + ‖(x.1 : ℂ)‖ ^ 2))⁻¹ • ((x.1 : ℂ) * (x.2 ^ e : Circle)) := by
   simp [rightCover, twist]
 
-private theorem range_leftCover (e : ℤ) :
+/-- The left cover has image the solid torus `‖x 0‖ ≤ ‖x 1‖` in the unit sphere of `ℂ²`. -/
+@[simp]
+theorem range_leftCover (e : ℤ) :
     range (leftCover e) = {x : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1 |
       ‖(x : EuclideanSpace ℂ (Fin 2)) 0‖ ≤ ‖(x : EuclideanSpace ℂ (Fin 2)) 1‖} := by
   ext x
@@ -211,7 +213,9 @@ private theorem range_leftCover (e : ℤ) :
     ext1
     simp [leftCover]
 
-private theorem range_rightCover (e : ℤ) :
+/-- The right cover has image the solid torus `‖x 1‖ ≤ ‖x 0‖` in the unit sphere of `ℂ²`. -/
+@[simp]
+theorem range_rightCover (e : ℤ) :
     range (rightCover e) = {x : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1 |
       ‖(x : EuclideanSpace ℂ (Fin 2)) 1‖ ≤ ‖(x : EuclideanSpace ℂ (Fin 2)) 0‖} := by
   ext x
