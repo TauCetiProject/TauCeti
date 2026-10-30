@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -55,6 +56,8 @@ automorphism of `k(t)` permutes the three marked places
 * `TauCeti.isAlgebraicBelyiPair_ratFunc`: `k(t)` over itself is an algebraic Belyi pair.
 * `TauCeti.IsAlgebraicBelyiPair.of_equiv_equiv` and `TauCeti.IsAlgebraicBelyiPair.of_algEquiv`:
   transport along isomorphisms.
+* `TauCeti.IsAlgebraicBelyiPair.of_isScalarTower`: a finite extension of an algebraic Belyi pair
+  that is unramified over the places outside the three marked fibres is an algebraic Belyi pair.
 
 ## References
 
@@ -203,5 +206,24 @@ degree one, is an algebraic Belyi pair. -/
 theorem isAlgebraicBelyiPair_ratFunc : IsAlgebraicBelyiPair k (RatFunc k) where
   isIntegrallyClosedIn := isIntegrallyClosedIn_ratFunc
   ramificationIdx_eq_one {P} _ := Place.ramificationIdx_self P
+
+variable {E : Type*} [Field E] [Algebra k E] [Algebra (RatFunc k) E]
+  [IsScalarTower k (RatFunc k) E] [FiniteDimensional (RatFunc k) E] [Algebra E F]
+  [IsScalarTower k E F] [IsScalarTower (RatFunc k) E F]
+
+/-- **Composing a Belyi map with a cover unramified over its unmarked fibres**: if `E / k(t)` is an
+algebraic Belyi pair and `F / E` is a finite extension, with exact constant field `k`, in which
+every place of `F` over a place of `k(t)` other than `t = 0`, `t = 1` and `t = ∞` is unramified
+over `E`, then `F / k(t)` is an algebraic Belyi pair. -/
+theorem IsAlgebraicBelyiPair.of_isScalarTower (hE : IsAlgebraicBelyiPair k E)
+    (hF : IsIntegrallyClosedIn k F)
+    (h : ∀ P : Place k F, P.restrict k (RatFunc k) ∉ Place.zeroOneInfty k →
+      Place.ramificationIdx E P = 1) :
+    IsAlgebraicBelyiPair k F where
+  isIntegrallyClosedIn := hF
+  ramificationIdx_eq_one {P} hP := by
+    have : Algebra.IsIntegral E F := .tower_top (RatFunc k)
+    rw [Place.ramificationIdx_restrict_mul (k₁ := k) (F₁ := E) P, h P hP, one_mul]
+    exact hE.ramificationIdx_eq_one (by rwa [Place.restrict_restrict])
 
 end TauCeti

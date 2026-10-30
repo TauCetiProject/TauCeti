@@ -11,7 +11,6 @@ public import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.FunctionField.Belyi.Radical
 import TauCeti.FieldTheory.FunctionField.Different.Divisor
 import TauCeti.FieldTheory.FunctionField.Place.Degree
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.RatFunc.Automorphism
 
@@ -39,8 +38,6 @@ is unramified there. Ramification indices multiply in the tower `k(t) ⊆ k(x) �
 
 ## Main results
 
-* `TauCeti.IsAlgebraicBelyiPair.of_isScalarTower`: a finite extension of an algebraic Belyi pair
-  that is unramified over the places outside the three marked fibres is an algebraic Belyi pair.
 * `TauCeti.IsFunctionField.exists_polynomial_isAlgebraicBelyiPair`: for every transcendental
   `x ∈ F` there is a nonconstant `q ∈ ℚ[X]` such that `t ↦ q(x)` is a Belyi map.
 * `TauCeti.IsFunctionField.exists_isAlgebraicBelyiPair`: `F` admits a Belyi map.
@@ -65,38 +62,7 @@ universe u v
 
 variable {k : Type u} {F : Type v} [Field k] [CharZero k] [Field F] [Algebra k F]
 
-namespace IsAlgebraicBelyiPair
-
-variable [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
-  {E : Type*} [Field E] [Algebra k E] [Algebra (RatFunc k) E] [IsScalarTower k (RatFunc k) E]
-  [FiniteDimensional (RatFunc k) E] [Algebra E F] [IsScalarTower k E F]
-  [IsScalarTower (RatFunc k) E F]
-
-/-- **Composing a Belyi map with a cover unramified over its unmarked fibres**: if `E / k(t)` is an
-algebraic Belyi pair and `F / E` is a finite extension, with exact constant field `k`, in which
-every place of `F` over a place of `k(t)` other than `t = 0`, `t = 1` and `t = ∞` is unramified
-over `E`, then `F / k(t)` is an algebraic Belyi pair. -/
-theorem of_isScalarTower (hE : IsAlgebraicBelyiPair k E) (hF : IsIntegrallyClosedIn k F)
-    (h : ∀ P : Place k F, P.restrict k (RatFunc k) ∉ Place.zeroOneInfty k →
-      Place.ramificationIdx E P = 1) :
-    IsAlgebraicBelyiPair k F where
-  isIntegrallyClosedIn := hF
-  ramificationIdx_eq_one {P} hP := by
-    have : Algebra.IsIntegral E F := .tower_top (RatFunc k)
-    rw [Place.ramificationIdx_restrict_mul (k₁ := k) (F₁ := E) P, h P hP, one_mul]
-    exact hE.ramificationIdx_eq_one (by rwa [Place.restrict_restrict])
-
-end IsAlgebraicBelyiPair
-
 namespace IsFunctionField
-
-/-- A nonconstant polynomial with rational coefficients in a transcendental element is
-transcendental. -/
-private theorem transcendental_aeval_map {A : Type*} [CommRing A] [Algebra k A] {x : A}
-    (hx : Transcendental k x) {q : ℚ[X]} (hq : 0 < q.natDegree) :
-    Transcendental k (aeval x (q.map (algebraMap ℚ k))) :=
-  hx.aeval _ (by rw [natDegree_map]; exact hq.ne') (mem_nonZeroDivisors_of_ne_zero
-    (leadingCoeff_ne_zero.mpr (ne_zero_of_natDegree_gt (by rwa [natDegree_map]))))
 
 open Classical in
 /-- At a place where `x` is regular, the value of `x`, embedded into an algebraic closure of
@@ -169,7 +135,7 @@ theorem exists_polynomial_isAlgebraicBelyiPair (hF : IsFunctionField k F)
   -- The field `k(x)`, with `t` acting as `q(x)`, is a Belyi pair, and `F` lies over it.
   set y := AdjoinSimple.gen k x
   have hy : k⟮y⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top x
-  have hyt : Transcendental k (aeval y q') := transcendental_aeval_map
+  have hyt : Transcendental k (aeval y q') := Transcendental.aeval_map
     ((transcendental_algebraMap_iff (algebraMap k⟮x⟯ F).injective).mp
       (by rwa [AdjoinSimple.algebraMap_gen])) hq0
   let : Algebra (RatFunc k) k⟮x⟯ := ratFuncAlgebraOfTranscendental hyt
@@ -204,7 +170,7 @@ theorem exists_isAlgebraicBelyiPair (hF : IsFunctionField k F) (hc : IsIntegrall
       IsAlgebraicBelyiPair k F := by
   obtain ⟨x, hx⟩ := hF.exists_transcendental
   obtain ⟨q, hq0, h⟩ := hF.exists_polynomial_isAlgebraicBelyiPair hc hx
-  have hβ := transcendental_aeval_map hx hq0
+  have hβ := hx.aeval_map hq0
   let := ratFuncAlgebraOfTranscendental hβ
   have := isScalarTower_ratFuncAlgebraOfTranscendental hβ
   have : FiniteDimensional k⟮aeval x (q.map (algebraMap ℚ k))⟯ F := hF.finiteDimensional_adjoin hβ
