@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Vec
-public import TauCeti.Probability.Distributions.Gaussian.Affine
+public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Analysis.Matrix.MeasurableSpace
 
 import Mathlib.Analysis.Matrix.Order
+import TauCeti.Probability.Distributions.Gaussian.Affine
 
 /-!
 # Matrix normal laws
@@ -20,7 +21,9 @@ vectorization `Matrix.vec`, packaged as the measurable equivalence
 `TauCeti.matrixVecMeasurableEquiv`: the vectorization of a matrix normal matrix is the multivariate
 Gaussian with mean `vec M` and Kronecker covariance `V ⊗ₖ U`. Thus entries `(i, j)` and
 `(k, l)` have covariance `U i k * V j l`, and rows and columns are multivariate Gaussian with
-covariances proportional to `V` and `U`.
+covariances proportional to `V` and `U`. Transposition exchanges the two covariances: the
+transpose of a matrix normal matrix with parameters `M`, `U`, `V` is matrix normal with parameters
+`Mᵀ`, `V`, `U`.
 
 The covariance parameters are only required to be positive semidefinite, so singular laws are
 included. If `U` or `V` is not positive semidefinite, the law is the point mass at `M`; this is
@@ -33,6 +36,8 @@ definite. Matrices with an empty row or column type also give the point mass.
   Gaussian with Kronecker covariance.
 * `TauCeti.Probability.covariance_matrixNormalMeasure`: entries have covariance
   `U i k * V j l`.
+* `TauCeti.Probability.map_transpose_matrixNormalMeasure`: the transpose is matrix normal with
+  mean `Mᵀ` and the row and column covariances exchanged.
 * `TauCeti.Probability.map_mul_mul_add_matrixNormalMeasure`: the image under `X ↦ A * X * B + C`
   is matrix normal with parameters `A * M * B + C`, `A * U * Aᵀ` and `Bᵀ * V * B`.
 * `TauCeti.Probability.map_row_matrixNormalMeasure`, `map_col_matrixNormalMeasure`: rows and
@@ -91,8 +96,9 @@ instance isProbabilityMeasure_matrixNormalMeasure (M : Matrix ι κ ℝ) (U : Ma
   · rw [matrixNormalMeasure_of_not_posSemidef M h]
     infer_instance
 
-/-- The column-stacking vectorization of a matrix normal matrix is multivariate Gaussian, with
-the vectorized mean and the Kronecker product of the column and row covariances. -/
+/-- For positive semidefinite covariances, the column-stacking vectorization of a matrix normal
+matrix is multivariate Gaussian, with the vectorized mean and the Kronecker product of the column
+and row covariances. -/
 theorem map_vec_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ}
     (hU : U.PosSemidef) (hV : V.PosSemidef) :
     (matrixNormalMeasure M U V).map (fun X => WithLp.toLp 2 X.vec) =
@@ -131,8 +137,8 @@ theorem matrixNormalMeasure_of_subsingleton [Subsingleton (Matrix ι κ ℝ)] (M
   rw [← Measure.map_id (μ := matrixNormalMeasure M U V), h, Measure.map_const, measure_univ,
     one_smul]
 
-/-- Reading the vectorized entries along any map of indices gives a multivariate Gaussian with the
-reindexed mean and Kronecker covariance. -/
+/-- For positive semidefinite covariances, reading the vectorized entries along any map of indices
+gives a multivariate Gaussian with the reindexed mean and Kronecker covariance. -/
 private theorem map_comp_vec_matrixNormalMeasure [Fintype α] [DecidableEq α] (M : Matrix ι κ ℝ)
     {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) (f : α → κ × ι) :
     (matrixNormalMeasure M U V).map (fun X => WithLp.toLp 2 fun a => X.vec (f a)) =
@@ -142,8 +148,9 @@ private theorem map_comp_vec_matrixNormalMeasure [Fintype α] [DecidableEq α] (
     at h
   simpa [Function.comp_def] using h
 
-/-- Each entry of a matrix normal matrix is a real Gaussian, with variance the product of the
-corresponding diagonal entries of the row and column covariances. -/
+/-- For positive semidefinite covariances, each entry of a matrix normal matrix is a real
+Gaussian, with variance the product of the corresponding diagonal entries of the row and column
+covariances. -/
 theorem map_apply_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ}
     (hU : U.PosSemidef) (hV : V.PosSemidef) (i : ι) (j : κ) :
     (matrixNormalMeasure M U V).map (fun X => X i j) =
@@ -176,7 +183,8 @@ theorem integral_apply_matrixNormalMeasure (M : Matrix ι κ ℝ) (U : Matrix ι
       integral_map Matrix.measurable_apply.aemeasurable (by fun_prop)]
   · rw [matrixNormalMeasure_of_not_posSemidef M h, integral_dirac]
 
-/-- Entries `(i, j)` and `(k, l)` of a matrix normal matrix have covariance `U i k * V j l`. -/
+/-- For positive semidefinite covariances `U` and `V`, entries `(i, j)` and `(k, l)` of a matrix
+normal matrix have covariance `U i k * V j l`. -/
 theorem covariance_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ}
     {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) (i k : ι) (j l : κ) :
     cov[fun X => X i j, fun X => X k l; matrixNormalMeasure M U V] = U i k * V j l := by
@@ -210,8 +218,9 @@ theorem map_transpose_matrixNormalMeasure (M : Matrix ι κ ℝ) (U : Matrix ι 
       matrixNormalMeasure_of_not_posSemidef Mᵀ fun h' => h ⟨h'.2, h'.1⟩,
       Measure.map_dirac' (by fun_prop)]
 
-/-- Each row of a matrix normal matrix is multivariate Gaussian, with covariance the column
-covariance scaled by the corresponding diagonal entry of the row covariance. -/
+/-- For positive semidefinite covariances, each row of a matrix normal matrix is multivariate
+Gaussian, with covariance the column covariance scaled by the corresponding diagonal entry of the
+row covariance. -/
 theorem map_row_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ}
     (hU : U.PosSemidef) (hV : V.PosSemidef) (i : ι) :
     (matrixNormalMeasure M U V).map (fun X => WithLp.toLp 2 (X i)) =
@@ -222,8 +231,9 @@ theorem map_row_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ
     simp [mul_comm]
   simpa [hcov] using h
 
-/-- Each column of a matrix normal matrix is multivariate Gaussian, with covariance the row
-covariance scaled by the corresponding diagonal entry of the column covariance. -/
+/-- For positive semidefinite covariances, each column of a matrix normal matrix is multivariate
+Gaussian, with covariance the row covariance scaled by the corresponding diagonal entry of the
+column covariance. -/
 theorem map_col_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ}
     (hU : U.PosSemidef) (hV : V.PosSemidef) (j : κ) :
     (matrixNormalMeasure M U V).map (fun X => WithLp.toLp 2 fun i => X i j) =
@@ -234,9 +244,10 @@ theorem map_col_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ
     simp
   simpa [hcov] using h
 
-/-- **Affine transport of matrix normal laws.** The image of a matrix normal matrix `X` under
-`X ↦ A * X * B + C` is matrix normal with mean `A * M * B + C`, row covariance `A * U * Aᵀ` and
-column covariance `Bᵀ * V * B`. The matrices `A` and `B` may be rectangular and singular. -/
+/-- **Affine transport of matrix normal laws.** For positive semidefinite covariances `U` and
+`V`, the image of a matrix normal matrix `X` under `X ↦ A * X * B + C` is matrix normal with mean
+`A * M * B + C`, row covariance `A * U * Aᵀ` and column covariance `Bᵀ * V * B`. The matrices `A`
+and `B` may be rectangular and singular. -/
 theorem map_mul_mul_add_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ}
     {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) (A : Matrix ι' ι ℝ)
     (B : Matrix κ κ' ℝ) (C : Matrix ι' κ' ℝ) :

@@ -8,7 +8,10 @@ module
 public import Mathlib.Data.Fintype.BigOperators
 
 /-!
-# Sums over maps of a function of two coordinates
+# Sums over finite types
+
+A sum of values that are all equal to `d` on the indices satisfying `p`, and zero elsewhere, is
+the number of such indices times `d` (`Fintype.sum_ite_eq_card_nsmul`).
 
 For a finite type `ι` and finite coordinate sets `s i`, a sum over maps taking their `i`th value
 in `s i` of a quantity depending only on two distinct coordinates is a sum over the pairs of
@@ -22,6 +25,14 @@ public section
 open Finset
 
 namespace Fintype
+
+/-- A sum of values `f i` over the indices satisfying `p`, all of which are equal to `d`, is the
+number of such indices times `d`. -/
+theorem sum_ite_eq_card_nsmul {ι M : Type*} [Fintype ι] [AddCommMonoid M] {p : ι → Prop}
+    [DecidablePred p] {f : ι → M} {d : M} (hf : ∀ i, p i → f i = d) :
+    (∑ i, if p i then f i else 0) = Fintype.card {i // p i} • d := by
+  rw [Fintype.card_subtype, ← sum_filter]
+  exact sum_eq_card_nsmul fun i hi ↦ hf i (mem_filter.1 hi).2
 
 /-- A sum of a function of two distinct coordinates over a finite box counts each pair
 of values once for every choice of the remaining coordinates. -/

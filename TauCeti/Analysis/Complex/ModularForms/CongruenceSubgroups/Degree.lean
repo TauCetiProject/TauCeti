@@ -78,7 +78,7 @@ theorem degree_compactifiedQuotientMap_Gamma0_mul_prod_primeFactors :
     degree (Subgroup.compactifiedQuotientMap
       (Gamma0 N).map_sl2zToPSL2R_le_range_psl2zToPSL2R) *
         ∏ p ∈ N.primeFactors, p = N * ∏ p ∈ N.primeFactors, (p + 1) := by
-  rw [degree_compactifiedQuotientMap_Gamma0, Gamma0_index_mul_prod_primeFactors (NeZero.ne N)]
+  rw [degree_compactifiedQuotientMap_Gamma0, Gamma0_index_mul_prod_primeFactors]
 
 /-- **The degree of `X₁(N) → X(1)` for `N ≥ 3`** is half of `[SL(2, ℤ) : Γ₁(N)]`: there
 `-I ∉ Γ₁(N)`, so each coset by the image of `Γ₁(N)` in `PSL(2, ℤ)` comes from two cosets of

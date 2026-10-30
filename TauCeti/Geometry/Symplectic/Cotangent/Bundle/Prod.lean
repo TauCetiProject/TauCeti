@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Prod
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Manifold.Prod
 
 /-!
 # Canonical cotangent forms of a product
@@ -23,10 +24,14 @@ Indeed `Φ` covers the identity of `M × N`, so the projections of `T*M` and `T*
 `pr₁ ∘ Φ` and `pr₂ ∘ Φ` are the components of the projection of `T*(M × N)`; and a covector on the
 product evaluates a tangent vector as the sum of its two restrictions evaluated on the components.
 Since exterior differentiation commutes with pullback, the canonical symplectic form `ω = -dλ` of
-the product is the product of the canonical symplectic forms of the factors:
+the product is the product form (`TauCeti.SmoothTwoForm.prod`) of the canonical symplectic forms
+of the factors:
 
 `Φ^* (pr₁^* ω_M + pr₂^* ω_N) = ω_(M × N)`
 (`TauCeti.CotangentBundle.mpullback_prodDiffeomorph_symplecticForm`).
+
+So `Φ` is a symplectomorphism from `T*(M × N)` to the product of the symplectic manifolds `T*M`
+and `T*N`.
 
 Both identities equivalently hold along the inverse diffeomorphism, where they read
 `(Φ⁻¹)^* λ_(M × N) = pr₁^* λ_M + pr₂^* λ_N` and `(Φ⁻¹)^* ω_(M × N) = pr₁^* ω_M + pr₂^* ω_N`.
@@ -170,16 +175,16 @@ private theorem add_mpullback_symplecticForm :
     ((neg_add _ _).symm.trans (congrArg Neg.neg (map_add _ _ _).symm))
 
 /-- **The canonical symplectic form of a product is the product of the canonical symplectic forms
-of the factors.** The identification `T*(M × N) ≃ T*M × T*N` pulls `pr₁^* ω_M + pr₂^* ω_N` back
-to `ω_(M × N)`. -/
+of the factors.** The identification `T*(M × N) ≃ T*M × T*N` pulls the product form
+`pr₁^* ω_M + pr₂^* ω_N` back to `ω_(M × N)`. -/
 @[simp]
 theorem mpullback_prodDiffeomorph_symplecticForm :
     SmoothForm.mpullback (prodDiffeomorph I J M N) (prodDiffeomorph I J M N).contMDiff
-        (SmoothForm.mpullback Prod.fst contMDiff_fst (symplecticForm I M) +
-          SmoothForm.mpullback Prod.snd contMDiff_snd (symplecticForm J N)) =
+        (SmoothTwoForm.prod (symplecticForm I M) (symplecticForm J N)) =
       symplecticForm (I.prod J) (M × N) := by
   -- Exterior differentiation commutes with pullback, so this follows from the Liouville identity.
-  exact (congrArg _ (add_mpullback_symplecticForm (I := I) (J := J) (M := M) (N := N))).trans
+  exact (congrArg _ ((SmoothTwoForm.prod_def _ _).trans
+      (add_mpullback_symplecticForm (I := I) (J := J) (M := M) (N := N)))).trans
     ((map_neg _ _).trans (congrArg Neg.neg ((SmoothForm.mextDerivₗ_mpullback _ _ 1 _).symm.trans
       (congrArg _ (mpullback_prodDiffeomorph_liouvilleForm (I := I) (J := J) (M := M)
         (N := N)))))) |>.trans symplecticForm_eq_neg_mextDerivₗ.symm

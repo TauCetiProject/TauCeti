@@ -81,11 +81,7 @@ private theorem finite_quotient_option {σ : Type*} [Finite σ]
   -- Separate the variable `Y = X none`: `K⟨X, Y⟩ ≅ S = K⟨X⟩⟨Y⟩`, as `K`-algebras.
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
-  let _ : Algebra K S := ((algebraMap R S).comp (algebraMap K R)).toAlgebra
-  have : IsScalarTower K R S := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  let Φ : Tate (Option σ) ≃ₐ[K] S :=
-    e.trans (AlgEquiv.ofRingEquiv (f := restrictedOptionEquiv)
-      restrictedOptionEquiv_algebraMap)
+  let Φ : Tate (Option σ) ≃ₐ[K] S := e.trans restrictedOptionEquiv
   let m' := m.map (Φ : Tate (Option σ) →+* S)
   have : m'.IsMaximal := Ideal.map_isMaximal_of_equiv (Φ : Tate (Option σ) ≃+* S)
   -- `S ⧸ m'` is a quotient of `S ⧸ (Φ f)`, which is finite over `R` by Weierstrass division.

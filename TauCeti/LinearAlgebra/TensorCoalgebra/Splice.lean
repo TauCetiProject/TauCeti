@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Graded.Insertion
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Basic
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
 
 /-!
 # Collapsing a block of a tensor word to a single letter
@@ -364,6 +364,38 @@ theorem prepend_splice {n : ℕ} (y : Fin (n + 1) → M) (p d : ℕ) (e : M) :
       split_ifs <;> first | omega | rfl | exact congrArg y (Fin.ext (by simp; omega))
   · rw [splice_eq_zero_of_not_fits R _ e h, map_zero,
       splice_eq_zero_of_not_fits R y e (by omega)]
+
+/-- Off the triangle `c + p < n`, every right-half term of the co-Leibniz rule vanishes: an empty
+collapse is zero outright, and an overrunning collapse vanishes because the cut half is shorter
+than the end of the collapsed block. -/
+theorem sum_tmul_splice_eq_zero {N : Type*} [AddCommMonoid N] [Module R N]
+    {n : ℕ} (x : Fin n → M) {c p : ℕ}
+    (u : N) (e : ℕ → M) (hp : n ≤ c + p) :
+    ∑ d ∈ Finset.range (n + 1), u ⊗ₜ[R] splice R x c (n - c) p d (e d) = 0 := by
+  refine Finset.sum_eq_zero fun d _ ↦ ?_
+  rw [splice_eq_zero_of_not_fits R x _ (by omega), TensorProduct.tmul_zero]
+
+/-- The letter of a spliced word vanishes unless the collapse starts at the beginning of the
+block and replaces all of it. A fitting collapse otherwise leaves at least two letters, and
+an invalid splice is zero. -/
+theorem letter_splice_eq_zero {n : ℕ} (x : Fin n → M) {a b p d : ℕ} (e : M)
+    (hnot : ¬(p = 0 ∧ d = b)) :
+    letter R M (splice R x a b p d e) = 0 := by
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · rw [letter_apply, splice_eq_of_tprod R x e h.1 h.2.1 h.2.2,
+      component_of_of_ne R M
+        (by simp only [ne_eq, Subtype.ext_iff, Positive.val_one]; omega), map_zero]
+  · rw [splice_eq_zero R x e h, map_zero]
+
+/-- Collapsing a whole block leaves the single new letter. -/
+theorem letter_splice_self {n : ℕ} (x : Fin n → M) {a b : ℕ} (e : M) (hb : 0 < b)
+    (hab : a + b ≤ n) : letter R M (splice R x a b 0 b e) = e := by
+  rw [letter_apply, splice_eq_of_tprod R x e hb (by omega) hab,
+    component_of_eq R M (m := ⟨b + 1 - b, by omega⟩) (n := 1)
+      (Subtype.ext (by simp only [Positive.val_one]; omega)),
+    TensorPower.cast_tprod, TauCeti.TensorPower.oneEquiv_tprod]
+  simp only [Function.comp_apply]
+  rw [dite_eq_right (by simp), dite_eq_left (by simp)]
 
 end ReducedTensorWords
 
