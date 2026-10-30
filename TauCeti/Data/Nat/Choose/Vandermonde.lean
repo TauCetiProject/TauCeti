@@ -23,13 +23,16 @@ both ways gives the multivariate Vandermonde identity
 Restricting to the choices with a prescribed number `m` of objects from one group `i` leaves
 `choose (K i) m` choices there, times the Vandermonde count for the remaining groups. These
 identities normalize the multivariate hypergeometric distribution and compute its coordinate
-marginals.
+marginals. Prescribing a count in every fibre of a map of groups gives a product of binomial
+coefficients, which describes merging categories of a sample.
 
 ## Main results
 
 * `Finset.sum_piAntidiag_prod_choose`: the multivariate Vandermonde identity, generalizing
   Mathlib's `Nat.add_choose_eq`.
 * `Finset.sum_filter_piAntidiag_prod_choose`: the same count with one coordinate prescribed.
+* `Finset.sum_filter_piAntidiag_fiberwise_prod_choose`: the count with every fibre total
+  prescribed.
 -/
 
 public section
@@ -99,5 +102,54 @@ theorem sum_filter_piAntidiag_prod_choose {s : Finset ι} {i : ι} (hi : i ∈ s
       rw [mem_antidiagonal] at hp
       omega
     simp [ha]
+
+end Finset
+
+namespace Finset
+
+/-- Vandermonde's identity with the number of selected objects prescribed in every fibre of
+a map of finite index types. The count factors over the fibres, provided their prescribed
+counts have total `n`. -/
+theorem sum_filter_piAntidiag_fiberwise_prod_choose {ι κ : Type*} [Fintype ι] [Fintype κ]
+    [DecidableEq ι] [DecidableEq κ] (f : ι → κ) (K : ι → ℕ) (l : κ → ℕ) (n : ℕ) :
+    ∑ k ∈ (univ.piAntidiag n).filter
+        (fun k ↦ ∀ j, ∑ i : {i // f i = j}, k i = l j), ∏ i, (K i).choose (k i) =
+      if ∑ j, l j = n then ∏ j, (∑ i : {i // f i = j}, K i).choose (l j) else 0 := by
+  classical
+  let e := Equiv.piCongrFiberwise (f := f) (γ₁ := fun _ ↦ ℕ)
+    (fun j ↦ Equiv.refl ({i // f i = j} → ℕ))
+  let t (j : κ) := (univ : Finset {i // f i = j}).piAntidiag (l j)
+  by_cases hl : ∑ j, l j = n
+  · rw [ite_eq_left hl]
+    have hmem (k : ι → ℕ) :
+        e k ∈ Fintype.piFinset t ↔
+          k ∈ (univ.piAntidiag n).filter
+            (fun k ↦ ∀ j, ∑ i : {i // f i = j}, k i = l j) := by
+      simp only [Fintype.mem_piFinset, t, mem_piAntidiag, mem_univ, implies_true,
+        and_true, Equiv.piCongrFiberwise_apply, Equiv.refl_apply, e, mem_filter]
+      constructor
+      · intro hk
+        refine ⟨?_, hk⟩
+        rw [← Fintype.sum_fiberwise f k]
+        simpa only [hk] using hl
+      · exact fun hk ↦ hk.2
+    calc
+      _ = ∑ v ∈ Fintype.piFinset t, ∏ j, ∏ i : {i // f i = j}, (K i).choose (v j i) := by
+        refine sum_bij (fun k _ ↦ e k) (fun k hk ↦ (hmem k).2 hk)
+          (fun _ _ _ _ h ↦ e.injective h) ?_ ?_
+        · intro v hv
+          exact ⟨e.symm v, (hmem _).1 ((e.apply_symm_apply v).symm ▸ hv), e.apply_symm_apply v⟩
+        · intro k _
+          exact (Fintype.prod_fiberwise f (fun i ↦ (K i).choose (k i))).symm
+      _ = ∏ j, ∑ v ∈ t j, ∏ i : {i // f i = j}, (K i).choose (v i) :=
+        (prod_univ_sum t (fun j v ↦ ∏ i : {i // f i = j}, (K i).choose (v i))).symm
+      _ = _ := by simp only [t, sum_piAntidiag_prod_choose]
+  · rw [ite_eq_right hl]
+    apply sum_eq_zero
+    intro k hk
+    obtain ⟨hk, hf⟩ := mem_filter.mp hk
+    have hsum := (mem_piAntidiag.mp hk).1
+    rw [← Fintype.sum_fiberwise f k] at hsum
+    exact (hl (by simpa only [hf] using hsum)).elim
 
 end Finset
