@@ -8,9 +8,10 @@ module
 public import Mathlib.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 public import TauCeti.RingTheory.MvPolynomial.Dominant
+public import TauCeti.Algebra.Lie.AdjointAction.Matrix
+public import TauCeti.RingTheory.MvPolynomial.MatrixExponential
 import Mathlib.Algebra.CharZero.Infinite
 import Mathlib.Algebra.Module.Submodule.Union
-import TauCeti.Algebra.DualNumber.Matrix
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -63,153 +64,10 @@ public section
 
 namespace TauCeti
 
-open LieAlgebra LieAlgebra.IsKilling LieModule MvPolynomial Matrix TrivSqZeroExt
+open LieAlgebra LieAlgebra.IsKilling LieModule MvPolynomial Matrix List
   LinearMap.GeneralLinearGroup
 
-/-! ### Truncated exponential series of matrices with coefficients in an algebra -/
-
-section ExpSeries
-
-variable {K ι : Type*} [Field K] [Fintype ι] [DecidableEq ι]
-
-/-- The exponential series of `x • A`, truncated below degree `d`, for a matrix `A` over `K` and a
-scalar `x` in a commutative `K`-algebra `S`. It is a truncated sum rather than `IsNilpotent.exp`
-so that it is defined over every commutative `K`-algebra, polynomial rings and dual numbers
-included, and commutes with every `K`-algebra map. -/
-private noncomputable def expSeries {S : Type*} [CommRing S] [Algebra K S] (A : Matrix ι ι K)
-    (d : ℕ) (x : S) : Matrix ι ι S :=
-  ∑ k ∈ Finset.range d, (x ^ k * algebraMap K S (k.factorial : K)⁻¹) • A.map (algebraMap K S) ^ k
-
-/-- The truncated exponential series is natural in the coefficient algebra. -/
-private theorem map_expSeries {S S' : Type*} [CommRing S] [Algebra K S] [CommRing S']
-    [Algebra K S'] (f : S →ₐ[K] S') (A : Matrix ι ι K) (d : ℕ) (x : S) :
-    f.mapMatrix (expSeries A d x) = expSeries A d (f x) := by
-  have hsmul (r : S) (M : Matrix ι ι S) : f.mapMatrix (r • M) = f r • f.mapMatrix M := by
-    ext i j
-    simp
-  simp only [expSeries, map_sum, hsmul, map_pow, map_mul, AlgHom.commutes]
-  congr! 3
-  ext i j
-  simp
-
-/-- With a square-zero coefficient `ε c`, the truncated exponential series is `1 + ε c A`. -/
-private theorem expSeries_inr {d : ℕ} (hd : 2 ≤ d) (A : Matrix ι ι K) (c : K) :
-    expSeries A d (inr c : TrivSqZeroExt K K) = 1 + (c • A).map inr := by
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le' hd
-  have hsq (k : ℕ) : (inr c : TrivSqZeroExt K K) ^ (k + 1 + 1) = 0 := by
-    rw [pow_succ, pow_succ, mul_assoc, inr_mul_inr, mul_zero]
-  rw [expSeries, Finset.sum_range_succ', Finset.sum_range_succ', Finset.sum_eq_zero, zero_add]
-  · simp only [zero_add, pow_one, pow_zero, Nat.factorial_zero, Nat.factorial_one, Nat.cast_one,
-      inv_one, map_one, mul_one, one_smul, add_comm (1 : Matrix ι ι _)]
-    congr 1
-    ext i j : 1
-    simp [algebraMap_eq_inl, inr_mul_inl]
-  · intro k _
-    rw [hsq, zero_mul]
-    ext i j : 1
-    simp
-
-end ExpSeries
-
-/-! ### Products of truncated exponentials applied to a parametrized vector -/
-
-section ExpProd
-
-variable {K ι α κ : Type*} [Field K] [Fintype ι] [DecidableEq ι] [Fintype κ]
-
-/-- The vector `(∏_{a ∈ l} exp(t_a A_a)) (∑_j s_j c_j)`, with the exponentials truncated below
-the degrees `d a`, for coefficients `t` and `s` in a commutative `K`-algebra `S`. -/
-private noncomputable def expProdVec {S : Type*} [CommRing S] [Algebra K S] (l : List α)
-    (A : α → Matrix ι ι K) (d : α → ℕ) (c : κ → ι → K) (t : α → S) (s : κ → S) : ι → S :=
-  (l.map fun a ↦ expSeries (A a) (d a) (t a)).prod *ᵥ ∑ j, s j • fun i ↦ algebraMap K S (c j i)
-
-private theorem map_expProdVec {S S' : Type*} [CommRing S] [Algebra K S] [CommRing S']
-    [Algebra K S'] (f : S →ₐ[K] S') (l : List α) (A : α → Matrix ι ι K) (d : α → ℕ)
-    (c : κ → ι → K) (t : α → S) (s : κ → S) (i : ι) :
-    f (expProdVec l A d c t s i) = expProdVec l A d c (f ∘ t) (f ∘ s) i := by
-  rw [expProdVec, expProdVec, ← f.coe_toRingHom, RingHom.map_mulVec, f.coe_toRingHom,
-    ← AlgHom.mapMatrix_apply, map_list_prod, List.map_map]
-  congr 1
-  · exact congrArg List.prod (List.map_congr_left fun a _ ↦ map_expSeries f _ _ _)
-  · ext i
-    simp [map_sum]
-
-/-- The polynomial coordinates of `(t, s) ↦ (∏_{a ∈ l} exp(t_a A_a)) (∑_j s_j c_j)`. -/
-private noncomputable def expProdPoly (l : List α) (A : α → Matrix ι ι K) (d : α → ℕ)
-    (c : κ → ι → K) (i : ι) : MvPolynomial (α ⊕ κ) K :=
-  expProdVec l A d c (fun a ↦ X (Sum.inl a)) (fun j ↦ X (Sum.inr j)) i
-
-private theorem eval_expProdPoly (l : List α) (A : α → Matrix ι ι K) (d : α → ℕ)
-    (c : κ → ι → K) (x : α ⊕ κ → K) (i : ι) :
-    eval x (expProdPoly l A d c i) =
-      ((l.map fun a ↦ expSeries (A a) (d a) (x (Sum.inl a))).prod *ᵥ
-        ∑ j, x (Sum.inr j) • c j) i := by
-  have h := map_expProdVec (aeval x : MvPolynomial (α ⊕ κ) K →ₐ[K] K) l A d c
-    (fun a ↦ X (Sum.inl a)) (fun j ↦ X (Sum.inr j)) i
-  rw [aeval_eq_eval] at h
-  rw [expProdPoly, h, expProdVec]
-  simp
-
-/-- **The differential of the parametrization at `t = 0`.** If every `d a` is at least `2`, the
-Jacobian matrix at a point with vanishing `t`-coordinates sends a tangent vector `w` to
-`(∑_{a ∈ l} w_a A_a) (∑_j s_j c_j) + ∑_j w_j c_j`. -/
-private theorem jacobiMatrixAt_expProdPoly_mulVec [Fintype α] (l : List α)
-    (A : α → Matrix ι ι K) {d : α → ℕ} (hd : ∀ a, 2 ≤ d a) (c : κ → ι → K) (s : κ → K)
-    (w : α ⊕ κ → K) :
-    jacobiMatrixAt (expProdPoly l A d c) (Sum.elim 0 s) *ᵥ w =
-      (l.map fun a ↦ w (Sum.inl a) • A a).sum *ᵥ (∑ j, s j • c j) + ∑ j, w (Sum.inr j) • c j := by
-  ext i
-  rw [jacobiMatrixAt_mulVec_apply_eq_snd_aeval, expProdPoly, map_expProdVec, expProdVec]
-  have hexp : ∀ a, expSeries (A a) (d a)
-      ((aeval fun j ↦ inl (Sum.elim 0 s j) + inr (w j) : MvPolynomial (α ⊕ κ) K →ₐ[K] _)
-        (X (Sum.inl a))) = 1 + (w (Sum.inl a) • A a).map inr := by
-    intro a
-    rw [aeval_X, Sum.elim_inl, Pi.zero_apply, inl_zero, zero_add, expSeries_inr (hd a)]
-  have hvec : (∑ j, ((aeval fun j ↦ inl (Sum.elim 0 s j) + inr (w j) :
-      MvPolynomial (α ⊕ κ) K →ₐ[K] _) (X (Sum.inr j))) •
-        fun i ↦ algebraMap K (TrivSqZeroExt K K) (c j i)) =
-      fun i ↦ inl ((∑ j, s j • c j) i) + inr ((∑ j, w (Sum.inr j) • c j) i) := by
-    ext i
-    · simp [algebraMap_eq_inl, Finset.sum_apply, fst_sum]
-    · simp [algebraMap_eq_inl, Finset.sum_apply, snd_sum]
-  simp only [Function.comp_def, hexp, hvec]
-  rw [List.prod_map_one_add_map_inr, Matrix.one_add_map_inr_mulVec, snd_add, snd_inl, zero_add,
-    snd_inr]
-
-end ExpProd
-
-/-! ### The root-exponential parametrization -/
-
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
-
-section Exponential
-
-variable [CharZero K] [LieAlgebra ℚ L]
-
-/-- The truncated exponential series of the matrix of `ad e` is the matrix of `exp (ad (t • e))`,
-once the truncation degree kills `ad e`. -/
-private theorem toMatrixAlgEquiv_expAd {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι K L) {e : L} {d : ℕ} (hd : ad K L e ^ d = 0) (t : K)
-    (ht : IsNilpotent (ad K L (t • e))) :
-    LinearMap.toMatrixAlgEquiv b (expAd (t • e) ht).toLinearEquiv.toLinearMap =
-      expSeries (LinearMap.toMatrixAlgEquiv b (ad K L e)) d t := by
-  have hlin : (expAd (t • e) ht).toLinearEquiv.toLinearMap =
-      ∑ k ∈ Finset.range d, ((k.factorial : K)⁻¹) • (t • ad K L e) ^ k := by
-    ext y
-    have hy : (ad K L (t • e) ^ d) y = 0 := by
-      rw [map_smul, smul_pow, hd, smul_zero, LinearMap.zero_apply]
-    simp only [LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv, LinearMap.sum_apply,
-      expAd_apply_eq_sum ht hy]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    have hq := ratCast_smul_eq ℚ K ((k.factorial : ℚ)⁻¹) (((t • ad K L e) ^ k) y)
-    rw [Rat.cast_id] at hq
-    rw [map_smul, hq, LinearMap.smul_apply, Rat.cast_inv, Rat.cast_natCast]
-  rw [hlin, expSeries, map_sum]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [map_smul, map_pow, map_smul, smul_pow, smul_smul, mul_comm]
-  simp [Algebra.algebraMap_self]
-
-end Exponential
 
 variable (H : LieSubalgebra K L)
 
@@ -313,7 +171,7 @@ theorem _root_.LieSubalgebra.exists_rootExponentialPolynomialParametrization {ι
       rw [eval_expProdPoly, b.equivFun_list_prod_smul]
       congr 2
       · refine List.map_congr_left fun α _ ↦ ?_
-        exact toMatrixAlgEquiv_expAd b (hd α) _ _
+        exact b.toMatrixAlgEquiv_expAd (hd α) _ _
       · simp [c, map_sum]
 
 /-- **A polynomial vanishing on the conjugates of a Cartan subalgebra is zero.** In the coordinates
