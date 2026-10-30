@@ -490,11 +490,7 @@ theorem finiteDimensional_cohomology_sheaf_of_add_ofPoint
   | zero =>
     -- `H⁰(X, 𝒪_X(D))` embeds into `H⁰(X, 𝒪_X(D + y))`.
     have := hS.mono_f
-    refine Module.Finite.of_injective (Scheme.Modules.cohomologyMapBaseLinear k X S.f 0) ?_
-    intro a b hab
-    simp only [Scheme.Modules.cohomologyMapBaseLinear_apply,
-      Scheme.Modules.cohomologyFunctor_map] at hab
-    exact Scheme.Modules.cohomologyMap_injective S.f hab
+    exact Scheme.Modules.finiteDimensional_cohomology_zero_of_mono k X S.f
   | succ i =>
     have : FiniteDimensional k (Scheme.Modules.Cohomology S.X₃ i) := by
       dsimp only [S]
