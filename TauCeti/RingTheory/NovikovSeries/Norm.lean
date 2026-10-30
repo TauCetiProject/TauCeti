@@ -64,7 +64,7 @@ end Matrix
 
 /-- The norm multiplies a support lower bound by the index. This bound includes all
 coefficients tied at a period. -/
-theorem norm_mem_periodFiltration {a : NovikovSeries R H N} {D : ℝ}
+theorem algebraNorm_mem_periodFiltration {a : NovikovSeries R H N} {D : ℝ}
     (ha : a ∈ periodFiltration R N D) :
     Algebra.norm (NovikovSeries R K (N.comp K.subtype)) a ∈
       periodFiltration R (N.comp K.subtype) (K.index * D) := by
@@ -78,7 +78,7 @@ theorem norm_mem_periodFiltration {a : NovikovSeries R H N} {D : ℝ}
 
 /-- Norms of two series supported above `D` agree above `C + [H : K] * D` if the
 series agree above `C + D`. Unlike an estimate at `1`, this permits negative `D`. -/
-theorem norm_sub_norm_mem_periodFiltration {a b : NovikovSeries R H N} {C D : ℝ}
+theorem algebraNorm_sub_algebraNorm_mem_periodFiltration {a b : NovikovSeries R H N} {C D : ℝ}
     (ha : a ∈ periodFiltration R N D) (hb : b ∈ periodFiltration R N D)
     (hab : a - b ∈ periodFiltration R N (C + D)) :
     Algebra.norm (NovikovSeries R K (N.comp K.subtype)) a -
@@ -103,7 +103,7 @@ theorem norm_sub_norm_mem_periodFiltration {a b : NovikovSeries R H N} {C D : �
 
 /-- The finite-cover norm is continuous for the period topologies. -/
 @[fun_prop]
-theorem continuous_norm :
+theorem continuous_algebraNorm :
     Continuous (Algebra.norm (NovikovSeries R K (N.comp K.subtype)) :
       NovikovSeries R H N → NovikovSeries R K (N.comp K.subtype)) := by
   rw [continuous_iff_continuousAt]
@@ -114,7 +114,7 @@ theorem continuous_norm :
   have hba := antitone_periodFiltration (le_max_left _ _) hb
   have hbD : b ∈ periodFiltration R N D := by
     simpa using (periodFiltration R N D).add_mem hba ha
-  have h := norm_sub_norm_mem_periodFiltration K hbD ha
+  have h := algebraNorm_sub_algebraNorm_mem_periodFiltration K hbD ha
     (antitone_periodFiltration (le_max_right _ _) hb)
   simpa using h
 
@@ -123,7 +123,8 @@ It is not asserted to preserve addition. -/
 def normNonnegSubring : nonnegSubring R N →* nonnegSubring R (N.comp K.subtype) where
   toFun a := ⟨Algebra.norm (NovikovSeries R K (N.comp K.subtype)) (a : NovikovSeries R H N),
     mem_nonnegSubring.2 <| mem_periodFiltration.1 <| by
-      simpa using norm_mem_periodFiltration K (mem_periodFiltration.2 (mem_nonnegSubring.1 a.2))⟩
+      simpa using algebraNorm_mem_periodFiltration K
+        (mem_periodFiltration.2 (mem_nonnegSubring.1 a.2))⟩
   map_one' := Subtype.ext (_root_.map_one _)
   map_mul' a b := Subtype.ext (_root_.map_mul _ _ _)
 
@@ -137,16 +138,16 @@ theorem coe_normNonnegSubring (a : nonnegSubring R N) :
 @[fun_prop]
 theorem continuous_normNonnegSubring : Continuous (normNonnegSubring (R := R) (N := N) K) := by
   apply Continuous.subtype_mk
-  exact (continuous_norm K).comp continuous_subtype_val
+  exact (continuous_algebraNorm K).comp continuous_subtype_val
 
 /-- A perturbation of `1` above a nonnegative cutoff has norm congruent to `1` above
 that same cutoff, without losing a constant depending on coset representatives. -/
-theorem norm_one_add_sub_one_mem_periodFiltration {a : NovikovSeries R H N} {C : ℝ}
+theorem algebraNorm_one_add_sub_one_mem_periodFiltration {a : NovikovSeries R H N} {C : ℝ}
     (hC : 0 ≤ C) (ha : a ∈ periodFiltration R N C) :
     Algebra.norm (NovikovSeries R K (N.comp K.subtype)) (1 + a) - 1 ∈
       periodFiltration R (N.comp K.subtype) C := by
   have ha0 := antitone_periodFiltration hC ha
-  have h := norm_sub_norm_mem_periodFiltration K
+  have h := algebraNorm_sub_algebraNorm_mem_periodFiltration K
     (add_mem one_mem_periodFiltration_zero ha0) one_mem_periodFiltration_zero
     (C := C) (D := 0) (by simpa using ha)
   simpa using h
@@ -159,6 +160,6 @@ theorem normNonnegSubring_one_add_sub_one_mem_posIdeal {a : nonnegSubring R N}
   obtain ⟨C, hC, haC⟩ := exists_pos_mem_periodFiltration_iff.2 (mem_posIdeal.1 ha)
   apply mem_posIdeal.2
   apply exists_pos_mem_periodFiltration_iff.1
-  exact ⟨C, hC, by simpa using norm_one_add_sub_one_mem_periodFiltration K hC.le haC⟩
+  exact ⟨C, hC, by simpa using algebraNorm_one_add_sub_one_mem_periodFiltration K hC.le haC⟩
 
 end TauCeti.NovikovSeries
