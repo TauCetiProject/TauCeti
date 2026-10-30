@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Categorical
 public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.MeasureTheory.Measure.Support
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Distributions.Exponential.Measurability
 import TauCeti.MeasureTheory.Measure.WithDensity
 
@@ -99,9 +100,8 @@ theorem isProbabilityMeasure_hyperexponentialMeasure_iff :
       ∀ i, 0 < p.weights i → 0 < r i := by
   refine ⟨fun h ↦ ?_, isProbabilityMeasure_hyperexponentialMeasure⟩
   by_contra hr
-  let _ := h
-  exact (IsProbabilityMeasure.ne_zero (hyperexponentialMeasure p r))
-    (hyperexponentialMeasure_of_not_pos hr)
+  rw [hyperexponentialMeasure_of_not_pos hr] at h
+  exact not_isProbabilityMeasure_zero h
 
 /-- The real density of a hyperexponential law, with value zero off the positive half-line
 and outside the valid parameter range. -/

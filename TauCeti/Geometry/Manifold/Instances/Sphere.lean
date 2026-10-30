@@ -6,12 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
+public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Geometry.Manifold.Algebra.SMul
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Topology.MetricSpace.HausdorffDimension
@@ -69,13 +73,17 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
   `exp (t i)`.
 * `TauCeti.exists_notMem_range_circle_sphere`: a differentiable loop in a sphere of dimension
   at least two omits a point.
+* `TauCeti.contMDiff_coe_sphere_compl_zero`, `TauCeti.contMDiff_normalize_sphere`: the inclusion
+  of the unit sphere into the punctured space `E \ {0}` and the radial projection
+  `x ↦ x / ‖x‖` back onto the sphere are smooth; `TauCeti.contMDiff_normalize_compl_zero` is the
+  radial projection read in `E`.
 -/
 
 public section
 
 noncomputable section
 
-open Function Manifold Metric Module Set
+open Function Manifold Metric Module Set TopologicalSpace
 open scoped Manifold InnerProductSpace ContDiff
 
 namespace TauCeti
@@ -349,5 +357,40 @@ theorem exists_notMem_range_circle_sphere
   have hz' := congrArg Subtype.val hz
   refine ha ⟨(‖a‖, t), ?_⟩
   simp only [F, hz', smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha0), one_smul]
+
+/-! ### The unit sphere in the punctured space -/
+
+section Punctured
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {m : ℕ∞ω}
+
+/-- The radial projection `x ↦ x / ‖x‖` is smooth on the punctured space `E \ {0}`, an open subset
+of `E`. -/
+theorem contMDiff_normalize_compl_zero :
+    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) m
+      (fun x : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E) ↦ NormedSpace.normalize (x : E)) := by
+  simp only [NormedSpace.normalize]
+  exact fun x ↦ (((contDiffAt_norm ℝ x.2).inv (norm_ne_zero_iff.2 x.2)).contMDiffAt.comp x
+    contMDiff_subtype_val.contMDiffAt).smul contMDiff_subtype_val.contMDiffAt
+
+variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
+
+/-- The inclusion of the unit sphere of `E` into the punctured space `E \ {0}`, an open subset of
+`E`, is smooth. -/
+theorem contMDiff_coe_sphere_compl_zero :
+    ContMDiff (𝓡 n) 𝓘(ℝ, E) m (fun x : sphere (0 : E) 1 ↦
+      (⟨x, ne_zero_of_mem_unit_sphere x⟩ : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E))) := by
+  rw [← TauCeti.ContMDiff.subtypeVal_comp_iff]
+  exact contMDiff_coe_sphere
+
+/-- The radial projection `x ↦ x / ‖x‖` of the punctured space `E \ {0}`, an open subset of `E`,
+onto the unit sphere is smooth. -/
+theorem contMDiff_normalize_sphere :
+    ContMDiff 𝓘(ℝ, E) (𝓡 n) m (fun x : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E) ↦
+      (⟨NormedSpace.normalize (x : E), mem_sphere_zero_iff_norm.2
+        (NormedSpace.norm_normalize_eq_one_iff.2 x.2)⟩ : sphere (0 : E) 1)) :=
+  contMDiff_normalize_compl_zero.codRestrict_sphere _
+
+end Punctured
 
 end TauCeti

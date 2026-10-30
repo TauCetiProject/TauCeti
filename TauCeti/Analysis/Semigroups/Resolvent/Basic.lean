@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Generator.Basic
 public import TauCeti.Analysis.Semigroups.ExponentialShift
-import TauCeti.Analysis.Calculus.ExponentialSlope
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.MeasureTheory.Integral.ExpDecay
 public import Mathlib.MeasureTheory.Integral.ExpDecay
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -254,7 +254,7 @@ private theorem StronglyContinuousSemigroup.resolvent_generator_tendsto
     apply Filter.Tendsto.sub
     · -- `(1/t * (e^{λt}-1)) • Rlx → λ • Rlx`
       apply Filter.Tendsto.smul _ tendsto_const_nhds
-      exact (tendsto_exp_mul_sub_one_div lambda).congr
+      exact ((Real.tendsto_exp_mul_sub_one_div lambda).mono_left (nhdsGT_le_nhdsNE 0)).congr
         (fun t ↦ by ring)
     · -- `(1/t * e^{λt}) • ∫_{Ioc 0 t} f → 1 • x = x`
       have h_one_smul_x : x = (1 : ℝ) • x := (one_smul ℝ x).symm
