@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Standard
-public import Mathlib.Analysis.Calculus.Deriv.Prod
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -20,7 +19,8 @@ standard symplectic plane `ℝ × ℝ` of positions `q` and momenta `p`, with
 
 `H(q, p) = p² / (2m) + m ν² q² / 2`
 
-(`TauCeti.oscillatorHamiltonian`). Hamilton's equations are `q' = p / m`, `p' = -m ν² q`.
+(`TauCeti.oscillatorHamiltonian`, defined with Hamilton's equations `q' = p / m`, `p' = -m ν² q`
+in `TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Basic`).
 
 Its action–angle parametrization (`TauCeti.oscillatorActionAngle`) is
 
@@ -49,13 +49,11 @@ energy: the integral curve through `(θ, I)` returns to its starting point at ti
 
 ## Main definitions
 
-* `TauCeti.oscillatorHamiltonian m ν`: the energy `p² / (2m) + m ν² q² / 2`.
 * `TauCeti.oscillatorActionAngle m ν`: the action–angle parametrization.
 * `TauCeti.oscillatorAction m ν`, `TauCeti.oscillatorAngle m ν`: the action and angle of a point.
 
 ## Main results
 
-* `TauCeti.stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian`: Hamilton's equations.
 * `TauCeti.oscillatorHamiltonian_oscillatorActionAngle`: `H` is `ν I` in action–angle coordinates.
 * `TauCeti.stdSymplecticForm_fderiv_oscillatorActionAngle`: the parametrization is symplectic.
 * `TauCeti.fderiv_oscillatorActionAngle_apply_frequency`: the Hamiltonian vector field is `ν ∂_θ`.
@@ -84,31 +82,6 @@ namespace TauCeti
 open Real ContinuousLinearMap
 
 variable {m ν : ℝ}
-
-/-! ### The Hamiltonian and Hamilton's equations -/
-
-/-- The energy `H(q, p) = p² / (2m) + m ν² q² / 2` of a harmonic oscillator of mass `m` and angular
-frequency `ν`, on the phase space `ℝ × ℝ` of positions and momenta. -/
-def oscillatorHamiltonian (m ν : ℝ) (x : ℝ × ℝ) : ℝ :=
-  x.2 ^ 2 / (2 * m) + m * ν ^ 2 * x.1 ^ 2 / 2
-
-theorem oscillatorHamiltonian_apply (m ν : ℝ) (x : ℝ × ℝ) :
-    oscillatorHamiltonian m ν x = x.2 ^ 2 / (2 * m) + m * ν ^ 2 * x.1 ^ 2 / 2 :=
-  (rfl)
-
-/-- **Hamilton's equations** of the harmonic oscillator: `q' = p / m`, `p' = -m ν² q`. -/
-theorem stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian (m ν : ℝ) (x : ℝ × ℝ) :
-    (stdSymplecticForm (V := ℝ)).hamiltonianVectorField (oscillatorHamiltonian m ν) x =
-      (x.2 / m, -(m * ν ^ 2 * x.1)) := by
-  have hH : oscillatorHamiltonian m ν =
-      fun y ↦ y.2 ^ 2 * (2 * m)⁻¹ + m * ν ^ 2 * y.1 ^ 2 * 2⁻¹ := by
-    ext y
-    simp [oscillatorHamiltonian_apply, div_eq_mul_inv]
-  have h := (((hasFDerivAt_snd (𝕜 := ℝ) (p := x)).pow 2).mul_const (2 * m)⁻¹).add
-    ((((hasFDerivAt_fst (𝕜 := ℝ) (p := x)).pow 2).const_mul (m * ν ^ 2)).mul_const 2⁻¹)
-  rw [hH]
-  refine stdSymplecticForm_hamiltonianVectorField (h.congr_fderiv ?_)
-  ext <;> simp [RCLike.inner_apply] <;> ring
 
 /-! ### The action–angle parametrization -/
 
@@ -197,14 +170,20 @@ theorem fderiv_oscillatorActionAngle_apply_frequency (hm : 0 < m) (hν : 0 < ν)
     field_simp
     linear_combination Real.sin y.1 * hc
 
-/-- **Uniform rotation of the angle solves Hamilton's equations**: for `I > 0`, the curve
+/-- **Uniform rotation of the angle solves Hamilton's equations**: for `I ≥ 0`, the curve
 `t ↦ (θ + ν t, I)` in action–angle coordinates is an integral curve of the Hamiltonian vector
-field of the energy. -/
-theorem hasDerivAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν) (θ : ℝ) {I : ℝ} (hI : 0 < I)
+field of the energy. For `I = 0` it is the constant curve at the equilibrium at the origin. -/
+theorem hasDerivAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν) (θ : ℝ) {I : ℝ} (hI : 0 ≤ I)
     (t : ℝ) :
     HasDerivAt (fun s ↦ oscillatorActionAngle m ν (θ + ν * s, I))
       ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField (oscillatorHamiltonian m ν)
         (oscillatorActionAngle m ν (θ + ν * t, I))) t := by
+  rcases hI.eq_or_lt with rfl | hI
+  · have h0 (s : ℝ) : oscillatorActionAngle m ν (s, 0) = 0 := by
+      simp [oscillatorActionAngle_apply]
+    simp only [h0, stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian, Prod.fst_zero,
+      Prod.snd_zero, zero_div, mul_zero, neg_zero, Prod.mk_zero_zero]
+    exact hasDerivAt_const t 0
   have hcurve : HasDerivAt (fun s : ℝ ↦ (θ + ν * s, I)) (ν, 0) t := by
     simpa only [mul_one] using
       (((hasDerivAt_id' t).const_mul ν).const_add θ).prodMk (hasDerivAt_const t I)
@@ -231,6 +210,10 @@ private def oscillatorComplex (m ν : ℝ) (x : ℝ × ℝ) : ℂ :=
 `Real.Angle = ℝ / 2πℤ`: the argument of `p / √(m ν) + i √(m ν) q`. -/
 def oscillatorAngle (m ν : ℝ) (x : ℝ × ℝ) : Real.Angle :=
   Complex.arg (oscillatorComplex m ν x)
+
+theorem oscillatorAngle_apply (m ν : ℝ) (x : ℝ × ℝ) :
+    oscillatorAngle m ν x = (Complex.arg ⟨x.2 / √(m * ν), √(m * ν) * x.1⟩ : Real.Angle) :=
+  (rfl)
 
 /-- The angle of the origin is `0`. -/
 @[simp]
