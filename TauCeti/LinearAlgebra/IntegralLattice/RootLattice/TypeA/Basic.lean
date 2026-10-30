@@ -585,11 +585,11 @@ noncomputable def typeAOneZModStandardIsometry :
     norm_num [pow_two]
 
 /-- The binary comparison preserves the residue label. -/
-theorem typeAOneZModStandardIsometry_apply (a : ZMod 2) :
+@[simp] theorem typeAOneZModStandardIsometry_apply (a : ZMod 2) :
     typeAOneZModStandardIsometry a = a := by rfl
 
 /-- The inverse binary comparison preserves the residue label. -/
-theorem typeAOneZModStandardIsometry_symm_apply (a : ZMod 2) :
+@[simp] theorem typeAOneZModStandardIsometry_symm_apply (a : ZMod 2) :
     typeAOneZModStandardIsometry.symm a = a := by rfl
 
 /-- The additive equivalence underlying the binary comparison is the identity. -/

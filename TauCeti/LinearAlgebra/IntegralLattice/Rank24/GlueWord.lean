@@ -203,7 +203,7 @@ def typeAGlueWordOfDigits (n m : ℕ) (l : List ℕ) :
 
 /-- Each coordinate of a type-`A` digit word is the corresponding digit reduced modulo the
 alphabet size. -/
-theorem typeAGlueWordOfDigits_apply (n m : ℕ) (l : List ℕ) (i : Fin m) :
+@[simp] theorem typeAGlueWordOfDigits_apply (n m : ℕ) (l : List ℕ) (i : Fin m) :
     typeAGlueWordOfDigits n m l i = ((l.getD i 0 : ℕ) : ZMod (n + 1)) :=
   (rfl)
 
@@ -221,7 +221,7 @@ theorem encodeGlueWord_typeA_eq (n m : ℕ)
     (DynkinType.isSimplyLaced_A n) (w i))
 
 /-- Reading the encoded digits of a type-`A` word recovers the word. -/
-theorem typeAGlueWordOfDigits_encodeGlueWord (n m : ℕ)
+@[simp] theorem typeAGlueWordOfDigits_encodeGlueWord (n m : ℕ)
     (w : Fin m → (DynkinType.A n).glueAlphabet (DynkinType.isSimplyLaced_A n)) :
     typeAGlueWordOfDigits n m (encodeGlueWord (fun _ : Fin m ↦ DynkinType.A n)
       (fun _ ↦ DynkinType.isSimplyLaced_A n) w) = w := by

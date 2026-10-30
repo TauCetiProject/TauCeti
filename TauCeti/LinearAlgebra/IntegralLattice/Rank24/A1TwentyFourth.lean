@@ -87,6 +87,11 @@ theorem a1TwentyFourthBlock_eq :
 def a1TwentyFourthPattern : GluePattern :=
   GluePattern.cyclic [1] a1TwentyFourthBlock []
 
+/-- The table pattern fixes the leading label and rotates the marked block. -/
+theorem a1TwentyFourthPattern_def :
+    a1TwentyFourthPattern = GluePattern.cyclic [1] a1TwentyFourthBlock [] :=
+  (rfl)
+
 /-- **The coordinate permutation of the `A₁²⁴` comparison**, from destination (Golay)
 coordinates to source (table) coordinates: Golay coordinate `j` reads table coordinate `p j`. -/
 def a1TwentyFourthDestinationToSource : Equiv.Perm (Fin 24) where
@@ -161,7 +166,7 @@ private theorem a1TwentyFourthGolayIsometry_ofDigits (l : List ℕ) :
 private theorem forall_mem_expand_ofFn_val_ofDigits :
     ∀ l ∈ a1TwentyFourthPattern.expand,
       List.ofFn (fun i : Fin 24 ↦ (((l.getD i 0 : ℕ) : ZMod 2)).val) = l := by
-  rw [a1TwentyFourthPattern, a1TwentyFourthBlock_eq, GluePattern.expand_cyclic]
+  rw [a1TwentyFourthPattern_def, a1TwentyFourthBlock_eq, GluePattern.expand_cyclic]
   decide
 
 /-- The `k`-th table word: the leading label followed by the block rotated by `k`. -/
@@ -170,7 +175,7 @@ private def tableWord (k : ℕ) : List ℕ :=
 
 private theorem tableWord_mem_expand (k : ℕ) :
     tableWord k ∈ a1TwentyFourthPattern.expand := by
-  rw [a1TwentyFourthPattern]
+  rw [a1TwentyFourthPattern_def]
   exact (GluePattern.mem_expand_cyclic_iff _ _ _ _).mpr
     ⟨_, List.mem_cyclicPermutations_iff.mpr (List.IsRotated.symm ⟨k, rfl⟩), by simp [tableWord]⟩
 
@@ -194,7 +199,7 @@ private theorem forall_mem_expand_transportDigits_mem_code :
     ∀ l ∈ a1TwentyFourthPattern.expand,
       BinaryGolay.generator *ᵥ transportDigits l = 0 := by
   intro l hl
-  rw [a1TwentyFourthPattern, GluePattern.mem_expand_cyclic_iff] at hl
+  rw [a1TwentyFourthPattern_def, GluePattern.mem_expand_cyclic_iff] at hl
   obtain ⟨b, hb, hbw⟩ := hl
   obtain ⟨n, hn⟩ := (List.mem_cyclicPermutations_iff.mp hb).symm
   rw [← hbw, ← hn]
