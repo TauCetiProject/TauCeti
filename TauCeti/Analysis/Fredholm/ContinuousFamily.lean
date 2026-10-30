@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Analysis.Convex.PathConnected
-public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Fredholm.SmallPerturbation
 
 /-!
@@ -85,24 +84,15 @@ theorem _root_.Path.index_eq {T S : E →L[K] F} (A : Path T S)
   simpa only [A.source, A.target] using
     Continuous.index_eq_of_preconnectedSpace A.continuous hFredholm 0 1
 
-section Segment
-
-variable {K' E' F' : Type*} [NontriviallyNormedField K'] [IsRCLikeNormedField K']
-variable [CompleteSpace K'] [NormedAddCommGroup E'] [NormedSpace K' E'] [CompleteSpace E']
-variable [NormedAddCommGroup F'] [NormedSpace K' F']
-variable [NormedSpace ℝ (E' →L[K'] F')]
-
-/-- Two operators over an `IsRCLikeNormedField` have equal index if every operator on the affine
-segment between them is Fredholm. -/
-theorem index_eq_of_segment (T S : E' →L[K'] F') : (∀ t : unitInterval,
+/-- Two operators have equal index if every operator on the affine segment between them is
+Fredholm. The operator space only needs a continuous real module structure to form the segment. -/
+theorem index_eq_of_segment [Module ℝ (E →L[K] F)] [ContinuousSMul ℝ (E →L[K] F)]
+    (T S : E →L[K] F) : (∀ t : unitInterval,
       ContinuousLinearMap.IsFredholm ((1 - (t : ℝ)) • T + (t : ℝ) • S)) →
       ContinuousLinearMap.index T = ContinuousLinearMap.index S := by
-  let := IsRCLikeNormedField.rclike K'
   intro hFredholm
   apply Path.index_eq (Path.segment T S)
   simpa only [Path.segment_apply, AffineMap.lineMap_apply_module] using hFredholm
-
-end Segment
 
 end TauCeti
 
