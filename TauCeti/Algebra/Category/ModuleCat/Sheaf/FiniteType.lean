@@ -112,7 +112,7 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : S
 generators of the pushforward of `M`: the cover is formed by the objects of `D` whose image maps
 to a member of the original cover, and the generators are carried as in
 `SheafOfModules.QuasicoherentData.pushforward`. -/
-noncomputable def _root_.SheafOfModules.LocalGeneratorsData.pushforward
+@[expose] noncomputable def _root_.SheafOfModules.LocalGeneratorsData.pushforward
     (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
       _root_.SheafOfModules.unit S)
     [∀ (X : D), (Over.post G).IsContinuous (K.over X) (J.over _)]
@@ -143,6 +143,56 @@ noncomputable def _root_.SheafOfModules.LocalGeneratorsData.pushforward
       _root_.SheafOfModules.unit (S.over i.fst) := overS.mapIso η
     haveI : PreservesColimitsOfSize.{u, u, _} (_root_.SheafOfModules.pushforward ψ) := h _ _ _
     exact (P.generators i.2.1).map (_root_.SheafOfModules.pushforward ψ) e.symm
+
+section pushforward
+
+variable (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
+      _root_.SheafOfModules.unit S)
+    [∀ (X : D), (Over.post G).IsContinuous (K.over X) (J.over _)]
+    (h : ∀ (X : D) (Y : C) (f : G.obj X ⟶ Y),
+      PreservesColimitsOfSize.{u, u} <|
+      _root_.SheafOfModules.pushforward.{u} (R := (R.over Y))
+        (F := Over.post (X := X) G ⋙ Over.map f)
+        (((Over.forget X).sheafPushforwardContinuous RingCat.{u} (K.over X) K).map φ))
+    {M : SheafOfModules.{u} R} (P : _root_.SheafOfModules.LocalGeneratorsData.{w} M)
+
+/-- The covering family of the pushforward of local generators is indexed by the objects of `D`
+together with a member of the original cover and a map from the image to that member. -/
+@[simp]
+lemma _root_.SheafOfModules.LocalGeneratorsData.pushforward_I :
+    (P.pushforward G φ η h).I = Σ (X : D) (i : P.I), G.obj X ⟶ P.X i :=
+  rfl
+
+/-- The covering object of the pushforward of local generators at an index `⟨X, i, f⟩` is `X`. -/
+@[simp]
+lemma _root_.SheafOfModules.LocalGeneratorsData.pushforward_X
+    (i : Σ (X : D) (i : P.I), G.obj X ⟶ P.X i) :
+    (P.pushforward G φ η h).X i = i.1 :=
+  rfl
+
+/-- The generating sections of the pushforward of local generators at an index `⟨X, i, f⟩`
+are the generating sections of `P` at `i`, carried along the pushforward over `X`. -/
+lemma _root_.SheafOfModules.LocalGeneratorsData.pushforward_generators
+    (i : Σ (X : D) (i : P.I), G.obj X ⟶ P.X i) :
+    (P.pushforward G φ η h).generators i =
+      haveI := h i.1 _ i.2.2
+      (P.generators i.2.1).map
+        (_root_.SheafOfModules.pushforward (show S.over i.1 ⟶
+            ((Over.post (X := i.1) G ⋙ Over.map i.2.2).sheafPushforwardContinuous RingCat.{u}
+              (K.over i.1) (J.over (P.X i.2.1))).obj (R.over (P.X i.2.1)) from
+          ((Over.forget i.1).sheafPushforwardContinuous RingCat.{u} (K.over i.1) K).map φ))
+        ((_root_.SheafOfModules.pushforward (𝟙 (S.over i.1))).mapIso η).symm :=
+  rfl
+
+/-- The generating sections of the pushforward of local generators at an index `⟨X, i, f⟩` are
+indexed like the generating sections of `P` at `i`. -/
+@[simp]
+lemma _root_.SheafOfModules.LocalGeneratorsData.pushforward_generators_I
+    (i : Σ (X : D) (i : P.I), G.obj X ⟶ P.X i) :
+    ((P.pushforward G φ η h).generators i).I = (P.generators i.2.1).I :=
+  rfl
+
+end pushforward
 
 /-- Carrying local generators along a continuous and cocontinuous functor preserves finiteness. -/
 instance _root_.SheafOfModules.LocalGeneratorsData.isFiniteType_pushforward
