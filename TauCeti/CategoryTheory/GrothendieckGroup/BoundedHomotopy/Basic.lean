@@ -11,6 +11,8 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Generation
 public import TauCeti.CategoryTheory.GrothendieckGroup.BoundedComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
 public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
+public import Mathlib.Order.SuccPred.Int
+public import Mathlib.Order.Interval.Finset.SuccPred
 
 /-!
 # Split `K₀` and the bounded homotopy category
@@ -122,6 +124,20 @@ private lemma toBoundedHomotopy_of (X : C) :
       TriangulatedK0.of ((HomotopyCategory.Bounded.singleFunctor C 0).obj X) := by
   simp [toBoundedHomotopy]
 
+/-- **Splitting off the top term of an Euler characteristic**: over an interval `[a, b + 1]`, the
+Euler characteristic of `K` is the signed class of its term in degree `b + 1` plus the Euler
+characteristic over `[a, b]` of its brutal truncation in degrees `≤ b`. -/
+private lemma eulerChar_Icc_add_one (K : CochainComplex C ℤ) {a b : ℤ} (hab : a ≤ b + 1) :
+    eulerChar K (Finset.Icc a (b + 1)) = ((b + 1).negOnePow : ℤ) • of (K.X (b + 1)) +
+      eulerChar (K.stupidTrunc (ComplexShape.embeddingUpIntLE b)) (Finset.Icc a b) := by
+  rw [← Order.succ_eq_add_one, ← Finset.insert_Icc_right_eq_Icc_succ (by simpa using hab),
+    eulerChar_insert K (by simp), Order.succ_eq_add_one, eulerChar_def, eulerChar_def]
+  congr 1
+  -- In degrees `≤ b` the truncation has the terms of `K`.
+  refine Finset.sum_congr rfl fun n hn ↦ ?_
+  have := K.isIso_πStupidTruncLE_f b (Finset.mem_Icc.1 hn).2
+  rw [of_congr (asIso ((K.πStupidTruncLE b).f n))]
+
 end SplitK0
 
 namespace TriangulatedK0
@@ -180,31 +196,33 @@ private lemma of_bounded_quotient_obj_aux (K : CochainComplex C ℤ)
     let a := min a₀ (b + 1)
     have : K.IsStrictlyGE a := K.isStrictlyGE_of_ge a a₀ (min_le_left _ _)
     let X₃ := K.stupidTrunc (ComplexShape.embeddingUpIntLE b)
-    obtain ⟨T, hT, ⟨e₁⟩, ⟨e₂⟩, ⟨e₃⟩⟩ :=
-      TauCeti.HomotopyCategory.Bounded.exists_distTriang_top K hK' b
     -- The truncation has the terms of `K` in degrees `≤ b` and zero terms above.
     have hs₃ : ∀ n ∉ s, IsZero (X₃.X n) := fun n hn ↦ by
       by_cases hnb : n ≤ b
       · have := K.isIso_πStupidTruncLE_f b hnb
         exact (hs n hn).of_iso (asIso ((K.πStupidTruncLE b).f n)).symm
       · exact K.isZero_stupidTrunc_embeddingUpIntLE_X b (by omega)
-    have hX₃ : SplitK0.eulerChar X₃ (Finset.Icc a b) = SplitK0.eulerChar K (Finset.Icc a b) := by
-      rw [SplitK0.eulerChar_def, SplitK0.eulerChar_def]
-      refine Finset.sum_congr rfl fun n hn ↦ ?_
-      have := K.isIso_πStupidTruncLE_f b (Finset.mem_Icc.1 hn).2
-      rw [SplitK0.of_congr (asIso ((K.πStupidTruncLE b).f n))]
-    have hIcc : Finset.Icc a (b + 1) = insert (b + 1) (Finset.Icc a b) := by
-      ext n
-      simp only [Finset.mem_Icc, Finset.mem_insert]
-      have : a ≤ b + 1 := min_le_right _ _
-      omega
-    rw [← of_congr e₂, of_distTriang hT, of_congr e₁, of_congr e₃, of_boundedSingleFunctor_obj,
-      ← SplitK0.toBoundedHomotopy_of, ← map_zsmul, ih _ s hs₃,
-      SplitK0.eulerChar_eq_eulerChar_of_isZero K hs (t := Finset.Icc a (b + 1))
-        (fun n hn ↦ K.isZero_X_of_notMem_Icc a (b + 1) hn),
-      SplitK0.eulerChar_eq_eulerChar_of_isZero X₃ hs₃ (t := Finset.Icc a b)
-        (fun n hn ↦ X₃.isZero_X_of_notMem_Icc a b hn),
-      hX₃, hIcc, SplitK0.eulerChar_insert K (by simp), map_add]
+    -- The distinguished triangle splitting off the top term gives the relation in `K₀`.
+    have htri : (of ((HomotopyCategory.Bounded.quotient C).obj ⟨K, hK'⟩) :
+        TriangulatedK0 (HomotopyCategory.Bounded C)) =
+        ((b + 1).negOnePow : ℤ) • of ((HomotopyCategory.Bounded.singleFunctor C 0).obj
+          (K.X (b + 1))) + of ((HomotopyCategory.Bounded.quotient C).obj
+            ⟨X₃, CochainComplex.bounded_stupidTrunc_embeddingUpIntLE hK' b⟩) := by
+      obtain ⟨T, hT, ⟨e₁⟩, ⟨e₂⟩, ⟨e₃⟩⟩ :=
+        TauCeti.HomotopyCategory.Bounded.exists_distTriang_top K hK' b
+      rw [← of_congr e₂, of_distTriang hT, of_congr e₁, of_congr e₃, of_boundedSingleFunctor_obj]
+    -- Both Euler characteristics may be computed over the bounding intervals.
+    have hK₁ : SplitK0.eulerChar K s = SplitK0.eulerChar K (Finset.Icc a (b + 1)) :=
+      SplitK0.eulerChar_eq_eulerChar_of_isZero K hs
+        fun n hn ↦ K.isZero_X_of_notMem_Icc a (b + 1) hn
+    have hX₃ : SplitK0.eulerChar X₃ s = SplitK0.eulerChar X₃ (Finset.Icc a b) :=
+      SplitK0.eulerChar_eq_eulerChar_of_isZero X₃ hs₃
+        fun n hn ↦ X₃.isZero_X_of_notMem_Icc a b hn
+    calc _ = ((b + 1).negOnePow : ℤ) • SplitK0.toBoundedHomotopy C (SplitK0.of (K.X (b + 1))) +
+          SplitK0.toBoundedHomotopy C (SplitK0.eulerChar X₃ s) := by
+            rw [htri, ih _ s hs₃, SplitK0.toBoundedHomotopy_of]
+      _ = SplitK0.toBoundedHomotopy C (SplitK0.eulerChar K s) := by
+            rw [hK₁, hX₃, SplitK0.eulerChar_Icc_add_one K (min_le_right _ _), map_add, map_zsmul]
 
 /-- **The class of a bounded complex** in triangulated `K₀` of the bounded homotopy category is
 the alternating sum of the classes of its terms, each placed in degree zero. The sum runs over any
