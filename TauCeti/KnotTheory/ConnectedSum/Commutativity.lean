@@ -15,6 +15,7 @@ rotating its circle parameter by a half-turn (`TauCeti.SmoothCircleEmbedding.tur
 of a smooth isotopy through parametrized embeddings, in every sphere dimension
 (`TauCeti.SmoothCircleEmbedding.smoothIsotopic_turnOver`): the half-turn is joined to the identity
 by rotations, and the parameter is rotated alongside. Its collared trace is a concordance.
+These general turnover results are proved in `TauCeti.KnotTheory.ConnectedSum.Basic`.
 
 Two consequences for knots in connected-sum position:
 
@@ -70,61 +71,6 @@ theorem turnOver_connectedSum {K₁ K₂ :
   · rw [coe_connectedSum_apply_of_im_neg _ _ (by simpa using hz),
       neg_neg, Submodule.reflection_reflection,
       connectedSum_apply_of_im_nonneg _ _ hz.le]
-
-/-- **A knot is smoothly isotopic to its turned-over copy**: `K` and `turnOver ι K`, the knot moved
-by the half-turn in the plane `ι ℂ` and reparametrized by `z ↦ -z`, are joined by a jointly smooth
-isotopy through parametrized embeddings. -/
-theorem smoothIsotopic_turnOver (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
-    SmoothIsotopic K.toContMDiffMap (turnOver ι K).toContMDiffMap := by
-  apply smoothIsotopic_def.mpr
-  obtain ⟨R, hR, hR0, hR1⟩ := ι.exists_contDiff_path_reflection_orthogonal_range
-  let a : unitInterval → Circle := fun t => Circle.exp (Real.pi * t)
-  have ha : ContMDiff (𝓡∂ 1) (𝓡 1) ∞ a :=
-    contMDiff_circleExp.comp
-      (contMDiff_const.mul (contMDiff_subtypeVal_Icc (x := 0) (y := 1)))
-  have ha0 : a 0 = 1 := by simp [a]
-  have ha1 : a 1 = -1 := by
-    apply Subtype.ext
-    simp [a, Circle.coe_exp, Complex.exp_pi_mul_I]
-  let F : unitInterval × Circle → sphere (0 : E) 1 := fun p =>
-    (R p.1).unitSphereDiffeomorph (n := n) (k := n) ∞ (K (a p.1 * p.2))
-  have hs : ContMDiff ((𝓡∂ 1).prod (𝓡 1)) (𝓡 n) ∞ F := by
-    have hK : ContMDiff ((𝓡∂ 1).prod (𝓡 1)) 𝓘(ℝ, E) ∞
-        (fun p : unitInterval × Circle => (K (a p.1 * p.2) : E)) :=
-      contMDiff_coe_sphere.comp
-        (K.contMDiff.comp ((ha.comp contMDiff_fst).mul contMDiff_snd))
-    have ht : ContMDiff ((𝓡∂ 1).prod (𝓡 1)) 𝓘(ℝ) ∞
-        (fun p : unitInterval × Circle => (p.1 : ℝ)) :=
-      (contMDiff_subtypeVal_Icc (x := 0) (y := 1)).comp contMDiff_fst
-    have hambient := hR.comp_contMDiff (ht.prodMk_space hK)
-    have hcoe : (fun p => (F p : E)) =
-        (fun p => R (p.1 : ℝ) (K (a p.1 * p.2))) := by
-      funext p
-      exact LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply _ _
-    have hmem (p : unitInterval × Circle) : (F p : E) ∈ sphere (0 : E) 1 := (F p).property
-    simp only [Function.comp_def] at hambient
-    rw [← hcoe] at hambient
-    exact hambient.codRestrict_sphere hmem
-  refine ⟨{ toContMDiffMap := ⟨F, hs⟩
-            map_zero_left := ?_
-            map_one_left := ?_
-            isSmoothEmbedding := ?_ }⟩
-  · intro z
-    apply Subtype.ext
-    simp [F, ha0, hR0]
-  · intro z
-    apply Subtype.ext
-    simp [F, ha1, hR1]
-  · intro t
-    have hslice := (K.rotate (a t)).transDiffeomorph
-      ((R t).unitSphereDiffeomorph (n := n) (k := n) ∞) |>.isSmoothEmbedding
-    simpa only [SmoothEmbedding.coe_transDiffeomorph, Function.comp_def,
-      rotate_apply, F, ContMDiffMap.coeFn_mk] using hslice
-
-/-- **Turning a knot over does not change its concordance class.** -/
-theorem concordant_turnOver (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
-    SmoothEmbedding.Concordant K (turnOver ι K) :=
-  SmoothEmbedding.Concordant.of_smoothIsotopic (smoothIsotopic_turnOver ι K) (by simp) le_rfl
 
 /-- **The great circle is a left unit up to concordance**: the connected sum of the great circle
 with a knot `K` in connected-sum position is concordant to `K`. On the right the great circle is a
