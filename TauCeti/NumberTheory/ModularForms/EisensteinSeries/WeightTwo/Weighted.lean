@@ -887,6 +887,28 @@ theorem summable_weightedG2Row_terms (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) 
   gcongr
   exact Finset.single_le_sum (f := fun b ↦ ‖W b‖) (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ _)
 
+omit [NeZero N] in
+/-- The rows are linear in the weight: the zero weight. -/
+@[simp]
+lemma weightedG2Row_zero : weightedG2Row (0 : (Fin 2 → ZMod N) → ℂ) = 0 := by
+  ext z c
+  simp [weightedG2Row]
+
+/-- The rows are linear in the weight: sums. -/
+lemma weightedG2Row_add (W W' : (Fin 2 → ZMod N) → ℂ) :
+    weightedG2Row (W + W') = weightedG2Row W + weightedG2Row W' := by
+  ext z c
+  simp only [weightedG2Row, Pi.add_apply, add_mul]
+  exact (summable_weightedG2Row_terms W z c).tsum_add (summable_weightedG2Row_terms W' z c)
+
+omit [NeZero N] in
+/-- The rows are linear in the weight: scalar multiples. -/
+@[simp]
+lemma weightedG2Row_smul (a : ℂ) (W : (Fin 2 → ZMod N) → ℂ) :
+    weightedG2Row (a • W) = a • weightedG2Row W := by
+  ext z c
+  simp [weightedG2Row, ← tsum_mul_left, mul_assoc]
+
 /-- A row grouped by the residue of `d` modulo `N`:
 `∑_d W(c, d) (c z + d)⁻² = N⁻² ∑_{b mod N} W(c, b) P((c z + b) / N)`. -/
 private lemma weightedG2Row_eq_sum_rowSum (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) (c : ℤ) :
@@ -1015,17 +1037,17 @@ theorem tsum_weightedG2Row (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
     congr 1
     ext a
     simp
-  have he2 : Summable fun c ↦ e2Summand c z :=
-    (summable_weightedG2Row (fun _ : Fin 2 → ZMod N ↦ (1 : ℂ)) z).congr fun c ↦ by
-      simp [weightedG2Row_def, e2Summand]
+  have h1 (c : ℤ) : weightedG2Row (1 : (Fin 2 → ZMod N) → ℂ) z c = e2Summand c z := by
+    simp [weightedG2Row_def, e2Summand]
+  have he2 : Summable fun c ↦ e2Summand c z := (summable_weightedG2Row 1 z).congr h1
   have hsplit (c : ℤ) : weightedG2Row W z c =
       weightedG2Row (fun a ↦ W a - m) z c + m * e2Summand c z := by
-    rw [weightedG2Row_def, weightedG2Row_def, e2Summand, ← tsum_mul_left,
-      ← (summable_weightedG2Row_terms (fun a ↦ W a - m) z c).tsum_add
-        ((e2Summand_summable c z).mul_left m)]
-    congr 1
-    ext d
-    ring
+    have hW : W = (fun a ↦ W a - m) + m • 1 := by
+      ext a
+      simp
+    conv_lhs => rw [hW]
+    rw [weightedG2Row_add, weightedG2Row_smul, Pi.add_apply, Pi.add_apply, Pi.smul_apply,
+      Pi.smul_apply, smul_eq_mul, h1]
   rw [tsum_congr hsplit, (summable_weightedG2Row _ z).tsum_add (he2.mul_left m), tsum_mul_left,
     (hasSum_weightedG2Row hmass z).tsum_eq, hG, G2,
     tsum_eq_of_summable_unconditional (L := SummationFilter.symmetricIcc ℤ) he2]

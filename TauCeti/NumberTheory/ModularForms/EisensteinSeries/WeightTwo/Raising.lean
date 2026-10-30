@@ -75,6 +75,29 @@ lemma raisedWeight_def (a : Fin 2 → ZMod (t * M)) :
       if t ∣ (a 0).val then W ![(((a 0).val / t : ℕ) : ZMod M), ((a 1).val : ZMod M)] else 0 :=
   (rfl)
 
+omit [NeZero M] [NeZero t] in
+/-- The raised weight is linear in `W`: the zero weight. -/
+@[simp]
+lemma raisedWeight_zero : raisedWeight t (0 : (Fin 2 → ZMod M) → ℂ) = 0 := by
+  ext a
+  simp [raisedWeight]
+
+omit [NeZero M] [NeZero t] in
+/-- The raised weight is linear in `W`: sums. -/
+lemma raisedWeight_add (W' : (Fin 2 → ZMod M) → ℂ) :
+    raisedWeight t (W + W') = raisedWeight t W + raisedWeight t W' := by
+  ext a
+  simp only [raisedWeight, Pi.add_apply]
+  split_ifs <;> simp
+
+omit [NeZero M] [NeZero t] in
+/-- The raised weight is linear in `W`: scalar multiples. -/
+@[simp]
+lemma raisedWeight_smul (c : ℂ) : raisedWeight t (c • W) = c • raisedWeight t W := by
+  ext a
+  simp only [raisedWeight, Pi.smul_apply, smul_eq_mul]
+  split_ifs <;> simp
+
 /-- The raised weight at the reduction of an integer pair `x`: `W(x₀ / t, x₁)` if `t ∣ x₀`, and
 `0` otherwise. -/
 theorem raisedWeight_intCast (x : Fin 2 → ℤ) :
