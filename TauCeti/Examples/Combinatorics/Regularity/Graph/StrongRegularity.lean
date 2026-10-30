@@ -32,7 +32,7 @@ example (h : G.StrongRegular P Q ε F l₀) (hF : 0 < F #P.parts) (hm : ∀ A �
             G.edgeDensity (φ 1 : Finset V) (φ 2))| ≤
       (15 * F #P.parts + 3 * √ε) * Fintype.card V ^ 3 + 6 * m * Fintype.card V ^ 2 := by
   convert h.inducedGraphCount3_estimate ⊤ hF hm using 4
-  rw [coarseInducedGraphEstimate3_def]
+  rw [coarseInducedGraphEstimate_def]
   refine sum_congr rfl fun φ _ ↦ ?_
   rw [← prod_subtype ({(0, 1), (0, 2), (1, 2)} : Finset (Fin 3 × Fin 3)) (by decide)
     fun p ↦ (G.patternDensity ((⊤ : SimpleGraph (Fin 3)).Adj p.1 p.2) (φ p.1 : Finset V)
@@ -49,7 +49,7 @@ example (h : G.StrongRegular P Q ε F l₀) (hF : 0 < F #P.parts) (hm : ∀ A �
             (1 - G.edgeDensity (φ 1 : Finset V) (φ 2)))| ≤
       (15 * F #P.parts + 3 * √ε) * Fintype.card V ^ 3 + 6 * m * Fintype.card V ^ 2 := by
   convert h.inducedGraphCount3_estimate ⊥ hF hm using 4
-  rw [coarseInducedGraphEstimate3_def]
+  rw [coarseInducedGraphEstimate_def]
   refine sum_congr rfl fun φ _ ↦ ?_
   rw [← prod_subtype ({(0, 1), (0, 2), (1, 2)} : Finset (Fin 3 × Fin 3)) (by decide)
     fun p ↦ (G.patternDensity ((⊥ : SimpleGraph (Fin 3)).Adj p.1 p.2) (φ p.1 : Finset V)

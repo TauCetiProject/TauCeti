@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -30,7 +31,9 @@ the same Lie algebra on `M` and on `N` give the diagonal action `Z ↦ (Z_M, Z_N
 factor by factor. The basic example is the
 action of the Lie algebra of all endomorphisms of a finite-dimensional real vector space `V` on `V`
 by the linear vector fields `x ↦ A x` (`TauCeti.InfinitesimalAction.linear`), which restricts to
-the linear actions of the classical subalgebras, such as the symplectic Lie algebra.
+the linear actions of the classical subalgebras, such as the symplectic Lie algebra. An abelian Lie
+algebra acts by translations, through the constant vector fields `x ↦ τ Z` of a linear map `τ`
+(`TauCeti.InfinitesimalAction.translation`).
 
 ## Main definitions
 
@@ -40,6 +43,8 @@ the linear actions of the classical subalgebras, such as the symplectic Lie alge
 * `TauCeti.InfinitesimalAction.prod`: the diagonal action on a product of two manifolds.
 * `TauCeti.InfinitesimalAction.linear V`: the action of `Module.End ℝ V` on `V` by linear vector
   fields.
+* `TauCeti.InfinitesimalAction.translation τ`: the action of an abelian Lie algebra on a vector
+  space by the constant vector fields of a linear map `τ`.
 
 ## References
 
@@ -201,6 +206,34 @@ theorem linear_apply (A : Module.End ℝ V) (x : V) : linear V A x = A x :=
   (rfl)
 
 end linear
+
+section translation
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [IsLieAbelian 𝔤]
+
+/-- The infinitesimal action of an abelian Lie algebra `𝔤` on a normed space `V` by the constant
+vector fields `x ↦ τ Z` of a linear map `τ : 𝔤 → V`, the generators of the translations
+`x ↦ x + t • τ Z`. -/
+def translation (τ : 𝔤 →ₗ[ℝ] V) : InfinitesimalAction 𝔤 𝓘(ℝ, V) V where
+  toLinearMap :=
+    { toFun Z _ := τ Z
+      map_add' _ _ := funext fun _ ↦ τ.map_add _ _
+      map_smul' _ _ := funext fun _ ↦ τ.map_smul _ _ }
+  contMDiff_toLinearMap' Z := contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+  toLinearMap_lie' Z Z' := by
+    funext x
+    -- Evaluate the bundled map `Z ↦ (x ↦ τ Z)` being defined; its values are typed as tangent
+    -- vectors rather than elements of `V`.
+    change τ ⁅Z, Z'⁆ = -mlieBracket 𝓘(ℝ, V) (fun _ ↦ τ Z) (fun _ ↦ τ Z') x
+    rw [mlieBracket_const_model_space, trivial_lie_zero, map_zero, neg_zero]
+    -- The zero of `V` and the zero of its tangent space at `x` agree by definition.
+    rfl
+
+@[simp]
+theorem translation_apply (τ : 𝔤 →ₗ[ℝ] V) (Z : 𝔤) (x : V) : translation τ Z x = τ Z :=
+  (rfl)
+
+end translation
 
 end InfinitesimalAction
 
