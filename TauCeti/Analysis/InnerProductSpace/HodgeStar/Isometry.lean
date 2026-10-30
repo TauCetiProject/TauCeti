@@ -16,7 +16,8 @@ The Hodge star preserves the inner product and hence defines a linear isometric 
 between complementary exterior powers. Combined with the defining identity
 `⟪⋆x, y⟫ = vol (x ∧ y)`, this gives the wedge characterization `α ∧ ⋆β = ⟪α, β⟫ vol`.
 On the top exterior power the inner product is the product of the volumes,
-`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume.
+`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume. In an even
+middle degree the Hodge star is an isometric involution, hence symmetric.
 Reversing the orientation negates the Hodge star, and transporting the orientation along a
 linear isometric equivalence commutes with it. These statements hold also in dimension zero, for
 either orientation.
@@ -92,6 +93,13 @@ theorem inner_hodgeStar_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V)
     (x y : ⋀[ℝ]^k V) : ⟪o.hodgeStar hkl x, o.hodgeStar hkl y⟫ = ⟪x, y⟫ := by
   simpa only [← o.hodgeStarIsometry_toLinearEquiv hkl, LinearIsometryEquiv.coe_toLinearEquiv]
     using (o.hodgeStarIsometry hkl).inner_map_map x y
+
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the Hodge star is symmetric,
+`⟪⋆x, y⟫ = ⟪x, ⋆y⟫`, being an isometric involution. This covers two-forms in dimension four. -/
+theorem isSymmetric_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V) :
+    (o.hodgeStar hkk : ⋀[ℝ]^k V →ₗ[ℝ] ⋀[ℝ]^k V).IsSymmetric := fun x y ↦ by
+  conv_lhs => rw [← o.hodgeStar_hodgeStar_of_even hk hkk y]
+  exact o.inner_hodgeStar_hodgeStar hkk x (o.hodgeStar hkk y)
 
 /-- **The wedge characterization of the Hodge star**: `α ∧ ⋆β = ⟪α, β⟫ vol`, that is, the
 volume of `α ∧ ⋆β` is the inner product of `α` and `β`, for `α β ∈ ⋀ᵏ V`. -/
