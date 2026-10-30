@@ -209,14 +209,14 @@ section Family
 variable {L : IntegralLattice V} {ι : Type*} {f : ι → IntegralLattice V}
 
 /-- Pairwise non-isometric lattices have distinct classes. -/
-private theorem injective_isometryClass_comp
+theorem injective_isometryClass_comp
     (hf : Pairwise fun i j ↦ IsEmpty (Isometry (f i) (f j))) :
     Function.Injective (isometryClass ∘ f) := fun i j hij ↦ by
   by_contra hne
   exact (hf hne).false (isometryClass_eq_isometryClass_iff.mp hij).some
 
 /-- The classes of a family of lattices in the genus of `L` are classes in the genus of `L`. -/
-private theorem range_isometryClass_comp_subset (hgen : ∀ i, L.SameGenus (f i)) :
+theorem range_isometryClass_comp_subset (hgen : ∀ i, L.SameGenus (f i)) :
     Set.range (isometryClass ∘ f) ⊆ L.genusClasses := by
   rintro _ ⟨i, rfl⟩
   exact isometryClass_mem_genusClasses_iff.mpr (hgen i)

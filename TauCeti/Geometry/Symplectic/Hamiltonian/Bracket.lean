@@ -72,8 +72,8 @@ theorem mvfderiv_eval₂ (hσ : σ.IsClosed) (hX : σ.IsHamiltonianVectorField f
     (hX' : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x)
     (hY' : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) x)
     (v : TangentSpace I x) :
-    mvfderiv I (fun y ↦ SmoothForm.eval₂ σ y (X y) (Y y)) x v =
-      -SmoothForm.eval₂ σ x (mlieBracket I X Y x) v := by
+    mvfderiv I (fun y ↦ SmoothBundleForm.eval₂ σ y (X y) (Y y)) x v =
+      -SmoothBundleForm.eval₂ σ x (mlieBracket I X Y x) v := by
   set W : (y : M) → TangentSpace I y := FiberBundle.extend E v
   have hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x :=
     FiberBundle.mdifferentiableAt_extend I E v
@@ -83,24 +83,26 @@ theorem mvfderiv_eval₂ (hσ : σ.IsClosed) (hX : σ.IsHamiltonianVectorField f
   -- Extend `v` to a vector field `W` and evaluate `dσ(X, Y, W) = 0` by the invariant formula.
   -- The terms of `dσ(X, Y, W) = 0` that differentiate `σ` along the fields.
   have hYW : (fun y ↦ σ.1 y ![Y y, W y]) = fun y ↦ mvfderiv I g y (W y) := by
-    funext y; rw [← SmoothForm.eval₂_apply, isHamiltonianVectorField_iff.1 hY y]
+    funext y; rw [← SmoothBundleForm.eval₂_apply, isHamiltonianVectorField_iff.1 hY y]
   have hXW : (fun y ↦ σ.1 y ![X y, W y]) = fun y ↦ mvfderiv I f y (W y) := by
-    funext y; rw [← SmoothForm.eval₂_apply, isHamiltonianVectorField_iff.1 hX y]
-  have hgX : (fun y ↦ mvfderiv I g y (X y)) = fun y ↦ -SmoothForm.eval₂ σ y (X y) (Y y) := by
-    funext y; rw [← isHamiltonianVectorField_iff.1 hY y, SmoothForm.eval₂_swap]
-  have hfY : (fun y ↦ mvfderiv I f y (Y y)) = fun y ↦ SmoothForm.eval₂ σ y (X y) (Y y) := by
+    funext y; rw [← SmoothBundleForm.eval₂_apply, isHamiltonianVectorField_iff.1 hX y]
+  have hgX : (fun y ↦ mvfderiv I g y (X y)) = fun y ↦ -SmoothBundleForm.eval₂ σ y (X y) (Y y) := by
+    funext y; rw [← isHamiltonianVectorField_iff.1 hY y, SmoothBundleForm.eval₂_swap]
+  have hfY : (fun y ↦ mvfderiv I f y (Y y)) = fun y ↦ SmoothBundleForm.eval₂ σ y (X y) (Y y) := by
     funext y; rw [← isHamiltonianVectorField_iff.1 hX y]
   -- The bracket terms of `dσ(X, Y, W) = 0`.
   have hXWY : σ.1 x ![mlieBracket I X W x, Y x] = -mvfderiv I g x (mlieBracket I X W x) := by
-    rw [← SmoothForm.eval₂_apply, SmoothForm.eval₂_swap, isHamiltonianVectorField_iff.1 hY x]
+    rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
+      isHamiltonianVectorField_iff.1 hY x]
   have hYWX : σ.1 x ![mlieBracket I Y W x, X x] = -mvfderiv I f x (mlieBracket I Y W x) := by
-    rw [← SmoothForm.eval₂_apply, SmoothForm.eval₂_swap, isHamiltonianVectorField_iff.1 hX x]
+    rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
+      isHamiltonianVectorField_iff.1 hX x]
   have h := SmoothForm.mextDeriv_apply_two (φ := σ) hX' hY' hW
   rw [(SmoothForm.isClosed_def σ).1 hσ, hYW, hXW, hXWY, hYWX,
     mvfderiv_mlieBracket hg h2 hX' hW, mvfderiv_mlieBracket hf h2 hY' hW, hgX, hfY,
     mvfderiv_fun_neg, hWx] at h
   simp only [Pi.zero_apply, ContinuousAlternatingMap.coe_zero, neg_apply,
-    SmoothForm.eval₂_apply] at h ⊢
+    SmoothBundleForm.eval₂_apply] at h ⊢
   linear_combination h
 
 /-- **The Lie bracket of Hamiltonian vector fields is Hamiltonian.** For a closed form `σ` and
@@ -111,7 +113,7 @@ theorem mlieBracket (hσ : σ.IsClosed) (hX : σ.IsHamiltonianVectorField f X)
     (hg : ContMDiff I 𝓘(ℝ) 2 g)
     (hX' : MDifferentiable I I.tangent (fun y ↦ (X y : TangentBundle I M)))
     (hY' : MDifferentiable I I.tangent (fun y ↦ (Y y : TangentBundle I M))) :
-    σ.IsHamiltonianVectorField (fun y ↦ -SmoothForm.eval₂ σ y (X y) (Y y))
+    σ.IsHamiltonianVectorField (fun y ↦ -SmoothBundleForm.eval₂ σ y (X y) (Y y))
       (mlieBracket I X Y) :=
   isHamiltonianVectorField_iff.2 fun x v ↦ by
     rw [mvfderiv_fun_neg, neg_apply,
@@ -132,12 +134,12 @@ theorem hamiltonianVectorField_poissonBracket (hσ : σ.IsClosed) (hf : ContMDif
       -mlieBracket I (σ.hamiltonianVectorField f) (σ.hamiltonianVectorField g) := by
   refine (h.isHamiltonianVectorField_iff_eq.1 (isHamiltonianVectorField_iff.2 fun x v ↦ ?_)).symm
   have hfg : σ.poissonBracket f g = fun y ↦
-      SmoothForm.eval₂ σ y (σ.hamiltonianVectorField f y) (σ.hamiltonianVectorField g y) :=
+      SmoothBundleForm.eval₂ σ y (σ.hamiltonianVectorField f y) (σ.hamiltonianVectorField g y) :=
     funext (σ.poissonBracket_def f g)
   rw [hfg, (h.isHamiltonianVectorField_hamiltonianVectorField f).mvfderiv_eval₂ hσ
     (h.isHamiltonianVectorField_hamiltonianVectorField g) (hf x) (hg x)
     (h.mdifferentiable_hamiltonianVectorField hf x) (h.mdifferentiable_hamiltonianVectorField hg x),
-    Pi.neg_apply, SmoothForm.eval₂_neg_left]
+    Pi.neg_apply, SmoothBundleForm.eval₂_neg_left]
 
 /-- For a nondegenerate closed form on a finite-dimensional manifold, the Poisson bracket of `C²`
 functions satisfies `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}`. -/

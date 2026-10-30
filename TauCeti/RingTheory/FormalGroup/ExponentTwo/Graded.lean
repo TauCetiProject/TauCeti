@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Basic
--- Proof-only: homogeneity as an equation in `A[T]`, rescaling, and base change.
+-- Proof-only: homogeneity as an equation in `A[T]`, rescaling, base change, and uniqueness of
+-- normalised logarithms.
+import TauCeti.RingTheory.FormalGroup.Logarithm.InfiniteHeight
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.FormalGroup.Rescale
 
@@ -29,7 +31,7 @@ is the rescaling `F^T(X, Y) = X + Y + ∑ Tⁱ⁺ʲ⁻¹ aᵢⱼ Xⁱ Yʲ` of `F
 is graded exactly when its base change along `ψ` is the rescaled series `∑ Tⁿ⁻¹ bₙ₋₁ Xⁿ`. Both
 series are normalised and additive along the corresponding formal group laws, because `T` is a
 nonzerodivisor, so the uniqueness of the normalised logarithm
-(`FormalGroup.logarithm_unique_of_nsmulSeries_two_eq_zero`) compares them.
+(`FormalGroup.logarithm_unique_of_natCast_eq_zero`) compares them.
 
 ## Main results
 
@@ -106,7 +108,8 @@ theorem forall_coeff_exponentTwoLog_mem_iff (F : FormalGroup A) [F.IsComm]
     rw [h] at hψ
     have h₂ : ((F.map Polynomial.C).rescale Polynomial.X).nsmulSeries 2 = 0 := by
       rw [← h, ← map_nsmulSeries, hF, map_zero]
-    refine logarithm_unique_of_nsmulSeries_two_eq_zero _ h₂ ?_ ?_ ?_ hψ ?_ ?_ ?_ hT
+    refine logarithm_unique_of_natCast_eq_zero _ Nat.prime_two
+      (natCast_eq_zero_of_nsmulSeries_eq_zero _ h₂) ?_ ?_ ?_ hψ ?_ ?_ ?_ hT
     · rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
       simp [g]
     · simp [g]

@@ -35,6 +35,11 @@ This file proves the basic laws of moment maps:
 * a moment map stays a moment map after adding a constant `ν ∈ 𝔤*`, after restricting the action
   along a Lie algebra homomorphism `𝔥 → 𝔤` (composing with the dual map), and, negated, for the
   opposite form `-σ`;
+* a moment map pulls back to a moment map along a smooth map relating two actions, so equivariant
+  symplectomorphisms transport moment maps (`TauCeti.SmoothTwoForm.IsMomentMap.mpullback`), and
+  the moment maps `μ` and `ν` of actions of one Lie algebra on two manifolds add up to the moment
+  map `(x, y) ↦ μ x + ν y` of the diagonal action on the product
+  (`TauCeti.SmoothTwoForm.IsMomentMap.prod`);
 * on a preconnected manifold any two moment maps of the same action differ by a constant, so the
   moment maps of an action are exactly the constant shifts of any one of them
   (`TauCeti.SmoothTwoForm.IsMomentMap.isMomentMap_iff_exists_eq_add`);
@@ -124,7 +129,7 @@ namespace IsMomentMap
 
 /-- The defining identity of a moment map: `σ(Z_M x, v) = d μ_Z (v)`. -/
 theorem eval₂_apply (h : σ.IsMomentMap a μ) (Z : 𝔤) (x : M) (v : TangentSpace I x) :
-    SmoothForm.eval₂ σ x (a Z x) v = mvfderiv I (fun y ↦ μ y Z) x v :=
+    SmoothBundleForm.eval₂ σ x (a Z x) v = mvfderiv I (fun y ↦ μ y Z) x v :=
   isHamiltonianVectorField_iff.1 (h.isHamiltonianVectorField Z) x v
 
 /-- The components of a moment map are differentiable. -/
@@ -151,7 +156,7 @@ theorem neg (h : σ.IsMomentMap a μ) : (-σ).IsMomentMap a fun x ↦ -μ x wher
     exact (h.contMDiff Z).neg
   isHamiltonianVectorField Z := isHamiltonianVectorField_iff.2 fun x v ↦ by
     simp only [LinearMap.neg_apply]
-    rw [mvfderiv_fun_neg, SmoothForm.eval₂_neg, h.eval₂_apply, _root_.neg_apply]
+    rw [mvfderiv_fun_neg, SmoothBundleForm.eval₂_neg, h.eval₂_apply, _root_.neg_apply]
 
 /-- **Restriction of moment maps.** Along a Lie algebra homomorphism `f : 𝔥 → 𝔤`, for instance the
 inclusion of a Lie subalgebra, a moment map `μ` of `a` gives the moment map `x ↦ μ x ∘ f` of the
@@ -163,6 +168,35 @@ theorem comp {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] (h : σ.IsMomen
   isHamiltonianVectorField Z := by
     simpa only [InfinitesimalAction.comp_apply, LinearMap.comp_apply, LieHom.coe_toLinearMap]
       using h.isHamiltonianVectorField (f Z)
+
+/-- **Transport of moment maps.** Let a smooth map `φ : M' → M` relate an infinitesimal action
+`a'` on `M'` to `a`, that is `dφ (Z_{M'} x) = Z_M (φ x)`. Then `μ ∘ φ` is a moment map of `a'` for
+the pullback `φ^* σ`. For instance, an equivariant symplectomorphism carries moment maps to moment
+maps. -/
+theorem mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' ∞ M'] {a' : InfinitesimalAction 𝔤 I' M'}
+    (h : σ.IsMomentMap a μ) {φ : M' → M} (hφ : ContMDiff I' I ∞ φ)
+    (hφa : ∀ Z x, mfderiv I' I φ x (a' Z x) = a Z (φ x)) :
+    IsMomentMap (SmoothForm.mpullback φ hφ σ) a' (μ ∘ φ) where
+  contMDiff Z := (h.contMDiff Z).comp hφ
+  isHamiltonianVectorField Z :=
+    (h.isHamiltonianVectorField Z).mpullback hφ (fun x ↦ h.mdifferentiableAt Z (φ x)) (hφa Z)
+
+/-- **Moment maps of products.** If `μ` and `ν` are moment maps of infinitesimal actions of the
+same Lie algebra on `(M, σ)` and on `(N, τ)`, then `(x, y) ↦ μ x + ν y` is a moment map of the
+diagonal action on `M × N` for the product form `pr₁^* σ + pr₂^* τ`. -/
+theorem prod {F H' N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+    [CompleteSpace E] [CompleteSpace F] {τ : SmoothTwoForm J N}
+    {b : InfinitesimalAction 𝔤 J N} {ν : N → Module.Dual ℝ 𝔤} (h : σ.IsMomentMap a μ)
+    (h' : τ.IsMomentMap b ν) :
+    (σ.prod τ).IsMomentMap (a.prod b) fun p ↦ μ p.1 + ν p.2 where
+  contMDiff Z := ((h.contMDiff Z).comp contMDiff_fst).add ((h'.contMDiff Z).comp contMDiff_snd)
+  isHamiltonianVectorField Z := by
+    simpa only [LinearMap.add_apply, InfinitesimalAction.prod_apply] using
+      (h.isHamiltonianVectorField Z).prod (h'.isHamiltonianVectorField Z) (h.mdifferentiableAt Z)
+        (h'.mdifferentiableAt Z)
 
 /-- Two moment maps of the same action have components differing by functions with vanishing
 differential. -/
@@ -218,7 +252,7 @@ vector fields: `{μ_Z, μ_Z'} = σ(Z_M, Z'_M)`. -/
 theorem poissonBracket_eq_eval₂ (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (Z Z' : 𝔤)
     (x : M) :
     σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z') x =
-      SmoothForm.eval₂ σ x (a Z x) (a Z' x) := by
+      SmoothBundleForm.eval₂ σ x (a Z x) (a Z' x) := by
   rw [h.poissonBracket_eq_mvfderiv hσ, h.eval₂_apply]
 
 /-- **Noether's theorem.** The derivative of a function `f` along the generated vector field `Z_M`
@@ -256,7 +290,7 @@ def momentCocycle (σ : SmoothTwoForm I M) (a : InfinitesimalAction 𝔤 I M)
 theorem momentCocycle_apply (σ : SmoothTwoForm I M) (a : InfinitesimalAction 𝔤 I M)
     (μ : M → Module.Dual ℝ 𝔤) (x : M) (Z Z' : 𝔤) :
     σ.momentCocycle a μ x Z Z' = (TrivialLieModule.equiv ℝ 𝔤 ℝ).symm
-      (SmoothForm.eval₂ σ x (a Z x) (a Z' x) - μ x ⁅Z, Z'⁆) := by
+      (SmoothBundleForm.eval₂ σ x (a Z x) (a Z' x) - μ x ⁅Z, Z'⁆) := by
   simp only [momentCocycle, ← LieModule.Cohomology.twoCochain_val_apply, LinearMap.compr₂_apply,
     LinearMap.sub_apply, LinearMap.compl₁₂_apply, LinearMap.coe_comp, LinearMap.coe_proj,
     InfinitesimalAction.coe_toLinearMap, Function.comp_apply, Function.eval,
@@ -284,7 +318,7 @@ theorem momentCocycle_neg (σ : SmoothTwoForm I M) (a : InfinitesimalAction 𝔤
     (-σ).momentCocycle a (fun y ↦ -μ y) x = -σ.momentCocycle a μ x := by
   refine DFunLike.ext _ _ fun Z ↦ LinearMap.ext fun Z' ↦ ?_
   rw [← neg_one_smul ℝ (σ.momentCocycle a μ x), LieModule.Cohomology.smul_apply_apply,
-    neg_one_smul, momentCocycle_apply, momentCocycle_apply, SmoothForm.eval₂_neg,
+    neg_one_smul, momentCocycle_apply, momentCocycle_apply, SmoothBundleForm.eval₂_neg,
     LinearMap.neg_apply, neg_sub_neg, ← neg_sub, map_neg]
 
 /-- The cocycle of the restriction of `μ` along a Lie algebra homomorphism `f : 𝔥 → 𝔤` is the
@@ -300,8 +334,8 @@ theorem momentCocycle_comp {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] (
 /-- The pairing `σ(Z_M, Z'_M)` of two generated vector fields is a differentiable function. -/
 private theorem mdifferentiableAt_eval₂ (σ : SmoothTwoForm I M) (a : InfinitesimalAction 𝔤 I M)
     (Z Z' : 𝔤) (x : M) :
-    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ SmoothForm.eval₂ σ y (a Z y) (a Z' y)) x := by
-  simpa only [SmoothForm.eval₂_apply] using
+    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ SmoothBundleForm.eval₂ σ y (a Z y) (a Z' y)) x := by
+  simpa only [SmoothBundleForm.eval₂_apply] using
     σ.mdifferentiableAt_apply_vectorField (V := fun i y ↦ ![a Z y, a Z' y] i)
       fun i ↦ by fin_cases i <;> exact (a.contMDiff _ x).mdifferentiableAt (by simp)
 
@@ -322,7 +356,7 @@ variable [CompleteSpace E]
 /-- For a closed form, the differential of `σ(Z_M, Z'_M)` is the differential of the component
 `μ_{⁅Z, Z'⁆}` of a moment map: the cocycle `σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` is locally constant. -/
 theorem mvfderiv_eval₂ (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed) (Z Z' : 𝔤) (x : M) :
-    mvfderiv I (fun y ↦ SmoothForm.eval₂ σ y (a Z y) (a Z' y)) x =
+    mvfderiv I (fun y ↦ SmoothBundleForm.eval₂ σ y (a Z y) (a Z' y)) x =
       mvfderiv I (fun y ↦ μ y ⁅Z, Z'⁆) x := by
   ext v
   have h2 : (2 : WithTop ℕ∞) ≤ ∞ := by simp
@@ -330,7 +364,7 @@ theorem mvfderiv_eval₂ (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed) (Z Z' : �
       ((h.contMDiff Z).of_le h2 x) ((h.contMDiff Z').of_le h2 x)
       ((a.contMDiff Z x).mdifferentiableAt (by simp))
       ((a.contMDiff Z' x).mdifferentiableAt (by simp)),
-    ← h.eval₂_apply, a.map_lie, Pi.neg_apply, SmoothForm.eval₂_neg_left]
+    ← h.eval₂_apply, a.map_lie, Pi.neg_apply, SmoothBundleForm.eval₂_neg_left]
 
 /-- **The cocycle of a moment map is constant** on a preconnected manifold, for a closed form. -/
 theorem momentCocycle_eq [PreconnectedSpace M] (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed)
@@ -339,7 +373,7 @@ theorem momentCocycle_eq [PreconnectedSpace M] (h : σ.IsMomentMap a μ) (hσ : 
   rw [momentCocycle_apply, momentCocycle_apply]
   congr 1
   refine MDifferentiable.apply_eq_of_mfderiv_eq_zero
-    (f := fun y ↦ SmoothForm.eval₂ σ y (a Z y) (a Z' y) - μ y ⁅Z, Z'⁆)
+    (f := fun y ↦ SmoothBundleForm.eval₂ σ y (a Z y) (a Z' y) - μ y ⁅Z, Z'⁆)
     (fun y ↦ (mdifferentiableAt_eval₂ σ a Z Z' y).sub (h.mdifferentiableAt _ y))
     (fun y ↦ mvfderiv_eq_zero_iff.1 ?_) x x'
   rw [mvfderiv_fun_sub (mdifferentiableAt_eval₂ σ a Z Z' y) (h.mdifferentiableAt _ y),
@@ -349,9 +383,9 @@ theorem momentCocycle_eq [PreconnectedSpace M] (h : σ.IsMomentMap a μ) (hσ : 
 the real values of the cocycle. -/
 private theorem eval₂_sub_lie_add (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed) (X Y Z : 𝔤)
     (x : M) :
-    (SmoothForm.eval₂ σ x (a ⁅X, Y⁆ x) (a Z x) - μ x ⁅⁅X, Y⁆, Z⁆) +
-      (SmoothForm.eval₂ σ x (a ⁅Y, Z⁆ x) (a X x) - μ x ⁅⁅Y, Z⁆, X⁆) +
-      (SmoothForm.eval₂ σ x (a ⁅Z, X⁆ x) (a Y x) - μ x ⁅⁅Z, X⁆, Y⁆) = 0 := by
+    (SmoothBundleForm.eval₂ σ x (a ⁅X, Y⁆ x) (a Z x) - μ x ⁅⁅X, Y⁆, Z⁆) +
+      (SmoothBundleForm.eval₂ σ x (a ⁅Y, Z⁆ x) (a X x) - μ x ⁅⁅Y, Z⁆, X⁆) +
+      (SmoothBundleForm.eval₂ σ x (a ⁅Z, X⁆ x) (a Y x) - μ x ⁅⁅Z, X⁆, Y⁆) = 0 := by
   have hb (A B : 𝔤) : VectorField.mlieBracket I (a A) (a B) x = -a ⁅A, B⁆ x := by
     rw [a.map_lie, Pi.neg_apply, neg_neg]
   -- Evaluate `dσ(X_M, Y_M, Z_M) = 0` by the invariant formula; every term is a pairing
@@ -360,9 +394,9 @@ private theorem eval₂_sub_lie_add (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed
     ((a.contMDiff X x).mdifferentiableAt (by simp)) ((a.contMDiff Y x).mdifferentiableAt (by simp))
     ((a.contMDiff Z x).mdifferentiableAt (by simp))
   rw [(SmoothForm.isClosed_def σ).1 hσ] at hd
-  simp only [← SmoothForm.eval₂_apply, h.mvfderiv_eval₂ hσ, ← h.eval₂_apply, hb,
-    SmoothForm.eval₂_neg_left, Pi.zero_apply, ContinuousAlternatingMap.coe_zero] at hd
-  simp only [← lie_skew X Z, map_neg, Pi.neg_apply, SmoothForm.eval₂_neg_left] at hd
+  simp only [← SmoothBundleForm.eval₂_apply, h.mvfderiv_eval₂ hσ, ← h.eval₂_apply, hb,
+    SmoothBundleForm.eval₂_neg_left, Pi.zero_apply, ContinuousAlternatingMap.coe_zero] at hd
+  simp only [← lie_skew X Z, map_neg, Pi.neg_apply, SmoothBundleForm.eval₂_neg_left] at hd
   have hj : μ x ⁅X, ⁅Y, Z⁆⁆ + μ x ⁅Y, ⁅Z, X⁆⁆ + μ x ⁅Z, ⁅X, Y⁆⁆ = 0 := by
     rw [← map_add, ← map_add, lie_jacobi, map_zero]
   simp only [← lie_skew ⁅X, Y⁆ Z, ← lie_skew ⁅Y, Z⁆ X, ← lie_skew ⁅Z, X⁆ Y, map_neg]
@@ -379,11 +413,11 @@ theorem momentCocycle_mem_twoCocycle (h : σ.IsMomentMap a μ) (hσ : σ.IsClose
   have e₁ : μ x ⁅X, ⁅Y, Z⁆⁆ = -μ x ⁅⁅Y, Z⁆, X⁆ := by rw [← lie_skew ⁅Y, Z⁆ X, map_neg, neg_neg]
   have e₂ : μ x ⁅Y, ⁅X, Z⁆⁆ = μ x ⁅⁅Z, X⁆, Y⁆ := by
     rw [← lie_skew ⁅Z, X⁆ Y, ← lie_skew Z X, lie_neg, neg_neg]
-  have e₃ : SmoothForm.eval₂ σ x (a Y x) (a ⁅X, Z⁆ x) =
-      SmoothForm.eval₂ σ x (a ⁅Z, X⁆ x) (a Y x) := by
-    rw [SmoothForm.eval₂_swap σ x (a Y x), ← lie_skew Z X, map_neg, Pi.neg_apply,
-      SmoothForm.eval₂_neg_left]
-  rw [e₁, e₂, e₃, SmoothForm.eval₂_swap σ x (a X x)]
+  have e₃ : SmoothBundleForm.eval₂ σ x (a Y x) (a ⁅X, Z⁆ x) =
+      SmoothBundleForm.eval₂ σ x (a ⁅Z, X⁆ x) (a Y x) := by
+    rw [SmoothBundleForm.eval₂_swap σ x (a Y x), ← lie_skew Z X, map_neg, Pi.neg_apply,
+      SmoothBundleForm.eval₂_neg_left]
+  rw [e₁, e₂, e₃, SmoothBundleForm.eval₂_swap σ x (a X x)]
   linear_combination -h.eval₂_sub_lie_add hσ X Y Z x
 
 end Closed

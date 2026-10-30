@@ -42,6 +42,9 @@ The main result is that the action of a monotone map preserves the defining equa
 
 * `TauCeti.DGNerve.Simplex`: the `n`-simplices of the differential graded nerve.
 * `TauCeti.DGNerve.Simplex.map`: the pullback of a simplex along a monotone map.
+* `TauCeti.DGNerve.Coherences.comap`: coherences pulled back along a strictly monotone map,
+  functorially (`Coherences.comap_id`, `Coherences.comap_comap`) and compatibly with the boundary
+  (`TauCeti.DGNerve.boundary_comap`).
 * `TauCeti.dgNerve`: the differential graded nerve, a simplicial set.
 * `TauCeti.dgNerveEquiv`: its vertices are the objects of `C`.
 * `TauCeti.dgNerve.edgeEquiv`: its edges from `X` to `Y` are the closed degree-zero morphisms.
@@ -147,6 +150,79 @@ theorem boundary_empty {X : Fin (n + 1) → C} (f : Coherences R X) (i j : Fin (
     (hij : i ≤ j) (hS : ∅ ⊆ Ioo i j) (hd : d + #(∅ : Finset (Fin (n + 1))) = 0) :
     boundary R f i j ∅ d hij hS hd = 0 := by
   simp [boundary]
+
+/-- Coherences pulled back along a strictly monotone map `e`: the coherence indexed by `i`, `S`
+and `j` is the one indexed by their images under `e`. -/
+noncomputable def Coherences.comap {m : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
+    {e : Fin (m + 1) → Fin (n + 1)} (he : StrictMono e) : Coherences R (X ∘ e) :=
+  fun i j S d hij hS hd ↦ f (e i) (e j) (S.image e) d (he.monotone hij)
+    (by
+      rw [← coe_subset, coe_image, coe_Ioo]
+      exact (Set.image_mono (by rwa [← coe_Ioo, coe_subset])).trans he.image_Ioo_subset)
+    (by rwa [card_image_of_injective _ he.injective])
+
+/-- The coherence of the pullback indexed by `i`, `S` and `j` is the coherence indexed by their
+images. -/
+theorem Coherences.comap_apply {m : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
+    {e : Fin (m + 1) → Fin (n + 1)} (he : StrictMono e) {i j : Fin (m + 1)}
+    {S : Finset (Fin (m + 1))} {d : ℤ} (hij : i ≤ j) (hS : S ⊆ Ioo i j) (hd : d + #S = 0)
+    (h₁ : e i ≤ e j) (h₂ : S.image e ⊆ Ioo (e i) (e j)) (h₃ : d + #(S.image e) = 0) :
+    f.comap he i j S d hij hS hd = f (e i) (e j) (S.image e) d h₁ h₂ h₃ :=
+  (rfl)
+
+/-- Pulling coherences back along the identity does nothing. -/
+@[simp]
+theorem Coherences.comap_id {X : Fin (n + 1) → C} (f : Coherences R X) :
+    f.comap strictMono_id = f := by
+  funext i j S d hij hS hd
+  exact f.congr (image_id (s := S))
+
+/-- Pulling coherences back along two strictly monotone maps in turn is pulling them back along
+the composite. -/
+@[simp]
+theorem Coherences.comap_comap {m l : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
+    {e : Fin (m + 1) → Fin (n + 1)} (he : StrictMono e) {e' : Fin (l + 1) → Fin (m + 1)}
+    (he' : StrictMono e') : (f.comap he).comap he' = f.comap (he.comp he') := by
+  funext i j S d hij hS hd
+  exact f.congr image_image
+
+/-- The boundary of pulled-back coherences is the boundary of the original ones on the images. -/
+theorem boundary_comap {m : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
+    {e : Fin (m + 1) → Fin (n + 1)} (he : StrictMono e) {i j : Fin (m + 1)}
+    {S : Finset (Fin (m + 1))} {d : ℤ} (hij : i ≤ j) (hS : S ⊆ Ioo i j) (hd : d + #S = 0)
+    (h₁ : e i ≤ e j) (h₂ : S.image e ⊆ Ioo (e i) (e j)) (h₃ : d + #(S.image e) = 0) :
+    boundary R (f.comap he) i j S d hij hS hd =
+      boundary R f (e i) (e j) (S.image e) d h₁ h₂ h₃ := by
+  have hcard (P : Fin (n + 1) → Prop) [DecidablePred P] :
+      #{s ∈ S.image e | P s} = #{s ∈ S | P (e s)} := by
+    rw [filter_image, card_image_of_injective _ he.injective]
+  rw [boundary_def, boundary_def]
+  refine sum_bij (fun t _ ↦ ⟨e t, mem_image_of_mem e t.2⟩) (fun _ _ ↦ mem_attach _ _)
+    (fun a _ b _ h ↦ Subtype.ext (he.injective (congrArg Subtype.val h))) (fun b _ ↦ ?_)
+    fun t _ ↦ ?_
+  · obtain ⟨a, ha, hab⟩ := mem_image.1 b.2
+    exact ⟨⟨a, ha⟩, mem_attach _ _, Subtype.ext hab⟩
+  have hle : #{s ∈ S.image e | e t ≤ s} = #{s ∈ S | t.1 ≤ s} := by
+    rw [hcard]
+    simp only [he.le_iff_le]
+  have hlt : #{s ∈ S.image e | s < e t} = #{s ∈ S | s < t.1} := by
+    rw [hcard]
+    simp only [he.lt_iff_lt]
+  have hgt : #{s ∈ S.image e | e t < s} = #{s ∈ S | t.1 < s} := by
+    rw [hcard]
+    simp only [he.lt_iff_lt]
+  have e₁ : {s ∈ S | s < t.1}.image e = {s ∈ S.image e | s < e t} := by
+    rw [filter_image]
+    simp only [he.lt_iff_lt]
+  have e₂ : {s ∈ S | t.1 < s}.image e = {s ∈ S.image e | e t < s} := by
+    rw [filter_image]
+    simp only [he.lt_iff_lt]
+  rw [hle]
+  congr 1
+  refine congrArg₂ (· - ·) (Coherences.congr f (image_erase he.injective _ _)) ?_
+  congr 1
+  · rw [hlt, hgt]
+  · exact Coherences.dgComp_congr f e₁ e₂ (by rw [hlt]) (by rw [hgt])
 
 variable (R C) in
 /-- An `n`-simplex of the differential graded nerve: objects `X 0, …, X n` with coherences
@@ -614,6 +690,63 @@ theorem map_map {k : ℕ} (β : Fin (k + 1) →o Fin (m + 1)) :
       x.mapCoh_eq_zero (α.comp β) fun h ↦ hβ (hc.1 h).1]
     -- As above, the two zeros agree because `map_obj` and `OrderHom.comp_coe` hold by `rfl`.
     rfl
+
+/-- Coherences of a simplex at equal indices are heterogeneously equal. -/
+theorem coh_heq {i i' j j' : Fin (n + 1)} {S S' : Finset (Fin (n + 1))} {d : ℤ} (hi : i = i')
+    (hj : j = j') (hS : S = S') {h₁ : i ≤ j} {h₂ : S ⊆ Ioo i j} {h₃ : d + #S = 0}
+    {h₁' : i' ≤ j'} {h₂' : S' ⊆ Ioo i' j'} {h₃' : d + #S' = 0} :
+    x.coh i j S d h₁ h₂ h₃ ≍ x.coh i' j' S' d h₁' h₂' h₃' := by
+  subst hi hj hS
+  rfl
+
+/-- A coherence of the pullback of a simplex only depends on the values of the monotone map at
+the vertices of the coherence. -/
+theorem map_coh_heq {α β : Fin (m + 1) →o Fin (n + 1)} {i j : Fin (m + 1)}
+    {S : Finset (Fin (m + 1))} {d : ℤ} {hij : i ≤ j} {hS : S ⊆ Ioo i j} {hd : d + #S = 0}
+    (hi : α i = β i) (hj : α j = β j) (hS' : ∀ s ∈ S, α s = β s) :
+    (x.map α).coh i j S d hij hS hd ≍ (x.map β).coh i j S d hij hS hd := by
+  have himg : S.image α = S.image β := image_congr hS'
+  rw [map_coh, map_coh]
+  by_cases h : #(S.image α) = #S ∧ S.image α ⊆ Ioo (α i) (α j)
+  · rw [x.mapCoh_eq_coh α h, x.mapCoh_eq_coh β (by rwa [← himg, ← hi, ← hj])]
+    exact x.coh_heq hi hj himg
+  · rw [x.mapCoh_eq_zero α h, x.mapCoh_eq_zero β (by rwa [← himg, ← hi, ← hj])]
+    have h0 : ∀ {a a' b b' : C}, a = a' → b = b' → (0 : DGHom R d a b) ≍ (0 : DGHom R d a' b') := by
+      rintro _ _ _ _ rfl rfl
+      rfl
+    exact h0 (congrArg x.obj hi) (congrArg x.obj hj)
+
+/-- The coherences of the pullback along a strictly monotone map are those of the images. -/
+theorem map_coh_of_strictMono (hα : StrictMono α) {i j : Fin (m + 1)} {S : Finset (Fin (m + 1))}
+    {d : ℤ} (hij : i ≤ j) (hS : S ⊆ Ioo i j) (hd : d + #S = 0)
+    (hsub : S.image α ⊆ Ioo (α i) (α j)) :
+    (x.map α).coh i j S d hij hS hd = x.coh (α i) (α j) (S.image α) d (α.monotone hij) hsub
+      (by rwa [card_image_of_injective _ hα.injective]) := by
+  rw [map_coh]
+  exact x.mapCoh_eq_coh α ⟨card_image_of_injective _ hα.injective, hsub⟩
+
+/-- A copy of a simplex with propositionally equal objects. -/
+-- Exposed so that the objects of the copy reduce to `X'`: the types of its coherences depend on
+-- them.
+@[expose] def copy (X' : Fin (n + 1) → C) (h : x.obj = X') : Simplex R C n where
+  obj := X'
+  coh := h ▸ x.coh
+  coh_self i := by
+    subst h
+    exact x.coh_self i
+  dgDifferential_coh := by
+    subst h
+    exact x.dgDifferential_coh
+
+/-- The objects of a copy of a simplex are the given ones. -/
+@[simp]
+theorem copy_obj (X' : Fin (n + 1) → C) (h : x.obj = X') : (x.copy X' h).obj = X' := rfl
+
+/-- A copy of a simplex is equal to the original. -/
+@[simp]
+theorem copy_eq (X' : Fin (n + 1) → C) (h : x.obj = X') : x.copy X' h = x := by
+  subst h
+  rfl
 
 /-! ### Vertices and low-dimensional simplices -/
 
