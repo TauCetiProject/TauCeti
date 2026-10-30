@@ -174,6 +174,13 @@ lemma localOrientationEquiv_comap_apply (o : HomologicalOrientation N E d)
     hj.localOrientationEquiv x d (o.comap hj x) = o (j x) :=
   Equiv.apply_symm_apply _ _
 
+/-- The pullback depends only on the open embedding as a function, not on the proof that it is
+one. -/
+lemma comap_congr (o : HomologicalOrientation N E d) {j' : M → N} (hj : IsOpenEmbedding j)
+    (hj' : IsOpenEmbedding j') (hjj' : j = j') : o.comap hj = o.comap hj' := by
+  subst hjj'
+  rfl
+
 /-- Pulling back commutes with reversing orientations. -/
 @[simp]
 lemma comap_neg (o : HomologicalOrientation N E d) (hj : IsOpenEmbedding j) :

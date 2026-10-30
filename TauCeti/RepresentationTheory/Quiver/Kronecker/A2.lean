@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.CartanMap.Matrix
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.EulerForm
 public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Simple.ExtEuler
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
@@ -27,6 +28,10 @@ the Cartan matrix is
 [1 1].
 ```
 
+The same matrix is the categorical Cartan matrix of the path algebra, whose entries are the
+composition multiplicities `[kQ eⱼ : Sᵢ]` of the vertex projectives: the Cartan map sends `[P₁]`
+to `[S₁] + [S₂]` and `[P₂]` to `[S₂]`.
+
 The Ringel Euler matrix is `[1, -1; 0, 1]`. Its product with the transposed Cartan matrix is the
 identity on either side, and its symmetrization is the type `A₂` Cartan matrix. The final theorem
 computes the same Euler matrix categorically: it applies the Ext-Euler calculation obtained from
@@ -36,6 +41,11 @@ the length-one projective resolutions of the two vertex simples.
 
 * `TauCeti.Quiver.Kronecker.projectiveDimensionMatrix_eq_cartanMatrixA2`: the projective
   path-counting matrix is `[1, 0; 1, 1]`.
+* `TauCeti.Quiver.Kronecker.submatrix_cartanMatrix_vertexProjective_eq_cartanMatrixA2`: the
+  categorical Cartan matrix of the path algebra is `[1, 0; 1, 1]`.
+* `TauCeti.Quiver.Kronecker.cartanMap_vertexProjective_src` and
+  `TauCeti.Quiver.Kronecker.cartanMap_vertexProjective_tgt`: the Cartan map sends `[P₁]` to
+  `[S₁] + [S₂]` and `[P₂]` to `[S₂]`.
 * `TauCeti.Quiver.Kronecker.submatrix_toMatrix_eulerForm_eq_eulerMatrixA2`: the quiver Euler
   matrix is
   `[1, -1; 0, 1]`.
@@ -90,6 +100,40 @@ theorem projectiveDimensionMatrix_apply (k : Type u) [Field k] (i j : Fin 2) :
       ((CategoryTheory.Paths.of (Kronecker A)).obj (![src, tgt] i))) : ℤ) = cartanMatrixA2 i j := by
   simpa only [dimVector_apply] using
     congrFun (congrFun (projectiveDimensionMatrix_eq_cartanMatrixA2 k) i) j
+
+/-- **The categorical Cartan matrix of `1 ⟶ 2` is `[1, 0; 1, 1]`.** In the bases of vertex
+projectives `kQ eᵢ` and vertex simples `Sᵢ` of the path algebra, ordered source first, the
+composition multiplicities `[kQ eⱼ : Sᵢ]` form `cartanMatrixA2`. -/
+theorem submatrix_cartanMatrix_vertexProjective_eq_cartanMatrixA2 (k : Type v) [Field k] :
+    (cartanMatrix (PathAlgebra.vertexProjective k (Kronecker A))
+        (vertexSimpleModuleFG k (Kronecker A))
+        (PathAlgebra.isIndecomposableModule_vertexProjective k (Kronecker A))
+        (PathAlgebra.pairwise_isEmpty_linearEquiv_vertexProjective k (Kronecker A))
+        (PathAlgebra.isExhaustiveIndecomposableProjectiveFamily_vertexProjective k (Kronecker A))
+        (pairwise_isEmpty_linearEquiv_vertexSimpleModuleFG k (Kronecker A))
+        (isExhaustiveSimpleFamily_vertexSimpleModuleFG k (Kronecker A))).submatrix
+      ![src, tgt] ![src, tgt] = cartanMatrixA2 := by
+  ext i j
+  rw [Matrix.submatrix_apply, PathAlgebra.cartanMatrix_vertexProjective_apply,
+    ← dimVector_indecProjRep (k := k)]
+  exact congrFun (congrFun (projectiveDimensionMatrix_eq_cartanMatrixA2 k) i) j
+
+/-- The Cartan map of `1 ⟶ 2` sends the class of the source projective `P₁` to `[S₁] + [S₂]`. -/
+theorem cartanMap_vertexProjective_src (k : Type v) [Field k] :
+    cartanMap (pathAlgebra k (Kronecker A))
+        (ExactK0.of (PathAlgebra.vertexProjective k (Kronecker A) src)) =
+      ExactK0.of (vertexSimpleModuleFG k (Kronecker A) src) +
+        ExactK0.of (vertexSimpleModuleFG k (Kronecker A) tgt) := by
+  rw [PathAlgebra.cartanMap_vertexProjective]
+  simp
+
+/-- The Cartan map of `1 ⟶ 2` sends the class of the target projective `P₂` to `[S₂]`. -/
+theorem cartanMap_vertexProjective_tgt (k : Type v) [Field k] :
+    cartanMap (pathAlgebra k (Kronecker A))
+        (ExactK0.of (PathAlgebra.vertexProjective k (Kronecker A) tgt)) =
+      ExactK0.of (vertexSimpleModuleFG k (Kronecker A) tgt) := by
+  rw [PathAlgebra.cartanMap_vertexProjective]
+  simp
 
 /-- The Ringel Euler matrix `[1, -1; 0, 1]` of the quiver `1 ⟶ 2`, with vertices ordered source
 first. -/

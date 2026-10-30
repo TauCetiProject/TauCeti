@@ -10,9 +10,15 @@ public import Mathlib.Analysis.Normed.Module.Normalize
 /-!
 # Radial projection to the unit sphere
 
-This file packages pointwise normalization of a continuous nowhere-zero map as a continuous map
-to the unit sphere. It also defines the direction map `sphereDirection e`, which sends a nonzero
-vector `x` to `‖x‖⁻¹ • x` and the origin to an assigned point `e` of the unit sphere.
+This file proves that normalization is continuous away from the origin, in the form
+`Filter.Tendsto.normalize`, and packages pointwise normalization of a continuous nowhere-zero
+map as a continuous map to the unit sphere. It also defines the direction map
+`sphereDirection e`, which sends a nonzero vector `x` to `‖x‖⁻¹ • x` and the origin to an assigned
+point `e` of the unit sphere.
+
+## Main results
+
+* `Filter.Tendsto.normalize`: normalization preserves limits with a nonzero limit.
 
 ## Main definitions
 
@@ -24,22 +30,27 @@ public section
 
 noncomputable section
 
-open Metric NormedSpace Set
+open Filter Metric NormedSpace Set Topology
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- If `f` tends to a nonzero vector `x`, then the normalization of `f` tends to the normalization
+of `x`. -/
+theorem _root_.Filter.Tendsto.normalize {α : Type*} {l : Filter α} {f : α → E} {x : E}
+    (hf : Tendsto f l (𝓝 x)) (hx : x ≠ 0) :
+    Tendsto (fun a => NormedSpace.normalize (f a)) l (𝓝 (NormedSpace.normalize x)) := by
+  simp only [NormedSpace.normalize]
+  exact (hf.norm.inv₀ (norm_ne_zero_iff.mpr hx)).smul hf
 
 /-- Radial projection sends a continuous nowhere-zero map into a real normed space continuously
 to its unit sphere. -/
 noncomputable def normalizeToSphere {Y : Type*} [TopologicalSpace Y] (f : Y → E)
     (hf : Continuous f) (h0 : ∀ y, f y ≠ 0) : C(Y, sphere (0 : E) 1) where
   toFun y := ⟨normalize (f y), mem_sphere_zero_iff_norm.mpr (norm_normalize (h0 y))⟩
-  continuous_toFun := by
-    refine Continuous.subtype_mk ?_ _
-    simp only [NormedSpace.normalize]
-    exact ((continuous_norm.comp hf).inv₀
-      (fun y => norm_ne_zero_iff.mpr (h0 y))).smul hf
+  continuous_toFun :=
+    (continuous_iff_continuousAt.2 fun y => (hf.tendsto y).normalize (h0 y)).subtype_mk _
 
 /-- The underlying vector of `normalizeToSphere f hf h0 y` is the normalization of `f y`. -/
 @[simp]
