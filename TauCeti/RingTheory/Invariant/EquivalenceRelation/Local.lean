@@ -58,9 +58,10 @@ rank over the local ring `C`. Then the images `t aᵢ` of a basis `aᵢ` of `A` 
   finitely many maximal ideals.
 * `RingHom.IsSpecEquivRel.exists_basis_eq_apply`: if the ring of invariants is local, some basis of
   `B` over `A` consists of elements `t aᵢ`.
-* `RingHom.IsSpecEquivRel.free_of_isLocalRing`, `RingHom.IsSpecEquivRel.finite_of_isLocalRing` and
-  `RingHom.IsSpecEquivRel.exists_tensorProductEquiv_of_isLocalRing`: then `A` is finite free over
-  the ring of invariants `C`, and `A ⊗[C] A ≅ B`.
+* `RingHom.IsSpecEquivRel.free_of_isLocalRing`: then `A` is free over the ring of invariants `C`.
+
+The finiteness of `A` over `C` and the isomorphism `A ⊗[C] A ≅ B` hold without assuming that `C`
+is local; they are proved in `TauCeti.RingTheory.Invariant.EquivalenceRelation.Quotient`.
 
 ## References
 
@@ -292,20 +293,5 @@ local, then `A` is a free `C`-module. -/
 theorem free_of_isLocalRing : Module.Free ((algebraMap A B).eqLocus t) A :=
   have ⟨b, _, hb⟩ := h.exists_basis_eq_apply
   .of_basis (h.basis b hb)
-
-/-- **The quotient map is finite.** If `B` is finite free over `A` and the ring of invariants `C`
-is local, then `A` is a finite `C`-module. -/
-theorem finite_of_isLocalRing : Module.Finite ((algebraMap A B).eqLocus t) A :=
-  have ⟨b, _, hb⟩ := h.exists_basis_eq_apply
-  .of_basis (h.basis b hb)
-
-/-- **The relation is the kernel pair of the quotient map.** If `B` is finite free over `A` and
-the ring of invariants `C` is local, then `x ⊗ y ↦ s x * t y` is an isomorphism of `A`-algebras
-`A ⊗[C] A ≃ₐ[A] B`. -/
-theorem exists_tensorProductEquiv_of_isLocalRing :
-    ∃ e : A ⊗[(algebraMap A B).eqLocus t] A ≃ₐ[A] B,
-      ∀ x y, e (x ⊗ₜ y) = algebraMap A B x * t y :=
-  have ⟨b, _, hb⟩ := h.exists_basis_eq_apply
-  ⟨h.tensorProductEquiv b hb, h.tensorProductEquiv_tmul b hb⟩
 
 end RingHom.IsSpecEquivRel
