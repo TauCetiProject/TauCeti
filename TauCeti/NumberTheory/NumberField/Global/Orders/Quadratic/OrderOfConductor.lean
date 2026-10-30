@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Orders.ClassNumber
 public import TauCeti.NumberTheory.NumberField.Global.Orders.IntAddMulOrder
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.Conductor
+public import TauCeti.NumberTheory.NumberField.Quadratic.ResidueUnits
+import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
@@ -25,8 +27,15 @@ orders becomes
 ```
 
 Counting the residue units `(𝓞 K ⧸ f 𝓞 K)ˣ` through the splitting of the primes dividing `f`
-turns this identity into the classical formula
-`h(O_f) = h_K f / [(𝓞 K)ˣ : O_fˣ] · ∏_{p ∣ f} (1 - (D / p) / p)` (Cox, Theorem 7.24).
+(`TauCeti.NumberField.card_units_quotient_span_natCast_mul_prod`) turns this identity into the
+classical formula
+
+```text
+h(O_f) = h_K f / [(𝓞 K)ˣ : O_fˣ] · ∏_{p ∣ f} (1 - χ_D(p) / p)
+```
+
+(Cox, Theorem 7.24), where `χ_D = TauCeti.Multiquadratic.fundamentalDiscriminantChar D` is the
+quadratic character of `K`, with `χ_D(p) = 0` at the ramified primes.
 
 ## Main results
 
@@ -40,6 +49,9 @@ turns this identity into the classical formula
   is determined by its conductor.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_mul_index_mul_totient`:
   the class number formula for `O_f` in terms of the residue units modulo `f`.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_mul_index_mul_prod` and
+  `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_eq`: the class number of
+  `O_f` in terms of `h_K`, `f`, the unit index and `χ_D`.
 
 ## References
 
@@ -50,6 +62,7 @@ public section
 noncomputable section
 
 open NumberField
+open TauCeti.Multiquadratic (fundamentalDiscriminantChar isFundamentalDiscr_discr)
 
 namespace TauCeti.GlobalNumberFields.NumberFieldOrder
 
@@ -114,5 +127,85 @@ theorem card_pic_intAddMulOrder_mul_index_mul_totient (hK : Module.finrank ℚ K
       Nat.card (ClassGroup (𝓞 K)) * Nat.card (𝓞 K ⧸ Ideal.span {(f : 𝓞 K)})ˣ := by
   have h := (intAddMulOrder K f).card_pic_mul_index_mul_card_units
   rwa [card_units_quotient_conductor_intAddMulOrder hK, conductor_intAddMulOrder hK] at h
+
+/-- **The class number of the order of conductor `f`**, without denominators. For the order
+`O_f = ℤ + f 𝓞 K` of a quadratic field `K` with discriminant `D`,
+
+`#Pic O_f · [(𝓞 K)ˣ : O_fˣ] · ∏_{p ∣ f} p = h_K · f · ∏_{p ∣ f} (p - χ_D(p))`. -/
+theorem card_pic_intAddMulOrder_mul_index_mul_prod (hK : Module.finrank ℚ K = 2) (f : ℕ)
+    [NeZero f] :
+    (Nat.card (Pic (intAddMulOrder K f)) : ℤ) *
+        (Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
+          (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range.index *
+        ∏ p ∈ f.primeFactors, (p : ℤ) =
+      Nat.card (ClassGroup (𝓞 K)) * f * ∏ p ∈ f.primeFactors,
+        ((p : ℤ) - fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK)
+          p) := by
+  have hf : f ≠ 0 := NeZero.ne f
+  have hA := congrArg (Nat.cast : ℕ → ℤ) (card_pic_intAddMulOrder_mul_index_mul_totient hK f)
+  push_cast at hA
+  have hT : (f.totient : ℤ) * ∏ p ∈ f.primeFactors, (p : ℤ) =
+      f * ∏ p ∈ f.primeFactors, ((p : ℤ) - 1) := by
+    have h := congrArg (Nat.cast : ℕ → ℤ) (Nat.totient_mul_prod_primeFactors f)
+    push_cast at h
+    rw [h, Finset.prod_congr rfl fun p hp ↦ Nat.cast_pred (Nat.prime_of_mem_primeFactors hp).pos]
+  have hU := TauCeti.NumberField.card_units_quotient_span_natCast_mul_prod hK hf
+  rw [Finset.prod_pow, Finset.prod_mul_distrib] at hU
+  have hY : ∏ p ∈ f.primeFactors, ((p : ℤ) - 1) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun p hp ↦
+    sub_ne_zero.mpr (by exact_mod_cast (Nat.prime_of_mem_primeFactors hp).one_lt.ne')
+  have hX : ∏ p ∈ f.primeFactors, (p : ℤ) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun p hp ↦ by
+    exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero
+  -- Multiply through by `f ∏ (p - 1) ∏ p = φ(f) (∏ p)²` and combine the formula with residue
+  -- units `hA`, the totient product `hT` and the residue-unit count `hU`.
+  refine mul_right_cancel₀ (mul_ne_zero (mul_ne_zero (Nat.cast_ne_zero.mpr hf) hY) hX) ?_
+  linear_combination
+    (-((Nat.card (Pic (intAddMulOrder K f)) : ℤ) *
+        (Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
+          (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range.index *
+        (∏ p ∈ f.primeFactors, (p : ℤ)) ^ 2)) * hT +
+      (∏ p ∈ f.primeFactors, (p : ℤ)) ^ 3 * hA +
+      (Nat.card (ClassGroup (𝓞 K)) * ∏ p ∈ f.primeFactors, (p : ℤ)) * hU
+
+/-- **The class number of the order of conductor `f`** (Cox, Theorem 7.24). For the order
+`O_f = ℤ + f 𝓞 K` of a quadratic field `K` with discriminant `D`,
+
+`h(O_f) = h_K · f / [(𝓞 K)ˣ : O_fˣ] · ∏_{p ∣ f} (1 - χ_D(p) / p)`,
+
+in any field of characteristic zero. -/
+theorem card_pic_intAddMulOrder_eq {F : Type*} [Field F] [CharZero F]
+    (hK : Module.finrank ℚ K = 2) (f : ℕ) [NeZero f] :
+    (Nat.card (Pic (intAddMulOrder K f)) : F) =
+      Nat.card (ClassGroup (𝓞 K)) * f /
+          (Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
+            (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range.index *
+        ∏ p ∈ f.primeFactors,
+          (1 - (fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p :
+            F) / p) := by
+  have hf : f ≠ 0 := NeZero.ne f
+  -- The unit index is nonzero, since `h_K` and the number of residue units are.
+  have hI : ((Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
+      (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range.index : F) ≠ 0 := by
+    have : Finite (𝓞 K ⧸ Ideal.span {(f : 𝓞 K)}) :=
+      Ideal.finiteQuotientOfFreeOfNeBot _ (by simpa using hf)
+    have h := card_pic_intAddMulOrder_mul_index_mul_totient hK f
+    refine Nat.cast_ne_zero.mpr fun h0 ↦ ?_
+    rw [h0, mul_zero, zero_mul] at h
+    exact (Nat.mul_pos Nat.card_pos Nat.card_pos).ne' h.symm
+  have hX : ∏ p ∈ f.primeFactors, (p : F) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun p hp ↦
+    Nat.cast_ne_zero.mpr (Nat.prime_of_mem_primeFactors hp).ne_zero
+  have key := congrArg (Int.cast : ℤ → F) (card_pic_intAddMulOrder_mul_index_mul_prod hK f)
+  push_cast at key
+  have hprod : (∏ p ∈ f.primeFactors,
+      (1 - (fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p :
+        F) / p)) * ∏ p ∈ f.primeFactors, (p : F) = ∏ p ∈ f.primeFactors,
+      ((p : F) - fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK)
+        p) := by
+    rw [← Finset.prod_mul_distrib]
+    refine Finset.prod_congr rfl fun p hp ↦ ?_
+    have : (p : F) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.prime_of_mem_primeFactors hp).ne_zero
+    field_simp
+  refine mul_right_cancel₀ (mul_ne_zero hI hX) ?_
+  rw [← mul_assoc, key, ← hprod]
+  field_simp
 
 end TauCeti.GlobalNumberFields.NumberFieldOrder
