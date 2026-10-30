@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Path
 public import TauCeti.Topology.Circle.AddCircle
+import TauCeti.Algebra.Group.Pow
 
 /-!
 # Loops as maps out of the circle
@@ -91,13 +92,6 @@ theorem torusCurve_apply (p q : ℤ) (t : unitInterval) :
 
 /-! ### The gluing of the boundary tori -/
 
-private theorem torus_zpow_mul {G : Type*} [CommGroup G] (a b : G)
-    (i j k i' j' k' : ℤ) :
-    (a ^ i * b ^ j) ^ k * (a ^ i' * b ^ j') ^ k' =
-      a ^ (i * k + i' * k') * b ^ (j * k + j' * k') := by
-  simp only [mul_zpow, ← zpow_mul, zpow_add]
-  ac_rfl
-
 /-- The homeomorphism `(a, b) ↦ (a ^ p b ^ (-t), a ^ q b ^ s)` of the torus `S¹ × S¹` given by the
 matrix `[[p, -t], [q, s]]` of determinant `s p + t q = 1`. -/
 def torusGluing (p q s t : ℤ) (h : s * p + t * q = 1) :
@@ -106,16 +100,16 @@ def torusGluing (p q s t : ℤ) (h : s * p + t * q = 1) :
   invFun y := (y.1 ^ s * y.2 ^ t, y.1 ^ (-q) * y.2 ^ p)
   left_inv x := by
     ext1 <;> dsimp only
-    · rw [torus_zpow_mul, show p * s + q * t = 1 by linear_combination h,
+    · rw [mul_zpow_mul_mul_zpow, show p * s + q * t = 1 by linear_combination h,
         show -t * s + s * t = 0 by ring, zpow_one, zpow_zero, mul_one]
-    · rw [torus_zpow_mul, show p * -q + q * p = 0 by ring,
+    · rw [mul_zpow_mul_mul_zpow, show p * -q + q * p = 0 by ring,
         show -t * -q + s * p = 1 by linear_combination h, zpow_one, zpow_zero, one_mul]
   right_inv y := by
     ext1 <;> dsimp only
-    · rw [torus_zpow_mul,
+    · rw [mul_zpow_mul_mul_zpow,
         show s * p + -q * -t = 1 by linear_combination h, show t * p + p * -t = 0 by ring, zpow_one,
         zpow_zero, mul_one]
-    · rw [torus_zpow_mul, show s * q + -q * s = 0 by ring,
+    · rw [mul_zpow_mul_mul_zpow, show s * q + -q * s = 0 by ring,
         show t * q + p * s = 1 by linear_combination h, zpow_one, zpow_zero, one_mul]
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
