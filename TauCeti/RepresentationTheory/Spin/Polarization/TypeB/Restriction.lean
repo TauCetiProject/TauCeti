@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Basic
-public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
-public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Odd
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
@@ -49,8 +47,6 @@ hypotheses, giving the concrete instance
 
 ## Main results
 
-* `TauCeti.SpinPolarizationData.spinAction_map_comp_exteriorAlgebraMap`: naturality of the Fock
-  action along an isometric embedding of an even polarization into another polarization.
 * `TauCeti.SpinPolarizationData.map_typeDQuadraticEquiv`: the embedding carries type-`D`
   quadratic elements to the type-`B` quadratic elements of the zero-extended matrices.
 * `TauCeti.SpinPolarizationData.typeBSpinLieRep_ofTypeD_comp_exteriorAlgebraMap`: **the
@@ -77,51 +73,6 @@ universe u v₁ v₂ w
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-! ### Naturality of the Fock action -/
-
-section Fock
-
-variable {K : Type u} [CommRing K] {V₁ : Type v₁} [AddCommGroup V₁] [Module K V₁]
-  {V₂ : Type v₂} [AddCommGroup V₂] [Module K V₂]
-  {Q₁ : QuadraticForm K V₁} {Q₂ : QuadraticForm K V₂}
-  (P₁ : SpinPolarizationData Q₁) (P₂ : SpinPolarizationData Q₂)
-  {f : Q₁ →qᵢ Q₂} {g : P₁.W →ₗ[K] P₂.W}
-
-/-- **The Fock action is natural along an isometric embedding of polarizations.** Let `f` be an
-isometry from the space of an even polarization `P₁` to the space of a polarization `P₂`, acting
-on `P₁.W` through a linear map `g` into `P₂.W` and carrying `P₁.W'` into `P₂.W'`. Then the
-exterior-algebra map induced by `g` intertwines the Fock action of every Clifford element `x` with
-the Fock action of its image under the Clifford algebra map induced by `f`. -/
-theorem spinAction_map_comp_exteriorAlgebraMap (hline : P₁.line = ⊥)
-    (hW : ∀ w : P₁.W, f w = g w) (hW' : ∀ y : P₁.W', f y ∈ P₂.W') (x : CliffordAlgebra Q₁) :
-    spinAction Q₂ P₂ (map f x) ∘ₗ (ExteriorAlgebra.map g).toLinearMap =
-      (ExteriorAlgebra.map g).toLinearMap ∘ₗ spinAction Q₁ P₁ x := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r =>
-    refine LinearMap.ext fun s => ?_
-    simp [Module.algebraMap_end_apply]
-  | ι v =>
-    obtain ⟨⟨⟨w, y⟩, l⟩, rfl⟩ := P₁.decompositionEquiv.surjective v
-    have hl : (l : V₁) = 0 := by simpa [hline] using l.property
-    -- The isometry `f` transports the polar pairing of `P₁` to that of `P₂`.
-    have hpair : P₂.pairingEquiv ⟨f y, hW' y⟩ ∘ₗ g = P₁.pairingEquiv y :=
-      LinearMap.ext fun x => by
-        rw [LinearMap.comp_apply, P₂.pairingEquiv_apply, P₁.pairingEquiv_apply, ← hW,
-          QuadraticMap.Isometry.polar_apply]
-    have hy : f y = ((⟨f y, hW' y⟩ : P₂.W') : V₂) := (rfl)
-    refine LinearMap.ext fun s => ?_
-    simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, map_apply_ι,
-      P₁.decompositionEquiv_apply, hl, add_zero, map_add, LinearMap.add_apply, hW]
-    rw [hy, spinAction_ι_wedge, spinAction_ι_contract, spinAction_ι_wedge, spinAction_ι_contract,
-      map_mul, ExteriorAlgebra.map_apply_ι, ExteriorAlgebra.contractLeft_map, hpair]
-  | mul a b ha hb =>
-    rw [map_mul, map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
-      LinearMap.comp_assoc, hb, ← LinearMap.comp_assoc, ha, LinearMap.comp_assoc]
-  | add a b ha hb =>
-    rw [map_add, map_add, map_add, LinearMap.add_comp, LinearMap.comp_add, ha, hb]
-
-end Fock
-
 /-! ### The type-`D` matrices inside the type-`B` matrices -/
 
 section TypeB
@@ -132,39 +83,6 @@ variable {K : Type u} [Field K] {V₁ : Type v₁} [AddCommGroup V₁] [Module K
   (P₁ : SpinPolarizationData Q₁) (P₂ : SpinPolarizationData Q₂)
   {ι : Type w} (b₁ : Module.Basis ι K P₁.W) (b₂ : Module.Basis ι K P₂.W)
   (z : P₂.line) (hz : Q₂ (z : V₂) = 1) {f : Q₁ →qᵢ Q₂}
-
-/-- An isometry matching the bases of the first isotropic summands acts on that summand through
-the induced linear equivalence. -/
-private theorem apply_coe_eq_basisEquiv (hb : ∀ i, f (b₁ i) = b₂ i) (w : P₁.W) :
-    f w = (b₁.equiv b₂ (Equiv.refl ι) w : V₂) := by
-  have h : f.toLinearMap ∘ₗ P₁.W.subtype =
-      P₂.W.subtype ∘ₗ (b₁.equiv b₂ (Equiv.refl ι)).toLinearMap :=
-    b₁.ext fun i => by simp [hb]
-  exact LinearMap.congr_fun h w
-
-/-- An isometry matching the bases of the first isotropic summands and carrying the second
-isotropic summand into the second one matches their dual vectors. -/
-private theorem apply_dualVector (hb : ∀ i, f (b₁ i) = b₂ i)
-    (hW' : ∀ y : P₁.W', f y ∈ P₂.W') (i : ι) :
-    f (P₁.dualVector b₁ i) = P₂.dualVector b₂ i := by
-  classical
-  have h : (⟨f (P₁.dualVector b₁ i), hW' _⟩ : P₂.W') = P₂.dualVector b₂ i := by
-    apply P₂.pairingEquiv.injective
-    refine b₂.ext fun j => ?_
-    rw [pairingEquiv_dualVector, P₂.pairingEquiv_apply, ← hb, QuadraticMap.Isometry.polar_apply,
-      polar_dualVector, Module.Basis.coord_apply, Module.Basis.repr_self,
-      Finsupp.single_apply]
-  exact congrArg Subtype.val h
-
-/-- The remainder vector is orthogonal to the image of the embedding. -/
-private theorem polar_apply_line (hline : P₁.line = ⊥) (hb : ∀ i, f (b₁ i) = b₂ i)
-    (hW' : ∀ y : P₁.W', f y ∈ P₂.W') (v : V₁) :
-    QuadraticMap.polar Q₂ (f v) (z : V₂) = 0 := by
-  obtain ⟨⟨⟨w, y⟩, l⟩, rfl⟩ := P₁.decompositionEquiv.surjective v
-  have hl : (l : V₁) = 0 := by simpa [hline] using l.property
-  rw [P₁.decompositionEquiv_apply, hl, add_zero, map_add, QuadraticMap.polar_add_left,
-    apply_coe_eq_basisEquiv P₁ P₂ b₁ b₂ hb, QuadraticMap.polar_comm, P₂.line_orthogonal_W,
-    QuadraticMap.polar_comm, P₂.line_orthogonal_W' z ⟨f y, hW' y⟩, add_zero]
 
 variable [Fintype ι] [DecidableEq ι]
 
@@ -208,8 +126,11 @@ theorem map_typeDQuadraticEquiv (hline : P₁.line = ⊥) (hb : ∀ i, f (b₁ i
     rintro (⟨⟩ | c)
     · rw [typeBBasis_inl, hz_comm, ← typeBBasis_inl P₂ b₂ z hz (), Matrix.toLinAlgEquiv_self]
       simp [Fintype.sum_sum_type]
-    · rw [← apply_typeDBasis P₁ P₂ b₁ b₂ z hz hline hb hW' c, ← map_apply_ι, Ring.lie_def,
-        ← map_mul, ← map_mul, ← map_sub, ← Ring.lie_def, P₁.typeDQuadraticEquiv_lie_ι,
+    · have hmap : map f ⁅q, CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c)⁆ =
+          ⁅map f q, map f (CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c))⁆ :=
+        (map f).toLieHom.map_lie _ _
+      rw [← apply_typeDBasis P₁ P₂ b₁ b₂ z hz hline hb hW' c, ← map_apply_ι,
+        ← hmap, P₁.typeDQuadraticEquiv_lie_ι,
         map_apply_ι, Matrix.toLinAlgEquiv_self, apply_typeDBasis P₁ P₂ b₁ b₂ z hz hline hb hW',
         Matrix.toLinAlgEquiv_self]
       simp [Fintype.sum_sum_type, map_sum, hb, apply_dualVector P₁ P₂ b₁ b₂ hb hW']
