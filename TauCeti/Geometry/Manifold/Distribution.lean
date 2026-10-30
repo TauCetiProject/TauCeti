@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+public import TauCeti.Topology.VectorBundle.Subbundle
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
@@ -30,7 +31,6 @@ while its regularity and involutivity are predicates on that family.
   transported to the model vector space.
 * `TauCeti.IsDistributionFrameOn I n D X U`: the vector fields `X i` form a `C^n` local frame of
   `D` on `U`.
-* `TauCeti.IsDistributionFrameOn.basis`: the basis of a fibre of `D` given by a local frame.
 * `TauCeti.IsContMDiffDistribution I n k D`: `D` is a `C^n` distribution of rank `k`.
 * `TauCeti.IsInvolutiveDistribution I D`: `D` is involutive.
 * `TauCeti.IsInvolutiveDistributionOn I D s`: `D` is involutive on `s`.
@@ -38,6 +38,9 @@ while its regularity and involutivity are predicates on that family.
 
 ## Main results
 
+* `TauCeti.IsDistributionFrameOn.isSubbundleFrameOn`: a `C^n` local frame of `D` is a continuous
+  local frame of `D` as a family of subspaces of the tangent bundle, in the sense of
+  `TauCeti.IsSubbundleFrameOn`.
 * `TauCeti.isDistributionFrameOn_top_iff`: local frames of the whole tangent bundle, in the sense
   of `IsLocalFrameOn`, are the local frames of the distribution `⊤`.
 * `TauCeti.IsContMDiffDistribution.finrank_eq`: a distribution of rank `k` has `k`-dimensional
@@ -148,25 +151,14 @@ theorem of_le (hX : IsDistributionFrameOn I n D X U) (hmn : m ≤ n) :
   linearIndependent := hX.linearIndependent
   span_eq := hX.span_eq
 
-/-- Every member of a local frame of `D` on `U` is tangent to `D` on `U`. -/
-theorem apply_mem (hX : IsDistributionFrameOn I n D X U) (i : ι) {x : M} (hx : x ∈ U) :
-    X i x ∈ D x :=
-  hX.span_eq hx ▸ Submodule.subset_span (mem_range_self i)
-
-/-- The subspaces of a distribution with a local frame indexed by `ι` have dimension `card ι`. -/
-theorem finrank_eq [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U) :
-    finrank 𝕜 (D x) = Fintype.card ι := by
-  rw [← hX.span_eq hx]
-  exact finrank_span_eq_card (hX.linearIndependent hx)
-
-/-- At a point `y` of `U`, a local frame of `D` on `U` is a basis of the fibre `D y`. -/
-def basis (hX : IsDistributionFrameOn I n D X U) {y : M} (hy : y ∈ U) : Basis ι 𝕜 (D y) :=
-  (Basis.span (hX.linearIndependent hy)).map (LinearEquiv.ofEq _ _ (hX.span_eq hy))
-
-@[simp]
-theorem coe_basis (hX : IsDistributionFrameOn I n D X U) {y : M} (hy : y ∈ U) (i : ι) :
-    (hX.basis hy i : TangentSpace I y) = X i y := by
-  simp [basis]
+/-- A `C^n` local frame of `D` is a continuous local frame of `D`, viewed as a family of subspaces
+of the fibres of the tangent bundle. Its algebraic consequences, such as the basis of each fibre
+`hX.isSubbundleFrameOn.basis`, are those of `TauCeti.IsSubbundleFrameOn`. -/
+theorem isSubbundleFrameOn (hX : IsDistributionFrameOn I n D X U) :
+    IsSubbundleFrameOn E D X U where
+  continuousOn i := (hX.contMDiffOn i).continuousOn
+  linearIndependent := hX.linearIndependent
+  span_eq := hX.span_eq
 
 /-- A `C^n` local frame `X` of a distribution on a normed space `V`, on a set `U`, gives a
 `C^n` family of continuous linear maps `Φ p : (ι → 𝕜) →L[𝕜] V`, namely `c ↦ ∑ i, c i • X i p`,
@@ -237,7 +229,7 @@ theorem IsDistributionFrameOn.isContMDiffDistribution {X : Fin k → Π x : M, T
 theorem IsContMDiffDistribution.finrank_eq (hD : IsContMDiffDistribution I n k D) (x : M) :
     finrank 𝕜 (D x) = k := by
   obtain ⟨U, -, hx, X, hX⟩ := hD x
-  simpa using hX.finrank_eq hx
+  simpa using hX.isSubbundleFrameOn.finrank_eq hx
 
 /-- A `C^n` distribution is a `C^m` distribution for every `m ≤ n`. -/
 theorem IsContMDiffDistribution.of_le (hD : IsContMDiffDistribution I n k D) (hmn : m ≤ n) :
@@ -492,8 +484,9 @@ theorem not_isInvolutiveDistribution_standardContactDistribution :
   intro h
   have hframe := isDistributionFrameOn_contactFrame (𝕜 := 𝕜) (n := 1)
   have hmem := h isOpen_univ ((hframe.contMDiffOn 0).mdifferentiableOn one_ne_zero)
-    ((hframe.contMDiffOn 1).mdifferentiableOn one_ne_zero) (fun p hp ↦ hframe.apply_mem 0 hp)
-    (fun p hp ↦ hframe.apply_mem 1 hp) 0 (mem_univ 0)
+    ((hframe.contMDiffOn 1).mdifferentiableOn one_ne_zero)
+    (fun p hp ↦ hframe.isSubbundleFrameOn.apply_mem 0 hp)
+    (fun p hp ↦ hframe.isSubbundleFrameOn.apply_mem 1 hp) 0 (mem_univ 0)
   rw [mlieBracket_eq_lieBracket] at hmem
   have hW : HasFDerivAt (fun p : 𝕜 × 𝕜 × 𝕜 ↦ ((0, 1, p.1) : 𝕜 × 𝕜 × 𝕜))
       ((0 : 𝕜 × 𝕜 × 𝕜 →L[𝕜] 𝕜).prod ((0 : 𝕜 × 𝕜 × 𝕜 →L[𝕜] 𝕜).prod
