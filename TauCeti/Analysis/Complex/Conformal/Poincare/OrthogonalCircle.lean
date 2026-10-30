@@ -105,16 +105,6 @@ several of them ask less: the discriminant identity is homogeneous in `u` and ne
 at all, and the degenerate case needs only `‖a‖ ≠ 1`. They are stated for bare complex numbers so
 that they can be reused off the `PoincareDisc` synonym.
 
-## Coordination with upstream Mathlib
-
-This is L2 material, "the hyperbolic / Poincaré metric on `𝔻`" of
-`TauCetiRoadmap/ConformalMapping/README.md`, and as such falls under that roadmap's coordination
-clause for the in-progress human-curated Riemann-mapping effort
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505): it should be
-refactored onto upstream API if that work lands a Poincaré-disc geometry. The pinned Mathlib has
-the hyperbolic metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane`) but no
-Poincaré metric on the disc and no description of its geodesics; nothing is vendored here.
-
 ## References
 
 * L. V. Ahlfors, *Conformal Invariants*, Ch. 1 (the hyperbolic metric of the disc).

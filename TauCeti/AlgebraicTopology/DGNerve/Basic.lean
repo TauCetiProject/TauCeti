@@ -48,6 +48,8 @@ The main result is that the action of a monotone map preserves the defining equa
 * `TauCeti.dgNerve`: the differential graded nerve, a simplicial set.
 * `TauCeti.dgNerveEquiv`: its vertices are the objects of `C`.
 * `TauCeti.dgNerve.edgeEquiv`: its edges from `X` to `Y` are the closed degree-zero morphisms.
+* `TauCeti.DGNerve.Simplex.mk₂`: the `2`-simplex with closed edges `f`, `g`, `h` and a homotopy
+  `η` with `d η = g ∘ f - h`.
 
 ## Main results
 
@@ -55,9 +57,12 @@ The main result is that the action of a monotone map preserves the defining equa
   defining equation.
 * `TauCeti.DGNerve.Simplex.mapCoh_eq_zero_of_collapse`: a coherence collapsed by a monotone map
   vanishes, while `TauCeti.dgNerve.coh_σ_vertex` shows that the degenerate edge at a vertex is its
-  identity.
+  identity, and `TauCeti.dgNerve.edgeMk_dgId` that the edge of an identity is degenerate.
 * `TauCeti.DGNerve.Simplex.dgDifferential_coh_two`: a `2`-simplex carries a homotopy between the
-  composite of two of its edges and the third.
+  composite of two of its edges and the third. Conversely, `TauCeti.DGNerve.Simplex.mk₂` has the
+  prescribed faces (`TauCeti.DGNerve.Simplex.mk₂_map_δ_two`,
+  `TauCeti.DGNerve.Simplex.mk₂_map_δ_zero` and `TauCeti.DGNerve.Simplex.mk₂_map_δ_one`) and the
+  prescribed homotopy as its coherence (`TauCeti.DGNerve.Simplex.mk₂_coh_zero_two_singleton_heq`).
 * `TauCeti.DGNerve.Simplex.coh_eq_dgComp_of_coh_eq_zero`: if the homotopy carried by a `2`-face of
   a simplex vanishes, its long edge is the composite of its two short edges.
 
@@ -152,6 +157,23 @@ theorem boundary_empty {X : Fin (n + 1) → C} (f : Coherences R X) (i j : Fin (
     (hij : i ≤ j) (hS : ∅ ⊆ Ioo i j) (hd : d + #(∅ : Finset (Fin (n + 1))) = 0) :
     boundary R f i j ∅ d hij hS hd = 0 := by
   simp [boundary]
+
+/-- On a string of three objects, the right-hand side of the dg nerve equation for the coherence
+from `0` to `2` through `1` is the composite of the two short coherences minus the long one. -/
+theorem boundary_two {X : Fin 3 → C} (f : Coherences R X) :
+    boundary R f 0 2 {1} (-1) (by decide) (by decide) (by simp) =
+      dgComp R (f 0 1 ∅ 0 (by decide) (empty_subset _) (by simp))
+          (f 1 2 ∅ 0 (by decide) (empty_subset _) (by simp)) (by simp) -
+        f 0 2 ∅ (-1 + 1) (by decide) (empty_subset _) (by simp) := by
+  rw [boundary, sum_eq_single_of_mem ⟨1, mem_singleton_self 1⟩
+    (mem_attach _ _) fun t _ ht ↦ absurd (Subtype.ext (mem_singleton.1 t.2)) ht]
+  dsimp only
+  have hσ : ((#{s ∈ ({1} : Finset (Fin 3)) | 1 ≤ s} : ℕ) : ℤ).negOnePow = -1 := by decide
+  have hκ : ((#{s ∈ ({1} : Finset (Fin 3)) | s < 1} : ℕ) *
+      (#{s ∈ ({1} : Finset (Fin 3)) | 1 < s} : ℕ) : ℤ).negOnePow = 1 := by decide
+  rw [hσ, hκ, one_smul, Units.neg_smul, one_smul, neg_sub]
+  exact congrArg₂ (· - ·) (Coherences.dgComp_congr _ (by decide) (by decide) (by simp) (by simp))
+    (Coherences.congr _ (by decide))
 
 /-- Coherences pulled back along a strictly monotone map `e`: the coherence indexed by `i`, `S`
 and `j` is the one indexed by their images under `e`. -/
@@ -779,6 +801,14 @@ theorem ext_zero {x y : Simplex R C 0} (h : x.obj 0 = y.obj 0) : x = y := by
   obtain rfl := (Fin.eq_zero i).trans (Fin.eq_zero j).symm
   rw [x.coh_self, y.coh_self, hobj]
 
+/-- The degenerate edge at a vertex carries the identity of its object. -/
+@[simp]
+theorem coh_map_σ_zero (x : Simplex R C 0) :
+    (x.map (SimplexCategory.σ 0).toOrderHom).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) =
+      dgId R (x.obj 0) := by
+  rw [map_coh, x.mapCoh_eq_coh _ (by simp)]
+  exact (Coherences.congr _ (image_empty _)).trans (x.coh_self 0)
+
 /-- **The 2-simplex check**: a `2`-simplex with edges `f : X 0 ⟶ X 1`, `g : X 1 ⟶ X 2` and
 `h : X 0 ⟶ X 2` carries a degree `-1` morphism `η : X 0 ⟶ X 2` with `d η = g ∘ f - h`, a homotopy
 between the composite and `h` rather than an equality. -/
@@ -787,15 +817,7 @@ theorem dgDifferential_coh_two (x : Simplex R C 2) :
       dgComp R (x.coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp))
           (x.coh 1 2 ∅ 0 (by decide) (empty_subset _) (by simp)) (by simp) -
         x.coh 0 2 ∅ (-1 + 1) (by decide) (empty_subset _) (by simp) := by
-  rw [x.dgDifferential_coh, boundary, sum_eq_single_of_mem ⟨1, mem_singleton_self 1⟩
-    (mem_attach _ _) fun t _ ht ↦ absurd (Subtype.ext (mem_singleton.1 t.2)) ht]
-  dsimp only
-  have hσ : ((#{s ∈ ({1} : Finset (Fin 3)) | 1 ≤ s} : ℕ) : ℤ).negOnePow = -1 := by decide
-  have hκ : ((#{s ∈ ({1} : Finset (Fin 3)) | s < 1} : ℕ) *
-      (#{s ∈ ({1} : Finset (Fin 3)) | 1 < s} : ℕ) : ℤ).negOnePow = 1 := by decide
-  rw [hσ, hκ, one_smul, Units.neg_smul, one_smul, neg_sub]
-  exact congrArg₂ (· - ·) (Coherences.dgComp_congr _ (by decide) (by decide) (by simp) (by simp))
-    (Coherences.congr _ (by decide))
+  rw [x.dgDifferential_coh, boundary_two]
 
 /-- If the homotopy carried by the `2`-face `{i, t, j}` of a simplex vanishes, the edge from `i` to
 `j` is the composite of the edges from `i` to `t` and from `t` to `j`. -/
@@ -866,11 +888,15 @@ theorem edge_coh_zero_one {X Y : C} (f : dgCycles R X Y) :
     (edge f).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) = f.1 :=
   castDeg_self R rfl _
 
+/-- A coherence without interior vertices is a closed degree-zero morphism. -/
+theorem coh_empty_mem_dgCycles (i j : Fin (n + 1)) (hij : i ≤ j) :
+    x.coh i j ∅ 0 hij (empty_subset _) (by simp) ∈ dgCycles R (x.obj i) (x.obj j) := by
+  rw [mem_dgCycles, x.dgDifferential_coh, boundary_empty]
+
 /-- The coherence of a `1`-simplex is a closed degree-zero morphism. -/
 theorem coh_zero_one_mem_dgCycles (x : Simplex R C 1) :
-    x.coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) ∈ dgCycles R (x.obj 0) (x.obj 1) := by
-  rw [mem_dgCycles, x.dgDifferential_coh]
-  simp [boundary]
+    x.coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) ∈ dgCycles R (x.obj 0) (x.obj 1) :=
+  x.coh_empty_mem_dgCycles 0 1 (by decide)
 
 /-- A `1`-simplex is the edge given by its coherence. -/
 theorem eq_edge (x : Simplex R C 1) : x = edge ⟨_, x.coh_zero_one_mem_dgCycles⟩ := by
@@ -903,6 +929,167 @@ theorem exists_edge_eq (x : Simplex R C 1) {X Y : C} (hX : x.obj 0 = X) (hY : x.
   subst hX hY
   exact ⟨_, x.eq_edge.symm⟩
 
+/-- On an empty interval, the dg nerve equation for a coherence family says that its coherence
+without interior vertices is closed. -/
+private lemma dgDifferential_eq_boundary_of_Ioo_eq_empty {X : Fin (n + 1) → C}
+    (f : Coherences R X) {i j : Fin (n + 1)} (hIoo : Ioo i j = ∅) (φ : DGHom R 0 (X i) (X j))
+    (hφ : dgDifferential R 0 φ = 0) (hf : ∀ hij hS hd, f i j ∅ 0 hij hS hd = φ)
+    {S : Finset (Fin (n + 1))} {d : ℤ} {hij : i ≤ j} {hS : S ⊆ Ioo i j} {hd : d + #S = 0} :
+    dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd := by
+  obtain rfl : S = ∅ := subset_empty.1 (hIoo ▸ hS)
+  obtain rfl : d = 0 := by simpa using hd
+  rw [boundary_empty, hf, hφ]
+
+/-- The coherences of `TauCeti.DGNerve.Simplex.mk₂`. -/
+private noncomputable def mk₂Coh {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X₁) (g : DGHom R 0 X₁ X₂)
+    (h : DGHom R 0 X₀ X₂) (η : DGHom R (-1) X₀ X₂) : Coherences R ![X₀, X₁, X₂] :=
+  fun i j S d hij hS hd ↦
+    -- a coherence over an empty interval has degree zero
+    have hd₀ (h : Ioo i j = ∅) : 0 = d := by simpa [subset_empty.1 (h ▸ hS)] using hd.symm
+    match i, j, hij with
+    | 0, 0, _ => castDeg R (hd₀ (by decide)) (dgId R X₀)
+    | 0, 1, _ => castDeg R (hd₀ (by decide)) f
+    | 0, 2, _ => if hS' : S = ∅ then castDeg R (by simpa [hS'] using hd.symm) h
+        else castDeg R (by
+          obtain rfl : S = {1} := (subset_singleton_iff.1 (hS.trans (by decide))).resolve_left hS'
+          simp at hd; omega) η
+    | 1, 1, _ => castDeg R (hd₀ (by decide)) (dgId R X₁)
+    | 1, 2, _ => castDeg R (hd₀ (by decide)) g
+    | 2, 2, _ => castDeg R (hd₀ (by decide)) (dgId R X₂)
+
+/-- The coherence of `TauCeti.DGNerve.Simplex.mk₂` from `0` to `1` is `f`. -/
+private lemma mk₂Coh_zero_one {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X₁) (g : DGHom R 0 X₁ X₂)
+    (h : DGHom R 0 X₀ X₂) (η : DGHom R (-1) X₀ X₂) {hij hS hd} :
+    mk₂Coh f g h η 0 1 ∅ 0 hij hS hd = f :=
+  castDeg_self R _ f
+
+/-- The coherence of `TauCeti.DGNerve.Simplex.mk₂` from `1` to `2` is `g`. -/
+private lemma mk₂Coh_one_two {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X₁) (g : DGHom R 0 X₁ X₂)
+    (h : DGHom R 0 X₀ X₂) (η : DGHom R (-1) X₀ X₂) {hij hS hd} :
+    mk₂Coh f g h η 1 2 ∅ 0 hij hS hd = g :=
+  castDeg_self R _ g
+
+/-- The coherence of `TauCeti.DGNerve.Simplex.mk₂` from `0` to `2` without interior vertices is
+`h`. -/
+private lemma mk₂Coh_zero_two_empty {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X₁) (g : DGHom R 0 X₁ X₂)
+    (h : DGHom R 0 X₀ X₂) (η : DGHom R (-1) X₀ X₂) {hij hS hd} :
+    mk₂Coh f g h η 0 2 ∅ 0 hij hS hd = h := by
+  simp only [mk₂Coh, dite_true]
+  exact castDeg_self R _ h
+
+/-- The coherence of `TauCeti.DGNerve.Simplex.mk₂` from `0` to `2` through `1` is `η`. -/
+private lemma mk₂Coh_zero_two_singleton {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X₁) (g : DGHom R 0 X₁ X₂)
+    (h : DGHom R 0 X₀ X₂) (η : DGHom R (-1) X₀ X₂) {hij hS hd} :
+    mk₂Coh f g h η 0 2 {1} (-1) hij hS hd = η := by
+  simp only [mk₂Coh, singleton_ne_empty, dite_false]
+  exact castDeg_self R _ η
+
+/-- The `2`-simplex of the differential graded nerve with edges `f : X₀ ⟶ X₁`, `g : X₁ ⟶ X₂` and
+`h : X₀ ⟶ X₂` and with the homotopy `η` from the composite of `f` and `g` to `h`, that is
+`d η = g ∘ f - h`. -/
+noncomputable def mk₂ {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
+    (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
+    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) : Simplex R C 2 where
+  obj := ![X₀, X₁, X₂]
+  coh := mk₂Coh f.1 g.1 h.1 η
+  coh_self i := match i with
+    | 0 => castDeg_self R _ (dgId R X₀)
+    | 1 => castDeg_self R _ (dgId R X₁)
+    | 2 => castDeg_self R _ (dgId R X₂)
+  dgDifferential_coh i j S d hij hS hd := match i, j, hij with
+    | 0, 0, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) (dgId R X₀)
+      (dgDifferential_dgId R X₀) fun _ _ _ ↦ castDeg_self R _ _
+    | 0, 1, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) f.1
+      ((mem_dgCycles R).1 f.2) fun _ _ _ ↦ castDeg_self R _ _
+    | 0, 2, _ => by
+      rcases subset_singleton_iff.1 (hS.trans (by decide : Ioo (0 : Fin 3) 2 ⊆ {1})) with
+        rfl | rfl
+      · obtain rfl : d = 0 := by simpa using hd
+        rw [boundary_empty, mk₂Coh_zero_two_empty]
+        exact (mem_dgCycles R).1 h.2
+      · obtain rfl : d = -1 := by simp at hd; omega
+        rw [boundary_two, mk₂Coh_zero_two_singleton, mk₂Coh_zero_one, mk₂Coh_one_two]
+        refine hη.trans ?_
+        rw [dgCompZero_def]
+        exact congrArg (dgComp R f.1 g.1 _ - ·) (mk₂Coh_zero_two_empty f.1 g.1 h.1 η).symm
+    | 1, 1, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) (dgId R X₁)
+      (dgDifferential_dgId R X₁) fun _ _ _ ↦ castDeg_self R _ _
+    | 1, 2, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) g.1
+      ((mem_dgCycles R).1 g.2) fun _ _ _ ↦ castDeg_self R _ _
+    | 2, 2, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) (dgId R X₂)
+      (dgDifferential_dgId R X₂) fun _ _ _ ↦ castDeg_self R _ _
+
+/-- The objects of `TauCeti.DGNerve.Simplex.mk₂`. -/
+@[simp]
+theorem mk₂_obj {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
+    (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
+    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
+    (mk₂ f g h η hη).obj = ![X₀, X₁, X₂] :=
+  (rfl)
+
+/-- The coherence of `TauCeti.DGNerve.Simplex.mk₂` through the vertex `1` is the homotopy `η`. -/
+@[simp]
+theorem mk₂_coh_zero_two_singleton_heq {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁)
+    (g : dgCycles R X₁ X₂) (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
+    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
+    (mk₂ f g h η hη).coh 0 2 {1} (-1) (by decide) (by decide) (by simp) ≍ η :=
+  heq_of_eq (mk₂Coh_zero_two_singleton f.1 g.1 h.1 η (hij := by decide) (hS := by decide)
+    (hd := by simp))
+
+/-- The edge of a `2`-simplex opposite the vertex `2` carries its coherence from `0` to `1`. -/
+@[simp]
+theorem coh_map_δ_two (x : Simplex R C 2) :
+    (x.map (SimplexCategory.δ 2).toOrderHom).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) =
+      x.coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) := by
+  rw [map_coh, x.mapCoh_eq_coh _ (by simp)]
+  exact Coherences.congr _ (image_empty _)
+
+/-- The edge of a `2`-simplex opposite the vertex `0` carries its coherence from `1` to `2`. -/
+@[simp]
+theorem coh_map_δ_zero (x : Simplex R C 2) :
+    (x.map (SimplexCategory.δ 0).toOrderHom).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) =
+      x.coh 1 2 ∅ 0 (by decide) (empty_subset _) (by simp) := by
+  rw [map_coh, x.mapCoh_eq_coh _ (by simp)]
+  exact Coherences.congr _ (image_empty _)
+
+/-- The edge of a `2`-simplex opposite the vertex `1` carries its coherence from `0` to `2`
+without interior vertices. -/
+@[simp]
+theorem coh_map_δ_one (x : Simplex R C 2) :
+    (x.map (SimplexCategory.δ 1).toOrderHom).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) =
+      x.coh 0 2 ∅ 0 (by decide) (empty_subset _) (by simp) := by
+  rw [map_coh, x.mapCoh_eq_coh _ (by simp)]
+  exact Coherences.congr _ (image_empty _)
+
+/-- The face of `TauCeti.DGNerve.Simplex.mk₂` opposite the vertex `2` is the edge `f`. -/
+@[simp]
+theorem mk₂_map_δ_two {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
+    (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
+    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
+    (mk₂ f g h η hη).map (SimplexCategory.δ 2).toOrderHom = edge f :=
+  (eq_edge _).trans (congrArg edge (Subtype.ext ((coh_map_δ_two (mk₂ f g h η hη)).trans
+    (mk₂Coh_zero_one f.1 g.1 h.1 η (hij := by decide) (hS := empty_subset _) (hd := by simp)))))
+
+/-- The face of `TauCeti.DGNerve.Simplex.mk₂` opposite the vertex `0` is the edge `g`. -/
+@[simp]
+theorem mk₂_map_δ_zero {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
+    (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
+    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
+    (mk₂ f g h η hη).map (SimplexCategory.δ 0).toOrderHom = edge g :=
+  (eq_edge _).trans (congrArg edge (Subtype.ext ((coh_map_δ_zero (mk₂ f g h η hη)).trans
+    (mk₂Coh_one_two f.1 g.1 h.1 η (hij := by decide) (hS := empty_subset _) (hd := by simp)))))
+
+/-- The face of `TauCeti.DGNerve.Simplex.mk₂` opposite the vertex `1` is the edge `h`. -/
+@[simp]
+theorem mk₂_map_δ_one {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
+    (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
+    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
+    (mk₂ f g h η hη).map (SimplexCategory.δ 1).toOrderHom =
+      edge h :=
+  (eq_edge _).trans (congrArg edge (Subtype.ext ((coh_map_δ_one (mk₂ f g h η hη)).trans
+    (mk₂Coh_zero_two_empty f.1 g.1 h.1 η (hij := by decide) (hS := empty_subset _)
+      (hd := by simp)))))
+
 end Simplex
 
 end DGNerve
@@ -928,6 +1115,25 @@ variable (R : Type v) [CommRing R] (C : Type u) [DGCategory R C]
 @[simp]
 theorem dgNerve_map_apply {Δ Δ' : SimplexCategoryᵒᵖ} (f : Δ ⟶ Δ') (x : (dgNerve R C).obj Δ) :
     (dgNerve R C).map f x = Simplex.map x f.unop.toOrderHom :=
+  rfl
+
+/-- The objects of a face of a simplex of the differential graded nerve are its objects at the
+vertices other than the omitted one. -/
+@[simp]
+theorem dgNerve_δ_obj {n : ℕ} (i : Fin (n + 2)) (x : (dgNerve R C) _⦋n + 1⦌) (j : Fin (n + 1)) :
+    Simplex.obj ((dgNerve R C).δ i x) j = Simplex.obj x (i.succAbove j) :=
+  rfl
+
+/-- A face of a simplex of the differential graded nerve is `TauCeti.DGNerve.Simplex.map` along
+the coface map. -/
+theorem dgNerve_δ {n : ℕ} (i : Fin (n + 2)) (x : (dgNerve R C) _⦋n + 1⦌) :
+    (dgNerve R C).δ i x = Simplex.map x (SimplexCategory.δ i).toOrderHom :=
+  rfl
+
+/-- A degeneracy of a simplex of the differential graded nerve is `TauCeti.DGNerve.Simplex.map`
+along the codegeneracy map. -/
+theorem dgNerve_σ {n : ℕ} (i : Fin (n + 1)) (x : (dgNerve R C) _⦋n⦌) :
+    (dgNerve R C).σ i x = Simplex.map x (SimplexCategory.σ i).toOrderHom :=
   rfl
 
 /-- The vertices of the differential graded nerve are the objects of the differential graded
@@ -1003,14 +1209,19 @@ theorem edgeEquiv_symm_apply_heq {X Y : C}
 zero. -/
 theorem coh_σ_vertex (X : C) :
     ((dgNerve R C).σ 0 (Simplex.vertex X : Simplex R C 0)).coh 0 1 ∅ 0 (by decide)
-      (empty_subset _) (by simp) = dgId R X := by
-  -- `σ 0` acts on the nerve through `dgNerve.map`, i.e. by `Simplex.map`. Rewriting with
-  -- `SimplicialObject.σ_def` and `dgNerve_map_apply` fails (motive is not type correct): the
-  -- right-hand side `dgId R X` has type `DGHom R 0 X X`, whose objects agree with the endpoints of
-  -- the coherence only definitionally, so the simplex is replaced by `change` instead.
-  change (Simplex.map (Simplex.vertex X) (SimplexCategory.σ 0).toOrderHom).coh 0 1 ∅ 0 _ _ _ = _
-  rw [Simplex.map_coh, Simplex.mapCoh_eq_coh _ _ (by simp)]
-  exact castDeg_self R rfl _
+      (empty_subset _) (by simp) = dgId R X :=
+  -- `σ 0` acts on the nerve by `Simplex.map`, definitionally.
+  Simplex.coh_map_σ_zero (Simplex.vertex X)
+
+/-- The edge of the identity is the degenerate edge. -/
+@[simp]
+theorem edgeMk_dgId (X : C) :
+    edgeMk R C ⟨dgId R X, (mem_dgCycles R).2 (dgDifferential_dgId R X)⟩ =
+      SSet.Edge.id ((dgNerveEquiv R C).symm X) := by
+  refine SSet.Edge.ext ?_
+  rw [edgeMk_edge, SSet.Edge.id_edge, dgNerveEquiv_symm_apply]
+  exact (congrArg Simplex.edge (Subtype.ext (coh_σ_vertex R C X).symm)).trans
+    (Simplex.eq_edge ((dgNerve R C).σ 0 (Simplex.vertex X))).symm
 
 end dgNerve
 
