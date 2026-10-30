@@ -42,6 +42,7 @@ results that identify the operator as the derivative of the gradient and prove s
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
 * `TauCeti.hessianOperator_congr_of_eventuallyEq`: the operator depends only on the germ of the
   function at the point.
+* `ContDiff.contDiff_hessianOperator`: the Hessian operator of a `C^{m+2}` function is `Cᵐ`.
 * `ContDiffAt.isSelfAdjoint_hessianOperator`: symmetry of the second derivative becomes
   self-adjointness of the Hessian operator.
 * `ContDiffAt.hasFDerivAt_neg_gradient`: the derivative of `-∇ f` is the negative Hessian
@@ -127,6 +128,23 @@ theorem hessianOperator_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     hfg.fderiv.fderiv_eq]
 
 end TauCeti
+
+namespace ContDiff
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {f : E → ℝ}
+
+open TauCeti
+
+/-- The Hessian operator field of a `C^{m+2}` function is `Cᵐ`, being the derivative of its
+`C^{m+1}` gradient. -/
+theorem contDiff_hessianOperator {m n : WithTop ℕ∞} (hf : ContDiff ℝ n f) (hmn : m + 2 ≤ n) :
+    ContDiff ℝ m (hessianOperator f) := by
+  rw [show hessianOperator f = fderiv ℝ (∇ f) from funext fun x ↦ (fderiv_gradient f x).symm]
+  exact (hf.gradient_right (m := m + 1) (by rwa [add_assoc, one_add_one_eq_two])).fderiv_right
+    le_rfl
+
+end ContDiff
 
 namespace ContDiffAt
 
