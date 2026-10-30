@@ -84,7 +84,7 @@ theorem comap_finiteRadical_strandIncl_le (hτ : ∀ x y, τ (x * y) = τ (y * x
 /-- The tracial functional induced on the finite trace-radical quotient. -/
 def finiteQuotientTrace (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
     TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ n →ₗ[R] R :=
-  (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient
+  (τ ∘ₗ (toInfinite R q n).toLinearMap).quotientTrace
     (τ.comp_algHom_mul_comm hτ (toInfinite R q n))
 
 /-- The finite quotient trace agrees with the original trace on representatives. -/
@@ -93,7 +93,7 @@ theorem finiteQuotientTrace_mk (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ
     (x : TypeAHeckeAlgebra R q n) :
     finiteQuotientTrace hτ n (Ideal.Quotient.mk (finiteRadical hτ n) x) =
       τ (toInfinite R q n x) := by
-  exact (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient_mk
+  exact (τ ∘ₗ (toInfinite R q n).toLinearMap).quotientTrace_mk
     (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) x
 
 /-- The finite quotient preserves the value at the identity. -/
@@ -111,14 +111,14 @@ theorem IsMarkovTrace.finiteQuotientTrace_one (hτ : IsMarkovTrace z τ) (n : �
 theorem finiteQuotientTrace_mul_comm (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ)
     (x y : TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ n) :
     finiteQuotientTrace hτ n (x * y) = finiteQuotientTrace hτ n (y * x) := by
-  exact (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient_mul_comm
+  exact (τ ∘ₗ (toInfinite R q n).toLinearMap).quotientTrace_mul_comm
     (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) x y
 
 /-- The finite quotient multiplication pairing is algebraically nondegenerate. -/
 theorem finiteQuotientTrace_nondegenerate (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ)
     (x : TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ n)
     (hx : ∀ y, finiteQuotientTrace hτ n (x * y) = 0) : x = 0 := by
-  exact (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient_nondegenerate
+  exact (τ ∘ₗ (toInfinite R q n).toLinearMap).quotientTrace_nondegenerate
     (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) x hx
 
 /-- At the index-character parameter, the finite radical is the kernel of that character

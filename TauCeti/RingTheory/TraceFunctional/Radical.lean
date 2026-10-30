@@ -97,47 +97,47 @@ theorem le_traceRadical_iff (I : Ideal A) [I.IsTwoSided] :
   exact h (I.mul_mem_right y hx)
 
 /-- The linear functional induced on the quotient by the trace radical. -/
-def traceRadicalQuotient : A ⧸ τ.traceRadical hτ →ₗ[R] R :=
+def quotientTrace : A ⧸ τ.traceRadical hτ →ₗ[R] R :=
   ((τ.traceRadical hτ).restrictScalars R).liftQ τ (τ.traceRadical_le_ker hτ) ∘ₗ
     (Submodule.Quotient.restrictScalarsEquiv R (τ.traceRadical hτ)).symm.toLinearMap
 
 /-- The quotient functional agrees with the original trace on representatives. -/
 @[simp]
-theorem traceRadicalQuotient_mk (x : A) :
-    τ.traceRadicalQuotient hτ (Ideal.Quotient.mk (τ.traceRadical hτ) x) = τ x := by
-  simp only [traceRadicalQuotient, LinearMap.comp_apply, LinearEquiv.coe_coe,
+theorem quotientTrace_mk (x : A) :
+    τ.quotientTrace hτ (Ideal.Quotient.mk (τ.traceRadical hτ) x) = τ x := by
+  simp only [quotientTrace, LinearMap.comp_apply, LinearEquiv.coe_coe,
     ← Ideal.Quotient.mk_eq_mk,
     Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.liftQ_apply]
 
 /-- The quotient preserves the value at the identity, in particular normalization. -/
 @[simp]
-theorem traceRadicalQuotient_one : τ.traceRadicalQuotient hτ 1 = τ 1 := by
-  simpa only [map_one] using τ.traceRadicalQuotient_mk hτ 1
+theorem quotientTrace_one : τ.quotientTrace hτ 1 = τ 1 := by
+  simpa only [map_one] using τ.quotientTrace_mk hτ 1
 
 /-- The induced functional is tracial. -/
-theorem traceRadicalQuotient_mul_comm (x y : A ⧸ τ.traceRadical hτ) :
-    τ.traceRadicalQuotient hτ (x * y) = τ.traceRadicalQuotient hτ (y * x) := by
+theorem quotientTrace_mul_comm (x y : A ⧸ τ.traceRadical hτ) :
+    τ.quotientTrace hτ (x * y) = τ.quotientTrace hτ (y * x) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (τ.traceRadical hτ) x
   obtain ⟨y, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (τ.traceRadical hτ) y
-  simp only [← map_mul, Ideal.Quotient.mkₐ_eq_mk, traceRadicalQuotient_mk, hτ]
+  simp only [← map_mul, Ideal.Quotient.mkₐ_eq_mk, quotientTrace_mk, hτ]
 
 /-- The quotient multiplication pairing has zero left radical. By traciality its right radical
 is zero as well. This is algebraic nondegeneracy, not positivity or faithfulness of a state. -/
-theorem traceRadicalQuotient_nondegenerate (x : A ⧸ τ.traceRadical hτ)
-    (hx : ∀ y, τ.traceRadicalQuotient hτ (x * y) = 0) : x = 0 := by
+theorem quotientTrace_nondegenerate (x : A ⧸ τ.traceRadical hτ)
+    (hx : ∀ y, τ.quotientTrace hτ (x * y) = 0) : x = 0 := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (τ.traceRadical hτ) x
   apply Ideal.Quotient.eq_zero_iff_mem.mpr
   intro y
-  simpa only [← map_mul, Ideal.Quotient.mkₐ_eq_mk, traceRadicalQuotient_mk] using
+  simpa only [← map_mul, Ideal.Quotient.mkₐ_eq_mk, quotientTrace_mk] using
     hx (Ideal.Quotient.mkₐ R (τ.traceRadical hτ) y)
 
 /-- A functional on the trace quotient is determined by its values on representatives. -/
-theorem eq_traceRadicalQuotient (σ : A ⧸ τ.traceRadical hτ →ₗ[R] R)
+theorem eq_quotientTrace (σ : A ⧸ τ.traceRadical hτ →ₗ[R] R)
     (hσ : σ ∘ₗ (Ideal.Quotient.mkₐ R (τ.traceRadical hτ)).toLinearMap = τ) :
-    σ = τ.traceRadicalQuotient hτ := by
+    σ = τ.quotientTrace hτ := by
   ext x
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (τ.traceRadical hτ) x
-  exact (LinearMap.congr_fun hσ x).trans (τ.traceRadicalQuotient_mk hτ x).symm
+  exact (LinearMap.congr_fun hσ x).trans (τ.quotientTrace_mk hτ x).symm
 
 variable {τ} {σ : B →ₗ[R] R} (hσ : ∀ x y, σ (x * y) = σ (y * x))
 
