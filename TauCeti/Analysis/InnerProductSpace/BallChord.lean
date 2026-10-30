@@ -104,6 +104,7 @@ theorem chordPoint_one (x : E) : chordPoint p x 1 = x := by
 
 /-- The bottom `t = -1` of the chord through `x` is the reflection of `x` in the hyperplane
 `(ℝ ∙ p)ᗮ`. -/
+@[simp]
 theorem chordPoint_neg_one (x : E) : chordPoint p x (-1) = (ℝ ∙ (p : E))ᗮ.reflection x := by
   rw [reflection_orthogonal_singleton_apply (norm_eq_of_mem_sphere p), real_inner_comm, chordPoint]
   norm_num
