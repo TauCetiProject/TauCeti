@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Contour.Argument.Divisor
 import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
 # Rouché's theorem
@@ -240,7 +241,7 @@ private lemma finsum_divisor_cast {h : ℂ → ℂ} (hh : AnalyticOnNhd ℂ h (c
     obtain ⟨hzb, hzs⟩ := hz
     simp only [Function.mem_support, ne_eq] at hzs
     have hd : MeromorphicOn.divisor h (ball c R) z ≠ 0 := by
-      rw [Contour.divisor_eq_analyticOrderNatAt (hh.mono ball_subset_closedBall).meromorphicOn
+      rw [(hh.mono ball_subset_closedBall).meromorphicOn.divisor_eq_analyticOrderNatAt
         (hh _ (ball_subset_closedBall hzb)) hzb]
       exact_mod_cast hzs
     simpa [hS, Set.Finite.mem_toFinset] using hd
@@ -248,7 +249,7 @@ private lemma finsum_divisor_cast {h : ℂ → ℂ} (hh : AnalyticOnNhd ℂ h (c
   push_cast
   refine Finset.sum_congr rfl (fun z hz => ?_)
   have hzb' := hsub (by simpa [hS] using hz)
-  rw [Contour.divisor_eq_analyticOrderNatAt (hh.mono ball_subset_closedBall).meromorphicOn
+  rw [(hh.mono ball_subset_closedBall).meromorphicOn.divisor_eq_analyticOrderNatAt
     (hh _ (ball_subset_closedBall hzb')) hzb']
   push_cast
   ring

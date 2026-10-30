@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Geometry.Manifold.VectorField.Prod
 
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
@@ -23,18 +25,26 @@ antihomomorphism into the Lie algebra of vector fields. Infinitesimal actions ar
 moment maps (`TauCeti.SmoothTwoForm.IsMomentMap`).
 
 An infinitesimal action restricts along a Lie algebra homomorphism `𝔥 → 𝔤`
-(`TauCeti.InfinitesimalAction.comp`), for instance to a Lie subalgebra. The basic example is the
+(`TauCeti.InfinitesimalAction.comp`), for instance to a Lie subalgebra. Two infinitesimal actions of
+the same Lie algebra on `M` and on `N` give the diagonal action `Z ↦ (Z_M, Z_N)` on `M × N`
+(`TauCeti.InfinitesimalAction.prod`), because Lie brackets of product vector fields are computed
+factor by factor. The basic example is the
 action of the Lie algebra of all endomorphisms of a finite-dimensional real vector space `V` on `V`
 by the linear vector fields `x ↦ A x` (`TauCeti.InfinitesimalAction.linear`), which restricts to
-the linear actions of the classical subalgebras, such as the symplectic Lie algebra.
+the linear actions of the classical subalgebras, such as the symplectic Lie algebra. An abelian Lie
+algebra acts by translations, through the constant vector fields `x ↦ τ Z` of a linear map `τ`
+(`TauCeti.InfinitesimalAction.translation`).
 
 ## Main definitions
 
 * `TauCeti.InfinitesimalAction 𝔤 I M`: infinitesimal actions of `𝔤` on `M`.
 * `TauCeti.InfinitesimalAction.comp`: the restriction of an infinitesimal action along a Lie
   algebra homomorphism.
+* `TauCeti.InfinitesimalAction.prod`: the diagonal action on a product of two manifolds.
 * `TauCeti.InfinitesimalAction.linear V`: the action of `Module.End ℝ V` on `V` by linear vector
   fields.
+* `TauCeti.InfinitesimalAction.translation τ`: the action of an abelian Lie algebra on a vector
+  space by the constant vector fields of a linear map `τ`.
 
 ## References
 
@@ -129,6 +139,41 @@ theorem comp_apply (a : InfinitesimalAction 𝔤 I M) (f : 𝔥 →ₗ⁅ℝ⁆ 
 
 end comp
 
+section prod
+
+variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [CompleteSpace E] [CompleteSpace E'] [IsManifold I 2 M] [IsManifold J 2 N]
+
+/-- The diagonal infinitesimal action `Z ↦ (Z_M, Z_N)` of `𝔤` on `M × N` of infinitesimal actions
+of `𝔤` on `M` and on `N`: the product of the vector fields generated on the two factors. -/
+def prod (a : InfinitesimalAction 𝔤 I M) (b : InfinitesimalAction 𝔤 J N) :
+    InfinitesimalAction 𝔤 (I.prod J) (M × N) where
+  toLinearMap :=
+    { toFun Z := Manifold.prodVectorField (a Z) (b Z)
+      map_add' Z Z' := by simp only [map_add, Manifold.prodVectorField_add]
+      map_smul' c Z := by simp only [map_smul, Manifold.prodVectorField_smul, RingHom.id_apply] }
+  contMDiff_toLinearMap' Z := Manifold.contMDiff_prodVectorField (a.contMDiff Z) (b.contMDiff Z)
+  toLinearMap_lie' Z Z' := funext fun p ↦ by
+    have : IsManifold I (minSmoothness ℝ 2) M := by
+      rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
+    have : IsManifold J (minSmoothness ℝ 2) N := by
+      rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, Pi.neg_apply]
+    rw [Manifold.mlieBracket_prodVectorField ((a.contMDiff Z p.1).mdifferentiableAt (by simp))
+      ((a.contMDiff Z' p.1).mdifferentiableAt (by simp))
+      ((b.contMDiff Z p.2).mdifferentiableAt (by simp))
+      ((b.contMDiff Z' p.2).mdifferentiableAt (by simp)), map_lie, map_lie,
+      Manifold.prodVectorField_neg, Pi.neg_apply]
+
+/-- The diagonal action of `Z` is the product of the fields generated on the factors. -/
+@[simp]
+theorem prod_apply (a : InfinitesimalAction 𝔤 I M) (b : InfinitesimalAction 𝔤 J N) (Z : 𝔤) :
+    a.prod b Z = Manifold.prodVectorField (a Z) (b Z) :=
+  (rfl)
+
+end prod
+
 section linear
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -161,6 +206,34 @@ theorem linear_apply (A : Module.End ℝ V) (x : V) : linear V A x = A x :=
   (rfl)
 
 end linear
+
+section translation
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [IsLieAbelian 𝔤]
+
+/-- The infinitesimal action of an abelian Lie algebra `𝔤` on a normed space `V` by the constant
+vector fields `x ↦ τ Z` of a linear map `τ : 𝔤 → V`, the generators of the translations
+`x ↦ x + t • τ Z`. -/
+def translation (τ : 𝔤 →ₗ[ℝ] V) : InfinitesimalAction 𝔤 𝓘(ℝ, V) V where
+  toLinearMap :=
+    { toFun Z _ := τ Z
+      map_add' _ _ := funext fun _ ↦ τ.map_add _ _
+      map_smul' _ _ := funext fun _ ↦ τ.map_smul _ _ }
+  contMDiff_toLinearMap' Z := contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+  toLinearMap_lie' Z Z' := by
+    funext x
+    -- Evaluate the bundled map `Z ↦ (x ↦ τ Z)` being defined; its values are typed as tangent
+    -- vectors rather than elements of `V`.
+    change τ ⁅Z, Z'⁆ = -mlieBracket 𝓘(ℝ, V) (fun _ ↦ τ Z) (fun _ ↦ τ Z') x
+    rw [mlieBracket_const_model_space, trivial_lie_zero, map_zero, neg_zero]
+    -- The zero of `V` and the zero of its tangent space at `x` agree by definition.
+    rfl
+
+@[simp]
+theorem translation_apply (τ : 𝔤 →ₗ[ℝ] V) (Z : 𝔤) (x : V) : translation τ Z x = τ Z :=
+  (rfl)
+
+end translation
 
 end InfinitesimalAction
 
