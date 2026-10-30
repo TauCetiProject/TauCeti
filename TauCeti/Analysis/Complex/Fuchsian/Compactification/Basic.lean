@@ -35,8 +35,8 @@ countable: two cusps are separated by high horodiscs
 (`TauCeti.Subgroup.CuspDatum.disjoint_image_quotientMk_horodisc_iff`), and a point of the orbit
 space is separated from a cusp because orbits stay uniformly low near a point
 (`TauCeti.Subgroup.CuspDatum.exists_isOpen_mem_disjoint_image_quotientMk_horodisc`).
-Compactness for a cofinite group and the complex structure at the cusps are not part of this
-file.
+Compactness for a cofinite group (`Subgroup.IsCofinite.compactSpace_compactifiedQuotient`) and
+the complex structure at the cusps are not part of this file.
 
 ## Main declarations
 

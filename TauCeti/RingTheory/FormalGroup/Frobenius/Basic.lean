@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.FormalGroup.Logarithm
+public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.PowerSeries.Cartier
 import TauCeti.RingTheory.PowerSeries.Expand
 

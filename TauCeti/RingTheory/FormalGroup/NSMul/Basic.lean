@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.AddInv
-public import TauCeti.RingTheory.FormalGroup.Logarithm
+public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 -- Proof-only: splitting a power series into its truncation and its tail.
 import Mathlib.RingTheory.PowerSeries.Trunc
 

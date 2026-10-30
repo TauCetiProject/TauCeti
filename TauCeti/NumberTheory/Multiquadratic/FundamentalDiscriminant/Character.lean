@@ -69,7 +69,7 @@ theorem fundamentalDiscriminantChar_neg_one {D : ℤ} (hD : Int.IsFundamentalDis
 theorem fundamentalDiscriminantChar_isQuadratic {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) :
     (fundamentalDiscriminantChar D hD).IsQuadratic := by
-  let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+  have := hD.neZero_natAbs
   obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant
   intro a
   have hval : fundamentalDiscriminantChar D hD a = genusCharFun s (a.val : ℤ) := by
@@ -115,7 +115,7 @@ theorem fundamentalDiscriminantChar_two {D : ℤ} (hD : Int.IsFundamentalDiscr D
 /-- **The character of a fundamental discriminant `D ≠ 1` is nontrivial.** -/
 theorem fundamentalDiscriminantChar_ne_one {D : ℤ} (hD : Int.IsFundamentalDiscr D)
     (h1 : D ≠ 1) : fundamentalDiscriminantChar D hD ≠ 1 := by
-  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+  have := hD.neZero_natAbs
   have hD1 : D.natAbs ≠ 1 := by
     have := hD.emod_four_eq_zero_or_one
     omega

@@ -47,6 +47,8 @@ topologized special orthogonal group.
 * `QuadraticMap.Isometry.continuous_spinGroupMap` proves continuity of the Spin-group map induced
   by an isometry of quadratic spaces, and `QuadraticMap.IsometryEquiv.continuous_spinGroupEquiv`
   that of the Spin-group equivalence induced by an isometric equivalence.
+* `QuadraticMap.IsometryEquiv.spinGroupContinuousMulEquiv` upgrades the latter to an isomorphism
+  of topological groups.
 * `QuadraticMap.Isometry.isEmbedding_spinGroupMap` restricts an embedding of the induced Clifford
   map to the corresponding Spin groups.
 * `CliffordAlgebra.instIsTopologicalGroupSpinGroup` equips `spinGroup Q` with a topological
@@ -137,6 +139,28 @@ continuous for the canonical subtype topologies. -/
 @[fun_prop]
 theorem continuous_spinGroupEquiv (e : Q.IsometryEquiv P) : Continuous e.spinGroupEquiv :=
   e.toIsometry.continuous_spinGroupMap.congr fun x ↦ (e.spinGroupEquiv_apply x).symm
+
+/-- The Spin-group equivalence induced by an isometric equivalence of quadratic spaces, as an
+isomorphism of topological groups for the canonical subtype topologies. -/
+def spinGroupContinuousMulEquiv (e : Q.IsometryEquiv P) :
+    spinGroup Q ≃ₜ* spinGroup P where
+  toMulEquiv := e.spinGroupEquiv
+  continuous_toFun := e.continuous_spinGroupEquiv
+  continuous_invFun := e.symm.continuous_spinGroupEquiv.congr fun x ↦
+    congrArg (· x) e.spinGroupEquiv_symm.symm
+
+/-- The topological Spin-group equivalence induced by an isometric equivalence evaluates as the
+underlying Spin-group equivalence. -/
+@[simp]
+theorem coe_spinGroupContinuousMulEquiv (e : Q.IsometryEquiv P) :
+    ⇑e.spinGroupContinuousMulEquiv = e.spinGroupEquiv :=
+  (rfl)
+
+/-- The inverse of the topological Spin-group equivalence is induced by the inverse isometry. -/
+@[simp]
+theorem spinGroupContinuousMulEquiv_symm (e : Q.IsometryEquiv P) :
+    e.spinGroupContinuousMulEquiv.symm = e.symm.spinGroupContinuousMulEquiv :=
+  ContinuousMulEquiv.ext fun x ↦ congrArg (· x) e.spinGroupEquiv_symm
 
 end QuadraticMap.IsometryEquiv
 
