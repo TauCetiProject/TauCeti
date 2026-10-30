@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
-public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap

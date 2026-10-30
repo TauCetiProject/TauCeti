@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import Mathlib.LinearAlgebra.TensorPower.Symmetric
-public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 
 /-!
 # Bilinear forms from functionals on the second symmetric and exterior powers
