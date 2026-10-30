@@ -242,9 +242,7 @@ theorem exists_isSMulRegular_and_map_eq_span_singleton_iff_fiber [IsNoetherianRi
       Ideal.map_map, Ideal.map_map]
     congr 1
     ext b
-    simp [e, ← Ideal.Quotient.mk_algebraMap]
-    -- The two sides differ only by unfolding the local definition `Br`.
-    rfl
+    simp [e, Br, r, ← Ideal.Quotient.mk_algebraMap]
   rw [he]
   constructor
   · rintro ⟨g, hg, hIg⟩

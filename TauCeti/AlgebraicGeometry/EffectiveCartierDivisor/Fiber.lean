@@ -160,8 +160,11 @@ theorem isEffectiveCartier_of_isEffectiveCartier_comap_fiberι [IsLocallyNoether
   have hqp : PrimeSpectrum.comap (algebraMap Γ(S, W) Γ(X, U)) q = p :=
     IsAffineOpen.comap_primeIdealOf_appLE W hW U hU hUW hxU
   let Q := PrimeSpectrum.preimageEquivFiber Γ(S, W) Γ(X, U) p ⟨q, hqp⟩
-  have hQ : Q.asIdeal.comap includeRight = q.asIdeal :=
-    congr($((PrimeSpectrum.preimageEquivFiber Γ(S, W) Γ(X, U) p).symm_apply_apply ⟨q, hqp⟩).1.1)
+  have hQ : Q.asIdeal.comap includeRight = q.asIdeal := by
+    have := congrArg Subtype.val
+      ((PrimeSpectrum.preimageEquivFiber Γ(S, W) Γ(X, U) p).symm_apply_apply ⟨q, hqp⟩)
+    rwa [PrimeSpectrum.preimageEquivFiber_symm_apply_coe, PrimeSpectrum.ext_iff,
+      PrimeSpectrum.comap_asIdeal] at this
   -- The fibre of `I` over `Spec κ(p) ⟶ S` is effective Cartier, so `I(U)` generates a principal
   -- ideal, with a nonzerodivisor generator, in the local ring of the fibre ring at `Q`, hence
   -- also in `B_q`.

@@ -40,26 +40,12 @@ theorem algEquivAux₂_algebraMap_one_tmul (Q : Ideal (p.Fiber B)) [Q.IsPrime] (
     algEquivAux₂ p Q (algebraMap _ (Localization.AtPrime Q) ((1 : p.ResidueField) ⊗ₜ[R] b)) =
       Ideal.Quotient.mk _ (algebraMap B (Localization.AtPrime (Q.comap includeRight)) b) := by
   -- `algEquivAux₂` is the restriction of scalars to `R` of a composite of `B`-algebra
-  -- isomorphisms; rebuild that composite, with the local instances of its definition, and use
-  -- that it commutes with the maps from `B`.
+  -- isomorphisms; unfold it and use that each factor commutes with the maps from `B`.
   let : Algebra B (p.Fiber B) := rightAlgebra
-  let Bp := Localization (Algebra.algebraMapSubmonoid B p.primeCompl)
-  let pB := p.map (algebraMap R B)
-  let r := Q.comap includeRight
-  let e₁ : p.Fiber B ≃ₐ[B] Bp ⧸ pB.map (algebraMap B Bp) := algEquivAux₁ p
-  let Q' : Ideal (Bp ⧸ pB.map (algebraMap B Bp)) := Q.comap e₁.symm
-  have : (Q'.under (B ⧸ pB)).LiesOver r := Ideal.under_liesOver_of_liesOver _ Q' (Q.under B)
-  have : Algebra.algebraMapSubmonoid (B ⧸ pB) r.primeCompl = (Q'.under (B ⧸ pB)).primeCompl :=
-    Ideal.algebraMapSubmonoid_primeCompl_of_liesOver_surjective _ r Ideal.Quotient.mk_surjective
-  have : IsLocalization (Algebra.algebraMapSubmonoid (B ⧸ pB) r.primeCompl)
-      (Localization.AtPrime Q') := by
-    convert IsLocalization.isLocalization_isLocalization_atPrime_isLocalization
-      (Algebra.algebraMapSubmonoid (B ⧸ pB) (Algebra.algebraMapSubmonoid B p.primeCompl))
-      (Localization.AtPrime Q') Q'
-  have := IsScalarTower.to₁₃₄ B (B ⧸ pB) (Bp ⧸ pB.map (algebraMap B Bp)) (Localization.AtPrime Q')
-  exact ((Localization.localAlgEquiv Q' Q e₁.symm rfl).symm.trans
-    ((IsLocalization.algEquiv (Algebra.algebraMapSubmonoid (B ⧸ pB) r.primeCompl)
-      (Localization.AtPrime Q') (Localization.AtPrime r ⧸ pB.map (algebraMap B _))).restrictScalars
-        B)).commutes b
+  unfold algEquivAux₂
+  simp only [AlgEquiv.trans_apply, AlgEquiv.restrictScalars_apply]
+  rw [← AlgEquiv.restrictScalars_apply B, ← right_algebraMap_apply,
+    ← IsScalarTower.algebraMap_apply, AlgEquiv.commutes, AlgEquiv.commutes,
+    Ideal.Quotient.mk_algebraMap]
 
 end Ideal.Fiber
