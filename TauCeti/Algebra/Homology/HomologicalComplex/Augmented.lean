@@ -125,7 +125,8 @@ any projective resolution. No exactness assumption is made on the source complex
 def liftFromComplex (Q : ProjectiveResolution Z) (P : ChainComplex C ℕ)
     [∀ n, Projective (P.X n)] (f : P ⟶ (ChainComplex.single₀ C).obj Z) : P ⟶ Q.complex :=
   P.liftToAugmented (Q.π.f 0) Q.complex_d_comp_π_f_zero Q.exact₀ Q.exact_succ
-    (f.f 0) (ChainComplex.toSingle₀Equiv P Z f).property
+    (f.f 0) (by
+      simpa only [HomologicalComplex.single_obj_d, comp_zero] using (f.comm 1 0).symm)
 
 /-- The degree-zero comparison lifts the prescribed augmentation through the resolution. -/
 @[reassoc (attr := simp)]
