@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.DedekindDomain.PID
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Examples
 import TauCeti.NumberTheory.NumberField.Global.Orders.Maximal
+import TauCeti.NumberTheory.QuadraticOrder.NormOne
 
 /-!
 # Class numbers of imaginary quadratic orders from reduced forms
@@ -21,6 +22,9 @@ such class contains exactly one primitive reduced form
 (`posDefProperClass_mk_primitiveReducedForms_bijective`). Composing the two, the ideals
 `aℤ + ((-b + √(-n))/2)ℤ` of the primitive reduced forms `(a, b, c)` represent every Picard class
 exactly once, and the order of the Picard group is the number of primitive reduced forms.
+Weighting each primitive reduced form as in the Hurwitz class number gives `2 h / w`, for `h` the
+order of the Picard group and `w` the number of units of the order, so that `w` accounts for the
+exceptional weights at the discriminants `-3` and `-4`.
 
 When `-n` is a fundamental discriminant the order is the maximal order of `ℚ(√(-n))`
 (`QuadraticOrder.numberFieldOrder_eq_maximal_iff`), whose Picard group is the ideal class group
@@ -37,6 +41,9 @@ domain.
   discriminant `-n` without repetition.
 * `TauCeti.BinaryQuadraticForm.nat_card_pic`: that Picard group has
   `#(primitiveReducedForms n)` elements.
+* `sum_reducedFormWeight_primitiveReducedForms_eq_card_pic_div_card_units`: the weighted count of
+  the primitive reduced forms of discriminant `-n`, their contribution to the Hurwitz class
+  number, is twice the order of that Picard group divided by the number of units of the order.
 * `TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms`: for fundamental `-n`,
   the class number of `ℚ(√(-n))` is `#(primitiveReducedForms n)`.
 * `TauCeti.BinaryQuadraticForm.classNumber_neg_four_eq_one` and
@@ -82,6 +89,22 @@ theorem nat_card_pic :
     Nat.card (Pic (QuadraticOrder.numberFieldOrder (-n) hn)) = #(primitiveReducedForms n) :=
   (Nat.card_eq_of_bijective _ (picClass_primitiveReducedForms_bijective n hn)).symm.trans
     (Nat.card_eq_finsetCard _)
+
+/-- **The weighted count of the primitive reduced forms as class number over units.** The
+weighted count of the primitive reduced forms of discriminant `-n` is `2 h / w`, for `h` the order
+of the Picard group and `w` the number of units of the quadratic order of discriminant `-n`: the
+weights `1/3` of `x² + x y + y²` and `1/2` of `x² + y²` are the exceptional unit counts `6` and `4`
+at `n = 3` and `n = 4`. This is the term of discriminant `-n` in
+`TauCeti.hurwitzClassNumber_eq_sum_card_primitiveReducedForms`. -/
+theorem sum_reducedFormWeight_primitiveReducedForms_eq_card_pic_div_card_units :
+    ∑ f ∈ primitiveReducedForms n, reducedFormWeight f =
+      2 * Nat.card (Pic (QuadraticOrder.numberFieldOrder (-n) hn)) /
+        Nat.card (QuadraticOrder.numberFieldOrder (-n) hn).toSubalgebraˣ := by
+  rw [sum_reducedFormWeight_primitiveReducedForms, nat_card_pic,
+    QuadraticOrder.numberFieldOrder_toSubalgebra,
+    QuadraticOrder.card_units_of_neg _ _ (by simpa using NeZero.pos n)]
+  simp only [neg_inj, Nat.cast_ite, Nat.cast_ofNat]
+  norm_cast
 
 end Order
 
