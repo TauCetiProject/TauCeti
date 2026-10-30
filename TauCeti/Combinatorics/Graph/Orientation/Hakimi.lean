@@ -333,6 +333,20 @@ theorem orientationEndpointEquiv_symm_head_eq_iff {a b : G.vertexSet → ℕ}
     Equiv.symm_apply_apply, Orientation.headAssignment_apply]
   split_ifs <;> simp_all
 
+/-- The indegree of the orientation recovered from a feasible endpoint assignment is the excess
+at the corresponding vertex node. -/
+@[simp]
+theorem orientationEndpointEquiv_symm_indegree {a b : G.vertexSet → ℕ}
+    (f : ExcessIntervalFlow (0 : Assignment G.EndpointHom ℤ) 1 (endpointBound a)
+      (endpointBound b)) (x : G.vertexSet) :
+    (((orientationEndpointEquiv a b).symm f).1.indegree x : ℤ) =
+      excessAt f.1 (.inr x) := by
+  change endpointBound ((orientationEndpointEquiv a b).symm f).1.indegree (.inr x) = _
+  rw [← Orientation.excessAt_headAssignment]
+  have h := congrArg Subtype.val ((orientationEndpointEquiv a b).apply_symm_apply f)
+  exact congrArg (fun g : Assignment G.EndpointHom ℤ ↦ excessAt g (.inr x)) <|
+    by simpa only [orientationEndpointEquiv_apply_coe] using h
+
 section Cuts
 
 omit [Fintype G.edgeSet] [Fintype G.vertexSet] in
@@ -384,8 +398,7 @@ private theorem sum_endpointBound_le_cutBound_compl [DecidableEq (G.edgeSet ⊕ 
     exact (one_le_sum_card hx hex).trans_eq (zero_add _).symm
   have hI : (#(G.incidentEdges S) : ℤ) ≤ #F + ∑ e ∈ Fᶜ, w e := by
     have := sum_le_sum fun e (_ : e ∈ univ) ↦ key e
-    rwa [sum_add_distrib, sum_ite_mem_eq, sum_ite_mem_eq, sum_ite_mem_eq, sum_const, sum_const,
-      nsmul_one, nsmul_one] at this
+    simpa only [sum_add_distrib, sum_ite_mem_eq, sum_const, nsmul_one] using this
   have hS : ∑ x ∈ S, (a x : ℤ) ≤ #(G.incidentEdges S) := by exact_mod_cast ha S
   have hw : ∑ e ∈ Fᶜ, w e = Fᶜ.sum w := rfl
   omega
@@ -427,21 +440,55 @@ private theorem neg_cutBound_le_sum_endpointBound [DecidableEq (G.edgeSet ⊕ G.
   have hw : ∑ e ∈ F, w e = F.sum w := rfl
   omega
 
-/-- **Reduction of the cut inequalities.** For the edge-to-endpoint network with vertex bounds
-`a ≤ b`, the cut inequalities of `TauCeti.ExcessIntervalFlow.nonempty_iff` over all sets of
-nodes are equivalent to `|E(S)| ≤ b(S)` and `a(S) ≤ |I(S)|` over all sets `S` of vertices. -/
-theorem forall_cutBound_endpointBound_iff [DecidableEq (G.edgeSet ⊕ G.vertexSet)]
-    (hab : a ≤ b) :
+/-- **Reduction of the cut inequalities.** For the edge-to-endpoint network, the cut inequalities
+over all sets of nodes are equivalent to `|E(S)| ≤ b(S)` and `a(S) ≤ |I(S)|` over all sets
+`S` of vertices. -/
+theorem forall_cutBound_endpointBound_iff [DecidableEq (G.edgeSet ⊕ G.vertexSet)] :
     ((∀ T, ∑ y ∈ T, endpointBound a y ≤ cutBound (0 : Assignment G.EndpointHom ℤ) 1 Tᶜ) ∧
         ∀ T, -cutBound (0 : Assignment G.EndpointHom ℤ) 1 T ≤ ∑ y ∈ T, endpointBound b y) ↔
       (∀ S : Finset G.vertexSet, #(G.internalEdges S) ≤ ∑ x ∈ S, b x) ∧
         ∀ S : Finset G.vertexSet, ∑ x ∈ S, a x ≤ #(G.incidentEdges S) := by
   refine ⟨fun h ↦ ?_, fun ⟨hb, ha⟩ ↦
     ⟨sum_endpointBound_le_cutBound_compl ha, neg_cutBound_le_sum_endpointBound hb⟩⟩
-  obtain ⟨f⟩ := (ExcessIntervalFlow.nonempty_iff zero_le_one (endpointBound_mono hab)).2 h
-  obtain ⟨o, ho⟩ := (orientationEndpointEquiv a b).symm f
-  exact ⟨fun S ↦ (o.card_internalEdges_le_sum_indegree S).trans (sum_le_sum fun x _ ↦ (ho x).2),
-    fun S ↦ (sum_le_sum fun x _ ↦ (ho x).1).trans (o.sum_indegree_le_card_incidentEdges S)⟩
+  constructor
+  · intro S
+    let T := (G.internalEdges S).disjSum S
+    have hcut : cutBound (0 : Assignment G.EndpointHom ℤ) 1 T = 0 := by
+      rw [cutBound_eq]
+      apply sum_eq_zero
+      intro e he
+      apply sum_eq_zero
+      intro x hx
+      exact_mod_cast Fintype.card_eq_zero_iff.2 ⟨fun p ↦ by
+        have hxS : x ∉ S := by simpa [T] using hx
+        obtain ⟨u, hu, v, hv, huv⟩ := G.mem_internalEdges.1 (by simpa [T] using he)
+        rcases p.inc.eq_or_eq_of_isLink huv with hxu | hxv
+        · exact hxS (Subtype.ext hxu ▸ hu)
+        · exact hxS (Subtype.ext hxv ▸ hv)⟩
+    have hS := h.2 T
+    rw [hcut, sum_endpointBound] at hS
+    have hS' : (#(G.internalEdges S) : ℤ) ≤ ∑ x ∈ S, (b x : ℤ) := by
+      simpa only [T, toLeft_disjSum, toRight_disjSum, neg_zero] using (show
+        (#T.toLeft : ℤ) ≤ ∑ x ∈ T.toRight, (b x : ℤ) by omega)
+    exact_mod_cast hS'
+  · intro S
+    let T := (G.incidentEdges S).disjSum S
+    have hcut : cutBound (0 : Assignment G.EndpointHom ℤ) 1 Tᶜ = 0 := by
+      rw [cutBound_eq]
+      apply sum_eq_zero
+      intro e he
+      apply sum_eq_zero
+      intro x hx
+      exact_mod_cast Fintype.card_eq_zero_iff.2 ⟨fun p ↦ by
+        have heS : e ∉ G.incidentEdges S := by simpa [T] using he
+        have hxS : x ∈ S := by simpa [T] using hx
+        exact heS (G.mem_incidentEdges.2 ⟨x, hxS, p.inc⟩)⟩
+    have hS := h.1 T
+    rw [hcut, sum_endpointBound] at hS
+    have hS' : ∑ x ∈ S, (a x : ℤ) ≤ #(G.incidentEdges S) := by
+      simpa only [T, toLeft_disjSum, toRight_disjSum] using (show
+        ∑ x ∈ T.toRight, (a x : ℤ) ≤ (#T.toLeft : ℤ) by omega)
+    exact_mod_cast hS'
 
 end Cuts
 
@@ -459,7 +506,7 @@ theorem exists_orientation_indegree_mem_Icc_iff [Finite G.vertexSet] {a b : G.ve
         ∀ S : Finset G.vertexSet, ∑ x ∈ S, a x ≤ #(G.incidentEdges S) := by
   classical
   have := Fintype.ofFinite G.vertexSet
-  rw [← forall_cutBound_endpointBound_iff hab, ← ExcessIntervalFlow.nonempty_iff zero_le_one
+  rw [← forall_cutBound_endpointBound_iff, ← ExcessIntervalFlow.nonempty_iff zero_le_one
     (endpointBound_mono hab), ← (orientationEndpointEquiv a b).nonempty_congr, nonempty_subtype]
 
 /-- A finite multigraph has an orientation with indegrees between `a ≤ b`, or some vertex set
