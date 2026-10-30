@@ -11,8 +11,9 @@ public import TauCeti.LinearAlgebra.End.SquareZero
 /-!
 # Face germs detect the ambient ineffective kernel
 
-Consider a finite group fixing a point `x`, a chart `χ` centred at `x` in a real Banach
-space, and a continuous linear map `q` to the normal-coordinate space. Suppose the action
+Consider a finite group fixing a point `x`, a chart `χ` centred at `x` in a Banach space
+over a nontrivially normed field in which the group order is invertible, and a continuous
+linear map `q` to the normal-coordinate space. Suppose the action
 preserves these normal coordinates near `x` and its coordinate maps are strictly differentiable
 there. An element acts as the identity near `x` if and only if it fixes the germ parametrized
 by `χ.symm` on `ker q`. More generally, testing on a subset of this kernel with unique
@@ -40,26 +41,26 @@ open Filter Topology TauCeti
 
 namespace OpenPartialHomeomorph
 
-variable {G X E F : Type*} [Group G] [Finite G]
+variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintype G]
+  [Invertible (Fintype.card G : 𝕜)]
   [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- For a finite action fixing `x` and preserving linear normal coordinates in a chart centred
 at `x`, identity of an element's germ on the common coordinate kernel is equivalent to identity
 of its ambient germ. The test set `s` in the kernel need only have unique derivatives at zero,
 so it can be a relative quadrant rather than a whole neighborhood. The coordinate maps need
 only be strictly differentiable at the origin; normal coordinates need only be preserved
-near it. -/
+near it. The group order must be invertible in the coefficient field. -/
 theorem eventually_smul_eq_iff_on_ker (χ : OpenPartialHomeomorph X E) {x : X}
     (hx : x ∈ χ.source) (hχx : χ x = 0) (hfix : ∀ g : G, g • x = x)
-    (q : E →L[ℝ] F) {s : Set q.ker} (hs : UniqueDiffWithinAt ℝ s 0)
-    {L : G → E →L[ℝ] E}
+    (q : E →L[𝕜] F) {s : Set q.ker} (hs : UniqueDiffWithinAt 𝕜 s 0)
+    {L : G → E →L[𝕜] E}
     (hL : ∀ g : G, HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm) (L g) 0)
     (hq : ∀ g : G, q ∘ χ ∘ (g • ·) ∘ χ.symm =ᶠ[𝓝 0] q) (g : G) :
     (∀ᶠ y : X in 𝓝 x, g • y = y) ↔
       ∀ᶠ v : q.ker in 𝓝[s] 0, g • χ.symm (v : E) = χ.symm (v : E) := by
-  let := Fintype.ofFinite G
   have hx0 : (0 : E) ∈ χ.target := hχx ▸ χ.map_source hx
   have hχsymm0 : χ.symm 0 = x := by rw [← hχx, χ.left_inv hx]
   have hT : Tendsto (fun v : q.ker ↦ χ.symm (v : E)) (𝓝[s] 0) (𝓝 x) := by
@@ -97,21 +98,21 @@ theorem eventually_smul_eq_iff_on_ker (χ : OpenPartialHomeomorph X E) {x : X}
     have hnormal : q.comp (σ g) = q := by
       have hd := q.hasFDerivAt.comp (0 : E) (hderiv g)
       exact hd.unique (q.hasFDerivAt.congr_of_eventuallyEq (hq g))
-    have hfixed : q.ker ≤ LinearMap.ker ((σ g : Module.End ℝ E) - 1) := by
+    have hfixed : q.ker ≤ LinearMap.ker ((σ g : Module.End 𝕜 E) - 1) := by
       intro v hv
       have h := DFunLike.congr_fun hfaceDeriv ⟨v, hv⟩
       simpa using sub_eq_zero.mpr h
-    have hrange : LinearMap.range ((σ g : Module.End ℝ E) - 1) ≤ q.ker := by
+    have hrange : LinearMap.range ((σ g : Module.End 𝕜 E) - 1) ≤ q.ker := by
       rintro v ⟨w, rfl⟩
       have h := DFunLike.congr_fun hnormal w
       simpa using sub_eq_zero.mpr h
-    have hpow : (σ g : Module.End ℝ E) ^ Fintype.card G = 1 := by
+    have hpow : (σ g : Module.End 𝕜 E) ^ Fintype.card G = 1 := by
       have h : (σ g) ^ Fintype.card G = 1 := by
         rw [← map_pow, pow_card_eq_one, map_one]
       simpa using congrArg ContinuousLinearMap.toLinearMap h
     have hone : σ g = 1 := ContinuousLinearMap.coe_injective <|
-      LinearMap.eq_one_of_pow_eq_one_of_range_sub_le (σ g : Module.End ℝ E) q.ker
-        (Nat.cast_ne_zero.mpr Fintype.card_ne_zero) hpow hfixed hrange
+      Module.End.eq_one_of_pow_eq_one_of_range_sub_one_le (σ g : Module.End 𝕜 E) q.ker
+        (Invertible.ne_zero _) hpow hfixed hrange
     exact MulAction.mem_germKernel.mp <|
       (χ.map_eq_one_iff_mem_germKernel hx hfix σ
         (hasStrictFDerivAt_conj_smul_isotropyRepresentation hx hfix hD) g).mp hone

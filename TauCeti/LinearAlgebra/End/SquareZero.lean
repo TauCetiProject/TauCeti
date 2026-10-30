@@ -22,14 +22,14 @@ normal directions into that tangent space.
 
 public section
 
-namespace LinearMap
+namespace Module.End
 
 variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
 /-- A finite-order endomorphism whose displacement from the identity has square zero is
 the identity, provided the order is nonzero in the coefficient division ring.
 No finite-dimensionality hypothesis is needed. -/
-theorem eq_one_of_pow_eq_one_of_sub_sq_eq_zero (f : Module.End K V) {n : ℕ}
+theorem eq_one_of_pow_eq_one_of_sub_one_sq_eq_zero (f : Module.End K V) {n : ℕ}
     (hn : (n : K) ≠ 0) (hpow : f ^ n = 1) (hsq : (f - 1) ^ 2 = 0) : f = 1 := by
   have hfix (v : V) : f (f v - v) = f v - v := by
     have h := LinearMap.congr_fun hsq v
@@ -49,11 +49,11 @@ theorem eq_one_of_pow_eq_one_of_sub_sq_eq_zero (f : Module.End K V) {n : ℕ}
 /-- A finite-order endomorphism acting trivially on both a submodule and the quotient is
 the identity, when its order is nonzero in the coefficient division ring. The quotient condition
 is expressed without choosing a quotient carrier, as containment of the displacement range. -/
-theorem eq_one_of_pow_eq_one_of_range_sub_le (f : Module.End K V) (W : Submodule K V)
+theorem eq_one_of_pow_eq_one_of_range_sub_one_le (f : Module.End K V) (W : Submodule K V)
     {n : ℕ} (hn : (n : K) ≠ 0) (hpow : f ^ n = 1)
-    (hfixed : W ≤ ker (f - 1)) (hrange : range (f - 1) ≤ W) : f = 1 := by
-  apply f.eq_one_of_pow_eq_one_of_sub_sq_eq_zero hn hpow
-  rw [pow_two, Module.End.mul_eq_comp, ← range_le_ker_iff]
+    (hfixed : W ≤ LinearMap.ker (f - 1)) (hrange : LinearMap.range (f - 1) ≤ W) : f = 1 := by
+  apply f.eq_one_of_pow_eq_one_of_sub_one_sq_eq_zero hn hpow
+  rw [pow_two, Module.End.mul_eq_comp, ← LinearMap.range_le_ker_iff]
   exact hrange.trans hfixed
 
-end LinearMap
+end Module.End
