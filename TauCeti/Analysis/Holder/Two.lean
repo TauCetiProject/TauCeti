@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.One
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 
 /-!
@@ -52,20 +53,6 @@ universe u v
 variable (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The currying linear isometry from continuous multilinear maps on `Fin 2` to
-continuous bilinear maps in curried form. -/
-def continuousMultilinearCurryFin2 :
-    (E [×2]→L[ℝ] F) ≃ₗᵢ[ℝ] E →L[ℝ] E →L[ℝ] F :=
-  (continuousMultilinearCurryRightEquiv' ℝ 1 E F).trans
-    (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F))
-
-/-- The inverse currying isometry evaluates its arguments in their original order. -/
-@[simp]
-theorem continuousMultilinearCurryFin2_symm_apply
-    (g : E →L[ℝ] E →L[ℝ] F) (m : Fin 2 → E) :
-    (continuousMultilinearCurryFin2 (E := E) (F := F)).symm g m = g (m 0) (m 1) := by
-  simp [continuousMultilinearCurryFin2, Fin.init]
 
 namespace C2HolderSpace
 

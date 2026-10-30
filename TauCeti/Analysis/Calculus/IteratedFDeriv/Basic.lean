@@ -13,12 +13,34 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 The `i`-th iterated derivative of the `m`-th iterated derivative of a function has the same norm
 as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFDeriv_fderiv`, the
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
-derivative fields.
+derivative fields. The file also supplies the two-variable currying isometry used to identify
+continuous multilinear second derivatives with curried bilinear maps.
 -/
 
 public section
 
 namespace TauCeti
+
+section CurryFin2
+
+variable (E F : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The currying linear isometry from continuous multilinear maps on `Fin 2` to
+continuous bilinear maps in curried form. -/
+noncomputable def continuousMultilinearCurryFin2 :
+    (E [×2]→L[ℝ] F) ≃ₗᵢ[ℝ] E →L[ℝ] E →L[ℝ] F :=
+  (continuousMultilinearCurryRightEquiv' ℝ 1 E F).trans
+    (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F))
+
+/-- The inverse currying isometry evaluates its arguments in their original order. -/
+@[simp]
+theorem continuousMultilinearCurryFin2_symm_apply
+    (g : E →L[ℝ] E →L[ℝ] F) (m : Fin 2 → E) :
+    (continuousMultilinearCurryFin2 (E := E) (F := F)).symm g m = g (m 0) (m 1) := by
+  simp [continuousMultilinearCurryFin2, Fin.init]
+
+end CurryFin2
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
