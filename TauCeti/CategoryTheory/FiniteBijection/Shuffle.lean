@@ -31,7 +31,7 @@ the subsets of `Fin n` with `p` elements are the cosets `Σ_n / (Σ_p × Σ_q)`,
 are the standard coset representatives. The action of a bijection `τ : n ⟶ m` carries the
 summand of `S` to the summand of `S.map τ`, through the block bijections of `shuffle S ≫ τ`
 (`hom_app_comp_map_eq_map_comp_shuffleCofan_inj`,
-`DayFunctor.η_app_comp_map_eq_map_comp_shuffleCofan_inj`, `blockImage_shuffle_comp`).
+`DayFunctor.η_app_comp_map_eq_tensorHom_comp_shuffleCofan_inj`, `blockImage_shuffle_comp`).
 
 ## Main definitions
 
@@ -364,7 +364,7 @@ noncomputable def isColimitShuffleCofan (F G : FiniteBijection ⊛⥤ V) (n : Fi
 /-- The Day convolution unit followed by the action of a bijection `σ : p ⊗ q ⟶ n` factors through
 the shuffle summand of `blockImage σ`, through the block bijections of `σ`. For
 `σ = shuffle S ≫ τ`, this describes the action of `τ` on the summands. -/
-lemma η_app_comp_map_eq_map_comp_shuffleCofan_inj (F G : FiniteBijection ⊛⥤ V)
+lemma η_app_comp_map_eq_tensorHom_comp_shuffleCofan_inj (F G : FiniteBijection ⊛⥤ V)
     {n p q : FiniteBijection} (σ : p ⊗ q ⟶ n) :
     (η F G).app (p, q) ≫ (F ⊗ G).functor.map σ =
       (F.functor.map (blockLeft σ) ⊗ₘ G.functor.map (blockRight σ)) ≫
