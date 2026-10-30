@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Semisimple.Basic
+public import Mathlib.Algebra.Lie.Semisimple.Defs
 
 /-!
 # Modules over a Lie subalgebra which is the whole algebra
