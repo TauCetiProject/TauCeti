@@ -30,7 +30,8 @@ values at `φ = π / 2`. The powers are `Real.rpow`. These are total functions o
 arguments; their values are meaningful for `k ^ 2 < 1` and `α2 < 1`, under which every integrand
 is continuous and bounded between two positive constants, and every theorem below states the
 hypotheses it needs. The integral of the second kind needs no hypothesis at all for the bounds on
-its integrand, nor for continuity, differentiability and quasi-periodicity in `φ`.
+its integrand, nor for continuity, differentiability, positivity and quasi-periodicity in `φ`, and
+it is strictly increasing in `φ` for `k ^ 2 ≤ 1`.
 
 We prove the basic theory in the amplitude:
 
@@ -146,6 +147,11 @@ theorem continuous_legendreE_integrand (k : ℝ) :
 theorem legendreE_integrand_pos {k : ℝ} (hk : k ^ 2 < 1) (θ : ℝ) :
     0 < (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) :=
   rpow_pos_of_pos (one_sub_mul_sin_sq_pos hk θ) _
+
+/-- The integrand of the second kind is nonnegative, for every modulus. -/
+theorem legendreE_integrand_nonneg (k θ : ℝ) : 0 ≤ (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) := by
+  rw [← sqrt_eq_rpow]
+  exact sqrt_nonneg _
 
 /-- The integrand of the second kind is at least `(1 - k²)^(1/2)`, for every modulus. -/
 theorem le_legendreE_integrand (k θ : ℝ) :
@@ -322,13 +328,32 @@ theorem hasDerivAt_legendreE (k φ : ℝ) :
 theorem continuous_legendreE (k : ℝ) : Continuous (legendreE · k) :=
   continuous_iff_continuousAt.2 fun φ ↦ (hasDerivAt_legendreE k φ).continuousAt
 
-/-- For `k ^ 2 < 1`, `E(φ, k)` is strictly increasing in the amplitude `φ`. -/
-theorem strictMono_legendreE {k : ℝ} (hk : k ^ 2 < 1) : StrictMono (legendreE · k) :=
-  strictMono_of_hasDerivAt_pos (hasDerivAt_legendreE k) (legendreE_integrand_pos hk)
+/-- For `k ^ 2 ≤ 1`, `E(φ, k)` is strictly increasing in the amplitude `φ`. -/
+theorem strictMono_legendreE {k : ℝ} (hk : k ^ 2 ≤ 1) : StrictMono (legendreE · k) := by
+  intro a b hab
+  -- The integrand is positive wherever `cos θ ≠ 0`, which holds off a countable set.
+  have hZ : {θ : ℝ | cos θ = 0}.Countable := by
+    refine (countable_range fun n : ℤ ↦ (2 * n + 1) * π / 2).mono fun θ hθ ↦ ?_
+    obtain ⟨n, hn⟩ := cos_eq_zero_iff.1 hθ
+    exact ⟨n, hn.symm⟩
+  have hne : volume (Ioo a b \ {θ : ℝ | cos θ = 0}) ≠ 0 := by
+    rw [measure_sdiff_null (hZ.measure_zero volume)]
+    exact ((Measure.measure_Ioo_pos _).2 hab).ne'
+  obtain ⟨c, hc, hcos⟩ := nonempty_of_measure_ne_zero hne
+  have hc_pos : 0 < (1 - k ^ 2 * sin c ^ 2) ^ (1 / 2 : ℝ) := by
+    have : 0 < cos c ^ 2 := (sq_nonneg _).lt_of_ne (pow_ne_zero 2 hcos).symm
+    exact rpow_pos_of_pos (by nlinarith [sin_sq_add_cos_sq c, sq_nonneg (sin c)]) _
+  have hint := intervalIntegrable_legendreE_integrand k
+  rw [← sub_pos]
+  simp only [legendreE_def]
+  rw [integral_interval_sub_left (hint 0 b) (hint 0 a)]
+  exact intervalIntegral.integral_pos hab (continuous_legendreE_integrand k).continuousOn
+    (fun θ _ ↦ legendreE_integrand_nonneg k θ) ⟨c, Ioo_subset_Icc_self hc, hc_pos⟩
 
-/-- For `k ^ 2 < 1`, `E(φ, k)` is positive for positive amplitude `φ`. -/
-theorem legendreE_pos {φ k : ℝ} (hk : k ^ 2 < 1) (hφ : 0 < φ) : 0 < legendreE φ k := by
-  simpa using strictMono_legendreE hk hφ
+/-- For every modulus `k`, `E(φ, k)` is positive for positive amplitude `φ`. -/
+theorem legendreE_pos {φ k : ℝ} (hφ : 0 < φ) : 0 < legendreE φ k :=
+  intervalIntegral.integral_pos hφ (continuous_legendreE_integrand k).continuousOn
+    (fun θ _ ↦ legendreE_integrand_nonneg k θ) ⟨0, left_mem_Icc.2 hφ.le, by simp⟩
 
 /-- `E(φ, k)` is odd in the amplitude. -/
 @[simp]
@@ -358,9 +383,9 @@ theorem legendreE_int_mul_pi (k : ℝ) (n : ℤ) : legendreE (n * π) k = 2 * n 
 theorem legendreE_zero_modulus (φ : ℝ) : legendreE φ 0 = φ := by
   simp [legendreE_def]
 
-/-- For `k ^ 2 < 1`, the complete integral of the second kind `E(k)` is positive. -/
-theorem legendreEc_pos {k : ℝ} (hk : k ^ 2 < 1) : 0 < legendreEc k :=
-  legendreE_pos hk (by positivity)
+/-- For every modulus `k`, the complete integral of the second kind `E(k)` is positive. -/
+theorem legendreEc_pos (k : ℝ) : 0 < legendreEc k :=
+  legendreE_pos (by positivity)
 
 @[simp]
 theorem legendreEc_neg (k : ℝ) : legendreEc (-k) = legendreEc k := legendreE_neg_modulus _ k
