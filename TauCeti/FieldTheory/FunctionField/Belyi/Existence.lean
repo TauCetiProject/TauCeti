@@ -12,7 +12,7 @@ import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
-# Every curve over `ℚ̄` admits a Belyi map
+# Every curve over `AlgebraicClosure ℚ` admits a Belyi map
 
 This file proves the constructive direction of Belyi's theorem: an algebraic function field `F`
 over a field `k` algebraic over `ℚ`, such as `AlgebraicClosure ℚ` or a number field, with exact
@@ -41,7 +41,8 @@ of the resulting Belyi map is not controlled.
 
 The hypothesis that `k` is algebraic over `ℚ` is what makes the values `x(P)` algebraic numbers,
 to which polynomial Belyification applies. It cannot be dropped: by the other direction of
-Belyi's theorem, a curve over `ℂ` admits a Belyi map only if it is defined over `ℚ̄`.
+Belyi's theorem, a curve over `ℂ` admits a Belyi map only if it is defined over
+`AlgebraicClosure ℚ`.
 
 ## Main results
 
@@ -108,9 +109,9 @@ theorem IsAlgebraicBelyiPair.of_criticalValues_subset_of_restrict_mem_zeroOneInf
     le_antisymm (not_lt.mp hPx) (Place.ramificationIdx_pos k⟮x⟯ P), one_mul]
   exact hE.ramificationIdx_eq_one (by rwa [Place.restrict_restrict])
 
-/-- **A curve over `ℚ̄` admits a Belyi map, through any of its functions.** Let `F` be an
-algebraic function field over a field `k` algebraic over `ℚ`, with exact constant field `k`, and
-let `x ∈ F` be transcendental over `k`. There is a nonconstant polynomial `q` with rational
+/-- **A curve over `AlgebraicClosure ℚ` admits a Belyi map, through any of its functions.** Let
+`F` be an algebraic function field over a field `k` algebraic over `ℚ`, with exact constant field
+`k`, and let `x ∈ F` be transcendental over `k`. There is a nonconstant polynomial `q` with rational
 coefficients such that `F`, as an extension of `k(t)` through `t ↦ q(x)`, is an algebraic Belyi
 pair: unramified outside `t = 0`, `t = 1` and `t = ∞`.
 
@@ -166,9 +167,9 @@ theorem IsFunctionField.exists_polynomial_isAlgebraicBelyiPair [Algebra.IsAlgebr
   · by_contra hinf
     exact hxP (Place.mem_integers_of_restrict_ne_infty hβ fun h ↦ hinf (h ▸ by simp))
 
-/-- **A curve over `ℚ̄` admits a Belyi map** (Belyi). An algebraic function field `F` over a
-field `k` algebraic over `ℚ`, with exact constant field `k`, carries a finite-dimensional
-`k(t)`-algebra structure making it an algebraic Belyi pair. -/
+/-- **A curve over `AlgebraicClosure ℚ` admits a Belyi map** (Belyi). An algebraic function
+field `F` over a field `k` algebraic over `ℚ`, with exact constant field `k`, carries a
+finite-dimensional `k(t)`-algebra structure making it an algebraic Belyi pair. -/
 theorem IsFunctionField.exists_isAlgebraicBelyiPair [Algebra.IsAlgebraic ℚ k]
     (hF : IsFunctionField k F) (hk : IsIntegrallyClosedIn k F) :
     ∃ (_ : Algebra (RatFunc k) F) (_ : IsScalarTower k (RatFunc k) F)
