@@ -124,11 +124,13 @@ theorem exists_parametrization_iteratedFDeriv_eq_zero
       range_rightDeriv := LinearMap.range_eq_of_proj (Classical.choose_spec hker)
       isCompl_ker := LinearMap.isCompl_of_proj (Classical.choose_spec hker) }
   let θ : ↥g'.ker → E := φ.implicitFunction 0
+  -- The implicit-function API is stated for `φ.leftFun`; record that this field is `g`.
+  have hleft : φ.leftFun = g := by simp only [φ]
   have hright : φ.rightFun φ.pt = 0 := by simp [φ]
   have hpt : φ.prodFun φ.pt = (0, 0) := by simp [φ, hzero a hi]
   have hθa : θ 0 = a := by
     have h := φ.implicitFunction_apply_image.self_of_nhds
-    rwa [hright, show φ.leftFun φ.pt = 0 from hzero a hi] at h
+    rwa [hright, hleft, hzero a hi] at h
   have hθ : ContDiffAt 𝕜 r θ 0 := by
     have hrightφ : ContDiffAt 𝕜 r φ.rightFun φ.pt := by
       simp only [φ]
@@ -150,7 +152,7 @@ theorem exists_parametrization_iteratedFDeriv_eq_zero
     have htend : Tendsto φ.rightFun (𝓝 a) (𝓝 0) :=
       hright ▸ φ.hasStrictFDerivAt_rightFun.continuousAt.tendsto
     filter_upwards [φ.implicitFunction_apply_image, htend hV] with x hx hxV hxi
-    rw [show φ.leftFun x = 0 from hzero x hxi] at hx
+    rw [hleft, hzero x hxi] at hx
     exact ⟨φ.rightFun x, hxV, hx⟩
   exact ⟨g, g', θ, hg, hstrict, hsurj, hzero, hθa, hθ, hθg, hcover,
     Module.Dual.finrank_ker_add_one_of_ne_zero hg'⟩
