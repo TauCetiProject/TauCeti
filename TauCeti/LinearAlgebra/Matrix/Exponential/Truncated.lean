@@ -61,7 +61,6 @@ theorem _root_.AlgHom.map_expSeries {S S' : Type*} [CommRing S] [Algebra K S] [C
   simp
 
 /-- With a square-zero coefficient `ε c`, the truncated exponential series is `1 + ε c A`. -/
-@[simp]
 theorem expSeries_inr {d : ℕ} (hd : 2 ≤ d) (A : Matrix ι ι K) (c : K) :
     expSeries A d (inr c : TrivSqZeroExt K K) = 1 + (c • A).map inr := by
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le' hd
