@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.StrictHenselization.Local
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 public import Mathlib.RingTheory.Henselian
 
 /-!
@@ -49,12 +50,12 @@ instance henselianLocalRing : HenselianLocalRing (algebra R Ω) where
       (fun i : Option (Fin f.natDegree) ↦ i.elim a₀ fun j ↦ f.coeff j)
     have hb₀ : stage R Ω B (b none) = a₀ := hb none
     have hbj (j : Fin f.natDegree) : stage R Ω B (b (some j)) = f.coeff j := hb (some j)
-    let g : Polynomial B.obj.left :=
-      X ^ f.natDegree + ∑ j : Fin f.natDegree, C (b (some j)) * X ^ (j : ℕ)
-    have hg : g.Monic := monic_X_pow_add (degree_sum_fin_lt _)
+    let g : Polynomial B.obj.left := Polynomial.monicOfCoeff (fun j ↦ b (some j))
+    have hg : g.Monic := Polynomial.monic_monicOfCoeff _
     have hgf : g.map (stage R Ω B).toRingHom = f := by
-      conv_rhs => rw [hf.as_sum, ← Fin.sum_univ_eq_sum_range (fun j ↦ C (f.coeff j) * X ^ j)]
-      simp [g, Polynomial.map_sum, hbj]
+      simpa only [g, Polynomial.map_monicOfCoeff, AlgHom.toRingHom_eq_coe,
+        AlgHom.coe_toRingHom, hbj] using
+        Polynomial.monicOfCoeff_coeff hf rfl
     have heval (p : Polynomial B.obj.left) :
         toTarget R Ω (stage R Ω B (p.eval (b none))) =
           toTarget R Ω ((p.map (stage R Ω B).toRingHom).eval a₀) := by
