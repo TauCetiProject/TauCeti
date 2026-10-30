@@ -745,6 +745,7 @@ private theorem tensorMapLinear_apply (f : M ⟶ M') (g : N ⟶ N')
     tensorMapLinear Γ Δ Θ f g z = tensorMapBase Γ Δ Θ f g z := by
   simp only [tensorMapLinear, TauCeti.Algebra.TensorProduct.linearMapOfFactors_apply]
 
+omit [GradedAlgebra Δ.piece] in
 private theorem tensorMapBase_mem (f : M ⟶ M') (g : N ⟶ N') {p : ℤ}
     {z : BalancedTensorProduct k B M N}
     (hz : z ∈ (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p) :

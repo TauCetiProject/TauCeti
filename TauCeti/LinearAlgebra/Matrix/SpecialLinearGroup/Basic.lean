@@ -55,6 +55,11 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
+* `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
+  leaves sums over all row vectors unchanged.
+* `Matrix.SpecialLinearGroup.intCast_comp_vecCons_eq_zsmul_vecMul_inv`: the bottom row of
+  `γ⁻¹` for `γ = [a, b; c, d] ∈ SL₂(ℤ)` is `(-c, a)`, in any commutative ring; and
+  `Matrix.SpecialLinearGroup.neg_vecMul_inv`: replacing `γ` by `-γ` negates `v ᵥ* γ⁻¹`.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
@@ -133,6 +138,35 @@ theorem vecMul_eq_iff_eq_vecMul_inv {R : Type*} [CommRing R] {n : Type*} [Fintyp
     rw [vecMul_vecMul, ← coe_mul, mul_inv_cancel, coe_one, vecMul_one]
   · rintro rfl
     rw [vecMul_vecMul, ← coe_mul, inv_mul_cancel, coe_one, vecMul_one]
+
+/-- Right multiplication of row vectors by `g ∈ SL(n, R)` permutes `n → R`, so it does not change
+a sum over all row vectors when `R` is finite. -/
+theorem sum_comp_vecMul {R : Type*} [CommRing R] [Fintype R] {n : Type*} [Fintype n]
+    [DecidableEq n] {M : Type*} [AddCommMonoid M] (F : (n → R) → M)
+    (g : SpecialLinearGroup n R) :
+    ∑ a, F (a ᵥ* (g : Matrix n n R)) = ∑ a, F a :=
+  Fintype.sum_equiv
+    { toFun a := a ᵥ* (g : Matrix n n R)
+      invFun y := y ᵥ* ((g⁻¹ : SpecialLinearGroup n R) : Matrix n n R)
+      left_inv a := ((vecMul_eq_iff_eq_vecMul_inv g a _).mp rfl).symm
+      right_inv y := (vecMul_eq_iff_eq_vecMul_inv g _ y).mpr rfl }
+    _ _ fun _ ↦ rfl
+
+/-- For `γ = [a, b; c, d] ∈ SL₂(ℤ)`, the bottom row of `γ⁻¹` is `(-c, a)`: its `n`-th multiple,
+cast to any commutative ring `R`, is `n • ((0, 1) ᵥ* γ⁻¹)`. -/
+theorem intCast_comp_vecCons_eq_zsmul_vecMul_inv {R : Type*} [CommRing R] (γ : SL(2, ℤ))
+    (n : ℤ) :
+    ((↑) ∘ ![-(n * γ 1 0), n * γ 0 0] : Fin 2 → R) =
+      n • ((![0, 1] : Fin 2 → R) ᵥ* (γ⁻¹ : SL(2, ℤ))) := by
+  ext i
+  fin_cases i <;> simp [Matrix.SpecialLinearGroup.coe_inv, adjugate_fin_two]
+
+/-- Replacing `γ ∈ SL₂(ℤ)` by `-γ` negates the right multiplication of row vectors by `γ⁻¹`,
+over any commutative ring `R`. -/
+theorem neg_vecMul_inv {R : Type*} [CommRing R] (v : Fin 2 → R) (γ : SL(2, ℤ)) :
+    (-(v ᵥ* (γ⁻¹ : SL(2, ℤ))) : Fin 2 → R) = v ᵥ* ((-γ)⁻¹ : SL(2, ℤ)) := by
+  ext i
+  fin_cases i <;> simp [vecMul, dotProduct]
 
 /-- The determinant-one identity for an element of `SL₂(R)`, written in coordinates. -/
 lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :

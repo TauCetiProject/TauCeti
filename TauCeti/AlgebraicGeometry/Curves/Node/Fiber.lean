@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 public import Mathlib.AlgebraicGeometry.Fiber
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
+import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Fiber
 import TauCeti.CategoryTheory.MorphismProperty.Limits
 
 /-!
@@ -30,12 +31,22 @@ that its singular subscheme, cut out by the first Fitting ideal of `Ω_{X/k}`, b
 `k`. Thus the theorem below reduces nodality of a syntomic family to nodality of the curves over
 the residue fields of its base.
 
+Syntomicity is itself detected on fibres for flat morphisms locally of finite presentation
+(`TauCeti.AlgebraicGeometry.syntomicOfRelativeDimension_iff_flat_and_fiberToSpecResidueField`).
+Combining the two gives the fibrewise criterion: a morphism is at worst nodal of relative dimension
+one exactly when it is flat and locally of finite presentation and its fibres over the residue
+fields are at worst nodal curves. Such fibres have pure dimension one
+(`TauCeti.AlgebraicGeometry.PureRelativeDimension.of_syntomicOfRelativeDimension`).
+
 ## Main results
 
 * `AtWorstNodalOfRelativeDimensionOne.of_baseChange_field`: a syntomic
   morphism of relative dimension one is at worst nodal if all its base changes to fields are.
 * `atWorstNodalOfRelativeDimensionOne_iff_syntomic_and_fiberToSpecResidueField`: a morphism is
   at worst nodal of relative dimension one exactly when it is syntomic of relative dimension one
+  and all its fibres over residue fields are at worst nodal.
+* `atWorstNodalOfRelativeDimensionOne_iff_flat_and_fiberToSpecResidueField`: a morphism is at
+  worst nodal of relative dimension one exactly when it is flat and locally of finite presentation
   and all its fibres over residue fields are at worst nodal.
 
 ## References
@@ -137,5 +148,17 @@ theorem atWorstNodalOfRelativeDimensionOne_iff_syntomic_and_fiberToSpecResidueFi
   refine AtWorstNodalOfRelativeDimensionOne.of_baseChange_field f fun K _ s ↦ ?_
   rw [← Scheme.descResidueField_stalkClosedPointTo_fromSpecResidueField K Y s]
   exact MorphismProperty.pullback_snd_comp f _ _ (h _)
+
+/-- **The fibrewise criterion for nodal curves.** A morphism is at worst nodal of relative
+dimension one exactly when it is flat and locally of finite presentation and each of its fibres
+`f.fiber y ⟶ Spec κ(y)` over a residue field is at worst nodal. -/
+theorem atWorstNodalOfRelativeDimensionOne_iff_flat_and_fiberToSpecResidueField
+    {X Y : Scheme.{u}} (f : X ⟶ Y) :
+    AtWorstNodalOfRelativeDimensionOne f ↔ Flat f ∧ LocallyOfFinitePresentation f ∧
+      ∀ y : Y, AtWorstNodalOfRelativeDimensionOne (f.fiberToSpecResidueField y) := by
+  rw [atWorstNodalOfRelativeDimensionOne_iff_syntomic_and_fiberToSpecResidueField,
+    syntomicOfRelativeDimension_iff_flat_and_fiberToSpecResidueField]
+  exact ⟨fun ⟨⟨hfl, hfp, _⟩, h⟩ ↦ ⟨hfl, hfp, h⟩,
+    fun ⟨hfl, hfp, h⟩ ↦ ⟨⟨hfl, hfp, fun y ↦ (h y).syntomic⟩, h⟩⟩
 
 end TauCeti.AlgebraicGeometry

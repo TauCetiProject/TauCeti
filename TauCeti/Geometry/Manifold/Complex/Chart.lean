@@ -14,6 +14,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+public import Mathlib.Topology.DiscreteSubset
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 
 /-!
@@ -246,6 +247,23 @@ theorem mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE (hc : ContinuousA
   · exact (c'.continuousAt hc'fx).comp_of_eq
       (hc.comp_of_eq (c.continuousAt_symm (c.map_source hcx)) (c.left_inv hcx))
       (by rw [c.left_inv hcx])
+
+/-- A continuous map between complex curves that is holomorphic off a closed discrete set is
+holomorphic everywhere. -/
+theorem mdifferentiable_of_continuous_of_mdifferentiableOn_compl {s : Set X}
+    (hc : Continuous f) (hs : sᶜ ∈ codiscrete X)
+    (hf : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f sᶜ) : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f := by
+  intro x
+  refine mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE hc.continuousAt ?_
+  filter_upwards [mem_codiscrete_iff_forall_mem_nhdsNE.mp hs x] with y hy
+  exact (hf y hy).mdifferentiableAt ((mem_codiscrete'.mp hs).1.mem_nhds hy)
+
+/-- A continuous map between complex curves that is holomorphic off a finite set is
+holomorphic everywhere. -/
+theorem _root_.Set.Finite.mdifferentiable_of_continuous_of_compl [T1Space X] {s : Set X}
+    (hs : s.Finite) (hc : Continuous f) (hf : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f sᶜ) :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f :=
+  mdifferentiable_of_continuous_of_mdifferentiableOn_compl hc hs.compl_mem_codiscrete hf
 
 /-- **A continuous lift of a holomorphic map through a local biholomorphism is holomorphic.** If
 `g` is holomorphic near `f x` and injective on a neighbourhood of `f x`, `g ∘ f` is holomorphic near

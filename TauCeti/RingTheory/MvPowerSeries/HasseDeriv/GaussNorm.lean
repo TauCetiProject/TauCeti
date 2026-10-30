@@ -41,7 +41,8 @@ series `∑ₙ X Yⁿ` is restricted, since every weight involving `X` vanishes,
 * `MvPowerSeries.restrictedHasseDeriv`: the Hasse derivative on the ring of series restricted at
   a positive polyradius `c`, with the Cauchy estimate
   `MvPowerSeries.norm_restrictedHasseDeriv_le`, `‖∂^d f‖ ≤ (∏ᵢ cᵢ ^ dᵢ)⁻¹ ‖f‖`, its continuity,
-  and over a commutative ring its `R`-linearity `MvPowerSeries.restrictedHasseDeriv_smul`.
+  and over a commutative ring its `R`-linearity `MvPowerSeries.restrictedHasseDeriv_smul` and its
+  agreement `MvPowerSeries.restrictedHasseDeriv_polynomial` with `MvPolynomial.hasseDeriv`.
 
 ## References
 
@@ -181,6 +182,15 @@ theorem restrictedHasseDeriv_smul (d : σ →₀ ℕ) (r : R) (f : IsRestricted.
   Subtype.ext (by
     rw [TauCeti.MvPowerSeries.coe_smul_isRestrictedSubring, coe_restrictedHasseDeriv,
       coe_restrictedHasseDeriv, TauCeti.MvPowerSeries.coe_smul_isRestrictedSubring, map_smul])
+
+/-- On a polynomial, the Hasse derivative on the restricted-series ring is the polynomial Hasse
+derivative `MvPolynomial.hasseDeriv`. -/
+@[simp]
+theorem restrictedHasseDeriv_polynomial (d : σ →₀ ℕ) (p : MvPolynomial σ R) :
+    restrictedHasseDeriv d ⟨(p : MvPowerSeries σ R), p.isRestricted c⟩ =
+      ⟨(MvPolynomial.hasseDeriv d p : MvPowerSeries σ R),
+        (MvPolynomial.hasseDeriv d p).isRestricted c⟩ :=
+  Subtype.ext (by rw [coe_restrictedHasseDeriv, hasseDeriv_coe])
 
 end NormedCommRing
 

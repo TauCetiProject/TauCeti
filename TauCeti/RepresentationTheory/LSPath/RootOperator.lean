@@ -44,8 +44,8 @@ elementary moves (subdividing a segment, inserting a stationary segment) commute
 the same moves. The weight changes by `-α` under `f_α` and by `α` under `e_α`.
 
 This file works with the ambient operators on all paths. That `e_α` and `f_α` are partial
-inverses is proved in `TauCeti.RepresentationTheory.LSPath.PartialInverse`; the integral
-string-length identities of Littelmann's path crystals are not proved here.
+inverses is proved in `TauCeti.RepresentationTheory.LSPath.PartialInverse`, and the lengths
+of the root strings through a path in `TauCeti.RepresentationTheory.LSPath.StringLength`.
 
 ## Main definitions
 

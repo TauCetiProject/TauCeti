@@ -16,7 +16,9 @@ Restricting global functions to an open equips its sections with a common scalar
 Restriction maps are linear over that ring, so differences of restrictions and their
 cokernels can be formed as modules, even when the opens have different coordinate rings.
 For a scheme over a commutative ring, this action is compatible with that of the base ring
-(`AlgebraicGeometry.Scheme.Modules.isScalarTower_sections`).
+(`AlgebraicGeometry.Scheme.Modules.isScalarTower_sections`). Along a morphism over the base,
+`pushforwardSectionsBaseLinearEquiv` identifies sections of a pushforward with those on the
+preimage as modules over the base ring.
 
 The sections of a sheaf of modules on a scheme over `R` are thus `R`-modules, and the restriction
 maps are `R`-linear: this is the presheaf of `R`-modules
@@ -293,6 +295,57 @@ lemma exact_sectionsRestrictPiBaseLinear (hV : ∀ i, V i ≤ W) (hW : W ≤ ⨆
     rfl
 
 end Restriction
+
+variable {Y : Scheme.{u}} [Y.Over (Spec (.of R))]
+  (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
+
+/-- The base ring acts on sections of a pushforward over `U` as it acts on sections over the
+preimage of `U`: pushforward restricts scalars along `f.app U`, which carries the image of the
+base ring in `Γ(Y, U)` to its image in `Γ(X, f ⁻¹ᵁ U)`. -/
+lemma pushforward_baseRingToStructurePresheaf_smul (M : X.Modules) (U : Y.Opens) (r : R)
+    (s : Γ((pushforward f).obj M, U)) :
+    (Y.baseRingToStructurePresheaf R).app (op U) r • s =
+      ((X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ U)) r •
+        show Γ(M, f ⁻¹ᵁ U) from s : Γ(M, f ⁻¹ᵁ U)) := by
+  -- Scalars act on pushforward sections through `f.app U` by definition of the pushforward.
+  change f.app U ((Y.baseRingToStructurePresheaf R).app (op U) r) •
+    (show Γ(M, f ⁻¹ᵁ U) from s) = _
+  rw [app_baseRingToStructurePresheaf]
+
+/-- The sections of a pushforward over an open have the same base-ring module structure as
+the sections on its preimage. -/
+def pushforwardSectionsBaseLinearEquiv (M : X.Modules) (U : Y.Opens) :
+    letI : Module R Γ((pushforward f).obj M, U) := Module.compHom _
+      ((Y.baseRingToStructurePresheaf R).app (op U)).hom
+    letI : Module R Γ(M, f ⁻¹ᵁ U) := Module.compHom _
+      ((X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ U))).hom
+    Γ((pushforward f).obj M, U) ≃ₗ[R] Γ(M, f ⁻¹ᵁ U) := by
+  let : Module R Γ((pushforward f).obj M, U) := Module.compHom Γ((pushforward f).obj M, U)
+    ((Y.baseRingToStructurePresheaf R).app (op U)).hom
+  let : Module R Γ(M, f ⁻¹ᵁ U) := Module.compHom Γ(M, f ⁻¹ᵁ U)
+    ((X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ U))).hom
+  exact
+    { toFun := id
+      invFun := id
+      left_inv _ := rfl
+      right_inv _ := rfl
+      map_add' _ _ := rfl
+      map_smul' := pushforward_baseRingToStructurePresheaf_smul R f M U }
+
+-- Normalize the implicit section types before registering simp rules: `pushforward_obj_obj`
+-- otherwise rewrites their left-hand sides before the section formulas can apply.
+@[simp]
+lemma pushforwardSectionsBaseLinearEquiv_apply (M : X.Modules) (U : Y.Opens)
+    (s : Γ((pushforward f).obj M, U)) :
+    dsimp% only [pushforward_obj_obj] (pushforwardSectionsBaseLinearEquiv R f M U s) = s := by
+  rfl
+
+@[simp]
+lemma pushforwardSectionsBaseLinearEquiv_symm_apply (M : X.Modules) (U : Y.Opens)
+    (s : Γ(M, f ⁻¹ᵁ U)) :
+    dsimp% only [pushforward_obj_obj] ((pushforwardSectionsBaseLinearEquiv R f M U).symm s) =
+      s := by
+  rfl
 
 end
 
