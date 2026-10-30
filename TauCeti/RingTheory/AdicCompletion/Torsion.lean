@@ -251,19 +251,19 @@ open _root_.AdicCompletion
 
 /-- The extension of `f` through the residues modulo `I ^ n`, for `f` with values killed by
 `I ^ n`. -/
-private def liftAt (f : N →ₗ[R] M) (n : ℕ)
+private def _root_.AdicCompletion.liftAt (f : N →ₗ[R] M) (n : ℕ)
     (hf : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n)) : AdicCompletion I N →ₗ[R] M :=
   (I ^ n • ⊤ : Submodule R N).liftQ f
     (Submodule.smul_le.mpr fun r hr y _ ↦ by
       simpa using (Submodule.mem_torsionBySet_iff _ _).mp (hf y) ⟨r, hr⟩) ∘ₗ
     eval I N n
 
-private theorem liftAt_apply {f : N →ₗ[R] M} {n : ℕ}
+private theorem _root_.AdicCompletion.liftAt_apply {f : N →ₗ[R] M} {n : ℕ}
     (hf : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n)) {x : AdicCompletion I N} {y : N}
     (hx : eval I N n x = Submodule.Quotient.mk y) : liftAt f n hf x = f y := by
   simp only [liftAt, LinearMap.comp_apply, hx, Submodule.liftQ_apply]
 
-private theorem liftAt_smul {f : N →ₗ[R] M} {n : ℕ}
+private theorem _root_.AdicCompletion.liftAt_smul {f : N →ₗ[R] M} {n : ℕ}
     (hf : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n)) (a : AdicCompletion I R)
     (x : AdicCompletion I N) :
     letI := torsionModule hM
