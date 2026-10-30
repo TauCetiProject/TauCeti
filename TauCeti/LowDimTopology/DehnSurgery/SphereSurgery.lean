@@ -87,19 +87,12 @@ theorem sphereExterior_solidTorusFramedSphere :
 
 end FramedSphere
 
-/-- The solid torus `D² × S¹` identified with `D² × S¹ ⊆ ℂ × ℂ`, the target of the glued-in piece
-of a surgery along a framed circle. -/
-private def solidTorusBallSphereHomeomorph :
-    SolidTorus ≃ₜ closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 :=
-  (Homeomorph.refl _).prodCongr Circle.homeomorphSphere
-
 /-- On the boundary torus, the identification of the solid torus with `D² × S¹ ⊆ ℂ × ℂ` is the
 boundary inclusion of `D² × S¹`. -/
-private theorem solidTorusBallSphereHomeomorph_boundaryInclusion (q : Circle × Circle) :
-    solidTorusBallSphereHomeomorph (SolidTorus.boundaryInclusion q) =
+theorem SolidTorus.homeomorphBallSphere_boundaryInclusion (q : Circle × Circle) :
+    SolidTorus.homeomorphBallSphere (SolidTorus.boundaryInclusion q) =
       ballSphereBoundaryInclusion (Circle.homeomorphSphere q.1, Circle.homeomorphSphere q.2) :=
-  Prod.ext (Subtype.ext (by simp [solidTorusBallSphereHomeomorph]))
-    (Subtype.ext (by simp [solidTorusBallSphereHomeomorph]))
+  Prod.ext (Subtype.ext (by simp)) (Subtype.ext (by simp))
 
 namespace SphereSurgery
 
@@ -117,9 +110,9 @@ def toDehnFilling (h : IsSolidTorusNeighborhood f Φ)
     S.exteriorEmbedding ∘ Homeomorph.setCongr sphereExterior_solidTorusFramedSphere.symm
   isClosedEmbedding_exteriorEmbedding := S.isClosedEmbedding_exteriorEmbedding.comp
     (Homeomorph.setCongr sphereExterior_solidTorusFramedSphere.symm).isClosedEmbedding
-  solidTorusEmbedding := S.ballSphereEmbedding ∘ solidTorusBallSphereHomeomorph
+  solidTorusEmbedding := S.ballSphereEmbedding ∘ SolidTorus.homeomorphBallSphere
   isClosedEmbedding_solidTorusEmbedding :=
-    S.isClosedEmbedding_ballSphereEmbedding.comp solidTorusBallSphereHomeomorph.isClosedEmbedding
+    S.isClosedEmbedding_ballSphereEmbedding.comp SolidTorus.homeomorphBallSphere.isClosedEmbedding
   gluing := Homeomorph.prodComm Circle Circle
   exteriorEmbedding_exteriorBoundaryInclusion q := by
     -- The boundary point `Φ (q.2, q.1)` of the knot exterior is the boundary point
@@ -133,7 +126,7 @@ def toDehnFilling (h : IsSolidTorusNeighborhood f Φ)
         rw [coe_sphereExteriorBoundaryInclusion_apply, solidTorusFramedSphere_apply]
         exact congrArg Φ (Prod.ext (Subtype.ext (by simp)) (by simp))
     rw [Function.comp_apply, hx, S.exteriorEmbedding_sphereExteriorBoundaryInclusion,
-      Function.comp_apply, solidTorusBallSphereHomeomorph_boundaryInclusion]
+      Function.comp_apply, SolidTorus.homeomorphBallSphere_boundaryInclusion]
   range_union_range := by
     rw [range_comp, range_comp, Homeomorph.range_coe, Homeomorph.range_coe, image_univ, image_univ,
       S.range_union_range]
@@ -142,7 +135,8 @@ def toDehnFilling (h : IsSolidTorusNeighborhood f Φ)
     refine S.range_inter_range_subset.trans ?_
     rintro _ ⟨q, rfl⟩
     refine ⟨(Circle.homeomorphSphere.symm q.1, Circle.homeomorphSphere.symm q.2), ?_⟩
-    simp [solidTorusBallSphereHomeomorph_boundaryInclusion]
+    simp only [Function.comp_apply, SolidTorus.homeomorphBallSphere_boundaryInclusion,
+      Homeomorph.apply_symm_apply]
   fillingSlope_gluing := h.fillingSlope_prodComm
 
 /-- The Dehn filling of a surgery embeds the knot exterior as the exterior of the framed
@@ -161,8 +155,8 @@ theorem toDehnFilling_solidTorusEmbedding_apply (h : IsSolidTorusNeighborhood f 
     (S : SphereSurgery (solidTorusFramedSphere_injective h.isEmbedding.injective) Y)
     (p : SolidTorus) :
     (S.toDehnFilling h).solidTorusEmbedding p =
-      S.ballSphereEmbedding (p.1, Circle.homeomorphSphere p.2) :=
-  (rfl)
+      S.ballSphereEmbedding (p.1, Circle.homeomorphSphere p.2) := by
+  simp only [toDehnFilling, Function.comp_apply, SolidTorus.homeomorphBallSphere_apply]
 
 /-- The Dehn filling of a surgery glues the boundary tori by exchanging the circle factors. -/
 @[simp]
