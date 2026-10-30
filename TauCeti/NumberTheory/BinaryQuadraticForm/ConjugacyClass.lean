@@ -61,6 +61,8 @@ Popa and Zagier state it for matrices modulo `±1`, summing over the classes of 
 
 * `TauCeti.BinaryQuadraticForm.ofMatrix_conjAct_smul`: `Q_{γ M γ⁻¹} = γ • Q_M`, for the conjugation
   action.
+* `TauCeti.BinaryQuadraticForm.smul_eq_iff_ofConjAct_smul_ofMatrix_eq`: two matrices of the same
+  trace are conjugate by `γ` exactly when `γ` carries one form to the other.
 * `TauCeti.BinaryQuadraticForm.card_stabilizer_ofMatrix`: the stabiliser of `Q_M` has the order of
   the centraliser of `M` in `SL(2, ℤ)`.
 * `TauCeti.BinaryQuadraticForm.apply_one_zero_ne_zero_of_mem_traceDetFiber`: in an elliptic fibre,
@@ -101,6 +103,14 @@ theorem ofMatrix_conjAct_smul (g : ConjAct SL(2, R)) (M : Matrix (Fin 2) (Fin 2)
   ofMatrix_conj (ofConjAct g) M
 
 end CommRing
+
+/-- Over `ℤ`, conjugation between two matrices of the same trace is detected on their forms:
+`g M g⁻¹ = N` exactly when `g • Q_M = Q_N`. -/
+theorem smul_eq_iff_ofConjAct_smul_ofMatrix_eq {M N : Matrix (Fin 2) (Fin 2) ℤ}
+    (h : M.trace = N.trace) (g : ConjAct SL(2, ℤ)) :
+    g • M = N ↔ ofConjAct g • ofMatrix M = ofMatrix N := by
+  rw [← ofMatrix_inj_of_trace_eq ((trace_specialLinearGroup_smul g M).trans h),
+    ofMatrix_conjAct_smul]
 
 /-- **The automorphism weights agree**: the stabiliser of `Q_M` in `SL(2, ℤ)` has the order of the
 centraliser of `M` in `SL(2, ℤ)`, that is of its stabiliser under conjugation. -/
