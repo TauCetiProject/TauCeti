@@ -59,7 +59,7 @@ private theorem nonempty_homeomorph_setOf_norm_fst_le_norm_snd_handlebody_one :
       ‖(x : WithLp 2 (ℂ × ℂ)).snd‖} ≃ₜ handlebody 1) :=
   nonempty_homeomorph_handlebody_one.map fun e ↦
     (sphereProdFstLeHomeomorph ℂ ℂ).trans <|
-      ((Homeomorph.refl _).prodCongr Circle.homeomorphSphere.symm).trans e.symm
+      SolidTorus.homeomorphBallSphere.symm.trans e.symm
 
 /-- The solid torus `‖w‖ ≤ ‖z‖` in the unit sphere of `ℂ²` is a genus-one handlebody. -/
 private theorem nonempty_homeomorph_setOf_norm_snd_le_norm_fst_handlebody_one :
@@ -67,7 +67,7 @@ private theorem nonempty_homeomorph_setOf_norm_snd_le_norm_fst_handlebody_one :
       ‖(x : WithLp 2 (ℂ × ℂ)).fst‖} ≃ₜ handlebody 1) :=
   nonempty_homeomorph_handlebody_one.map fun e ↦
     (sphereProdSndLeHomeomorph ℂ ℂ).trans <| (Homeomorph.prodComm _ _).trans <|
-      ((Homeomorph.refl _).prodCongr Circle.homeomorphSphere.symm).trans e.symm
+      SolidTorus.homeomorphBallSphere.symm.trans e.symm
 
 /-- The genus-one Heegaard splitting of the unit sphere of `ℂ²` into the solid tori `‖z‖ ≤ ‖w‖`
 and `‖w‖ ≤ ‖z‖`, meeting along the Clifford torus `‖z‖ = ‖w‖`. -/

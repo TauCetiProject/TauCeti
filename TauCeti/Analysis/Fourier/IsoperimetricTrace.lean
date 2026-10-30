@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.AreaEnergy
 public import TauCeti.Analysis.Normed.Module.FilledHull
-import TauCeti.Analysis.Contour.Curve.Circle
+import TauCeti.Analysis.Contour.Curve.Circle.Basic
 
 /-!
 # Circular traces in the rectifiable isoperimetric equality case

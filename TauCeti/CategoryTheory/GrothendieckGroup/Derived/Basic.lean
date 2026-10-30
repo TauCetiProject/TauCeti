@@ -97,19 +97,6 @@ private lemma exists_finset_isZero_homology (X : DerivedCategory.Bounded A) :
   · exact (X.obj.isGE_iff a).1 ha n hn
   · exact (X.obj.isLE_iff b).1 hb n hn
 
-/-- The localization functor sends an object placed in degree zero to that object placed in degree
-zero. -/
-private noncomputable def boundedQhSingleIso (X : A) :
-    (DerivedCategory.Bounded.Qh A).obj ((HomotopyCategory.Bounded.singleFunctor A 0).obj X) ≅
-      (DerivedCategory.Bounded.singleFunctor A 0).obj X :=
-  DerivedCategory.Bounded.ι.preimageIso
-    ((DerivedCategory.Bounded.QhCompιIsoιCompQh A).app _ ≪≫
-      DerivedCategory.Qh.mapIso ((HomotopyCategory.Bounded.singleFunctorCompιIso A 0).app X) ≪≫
-      ((DerivedCategory.singleFunctorIsoCompQh A 0).app X).symm ≪≫
-      (((DerivedCategory.TStructure.t (C := A)).bounded.liftCompιIso
-        (DerivedCategory.singleFunctor A 0)
-        (fun _ ↦ ⟨⟨0, inferInstance⟩, ⟨0, inferInstance⟩⟩)).app X).symm)
-
 end AbelianK0
 
 section Triangulated
@@ -317,7 +304,8 @@ private lemma toBoundedDerivedK0_surjective :
       rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
         SplitK0.boundedHomotopyEquiv_of, TriangulatedK0.map_of, fromSplit_of,
         toBoundedDerivedK0_of]
-      exact TriangulatedK0.of_congr (boundedQhSingleIso X)
+      exact TriangulatedK0.of_congr
+        ((DerivedCategory.Bounded.singleFunctorCompQhIso A 0).app X)
   refine TriangulatedK0.surjective_of_forall_of_mem_range fun Y => ?_
   refine ⟨fromSplit A ((SplitK0.boundedHomotopyEquiv A).symm
     (TriangulatedK0.of ((DerivedCategory.Bounded.Qh A).objPreimage Y))), ?_⟩
