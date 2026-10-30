@@ -10,7 +10,7 @@ public import TauCeti.Algebra.BigOperators.Finset.Range
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 import Mathlib.Algebra.Module.BigOperators
 import TauCeti.LinearAlgebra.End.Basic
-import Mathlib.Tactic.FieldSimp
+import TauCeti.Data.Nat.Factorial.Sum
 
 /-!
 # The exponential of a locally nilpotent endomorphism
@@ -63,27 +63,6 @@ private theorem sum_range_eq_of_le {x : M} {k l : ℕ} (hk : (f ^ k) x = 0) (hkl
   rw [← sum_range_add_sum_Ico _ hkl, add_eq_left]
   refine sum_eq_zero fun i hi ↦ ?_
   rw [pow_map_zero_of_le (mem_Ico.1 hi).1 hk, smul_zero]
-
-/-- The coefficients of the product of the exponential series of `-X` and of `X`: the coefficient
-of `Xⁿ` is `(1 - 1)ⁿ / n!`. -/
-private theorem sum_antidiagonal_neg_one_pow_mul_inv_factorial (n : ℕ) :
-    ∑ p ∈ antidiagonal n, (-1 : ℚ) ^ p.1 * ((p.1.factorial : ℚ)⁻¹ * (p.2.factorial : ℚ)⁻¹) =
-      if n = 0 then 1 else 0 := by
-  have hterm : ∀ m ∈ range (n + 1), (-1 : ℚ) ^ m * ((m.factorial : ℚ)⁻¹ *
-      ((n - m).factorial : ℚ)⁻¹) = (n.factorial : ℚ)⁻¹ * ((-1) ^ m * 1 ^ (n - m) * n.choose m) := by
-    intro m hm
-    have hmn : m ≤ n := Nat.lt_succ_iff.1 (mem_range.1 hm)
-    have hfac : (n.choose m : ℚ) * m.factorial * (n - m).factorial = n.factorial := by
-      exact_mod_cast Nat.choose_mul_factorial_mul_factorial hmn
-    have hc : (n.choose m : ℚ) ≠ 0 := by exact_mod_cast (Nat.choose_pos hmn).ne'
-    rw [one_pow, mul_one, ← hfac]
-    field_simp
-  rw [Nat.sum_antidiagonal_eq_sum_range_succ
-    (fun i j ↦ (-1 : ℚ) ^ i * ((i.factorial : ℚ)⁻¹ * (j.factorial : ℚ)⁻¹)) n,
-    sum_congr rfl hterm, ← mul_sum, ← add_pow, neg_add_cancel]
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  · simp [hn]
 
 variable (hf : ∀ x, ∃ n, (f ^ n) x = 0)
 
@@ -142,7 +121,7 @@ private theorem expFun_expFun_of_eq_neg {g : Module.End R M} (hfg : g = -f)
       ((p.1.factorial : ℚ)⁻¹ * ((p.2.factorial : ℚ)⁻¹ * (-1) ^ p.1)) • (f ^ (p.1 + p.2)) x =
         (if n = 0 then (1 : ℚ) else 0) • (f ^ n) x := by
     intro n
-    rw [← sum_antidiagonal_neg_one_pow_mul_inv_factorial, Finset.sum_smul]
+    rw [← Nat.sum_antidiagonal_neg_one_pow_mul_inv_factorial, Finset.sum_smul]
     refine sum_congr rfl fun p hp ↦ ?_
     rw [mem_antidiagonal.1 hp]
     congr 1
