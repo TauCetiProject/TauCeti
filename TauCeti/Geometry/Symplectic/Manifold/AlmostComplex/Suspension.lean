@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Descent
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Prod
-public import TauCeti.Geometry.Symplectic.Manifold.Suspension
+public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 
 /-!
