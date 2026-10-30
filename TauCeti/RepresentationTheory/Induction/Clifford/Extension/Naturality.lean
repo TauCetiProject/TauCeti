@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Linear.Conj
 public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Commutant
 
 /-!
@@ -234,7 +235,7 @@ theorem cliffordImplementersEquiv_kernelLift (e : A ≅ B) (d : (End A)ˣ) :
 
 /-- The Clifford isomorphism carries the inclusion of commutant units to the inclusion
 of conjugated commutant units. -/
-theorem inl_cliffordExtensionEquiv (e : A ≅ B) (d : (End A)ˣ) :
+theorem cliffordExtensionEquiv_inl (e : A ≅ B) (d : (End A)ˣ) :
     e.cliffordExtensionEquiv (inl A d) = inl B (Units.map e.conj.toMonoidHom d) := by
   rw [inl_apply, inl_apply, cliffordExtensionEquiv_mk, cliffordImplementersEquiv_kernelLift]
 
@@ -243,11 +244,11 @@ theorem conjAlgEquiv_commutantAction (e : A ≅ B) (c : Carrier A) (f : End A) :
     e.conjAlgEquiv k (commutantAction c f) =
       commutantAction (e.cliffordExtensionEquiv c) (e.conjAlgEquiv k f) := by
   refine QuotientGroup.induction_on c fun p ↦ ?_
-  simp only [cliffordExtensionEquiv_mk, commutantAction_mk]
+  simp only [cliffordExtensionEquiv_mk, commutantAction_mk, conjAlgEquiv_apply]
   apply End.ext
   ext x
-  rw [FDRep.Iso.conjAlgEquiv_apply_asHom_apply, implementerConj_apply, implementerConj_apply,
-    FDRep.Iso.conjAlgEquiv_apply_asHom_apply]
+  rw [FDRep.Iso.conj_apply_asHom_apply, implementerConj_apply, implementerConj_apply,
+    FDRep.Iso.conj_apply_asHom_apply]
   simp
 
 end CategoryTheory.Iso

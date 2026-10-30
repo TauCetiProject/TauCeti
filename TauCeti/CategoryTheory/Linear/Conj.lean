@@ -36,10 +36,10 @@ def conjAlgEquiv (e : X ≅ Y) : End X ≃ₐ[R] End Y where
 theorem conjAlgEquiv_toMulEquiv (e : X ≅ Y) :
     (e.conjAlgEquiv R).toMulEquiv = e.conj := (rfl)
 
-/-- The underlying morphism is conjugated by the specified isomorphism. -/
+/-- Applying the algebra equivalence is applying Mathlib's conjugation equivalence. -/
 @[simp]
-theorem conjAlgEquiv_apply_asHom (e : X ≅ Y) (f : End X) :
-    (e.conjAlgEquiv R f).asHom = e.inv ≫ f.asHom ≫ e.hom := (rfl)
+theorem conjAlgEquiv_apply (e : X ≅ Y) (f : End X) :
+    e.conjAlgEquiv R f = e.conj f := (rfl)
 
 /-- Conjugation by the identity is the identity algebra equivalence. -/
 @[simp]
