@@ -21,10 +21,19 @@ requires no smoothness or projectivity assumption.
 This gives the matrix calculation for identifying simple-coroot differentials with Cartan
 vectors in a group defined by generators inside a general linear group.
 
+The weight cocharacter `t ↦ diag(t ^ w a)` of `GL_N` itself, `weightCocharacter w`, is the
+special case read directly off the generic matrix entries: it differentiates to the diagonal
+matrix of its weights. For `w = Pi.single i 1` this is the matrix unit `Eᵢᵢ`, which is how a
+weight vector of a rational representation is seen to be an eigenvector of `Eᵢᵢ`.
+
 ## Main declarations
 
 * `tangentMatrix_derivationComp_cocharacter_of_weightTorus`: the matrix of a represented
   weight-torus cocharacter differential over any coefficient algebra.
+* `weightCocharacter_apply_X`: the coordinate morphism of the weight cocharacter
+  `t ↦ diag(t ^ w a)` of `GL_N` on the generic matrix entries.
+* `tangentMatrix_derivationComp_weightCocharacter`: its differential, the diagonal matrix of the
+  weights `w a` times the tangent parameter.
 -/
 
 public section
@@ -41,6 +50,47 @@ variable {N : ℕ} (q : coordinateHopfAlgebra R N →ₐc[R] H)
   (π : H →ₐc[R] MonoidAlgebra R (Multiplicative (sigma →₀ ℤ)))
   (wt : Fin N → sigma → ℤ) (hπ : π.comp q = weightTorusCoordinateBialgHom (S := R) wt)
   (ψ : Multiplicative (sigma →₀ ℤ) →* Multiplicative ℤ)
+
+/-- **The weight cocharacter on the generic matrix entries**: its coordinate morphism sends the
+generic diagonal entry `xₐₐ` to the Laurent monomial `T ^ w a` and every off-diagonal entry to
+zero. This is the coordinate form of `t ↦ diag(t ^ w a)`, read off at the universal point. -/
+@[simp]
+theorem weightCocharacter_apply_X (w : Fin N → ℤ) (a b : Fin N) :
+    weightCocharacter (R := R) w
+        (coordinateHopfAlgebraAlgEquiv R N (coordinateRingMap R N (MvPolynomial.X (a, b)))) =
+      if a = b then LaurentPolynomial.T (w a) else 0 := by
+  let f : WithConv (LaurentPolynomial R →ₐ[R] LaurentPolynomial R) :=
+    WithConv.toConv (AlgHom.id R _)
+  have h := congrArg (fun p ↦ (pointsMulEquiv N p).val a b)
+    (mapDomain_weightCocharacter (R := R) w f)
+  beta_reduce at h
+  rw [pointsMulEquiv_weightCocharacterPoints, diagGL_apply, BialgHom.mapDomain_apply,
+    pointsMulEquiv_apply, pointToGeneralLinear_apply, WithConv.ofConv_toConv, AlgHom.comp_apply,
+    BialgHom.coe_toAlgHom] at h
+  refine h.trans ?_
+  have hf : laurentEval (MultiplicativeGroup.pointsMulEquiv f) =
+      AlgHom.id R (LaurentPolynomial R) := by
+    rw [MultiplicativeGroup.pointsMulEquiv_apply, laurentEval_laurentEvalEquiv_symm]
+  split_ifs with hab
+  · subst hab
+    rw [weightDiagonalUnits_apply, ← laurentEval_T (R := R), hf, AlgHom.id_apply]
+  · rfl
+
+/-- **The differential of the weight cocharacter** `t ↦ diag(t ^ w a)` is the diagonal matrix of
+its weights, multiplied by the tangent parameter. -/
+@[simp]
+theorem tangentMatrix_derivationComp_weightCocharacter (w : Fin N → ℤ)
+    (d : Derivation R (LaurentPolynomial R)
+      (Bialgebra.CounitAlgebra R (LaurentPolynomial R) B)) :
+    tangentMatrix N (derivationComp (B := B) (weightCocharacter (R := R) w) d) =
+      Matrix.diagonal fun a ↦ w a • MultiplicativeGroup.tangentLinearEquiv d := by
+  ext a b
+  rw [tangentMatrix_apply, algEquivSelf_derivationComp_apply, BialgHom.coe_toAlgHom,
+    weightCocharacter_apply_X, Matrix.diagonal_apply]
+  split_ifs
+  · rw [MultiplicativeGroup.derivation_T_zsmul, map_zsmul,
+      MultiplicativeGroup.tangentLinearEquiv_apply]
+  · rw [map_zero, map_zero]
 
 include hπ
 

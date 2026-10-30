@@ -30,7 +30,9 @@ Together with the irreducibility of `V_λ` (`TauCeti.isIrreducible_rationalWeylR
 that `λ ↦ V_λ` is an injective map from the dominant weights of `GL n` to the isomorphism classes
 of irreducible representations, `TauCeti.SimpleFDRepClasses k (GL n k)`
 (`TauCeti.rationalWeylFDRepClass_injective`): half of the theorem of the highest weight for
-`GL n`. That every irreducible rational representation is some `V_λ` is not proved here.
+`GL n`. The other half, that every irreducible rational representation is some `V_λ`, is
+`TauCeti.IsRationalRep.exists_nonempty_equiv_rationalWeylRep` in
+`TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Classification`.
 
 ## Main results
 
@@ -172,7 +174,8 @@ theorem rationalWeylFDRepClass_def (l : DominantWeight n) :
 
 /-- **`λ ↦ V_λ` is injective on isomorphism classes**: distinct dominant weights of `GL n` name
 distinct isomorphism classes of irreducible rational representations. This is the injectivity half
-of the highest-weight classification; that every class is some `V_λ` is not proved here. -/
+of the highest-weight classification; that every irreducible rational representation is some
+`V_λ` is `TauCeti.IsRationalRep.exists_nonempty_equiv_rationalWeylRep`. -/
 theorem rationalWeylFDRepClass_injective :
     Function.Injective (rationalWeylFDRepClass k (n := n)) := fun _ _ hl => by
   rw [rationalWeylFDRepClass_def, rationalWeylFDRepClass_def,
