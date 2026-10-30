@@ -14,9 +14,8 @@ public import Mathlib.RingTheory.Derivation.Basic
 An `R`-algebra homomorphism `A →ₐ[R] B[ε]` into the dual numbers lifting a fixed point
 `A →ₐ[R] B` is the same data as an `R`-derivation of `A` valued in `B`. This is the
 infinitesimal-lifting dictionary specialised to the square-zero extension `B[ε] → B`,
-and it is the engine identifying the tangent space of a functor of points with a module
-of derivations (reductive-groups roadmap, Layer 2): tangent vectors at a point are
-exactly the dual-number points lying over it.
+and it identifies the tangent space of a functor of points with a module of derivations:
+tangent vectors at a point are exactly the dual-number points lying over it.
 
 The fixed point is carried by the algebra-tower hypotheses `[Algebra A B]`
 `[IsScalarTower R A B]`, as in `Mathlib.RingTheory.Derivation.ToSquareZero`. For an
@@ -51,46 +50,34 @@ value at `a` has classical component `algebraMap A B a` and infinitesimal compon
 `d a`. -/
 private def liftOfDerivation (d : Derivation R A B) : A →ₐ[R] DualNumber B where
   toFun a := inl (algebraMap A B a) + inr (d a)
-  map_one' := by rw [map_one, d.map_one_eq_zero, inr_zero, add_zero, inl_one]
-  map_mul' a b := by
-    ext
-    · simp [fst_mul]
-    · simp only [snd_mul, fst_add, fst_inl, fst_inr, snd_add, snd_inl, snd_inr, add_zero,
-        zero_add, smul_eq_mul, MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op,
-        d.leibniz, Algebra.smul_def]
-      rw [Algebra.commutes, Algebra.commutes]
-  map_zero' := by rw [map_zero, map_zero, inr_zero, add_zero, inl_zero]
-  map_add' a b := by rw [map_add, map_add, inl_add, inr_add]; abel
+  map_one' := by simp
+  map_mul' a b := by ext <;> simp [Algebra.smul_def, Algebra.commutes b]
+  map_zero' := by simp
+  map_add' a b := by ext <;> simp
   commutes' r := by
-    rw [Derivation.map_algebraMap, inr_zero, add_zero, ← IsScalarTower.algebraMap_apply,
-      algebraMap_eq_inl']
+    simp [algebraMap_eq_inl', IsScalarTower.algebraMap_apply R A B]
+
+variable {A B} in
+/-- The classical component of a lift of the structure point is that point. -/
+private lemma fst_apply_of_comp_eq {ψ : A →ₐ[R] DualNumber B}
+    (hψ : (fstHom R B B).comp ψ = IsScalarTower.toAlgHom R A B) (a : A) :
+    fst (ψ a) = algebraMap A B a :=
+  DFunLike.congr_fun hψ a
 
 /-- Lifting the structure point of an algebra to the dual numbers is the same as giving
 a derivation: the equivalence between `R`-derivations `A → B` and dual-number points
 `A →ₐ[R] B[ε]` lying over the point `A →ₐ[R] B` of the tower. -/
-noncomputable def derivationToDualNumberEquivLift :
+def derivationToDualNumberEquivLift :
     Derivation R A B ≃
       {ψ : A →ₐ[R] DualNumber B // (fstHom R B B).comp ψ = IsScalarTower.toAlgHom R A B} where
   toFun d := ⟨liftOfDerivation R d, by ext a; simp [liftOfDerivation]⟩
   invFun ψ :=
     { toLinearMap := (sndHom B B).restrictScalars R ∘ₗ ψ.1.toLinearMap
-      map_one_eq_zero' := by simp [snd_one]
-      leibniz' := fun a b => by
-        have ha : fst (ψ.1 a) = algebraMap A B a := congrArg (fun f => f a) <|
-          congrArg DFunLike.coe ψ.2
-        have hb : fst (ψ.1 b) = algebraMap A B b := congrArg (fun f => f b) <|
-          congrArg DFunLike.coe ψ.2
-        simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, Function.comp_apply,
-          AlgHom.toLinearMap_apply, map_mul, snd_mul, sndHom_apply, ha, hb, smul_eq_mul,
-          MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op, Algebra.smul_def]
-        rw [Algebra.commutes, Algebra.commutes] }
+      map_one_eq_zero' := by simp
+      leibniz' a b := by
+        simp [fst_apply_of_comp_eq R ψ.2, Algebra.smul_def, Algebra.commutes b] }
   left_inv d := by ext a; simp [liftOfDerivation]
-  right_inv ψ := by
-    ext a
-    · have ha : fst (ψ.1 a) = algebraMap A B a := congrArg (fun f => f a) <|
-        congrArg DFunLike.coe ψ.2
-      simpa [liftOfDerivation] using ha.symm
-    · simp [liftOfDerivation]
+  right_inv ψ := by ext a <;> simp [liftOfDerivation, fst_apply_of_comp_eq R ψ.2]
 
 variable {R A B}
 
