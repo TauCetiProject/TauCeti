@@ -588,6 +588,11 @@ section Rotate
 
 variable (x : Fin (n - 1) × ℤˣ) (v : BraidWord n)
 
+/-- Shifting a loop with positive endpoints one position earlier and back gives the same loop. -/
+private theorem sub_one_add_one_pair {c : ℕ × ℕ} (h₁ : c.1 ≠ 0) (h₂ : c.2 ≠ 0) :
+    (c.1 - 1 + 1, c.2 - 1 + 1) = c :=
+  Prod.ext (Nat.sub_one_add_one h₁) (Nat.sub_one_add_one h₂)
+
 private theorem levelAt_append_singleton_of_lt {k : ℕ} (hk : k < v.length) :
     (v ++ [x]).levelAt k = levelAt (n := n) (x :: v) (k + 1) := by
   simp [levelAt, List.getElem?_append_left hk]
@@ -815,16 +820,18 @@ private theorem seifertEntry_append_singleton_eq_neg_sum_right {a b : ℕ × ℕ
       sum_seifertLoops_levelAt_sub_cons hm hm']
     simp only [seifertEntry, hab, hla, hlb, h₁, ↓reduceIte, rowPotential,
       signAt_append_singleton_of_lt x v halt]
-    have hs := signAt_eq_one_or_eq_neg_one (x :: v : BraidWord n) (show a.2 + 1 < v.length + 1 by
-      omega)
+    have hlt : a.2 + 1 < v.length + 1 := by omega
+    have hs := signAt_eq_one_or_eq_neg_one (x :: v : BraidWord n) hlt
     split_ifs <;> first | contradiction | omega
   by_cases h₂ : levelAt (n := n) (x :: v) (a.1 + 1) = (some (x.1 : ℕ)).map (· + 1)
   · -- `a` lies one level above `x`
+    have hneg : ∀ d : ℕ × ℕ, betweenIndicator (a.1 + 1, a.2 + 1) d.1 -
+        betweenIndicator (a.1 + 1, a.2 + 1) d.2 = (-betweenIndicator (a.1 + 1, a.2 + 1) d.2) -
+          (-betweenIndicator (a.1 + 1, a.2 + 1) d.1) := fun d ↦ by ring
     rw [Finset.sum_congr rfl fun d hd ↦ (seifertEntry_eq_betweenIndicator_sub'
       (mem_filter_seifertLoops_cons hm' hd).1
       (by simp only [(mem_filter_seifertLoops_cons hm' hd).2.1]; exact h₂) hA.2.2.1).trans
-      (show _ = (-betweenIndicator (a.1 + 1, a.2 + 1) d.2) -
-        (-betweenIndicator (a.1 + 1, a.2 + 1) d.1) by ring),
+      (hneg d),
       sum_seifertLoops_levelAt_sub_cons hm hm' (fun p ↦ -betweenIndicator (a.1 + 1, a.2 + 1) p)]
     simp only [seifertEntry, hab, hla, hlb, h₁, ↓reduceIte, betweenIndicator]
     simp only [h₂, ↓reduceIte]
@@ -856,8 +863,10 @@ private theorem seifertEntry_append_singleton_eq_sum_sum {a : ℕ × ℕ}
       ((mem_filter_seifertLoops_cons hm' hc).2.1.trans
         (mem_filter_seifertLoops_cons hm' hd).2.1.symm)).trans
     (sum_seifertLoops_levelAt_sub_cons hm hm' _)]
-  rw [Finset.sum_congr rfl fun c hc ↦ show rowPotential (x :: v : BraidWord n) c m -
-      rowPotential (x :: v : BraidWord n) c 0 = g c.2 - g c.1 by
+  have hrow : ∀ c ∈ (seifertLoops (n := n) (x :: v)).filter
+      (fun c ↦ levelAt (n := n) (x :: v) c.1 = some (x.1 : ℕ)),
+      rowPotential (x :: v : BraidWord n) c m - rowPotential (x :: v : BraidWord n) c 0 =
+        g c.2 - g c.1 := fun c hc ↦ by
     obtain ⟨⟨hc12, -, -, -⟩, -, hc2⟩ := mem_filter_seifertLoops_cons hm' hc
     simp only [rowPotential, hg]
     rcases eq_or_ne c.2 m with h | h <;> rcases eq_or_ne c.1 0 with h' | h'
@@ -865,8 +874,8 @@ private theorem seifertEntry_append_singleton_eq_sum_sum {a : ℕ × ℕ}
       | (rw [h, h']; split_ifs <;> omega)
       | (rw [h]; split_ifs <;> omega)
       | (rw [h']; split_ifs <;> omega)
-      | (split_ifs <;> omega),
-    sum_seifertLoops_levelAt_sub_cons hm hm']
+      | (split_ifs <;> omega)
+  rw [Finset.sum_congr rfl hrow, sum_seifertLoops_levelAt_sub_cons hm hm']
   simp only [seifertEntry, ↓reduceIte, hg, signAt_append_singleton_of_lt x v hal, ha2,
     signAt_append_singleton_length, ha1]
   have hs₀ := signAt_eq_one_or_eq_neg_one (x :: v : BraidWord n) (Nat.succ_pos v.length)
@@ -938,8 +947,7 @@ theorem exists_seifertMatrix_append_singleton :
       · exact isSeifertLoop_sub_one_length hm hm' (hm0 c h0)
       · have := hlen c
         rw [isSeifertLoop_append_singleton_iff x v (by omega),
-          show (c.1.1 - 1 + 1, c.1.2 - 1 + 1) = c.1 from Prod.ext (by simp only; omega)
-            (by simp only; omega)]
+          sub_one_add_one_pair h0 (by omega)]
         exact (mem_seifertLoops _).1 c.2⟩
   have hκ : ∀ c : seifertLoops (n := n) (x :: v), c.1.1 ≠ 0 →
       (κ c).1 = (c.1.1 - 1, c.1.2 - 1) := fun c h0 ↦ by simp [κ, h0]
@@ -985,10 +993,10 @@ theorem exists_seifertMatrix_append_singleton :
     have hrow : ∀ c d : seifertLoops (n := n) (x :: v), c.1.1 ≠ 0 →
         rotateRow x v (κ c) d = (1 : Matrix _ _ ℤ) c d := fun c d h0 ↦ by
       have := hlen c
+      have hne : c.1.2 - 1 ≠ v.length := by omega
       rw [rotateRow, hκ c h0, Matrix.one_apply]
-      simp only [show c.1.2 - 1 ≠ v.length by omega, ↓reduceIte,
-        show (c.1.1 - 1 + 1, c.1.2 - 1 + 1) = c.1 from Prod.ext (by simp only; omega)
-          (by simp only; omega), eq_comm (a := d.1), Subtype.ext_iff]
+      simp only [hne, ↓reduceIte, sub_one_add_one_pair h0 (by omega), eq_comm (a := d.1),
+        Subtype.ext_iff]
     by_cases h₀ : ∃ c₀ : seifertLoops (n := n) (x :: v), c₀.1.1 = 0
     · obtain ⟨c₀, hc₀⟩ := h₀
       set r : seifertLoops (n := n) (x :: v) → ℤ := fun d ↦
