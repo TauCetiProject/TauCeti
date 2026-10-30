@@ -170,19 +170,6 @@ private theorem det_D_eq {A S K : Type*} [CommRing A] [CommRing S] [Algebra A S]
       ψ u * (ψ v * ψ u) - ψ v * ψ a * ψ c := by
   simp [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, hB₀, hB₁, hp, hq]
 
-/-- Along a formally étale extension `S → T`, the determinant of the images of differentials in
-the induced basis of `Ω[T⁄R]` is the image of their determinant. -/
-private theorem det_kaehlerBasisOfFormallyEtale (R S T : Type*) [CommRing R] [CommRing S]
-    [CommRing T] [Algebra R S] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
-    [Algebra.FormallyEtale S T] {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι S Ω[S⁄R]) (v : ι → Ω[S⁄R]) :
-    (kaehlerBasisOfFormallyEtale R S T b).det (fun i ↦ map R R S T (v i)) =
-      algebraMap S T (b.det v) := by
-  simp only [Module.Basis.det_apply, RingHom.map_det]
-  congr 1
-  ext i j
-  simp [Module.Basis.toMatrix_apply]
-
 section
 
 variable {A : Type u} {W : Type v} [CommRing A] [CommRing W] [Algebra A W]
@@ -268,7 +255,7 @@ theorem exists_etale_mul_eq_quadratic [Algebra.Smooth A W] {p q : W}
   -- `ds, dt` is a basis of `Ω[W'⁄A]`: its determinant in the basis `dp, dq` is the unit `d`.
   let bW' := kaehlerBasisOfFormallyEtale A W₁ W' bW₁
   have hdet : bW'.det ![D A W' s, D A W' t] = algebraMap W₁ W' d := by
-    rw [← det_kaehlerBasisOfFormallyEtale]
+    rw [← kaehlerBasisOfFormallyEtale_det_map]
     congr 1
     ext i
     fin_cases i <;> simp [s, t]

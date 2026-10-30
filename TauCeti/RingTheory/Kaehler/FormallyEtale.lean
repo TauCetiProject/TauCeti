@@ -38,7 +38,8 @@ is smooth over `R` (`TauCeti.etale_aeval_of_basis`).
 ## Main declarations
 
 * `TauCeti.kaehlerBasisOfFormallyEtale`: the induced basis of `Ω[T⁄R]`, with coordinates
-  computed by `TauCeti.kaehlerBasisOfFormallyEtale_repr_map`;
+  computed by `TauCeti.kaehlerBasisOfFormallyEtale_repr_map` and determinants by
+  `TauCeti.kaehlerBasisOfFormallyEtale_det_map`;
 * `TauCeti.formallyEtale_of_bijective_mapBaseChange` and
   `TauCeti.formallyEtale_iff_bijective_mapBaseChange`: formal étaleness of `T` over `S` when `T`
   is formally smooth over `R`;
@@ -88,6 +89,17 @@ theorem kaehlerBasisOfFormallyEtale_repr_map {ι : Type*} (b : Basis ι S Ω[S�
     simp [mapBaseChange_tmul]
   simp [kaehlerBasisOfFormallyEtale, -tensorKaehlerEquivOfFormallyEtale_apply, this,
     Algebra.smul_def]
+
+/-- The determinant, in the induced basis of `Ω[T⁄R]`, of the images of differentials of `S` is
+the image of their determinant in the original basis. -/
+theorem kaehlerBasisOfFormallyEtale_det_map {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι S Ω[S⁄R]) (v : ι → Ω[S⁄R]) :
+    (kaehlerBasisOfFormallyEtale R S T b).det (fun i ↦ map R R S T (v i)) =
+      algebraMap S T (b.det v) := by
+  simp only [Basis.det_apply, RingHom.map_det]
+  congr 1
+  ext i j
+  simp [Basis.toMatrix_apply]
 
 end Basis
 
