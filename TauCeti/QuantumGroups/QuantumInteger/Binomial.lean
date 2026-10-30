@@ -7,7 +7,6 @@ module
 
 public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import Mathlib.Algebra.Algebra.Defs
-public import Mathlib.Algebra.Order.Ring.Defs
 
 import TauCeti.Algebra.BigOperators.Finset.Range
 import Mathlib.Tactic
@@ -41,9 +40,6 @@ generators of `U_q(sl₂)`.
 * `TauCeti.quantumBinomial_inv` and `TauCeti.quantumBinomial_symm`: invariance under `q ↦ q⁻¹`,
   and under `k ↦ n - k` for `k ≤ n`.
 * `TauCeti.quantumBinomial_one_right`: `[n choose 1]_q = [n]_q` when `q - q⁻¹ ≠ 0`.
-* `TauCeti.map_quantumBinomial`: ring homomorphisms commute with `[n choose k]_q`.
-* `TauCeti.quantumBinomial_pos`: `[n choose k]_q` is positive at a positive parameter for
-  `k ≤ n`.
 * `TauCeti.quantumBinomial_one`: the classical specialization `[n choose k]_1 = n.choose k`.
 * `TauCeti.add_pow_of_mul_eq_smul_mul`: the `q`-binomial theorem for `y x = q² x y` with
   `q ≠ 0`.
@@ -111,50 +107,6 @@ theorem quantumBinomial_succ_succ (q : K) (n k : ℕ) :
   | succ n ih =>
     rw [quantumBinomial_succ_succ, ih, quantumBinomial_eq_zero_of_lt q (Nat.lt_succ_self n)]
     simp
-
-end
-
-/-- Ring homomorphisms commute with the quantum binomial coefficients. -/
-theorem map_quantumBinomial [Semifield K] {L : Type*} [Semifield L] (φ : K →+* L)
-    (q : K) (n k : ℕ) : φ (quantumBinomial q n k) = quantumBinomial (φ q) n k := by
-  induction n generalizing k with
-  | zero => cases k <;> simp
-  | succ n ih =>
-    cases k with
-    | zero => simp
-    | succ k => simp [quantumBinomial_succ_succ, ih]
-
-section
-
-variable [Semifield K] [PartialOrder K] [IsStrictOrderedRing K] [PosMulReflectLT K] {q : K}
-
-/-- The quantum binomial coefficients at a positive parameter are nonnegative. -/
-theorem quantumBinomial_nonneg (hq : 0 < q) (n k : ℕ) : 0 ≤ quantumBinomial q n k := by
-  induction n generalizing k with
-  | zero => cases k <;> simp
-  | succ n ih =>
-    cases k with
-    | zero => simp
-    | succ k =>
-      rw [quantumBinomial_succ_succ]
-      have := inv_pos.mpr hq
-      exact add_nonneg (mul_nonneg (by positivity) (ih k)) (mul_nonneg (by positivity) (ih _))
-
-/-- The quantum binomial coefficient `[n choose k]_q` at a positive parameter is positive for
-`k ≤ n`. -/
-theorem quantumBinomial_pos (hq : 0 < q) {n k : ℕ} (h : k ≤ n) : 0 < quantumBinomial q n k := by
-  induction n generalizing k with
-  | zero =>
-    obtain rfl : k = 0 := by omega
-    simp
-  | succ n ih =>
-    cases k with
-    | zero => simp
-    | succ k =>
-      rw [quantumBinomial_succ_succ]
-      have := inv_pos.mpr hq
-      exact add_pos_of_pos_of_nonneg (mul_pos (by positivity) (ih (by omega)))
-        (mul_nonneg (by positivity) (quantumBinomial_nonneg hq n _))
 
 end
 
