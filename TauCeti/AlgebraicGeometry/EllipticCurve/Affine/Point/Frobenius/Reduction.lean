@@ -7,8 +7,13 @@ module
 
 public import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.GoodReduction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 -- Proof-only: transport of points along an equality of curves keeps their coordinates.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
+-- Proof-only: reduction is injective on torsion prime to the residue characteristic.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TorsionReduction
+-- Proof-only: the `q`-power map on points is a root of `X² - a_q X + q`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Charpoly
 
 /-!
 # Reduction turns a Frobenius element into the `q`-power map
@@ -32,14 +37,24 @@ This is how the Galois action of a Frobenius element on the points of good reduc
 on the reduced curve, where the `q`-power map satisfies `Fr² - a_q Fr + q = 0`
 (`TauCeti.Isogeny.map_frobeniusAlgHom_map_frobeniusAlgHom`).
 
+Over the fraction field `L` of a Dedekind domain, at a height-one prime `u` of good reduction,
+this gives the relation `τ (τ P) = a_q • τ P - q • P` on the torsion of order prime to `u`, where
+`a_q` is the Frobenius trace of `C`: the difference of the two sides reduces to the point at
+infinity and is killed by an integer prime to `u`, and reduction is injective on such torsion
+(`WeierstrassCurve.Affine.Point.eq_zero_of_reductionHom_eq_zero_of_nsmul_eq_zero`).
+
 ## Main results
 
 * `WeierstrassCurve.Affine.Point.cast_reductionHom_map_eq_map_frobeniusAlgHom`: reduction carries
   a Frobenius element for `v` to the `q`-power map on the points of the reduced curve.
+* `WeierstrassCurve.Affine.Point.map_map_eq_of_nsmul_eq_zero`: over the fraction field of a
+  Dedekind domain, an endomorphism acting on the residues at a prime `u` of good reduction as the
+  `q`-power map satisfies `τ (τ P) = a_q • τ P - q • P` on the torsion of order prime to `u`.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VII.2 and VII.7.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], V.2.3.1, VII.2, VII.3.1 and
+  VII.7.
 -/
 
 public section
@@ -117,3 +132,59 @@ theorem cast_reductionHom_map_eq_map_frobeniusAlgHom
       _root_.map_zero]
 
 end WeierstrassCurve.Affine.Point
+
+namespace WeierstrassCurve
+
+section Dedekind
+
+open IsDedekindDomain
+
+variable {A : Type*} [CommRing A] [IsDedekindDomain A] {K L : Type*} [Field K] [Field L]
+  [Algebra K L] [Algebra A L] [IsFractionRing A L] (u : HeightOneSpectrum A)
+  {W : WeierstrassCurve K} [IsIntegral (u.valuation L).valuationSubring (W⁄L)]
+  [(integralModel (u.valuation L).valuationSubring (W⁄L)).IsElliptic] [DecidableEq L]
+  {F : Type*} [Field F] [Fintype F] [Algebra F (ResidueField (u.valuation L).valuationSubring)]
+  {C : WeierstrassCurve F}
+
+/-- **A Frobenius element satisfies `X² - a_q X + q` on prime-to-`u` torsion at good reduction.**
+Let `W` have good reduction at a height-one prime `u` of a Dedekind domain with fraction field `L`,
+with reduced curve the base change of a curve `C` over a finite field `F` with `q` elements, and
+let `τ` be a `K`-algebra endomorphism of `L` acting on the residues at `u` as the `q`-power map.
+If `n • P = 0` for a point `P` of `W(L)` and an integer `n ∉ u`, then
+`τ (τ P) = a_q • τ P - q • P`, where `a_q` is the Frobenius trace of `C`. -/
+theorem Affine.Point.map_map_eq_of_nsmul_eq_zero
+    (hC : (integralModel (u.valuation L).valuationSubring (W⁄L)).map
+      (residue (u.valuation L).valuationSubring) =
+        C.baseChange (ResidueField (u.valuation L).valuationSubring))
+    {τ : L →ₐ[K] L}
+    (hτ : ∀ x, u.valuation L x ≤ 1 → u.valuation L (τ x - x ^ Fintype.card F) < 1) {n : ℕ}
+    (hn : (n : A) ∉ u.asIdeal) {P : (W⁄L).toAffine.Point} (hP : n • P = 0) :
+    Affine.Point.map τ (Affine.Point.map τ P) =
+      C.frobeniusTrace • Affine.Point.map τ P - Nat.card F • P := by
+  classical
+  -- `C` is elliptic, its base change being the reduction of `W`
+  have : C.IsElliptic := by
+    have hΔ := ((integralModel (u.valuation L).valuationSubring (W⁄L)).map
+      (residue (u.valuation L).valuationSubring)).isUnit_Δ
+    rw [hC, WeierstrassCurve.baseChange, map_Δ] at hΔ
+    exact ⟨isUnit_iff_ne_zero.mpr fun h0 ↦ not_isUnit_zero (by rwa [h0, _root_.map_zero] at hΔ)⟩
+  -- `τ (τ P) - a_q • τ P + q • P` reduces to `Fr (Fr P') - a_q • Fr P' + q • P' = 0`, where
+  -- `P'` is the reduction of `P` and `Fr` is the `q`-power map, and is killed by `n`
+  set e := AddEquiv.cast
+    (M := fun V : WeierstrassCurve (ResidueField (u.valuation L).valuationSubring) ↦
+      V.toAffine.Point) hC
+  have hred (Q : (W⁄L).toAffine.Point) :=
+    Affine.Point.cast_reductionHom_map_eq_map_frobeniusAlgHom (u.valuation L) hC hτ Q
+  rw [← sub_eq_zero]
+  refine Affine.Point.eq_zero_of_reductionHom_eq_zero_of_nsmul_eq_zero u hn ?_ ?_
+  · apply e.injective
+    rw [map_sub, map_sub, map_sub, map_sub, map_zsmul, map_zsmul, map_nsmul, map_nsmul, hred, hred,
+      TauCeti.Isogeny.map_frobeniusAlgHom_map_frobeniusAlgHom, _root_.map_zero]
+    exact sub_self _
+  · rw [nsmul_sub, nsmul_sub, ← map_nsmul, ← map_nsmul, smul_comm n, ← map_nsmul, smul_comm n, hP]
+    simp
+
+end Dedekind
+
+
+end WeierstrassCurve
