@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Stasheff
 public import TauCeti.Algebra.Module.GradedModule.Shift
-public import TauCeti.Algebra.Module.GradedModule.TensorProduct
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.LinearAlgebra.TensorCoalgebra.OddSquare
 public import TauCeti.LinearAlgebra.TensorCoalgebra.TaylorComponent
 

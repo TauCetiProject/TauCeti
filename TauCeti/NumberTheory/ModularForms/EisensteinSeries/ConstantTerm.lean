@@ -167,38 +167,6 @@ theorem constantTermAt_weightedEisensteinSeriesMF (hk : 3 ≤ k) (γ : SL(2, ℤ
 
 variable {u v : ℕ} (ψ : DirichletCharacter ℂ u) (φ : DirichletCharacter ℂ v)
 
-/-- The sum of the character weight over the multiples of an integer pair `(-c, a)`: it vanishes
-unless `v ∣ c`, and otherwise factors through the series of `ψ φ⁻¹`. -/
-private lemma tsum_charWeight_mul_zpow (huv : u * v ∣ N) (c a : ℤ) :
-    ∑' n : ℤ, charWeight N ψ φ ((↑) ∘ ![-(n * c), n * a]) * (n : ℂ) ^ (-k) =
-      if (v : ℤ) ∣ c then
-        ψ ((-(c / v) : ℤ) : ZMod u) * φ⁻¹ (a : ZMod v) *
-          ∑' n : ℤ, ψ (n : ZMod u) * φ⁻¹ (n : ZMod v) * (n : ℂ) ^ (-k)
-      else 0 := by
-  simp only [charWeight_intCast ψ φ huv, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one]
-  split_ifs with hc
-  · obtain ⟨c, rfl⟩ := hc
-    have hv : (v : ℤ) ≠ 0 := by
-      have : v ≠ 0 := fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (by simpa [h] using huv))
-      exact_mod_cast this
-    rw [Int.mul_ediv_cancel_left _ hv, ← tsum_mul_left]
-    refine tsum_congr fun n ↦ ?_
-    have hdvd : (v : ℤ) ∣ -(n * (v * c)) := Dvd.intro (-(n * c)) (by ring)
-    have hfactor : -(n * (v * c)) = (v : ℤ) * (n * -c) := by ring
-    have hquot : -(n * (v * c)) / (v : ℤ) = n * -c := by
-      rw [hfactor, Int.mul_ediv_cancel_left _ hv]
-    rw [hquot]
-    simp only [hdvd, ↓reduceIte, Int.cast_mul, map_mul]
-    ring
-  · refine (tsum_congr fun n ↦ ?_).trans tsum_zero
-    split_ifs with hn
-    · rw [MulChar.map_nonunit φ⁻¹, mul_zero, zero_mul]
-      intro hu
-      rw [ZMod.coe_int_isUnit_iff_isCoprime] at hu
-      exact hc ((hu.of_mul_right_left).dvd_of_dvd_mul_left (by simpa using hn))
-    · rw [zero_mul]
-
 /-- **The constant term of the Eisenstein series with character at every cusp.** For `ψ`
 modulo `u`, `φ` modulo `v` with `u v ∣ N`, and `γ = !![a, b; c, d] ∈ SL₂(ℤ)`, the constant term
 of `G_k^{ψ,φ}` at the cusp `a / c` is
@@ -231,17 +199,9 @@ theorem constantTermAt_charEisensteinSeriesMFRaise {t : ℕ} (hk : 3 ≤ k)
         else 0) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-  obtain ⟨δ, ha, hc⟩ := γ.exists_scaled_cusp_reduction (t := t)
-  have hg : (Int.gcd (γ 1 0) t : ℤ) ≠ 0 := by
-    exact_mod_cast (Int.gcd_pos_of_ne_zero_right (γ 1 0)
-      (Nat.cast_ne_zero.mpr (NeZero.ne t))).ne'
-  have hδa : δ 0 0 = (t : ℤ) * γ 0 0 / Int.gcd (γ 1 0) t := by
-    rw [ha, Int.mul_ediv_cancel _ hg]
-  have hδc : δ 1 0 = γ 1 0 / Int.gcd (γ 1 0) t := by
-    exact ((congrArg (fun c : ℤ ↦ c / Int.gcd (γ 1 0) t) hc).trans
-      (Int.mul_ediv_cancel _ hg)).symm
-  rw [charEisensteinSeriesMFRaise_eq_levelRaise,
-    _root_.ModularForm.constantTermAt_levelRaise _ _ γ δ ha hc,
+  obtain ⟨δ, hδa, hδc, hδ⟩ := _root_.ModularForm.exists_constantTermAt_levelRaise
+    (charEisensteinSeriesMF ψ φ hk dvd_rfl) (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) γ
+  rw [charEisensteinSeriesMFRaise_eq_levelRaise, hδ,
     constantTermAt_charEisensteinSeriesMF ψ φ hk dvd_rfl, hδa, hδc]
 
 end TauCeti.EisensteinSeries

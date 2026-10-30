@@ -24,6 +24,8 @@ finitely supported factor whose product is `1`.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
 * `TauCeti.finprod_mul_eq_right_of_finprod_eq_one`: multiplying by a finitely supported family
   with product `1` preserves a product, without any finiteness assumption on the other factor.
+* `TauCeti.finprod_comm`: the two iterated products of a family of two variables agree when the
+  family has finite multiplicative support jointly in both variables.
 -/
 
 public section
@@ -104,5 +106,20 @@ theorem finprod_mul_eq_right_of_finprod_eq_one {ι : Type*} {f g : ι → M}
         simp only [Set.mem_union, mem_mulSupport, not_or, not_not] at h
         exact hi (by simpa [h.2] using h.1)
     rw [finprod_of_infinite_mulSupport hfg, finprod_of_infinite_mulSupport hg]
+
+/-- The two iterated products of a family of two variables agree when the family has finite
+multiplicative support jointly in both variables. This is the `finprod` analogue of
+`Finset.prod_comm`. -/
+@[to_additive /-- The two iterated sums of a family of two variables agree when the family has
+finite support jointly in both variables. This is the `finsum` analogue of `Finset.sum_comm`. -/]
+theorem finprod_comm {ι κ : Type*} {f : ι → κ → M} (hf : HasFiniteMulSupport (uncurry f)) :
+    ∏ᶠ i, ∏ᶠ k, f i k = ∏ᶠ k, ∏ᶠ i, f i k := by
+  have hf' : HasFiniteMulSupport fun x : κ × ι ↦ f x.2 x.1 :=
+    Set.Finite.preimage (Equiv.prodComm κ ι).injective.injOn hf
+  calc
+    ∏ᶠ i, ∏ᶠ k, f i k = ∏ᶠ x : ι × κ, f x.1 x.2 := (finprod_curry (uncurry f) hf).symm
+    _ = ∏ᶠ x : κ × ι, f x.2 x.1 :=
+      (finprod_comp_equiv (Equiv.prodComm κ ι) (f := fun x : ι × κ ↦ f x.1 x.2)).symm
+    _ = ∏ᶠ k, ∏ᶠ i, f i k := finprod_curry _ hf'
 
 end TauCeti

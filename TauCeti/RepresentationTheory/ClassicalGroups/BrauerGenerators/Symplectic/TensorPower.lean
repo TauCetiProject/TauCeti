@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 -- `TauCeti.sum_sum_smul_tprod_update_pair_mulVec`, the congruence at two slots the cup
 -- invariance below runs on.
 public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
@@ -89,6 +90,9 @@ coincident strands too.
   strands, the invariant form of the two chosen factors times the cup re-expanding those slots.
 * `TauCeti.symplecticCupCapAt_tprod_single`: the same on a monomial tensor of standard basis
   vectors, where the form is an entry of `J`.
+* `TauCeti.piTensorProduct_repr_symplecticCupCapAt_piTensorProduct` and
+  `TauCeti.isHermitian_toMatrix_symplecticCupCapAt`: the matrix coefficients of an arc in the
+  monomial basis, which form a symmetric integer matrix, Hermitian for every star structure on `k`.
 * `TauCeti.symplecticCupCapAt_self_tprod`: the degenerate value at `i = j`, where the second plug
   is dead and the operator is not an arc.
 * `TauCeti.symplecticCupCapAt_comm`: **the generator depends only on the unordered pair of
@@ -199,11 +203,7 @@ theorem symplecticCupCapAt_tprod {i j : Fin d} (hij : i ≠ j)
       ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, (-Matrix.J (Fin n) k x y) •
         PiTensorProduct.tprod k (Function.update
           (Function.update v i (Pi.single x (1 : k))) j (Pi.single y (1 : k))) := by
-    rw [← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun x _ => ?_
-    rw [← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun y _ =>
-      (neg_smul (M := ⨂[k]^d ((Fin n ⊕ Fin n) → k)) _ _).symm
+    simp_rw [neg_smul (M := ⨂[k]^d ((Fin n ⊕ Fin n) → k)), Finset.sum_neg_distrib]
   have hsummand : ∀ a b x y : Fin n ⊕ Fin n,
       (-(Matrix.J (Fin n) k a b * Matrix.J (Fin n) k x y)) •
           PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y)
@@ -239,8 +239,7 @@ theorem symplecticCupCapAt_tprod_single {i j : Fin d} (hij : i ≠ j)
           (Fin n ⊕ Fin n) → k) := by
     intro x y
     funext t
-    simp only [Function.update_apply]
-    split_ifs <;> rfl
+    simp only [Function.apply_update (fun _ (a : Fin n ⊕ Fin n) => Pi.single a (1 : k))]
   rw [symplecticCupCapAt_tprod hij, stdSymplecticBilinForm_single_single, smul_neg]
   simp only [hplug]
 
@@ -285,11 +284,7 @@ theorem symplecticCupCapAt_self_tprod (i : Fin d) (v : Fin d → ((Fin n ⊕ Fin
         PiTensorProduct.tprod k (Function.update v i (Pi.single x (1 : k)))) =
       ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, (-Matrix.J (Fin n) k x y) •
         PiTensorProduct.tprod k (Function.update v i (Pi.single x (1 : k))) := by
-    rw [← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun x _ => ?_
-    rw [← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun y _ =>
-      (neg_smul (M := ⨂[k]^d ((Fin n ⊕ Fin n) → k)) _ _).symm
+    simp_rw [neg_smul (M := ⨂[k]^d ((Fin n ⊕ Fin n) → k)), Finset.sum_neg_distrib]
   have hsummand : ∀ a b x y : Fin n ⊕ Fin n,
       (-(Matrix.J (Fin n) k a b * Matrix.J (Fin n) k x y)) •
           PiTensorProduct.map (symplecticCupCapStrand k n d i i a b x y)
@@ -305,6 +300,65 @@ theorem symplecticCupCapAt_self_tprod (i : Fin d) (v : Fin d → ((Fin n ⊕ Fin
   rw [Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ =>
     Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => hsummand a b x y, hform, hneg]
   simp_rw [Finset.sum_smul, Finset.smul_sum, smul_smul]
+
+/-! ### The matrix of an arc -/
+
+/-- **The matrix coefficients of an arc** in the monomial basis: the coefficient of `e_w` in the
+image of `e_u` is `-(J (u i) (u j) * J (w i) (w j))` when `w` agrees with `u` off the two strands,
+and `0` otherwise. The cap reads `J` off the two input labels and the cup writes `-J` at the two
+output labels. -/
+theorem piTensorProduct_repr_symplecticCupCapAt_piTensorProduct {i j : Fin d} (hij : i ≠ j)
+    (u w : Fin d → Fin n ⊕ Fin n) :
+    (Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n)).repr
+        (symplecticCupCapAt k n d i j
+          (Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n)) u)) w =
+      if ∀ t, t ≠ i → t ≠ j → w t = u t then
+        -(Matrix.J (Fin n) k (u i) (u j) * Matrix.J (Fin n) k (w i) (w j))
+      else 0 := by
+  classical
+  set b := Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n)
+  have hb (f : Fin d → Fin n ⊕ Fin n) : b f = PiTensorProduct.tprod k fun t =>
+      (Pi.single (f t) (1 : k) : (Fin n ⊕ Fin n) → k) := by
+    simp [b, Basis.piTensorProduct_apply]
+  -- the basis tensor `e_w` is written by the cup exactly once, at the labels `w i` and `w j`,
+  -- when `w` agrees with `u` off the two strands, and not at all otherwise
+  have key (x y : Fin n ⊕ Fin n) : Function.update (Function.update u i x) j y = w ↔
+      x = w i ∧ y = w j ∧ ∀ t, t ≠ i → t ≠ j → w t = u t := by
+    refine ⟨fun h => ?_, fun ⟨hx, hy, h⟩ => funext fun t => ?_⟩
+    · subst h
+      simp only [Function.update_self, Function.update_of_ne hij, true_and]
+      exact fun t hti htj => by simp [Function.update_of_ne hti, Function.update_of_ne htj]
+    · rcases eq_or_ne t j with rfl | htj
+      · rw [Function.update_self, hy]
+      rcases eq_or_ne t i with rfl | hti
+      · rw [Function.update_of_ne htj, Function.update_self, hx]
+      · rw [Function.update_of_ne htj, Function.update_of_ne hti, h t hti htj]
+  rw [hb, symplecticCupCapAt_tprod_single hij]
+  simp only [← hb, map_neg, map_smul, map_sum, Finsupp.neg_apply, Finsupp.smul_apply,
+    Finsupp.finsetSum_apply, Module.Basis.repr_self, Finsupp.single_apply, key, smul_eq_mul,
+    mul_ite, mul_one, mul_zero, ite_and]
+  split_ifs <;> simp
+
+/-- **The matrix of an arc in the monomial basis is Hermitian**, for every star structure on `k`:
+it is symmetric, by `TauCeti.piTensorProduct_repr_symplecticCupCapAt_piTensorProduct`, and its
+entries are integers, which `star` fixes. So an arc is self-adjoint for the Hermitian form in which
+the monomial basis is orthonormal. -/
+theorem isHermitian_toMatrix_symplecticCupCapAt [StarRing k] {i j : Fin d} (hij : i ≠ j) :
+    (LinearMap.toMatrix (Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n))
+      (Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n))
+      (symplecticCupCapAt k n d i j)).IsHermitian := by
+  refine Matrix.IsHermitian.ext fun w u => ?_
+  have hstar (a b : Fin n ⊕ Fin n) : star (Matrix.J (Fin n) k a b) = Matrix.J (Fin n) k a b := by
+    rw [← Matrix.map_J (Fin n) (Int.castRingHom k), Matrix.map_apply, eq_intCast, star_intCast]
+  have hsymm : (∀ t, t ≠ i → t ≠ j → u t = w t) ↔ (∀ t, t ≠ i → t ≠ j → w t = u t) :=
+    ⟨fun h t hti htj => (h t hti htj).symm, fun h t hti htj => (h t hti htj).symm⟩
+  rw [LinearMap.toMatrix_apply, LinearMap.toMatrix_apply,
+    piTensorProduct_repr_symplecticCupCapAt_piTensorProduct hij,
+    piTensorProduct_repr_symplecticCupCapAt_piTensorProduct hij]
+  simp only [hsymm]
+  split_ifs
+  · rw [star_neg, star_mul', hstar, hstar, mul_comm]
+  · exact star_zero k
 
 /-! ### The orientation of the arc -/
 
@@ -404,34 +458,23 @@ theorem symplecticCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
 
 /-! ### Two arcs -/
 
-/-- Two summands of `TauCeti.symplecticCupCapAt` on disjoint pairs of strands commute: at every
-strand one of the two families `TauCeti.symplecticCupCapStrand` is the identity, so the two
-pointwise composites agree and `PiTensorProduct.map_comp` turns them into the same operator.
-Nothing here reads an arc through the form, so the two strands of a pair may coincide. -/
+/-- Tensor operators associated with disjoint pairs of strands commute. The strands within
+either pair may coincide. -/
 private theorem commute_map_symplecticCupCapStrand {i j p q : Fin d} (hip : i ≠ p) (hiq : i ≠ q)
     (hjp : j ≠ p) (hjq : j ≠ q) (a b x y a' b' x' y' : Fin n ⊕ Fin n) :
     Commute (PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y))
       (PiTensorProduct.map (symplecticCupCapStrand k n d p q a' b' x' y')) := by
-  have hstrand :
-      (fun t => symplecticCupCapStrand k n d i j a b x y t ∘ₗ
-          symplecticCupCapStrand k n d p q a' b' x' y' t) =
-        fun t => symplecticCupCapStrand k n d p q a' b' x' y' t ∘ₗ
-          symplecticCupCapStrand k n d i j a b x y t := by
+  have hstrand : Commute (symplecticCupCapStrand k n d i j a b x y)
+      (symplecticCupCapStrand k n d p q a' b' x' y') := by
     funext t
     rcases eq_or_ne t i with hi | hi
     · subst hi
-      simp [symplecticCupCapStrand, hip, hiq]
+      simp [symplecticCupCapStrand, hip, hiq, ← Module.End.one_eq_id]
     · rcases eq_or_ne t j with hj | hj
       · subst hj
-        simp [symplecticCupCapStrand, hi, hjp, hjq]
-      · simp [symplecticCupCapStrand, hi, hj]
-  have hmul : (PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y) :
-        Module.End k _) * PiTensorProduct.map (symplecticCupCapStrand k n d p q a' b' x' y') =
-      PiTensorProduct.map (symplecticCupCapStrand k n d p q a' b' x' y') *
-        PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y) := by
-    rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← PiTensorProduct.map_comp,
-      ← PiTensorProduct.map_comp, hstrand]
-  exact hmul
+        simp [symplecticCupCapStrand, hi, hjp, hjq, ← Module.End.one_eq_id]
+      · simp [symplecticCupCapStrand, hi, hj, ← Module.End.one_eq_id]
+  exact hstrand.map PiTensorProduct.mapMonoidHom
 
 /-- **Disjoint arcs commute**: two generators whose pairs of strands are disjoint act in disjoint
 groups of slots. The two strands of either pair may coincide, since the proof never reads an arc
@@ -483,16 +526,7 @@ theorem commute_symplecticCupCapAt_piTensorProductMap
   rw [map_smul, PiTensorProduct.map_tprod]
   simp only [Matrix.mulVecLin_apply]
   refine congrArg _ (congrArg _ ?_)
-  funext t
-  rcases eq_or_ne t i with hi | hi
-  · subst hi
-    rw [Function.update_of_ne hij, Function.update_self, Function.update_of_ne hij,
-      Function.update_self]
-  · rcases eq_or_ne t j with hj | hj
-    · subst hj
-      rw [Function.update_self, Function.update_self]
-    · rw [Function.update_of_ne hj, Function.update_of_ne hi, Function.update_of_ne hj,
-        Function.update_of_ne hi]
+  simp only [Function.apply_update (fun _ : Fin d => Matrix.mulVec A)]
 
 /-- **The symplectic Brauer arc commutes with the symplectic group.** Membership in
 `Matrix.symplecticGroup` supplies preservation of the standard alternating form, so every

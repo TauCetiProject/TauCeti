@@ -52,7 +52,7 @@ theorem natAbs_dvd_of_adjoin_sqrt_le_cyclotomic {n m : ℕ} [NeZero n] {K : Type
     (hDn : D.natAbs ∣ n) (hmn : m ∣ n) (F : IntermediateField ℚ K)
     [IsCyclotomicExtension {m} ℚ F] {x : K} (hx : x ^ 2 = (D : K)) (hfield : ℚ⟮x⟯ ≤ F) :
     D.natAbs ∣ m := by
-  let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+  have := hD.neZero_natAbs
   let _ : NeZero m := ⟨fun h => NeZero.ne n (Nat.eq_zero_of_zero_dvd (h ▸ hmn))⟩
   let _ : NeZero (Monoid.exponent (ZMod n)ˣ : ℂ) :=
     ⟨by exact_mod_cast Monoid.exponent_ne_zero_of_finite (G := (ZMod n)ˣ)⟩

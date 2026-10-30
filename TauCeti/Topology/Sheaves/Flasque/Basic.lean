@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
 public import Mathlib.Topology.Sheaves.Abelian
 public import Mathlib.Topology.Sheaves.Flasque
 public import Mathlib.Topology.Sheaves.Skyscraper
+import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
 /-!
 # Flasque sheaves are acyclic
@@ -27,7 +28,10 @@ surjective. This file proves that a flasque sheaf has no higher cohomology.
   cohomology in every positive degree over every open subset;
 * `TauCeti.Topology.subsingleton_H_succ_of_isFlasque`: the same statement for the cohomology
   of the whole space;
-* `TauCeti.Topology.isFlasque_skyscraperSheaf`: skyscraper sheaves are flasque, and hence acyclic.
+* `TauCeti.Topology.isFlasque_skyscraperSheaf`: skyscraper sheaves are flasque, and hence acyclic;
+* `TopCat.Sheaf.IsFlasque.epi_cokernel_π_app` and `TopCat.Sheaf.IsFlasque.exact_cokernel_π_app`:
+  if `0 ⟶ A ⟶ B ⟶ C` is exact with `A` and `B` flasque, then taking sections over an open `U`
+  gives an exact sequence `B(U) ⟶ C(U) ⟶ (coker (B ⟶ C))(U) ⟶ 0`.
 
 The proof is the classical dimension shift. Embedding a flasque sheaf `F` in an injective sheaf
 `I` gives a short exact sequence `0 ⟶ F ⟶ I ⟶ Q ⟶ 0`, and the covariant long exact sequence of
@@ -90,59 +94,38 @@ instance isFlasque_of_injective
     rw [Injective.comp_factorThru, AddEquiv.apply_symm_apply] at h
     exact h.symm
 
-private instance isFlasque_injectiveCokernelSequence_X₂
-    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
-    TopCat.Presheaf.IsFlasque (injectiveCokernelSequence F).X₂.obj :=
-  isFlasque_of_injective _
-
 /-- The dimension-shifting induction: a flasque sheaf has no cohomology in positive degrees over
 any open subset. -/
 private lemma subsingleton_H'_succ_of_isFlasque_aux (n : ℕ) :
     ∀ (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}),
       TopCat.Presheaf.IsFlasque F.obj → ∀ U : Opens X,
       Subsingleton (_root_.CategoryTheory.Sheaf.H'.{u} F (n + 1) U) := by
+  -- the injective sheaf `I` in `0 ⟶ F ⟶ I ⟶ Q ⟶ 0` has no higher cohomology
+  have hI (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) (m : ℕ) (U : Opens X) :
+      Subsingleton (_root_.CategoryTheory.Sheaf.H'.{u} (Injective.under F) (m + 1) U) := by
+    rw [sheafH'_eq]
+    exact Abelian.Ext.subsingleton_of_injective _ _ m
   induction n with
   | zero =>
     intro F hF U
-    rw [sheafH'_eq]
-    apply subsingleton_ext_succ_of_injectiveCokernelSequence
-    intro x₃
-    let S := injectiveCokernelSequence F
-    have hS₁ : TopCat.Presheaf.IsFlasque S.X₁.obj := by dsimp [S]; exact hF
-    let _ : TopCat.Presheaf.IsFlasque S.X₁.obj := hS₁
     have hS := injectiveCokernelSequence_shortExact F
-    have hepi : Epi (S.g.hom.app (op U)) :=
+    have : TopCat.Presheaf.IsFlasque (injectiveCokernelSequence F).X₁.obj := hF
+    have : TopCat.Presheaf.IsFlasque (injectiveCokernelSequence F).X₂.obj :=
+      isFlasque_of_injective _
+    -- sections of `Q` lift to `I`, because `F` is flasque
+    have hepi : Epi ((injectiveCokernelSequence F).g.hom.app (op U)) :=
       TopCat.Sheaf.IsFlasque.epi_of_shortExact hS
-    rw [AddCommGrpCat.epi_iff_surjective] at hepi
-    obtain ⟨t, ht⟩ := hepi
-      (freeYonedaSheafSectionsEquiv _ U S.X₃ (Abelian.Ext.addEquiv₀ x₃))
-    have hx₃ : x₃ =
-        (Abelian.Ext.mk₀ ((freeYonedaSheafSectionsEquiv _ U S.X₂).symm t)).comp
-        (Abelian.Ext.mk₀ S.g) (add_zero 0) := by
-      rw [Abelian.Ext.mk₀_comp_mk₀]
-      refine (Abelian.Ext.mk₀_addEquiv₀_apply x₃).symm.trans (congrArg Abelian.Ext.mk₀ ?_)
-      refine (freeYonedaSheafSectionsEquiv _ U S.X₃).injective ?_
-      rw [freeYonedaSheafSectionsEquiv_naturality_right, AddEquiv.apply_symm_apply, ht]
-    rw [hx₃, Abelian.Ext.comp_assoc_of_second_deg_zero, hS.comp_extClass,
-      Abelian.Ext.comp_zero]
+    exact Sheaf.H'.subsingleton_X₁_one hS U ((AddCommGrpCat.epi_iff_surjective _).1 hepi)
+      (hI F 0 U)
   | succ n ih =>
     intro F hF U
-    rw [sheafH'_eq]
-    apply subsingleton_ext_succ_of_injectiveCokernelSequence
-    intro x₃
-    let S := injectiveCokernelSequence F
-    have hS₁ : TopCat.Presheaf.IsFlasque S.X₁.obj := by dsimp [S]; exact hF
-    let _ : TopCat.Presheaf.IsFlasque S.X₁.obj := hS₁
     have hS := injectiveCokernelSequence_shortExact F
-    have hS₃ : TopCat.Presheaf.IsFlasque S.X₃.obj :=
-      TopCat.Sheaf.IsFlasque.of_shortExact_of_isFlasque₁₂ hS
-    have hH : Subsingleton (_root_.CategoryTheory.Sheaf.H'.{u} S.X₃ (n + 1) U) :=
-      ih S.X₃ hS₃ U
-    have hExt : Subsingleton
-        (Abelian.Ext.{u}
-          ((freeYonedaSheafFunctor (Opens.grothendieckTopology X)).obj U) S.X₃ (n + 1)) :=
-      by simpa only [sheafH'_eq] using hH
-    rw [@Subsingleton.elim _ hExt x₃ 0, Abelian.Ext.zero_comp]
+    have : TopCat.Presheaf.IsFlasque (injectiveCokernelSequence F).X₁.obj := hF
+    have : TopCat.Presheaf.IsFlasque (injectiveCokernelSequence F).X₂.obj :=
+      isFlasque_of_injective _
+    -- `Q` is flasque, as a quotient of flasque sheaves
+    exact Sheaf.H'.subsingleton_X₁ hS U (n + 1)
+      (ih _ (TopCat.Sheaf.IsFlasque.of_shortExact_of_isFlasque₁₂ hS) U) (hI F (n + 1) U)
 
 /-- A flasque sheaf of abelian groups has vanishing cohomology in every positive degree over
 every open subset. -/
@@ -183,3 +166,36 @@ theorem of_isZero {C : Type*} [Category* C] [HasZeroObject C] {X : TopCat.{u}}
   ⟨fun _ ↦ (h.obj _).epi _⟩
 
 end TopCat.Presheaf.IsFlasque
+
+namespace TopCat.Sheaf.IsFlasque
+
+variable {X : TopCat.{u}}
+  {E : ShortComplex (CategoryTheory.Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
+
+/-- If `0 ⟶ A ⟶ B ⟶ C` is an exact sequence of sheaves of abelian groups with `A` and `B` flasque,
+then every section of the cokernel of `B ⟶ C` lifts to a section of `C`. -/
+theorem epi_cokernel_π_app (hE : E.Exact) [Mono E.f] [Presheaf.IsFlasque E.X₁.obj]
+    [Presheaf.IsFlasque E.X₂.obj] (U : Opens X) : Epi ((cokernel.π E.g).hom.app (op U)) :=
+  have := of_shortExact_of_isFlasque₁₂ hE.shortExact_factorThruImage
+  epi_of_shortExact (ShortComplex.shortExact_image_ι_cokernel_π E.g)
+
+/-- If `0 ⟶ A ⟶ B ⟶ C` is an exact sequence of sheaves of abelian groups with `A` flasque, then a
+section of `C` maps to zero in the cokernel of `B ⟶ C` exactly when it comes from a section of
+`B`. -/
+theorem exact_cokernel_π_app (hE : E.Exact) [Mono E.f] [Presheaf.IsFlasque E.X₁.obj]
+    (U : Opens X) :
+    (ShortComplex.mk (E.g.hom.app (op U)) ((cokernel.π E.g).hom.app (op U)) (by
+      simp [← NatTrans.comp_app, ← ObjectProperty.FullSubcategory.comp_hom])).Exact := by
+  rw [ShortComplex.ab_exact_iff]
+  intro c hc
+  -- `c` is a section of the image sheaf, since sections preserve kernels
+  have h₂ := (ShortComplex.shortExact_image_ι_cokernel_π E.g).exact.map_of_mono_of_preservesKernel
+    (sheafToPresheaf _ _ ⋙ (evaluation _ _).obj (op U)) inferInstance inferInstance
+  obtain ⟨i, rfl⟩ := (ShortComplex.ab_exact_iff _).1 h₂ c hc
+  -- and sections of the image lift to `B`, because the kernel `A` is flasque
+  obtain ⟨b, rfl⟩ := (AddCommGrpCat.epi_iff_surjective _).1
+    (epi_of_shortExact hE.shortExact_factorThruImage (U := U)) i
+  exact ⟨b, by simp [← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
+    ← ObjectProperty.FullSubcategory.comp_hom]⟩
+
+end TopCat.Sheaf.IsFlasque

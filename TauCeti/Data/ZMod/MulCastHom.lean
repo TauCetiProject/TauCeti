@@ -42,6 +42,8 @@ characters.
   multiplications.
 * `ZMod.natCard_ker_castHom`: for `k ≠ 0` the kernel of the reduction `ZMod n → ZMod k` has
   `Nat.card` equal to `m`; for `m ≠ 0` it has `m` elements.
+* `ZMod.natCast_mul_eq_zero_iff`: for `m ≠ 0` that kernel is the annihilator of `m`, so that
+  multiplying by `m` and reducing modulo `k` detect the same classes.
 * `ZMod.ker_castHom_sq_eq_bot`: for `m ∣ k` that kernel is a square-zero ideal, so that
   `ZMod n → ZMod k` is a square-zero extension; for `pʳ⁺¹ → pʳ` with `r ≥ 1` this is the step
   in which Hensel-type lifting arguments over `ℤ/pʳ` take place.
@@ -159,6 +161,15 @@ theorem natCard_ker_castHom (hk : k ≠ 0) :
     (Equiv.subtypeEquivRight fun y => ?_))).symm.trans (Nat.card_zmod m)
   rw [RingHom.mem_ker]
   exact ((exact_mulCastHom_castHom k h) y).symm
+
+/-- **The kernel of the reduction `ZMod n → ZMod k` is the annihilator of `m`** for `n = m * k`
+and `m ≠ 0`: `m * z` vanishes modulo `m * k` exactly when `z` vanishes modulo `k`. -/
+theorem natCast_mul_eq_zero_iff (hm : m ≠ 0) (z : ZMod n) :
+    (m : ZMod n) * z = 0 ↔ castHom (Dvd.intro_left m h) (ZMod k) z = 0 := by
+  obtain ⟨a, rfl⟩ := intCast_surjective z
+  rw [map_intCast, ← Int.cast_natCast, ← Int.cast_mul, intCast_zmod_eq_zero_iff_dvd,
+    intCast_zmod_eq_zero_iff_dvd, ← h, Nat.cast_mul,
+    mul_dvd_mul_iff_left (Int.natCast_ne_zero.mpr hm)]
 
 /-- **The kernel of the reduction `ZMod n → ZMod k` squares to zero** for `n = m * k` with
 `m ∣ k`: the product of two multiples of `k` is a multiple of `k * k`, which `n` divides. -/

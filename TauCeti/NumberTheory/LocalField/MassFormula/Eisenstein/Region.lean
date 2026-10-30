@@ -13,6 +13,8 @@ public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
+import Mathlib.RingTheory.Polynomial.GaussLemma
+import Mathlib.RingTheory.Valuation.ValuationRing
 
 /-!
 # The Eisenstein region of coefficient space
@@ -46,14 +48,20 @@ product structure on the measure is used.
 
 ## Main results
 
+* `TauCeti.eisensteinSet_subset_integerBox`: the coefficients of an Eisenstein polynomial are
+  integral.
 * `TauCeti.mem_eisensteinSet_iff_exists_isEisensteinAt`: a coefficient vector lies in the
   Eisenstein region exactly when it is the coefficient vector of a polynomial over `𝒪[K]` that is
   Eisenstein at `𝓂[K]`.
+* `TauCeti.irreducible_monicOfCoeff_of_mem_eisensteinSet`: a positive-degree Eisenstein
+  coefficient vector defines an irreducible polynomial over `K`.
 * `TauCeti.eisensteinSet_eq_sdiff`: for `0 < n`, the Eisenstein region is the box `𝓂[K] ^ n` minus
   the box whose constant coordinate lies in `𝓂[K] ^ 2`.
 * `TauCeti.measurableSet_eisensteinSet`: the Eisenstein region is measurable.
 * `TauCeti.measure_eisensteinSet`: for `0 < n`, the Eisenstein region has volume
   `q ^ (-n) (1 - q⁻¹)`.
+* `TauCeti.measure_eisensteinSet_pos`, `TauCeti.measure_eisensteinSet_lt_top`: the Eisenstein
+  region has positive finite volume for every additive Haar measure.
 
 ## Implementation notes
 
@@ -98,6 +106,10 @@ theorem mem_eisensteinSet {n : ℕ} {a : Fin n → K} :
       ∀ y : K, valuation K y < 1 → valuation K y ≤ valuation K ((monicOfCoeff a).coeff 0) :=
   Iff.rfl
 
+/-- The Eisenstein region lies in the integer box: its coefficients are integral. -/
+theorem eisensteinSet_subset_integerBox (n : ℕ) : eisensteinSet K n ⊆ integerBox K (Fin n) :=
+  fun _ ha ↦ mem_integerBox.2 fun i ↦ (Valuation.mem_integer_iff _ _).2 (ha.1 i).le
+
 end CoefficientSpace
 
 section EisensteinPolynomial
@@ -138,6 +150,19 @@ theorem mem_eisensteinSet_iff_exists_isEisensteinAt {n : ℕ} {a : Fin n → K} 
       exact (valuation K).mem_maximalIdeal_iff.1 (hE.mem (hdeg ▸ i.isLt))
     · rw [hcoeff]
       exact forall_valuation_le_iff_notMem_maximalIdeal_sq.2 hE.notMem
+
+/-- An Eisenstein coefficient vector of positive degree defines an irreducible polynomial
+over the base field. -/
+theorem irreducible_monicOfCoeff_of_mem_eisensteinSet {n : ℕ} (hn : 0 < n)
+    {a : Fin n → K} (ha : a ∈ eisensteinSet K n) : Irreducible (monicOfCoeff a) := by
+  obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
+  have hmonic : f.Monic := (FaithfulSMul.algebraMap_injective 𝒪[K] K).monic_map_iff.mpr
+    (hf ▸ monic_monicOfCoeff a)
+  have hdeg : f.natDegree = n := by
+    rw [← natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective 𝒪[K] K) f,
+      hf, natDegree_monicOfCoeff]
+  exact hf ▸ hmonic.irreducible_iff_irreducible_map_fraction_map.mp
+    (he.irreducible (Ideal.IsMaximal.isPrime inferInstance) hmonic.isPrimitive (hdeg ▸ hn))
 
 /-- **The Eisenstein region as a difference of boxes**: for `0 < n`, it is the box `𝓂[K] ^ n`
 minus the box whose constant coordinate lies in `𝓂[K] ^ 2` and whose other coordinates lie in
@@ -198,8 +223,9 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
     simp only [e, Finset.sum_update_of_mem (Finset.mem_univ _), Finset.sum_const,
       Finset.card_univ_sdiff, Finset.card_singleton, smul_eq_mul, mul_one, Fintype.card_fin]
     omega
-  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ fun _ ↦ 1
-  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ e
+  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ fun _ ↦ 1
+  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ e
+  rw [hμ, mul_one] at h₁ h₂
   simp only [pow_one, Fin.sum_const, smul_eq_mul, mul_one] at hsub h₁
   rw [he] at h₂
   have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by simp [Nat.card_pos.ne']
@@ -210,6 +236,38 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
   rw [ENNReal.mul_sub fun _ _ ↦ ENNReal.inv_ne_top.2 (pow_ne_zero _ hq), mul_one, pow_succ,
     ENNReal.mul_inv (.inl (pow_ne_zero _ hq))
       (.inl (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))]
+
+/-- The Eisenstein region has finite volume for every measure that is finite on compact sets,
+since it lies in the compact integer box. -/
+theorem measure_eisensteinSet_lt_top {n : ℕ} [MeasurableSpace (Fin n → K)]
+    (μ : Measure (Fin n → K)) [IsFiniteMeasureOnCompacts μ] : μ (eisensteinSet K n) < ∞ :=
+  (measure_mono (eisensteinSet_subset_integerBox n)).trans_lt isCompact_integerBox.measure_lt_top
+
+/-- The Eisenstein region has positive volume for every additive Haar measure, not only for the
+one normalized on the integer box. -/
+theorem measure_eisensteinSet_pos {n : ℕ} [MeasurableSpace (Fin n → K)]
+    [BorelSpace (Fin n → K)] (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
+    0 < μ (eisensteinSet K n) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- For `n = 0` the region is the whole one-point space.
+    have h0 : (0 : Fin 0 → K) ∈ eisensteinSet K 0 :=
+      ⟨fun i ↦ i.elim0, fun y hy ↦ by
+        rw [coeff_monicOfCoeff_self (n := 0), map_one]
+        exact hy.le⟩
+    rw [Set.Nonempty.eq_univ ⟨0, h0⟩]
+    exact isOpen_univ.measure_pos μ Set.univ_nonempty
+  -- Rescale `μ` to the Haar measure normalized on the integer box.
+  set c := μ (integerBox K (Fin n))
+  have hc0 : c ≠ 0 := isOpen_integerBox.measure_ne_zero μ ⟨0, mem_integerBox.2 fun _ ↦ zero_mem _⟩
+  have hctop : c ≠ ∞ := isCompact_integerBox.measure_lt_top.ne
+  have h := measure_eisensteinSet hn (c⁻¹ • μ) (by
+    rw [Measure.smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel hc0 hctop])
+  have hq : 1 < (Nat.card 𝓀[K] : ℝ≥0∞) := by
+    exact_mod_cast Finite.one_lt_card_iff_nontrivial.2 inferInstance
+  have hpos : 0 < 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) :=
+    ENNReal.mul_pos (by simp) (tsub_pos_of_lt (ENNReal.div_lt_of_lt_mul (by simpa using hq))).ne'
+  rw [← h, Measure.smul_apply, smul_eq_mul] at hpos
+  exact pos_of_ne_zero fun h0 ↦ by simp [h0] at hpos
 
 end Measure
 

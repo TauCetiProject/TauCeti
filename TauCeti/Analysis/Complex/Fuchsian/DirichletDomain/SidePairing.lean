@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Polygon
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Presentation
 import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Faces
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
-import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.LocallyFinite
 
 /-!
 # The side pairing of a Dirichlet polygon
@@ -24,10 +23,12 @@ the sense of `ConvexPolygon.SidePairing`: `g⁻¹` reverses the orientation of t
 moves the centre `p` across the bisector of `p` and `g⁻¹ • p`. It is the only side pairing of `P`
 by elements of `Γ`.
 
-For a cocompact group every Dirichlet domain is a compact convex polygon, its translates are
-locally finite, and distinct translates of its interior are disjoint. Poincaré's presentation
-theorem therefore applies: such a group is presented by the side-pairing maps of a Dirichlet
-polygon, subject to the side relations and the vertex-cycle relations.
+The translates of a Dirichlet polygon by `Γ` are locally finite, and, since the centre has
+trivial stabilizer, every nonidentity element of `Γ` moves its interior off itself. These are
+the tessellation hypotheses of Poincaré's polygon theorem, under which the side-pairing maps
+generate `Γ` and present it, subject to the side relations and the vertex-cycle relations. For a
+cocompact group every Dirichlet domain is a compact convex polygon, so every cocompact group has
+such a Dirichlet presentation.
 
 ## Main results
 
@@ -35,6 +36,8 @@ polygon, subject to the side relations and the vertex-cycle relations.
   has exactly one side pairing whose maps lie in `Γ`.
 * `ConvexPolygon.SidePairing.side_eq_dirichletFace`: for that side pairing, side `i` is the
   Dirichlet face of the inverse of the side-pairing map of `i`.
+* `ConvexPolygon.disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain`: the translates of
+  a Dirichlet polygon have disjoint interiors.
 * `Subgroup.exists_sidePairing_relatorQuotientTo_bijective_of_compactSpace`: a cocompact
   Fuchsian group is presented by the side pairing of a compact Dirichlet polygon.
 
@@ -130,7 +133,7 @@ theorem SidePairing.side_eq_dirichletFace (σ : P.SidePairing) (hmap : ∀ i, σ
     have hxD : x ∈ dirichletDomain Γ p := hP ▸ P.side_subset_carrier i hx
     refine (inv_smul_mem_dirichletDomain_iff hxD t⁻¹).1 ?_
     rw [inv_inv, ← hP]
-    exact P.side_subset_carrier _ (σ.map_smul_side i ▸ smul_mem_smul_set hx)
+    exact P.side_subset_carrier _ (σ.map_smul_mem_side hx)
   obtain ⟨j, hj⟩ := exists_side_eq_dirichletFace_of_nontrivial hP
     (TauCeti.smul_ne_of_ne_one Γ ℍ hp ht) ((P.side_nontrivial i).mono hsub)
   rw [← hj, P.eq_of_nontrivial_side_inter_side (i := j) (j := i)
@@ -183,6 +186,15 @@ theorem existsUnique_sidePairing_of_carrier_eq_dirichletDomain
     P.side_injective (by rw [← τ.map_smul_side, ← σ.map_smul_side, hmap])
   exact SidePairing.ext (Equiv.ext hpairτ) (funext hmap)
 
+/-- **Distinct translates of the interior of a Dirichlet polygon are disjoint.** If the carrier
+of `P` is the Dirichlet domain of a properly discontinuous `Γ`, centred at a point with trivial
+stabilizer, then every nonidentity element of `Γ` moves the interior of `P` off itself. -/
+theorem disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain
+    (hP : P.carrier = dirichletDomain Γ p) (hp : p ∈ TauCeti.freeLocus Γ ℍ) (γ : Γ)
+    (hγ : γ ≠ 1) : Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier) := by
+  rw [hP]
+  exact disjoint_smul_interior_dirichletDomain (TauCeti.smul_ne_of_ne_one Γ ℍ hp hγ)
+
 end TauCeti.UpperHalfPlane.ConvexPolygon
 
 namespace Subgroup
@@ -206,21 +218,8 @@ theorem exists_sidePairing_relatorQuotientTo_bijective_of_compactSpace
   have hP' : P.toConvexPolygon.carrier = dirichletDomain Γ p := by
     rw [CompactConvexPolygon.carrier_toConvexPolygon, hP]
   obtain ⟨σ, hσ, -⟩ := ConvexPolygon.existsUnique_sidePairing_of_carrier_eq_dirichletDomain hP' hp
-  refine ⟨n, ‹NeZero n›, P, σ, hσ, hP, σ.relatorQuotientTo_bijective hσ ?_ fun γ hγ ↦ ?_⟩
-  · rw [CompactConvexPolygon.carrier_toConvexPolygon]
-    exact P.locallyFinite_smul_carrier Γ
-  -- an interior point of the domain is strictly closer to `p` than to `γ • p` and to `γ⁻¹ • p`
-  rw [CompactConvexPolygon.carrier_toConvexPolygon, hP]
-  refine Set.disjoint_left.2 fun z hz hz' ↦ ?_
-  obtain ⟨w, hw, rfl⟩ := Set.mem_smul_set.1 hz
-  have hγp : γ • p ≠ p := TauCeti.smul_ne_of_ne_one Γ ℍ hp hγ
-  have h₁ := mem_interior_dirichletDomain_iff.1 hw γ⁻¹ fun h ↦
-    hγp ((smul_eq_iff_eq_inv_smul γ).2 h.symm)
-  have h₂ := mem_interior_dirichletDomain_iff.1 hz' γ hγp
-  have he : dist ((γ : PSL(2, ℝ)) • w) p = dist w ((γ : PSL(2, ℝ))⁻¹ • p) := by
-    rw [← dist_smul (γ : PSL(2, ℝ)) w, smul_inv_smul]
-  rw [Subgroup.smul_def, Subgroup.coe_inv] at h₁
-  rw [Subgroup.smul_def, dist_smul, he] at h₂
-  exact (h₁.trans h₂).false
+  exact ⟨n, ‹NeZero n›, P, σ, hσ, hP, σ.relatorQuotientTo_bijective hσ
+    (hP' ▸ locallyFinite_smul_dirichletDomain p)
+    (ConvexPolygon.disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain hP' hp)⟩
 
 end Subgroup
