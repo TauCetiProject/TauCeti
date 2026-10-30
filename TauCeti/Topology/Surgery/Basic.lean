@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
-public import Mathlib.Data.Set.UnionLift
-public import Mathlib.Topology.ContinuousMap.Defs
-public import Mathlib.Topology.Homeomorph.Defs
+public import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 
 /-!
 # Surgery on a framed sphere
@@ -234,47 +232,7 @@ theorem exteriorEmbedding_eq_ballSphereEmbedding_iff {S : SphereSurgery hφ Y}
 
 section desc
 
-variable {Z : Type*}
-
-/-- The function underlying `TauCeti.SphereSurgery.desc`: `a` on the exterior and `b` on
-`D^(k+1) × S^(q-1)`, glued over the cover of the result by the two pieces. -/
-private def descFun (S : SphereSurgery hφ Y) {a : sphereExterior φ → Z}
-    {b : closedBall (0 : E) 1 × sphere (0 : F) 1 → Z}
-    (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q)) :
-    Y → Z :=
-  liftCover (fun i ↦ cond i (range S.exteriorEmbedding) (range S.ballSphereEmbedding))
-    (fun i ↦ match i with
-      | true => a ∘ S.isClosedEmbedding_exteriorEmbedding.isEmbedding.toHomeomorph.symm
-      | false => b ∘ S.isClosedEmbedding_ballSphereEmbedding.isEmbedding.toHomeomorph.symm)
-    (by
-      have key (y : Y) (hE : y ∈ range S.exteriorEmbedding)
-          (hB : y ∈ range S.ballSphereEmbedding) :
-          a (S.isClosedEmbedding_exteriorEmbedding.isEmbedding.toHomeomorph.symm ⟨y, hE⟩) =
-            b (S.isClosedEmbedding_ballSphereEmbedding.isEmbedding.toHomeomorph.symm ⟨y, hB⟩) := by
-        obtain ⟨x, rfl⟩ := hE
-        obtain ⟨p, hp⟩ := hB
-        obtain ⟨q, rfl, rfl⟩ := exteriorEmbedding_eq_ballSphereEmbedding_iff.1 hp.symm
-        rw [IsEmbedding.toHomeomorph_symm_apply, hab,
-          (Homeomorph.symm_apply_eq _).2 (Subtype.ext hp.symm)]
-      rintro (_ | _) (_ | _) y hi hj
-      exacts [rfl, (key y hj hi).symm, key y hi hj, rfl])
-    (union_eq_iUnion.symm.trans S.range_union_range)
-
-private theorem descFun_exteriorEmbedding (S : SphereSurgery hφ Y) {a : sphereExterior φ → Z}
-    {b : closedBall (0 : E) 1 × sphere (0 : F) 1 → Z}
-    (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q))
-    (x : sphereExterior φ) : descFun S hab (S.exteriorEmbedding x) = a x :=
-  (liftCover_of_mem (i := true) (mem_range_self x)).trans
-    (congrArg a (IsEmbedding.toHomeomorph_symm_apply _ x))
-
-private theorem descFun_ballSphereEmbedding (S : SphereSurgery hφ Y) {a : sphereExterior φ → Z}
-    {b : closedBall (0 : E) 1 × sphere (0 : F) 1 → Z}
-    (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q))
-    (p : closedBall (0 : E) 1 × sphere (0 : F) 1) : descFun S hab (S.ballSphereEmbedding p) = b p :=
-  (liftCover_of_mem (i := false) (mem_range_self p)).trans
-    (congrArg b (IsEmbedding.toHomeomorph_symm_apply _ p))
-
-variable [TopologicalSpace Z]
+variable {Z : Type*} [TopologicalSpace Z]
 
 /-- **Maps out of the result of a surgery.** Continuous maps `a` on the exterior and `b` on
 `D^(k+1) × S^(q-1)` that agree along the boundary descend to a continuous map on the result,
@@ -282,19 +240,11 @@ which is the gluing of its two closed pieces (`TauCeti.SphereSurgery.desc_unique
 def desc (S : SphereSurgery hφ Y) (a : C(sphereExterior φ, Z))
     (b : C(closedBall (0 : E) 1 × sphere (0 : F) 1, Z))
     (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q)) :
-    C(Y, Z) where
-  toFun := descFun S hab
-  continuous_toFun := by
-    have hE : ContinuousOn (descFun S hab) (range S.exteriorEmbedding) := by
-      rw [← image_univ, S.isClosedEmbedding_exteriorEmbedding.isInducing.continuousOn_image_iff]
-      exact (continuous_congr (descFun_exteriorEmbedding S hab)).2 a.continuous |>.continuousOn
-    have hB : ContinuousOn (descFun S hab) (range S.ballSphereEmbedding) := by
-      rw [← image_univ,
-        S.isClosedEmbedding_ballSphereEmbedding.isInducing.continuousOn_image_iff]
-      exact (continuous_congr (descFun_ballSphereEmbedding S hab)).2 b.continuous |>.continuousOn
-    rw [← continuousOn_univ, ← S.range_union_range]
-    exact hE.union_of_isClosed hB S.isClosedEmbedding_exteriorEmbedding.isClosed_range
-      S.isClosedEmbedding_ballSphereEmbedding.isClosed_range
+    C(Y, Z) :=
+  ContinuousMap.glueClosedEmbeddings a b S.isClosedEmbedding_exteriorEmbedding
+    S.isClosedEmbedding_ballSphereEmbedding S.range_union_range fun _ _ hxp ↦ by
+      obtain ⟨q, rfl, rfl⟩ := exteriorEmbedding_eq_ballSphereEmbedding_iff.1 hxp
+      exact hab q
 
 /-- The map descended from `a` and `b` restricts to `a` on the exterior. -/
 @[simp]
@@ -302,7 +252,7 @@ theorem desc_exteriorEmbedding (S : SphereSurgery hφ Y) (a : C(sphereExterior �
     (b : C(closedBall (0 : E) 1 × sphere (0 : F) 1, Z))
     (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q))
     (x : sphereExterior φ) : S.desc a b hab (S.exteriorEmbedding x) = a x :=
-  descFun_exteriorEmbedding S hab x
+  ContinuousMap.glueClosedEmbeddings_apply_left _ _ _ _ _ _ x
 
 /-- The map descended from `a` and `b` restricts to `b` on `D^(k+1) × S^(q-1)`. -/
 @[simp]
@@ -311,16 +261,14 @@ theorem desc_ballSphereEmbedding (S : SphereSurgery hφ Y) (a : C(sphereExterior
     (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q))
     (p : closedBall (0 : E) 1 × sphere (0 : F) 1) :
     S.desc a b hab (S.ballSphereEmbedding p) = b p :=
-  descFun_ballSphereEmbedding S hab p
+  ContinuousMap.glueClosedEmbeddings_apply_right _ _ _ _ _ _ p
 
 /-- **Maps out of the result of a surgery are determined by their restrictions** to the two
 pieces. -/
 theorem hom_ext (S : SphereSurgery hφ Y) {f g : C(Y, Z)}
     (hE : ∀ x, f (S.exteriorEmbedding x) = g (S.exteriorEmbedding x))
-    (hB : ∀ p, f (S.ballSphereEmbedding p) = g (S.ballSphereEmbedding p)) : f = g := by
-  ext y
-  obtain ⟨x, rfl⟩ | ⟨p, rfl⟩ := S.range_union_range.symm ▸ mem_univ y
-  exacts [hE x, hB p]
+    (hB : ∀ p, f (S.ballSphereEmbedding p) = g (S.ballSphereEmbedding p)) : f = g :=
+  ContinuousMap.ext_of_range_union_range S.range_union_range hE hB
 
 /-- **Uniqueness of the descended map**: a continuous map on the result of a surgery restricting
 to `a` on the exterior and to `b` on `D^(k+1) × S^(q-1)` is `TauCeti.SphereSurgery.desc`. -/
@@ -329,7 +277,7 @@ theorem desc_unique (S : SphereSurgery hφ Y) {a : C(sphereExterior φ, Z)}
     (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q))
     {f : C(Y, Z)} (hE : ∀ x, f (S.exteriorEmbedding x) = a x)
     (hB : ∀ p, f (S.ballSphereEmbedding p) = b p) : f = S.desc a b hab :=
-  S.hom_ext (by simpa using hE) (by simpa using hB)
+  ContinuousMap.eq_glueClosedEmbeddings hE hB
 
 end desc
 

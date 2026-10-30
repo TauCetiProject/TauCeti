@@ -18,8 +18,8 @@ unit sphere `S^(k+1)` of the `L²` product `WithLp 2 (E × ℝ)` are the graphs 
 `(u, c √(1 - ‖u‖ ^ 2))`. Each hemisphere is a closed embedding of the ball, the two hemispheres
 cover the sphere, agree on the equator `‖u‖ = 1`, and meet only there.
 
-This is the analogue, for the unit sphere of an `L²` product, of `TauCeti.hemisphereGraph`, which
-writes the hemispheres of `S² ⊆ ℝ³` as graphs over the closed unit disc of `ℂ`.
+For `E = ℂ`, moved into `ℝ³` by the linear isometry `(u, t) ↦ (Re u, Im u, t)`, these are the
+hemispheres `TauCeti.hemisphereGraph` of `S² ⊆ ℝ³` over the closed unit disc of `ℂ`.
 
 ## Main definitions
 
@@ -159,7 +159,7 @@ theorem exists_prodHemisphereGraph_eq {c : ℝ} (hc : c ^ 2 = 1)
     · rw [one_mul, abs_of_nonneg (by simpa using hx)]
     · rw [neg_one_mul, abs_of_nonpos (by linarith), neg_neg]
   rw [hc']
-  rfl
+  simp only [← WithLp.ofLp_fst, ← WithLp.ofLp_snd, Prod.mk.eta, WithLp.toLp_ofLp]
 
 end Seminormed
 

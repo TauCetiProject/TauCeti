@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LowDimTopology.DehnSurgery.Framing
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Exterior
+public import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 
 /-!
 # Dehn fillings of knot exteriors
@@ -201,56 +202,18 @@ theorem exteriorEmbedding_eq_solidTorusEmbedding_iff {F : DehnFilling h s Y}
 
 section desc
 
-variable {Z : Type*}
-
-/-- A point of the filled space outside the exterior lies in the filling solid torus. -/
-private theorem mem_range_solidTorusEmbedding_of_notMem (F : DehnFilling h s Y) {y : Y}
-    (hy : y ∉ range F.exteriorEmbedding) : y ∈ range F.solidTorusEmbedding :=
-  (eq_univ_iff_forall.1 F.range_union_range y).resolve_left hy
-
-open Classical in
-/-- The function underlying `TauCeti.DehnFilling.desc`: `a` on the exterior and `b` elsewhere. -/
-private def descFun (F : DehnFilling h s Y) (a : knotExterior (Φ := Φ) → Z) (b : SolidTorus → Z)
-    (y : Y) : Z :=
-  if hy : y ∈ range F.exteriorEmbedding then a hy.choose
-  else b (F.mem_range_solidTorusEmbedding_of_notMem hy).choose
-
-private theorem descFun_exteriorEmbedding (F : DehnFilling h s Y) (a : knotExterior (Φ := Φ) → Z)
-    (b : SolidTorus → Z) (x : knotExterior (Φ := Φ)) :
-    descFun F a b (F.exteriorEmbedding x) = a x := by
-  have hx : F.exteriorEmbedding x ∈ range F.exteriorEmbedding := mem_range_self x
-  rw [descFun, dite_eq_left hx, F.isClosedEmbedding_exteriorEmbedding.injective hx.choose_spec]
-
-private theorem descFun_solidTorusEmbedding (F : DehnFilling h s Y)
-    {a : knotExterior (Φ := Φ) → Z} {b : SolidTorus → Z}
-    (hab : ∀ q, a (h.exteriorBoundaryInclusion (F.gluing q)) = b (SolidTorus.boundaryInclusion q))
-    (p : SolidTorus) : descFun F a b (F.solidTorusEmbedding p) = b p := by
-  by_cases hp : F.solidTorusEmbedding p ∈ range F.exteriorEmbedding
-  · obtain ⟨x, hx⟩ := hp
-    obtain ⟨q, rfl, rfl⟩ := exteriorEmbedding_eq_solidTorusEmbedding_iff.1 hx
-    rw [← hx, descFun_exteriorEmbedding, hab]
-  · rw [descFun, dite_eq_right hp, F.isClosedEmbedding_solidTorusEmbedding.injective
-      (F.mem_range_solidTorusEmbedding_of_notMem hp).choose_spec]
-
-variable [TopologicalSpace Z]
+variable {Z : Type*} [TopologicalSpace Z]
 
 /-- **Maps out of a Dehn filling.** Continuous maps `a` on the knot exterior and `b` on the filling
 solid torus that agree along the gluing of the boundary tori descend to a continuous map on the
 filled space, which is the gluing of its two closed pieces (`TauCeti.DehnFilling.desc_unique`). -/
 def desc (F : DehnFilling h s Y) (a : C(knotExterior (Φ := Φ), Z)) (b : C(SolidTorus, Z))
     (hab : ∀ q, a (h.exteriorBoundaryInclusion (F.gluing q)) = b (SolidTorus.boundaryInclusion q)) :
-    C(Y, Z) where
-  toFun := descFun F a b
-  continuous_toFun := by
-    have hE : ContinuousOn (descFun F a b) (range F.exteriorEmbedding) := by
-      rw [← image_univ, F.isClosedEmbedding_exteriorEmbedding.isInducing.continuousOn_image_iff]
-      exact (continuous_congr (descFun_exteriorEmbedding F a b)).2 a.continuous |>.continuousOn
-    have hS : ContinuousOn (descFun F a b) (range F.solidTorusEmbedding) := by
-      rw [← image_univ, F.isClosedEmbedding_solidTorusEmbedding.isInducing.continuousOn_image_iff]
-      exact (continuous_congr (descFun_solidTorusEmbedding F hab)).2 b.continuous |>.continuousOn
-    rw [← continuousOn_univ, ← F.range_union_range]
-    exact hE.union_of_isClosed hS F.isClosedEmbedding_exteriorEmbedding.isClosed_range
-      F.isClosedEmbedding_solidTorusEmbedding.isClosed_range
+    C(Y, Z) :=
+  ContinuousMap.glueClosedEmbeddings a b F.isClosedEmbedding_exteriorEmbedding
+    F.isClosedEmbedding_solidTorusEmbedding F.range_union_range fun _ _ hxp ↦ by
+      obtain ⟨q, rfl, rfl⟩ := exteriorEmbedding_eq_solidTorusEmbedding_iff.1 hxp
+      exact hab q
 
 /-- The map descended from `a` and `b` restricts to `a` on the knot exterior. -/
 @[simp]
@@ -258,7 +221,7 @@ theorem desc_exteriorEmbedding (F : DehnFilling h s Y) (a : C(knotExterior (Φ :
     (b : C(SolidTorus, Z))
     (hab : ∀ q, a (h.exteriorBoundaryInclusion (F.gluing q)) = b (SolidTorus.boundaryInclusion q))
     (x : knotExterior (Φ := Φ)) : F.desc a b hab (F.exteriorEmbedding x) = a x :=
-  descFun_exteriorEmbedding F a b x
+  ContinuousMap.glueClosedEmbeddings_apply_left _ _ _ _ _ _ x
 
 /-- The map descended from `a` and `b` restricts to `b` on the filling solid torus. -/
 @[simp]
@@ -266,15 +229,13 @@ theorem desc_solidTorusEmbedding (F : DehnFilling h s Y) (a : C(knotExterior (Φ
     (b : C(SolidTorus, Z))
     (hab : ∀ q, a (h.exteriorBoundaryInclusion (F.gluing q)) = b (SolidTorus.boundaryInclusion q))
     (p : SolidTorus) : F.desc a b hab (F.solidTorusEmbedding p) = b p :=
-  descFun_solidTorusEmbedding F hab p
+  ContinuousMap.glueClosedEmbeddings_apply_right _ _ _ _ _ _ p
 
 /-- **Maps out of a Dehn filling are determined by their restrictions** to the two pieces. -/
 theorem hom_ext (F : DehnFilling h s Y) {φ ψ : C(Y, Z)}
     (hE : ∀ x, φ (F.exteriorEmbedding x) = ψ (F.exteriorEmbedding x))
-    (hS : ∀ p, φ (F.solidTorusEmbedding p) = ψ (F.solidTorusEmbedding p)) : φ = ψ := by
-  ext y
-  obtain ⟨x, rfl⟩ | ⟨p, rfl⟩ := F.range_union_range.symm ▸ mem_univ y
-  exacts [hE x, hS p]
+    (hS : ∀ p, φ (F.solidTorusEmbedding p) = ψ (F.solidTorusEmbedding p)) : φ = ψ :=
+  ContinuousMap.ext_of_range_union_range F.range_union_range hE hS
 
 /-- **Uniqueness of the descended map**: a continuous map on the filled space restricting to `a`
 on the exterior and to `b` on the filling solid torus is `TauCeti.DehnFilling.desc`. -/
@@ -283,7 +244,7 @@ theorem desc_unique (F : DehnFilling h s Y) {a : C(knotExterior (Φ := Φ), Z)}
     (hab : ∀ q, a (h.exteriorBoundaryInclusion (F.gluing q)) = b (SolidTorus.boundaryInclusion q))
     {φ : C(Y, Z)} (hE : ∀ x, φ (F.exteriorEmbedding x) = a x)
     (hS : ∀ p, φ (F.solidTorusEmbedding p) = b p) : φ = F.desc a b hab :=
-  F.hom_ext (by simpa using hE) (by simpa using hS)
+  ContinuousMap.eq_glueClosedEmbeddings hE hS
 
 end desc
 
