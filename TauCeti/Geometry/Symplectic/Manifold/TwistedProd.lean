@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Diffeomorph.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 
 /-!
@@ -16,6 +17,13 @@ It is the product form `TauCeti.SmoothTwoForm.prod` of `σ` and `-τ`
 inherited from the two factors through the product form. Its value on each tangent
 space is the existing linear twisted product. These comparisons let the linear theory
 of Lagrangian graphs apply to graphs of maps between manifolds.
+
+Two sign laws govern the operations on correspondences. Exchanging the factors pulls
+`pr₁*τ - pr₂*σ` on `N × M` back to `-(pr₁*σ - pr₂*τ)` on `M × N`
+(`TauCeti.SmoothTwoForm.mpullback_prodComm_twistedProd`), so transposing a relation negates
+its form. Regrouping `(M × N) × (M' × N')` as `(M × M') × (N × N')` pulls the twisted product
+of the product forms back to the product of the twisted products
+(`TauCeti.SmoothTwoForm.mpullback_prodProdProdComm_twistedProd_prod`).
 
 ## References
 
@@ -108,5 +116,39 @@ theorem IsSymplectic.twistedProd {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J 
     (hσ : σ.IsSymplectic) (hτ : τ.IsSymplectic) : (twistedProd σ τ).IsSymplectic :=
   ⟨isClosed_twistedProd hσ.isClosed hτ.isClosed,
     hσ.isNondegenerate.twistedProd hτ.isNondegenerate⟩
+
+/-- Exchanging the factors turns the twisted product `pr₁*τ - pr₂*σ` on `N × M` into the
+negative of the twisted product `pr₁*σ - pr₂*τ` on `M × N`. -/
+theorem mpullback_prodComm_twistedProd (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) :
+    SmoothForm.mpullback (Diffeomorph.prodComm I J M N ∞)
+        (Diffeomorph.prodComm I J M N ∞).contMDiff (twistedProd τ σ) =
+      -twistedProd σ τ := by
+  simp only [twistedProd_def, map_sub, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp,
+    Diffeomorph.coe_prodComm, Function.comp_def, Prod.fst_swap, Prod.snd_swap, neg_sub]
+
+section Regroup
+
+variable {E' H'' M' F' H''' N' : Type*}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'']
+  {I' : ModelWithCorners ℝ E' H''} [TopologicalSpace M'] [ChartedSpace H'' M']
+  [IsManifold I' ∞ M']
+  [NormedAddCommGroup F'] [NormedSpace ℝ F'] [TopologicalSpace H''']
+  {J' : ModelWithCorners ℝ F' H'''} [TopologicalSpace N'] [ChartedSpace H''' N']
+  [IsManifold J' ∞ N']
+
+/-- Regrouping `(M × N) × (M' × N')` as `(M × M') × (N × N')` pulls the twisted product of the
+product forms back to the product of the twisted products. -/
+theorem mpullback_prodProdProdComm_twistedProd_prod (σ : SmoothTwoForm I M)
+    (τ : SmoothTwoForm J N) (σ' : SmoothTwoForm I' M') (τ' : SmoothTwoForm J' N') :
+    SmoothForm.mpullback (Diffeomorph.prodProdProdComm I J I' J' M N M' N' ∞)
+        (Diffeomorph.prodProdProdComm I J I' J' M N M' N' ∞).contMDiff
+        (twistedProd (prod σ σ') (prod τ τ')) =
+      prod (twistedProd σ τ) (twistedProd σ' τ') := by
+  simp only [twistedProd_def, prod_def, map_sub, map_add, ← LinearMap.comp_apply,
+    ← SmoothForm.mpullback_comp, Diffeomorph.coe_prodProdProdComm, Function.comp_def,
+    Equiv.prodProdProdComm_apply]
+  abel
+
+end Regroup
 
 end TauCeti.SmoothTwoForm

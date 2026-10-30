@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Ring.NegOnePow
 
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+
 /-!
 # Regrouping finitely supported products
 
@@ -15,9 +17,10 @@ public import Mathlib.Algebra.Ring.NegOnePow
 both index types to be finite.  This file records the `finprod` analogue, which only needs the two
 restricted families to have finite multiplicative support. Regrouping by the fibers of an
 arbitrary map is also available, without finiteness assumptions on the fibers, as is cancelling a
-finitely supported factor whose product is `1`. Finally, shifting the index of an alternating
-product over `ℤ` by one inverts it, which is how changes of boundary bases cancel in Reidemeister
-torsion.
+finitely supported factor whose product is `1`. Shifting the index of an alternating product over
+`ℤ` by one inverts it, which is how changes of boundary bases cancel in Reidemeister torsion.
+Finally, a product over a finset is compared with the `finprod` of a finitely supported family
+whose factors off the finset are all at least `1`, or all at most `1`.
 
 ## Main results
 
@@ -31,6 +34,9 @@ torsion.
   family has finite multiplicative support jointly in both variables.
 * `TauCeti.finprod_zpow_negOnePow_add_one`: `∏ᶠ j, f (j + 1) ^ (-1) ^ j` is the inverse of
   `∏ᶠ j, f j ^ (-1) ^ j`.
+* `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
+  finset is at most, respectively at least, the `finprod` when the factors off the finset are at
+  least, respectively at most, `1`.
 -/
 
 public section
@@ -138,3 +144,38 @@ theorem finprod_zpow_negOnePow_add_one {G : Type*} [DivisionCommMonoid G] (f : �
   simp [Int.negOnePow_succ, zpow_neg]
 
 end TauCeti
+
+namespace Finset
+
+open Function
+
+section OrderedWithZero
+
+variable {ι M₀ : Type*} [CommMonoidWithZero M₀] [PartialOrder M₀] [ZeroLEOneClass M₀]
+  [PosMulMono M₀] {f : ι → M₀}
+
+/-- A product over a finset is at most the `finprod` of a finitely supported family whose factors
+off the finset are at least `1`. This is the `finprod` analogue of
+`Finset.prod_le_prod_of_subset_of_one_le₀`. -/
+theorem prod_le_finprod_of_one_le₀ (s : Finset ι) (hf : HasFiniteMulSupport f)
+    (hf₀ : ∀ i ∈ s, 0 ≤ f i) (hf₁ : ∀ i ∉ s, 1 ≤ f i) : ∏ i ∈ s, f i ≤ ∏ᶠ i, f i := by
+  classical
+  rw [finprod_eq_finsetProd_of_mulSupport_subset f (s := s ∪ hf.toFinset)
+    fun i hi ↦ Finset.mem_union_right s (hf.mem_toFinset.mpr hi)]
+  exact Finset.prod_le_prod_of_subset_of_one_le₀ Finset.subset_union_left hf₀
+    fun i _ hi ↦ hf₁ i hi
+
+/-- The `finprod` of a finitely supported nonnegative family whose factors off a finset are at
+most `1` is at most the product over that finset. This is the `finprod` analogue of
+`Finset.prod_le_prod_of_subset_of_le_one₀`. -/
+theorem finprod_le_prod_of_le_one₀ (s : Finset ι) (hf : HasFiniteMulSupport f)
+    (hf₀ : ∀ i, 0 ≤ f i) (hf₁ : ∀ i ∉ s, f i ≤ 1) : ∏ᶠ i, f i ≤ ∏ i ∈ s, f i := by
+  classical
+  rw [finprod_eq_finsetProd_of_mulSupport_subset f (s := s ∪ hf.toFinset)
+    fun i hi ↦ Finset.mem_union_right s (hf.mem_toFinset.mpr hi)]
+  exact Finset.prod_le_prod_of_subset_of_le_one₀ Finset.subset_union_left (fun i _ ↦ hf₀ i)
+    fun i _ hi ↦ hf₁ i hi
+
+end OrderedWithZero
+
+end Finset

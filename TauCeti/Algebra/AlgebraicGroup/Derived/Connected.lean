@@ -134,7 +134,7 @@ private theorem identityComponentHopfIdeal_quotient_derivedDefiningIdeal_eq_bot
   have hfe : f (PrimeSpectrum.connectedComponentIdempotent z) = 1 :=
     commutatorToDerivedAlgHom_eq_one_of_isIdempotentElem H _
       (PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent z)
-      (TauCeti.AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one
+      (AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one
         (Bialgebra.counitAlgHom k D))
   apply eq_bot_of_comapOfSurjective_le J
   rw [le_derivedDefiningIdeal_iff]

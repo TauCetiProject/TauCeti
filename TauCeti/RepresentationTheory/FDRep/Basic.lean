@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
+public import Mathlib.CategoryTheory.Preadditive.Opposite
 public import Mathlib.RingTheory.Finiteness.Small
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Rep.Res
@@ -88,6 +89,7 @@ of `Representation.Equiv` apply to isomorphic objects.
   it takes a tensor product to the tensor product of the forgotten objects, on the nose.
 * `FDRep.hom_hom_hom_comm`: a morphism intertwines the actions, read on the underlying linear
   maps.
+* `FDRep.op_smul_apply`: the opposite-endomorphism action is precomposition on underlying vectors.
 * `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`: the actions on the tensor unit and on a tensor
   product, read on the underlying linear maps.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
@@ -260,6 +262,13 @@ and of `ModuleCat R`, stripped away. -/
 theorem hom_hom_hom_comm {R : Type u} {G : Type v} [CommRing R] [Monoid G] {X Y : FDRep R G}
     (φ : X ⟶ Y) (g : G) : φ.hom.hom.hom ∘ₗ X.ρ g = Y.ρ g ∘ₗ φ.hom.hom.hom := by
   simpa using congrArg (fun t : X.V ⟶ Y.V => t.hom.hom) (φ.comm g)
+
+/-- The native opposite-endomorphism action is precomposition on underlying vectors. -/
+@[simp]
+theorem op_smul_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDRep R G)
+    {B : FDRep R G} (d : End A) (f : A ⟶ B) (x : A) :
+    (MulOpposite.op d • f).hom.hom.hom x = f.hom.hom.hom (d.asHom.hom.hom.hom x) := by
+  simp [End.smul_left]
 
 open MonoidalCategory in
 /-- **The tensor unit of `FDRep R G` carries the trivial action**, read on the underlying linear
