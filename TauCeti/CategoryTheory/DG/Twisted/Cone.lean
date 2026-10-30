@@ -364,28 +364,6 @@ theorem shiftConeInv_def :
             (add_zero 0)) (add_zero 0) :=
   (rfl)
 
-/-- The shifts of degree-zero morphisms composing to the identity compose to the identity, in
-front of any further morphism `x`. -/
-private theorem dgMap_dgComp_dgMap_assoc_of_eq_dgId
-    {X Y Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))}
-    {f : DGHom R 0 X Y} {g : DGHom R 0 Y X} (hfg : dgComp R f g (add_zero 0) = dgId R X) {m : ℤ}
-    (x : DGHom R m ((shiftFunctor R n).obj X) Z) :
-    dgComp R ((shiftFunctor R n).dgMap 0 f) (dgComp R ((shiftFunctor R n).dgMap 0 g) x
-      (zero_add m)) (zero_add m) = x := by
-  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add m) (by omega), ← EnrichedFunctor.dgMap_dgComp,
-    hfg, EnrichedFunctor.dgMap_dgId, dgId_dgComp]
-
-/-- The shifts of degree-zero morphisms composing to zero compose to zero, in front of any
-further morphism `x`. -/
-private theorem dgMap_dgComp_dgMap_assoc_of_eq_zero
-    {X Y Y' Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))}
-    {f : DGHom R 0 X Y} {g : DGHom R 0 Y Y'} (hfg : dgComp R f g (add_zero 0) = 0) {m : ℤ}
-    (x : DGHom R m ((shiftFunctor R n).obj Y') Z) :
-    dgComp R ((shiftFunctor R n).dgMap 0 f) (dgComp R ((shiftFunctor R n).dgMap 0 g) x
-      (zero_add m)) (zero_add m) = 0 := by
-  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add m) (by omega), ← EnrichedFunctor.dgMap_dgComp,
-    hfg, map_zero, zero_dgComp]
-
 /-- The shift of the inclusion of `Q` into `cone u` followed by the comparison
 `(cone u)⟦n⟧ ⟶ cone (u⟦n⟧)` is the inclusion of `Q⟦n⟧`. -/
 @[simp↓]
@@ -395,9 +373,9 @@ theorem dgComp_dgMap_extensionInl_shiftConeHom :
       extensionInl R (dgDifferential_coneMorphism
         ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu)) := by
   simp only [shiftConeHom_def, dgComp_add, dgComp_units_smul,
-    dgMap_dgComp_dgMap_assoc_of_eq_dgId n (dgComp_extensionInl_extensionFst R _),
-    dgMap_dgComp_dgMap_assoc_of_eq_zero n (dgComp_extensionInl_extensionSnd R _), smul_zero,
-    add_zero]
+    (shiftFunctor R n).dgMap_dgComp_dgMap_assoc_of_eq_dgId (dgComp_extensionInl_extensionFst R _),
+    (shiftFunctor R n).dgMap_dgComp_dgMap_assoc_of_eq_zero (dgComp_extensionInl_extensionSnd R _),
+    smul_zero, add_zero]
 
 /-- The shift of the inclusion of `P⟦1⟧` into `cone u` followed by the comparison
 `(cone u)⟦n⟧ ⟶ cone (u⟦n⟧)` is `(-1)^n` times the comparison `P⟦1⟧⟦n⟧ ⟶ P⟦n⟧⟦1⟧` followed by
@@ -409,8 +387,9 @@ theorem dgComp_dgMap_extensionInr_shiftConeHom :
       n.negOnePow • dgComp R (shiftCommHom P 1 n) (extensionInr R (dgDifferential_coneMorphism
         ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu))) (add_zero 0) := by
   simp only [shiftConeHom_def, dgComp_add, dgComp_units_smul,
-    dgMap_dgComp_dgMap_assoc_of_eq_zero n (dgComp_extensionInr_extensionFst R _),
-    dgMap_dgComp_dgMap_assoc_of_eq_dgId n (dgComp_extensionInr_extensionSnd R _), zero_add]
+    (shiftFunctor R n).dgMap_dgComp_dgMap_assoc_of_eq_zero (dgComp_extensionInr_extensionFst R _),
+    (shiftFunctor R n).dgMap_dgComp_dgMap_assoc_of_eq_dgId (dgComp_extensionInr_extensionSnd R _),
+    zero_add]
 
 /-- The comparison `(cone u)⟦n⟧ ⟶ cone (u⟦n⟧)` followed by the projection onto `P⟦n⟧⟦1⟧` is
 `(-1)^n` times the shift of the projection onto `P⟦1⟧` followed by the comparison
@@ -472,16 +451,6 @@ private theorem shiftFunctor_cone_dgHom_ext
     dgComp_assoc R _ _ f (add_zero 0) (zero_add m) (by omega),
     dgComp_assoc R _ _ f' (add_zero 0) (zero_add m) (by omega),
     dgComp_assoc R _ _ f' (add_zero 0) (zero_add m) (by omega), hl, hr]
-
-/-- A sign times the comparison `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧`, followed by the same sign times the
-comparison `P⟦b⟧⟦a⟧ ⟶ P⟦a⟧⟦b⟧` and then `x`, is `x`. -/
-private theorem units_smul_dgComp_shiftCommHom_units_smul_dgComp_shiftCommHom (ε : ℤˣ) (a b : ℤ)
-    {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {m : ℤ}
-    (x : DGHom R m ((shiftFunctor R b).obj ((shiftFunctor R a).obj P)) Z) :
-    ε • dgComp R (shiftCommHom P a b) (ε • dgComp R (shiftCommHom P b a) x (zero_add m))
-      (zero_add m) = x := by
-  rw [dgComp_units_smul, smul_smul, Int.units_mul_self, one_smul,
-    dgComp_shiftCommHom_shiftCommHom_assoc]
 
 /-- The comparisons `(cone u)⟦n⟧ ⟶ cone (u⟦n⟧) ⟶ (cone u)⟦n⟧` compose to the identity. -/
 @[simp↓]

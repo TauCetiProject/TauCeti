@@ -527,6 +527,16 @@ theorem dgComp_shiftCommHom_shiftCommHom_assoc (a b : ℤ)
   rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add m) (by omega),
     dgComp_shiftCommHom_shiftCommHom, dgId_dgComp]
 
+/-- A sign times the comparison `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧`, followed by the same sign times the
+comparison `P⟦b⟧⟦a⟧ ⟶ P⟦a⟧⟦b⟧` and then `x`, is `x`. -/
+theorem units_smul_dgComp_shiftCommHom_units_smul_dgComp_shiftCommHom (ε : ℤˣ) (a b : ℤ)
+    {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {m : ℤ}
+    (x : DGHom R m ((shiftFunctor R b).obj ((shiftFunctor R a).obj P)) Z) :
+    ε • dgComp R (shiftCommHom P a b) (ε • dgComp R (shiftCommHom P b a) x (zero_add m))
+      (zero_add m) = x := by
+  rw [dgComp_units_smul, smul_smul, Int.units_mul_self, one_smul,
+    dgComp_shiftCommHom_shiftCommHom_assoc]
+
 /-- The comparison `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧` is the comparison `P⟦a⟧⟦b⟧ ⟶ P⟦a + b⟧`, followed by the
 comparison `P⟦a + b⟧ ⟶ P ⟶ P⟦b + a⟧` and the comparison `P⟦b + a⟧ ⟶ P⟦b⟧⟦a⟧`. -/
 theorem shiftCommHom_eq_dgComp_shiftAddInv (a b : ℤ) :
