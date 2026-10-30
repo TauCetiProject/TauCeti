@@ -6,17 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.Finite
 
 /-!
-# Finrank of zero objects and biproducts in `ModuleCat`
+# Finrank of zero objects, biproducts and short exact sequences in `ModuleCat`
 
 Vanishing and direct sums of objects of `ModuleCat R` are naturally expressed categorically, as
 `CategoryTheory.Limits.IsZero` and biproducts `M ⊞ N`, while the dimension counts that consume them
 speak of `Module.finrank`. This file supplies the translations between the two: a zero object has
 finrank zero, and finrank is additive on biproducts of finite free modules
 (`ModuleCat.finrank_biprod`, the analogue of `FGModuleCat.finrank_biprod`).
+
+Over a ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a division ring or a
+commutative domain, finrank is moreover additive on every short exact sequence whose middle term
+is finitely generated (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`). Unlike
+Mathlib's `ModuleCat.free_shortExact_finrank_add`, no freeness is assumed, so this covers
+sequences of finitely generated abelian groups with torsion.
 
 The first translation is what bounds the `Module.finrank` support of a bounded complex of vector
 spaces by its bounding interval, which is in turn what makes Mathlib's `finsum`-based Euler
@@ -60,3 +68,21 @@ theorem finrank_biprod {R : Type u} [Ring R] [StrongRankCondition R] (M N : Modu
   (biprodIsoProd M N).toLinearEquiv.finrank_eq.trans Module.finrank_prod
 
 end ModuleCat
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
+
+/-- Over a ring with the rank-nullity property, finrank is additive on a short exact sequence of
+modules whose middle term is finitely generated. -/
+theorem moduleCat_finrank_eq_add {S : ShortComplex (ModuleCat.{v} R)} (hS : S.ShortExact)
+    [Module.Finite R S.X₂] :
+    Module.finrank R S.X₂ = Module.finrank R S.X₁ + Module.finrank R S.X₃ := by
+  -- Rank-nullity for the kernel of `g`, which is the image of the injective map `f`.
+  have h := (LinearMap.ker S.g.hom).finrank_quotient_add_finrank
+  rw [(S.g.hom.quotKerEquivOfSurjective hS.moduleCat_surjective_g).finrank_eq,
+    ← hS.exact.moduleCat_range_eq_ker,
+    (LinearEquiv.ofInjective _ hS.moduleCat_injective_f).finrank_eq.symm] at h
+  lia
+
+end CategoryTheory.ShortComplex.ShortExact
