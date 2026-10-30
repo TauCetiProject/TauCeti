@@ -101,6 +101,9 @@ function `X₁ / X₀` on that chart going to `X`.
   `D₊(X₀)`, the identification of the function field with `R(X)` is `chartSectionsEquiv`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv_symm_X`: that identification sends
   the function `X₁ / X₀` to `X`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.natDegree_dehomogenize_le` and
+  `TauCeti.AlgebraicGeometry.projectiveLine.dehomogenize_eq_zero_iff`: dehomogenizing a form of
+  degree `j` gives a polynomial of degree at most `j`, and is injective on such forms.
 
 ## References
 
@@ -139,6 +142,12 @@ noncomputable def coord (i : Fin 2) : _root_.SymmetricAlgebra R (Fin 2 → R) :=
 theorem coord_mem (i : Fin 2) : coord R i ∈ 𝒜 1 :=
   SymmetricAlgebra.ι_mem_homogeneousSubmodule R _ _
 
+/-- The monomial `X₀ᵃ X₁ᵇ` is a form of degree `a + b`. -/
+theorem coord_pow_mul_coord_pow_mem {a b d : ℕ} (h : a + b = d) :
+    coord R 0 ^ a * coord R 1 ^ b ∈ 𝒜 d := by
+  simpa [← h] using SetLike.mul_mem_graded (SetLike.pow_mem_graded a (coord_mem R 0))
+    (SetLike.pow_mem_graded b (coord_mem R 1))
+
 /-- Each homogeneous coordinate is a nonzerodivisor, even over a nonreduced base ring. -/
 theorem coord_mem_nonZeroDivisors (i : Fin 2) : coord R i ∈ nonZeroDivisors _ := by
   apply mem_nonZeroDivisors_of_injective
@@ -171,6 +180,23 @@ theorem dehomogenize_coord_self (i : Fin 2) : dehomogenize R i (coord R i) = 1 :
 @[simp]
 theorem dehomogenize_coord_rev (i : Fin 2) : dehomogenize R i (coord R i.rev) = X := by
   fin_cases i <;> simp [dehomogenize, coord]
+
+/-- Dehomogenizing a form of degree `j` gives a polynomial of degree at most `j`. -/
+theorem natDegree_dehomogenize_le (i : Fin 2) {j : ℕ} {p : _root_.SymmetricAlgebra R (Fin 2 → R)}
+    (hp : p ∈ 𝒜 j) : (dehomogenize R i p).natDegree ≤ j := by
+  induction hp using Submodule.pow_induction_on_left' with
+  | algebraMap r => simp
+  | add x y _ _ _ hx hy =>
+    rw [map_add]
+    exact (natDegree_add_le _ _).trans (max_le hx hy)
+  | mem_mul x hx _ y _ hy =>
+    obtain ⟨v, rfl⟩ := hx
+    have hv : (dehomogenize R i (_root_.SymmetricAlgebra.ι R (Fin 2 → R) v)).natDegree ≤ 1 := by
+      rw [ι_eq_smul_coord_add_smul_coord R i v, map_add, map_smul, map_smul,
+        dehomogenize_coord_self, dehomogenize_coord_rev]
+      compute_degree
+    rw [map_mul]
+    exact natDegree_mul_le.trans (by omega)
 
 /-! ### The standard affine charts -/
 
@@ -237,6 +263,19 @@ theorem awayEquivPolynomial_mk (i : Fin 2) {n : ℕ} {a : _root_.SymmetricAlgebr
     (ha : a ∈ 𝒜 (n • 1)) :
     awayEquivPolynomial R i (Away.mk 𝒜 (coord_mem R i) n a ha) = dehomogenize R i a :=
   awayToPolynomial_mk R i ha
+
+/-- **Dehomogenization is injective on forms of a fixed degree**: a form of degree `j` vanishes
+once it does after setting `Xᵢ = 1`. -/
+theorem dehomogenize_eq_zero_iff (i : Fin 2) {j : ℕ} {p : _root_.SymmetricAlgebra R (Fin 2 → R)}
+    (hp : p ∈ 𝒜 j) : dehomogenize R i p = 0 ↔ p = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_zero _⟩
+  -- `p / Xᵢʲ` vanishes in the chart ring, so a power of the nonzerodivisor `Xᵢ` kills `p`
+  rw [← awayEquivPolynomial_mk R i (by simpa using hp),
+    map_eq_zero_iff _ (awayEquivPolynomial R i).injective] at h
+  have h' := congrArg HomogeneousLocalization.val h
+  rw [Away.val_mk, val_zero, Localization.mk_eq_mk', IsLocalization.mk'_eq_zero_iff] at h'
+  obtain ⟨⟨_, k, rfl⟩, hk⟩ := h'
+  exact (pow_mem (coord_mem_nonZeroDivisors R i) k).2 p (by simpa [mul_comm] using hk)
 
 /-- The inverse of the chart isomorphism sends `X` to the other coordinate over `Xᵢ`. -/
 @[simp]
