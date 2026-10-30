@@ -86,7 +86,7 @@ theorem ginzburgTwoToCompleted_surjective_of_no_arrows
   refine ⟨p, hp', ?_⟩
   have hw := adamsWeight_eq_neg_two_mul_degree_of_no_arrows Q hQ x.2.2
   rw [hxA, hxC] at hw
-  exact (congrArg Int.toNat hw).symm
+  simpa only [Int.toNat_natCast] using (congrArg Int.toNat hw).symm
 
 /-- An arrow gives a degree-zero element of the completed Ginzburg algebra outside the image of
 its ordinary algebra: the formal sum of all powers of the corresponding doubled backtrack. -/
