@@ -46,11 +46,12 @@ theorem continuous_iff_exists_lattice_le_ker (ℓ : K⸨X⸩ →ₗ[K] K) :
       exact hℓ.continuousAt.preimage_mem_nhds
         ((isOpen_discrete {0}).mem_nhds (by simp))
     obtain ⟨a, -, ha⟩ := hasBasis_nhds_zero_lattice.eventually_iff.mp hzero
-    exact ⟨a, ha⟩
+    exact ⟨a, fun f hf ↦ LinearMap.mem_ker.mpr (ha hf)⟩
   · rintro ⟨a, ha⟩
-    apply continuous_of_continuousAt_zero ℓ.toAddMonoidHom
+    apply continuous_of_continuousAt_zero ℓ
     simp only [ContinuousAt, map_zero, nhds_discrete K, tendsto_pure]
-    exact hasBasis_nhds_zero_lattice.eventually_iff.mpr ⟨a, trivial, ha⟩
+    exact hasBasis_nhds_zero_lattice.eventually_iff.mpr
+      ⟨a, trivial, fun f hf ↦ LinearMap.mem_ker.mp (ha hf)⟩
 
 end LinearMap
 
@@ -60,8 +61,8 @@ namespace LaurentSeries
 theorem continuous_residueForm (g : K⸨X⸩) : Continuous (residueForm K g) := by
   apply (LinearMap.continuous_iff_exists_lattice_le_ker _).mpr
   refine ⟨-g.order, fun f hf ↦ ?_⟩
-  exact residueForm_eq_zero_of_mem_lattice
-    (mem_lattice_iff.mpr fun _ hn ↦ coeff_eq_zero_of_lt_order hn) hf (by omega)
+  exact LinearMap.mem_ker.mpr (residueForm_eq_zero_of_mem_lattice
+    (mem_lattice_iff.mpr fun _ hn ↦ coeff_eq_zero_of_lt_order hn) hf (by omega))
 
 /-- The continuous functional `f ↦ Res(g f dX)`. -/
 noncomputable def residueDual (g : K⸨X⸩) : K⸨X⸩ →L[K] K where
