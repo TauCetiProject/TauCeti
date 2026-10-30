@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.Coset.Basic
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.Data.Finsupp.ToDFinsupp
 import Mathlib.Algebra.Module.Opposite
+import Mathlib.Algebra.Ring.AddAut
 
 /-!
 # Crossed products as right modules over subgroup crossed products
@@ -53,12 +54,8 @@ attribute [local instance] rightSubgroupModule
 theorem rightSubgroupModule_smul (a : (Algebra (c.comap H.subtype))ᵐᵒᵖ) (x : Algebra c) :
     a • x = x * comapHom c H.subtype (unop a) := (rfl)
 
-private noncomputable def coefficientTwist (q : G ⧸ H) (h : H) : D ≃+ D where
-  toFun d := c.action q.out d * c.factor q.out h
-  invFun d := (c.action q.out).symm (d * ↑(c.factor q.out h)⁻¹)
-  left_inv d := by simp [mul_assoc]
-  right_inv d := by simp [mul_assoc]
-  map_add' d e := by simp [add_mul]
+private noncomputable def coefficientTwist (q : G ⧸ H) (h : H) : D ≃+ D :=
+  (c.action q.out).toAddEquiv.trans (AddAut.mulRight (c.factor q.out h))
 
 private noncomputable def twistCoordinates : ((G ⧸ H) × H →₀ D) ≃+
     ((G ⧸ H) × H →₀ D) := by
