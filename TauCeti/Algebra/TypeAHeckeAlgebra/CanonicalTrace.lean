@@ -152,8 +152,8 @@ theorem canonicalTrace_Tw_mul_Tw (v w : W) :
     · rw [Tw_mul_T_of_not_isRightDescent cs hd, ih _ hu u _ rfl, heq]
 
 open Classical in
-/-- In the `g_i = q T_i` normalization, the reversed-word PBW pairing is diagonal with
-weight `(q²) ^ length w`. -/
+/-- For `g_w = q ^ length w • T_w`, the trace `τ(g_v g_w)` equals
+`(q²) ^ length w` if `v * w = 1`, and `0` otherwise. -/
 theorem canonicalTrace_rescaled_Tw_mul_rescaled_Tw (v w : W) :
     canonicalTrace cs (((q : R) ^ cs.length v) • Tw q cs v *
       ((q : R) ^ cs.length w) • Tw q cs w) =
