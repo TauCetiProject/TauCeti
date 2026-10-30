@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Factorization.Defs
 public import Mathlib.GroupTheory.Index
+import Mathlib.Data.Nat.Prime.Infinite
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -649,6 +650,16 @@ theorem Gamma0_prime_index : (Gamma0 p).index = p + 1 :=
 
 end BaseCase
 
+/-- The upper-triangular subgroup `Γ₀(0)` has infinite index, represented by zero in `ℕ`. -/
+@[simp]
+theorem Gamma0_zero_index : (Gamma0 0).index = 0 := by
+  by_contra h
+  obtain ⟨p, hle, hp⟩ := Nat.exists_infinite_primes (Gamma0 0).index
+  have hdvd := Subgroup.index_dvd_of_le (Gamma0_le_Gamma0_of_dvd (dvd_zero p))
+  rw [Gamma0_prime_index p hp] at hdvd
+  have := Nat.le_of_dvd (Nat.pos_of_ne_zero h) hdvd
+  omega
+
 section InductiveStep
 
 variable (p : ℕ)
@@ -1038,9 +1049,12 @@ theorem Gamma0_index_eq_prod_factorization {N : ℕ} (hN : N ≠ 0) :
 /-- **Dedekind's formula for the index of `Γ₀(N)`**:
 `[SL₂(ℤ) : Γ₀(N)] = N ∏_{p ∣ N} (1 + 1/p)`, with the denominators cleared.
 
+At level zero both sides vanish, since `Γ₀(0)` has infinite index.
 The proof is adapted from Mathlib's `Nat.totient_mul_prod_primeFactors`. -/
-theorem Gamma0_index_mul_prod_primeFactors {N : ℕ} (hN : N ≠ 0) :
+theorem Gamma0_index_mul_prod_primeFactors {N : ℕ} :
     (Gamma0 N).index * ∏ p ∈ N.primeFactors, p = N * ∏ p ∈ N.primeFactors, (p + 1) := by
+  by_cases hN : N = 0
+  · simp [hN]
   rw [Gamma0_index_eq_prod_factorization hN]
   conv_rhs => arg 1; rw [← Nat.prod_factorization_pow_eq_self hN]
   simp only [Nat.prod_primeFactors_prod_factorization, ← Finsupp.prod_mul]

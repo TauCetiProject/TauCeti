@@ -16,9 +16,9 @@ Point evaluation of the holomorphic disk function is a bounded linear functional
 Fourier coefficients are the powers of the conjugate evaluation point. Its disk function is
 `z ↦ (1 - conj w * z)⁻¹`. The exact norm of this vector gives the sharp norm of evaluation.
 
-The normalized kernels have norm one and reproduce evaluation multiplied by
-`√(1 - ‖w‖ ^ 2)`. Points are carried by the open unit disk, so the constructions require no
-choices of values at boundary or exterior points.
+The normalized kernels, Mathlib's `NormedSpace.normalize` of the Szegő kernels, have norm one
+and reproduce evaluation multiplied by `√(1 - ‖w‖ ^ 2)`. Points are carried by the open unit
+disk, so the constructions require no choices of values at boundary or exterior points.
 
 ## References
 
@@ -121,40 +121,43 @@ theorem norm_diskEvaluation :
   rw [← norm_reproducingKernel]
   exact ((InnerProductSpace.toDual ℂ HardySpace).symm.norm_map (diskEvaluation w)).symm
 
-/-- The unit-norm Szegő kernel, with positive real normalization. -/
-def normalizedReproducingKernel : HardySpace :=
-  (√(1 - ‖(w : ℂ)‖ ^ 2) : ℂ) • reproducingKernel w
+/-- The Szegő kernel is nonzero. -/
+@[simp]
+theorem reproducingKernel_ne_zero : reproducingKernel w ≠ 0 := by
+  have hw : ‖(w : ℂ)‖ < 1 := by simpa only [Metric.mem_ball, dist_zero_right] using w.property
+  have hpos : 0 < 1 - ‖(w : ℂ)‖ ^ 2 := by nlinarith [norm_nonneg (w : ℂ)]
+  rw [← norm_pos_iff, norm_reproducingKernel]
+  exact inv_pos.mpr (Real.sqrt_pos.mpr hpos)
 
-/-- The normalized kernel is the positive square root of the disk defect times the kernel. -/
-theorem normalizedReproducingKernel_def :
-    normalizedReproducingKernel w =
-      (√(1 - ‖(w : ℂ)‖ ^ 2) : ℂ) • reproducingKernel w :=
-  (rfl)
+/-- The unit-norm Szegő kernel `NormedSpace.normalize (reproducingKernel w)` is the kernel
+scaled by the positive square root of the disk defect. -/
+theorem normalize_reproducingKernel :
+    NormedSpace.normalize (reproducingKernel w) =
+      (√(1 - ‖(w : ℂ)‖ ^ 2) : ℂ) • reproducingKernel w := by
+  rw [NormedSpace.normalize, norm_reproducingKernel, inv_inv]
+  exact (Complex.coe_smul ..).symm
 
 /-- Pairing with a normalized kernel is the corresponding scaled evaluation. -/
 @[simp↓]
-theorem inner_normalizedReproducingKernel (x : HardySpace) :
-    ⟪normalizedReproducingKernel w, x⟫_ℂ =
+theorem inner_normalize_reproducingKernel (x : HardySpace) :
+    ⟪NormedSpace.normalize (reproducingKernel w), x⟫_ℂ =
       (√(1 - ‖(w : ℂ)‖ ^ 2) : ℂ) * x.diskFunction w := by
-  rw [normalizedReproducingKernel_def,
+  rw [normalize_reproducingKernel,
     inner_smul_left (𝕜 := ℂ) (E := HardySpace), inner_reproducingKernel]
   simp only [Complex.conj_ofReal]
 
 /-- Every normalized Szegő kernel has norm one. -/
 @[simp↓]
-theorem norm_normalizedReproducingKernel : ‖normalizedReproducingKernel w‖ = 1 := by
-  have hw : ‖(w : ℂ)‖ < 1 := by simpa only [Metric.mem_ball, dist_zero_right] using w.property
-  have hpos : 0 < 1 - ‖(w : ℂ)‖ ^ 2 := by nlinarith [norm_nonneg (w : ℂ)]
-  rw [normalizedReproducingKernel_def, norm_smul, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_nonneg (Real.sqrt_nonneg _), norm_reproducingKernel,
-    mul_inv_cancel₀ (ne_of_gt (Real.sqrt_pos.mpr hpos))]
+theorem norm_normalize_reproducingKernel :
+    ‖NormedSpace.normalize (reproducingKernel w)‖ = 1 :=
+  NormedSpace.norm_normalize_eq_one_iff.mpr (reproducingKernel_ne_zero w)
 
 /-- The normalized Szegő kernel has the normalized geometric-series disk function. -/
 @[simp↓]
-theorem diskFunction_normalizedReproducingKernel {z : ℂ} (hz : ‖z‖ < 1) :
-    (normalizedReproducingKernel w).diskFunction z =
+theorem diskFunction_normalize_reproducingKernel {z : ℂ} (hz : ‖z‖ < 1) :
+    (NormedSpace.normalize (reproducingKernel w)).diskFunction z =
       (√(1 - ‖(w : ℂ)‖ ^ 2) : ℂ) * (1 - starRingEnd ℂ (w : ℂ) * z)⁻¹ := by
-  rw [normalizedReproducingKernel_def, diskFunction_smul _ _ hz,
+  rw [normalize_reproducingKernel, diskFunction_smul _ _ hz,
     diskFunction_reproducingKernel w hz]
 
 end TauCeti.HardySpace

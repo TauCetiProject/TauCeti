@@ -191,9 +191,16 @@ theorem dualFunctor_obj (H : (FiniteLocallyFreeBicommutativeHopfAlgCat.{u} k)ᵒ
 @[simp]
 theorem dualFunctor_map {H K : (FiniteLocallyFreeBicommutativeHopfAlgCat.{u} k)ᵒᵖ}
     (f : H ⟶ K) :
-    (dualFunctor (k := k)).map f =
-      eqToHom (dualFunctor_obj H) ≫ dualMap f.unop ≫ eqToHom (dualFunctor_obj K).symm :=
+    (dualFunctor (k := k)).map f = dualMap f.unop :=
   (rfl)
+
+/-- The finite-dual functor acts on underlying bialgebra morphisms by precomposition. -/
+@[simp↓]
+theorem toBialgHom_dualFunctor_map
+    {H K : (FiniteLocallyFreeBicommutativeHopfAlgCat.{u} k)ᵒᵖ} (f : H ⟶ K) :
+    toBialgHom ((dualFunctor (k := k)).map f) =
+      ConvolutionDual.map k (toBialgHom f.unop) :=
+  rfl
 
 /-- Evaluation identifies a finite locally free bicommutative Hopf algebra with its double finite
 dual. -/

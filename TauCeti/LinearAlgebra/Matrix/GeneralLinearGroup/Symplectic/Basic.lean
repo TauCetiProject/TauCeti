@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.SymplecticGroup
 -- This module supplies general-linear-group reindexing and re-exports the `GL` notation and its
 -- matrix coercion.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 
 /-!
@@ -447,6 +448,13 @@ theorem coe_map {S : Type*} [CommRing S] (f : R →+* S) (M : GLSymplecticFin m 
     ((GLSymplecticFin.map m R f M : GLSymplecticFin m S) : GL (Fin (m + m)) S) =
       Matrix.GeneralLinearGroup.map f (M : GL (Fin (m + m)) R) :=
   (rfl)
+
+variable {m R} in
+/-- Entrywise application of an injective ring morphism is injective on `Fin`-indexed symplectic
+matrices. -/
+theorem map_injective {S : Type*} [CommRing S] {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (GLSymplecticFin.map m R f) := fun _ _ h =>
+  Subtype.ext (Matrix.GeneralLinearGroup.map_injective hf (congrArg Subtype.val h))
 
 end GLSymplecticFin
 
