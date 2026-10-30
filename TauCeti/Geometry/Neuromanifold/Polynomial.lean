@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MvPolynomial.Sum
-public import Mathlib.RingTheory.MvPolynomial.Basic
+public import TauCeti.Data.Finsupp.Weight
+public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
+public import Mathlib.Algebra.MvPolynomial.Funext
 
 /-!
 # Polynomial realization maps and input coefficients
@@ -23,12 +25,21 @@ independent of the parameters. `polynomialCoefficientMap P` therefore takes valu
 a product of bounded-degree polynomial submodules, ready for finite coefficient coordinates.
 Zero outputs and constant polynomials are included; the degree bound need not be minimal.
 
+A tuple of bounded-degree polynomials has finite coordinates: `boundedCoefficientEquiv`
+identifies it with functions on the pairs of an output and an exponent of degree at most `d`,
+by taking monomial coefficients. Its evaluation `boundedEvaluation` is a linear map to
+vector-valued functions on inputs, injective over an infinite integral domain, and
+`boundedEvaluation_comp_polynomialCoefficientMap` recovers the realization map from the
+coefficient presentation. Composing with the coordinates gives
+`polynomialCoefficientCoordinates P`, whose coordinates are polynomial in the parameters.
+
 The jointly polynomial setting and the coefficient/function viewpoint follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
 [arXiv:2501.18915v2](https://arxiv.org/abs/2501.18915v2), §3.1.
 The extraction uses Mathlib's `MvPolynomial.sumAlgEquiv` and coefficient mapping;
-the bounded spaces are Mathlib's `MvPolynomial.restrictTotalDegree`.
+the bounded spaces are Mathlib's `MvPolynomial.restrictTotalDegree`, with coordinates given by
+its monomial basis, and faithfulness of evaluation is Mathlib's `MvPolynomial.funext`.
 -/
 
 public section
@@ -91,6 +102,8 @@ theorem polynomialRealization_eq_sum (P : J → MvPolynomial (W ⊕ X) K)
         eval w ((inputPolynomial P j).coeff a) * a.prod (fun i n => x i ^ n) := by
   rw [← eval₂_inputPolynomial, eval₂_eq]
   rfl
+
+section InputDegree
 
 variable [Fintype J]
 
@@ -160,5 +173,81 @@ theorem coeff_polynomialCoefficientMap (P : J → MvPolynomial (W ⊕ X) K)
     (polynomialCoefficientMap P w j : MvPolynomial X K).coeff a =
       eval w ((inputPolynomial P j).coeff a) := by
   rw [polynomialCoefficientMap_coe, coeff_map]
+
+end InputDegree
+
+section Coordinates
+
+variable (K X J) in
+/-- Monomial coefficients identify tuples of polynomials of total degree at most `d` with
+functions on the pairs of an output and an exponent of degree at most `d`. For finitely many
+inputs and outputs this index type is finite, so these are finite coordinates. -/
+def boundedCoefficientEquiv [Finite X] (d : ℕ) :
+    (J → restrictTotalDegree X K d) ≃ₗ[K] (J × {s : X →₀ ℕ // s.degree ≤ d} → K) :=
+  (LinearEquiv.piCongrRight fun _ => (basisRestrictTotalDegree X K d).equivFun).trans
+    (LinearEquiv.curry K K J {s : X →₀ ℕ // s.degree ≤ d}).symm
+
+/-- A finite coefficient coordinate is the corresponding monomial coefficient of an output. -/
+@[simp] theorem boundedCoefficientEquiv_apply [Finite X] {d : ℕ}
+    (v : J → restrictTotalDegree X K d) (i : J × {s : X →₀ ℕ // s.degree ≤ d}) :
+    boundedCoefficientEquiv K X J d v i = (v i.1 : MvPolynomial X K).coeff i.2 := by
+  simp [boundedCoefficientEquiv, Function.uncurry]
+
+/-- The tuple with prescribed finite coefficient coordinates has those monomial coefficients. -/
+@[simp] theorem coeff_boundedCoefficientEquiv_symm_apply [Finite X] {d : ℕ}
+    (a : J × {s : X →₀ ℕ // s.degree ≤ d} → K) (j : J) (s : {s : X →₀ ℕ // s.degree ≤ d}) :
+    (((boundedCoefficientEquiv K X J d).symm a j : restrictTotalDegree X K d) :
+      MvPolynomial X K).coeff s = a (j, s) := by
+  have h := boundedCoefficientEquiv_apply ((boundedCoefficientEquiv K X J d).symm a) (j, s)
+  rwa [LinearEquiv.apply_symm_apply, eq_comm] at h
+
+variable (K X J) in
+/-- Evaluation of a tuple of bounded-degree polynomials as a vector-valued function on inputs.
+It is linear in the tuple. -/
+def boundedEvaluation (d : ℕ) :
+    (J → restrictTotalDegree X K d) →ₗ[K] (X → K) → J → K where
+  toFun v x j := eval x (v j : MvPolynomial X K)
+  map_add' v w := by
+    funext x j
+    simp
+  map_smul' a v := by
+    funext x j
+    simp
+
+/-- Coordinate evaluation of a tuple of bounded-degree polynomials. -/
+@[simp] theorem boundedEvaluation_apply {d : ℕ} (v : J → restrictTotalDegree X K d)
+    (x : X → K) (j : J) :
+    boundedEvaluation K X J d v x j = eval x (v j : MvPolynomial X K) := (rfl)
+
+/-- Evaluating the coefficient presentation recovers the jointly polynomial realization map. -/
+theorem boundedEvaluation_comp_polynomialCoefficientMap [Fintype J]
+    (P : J → MvPolynomial (W ⊕ X) K) :
+    boundedEvaluation K X J (polynomialInputDegree P) ∘ polynomialCoefficientMap P =
+      polynomialRealization P := by
+  funext w x j
+  simp [eval_map]
+
+/-- Over an infinite integral domain, bounded-degree polynomial tuples are determined by the
+functions they define: the evaluation map is faithful. -/
+theorem boundedEvaluation_injective {K : Type*} [CommRing K] [IsDomain K] [Infinite K]
+    (d : ℕ) : Function.Injective (boundedEvaluation K X J d) := fun _ _ h =>
+  funext fun j => Subtype.ext <| MvPolynomial.funext fun x => congrFun (congrFun h x) j
+
+variable [Fintype J] [Finite X]
+
+/-- The polynomial coefficient presentation in finite coordinates, indexed by an output and
+an input exponent of degree at most `polynomialInputDegree P`. -/
+def polynomialCoefficientCoordinates (P : J → MvPolynomial (W ⊕ X) K) (w : W → K) :
+    J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P} → K :=
+  boundedCoefficientEquiv K X J _ (polynomialCoefficientMap P w)
+
+/-- Each finite coefficient coordinate is the evaluation at the parameters of a fixed
+polynomial in the parameters. -/
+@[simp] theorem polynomialCoefficientCoordinates_apply (P : J → MvPolynomial (W ⊕ X) K)
+    (w : W → K) (i : J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P}) :
+    polynomialCoefficientCoordinates P w i = eval w ((inputPolynomial P i.1).coeff i.2) := by
+  simp [polynomialCoefficientCoordinates, coeff_map]
+
+end Coordinates
 
 end TauCeti.Neuromanifold
