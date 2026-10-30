@@ -24,9 +24,9 @@ mapping torus `Y_φ = (ℝ × M) / ((t, x) ∼ (t + 1, φ⁻¹ x))`, carrying th
 it pulls `Ω` back to the product form `ds ∧ dt + σ` of `(ℝ × ℝ) × M`.
 
 On `(ℝ × ℝ) × M`, a jointly smooth family `K_((s,t),x)` of almost complex structures on the tangent
-spaces of `M` gives the block structure `J̃(a ∂_s + b ∂_t + v) = -b ∂_s + a ∂_t + K v`
+spaces of `M` gives the block structure `J'(a ∂_s + b ∂_t + v) = -b ∂_s + a ∂_t + K v`
 (`TauCeti.SmoothAlmostComplexStructure.prodFamily`). This file descends it along `q`. The descent
-needs two identities, which say that `J̃` is invariant under the deck transformations generating
+needs two identities, which say that `J'` is invariant under the deck transformations generating
 the fibres of `q`:
 
 * periodicity in `s`, `K_((s + 1, t), x) = K_((s, t), x)`;
@@ -35,7 +35,7 @@ the fibres of `q`:
 No `φ`-invariant almost complex structure on `M` is needed: the vertical family may vary with
 `t` and only its values at times one apart are related. The descended structure
 `TauCeti.SmoothMappingTorus.suspensionAlmostComplexStructure` acts on `a ∂_s + b ∂_t + v` at
-`([s], [t, x])` as `J̃` does, sending `∂_s` to the suspension vector field `T = ∂_t` and `T` to
+`([s], [t, x])` as `J'` does, sending `∂_s` to the suspension vector field `T = ∂_t` and `T` to
 `-∂_s`. Its quadratic form against `Ω` is `Ω(w, J w) = a² + b² + σ(v, K v)` for
 `w = a ∂_s + b ∂_t + v`, and when each `K_((s,t),x)` is compatible with `σ`, the descended
 structure is compatible with `Ω`.
