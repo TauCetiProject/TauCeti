@@ -268,6 +268,19 @@ theorem cliffordBalancedEvaluationEquiv_tmul
       f.hom.hom.hom x := by
   rw [cliffordBalancedEvaluationEquiv_apply, cliffordBalancedEvaluation_tmul]
 
+/-- The inverse reconstruction is the inverse of the underlying isotypic evaluation. -/
+private theorem cliffordBalancedEvaluationEquiv_symm_apply_eq
+    [IsSemisimpleModule k[N] (Representation.asModule (resW).ρ)]
+    (h : IsIsotypicOfType k[N] (Representation.asModule (resW).ρ)
+      (Representation.asModule A.ρ)) (y : W) :
+    (cliffordBalancedEvaluationEquiv A W h).symm y =
+      (A.isotypicBalancedEvaluationEquiv resW h).symm y := by
+  apply (cliffordBalancedEvaluationEquiv A W h).injective
+  simp only [Representation.Equiv.toLinearEquiv_apply, Representation.Equiv.coe_toIntertwiningMap]
+  rw [Representation.Equiv.apply_symm_apply, cliffordBalancedEvaluationEquiv_apply]
+  exact ((A.isotypicBalancedEvaluationEquiv_apply resW h _).symm.trans
+    (LinearEquiv.apply_symm_apply _ y)).symm
+
 /-- The inverse reconstruction takes a multiplicity's value back to its pure tensor. -/
 @[simp]
 theorem cliffordBalancedEvaluationEquiv_symm_apply_map
@@ -275,9 +288,9 @@ theorem cliffordBalancedEvaluationEquiv_symm_apply_map
     (h : IsIsotypicOfType k[N] (Representation.asModule (resW).ρ)
       (Representation.asModule A.ρ)) (f : M) (x : V) :
     (cliffordBalancedEvaluationEquiv A W h).symm (f.hom.hom.hom x) =
-      BalancedTensorProduct.tmul k (End A) (N := V) f x := by
-  rw [← cliffordBalancedEvaluationEquiv_tmul A W h f x,
-    Representation.Equiv.symm_apply_apply]
+      BalancedTensorProduct.tmul k (End A) (N := V) f x :=
+  (cliffordBalancedEvaluationEquiv_symm_apply_eq A W h _).trans
+    (A.isotypicBalancedEvaluationEquiv_symm_apply_map resW h f x)
 
 /-- The inverse reconstruction is natural under inertia intertwiners. -/
 theorem cliffordBalancedEvaluationEquiv_symm_naturality {W' : FDRep k (inertia A)}
@@ -288,12 +301,10 @@ theorem cliffordBalancedEvaluationEquiv_symm_naturality {W' : FDRep k (inertia A
     (h' : IsIsotypicOfType k[N] (Representation.asModule (FDRep.ρ ((res).obj W')))
       (Representation.asModule A.ρ)) (g : W ⟶ W') (y : W) :
     cliffordTensorMap A W g ((cliffordBalancedEvaluationEquiv A W h).symm y) =
-      (cliffordBalancedEvaluationEquiv A W' h').symm (g.hom.hom.hom y) := by
-  apply (cliffordBalancedEvaluationEquiv A W' h').injective
-  simp only [Representation.Equiv.toLinearEquiv_apply, Representation.Equiv.coe_toIntertwiningMap]
-  rw [cliffordBalancedEvaluationEquiv_apply, cliffordBalancedEvaluation_naturality,
-    ← cliffordBalancedEvaluationEquiv_apply A W h,
-    Representation.Equiv.apply_symm_apply, Representation.Equiv.apply_symm_apply]
+      (cliffordBalancedEvaluationEquiv A W' h').symm (g.hom.hom.hom y) :=
+  (congrArg (cliffordTensorMap A W g) (cliffordBalancedEvaluationEquiv_symm_apply_eq A W h y)).trans
+    ((A.isotypicBalancedEvaluationEquiv_symm_naturality resW ((res).obj W') h h' ((res).map g)
+      y).trans (cliffordBalancedEvaluationEquiv_symm_apply_eq A W' h' _).symm)
 
 end Field
 
