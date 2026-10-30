@@ -197,7 +197,8 @@ theorem exists_concordant_isConnectedSumPosition_of_mfderiv_eq
     (h₁ : mfderiv (𝓡 1) (𝓡 n) K z₀ = mfderiv (𝓡 1) (𝓡 n) (greatCircle (n := n) ι) z₀) :
     ∃ K', SmoothEmbedding.Concordant K K' ∧ IsConnectedSumPosition ι K' := by
   obtain ⟨K₁, F, hK₁, -⟩ :=
-    SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq K _ h₀ h₁ univ_mem
+    SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq K
+      (greatCircle (n := n) ι).contMDiff h₀ h₁ univ_mem
   obtain ⟨K', hK', hpos⟩ := exists_concordant_isConnectedSumPosition hz₀ hK₁
   exact ⟨K', (SmoothEmbedding.Concordant.of_smoothIsotopic (smoothIsotopic_def.2 ⟨F⟩) (by simp)
     le_rfl).trans hK', hpos⟩

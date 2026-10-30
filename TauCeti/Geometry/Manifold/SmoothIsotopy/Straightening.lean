@@ -8,24 +8,22 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.Analysis.Normed.Module.HahnBanach
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
+public import TauCeti.Topology.Circle.Arc
 public import Mathlib.Geometry.Manifold.Algebra.SMul
-public import Mathlib.Geometry.Manifold.Instances.Icc
 
 /-!
 # Straightening a circle embedding near a point
 
-Two smooth embeddings `K L : S¹ → M` of the circle into a boundaryless manifold `M` modelled on a
-finite-dimensional real normed space, which agree to first order at a point `z₀` (same value and
-same derivative there), can be made to agree on a neighbourhood of `z₀`: `K` is smoothly isotopic
-to an embedding which coincides with `L` near `z₀`, by an isotopy which is stationary off any
-prescribed neighbourhood of `z₀`
+A smooth embedding `K : S¹ → M` of the circle into a boundaryless manifold `M` modelled on a
+finite-dimensional real normed space, and a smooth map `L : S¹ → M`, which agree to first order at a
+point `z₀` (same value and same derivative there), can be made to agree on a neighbourhood of
+`z₀`: `K` is smoothly isotopic to an embedding which coincides with `L` near `z₀`, by an isotopy
+which is stationary off any prescribed neighbourhood of `z₀`
 (`TauCeti.SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq`).
 
 For knots this is how a knot is made standard near a point. The connected sum of knots in a sphere
@@ -49,7 +47,7 @@ embeddings.
 
 * `TauCeti.SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq`: a circle embedding
   is smoothly isotopic, by an isotopy supported near `z₀`, to one agreeing near `z₀` with any
-  embedding tangent to it at `z₀`.
+  smooth circle tangent to it at `z₀`.
 -/
 
 public section
@@ -264,44 +262,6 @@ private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
 
 end Splice
 
-/-! ### Arcs of the circle -/
-
-section Arc
-
-open Complex (arg)
-
-attribute [local instance] finrank_real_complex_fact'
-
-/-- The argument is smooth on the circle away from `-1`. -/
-private theorem contMDiffAt_arg {z : Circle} (hz : |arg z| < Real.pi) :
-    ContMDiffAt (𝓡 1) 𝓘(ℝ, ℝ) ∞ (fun w : Circle => arg w) z := by
-  have hslit : (z : ℂ) ∈ Complex.slitPlane :=
-    Complex.mem_slitPlane_iff_arg.2 ⟨fun h => by simp [h, abs_of_pos Real.pi_pos] at hz,
-      Circle.coe_ne_zero z⟩
-  have h : ContDiffAt ℝ ∞ (fun x : ℂ => (Complex.log x).im) z :=
-    Complex.imCLM.contDiff.contDiffAt.comp _ ((Complex.contDiffAt_log hslit).restrict_scalars ℝ)
-  have hc : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) ∞ (fun w : Circle => (w : ℂ)) := contMDiff_coe_sphere
-  exact (h.contMDiffAt.comp z hc.contMDiffAt).congr_of_eventuallyEq
-    (Eventually.of_forall fun w => (Complex.log_im w).symm)
-
-/-- A point of the closed arc `exp [-a, a]` has argument less than any `b ∈ (a, π]`. -/
-private theorem abs_arg_lt_of_mem_image {a b : ℝ} (hab : a < b) (hb : b ≤ Real.pi) {z : Circle}
-    (hz : z ∈ Circle.exp '' Icc (-a) a) : |arg z| < b := by
-  obtain ⟨t, ht, rfl⟩ := hz
-  have hta : |t| ≤ a := abs_le.2 ht
-  rw [Circle.arg_exp (by linarith [neg_abs_le t]) (by linarith [le_abs_self t])]
-  exact hta.trans_lt hab
-
-/-- A point off the closed arc `exp [-a, a]` has argument at least `a` in absolute value. -/
-private theorem le_abs_arg_of_notMem_image {a : ℝ} {z : Circle}
-    (hz : z ∉ Circle.exp '' Icc (-a) a) : a ≤ |arg z| :=
-  le_of_not_gt fun h => hz ⟨arg z, abs_le.1 h.le, Circle.exp_arg z⟩
-
-private theorem isOpen_compl_image_exp_Icc (a : ℝ) : IsOpen (Circle.exp '' Icc (-a) a)ᶜ :=
-  (isCompact_Icc.image Circle.exp.continuous).isClosed.isOpen_compl
-
-end Arc
-
 /-! ### Splicing a circle embedding in a chart -/
 
 section Motion
@@ -362,7 +322,7 @@ private theorem contMDiff_spliceMap {G : ℝ → ℝ → E}
     have hin : ContMDiffAt ((𝓡∂ 1).prod (𝓡 1)) 𝓘(ℝ, ℝ × ℝ) ∞
         (fun q : unitInterval × Circle => ((q.1 : ℝ), arg q.2)) q :=
       (contMDiff_subtypeVal_Icc.comp contMDiff_fst).contMDiffAt.prodMk_space
-        ((contMDiffAt_arg ((hq.trans_le hρr).trans_le hrπ)).comp q contMDiffAt_snd)
+        ((contMDiffAt_circle_arg ((hq.trans_le hρr).trans_le hrπ)).comp q contMDiffAt_snd)
     have hlt := hq.trans_le hρr
     have hGq : ContDiffAt ℝ ∞ (fun p : ℝ × ℝ => G p.1 p.2) ((q.1 : ℝ), arg q.2) :=
       hG.contDiffAt (prod_mem_nhds univ_mem
@@ -371,12 +331,13 @@ private theorem contMDiff_spliceMap {G : ℝ → ℝ → E}
       (hGq.contMDiffAt.comp q hin)
   · -- Near `q` the motion is `K`.
     have hqO : q.2 ∈ (Circle.exp '' Icc (-a) a)ᶜ := fun h =>
-      hq (abs_arg_lt_of_mem_image haρ (hρr.trans hrπ) h)
+      hq ((mem_circleExp_image_Icc_neg_iff.1 h).trans_lt haρ)
     have hev : (fun q : unitInterval × Circle => spliceMap K φ ρ (G q.1) q.2) =ᶠ[𝓝 q]
         fun q => K q.2 := by
       filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
-        ((isOpen_compl_image_exp_Icc a).mem_nhds hqO)] with q' hq'
-      exact spliceMap_of_le_abs (hGK _ q'.1.2) hKφ hρr (le_abs_arg_of_notMem_image hq')
+        ((isClosed_circleExp_image_Icc (-a) a).isOpen_compl.mem_nhds hqO)] with q' hq'
+      exact spliceMap_of_le_abs (hGK _ q'.1.2) hKφ hρr
+        (not_le.1 (mt mem_circleExp_image_Icc_neg_iff.2 hq')).le
     exact (K.contMDiff.comp contMDiff_snd).contMDiffAt.congr_of_eventuallyEq hev
 
 /-- **The spliced map is a smooth embedding**, provided the curve `g` is regular and injective on
@@ -432,7 +393,7 @@ private theorem isSmoothEmbedding_spliceMap [T2Space M]
       hgC.contDiffAt (isOpen_Ioo.mem_nhds ⟨neg_lt_of_abs_lt hlt, lt_of_abs_lt hlt⟩)
     have hh : MDifferentiableAt (𝓡 1) 𝓘(ℝ, E) h (Circle.exp (arg z)) := by
       rw [Circle.exp_arg]
-      exact (hgz.contMDiffAt.comp z (contMDiffAt_arg (hlt.trans_le hrπ))).mdifferentiableAt
+      exact (hgz.contMDiffAt.comp z (contMDiffAt_circle_arg (hlt.trans_le hrπ))).mdifferentiableAt
         (by simp)
     have hlift : h ∘ Circle.exp =ᶠ[𝓝 (arg z)] g := by
       have hπ : |arg z| < Real.pi := hlt.trans_le hrπ
@@ -450,10 +411,10 @@ private theorem isSmoothEmbedding_spliceMap [T2Space M]
       (mem_univ z) (by simp)).2 (isDiffImmersionAt_iff.1 himm)
   · -- Off the arc the map is `K`.
     have hzO : z ∈ (Circle.exp '' Icc (-a) a)ᶜ := fun h =>
-      hz (abs_arg_lt_of_mem_image haρ hρπ h)
+      hz ((mem_circleExp_image_Icc_neg_iff.1 h).trans_lt haρ)
     have hev : spliceMap K φ ρ g =ᶠ[𝓝 z] K := by
-      filter_upwards [(isOpen_compl_image_exp_Icc a).mem_nhds hzO] with w hw
-      exact spliceMap_of_le_abs hgK hKφ hρr (le_abs_arg_of_notMem_image hw)
+      filter_upwards [(isClosed_circleExp_image_Icc (-a) a).isOpen_compl.mem_nhds hzO] with w hw
+      exact spliceMap_of_le_abs hgK hKφ hρr (not_le.1 (mt mem_circleExp_image_Icc_neg_iff.2 hw)).le
     exact (K.isImmersion.isImmersionAt z).congr_of_eventuallyEq hev.symm
 
 end Motion
@@ -469,33 +430,18 @@ attribute [local instance] finrank_real_complex_fact'
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- Read in a chart `φ` at `f 1`, the velocity at `0` of the lift `t ↦ φ (f (exp (t i)))` is the
-derivative of `f` at `1`, followed by that of `φ`, applied to the velocity of `Circle.exp`. -/
-private theorem toSpanSingleton_deriv_chart_comp {f : Circle → M}
-    (hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, E) f 1) {φ : OpenPartialHomeomorph M E}
-    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) (hf1 : f 1 ∈ φ.source) :
-    ContinuousLinearMap.toSpanSingleton ℝ (deriv (fun t => φ (f (Circle.exp t))) 0) =
-      (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ (f 1)).comp
-        ((mfderiv (𝓡 1) 𝓘(ℝ, E) f 1).comp (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp 0)) := by
-  have hφd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ (f 1) :=
-    (contMDiffAt_of_mem_maximalAtlas hφ hf1).mdifferentiableAt (by simp)
-  have h := toSpanSingleton_deriv_comp_circleExp (f := φ ∘ f) (t := 0)
-    (by rw [Circle.exp_zero]; exact hφd.comp 1 hf)
-  rw [Circle.exp_zero, mfderiv_comp 1 hφd hf] at h
-  exact h
-
 variable [T2Space M]
 
 /-- Straightening at the base point `1` of the circle; the general statement is
 `TauCeti.SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq`. -/
 private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
-    (K L : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M) (h₀ : K 1 = L 1)
+    (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M) {L : Circle → M}
+    (hL : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ L) (h₀ : K 1 = L 1)
     (h₁ : mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 = mfderiv (𝓡 1) 𝓘(ℝ, E) L 1) {U : Set Circle}
     (hU : U ∈ 𝓝 1) :
     ∃ (K' : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M)
       (F : SmoothIsotopy K.toContMDiffMap K'.toContMDiffMap),
-      ⇑K' =ᶠ[𝓝 1] ⇑L ∧ ∀ t z, z ∉ U → F (t, z) = K z := by
+      ⇑K' =ᶠ[𝓝 1] L ∧ ∀ t z, z ∉ U → F (t, z) = K z := by
   set p := K 1 with hp
   set φ := chartAt E p
   have hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M := IsManifold.chart_mem_maximalAtlas p
@@ -504,14 +450,14 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
   obtain ⟨r, hr, hrπ, hrU, hKφ, hLφ⟩ : ∃ r, 0 < r ∧ r ≤ Real.pi ∧ Circle.centeredArc r ⊆ U ∧
       (∀ t, |t| < r → K (Circle.exp t) ∈ φ.source) ∧
       (∀ t, |t| < r → L (Circle.exp t) ∈ φ.source) := by
-    have hpre (f : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M) (hf : f 1 ∈ φ.source) :
+    have hpre {f : Circle → M} (hf : Continuous f) (hf1 : f 1 ∈ φ.source) :
         (fun t => f (Circle.exp t)) ⁻¹' φ.source ∈ 𝓝 0 :=
-      (f.contMDiff.continuous.comp Circle.exp.continuous).continuousAt.preimage_mem_nhds
+      (hf.comp Circle.exp.continuous).continuousAt.preimage_mem_nhds
         (φ.open_source.mem_nhds (by rwa [comp_apply, Circle.exp_zero]))
     have hU' : Circle.exp ⁻¹' U ∈ 𝓝 0 :=
       Circle.exp.continuous.continuousAt.preimage_mem_nhds (by rwa [Circle.exp_zero])
     obtain ⟨r', hr', hball⟩ := Metric.mem_nhds_iff.1
-      (inter_mem hU' (inter_mem (hpre K hpφ) (hpre L (h₀ ▸ hpφ))))
+      (inter_mem hU' (inter_mem (hpre K.contMDiff.continuous hpφ) (hpre hL.continuous (h₀ ▸ hpφ))))
     have hmem {t : ℝ} (ht : |t| < min r' Real.pi) : t ∈ Metric.ball 0 r' := by
       simpa [Real.dist_eq] using ht.trans_le (min_le_left _ _)
     refine ⟨min r' Real.pi, lt_min hr' Real.pi_pos, min_le_right _ _, ?_,
@@ -521,18 +467,20 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
   -- Step 2: `K` and `L` read in the chart along the circle have the same nonzero velocity at `0`.
   set k : ℝ → E := fun t => φ (K (Circle.exp t))
   set l : ℝ → E := fun t => φ (L (Circle.exp t))
-  have hC (f : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M)
-      (hf : ∀ t, |t| < r → f (Circle.exp t) ∈ φ.source) :
+  have hC {f : Circle → M} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ f)
+      (hfφ : ∀ t, |t| < r → f (Circle.exp t) ∈ φ.source) :
       ContDiffOn ℝ ∞ (fun t => φ (f (Circle.exp t))) (Ioo (-r) r) :=
     contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_chart (x := p)).comp
-      (f.contMDiff.comp contMDiff_circleExp).contMDiffOn fun t ht => hf t (abs_lt.2 ht))
-  have hkC := hC K hKφ
-  have hlC := hC L hLφ
+      (hf.comp contMDiff_circleExp).contMDiffOn fun t ht => hfφ t (abs_lt.2 ht))
+  have hkC := hC K.contMDiff hKφ
+  have hlC := hC hL hLφ
   have hk0 : k 0 = φ p := by simp only [k, Circle.exp_zero, hp]
   have hl0 : l 0 = φ p := by simp only [l, Circle.exp_zero, ← h₀]
-  have hvK := toSpanSingleton_deriv_chart_comp (K.contMDiff.mdifferentiableAt (by simp)) hφ hpφ
-  have hvL := toSpanSingleton_deriv_chart_comp (L.contMDiff.mdifferentiableAt (by simp)) hφ
-    (h₀ ▸ hpφ)
+  have hvK := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
+    (K.contMDiff.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero])
+  have hvL := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
+    (hL.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero, ← h₀])
+  rw [Circle.exp_zero] at hvK hvL
   rw [← h₁, ← h₀] at hvL
   have hd : deriv k 0 = deriv l 0 := by
     simpa using congrArg (fun T => T 1) (hvK.trans hvL.symm)
@@ -630,32 +578,34 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
     have hzr : r ≤ |arg z| := not_lt.1 fun h => hz (hrU ((Circle.mem_centeredArc hrπ).2 h))
     exact spliceMap_of_le_abs (fun t' ht' _ => hGK t t' ht') hKφ hρr.le (by linarith)
 
-/-- **Straightening a circle embedding near a point.** Let `K` and `L` be smooth embeddings of the
-circle into a boundaryless manifold `M` which agree to first order at `z₀`: `K z₀ = L z₀` and
-`K` and `L` have the same derivative there. Then `K` is smoothly isotopic to an embedding `K'`
-which agrees with `L` on a neighbourhood of `z₀`, by an isotopy which is stationary off any given
+/-- **Straightening a circle embedding near a point.** Let `K` be a smooth embedding of the circle
+into a boundaryless manifold `M`, and `L` a smooth map of the circle into `M`, which agree to first
+order at `z₀`: `K z₀ = L z₀` and `K` and `L` have the same derivative there. Then `K` is smoothly
+isotopic to an embedding `K'` which agrees with `L` on a neighbourhood of `z₀`, by an isotopy which
+is stationary off any given
 neighbourhood `U` of `z₀`. -/
 theorem SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq
-    (K L : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M) {z₀ : Circle} (h₀ : K z₀ = L z₀)
+    (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M) {L : Circle → M}
+    (hL : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ L) {z₀ : Circle} (h₀ : K z₀ = L z₀)
     (h₁ : mfderiv (𝓡 1) 𝓘(ℝ, E) K z₀ = mfderiv (𝓡 1) 𝓘(ℝ, E) L z₀) {U : Set Circle}
     (hU : U ∈ 𝓝 z₀) :
     ∃ (K' : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M)
       (F : SmoothIsotopy K.toContMDiffMap K'.toContMDiffMap),
-      ⇑K' =ᶠ[𝓝 z₀] ⇑L ∧ ∀ t z, z ∉ U → F (t, z) = K z := by
+      ⇑K' =ᶠ[𝓝 z₀] L ∧ ∀ t z, z ∉ U → F (t, z) = K z := by
   -- Rotate the base point `z₀` to `1` and straighten there.
   set R : Circle ≃ₘ^∞⟮𝓡 1, 𝓡 1⟯ Circle := _root_.Diffeomorph.smul (𝓡 1) (𝓡 1) ∞ z₀
   have hR1 : R 1 = z₀ := mul_one z₀
-  have hmf (f : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M) :
-      mfderiv (𝓡 1) 𝓘(ℝ, E) (f.compDiffeomorph R) 1 =
+  have hmf {f : Circle → M} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ f) :
+      mfderiv (𝓡 1) 𝓘(ℝ, E) (f ∘ R) 1 =
         (mfderiv (𝓡 1) 𝓘(ℝ, E) f z₀).comp (mfderiv (𝓡 1) (𝓡 1) R 1) := by
-    rw [coe_compDiffeomorph, mfderiv_comp 1 (f.contMDiff.mdifferentiableAt (by simp))
+    rw [mfderiv_comp 1 (hf.mdifferentiableAt (by simp))
       (R.contMDiff.mdifferentiableAt (by simp)), hR1]
   obtain ⟨K₁, F₁, hK₁, hF₁⟩ := exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
-    (K.compDiffeomorph R) (L.compDiffeomorph R)
-    (by rw [compDiffeomorph_apply, compDiffeomorph_apply, hR1, h₀])
+    (K.compDiffeomorph R) (hL.comp R.contMDiff)
+    (by rw [compDiffeomorph_apply, comp_apply, hR1, h₀])
     -- After rewriting, the two sides differ only in the base points `K z₀` and `L z₀` of the
     -- tangent spaces in their types, both of which are `E`.
-    (by rw [hmf, hmf, h₁]; rfl)
+    (by rw [coe_compDiffeomorph, hmf K.contMDiff, hmf hL, h₁]; rfl)
     (U := R ⁻¹' U) (R.continuous.continuousAt.preimage_mem_nhds (by rwa [hR1]))
   -- Rotate back.
   refine ⟨K₁.compDiffeomorph R.symm,
@@ -671,7 +621,7 @@ theorem SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq
   · have hR : Tendsto R.symm (𝓝 z₀) (𝓝 1) := by
       simpa [← hR1] using R.symm.continuous.tendsto z₀
     filter_upwards [hR.eventually hK₁] with z hz
-    rw [compDiffeomorph_apply, hz, compDiffeomorph_apply, Diffeomorph.apply_symm_apply]
+    rw [compDiffeomorph_apply, hz, comp_apply, Diffeomorph.apply_symm_apply]
   · have hz' : R.symm z ∉ R ⁻¹' U := by
       rwa [mem_preimage, Diffeomorph.apply_symm_apply]
     exact (hF₁ t _ hz').trans (by rw [compDiffeomorph_apply, Diffeomorph.apply_symm_apply])
