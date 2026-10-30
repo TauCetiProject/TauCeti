@@ -148,7 +148,7 @@ theorem piRight_mem_twistedTotalGrading {n : ℤ} {z : BalancedTensorProduct R A
               (by simpa only [InternalGrading.ofDecomposition_piece,
                 mem_rowFiniteTotalGrading_iff, mem_twistedTotalGrading_iff,
                 Finsupp.linearEquivFunOnFinite_symm_apply] using hg)) hz
-  simpa only [piRight, LinearEquiv.trans_apply,
+  simpa only [piRight_eq_finsuppScalarRight, LinearEquiv.trans_apply,
     Finsupp.linearEquivFunOnFinite_apply] using
     (mem_rowFiniteTotalGrading_iff_twistedTotalGrading ℳ ind n _).mp
       (finsuppScalarRight_mem_rowFiniteTotalGrading hz')
@@ -173,7 +173,8 @@ theorem piRight_symm_mem_grading {n : ℤ} {f : P → M} (hf : f ∈ twistedTota
           (by simpa only [InternalGrading.ofDecomposition_piece,
             mem_rowFiniteTotalGrading_iff, mem_twistedTotalGrading_iff,
             Finsupp.linearEquivFunOnFinite_apply] using hg)) hz
-  simpa only [add_zero, piRight, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+  simpa only [add_zero, piRight_eq_finsuppScalarRight, LinearEquiv.trans_symm,
+    LinearEquiv.trans_apply,
     LinearEquiv.symm_symm, LinearEquiv.coe_coe] using h
 
 /-- **`piRight` carries the total degree of `M ⊗_A K_m` onto the total grading of `P → M`.** -/

@@ -50,11 +50,19 @@ open scoped Classical in
 /-- **Tensoring a right module with a finite free left module gives the functions into it**:
 `m ⊗ g ↦ fun y ↦ m · g y`, with inverse `f ↦ ∑ x, f x ⊗ e_x`.  This is
 `TauCeti.BalancedTensorProduct.rid` with a finite set of coordinates. -/
--- Expose the finite specialization so grading transport can use this same composite.
-@[expose] noncomputable def piRight : BalancedTensorProduct k A M (P → A) ≃ₗ[k] (P → M) :=
+noncomputable def piRight : BalancedTensorProduct k A M (P → A) ≃ₗ[k] (P → M) :=
   (congr (LinearEquiv.refl k M) (Finsupp.linearEquivFunOnFinite k A P)
       (by intros; rfl) (by intros; rfl)).symm ≪≫ₗ
     finsuppScalarRight k A M P ≪≫ₗ Finsupp.linearEquivFunOnFinite k M P
+
+open scoped Classical in
+/-- `piRight` is the finite specialization of `finsuppScalarRight` through the
+finite-support/function equivalences. -/
+theorem piRight_eq_finsuppScalarRight :
+    piRight k A M P =
+      (congr (LinearEquiv.refl k M) (Finsupp.linearEquivFunOnFinite k A P)
+        (by intros; rfl) (by intros; rfl)).symm ≪≫ₗ
+        finsuppScalarRight k A M P ≪≫ₗ Finsupp.linearEquivFunOnFinite k M P := (rfl)
 
 /-- A pure tensor `m ⊗ g` goes to the function `y ↦ m · g y`. -/
 @[simp]
