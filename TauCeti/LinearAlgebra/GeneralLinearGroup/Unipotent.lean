@@ -9,9 +9,7 @@ public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.RingTheory.Nilpotent.Basic
-import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
-import Mathlib.RingTheory.Polynomial.Nilpotent
+import TauCeti.LinearAlgebra.Charpoly.Nilpotent
 
 /-!
 # Unipotent linear automorphisms
@@ -39,6 +37,8 @@ the first summand is nilpotent and commutes with the second.
 * `LinearMap.GeneralLinearGroup.isUnipotent_one`: the identity automorphism is unipotent.
 * `LinearMap.GeneralLinearGroup.IsUnipotent.inv`: the inverse of a unipotent automorphism is
   unipotent.
+* `LinearMap.GeneralLinearGroup.val_ofLinearEquiv`: the endomorphism underlying
+  `ofLinearEquiv f` is `f`.
 * `LinearMap.GeneralLinearGroup.isUnipotent_ofLinearEquiv_iff`: unipotence after converting a
   linear equivalence to a general-linear-group element.
 * `LinearMap.GeneralLinearGroup.isUnipotent_congrLinearEquiv_iff`: unipotence is invariant under
@@ -98,34 +98,28 @@ theorem isUnipotent_iff_charpoly
     IsUnipotent g ↔
       (g : End F W).charpoly = (Polynomial.X - 1) ^ Module.finrank F W := by
   refine ⟨fun h ↦ ?_, isUnipotent_of_charpoly_eq g⟩
-  nontriviality F
-  have hnil : ((g : End F W) - 1).charpoly = Polynomial.X ^ finrank F W := by
-    -- Mathlib's `LinearMap.IsNilpotent.charpoly_eq_X_pow_finrank` assumes a domain; its argument
-    -- only needs the base to be reduced. `LinearMap.charpoly` is by definition the
-    -- characteristic polynomial of the matrix in `Module.Free.chooseBasis`.
-    have hP : IsNilpotent (((g : End F W) - 1).charpoly - Polynomial.X ^ finrank F W) := by
-      rw [finrank_eq_card_chooseBasisIndex]
-      apply Matrix.isNilpotent_charpoly_sub_pow_of_isNilpotent
-      exact h.map (LinearMap.toMatrixAlgEquiv (Free.chooseBasis F W))
-    rw [← sub_eq_zero]
-    ext i
-    simpa using (Polynomial.isNilpotent_iff.mp hP i).eq_zero
-  have hchar := LinearMap.charpoly_sub_smul ((g : End F W) - 1) (-1 : F)
-  rw [hnil] at hchar
-  simpa [sub_eq_add_neg] using hchar
+  simpa using LinearMap.charpoly_eq_pow_of_isNilpotent_sub_smul (g : End F W) 1
+    (by simpa using (isUnipotent_def g).mp h)
 
 /-- The identity automorphism is unipotent. -/
 @[simp]
 theorem isUnipotent_one : IsUnipotent (1 : GeneralLinearGroup K V) := by
   simp [isUnipotent_def]
 
+/-- The endomorphism underlying the general-linear-group element of a linear equivalence is that
+equivalence. Mathlib's `coe_ofLinearEquiv` records this only for the underlying function. -/
+@[simp]
+theorem val_ofLinearEquiv (f : V ≃ₗ[K] V) :
+    ((ofLinearEquiv f : GeneralLinearGroup K V) : End K V) = f.toLinearMap :=
+  LinearMap.ext fun x ↦ congrFun (coe_ofLinearEquiv f) x
+
 /-- A linear equivalence is unipotent after conversion to the general linear group exactly when
 its underlying endomorphism minus the identity is nilpotent. -/
 @[simp]
 theorem isUnipotent_ofLinearEquiv_iff (f : V ≃ₗ[K] V) :
     IsUnipotent (LinearMap.GeneralLinearGroup.ofLinearEquiv f) ↔
-      _root_.IsNilpotent (f.toLinearMap - 1) :=
-  Iff.rfl
+      _root_.IsNilpotent (f.toLinearMap - 1) := by
+  rw [isUnipotent_def, val_ofLinearEquiv]
 
 /-- Unipotence of a linear automorphism is invariant under transport by a semilinear
 equivalence. -/
@@ -134,9 +128,13 @@ theorem isUnipotent_congrLinearEquiv_iff
     {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
     (e : V ≃ₛₗ[σ] W) (g : GeneralLinearGroup K V) :
     IsUnipotent (congrLinearEquiv e g) ↔ IsUnipotent g := by
-  rw [isUnipotent_def, isUnipotent_def,
-    ← IsNilpotent.map_iff (LinearEquiv.conjRingEquiv e).injective, map_sub, map_one,
-    congrLinearEquiv, Units.coe_mapEquiv, RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv]
+  have h : LinearEquiv.conjRingEquiv e (g : End K V) =
+      (e.symm.trans (g.toLinearEquiv.trans e)).toLinearMap := by
+    ext x
+    simp
+  rw [congrLinearEquiv_apply, isUnipotent_ofLinearEquiv_iff, isUnipotent_def, ← h,
+    ← map_one (LinearEquiv.conjRingEquiv e), ← map_sub]
+  exact IsNilpotent.map_iff (LinearEquiv.conjRingEquiv e).injective
 
 /-- The inverse of a unipotent linear automorphism is unipotent. -/
 theorem IsUnipotent.inv {g : GeneralLinearGroup K V} (hg : IsUnipotent g) :
