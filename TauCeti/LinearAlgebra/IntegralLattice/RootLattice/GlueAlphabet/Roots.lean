@@ -13,8 +13,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Glued
 # Roots of overlattices in ADE glue coordinates
 
 For a finite family of valid ADE components, let `R` be the orthogonal sum of their root
-lattices and `H` a quadratically isotropic subgroup of their glue alphabets, and let
-`R_H = gluedRootLattice t ht hv H hH` be the overlattice glued along `H`.
+lattices, let `H` be a quadratically isotropic subgroup of their glue alphabets, and glue `R`
+along `H` by `TauCeti.DynkinType.gluedLattice`.
 
 If every nonzero word in `H` has minimum squared norm at least `r`, gluing preserves every
 norm shell below `r`. When `2 < r`, the integral span of the glued lattice's roots in the
@@ -62,31 +62,31 @@ private theorem norm_bound_of_mem_map_glueWordIsometry
 
 /-- Gluing by words whose nonzero coset minima are at least `r` adds no vectors to any
 norm shell below `r`. The two shells are compared in the common rational ambient space. -/
-theorem image_vectorsOfNorm_gluedRootLattice_eq
+theorem image_vectorsOfNorm_gluedLattice_eq
     (H : AddSubgroup (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)))
     (hH : (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsIsotropic H)
     {r n : ℚ} (hmin : ∀ w ∈ H, w ≠ 0 → r ≤ ∑ i, (t i).glueMinimum (ht i) (w i))
     (hn : n < r) :
-    (fun x : gluedRootLattice t ht hv H hH ↦ (x : ∀ i, Fin (t i).rank → ℚ)) ''
-        (gluedRootLattice t ht hv H hH).vectorsOfNorm n =
-      (fun x : pi (fun i ↦ (t i).rootLattice (ht i)) ↦ (x : ∀ i, Fin (t i).rank → ℚ)) ''
+    (fun x : gluedLattice t ht hv H hH ↦ (x : ∀ i, Fin (t i).rank → ℚ)) ''
+        (gluedLattice t ht hv H hH).vectorsOfNorm n =
+      (fun x : pi fun i ↦ (t i).rootLattice (ht i) ↦ (x : ∀ i, Fin (t i).rank → ℚ)) ''
         (pi fun i ↦ (t i).rootLattice (ht i)).vectorsOfNorm n := by
-  rw [gluedRootLattice_def]
+  rw [gluedLattice_def]
   exact image_vectorsOfNorm_ofIsotropicSubgroup_eq _ _ _ _
     (norm_bound_of_mem_map_glueWordIsometry t ht hv H hmin) hn
 
 /-- If the nonzero glue words have a common minimum-norm lower bound `r > 2`, the root
 sublattice of the glued ADE lattice is literally the original root-lattice carrier.
 The usual glue-table check uses `r = 4`. -/
-theorem span_vectorsOfNorm_two_gluedRootLattice_eq
+theorem span_vectorsOfNorm_two_gluedLattice
     (H : AddSubgroup (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)))
     (hH : (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsIsotropic H)
     {r : ℚ} (hmin : ∀ w ∈ H, w ≠ 0 → r ≤ ∑ i, (t i).glueMinimum (ht i) (w i))
     (hr : 2 < r) :
-    Submodule.span ℤ ((fun x : gluedRootLattice t ht hv H hH ↦ (x : ∀ i, Fin (t i).rank → ℚ)) ''
-        (gluedRootLattice t ht hv H hH).vectorsOfNorm 2) =
+    Submodule.span ℤ ((fun x : gluedLattice t ht hv H hH ↦ (x : ∀ i, Fin (t i).rank → ℚ)) ''
+        (gluedLattice t ht hv H hH).vectorsOfNorm 2) =
       (pi fun i ↦ (t i).rootLattice (ht i)).carrier := by
-  rw [image_vectorsOfNorm_gluedRootLattice_eq t ht hv H hH hmin hr]
+  rw [image_vectorsOfNorm_gluedLattice_eq t ht hv H hH hmin hr]
   exact span_vectorsOfNorm_two_pi_rootLattice t ht
 
 end TauCeti.DynkinType

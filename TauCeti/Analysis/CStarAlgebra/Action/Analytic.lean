@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Generator
+public import TauCeti.Analysis.CStarAlgebra.Action.Generator.Basic
 public import TauCeti.Analysis.Complex.RealIdentity
 
 /-!
