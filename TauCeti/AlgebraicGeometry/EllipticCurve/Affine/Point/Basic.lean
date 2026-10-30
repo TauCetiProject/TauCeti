@@ -38,6 +38,8 @@ hypotheses only because Mathlib's `Point.map` does.
 * `WeierstrassCurve.Affine.Point.nonsingular_coords` and
   `WeierstrassCurve.Affine.Point.some_coords`: a nonzero point is `.some` of its accessors.
 * `WeierstrassCurve.Affine.Point.eq_of_coords`: nonzero points with equal coordinates are equal.
+* `WeierstrassCurve.Affine.Point.eq_or_eq_neg_of_xCoord_eq`: nonzero points with equal
+  `x`-coordinates are equal or opposite.
 * `WeierstrassCurve.Affine.Point.xCoord_map` and
   `WeierstrassCurve.Affine.Point.yCoord_map`: the accessors commute with `Point.map`.
 * `WeierstrassCurve.Affine.Point.map_eq_self_iff`: a field endomorphism fixes a point exactly
@@ -130,6 +132,12 @@ theorem yCoord_neg {P : W.Point} (hP : P ≠ 0) :
   cases P with
   | zero => exact absurd rfl hP
   | some x y h => rfl
+
+/-- **Two nonzero points with the same `x`-coordinate are equal or opposite**, over a field. -/
+theorem eq_or_eq_neg_of_xCoord_eq {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F}
+    {P Q : W.Point} (hP : P ≠ 0) (hQ : Q ≠ 0) (h : xCoord P = xCoord Q) : P = Q ∨ P = -Q := by
+  rw [← some_coords hP, ← some_coords hQ]
+  exact X_eq_iff.mp h
 
 variable {S F K : Type*} [CommRing S] [Field F] [Field K] [Algebra R S] [Algebra R F]
   [Algebra S F] [IsScalarTower R S F] [Algebra R K] [Algebra S K] [IsScalarTower R S K]
