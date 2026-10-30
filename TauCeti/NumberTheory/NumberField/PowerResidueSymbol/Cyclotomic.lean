@@ -18,7 +18,7 @@ conjugate ideal `σ 𝔞` is the inverse of its symbol at `𝔞`:
 `(m / σ 𝔞)_n (m / 𝔞)_n = 1`.
 
 This is how conjugate ideals are paired off in the reciprocity laws involving rational integers:
-for instance, the symbol of `m` at a rational prime that splits as `p = π π̄` is `1`.
+for instance, the symbol of `m` at a rational prime that splits as `p = π (σ π)` is `1`.
 
 ## Main results
 

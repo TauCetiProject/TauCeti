@@ -20,9 +20,10 @@ whose numerator and denominator are both rational integers.
 
 By multiplicativity in the denominator it suffices to treat a rational prime `q`:
 
-* if `q ≢ 3 (mod 4)`, then `q = x² + y² = β β̄` with `β = x + y i`, and complex conjugation
-  inverts the symbol of `n` at `β` (`Ideal.powerResidueSymbolIdeal_map_intCast_mul_eq_one`), so
-  the symbols at `β` and at `β̄` cancel. This covers `q = 2 = (1 + i) (1 - i)` as well;
+* if `q ≢ 3 (mod 4)`, then `q = x² + y² = β β'` with `β = x + y i` and `β' = x - y i`;
+  complex conjugation inverts the symbol of `n` at `β`
+  (`Ideal.powerResidueSymbolIdeal_map_intCast_mul_eq_one`), so the symbols at `β` and at `β'`
+  cancel. This covers `q = 2 = (1 + i) (1 - i)` as well;
 * if `q ≡ 3 (mod 4)`, then `q 𝓞 K` is prime of norm `q²`, and
   `(n / q)₄ ≡ n ^ ((q² - 1) / 4) = (n ^ (q - 1)) ^ ((q + 1) / 4) ≡ 1 (mod q)` by Fermat's little
   theorem (`Ideal.powerResidueSymbol_intCast_eq_one`).
