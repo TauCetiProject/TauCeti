@@ -13,9 +13,9 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 # Periodic tori in symplectic suspensions
 
 A periodic point `x` of a diffeomorphism `φ`, with positive period `d`, determines the torus
-`(s, t) ↦ (s, [t, x])` in `(ℝ / ℤ) × Y_φ`. On a finite-dimensional boundaryless fiber
-manifold it is a smooth immersion, and is an embedding exactly when `d` is the least period
-of `x`. Its image is the product of the independent
+`(s, t) ↦ (s, [t, x])` in `(ℝ / ℤ) × Y_φ`. For a `C^n` diffeomorphism with `1 ≤ n` of a
+finite-dimensional boundaryless fiber manifold it is a `C^n` immersion, and is an embedding
+exactly when `d` is the least period of `x`. Its image is the product of the independent
 time circle with the closed suspension orbit, so changing the starting point along the
 periodic orbit does not change this image.
 
@@ -41,8 +41,8 @@ namespace TauCeti.SmoothMappingTorus
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  (φ : M ≃ₘ⟮I, I⟯ M) {d : ℕ} {x : M}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+  (φ : M ≃ₘ^n⟮I, I⟯ M) {d : ℕ} {x : M}
 
 /-- The torus over a periodic suspension orbit, parametrized by the independent unit circle
 and the orbit's period circle. A nonminimal period traverses the same image several times. -/
@@ -74,12 +74,43 @@ theorem range_periodicTorus_apply_iterate (j : ℕ) :
     range (periodicTorus φ (hx.apply_iterate j)) = range (periodicTorus φ hx) := by
   rw [range_periodicTorus, range_periodicTorus, range_closedOrbit_apply_iterate]
 
-variable [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] [Fact (0 < (d : ℝ))]
+section Manifold
 
-/-- The periodic torus is smooth for every positive period. -/
+variable [IsManifold I n M] [T2Space M] [LocallyCompactSpace M] [Fact (0 < (d : ℝ))]
+
+/-- The periodic torus is `C^n` for every positive period. -/
 theorem contMDiff_periodicTorus :
-    ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ (periodicTorus φ hx) :=
+    ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) n (periodicTorus φ hx) :=
   contMDiff_id.prodMap (contMDiff_closedOrbit hx)
+
+/-- Every positive period gives an immersed torus, even when it is not the least period. -/
+theorem isImmersion_periodicTorus [I.Boundaryless] [FiniteDimensional ℝ E] (hn : 1 ≤ n) :
+    IsImmersion (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) n
+      (periodicTorus φ hx) :=
+  IsImmersion.id.prodMap (isImmersion_closedOrbit hx hn)
+
+/-- The periodic torus is a smooth embedding exactly when its period is the least period.
+The fiber manifold need not be compact. -/
+theorem isSmoothEmbedding_periodicTorus_iff [I.Boundaryless] [FiniteDimensional ℝ E]
+    (hn : 1 ≤ n) :
+    IsSmoothEmbedding (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) n
+      (periodicTorus φ hx) ↔ minimalPeriod φ x = d := by
+  constructor
+  · intro h
+    apply (injective_closedOrbit_iff hx).1
+    intro t u htu
+    have hh : periodicTorus φ hx ((0 : UnitAddCircle), t) = periodicTorus φ hx (0, u) :=
+      congrArg ((0 : UnitAddCircle), ·) htu
+    exact congrArg Prod.snd (h.isEmbedding.injective hh)
+  · intro hd
+    exact IsSmoothEmbedding.id.prodMap ((isSmoothEmbedding_closedOrbit_iff hx hn).2 hd)
+
+end Manifold
+
+section Smooth
+
+variable [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
+  {φ : M ≃ₘ⟮I, I⟯ M} (hx : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
 
 /-- The tangent map preserves the independent time direction and sends the orbit direction
 to the suspension vector field. -/
@@ -102,27 +133,6 @@ theorem mfderiv_periodicTorus (p : UnitAddCircle × AddCircle (d : ℝ))
   erw [Manifold.tangentSpaceProdEquiv_symm_apply] at h
   simp only [mfderiv_id, hγ] at h
   convert! h using 1
-
-/-- Every positive period gives an immersed torus, even when it is not the least period. -/
-theorem isImmersion_periodicTorus [I.Boundaryless] [FiniteDimensional ℝ E] :
-    IsImmersion (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞
-      (periodicTorus φ hx) :=
-  IsImmersion.id.prodMap (isImmersion_closedOrbit hx (by simp))
-
-/-- The periodic torus is a smooth embedding exactly when its period is the least period.
-The fiber manifold need not be compact. -/
-theorem isSmoothEmbedding_periodicTorus_iff [I.Boundaryless] [FiniteDimensional ℝ E] :
-    IsSmoothEmbedding (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞
-      (periodicTorus φ hx) ↔ minimalPeriod φ x = d := by
-  constructor
-  · intro h
-    apply (injective_closedOrbit_iff hx).1
-    intro t u htu
-    have hh : periodicTorus φ hx ((0 : UnitAddCircle), t) = periodicTorus φ hx (0, u) :=
-      congrArg ((0 : UnitAddCircle), ·) htu
-    exact congrArg Prod.snd (h.isEmbedding.injective hh)
-  · intro hd
-    exact IsSmoothEmbedding.id.prodMap ((isSmoothEmbedding_closedOrbit_iff hx (by simp)).2 hd)
 
 variable {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
 
@@ -194,5 +204,7 @@ theorem integral_periodicTorus_suspensionForm :
         (suspensionForm φ σ hσ)).eval₂ ((s : UnitAddCircle), (t : AddCircle (d : ℝ)))
           ((1 : ℝ), (0 : ℝ)) ((0 : ℝ), (1 : ℝ))) = d := by
   simp [eval₂_mpullback_periodicTorus_suspensionForm]
+
+end Smooth
 
 end TauCeti.SmoothMappingTorus
