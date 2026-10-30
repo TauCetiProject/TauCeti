@@ -147,9 +147,7 @@ theorem SyntomicOfRelativeDimension.flat [SyntomicOfRelativeDimension n f] : Fla
   intro U V e
   have h := (HasRingHomProperty.iff_appLE (P := @SyntomicOfRelativeDimension n)).mp
     ‹SyntomicOfRelativeDimension n f› U V e
-  exact (RingHom.locally_iff_of_localizationSpanTarget RingHom.Flat.respectsIso
-    RingHom.Flat.ofLocalizationSpanTarget _).mp <|
-      RingHom.locally_of_locally (fun hf ↦ hf.flat) h
+  exact flat_of_locally_isStandardSyntomicOfRelativeDimension h
 
 /-- Syntomic morphisms are locally of finite presentation. -/
 theorem SyntomicOfRelativeDimension.locallyOfFinitePresentation
@@ -158,10 +156,7 @@ theorem SyntomicOfRelativeDimension.locallyOfFinitePresentation
   intro U V e
   have h := (HasRingHomProperty.iff_appLE (P := @SyntomicOfRelativeDimension n)).mp
     ‹SyntomicOfRelativeDimension n f› U V e
-  exact (RingHom.locally_iff_of_localizationSpanTarget
-    RingHom.finitePresentation_respectsIso
-    RingHom.finitePresentation_ofLocalizationSpanTarget _).mp <|
-      RingHom.locally_of_locally (fun hf ↦ hf.finitePresentation) h
+  exact finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension h
 
 /-- A syntomic morphism of relative dimension one is flat. -/
 instance (priority := low)

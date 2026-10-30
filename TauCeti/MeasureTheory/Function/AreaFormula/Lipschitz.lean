@@ -11,6 +11,7 @@ import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.AreaFormula.Integral
+import TauCeti.MeasureTheory.Function.Jacobian.Decomposition
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 
 /-!
@@ -52,6 +53,9 @@ and the regular injective area formula applies.
   have null images.
 * `LipschitzWith.euclideanHausdorffMeasure_image_setOf_normDet_fderiv_eq_zero`: the image of the
   set where the Jacobian of a Lipschitz map vanishes is null.
+* `LipschitzWith.exists_bilipschitz_cover`: countably many disjoint Borel patches with Lipschitz
+  inverse coordinates cover the image up to a null set, using
+  `TauCeti.exists_partition_lipschitz_antilipschitz_of_hasFDerivWithinAt` on the regular points.
 * `LipschitzWith.lintegral_image_eq_lintegral_normDet_fderiv_mul`: the weighted area formula for
   a Lipschitz map injective on a measurable set.
 * `LipschitzWith.lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image`: the area formula
@@ -74,6 +78,14 @@ namespace TauCeti
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace U] [BorelSpace U] [MeasurableSpace V] [BorelSpace V] {f : U → V} {s : Set U}
+
+omit [MeasurableSpace V] [BorelSpace V] in
+/-- The set of differentiability points with nonzero geometric Jacobian is Borel measurable. -/
+theorem measurableSet_setOf_differentiableAt_normDet_ne_zero (f : U → V) :
+    MeasurableSet {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0} :=
+  (measurableSet_of_differentiableAt ℝ f).inter
+    (measurableSet_eq_fun (ContinuousLinearMap.continuous_normDet.measurable.comp
+      (measurable_fderiv ℝ f)) measurable_const).compl
 
 /-- The zero Jacobian statement on a bounded measurable piece on which the derivative is
 bounded. -/
@@ -191,6 +203,28 @@ theorem euclideanHausdorffMeasure_image_compl_setOf_regular (hf : LipschitzWith 
   · exact le_antisymm ((hf.lipschitzOnWith.euclideanHausdorffMeasure_image_le _).trans
       (by rw [hN, mul_zero])) bot_le
 
+/-- The image of a Lipschitz map is covered up to a null set by images of countably many
+disjoint Borel sets on which the map has a Lipschitz inverse. The forward Lipschitz bound
+is inherited from the original map. -/
+theorem exists_bilipschitz_cover (hf : LipschitzWith K f) :
+    ∃ A : ℕ → Set U, (∀ n, MeasurableSet (A n)) ∧ Pairwise (Disjoint on A) ∧
+      (∀ n, ∃ L : ℝ≥0, AntilipschitzWith L ((A n).domRestrict f)) ∧
+      μHE[finrank ℝ U] (range f \ ⋃ n, f '' A n) = 0 := by
+  let G := {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0}
+  have hG : MeasurableSet G := measurableSet_setOf_differentiableAt_normDet_ne_zero f
+  have hi (x : U) (hx : x ∈ G) : Injective (fderiv ℝ f x) :=
+    ((fderiv ℝ f x).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp hx.2
+  obtain ⟨A, K', L', hAm, hdisj, hcover, hbi⟩ :=
+    TauCeti.exists_partition_lipschitz_antilipschitz_of_hasFDerivWithinAt hG
+      (fun x (hx : x ∈ G) ↦ hx.1.hasFDerivAt.hasFDerivWithinAt) hi
+  refine ⟨A, hAm, hdisj, fun n ↦ ⟨L' n, (hbi n).2⟩, ?_⟩
+  refine measure_mono_null ?_ hf.euclideanHausdorffMeasure_image_compl_setOf_regular
+  rintro y ⟨⟨x, rfl⟩, hy⟩
+  refine ⟨x, ?_, rfl⟩
+  intro hx
+  obtain ⟨n, hn⟩ := mem_iUnion.mp (hcover.symm.subset hx)
+  exact hy (mem_iUnion.mpr ⟨n, x, hn, rfl⟩)
+
 /-- **Sard's lemma for Lipschitz maps.** The image of the set where the `dim U`-dimensional
 Jacobian of a Lipschitz map `f : U → V` vanishes is null for the `dim U`-dimensional Euclidean
 Hausdorff measure. -/
@@ -209,9 +243,7 @@ theorem lintegral_image_eq_lintegral_normDet_fderiv_mul (hf : LipschitzWith K f)
       ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).normDet * g (f x) := by
   -- Split `s` into its regular points `s ∩ G` and the rest, which contributes to neither side.
   set G := {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0}
-  have hG : MeasurableSet G := (measurableSet_of_differentiableAt ℝ f).inter
-    (measurableSet_eq_fun (ContinuousLinearMap.continuous_normDet.measurable.comp
-      (measurable_fderiv ℝ f)) measurable_const).compl
+  have hG : MeasurableSet G := measurableSet_setOf_differentiableAt_normDet_ne_zero f
   have himage : f '' s =ᵐ[μHE[finrank ℝ U]] f '' (s ∩ G) := by
     rw [← inter_union_sdiff s G, image_union, inter_union_sdiff]
     exact union_ae_eq_left_of_ae_eq_empty (ae_eq_empty.2 (measure_mono_null
@@ -223,8 +255,7 @@ theorem lintegral_image_eq_lintegral_normDet_fderiv_mul (hf : LipschitzWith K f)
   rw [setLIntegral_congr himage, ← lintegral_inter_add_sdiff _ s hG, hzero, add_zero]
   refine TauCeti.lintegral_image_eq_lintegral_normDet_fderiv_mul (hs.inter hG)
     (fun x hx => hx.2.1) (fun x hx => ?_) (hinj.mono inter_subset_left) g
-  exact LinearMap.ker_eq_bot.1
-    (not_not.1 fun h => hx.2.2 (LinearMap.normDet_eq_zero_iff_ker_ne_bot.2 h))
+  exact ((fderiv ℝ f x).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp hx.2.2
 
 /-- **The area formula for injective Lipschitz maps.** If `f : U → V` is Lipschitz and injective
 on a measurable set `s`, then the integral over `s` of the `dim U`-dimensional Jacobian

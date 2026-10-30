@@ -22,11 +22,12 @@ the indicator of the ball `n + p ^ ℓ(n) ℤ_p`, that is of the `x` whose trunc
 `n > 0` gives `n⁻ = n % p ^ (ℓ(n) - 1)`, and the `n`-th van der Put coefficient of a function
 `f` on `ℤ_p` is `f 0` for `n = 0` and `f n - f n⁻` for `n > 0`.
 
-Van der Put's theorem says that for a complete ultrametric normed group `E`, a continuous
+Van der Put's theorem says that for an ultrametric normed group `E`, a continuous
 `f : ℤ_[p] → E` is the uniformly convergent sum of its van der Put terms, its coefficients tend to
-zero, and its sup norm is the sup norm of its coefficients. Conversely every null sequence of
-coefficients defines a continuous function. Together, the coefficients give an isometric
-isomorphism `C(ℤ_[p], E) ≃ₗᵢ C₀(ℕ, E)`, linear over any scalars acting continuously on `E`.
+zero, and its sup norm is the sup norm of its coefficients. If `E` is also complete, conversely
+every null sequence of coefficients defines a continuous function. Together, the coefficients then
+give an isometric isomorphism `C(ℤ_[p], E) ≃ₗᵢ C₀(ℕ, E)`, linear over any scalars acting
+continuously on `E`.
 
 Unlike Mahler's theorem (`PadicInt.mahlerEquiv`), this needs no `ℤ_[p]`-module structure on `E`,
 and its basis functions are locally constant. The proof rests on the telescoping identity
@@ -321,15 +322,51 @@ section Normed
 
 variable {S E : Type*} [NormedAddCommGroup E]
 
-variable [IsUltrametricDist E] [CompleteSpace E]
+/-- The van der Put series `x ↦ ∑ n, e_n(x) a n` with coefficients `a`. -/
+noncomputable def vanDerPutSeries (a : ℕ → E) : C(ℤ_[p], E) :=
+  ∑' n, vanDerPutTerm (a n) n
+
+variable [IsUltrametricDist E]
+
+/-- **Van der Put's theorem**: a continuous function on `ℤ_[p]` with values in an ultrametric
+normed group is the uniformly convergent sum of its van der Put terms, without assuming
+completeness. -/
+theorem hasSum_vanDerPut (f : C(ℤ_[p], E)) :
+    HasSum (fun n ↦ vanDerPutTerm (vanDerPutCoeff f n) n) f := by
+  -- The terms tend to zero, so partial sums are Cauchy. The sums over `n < p ^ k` are
+  -- `x ↦ f (x mod p ^ k)` and converge uniformly to `f`.
+  have hC := NonarchimedeanAddGroup.cauchySeq_sum_of_tendsto_cofinite_zero
+    (f := fun n ↦ vanDerPutTerm (p := p) (vanDerPutCoeff f n) n) (by
+      rw [tendsto_zero_iff_norm_tendsto_zero]
+      simpa only [norm_vanDerPutTerm, Nat.cofinite_eq_atTop] using
+        (tendsto_zero_iff_norm_tendsto_zero.mp (tendsto_vanDerPutCoeff f)))
+  have hpow : Tendsto (fun k ↦ p ^ k) atTop atTop :=
+    tendsto_atTop_mono (fun _ ↦ (Nat.lt_pow_self hp.out.one_lt).le) tendsto_id
+  refine tendsto_nhds_of_cauchySeq_of_subseq hC (tendsto_finset_range.comp hpow) ?_
+  rw [ContinuousMap.tendsto_iff_tendstoUniformly]
+  have hid : TendstoUniformly (fun k (x : ℤ_[p]) ↦ ((x.appr k : ℕ) : ℤ_[p])) id atTop := by
+    refine Metric.tendstoUniformly_iff.mpr fun ε hε ↦ ?_
+    obtain ⟨k, hk⟩ := exists_pow_neg_lt p hε
+    filter_upwards [eventually_ge_atTop k] with n hn x
+    rw [dist_eq_norm]
+    exact (norm_sub_appr_le_of_le x hn).trans_lt hk
+  convert (CompactSpace.uniformContinuous_of_continuous f.continuous).comp_tendstoUniformly hid
+    using 1
+  · ext k x
+    simp only [Function.comp_apply, ContinuousMap.coe_sum, Finset.sum_apply,
+      sum_vanDerPutTerm_vanDerPutCoeff_apply]
+  · rfl
+
+/-- A continuous function is the van der Put series of its van der Put coefficients. -/
+theorem vanDerPutSeries_vanDerPutCoeff (f : C(ℤ_[p], E)) :
+    vanDerPutSeries (vanDerPutCoeff f) = f :=
+  (hasSum_vanDerPut f).tsum_eq
+
+variable [CompleteSpace E]
 
 section Series
 
 variable {a : ℕ → E}
-
-/-- The van der Put series `x ↦ ∑ n, e_n(x) a n` with coefficients `a`. -/
-noncomputable def vanDerPutSeries (a : ℕ → E) : C(ℤ_[p], E) :=
-  ∑' n, vanDerPutTerm (a n) n
 
 /-- A van der Put series whose coefficients tend to zero converges uniformly. -/
 theorem hasSum_vanDerPutSeries (ha : Tendsto a atTop (𝓝 0)) :
@@ -360,27 +397,7 @@ theorem vanDerPutCoeff_vanDerPutSeries (ha : Tendsto a atTop (𝓝 0)) (n : ℕ)
   · simp
   · simp [hm, hm.symm]
 
-/-- **Van der Put's theorem**: a continuous function on `ℤ_[p]` with values in a complete
-ultrametric normed group is the uniformly convergent sum of its van der Put terms. -/
-theorem hasSum_vanDerPut (f : C(ℤ_[p], E)) :
-    HasSum (fun n ↦ vanDerPutTerm (vanDerPutCoeff f n) n) f := by
-  convert hasSum_vanDerPutSeries (tendsto_vanDerPutCoeff f) using 1
-  ext x
-  -- Along `N = p ^ k`, the partial sums at `x` are `f (x mod p ^ k)`, which tend to `f x`.
-  have hpow : Tendsto (fun k ↦ p ^ k) atTop atTop :=
-    tendsto_atTop_mono (fun _ ↦ (Nat.lt_pow_self hp.out.one_lt).le) tendsto_id
-  have hser := ((ContinuousMap.hasSum_apply
-    (hasSum_vanDerPutSeries (tendsto_vanDerPutCoeff f)) x).tendsto_sum_nat).comp hpow
-  refine tendsto_nhds_unique ?_ hser
-  simp_rw [Function.comp_def, sum_vanDerPutTerm_vanDerPutCoeff_apply]
-  exact (f.continuous.tendsto x).comp (tendsto_appr x)
-
 end Series
-
-/-- A continuous function is the van der Put series of its van der Put coefficients. -/
-theorem vanDerPutSeries_vanDerPutCoeff (f : C(ℤ_[p], E)) :
-    vanDerPutSeries (vanDerPutCoeff f) = f :=
-  (hasSum_vanDerPut f).tsum_eq
 
 variable (S E) in
 /-- **Van der Put's theorem**, as an isometric isomorphism between the continuous functions on
@@ -437,18 +454,20 @@ theorem vanDerPutEquiv_symm_single (n : ℕ) (a : E) :
 
 end Normed
 
-/-- The van der Put coefficients of the identity of `ℤ_[p]`: for `n > 0`, the `n`-th coefficient
-is `n - n⁻`, the leading base-`p` digit of `n` times `p ^ Nat.log p n`. -/
-theorem vanDerPutCoeff_id {n : ℕ} (hn : n ≠ 0) :
+/-- The van der Put coefficients of the identity of `ℤ_[p]`: the `n`-th coefficient is `n - n⁻`,
+the leading base-`p` digit of `n` times `p ^ Nat.log p n` (both sides are `0` for `n = 0`). -/
+theorem vanDerPutCoeff_id (n : ℕ) :
     vanDerPutCoeff (fun x : ℤ_[p] ↦ x) n =
       ((n / p ^ Nat.log p n * p ^ Nat.log p n : ℕ) : ℤ_[p]) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
   rw [vanDerPutCoeff_of_ne_zero _ hn, sub_eq_iff_eq_add, ← Nat.cast_add, Nat.div_add_mod']
 
 /-- At `p = 3`, the integer `7` has base-`3` digits `2 1`, so the corresponding van der Put
 coefficient of the identity is `7 - 1 = 2 * 3`. -/
 example : vanDerPutCoeff (fun x : ℤ_[3] ↦ x) 7 = 6 := by
   have : Nat.log 3 7 = 1 := Nat.log_eq_of_pow_le_of_lt_pow (by norm_num) (by norm_num)
-  rw [vanDerPutCoeff_id (by norm_num), this]
+  rw [vanDerPutCoeff_id, this]
   norm_num
 
 end PadicInt

@@ -31,6 +31,12 @@ The main theorem is the *transfer descent*: a symmetric convex set containing `y
 antitone nonnegative `z` whose prefix sums are bounded by those of `y`. No ordering or sign
 condition is needed on `y`; in particular, it applies to every pair `z ≺w y`.
 
+Without sign invariance, transfers alone reach every antitone tuple `d` with the total sum of `y`
+and prefix sums bounded by those of `y` (the *transfer closure*): for antitone `y` this is the
+statement that every tuple majorized by `y` arises from `y` by finitely many Robin Hood transfers.
+It applies to sets that are not known to be convex, such as the diagonals of a symmetric operator
+in all orthonormal bases.
+
 Applied to the sublevel sets of a symmetric gauge (a seminorm invariant under permutations and
 sign changes of the coordinates), the descent shows that symmetric gauges are monotone for weak
 majorization. This is the convex engine behind Ky Fan dominance: once singular values are
@@ -49,6 +55,9 @@ compared by their Ky Fan sums, every symmetric gauge of them is compared at once
 
 ## Main results
 
+* `TauCeti.mem_of_prefixSum_le_of_sum_eq`: transfer closure.
+* `Convex.robinHood_mem`: a convex set containing a tuple and its swap contains the Robin Hood
+  transfers between the swapped coordinates.
 * `TauCeti.IsSymmetricConvex.isSolid`: symmetric convex sets are solid.
 * `TauCeti.IsSymmetricConvex.robinHood_mem`: symmetric convex sets are closed under Robin Hood
   transfers.
@@ -66,6 +75,9 @@ compared by their Ky Fan sums, every symmetric gauge of them is compared at once
   and §IV.1.
 * A. W. Marshall, I. Olkin, B. C. Arnold, *Inequalities: Theory of Majorization and Its
   Applications*, 2nd ed., Springer (2011), §1.A and §2.B.
+* G. H. Hardy, J. E. Littlewood, G. Pólya, *Some simple inequalities satisfied by convex
+  functions*, Messenger Math. **58** (1929), 145–152, for the reduction of majorization to
+  transfers.
 -/
 
 public section
@@ -186,6 +198,45 @@ theorem sum_robinHood [Fintype ι] (x : ι → ℝ) (i j : ι) (δ : ℝ) :
     ∑ k, robinHood x i j δ k = ∑ k, x k := by
   simp [robinHood, sum_add_distrib, sum_sub_distrib]
 
+/-- Prefix sums of a Robin Hood transfer: the transferred amount leaves the prefix sum when the
+source coordinate lies below the cut, and enters it when the target coordinate does. -/
+@[simp]
+theorem prefixSum_robinHood (k : ℕ) (x : Fin n → ℝ) (i j : Fin n) (δ : ℝ) :
+    prefixSum k (robinHood x i j δ) =
+      prefixSum k x - (if (i : ℕ) < k then δ else 0) + (if (j : ℕ) < k then δ else 0) := by
+  simp [robinHood, prefixSum_def, sum_add_distrib, sum_sub_distrib, sum_pi_single']
+
+/-- **Convex sets are closed under Robin Hood transfers.** If a convex set contains `x` and the
+tuple obtained from `x` by swapping the coordinates `i` and `j`, then it contains every Robin Hood
+transfer of `δ` from `i` to `j` with `0 ≤ δ ≤ x i - x j`. -/
+theorem _root_.Convex.robinHood_mem {K : Set (ι → ℝ)} (hK : Convex ℝ K) {x : ι → ℝ} {i j : ι}
+    {δ : ℝ} (hx : x ∈ K) (hswap : x ∘ Equiv.swap i j ∈ K) (hδ : 0 ≤ δ)
+    (hδ' : δ ≤ x i - x j) : robinHood x i j δ ∈ K := by
+  rcases eq_or_ne i j with rfl | hij
+  · simpa using hx
+  rcases (sub_nonneg.1 (hδ.trans hδ')).eq_or_lt with heq | hlt
+  · obtain rfl : δ = 0 := le_antisymm (by linarith) hδ
+    simpa [robinHood] using hx
+  -- `robinHood x i j δ` is a convex combination of `x` and of `x` with `x i` and `x j` swapped.
+  have hpos : 0 < x i - x j := sub_pos.2 hlt
+  have hmem := hK hx hswap
+    (a := 1 - δ / (x i - x j)) (b := δ / (x i - x j))
+    (by rw [sub_nonneg]; exact div_le_one_of_le₀ hδ' hpos.le) (div_nonneg hδ hpos.le)
+    (by ring)
+  convert hmem using 1
+  ext k
+  simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, comp_apply]
+  rcases eq_or_ne k i with rfl | hki
+  · rw [robinHood_apply_left x hij, Equiv.swap_apply_left]
+    field_simp
+    ring
+  rcases eq_or_ne k j with rfl | hkj
+  · rw [robinHood_apply_right x hij, Equiv.swap_apply_right]
+    field_simp
+    ring
+  · rw [robinHood_apply_of_ne x hki hkj, Equiv.swap_apply_of_ne_of_ne hki hkj]
+    ring
+
 /-- `y` is a *T-transform* of `x`: it is obtained from `x` by one Robin Hood transfer from a
 coordinate to a coordinate with no larger value, followed by a permutation of the
 coordinates. -/
@@ -201,6 +252,100 @@ theorem IsTTransform.sum_eq [Fintype ι] {x y : ι → ℝ} (h : IsTTransform x 
   exact Equiv.sum_comp σ (robinHood x i j δ)
 
 end RobinHood
+
+/-! ### Transfer closure -/
+
+/-- The inductive step of transfer closure: if `y ≠ d`, one Robin Hood transfer from a coordinate
+of `y` to one with no larger value makes it agree with `d` at more coordinates, while keeping the
+prefix bounds. -/
+private theorem exists_robinHood_card_lt {y d : Fin n → ℝ} (hd : Antitone d)
+    (hle : ∀ k, prefixSum k d ≤ prefixSum k y) (hsum : ∑ i, d i = ∑ i, y i) (hne : y ≠ d) :
+    ∃ (j k : Fin n) (δ : ℝ), 0 ≤ δ ∧ δ ≤ y j - y k ∧
+      #{i | robinHood y j k δ i ≠ d i} < #{i | y i ≠ d i} ∧
+      ∀ l, prefixSum l d ≤ prefixSum l (robinHood y j k δ) := by
+  set D : Finset (Fin n) := {i | y i ≠ d i}
+  have hDne : D.Nonempty := let ⟨i, hi⟩ := Function.ne_iff.1 hne; ⟨i, by simpa [D] using hi⟩
+  -- `y` exceeds `d` at the first coordinate `j` where they differ.
+  set j := D.min' hDne
+  have hjD : y j ≠ d j := (mem_filter.1 (D.min'_mem hDne)).2
+  have hbelow : ∀ i, i < j → y i = d i := fun i hi ↦ by
+    by_contra h
+    exact not_le.2 hi (D.min'_le i (by simp [D, h]))
+  have hj : d j < y j := by
+    have h1 := hle (j + 1)
+    rw [prefixSum_succ j.isLt, prefixSum_succ j.isLt,
+      prefixSum_congr fun i hi ↦ (hbelow i (Fin.lt_def.2 hi)).symm] at h1
+    exact lt_of_le_of_ne (by simpa using h1) hjD.symm
+  -- Since the totals agree, `y` falls below `d` at some later coordinate; let `k` be the first.
+  set P : Finset (Fin n) := {i | j < i ∧ y i < d i}
+  have hP : P.Nonempty := by
+    by_contra hPe
+    have hge : ∀ i, d i ≤ y i := fun i ↦ by
+      rcases lt_trichotomy i j with h | rfl | h
+      · exact (hbelow i h).ge
+      · exact hj.le
+      · by_contra h'
+        exact hPe ⟨i, by simp [P, h, not_le.1 h']⟩
+    have : ∑ i, d i < ∑ i, y i := sum_lt_sum (fun i _ ↦ hge i) ⟨j, mem_univ _, hj⟩
+    linarith
+  set k := P.min' hP
+  have hk : j < k ∧ y k < d k := (mem_filter.1 (P.min'_mem hP)).2
+  have hmid : ∀ i, j < i → i < k → d i ≤ y i := fun i hji hik ↦ by
+    by_contra h
+    exact not_le.2 hik (P.min'_le i (by simp [P, hji, not_le.1 h]))
+  have hjk : j ≠ k := hk.1.ne
+  -- Transfer `δ` from `j` to `k`; this makes `y` agree with `d` at `j` or at `k`.
+  set δ := min (y j - d j) (d k - y k)
+  have hδ : 0 < δ := lt_min (sub_pos.2 hj) (sub_pos.2 hk.2)
+  have hδj : δ ≤ y j - d j := min_le_left _ _
+  refine ⟨j, k, δ, hδ.le, by linarith [hd hk.1.le, min_le_right (y j - d j) (d k - y k)],
+    card_lt_card ((ssubset_iff_of_subset fun i ↦ ?_).2 ?_), fun l ↦ ?_⟩
+  · simp only [mem_filter, mem_univ, true_and, D]
+    intro hi
+    by_cases hij : i = j
+    · exact hij ▸ hjD
+    by_cases hik : i = k
+    · exact hik ▸ hk.2.ne
+    rwa [robinHood_apply_of_ne y hij hik] at hi
+  · rcases min_choice (y j - d j) (d k - y k) with h | h
+    · refine ⟨j, D.min'_mem hDne, ?_⟩
+      simp [robinHood_apply_left y hjk, δ, h]
+    · refine ⟨k, by simpa [D] using hk.2.ne, ?_⟩
+      simp only [mem_filter, mem_univ, true_and, not_not, robinHood_apply_right y hjk, δ, h]
+      ring
+  rw [prefixSum_robinHood]
+  by_cases hkl : (k : ℕ) < l
+  · simpa [hkl, (Fin.lt_def.1 hk.1).trans hkl] using hle l
+  by_cases hjl : (j : ℕ) < l
+  · -- Between `j` and `k`, the prefix sums of `y` exceed those of `d` by at least `y j - d j`.
+    have hgap : y j - d j ≤ prefixSum l y - prefixSum l d := by
+      rw [prefixSum_def, prefixSum_def, ← sum_sub_distrib]
+      refine single_le_sum (f := fun i ↦ y i - d i) (fun i hi ↦ ?_) (by simpa using hjl)
+      rcases lt_trichotomy i j with h | rfl | h
+      · simp [hbelow i h]
+      · exact sub_nonneg.2 hj.le
+      · exact sub_nonneg.2 (hmid i h (Fin.lt_def.2 (by simp at hi; omega)))
+    simp only [hjl, hkl, ite_true, ite_false, add_zero]
+    linarith
+  · simpa [hjl, hkl] using hle l
+
+/-- **Transfer closure.** Let `K` be a set of real tuples that is closed under every Robin Hood
+transfer from a coordinate to one with no larger value. If `K` contains `y`, then it contains
+every antitone tuple `d` with the same total sum as `y` whose prefix sums are bounded by those
+of `y`. No order condition on `y` is needed.
+
+When `y` is antitone too, the hypotheses on `d` say that `d` is majorized by `y`. -/
+theorem mem_of_prefixSum_le_of_sum_eq {K : Set (Fin n → ℝ)}
+    (hK : ∀ x ∈ K, ∀ (i j : Fin n) (δ : ℝ), 0 ≤ δ → δ ≤ x i - x j → robinHood x i j δ ∈ K)
+    {y d : Fin n → ℝ} (hy : y ∈ K) (hd : Antitone d) (hle : ∀ k, prefixSum k d ≤ prefixSum k y)
+    (hsum : ∑ i, d i = ∑ i, y i) : d ∈ K := by
+  -- Induct on the number of coordinates at which `y` differs from `d`.
+  induction hm : #{i | y i ≠ d i} using Nat.strong_induction_on generalizing y with
+  | _ m ih =>
+  rcases eq_or_ne y d with rfl | hne
+  · exact hy
+  obtain ⟨j, k, δ, hδ, hδ', hcard, hle'⟩ := exists_robinHood_card_lt hd hle hsum hne
+  exact ih _ (hm ▸ hcard) (hK y hy j k δ hδ hδ') hle' (by simp [hsum]) rfl
 
 /-! ### Symmetric convex sets -/
 
@@ -260,31 +405,8 @@ theorem isSolid [Finite ι] (hK : IsSymmetricConvex K) :
 
 /-- **Symmetric convex sets are closed under Robin Hood transfers.** -/
 theorem robinHood_mem (hK : IsSymmetricConvex K) (hx : x ∈ K) {i j : ι} {δ : ℝ} (hδ : 0 ≤ δ)
-    (hδ' : δ ≤ x i - x j) : robinHood x i j δ ∈ K := by
-  rcases eq_or_ne i j with rfl | hij
-  · simpa using hx
-  rcases (sub_nonneg.1 (hδ.trans hδ')).eq_or_lt with heq | hlt
-  · obtain rfl : δ = 0 := le_antisymm (by linarith) hδ
-    simpa [robinHood] using hx
-  -- `robinHood x i j δ` is a convex combination of `x` and of `x` with `x i` and `x j` swapped.
-  have hpos : 0 < x i - x j := sub_pos.2 hlt
-  have hmem := hK.convex hx (hK.comp_perm_mem (Equiv.swap i j) x hx)
-    (a := 1 - δ / (x i - x j)) (b := δ / (x i - x j))
-    (by rw [sub_nonneg]; exact div_le_one_of_le₀ hδ' hpos.le) (div_nonneg hδ hpos.le)
-    (by ring)
-  convert hmem using 1
-  ext k
-  simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, comp_apply]
-  rcases eq_or_ne k i with rfl | hki
-  · rw [robinHood_apply_left x hij, Equiv.swap_apply_left]
-    field_simp
-    ring
-  rcases eq_or_ne k j with rfl | hkj
-  · rw [robinHood_apply_right x hij, Equiv.swap_apply_right]
-    field_simp
-    ring
-  · rw [robinHood_apply_of_ne x hki hkj, Equiv.swap_apply_of_ne_of_ne hki hkj]
-    ring
+    (hδ' : δ ≤ x i - x j) : robinHood x i j δ ∈ K :=
+  hK.convex.robinHood_mem hx (hK.comp_perm_mem _ x hx) hδ hδ'
 
 /-- Symmetric convex sets are closed under T-transforms. -/
 theorem mem_of_isTTransform (hK : IsSymmetricConvex K) (hx : x ∈ K) {y : ι → ℝ}

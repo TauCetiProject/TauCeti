@@ -100,6 +100,8 @@ orthogonal file consumes the pointwise `Matrix.piTensorProductMap_tprod_single` 
 ## Main results
 
 * `TauCeti.symplecticCap_comp_symplecticCup`: the loop value, `cap ∘ cup = -2n`.
+* `TauCeti.symplecticCap_surjective` and `TauCeti.range_symplecticCupCap`: the cap is onto once
+  `n ≠ 0`, so `e` has the image of the cup.
 * `TauCeti.symplecticCupCap_mul_self`: `e * e = (-2n) • e`.
 * `TauCeti.symplecticCrossing_mul_self`: `s * s = 1`.
 * `TauCeti.symplecticCrossing_mul_symplecticCupCap` and
@@ -199,6 +201,15 @@ theorem symplecticCap_tprod_single (x y : Fin n ⊕ Fin n) :
     ← Matrix.toBilin'_apply' (Matrix.J (Fin n) k)]
   simp
 
+/-- **The cap is surjective** once there is a coordinate to contract: it pairs the basis vectors
+`e_{inl 0}` and `e_{inr 0}` to `J (inl 0) (inr 0) = -1`. -/
+theorem symplecticCap_surjective [NeZero n] : Function.Surjective (symplecticCap k n) := by
+  intro c
+  refine ⟨-c • PiTensorProduct.tprod k
+    ![Pi.single (Sum.inl 0) (1 : k), Pi.single (Sum.inr 0) (1 : k)], ?_⟩
+  rw [map_smul, symplecticCap_tprod_single]
+  simp [Matrix.J]
+
 end Cap
 
 section Cup
@@ -276,6 +287,17 @@ noncomputable def symplecticCupCap : Module.End k (⨂[k]^2 ((Fin n ⊕ Fin n) �
 theorem symplecticCupCap_apply (x : ⨂[k]^2 ((Fin n ⊕ Fin n) → k)) :
     symplecticCupCap k n x = symplecticCup k n (symplecticCap k n x) :=
   (rfl)
+
+/-- **The image of the Brauer generator `e = cup ∘ cap` is the image of the cup alone**, the cap
+being surjective once `V ≠ 0`. For `n = 0` the cup is the zero map and both images are `⊥`. -/
+theorem range_symplecticCupCap :
+    LinearMap.range (symplecticCupCap k n) = LinearMap.range (symplecticCup k n) := by
+  rw [symplecticCupCap]
+  obtain _ | m := n
+  · have hcup : symplecticCup k 0 = 0 := LinearMap.ext_ring (by simp)
+    rw [hcup, LinearMap.zero_comp, LinearMap.range_zero, LinearMap.range_zero]
+  · rw [LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top_of_surjective _ (symplecticCap_surjective k (m + 1)))]
 
 /-- **The relation `e² = δ e`** at the loop value `δ = -2n`: the middle of `e * e` is a closed
 loop. -/

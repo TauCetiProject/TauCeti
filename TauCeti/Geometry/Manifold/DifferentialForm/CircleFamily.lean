@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Leibniz
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.FunSMul
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 public import TauCeti.Geometry.Manifold.Instances.CircleFamily
 
 /-!
@@ -106,7 +106,7 @@ theorem mpullback_mk_angleForm (p : PositivePeriod) :
 by the period. It restricts to the time form `dt_p` on each circle of period `p`. -/
 def timeForm : SmoothForm (𝓘(ℝ).prod 𝓘(ℝ)) CircleFamily ℝ 1 :=
   ⟨fun z ↦ (z.period : ℝ) • angleForm.1 z,
-    (angleForm.isSmoothForm.fun_smul contMDiff_periodReal).mem_smoothForms⟩
+    (angleForm.isSmoothForm.fun_smul contMDiff_periodReal).mem_smoothBundleForms⟩
 
 /-- The time form is the angle form rescaled by the period. -/
 @[simp]
@@ -135,13 +135,13 @@ theorem mextDeriv_timeForm :
         angleForm.1 := by
   funext z
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  have h := mextDeriv_fun_smul_apply
+  have h := mextDeriv_fun_smul
     (contMDiff_periodReal (n := 1).mdifferentiableAt one_ne_zero (x := z))
     (angleForm.mdifferentiableAt z) v
   rw [(SmoothForm.isClosed_iff_forall_mextDeriv_apply_eq_zero angleForm).mp
     isClosed_angleForm z] at h
   simp only [Nat.reduceAdd, Fin.cast_refl, CompTriple.comp_eq, ContinuousAlternatingMap.coe_zero,
-    Pi.zero_apply, smul_eq_mul, mul_zero, add_zero] at h
+    Pi.zero_apply, mul_zero, add_zero] at h
   -- `timeForm.1` is `fun z ↦ z.period • angleForm.1 z` by definition.
   exact h
 

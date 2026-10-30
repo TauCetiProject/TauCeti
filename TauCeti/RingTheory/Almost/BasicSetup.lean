@@ -47,6 +47,10 @@ pseudouniformiser.
 * `TauCeti.Almost.BasicSetup.IsAlmostZero.of_injective`,
   `TauCeti.Almost.BasicSetup.IsAlmostZero.of_surjective` and `LinearEquiv.isAlmostZero_iff`:
   submodules, quotients and isomorphic copies of almost zero modules are almost zero.
+* `TauCeti.Almost.BasicSetup.IsAlmostZero.tensorProduct`,
+  `TauCeti.Almost.BasicSetup.IsAlmostZero.linearMap_of_domain` and
+  `TauCeti.Almost.BasicSetup.IsAlmostZero.linearMap_of_codomain`: almost zero modules form a
+  tensor ideal, stable under `P ⊗[V] -` and under `Hom` into and out of any module.
 * `TauCeti.Almost.BasicSetup.isAlmostZero_classical_iff` and
   `TauCeti.Almost.BasicSetup.isAlmostIso_classical_iff`: in the classical setup, almost zero means
   zero and an almost isomorphism is a bijective linear map.
@@ -201,6 +205,22 @@ theorem IsAlmostZero.tensorProduct {M : Type*} [AddCommGroup M] [Module V M]
   induction t using TensorProduct.inductionOn with
   | tmul p x => rw [← tmul_smul, h.smul_eq_zero hε, tmul_zero]
   | add t t' ht ht' => rw [smul_add, ht, ht', add_zero]
+
+variable {S} in
+/-- The module of linear maps out of an almost zero module is almost zero. -/
+theorem IsAlmostZero.linearMap_of_domain {M : Type*} [AddCommGroup M] [Module V M]
+    (N : Type*) [AddCommGroup N] [Module V N] (h : S.IsAlmostZero M) :
+    S.IsAlmostZero (M →ₗ[V] N) :=
+  isAlmostZero_iff.mpr fun ε hε f ↦ LinearMap.ext fun x ↦ by
+    rw [LinearMap.smul_apply, ← map_smul, h.smul_eq_zero hε, map_zero, LinearMap.zero_apply]
+
+variable {S} in
+/-- The module of linear maps into an almost zero module is almost zero. -/
+theorem IsAlmostZero.linearMap_of_codomain (M : Type*) [AddCommGroup M] [Module V M]
+    {N : Type*} [AddCommGroup N] [Module V N] (h : S.IsAlmostZero N) :
+    S.IsAlmostZero (M →ₗ[V] N) :=
+  isAlmostZero_iff.mpr fun ε hε f ↦ LinearMap.ext fun x ↦ by
+    rw [LinearMap.smul_apply, h.smul_eq_zero hε, LinearMap.zero_apply]
 
 /-- If `m ⊗[V] N` is killed by `m` then it vanishes: every element of `m` is a sum of products
 of two elements of `m`. -/

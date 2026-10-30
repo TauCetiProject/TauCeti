@@ -7,9 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Category
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
+public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.ProjectiveEmbedding
 
 /-!
-# Regular proper curves are anti-equivalent to algebraic function fields
+# Regular proper and projective curves are anti-equivalent to algebraic function fields
 
 Let `k` be a field. This file proves that the function-field functor
 `X ↦ k(X)` from regular proper curves over `k` (with dominant `k`-morphisms) to algebraic
@@ -29,6 +30,11 @@ The two natural isomorphisms are the ones already constructed object by object:
   (`AlgebraicGeometry.Scheme.isoTwoChartModel`), naturally in `X` because a dominant
   `k`-morphism into a separated scheme is determined by its pullback of rational functions.
 
+Every regular proper curve is projective
+(`AlgebraicGeometry.Scheme.isProjectiveOver_of_isCurveOver`), so the regular projective curves, a
+full subcategory of the regular proper curves, are all of them. The anti-equivalence therefore also
+holds with regular projective curves on the geometric side, as in Hartshorne's Corollary I.6.12.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.RegularProperCurveCat.twoChartModelFunctor`: the model functor
@@ -40,11 +46,17 @@ The two natural isomorphisms are the ones already constructed object by object:
 * `TauCeti.AlgebraicGeometry.RegularProperCurveCat.equivFunctionFieldCat`: **the anti-equivalence**
   `RegularProperCurveCat k ≌ (FunctionFieldCat k)ᵒᵖ`, with functor the function-field functor,
   inverse the model functor, and the two natural isomorphisms above as counit and unit.
+* `TauCeti.AlgebraicGeometry.RegularProjectiveCurveCat.equivRegularProperCurveCat`: regarding a
+  regular projective curve as a regular proper curve is an equivalence of categories.
+* `TauCeti.AlgebraicGeometry.RegularProjectiveCurveCat.equivFunctionFieldCat`: **the
+  anti-equivalence** `RegularProjectiveCurveCat k ≌ (FunctionFieldCat k)ᵒᵖ` between regular
+  projective curves and algebraic function fields.
 
 ## Main results
 
-* the instances `(functionFieldFunctor k).IsEquivalence` and
-  `(twoChartModelFunctor k).IsEquivalence`.
+* the instances `(functionFieldFunctor k).IsEquivalence`,
+  `(twoChartModelFunctor k).IsEquivalence` and
+  `(RegularProjectiveCurveCat.toRegularProperCurveCat k).IsEquivalence`.
 
 ## References
 
@@ -316,5 +328,169 @@ instance : (twoChartModelFunctor k).IsEquivalence :=
   (equivFunctionFieldCat k).isEquivalence_inverse
 
 end RegularProperCurveCat
+
+namespace RegularProjectiveCurveCat
+
+variable {k : Type u} [Field k]
+
+/-- A regular proper curve, as a regular projective curve: it is projective over `k` by
+`AlgebraicGeometry.Scheme.isProjectiveOver_of_isCurveOver`. -/
+@[expose] noncomputable def ofRegularProperCurveCat (X : RegularProperCurveCat k) :
+    RegularProjectiveCurveCat k where
+  toScheme := X.toScheme
+  topologicalKrullDim_eq_one := Scheme.IsCurveOver.topologicalKrullDim_eq_one k
+
+@[simp]
+lemma ofRegularProperCurveCat_toScheme (X : RegularProperCurveCat k) :
+    (ofRegularProperCurveCat X).toScheme = X.toScheme :=
+  (rfl)
+
+variable (k) in
+/-- **Regular projective curves are regular proper curves**: regarding a regular projective curve
+as a regular proper curve is an equivalence of categories, because every regular proper curve is
+projective. -/
+@[expose] noncomputable def equivRegularProperCurveCat :
+    RegularProjectiveCurveCat k ≌ RegularProperCurveCat k where
+  functor := toRegularProperCurveCat k
+  inverse :=
+    { obj := ofRegularProperCurveCat
+      map f := InducedCategory.homMk f }
+  -- Both round trips keep the underlying scheme and morphism, and the remaining fields are
+  -- propositions or the same instances, so both composites are the identity functors up to
+  -- structure eta.
+  unitIso := Iso.refl _
+  counitIso := Iso.refl _
+
+@[simp]
+lemma equivRegularProperCurveCat_functor :
+    (equivRegularProperCurveCat k).functor = toRegularProperCurveCat k :=
+  (rfl)
+
+@[simp]
+lemma equivRegularProperCurveCat_inverse_obj (X : RegularProperCurveCat k) :
+    (equivRegularProperCurveCat k).inverse.obj X = ofRegularProperCurveCat X :=
+  (rfl)
+
+@[simp]
+lemma equivRegularProperCurveCat_inverse_map_hom {X Y : RegularProperCurveCat k} (f : X ⟶ Y) :
+    ((equivRegularProperCurveCat k).inverse.map f).hom = f :=
+  (rfl)
+
+@[simp]
+lemma equivRegularProperCurveCat_unitIso : (equivRegularProperCurveCat k).unitIso = Iso.refl _ :=
+  (rfl)
+
+@[simp]
+lemma equivRegularProperCurveCat_counitIso :
+    (equivRegularProperCurveCat k).counitIso = Iso.refl _ :=
+  (rfl)
+
+instance : (toRegularProperCurveCat k).IsEquivalence :=
+  (equivRegularProperCurveCat k).isEquivalence_functor
+
+variable (k) in
+/-- **The anti-equivalence between regular projective curves and algebraic function fields** over
+a field `k`: the functor sending a regular projective curve `X` to its function field `k(X)` and a
+dominant `k`-morphism to the pullback of rational functions along it is an equivalence
+`RegularProjectiveCurveCat k ≌ (FunctionFieldCat k)ᵒᵖ`. Its inverse sends a function field to its
+two-chart model, the normalization of the projective line in it. -/
+@[expose] noncomputable def equivFunctionFieldCat :
+    RegularProjectiveCurveCat k ≌ (FunctionFieldCat k)ᵒᵖ :=
+  (equivRegularProperCurveCat k).trans (RegularProperCurveCat.equivFunctionFieldCat k)
+
+/-- The anti-equivalence sends a regular projective curve to its function field. -/
+@[simp]
+lemma equivFunctionFieldCat_functor_obj (X : RegularProjectiveCurveCat k) :
+    (equivFunctionFieldCat k).functor.obj X =
+      op (.of X.toScheme.functionField Scheme.IsCurveOver.isFunctionField) :=
+  (rfl)
+
+/-- The anti-equivalence sends a dominant `k`-morphism to the pullback of rational functions
+along it. -/
+@[simp]
+lemma equivFunctionFieldCat_functor_map_unop_hom {X Y : RegularProjectiveCurveCat k}
+    (f : X ⟶ Y) :
+    ((equivFunctionFieldCat k).functor.map f).unop.hom = f.hom.hom.functionFieldAlgHom k :=
+  (rfl)
+
+/-- The inverse of the anti-equivalence sends a function field `F` to the two-chart model of `F`
+built from `modelGenerator F`. -/
+@[simp]
+lemma equivFunctionFieldCat_inverse_obj_toScheme (F : (FunctionFieldCat k)ᵒᵖ) :
+    ((equivFunctionFieldCat k).inverse.obj F).toScheme =
+      twoChartModel F.unop.isFunctionField
+        (RegularProperCurveCat.modelGenerator_ne_zero F.unop) :=
+  (rfl)
+
+/-- The inverse of the anti-equivalence sends a `k`-embedding of function fields to the induced
+dominant `k`-morphism of two-chart models. -/
+@[simp]
+lemma equivFunctionFieldCat_inverse_map_hom {F G : (FunctionFieldCat k)ᵒᵖ} (φ : F ⟶ G) :
+    ((equivFunctionFieldCat k).inverse.map φ).hom =
+      (RegularProperCurveCat.twoChartModelFunctor k).map φ :=
+  (rfl)
+
+/-- The unit of the anti-equivalence at `X` is the isomorphism of `X` with the two-chart model of
+its function field. -/
+@[simp]
+lemma equivFunctionFieldCat_unitIso_hom_app_hom (X : RegularProjectiveCurveCat k) :
+    ((equivFunctionFieldCat k).unitIso.hom.app X).hom =
+      (RegularProperCurveCat.idIsoFunctionFieldFunctorCompTwoChartModelFunctor k).hom.app
+        ((toRegularProperCurveCat k).obj X) := by
+  dsimp only [equivFunctionFieldCat]
+  rw [Equivalence.trans_unitIso, Iso.trans_hom, NatTrans.comp_app, InducedCategory.comp_hom]
+  simp only [Functor.id_obj, Equivalence.trans_functor, Equivalence.trans_inverse, Functor.comp_obj,
+    equivRegularProperCurveCat_unitIso, Iso.refl_hom, NatTrans.id_app,
+    RegularProperCurveCat.equivFunctionFieldCat_unitIso, Functor.isoWhiskerRight_trans,
+    Iso.trans_assoc, Iso.trans_hom, Functor.isoWhiskerRight_hom, Iso.symm_hom, NatTrans.comp_app,
+    Functor.whiskerRight_app, Functor.rightUnitor_inv_app, CategoryTheory.Functor.map_id,
+    Functor.associator_inv_app, Functor.associator_hom_app, Category.comp_id, Category.id_comp,
+    equivRegularProperCurveCat_inverse_map_hom]
+  exact Category.id_comp _
+
+/-- The inverse of the unit of the anti-equivalence at `X` is the isomorphism of the two-chart
+model of the function field of `X` with `X`. -/
+@[simp]
+lemma equivFunctionFieldCat_unitIso_inv_app_hom (X : RegularProjectiveCurveCat k) :
+    ((equivFunctionFieldCat k).unitIso.inv.app X).hom =
+      (RegularProperCurveCat.idIsoFunctionFieldFunctorCompTwoChartModelFunctor k).inv.app
+        ((toRegularProperCurveCat k).obj X) := by
+  dsimp only [equivFunctionFieldCat]
+  rw [Equivalence.trans_unitIso, Iso.trans_inv, NatTrans.comp_app, InducedCategory.comp_hom]
+  simp only [Equivalence.trans_functor, Equivalence.trans_inverse, Functor.comp_obj, Functor.id_obj,
+    RegularProperCurveCat.equivFunctionFieldCat_unitIso, Functor.isoWhiskerRight_trans,
+    Iso.trans_assoc, Iso.trans_inv, Functor.isoWhiskerRight_inv, Iso.symm_inv, Category.assoc,
+    NatTrans.comp_app, Functor.associator_inv_app, Functor.whiskerRight_app,
+    Functor.associator_hom_app, CategoryTheory.Functor.map_id, Functor.rightUnitor_hom_app,
+    Category.comp_id, Category.id_comp, equivRegularProperCurveCat_inverse_map_hom,
+    equivRegularProperCurveCat_unitIso, Iso.refl_inv, NatTrans.id_app]
+  exact Category.comp_id _
+
+/-- The counit of the anti-equivalence at `F` identifies the function field of the two-chart model
+of `F` with `F`. -/
+@[simp]
+lemma equivFunctionFieldCat_counitIso_hom_app (F : (FunctionFieldCat k)ᵒᵖ) :
+    (equivFunctionFieldCat k).counitIso.hom.app F =
+      (RegularProperCurveCat.twoChartModelFunctorCompFunctionFieldFunctorIso k).hom.app F := by
+  dsimp only [equivFunctionFieldCat]
+  rw [Equivalence.trans_counitIso, Iso.trans_hom, NatTrans.comp_app, Iso.trans_hom,
+    NatTrans.comp_app, Functor.isoWhiskerRight_hom, Functor.whiskerRight_app]
+  -- The two sides have the same type only up to structure eta for the two-chart model, so `simp`
+  -- cannot rewrite the goal; the remaining factors are identities, removed one at a time.
+  refine (Category.id_comp _).trans ((congrArg (· ≫ _) ?_).trans (Category.id_comp _))
+  refine (congrArg _ ?_).trans (CategoryTheory.Functor.map_id _ _)
+  rfl
+
+/-- The inverse of the counit of the anti-equivalence at `F` identifies `F` with the function
+field of the two-chart model of `F`. -/
+@[simp]
+lemma equivFunctionFieldCat_counitIso_inv_app (F : (FunctionFieldCat k)ᵒᵖ) :
+    (equivFunctionFieldCat k).counitIso.inv.app F =
+      (RegularProperCurveCat.twoChartModelFunctorCompFunctionFieldFunctorIso k).inv.app F :=
+  Iso.inv_ext (f := (equivFunctionFieldCat k).counitIso.app F) <|
+    (congrArg (· ≫ _) (equivFunctionFieldCat_counitIso_hom_app F)).trans <|
+      (RegularProperCurveCat.twoChartModelFunctorCompFunctionFieldFunctorIso k).hom_inv_id_app F
+
+end RegularProjectiveCurveCat
 
 end TauCeti.AlgebraicGeometry
