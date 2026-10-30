@@ -32,9 +32,11 @@ kernel is the image of the norm group in `Cl_𝔪` (`ker_rayClassArtinMap`).
 
 On ideals it is the ideal-theoretic Artin map. The prime idele class at a finite place `v` outside
 the support of `𝔪` is congruent to one modulo `𝔪`, and its ray class is the ray class of the prime
-`v` (`rayClassQuotient_primeIdeleClass`). An admissible modulus contains every ramified prime in
-its support (`IsAdmissibleModulus.isUnramifiedAway`), and the global Artin symbol of the prime
-idele class at an unramified place is the Frobenius there (`globalArtinMap_ideal`). Since the
+`v` (`rayClassQuotient_primeIdeleClass`, an instance of
+`GlobalNumberFields.rayClassQuotient_ofAdicCompletion_of_isUniformizer`). An admissible modulus
+contains every ramified prime in its support (`IsAdmissibleModulus.isUnramifiedAway`), and the
+global Artin symbol of the prime idele class at an unramified place is the Frobenius there
+(`globalArtinMap_ideal`). Since the
 ideal-theoretic Artin map is determined by its values on primes, the ray-class Artin map,
 composed with the ray class of an ideal prime to `𝔪`, is
 `NumberFieldArithmetic.artinHomAway` for the excluded set `𝔪.support`
@@ -88,28 +90,16 @@ variable {K : Type} [Field K] [NumberField K]
 
 /-- **The ray class of a prime idele class is the ray class of the prime.** For a finite place `v`
 of `K` outside the support of a modulus `𝔪`, the prime idele class at `v` has the ray class of the
-prime `v`: the idele with a uniformizer at `v` and `1` elsewhere is congruent to one modulo `𝔪`,
-and its fractional ideal is `v`. -/
+prime `v`, as does the class of any uniformizer at `v`
+(`GlobalNumberFields.rayClassQuotient_ofAdicCompletion_of_isUniformizer`). -/
 theorem rayClassQuotient_primeIdeleClass {𝔪 : Modulus K} {v : HeightOneSpectrum (𝓞 K)}
     (hv : v ∉ 𝔪.support) (I : idealsPrimeTo 𝔪)
     (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K)) :
     rayClassQuotient 𝔪 (primeIdeleClass K v) = rayClassMk 𝔪 I := by
   obtain ⟨π, hπ, h⟩ := exists_isUniformizer_primeIdeleClass_eq K v
-  -- The idele concentrated at `v` is trivial at the places of `𝔪`.
-  have hmem : IdeleGroup.ofAdicCompletion (𝓞 K) K v π ∈ ideleCongrOneSubgroup 𝔪 := by
-    refine mem_ideleCongrOneSubgroup_iff.mpr ⟨fun v' hv' ↦ ?_, fun w _ ↦ ?_⟩
-    · have hne : v' ≠ v := fun he ↦ hv ((Modulus.mem_support_iff 𝔪 v).mpr (he ▸ hv'))
-      simp [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hne]
-    · simp [InfinitePlace.ideleInfiniteCoord_ofAdicCompletion]
-  -- A uniformizer has valuation `exp (-1)`, so the fractional ideal of the idele is `v`.
-  have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  rw [h, IdeleClassGroup.ofAdicCompletion_apply, rayClassQuotient_mk_of_mem hmem]
-  refine congrArg _ (Subtype.ext ?_)
-  dsimp only
-  rw [HeightOneSpectrum.toFractionalIdeal_toFiniteIdele_ofAdicCompletion_of_eq_exp_neg_one v
-    (v.isUniformizer_iff_valued_eq_exp_neg_one.1 hπ)]
-  exact Units.ext ((HeightOneSpectrum.coe_unitOfPrime v K).trans hI.symm)
+  rw [h]
+  exact rayClassQuotient_ofAdicCompletion_of_isUniformizer hv hπ I hI
 
 end PrimeIdeleClass
 

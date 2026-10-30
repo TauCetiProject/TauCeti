@@ -277,9 +277,13 @@ theorem isUniformizer_iff_valued_eq_exp_neg_one [Finite (R ⧸ v.asIdeal)]
     {π : (v.adicCompletion K)ˣ} :
     TauCeti.IsUniformizer (v.adicCompletion K) π ↔
       Valued.v (π : v.adicCompletion K) = WithZero.exp (-1) := by
-  rw [TauCeti.isUniformizer_def, ← WithZero.coe_inj, ← TauCeti.normalizedValuationWithZero_coe,
-    normalizedValuationWithZero_adicCompletion, ← WithZero.exp_eq_coe_ofAdd, inv_eq_iff_eq_inv,
-    WithZero.exp_neg]
+  -- The normalized valuation of `π` is the inverse of its adic valuation.
+  have hπ : (TauCeti.normalizedValuation (v.adicCompletion K) π : ℤᵐ⁰) =
+      (Valued.v (π : v.adicCompletion K))⁻¹ := by
+    rw [← TauCeti.normalizedValuationWithZero_coe, normalizedValuationWithZero_adicCompletion]
+  -- What remains is a normalization of `ℤᵐ⁰` values.
+  rw [TauCeti.isUniformizer_def, ← WithZero.coe_inj, hπ]
+  simp [inv_eq_iff_eq_inv, ← WithZero.exp_eq_coe_ofAdd]
 
 /-- The ring of integers in an adic completion that is a nonarchimedean local field is compact. -/
 instance compactSpace_adicCompletionIntegers

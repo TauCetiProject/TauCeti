@@ -283,9 +283,11 @@ theorem ker_ideleClassArtinMap :
       (GlobalNumberFields.ideleClassNormMap K L :
         IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
   ext c
-  rw [MonoidHom.mem_ker, ← globalArtinMap_eq_zero_iff K L IsSepClosed.lift,
-    ← Abelianization.of_injective.eq_iff, of_ideleClassArtinMap K L IsSepClosed.lift, map_one,
-    ← toMul_zero, Additive.toMul.injective.eq_iff]
+  -- The Artin symbol of `c` is trivial exactly when its class in `Gal(L/K)^ab` is.
+  have hc : ideleClassArtinMap K L c = 1 ↔ globalArtinMap K L IsSepClosed.lift (.ofMul c) = 0 := by
+    rw [← Abelianization.of_injective.eq_iff, of_ideleClassArtinMap K L IsSepClosed.lift, map_one,
+      toMul_eq_one]
+  rw [MonoidHom.mem_ker, hc, globalArtinMap_eq_zero_iff]
 
 /-- **The global Artin map of an abelian extension is surjective.** -/
 theorem ideleClassArtinMap_surjective : Function.Surjective (ideleClassArtinMap K L) := by
