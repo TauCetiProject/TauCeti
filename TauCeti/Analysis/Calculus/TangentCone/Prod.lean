@@ -21,8 +21,8 @@ point of a product of manifolds with corners is read.
 
 ## Main results
 
-* `tangentConeAt_prod_subset`: the tangent cone of a product lies in the product of the tangent
-  cones.
+* `TauCeti.tangentConeAt_prod_subset`: the tangent cone of a product lies in the product of the
+  tangent cones.
 * `Convex.posTangentConeAt_prod`: for convex sets the positive tangent cone of the product is the
   product of the positive tangent cones.
 -/
@@ -30,6 +30,8 @@ point of a product of manifolds with corners is read.
 public section
 
 open Filter Set Topology
+
+namespace TauCeti
 
 /-- The tangent cone of a product of sets is contained in the product of the tangent cones of the
 factors. -/
@@ -46,13 +48,16 @@ theorem tangentConeAt_prod_subset {R E F : Type*} [AddCommGroup E] [SMul R E]
   · simpa [Function.comp_def] using (continuous_snd.tendsto _).comp hd₀
   · simpa [Function.comp_def] using (continuous_snd.tendsto _).comp hcd
 
+end TauCeti
+
 /-- For convex sets containing the base points, the positive tangent cone of the product is the
 product of the positive tangent cones. -/
+@[simp]
 theorem Convex.posTangentConeAt_prod {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E} {t : Set F} (hs : Convex ℝ s)
     (ht : Convex ℝ t) {x : E} {y : F} (hx : x ∈ s) (hy : y ∈ t) :
     posTangentConeAt (s ×ˢ t) (x, y) = posTangentConeAt s x ×ˢ posTangentConeAt t y := by
-  refine tangentConeAt_prod_subset.antisymm ?_
+  refine TauCeti.tangentConeAt_prod_subset.antisymm ?_
   rintro ⟨v, w⟩ ⟨hv, hw⟩
   obtain ⟨α, l₁, hl₁, c₁, d₁, hd₁, hds₁, hcd₁⟩ := exists_fun_of_mem_tangentConeAt hv
   obtain ⟨β, l₂, hl₂, c₂, d₂, hd₂, hds₂, hcd₂⟩ := exists_fun_of_mem_tangentConeAt hw

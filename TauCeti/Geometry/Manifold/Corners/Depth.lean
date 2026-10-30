@@ -238,6 +238,7 @@ theorem finrank_sub_depthAt_le_of_hasFDerivWithinAt (hy : y ∈ range I) {φ : E
 
 /-- **The depth is additive on product models**: the depth of a point of the range of `I.prod I'`
 is the sum of the depths of its two coordinates. -/
+@[simp]
 theorem depthAt_prod (hy : y ∈ range I) {y' : E'} (hy' : y' ∈ range I') :
     (I.prod I').depthAt (y, y') = I.depthAt y + I'.depthAt y' := by
   have hcone : posTangentConeAt (range (I.prod I')) (y, y') =
@@ -259,8 +260,9 @@ theorem depthAt_prod (hy : y ∈ range I) {y' : E'} (hy' : y' ∈ range I') :
       (by rintro _ ⟨u, hu, rfl⟩; exact (hcone ▸ hU hu).1)
     have h₂ := finrank_add_depthAt_le (I := I') (y := y') (U.map (LinearMap.snd ℝ E E'))
       (by rintro _ ⟨u, hu, rfl⟩; exact (hcone ▸ hU hu).2)
-    have hU' := Submodule.finrank_mono (show U ≤ (U.map (LinearMap.fst ℝ E E')).prod
-      (U.map (LinearMap.snd ℝ E E')) from fun u hu ↦ ⟨⟨u, hu, rfl⟩, ⟨u, hu, rfl⟩⟩)
+    have hle : U ≤ (U.map (LinearMap.fst ℝ E E')).prod (U.map (LinearMap.snd ℝ E E')) :=
+      fun u hu ↦ ⟨⟨u, hu, rfl⟩, ⟨u, hu, rfl⟩⟩
+    have hU' := Submodule.finrank_mono hle
     rw [hfin] at hU'
     omega
 
