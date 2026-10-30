@@ -36,10 +36,10 @@ real vector skew-Hermitian.
 
 ## Main results
 
-* `TauCeti.ExteriorAlgebra.toLinearMapₛₗ₂_ι_mul_left`: `H (x ∧ s) t = H s (h(x, ·) ⌋ t)`.
-* `TauCeti.ExteriorAlgebra.toLinearMapₛₗ₂_ι_mul_right`: `H s (x ∧ t) = H (h(x, ·) ⌋ s) t`.
-* `TauCeti.ExteriorAlgebra.toLinearMapₛₗ₂_apply_one_one`: `H 1 1 = 1`.
-* `TauCeti.ExteriorAlgebra.toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq`: two bases with the same
+* `ExteriorAlgebra.toLinearMapₛₗ₂_ι_mul_left`: `H (x ∧ s) t = H s (h(x, ·) ⌋ t)`.
+* `ExteriorAlgebra.toLinearMapₛₗ₂_ι_mul_right`: `H s (x ∧ t) = H (h(x, ·) ⌋ s) t`.
+* `ExteriorAlgebra.toLinearMapₛₗ₂_apply_one_one`: `H 1 1 = 1`.
+* `ExteriorAlgebra.toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq`: two bases with the same
   Hermitian form on `M` give the same Hermitian form on `⋀ M`.
 
 ## References
@@ -50,9 +50,9 @@ real vector skew-Hermitian.
 
 public section
 
-open CliffordAlgebra Matrix
+open CliffordAlgebra Matrix TauCeti.ExteriorAlgebra
 
-namespace TauCeti.ExteriorAlgebra
+namespace ExteriorAlgebra
 
 variable {R M I : Type*} [CommRing R] [StarRing R] [AddCommGroup M] [Module R M]
   [Fintype I] [LinearOrder I] (b : Module.Basis I R M)
@@ -155,4 +155,4 @@ theorem toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq {I' : Type*} [Fintype
     refine LinearMap.ext fun t ↦ ?_
     rw [toLinearMapₛₗ₂_ι_mul_left, toLinearMapₛₗ₂_ι_mul_left, hs, h]
 
-end TauCeti.ExteriorAlgebra
+end ExteriorAlgebra

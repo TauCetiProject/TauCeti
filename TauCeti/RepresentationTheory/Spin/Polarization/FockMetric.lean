@@ -18,20 +18,20 @@ almost complex structure preserving `Q`. In the geometric convention `Q (v) = -g
 metric `g` induces on the `i`-eigenspace `W` of the complexified complex structure the Hermitian
 form
 
-  `h (x, y) = g_ℂ (x̄, y) = -(1/2) polar Q_ℂ (x̄, y)`,
+  `h (x, y) = g_ℂ (conj x, y) = -(1/2) polar Q_ℂ (conj x, y)`,
 
-conjugate-linear in `x`, where `x̄ = TauCeti.tmulConj V x` lies in the `-i`-eigenspace `W'`.
+conjugate-linear in `x`, where `conj x = TauCeti.tmulConj V x` lies in the `-i`-eigenspace `W'`.
 For a basis `b` of `W` that is orthonormal for `h`, in the sense that
-`polar Q_ℂ (b̄ᵢ, bⱼ) = -2 δᵢⱼ`, let `H` be the Hermitian form on the spinor module `⋀ W` for which
-the increasing wedge basis of `b` is orthonormal. It is the exterior Gram metric of `h`: it is
-positive definite, and it does not depend on the orthonormal basis.
+`polar Q_ℂ (conj bᵢ, bⱼ) = -2 δᵢⱼ`, let `H` be the Hermitian form on the spinor module `⋀ W` for
+which the increasing wedge basis of `b` is orthonormal. It is the exterior Gram metric of `h`: it
+is positive definite, and it does not depend on the orthonormal basis.
 
 This file proves that **the normalized Fock action is a `*`-representation for `H`**:
 `H (c(a) s) t = H s (c(a^*) t)` for every element `a` of the complexified Clifford algebra, where
 `a^*` is the conjugate-linear Clifford involution `CliffordAlgebra.conjStar`. In particular
 Clifford multiplication `c(v)` by a real vector is skew-Hermitian. The underlying statement is the
 adjointness of creation and annihilation: exterior multiplication by `x ∈ W` is adjoint to the
-contraction `ι(x̄)` against `g_ℂ`, that is to `-(1/2)` times the contraction
+contraction `ι(conj x)` against `g_ℂ`, that is to `-(1/2)` times the contraction
 `TauCeti.SpinPolarizationData.contract` against the polar form. Since the normalized Fock action
 is `c(x) = √2 ε(x)` on `W` and `c(y) = (1/√2)` times contraction on `W'`, both halves of
 `c(v) = √2 (ε(v^(1,0)) - ι(v^(0,1)))` carry the same factor, and the wedge basis is orthonormal
@@ -44,7 +44,7 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
 ## Main results
 
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_apply_eq_polar`: an orthonormal basis of `W`
-  is orthonormal for the intrinsic form `h (x, y) = -(1/2) polar Q_ℂ (x̄, y)`.
+  is orthonormal for the intrinsic form `h (x, y) = -(1/2) polar Q_ℂ (conj x, y)`.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_wedge_left` and
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_contract_left`: creation and annihilation are
   adjoint.
@@ -89,9 +89,9 @@ variable (hb : ∀ i j, polar (Q.baseChange ℂ) (tmulConj V (b i : ℂ ⊗[ℝ]
 include hb
 
 /-- **An orthonormal basis of `W` is orthonormal for the intrinsic Hermitian form**: if
-`polar Q_ℂ (b̄ᵢ, bⱼ) = -2 δᵢⱼ`, then the form making `b` orthonormal is
-`h (x, y) = -(1/2) polar Q_ℂ (x̄, y)`. In the geometric convention `Q (v) = -g (v, v)` this is
-`h (x, y) = g_ℂ (x̄, y)`. -/
+`polar Q_ℂ (conj bᵢ, bⱼ) = -2 δᵢⱼ`, then the form making `b` orthonormal is
+`h (x, y) = -(1/2) polar Q_ℂ (conj x, y)`. In the geometric convention `Q (v) = -g (v, v)` this is
+`h (x, y) = g_ℂ (conj x, y)`. -/
 theorem toLinearMapₛₗ₂_apply_eq_polar (x y : (J.spinPolarizationData hQJ hQ).W) :
     toLinearMapₛₗ₂ (starRingEnd ℂ) b b (1 : Matrix ι ι ℂ) x y =
       -(2 : ℂ)⁻¹ * polar (Q.baseChange ℂ) (tmulConj V x) y := by
@@ -119,8 +119,8 @@ private theorem pairingEquiv_tmulConj (x : (J.spinPolarizationData hQJ hQ).W) :
 
 /-- **Creation is adjoint to annihilation**: for an orthonormal basis `b` of `W` and the metric `H`
 making its wedge basis orthonormal, exterior multiplication by `x ∈ W` is adjoint to `-(1/2)`
-times the contraction against the polar pairing with the conjugate `x̄ ∈ W'`. In the geometric
-convention `Q (v) = -g (v, v)` this is the contraction `ι(x̄)` against `g_ℂ`. -/
+times the contraction against the polar pairing with the conjugate `conj x ∈ W'`. In the geometric
+convention `Q (v) = -g (v, v)` this is the contraction `ι(conj x)` against `g_ℂ`. -/
 theorem toLinearMapₛₗ₂_wedge_left (x : (J.spinPolarizationData hQJ hQ).W)
     (s t : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :
     toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
@@ -129,14 +129,14 @@ theorem toLinearMapₛₗ₂_wedge_left (x : (J.spinPolarizationData hQJ hQ).W)
         (1 : Matrix (Finset ι) (Finset ι) ℂ) s
         ((-(2 : ℂ)⁻¹) • (J.spinPolarizationData hQJ hQ).contract
           ⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.2⟩ t) := by
-  rw [SpinPolarizationData.wedge_apply, toLinearMapₛₗ₂_ι_mul_left,
+  rw [SpinPolarizationData.wedge_apply, ExteriorAlgebra.toLinearMapₛₗ₂_ι_mul_left,
     SpinPolarizationData.contract_apply, J.pairingEquiv_tmulConj hQJ hQ b hb]
   simp only [map_smul, LinearMap.smul_apply, smul_smul]
   norm_num
 
 /-- **Annihilation is adjoint to creation**: for an orthonormal basis `b` of `W` and the metric `H`
 making its wedge basis orthonormal, the contraction against the polar pairing with `y ∈ W'` is
-adjoint to `-2` times exterior multiplication by the conjugate `ȳ ∈ W`. -/
+adjoint to `-2` times exterior multiplication by the conjugate `conj y ∈ W`. -/
 theorem toLinearMapₛₗ₂_contract_left (y : (J.spinPolarizationData hQJ hQ).W')
     (s t : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :
     toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
@@ -156,8 +156,8 @@ theorem toLinearMapₛₗ₂_contract_left (y : (J.spinPolarizationData hQJ hQ).
     Subtype.ext (tmulConj_tmulConj V x)
   rw [hx, SpinPolarizationData.contract_apply, J.pairingEquiv_tmulConj hQJ hQ b hb,
     SpinPolarizationData.wedge_apply]
-  simp only [map_smul, LinearMap.map_smulₛₗ, LinearMap.smul_apply, toLinearMapₛₗ₂_ι_mul_right,
-    smul_eq_mul, map_neg, map_ofNat]
+  simp only [map_smul, LinearMap.map_smulₛₗ, LinearMap.smul_apply,
+    ExteriorAlgebra.toLinearMapₛₗ₂_ι_mul_right, smul_eq_mul, map_neg, map_ofNat]
 
 /-- The `*`-representation property for a vector of `W`. -/
 private theorem toLinearMapₛₗ₂_fockAction_ι_coe_W_left (x : (J.spinPolarizationData hQJ hQ).W)
@@ -255,7 +255,7 @@ theorem toLinearMapₛₗ₂_realFockAction_left (a : CliffordAlgebra Q)
     conjStar_ofBaseChangeAux]
 
 /-- **The Fock metric does not depend on the orthonormal basis**: two bases of `W` orthonormal for
-`h (x, y) = -(1/2) polar Q_ℂ (x̄, y)` give the same metric on `⋀ W`. -/
+`h (x, y) = -(1/2) polar Q_ℂ (conj x, y)` give the same metric on `⋀ W`. -/
 theorem toLinearMapₛₗ₂_exteriorAlgebra_eq {ι' : Type*} [Fintype ι'] [LinearOrder ι']
     (b' : Basis ι' ℂ (J.spinPolarizationData hQJ hQ).W)
     (hb' : ∀ i j, polar (Q.baseChange ℂ) (tmulConj V (b' i : ℂ ⊗[ℝ] V)) (b' j) =
@@ -264,8 +264,10 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_eq {ι' : Type*} [Fintype ι'] [Lin
         (1 : Matrix (Finset ι) (Finset ι) ℂ) =
       toLinearMapₛₗ₂ (starRingEnd ℂ) b'.ExteriorAlgebra b'.ExteriorAlgebra
         (1 : Matrix (Finset ι') (Finset ι') ℂ) :=
-  toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq b b' <| LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ by
-    rw [J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb, J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b' hb']
+  ExteriorAlgebra.toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq b b' <|
+    LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ by
+      rw [J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb,
+        J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b' hb']
 
 end Metric
 
@@ -278,7 +280,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   (hQnd : Q.Nondegenerate)
 
 /-- **Orthonormal bases of `W` exist** for the geometric form `Q (v) = -‖v‖²` of a Euclidean space
-of dimension `2ℓ`: there is a basis `b` of `W` with `polar Q_ℂ (b̄ᵢ, bⱼ) = -2 δᵢⱼ`, namely
+of dimension `2ℓ`: there is a basis `b` of `W` with `polar Q_ℂ (conj bᵢ, bⱼ) = -2 δᵢⱼ`, namely
 `bₖ = √2 uₖ^(1,0)` for an orthonormal basis `(u₁, J u₁, …, u_ℓ, J u_ℓ)` of `V` adapted to `J`. -/
 theorem exists_basis_polar_tmulConj (hQ : ∀ v, Q v = -‖v‖ ^ 2) (ℓ : ℕ)
     (hdim : finrank ℝ V = 2 * ℓ) :
