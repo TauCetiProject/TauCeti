@@ -85,15 +85,6 @@ integral by the area of the image, and in the chord bound, where the fundamental
 along the arc is applied. The estimates themselves hold for the measurable function `deriv f`
 whatever it is, which is why they are proved for a general weight one file down.
 
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505),
-the in-progress human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem
-itself, and the pinned Mathlib has no length–area estimate; so this file is new Lean formalization
-rather than a temporary shim. Its Mathlib inputs — the measurability of `deriv` and the increment
-bound `MeasureTheory.enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc` along an arc — are consumed,
-not restated.
-
 ## References
 
 * Ch. Pommerenke, *Boundary Behaviour of Conformal Maps*, §2.2 (the length–area method and

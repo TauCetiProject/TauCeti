@@ -31,7 +31,7 @@ the left-hand side by the inverse of the right-hand side. Thus the first two com
 
 ## Checks
 
-The generator and relator counts are checked by `j2Presentation_matchesMetadata`. The stored
+The relator count is checked by `j2Presentation_matchesMetadata`. The stored
 expressions preserve the source's powers and display each relation in the same left-to-right order;
 `Relator.toWord_toFreeGroup` is the already-proved audit boundary from those expressions to the
 signed words used by `PresentedGroup`.
@@ -140,74 +140,40 @@ entry in Section 3 of Stoytchev's *A Class of Efficient Presentations of Finite 
 
 The source obtains this presentation by enumerating the finitely presented group and checking that
 the group of order `604800` is simple. No such structural property is asserted here: this definition
-records only the cited generators and relations. -/
+records only the cited generators and relations.
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: O. Stoytchev, A Class of Efficient Presentations of Finite Simple Groups,
+arXiv:2011.05660v1 (2020).
+
+Source locator: Section 3, n = 7, order 604800 entry (the presentation labelled J_2)
+
+Generator convention: The generators a and b of the source, in that order, so index 0 is a and
+index 1 is b. Products are read left to right, negative exponents denote inverses, and each
+displayed equality is imposed as a relator equal to the identity.
+
+Transcription notes: The relations aba = bab and ab^2 a = b^5 are transcribed as aba(bab)^-1 and
+ab^2 a b^-5. For the source's final relation (a b^-1 a b^-3 a^3 b^-1)^(±3) a^7 = 1, this row
+chooses the positive exponent +3. GAP 4.15.1 independently enumerates these exact three relators
+to order 604800. -/
 def j2Presentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "O. Stoytchev, A Class of Efficient Presentations of Finite Simple Groups, \
-    arXiv:2011.05660v1 (2020)"
-  sourceLocator := "Section 3, n = 7, order 604800 entry (the presentation labelled J_2)"
-  generatorConvention := "The generators a and b of the source, in that order, so index 0 is a \
-    and index 1 is b. Products are read left to right, negative exponents denote inverses, and \
-    each displayed equality is imposed as a relator equal to the identity."
-  transcriptionNotes := "The relations aba = bab and ab^2 a = b^5 are transcribed as \
-    aba(bab)^-1 and ab^2 a b^-5. For the source's final relation \
-    (a b^-1 a b^-3 a^3 b^-1)^(+/-3) a^7 = 1, this row chooses the positive exponent +3. \
-    GAP 4.15.1 independently enumerates these exact three relators to order 604800."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 3
   transcribed :=
     [ a ⬝ b ⬝ a ⬝ .inv (b ⬝ a ⬝ b),
       a ⬝ .pow b 2 ⬝ a ⬝ .pow (.inv b) 5,
       .pow j2Word 3 ⬝ .pow a 7 ]
 
-/-- The generator names recorded for `J₂`. The row's body is sealed, so this is what lets a
+/-- The number of generators in the presentation of `J₂`. The row's body is sealed, so this is
+what lets a
 consumer see that it is a two-generator presentation. -/
 @[simp]
-theorem j2Presentation_generatorNames : j2Presentation.generatorNames = ["a", "b"] := by
-  simp [j2Presentation]
-
-/-- The source recorded for `J₂`. The row's body is sealed, so this equation is what publishes the
-citation itself, rather than only the row's name, to a downstream audit. -/
-@[simp]
-theorem j2Presentation_source :
-    j2Presentation.source = "O. Stoytchev, A Class of Efficient Presentations of Finite Simple \
-      Groups, arXiv:2011.05660v1 (2020)" := by
-  simp [j2Presentation]
-
-/-- The locator recorded for `J₂`, pointing at the presentation inside its source. -/
-@[simp]
-theorem j2Presentation_sourceLocator :
-    j2Presentation.sourceLocator =
-      "Section 3, n = 7, order 604800 entry (the presentation labelled J_2)" := by
-  simp [j2Presentation]
-
-/-- The generator convention recorded for `J₂`, fixing which generator each relator index names. -/
-@[simp]
-theorem j2Presentation_generatorConvention :
-    j2Presentation.generatorConvention = "The generators a and b of the source, in that order, so \
-      index 0 is a and index 1 is b. Products are read left to right, negative exponents denote \
-      inverses, and each displayed equality is imposed as a relator equal to the identity." := by
-  simp [j2Presentation]
-
-/-- The transcription notes recorded for `J₂`, including the choice of sign left open by the
-source's last relation. -/
-@[simp]
-theorem j2Presentation_transcriptionNotes :
-    j2Presentation.transcriptionNotes = "The relations aba = bab and ab^2 a = b^5 are transcribed \
-      as aba(bab)^-1 and ab^2 a b^-5. For the source's final relation \
-      (a b^-1 a b^-3 a^3 b^-1)^(+/-3) a^7 = 1, this row chooses the positive exponent +3. \
-      GAP 4.15.1 independently enumerates these exact three relators to order 604800." := by
-  simp [j2Presentation]
-
-/-- The generator count `J₂`'s source states. With
-`TauCeti.Sporadic.j2Presentation_generatorNames` this is what makes
-`TauCeti.Sporadic.j2Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem j2Presentation_expectedGeneratorCount : j2Presentation.expectedGeneratorCount = 2 := by
+theorem j2Presentation_generatorCount : j2Presentation.generatorCount = 2 := by
   simp [j2Presentation]
 
 /-- The relator count `J₂`'s source states; see
-`TauCeti.Sporadic.j2Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.j2Presentation_generatorCount`. -/
 @[simp]
 theorem j2Presentation_expectedRelatorCount : j2Presentation.expectedRelatorCount = 3 := by
   simp [j2Presentation]
@@ -220,7 +186,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. Index `0` is the
 generator `a` and index `1` is `b`, and the bounds come from
-`TauCeti.Sporadic.j2Presentation_generatorNames`. -/
+`TauCeti.Sporadic.j2Presentation_generatorCount`. -/
 @[simp]
 theorem j2Presentation_transcribed :
     j2Presentation.transcribed =
@@ -236,7 +202,7 @@ theorem j2Presentation_transcribed :
           .inv (.gen ⟨1, by simp⟩)) 3 ⬝ .pow (.gen ⟨0, by simp⟩) 7 ] := by
   simp [j2Presentation]
 
-/-- The generator and relator counts recorded for `J₂` agree with the transcribed data. -/
+/-- The relator count recorded for `J₂` agrees with the transcribed data. -/
 theorem j2Presentation_matchesMetadata : j2Presentation.matchesMetadata := by decide
 
 /-- The lengths of the three compiled relator words for `J₂`, in the order of the source.
