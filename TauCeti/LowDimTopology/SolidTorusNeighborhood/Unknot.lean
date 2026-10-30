@@ -216,6 +216,19 @@ theorem unknotExteriorHomeomorph_symm_boundaryInclusion (q : Circle × Circle) :
   ext1
   simp
 
+/-- On the boundary torus, `TauCeti.unknotExteriorHomeomorph` sends the exterior boundary point
+`r` to `SolidTorus.boundaryInclusion r.swap`, exchanging the two circle factors. This is the
+forward counterpart of `TauCeti.unknotExteriorHomeomorph_symm_boundaryInclusion`. -/
+@[simp]
+theorem unknotExteriorHomeomorph_exteriorBoundaryInclusion (r : Circle × Circle) :
+    unknotExteriorHomeomorph
+        (isSolidTorusNeighborhood_unknotSolidTorus.exteriorBoundaryInclusion r) =
+      SolidTorus.boundaryInclusion r.swap := by
+  rw [← unknotExteriorHomeomorph.apply_symm_apply (SolidTorus.boundaryInclusion r.swap)]
+  refine congrArg _ (Subtype.ext ?_)
+  rw [unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap,
+    IsSolidTorusNeighborhood.coe_exteriorBoundaryInclusion_apply]
+
 /-- The exterior of the unknot misses the unknot. -/
 theorem unknotExteriorHomeomorph_symm_notMem_range (p : SolidTorus) :
     (unknotExteriorHomeomorph.symm p : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∉ range unknot :=
