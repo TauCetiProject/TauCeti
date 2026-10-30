@@ -52,10 +52,8 @@ theorem qExpansion_translate_mulDiscriminant
   have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (Nat.pos_of_ne_zero (NeZero.ne N))
   have hslash : ⇑(translate (mulDiscriminant hΓ f) (mapGL ℝ γ)) =
       ⇑(translate f (mapGL ℝ γ)) * discriminant := by
-    have hΔ : discriminant ∣[(12 : ℤ)] γ = discriminant :=
-      CuspForm.discriminant.slash_action_eq' _ ⟨γ, rfl⟩
     rw [coe_translate, coe_translate, coe_mulDiscriminant]
-    exact (mul_slash_SL2 k 12 γ _ _).trans (by rw [hΔ]; rfl)
+    exact (mul_slash_SL2 k 12 γ _ _).trans (by rw [discriminant_slash]; rfl)
   rw [hslash]
   exact qExpansion_mul
     (ModularFormClass.analyticAt_cuspFunction_zero _ hN

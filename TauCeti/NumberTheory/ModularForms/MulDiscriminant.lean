@@ -27,6 +27,9 @@ low weight, such as weight one, are reduced to higher weight.
 
 * `ModularForm.mulDiscriminant`: multiplication by `Δ`, from weight `k` to `k + 12`.
 * `ModularForm.mulDiscriminant_injective`: it is injective.
+* `ModularForm.discriminant_slash`: `Δ` is invariant under slashing by `SL₂(ℤ)` in weight `12`.
+* `ModularForm.div_discriminant_slash`: slashing `g / Δ` in weight `k` slashes `g` in weight
+  `k + 12`.
 * `ModularForm.mem_range_mulDiscriminant_iff`: its range consists of the forms that are
   `O(Δ)` at every cusp.
 -/
@@ -66,11 +69,11 @@ theorem mulDiscriminant_injective (hΓ : Γ ≤ 𝒮ℒ) :
   simpa [discriminant_ne_zero τ] using congr($h τ)
 
 /-- The discriminant is invariant under slashing by `SL₂(ℤ)` in weight `12`. -/
-private theorem discriminant_slash (γ : SL(2, ℤ)) : discriminant ∣[(12 : ℤ)] γ = discriminant :=
+theorem discriminant_slash (γ : SL(2, ℤ)) : discriminant ∣[(12 : ℤ)] γ = discriminant :=
   CuspForm.discriminant.slash_action_eq' _ ⟨γ, rfl⟩
 
 /-- Slashing `g / Δ` in weight `k` by `γ ∈ SL₂(ℤ)` slashes `g` in weight `k + 12`. -/
-private theorem div_discriminant_slash (g : ℍ → ℂ) (γ : SL(2, ℤ)) :
+theorem div_discriminant_slash (g : ℍ → ℂ) (γ : SL(2, ℤ)) :
     (g / discriminant) ∣[k] γ = (g ∣[k + 12] γ) / discriminant := by
   simpa [discriminant_slash] using div_slash_SL2 (k + 12) 12 γ g discriminant
 
