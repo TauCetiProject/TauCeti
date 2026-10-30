@@ -21,9 +21,8 @@ a continuous bilinear map. Writing `∂s u` and `∂t u` for the derivatives of 
 where the right-hand side is the integral over the positively oriented boundary of `R`, written
 out as four interval integrals. This is Green's theorem for the pullback along `u` of the one-form
 `x ↦ B x`, whose exterior derivative is the constant two-form `(v, w) ↦ B v w - B w v`.
-Both formulas below follow from Stokes' formula for arbitrary one-forms and naturality of the
-exterior derivative. The polar-rectangle construction originally used for the bilinear annulus
-formula now lives in `TauCeti.integral_extDeriv_annulus`.
+Both formulas below are `TauCeti.integral_extDeriv_prod_Icc` and
+`TauCeti.integral_extDeriv_annulus` applied to the pullback along `u` of the one-form `x ↦ B x`.
 
 For a compactly supported map on the whole plane the boundary terms are absent and the integral
 vanishes (`TauCeti.integral_bilinear_fderiv_apply_comm`). With boundary, this is the formula that

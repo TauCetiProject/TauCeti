@@ -27,10 +27,10 @@ one-forms, including pullbacks of Liouville forms from exact symplectic manifold
 provide the area calculation used to exclude holomorphic discs with exact Lagrangian boundary.
 
 The proofs use Mathlib's rectangular divergence theorem, naturality of the exterior
-derivative, and the polar change of variables. The polar-rectangle argument generalizes the
-construction originally used for
-`ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus`, with an arbitrary one-form
-in place of a bilinear primitive.
+derivative, and the polar change of variables. Applying the rectangle formula to the polar
+pullback gives the annulus formula: the seam edges cancel, and the radial Jacobian is given by
+`extDeriv_pullback_polarCoord_symm_apply`. The bilinear Green formulas in
+`TauCeti.MeasureTheory.Integral.DivergenceTheorem` are special cases.
 
 ## References
 
