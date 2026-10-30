@@ -11,6 +11,7 @@ public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
 
 /-!
 # The half-spin representations of `Spin(4)` and `Spinᶜ(4)`
@@ -23,20 +24,23 @@ commutes with every even Clifford element, so the even subalgebra, and with it t
 `W^±`, and `ε = 1` is `CliffordAlgebra.positiveHalfSpinors o ρ`. Twisting by a unit complex
 scalar gives the action `(s, z) ↦ z ρ(s)` of `Spin(4) × U(1)`. As `(-1, -1)` acts trivially, it
 descends to the half-spin representations `ρ^±([s, z]) = z ρ^±(s)` of
-`Spinᶜ(4) = (Spin(4) × U(1)) / {±(1, 1)}`, the structure group of the spinor bundles of a `Spinᶜ`
-four-manifold.
+`Spinᶜ(4) = (Spin(4) × U(1)) / {±(1, 1)}` (`CliffordAlgebra.spinCGroup`), the structure group of
+the spinor bundles of a `Spinᶜ` four-manifold.
 
 When `W^ε` has complex dimension two, `ρ(x* x) = det(ρ x)` on `W^ε` for every even `x`
 (`CliffordAlgebra.evenHalfSpinAction_reverseEven_mul_self`), so every Spin element acts with
-determinant one, and `[s, z]` acts with determinant `z²`: the determinant line of `W^±` is the
-square of the twisting circle. If `W` is moreover a Hermitian Clifford module, the generators
+determinant one, and `[s, z]` acts with determinant `z²`, the determinant character of
+`Spinᶜ(4)` (`CliffordAlgebra.spinCGroup.det`): the determinant line of `W^±` is the square of the
+twisting circle. If `W` is moreover a Hermitian Clifford module, the generators
 acting skew-adjointly, both representations are unitary.
 
 Clifford multiplication `c(v) : W^ε → W^{-ε}` (`CliffordAlgebra.halfSpinCliffordMul`) is
 equivariant: `ρ^{-ε}(s) c(v) = c(s v) ρ^ε(s)`, where `s v` is the rotation action of `s` on `V`
 (`CliffordAlgebra.spinVectorAction`). The circle factor of `[s, z]` scales both sides alike and
-does not act on vectors. This is the equivariance that lets Clifford multiplication by cotangent
-vectors be defined on the associated spinor bundles `W^±` of a `Spinᶜ` structure.
+does not act on vectors, so `Spinᶜ(4)` acts on vectors through its rotation
+`CliffordAlgebra.spinCGroup.toSpecialOrthogonal`. This is the equivariance that lets Clifford
+multiplication by cotangent vectors be defined on the associated spinor bundles `W^±` of a `Spinᶜ`
+structure.
 
 ## Main definitions
 
@@ -44,6 +48,8 @@ vectors be defined on the associated spinor bundles `W^±` of a `Spinᶜ` struct
   `ε`-eigenspace of `Γ`, restricting `CliffordAlgebra.evenHalfSpinAction o ρ ε`.
 * `CliffordAlgebra.spinCHalfSpinRep o ρ ε`: the representation `(s, z) ↦ z ρ(s)` of
   `spinGroup Q × Circle` on that eigenspace.
+* `CliffordAlgebra.spinCGroupHalfSpinRep o ρ ε hQ₀`: its descent `[s, z] ↦ z ρ(s)` to the
+  quotient `CliffordAlgebra.spinCGroup Q hQ₀ = Spinᶜ(4)`.
 
 ## Main results
 
@@ -60,6 +66,11 @@ vectors be defined on the associated spinor bundles `W^±` of a `Spinᶜ` struct
 * `CliffordAlgebra.det_spinCHalfSpinRep`: `(s, z)` acts with determinant `z²`, and
   `CliffordAlgebra.inner_spinCHalfSpinRep_apply_spinCHalfSpinRep_apply`: the twisted action is
   unitary.
+* `CliffordAlgebra.spinCGroupHalfSpinRep_comp_halfSpinCliffordMul`,
+  `CliffordAlgebra.det_spinCGroupHalfSpinRep` and
+  `CliffordAlgebra.inner_spinCGroupHalfSpinRep_apply_spinCGroupHalfSpinRep_apply`: the descended
+  representations of `Spinᶜ(4)` are Clifford equivariant over its rotation, have determinant the
+  determinant character, and are unitary.
 
 ## References
 
@@ -103,7 +114,8 @@ theorem coe_halfSpinRep_apply (s : spinGroup Q) (ψ : eigenspace (ρ (chirality 
 
 /-- **The half-spin representation of `Spinᶜ(4)`**, before passing to the quotient by
 `{±(1, 1)}`: `(s, z)` acts on the `ε`-eigenspace of `Γ` by `z ρ(s)`. It is trivial on
-`(-1, -1)` (`CliffordAlgebra.spinCHalfSpinRep_negOne_neg_one`). -/
+`(-1, -1)` (`CliffordAlgebra.spinCHalfSpinRep_negOne_neg_one`), and descends to
+`CliffordAlgebra.spinCGroupHalfSpinRep`. -/
 def spinCHalfSpinRep :
     Representation ℂ (spinGroup Q × Circle) (eigenspace (ρ (chirality Q o)) ε) where
   toFun p := (p.2 : ℂ) • halfSpinRep o ρ ε p.1
@@ -145,6 +157,46 @@ theorem spinCHalfSpinRep_comp_halfSpinCliffordMul (p : spinGroup Q × Circle) (v
   rw [spinCHalfSpinRep_apply, spinCHalfSpinRep_apply, LinearMap.smul_comp, LinearMap.comp_smul,
     halfSpinRep_comp_halfSpinCliffordMul]
 
+variable (hQ₀ : Q ≠ 0)
+
+/-- **The half-spin representation of `Spinᶜ(4)`** on the `ε`-eigenspace of `Γ`:
+`[s, z]` acts by `z ρ(s)`. It is the descent of `CliffordAlgebra.spinCHalfSpinRep` to the quotient
+`CliffordAlgebra.spinCGroup Q hQ₀` of `spinGroup Q × Circle` by `{1, (-1, -1)}`. -/
+def spinCGroupHalfSpinRep :
+    Representation ℂ (spinCGroup Q hQ₀) (eigenspace (ρ (chirality Q o)) ε) :=
+  spinCGroup.lift Q hQ₀ (spinCHalfSpinRep o ρ ε) (spinCHalfSpinRep_negOne_neg_one o ρ ε hQ₀)
+
+/-- `[s, z]` acts by `z ρ(s)`. -/
+@[simp]
+theorem spinCGroupHalfSpinRep_mk (p : spinGroup Q × Circle) :
+    spinCGroupHalfSpinRep o ρ ε hQ₀ (spinCGroup.mk Q hQ₀ p) = spinCHalfSpinRep o ρ ε p :=
+  spinCGroup.lift_mk ..
+
+/-- On `Spin(4) ⊆ Spinᶜ(4)` the representation restricts to the half-spin representation of the
+Spin group. -/
+@[simp]
+theorem spinCGroupHalfSpinRep_ofSpin (s : spinGroup Q) :
+    spinCGroupHalfSpinRep o ρ ε hQ₀ (spinCGroup.ofSpin Q hQ₀ s) = halfSpinRep o ρ ε s := by
+  simp [spinCGroup.ofSpin_apply]
+
+/-- The circle `U(1) ⊆ Spinᶜ(4)` acts by scalars. -/
+@[simp]
+theorem spinCGroupHalfSpinRep_ofCircle (z : Circle) :
+    spinCGroupHalfSpinRep o ρ ε hQ₀ (spinCGroup.ofCircle Q hQ₀ z) = (z : ℂ) • 1 := by
+  simp [spinCGroup.ofCircle_apply]
+
+/-- **Clifford equivariance of the half-spin representations of `Spinᶜ(4)`**: Clifford
+multiplication `W^ε → W^{-ε}` intertwines them when `Spinᶜ(4)` acts on vectors through its rotation
+`[s, z] ↦ π(s)`, `ρ^{-ε}(x) c(v) = c(π(x) v) ρ^ε(x)`. -/
+theorem spinCGroupHalfSpinRep_comp_halfSpinCliffordMul (x : spinCGroup Q hQ₀) (v : V) :
+    spinCGroupHalfSpinRep o ρ (-ε) hQ₀ x ∘ₗ halfSpinCliffordMul o ρ ε v =
+      halfSpinCliffordMul o ρ ε ((spinCGroup.toSpecialOrthogonal Q hQ₀ x : V ≃ₗ[ℝ] V) v) ∘ₗ
+        spinCGroupHalfSpinRep o ρ ε hQ₀ x := by
+  obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ₀ x
+  rw [spinCGroupHalfSpinRep_mk, spinCGroupHalfSpinRep_mk,
+    spinCGroup.toSpecialOrthogonal_mk, coe_spinToSpecialOrthogonal_apply,
+    spinCHalfSpinRep_comp_halfSpinCliffordMul]
+
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
@@ -168,6 +220,16 @@ theorem det_spinCHalfSpinRep (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)
     (s : spinGroup Q) (z : Circle) :
     LinearMap.det (spinCHalfSpinRep o ρ ε (s, z)) = (z : ℂ) ^ 2 := by
   rw [spinCHalfSpinRep_apply, LinearMap.det_smul, h₂, det_halfSpinRep o ρ ε hQ h₂, mul_one]
+
+/-- **The determinant of the half-spin representations of `Spinᶜ(4)` is the determinant
+character**: on an eigenspace of `Γ` of complex dimension two, `x` acts with determinant
+`det x`, which is `z²` at `x = [s, z]`. -/
+theorem det_spinCGroupHalfSpinRep (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2)
+    (x : spinCGroup Q hQ₀) :
+    LinearMap.det (spinCGroupHalfSpinRep o ρ ε hQ₀ x) = (spinCGroup.det Q hQ₀ x : ℂ) := by
+  obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective Q hQ₀ x
+  rw [spinCGroupHalfSpinRep_mk, det_spinCHalfSpinRep o ρ ε hQ h₂, spinCGroup.det_mk,
+    Circle.coe_pow]
 
 end Module
 
@@ -195,6 +257,14 @@ theorem inner_spinCHalfSpinRep_apply_spinCHalfSpinRep_apply
   rw [spinCHalfSpinRep_apply, LinearMap.smul_apply, LinearMap.smul_apply, inner_smul_left,
     inner_smul_right, inner_halfSpinRep_apply_halfSpinRep_apply o ε hρ, ← mul_assoc,
     Complex.conj_mul', Circle.norm_coe, Complex.ofReal_one, one_pow, one_mul]
+
+/-- **The half-spin representations of `Spinᶜ(4)` are unitary** on a Hermitian Clifford module. -/
+theorem inner_spinCGroupHalfSpinRep_apply_spinCGroupHalfSpinRep_apply
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (hQ₀ : Q ≠ 0)
+    (x : spinCGroup Q hQ₀) (ψ χ : eigenspace (ρ (chirality Q o)) ε) :
+    ⟪spinCGroupHalfSpinRep o ρ ε hQ₀ x ψ, spinCGroupHalfSpinRep o ρ ε hQ₀ x χ⟫_ℂ = ⟪ψ, χ⟫_ℂ := by
+  obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ₀ x
+  rw [spinCGroupHalfSpinRep_mk, inner_spinCHalfSpinRep_apply_spinCHalfSpinRep_apply o ε hρ]
 
 end Hermitian
 
