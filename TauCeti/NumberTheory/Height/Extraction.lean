@@ -55,27 +55,6 @@ variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Finite ι]
   {k : ℕ} {f : (ι → K) →ₗ[ℚ] M} {u : Fin (finrank ℚ K * k) → ι → 𝓞 K}
   {c : Fin (finrank ℚ K * k) → ℝ}
 
-omit [Finite ι] in
-/-- The common selection step: for any nonnegative quantity `g` bounded on the family by a
-monotone `c`, some `K`-independent selection has product of `g` at most `(∏ l, c l) ^ (1 / D)`.
-This is `exists_linearIndependent_comp_finrank_mul_prod_pow_le` in the normalisation of the
-absolute heights. -/
-private theorem exists_linearIndependent_prod_le (hu : LinearIndependent E fun l ↦ f fun i ↦
-      (u l i : K)) (hc : Monotone c) (g : (ι → 𝓞 K) → ℝ) (hg0 : ∀ l, 0 ≤ g (u l))
-    (hgc : ∀ l, g (u l) ≤ c l) :
-    ∃ s : Fin k → Fin (finrank ℚ K * k),
-      LinearIndependent K (fun j i ↦ (u (s j) i : K)) ∧ (∀ j, (s j : ℕ) ≤ finrank ℚ K * j) ∧
-      ∏ j, g (u (s j)) ≤ (∏ l, c l) ^ (finrank ℚ K : ℝ)⁻¹ := by
-  obtain ⟨s, hs, hsD, hprod⟩ := exists_linearIndependent_comp_finrank_mul_prod_pow_le (K := K)
-    (f := f) (u := fun l i ↦ (u l i : K)) (b := fun l ↦ g (u l)) hu hg0 hgc hc
-  refine ⟨s, hs, hsD, ?_⟩
-  have hg : 0 ≤ ∏ j, g (u (s j)) := Finset.prod_nonneg fun j _ ↦ hg0 _
-  calc ∏ j, g (u (s j))
-      = ((∏ j, g (u (s j))) ^ finrank ℚ K) ^ (finrank ℚ K : ℝ)⁻¹ :=
-        (Real.pow_rpow_inv_natCast hg finrank_pos.ne').symm
-    _ ≤ (∏ l, c l) ^ (finrank ℚ K : ℝ)⁻¹ :=
-        Real.rpow_le_rpow (pow_nonneg hg _) hprod (by positivity)
-
 /-- **Basis form of Siegel's lemma, selection step, sup height.** Let `u` be `[K : ℚ] * k`
 tuples of algebraic integers with linearly independent images under a `ℚ`-linear map `f`, and
 let `c` be monotone with `|u l i|_w ≤ c l` at every infinite place `w`. Then `k` members of `u`
@@ -88,10 +67,11 @@ theorem exists_linearIndependent_prod_absoluteProjectiveTupleHeight_le
       LinearIndependent K (fun j i ↦ (u (s j) i : K)) ∧ (∀ j, (s j : ℕ) ≤ finrank ℚ K * j) ∧
       ∏ j, absoluteProjectiveTupleHeight (fun i ↦ (u (s j) i : K)) ≤
         (∏ l, c l) ^ (finrank ℚ K : ℝ)⁻¹ :=
-  exists_linearIndependent_prod_le hu hc (fun y ↦ absoluteProjectiveTupleHeight fun i ↦ (y i : K))
+  exists_linearIndependent_comp_finrank_mul_prod_le_rpow_inv (K := K) (u := fun l i ↦ (u l i : K))
+    (b := fun l ↦ absoluteProjectiveTupleHeight fun i ↦ (u l i : K)) hu
     (fun _ ↦ (absoluteProjectiveTupleHeight_pos _).le)
-    fun l ↦ absoluteProjectiveTupleHeight_le_of_forall_le
-      (fun h ↦ hu.ne_zero l (by simp [RingOfIntegers.coe_tuple_eq_zero_iff.mpr h])) (hle l)
+    (fun l ↦ absoluteProjectiveTupleHeight_le_of_forall_le
+      (fun h ↦ hu.ne_zero l (by simp [RingOfIntegers.coe_tuple_eq_zero_iff.mpr h])) (hle l)) hc
 
 /-- **Basis form of Siegel's lemma, selection step, Euclidean height.** Let `u` be
 `[K : ℚ] * k` tuples of algebraic integers with linearly independent images under a `ℚ`-linear
@@ -105,7 +85,8 @@ theorem exists_linearIndependent_prod_height2_le [Fintype ι]
     ∃ s : Fin k → Fin (finrank ℚ K * k),
       LinearIndependent K (fun j i ↦ (u (s j) i : K)) ∧ (∀ j, (s j : ℕ) ≤ finrank ℚ K * j) ∧
       ∏ j, height2 (fun i ↦ (u (s j) i : K)) ≤ (∏ l, c l) ^ (finrank ℚ K : ℝ)⁻¹ :=
-  exists_linearIndependent_prod_le hu hc (fun y ↦ height2 fun i ↦ (y i : K))
-    (fun _ ↦ height2_nonneg _) fun l ↦ height2_le_of_forall_le (hle l)
+  exists_linearIndependent_comp_finrank_mul_prod_le_rpow_inv (K := K) (u := fun l i ↦ (u l i : K))
+    (b := fun l ↦ height2 fun i ↦ (u l i : K)) hu (fun _ ↦ height2_nonneg _)
+    (fun l ↦ height2_le_of_forall_le (hle l)) hc
 
 end TauCeti

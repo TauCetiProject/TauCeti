@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Basic
 public import Mathlib.Algebra.Order.Ring.Defs
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import TauCeti.Algebra.Order.BigOperators.Fin
 
@@ -24,6 +25,8 @@ minima does, then the index bounds control the quantities of the selected vector
 
 * `TauCeti.exists_linearIndependent_comp_finrank_mul_prod_pow_le`: a `K`-independent selection
   of `k` vectors whose quantities `b` have product with `[K : F]`-th power at most `∏ l, c l`.
+* `TauCeti.exists_linearIndependent_comp_finrank_mul_prod_le_rpow_inv`: for real quantities, the
+  same selection with product at most `(∏ l, c l) ^ (1 / [K : F])`.
 -/
 
 public section
@@ -52,5 +55,26 @@ theorem exists_linearIndependent_comp_finrank_mul_prod_pow_le {k : ℕ} {f : V �
   exact ⟨s, hs, hsD, (pow_le_pow_left₀ (Finset.prod_nonneg fun _ _ ↦ hb0 _)
     (Finset.prod_le_prod₀ (fun _ _ ↦ hb0 _) fun _ _ ↦ hbc _) _).trans
     (Fin.prod_pow_le_prod_of_monotone (fun l ↦ (hb0 l).trans (hbc l)) hc hsD)⟩
+
+/-- The real form of `exists_linearIndependent_comp_finrank_mul_prod_pow_le`: from
+`[K : F] * k` vectors with independent images under an `F`-linear map, carrying nonnegative real
+quantities `b` bounded by a monotone sequence `c`, select `k` vectors independent over `K`, the
+`j`-th at position at most `[K : F] * j`, such that the product of their quantities is at most
+`(∏ l, c l) ^ (1 / [K : F])`. -/
+theorem exists_linearIndependent_comp_finrank_mul_prod_le_rpow_inv {k : ℕ} {f : V →ₗ[F] W}
+    {u : Fin (finrank F K * k) → V} (h : LinearIndependent E (f ∘ u))
+    {b c : Fin (finrank F K * k) → ℝ} (hb0 : ∀ l, 0 ≤ b l) (hbc : ∀ l, b l ≤ c l)
+    (hc : Monotone c) :
+    ∃ s : Fin k → Fin (finrank F K * k), LinearIndependent K (u ∘ s) ∧
+      (∀ j, (s j : ℕ) ≤ finrank F K * j) ∧
+      ∏ j, b (s j) ≤ (∏ l, c l) ^ (finrank F K : ℝ)⁻¹ := by
+  obtain ⟨s, hs, hsD, hprod⟩ := exists_linearIndependent_comp_finrank_mul_prod_pow_le h hb0 hbc hc
+  refine ⟨s, hs, hsD, ?_⟩
+  have hb : 0 ≤ ∏ j, b (s j) := Finset.prod_nonneg fun j _ ↦ hb0 _
+  calc ∏ j, b (s j)
+      = ((∏ j, b (s j)) ^ finrank F K) ^ (finrank F K : ℝ)⁻¹ :=
+        (Real.pow_rpow_inv_natCast hb finrank_pos.ne').symm
+    _ ≤ (∏ l, c l) ^ (finrank F K : ℝ)⁻¹ :=
+        Real.rpow_le_rpow (pow_nonneg hb _) hprod (by positivity)
 
 end TauCeti
