@@ -59,6 +59,14 @@ theorem map_divisorSumAt {L : Type*} [NormedRing L] (f : K →+* L) (hf : Contin
     evalIntSeries q hq (divisorSumSeries k) = divisorSumAt k q := by
   simp only [evalIntSeries_apply, coeff_divisorSumSeries, divisorSumAt_def]
 
+/-- The divisor-sum series has no constant term, so `‖s_k(q)‖ ≤ ‖q‖` for `‖q‖ < 1`. -/
+theorem norm_divisorSumAt_le {K : Type*} [NormedCommRing K] [CompleteSpace K]
+    [IsUltrametricDist K] (k : ℕ) {q : K} (hq : ‖q‖ < 1) : ‖divisorSumAt k q‖ ≤ ‖q‖ := by
+  rw [← evalIntSeries_divisorSumSeries k q hq]
+  refine norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq ?_
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_divisorSumSeries]
+  simp
+
 end TauCeti
 
 end
