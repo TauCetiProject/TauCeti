@@ -70,6 +70,8 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
   `Representation.isInvariant_symmetricAlgebraInvariants`: it is the fixed subalgebra of the
   bundled action, and `Sym M` is an invariant extension of it in the sense of
   `Algebra.IsInvariant`.
+* `Representation.symmetricAlgebraInvariants_comp_subtype`: the invariants of the restriction to
+  a subgroup `H` are the fixed points of `H` under the bundled action of `G`.
 * `Representation.isIntegral_symmetricAlgebraInvariants`: for a finite group, `Sym M` is integral
   over the invariant subalgebra.
 
@@ -113,6 +115,12 @@ noncomputable def symmetricAlgebra : Representation R G (SymmetricAlgebra R M) w
 theorem symmetricAlgebra_apply (g : G) (p : SymmetricAlgebra R M) :
     ρ.symmetricAlgebra g p = SymmetricAlgebra.map R (ρ g) p :=
   (rfl)
+
+/-- The action induced by a representation pulled back along `f : G' →* G` is the induced action
+of `f g`. -/
+theorem symmetricAlgebra_comp_apply {G' : Type*} [Monoid G'] (f : G' →* G) (g : G') :
+    Representation.symmetricAlgebra (ρ.comp f) g = ρ.symmetricAlgebra (f g) :=
+  LinearMap.ext fun p ↦ by simp
 
 /-- The induced action applies `ρ` to a canonical generator.
 
@@ -259,6 +267,19 @@ theorem isInvariant_symmetricAlgebraInvariants :
   letI := ρ.symmetricAlgebraMulSemiringAction
   haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
   ρ.symmetricAlgebraInvariants_eq_fixedPoints ▸ inferInstance
+
+/-- The invariants of the restriction of `ρ` to a subgroup `H` are the fixed points of `H` under
+the bundled action of `G`, so Mathlib's `FixedPoints.subalgebra` API applies to them. -/
+theorem symmetricAlgebraInvariants_comp_subtype (H : Subgroup G) :
+    letI := ρ.symmetricAlgebraMulSemiringAction
+    haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+    Representation.symmetricAlgebraInvariants (ρ.comp H.subtype) =
+      FixedPoints.subalgebra R (SymmetricAlgebra R M) H := by
+  let := ρ.symmetricAlgebraMulSemiringAction
+  have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+  ext p
+  simp [FixedPoints.mem_subalgebra, Subgroup.smul_def, symmetricAlgebraMulSemiringAction_smul,
+    symmetricAlgebra_comp_apply]
 
 end Group
 

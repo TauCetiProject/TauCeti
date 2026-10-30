@@ -48,7 +48,8 @@ Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and w
   `Representation.forall_sub_dual_apply_mem_span_singleton_iff`, this characterizes the elements
   fixing `ker ℓ` pointwise.
 * `Representation.dual_apply_eq_one_iff`: over a field, `g` acts trivially on the dual exactly
-  when it acts trivially on the space.
+  when it acts trivially on the space, so `Representation.dual_injective_iff`: the dual is
+  faithful exactly when the representation is.
 * `Representation.dualTprodEquivDualDualTprod`: `Dual W ⊗ V` is the dual of `Dual V ⊗ W` as
   representations.
 * `Representation.dualTprodEquivTrivialOfFinrankEqOne`: for a line `V`, the contraction
@@ -129,6 +130,10 @@ theorem dual_apply_eq_one_iff : ρ.dual g = 1 ↔ ρ g = 1 := by
   simp only [Submodule.span_singleton_eq_bot.2 rfl, Submodule.mem_bot, sub_eq_zero] at h
   rw [← h, LinearMap.ext_iff]
   exact forall_congr' fun φ ↦ eq_comm
+
+/-- Over a field, the dual representation is faithful exactly when the representation is. -/
+theorem dual_injective_iff : Function.Injective ρ.dual ↔ Function.Injective ρ := by
+  simp only [injective_iff_map_eq_one, dual_apply_eq_one_iff]
 
 end Field
 
