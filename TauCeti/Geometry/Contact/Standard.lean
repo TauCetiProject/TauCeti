@@ -7,12 +7,14 @@ module
 
 public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Manifold.Distribution
+public import TauCeti.Geometry.Symplectic.StandardCompatible
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
-# The standard contact form on `ℝ³`
+# The standard contact forms
 
 On `ℝ³ = ℝ × ℝ × ℝ` with coordinates `(x, y, z)`, the one-form `α = dz - x dy`
 (`TauCeti.standardContactForm`) is a contact form (`TauCeti.isContactForm_standardContactForm`).
@@ -27,17 +29,33 @@ The constant vector field `∂_z` (`TauCeti.standardReebField`) satisfies the Re
 The form is assembled from the constant forms `dz` and `dy` and the coordinate function `x`, so its
 exterior derivative is computed by the Leibniz rule `d(x dy) = dx ∧ dy`.
 
+In every dimension, let `V` be a real inner product space and give `V × V × ℝ` the coordinates
+`(q, p, z)`. The one-form `α = dz - ⟪p, dq⟫` (`TauCeti.stdContactForm`) is a contact form
+(`TauCeti.isContactForm_stdContactForm`), and no finite-dimensionality is needed. For
+`V = EuclideanSpace ℝ (Fin n)` it is the standard form `dz - Σᵢ pᵢ dqᵢ` on `ℝ^(2n+1)`
+(`TauCeti.stdContactForm_euclideanSpace_apply`). Its exterior derivative `Σᵢ dqᵢ ∧ dpᵢ` is the
+standard symplectic form `TauCeti.stdSymplecticForm` of the `(q, p)` coordinates
+(`TauCeti.mextDeriv_stdContactForm_apply`), and its kernel at `(q, p, z)` consists of the vectors
+`(u, v, w)` with `w = ⟪p, u⟫` (`TauCeti.mem_kerDistribution_stdContactForm`). The proof of
+contactness tests a kernel vector `(u, v, w)` against the kernel vectors `(0, u, 0)` and
+`(v, 0, ⟪p, v⟫)`, on which `dα` takes the values `‖u‖²` and `-‖v‖²`.
+
+For `V = ℝ` this is the form `dz - x dy` above in the coordinates `(q, p, z) = (y, x, z)`
+(`TauCeti.mpullback_stdContactForm_real`). The linear map `(q, p, z) ↦ (q, -p, -z)` preserves the
+contact structure and reverses its coorientation, pulling `α` back to `-α`
+(`TauCeti.mpullback_stdContactForm_neg`).
+
 ## References
 
 * H. Geiges, *An Introduction to Contact Topology*, Cambridge University Press, 2008,
-  Example 2.1.3.
+  Section 2.1, in particular Example 2.1.3.
 -/
 
 public section
 
 noncomputable section
 
-open scoped Manifold
+open scoped Manifold InnerProductSpace ContDiff
 
 namespace TauCeti
 
@@ -176,5 +194,173 @@ theorem mextDeriv_standardContactForm_standardReebField (p : ℝ × ℝ × ℝ)
     mextDeriv standardContactForm.1 p ![standardReebField p, w] = 0 := by
   rw [mextDeriv_standardContactForm_apply]
   simp [standardReebField]
+
+section InnerProductSpace
+
+variable (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The family of covectors `(u, v, w) ↦ w - ⟪p, u⟫` at the points `(q, p, z)`. -/
+private def stdContactFormFun (x : V × V × ℝ) : (V × V × ℝ) [⋀^Fin 1]→L[ℝ] ℝ :=
+  ContinuousAlternatingMap.ofSubsingleton ℝ (V × V × ℝ) ℝ (0 : Fin 1)
+    ((ContinuousLinearMap.snd ℝ V ℝ).comp (ContinuousLinearMap.snd ℝ V (V × ℝ)) -
+      (innerSL ℝ x.2.1).comp (ContinuousLinearMap.fst ℝ V (V × ℝ)))
+
+private theorem stdContactFormFun_apply (x : V × V × ℝ) (v : Fin 1 → V × V × ℝ) :
+    stdContactFormFun V x v = (v 0).2.2 - ⟪x.2.1, (v 0).1⟫_ℝ := by
+  simp [stdContactFormFun]
+
+private theorem contDiff_stdContactFormFun : ContDiff ℝ ∞ (stdContactFormFun V) :=
+  (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V × V × ℝ) (F := ℝ)
+    (0 : Fin 1)).contDiff.comp <| contDiff_const.sub <|
+      ((innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).contDiff.comp
+        (contDiff_fst.comp contDiff_snd)).clm_comp contDiff_const
+
+/-- The **standard contact form** `α = dz - ⟪p, dq⟫` on `V × V × ℝ`, with coordinates
+`(q, p, z)`. For `V = EuclideanSpace ℝ (Fin n)` this is the form `dz - Σᵢ pᵢ dqᵢ` on `ℝ^(2n+1)`
+(`TauCeti.stdContactForm_euclideanSpace_apply`). Its exterior derivative is the standard
+symplectic form `TauCeti.stdSymplecticForm` of the `(q, p)` coordinates
+(`TauCeti.mextDeriv_stdContactForm_apply`). -/
+def stdContactForm : SmoothForm 𝓘(ℝ, V × V × ℝ) (V × V × ℝ) ℝ 1 :=
+  ⟨stdContactFormFun V,
+    (isSmoothForm_modelSpace_iff.mpr (contDiff_stdContactFormFun V)).mem_smoothBundleForms⟩
+
+private theorem stdContactForm_toRoughForm : (stdContactForm V).1 = stdContactFormFun V :=
+  (rfl)
+
+/-- The standard contact form evaluates a tangent vector `(u, v, w)` at `(q, p, z)` as
+`w - ⟪p, u⟫`. -/
+@[simp]
+theorem stdContactForm_apply (x : V × V × ℝ) (v : TangentSpace 𝓘(ℝ, V × V × ℝ) x) :
+    (stdContactForm V).1 x ![v] = v.2.2 - ⟪x.2.1, v.1⟫_ℝ :=
+  stdContactFormFun_apply V x ![v]
+
+/-- The scalar function obtained by evaluating the standard contact form on a fixed vector has
+derivative `δx ↦ -⟪δp, u⟫`: only the momentum coordinate of the base point varies. -/
+private theorem hasFDerivAt_stdContactFormFun_apply (v : Fin 1 → V × V × ℝ) (x : V × V × ℝ) :
+    HasFDerivAt (fun y ↦ stdContactFormFun V y v)
+      (-((innerSL ℝ (v 0).1).comp ((ContinuousLinearMap.fst ℝ V ℝ).comp
+        (ContinuousLinearMap.snd ℝ V (V × ℝ))))) x := by
+  have h : (fun y ↦ stdContactFormFun V y v) = fun y ↦ (v 0).2.2 -
+      (innerSL ℝ (v 0).1).comp ((ContinuousLinearMap.fst ℝ V ℝ).comp
+        (ContinuousLinearMap.snd ℝ V (V × ℝ))) y := by
+    funext y
+    simp [stdContactFormFun_apply, real_inner_comm]
+  rw [h]
+  exact (hasFDerivAt_const _ x).sub (ContinuousLinearMap.hasFDerivAt _) |>.congr_fderiv
+    (zero_sub _)
+
+/-- The flat exterior derivative of the standard contact form. -/
+private theorem extDeriv_stdContactFormFun_apply (x : V × V × ℝ) (v : Fin 2 → V × V × ℝ) :
+    extDeriv (stdContactFormFun V) x v =
+      stdSymplecticForm ((v 0).1, (v 0).2.1) ((v 1).1, (v 1).2.1) := by
+  rw [extDeriv_apply ((contDiff_stdContactFormFun V).differentiable (by simp) x), Fin.sum_univ_two,
+    (hasFDerivAt_stdContactFormFun_apply V _ x).fderiv,
+    (hasFDerivAt_stdContactFormFun_apply V _ x).fderiv]
+  simp [Fin.removeNth]
+  linarith [real_inner_comm (v 0).2.1 (v 1).1]
+
+/-- The exterior derivative of the standard contact form is the standard symplectic form of the
+`(q, p)` coordinates: `d(dz - ⟪p, dq⟫) = Σᵢ dqᵢ ∧ dpᵢ`. -/
+theorem mextDeriv_stdContactForm_apply (x : V × V × ℝ) (v w : TangentSpace 𝓘(ℝ, V × V × ℝ) x) :
+    mextDeriv (stdContactForm V).1 x ![v, w] = stdSymplecticForm (v.1, v.2.1) (w.1, w.2.1) :=
+  (congrArg (fun A ↦ A ![v, w]) (mextDeriv_eq_extDeriv (stdContactForm V).1 x)).trans
+    (extDeriv_stdContactFormFun_apply V x ![v, w])
+
+/-- A tangent vector `(u, v, w)` lies in the kernel of the standard contact form at `(q, p, z)`
+exactly when `w = ⟪p, u⟫`. -/
+theorem mem_kerDistribution_stdContactForm {x : V × V × ℝ}
+    {v : TangentSpace 𝓘(ℝ, V × V × ℝ) x} :
+    v ∈ (stdContactForm V).kerDistribution x ↔ v.2.2 = ⟪x.2.1, v.1⟫_ℝ := by
+  rw [SmoothForm.mem_kerDistribution, stdContactForm_apply, sub_eq_zero]
+
+/-- The standard form `dz - ⟪p, dq⟫` on `V × V × ℝ` is a contact form. -/
+theorem isContactForm_stdContactForm : (stdContactForm V).IsContactForm := by
+  refine SmoothForm.isContactForm_iff.2 fun x ↦ ⟨?_, fun v hv hvw ↦ ?_⟩
+  · -- The form takes the value `1` on `∂_z`.
+    obtain ⟨e, he⟩ : ∃ e : TangentSpace 𝓘(ℝ, V × V × ℝ) x, e = ((0, 0, 1) : V × V × ℝ) :=
+      ⟨_, rfl⟩
+    exact ⟨e, by rw [stdContactForm_apply, he]; simp⟩
+  -- Test `v = (u, v', w)` against the kernel vectors `(0, u, 0)` and `(v', 0, ⟪p, v'⟫)`.
+  obtain ⟨e₁, he₁⟩ : ∃ e : TangentSpace 𝓘(ℝ, V × V × ℝ) x, e = ((0, v.1, 0) : V × V × ℝ) :=
+    ⟨_, rfl⟩
+  obtain ⟨e₂, he₂⟩ : ∃ e : TangentSpace 𝓘(ℝ, V × V × ℝ) x,
+      e = ((v.2.1, 0, ⟪x.2.1, v.2.1⟫_ℝ) : V × V × ℝ) := ⟨_, rfl⟩
+  have h₁ := hvw e₁ (by rw [stdContactForm_apply, he₁]; simp)
+  have h₂ := hvw e₂ (by rw [stdContactForm_apply, he₂]; simp)
+  rw [mextDeriv_stdContactForm_apply, he₁] at h₁
+  rw [mextDeriv_stdContactForm_apply, he₂] at h₂
+  simp only [stdSymplecticForm_apply, inner_zero_right, sub_zero, zero_sub, neg_eq_zero,
+    inner_self_eq_zero] at h₁ h₂
+  rw [stdContactForm_apply, sub_eq_zero, h₁, inner_zero_right] at hv
+  exact Prod.ext h₁ (Prod.ext h₂ hv)
+
+/-- On `ℝ^(2n+1) = ℝⁿ × ℝⁿ × ℝ`, the standard contact form is `dz - Σᵢ pᵢ dqᵢ`. -/
+theorem stdContactForm_euclideanSpace_apply {n : ℕ}
+    (x : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)
+    (v : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) x) :
+    (stdContactForm (EuclideanSpace ℝ (Fin n))).1 x ![v] = v.2.2 - ∑ i, x.2.1 i * v.1 i := by
+  simp [PiLp.inner_apply, mul_comm]
+
+/-- On `ℝ^(2n+1) = ℝⁿ × ℝⁿ × ℝ`, the exterior derivative of the standard contact form is
+`Σᵢ dqᵢ ∧ dpᵢ`. -/
+theorem mextDeriv_stdContactForm_euclideanSpace_apply {n : ℕ}
+    (x : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)
+    (v w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) x) :
+    mextDeriv (stdContactForm (EuclideanSpace ℝ (Fin n))).1 x ![v, w] =
+      ∑ i, (v.1 i * w.2.1 i - v.2.1 i * w.1 i) := by
+  simp [mextDeriv_stdContactForm_apply, PiLp.inner_apply, Finset.sum_sub_distrib, mul_comm]
+
+/-- For `V = ℝ`, the standard contact form is the form `dz - x dy` of
+`TauCeti.standardContactForm` in the coordinates `(q, p, z) = (y, x, z)`: pulling `dz - p dq` back
+along `(x, y, z) ↦ (y, x, z)` gives `dz - x dy`. -/
+theorem mpullback_stdContactForm_real :
+    mpullback 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun p : ℝ × ℝ × ℝ ↦ (p.2.1, p.1, p.2.2))
+      (stdContactForm ℝ).1 = standardContactForm.1 := by
+  let L : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ × ℝ :=
+    ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))).prod
+      ((ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)).prod
+        ((ContinuousLinearMap.snd ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))))
+  have hL : (fun p : ℝ × ℝ × ℝ ↦ (p.2.1, p.1, p.2.2)) = L := by
+    funext p
+    simp [L]
+  funext p
+  ext v
+  have hv : v = ![v 0] := by
+    ext i
+    fin_cases i
+    rfl
+  rw [hL, mpullback_apply, L.mfderiv_eq, stdContactForm_toRoughForm]
+  refine (stdContactFormFun_apply ℝ (L p) fun i ↦ L (v i)).trans ?_
+  conv_rhs => rw [hv, standardContactForm_apply]
+  generalize v 0 = w
+  obtain ⟨a, b, c⟩ := w
+  simp [L, mul_comm]
+
+/-- The linear map `(q, p, z) ↦ (q, -p, -z)` reverses the coorientation of the standard contact
+structure: it pulls the standard contact form `α` back to `-α`. -/
+theorem mpullback_stdContactForm_neg :
+    mpullback 𝓘(ℝ, V × V × ℝ) 𝓘(ℝ, V × V × ℝ) (fun x : V × V × ℝ ↦ (x.1, -x.2.1, -x.2.2))
+      (stdContactForm V).1 = (-stdContactForm V).1 := by
+  let L : (V × V × ℝ) →L[ℝ] V × V × ℝ :=
+    (ContinuousLinearMap.fst ℝ V (V × ℝ)).prod
+      (-(ContinuousLinearMap.snd ℝ V (V × ℝ)))
+  have hL : (fun x : V × V × ℝ ↦ (x.1, -x.2.1, -x.2.2)) = L := by
+    funext x
+    simp [L, Prod.ext_iff]
+  funext x
+  ext v
+  have hv : v = ![v 0] := by
+    ext i
+    fin_cases i
+    rfl
+  rw [hL, mpullback_apply, L.mfderiv_eq, stdContactForm_toRoughForm]
+  refine (stdContactFormFun_apply V (L x) fun i ↦ L (v i)).trans ?_
+  conv_rhs => rw [hv, SmoothForm.neg_toRoughForm, Pi.neg_apply,
+    ContinuousAlternatingMap.neg_apply, stdContactForm_apply]
+  generalize v 0 = w
+  obtain ⟨a, b, c⟩ := w
+  simp [L, neg_add_eq_sub]
+
+end InnerProductSpace
 
 end TauCeti
