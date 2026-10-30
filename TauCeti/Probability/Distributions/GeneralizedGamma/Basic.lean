@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Gamma.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Generalized gamma laws

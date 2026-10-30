@@ -92,7 +92,6 @@ theorem natCard_generatingSections_eq_of_mem
 
 namespace FiniteLocallyFreeSheaf
 
-attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 attribute [local instance] preservesBinaryBiproducts_of_preservesBinaryProducts
 
 /-- A finite locally free sheaf is free on a finite basis over some open neighbourhood of each

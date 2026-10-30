@@ -25,6 +25,12 @@ characterizes successful decoding without unfolding either function, while
 `decodeGlueWord_eq_none_iff` characterizes both ways a word can fail validation. An ordered
 list of components is represented by its `List.get` family on `Fin length`.
 
+For a word given by its labels `List.ofFn d`, validity is the range condition on each label
+(`isValidGlueWord_ofFn_iff`), and decoding is natural under permutations of the components
+(`decodeGlueWord_ofFn_comp`): permuting the labels and the components together reindexes the
+decoded word through `Equiv.piCongrLeft`, the reindexing along which the glue-word isometry is
+natural.
+
 Reference: Conway and Sloane, *Sphere Packings, Lattices and Groups*, Chapter 16 §1.
 -/
 
@@ -61,6 +67,12 @@ def decodeGlueWord (l : List ℕ) : Option (∀ i, (t i).glueAlphabet (ht i)) :=
       ⟨l[i.val]'(by have := ((isValidGlueWord_iff t l).mp h).choose; omega),
         ((isValidGlueWord_iff t l).mp h).choose_spec i⟩
   else none
+
+/-- An encoded word lists the labels of its coordinates. -/
+theorem encodeGlueWord_def (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    encodeGlueWord t ht w =
+      List.ofFn fun i ↦ (((t i).glueLabelEquiv (ht i)).symm (w i)).val :=
+  (rfl)
 
 /-- Encoding preserves the number of components. -/
 @[simp] theorem length_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) :
@@ -132,5 +144,46 @@ theorem encodeGlueWord_injective : Function.Injective (encodeGlueWord t ht) := b
     decodeGlueWord t ht l = none ↔ ¬ IsValidGlueWord t l := by
   simp only [decodeGlueWord]
   split_ifs <;> simp_all
+
+/-! ### Words given by their labels, and permutations of the components -/
+
+/-- A word given by its labels is valid exactly when each label lies in the alphabet of its
+component. -/
+@[simp] theorem isValidGlueWord_ofFn_iff (d : Fin n → ℕ) :
+    IsValidGlueWord t (List.ofFn d) ↔ ∀ i, d i < (t i).glueLabelCount := by
+  simp [isValidGlueWord_iff]
+
+/-- A word given by in-range labels decodes to the classes of those labels. -/
+theorem decodeGlueWord_ofFn (d : Fin n → ℕ) (hd : ∀ i, d i < (t i).glueLabelCount) :
+    decodeGlueWord t ht (List.ofFn d) =
+      some fun i ↦ (t i).glueLabelEquiv (ht i) ⟨d i, hd i⟩ := by
+  rw [decodeGlueWord_eq_some_iff]
+  apply List.ext_getElem
+  · simp
+  · intro i hi _
+    have h := getElem_encodeGlueWord t ht (fun i ↦ (t i).glueLabelEquiv (ht i) ⟨d i, hd i⟩)
+      ⟨i, by simpa using hi⟩
+    simp only [Equiv.symm_apply_apply] at h
+    simpa using h.symm
+
+/-- **Decoding is natural under permutations of the components.** Reindexing the labels of a
+word along `σ : Fin m ≃ Fin n` and decoding against the reindexed components `k ↦ t (σ k)`
+reindexes the decoded word; in particular the reindexed word is valid exactly when the original
+one is. -/
+theorem decodeGlueWord_ofFn_comp {m : ℕ} (σ : Fin m ≃ Fin n) (d : Fin n → ℕ) :
+    decodeGlueWord (fun k ↦ t (σ k)) (fun k ↦ ht (σ k)) (List.ofFn (d ∘ σ)) =
+      (decodeGlueWord t ht (List.ofFn d)).map
+        (Equiv.piCongrLeft (fun i ↦ (t i).glueAlphabet (ht i)) σ).symm := by
+  by_cases hd : ∀ i, d i < (t i).glueLabelCount
+  · rw [decodeGlueWord_ofFn (fun k ↦ t (σ k)) (fun k ↦ ht (σ k)) (d ∘ σ) fun k ↦ hd (σ k),
+      decodeGlueWord_ofFn t ht d hd, Option.map_some]
+    simp only [Option.some.injEq]
+    funext k
+    rw [Equiv.piCongrLeft_symm_apply]
+    rfl
+  · have hdσ : ¬ ∀ k, (d ∘ σ) k < (t (σ k)).glueLabelCount := fun h ↦
+      hd (σ.forall_congr_right.mp h)
+    rw [(decodeGlueWord_eq_none_iff _ _ _).mpr (by simpa using hdσ),
+      (decodeGlueWord_eq_none_iff _ _ _).mpr (by simpa using hd), Option.map_none]
 
 end TauCeti

@@ -23,12 +23,16 @@ Reduction modulo `I` is right exact. When `I = (x)` and `x` is regular on the la
 preserves injectivity on the left, so it carries a short exact sequence `0 → K → P → M → 0` to a
 short exact sequence `0 → K ⧸ x K → P ⧸ x P → M ⧸ x M → 0`.
 
+Mathlib makes `QuotSMulTop x M = M ⧸ x M` a module over `R ⧸ (x)`; this action is induced by the
+`R`-action on `M`, the analogue for `x • ⊤` of Mathlib's `Module.Quotient.mk_smul_mk` for `I • ⊤`.
+
 ## Main definitions
 
 * `Ideal.mapQSMulTop`: the `R ⧸ I`-linear map `M ⧸ I • M → N ⧸ I • N` induced by `f : M →ₗ[R] N`.
 
 ## Main results
 
+* `QuotSMulTop.mk_smul_mk`: `[r] • [m] = [r • m]` in `M ⧸ x M`.
 * `Ideal.mapQSMulTop_id` and `Ideal.mapQSMulTop_comp`: reduction modulo `I` is functorial.
 * `Ideal.mapQSMulTop_surjective` and `Ideal.mapQSMulTop_exact`: reduction modulo `I` preserves
   surjectivity and exactness at the middle of `M → N → P → 0`.
@@ -91,6 +95,13 @@ namespace QuotSMulTop
 
 variable {R : Type*} [CommRing R] {M N : Type*} [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N]
+
+/-- The `R ⧸ (x)`-action on `M ⧸ x M` is induced by the `R`-action on `M`. -/
+@[simp]
+theorem mk_smul_mk {x : R} (r : R) (m : M) :
+    Ideal.Quotient.mk (Ideal.span {x}) r • (Submodule.Quotient.mk m : QuotSMulTop x M) =
+      Submodule.Quotient.mk (r • m) :=
+  rfl
 
 /-- `Ideal.mapQSMulTop (x) f` is Mathlib's `QuotSMulTop.map x f`, up to the identification of
 `(x) • ⊤` with `x • ⊤`. -/
