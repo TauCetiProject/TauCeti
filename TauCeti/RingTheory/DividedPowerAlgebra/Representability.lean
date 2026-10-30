@@ -141,20 +141,11 @@ scalar algebras. -/
 theorem homogeneousLawMap_injective (d : ℕ) :
     Function.Injective (homogeneousLawMap R M N d) := by
   intro f g hfg
-  have hprod {ι : Type} [Fintype ι] (m : ι → M) (k : ι →₀ ℕ)
-      (hk : ∑ j, k j = d) :
-      f ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ =
-      g ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ := by
-    rw [← lid_rTensor_lcoeff_homogeneousLawMap d f m k hk,
-      ← lid_rTensor_lcoeff_homogeneousLawMap d g m k hk, hfg]
-  apply homogeneousSubmodule_ext
-  intro l hl
-  let k : Fin l.length →₀ ℕ := Finsupp.equivFunOnFinite.symm fun j ↦ l[j.1].1
-  have hk : ∑ j, k j = d := by
-    simpa [k] using hl
-  have hp := Fin.prod_univ_fun_getElem l (fun nm : ℕ × M ↦ dp R nm.1 nm.2)
-  simpa only [k, Finsupp.coe_equivFunOnFinite_symm, hp] using
-    hprod (fun j : Fin l.length ↦ l[j.1].2) k hk
+  refine homogeneousSubmodule_ext_prod_dp fun n m k hk ↦ ?_
+  have hf := lid_rTensor_lcoeff_homogeneousLawMap d f m (Finsupp.equivFunOnFinite.symm k) hk
+  have hg := lid_rTensor_lcoeff_homogeneousLawMap d g m (Finsupp.equivFunOnFinite.symm k) hk
+  rw [hfg] at hf
+  simpa only [Finsupp.coe_equivFunOnFinite_symm] using hf.symm.trans hg
 
 /-- Postcomposition of the representing linear map agrees with postcomposition of its law. -/
 theorem homogeneousLawMap_comp (d : ℕ)
