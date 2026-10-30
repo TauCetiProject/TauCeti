@@ -152,6 +152,21 @@ theorem evalPrefix_congr (A : MLPSpec K L) {θ θ' : A.Parameters} (x : Fin (A.w
     rw [evalPrefix_succ, evalPrefix_succ, h i (Fin.castSucc_lt_succ ..),
       ih fun j hj => h j (hj.trans (Fin.castSucc_lt_succ ..))]
 
+/-- Prefixes from layer `k` on depend only on the prefix at `k` and on the parameters of the
+layers above it. -/
+theorem evalPrefix_congr_of_le (A : MLPSpec K L) {θ θ' : A.Parameters}
+    {x x' : Fin (A.width 0) → K} {k : Fin (L + 1)}
+    (hk : A.evalPrefix θ x k = A.evalPrefix θ' x' k)
+    (h : ∀ j : Fin L, k ≤ j.castSucc → θ j = θ' j) {i : Fin (L + 1)} (hi : k ≤ i) :
+    A.evalPrefix θ x i = A.evalPrefix θ' x' i := by
+  induction i using Fin.induction with
+  | zero => rwa [Fin.le_zero_iff.mp hi] at hk
+  | succ i ih =>
+    rcases hi.lt_or_eq with hlt | rfl
+    · have hki : k ≤ i.castSucc := Fin.le_castSucc_iff.mpr hlt
+      rw [evalPrefix_succ, evalPrefix_succ, h i hki, ih hki]
+    · exact hk
+
 /-- The realization map of an MLP specification on affine parameters: the last prefix. -/
 def realize (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.width 0) → K) :
     Fin (A.width (Fin.last L)) → K :=

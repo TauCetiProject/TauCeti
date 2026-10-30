@@ -32,6 +32,11 @@ For cancellation of output or input composition, first rewrite parameter equival
 `ha.injective_comp_right.eq_iff`. These use the public characterization, so they also apply
 from modules importing this one.
 
+Given an equivalence relation `s` on parameters, such as the symmetries of an architecture, a
+parameter `w` is identifiable modulo `s` (`IdentifiableAt`) when its whole realization fibre is
+its `s`-class. When the `s`-classes lie in realization fibres, this is injectivity at the class
+of `w` of the parametrization induced on `Quotient s`.
+
 The definitions follow Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
 [arXiv:2501.18915v2](https://arxiv.org/abs/2501.18915v2), Definition 3.1 and §4.3.
@@ -154,5 +159,69 @@ theorem fiber_eq_univ [Subsingleton W] (f : W → X → Y) (w : W) :
     fiber f (f w) = Set.univ := by
   ext v
   simp [Subsingleton.elim v w]
+
+/-! ### Identifiability modulo a symmetry -/
+
+/-- A parameter `w` is identifiable modulo an equivalence relation `s` on parameters when its
+whole realization fibre is exactly its `s`-class. -/
+def IdentifiableAt (f : W → X → Y) (s : Setoid W) (w : W) : Prop :=
+  fiber f (f w) = {v | s v w}
+
+/-- Identifiability at `w` says that a parameter realizes the same function as `w` exactly when
+it is `s`-equivalent to `w`. -/
+theorem identifiableAt_iff {f : W → X → Y} {s : Setoid W} {w : W} :
+    IdentifiableAt f s w ↔ ∀ v, f v = f w ↔ s v w :=
+  Set.ext_iff
+
+/-- Every parameter is identifiable modulo realization equality itself. -/
+theorem identifiableAt_parameterSetoid (f : W → X → Y) (w : W) :
+    IdentifiableAt f (parameterSetoid f) w :=
+  fiber_eq_class f w
+
+/-- The parametrization induced on the quotient by an equivalence relation whose classes lie
+in realization fibres. -/
+def quotientParametrization (f : W → X → Y) {s : Setoid W} (h : s ≤ parameterSetoid f) :
+    Quotient s → realizedFunctions f :=
+  Quotient.lift (parametrization f) fun _ _ hvw => Subtype.ext (h hvw)
+
+/-- The induced parametrization sends a class to the function realized by a representative. -/
+@[simp] theorem quotientParametrization_mk (f : W → X → Y) {s : Setoid W}
+    (h : s ≤ parameterSetoid f) (w : W) :
+    quotientParametrization f h (Quotient.mk s w) = parametrization f w := (rfl)
+
+/-- The induced parametrization is surjective. -/
+theorem quotientParametrization_surjective (f : W → X → Y) {s : Setoid W}
+    (h : s ≤ parameterSetoid f) : Function.Surjective (quotientParametrization f h) :=
+  fun g => (parametrization_surjective f g).imp' (Quotient.mk s) fun _ hw => hw
+
+/-- When the classes of `s` lie in realization fibres, identifiability at `w` only asks that
+the fibre through `w` be contained in the class of `w`. -/
+theorem identifiableAt_iff_fiber_subset {f : W → X → Y} {s : Setoid W}
+    (h : s ≤ parameterSetoid f) {w : W} :
+    IdentifiableAt f s w ↔ fiber f (f w) ⊆ {v | s v w} :=
+  ⟨Eq.subset, fun hsub => hsub.antisymm fun _ hv => h hv⟩
+
+/-- Identifiability at `w` is injectivity of the induced parametrization at the class
+of `w`. -/
+theorem identifiableAt_iff_quotientParametrization {f : W → X → Y} {s : Setoid W}
+    (h : s ≤ parameterSetoid f) {w : W} :
+    IdentifiableAt f s w ↔ ∀ q : Quotient s,
+      quotientParametrization f h q = quotientParametrization f h (Quotient.mk s w) →
+        q = Quotient.mk s w := by
+  rw [identifiableAt_iff_fiber_subset h]
+  refine ⟨fun hsub q hq => ?_, fun hinj v hv => ?_⟩
+  · induction q using Quotient.inductionOn with
+    | h v => exact Quotient.sound (hsub (congrArg Subtype.val hq))
+  · exact Quotient.exact (hinj (Quotient.mk s v) (Subtype.ext hv))
+
+/-- Every parameter is identifiable modulo `s` exactly when the induced parametrization is
+injective. -/
+theorem forall_identifiableAt_iff_injective {f : W → X → Y} {s : Setoid W}
+    (h : s ≤ parameterSetoid f) :
+    (∀ w, IdentifiableAt f s w) ↔ Function.Injective (quotientParametrization f h) := by
+  simp_rw [identifiableAt_iff_quotientParametrization h]
+  refine ⟨fun hid q q' hqq' => ?_, fun hinj w q hq => hinj hq⟩
+  induction q' using Quotient.inductionOn with
+  | h w => exact hid w q hqq'
 
 end TauCeti.Neuromanifold
