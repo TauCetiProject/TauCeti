@@ -9,9 +9,8 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.ConnectedSum.Basic
 
 import Mathlib.Geometry.Euclidean.Inversion.Calculus
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Instances.Quotient
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # The connected sum of two manifolds
@@ -21,8 +20,9 @@ product space, and let `e₁ : E → M` and `e₂ : E → N` be open embeddings 
 diffeomorphisms, the coordinate balls of the connected sum `TauCeti.ConnectedSum e₁ e₂`. The
 punctured summands are open subsets of `M` and `N`, so their disjoint union is a `C^n` manifold, and
 the quotient map onto the connected sum is a local homeomorphism
-(`TauCeti.ConnectedSum.isLocalHomeomorph_mk`). Pushing the charts forward along it gives the
-connected sum a charted-space structure (`TauCeti.ConnectedSum.chartedSpace`).
+(`TauCeti.ConnectedSum.isLocalHomeomorph_mk`, in `TauCeti.Geometry.Manifold.ConnectedSum.Basic`).
+Pushing the charts forward along it gives the connected sum a charted-space structure
+(`TauCeti.ConnectedSum.chartedSpace`).
 
 These charts form a `C^n` manifold (`TauCeti.ConnectedSum.isManifold`): two points of the punctured
 summands with the same image are glued by the inversion `v ↦ v / ‖v‖²` of `E`, read through the
@@ -41,8 +41,6 @@ The charts are not instances, as they depend on the hypotheses on the balls; con
 
 ## Main results
 
-* `TauCeti.ConnectedSum.isLocalHomeomorph_mk`: the quotient map of the connected sum is a local
-  homeomorphism.
 * `TauCeti.ConnectedSum.isManifold`: the connected sum of two `C^n` manifolds is a `C^n` manifold.
 * `TauCeti.ConnectedSum.isLocalDiffeomorph_mk`: its quotient map is a `C^n` local diffeomorphism.
 
@@ -65,26 +63,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [T1Space M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [T1Space N] [ChartedSpace H N]
   {e₁ : E → M} {e₂ : E → N}
-
-/-- The quotient map of the connected sum is a local homeomorphism: on each punctured summand, an
-open subset of the disjoint union, it restricts to an open embedding. -/
-theorem isLocalHomeomorph_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂) :
-    IsLocalHomeomorph (mk e₁ e₂) := by
-  have hopen := (isOpenQuotientMap_mk h₁ h₂).isOpenMap
-  refine isLocalHomeomorph_iff_isOpenEmbedding_restrict.2 fun p ↦ ?_
-  -- The summand containing `p` is an open neighbourhood on which `mk` is injective.
-  have key : ∀ U : Set (puncture e₁ ⊕ puncture e₂), IsOpen U → p ∈ U →
-      InjOn (mk e₁ e₂) U → ∃ U ∈ 𝓝 p, IsOpenEmbedding (U.domRestrict (mk e₁ e₂)) :=
-    fun U hU hp hinj ↦ ⟨U, hU.mem_nhds hp, .of_continuous_injective_isOpenMap
-      ((continuous_mk e₁ e₂).comp continuous_subtype_val) hinj.injective
-      (hopen.comp hU.isOpenMap_subtype_val)⟩
-  rcases p with x | y
-  · refine key _ isOpen_range_inl ⟨x, rfl⟩ ?_
-    rintro _ ⟨x, rfl⟩ _ ⟨x', rfl⟩ h
-    exact congrArg _ (inl_injective h₁.injective h₂.injective (by simpa using h))
-  · refine key _ isOpen_range_inr ⟨y, rfl⟩ ?_
-    rintro _ ⟨y, rfl⟩ _ ⟨y', rfl⟩ h
-    exact congrArg _ (inr_injective h₁.injective h₂.injective (by simpa using h))
 
 /-- The **charts of the connected sum**, pushed forward from the punctured summands along the
 quotient map. -/
@@ -131,15 +109,11 @@ private theorem exists_transition {X Y : Type*} [TopologicalSpace X] [T1Space X]
   have hτ : ∀ᶠ x' in 𝓝 x, ((τ x' : puncture g) : Y) = τ₀ x' :=
     hev'.mono fun x' h ↦ by simp [τ, h.2.2]
   refine ⟨τ, ?_, Subtype.ext ?_, hev'.and hτ |>.mono fun x' h ↦ ⟨L x', h.1.1, h.1.2.1, h.2.symm⟩⟩
-  · -- The open inclusion of the punctured summand is a local diffeomorphism, so it suffices to
-    -- show that `τ` is `C^n` after it, which holds as it agrees with `τ₀` near `x`.
+  · -- A map into the open punctured summand is `C^n` when it is after the inclusion, which holds
+    -- as it agrees with `τ₀` near `x`.
     have hcomp : ContMDiffAt I I n (Subtype.val ∘ τ) x :=
       (hτ₀.comp x contMDiff_subtype_val.contMDiffAt).congr_of_eventuallyEq hτ
-    have hcont : ContinuousAt τ x :=
-      IsInducing.subtypeVal.continuousAt_iff.2 hcomp.continuousAt
-    rw [← contMDiffWithinAt_univ] at hcomp ⊢
-    exact hcomp.of_comp_isLocalDiffeomorph (isLocalDiffeomorph_subtype_val _)
-      hcont.continuousWithinAt
+    exact (TauCeti.ContMDiffAt.subtypeVal_comp_iff (puncture g) τ x).mp hcomp
   · rw [hτ.self_of_nhds, hτ₀x]
 
 /-- The local deck transformations of the quotient map of the connected sum are `C^n`: two points

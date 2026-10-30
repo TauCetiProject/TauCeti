@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Geometry.Euclidean.Inversion.Basic
+public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.OpenQuotient
 public import Mathlib.Topology.Sets.Opens
 
@@ -31,9 +32,10 @@ The summands with their centres removed, `TauCeti.ConnectedSum.puncture e₁` an
 `TauCeti.ConnectedSum.puncture e₂`, are open subspaces of the connected sum
 (`TauCeti.ConnectedSum.isOpenEmbedding_inl`, `TauCeti.ConnectedSum.isOpenEmbedding_inr`) which
 together cover it, and they meet exactly along the glued punctured balls
-(`TauCeti.ConnectedSum.inl_eq_inr_iff`). When `E` is finite-dimensional and `M` and `N` are
-Hausdorff, so is the connected sum (`TauCeti.ConnectedSum.t2Space`): a point outside both balls is
-kept apart from the far end of the other ball by the image of a closed ball.
+(`TauCeti.ConnectedSum.inl_eq_inr_iff`); so the quotient map from their disjoint union is a local
+homeomorphism (`TauCeti.ConnectedSum.isLocalHomeomorph_mk`). When `E` is finite-dimensional and `M`
+and `N` are Hausdorff, so is the connected sum (`TauCeti.ConnectedSum.t2Space`): a point outside
+both balls is kept apart from the far end of the other ball by the image of a closed ball.
 
 The construction takes the balls as data, as the connected sum depends on them; that the result
 does not depend on the choice up to diffeomorphism, for orientation-compatible balls in connected
@@ -50,7 +52,10 @@ manifolds, is the disc theorem of Palais and is not part of this file.
 
 * `TauCeti.ConnectedSum.mk_eq_mk_iff`, `TauCeti.ConnectedSum.inl_eq_inr_iff`: the identifications
   made by the gluing.
+* `TauCeti.ConnectedSum.lift_unique`, `TauCeti.ConnectedSum.hom_ext`: a map out of the connected
+  sum is determined by its restrictions to the two punctured summands.
 * `TauCeti.ConnectedSum.isOpenQuotientMap_mk`: the quotient map is open.
+* `TauCeti.ConnectedSum.isLocalHomeomorph_mk`: the quotient map is a local homeomorphism.
 * `TauCeti.ConnectedSum.isOpenEmbedding_inl`, `TauCeti.ConnectedSum.isOpenEmbedding_inr`: each
   punctured summand is an open subspace.
 * `TauCeti.ConnectedSum.t2Space`: the connected sum of Hausdorff spaces along finite-dimensional
@@ -252,6 +257,17 @@ theorem lift_inr (y : puncture e₂) : lift f g hfg (inr e₁ e₂ y) = g y :=
 theorem lift_comp_mk : lift f g hfg ∘ mk e₁ e₂ = Sum.elim f g :=
   funext <| Sum.rec (lift_inl f g hfg) (lift_inr f g hfg)
 
+/-- Two maps out of the connected sum are equal when they agree on both punctured summands. -/
+theorem hom_ext {φ ψ : ConnectedSum e₁ e₂ → Z} (hl : ∀ x, φ (inl e₁ e₂ x) = ψ (inl e₁ e₂ x))
+    (hr : ∀ y, φ (inr e₁ e₂ y) = ψ (inr e₁ e₂ y)) : φ = ψ :=
+  funext <| Quot.ind <| Sum.rec hl hr
+
+/-- **Uniqueness of maps out of the connected sum.** A map restricting to `f` and `g` on the
+punctured summands is the lift of `f` and `g`. -/
+theorem lift_unique (φ : ConnectedSum e₁ e₂ → Z) (hl : ∀ x, φ (inl e₁ e₂ x) = f x)
+    (hr : ∀ y, φ (inr e₁ e₂ y) = g y) : φ = lift f g hfg :=
+  hom_ext hl hr
+
 /-- A map out of the connected sum is continuous when its restrictions to the two punctured
 summands are. -/
 theorem continuous_lift [TopologicalSpace Z] (hf : Continuous f) (hg : Continuous g) :
@@ -259,17 +275,6 @@ theorem continuous_lift [TopologicalSpace Z] (hf : Continuous f) (hg : Continuou
   (isQuotientMap_mk e₁ e₂).continuous_iff.2 (by rw [lift_comp_mk]; exact hf.sumElim hg)
 
 end lift
-
-/-- The points of one ball glued to an open set of the other: the image under `f` of the nonzero
-vectors whose inversion `g` sends into `V`. -/
-private theorem isOpen_image_inversion_preimage {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] {f : E → X} {g : E → Y} (hf : IsOpenEmbedding f) (hg : Continuous g)
-    {V : Set Y} (hV : IsOpen V) : IsOpen (f '' {v | v ≠ 0 ∧ g (inversion 0 1 v) ∈ V}) := by
-  refine hf.isOpenMap _ ?_
-  have hc : ContinuousOn (fun v : E ↦ g (inversion 0 1 v)) {0}ᶜ :=
-    hg.comp_continuousOn (continuousOn_const.inversion continuousOn_const continuousOn_id
-      fun v hv ↦ hv)
-  exact hc.isOpen_inter_preimage isOpen_compl_singleton hV
 
 /-- The quotient map of the connected sum is open: the saturation of an open set adds to it the
 points of the other summand glued to it, which form an open set. -/
@@ -283,9 +288,14 @@ theorem isOpenQuotientMap_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
   set U₂ : Set N := (↑) '' (Sum.inr ⁻¹' U : Set (puncture e₂))
   have hU₁' : IsOpen U₁ := (puncture e₁).isOpen.isOpenMap_subtype_val _ hU₁
   have hU₂' : IsOpen U₂ := (puncture e₂).isOpen.isOpenMap_subtype_val _ hU₂
+  -- The points of one ball glued to an open set `V` of the other form the open set
+  -- `e '' ({0}ᶜ ∩ inversion 0 1 ⁻¹' (e' ⁻¹' V))`.
+  have hinv : ContinuousOn (inversion (0 : E) 1) {0}ᶜ :=
+    continuousOn_const.inversion continuousOn_const continuousOn_id fun _ ↦ id
   constructor
   · -- `x` is in the saturation if it is in `U`, or if it is glued to a point of `U₂`.
-    have hW := isOpen_image_inversion_preimage h₁ h₂.continuous hU₂'
+    have hW := h₁.isOpenMap _
+      (hinv.isOpen_inter_preimage isOpen_compl_singleton (hU₂'.preimage h₂.continuous))
     convert hU₁.union (hW.preimage continuous_subtype_val) using 1
     refine Set.ext fun x ↦ ?_
     simp only [mem_union, mem_preimage, mem_image, U₂]
@@ -303,7 +313,8 @@ theorem isOpenQuotientMap_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
         exact ⟨v, hv, hvx, hy.symm⟩
   · -- `y` is in the saturation if it is in `U`, or if it is glued to a point of `U₁`; the
     -- gluing read from the second summand is again the inversion, an involution.
-    have hW := isOpen_image_inversion_preimage h₂ h₁.continuous hU₁'
+    have hW := h₂.isOpenMap _
+      (hinv.isOpen_inter_preimage isOpen_compl_singleton (hU₁'.preimage h₁.continuous))
     convert hU₂.union (hW.preimage continuous_subtype_val) using 1
     refine Set.ext fun y ↦ ?_
     simp only [mem_union, mem_preimage, mem_image, U₁]
@@ -337,29 +348,44 @@ theorem isOpenEmbedding_inr (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddin
     (inr_injective h₁.injective h₂.injective)
     ((isOpenQuotientMap_mk h₁ h₂).isOpenMap.comp isOpenMap_inr)
 
-/-- Two distinct points of a Hausdorff space have disjoint neighbourhoods after an open
-embedding. -/
-private theorem disjoint_nhds_of_isOpenEmbedding {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [T2Space X] {ι : X → Y} (hι : IsOpenEmbedding ι) {x x' : X}
-    (h : ι x ≠ ι x') : Disjoint (𝓝 (ι x)) (𝓝 (ι x')) := by
-  rw [← hι.map_nhds_eq, ← hι.map_nhds_eq, Filter.disjoint_map hι.injective]
-  exact disjoint_nhds_nhds.2 fun hxx' ↦ h (congrArg ι hxx')
+/-- The quotient map of the connected sum is a local homeomorphism: on each punctured summand, an
+open subset of the disjoint union, it restricts to an open embedding. -/
+theorem isLocalHomeomorph_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂) :
+    IsLocalHomeomorph (mk e₁ e₂) := by
+  have hopen := (isOpenQuotientMap_mk h₁ h₂).isOpenMap
+  refine isLocalHomeomorph_iff_isOpenEmbedding_restrict.2 fun p ↦ ?_
+  -- The summand containing `p` is an open neighbourhood on which `mk` is injective.
+  have key : ∀ U : Set (puncture e₁ ⊕ puncture e₂), IsOpen U → p ∈ U →
+      InjOn (mk e₁ e₂) U → ∃ U ∈ 𝓝 p, IsOpenEmbedding (U.domRestrict (mk e₁ e₂)) :=
+    fun U hU hp hinj ↦ ⟨U, hU.mem_nhds hp, .of_continuous_injective_isOpenMap
+      ((continuous_mk e₁ e₂).comp continuous_subtype_val) hinj.injective
+      (hopen.comp hU.isOpenMap_subtype_val)⟩
+  rcases p with x | y
+  · refine key _ isOpen_range_inl ⟨x, rfl⟩ ?_
+    rintro _ ⟨x, rfl⟩ _ ⟨x', rfl⟩ h
+    exact congrArg _ (inl_injective h₁.injective h₂.injective (by simpa using h))
+  · refine key _ isOpen_range_inr ⟨y, rfl⟩ ?_
+    rintro _ ⟨y, rfl⟩ _ ⟨y', rfl⟩ h
+    exact congrArg _ (inr_injective h₁.injective h₂.injective (by simpa using h))
 
 /-- A point of the first summand outside the first ball and a point of the second summand outside
-the second ball have disjoint neighbourhoods: the complements of the images of the closed unit
+the second ball are separated by open sets: the complements of the images of the closed unit
 balls are disjoint once glued, since the inversion exchanges the inside and the outside of the
 unit sphere. -/
-private theorem disjoint_nhds_inl_inr [T2Space M] [T2Space N] [ProperSpace E]
+private theorem separated_inl_inr [T2Space M] [T2Space N] [ProperSpace E]
     (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂) {x : puncture e₁} {y : puncture e₂}
     (hx : (x : M) ∉ range e₁) (hy : (y : N) ∉ range e₂) :
-    Disjoint (𝓝 (inl e₁ e₂ x)) (𝓝 (inr e₁ e₂ y)) := by
+    ∃ u v : Set (ConnectedSum e₁ e₂), IsOpen u ∧ IsOpen v ∧ inl e₁ e₂ x ∈ u ∧ inr e₁ e₂ y ∈ v ∧
+      Disjoint u v := by
   have hK₁ : IsClosed (e₁ '' Metric.closedBall 0 1) :=
     ((isCompact_closedBall 0 1).image h₁.continuous).isClosed
   have hK₂ : IsClosed (e₂ '' Metric.closedBall 0 1) :=
     ((isCompact_closedBall 0 1).image h₂.continuous).isClosed
-  refine Filter.disjoint_of_disjoint_of_mem
-    (s := inl e₁ e₂ '' ((↑) ⁻¹' (e₁ '' Metric.closedBall 0 1)ᶜ))
-    (t := inr e₁ e₂ '' ((↑) ⁻¹' (e₂ '' Metric.closedBall 0 1)ᶜ)) ?_ ?_ ?_
+  refine ⟨inl e₁ e₂ '' ((↑) ⁻¹' (e₁ '' Metric.closedBall 0 1)ᶜ),
+    inr e₁ e₂ '' ((↑) ⁻¹' (e₂ '' Metric.closedBall 0 1)ᶜ),
+    (isOpenEmbedding_inl h₁ h₂).isOpenMap _ (hK₁.isOpen_compl.preimage continuous_subtype_val),
+    (isOpenEmbedding_inr h₁ h₂).isOpenMap _ (hK₂.isOpen_compl.preimage continuous_subtype_val),
+    ⟨x, fun ⟨v, _, hv⟩ ↦ hx ⟨v, hv⟩, rfl⟩, ⟨y, fun ⟨v, _, hv⟩ ↦ hy ⟨v, hv⟩, rfl⟩, ?_⟩
   · refine Set.disjoint_left.2 ?_
     rintro _ ⟨x', hx', rfl⟩ ⟨y', hy', hxy⟩
     obtain ⟨v, hv, hvx, hvy⟩ := (inl_eq_inr_iff h₁.injective h₂.injective).1 hxy.symm
@@ -368,12 +394,6 @@ private theorem disjoint_nhds_inl_inr [T2Space M] [T2Space N] [ProperSpace E]
     have hv1 : 1 < ‖v‖ := not_le.1 fun h ↦ hx' ⟨v, by simpa using h, rfl⟩
     rw [Metric.mem_closedBall, dist_inversion_center, dist_zero_right]
     exact (div_le_one (by linarith)).2 (by linarith)
-  · exact (isOpenEmbedding_inl h₁ h₂).isOpenMap _
-      (hK₁.isOpen_compl.preimage continuous_subtype_val) |>.mem_nhds
-      ⟨x, fun ⟨v, _, hv⟩ ↦ hx ⟨v, hv⟩, rfl⟩
-  · exact (isOpenEmbedding_inr h₁ h₂).isOpenMap _
-      (hK₂.isOpen_compl.preimage continuous_subtype_val) |>.mem_nhds
-      ⟨y, fun ⟨v, _, hv⟩ ↦ hy ⟨v, hv⟩, rfl⟩
 
 /-- A point of the first summand lies in the second exactly when it is in the punctured first
 ball. -/
@@ -406,36 +426,38 @@ private theorem inr_mem_range_inl_of_mem_range (h₁ : IsOpenEmbedding e₁)
 finite-dimensional space. -/
 theorem t2Space [T2Space M] [T2Space N] [ProperSpace E] (h₁ : IsOpenEmbedding e₁)
     (h₂ : IsOpenEmbedding e₂) : T2Space (ConnectedSum e₁ e₂) := by
-  refine t2Space_iff_disjoint_nhds.2 fun p q hpq ↦ ?_
+  refine ⟨fun p q hpq ↦ ?_⟩
   have hcov := range_inl_union_range_inr e₁ e₂
   -- Points in a common summand are separated there; otherwise each lies outside the other ball.
   by_cases hp : p ∈ range (inl e₁ e₂) <;> by_cases hq : q ∈ range (inl e₁ e₂)
   · obtain ⟨x, rfl⟩ := hp
     obtain ⟨x', rfl⟩ := hq
-    exact disjoint_nhds_of_isOpenEmbedding (isOpenEmbedding_inl h₁ h₂) hpq
+    exact separated_by_isOpenEmbedding (isOpenEmbedding_inl h₁ h₂) (ne_of_apply_ne _ hpq)
   · have hq' : q ∈ range (inr e₁ e₂) := (hcov.symm ▸ mem_univ q).resolve_left hq
     by_cases hp' : p ∈ range (inr e₁ e₂)
     · obtain ⟨y, rfl⟩ := hp'
       obtain ⟨y', rfl⟩ := hq'
-      exact disjoint_nhds_of_isOpenEmbedding (isOpenEmbedding_inr h₁ h₂) hpq
+      exact separated_by_isOpenEmbedding (isOpenEmbedding_inr h₁ h₂) (ne_of_apply_ne _ hpq)
     obtain ⟨x, rfl⟩ := hp
     obtain ⟨y, rfl⟩ := hq'
-    exact disjoint_nhds_inl_inr h₁ h₂ (fun h ↦ hp' (inl_mem_range_inr_of_mem_range h₁ h₂ h))
+    exact separated_inl_inr h₁ h₂ (fun h ↦ hp' (inl_mem_range_inr_of_mem_range h₁ h₂ h))
       fun h ↦ hq (inr_mem_range_inl_of_mem_range h₁ h₂ h)
   · have hp' : p ∈ range (inr e₁ e₂) := (hcov.symm ▸ mem_univ p).resolve_left hp
     by_cases hq' : q ∈ range (inr e₁ e₂)
     · obtain ⟨y, rfl⟩ := hp'
       obtain ⟨y', rfl⟩ := hq'
-      exact disjoint_nhds_of_isOpenEmbedding (isOpenEmbedding_inr h₁ h₂) hpq
+      exact separated_by_isOpenEmbedding (isOpenEmbedding_inr h₁ h₂) (ne_of_apply_ne _ hpq)
     obtain ⟨y, rfl⟩ := hp'
     obtain ⟨x, rfl⟩ := hq
-    exact (disjoint_nhds_inl_inr h₁ h₂ (fun h ↦ hq' (inl_mem_range_inr_of_mem_range h₁ h₂ h))
-      fun h ↦ hp (inr_mem_range_inl_of_mem_range h₁ h₂ h)).symm
+    obtain ⟨u, v, hu, hv, hxu, hyv, huv⟩ := separated_inl_inr h₁ h₂
+      (fun h ↦ hq' (inl_mem_range_inr_of_mem_range h₁ h₂ h))
+      fun h ↦ hp (inr_mem_range_inl_of_mem_range h₁ h₂ h)
+    exact ⟨v, u, hv, hu, hyv, hxu, huv.symm⟩
   · have hp' : p ∈ range (inr e₁ e₂) := (hcov.symm ▸ mem_univ p).resolve_left hp
     have hq' : q ∈ range (inr e₁ e₂) := (hcov.symm ▸ mem_univ q).resolve_left hq
     obtain ⟨y, rfl⟩ := hp'
     obtain ⟨y', rfl⟩ := hq'
-    exact disjoint_nhds_of_isOpenEmbedding (isOpenEmbedding_inr h₁ h₂) hpq
+    exact separated_by_isOpenEmbedding (isOpenEmbedding_inr h₁ h₂) (ne_of_apply_ne _ hpq)
 
 end ConnectedSum
 
