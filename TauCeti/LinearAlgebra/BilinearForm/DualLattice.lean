@@ -11,20 +11,20 @@ public import TauCeti.Algebra.Module.Lattice
 /-!
 # Dual submodules of lattices
 
-This file develops the duality theory for free full lattices in vector spaces equipped with a
+This file develops the duality theory for full lattices in vector spaces equipped with a
 nondegenerate bilinear form over a fraction field.
 
 ## Main declarations
 
 * `LinearMap.BilinForm.dualSubmoduleToDual_surjective`: surjectivity of
-  `dualSubmoduleToDual` for a free full lattice and nondegenerate bilinear form.
-* `LinearMap.BilinForm.dualSubmoduleEquivDual`: the perfect linear equivalence
+  `dualSubmoduleToDual` for a full lattice and nondegenerate bilinear form.
+* `LinearMap.BilinForm.dualSubmoduleEquivDual`: the canonical linear equivalence
   `B.dualSubmodule N ≃ₗ[R] Module.Dual R N`.
 * `LinearMap.BilinForm.dualSubmoduleEquivDual_apply`: evaluation of
   `dualSubmoduleEquivDual` is `B.dualSubmoduleToDual N`.
-* `LinearMap.BilinForm.dualSubmodule_dualSubmodule_flip`: double duality for general
+* `LinearMap.BilinForm.dualSubmodule_dualSubmodule_flip`: double duality for free
   full lattices using `B.flip`.
-* `LinearMap.BilinForm.dualSubmodule_flip_dualSubmodule`: double duality for general
+* `LinearMap.BilinForm.dualSubmodule_flip_dualSubmodule`: double duality for free
   full lattices with `B.flip` on the outside.
 -/
 
@@ -40,47 +40,37 @@ variable {R K V : Type*} [CommRing R] [IsDomain R]
 variable [Field K] [Algebra R K] [IsFractionRing R K] [Module.IsTorsionFree R K]
 variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
 
-/-- Surjectivity of Mathlib's canonical pairing `dualSubmoduleToDual` for a free full lattice
-and a nondegenerate bilinear form. -/
+/-- Surjectivity of Mathlib's canonical pairing `dualSubmoduleToDual` for a full lattice
+and a nondegenerate bilinear form. A linear form on the lattice extends to the fraction field,
+where nondegeneracy represents it by an ambient vector; no lattice basis is needed. -/
 theorem _root_.LinearMap.BilinForm.dualSubmoduleToDual_surjective
     (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
-    (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
+    (N : Submodule R V) [N.IsLattice K] :
     Function.Surjective (B.dualSubmoduleToDual N) := by
+  have := Module.Finite.of_isLattice (A := K) N
+  have := Submodule.IsLattice.isLocalizedModule_subtype K N
   intro f
-  let b := Module.Free.chooseBasis R N
-  let b_ext := b.extendOfIsLattice K
-  let bd := B.dualBasis hB b_ext
-  let x : V := ∑ i, (algebraMap R K (f (b i))) • bd i
+  let fK : Module.Dual K V :=
+    IsLocalizedModule.mapExtendScalars (nonZeroDivisors R) N.subtype (Algebra.linearMap R K) K f
+  have hfK (n : N) : fK n = algebraMap R K (f n) :=
+    IsLocalizedModule.map_apply (nonZeroDivisors R) N.subtype (Algebra.linearMap R K) f n
+  let x := (B.toDual hB).symm fK
   have hx : x ∈ B.dualSubmodule N := by
-    rw [← b.span_range_extendOfIsLattice, B.dualSubmodule_span_of_basis hB b_ext]
-    exact Submodule.sum_mem _ fun i _ => by
-      simpa only [algebraMap_smul] using
-        Submodule.smul_mem _ (f (b i)) (Submodule.subset_span (Set.mem_range_self i))
+    intro y hy
+    rw [LinearMap.BilinForm.apply_toDual_symm_apply]
+    exact Submodule.mem_one.mpr ⟨f ⟨y, hy⟩, (hfK ⟨y, hy⟩).symm⟩
   refine ⟨⟨x, hx⟩, ?_⟩
-  apply LinearMap.ext_on b.span_eq
-  rintro _ ⟨i, rfl⟩
+  ext n
   apply FaithfulSMul.algebraMap_injective R K
   rw [LinearMap.BilinForm.dualSubmoduleToDual_apply_apply,
     LinearMap.BilinForm.dualSubmodulePairing_spec]
-  have hform (j) : B (bd j) ((b i : N) : V) = if i = j then 1 else 0 := by
-    calc
-      B (bd j) ((b i : N) : V) = B (bd j) (b_ext i) := by
-        rw [Basis.extendOfIsLattice_apply K b i]
-      _ = _ := B.apply_dualBasis_left hB b_ext j i
-  dsimp only [Submodule.coe_mk]
-  have hx_eq : x = ∑ j, (algebraMap R K (f (b j))) • bd j := rfl
-  rw [hx_eq, map_sum, LinearMap.sum_apply]
-  rw [Finset.sum_eq_single i]
-  · simp [hform, Algebra.smul_def]
-  · intro j _ hji
-    simp [hform, Ne.symm hji]
-  · simp
+  exact (B.apply_toDual_symm_apply fK n).trans (hfK n)
 
-/-- The canonical pairing between the dual submodule of a free full lattice and the lattice
-itself is a linear equivalence over `R` whenever the ambient bilinear form is nondegenerate. -/
+/-- The dual submodule of a full lattice is canonically isomorphic to its `R`-linear dual
+whenever the ambient bilinear form is nondegenerate. -/
 noncomputable def _root_.LinearMap.BilinForm.dualSubmoduleEquivDual
     (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
-    (N : Submodule R V) [hN : N.IsLattice K] [Module.Free R N] :
+    (N : Submodule R V) [hN : N.IsLattice K] :
     B.dualSubmodule N ≃ₗ[R] Module.Dual R N :=
   LinearEquiv.ofBijective (B.dualSubmoduleToDual N)
     ⟨B.dualSubmoduleToDual_injective hB N hN.span_eq_top,
@@ -90,7 +80,7 @@ noncomputable def _root_.LinearMap.BilinForm.dualSubmoduleEquivDual
 @[simp]
 theorem _root_.LinearMap.BilinForm.dualSubmoduleEquivDual_apply
     (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
-    (N : Submodule R V) [N.IsLattice K] [Module.Free R N] (x : B.dualSubmodule N) :
+    (N : Submodule R V) [N.IsLattice K] (x : B.dualSubmodule N) :
     LinearMap.BilinForm.dualSubmoduleEquivDual B hB N x = B.dualSubmoduleToDual N x :=
   LinearEquiv.ofBijective_apply (B.dualSubmoduleToDual N) x
 
