@@ -528,23 +528,31 @@ theorem _root_.MonoidHom.card_ker_elementaryTwoQuotientMap_le_card_ker (f : G �
 with `|ker f| ≤ 2 ^ n`, then `twoRank G ≤ twoRank H + n`. Together with
 `TauCeti.twoRank_le_twoRank_of_surjective` this pins the 2-rank of the quotient to within `n` of
 the 2-rank of `G`. The rank-nullity theorem for the induced map `G / G² → H / H²` turns the bound
-on the kernel of `f` into a bound on the dimension of the kernel of that map. -/
+on the kernel of `f` into a bound on the dimension of the kernel of that map.
+
+No finite-dimensionality assumption is needed for this inequality: if `G / G²` is
+infinite-dimensional, `twoRank G` is zero by the convention for `Module.finrank`. -/
 theorem _root_.MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow
-    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] {n : ℕ} (f : G →* H)
+    {n : ℕ} (f : G →* H)
     [Finite (MonoidHom.ker f)] (hf : Function.Surjective f)
     (hn : Nat.card (MonoidHom.ker f) ≤ 2 ^ n) :
     twoRank G ≤ twoRank H + n := by
-  -- The dimension of the kernel of `G / G² → H / H²` is at most `n`.
-  have hker : Module.finrank (ZMod 2) (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ n := by
-    have hcard : Nat.card (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ 2 ^ n :=
-      (f.card_ker_elementaryTwoQuotientMap_le_card_ker hf).trans hn
-    rw [Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod] at hcard
-    exact (Nat.pow_le_pow_iff_right one_lt_two).mp hcard
-  -- Rank-nullity for the induced map, whose range is everything.
-  have hrn := LinearMap.finrank_range_add_finrank_ker (elementaryTwoQuotientMap f)
-  rw [LinearMap.range_eq_top.mpr (elementaryTwoQuotientMap_surjective f hf), finrank_top] at hrn
-  rw [twoRank_def, twoRank_def, ← hrn]
-  omega
+  classical
+  by_cases hfin : Module.Finite (ZMod 2) (ElementaryTwoQuotient G)
+  · let : Module.Finite (ZMod 2) (ElementaryTwoQuotient G) := hfin
+    -- The dimension of the kernel of `G / G² → H / H²` is at most `n`.
+    have hker : Module.finrank (ZMod 2) (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ n := by
+      have hcard : Nat.card (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ 2 ^ n :=
+        (f.card_ker_elementaryTwoQuotientMap_le_card_ker hf).trans hn
+      rw [Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod] at hcard
+      exact (Nat.pow_le_pow_iff_right one_lt_two).mp hcard
+    -- Rank-nullity for the induced map, whose range is everything.
+    have hrn := LinearMap.finrank_range_add_finrank_ker (elementaryTwoQuotientMap f)
+    rw [LinearMap.range_eq_top.mpr (elementaryTwoQuotientMap_surjective f hf), finrank_top] at hrn
+    rw [twoRank_def, twoRank_def, ← hrn]
+    omega
+  · rw [twoRank_def, Module.finrank_of_not_finite hfin]
+    exact Nat.zero_le _
 
 /-- **A surjection keeps the 2-rank exactly when its kernel consists of squares.** For a
 surjective `f : G →* H`, the groups `G` and `H` have the same 2-rank if and only if every element
