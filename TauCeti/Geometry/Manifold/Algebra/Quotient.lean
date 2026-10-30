@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
+public import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
 # Quotients of normed spaces by discrete submodules are Lie groups
@@ -43,15 +44,25 @@ is smooth since a linear map out of a finite-dimensional space is continuous. Li
 continuous linear equivalence carrying `L` onto `L'` induces a biholomorphic isomorphism of complex
 tori.
 
+For discrete submodules `L` of `E` and `L'` of `E'`, the quotient of `E × E'` by the product
+`L.prod L'` is `C^n` diffeomorphic to the product of the quotients of `E` by `L` and of `E'` by
+`L'`, by the additive equivalence `Submodule.orbitRelQuotientProdAddEquiv`. For full lattices this
+identifies the complex torus of the product lattice, a full lattice by
+`Submodule.instIsZLatticeProd`, with the product of the two complex tori.
+
 ## Main results
 
 * `Submodule.instLieAddGroupOrbitRelQuotient`: the quotient of a locally compact normed space by a
   discrete submodule is a `C^n` additive Lie group; for `𝕜 = ℂ` and `n = ω` it is a complex Lie
   group.
+* `Submodule.contMDiff_orbitRelQuotient_of_comp_mk`: a map of quotients by discrete submodules
+  induced by a `C^n` map of the ambient spaces is `C^n`.
 * `Submodule.contMDiff_orbitRelQuotientMap`: a `C^n` semilinear map carrying `L` into `L'` induces
   a `C^n` map of quotients.
 * `Submodule.orbitRelQuotientDiffeomorph`: a semilinear equivalence carrying `L` onto `L'` which is
   `C^n` in both directions induces a `C^n` diffeomorphism of quotients, which is additive.
+* `Submodule.orbitRelQuotientProdDiffeomorph`: the quotient of `E × E'` by `L.prod L'` is `C^n`
+  diffeomorphic to the product of the quotients by `L` and by `L'`, by an additive equivalence.
 
 ## References
 
@@ -78,6 +89,21 @@ instance Submodule.instLieAddGroupOrbitRelQuotient :
     (AddMonoidHom.mk' (_root_.Quotient.mk (AddAction.orbitRel L E)) L.orbitRelQuotient_mk_add)
     TauCeti.isLocalDiffeomorph_addQuotientMk _root_.Quotient.mk_surjective
 
+variable {L} in
+/-- A map `g` of quotients by discrete submodules that is induced by a `C^n` map `f` of the ambient
+spaces, in the sense that `g` sends the class of `x` to the class of `f x`, is `C^n`. -/
+theorem Submodule.contMDiff_orbitRelQuotient_of_comp_mk {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] [LocallyCompactSpace F] {S : Type*} [Ring S] [Module S F]
+    {P : Submodule S F} [DiscreteTopology P]
+    {g : AddAction.orbitRel.Quotient L E → AddAction.orbitRel.Quotient P F} {f : E → F}
+    (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) n f)
+    (hg : g ∘ _root_.Quotient.mk (AddAction.orbitRel L E) =
+      _root_.Quotient.mk (AddAction.orbitRel P F) ∘ f) :
+    ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) n g := by
+  rw [← (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E)) (n := n)).contMDiff_comp_iff
+    _root_.Quotient.mk_surjective le_rfl, hg]
+  exact TauCeti.isLocalDiffeomorph_addQuotientMk.contMDiff.comp hf
+
 section Map
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [LocallyCompactSpace E']
@@ -90,13 +116,9 @@ finite-dimensional complex vector spaces with `f(L) ⊆ L'` for lattices `L` and
 complex tori `E / L → E' / L'` induced by `f`. -/
 theorem Submodule.contMDiff_orbitRelQuotientMap {τ : R →+* R'} (f : E →ₛₗ[τ] E')
     (h : L ≤ L'.comap f) (hf : ContDiff 𝕜 n f) :
-    ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E') n (L.orbitRelQuotientMap L' f h) := by
-  have hcomp : L.orbitRelQuotientMap L' f h ∘ _root_.Quotient.mk (AddAction.orbitRel L E) =
-      _root_.Quotient.mk (AddAction.orbitRel L' E') ∘ f :=
+    ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E') n (L.orbitRelQuotientMap L' f h) :=
+  Submodule.contMDiff_orbitRelQuotient_of_comp_mk hf.contMDiff <|
     funext <| L.orbitRelQuotientMap_mk L' f h
-  rw [← (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E)) (n := n)).contMDiff_comp_iff
-    _root_.Quotient.mk_surjective le_rfl, hcomp]
-  exact TauCeti.isLocalDiffeomorph_addQuotientMk.contMDiff.comp hf.contMDiff
 
 variable {σ : R →+* R'} {σ' : R' →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
 
@@ -142,3 +164,69 @@ theorem Submodule.orbitRelQuotientDiffeomorph_symm (e : E ≃ₛₗ[σ] E')
   exact DFunLike.congr_fun (L.orbitRelQuotientCongr_symm L' e he) x
 
 end Map
+
+section Prod
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [LocallyCompactSpace E']
+  [Module R E'] (L' : Submodule R E') [DiscreteTopology L']
+
+/-- The quotient of `E × E'` by the product `L.prod L'` of discrete submodules is `C^n`
+diffeomorphic to the product of the quotients of `E` by `L` and of `E'` by `L'`; as a map it is
+the additive equivalence `Submodule.orbitRelQuotientProdAddEquiv`. For lattices `L` and `L'` in
+finite-dimensional complex vector spaces and `n = ω`, this is the biholomorphic isomorphism of
+complex Lie groups between the complex torus `(E × E') / (L × L')` and the product of the complex
+tori `E / L` and `E' / L'`. -/
+def Submodule.orbitRelQuotientProdDiffeomorph :
+    Diffeomorph 𝓘(𝕜, E × E') (𝓘(𝕜, E).prod 𝓘(𝕜, E'))
+      (AddAction.orbitRel.Quotient (L.prod L') (E × E'))
+      (AddAction.orbitRel.Quotient L E × AddAction.orbitRel.Quotient L' E') n where
+  toEquiv := L.orbitRelQuotientProdAddEquiv L'
+  contMDiff_toFun := by
+    have hL : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E) n (_root_.Quotient.mk (AddAction.orbitRel L E)) :=
+      TauCeti.isLocalDiffeomorph_addQuotientMk.contMDiff
+    have hL' : ContMDiff 𝓘(𝕜, E') 𝓘(𝕜, E') n (_root_.Quotient.mk (AddAction.orbitRel L' E')) :=
+      TauCeti.isLocalDiffeomorph_addQuotientMk.contMDiff
+    have hcomp : L.orbitRelQuotientProdAddEquiv L' ∘
+        _root_.Quotient.mk (AddAction.orbitRel (L.prod L') (E × E')) =
+          fun x ↦ (_root_.Quotient.mk _ x.1, _root_.Quotient.mk _ x.2) :=
+      funext <| L.orbitRelQuotientProdAddEquiv_mk L'
+    rw [AddEquiv.coe_toEquiv,
+      ← (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E × E')) (n := n)).contMDiff_comp_iff
+        _root_.Quotient.mk_surjective le_rfl, hcomp]
+    exact (hL.comp contDiff_fst.contMDiff).prodMk (hL'.comp contDiff_snd.contMDiff)
+  contMDiff_invFun := by
+    -- The inverse sends `(a, b)` to `e.symm (a, 0) + e.symm (0, b)`. Each summand is descended
+    -- from an inclusion of a factor into `E × E'`, and addition on the quotient is smooth.
+    set e := L.orbitRelQuotientProdAddEquiv L'
+    have h₁ : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E × E') n fun a ↦ e.symm (a, 0) :=
+      Submodule.contMDiff_orbitRelQuotient_of_comp_mk (f := fun x ↦ (x, 0))
+        (contDiff_id.prodMk contDiff_const).contMDiff <| funext fun x ↦ by
+          simp only [Function.comp_apply]
+          rw [← L'.orbitRelQuotient_mk_zero, L.orbitRelQuotientProdAddEquiv_symm_mk]
+    have h₂ : ContMDiff 𝓘(𝕜, E') 𝓘(𝕜, E × E') n fun b ↦ e.symm (0, b) :=
+      Submodule.contMDiff_orbitRelQuotient_of_comp_mk (f := fun y ↦ (0, y))
+        (contDiff_const.prodMk contDiff_id).contMDiff <| funext fun y ↦ by
+          simp only [Function.comp_apply]
+          rw [← L.orbitRelQuotient_mk_zero, L.orbitRelQuotientProdAddEquiv_symm_mk]
+    have h : ⇑e.symm = fun z ↦ e.symm (z.1, 0) + e.symm (0, z.2) :=
+      funext fun z ↦ by rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
+    rw [AddEquiv.coe_toEquiv_symm, h]
+    exact (h₁.comp contMDiff_fst).add (h₂.comp contMDiff_snd)
+
+/-- As a map, the diffeomorphism `Submodule.orbitRelQuotientProdDiffeomorph` is the additive
+equivalence `Submodule.orbitRelQuotientProdAddEquiv`. -/
+@[simp]
+theorem Submodule.coe_orbitRelQuotientProdDiffeomorph :
+    ⇑(L.orbitRelQuotientProdDiffeomorph L' (𝕜 := 𝕜) (n := n)) =
+      L.orbitRelQuotientProdAddEquiv L' :=
+  (rfl)
+
+/-- As a map, the inverse of `Submodule.orbitRelQuotientProdDiffeomorph` is the inverse of the
+additive equivalence `Submodule.orbitRelQuotientProdAddEquiv`. -/
+@[simp]
+theorem Submodule.coe_orbitRelQuotientProdDiffeomorph_symm :
+    ⇑(L.orbitRelQuotientProdDiffeomorph L' (𝕜 := 𝕜) (n := n)).symm =
+      (L.orbitRelQuotientProdAddEquiv L').symm :=
+  (rfl)
+
+end Prod

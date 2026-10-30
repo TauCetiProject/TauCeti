@@ -195,24 +195,20 @@ theorem toTarget_apply (x : algebra R Ω) :
     toTarget R Ω x = ULift.algEquiv (R := R) (A := Ω) (desc R Ω (pointCocone R Ω) x) :=
   (rfl)
 
-/-- Composing a stage map with `toTarget` recovers the point `B.obj.hom` of that neighbourhood
-(up to `ULift`). -/
+/-- Composing a stage map with `toTarget` recovers the point of that neighbourhood. -/
 @[simp]
 theorem toTarget_comp_stage (B : Neighbourhood R Ω) :
-    (toTarget R Ω).comp (stage R Ω B) =
-      ULift.algEquiv.toAlgHom.comp B.obj.hom.hom := by
+    (toTarget R Ω).comp (stage R Ω B) = B.point := by
   ext element
-  rw [AlgHom.comp_apply, toTarget_apply, desc_stage_apply, pointCocone_ι_app]
-  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+  rw [AlgHom.comp_apply, toTarget_apply, desc_stage_apply, pointCocone_ι_app,
+    Neighbourhood.point_apply]
   -- The carrier of `CommAlgCat.of R (ULift Ω)` needs unification to see `ULift Ω`.
   exact ULift.algEquiv_apply _
 
 /-- Elementwise form of `toTarget_comp_stage`. -/
 @[simp]
 theorem toTarget_stage_apply (B : Neighbourhood R Ω) (b : B.obj.left) :
-    toTarget R Ω (stage R Ω B b) = (B.obj.hom.hom b).down := by
-  rw [toTarget_apply, desc_stage_apply, pointCocone_ι_app]
-  -- The carrier of `CommAlgCat.of R (ULift Ω)` needs unification to see `ULift Ω`.
-  exact ULift.algEquiv_apply _
+    toTarget R Ω (stage R Ω B b) = B.point b :=
+  DFunLike.congr_fun (toTarget_comp_stage R Ω B) b
 
 end TauCeti.StrictHenselization
