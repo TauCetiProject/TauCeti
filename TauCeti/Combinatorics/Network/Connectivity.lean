@@ -9,7 +9,7 @@ public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Combinatorics.Network.Menger.Adjacent
 public import TauCeti.Data.ENat.Lattice
-import Mathlib.Tactic.Linarith
+import TauCeti.Combinatorics.Network.Menger.Edge
 
 /-!
 # Arc connectivity and vertex strong connectivity of arrow families
@@ -226,29 +226,6 @@ private theorem IsVertexStrong.le_card_of_isEmpty {C : Set V} (h : IsVertexStron
   split_ifs at hmem
   exacts [hxX (mem_coe.2 hmem), hvX (mem_coe.2 hmem)]
 
-/-- If every vertex of `C` has an arrow to every vertex outside `C`, then at least `|V| - 1`
-arrows leave `C`, when `C` and its complement are nonempty. -/
-private theorem le_card_of_forall_nonempty [Finite V] {C : Set V} (hs : s ∈ C) (ht : t ∉ C)
-    (hk : k < Nat.card V) (hC : ∀ u ∈ C, ∀ w ∉ C, Nonempty (Q u w))
-    {F : Finset (Σ x y, Q x y)}
-    (hF : ∀ ⦃v w : V⦄ (e : Q v w), v ∈ C → w ∉ C → ⟨v, w, e⟩ ∈ F) : k ≤ #F := by
-  classical
-  have := Fintype.ofFinite V
-  set D : Finset V := {v | v ∈ C}
-  have hsub : D ×ˢ Dᶜ ⊆ ({a ∈ F | a.1 ∈ C ∧ a.2.1 ∉ C}).image fun a ↦ (a.1, a.2.1) := by
-    rintro ⟨v, w⟩ hvw
-    simp only [D, mem_product, mem_compl, mem_filter, mem_univ, true_and] at hvw
-    obtain ⟨e⟩ := hC v hvw.1 w hvw.2
-    exact mem_image.2 ⟨⟨v, w, e⟩, mem_filter.2 ⟨hF e hvw.1 hvw.2, hvw.1, hvw.2⟩, rfl⟩
-  have hcard := (card_le_card hsub).trans (card_image_le.trans (card_filter_le _ _))
-  rw [card_product] at hcard
-  have hD : 1 ≤ #D := card_pos.2 ⟨s, by simpa [D] using hs⟩
-  have hDc : 1 ≤ #Dᶜ := card_pos.2 ⟨t, by simpa [D] using ht⟩
-  have hV : k < #D + #Dᶜ := by
-    rw [card_add_card_compl]
-    simpa only [Nat.card_eq_fintype_card] using hk
-  nlinarith
-
 /-- In a `k`-vertex-strong arrow family, at least `k` arrows leave every vertex set `C` containing
 `s` but not `t`: every finite set of arrows containing them all has at least `k` members. -/
 theorem IsVertexStrong.le_card {C : Set V} (h : IsVertexStrong Q k) (hs : s ∈ C)
@@ -268,7 +245,8 @@ theorem IsVertexStrong.le_card {C : Set V} (h : IsVertexStrong Q k) (hs : s ∈ 
         exact mem_union_right _ (mem_image.2 ⟨⟨s, v, e⟩, hF e hs hv, rfl⟩)
     let _ : Finite V := Finite.of_surjective (fun v : {v // v ∈ D} ↦ v.1) fun v ↦
       ⟨⟨v, hD v⟩, rfl⟩
-    exact le_card_of_forall_nonempty hs ht h.lt_natCard hpair hF
+    exact (Nat.le_sub_one_of_lt h.lt_natCard).trans
+      (natCard_sub_one_le_card_of_completeCut hs ht hpair hF)
 
 /-- **The directed Whitney inequality.** A `k`-vertex-strong arrow family is `k`-arc-strong. -/
 theorem IsVertexStrong.isArcStrong (h : IsVertexStrong Q k) : IsArcStrong Q k :=
