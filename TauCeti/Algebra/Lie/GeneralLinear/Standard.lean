@@ -22,9 +22,11 @@ Writing `εₜ = Pi.single t 1` for the coordinate tuples, the standard basis ve
 of `n → R` has weight `εₜ` and the dual basis functional `LinearMap.proj t` has weight `-εₜ`. The
 identity matrix spans the centre of `gl n R` and acts by `1` on the standard module and by `-1` on
 its dual, so away from characteristic two the two modules are not isomorphic
-(`TauCeti.isEmpty_lieModuleEquiv_dual_pi`). This is why the dual standard module carries a Pieri
-rule `V* ⊗ L(μ) ≅ ⨁ₜ L(μ - εₜ)` of its own rather than inheriting the one for the standard module;
-that decomposition is not proved here, only the description of `V*` which it presupposes.
+(`TauCeti.isEmpty_lieModuleEquiv_dual_pi`). This is why, over a characteristic-zero field, the dual
+standard module carries a Pieri rule `V* ⊗ L(μ) ≅ ⨁ₜ L(μ - εₜ)` of its own rather than inheriting
+the one for the standard module, the sum running only over those `t` for which `μ - εₜ` is dominant
+integral (for `μ = 0` only `t = last` survives, recovering `V* ≅ L(-ε_last)`). That decomposition
+is not proved here, only the description of `V*` which it presupposes.
 
 In the matrix unit positive system of `TauCeti/Algebra/Lie/GeneralLinear/Borel.lean` the raising
 matrix units move a standard basis vector *down* the order and a dual basis functional *up* it. The
