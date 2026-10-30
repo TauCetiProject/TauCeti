@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.Homotopy.Path
 
@@ -20,7 +21,8 @@ homotopy `e.toFun ∘ e.invFun ≃ id`: evaluated at a point `y`, it is a path f
 This is the prerequisite for the base-point-free homotopy-group statements in
 `TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv`, which need the target space to be path
 connected before base-point change is available there. The file also records that the product
-`ContinuousMap.HomotopyEquiv.prodCongr` of two homotopy equivalences acts componentwise.
+`ContinuousMap.HomotopyEquiv.prodCongr` of two homotopy equivalences acts componentwise, and that
+a product with a contractible factor is homotopy equivalent to the other factor.
 
 ## Main declarations
 
@@ -28,6 +30,8 @@ connected before base-point change is available there. The file also records tha
   connected space is path connected.
 * `ContinuousMap.HomotopyEquiv.prodCongr_apply`: the product of two homotopy equivalences acts
   componentwise.
+* `ContractibleSpace.prod_hequiv_left`: `X × Y` is homotopy equivalent to `X` when `Y` is
+  contractible.
 -/
 
 public section
@@ -58,5 +62,12 @@ theorem _root_.ContinuousMap.HomotopyEquiv.pathConnectedSpace [PathConnectedSpac
 theorem _root_.ContinuousMap.HomotopyEquiv.prodCongr_apply (h₁ : X ≃ₕ Y) (h₂ : Z ≃ₕ Z')
     (x : X × Z) : h₁.prodCongr h₂ x = (h₁ x.1, h₂ x.2) :=
   (rfl)
+
+variable (X Y) in
+/-- The product `X × Y` with a contractible space `Y` is homotopy equivalent to `X`. -/
+theorem _root_.ContractibleSpace.prod_hequiv_left [ContractibleSpace Y] : Nonempty (X × Y ≃ₕ X) :=
+  (ContractibleSpace.hequiv_unit Y).map fun e =>
+    ((ContinuousMap.HomotopyEquiv.refl X).prodCongr e).trans
+      (Homeomorph.prodUnique X Unit).toHomotopyEquiv
 
 end TauCeti

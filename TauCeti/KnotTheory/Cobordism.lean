@@ -16,6 +16,7 @@ public import TauCeti.KnotTheory.SmoothCircle
 
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.Torus.Exterior
+import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # Knot cobordisms and the cobordism distance
@@ -151,7 +152,7 @@ theorem genus_def (S : KnotCobordism K₀ K₁) : S.genus = finrank ℚ S.firstH
   (rfl)
 
 /-- A knot cobordism from `K₀` to `K₁` is one between any knots with the same images. -/
-@[expose] def congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = range K₀')
+def congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = range K₀')
     (h₁ : range K₁ = range K₁') : KnotCobordism K₀' K₁' where
   carrier := S.carrier
   toFun := S.toFun
@@ -166,9 +167,20 @@ theorem genus_congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = rang
     (h₁ : range K₁ = range K₁') : (S.congrRange h₀ h₁).genus = S.genus :=
   (rfl)
 
+/-- Transporting a knot cobordism to knots with the same images keeps its surface. -/
+theorem carrier_congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = range K₀')
+    (h₁ : range K₁ = range K₁') : (S.congrRange h₀ h₁).carrier = S.carrier :=
+  (rfl)
+
+/-- Transporting a knot cobordism to knots with the same images keeps its embedded surface. -/
+@[simp]
+theorem range_toFun_congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = range K₀')
+    (h₁ : range K₁ = range K₁') : range (S.congrRange h₀ h₁).toFun = range S.toFun :=
+  (rfl)
+
 /-- The **cobordism traced by a concordance**: the track `S¹ × ℝ → Sⁿ × ℝ` of a smooth concordance
 from `K₀` to `K₁` is a knot cobordism, its surface the cylinder `S¹ × ℝ`. -/
-@[expose] def ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) : KnotCobordism K₀ K₁ where
+def ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) : KnotCobordism K₀ K₁ where
   carrier := Circle × ℝ
   toFun := F
   isSmoothEmbedding := F.toSmoothEmbedding.isSmoothEmbedding
@@ -188,22 +200,22 @@ theorem carrier_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
     (ofConcordance F).carrier = (Circle × ℝ) :=
   (rfl)
 
-/-- The cylinder `S¹ × ℝ` is homotopy equivalent to the one-circle torus `Unit → S¹`. -/
-private def circleProdRealHomotopyEquiv :
-    ContinuousMap.HomotopyEquiv (Circle × ℝ) (Unit → ULift.{0} Circle) :=
-  (((ContinuousMap.HomotopyEquiv.refl Circle).prodCongr
-      (ContractibleSpace.hequiv_unit ℝ).some).trans
-    (Homeomorph.prodUnique Circle Unit).toHomotopyEquiv).trans
-    (Homeomorph.ulift.symm.trans
-      (Homeomorph.funUnique Unit (ULift.{0} Circle)).symm).toHomotopyEquiv
+/-- The embedded surface of the cobordism traced by a concordance is the image of its track. -/
+@[simp]
+theorem range_toFun_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
+    range (ofConcordance F).toFun = range F :=
+  (rfl)
 
 /-- **A concordance is a cobordism of genus `0`**: the first homology of the cylinder `S¹ × ℝ` is
 one copy of `ℚ`. -/
 @[simp]
 theorem genus_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
     (ofConcordance F).genus = 0 := by
-  have h :=
-    (circleProdRealHomotopyEquiv.singularHomologyIso (ModuleCat.of ℚ ℚ) 1).toLinearEquiv.finrank_eq
+  -- The cylinder `S¹ × ℝ` is homotopy equivalent to the one-circle torus `Unit → S¹`.
+  obtain ⟨e⟩ := ContractibleSpace.prod_hequiv_left Circle ℝ
+  have h := ((e.trans (Homeomorph.ulift.symm.trans
+      (Homeomorph.funUnique Unit (ULift.{0} Circle)).symm).toHomotopyEquiv).singularHomologyIso
+    (ModuleCat.of ℚ ℚ) 1).toLinearEquiv.finrank_eq
   rw [finrank_singularHomology_pi_circle] at h
   simp only [Nat.card_unique, Nat.choose_self, finrank_self, mul_one] at h
   -- The first homology of the cobordism is, by definition, that of the cylinder `S¹ × ℝ`.
