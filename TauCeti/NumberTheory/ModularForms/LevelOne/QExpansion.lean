@@ -164,6 +164,7 @@ theorem qExpansion_natCast_discriminant :
     (ModularFormClass.bdd_at_infty CuspForm.discriminant) CuspForm.discriminant.holo'
 
 /-- The coefficients of `Δ` at period `N` vanish below `N`. -/
+@[simp]
 theorem qExpansion_natCast_discriminant_coeff_of_lt {i : ℕ} (hi : i < N) :
     (qExpansion N discriminant).coeff i = 0 := by
   rw [qExpansion_natCast_discriminant, PowerSeries.coeff_expand]
@@ -173,6 +174,7 @@ theorem qExpansion_natCast_discriminant_coeff_of_lt {i : ℕ} (hi : i < N) :
   · rfl
 
 /-- The coefficient of `qᴺ` in the expansion of `Δ` at period `N` is `1`. -/
+@[simp]
 theorem qExpansion_natCast_discriminant_coeff_self :
     (qExpansion N discriminant).coeff N = 1 := by
   simpa [qExpansion_natCast_discriminant, discriminant_qExpansion_coeff_one] using
