@@ -23,14 +23,16 @@ Nothing beyond the containments `ball x ρ ⊆ closedBall x ρ` and `sphere x ρ
 the openness of a ball against the closedness of a closed ball, is used, so `s` is an arbitrary set
 in an arbitrary pseudo-metric space.
 
-The one quantitative statement is about *shrinking* the cut. When the cut point `x` lies off `s`,
-the far side keeps two prescribed points of `s` once `ρ` is small enough, so the image of the far
-side stays at least as wide as the distance between their two distinct images: the far side does
-not degenerate as the cut shrinks. Distinctness of those two images is what forces a genuine metric,
-rather than pseudo-metric, structure on both sides, and that statement alone is stated for one.
+The one quantitative statement is about *shrinking* the cut. Once the far side at radius `0`,
+`s \ closedBall x 0`, has two points with distinct images, the far side keeps both of them for
+every small enough `ρ`, so its image stays at least as wide as the distance between those two
+images: the far side does not degenerate as the cut shrinks. Distinctness of the two images is what
+forces a genuine metric, rather than pseudo-metric, structure on the target, and that statement
+alone asks for one. In a metric space `s \ closedBall x 0 = s \ {x}`, which is `s` itself when the
+cut point lies off `s`.
 
-The intended consumer is layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md`, Carathéodory's
-boundary correspondence, through `TauCeti/Analysis/Complex/Conformal/Crosscut/Basic.lean` and
+The motivating application is Carathéodory's boundary correspondence, in
+`TauCeti/Analysis/Complex/Conformal/Crosscut/Basic.lean` and
 `TauCeti/Analysis/Complex/Conformal/CutDiameter.lean`: there `X = ℂ` and the sphere is the
 *circular crosscut* of a plane domain at a boundary point, whose near side is the approach region
 along which the boundary behaviour of a conformal map is read off. Nothing here is specific to that
@@ -48,9 +50,9 @@ use, and Mathlib has no form of the decomposition.
   image under an arbitrary map.
 * `TauCeti.subset_inter_ball_or_subset_sdiff_closedBall` — a preconnected subset of an open cut set
   missing the sphere lies on one side of it.
-* `TauCeti.exists_pos_forall_le_diam_image_sdiff_closedBall` — cutting at a point off the set, the
-  image of the far side stays at least as wide as a fixed positive number for every small enough
-  radius.
+* `TauCeti.exists_pos_forall_le_diam_image_sdiff_closedBall` — once the far side at radius `0` has
+  a nontrivial image, the image of the far side stays at least as wide as a fixed positive number
+  for every small enough radius.
 -/
 
 public section
@@ -66,34 +68,25 @@ variable {X : Type*} [PseudoMetricSpace X] {x : X} {ρ : ℝ}
 with those at distance more than `ρ`. -/
 theorem sdiff_sphere_eq_inter_ball_union_sdiff_closedBall {s : Set X} :
     s \ sphere x ρ = s ∩ ball x ρ ∪ s \ closedBall x ρ := by
-  ext y
-  constructor
-  · rintro ⟨hy, hne⟩
-    rw [Metric.mem_sphere] at hne
-    rcases lt_or_gt_of_ne hne with h | h
-    · exact Or.inl ⟨hy, Metric.mem_ball.mpr h⟩
-    · exact Or.inr ⟨hy, fun hc => absurd (Metric.mem_closedBall.mp hc) (not_le.mpr h)⟩
-  · rintro (⟨hy, h⟩ | ⟨hy, h⟩)
-    · exact ⟨hy, fun hc => (Metric.mem_ball.mp h).ne (Metric.mem_sphere.mp hc)⟩
-    · exact ⟨hy, fun hc => h (Metric.sphere_subset_closedBall hc)⟩
+  ext
+  simp [← and_or_left, lt_or_lt_iff_ne]
 
 /-- The two sides of a circular cut are disjoint, the near side lying inside `closedBall x ρ` and
 the far side outside it. -/
 theorem disjoint_inter_ball_sdiff_closedBall {s : Set X} :
     Disjoint (s ∩ ball x ρ) (s \ closedBall x ρ) :=
-  Set.disjoint_sdiff_right.mono_left (inter_subset_right.trans ball_subset_closedBall)
+  disjoint_sdiff_right.mono_left (inter_subset_right.trans ball_subset_closedBall)
 
 /-- The near side of a circular cut misses the cut itself, the ball and the sphere being
 disjoint. -/
 theorem disjoint_inter_ball_inter_sphere {s : Set X} :
     Disjoint (s ∩ ball x ρ) (s ∩ sphere x ρ) :=
-  Set.disjoint_of_subset inter_subset_right inter_subset_right sphere_disjoint_ball.symm
+  sphere_disjoint_ball.symm.mono inter_subset_right inter_subset_right
 
 /-- The far side of a circular cut misses the cut itself, the sphere lying in the closed ball. -/
 theorem disjoint_sdiff_closedBall_inter_sphere {s : Set X} :
     Disjoint (s \ closedBall x ρ) (s ∩ sphere x ρ) :=
-  Set.disjoint_of_subset le_rfl (inter_subset_right.trans sphere_subset_closedBall)
-    disjoint_sdiff_left
+  disjoint_sdiff_left.mono_right (inter_subset_right.trans sphere_subset_closedBall)
 
 /-- **A circular cut splits a set into a near side, a far side and the cut.** The three-piece form
 of `TauCeti.sdiff_sphere_eq_inter_ball_union_sdiff_closedBall`. -/
@@ -117,38 +110,31 @@ theorem subset_inter_ball_or_subset_sdiff_closedBall {s S : Set X} (hs : IsOpen 
     S ⊆ s ∩ ball x ρ ∨ S ⊆ s \ closedBall x ρ :=
   hS.subset_or_subset (hs.inter isOpen_ball) (hs.sdiff isClosed_closedBall)
     disjoint_inter_ball_sdiff_closedBall
-    (sdiff_sphere_eq_inter_ball_union_sdiff_closedBall (x := x) (s := s) ▸ hSsub)
+    (hSsub.trans_eq sdiff_sphere_eq_inter_ball_union_sdiff_closedBall)
 
 /-! ## The far side does not degenerate -/
 
-section Metric
+variable {Y : Type*} [MetricSpace Y] {f : X → Y} {s : Set X}
 
-variable {X Y : Type*} [MetricSpace X] [MetricSpace Y] {f : X → Y} {s : Set X} {x : X}
-
-/-- **Cutting at a point off the set, the far side keeps a fixed width as the cut shrinks.** Let
-the image of `s` under `f` have at least two points, let `x` lie off `s`, and suppose the image is
-bounded. Then there are `d > 0` and `ρ₀ > 0` such that
+/-- **The far side of a shrinking circular cut keeps a fixed width.** Suppose the image under `f`
+of the far side at radius `0`, `s \ closedBall x 0`, has at least two points, and the image of `s`
+is bounded. Then there are `d > 0` and `ρ₀ > 0` such that
 
 > `d ≤ diam (f '' (s \ closedBall x ρ))` for every `ρ ≤ ρ₀`.
 
-No hypothesis relates `f` to the metric of `X`. -/
-theorem exists_pos_forall_le_diam_image_sdiff_closedBall (hfs : ¬ (f '' s).Subsingleton)
-    (hx : x ∉ s) (hb : Bornology.IsBounded (f '' s)) :
+In a metric space `s \ closedBall x 0 = s \ {x}`, so when `x ∉ s` the first hypothesis just asks
+that `f '' s` have two points. No hypothesis relates `f` to the metric of `X`. -/
+theorem exists_pos_forall_le_diam_image_sdiff_closedBall
+    (hfs : (f '' (s \ closedBall x 0)).Nontrivial) (hb : Bornology.IsBounded (f '' s)) :
     ∃ d > 0, ∃ ρ₀ > 0, ∀ ρ ≤ ρ₀, d ≤ diam (f '' (s \ closedBall x ρ)) := by
-  obtain ⟨y₁, hy₁, y₂, hy₂, hne⟩ := Set.not_subsingleton_iff.mp hfs
-  rcases hy₁ with ⟨z₁, hz₁, rfl⟩
-  rcases hy₂ with ⟨z₂, hz₂, rfl⟩
-  have hd : 0 < dist (f z₁) (f z₂) := dist_pos.mpr hne
-  have h₁ : 0 < dist z₁ x := dist_pos.mpr fun h => hx (h ▸ hz₁)
-  have h₂ : 0 < dist z₂ x := dist_pos.mpr fun h => hx (h ▸ hz₂)
-  have hmin : 0 < min (dist z₁ x) (dist z₂ x) := lt_min h₁ h₂
-  refine ⟨dist (f z₁) (f z₂), hd, min (dist z₁ x) (dist z₂ x) / 2, by linarith, fun ρ hρ => ?_⟩
-  have hmem : ∀ z, z ∈ s → min (dist z₁ x) (dist z₂ x) ≤ dist z x → z ∈ s \ closedBall x ρ :=
-    fun z hz hzd => ⟨hz, by simp only [mem_closedBall, not_le]; linarith⟩
-  exact dist_le_diam_of_mem (hb.subset (Set.image_mono Set.sdiff_subset))
-    (Set.mem_image_of_mem f (hmem z₁ hz₁ (min_le_left _ _)))
-    (Set.mem_image_of_mem f (hmem z₂ hz₂ (min_le_right _ _)))
-
-end Metric
+  obtain ⟨_, ⟨z₁, ⟨hz₁, h₁⟩, rfl⟩, _, ⟨z₂, ⟨hz₂, h₂⟩, rfl⟩, hne⟩ := hfs
+  rw [mem_closedBall, not_le] at h₁ h₂
+  refine ⟨dist (f z₁) (f z₂), dist_pos.mpr hne, min (dist z₁ x) (dist z₂ x) / 2,
+    half_pos (lt_min h₁ h₂), fun ρ hρ => ?_⟩
+  have hmem {z} (hz : z ∈ s) (hzd : min (dist z₁ x) (dist z₂ x) ≤ dist z x) :
+      f z ∈ f '' (s \ closedBall x ρ) :=
+    mem_image_of_mem f ⟨hz, by rw [mem_closedBall, not_le]; linarith [lt_min h₁ h₂]⟩
+  exact dist_le_diam_of_mem (hb.subset (image_mono sdiff_subset))
+    (hmem hz₁ (min_le_left _ _)) (hmem hz₂ (min_le_right _ _))
 
 end TauCeti
