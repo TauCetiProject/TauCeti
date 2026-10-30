@@ -36,6 +36,9 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   vectors are equivalent over a commutative semiring.
 * `Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
   coordinate action has the corresponding single-entry matrix.
+* `LinearMap.vecMul_toMatrixRight'` and `LinearMap.isIdempotentElem_toMatrixRight'_iff`: over a
+  possibly noncommutative semiring, linear maps of coordinate vectors are matrices acting on row
+  vectors, and idempotent endomorphisms correspond to idempotent matrices.
 
 The first is used to turn the Azumaya isomorphism of a finite-dimensional central simple algebra
 into a matrix algebra in `TauCeti/Algebra/CentralSimple/Opposite.lean`.
@@ -94,6 +97,25 @@ theorem toMatrixAlgEquiv_eq_single_of_apply_basis {R : Type*} [CommSemiring R] {
   exact h c
 
 end Module.Basis
+
+namespace LinearMap
+
+variable {R : Type*} [Semiring R] {m n : Type*} [Fintype m] [DecidableEq m]
+
+/-- Multiplying a row vector by the matrix `f.toMatrixRight'` applies the linear map `f`. -/
+@[simp]
+theorem vecMul_toMatrixRight' (f : (m → R) →ₗ[R] n → R) (v : m → R) :
+    Matrix.vecMul v f.toMatrixRight' = f v := by
+  rw [← Matrix.toLinearMapRight'_apply, LinearEquiv.symm_apply_apply]
+
+/-- The matrix of an endomorphism of `m → R`, acting on row vectors, is idempotent exactly when
+the endomorphism is. -/
+theorem isIdempotentElem_toMatrixRight'_iff (f : Module.End R (m → R)) :
+    IsIdempotentElem f.toMatrixRight' ↔ IsIdempotentElem f := by
+  rw [IsIdempotentElem, IsIdempotentElem, ← toMatrixRight'_comp, Module.End.mul_eq_comp]
+  exact toMatrixRight'.injective.eq_iff
+
+end LinearMap
 
 namespace TauCeti.Algebra
 
