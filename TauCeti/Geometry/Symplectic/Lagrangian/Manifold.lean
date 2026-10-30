@@ -147,7 +147,8 @@ theorem isLagrangianMap_iff_forall :
 theorem isIsotropicMap_iff :
     hσ.IsIsotropicMap J f ↔
       ∀ x (v w : TangentSpace J x),
-        SmoothForm.eval₂ σ (f x) (mfderiv J I f x v) (mfderiv J I f x w) = 0 := by
+        SmoothBundleForm.eval₂ σ (f x)
+            (mfderiv J I f x v) (mfderiv J I f x w) = 0 := by
   refine forall_congr' fun x ↦ ?_
   simp only [SymplecticForm.isIsotropic_iff, LinearMap.mem_range, forall_exists_index,
     forall_apply_eq_imp_iff, symplecticFormAt_apply, ContinuousLinearMap.coe_coe]
@@ -170,7 +171,7 @@ theorem IsLagrangianMap.isCoisotropicMap (h : hσ.IsLagrangianMap J f) : hσ.IsC
 the two-form back to zero. -/
 theorem isIsotropicMap_iff_mpullback_eq_zero [IsManifold J ∞ N] (hf : ContMDiff J I ∞ f) :
     hσ.IsIsotropicMap J f ↔ SmoothForm.mpullback f hf σ = 0 := by
-  rw [isIsotropicMap_iff, SmoothForm.ext_iff]
+  rw [isIsotropicMap_iff, SmoothBundleForm.ext_eval₂_iff]
   simp only [SmoothForm.eval₂_mpullback]
   simp
 

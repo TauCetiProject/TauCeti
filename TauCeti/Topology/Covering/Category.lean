@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.CategoryTheory.Comma.Over.Basic
+public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # The category of covering spaces over a fixed base
@@ -444,6 +445,16 @@ theorem forget_obj_mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap 
 /-- The total space of a connected covering space is connected. -/
 instance connectedSpace (p : ConnectedCoveringSpace X) : ConnectedSpace (p : TopCat) :=
   p.prop_obj
+
+/-- A connected cover of a locally path-connected base is locally path connected. -/
+instance locallyPathConnectedSpace [LocallyPathConnectedSpace X]
+    (p : ConnectedCoveringSpace X) : LocallyPathConnectedSpace (p : TopCat) :=
+  p.isCoveringMap_proj.isLocalHomeomorph.locallyPathConnectedSpace
+
+/-- A connected cover of a locally path-connected base is path connected. -/
+instance pathConnectedSpace [LocallyPathConnectedSpace X]
+    (p : ConnectedCoveringSpace X) : PathConnectedSpace (p : TopCat) :=
+  PathConnectedSpace.of_locallyPathConnectedSpace
 
 end ConnectedCoveringSpace
 

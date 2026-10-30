@@ -29,6 +29,10 @@ The zero module is Cohen–Macaulay by convention: its depth is `⊤` while its 
 * `Module.IsCohenMacaulay R M`: the `R`-module `M` is Cohen–Macaulay.
 * `Module.isCohenMacaulay_iff_supportDim_le_depth`: a finite nonzero module over a Noetherian local
   ring is Cohen–Macaulay if and only if the dimension of its support is at most its depth.
+* `RingEquiv.isCohenMacaulay_self_iff`: being Cohen–Macaulay over itself is invariant under
+  isomorphisms of Noetherian local rings.
+* `IsLocalization.AtPrime.isCohenMacaulay_self_iff`: a localization of a Noetherian ring at a
+  prime is Cohen–Macaulay over itself exactly when `Localization.AtPrime p` is.
 * `Module.isCohenMacaulay_quotSMulTop_iff`: for an `M`-regular element `x` of the maximal ideal,
   `M ⧸ x M` is Cohen–Macaulay if and only if `M` is (Stacks, Lemma 10.103.5 (0C6G)), and
   `Module.isCohenMacaulay_quotient_ofList_smul_iff` is the same for an `M`-regular sequence.
@@ -105,6 +109,38 @@ theorem isCohenMacaulay_iff (e : M ≃ₗ[R] N) :
     depth_eq_of_linearEquiv e, Module.supportDim_eq_of_equiv e]
 
 end LinearEquiv
+
+namespace RingEquiv
+
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [IsLocalRing R] [IsLocalRing S]
+  [IsNoetherianRing R]
+
+/-- A Noetherian local ring is Cohen–Macaulay over itself exactly when an isomorphic ring is. -/
+theorem isCohenMacaulay_self_iff (e : R ≃+* S) :
+    Module.IsCohenMacaulay R R ↔ Module.IsCohenMacaulay S S := by
+  rw [Module.isCohenMacaulay_iff_depth_eq, Module.isCohenMacaulay_iff_depth_eq,
+    Module.supportDim_self_eq_ringKrullDim, Module.supportDim_self_eq_ringKrullDim,
+    e.depth_self_eq, ringKrullDim_eq_of_ringEquiv e]
+
+end RingEquiv
+
+namespace IsLocalization.AtPrime
+
+variable {A : Type u} [CommRing A] [IsNoetherianRing A] (p : Ideal A) [p.IsPrime]
+  (B : Type v) [CommRing B] [IsLocalRing B] [Algebra A B] [IsLocalization.AtPrime B p]
+
+/-- A localization `B` of a Noetherian ring `A` at a prime `p` is Cohen–Macaulay over itself
+exactly when `Localization.AtPrime p` is. The local-ring instance on `B` is taken as an argument
+so that it can be the one already present, as on the stalks of a scheme; it always holds, by
+`IsLocalization.AtPrime.isLocalRing`. -/
+theorem isCohenMacaulay_self_iff :
+    Module.IsCohenMacaulay B B ↔
+      Module.IsCohenMacaulay (Localization.AtPrime p) (Localization.AtPrime p) :=
+  have := IsLocalization.isNoetherianRing p.primeCompl B inferInstance
+  (IsLocalization.algEquiv p.primeCompl B (Localization.AtPrime p)).toRingEquiv
+    |>.isCohenMacaulay_self_iff
+
+end IsLocalization.AtPrime
 
 namespace Module
 
