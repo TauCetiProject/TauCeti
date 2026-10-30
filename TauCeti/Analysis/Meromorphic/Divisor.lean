@@ -10,9 +10,10 @@ public import Mathlib.Analysis.Meromorphic.Divisor
 /-!
 # The divisor at a point of analyticity
 
-Mathlib's `MeromorphicOn.divisor` evaluates to `(meromorphicOrderAt f z).untop₀`, while zero
-counts of analytic functions are stated in terms of `analyticOrderNatAt f z`. This file records
-the bridge between the two vocabularies at a point where `f` is analytic.
+At a point `z ∈ U`, Mathlib's `MeromorphicOn.divisor f U` evaluates to
+`(meromorphicOrderAt f z).untop₀`, while zero counts of analytic functions are stated in terms of
+`analyticOrderNatAt f z`. This file records the bridge between the two vocabularies at a point
+where `f` is analytic.
 
 ## Main results
 
@@ -22,14 +23,14 @@ the bridge between the two vocabularies at a point where `f` is analytic.
 
 public section
 
-/-- Where a meromorphic function is analytic, its divisor records the order of vanishing. The
-identity also holds at a point of infinite order, where both sides read `0`.
+/-- At a point `z ∈ U` where a function meromorphic on `U` is analytic, its divisor on `U`
+equals its order of vanishing `analyticOrderNatAt f z`. This includes a point near which `f`
+vanishes identically: there the analytic order is infinite and both sides read `0`.
 
-This is the bridge between `MeromorphicOn.divisor` — whose support is finite on a ball by
-`MeromorphicOn.divisor_ball_support_finite` — and the `analyticOrderNatAt` vocabulary that zero
-counts are stated in, so zero-counting arguments can reuse it instead of rebuilding the
-correspondence. Note the finiteness is of the divisor's *support*, equivalently of the zeros of
-finite order: a point where `f` vanishes identically has divisor value `0` and is absent from it. -/
+The divisor is defined through `meromorphicOrderAt`, while zero counts of analytic functions are
+stated through `analyticOrderNatAt`; this lemma translates between the two, so that a statement
+about divisor values of a function analytic on `U` becomes one about its orders of vanishing. It
+says nothing at a pole, where `f` is not analytic. -/
 theorem MeromorphicOn.divisor_eq_analyticOrderNatAt {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
     (hm : MeromorphicOn f U) (hf : AnalyticAt 𝕜 f z) (hz : z ∈ U) :
