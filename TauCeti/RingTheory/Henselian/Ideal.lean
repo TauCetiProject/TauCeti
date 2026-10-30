@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Henselian.Radical
-import Mathlib.Algebra.Polynomial.Lifts
+public import TauCeti.RingTheory.Henselian.Quotient
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Tactic.LinearCombination
 
@@ -60,30 +60,6 @@ theorem henselianRing_of_le (hJI : J ≤ I) [HenselianRing R I] : HenselianRing 
     rw [heq]
     exact J.neg_mem ha
 
-/-- Quotienting by an ideal contained in the henselian ideal preserves henselianity. -/
-theorem henselianRing_quotient (hJI : J ≤ I) [HenselianRing R I] :
-    HenselianRing (R ⧸ J) (I.map (Quotient.mk J)) where
-  jac := by
-    rw [map_le_iff_le_comap, comap_jacobson_of_surjective Quotient.mk_surjective,
-      ← RingHom.ker_eq_comap_bot, mk_ker]
-    exact HenselianRing.jac.trans (jacobson_mono bot_le)
-  is_henselian f hf a₀ ha hu := by
-    obtain ⟨g, hg, -, hgmonic⟩ :=
-      lifts_and_natDegree_eq_and_monic (mem_lifts_of_surjective Quotient.mk_surjective f) hf
-    obtain ⟨a₀, rfl⟩ := Quotient.mk_surjective a₀
-    have hga : g.eval a₀ ∈ I := by
-      rw [← comap_map_mk hJI, mem_comap, ← eval_map_apply, hg]
-      exact ha
-    have hgu : IsUnit (Quotient.mk I (g.derivative.eval a₀)) := by
-      have h := hu.map (DoubleQuot.quotQuotEquivQuotOfLE hJI).toRingHom
-      simp only [← hg, derivative_map, eval_map_apply, RingEquiv.toRingHom_eq_coe,
-        RingEquiv.coe_toRingHom] at h
-      exact (DoubleQuot.quotQuotEquivQuotOfLE_quotQuotMk (g.derivative.eval a₀) hJI) ▸ h
-    obtain ⟨a, hfa, haa⟩ := HenselianRing.is_henselian g hgmonic a₀ hga hgu
-    refine ⟨Quotient.mk J a, ?_, ?_⟩
-    · simpa [hg] using hfa.map (Quotient.mk J)
-    · simpa only [map_sub] using mem_map_of_mem (Quotient.mk J) haa
-
 /-- Simple-root lifting can be performed first in `R/J` and then in `R`: henselianity
 along `J` and along `I/J` implies henselianity along `I`. -/
 theorem henselianRing_of_quotient (hJI : J ≤ I) [HenselianRing R J]
@@ -124,7 +100,7 @@ theorem henselianRing_iff_quotient (hJI : J ≤ I) :
     HenselianRing R I ↔ HenselianRing R J ∧ HenselianRing (R ⧸ J) (I.map (Quotient.mk J)) := by
   constructor
   · intro h
-    exact ⟨henselianRing_of_le hJI, henselianRing_quotient hJI⟩
+    exact ⟨henselianRing_of_le hJI, inferInstance⟩
   · rintro ⟨hJ, hquot⟩
     exact henselianRing_of_quotient hJI
 

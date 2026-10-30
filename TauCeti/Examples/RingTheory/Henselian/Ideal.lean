@@ -48,7 +48,7 @@ example : HenselianRing (ZMod 16) (Ideal.span {4}) :=
 -- The quotient keeps its nonzero henselian ideal; this is not merely the residue field.
 example : HenselianRing ((ZMod 16) ⧸ Ideal.span {(4 : ZMod 16)})
     ((Ideal.span {2}).map (Ideal.Quotient.mk (Ideal.span {4}))) :=
-  henselianRing_quotient four_le_two
+  inferInstance
 
 /-- The simple root zero modulo `(4)` lifts to a nonzero root in `(4)` over `ℤ/16ℤ`. -/
 theorem exists_nonzero_root : ∃ a : ZMod 16,
@@ -64,13 +64,14 @@ theorem exists_nonzero_root : ∃ a : ZMod 16,
 -- Reconstruct the original pair from the two successive henselian pairs.
 example : HenselianRing (ZMod 16) (Ideal.span {2}) := by
   have : HenselianRing (ZMod 16) (Ideal.span {4}) := henselianRing_of_le four_le_two
-  have := henselianRing_quotient four_le_two
+  have : HenselianRing ((ZMod 16) ⧸ Ideal.span {(4 : ZMod 16)})
+      ((Ideal.span {2}).map (Ideal.Quotient.mk (Ideal.span {4}))) := inferInstance
   exact henselianRing_of_quotient four_le_two
 
 -- Equality is allowed in the nesting, and the upper quotient ideal is then zero.
 example (R : Type*) [CommRing R] (I : Ideal R) [HenselianRing R I] :
     HenselianRing (R ⧸ I) ⊥ := by
-  simpa using henselianRing_quotient (I := I) le_rfl
+  simpa using (inferInstance : HenselianRing (R ⧸ I) (I.map (Ideal.Quotient.mk I)))
 
 -- The criterion retains the zero ring and its unit ideal.
 example : HenselianRing (ZMod 1) ⊤ ↔
