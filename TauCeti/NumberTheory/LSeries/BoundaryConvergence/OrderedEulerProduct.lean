@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.NumberTheory.PrimeCounting
 import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
+import TauCeti.NumberTheory.PrimeCounting
 import TauCeti.NumberTheory.SumPrimePow
 
 /-!
@@ -42,6 +43,11 @@ at `s = 1` is asserted.
   `L`, the finite Euler products converge to `exp L`.
 * `TauCeti.LSeries.tendsto_prod_primesLE_filter_notMem_inv_of_tendsto_sum`: the same with the
   factors at a finite set of primes deleted.
+* `TauCeti.LSeries.tendsto_prod_primesLE_filter_notMem_inv_iff`: independently of any partial
+  sums, deleting the factors at a finite set `S` of primes transports convergence of the finite
+  Euler products in both directions, multiplying the limit by `∏ p ∈ S, (1 - c p / p)`;
+  `TauCeti.LSeries.tendsto_prod_primesLE_filter_notMem_inv_congr_iff` changes one finite set of
+  deleted primes into another.
 -/
 
 public section
@@ -52,6 +58,39 @@ open scoped Topology
 namespace TauCeti.LSeries
 
 variable {a c : ℕ → ℂ}
+
+section FiniteDeletion
+
+variable {S T : Finset ℕ}
+
+/-- **Deleting finitely many Euler factors.** Let `S` be a finite set of primes with
+`‖c p‖ ≤ 1` on `S`. The finite Euler products `∏ p ≤ N, (1 - c p / p)⁻¹` converge to `L` if and
+only if the products over the primes `p ≤ N` outside `S` converge to
+`L * ∏ p ∈ S, (1 - c p / p)`. -/
+theorem tendsto_prod_primesLE_filter_notMem_inv_iff (hS : ∀ p ∈ S, p.Prime)
+    (hc : ∀ p ∈ S, ‖c p‖ ≤ 1) {L : ℂ} :
+    Tendsto (fun N : ℕ ↦ ∏ p ∈ Nat.primesLE N with p ∉ S, (1 - c p / p)⁻¹) atTop
+        (𝓝 (L * ∏ p ∈ S, (1 - c p / p))) ↔
+      Tendsto (fun N : ℕ ↦ ∏ p ∈ Nat.primesLE N, (1 - c p / p)⁻¹) atTop (𝓝 L) := by
+  have hne : ∀ p ∈ S, 1 - c p / p ≠ 0 := fun p hp ↦
+    one_sub_div_natCast_ne_zero (hS p hp).one_lt (hc p hp)
+  rw [← Nat.tendsto_prod_primesLE_filter_notMem_iff hS fun p hp ↦ inv_ne_zero (hne p hp),
+    prod_inv_distrib, mul_inv_cancel_right₀ (prod_ne_zero_iff.mpr hne)]
+
+/-- **Changing the finite set of deleted Euler factors.** Let `S` and `T` be finite sets of primes
+with `‖c p‖ ≤ 1` on both. The finite Euler products over the primes `p ≤ N` outside `S` converge
+to `L * ∏ p ∈ S, (1 - c p / p)` if and only if those outside `T` converge to
+`L * ∏ p ∈ T, (1 - c p / p)`: both say that the full products converge to `L`. -/
+theorem tendsto_prod_primesLE_filter_notMem_inv_congr_iff (hS : ∀ p ∈ S, p.Prime)
+    (hT : ∀ p ∈ T, p.Prime) (hcS : ∀ p ∈ S, ‖c p‖ ≤ 1) (hcT : ∀ p ∈ T, ‖c p‖ ≤ 1) {L : ℂ} :
+    Tendsto (fun N : ℕ ↦ ∏ p ∈ Nat.primesLE N with p ∉ S, (1 - c p / p)⁻¹) atTop
+        (𝓝 (L * ∏ p ∈ S, (1 - c p / p))) ↔
+      Tendsto (fun N : ℕ ↦ ∏ p ∈ Nat.primesLE N with p ∉ T, (1 - c p / p)⁻¹) atTop
+        (𝓝 (L * ∏ p ∈ T, (1 - c p / p))) := by
+  rw [tendsto_prod_primesLE_filter_notMem_inv_iff hS hcS,
+    tendsto_prod_primesLE_filter_notMem_inv_iff hT hcT]
+
+end FiniteDeletion
 
 section Comparison
 
@@ -105,15 +144,9 @@ theorem tendsto_prod_primesLE_filter_notMem_inv_of_tendsto_sum {L : ℂ}
     (hL : Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, a n / n) atTop (𝓝 L)) {S : Finset ℕ}
     (hS : ∀ p ∈ S, p.Prime) :
     Tendsto (fun N : ℕ ↦ ∏ p ∈ Nat.primesLE N with p ∉ S, (1 - c p / p)⁻¹) atTop
-      (𝓝 (exp L * ∏ p ∈ S, (1 - c p / p))) := by
-  refine ((tendsto_prod_primesLE_inv_of_tendsto_sum hc ha ha_pow hL).mul_const _).congr' ?_
-  filter_upwards [eventually_ge_atTop (S.sup id)] with N hN
-  have hSN : S ⊆ Nat.primesLE N := fun p hp ↦
-    Nat.mem_primesLE.mpr ⟨(le_sup (f := id) hp).trans hN, hS p hp⟩
-  rw [← prod_filter_mul_prod_filter_not (Nat.primesLE N) (· ∈ S), filter_mem_eq_inter,
-    inter_eq_right.mpr hSN, mul_right_comm, ← prod_mul_distrib,
-    prod_eq_one fun p hp ↦
-      inv_mul_cancel₀ (one_sub_div_natCast_ne_zero (hS p hp).one_lt (hc p (hS p hp))), one_mul]
+      (𝓝 (exp L * ∏ p ∈ S, (1 - c p / p))) :=
+  (tendsto_prod_primesLE_filter_notMem_inv_iff hS fun p hp ↦ hc p (hS p hp)).mpr
+    (tendsto_prod_primesLE_inv_of_tendsto_sum hc ha ha_pow hL)
 
 end Comparison
 
