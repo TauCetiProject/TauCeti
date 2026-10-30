@@ -49,8 +49,8 @@ makes the higher direct images vanish.
   its case `g = 1`, `Scheme.Modules.exists_subsingleton_cohomologyOn_of_isCompact`;
 * `Scheme.Modules.exists_subsingleton_cohomology`: a uniform vanishing bound on a quasi-compact
   quasi-separated scheme;
-* `TauCeti.QCoh.higherDirectImage_vanishing`: the bound for the source of a quasi-compact
-  quasi-separated morphism to an affine scheme;
+* `Scheme.Hom.exists_subsingleton_cohomology_of_isAffine`: the bound for the source of a
+  quasi-compact quasi-separated morphism to an affine scheme;
 * `Scheme.Hom.exists_isZero_higherDirectImage`: the higher direct images along a quasi-compact
   quasi-separated morphism to a quasi-compact scheme vanish in a range depending only on the
   morphism.
@@ -176,26 +176,20 @@ theorem exists_subsingleton_cohomology (X : Scheme.{u}) [CompactSpace X] [QuasiS
 
 end AlgebraicGeometry.Scheme.Modules
 
-namespace TauCeti.QCoh
+namespace AlgebraicGeometry.Scheme.Hom
 
-open _root_.AlgebraicGeometry.Scheme.Modules _root_.TauCeti.AlgebraicGeometry.Scheme.Modules
+open TauCeti.AlgebraicGeometry.Scheme.Modules
 
 /-- **Uniform vanishing over an affine base.** For a quasi-compact and quasi-separated morphism
 `f : X ⟶ S` to an affine scheme, the cohomology of quasi-coherent modules on `X` vanishes in a
 range depending only on `f`. Stacks, Lemmas 30.4.1–30.4.6 (01XH). -/
-theorem higherDirectImage_vanishing {X S : Scheme.{u}} (f : X ⟶ S) [QuasiCompact f]
-    [QuasiSeparated f] [IsAffine S] :
+theorem exists_subsingleton_cohomology_of_isAffine {X S : Scheme.{u}} (f : X ⟶ S)
+    [QuasiCompact f] [QuasiSeparated f] [IsAffine S] :
     ∃ N : ℕ, ∀ (F : X.Modules) [F.IsQuasicoherent] (p : ℕ), N ≤ p →
       Subsingleton (Cohomology F p) := by
   have := QuasiCompact.compactSpace_of_compactSpace f
   have := quasiSeparatedSpace_of_quasiSeparated f
-  exact exists_subsingleton_cohomology X
-
-end TauCeti.QCoh
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-open TauCeti.AlgebraicGeometry.Scheme.Modules
+  exact Modules.exists_subsingleton_cohomology X
 
 /-- **Uniform vanishing of higher direct images over a quasi-compact base.** For a quasi-compact
 and quasi-separated morphism `f : X ⟶ S` to a quasi-compact scheme, the higher direct images
