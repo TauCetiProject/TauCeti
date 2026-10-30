@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Basic
 import Mathlib.Algebra.CharP.CharAndCard
 import Mathlib.NumberTheory.LegendreSymbol.Complex
 import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
-import TauCeti.NumberTheory.GaussSum
+import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.NumberTheory.JacobiSum.Basic
 import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
