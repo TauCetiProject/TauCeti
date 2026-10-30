@@ -200,6 +200,7 @@ theorem sum_robinHood [Fintype ι] (x : ι → ℝ) (i j : ι) (δ : ℝ) :
 
 /-- Prefix sums of a Robin Hood transfer: the transferred amount leaves the prefix sum when the
 source coordinate lies below the cut, and enters it when the target coordinate does. -/
+@[simp]
 theorem prefixSum_robinHood (k : ℕ) (x : Fin n → ℝ) (i j : Fin n) (δ : ℝ) :
     prefixSum k (robinHood x i j δ) =
       prefixSum k x - (if (i : ℕ) < k then δ else 0) + (if (j : ℕ) < k then δ else 0) := by

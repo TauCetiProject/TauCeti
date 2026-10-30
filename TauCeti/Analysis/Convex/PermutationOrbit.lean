@@ -214,7 +214,7 @@ theorem sum_eq_of_mem_convexHull_range_comp_perm [Semiring R] [PartialOrder R] {
 
 /-- For antitone `w`, every point of the convex hull of the permutation orbit of `w` has prefix
 sums bounded by those of `w`. -/
-theorem prefixSum_le_of_mem_convexHull_range_comp_perm [Field R] [LinearOrder R]
+theorem prefixSum_le_of_mem_convexHull_range_comp_perm [CommRing R] [LinearOrder R]
     [IsStrictOrderedRing R] {w x : Fin n → R} (hw : Antitone w)
     (hx : x ∈ convexHull R (Set.range fun σ : Equiv.Perm (Fin n) ↦ w ∘ σ)) (k : ℕ) :
     prefixSum k x ≤ prefixSum k w := by
