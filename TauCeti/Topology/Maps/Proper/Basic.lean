@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
-# Proper maps: composition with homeomorphisms and products
+# Proper maps: compact domains, composition with homeomorphisms and products
 
 Composing with a homeomorphism on either side neither creates nor destroys properness, in the
 pattern of Mathlib's `Homeomorph.comp_isOpenMap_iff`.
@@ -24,6 +24,7 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
 
 ## Main declarations
 
+* `IsProperMap.compactSpace`: the domain of a proper map to a compact space is compact.
 * `Homeomorph.comp_isProperMap_iff` and `Homeomorph.comp_isProperMap_iff'`: properness is
   invariant under composition with a homeomorphism.
 * `IsProperMap.of_prodMap_left` and `IsProperMap.of_prodMap_right`: the factors of a proper
@@ -60,6 +61,12 @@ theorem comp_isProperMap_iff' (h : X ≃ₜ Y) {f : Y → Z} : IsProperMap (f �
 end Homeomorph
 
 variable {f : X → Y} {g : Z → W}
+
+/-- The domain of a proper map to a compact space is compact. No separation axiom is needed. -/
+theorem IsProperMap.compactSpace [CompactSpace Y] (hf : IsProperMap f) : CompactSpace X := by
+  refine ⟨?_⟩
+  simpa only [Set.preimage_univ] using
+    hf.isCompact_preimage (isCompact_univ : IsCompact (Set.univ : Set Y))
 
 /-- If a product map `Prod.map f g` is proper and the source of `g` is nonempty, then `f` is
 proper. -/

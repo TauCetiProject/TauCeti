@@ -150,9 +150,7 @@ noncomputable instance realCliffordSpinLieModelFiniteDimensional (n : ℕ) :
   let _ : FiniteDimensional ℝ
       (LeftInvariantDerivation 𝓘(ℝ, CliffordAlgebra (realCliffordForm n 0))
         (CliffordAlgebra (realCliffordForm n 0))ˣ) :=
-    finiteDimensional_leftInvariantDerivation
-      (ContMDiffMul.isInteriorPoint
-        (I := 𝓘(ℝ, CliffordAlgebra (realCliffordForm n 0))) (n := ∞) (by simp) 1)
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   exact FiniteDimensional.finiteDimensional_submodule _
 
 /-- The closed real special-orthogonal carrier's canonical model is finite-dimensional. -/
@@ -161,9 +159,7 @@ noncomputable instance realCliffordSpecialOrthogonalLieModelFiniteDimensional (n
   let _ : FiniteDimensional ℝ
       (LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin n) (Fin n) ℝ)
         (Matrix (Fin n) (Fin n) ℝ)ˣ) :=
-    finiteDimensional_leftInvariantDerivation
-      (ContMDiffMul.isInteriorPoint
-        (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℝ)) (n := ∞) (by simp) 1)
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   exact FiniteDimensional.finiteDimensional_submodule _
 
 /-- The charted-space structure on the closed real Spin carrier selected by Cartan's theorem. -/
