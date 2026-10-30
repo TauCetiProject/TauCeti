@@ -29,6 +29,8 @@ is faithful.
 * `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
 * `CliffordAlgebra.comp_eq_map_comp_of_forall_ι`: a linear map of Clifford modules intertwining
   the generators along a quadratic isometry `f` intertwines every `a` with `map f a`.
+* `CliffordAlgebra.mul_eq_map_involute_mul_of_forall_ι`: an element that moves past each
+  generator by an isometry `f` up to sign moves past every `a` by `map f ∘ involute`.
 * `CliffordAlgebra.map_evenOdd_equivOfIsometry` proves that an isometry equivalence preserves the
   `ℤ/2`-grading.
 * `CliffordAlgebra.evenEquivOfIsometry` restricts an isometry-induced equivalence to the even
@@ -113,6 +115,19 @@ theorem comp_eq_map_comp_of_forall_ι {S : Type*} [CommRing S] [Algebra R S]
     simp only [map_mul, Module.End.mul_eq_comp, ← LinearMap.comp_assoc, ha]
     simp only [LinearMap.comp_assoc, hb]
   | add a b ha hb => simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, ha, hb]
+
+/-- If an element `u` of a Clifford algebra moves past every generator by a quadratic isometry `f`
+of the same form, up to sign, `u * ι m = -(ι (f m) * u)`, then it moves past every Clifford
+element `a` by the grade involution followed by `f`: `u * a = map f (involute a) * u`. The
+generator of an anisotropic vector does this with `f` the reflection in that vector. -/
+theorem mul_eq_map_involute_mul_of_forall_ι (f : Q₁ →qᵢ Q₁) {u : CliffordAlgebra Q₁}
+    (hu : ∀ m, u * ι Q₁ m = -(ι Q₁ (f m) * u)) (a : CliffordAlgebra Q₁) :
+    u * a = map f (involute a) * u := by
+  induction a using CliffordAlgebra.induction with
+  | algebraMap r => rw [AlgHom.commutes, AlgHom.commutes, Algebra.commutes]
+  | ι m => rw [involute_ι, map_neg, map_apply_ι, neg_mul, hu]
+  | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, map_mul, map_mul, mul_assoc]
+  | add a b ha hb => rw [mul_add, ha, hb, map_add, map_add, add_mul]
 
 /-- An isometry equivalence maps the even Clifford subalgebra onto the even Clifford subalgebra. -/
 theorem map_equivOfIsometry_even (e : Q₁.IsometryEquiv Q₂) :
