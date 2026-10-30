@@ -34,8 +34,6 @@ and the unit index is `w_K / 2`. This gives the exceptional unit indices for `D 
 
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.eq_one_or_neg_one_of_mem_torsion`: for `f ≠ 1`,
   the only roots of unity of a quadratic field lying in `ℤ + f 𝓞 K` are `±1`.
-* `TauCeti.GlobalNumberFields.NumberFieldOrder.index_range_unitsMap_intAddMulOrder_one`: the
-  maximal order `ℤ + 1 𝓞 K` has unit index `1`, in any number field.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.mem_range_unitsMap_intAddMulOrder_iff`: for
   imaginary quadratic `K` and `f ≠ 1`, the units of `ℤ + f 𝓞 K` are `±1`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.card_units_intAddMulOrder`: for imaginary
@@ -149,19 +147,6 @@ theorem eq_one_or_neg_one_of_mem_torsion (hK : finrank ℚ K = 2) {f : ℕ} [NeZ
   · exact .inr (Units.ext h)
   · exact absurd (eq_one_of_sq_sub_mul_add_one_eq_zero hK ht h hζf) hf
 
-variable (K) in
-/-- **The unit index of the maximal order.** Every unit of `𝓞 K` is a unit of `ℤ + 1 𝓞 K`, so
-`[(𝓞 K)ˣ : O_1ˣ] = 1`. -/
-theorem index_range_unitsMap_intAddMulOrder_one :
-    (Units.map ((intAddMulOrder K 1).toRingOfIntegers.val :
-      (intAddMulOrder K 1).toRingOfIntegers →* 𝓞 K)).range.index = 1 := by
-  rw [Subgroup.index_eq_one, MonoidHom.range_eq_top]
-  intro ε
-  have hmem (x : 𝓞 K) : x ∈ (intAddMulOrder K 1).toRingOfIntegers :=
-    mem_toRingOfIntegers_intAddMulOrder.mpr ⟨0, x, by simp⟩
-  exact ⟨⟨⟨ε, hmem _⟩, ⟨_, hmem _⟩, Subtype.ext ε.mul_inv, Subtype.ext ε.inv_mul⟩,
-    Units.ext rfl⟩
-
 variable [IsTotallyComplex K]
 
 /-- **The units of the order of conductor `f ≠ 1` in an imaginary quadratic field are `±1`.** -/
@@ -179,6 +164,7 @@ theorem mem_range_unitsMap_intAddMulOrder_iff (hK : finrank ℚ K = 2) {f : ℕ}
     · exact ⟨-1, Units.ext (by simp)⟩
 
 /-- **The order of conductor `f ≠ 1` in an imaginary quadratic field has two units.** -/
+@[simp]
 theorem card_units_intAddMulOrder (hK : finrank ℚ K = 2) {f : ℕ} [NeZero f] (hf : f ≠ 1) :
     Nat.card (intAddMulOrder K f).toRingOfIntegersˣ = 2 := by
   set φ : (intAddMulOrder K f).toRingOfIntegersˣ →* (𝓞 K)ˣ :=
@@ -198,6 +184,7 @@ theorem card_units_intAddMulOrder (hK : finrank ℚ K = 2) {f : ℕ} [NeZero f] 
 /-- **The unit index of the order of conductor `f`.** In an imaginary quadratic field of
 discriminant `D`, the index `[(𝓞 K)ˣ : O_fˣ]` of the units of `ℤ + f 𝓞 K` is `1` for `f = 1`,
 and for `f ≥ 2` it is `2` if `D = -4`, `3` if `D = -3`, and `1` otherwise. -/
+@[simp]
 theorem index_range_unitsMap_intAddMulOrder (hK : finrank ℚ K = 2) (f : ℕ) [NeZero f] :
     (Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
       (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range.index =
@@ -205,7 +192,7 @@ theorem index_range_unitsMap_intAddMulOrder (hK : finrank ℚ K = 2) (f : ℕ) [
       else if NumberField.discr K = -4 then 2 else if NumberField.discr K = -3 then 3 else 1 := by
   by_cases hf : f = 1
   · subst hf
-    simpa using index_range_unitsMap_intAddMulOrder_one K
+    simp
   -- `2 · [(𝓞 K)ˣ : O_fˣ] = w_K`.
   have h := (Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
     (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range.card_mul_index
