@@ -45,7 +45,8 @@ together with the formula for `c(v)`.
 * `TauCeti.AlmostComplexStructure.fockAction_ι_one_tmul_mul_self`: the Clifford relation
   `c(v) ^ 2 = Q v`, which is `-|v|² Id` in the geometric convention.
 * `TauCeti.AlmostComplexStructure.fockAction_ι_coe_W`: a vector of `W` acts by `√2` times
-  exterior multiplication.
+  exterior multiplication, and `TauCeti.AlmostComplexStructure.fockAction_ι_coe_W'`: a vector of
+  `W'` acts by `1 / √2` times contraction.
 * `TauCeti.AlmostComplexStructure.realFockAction_ι`: a real generator `ι Q v` acts by `c(v)`.
 * `TauCeti.AlmostComplexStructure.realFockAction_ι_mul_ι_apply_apply_one`: on the vacuum,
   `c(u) c(J u) 1 = i Q(u)`.
@@ -167,6 +168,14 @@ theorem fockAction_ι_coe_W (x : (J.spinPolarizationData hQJ hQ).W) :
       (Real.sqrt 2 : ℂ) • (J.spinPolarizationData hQJ hQ).wedge x := by
   rw [J.fockAction_eq_scaledSpinAction hQJ hQ coe_sqrtTwoUnit,
     SpinPolarizationData.scaledSpinAction_ι_coe_W, coe_sqrtTwoUnit]
+
+/-- In the normalized Fock action a vector of `W'` acts by `1 / √2` times contraction. -/
+@[simp]
+theorem fockAction_ι_coe_W' (y : (J.spinPolarizationData hQJ hQ).W') :
+    J.fockAction hQJ hQ (ι (Q.baseChange ℂ) (y : ℂ ⊗[ℝ] V)) =
+      (Real.sqrt 2 : ℂ)⁻¹ • (J.spinPolarizationData hQJ hQ).contract y := by
+  rw [J.fockAction_eq_scaledSpinAction hQJ hQ coe_sqrtTwoUnit,
+    SpinPolarizationData.scaledSpinAction_ι_coe_W', Units.val_inv_eq_inv_val, coe_sqrtTwoUnit]
 
 /-- **The Fock action of the real Clifford algebra**: the normalized Fock action
 `TauCeti.AlmostComplexStructure.fockAction` restricted along the canonical map
