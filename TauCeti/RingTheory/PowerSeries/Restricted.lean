@@ -29,6 +29,8 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
 * `TauCeti.PowerSeries.isRestricted_of_abs_le`: restrictedness passes to smaller radii, and
   `TauCeti.PowerSeries.isRestrictedSubring_le_of_abs_le` is the resulting containment of subrings.
 * `TauCeti.PowerSeries.isRestricted_polynomial`: every polynomial is restricted.
+* `PowerSeries.IsRestricted.summable_norm_coeff_mul_pow`: weighted coefficient norms are
+  summable strictly inside the radius of restrictedness.
 * `PowerSeries.IsRestricted.mul_of_abs_lt`: over any normed ring, a product of series restricted
   at `c'` is restricted at every `c` with `|c| < |c'|`.
 * `TauCeti.PowerSeries.not_isRestricted_mk_pow`: for `a ≠ 0` and a multiplicative norm, `∑ aⁿ Xⁿ`
@@ -208,6 +210,21 @@ open Filter
 open scoped Topology
 
 variable {R : Type*} [NormedRing R] {c c' : ℝ} {f g : PowerSeries R}
+
+/-- The weighted coefficient norms of a restricted series are summable at every strictly
+smaller radius. No completeness or ultrametric hypothesis is needed. -/
+theorem IsRestricted.summable_norm_coeff_mul_pow (hf : f.IsRestricted c') {t : ℝ}
+    (ht : |t| < |c'|) : Summable fun n ↦ ‖coeff n f‖ * t ^ n := by
+  have hs : 0 < |c'| := (abs_nonneg t).trans_lt ht
+  obtain ⟨B, _, hB⟩ := hf.exists_nonneg_norm_coeff_mul_pow_le
+  have hq : |t| / |c'| < 1 := (div_lt_one hs).mpr ht
+  refine Summable.of_norm_bounded
+    ((summable_geometric_of_lt_one (by positivity) hq).mul_left B) fun n ↦ ?_
+  calc ‖‖coeff n f‖ * t ^ n‖ = ‖coeff n f‖ * |c'| ^ n * (|t| / |c'|) ^ n := by
+        rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (norm_nonneg _), abs_pow, div_pow]
+        field_simp
+    _ ≤ B * (|t| / |c'|) ^ n :=
+      mul_le_mul_of_nonneg_right (hB n) (by positivity)
 
 /-- **Products of restricted series at a smaller radius.** Over any normed ring, if `f` and `g`
 are restricted at the radius `c'`, then `f * g` is restricted at every radius `c` with
