@@ -31,7 +31,7 @@ says that `F` preserves the torus and acts on its points through `φ`:
 `F (T s) = T (torusPointMap φ s)`. The character map is data supplied with `F` and checked, not a
 function of `F`. An abstract endomorphism that preserves the torus need not act on it through
 characters at all: entrywise complex conjugation preserves the diagonal torus of `SL₂(ℂ)` and acts
-on its coordinate by `z ↦ z̄`, which is not an integer power. And when `R` is a finite field the
+on its coordinate by `z ↦ conj z`, which is not an integer power. And when `R` is a finite field the
 character map of `F` need not be unique, since distinct characters can agree as functions on the
 finitely many torus points.
 
