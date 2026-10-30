@@ -6,14 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
+public import TauCeti.Geometry.Manifold.LocallyFlat.Segment
 public import TauCeti.Geometry.Polygon.Simple
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.Topology.Algebra.Module.Equiv.Prod
-import TauCeti.Analysis.Convex.Between
-import TauCeti.Analysis.LocallyConvex.Separation
-import TauCeti.Topology.Algebra.Affine.Ray
-import TauCeti.Topology.Algebra.Affine.Coordinate
 
 /-!
 # Polygonal knots are locally flat
@@ -27,21 +23,17 @@ the locally flat embeddings to which the topological notions of concordance and 
 
 The flattening chart at a point `z` of the polygon comes from its local structure,
 `Polygon.IsSimple.exists_mem_nhds_inter_boundary_eq`: near `z` the polygon is two segments from
-`z`, to points `a` and `b`, meeting only at `z`. Hence `a - z` and `b - z` do not lie on a common
-ray, and a continuous functional `ℓ` separates them, with `ℓ (a - z) < 0 < ℓ (b - z)`. Near `z` the
-polygon is then the graph over the coordinate `ℓ (· - z)` of a piecewise affine map, running out
-along `a - z` for negative values and along `b - z` for positive ones, and a graph is flattened by
-shearing (`TauCeti.exists_isSliceChart_of_inter_eq_inter_range`). An open strip of values of `ℓ`
-between its values at the two endpoints truncates the rays to the segments, without a norm or
-metrizability assumption. The complementary model of the local flatness is any topological real
-module `F'` with `V ≃L[ℝ] ℝ × F'`, where `V` is the space of translations; for a knot in `ℝ³` it is
-`ℝ²`.
+`z`, to points `a` and `b`, meeting only at `z`, and two such segments are flat at `z`
+(`TauCeti.exists_isSliceChart_of_inter_eq_union_affineSegment`). The complementary model of the
+local flatness is any topological real module `F'` with `V ≃L[ℝ] ℝ × F'`, where `V` is the space of
+translations; for a knot in `ℝ³` it is `ℝ²`.
 
 That a polygonal curve is locally flat is special to curves. A piecewise-linear embedding of a
 manifold of dimension at least two need not be locally flat in codimension two: the cone on a
 knotted circle in `S³` is a piecewise-linear disc in the four-ball which is not locally flat at the
 cone point. For a curve the link of a vertex is a pair of points in a sphere, which is never
-knotted, and that is what the separating functional above uses.
+knotted. The same local model gives the local flatness of piecewise-linear curves in charts,
+`TauCeti.IsLocallyFlat.of_isPLOn_chartAt`.
 
 ## Main results
 
@@ -81,45 +73,8 @@ theorem IsSimple.exists_isSliceChart {n : ℕ} [NeZero n] {poly : Polygon P n}
     (h : poly.IsSimple ℝ) (e : V ≃L[ℝ] ℝ × F') {z : P} (hz : z ∈ poly.boundary ℝ) :
     ∃ φ : OpenPartialHomeomorph P (ℝ × F'), z ∈ φ.source ∧
       IsSliceChart φ ((univ : Set ℝ) ×ˢ ({0} : Set F')) (poly.boundary ℝ) := by
-  have := IsTopologicalAddTorsor.to_isTopologicalAddGroup V P
-  have : IsTopologicalAddGroup F' :=
-    (e.symm.toHomeomorph.isInducing.comp (isInducing_prodMkRight (0 : ℝ))).isTopologicalAddGroup
-      (e.symm.toLinearMap.comp (LinearMap.inr ℝ ℝ F')).toAddMonoidHom
   obtain ⟨a, b, ha, hb, hab, U, hU, hUeq⟩ := h.exists_mem_nhds_inter_boundary_eq hz
-  obtain ⟨ℓ, h₁, h₂, hℓ⟩ := exists_strongDual_neg_pos_ne_zero
-    (zero_notMem_segment_of_affineSegment_inter_eq ha hb hab)
-    ((ContinuousLinearMap.fst ℝ ℝ F').comp e.toContinuousLinearMap) (u := e.symm (1, 0))
-    (by simp)
-  obtain ⟨Φ, hΦ⟩ := e.exists_homeomorph_fst_eq ℓ hℓ z
-  -- Near `z` the polygon is the union of the rays through `a` and `b`, a graph over `ℓ`.
-  obtain ⟨g, hg, hℓg, hrange⟩ := ℓ.toLinearMap.exists_continuous_range_eq_rays h₁ h₂ z
-  simp only [ContinuousLinearMap.coe_coe] at hℓg
-  obtain ⟨U, hUsub, hUopen, hzU⟩ := mem_nhds_iff.1 hU
-  -- The open strip between the endpoints truncates both rays to their segments.
-  let W := U ∩ (fun y => ℓ (y -ᵥ z)) ⁻¹' Ioo (ℓ (a -ᵥ z)) (ℓ (b -ᵥ z))
-  have hW : IsOpen W := hUopen.inter (isOpen_Ioo.preimage (by fun_prop))
-  have hzW : z ∈ W := ⟨hzU, by simpa using And.intro h₁ h₂⟩
-  obtain ⟨φ, hφ, hslice⟩ := exists_isSliceChart_of_inter_eq_inter_range Φ hg (by simp [hΦ, hℓg])
-    (U := W) (A := poly.boundary ℝ) hW <| by
-      ext y
-      refine and_congr_right fun hy => ?_
-      have hb' : y ∈ poly.boundary ℝ ↔ y ∈ affineSegment ℝ z a ∪ affineSegment ℝ z b := by
-        simpa [hUsub hy.1] using congrArg (y ∈ ·) hUeq
-      rw [hb', hrange]
-      constructor
-      · rintro (⟨t, ht, rfl⟩ | ⟨t, ht, rfl⟩)
-        · exact .inl ⟨t, ht.1, AffineMap.lineMap_apply _ _ _⟩
-        · exact .inr ⟨t, ht.1, AffineMap.lineMap_apply _ _ _⟩
-      · rintro (⟨t, ht, rfl⟩ | ⟨t, ht, rfl⟩)
-        · refine .inl ⟨t, ⟨ht, ?_⟩, AffineMap.lineMap_apply _ _ _⟩
-          have hy₁ := hy.2.1
-          simp only [vadd_vsub, map_smul, smul_eq_mul] at hy₁
-          nlinarith
-        · refine .inr ⟨t, ⟨ht, ?_⟩, AffineMap.lineMap_apply _ _ _⟩
-          have hy₂ := hy.2.2
-          simp only [vadd_vsub, map_smul, smul_eq_mul] at hy₂
-          nlinarith
-  exact ⟨φ, hφ ▸ hzW, hslice⟩
+  exact exists_isSliceChart_of_inter_eq_union_affineSegment e ha hb hab hU hUeq
 
 end Polygon
 

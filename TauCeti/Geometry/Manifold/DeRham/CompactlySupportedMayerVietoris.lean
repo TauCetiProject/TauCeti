@@ -124,7 +124,7 @@ theorem surjective_coprod_extendByZero [FiniteDimensional ℝ E] [IsManifold I �
   -- The cut-off forms `ρ b φ` are compactly supported, with support in `V` or `U`. The
   -- supports are computed for the model-fibre view of `φ`, for the function support lemmas.
   let ρφ (b : Bool) : compactlySupportedForms I (U ⊔ V : Opens M) k :=
-    ⟨⟨fun x ↦ ρ b x • φ.1.1 x, (φ.1.isSmoothForm.fun_smul (ρ b).contMDiff).mem_smoothForms⟩,
+    ⟨⟨fun x ↦ ρ b x • φ.1.1 x, (φ.1.isSmoothForm.fun_smul (ρ b).contMDiff).mem_smoothBundleForms⟩,
       (mem_compactlySupportedForms I).mpr <|
         ((mem_compactlySupportedForms I).mp φ.2).of_isClosed_subset (isClosed_tsupport _)
           (tsupport_smul_subset_right (ρ b)

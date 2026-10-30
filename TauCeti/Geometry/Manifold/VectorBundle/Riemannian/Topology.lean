@@ -21,7 +21,9 @@ of every chart target. Derivatives take values in continuous multilinear maps wi
 operator norm; no basis of the model space is chosen.
 
 The family criterion `continuous_chartC2_iff` expresses continuity by joint continuity of the
-coordinate derivatives in the parameter and chart variable. Evaluation of the metric at a
+coordinate derivatives in the parameter and chart variable; in particular each coordinate
+derivative is jointly continuous in the metric and the chart variable
+(`continuousAt_iteratedFDeriv_chartMetric`). Evaluation of the metric at a
 fixed point is continuous, and these evaluations separate metrics. The topology is selected
 by `open scoped TauCeti.MetricC2`, rather than a global instance, so it can coexist with
 topologies controlling higher derivatives.
@@ -129,6 +131,23 @@ theorem continuous_chartC2_iff [LocallyCompactSpace E] {P : Type*} [TopologicalS
     exact continuous_eval.comp ((h x m).prodMap continuous_id)
   · intro h x m
     exact ContinuousMap.continuous_of_continuous_uncurry _ (h x m)
+
+/-- A coordinate derivative through order two, as a function of the metric and of a point of the
+model space, is continuous at every point of the chart target. Away from the chart target the
+iterated derivative is still defined, but carries no information about the metric. -/
+theorem continuousAt_iteratedFDeriv_chartMetric [LocallyCompactSpace E] (x : M) (m : Fin 3)
+    (g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {z₀ : E}
+    (hz₀ : z₀ ∈ (extChartAt I x).target) : withMetricOperatorNorms E in
+    ContinuousAt (fun q : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) × E ↦
+      iteratedFDeriv ℝ m (q.1.toNondegenerateMetric.chartMetric x) q.2) (g₀, z₀) := by
+  have h := (continuous_chartC2_iff (I := I) (M := M) (g := id)).1 continuous_id x m
+  -- The chart target is open, so neighbourhoods of `z₀` in it are its neighbourhoods in `E`.
+  have hmap : map (Prod.map id Subtype.val) (𝓝 (g₀, (⟨z₀, hz₀⟩ : (extChartAt I x).target))) =
+      𝓝 (g₀, z₀) := by
+    rw [nhds_prod_eq, nhds_prod_eq, ← prod_map_map_eq', map_id,
+      map_nhds_subtype_coe_eq_nhds hz₀ ((isOpen_extChartAt_target x).mem_nhds hz₀)]
+  rw [ContinuousAt, ← hmap, tendsto_map'_iff]
+  exact h.continuousAt
 
 /-- Convergence of metrics in the chart C² topology is uniform convergence on every compact
 chart set of each coordinate derivative of order at most two. -/

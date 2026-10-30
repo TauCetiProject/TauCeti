@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
-public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.Topology.Instances.Matrix
 
 /-!
@@ -23,6 +22,10 @@ entry in the completion. Composition uses the native matrix API. When the coeffi
 exponent structures are commutative, that API also supplies Novikov linearity. The cutoff estimates
 apply to matrices whose entries are infinite Novikov series, as arise from supported trajectory
 counts. No discreteness or injectivity of the period homomorphism is required.
+
+For square matrices, row and column period shifts cancel in the determinant. The weighted
+determinant and perturbation estimates keep this cancellation explicit, avoiding any loss of
+cutoff from the choice of a monomial basis in finite extensions of Novikov rings.
 
 ## References
 
@@ -112,68 +115,6 @@ theorem exists_mulVec_filtration_shift [Finite m]
 
 end Estimates
 
-section Determinant
-
-variable [AddCommMonoid H] {N : H →+ ℝ} [CommRing R] [Fintype n] [DecidableEq n] {C : ℝ}
-
-/-- A finite product of series `1 + f i` with every `f i ∈ U_C`, `C ≥ 0`, is `1` modulo `U_C`. -/
-private theorem prod_one_add_sub_one_mem_periodFiltration (hC : 0 ≤ C) {ι : Type*}
-    (s : Finset ι) {f : ι → NovikovSeries R H N} (hf : ∀ i ∈ s, f i ∈ periodFiltration R N C) :
-    ∏ i ∈ s, (1 + f i) - 1 ∈ periodFiltration R N C := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih =>
-    rw [Finset.prod_insert ha, add_mul, one_mul, add_sub_right_comm]
-    refine add_mem (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) ?_
-    have hprod : ∏ i ∈ s, (1 + f i) ∈ periodFiltration R N 0 := by
-      simpa using add_mem (antitone_periodFiltration hC
-        (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)))
-        (one_mem_periodFiltration_zero (R := R) (N := N))
-    simpa only [add_zero] using
-      NovikovSeries.mul_mem_periodFiltration (hf a (Finset.mem_insert_self a s)) hprod
-
-/-- **The determinant of a matrix of high period.** Let `X` be a square matrix of Novikov
-series whose entry `X i j` lies in `U_(C + w j - w i)` for some weights `w` and some `C ≥ 0`.
-Then `det (1 + X)` is `1` modulo `U_C`. The weights cancel along the cycles of every permutation
-in the Leibniz expansion. This applies to the matrix of multiplication by a series of `U_C` in a
-basis of monomials, with the periods of the basis monomials as weights. -/
-theorem det_one_add_sub_one_mem_periodFiltration (hC : 0 ≤ C) (w : n → ℝ)
-    {X : Matrix n n (NovikovSeries R H N)}
-    (hX : ∀ i j, X i j ∈ periodFiltration R N (C + w j - w i)) :
-    (1 + X).det - 1 ∈ periodFiltration R N C := by
-  have hdiag (i : n) : X i i ∈ periodFiltration R N C := by simpa using hX i i
-  rw [det_apply, ← Finset.add_sum_erase _ _ (Finset.mem_univ 1), Equiv.Perm.sign_one, one_smul,
-    add_sub_right_comm]
-  refine add_mem ?_ (sum_mem fun σ hσ => ?_)
-  · simpa [Matrix.one_apply_eq] using
-      prod_one_add_sub_one_mem_periodFiltration hC Finset.univ fun i _ => hdiag i
-  · -- Along `σ ≠ 1`, a factor at a moved index has period at least `C + w i - w (σ i)` and a
-    -- factor at a fixed index has nonnegative period; the weights cancel over all indices.
-    obtain ⟨j, hj⟩ := not_forall.1 fun h => (Finset.mem_erase.1 hσ).1 (Equiv.ext h)
-    rw [Equiv.Perm.one_apply] at hj
-    let e : n → ℝ := fun i => (if σ i = i then 0 else C) + (w i - w (σ i))
-    have hfactor (i : n) : (1 + X) (σ i) i ∈ periodFiltration R N (e i) := by
-      by_cases hi : σ i = i
-      · simp only [e, hi, ite_true, sub_self, add_zero, Matrix.add_apply, Matrix.one_apply_eq]
-        exact add_mem (one_mem_periodFiltration_zero (R := R) (N := N))
-          (antitone_periodFiltration hC (hdiag i))
-      · simp only [e, hi, ite_false, Matrix.add_apply, Matrix.one_apply_ne hi, zero_add]
-        simpa [add_sub_assoc] using hX (σ i) i
-    have hsum : C ≤ ∑ i, e i := by
-      have hw : ∑ i, (w i - w (σ i)) = 0 := by
-        rw [Finset.sum_sub_distrib, Equiv.sum_comp σ w, sub_self]
-      rw [Finset.sum_add_distrib, hw, add_zero]
-      calc C = if σ j = j then 0 else C := by simp [hj]
-        _ ≤ ∑ i, if σ i = i then 0 else C :=
-          Finset.single_le_sum (f := fun i => if σ i = i then 0 else C)
-            (fun i _ => by split_ifs <;> simp [hC]) (Finset.mem_univ j)
-    rw [Units.smul_def]
-    exact zsmul_mem (antitone_periodFiltration hsum
-      (prod_mem_periodFiltration Finset.univ fun i _ => hfactor i)) _
-
-end Determinant
-
 section Extension
 
 variable [AddMonoid H] [Ring R] [Fintype n]
@@ -200,5 +141,47 @@ theorem continuous_mulVec_extension_iff (A : Matrix m n (AddMonoidAlgebra R H))
       fun v => funext fun i => (ι.map_mulVec A v i).symm⟩
 
 end Extension
+
+section Determinant
+
+variable [AddCommMonoid H] {N : H →+ ℝ} [CommRing R] [Fintype n] [DecidableEq n]
+
+/-- Row and column period shifts cancel in the determinant. Thus an entrywise bound
+`D + w j - w i` gives the determinant bound `card n * D`. -/
+theorem det_mem_periodFiltration_of_weights (A : Matrix n n (NovikovSeries R H N))
+    (w : n → ℝ) {D : ℝ}
+    (hA : ∀ i j, A i j ∈ periodFiltration R N (D + w j - w i)) :
+    A.det ∈ periodFiltration R N (Fintype.card n * D) := by
+  have hsum (σ : Equiv.Perm n) :
+      ∑ i, (D + w i - w (σ i)) = Fintype.card n * D := by
+    simp [Finset.sum_sub_distrib, Finset.sum_add_distrib, Equiv.sum_comp]
+  rw [det_apply]
+  apply (periodFiltration R N _).sum_mem
+  intro σ _
+  have hp := SetLike.prod_mem_graded (periodFiltration R N) (F := Finset.univ)
+    (fun i => D + w i - w (σ i)) (fun i => A (σ i) i) (fun i _ => hA (σ i) i)
+  rw [hsum] at hp
+  exact (periodFiltration R N _).zsmul_mem hp _
+
+/-- A weighted entrywise perturbation changes a determinant only above the corresponding
+cutoff. No sign or nonzero-divisor assumption on the coefficients is needed. -/
+theorem det_sub_det_mem_periodFiltration_of_weights (A B : Matrix n n (NovikovSeries R H N))
+    (w : n → ℝ) {C D : ℝ}
+    (hA : ∀ i j, A i j ∈ periodFiltration R N (D + w j - w i))
+    (hB : ∀ i j, B i j ∈ periodFiltration R N (D + w j - w i))
+    (hAB : ∀ i j, A i j - B i j ∈ periodFiltration R N (C + (D + w j - w i))) :
+    A.det - B.det ∈ periodFiltration R N (C + Fintype.card n * D) := by
+  have hsum (σ : Equiv.Perm n) :
+      ∑ i, (D + w i - w (σ i)) = Fintype.card n * D := by
+    simp [Finset.sum_sub_distrib, Finset.sum_add_distrib, Equiv.sum_comp]
+  simp only [det_apply, ← Finset.sum_sub_distrib, ← smul_sub]
+  apply (periodFiltration R N _).sum_mem
+  intro σ _
+  have hp := NovikovSeries.prod_sub_prod_mem_periodFiltration_of_bounds Finset.univ
+    (fun i _ => hA (σ i) i) (fun i _ => hB (σ i) i) (fun i _ => hAB (σ i) i)
+  rw [hsum] at hp
+  exact (periodFiltration R N _).zsmul_mem hp _
+
+end Determinant
 
 end Matrix

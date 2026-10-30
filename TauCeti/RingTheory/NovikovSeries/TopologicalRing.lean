@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
 public import TauCeti.RingTheory.NovikovSeries.Topology
+public import Mathlib.Algebra.GradedMonoid
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
@@ -186,6 +187,11 @@ theorem one_mem_periodFiltration_zero : (1 : NovikovSeries R H N) ∈ periodFilt
   simpa only [single_zero_one, map_zero] using
     single_mem_periodFiltration (R := R) (N := N) (0 : H) 1
 
+/-- The period filtration is multiplicatively graded by real lower bounds. -/
+instance : SetLike.GradedMonoid (periodFiltration R N) where
+  one_mem := one_mem_periodFiltration_zero
+  mul_mem _ _ _ _ := mul_mem_periodFiltration
+
 /-- If the coefficients of `a` vanish below the period `C`, then those of `a ^ n` vanish below
 `n • C`. -/
 theorem pow_mem_periodFiltration (ha : a ∈ periodFiltration R N C) (n : ℕ) :
@@ -195,31 +201,6 @@ theorem pow_mem_periodFiltration (ha : a ∈ periodFiltration R N C) (n : ℕ) :
   | succ n ih =>
     rw [pow_succ, succ_nsmul]
     exact mul_mem_periodFiltration ih ha
-
-end Ring
-
-section CommRing
-
-variable [AddCommMonoid H] {N : H →+ ℝ} [CommRing R]
-
-/-- Periods add along finite products: if each factor `f i` lies in `U_(C i)`, then the product
-lies in `U_(∑ C i)`. -/
-theorem prod_mem_periodFiltration {ι : Type*} (s : Finset ι) {f : ι → NovikovSeries R H N}
-    {C : ι → ℝ} (hf : ∀ i ∈ s, f i ∈ periodFiltration R N (C i)) :
-    ∏ i ∈ s, f i ∈ periodFiltration R N (∑ i ∈ s, C i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using one_mem_periodFiltration_zero (R := R) (N := N)
-  | insert a s ha ih =>
-    rw [Finset.prod_insert ha, Finset.sum_insert ha]
-    exact mul_mem_periodFiltration (hf a (Finset.mem_insert_self a s))
-      (ih fun i hi => hf i (Finset.mem_insert_of_mem hi))
-
-end CommRing
-
-section Ring
-
-variable [AddMonoid H] {N : H →+ ℝ} [Ring R] {C : ℝ} {a : NovikovSeries R H N}
 
 /-- A Novikov series whose coefficients vanish below some positive period is topologically
 nilpotent: its powers tend to `0` in the period topology. -/
@@ -408,6 +389,34 @@ theorem coe_algebraMap_nonnegSubring (s : S) :
 end Algebra
 
 end Ring
+
+section FiniteProducts
+
+variable [AddCommMonoid H] {N : H →+ ℝ} [CommRing R] {ι : Type*}
+
+/-- Perturbing each factor above its lower bound by `C` perturbs the product above the sum
+of the lower bounds by `C`. The empty product has zero difference, at every cutoff. -/
+theorem prod_sub_prod_mem_periodFiltration_of_bounds (s : Finset ι)
+    {a b : ι → NovikovSeries R H N} {w : ι → ℝ} {C : ℝ}
+    (ha : ∀ i ∈ s, a i ∈ periodFiltration R N (w i))
+    (hb : ∀ i ∈ s, b i ∈ periodFiltration R N (w i))
+    (hab : ∀ i ∈ s, a i - b i ∈ periodFiltration R N (C + w i)) :
+    (∏ i ∈ s, a i) - ∏ i ∈ s, b i ∈ periodFiltration R N (C + ∑ i ∈ s, w i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+    have hbs := SetLike.prod_mem_graded (periodFiltration R N) w b
+      fun j hj => hb j (Finset.mem_insert_of_mem hj)
+    have hdiff := ih (fun j hj => ha j (Finset.mem_insert_of_mem hj))
+      (fun j hj => hb j (Finset.mem_insert_of_mem hj))
+      (fun j hj => hab j (Finset.mem_insert_of_mem hj))
+    rw [Finset.prod_insert hi, Finset.prod_insert hi, Finset.sum_insert hi]
+    apply mul_sub_mul_mem_periodFiltration (ha i (Finset.mem_insert_self i s)) hbs
+    · convert hab i (Finset.mem_insert_self i s) using 1; congr 1; ring
+    · convert hdiff using 1; congr 1; ring
+
+end FiniteProducts
 
 section IsLeftCancelAdd
 
