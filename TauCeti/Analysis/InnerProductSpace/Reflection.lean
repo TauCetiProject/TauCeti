@@ -20,7 +20,7 @@ inner product space. They supply the reflection identities used by the half-spac
 and the splitting of the squared distance from a point of the hyperplane into the squared distance
 to the foot of a point and its squared height (`TauCeti.norm_sub_sq_eq_of_inner_eq_zero`). For a
 linear isometry `ι : ℂ → F`, the reflection in the hyperplane perpendicular to `ι i` is complex
-conjugation on the plane `ι ℂ` (`TauCeti.reflection_orthogonal_singleton_map_I`).
+conjugation on the plane `ι ℂ` (`LinearIsometry.reflection_orthogonal_singleton_map_I`).
 
 In dimension at least two, every vector `v` is sent to `-v` by a linear isometry of determinant
 `1` (`TauCeti.exists_det_eq_one_apply_eq_neg`). For nonzero `v`, this is the composition of the
@@ -161,7 +161,7 @@ theorem norm_sub_sq_eq_of_inner_eq_zero {E : Type*} [SeminormedAddCommGroup E]
 
 /-- For a linear isometry `ι : ℂ → F`, the reflection in the hyperplane perpendicular to `ι i`
 acts on the plane `ι ℂ` by complex conjugation. -/
-theorem reflection_orthogonal_singleton_map_I (ι : ℂ →ₗᵢ[ℝ] F) (w : ℂ) :
+theorem _root_.LinearIsometry.reflection_orthogonal_singleton_map_I (ι : ℂ →ₗᵢ[ℝ] F) (w : ℂ) :
     (ℝ ∙ ι Complex.I)ᗮ.reflection (ι w) = ι ((starRingEnd ℂ) w) := by
   rw [reflection_orthogonal_singleton_apply (by simp), ι.inner_map_map, ← ι.map_smul, ← map_sub]
   congr 1
