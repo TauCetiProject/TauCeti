@@ -28,10 +28,12 @@ space on the basis given by `u`, `H = max(house α, house β)`, `A = κ (d - 1) 
 
 The proof bounds the houses of both unknowns. A unit `y` has a conjugate `σ y` of absolute value
 at most `house y ^ (-1 / (d - 1))`, so `σ (α x) - 1 = -σ (β y)` is small, and the lower bound
-gives `log (house y) ≤ (d - 1) (log H + C (1 + log M))` with `M = max(1, maxⱼ max(|e j|, |f j|))`.
-The exponent bound `|e j| ≤ κ log (house x)` for units turns this into `M ≤ A + B₀ log M`, which
-is solved for `M`. With `C` a Baker constant for the finitely many relevant tuples, the bound
-confines the solutions of the unit equation to an explicit finite region.
+gives `log (house y) ≤ (d - 1) (log H + C (1 + log M))`, where `M = max(1, B)` and
+`B = maxⱼ max(|e j|, |f j|)` is the largest exponent. The exponent bound `|e j| ≤ κ log (house x)`
+for units turns this into `B ≤ A + B₀ log M`. If `B ≤ 1` the final bound is immediate; otherwise
+`M = B`, and `B ≤ A + B₀ log B` is solved for `B`. With `C` a Baker constant for the finitely
+many relevant tuples, the bound confines the solutions of the unit equation to an explicit finite
+region.
 
 ## Main results
 
