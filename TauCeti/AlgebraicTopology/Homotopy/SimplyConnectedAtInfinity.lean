@@ -136,11 +136,11 @@ theorem simplyConnectedAtInfinity_of_two_lt_rank {E : Type*} [NormedAddCommGroup
   refine ⟨closedBall 0 R, isCompact_closedBall 0 R, hKR, fun f hf => ?_⟩
   have h0 : (0 : E) ∈ closedBall 0 R := mem_closedBall_self (le_max_right r 0)
   have hB : closedBall (0 : E) R ⊆ ball 0 (R + 1) := closedBall_subset_ball (lt_add_one R)
-  have : SimplyConnectedSpace (sphere (0 : E) (R + 1)) :=
-    simplyConnectedSpace_sphere h 0 (by linarith [le_max_right r 0])
+  have hR : 0 < R + 1 := by linarith [le_max_right r 0]
+  have : SimplyConnectedSpace (sphere (0 : E) (R + 1)) := simplyConnectedSpace_sphere h 0 hR.le
   -- `f` as a circle in the complement of the ball, and its radial projection onto the sphere
   let f' : C(AddCircle (1 : ℝ), ↥(closedBall (0 : E) R)ᶜ) := ⟨fun z => ⟨f z, hf z⟩, by fun_prop⟩
-  let g := (complRadialProjection h0 hB).comp f'
+  let g := (complRadialProjection h0 hR).comp f'
   obtain ⟨q, ⟨G⟩⟩ := nullhomotopic_addCircle_of_simplyConnectedSpace g
   let j := ContinuousMap.inclusion (sphere_disjoint_ball.mono_right hB).subset_compl_right
   -- contract `f'` inside the complement: deform it radially onto the sphere, then contract there
