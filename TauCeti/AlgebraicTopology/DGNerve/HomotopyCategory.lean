@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.HomotopyCat
 public import TauCeti.AlgebraicTopology.DGNerve.Basic
+import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # The homotopy category of the differential graded nerve
@@ -209,9 +210,15 @@ private lemma edgeHom_comp_edgeHom {x₀ x₁ x₂ : (dgNerve R C) _⦋0⦌} {e�
     (h : e₀₁.CompStruct e₁₂ e₀₂) :
     edgeHom R C e₀₁ ≫ edgeHom R C e₁₂ = edgeHom R C e₀₂ := by
   let σ : Simplex R C 2 := h.simplex
-  have h₀ : Simplex.obj x₀ 0 = σ.obj 0 := by rw [← e₀₁.src_eq, ← h.d₂]; rfl
-  have h₁ : Simplex.obj x₁ 0 = σ.obj 1 := by rw [← e₁₂.src_eq, ← h.d₀]; rfl
-  have h₂ : Simplex.obj x₂ 0 = σ.obj 2 := by rw [← e₁₂.tgt_eq, ← h.d₀]; rfl
+  have h₀ : Simplex.obj x₀ 0 = σ.obj 0 := by
+    rw [← e₀₁.src_eq, ← h.d₂, dgNerve_δ_obj, dgNerve_δ_obj]
+    simp [σ]
+  have h₁ : Simplex.obj x₁ 0 = σ.obj 1 := by
+    rw [← e₁₂.src_eq, ← h.d₀, dgNerve_δ_obj, dgNerve_δ_obj]
+    simp [σ]
+  have h₂ : Simplex.obj x₂ 0 = σ.obj 2 := by
+    rw [← e₁₂.tgt_eq, ← h.d₀, dgNerve_δ_obj, dgNerve_δ_obj]
+    simp [σ]
   rw [edgeHom_eq R C e₀₁ h₀ h₁ _ (σ.coh_empty_mem_dgCycles 0 1 (by decide))
       (by rw [← h.d₂]; exact heq_of_eq σ.coh_map_δ_two),
     edgeHom_eq R C e₁₂ h₁ h₂ _ (σ.coh_empty_mem_dgCycles 1 2 (by decide))
@@ -264,7 +271,8 @@ theorem fromHomotopyCategory_map_homMk_edgeMk {X Y : C} (f : dgCycles R X Y) :
         DGHomotopyCategory.homOf R f.1 f.2 ≫
           eqToHom (by rw [fromHomotopyCategory_obj_mk, Equiv.apply_symm_apply]) :=
   (conj_eqToHom_iff_heq' _ _ _ _).2 (fromHomotopyCategory_map_homMk_heq R C (edgeMk R C f)
-    (by rw [dgNerveEquiv_symm_apply]; rfl) (by rw [dgNerveEquiv_symm_apply]; rfl) f.1 f.2
+    (by rw [dgNerveEquiv_symm_apply, Simplex.vertex_obj])
+    (by rw [dgNerveEquiv_symm_apply, Simplex.vertex_obj]) f.1 f.2
     (by rw [edgeMk_edge]; exact heq_of_eq (Simplex.edge_coh_zero_one f)))
 
 /-- **Inverse functors, first composite**: the canonical functor
@@ -275,9 +283,9 @@ theorem toHomotopyCategory_comp_fromHomotopyCategory :
   refine CategoryTheory.Functor.hext
     (fun X ↦ DGHomotopyCategory.ext R ((dgNerveEquiv R C).apply_symm_apply _)) (fun X Y φ ↦ ?_)
   have hX : Simplex.obj ((dgNerveEquiv R C).symm X.underlying) 0 = X.underlying := by
-    rw [dgNerveEquiv_symm_apply]; rfl
+    rw [dgNerveEquiv_symm_apply, Simplex.vertex_obj]
   have hY : Simplex.obj ((dgNerveEquiv R C).symm Y.underlying) 0 = Y.underlying := by
-    rw [dgNerveEquiv_symm_apply]; rfl
+    rw [dgNerveEquiv_symm_apply, Simplex.vertex_obj]
   let c : dgCycles R X.underlying Y.underlying :=
     ⟨_, (exists_dgHomotopyClass_eq R (X := X.underlying) (Y := Y.underlying) φ).choose_spec.choose⟩
   have hc : DGHomotopyCategory.homOf R c.1 c.2 = φ :=
@@ -304,13 +312,9 @@ theorem fromHomotopyCategory_comp_toHomotopyCategory :
   have h₁ := fromHomotopyCategory_map_homMk_heq R C e' hX hY c.1 c.2 HEq.rfl
   have h₂ : (toHomotopyCategory R C).map ((fromHomotopyCategory R C).map
       (HomotopyCategory.homMk e')) ≍
-        (toHomotopyCategory R C).map (DGHomotopyCategory.homOf R c.1 c.2) := by
-    -- A functor carries heterogeneously equal morphisms to heterogeneously equal morphisms.
-    have hmap : ∀ {A B A' B' : DGHomotopyCategory R C} (f : A ⟶ B) (g : A' ⟶ B'), A = A' →
-        B = B' → f ≍ g → (toHomotopyCategory R C).map f ≍ (toHomotopyCategory R C).map g := by
-      rintro A B A' B' f g rfl rfl h
-      rw [eq_of_heq h]
-    exact hmap _ _ (congrArg (DGHomotopyCategory.of R) ((dgNerveEquiv_apply R C x).trans hX))
+        (toHomotopyCategory R C).map (DGHomotopyCategory.homOf R c.1 c.2) :=
+    (toHomotopyCategory R C).map_heq
+      (congrArg (DGHomotopyCategory.of R) ((dgNerveEquiv_apply R C x).trans hX))
       (congrArg (DGHomotopyCategory.of R) ((dgNerveEquiv_apply R C y).trans hY)) h₁
   have h₃ : HomotopyCategory.homMk (edgeMk R C c) ≍ HomotopyCategory.homMk e' := by
     obtain ⟨hs, ht, h⟩ := (Arrow.mk_eq_mk_iff _ _).1

@@ -1117,6 +1117,13 @@ theorem dgNerve_map_apply {Δ Δ' : SimplexCategoryᵒᵖ} (f : Δ ⟶ Δ') (x :
     (dgNerve R C).map f x = Simplex.map x f.unop.toOrderHom :=
   rfl
 
+/-- The objects of a face of a simplex of the differential graded nerve are its objects at the
+vertices other than the omitted one. -/
+@[simp]
+theorem dgNerve_δ_obj {n : ℕ} (i : Fin (n + 2)) (x : (dgNerve R C) _⦋n + 1⦌) (j : Fin (n + 1)) :
+    Simplex.obj ((dgNerve R C).δ i x) j = Simplex.obj x (i.succAbove j) :=
+  rfl
+
 /-- The vertices of the differential graded nerve are the objects of the differential graded
 category. -/
 noncomputable def dgNerveEquiv : (dgNerve R C) _⦋0⦌ ≃ C where
