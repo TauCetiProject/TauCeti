@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Compactification.DenseReplacement
+public import TauCeti.AlgebraicGeometry.Compactification.DenseReplacement.Basic
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 
 /-!
