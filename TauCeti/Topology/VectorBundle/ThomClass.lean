@@ -150,11 +150,13 @@ namespace Bundle.Trivialization
 
 open TauCeti
 
-variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C} {k : Type*} [Ring k]
-  [Linear k C] {M : C} {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
-  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
-  (e : Trivialization F (π F E)) [e.IsLinear ℝ]
+section Geometry
+
+variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {B : Type w} [TopologicalSpace B] {F : Type w}
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type w}
+  [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
 
 /-- A trivialization over the whole base, as an isomorphism `(E, E₀) ≅ (B × F, B × (F ∖ {0}))` of
 the Thom pair of `E` with the Thom pair of the trivial bundle: it is linear on the fibres, so it
@@ -164,19 +166,19 @@ def thomPairIso (he : e.baseSet = Set.univ) :
   TopPair.ofSubsetIso (X := TopCat.of (TotalSpace F E))
     (Y := TopCat.of (TotalSpace F (Bundle.Trivial B F))) (e.homeomorphTrivial he) fun v ↦ by
       rw [mem_zeroSectionCompl, mem_zeroSectionCompl,
-        homeomorphTrivial_apply_eq_continuousLinearEquivAt]
+        homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜]
       exact (map_ne_zero_iff _ (ContinuousLinearEquiv.injective _)).symm
 
 @[simp]
 theorem thomPairIso_hom_fst_apply (he : e.baseSet = Set.univ) (v : TotalSpace F E) :
-    TopPair.Hom.fst (e.thomPairIso he).hom v = e.homeomorphTrivial he v := by
+    TopPair.Hom.fst (e.thomPairIso 𝕜 he).hom v = e.homeomorphTrivial he v := by
   rw [thomPairIso, TopPair.ofSubsetIso_hom]
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
 @[simp]
 theorem thomPairIso_inv_fst_apply (he : e.baseSet = Set.univ)
     (w : TotalSpace F (Bundle.Trivial B F)) :
-    TopPair.Hom.fst (e.thomPairIso he).inv w = (e.homeomorphTrivial he).symm w := by
+    TopPair.Hom.fst (e.thomPairIso 𝕜 he).inv w = (e.homeomorphTrivial he).symm w := by
   rw [thomPairIso, TopPair.ofSubsetIso_inv]
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
@@ -186,38 +188,46 @@ def fiberPairIso {b : B} (hb : b ∈ e.baseSet) :
     TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b)) ≅
       TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
   TopPair.ofSubsetIso (X := TopCat.of (E b)) (Y := TopCat.of F)
-    (e.continuousLinearEquivAt ℝ b hb).toHomeomorph fun _ ↦ by
+    (e.continuousLinearEquivAt 𝕜 b hb).toHomeomorph fun _ ↦ by
       rw [Set.mem_compl_singleton_iff, Set.mem_compl_singleton_iff]
-      exact (map_ne_zero_iff (e.continuousLinearEquivAt ℝ b hb)
+      exact (map_ne_zero_iff (e.continuousLinearEquivAt 𝕜 b hb)
         (ContinuousLinearEquiv.injective _)).symm
 
 @[simp]
 theorem fiberPairIso_hom_fst_apply {b : B} (hb : b ∈ e.baseSet) (x : E b) :
-    TopPair.Hom.fst (e.fiberPairIso hb).hom x = e.continuousLinearEquivAt ℝ b hb x := by
+    TopPair.Hom.fst (e.fiberPairIso 𝕜 hb).hom x = e.continuousLinearEquivAt 𝕜 b hb x := by
   rw [fiberPairIso, TopPair.ofSubsetIso_hom]
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
 @[simp]
 theorem fiberPairIso_inv_fst_apply {b : B} (hb : b ∈ e.baseSet) (y : F) :
-    TopPair.Hom.fst (e.fiberPairIso hb).inv y = (e.continuousLinearEquivAt ℝ b hb).symm y := by
+    TopPair.Hom.fst (e.fiberPairIso 𝕜 hb).inv y = (e.continuousLinearEquivAt 𝕜 b hb).symm y := by
   rw [fiberPairIso, TopPair.ofSubsetIso_inv]
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
 /-- On the fibre over `b`, the isomorphism of Thom pairs given by a trivialization over the whole
 base is the isomorphism of fibre pairs given by the trivialization at `b`. -/
 theorem fiberThomPairMap_comp_thomPairIso_hom (he : e.baseSet = Set.univ) (b : B) :
-    fiberThomPairMap F E b ≫ (e.thomPairIso he).hom =
-      (e.fiberPairIso (he ▸ Set.mem_univ b)).hom ≫ fiberThomPairMap F (Bundle.Trivial B F) b := by
+    fiberThomPairMap F E b ≫ (e.thomPairIso 𝕜 he).hom =
+      (e.fiberPairIso 𝕜 (he ▸ Set.mem_univ b)).hom ≫ fiberThomPairMap F (Bundle.Trivial B F) b := by
   refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : E b) ↦ ?_)
   -- Both sides send `x : E_b` to `(b, e x)`. The carriers of the pairs agree with `E_b`, `F` and
   -- the total spaces only up to unfolding, so first split each composite into its evaluations.
-  change TopPair.Hom.fst (e.thomPairIso he).hom (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
+  change TopPair.Hom.fst (e.thomPairIso 𝕜 he).hom (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
     TopPair.Hom.fst (fiberThomPairMap F (Bundle.Trivial B F) b)
-      (TopPair.Hom.fst (e.fiberPairIso (he ▸ Set.mem_univ b)).hom x)
+      (TopPair.Hom.fst (e.fiberPairIso 𝕜 (he ▸ Set.mem_univ b)).hom x)
   simp only [fiberThomPairMap_fst_apply, thomPairIso_hom_fst_apply,
-    homeomorphTrivial_apply_eq_continuousLinearEquivAt, fiberPairIso_hom_fst_apply]
+    homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜, fiberPairIso_hom_fst_apply]
   -- `TotalSpace.mk'` is `TotalSpace.mk` with the fibre made explicit.
   rfl
+
+end Geometry
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C} {k : Type*} [Ring k]
+  [Linear k C] {M : C} {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  (e : Trivialization F (π F E)) [e.IsLinear ℝ]
 
 /-- **Thom classes of a trivializable bundle.** For a trivialization of `E` over the whole base,
 the pull-back of a class `u` of the Thom pair of the trivial bundle `B × F` along the isomorphism
@@ -225,15 +235,15 @@ of Thom pairs `(E, E₀) ≅ (B × F, B × (F ∖ {0}))` is a Thom class of `E` 
 class of the trivial bundle. -/
 theorem isThomClass_singularCohomologyMap_thomPairIso_hom_iff (he : e.baseSet = Set.univ)
     {u : (thomPair F (Bundle.Trivial B F)).singularCohomology R k M (finrank ℝ F)} :
-    IsThomClass F E (TopPair.singularCohomologyMap (e.thomPairIso he).hom _ u) ↔
+    IsThomClass F E (TopPair.singularCohomologyMap (e.thomPairIso ℝ he).hom _ u) ↔
       IsThomClass F (Bundle.Trivial B F) u := by
   refine ⟨fun hu ↦ ?_, fun hu ↦ hu.singularCohomologyMap _ id _
-    (e.fiberThomPairMap_comp_thomPairIso_hom he)⟩
+    (e.fiberThomPairMap_comp_thomPairIso_hom ℝ he)⟩
   -- Pull back along the inverse isomorphism, whose fibres are the inverse fibre isomorphisms.
-  have h := hu.singularCohomologyMap (e.thomPairIso he).inv id
-    (fun b ↦ (e.fiberPairIso (he ▸ Set.mem_univ b)).symm) fun b ↦ by
+  have h := hu.singularCohomologyMap (e.thomPairIso ℝ he).inv id
+    (fun b ↦ (e.fiberPairIso ℝ (he ▸ Set.mem_univ b)).symm) fun b ↦ by
       rw [id_eq, Iso.symm_hom, Iso.eq_inv_comp, ← Category.assoc,
-        ← e.fiberThomPairMap_comp_thomPairIso_hom he, Category.assoc, Iso.hom_inv_id,
+        ← e.fiberThomPairMap_comp_thomPairIso_hom ℝ he, Category.assoc, Iso.hom_inv_id,
         Category.comp_id]
   rwa [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp, Iso.inv_hom_id,
     TopPair.singularCohomologyMap_id, ConcreteCategory.id_apply] at h

@@ -176,12 +176,14 @@ theorem IsThomClass.singularCohomologyMap {B' : Type w} [TopologicalSpace B'] {E
   -- The isomorphism `ψ b'` induces a linear isomorphism `e` in cohomology, carrying generators to
   -- generators; by definition of the cohomology functor, `e` applies
   -- `TopPair.singularCohomologyMap (ψ b').hom`.
-  let e := ((TopPair.singularCohomologyFunctor R k M (finrank ℝ F)).mapIso (ψ b').op).toLinearEquiv
-  have hx := hu.2 (g b')
-  rw [Submodule.span_singleton_eq_top_iff] at hx ⊢
-  intro y
-  obtain ⟨r, hr⟩ := hx (e.symm y)
-  exact ⟨r, (map_smul e r _).symm.trans ((congrArg e hr).trans (e.apply_symm_apply y))⟩
+  let e : (TopPair.ofSubset (X := TopCat.of (E (g b'))) ({0}ᶜ : Set (E (g b')))).singularCohomology
+      R k M (finrank ℝ F) ≃ₗ[k]
+      (TopPair.ofSubset (X := TopCat.of (E' b')) ({0}ᶜ : Set (E' b'))).singularCohomology
+        R k M (finrank ℝ F) :=
+    ((TopPair.singularCohomologyFunctor R k M (finrank ℝ F)).mapIso (ψ b').op).toLinearEquiv
+  have h := (Submodule.map_eq_top_iff (e := e)).2 (hu.2 (g b'))
+  rw [← Submodule.span_image_linearEquiv e, Set.image_singleton] at h
+  exact h
 
 end ThomClass
 

@@ -17,9 +17,9 @@ A trivialization `e` of a fibre bundle `E` whose base set is the whole base is a
 (`Bundle.Trivialization.homeomorphTrivial`). It covers the identity of the base, sends `v` to the
 fibre coordinate of `e v`, and its inverse is the partial inverse of `e`
 (`Bundle.Trivialization.homeomorphTrivial_apply`,
-`Bundle.Trivialization.homeomorphTrivial_symm_apply`). For a linear trivialization of a real
-vector bundle, on the fibre over `b` it is the continuous linear equivalence
-`e.continuousLinearEquivAt ℝ b`, with inverse its symmetric
+`Bundle.Trivialization.homeomorphTrivial_symm_apply`). For a linear trivialization of a
+vector bundle over a nontrivially normed field `𝕜`, on the fibre over `b` it is the continuous
+linear equivalence `e.continuousLinearEquivAt 𝕜 b`, with inverse its symmetric
 (`Bundle.Trivialization.homeomorphTrivial_apply_eq_continuousLinearEquivAt`,
 `Bundle.Trivialization.homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt`).
 -/
@@ -54,22 +54,23 @@ theorem homeomorphTrivial_symm_apply (he : e.baseSet = Set.univ)
     (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.2) := by
   rfl
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type*}
-  [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)]
-  [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F (π F E)) [e.IsLinear ℝ]
+variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {F : Type*} [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
+  [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
 
 theorem homeomorphTrivial_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (v : TotalSpace F E) :
-    e.homeomorphTrivial he v = TotalSpace.mk' F v.proj (e.continuousLinearEquivAt ℝ v.proj
+    e.homeomorphTrivial he v = TotalSpace.mk' F v.proj (e.continuousLinearEquivAt 𝕜 v.proj
       (he ▸ Set.mem_univ _) v.2) :=
   congrArg (Bundle.Trivial.homeomorphProd B F).symm
-    (e.apply_eq_prod_continuousLinearEquivAt ℝ v.proj (he ▸ Set.mem_univ _) v.2)
+    (e.apply_eq_prod_continuousLinearEquivAt 𝕜 v.proj (he ▸ Set.mem_univ _) v.2)
 
 theorem homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (w : TotalSpace F (Bundle.Trivial B F)) :
     (e.homeomorphTrivial he).symm w = TotalSpace.mk' F w.proj
-      ((e.continuousLinearEquivAt ℝ w.proj (he ▸ Set.mem_univ _)).symm w.2) := by
-  rw [Homeomorph.symm_apply_eq, homeomorphTrivial_apply_eq_continuousLinearEquivAt]
+      ((e.continuousLinearEquivAt 𝕜 w.proj (he ▸ Set.mem_univ _)).symm w.2) := by
+  rw [Homeomorph.symm_apply_eq, homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜]
   exact congrArg (TotalSpace.mk' F w.proj) (ContinuousLinearEquiv.apply_symm_apply _ _).symm
 
 end Bundle.Trivialization
