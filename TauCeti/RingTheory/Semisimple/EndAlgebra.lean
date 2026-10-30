@@ -105,10 +105,10 @@ is the matrix ring `Mat_k(End_R S)` over the division ring of Schur's lemma, wit
 
 No base field is involved: `M` is a power `Sᵏ` of a minimal left ideal `S` of `R` because `R` is
 simple Artinian and `M` is finite over `R`.  That is the only use made of simplicity of `R`, so
-this is the specialization of `TauCeti.isSimpleRing_moduleEnd_of_isIsotypic` along
+this is the specialization of `IsIsotypic.isSimpleRing_moduleEnd` along
 `IsSimpleRing.isIsotypic`. -/
 theorem moduleEnd [Nontrivial M] : IsSimpleRing (Module.End R M) :=
-  isSimpleRing_moduleEnd_of_isIsotypic (_root_.IsSimpleRing.isIsotypic R M)
+  (_root_.IsSimpleRing.isIsotypic R M).isSimpleRing_moduleEnd
 
 end Simplicity
 

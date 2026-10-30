@@ -306,6 +306,13 @@ theorem eval₂_smul_right (φ : SmoothBundleForm I F V 2) (x : M)
   simpa only [eval₂, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero] using
     (φ.1 x).map_update_smul ![v, w] (0 : Fin 1).succ c w
 
+/-- Negating the first tangent vector negates the evaluation of a degree-two form. -/
+theorem eval₂_neg_left (φ : SmoothBundleForm I F V 2) (x : M) (v w : TangentSpace I x) :
+    φ.eval₂ x (-v) w = -φ.eval₂ x v w := by
+  simpa only [eval₂, Matrix.vecCons, Fin.update_cons_zero,
+    ContinuousAlternatingMap.coe_toAlternatingMap] using
+    (φ.1 x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 2) v
+
 /-- Two smooth bundle-valued two-forms are equal when their ordered-pair evaluations agree. -/
 theorem ext_eval₂ {φ ψ : SmoothBundleForm I F V 2}
     (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) : φ = ψ := by

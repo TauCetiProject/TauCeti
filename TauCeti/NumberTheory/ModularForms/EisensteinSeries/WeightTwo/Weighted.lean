@@ -14,6 +14,7 @@ import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
 import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
 
 /-!
 # Weight-two Eisenstein series weighted by a function of residues
@@ -58,6 +59,7 @@ of `G₂^W` at all cusps.
 * `TauCeti.EisensteinSeries.weightedG2`: the weight-two series weighted by `W`.
 * `TauCeti.EisensteinSeries.weightedG2MF`: it is a modular form of weight two and level `Γ(N)`.
 * `TauCeti.EisensteinSeries.weightedG2MFₗ`: the same, as a linear map in the weight.
+* `TauCeti.EisensteinSeries.weightedG2ₗ`: the series as a linear map to functions on `ℍ`.
 
 ## Main results
 
@@ -74,6 +76,15 @@ of `G₂^W` at all cusps.
   `TauCeti.EisensteinSeries.valueAtInfty_weightedG2`: the limit at `i∞`.
 * `TauCeti.EisensteinSeries.valueAtInfty_weightedG2_slash`: the value at `i∞` of every
   `SL(2, ℤ)`-translate.
+* `TauCeti.EisensteinSeries.weightedG2_eq_zero_of_forall_vecMul_eq`: an `SL(2, ℤ)`-invariant
+  weight has the zero series, by Mathlib's `ModularForm.levelOne_weight_two_rank_zero`.
+* `TauCeti.EisensteinSeries.weightedG2_comp_castHom`: for `M ∣ N`, the series of `W` modulo `M`
+  and of `c ↦ W(c mod M)` modulo `N` agree.
+* `TauCeti.EisensteinSeries.weightedG2_single_eq_of_val_eq`: if `c = g e` with `N = g M`, the
+  series of the single residues `c` modulo `N` and `e` modulo `M` agree up to `g²`, both being
+  values of `℘` at the same division point.
+* `TauCeti.EisensteinSeries.weightedG2_eq_sum_single`: the series as a combination of
+  single-residue series.
 
 ## References
 
@@ -126,6 +137,17 @@ lemma weightedG2_smul (c : ℂ) (W : (Fin 2 → ZMod N) → ℂ) :
     weightedG2 (c • W) = c • weightedG2 W := by
   ext z
   simp [weightedG2, Finset.mul_sum, mul_assoc, mul_left_comm]
+
+variable (N) in
+/-- The weighted series as a linear map to functions on `ℍ`. -/
+def weightedG2ₗ : ((Fin 2 → ZMod N) → ℂ) →ₗ[ℂ] (ℍ → ℂ) where
+  toFun := weightedG2
+  map_add' := weightedG2_add
+  map_smul' := weightedG2_smul
+
+@[simp]
+lemma weightedG2ₗ_apply (W : (Fin 2 → ZMod N) → ℂ) : weightedG2ₗ N W = weightedG2 W :=
+  (rfl)
 
 /-! ### The division values of `℘` -/
 
@@ -701,5 +723,131 @@ def weightedG2MFₗ : ((Fin 2 → ZMod N) → ℂ) →ₗ[ℂ] ModularForm Γ(N)
 
 @[simp]
 lemma weightedG2MFₗ_apply (W : (Fin 2 → ZMod N) → ℂ) : weightedG2MFₗ W = weightedG2MF W := (rfl)
+
+/-! ### Weights invariant under `SL(2, ℤ)` -/
+
+/-- A weight invariant under right multiplication by `SL(2, ℤ)` has the zero series. -/
+theorem weightedG2_eq_zero_of_forall_vecMul_eq {W : (Fin 2 → ZMod N) → ℂ}
+    (hW : ∀ (γ : SL(2, ℤ)) (a : Fin 2 → ZMod N),
+      W (a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N))) = W a) :
+    weightedG2 W = 0 := by
+  have hslash (γ : SL(2, ℤ)) : weightedG2 W ∣[(2 : ℤ)] γ = weightedG2 W := by
+    rw [weightedG2_slash_apply]
+    simp only [hW]
+  let f : ModularForm 𝒮ℒ 2 :=
+    ModularForm.ofSlashInvariant Subgroup.IsArithmetic.isCusp_of_isCusp (weightedG2MF W) <| by
+      rintro _ ⟨γ, rfl⟩
+      rw [coe_weightedG2MF]
+      exact hslash γ
+  have hf := congrArg DFunLike.coe
+    ((rank_zero_iff_forall_zero.mp _root_.ModularForm.levelOne_weight_two_rank_zero) f)
+  rwa [ModularForm.coe_ofSlashInvariant, coe_weightedG2MF] at hf
+
+/-! ### Changing the level -/
+
+variable {M : ℕ} [NeZero M]
+
+/-- The change of level for a weight of total mass zero: both series are
+`∑_x W(x mod M) (x₀ z + x₁)⁻²`, summed over blocks of residues modulo `M` and modulo `N`. -/
+private lemma weightedG2_comp_castHom_of_sum_eq_zero (h : M ∣ N) {W : (Fin 2 → ZMod M) → ℂ}
+    (hW : ∑ a, W a = 0) :
+    weightedG2 (fun c : Fin 2 → ZMod N ↦ W (ZMod.castHom h (ZMod M) ∘ c)) = weightedG2 W := by
+  ext z
+  -- a residue modulo `N` is its residue modulo `M` and the quotient of its representative by `M`
+  let D : ZMod N → ZMod M × Fin (N / M) := fun c ↦
+    (ZMod.castHom h (ZMod M) c, ⟨c.val / M, Nat.div_lt_div_of_lt_of_dvd h c.val_lt⟩)
+  have hval (c : ZMod N) : c.val = (D c).1.val + M * ((D c).2 : ℕ) := by
+    simp only [D, ZMod.castHom_apply, ZMod.cast_eq_val, ZMod.val_natCast]
+    exact (Nat.mod_add_div _ _).symm
+  have hD : Function.Bijective D := by
+    rw [Fintype.bijective_iff_injective_and_card]
+    refine ⟨fun c c' hcc' ↦ ZMod.val_injective N (by rw [hval c, hval c', hcc']), by
+      simp [ZMod.card, Nat.mul_div_cancel' h]⟩
+  let E₂ : (Fin 2 → ZMod N) ≃ (Fin 2 → ZMod M) × (Fin 2 → Fin (N / M)) :=
+    (Equiv.piCongrRight fun _ ↦ Equiv.ofBijective D hD).trans
+      (Equiv.arrowProdEquivProdArrow _ _ _)
+  have hn : NeZero (N / M) :=
+    ⟨(Nat.div_pos (Nat.le_of_dvd (NeZero.pos N) h) (NeZero.pos M)).ne'⟩
+  have hNM : ((N : ℕ) : ℤ) = M * (N / M : ℕ) := by exact_mod_cast (Nat.mul_div_cancel' h).symm
+  -- the series of level `M`, over the blocks `e + M y` with `e` lifted to `ℤ`
+  let F : (Fin 2 → ℤ) → ℂ := fun y ↦
+    ∑ e, W e * eisSummand 2 ((fun i ↦ ((e i).val : ℤ)) + M • y) z
+  have hF : HasSum F (weightedG2 W z) := by
+    refine ((Equiv.neg (Fin 2 → ℤ)).hasSum_iff.mpr
+      (hasSum_weightedG2_of_sum_eq_zero hW z)).congr_fun fun y ↦ ?_
+    simp [F, sub_eq_add_neg]
+  -- regroup the blocks along `y = (N / M) q + r`
+  let E : (Fin 2 → ℤ) ≃ (Fin 2 → ℤ) × (Fin 2 → Fin (N / M)) :=
+    (Equiv.piCongrRight fun _ ↦ Int.divModEquiv (N / M)).trans
+      (Equiv.arrowProdEquivProdArrow _ _ _)
+  have hG : HasSum (fun q : Fin 2 → ℤ ↦ ∑ r : Fin 2 → Fin (N / M),
+      F (fun i ↦ q i * (N / M : ℕ) + r i)) (weightedG2 W z) :=
+    (E.symm.hasSum_iff.mpr hF).prod_fiberwise fun q ↦ hasSum_fintype _
+  have hmass : ∑ c : Fin 2 → ZMod N, W (ZMod.castHom h (ZMod M) ∘ c) = 0 := by
+    rw [Fintype.sum_equiv E₂ (fun c ↦ W (ZMod.castHom h (ZMod M) ∘ c))
+      (fun p ↦ W p.1) fun _ ↦ rfl,
+      Fintype.sum_prod_type]
+    simp only [Finset.sum_const, Finset.card_univ, ← Finset.smul_sum, hW, smul_zero]
+  have hN := (Equiv.neg (Fin 2 → ℤ)).hasSum_iff.mpr (hasSum_weightedG2_of_sum_eq_zero hmass z)
+  refine hN.unique (hG.congr_fun fun q ↦ ?_)
+  simp only [Function.comp_apply, Equiv.neg_apply, F]
+  rw [Fintype.sum_equiv E₂ (fun c ↦ W (ZMod.castHom h (ZMod M) ∘ c) *
+      eisSummand 2 ((fun i ↦ ((c i).val : ℤ)) - N • -q) z) (fun p ↦ W p.1 * eisSummand 2
+      ((fun i ↦ ((p.1 i).val : ℤ)) + M • (fun i ↦ ((p.2 i : ℕ) : ℤ)) + N • q) z) fun c ↦ ?_,
+    Fintype.sum_prod_type, Finset.sum_comm]
+  · refine Finset.sum_congr rfl fun r _ ↦ Finset.sum_congr rfl fun e _ ↦ ?_
+    congr 2
+    ext i
+    simp only [Pi.add_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply, hNM]
+    ring
+  · congr 2
+    ext i
+    simp only [Pi.sub_apply, Pi.add_apply, Pi.neg_apply, nsmul_eq_mul, smul_neg, sub_neg_eq_add]
+    rw [hval (c i)]
+    simp [E₂]
+
+/-- **Changing the level of a weight-two series.** For `M ∣ N`, the series of a weight `W` modulo
+`M` and of the weight `c ↦ W(c mod M)` modulo `N` agree. -/
+theorem weightedG2_comp_castHom (h : M ∣ N) (W : (Fin 2 → ZMod M) → ℂ) :
+    weightedG2 (fun c : Fin 2 → ZMod N ↦ W (ZMod.castHom h (ZMod M) ∘ c)) = weightedG2 W := by
+  -- split off a constant weight, whose series vanishes at every level
+  set m : ℂ := (∑ a, W a) / (M : ℂ) ^ 2
+  have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
+  have hmass : ∑ a, (W a - m) = 0 := by
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fun, ZMod.card,
+      Fintype.card_fin, nsmul_eq_mul]
+    push_cast
+    rw [show (M : ℂ) ^ 2 * m = ∑ a, W a from mul_div_cancel₀ _ (pow_ne_zero 2 hM), sub_self]
+  have hconst {L : ℕ} [NeZero L] : weightedG2 (fun _ : Fin 2 → ZMod L ↦ m) = 0 :=
+    weightedG2_eq_zero_of_forall_vecMul_eq fun _ _ ↦ rfl
+  have hsplit {L : ℕ} [NeZero L] (V : (Fin 2 → ZMod L) → ℂ) :
+      weightedG2 V = weightedG2 fun a ↦ V a - m := by
+    conv_lhs => rw [show V = (fun a ↦ V a - m) + fun _ ↦ m by ext; simp]
+    rw [weightedG2_add, hconst, add_zero]
+  rw [hsplit, hsplit W]
+  exact weightedG2_comp_castHom_of_sum_eq_zero h (W := fun a ↦ W a - m) hmass
+
+/-! ### Common division points -/
+
+/-- The single-residue series of level `N` at the residue `g e` agrees with `g⁻²` times that of
+level `M` at `e`, when `N = g M`: both are values of `℘` at the same division point. -/
+theorem weightedG2_single_eq_of_val_eq {g : ℕ} (hg : N = g * M) {c : Fin 2 → ZMod N}
+    {e : Fin 2 → ZMod M} (hce : ∀ i, (c i).val = g * (e i).val) :
+    weightedG2 (Pi.single c (1 : ℂ)) = ((g : ℂ) ^ 2)⁻¹ • weightedG2 (Pi.single e (1 : ℂ)) := by
+  ext z
+  have hg0 : (g : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr fun h0 ↦ NeZero.ne N (by simp [hg, h0])
+  have hM0 : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
+  simp only [weightedG2_def, Pi.single_apply, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq',
+    Finset.mem_univ, ite_true, Pi.smul_apply, smul_eq_mul, hce, hg]
+  push_cast
+  rw [show ((g : ℂ) * (e 0).val * z + g * (e 1).val) / (g * M) = ((e 0).val * z + (e 1).val) / M by
+    field_simp]
+  field_simp
+
+/-- The weighted series as a combination of single-residue series. -/
+theorem weightedG2_eq_sum_single (W : (Fin 2 → ZMod N) → ℂ) :
+    weightedG2 W = ∑ a, W a • weightedG2 (Pi.single a (1 : ℂ)) := by
+  conv_lhs => rw [pi_eq_sum_univ' W, ← weightedG2ₗ_apply, map_sum]
+  simp only [map_smul, weightedG2ₗ_apply]
 
 end TauCeti.EisensteinSeries
