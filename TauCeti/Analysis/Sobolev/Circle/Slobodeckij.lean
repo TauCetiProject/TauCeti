@@ -22,10 +22,12 @@ equivalent description by differences instead of Fourier coefficients: an elemen
 `∫ ‖τ_h a - a‖² / ‖h‖ ^ (1 + 2 s) dh`
 
 is finite. Here `τ_h` is the rotation by `h` (`TauCeti.CircleSobolev.rotate`), `‖h‖` is the
-distance from `h` to `0` on the circle and `dh` is Lebesgue measure on the circle. The energy and
-the squared `H^s` norm control each other up to constants
-(`TauCeti.CircleSobolev.exists_slobodeckijEnergy_le` and
-`TauCeti.CircleSobolev.exists_norm_sq_le_slobodeckijEnergy`).
+distance from `h` to `0` on the circle and `dh` is Lebesgue measure on the circle. The energy is
+at most a constant times the squared `H^s` norm
+(`TauCeti.CircleSobolev.exists_slobodeckijEnergy_le`), and the squared `H^s` norm is at most the
+squared `H⁰` norm plus a constant times the energy
+(`TauCeti.CircleSobolev.exists_norm_sq_le_slobodeckijEnergy`). So the squared `H⁰` norm plus the
+energy is equivalent to the squared `H^s` norm; the energy alone vanishes on constants.
 
 By Parseval's identity, the energy is `∑ₙ K(n) ‖aₙ‖²`, with the multiplier
 `K(n) = ∫ |e^{2πinh/T} - 1|² / ‖h‖ ^ (1 + 2 s) dh`. This multiplier vanishes at `n = 0` and is
@@ -95,6 +97,16 @@ theorem slobodeckijEnergy_def (s : ℝ) (a : CircleSobolev 0 E) :
     slobodeckijEnergy T s a =
       ∫⁻ h : AddCircle T, ENNReal.ofReal (‖rotate h a - a‖ ^ 2 / ‖h‖ ^ (1 + 2 * s)) :=
   (rfl)
+
+@[simp]
+theorem slobodeckijEnergy_zero (s : ℝ) : slobodeckijEnergy T s (0 : CircleSobolev 0 E) = 0 := by
+  simp [slobodeckijEnergy_def]
+
+/-- The energy is homogeneous of degree two. -/
+theorem slobodeckijEnergy_smul (s : ℝ) (z : ℂ) (a : CircleSobolev 0 E) :
+    slobodeckijEnergy T s (z • a) = ENNReal.ofReal (‖z‖ ^ 2) * slobodeckijEnergy T s a := by
+  simp_rw [slobodeckijEnergy_def, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, map_smul,
+    ← smul_sub, norm_smul, mul_pow, mul_div_assoc, ENNReal.ofReal_mul (sq_nonneg ‖z‖)]
 
 /-! ### The Fourier multiplier of the energy -/
 
@@ -297,13 +309,6 @@ private theorem kernel_le (hs0 : 0 < s) (hs1 : s < 1) (n : ℤ) :
 
 /-! ### Comparison of the energy with the norm of `H^s` -/
 
-/-- Parseval's identity for `H^s` in `ℝ≥0∞`: the squared norm is the weighted sum of the squared
-coefficient norms. -/
-private theorem ofReal_norm_sq_eq_tsum (a : CircleSobolev s E) :
-    ENNReal.ofReal (‖a‖ ^ 2) = ∑' n, ENNReal.ofReal (weight (2 * s) n * ‖a.coeff n‖ ^ 2) := by
-  rw [← (hasSum_norm_sq a).tsum_eq, ENNReal.ofReal_tsum_of_nonneg
-    (fun n ↦ by positivity [weight_nonneg (2 * s) n]) (hasSum_norm_sq a).summable]
-
 /-- The weighted coefficient sum of `H^s` is bounded by the squared `H⁰` norm and the energy. The
 frequency `0` is controlled by the `H⁰` norm and the other frequencies by the lower bound on the
 multiplier. -/
@@ -335,7 +340,8 @@ private theorem tsum_ofReal_weight_mul_le (hs : 0 ≤ s) (a : CircleSobolev 0 E)
         gcongr
         exact ofReal_mul_weight_le_kernel T hs hn
 
-/-- **The norm of `H^s` is controlled by the Gagliardo–Slobodeckij energy.** For `0 ≤ s`, the
+/-- **The norm of `H^s` is controlled by the `H⁰` norm and the Gagliardo–Slobodeckij energy.**
+For `0 ≤ s`, the
 squared norm of `a ∈ H^s` is at most its squared `H⁰` norm plus a constant multiple of the energy
 of order `s`. -/
 theorem exists_norm_sq_le_slobodeckijEnergy (hs : 0 ≤ s) :
