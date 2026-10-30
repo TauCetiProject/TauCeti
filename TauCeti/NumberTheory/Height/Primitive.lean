@@ -14,19 +14,19 @@ public import TauCeti.RingTheory.DedekindDomain.SInteger.Primitive
 # The height of a point through finitely many places
 
 Let `K` be a number field and `S` a finite set of finite places of `K`, carried as a `Finset` of
-height one primes of `𝓞 K`. For a nonzero tuple `x : ι → K` of `S`-integers, every local sup norm
-`⨆ i, |x i|_v` at a finite place `v ∉ S` is at most `1`, so
+height one primes of `𝓞 K`. For a nonzero finite tuple `x : ι → K` of `S`-integers, every local
+sup norm `⨆ i, |x i|_v` at a finite place `v ∉ S` is at most `1`, so
 
 `mulHeight x ≤ (∏_{v | ∞} (⨆ i, v (x i)) ^ mult v) * ∏_{v ∈ S} ⨆ i, |x i|_v`,
 
-with equality as soon as those local sup norms are all `1`. For a nonzero tuple this happens
-exactly when `x` is `S`-primitive (`Set.isPrimitive_iff_finitePlace`), its coordinates being
-`S`-integers that generate the unit ideal of `S.integer K`. Enlarging `S` until `S.integer K` is a
-principal ideal domain makes every nonzero tuple `S`-primitive after one scaling, so the height
-of every point of projective space over `K` is computed by the infinite places and a single
-finite set of finite places (`NumberField.exists_finset_superset_forall_exists_mulHeight_eq`).
-This is the normalisation with which Bombieri and Gubler open the proof of the `S`-integral form
-of the Subspace Theorem.
+with equality as soon as those local sup norms are all `1`. For a nonzero finite tuple this
+happens exactly when `x` is `S`-primitive (`Set.isPrimitive_iff_finitePlace`), its coordinates
+being `S`-integers that generate the unit ideal of `S.integer K`. Enlarging `S` until
+`S.integer K` is a principal ideal domain makes every nonzero finite tuple `S`-primitive after one
+scaling, so the height of every point of projective space over `K` is computed by the infinite
+places and a single finite set of finite places
+(`NumberField.exists_finset_superset_forall_exists_mulHeight_eq`). This is the normalisation with
+which Bombieri and Gubler open the proof of the `S`-integral form of the Subspace Theorem.
 
 ## Main results
 
@@ -38,7 +38,7 @@ of the Subspace Theorem.
   `NumberField.mulHeight_eq_prod_of_isPrimitive`: equality when the local sup norms outside `S`
   are `1`, in particular for an `S`-primitive tuple.
 * `NumberField.exists_finset_superset_forall_exists_mulHeight_eq`: every finite `S` is contained
-  in a finite `S'` such that every nonzero tuple has a nonzero scalar multiple which is
+  in a finite `S'` such that every nonzero finite tuple has a nonzero scalar multiple which is
   `S'`-primitive, and whose local sup norms over the infinite places and `S'` multiply to the
   height.
 
@@ -135,10 +135,10 @@ theorem mulHeight_eq_prod_of_isPrimitive (S : Finset (HeightOneSpectrum (𝓞 K)
     (Set.isPrimitive_iff_finitePlace _ hx.ne_zero).mp hx v (by simpa using hv)
 
 /-- **The height of every point is computed by finitely many places.** Every finite set `S` of
-finite places is contained in a finite set `S'` such that every nonzero tuple has a nonzero scalar
-multiple `c • x` which is `S'`-primitive, so that the height of `x` is the product of the local
-sup norms of `c • x` over the infinite places and the places of `S'`. One may take any `S'` whose
-`S'`-integers are a principal ideal domain. -/
+finite places is contained in a finite set `S'` such that every nonzero finite tuple has a nonzero
+scalar multiple `c • x` which is `S'`-primitive, so that the height of `x` is the product of the
+local sup norms of `c • x` over the infinite places and the places of `S'`. One may take any `S'`
+whose `S'`-integers are a principal ideal domain. -/
 theorem exists_finset_superset_forall_exists_mulHeight_eq (S : Finset (HeightOneSpectrum (𝓞 K))) :
     ∃ S' : Finset (HeightOneSpectrum (𝓞 K)), S ⊆ S' ∧ ∀ x : ι → K, x ≠ 0 →
       ∃ c : K, c ≠ 0 ∧ (S' : Set (HeightOneSpectrum (𝓞 K))).IsPrimitive (c • x) ∧
@@ -163,8 +163,10 @@ example [Nonempty ι] :
         ∏ v ∈ (∅ : Finset (HeightOneSpectrum (𝓞 K))), ⨆ _ : ι, FinitePlace.mk v (2 : K) := by
   have h2 : ∀ w : InfinitePlace K, w (2 : K) = 2 := fun w ↦ by simpa using w.map_natCast 2
   have hlhs : mulHeight (fun _ : ι ↦ (2 : K)) = 1 := by
-    rw [show (fun _ : ι ↦ (2 : K)) = (2 : K) • (1 : ι → K) by funext; simp,
-      mulHeight_smul_eq_mulHeight _ two_ne_zero, mulHeight_one]
+    have h2one : (fun _ : ι ↦ (2 : K)) = (2 : K) • (1 : ι → K) := by
+      funext
+      simp
+    rw [h2one, mulHeight_smul_eq_mulHeight _ two_ne_zero, mulHeight_one]
   rw [hlhs, Finset.prod_empty, mul_one]
   simp_rw [ciSup_const, h2]
   rw [Finset.prod_pow_eq_pow_sum, ← totalWeight_eq_sum_mult, totalWeight_eq_finrank]

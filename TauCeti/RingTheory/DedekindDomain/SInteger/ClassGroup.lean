@@ -189,7 +189,7 @@ generate the class group of `R`.** -/
 theorem isPrincipalIdealRing_integer_iff :
     IsPrincipalIdealRing (S.integer K) ↔
       Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤ := by
-  rw [isPrincipalIdealRing_iff_subsingleton_classGroup, subsingleton_integer_classGroup_iff]
+  rw [TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup, subsingleton_integer_classGroup_iff]
 
 /-- **Every finite set of primes is contained in a finite set whose `S`-integers are a principal
 ideal domain**, when the class group of `R` is finite (Bombieri–Gubler, Proposition 5.3.6): adjoin

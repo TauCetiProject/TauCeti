@@ -14,7 +14,7 @@ Let `R` be a Dedekind domain with fraction field `K` and `S` a set of height one
 A tuple `x : ι → K` is **`S`-primitive** (`Set.IsPrimitive`) when its coordinates are `S`-integers
 which generate the unit ideal of the ring `𝒪_S = S.integer K`. These are the normalised
 representatives of the points of projective space over `K` with respect to `S`: when `𝒪_S` is a
-principal ideal domain every nonzero tuple has an `S`-primitive scalar multiple
+principal ideal domain every nonzero finite tuple has an `S`-primitive scalar multiple
 (`Set.exists_isPrimitive_smul`), and for a number field the height of an `S`-primitive tuple is
 the product of its local sup norms over the infinite places and the places of `S`.
 
@@ -35,6 +35,8 @@ directions go through the primes of `𝒪_S`, which are the primes of `R` outsid
   when its coordinates generate the unit ideal of `𝒪_S`; `Set.isPrimitive_iff_span_eq_top` is the
   same for a tuple of `K`.
 * `Set.isPrimitive_iff_exists_sum_mul_eq_one`: the same with the linear combination written out.
+* `Set.IsPrimitive.unit_smul` and `Set.isPrimitive_unit_smul_iff`: `S`-primitivity is invariant
+  under scaling by an `S`-unit.
 * `Set.IsPrimitive.exists_valuation_eq_one` and
   `Set.isPrimitive_iff_forall_exists_valuation_eq_one`: the local characterisation.
 * `Set.exists_isPrimitive_smul`: over a principal `𝒪_S`, every nonzero finite tuple has an
@@ -82,7 +84,8 @@ theorem isPrimitive_coe_iff_span_eq_top (a : ι → S.integer K) :
     simp [Function.comp_def]
   rw [IsPrimitive, hrange, ← Submodule.map_span, Ideal.eq_top_iff_one, Submodule.mem_map]
   refine ⟨fun ⟨_, b, hb, hb1⟩ ↦ ?_, fun h ↦ ⟨fun i ↦ (a i).2, 1, h, by simp⟩⟩
-  rwa [show b = 1 from Subtype.ext (by simpa using hb1)] at hb
+  have hb1' : b = 1 := Subtype.ext (by simpa using hb1)
+  rwa [hb1'] at hb
 
 /-- The ideal form of `Set.IsPrimitive` for a tuple of `K`. -/
 theorem isPrimitive_iff_span_eq_top :
@@ -99,6 +102,22 @@ theorem isPrimitive_iff_exists_sum_mul_eq_one [Fintype ι] :
   rw [Submodule.mem_span_range_iff_exists_fun]
   refine ⟨fun ⟨c, hc⟩ ↦ ⟨fun i ↦ c i, fun i ↦ (c i).2, by simpa [Algebra.smul_def] using hc⟩,
     fun ⟨c, hcS, hc⟩ ↦ ⟨fun i ↦ ⟨c i, hcS i⟩, by simpa [Algebra.smul_def] using hc⟩⟩
+
+/-- **Scaling by an `S`-unit preserves `S`-primitivity**: an `S`-unit is a unit of the ring of
+`S`-integers, so it keeps the coordinates `S`-integral and the ideal they generate unchanged. -/
+theorem IsPrimitive.unit_smul (h : S.IsPrimitive x) (u : S.unit K) :
+    S.IsPrimitive (((u : Kˣ) : K) • x) := by
+  let w := unitEquivUnitsInteger S K u
+  have hw : ((u : Kˣ) : K) • x = fun i ↦ (w : S.integer K) • x i := rfl
+  refine ⟨fun i ↦ mul_mem (w : S.integer K).2 (h.1 i), ?_⟩
+  rw [hw, ← smul_set_range, Submodule.span_smul_eq_of_isUnit _ _ w.isUnit]
+  exact h.2
+
+/-- **`S`-primitivity is invariant under scaling by an `S`-unit.** -/
+@[simp]
+theorem isPrimitive_unit_smul_iff (u : S.unit K) :
+    S.IsPrimitive (((u : Kˣ) : K) • x) ↔ S.IsPrimitive x :=
+  ⟨fun h ↦ by simpa [smul_smul] using h.unit_smul u⁻¹, fun h ↦ h.unit_smul u⟩
 
 /-- An `S`-primitive tuple is nonzero. -/
 theorem IsPrimitive.ne_zero (h : S.IsPrimitive x) : x ≠ 0 := by
@@ -168,14 +187,16 @@ theorem exists_isPrimitive_smul [Finite ι] [IsPrincipalIdealRing (S.integer K)]
     rintro rfl
     obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hx
     have h0 := hy' i₀
-    rw [show y i₀ = 0 by simpa using hgy i₀] at h0
+    have hy0 : y i₀ = 0 := by simpa using hgy i₀
+    rw [hy0] at h0
     exact hi₀ ((mul_eq_zero.mp (by exact_mod_cast h0.symm)).resolve_left hb0)
   have hgK : (g : K) ≠ 0 := by simpa using hg0
   -- `g⁻¹ • y = a`, and `1` is a combination of the `a i` because `g` is one of the `y i`
   have hcx : ((g : K)⁻¹ * b) • x = fun i ↦ (a i : K) := by
     funext i
-    rw [Pi.smul_apply, smul_eq_mul, mul_assoc, ← hy' i, ← ha i, MulMemClass.coe_mul,
-      mul_comm (a i : K), ← mul_assoc, inv_mul_cancel₀ hgK, one_mul]
+    have hyi : (y i : K) = a i * g := by rw [← ha i, MulMemClass.coe_mul]
+    rw [Pi.smul_apply, smul_eq_mul, mul_assoc, ← hy' i, hyi]
+    field_simp
   refine ⟨(g : K)⁻¹ * b, mul_ne_zero (inv_ne_zero hgK) hb0, ?_⟩
   rw [hcx, isPrimitive_coe_iff_span_eq_top, Ideal.eq_top_iff_one]
   have hgmem : g ∈ Ideal.span (range y) := by
