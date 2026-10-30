@@ -110,6 +110,15 @@ theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : 
   rw [hodgeStar_apply, Pi.neg_apply, hodgeStar_apply, Manifold.Orientation.orientationAt_neg,
     Orientation.formHodgeStar_neg_orientation]
 
+/-- The Hodge star does not enlarge supports. -/
+theorem tsupport_hodgeStar_subset (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (φ : RoughForm I M ℝ k) :
+    _root_.tsupport (α := E [⋀^Fin l]→L[ℝ] ℝ) (hodgeStar o hkl φ) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ := by
+  refine closure_mono fun x hx hφ ↦ hx ?_
+  rw [hodgeStar_apply]
+  exact (congrArg _ hφ).trans (map_zero _)
+
 end RoughForm
 
 /-- The Hodge star in the frame of a tangent trivialization: at a point `y` of the base set of the
