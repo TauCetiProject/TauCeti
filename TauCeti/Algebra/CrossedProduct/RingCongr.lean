@@ -23,8 +23,9 @@ compatibility theorem records how the two base rings act. `scalarExtensionEquiv`
 identifies the tensor-defined scalar extension with the transported crossed product, with
 explicit pure-tensor, coefficient and basis formulas.
 
-The coordinate construction follows `CrossedProduct.congr` and uses Mathlib's
-`Finsupp.domCongr` and `Finsupp.mapRange.addEquiv`.
+The coordinate construction previously used for `CrossedProduct.congr` and
+`CrossedProduct.uliftEquiv` is generalized here, using Mathlib's `Finsupp.domCongr`
+and `Finsupp.mapRange.addEquiv`.
 
 ## References
 
@@ -104,6 +105,13 @@ theorem comapRingEquiv_symm_inc (x : L) :
   apply (comapRingEquiv c ι π hπ).injective
   simp
 
+/-- The inverse transport is semilinear for the coefficient-ring actions. -/
+@[simp]
+theorem comapRingEquiv_symm_smul (x : L) (a : CrossedProduct c) :
+    (comapRingEquiv c ι π hπ).symm (x • a) =
+      ι x • (comapRingEquiv c ι π hπ).symm a := by
+  simp only [smul_def, map_mul, comapRingEquiv_symm_inc]
+
 /-- Every coordinate is transported by the specified coefficient isomorphism. -/
 @[simp]
 theorem repr_comapRingEquiv (a : CrossedProduct (c.comap (R := R) π ι hπ))
@@ -111,6 +119,15 @@ theorem repr_comapRingEquiv (a : CrossedProduct (c.comap (R := R) π ι hπ))
     (basis c).repr (comapRingEquiv c ι π hπ a) g =
       ι.symm ((basis _).repr a (π.symm g)) := by
   simp [comapRingEquiv, comapAddEquiv, Finsupp.domCongr]
+
+/-- Inverse transport maps every coordinate by the coefficient isomorphism. -/
+@[simp]
+theorem repr_comapRingEquiv_symm (a : CrossedProduct c) (g : M ≃ₐ[R] M) :
+    (basis _).repr ((comapRingEquiv c ι π hπ).symm a) g =
+      ι ((basis c).repr a (π g)) := by
+  apply ι.symm.injective
+  simpa using (repr_comapRingEquiv c ι π hπ
+    ((comapRingEquiv c ι π hπ).symm a) (π g)).symm
 
 /-- Scalar compatibility with a homomorphism of the base rings, stated without choosing
 new algebra instances on either crossed product. -/

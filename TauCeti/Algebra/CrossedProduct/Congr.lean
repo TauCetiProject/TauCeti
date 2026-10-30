@@ -118,13 +118,6 @@ theorem congr_smul (x : L) (a : CrossedProduct c) :
 theorem repr_congr (a : CrossedProduct c) (σ : M ≃ₐ[K] M) :
     (basis d).repr (congr c d e hc a) σ = e ((basis c).repr a (e.autCongr.symm σ)) := by
   simp only [congr, AlgEquiv.trans_apply, AlgEquiv.ofRingEquiv_apply,
-    repr_cocycleEqEquiv]
-  apply e.symm.injective
-  rw [e.symm_apply_apply]
-  simpa only [RingEquiv.apply_symm_apply, MulEquiv.symm_symm, MulEquiv.apply_symm_apply,
-    AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv] using
-    (repr_comapRingEquiv c e.toRingEquiv e.autCongr.symm (autCongr_symm_compat e)
-      ((comapRingEquiv c e.toRingEquiv e.autCongr.symm
-        (autCongr_symm_compat e)).symm a) (e.autCongr.symm σ)).symm
+    repr_cocycleEqEquiv, repr_comapRingEquiv_symm, AlgEquiv.coe_toRingEquiv]
 
 end TauCeti.CrossedProduct
