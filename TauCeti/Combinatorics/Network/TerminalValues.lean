@@ -43,66 +43,8 @@ variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
 
 namespace BoundedFlow
 
-section Minimum
-
-variable [Preorder K] {lo hi : Assignment Q K} {s t : V}
-
-/-- A bounded terminal assignment is minimum when no other feasible assignment has smaller
-terminal value. No sign condition is imposed on that value. -/
-def IsMinimum (f : BoundedFlow lo hi s t) : Prop :=
-  IsMinOn val Set.univ f
-
-theorem isMinimum_iff {f : BoundedFlow lo hi s t} :
-    f.IsMinimum ↔ ∀ g : BoundedFlow lo hi s t, f.val ≤ g.val :=
-  isMinOn_univ_iff
-
-end Minimum
-
-section Swap
-
-variable [PartialOrder K] [IsOrderedAddMonoid K]
-variable {lo hi : Assignment Q K} {s t : V}
-
-/-- Exchanging the terminals exchanges minimum and maximum assignments. -/
-@[simp]
-theorem isMaximum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMaximum ↔ f.IsMinimum := by
-  rw [isMaximum_iff, isMinimum_iff]
-  constructor
-  · intro h g
-    simpa using h g.swap
-  · intro h g
-    simpa using neg_le_neg (h g.swap)
-
-/-- Exchanging the terminals exchanges maximum and minimum assignments. -/
-@[simp]
-theorem isMinimum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMinimum ↔ f.IsMaximum := by
-  rw [← isMaximum_swap, swap_swap]
-
-end Swap
-
 variable [LinearOrder K] [IsOrderedAddMonoid K]
 variable {lo hi : Assignment Q K} {s t : V}
-
-/-- A bounded terminal assignment is minimum exactly when its residual network has no positive
-path from the sink to the source. -/
-theorem isMinimum_iff_not_positiveReachable (hst : s ≠ t) (f : BoundedFlow lo hi s t) :
-    f.IsMinimum ↔ ¬PositiveReachable (residualCapacity lo hi f.toFun) t s := by
-  rw [← isMaximum_swap, isMaximum_iff_not_positiveReachable hst.symm, swap_toFun]
-
-/-- A minimum bounded terminal assignment attains a lower cut bound. -/
-theorem IsMinimum.exists_val_eq_neg_cutBound_compl [DecidableEq V] (hst : s ≠ t)
-    {f : BoundedFlow lo hi s t} (hf : f.IsMinimum) :
-    ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = -cutBound lo hi Sᶜ := by
-  obtain ⟨T, ht, hs, hT⟩ := ((isMaximum_swap f).2 hf).exists_val_eq_cutBound hst.symm
-  refine ⟨Tᶜ, by simpa using hs, by simpa using ht, ?_⟩
-  simpa using congrArg Neg.neg hT
-
-/-- A feasible bounded terminal problem has a minimum assignment, including when its values
-are all negative. -/
-theorem exists_isMinimum (f : BoundedFlow lo hi s t) :
-    ∃ g : BoundedFlow lo hi s t, g.IsMinimum := by
-  obtain ⟨g, hg⟩ := f.swap.exists_isMaximum
-  exact ⟨g.swap, (isMaximum_swap _).1 (by simpa using hg)⟩
 
 /-- **Subgroup-valued intermediate values.** Between any two feasible terminal values, every
 value in an additive subgroup containing the bounds has a realizing assignment in that subgroup.
@@ -117,29 +59,9 @@ theorem exists_val_eq_mem (f g : BoundedFlow lo hi s t)
   have hsum (S : Finset V) : ∑ v ∈ S, b v =
       (if t ∈ S then q else 0) - (if s ∈ S then q else 0) := by
     simp [b, sum_sub_distrib, sum_pi_single']
-  have hbound (a : BoundedFlow lo hi s t) (S : Finset V) :
-      ((if t ∈ S then a.val else 0) - (if s ∈ S then a.val else 0)) +
-        arrowSum lo S Sᶜ ≤ arrowSum hi Sᶜ S := by
-    have h := ExcessFlow.sum_add_arrowSum_le
-      (⟨a.toFun, a.mem_Icc, rfl⟩ : ExcessFlow lo hi (excessAt a.toFun)) S
-    simpa [a.excessAt_eq_single_sub_single, sum_sub_distrib, sum_pi_single'] using h
-  have hcut (S : Finset V) : (∑ v ∈ S, b v) + arrowSum lo S Sᶜ ≤ arrowSum hi Sᶜ S := by
-    rw [hsum]
-    by_cases hs : s ∈ S <;> by_cases ht : t ∈ S
-    · simpa [hs, ht] using hbound f S
-    · simp only [ite_eq_right ht, ite_eq_left hs, zero_sub]
-      calc
-        -q + arrowSum lo S Sᶜ ≤ -f.val + arrowSum lo S Sᶜ := add_le_add (neg_le_neg hfq) le_rfl
-        _ ≤ arrowSum hi Sᶜ S := by
-          simpa only [ite_eq_right ht, ite_eq_left hs, zero_sub] using hbound f S
-    · simp only [ite_eq_left ht, ite_eq_right hs, sub_zero]
-      calc
-        q + arrowSum lo S Sᶜ ≤ g.val + arrowSum lo S Sᶜ := add_le_add hqg le_rfl
-        _ ≤ arrowSum hi Sᶜ S := by
-          simpa only [ite_eq_left ht, ite_eq_right hs, sub_zero] using hbound g S
-    · simpa [hs, ht] using hbound f S
   obtain ⟨h, hh⟩ := ExcessFlow.exists_mem_of_forall_cut (f.mem_Icc.1.trans f.mem_Icc.2)
-    (b := b) (by simpa using hsum univ) hcut H hlo hhi (fun v ↦ by
+    (b := b) (by simpa using hsum univ)
+    (sum_single_sub_single_add_arrowSum_le f g hfq hqg) H hlo hhi (fun v ↦ by
       dsimp [b]
       exact H.sub_mem (by by_cases hv : v = t <;> simp [hv, hq])
         (by by_cases hv : v = s <;> simp [hv, hq]))
@@ -181,8 +103,7 @@ theorem range_val_eq_Icc_pairMinimumValue [DecidableEq V] (hst : s ≠ t)
   obtain ⟨M, hM⟩ := f.exists_isMaximum
   rw [range_val_eq_Icc hm hM, hM.val_eq_pairMinimumValue hst]
   have hmval := ((isMaximum_swap m).2 hm).val_eq_pairMinimumValue hst.symm
-  simpa using congrArg (fun q ↦ Set.Icc q (TerminalCut.pairMinimumValue (cutBound lo hi) s t))
-    (by simpa using congrArg Neg.neg hmval)
+  rw [← neg_neg m.val, ← val_swap, hmval]
 
 /-- **Integral extrema without an integral starting assignment.** If the bounds take values
 in an additive subgroup, a feasible bounded terminal problem has both minimum and maximum
@@ -195,8 +116,7 @@ theorem exists_isMinimum_isMaximum_mem (f : BoundedFlow lo hi s t) (H : AddSubgr
   by_cases hst : s = t
   · obtain ⟨g, -, hg⟩ := exists_val_eq_mem f f le_rfl le_rfl H hlo hhi
       (by simp [f.val_eq_zero_of_eq hst])
-    exact ⟨g, g, isMinimum_iff.2 (fun h ↦ by simp [val_eq_zero_of_eq hst]),
-      isMaximum_of_eq hst g, hg, hg⟩
+    exact ⟨g, g, isMinimum_of_eq hst g, isMaximum_of_eq hst g, hg, hg⟩
   have hcut (S : Finset V) : cutBound lo hi S ∈ H := by
     rw [cutBound_def]
     exact H.sub_mem (arrowSum_mem hhi S Sᶜ) (arrowSum_mem hlo Sᶜ S)
@@ -242,10 +162,10 @@ private theorem valueExampleFlow_val (q : ℚ) (hq : q ∈ Set.Icc (-5 : ℚ) (-
 
 private theorem valueExampleFlow_isMinimum :
     (valueExampleFlow (-5) (by norm_num)).IsMinimum := by
-  refine BoundedFlow.isMinimum_iff.2 fun g ↦ ?_
-  have h := g.neg_cutBound_compl_le_val (S := {false}) (by simp) (by simp)
-  simpa [valueExampleFlow_val, cutBound_def, arrowSum_eq_sum_ite,
-    valueExampleLower, valueExampleUpper] using h
+  apply (valueExampleFlow (-5) (by norm_num)).isMinimum_of_val_eq_neg_cutBound_compl
+    (S := {false}) (by simp) (by simp)
+  simp [valueExampleFlow_val, cutBound_def, arrowSum_eq_sum_ite,
+    valueExampleLower, valueExampleUpper]
 
 private theorem valueExampleFlow_isMaximum :
     (valueExampleFlow (-2) (by norm_num)).IsMaximum := by

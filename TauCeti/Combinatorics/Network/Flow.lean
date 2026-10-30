@@ -218,6 +218,35 @@ theorem neg_cutBound_compl_le_val [DecidableEq V] (f : BoundedFlow lo hi s t) {S
   rw [f.val_eq_arrowSum_sub hs ht, cutBound_def, compl_compl, neg_sub]
   exact sub_le_sub (arrowSum_mono f.mem_Icc.1 _ _) (arrowSum_mono f.mem_Icc.2 _ _)
 
+/-- The terminal excess of a bounded assignment satisfies the incoming cut inequality on every
+vertex set, whether or not it separates the terminals. -/
+theorem terminal_excess_add_arrowSum_le [DecidableEq V] (f : BoundedFlow lo hi s t)
+    (S : Finset V) :
+    ((if t ∈ S then f.val else 0) - (if s ∈ S then f.val else 0)) +
+      arrowSum lo S Sᶜ ≤ arrowSum hi Sᶜ S := by
+  have hex := sum_excessAt_eq_arrowSum_sub f.toFun S
+  rw [f.excessAt_eq_single_sub_single] at hex
+  simp only [Pi.sub_apply, sum_sub_distrib, sum_pi_single'] at hex
+  rw [hex, sub_add_eq_add_sub, sub_le_iff_le_add]
+  exact add_le_add (arrowSum_mono f.mem_Icc.2 Sᶜ S) (arrowSum_mono f.mem_Icc.1 S Sᶜ)
+
+/-- A value between two feasible terminal values satisfies every incoming cut inequality for
+its terminal demand. -/
+theorem sum_single_sub_single_add_arrowSum_le [DecidableEq V]
+    (f g : BoundedFlow lo hi s t) {q : K} (hfq : f.val ≤ q) (hqg : q ≤ g.val)
+    (S : Finset V) :
+    (∑ v ∈ S, (Pi.single t q - Pi.single s q : V → K) v) + arrowSum lo S Sᶜ ≤
+      arrowSum hi Sᶜ S := by
+  have hf := f.terminal_excess_add_arrowSum_le S
+  have hg := g.terminal_excess_add_arrowSum_le S
+  simp only [Pi.sub_apply, sum_sub_distrib, sum_pi_single']
+  by_cases hs : s ∈ S <;> by_cases ht : t ∈ S <;>
+    simp only [hs, ht, ↓reduceIte, sub_self, zero_sub, sub_zero, zero_add] at *
+  · exact hf
+  · exact (add_le_add (neg_le_neg_iff.mpr hfq) le_rfl).trans hf
+  · exact (add_le_add hqg le_rfl).trans hg
+  · exact hf
+
 /-- The *residual update* of a bounded `s`–`t` assignment `f` by a residual `s`–`t` assignment `r`
 between zero and the residual capacities of `f`: the value on an arrow `e` becomes
 `f e + r e⁺ - r e⁻`. -/
