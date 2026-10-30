@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
 
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
@@ -71,17 +72,6 @@ section Defs
 variable {𝕜 E H M G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M]
   [ChartedSpace H M] [Group G] [MulAction G M] {x : M}
-
-/-- The chain rule at a fixed point: if `f x = x`, the derivative of `g ∘ f` at `x` is the
-composite of the derivatives of `g` and `f` at `x`, the tangent space at `f x` being that at `x`. -/
-theorem mfderiv_comp_of_apply_eq_self {f g : M → M} (hg : MDifferentiableAt I I g x)
-    (hf : MDifferentiableAt I I f x) (hfx : f x = x) :
-    mfderiv I I (g ∘ f) x = (mfderiv I I g x).comp (mfderiv I I f x) := by
-  have h := mfderiv_comp_of_eq hg hf hfx
-  -- `mfderiv_comp_of_eq` takes the derivative of `g` at `f x`; replace that point by `x`.
-  generalize hz : f x = z at h
-  obtain rfl : z = x := hz.symm.trans hfx
-  exact h
 
 /-- The tangent representation of the stabilizer of `x` on `T_x M`: an element `g` of the
 stabilizer acts by the derivative of `g • ·` at `x`, which maps `T_x M` to `T_{g • x} M = T_x M`.
