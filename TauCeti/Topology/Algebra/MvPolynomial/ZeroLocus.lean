@@ -88,13 +88,8 @@ end CommSemiring
 /-- The level-set zero locus of a family is Mathlib's zero locus of the ideal it generates. -/
 theorem affineZeroLocus_eq_zeroLocus {K σ ι : Type*} [Field K] {p : ι → MvPolynomial σ K} :
     affineZeroLocus p = zeroLocus K (Ideal.span (range p)) := by
+  rw [zeroLocus_span]
   ext x
-  rw [mem_affineZeroLocus, mem_zeroLocus_iff]
-  refine ⟨fun h q hq ↦ ?_, fun h k ↦ h _ (Ideal.subset_span (mem_range_self k))⟩
-  have hle : Ideal.span (range p) ≤ RingHom.ker (eval x) := by
-    rw [Ideal.span_le]
-    rintro _ ⟨k, rfl⟩
-    exact h k
-  simpa using hle hq
+  simp
 
 end TauCeti

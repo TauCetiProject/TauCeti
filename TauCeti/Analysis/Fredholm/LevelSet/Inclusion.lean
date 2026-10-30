@@ -74,14 +74,7 @@ theorem range_mfderiv_coe_levelSet (z : ↥{x | f x = c}) :
     ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
       (hindex z.1 z.2))
   rw [(hasMFDerivAt_coe_levelSet hf hFred hsurj hindex z).mfderiv]
-  ext v
-  simp only [LinearMap.mem_range]
-  -- The composite applied to `w` is, by definition of `ContinuousLinearMap.comp` and of the
-  -- subtype inclusion, the underlying vector of `K.symm w`.
-  constructor
-  · rintro ⟨w, rfl⟩
-    exact (K.symm w).2
-  · intro hv
-    exact ⟨K ⟨v, hv⟩, congrArg Subtype.val (K.symm_apply_apply ⟨v, hv⟩)⟩
+  exact (LinearMap.range_comp_of_range_eq_top (D z.1).ker.subtype
+    K.symm.toLinearEquiv.range).trans (D z.1).ker.range_subtype
 
 end TauCeti
