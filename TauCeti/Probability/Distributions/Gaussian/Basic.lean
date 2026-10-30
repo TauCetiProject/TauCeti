@@ -23,6 +23,8 @@ relation and the Gaussian Hermite basis both do).
 ## Main statements
 
 * `TauCeti.Probability.gaussianPDFReal_zero_one` — `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`.
+* `TauCeti.Probability.gaussianPDFReal_eq_gaussianPDFReal_zero_one` — standardization: for a
+  nonzero variance, `gaussianPDFReal m v x = φ ((x - m) / √v) / √v` with `φ = gaussianPDFReal 0 1`.
 * `TauCeti.Probability.tendsto_mul_gaussianPDFReal_zero_one_cocompact` — `x φ(x) → 0` as
   `|x| → ∞`, for the standard Gaussian density `φ`.
 -/
@@ -32,7 +34,7 @@ public section
 namespace TauCeti.Probability
 
 open Filter ProbabilityTheory Real
-open scoped Topology
+open scoped Topology NNReal
 
 /-- The probability-density form of the standard Gaussian weight:
 `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`. -/
@@ -41,6 +43,15 @@ theorem gaussianPDFReal_zero_one (x : ℝ) :
   rw [gaussianPDFReal]
   simp only [NNReal.coe_one, mul_one, sub_zero]
   rw [show -x ^ 2 / 2 = -(x ^ 2 / 2) from by ring]
+
+/-- Standardization of the Gaussian density: for a nonzero variance, the density of `N(m, v)` at
+`x` is `φ ((x - m) / √v) / √v`, where `φ = gaussianPDFReal 0 1` is the standard Gaussian density. -/
+theorem gaussianPDFReal_eq_gaussianPDFReal_zero_one (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    gaussianPDFReal m v x = gaussianPDFReal 0 1 ((x - m) / √(v : ℝ)) / √(v : ℝ) := by
+  have hv' : (0 : ℝ) < v := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv)
+  simp only [gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero, div_pow, Real.sq_sqrt hv'.le,
+    Real.sqrt_mul (by positivity : (0 : ℝ) ≤ 2 * π)]
+  field_simp
 
 /-- The standard Gaussian density decays faster than `1 / |x|`: `x φ(x) → 0` as `|x| → ∞`. -/
 theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :
