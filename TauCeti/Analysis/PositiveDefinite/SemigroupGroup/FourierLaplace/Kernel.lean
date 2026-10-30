@@ -176,7 +176,7 @@ theorem exists_representsLaplaceFourier_iff_exists_timeKernel
   have hsnd : μ.snd = bochnerMeasure fun a => F (0, a) := by
     rw [← spatialSlice_zero, hμ.spatialSlice_eq]
   refine ⟨(μ.map Prod.swap).condKernel, inferInstance, fun t => ?_⟩
-  rw [← hsnd, ← spatialSlice_swapCompProd, swapCompProd_snd_condKernel, hμ.spatialSlice_eq]
+  rw [← hsnd, ← spatialSlice_swapCompProd, μ.swapCompProd_snd_condKernel, hμ.spatialSlice_eq]
 
 end Reduction
 
