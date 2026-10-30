@@ -14,8 +14,8 @@ public import TauCeti.Algebra.Order.Field.Clipping
 
 `MeasureTheory.MemLp.max_min` shows that clipping a real `Lᵖ` function to `[-M, M]`, for
 `0 ≤ M`, preserves `Lᵖ` membership for any measure. For `M > 0`,
-`MeasureTheory.integral_sq_sub_max_min_le` bounds the integrated squared clipping error by
-the fourth moment divided by `16 M²`, using the pointwise inequality from
+`MeasureTheory.Integrable.integral_sq_sub_max_min_le` bounds the integrated squared clipping
+error by the fourth moment divided by `16 M²`, using the pointwise inequality from
 `TauCeti.Algebra.Order.Field.Clipping`. This controls the `L²` error of clipping Gaussian
 linear observables in the truncation proof of Grothendieck's inequality.
 
@@ -44,7 +44,7 @@ theorem MemLp.max_min {p : ℝ≥0∞} (hf : MemLp f p μ) {M : ℝ} (hM : 0 ≤
   exact Filter.Eventually.of_forall fun x ↦ TauCeti.abs_max_min_le_abs hM (f x)
 
 /-- The squared `L²` clipping error is bounded by the fourth moment divided by `16 M²`. -/
-theorem integral_sq_sub_max_min_le
+theorem Integrable.integral_sq_sub_max_min_le
     (hf₄ : Integrable (fun x ↦ f x ^ 4) μ) {M : ℝ} (hM : 0 < M) :
     (∫ x, (f x - max (-M) (min M (f x))) ^ 2 ∂μ) ≤
       (∫ x, f x ^ 4 ∂μ) / (16 * M ^ 2) := by

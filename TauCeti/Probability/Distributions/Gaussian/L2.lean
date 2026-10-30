@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
-import TauCeti.Probability.Distributions.Gaussian.Moments
+import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.Probability.Distributions.Gaussian.MixedMoments
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Clipping
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -53,12 +54,10 @@ theorem memLp_inner_stdGaussian (x : E) (p : ℝ≥0∞) (hp : p ≠ ∞) :
 theorem integral_pow_two_mul_inner_stdGaussian (x : E) (n : ℕ) :
     (∫ y, ⟪x, y⟫_ℝ ^ (2 * n) ∂stdGaussian E) =
       ‖x‖ ^ (2 * n) * (2 * n - 1 : ℕ)‼ := by
-  have hmap := IsGaussian.map_eq_gaussianReal (μ := stdGaussian E) (innerSL ℝ x)
-  rw [integral_strongDual_stdGaussian, variance_dual_stdGaussian, innerSL_apply_norm] at hmap
-  have h := integral_sub_pow_two_mul_gaussianReal 0 (‖x‖ ^ 2).toNNReal n
-  rw [← hmap, integral_map (by fun_prop) (by fun_prop)] at h
-  simpa only [sub_zero, Real.coe_toNNReal _ (sq_nonneg _), pow_mul,
-    innerSL_apply_apply] using h
+  have h := IsGaussian.integral_pow_two_mul_sub_dual (stdGaussian E) (innerSL ℝ x) n
+  rw [covarianceBilinDual_self_eq_variance IsGaussian.memLp_two_id,
+    variance_dual_stdGaussian, innerSL_apply_norm] at h
+  simpa only [id_eq, integral_id_stdGaussian, sub_zero, innerSL_apply_apply, pow_mul] using h
 
 /-- The second moment of a standard Gaussian linear observable. -/
 theorem integral_sq_inner_stdGaussian (x : E) :
@@ -149,7 +148,7 @@ theorem norm_sub_clippedGaussianL2_sq_le (x : E) {M : ℝ} (hM : 0 < M) :
       simp only [h₁, Pi.sub_apply, h₂, h₃, Real.norm_eq_abs, sq_abs]
     _ ≤ _ := by
       simpa only [innerSL_apply_apply, integral_pow_four_inner_stdGaussian] using
-        integral_sq_sub_max_min_le hf₄ hM
+        hf₄.integral_sq_sub_max_min_le hM
 
 /-- The uniform clipping-error bound for Gaussian observables of unit-ball vectors. -/
 theorem norm_sub_clippedGaussianL2_sq_le_of_norm_le_one {x : E} (hx : ‖x‖ ≤ 1)
