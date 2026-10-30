@@ -71,13 +71,9 @@ This advances the conformal-mapping roadmap's L2 target "the hyperbolic / Poinca
 instance and its topology; being geodesic is a further basic property of that metric, the one
 that makes hyperbolic lines and segments available in this model. (It is not by itself a
 characterisation of the hyperbolic plane: many unrelated metric spaces are geodesic.) It reuses
-Tau Ceti's pseudo-hyperbolic, hyperbolic-distance and disc-automorphism API. As with the rest of
-the L0--L3 conformal-mapping material, it is coordinated with the upstream Mathlib
-Riemann-mapping effort leanprover-community/mathlib4#33505, whose preceding human-curated work in
-`Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean` this file
-duplicates nothing of; should a human-curated Poincaré-disc metric land upstream, this material
-should be refactored onto it. Mathlib has the hyperbolic metric on the upper half-plane
-(`Analysis/Complex/UpperHalfPlane`), but no Poincaré metric on the disc and no geodesics for it.
+Tau Ceti's pseudo-hyperbolic, hyperbolic-distance and disc-automorphism API. Mathlib has the
+hyperbolic metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane`), but no Poincaré
+metric on the disc and no geodesics for it.
 -/
 
 public section

@@ -61,10 +61,7 @@ avoids the `im`-versus-defect bookkeeping.
 
 This advances the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on `𝔻`"
 (see `ConformalMapping/README.md`), completing the basic API of `hyperbolicDist` with the closed
-forms that the geometric statements of `Conformal/Poincare/` are usually quoted in. As with the
-rest of the L0--L3 conformal-mapping material it is coordinated with the upstream Mathlib RMT
-effort leanprover-community/mathlib4#33505, which contains no Poincaré metric on the disc: should
-a human-curated disc metric land in Mathlib, these formulas are to be refactored onto it.
+forms that the geometric statements of `Conformal/Poincare/` are usually quoted in.
 -/
 
 public section

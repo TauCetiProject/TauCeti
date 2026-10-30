@@ -31,10 +31,7 @@ This advances the conformal-mapping roadmap's L2 disc-automorphism target
 `Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`"); it is the rotation rigidity that pins down the automorphisms
 fixing the origin, and is the step Mathlib's `Analysis/Complex/Schwarz.lean` lists as an open
 TODO ("Prove that any diffeomorphism of the unit disk to itself is a Möbius map").  It reuses
-Mathlib's Schwarz lemma throughout and adds no new complex-analytic input.  As with the rest of
-the L0--L3 conformal-mapping material, it is coordinated with the upstream Mathlib RMT effort
-leanprover-community/mathlib4#33505 and should be refactored to upstream API if that work lands a
-human-curated disc-automorphism classification.
+Mathlib's Schwarz lemma throughout and adds no new complex-analytic input.
 -/
 
 public section

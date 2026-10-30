@@ -22,8 +22,7 @@ the conformal-mapping roadmap.
 
 The construction follows Ahlfors, *Complex Analysis*, Chapters 4--6. It reuses Mathlib's
 topological piecewise API and Euclidean inversion, together with Tau Ceti's line-removability and
-circle-reflection conjugation theorems. Layer L4 is absent from the upstream Mathlib
-Riemann-mapping draft mathlib4#33505.
+circle-reflection conjugation theorems.
 -/
 
 public section

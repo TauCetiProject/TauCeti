@@ -52,10 +52,7 @@ L0–L6 to remain scalar; the Banach-valued generalization is therefore outside 
 
 The Cauchy foundations consumed here are Mathlib's: the rectangle Cauchy–Goursat theorem
 (`Analysis/Complex/CauchyIntegral.lean`) and the disc Morera theorem
-(`Analysis/Complex/HasPrimitives.lean`). Layer L4 of the roadmap is absent from the upstream
-Mathlib Riemann-mapping effort leanprover-community/mathlib4#33505, so this is new Lean
-formalization rather than a shim; any shared foundational API should still be refactored onto
-Mathlib's once that human-curated work lands.
+(`Analysis/Complex/HasPrimitives.lean`).
 
 ## References
 

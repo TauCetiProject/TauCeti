@@ -137,11 +137,7 @@ analogue in a general normed space.
 
 This carries the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on `𝔻`"
 (see `ConformalMapping/README.md`) onto its metric geometry, completing the basic ball API of that
-metric. As with the rest of the L0–L3 conformal-mapping material it is coordinated with the
-upstream Mathlib Riemann mapping effort leanprover-community/mathlib4#33505, which contains the
-preceding human-curated work along with `Analysis/Complex/RiemannMapping.lean` and
-`Analysis/Complex/BranchLogRoot.lean`; none of that material describes the hyperbolic metric on
-the disc.
+metric.
 
 The closest formal precedent anywhere is Mathlib's *upper half-plane* model,
 `Mathlib/Analysis/Complex/UpperHalfPlane/Metric.lean`, which does carry the analogous ball

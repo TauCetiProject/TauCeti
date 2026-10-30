@@ -19,11 +19,6 @@ composes it with Mathlib's `Circle` action on `Complex.UnitDisc`.
 
 This advances the conformal-mapping roadmap's L2 disc-automorphism target.  It reuses
 Mathlib's `Circle` action on `Complex.UnitDisc` and Tau Ceti's `unitDiscMoebiusEquiv`.
-
-This L2 material is coordinated with the upstream Mathlib RMT effort in
-leanprover-community/mathlib4#33505.  Mathlib already contains the preceding human-curated
-work in `Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`;
-this file only adds the small discoverable API around `Complex.UnitDisc`.
 -/
 
 public section

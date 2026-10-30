@@ -88,9 +88,7 @@ equality cases off the injectivity of `artanh`.
 
 This advances the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
 `𝔻`" (see `ConformalMapping/README.md`). It reuses Tau Ceti's pseudo-hyperbolic, Moebius and
-Schwarz--Pick API. As with the rest of the L0--L3 conformal-mapping material, it is
-coordinated with the upstream Mathlib RMT effort leanprover-community/mathlib4#33505 and should
-be refactored to upstream API if that work lands a human-curated Poincaré metric.
+Schwarz--Pick API.
 -/
 
 public section

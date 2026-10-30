@@ -45,9 +45,9 @@ The remaining step is to show that the boundary piece of the crosscut neighbourh
 small Jordan curve chosen here. The existing crosscut criterion then bounds the cut-off image
 piece and gives the continuous extension of the conformal map.
 
-Layer L5 is absent from Mathlib's in-progress Riemann-mapping development, and the pinned Mathlib
-has no Jordan-curve vocabulary. The proof follows the crosscut argument in Caratheodory's 1913
-paper and the presentations in Pommerenke, Section 2.2--2.3, and Duren, Chapter 3.
+The pinned Mathlib has no Jordan-curve vocabulary. The proof follows the crosscut argument in
+Caratheodory's 1913 paper and the presentations in Pommerenke, Section 2.2--2.3, and Duren,
+Chapter 3.
 
 ## References
 

@@ -39,11 +39,9 @@ validating that the Poincaré distance is the automorphism-invariant metric:
 This completes the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
 `𝔻`" (see `ConformalMapping/README.md`), discharging the `MetricSpace`-instance step that the
 docstrings of `HyperbolicDistance.lean` and `HyperbolicTriangle.lean` deferred as future work.
-It reuses Tau Ceti's hyperbolic-distance and disc-automorphism API. As with the rest of the
-L0--L3 conformal-mapping material, it is coordinated with the upstream Mathlib RMT effort
-leanprover-community/mathlib4#33505 and should be refactored to upstream API if that work lands
-a human-curated Poincaré metric. Mathlib has the hyperbolic metric on the upper half-plane
-(`Analysis/Complex/UpperHalfPlane`), but no Poincaré metric on the disc.
+It reuses Tau Ceti's hyperbolic-distance and disc-automorphism API. Mathlib has the hyperbolic
+metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane`), but no Poincaré metric on the
+disc.
 -/
 
 public section

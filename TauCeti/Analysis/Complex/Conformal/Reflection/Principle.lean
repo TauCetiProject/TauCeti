@@ -41,11 +41,6 @@ the real axis, holomorphic above it and vanishing on it vanishes identically,
 `TauCeti.eqOn_zero_im_preimage_uIcc_of_zero_on_real_axis`, for strips on either side of the
 axis, determines a bounded holomorphic function on a strip by its values on one edge, as for
 the KMS functions of C⋆-algebra dynamics.
-
-As with the rest of the L0–L3/L4 conformal-mapping material, this is coordinated with the upstream
-Mathlib Riemann-mapping effort leanprover-community/mathlib4#33505; L4 (reflection) is not part of
-that draft, so this is genuinely new Lean formalization, but any shared foundational API should be
-refactored to Mathlib's once it lands.
 -/
 
 public section

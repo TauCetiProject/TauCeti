@@ -108,10 +108,8 @@ pinned Mathlib has for complex manifolds but which this area does not use anywhe
 Mathlib has the étalé space of a presheaf (`Mathlib/Topology/Sheaves/EtaleSpace.lean`) and the
 local-predicate construction of a sheaf of functions
 (`Mathlib/Topology/Sheaves/LocalPredicate.lean`), both consumed here; it has no sheaf of
-holomorphic functions and no étalé space of holomorphic germs. The in-progress human-curated
-Riemann-mapping effort [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505)
-contains no continuation or monodromy material, so nothing here is a shim for it. Mathlib's sheaf
-of smooth functions on a manifold (`Mathlib/Geometry/Manifold/Sheaf/Smooth.lean`) reaches the same
+holomorphic functions and no étalé space of holomorphic germs. Mathlib's sheaf of smooth
+functions on a manifold (`Mathlib/Geometry/Manifold/Sheaf/Smooth.lean`) reaches the same
 `LocalPredicate` interface through the structure-groupoid machinery, but is fixed at smoothness
 `∞`; running that route at analytic smoothness would put the charted-space structure of `ℂ` and a
 translation between `ContMDiff` and `AnalyticOnNhd` between this file and the identity theorem it

@@ -34,10 +34,7 @@ automorphisms bundled as `unitDiscStandardAutomorphismEquiv`.
 
 This advances the conformal-mapping roadmap's L2 Schwarz--Pick / disc-automorphism target,
 building directly on Tau Ceti's `pseudoHyperbolicExpr_map_le` (Mathlib's Schwarz lemma) and
-the unit-disc Moebius / automorphism API.  As with the rest of the L0--L3 conformal-mapping
-material, it is coordinated with the upstream Mathlib RMT effort
-leanprover-community/mathlib4#33505 and should be refactored to upstream API if that work
-lands a human-curated Schwarz--Pick theorem.
+the unit-disc Moebius / automorphism API.
 -/
 
 public section

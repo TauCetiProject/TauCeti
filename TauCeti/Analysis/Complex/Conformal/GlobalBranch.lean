@@ -74,9 +74,7 @@ in `ℂ`.
 This completes the L4 target "the monodromy theorem (continuations along homotopic paths agree)"
 of `TauCetiRoadmap/ConformalMapping/README.md` with the statement that layer is built for: the
 passage from local germ data to a single-valued function on a simply connected domain, which is
-what the reflection and continuation layers hand to their consumers. Layer L4 lies outside the
-roadmap's shim-deletion clause for the upstream Riemann-mapping effort
-(leanprover-community/mathlib4#33505), which contains no continuation or monodromy material.
+what the reflection and continuation layers hand to their consumers.
 
 Mathlib has the abstract monodromy statement `IsLocalHomeomorph.monodromy_theorem` and the lifting
 criterion `IsCoveringMap.existsUnique_continuousMap_lifts` for a simply connected base

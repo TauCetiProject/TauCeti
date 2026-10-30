@@ -76,10 +76,9 @@ unconditional. `TauCeti/Analysis/Complex/ContinuousLog/Basic.lean` names the rem
 statement on the classical route through Janiszewski's theorem — the converse direction — and
 this file supplies it, so `TauCeti.janiszewski` is available to that route as well.
 
-Mathlib has no separation theory for the plane and no Jordan curve theorem, and layer L5 is absent
-from [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort. The lifting of a zero-free continuous function
-through `Complex.exp` is supplied by Mathlib's `Complex.exists_continuousOn_eqOn_exp_comp`.
+Mathlib has no separation theory for the plane and no Jordan curve theorem. The lifting of a
+zero-free continuous function through `Complex.exp` is supplied by Mathlib's
+`Complex.exists_continuousOn_eqOn_exp_comp`.
 
 ## Janiszewski's second theorem
 
