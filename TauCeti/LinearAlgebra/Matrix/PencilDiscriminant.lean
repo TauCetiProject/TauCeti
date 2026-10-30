@@ -13,10 +13,11 @@ public import TauCeti.LinearAlgebra.Matrix.SymplecticMultiplier
 # The discriminant of a matrix pencil realised over every prime
 
 Let `q` and `t` be integers. `TauCeti.Matrix.eq_quadratic_form_of_det_det_one_sub` shows that an
-integer realised, modulo every prime `ℓ` other than one exceptional `p`, as the determinant of the
-pencil `r • M - s • 1` of a `2 × 2` matrix `M` with `M.det = q` and `(1 - M).det = q + 1 - t` is
-forced to equal `q * r ^ 2 - t * (r * s) + s ^ 2`. This file draws the conclusion that follows when
-such an integer exists and is **non-negative** at every `(r, s)` avoiding `p`:
+integer realised, modulo all but finitely many primes `ℓ`, as the determinant of the pencil
+`r • M - s • 1` of a `2 × 2` matrix `M` with `M.det = q` and `(1 - M).det = q + 1 - t` is forced to
+equal `q * r ^ 2 - t * (r * s) + s ^ 2`. Fix a non-unit `p`. This file draws the conclusion that
+follows when such an integer, realised modulo every prime `ℓ ≠ p`, exists and is **non-negative**
+at every `(r, s)` avoiding `p`:
 
 `t ^ 2 ≤ 4 * q`.
 
@@ -107,7 +108,8 @@ theorem sq_le_four_mul_of_exists_nonneg_pencil_det (hp : p ≠ 1)
     refine Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd hu fun r s hr hs => ?_
     obtain ⟨D, hD0, hD⟩ := h r s hr hs
     -- the realising integer *is* the form, so its non-negativity is the form's
-    rw [eq_quadratic_form_of_det_det_one_sub (p := p) hD] at hD0
+    rw [eq_quadratic_form_of_det_det_one_sub <|
+      (Filter.eventually_cofinite_ne p).mono fun ℓ hℓne hℓ ↦ hD ℓ hℓ hℓne] at hD0
     linarith
   simpa [discrim] using hd
 

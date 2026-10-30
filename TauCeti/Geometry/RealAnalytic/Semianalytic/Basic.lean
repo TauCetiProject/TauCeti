@@ -367,25 +367,28 @@ theorem SemianalyticAt.iInter {ι : Type*} [Finite ι] {s : ι → Set E}
   simpa using SemianalyticAt.biInter finite_univ fun i (_ : i ∈ univ) => hs i
 
 /-- **Analytic preimages.** The preimage of a set semianalytic at `g x` under a map `g` analytic
-on a neighbourhood `W` of `x` is semianalytic at `x`. -/
-theorem SemianalyticAt.preimage_of_analyticOnNhd {s : Set F} {g : E → F} {W : Set E}
-    (hs : SemianalyticAt s (g x)) (hW : W ∈ 𝓝 x) (hg : AnalyticOnNhd ℝ g W) :
-    SemianalyticAt (g ⁻¹' s) x := by
+at `x` is semianalytic at `x`. -/
+theorem SemianalyticAt.preimage {s : Set F} {g : E → F} (hs : SemianalyticAt s (g x))
+    (hg : AnalyticAt ℝ g x) : SemianalyticAt (g ⁻¹' s) x := by
   obtain ⟨U, hU, t, ht, hst⟩ := hs
-  refine ⟨W ∩ g ⁻¹' U,
-    inter_mem hW ((hg x (mem_of_mem_nhds hW)).continuousAt.preimage_mem_nhds hU), g ⁻¹' t,
-    ht.preimage (hg.mono inter_subset_left) fun _ hy => hy.2, ?_⟩
+  obtain ⟨m, f, hf, Φ, rfl⟩ := ht.exists_eq_setOf_sign
+  have hfg : ∀ i, ∀ᶠ y in 𝓝 x, AnalyticAt ℝ (f i ∘ g) y := fun i =>
+    ((hf i (g x) (mem_of_mem_nhds hU)).comp hg).eventually_analyticAt
+  set W := {y | ∀ i, AnalyticAt ℝ (f i ∘ g) y} ∩ g ⁻¹' U
+  refine ⟨W, inter_mem (eventually_all.2 hfg) (hg.continuousAt.preimage_mem_nhds hU), _,
+    isAnalyticBooleanCombination_setOf_sign (f := fun i => f i ∘ g)
+      (fun i y (hy : y ∈ W) => hy.1 i) Φ, ?_⟩
   ext y
   have := Set.ext_iff.1 hst (g y)
-  simp only [mem_inter_iff, mem_preimage] at this ⊢
+  simp only [W, mem_inter_iff, mem_preimage, mem_ofPred_eq, Function.comp_apply] at this ⊢
   tauto
 
 /-- **Analytic preimages.** The preimage of a set semianalytic at `g x` under a map `g` analytic
-at `x` is semianalytic at `x`. -/
-theorem SemianalyticAt.preimage [CompleteSpace F] {s : Set F} {g : E → F}
-    (hs : SemianalyticAt s (g x)) (hg : AnalyticAt ℝ g x) : SemianalyticAt (g ⁻¹' s) x :=
-  let ⟨_, hW, hgW⟩ := hg.exists_mem_nhds_analyticOnNhd
-  hs.preimage_of_analyticOnNhd hW hgW
+on a neighbourhood `W` of `x` is semianalytic at `x`. -/
+theorem SemianalyticAt.preimage_of_analyticOnNhd {s : Set F} {g : E → F} {W : Set E}
+    (hs : SemianalyticAt s (g x)) (hW : W ∈ 𝓝 x) (hg : AnalyticOnNhd ℝ g W) :
+    SemianalyticAt (g ⁻¹' s) x :=
+  hs.preimage (hg x (mem_of_mem_nhds hW))
 
 end SemianalyticAt
 
@@ -537,8 +540,8 @@ theorem _root_.LocallyFinite.isSemianalytic_iUnion {ι : Type*} {s : ι → Set 
 neighbourhood of `x`, with `e` analytic at `x` and its inverse analytic at `e x`, the set
 `e.symm ⁻¹' s` is semianalytic at `e x` if and only if `s` is semianalytic at `x`. This applies to
 charts and other local analytic isomorphisms. -/
-theorem _root_.PartialEquiv.semianalyticAt_preimage_symm_iff [CompleteSpace E] [CompleteSpace F]
-    {s : Set E} {x : E} (e : PartialEquiv E F) (hx : e.source ∈ 𝓝 x) (he : AnalyticAt ℝ e x)
+theorem _root_.PartialEquiv.semianalyticAt_preimage_symm_iff {s : Set E} {x : E}
+    (e : PartialEquiv E F) (hx : e.source ∈ 𝓝 x) (he : AnalyticAt ℝ e x)
     (he' : AnalyticAt ℝ e.symm (e x)) :
     SemianalyticAt (e.symm ⁻¹' s) (e x) ↔ SemianalyticAt s x := by
   have hxx : e.symm (e x) = x := e.left_inv (mem_of_mem_nhds hx)
@@ -549,9 +552,9 @@ theorem _root_.PartialEquiv.semianalyticAt_preimage_symm_iff [CompleteSpace E] [
 /-- **Analytic isomorphisms, locally.** For a bijection `e` analytic at `x` whose inverse is
 analytic at `e x`, the image `e '' s` is semianalytic at `e x` if and only if `s` is semianalytic
 at `x`. -/
-theorem _root_.Equiv.semianalyticAt_image_iff [CompleteSpace E] [CompleteSpace F] {s : Set E}
-    {x : E} (e : E ≃ F) (he : AnalyticAt ℝ e x)
-    (he' : AnalyticAt ℝ e.symm (e x)) : SemianalyticAt (e '' s) (e x) ↔ SemianalyticAt s x := by
+theorem _root_.Equiv.semianalyticAt_image_iff {s : Set E} {x : E} (e : E ≃ F)
+    (he : AnalyticAt ℝ e x) (he' : AnalyticAt ℝ e.symm (e x)) :
+    SemianalyticAt (e '' s) (e x) ↔ SemianalyticAt s x := by
   rw [e.image_eq_preimage_symm]
   exact e.toPartialEquiv.semianalyticAt_preimage_symm_iff univ_mem he he'
 
