@@ -129,9 +129,7 @@ theorem mem_symplecticVectorFields_of_isHamiltonianVectorField {φ : SmoothForm 
     {X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯}
     (hX : σ.IsHamiltonianVectorField (fun y ↦ φ.1 y 0) X) : X ∈ σ.symplecticVectorFields := by
   rw [symplecticVectorFields, Submodule.mem_comap, isHamiltonianVectorField_iff_interiorₗ_eq.1 hX]
-  apply exactForms_le_closedForms I 1
-  rw [exactForms_succ]
-  exact LinearMap.mem_range_self _ φ
+  exact mextDerivₗ_mem_closedForms I 0 φ
 
 variable (σ)
 
@@ -175,9 +173,7 @@ private theorem neg_interiorEquiv_symm_mextDerivₗ_mem (φ : SmoothForm I M ℝ
     -h.interiorEquiv.symm (mextDerivₗ I 0 φ) ∈ σ.symplecticVectorFields := by
   rw [symplecticVectorFields, Submodule.mem_comap, map_neg, interiorₗ_interiorEquiv_symm,
     neg_mem_iff]
-  apply exactForms_le_closedForms I 1
-  rw [exactForms_succ]
-  exact LinearMap.mem_range_self _ φ
+  exact mextDerivₗ_mem_closedForms I 0 φ
 
 /-- The map `f ↦ -X_f` from smooth functions, as smooth `0`-forms, to symplectic vector fields.
 When `σ` is moreover closed, the convention `{f, g} = df(X_g)` gives `X_{{f, g}} = -[X_f, X_g]`,
@@ -213,10 +209,12 @@ theorem interiorₗ_negHamiltonianₗ (φ : SmoothForm I M ℝ 0) :
 is, locally constant. -/
 theorem ker_negHamiltonianₗ : LinearMap.ker h.negHamiltonianₗ = closedForms I M 0 := by
   ext φ
-  rw [LinearMap.mem_ker, mem_closedForms_iff_mextDerivₗ_eq_zero,
-    ← neg_eq_zero (a := mextDerivₗ I 0 φ),
-    ← interiorₗ_negHamiltonianₗ h, ← interiorEquiv_apply h, LinearEquiv.map_eq_zero_iff,
-    ZeroMemClass.coe_eq_zero]
+  -- The injective `interiorEquiv` sends `-X_f` to `-df`, so one vanishes exactly when the other
+  -- does.
+  have key := h.interiorEquiv.map_eq_zero_iff
+    (x := (h.negHamiltonianₗ φ : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯))
+  rw [interiorEquiv_apply, interiorₗ_negHamiltonianₗ, neg_eq_zero, ZeroMemClass.coe_eq_zero] at key
+  rw [LinearMap.mem_ker, mem_closedForms_iff_mextDerivₗ_eq_zero, key]
 
 /-- **Exactness at the smooth functions**, as exactness of the inclusion of closed `0`-forms
 followed by `f ↦ -X_f`. -/
