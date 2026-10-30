@@ -22,8 +22,8 @@ restrictions. No acyclicity on the overlap is needed.
 
 This upgrades the additive computation in `SectionsQuotient.Basic` to a linear one,
 so it can be used for dimensions and extension of scalars. For quasi-coherent coefficients,
-affine acyclicity supplies the hypotheses on any two affine opens of a locally Noetherian
-scheme. The quotient uses the sign `s| - t|` of the Mayer–Vietoris sequence.
+affine acyclicity supplies the hypotheses on any two affine opens of any scheme. The
+quotient uses the sign `s| - t|` of the Mayer–Vietoris sequence.
 
 The construction reuses `mayerVietorisSectionClass`, its kernel calculation and
 surjectivity, and Mathlib's linear first isomorphism theorem. It does not assert a comparison of

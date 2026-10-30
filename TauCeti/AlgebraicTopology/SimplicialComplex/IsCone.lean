@@ -15,15 +15,16 @@ to a face gives a face again.  This file carries that condition as the predicate
 stated for an apex `v` of the vertex type of `K` itself, so that a complex can be recognised as a
 cone without changing its vertex type.
 
-The predicate sits upstream of every construction that satisfies it, so that each construction
-records its own recognition lemma in its own file: `isCone_simplex` for an abstract simplex
-(`TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic`), `isCone_closedStar` for the closed
-star of a face and `isCone_deletion` for the deletion of a face missing the apex
+The predicate sits upstream of the constructions that satisfy it, so that each construction
+records its own recognition lemma in its own file; for example `isCone_simplex` for an abstract
+simplex (`TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic`), `isCone_closedStar` for the
+closed star of a face and `isCone_deletion` for the deletion of a face missing the apex
 (`TauCeti.AlgebraicTopology.SimplicialComplex.LinkStar`), and `isCone_cone` for the cone
 construction (`TauCeti.AlgebraicTopology.SimplicialComplex.Cone`), which is what identifies the
-two accounts of a cone.  The point of the predicate is the basic collapsing theorem of
-piecewise-linear topology, that a finite cone collapses to its apex
-(`TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Cone`).
+two accounts of a cone.  The predicate feeds the basic collapsing theorem of piecewise-linear
+topology, that a finite cone collapses to its apex
+(`TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Cone`), and the contractibility of the
+realization of a cone (`TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Cone`).
 
 ## Main definitions
 
@@ -49,8 +50,9 @@ structure IsCone (K : PreAbstractSimplicialComplex ι) (v : ι) : Prop where
   insert_mem : ∀ ⦃σ : Finset ι⦄, σ ∈ K → insert v σ ∈ K
 
 /-- A cone with apex `v` is nonempty. -/
-theorem IsCone.ne_bot {K : PreAbstractSimplicialComplex ι} (h : IsCone K v) : K ≠ ⊥ := fun hK =>
-  (hK ▸ h.apex_mem : ({v} : Finset ι) ∈ (⊥ : PreAbstractSimplicialComplex ι)).elim
+theorem IsCone.ne_bot {K : PreAbstractSimplicialComplex ι} (h : IsCone K v) : K ≠ ⊥ := by
+  rintro rfl
+  exact h.apex_mem
 
 end PreAbstractSimplicialComplex
 

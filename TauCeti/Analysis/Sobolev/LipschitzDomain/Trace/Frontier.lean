@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.SurfaceMeasure
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Kernel
 
 /-!
 # The boundary trace of a bounded Lipschitz domain
@@ -32,6 +33,13 @@ required boundary values. Uniqueness, and hence independence of all choices, fol
 restrictions of test functions are dense in `W^{1,p}(Ω)`
 (`TauCeti.W1p.denseRange_restrictL_ofTestFunctionₗ_top`).
 
+The same density argument shows that the trace commutes with multiplication by smooth bounded
+functions, and that the frontier version of each local chart trace is the trace of the cutoff
+product. Hence a function of zero trace has zero local trace in every chart, and the chart
+characterization of `W^{1,p}_0(Ω)`
+(`TauCeti.W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero`) identifies the kernel
+of the trace with `W^{1,p}_0(Ω)`.
+
 ## Main declarations
 
 * `TauCeti.W1p.lipschitzChartFrontierTrace`: a local chart trace as an `Lᵖ` function on the
@@ -41,10 +49,13 @@ restrictions of test functions are dense in `W^{1,p}(Ω)`
   the boundary is its restriction to the frontier.
 * `TauCeti.W1p.eq_frontierTrace`: any bounded operator with these boundary values is the trace.
 * `TauCeti.W1p.w1p0Submodule_le_ker_frontierTrace`: functions in `W^{1,p}_0(Ω)` have zero trace.
+* `TauCeti.W1p.frontierTrace_contDiffSMul_ae`: the trace of `ψ u` is `ψ` times the trace of `u`.
+* `TauCeti.W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero` and `TauCeti.W1p.ker_frontierTrace`:
+  the kernel of the trace is `W^{1,p}_0(Ω)`.
 
 ## References
 
-* L. C. Evans, *Partial Differential Equations*, 2nd ed., §5.5, Theorem 1.
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §5.5, Theorems 1 and 2.
 * J. Nečas, *Direct Methods in the Theory of Elliptic Equations*, Chapter 2, §4
   (traces on Lipschitz domains by local flattening).
 -/
@@ -240,11 +251,8 @@ theorem W1p.eq_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
   refine DFunLike.coe_injective <|
     (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).equalizer
       T.continuous (W1p.frontierTrace hp hΩ hb).continuous (funext fun φ => ?_)
-  refine Lp.ext ((hT φ).trans (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb
-    φ.continuous.continuousOn ?_).symm)
-  exact (W1p.value_restrictL_ae (le_top : Ω ≤ ⊤) _).trans
-    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 le_top)
-      (W1p.value_ofTestFunctionₗ_ae φ))
+  exact Lp.ext ((hT φ).trans (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb
+    φ.continuous.continuousOn (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)).symm)
 
 /-- **Functions in `W^{1,p}_0(Ω)` have zero trace.** -/
 theorem W1p.w1p0Submodule_le_ker_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
@@ -268,5 +276,182 @@ theorem W1p.w1p0Submodule_le_ker_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
   rw [← hx0]
   exact image_eq_zero_of_notMem_tsupport fun hxs =>
     (Ω.isOpen.frontier_eq ▸ hxF).2 (φ.tsupport_subset hxs)
+
+/-! ### Localization and the kernel of the trace -/
+
+/-- The trace of `ψ` times the restriction of a whole-space test function `φ` is `ψ φ` on the
+frontier. This is the test-function case of `TauCeti.W1p.frontierTrace_contDiffSMul_ae`. -/
+private theorem W1p.frontierTrace_contDiffSMul_restrictL_ofTestFunctionₗ_ae
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
+    W1p.frontierTrace hp hΩ hb (W1p.contDiffSMul ψ hψ hM hψM hgM
+        (W1p.restrictL (le_top : Ω ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ))) =ᵐ[
+      (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+        (frontier (Ω : Set (WithLp 2 (ℝ × E))))] fun x => ψ x * φ x :=
+  W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb (hψ.continuous.mul φ.continuous).continuousOn
+    (Filter.EventuallyEq.trans (W1p.value_contDiffSMul_ae hψ hM hψM hgM _)
+      (Filter.EventuallyEq.rfl.smul (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)))
+
+/-- **The trace commutes with smooth bounded multiplication.** On a bounded Lipschitz domain, for
+`1 ≤ p < ∞`, the trace of `ψ u` is `ψ` times the trace of `u`, for every smooth `ψ` bounded
+together with its gradient on `Ω`. The density argument is adapted from the flat version
+`TauCeti.W1p.hyperplaneTrace_contDiffSMul_ae` in `TauCeti.Analysis.Sobolev.Trace.Multiplication`. -/
+theorem W1p.frontierTrace_contDiffSMul_ae (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M) (u : W1p volume Ω p) :
+    W1p.frontierTrace hp hΩ hb (W1p.contDiffSMul ψ hψ hM hψM hgM u) =ᵐ[
+      (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+        (frontier (Ω : Set (WithLp 2 (ℝ × E))))]
+      fun x => ψ x * W1p.frontierTrace hp hΩ hb u x := by
+  let σ := (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+    (frontier (Ω : Set (WithLp 2 (ℝ × E))))
+  -- The frontier lies in the closure of `Ω`, where `ψ` is still bounded by `M`.
+  have hB : MemLp ψ ∞ σ := memLp_top_of_bound hψ.continuous.aestronglyMeasurable M <|
+    (ae_restrict_mem isClosed_frontier.measurableSet).mono fun x hx =>
+      closure_minimal (fun y hy => (Real.norm_eq_abs _).trans_le (hψM y hy))
+        (isClosed_le hψ.continuous.norm continuous_const) (frontier_subset_closure hx)
+  let T : Lp ℝ p σ →L[ℝ] Lp ℝ p σ :=
+    (ContinuousLinearMap.lsmul ℝ ℝ).holderL σ ∞ p p (hB.toLp ψ)
+  have hT (f : Lp ℝ p σ) : T f =ᵐ[σ] fun x => ψ x * f x := by
+    filter_upwards [(ContinuousLinearMap.lsmul ℝ ℝ).coeFn_holder (r := p) (hB.toLp ψ) f,
+      hB.coeFn_toLp] with x hx hψx
+    simpa only [T, ContinuousLinearMap.holderL_apply_apply, hψx,
+      ContinuousLinearMap.lsmul_apply, smul_eq_mul] using hx
+  -- Both sides are continuous in `u`, so it suffices to check restrictions of test functions.
+  have heq : W1p.frontierTrace hp hΩ hb (W1p.contDiffSMul ψ hψ hM hψM hgM u) =
+      T (W1p.frontierTrace hp hΩ hb u) := by
+    refine (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).induction_on u
+      (isClosed_eq ?_ ?_) fun φ => ?_
+    · exact ((W1p.frontierTrace hp hΩ hb).continuous.comp
+        (W1p.contDiffSMulL ψ hψ hM hψM hgM).continuous).congr fun v =>
+          congrArg _ (W1p.contDiffSMulL_apply hψ hM hψM hgM v)
+    · exact T.continuous.comp (W1p.frontierTrace hp hΩ hb).continuous
+    have hφ := W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb φ.continuous.continuousOn
+      (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)
+    exact Lp.ext <| (W1p.frontierTrace_contDiffSMul_restrictL_ofTestFunctionₗ_ae hp hΩ hb hψ hM hψM
+      hgM φ).trans ((hT _).trans (Filter.EventuallyEq.rfl.mul hφ)).symm
+  exact (Filter.EventuallyEq.of_eq (congrArg (fun f : Lp ℝ p σ => (f : WithLp 2 (ℝ × E) → ℝ))
+    heq)).trans (hT _)
+
+/-- **A local chart trace on the frontier is the trace of the cutoff product.** On a bounded
+Lipschitz domain, for `1 ≤ p < ∞`, the frontier version of the local trace through a Lipschitz
+boundary chart with cutoff `ψ` is the trace of `ψ u`. -/
+theorem W1p.lipschitzChartFrontierTrace_eq_frontierTrace_comp (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {L' : ℝ≥0}
+    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L' e φ a b)
+    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) :
+    W1p.lipschitzChartFrontierTrace hp h ψ hψ hM hψM hgM hs =
+      (W1p.frontierTrace hp hΩ hb).comp (W1p.contDiffSMulL ψ hψ hM hψM hgM) := by
+  refine DFunLike.coe_injective <|
+    (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).equalizer
+      (W1p.lipschitzChartFrontierTrace hp h ψ hψ hM hψM hgM hs).continuous
+      ((W1p.frontierTrace hp hΩ hb).comp (W1p.contDiffSMulL ψ hψ hM hψM hgM)).continuous
+      (funext fun χ => ?_)
+  simp only [Function.comp_apply, ContinuousLinearMap.comp_apply, W1p.contDiffSMulL_apply]
+  exact Lp.ext <| (W1p.lipschitzChartFrontierTrace_ae_eq_of_continuousOn hp h hψ hM hψM hgM hs
+    χ.continuous.continuousOn (W1p.value_restrictL_ofTestFunctionₗ_ae le_top χ)).trans
+      (W1p.frontierTrace_contDiffSMul_restrictL_ofTestFunctionₗ_ae hp hΩ hb hψ hM hψM hgM χ).symm
+
+/-- **A local chart trace vanishes off the chart.** On a bounded Lipschitz domain, for
+`1 ≤ p < ∞`, the local trace through a Lipschitz boundary chart vanishes almost everywhere at
+the tangential parameters whose graph point lies outside the chart cylinder. -/
+theorem W1p.lipschitzChartTrace_ae_eq_zero_of_notMem (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {L' : ℝ≥0}
+    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L' e φ a b)
+    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) (u : W1p volume Ω p) :
+    ∀ᵐ y ∂(volume : Measure E), normalGraphEmbedding φ y ∉ normalCylinder a b →
+      W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u y = 0 := by
+  let S : Set E := (normalGraphEmbedding φ ⁻¹' normalCylinder a b)ᶜ
+  let R := (LpToLpRestrictCLM E ℝ ℝ (volume : Measure E) p S).comp
+    (W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs)
+  -- `R v` is zero exactly when the local trace of `v` vanishes almost everywhere on `S`.
+  have hR (v : W1p volume Ω p) :
+      R v = 0 ↔ W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs v =ᵐ[volume.restrict S] 0 :=
+    Lp.eq_zero_iff_ae_eq_zero.trans ⟨(LpToLpRestrictCLM_coeFn ℝ S _).symm.trans,
+      (LpToLpRestrictCLM_coeFn ℝ S _).trans⟩
+  -- On restrictions of test functions, the local trace is the cutoff product at the graph point,
+  -- which vanishes on `S`; the general case follows by density.
+  have hu : R u = 0 := (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).induction_on u
+    (isClosed_eq R.continuous continuous_const) fun χ => (hR _).2 <| by
+      filter_upwards [ae_restrict_of_ae (W1p.lipschitzChartTrace_apply_ae_of_continuousOn hp h hψ
+          hM hψM hgM hs χ.continuous.continuousOn
+            (W1p.value_restrictL_ofTestFunctionₗ_ae le_top χ)),
+        ae_restrict_mem h.measurableSet_normalGraphEmbedding_preimage_normalCylinder.compl]
+        with y hy hyS
+      exact hy.trans (mul_eq_zero_of_left (image_eq_zero_of_notMem_tsupport fun hys =>
+        hyS (by simpa using hs hys)) _)
+  exact (ae_restrict_iff' h.measurableSet_normalGraphEmbedding_preimage_normalCylinder.compl).1
+    ((hR u).1 hu)
+
+/-- **Zero trace gives zero local chart traces.** On a bounded Lipschitz domain, for
+`1 ≤ p < ∞`, if the trace of `u ∈ W^{1,p}(Ω)` vanishes, then so does its local trace through
+every Lipschitz boundary chart. -/
+theorem W1p.lipschitzChartTrace_eq_zero_of_frontierTrace_eq_zero (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {L' : ℝ≥0}
+    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L' e φ a b)
+    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Ω p}
+    (hu : W1p.frontierTrace hp hΩ hb u = 0) :
+    W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u = 0 := by
+  -- The frontier version of the local trace is the trace of `ψ u`, which is `ψ` times zero.
+  have hF : W1p.lipschitzChartFrontierTrace hp h ψ hψ hM hψM hgM hs u = 0 := by
+    rw [W1p.lipschitzChartFrontierTrace_eq_frontierTrace_comp hp hΩ hb,
+      ContinuousLinearMap.comp_apply, W1p.contDiffSMulL_apply, Lp.eq_zero_iff_ae_eq_zero]
+    filter_upwards [W1p.frontierTrace_contDiffSMul_ae hp hΩ hb hψ hM hψM hgM u,
+      Lp.eq_zero_iff_ae_eq_zero.1 hu] with x hx h0
+    rw [hx, h0, Pi.zero_apply, mul_zero]
+  -- Hence the local trace vanishes at almost every tangential parameter in the chart cylinder.
+  have hP : ∀ᵐ y ∂(volume : Measure E).restrict (normalGraphEmbedding φ ⁻¹' normalCylinder a b),
+      W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u y = 0 := by
+    refine h.ae_restrict_frontier_inter_iff.1 ?_
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_left
+        ((W1p.lipschitzChartFrontierTrace_ae_eq hp h hψ hM hψM hgM hs u).symm.trans
+          (Lp.eq_zero_iff_ae_eq_zero.1 hF)),
+      ae_restrict_mem (measurableSet_frontier_inter_preimage_normalCylinder _ e a b)] with x hx hxP
+    rwa [indicator_of_mem hxP] at hx
+  refine Lp.eq_zero_iff_ae_eq_zero.2 ?_
+  filter_upwards [W1p.lipschitzChartTrace_ae_eq_zero_of_notMem hp hΩ hb h hψ hM hψM hgM hs u,
+    (ae_restrict_iff' h.measurableSet_normalGraphEmbedding_preimage_normalCylinder).1 hP]
+    with y hy hy'
+  exact (em _).elim hy' hy
+
+/-- **The functions of zero trace on a bounded Lipschitz domain are those of `W^{1,p}_0`.** For
+`1 ≤ p < ∞`, `u ∈ W^{1,p}(Ω)` lies in `W^{1,p}_0(Ω)` exactly when its trace on the frontier
+vanishes. -/
+theorem W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : W1p volume Ω p) :
+    u ∈ w1p0Submodule volume Ω p ↔ W1p.frontierTrace hp hΩ hb u = 0 := by
+  refine ⟨fun hu => W1p.w1p0Submodule_le_ker_frontierTrace hp hΩ hb hu, fun hu => ?_⟩
+  obtain ⟨t, e, φ, a, b, ψ₀, ψ, M, hchart, ⟨hψ₀, hψ₀c, hψ₀Ω⟩, hψ, hsum⟩ :=
+    hΩ.exists_lipschitzChart_cutoffs hb
+  choose hψ hM hψM hgM hs using hψ
+  exact (W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero hp hchart hψ₀ hψ₀c hψ₀Ω hψ hM
+    (fun i x _ => hψM i x) (fun i x _ => hgM i x) hs (fun x hx => hsum x (subset_closure hx))
+      u).2 fun i => W1p.lipschitzChartTrace_eq_zero_of_frontierTrace_eq_zero hp hΩ hb (hchart i)
+        (hψ i) (hM i) _ _ (hs i) hu
+
+/-- **The kernel of the trace on a bounded Lipschitz domain is `W^{1,p}_0`.** For `1 ≤ p < ∞`,
+the trace `W^{1,p}(Ω) → Lᵖ(frontier Ω)` vanishes exactly on the closure of the test functions
+supported in `Ω`. -/
+theorem W1p.ker_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
+    LinearMap.ker (W1p.frontierTrace hp hΩ hb).toLinearMap =
+      (w1p0Submodule volume Ω p).toSubmodule := by
+  ext u
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ClosedSubmodule.mem_toSubmodule_iff,
+    W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero hp hΩ hb]
 
 end TauCeti

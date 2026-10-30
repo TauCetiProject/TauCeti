@@ -5,9 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import TauCeti.Algebra.Coalgebra.Comodule.Product
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
+import TauCeti.Algebra.AlgebraicGroup.Representation.PointConjugation
+import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
+import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Product
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 
@@ -30,9 +35,15 @@ line and characterizes it intrinsically.
 * It is the smallest Hopf ideal containing the elements `c(φ, v) - φ(v)`.
 * It is zero, so the stabilizer is all of `G`, exactly when `v` is a fixed vector.
 * Its Lie algebra consists of the tangent vectors whose differentiated action kills `v`.
+* Over a field of characteristic zero it is smooth, by Cartier's theorem, so its dimension is the
+  dimension of that Lie algebra. Equivalently, the dimension of the group is the dimension of the
+  stabilizer plus the dimension of the space `𝔤 • v` of images of `v` under the Lie algebra `𝔤`.
+  Geometrically, `𝔤 • v` is the tangent space at `v` to the orbit of `v`, so this is the
+  infinitesimal form of `dim G = dim Stab_G(v) + dim (G • v)`.
 
-Applied to the adjoint representation, the last statement says that the Lie algebra of the
-centralizer of an element `x` of the Lie algebra is the kernel of `ad x`.
+Applied to the adjoint representation, these statements say that the Lie algebra of the
+centralizer of an element `x` of the Lie algebra is the kernel of `ad x`, and in characteristic
+zero that the centralizer has dimension `dim ker (ad x)`.
 
 ## Main declarations
 
@@ -43,9 +54,16 @@ centralizer of an element `x` of the Lie algebra is the kernel of `ad x`.
 * `TauCeti.Comodule.matrixCoefficient_sub_algebraMap_mem_stabilizerHopfIdeal` and
   `TauCeti.Comodule.stabilizerHopfIdeal_le_iff`: its defining equations, and its universal property
   among Hopf ideals.
+* `TauCeti.Comodule.stabilizerHopfIdeal_basePointsRepresentation`: acting on the vector
+  conjugates its scheme-theoretic stabilizer.
 * `TauCeti.Comodule.stabilizerHopfIdeal_eq_bot_iff`: it vanishes exactly when `v` is fixed.
-* `TauCeti.Comodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff`: its Lie algebra is the
-  annihilator of `v` under the differentiated representation.
+* `TauCeti.Comodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff` and
+  `TauCeti.Comodule.lieSubalgebra_stabilizerHopfIdeal`: its Lie algebra is the annihilator of `v`
+  under the differentiated representation.
+* `TauCeti.Comodule.ringKrullDim_quotient_stabilizerHopfIdeal` and
+  `TauCeti.Comodule.ringKrullDim_quotient_stabilizerHopfIdeal_add_finrank_range`: in
+  characteristic zero, the stabilizer has the dimension of its Lie algebra, and together with
+  `𝔤 • v` it accounts for the dimension of the group.
 
 ## References
 
@@ -67,9 +85,12 @@ namespace TauCeti.Comodule
 variable (k : Type u) (H : Type v) {M : Type w} [Field k] [CommRing H] [HopfAlgebra k H]
 variable [AddCommGroup M] [Module k M] [Comodule k H M]
 
-/-- The product `M × k` of a comodule with the trivial comodule `k`. -/
+/-- The product `M × k` of a comodule with the trivial comodule `k`. The stabilizer of a vector
+`v` is the stabilizer of the line through `(v, 1)` in this comodule, and the orbit of `v` is
+realized as the projective orbit of that line. Install it with
+`attribute [local instance] TauCeti.Comodule.prodTrivial`. -/
 @[implicit_reducible]
-private def prodTrivial : Comodule k H (M × k) :=
+def prodTrivial : Comodule k H (M × k) :=
   letI : Comodule k H k := trivial
   Prod
 
@@ -82,9 +103,10 @@ trivial coaction. Contravariantly, it cuts out the closed subgroup of `Spec H` f
 def stabilizerHopfIdeal (v : M) : HopfIdeal k H :=
   (k ∙ ((v, 1) : M × k)).stabilizerHopfIdeal H
 
-private theorem stabilizerHopfIdeal_eq (v : M) :
+/-- The stabilizer of `v` is the stabilizer of the line through `(v, 1)` in `M × k`. -/
+theorem stabilizerHopfIdeal_def (v : M) :
     stabilizerHopfIdeal k H v = (k ∙ ((v, 1) : M × k)).stabilizerHopfIdeal H :=
-  rfl
+  (rfl)
 
 variable {k H}
 
@@ -100,7 +122,7 @@ private abbrev sndHom : letI : Comodule k H k := trivial
   prodSnd
 
 /-- A matrix coefficient of `(v, 1)` in `M × k` is a matrix coefficient of `v` plus a constant. -/
-private theorem matrixCoefficient_prodTrivial (Φ : M × k →ₗ[k] k) (v : M) :
+theorem matrixCoefficient_prodTrivial (Φ : M × k →ₗ[k] k) (v : M) :
     matrixCoefficient (R := k) (C := H) Φ (v, 1) =
       matrixCoefficient (R := k) (C := H) (Φ ∘ₗ LinearMap.inl k M k) v +
         algebraMap k H (Φ (0, 1)) := by
@@ -144,7 +166,7 @@ theorem stabilizerHopfIdeal_le_ker_iff (v : M) {A : Type*} [CommRing A] [Algebra
     (stabilizerHopfIdeal k H v).toIdeal ≤ RingHom.ker g.ofConv ↔
       endOfPoint M g.ofConv (1 ⊗ₜ[k] v) = 1 ⊗ₜ[k] v := by
   let : Comodule k H k := trivial
-  rw [stabilizerHopfIdeal_eq, Submodule.stabilizerHopfIdeal_le_ker_iff,
+  rw [stabilizerHopfIdeal_def, Submodule.stabilizerHopfIdeal_le_ker_iff,
     ← endOfPoint_prodTrivial_eq_iff]
   -- Both sides of the stabilizer condition are spans of a single vector.
   simp only [Submodule.baseChange_span, Submodule.map_span, Set.image_singleton,
@@ -158,16 +180,23 @@ theorem stabilizerHopfIdeal_le_ker_iff (v : M) {A : Type*} [CommRing A] [Algebra
   have ha1 : a = 1 := by simpa using congrArg (TensorProduct.rid k A) h1
   rw [← ha, ha1, one_smul]
 
+/-- An algebra-valued point lies in the stabilizer precisely when it fixes the constant
+extension of the vector. The value algebra may be nonreduced. -/
+theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint (v : M)
+    {A : Type*} [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        (stabilizerHopfIdeal k H v) (CommAlgCat.of k A) ↔
+      endOfPoint M g.ofConv (1 ⊗ₜ[k] v) = 1 ⊗ₜ[k] v := by
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, ← stabilizerHopfIdeal_le_ker_iff]
+  exact ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
+
 /-- A rational point lies in the stabilizer of `v` exactly when it fixes `v`. -/
 theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (v : M)
     (g : WithConv (H →ₐ[k] k)) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
         (stabilizerHopfIdeal k H v) (CommAlgCat.of k k) ↔
       basePointsRepresentation (H := H) M g v = v := by
-  have hker : (∀ h ∈ stabilizerHopfIdeal k H v, g.ofConv h = 0) ↔
-      (stabilizerHopfIdeal k H v).toIdeal ≤ RingHom.ker g.ofConv :=
-    ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker, stabilizerHopfIdeal_le_ker_iff,
+  rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint,
     basePointsRepresentation_apply, ← (TensorProduct.lid k M).injective.eq_iff,
     TensorProduct.lid_tmul, one_smul]
 
@@ -178,7 +207,7 @@ theorem stabilizerHopfIdeal_le_iff (v : M) (J : HopfIdeal k H) :
     stabilizerHopfIdeal k H v ≤ J ↔
       ∀ φ : Module.Dual k M,
         matrixCoefficient (R := k) (C := H) φ v - algebraMap k H (φ v) ∈ J := by
-  rw [stabilizerHopfIdeal_eq, Submodule.stabilizerHopfIdeal_le_iff]
+  rw [stabilizerHopfIdeal_def, Submodule.stabilizerHopfIdeal_le_iff]
   constructor
   · intro h φ
     -- The functional `(m, a) ↦ φ m - a φ v` vanishes on the line through `(v, 1)`.
@@ -248,7 +277,7 @@ theorem mem_lieSubalgebra_stabilizerHopfIdeal_iff (v : M)
     rw [differential_eq_zero_of_coact_eq_tmul_one
       (trivial_coact_apply (R := k) (C := H) (1 : k))] at h2
     exact Prod.ext h1 h2
-  rw [stabilizerHopfIdeal_eq, Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff]
+  rw [stabilizerHopfIdeal_def, Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff]
   constructor
   · intro h
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp (h _ (Submodule.mem_span_singleton_self _))
@@ -259,5 +288,81 @@ theorem mem_lieSubalgebra_stabilizerHopfIdeal_iff (v : M)
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
     rw [map_smul, hd, h, Prod.mk_zero_zero, smul_zero]
     exact zero_mem _
+
+/-- Acting on a vector by a rational point conjugates its scheme-theoretic stabilizer.
+This is an equality of defining Hopf ideals, including their equations on nonreduced
+coefficient algebras. -/
+theorem stabilizerHopfIdeal_basePointsRepresentation (v : M)
+    (g : WithConv (H →ₐ[k] k)) :
+    stabilizerHopfIdeal k H (basePointsRepresentation (H := H) M g v) =
+      (stabilizerHopfIdeal k H v).conjugate g := by
+  apply HopfIdeal.eq_conjugate_of_forall_mem_iff g
+  intro A p
+  rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint,
+    mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint]
+  have hconj (q : WithConv (H →ₐ[k] A)) (a : WithConv (H →ₐ[k] k)) :
+      (AlgHom.mapValue (H := H) (Algebra.ofId k A) a * q *
+        (AlgHom.mapValue (H := H) (Algebra.ofId k A) a)⁻¹).ofConv =
+      q.ofConv.comp (HopfAlgebra.pointConjugationAlgHom a) := by
+    exact congrArg WithConv.ofConv (HopfAlgebra.comp_pointConjugationAlgHom a q).symm
+  constructor
+  · intro hp
+    rw [hconj] at hp
+    have hp' := endOfPoint_one_tmul_basePointsRepresentation_of_conj
+      (V := M) p.ofConv g⁻¹ (y := 1) (by simpa only [inv_inv] using hp)
+    simpa only [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one,
+      Module.End.one_apply] using hp'
+  · intro hp
+    apply endOfPoint_one_tmul_basePointsRepresentation_of_conj
+      (V := M) _ g (y := 1)
+    rw [← hconj]
+    simpa only [map_inv, inv_inv, mul_assoc, inv_mul_cancel_left, inv_mul_cancel,
+      mul_one] using hp
+
+section Orbit
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- **The Lie algebra of a stabilizer.** The Lie algebra of the stabilizer of `v` is the kernel of
+the linear map `d ↦ d • v` given by the differentiated representation. -/
+theorem lieSubalgebra_stabilizerHopfIdeal (v : M) :
+    ((stabilizerHopfIdeal k H v).lieSubalgebra (B := k)).toSubmodule =
+      LinearMap.ker ((differential (R := k) (H := H) (M := M)).toLinearMap.flip v) := by
+  ext d
+  rw [LieSubalgebra.mem_toSubmodule, mem_lieSubalgebra_stabilizerHopfIdeal_iff, LinearMap.mem_ker,
+    LinearMap.flip_apply, LieHom.coe_toLinearMap]
+
+section CharZero
+
+variable [CharZero k] [Algebra.FiniteType k H]
+
+/-- **The dimension of a stabilizer.** Over a field of characteristic zero, the stabilizer of `v`
+in a finite-type affine group has the dimension of the space of tangent vectors killing `v`. -/
+theorem ringKrullDim_quotient_stabilizerHopfIdeal (v : M) :
+    ringKrullDim (H ⧸ (stabilizerHopfIdeal k H v).toIdeal) =
+      Module.finrank k
+        (LinearMap.ker ((differential (R := k) (H := H) (M := M)).toLinearMap.flip v)) := by
+  rw [HopfIdeal.ringKrullDim_quotient_eq_finrank_lieSubalgebra, ← lieSubalgebra_stabilizerHopfIdeal]
+  -- A Lie subalgebra and its underlying submodule have the same carrier, as `k`-modules.
+  rfl
+
+/-- **Dimension of a stabilizer and of an orbit tangent space.** Over a field of characteristic
+zero, the dimension of a finite-type affine group is the dimension of the stabilizer of `v` plus
+the dimension of the space `𝔤 • v` swept out by the differentiated representation. -/
+theorem ringKrullDim_quotient_stabilizerHopfIdeal_add_finrank_range (v : M) :
+    ringKrullDim (H ⧸ (stabilizerHopfIdeal k H v).toIdeal) +
+        Module.finrank k
+          (LinearMap.range ((differential (R := k) (H := H) (M := M)).toLinearMap.flip v)) =
+      ringKrullDim H := by
+  rw [ringKrullDim_quotient_stabilizerHopfIdeal,
+    ← HopfAlgebra.finrank_lie_eq_ringKrullDim_of_charZero k H,
+    ← LinearMap.finrank_range_add_finrank_ker
+      ((differential (R := k) (H := H) (M := M)).toLinearMap.flip v)]
+  push_cast
+  exact add_comm _ _
+
+end CharZero
+
+end Orbit
 
 end TauCeti.Comodule

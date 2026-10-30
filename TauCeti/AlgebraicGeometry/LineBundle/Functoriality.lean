@@ -194,6 +194,11 @@ def pullbackHom (f : X ⟶ Y) : LineBundleClass Y →* LineBundleClass X :=
 lemma pullbackHom_apply (f : X ⟶ Y) (a : LineBundleClass Y) : pullbackHom f a = pullback f a :=
   (rfl)
 
+/-- Pullback of line-bundle classes is compatible with inverses: `[f^*L⁻¹] = [f^*L]⁻¹`. -/
+@[simp]
+lemma pullback_inv (f : X ⟶ Y) (a : LineBundleClass Y) : pullback f a⁻¹ = (pullback f a)⁻¹ := by
+  simpa only [pullbackHom_apply] using map_inv (pullbackHom f) a
+
 /-- Pullback of Picard groups along the identity is the identity. -/
 @[simp]
 lemma pullbackHom_id (X : Scheme.{u}) : pullbackHom (𝟙 X) = MonoidHom.id _ :=

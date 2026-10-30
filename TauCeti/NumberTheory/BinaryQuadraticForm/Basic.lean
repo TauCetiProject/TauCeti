@@ -362,6 +362,11 @@ theorem a_ne_zero_of_not_isSquare_discrim {f : BinaryQuadraticForm ℤ}
   apply hf
   exact ⟨f.b, by simp [discrim_def, _root_.discrim, ha, pow_two]⟩
 
+/-- A nonsquare discriminant is nonzero, since `0 = 0 * 0` is a square. This lets results stated
+under `[NeZero D]` apply under the standing assumption `[Fact (¬ IsSquare D)]`. -/
+instance neZero_of_fact_not_isSquare {D : ℤ} [Fact (¬ IsSquare D)] : NeZero D :=
+  ⟨by rintro rfl; exact (Fact.out : ¬ IsSquare (0 : ℤ)) ⟨0, by simp⟩⟩
+
 /-- `γ • f` is the form `f ∘ γ⁻¹` (`eval_smul`). The coefficients are written through the entries
 of the adjugate `γ⁻¹ = !![s, -q; -r, p]` of `γ = !![p, q; r, s]`, so each is a polynomial in the
 entries of `γ`. -/
@@ -439,6 +444,14 @@ theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) : (γ • f).di
     (r • f).discrim = r ^ 2 * f.discrim := by
   simp only [discrim_def, discrim, smul_a', smul_b', smul_c', smul_eq_mul]
   ring
+
+/-- A form `g • f` has discriminant `-D` exactly when `f` has discriminant `-D / g²`. -/
+theorem discrim_natCast_smul_eq_neg_iff {D g : ℕ} (hg : g ^ 2 ∣ D) (hg0 : g ≠ 0)
+    (f : BinaryQuadraticForm ℤ) :
+    ((g : ℤ) • f).discrim = -D ↔ f.discrim = -(D / g ^ 2 : ℕ) := by
+  obtain ⟨m, rfl⟩ := hg
+  rw [Nat.mul_div_cancel_left _ (by positivity), discrim_smul', Nat.cast_mul, Nat.cast_pow,
+    ← mul_neg, mul_right_inj' (by positivity)]
 
 /-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
 sub-action of `SL(2, ℤ)`: the forms of discriminant `-D` whose leading coefficient is positive. -/

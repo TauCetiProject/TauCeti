@@ -11,17 +11,20 @@ public import Mathlib.Topology.EMetricSpace.BoundedVariation
 # Limits of total variation bounds
 
 This file transfers eventual upper bounds on the total variations of a family of maps to a
-`liminf` bound on the total variation of a pointwise limit.
+`liminf` bound on the total variation of a pointwise limit. It also computes the variation of a
+composition with an antitone map on an interval.
 
 ## Main results
 
 * `TauCeti.eVariationOn_le_liminf_of_eventually_le`: an eventual bound on the total variations of
   a family of maps bounds the total variation of a pointwise limit by the `liminf` of the bounds.
+* `eVariationOn.comp_inter_Icc_eq_of_antitoneOn`: the antitone counterpart of Mathlib's
+  `eVariationOn.comp_inter_Icc_eq_of_monotoneOn`.
 -/
 
 public section
 
-open Filter
+open Filter Set
 open scoped ENNReal
 
 namespace TauCeti
@@ -54,3 +57,20 @@ theorem eVariationOn_le_liminf_of_eventually_le {ι : Type*} {l : Filter ι} {s 
   exact hi.trans_le hui
 
 end TauCeti
+
+namespace eVariationOn
+
+variable {α β E : Type*} [LinearOrder α] [LinearOrder β] [TopologicalSpace E]
+  [WeakPseudoEMetricSpace E]
+
+open OrderDual in
+/-- The variation of `f ∘ φ` on `t ∩ [x, y]` for an antitone `φ` is the variation of `f` on the
+corresponding reversed interval of `φ '' t`. -/
+theorem comp_inter_Icc_eq_of_antitoneOn (f : α → E) {t : Set β} (φ : β → α) (hφ : AntitoneOn φ t)
+    {x y : β} (hx : x ∈ t) (hy : y ∈ t) :
+    eVariationOn (f ∘ φ) (t ∩ Icc x y) = eVariationOn f (φ '' t ∩ Icc (φ y) (φ x)) := by
+  have := comp_inter_Icc_eq_of_monotoneOn (f ∘ ofDual) (toDual ∘ φ) hφ.dual_right hx hy
+  rwa [Function.comp_apply, Function.comp_apply, Icc_toDual, image_comp,
+    Equiv.image_eq_preimage_symm, toDual_symm_eq, ← preimage_inter, comp_ofDual] at this
+
+end eVariationOn

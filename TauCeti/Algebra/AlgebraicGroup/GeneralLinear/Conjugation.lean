@@ -61,7 +61,7 @@ variable {R : Type u} [CommRing R] {n : ℕ}
 constant invertible matrix `P`. -/
 noncomputable def conjCoordinateIso (P : Matrix.GeneralLinearGroup (Fin n) R) :
     coordinateHopfAlgebra R n ≅ coordinateHopfAlgebra R n :=
-  CommHopfAlgCat.innerConjugationIso (coordinateHopfAlgebra R n)
+  (coordinateHopfAlgebra R n).innerConjugationIso
     ((pointsMulEquiv (R := R) (A := R) n).symm P)
 
 /-- The `R`-valued point underlying a constant matrix, extended to an `R`-algebra `A`, is the
@@ -85,7 +85,7 @@ theorem pointsMulEquiv_mapPointsFunctor_conjCoordinateIso
         ((CommHopfAlgCat.Hom.mapPointsFunctor (conjCoordinateIso P).hom).app A f) =
       Matrix.GeneralLinearGroup.map (algebraMap R A) P * pointsMulEquiv n f *
         (Matrix.GeneralLinearGroup.map (algebraMap R A) P)⁻¹ := by
-  rw [conjCoordinateIso, CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom,
+  rw [conjCoordinateIso, _root_.CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom,
     HopfAlgebra.innerConjugationPointNatIso_hom_app_apply, map_mul, map_mul, map_inv,
     pointsMulEquiv_extendPoint_symm]
 
@@ -121,6 +121,6 @@ theorem pointsMulEquiv_toConv_comp_pointConjugationAlgHom
 theorem conjCoordinateIso_inv (P : Matrix.GeneralLinearGroup (Fin n) R) :
     conjCoordinateIso P⁻¹ = (conjCoordinateIso P).symm := by
   rw [conjCoordinateIso, conjCoordinateIso, map_inv,
-    CommHopfAlgCat.innerConjugationIso_inv_point]
+    _root_.CommHopfAlgCat.innerConjugationIso_inv_point]
 
 end TauCeti.GeneralLinear

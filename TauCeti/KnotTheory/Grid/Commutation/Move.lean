@@ -30,6 +30,7 @@ is an involution and preserves non-interleaving of the swapped pair.
 * `TauCeti.GridDiagram.ColumnCommutationData`: a column commutation together with the two turn
   rows and the placement of the adjacent-column markings in the resulting bigons; it extends
   `ColumnTurn`.
+* `TauCeti.GridDiagram.ColumnTurn.withTurnRow`: the turn at the same columns in another row.
 * `TauCeti.GridDiagram.IsRowCommutation`: one elementary row commutation.
 * `TauCeti.GridDiagram.IsCommutation`: one elementary commutation of either kind.
 
@@ -119,6 +120,25 @@ theorem ColumnTurn.one_lt (C : ColumnTurn n) : 1 < n := by
     have := C.column.isLt
     have := (finRotate n C.column).isLt
     omega))
+
+/-- The turn at the same pair of columns as `C`, turning in row `t` instead.
+
+It is reducible, so that the pentagons of this turn are the pentagons at the column `C.column`
+turning in row `t`. -/
+abbrev ColumnTurn.withTurnRow (C : ColumnTurn n) (t : Fin n) : ColumnTurn n :=
+  ⟨C.column, t, C.column_ne_next⟩
+
+/-- The turn in another row exchanges the same columns. -/
+@[simp]
+theorem ColumnTurn.withTurnRow_column (C : ColumnTurn n) (t : Fin n) :
+    (C.withTurnRow t).column = C.column :=
+  (rfl)
+
+/-- The turn in row `t` turns in row `t`. -/
+@[simp]
+theorem ColumnTurn.withTurnRow_turnRow (C : ColumnTurn n) (t : Fin n) :
+    (C.withTurnRow t).turnRow = t :=
+  (rfl)
 
 /-- Validated geometric data for a column commutation.
 

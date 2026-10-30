@@ -18,7 +18,7 @@ characteristic zero. The **Slodowy slice** at `e` is the affine subspace `S = e 
 (`IsSl2Triple.isCompl_range_ad_e_ker_ad_f`), so `S` is transverse to that orbit at `e` at the
 level of tangent spaces.
 
-Over an algebraically closed field `ad h` is diagonalizable with integer eigenvalues, and for a
+Over every characteristic-zero field `ad h` is diagonalizable with integer eigenvalues, and for a
 unit `c` the grading automorphism `TauCeti.gradingAut` acts on the `j`-eigenspace `L(j)` by
 `c ^ j`. If `L` is the Lie algebra of an algebraic group `G` and `λ` is a cocharacter of `G` with
 differential `h`, this automorphism is `Ad (λ c)`. The **contracting action** is
@@ -110,7 +110,7 @@ namespace IsSl2Triple
 
 section Contraction
 
-variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] {h e f : L}
 
 /-- **The contracting action** of `Kˣ` on `L` attached to an `sl₂` triple `(h, e, f)`:

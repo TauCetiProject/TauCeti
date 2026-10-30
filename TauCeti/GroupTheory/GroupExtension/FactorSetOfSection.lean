@@ -250,8 +250,9 @@ section FactorSetFun
 variable [Group M] {S : GroupExtension M E G}
 
 /-- **The factor set of a section**, as a bare function: `σ g * σ h * (σ (g * h))⁻¹` lies in the
-kernel, and this is its preimage there. It is a genuine factor set once the kernel is abelian, the
-section is normalized and the ambient action is the conjugation action; see
+kernel, and this is its preimage there. For arbitrary kernels it satisfies the noncommutative
+cocycle law `GroupExtension.Section.factorSetFun_mul`. When the kernel is abelian, the section
+is normalized and the ambient action is the conjugation action, it bundles as a `FactorSet`; see
 `TauCeti.GroupExtension.factorSet`. -/
 noncomputable def factorSetFun (σ : S.Section) (p : G × G) : M :=
   inlInv S (σ p.1 * σ p.2 * (σ (p.1 * p.2))⁻¹)
@@ -267,9 +268,30 @@ theorem section_mul (σ : S.Section) (g h : G) :
     (σ g : E) * σ h = S.inl (factorSetFun σ (g, h)) * σ (g * h) := by
   rw [inl_factorSetFun, inv_mul_cancel_right]
 
-theorem factorSetFun_one_one (σ : S.Section) (hσ : σ 1 = 1) : factorSetFun σ (1, 1) = 1 := by
-  refine S.inl_injective ?_
+/-- A normalized section has trivial factor whenever its first argument is the identity. -/
+@[simp]
+theorem _root_.GroupExtension.Section.factorSetFun_one_left (σ : S.Section)
+    (hσ : σ 1 = 1) (g : G) :
+    factorSetFun σ (1, g) = 1 := by
+  apply S.inl_injective
   simp [hσ]
+
+/-- A normalized section has trivial factor whenever its second argument is the identity. -/
+@[simp]
+theorem _root_.GroupExtension.Section.factorSetFun_one_right (σ : S.Section)
+    (hσ : σ 1 = 1) (g : G) :
+    factorSetFun σ (g, 1) = 1 := by
+  apply S.inl_injective
+  simp [hσ]
+
+/-- Section factors satisfy the noncommutative cocycle law, with conjugation by the section.
+No abelian-kernel hypothesis is required. -/
+theorem _root_.GroupExtension.Section.factorSetFun_mul (σ : S.Section) (g h j : G) :
+    factorSetFun σ (g, h) * factorSetFun σ (g * h, j) =
+      S.conjAct (σ g) (factorSetFun σ (h, j)) * factorSetFun σ (g, h * j) := by
+  apply S.inl_injective
+  simp only [map_mul, GroupExtension.inl_conjAct_comm, inl_factorSetFun]
+  simp [mul_assoc]
 
 end FactorSetFun
 
@@ -280,11 +302,8 @@ variable [CommGroup M] {S : GroupExtension M E G} [MulDistribMulAction G M]
 theorem isMulCocycle₂_factorSetFun (σ : S.Section) (hact : InducesAction S) :
     IsMulCocycle₂ (factorSetFun σ) := by
   intro g₁ g₂ g₃
-  refine S.inl_injective ?_
-  rw [mul_comm (factorSetFun σ (g₁ * g₂, g₃)), map_mul, map_mul, inl_smul σ hact]
-  simp only [inl_factorSetFun]
-  rw [mul_assoc g₁ g₂ g₃]
-  group
+  rw [mul_comm (factorSetFun σ (g₁ * g₂, g₃)), GroupExtension.Section.factorSetFun_mul, hact,
+    GroupExtension.Section.rightHom_section]
 
 /-- **The factor set of a normalized section** of an extension whose conjugation action on its
 abelian kernel is the ambient one. -/
@@ -292,7 +311,7 @@ noncomputable def factorSet (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAct
     FactorSet G M where
   toFun := factorSetFun σ
   isMulCocycle₂' := isMulCocycle₂_factorSetFun σ hact
-  map_one_one' := factorSetFun_one_one σ hσ
+  map_one_one' := σ.factorSetFun_one_left hσ 1
 
 @[simp]
 theorem coe_factorSet (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S) :
