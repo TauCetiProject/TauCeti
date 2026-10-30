@@ -54,7 +54,9 @@ that the part of `X` over `U` is the base change of this chart.
 * `TauCeti.DescentDatum.toBaseChangeDescended D`: the comparison morphism of descent data from `D`
   to the canonical descent datum on the base change of `D.descended`;
 * `TauCeti.DescentDatum.isIso_toBaseChangeDescended_hom`: for `p` flat, the comparison is an
-  isomorphism, so that `D` is effective with descended scheme `D.descended`.
+  isomorphism, so that `D` is effective with descended scheme `D.descended`;
+* `TauCeti.DescentDatum.isPullback_toDescended`: for `p` flat, `X` is the base change of
+  `D.descended` along `p`, through the quotient map.
 
 ## References
 
@@ -426,6 +428,15 @@ instance isIso_toBaseChangeDescended_hom [Flat p] : IsIso D.toBaseChangeDescende
     apply hQ.hom_ext <;> simp [g]
   have : IsIso g := by rw [hg]; infer_instance
   exact hsq.isoPullback_inv_snd ▸ inferInstanceAs (IsIso (hsq.isoPullback.inv ≫ g))
+
+/-- If `p : S' ⟶ S` is affine and flat, `X` is the base change of the descended scheme: the
+square formed by the quotient map `D.toDescended : X ⟶ D.descended`, the structure morphisms
+`X ⟶ S'` and `D.descended ⟶ S`, and `p` is cartesian. -/
+theorem isPullback_toDescended [Flat p] : IsPullback D.toDescended X.hom D.descended.hom p := by
+  have : IsIso D.toBaseChangeDescended.hom.left :=
+    (Over.forget S').map_isIso D.toBaseChangeDescended.hom
+  exact .of_iso_pullback ⟨D.toDescended_hom⟩ (asIso D.toBaseChangeDescended.hom.left)
+    D.toBaseChangeDescended_hom_left_fst D.toBaseChangeDescended_hom_left_snd
 
 end Effective
 
