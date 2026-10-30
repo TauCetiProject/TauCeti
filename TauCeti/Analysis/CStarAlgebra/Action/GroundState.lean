@@ -12,6 +12,7 @@ import Mathlib.Analysis.Complex.LocallyUniformLimit
 import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
 import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
 import TauCeti.Analysis.Complex.PhragmenLindelof
+import TauCeti.Analysis.SpecificLimits.SqLeMulDoubling
 
 /-!
 # Ground states of C⋆-algebra dynamics
@@ -61,7 +62,7 @@ of KMS states.
 public section
 
 open Complex Set Filter
-open scoped ComplexConjugate ComplexOrder Topology
+open scoped ComplexOrder Topology
 
 namespace TauCeti.CStarAction
 
@@ -305,50 +306,27 @@ theorem IsGroundState.apply_star_mul_entireExtension_mul_I_le (hω : α.IsGround
   have hGg (s : ℝ) : G s = g s := Complex.eq_coe_norm_of_nonneg
     (apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action hinv ha s)
   have hG0 : G 0 = ω (star a * a) := by simp [hG_def, ha.entireExtension_apply_zero]
-  -- Cauchy–Schwarz with `a` and `α_{is}(a)` gives `g s ^ 2 ≤ g 0 * g (2 * s)`
-  have hcs (s : ℝ) : g s ^ 2 ≤ g 0 * g (2 * s) := by
-    have hyy : ω (star (α.entireExtension a (s * I)) * α.entireExtension a (s * I)) =
-        G (2 * s) := by
-      have h := apply_star_entireExtension_mul_entireExtension_of_apply_action
-        (φ := (ω : A →L[ℂ] ℂ)) hinv ha (s * I) (s * I)
-      have hs' : (s * I : ℂ) - conj (s * I) = (2 * s : ℝ) * I := by
-        rw [map_mul, conj_ofReal, conj_I]; push_cast; ring
-      rwa [hs', PositiveContinuousLinearMap.coe_toContinuousLinearMap] at h
+  -- Cauchy–Schwarz with `a` and `α_{is}(a)` gives `g s ^ 2 ≤ g 0 * g (s + s)`
+  have hcs (s : ℝ) : g s ^ 2 ≤ g 0 * g (s + s) := by
+    have hyy := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
+      (φ := (ω : A →L[ℂ] ℂ)) hinv ha s s
+    rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap] at hyy
     have h := PositiveLinearMap.norm_map_star_mul_sq_le ω a (α.entireExtension a (s * I))
     rwa [hyy, ← hG0] at h
   -- the ground-state bound `g s ≤ ‖a‖ ^ 2` for `s ≥ 0`
   have hbd {s : ℝ} (hs : 0 ≤ s) : g s ≤ ‖a‖ * ‖a‖ := by
     simpa only [norm_star] using hω.norm_apply_mul_entireExtension_le (star a) ha
       (z := s * I) (by simpa using hs)
-  suffices g s ≤ g 0 by
-    calc ω (star a * α.entireExtension a (s * I)) = g s := hGg s
-      _ ≤ g 0 := Complex.real_le_real.mpr this
-      _ = ω (star a * a) := (hGg 0).symm.trans hG0
-  -- otherwise `g` would grow without bound along `2 ^ n * s`, contradicting `hbd`
-  by_contra! hlt
-  have hg0 : 0 < g 0 := by
-    by_contra! h
-    have h0 : g 0 = 0 := le_antisymm h (norm_nonneg _)
-    have := hcs s
-    rw [h0, zero_mul] at this
-    exact (pow_pos (h0 ▸ hlt) 2).not_ge this
-  -- repeated doubling: `g 0 * (g s / g 0) ^ 2 ^ n ≤ g (2 ^ n * s)`
-  have hdouble (n : ℕ) : g 0 * (g s / g 0) ^ 2 ^ n ≤ g (2 ^ n * s) := by
-    induction n with
-    | zero => simp [mul_div_cancel₀ _ hg0.ne']
-    | succ n ih =>
-      have h := hcs (2 ^ n * s)
-      rw [← mul_assoc, ← pow_succ'] at h
-      calc g 0 * (g s / g 0) ^ 2 ^ (n + 1)
-          = (g 0 * (g s / g 0) ^ 2 ^ n) ^ 2 / g 0 := by field_simp; ring
-        _ ≤ g (2 ^ n * s) ^ 2 / g 0 := by gcongr
-        _ ≤ g (2 ^ (n + 1) * s) := by rwa [div_le_iff₀' hg0]
-  have hr : 1 < g s / g 0 := (one_lt_div hg0).mpr hlt
-  have htend : Tendsto (fun n : ℕ => g 0 * (g s / g 0) ^ 2 ^ n) atTop atTop :=
-    ((tendsto_pow_atTop_atTop_of_one_lt hr).comp
-      (tendsto_pow_atTop_atTop_of_one_lt (α := ℕ) one_lt_two)).const_mul_atTop hg0
-  obtain ⟨n, hn⟩ := (htend.eventually_gt_atTop (‖a‖ * ‖a‖)).exists
-  exact (hn.trans_le ((hdouble n).trans (hbd (by positivity)))).false
+  -- a bounded sequence `n ↦ g (n * s)` satisfying Cauchy–Schwarz cannot increase at `n = 1`
+  have hle : g s ≤ g 0 := by
+    have hsq (n : ℕ) : g (n * s) ^ 2 ≤ g ((0 : ℕ) * s) * g ((n + n : ℕ) * s) := by
+      simpa only [Nat.cast_zero, zero_mul, Nat.cast_add, add_mul] using hcs (n * s)
+    have h := apply_one_le_apply_zero_of_sq_le_mul (b := fun n : ℕ => g (n * s))
+      (norm_nonneg _) hsq fun n => hbd (by positivity)
+    simpa only [Nat.cast_one, one_mul, Nat.cast_zero, zero_mul] using h
+  calc ω (star a * α.entireExtension a (s * I)) = g s := hGg s
+    _ ≤ g 0 := Complex.real_le_real.mpr hle
+    _ = ω (star a * a) := (hGg 0).symm.trans hG0
 
 /-- **Ground states satisfy the generator inequality.** For a ground state `ω` with generator
 `δ` of the dynamics and an entire analytic `a`, `-i ω (a⋆ δ(a)) ≥ 0`. -/

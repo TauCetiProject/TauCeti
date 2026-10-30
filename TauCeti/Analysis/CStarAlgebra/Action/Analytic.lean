@@ -392,6 +392,17 @@ theorem apply_star_entireExtension_mul_entireExtension_of_apply_action {φ : A �
   have h := apply_entireExtension_mul_entireExtension_of_apply_action hφ ha.star ha (conj z) w
   rwa [ha.entireExtension_star, Complex.conj_conj] at h
 
+/-- For an invariant continuous linear functional `φ` and an entire analytic `a`, imaginary-time
+correlations add: `φ ((α_{is}(a))⋆ α_{it}(a)) = φ (a⋆ α_{i(s + t)}(a))` for real `s, t`. -/
+theorem apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
+    {φ : A →L[ℂ] ℂ} (hφ : ∀ t a, φ (α t a) = φ a) (ha : α.IsEntireAnalytic a) (s t : ℝ) :
+    φ (star (α.entireExtension a (s * Complex.I)) * α.entireExtension a (t * Complex.I)) =
+      φ (star a * α.entireExtension a ((s + t : ℝ) * Complex.I)) := by
+  rw [apply_star_entireExtension_mul_entireExtension_of_apply_action hφ ha]
+  congr 3
+  simp only [map_mul, Complex.conj_ofReal, Complex.conj_I, Complex.ofReal_add]
+  ring
+
 section Positive
 
 open Complex
@@ -404,11 +415,9 @@ correlation `ω (a⋆ α_{is}(a))` is nonnegative for every real `s`. -/
 theorem apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action
     (hω : ∀ t a, ω (α t a) = ω a) (ha : α.IsEntireAnalytic a) (s : ℝ) :
     0 ≤ ω (star a * α.entireExtension a (s * I)) := by
-  have h := apply_star_entireExtension_mul_entireExtension_of_apply_action
-    (φ := (ω : A →L[ℂ] ℂ)) hω ha (s / 2 * I) (s / 2 * I)
-  have hs : (s / 2 * I : ℂ) - conj (s / 2 * I) = s * I := by
-    rw [map_mul, map_div₀, conj_ofReal, conj_I, map_ofNat]; ring
-  rw [hs, PositiveContinuousLinearMap.coe_toContinuousLinearMap] at h
+  have h := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
+    (φ := (ω : A →L[ℂ] ℂ)) hω ha (s / 2) (s / 2)
+  rw [add_halves, PositiveContinuousLinearMap.coe_toContinuousLinearMap] at h
   rw [← h]
   exact ω.map_nonneg (star_mul_self_nonneg _)
 
