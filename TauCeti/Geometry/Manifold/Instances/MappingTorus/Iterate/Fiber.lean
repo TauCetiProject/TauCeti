@@ -100,6 +100,7 @@ theorem injective_mk_iterateMap_fiber (hk : k ≠ 0) (t : ℝ) (x : M) :
   exact Fin.ext (by exact_mod_cast heq)
 
 /-- Every fiber of a nonzero integer-iterate map is finite. -/
+@[simp]
 theorem finite_preimage_iterateMap (hk : k ≠ 0) (y : SmoothMappingTorus φ) :
     (iterateMap φ k ⁻¹' {y}).Finite := by
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ y
@@ -108,6 +109,7 @@ theorem finite_preimage_iterateMap (hk : k ≠ 0) (y : SmoothMappingTorus φ) :
 
 /-- Every fiber of the integer-iterate map has exactly the absolute value of the iterate
 many points, even for a negative iterate and a noncompact fiber manifold. -/
+@[simp]
 theorem ncard_preimage_iterateMap (hk : k ≠ 0) (y : SmoothMappingTorus φ) :
     (iterateMap φ k ⁻¹' {y}).ncard = k.natAbs := by
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ y
