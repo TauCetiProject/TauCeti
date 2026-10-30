@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Tensor.Induction.Resolution
 public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cochain
+import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Resolution
 import Mathlib.RingTheory.Ideal.Int
 
 /-!
@@ -15,13 +16,16 @@ import Mathlib.RingTheory.Ideal.Int
 
 A homogeneous cocycle for a compact open subgroup, with trivial mod-two coefficients, gives
 an ambient cohomology class by taking its diagonal tensor in the tensor-induced resolution.
-This file supplies that construction directly on Mathlib's homogeneous cochains. In positive
-degree its value depends only on the input cohomology class, including when that class is zero.
-Multiplication identifies the tensor-induced coefficients with the ambient trivial coefficients.
+This file supplies that construction directly on Mathlib's homogeneous cochains. Its value
+depends only on the input cohomology class, including when that class is zero, and not on the
+transversal used to tensor-induce. Multiplication identifies the tensor-induced coefficients with
+the ambient trivial coefficients.
 
 The construction uses `TauCeti.smoothTensorInducedDiagonalClass` and its change-of-coboundary
 theorem. These operate on the total graded resolution; `TopRep.cochainToGradedResolution`
-transfers the canonical differential and invariance to that presentation. No choice of a
+transfers the canonical differential and invariance to that presentation. In degree zero there
+are no coboundaries, so cocycles with equal classes are equal. Transversal independence is
+`TauCeti.smoothTensorInducedDiagonalClass_trivialF2_changeTransversal`. No choice of a
 representative of a cohomology class is made here.
 
 ## References
@@ -84,28 +88,46 @@ theorem tensorNormCocycleClass_def {n : ℕ}
           (by rw [TopRep.gradedResolutionDifferential_cochainToGradedResolution, hz, map_zero])) :=
   (rfl)
 
-/-- Equal positive-degree classes have equal tensor norms. The equality is in Mathlib's
-canonical continuous cohomology; no graded coboundary witness is required from the caller. -/
+/-- The tensor norm of a cocycle does not depend on the transversal used to tensor-induce. -/
+theorem tensorNormCocycleClass_changeTransversal (s : U.toSubgroup.LeftTransversal) {n : ℕ}
+    (z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X n)
+    (hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d n (n + 1)).hom z = 0) :
+    tensorNormCocycleClass U t z hz = tensorNormCocycleClass U s z hz :=
+  smoothTensorInducedDiagonalClass_trivialF2_changeTransversal G U.toSubgroup U.isOpen' s t _ _ _ _
+
+/-- Equal classes have equal tensor norms. The equality is in Mathlib's canonical continuous
+cohomology; no graded coboundary witness is required from the caller. -/
 theorem tensorNormCocycleClass_eq_of_cochainClass_eq {n : ℕ}
-    (z z' : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X (n + 1))
-    (hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d (n + 1) (n + 1 + 1)).hom z = 0)
-    (hz' : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d (n + 1) (n + 1 + 1)).hom z' = 0)
-    (h : (trivialF2 U.toSubgroup).cochainClass (n + 1) z hz =
-      (trivialF2 U.toSubgroup).cochainClass (n + 1) z' hz') :
+    (z z' : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X n)
+    (hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d n (n + 1)).hom z = 0)
+    (hz' : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d n (n + 1)).hom z' = 0)
+    (h : (trivialF2 U.toSubgroup).cochainClass n z hz =
+      (trivialF2 U.toSubgroup).cochainClass n z' hz') :
     tensorNormCocycleClass U t z hz = tensorNormCocycleClass U t z' hz' := by
-  let : (Ideal.span {(2 : ℤ)}).IsMaximal :=
-    @Int.ideal_span_isMaximal_of_prime 2 ⟨Nat.prime_two⟩
-  obtain ⟨y, hy⟩ := ((trivialF2 U.toSubgroup).cochainClass_eq_cochainClass_iff rfl hz hz').1 h
-  rw [tensorNormCocycleClass_def, tensorNormCocycleClass_def]
-  congr 1
-  apply smoothTensorInducedDiagonalClass_eq_of_sub_eq_d
-    U.toSubgroup U.isOpen' t
-    ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
-    (fun a ↦ by simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)
-    _ _ _ _ _ _
-    ((trivialF2 U.toSubgroup).cochainToGradedResolution_mem n y)
-    ((trivialF2 U.toSubgroup).cochainToGradedResolution_invariant n y)
-  rw [← map_sub, hy, TopRep.gradedResolutionDifferential_cochainToGradedResolution]
+  cases n with
+  | zero =>
+    -- In degree zero there are no coboundaries: the class map is injective.
+    rw [TopRep.cochainClass_def, TopRep.cochainClass_def] at h
+    have hc := (CategoryTheory.ConcreteCategory.bijective_of_isIso
+      ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).homologyπ 0)).1 h
+    obtain rfl : z = z' := by
+      simpa only [HomologicalComplex.iCycles_cyclesMkOfEq] using
+        congrArg ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).iCycles 0).hom hc
+    rfl
+  | succ n =>
+    let : (Ideal.span {(2 : ℤ)}).IsMaximal :=
+      @Int.ideal_span_isMaximal_of_prime 2 ⟨Nat.prime_two⟩
+    obtain ⟨y, hy⟩ := ((trivialF2 U.toSubgroup).cochainClass_eq_cochainClass_iff rfl hz hz').1 h
+    rw [tensorNormCocycleClass_def, tensorNormCocycleClass_def]
+    congr 1
+    apply smoothTensorInducedDiagonalClass_eq_of_sub_eq_d
+      U.toSubgroup U.isOpen' t
+      ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
+      (fun a ↦ by simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)
+      _ _ _ _ _ _
+      ((trivialF2 U.toSubgroup).cochainToGradedResolution_mem n y)
+      ((trivialF2 U.toSubgroup).cochainToGradedResolution_invariant n y)
+    rw [← map_sub, hy, TopRep.gradedResolutionDifferential_cochainToGradedResolution]
 
 /-- The zero cocycle has zero tensor norm, including in degree zero. -/
 @[simp]
@@ -131,14 +153,13 @@ theorem tensorNormCocycleClass_zero (n : ℕ) :
   simp only [map_zero, hten]
   rfl
 
-/-- A positive-degree cocycle representing zero has zero tensor norm. -/
+/-- A cocycle representing zero has zero tensor norm. -/
 theorem tensorNormCocycleClass_eq_zero_of_cochainClass_eq_zero {n : ℕ}
-    (z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X (n + 1))
-    (hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d
-      (n + 1) (n + 1 + 1)).hom z = 0)
-    (h : (trivialF2 U.toSubgroup).cochainClass (n + 1) z hz = 0) :
+    (z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X n)
+    (hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d n (n + 1)).hom z = 0)
+    (h : (trivialF2 U.toSubgroup).cochainClass n z hz = 0) :
     tensorNormCocycleClass U t z hz = 0 := by
-  rw [← tensorNormCocycleClass_zero U t (n + 1)]
+  rw [← tensorNormCocycleClass_zero U t n]
   apply tensorNormCocycleClass_eq_of_cochainClass_eq U t z 0 hz (map_zero _)
   simpa only [TopRep.cochainClass_zero] using h
 
