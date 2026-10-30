@@ -304,32 +304,6 @@ theorem waldschmidtOperatorEntry_apply {K : Type*} [Field K] (α b : Fin (n + 1)
         (Polynomial.taylor (t : K) P) F) * ∏ j, α j ^ (t * s j) :=
   (rfl)
 
-/-- For the operator `∂^σ/∂z₀^σ` the entry is the entry `TauCeti.waldschmidtEntry` of the
-iterated derivative. -/
-@[simp]
-theorem waldschmidtOperatorEntry_X_pow {K : Type*} [Field K] (α b : Fin (n + 1) → K) (t : ℤ)
-    (s : Fin (n + 1) → ℤ) (F : MvPolynomial (Fin (n + 1)) K) (σ : ℕ) :
-    waldschmidtOperatorEntry α b t s F (Polynomial.X ^ σ) = waldschmidtEntry α b F t σ s := by
-  rw [waldschmidtOperatorEntry_apply, waldschmidtEntry_def, Polynomial.taylor_X_pow, map_pow,
-    map_add, Polynomial.aeval_X, Polynomial.aeval_C,
-    (Algebra.commute_algebraMap_right _ _).add_pow]
-  simp only [LinearMap.coe_sum, Finset.sum_apply, map_sum, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [← map_pow, ← map_natCast (algebraMap K (Module.End K (MvPolynomial (Fin (n + 1)) K))),
-    mul_assoc, ← map_mul, ← Algebra.commutes, Module.End.mul_apply,
-    Module.algebraMap_end_apply, Module.End.pow_apply, smul_eval,
-    Derivation.coeFn_coe]
-  ring
-
-/-- For the identity operator the entry is the value of `F` at the grid point times
-`α₁^(t s₁) ⋯ αₘ^(t sₘ)`. -/
-@[simp]
-theorem waldschmidtOperatorEntry_one {K : Type*} [Field K] (α b : Fin (n + 1) → K) (t : ℤ)
-    (s : Fin (n + 1) → ℤ) (F : MvPolynomial (Fin (n + 1)) K) :
-    waldschmidtOperatorEntry α b t s F 1 =
-      MvPolynomial.eval (waldschmidtPoint b s) F * ∏ j, α j ^ (t * s j) := by
-  simpa using waldschmidtOperatorEntry_X_pow α b t s F 0
-
 /-- **Leibniz formula for the operator entries.** Since
 `P(∂)(F e^{tz₀}) = e^{tz₀} P(∂ + t) F`, the entry of `P(∂/∂z₀)` is
 `(∑ₖ P^{[k]}(t) (∂ᵏF/∂z₀ᵏ)(s · y)) α₁^(t s₁) ⋯ αₘ^(t sₘ)`, where `P^{[k]}` is the `k`-th Hasse
@@ -345,6 +319,24 @@ theorem waldschmidtOperatorEntry_eq_sum_hasseDeriv {K : Type*} [Field K]
   rw [waldschmidtOperatorEntry_apply, Polynomial.aeval_eq_sum_range, Polynomial.natDegree_taylor]
   simp only [LinearMap.coe_sum, Finset.sum_apply, map_sum, LinearMap.smul_apply,
     Module.End.pow_apply, smul_eval, Polynomial.taylor_coeff, Derivation.coeFn_coe]
+
+/-- For the operator `∂^σ/∂z₀^σ` the entry is the entry `TauCeti.waldschmidtEntry` of the
+iterated derivative. -/
+@[simp]
+theorem waldschmidtOperatorEntry_X_pow {K : Type*} [Field K] (α b : Fin (n + 1) → K) (t : ℤ)
+    (s : Fin (n + 1) → ℤ) (F : MvPolynomial (Fin (n + 1)) K) (σ : ℕ) :
+    waldschmidtOperatorEntry α b t s F (Polynomial.X ^ σ) = waldschmidtEntry α b F t σ s := by
+  rw [waldschmidtOperatorEntry_eq_sum_hasseDeriv, waldschmidtEntry_def, Polynomial.natDegree_X_pow]
+  simp [← Polynomial.monomial_one_right_eq_X_pow, Polynomial.hasseDeriv_monomial]
+
+/-- For the identity operator the entry is the value of `F` at the grid point times
+`α₁^(t s₁) ⋯ αₘ^(t sₘ)`. -/
+@[simp]
+theorem waldschmidtOperatorEntry_one {K : Type*} [Field K] (α b : Fin (n + 1) → K) (t : ℤ)
+    (s : Fin (n + 1) → ℤ) (F : MvPolynomial (Fin (n + 1)) K) :
+    waldschmidtOperatorEntry α b t s F 1 =
+      MvPolynomial.eval (waldschmidtPoint b s) F * ∏ j, α j ^ (t * s j) := by
+  simpa using waldschmidtOperatorEntry_X_pow α b t s F 0
 
 /-- The entry identity for a differential operator. Let `ι : K →+* ℂ` with `ι αⱼ = exp λⱼ` for
 `1 ≤ j ≤ m`, let `F` be a polynomial and `P = ∑ᵢ cᵢ Xⁱ` a one-variable polynomial with
