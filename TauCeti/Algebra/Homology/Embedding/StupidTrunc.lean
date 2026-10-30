@@ -222,6 +222,7 @@ section Abelian
 variable [Abelian C] (K : CochainComplex C ℤ) (n : ℤ)
 
 /-- In degrees `≤ n`, the inclusion of the kernel of `K ⟶ σ^{≤ n} K` vanishes. -/
+@[simp]
 lemma kernel_ι_πStupidTruncLE_f_eq_zero {i : ℤ} (hi : i ≤ n) :
     (kernel.ι (K.πStupidTruncLE n)).f i = 0 := by
   have := K.isIso_πStupidTruncLE_f n hi
