@@ -14,13 +14,6 @@ If `(R, I)` is henselian and `φ : R →+* S` is surjective, then `(S, I.map φ)
 henselian. In particular, one can quotient by any ideal, not only an ideal contained
 in `I`. This permanence result is used when changing the ambient ring of a henselian pair.
 
-A polynomial over `S` lifts to a polynomial `g` over `R`, but its approximate root and
-invertible derivative need not lift with the same properties. Multiplying `g` by a
-lift of the inverse derivative and correcting its constant and linear terms in
-`ker φ` gives a polynomial with value in `I` and derivative exactly one. Apply
-`Polynomial.exists_isRoot_sub_mem`, the nonmonic form of Hensel's lemma, to this
-corrected polynomial.
-
 ## References
 
 * Stacks Project, Lemma 15.11.8 (09XK), the quotient case of integral permanence.
@@ -42,6 +35,12 @@ theorem henselianRing_of_surjective (φ : R →+* S) (hφ : Function.Surjective 
     rw [Ideal.map_le_iff_le_comap, Ideal.comap_jacobson_of_surjective hφ]
     exact HenselianRing.jac.trans (Ideal.jacobson_mono bot_le)
   refine ⟨hJac, fun f _ a₀ ha₀ hd => ?_⟩
+  /- A polynomial over S lifts to a polynomial g over R, but its approximate root and
+  invertible derivative need not lift with the same properties. Multiplying g by a
+  lift of the inverse derivative and correcting its constant and linear terms in
+  ker φ gives a polynomial with value in I and derivative exactly one. Apply
+  Polynomial.exists_isRoot_sub_mem, the nonmonic form of Hensel's lemma, to this
+  corrected polynomial. -/
   have := isLocalHom_of_le_jacobson_bot (I.map φ) hJac
   obtain ⟨u, hu⟩ := isUnit_of_map_unit (Ideal.Quotient.mk (I.map φ)) _ hd
   obtain ⟨b, hb⟩ := hφ (↑u⁻¹ : S)
