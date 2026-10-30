@@ -390,6 +390,15 @@ theorem mdifferentiableAt (φ : SmoothForm I M F k) (x : M) :
           (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Bundle.Trivial M F x))) x :=
   φ.contMDiff.mdifferentiableAt (by simp)
 
+/-- Evaluating a smooth form on vector fields differentiable at a point gives a function
+differentiable at that point. -/
+theorem mdifferentiableAt_apply_vectorField (φ : SmoothForm I M F k)
+    {V : Fin k → (y : M) → TangentSpace I y} {x : M}
+    (hV : ∀ i, MDifferentiableAt I I.tangent (fun y ↦ (V i y : TangentBundle I M)) x) :
+    MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ φ.1 y (V · y)) x := by
+  have h := (φ.mdifferentiableAt x).continuousAlternatingMap_bundle_apply (b := id) hV
+  simpa using ((mdifferentiableAt_totalSpace _ _).1 h).2
+
 /-- The smooth section underlying a fixed-coefficient smooth form. -/
 def toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
     ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
@@ -541,6 +550,11 @@ theorem eval₂_add (φ ψ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x
     (φ + ψ).eval₂ x v w = φ.eval₂ x v w + ψ.eval₂ x v w :=
   (rfl)
 
+/-- Evaluation of the negative of a degree-two form is the negative of the evaluation. -/
+theorem eval₂_neg (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
+    (-φ).eval₂ x v w = -φ.eval₂ x v w :=
+  (rfl)
+
 
 section Evaluation
 
@@ -662,6 +676,18 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
   apply MultilinearMap.isAlt_toBilinForm
   intro v
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
+
+/-- The bilinear form represented by a degree-two smooth form at a point vanishes exactly when the
+form vanishes there. -/
+@[simp]
+theorem bilinFormAt_eq_zero_iff (φ : SmoothForm I M ℝ 2) (x : M) :
+    φ.bilinFormAt x = 0 ↔ φ.1 x = 0 := by
+  refine ⟨fun h => ContinuousAlternatingMap.ext fun v => ?_, fun h => ?_⟩
+  · have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+    rw [hv]
+    simpa using LinearMap.congr_fun₂ h (v 0) (v 1)
+  · ext v w
+    simp [h]
 
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
 theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :

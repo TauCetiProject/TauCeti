@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.AEEqFun
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
@@ -65,6 +66,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv`: for a locally Lipschitz
   function, in particular a `C¹` one, the total variation is `∫_Ω ‖Du‖` for its classical
   derivative.
+* `HasCompactSupport.totalVariationOn_lt_top`: a compactly supported `C¹` function has finite
+  total variation on every open set.
 
 ## References
 
@@ -373,6 +376,16 @@ theorem _root_.LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv
     (hu : LocallyLipschitzOn Ω u) :
     totalVariationOn μ Ω u = ∫⁻ x in Ω, ‖fderiv ℝ u x‖ₑ ∂μ :=
   hu.hasWeakFDerivOn_fderiv.totalVariationOn_eq_setLIntegral_enorm
+
+/-- A compactly supported `C¹` function has finite total variation on every open set, against
+an additive Haar measure. -/
+theorem _root_.HasCompactSupport.totalVariationOn_lt_top (huc : HasCompactSupport u)
+    (hu : ContDiff ℝ 1 u) : totalVariationOn μ Ω u < ⊤ := by
+  have hweak : HasWeakFDerivOn μ Ω u (fderiv ℝ u) :=
+    hu.locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn_fderiv
+  apply hweak.totalVariationOn_lt_top_iff_integrableOn.mpr
+  exact ((hu.continuous_fderiv (by simp)).integrable_of_hasCompactSupport
+    (huc.fderiv (𝕜 := ℝ))).integrableOn
 
 end Haar
 

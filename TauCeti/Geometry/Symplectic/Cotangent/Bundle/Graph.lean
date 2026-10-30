@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
-public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
+public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 
 /-!
 # Graphs of one-forms in a cotangent bundle
@@ -31,8 +32,13 @@ tangent-image predicates of `TauCeti.Geometry.Symplectic.Lagrangian.Manifold`:
 
 In particular the zero section of `T*M` is a Lagrangian map
 (`TauCeti.CotangentBundle.isLagrangianMap_zeroSection`), and so is the graph of the differential
-`df` of a smooth function (`TauCeti.CotangentBundle.isLagrangianMap_section_mextDerivₗ`). Since
-`s_α^*λ = α`, the pulled-back Liouville form on the graph is exact exactly when `α` is.
+`df` of a smooth function (`TauCeti.CotangentBundle.isLagrangianMap_section_mextDerivₗ`).
+
+Since `s_α^*λ = α`, the graph of `α` is an exact Lagrangian map for the primitive `λ` of `ω`, with
+primitive `h`, exactly when `α = dh` (`TauCeti.CotangentBundle.isExactLagrangianMap_section_iff`).
+So the graph is exact Lagrangian for some primitive exactly when `α` is an exact form
+(`TauCeti.CotangentBundle.exists_isExactLagrangianMap_section_iff`); the zero section is exact
+Lagrangian with primitive `0` (`TauCeti.CotangentBundle.isExactLagrangianMap_zeroSection`).
 
 ## Main declarations
 
@@ -43,6 +49,12 @@ In particular the zero section of `T*M` is a Lagrangian map
   `dα = 0`.
 * `TauCeti.CotangentBundle.isLagrangianMap_zeroSection`: the zero section is Lagrangian.
 * `TauCeti.CotangentBundle.isLagrangianMap_section_mextDerivₗ`: the graph of `df` is Lagrangian.
+* `TauCeti.CotangentBundle.isExactLagrangianMap_section_iff`: the graph of `α` is exact Lagrangian
+  with primitive `h` iff `α = dh`.
+* `TauCeti.CotangentBundle.exists_isExactLagrangianMap_section_iff`: the graph of `α` is exact
+  Lagrangian iff `α` is exact.
+* `TauCeti.CotangentBundle.isExactLagrangianMap_zeroSection`: the zero section is exact
+  Lagrangian.
 
 ## References
 
@@ -121,6 +133,59 @@ theorem isLagrangianMap_section_mextDerivₗ (f : SmoothForm I M ℝ 0) :
     (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsLagrangianMap I
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)) :=
   (isLagrangianMap_section_iff _).mpr (SmoothForm.isClosed_mextDerivₗ f)
+
+/-! ### Exact Lagrangian graphs -/
+
+/-- **The graph of a one-form is exact Lagrangian exactly when the form is exact.** On a
+finite-dimensional manifold, the section of the cotangent bundle defined by a smooth one-form `α`
+is an exact Lagrangian map for the primitive `λ` of `ω = -dλ`, with primitive `h`, if and only if
+`h` is smooth and `α = dh`. -/
+theorem isExactLagrangianMap_section_iff (α : SmoothForm I M ℝ 1) {h : M → ℝ} :
+    (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap I
+        (liouvilleForm I M)
+        (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x)) h ↔
+      ContMDiff I 𝓘(ℝ) ∞ h ∧ α.1 = mextDeriv (RoughForm.ofFunction I h) := by
+  -- The Liouville form is tautological: `s_α^*λ = α`.
+  have hpull := congrArg Subtype.val (mpullback_liouvilleForm α)
+  rw [SmoothForm.coe_mpullback] at hpull
+  refine ⟨fun hL ↦ ⟨hL.contMDiff_primitive, hpull.symm.trans hL.mpullback_eq⟩,
+    fun ⟨hh, hα⟩ ↦ ⟨(isLagrangianMap_section_iff α).mpr ?_, hh, hpull.trans hα⟩⟩
+  rw [SmoothForm.isClosed_def, hα]
+  exact mextDeriv_mextDeriv_ofFunction (hh.of_le (by simp))
+
+/-- **The graph of a one-form is exact Lagrangian for some primitive exactly when the form is
+exact.** On a finite-dimensional manifold, the pulled-back Liouville form on the graph of a smooth
+one-form `α` has a smooth primitive making the graph an exact Lagrangian map if and only if `α` is
+an exact form. -/
+theorem exists_isExactLagrangianMap_section_iff (α : SmoothForm I M ℝ 1) :
+    (∃ h : M → ℝ,
+      (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap I
+        (liouvilleForm I M)
+        (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x)) h) ↔
+      α ∈ exactForms I M 1 := by
+  simp only [isExactLagrangianMap_section_iff, exactForms_succ, LinearMap.mem_range]
+  refine ⟨fun ⟨h, hh, hα⟩ ↦ ⟨⟨RoughForm.ofFunction I h,
+    (isSmoothForm_ofFunction_iff.mpr hh).mem_smoothForms⟩, Subtype.ext ?_⟩,
+    fun ⟨g, hg⟩ ↦ ⟨fun x ↦ g.1 x 0, ?_, ?_⟩⟩
+  · rw [mextDerivₗ_apply, hα]
+  · rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction, isSmoothForm_def]
+    exact g.contMDiff
+  · rw [← hg, mextDerivₗ_apply, ← RoughForm.eq_ofFunction]
+
+/-- **The zero section is exact Lagrangian.** On a finite-dimensional manifold, the zero section of
+the cotangent bundle is an exact Lagrangian map for the primitive `λ` of `ω = -dλ`, with primitive
+`0`, since `λ` vanishes along it. -/
+theorem isExactLagrangianMap_zeroSection :
+    (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap I
+      (liouvilleForm I M) (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) 0 := by
+  have h := (isExactLagrangianMap_section_iff (0 : SmoothForm I M ℝ 1) (h := 0)).mpr
+    ⟨contMDiff_const, ?_⟩
+  · -- The section of the zero one-form is the zero section.
+    convert h using 2 with x
+    simp [zeroSection]
+  · funext x
+    ext v
+    simp [mextDeriv_ofFunction]
 
 end CotangentBundle
 

@@ -336,6 +336,18 @@ theorem typeProjection_eq_of_sum_eq {η : ℕ × ℕ → SmoothForm I M F k}
   · intro h
     exact absurd (by simpa using hpq) h
 
+/-- For a form `φ` of type `(p,q)` and a family `f` vanishing at `0`, the sum over all types of `f`
+applied to the type components of `φ` reduces to its `(p,q)` term. -/
+theorem IsOfType.sum_typeProjection_eq {G : Type*} [AddCommMonoid G]
+    (h : φ.IsOfType J p q) (f : ℕ × ℕ → SmoothForm I M F k → G)
+    (hf : ∀ pq, f pq 0 = 0) :
+    ∑ pq ∈ Finset.antidiagonal k, f pq (J.typeProjection pq.1 pq.2 φ) = f (p, q) φ := by
+  rw [Finset.sum_eq_single (p, q), h.typeProjection_self]
+  · intro pq _ hne
+    rw [h.typeProjection_of_ne hne, hf]
+  · intro hpq
+    exact absurd (by simpa using h.add_eq) hpq
+
 end SmoothForm
 
 namespace SmoothAlmostComplexStructure
@@ -355,6 +367,12 @@ theorem typeProjection_zero_one :
       (2 : ℂ)⁻¹ • (1 + Complex.I • J.toEndomorphism.alternatingDerivation) := by
   ext α x : 3
   simp [ContinuousLinearMap.typeProjection_zero_one]
+
+/-- A smooth one-form is the sum of its components of types `(1,0)` and `(0,1)`. -/
+theorem typeProjection_one_zero_add_zero_one (α : SmoothForm I M F 1) :
+    J.typeProjection 1 0 α + J.typeProjection 0 1 α = α := by
+  conv_rhs => rw [← J.sum_typeProjection α]
+  simp [Finset.Nat.sum_antidiagonal_succ, add_comm]
 
 end SmoothAlmostComplexStructure
 
