@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Basic
-public import Mathlib.Algebra.Order.Ring.Defs
+public import Mathlib.Algebra.Order.GroupWithZero.Defs
+public import Mathlib.Algebra.Order.ZeroLEOne
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import TauCeti.Algebra.Order.BigOperators.Fin
@@ -39,7 +40,7 @@ variable {F K E V W R : Type*} [Field F] [DivisionRing K] [Semiring E] [Nontrivi
   [Algebra F K] [Algebra F E] [Module.Finite F K]
   [AddCommGroup V] [Module K V] [Module F V] [IsScalarTower F K V]
   [AddCommGroup W] [Module E W] [Module F W] [IsScalarTower F E W]
-  [CommSemiring R] [PartialOrder R] [IsOrderedRing R]
+  [CommMonoidWithZero R] [Preorder R] [ZeroLEOneClass R] [PosMulMono R]
 
 /-- From `[K : F] * k` vectors with independent images under an `F`-linear map, carrying
 nonnegative quantities `b` bounded by a monotone sequence `c`, select `k` vectors independent
@@ -52,6 +53,7 @@ theorem exists_linearIndependent_comp_finrank_mul_prod_pow_le {k : ℕ} {f : V �
     ∃ s : Fin k → Fin (finrank F K * k), LinearIndependent K (u ∘ s) ∧
       (∀ j, (s j : ℕ) ≤ finrank F K * j) ∧ (∏ j, b (s j)) ^ finrank F K ≤ ∏ l, c l := by
   obtain ⟨s, hs, hsD⟩ := exists_linearIndependent_comp_finrank_mul (K := K) h
+  have := PosMulMono.toMulPosMono (α := R)
   exact ⟨s, hs, hsD, (pow_le_pow_left₀ (Finset.prod_nonneg fun _ _ ↦ hb0 _)
     (Finset.prod_le_prod₀ (fun _ _ ↦ hb0 _) fun _ _ ↦ hbc _) _).trans
     (Fin.prod_pow_le_prod_of_monotone (fun l ↦ (hb0 l).trans (hbc l)) hc hsD)⟩

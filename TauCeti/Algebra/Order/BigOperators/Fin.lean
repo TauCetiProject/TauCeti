@@ -56,9 +56,9 @@ theorem sum_le_two_mul_of_two_mul_succ_le {R : Type*} [Semiring R] [PartialOrder
 position at most `D * j`, the product of the selected terms raised to the power `D` is at most the
 product of the whole sequence: the `j`-th block of `D` consecutive terms bounds the `D`-th power of
 the `j`-th selected term from above. -/
-theorem prod_pow_le_prod_of_monotone {R : Type*} [CommSemiring R] [PartialOrder R]
-    [IsOrderedRing R] {D k : ℕ} {c : Fin (D * k) → R} (hc0 : ∀ i, 0 ≤ c i) (hc : Monotone c)
-    {s : Fin k → Fin (D * k)} (hs : ∀ j, (s j : ℕ) ≤ D * j) :
+theorem prod_pow_le_prod_of_monotone {R : Type*} [CommMonoidWithZero R] [Preorder R]
+    [ZeroLEOneClass R] [PosMulMono R] {D k : ℕ} {c : Fin (D * k) → R} (hc0 : ∀ i, 0 ≤ c i)
+    (hc : Monotone c) {s : Fin k → Fin (D * k)} (hs : ∀ j, (s j : ℕ) ≤ D * j) :
     (∏ j, c (s j)) ^ D ≤ ∏ i, c i := by
   let e : Fin k × Fin D ≃ Fin (D * k) := finProdFinEquiv.trans (finCongr (Nat.mul_comm k D))
   have he (p : Fin k × Fin D) : (e p : ℕ) = p.2 + D * p.1 := by simp [e]
