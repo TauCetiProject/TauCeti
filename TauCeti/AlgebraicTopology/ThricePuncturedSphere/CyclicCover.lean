@@ -152,30 +152,24 @@ local notation "w₀" => (a * log (1 / 2) + b * (log (1 / 2) + π * I) : ℂ)
 private theorem isPrimitiveRoot_ζ : IsPrimitiveRoot ζ m :=
   isPrimitiveRoot_exp m (NeZero.ne m)
 
-/-- The `m`-th power of `exp (w / m)` is `exp w`. -/
-private theorem exp_div_pow (w : ℂ) : cexp (w / m) ^ m = cexp w := by
-  rw [← exp_nat_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 (NeZero.ne m))]
-
-/-- The `m`-th power of `ζ ^ k · exp (w / m)` is `exp w`. -/
-private theorem pow_mul_exp_div_pow (k : ℕ) (w : ℂ) : (ζ ^ k * cexp (w / m)) ^ m = cexp w := by
-  rw [mul_pow, ← pow_mul, pow_mul', isPrimitiveRoot_ζ.pow_eq_one, one_pow, one_mul, exp_div_pow]
-
-/-- `exp (a u + b v) = (exp u)ᵃ (exp v)ᵇ`. -/
-private theorem exp_nat_mul_add_nat_mul (u v : ℂ) :
-    cexp (a * u + b * v) = cexp u ^ a * cexp v ^ b := by
-  simp only [exp_add, exp_nat_mul]
+/-- If `exp w = tᵃ (t − 1)ᵇ`, then `y = ζ ^ k · exp (w / m)` solves the equation
+`y ^ m = tᵃ (t − 1)ᵇ` of the cyclic cover over `t`. -/
+private theorem ζ_pow_mul_exp_div_pow {t : ThricePuncturedSphere} {w : ℂ}
+    (hw : cexp w = (t : ℂ) ^ a * ((t : ℂ) - 1) ^ b) (k : ℕ) :
+    (ζ ^ k * cexp (w / m)) ^ m = (t : ℂ) ^ a * ((t : ℂ) - 1) ^ b := by
+  rw [mul_pow, pow_right_comm, isPrimitiveRoot_ζ.pow_eq_one, one_pow, one_mul, ← exp_nat_mul,
+    mul_div_cancel₀ _ (Nat.cast_ne_zero.2 (NeZero.ne m)), hw]
 
 /-- `exp (a log (1/2) + b log (−1/2)) = (1/2)ᵃ (1/2 − 1)ᵇ`. -/
 private theorem exp_w₀ : cexp w₀ = (1 / 2 : ℂ) ^ a * (1 / 2 - 1) ^ b := by
-  rw [exp_nat_mul_add_nat_mul]
-  simp only [exp_add, exp_log (by norm_num : (1 / 2 : ℂ) ≠ 0), exp_pi_mul_I]
+  simp only [exp_add, exp_nat_mul, exp_log (by norm_num : (1 / 2 : ℂ) ≠ 0), exp_pi_mul_I]
   norm_num
 
 /-- The point `ζ ^ k · y₀` of the fibre of the cyclic cover over `1/2`, where
 `y₀ = exp ((a log (1/2) + b log (−1/2)) / m)`. -/
 def fiberPoint (k : ℕ) :
     (Function.Pullback.fst ⁻¹' {basePt} : Set (CyclicCover m a b)) :=
-  ⟨mk basePt (ζ ^ k * cexp (w₀ / m)) (by rw [pow_mul_exp_div_pow, exp_w₀, coe_basePt]), rfl⟩
+  ⟨mk basePt (ζ ^ k * cexp (w₀ / m)) (ζ_pow_mul_exp_div_pow (by rw [coe_basePt, exp_w₀]) k), rfl⟩
 
 @[simp]
 theorem fst_fiberPoint (k : ℕ) : (fiberPoint (m := m) (a := a) (b := b) k : CyclicCover m a b).fst =
@@ -211,7 +205,8 @@ private theorem fiberPoint_surjective :
   have hz : (z : CyclicCover m a b).fst = basePt := z.2
   have hy₀ : cexp (w₀ / m) ≠ 0 := exp_ne_zero _
   have hpow : ((z : CyclicCover m a b).snd / cexp (w₀ / m)) ^ m = 1 := by
-    rw [div_pow, snd_pow, hz, exp_div_pow, exp_w₀, coe_basePt]
+    rw [div_pow, snd_pow, hz, ← exp_nat_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 (NeZero.ne m)),
+      exp_w₀, coe_basePt]
     exact div_self (by norm_num)
   obtain ⟨i, hi, hζ⟩ := isPrimitiveRoot_ζ.eq_pow_of_pow_eq_one hpow
   refine ⟨⟨i, hi⟩, Subtype.ext (Pullback.ext hz.symm ?_)⟩
@@ -252,8 +247,8 @@ the branch `ζ ^ k · exp ((a (log (1/2) + 2πis) + b (log (1 − t) + πi)) / m
 private def liftγ0 (k : ℕ) : C(unitInterval, CyclicCover m a b) where
   toFun s := mk (γ0 s) (ζ ^ k * cexp ((a * (log (1 / 2) + 2 * π * I * s) +
       b * (log (1 - γ0 s) + π * I)) / m)) (by
-    rw [pow_mul_exp_div_pow, exp_nat_mul_add_nat_mul]
-    simp only [exp_add, exp_log (by norm_num : (1 / 2 : ℂ) ≠ 0),
+    refine ζ_pow_mul_exp_div_pow ?_ k
+    simp only [exp_add, exp_nat_mul, exp_log (by norm_num : (1 / 2 : ℂ) ≠ 0),
       exp_log (slitPlane_ne_zero (one_sub_γ0_mem_slitPlane s)), exp_pi_mul_I]
     rw [coe_γ0_eq_exp]
     ring)
@@ -274,9 +269,9 @@ of `(tᵃ (t − 1)ᵇ)^(1/m)`. -/
 private def liftγ1 (k : ℕ) : C(unitInterval, CyclicCover m a b) where
   toFun s := mk (γ1 s) (ζ ^ k * cexp ((a * log (γ1 s) +
       b * (log (1 / 2) + π * I + 2 * π * I * s)) / m)) (by
-    rw [show (γ1 s : ℂ) - 1 = 1 / 2 * -1 * cexp (2 * π * I * s) by rw [coe_γ1_eq_exp]; ring,
-      pow_mul_exp_div_pow, exp_nat_mul_add_nat_mul]
-    simp only [exp_add, exp_log (slitPlane_ne_zero (γ1_mem_slitPlane s)),
+    refine ζ_pow_mul_exp_div_pow ?_ k
+    rw [show (γ1 s : ℂ) - 1 = 1 / 2 * -1 * cexp (2 * π * I * s) by rw [coe_γ1_eq_exp]; ring]
+    simp only [exp_add, exp_nat_mul, exp_log (slitPlane_ne_zero (γ1_mem_slitPlane s)),
       exp_log (by norm_num : (1 / 2 : ℂ) ≠ 0), exp_pi_mul_I])
   continuous_toFun := by
     have hlog : Continuous fun s : unitInterval ↦ log (γ1 s : ℂ) :=
