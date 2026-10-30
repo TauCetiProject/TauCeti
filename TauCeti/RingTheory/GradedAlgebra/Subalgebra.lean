@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
+public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import TauCeti.Algebra.DirectSum.Internal
 
 /-!
@@ -32,6 +33,8 @@ underlying effective descent for projective spectra.
 * `Subalgebra.isInternal_grading`: the induced grading of a homogeneous subalgebra is internal.
 * `Subalgebra.coe_decompose_grading`: the homogeneous components of an element of `T` are its
   homogeneous components in `A`.
+* `Subalgebra.mem_irrelevant_grading_iff`: the irrelevant ideal of `T` consists of the elements of
+  `T` lying in the irrelevant ideal of `A`.
 -/
 
 public section
@@ -94,5 +97,21 @@ components in the ambient algebra. -/
 theorem coe_decompose_grading (x : T) (i : ι) :
     ((decompose (T.grading 𝒜) x i : T) : A) = decompose 𝒜 (x : A) i :=
   (T.gradedVal 𝒜).map_directSumDecompose
+
+end Subalgebra
+
+namespace Subalgebra
+
+variable {ι R A : Type*} [DecidableEq ι] [AddCommMonoid ι] [PartialOrder ι]
+  [CanonicallyOrderedAdd ι] [CommSemiring R] [Semiring A] [Algebra R A]
+  (T : Subalgebra R A) (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] [GradedAlgebra (T.grading 𝒜)]
+
+/-- An element of a graded subalgebra lies in its irrelevant ideal exactly when it lies in the
+irrelevant ideal of the ambient algebra. -/
+theorem mem_irrelevant_grading_iff {x : T} :
+    x ∈ HomogeneousIdeal.irrelevant (T.grading 𝒜) ↔ (x : A) ∈ HomogeneousIdeal.irrelevant 𝒜 := by
+  rw [HomogeneousIdeal.mem_irrelevant_iff, HomogeneousIdeal.mem_irrelevant_iff,
+    GradedRing.proj_apply, GradedRing.proj_apply, ← coe_decompose_grading]
+  simp only [ZeroMemClass.coe_eq_zero]
 
 end Subalgebra
