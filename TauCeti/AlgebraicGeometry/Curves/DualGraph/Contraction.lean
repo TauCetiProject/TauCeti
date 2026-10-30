@@ -36,6 +36,12 @@ In the stable range `2g - 2 + n > 0`, a graph admits a stabilization step exactl
 stable, and iterating steps from any graph reaches a stable graph of the same genus with the same
 markings; the number of vertices decreases at every step.
 
+`TauCeti.DualGraph.LabelledStabilizationStep P` is the variant for graphs whose vertices carry
+labels: it contracts only vertices whose label satisfies `P`, and the remaining vertices keep their
+labels. Labelling the components by the degree of a map and contracting only those of degree zero
+gives map-aware stabilization, which never contracts a component on which the map is not
+constant.
+
 ## Main definitions
 
 * `TauCeti.DualGraph.attachment`: the neighbour of a vertex of valence one.
@@ -45,6 +51,8 @@ markings; the number of vertices decreases at every step.
   replaced by an edge joining its two neighbours.
 * `TauCeti.DualGraph.StabilizationStep`: contraction of a rational tail with at most one marking
   or of an unmarked rational bridge.
+* `TauCeti.DualGraph.LabelledStabilizationStep`: the same contractions on labelled graphs,
+  restricted to vertices whose label satisfies a predicate.
 
 ## Main results
 
@@ -57,6 +65,8 @@ markings; the number of vertices decreases at every step.
   stable exactly when it admits no stabilization step.
 * `TauCeti.DualGraph.exists_reflTransGen_stabilizationStep_isStable`: in the stable range,
   iterated stabilization steps reach a stable graph.
+* `TauCeti.DualGraph.exists_reflTransGen_labelledStabilizationStep_forall_not`: iterated labelled
+  stabilization steps reach a labelled graph admitting no further step.
 
 ## References
 
@@ -74,7 +84,7 @@ namespace DualGraph
 
 open Finset
 
-universe u v
+universe u v w
 
 variable {ι : Type v} (G : DualGraph.{u} ι)
 
@@ -785,6 +795,112 @@ theorem arithmeticGenus_eq_of_reflTransGen (h : Relation.ReflTransGen Stabilizat
   induction h with
   | refl => rfl
   | tail _ hstep ih => exact hstep.arithmeticGenus_eq.trans ih
+
+/-! ### Labelled stabilization -/
+
+section Labelled
+
+variable {α : Type w} (P : α → Prop)
+
+/-- A **labelled stabilization step**. The vertices of the dual graphs carry labels in `α`; the
+step contracts a rational tail carrying at most one marking or an unmarked rational bridge whose
+label satisfies `P`, and the remaining vertices keep their labels. Thus only vertices whose label
+satisfies `P` are ever contracted. With the degree of a map on each component as label and `P`
+saying that the degree is zero, these are the steps of map-aware stabilization; with labels in
+`Unit` and `P` always true, they are the stabilization steps
+(`TauCeti.DualGraph.StabilizationStep.labelledStabilizationStep`). -/
+inductive LabelledStabilizationStep :
+    (Σ G : DualGraph.{u} ι, G.Vertex → α) → (Σ G : DualGraph.{u} ι, G.Vertex → α) → Prop
+  /-- Contract a rational tail carrying at most one marking, whose label satisfies `P`. -/
+  | contractTail {G : DualGraph.{u} ι} (c : G.Vertex → α) {v : G.Vertex}
+      (hv : G.IsRationalTail v) (hm : G.numMarkings v ≤ 1) (hc : P (c v)) :
+      LabelledStabilizationStep ⟨G, c⟩
+        ⟨G.contractTail (G.isRationalTail_iff.mp hv).2, fun w ↦ c w.1⟩
+  /-- Contract an unmarked rational bridge whose label satisfies `P`. -/
+  | contractBridge {G : DualGraph.{u} ι} (c : G.Vertex → α) {v : G.Vertex}
+      (hv : G.IsRationalBridge v) (hm : ∀ i, G.marking i ≠ v) (hc : P (c v)) :
+      LabelledStabilizationStep ⟨G, c⟩
+        ⟨G.contractBridge (G.isRationalBridge_iff.mp hv).2.1 (G.isRationalBridge_iff.mp hv).2.2 hm,
+          fun w ↦ c w.1⟩
+
+variable {P} {x y : Σ G : DualGraph.{u} ι, G.Vertex → α}
+
+namespace LabelledStabilizationStep
+
+/-- A labelled stabilization step is a stabilization step of the underlying graphs. -/
+theorem fst (h : LabelledStabilizationStep P x y) : StabilizationStep x.1 y.1 := by
+  cases h with
+  | contractTail c hv hm => exact .contractTail _ hv hm
+  | contractBridge c hv hm => exact .contractBridge _ hv hm
+
+/-- A labelled stabilization step contracts a vertex whose label satisfies `P` and whose
+log-canonical degree is nonpositive. -/
+theorem exists_logCanonicalDegree_nonpos (h : LabelledStabilizationStep P x y) :
+    ∃ v, P (x.2 v) ∧ x.1.logCanonicalDegree v ≤ 0 := by
+  cases h with
+  | contractTail c hv hm hc => exact ⟨_, hc, by rw [hv.logCanonicalDegree_eq]; omega⟩
+  | contractBridge c hv hm hc =>
+    exact ⟨_, hc, by rw [hv.logCanonicalDegree_eq, numMarkings_def]; simp [hm]⟩
+
+/-- Since the contracted vertex has a label satisfying `P` and the other vertices keep their
+labels, all labels satisfy `P` after a labelled stabilization step exactly when they did before. -/
+theorem forall_snd_iff (h : LabelledStabilizationStep P x y) :
+    (∀ w, P (y.2 w)) ↔ ∀ v, P (x.2 v) := by
+  refine ⟨fun hy v ↦ ?_, fun hx w ↦ ?_⟩
+  · cases h with
+    | @contractTail G c u hv hm hc =>
+      by_cases hvu : v = u
+      exacts [hvu ▸ hc, hy ⟨v, hvu⟩]
+    | @contractBridge G c u hv hm hc =>
+      by_cases hvu : v = u
+      exacts [hvu ▸ hc, hy ⟨v, hvu⟩]
+  · cases h with
+    | contractTail c hv hm hc => exact hx _
+    | contractBridge c hv hm hc => exact hx _
+
+end LabelledStabilizationStep
+
+/-- The stable range condition `2g - 2 + n > 0`, required only when all labels satisfy `P`,
+persists along a labelled stabilization step. -/
+theorem LabelledStabilizationStep.two_mul_arithmeticGenus_sub_two_add_card_pos
+    (h : LabelledStabilizationStep P x y)
+    (hrange : (∀ v, P (x.2 v)) → 0 < 2 * (x.1.arithmeticGenus : ℤ) - 2 + Fintype.card ι) :
+    (∀ w, P (y.2 w)) → 0 < 2 * (y.1.arithmeticGenus : ℤ) - 2 + Fintype.card ι := fun hy ↦ by
+  rw [h.fst.arithmeticGenus_eq]
+  exact hrange (h.forall_snd_iff.mp hy)
+
+/-- A stabilization step is a labelled stabilization step for the constant labelling by `Unit`,
+in which every vertex may be contracted. -/
+theorem StabilizationStep.labelledStabilizationStep (h : StabilizationStep G H) :
+    LabelledStabilizationStep (fun _ : Unit ↦ True) ⟨G, fun _ ↦ ()⟩ ⟨H, fun _ ↦ ()⟩ := by
+  cases h with
+  | contractTail hv hm => exact .contractTail _ hv hm trivial
+  | contractBridge hv hm => exact .contractBridge _ hv hm trivial
+
+/-- Iterated stabilization steps are iterated labelled stabilization steps for the constant
+labelling by `Unit`. -/
+theorem reflTransGen_labelledStabilizationStep_of_reflTransGen
+    (h : Relation.ReflTransGen StabilizationStep G H) :
+    Relation.ReflTransGen (LabelledStabilizationStep fun _ : Unit ↦ True)
+      ⟨G, fun _ ↦ ()⟩ ⟨H, fun _ ↦ ()⟩ :=
+  h.lift (fun G : DualGraph.{u} ι ↦ (⟨G, fun _ ↦ ()⟩ : Σ G : DualGraph.{u} ι, G.Vertex → Unit))
+    fun _ _ ↦ StabilizationStep.labelledStabilizationStep
+
+/-- **Labelled stabilization terminates.** Iterating labelled stabilization steps from any
+labelled graph reaches one admitting no further step, since every step removes a vertex. -/
+theorem exists_reflTransGen_labelledStabilizationStep_forall_not
+    (x : Σ G : DualGraph.{u} ι, G.Vertex → α) :
+    ∃ y, Relation.ReflTransGen (LabelledStabilizationStep P) x y ∧
+      ∀ z, ¬ LabelledStabilizationStep P y z := by
+  induction hn : Fintype.card x.1.Vertex using Nat.strong_induction_on generalizing x with
+  | _ n ih =>
+    by_cases hx : ∃ z, LabelledStabilizationStep P x z
+    · obtain ⟨z, hz⟩ := hx
+      obtain ⟨y, hy, hys⟩ := ih _ (hn ▸ hz.fst.card_vertex_lt) z rfl
+      exact ⟨y, .head hz hy, hys⟩
+    · exact ⟨x, .refl, fun z hz ↦ hx ⟨z, hz⟩⟩
+
+end Labelled
 
 variable (G)
 
