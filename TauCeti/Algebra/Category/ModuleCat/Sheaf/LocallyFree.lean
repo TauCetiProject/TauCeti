@@ -28,7 +28,8 @@ Finite locally free sheaves also contain the zero sheaf (the free sheaf on the e
 closed under direct sums, hence under finite products, so they form an additive full subcategory.
 
 Local freeness is also shown to be invariant under isomorphism, by transporting local bases along
-an isomorphism (`SheafOfModules.LocalGeneratorsData.ofIsIso`).
+an isomorphism (`SheafOfModules.LocalGeneratorsData.ofIsIso`); the same transport preserves
+finite-type local generators.
 
 Finally, local freeness descends along a covering family: local bases chosen after restricting to
 every member of a covering family can be combined into local bases on the original site. This
@@ -116,6 +117,13 @@ instance (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [q.IsLocallyFreeDat
     rw [LocalGeneratorsData.ofIsIso_generators]
     exact (q.generators _).isIso_ofEpi_π (f.over (q.X _))
       (LocalGeneratorsData.IsLocallyFreeData.isIso (q := q) _)
+
+/-- Finite-type local generators transported along an isomorphism are of finite type. -/
+instance (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [q.IsFiniteType] :
+    (q.ofIsIso f).IsFiniteType where
+  isFiniteType i :=
+    let _ := LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i
+    inferInstanceAs ((q.generators i).ofEpi (f.over (q.X i))).IsFiniteType
 
 variable (R) in
 /-- Local freeness of sheaves of modules, as a property of objects. -/
