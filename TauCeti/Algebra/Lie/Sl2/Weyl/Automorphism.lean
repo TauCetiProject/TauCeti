@@ -273,11 +273,15 @@ variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ
 in `Int L`. -/
 theorem _root_.IsSl2Triple.ofLinearEquiv_weylAut_mem_intLieAlgebra {h e f : L}
     (t : IsSl2Triple h e f) (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) :
-    ofLinearEquiv (weylAut t he hf).toLinearEquiv ∈ intLieAlgebra K L := by
+    ofLinearEquiv
+        (weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero).toLinearEquiv ∈
+      intLieAlgebra K L := by
   have hf' : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
-  have h : ofLinearEquiv (weylAut t he hf).toLinearEquiv =
-      ofLinearEquiv (expAd e he).toLinearEquiv * ofLinearEquiv (expAd (-f) hf').toLinearEquiv *
-        ofLinearEquiv (expAd e he).toLinearEquiv := by
+  have h : ofLinearEquiv
+        (weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero).toLinearEquiv =
+      ofLinearEquiv (expAd e he.exists_pow_apply_eq_zero).toLinearEquiv *
+        ofLinearEquiv (expAd (-f) hf'.exists_pow_apply_eq_zero).toLinearEquiv *
+        ofLinearEquiv (expAd e he.exists_pow_apply_eq_zero).toLinearEquiv := by
     ext y
     simp [weylAut_apply]
   rw [h]
