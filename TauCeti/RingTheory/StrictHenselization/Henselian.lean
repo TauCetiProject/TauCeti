@@ -66,7 +66,7 @@ instance henselianLocalRing : HenselianLocalRing (algebra R Ω) where
       calc
         _ = (B.obj.hom.hom (p.eval (b none))).down := by
           exact congrArg ULift.down (eval₂_at_apply B.obj.hom.hom.toRingHom (b none))
-        _ = _ := by rw [← toTarget_stage_apply, heval]
+        _ = _ := by rw [← Neighbourhood.point_apply, ← toTarget_stage_apply, heval]
     -- The maximal ideal is the kernel of the pointing, and units remain units at the point.
     have hroot : g.eval₂ B.obj.hom.hom.toRingHom (B.obj.hom.hom (b none)) = 0 := by
       apply ULift.ext
@@ -91,6 +91,7 @@ instance henselianLocalRing : HenselianLocalRing (algebra R Ω) where
       simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using h
     · rw [← ker_toTarget_eq_maximalIdeal, RingHom.mem_ker, AlgHom.toRingHom_eq_coe,
         AlgHom.coe_toRingHom, map_sub,
-        toTarget_stage_apply, ← hb₀, toTarget_stage_apply, hpoint, sub_self]
+        toTarget_stage_apply, ← hb₀, toTarget_stage_apply]
+      simp only [Neighbourhood.point_apply, hpoint, sub_self]
 
 end TauCeti.StrictHenselization
