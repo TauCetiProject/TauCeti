@@ -27,7 +27,9 @@ For finite free `Mᵢ` the proof is a basis computation: a basis `bᵢ` of `Mᵢ
 `⨂ᵢ Mᵢ →ₗ ⨂ᵢ Nᵢ` with the functions `(∀ i, κᵢ) → ⨂ᵢ Nᵢ`, and under these identifications the
 comparison map is the distributivity of the tensor product over finite direct sums,
 `PiTensorProduct.ofDFinsuppEquiv`. A finite projective module is a retract of a finite free one,
-and precomposition with the retraction data transports bijectivity.
+and precomposition with the retraction data transports bijectivity. This step adapts the retract
+argument in the proof of Mathlib's `dualTensorHom_bijective`
+(`Mathlib/LinearAlgebra/Contraction.lean`).
 
 Taking `Nᵢ = Mᵢ` this identifies `End (⨂ᵢ Mᵢ)` with `⨂ᵢ End Mᵢ`, compatibly with composition
 (`PiTensorProduct.piTensorHomEquiv_tprod_comp_tprod`). That identification is the shape in which the
@@ -108,6 +110,8 @@ theorem piTensorHomMap_bijective :
     Function.Bijective (piTensorHomMap (R := R) (s := M) (t := N)) := by
   -- Each `Mᵢ` is a retract `fᵢ ∘ₗ gᵢ = id` of a finite free module `Fᵢ`, where the comparison map
   -- is bijective. Precomposition with the `fᵢ` and the `gᵢ` intertwines the two comparison maps.
+  -- This adapts the retract argument of Mathlib's `dualTensorHom_bijective`
+  -- (`Mathlib/LinearAlgebra/Contraction.lean`) to the `ι`-ary comparison map.
   choose n f g _ _ hfg using fun i => Module.Finite.exists_comp_eq_id_of_projective R (M i)
   have hF := piTensorHomMap_bijective_of_basis (N := N) fun i => Pi.basisFun R (Fin (n i))
   have hf : piTensorHomMap ∘ₗ (map fun i => (f i).lcomp R (N i)) =
