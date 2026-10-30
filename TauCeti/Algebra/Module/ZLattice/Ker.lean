@@ -6,19 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
+public import TauCeti.Algebra.Module.ZLattice.Quotient
+public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
+public import TauCeti.Topology.Algebra.Module.DiscretePreimage
 import Mathlib.LinearAlgebra.Dimension.Localization
 import TauCeti.Algebra.Module.ZLattice.Rank
 
 /-!
-# The lattice induced on the kernel of a lattice-preserving map
+# The lattice and the torus induced on the kernel of a lattice-preserving map
 
 Let `L` be a full lattice in a finite-dimensional real normed space `E`, and let `f : E → E'` be a
 linear map, over a normed field `K` such as `ℝ` or `ℂ`, which carries `L` into a discrete subgroup
 `L'` of `E'`. Then `L ∩ ker f` is a full lattice in the subspace `ker f`.
 
 For complex tori this is the lattice of the identity component of the kernel: when `f` is
-complex linear, the kernel of the induced homomorphism `E / L → E' / L'` has identity component
-the complex torus `ker f / (L ∩ ker f)`, and this file supplies its full lattice.
+complex linear, the kernel `f⁻¹(L') / L` of the induced homomorphism `E / L → E' / L'` has
+identity component the complex torus `ker f / (L ∩ ker f)`. More generally, whenever `L ∩ V` is a
+full lattice in a subspace `V`, the map `V / (L ∩ V) → E / L` induced by the inclusion is a
+closed embedding, so the compact torus `V / (L ∩ V)` is identified with a closed subgroup of
+`E / L`. For `V = ker f` its image is the identity component of `f⁻¹(L') / L`.
 
 The hypothesis on `f` cannot be dropped: an irrational line through the lattice `ℤ²` in `ℝ²` is
 the kernel of a linear form, and it meets the lattice only in `0`.
@@ -29,6 +35,10 @@ the kernel of a linear form, and it meets the lattice only in `0`.
   to a subspace `V` is discrete.
 * `ZLattice.isZLattice_comap_ker_subtype`: if `f(L) ⊆ L'` with `L'` discrete, then `L ∩ ker f`
   is a full lattice in `ker f`.
+* `Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype`: if `L ∩ V` is a full lattice in `V`,
+  then `V / (L ∩ V) → E / L` is a closed embedding.
+* `Submodule.range_orbitRelQuotientMap_ker_subtype`: the image of `ker f / (L ∩ ker f) → E / L`
+  is the identity component of the kernel of `E / L → E' / L'`.
 
 ## References
 
@@ -105,3 +115,45 @@ theorem isZLattice_comap_ker_subtype {L' : Submodule ℤ E'} [DiscreteTopology L
     rw [map_span, himage, hS, Submodule.map_top, LinearMap.range_restrictScalars, range_subtype]
 
 end ZLattice
+
+section Torus
+
+open Topology
+
+variable {K : Type*} [NormedField K] [NormedSpace ℝ K]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace K E] [IsScalarTower ℝ K E]
+  [FiniteDimensional ℝ E] (L : Submodule ℤ E)
+
+/-- If `L ∩ V` is a full lattice in a subspace `V`, then the map of quotients
+`V / (L ∩ V) → E / L` induced by the inclusion of `V` is a closed embedding: the compact torus
+`V / (L ∩ V)` is identified with its image, a closed subgroup of `E / L`. -/
+theorem Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype [DiscreteTopology L]
+    (V : Submodule K E) [IsZLattice ℝ (ZLattice.comap K L V.subtype)] :
+    IsClosedEmbedding ((ZLattice.comap K L V.subtype).orbitRelQuotientMap L
+      (V.subtype.restrictScalars ℤ) le_rfl) := by
+  have : FiniteDimensional ℝ V := .of_injective (V.subtype.restrictScalars ℝ) V.injective_subtype
+  refine Continuous.isClosedEmbedding ?_ ?_
+  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtype_val
+  · exact (Submodule.orbitRelQuotientMap_injective_iff _ _ _ _).2 le_rfl
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedSpace K E']
+  [IsScalarTower ℝ K E'] {L' : Submodule ℤ E'} [DiscreteTopology L']
+
+/-- Let `f` carry `L` into the discrete subgroup `L'`. The image of the map of quotients
+`ker f / (L ∩ ker f) → E / L` induced by the inclusion of `ker f` is the identity component of the
+kernel `f⁻¹(L') / L` of the map `E / L → E' / L'` induced by `f`. When `L` is a full lattice this
+map is a closed embedding (`Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype` together
+with `ZLattice.isZLattice_comap_ker_subtype`), so this identity component is the torus
+`ker f / (L ∩ ker f)`. -/
+theorem Submodule.range_orbitRelQuotientMap_ker_subtype (f : E →ₗ[K] E')
+    (h : L ≤ L'.comap (f.restrictScalars ℤ)) :
+    Set.range ((ZLattice.comap K L (LinearMap.ker f).subtype).orbitRelQuotientMap L
+        ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl) =
+      connectedComponentIn (L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker 0 := by
+  have hK : ((L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :
+      Set (AddAction.orbitRel.Quotient L E)) =
+        _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := by
+    simp [Submodule.ker_orbitRelQuotientMap]
+  rw [hK, connectedComponentIn_orbitRelQuotient_mk_image_preimage L f
+    (f.restrictScalars ℝ).continuous_of_finiteDimensional (map_le_iff_le_comap.2 h)]
+  exact (range_orbitRelQuotientMap _ _ _ _).trans <| congrArg _ <| by ext; simp
