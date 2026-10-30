@@ -53,16 +53,6 @@ namespace TauCeti.NumberField.SUnit
 variable {K : Type*} [Field K] [NumberField K] {S : Finset (HeightOneSpectrum (𝓞 K))}
   {ι : Type*} [Fintype ι]
 
-/-- The `S`-logarithmic image of `ζ * ∏ j, γ j ^ z j`, for `ζ` torsion, is
-`∑ j, z j • ℓ(γ j)`. -/
-theorem logEmbedding_mul_prod_zpow {γ : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
-    {ζ : (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
-    (hζ : ζ ∈ CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) (z : ι → ℤ) :
-    logEmbedding S (Additive.ofMul (ζ * ∏ j, γ j ^ z j)) =
-      ∑ j, z j • logEmbedding S (Additive.ofMul (γ j)) := by
-  rw [ofMul_mul, map_add, (logEmbedding_eq_zero_iff S).mpr hζ, zero_add, ofMul_prod, map_sum]
-  simp only [ofMul_zpow, map_zsmul]
-
 /-- **Multiplicatively independent `S`-units have linearly independent logarithms.** If no
 product `∏ j, γ j ^ z j` with `z ≠ 0` is torsion, then the `S`-logarithmic images of the `γ j`
 are linearly independent over `ℝ`. -/
@@ -114,15 +104,6 @@ theorem abs_le_opNorm_mul_logHeight₁ {γ : ι → (S : Set (HeightOneSpectrum 
     _ ≤ ‖T‖ * logHeight₁ ((x : Kˣ) : K) :=
         mul_le_mul_of_nonneg_left (norm_logEmbedding_le_logHeight₁ S x) (norm_nonneg T)
 
-/-- A nonzero element of `K` which has absolute value `1` at every finite place outside `S` is
-an `S`-unit. -/
-private theorem exists_sUnit_coe_eq {x : K} (hx0 : x ≠ 0)
-    (hx : ∀ v ∉ S, HeightOneSpectrum.adicAbv K v x = 1) :
-    ∃ y : (S : Set (HeightOneSpectrum (𝓞 K))).unit K, ((y : Kˣ) : K) = x :=
-  ⟨⟨Units.mk0 x hx0, (Set.mem_unit_iff_finitePlace _ _).mpr fun v hv ↦ by
-    rw [FinitePlace.mk_apply, FinitePlace.norm_embedding, Units.val_mk0]
-    exact hx v hv⟩, rfl⟩
-
 /-- **Exponent–height bound for finitely generated groups.** Let `γ j` be nonzero elements of a
 number field `K` with absolute value `1` at every finite place outside a finite set `S`, and
 multiplicatively independent: `∏ j, γ j ^ z j` is a root of unity only for `z = 0`. Then there is
@@ -136,7 +117,8 @@ theorem exists_abs_le_mul_logHeight₁ {γ : ι → K} (hγ0 : ∀ j, γ j ≠ 0
     ∃ κ : ℝ, 0 ≤ κ ∧ ∀ ζ : K, IsOfFinOrder ζ → ∀ (z : ι → ℤ) (j : ι),
       |(z j : ℝ)| ≤ κ * logHeight₁ (ζ * ∏ i, γ i ^ z i) := by
   classical
-  choose γ' hγ' using fun j ↦ exists_sUnit_coe_eq (hγ0 j) (hγS j)
+  choose γ' hγ' using fun j ↦
+    exists_sUnit_coe_eq (S := (S : Set (HeightOneSpectrum (𝓞 K)))) (hγ0 j) (hγS j)
   have hcoe (ζ' : (S : Set (HeightOneSpectrum (𝓞 K))).unit K) (z : ι → ℤ) :
       (((ζ' * ∏ i, γ' i ^ z i : _) : Kˣ) : K) = ((ζ' : Kˣ) : K) * ∏ i, γ i ^ z i := by
     simp [hγ']
@@ -156,8 +138,8 @@ theorem exists_abs_le_mul_logHeight₁ {γ : ι → K} (hγ0 : ∀ j, γ j ≠ 0
     have h := LinearMap.congr_fun hg z
     rwa [LinearMap.comp_apply, Fintype.linearCombination_apply] at h
   refine ⟨‖LinearMap.toContinuousLinearMap g‖, norm_nonneg _, fun ζ hζ z j ↦ ?_⟩
-  obtain ⟨ζ', hζ'⟩ := exists_sUnit_coe_eq (S := S) hζ.isUnit.ne_zero
-    fun v _ ↦ AbsoluteValue.map_eq_one_of_isOfFinOrder _ hζ
+  obtain ⟨ζ', hζ'⟩ := exists_sUnit_coe_eq (S := (S : Set (HeightOneSpectrum (𝓞 K))))
+    hζ.isUnit.ne_zero fun v _ ↦ AbsoluteValue.map_eq_one_of_isOfFinOrder _ hζ
   have hζt : ζ' ∈ CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) := by
     rw [CommGroup.mem_torsion, ← Submonoid.isOfFinOrder_coe, ← Units.isOfFinOrder_val]
     simpa [hζ'] using hζ

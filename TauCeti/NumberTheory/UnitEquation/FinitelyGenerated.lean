@@ -239,7 +239,7 @@ theorem max_abs_le_of_mul_add_mul_eq_one {ι : Type*} [Fintype ι]
   rcases le_or_gt (Bn : ℝ) 1 with h1 | h1
   · exact hj.trans (h1.trans (le_max_left _ _))
   refine hj.trans (le_trans ?_ (le_max_right _ _))
-  rw [show N = Bn from max_eq_right h1.le] at hBn
+  simp only [N, max_eq_right h1.le] at hBn
   -- Solve `Bn ≤ A + B₀ log Bn`: as `log (Bn / (2 B₀)) ≤ Bn / (2 B₀) - 1`,
   -- `B₀ log Bn ≤ Bn / 2 + B₀ (log (2 B₀) - 1)`.
   rcases hB₀.eq_or_lt with h0 | h0
