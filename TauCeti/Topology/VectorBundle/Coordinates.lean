@@ -20,6 +20,8 @@ charts, as required for quotient-bundle coordinate changes.
 `ContinuousLinearMap.inCoordinates_inverse` reads the inverse of a fibre map in coordinates
 as the inverse of its coordinate expression, which reduces smoothness of fibrewise inverses
 to smoothness of inversion of continuous linear maps.
+`ContinuousLinearMap.isInvertible_inCoordinates_iff` reads invertibility of a fibre map
+off its coordinate expression.
 
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
@@ -145,6 +147,14 @@ theorem inCoordinates_inverse {x₀ x : B} {y₀ y : B'} (ϕ : V x →L[𝕜] W 
       (inCoordinates F V F' W x₀ x y₀ y ϕ).inverse := by
   rw [inCoordinates_eq hy hx, inCoordinates_eq hx hy, inverse_equiv_comp, inverse_comp_equiv,
     ContinuousLinearEquiv.symm_symm, comp_assoc]
+
+/-- In trivializations whose base sets contain the two fibre base points, a continuous linear
+map between fibres is invertible exactly when its coordinate expression is. -/
+theorem isInvertible_inCoordinates_iff {x₀ x : B} {y₀ y : B'} {ϕ : V x →L[𝕜] W y}
+    (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
+    (inCoordinates F V F' W x₀ x y₀ y ϕ).IsInvertible ↔ ϕ.IsInvertible := by
+  rw [inCoordinates_eq hx hy, isInvertible_equiv_comp, isInvertible_comp_equiv]
 
 end Inverse
 

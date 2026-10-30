@@ -68,12 +68,15 @@ theorem twistedProd_eq_prod_neg (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N
 /-- Evaluation of the twisted product on two product tangent vectors. -/
 theorem eval₂_twistedProd (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N)
     (p : M × N) (v w : TangentSpace (I.prod J) p) :
-    (twistedProd σ τ).eval₂ p v w =
-      σ.eval₂ p.1 (Manifold.tangentSpaceProdEquiv p v).1
+    SmoothBundleForm.eval₂ (twistedProd σ τ) p v w =
+      SmoothBundleForm.eval₂ σ p.1
+        (Manifold.tangentSpaceProdEquiv p v).1
         (Manifold.tangentSpaceProdEquiv p w).1 -
-      τ.eval₂ p.2 (Manifold.tangentSpaceProdEquiv p v).2
+      SmoothBundleForm.eval₂ τ p.2
+        (Manifold.tangentSpaceProdEquiv p v).2
         (Manifold.tangentSpaceProdEquiv p w).2 := by
-  rw [twistedProd_eq_prod_neg, eval₂_prod, SmoothForm.eval₂_neg, sub_eq_add_neg]
+  rw [twistedProd_eq_prod_neg, eval₂_prod]
+  simp [sub_eq_add_neg]
 
 /-- Nondegenerate factors give a nondegenerate twisted product. -/
 theorem IsNondegenerate.twistedProd {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N}
