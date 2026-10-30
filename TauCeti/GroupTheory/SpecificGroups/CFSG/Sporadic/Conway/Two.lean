@@ -175,29 +175,32 @@ standard generators `a` and `b`.
 The ATLAS lists this as a full presentation of the abstract group, separately from the
 semi-presentation used to recognize standard generators inside a group already constructed. No
 structural property of the presented group is asserted here: this definition records only the
-cited generators and relations. -/
+cited generators and relations.
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group Representations,
+version 3; presentation contributed by John Bray.
+
+Source locator: Co2G1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/Co2G1-P1, with the relator
+list and the demonstration of correctness in the Magma source file
+https://brauer.maths.qmul.ac.uk/Atlas/spor/Co2/mag/Co2G1-P1.M
+
+Generator convention: The ATLAS standard generators a and b of Co2, that is, a in class 2A and b
+in class 5A with ab of order 28, in that order, so index 0 is a and index 1 is b. Products are
+read left to right, negative exponents denote inverses, and [r,s] denotes r^-1 s^-1 r s.
+
+Transcription notes: The ten words of the source's relator list are stored as ten relators equal
+to the identity. The source's eleventh displayed word `(x,y^2*x*y^2)^3` is struck out of the
+relator list, shown struck through on the presentation page and commented out as 'Redundant, but
+useful.' in the Magma file, so it lies outside the relator list and is not transcribed. The source
+demonstrates correctness with and without that word, enumerating in each case the 56925 cosets of
+a subgroup that centralizes a, which is the index of the involution centralizer [2^9].S6(2) in
+Co2. GAP 4.15.1 checks that the ten compiled words vanish on five independent standard generating
+pairs of the 2300-point primitive representation of Co2, taking a with centralizer of order
+743178240, b of order 5 with centralizer of order 3000, and ab of order 28. -/
 def co2Presentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group \
-    Representations, version 3; presentation contributed by John Bray"
-  sourceLocator := "Co2G1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/Co2G1-P1, with the \
-    relator list and the demonstration of correctness in the Magma source file \
-    https://brauer.maths.qmul.ac.uk/Atlas/spor/Co2/mag/Co2G1-P1.M"
-  generatorConvention := "The ATLAS standard generators a and b of Co2, that is, a in class 2A \
-    and b in class 5A with ab of order 28, in that order, so index 0 is a and index 1 is b. \
-    Products are read left to right, negative exponents denote inverses, and [r,s] denotes \
-    r^-1 s^-1 r s."
-  transcriptionNotes := "The ten words of the source's relator list are stored as ten relators \
-    equal to the identity. The source's eleventh displayed word (x,y^2*x*y^2)^3 is struck out of \
-    the relator list, shown struck through on the presentation page and commented out as \
-    'Redundant, but useful.' in the Magma file, so it lies outside the relator list and is not \
-    transcribed. The source demonstrates correctness with and without that word, enumerating in \
-    each case the 56925 cosets of a subgroup that centralizes a, \
-    which is the index of the involution centralizer [2^9].S6(2) in Co2. GAP 4.15.1 checks that \
-    the ten compiled words vanish on five independent standard generating pairs of the 2300-point \
-    primitive representation of Co2, taking a with centralizer of order 743178240, b of order 5 \
-    with centralizer of order 3000, and ab of order 28."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 10
   transcribed :=
     [ .pow a 2,
@@ -211,63 +214,15 @@ def co2Presentation : GroupPresentation where
       .pow (.commInvInv a (.pow (.inv b) 2 ⬝ ab1 ⬝ abNeg2)) 2,
       .pow (ab1 ⬝ ab2 ⬝ abNeg1 ⬝ abNeg2) 7 ]
 
-/-- The generator names recorded for `Co₂`. The row's body is sealed, so this is what lets a
+/-- The number of generators in the presentation of `Co₂`. The row's body is sealed, so this is
+what lets a
 consumer see that it is a two-generator presentation. -/
 @[simp]
-theorem co2Presentation_generatorNames : co2Presentation.generatorNames = ["a", "b"] := by
-  simp [co2Presentation]
-
-/-- The source recorded for `Co₂`. The row's body is sealed, so this equation is what publishes the
-citation itself, rather than only the row's name, to a downstream audit. -/
-@[simp]
-theorem co2Presentation_source :
-    co2Presentation.source = "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite \
-      Group Representations, version 3; presentation contributed by John Bray" := by
-  simp [co2Presentation]
-
-/-- The locator recorded for `Co₂`, pointing at the presentation inside its source. -/
-@[simp]
-theorem co2Presentation_sourceLocator :
-    co2Presentation.sourceLocator = "Co2G1-P1, \
-      https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/Co2G1-P1, with the relator list and the \
-      demonstration of correctness in the Magma source file \
-      https://brauer.maths.qmul.ac.uk/Atlas/spor/Co2/mag/Co2G1-P1.M" := by
-  simp [co2Presentation]
-
-/-- The generator convention recorded for `Co₂`, fixing which generator each relator index names
-and which commutator convention the source uses. -/
-@[simp]
-theorem co2Presentation_generatorConvention :
-    co2Presentation.generatorConvention = "The ATLAS standard generators a and b of Co2, that is, \
-      a in class 2A and b in class 5A with ab of order 28, in that order, so index 0 is a and \
-      index 1 is b. Products are read left to right, negative exponents denote inverses, and \
-      [r,s] denotes r^-1 s^-1 r s." := by
-  simp [co2Presentation]
-
-/-- The transcription notes recorded for `Co₂`. -/
-@[simp]
-theorem co2Presentation_transcriptionNotes :
-    co2Presentation.transcriptionNotes = "The ten words of the source's relator list are stored \
-      as ten relators equal to the identity. The source's eleventh displayed word \
-      (x,y^2*x*y^2)^3 is struck out of the relator list, shown struck through on the presentation \
-      page and commented out as 'Redundant, but useful.' in the Magma file, so it lies outside \
-      the relator list and is not transcribed. The source demonstrates correctness with and \
-      without that word, enumerating in each case the 56925 cosets of a subgroup that centralizes \
-      a, which is the index of the involution centralizer [2^9].S6(2) in Co2. GAP 4.15.1 checks \
-      that the ten compiled words vanish on five independent standard generating pairs of the \
-      2300-point primitive representation of Co2, taking a with centralizer of order 743178240, \
-      b of order 5 with centralizer of order 3000, and ab of order 28." := by
-  simp [co2Presentation]
-
-/-- The generator count `Co₂`'s source states. With
-`TauCeti.Sporadic.co2Presentation_generatorNames` this is what makes
-`TauCeti.Sporadic.co2Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem co2Presentation_expectedGeneratorCount : co2Presentation.expectedGeneratorCount = 2 := by
+theorem co2Presentation_generatorCount : co2Presentation.generatorCount = 2 := by
   simp [co2Presentation]
 
 /-- The relator count `Co₂`'s source states; see
-`TauCeti.Sporadic.co2Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.co2Presentation_generatorCount`. -/
 @[simp]
 theorem co2Presentation_expectedRelatorCount : co2Presentation.expectedRelatorCount = 10 := by
   simp [co2Presentation]
@@ -280,7 +235,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. Index `0` is the
 generator `a` and index `1` is `b`, and the bounds come from
-`TauCeti.Sporadic.co2Presentation_generatorNames`. Each commutator appears applied to the two
+`TauCeti.Sporadic.co2Presentation_generatorCount`. Each commutator appears applied to the two
 inverses, which is the source's convention `[r,s] = r⁻¹s⁻¹rs` written in Mathlib's bracket. -/
 @[simp]
 theorem co2Presentation_transcribed :
@@ -317,7 +272,7 @@ theorem co2Presentation_transcribed :
           (.gen ⟨0, by simp⟩ ⬝ .pow (.inv (.gen ⟨1, by simp⟩)) 2)) 7 ] := by
   simp [co2Presentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `Co₂` agree with the transcribed data. -/
+/-- The relator count recorded for `Co₂` agrees with the transcribed data. -/
 theorem co2Presentation_matchesMetadata : co2Presentation.matchesMetadata := by decide
 
 /-- The lengths of the ten compiled relator words for `Co₂`, in the order of the source.

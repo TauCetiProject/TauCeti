@@ -11,13 +11,16 @@ public import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 /-!
 # Legendre symbols of odd prime discriminants
 
-The genus-field layer of the multiquadratic roadmap uses the odd prime discriminant
-`p* = (-1)^((p-1)/2) p` rather than the bare prime radicand `p`. This file records the
-small Legendre-symbol API that makes that normalization usable in the prime-splitting law.
+For an odd prime `p`, the odd prime discriminant `p* = (-1)^((p-1)/2) p`, defined in
+`TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic`, is the sign normalization of `p`
+in which quadratic reciprocity takes its cleanest form: for odd primes `p` and `q`,
+`(p* / q) = (q / p)`, that is, `legendreSym q (oddPrimeDiscriminant p) = legendreSym p q`.
+So whether an odd prime `q ≠ p` splits in `ℚ(√p*)` depends only on `q` modulo `p`.
 
-For odd primes `p` and `q`, the classical identity `(p* / q) = (q / p)` is exactly
-`legendreSym q (oddPrimeDiscriminant p) = legendreSym p q`. This file packages that result
-in the shape downstream multiquadratic splitting statements need.
+This file proves that identity, together with the expansion of `(p* / q)` at an arbitrary prime
+`q` and the quadratic-residue criteria it yields. The even prime discriminants `-4`, `8`, `-8`
+are treated in `TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Even`, and the two
+cases are combined in `TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminants`.
 
 ## Main results
 
@@ -28,7 +31,8 @@ in the shape downstream multiquadratic splitting statements need.
 * `TauCeti.Multiquadratic.legendreSym_oddPrimeDiscriminant_eq_one_iff` rewrites the
   quadratic-residue condition for an odd prime discriminant into the reciprocal symbol.
 * `TauCeti.Multiquadratic.forall_legendreSym_oddPrimeDiscriminant_eq_one_iff` is the
-  indexed-family form used by the multiquadratic splitting law.
+  indexed-family form, matching the hypothesis of the multiquadratic prime-splitting law
+  `NumberField.ncard_primesOver_multiquadratic_iff`.
 -/
 
 public section

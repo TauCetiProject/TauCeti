@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.Basic
 import TauCeti.RingTheory.Flat.TensorProduct
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Geometric properties of affine group images
@@ -82,7 +83,7 @@ theorem image (f : H ⟶ K) (hK : geometricallyConnectedCommHopfAlgProperty k K)
     geometricallyConnectedCommHopfAlgProperty k (CommHopfAlgCat.image f) := by
   rw [geometricallyConnectedCommHopfAlgProperty_iff] at hK ⊢
   intro L _ _
-  exact connectedSpace_primeSpectrum_of_injective
+  exact RingHom.connectedSpace_primeSpectrum_of_injective
     (Algebra.TensorProduct.map
       (CommHopfAlgCat.imageι f).hom.toAlgHom (AlgHom.id k L)).toRingHom
     (CommHopfAlgCat.image_baseChange_injective f L)
