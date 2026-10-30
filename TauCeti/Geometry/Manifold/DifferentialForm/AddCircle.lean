@@ -89,7 +89,7 @@ It is the unique form pulling back to `dt` along the quotient map `ℝ → AddCi
 (`AddCircle.eq_timeForm_iff`). -/
 def timeForm : SmoothForm 𝓘(ℝ) (AddCircle p) ℝ 1 :=
   ⟨fun x ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace 𝓘(ℝ) x) ℝ 0
-    (ContinuousLinearMap.id ℝ ℝ), (isSmoothForm_timeForm p).mem_smoothForms⟩
+    (ContinuousLinearMap.id ℝ ℝ), (isSmoothForm_timeForm p).mem_smoothBundleForms⟩
 
 /-- The time form sends a tangent vector of `AddCircle p` to itself. -/
 @[simp]

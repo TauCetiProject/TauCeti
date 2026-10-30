@@ -12,7 +12,10 @@ public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Basic
 import Mathlib.Algebra.CharP.CharAndCard
 import Mathlib.NumberTheory.LegendreSymbol.Complex
 import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
-import TauCeti.NumberTheory.GaussSum
+import TauCeti.NumberTheory.GaussSum.Basic
+import TauCeti.NumberTheory.JacobiSum.Basic
+import TauCeti.NumberTheory.MulChar.Basic
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # The Gauss sum power `Φ(P) = g(P)^m`
@@ -45,6 +48,8 @@ into primes, `Φ(A) = ∏ᵢ Φ(Pᵢ)`; the primes whose norm is not prime to `m
 * `Ideal.stickelbergerPhi_top`: `Φ(𝓞 K) = 1`.
 * `Ideal.stickelbergerPhi_norm_sq`: `|σ(Φ(A))|² = N(A)^m` for every complex embedding `σ` of `K`
   and every ideal `A` whose norm is prime to `m`.
+* `Ideal.map_stickelbergerPhi`: `σ (Φ(A)) = Φ(σ A)` for every ring isomorphism `σ` of rings of
+  integers, in particular for every automorphism of `K`.
 * `Ideal.stickelbergerPhi_modEq`: `Φ(P) ≡ -1 (mod m)` for `m` prime and every maximal ideal `P`
   whose norm is prime to `m`.
 * `Ideal.stickelbergerPhi_modEq_neg_one_pow`: `Φ(A) ≡ (-1)^r (mod m)` for `m` prime and every ideal
@@ -203,6 +208,50 @@ theorem stickelbergerPhi_ne_zero {A : Ideal (𝓞 K)} (hA : (absNorm A).Coprime 
   have := stickelbergerPhi_norm_sq hA hm (Classical.arbitrary (K →+* ℂ))
   simp only [h, map_zero, norm_zero, zero_pow two_ne_zero] at this
   exact pow_ne_zero m (Nat.cast_ne_zero.mpr hA₀) this.symm
+
+section Galois
+
+variable {L : Type*} [Field L] [NumberField L] [HasEnoughRootsOfUnity (𝓞 L) m]
+
+/-- `σ (Φ(P)) = Φ(σ P)` at a maximal ideal `P`. -/
+private theorem map_stickelbergerPhi_of_isMaximal (P : Ideal (𝓞 K)) [P.IsMaximal]
+    (σ : 𝓞 K ≃+* 𝓞 L) : σ (stickelbergerPhi P m) = stickelbergerPhi (P.map σ) m := by
+  have hN : absNorm (P.map σ) = absNorm P := absNorm_map_of_ringEquiv σ P
+  by_cases hP : (absNorm P).Coprime m
+  · let _ := Fintype.ofFinite (𝓞 K ⧸ P)
+    let _ := Fintype.ofFinite (𝓞 L ⧸ P.map σ)
+    -- `σ` carries `χ_P` to `χ_{σ P}` along the induced isomorphism `τ` of residue fields.
+    let τ := quotientEquiv P (P.map σ) σ rfl
+    have hχ (x : 𝓞 K ⧸ P) :
+        σ (powerResidueSymbol P m x) = powerResidueSymbol (P.map σ) m (τ x) := by
+      obtain ⟨α, rfl⟩ := Quotient.mk_surjective x
+      rw [map_powerResidueSymbol P σ α, ← quotientEquiv_mk P (P.map σ) σ rfl]
+    have hχ' := MulChar.map_inv_apply_of_map_apply hχ
+    rw [stickelbergerPhi_eq_mul_prod_jacobiSum P hP,
+      stickelbergerPhi_eq_mul_prod_jacobiSum (P.map σ) (hN ▸ hP), map_mul, map_mul, map_natCast,
+      map_prod, hχ', map_neg, map_one, hN]
+    exact congrArg _ <| Finset.prod_congr rfl fun i _ =>
+      TauCeti.map_jacobiSum hχ' (MulChar.map_pow_apply_of_map_apply hχ' i)
+  · rw [stickelbergerPhi_of_not_coprime P hP, stickelbergerPhi_of_not_coprime (P.map σ) (hN ▸ hP),
+      map_one]
+
+/-- **Galois equivariance of `Φ`.** A ring isomorphism `σ : 𝓞 K ≃+* 𝓞 L` carries `Φ(A)` to
+`Φ(σ A)`. Taking `L = K`, this applies to every ring automorphism of `𝓞 K`, in particular to the
+restriction of every automorphism of `K`. No hypothesis on `A` is needed: `σ` preserves norms, so
+the primes whose norm is not prime to `m` contribute `1` on both sides. -/
+theorem map_stickelbergerPhi (A : Ideal (𝓞 K)) (σ : 𝓞 K ≃+* 𝓞 L) :
+    σ (stickelbergerPhi A m) = stickelbergerPhi (A.map σ) m := by
+  have hσ {B : Ideal (𝓞 K)} (hB : B ≠ ⊥) : B.map σ ≠ ⊥ :=
+    (map_eq_bot_iff_of_injective σ.injective).not.mpr hB
+  induction A using induction_on_prime with
+  | h₁ => rw [zero_eq_bot, map_bot, stickelbergerPhi_bot, stickelbergerPhi_bot, map_one]
+  | h₂ A hA => rw [isUnit_iff.mp hA, map_top, stickelbergerPhi_top, stickelbergerPhi_top, map_one]
+  | h₃ A P hA hP ih =>
+    have : P.IsMaximal := (isPrime_of_prime hP).isMaximal hP.ne_zero
+    rw [Ideal.map_mul, stickelbergerPhi_mul hP.ne_zero hA,
+      stickelbergerPhi_mul (hσ hP.ne_zero) (hσ hA), map_mul, ih, map_stickelbergerPhi_of_isMaximal]
+
+end Galois
 
 /-- **`Φ(P)` is `-1` modulo `m`.** If `m` is prime and `P` is a maximal ideal whose norm is prime
 to `m`, then `Φ(P) ≡ -1` modulo `m 𝓞 K`. -/
