@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Grassmannian
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.ContinuousMap.Basic
+public import Mathlib.Topology.Homeomorph.Quotient
 
 /-!
 # Finite Grassmannians as quotients of frame spaces
@@ -150,16 +152,6 @@ theorem frameSpan_eq_frameSpan_iff {f g : finiteFullRankFrame 𝕜 r N} :
   · rintro ⟨A, rfl⟩
     exact (frameSpan_smul A f).symm
 
-/-- The frame-span map descends to a bijection from the orbit space of frames under the general
-linear group onto the finite Grassmannian. -/
-theorem bijective_lift_frameSpan :
-    Function.Bijective (Quotient.lift (s := MulAction.orbitRel (GL (Fin r) 𝕜) _)
-      (frameSpan : finiteFullRankFrame 𝕜 r N → _) fun _ _ h =>
-        (frameSpan_eq_frameSpan_iff.2 (MulAction.orbitRel_apply.1 h)).symm) :=
-  ⟨fun x y => Quotient.inductionOn₂ x y fun _ _ h =>
-      Quotient.sound (MulAction.orbitRel_apply.2 (frameSpan_eq_frameSpan_iff.1 h.symm)),
-    fun V => let ⟨f, hf⟩ := frameSpan_surjective V; ⟨Quotient.mk _ f, hf⟩⟩
-
 /-- There is an `r`-dimensional subspace of `Fin N → 𝕜` exactly when `r ≤ N`. -/
 theorem nonempty_iff_le : Nonempty (finiteGrassmannian 𝕜 r N) ↔ r ≤ N := by
   refine ⟨fun ⟨V⟩ => ?_, fun h => ⟨frameSpan ⟨fun i => Pi.single (Fin.castLE h i) 1, ?_⟩⟩⟩
@@ -250,13 +242,11 @@ variable (𝕜 r N) in
 linear group, by taking the span of a representative frame. -/
 noncomputable def orbitHomeomorph :
     MulAction.orbitRel.Quotient (GL (Fin r) 𝕜) (finiteFullRankFrame 𝕜 r N) ≃ₜ
-      finiteGrassmannian 𝕜 r N where
-  toEquiv := Equiv.ofBijective _ bijective_lift_frameSpan
-  continuous_toFun := continuous_quot_lift _ continuous_frameSpan
-  continuous_invFun := by
-    rw [isQuotientMap_frameSpan.continuous_iff]
-    exact continuous_quot_mk.congr fun f =>
-      ((Equiv.ofBijective _ bijective_lift_frameSpan).symm_apply_apply (Quotient.mk _ f)).symm
+      finiteGrassmannian 𝕜 r N :=
+  (Homeomorph.Quotient.congrRight (r' := Setoid.ker frameSpan) fun _ _ =>
+    MulAction.orbitRel_apply.trans (frameSpan_eq_frameSpan_iff.symm.trans eq_comm)).trans
+    (Topology.IsQuotientMap.homeomorph (f := ⟨frameSpan, continuous_frameSpan⟩)
+      isQuotientMap_frameSpan)
 
 @[simp] theorem orbitHomeomorph_mk (f : finiteFullRankFrame 𝕜 r N) :
     orbitHomeomorph 𝕜 r N (Quotient.mk _ f) = frameSpan f := (rfl)
