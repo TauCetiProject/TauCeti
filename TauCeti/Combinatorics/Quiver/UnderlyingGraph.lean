@@ -25,6 +25,8 @@ distinct vertices, whatever their direction (`TauCeti.Quiver.underlyingGraph_con
 
 * `TauCeti.Quiver.underlyingGraph_adj`: two vertices are adjacent when they are distinct and
   joined by an arrow in one direction or the other.
+* `TauCeti.Quiver.isContained_underlyingGraph_of_injective`: a graph is contained in the
+  underlying graph once an injective vertex map sends its edges to arrows.
 * `TauCeti.Quiver.underlyingGraph_congr`: two quiver structures joining the same pairs of
   distinct vertices by an arrow, in either direction, have the same underlying graph.
 * `TauCeti.Quiver.isAcyclic_underlyingGraph_of_lt`: a quiver in which the arrows out of each vertex
@@ -67,6 +69,14 @@ theorem underlyingGraph_adj {a b : V} :
 theorem underlyingGraph_adj_of_hom {a b : V} (e : a ⟶ b) (hab : a ≠ b) :
     (underlyingGraph V).Adj a b :=
   underlyingGraph_adj.mpr ⟨hab, .inl ⟨e⟩⟩
+
+/-- **A graph is contained in the underlying graph of a quiver** as soon as an injective vertex map
+joins the images of any two adjacent vertices by an arrow, in one direction or the other. -/
+theorem isContained_underlyingGraph_of_injective {W : Type*} {H : SimpleGraph W} (φ : W → V)
+    (hφ : Function.Injective φ)
+    (hadj : ∀ ⦃i j⦄, H.Adj i j → Nonempty (φ i ⟶ φ j) ∨ Nonempty (φ j ⟶ φ i)) :
+    H.IsContained (underlyingGraph V) :=
+  ⟨⟨⟨φ, fun {_ _} h ↦ underlyingGraph_adj.mpr ⟨hφ.ne (H.ne_of_adj h), hadj h⟩⟩, hφ⟩⟩
 
 /-- If every arrow strictly lowers a height function, then two vertices adjacent in the underlying
 graph are joined by an arrow out of the one whose height is not below the other's. -/
