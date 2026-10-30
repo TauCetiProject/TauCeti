@@ -160,6 +160,11 @@ theorem _root_.Equidecomp.equidecomposable_image (f : Equidecomp X G) (hA : A �
 theorem equidecomposable_empty : Equidecomposable G (∅ : Set X) ∅ :=
   ⟨⟨(PartialEquiv.refl X).restr ∅, ∅, fun _ ha => by simp at ha⟩, by simp, by simp⟩
 
+/-- Equidecomposable sets are simultaneously empty or nonempty. -/
+theorem Equidecomposable.nonempty_iff (h : Equidecomposable G A B) : A.Nonempty ↔ B.Nonempty := by
+  obtain ⟨f, rfl, rfl⟩ := h
+  rw [← f.image_source_eq_target, image_nonempty]
+
 /-- Restricting an equidecomposition of `A` with `B` to `A' ⊆ A` makes `A'` equidecomposable with
 some `B' ⊆ B`, and the remaining pieces `A \ A'` and `B \ B'` equidecomposable too. -/
 theorem Equidecomposable.exists_subset_and_sdiff (h : Equidecomposable G A B) (hA' : A' ⊆ A) :

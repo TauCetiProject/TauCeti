@@ -46,12 +46,13 @@ splits it into the two knotted arcs: the sign of `⟪(K₁ # K₂) z, ι i⟫` i
 (`TauCeti.SmoothCircleEmbedding.sign_inner_connectedSum`).
 
 The great circle is a right unit on the nose
-(`TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`), and a left unit up to moving the knot
-by the half-turn and rotating its parametrization by `-1`
-(`TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`). An isometry fixing the plane `ι ℂ`
-pointwise preserves connected-sum position and commutes with the connected sum; in particular the
-mirror image of a connected sum of knots in `S³ ⊆ ℝ⁴`, in position for the unknot, is the connected
-sum of the mirror images (`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
+(`TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`), and a left unit up to replacing the
+knot by `TauCeti.SmoothCircleEmbedding.turnOver`, which moves it by the half-turn and rotates its
+parametrization by `-1` (`TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`). An isometry
+fixing the plane `ι ℂ` pointwise preserves connected-sum position and commutes with the connected
+sum; in particular the mirror image of a connected sum of knots in `S³ ⊆ ℝ⁴`, in position for the
+unknot, is the connected sum of the mirror images
+(`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
 
 Concordances in connected-sum position can themselves be summed, giving a concordance between
 the connected sums (`TauCeti.KnotTheory.ConnectedSum.Concordance`). Not formalized here: that
@@ -63,6 +64,8 @@ construction to the knot concordance group.
 
 * `TauCeti.SmoothCircleEmbedding.IsConnectedSumPosition ι K`: the knot `K` is standard on the lower
   half of the circle and knotted only in the upper hemisphere determined by `ι`.
+* `TauCeti.SmoothCircleEmbedding.turnOver ι K`: the knot `K` moved by the half-turn `ρ` and
+  reparametrized by `z ↦ -z`, the second summand of a connected sum.
 * `TauCeti.SmoothCircleEmbedding.connectedSum`: the connected sum of two knots in connected-sum
   position.
 
@@ -164,23 +167,23 @@ theorem IsConnectedSumPosition.transDiffeomorph (h : IsConnectedSumPosition ι K
 /-- The second summand of a connected sum: the knot moved into the lower hemisphere by the
 half-turn in the plane `ι ℂ`, and reparametrized by the rotation `z ↦ -z` of the circle, so that
 its knotted arc lies over the lower half of the circle. -/
-private def turnOver (ι : ℂ →ₗᵢ[ℝ] E) (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+def turnOver (ι : ℂ →ₗᵢ[ℝ] E) (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
     SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) :=
   rotate (K.transDiffeomorph
     ((LinearMap.range ι.toLinearMap)ᗮ.reflection.unitSphereDiffeomorph (n := n) (k := n) ∞)) (-1)
 
-private theorem coe_turnOver_apply (ι : ℂ →ₗᵢ[ℝ] E)
+/-- The turned-over embedding reflects the knot at the antipodal circle parameter. -/
+@[simp]
+theorem coe_turnOver_apply (ι : ℂ →ₗᵢ[ℝ] E)
     (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) (z : Circle) :
     (turnOver ι K z : E) = (LinearMap.range ι.toLinearMap)ᗮ.reflection (K (-z)) := by
   simp [turnOver]
 
 /-- The half-turn and the antipodal parametrization together fix the great circle. -/
-private theorem reflection_greatCircle_neg (z : Circle) :
+theorem reflection_greatCircle_neg (z : Circle) :
     (LinearMap.range ι.toLinearMap)ᗮ.reflection (greatCircle (n := n) ι (-z)) = ι z := by
   rw [coe_greatCircle_apply, Circle.coe_neg, map_neg, map_neg,
-    Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
-      (K := LinearMap.range ι.toLinearMap) (v := ι (z : ℂ))
-      (LinearMap.mem_range_self _ (z : ℂ)), neg_neg]
+    ι.reflection_orthogonal_range_apply, neg_neg]
 
 /-- Near the closed upper half of the circle, the turned-over knot is the great circle. -/
 private theorem IsConnectedSumPosition.eventuallyEq_turnOver (h : IsConnectedSumPosition ι K)
