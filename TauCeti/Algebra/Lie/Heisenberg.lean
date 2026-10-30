@@ -76,9 +76,9 @@ bracket, so it lands in the **square** `(U⁺)²` and not merely in `U⁺` itsel
   `TauCeti.lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ` and
   `TauCeti.finrank_quotient_lieAnnihilator_heisenberg`: **the coadjoint stabilizer of `ν` is
   everything when `ν z = 0` and, over a ring without zero divisors, the centre `R ∙ z` otherwise**,
-  so over a field the coadjoint orbits
-  have dimension `0` or `2`, even as their Kirillov–Kostant–Souriau form requires. By contrast the
-  adjoint orbit of `x` has dimension `1` (`TauCeti.finrank_quotient_lieAnnihilator_heisenbergX`).
+  so over a field the algebraic tangent models `L ⧸ L_ν` of the coadjoint orbits have dimension `0`
+  or `2`, even as their Kirillov–Kostant–Souriau form requires. By contrast the quotient of `L` by
+  the centralizer of `x` has dimension `1` (`TauCeti.finrank_quotient_lieAnnihilator_heisenbergX`).
 
 ## Implementation notes
 
@@ -415,8 +415,8 @@ theorem ι_heisenbergZ_mem_augmentation_toIdeal_sq :
 variable {R}
 
 /-- **A functional vanishing on the centre is fixed by the coadjoint action**, and conversely: the
-whole Heisenberg Lie algebra stabilizes `ν` exactly when `ν z = 0`, so the coadjoint orbit through
-such a `ν` is a point. -/
+whole Heisenberg Lie algebra stabilizes `ν` exactly when `ν z = 0`, so the algebraic tangent model
+`L ⧸ L_ν` of the coadjoint orbit through such a `ν` is zero. -/
 theorem _root_.Module.Dual.lieAnnihilator_heisenberg_eq_top_iff (ν : Dual R (heisenberg R)) :
     lieAnnihilator R (heisenberg R) ν = ⊤ ↔ ν (heisenbergZ R) = 0 := by
   refine ⟨fun h => ?_, fun h => ?_⟩
@@ -447,8 +447,8 @@ theorem lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ [NoZeroDivisor
     ext B
     simp
 
-/-- **The coadjoint orbits of the Heisenberg Lie algebra through functionals nonzero on the centre
-are two-dimensional.** -/
+/-- **The algebraic tangent models `L ⧸ L_ν` of the coadjoint orbits of the Heisenberg Lie algebra
+through functionals nonzero on the centre are two-dimensional.** -/
 theorem finrank_quotient_lieAnnihilator_heisenberg {K : Type*} [Field K]
     {ν : Dual K (heisenberg K)} (hν : ν (heisenbergZ K) ≠ 0) :
     finrank K (heisenberg K ⧸ (lieAnnihilator K (heisenberg K) ν).toSubmodule) = 2 := by
@@ -457,9 +457,9 @@ theorem finrank_quotient_lieAnnihilator_heisenberg {K : Type*} [Field K]
   rw [finrank_span_singleton heisenbergZ_ne_zero, finrank_heisenberg] at h
   omega
 
-/-- **The adjoint orbit of `x` in the Heisenberg Lie algebra is one-dimensional**, in contrast
-with the even-dimensional coadjoint orbits: the centralizer of `x` is cut out by the single
-entry `A 1 2`, since `⁅A, x⁆ = -(A 1 2) • z`. -/
+/-- **The quotient of the Heisenberg Lie algebra by the centralizer of `x` is one-dimensional**,
+in contrast with the even-dimensional coadjoint tangent models: the centralizer is cut out by the
+single entry `A 1 2`, since `⁅A, x⁆ = -(A 1 2) • z`. -/
 theorem finrank_quotient_lieAnnihilator_heisenbergX {K : Type*} [Field K] :
     finrank K (heisenberg K ⧸ (lieAnnihilator K (heisenberg K) (heisenbergX K)).toSubmodule) =
       1 := by
