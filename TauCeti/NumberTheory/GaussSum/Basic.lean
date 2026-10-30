@@ -14,7 +14,7 @@ import Mathlib.Algebra.CharP.Quotient
 /-!
 # Gauss sums over finite fields
 
-This file adds three classical facts about Gauss sums `g(χ, ψ)` of characters of a finite field `F`
+This file adds four classical facts about Gauss sums `g(χ, ψ)` of characters of a finite field `F`
 to Mathlib's theory in `Mathlib.NumberTheory.GaussSum`.
 
 Let `χ` be a nontrivial multiplicative character and `ψ` a primitive additive character, both
@@ -27,6 +27,11 @@ the `l`-th power is additive modulo `l`, so `g(χ, ψ)^l ≡ g(χ^l, ψ^l) = g(1
 `l R` as soon as `ψ ^ l` is nontrivial. This is the congruence behind `Φ(P) ≡ -1 (mod l)` for the
 `l`-th power `Φ(P)` of the Gauss sum of the `l`-th power residue character.
 
+If instead the coefficients have characteristic `p`, then raising to the power `q = p ^ n` is
+additive, so `g(χ, ψ) ^ q = g(χ ^ q, ψ ^ q)`; when `χ ^ q = χ` and `q` is invertible in `F`,
+reindexing gives `g(χ, ψ) ^ q = χ⁻¹ (q) g(χ, ψ)`. Read modulo a prime of residue
+characteristic `p`, this computes the power residue symbol of `Φ(P)` at a second prime.
+
 If `F` has characteristic `p` and `ψ` is invariant under the Frobenius `x ↦ x ^ p`, as every
 additive character factoring through the trace to `𝔽_p` is (`TauCeti.apply_pow_char_of_trace`),
 then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`.
@@ -36,6 +41,8 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
 * `TauCeti.norm_gaussSum`: `‖g(χ, ψ)‖ = √#F`.
 * `TauCeti.gaussSum_pow_modEq_neg_one`: `g(χ, ψ)^l ≡ -1 (mod l)` when `χ ^ l = 1` and
   `ψ ^ l ≠ 1`.
+* `TauCeti.gaussSum_pow_char_pow`: `g(χ, ψ) ^ q = χ⁻¹ (q) g(χ, ψ)` when the coefficients have
+  characteristic `p`, `q = p ^ n` and `χ ^ q = χ`.
 * `TauCeti.apply_pow_char_of_trace`: `ψ (x ^ p) = ψ x` when `ψ` factors through the trace to
   `𝔽_p`.
 * `MulChar.gaussSum_pow_char_left`: `g(χ ^ p, ψ) = g(χ, ψ)` when `ψ (x ^ p) = ψ x`.
@@ -77,6 +84,22 @@ theorem gaussSum_pow_modEq_neg_one {R : Type*} [CommRing R] [IsDomain R] {l : �
     gaussSum, map_sum, map_sum, sum_pow_char]
   simp only [map_mul, mul_pow, ← map_pow, ← MulChar.pow_apply' χ (Fact.out : l.Prime).ne_zero,
     AddChar.pow_apply]
+
+/-- **The Frobenius on a Gauss sum.** Let `R` have prime characteristic `p` and let `q = p ^ n` be
+invertible in the finite ring `A`. If the multiplicative character `χ` satisfies `χ ^ q = χ`,
+for instance because its order divides `q - 1`, then `g(χ, ψ) ^ q = χ⁻¹ (q) g(χ, ψ)` for every
+additive character `ψ`. For a quadratic character this is Mathlib's
+`MulChar.IsQuadratic.gaussSum_frob_iter`. -/
+theorem gaussSum_pow_char_pow {A : Type*} [CommRing A] [Fintype A] {R : Type*} [CommRing R]
+    {p : ℕ} [Fact p.Prime] [CharP R p] {n : ℕ} {χ : MulChar A R} (hχ : χ ^ p ^ n = χ)
+    (ψ : AddChar A R) (hq : IsUnit ((p : A) ^ n)) :
+    gaussSum χ ψ ^ p ^ n = χ⁻¹ ((p : A) ^ n) * gaussSum χ ψ := by
+  have h : gaussSum χ ψ ^ p ^ n = gaussSum χ (ψ ^ p ^ n) := by
+    rw [gaussSum, gaussSum, sum_pow_char_pow]
+    refine Finset.sum_congr rfl fun x _ ↦ ?_
+    rw [mul_pow, ← MulChar.pow_apply' χ (pow_ne_zero n (Fact.out : p.Prime).ne_zero), hχ,
+      AddChar.pow_apply]
+  rw [h, AddChar.pow_mulShift, Nat.cast_pow, ← hq.unit_spec, gaussSum_mulShift_eq]
 
 omit [Fintype F] in
 /-- An additive character factoring through the trace to `𝔽_p` is invariant under the Frobenius:
