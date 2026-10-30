@@ -45,6 +45,11 @@ Gram matrix.
 * `LinearMap.BilinForm.toMatrix_collectedBasis`: the Gram matrix of a form in a basis collected
   from a pairwise orthogonal internal direct sum is block diagonal, with the Gram matrices of the
   summands as blocks.
+* `LinearMap.BilinForm.exists_basis_toMatrix_mul_toMatrix_eq_smul_of_isInternal`: Gram matrices
+  of two forms on the summands of an orthogonal internal direct sum that multiply to `c • 1` give
+  Gram matrices on the whole module with the same product; the same holds for the restrictions to
+  the supremum of finitely many independent submodules
+  (`LinearMap.BilinForm.exists_basis_restrict_biSup_toMatrix_mul_toMatrix_eq_smul`).
 * `LinearMap.BilinForm.equivalent_iff_equivalent_of_toMatrix_mul_eq_smul`: if the Gram matrices of
   `B` and `D` in some basis multiply to `c • 1`, for a non-zero-divisor `c`, then `D` is determined
   up to isometry by `B` and conversely: such pairs `(B₁, D₁)` and `(B₂, D₂)` have `B₁ ≅ B₂` exactly
@@ -53,6 +58,8 @@ Gram matrix.
 -/
 
 public section
+
+universe u
 
 namespace Matrix
 
@@ -170,6 +177,62 @@ theorem toMatrix_collectedBasis_mul_toMatrix_collectedBasis {M o : Type*} [AddCo
   simp only [hd]
   have := Matrix.blockDiagonal'_smul c (1 : ∀ i, Matrix (α i) (α i) R)
   rwa [Matrix.blockDiagonal'_one] at this
+
+/-- If two forms are pairwise orthogonal across a family of submodules `N i` of which `M` is the
+internal direct sum, finitely many of them nonzero, and their Gram matrices in some basis of each
+nonzero `N i` multiply to `c • 1`, then so do their Gram matrices in some basis of `M`. -/
+theorem exists_basis_toMatrix_mul_toMatrix_eq_smul_of_isInternal {M : Type*} {o : Type u}
+    [AddCommGroup M] [Module R M] [DecidableEq o] {B D : BilinForm R M} {N : o → Submodule R M}
+    (hN : DirectSum.IsInternal N) (hfin : {i | N i ≠ ⊥}.Finite)
+    (hB : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', B x y = 0)
+    (hD : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', D x y = 0) {c : R}
+    (hd : ∀ i, N i ≠ ⊥ → ∃ (α : Type u) (_ : Fintype α) (_ : DecidableEq α) (d : Basis α R (N i)),
+      (B.restrict (N i)).toMatrix d * (D.restrict (N i)).toMatrix d = c • 1) :
+    ∃ (β : Type u) (_ : Fintype β) (_ : DecidableEq β) (b : Basis β R M),
+      B.toMatrix b * D.toMatrix b = c • 1 := by
+  have : Finite {i // N i ≠ ⊥} := hfin.to_subtype
+  have : Fintype {i // N i ≠ ⊥} := Fintype.ofFinite _
+  choose α _ _ d hd using fun i : {i // N i ≠ ⊥} ↦ hd i i.2
+  have hP : DirectSum.IsInternal fun i : {i // N i ≠ ⊥} ↦ N i :=
+    DirectSum.isInternal_ne_bot_iff.mpr hN
+  refine ⟨_, inferInstance, inferInstance, hP.collectedBasis d,
+    toMatrix_collectedBasis_mul_toMatrix_collectedBasis hP ?_ ?_ d hd⟩
+  · exact fun i i' hii ↦ hB i i' fun h ↦ hii (Subtype.ext h)
+  · exact fun i i' hii ↦ hD i i' fun h ↦ hii (Subtype.ext h)
+
+/-- The version of `exists_basis_toMatrix_mul_toMatrix_eq_smul_of_isInternal` for the
+restrictions of the forms to the supremum of finitely many members `N i`, `i ∈ s`, of an
+independent family of submodules. -/
+theorem exists_basis_restrict_biSup_toMatrix_mul_toMatrix_eq_smul {M : Type*} {o : Type u}
+    [AddCommGroup M] [Module R M] {B D : BilinForm R M} {N : o → Submodule R M}
+    (hN : iSupIndep N) (hB : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', B x y = 0)
+    (hD : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', D x y = 0) {s : Set o} (hs : s.Finite) {c : R}
+    (hd : ∀ i ∈ s, ∃ (α : Type u) (_ : Fintype α) (_ : DecidableEq α) (d : Basis α R (N i)),
+      (B.restrict (N i)).toMatrix d * (D.restrict (N i)).toMatrix d = c • 1) :
+    ∃ (β : Type u) (_ : Fintype β) (_ : DecidableEq β) (b : Basis β R ↥(⨆ i ∈ s, N i)),
+      (B.restrict (⨆ i ∈ s, N i)).toMatrix b * (D.restrict (⨆ i ∈ s, N i)).toMatrix b =
+        c • 1 := by
+  classical
+  have : Fintype s := hs.fintype
+  choose α _ _ d hd using fun i : s ↦ hd i i.2
+  set A := ⨆ i ∈ s, N i
+  have hle (i : s) : N i ≤ A := le_biSup N i.2
+  -- Transport the bases of the `N i` into `A`.
+  let d' (i : s) : Basis (α i) R ((N i).comap A.subtype) :=
+    (d i).map (Submodule.comapSubtypeEquivOfLe (hle i)).symm
+  have hgram (F : BilinForm R M) (i : s) :
+      ((F.restrict A).restrict ((N i).comap A.subtype)).toMatrix (d' i) =
+        (F.restrict (N i)).toMatrix (d i) := by
+    ext a a'
+    simp only [toMatrix_apply, restrict_apply, LinearMap.domRestrict_apply, d', Basis.map_apply,
+      Submodule.comapSubtypeEquivOfLe_symm_apply]
+  have hP := DirectSum.isInternal_biSup_submodule_of_iSupIndep s (hN.comp Subtype.val_injective)
+  refine ⟨_, inferInstance, inferInstance, hP.collectedBasis d',
+    toMatrix_collectedBasis_mul_toMatrix_collectedBasis hP ?_ ?_ d' fun i ↦ ?_⟩
+  · exact fun i i' hii x hx y hy ↦ hB i i' (fun h ↦ hii (Subtype.ext h)) _ hx _ hy
+  · exact fun i i' hii x hx y hy ↦ hD i i' (fun h ↦ hii (Subtype.ext h)) _ hx _ hy
+  · rw [hgram, hgram]
+    exact hd i
 
 /-- One direction of `LinearMap.BilinForm.equivalent_iff_equivalent_of_toMatrix_mul_eq_smul`. If
 `e` is an isometry with matrix `P`, the contragredient map, with matrix the inverse transpose of

@@ -75,15 +75,9 @@ theorem mul_eq_smul_one_comm {n : Type*} [Fintype n] [DecidableEq n] {A B : Matr
     have := congrArg det h
     rw [det_mul, det_smul, det_one, mul_one] at this
     exact (mul_mem_nonZeroDivisors.mp (this ▸ pow_mem hc _)).1
-  have h1 : A * (B * A - c • 1) = 0 := by
-    rw [Matrix.mul_sub, ← Matrix.mul_assoc, h]
-    simp
-  have h0 : A.det • (B * A - c • 1) = 0 := by
-    rw [← Matrix.one_mul (B * A - c • 1), ← Matrix.smul_mul, ← adjugate_mul, Matrix.mul_assoc, h1,
-      Matrix.mul_zero]
-  ext i j
-  have := congrFun (congrFun h0 i) j
-  rwa [Matrix.smul_apply, smul_eq_mul, Matrix.zero_apply, mul_left_mem_nonZeroDivisors_eq_zero_iff
-    hdet, Matrix.sub_apply, sub_eq_zero] at this
+  refine (isRegular_of_isLeftRegular_det
+    (isRegular_iff_mem_nonZeroDivisors.mpr hdet).left).left ?_
+  change A * (B * A) = A * (c • 1)
+  rw [← Matrix.mul_assoc, h, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul, Matrix.mul_one]
 
 end Matrix

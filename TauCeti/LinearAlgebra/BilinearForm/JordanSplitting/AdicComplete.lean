@@ -13,6 +13,7 @@ import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.LinearAlgebra.Submodule.Compl
+import TauCeti.Order.CompleteLattice.Basic
 
 /-!
 # Jordan splittings over an adically complete local domain
@@ -189,8 +190,7 @@ private theorem IsJordanSplitting.exists_dual [Module.Free R M] [Module.Finite R
     rw [← toMatrix_apply, toMatrix_toBilin, Matrix.smul_apply, smul_eq_mul]
   have hEs (i : ℕ) : (E i).IsSymm := (Matrix.isSymm_toBilin_iff_isSymm (d i)).mpr <| by
     rw [Matrix.IsSymm, Matrix.transpose_smul, Matrix.transpose_nonsing_inv, (hUs i).eq]
-  obtain ⟨D, hres, horth, hDs⟩ := exists_forall_restrict_eq_of_isInternal h.isInternal
-    h.hasFiniteSupport E
+  obtain ⟨D, hres, horth, hDs⟩ := exists_forall_restrict_eq_of_isInternal h.isInternal E
   -- Reversing the indices up to `m` is an involution of `ℕ`.
   let τ (k : ℕ) : ℕ := if k ≤ m then m - k else k
   have hτ : Function.Involutive τ := fun k ↦ by
@@ -238,84 +238,6 @@ private theorem IsJordanSplitting.exists_dual [Module.Free R M] [Module.Finite R
       exact mul_dvd_mul_left _ (Matrix.IsSymm.two_dvd_inv_apply_self (hUs i) (hUdet i) hUd a)
 
 end Dual
-
-/-- If the Gram matrices of `B` and `D` on each constituent `N i`, `i ≤ m`, of an orthogonal
-internal direct sum with no constituents above `m` multiply to `c • 1`, then so do their Gram
-matrices on the whole module. -/
-private theorem exists_basis_toMatrix_mul_toMatrix_eq {D : BilinForm R M}
-    (hN : DirectSum.IsInternal N) (hfin : {i | N i ≠ ⊥}.Finite)
-    (hB : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', B x y = 0)
-    (hD : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', D x y = 0) {c : R} {m : ℕ}
-    (htop : ∀ i, m < i → N i = ⊥)
-    (hd : ∀ i ≤ m, ∃ d : Basis (Fin (finrank R (N i))) R (N i),
-      (B.restrict (N i)).toMatrix d * (D.restrict (N i)).toMatrix d = c • 1) :
-    ∃ (ι : Type) (_ : Fintype ι) (_ : DecidableEq ι) (b : Basis ι R M),
-      B.toMatrix b * D.toMatrix b = c • 1 := by
-  choose d hd using hd
-  have : Finite {i // N i ≠ ⊥} := hfin.to_subtype
-  have : Fintype {i // N i ≠ ⊥} := Fintype.ofFinite _
-  have hle (i : {i // N i ≠ ⊥}) : (i : ℕ) ≤ m := not_lt.mp fun hlt ↦ i.2 (htop i hlt)
-  have hP : DirectSum.IsInternal fun i : {i // N i ≠ ⊥} ↦ N i :=
-    DirectSum.isInternal_ne_bot_iff.mpr hN
-  refine ⟨_, inferInstance, inferInstance, hP.collectedBasis fun i ↦ d i (hle i),
-    toMatrix_collectedBasis_mul_toMatrix_collectedBasis hP ?_ ?_ _ fun i ↦ hd i (hle i)⟩
-  · exact fun i i' hii ↦ hB i i' fun h ↦ hii (Subtype.ext h)
-  · exact fun i i' hii ↦ hD i i' fun h ↦ hii (Subtype.ext h)
-
-/-- The case of `exists_basis_toMatrix_mul_toMatrix_eq` for the restrictions to the sum of the
-constituents of index in `[k, m]`. -/
-private theorem exists_basis_restrict_biSup_Icc_toMatrix_mul_eq {D : BilinForm R M}
-    (hN : iSupIndep N) (hB : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', B x y = 0)
-    (hD : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', D x y = 0) {c : R} {m : ℕ}
-    (hd : ∀ i ≤ m, ∃ d : Basis (Fin (finrank R (N i))) R (N i),
-      (B.restrict (N i)).toMatrix d * (D.restrict (N i)).toMatrix d = c • 1) (k : ℕ) :
-    ∃ (ι : Type) (_ : Fintype ι) (_ : DecidableEq ι) (b : Basis ι R ↥(⨆ i ∈ Set.Icc k m, N i)),
-      (B.restrict (⨆ i ∈ Set.Icc k m, N i)).toMatrix b *
-        (D.restrict (⨆ i ∈ Set.Icc k m, N i)).toMatrix b = c • 1 := by
-  choose d hd using hd
-  set A := ⨆ i ∈ Set.Icc k m, N i
-  have hle (i : Set.Icc k m) : N i ≤ A := le_biSup N i.2
-  -- Transport the bases of the constituents into `A`.
-  let d' (i : Set.Icc k m) : Basis (Fin (finrank R (N i))) R ((N i).comap A.subtype) :=
-    (d i i.2.2).map (Submodule.comapSubtypeEquivOfLe (hle i)).symm
-  have hgram (F : BilinForm R M) (i : Set.Icc k m) :
-      ((F.restrict A).restrict ((N i).comap A.subtype)).toMatrix (d' i) =
-        (F.restrict (N i)).toMatrix (d i i.2.2) := by
-    ext a a'
-    simp only [toMatrix_apply, restrict_apply, LinearMap.domRestrict_apply, d', Basis.map_apply,
-      Submodule.comapSubtypeEquivOfLe_symm_apply]
-  have hP := DirectSum.isInternal_biSup_submodule_of_iSupIndep (Set.Icc k m)
-    (hN.comp Subtype.val_injective)
-  refine ⟨_, inferInstance, inferInstance, hP.collectedBasis d',
-    toMatrix_collectedBasis_mul_toMatrix_collectedBasis hP ?_ ?_ d' fun i ↦ ?_⟩
-  · exact fun i i' hii x hx y hy ↦ hB i i' (fun h ↦ hii (Subtype.ext h)) _ hx _ hy
-  · exact fun i i' hii x hx y hy ↦ hD i i' (fun h ↦ hii (Subtype.ext h)) _ hx _ hy
-  · rw [hgram, hgram]
-    exact hd i i.2.2
-
-/-- Reversing the indices up to `m` carries `Set.Iic (m - (j + 1))` onto `Set.Icc (j + 1) m`. -/
-private theorem biSup_Iic_ite_eq {X : Type*} [AddCommGroup X] [Module R X] (P : ℕ → Submodule R X)
-    {j m : ℕ} (hjm : j + 1 ≤ m) :
-    ⨆ k ∈ Set.Iic (m - (j + 1)), (if k ≤ m then P (m - k) else ⊥) =
-      ⨆ i ∈ Set.Icc (j + 1) m, P i := by
-  refine le_antisymm (iSup₂_le fun k hk ↦ ?_) (iSup₂_le fun i hi ↦ ?_)
-  · simp only [Set.mem_Iic] at hk
-    simp only [show k ≤ m by omega, ↓reduceIte]
-    exact le_biSup P (by simp only [Set.mem_Icc]; omega)
-  · simp only [Set.mem_Icc] at hi
-    have := le_biSup (fun k ↦ if k ≤ m then P (m - k) else ⊥)
-      (show m - i ∈ Set.Iic (m - (j + 1)) by simp only [Set.mem_Iic]; omega)
-    simpa [show m - i ≤ m by omega, Nat.sub_sub_self hi.2] using this
-
-/-- Above the last nonzero constituent, `Set.Ici k` may be cut down to `Set.Icc k m`. -/
-private theorem biSup_Ici_eq_biSup_Icc {X : Type*} [AddCommGroup X] [Module R X]
-    (P : ℕ → Submodule R X) {k m : ℕ} (htop : ∀ i, m < i → P i = ⊥) :
-    ⨆ i ∈ Set.Ici k, P i = ⨆ i ∈ Set.Icc k m, P i := by
-  refine le_antisymm (iSup₂_le fun i hi ↦ ?_) (biSup_mono fun i hi ↦ hi.1)
-  by_cases him : i ≤ m
-  · exact le_biSup P ⟨hi, him⟩
-  · rw [htop i (by omega)]
-    exact bot_le
 
 /-- Projecting to the sum of the constituents of index at most `j`, along those of index above `j`,
 preserves the form modulo `π ^ (j + 1)`, and the self-pairings modulo `2 * π ^ (j + 1)` when the
@@ -465,10 +387,12 @@ theorem IsJordanSplitting.equivalent_restrict_biSup_Ici_of_equivalent [IsDomain 
   -- The scaled duals `D` and `D'` are isometric, since `B` and `B'` are.
   obtain ⟨D, hDs, hD, hDo, hBD, hDeven⟩ := h.exists_dual hB hπ' htop
   obtain ⟨D', -, hD', hD'o, hBD', -⟩ := h'.exists_dual hB' hπ' htop'
-  obtain ⟨_, _, _, b, hb⟩ := exists_basis_toMatrix_mul_toMatrix_eq h.isInternal
-    h.hasFiniteSupport h.apply_eq_zero hDo htop hBD
-  obtain ⟨_, _, _, b', hb'⟩ := exists_basis_toMatrix_mul_toMatrix_eq h'.isInternal
-    h'.hasFiniteSupport h'.apply_eq_zero hD'o htop' hBD'
+  obtain ⟨_, _, _, b, hb⟩ := exists_basis_toMatrix_mul_toMatrix_eq_smul_of_isInternal h.isInternal
+    h.hasFiniteSupport h.apply_eq_zero hDo fun i hi ↦
+      (hBD i (not_lt.mp fun hlt ↦ hi (htop i hlt))).elim fun d hd ↦ ⟨_, _, _, d, hd⟩
+  obtain ⟨_, _, _, b', hb'⟩ := exists_basis_toMatrix_mul_toMatrix_eq_smul_of_isInternal
+    h'.isInternal h'.hasFiniteSupport h'.apply_eq_zero hD'o fun i hi ↦
+      (hBD' i (not_lt.mp fun hlt ↦ hi (htop' i hlt))).elim fun d hd ↦ ⟨_, _, _, d, hd⟩
   have hDD' : D.Equivalent D' :=
     (equivalent_iff_equivalent_of_toMatrix_mul_eq_smul b b' (pow_mem hπ' m) hb hb').mp hBB'
   -- In `D`, the constituents `N (j + 1)` and `N j` have indices `m - (j + 1)` and `m - j`, and
@@ -486,13 +410,16 @@ theorem IsJordanSplitting.equivalent_restrict_biSup_Ici_of_equivalent [IsDomain 
     simp only [e₁, e₂, show m - j ≤ m by omega, ↓reduceIte] at hw ⊢
     exact hDeven j (by omega) heven w hw
   have hlow := hD.equivalent_restrict_biSup_Iic_of_equivalent hD' hDs hDD' hπ h2 hevenD hnextD
-  rw [biSup_Iic_ite_eq N hjm, biSup_Iic_ite_eq N' hjm] at hlow
+  rw [TauCeti.biSup_Iic_ite_tsub_eq_biSup_Icc N hjm,
+    TauCeti.biSup_Iic_ite_tsub_eq_biSup_Icc N' hjm] at hlow
   -- Back from the duals to `B` and `B'`, on the constituents of index in `[j + 1, m]`.
-  obtain ⟨_, _, _, c, hc⟩ := exists_basis_restrict_biSup_Icc_toMatrix_mul_eq
-    h.isInternal.submodule_iSupIndep h.apply_eq_zero hDo hBD (j + 1)
-  obtain ⟨_, _, _, c', hc'⟩ := exists_basis_restrict_biSup_Icc_toMatrix_mul_eq
-    h'.isInternal.submodule_iSupIndep h'.apply_eq_zero hD'o hBD' (j + 1)
-  rw [biSup_Ici_eq_biSup_Icc N htop, biSup_Ici_eq_biSup_Icc N' htop']
+  obtain ⟨_, _, _, c, hc⟩ := exists_basis_restrict_biSup_toMatrix_mul_toMatrix_eq_smul
+    h.isInternal.submodule_iSupIndep h.apply_eq_zero hDo (Set.finite_Icc (j + 1) m) fun i hi ↦
+      (hBD i hi.2).elim fun d hd ↦ ⟨_, _, _, d, hd⟩
+  obtain ⟨_, _, _, c', hc'⟩ := exists_basis_restrict_biSup_toMatrix_mul_toMatrix_eq_smul
+    h'.isInternal.submodule_iSupIndep h'.apply_eq_zero hD'o (Set.finite_Icc (j + 1) m) fun i hi ↦
+      (hBD' i hi.2).elim fun d hd ↦ ⟨_, _, _, d, hd⟩
+  rw [TauCeti.biSup_Ici_eq_biSup_Icc N htop, TauCeti.biSup_Ici_eq_biSup_Icc N' htop']
   exact (equivalent_iff_equivalent_of_toMatrix_mul_eq_smul c c' (pow_mem hπ' m) hc hc').mpr hlow
 
 /-- Across a break between two consecutive constituents that are even at their own scales, the
