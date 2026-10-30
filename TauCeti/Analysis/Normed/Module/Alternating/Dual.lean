@@ -15,8 +15,8 @@ public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 Let `E` be a finite-dimensional normed space over a complete nontrivially normed field `𝕜`. The
 `k`-vectors `⋀[𝕜]^k E` and the continuous alternating `k`-forms `E [⋀^Fin k]→L[𝕜] 𝕜` are dual to
-each other: a `k`-vector `ξ` acts on forms by `ω ↦ ω̃ ξ`, where `ω̃ : ⋀[𝕜]^k E →ₗ[𝕜] 𝕜` is the
-linear map induced by `ω`. On a wedge of vectors this is evaluation,
+each other: a `k`-vector `ξ` acts on forms by `ω ↦ L_ω ξ`, where `L_ω : ⋀[𝕜]^k E →ₗ[𝕜] 𝕜` is
+the linear map induced by `ω`. On a wedge of vectors this is evaluation,
 `(v₁ ∧ ⋯ ∧ vₖ)(ω) = ω (v₁, …, vₖ)`. This file packages the pairing as the linear equivalence
 `exteriorPower.formDualEquiv` of `⋀[𝕜]^k E` with the native normed dual
 `StrongDual 𝕜 (E [⋀^Fin k]→L[𝕜] 𝕜)`.
