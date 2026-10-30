@@ -47,6 +47,8 @@ depends only on the isomorphism class of `G`.
 
 ## Main results
 
+* `TauCeti.DerivedCentralQuotient.mulEquivQuotientCenter`: on a perfect group the output is the
+  quotient by the centre.
 * `TauCeti.DerivedCentralQuotient.mulEquivOfCenterEqBot`: a perfect group with trivial centre is its
   own derived central quotient.
 * `TauCeti.DerivedCentralQuotient.mulEquivOfIsSimpleGroup`: so is a nonabelian simple group.
@@ -145,6 +147,19 @@ theorem lift_surjective {K : Type*} [Group K] (f : ↥(commutator G) →* K)
     (MonoidHom.center_le_ker f hf hK)
 
 /-! ### The recipe on groups it has already succeeded on -/
+
+/-- **On a perfect group the derived central quotient is the quotient by the centre.** Since
+`[G, G] = G`, the recipe only removes the centre; for instance it turns a perfect special linear
+group into the projective special linear group. -/
+def mulEquivQuotientCenter [Group.IsPerfect G] : DerivedCentralQuotient G ≃* G ⧸ center G :=
+  let e : ↥(commutator G) ≃* G :=
+    (MulEquiv.subgroupCongr Group.IsPerfect.commutator_eq_top).trans Subgroup.topEquiv
+  QuotientGroup.congr _ _ e (Subgroup.map_center_eq e)
+
+@[simp]
+theorem mulEquivQuotientCenter_mk [Group.IsPerfect G] (x : ↥(commutator G)) :
+    mulEquivQuotientCenter (x : DerivedCentralQuotient G) = ((x : G) : G ⧸ center G) := by
+  simp [mulEquivQuotientCenter, QuotientGroup.congr_mk]
 
 /-- **A perfect group with trivial centre is its own derived central quotient.** -/
 def mulEquivOfCenterEqBot [Group.IsPerfect G] (h : center G = ⊥) :
