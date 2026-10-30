@@ -7,6 +7,8 @@ module
 
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.NumberField.Ideal.RootsOfUnity
+import TauCeti.NumberTheory.MulChar.Basic
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # The `n`-th power residue symbol at a prime of a number field
@@ -35,10 +37,12 @@ object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
   root of unity `ζ` of `𝓞 K`.
 * `Ideal.powerResidueSymbol_pow_div`: `((x / P)_n) ^ (n / d) = (x / P)_d` for `d ∣ n`.
 * `Ideal.orderOf_powerResidueSymbol`: the symbol has order `n`.
+* `Ideal.map_powerResidueSymbol`: Galois equivariance, `σ ((α / P)_n) = (σ α / σ P)_n` for a ring
+  isomorphism `σ : 𝓞 K ≃+* 𝓞 L`.
 
 ## References
 
-* S. D. Adhikari, *The early reciprocity laws: from Gauss to Eisenstein*, §4.
+* S. D. Adhikari, *The early reciprocity laws: from Gauss to Eisenstein*, §4, Proposition 4.1.
 * K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 14, §2.
 -/
 
@@ -163,5 +167,43 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
 @[simp]
 theorem powerResidueSymbol_one : powerResidueSymbol P 1 = 1 :=
   orderOf_eq_one_iff.mp (orderOf_powerResidueSymbol (Nat.coprime_one_right _))
+
+variable {L : Type*} [Field L] [NumberField L] [HasEnoughRootsOfUnity (𝓞 L) n]
+
+/-- **Galois equivariance of the power residue symbol.** A ring isomorphism `σ : 𝓞 K ≃+* 𝓞 L`
+carries the symbol at `P` to the symbol at `σ P`: `σ ((α / P)_n) = (σ α / σ P)_n`. Taking `L = K`,
+this applies to every ring automorphism of `𝓞 K`, the restrictions of the automorphisms of `K`.
+No coprimality is assumed: since `N (σ P) = N P`, if `N P` is not prime to `n` then both
+symbols are the trivial character. -/
+theorem map_powerResidueSymbol (P : Ideal (𝓞 K)) [P.IsMaximal] (σ : 𝓞 K ≃+* 𝓞 L) (α : 𝓞 K) :
+    σ (powerResidueSymbol P n (Quotient.mk P α)) =
+      powerResidueSymbol (P.map σ) n (Quotient.mk (P.map σ) (σ α)) := by
+  -- Transport the residue class of `α` along the induced isomorphism of residue fields.
+  let τ := quotientEquiv P (P.map σ) σ rfl
+  rw [← quotientEquiv_mk P (P.map σ) σ rfl]
+  generalize Quotient.mk P α = x
+  have hN : absNorm (P.map σ) = absNorm P := absNorm_map_of_ringEquiv σ P
+  by_cases hP : (absNorm P).Coprime n
+  · obtain rfl | hx := eq_or_ne x 0
+    · rw [MulChar.map_zero, map_zero, map_zero, MulChar.map_zero]
+    -- `σ ((x / P)_n)` is an `n`-th root of unity congruent to `τ x ^ ((N P - 1) / n)`.
+    refine ((powerResidueSymbol_eq_iff (hN ▸ hP) (τ.map_ne_zero_iff.mpr hx) ?_).mpr ?_).symm
+    · rw [← map_pow, powerResidueSymbol_pow_eq_one hP hx, map_one]
+    · rw [← quotientEquiv_mk P (P.map σ) σ rfl, mk_powerResidueSymbol hP hx, map_pow, hN]
+  · rw [powerResidueSymbol_of_not_coprime hP, powerResidueSymbol_of_not_coprime (hN ▸ hP),
+      MulChar.map_one_apply σ τ]
+
+/-- If an automorphism `σ` of `𝓞 K` raises the `n`-th root of unity `ζ` to the power `k`, then
+both sides of `map_powerResidueSymbol` at `ζ`, computed directly, are `ζ ^ (k (N P - 1) / n)`,
+because `N (σ P) = N P`. -/
+example (σ : 𝓞 K ≃+* 𝓞 K) (hP : (absNorm P).Coprime n) {ζ : 𝓞 K} (hζ : ζ ^ n = 1) {k : ℕ}
+    (hσ : σ ζ = ζ ^ k) :
+    σ (powerResidueSymbol P n (Quotient.mk P ζ)) = ζ ^ (k * ((absNorm P - 1) / n)) ∧
+      powerResidueSymbol (P.map σ) n (Quotient.mk (P.map σ) (σ ζ)) =
+        ζ ^ (k * ((absNorm P - 1) / n)) := by
+  have hζk : (ζ ^ k) ^ n = 1 := by rw [← pow_mul, mul_comm, pow_mul, hζ, one_pow]
+  refine ⟨by rw [powerResidueSymbol_mk_of_pow_eq_one hP hζ, map_pow, hσ, ← pow_mul], ?_⟩
+  rw [hσ, powerResidueSymbol_mk_of_pow_eq_one (by rwa [absNorm_map_of_ringEquiv]) hζk,
+    absNorm_map_of_ringEquiv, ← pow_mul]
 
 end Ideal

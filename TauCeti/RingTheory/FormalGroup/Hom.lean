@@ -293,6 +293,14 @@ theorem isUnit_coeff_one (f : FormalGroupIso F G) :
     IsUnit (PowerSeries.coeff 1 f.toHom.toPowerSeries) :=
   PowerSeries.isUnit_coeff_one_of_subst_eq_X f.toHom.hasSubst f.subst_toHom_invHom
 
+/-- Over a nontrivial ring, the forward series of an isomorphism is nonzero: its linear
+coefficient is invertible. -/
+theorem toHom_toPowerSeries_ne_zero [Nontrivial R] (f : FormalGroupIso F G) :
+    f.toHom.toPowerSeries ≠ 0 := by
+  intro h0
+  have h := congrArg (PowerSeries.coeff 1) f.subst_invHom_toHom
+  simp [PowerSeries.coeff_one_subst f.invHom.zero_constantCoeff, h0] at h
+
 /-- A formal group isomorphism is determined by its forward homomorphism. -/
 @[ext]
 theorem ext {f g : FormalGroupIso F G} (h : f.toHom = g.toHom) : f = g := by

@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
@@ -39,6 +40,8 @@ characteristic is the absolute ramification index of `K`.
 
 * `TauCeti.natCast_ne_zero_of_coprime_ringChar`: a natural number prime to the residue
   characteristic is nonzero in `K`.
+* `TauCeti.natCast_ne_zero_of_residueField_natCast_ne_zero`: a natural number nonzero in the
+  residue field is nonzero in every nontrivial `K`-algebra.
 * `TauCeti.normalizedValuation_natCast`: the characteristic equation, which also records that
   the value is nonnegative.
 * `TauCeti.toAdd_normalizedValuation_natCast` and `TauCeti.valuation_natCast_eq_pow`: the
@@ -84,6 +87,14 @@ theorem natCast_ne_zero_of_coprime_ringChar {n : ℕ} (hn : n.Coprime (ringChar 
     (n : K) ≠ 0 :=
   natCast_ne_zero_of_isUnit <| IsLocalRing.isUnit_natCast_iff_not_dvd.2 fun h ↦
     CharP.ringChar_ne_one (hn.symm.eq_one_of_dvd h)
+
+/-- A natural number that is nonzero in the residue field is nonzero in every nontrivial algebra
+over the field, such as an algebraic closure: a prime different from the residue characteristic
+stays invertible there. -/
+theorem natCast_ne_zero_of_residueField_natCast_ne_zero {A : Type*} [Semiring A] [Nontrivial A]
+    [Algebra K A] {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0) : (n : A) ≠ 0 :=
+  IsUnit.natCast_ne_zero_of_algebra (K := K) (natCast_ne_zero_of_isUnit
+    ((IsLocalRing.residue_ne_zero_iff_isUnit _).1 (by rwa [map_natCast]))).isUnit
 
 variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 

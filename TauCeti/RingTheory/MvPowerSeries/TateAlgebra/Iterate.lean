@@ -20,10 +20,10 @@ series in `Option σ` at the polyradii `c` with univariate series restricted at 
 R{X/c} ≅ R{Y/(c ∘ some)}{T/c none}.
 ```
 
-The comparison preserves the Gauss norms, so it identifies the Banach rings when the
-coefficient ring is complete. It allows one-variable Weierstrass division and preparation to be
-applied with a ring of restricted series in the remaining variables as coefficient ring, at every
-positive polyradius and in particular for the unit-radius Tate algebra.
+The comparison is an `R`-algebra equivalence preserving the Gauss norms. The series rings are
+complete when the coefficient ring is complete. It allows one-variable Weierstrass division and
+preparation over the ring of restricted series in the remaining variables, at every positive
+polyradius and in particular for the unit-radius Tate algebra.
 
 The construction restricts Mathlib's `MvPowerSeries.optionEquivLeft`; restrictedness of the
 coefficient slices and convergence of their weighted Gauss norms are both required. Merely
@@ -37,15 +37,16 @@ For two arbitrary families of variables, the analogous comparison into multivari
   coefficients of the slices, weighted again by `c none`, are the weighted norms at `c`.
 * `MvPowerSeries.isRestricted_coeff_optionEquivLeft`: the coefficient slices of a restricted
   series in `Option σ` are restricted in `σ`.
-* `MvPowerSeries.restrictedOptionEquiv`: the ring isomorphism
-  `R{X/c} ≃+* R{Y/(c ∘ some)}{T/c none}`, with its coefficients
+* `MvPowerSeries.restrictedOptionEquiv`: the algebra isomorphism
+  `R{X/c} ≃ₐ[R] R{Y/(c ∘ some)}{T/c none}`, with its coefficients
   `MvPowerSeries.coeff_restrictedOptionEquiv` and the inverse
-  `MvPowerSeries.coe_restrictedOptionEquiv_symm`.
+  `MvPowerSeries.coe_restrictedOptionEquiv_symm`. It sends scalars to scalars by
+  `AlgEquiv.commutes`.
 * `MvPowerSeries.coeff_restrictedOptionEquiv_eq_zero_iff`: a coefficient of the iterated series
   vanishes exactly when every monomial with that exponent of the separated variable does.
-* `MvPowerSeries.restrictedOptionEquiv_algebraMap`, `MvPowerSeries.coe_restrictedOptionEquiv_X_none`
-  and `MvPowerSeries.coe_restrictedOptionEquiv_X_some`: it sends constants to constants, the
-  separated variable to the univariate variable, and the remaining variables to constants.
+* `MvPowerSeries.coe_restrictedOptionEquiv_X_none` and
+  `MvPowerSeries.coe_restrictedOptionEquiv_X_some`: it sends the separated variable to the
+  univariate variable, and the remaining variables to constants.
 * `MvPowerSeries.norm_restrictedOptionEquiv` and `MvPowerSeries.isometry_restrictedOptionEquiv`:
   it preserves the Gauss norms.
 
@@ -173,10 +174,15 @@ private theorem isRestricted_optionEquivLeft_symm (g : Iter) :
   · rw [Set.mem_ofPred_eq, div_le_iff₀ (hpos _)]
     exact ht'
 
-/-- Flattening the iterated restricted-series ring into the multivariate restricted-series ring. -/
-private noncomputable def restrictedOptionFlatten : Iter →+* Flat :=
-  (((optionEquivLeft σ R).symm.toRingHom.comp (PowerSeries.map (Inner).subtype)).comp
+/-- Flattening the iterated restricted-series algebra into the multivariate restricted-series
+algebra. -/
+private noncomputable def restrictedOptionFlatten : Iter →ₐ[R] Flat where
+  toRingHom := (((optionEquivLeft σ R).symm.toRingHom.comp (PowerSeries.map (Inner).subtype)).comp
     (Iter).subtype).codRestrict _ isRestricted_optionEquivLeft_symm
+  commutes' r := by
+    apply Subtype.ext
+    apply (optionEquivLeft σ R).injective
+    simp
 
 private theorem restrictedOptionFlatten_bijective :
     Function.Bijective (restrictedOptionFlatten (σ := σ) (R := R) (c := c)) := by
@@ -189,15 +195,15 @@ private theorem restrictedOptionFlatten_bijective :
     simp [restrictedOptionFlatten, coeff_restrictedOptionSeries]
 
 /-- **Restricted series in `Option σ` are univariate restricted series over restricted series
-in `σ`.** For positive polyradii `c`, this is the ring isomorphism
-`R{X/c} ≃+* R{Y/(c ∘ some)}{T/c none}` induced by `MvPowerSeries.optionEquivLeft`. No
+in `σ`.** For positive polyradii `c`, this is the algebra isomorphism
+`R{X/c} ≃ₐ[R] R{Y/(c ∘ some)}{T/c none}` induced by `MvPowerSeries.optionEquivLeft`. No
 completeness of `R` and no finiteness of the variable type is needed. -/
-noncomputable def restrictedOptionEquiv : Flat ≃+* Iter :=
-  (RingEquiv.ofBijective _ (restrictedOptionFlatten_bijective (σ := σ) (R := R) (c := c))).symm
+noncomputable def restrictedOptionEquiv : Flat ≃ₐ[R] Iter :=
+  (AlgEquiv.ofBijective _ (restrictedOptionFlatten_bijective (σ := σ) (R := R) (c := c))).symm
 
 private theorem restrictedOptionEquiv_symm_apply (g : Iter) :
     restrictedOptionEquiv.symm g = restrictedOptionFlatten g := by
-  rw [restrictedOptionEquiv, RingEquiv.symm_symm, RingEquiv.ofBijective_apply]
+  rw [restrictedOptionEquiv, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply]
 
 /-- Flattening the comparison recovers Mathlib's inverse formal-series comparison. -/
 @[simp]
@@ -248,15 +254,6 @@ theorem map_subtype_restrictedOptionEquiv (f : Flat) :
     PowerSeries.map (Inner).subtype (restrictedOptionEquiv f : PowerSeries Inner) =
       optionEquivLeft σ R (f : MvPowerSeries (Option σ) R) := by
   ext n : 1
-  simp
-
-/-- The comparison sends a constant `r` to the constant univariate series whose coefficient is
-the constant `r` of the restricted series in the remaining variables. -/
-@[simp]
-theorem restrictedOptionEquiv_algebraMap (r : R) :
-    restrictedOptionEquiv (algebraMap R Flat r) = algebraMap Inner Iter (algebraMap R Inner r) := by
-  refine Subtype.ext (PowerSeries.map_injective (Inner).subtype Subtype.val_injective ?_)
-  rw [map_subtype_restrictedOptionEquiv]
   simp
 
 /-- The comparison sends the separated variable to the univariate variable. -/
