@@ -187,7 +187,7 @@ instance [Semiring R] [AddCommMonoid A] [Module R A] [Module.Finite R A] :
 
 variable (R A) in
 /-- **The double has twice the dimension**: an element is a pair of elements of `A`. -/
-theorem finrank_eq [Ring R] [StrongRankCondition R] [AddCommGroup A] [Module R A]
+theorem finrank_eq [Semiring R] [StrongRankCondition R] [AddCommMonoid A] [Module R A]
     [Module.Free R A] [Module.Finite R A] :
     Module.finrank R (CayleyDickson A) = 2 * Module.finrank R A := by
   rw [(linearEquivProd R A).finrank_eq, Module.finrank_prod, two_mul]
