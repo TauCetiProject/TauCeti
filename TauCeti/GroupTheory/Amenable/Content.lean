@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Amenable.Discrete
 public import TauCeti.Topology.ContinuousMap.Bounded.AddContent
 
 /-!
-# Finitely additive probabilities from discrete means
+# Means and finitely additive probabilities on discrete groups
 
 A mean on a discrete group gives a finitely additive probability on all subsets by evaluating
 characteristic functions. `TauCeti.Mean.toContent` bundles this probability as an `AddContent`,
@@ -17,9 +17,12 @@ not as a countably additive measure. Its values are finite, and their real parts
 mean on characteristic functions. More generally, the mean of a finite linear combination of
 characteristic functions is the corresponding linear combination of content values.
 
-The construction commutes with pushforward along arbitrary maps between discrete groups.
-A left-invariant mean gives a left-invariant probability, so every amenable discrete group
-admits such a probability. No converse construction of a mean from a content is asserted here.
+Every finitely additive probability on all subsets arises from exactly one mean
+(`TauCeti.Mean.contentEquiv`), by integrating bounded functions against it. The construction
+commutes with pushforward along arbitrary maps between discrete groups, and a mean is left
+invariant exactly when its probability is. Hence a discrete group is amenable exactly when it
+admits a left-invariant finitely additive probability on all subsets
+(`TauCeti.amenable_iff_exists_invariantContent`).
 
 ## References
 
@@ -122,6 +125,61 @@ theorem IsLeftInvariant.toContent_smul {m : Mean G} (hm : m.IsLeftInvariant)
     by_cases hx : x ∈ g • s <;> simp_all [mem_smul_set_iff_inv_smul_mem]
   simp only [toContent_apply, h, hm.apply_leftTranslation]
 
+variable (G) in
+/-- Means on a discrete group correspond to finitely additive probabilities on all subsets, by
+evaluating at characteristic functions. The inverse integrates a bounded function against the
+probability. -/
+def contentEquiv : Mean G ≃ {ν : AddContent ℝ≥0∞ (univ : Set (Set G)) // ν univ = 1} where
+  toFun m := ⟨m.toContent, m.toContent_univ⟩
+  invFun ν := (boundedContinuousFunctionEquiv G).symm
+    ⟨(PositiveLinearMap.addContentEquiv G).symm
+      ⟨ν.1.toReal fun s _ => addContent_ne_top_of_univ_ne_top (ν.2.trans_ne ENNReal.one_ne_top) s,
+        AddContent.toReal_nonneg _ _⟩,
+      by simp [AddContent.toReal_apply, ν.2]⟩
+  left_inv m := by
+    refine (boundedContinuousFunctionEquiv G).symm_apply_eq.2 (Subtype.ext ?_)
+    refine (PositiveLinearMap.addContentEquiv G).symm_apply_eq.2 (Subtype.ext ?_)
+    rw [PositiveLinearMap.coe_addContentEquiv_apply]
+    exact toContent_toReal m
+  right_inv ν := by
+    refine Subtype.ext (AddContent.ext fun s => ?_)
+    rw [toContent_apply, boundedContinuousFunctionEquiv_symm_apply,
+      UCB.coe_discreteAlgEquiv_symm, PositiveLinearMap.addContentEquiv_symm_apply_indicator,
+      AddContent.toReal_apply,
+      ENNReal.ofReal_toReal (addContent_ne_top_of_univ_ne_top (ν.2.trans_ne ENNReal.one_ne_top) s)]
+
+@[simp]
+theorem coe_contentEquiv_apply (m : Mean G) :
+    (contentEquiv G m : AddContent ℝ≥0∞ (univ : Set (Set G))) = m.toContent :=
+  (rfl)
+
+/-- The mean associated to a finitely additive probability has that probability as its
+content. -/
+@[simp]
+theorem toContent_contentEquiv_symm
+    (ν : {ν : AddContent ℝ≥0∞ (univ : Set (Set G)) // ν univ = 1}) :
+    ((contentEquiv G).symm ν).toContent = ν.1 :=
+  congrArg Subtype.val ((contentEquiv G).apply_symm_apply ν)
+
+/-- A mean on a discrete group is determined by its content. -/
+theorem toContent_injective : Function.Injective (toContent : Mean G → _) :=
+  fun _ _ h => (contentEquiv G).injective (Subtype.ext h)
+
+/-- A mean on a discrete group is left invariant exactly when its content is invariant under
+left translation of sets. -/
+theorem isLeftInvariant_iff_toContent_smul (m : Mean G) :
+    m.IsLeftInvariant ↔ ∀ (g : G) (s : Set G), m.toContent (g • s) = m.toContent s := by
+  refine ⟨fun hm => hm.toContent_smul, fun h => isLeftInvariant_iff.2 fun g f => ?_⟩
+  -- Pushing `m` forward along `x ↦ g⁻¹ * x` translates its content by `g`, so fixes it.
+  have hmap : m.mapOfDiscrete (g⁻¹ * ·) = m := by
+    refine toContent_injective (AddContent.ext fun s => ?_)
+    -- The left regular action `g⁻¹ • x` is multiplication `g⁻¹ * x`.
+    have hs : (g⁻¹ * ·) ⁻¹' s = g • s := preimage_smul_inv g s
+    rw [toContent_mapOfDiscrete, AddContent.map_apply, hs, h]
+  have hf : UCB.compRightAlgHomOfDiscrete (g⁻¹ * ·) f = UCB.leftTranslation g f :=
+    UCB.ext fun x => by simp [UCB.compRightAlgHomOfDiscrete_apply, UCB.leftTranslation_apply]
+  rw [← hf, ← mapOfDiscrete_apply, hmap]
+
 end Mean
 
 /-- An amenable discrete group admits an invariant finitely additive probability on all subsets. -/
@@ -130,5 +188,16 @@ theorem Amenable.exists_invariantContent [Amenable G] :
       ν univ = 1 ∧ ∀ (g : G) (s : Set G), ν (g • s) = ν s := by
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   exact ⟨m.toContent, m.toContent_univ, hm.toContent_smul⟩
+
+variable (G) in
+/-- **Discrete amenability by finitely additive probabilities.** A discrete group is amenable
+exactly when it admits a left-invariant finitely additive probability on all subsets. -/
+theorem amenable_iff_exists_invariantContent :
+    Amenable G ↔ ∃ ν : AddContent ℝ≥0∞ (univ : Set (Set G)),
+      ν univ = 1 ∧ ∀ (g : G) (s : Set G), ν (g • s) = ν s := by
+  refine ⟨fun _ => Amenable.exists_invariantContent, fun ⟨ν, h₁, hν⟩ => ?_⟩
+  refine (amenable_iff G).2 ⟨(Mean.contentEquiv G).symm ⟨ν, h₁⟩, ?_⟩
+  rw [Mean.isLeftInvariant_iff_toContent_smul, Mean.toContent_contentEquiv_symm]
+  exact hν
 
 end TauCeti
