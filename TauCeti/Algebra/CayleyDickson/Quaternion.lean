@@ -265,28 +265,36 @@ theorem inv_zero : (0 : CayleyDickson ℍ[R])⁻¹ = 0 := by simp [inv_def]
 
 variable [LinearOrder R] [IsStrictOrderedRing R] {x : CayleyDickson ℍ[R]} (y : CayleyDickson ℍ[R])
 
+/-- Over a linearly ordered field, the inverse of a nonzero element is a right inverse. -/
+@[simp]
 theorem mul_inv_cancel₀ (hx : x ≠ 0) : x * x⁻¹ = 1 := by
   rw [inv_def, mul_smul_comm, self_mul_star, inv_smul_smul₀ (normSq_ne_zero.mpr hx)]
 
+/-- Over a linearly ordered field, the inverse of a nonzero element is a left inverse. -/
+@[simp]
 theorem inv_mul_cancel₀ (hx : x ≠ 0) : x⁻¹ * x = 1 := by
   rw [inv_def, smul_mul_assoc, star_mul_self, inv_smul_smul₀ (normSq_ne_zero.mpr hx)]
 
 /-- Left multiplication by a nonzero element is undone by left multiplication by its inverse. -/
+@[simp]
 theorem inv_mul_cancel_left₀ (hx : x ≠ 0) : x⁻¹ * (x * y) = y := by
   rw [inv_def, smul_mul_assoc, star_mul_mul_left, inv_smul_smul₀ (normSq_ne_zero.mpr hx)]
 
 /-- Left multiplication by the inverse of a nonzero element is undone by left multiplication by the
 element. -/
+@[simp]
 theorem mul_inv_cancel_left₀ (hx : x ≠ 0) : x * (x⁻¹ * y) = y := by
   rw [inv_def, smul_mul_assoc, mul_smul_comm, mul_star_mul_left,
     inv_smul_smul₀ (normSq_ne_zero.mpr hx)]
 
 /-- Right multiplication by a nonzero element is undone by right multiplication by its inverse. -/
+@[simp]
 theorem mul_inv_cancel_right₀ (hx : x ≠ 0) : y * x * x⁻¹ = y := by
   rw [inv_def, mul_smul_comm, mul_mul_star_right, inv_smul_smul₀ (normSq_ne_zero.mpr hx)]
 
 /-- Right multiplication by the inverse of a nonzero element is undone by right multiplication by
 the element. -/
+@[simp]
 theorem inv_mul_cancel_right₀ (hx : x ≠ 0) : y * x⁻¹ * x = y := by
   rw [inv_def, mul_smul_comm, smul_mul_assoc, mul_star_mul_right,
     inv_smul_smul₀ (normSq_ne_zero.mpr hx)]

@@ -12,8 +12,9 @@ public import Mathlib.RingTheory.Finiteness.Prod
 /-!
 # The Cayley–Dickson double of a ring with involution
 
-For a ring `A` with an involution `star`, the **Cayley–Dickson double** `CayleyDickson A` is the
-set of ordered pairs `⟨a, b⟩` of elements of `A`, added coordinatewise and multiplied by
+For a possibly nonassociative ring `A` with an involution `star`, the **Cayley–Dickson double**
+`CayleyDickson A` is the set of ordered pairs `⟨a, b⟩` of elements of `A`, added coordinatewise
+and multiplied by
 
 `⟨a, b⟩ * ⟨c, d⟩ = ⟨a * c - star d * b, d * a + b * star c⟩`,
 
@@ -23,8 +24,9 @@ gives the octonions, the eight-dimensional real division algebra; the identities
 the quaternions are proved in `TauCeti.Algebra.CayleyDickson.Quaternion`.
 
 The double of an associative ring is in general no longer associative, so it is a `NonAssocRing`
-and nothing more. This file builds that structure for every ring with involution: the additive and
-module structures, transported from `A × A`, the multiplication with its unit and integer casts,
+and nothing more. This file builds that structure for every possibly nonassociative ring with
+involution: the additive and module structures, transported from `A × A`, the multiplication with
+its unit and integer casts,
 the involution, which reverses products, so that the double is again a ring with involution, and
 the two scalar towers for scalars acting on `A` compatibly with its product (and, for
 `SMulCommClass`, with its involution).
@@ -194,7 +196,7 @@ theorem finrank_eq [Ring R] [StrongRankCondition R] [AddCommGroup A] [Module R A
 
 section Ring
 
-variable [Ring A] [StarRing A]
+variable [NonAssocRing A] [StarRing A]
 
 /-- The Cayley–Dickson product `⟨a, b⟩ * ⟨c, d⟩ = ⟨a * c - star d * b, d * a + b * star c⟩`. -/
 instance : Mul (CayleyDickson A) :=
