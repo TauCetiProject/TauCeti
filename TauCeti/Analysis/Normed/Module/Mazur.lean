@@ -22,6 +22,9 @@ tail with any positive error tolerance. `exists_tendsto_sum_smul_of_tendsto_weak
 such combinations as a norm-convergent sequence. In both statements, the indices in the
 `n`th tail are written as `n + i`, so no coefficient can involve an earlier term.
 
+`Submodule.mem_of_tendsto_toWeakSpace` deduces that a norm-closed subspace contains
+weak limits of families in it.
+
 These results require neither completeness nor separability. They use Mathlib's
 `Convex.toWeakSpace_closure` to pass from weak convergence to norm approximation, and
 `convexHull_range_eq_exists_affineCombination` to extract the finite coefficients.
@@ -100,3 +103,17 @@ theorem exists_tendsto_sum_smul_of_tendsto_weak {u : ℕ → E} {x : E}
     tendsto_one_div_add_atTop_nhds_zero_nat
 
 end TauCeti
+
+/-- A norm-closed subspace contains every weak limit of a family in it, along any
+nontrivial filter. -/
+theorem Submodule.mem_of_tendsto_toWeakSpace
+    {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    (N : Submodule 𝕜 E) (hN : IsClosed (N : Set E)) {l : Filter ι} [NeBot l]
+    {u : ι → E} {x : E} (hu : ∀ i, u i ∈ N)
+    (hlim : Tendsto (fun i ↦ toWeakSpace 𝕜 E (u i)) l (𝓝 (toWeakSpace 𝕜 E x))) :
+    x ∈ N := by
+  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  let : IsScalarTower ℝ 𝕜 E := RestrictScalars.isScalarTower ℝ 𝕜 E
+  exact closure_minimal
+    (convexHull_min (range_subset_iff.mpr hu) (N.restrictScalars ℝ).convex) hN
+    (TauCeti.mem_closure_convexHull_range_of_tendsto_weak hlim)

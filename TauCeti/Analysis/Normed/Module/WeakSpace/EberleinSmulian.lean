@@ -38,14 +38,16 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜
 
 /-- The sequence used in the separable reduction: every weak subsequential limit represents
 the prescribed weak-star cluster point in the bidual. -/
-theorem exists_seq_inclusionInDoubleDual_eq_of_tendsto {K : Set E}
+theorem exists_seq_inclusionInDoubleDual_eq_of_mem_closure {K : Set E}
     {φ : WeakDual 𝕜 (StrongDual 𝕜 E)}
     (hφ : φ ∈ closure (NormedSpace.inclusionInDoubleDualWeak 𝕜 E ''
       (toWeakSpace 𝕜 E '' K))) :
     ∃ u : ℕ → E, (∀ n, u n ∈ K) ∧
       ∀ (x : E) (σ : ℕ → ℕ), StrictMono σ →
         Tendsto (fun n ↦ toWeakSpace 𝕜 E (u (σ n))) atTop (𝓝 (toWeakSpace 𝕜 E x)) →
-        NormedSpace.inclusionInDoubleDual 𝕜 E x = WeakDual.toStrongDual φ := by
+        NormedSpace.inclusionInDoubleDualWeak 𝕜 E (toWeakSpace 𝕜 E x) = φ := by
+  -- Recursively choose `p` and `u`, prove agreement on accumulated tests in `heval`,
+  -- then close by norming the difference in the closure of the accumulated spans.
   classical
   let : NormedAddCommGroup (StrongDual 𝕜 E) := ContinuousLinearMap.normedAddCommGroup
   let : NormedAddCommGroup (StrongDual 𝕜 (StrongDual 𝕜 E)) :=
@@ -116,28 +118,15 @@ theorem exists_seq_inclusionInDoubleDual_eq_of_tendsto {K : Set E}
     let N := L.comap J.toLinearMap
     have hNclosed : IsClosed (N : Set E) :=
       (⨆ n, M (p n).1).isClosed_topologicalClosure.preimage J.continuous
-    let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
-    let : IsScalarTower ℝ 𝕜 E := RestrictScalars.isScalarTower ℝ 𝕜 E
-    have huN (n : ℕ) : u (σ n) ∈ N := hJu (σ n)
-    have hxN : x ∈ N := closure_minimal
-      (convexHull_min (range_subset_iff.mpr huN)
-        (N.restrictScalars ℝ).convex) hNclosed
-      (mem_closure_convexHull_range_of_tendsto_weak hlim)
+    have hxN : x ∈ N :=
+      N.mem_of_tendsto_toWeakSpace hNclosed (fun n ↦ hJu (σ n)) hlim
     exact L.sub_mem hΦ hxN
-  have hclosed : IsClosed {g : StrongDual 𝕜 (StrongDual 𝕜 E) | ‖g‖ ≤ 2 * ‖g - ψ‖} :=
-    isClosed_le continuous_norm (continuous_const.mul (continuous_id.sub continuous_const).norm)
-  have hbound : (⨆ n, M (p n).1 : Submodule 𝕜 _) ≤
-      {g : StrongDual 𝕜 (StrongDual 𝕜 E) | ‖g‖ ≤ 2 * ‖g - ψ‖} := by
-    intro g hg
-    obtain ⟨n, hn⟩ := (Submodule.mem_iSup_of_directed _ hMmono.directed_le).mp hg
-    obtain ⟨f, hf, hgf⟩ := hnorm (p n).1 g hn
-    calc
-      ‖g‖ ≤ 2 * ‖g f‖ := hgf
-      _ = 2 * ‖(g - ψ) f‖ := by simp [hzero n f hf]
-      _ ≤ 2 * ‖g - ψ‖ := by gcongr; exact (g - ψ).unit_le_opNorm f (ht _ f hf)
-  have hψ := closure_minimal hbound hclosed hL
-  have : ψ = 0 := norm_eq_zero.mp (by simpa using hψ)
-  exact (sub_eq_zero.mp this).symm
+  have hψ : ψ = 0 := ψ.eq_zero_of_mem_topologicalClosure_iSup_of_norming hMmono
+    (by norm_num) (fun n ↦ ht (p n).1) (fun n ↦ hnorm (p n).1) hL hzero
+  have hJ : NormedSpace.inclusionInDoubleDual 𝕜 E x = WeakDual.toStrongDual φ :=
+    (sub_eq_zero.mp hψ).symm
+  simpa only [NormedSpace.inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
+    WeakDual.toWeakDual_toStrongDual] using congrArg StrongDual.toWeakDual hJ
 
 /-- **Eberlein–Šmulian, relative form.** A set in a real or complex normed space has
 weakly compact closure exactly when every sequence in it has a weakly convergent subsequence
@@ -152,11 +141,9 @@ theorem isCompact_closure_toWeakSpace_iff {K : Set E} :
   · rw [Set.preimage_image_eq _ (toWeakSpace 𝕜 E).injective]
     exact isBounded_of_forall_tendsto_subseq_toWeakSpace hK
   · intro φ hφ
-    obtain ⟨u, hu, huniq⟩ := exists_seq_inclusionInDoubleDual_eq_of_tendsto hφ
+    obtain ⟨u, hu, huniq⟩ := exists_seq_inclusionInDoubleDual_eq_of_mem_closure hφ
     obtain ⟨x, σ, hσ, hlim⟩ := hK u hu
-    refine ⟨toWeakSpace 𝕜 E x, ?_⟩
-    rw [NormedSpace.inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
-      huniq x σ hσ hlim, WeakDual.toWeakDual_toStrongDual]
+    exact ⟨toWeakSpace 𝕜 E x, huniq x σ hσ hlim⟩
 
 /-- **Eberlein–Šmulian.** Weak compactness is equivalent to weak sequential compactness,
 without completeness or separability assumptions. -/
@@ -175,13 +162,12 @@ theorem isCompact_toWeakSpace_iff_isSeqCompact {K : Set E} :
     intro z hz
     have hφ := mem_closure_image
       (NormedSpace.inclusionInDoubleDualWeak 𝕜 E).continuous.continuousAt hz
-    obtain ⟨u, hu, huniq⟩ := exists_seq_inclusionInDoubleDual_eq_of_tendsto hφ
+    obtain ⟨u, hu, huniq⟩ := exists_seq_inclusionInDoubleDual_eq_of_mem_closure hφ
     obtain ⟨_, ⟨x, hx, rfl⟩, σ, hσ, hlim⟩ :=
       hK (fun n ↦ mem_image_of_mem (toWeakSpace 𝕜 E) (hu n))
     have hxz : toWeakSpace 𝕜 E x = z := by
       apply (NormedSpace.isEmbedding_inclusionInDoubleDualWeak 𝕜 E).injective
-      rw [NormedSpace.inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
-        huniq x σ hσ hlim, WeakDual.toWeakDual_toStrongDual]
+      exact huniq x σ hσ hlim
     exact hxz ▸ mem_image_of_mem (toWeakSpace 𝕜 E) hx
   simpa only [hclosed.closure_eq] using isCompact_closure_toWeakSpace_iff.mpr hrelative
 
