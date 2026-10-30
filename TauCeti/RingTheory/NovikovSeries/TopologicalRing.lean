@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
 public import TauCeti.RingTheory.NovikovSeries.Topology
+public import Mathlib.Algebra.GradedMonoid
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
@@ -185,6 +186,11 @@ instance : NonarchimedeanRing (NovikovSeries R H N) where
 theorem one_mem_periodFiltration_zero : (1 : NovikovSeries R H N) ∈ periodFiltration R N 0 := by
   simpa only [single_zero_one, map_zero] using
     single_mem_periodFiltration (R := R) (N := N) (0 : H) 1
+
+/-- The period filtration is multiplicatively graded by real lower bounds. -/
+instance : SetLike.GradedMonoid (periodFiltration R N) where
+  one_mem := one_mem_periodFiltration_zero
+  mul_mem _ _ _ _ := mul_mem_periodFiltration
 
 /-- If the coefficients of `a` vanish below the period `C`, then those of `a ^ n` vanish below
 `n • C`. -/
@@ -388,18 +394,6 @@ section FiniteProducts
 
 variable [AddCommMonoid H] {N : H →+ ℝ} [CommRing R] {ι : Type*}
 
-/-- Lower period bounds add under a finite product, with a separate bound for each factor. -/
-theorem prod_mem_periodFiltration (s : Finset ι) {a : ι → NovikovSeries R H N}
-    {w : ι → ℝ} (ha : ∀ i ∈ s, a i ∈ periodFiltration R N (w i)) :
-    ∏ i ∈ s, a i ∈ periodFiltration R N (∑ i ∈ s, w i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using one_mem_periodFiltration_zero (R := R) (N := N)
-  | @insert i s hi ih =>
-    simp only [Finset.prod_insert hi, Finset.sum_insert hi]
-    exact mul_mem_periodFiltration (ha i (Finset.mem_insert_self i s))
-      (ih fun j hj => ha j (Finset.mem_insert_of_mem hj))
-
 /-- Perturbing each factor above its lower bound by `C` perturbs the product above the sum
 of the lower bounds by `C`. The empty product has zero difference, at every cutoff. -/
 theorem prod_sub_prod_mem_periodFiltration_of_bounds (s : Finset ι)
@@ -412,7 +406,8 @@ theorem prod_sub_prod_mem_periodFiltration_of_bounds (s : Finset ι)
   induction s using Finset.induction_on with
   | empty => simp
   | @insert i s hi ih =>
-    have hbs := prod_mem_periodFiltration s fun j hj => hb j (Finset.mem_insert_of_mem hj)
+    have hbs := SetLike.prod_mem_graded (periodFiltration R N) w b
+      fun j hj => hb j (Finset.mem_insert_of_mem hj)
     have hdiff := ih (fun j hj => ha j (Finset.mem_insert_of_mem hj))
       (fun j hj => hb j (Finset.mem_insert_of_mem hj))
       (fun j hj => hab j (Finset.mem_insert_of_mem hj))

@@ -158,8 +158,8 @@ theorem det_mem_periodFiltration_of_weights (A : Matrix n n (NovikovSeries R H N
   rw [det_apply]
   apply (periodFiltration R N _).sum_mem
   intro σ _
-  have hp := NovikovSeries.prod_mem_periodFiltration Finset.univ
-    (fun i _ => hA (σ i) i)
+  have hp := SetLike.prod_mem_graded (periodFiltration R N) (F := Finset.univ)
+    (fun i => D + w i - w (σ i)) (fun i => A (σ i) i) (fun i _ => hA (σ i) i)
   rw [hsum] at hp
   exact (periodFiltration R N _).zsmul_mem hp _
 
