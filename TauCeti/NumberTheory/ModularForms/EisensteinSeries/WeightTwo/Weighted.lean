@@ -876,8 +876,8 @@ lemma weightedG2Row_def (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) (c : ℤ) :
     weightedG2Row W z c = ∑' d : ℤ, W ((↑) ∘ ![c, d]) * eisSummand 2 ![c, d] z :=
   (rfl)
 
-/-- Each row converges absolutely. -/
-private lemma summable_weightedG2Row_terms (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) (c : ℤ) :
+/-- Each row converges absolutely: the terms `W(c, d) (c z + d)⁻²` of the row `c` are summable. -/
+theorem summable_weightedG2Row_terms (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) (c : ℤ) :
     Summable fun d : ℤ ↦ W ((↑) ∘ ![c, d]) * eisSummand 2 ![c, d] z := by
   have h2 : Summable fun d : ℤ ↦ ‖eisSummand 2 ![c, d] z‖ :=
     summable_norm_iff.mpr <| (linear_right_summable (z : ℂ) c (k := 2) le_rfl).congr

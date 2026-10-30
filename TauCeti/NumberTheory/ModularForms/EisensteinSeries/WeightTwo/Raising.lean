@@ -12,13 +12,13 @@ import TauCeti.Data.ZMod.Divisibility
 /-!
 # Raised weight-two series as weighted series
 
-For a weight `W : (Fin 2 → ZMod M) → ℂ` and `t ≥ 1`, the function `z ↦ G₂^W(t z)` is again a
-weighted weight-two series, of level `t M`: its weight `TauCeti.EisensteinSeries.raisedWeight t W`
-puts `W(c / t, d)` at the residue pairs `(c, d)` modulo `t M` with `t ∣ c`. Both series are
-compared along their rows (`TauCeti.EisensteinSeries.tsum_weightedG2Row`): the rows of the raised
-weight are those of `W` at `t z`, placed at the multiples of `t`. The regularizations by `G₂` of
-the two sides differ by `M⁻² (∑ W) (G₂(t z) - t⁻¹ G₂(z))`, which vanishes for weights of total mass
-zero.
+For a weight `W : (Fin 2 → ZMod M) → ℂ` and `t ≥ 1`, the raised weight
+`TauCeti.EisensteinSeries.raisedWeight t W` of level `t M` puts `W(c / t, d)` at the residue pairs
+`(c, d)` modulo `t M` with `t ∣ c`. Its series is `z ↦ G₂^W(t z) + M⁻² (∑ W) (G₂(t z) - t⁻¹ G₂(z))`:
+both series are compared along their rows (`TauCeti.EisensteinSeries.tsum_weightedG2Row`), the rows
+of the raised weight being those of `W` at `t z`, placed at the multiples of `t`, and the
+correction is the difference of the regularizations by `G₂` of the two sides. For weights of total
+mass zero the correction vanishes, and the series of the raised weight is exactly `z ↦ G₂^W(t z)`.
 
 This identifies the two families of weight-two Eisenstein series used for the decomposition of
 `M₂(N, χ)` with weighted series of level dividing `N`.
@@ -59,9 +59,10 @@ section Raise
 
 variable {M : ℕ} [NeZero M]
 
-/-- The weight of the raised series `z ↦ G₂^W(t z)`, of level `t M`: the weight `W` of the pair
-`(c / t, d)` modulo `M` at a residue pair `(c, d)` modulo `t M` with `t ∣ c`, and `0` at the
-others. -/
+/-- The raised weight of level `t M`: the weight `W` of the pair `(c / t, d)` modulo `M` at a
+residue pair `(c, d)` modulo `t M` with `t ∣ c`, and `0` at the others. Its series is
+`z ↦ G₂^W(t z)` corrected by `M⁻² (∑ W) (G₂(t z) - t⁻¹ G₂(z))` (`weightedG2_raisedWeight`), so
+exactly `z ↦ G₂^W(t z)` when `W` has total mass zero. -/
 def raisedWeight (t : ℕ) (W : (Fin 2 → ZMod M) → ℂ) (a : Fin 2 → ZMod (t * M)) : ℂ :=
   if t ∣ (a 0).val then W ![(((a 0).val / t : ℕ) : ZMod M), ((a 1).val : ZMod M)] else 0
 

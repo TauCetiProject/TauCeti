@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Subsp
 import TauCeti.NumberTheory.ModularForms.CharacterDecomp
 import TauCeti.NumberTheory.ModularForms.Cusps.WeightTwo
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Raising
-import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Span
 import TauCeti.NumberTheory.ModularForms.SturmBound
 
 /-!
@@ -21,7 +20,7 @@ In weight two, the Eisenstein series of the indices `(ψ, φ, t)` of
 the normalized raised series `E₂^{ψ,φ,t}` for a pair other than the trivial one, and the
 corrected series `E₂(z) - t E₂(t z)` for the trivial pair) span the weight-two Eisenstein
 subspace `TauCeti.EisensteinSeries.congruenceG2Subspace` of `M₂(Γ₁(N))`, the complement of the
-cusp forms (Diamond–Shurman, Theorem 4.6.2). At a level `N ∉ {1, 2, 4}` this gives
+cusp forms (Diamond–Shurman, Theorem 4.6.2). At every level `N` this gives
 
 `dim M₂(Γ₁(N)) = dim S₂(Γ₁(N)) + ε∞(Γ₁(N)) - 1`,
 
@@ -34,27 +33,25 @@ The proof compares dimensions, as in weight `k ≥ 3`
 function, a weighted series `G₂^W` of a level dividing `N`
 (`TauCeti.EisensteinSeries.coe_charG2MFRaise`,
 `TauCeti.EisensteinSeries.coe_correctedE2_eq_smul_weightedG2`), so it lies in the Eisenstein
-subspace. The nonzero series, those of the indices other than `(1, 1, 1)`, are linearly
-independent (`TauCeti.EisensteinSeries.CharIndex.linearIndepOn_weightTwoForm`). Conversely, the
-constant terms embed the Eisenstein subspace into the functions on the cusps, and the weight-two
-residue relation cuts the image by one dimension
-(`TauCeti.ModularForm.finrank_le_natCard_sub_one_of_disjoint`). The indices are as many as the
-cusps: through the cusp count at `N ∉ {1, 2, 4}`
+subspace (`TauCeti.EisensteinSeries.mem_congruenceG2Subspace_of_coe_eq_weightedG2`). The nonzero
+series, those of the indices other than `(1, 1, 1)`, are linearly independent
+(`TauCeti.EisensteinSeries.CharIndex.linearIndepOn_weightTwoForm`). Conversely, the constant terms
+embed the Eisenstein subspace into the functions on the cusps, and the weight-two residue relation
+cuts the image by one dimension (`TauCeti.ModularForm.finrank_le_natCard_sub_one_of_disjoint`).
+The indices are as many as the cusps: through the cusp count at `N ∉ {1, 2, 4}`
 (`TauCeti.EisensteinSeries.CharIndex.card_eq_card_cuspOrbit_Gamma1`), and through explicit cusp
 representatives at the levels `1`, `2` and `4`.
 
 ## Main results
 
-* `TauCeti.EisensteinSeries.mem_congruenceG2Subspace_of_coe_eq_weightedG2`: a form that is a
-  weighted weight-two series of a level dividing `N` lies in the weight-two Eisenstein subspace.
 * `TauCeti.EisensteinSeries.CharIndex.weightTwoForm_mem_congruenceG2Subspace`: the weight-two
-  series of every index lies in it.
+  series of every index lies in the weight-two Eisenstein subspace.
 * `TauCeti.EisensteinSeries.span_range_weightTwoForm_eq_congruenceG2Subspace`: the series span
   the weight-two Eisenstein subspace of `M₂(Γ₁(N))`.
 * `TauCeti.EisensteinSeries.finrank_congruenceG2Subspace`: its dimension is the number of indices
   minus one.
 * `TauCeti.finrank_weight_two_modularForm_Gamma1_eq_finrank_cuspForm_add_card_cuspOrbit_sub_one`:
-  `dim M₂(Γ₁(N)) = dim S₂(Γ₁(N)) + ε∞(Γ₁(N)) - 1` at `N ∉ {1, 2, 4}`.
+  `dim M₂(Γ₁(N)) = dim S₂(Γ₁(N)) + ε∞(Γ₁(N)) - 1`.
 * `TauCeti.weightTwoEisensteinSubspace_eq_comap_congruenceG2Subspace`: the series of nebentypus
   `χ` span the Eisenstein part of `M₂(N, χ)`.
 * `TauCeti.isCompl_weightTwoEisensteinSubspace_range_cuspToModFormCharSpace`: the weight-two
@@ -75,20 +72,6 @@ namespace TauCeti.EisensteinSeries
 
 variable {N : ℕ} [NeZero N]
 
-/-- A form on `Γ ⊇ Γ(N)` that is, as a function, the weighted weight-two series `G₂^W` of a weight
-`W` modulo a divisor `M` of `N` lies in the weight-two Eisenstein subspace of `M₂(Γ)`. -/
-theorem mem_congruenceG2Subspace_of_coe_eq_weightedG2 {Γ : Subgroup SL(2, ℤ)} {M : ℕ} [NeZero M]
-    (hMN : M ∣ N) (hΓ : Gamma N ≤ Γ) {f : ModularForm (Γ.map (mapGL ℝ)) 2}
-    {W : (Fin 2 → ZMod M) → ℂ} (hf : ⇑f = weightedG2 W) :
-    f ∈ congruenceG2Subspace hΓ := by
-  rw [mem_congruenceG2Subspace_iff]
-  have h : ModularForm.restrict (Subgroup.map_mono hΓ) f =
-      weightedG2MF fun c : Fin 2 → ZMod N ↦ W (ZMod.castHom hMN (ZMod M) ∘ c) := by
-    apply DFunLike.coe_injective
-    rw [ModularForm.coe_restrict, coe_weightedG2MF, weightedG2_comp_castHom, hf]
-  rw [h]
-  exact weightedG2MF_mem_primitiveG2Subspace _
-
 /-- **The weight-two Eisenstein series are Eisenstein**: the weight-two series of every index
 lies in the weight-two Eisenstein subspace of `M₂(Γ₁(N))`. -/
 theorem CharIndex.weightTwoForm_mem_congruenceG2Subspace (a : CharIndex N 2) :
@@ -106,6 +89,36 @@ theorem CharIndex.weightTwoForm_mem_congruenceG2Subspace (a : CharIndex N 2) :
     exact Submodule.smul_mem _ _ (mem_congruenceG2Subspace_of_coe_eq_weightedG2 a.level_dvd _
       (coe_charG2MFRaise _ _ a.level_dvd h'))
 
+/-- At the levels `1`, `2` and `4`, the cusps `∞`, `0` and `1/2` give as many cusp
+representatives of `Γ₁(N)` as there are weight-two Eisenstein indices. -/
+private theorem exists_cuspOrbitOfSL2Z_Gamma1_reps (hN : ¬(2 < N ∧ N ≠ 4)) :
+    ∃ r : Fin (Nat.card (CharIndex N 2)) → SL(2, ℤ),
+      ∀ γ : SL(2, ℤ), ∃ i, (Gamma1 N).cuspOrbitOfSL2Z (r i) = (Gamma1 N).cuspOrbitOfSL2Z γ := by
+  obtain rfl | rfl | rfl : N = 1 ∨ N = 2 ∨ N = 4 := by have := NeZero.ne N; omega
+  · rw [CharIndex.card_one, ite_eq_left even_two]
+    exact ⟨fun _ ↦ 1, fun γ ↦ ⟨0, cuspOrbitOfSL2Z_Gamma1_one γ⟩⟩
+  · rw [CharIndex.card_two, ite_eq_left even_two]
+    exact ⟨![1, ModularGroup.S],
+      fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_two γ).elim (fun h ↦ ⟨0, h⟩) fun h ↦ ⟨1, h⟩⟩
+  · rw [CharIndex.card_four, ite_eq_left even_two]
+    -- The cusp `1/2 = α • ∞` is the third representative.
+    let α : SL(2, ℤ) := ⟨!![1, 0; 2, 1], by norm_num [Matrix.det_fin_two_of]⟩
+    have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := rfl
+    exact ⟨![1, ModularGroup.S, α], fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ ⟨0, h⟩)
+      fun h ↦ h.elim (fun h ↦ ⟨1, h⟩)
+        fun h ↦ ⟨2, cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two hα h⟩⟩
+
+/-- `Γ₁(N)` has at most as many cusps as there are weight-two Eisenstein indices. -/
+private theorem card_cuspOrbit_Gamma1_le_card_charIndex :
+    Nat.card ((Gamma1 N).map sl2zToPSL2R).CuspOrbit ≤ Nat.card (CharIndex N 2) := by
+  by_cases hN : 2 < N ∧ N ≠ 4
+  · exact (CharIndex.card_eq_card_cuspOrbit_Gamma1 hN.1 hN.2).ge
+  obtain ⟨r, hr⟩ := exists_cuspOrbitOfSL2Z_Gamma1_reps hN
+  refine (Nat.card_le_card_of_surjective (fun i ↦ (Gamma1 N).cuspOrbitOfSL2Z (r i))
+    fun C ↦ ?_).trans_eq (Nat.card_eq_fintype_card.trans (Fintype.card_fin _))
+  obtain ⟨γ, rfl⟩ := (Gamma1 N).cuspOrbitOfSL2Z_surjective C
+  exact hr γ
+
 /-- The weight-two Eisenstein subspace of `M₂(Γ₁(N))` has dimension at most the number of
 indices minus one. Away from the levels `1`, `2` and `4` the indices are as many as the cusps;
 at those levels the constant terms are read at explicit cusp representatives. -/
@@ -116,21 +129,8 @@ private theorem finrank_congruenceG2Subspace_le :
   by_cases hN : 2 < N ∧ N ≠ 4
   · rw [CharIndex.card_eq_card_cuspOrbit_Gamma1 hN.1 hN.2]
     exact ModularForm.finrank_le_card_cuspOrbit_sub_one_of_disjoint (Gamma1 N) hV
-  obtain rfl | rfl | rfl : N = 1 ∨ N = 2 ∨ N = 4 := by have := NeZero.ne N; omega
-  · rw [CharIndex.card_one, ite_eq_left even_two]
-    simpa using ModularForm.finrank_le_natCard_sub_one_of_disjoint (Gamma1 1) (fun _ : Unit ↦ 1)
-      (fun γ ↦ ⟨(), cuspOrbitOfSL2Z_Gamma1_one γ⟩) hV
-  · rw [CharIndex.card_two, ite_eq_left even_two]
-    simpa using ModularForm.finrank_le_natCard_sub_one_of_disjoint (Gamma1 2) ![1, ModularGroup.S]
-      (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_two γ).elim (fun h ↦ ⟨0, h⟩) fun h ↦ ⟨1, h⟩) hV
-  · rw [CharIndex.card_four, ite_eq_left even_two]
-    -- The cusp `1/2 = α • ∞` is the third representative.
-    let α : SL(2, ℤ) := ⟨!![1, 0; 2, 1], by norm_num [Matrix.det_fin_two_of]⟩
-    have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := rfl
-    simpa using ModularForm.finrank_le_natCard_sub_one_of_disjoint (Gamma1 4)
-      ![1, ModularGroup.S, α] (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ ⟨0, h⟩)
-        fun h ↦ h.elim (fun h ↦ ⟨1, h⟩)
-          fun h ↦ ⟨2, cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two hα h⟩) hV
+  obtain ⟨r, hr⟩ := exists_cuspOrbitOfSL2Z_Gamma1_reps hN
+  simpa using ModularForm.finrank_le_natCard_sub_one_of_disjoint (Gamma1 N) r hr hV
 
 /-- The span of the weight-two series has dimension the number of indices minus one: only the
 series of `(1, 1, 1)` vanishes, and the others are linearly independent. -/
@@ -185,18 +185,21 @@ open TauCeti.EisensteinSeries
 
 variable {N : ℕ} [NeZero N]
 
-/-- **The Eisenstein part of the dimension of `M₂(Γ₁(N))`**: at a level `N ∉ {1, 2, 4}`, the
-weight-two modular forms on `Γ₁(N)` have dimension `ε∞(Γ₁(N)) - 1` more than the cusp forms,
-where `ε∞(Γ₁(N))` is the number of cusps of `Γ₁(N)`. -/
-theorem finrank_weight_two_modularForm_Gamma1_eq_finrank_cuspForm_add_card_cuspOrbit_sub_one
-    (hN : 2 < N) (hN4 : N ≠ 4) :
+/-- **The Eisenstein part of the dimension of `M₂(Γ₁(N))`**: the weight-two modular forms on
+`Γ₁(N)` have dimension `ε∞(Γ₁(N)) - 1` more than the cusp forms, where `ε∞(Γ₁(N))` is the number
+of cusps of `Γ₁(N)`. -/
+theorem finrank_weight_two_modularForm_Gamma1_eq_finrank_cuspForm_add_card_cuspOrbit_sub_one :
     Module.finrank ℂ (ModularForm ((Gamma1 N).map (mapGL ℝ)) 2) =
       Module.finrank ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) 2) +
         (Nat.card ((Gamma1 N).map sl2zToPSL2R).CuspOrbit - 1) := by
-  rw [← CharIndex.card_eq_card_cuspOrbit_Gamma1 (k := 2) hN hN4, ← finrank_congruenceG2Subspace,
-    (_root_.ModularForm.CuspForm.equivCuspFormSubmodule _ _).finrank_eq, add_comm]
-  exact (Submodule.finrank_add_eq_of_isCompl
-    (isCompl_congruenceG2Subspace_cuspFormSubmodule (Gamma_le_Gamma1 N))).symm
+  refine le_antisymm
+    (ModularForm.finrank_weight_two_le_finrank_cuspForm_add_card_cuspOrbit_sub_one (Gamma1 N)) ?_
+  rw [(_root_.ModularForm.CuspForm.equivCuspFormSubmodule _ _).finrank_eq,
+    ← Submodule.finrank_add_eq_of_isCompl
+      (isCompl_congruenceG2Subspace_cuspFormSubmodule (Gamma_le_Gamma1 N)),
+    finrank_congruenceG2Subspace]
+  have := card_cuspOrbit_Gamma1_le_card_charIndex (N := N)
+  omega
 
 /-- **The weight-two Eisenstein series of nebentypus `χ` span the Eisenstein part of
 `M₂(N, χ)`**: a form of nebentypus `χ` lies in the weight-two Eisenstein subspace of `M₂(Γ₁(N))`
