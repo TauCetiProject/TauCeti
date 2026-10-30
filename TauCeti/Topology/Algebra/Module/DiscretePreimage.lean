@@ -34,8 +34,8 @@ group is `ker f / (L ∩ ker f)`, a complex torus because `L ∩ ker f` is a ful
   of `0` in `f⁻¹(L') / L` is the image of `ker f`.
 * `Submodule.coe_addSubgroupOf_eq_connectedComponent_zero`: the same statement inside the
   subgroup `f⁻¹(L') / L`, in the form used by `Submodule.orbitRelQuotientComapQuotientEquiv`.
-* `Submodule.range_orbitRelQuotientMap_ker_subtype`: for normed spaces, the image of
-  `ker f / (L ∩ ker f) → E / L` is the identity component of the kernel of the map
+* `Submodule.range_orbitRelQuotientMap_ker_subtype`: for normed spaces and continuous `f`, the
+  image of `ker f / (L ∩ ker f) → E / L` is the identity component of the kernel of the map
   `E / L → E' / L'` induced by `f`.
 
 ## References
@@ -180,17 +180,18 @@ theorem Submodule.coe_addSubgroupOf_eq_connectedComponent_zero [DiscreteTopology
   rw [← AddSubgroup.coe_subtype, ← AddSubgroup.coe_map, himage, hK, hK₀,
     connectedComponentIn_orbitRelQuotient_mk_image_preimage L f hfc hf]
 
-/-- Let `f` carry `L` into the discrete subgroup `L'`. The image of the map of quotients
-`ker f / (L ∩ ker f) → E / L` induced by the inclusion of `ker f` is the identity component of the
-kernel `f⁻¹(L') / L` of the map `E / L → E' / L'` induced by `f`. When `L` is a full lattice this
-map is a closed embedding (`Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype` together
-with `ZLattice.isZLattice_comap_ker_subtype`), so this identity component is the torus
+/-- Let the continuous map `f` carry `L` into the discrete subgroup `L'`. The image of the map of
+quotients `ker f / (L ∩ ker f) → E / L` induced by the inclusion of `ker f` is the identity
+component of the kernel `f⁻¹(L') / L` of the map `E / L → E' / L'` induced by `f`. When `L` is
+a full lattice this map is a closed embedding
+(`Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype` together with
+`ZLattice.isZLattice_comap_ker_subtype`), so this identity component is the torus
 `ker f / (L ∩ ker f)`. -/
 theorem Submodule.range_orbitRelQuotientMap_ker_subtype {K : Type*} [NormedField K]
     [NormedSpace ℝ K] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace K E]
-    [IsScalarTower ℝ K E] [FiniteDimensional ℝ E] {E' : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [NormedSpace K E'] [IsScalarTower ℝ K E'] (L : Submodule ℤ E)
-    {L' : Submodule ℤ E'} [DiscreteTopology L'] (f : E →ₗ[K] E')
+    [IsScalarTower ℝ K E] {E' : Type*} [NormedAddCommGroup E'] [NormedSpace K E']
+    (L : Submodule ℤ E) {L' : Submodule ℤ E'} [DiscreteTopology L'] (f : E →ₗ[K] E')
+    (hfc : Continuous f)
     (h : L ≤ L'.comap (f.restrictScalars ℤ)) :
     Set.range ((ZLattice.comap K L (LinearMap.ker f).subtype).orbitRelQuotientMap L
         ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl) =
@@ -199,6 +200,6 @@ theorem Submodule.range_orbitRelQuotientMap_ker_subtype {K : Type*} [NormedField
       Set (AddAction.orbitRel.Quotient L E)) =
         _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := by
     simp [Submodule.ker_orbitRelQuotientMap]
-  rw [hK, connectedComponentIn_orbitRelQuotient_mk_image_preimage L f
-    (f.restrictScalars ℝ).continuous_of_finiteDimensional (map_le_iff_le_comap.2 h)]
+  rw [hK, connectedComponentIn_orbitRelQuotient_mk_image_preimage L f hfc
+    (map_le_iff_le_comap.2 h)]
   exact (range_orbitRelQuotientMap _ _ _ _).trans <| congrArg _ <| by ext; simp
