@@ -47,9 +47,10 @@ statement below is invariant under that sign. They are recorded as propositions,
   `{2, -2}` or `{1 / q, -1 / q}` for a positive integer `q`. It implies the two parts of Ni and Wu's
   theorem stated here (`TauCeti.HanselmanCosmeticSurgeryTheorem.niWuCosmeticSurgeryTheorem`).
 * **Mathieu's chirally cosmetic surgeries** (`TauCeti.MathieuChirallyCosmeticTheorem`): on the
-  right-handed trefoil the slopes with coefficients `9` and `9 / 2` are chirally cosmetic. Their
-  coefficients are distinct and not opposite, so the cosmetic surgery conjecture does not extend to
-  chirally cosmetic pairs.
+  right-handed trefoil either the slopes with coefficients `9` and `9 / 2` or those with
+  coefficients `-9` and `-9 / 2` are chirally cosmetic, depending on the sign the framing of `Φ`
+  introduces. The two coefficients of each pair are distinct and not opposite, so the cosmetic
+  surgery conjecture does not extend to chirally cosmetic pairs.
 
 ## Main definitions
 
@@ -304,10 +305,10 @@ def HanselmanCosmeticSurgeryTheorem : Prop :=
         (|r| = 2 ∨ ∃ q : ℕ, 0 < q ∧ |r| = (q : ℚ)⁻¹)
 
 /-- **Mathieu's chirally cosmetic surgeries on the trefoil**: on the exterior of the right-handed
-trefoil, the slopes with coefficients `9` and `9 / 2` in the preferred framing are chirally
-cosmetic, for every solid torus neighbourhood `Φ` and orientation `o` of `S³`. The sign of the
-coefficients depends on whether `Φ` preserves orientation, so the statement allows the opposite
-pair `-9`, `-9 / 2`, the coefficients of the same two surgeries for the mirrored framing.
+trefoil, for every solid torus neighbourhood `Φ` and orientation `o` of `S³`, either the slopes
+with coefficients `9` and `9 / 2` or those with coefficients `-9` and `-9 / 2` in the preferred
+framing are chirally cosmetic. Which pair holds depends on whether `Φ` preserves orientation: the
+pair `-9`, `-9 / 2` gives the coefficients of the same two surgeries for the mirrored framing.
 
 The two coefficients are distinct and not opposite, so these slopes are not identified by any
 symmetry of the knot exterior. -/
@@ -410,10 +411,15 @@ theorem CosmeticSurgeryConjecture.hanselmanCosmeticSurgeryTheorem
     (hC : CosmeticSurgeryConjecture) : HanselmanCosmeticSurgeryTheorem :=
   fun o K Φ h s₁ s₂ hK hc hne ↦ absurd (hC o K Φ h s₁ s₂ hK hc) hne
 
-/-- The rational numbers `±2` and `±1 / q`, for a positive integer `q`, have the form `p / q` in
-lowest terms with `q² ≡ -1` modulo `p`. -/
-private theorem den_sq_modEq_neg_one_of_abs {r : ℚ}
-    (hr : |r| = 2 ∨ ∃ q : ℕ, 0 < q ∧ |r| = (q : ℚ)⁻¹) : (r.den : ℤ) ^ 2 ≡ -1 [ZMOD r.num] := by
+/-- Hanselman's theorem implies the two parts of Ni and Wu's theorem stated here: the coefficients
+`±2` and `±1 / q` of a purely cosmetic pair satisfy `q² ≡ -1` modulo `p`. -/
+theorem HanselmanCosmeticSurgeryTheorem.niWuCosmeticSurgeryTheorem
+    (hH : HanselmanCosmeticSurgeryTheorem) : NiWuCosmeticSurgeryTheorem := by
+  intro o K Φ h s₁ s₂ hK hc hne
+  obtain ⟨r, hr₁, hr₂, hr⟩ := hH.exists_value_eq_neg
+    (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
+    (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _) hK hc hne
+  refine ⟨r, hr₁, hr₂, ?_⟩
   rw [Int.modEq_iff_dvd, ← abs_dvd]
   rcases hr with hr | ⟨q, hq, hr⟩
   · have hnum : |r.num| = 2 := by rw [← Rat.num_abs_eq_abs_num, hr]; rfl
@@ -423,15 +429,5 @@ private theorem den_sq_modEq_neg_one_of_abs {r : ℚ}
   · have hnum : |r.num| = 1 := by rw [← Rat.num_abs_eq_abs_num, hr, Rat.inv_natCast_num_of_pos hq]
     rw [hnum]
     exact one_dvd _
-
-/-- Hanselman's theorem implies the two parts of Ni and Wu's theorem stated here: the coefficients
-`±2` and `±1 / q` of a purely cosmetic pair satisfy `q² ≡ -1` modulo `p`. -/
-theorem HanselmanCosmeticSurgeryTheorem.niWuCosmeticSurgeryTheorem
-    (hH : HanselmanCosmeticSurgeryTheorem) : NiWuCosmeticSurgeryTheorem := by
-  intro o K Φ h s₁ s₂ hK hc hne
-  obtain ⟨r, hr₁, hr₂, hr⟩ := hH.exists_value_eq_neg
-    (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
-    (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _) hK hc hne
-  exact ⟨r, hr₁, hr₂, den_sq_modEq_neg_one_of_abs hr⟩
 
 end TauCeti
