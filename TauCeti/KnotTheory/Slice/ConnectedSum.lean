@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.BallChord
-public import TauCeti.KnotTheory.ConnectedSum
+public import TauCeti.KnotTheory.ConnectedSum.Basic
 import TauCeti.Geometry.Manifold.Boundary.Collar.Basic
 import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
 
