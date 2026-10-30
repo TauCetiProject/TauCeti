@@ -85,9 +85,9 @@ theorem kaehlerBasisOfFormallyEtale_repr_map {ι : Type*} (b : Basis ι S Ω[S�
     (i : ι) :
     (kaehlerBasisOfFormallyEtale R S T b).repr (map R R S T ω) i = algebraMap S T (b.repr ω i) := by
   have : map R R S T ω = tensorKaehlerEquivOfFormallyEtale R S T (1 ⊗ₜ ω) := by
-    rw [tensorKaehlerEquivOfFormallyEtale_apply, mapBaseChange_tmul, one_smul]
-  rw [kaehlerBasisOfFormallyEtale, Basis.map_repr, LinearEquiv.trans_apply, this,
-    LinearEquiv.symm_apply_apply, Basis.baseChange_repr_tmul, Algebra.smul_def, mul_one]
+    simp [mapBaseChange_tmul]
+  simp [kaehlerBasisOfFormallyEtale, -tensorKaehlerEquivOfFormallyEtale_apply, this,
+    Algebra.smul_def]
 
 end Basis
 
