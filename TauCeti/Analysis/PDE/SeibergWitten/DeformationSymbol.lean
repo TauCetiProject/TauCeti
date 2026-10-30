@@ -74,7 +74,8 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   (o : Orientation ℝ V (Fin 4)) (hkl : 2 + 2 = finrank ℝ V)
 
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
+local instance finiteDimensional_of_finrank_eq_four : FiniteDimensional ℝ V :=
+  .of_fact_finrank_eq_succ 3
 
 omit [Fact (finrank ℝ V = 4)] in
 /-- The wedge `ξ ∧ a` is additive in `a`. -/
