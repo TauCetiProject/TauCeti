@@ -129,17 +129,11 @@ points: the singular counterpart of `TauCeti.SSet.homology₀_hom_ext`. -/
 lemma singularHomology₀_hom_ext {X : TopCat.{w}} {Y : C}
     {f g : ((singularHomologyFunctor C 0).obj R).obj X ⟶ Y}
     (h : ∀ x : X, singularHomology₀Section R x ≫ f = singularHomology₀Section R x ≫ g) :
-    f = g := by
-  -- The simplicial lemma does not apply directly: its vertex classes of `TopCat.toSSet.obj X` are
-  -- not syntactically the classes of points. Instead, test on the summands of `H₀(X)` indexed by
-  -- path components, each the class of a point of that component.
-  rw [← cancel_epi (X.singularHomology₀Iso R).inv]
-  refine Sigma.hom_ext _ _ fun c ↦ ?_
-  induction c using ZerothHomotopy.rec with
-  | mk x =>
-    rw [← singularHomology₀Section_singularHomology₀Iso_hom_assoc,
-      ← singularHomology₀Section_singularHomology₀Iso_hom_assoc, Iso.hom_inv_id_assoc,
-      Iso.hom_inv_id_assoc, h]
+    f = g :=
+  SSet.homology₀_hom_ext R fun x ↦ by
+    have hx := h (TopCat.toSSetObj₀Equiv x)
+    rw [singularHomology₀Section_def, Equiv.symm_apply_apply] at hx
+    exact hx
 
 variable [HasKernels C]
 
