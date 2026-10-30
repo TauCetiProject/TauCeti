@@ -36,6 +36,8 @@ can only increase it. At a single place the two bounds read
 
 * `NumberField.prod_apply_le_mulHeight₁` and `NumberField.inv_mulHeight₁_le_prod_apply`: the two
   halves of the fundamental inequality.
+* `NumberField.prod_max_apply_one_le_mulHeight₁`: the upper bound with every local factor
+  truncated to `max |x|_v 1`.
 * `NumberField.prod_min_one_apply_eq_inv_mulHeight₁`: over all places the truncated local factors
   of `x ≠ 0` multiply to `(mulHeight₁ x)⁻¹`.
 * `NumberField.inv_mulHeight₁_le_prod_min_one_apply`: over finitely many places the truncated
@@ -44,6 +46,9 @@ can only increase it. At a single place the two bounds read
   `NumberField.FinitePlace.max_apply_one_le_mulHeight₁`,
   `NumberField.InfinitePlace.inv_mulHeight₁_le_min_one_apply` and
   `NumberField.FinitePlace.inv_mulHeight₁_le_min_one_apply`: the bounds at a single place.
+* `NumberField.InfinitePlace.max_apply_one_pow_mult_le_mulHeight₁` and
+  `NumberField.InfinitePlace.inv_mulHeight₁_le_min_one_apply_pow_mult`: the bounds at a single
+  infinite place, keeping the weight `mult v`.
 
 The logarithmic form of the single-place bounds, for the normalized absolute value at a place, is
 `TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁`.
@@ -70,25 +75,26 @@ variable (Sinf : Finset (InfinitePlace K)) (Sfin : Finset (FinitePlace K))
 
 /-! ### The fundamental inequality -/
 
+/-- The truncated local factors `max |x|_v 1` of `x` over finitely many places, weighted by `mult`
+at the infinite places, multiply to at most the height of `x`. -/
+theorem prod_max_apply_one_le_mulHeight₁ (x : K) :
+    (∏ v ∈ Sinf, max (v x) 1 ^ v.mult) * ∏ v ∈ Sfin, max (v x) 1 ≤ mulHeight₁ x := by
+  have hinf : ∏ v ∈ Sinf, max (v x) 1 ^ v.mult ≤ ∏ v : InfinitePlace K, max (v x) 1 ^ v.mult :=
+    Finset.prod_le_prod_of_subset_of_one_le₀ (Finset.subset_univ _)
+      (fun v _ ↦ by positivity) fun v _ _ ↦ one_le_pow₀ (le_max_right _ _)
+  have hfin : ∏ v ∈ Sfin, max (v x) 1 ≤ ∏ᶠ v : FinitePlace K, max (v x) 1 :=
+    Finset.prod_le_finprod_of_one_le₀ Sfin (FinitePlace.hasFiniteMulSupport_max_one x)
+      (fun v _ ↦ by positivity) fun v _ ↦ le_max_right _ _
+  rw [mulHeight₁_eq]
+  exact mul_le_mul hinf hfin (Finset.prod_nonneg fun v _ ↦ by positivity) (by positivity)
+
 /-- **The fundamental inequality, upper bound** (Bombieri–Gubler (1.8)): the product of the local
 factors of `x` over finitely many places, weighted by `mult` at the infinite places, is at most
 the height of `x`. -/
 theorem prod_apply_le_mulHeight₁ (x : K) :
     (∏ v ∈ Sinf, v x ^ v.mult) * ∏ v ∈ Sfin, v x ≤ mulHeight₁ x := by
-  have hinf : ∏ v ∈ Sinf, v x ^ v.mult ≤ ∏ v : InfinitePlace K, max (v x) 1 ^ v.mult :=
-    calc ∏ v ∈ Sinf, v x ^ v.mult
-      _ ≤ ∏ v ∈ Sinf, max (v x) 1 ^ v.mult := by gcongr; exact le_max_left _ _
-      _ ≤ ∏ v : InfinitePlace K, max (v x) 1 ^ v.mult :=
-        Finset.prod_le_prod_of_subset_of_one_le₀ (Finset.subset_univ _)
-          (fun v _ ↦ by positivity) fun v _ _ ↦ one_le_pow₀ (le_max_right _ _)
-  have hfin : ∏ v ∈ Sfin, v x ≤ ∏ᶠ v : FinitePlace K, max (v x) 1 :=
-    calc ∏ v ∈ Sfin, v x
-      _ ≤ ∏ v ∈ Sfin, max (v x) 1 := by gcongr; exact le_max_left _ _
-      _ ≤ ∏ᶠ v : FinitePlace K, max (v x) 1 :=
-        Finset.prod_le_finprod_of_one_le₀ Sfin (FinitePlace.hasFiniteMulSupport_max_one x)
-          (fun v _ ↦ by positivity) fun v _ ↦ le_max_right _ _
-  rw [mulHeight₁_eq]
-  exact mul_le_mul hinf hfin (Finset.prod_nonneg fun v _ ↦ by positivity) (by positivity)
+  refine le_trans ?_ (prod_max_apply_one_le_mulHeight₁ Sinf Sfin x)
+  gcongr <;> exact le_max_left _ _
 
 /-- **The fundamental inequality, lower bound** (Bombieri–Gubler (1.8)): the product of the local
 factors of a nonzero `x` over finitely many places, weighted by `mult` at the infinite places, is
@@ -142,15 +148,16 @@ theorem inv_mulHeight₁_le_prod_min_one_apply {x : K} (hx : x ≠ 0) :
 
 /-! ### One place at a time -/
 
+/-- The truncated local factor of `x` at an infinite place, weighted by `mult`, is at most the
+height of `x`: `max |x|_v 1 ^ mult v ≤ H(x)`. -/
+theorem InfinitePlace.max_apply_one_pow_mult_le_mulHeight₁ (v : InfinitePlace K) (x : K) :
+    max (v x) 1 ^ v.mult ≤ mulHeight₁ x := by
+  simpa using prod_max_apply_one_le_mulHeight₁ {v} (∅ : Finset (FinitePlace K)) x
+
 /-- The value of `x` at an infinite place is at most the height of `x`: `max |x|_v 1 ≤ H(x)`. -/
 theorem InfinitePlace.max_apply_one_le_mulHeight₁ (v : InfinitePlace K) (x : K) :
-    max (v x) 1 ≤ mulHeight₁ x := by
-  refine max_le ?_ (one_le_mulHeight₁ x)
-  have h := prod_apply_le_mulHeight₁ {v} (∅ : Finset (FinitePlace K)) x
-  rw [Finset.prod_singleton, Finset.prod_empty, mul_one] at h
-  rcases le_or_gt (v x) 1 with h1 | h1
-  · exact h1.trans (one_le_mulHeight₁ x)
-  · exact (le_self_pow₀ h1.le v.mult_ne_zero).trans h
+    max (v x) 1 ≤ mulHeight₁ x :=
+  (le_self_pow₀ (le_max_right _ _) v.mult_ne_zero).trans (v.max_apply_one_pow_mult_le_mulHeight₁ x)
 
 /-- The value of `x` at a finite place is at most the height of `x`: `max |x|_v 1 ≤ H(x)`. -/
 theorem FinitePlace.max_apply_one_le_mulHeight₁ (v : FinitePlace K) (x : K) :
@@ -158,14 +165,18 @@ theorem FinitePlace.max_apply_one_le_mulHeight₁ (v : FinitePlace K) (x : K) :
   refine max_le ?_ (one_le_mulHeight₁ x)
   simpa using prod_apply_le_mulHeight₁ ∅ {v} x
 
+/-- The truncated local factor of a nonzero `x` at an infinite place, weighted by `mult`, is at
+least the reciprocal of the height of `x`: `H(x)⁻¹ ≤ min 1 |x|_v ^ mult v`. -/
+theorem InfinitePlace.inv_mulHeight₁_le_min_one_apply_pow_mult (v : InfinitePlace K) {x : K}
+    (hx : x ≠ 0) : (mulHeight₁ x)⁻¹ ≤ min 1 (v x) ^ v.mult := by
+  simpa using inv_mulHeight₁_le_prod_min_one_apply {v} (∅ : Finset (FinitePlace K)) hx
+
 /-- The value of a nonzero `x` at an infinite place is at least the reciprocal of the height of
 `x`: `H(x)⁻¹ ≤ min 1 |x|_v`. -/
 theorem InfinitePlace.inv_mulHeight₁_le_min_one_apply (v : InfinitePlace K) {x : K}
-    (hx : x ≠ 0) : (mulHeight₁ x)⁻¹ ≤ min 1 (v x) := by
-  have h := inv_mulHeight₁_le_prod_min_one_apply {v} (∅ : Finset (FinitePlace K)) hx
-  rw [Finset.prod_singleton, Finset.prod_empty, mul_one] at h
-  exact h.trans (pow_le_of_le_one (le_min zero_le_one (apply_nonneg _ _)) (min_le_left _ _)
-    v.mult_ne_zero)
+    (hx : x ≠ 0) : (mulHeight₁ x)⁻¹ ≤ min 1 (v x) :=
+  (v.inv_mulHeight₁_le_min_one_apply_pow_mult hx).trans <|
+    pow_le_of_le_one (le_min zero_le_one (apply_nonneg _ _)) (min_le_left _ _) v.mult_ne_zero
 
 /-- The value of a nonzero `x` at a finite place is at least the reciprocal of the height of
 `x`: `H(x)⁻¹ ≤ min 1 |x|_v`. -/

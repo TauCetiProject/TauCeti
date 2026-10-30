@@ -18,6 +18,7 @@ import Mathlib.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
 
 /-!
@@ -45,7 +46,8 @@ makes the restriction a smooth embedding. Great circles, the geometric presentat
 are the case of a linear isometry `ℂ →ₗᵢ[ℝ] E`.
 
 Finally, the covering map `Circle.exp : ℝ → S¹` has injective derivative everywhere, so that a
-loop and its lift to `ℝ` have the same tangent lines. A differentiable loop in a sphere of dimension
+loop and its lift to `ℝ` have the same tangent lines, and its local inverse, the argument, is smooth
+away from `-1`. A differentiable loop in a sphere of dimension
 at least two omits a point, allowing the entire loop to be read in one stereographic chart.
 
 ## Main results
@@ -64,8 +66,10 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
   unit spheres is a smooth embedding, at every differentiability order.
 * `TauCeti.injective_mfderiv_circleExp`, `TauCeti.surjective_mfderiv_circleExp`: the derivative of
   `Circle.exp : ℝ → S¹` is bijective.
-* `TauCeti.toSpanSingleton_deriv_comp_circleExp`: the chain rule for a map of the circle read
-  along `Circle.exp`.
+* `TauCeti.contMDiffAt_circle_arg`: the argument is smooth on the circle away from `-1`.
+* `TauCeti.toSpanSingleton_deriv_comp_circleExp`,
+  `TauCeti.toSpanSingleton_deriv_chart_comp_circleExp`: the chain rule for a map of the circle read
+  along `Circle.exp`, into a normed space or, through a chart, into a manifold.
 * `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C¹` immersed circle
   along `Circle.exp` gives a nonzero derivative spanning its tangent line.
 * `TauCeti.injective_mfderiv_of_deriv_comp_circleExp_ne_zero`: conversely, a map of the circle
@@ -269,6 +273,18 @@ theorem surjective_mfderiv_circleExp (t : ℝ) :
   (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (K := ℝ) (V := ℝ)
     (V₂ := EuclideanSpace ℝ (Fin 1)) (by simp)).mp (injective_mfderiv_circleExp t)
 
+/-- The argument is smooth on the circle away from `-1`. -/
+theorem contMDiffAt_circle_arg {n : WithTop ℕ∞} {z : Circle} (hz : |Complex.arg z| < Real.pi) :
+    ContMDiffAt (𝓡 1) 𝓘(ℝ, ℝ) n (fun w : Circle => Complex.arg w) z := by
+  have hslit : (z : ℂ) ∈ Complex.slitPlane :=
+    Complex.mem_slitPlane_iff_arg.2 ⟨fun h => by simp [h, abs_of_pos Real.pi_pos] at hz,
+      Circle.coe_ne_zero z⟩
+  have h : ContDiffAt ℝ n (fun x : ℂ => (Complex.log x).im) z :=
+    Complex.imCLM.contDiff.contDiffAt.comp _ ((Complex.contDiffAt_log hslit).restrict_scalars ℝ)
+  have hc : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) n (fun w : Circle => (w : ℂ)) := contMDiff_coe_sphere
+  exact (h.contMDiffAt.comp z hc.contMDiffAt).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun w => (Complex.log_im w).symm)
+
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- The chain rule for a map `f` of the circle read along `Circle.exp`: the derivative of
@@ -285,6 +301,22 @@ theorem toSpanSingleton_deriv_comp_circleExp {f : Circle → V} {t : ℝ}
   have hcomp := mfderiv_comp t hf hexp
   rw [mfderiv_eq_fderiv, hγ.hasDerivAt.hasFDerivAt.fderiv] at hcomp
   exact hcomp
+
+/-- The chain rule for a map `f` of the circle into a manifold, read along `Circle.exp` in a chart
+`φ` of the maximal atlas at `f (exp (t i))`: the derivative of `s ↦ φ (f (exp (s i)))` at `t`, as a
+map out of `ℝ`, is the derivative of `Circle.exp` at `t`, followed by those of `f` and of `φ`. -/
+theorem toSpanSingleton_deriv_chart_comp_circleExp {M : Type*} [TopologicalSpace M]
+    [ChartedSpace V M] {n : WithTop ℕ∞} (hn : n ≠ 0) {f : Circle → M} {t : ℝ}
+    (hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)) {φ : OpenPartialHomeomorph M V}
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, V) n M) (hft : f (Circle.exp t) ∈ φ.source) :
+    ContinuousLinearMap.toSpanSingleton ℝ (deriv (fun s => φ (f (Circle.exp s))) t) =
+      (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) φ (f (Circle.exp t))).comp
+        ((mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)).comp (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t)) := by
+  have hφd : MDifferentiableAt 𝓘(ℝ, V) 𝓘(ℝ, V) φ (f (Circle.exp t)) :=
+    (contMDiffAt_of_mem_maximalAtlas hφ hft).mdifferentiableAt hn
+  have h := toSpanSingleton_deriv_comp_circleExp (f := φ ∘ f) (t := t) (hφd.comp _ hf)
+  rw [mfderiv_comp _ hφd hf] at h
+  exact h
 
 /-- For a `C¹` immersion `f` of the circle, the derivative of `t ↦ f (exp (t i))` is nonzero and
 spans the range of the derivative of `f`. -/

@@ -58,6 +58,8 @@ The main result is that the action of a monotone map preserves the defining equa
   identity.
 * `TauCeti.DGNerve.Simplex.dgDifferential_coh_two`: a `2`-simplex carries a homotopy between the
   composite of two of its edges and the third.
+* `TauCeti.DGNerve.Simplex.coh_eq_dgComp_of_coh_eq_zero`: if the homotopy carried by a `2`-face of
+  a simplex vanishes, its long edge is the composite of its two short edges.
 
 ## References
 
@@ -794,6 +796,42 @@ theorem dgDifferential_coh_two (x : Simplex R C 2) :
   rw [hσ, hκ, one_smul, Units.neg_smul, one_smul, neg_sub]
   exact congrArg₂ (· - ·) (Coherences.dgComp_congr _ (by decide) (by decide) (by simp) (by simp))
     (Coherences.congr _ (by decide))
+
+/-- If the homotopy carried by the `2`-face `{i, t, j}` of a simplex vanishes, the edge from `i` to
+`j` is the composite of the edges from `i` to `t` and from `t` to `j`. -/
+theorem coh_eq_dgComp_of_coh_eq_zero (x : Simplex R C n) {i t j : Fin (n + 1)} (hit : i < t)
+    (htj : t < j)
+    (h : x.coh i j {t} (-1) (hit.le.trans htj.le) (by simp [hit, htj]) (by simp) = 0) :
+    x.coh i j ∅ 0 (hit.le.trans htj.le) (empty_subset _) (by simp) =
+      dgComp R (x.coh i t ∅ 0 hit.le (empty_subset _) (by simp))
+        (x.coh t j ∅ 0 htj.le (empty_subset _) (by simp)) (zero_add 0) := by
+  have key := x.dgDifferential_coh i j {t} (-1) (hit.le.trans htj.le) (by simp [hit, htj])
+    (by simp)
+  rw [h, map_zero, boundary_def, sum_eq_single_of_mem ⟨t, mem_singleton_self t⟩ (mem_attach _ _)
+    fun s _ hs ↦ absurd (Subtype.ext (mem_singleton.1 s.2)) hs] at key
+  dsimp only at key
+  have hσ : ((#{s ∈ ({t} : Finset (Fin (n + 1))) | t ≤ s} : ℕ) : ℤ).negOnePow = -1 := by
+    rw [filter_singleton, ite_eq_left le_rfl, card_singleton, Nat.cast_one, Int.negOnePow_one]
+  have hκ : ((#{s ∈ ({t} : Finset (Fin (n + 1))) | s < t} : ℤ) *
+      #{s ∈ ({t} : Finset (Fin (n + 1))) | t < s}).negOnePow = 1 := by
+    rw [filter_singleton, ite_eq_right (lt_irrefl t), card_empty, Nat.cast_zero, zero_mul,
+      Int.negOnePow_zero]
+  rw [hσ, hκ, one_smul, Units.neg_smul, one_smul, eq_comm, neg_eq_zero, sub_eq_zero] at key
+  exact (Coherences.congr _ (by simp)).trans (key.trans
+    (Coherences.dgComp_congr _ (by simp) (by simp) (by simp) (by simp)))
+
+/-- When the Hom complexes vanish in degree `-1`, the edge from `i` to `j` of a simplex is the
+composite of the edges from `i` to `t` and from `t` to `j`, for all `i ≤ t ≤ j`. -/
+theorem coh_eq_dgComp (h₁ : ∀ X Y : C, Subsingleton (DGHom R (-1) X Y)) (x : Simplex R C n)
+    {i t j : Fin (n + 1)} (hit : i ≤ t) (htj : t ≤ j) :
+    x.coh i j ∅ 0 (hit.trans htj) (empty_subset _) (by simp) =
+      dgComp R (x.coh i t ∅ 0 hit (empty_subset _) (by simp))
+        (x.coh t j ∅ 0 htj (empty_subset _) (by simp)) (zero_add 0) := by
+  rcases hit.lt_or_eq with hit | rfl
+  · rcases htj.lt_or_eq with htj | rfl
+    · exact x.coh_eq_dgComp_of_coh_eq_zero hit htj (Subsingleton.elim _ _)
+    · exact (x.dgComp_coh_of_eq_right rfl).symm
+  · exact (x.dgComp_coh_of_eq_left rfl).symm
 
 /-- The edge of the differential graded nerve given by a closed degree-zero morphism
 `f : X ⟶ Y`. -/
