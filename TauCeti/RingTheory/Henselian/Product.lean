@@ -37,30 +37,29 @@ variable {ι : Type*} {R : ι → Type*} [∀ i, CommRing (R i)] (I : ∀ i, Ide
 
 /-- Products of henselian pairs are henselian, including infinite and empty products. -/
 instance henselianRing_pi [∀ i, HenselianRing (R i) (I i)] :
-    HenselianRing (∀ i, R i) (pi I) where
-  jac x hx := by
+    HenselianRing (∀ i, R i) (pi I) := by
+  have hjac : pi I ≤ jacobson ⊥ := by
+    intro x hx
     rw [mem_jacobson_bot]
     intro y
     rw [Pi.isUnit_iff]
     intro i
     exact mem_jacobson_bot.1 (HenselianRing.jac (hx i)) (y i)
-  is_henselian f hf a₀ ha hu := by
-    classical
-    have hcoord (i : ι) :
-        ∃ a : R i, (f.map (Pi.evalRingHom R i)).IsRoot a ∧ a - a₀ i ∈ I i := by
-      have hu' := hu.map (quotientMap (I := pi I) (I i) (Pi.evalRingHom R i)
-        (fun _ hx ↦ hx i))
-      -- The quotient-map formula uses the quotient Ring instance; IsUnit.map elaborates
-      -- through its Semiring instance. Unfold those instance projections for this rewrite.
-      erw [quotientMap_mk] at hu'
-      simp only [Pi.evalRingHom_apply] at hu'
-      apply HenselianRing.is_henselian (f.map (Pi.evalRingHom R i)) (hf.map _) (a₀ i)
-      · simpa only [eval_map_evalRingHom] using ha i
-      · simpa only [derivative_map, eval_map_evalRingHom] using hu'
-    choose a hroot hmem using hcoord
-    refine ⟨a, ?_, hmem⟩
-    exact funext fun i ↦ by
-      simpa only [IsRoot, eval_map_evalRingHom, Pi.zero_apply] using hroot i
+  refine ⟨hjac, ?_⟩
+  intro f hf a₀ ha hu
+  classical
+  have := isLocalHom_of_le_jacobson_bot (pi I) hjac
+  have hunit : IsUnit (f.derivative.eval a₀) := isUnit_of_map_unit _ _ hu
+  have hcoord (i : ι) :
+      ∃ a : R i, (f.map (Pi.evalRingHom R i)).IsRoot a ∧ a - a₀ i ∈ I i := by
+    have hu' := (hunit.map (Pi.evalRingHom R i)).map (Quotient.mk (I i))
+    apply HenselianRing.is_henselian (f.map (Pi.evalRingHom R i)) (hf.map _) (a₀ i)
+    · simpa only [eval_map_evalRingHom] using ha i
+    · simpa only [derivative_map, eval_map_evalRingHom, Pi.evalRingHom_apply] using hu'
+  choose a hroot hmem using hcoord
+  refine ⟨a, ?_, hmem⟩
+  exact funext fun i ↦ by
+    simpa only [IsRoot, eval_map_evalRingHom, Pi.zero_apply] using hroot i
 
 /-- Each factor of a henselian product pair is henselian. This is not an instance,
 since the converse instance `henselianRing_pi` would create an instance-search loop. -/
@@ -84,34 +83,29 @@ theorem henselianRing_of_pi [HenselianRing (∀ i, R i) (pi I)] (i : ι) :
     (fun x ↦ ⟨Pi.single i x, by simp⟩) f
   let e : ∀ j, R j := Pi.single i 1
   let q : (∀ j, R j)[X] := C e * g + C (1 - e) * X
-  have hq (j : ι) :
-      q.map (Pi.evalRingHom R j) = if h : j = i then h ▸ f else X := by
-    by_cases hji : j = i
-    · subst j
-      simp [q, e, hg]
-    · simp [q, e, hji]
+  have hqi : q.map (Pi.evalRingHom R i) = f := by
+    simp [q, e, hg]
+  have hqj (j : ι) (hji : j ≠ i) : q.map (Pi.evalRingHom R j) = X := by
+    simp [q, e, hji]
   have heval : q.eval (Pi.single i a₀) ∈ pi I := by
     intro j
-    rw [← eval_map_evalRingHom, hq]
-    split_ifs with hji
-    · subst j
-      simpa using ha
-    · simp [hji]
+    rcases eq_or_ne j i with rfl | hji
+    · simpa only [← eval_map_evalRingHom, hqi, Pi.single_eq_same] using ha
+    · simp [← eval_map_evalRingHom, hqj j hji, hji]
   have hderiv : IsUnit (q.derivative.eval (Pi.single i a₀)) := by
     rw [Pi.isUnit_iff]
     intro j
-    rw [← eval_map_evalRingHom, ← derivative_map, hq]
-    split_ifs with hji
-    · subst j
-      simpa using hunit
-    · simp
+    rcases eq_or_ne j i with rfl | hji
+    · simpa only [← eval_map_evalRingHom, ← derivative_map, hqi, Pi.single_eq_same]
+        using hunit
+    · simp [← eval_map_evalRingHom, ← derivative_map, hqj j hji]
   -- The assembled polynomial is not necessarily monic, but its root is simple in every
   -- factor. The nonmonic Hensel lemma therefore applies to the product pair.
   obtain ⟨a, hroot, hmem⟩ := q.exists_isRoot_sub_mem heval (hderiv.map (Quotient.mk (pi I)))
   refine ⟨a i, ?_, ?_⟩
   · have hr := congrFun hroot i
-    rw [← eval_map_evalRingHom, hq] at hr
-    simpa only [IsRoot, dite_true, Pi.zero_apply] using hr
+    rw [← eval_map_evalRingHom, hqi] at hr
+    simpa only [IsRoot, Pi.zero_apply] using hr
   · simpa using hmem i
 
 /-- A product pair is henselian exactly when each of its factors is henselian.
