@@ -9,6 +9,7 @@ import TauCeti.RingTheory.CentralIdempotent
 public import Mathlib.RingTheory.SimpleRing.Defs
 public import Mathlib.Algebra.Ring.Pi
 public import Mathlib.SetTheory.Cardinal.Finite
+public import Mathlib.Algebra.Algebra.Pi
 
 /-!
 # Isomorphisms between products of simple rings
@@ -32,6 +33,8 @@ infinite products. The matrix-block specialization for Wedderburn presentations 
 
 * `RingEquiv.exists_equiv_factors`: an isomorphism between products of simple rings acts
   coordinatewise through an equivalence of their index sets and matched factor isomorphisms.
+* `AlgEquiv.exists_equiv_factors`: the factor isomorphisms preserve the base algebra
+  structure when the original isomorphism does.
 * `RingEquiv.card_eq_of_pi_of_isSimpleRing`: two presentations of a ring as products of simple
   rings have equal `Nat.card` of their index sets.
 
@@ -206,3 +209,19 @@ theorem card_eq_of_pi_of_isSimpleRing {R : Type*} [Ring R]
   exact Nat.card_congr σ
 
 end RingEquiv
+
+/-- An algebra isomorphism between products of simple algebras permutes their factors
+through algebra isomorphisms. The factor maps describe the original map coordinatewise,
+even for infinite products. -/
+theorem AlgEquiv.exists_equiv_factors {K : Type*} [CommSemiring K]
+    {ι κ : Type*} {A : ι → Type*} {B : κ → Type*}
+    [∀ i, Ring (A i)] [∀ i, Algebra K (A i)] [∀ i, IsSimpleRing (A i)]
+    [∀ j, Ring (B j)] [∀ j, Algebra K (B j)] [∀ j, IsSimpleRing (B j)]
+    (f : (∀ i, A i) ≃ₐ[K] (∀ j, B j)) :
+    ∃ σ : ι ≃ κ, ∀ i, ∃ e : A i ≃ₐ[K] B (σ i), ∀ a, f a (σ i) = e (a i) := by
+  obtain ⟨σ, hσ⟩ := f.toRingEquiv.exists_equiv_factors
+  refine ⟨σ, fun i ↦ ?_⟩
+  obtain ⟨e, he⟩ := hσ i
+  refine ⟨AlgEquiv.ofRingEquiv (f := e) (fun r ↦ ?_), he⟩
+  exact (he (algebraMap K (∀ i, A i) r)).symm.trans
+    (congrFun (f.commutes r) (σ i))
