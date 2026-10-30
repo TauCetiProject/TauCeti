@@ -55,11 +55,12 @@ Stickelberger's theorem on the annihilation of class groups and to the Gross–K
 
 Write `T(a) = -g(ω⁻ᵃ, ψ)` and `π = ζ - 1`. The case `a = 0` is `T(0) = 1 - ∑ ψ ≡ 1`. For `a = 1`,
 expand `ψ(x) = (1 + π) ^ Tr(x) ≡ 1 + Tr(x) π (mod P ^ 2)`; since `ω⁻¹(x) ≡ x⁻¹ (mod P)` and
-`∑ x⁻¹ Tr(x) = ∑ᵢ ∑ x ^ (pⁱ - 1) = -1` in `F`, this gives `T(1) ≡ π (mod P ^ 2)`. The relation
-`g(ω⁻¹) g(ω⁻ˣ) = J(ω⁻¹, ω⁻ˣ) g(ω⁻⁽ˣ⁺¹⁾)` together with `J(ω⁻¹, ω⁻ˣ) ≡ -(x + 1) (mod P)`, a power
-sum computation in `F`, raises the last digit by one; the invariance `g(χ ^ p, ψ) = g(χ, ψ)` under
-the Frobenius shifts the digits, giving `T(p y) = T(y)`. Induction on `a = a₀ + p y` assembles the
-digits. Only the leading term is tracked, so no multinomial congruence is needed.
+`∑ x⁻¹ Tr(x) = ∑ᵢ ∑_{x ≠ 0} x ^ (pⁱ - 1) = -1` in `F`, this gives `T(1) ≡ π (mod P ^ 2)`.
+The relation `g(ω⁻¹) g(ω⁻ˣ) = J(ω⁻¹, ω⁻ˣ) g(ω⁻⁽ˣ⁺¹⁾)` together with
+`J(ω⁻¹, ω⁻ˣ) ≡ -(x + 1) (mod P)`, a power sum computation in `F`, raises the last digit by one;
+the invariance `g(χ ^ p, ψ) = g(χ, ψ)` under the Frobenius shifts the digits, giving
+`T(p y) = T(y)`. Induction on `a = a₀ + p y` assembles the digits. Only the leading term is
+tracked, so no multinomial congruence is needed.
 
 ## References
 

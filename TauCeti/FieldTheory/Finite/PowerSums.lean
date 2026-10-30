@@ -27,7 +27,8 @@ at `m = q - 1` and `0` otherwise, and this gives two sums used for Jacobi and Ga
 * `TauCeti.FiniteField.sum_pow_mul_one_sub_pow`: `∑ y, y ^ (q - 2) (1 - y) ^ n = n` for
   `n ≤ q - 1`.
 * `TauCeti.FiniteField.sum_pow_mul_trace`: `∑ x, x ^ (q - 2) Tr(x) = -1`, where `Tr` is the trace
-  to the prime field `𝔽_p` and `x ^ (q - 2) = x⁻¹`.
+  to the prime field `𝔽_p`. Since `x ^ (q - 2) = x⁻¹` for `x ≠ 0` and `Tr(0) = 0`, this is
+  `∑ x⁻¹ Tr(x) = -1`.
 -/
 
 public section
@@ -95,8 +96,9 @@ theorem sum_pow_mul_one_sub_pow {n : ℕ} (hn : n ≤ Fintype.card F - 1) :
     rw [Nat.choose_eq_zero_of_lt (by omega)]
     simp
 
-/-- `∑ x, x⁻¹ Tr(x) = -1` for the trace `Tr` to the prime field, with `x⁻¹` written
-`x ^ (q - 2)`. -/
+/-- `∑ x, x ^ (q - 2) Tr(x) = -1` for the trace `Tr` to the prime field. Since
+`x ^ (q - 2) = x⁻¹` for `x ≠ 0` and the `x = 0` term vanishes as `Tr(0) = 0`, this is
+`∑ x, x⁻¹ Tr(x) = -1`. -/
 theorem sum_pow_mul_trace {p : ℕ} [hp : Fact p.Prime] [Algebra (ZMod p) F] :
     ∑ x : F, x ^ (Fintype.card F - 2) * algebraMap (ZMod p) F (Algebra.trace (ZMod p) F x) =
       -1 := by
