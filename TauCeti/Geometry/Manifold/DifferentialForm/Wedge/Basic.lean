@@ -256,6 +256,15 @@ theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
             (ψ x (fun j ↦ v (σ (Fin.natAdd k j)))) :=
   bundleWedgeWith_apply _ _ φ ψ x v
 
+/-- Pairing a rough form with a degree-zero form pairs its value with the function value. -/
+@[simp]
+theorem wedgeWith_apply_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ 0)
+    (x : M) (v : Fin k → TangentSpace I x) :
+    φ.wedgeWith μ ψ x v = μ (φ x v) (ψ x 0) := by
+  rw [wedgeWith_apply']
+  exact ContinuousAlternatingMap.pairedWedge_apply_zero_right μ μ.continuous₂ _ _ v
+
 /-- Evaluation of the paired rough-form wedge on two one-forms. -/
 theorem wedgeWith_apply_one_one (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : RoughForm I M F₁ 1) (ψ : RoughForm I M F₂ 1) (x : M)
@@ -401,6 +410,15 @@ theorem wedge_apply (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l)
             ψ x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   simpa [wedge, ContinuousLinearMap.mul_apply'] using
     (wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v)
+
+/-- Wedging a real-valued rough form with a degree-zero form multiplies its value by the
+function value. -/
+@[simp]
+theorem wedge_apply_zero_right (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ 0)
+    (x : M) (v : Fin k → TangentSpace I x) :
+    φ.wedge ψ x v = φ x v * ψ x 0 := by
+  simpa only [wedge_def, ContinuousLinearMap.mul_apply'] using
+    (wedgeWith_apply_zero_right (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v)
 
 /-- The wedge of real-valued one-forms has the determinant normalization. -/
 @[simp]
