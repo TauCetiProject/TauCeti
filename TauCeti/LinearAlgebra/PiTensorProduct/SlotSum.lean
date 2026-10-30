@@ -56,13 +56,14 @@ characteristic-two form of the tensor trick, whose Koszul-signed version on word
 is formalized in `TauCeti/Algebra/Homology/Contraction/TensorTrick.lean`. The homotopy depends on
 the ordering, but it need not be equivariant for anything.
 
-Finally, a grading `ℳ` of `M` induces the total-degree grading of the tensor power
+Finally, gradings `ℳ i` of the factors `M i` induce the total-degree grading of `⨂[R] i, M i`
 (`TauCeti.PiTensorProduct.totalDegreePiece`), spanned by pure tensors of homogeneous factors whose
 degrees add up to the given degree. Factorwise maps of degrees `a i` shift total degree by
-`∑ i, a i`, so the slot sum and the slot homotopy shift total degree by the degrees of `d` and `h`.
-For a grading without negative pieces, the tensor power of a retraction vanishing in positive
-degrees vanishes in positive total degree, while the slot homotopy of a homotopy vanishing in
-degree zero vanishes in total degree zero.
+`∑ i, a i`, while the slot sum of a family `f i` of common degree `a` shifts total degree by `a`.
+For a constant family, the slot homotopy shifts total degree by the degree of `h`. For a grading
+without negative pieces, the tensor power of a retraction vanishing in positive degrees vanishes
+in positive total degree, while the slot homotopy of a homotopy vanishing in degree zero vanishes
+in total degree zero.
 
 These are the data with which a tensor power of the total coinduced resolution, with its
 contraction by evaluation at `1`, is again a contracted resolution: the input of Evens'
@@ -71,14 +72,16 @@ representing cocycle in the tensor-induced resolution.
 
 ## Main definitions
 
-* `TauCeti.PiTensorProduct.slotSum`: the sign-free extension of an endomorphism to a tensor power.
+* `TauCeti.PiTensorProduct.slotSum`: the sign-free extension of a family of endomorphisms `f i`
+  to `⨂[R] i, M i`.
 * `TauCeti.PiTensorProduct.slotHomotopy`: the ordered homotopy built from `e` and `h`.
-* `TauCeti.PiTensorProduct.totalDegreePiece`: the total-degree grading of a tensor power.
+* `TauCeti.PiTensorProduct.totalDegreePiece`: the total-degree grading of `⨂[R] i, M i` induced
+  by gradings `ℳ i`.
 
 ## Main results
 
-* `TauCeti.PiTensorProduct.slotSum_comp_slotSum`: if every element of `M` is its own additive
-  inverse, the slot sum of a square-zero endomorphism squares to zero.
+* `TauCeti.PiTensorProduct.slotSum_comp_slotSum`: if every element of each `M i` is its own
+  additive inverse, the slot sum of a family of square-zero endomorphisms `f i` squares to zero.
 * `TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`: if every element of `M` is its own
   additive inverse, the slot homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`.
 * `TauCeti.PiTensorProduct.slotSum_comp_map` and `TauCeti.PiTensorProduct.slotSum_comp_reindex`:
@@ -214,7 +217,7 @@ theorem slotSum_comp_slotSum (hM : ∀ i (m : M i), m + m = 0)
   · simp only [update_of_ne hij.symm, update_of_ne hij]
     rw [update_comm hij, ← MultilinearMap.map_update_add, hM i, MultilinearMap.map_update_zero]
 
-/-- There is no slot-sum differential on a tensor product with no factors. -/
+/-- The slot sum on a tensor product with no factors is zero. -/
 @[simp]
 theorem slotSum_of_isEmpty [IsEmpty ι] (f : ∀ i, Module.End R (M i)) :
     slotSum ι f = 0 := by
