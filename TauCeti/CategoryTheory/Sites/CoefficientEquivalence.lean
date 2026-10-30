@@ -35,8 +35,6 @@ variable {C : Type u} [Category.{v} C] {A : Type u₁} [Category.{v₁} A]
 
 /-- An equivalence of coefficient categories induces an equivalence of sheaf categories by
 postcomposition on the same site. -/
--- Expose the coefficient functors so dependent section and restriction types elaborate.
-@[expose]
 noncomputable def sheafCongrRight (e : A ≌ B) (J : GrothendieckTopology C) :
     Sheaf J A ≌ Sheaf J B where
   functor := sheafCompose J e.functor
@@ -60,6 +58,34 @@ lemma sheafCongrRight_functor (e : A ≌ B) (J : GrothendieckTopology C) :
 lemma sheafCongrRight_inverse (e : A ≌ B) (J : GrothendieckTopology C) :
     (e.sheafCongrRight J).inverse = sheafCompose J e.inverse :=
   (rfl)
+
+@[simp]
+lemma sheafCongrRight_unitIso_hom_app_hom_app (e : A ≌ B) (J : GrothendieckTopology C)
+    (F : Sheaf J A) (U : Cᵒᵖ) :
+    ((e.sheafCongrRight J).unitIso.hom.app F).hom.app U =
+      e.unitIso.hom.app (F.obj.obj U) ≫ eqToHom (by simp) := by
+  exact (Category.comp_id _).symm
+
+@[simp]
+lemma sheafCongrRight_unitIso_inv_app_hom_app (e : A ≌ B) (J : GrothendieckTopology C)
+    (F : Sheaf J A) (U : Cᵒᵖ) :
+    ((e.sheafCongrRight J).unitIso.inv.app F).hom.app U =
+      eqToHom (by simp) ≫ e.unitIso.inv.app (F.obj.obj U) := by
+  exact (Category.id_comp _).symm
+
+@[simp]
+lemma sheafCongrRight_counitIso_hom_app_hom_app (e : A ≌ B) (J : GrothendieckTopology C)
+    (F : Sheaf J B) (U : Cᵒᵖ) :
+    ((e.sheafCongrRight J).counitIso.hom.app F).hom.app U =
+      eqToHom (by simp) ≫ e.counitIso.hom.app (F.obj.obj U) := by
+  exact (Category.id_comp _).symm
+
+@[simp]
+lemma sheafCongrRight_counitIso_inv_app_hom_app (e : A ≌ B) (J : GrothendieckTopology C)
+    (F : Sheaf J B) (U : Cᵒᵖ) :
+    ((e.sheafCongrRight J).counitIso.inv.app F).hom.app U =
+      e.counitIso.inv.app (F.obj.obj U) ≫ eqToHom (by simp) := by
+  exact (Category.comp_id _).symm
 
 /-- Change coefficients, sheafify, and change back. This is a sheafification functor for the
 original coefficient category even when it has no chosen sheafification yet. -/
