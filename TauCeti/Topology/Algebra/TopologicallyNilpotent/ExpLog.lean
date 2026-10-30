@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Evaluation
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
 /-!
@@ -38,7 +39,10 @@ nilpotent and in every ideal containing `a`. The functional equation
 `exp (a + b) = exp a * exp b` is the Cauchy product of the exponential series in the complete
 nonarchimedean ring `S`, matched coefficientwise with Mathlib's
 `PowerSeries.exp_mul_exp_eq_exp_add`; its proof follows that of Mathlib's
-`NormedSpace.exp_add_of_commute_of_mem_ball`.
+`NormedSpace.exp_add_of_commute_of_mem_ball`. Since `exp a - 1` lies in every open ideal
+containing `a`, the exponential is continuous on an ideal of topologically nilpotent elements, so
+it carries convergent sums to convergent products, as Mathlib's `HasSum.exp` does for complete
+normed algebras.
 
 ## Main definitions
 
@@ -58,6 +62,9 @@ nonarchimedean ring `S`, matched coefficientwise with Mathlib's
   identities.
 * `IsTopologicallyNilpotent.exp_add`, `IsTopologicallyNilpotent.log_mul`: the functional
   equations.
+* `IsTopologicallyNilpotent.hasSum_log_one_sub`: `log (1 - a) = -∑ aⁿ⁺¹ / (n + 1)`.
+* `HasSum.exp_of_mem_ideal`: inside an ideal of topologically nilpotent elements, the exponential
+  turns convergent sums into convergent products.
 -/
 
 public section
@@ -197,7 +204,52 @@ theorem log_mul (hu : IsTopologicallyNilpotent (u - 1)) (hv : IsTopologicallyNil
     NormedSpace.log (u * v) = NormedSpace.log u + NormedSpace.log v := by
   rw [← (hu.log.add hv.log).log_exp, hu.log.exp_add hv.log, hu.exp_log, hv.exp_log]
 
+/-- For a topologically nilpotent `a`, the logarithm of `1 - a` is `-∑ₙ aⁿ⁺¹ / (n + 1)`. -/
+theorem hasSum_log_one_sub (ha : IsTopologicallyNilpotent a) :
+    HasSum (fun n : ℕ => -(((n + 1 : ℕ) : ℚ)⁻¹ • a ^ (n + 1))) (NormedSpace.log (1 - a)) := by
+  have h := hasSum_log (u := 1 - a) (by rw [sub_sub_cancel_left]; exact ha.neg)
+  rw [← hasSum_nat_add_iff' 1] at h
+  convert h using 1
+  · funext n
+    have key : ((-1 : ℚ) ^ (n + 1 + 1) / ↑(n + 1)) * (-1) ^ (n + 1) = -((↑(n + 1) : ℚ)⁻¹) := by
+      rw [pow_succ (-1 : ℚ) (n + 1), mul_comm, ← mul_div_assoc, ← mul_assoc, ← pow_add,
+        ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul, neg_div, one_div]
+    rw [sub_sub_cancel_left, neg_pow a,
+      show (-1 : S) ^ (n + 1) = algebraMap ℚ S ((-1) ^ (n + 1)) by simp, ← Algebra.smul_def,
+      smul_smul, key, neg_smul]
+  · simp
+
 end IsTopologicallyNilpotent
+
+/-- **The exponential of a sum is the product of the exponentials.** If `f` has sum `a`, with all
+`f i` and `a` in an ideal `I` of topologically nilpotent elements, then `exp ∘ f` has product
+`exp a`. -/
+theorem HasSum.exp_of_mem_ideal [Algebra ℚ S] {ι : Type*} {I : Ideal S}
+    (hI : ∀ a ∈ I, IsTopologicallyNilpotent a) {f : ι → S} {a : S} (h : HasSum f a)
+    (hf : ∀ i, f i ∈ I) (ha : a ∈ I) :
+    HasProd (NormedSpace.exp ∘ f) (NormedSpace.exp a) := by
+  have hs (s : Finset ι) : ∑ i ∈ s, f i ∈ I := I.sum_mem fun i _ => hf i
+  have hprod (s : Finset ι) :
+      ∏ i ∈ s, NormedSpace.exp (f i) = NormedSpace.exp (∑ i ∈ s, f i) := by
+    classical
+    induction s using Finset.induction_on with
+    | empty => simp [NormedSpace.exp_zero]
+    | @insert i s hi ih =>
+      rw [Finset.prod_insert hi, Finset.sum_insert hi, ih,
+        (hI _ (hf i)).exp_add (hI _ (hs s))]
+  -- Near `a`, `exp (∑ i ∈ s, f i) - exp a = exp a * (exp (∑ i ∈ s, f i - a) - 1)` lies in any
+  -- open ideal containing `∑ i ∈ s, f i - a`.
+  unfold HasProd
+  simp_rw [Function.comp_apply, hprod]
+  rw [← tendsto_sub_nhds_zero_iff]
+  have h' := tendsto_sub_nhds_zero_iff.2 h
+  refine IsLinearTopology.hasBasis_ideal.tendsto_right_iff.2 fun J hJ => ?_
+  filter_upwards [h'.eventually (IsLinearTopology.hasBasis_ideal.mem_of_mem hJ)] with s hsJ
+  have hsI : ∑ i ∈ s, f i - a ∈ I := sub_mem (hs s) ha
+  have heq : ∑ i ∈ s, f i = a + (∑ i ∈ s, f i - a) := by abel
+  rw [SetLike.mem_coe, heq, (hI _ ha).exp_add (hI _ hsI),
+    show ∀ x y : S, x * y - x = x * (y - 1) from fun x y => by ring]
+  exact J.mul_mem_left _ ((hI _ hsI).exp_sub_one_mem hsJ)
 
 namespace Ideal
 
