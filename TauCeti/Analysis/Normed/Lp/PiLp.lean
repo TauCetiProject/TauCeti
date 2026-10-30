@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
+public import Mathlib.Analysis.Normed.Operator.Basic
 
 /-!
-# Comparisons of finite product norms and distances
+# Finite product norms, distances and coordinatewise operators
 
 The finite `Lᵖ` norm respects coordinatewise bounds on norms, including when the two
 families have different target spaces. This compares scalar evaluations of a vector
@@ -22,6 +23,10 @@ These estimates give inclusions between balls in the two metrics. The correspond
 Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm.
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons.
+
+The coordinatewise continuous linear map `PiLp.mapCLM` transports the native product
+operator to `PiLp`. For finite products and `p ≥ 1`, a common operator norm bound on
+its blocks bounds its operator norm. It preserves identities and composition.
 
 ## Source
 
@@ -153,5 +158,61 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : PiLp 2 β) (r : ℝ) :
     (mul_lt_mul_of_pos_left hy (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)))
 
 end PseudoMetricSpace
+
+end PiLp
+
+namespace PiLp
+
+section Operators
+
+variable {ι : Type*} {p : ℝ≥0∞} {E F : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (E i)]
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [∀ i, NormedSpace 𝕜 (E i)] [∀ i, SeminormedAddCommGroup (F i)]
+    [∀ i, NormedSpace 𝕜 (F i)]
+
+/-- The bounded coordinatewise operator between finite `Lᵖ` products. -/
+def mapCLM (f : ∀ i, E i →L[𝕜] F i) : PiLp p E →L[𝕜] PiLp p F :=
+  (continuousLinearEquiv p 𝕜 F).symm.toContinuousLinearMap ∘L
+    ContinuousLinearMap.piMap f ∘L (continuousLinearEquiv p 𝕜 E).toContinuousLinearMap
+
+/-- The coordinatewise operator is conjugate to the native product operator. -/
+theorem mapCLM_def (f : ∀ i, E i →L[𝕜] F i) :
+    mapCLM (p := p) f = (continuousLinearEquiv p 𝕜 F).symm.toContinuousLinearMap ∘L
+      ContinuousLinearMap.piMap f ∘L (continuousLinearEquiv p 𝕜 E).toContinuousLinearMap := (rfl)
+
+/-- The coordinates of the bounded coordinatewise operator. -/
+@[simp]
+theorem mapCLM_apply (f : ∀ i, E i →L[𝕜] F i) (x : PiLp p E) (i : ι) :
+    mapCLM f x i = f i (x i) := (rfl)
+
+/-- The coordinatewise operator associated to identities is the identity. -/
+@[simp]
+theorem mapCLM_id : mapCLM (p := p) (fun i ↦ ContinuousLinearMap.id 𝕜 (E i)) =
+    ContinuousLinearMap.id 𝕜 (PiLp p E) := by
+  ext x i
+  simp
+
+/-- Coordinatewise operators preserve composition. -/
+@[simp]
+theorem mapCLM_comp {G : ι → Type*} [∀ i, SeminormedAddCommGroup (G i)]
+    [∀ i, NormedSpace 𝕜 (G i)] (g : ∀ i, F i →L[𝕜] G i) (f : ∀ i, E i →L[𝕜] F i) :
+    mapCLM (p := p) (fun i ↦ (g i).comp (f i)) = (mapCLM g).comp (mapCLM f) := by
+  ext x i
+  simp
+
+/-- A common bound on the block norms bounds the coordinatewise operator norm. -/
+theorem norm_mapCLM_le [Fintype ι] [Fact (1 ≤ p)] (f : ∀ i, E i →L[𝕜] F i) {C : ℝ}
+    (hC : 0 ≤ C) (hf : ∀ i, ‖f i‖ ≤ C) : ‖mapCLM (p := p) f‖ ≤ C := by
+  refine ContinuousLinearMap.opNorm_le_bound _ hC fun x ↦ ?_
+  calc
+    ‖mapCLM f x‖ ≤ ‖C • WithLp.toLp p (fun i ↦ ‖x i‖)‖ :=
+      norm_mono fun i ↦ by
+        simpa [abs_of_nonneg hC] using
+          (ContinuousLinearMap.le_opNorm (f i) (x i)).trans
+            (mul_le_mul_of_nonneg_right (hf i) (norm_nonneg _))
+    _ = C * ‖x‖ := by simp [norm_smul, abs_of_nonneg hC]
+
+end Operators
 
 end PiLp

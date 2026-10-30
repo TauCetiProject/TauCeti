@@ -32,8 +32,9 @@ operations that need them.
   the index.
 * `ContinuousLinearMap.index_equiv_comp` and `index_comp_equiv`: composition with a
   continuous linear equivalence preserves the index.
-* `ContinuousLinearMap.index_prodMap`: the index is additive under products with finite free
-  kernels and cokernels.
+* `ContinuousLinearMap.index_prodMap` and `ContinuousLinearMap.index_piMap`: the index is
+  additive under Cartesian and finite coordinatewise products with finite free kernels and
+  cokernels.
 * `ContinuousLinearMap.index_of_surjective` and `index_of_injective`: the index in the one-sided
   cases.
 * `ContinuousLinearMap.finrank_ker_eq_iff_index_eq` and
@@ -164,6 +165,20 @@ lemma index_prodMap (T : E₁ →L[𝕜] F₁) (S : E₂ →L[𝕜] F₂)
     (T.prodMap S).index = T.index + S.index := by
   simpa only [index_def, coe_prodMap] using
     (T : E₁ →ₗ[𝕜] F₁).index_prodMap (S : E₂ →ₗ[𝕜] F₂)
+
+/-- The index is additive under finite coordinatewise products with finite free kernels
+and cokernels. -/
+@[simp]
+lemma index_piMap {ι : Type*} [Fintype ι] {E F : ι → Type*}
+    [∀ i, AddCommGroup (E i)] [∀ i, Module 𝕜 (E i)] [∀ i, TopologicalSpace (E i)]
+    [∀ i, AddCommGroup (F i)] [∀ i, Module 𝕜 (F i)] [∀ i, TopologicalSpace (F i)]
+    (f : ∀ i, E i →L[𝕜] F i)
+    [∀ i, Module.Free 𝕜 (f i).ker] [∀ i, Module.Finite 𝕜 (f i).ker]
+    [∀ i, Module.Free 𝕜 (F i ⧸ (f i).range)]
+    [∀ i, Module.Finite 𝕜 (F i ⧸ (f i).range)] :
+    (piMap f).index = ∑ i, (f i).index := by
+  simpa only [index_def, coe_piMap] using
+    LinearMap.index_piMap (fun i ↦ (f i).toLinearMap)
 
 end Prod
 
