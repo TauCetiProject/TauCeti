@@ -57,8 +57,7 @@ section Differential
 
 variable [LieGroup I 1 G]
 
-local instance lieGroupMinSmoothnessOne : LieGroup I (minSmoothness ℝ 1) G := by
-  simpa using (inferInstance : LieGroup I 1 G)
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- The continuous linear equivalence given by the differential of conjugation at the identity. -/
 def adjointContinuousLinearEquiv (g : G) :
@@ -240,7 +239,7 @@ section Bracket
 
 variable [LieGroup I 3 G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 local instance lieGroupOne : LieGroup I 1 G :=
   LieGroup.of_le (I := I) (G := G) (m := 1) (n := 3) (by norm_num)

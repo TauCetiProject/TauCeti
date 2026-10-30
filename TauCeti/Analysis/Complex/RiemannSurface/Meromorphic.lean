@@ -47,14 +47,16 @@ and products add the two divisor bounds.
   `TauCeti.RiemannSurface.meromorphicOrderAt_eq_of_mem_maximalAtlas`: chart independence.
 * `TauCeti.RiemannSurface.tendsto_zero_iff_meromorphicOrderAt_pos`: the order is positive exactly
   where the function tends to zero.
-* `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt`: a holomorphic function
-  is meromorphic.
+* `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt` and
+  `TauCeti.RiemannSurface.meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt`: a holomorphic
+  function is meromorphic, of nonnegative order.
 * `TauCeti.RiemannSurface.MeromorphicAt.comp` and `TauCeti.RiemannSurface.meromorphicOrderAt_comp`:
   pullback along a holomorphic map, with the order formula.
 * `TauCeti.RiemannSurface.meromorphicAt_const`, `TauCeti.RiemannSurface.MeromorphicAt.add`,
   `.neg`, `.sub`, `.smul`, `.const_smul`, `.mul`, `.inv`, and `.pow`: arithmetic of local
   meromorphic sections.
-* `TauCeti.RiemannSurface.meromorphicOrderAt_const`, `_add`, `_neg`, `_smul`, and `_mul`:
+* `TauCeti.RiemannSurface.meromorphicOrderAt_const`, `_add`, `_neg`, `_smul`, `_const_smul`, and
+  `_mul`:
   arithmetic of their orders.
 
 ## References
@@ -169,14 +171,13 @@ theorem meromorphicOrderAt_eq_of_mem_maximalAtlas {e : OpenPartialHomeomorph X �
 
 /-- A function holomorphic near `x` is meromorphic at `x`. -/
 theorem meromorphicAt_of_eventually_mdifferentiableAt [CompleteSpace E]
-    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : MeromorphicAt f x := by
-  have hcx := mem_chart_source ℂ x
-  refine AnalyticAt.meromorphicAt ?_
-  rw [Complex.analyticAt_iff_eventually_differentiableAt]
-  filter_upwards [(chartAt ℂ x).open_target.mem_nhds ((chartAt ℂ x).map_source hcx),
-    ((chartAt ℂ x).tendsto_symm hcx).eventually hf] with z hz hfz
-  exact mdifferentiableAt_iff_differentiableAt.1
-    (hfz.comp z (mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ x) hz))
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : MeromorphicAt f x :=
+  (analyticAt_comp_chartAt_symm hf).meromorphicAt
+
+/-- A function holomorphic near `x` has nonnegative order at `x`. -/
+theorem meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt [CompleteSpace E]
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : 0 ≤ meromorphicOrderAt f x :=
+  (analyticAt_comp_chartAt_symm hf).meromorphicOrderAt_nonneg
 
 /-! ### Pullback along a holomorphic map -/
 
@@ -298,6 +299,13 @@ theorem meromorphicOrderAt_smul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x
   rw [meromorphicAt_def] at hf hg
   simp only [meromorphicOrderAt_def]
   exact _root_.meromorphicOrderAt_smul hf hg
+
+/-- Multiplying by a nonzero constant does not change the order at a point of a Riemann
+surface. -/
+theorem meromorphicOrderAt_const_smul {c : ℂ} (hc : c ≠ 0) :
+    meromorphicOrderAt (c • g) x = meromorphicOrderAt g x := by
+  simp only [meromorphicOrderAt_def, Pi.smul_comp]
+  exact _root_.meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hc
 
 end Scalar
 

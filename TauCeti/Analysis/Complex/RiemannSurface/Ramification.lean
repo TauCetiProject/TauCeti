@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Divisor
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Basic
 public import Mathlib.Topology.DiscreteSubset
 
 /-!

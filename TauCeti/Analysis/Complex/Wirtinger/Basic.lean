@@ -154,4 +154,34 @@ theorem conjWirtingerDeriv_ofReal_comp_apply (f : V → ℝ) (x v : V) :
 
 end Wirtinger
 
+/-- In one variable the Wirtinger derivative is determined by its value at `1`. -/
+theorem wirtingerDeriv_apply_eq_smul_apply_one {f : ℂ → W} (x v : ℂ) :
+    wirtingerDeriv f x v = v • wirtingerDeriv f x 1 := by
+  simpa only [smul_eq_mul, mul_one] using (wirtingerDeriv f x).map_smul v (1 : ℂ)
+
+/-- In one variable the conjugate Wirtinger derivative is determined by its value at `1`
+through complex-antilinearity. -/
+theorem conjWirtingerDeriv_apply_eq_conj_smul_apply_one {f : ℂ → W} (x v : ℂ) :
+    conjWirtingerDeriv f x v = conj v • conjWirtingerDeriv f x 1 := by
+  simpa only [smul_eq_mul, mul_one] using (conjWirtingerDeriv f x).map_smulₛₗ v (1 : ℂ)
+
+/-- In one variable the real differential is the sum of its `dz` and `dbar z` terms.
+This identity also holds for the totalized derivative, without a differentiability assumption. -/
+theorem fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv {f : ℂ → W} (x v : ℂ) :
+    fderiv ℝ f x v =
+      v • wirtingerDeriv f x 1 + conj v • conjWirtingerDeriv f x 1 := by
+  rw [← wirtingerDeriv_add_conjWirtingerDeriv f x v,
+    wirtingerDeriv_apply_eq_smul_apply_one, conjWirtingerDeriv_apply_eq_conj_smul_apply_one]
+
+/-- In one variable the conjugate Wirtinger derivative vanishes exactly when its value
+at `1` vanishes, since it is complex-antilinear. -/
+theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : ℂ} :
+    conjWirtingerDeriv f x = 0 ↔ conjWirtingerDeriv f x 1 = 0 := by
+  constructor
+  · intro h
+    simp only [h, zero_apply]
+  · intro h
+    ext v
+    rw [conjWirtingerDeriv_apply_eq_conj_smul_apply_one, h, smul_zero, zero_apply]
+
 end TauCeti
