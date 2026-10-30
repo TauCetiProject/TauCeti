@@ -102,6 +102,18 @@ lemma mul_eq_sum [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃]
       f.sum fun D₁ b₁ ↦ g.sum fun D₂ b₂ ↦ b₁ • b₂ • structureConstants R H₁ H₂ H₃ D₁.rep D₂.rep :=
   (rfl)
 
+/-- The coefficient of a convolution product at a double coset, expanded over the supports of
+the two factors. -/
+lemma mul_apply [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃]
+    (f : HeckeCosetModule Δ H₁ H₂ R) (g : HeckeCosetModule Δ H₂ H₃ R) (D : HeckeCoset Δ H₁ H₃) :
+    mul R f g D = ∑ D₁ ∈ f.support, ∑ D₂ ∈ g.support,
+      f D₁ * (g D₂ * structureConstants R H₁ H₂ H₃ D₁.rep D₂.rep D) := by
+  rw [mul_eq_sum, sum_apply, sum_def]
+  refine Finset.sum_congr rfl fun D₁ _ ↦ ?_
+  rw [sum_apply, sum_def]
+  exact Finset.sum_congr rfl fun D₂ _ ↦
+    (smul_apply _ _ _).trans (congrArg _ (smul_apply _ _ _))
+
 /-- The multiplication of the Hecke ring: the diagonal case of the convolution product
 `HeckeCosetModule.mul`. -/
 noncomputable instance instMulHeckeRing {H : Subgroup G} [IsHeckeTriple Δ H H] :

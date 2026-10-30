@@ -34,6 +34,8 @@ coefficient one, is `HeckeRing.GLn.diagElem_primePowDiag_mul_apply_diagCoset_add
 
 * `HeckeCoset.rep_det_eq_mul_of_structureConstants_ne_zero`: the determinant of a coset in the
   support is the product of the determinants.
+* `HeckeRing.GLn.diagElem_mul_diagElem`: `T(a) · T(b)` is the structure-constant family of the
+  representatives of `T(a)` and `T(b)`.
 * `HeckeRing.GLn.prod_castLE_mul_prod_castLE_dvd_of_diagElem_mul_apply_ne_zero`: the leading
   elementary divisors of a coset in the support of `T(a) · T(b)` are divisible by those of
   `a` times those of `b`.
@@ -122,13 +124,21 @@ section Dominance
 -- `NeZero n`.
 variable [NeZero n]
 
+/-- The product of two diagonal basis elements is the structure-constant family of their
+representatives: the case `a = b = 1` of `HeckeCosetModule.single_mul_single`. -/
+theorem diagElem_mul_diagElem (a b : Fin n → ℕ) :
+    diagElem a * diagElem b =
+      HeckeCosetModule.structureConstants ℤ (SLnZ n) (SLnZ n) (SLnZ n)
+        (diagCoset a).rep (diagCoset b).rep := by
+  rw [diagElem_def, diagElem_def, HeckeCosetModule.single_mul_single]
+  exact (one_smul ℤ _).trans (one_smul ℤ _)
+
 /-- A coset occurring in `T(a) · T(b)` has a nonzero structure constant there. -/
 private lemma structureConstants_ne_zero_of_diagElem_mul_apply_ne_zero {a b : Fin n → ℕ}
     {D : HeckeCoset (posDetInt n) (SLnZ n) (SLnZ n)} (h : (diagElem a * diagElem b) D ≠ 0) :
     HeckeCosetModule.structureConstants ℤ (SLnZ n) (SLnZ n) (SLnZ n)
       (diagCoset a).rep (diagCoset b).rep D ≠ 0 := by
-  rwa [diagElem_def, diagElem_def, HeckeCosetModule.single_mul_single,
-    HeckeCosetModule.smul_apply, HeckeCosetModule.smul_apply, one_mul, one_mul] at h
+  rwa [diagElem_mul_diagElem] at h
 
 /-- A coset `T(c)` occurring in `T(a) · T(b)` has the integral representative
 `P * diag(a) * Q * diag(b) * S`: the product of two coset representatives, each of the form

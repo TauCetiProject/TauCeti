@@ -88,6 +88,17 @@ lemma isDvdChain_primePowDiag (p : ℕ) (e : Fin n → ℕ) (hmono : Monotone e)
     IsDvdChain (primePowDiag n p e) :=
   isDvdChain_iff.mpr fun _ _ hij ↦ Nat.pow_dvd_pow p (hmono hij)
 
+/-- For `1 < p`, the double coset `T(p ^ e)` of a monotone exponent vector determines `e`: this is
+the uniqueness of elementary divisors, `eq_of_diagCoset_eq`, read through `k ↦ p ^ k`. -/
+lemma eq_of_diagCoset_primePowDiag_eq {p : ℕ} (hp : 1 < p) {e f : Fin n → ℕ} (he : Monotone e)
+    (hf : Monotone f) (h : diagCoset (primePowDiag n p e) = diagCoset (primePowDiag n p f)) :
+    e = f := by
+  have h0 : 0 < p := Nat.zero_lt_of_lt hp
+  have hdiag := eq_of_diagCoset_eq (primePowDiag_pos n p h0 e) (primePowDiag_pos n p h0 f)
+    (isDvdChain_primePowDiag n p e he) (isDvdChain_primePowDiag n p f hf) h
+  funext i
+  simpa only [primePowDiag_apply] using Nat.pow_right_injective hp (congrFun hdiag i)
+
 /-- The entrywise `p`-adic valuation of a diagonal. -/
 def diagFactorizationAt (p : ℕ) (a : Fin n → ℕ) : Fin n → ℕ :=
   fun i ↦ (a i).factorization p
