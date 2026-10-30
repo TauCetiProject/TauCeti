@@ -18,9 +18,10 @@ whereas the ambient scheme is `Spec R`. Dense replacement of this special fibre 
 therefore empty. For nonzero `R`, this shows that the canonical dense-replacement
 base-change comparison need not be an isomorphism.
 
-We first give the analogous compactification for localization at any element of a
-commutative ring. The special-fibre calculation uses the invertibility of the defining
-element after localization and Mathlib's criterion for an empty scheme pullback.
+We use the principal-open compactification from `Compactification.Basic` and its
+pullback-emptiness theorem from `Compactification.BaseChange`. The special-fibre calculation
+uses the invertibility of the defining element after localization and Mathlib's criterion
+for an empty scheme pullback.
 
 ## References
 
@@ -39,41 +40,6 @@ namespace TauCeti.Compactification
 noncomputable section
 
 variable {R : CommRingCat.{u}}
-
-/-- The tautological compactification of a principal affine open, over its ambient spectrum. -/
-abbrev localizationAway (r : R) :
-    Compactification (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away r)))) :=
-  ofHom (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away r))))
-    (𝟙 _) (by simp)
-
-/-- Localizing at a non-zero-divisor gives a schematically dense interior; the ring need
-not be reduced. -/
-theorem isSchemeTheoreticallyDominant_localizationAway (r : R) (hr : IsRegular r) :
-    IsSchemeTheoreticallyDominant (localizationAway r).j := by
-  apply (isSchemeTheoreticallyDominant_SpecMap_iff _).mpr
-  apply (IsLocalization.injective_iff_isRegular (S := Localization.Away r)
-    (Submonoid.powers r)).mpr
-  rintro ⟨_, n, rfl⟩
-  exact hr.pow n
-
-/-- The special fibre of a principal open is empty along a ring map that kills its defining
-element. -/
-theorem isEmpty_pullback_localizationAway {A : CommRingCat.{u}}
-    (r : R) (φ : R →+* A) (hφ : φ r = 0) :
-    IsEmpty ↑(pullback (localizationAway r).j (Spec.map (CommRingCat.ofHom φ))) := by
-  -- Normalize the dependent endpoints of the compactification before using the affine API.
-  dsimp only [localizationAway, j, Xbar, ofHom]
-  apply Scheme.isEmpty_pullback
-  rw [Set.disjoint_left]
-  rintro _ ⟨x, rfl⟩ ⟨y, hy⟩
-  have hx : r ∉ (PrimeSpectrum.comap (algebraMap R (Localization.Away r)) x).asIdeal := by
-    have : x.asIdeal.IsPrime := x.isPrime
-    exact x.asIdeal.notMem_of_isUnit (IsLocalization.Away.algebraMap_isUnit r)
-  have hy' := congrArg (fun p : Spec (CommRingCat.of R) ↦ p.asIdeal) hy
-  simp only [Spec.map_apply, CommRingCat.hom_ofHom] at hy'
-  have hy0 : r ∈ (PrimeSpectrum.comap φ y).asIdeal :=
-    (PrimeSpectrum.comap_asIdeal φ y).symm ▸ Ideal.mem_comap.mpr (hφ ▸ y.asIdeal.zero_mem)
-  exact hx (hy' ▸ hy0)
 
 /-- Dense replacement of the special fibre at `t = 0` of `D(t) ⟶ Spec R[t]` is empty. -/
 theorem denseReplacement_specialFiber_empty :
