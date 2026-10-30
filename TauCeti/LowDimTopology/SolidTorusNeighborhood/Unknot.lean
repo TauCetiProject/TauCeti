@@ -48,8 +48,7 @@ slopes.
   torus neighbourhood of `TauCeti.unknot`.
 * `TauCeti.knotExterior_unknotSolidTorus`: the exterior of the unknot is the solid torus
   `x₀² + x₁² ≤ x₂² + x₃²`.
-* `TauCeti.unknotExteriorHomeomorph_symm_boundaryInclusion`,
-  `TauCeti.unknotExteriorHomeomorph_exteriorBoundaryInclusion`: on the boundary torus, the
+* `TauCeti.unknotExteriorHomeomorph_symm_boundaryInclusion`: on the boundary torus, the
   identification of the exterior with a solid torus exchanges meridian and longitude.
 * `TauCeti.unknotExteriorHomeomorph_symm_notMem_range`: the exterior of the unknot misses the
   unknot.
@@ -217,18 +216,18 @@ theorem unknotExteriorHomeomorph_symm_boundaryInclusion (q : Circle × Circle) :
   ext1
   simp
 
-/-- On the boundary torus, the identification `TauCeti.unknotExteriorHomeomorph` of the exterior
-of the unknot with `D² × S¹` exchanges the two circle factors: the point `(a, b)` of the boundary
-torus of `TauCeti.unknotSolidTorus` is the point `(b, a)` of the boundary torus `∂D² × S¹`. -/
+/-- On the boundary torus, `TauCeti.unknotExteriorHomeomorph` sends the exterior boundary point
+`r` to `SolidTorus.boundaryInclusion r.swap`, exchanging the two circle factors. This is the
+forward counterpart of `TauCeti.unknotExteriorHomeomorph_symm_boundaryInclusion`. -/
 @[simp]
-theorem unknotExteriorHomeomorph_exteriorBoundaryInclusion (q : Circle × Circle) :
+theorem unknotExteriorHomeomorph_exteriorBoundaryInclusion (r : Circle × Circle) :
     unknotExteriorHomeomorph
-        (isSolidTorusNeighborhood_unknotSolidTorus.exteriorBoundaryInclusion q) =
-      SolidTorus.boundaryInclusion q.swap := by
-  rw [← Homeomorph.eq_symm_apply]
-  ext1
-  rw [IsSolidTorusNeighborhood.coe_exteriorBoundaryInclusion_apply,
-    unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap]
+        (isSolidTorusNeighborhood_unknotSolidTorus.exteriorBoundaryInclusion r) =
+      SolidTorus.boundaryInclusion r.swap := by
+  rw [← unknotExteriorHomeomorph.apply_symm_apply (SolidTorus.boundaryInclusion r.swap)]
+  refine congrArg _ (Subtype.ext ?_)
+  rw [unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap,
+    IsSolidTorusNeighborhood.coe_exteriorBoundaryInclusion_apply]
 
 /-- The exterior of the unknot misses the unknot. -/
 theorem unknotExteriorHomeomorph_symm_notMem_range (p : SolidTorus) :
