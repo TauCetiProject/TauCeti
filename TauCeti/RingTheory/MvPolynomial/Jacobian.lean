@@ -39,7 +39,7 @@ products, as the multiplicativity of evaluation then replaces the Leibniz rule.
 ## Main results
 
 * `TauCeti.jacobiMatrixAt_mulVec_self`: Euler's identity `J_p(v) v = (d_i p_i(v))_i`.
-* `TauCeti.aeval_inl_add_inr` and `TauCeti.jacobiMatrixAt_mulVec_apply_eq_snd_aeval`:
+* `MvPolynomial.aeval_inl_add_inr` and `TauCeti.jacobiMatrixAt_mulVec_apply_eq_snd_aeval`:
   `p(v + ε w) = p(v) + ε J_p(v) w` over the dual numbers.
 * `TauCeti.jacobiMatrixAt_smul`: `J_p(t • v) = diag(t ^ (d_i - 1)) J_p(v)`.
 * `TauCeti.rank_jacobiMatrixAt_eq_of_mk_eq_mk`,
@@ -130,7 +130,7 @@ theorem jacobiMatrixAt_dehomogenize {n : ℕ} (i : Fin (n + 1))
 
 /-- **Evaluation at a dual-number point.** Evaluating a polynomial at `v + ε w`, where `ε² = 0`,
 gives its value at `v` plus `ε` times its derivative at `v` in the direction `w`. -/
-theorem aeval_inl_add_inr [Fintype σ] (f : MvPolynomial σ R) (v w : σ → R) :
+theorem _root_.MvPolynomial.aeval_inl_add_inr [Fintype σ] (f : MvPolynomial σ R) (v w : σ → R) :
     aeval (fun j ↦ TrivSqZeroExt.inl (v j) + TrivSqZeroExt.inr (w j) :
         σ → TrivSqZeroExt R R) f =
       TrivSqZeroExt.inl (eval v f) + TrivSqZeroExt.inr (∑ j, w j * eval v (pderiv j f)) := by
@@ -166,7 +166,6 @@ theorem jacobiMatrixAt_mulVec_apply_eq_snd_aeval [Fintype σ] (p : ι → MvPoly
         σ → TrivSqZeroExt R R) (p i)).snd := by
   rw [aeval_inl_add_inr]
   simp [mulVec, dotProduct, mul_comm]
-
 
 end CommSemiring
 

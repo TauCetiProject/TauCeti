@@ -9,8 +9,9 @@ public import Mathlib.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 public import TauCeti.RingTheory.MvPolynomial.Dominant
 import Mathlib.Algebra.CharZero.Infinite
-import Mathlib.Algebra.Lie.Weights.Chain
 import Mathlib.Algebra.Module.Submodule.Union
+import TauCeti.Algebra.DualNumber.Matrix
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Root exponentials and the density of the conjugates of a Cartan subalgebra
@@ -44,13 +45,13 @@ and the product of these is `1 + ε ∑ τ_α ad e_α` because `ε² = 0`.
 
 ## Main results
 
-* `TauCeti.exists_rootExponentialPolynomialParametrization`: a polynomial family, in the
+* `LieSubalgebra.exists_rootExponentialPolynomialParametrization`: a polynomial family, in the
   coordinates of a basis of `L`, whose values all lie in `Int(L) · H` and whose Jacobian matrix
   is surjective at some point.
-* `TauCeti.polynomial_eq_zero_of_intCartan`: a polynomial in the coordinates of a basis of `L`
-  that vanishes on `Int(L) · H` is zero.
-* `TauCeti.polynomial_eq_zero_of_invariant_of_cartan`: an `Int(L)`-invariant polynomial that
-  vanishes on `H` is zero.
+* `LieSubalgebra.polynomial_eq_zero_of_intCartan`: a polynomial in the coordinates of a basis
+  of `L` that vanishes on `Int(L) · H` is zero.
+* `LieSubalgebra.polynomial_eq_zero_of_invariant_of_cartan`: an `Int(L)`-invariant polynomial
+  that vanishes on `H` is zero.
 
 ## References
 
@@ -95,7 +96,8 @@ private theorem map_expSeries {S S' : Type*} [CommRing S] [Algebra K S] [CommRin
 private theorem expSeries_inr {d : ℕ} (hd : 2 ≤ d) (A : Matrix ι ι K) (c : K) :
     expSeries A d (inr c : TrivSqZeroExt K K) = 1 + (c • A).map inr := by
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le' hd
-  have hsq : (inr c : TrivSqZeroExt K K) ^ 2 = 0 := by rw [sq, inr_mul_inr]
+  have hsq (k : ℕ) : (inr c : TrivSqZeroExt K K) ^ (k + 1 + 1) = 0 := by
+    rw [pow_succ, pow_succ, mul_assoc, inr_mul_inr, mul_zero]
   rw [expSeries, Finset.sum_range_succ', Finset.sum_range_succ', Finset.sum_eq_zero, zero_add]
   · simp only [zero_add, pow_one, pow_zero, Nat.factorial_zero, Nat.factorial_one, Nat.cast_one,
       inv_one, map_one, mul_one, one_smul, add_comm (1 : Matrix ι ι _)]
@@ -103,44 +105,11 @@ private theorem expSeries_inr {d : ℕ} (hd : 2 ≤ d) (A : Matrix ι ι K) (c :
     ext i j : 1
     simp [algebraMap_eq_inl, inr_mul_inl]
   · intro k _
-    rw [show k + 1 + 1 = 2 + k by ring, pow_add, hsq, zero_mul, zero_mul]
+    rw [hsq, zero_mul]
     ext i j : 1
     simp
 
 end ExpSeries
-
-/-! ### Matrices over the dual numbers -/
-
-section DualNumber
-
-variable {K ι α : Type*} [Field K] [Fintype ι]
-
-private theorem map_inr_mul_map_inr (M N : Matrix ι ι K) :
-    M.map (inr : K → TrivSqZeroExt K K) * N.map inr = 0 := by
-  ext i j : 1
-  simp [Matrix.mul_apply, inr_mul_inr]
-
-variable [DecidableEq ι]
-
-private theorem list_prod_one_add_map_inr (l : List α) (M : α → Matrix ι ι K) :
-    (l.map fun a ↦ 1 + (M a).map (inr : K → TrivSqZeroExt K K)).prod =
-      1 + (l.map M).sum.map inr := by
-  induction l with
-  | nil => simp [Matrix.map_zero _ (inr_zero K)]
-  | cons a l ih =>
-    rw [List.map_cons, List.prod_cons, ih, List.map_cons, List.sum_cons, add_mul, one_mul,
-      mul_add, mul_one, map_inr_mul_map_inr, add_zero, Matrix.map_add _ (inr_add K)]
-    abel
-
-private theorem one_add_map_inr_mulVec (M : Matrix ι ι K) (u u' : ι → K) :
-    (1 + M.map (inr : K → TrivSqZeroExt K K)) *ᵥ (fun i ↦ inl (u i) + inr (u' i)) =
-      fun i ↦ inl (u i) + inr ((M *ᵥ u + u') i) := by
-  ext i
-  · simp [mulVec, dotProduct, Matrix.one_apply, fst_sum, add_mul, ite_mul, apply_ite fst]
-  · simp [mulVec, dotProduct, Matrix.one_apply, snd_sum, add_mul, ite_mul, Finset.sum_add_distrib,
-      add_comm]
-
-end DualNumber
 
 /-! ### Products of truncated exponentials applied to a parametrized vector -/
 
@@ -204,29 +173,10 @@ private theorem jacobiMatrixAt_expProdPoly_mulVec [Fintype α] (l : List α)
     · simp [algebraMap_eq_inl, Finset.sum_apply, fst_sum]
     · simp [algebraMap_eq_inl, Finset.sum_apply, snd_sum]
   simp only [Function.comp_def, hexp, hvec]
-  rw [list_prod_one_add_map_inr, one_add_map_inr_mulVec, snd_add, snd_inl, zero_add, snd_inr]
+  rw [List.prod_map_one_add_map_inr, Matrix.one_add_map_inr_mulVec, snd_add, snd_inl, zero_add,
+    snd_inr]
 
 end ExpProd
-
-/-! ### Coordinates of endomorphisms -/
-
-section Coordinates
-
-variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [Fintype ι] [DecidableEq ι]
-
-/-- The coordinates of a product of elements of the general linear group applied to a vector. -/
-private theorem equivFun_list_prod_smul {α : Type*} (b : Module.Basis ι K V) (l : List α)
-    (G : α → LinearMap.GeneralLinearGroup K V) (x : V) :
-    b.equivFun ((l.map G).prod • x) =
-      (l.map fun a ↦ LinearMap.toMatrixAlgEquiv b (G a : Module.End K V)).prod *ᵥ b.equivFun x := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    rw [List.map_cons, List.prod_cons, mul_smul, List.map_cons, List.prod_cons, ← mulVec_mulVec,
-      ← ih, Units.smul_def, Module.End.smul_def]
-    exact (LinearMap.toMatrix_mulVec_repr b b _ _).symm
-
-end Coordinates
 
 /-! ### The root-exponential parametrization -/
 
@@ -263,13 +213,6 @@ end Exponential
 
 variable (H : LieSubalgebra K L)
 
-/-- An element of `H` is the combination of a basis of `H` with its coordinates, read in `L`. -/
-private theorem sum_repr_coe {κ : Type*} [Fintype κ] (bH : Module.Basis κ K H) (h : H) :
-    ∑ j, bH.repr h j • (bH j : L) = h := by
-  have h1 := congrArg (H.incl : H →ₗ[K] L) (bH.sum_repr h)
-  simp only [map_sum, map_smul, LieHom.coe_toLinearMap, LieSubalgebra.coe_incl] at h1
-  exact h1
-
 variable [CharZero K] [LieAlgebra ℚ L] [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
   [H.IsCartanSubalgebra] [IsTriangularizable K H L]
 
@@ -279,8 +222,8 @@ polynomials in one variable for each root and one for each basis vector of `H`, 
 properties: its values, read in the coordinates of `b`, are all of the form `g h` with `g` in
 `Int(L)` and `h ∈ H`, and its Jacobian matrix is surjective at some point. The polynomials are the
 coordinates of `(t, h) ↦ ∏_α exp(t_α ad e_α) h` for chosen root vectors `e_α`. -/
-theorem exists_rootExponentialPolynomialParametrization {ι κ : Type*} [Finite ι] [Fintype κ]
-    (b : Module.Basis ι K L) (bH : Module.Basis κ K H) :
+theorem _root_.LieSubalgebra.exists_rootExponentialPolynomialParametrization {ι κ : Type*}
+    [Finite ι] [Fintype κ] (b : Module.Basis ι K L) (bH : Module.Basis κ K H) :
     ∃ p : ι → MvPolynomial (H.root ⊕ κ) K,
       (∃ v, (jacobiMatrixAt p v).mulVec.Surjective) ∧
       ∀ x, ∃ g ∈ intLieAlgebra K L, ∃ h ∈ H, b.equivFun (g • h) = fun i ↦ eval x (p i) := by
@@ -309,8 +252,9 @@ theorem exists_rootExponentialPolynomialParametrization {ι κ : Type*} [Finite 
         exact hα0 α ((Weight.coe_eq_zero_iff _).mp (funext fun x ↦ by simpa using h x))
     set s := bH.equivFun h₀
     have hs : ∑ j, s j • c j = b.equivFun (h₀ : L) := by
-      rw [← sum_repr_coe H bH h₀]
-      simp [s, c, map_sum]
+      conv_rhs => rw [← bH.sum_repr h₀]
+      rw [AddSubmonoidClass.coe_finsetSum, map_sum]
+      simp [s, c]
     refine ⟨Sum.elim 0 s, fun y ↦ ?_⟩
     -- The differential is `b.equivFun ∘ Λ` for the linear combination `Λ` of the vectors `v`.
     set v : H.root ⊕ κ → L :=
@@ -335,11 +279,11 @@ theorem exists_rootExponentialPolynomialParametrization {ι κ : Type*} [Finite 
       intro χ z hz
       rw [LieSubmodule.mem_toSubmodule] at hz
       by_cases hχ : χ.IsZero
-      · have hzH : z ∈ H := by
-          rwa [show genWeightSpace L χ = rootSpace H 0 from by
-            rw [← (Weight.coe_eq_zero_iff χ).mpr hχ], rootSpace_zero_eq K L H,
-            LieSubalgebra.mem_toLieSubmodule] at hz
-        rw [← show ((⟨z, hzH⟩ : H) : L) = z from rfl, ← sum_repr_coe H bH ⟨z, hzH⟩]
+      · -- `rootSpace H χ` is by definition the weight space `genWeightSpace L χ`.
+        have hzH : z ∈ rootSpace H 0 := by rwa [← (Weight.coe_eq_zero_iff χ).mpr hχ]
+        rw [rootSpace_zero_eq K L H, LieSubalgebra.mem_toLieSubmodule] at hzH
+        lift z to H using hzH
+        rw [← bH.sum_repr z, AddSubmonoidClass.coe_finsetSum]
         exact Submodule.sum_mem _ fun j _ ↦
           Submodule.smul_mem _ _ (Submodule.subset_span ⟨Sum.inr j, rfl⟩)
       · set α : H.root := ⟨χ, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hχ⟩⟩
@@ -350,8 +294,9 @@ theorem exists_rootExponentialPolynomialParametrization {ι κ : Type*} [Finite 
           rw [← lie_skew, ← LieSubalgebra.coe_bracket_of_module,
             lie_eq_smul_of_mem_rootSpace (he α) h₀, neg_smul]
         have hχh₀ : χ h₀ ≠ 0 := by simpa using hh₀ α
-        rw [hz', show e α = (-(χ h₀))⁻¹ • ⁅e α, (h₀ : L)⁆ by
-          rw [hbr, smul_smul, inv_mul_cancel₀ (neg_ne_zero.mpr hχh₀), one_smul]]
+        have he' : e α = (-(χ h₀))⁻¹ • ⁅e α, (h₀ : L)⁆ := by
+          rw [hbr, smul_smul, inv_mul_cancel₀ (neg_ne_zero.mpr hχh₀), one_smul]
+        rw [hz', he']
         exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
           (Submodule.subset_span ⟨Sum.inl α, rfl⟩))
     obtain ⟨w, hw⟩ : b.equivFun.symm y ∈ LinearMap.range (Fintype.linearCombination K v) := by
@@ -365,7 +310,7 @@ theorem exists_rootExponentialPolynomialParametrization {ι κ : Type*} [Finite 
     · obtain ⟨α, -, rfl⟩ := List.mem_map.mp hg
       exact ofLinearEquiv_expAd_mem_intLieAlgebra _ _
     · ext i
-      rw [eval_expProdPoly, equivFun_list_prod_smul]
+      rw [eval_expProdPoly, b.equivFun_list_prod_smul]
       congr 2
       · refine List.map_congr_left fun α _ ↦ ?_
         exact toMatrixAlgEquiv_expAd b (hd α) _ _
@@ -374,11 +319,11 @@ theorem exists_rootExponentialPolynomialParametrization {ι κ : Type*} [Finite 
 /-- **A polynomial vanishing on the conjugates of a Cartan subalgebra is zero.** In the coordinates
 of a basis `b` of `L`, a polynomial that vanishes at `g h` for every inner automorphism
 `g ∈ Int(L)` and every `h` in the splitting Cartan subalgebra `H` is the zero polynomial. -/
-theorem polynomial_eq_zero_of_intCartan {ι : Type*} [Finite ι]
+theorem _root_.LieSubalgebra.polynomial_eq_zero_of_intCartan {ι : Type*} [Finite ι]
     (b : Module.Basis ι K L) {q : MvPolynomial ι K}
     (hq : ∀ g ∈ intLieAlgebra K L, ∀ h ∈ H, eval (b.equivFun (g • h)) q = 0) : q = 0 := by
   obtain ⟨p, ⟨v, hv⟩, hp⟩ :=
-    exists_rootExponentialPolynomialParametrization H b (Module.finBasis K H)
+    H.exists_rootExponentialPolynomialParametrization b (Module.finBasis K H)
   refine eq_zero_of_forall_eval_eq_zero_of_mulVec_surjective_jacobiMatrixAt hv fun x ↦ ?_
   obtain ⟨g, hg, h, hh, hgh⟩ := hp x
   rw [← hgh]
@@ -387,10 +332,10 @@ theorem polynomial_eq_zero_of_intCartan {ι : Type*} [Finite ι]
 /-- **Chevalley injectivity on polynomials.** In the coordinates of a basis `b` of `L`, a
 polynomial invariant under the inner automorphisms `Int(L)` that vanishes on the splitting Cartan
 subalgebra `H` is the zero polynomial. -/
-theorem polynomial_eq_zero_of_invariant_of_cartan {ι : Type*} [Finite ι]
+theorem _root_.LieSubalgebra.polynomial_eq_zero_of_invariant_of_cartan {ι : Type*} [Finite ι]
     (b : Module.Basis ι K L) {q : MvPolynomial ι K}
     (hinv : ∀ g ∈ intLieAlgebra K L, ∀ x : L, eval (b.equivFun (g • x)) q = eval (b.equivFun x) q)
     (hH : ∀ h ∈ H, eval (b.equivFun h) q = 0) : q = 0 :=
-  polynomial_eq_zero_of_intCartan H b fun g hg h hh ↦ (hinv g hg h).trans (hH h hh)
+  H.polynomial_eq_zero_of_intCartan b fun g hg h hh ↦ (hinv g hg h).trans (hH h hh)
 
 end TauCeti
