@@ -20,6 +20,9 @@ increasing order are the concatenation, over the values `y` of `f` on `s` in inc
 the sorted fibres `{x ∈ s | f x = y}`. Consequently the ordered product of a word along `s` is the
 ordered product, over the values of `f` on `s`, of the ordered products along the fibres.
 
+In a linear order, the head of the sorted list of `s` is the least element of `s`, and there is no
+head when `s` is empty.
+
 Consecutive entries of the sorted list of `s` are the pairs of positions of `s` with no position of
 `s` strictly between them, so a chain condition on the sorted list is a condition on such adjacent
 pairs.
@@ -45,6 +48,14 @@ theorem sort_erase (s : Finset α) (a : α) : sort (s.erase a) r = (sort s r).er
 section LinearOrder
 
 variable {α β : Type*} [LinearOrder α] [LinearOrder β] {s : Finset α} {f : α → β}
+
+/-- The head of the sorted list of `s` is the least element of `s`, or `none` when `s` is
+empty. -/
+theorem head?_sort (s : Finset α) :
+    s.sort.head? = if h : s.Nonempty then some (s.min' h) else none := by
+  split_ifs with h
+  · rw [min'_eq_sorted_zero, List.head?_eq_getElem?, List.getElem?_eq_getElem]
+  · simp [not_nonempty_iff_eq_empty.1 h]
 
 /-- Collapsing `j` onto its predecessor `i` in `s` is monotone on `s`, identifies only
 `i` and `j`, and strictly decreases the cardinality of the image of `s`. -/
