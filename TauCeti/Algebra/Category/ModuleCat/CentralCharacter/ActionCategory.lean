@@ -1,0 +1,257 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.CategoryTheory.Action
+public import TauCeti.Algebra.Category.ModuleCat.CentralCharacter.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Twist
+public import TauCeti.CategoryTheory.Bicategory.Functor.FullSubcategory
+public import TauCeti.CategoryTheory.Monoidal.Action.Pseudofunctor
+
+/-!
+# Strict character fibers over an action groupoid
+
+Let a monoid `G` act on an `R`-algebra `A` by algebra automorphisms, through
+`a : G →* (A ≃ₐ[R] A)`, and on a type `X` of parameters. Suppose every parameter `x` carries a
+character `χ x` of the center of `A`, compatibly with the two actions:
+`χ (g • x) = χ x ∘ (a g)⁻¹` on the center. Twisting a module by `g`, that is, restricting its
+scalars along `(a g)⁻¹`, then carries the strict character fiber of `χ x` to that of `χ (g • x)`.
+An automorphism need not fix any character, so the twists move between different fibers rather
+than acting on a single one, and they assemble into a family of categories over the action
+groupoid `G ⋉ X` (Mathlib's `CategoryTheory.ActionCategory G X`), whose arrows `x ⟶ g • x` are
+labelled by `g`.
+
+* `TauCeti.actionCategoryTwist X a` is the twisting action of `G` on all of `ModuleCat A`,
+  as a pseudofunctor out of `G ⋉ X`. It is the classifying pseudofunctor of the action
+  `MonoidHom.restrictScalarsMonoidalLeftAction` composed with the label functor
+  `ActionCategory.π`, so that an arrow labelled `g` is sent to restriction of scalars along
+  `(a g)⁻¹`. Its unit and composition comparisons are `ModuleCat.restrictScalarsId'App` and
+  `ModuleCat.restrictScalarsComp'App`, whose underlying linear maps are identities.
+* `TauCeti.discreteCentralCharacterFamily X a ha χ hχ` is the family of strict discrete
+  character fibers `x ↦ discreteCentralCharacterModules (χ x)`, with the twist functors as
+  transport and the same unit and composition comparisons. Its transport functors are
+  `R`-linear.
+* `TauCeti.discreteCentralCharacterFamilyι X a ha χ hχ` is the inclusion of the fibers into all
+  modules, a strong transformation to `actionCategoryTwist X a` with identity naturality
+  isomorphisms. It expresses that the inclusions of the fibers are equivariant for the twists
+  moving the characters.
+
+For instance `X` may be a space of parameters `p` of central characters `χ p`, with a group
+acting both on the parameters and, compatibly, on the algebra; arrows of `G ⋉ X` then transport
+the category of modules with character `χ p` to that with character `χ (g • p)`.
+
+## References
+
+* Edward Frenkel, [Langlands Correspondence for Loop Groups](https://math.berkeley.edu/~frenkel/loop.pdf),
+  §1.3, for categories of modules with a fixed central character and their twists by
+  automorphisms.
+-/
+
+@[expose] public section
+
+universe v u
+
+open CategoryTheory Bicategory MonoidalCategory MonoidalLeftAction
+
+namespace TauCeti
+
+variable {G : Type*} [Monoid G] (X : Type*) [MulAction G X]
+  {R : Type*} [CommRing R] {A : Type u} [Ring A] [Algebra R A]
+  (a : G →* (A ≃ₐ[R] A))
+
+/-- The twisting action of `G` on `ModuleCat A`, as a pseudofunctor out of the action groupoid
+`G ⋉ X`: an arrow labelled `g` acts by restricting scalars along `(a g)⁻¹`. It is the
+classifying pseudofunctor of `MonoidHom.restrictScalarsMonoidalLeftAction` composed with the label
+functor `ActionCategory.π G X`. -/
+noncomputable def actionCategoryTwist :
+    LocallyDiscrete (ActionCategory G X) ⥤ᵖ Cat.{v, max u (v + 1)} :=
+  letI := MonoidHom.restrictScalarsMonoidalLeftAction.{v}
+    ((MulSemiringAction.toRingEquiv (A ≃ₐ[R] A) A).comp a)
+  (ActionCategory.π G X).toPseudofunctor.comp
+    (MonoidalLeftAction.pseudofunctor G (ModuleCat.{v} A))
+
+variable {X a}
+
+@[simp]
+lemma actionCategoryTwist_obj (x : LocallyDiscrete (ActionCategory G X)) :
+    (actionCategoryTwist.{v} X a).obj x = Cat.of (ModuleCat.{v} A) :=
+  rfl
+
+/-- The transport functor of `actionCategoryTwist X a` along an arrow labelled `g` is restriction
+of scalars along `(a g)⁻¹`. -/
+lemma actionCategoryTwist_map_toFunctor {x y : LocallyDiscrete (ActionCategory G X)}
+    (f : x ⟶ y) :
+    ((actionCategoryTwist.{v} X a).map f).toFunctor =
+      ModuleCat.restrictScalars (a f.as.hom).symm.toRingHom :=
+  rfl
+
+/-- The unit comparison of `actionCategoryTwist X a` is `ModuleCat.restrictScalarsId'App`. -/
+lemma actionCategoryTwist_mapId_app (x : LocallyDiscrete (ActionCategory G X))
+    (M : ModuleCat.{v} A) :
+    (Cat.Hom.toNatIso ((actionCategoryTwist.{v} X a).mapId x)).app M =
+      ModuleCat.restrictScalarsId'App (a 1).symm.toRingHom
+        (by ext; simp [← AlgEquiv.aut_inv]) M :=
+  Iso.ext rfl
+
+/-- The composition comparison of `actionCategoryTwist X a` at `f ≫ g`, an arrow labelled by the
+product `g.hom * f.hom`, is `ModuleCat.restrictScalarsComp'App` for the factorization
+`(a (g.hom * f.hom))⁻¹ = (a f.hom)⁻¹ ∘ (a g.hom)⁻¹`. -/
+lemma actionCategoryTwist_mapComp_app {x y z : LocallyDiscrete (ActionCategory G X)}
+    (f : x ⟶ y) (g : y ⟶ z) (M : ModuleCat.{v} A) :
+    (Cat.Hom.toNatIso ((actionCategoryTwist.{v} X a).mapComp f g)).app M =
+      ModuleCat.restrictScalarsComp'App (a g.as.hom).symm.toRingHom (a f.as.hom).symm.toRingHom
+        (a (g.as.hom * f.as.hom)).symm.toRingHom
+        (by ext; simp [← AlgEquiv.aut_inv, mul_inv_rev]) M :=
+  letI := MonoidHom.restrictScalarsMonoidalLeftAction.{v}
+    ((MulSemiringAction.toRingEquiv (A ≃ₐ[R] A) A).comp a)
+  -- The composition comparison of the composite pseudofunctor is that of the classifying
+  -- pseudofunctor, preceded by the image of an identity `2`-morphism of `SingleObj G`.
+  Iso.ext <| (Category.id_comp _).trans
+    ((MonoidalLeftAction.pseudofunctor_mapComp_hom_toNatTrans_app _ _ M).trans rfl)
+
+variable [TopologicalSpace A] (ha : ∀ g, Continuous (a g).symm)
+  (χ : X → (Subalgebra.center R A →ₐ[R] R))
+  (hχ : ∀ (g : G) (x : X), χ (g • x) = (χ x).comp (centerCongr (a g)).symm.toAlgHom)
+
+omit [TopologicalSpace A] in
+include hχ in
+/-- Along an arrow `x ⟶ y` of `G ⋉ X` labelled `g`, the character of `y` is that of `x`
+transported by `(a g)⁻¹`. -/
+lemma eq_comp_centerCongr_symm_of_hom {x y : LocallyDiscrete (ActionCategory G X)} (f : x ⟶ y) :
+    χ y.as.back = (χ x.as.back).comp (centerCongr (a f.as.hom)).symm.toAlgHom := by
+  have hf : f.as.hom • x.as.back = y.as.back := f.as.map_val
+  rw [← hf, hχ]
+
+variable (X a)
+
+/-- The strict discrete character fibers `x ↦ discreteCentralCharacterModules (χ x)` over the
+action groupoid `G ⋉ X`, with the twists along `(a g)⁻¹` as transport functors. It is the
+restriction of `actionCategoryTwist X a` to these fibers, so its unit and composition comparisons
+are restrictions of those of `ModuleCat.restrictScalars`. -/
+noncomputable def discreteCentralCharacterFamily :
+    LocallyDiscrete (ActionCategory G X) ⥤ᵖ Cat.{v, max u (v + 1)} :=
+  (actionCategoryTwist.{v} X a).fullSubcategory
+    (fun x ↦ discreteCentralCharacterModules.{v} (χ x.as.back))
+    (fun f M hM ↦ by
+      rw [eq_comp_centerCongr_symm_of_hom χ hχ f]
+      exact discreteCentralCharacterModules_restrictScalars _ _ (ha _) hM)
+
+/-- The inclusion of the strict discrete character fibers into all modules is equivariant: it is
+a strong transformation from `discreteCentralCharacterFamily` to `actionCategoryTwist` whose
+components are the inclusions and whose naturality isomorphisms are identities. -/
+noncomputable def discreteCentralCharacterFamilyι :
+    Pseudofunctor.StrongTrans (discreteCentralCharacterFamily.{v} X a ha χ hχ)
+      (actionCategoryTwist.{v} X a) :=
+  Pseudofunctor.fullSubcategoryι _ _ _
+
+variable {X a ha χ hχ}
+
+@[simp]
+lemma discreteCentralCharacterFamily_obj (x : LocallyDiscrete (ActionCategory G X)) :
+    (discreteCentralCharacterFamily.{v} X a ha χ hχ).obj x =
+      Cat.of (discreteCentralCharacterModules.{v} (χ x.as.back)).FullSubcategory :=
+  rfl
+
+/-- The underlying module of a transported fiber object is the restriction of scalars along the
+inverse of the label. -/
+@[simp]
+lemma discreteCentralCharacterFamily_map_toFunctor_obj_obj
+    {x y : LocallyDiscrete (ActionCategory G X)} (f : x ⟶ y)
+    (M : (discreteCentralCharacterModules.{v} (χ x.as.back)).FullSubcategory) :
+    (((discreteCentralCharacterFamily.{v} X a ha χ hχ).map f).toFunctor.obj M).obj =
+      (ModuleCat.restrictScalars (a f.as.hom).symm.toRingHom).obj M.obj :=
+  rfl
+
+/-- Transport between fibers does not change the underlying maps of modules. -/
+@[simp]
+lemma discreteCentralCharacterFamily_map_toFunctor_map_hom
+    {x y : LocallyDiscrete (ActionCategory G X)} (f : x ⟶ y)
+    {M N : (discreteCentralCharacterModules.{v} (χ x.as.back)).FullSubcategory} (φ : M ⟶ N) :
+    (((discreteCentralCharacterFamily.{v} X a ha χ hχ).map f).toFunctor.map φ).hom =
+      (ModuleCat.restrictScalars (a f.as.hom).symm.toRingHom).map φ.hom :=
+  rfl
+
+/-- Forgetting after transport between fibers is restriction of scalars after forgetting. -/
+lemma discreteCentralCharacterFamily_map_toFunctor_comp_ι
+    {x y : LocallyDiscrete (ActionCategory G X)} (f : x ⟶ y) :
+    ((discreteCentralCharacterFamily.{v} X a ha χ hχ).map f).toFunctor ⋙
+        (discreteCentralCharacterModules (χ y.as.back)).ι =
+      (discreteCentralCharacterModules (χ x.as.back)).ι ⋙
+        ModuleCat.restrictScalars (a f.as.hom).symm.toRingHom :=
+  rfl
+
+/-- The transport functor of the fiber family along an arrow labelled `g` is the twist functor
+`discreteCentralCharacterTwist` along `a g`, followed by the identification of the transported
+character with the character of the target. -/
+lemma discreteCentralCharacterFamily_map_toFunctor_eq
+    {x y : LocallyDiscrete (ActionCategory G X)} (f : x ⟶ y) :
+    (((discreteCentralCharacterFamily.{v} X a ha χ hχ).map f).toFunctor :
+        (discreteCentralCharacterModules.{v} (χ x.as.back)).FullSubcategory ⥤
+          (discreteCentralCharacterModules.{v} (χ y.as.back)).FullSubcategory) =
+      discreteCentralCharacterTwist (χ x.as.back) (a f.as.hom) (ha _) ⋙
+        ObjectProperty.ιOfLE (eq_comp_centerCongr_symm_of_hom χ hχ f ▸ le_rfl) :=
+  rfl
+
+/-- The unit comparison of the fiber family is the restriction of
+`ModuleCat.restrictScalarsId'App`. -/
+lemma discreteCentralCharacterFamily_mapId_app (x : LocallyDiscrete (ActionCategory G X))
+    (M : (discreteCentralCharacterModules.{v} (χ x.as.back)).FullSubcategory) :
+    (discreteCentralCharacterModules (χ x.as.back)).ι.mapIso
+        ((Cat.Hom.toNatIso ((discreteCentralCharacterFamily.{v} X a ha χ hχ).mapId x)).app M) =
+      ModuleCat.restrictScalarsId'App (a 1).symm.toRingHom
+        (by ext; simp [← AlgEquiv.aut_inv]) M.obj :=
+  Iso.ext rfl
+
+/-- The composition comparison of the fiber family at `f ≫ g` is the restriction of
+`ModuleCat.restrictScalarsComp'App` for `(a (g.hom * f.hom))⁻¹ = (a f.hom)⁻¹ ∘ (a g.hom)⁻¹`. -/
+lemma discreteCentralCharacterFamily_mapComp_app {x y z : LocallyDiscrete (ActionCategory G X)}
+    (f : x ⟶ y) (g : y ⟶ z)
+    (M : (discreteCentralCharacterModules.{v} (χ x.as.back)).FullSubcategory) :
+    (discreteCentralCharacterModules (χ z.as.back)).ι.mapIso
+        ((Cat.Hom.toNatIso ((discreteCentralCharacterFamily.{v} X a ha χ hχ).mapComp f g)).app
+          M) =
+      ModuleCat.restrictScalarsComp'App (a g.as.hom).symm.toRingHom (a f.as.hom).symm.toRingHom
+        (a (g.as.hom * f.as.hom)).symm.toRingHom
+        (by ext; simp [← AlgEquiv.aut_inv, mul_inv_rev]) M.obj :=
+  Iso.ext (congrArg Iso.hom (actionCategoryTwist_mapComp_app f g M.obj))
+
+@[simp]
+lemma discreteCentralCharacterFamilyι_app_toFunctor (x : LocallyDiscrete (ActionCategory G X)) :
+    ((discreteCentralCharacterFamilyι.{v} X a ha χ hχ).app x).toFunctor =
+      (discreteCentralCharacterModules (χ x.as.back)).ι :=
+  rfl
+
+/-- The transport functors between strict character fibers are additive. The categories of the
+fibers are given explicitly: the values of `discreteCentralCharacterFamily` are only
+definitionally the full subcategories, so instance search does not find their structure. -/
+lemma additive_discreteCentralCharacterFamily_map
+    {x y : LocallyDiscrete (ActionCategory G X)} (f : x ⟶ y) :
+    @Functor.Additive (discreteCentralCharacterModules.{v} (χ x.as.back)).FullSubcategory
+      (discreteCentralCharacterModules.{v} (χ y.as.back)).FullSubcategory
+      (ObjectProperty.FullSubcategory.category _) (ObjectProperty.FullSubcategory.category _)
+      (Preadditive.fullSubcategory _) (Preadditive.fullSubcategory _)
+      ((discreteCentralCharacterFamily.{v} X a ha χ hχ).map f).toFunctor where
+  map_add {_ _ φ ψ} := by
+    ext1
+    exact (ModuleCat.restrictScalars (a f.as.hom).symm.toRingHom).map_add (f := φ.hom) (g := ψ.hom)
+
+open ModuleCat.Algebra in
+/-- The transport functors between strict character fibers are `R`-linear. As for
+`additive_discreteCentralCharacterFamily_map`, the categories of the fibers are given
+explicitly. -/
+lemma linear_discreteCentralCharacterFamily_map {x y : LocallyDiscrete (ActionCategory G X)}
+    (f : x ⟶ y) :
+    @Functor.Linear R _ (discreteCentralCharacterModules.{v} (χ x.as.back)).FullSubcategory
+      (discreteCentralCharacterModules.{v} (χ y.as.back)).FullSubcategory
+      (ObjectProperty.FullSubcategory.category _) (ObjectProperty.FullSubcategory.category _)
+      (Preadditive.fullSubcategory _) (Preadditive.fullSubcategory _)
+      (Linear.fullSubcategory _) (Linear.fullSubcategory _)
+      ((discreteCentralCharacterFamily.{v} X a ha χ hχ).map f).toFunctor where
+  map_smul φ r := by
+    ext1
+    exact (ModuleCat.restrictScalars (a f.as.hom).symm.toAlgHom.toRingHom).map_smul r φ.hom
+
+end TauCeti
