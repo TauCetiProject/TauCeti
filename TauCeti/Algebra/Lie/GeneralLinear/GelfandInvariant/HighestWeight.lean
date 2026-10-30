@@ -104,7 +104,7 @@ section RingHom
 variable {L F : Type*} [CommRing L] [FunLike F K L] [RingHomClass F K L]
 
 /-- The diagonal scalars commute with ring homomorphisms. -/
-theorem map_gelfandEigenvalueEntry (f : F) (μ : n → K) (r : ℕ) (i : n) :
+@[simp] theorem map_gelfandEigenvalueEntry (f : F) (μ : n → K) (r : ℕ) (i : n) :
     f (gelfandEigenvalueEntry μ r i) = gelfandEigenvalueEntry (f ∘ μ) r i := by
   induction r generalizing i with
   | zero => simp
@@ -113,7 +113,7 @@ theorem map_gelfandEigenvalueEntry (f : F) (μ : n → K) (r : ℕ) (i : n) :
       map_zero, ih, Function.comp_apply]
 
 /-- The highest-weight eigenvalues of the Gelfand invariants commute with ring homomorphisms. -/
-theorem map_gelfandEigenvalue (f : F) (μ : n → K) (r : ℕ) :
+@[simp] theorem map_gelfandEigenvalue (f : F) (μ : n → K) (r : ℕ) :
     f (gelfandEigenvalue μ r) = gelfandEigenvalue (f ∘ μ) r := by
   simp only [gelfandEigenvalue_def, map_sum, map_gelfandEigenvalueEntry]
 
