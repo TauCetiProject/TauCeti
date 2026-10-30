@@ -7,16 +7,20 @@ module
 
 public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Artanh
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
+import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
-# The addition formula and the monotonicity of the hyperbolic tangent, and `sinh (r / 2)`
+# The addition formula and the monotonicity of the hyperbolic tangent, and bounds on `sinh`
 
 Mathlib's `Analysis/Complex/Trigonometric.lean` defines `Real.sinh`, `Real.cosh` and `Real.tanh`
 and proves the two addition formulae `Real.sinh_add` and `Real.cosh_add`, but records none for
 `Real.tanh`; `Analysis/SpecialFunctions/Artanh.lean` inverts `Real.tanh` on `(-1, 1)` and proves
 that the inverse is strictly monotone, but does not state the monotonicity of `Real.tanh`
 itself, nor its continuity. This file supplies these, together with the square of
-`Real.sinh (r / 2)` in terms of the exponentials `exp (± r / 2)`.
+`Real.sinh (r / 2)` in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
+`sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of Mathlib's
+`Real.cosh_le_exp_half_sq`.
 
 ## Main declarations
 
@@ -27,6 +31,10 @@ itself, nor its continuity. This file supplies these, together with the square o
 * `Real.tanh_nonneg` and `Real.continuous_tanh` — `Real.tanh` is nonnegative on `[0, ∞)` and
   continuous.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
+* `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
+  exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
+  distribution on `[0, 1]`, which is what makes the volume of a simplex cut from a cube
+  exponentially small below its centre.
 
 The formula `Real.tanh_add` is the quotient of the other two, both sides carrying the factor
 `cosh a * cosh b`, which is nonzero because `Real.cosh` is positive.
@@ -104,5 +112,23 @@ theorem _root_.Real.four_mul_sinh_half_sq (r : ℝ) :
     4 * Real.sinh (r / 2) ^ 2 = (Real.exp (r / 2) - Real.exp (-(r / 2))) ^ 2 := by
   rw [Real.sinh_eq]
   ring
+
+/-- `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. The two sides are the power series
+`∑ x ^ (2 k + 1) / (2 k + 1)!` and `∑ x ^ (2 k + 1) / (6 ^ k * k !)`, compared termwise by
+`Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`. The constant `6` is sharp: the cubic
+terms agree. -/
+theorem _root_.Real.sinh_le_mul_exp_sq_div_six {x : ℝ} (hx : 0 ≤ x) :
+    Real.sinh x ≤ x * Real.exp (x ^ 2 / 6) := by
+  rw [Real.sinh_eq_tsum, Real.exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum ℝ, ← tsum_mul_left]
+  refine x.hasSum_sinh.summable.tsum_le_tsum (fun k ↦ ?_)
+    ((NormedSpace.expSeries_summable' (x ^ 2 / 6)).mul_left x)
+  have h : x * ((k.factorial : ℝ)⁻¹ • (x ^ 2 / 6) ^ k) =
+      x ^ (2 * k + 1) / ((6 ^ k * k.factorial : ℕ) : ℝ) := by
+    push_cast
+    rw [smul_eq_mul, div_pow, ← pow_mul, pow_succ]
+    field_simp
+  rw [h]
+  gcongr
+  exact Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one k
 
 end TauCeti
