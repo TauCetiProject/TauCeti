@@ -33,7 +33,7 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
   with `φ = α / 2`, `η = (ξ, ζ)`, `∇ = d + a` and the complex defect `E = ∂bar_a α`, it reads
-  `L_x L_x* (ξ, ζ) = (-Δ ξ + |φ|² ξ + i ζ̄ E, -Δ_a ζ + (*iF_a + |φ|²) ζ + i E ξ̄)`.
+  `L_x L_x* (ξ, ζ) = (-Δ ξ + |φ|² ξ + i (conj ζ) E, -Δ_a ζ + (*iF_a + |φ|²) ζ + i E (conj ξ))`.
 * `gaugeFixedOperator_gaugeFixedAdjoint_of_equation_eq_zero`: at a point where the vortex
   equation holds, `L_x L_x* = (-Δ + |φ|²) ⊕ (-Δ_a + 1 / 8 + |φ|² / 2)`. Both summands are
   nonnegative Schrödinger operators, which is how the cokernel of `L_x` is shown to vanish at a
