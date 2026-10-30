@@ -62,7 +62,7 @@ The main result is that the action of a monotone map preserves the defining equa
   composite of two of its edges and the third. Conversely, `TauCeti.DGNerve.Simplex.mk₂` has the
   prescribed faces (`TauCeti.DGNerve.Simplex.mk₂_map_δ_two`,
   `TauCeti.DGNerve.Simplex.mk₂_map_δ_zero` and `TauCeti.DGNerve.Simplex.mk₂_map_δ_one`) and the
-  prescribed homotopy as its coherence (`TauCeti.DGNerve.Simplex.mk₂_coh_zero_two`).
+  prescribed homotopy as its coherence (`TauCeti.DGNerve.Simplex.mk₂_coh_zero_two_singleton_heq`).
 * `TauCeti.DGNerve.Simplex.coh_eq_dgComp_of_coh_eq_zero`: if the homotopy carried by a `2`-face of
   a simplex vanishes, its long edge is the composite of its two short edges.
 
@@ -1029,8 +1029,8 @@ theorem mk₂_obj {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles 
 
 /-- The coherence of `TauCeti.DGNerve.Simplex.mk₂` through the vertex `1` is the homotopy `η`. -/
 @[simp]
-theorem mk₂_coh_zero_two {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
-    (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
+theorem mk₂_coh_zero_two_singleton_heq {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁)
+    (g : dgCycles R X₁ X₂) (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
     (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
     (mk₂ f g h η hη).coh 0 2 {1} (-1) (by decide) (by decide) (by simp) ≍ η :=
   heq_of_eq (mk₂Coh_zero_two_singleton f.1 g.1 h.1 η (hij := by decide) (hS := by decide)
