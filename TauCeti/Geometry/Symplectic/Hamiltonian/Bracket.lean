@@ -15,8 +15,8 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 # Lie brackets of Hamiltonian vector fields
 
 Let `σ` be a closed two-form on a manifold `M`, with the convention `ι_X σ = df` for a Hamiltonian
-vector field `X` of `f`. If `X` and `Y` are Hamiltonian vector fields of `C²` functions `f` and
-`g`, then
+vector field `X` of `f`. If `X` and `Y` are differentiable Hamiltonian vector fields of `C²`
+functions `f` and `g`, then
 
 `d(σ(X, Y)) = -ι_{[X, Y]} σ`,
 
@@ -124,12 +124,6 @@ namespace IsNondegenerate
 variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
 include h
 
-/-- The Hamiltonian vector field of a `C²` function is differentiable. -/
-private theorem mdifferentiable_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
-    MDifferentiable I I.tangent (fun y ↦ (σ.hamiltonianVectorField f y : TangentBundle I M)) :=
-  (h.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by norm_num [hf])).mdifferentiable
-    one_ne_zero
-
 /-- For a nondegenerate closed form on a finite-dimensional manifold, the Hamiltonian vector field
 of the Poisson bracket of two `C²` functions is `X_{{f, g}} = -[X_f, X_g]`. -/
 theorem hamiltonianVectorField_poissonBracket (hσ : σ.IsClosed) (hf : ContMDiff I 𝓘(ℝ) 2 f)
@@ -143,8 +137,7 @@ theorem hamiltonianVectorField_poissonBracket (hσ : σ.IsClosed) (hf : ContMDif
   rw [hfg, (h.isHamiltonianVectorField_hamiltonianVectorField f).mvfderiv_eval₂ hσ
     (h.isHamiltonianVectorField_hamiltonianVectorField g) (hf x) (hg x)
     (h.mdifferentiable_hamiltonianVectorField hf x) (h.mdifferentiable_hamiltonianVectorField hg x),
-    Pi.neg_apply, ← SmoothForm.bilinFormAt_apply, ← SmoothForm.bilinFormAt_apply, map_neg,
-    LinearMap.neg_apply]
+    Pi.neg_apply, SmoothForm.eval₂_neg_left]
 
 /-- For a nondegenerate closed form on a finite-dimensional manifold, the Poisson bracket of `C²`
 functions satisfies `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}`. -/

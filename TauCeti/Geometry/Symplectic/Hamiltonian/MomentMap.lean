@@ -330,8 +330,7 @@ theorem mvfderiv_eval₂ (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed) (Z Z' : �
       ((h.contMDiff Z).of_le h2 x) ((h.contMDiff Z').of_le h2 x)
       ((a.contMDiff Z x).mdifferentiableAt (by simp))
       ((a.contMDiff Z' x).mdifferentiableAt (by simp)),
-    ← h.eval₂_apply, a.map_lie, ← SmoothForm.bilinFormAt_apply, ← SmoothForm.bilinFormAt_apply,
-    Pi.neg_apply, map_neg, LinearMap.neg_apply]
+    ← h.eval₂_apply, a.map_lie, Pi.neg_apply, SmoothForm.eval₂_neg_left]
 
 /-- **The cocycle of a moment map is constant** on a preconnected manifold, for a closed form. -/
 theorem momentCocycle_eq [PreconnectedSpace M] (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed)
@@ -353,9 +352,6 @@ private theorem eval₂_sub_lie_add (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed
     (SmoothForm.eval₂ σ x (a ⁅X, Y⁆ x) (a Z x) - μ x ⁅⁅X, Y⁆, Z⁆) +
       (SmoothForm.eval₂ σ x (a ⁅Y, Z⁆ x) (a X x) - μ x ⁅⁅Y, Z⁆, X⁆) +
       (SmoothForm.eval₂ σ x (a ⁅Z, X⁆ x) (a Y x) - μ x ⁅⁅Z, X⁆, Y⁆) = 0 := by
-  have hn (v w : TangentSpace I x) : SmoothForm.eval₂ σ x (-v) w = -SmoothForm.eval₂ σ x v w := by
-    rw [← SmoothForm.bilinFormAt_apply, ← SmoothForm.bilinFormAt_apply, map_neg,
-      LinearMap.neg_apply]
   have hb (A B : 𝔤) : VectorField.mlieBracket I (a A) (a B) x = -a ⁅A, B⁆ x := by
     rw [a.map_lie, Pi.neg_apply, neg_neg]
   -- Evaluate `dσ(X_M, Y_M, Z_M) = 0` by the invariant formula; every term is a pairing
@@ -365,8 +361,9 @@ private theorem eval₂_sub_lie_add (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed
     ((a.contMDiff Z x).mdifferentiableAt (by simp))
   simp only [← SmoothForm.eval₂_apply] at hd
   rw [(SmoothForm.isClosed_def σ).1 hσ, h.mvfderiv_eval₂ hσ, h.mvfderiv_eval₂ hσ,
-    h.mvfderiv_eval₂ hσ, ← h.eval₂_apply, ← h.eval₂_apply, ← h.eval₂_apply, hb, hb, hb, hn, hn, hn,
-    ← lie_skew X Z, map_neg, Pi.neg_apply, hn] at hd
+    h.mvfderiv_eval₂ hσ, ← h.eval₂_apply, ← h.eval₂_apply, ← h.eval₂_apply, hb, hb, hb,
+    SmoothForm.eval₂_neg_left, SmoothForm.eval₂_neg_left, SmoothForm.eval₂_neg_left, ← lie_skew X Z,
+    map_neg, Pi.neg_apply, SmoothForm.eval₂_neg_left] at hd
   simp only [Pi.zero_apply, ContinuousAlternatingMap.coe_zero] at hd
   have hj : μ x ⁅X, ⁅Y, Z⁆⁆ + μ x ⁅Y, ⁅Z, X⁆⁆ + μ x ⁅Z, ⁅X, Y⁆⁆ = 0 := by
     rw [← map_add, ← map_add, lie_jacobi, map_zero]
@@ -381,15 +378,13 @@ theorem momentCocycle_mem_twoCocycle (h : σ.IsMomentMap a μ) (hσ : σ.IsClose
   intro X Y Z
   apply (TrivialLieModule.equiv ℝ 𝔤 ℝ).injective
   simp only [map_add, momentCocycle_apply, LinearEquiv.apply_symm_apply]
-  have hn (v w : TangentSpace I x) : SmoothForm.eval₂ σ x (-v) w = -SmoothForm.eval₂ σ x v w := by
-    rw [← SmoothForm.bilinFormAt_apply, ← SmoothForm.bilinFormAt_apply, map_neg,
-      LinearMap.neg_apply]
   have e₁ : μ x ⁅X, ⁅Y, Z⁆⁆ = -μ x ⁅⁅Y, Z⁆, X⁆ := by rw [← lie_skew ⁅Y, Z⁆ X, map_neg, neg_neg]
   have e₂ : μ x ⁅Y, ⁅X, Z⁆⁆ = μ x ⁅⁅Z, X⁆, Y⁆ := by
     rw [← lie_skew ⁅Z, X⁆ Y, ← lie_skew Z X, lie_neg, neg_neg]
   have e₃ : SmoothForm.eval₂ σ x (a Y x) (a ⁅X, Z⁆ x) =
       SmoothForm.eval₂ σ x (a ⁅Z, X⁆ x) (a Y x) := by
-    rw [SmoothForm.eval₂_swap σ x (a Y x), ← lie_skew Z X, map_neg, Pi.neg_apply, hn]
+    rw [SmoothForm.eval₂_swap σ x (a Y x), ← lie_skew Z X, map_neg, Pi.neg_apply,
+      SmoothForm.eval₂_neg_left]
   rw [e₁, e₂, e₃, SmoothForm.eval₂_swap σ x (a X x)]
   linear_combination -h.eval₂_sub_lie_add hσ X Y Z x
 

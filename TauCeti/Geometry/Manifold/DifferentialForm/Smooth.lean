@@ -589,6 +589,12 @@ theorem eval₂_neg (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
     (-φ).eval₂ x v w = -φ.eval₂ x v w :=
   (rfl)
 
+/-- Negating the first tangent vector negates the evaluation of a degree-two form. -/
+theorem eval₂_neg_left (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
+    φ.eval₂ x (-v) w = -φ.eval₂ x v w := by
+  simpa only [eval₂, Matrix.vecCons, Fin.update_cons_zero,
+    ContinuousAlternatingMap.coe_toAlternatingMap] using
+    (φ.1 x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 2) v
 
 section Evaluation
 
