@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.OuterMeasure.Basic
-import Mathlib.MeasureTheory.OuterMeasure.Operations
 
 /-!
 # Locally null images
@@ -26,23 +25,22 @@ open scoped Topology
 
 namespace TauCeti
 
-variable {E F G : Type*} [TopologicalSpace E] [SecondCountableTopology E]
+variable {E F G : Type*} [TopologicalSpace E] [HereditarilyLindelofSpace E]
   [FunLike G (Set F) ENNReal] [OuterMeasureClass G F] {ν : G} {f : E → F} {s : Set E}
 
 /-- If every point of `s` has a neighbourhood within `s` whose image under `f` is null, then the
-image of `s` is null. A countable subcover, available because the source is second countable,
-reduces the global statement to the local ones; this is the image version of
-`MeasureTheory.measure_null_of_locally_null`. -/
+image of `s` is null. A countable subcover, available because the source is hereditarily
+Lindelöf (for instance second countable), reduces the global statement to the local ones; this
+is the image version of `MeasureTheory.measure_null_of_locally_null`. -/
 theorem measure_image_null_of_locally_null (h : ∀ x ∈ s, ∃ u ∈ 𝓝[s] x, ν (f '' u) = 0) :
     ν (f '' s) = 0 := by
-  let ν' : OuterMeasure F :=
-    { measureOf := ν
-      empty := measure_empty
-      mono := fun hst ↦ measure_mono hst
-      iUnion_nat := fun t ht ↦ OuterMeasureClass.measure_iUnion_nat_le ν t ht }
-  change ν' (f '' s) = 0
-  simpa only [OuterMeasure.comap_apply] using
-    measure_null_of_locally_null (μ := OuterMeasure.comap f ν') s h
+  choose! u hu hu₀ using h
+  choose! v hv hvu using fun x hx ↦ mem_nhdsWithin_iff_exists_mem_nhds_inter.1 (hu x hx)
+  obtain ⟨t, htc, hts, hst⟩ := (HereditarilyLindelofSpace.isLindelof s).elim_nhds_subcover v hv
+  refine measure_mono_null ?_ ((measure_biUnion_null_iff htc).2 fun x hx ↦ hu₀ x (hts x hx))
+  rintro _ ⟨y, hy, rfl⟩
+  obtain ⟨x, hx, hyx⟩ := mem_iUnion₂.1 (hst hy)
+  exact mem_iUnion₂.2 ⟨x, hx, mem_image_of_mem f (hvu x (hts x hx) ⟨hyx, hy⟩)⟩
 
 end TauCeti
 
