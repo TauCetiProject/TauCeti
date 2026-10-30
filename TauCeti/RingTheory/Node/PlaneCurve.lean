@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Extension.Presentation.Basic
 public import TauCeti.RingTheory.LocalRing.Coordinates
 public import TauCeti.RingTheory.Node.Cotangent
 public import TauCeti.RingTheory.Node.Hessian
+import TauCeti.RingTheory.Smooth.Jacobian
 import Mathlib.RingTheory.Etale.Kaehler
 import Mathlib.RingTheory.Kaehler.Polynomial
 import Mathlib.RingTheory.Localization.Algebra
@@ -18,29 +19,38 @@ import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 # The local ring at a node is a plane curve singularity
 
 Let `K` be a field and let `A = Q ⧸ (g₁, …, g_c)` be a quotient of a local `K`-algebra `Q`,
-essentially of finite type, whose differentials `Ω[Q⁄K]` are free of rank `c + 1`: for instance
-the local ring at a point of a curve cut out by `c` equations in affine `(c + 1)`-space. Suppose
-that the singular locus of `A`, cut out by the first Fitting ideal of `Ω[A⁄K]`, is unramified over
-`K` and contains the closed point, as at a node of a nodal curve over `K`. This file shows that
-`A` is then a plane curve singularity whose quadratic part is nondegenerate: `A ≅ P ⧸ (f)`, where
-`P` is a local `K`-algebra with coordinates `y₁, y₂` (they generate `𝔪_P`, and `dy₁, dy₂` is a
-basis of `Ω[P⁄K]`), `f ∈ 𝔪_P²`, and the Hessian determinant of `f` with respect to `y₁, y₂` is a
+essentially of finite type and formally smooth over `K`, whose differentials `Ω[Q⁄K]` are free of
+rank `c + 1`: for instance the local ring at a point of a curve cut out by `c` equations in affine
+`(c + 1)`-space. Suppose that the singular locus of `A`, cut out by the first Fitting ideal of
+`Ω[A⁄K]`, is unramified over `K` and contains the closed point, as at a node of a nodal curve over
+`K`. This file shows that `A` is then a plane curve singularity whose quadratic part is
+nondegenerate: `A ≅ P ⧸ (f)`, where `P` is a formally smooth local `K`-algebra, the local ring of
+a smooth surface, with coordinates `y₁, y₂` (they generate `𝔪_P`, and `dy₁, dy₂` is a basis of
+`Ω[P⁄K]`), `f ∈ 𝔪_P²`, and the Hessian determinant of `f` with respect to `y₁, y₂` is a
 unit. Writing `f = a y₁² + b y₁ y₂ + c y₂²`, the last condition says that `b² - 4ac` is a unit
 (`TauCeti.isUnit_det_hessian_iff_isUnit_discrim`), so that the quadratic part of `f` cuts out two
 distinct tangent lines, possibly conjugate over a separable quadratic extension of the residue
 field. These are the tangent directions of the two branches through the node.
 
+The smoothness of `Q` is essential: freeness of `Ω[Q⁄K]` alone does not make `Q` regular in
+positive characteristic. For instance, in characteristic `p`, the quotient of
+`K[x, y, z]_(x, y, z) ⧸ (z ^ p)` by `z - x ^ p` and `x y` is `K[x, y]_(x, y) ⧸ (x ^ (p ^ 2), x y)`.
+It satisfies the hypotheses on `A` without being a node, since the corresponding `P` is the
+nonreduced ring `K[x, y]_(x, y) ⧸ (x ^ (p ^ 2))`.
+
 The proof assembles three facts: the residue field at a node is separable over `K`, so `Q` has
 coordinates (`TauCeti.exists_coordinates`); the cotangent space at a node is a plane
-(`TauCeti.finrank_cotangentSpace_eq_two`), so `A` is a hypersurface in a local ring with two
-coordinates (`TauCeti.exists_hypersurface_presentation`); and the nodal criterion forces the
-Hessian of that hypersurface to be nondegenerate
+(`TauCeti.finrank_cotangentSpace_eq_two`), so `A` is a hypersurface in a local ring `P` with two
+coordinates (`TauCeti.exists_hypersurface_presentation`), which is formally smooth because the
+differentials of the relations cutting it out extend to a basis of `Ω[Q⁄K]`
+(`TauCeti.formallySmooth_quotient_of_basis_kaehlerDifferential`); and the nodal criterion forces
+the Hessian of that hypersurface to be nondegenerate
 (`TauCeti.mem_maximalIdeal_sq_and_isUnit_det_hessian_of_formallyUnramified`).
 
 A presentation `S = K[x₁, …, x_{c+1}] ⧸ (f₁, …, f_c)`, such as a standard syntomic presentation of
 relative dimension one, localizes at every prime `q` of `S` to such a quotient, with `Q` the
-localization of the polynomial ring. So the theorem applies at every point of the singular locus
-of `S` when that singular locus is unramified over `K`.
+localization of the polynomial ring, which is formally smooth. So the theorem applies at every
+point of the singular locus of `S` when that singular locus is unramified over `K`.
 
 ## Main results
 
@@ -67,23 +77,26 @@ open IsLocalRing KaehlerDifferential Module
 namespace TauCeti
 
 variable {K Q A ι σ : Type*} [Field K] [CommRing Q] [Algebra K Q] [IsLocalRing Q]
-  [Algebra.EssFiniteType K Q] [CommRing A] [Algebra K A] [Algebra.EssFiniteType K A]
-  [Fintype ι] [Fintype σ] [Algebra.FormallyUnramified K (A ⧸ fittingIdeal A Ω[A⁄K] 1)]
+  [Algebra.EssFiniteType K Q] [Algebra.FormallySmooth K Q] [CommRing A] [Algebra K A]
+  [Algebra.EssFiniteType K A] [Fintype ι] [Fintype σ]
+  [Algebra.FormallyUnramified K (A ⧸ fittingIdeal A Ω[A⁄K] 1)]
 
 /-- **The local ring at a node is a plane curve singularity.** Let `Q` be a local `K`-algebra,
-essentially of finite type over a field `K`, whose differentials `Ω[Q⁄K]` have a basis indexed by
-`ι`, and let `π : Q → A` be a surjection whose kernel is generated by `|ι| - 1` relations
-`g : σ → Q`. Suppose that `A ⧸ Fitt₁(Ω[A⁄K])` is unramified over `K` and that `Fitt₁(Ω[A⁄K])` is a
-proper ideal. Then all relations but one, `g s₀`, cut out a local ring `P = Q ⧸ (g s : s ≠ s₀)`
-with coordinates `y : Fin 2 → Q`: the images of the `yⱼ` generate `𝔪_P` and their differentials
-form a basis of `Ω[P⁄K]`. The image `f` of `g s₀` in `P` lies in `𝔪_P²` and has a unit Hessian
-determinant, and `π` induces a `K`-algebra isomorphism `P ⧸ (f) ≃ A`. -/
+essentially of finite type and formally smooth over a field `K`, whose differentials `Ω[Q⁄K]` have
+a basis indexed by `ι`, and let `π : Q → A` be a surjection whose kernel is generated by `|ι| - 1`
+relations `g : σ → Q`. Suppose that `A ⧸ Fitt₁(Ω[A⁄K])` is unramified over `K` and that
+`Fitt₁(Ω[A⁄K])` is a proper ideal. Then all relations but one, `g s₀`, cut out a formally smooth
+local ring `P = Q ⧸ (g s : s ≠ s₀)` with coordinates `y : Fin 2 → Q`: the images of the `yⱼ`
+generate `𝔪_P` and their differentials form a basis of `Ω[P⁄K]`. The image `f` of `g s₀` in `P`
+lies in `𝔪_P²` and has a unit Hessian determinant, and `π` induces a `K`-algebra isomorphism
+`P ⧸ (f) ≃ A`. -/
 theorem exists_hypersurface_presentation_of_formallyUnramified (b : Basis ι Q Ω[Q⁄K])
     (π : Q →ₐ[K] A) (hπ : Function.Surjective π) {g : σ → Q}
     (hg : RingHom.ker π = Ideal.span (Set.range g)) (hσ : Fintype.card σ + 1 = Fintype.card ι)
     (hsing : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
     ∃ (s₀ : σ) (_ : IsLocalRing (Q ⧸ Ideal.span (g '' {s₀}ᶜ))) (y : Fin 2 → Q)
       (b' : Basis (Fin 2) (Q ⧸ Ideal.span (g '' {s₀}ᶜ)) Ω[(Q ⧸ Ideal.span (g '' {s₀}ᶜ))⁄K]),
+      Algebra.FormallySmooth K (Q ⧸ Ideal.span (g '' {s₀}ᶜ)) ∧
       maximalIdeal (Q ⧸ Ideal.span (g '' {s₀}ᶜ)) =
         Ideal.span (Set.range (Ideal.Quotient.mk _ ∘ y)) ∧
       (∀ j, b' j = D K _ (Ideal.Quotient.mk _ (y j))) ∧
@@ -112,7 +125,33 @@ theorem exists_hypersurface_presentation_of_formallyUnramified (b : Basis ι Q �
   have h2 := finrank_cotangentSpace_eq_two hsing
   have := exists_hypersurface_presentation b₀ hx hb₀ (π : Q →+* A) hπ hg (by omega)
   rw [h2] at this
-  obtain ⟨s₀, hloc, y, b', -, hy', hb', hf2, φ, hφ⟩ := this
+  obtain ⟨s₀, hloc, y, b', hQy, hy', hb', hf2, φ, hφ⟩ := this
+  -- The differentials of the relations `g s` with `s ≠ s₀` and of the `yⱼ` form a basis of
+  -- `Ω[Q⁄K]`, so `P` is formally smooth by the Jacobian criterion.
+  have hsmooth : Algebra.FormallySmooth K (Q ⧸ Ideal.span (g '' {s₀}ᶜ)) := by
+    classical
+    set T : Set σ := {s₀}ᶜ
+    set δ : ι → Derivation K Q Q := fun i ↦ (b₀.coord i).compDer (D K Q)
+    have hD (i j : ι) : δ i (x j) = if i = j then 1 else 0 := by
+      simp [δ, ← hb₀, Finsupp.single_apply, eq_comm]
+    set w : T ⊕ Fin 2 → Q := Sum.elim (fun t ↦ g t) y
+    have hw : ∀ k, w k ∈ maximalIdeal Q := by
+      rw [hQy]
+      exact Sum.forall.2 ⟨fun t ↦ Ideal.mem_sup_left (Ideal.subset_span ⟨t, t.2, rfl⟩),
+        fun j ↦ Ideal.mem_sup_right (Ideal.subset_span ⟨j, rfl⟩)⟩
+    have hspan := span_residue_apply_eq_top_of_le_span_sup_sq
+      (fun i ↦ hx ▸ Ideal.subset_span ⟨i, rfl⟩) hD hw (by
+        rw [Set.Sum.elim_range, Ideal.span_union, ← Set.image_eq_range, ← hQy]
+        exact le_sup_left)
+    have hcard : Fintype.card (T ⊕ Fin 2) = Fintype.card ι := by
+      rw [Fintype.card_sum, Fintype.card_fin, Fintype.card_compl_set, Set.card_singleton]
+      have := Fintype.card_pos_iff.2 ⟨s₀⟩
+      omega
+    obtain ⟨b₂, hb₂⟩ := IsLocalRing.exists_basis_of_linearIndependent_residue_coord b₀ hcard
+      (v := fun k ↦ D K Q (w k)) (linearIndependent_of_top_le_span_of_card_eq_finrank hspan.ge
+        (by rw [Module.finrank_fintype_fun_eq_card, hcard]))
+    rw [Set.image_eq_range] at hloc ⊢
+    exact formallySmooth_quotient_of_basis_kaehlerDifferential b₂ fun t ↦ hb₂ (.inl t)
   -- `φ` is a `K`-algebra isomorphism, so it carries the singular locus of `A` to that of `P ⧸ (f)`,
   -- which is therefore unramified and contains the closed point.
   let φ' : ((Q ⧸ Ideal.span (g '' {s₀}ᶜ)) ⧸
@@ -131,7 +170,7 @@ theorem exists_hypersurface_presentation_of_formallyUnramified (b : Basis ι Q �
     rw [hfit]
     simp only [Fintype.card_fin] at h
     rw [h, Ideal.map_top]
-  exact ⟨s₀, hloc, y, b', hy', hb', hf2,
+  exact ⟨s₀, hloc, y, b', hsmooth, hy', hb', hf2,
     (mem_maximalIdeal_sq_and_isUnit_det_hessian_of_formallyUnramified b' hy' hb'
       (Ideal.pow_le_self two_ne_zero hf2) hsing').2, φ', hφ⟩
 
@@ -149,9 +188,10 @@ variable {K S ι σ : Type*} [Field K] [CommRing S] [Algebra K S] [Algebra.EssFi
 relations, with `S ⧸ Fitt₁(Ω[S⁄K])` unramified over `K`, and let `q` be a prime of `S` containing
 `Fitt₁(Ω[S⁄K])`. Let `Q` be the localization of the polynomial ring at the inverse image of `q`,
 and `g s` the image in `Q` of the relation `f_s`. Then all relations but one, `g s₀`, cut out a
-local ring `P = Q ⧸ (g s : s ≠ s₀)` with coordinates `y : Fin 2 → Q`, the image `f` of `g s₀` in `P`
-lies in `𝔪_P²` and has a unit Hessian determinant, and `P ⧸ (f)` is isomorphic to the localization
-of `S` at `q`, compatibly with the maps from the polynomial ring. -/
+formally smooth local ring `P = Q ⧸ (g s : s ≠ s₀)` with coordinates `y : Fin 2 → Q`, the image
+`f` of `g s₀` in `P` lies in `𝔪_P²` and has a unit Hessian determinant, and `P ⧸ (f)` is
+isomorphic to the localization of `S` at `q`, compatibly with the maps from the polynomial
+ring. -/
 theorem exists_hypersurface_presentation_of_formallyUnramified (P : Presentation K S ι σ)
     (hP : Fintype.card σ + 1 = Fintype.card ι) (q : Ideal S) [q.IsPrime]
     (hq : fittingIdeal S Ω[S⁄K] 1 ≤ q) (Q : Type*) [CommRing Q] [Algebra P.Ring Q] [Algebra K Q]
@@ -160,6 +200,7 @@ theorem exists_hypersurface_presentation_of_formallyUnramified (P : Presentation
       (y : Fin 2 → Q)
       (b' : Basis (Fin 2) (Q ⧸ Ideal.span ((algebraMap P.Ring Q ∘ P.relation) '' {s₀}ᶜ))
         Ω[(Q ⧸ Ideal.span ((algebraMap P.Ring Q ∘ P.relation) '' {s₀}ᶜ))⁄K]),
+      Algebra.FormallySmooth K (Q ⧸ Ideal.span ((algebraMap P.Ring Q ∘ P.relation) '' {s₀}ᶜ)) ∧
       maximalIdeal (Q ⧸ Ideal.span ((algebraMap P.Ring Q ∘ P.relation) '' {s₀}ᶜ)) =
         Ideal.span (Set.range (Ideal.Quotient.mk _ ∘ y)) ∧
       (∀ j, b' j = D K _ (Ideal.Quotient.mk _ (y j))) ∧
@@ -178,6 +219,7 @@ theorem exists_hypersurface_presentation_of_formallyUnramified (P : Presentation
   have : Algebra.EssFiniteType P.Ring Q := .of_isLocalization Q q'.primeCompl
   have : Algebra.EssFiniteType K Q := .comp K P.Ring Q
   have : Algebra.FormallyEtale P.Ring Q := .of_isLocalization q'.primeCompl
+  have : Algebra.FormallySmooth K Q := .comp K P.Ring Q
   -- Localizing `P.Ring → S` gives a surjection `Q → A` whose kernel is generated by the relations.
   have hT : q'.primeCompl.map (algebraMap P.Ring S) = q.primeCompl := by
     refine le_antisymm (Submonoid.map_le_iff_le_comap.2 fun r hr ↦ hr) fun s hs ↦ ?_
@@ -209,8 +251,8 @@ theorem exists_hypersurface_presentation_of_formallyUnramified (P : Presentation
     rw [(isBaseChange_of_formallyEtale K S A).fittingIdeal_eq_map 1]
     exact ne_top_of_le_ne_top (maximalIdeal.isMaximal A).ne_top
       ((Ideal.map_mono hq).trans (Localization.AtPrime.map_eq_maximalIdeal (I := q)).le)
-  obtain ⟨s₀, hloc, y, b', hy, hb', hf2, hH, φ, hφ⟩ :=
+  obtain ⟨s₀, hloc, y, b', hsm, hy, hb', hf2, hH, φ, hφ⟩ :=
     TauCeti.exists_hypersurface_presentation_of_formallyUnramified b π hπ hker hP hsing
-  exact ⟨s₀, hloc, y, b', hy, hb', hf2, hH, φ, fun r ↦ (hφ _).trans (hπ₀ r)⟩
+  exact ⟨s₀, hloc, y, b', hsm, hy, hb', hf2, hH, φ, fun r ↦ (hφ _).trans (hπ₀ r)⟩
 
 end Algebra.Presentation
