@@ -101,8 +101,9 @@ def totalSpaceMap (a : CoordinateHom Z W) (p : Z.TotalSpace) : W.TotalSpace :=
 theorem localTriv_fiberMap (a : CoordinateHom Z W) (i : ι) (j : κ) (p : Z.TotalSpace)
     (hi : p.proj ∈ Z.baseSet i) (hj : p.proj ∈ W.baseSet j) :
     ((W.localTriv j) (a.totalSpaceMap p)).2 =
-      a.operator i j ⟨p.proj, hi, hj⟩ ((Z.localTriv i) p).2 :=
-  a.coordChange_fiberMap i j hi hj p.2
+      a.operator i j ⟨p.proj, hi, hj⟩ ((Z.localTriv i) p).2 := by
+  simp only [localTriv_apply, totalSpaceMap]
+  exact a.coordChange_fiberMap i j hi hj p.2
 
 /-- Two coordinate morphisms inducing the same map of total spaces are equal. -/
 theorem totalSpaceMap_injective : Function.Injective (totalSpaceMap (Z := Z) (W := W)) := by
