@@ -37,6 +37,8 @@ the support of `M` imposes no condition.
 * `Module.satisfiesSerreS_zero` and `Module.SatisfiesSerreS.mono`: every module satisfies `(S_0)`,
   and `(S_n)` implies `(S_m)` for `m ≤ n`; likewise `Ring.SatisfiesSerreR.mono`, and a regular
   ring satisfies `(R_n)` for every `n` (`IsRegularRing.satisfiesSerreR`).
+* `Module.satisfiesSerreS_self_iff`: a ring satisfies `(S_n)` over itself exactly when every
+  localization `R_p` has depth at least `min (n, dim R_p)`.
 * `Module.forall_satisfiesSerreS_iff_forall_isCohenMacaulay`: a finite module satisfies `(S_n)`
   for every `n` if and only if all of its localizations at primes are Cohen–Macaulay.
 * `Module.satisfiesSerreS_one_iff`: a finite module satisfies `(S_1)` if and only if it has no
@@ -85,6 +87,20 @@ theorem satisfiesSerreS_iff : SatisfiesSerreS n R M ↔ ∀ (p : Ideal R) [p.IsP
       (depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) :
         WithBot ℕ∞) :=
   Iff.rfl
+
+variable (n R) in
+/-- A ring satisfies `(S_n)` as a module over itself if and only if every localization `R_p` at a
+prime has depth at least `min (n, dim R_p)`. -/
+theorem satisfiesSerreS_self_iff : SatisfiesSerreS n R R ↔ ∀ (p : Ideal R) [p.IsPrime],
+    min (n : WithBot ℕ∞) (ringKrullDim (Localization.AtPrime p)) ≤
+      (depth (ModuleCat.of (Localization.AtPrime p) (Localization.AtPrime p)) : WithBot ℕ∞) := by
+  refine forall_congr' fun p ↦ forall_congr' fun _ ↦ ?_
+  -- `R_p` is the localization of `R` at `p` both as a ring and as an `R`-module.
+  let e : LocalizedModule p.primeCompl R ≃ₗ[Localization.AtPrime p] Localization.AtPrime p :=
+    (IsLocalizedModule.iso p.primeCompl
+      (Algebra.linearMap R (Localization.AtPrime p))).extendScalarsOfIsLocalization
+      p.primeCompl (Localization.AtPrime p)
+  rw [depth_eq_of_linearEquiv e, supportDim_eq_of_equiv e, supportDim_self_eq_ringKrullDim]
 
 /-- Every module satisfies `(S_0)`. -/
 @[simp]
