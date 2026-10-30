@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Conformal boosts of a unit sphere
@@ -32,6 +33,11 @@ by the boost of the unit circle toward `i`. Boosting far enough carries a compac
 sphere avoiding `-v` into the open hemisphere around `v`
 (`IsCompact.eventually_forall_inner_sphereBoost_pos`).
 
+At the repelling fixed point `-v`, the boost of rapidity `a` stretches every tangent vector by
+`eᵃ` (`TauCeti.fderiv_sphereBoost_neg_self_apply`): it maps the line `-v + s w` through `-v` in a
+tangent direction `w` to the line `-v + eᵃ s w`. Boosting thus rescales the velocity of a curve
+through `-v` without moving the point.
+
 ## Main definitions
 
 * `TauCeti.sphereBoost v a`: the boost of rapidity `a` toward `v`.
@@ -44,6 +50,8 @@ sphere avoiding `-v` into the open hemisphere around `v`
 * `LinearIsometry.sphereBoost_map`: boosts commute with linear isometries.
 * `IsCompact.eventually_forall_inner_sphereBoost_pos`: large boosts carry a compact set
   avoiding `-v` into the open hemisphere around `v`.
+* `TauCeti.fderiv_sphereBoost_neg_self_apply`: at `-v`, the boost of rapidity `a` multiplies
+  tangent vectors by `eᵃ`.
 
 ## References
 
@@ -197,5 +205,52 @@ theorem _root_.IsCompact.eventually_forall_inner_sphereBoost_pos {C : Set E} (hC
       _ = b + 1 := exp_log hε
   have hcs := cosh_sub_sinh a
   nlinarith [mul_le_mul_of_nonneg_left (hbC x hx) (cosh_pos a).le, one_le_cosh a]
+
+/-- A boost is differentiable at every point where its denominator does not vanish, in
+particular at every point of the unit sphere (`TauCeti.cosh_add_sinh_mul_inner_pos`). -/
+theorem differentiableAt_sphereBoost {v x : E} {a : ℝ} (hx : cosh a + sinh a * ⟪x, v⟫ ≠ 0) :
+    DifferentiableAt ℝ (sphereBoost v a) x := by
+  have hD : DifferentiableAt ℝ (fun y : E => cosh a + sinh a * ⟪y, v⟫) x :=
+    (differentiableAt_const _).add
+      ((differentiableAt_const _).mul (differentiableAt_id.inner ℝ (differentiableAt_const _)))
+  have hN : DifferentiableAt ℝ (fun y : E => y + (sinh a + (cosh a - 1) * ⟪y, v⟫) • v) x :=
+    differentiableAt_id.add (((differentiableAt_const _).add ((differentiableAt_const _).mul
+      (differentiableAt_id.inner ℝ (differentiableAt_const _)))).smul (differentiableAt_const _))
+  rw [show sphereBoost v a = fun y => (cosh a + sinh a * ⟪y, v⟫)⁻¹ •
+      (y + (sinh a + (cosh a - 1) * ⟪y, v⟫) • v) from funext (sphereBoost_def v a)]
+  exact (hD.inv hx).smul hN
+
+/-- **The boost stretches tangent vectors at `-v` by `eᵃ`.** For a unit vector `v` and a vector
+`w` orthogonal to `v`, the derivative at `-v` of the boost of rapidity `a` toward `v` sends `w` to
+`eᵃ w`. -/
+theorem fderiv_sphereBoost_neg_self_apply {v w : E} (hv : ‖v‖ = 1) (a : ℝ) (hw : ⟪w, v⟫ = 0) :
+    fderiv ℝ (sphereBoost v a) (-v) w = exp a • w := by
+  have hvv : ⟪-v, v⟫ = -1 := by rw [inner_neg_left, real_inner_self_eq_norm_sq, hv, one_pow]
+  have hD : cosh a + sinh a * ⟪-v, v⟫ = exp (-a) := by
+    rw [hvv, ← cosh_sub_sinh]
+    ring
+  -- Along the line `s ↦ -v + s w` the boost is the affine map `s ↦ eᵃ s w - v`.
+  have hline (s : ℝ) : sphereBoost v a (-v + s • w) = (exp a * s) • w - v := by
+    have hin : ⟪-v + s • w, v⟫ = ⟪-v, v⟫ := by
+      rw [inner_add_left, real_inner_smul_left, hw, mul_zero, add_zero]
+    -- The coefficient of `v` in the numerator is `1 - e⁻ᵃ`, and the denominator is `e⁻ᵃ`.
+    have hnum : sinh a + (cosh a - 1) * ⟪-v, v⟫ = 1 - exp (-a) := by
+      rw [hvv, ← cosh_sub_sinh]
+      ring
+    rw [sphereBoost_def, hin, hD, hnum, exp_neg]
+    -- Compare the coefficients of `v` and of `w`.
+    match_scalars
+    · field_simp
+      ring
+    · field_simp
+  have hdiff : DifferentiableAt ℝ (sphereBoost v a) (-v + (0 : ℝ) • w) := by
+    rw [zero_smul, add_zero]
+    exact differentiableAt_sphereBoost (hD.symm ▸ (exp_pos _).ne')
+  have h₁ := hdiff.hasFDerivAt.comp_hasDerivAt (0 : ℝ)
+    (((hasDerivAt_id (0 : ℝ)).smul_const w).const_add (-v))
+  have h₂ : HasDerivAt (fun s : ℝ => (exp a * s) • w - v) (exp a • w) 0 := by
+    simpa using (((hasDerivAt_id (0 : ℝ)).const_mul (exp a)).smul_const w).sub_const v
+  rw [zero_smul, add_zero, one_smul] at h₁
+  exact h₁.unique (h₂.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => hline s))
 
 end TauCeti
