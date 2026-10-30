@@ -22,7 +22,7 @@ tail with any positive error tolerance. `exists_tendsto_sum_smul_of_tendsto_weak
 such combinations as a norm-convergent sequence. In both statements, the indices in the
 `n`th tail are written as `n + i`, so no coefficient can involve an earlier term.
 
-`mem_of_tendsto_toWeakSpace` deduces that a closed real-convex set contains
+`Convex.mem_of_tendsto_weak` deduces that a closed real-convex set contains
 weak limits of families in it.
 
 These results require neither completeness nor separability. They use Mathlib's
@@ -64,7 +64,7 @@ theorem mem_closure_convexHull_range_of_tendsto_weak {ι : Type*} {l : Filter ι
 
 /-- A closed real-convex set in a locally convex space contains every weak limit of a
 family in it, along any nontrivial filter. -/
-theorem mem_of_tendsto_toWeakSpace {ι : Type*} {s : Set E}
+theorem _root_.Convex.mem_of_tendsto_weak {ι : Type*} {s : Set E}
     (hs : Convex ℝ s) (hsc : IsClosed s) {l : Filter ι} [NeBot l]
     {u : ι → E} {x : E} (hu : ∀ i, u i ∈ s)
     (hlim : Tendsto (fun i ↦ toWeakSpace 𝕜 E (u i)) l (𝓝 (toWeakSpace 𝕜 E x))) :

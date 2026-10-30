@@ -121,7 +121,7 @@ theorem exists_seq_inclusionInDoubleDualWeak_eq_of_mem_closure {K : Set E}
     have hxN : x ∈ N := by
       let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
       let : IsScalarTower ℝ 𝕜 E := RestrictScalars.isScalarTower ℝ 𝕜 E
-      exact mem_of_tendsto_toWeakSpace (N.restrictScalars ℝ).convex hNclosed
+      exact (N.restrictScalars ℝ).convex.mem_of_tendsto_weak hNclosed
         (fun n ↦ hJu (σ n)) hlim
     exact L.sub_mem hΦ hxN
   have hψ : ψ = 0 := ψ.eq_zero_of_mem_topologicalClosure_iSup_of_norming hMmono
