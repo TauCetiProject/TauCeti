@@ -128,7 +128,7 @@ omit [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M
 /-- A smooth form invariant under `G` is invariant as a rough form. -/
 private theorem coe_invariant {α : SmoothForm I M F k}
     (hα : ∀ g : G, mpullback (g • ·) (contMDiff_const_smul g) α = α) (g : G) :
-    TauCeti.mpullback I I (g • ·) α.1 = α.1 := by
+    TauCeti.mpullback (F := F) I I (g • ·) α.1 = α.1 := by
   rw [← coe_mpullback _ (contMDiff_const_smul g), hα g]
 
 variable {α : SmoothForm I M F k}
@@ -139,7 +139,7 @@ smooth form whose pullback along the orbit projection is `α` (`TauCeti.SmoothFo
 def descend (α : SmoothForm I M F k)
     (hα : ∀ g : G, mpullback (g • ·) (contMDiff_const_smul g) α = α) :
     SmoothForm I (MulAction.orbitRel.Quotient G M) F k :=
-  ⟨RoughForm.descend G α.1, IsSmoothForm.mem_smoothForms <|
+  ⟨RoughForm.descend G α.1, IsSmoothForm.mem_smoothBundleForms <|
     ((isLocalDiffeomorph_quotientMk (n := ∞)).isSmoothForm_mpullback_iff (m := ∞)
       Quotient.mk_surjective (by simp)).mp <| by
       rw [RoughForm.mpullback_quotientMk_descend (n := ∞) (by simp) (coe_invariant hα)]

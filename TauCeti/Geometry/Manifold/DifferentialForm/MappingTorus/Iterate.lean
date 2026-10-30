@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus
-public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Iterate
+public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Iterate.Basic
 
 /-!
 # Forms under the integer-iterate map of mapping tori
