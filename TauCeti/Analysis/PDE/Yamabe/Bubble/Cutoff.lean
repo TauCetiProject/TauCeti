@@ -110,7 +110,7 @@ theorem tendsto_integral_cutoff_bubble_rpow_criticalExponent (hn : 2 < finrank �
   exact cutoff_critical_mass_error_le hn hχ hχrange hr
     hball ht
 
-omit [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
 private lemma cutoff_bubble_derivative_control (hn : 2 < finrank ℝ E) {χ : E → ℝ}
     {b : E} {r M : ℝ} (hr : 0 < r) (hM : 0 ≤ M)
     (hχderiv : ∀ x, (1 + ‖x - b‖ ^ 2) * ‖fderiv ℝ χ x‖ ≤ M)
@@ -123,9 +123,8 @@ private lemma cutoff_bubble_derivative_control (hn : 2 < finrank ℝ E) {χ : E 
   have hq : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
   have hd : ‖fderiv ℝ (bubble t b) x‖ =
       (((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) * ‖x - b‖ := by
-    rw [(hasGradientAt_bubble ht b x).hasFDerivAt.fderiv,
-      LinearIsometryEquiv.norm_map, norm_smul, norm_neg,
-      Real.norm_of_nonneg (mul_nonneg (div_nonneg hk.le hq.le) (bubble_pos ht b x).le)]
+    rw [norm_fderiv_bubble ht b x, abs_of_pos hk]
+    ring
   have hnum : (t ^ 2 + ‖x - b‖ ^ 2) * ‖fderiv ℝ χ x‖ ≤ M := by
     have ht₂ : t ^ 2 ≤ 1 := by nlinarith
     exact (mul_le_mul_of_nonneg_right (by linarith :
