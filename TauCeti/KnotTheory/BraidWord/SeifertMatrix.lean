@@ -1098,6 +1098,7 @@ theorem tristramLevineSignature_seifertMatrix_append_singleton (ω : ℂ) :
     tristramLevineSignature_congr hPReal]
 
 /-- Cyclically rotating a braid word keeps the Alexander polynomial of the Seifert matrix. -/
+@[simp]
 theorem alexander_seifertMatrix_rotate (w : BraidWord n) (k : ℕ) :
     alexander (seifertMatrix (n := n) (w.rotate k)) = alexander w.seifertMatrix := by
   induction k with
@@ -1112,6 +1113,7 @@ theorem alexander_seifertMatrix_rotate (w : BraidWord n) (k : ℕ) :
 
 /-- Cyclically rotating a braid word keeps the Tristram–Levine signatures of the Seifert
 matrix. -/
+@[simp]
 theorem tristramLevineSignature_seifertMatrix_rotate (w : BraidWord n) (k : ℕ) (ω : ℂ) :
     tristramLevineSignature ((seifertMatrix (n := n) (w.rotate k)).map ((↑) : ℤ → ℝ)) ω =
       tristramLevineSignature (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω := by
