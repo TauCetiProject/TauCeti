@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient
-public import TauCeti.Geometry.Manifold.Instances.MappingTorus
+public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit
 
 /-!
 # The time form and fiber forms of a smooth mapping torus
@@ -29,6 +29,12 @@ direction.
 
 For a symplectic form `σ` preserved by `φ`, the fiber form is the closed two-form `ω_v` of the
 symplectic suspension of `φ`.
+
+Along the flow lines `t ↦ [t, x]` of the suspension flow, the time form integrates to the elapsed
+time. For a point `x` of period `d`, the closed orbit `γ : ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`
+(`TauCeti.SmoothMappingTorus.closedOrbit`), pulls `dt` back to the time form `dt_d` of the circle
+`ℝ / dℤ`, so one circuit of `γ` has `dt`-length `d`, while every fiber form of positive degree
+vanishes on `γ`.
 
 ## Main definitions
 
@@ -56,6 +62,11 @@ symplectic suspension of `φ`.
   fiber.
 * `TauCeti.SmoothMappingTorus.isClosed_fiberForm_iff`: the fiber form is closed exactly when `σ`
   is.
+* `TauCeti.SmoothMappingTorus.pathIntegral_timeForm_mk`: the time form integrates to `b - a` along
+  the flow line `t ↦ [t, x]` from `a` to `b`.
+* `TauCeti.SmoothMappingTorus.mpullback_closedOrbit_timeForm`,
+  `TauCeti.SmoothMappingTorus.mpullback_closedOrbit_fiberForm`: the closed orbit through a point
+  of period `d` pulls `dt` back to `dt_d` and every fiber form of positive degree back to zero.
 
 ## References
 
@@ -246,6 +257,76 @@ theorem isClosed_fiberForm_iff : (fiberForm φ σ hσ).IsClosed ↔ σ.IsClosed 
   refine ⟨fun h ↦ ?_, fun h ↦ SmoothForm.isClosed_descend_iff.mpr (h.mpullback _ _)⟩
   rw [← mpullback_mk_fiberForm (hσ := hσ) 0]
   exact h.mpullback _ _
+
+/-! ### Flow lines and closed orbits -/
+
+/-- The time form integrates to `b - a` along the flow line `t ↦ [t, x]` of the suspension flow
+from `a` to `b`. -/
+@[simp]
+theorem pathIntegral_timeForm_mk (x : M) (a b : ℝ) :
+    pathIntegral (timeForm φ).1 (fun t ↦ mk φ t x) a b = b - a := by
+  have hcomp : proj φ ∘ (fun t ↦ mk φ t x) = ((↑) : ℝ → UnitAddCircle) :=
+    funext fun t ↦ proj_mk φ t x
+  have hline : ContMDiff 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ fun t ↦ mk φ t x :=
+    (contMDiff_uncurry_mk φ).comp (contMDiff_id.prodMk contMDiff_const)
+  rw [timeForm_def, SmoothForm.coe_mpullback,
+    pathIntegral_mpullback _ (fun t _ ↦ ((contMDiff_proj φ).mdifferentiable (by simp)) _)
+      (fun t _ ↦ (hline.mdifferentiable (by simp)) t),
+    hcomp, AddCircle.pathIntegral_timeForm_coe]
+
+variable {d : ℕ} {x : M} (h : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
+
+omit [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] [Fact (0 < (d : ℝ))] in
+include h in
+/-- Composing the closed orbit with the quotient map `ℝ → ℝ / dℤ` gives the flow line
+`t ↦ [t, x]`, the restriction of `(t, x) ↦ [t, x]` to the line through `(0, x)`. -/
+private theorem closedOrbit_comp_coe :
+    closedOrbit φ h ∘ ((↑) : ℝ → AddCircle (d : ℝ)) = uncurry (mk φ) ∘ fun t ↦ (t, x) :=
+  funext fun t ↦ closedOrbit_coe h t
+
+/-- The time form pulls back along the closed orbit `γ : ℝ / dℤ → Y_φ` through a point of period
+`d` to the time form `dt_d` of the circle `ℝ / dℤ`. -/
+@[simp]
+theorem mpullback_closedOrbit_timeForm :
+    SmoothForm.mpullback (closedOrbit φ h) (contMDiff_closedOrbit h) (timeForm φ) =
+      AddCircle.timeForm (d : ℝ) := by
+  have hline : ContMDiff 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ fun t : ℝ ↦ (t, x) :=
+    contMDiff_id.prodMk contMDiff_const
+  refine Subtype.ext (AddCircle.mpullback_coe_injective (d : ℝ) ?_)
+  have hfst : Prod.fst ∘ (fun t : ℝ ↦ (t, x)) = id := rfl
+  rw [SmoothForm.coe_mpullback, ← mpullback_comp
+      ((AddCircle.contMDiff_coe (d : ℝ) ∞).mdifferentiable (by simp))
+      ((contMDiff_closedOrbit h).mdifferentiable (by simp)),
+    closedOrbit_comp_coe, mpullback_comp (hline.mdifferentiable (by simp))
+      ((contMDiff_uncurry_mk φ).mdifferentiable (by simp)),
+    mpullback_uncurry_mk_timeForm, ← mpullback_comp (hline.mdifferentiable (by simp))
+      mdifferentiable_fst, hfst, mpullback_id, AddCircle.mpullback_coe_timeForm]
+
+/-- Every fiber form of positive degree vanishes on the closed orbit `γ : ℝ / dℤ → Y_φ` through a
+point of period `d`: the pullback of `σ_v` along `γ` is zero. -/
+@[simp]
+theorem mpullback_closedOrbit_fiberForm (hk : k ≠ 0) :
+    SmoothForm.mpullback (closedOrbit φ h) (contMDiff_closedOrbit h) (fiberForm φ σ hσ) = 0 := by
+  have hline : ContMDiff 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ fun t : ℝ ↦ (t, x) :=
+    contMDiff_id.prodMk contMDiff_const
+  refine Subtype.ext (AddCircle.mpullback_coe_injective (d : ℝ) ?_)
+  have hsnd : Prod.snd ∘ (fun t : ℝ ↦ (t, x)) = fun _ ↦ x := rfl
+  rw [SmoothForm.coe_mpullback, ← mpullback_comp
+      ((AddCircle.contMDiff_coe (d : ℝ) ∞).mdifferentiable (by simp))
+      ((contMDiff_closedOrbit h).mdifferentiable (by simp)),
+    closedOrbit_comp_coe, mpullback_comp (hline.mdifferentiable (by simp))
+      ((contMDiff_uncurry_mk φ).mdifferentiable (by simp)),
+    ← SmoothForm.coe_mpullback _ (contMDiff_uncurry_mk φ), mpullback_uncurry_mk_fiberForm,
+    SmoothForm.coe_mpullback, ← mpullback_comp (hline.mdifferentiable (by simp))
+      mdifferentiable_snd, hsnd,
+    ZeroMemClass.coe_zero, mpullback_zero]
+  -- The constant map `t ↦ x` has derivative zero, and a form of positive degree vanishes on
+  -- zero vectors.
+  funext t
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  rw [TauCeti.mpullback_apply, mfderiv_const, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
+    Pi.zero_apply]
+  exact (σ.1 x).map_coord_zero ⟨0, Nat.pos_of_ne_zero hk⟩ (zero_apply _)
 
 end SmoothMappingTorus
 
