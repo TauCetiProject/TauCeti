@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Bilinear
+public import Mathlib.Algebra.Order.Interval.Set.SuccPred
+public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Basic
 
@@ -15,7 +17,9 @@ public import Mathlib.RingTheory.MvPolynomial.Basic
 Mathlib's `MvPolynomial.restrictTotalDegree σ R m` is the submodule of polynomials of total degree
 at most `m`. This file records that these submodules increase with `m`, that a monomial of degree
 at most `m` lies in the `m`-th one, and that the `m`-th one is spanned by those monomials, so that
-a linear statement about polynomials of bounded degree reduces to monomials.
+a linear statement about polynomials of bounded degree reduces to monomials. The monomials may be
+replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members of a polynomial sequence `S` in the separate
+variables, for instance the integer-valued binomial polynomials.
 
 ## Main results
 
@@ -24,6 +28,10 @@ a linear statement about polynomials of bounded degree reduces to monomials.
   degree at most `m`.
 * `MvPolynomial.restrictTotalDegree_eq_span`: the monomials of degree at most `m` span the
   polynomials of total degree at most `m`.
+* `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
+  in the separate variables lie in the span of the products of the original family.
+* `Polynomial.Sequence.span_prod_aeval_X_eq_restrictTotalDegree`: the products `∏ᵢ Sₖᵢ(Xᵢ)` of
+  a polynomial sequence with unit leading coefficients span the polynomials of bounded degree.
 * `Module.Basis.apply_mem_of_monomial_degree_le`: a bilinear map takes values in a submodule on
   bounded-degree polynomials if it does so on basis vectors and bounded-degree monomials.
 * `Module.Basis.constr_X_mul_mem_restrictTotalDegree`: multiplication by a linear form raises
@@ -59,7 +67,77 @@ theorem restrictTotalDegree_eq_span (m : ℕ) :
     simp [Finsupp.sum, Finsupp.degree_apply]
   rw [restrictTotalDegree, restrictSupport_eq_span, hs]
 
+open Polynomial in
+/-- If each `q k` with `k ≤ m` is a combination of the `p j` with `j ≤ k`, then the products
+`∏ᵢ q_{τ i}(Xᵢ)` with `τ.degree ≤ m` lie in the span of the products `∏ᵢ p_{τ i}(Xᵢ)` with
+`τ.degree ≤ m`. -/
+theorem span_prod_aeval_X_le {σ R : Type*} [Fintype σ] [CommSemiring R] {p q : ℕ → R[X]} {m : ℕ}
+    (h : ∀ k ≤ m, q k ∈ Submodule.span R (p '' Set.Iic k)) :
+    Submodule.span R ((fun τ : σ →₀ ℕ ↦ ∏ i, Polynomial.aeval (X (R := R) i) (q (τ i))) ''
+        {τ | τ.degree ≤ m}) ≤
+      Submodule.span R ((fun τ : σ →₀ ℕ ↦ ∏ i, Polynomial.aeval (X (R := R) i) (p (τ i))) ''
+        {τ | τ.degree ≤ m}) := by
+  classical
+  rw [Submodule.span_le]
+  rintro _ ⟨τ, hτ, rfl⟩
+  -- Each factor lies in the span of the `p j (Xᵢ)` with `j ≤ τ i`.
+  have hmem (i : σ) : Polynomial.aeval (X (R := R) i) (q (τ i)) ∈
+      Submodule.span R ((Polynomial.aeval (X (R := R) i)).toLinearMap '' (p '' Set.Iic (τ i))) := by
+    rw [← Submodule.map_span]
+    exact Submodule.mem_map_of_mem (h _ ((Finsupp.le_degree i τ).trans hτ))
+  have hprod : ∏ i, Polynomial.aeval (X (R := R) i) (q (τ i)) ∈ ∏ i,
+      Submodule.span R ((Polynomial.aeval (X (R := R) i)).toLinearMap '' (p '' Set.Iic (τ i))) := by
+    induction (Finset.univ : Finset σ) using Finset.induction_on with
+    | empty =>
+      rw [Finset.prod_empty, Finset.prod_empty]
+      exact Submodule.one_le.1 le_rfl
+    | insert i s hi ih =>
+      rw [Finset.prod_insert hi, Finset.prod_insert hi]
+      exact Submodule.mul_mem_mul (hmem i) ih
+  rw [Submodule.prod_span] at hprod
+  refine Submodule.span_mono ?_ hprod
+  intro x hx
+  obtain ⟨g, hg, rfl⟩ := (Set.mem_finsetProd _ _ _).1 hx
+  simp only [Finset.mem_univ, forall_const, Set.image_image] at hg
+  choose j hj hgj using fun i ↦ @hg i
+  refine ⟨Finsupp.equivFunOnFinite.symm j, ?_, ?_⟩
+  · simp only [Set.mem_ofPred_eq, Finsupp.degree_eq_sum, Finsupp.coe_equivFunOnFinite_symm]
+    exact (Finset.sum_le_sum fun i _ ↦ Set.mem_Iic.1 (hj i)).trans
+      ((Finsupp.degree_eq_sum τ).symm.le.trans hτ)
+  · simp [← hgj]
+
 end MvPolynomial
+
+namespace Polynomial.Sequence
+
+open Submodule
+
+variable {σ R : Type*} [Fintype σ] [CommRing R]
+
+/-- **Change of basis to products of a polynomial sequence.** If the leading coefficients of
+`S₀, …, Sₘ` are units, then the products `∏ᵢ S_{τ i}(Xᵢ)` over the exponents `τ` of degree at
+most `m` span the polynomials of total degree at most `m`, exactly as the monomials `X^τ` do. -/
+theorem span_prod_aeval_X_eq_restrictTotalDegree (S : Sequence R) {m : ℕ}
+    (hS : ∀ k ≤ m, IsUnit (S k).leadingCoeff) :
+    span R ((fun τ : σ →₀ ℕ ↦ ∏ i, aeval (MvPolynomial.X (R := R) i) (S (τ i))) ''
+        {τ | τ.degree ≤ m}) = MvPolynomial.restrictTotalDegree σ R m := by
+  classical
+  have hmon : MvPolynomial.restrictTotalDegree σ R m =
+      span R ((fun τ : σ →₀ ℕ ↦ ∏ i, aeval (MvPolynomial.X (R := R) i) ((X : R[X]) ^ (τ i))) ''
+        {τ | τ.degree ≤ m}) := by
+    rw [MvPolynomial.restrictTotalDegree_eq_span]
+    congr! with τ
+    simp [MvPolynomial.monomial_eq, Finsupp.prod_fintype]
+  rw [hmon]
+  refine le_antisymm (MvPolynomial.span_prod_aeval_X_le fun k _ ↦ ?_)
+    (MvPolynomial.span_prod_aeval_X_le fun k hk ↦ ?_)
+  · have : S k ∈ degreeLE R k := mem_degreeLE.2 (S.degree_eq k).le
+    rwa [degreeLE_eq_span_X_pow, Finset.coe_image, Finset.coe_range,
+      Set.Iio_add_one_eq_Iic] at this
+  · rw [S.span_degreeLE fun i hi ↦ hS i (hi.trans hk), mem_degreeLE]
+    exact degree_X_pow_le k
+
+end Polynomial.Sequence
 
 namespace Module.Basis
 

@@ -282,6 +282,38 @@ structure IsPathCompatible {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] 
       (hij : (j : ℕ) = i + 1) (hne : t j ≠ s i) :
     f (fun k ↦ homInclusion (s k) (t k) (x k)) = 0
 
+/-- Restrict a multilinear map to a composable string and project its value to the Hom module
+between the images of the endpoints. No path-compatibility hypothesis is needed for projection. -/
+noncomputable def _root_.MultilinearMap.restrictToPath {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {n : ℕ}
+    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C'))
+    (φ : C → C') (X : Fin (n + 1) → C) :
+    MultilinearMap R
+      (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
+      (homModule (R := R) (φ (X 0)) (φ (X (Fin.last n)))) :=
+  (homProjection _ _).compMultilinearMap
+    (f.compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+
+theorem _root_.MultilinearMap.restrictToPath_apply {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {n : ℕ}
+    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C'))
+    (φ : C → C') (X : Fin (n + 1) → C)
+    (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    f.restrictToPath φ X x = homProjection (φ (X 0)) (φ (X (Fin.last n)))
+      (f fun i ↦ homInclusion _ _ (x i)) := (rfl)
+
+/-- Including a path restriction recovers the original total-module evaluation. -/
+@[simp]
+theorem IsPathCompatible.homInclusion_restrictToPath {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    (hf : IsPathCompatible φ f) (X : Fin (n + 1) → C)
+    (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    homInclusion (φ (X 0)) (φ (X (Fin.last n))) (f.restrictToPath φ X x) =
+      f (fun i ↦ homInclusion _ _ (x i)) := by
+  rw [MultilinearMap.restrictToPath_apply]
+  exact homInclusion_homProjection_of_mem_range (hf.mem_range_homInclusion X x)
+
 /-- A string of morphisms in which the target of each morphism is the source of the one before it
 comes from a string of objects. -/
 private theorem exists_eq_of_chain {n : ℕ} (s t : Fin (n + 1) → C)

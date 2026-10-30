@@ -240,6 +240,11 @@ theorem totalHomEquiv_symm_apply (o : Orientation G) (e : G.edgeSet) :
     o.totalHomEquiv.symm e = ⟨o.tail e, o.head e, o.arrow e⟩ :=
   (rfl)
 
+/-- The edge identity determines an oriented arrow, including its endpoints. -/
+theorem totalHom_edge_val_injective (o : Orientation G) :
+    Function.Injective (fun a : o.TotalHom ↦ a.2.2.edge.1) :=
+  Subtype.val_injective.comp o.totalHomEquiv.injective
+
 /-- Reversing an orientation reverses an arrow while retaining its edge identity. -/
 def reverseHomEquiv (o : Orientation G) (x y : G.vertexSet) :
     o.Hom x y ≃ o.reverse.Hom y x where
