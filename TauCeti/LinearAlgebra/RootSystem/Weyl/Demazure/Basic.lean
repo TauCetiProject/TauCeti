@@ -47,7 +47,8 @@ Since `1 - e^{-α}` is not a zero divisor in `ℤ[M]`, the localization identity
   `RootPairing.demazureOperator_single_of_coroot'_eq_neg_natCast_sub_one` and
   `RootPairing.demazureOperator_single_of_coroot'_eq_neg_one`: the root strings above.
 * `RootPairing.one_sub_single_neg_root_mul_demazureOperator`: the localization identity, and
-  `RootPairing.demazureOperator_eq_iff`: it characterizes `Dᵢ`.
+  `RootPairing.demazureOperator_eq_iff`: it characterizes `Dᵢ`, because multiplication by
+  `1 - e^{-αᵢ}` is injective (`RootPairing.isLeftRegular_one_sub_single_neg_root`).
 * `RootPairing.demazureOperator_eq_self_iff`: `Dᵢ f = f` exactly when `sᵢ f = f`.
 * `RootPairing.demazureOperator_demazureOperator`: `Dᵢ² = Dᵢ`.
 * `RootPairing.demazureOperator_mul_of_reflection_eq`: `Dᵢ` is linear over `sᵢ`-invariants.
@@ -160,8 +161,10 @@ theorem one_sub_single_neg_root_mul_demazureOperator (f : AddMonoidAlgebra ℤ M
     simp
 
 /-- Multiplication by `1 - e^{-αᵢ}` is injective on `ℤ[M]`, since `-αᵢ` has infinite order. -/
-private lemma eq_of_one_sub_single_neg_root_mul_eq {f g : AddMonoidAlgebra ℤ M}
-    (h : (1 - single (-P.root i) 1) * f = (1 - single (-P.root i) 1) * g) : f = g := by
+theorem isLeftRegular_one_sub_single_neg_root :
+    IsLeftRegular (1 - single (-P.root i) 1 : AddMonoidAlgebra ℤ M) := by
+  intro f g h
+  beta_reduce at h
   have hα : ¬IsOfFinAddOrder (-P.root i) := by
     rw [isOfFinAddOrder_iff_nsmul_eq_zero]
     rintro ⟨n, hn, hnα⟩
@@ -180,7 +183,7 @@ theorem demazureOperator_eq_iff {f g : AddMonoidAlgebra ℤ M} :
       (1 - single (-P.root i) 1) * g =
         f - single (-P.root i) 1 * mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv f := by
   refine ⟨fun h ↦ h ▸ P.one_sub_single_neg_root_mul_demazureOperator i f, fun h ↦ ?_⟩
-  exact P.eq_of_one_sub_single_neg_root_mul_eq i
+  exact P.isLeftRegular_one_sub_single_neg_root i
     ((P.one_sub_single_neg_root_mul_demazureOperator i f).trans h.symm)
 
 /-! ### Consequences of the localization identity -/
