@@ -219,16 +219,16 @@ theorem levelAt_ne_none_iff {k : ℕ} : w.levelAt k ≠ none ↔ k < w.length :=
 theorem signAt_of_lt {k : ℕ} (hk : k < w.length) : w.signAt k = (w[k].2 : ℤ) := by
   simp [signAt, hk]
 
-/-- The sign at a position inside the word is either `1` or `-1`. -/
-theorem signAt_eq_one_or_neg_one_of_lt {w : BraidWord n} {k : ℕ} (hk : k < w.length) :
-    w.signAt k = 1 ∨ w.signAt k = -1 := by
-  rw [signAt_of_lt w hk]
-  rcases Int.units_eq_one_or w[k].2 with h | h <;> simp [h]
-
 /-- Past the end of the word the sign is `0`. -/
 @[simp]
 theorem signAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.signAt k = 0 := by
   simp [signAt, hk]
+
+/-- Every letter of the word has sign `1` or `-1`. -/
+theorem signAt_eq_one_or_eq_neg_one {k : ℕ} (hk : k < w.length) :
+    w.signAt k = 1 ∨ w.signAt k = -1 := by
+  rw [signAt_of_lt w hk]
+  rcases Int.units_eq_one_or w[k].2 with h | h <;> simp [h]
 
 /-- Stabilization keeps the level of every letter of the original word. -/
 @[simp]

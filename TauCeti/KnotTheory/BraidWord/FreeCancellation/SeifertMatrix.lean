@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.BraidWord.FreeCancellation.Basic
-public import TauCeti.KnotTheory.BraidWord.SeifertMatrix
+public import TauCeti.KnotTheory.BraidWord.SeifertMatrix.Basic
 public import TauCeti.KnotTheory.SeifertMatrix.Enlargement
 public import TauCeti.KnotTheory.TristramLevine.Enlargement
 public import TauCeti.LinearAlgebra.Matrix.Congruence
@@ -418,8 +418,8 @@ private theorem seifertMatrix_insert_cut_cut (hα : α.1 = (insShift u.length γ
     levelAt_insert_length_succ, signAt_insert_insShift,
     signAt_insert_length, signAt_insert_length_succ, hγi, insShift_inj, 
     succ_ne_insShift, insShift_ne_self, ite_true]
-  rcases signAt_eq_one_or_neg_one_of_lt (hγ12.trans hγ2) with h₀ | h₀ <;>
-    rcases signAt_eq_one_or_neg_one_of_lt hγ2 with h₁ | h₁ <;>
+  rcases signAt_eq_one_or_eq_neg_one (u ++ v) (hγ12.trans hγ2) with h₀ | h₀ <;>
+    rcases signAt_eq_one_or_eq_neg_one (u ++ v) hγ2 with h₁ | h₁ <;>
     rcases Int.units_eq_one_or ε with rfl | rfl <;> simp [h₀, h₁] <;> omega
 
 end Crossing

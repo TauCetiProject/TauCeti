@@ -108,8 +108,8 @@ private theorem exists_eventually_sum_Ioc_norm_le_of_boundary (ha : 0 ≤ a)
   set c : ℝ := (𝓕 psi 0).re / 2 with hc
   have hc0 : 0 < c := half_pos (Complex.pos_iff.1 hpos).1
   have hcont : Continuous fun v : ℝ ↦ (𝓕 psi v).re :=
-    Complex.continuous_re.comp (TauCeti.continuous_fourier_of_integrable
-      (hpsi.continuous.integrable_of_hasCompactSupport hsupp))
+    Complex.continuous_re.comp
+      (hpsi.continuous.integrable_of_hasCompactSupport hsupp).continuous_fourier
   obtain ⟨η, hη, hηc⟩ := Metric.eventually_nhds_iff.1
     (hcont.continuousAt.eventually (lt_mem_nhds (by linarith : c < (𝓕 psi 0).re)))
   -- The smoothed series is eventually bounded by `M`.
