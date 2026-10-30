@@ -15,30 +15,34 @@ public import TauCeti.LinearAlgebra.TotallyReal.Finrank
 /-!
 # Holomorphic functions on the disc with boundary values on a rotating line
 
-Fix an integer `k`. This file solves the Riemann–Hilbert problem on the closed unit disc `𝔻̄`
+Fix an integer `k`. This file solves the Riemann–Hilbert problem on the closed unit disc
+`closedBall 0 1`
 
-`∂̄u = 0` on the open disc, `u` continuous on `𝔻̄`, `u(e^{iθ}) ∈ e^{ikθ/2} ℝ` for all `θ`.
+`∂u/∂(conj z) = 0` on the open disc, `u` continuous on `closedBall 0 1`,
+`u(e^{iθ}) ∈ e^{ikθ/2} ℝ` for all `θ`.
 
 The boundary condition says that `u(w)` lies on the real line `w^{k/2} ℝ`, which is well defined
 since `-ℝ = ℝ`. It is stated without square roots as `u w = w ^ k * conj (u w)` for `‖w‖ = 1`.
 The loop of real lines `θ ↦ e^{ikθ/2} ℝ` in `ℂ` has Maslov index `k`, and this problem is the
 one-dimensional model to which McDuff and Salamon reduce the Riemann–Roch theorem for
 Cauchy–Riemann operators on the disc with totally real boundary conditions: there, the index of
-`∂̄` with boundary condition of Maslov index `μ` on a bundle of rank `n` is `n + μ`.
+the operator `∂/∂(conj z)` with boundary condition of Maslov index `μ` on a bundle of rank `n` is
+`n + μ`.
 
 The solutions are computed explicitly. Expand `u` in its Taylor series `∑ aₙ zⁿ`; the
 coefficient `aₙ` is the `n`-th Fourier coefficient of the boundary values, and the negative
 Fourier coefficients vanish by Cauchy's theorem. The boundary condition turns into
-`aₙ = conj a_{k-n}` for every integer `n`, with `aₙ = 0` for `n < 0`. Hence `u` agrees on `𝔻̄`
-with a polynomial of degree at most `k` whose coefficients satisfy `aᵢ = conj aⱼ` whenever
-`i + j = k`, a *conjugate-reciprocal* polynomial
+`aₙ = conj a_{k-n}` for every integer `n`, with `aₙ = 0` for `n < 0`. Hence `u` agrees on the
+closed disc with a polynomial of degree at most `k` whose coefficients satisfy `aᵢ = conj aⱼ`
+whenever `i + j = k`, a *conjugate-reciprocal* polynomial
 (`TauCeti.mem_unitDiscCauchyRiemannKernel_iff_exists_eqOn`). Conversely every such polynomial is a
 solution.
 These polynomials form a real vector space of dimension `k + 1` for `k ≥ -1` and `0` for `k < 0`
-(`TauCeti.finrank_conjReciprocalPolynomials`), so the space of solutions, read on `𝔻̄`, has real
-dimension `max (k + 1) 0` (`TauCeti.finrank_map_unitDiscCauchyRiemannKernel`). For `k ≥ -1` this
-is `1 + k`, rank plus Maslov index, as the Riemann–Roch formula predicts once the cokernel is
-known to vanish; the cokernel, which needs Sobolev completions, is not treated here.
+(`TauCeti.finrank_conjReciprocalPolynomials`), so the space of solutions, read on the closed
+disc, has real dimension `max (k + 1) 0` (`TauCeti.finrank_map_unitDiscCauchyRiemannKernel`).
+For `k ≥ -1` this is `1 + k`, rank plus Maslov index, as the Riemann–Roch formula predicts once
+the cokernel is known to vanish; the cokernel, which needs Sobolev completions, is not treated
+here.
 
 ## Main definitions
 
@@ -215,11 +219,11 @@ theorem eval_eq_zpow_mul_conj_eval (hp : p ∈ conjReciprocalPolynomials k) {w :
 
 /-! ### The Cauchy–Riemann kernel on the unit disc -/
 
-/-- The kernel of the Cauchy–Riemann operator `∂̄` on the closed unit disc with boundary values on
-the rotating line `w ^ (k / 2) ℝ`: the functions `u : ℂ → ℂ` that are holomorphic on the open unit
-disc, continuous on its closure, and satisfy `u w = w ^ k * conj (u w)` for `‖w‖ = 1`. The
-boundary loop of lines has Maslov index `k`. Membership only depends on the values of `u` on the
-closed disc. -/
+/-- The kernel of the Cauchy–Riemann operator `∂/∂(conj z)` on the closed unit disc with
+boundary values on the rotating line `w ^ (k / 2) ℝ`: the functions `u : ℂ → ℂ` that are
+holomorphic on the open unit disc, continuous on its closure, and satisfy
+`u w = w ^ k * conj (u w)` for `‖w‖ = 1`. The boundary loop of lines has Maslov index `k`.
+Membership only depends on the values of `u` on the closed disc. -/
 def unitDiscCauchyRiemannKernel (k : ℤ) : Submodule ℝ (ℂ → ℂ) where
   carrier := {u | DiffContOnCl ℂ u (ball 0 1) ∧
     ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w)}
