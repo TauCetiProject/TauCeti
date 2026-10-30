@@ -136,7 +136,7 @@ theorem _root_.AnalyticOnNhd.volume_setOf_circleMap_eq_zero
     (hf : AnalyticOnNhd ℂ f (ball c R)) {w : ℂ}
     (hw : w ∈ ball c R) (hfw : f w ≠ 0) (hr : 0 < r) (hrR : r < R) :
     volume {θ | f (circleMap c r θ) = 0} = 0 := by
-  refine Set.Countable.measure_zero (((finite_setOf_mem_and_eq_zero_of_isCompact hf
+  refine Set.Countable.measure_zero (((hf.finite_setOf_mem_and_eq_zero_of_isCompact
     (convex_ball c R).isPreconnected hw hfw (isCompact_sphere c r)
     (sphere_subset_ball hrR)).countable.preimage_circleMap c hr.ne').mono ?_) _
   exact fun θ hθ ↦ ⟨circleMap_mem_sphere c hr.le θ, hθ⟩

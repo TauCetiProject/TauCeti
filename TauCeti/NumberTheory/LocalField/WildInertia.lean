@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
+public import TauCeti.NumberTheory.LocalField.FiniteGalois
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 public import TauCeti.NumberTheory.LocalField.TamelyRamified.NormalClosure
@@ -83,6 +84,9 @@ finite quotients of `G_K` through which `⁅P_K, P_K⁆` dies by tuples of a fix
   to a finite normal subextension `L` lies in `G_1` of `L/K`.
 * `TauCeti.mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem`: `P_K` is the inverse limit of
   the finite-level groups `G_1`.
+* `TauCeti.mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerRamificationGroup`
+  gives the same criterion on finite Galois intermediate fields with their induced
+  local-field structures.
 * `TauCeti.isProP_wildInertiaSubgroup`: `P_K` is pro-`p`.
 * `TauCeti.le_wildInertiaSubgroup_of_isProP`: every pro-`p` subgroup of `I_K` lies in `P_K`.
 * `TauCeti.isProPSylow_wildInertiaSubgroup` and
@@ -417,6 +421,77 @@ theorem restrictNormal_mem_lowerRamificationGroup_one
     ((ValuativeExtension.mapValueGroupWithZero_strictMono (A := L) (B := M)).lt_iff_lt.1 hlt)
 
 variable {K} in
+/-- **Wild inertia in canonical finite Galois coordinates.** An absolute Galois automorphism
+is wild exactly when its restriction to every finite Galois subextension belongs to `G₁`,
+using the local-field structures induced from the base field. This is the canonical finite-Galois
+criterion prescribed in `TauCetiRoadmap/LocalFieldsRamification`, Layer 4. -/
+theorem mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerRamificationGroup
+    {σ : Gal(AlgebraicClosure K/K)} :
+    σ ∈ wildInertiaSubgroup K ↔
+      ∀ L : FiniteGaloisIntermediateField K (AlgebraicClosure K),
+        AlgEquiv.restrictNormal σ L ∈ finiteGaloisLowerRamificationGroup K L 1 := by
+  refine ⟨fun hσ L ↦ ?_, fun h ↦ ?_⟩
+  · let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L.toIntermediateField
+    let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L.toIntermediateField
+    have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K)
+      L.toIntermediateField
+    have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) L.toIntermediateField
+    rw [finiteGaloisLowerRamificationGroup_def]
+    exact restrictNormal_mem_lowerRamificationGroup_one L.toIntermediateField hσ
+  · refine mem_wildInertiaSubgroup_iff_pow_eq.2 fun m hm a x hx ↦ ?_
+    have hm0 : m ≠ 0 := by
+      rintro rfl
+      exact hm (dvd_zero _)
+    have hx0 : x ≠ 0 := by
+      rintro rfl
+      rw [zero_pow hm0] at hx
+      exact (_root_.map_ne_zero _).2 a.ne_zero hx.symm
+    -- Use the finite splitting field of the separable polynomial `X^m - a`.
+    let f : K[X] := X ^ m - C (a : K)
+    have hsep : f.Separable := separable_X_pow_sub_C _
+      (natCast_ne_zero_of_isUnit (IsLocalRing.isUnit_natCast_iff_not_dvd.2 hm)) a.ne_zero
+    let L : IntermediateField K (AlgebraicClosure K) := adjoin K (f.rootSet (AlgebraicClosure K))
+    have hsplit : (f.map (algebraMap K (AlgebraicClosure K))).Splits := IsAlgClosed.splits _
+    have : IsSplittingField K L f := adjoin_rootSet_isSplittingField hsplit
+    have : IsGalois K L := IsGalois.of_separable_splitting_field hsep
+    let E : FiniteGaloisIntermediateField K (AlgebraicClosure K) := ⟨L⟩
+    have hxL : x ∈ L := subset_adjoin K _ (mem_rootSet.2
+      ⟨X_pow_sub_C_ne_zero (Nat.pos_of_ne_zero hm0) _,
+        by simpa [f, aeval_def, sub_eq_zero] using hx⟩)
+    let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L
+    let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L
+    have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) L
+    have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) L
+    have hchar : ringChar 𝓀[L] = ringChar 𝓀[K] :=
+      have : CharP 𝓀[L] (ringChar 𝓀[K]) :=
+        charP_of_injective_algebraMap (algebraMap 𝓀[K] 𝓀[L]).injective _
+      ringChar.eq 𝓀[L] _
+    have hG1 := h E
+    rw [finiteGaloisLowerRamificationGroup_def] at hG1
+    rw [lowerRamificationGroup_def] at hG1
+    set τ := AlgEquiv.restrictNormal σ L with hτ_def
+    -- The ratio `z = τ x / x` is a principal unit of `L` and an `m`-th root of unity, so `z = 1`.
+    set y : L := ⟨x, hxL⟩
+    have hy0 : y ≠ 0 := fun h ↦ hx0 (congrArg Subtype.val h)
+    set z : Lˣ := Units.mk0 (τ • y / y) (div_ne_zero ((smul_ne_zero_iff_ne _).2 hy0) hy0)
+    have hz1 : z ∈ unitFiltration L 1 := smul_div_mem_unitFiltration (y := Units.mk0 y hy0) hG1 rfl
+    have hym : y ^ m = algebraMap K L a := Subtype.ext hx
+    have hzm : z ∈ rootsOfUnity m L := by
+      rw [mem_rootsOfUnity]
+      refine Units.ext ?_
+      rw [Units.val_pow_eq_pow_val, Units.val_mk0, div_pow, ← smul_pow', hym, AlgEquiv.smul_def,
+        AlgEquiv.commutes, div_self ((_root_.map_ne_zero _).2 a.ne_zero), Units.val_one]
+    have hmL : ¬ ringChar 𝓀[L] ∣ m := hchar ▸ hm
+    have hz : z = 1 := Subgroup.disjoint_def.1
+      (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit
+        (IsLocalRing.isUnit_natCast_iff_not_dvd.2 hmL)) hzm hz1
+    have hτy : τ • y = y := by
+      have := congrArg Units.val hz
+      rwa [Units.val_mk0, Units.val_one, div_eq_one_iff_eq hy0] at this
+    have := congrArg Subtype.val hτy
+    rwa [AlgEquiv.smul_def, hτ_def, AlgEquiv.restrictNormal_apply] at this
+
+variable {K} in
 /-- **Wild inertia is the inverse limit of the finite-level `G_1`.** An automorphism `σ` of
 `K^{alg}` lies in the wild inertia subgroup `P_K` exactly when, for every finite normal
 subextension `L` of `K^{alg}/K`, its restriction to `L` lies in the first ramification group
@@ -427,54 +502,15 @@ theorem mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem {σ : Gal(Algebrai
       [FiniteDimensional K L] [Normal K L],
       AlgEquiv.restrictNormal σ L ∈ lowerRamificationGroup K L 1 := by
   refine ⟨fun hσ L _ _ _ _ _ _ ↦ restrictNormal_mem_lowerRamificationGroup_one L hσ, fun h ↦ ?_⟩
-  refine mem_wildInertiaSubgroup_iff_pow_eq.2 fun m hm a x hx ↦ ?_
-  have hm0 : m ≠ 0 := by
-    rintro rfl
-    exact hm (dvd_zero _)
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    rw [zero_pow hm0] at hx
-    exact (_root_.map_ne_zero _).2 a.ne_zero hx.symm
-  -- A finite normal extension `L` of `K` containing `x`, with its local-field structure.
-  have : FiniteDimensional K K⟮x⟯ := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)
-  set L : IntermediateField K (AlgebraicClosure K) := normalClosure K K⟮x⟯ (AlgebraicClosure K)
-  have : FiniteDimensional K L := normalClosure.is_finiteDimensional K K⟮x⟯ _
-  have : Normal K L := normalClosure.normal K K⟮x⟯ _
-  have hxL : x ∈ L := K⟮x⟯.le_normalClosure (mem_adjoin_simple_self K x)
-  let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L
-  let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L
-  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) L
-  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) L
-  have hchar : ringChar 𝓀[L] = ringChar 𝓀[K] :=
-    have : CharP 𝓀[L] (ringChar 𝓀[K]) :=
-      charP_of_injective_algebraMap (algebraMap 𝓀[K] 𝓀[L]).injective _
-    ringChar.eq 𝓀[L] _
-  have hG1 := h L
-  rw [lowerRamificationGroup_def] at hG1
-  set τ := AlgEquiv.restrictNormal σ L with hτ_def
-  -- The ratio `z = τ x / x` is a principal unit of `L` and an `m`-th root of unity, so `z = 1`.
-  set y : L := ⟨x, hxL⟩
-  have hy0 : y ≠ 0 := fun h ↦ hx0 (congrArg Subtype.val h)
-  set z : Lˣ := Units.mk0 (τ • y / y) (div_ne_zero ((smul_ne_zero_iff_ne _).2 hy0) hy0)
-  have hz1 : z ∈ unitFiltration L 1 := smul_div_mem_unitFiltration (y := Units.mk0 y hy0) hG1 rfl
-  have hym : y ^ m = algebraMap K L a := Subtype.ext hx
-  have hzm : z ∈ rootsOfUnity m L := by
-    rw [mem_rootsOfUnity]
-    refine Units.ext ?_
-    rw [Units.val_pow_eq_pow_val, Units.val_mk0, div_pow, ← smul_pow', hym, AlgEquiv.smul_def,
-      AlgEquiv.commutes, div_self ((_root_.map_ne_zero _).2 a.ne_zero), Units.val_one]
-  have hmL : ¬ ringChar 𝓀[L] ∣ m := hchar ▸ hm
-  have hmL0 : (m : L) ≠ 0 :=
-    natCast_ne_zero_of_isUnit (IsLocalRing.isUnit_natCast_iff_not_dvd.2 hmL)
-  have hz : z = 1 := Subgroup.disjoint_def.1 (disjoint_rootsOfUnity_unitFiltration (i := 1) hmL0
-    fun q hq hqL hqm ↦ natCastValuation_lt_sub_one_mul_of_lt_of_dvd hmL0
-      (by rw [(natCastValuation_eq_zero_iff_not_dvd L m hmL0).2 hmL]; exact one_pos) hq hqL hqm)
-    hzm hz1
-  have hτy : τ • y = y := by
-    have := congrArg Units.val hz
-    rwa [Units.val_mk0, Units.val_one, div_eq_one_iff_eq hy0] at this
-  have := congrArg Subtype.val hτy
-  rwa [AlgEquiv.smul_def, hτ_def, AlgEquiv.restrictNormal_apply] at this
+  apply mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerRamificationGroup.2
+  intro L
+  let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L.toIntermediateField
+  let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L.toIntermediateField
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K)
+    L.toIntermediateField
+  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) L.toIntermediateField
+  rw [finiteGaloisLowerRamificationGroup_def]
+  exact h L.toIntermediateField
 
 /-! ### Wild inertia is the pro-`p` Sylow subgroup of inertia -/
 

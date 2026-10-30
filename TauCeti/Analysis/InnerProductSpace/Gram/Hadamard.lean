@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 public import Mathlib.Analysis.Matrix.PosDef
-public import TauCeti.Analysis.Matrix.PosSemidef
+public import TauCeti.Analysis.Matrix.PosSemidef.Basic
 
 /-!
 # Hadamard's inequality for Gram determinants

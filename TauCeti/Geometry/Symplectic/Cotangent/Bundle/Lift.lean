@@ -29,6 +29,12 @@ may have boundary or corners and need not be finite-dimensional. In particular, 
 carry exact Lagrangian maps for `λ_M` to exact Lagrangian maps for `λ_N` with the same primitive
 (`Diffeomorph.isExactLagrangianMap_cotangent_comp_iff`).
 
+In particular, if a group `G` acts on `M` by smooth maps, its cotangent-lifted action on `T*M`
+(`TauCeti.CotangentBundle.instMulAction`) preserves `λ` and `ω`
+(`TauCeti.CotangentBundle.mpullback_smul_liouvilleForm`,
+`TauCeti.CotangentBundle.mpullback_smul_symplecticForm`): it is an action by exact
+symplectomorphisms.
+
 ## References
 
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
@@ -115,3 +121,31 @@ theorem isExactLagrangianMap_cotangent_comp_iff {E'' H'' : Type*} [NormedAddComm
 end Symplectic
 
 end Diffeomorph
+
+namespace TauCeti.CotangentBundle
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+
+/-- **The cotangent-lifted action preserves the Liouville form.** For a group acting on `M` by
+smooth maps, each element acting on `T*M` by the cotangent-lifted action pulls the Liouville form
+back to itself. -/
+@[simp]
+theorem mpullback_smul_liouvilleForm [IsManifold I 2 M] (g : G) :
+    SmoothForm.mpullback (fun z : CotangentBundle I M ↦ g • z) (contMDiff_const_smul g)
+      (liouvilleForm I M) = liouvilleForm I M := by
+  simp only [smul_def]
+  exact (Diffeomorph.constSmul I ∞ g).mpullback_cotangent_liouvilleForm
+
+/-- **The cotangent-lifted action is symplectic.** For a group acting on `M` by smooth maps, each
+element acting on `T*M` by the cotangent-lifted action pulls the canonical symplectic form back to
+itself. -/
+@[simp]
+theorem mpullback_smul_symplecticForm [IsManifold I ∞ M] (g : G) :
+    SmoothForm.mpullback (fun z : CotangentBundle I M ↦ g • z) (contMDiff_const_smul g)
+      (symplecticForm I M) = symplecticForm I M := by
+  simp only [smul_def]
+  exact (Diffeomorph.constSmul I ∞ g).mpullback_cotangent_symplecticForm
+
+end TauCeti.CotangentBundle
