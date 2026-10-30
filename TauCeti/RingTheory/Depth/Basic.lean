@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 
 /-!
 # Basic depth of modules
@@ -43,6 +44,12 @@ The regular-sequence transfer lemmas for linear maps live in
   `ModuleCat.depth_min_snd_fst_sub_one_le_trd_right` and
   `ModuleCat.depth_min_fst_trd_le_snd_right`, transported through
   `ModuleCat.shortComplexOfConj_shortExact`.
+* `ModuleCat.depth_trd_add_one_le_fst_of_comp_mk₀_eq_zero`: for a short exact sequence
+  `0 → X₁ → X₂ → X₃ → 0` whose first map induces zero on `Ext N - n` for every `n`, the depth
+  of `X₁` is at least one more than that of `X₃`. This sharpens Mathlib's
+  `ModuleCat.depth_min_snd_trd_add_one_le_fst_right`.
+* `IsLocalRing.depth_prod` and `IsLocalRing.depth_eq_depth_self_of_free`: the depth of a product
+  is the minimum of the depths, so a nonzero finite free module has the depth of the ring.
 * `IsLocalRing.depth_quotSMulTop_succ_eq_depth`: dividing a finite module by an `M`-regular element
   of the maximal ideal lowers the depth by exactly one.
 * `IsLocalRing.depth_add_length_eq_depth_of_isRegular`: dividing a finite module by an `M`-regular
@@ -92,6 +99,36 @@ theorem RingTheory.Sequence.IsRegular.length_le_supportDim {R : Type*} [CommRing
     (Module.supportDim_ne_bot_of_nontrivial R (M ⧸ Ideal.ofList rs • (⊤ : Submodule R M)))
   rw [← Module.supportDim_add_length_eq_supportDim_of_isRegular rs reg, ← he]
   exact_mod_cast le_add_self
+
+namespace ModuleCat
+
+open CategoryTheory Abelian
+
+variable {R : Type u} [CommRing R] [Small.{v} R]
+
+/-- In a short exact sequence `0 → X₁ → X₂ → X₃ → 0` whose first map induces the zero map
+`Ext N X₁ n → Ext N X₂ n` for every `n`, the depth of `X₁` with respect to `N` is at least one
+more than that of `X₃`: the connecting maps `Ext N X₃ n → Ext N X₁ (n + 1)` are surjective. -/
+theorem depth_trd_add_one_le_fst_of_comp_mk₀_eq_zero (N : ModuleCat.{v} R)
+    {S : ShortComplex (ModuleCat.{v} R)} (hS : S.ShortExact)
+    (h : ∀ (n : ℕ) (x : Ext N S.X₁ n), x.comp (Ext.mk₀ S.f) (add_zero n) = 0) :
+    N.depth S.X₃ + 1 ≤ N.depth S.X₁ := by
+  apply le_sSup
+  intro i hi
+  match i with
+  | 0 =>
+    -- `Hom (N, X₁) → Hom (N, X₂)` is injective, and zero by assumption.
+    exact ⟨fun x y ↦ Ext.postcomp_mk₀_injective_of_mono N S.f (hf := hS.mono_f)
+      ((h 0 x).trans (h 0 y).symm)⟩
+  | i + 1 =>
+    have hi' : (i : ℕ∞) < N.depth S.X₃ := by simpa using hi
+    have := subsingleton_ext_of_lt_depth hi'
+    refine ⟨fun x y ↦ ?_⟩
+    obtain ⟨x₃, rfl⟩ := Ext.covariant_sequence_exact₁ N hS x (h _ x) rfl
+    obtain ⟨y₃, rfl⟩ := Ext.covariant_sequence_exact₁ N hS y (h _ y) rfl
+    rw [Subsingleton.elim x₃ y₃]
+
+end ModuleCat
 
 namespace Ideal
 
@@ -219,6 +256,45 @@ theorem depth_min_fst_trd_le_snd_of_exact (first : M →ₗ[R] N) (second : N �
     surjective
 
 end Exact
+
+section Free
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
+
+/-- If `c ⊓ (b + 1) ≤ a` and `c ⊓ (a + 1) ≤ b`, then `c ≤ a`. -/
+private theorem le_of_inf_le_of_inf_le {a b c : ℕ∞} (ha : c ⊓ (b + 1) ≤ a)
+    (hb : c ⊓ (a + 1) ≤ b) : c ≤ a := by
+  induction a using ENat.recTopCoe <;> induction b using ENat.recTopCoe <;>
+    induction c using ENat.recTopCoe <;> simp_all <;> norm_cast at * <;> omega
+
+/-- The depth of a product of two modules over a local ring is the minimum of their depths. -/
+theorem depth_prod (M N : Type v) [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] :
+    depth (ModuleCat.of R (M × N)) = depth (ModuleCat.of R M) ⊓ depth (ModuleCat.of R N) := by
+  have hM := depth_min_snd_trd_add_one_le_fst_of_exact (LinearMap.inl R M N)
+    (LinearMap.snd R M N) Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective
+  have hN := depth_min_snd_trd_add_one_le_fst_of_exact (LinearMap.inr R M N)
+    (LinearMap.fst R M N) Function.Exact.inr_fst LinearMap.inr_injective LinearMap.fst_surjective
+  exact le_antisymm (le_inf (le_of_inf_le_of_inf_le hM hN) (le_of_inf_le_of_inf_le hN hM))
+    (depth_min_fst_trd_le_snd_of_exact (LinearMap.inl R M N) (LinearMap.snd R M N)
+      Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective)
+
+/-- A nonzero finite free module over a local ring has the same depth as the ring. -/
+theorem depth_eq_depth_self_of_free (M : Type v) [AddCommGroup M] [Module R M] [Module.Free R M]
+    [Module.Finite R M] [Nontrivial M] :
+    depth (ModuleCat.of R M) = depth (ModuleCat.of R R) := by
+  have key (k : ℕ) (hk : 0 < k) :
+      depth (ModuleCat.of R (Fin k → R)) = depth (ModuleCat.of R R) := by
+    induction k, hk using Nat.le_induction with
+    | base => exact depth_eq_of_linearEquiv (LinearEquiv.funUnique (Fin 1) R R)
+    | succ k hk ih =>
+      rw [← depth_eq_of_linearEquiv (Fin.consLinearEquiv R fun _ : Fin (k + 1) ↦ R), depth_prod,
+        ih, inf_idem]
+  let b := Module.Free.chooseBasis R M
+  have := b.index_nonempty
+  rw [depth_eq_of_linearEquiv (b.equivFun.trans
+    (LinearEquiv.funCongrLeft R R (Fintype.equivFin _).symm)), key _ Fintype.card_pos]
+
+end Free
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
   {M : Type v} [AddCommGroup M] [Module R M]

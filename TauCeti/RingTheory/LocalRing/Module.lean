@@ -23,6 +23,12 @@ More generally, a family of `n` elements of a free module of rank `n` whose coor
 linearly independent over the residue field is a basis. Applied to the differentials of a local
 ring, this changes coordinates.
 
+Every finite module `M` over a local ring `(R, 𝔪)` has a generating family `v₁, …, vₙ` all of
+whose relations `∑ cᵢ vᵢ = 0` have coefficients in `𝔪`: take a generating family of minimal
+length. Equivalently, the induced surjection `Rⁿ → M` has kernel inside `𝔪 Rⁿ`, so it is a
+minimal free presentation of `M`; such presentations compute depths and projective dimensions,
+as in the Auslander–Buchsbaum formula.
+
 ## Main results
 
 * `TauCeti.IsLocalRing.exists_mem_span_singleton_eq_top_of_finrank_eq_one`: a free module of
@@ -30,6 +36,8 @@ ring, this changes coordinates.
 * `TauCeti.IsLocalRing.exists_basis_of_linearIndependent_residue_coord`: a family of `n`
   elements of a free module of rank `n` whose coordinates have linearly independent residues is a
   basis.
+* `TauCeti.IsLocalRing.exists_span_eq_top_forall_mem_maximalIdeal`: a finite module over a local
+  ring has a finite generating family whose relations all have coefficients in the maximal ideal.
 -/
 
 public section
@@ -80,5 +88,42 @@ theorem exists_basis_of_linearIndependent_residue_coord {ι κ : Type*} [Fintype
     exact isUnit_of_map_unit (_root_.IsLocalRing.residue R) _ this
   refine ⟨(b.map (Matrix.toLinearEquiv b A hA)).reindex e.symm, fun k ↦ ?_⟩
   simp [A, Matrix.toLin_self, Module.Basis.sum_repr]
+
+omit [_root_.IsLocalRing R] in
+/-- If `v₀, …, vₘ` span `M` and some relation `∑ cᵢ vᵢ = 0` has a unit coefficient `cⱼ`, then the
+family with `vⱼ` removed still spans `M`. -/
+private theorem span_range_comp_succAbove_eq_top {m : ℕ} {v : Fin (m + 1) → M}
+    (hv : Submodule.span R (Set.range v) = ⊤) {c : Fin (m + 1) → R} (hc : ∑ i, c i • v i = 0)
+    {j : Fin (m + 1)} (hj : IsUnit (c j)) :
+    Submodule.span R (Set.range (v ∘ j.succAbove)) = ⊤ := by
+  rw [eq_top_iff, ← hv, Submodule.span_le]
+  rintro _ ⟨i, rfl⟩
+  rcases eq_or_ne i j with rfl | hij
+  · rw [Fin.sum_univ_succAbove _ i] at hc
+    rw [SetLike.mem_coe, ← Submodule.smul_mem_iff_of_isUnit _ hj, eq_neg_of_add_eq_zero_left hc]
+    exact neg_mem (Submodule.sum_mem _ fun k _ ↦
+      Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩))
+  · obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq hij
+    exact Submodule.subset_span ⟨k, rfl⟩
+
+/-- **Minimal generating families.** A finite module over a local ring has a finite generating
+family all of whose relations have coefficients in the maximal ideal. -/
+theorem exists_span_eq_top_forall_mem_maximalIdeal [Module.Finite R M] :
+    ∃ (n : ℕ) (v : Fin n → M), Submodule.span R (Set.range v) = ⊤ ∧
+      ∀ c : Fin n → R, ∑ i, c i • v i = 0 → ∀ i, c i ∈ _root_.IsLocalRing.maximalIdeal R := by
+  classical
+  have hex : ∃ n, ∃ v : Fin n → M, Submodule.span R (Set.range v) = ⊤ := Module.Finite.exists_fin
+  obtain ⟨v, hv⟩ := Nat.find_spec hex
+  have hmin (k : ℕ) (hk : k < Nat.find hex) :
+      ¬ ∃ w : Fin k → M, Submodule.span R (Set.range w) = ⊤ := Nat.find_min hex hk
+  -- A generating family of minimal length works.
+  generalize Nat.find hex = n at v hv hmin
+  refine ⟨n, v, hv, fun c hc j ↦ ?_⟩
+  cases n with
+  | zero => exact j.elim0
+  | succ m =>
+    by_contra hj
+    exact hmin m m.lt_succ_self
+      ⟨_, span_range_comp_succAbove_eq_top hv hc (_root_.IsLocalRing.notMem_maximalIdeal.mp hj)⟩
 
 end TauCeti.IsLocalRing
