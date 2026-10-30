@@ -359,15 +359,13 @@ private theorem eval₂_sub_lie_add (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed
   have hd := SmoothForm.mextDeriv_apply_two (φ := σ)
     ((a.contMDiff X x).mdifferentiableAt (by simp)) ((a.contMDiff Y x).mdifferentiableAt (by simp))
     ((a.contMDiff Z x).mdifferentiableAt (by simp))
-  simp only [← SmoothForm.eval₂_apply] at hd
-  rw [(SmoothForm.isClosed_def σ).1 hσ, h.mvfderiv_eval₂ hσ, h.mvfderiv_eval₂ hσ,
-    h.mvfderiv_eval₂ hσ, ← h.eval₂_apply, ← h.eval₂_apply, ← h.eval₂_apply, hb, hb, hb,
-    SmoothForm.eval₂_neg_left, SmoothForm.eval₂_neg_left, SmoothForm.eval₂_neg_left, ← lie_skew X Z,
-    map_neg, Pi.neg_apply, SmoothForm.eval₂_neg_left] at hd
-  simp only [Pi.zero_apply, ContinuousAlternatingMap.coe_zero] at hd
+  rw [(SmoothForm.isClosed_def σ).1 hσ] at hd
+  simp only [← SmoothForm.eval₂_apply, h.mvfderiv_eval₂ hσ, ← h.eval₂_apply, hb,
+    SmoothForm.eval₂_neg_left, Pi.zero_apply, ContinuousAlternatingMap.coe_zero] at hd
+  simp only [← lie_skew X Z, map_neg, Pi.neg_apply, SmoothForm.eval₂_neg_left] at hd
   have hj : μ x ⁅X, ⁅Y, Z⁆⁆ + μ x ⁅Y, ⁅Z, X⁆⁆ + μ x ⁅Z, ⁅X, Y⁆⁆ = 0 := by
     rw [← map_add, ← map_add, lie_jacobi, map_zero]
-  rw [← lie_skew ⁅X, Y⁆ Z, ← lie_skew ⁅Y, Z⁆ X, ← lie_skew ⁅Z, X⁆ Y, map_neg, map_neg, map_neg]
+  simp only [← lie_skew ⁅X, Y⁆ Z, ← lie_skew ⁅Y, Z⁆ X, ← lie_skew ⁅Z, X⁆ Y, map_neg]
   linear_combination -hd / 2 + hj
 
 /-- **The cocycle identity.** For a closed form, the cocycle of a moment map is a Lie algebra
