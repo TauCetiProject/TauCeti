@@ -20,16 +20,20 @@ decomposes as
 
 `𝕊^λ(ℂⁿ) ⊗ 𝕊^μ(ℂⁿ) ≅ ⨁_ν 𝕊^ν(ℂⁿ) ^ c_ν`,
 
-the sum running over the partitions `ν` of `|λ| + |μ|`, where the multiplicity `c_ν` is the
-Littlewood–Richardson coefficient in Stembridge's form: the number of `λ`-Yamanouchi
-semistandard tableaux `T` of shape `μ` with entries below `n` whose content added to `λ` is `ν`
-(`TauCeti.nonempty_equiv_tprod_weylRepOfShape`). The decomposition is indexed by these tableaux
-themselves, each contributing one copy of `𝕊^ν(ℂⁿ)`, so the multiplicity of `𝕊^ν(ℂⁿ)` is visibly
-the Littlewood–Richardson count. The Littlewood–Richardson coefficients are thus the
-tensor-product multiplicities of the polynomial irreducible representations of `GL n ℂ`.
+the sum running over the partitions `ν` of `|λ| + |μ|`, where `c_ν` is the number of
+`λ`-Yamanouchi semistandard tableaux `T` of shape `μ` with entries below `n` whose content added
+to `λ` is `ν` (`TauCeti.nonempty_equiv_tprod_weylRepOfShape`). The decomposition is indexed by
+these tableaux themselves, each contributing one copy of `𝕊^ν(ℂⁿ)`.
 
-Summands with more than `n` rows are zero, as is `𝕊^λ(ℂⁿ)` itself when `λ` has more than `n`
-rows, so no bound on the number of rows is needed in the statement.
+When `ν` has at most `n` rows, the entries of such a tableau are row indices of `ν`, so they are
+automatically below `n` and `c_ν` is the Littlewood–Richardson coefficient `c^ν_{λμ}` in
+Stembridge's form. The Littlewood–Richardson coefficients `c^ν_{λμ}` for `ν` with at most `n` rows
+are thus the tensor-product multiplicities of the polynomial irreducible representations of
+`GL n ℂ`. For `ν` with more than `n` rows the bounded count `c_ν` can be smaller than `c^ν_{λμ}`
+(for `n = 1` and `λ = μ = (1)`, it is `0` for `ν = (1, 1)` while `c^ν_{λμ} = 1`), but this does
+not affect the decomposition: Weyl modules of diagrams with more than `n` rows are zero, as is
+`𝕊^λ(ℂⁿ)` itself when `λ` has more than `n` rows, so no bound on the number of rows is needed in
+the statement.
 
 Both sides are rational representations of `GL n ℂ` (`TauCeti.IsRationalRep.tprod` and
 `TauCeti.IsRationalRep.directSum`), and rational representations whose characters agree on the
@@ -65,8 +69,9 @@ open scoped Classical in
 /-- **The Littlewood–Richardson rule for `GL n ℂ`.** The tensor product of the Weyl modules of
 two Young diagrams `λ` and `μ` is equivalent to the direct sum of the Weyl modules `𝕊^ν(ℂⁿ)`, one
 for each `λ`-Yamanouchi semistandard tableau `T` of shape `μ` with entries below `n`, where `ν` is
-the partition of `|λ| + |μ|` with `λ + c(T) = ν`. So `𝕊^ν(ℂⁿ)` occurs with multiplicity the
-Littlewood–Richardson coefficient `c^ν_{λμ}`. -/
+the partition of `|λ| + |μ|` with `λ + c(T) = ν`. So when `ν` has at most `n` rows, `𝕊^ν(ℂⁿ)`
+occurs with multiplicity the Littlewood–Richardson coefficient `c^ν_{λμ}`; the summands for `ν` with
+more than `n` rows are zero. -/
 theorem nonempty_equiv_tprod_weylRepOfShape (lam μ : YoungDiagram) :
     Nonempty (Representation.Equiv ((weylRepOfShape ℂ n lam).tprod (weylRepOfShape ℂ n μ))
       (Representation.directSum fun p : Σ ν : (lam.card + μ.card).Partition,
