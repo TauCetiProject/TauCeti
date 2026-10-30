@@ -108,15 +108,7 @@ finite set of original vertices. -/
 theorem finite_edgewiseVertex_entries_subset (K : PreAbstractSimplicialComplex ι) (k : ℕ)
     (σ : Finset ι) :
     {u : K.EdgewiseVertex k | ∀ l, u.1 l ∈ σ}.Finite := by
-  let e : {u : K.EdgewiseVertex k // ∀ l, u.1 l ∈ σ} → (Fin k → σ) :=
-    fun u l => ⟨u.1.1 l, u.2 l⟩
-  have he : Function.Injective e := by
-    intro u v h
-    apply Subtype.ext
-    apply Subtype.ext
-    funext l
-    exact congrArg Subtype.val (congrFun h l)
-  exact Set.finite_coe_iff.mp (Finite.of_injective e he)
+  exact (Set.Finite.pi' fun _ : Fin k => σ.finite_toSet).preimage Subtype.val_injective.injOn
 
 variable {K : PreAbstractSimplicialComplex ι} {k : ℕ} {ρ : Finset (K.EdgewiseVertex k)}
   {u w : K.EdgewiseVertex k}
