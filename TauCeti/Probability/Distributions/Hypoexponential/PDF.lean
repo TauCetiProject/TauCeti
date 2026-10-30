@@ -15,14 +15,16 @@ import TauCeti.Probability.Distributions.Gamma.PDF
 /-!
 # The density of a hypoexponential law
 
-Group the positive rates `r i` by their distinct values `ρ`, with multiplicities `m ρ`, and let
-`A ρ k` be the partial-fraction coefficients of `TauCeti.Probability.hypoexponentialCoeff`. The
-density of the sum of independent exponential variables with rates `r` is
+For a nonempty family of positive rates, group the `r i` by their distinct values `ρ`, with
+multiplicities `m ρ`, and let `A ρ k` be the partial-fraction coefficients of
+`TauCeti.Probability.hypoexponentialCoeff`. The density of the sum of independent exponential
+variables with rates `r` is
 
 `f x = ∑ ρ, ∑ k ∈ [1, m ρ], A ρ k * x ^ (k - 1) * exp (-(ρ * x)) / (k - 1)!`
 
 for `x > 0`, and zero for `x ≤ 0`. Equivalently, `f` is the combination of the Erlang densities
 of shape `k` and rate `ρ` with the weights `A ρ k / ρ ^ k`, which sum to one but may be negative.
+For an empty family the chosen formula below is zero, while its law is the point mass at zero.
 
 The identification of `f` with the law compares characteristic functions. Splitting the weights
 into their positive and negative parts gives two finite Erlang mixtures, and the partial-fraction
@@ -128,16 +130,13 @@ theorem measurable_hypoexponentialPDF (r : ι → ℝ) : Measurable (hypoexponen
 private theorem coeff_mul_pow_mul_exp_eq {ρ : ℝ} (hρ : 0 < ρ) {k : ℕ} (hk : 1 ≤ k) (a : ℝ)
     (hx : 0 < x) :
     a * x ^ (k - 1) * exp (-(ρ * x)) / (k - 1)! = a / ρ ^ k * gammaPDFReal k ρ x := by
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
-  have hpow : x ^ ((↑(j + 1) : ℝ) - 1) = x ^ j := by
-    rw [Nat.cast_succ, add_sub_cancel_right, Real.rpow_natCast]
-  rw [gammaPDFReal, ite_eq_left hx.le, Real.rpow_natCast, hpow,
-    Nat.cast_succ, Real.Gamma_nat_eq_factorial, Nat.add_sub_cancel]
-  have := Nat.factorial_pos j
+  rw [gammaPDFReal_nat_eq hk hx.le]
+  have := Nat.factorial_pos (k - 1)
   field_simp
 
 /-- For positive rates and `x > 0`, the density is the combination of Erlang densities with the
-weights `A ρ k / ρ ^ k`. These weights sum to one by `sum_hypoexponentialCoeff_div_pow`. -/
+weights `A ρ k / ρ ^ k`. For a nonempty family these weights sum to one by
+`sum_hypoexponentialCoeff_div_pow`. -/
 theorem hypoexponentialPDFReal_eq_sum_gammaPDFReal (hr : ∀ i, 0 < r i) (hx : 0 < x) :
     hypoexponentialPDFReal r x = ∑ ρ ∈ univ.image r, ∑ k ∈ Icc 1 #{i | r i = ρ},
       hypoexponentialCoeff r ρ k / ρ ^ k * gammaPDFReal k ρ x := by
@@ -226,7 +225,11 @@ private theorem charFun_hypoexponentialMeasure_eq_sum [Nonempty ι] (hr : ∀ i,
   have hsub : (ρ : ℂ) - Complex.I * t ≠ 0 := Complex.ne_zero_of_re_pos (by simpa using hρ)
   rw [charFun_gammaMeasure (Nat.cast_pos.2 hk) hρ, Complex.ofReal_natCast, Complex.cpow_neg,
     Complex.cpow_natCast, Complex.ofReal_div, Complex.ofReal_pow]
-  rw [show (1 : ℂ) - Complex.I * t / ρ = (ρ - Complex.I * t) / ρ by field_simp, div_pow]
+  -- Normalize the denominator before taking its natural power.
+  have hdenom_normalize :
+      (1 : ℂ) - Complex.I * t / ρ = (ρ - Complex.I * t) / ρ := by
+    field_simp
+  rw [hdenom_normalize, div_pow]
   field_simp
 
 /-- Adding the negative part of the Erlang expansion to the hypoexponential law gives its positive
