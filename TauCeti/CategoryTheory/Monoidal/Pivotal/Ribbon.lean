@@ -86,10 +86,18 @@ theorem leftTrace_eq_rightTrace_of_ribbon [RibbonCategory C] {X : C} (f : X ⟶ 
 
 /-- The pivotal structure induced by a ribbon twist is spherical. This is not a global
 instance: it applies specifically to `pivotalOfBalanced C`, not an arbitrary pivotal structure. -/
-theorem sphericalOfRibbon [RibbonCategory C] : SphericalCategory C where
+theorem sphericalCategory_of_ribbonCategory [RibbonCategory C] : SphericalCategory C where
   leftTrace_eq_rightTrace := leftTrace_eq_rightTrace_of_ribbon
 
 end Balanced
+
+/-- A pivotal structure is spherical if its associated twist is ribbon. -/
+theorem spherical_of_ribbon [PivotalCategory C]
+    (h : letI := balancedOfBraidedPivotal C; RibbonCategory C) : SphericalCategory C := by
+  have hs : @SphericalCategory C _ _ _
+      (@pivotalOfBalanced C _ _ _ _ (balancedOfBraidedPivotal C)) :=
+    @sphericalCategory_of_ribbonCategory C _ _ _ _ (balancedOfBraidedPivotal C) h
+  rwa [pivotalOfBalanced_balancedOfBraidedPivotal] at hs
 
 end
 
