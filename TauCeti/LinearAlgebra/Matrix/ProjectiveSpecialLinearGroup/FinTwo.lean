@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
-public import TauCeti.GroupTheory.GroupAction.ConjAct
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 

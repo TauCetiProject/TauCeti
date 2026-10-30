@@ -19,6 +19,7 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 import TauCeti.Analysis.SpecificLimits.FastGeometric
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.GroupTheory.JorgensenSequence
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
