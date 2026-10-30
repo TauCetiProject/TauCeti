@@ -16,7 +16,7 @@ Let `E` and `F` be topological modules over a commutative ring `𝕜`, where `F`
 over a commutative `𝕜`-algebra `A`. A continuous alternating one-form `α : E [⋀^Fin 1]→L[𝕜] F`
 has an `A`-linear extension `A ⊗[𝕜] E →ₗ[A] F`, and a continuous alternating two-form
 `ω : E [⋀^Fin 2]→L[𝕜] F` has an `A`-bilinear extension to `A ⊗[𝕜] E`, which is again
-antisymmetric. For `𝕜 = ℝ` and `A = ℂ` these are the complex-multilinear extensions of
+alternating. For `𝕜 = ℝ` and `A = ℂ` these are the complex-multilinear extensions of
 complex-valued real forms to the complexification of `E`. They evaluate complex-valued
 differential forms on complexified tangent vectors, such as those of type `(1,0)` and `(0,1)`.
 
@@ -27,8 +27,9 @@ differential forms on complexified tangent vectors, such as those of type `(1,0)
   through `LinearMap.BilinMap.liftBaseChange`.
 * `ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul`: a relation
   `ω(v, w) = c • α(N(v, w))` between a two-form and a one-form persists to their extensions.
-* `ContinuousAlternatingMap.liftBaseChangeFinTwo_swap`: the extension of a two-form is
-  antisymmetric.
+* `ContinuousAlternatingMap.liftBaseChangeFinTwo_swap`,
+  `ContinuousAlternatingMap.liftBaseChangeFinTwo_self`: the extension of a two-form is
+  antisymmetric and alternating.
 -/
 
 public section
@@ -101,5 +102,13 @@ theorem liftBaseChangeFinTwo_swap (ω : E [⋀^Fin 2]→L[𝕜] F) (X Y : A ⊗[
     ext v w
     simpa using ω.map_swap ![v, w] (i := 0) (j := 1) (by decide)
   simpa using LinearMap.congr_fun₂ h X Y
+
+/-- The `A`-bilinear extension of a two-form is alternating: it vanishes on equal arguments. -/
+@[simp]
+theorem liftBaseChangeFinTwo_self (ω : E [⋀^Fin 2]→L[𝕜] F) (X : A ⊗[𝕜] E) :
+    ω.liftBaseChangeFinTwo A X X = 0 := by
+  induction X using TensorProduct.inductionOn with
+  | tmul a v => simp [ω.map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl (by decide)]
+  | add X Y hX hY => simp [hX, hY, liftBaseChangeFinTwo_swap A ω X Y]
 
 end ContinuousAlternatingMap
