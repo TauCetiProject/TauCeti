@@ -40,6 +40,8 @@ API replace them.
   identification with that trivialization's local frame.
 * `Riemannian.Tensor.chartLocalFrame_eq_symmL`: the frame is the inverse trivialization applied to
   the basis of the model space.
+* `Riemannian.Tensor.mvfderiv_chartLocalFrame`: on a boundaryless manifold, differentiating along
+  the frame is taking coordinate partial derivatives in the chart.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
 * `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
   inner product in the basis given by the trivialization.
@@ -116,6 +118,28 @@ theorem chartLocalFrame_eq_symmL (α x : M) (i : Fin (Module.finrank ℝ E)) :
   · rw [chartLocalFrame_def, TauCeti.Manifold.symmL_basis_eq_localFrame _ hx]
   · rw [chartLocalFrame_def, Trivialization.localFrame_apply_of_notMem _ _ hx,
       Trivialization.symmL_apply_of_notMem _ hx]
+
+/-- On a boundaryless manifold, the derivative of a function along the chart-local frame at `α` is
+the partial derivative, along the corresponding basis vector of the model space, of the function
+read in the extended chart at `α`. -/
+theorem mvfderiv_chartLocalFrame [I.Boundaryless] (α : M) {y : M}
+    (hy : y ∈ (chartAt H α).source) {f : M → ℝ} (hf : MDifferentiableAt I 𝓘(ℝ) f y)
+    (k : Fin (Module.finrank ℝ E)) :
+    mvfderiv I f y (chartLocalFrame (I := I) α k y) =
+      fderiv ℝ (f ∘ (extChartAt I α).symm) (extChartAt I α y) (Module.finBasis ℝ E k) := by
+  have hz : extChartAt I α y ∈ (extChartAt I α).target :=
+    (extChartAt I α).map_source (by rwa [extChartAt_source])
+  have hsymm : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I α).symm (extChartAt I α y) := by
+    have := mdifferentiableWithinAt_extChartAt_symm (I := I) hz
+    rwa [I.range_eq_univ, mdifferentiableWithinAt_univ] at this
+  have hy' : (extChartAt I α).symm (extChartAt I α y) = y :=
+    (extChartAt I α).left_inv (by rwa [extChartAt_source])
+  have h := mvfderiv_comp_apply_of_eq (g := f) (extChartAt I α y) (hy'.symm ▸ hf) hsymm hy'
+    (Module.finBasis ℝ E k)
+  rw [mvfderiv_eq_fderiv] at h
+  rw [chartLocalFrame_eq_symmL, TangentBundle.symmL_trivializationAt hy, I.range_eq_univ,
+    mfderivWithin_univ]
+  exact h.symm
 
 /-- Each member of `chartLocalFrame` is `C^n` on the tangent-trivialization base set. -/
 theorem contMDiffOn_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
