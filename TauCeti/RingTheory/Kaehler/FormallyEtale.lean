@@ -147,6 +147,6 @@ theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} [Finite ι] (a : 
         simp
   have : Algebra.FinitePresentation (MvPolynomial ι R) T :=
     .of_restrict_scalars_finitePresentation R _ _
-  exact ⟨inferInstance, inferInstance⟩
+  exact RingHom.etale_algebraMap.mpr ⟨inferInstance, inferInstance⟩
 
 end TauCeti

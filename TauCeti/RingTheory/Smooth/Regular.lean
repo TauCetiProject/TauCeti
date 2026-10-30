@@ -63,7 +63,8 @@ private theorem isRegularLocalRing_localization_of_isStandardSmooth [IsRegularRi
   let := (MvPolynomial.aeval (R := R) a).toAlgebra
   have : IsScalarTower R P S := .of_algebraMap_eq fun r ↦ by
     simp [P, RingHom.algebraMap_toAlgebra]
-  have : Algebra.Etale P S := etale_aeval_of_basis a b fun i ↦ (ha i).symm
+  have : Algebra.Etale P S :=
+    RingHom.etale_algebraMap.mp (etale_aeval_of_basis a b fun i ↦ (ha i).symm)
   have : IsNoetherianRing S := Algebra.FiniteType.isNoetherianRing R S
   -- Localize at `q` and at the prime `p` of `P` below it; `P_p` is regular.
   let p := q.under P
