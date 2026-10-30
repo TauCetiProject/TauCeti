@@ -28,6 +28,8 @@ variables, for instance the integer-valued binomial polynomials.
   degree at most `m`.
 * `MvPolynomial.restrictTotalDegree_eq_span`: the monomials of degree at most `m` span the
   polynomials of total degree at most `m`.
+* `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting linear forms for the variables does
+  not raise the total degree.
 * `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
   in the separate variables lie in the span of the products of the original family.
 * `Polynomial.Sequence.span_prod_aeval_X_eq_restrictTotalDegree`: the products `∏ᵢ Sₖᵢ(Xᵢ)` of
@@ -66,6 +68,25 @@ theorem restrictTotalDegree_eq_span (m : ℕ) :
     ext s
     simp [Finsupp.sum, Finsupp.degree_apply]
   rw [restrictTotalDegree, restrictSupport_eq_span, hs]
+
+/-- Substituting polynomials of total degree at most one, for instance linear forms, for the
+variables does not raise the total degree. -/
+theorem aeval_mem_restrictTotalDegree {τ : Type*} {f : σ → MvPolynomial τ R}
+    (hf : ∀ i, (f i).totalDegree ≤ 1) {m : ℕ} {p : MvPolynomial σ R}
+    (hp : p ∈ restrictTotalDegree σ R m) : aeval f p ∈ restrictTotalDegree τ R m := by
+  rw [restrictTotalDegree_eq_span] at hp
+  induction hp using Submodule.span_induction with
+  | mem _ h =>
+    obtain ⟨s, hs, rfl⟩ := h
+    rw [mem_restrictTotalDegree, aeval_monomial, map_one, one_mul, Finsupp.prod]
+    calc (∏ i ∈ s.support, f i ^ s i).totalDegree
+        ≤ ∑ i ∈ s.support, (f i ^ s i).totalDegree := totalDegree_finsetProd _ _
+      _ ≤ ∑ i ∈ s.support, s i := Finset.sum_le_sum fun i _ ↦
+          (totalDegree_pow _ _).trans (by simpa using Nat.mul_le_mul_left (s i) (hf i))
+      _ ≤ m := hs
+  | zero => simp
+  | add p q _ _ hp hq => simpa using add_mem hp hq
+  | smul a p _ hp => simpa using Submodule.smul_mem _ a hp
 
 open Polynomial in
 /-- If each `q k` with `k ≤ m` is a combination of the `p j` with `j ≤ k`, then the products
