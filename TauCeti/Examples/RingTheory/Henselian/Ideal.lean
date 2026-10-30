@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Henselian.Ideal
-import TauCeti.RingTheory.Henselian.Basic
 
 /-!
 # Tests for henselian pairs and nested ideals

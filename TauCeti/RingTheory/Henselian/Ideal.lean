@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Henselian.Radical
 public import TauCeti.RingTheory.Henselian.Quotient
-import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Tactic.LinearCombination
 
 /-!
