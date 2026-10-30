@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import TauCeti.Combinatorics.Network.Residual
+import TauCeti.Combinatorics.Network.Shift
 
 /-!
 # Bounded terminal assignments, flows, and weak duality
@@ -224,11 +225,10 @@ theorem terminal_excess_add_arrowSum_le [DecidableEq V] (f : BoundedFlow lo hi s
     (S : Finset V) :
     ((if t ∈ S then f.val else 0) - (if s ∈ S then f.val else 0)) +
       arrowSum lo S Sᶜ ≤ arrowSum hi Sᶜ S := by
-  have hex := sum_excessAt_eq_arrowSum_sub f.toFun S
-  rw [f.excessAt_eq_single_sub_single] at hex
-  simp only [Pi.sub_apply, sum_sub_distrib, sum_pi_single'] at hex
-  rw [hex, sub_add_eq_add_sub, sub_le_iff_le_add]
-  exact add_le_add (arrowSum_mono f.mem_Icc.2 Sᶜ S) (arrowSum_mono f.mem_Icc.1 S Sᶜ)
+  have h := ExcessFlow.sum_add_arrowSum_le
+    (⟨f.toFun, f.mem_Icc, rfl⟩ : ExcessFlow lo hi (excessAt f.toFun)) S
+  simpa only [f.excessAt_eq_single_sub_single, Pi.sub_apply, sum_sub_distrib,
+    sum_pi_single'] using h
 
 /-- A value between two feasible terminal values satisfies every incoming cut inequality for
 its terminal demand. -/
