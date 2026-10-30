@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Analytic.Constructions
-public import Mathlib.Analysis.Analytic.Inverse
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import TauCeti.Order.Filter.Germ
 
