@@ -38,6 +38,8 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 * `TauCeti.MvPowerSeries.restrictedMap_id` and `TauCeti.MvPowerSeries.restrictedMap_comp`:
   `restrictedMap` is functorial.
 * `TauCeti.MvPowerSeries.restrictedMap_algebraMap`: `restrictedMap` sends constants to constants.
+* `MvPowerSeries.restrictedMap_polynomialToRestricted`: `restrictedMap` sends polynomials to their
+  coefficientwise images.
 * `TauCeti.MvPowerSeries.norm_restrictedMap_le`: `restrictedMap` is bounded by the same constant.
 * `TauCeti.MvPowerSeries.restrictedMap_eq_zero_iff`: the coefficientwise kernel formula.
 * `TauCeti.MvPowerSeries.continuous_restrictedMap`: continuity for the Gauss norm topologies.
@@ -207,6 +209,13 @@ variable {σ R S : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormedCommRi
 theorem restrictedMap_algebraMap (r : R) :
     restrictedMap (c := c) φ hφ (algebraMap R _ r) = algebraMap S _ (φ r) :=
   Subtype.ext (by simp [coe_restrictedMap])
+
+/-- `restrictedMap` sends a polynomial to its coefficientwise image under `φ`. -/
+@[simp]
+theorem restrictedMap_polynomialToRestricted (p : MvPolynomial σ R) :
+    restrictedMap φ hφ (TauCeti.MvPowerSeries.polynomialToRestricted c p) =
+      TauCeti.MvPowerSeries.polynomialToRestricted c (MvPolynomial.map φ p) :=
+  Subtype.ext (by ext t; simp [coe_restrictedMap, MvPolynomial.coeff_map])
 
 end Algebra
 
