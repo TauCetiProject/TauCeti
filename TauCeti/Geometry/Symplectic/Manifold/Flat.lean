@@ -96,14 +96,16 @@ theorem interior_apply_eq_ofSubsingleton_flat (σ : SmoothTwoForm I M)
 /-- For a nondegenerate two-form, a vector field is determined by its contraction with the form:
 if `ι_X σ = ι_Y σ`, then `X = Y`. In particular, the Liouville field of a primitive is unique. -/
 theorem IsNondegenerate.interior_injective (h : σ.IsNondegenerate) :
-    Function.Injective fun X : (x : M) → TangentSpace I x ↦ σ.1.interior X := by
+    Function.Injective fun X : (x : M) → TangentSpace I x ↦ RoughForm.interior X σ.1 := by
   intro X Y hXY
   funext x
   rw [← sub_eq_zero]
   refine isNondegenerate_iff_separatingLeft.1 h x _ fun w ↦ ?_
-  have hw : σ.1.interior X x ![w] = σ.1.interior Y x ![w] := by simp only at hXY; rw [hXY]
+  have hw : RoughForm.interior X σ.1 x ![w] = RoughForm.interior Y σ.1 x ![w] := by
+    simp only at hXY; rw [hXY]
   rw [← SmoothForm.bilinFormAt_apply, map_sub, LinearMap.sub_apply, SmoothForm.bilinFormAt_apply,
-    SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_apply, SmoothForm.eval₂_apply, sub_eq_zero]
+    SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply,
+    sub_eq_zero]
   simpa only [RoughForm.interior_apply] using hw
 
 /-- **The flat maps of a two-form form a smooth section** of the bundle `Hom(TM, Hom(TM, ℝ))`. -/

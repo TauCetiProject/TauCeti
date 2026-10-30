@@ -77,7 +77,8 @@ namespace IsLiouvilleDomain
 
 /-- **The Liouville field of a Liouville domain is smooth**: the vector field `Z` with
 `ι_Z ω = α`, unique since `ω` is nondegenerate, is a smooth section of the tangent bundle. -/
-theorem contMDiff_of_interior_eq (h : IsLiouvilleDomain ω α W) (hZ : ω.1.interior Z = α.1) :
+theorem contMDiff_of_interior_eq (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) :
     ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z) := by
   obtain ⟨Z', hZ's, hZ', -⟩ := h.exists_liouville_outward
   rwa [h.isNondegenerate.interior_injective (hZ.trans hZ'.symm)]
@@ -85,7 +86,7 @@ theorem contMDiff_of_interior_eq (h : IsLiouvilleDomain ω α W) (hZ : ω.1.inte
 /-- **The Liouville field points out of a Liouville domain.** If `ι_Z ω = α`, then `W = {f ≤ c}`
 for a continuous function `f`, smooth along the level `f⁻¹(c)`, with `df(Z) > 0` there. -/
 theorem exists_sublevel_of_interior_eq (h : IsLiouvilleDomain ω α W)
-    (hZ : ω.1.interior Z = α.1) :
+    (hZ : RoughForm.interior Z ω.1 = α.1) :
     ∃ (f : M → ℝ) (c : ℝ), Continuous f ∧ W = {x | f x ≤ c} ∧
       ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) f x ∧ 0 < mvfderiv I f x (Z x) := by
   obtain ⟨Z', -, hZ', hout⟩ := h.exists_liouville_outward
@@ -96,7 +97,7 @@ variable [CompleteSpace E] [T2Space M] [BoundarylessManifold I M]
 /-- **The Liouville flow never enters a Liouville domain.** Let `Z` be the Liouville field,
 `ι_Z ω = α`. If `x` is not an interior point of the Liouville domain `W`, then its trajectory under
 the flow of `Z` lies outside `W` at every positive time `t` at which it is defined. -/
-theorem flowOf_notMem (h : IsLiouvilleDomain ω α W) (hZ : ω.1.interior Z = α.1) {x : M}
+theorem flowOf_notMem (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.1 = α.1) {x : M}
     (hx : x ∉ interior W) {t : ℝ} (ht : 0 < t) (htx : (t, x) ∈ flowDomain Z) :
     flowOf Z t x ∉ W := by
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
@@ -121,7 +122,7 @@ theorem flowOf_notMem (h : IsLiouvilleDomain ω α W) (hZ : ω.1.interior Z = α
 `Z` of a Liouville domain `W` is complete, then `(y, t) ↦ ψ_t(y)` is injective on
 `∂W × [0, ∞)`, where `ψ` is the flow of `Z`. -/
 theorem injOn_flowOf [FiniteDimensional ℝ E] (h : IsLiouvilleDomain ω α W)
-    (hZ : ω.1.interior Z = α.1) (hc : IsCompleteVectorField Z) :
+    (hZ : RoughForm.interior Z ω.1 = α.1) (hc : IsCompleteVectorField Z) :
     InjOn (fun p : M × ℝ ↦ flowOf Z p.2 p.1) (frontier W ×ˢ Ici 0) := by
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
   -- On a complete field, `flowOf` is the global flow `ψ`, which satisfies the group law.
@@ -157,18 +158,19 @@ structure IsLiouvilleCompletion (ω : SmoothTwoForm I M) (α : SmoothForm I M �
   /-- The Liouville field of a completion is complete, and its flow carries every point into the
   Liouville domain. -/
   exists_isCompleteVectorField : ∃ Z : (x : M) → TangentSpace I x,
-    ω.1.interior Z = α.1 ∧ IsCompleteVectorField Z ∧ ∀ x, ∃ t, flowOf Z t x ∈ W
+    RoughForm.interior Z ω.1 = α.1 ∧ IsCompleteVectorField Z ∧ ∀ x, ∃ t, flowOf Z t x ∈ W
 
 namespace IsLiouvilleCompletion
 
 /-- The Liouville field of a completion is complete. -/
-theorem isCompleteVectorField (h : IsLiouvilleCompletion ω α W) (hZ : ω.1.interior Z = α.1) :
+theorem isCompleteVectorField (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) :
     IsCompleteVectorField Z := by
   obtain ⟨Z', hZ', hc, -⟩ := h.exists_isCompleteVectorField
   rwa [h.isNondegenerate.interior_injective (hZ.trans hZ'.symm)]
 
 /-- The Liouville flow of a completion carries every point into the Liouville domain. -/
-theorem exists_flowOf_mem (h : IsLiouvilleCompletion ω α W) (hZ : ω.1.interior Z = α.1)
+theorem exists_flowOf_mem (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1)
     (x : M) : ∃ t, flowOf Z t x ∈ W := by
   obtain ⟨Z', hZ', -, hW⟩ := h.exists_isCompleteVectorField
   rw [h.isNondegenerate.interior_injective (hZ.trans hZ'.symm)]
@@ -178,7 +180,8 @@ variable [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless]
 
 /-- Every point outside the Liouville domain of a completion lies on an outgoing Liouville
 trajectory from the boundary, at a positive time. -/
-private theorem exists_flowOf_eq (h : IsLiouvilleCompletion ω α W) (hZ : ω.1.interior Z = α.1)
+private theorem exists_flowOf_eq (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1)
     {x : M} (hx : x ∉ W) : ∃ y ∈ frontier W, ∃ t, 0 < t ∧ flowOf Z t y = x := by
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
   have hc := h.isCompleteVectorField hZ
@@ -213,7 +216,8 @@ private theorem exists_flowOf_eq (h : IsLiouvilleCompletion ω α W) (hZ : ω.1.
 /-- **The cylindrical end of a completion.** Let `M` be a completion of the Liouville domain `W`,
 with Liouville flow `ψ`. Every point `x` outside `W` is `ψ_t(y)` for exactly one point `y` of the
 boundary of `W` and one time `t > 0`. -/
-theorem existsUnique_flowOf_eq (h : IsLiouvilleCompletion ω α W) (hZ : ω.1.interior Z = α.1)
+theorem existsUnique_flowOf_eq (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1)
     {x : M} (hx : x ∉ W) : ∃! p : M × ℝ, p.1 ∈ frontier W ∧ 0 < p.2 ∧ flowOf Z p.2 p.1 = x := by
   obtain ⟨y, hy, t, ht, hyx⟩ := h.exists_flowOf_eq hZ hx
   exact ⟨(y, t), ⟨hy, ht, hyx⟩, fun q ⟨hq, hqt, hqx⟩ ↦
