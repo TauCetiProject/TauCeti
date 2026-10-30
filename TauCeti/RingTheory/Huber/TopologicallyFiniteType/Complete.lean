@@ -19,8 +19,9 @@ over a Tate ring `A` the presentation can be taken to be `π : A⟨X₁, …, X�
 (`TauCeti.Huber.IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType`). Only a topology is
 asked of `B`. This file shows that `B` then has the structure that Wedhorn's definitions assume.
 
-* Over a Huber ring, `B` is complete for every uniformity making it a uniform additive group, as an
-  open quotient of a complete first countable group (`IsOpenQuotientMap.completeSpace`).
+* Over a Huber ring, `B` is a Huber ring, as an open quotient of a Huber ring, and it is complete
+  for every uniformity making it a uniform additive group, as an open quotient of a complete first
+  countable group (`IsOpenQuotientMap.completeSpace`).
 * Over a Tate ring, `B` is a Tate ring: the image of a ring of definition of `A⟨X₁, …, Xₖ⟩` is an
   open bounded subring of `B`, and the image of a pseudouniformiser of `A` is a pseudouniformiser
   of `B`.
@@ -39,6 +40,8 @@ makes its adic spectrum an affinoid adic space.
 
 ## Main results
 
+* `TauCeti.Huber.IsTopologicallyFiniteType.isHuberRing`: over a Huber ring, an algebra
+  topologically of finite type is a Huber ring.
 * `TauCeti.Huber.IsTopologicallyFiniteType.completeSpace`: over a Huber ring, an algebra
   topologically of finite type is complete for any uniformity compatible with its additive group
   structure.
@@ -63,6 +66,14 @@ open Topology UniformSpace
 open scoped Uniformity
 
 namespace TauCeti.Huber
+
+/-- **An algebra topologically of finite type over a Huber ring is a Huber ring**: it is an open
+quotient of the completion of a weighted restricted power-series ring over `A`, which is Huber. -/
+theorem IsTopologicallyFiniteType.isHuberRing {A : Type*} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsHuberRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] {φ : A →+* B} (hφ : IsTopologicallyFiniteType φ) : IsHuberRing B := by
+  obtain ⟨k, T, -, hT, π, hπ, -⟩ := isTopologicallyFiniteType_iff.mp hφ
+  exact IsHuberRing.of_isOpenQuotientMap hπ
 
 /-- **An algebra topologically of finite type over a Huber ring is complete** (Wedhorn,
 Proposition 5.58, over a field), for every uniformity making it a uniform additive group: it is an
