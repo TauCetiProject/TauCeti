@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
-import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
@@ -138,11 +137,8 @@ theorem integral_extDeriv_annulus
   have hmem (p : ℝ × ℝ) (hp : p ∈ Icc (a, -π) (b, π)) :
       P p ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
     add_polarCoord_symm_mem_annulus z₀ ha ⟨hp.1.1, hp.2.1⟩
-  have hη p (hp : p ∈ Icc (a, -π) (b, π)) : ContDiffAt ℝ 1 η p := by
-    exact ((ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
-      (𝕜 := ℝ) (E := ℝ × ℝ) (F := ℂ) (G := F) (ι := Fin 1) 1).contDiffAt.comp p
-      (hP.fderiv_right (by norm_num)).contDiffAt).clm_apply
-        ((hω _ (hmem p hp)).comp p (hP.of_le (by norm_num)).contDiffAt)
+  have hη p (hp : p ∈ Icc (a, -π) (b, π)) : ContDiffAt ℝ 1 η p :=
+    hP.contDiffAt.differentialForm_pullback (hω _ (hmem p hp))
   have hgreen := integral_extDeriv_prod_Icc
     (a := (a, -π)) (b := (b, π)) ⟨hab, by linarith [Real.pi_pos]⟩ hη
   have hd p : fderiv ℝ P p =
