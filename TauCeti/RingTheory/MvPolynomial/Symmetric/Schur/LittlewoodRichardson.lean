@@ -89,14 +89,6 @@ namespace BoundedSSYT
 
 variable {lam μ : YoungDiagram}
 
-/-- A bounded tableau writes no letter outside its alphabet. -/
-private theorem content_eq_zero (T : BoundedSSYT N μ) {i : ℕ} (hi : N ≤ i) :
-    T.1.content i = 0 := by
-  rw [SemistandardYoungTableau.content_apply, card_eq_zero, filter_eq_empty_iff]
-  intro c hc hci
-  have := T.2 c.1 c.2 ((YoungDiagram.mem_cells _).mp hc)
-  omega
-
 /-- Off the `λ`-Yamanouchi tableaux, Stembridge's involution transposes two adjacent letters of
 the alphabet, so it keeps the alphabet. -/
 private theorem exists_stembridgeInvolution (T : BoundedSSYT N μ)
@@ -146,21 +138,15 @@ private theorem betaNumber_add_weight_stembridge (T : BoundedSSYT N μ)
   simp only [Function.comp_apply, weight_apply, coe_stembridge, YoungDiagram.betaNumber_def]
   have hj := hcont j
   have hjN := j.isLt
-  zify [show (j : ℕ) ≤ N - 1 by omega,
-    show ((Equiv.swap (⟨k, by omega⟩ : Fin N) ⟨k + 1, hkN⟩ j : Fin N) : ℕ) ≤ N - 1 by
-      have := (Equiv.swap (⟨k, by omega⟩ : Fin N) ⟨k + 1, hkN⟩ j).isLt
-      omega]
+  set j' := Equiv.swap (⟨k, by omega⟩ : Fin N) ⟨k + 1, hkN⟩ j
+  have hjle : (j : ℕ) ≤ N - 1 := by omega
+  have hj'le : (j' : ℕ) ≤ N - 1 := by
+    have := j'.isLt
+    omega
+  zify [hjle, hj'le]
   -- The transposition of `Fin N` acts on values as the transposition of `k` and `k + 1`.
-  have hval : ((Equiv.swap (⟨k, by omega⟩ : Fin N) ⟨k + 1, hkN⟩ j : Fin N) : ℕ) =
-      Equiv.swap k (k + 1) (j : ℕ) := by
-    rcases eq_or_ne (j : ℕ) k with hjk | hjk
-    · rw [show j = ⟨k, by omega⟩ from Fin.ext hjk]
-      simp
-    rcases eq_or_ne (j : ℕ) (k + 1) with hjk' | hjk'
-    · rw [show j = ⟨k + 1, hkN⟩ from Fin.ext hjk']
-      simp
-    · rw [Equiv.swap_apply_of_ne_of_ne (fun h => hjk (congrArg Fin.val h))
-        (fun h => hjk' (congrArg Fin.val h)), Equiv.swap_apply_of_ne_of_ne hjk hjk']
+  have hval : (j' : ℕ) = Equiv.swap k (k + 1) (j : ℕ) :=
+    (Fin.val_injective.swap_apply (⟨k, by omega⟩ : Fin N) ⟨k + 1, hkN⟩ j).symm
   rw [hval]
   push_cast at hj ⊢
   omega

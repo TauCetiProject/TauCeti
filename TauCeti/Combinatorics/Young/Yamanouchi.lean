@@ -110,11 +110,13 @@ private theorem colCount_le_one (T : SemistandardYoungTableau μ) (j k : ℕ) :
   obtain ⟨hb, hbj, hbk⟩ := hb
   have hcol : a.2 = b.2 := haj.trans hbj.symm
   rcases lt_trichotomy a.1 b.1 with h | h | h
-  · have := T.col_strict h (show (b.1, a.2) ∈ μ by rw [hcol]; exact hb)
+  · have hb' : (b.1, a.2) ∈ μ := hcol ▸ hb
+    have := T.col_strict h hb'
     rw [hcol] at this hak
     omega
   · exact Prod.ext h hcol
-  · have := T.col_strict h (show (a.1, b.2) ∈ μ by rw [← hcol]; exact ha)
+  · have ha' : (a.1, b.2) ∈ μ := hcol ▸ ha
+    have := T.col_strict h ha'
     rw [← hcol] at this hbk
     omega
 
