@@ -19,7 +19,8 @@ adjoint on the whole algebra.
 If the action surjects onto the full complex endomorphism algebra, every positive definite
 compatible Hermitian form is a unique positive real multiple of any given compatible inner
 product. In particular this applies to an algebra isomorphism onto the endomorphisms of a
-spinor space. No existence of a compatible inner product is asserted here. Surjectivity is
+spinor space; see `CliffordAlgebra.existsUnique_pos_mul_inner_of_surjective`.
+No existence of a compatible inner product is asserted here. Surjectivity is
 essential: reducible modules can have independently rescaled metrics on multiplicity spaces.
 
 The forms use Mathlib's conjugate-first convention. The uniqueness argument is the
@@ -105,7 +106,7 @@ form differs from a given compatible inner product by a unique positive real sca
 The surjectivity hypothesis applies, in particular, to any Clifford algebra isomorphism
 `CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S`. The statement allows dimension zero
 for `V`, but excludes the zero spinor module, on which a rescaling scalar is not unique. -/
-theorem existsUnique_pos_mul_inner_of_map_conjStar [Nontrivial S]
+theorem existsUnique_pos_mul_inner_of_surjective [Nontrivial S]
     (hsurj : Function.Surjective ρ)
     (hρ : ∀ v : V, (ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v))).adjoint =
       -ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)))
