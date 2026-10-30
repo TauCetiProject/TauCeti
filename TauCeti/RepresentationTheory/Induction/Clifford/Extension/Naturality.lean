@@ -119,49 +119,50 @@ private theorem map_diagonal_range (e : A ≅ B) :
   exact cliffordImplementersEquiv_diagonal e n
 
 /-- An isomorphism of normal-subgroup representations identifies their canonical Clifford groups. -/
-noncomputable def cliffordEquiv (e : A ≅ B) : Carrier A ≃* Carrier B :=
+noncomputable def cliffordExtensionEquiv (e : A ≅ B) : Carrier A ≃* Carrier B :=
   QuotientGroup.congr _ _ e.cliffordImplementersEquiv (map_diagonal_range e)
 
 /-- Transport of a Clifford class is represented by the conjugated implementing pair. -/
 @[simp]
-theorem cliffordEquiv_mk (e : A ≅ B) (p : implementers A) :
-    e.cliffordEquiv (QuotientGroup.mk p) =
+theorem cliffordExtensionEquiv_mk (e : A ≅ B) (p : implementers A) :
+    e.cliffordExtensionEquiv (QuotientGroup.mk p) =
       QuotientGroup.mk (e.cliffordImplementersEquiv p) := (rfl)
 
 /-- The identity representation isomorphism induces the identity Clifford isomorphism. -/
 @[simp]
-theorem refl_cliffordEquiv : (Iso.refl A).cliffordEquiv = MulEquiv.refl (Carrier A) := by
+theorem refl_cliffordExtensionEquiv :
+    (Iso.refl A).cliffordExtensionEquiv = MulEquiv.refl (Carrier A) := by
   apply MulEquiv.ext
   intro c
   refine QuotientGroup.induction_on c fun p ↦ ?_
-  simp only [cliffordEquiv_mk, refl_cliffordImplementersEquiv, MulEquiv.refl_apply]
+  simp only [cliffordExtensionEquiv_mk, refl_cliffordImplementersEquiv, MulEquiv.refl_apply]
   -- The remaining constructors are the same quotient map, viewed in Carrier A and its definition.
   rfl
 
 /-- Clifford transport respects composition of representation isomorphisms. -/
 @[simp]
-theorem trans_cliffordEquiv (e : A ≅ B) (f : B ≅ C) :
-    (e ≪≫ f).cliffordEquiv = e.cliffordEquiv.trans f.cliffordEquiv := by
+theorem trans_cliffordExtensionEquiv (e : A ≅ B) (f : B ≅ C) :
+    (e ≪≫ f).cliffordExtensionEquiv = e.cliffordExtensionEquiv.trans f.cliffordExtensionEquiv := by
   apply MulEquiv.ext
   intro c
   rw [MulEquiv.trans_apply]
   refine QuotientGroup.induction_on c fun p ↦ ?_
-  simp only [cliffordEquiv_mk, trans_cliffordImplementersEquiv, MulEquiv.trans_apply]
+  simp only [cliffordExtensionEquiv_mk, trans_cliffordImplementersEquiv, MulEquiv.trans_apply]
   -- Carrier C and its defining quotient have the same quotient constructor.
   rfl
 
 /-- The inverse representation isomorphism induces the inverse Clifford isomorphism. -/
 @[simp]
-theorem symm_cliffordEquiv (e : A ≅ B) :
-    e.symm.cliffordEquiv = e.cliffordEquiv.symm := by
+theorem symm_cliffordExtensionEquiv (e : A ≅ B) :
+    e.symm.cliffordExtensionEquiv = e.cliffordExtensionEquiv.symm := by
   apply MulEquiv.ext
   intro c
-  apply e.cliffordEquiv.injective
-  have h := DFunLike.congr_fun (trans_cliffordEquiv e.symm e) c
+  apply e.cliffordExtensionEquiv.injective
+  have h := DFunLike.congr_fun (trans_cliffordExtensionEquiv e.symm e) c
   simpa using h.symm
 
 /-- Isomorphic representations have canonically identified inertia quotients. -/
-noncomputable def cliffordQuotientEquiv (e : A ≅ B) :
+noncomputable def cliffordExtensionQuotientEquiv (e : A ≅ B) :
     CliffordExtension.Quotient A ≃* CliffordExtension.Quotient B :=
   QuotientGroup.congr _ _ (MulEquiv.subgroupCongr (inertia_congr e)) (by
     rw [Subgroup.map_equiv_eq_comap_symm]
@@ -170,16 +171,51 @@ noncomputable def cliffordQuotientEquiv (e : A ≅ B) :
 
 /-- The induced inertia quotient map keeps the underlying group element. -/
 @[simp]
-theorem cliffordQuotientEquiv_mk (e : A ≅ B) (t : inertia A) :
-    e.cliffordQuotientEquiv (QuotientGroup.mk t) =
+theorem cliffordExtensionQuotientEquiv_mk (e : A ≅ B) (t : inertia A) :
+    e.cliffordExtensionQuotientEquiv (QuotientGroup.mk t) =
       QuotientGroup.mk (MulEquiv.subgroupCongr (inertia_congr e) t) := (rfl)
+
+/-- The identity representation isomorphism induces the identity inertia quotient isomorphism. -/
+@[simp]
+theorem refl_cliffordExtensionQuotientEquiv :
+    (Iso.refl A).cliffordExtensionQuotientEquiv =
+      MulEquiv.refl (CliffordExtension.Quotient A) := by
+  apply MulEquiv.ext
+  intro c
+  refine QuotientGroup.induction_on c fun t ↦ ?_
+  simp only [cliffordExtensionQuotientEquiv_mk, MulEquiv.refl_apply]
+  apply congrArg QuotientGroup.mk
+  exact Subtype.ext (MulEquiv.subgroupCongr_apply _ _)
+
+/-- Inertia quotient transport respects composition of representation isomorphisms. -/
+@[simp]
+theorem trans_cliffordExtensionQuotientEquiv (e : A ≅ B) (f : B ≅ C) :
+    (e ≪≫ f).cliffordExtensionQuotientEquiv =
+      e.cliffordExtensionQuotientEquiv.trans f.cliffordExtensionQuotientEquiv := by
+  apply MulEquiv.ext
+  intro c
+  rw [MulEquiv.trans_apply]
+  refine QuotientGroup.induction_on c fun t ↦ ?_
+  simp only [cliffordExtensionQuotientEquiv_mk]
+  apply congrArg QuotientGroup.mk
+  exact Subtype.ext (by simp)
+
+/-- The inverse representation isomorphism induces the inverse inertia quotient isomorphism. -/
+@[simp]
+theorem symm_cliffordExtensionQuotientEquiv (e : A ≅ B) :
+    e.symm.cliffordExtensionQuotientEquiv = e.cliffordExtensionQuotientEquiv.symm := by
+  apply MulEquiv.ext
+  intro c
+  apply e.cliffordExtensionQuotientEquiv.injective
+  have h := DFunLike.congr_fun (trans_cliffordExtensionQuotientEquiv e.symm e) c
+  simpa using h.symm
 
 /-- The Clifford isomorphism commutes with projection to the inertia quotient. -/
 @[simp]
-theorem rightHom_cliffordEquiv (e : A ≅ B) (c : Carrier A) :
-    rightHom B (e.cliffordEquiv c) = e.cliffordQuotientEquiv (rightHom A c) := by
+theorem rightHom_cliffordExtensionEquiv (e : A ≅ B) (c : Carrier A) :
+    rightHom B (e.cliffordExtensionEquiv c) = e.cliffordExtensionQuotientEquiv (rightHom A c) := by
   refine QuotientGroup.induction_on c fun p ↦ ?_
-  simp only [cliffordEquiv_mk, rightHom_mk, cliffordQuotientEquiv_mk]
+  simp only [cliffordExtensionEquiv_mk, rightHom_mk, cliffordExtensionQuotientEquiv_mk]
   apply congrArg QuotientGroup.mk
   apply Subtype.ext
   simp
@@ -199,9 +235,9 @@ theorem cliffordImplementersEquiv_kernelLift (e : A ≅ B) (d : (End A)ˣ) :
 /-- Changing the representation intertwines the full commutant algebra actions. -/
 theorem conjAlgEquiv_commutantAction (e : A ≅ B) (c : Carrier A) (f : End A) :
     e.conjAlgEquiv (R := k) (commutantAction c f) =
-      commutantAction (e.cliffordEquiv c) (e.conjAlgEquiv (R := k) f) := by
+      commutantAction (e.cliffordExtensionEquiv c) (e.conjAlgEquiv (R := k) f) := by
   refine QuotientGroup.induction_on c fun p ↦ ?_
-  simp only [cliffordEquiv_mk, commutantAction_mk]
+  simp only [cliffordExtensionEquiv_mk, commutantAction_mk]
   apply End.ext
   ext x
   rw [FDRep.Iso.conjAlgEquiv_asHom_apply, implementerConj_apply, implementerConj_apply,

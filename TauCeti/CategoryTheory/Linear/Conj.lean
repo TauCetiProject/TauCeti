@@ -30,6 +30,11 @@ def conjAlgEquiv (e : X ≅ Y) : End X ≃ₐ[R] End Y where
   map_add' f g := by ext; simp
   commutes' r := by ext; simp
 
+/-- The underlying multiplicative equivalence is Mathlib's conjugation equivalence. -/
+@[simp]
+theorem conjAlgEquiv_toMulEquiv (e : X ≅ Y) :
+    (e.conjAlgEquiv (R := R)).toMulEquiv = e.conj := (rfl)
+
 /-- The underlying morphism is conjugated by the specified isomorphism. -/
 @[simp]
 theorem conjAlgEquiv_asHom (e : X ≅ Y) (f : End X) :
