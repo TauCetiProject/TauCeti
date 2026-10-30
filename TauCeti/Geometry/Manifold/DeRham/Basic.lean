@@ -110,6 +110,11 @@ theorem exactForms_le_closedForms (k : ℕ) : exactForms I M k ≤ closedForms I
   | succ k =>
     exact LinearMap.range_le_ker_iff.mpr (mextDerivₗ_comp_mextDerivₗ I (F := ℝ) k)
 
+/-- The exterior derivative of a smooth form is closed. -/
+theorem mextDerivₗ_mem_closedForms (k : ℕ) (φ : SmoothForm I M ℝ k) :
+    mextDerivₗ I (F := ℝ) k φ ∈ closedForms I M (k + 1) :=
+  exactForms_le_closedForms I (k + 1) (LinearMap.mem_range_self _ φ)
+
 /-- On a manifold of finite dimension at most `k`, every smooth `k`-form is closed. -/
 theorem mem_closedForms_of_finrank_le [FiniteDimensional ℝ E] {k : ℕ}
     (h : Module.finrank ℝ E ≤ k) (φ : SmoothForm I M ℝ k) : φ ∈ closedForms I M k :=

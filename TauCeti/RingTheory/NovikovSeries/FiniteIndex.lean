@@ -162,6 +162,15 @@ theorem coeff_cosetBasis_repr (a : NovikovSeries R H N) (q : H ⧸ K) (k : K) :
   rw [cosetBasis, Module.Basis.ofEquivFun_repr_apply, cosetEquiv_apply,
     coeff_comap_subtype_single_neg_mul]
 
+/-- In the monomial coset basis, multiplication by `a` has coefficient
+`a.coeff (s i + k - s j)` in row `i`, column `j`, at exponent `k ∈ K`. -/
+@[simp]
+theorem coeff_leftMulMatrix_cosetBasis [Fintype (H ⧸ K)] [DecidableEq (H ⧸ K)]
+    (a : NovikovSeries R H N) (i j : H ⧸ K) (k : K) :
+    (Algebra.leftMulMatrix (cosetBasis K s hs) a i j).coeff k =
+      a.coeff (s i + k - s j) := by
+  simp [Algebra.leftMulMatrix_eq_repr_mul, coeff_mul_single]
+
 /-- Over a finite-index subgroup `K`, the Novikov series on `H` form a free module. -/
 instance instModuleFreeAddSubgroup :
     Module.Free (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) :=

@@ -49,6 +49,7 @@ than to `K`.
 ## Main results
 
 * `TauCeti.CurrentAlgebra.envelopingι_mul_sub_mul`: the commutator relations.
+* `TauCeti.CurrentAlgebra.adjoin_range_envelopingι`: the currents generate the algebra.
 * `TauCeti.CurrentAlgebra.algHom_ext_envelopingι`: algebra morphisms are determined on currents.
 * `TauCeti.CurrentAlgebra.envelopingι_injective`: over a field, the currents embed.
 
@@ -116,6 +117,20 @@ theorem envelopingι_mul_sub_mul (u v : C) :
   rw [LieRing.of_associative_ring_bracket] at h
   rw [envelopingι_apply, envelopingι_apply, ← h, bracket_ofTwoCocycle]
   simp
+
+/-- The current generators generate `U(ĝ) / (ι K - a)` as an `R`-algebra. -/
+theorem adjoin_range_envelopingι : Algebra.adjoin R (Set.range (envelopingι Φ hΦ hΦs a)) = ⊤ := by
+  rw [eq_top_iff]
+  rintro x -
+  obtain ⟨x, rfl⟩ := CentralQuotient.mk_surjective (centralElement Φ hΦ hΦs) a x
+  induction x using UniversalEnvelopingAlgebra.induction_ι with
+  | ι e =>
+    obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective e
+    rw [← CentralQuotient.ι_apply, ι_ofProd]
+    exact add_mem (Algebra.subset_adjoin ⟨u, rfl⟩) (Subalgebra.algebraMap_mem _ _)
+  | algebraMap r => simpa only [AlgHom.commutes] using Subalgebra.algebraMap_mem _ r
+  | add x y hx hy => simpa only [map_add] using add_mem hx hy
+  | mul x y hx hy => simpa only [map_mul] using mul_mem hx hy
 
 variable {A : Type*} [Ring A] [Algebra R A]
 
