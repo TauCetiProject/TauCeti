@@ -78,12 +78,6 @@ theorem amiceTransform_dirac (x : ℤ_[p]) :
   ext n
   simp [coeff_amiceTransform, mahler_apply]
 
-/-- The Amice transform of the Dirac mass at a natural number is `(1 + X) ^ n`. -/
-theorem amiceTransform_dirac_natCast (n : ℕ) :
-    amiceTransform (dirac R (n : ℤ_[p])) = (1 + PowerSeries.X) ^ n := by
-  rw [amiceTransform_dirac]
-  exact PowerSeries.binomialSeries_nat (R := ℤ_[p]) (A := R) n
-
 /-- The Amice transform of the measure `μ` multiplied by the coordinate function is the Mahler
 derivation `(1 + T) d/dT` of the Amice transform of `μ`. -/
 theorem amiceTransform_weight_id_smul_one (μ : D(ℤ_[p], R)) :

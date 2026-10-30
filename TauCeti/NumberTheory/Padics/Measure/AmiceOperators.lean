@@ -124,9 +124,8 @@ theorem existsUnique_unitSupported_mahlerPrimitive (F : ℤ_[p]⟦X⟧)
 /-- The inverse Mahler operator kills constants. -/
 @[simp]
 theorem inverseMahler_one : inverseMahler p 1 = 0 := by
-  have h := inverseMahler_amiceTransform (dirac ℤ_[p] (0 : ℤ_[p]))
-  simpa only [amiceTransform_dirac, binomialSeries_zero,
-    inverseWeight_dirac_of_dvd (dvd_zero (p : ℤ_[p])), map_zero] using h
+  simpa only [binomialSeries_zero] using
+    inverseMahler_binomialSeries_of_dvd (p := p) (dvd_zero _)
 
 /-- The inverse Mahler operator fixes `1 + X`. -/
 @[simp]

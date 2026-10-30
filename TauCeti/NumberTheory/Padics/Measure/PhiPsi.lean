@@ -363,18 +363,15 @@ theorem psiSeries_binomialSeries_of_not_dvd {x : ℤ_[p]} (hx : ¬ (p : ℤ_[p])
 /-- Psi fixes the constant series one. -/
 @[simp]
 theorem psiSeries_one : psiSeries p 1 = 1 := by
-  have h0 : psiMeasure (dirac ℤ_[p] (0 : ℤ_[p])) = dirac ℤ_[p] 0 := by
-    simpa using psiMeasure_dirac_mul (R := ℤ_[p]) (p := p) 0
-  simpa only [h0, amiceTransform_dirac, binomialSeries_zero] using
-    psiSeries_amiceTransform (dirac ℤ_[p] (0 : ℤ_[p]))
+  simpa only [mul_zero, binomialSeries_zero] using psiSeries_binomialSeries_mul (p := p) 0
 
 /-- Psi kills `1 + X`, the transform of the Dirac mass at the unit one. -/
 @[simp]
 theorem psiSeries_one_add_X : psiSeries p (1 + X) = 0 := by
   have hunit : ¬ (p : ℤ_[p]) ∣ 1 := fun h ↦ PadicInt.p_nonunit (isUnit_of_dvd_one h)
-  have h := psiSeries_amiceTransform (dirac ℤ_[p] ((1 : ℕ) : ℤ_[p]))
-  rw [amiceTransform_dirac_natCast] at h
-  simpa only [Nat.cast_one, pow_one, psiMeasure_dirac_of_not_dvd hunit, map_zero] using h
+  have h := psiSeries_binomialSeries_of_not_dvd hunit
+  rw [← Nat.cast_one (R := ℤ_[p]), binomialSeries_nat, pow_one] at h
+  exact h
 
 -- Psi divides the exponent by the prime on atoms in pℤ_p; it does not average their mass.
 example : psiSeries 3 ((1 + X) ^ 3) = 1 + X := by
