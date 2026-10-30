@@ -118,6 +118,12 @@ noncomputable def finsuppDegreeFinTwoEquiv (w : ℕ) :
     · simp; omega
   right_inv j := by ext; simp
 
+/-- The equivalence sends an exponent vector of degree `w` to its value at `0`. -/
+@[simp]
+theorem coe_finsuppDegreeFinTwoEquiv_apply (w : ℕ) (s : {s : Fin 2 →₀ ℕ // s.degree = w}) :
+    (finsuppDegreeFinTwoEquiv w s : ℕ) = s.1 0 :=
+  (rfl)
+
 @[simp]
 theorem coe_finsuppDegreeFinTwoEquiv_symm (w : ℕ) (j : Fin (w + 1)) :
     ((finsuppDegreeFinTwoEquiv w).symm j).1 =

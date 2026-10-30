@@ -36,7 +36,8 @@ explicitly. This follows the convention already used for `Comodule.trivial` and
   comodule morphism into its cofree comodule (the unit of the adjunction).
 * `TauCeti.Comodule.Hom.cofreeLift`: the comodule morphism `P → M ⊗[R] C` lifting an `R`-linear
   map `P → M`.
-* `TauCeti.Comodule.Hom.cofreeEquiv`: the cofree adjunction, `Hom R C P (M ⊗[R] C) ≃ (P →ₗ[R] M)`.
+* `TauCeti.Comodule.Hom.cofreeEquiv`: the linear cofree adjunction,
+  `Hom R C P (M ⊗[R] C) ≃ₗ[R] (P →ₗ[R] M)`.
 * `TauCeti.ComoduleCat.cofree`: the cofree comodule, bundled as an object of `ComoduleCat`.
 
 ## References
@@ -58,22 +59,28 @@ namespace Comodule
 
 variable {R : Type u} {C : Type v} {M : Type w} {N : Type x} {P : Type y}
 variable [CommSemiring R]
-variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [AddCommMonoid C] [Module R C]
 variable [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
 variable [AddCommMonoid P] [Module R P]
 
+section CoalgebraStruct
+
+variable [CoalgebraStruct R C]
+
 variable (R C M) in
-/-- The coaction of the cofree right `C`-comodule on `M ⊗[R] C`, namely `id ⊗ Δ` followed by
-reassociation: `m ⊗ c ↦ ∑ (m ⊗ c₁) ⊗ c₂`. This is the coaction of `Comodule.cofree` as a bare
-linear map, usable without selecting the cofree instance; it unfolds by `cofreeCoact_def`, and the
-characterizations through `Comodule.cofree` are `Comodule.cofree_coact` and
+/-- The linear map underlying the cofree right coaction on `M ⊗[R] C`, namely `id ⊗ Δ`
+followed by reassociation: `m ⊗ c ↦ ∑ (m ⊗ c₁) ⊗ c₂`. Defining this map does not require the
+coalgebra laws. It is usable without selecting the cofree instance and unfolds by
+`cofreeCoact_def`; for a coalgebra, the characterizations through `Comodule.cofree` are
+`Comodule.cofree_coact` and
 `Comodule.cofree_coact_tmul`. -/
 noncomputable def cofreeCoact : M ⊗[R] C →ₗ[R] (M ⊗[R] C) ⊗[R] C :=
   (TensorProduct.assoc R M C C).symm.toLinearMap ∘ₗ Coalgebra.comul.lTensor M
 
+/-- The bare cofree coaction on a simple tensor. -/
 @[simp]
-private theorem cofreeCoact_tmul (m : M) (c : C) :
+theorem cofreeCoact_tmul (m : M) (c : C) :
     cofreeCoact R C M (m ⊗ₜ c) = (TensorProduct.assoc R M C C).symm (m ⊗ₜ Coalgebra.comul c) := by
   simp [cofreeCoact]
 
@@ -82,26 +89,6 @@ theorem cofreeCoact_def :
     cofreeCoact R C M = (TensorProduct.assoc R M C C).symm.toLinearMap ∘ₗ
       Coalgebra.comul.lTensor M :=
   rfl
-
-/-- Pushing the counit through the inverse associator (an instance of naturality). -/
-private theorem counit_lTensor_comp_assoc_symm :
-    Coalgebra.counit.lTensor (M ⊗[R] C) ∘ₗ (TensorProduct.assoc R M C C).symm.toLinearMap
-      = (TensorProduct.assoc R M C R).symm.toLinearMap ∘ₗ
-          LinearMap.lTensor M ((Coalgebra.counit (R := R) (A := C)).lTensor C) := by
-  refine TensorProduct.ext' fun m x => ?_
-  induction x using TensorProduct.inductionOn with
-  | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
-  | tmul a b => simp
-
-/-- Pushing the comultiplication through the inverse associator (an instance of naturality). -/
-private theorem comul_lTensor_comp_assoc_symm :
-    Coalgebra.comul.lTensor (M ⊗[R] C) ∘ₗ (TensorProduct.assoc R M C C).symm.toLinearMap
-      = (TensorProduct.assoc R M C (C ⊗[R] C)).symm.toLinearMap ∘ₗ
-          LinearMap.lTensor M ((Coalgebra.comul (R := R) (A := C)).lTensor C) := by
-  refine TensorProduct.ext' fun m x => ?_
-  induction x using TensorProduct.inductionOn with
-  | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
-  | tmul a b => simp
 
 /-- The double cofree coaction reorganized, with the coalgebra's own double comultiplication
 isolated on the right factor. This is pure associator bookkeeping (it does not use
@@ -121,6 +108,10 @@ private theorem assoc_comp_cofreeCoact_rTensor_comp_cofreeCoact :
     | add x y hx hy => simp only [tmul_add, map_add, add_tmul, hx, hy]
     | tmul p q => simp [assoc_symm_tmul, assoc_tmul]
 
+end CoalgebraStruct
+
+variable [Coalgebra R C]
+
 variable (R C M) in
 /-- The cofree (coinduced) right `C`-comodule structure on `M ⊗[R] C`, with coaction
 `m ⊗ c ↦ ∑ (m ⊗ c₁) ⊗ c₂`.
@@ -131,11 +122,16 @@ cofree one should be selected explicitly with `Comodule.cofree`. -/
 noncomputable def cofree : Comodule R C (M ⊗[R] C) where
   coact := cofreeCoact R C M
   coassoc := by
+    have h := TensorProduct.map_map_comp_assoc_symm_eq (LinearMap.id : M →ₗ[R] M)
+      (LinearMap.id : C →ₗ[R] C) (Coalgebra.comul (R := R) (A := C))
+    simp only [← lTensor_def, lTensor_id] at h
     rw [assoc_comp_cofreeCoact_rTensor_comp_cofreeCoact, Coalgebra.coassoc, cofreeCoact,
-      ← LinearMap.comp_assoc, comul_lTensor_comp_assoc_symm, LinearMap.comp_assoc,
-      ← LinearMap.lTensor_comp]
+      ← LinearMap.comp_assoc, h, LinearMap.comp_assoc, ← LinearMap.lTensor_comp]
   lTensor_counit_comp_coact := by
-    rw [cofreeCoact, ← LinearMap.comp_assoc, counit_lTensor_comp_assoc_symm,
+    have h := TensorProduct.map_map_comp_assoc_symm_eq (LinearMap.id : M →ₗ[R] M)
+      (LinearMap.id : C →ₗ[R] C) (Coalgebra.counit (R := R) (A := C))
+    simp only [← lTensor_def, lTensor_id] at h
+    rw [cofreeCoact, ← LinearMap.comp_assoc, h,
       LinearMap.comp_assoc, ← LinearMap.lTensor_comp, Coalgebra.lTensor_counit_comp_comul]
     refine TensorProduct.ext' fun m c => ?_
     simp
@@ -165,16 +161,6 @@ theorem cofree_coact_tmul (m : M) (c : C) :
       = (TensorProduct.assoc R M C C).symm (m ⊗ₜ Coalgebra.comul c) :=
   cofreeCoact_tmul m c
 
-/-- Pushing the counit through the inverse associator, element form. -/
-private theorem counit_rTensor_assoc_symm (m : M) (y : C ⊗[R] C) :
-    ((Coalgebra.counit (R := R) (A := C)).lTensor M).rTensor C
-        ((TensorProduct.assoc R M C C).symm (m ⊗ₜ y))
-      = (TensorProduct.assoc R M R C).symm
-          (m ⊗ₜ (Coalgebra.counit (R := R) (A := C)).rTensor C y) := by
-  induction y using TensorProduct.inductionOn with
-  | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
-  | tmul a b => simp
-
 /-- The cofree coaction is retracted by its counit projection on the right factor: applying the
 counit of `C` to the middle factor and then the right unitor of `M` gives back the element.
 This is the right-counit law of `C` transported to `M ⊗[R] C`. -/
@@ -183,8 +169,12 @@ theorem rTensor_rid_comp_lTensor_counit_comp_cofreeCoact :
         (Coalgebra.counit (R := R) (A := C)).lTensor M).rTensor C ∘ₗ cofreeCoact R C M =
       LinearMap.id := by
   refine TensorProduct.ext' fun m c ↦ ?_
-  simp only [LinearMap.comp_apply, LinearMap.rTensor_comp, cofreeCoact_tmul,
-    counit_rTensor_assoc_symm m (Coalgebra.comul c), Coalgebra.rTensor_counit_comul]
+  simp only [LinearMap.comp_apply, LinearMap.rTensor_comp, cofreeCoact_tmul]
+  have h := TensorProduct.map_map_assoc_symm (LinearMap.id : M →ₗ[R] M)
+    (Coalgebra.counit (R := R) (A := C)) (LinearMap.id : C →ₗ[R] C)
+    (m ⊗ₜ Coalgebra.comul c)
+  simp only [← lTensor_def, ← rTensor_def, lTensor_tmul] at h
+  rw [h, Coalgebra.rTensor_counit_comul]
   simp
 
 namespace Hom
@@ -199,9 +189,9 @@ noncomputable def cofreeMap (f : M →ₗ[R] N) :
         refine TensorProduct.ext' fun m c => ?_
         simp only [cofree_coact_eq_cofreeCoact, LinearMap.comp_apply, cofreeCoact_tmul,
           LinearMap.rTensor_tmul]
-        induction Coalgebra.comul (R := R) (A := C) c using TensorProduct.inductionOn with
-        | add x y hx hy => simp only [tmul_add, map_add, hx, hy]
-        | tmul a b => simp [assoc_symm_tmul, rTensor_tmul] }
+        simpa only [rTensor_def, TensorProduct.map_id, map_tmul, LinearMap.id_apply] using
+          TensorProduct.map_map_assoc_symm f (LinearMap.id : C →ₗ[R] C)
+            (LinearMap.id : C →ₗ[R] C) (m ⊗ₜ Coalgebra.comul c) }
 
 /-- The underlying linear map of `cofreeMap f` is `f ⊗ id`. -/
 @[simp]
@@ -273,22 +263,16 @@ theorem cofreeLift_apply [Comodule R C P] (g : P →ₗ[R] M) (p : P) :
     cofreeLift (C := C) g p = g.rTensor C (coact (R := R) (C := C) (M := P) p) :=
   rfl
 
-/-- Pushing the counit past `g ⊗ id`. -/
-private theorem counit_lTensor_rTensor (g : P →ₗ[R] M) (z : P ⊗[R] C) :
-    (Coalgebra.counit (R := R) (A := C)).lTensor M (g.rTensor C z)
-      = g.rTensor R ((Coalgebra.counit (R := R) (A := C)).lTensor P z) := by
-  induction z using TensorProduct.inductionOn with
-  | add a b ha hb => simp only [map_add, ha, hb]
-  | tmul p c => simp
-
 /-- Comodule morphisms `P → M ⊗[R] C` into the cofree comodule on `M` are exactly `R`-linear
-maps `P → M`: this is the universal property of the cofree comodule (the cofree functor is right
-adjoint to the forgetful functor). -/
+maps `P → M`, by an `R`-linear equivalence: this is the universal property of the cofree
+comodule (the cofree functor is right adjoint to the forgetful functor). -/
 noncomputable def cofreeEquiv [Comodule R C P] :
-    Hom R C P (M ⊗[R] C) ≃ (P →ₗ[R] M) := by
+    Hom R C P (M ⊗[R] C) ≃ₗ[R] (P →ₗ[R] M) := by
   exact
     { toFun φ := (TensorProduct.rid R M).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ φ.toLinearMap
+      map_add' φ ψ := by simp [LinearMap.comp_add]
+      map_smul' r φ := by simp [LinearMap.comp_smul]
       invFun g := cofreeLift (C := C) g
       left_inv φ := by
         refine Comodule.Hom.ext fun p => ?_
@@ -302,18 +286,17 @@ noncomputable def cofreeEquiv [Comodule R C P] :
       right_inv g := by
         refine LinearMap.ext fun p => ?_
         simp only [LinearMap.comp_apply, cofreeLift_toLinearMap]
-        rw [counit_lTensor_rTensor, Comodule.lTensor_counit_coact]
+        rw [← LinearMap.comp_apply (Coalgebra.counit.lTensor M), lTensor_comp_rTensor,
+          ← rTensor_comp_lTensor, LinearMap.comp_apply, Comodule.lTensor_counit_coact]
         simp }
 
 /-- The forward direction of the cofree adjunction sends a comodule morphism to the
 `R`-linear map obtained by applying the counit to the `C` factor. -/
 @[simp]
-theorem cofreeEquiv_apply [Comodule R C P] :
-    ∀ φ : Hom R C P (M ⊗[R] C),
-      cofreeEquiv (R := R) (C := C) (M := M) (P := P) φ
-        = (TensorProduct.rid R M).toLinearMap ∘ₗ
-            (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ φ.toLinearMap := by
-  intro φ
+theorem cofreeEquiv_apply [Comodule R C P] (φ : Hom R C P (M ⊗[R] C)) :
+    cofreeEquiv (R := R) (C := C) (M := M) (P := P) φ
+      = (TensorProduct.rid R M).toLinearMap ∘ₗ
+          (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ φ.toLinearMap :=
   rfl
 
 /-- The inverse direction of the cofree adjunction is `cofreeLift`. -/
@@ -366,9 +349,9 @@ theorem coact_comp_lTensor_coalgHom {D : Type*} [AddCommMonoid D] [Module R D] [
       Coalgebra.comul ((φ : C →ₗ[R] D) c) :=
     CoalgHomClass.map_comp_comul_apply φ c
   rw [← h]
-  induction Coalgebra.comul (R := R) (A := C) c using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
-  | tmul a b => simp
+  simpa only [map_tmul, LinearMap.id_apply, ← lTensor_def, lTensor_tmul] using
+    (TensorProduct.map_map_assoc_symm (LinearMap.id : M →ₗ[R] M)
+      (φ : C →ₗ[R] D) (φ : C →ₗ[R] D) (m ⊗ₜ Coalgebra.comul c)).symm
 
 end Comodule
 
@@ -401,13 +384,8 @@ theorem eq_zero_iff_counit {P : Type*} [AddCommMonoid P] [Module R P] [Comodule 
     f = 0 ↔
       (TensorProduct.rid R M).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ f.toLinearMap = 0 := by
-  constructor
-  · intro hf
-    subst f
-    simp
-  · intro hf
-    apply (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).injective
-    simpa only [cofreeEquiv_apply, Hom.zero_toLinearMap, LinearMap.comp_zero] using hf
+  simpa only [cofreeEquiv_apply] using
+    ((cofreeEquiv (R := R) (C := C) (M := M) (P := P)).map_eq_zero_iff (x := f)).symm
 
 end Hom
 

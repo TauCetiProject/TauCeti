@@ -5,9 +5,9 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.Algebra.Module.GradedModule.GradedObject
+public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.DirectSum.Internal
 public import Mathlib.Algebra.GradedMulAction
-public import Mathlib.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Degreewise products of internally graded modules
@@ -17,15 +17,14 @@ Its degree-`p` piece is the product of the degree-`p` pieces of the factors. The
 the range of the canonical map from the direct sum of these degreewise products to the product
 of the total modules. An arbitrary family of inhomogeneous elements need not belong to it.
 
-The internal grading is transported from `InternalGrading.ofGradedObject`. Homogeneous maps of
-one common degree lift componentwise into this product. This includes degree-one differentials
-and degree-minus-one homotopies, as well as degree-zero graded morphisms.
+The internal grading is transported from the canonical summands of the direct sum. Homogeneous
+maps of one common degree lift componentwise into this product. This includes degree-one
+differentials and degree-minus-one homotopies, as well as degree-zero graded morphisms.
 
 ## References
 
 * Mathlib's direct-sum decomposition and module APIs.
-* The Tau Ceti contributors, `TauCeti.Algebra.Module.GradedModule.GradedObject`: the internal
-  grading of a total graded object is reused here.
+* `DirectSum.summand` and its decomposition from `TauCeti.Algebra.DirectSum.Internal`.
 -/
 
 public section
@@ -36,10 +35,10 @@ namespace TauCeti.InternalGrading
 
 universe u v w z
 
-section BaseRing
+section BaseSemiring
 
-variable {R : Type u} [Ring R] {J : Type v} {M : J → Type w}
-  [∀ j, AddCommGroup (M j)] [∀ j, Module R (M j)]
+variable {R : Type u} [Semiring R] {J : Type v} {M : J → Type w}
+  [∀ j, AddCommMonoid (M j)] [∀ j, Module R (M j)]
   (G : ∀ j, InternalGrading R (M j))
 
 /-- Families all of whose components have degree `p`. -/
@@ -138,12 +137,7 @@ private theorem product_recompose_injective :
   apply Subtype.ext
   funext j
   have hj : productComponent G j x = productComponent G j y := by
-    apply (DirectSum.Decomposition.isInternal (G j).piece).1
-    calc
-      _ = DirectSum.coeLinearMap (productPiece G) x j :=
-        LinearMap.congr_fun (productComponent_total G j) x
-      _ = DirectSum.coeLinearMap (productPiece G) y j := congrFun hxy j
-      _ = _ := (LinearMap.congr_fun (productComponent_total G j) y).symm
+    rw [← productComponent_decompose, ← productComponent_decompose, hxy]
   simpa only [productComponent_apply] using congrArg (fun t ↦ (t p).1) hj
 
 /-- The sum of the degreewise products is the total graded product. -/
@@ -162,13 +156,13 @@ theorem productEquiv_apply (x : ⨁ p, productPiece G p) :
 
 /-- The internal grading on the product, obtained from its degreewise product presentation. -/
 noncomputable def product : InternalGrading R (productCarrier G) :=
-  (ofGradedObject R fun p ↦ ModuleCat.of R (productPiece G p)).map (productEquiv G)
+  (ofDecomposition (DirectSum.summand R (fun p : ℤ ↦ productPiece G p))).map (productEquiv G)
 
 /-- An element of the graded product has degree `p` exactly when each component does. -/
 @[simp]
 theorem mem_product_piece_iff (p : ℤ) (x : productCarrier G) :
     x ∈ (product G).piece p ↔ ∀ j, x.1 j ∈ (G j).piece p := by
-  rw [product, map_piece, ofGradedObject_piece]
+  rw [product, map_piece, ofDecomposition_piece, DirectSum.summand_def]
   constructor
   · rintro ⟨y, ⟨t, rfl⟩, rfl⟩
     simpa only [LinearEquiv.coe_coe, productEquiv_apply, DirectSum.coeLinearMap_lof] using
@@ -191,7 +185,7 @@ theorem productEval_apply (j : J) (x : productCarrier G) : productEval G j x = x
 
 section Lift
 
-variable {N : Type z} [AddCommGroup N] [Module R N] (H : InternalGrading R N)
+variable {N : Type z} [AddCommMonoid N] [Module R N] (H : InternalGrading R N)
   (r : ℤ) (f : ∀ j, N →ₗ[R] M j)
   (hf : ∀ j, LinearMap.IsHomogeneous (f j) H.piece (G j).piece r)
 
@@ -220,9 +214,8 @@ noncomputable def productLiftLinear : N →ₗ[R] productCarrier G :=
 theorem productLiftLinear_apply (x : N) (j : J) :
     (productLiftLinear G H r f hf x).1 j = f j x := by
   rw [productLiftLinear]
-  exact (congrFun
-    (LinearMap.codRestrict_apply (productCarrier G) (LinearMap.pi f)
-      (h := productLift_mem G H r f hf) x) j).trans (LinearMap.pi_apply f x j)
+  exact (congrFun (LinearMap.codRestrict_apply (productCarrier G) (LinearMap.pi f)
+    (h := productLift_mem G H r f hf) x) j).trans (LinearMap.pi_apply f x j)
 
 /-- The lift has the same common degree as its components. -/
 theorem productLiftLinear_isHomogeneous :
@@ -233,20 +226,19 @@ theorem productLiftLinear_isHomogeneous :
 
 end Lift
 
-end BaseRing
+end BaseSemiring
 
 section Scalars
 
-variable {R : Type u} [CommRing R] {J : Type v} {M : J → Type w}
-  [∀ j, AddCommGroup (M j)] [∀ j, Module R (M j)]
+variable {R : Type u} [Semiring R] {J : Type v} {M : J → Type w}
+  [∀ j, AddCommMonoid (M j)] [∀ j, Module R (M j)]
   (G : ∀ j, InternalGrading R (M j))
-  {S : Type*} [Ring S] [Algebra R S]
-  [∀ j, Module S (M j)] [∀ j, IsScalarTower R S (M j)]
-  (𝒜 : ℤ → Submodule R S) [GradedAlgebra 𝒜]
+  {S : Type*} [Semiring S] [∀ j, Module S (M j)]
+  {σ : Type*} [SetLike σ S] [AddSubmonoidClass σ S]
+  (𝒜 : ℤ → σ) [DirectSum.Decomposition 𝒜]
   [∀ j, SetLike.GradedSMul 𝒜 (G j).piece]
 
 include 𝒜 in
-omit [∀ j, IsScalarTower R S (M j)] in
 /-- The graded product is stable under the graded scalar action. A scalar also has finite
 homogeneous support, so multiplication preserves a common finite degree support. -/
 theorem productCarrier_smul_mem (a : S) {x : ∀ j, M j} (hx : x ∈ productCarrier G) :
@@ -267,7 +259,7 @@ theorem productCarrier_smul_mem (a : S) {x : ∀ j, M j} (hx : x ∈ productCarr
       SetLike.GradedSMul.smul_mem (B := (G j).piece)
         (DirectSum.decompose 𝒜 a q).2 ((mem_productPiece_iff G p y.1).mp y.2 j)
 
-/-- The same graded product as a submodule for the acting graded algebra. -/
+/-- The same graded product as a submodule over the acting graded scalars. -/
 @[expose, implicit_reducible]
 def productScalarSubmodule : Submodule S (∀ j, M j) where
   carrier := productCarrier G
@@ -275,32 +267,33 @@ def productScalarSubmodule : Submodule S (∀ j, M j) where
   add_mem' := fun hx hy ↦ (productCarrier G).add_mem hx hy
   smul_mem' := fun a _ hx ↦ productCarrier_smul_mem G 𝒜 a hx
 
+variable [SMul R S] [∀ j, IsScalarTower R S (M j)]
+
 /-- Restricting scalars recovers the base-linear graded-product submodule. -/
 @[simp]
 theorem productScalarSubmodule_restrictScalars :
     (productScalarSubmodule G 𝒜).restrictScalars R = productCarrier G :=
   rfl
 
-variable {N : Type z} [AddCommGroup N] [Module R N] [Module S N] [IsScalarTower R S N]
+variable {N : Type z} [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
   (H : InternalGrading R N) (r : ℤ) (f : ∀ j, N →ₗ[S] M j)
   (hf : ∀ j, LinearMap.IsHomogeneous ((f j).restrictScalars R) H.piece (G j).piece r)
 
-/-- The componentwise lift is linear over the acting algebra as well as the base ring. -/
+/-- The componentwise lift is linear over the acting scalars as well as the base ring. -/
 noncomputable def productLift : N →ₗ[S] productScalarSubmodule G 𝒜 :=
   (LinearMap.pi f).codRestrict (productScalarSubmodule G 𝒜)
     (productLift_mem G H r (fun j ↦ (f j).restrictScalars R) hf)
 
-/-- The algebra-linear product lift is computed componentwise. -/
+/-- The scalar-linear product lift is computed componentwise. -/
 @[simp]
 theorem productLift_apply (x : N) (j : J) :
     (productLift G 𝒜 H r f hf x).1 j = f j x := by
   rw [productLift]
-  exact (congrFun
-    (LinearMap.codRestrict_apply (productScalarSubmodule G 𝒜) (LinearMap.pi f)
-      (h := productLift_mem G H r (fun j ↦ (f j).restrictScalars R) hf) x) j).trans
+  exact (congrFun (LinearMap.codRestrict_apply (productScalarSubmodule G 𝒜) (LinearMap.pi f)
+    (h := productLift_mem G H r (fun j ↦ (f j).restrictScalars R) hf) x) j).trans
     (LinearMap.pi_apply f x j)
 
-/-- The algebra-linear lift retains the common homogeneous degree. -/
+/-- The scalar-linear lift retains the common homogeneous degree. -/
 theorem productLift_isHomogeneous :
     LinearMap.IsHomogeneous ((productLift G 𝒜 H r f hf).restrictScalars R)
       H.piece (product G).piece r := by

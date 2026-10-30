@@ -56,9 +56,26 @@ theorem LocallyBoundedVariationOn.image_naturalParameterization {α E : Type*}
   rw [image_image]
   exact image_congr fun x hx ↦ hf.naturalParameterization_variationOnFromTo ha hx
 
+/-- The natural parameterization of a curve of locally bounded variation on `s` starts, at
+parameter `0`, at the value of the curve at the base point. -/
+theorem LocallyBoundedVariationOn.naturalParameterization_zero {α E : Type*}
+    [LinearOrder α] [TopologicalSpace E] [WeakEMetricSpace E] {f : α → E} {s : Set α}
+    (hf : LocallyBoundedVariationOn f s) {a : α} (ha : a ∈ s) :
+    naturalParameterization f s a 0 = f a := by
+  simpa only [variationOnFromTo.self] using hf.naturalParameterization_variationOnFromTo ha ha
+
 namespace BoundedVariationOn
 
 variable {X : Type*} [MetricSpace X] {γ : ℝ → X} {a b : ℝ}
+
+/-- The natural parameterization of a curve of bounded variation on `[a, b]` ends, at the length
+`L` of the curve, at `γ b`. -/
+theorem naturalParameterization_toReal_eVariationOn (hγ : BoundedVariationOn γ (Icc a b))
+    (hab : a ≤ b) :
+    naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal = γ b := by
+  simpa only [variationOnFromTo.eq_of_le _ _ hab, inter_self] using
+    hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab)
+      (right_mem_Icc.2 hab)
 
 /-- Cumulative variation maps the parameter interval of a continuous rectifiable curve onto its
 length interval. -/
@@ -143,6 +160,25 @@ theorem image_naturalParameterization_Icc (hγ : BoundedVariationOn γ (Icc a b)
       γ '' Icc a b := by
   rw [← hγ.image_variationOnFromTo_Icc hcont hab]
   exact hγ.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)
+
+/-- The natural parameterization of a continuous rectifiable curve has unit speed on its length
+interval. -/
+theorem hasUnitSpeedOn_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
+    HasUnitSpeedOn (naturalParameterization γ (Icc a b) a)
+      (Icc 0 (eVariationOn γ (Icc a b)).toReal) := by
+  rw [← hγ.image_variationOnFromTo_Icc hcont hab]
+  exact has_unit_speed_naturalParameterization γ hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab)
+
+/-- The natural parameterization of a continuous rectifiable curve has, on its length interval,
+the same length as the curve. -/
+theorem eVariationOn_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
+    eVariationOn (naturalParameterization γ (Icc a b) a)
+      (Icc 0 (eVariationOn γ (Icc a b)).toReal) = eVariationOn γ (Icc a b) := by
+  have h := hγ.hasUnitSpeedOn_naturalParameterization hcont hab
+    (left_mem_Icc.2 ENNReal.toReal_nonneg) (right_mem_Icc.2 ENNReal.toReal_nonneg)
+  rwa [inter_self, NNReal.coe_one, one_mul, sub_zero, ENNReal.ofReal_toReal hγ] at h
 
 /-- For a continuous rectifiable curve injective on the interior of its parameter interval,
 cumulative variation is an increasing homeomorphism onto the length interval. The endpoint
