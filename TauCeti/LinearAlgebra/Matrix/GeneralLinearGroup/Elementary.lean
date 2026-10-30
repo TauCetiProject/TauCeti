@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 
 /-!
@@ -41,6 +42,8 @@ pairing with cyclic cohomology, descend to `K₁`.
 
 * `TauCeti.commutator_elementarySubgroup_self`: `⁅E n A, E n A⁆ = E n A` when `3 ≤ card n`.
 * `TauCeti.elementarySubgroup_le_commutator`: `E n A ≤ ⁅GL n A, GL n A⁆` when `3 ≤ card n`.
+* `TauCeti.map_reindexGL_elementarySubgroup`: reindexing along an equivalence of index types
+  identifies the elementary subgroups.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
   block unipotent matrices are elementary.
 * `TauCeti.fromBlocksGL_inv_mem_elementarySubgroup`: Whitehead's lemma, `u ⊕ u⁻¹ ∈ E`.
@@ -235,6 +238,31 @@ namespace TauCeti
 
 variable {A : Type*} [Ring A] {m k : Type*} [DecidableEq m] [Fintype m] [DecidableEq k]
   [Fintype k]
+
+/-- Reindexing along an equivalence `σ` of index types carries the elementary matrix `eᵢⱼ(a)` to
+the elementary matrix `e_(σ i)(σ j)(a)`. -/
+@[simp]
+theorem _root_.Equiv.reindexGL_transvectionUnit (σ : m ≃ k) {i j : m} (hij : i ≠ j) (a : A) :
+    σ.reindexGL A (transvectionUnit hij a) = transvectionUnit (σ.injective.ne hij) a := by
+  ext p q
+  simp [coe_transvectionUnit_eq_one_add_single, single_apply, one_apply, Equiv.eq_symm_apply,
+    eq_comm]
+
+/-- Reindexing along an equivalence of index types identifies the elementary subgroups. -/
+theorem map_reindexGL_elementarySubgroup (σ : m ≃ k) :
+    (elementarySubgroup m A).map (σ.reindexGL A).toMonoidHom = elementarySubgroup k A := by
+  refine le_antisymm (Subgroup.map_le_iff_le_comap.2 (elementarySubgroup_le_iff.2
+    fun i j hij a ↦ ?_)) (elementarySubgroup_le_iff.2 fun i j hij a ↦
+      ⟨transvectionUnit (σ.symm.injective.ne hij) a, transvectionUnit_mem_elementarySubgroup _ _,
+        ?_⟩)
+  · simpa using transvectionUnit_mem_elementarySubgroup (σ.injective.ne hij) a
+  · ext p q
+    simp [coe_transvectionUnit_eq_one_add_single, single_apply]
+
+/-- Reindexing along an equivalence of index types preserves elementary matrices. -/
+theorem _root_.Equiv.reindexGL_mem_elementarySubgroup (σ : m ≃ k) {g : GL m A}
+    (hg : g ∈ elementarySubgroup m A) : σ.reindexGL A g ∈ elementarySubgroup k A :=
+  map_reindexGL_elementarySubgroup (A := A) σ ▸ Subgroup.mem_map_of_mem _ hg
 
 /-- Placing an elementary matrix in the upper left block gives an elementary matrix: the
 stabilization `e ↦ e ⊕ 1` maps the elementary subgroup into the elementary subgroup. -/
