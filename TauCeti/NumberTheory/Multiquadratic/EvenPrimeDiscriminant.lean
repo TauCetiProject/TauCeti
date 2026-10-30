@@ -13,18 +13,18 @@ import Mathlib.Tactic.NormNum.IsSquare
 /-!
 # Even prime discriminants
 
-The genus-field layer of the multiquadratic roadmap uses the prime discriminants dividing a
-quadratic discriminant. The odd-prime normalization `p*` is developed in
-`TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic`; this file records the complementary
-2-adic list:
+The prime discriminants are the fundamental discriminants divisible by exactly one prime: the
+odd ones `p* = (-1)^((p - 1) / 2) p`, developed in
+`TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic`, and the three even ones treated
+here. Each even prime discriminant is four times a squarefree radicand:
 
 * `-4`, represented by the squarefree radicand `-1`;
 * `8`, represented by the squarefree radicand `2`;
 * `-8`, represented by the squarefree radicand `-2`.
 
-The quotient by `4` is the radicand whose square root generates the same quadratic field as
-the corresponding even prime discriminant. This is the small arithmetic API needed before the
-later genus-field package can form the multiquadratic compositum of the `ℚ(√p*)` factors.
+The quotient `D / 4` is the radicand whose square root generates the same quadratic field
+`ℚ(√D)`. These are the `2`-adic factors in the factorization of a fundamental discriminant into
+prime discriminants.
 
 ## Main definitions and results
 
@@ -84,7 +84,7 @@ def evenPrimeDiscriminantRadicand (D : ℤ) : ℤ :=
 /-- An even prime discriminant is four times its associated squarefree radicand. -/
 theorem evenPrimeDiscriminant_eq_four_mul_radicand {D : ℤ} (hD : IsEvenPrimeDiscriminant D) :
     D = 4 * evenPrimeDiscriminantRadicand D := by
-  rcases hD with rfl | rfl | rfl <;> norm_num [evenPrimeDiscriminantRadicand]
+  rcases hD with rfl | rfl | rfl <;> simp
 
 /-- The associated squarefree radicand of an even prime discriminant is one of `-1`, `2`,
 or `-2`. -/
@@ -109,12 +109,7 @@ theorem evenPrimeDiscriminantRadicand_ne_zero {D : ℤ} (hD : IsEvenPrimeDiscrim
 /-- The radicand attached to an even prime discriminant is squarefree. -/
 theorem squarefree_evenPrimeDiscriminantRadicand {D : ℤ} (hD : IsEvenPrimeDiscriminant D) :
     Squarefree (evenPrimeDiscriminantRadicand D) := by
-  rcases hD with rfl | rfl | rfl
-  · norm_num
-  · rw [evenPrimeDiscriminantRadicand_eight, ← Int.squarefree_natAbs]
-    exact Nat.prime_two.squarefree
-  · rw [evenPrimeDiscriminantRadicand_neg_eight, ← Int.squarefree_natAbs]
-    exact Nat.prime_two.squarefree
+  rcases hD with rfl | rfl | rfl <;> simp [← Int.squarefree_natAbs, Nat.squarefree_two]
 
 /-- The even prime discriminants themselves are even. -/
 theorem two_dvd_evenPrimeDiscriminant {D : ℤ} (hD : IsEvenPrimeDiscriminant D) : (2 : ℤ) ∣ D := by
@@ -130,8 +125,8 @@ theorem evenPrimeDiscriminantRadicand_mod_four_eq_three_or_two {D : ℤ}
 
 /-- The rational radicand associated to an even prime discriminant is not a square. -/
 theorem not_isSquare_evenPrimeDiscriminantRadicand_rat {D : ℤ} (hD : IsEvenPrimeDiscriminant D) :
-    ¬ IsSquare ((evenPrimeDiscriminantRadicand D : ℤ) : ℚ) := by
-  rcases hD with rfl | rfl | rfl <;> norm_num [evenPrimeDiscriminantRadicand]
+    ¬ IsSquare (evenPrimeDiscriminantRadicand D : ℚ) := by
+  rcases hD with rfl | rfl | rfl <;> norm_num
 
 /-- The discriminant `-4` gives the radicand `-1`. -/
 theorem evenPrimeDiscriminantRadicand_eq_neg_one_iff {D : ℤ} (hD : IsEvenPrimeDiscriminant D) :

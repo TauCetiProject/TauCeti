@@ -233,12 +233,13 @@ theorem mpullback_mk_fiberForm (t : ℝ) :
 theorem eval₂_fiberForm_mfderiv_uncurry_mk {τ : SmoothForm I M F 2}
     {hτ : SmoothForm.mpullback φ φ.contMDiff τ = τ} (t : ℝ) (x : M)
     (w w' : TangentSpace (𝓘(ℝ).prod I) (t, x)) :
-    (fiberForm φ τ hτ).eval₂ (mk φ t x)
+    SmoothBundleForm.eval₂ (fiberForm φ τ hτ) (mk φ t x)
         (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x) w)
         (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x) w') =
-      τ.eval₂ x (Manifold.tangentSpaceProdEquiv (t, x) w).2
+      SmoothBundleForm.eval₂ τ x (Manifold.tangentSpaceProdEquiv (t, x) w).2
         (Manifold.tangentSpaceProdEquiv (t, x) w').2 := by
-  have h := congrArg (fun β ↦ β.eval₂ (t, x) w w') (mpullback_uncurry_mk_fiberForm (hσ := hτ))
+  have h := congrArg (fun β ↦ SmoothBundleForm.eval₂ β (t, x) w w')
+    (mpullback_uncurry_mk_fiberForm (hσ := hτ))
   simp only [SmoothForm.eval₂_mpullback, mfderiv_snd] at h
   rw [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_apply]
   -- `uncurry (mk φ) (t, x)` is `mk φ t x`, and `ContinuousLinearMap.snd` is `Prod.snd`.

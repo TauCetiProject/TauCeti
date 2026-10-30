@@ -10,7 +10,8 @@ public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 /-!
 # Pointwise fixing subgroups
 
-This file records small generic additions to Mathlib's `fixingSubgroup` API.
+This file records small generic additions to Mathlib's `fixingSubgroup` API, together with their
+additive `fixingAddSubgroup` counterparts.
 -/
 
 public section
@@ -18,13 +19,12 @@ public section
 namespace TauCeti
 
 /-- For a faithful action, the subgroup fixing the whole space pointwise is trivial. -/
-@[simp]
+@[to_additive (attr := simp)
+  /-- For a faithful additive action, the additive subgroup fixing the whole space pointwise is
+  trivial. -/]
 theorem fixingSubgroup_univ {G α : Type*} [Group G] [MulAction G α] [FaithfulSMul G α] :
-    _root_.fixingSubgroup G (Set.univ : Set α) = ⊥ := by
-  ext g
-  rw [_root_.mem_fixingSubgroup_iff, Subgroup.mem_bot]
-  refine ⟨fun hg => ?_, fun hg x _ => by rw [hg, one_smul]⟩
-  exact FaithfulSMul.eq_of_smul_eq_smul fun x =>
-    (hg x (Set.mem_univ x)).trans (one_smul G x).symm
+    fixingSubgroup G (Set.univ : Set α) = ⊥ :=
+  (Subgroup.eq_bot_iff_forall _).2 fun _ hg ↦ eq_of_smul_eq_smul fun x ↦ by
+    rw [(mem_fixingSubgroup_iff G).1 hg x (Set.mem_univ x), one_smul]
 
 end TauCeti
