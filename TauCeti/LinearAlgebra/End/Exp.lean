@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Nilpotent.Exp
 public import TauCeti.Algebra.BigOperators.Finset.Range
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 import Mathlib.Algebra.Module.BigOperators
+import TauCeti.LinearAlgebra.End.Basic
 import Mathlib.Tactic.FieldSimp
 
 /-!
@@ -51,22 +52,8 @@ open Finset
 
 namespace Module.End
 
-variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
-
-/-- Local nilpotence of `f` passes to `-f`. -/
-private theorem neg_hf (f : Module.End R M) :
-    (∀ x, ∃ n, (f ^ n) x = 0) → ∀ x, ∃ n, ((-f) ^ n) x = 0 :=
-  fun hf x ↦ (hf x).imp fun n hn ↦ (neg_pow_apply_eq_zero_iff f n x).2 hn
-
-variable [Module ℚ M] (f : Module.End R M)
-
-/-- The powers of `-f` are the powers of `f` up to sign. -/
-private theorem neg_pow_apply (n : ℕ) (x : M) : ((-f) ^ n) x = ((-1 : ℚ) ^ n) • (f ^ n) x := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ', Module.End.mul_apply, ih, LinearMap.neg_apply, map_rat_smul, pow_succ' f,
-      Module.End.mul_apply, pow_succ' (-1 : ℚ), neg_one_mul, neg_smul]
+variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M] [Module ℚ M]
+  (f : Module.End R M)
 
 /-- The exponential series of `f` at a vector killed by `f ^ k` does not change when it is
 truncated at any length beyond `k`. -/
@@ -143,7 +130,8 @@ private theorem expFun_expFun_of_eq_neg {g : Module.End R M} (hfg : g = -f)
     rw [map_rat_smul, ← Module.End.mul_apply, ← pow_add, add_comm, hpow i K (by omega), smul_zero]
   have hterm : ∀ i j, ((-f) ^ i) ((f ^ j) x) = ((-1 : ℚ) ^ i) • (f ^ (i + j)) x := by
     intro i j
-    rw [neg_pow_apply, pow_add, Module.End.mul_apply]
+    rw [neg_pow_apply, pow_add, Module.End.mul_apply, ← Int.cast_smul_eq_zsmul ℚ, Int.cast_pow,
+      Int.cast_neg, Int.cast_one]
   rw [expFun_eq_sum (-f) hg hy, expFun_eq_sum f hf hKx]
   simp_rw [map_sum, map_rat_smul, hterm, smul_sum, smul_smul]
   rw [← TauCeti.sum_range_add_antidiagonal_of_support K K
@@ -167,10 +155,13 @@ private theorem expFun_expFun_of_eq_neg {g : Module.End R M} (hfg : g = -f)
 some power of `f`, the exponential series `∑ (fⁱ x) / i!` is a finite sum at every vector `x`, and
 it defines an `R`-linear automorphism of `M` whose inverse is the exponential series of `-f`. -/
 noncomputable def locallyNilpotentExp : M ≃ₗ[R] M :=
-  LinearEquiv.ofLinearMap (expLinearMap f hf) (expLinearMap (-f) (neg_hf f hf))
+  LinearEquiv.ofLinearMap (expLinearMap f hf)
+    (expLinearMap (-f) ((forall_exists_neg_pow_apply_eq_zero_iff f).2 hf))
     (LinearMap.ext fun x ↦
-      expFun_expFun_of_eq_neg (-f) (neg_hf f hf) (neg_neg f).symm hf x)
-    (LinearMap.ext fun x ↦ expFun_expFun_of_eq_neg f hf rfl (neg_hf f hf) x)
+      expFun_expFun_of_eq_neg (-f) ((forall_exists_neg_pow_apply_eq_zero_iff f).2 hf)
+        (neg_neg f).symm hf x)
+    (LinearMap.ext fun x ↦
+      expFun_expFun_of_eq_neg f hf rfl ((forall_exists_neg_pow_apply_eq_zero_iff f).2 hf) x)
 
 /-- **The exponential as a truncated series.** At a vector killed by `f ^ k`, the exponential of
 `f` is its exponential series truncated at length `k`. -/
@@ -182,7 +173,8 @@ theorem locallyNilpotentExp_apply_eq_sum {x : M} {k : ℕ} (hk : (f ^ k) x = 0) 
 exponential of `f` is the exponential series of `-f` truncated at length `k`. -/
 theorem locallyNilpotentExp_symm_apply_eq_sum {x : M} {k : ℕ} (hk : (f ^ k) x = 0) :
     (locallyNilpotentExp f hf).symm x = ∑ i ∈ range k, (i.factorial : ℚ)⁻¹ • ((-f) ^ i) x :=
-  expFun_eq_sum (-f) (neg_hf f hf) ((neg_pow_apply_eq_zero_iff f k x).2 hk)
+  expFun_eq_sum (-f) ((forall_exists_neg_pow_apply_eq_zero_iff f).2 hf)
+    ((neg_pow_apply_eq_zero_iff f k x).2 hk)
 
 /-- For a nilpotent endomorphism, the exponential is Mathlib's `IsNilpotent.exp`. -/
 theorem locallyNilpotentExp_eq_exp (hnil : IsNilpotent f) :

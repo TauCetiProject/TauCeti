@@ -35,7 +35,10 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 ## Main results
 
 * `IsNilpotent.exists_pow_apply_eq_zero`: a nilpotent endomorphism is locally nilpotent.
-* `Module.End.neg_pow_apply_eq_zero_iff`: `-f` is locally nilpotent exactly when `f` is.
+* `Module.End.neg_pow_apply_eq_zero_iff`: a power of `-f` kills a vector exactly when the same
+  power of `f` does.
+* `Module.End.forall_exists_neg_pow_apply_eq_zero_iff`: `-f` is locally nilpotent exactly when `f`
+  is.
 * `Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero`: `1 + f` is a unit when `f` is
   locally nilpotent.
 * `TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
@@ -67,6 +70,11 @@ theorem Module.End.neg_pow_apply_eq_zero_iff (f : Module.End R M) (n : ℕ) (x :
     ((-f) ^ n) x = 0 ↔ (f ^ n) x = 0 := by
   rcases neg_one_pow_eq_or (Module.End R M) n with h | h <;>
     simp [neg_pow, h]
+
+/-- An endomorphism `-f` is locally nilpotent exactly when `f` is. -/
+theorem Module.End.forall_exists_neg_pow_apply_eq_zero_iff (f : Module.End R M) :
+    (∀ x, ∃ n, ((-f) ^ n) x = 0) ↔ ∀ x, ∃ n, (f ^ n) x = 0 := by
+  simp only [neg_pow_apply_eq_zero_iff]
 
 /-- If every vector is annihilated by some power of `f`, then `1 + f` is invertible. -/
 theorem Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (f : Module.End R M)

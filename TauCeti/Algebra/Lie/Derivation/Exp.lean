@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Derivation.Basic
 public import TauCeti.LinearAlgebra.End.Exp
+import TauCeti.Algebra.Lie.Basic
 import Mathlib.Tactic.FieldSimp
 
 /-!
@@ -56,14 +57,6 @@ namespace LieDerivation
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [Module ℚ L]
   (D : LieDerivation R L L) (hD : ∀ x, ∃ n, (D.toLinearMap ^ n) x = 0)
 
-/-- Rational scalars pass through the bracket: the bracket is biadditive, hence `ℚ`-bilinear. -/
-private theorem rat_smul_lie_rat_smul (p q : ℚ) (x y : L) :
-    ⁅p • x, q • y⁆ = (p * q) • ⁅x, y⁆ := by
-  have h₁ : ∀ (a b : L) (c : ℚ), ⁅a, c • b⁆ = c • ⁅a, b⁆ := fun a b c ↦
-    map_rat_smul (AddMonoidHom.mk' (fun b ↦ ⁅a, b⁆) (lie_add a)) c b
-  rw [h₁, ← lie_skew, h₁, ← lie_skew y x]
-  module
-
 /-- The exponential of a locally nilpotent derivation preserves the bracket. -/
 private theorem locallyNilpotentExp_lie (x y : L) :
     Module.End.locallyNilpotentExp D.toLinearMap hD ⁅x, y⁆ =
@@ -89,7 +82,7 @@ private theorem locallyNilpotentExp_lie (x y : L) :
   rw [Module.End.locallyNilpotentExp_apply_eq_sum _ hD hxy,
     Module.End.locallyNilpotentExp_apply_eq_sum _ hD (hxN N le_rfl),
     Module.End.locallyNilpotentExp_apply_eq_sum _ hD (hyN N le_rfl), sum_lie]
-  simp_rw [lie_sum, rat_smul_lie_rat_smul]
+  simp_rw [lie_sum, TauCeti.rat_smul_lie, TauCeti.lie_rat_smul, smul_smul]
   rw [← TauCeti.sum_range_add_antidiagonal_of_support N N
     (fun p ↦ ((p.1.factorial : ℚ)⁻¹ * (p.2.factorial : ℚ)⁻¹) •
       ⁅(D.toLinearMap ^ p.1) x, (D.toLinearMap ^ p.2) y⁆)
