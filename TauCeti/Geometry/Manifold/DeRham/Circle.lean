@@ -291,8 +291,7 @@ private theorem image_circleParam :
       {Circle.exp (-Real.pi)}ᶜ := by
   have hsurj : Function.Surjective (EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 1)) := fun t ↦
     ⟨(EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t), rfl⟩
-  have h := compl_circleExp_image_Icc (a := -Real.pi) (b := -Real.pi) le_rfl
-    (by linarith [Real.pi_pos])
+  have h := compl_circleExp_image_Icc (-Real.pi) (-Real.pi)
   rw [Set.Icc_self, Set.image_singleton, show -Real.pi + 2 * Real.pi = Real.pi by ring] at h
   -- The parametrization factors through the coordinate projection, which is surjective.
   rw [h, show (fun z : EuclideanSpace ℝ (Fin 1) ↦ Circle.exp (z 0)) =

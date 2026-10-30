@@ -38,20 +38,14 @@ theorem properClassToNarrowPic_surjective (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 
   let O := QuadraticOrder.numberFieldOrder D hD
   intro c
   obtain ⟨I, hIc⟩ := GlobalNumberFields.NarrowPic.mk_surjective O c
-  obtain ⟨f, hf, hp, ha, r, hr, hscale⟩ :=
-    exists_pos_primitive_form_fractionalIdeal_eq D hD I.val (O.invertible_isProper I)
+  obtain ⟨f, hf, hp, ha, r, u, hr, hu, hI⟩ :=
+    exists_pos_primitive_form_invertibleFractionalIdeal_eq D hD I
   let g : primitiveForms D := ⟨f, (mem_primitiveForms D f).mpr ⟨hf, hp⟩⟩
-  have hrK : (r : QuadraticAlgebra ℚ (D : ℚ) 0) ≠ 0 := by exact_mod_cast hr.ne'
-  let u := Units.mk0 (r : QuadraticAlgebra ℚ (D : ℚ) 0) hrK
   have hnorm : Algebra.norm ℚ (u : QuadraticAlgebra ℚ (D : ℚ) 0) = r ^ 2 := by
-    simp [u, Algebra.norm_quadraticAlgebra_apply, QuadraticAlgebra.norm_def, pow_two]
+    simp [hu, Algebra.norm_quadraticAlgebra_apply, QuadraticAlgebra.norm_def, pow_two]
   have hfactor := GlobalNumberFields.NarrowPic.mkPrincipal_eq_one_of_norm_pos O
     (QuadraticAlgebra.finrank_eq_two (D : ℚ) 0) (hnorm ▸ sq_pos_of_pos hr)
   rw [GlobalNumberFields.NarrowPic.mkPrincipal_apply] at hfactor
-  have hI : I = toPrincipalIdeal _ _ u * f.invertibleFractionalIdeal D hf hp := by
-    apply Units.ext
-    rw [Units.val_mul, coe_toPrincipalIdeal, coe_invertibleFractionalIdeal]
-    exact hscale
   have hmap := congrArg (GlobalNumberFields.NarrowPic.mk O) hI
   dsimp only [O] at hfactor hmap
   simp only [map_mul, hfactor, one_mul] at hmap
@@ -59,61 +53,53 @@ theorem properClassToNarrowPic_surjective (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 
   simpa only [properClassToNarrowPic_mk, g, narrowPicClass_def,
     orientedInvertibleFractionalIdeal_of_a_pos f D hf hp ha] using hmap.symm.trans hIc
 
-private theorem exists_smul_eq_of_narrowPicClass_eq (D : ℤ)
-    (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)] (hpos : 0 < D)
-    (f g : primitiveForms D)
-    (h : f.val.narrowPicClass D ((mem_primitiveForms D f.val).mp f.property).1
-        ((mem_primitiveForms D f.val).mp f.property).2 =
-      g.val.narrowPicClass D ((mem_primitiveForms D g.val).mp g.property).1
-        ((mem_primitiveForms D g.val).mp g.property).2) :
-    ∃ γ : SL(2, ℤ), γ • f = g := by
-  have hf := ((mem_primitiveForms D f.val).mp f.property).1
-  have hg := ((mem_primitiveForms D g.val).mp g.property).1
-  have hfp := ((mem_primitiveForms D f.val).mp f.property).2
-  have hgp := ((mem_primitiveForms D g.val).mp g.property).2
-  obtain ⟨ρ, hρ⟩ := exists_smul_a_pos f.val (hf.symm ▸ hpos)
-  obtain ⟨σ, hσ⟩ := exists_smul_a_pos g.val (hg.symm ▸ hpos)
-  have hρD := (discrim_smul ρ f.val).trans hf
-  have hσD := (discrim_smul σ g.val).trans hg
-  have hρp := (isPrimitive_smul_iff f.val ρ).mpr hfp
-  have hσp := (isPrimitive_smul_iff g.val σ).mpr hgp
+/-- **Equal oriented narrow classes.** For positive nonsquare `D`, two primitive forms of
+discriminant `D` have the same oriented narrow class exactly when they are properly
+equivalent. -/
+theorem narrowPicClass_eq_narrowPicClass_iff_of_pos (D : ℤ) [Fact (¬ IsSquare D)]
+    (hpos : 0 < D) {f g : BinaryQuadraticForm ℤ} (hf : f.discrim = D) (hfp : f.IsPrimitive)
+    (hg : g.discrim = D) (hgp : g.IsPrimitive) :
+    f.narrowPicClass D hf hfp = g.narrowPicClass D hg hgp ↔ ∃ γ : SL(2, ℤ), γ • f = g := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨γ, rfl⟩; exact (narrowPicClass_smul f D hf hfp hpos γ).symm⟩
+  obtain ⟨ρ, hρ⟩ := exists_smul_a_pos f (hf.symm ▸ hpos)
+  obtain ⟨σ, hσ⟩ := exists_smul_a_pos g (hg.symm ▸ hpos)
+  have hρD := (discrim_smul ρ f).trans hf
+  have hσD := (discrim_smul σ g).trans hg
+  have hρp := (isPrimitive_smul_iff f ρ).mpr hfp
+  have hσp := (isPrimitive_smul_iff g σ).mpr hgp
+  have hD : D % 4 = 0 ∨ D % 4 = 1 := hf ▸ f.discrim_emod_four_eq_zero_or_one
   let O := QuadraticOrder.numberFieldOrder D hD
   have hmk : GlobalNumberFields.NarrowPic.mk O
-      ((ρ • f.val).invertibleFractionalIdeal D hρD hρp) =
+      ((ρ • f).invertibleFractionalIdeal D hρD hρp) =
       GlobalNumberFields.NarrowPic.mk O
-        ((σ • g.val).invertibleFractionalIdeal D hσD hσp) := by
-    rw [narrowPicClass_eq_mk_of_smul_a_pos f.val D hf hfp hpos ρ hρ,
-      narrowPicClass_eq_mk_of_smul_a_pos g.val D hg hgp hpos σ hσ] at h
+        ((σ • g).invertibleFractionalIdeal D hσD hσp) := by
+    rw [narrowPicClass_eq_mk_of_smul_a_pos f D hf hfp hpos ρ hρ,
+      narrowPicClass_eq_mk_of_smul_a_pos g D hg hgp hpos σ hσ] at h
     exact h
   obtain ⟨u, hu, hI⟩ :=
     (GlobalNumberFields.NarrowPic.mk_eq_mk_iff_exists_norm_pos O
       (QuadraticAlgebra.finrank_eq_two (D : ℚ) 0)).mp hmk
-  have hscale : (σ • g.val).fractionalIdeal D hσD =
+  have hscale : (σ • g).fractionalIdeal D hσD =
       spanSingleton (nonZeroDivisors O.toSubalgebra)
-        (u : QuadraticAlgebra ℚ (D : ℚ) 0) * (ρ • f.val).fractionalIdeal D hρD := by
-    have hval := congrArg Units.val hI
-    simpa only [Units.val_mul, coe_invertibleFractionalIdeal, coe_toPrincipalIdeal,
-      mul_comm] using hval.symm
+        (u : QuadraticAlgebra ℚ (D : ℚ) 0) * (ρ • f).fractionalIdeal D hρD := by
+    -- Rewriting with `mul_comm` first keeps commutativity out of the `simp` set.
+    rw [mul_comm]
+    simpa only [Units.val_mul, coe_invertibleFractionalIdeal, coe_toPrincipalIdeal]
+      using (congrArg Units.val hI).symm
   obtain ⟨τ, hτ⟩ := exists_smul_eq_of_fractionalIdeal_eq_of_norm_pos
-    (ρ • f.val) (σ • g.val) D hρD hσD hρ hσ u hu hscale
-  refine ⟨σ⁻¹ * τ * ρ, Subtype.ext ?_⟩
-  simp only [SubMulAction.val_smul, mul_smul, hτ, inv_smul_smul]
+    (ρ • f) (σ • g) D hρD hσD hρ hσ u hu hscale
+  exact ⟨σ⁻¹ * τ * ρ, by simp only [mul_smul, hτ, inv_smul_smul]⟩
 
 /-- Equal oriented narrow classes determine equal proper classes at positive nonsquare
 discriminant. -/
 theorem properClassToNarrowPic_injective (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
     [Fact (¬ IsSquare D)] (hpos : 0 < D) :
     Function.Injective (properClassToNarrowPic D hD hpos) := by
-  intro q r
-  induction q using Quotient.inductionOn with
-  | h f =>
-    induction r using Quotient.inductionOn with
-    | h g =>
-      intro h
-      obtain ⟨γ, hγ⟩ := exists_smul_eq_of_narrowPicClass_eq D hD hpos f g
-        (by simpa only [properClassToNarrowPic_mk] using h)
-      rw [← hγ]
-      exact MulAction.orbitRel.Quotient.quotient_smul_eq.symm
+  refine fun q r ↦ Quotient.inductionOn₂ q r fun f g h ↦ ?_
+  simp only [properClassToNarrowPic_mk, narrowPicClass_eq_narrowPicClass_iff_of_pos D hpos] at h
+  obtain ⟨γ, hγ⟩ := h
+  obtain rfl : γ • f = g := Subtype.ext ((SubMulAction.val_smul γ f).trans hγ)
+  exact MulAction.orbitRel.Quotient.quotient_smul_eq.symm
 
 /-- Proper classes of primitive positive-discriminant forms are in bijection with the
 consumed narrow Picard group through the original sign-corrected map. -/

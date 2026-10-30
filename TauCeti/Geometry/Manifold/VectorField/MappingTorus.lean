@@ -49,6 +49,8 @@ form: `ι_T σ_v = 0` for every form `σ` on `M` preserved by `φ`.
   `TauCeti.SmoothMappingTorus.mfderiv_proj_timeVectorField`: `dt(T) = 1` and `dp(T) = 1`.
 * `TauCeti.SmoothMappingTorus.isCompl_span_timeVectorField_ker_mfderiv_proj`: the splitting
   `T Y_φ = ℝ T ⊕ ker dp`.
+* `TauCeti.SmoothMappingTorus.mfderiv_map_timeVectorField`: the map `[t, x] ↦ [t, g x]` induced
+  by a smooth map `g` intertwining `φ` and `ψ` sends the field `T` of `Y_φ` to that of `Y_ψ`.
 * `TauCeti.SmoothMappingTorus.interior_timeVectorField_fiberForm`,
   `TauCeti.SmoothMappingTorus.fiberForm_apply_vecCons_timeVectorField`,
   `TauCeti.SmoothMappingTorus.eval₂_fiberForm_timeVectorField_left`: `ι_T σ_v = 0`.
@@ -210,6 +212,28 @@ theorem isCompl_span_timeVectorField_ker_mfderiv_proj (y : SmoothMappingTorus φ
     rw [hw', zero_smul]
   · exact LinearMap.span_singleton_sup_ker_eq_top f.toLinearMap
       (by rw [f.coe_coe, hT]; exact one_ne_zero)
+
+/-! ### Maps of mapping tori -/
+
+/-- The map `[t, x] ↦ [t, g x]` induced by a smooth map `g` intertwining `φ` and `ψ` sends the
+field `T` of `Y_φ` to the field `T` of `Y_ψ`, because it intertwines the suspension flows. -/
+@[simp]
+theorem mfderiv_map_timeVectorField {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} {N : Type*}
+    [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N] [T2Space N]
+    [LocallyCompactSpace N] (ψ : N ≃ₘ⟮J, J⟯ N) {g : M → N} (h : Function.Semiconj g φ ψ)
+    (hg : ContMDiff I J ∞ g) (y : SmoothMappingTorus φ) :
+    mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) (map φ ψ g h) y (timeVectorField φ y) =
+      timeVectorField ψ (map φ ψ g h y) := by
+  have hcurve : (fun s : ℝ ↦ flow ψ s (map φ ψ g h y)) = map φ ψ g h ∘ fun s ↦ flow φ s y :=
+    funext fun s ↦ (map_flow φ ψ g h s y).symm
+  have hflow : ContMDiff 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ fun s : ℝ ↦ flow φ s y :=
+    (contMDiff_uncurry_flow φ).comp (contMDiff_id.prodMk contMDiff_const)
+  rw [timeVectorField_def, timeVectorField_def, hcurve]
+  -- The chain rule along the orbit `s ↦ flow φ s y`, which passes through `y` at time zero.
+  exact (mfderiv_comp_apply_of_eq (0 : ℝ)
+    ((contMDiff_map φ ψ g h hg _).mdifferentiableAt (by simp))
+    ((hflow 0).mdifferentiableAt (by simp)) ((flow φ).map_zero_apply y) (1 : ℝ)).symm
 
 /-! ### Fiber forms -/
 
