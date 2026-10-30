@@ -163,6 +163,22 @@ theorem quotientSheaf_ext {U : Opens (Quotient s)}
   apply (quotientSheafSectionsEquiv I s U).injective
   exact Subtype.ext (holomorphicStructureSheaf.ext h)
 
+/-- Constant functions take equal values at identified points, so the quotient sections form a
+`ℂ`-algebra. -/
+instance (U : (Opens (Quotient s))ᵒᵖ) : Algebra ℂ ((quotientSheaf I s).obj.obj U) :=
+  RingHom.toAlgebra <| (quotientSheafSectionsEquiv I s U.unop).symm.toRingHom.comp <|
+    (algebraMap ℂ _).codRestrict (quotientSectionSubring I s U.unop) fun c ↦
+      (mem_quotientSectionSubring I s _ _).mpr fun _ _ _ _ _ ↦
+        (algebraMap_apply _ c _).trans (algebraMap_apply _ c _).symm
+
+/-- The constant quotient section `c` is the constant function `c` upstairs. -/
+@[simp]
+theorem quotientSheafSectionsEquiv_algebraMap (U : Opens (Quotient s)) (c : ℂ)
+    (x : (Opens.map (TopCat.quotientMk s)).obj U) :
+    (quotientSheafSectionsEquiv I s U (algebraMap ℂ ((quotientSheaf I s).obj.obj (op U)) c)).1 x =
+      c :=
+  algebraMap_apply _ c x
+
 /-- The normalization pullback includes the quotient sheaf into the direct image of the
 holomorphic structure sheaf. -/
 def quotientSheafι : quotientSheaf I s ⟶
