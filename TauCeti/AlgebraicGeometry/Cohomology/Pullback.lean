@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Adjunction.Mates
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.ToSheaf
 public import TauCeti.Topology.Sheaves.Cohomology.Pullback
 import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 
@@ -23,8 +23,8 @@ the pullback map
 It is the inverse image map on the cohomology of the underlying abelian sheaves
 (`TopCat.Hom.cohomologyPullback`), followed by the map induced on cohomology by the
 comparison `g⁻¹ M ⟶ g^* M` between the inverse image of the underlying abelian sheaf of `M` and
-the underlying abelian sheaf of the module pullback. That comparison is the mate of the equality
-`g_* N = g_* N` of underlying abelian sheaves of a pushforward.
+the underlying abelian sheaf of the module pullback
+(`AlgebraicGeometry.Scheme.Hom.toSheafPullbackComparison`).
 
 The pullback map is natural in `M`, commutes with the connecting maps of a short exact sequence
 whose pullback is still short exact (for instance for flat `g` and quasi-coherent terms), is
@@ -59,31 +59,6 @@ noncomputable section
 namespace AlgebraicGeometry.Scheme.Hom
 
 variable {X Y : Scheme.{u}} (g : Y ⟶ X)
-
-/-- The comparison `g⁻¹ M ⟶ g^* M` from the inverse image of the underlying abelian sheaf of `M`
-to the underlying abelian sheaf of its pullback as a sheaf of modules: the mate of the equality of
-the underlying abelian sheaves of `g_* N` computed in both ways. -/
-private def toSheafPullbackComparison :
-    toSheaf X ⋙ (Opens.map g.base).sheafPullback AddCommGrpCat.{u}
-        (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y) ⟶
-      Scheme.Modules.pullback g ⋙ toSheaf Y :=
-  (mateEquiv (Scheme.Modules.pullbackPushforwardAdjunction g)
-    ((Opens.map g.base).sheafAdjunctionContinuous AddCommGrpCat.{u} _ _)).symm (𝟙 _)
-
-/-- On sections, the unit of the module pullback is the abelian unit followed by the comparison
-`g⁻¹ M ⟶ g^* M`. -/
-private lemma toSheafPullbackComparison_unit (M : X.Modules) :
-    (toSheaf X).map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M) =
-      ((Opens.map g.base).sheafAdjunctionContinuous AddCommGrpCat.{u}
-          (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y)).unit.app
-          ((toSheaf X).obj M) ≫
-        ((Opens.map g.base).sheafPushforwardContinuous AddCommGrpCat.{u}
-          (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y)).map
-          ((toSheafPullbackComparison g).app M) :=
-  (Category.comp_id _).symm.trans (unit_mateEquiv_symm (G := toSheaf X) (H := toSheaf Y)
-    (Scheme.Modules.pullbackPushforwardAdjunction g)
-    ((Opens.map g.base).sheafAdjunctionContinuous AddCommGrpCat.{u}
-      (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y)) (𝟙 _) M)
 
 /-- The pullback map `Hⁿ(X, M) →+ Hⁿ(Y, g^* M)` on the cohomology of a sheaf of modules along a
 morphism of schemes `g : Y ⟶ X`. -/
