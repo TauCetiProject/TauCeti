@@ -43,6 +43,8 @@ has infinitely many places with residue field separable over `k`, even when `k` 
   that are not poles of a separating `x`, some `q(x)` with `q` irreducible is a prime element.
 * `TauCeti.Place.infinite_setOf_isSeparable_residueField`: if `F / k` has a separating element,
   infinitely many places of `F` have residue field separable over `k`.
+* `TauCeti.Place.infinite_setOf_isSeparable_residueField_of_finiteDimensional`: the same holds
+  for every subfield over which `F` is finite.
 -/
 
 public section
@@ -177,6 +179,23 @@ theorem infinite_setOf_isSeparable_residueField (hF : IsFunctionField k F) {x : 
   have := ((P a).restrict k (RatFunc k)).isSeparable_residueField_of_degree_eq_one
     (by rw [hP a]; exact degree_adicOfIrreducible_X_sub_C a)
   exact Algebra.IsSeparable.trans k ((P a).restrict k (RatFunc k)).ResidueField (P a).ResidueField
+
+/-- **Infinitely many places of a subfield have a separable residue field**: if `F / k` has a
+separating element and `E ⊆ F` is a subfield containing `k` over which `F` is finite, then
+infinitely many places of `E` have residue field separable over `k`. They include the restrictions
+of the places of `F` with separable residue field, and the restriction map has finite fibres. -/
+theorem infinite_setOf_isSeparable_residueField_of_finiteDimensional {E : Type*} [Field E]
+    [Algebra k E] [Algebra E F] [IsScalarTower k E F] [FiniteDimensional E F]
+    (hF : IsFunctionField k F) {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
+    {Q : Place k E | Algebra.IsSeparable k Q.ResidueField}.Infinite := by
+  have : Algebra.IsAlgebraic E F := Algebra.IsAlgebraic.of_finite E F
+  have hE : IsFunctionField k E := hF.of_isAlgebraic_top
+  intro hfin
+  refine infinite_setOf_isSeparable_residueField hF hx ((hfin.preimage' fun Q _ ↦
+    finite_setOf_restrict_eq (k' := k) (F' := F) k E Q).subset fun P (hP : Algebra.IsSeparable k
+      P.ResidueField) ↦ ?_)
+  -- The residue field of the restriction of `P` to `E` lies inside the residue field of `P`.
+  exact Algebra.isSeparable_tower_bot_of_isSeparable k (P.restrict k E).ResidueField P.ResidueField
 
 end Place
 
