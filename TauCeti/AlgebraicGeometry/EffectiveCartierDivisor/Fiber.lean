@@ -41,9 +41,9 @@ Cartier divisor (`Scheme.IdealSheafData.isEffectiveCartier_of_exists_map_germ_eq
 
 ## Main results
 
-* `Scheme.IdealSheafData.isEffectiveCartier_of_isEffectiveCartier_comap_fiberι`: an ideal sheaf,
-  flat over the base, whose residue-field fibres are effective Cartier divisors is an effective
-  Cartier divisor.
+* `Scheme.IdealSheafData.isEffectiveCartier_of_isEffectiveCartier_comap_fiberι`: an ideal sheaf
+  whose closed subscheme is flat over the base, and whose residue-field fibres are effective
+  Cartier divisors, is an effective Cartier divisor.
 * `Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι`:
   the fibre criterion for relative effective Cartier divisors over residue fields.
 * `Scheme.IdealSheafData.IsEffectiveCartier.comap_fst_of_comap_fiberι`: effective Cartier
@@ -143,7 +143,7 @@ theorem isEffectiveCartier_of_isEffectiveCartier_comap_fiberι [IsLocallyNoether
     S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   replace hW : IsAffineOpen W := hW
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, hUW⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
-    (show x ∈ f ⁻¹ᵁ W from hxW) (f ⁻¹ᵁ W).isOpen
+    (f.mem_preimage.mpr hxW) (f ⁻¹ᵁ W).isOpen
   replace hU : IsAffineOpen U := hU
   refine ⟨⟨U, hU⟩, hxU, ?_⟩
   let _ : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
@@ -170,7 +170,7 @@ theorem isEffectiveCartier_of_isEffectiveCartier_comap_fiberι [IsLocallyNoether
       (IsEffectiveCartier.exists_map_fiber_eq_span_singleton hW ⟨U, hU⟩ hUW rfl p.asIdeal
         (IsEffectiveCartier.comap_fst_of_comap_fiberι _ (h _)) Q.asIdeal)
   -- Transport to the stalk `𝒪_{X,x}`, the localization of `B` at `q`.
-  exact exists_map_germ_eq_span_singleton_of_localizationAtPrime ⟨U, hU⟩ hxU _ hQ hb hIb
+  exact X.exists_map_germ_eq_span_singleton_of_localizationAtPrime ⟨U, hU⟩ hxU _ hQ hb hIb
 
 /-- **The fibre criterion for relative effective Cartier divisors over residue fields.** Let
 `f : X ⟶ S` be flat with `X` locally noetherian, and let `I` be an ideal sheaf on `X` whose closed

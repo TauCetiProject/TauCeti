@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import Mathlib.RingTheory.Nakayama
 public import TauCeti.RingTheory.Flat.QuotientRegular
+public import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import Mathlib.RingTheory.Smooth.Quotient
 import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.Algebra.Regular.SMul
@@ -198,48 +198,6 @@ theorem exists_isSMulRegular_and_eq_span_singleton_iff [IsNoetherianRing B] [Fla
       ((Ideal.span_singleton_le_iff_mem I).mpr hf) hle
     subst hIf
     exact ⟨f, isSMulRegular_of_isSMulRegular_quotient_mk hjac hg, rfl⟩
-
-end Module.Flat
-
-namespace Ideal.Fiber
-
-open Algebra.TensorProduct
-
-variable (p : Ideal R) [p.IsPrime]
-
-/-- The isomorphism `(κ(p) ⊗[R] B)_Q ≃ B_q ⧸ p B_q` of `Ideal.Fiber.algEquivAux₂`, where `q` is
-the prime of `B` under `Q`, is compatible with the maps from `B`: it sends `1 ⊗ b` to the class
-of `b`. -/
-@[simp]
-theorem algEquivAux₂_algebraMap_one_tmul (Q : Ideal (p.Fiber B)) [Q.IsPrime] (b : B) :
-    algEquivAux₂ p Q (algebraMap _ (Localization.AtPrime Q) ((1 : p.ResidueField) ⊗ₜ[R] b)) =
-      Ideal.Quotient.mk _ (algebraMap B (Localization.AtPrime (Q.comap includeRight)) b) := by
-  -- `algEquivAux₂` is the restriction of scalars to `R` of a composite of `B`-algebra
-  -- isomorphisms; rebuild that composite, with the local instances of its definition, and use
-  -- that it commutes with the maps from `B`.
-  let : Algebra B (p.Fiber B) := rightAlgebra
-  let Bp := Localization (Algebra.algebraMapSubmonoid B p.primeCompl)
-  let pB := p.map (algebraMap R B)
-  let r := Q.comap includeRight
-  let e₁ : p.Fiber B ≃ₐ[B] Bp ⧸ pB.map (algebraMap B Bp) := algEquivAux₁ p
-  let Q' : Ideal (Bp ⧸ pB.map (algebraMap B Bp)) := Q.comap e₁.symm
-  have : (Q'.under (B ⧸ pB)).LiesOver r := Ideal.under_liesOver_of_liesOver _ Q' (Q.under B)
-  have : Algebra.algebraMapSubmonoid (B ⧸ pB) r.primeCompl = (Q'.under (B ⧸ pB)).primeCompl :=
-    Ideal.algebraMapSubmonoid_primeCompl_of_liesOver_surjective _ r Ideal.Quotient.mk_surjective
-  have : IsLocalization (Algebra.algebraMapSubmonoid (B ⧸ pB) r.primeCompl)
-      (Localization.AtPrime Q') := by
-    convert IsLocalization.isLocalization_isLocalization_atPrime_isLocalization
-      (Algebra.algebraMapSubmonoid (B ⧸ pB) (Algebra.algebraMapSubmonoid B p.primeCompl))
-      (Localization.AtPrime Q') Q'
-  have := IsScalarTower.to₁₃₄ B (B ⧸ pB) (Bp ⧸ pB.map (algebraMap B Bp)) (Localization.AtPrime Q')
-  exact ((Localization.localAlgEquiv Q' Q e₁.symm rfl).symm.trans
-    ((IsLocalization.algEquiv (Algebra.algebraMapSubmonoid (B ⧸ pB) r.primeCompl)
-      (Localization.AtPrime Q') (Localization.AtPrime r ⧸ pB.map (algebraMap B _))).restrictScalars
-        B)).commutes b
-
-end Ideal.Fiber
-
-namespace Module.Flat
 
 open Algebra.TensorProduct
 
