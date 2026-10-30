@@ -19,9 +19,10 @@ The Cayley–Dickson double `CayleyDickson ℍ[R]` of Hamilton's quaternions ove
 real division algebra, `TauCeti.DivisionOctonionReal`; this is its compact real form, unlike the
 split octonions `TauCeti.Octonion ℝ`.
 
-This file proves the identities that make the double a composition algebra. Its **norm**
-`N ⟨a, b⟩ = N a + N b`, the sum of the quaternion norms, and its **trace** `T ⟨a, b⟩ = 2 re a`
-satisfy
+This file proves the composition-algebra identities of the double over an arbitrary commutative
+ring; over a field of characteristic other than two, where the norm is nondegenerate, they make the
+double a composition algebra. Its **norm** `N ⟨a, b⟩ = N a + N b`, the sum of the quaternion norms,
+and its **trace** `T ⟨a, b⟩ = 2 re a` satisfy
 
 * `x * star x = star x * x = N x • 1` and `x + star x = T x • 1`, so every element satisfies its
   rank-two equation `x * x = T x • x - N x • 1`;
@@ -109,7 +110,8 @@ section CommRing
 variable {R : Type*} [CommRing R] (x y z : CayleyDickson ℍ[R])
 
 /-- The **norm** of the double of the quaternions, `N ⟨a, b⟩ = N a + N b`, the sum of the
-quaternion norms of the two coordinates. It is multiplicative, so the double is a composition
+quaternion norms of the two coordinates. It is multiplicative over every commutative ring `R`; over
+a field of characteristic other than two it is also nondegenerate, so the double is a composition
 algebra. -/
 def normSq : CayleyDickson ℍ[R] →*₀ R where
   toFun x := Quaternion.normSq x.fst + Quaternion.normSq x.snd
@@ -173,8 +175,8 @@ theorem star_add_self : star x + x = trace x • 1 := by
 theorem star_eq_trace_smul_one_sub : star x = trace x • 1 - x := by
   rw [← self_add_star, add_sub_cancel_left]
 
-/-- **The rank-two equation** `x * x = T x • x - N x • 1` of an element of a composition
-algebra. -/
+/-- **The rank-two equation** `x * x = T x • x - N x • 1`: every element of the double is a root
+of the quadratic polynomial `X ^ 2 - T x * X + N x`. -/
 theorem mul_self : x * x = trace x • x - normSq x • 1 := by
   ext <;> simp [normSq_def, Quaternion.normSq_def'] <;> ring
 
