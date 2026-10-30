@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
-import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
@@ -38,9 +37,7 @@ In the same way, two unit vectors `a` and `b` with `a ≠ -b` are joined by a ro
 they span: reflecting in the hyperplane orthogonal to `a` and then in the one orthogonal to `a + b`
 sends `a` to `b` and fixes every vector orthogonal to both. Moving the second normal from `a` to
 `a + b` connects this rotation to the identity by an analytic path of linear isometries
-(`TauCeti.exists_contDiff_path_apply_eq`). The inverses along a smooth path of linear isometries of
-a finite-dimensional space again form a smooth path (`ContDiff.linearIsometryEquiv_symm_apply`),
-so such a path moves the unit sphere by diffeomorphisms.
+(`TauCeti.exists_contDiff_path_apply_eq`).
 -/
 
 public section
@@ -320,26 +317,6 @@ theorem exists_contDiff_path_reflection_orthogonal_range :
     turningIsometry_one ι⟩
 
 end LinearIsometry
-
-/-! ### Smooth paths of linear isometries -/
-
-open scoped InnerProductSpace in
-/-- Along a smooth family of linear isometries of a finite-dimensional real inner product space,
-the inverses also depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
-`(R p)⁻¹ x = ∑ i, ⟪R p bᵢ, x⟫ bᵢ`. -/
-theorem ContDiff.linearIsometryEquiv_symm_apply {F G : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {m : WithTop ℕ∞} {R : G → F ≃ₗᵢ[ℝ] F} (hR : ContDiff ℝ m fun p : G × F => R p.1 p.2) :
-    ContDiff ℝ m fun p : G × F => (R p.1).symm p.2 := by
-  let b := stdOrthonormalBasis ℝ F
-  have hexp : (fun p : G × F => (R p.1).symm p.2) =
-      fun p => ∑ i, ⟪R p.1 (b i), p.2⟫_ℝ • b i := by
-    funext p
-    conv_lhs => rw [← b.sum_repr' ((R p.1).symm p.2)]
-    simp only [LinearIsometryEquiv.inner_map_eq_flip]
-  rw [hexp]
-  exact ContDiff.sum fun i _ =>
-    ((hR.comp (contDiff_fst.prodMk contDiff_const)).inner ℝ contDiff_snd).smul contDiff_const
 
 namespace TauCeti
 

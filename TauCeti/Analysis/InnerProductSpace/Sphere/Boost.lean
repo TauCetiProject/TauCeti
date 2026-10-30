@@ -225,19 +225,24 @@ theorem differentiableAt_sphereBoost {v x : E} {a : ℝ} (hx : cosh a + sinh a *
 `eᵃ w`. -/
 theorem fderiv_sphereBoost_neg_self_apply {v w : E} (hv : ‖v‖ = 1) (a : ℝ) (hw : ⟪w, v⟫ = 0) :
     fderiv ℝ (sphereBoost v a) (-v) w = exp a • w := by
+  have hvv : ⟪-v, v⟫ = -1 := by rw [inner_neg_left, real_inner_self_eq_norm_sq, hv, one_pow]
   have hD : cosh a + sinh a * ⟪-v, v⟫ = exp (-a) := by
-    rw [inner_neg_left, real_inner_self_eq_norm_sq, hv, ← cosh_sub_sinh]
+    rw [hvv, ← cosh_sub_sinh]
     ring
   -- Along the line `s ↦ -v + s w` the boost is the affine map `s ↦ eᵃ s w - v`.
   have hline (s : ℝ) : sphereBoost v a (-v + s • w) = (exp a * s) • w - v := by
     have hin : ⟪-v + s • w, v⟫ = ⟪-v, v⟫ := by
       rw [inner_add_left, real_inner_smul_left, hw, mul_zero, add_zero]
-    rw [sphereBoost_def, hin, hD, inner_neg_left, real_inner_self_eq_norm_sq, hv, one_pow,
-      show sinh a + (cosh a - 1) * -1 = 1 - exp (-a) by rw [← cosh_sub_sinh]; ring, exp_neg,
-      inv_inv, show exp a • (-v + s • w + (1 - (exp a)⁻¹) • v) =
-        (exp a * s) • w + (exp a * (1 - (exp a)⁻¹) - exp a) • v by module,
-      show exp a * (1 - (exp a)⁻¹) - exp a = -1 by field_simp; ring]
-    module
+    -- The coefficient of `v` in the numerator is `1 - e⁻ᵃ`, and the denominator is `e⁻ᵃ`.
+    have hnum : sinh a + (cosh a - 1) * ⟪-v, v⟫ = 1 - exp (-a) := by
+      rw [hvv, ← cosh_sub_sinh]
+      ring
+    rw [sphereBoost_def, hin, hD, hnum, exp_neg]
+    -- Compare the coefficients of `v` and of `w`.
+    match_scalars
+    · field_simp
+      ring
+    · field_simp
   have hdiff : DifferentiableAt ℝ (sphereBoost v a) (-v + (0 : ℝ) • w) := by
     rw [zero_smul, add_zero]
     exact differentiableAt_sphereBoost (hD.symm ▸ (exp_pos _).ne')

@@ -13,8 +13,9 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Dif
 /-!
 # Matching two circles in a sphere to first order by an ambient isotopy
 
-Let `K` and `L` be smooth embeddings of the circle into the unit sphere `Sⁿ` of a real inner
-product space `E`, with `n ≥ 2`, and let `z₀` be a point of the circle. Then `K` is smoothly
+Let `K` be a smooth embedding of the circle into the unit sphere `Sⁿ` of a real inner product
+space `E`, with `n ≥ 2`, and let `L` be a loop in `Sⁿ` which is differentiable with injective
+derivative at a point `z₀` of the circle, for instance another embedding. Then `K` is smoothly
 ambient isotopic to an embedding `K'` which agrees with `L` to first order at `z₀`: `K'` and `L`
 take the same value and have the same derivative at `z₀`
 (`TauCeti.SmoothEmbedding.exists_smoothAmbientIsotopic_mfderiv_eq`). For knots in `S³` and `L` a
@@ -24,14 +25,15 @@ making it standard near that point, as the connected sum of knots requires.
 The isotopy is a rotation followed by a boost. Read the two circles along `Circle.exp` in `E`, and
 write `x`, `y` for the points of `K` and `L` over `z₀ = exp (t i)` and `v`, `w` for their
 velocities there. Each velocity is tangent to the sphere
-(`TauCeti.inner_deriv_coe_comp_circleExp_eq_zero`) and nonzero, since an embedding is an
-immersion (`TauCeti.deriv_coe_comp_circleExp_ne_zero`). A rotation diffeotopy carries `x` to `y`
-and the direction of `v` to that of `w` (`TauCeti.exists_diffeotopy_final_apply_eq_and_apply_eq`);
-this is where `n ≥ 2` is used. The boost of rapidity `log (‖w‖ / ‖v‖)` toward `-y` then fixes `y`
-and multiplies the tangent vectors at `y` by `‖w‖ / ‖v‖`
-(`TauCeti.fderiv_sphereBoost_neg_self_apply`), which corrects the speed. Since the velocity read
-along `Circle.exp` determines the derivative (`TauCeti.mfderiv_eq_of_deriv_coe_comp_circleExp_eq`),
-the moved embedding agrees with `L` to first order.
+(`TauCeti.inner_deriv_coe_comp_circleExp_eq_zero`) and nonzero, since both loops have injective
+derivative at `z₀` (`TauCeti.deriv_coe_comp_circleExp_ne_zero`). A rotation diffeotopy carries
+`x` to `y` and the direction of `v` to that of `w`
+(`TauCeti.exists_diffeotopy_final_apply_eq_and_apply_eq`); this is where `n ≥ 2` is used. The
+boost of rapidity `log (‖w‖ / ‖v‖)` toward `-y` then fixes `y` and multiplies the tangent vectors
+at `y` by `‖w‖ / ‖v‖` (`TauCeti.fderiv_sphereBoost_neg_self_apply`), which corrects the speed.
+Since the velocity read along `Circle.exp` determines the derivative
+(`TauCeti.mfderiv_eq_of_deriv_coe_comp_circleExp_eq`), the moved embedding agrees with `L` to first
+order.
 
 For `n = 1` the statement is false: an isotopy of the circle cannot reverse the orientation of an
 embedding of the circle into itself.
@@ -39,8 +41,8 @@ embedding of the circle into itself.
 ## Main results
 
 * `TauCeti.SmoothEmbedding.exists_smoothAmbientIsotopic_mfderiv_eq`: a smooth embedding of the
-  circle into a sphere of dimension at least two is smoothly ambient isotopic to one agreeing with
-  any other such embedding to first order at a given point.
+  circle into a sphere of dimension at least two is smoothly ambient isotopic to one agreeing to
+  first order at a given point with any loop that has injective derivative there.
 
 ## References
 
@@ -54,7 +56,7 @@ public section
 
 noncomputable section
 
-open Metric Module Real
+open Function Metric Module Real
 open scoped Manifold ContDiff RealInnerProductSpace
 
 namespace TauCeti.SmoothEmbedding
@@ -64,10 +66,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 
 /-- **Matching two circles in a sphere to first order.** In the unit sphere `Sⁿ` of a real inner
 product space, `n ≥ 2`, a `C^k` embedding `K` of the circle, `k ≠ 0`, is smoothly ambient isotopic
-to an embedding `K'` which agrees with a given embedding `L` to first order at a given point
-`z₀`: `K' z₀ = L z₀`, and `K'` and `L` have the same derivative at `z₀`. -/
+to an embedding `K'` which agrees to first order at a given point `z₀` with a given loop `L`,
+differentiable with injective derivative at `z₀`: `K' z₀ = L z₀`, and `K'` and `L` have the same
+derivative at `z₀`. -/
 theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
-    (K L : SmoothEmbedding (𝓡 1) (𝓡 n) k Circle (sphere (0 : E) 1)) (z₀ : Circle) :
+    (K : SmoothEmbedding (𝓡 1) (𝓡 n) k Circle (sphere (0 : E) 1))
+    {L : Circle → sphere (0 : E) 1} {z₀ : Circle} (hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L z₀)
+    (hL : Injective (mfderiv (𝓡 1) (𝓡 n) L z₀)) :
     ∃ K' : SmoothEmbedding (𝓡 1) (𝓡 n) k Circle (sphere (0 : E) 1),
       K.SmoothAmbientIsotopic K' ∧ K' z₀ = L z₀ ∧
         mfderiv (𝓡 1) (𝓡 n) K' z₀ = mfderiv (𝓡 1) (𝓡 n) L z₀ := by
@@ -79,9 +84,8 @@ theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
   set v := deriv γ t
   set w := deriv (fun s => (L (Circle.exp s) : E)) t
   have hKd : MDifferentiableAt (𝓡 1) (𝓡 n) K (Circle.exp t) := K.contMDiff.mdifferentiableAt hk
-  have hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L (Circle.exp t) := L.contMDiff.mdifferentiableAt hk
   have hv : v ≠ 0 := deriv_coe_comp_circleExp_ne_zero hKd (K.isImmersion.mfderiv_injective hk _)
-  have hw : w ≠ 0 := deriv_coe_comp_circleExp_ne_zero hLd (L.isImmersion.mfderiv_injective hk _)
+  have hw : w ≠ 0 := deriv_coe_comp_circleExp_ne_zero hLd hL
   have hxv : ⟪x, v⟫ = 0 := inner_deriv_coe_comp_circleExp_eq_zero hKd
   have hyw : ⟪y, w⟫ = 0 := inner_deriv_coe_comp_circleExp_eq_zero hLd
   have hy : ‖-y‖ = 1 := by rw [norm_neg]; exact norm_eq_of_mem_sphere _

@@ -39,7 +39,8 @@ isometry is the inclusion of a factor in a product decomposition
 (`LinearIsometry.prodOrthogonalRangeEquiv`). That is the normal form Mathlib's
 `Manifold.IsImmersionAt` asks for, and together with the isometric embedding of the spheres it
 makes the restriction a smooth embedding. Great circles, the geometric presentation of the unknot,
-are the case of a linear isometry `ℂ →ₗᵢ[ℝ] E`.
+are the case of a linear isometry `ℂ →ₗᵢ[ℝ] E`. A family of linear isometries depending smoothly on
+a parameter likewise acts smoothly on the sphere.
 
 Finally, the covering map `Circle.exp : ℝ → S¹` has injective derivative everywhere, so that a
 loop and its lift to `ℝ` have the same tangent lines. A differentiable loop in a sphere of dimension
@@ -59,6 +60,8 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
   of unit spheres as a linear isometry of the model spaces.
 * `LinearIsometry.isSmoothEmbedding_unitSphereMap`: the restriction of a linear isometry to the
   unit spheres is a smooth embedding, at every differentiability order.
+* `TauCeti.contMDiff_unitSphereEquiv_apply`: a smooth family of linear isometries acts smoothly
+  on the unit sphere.
 * `TauCeti.injective_mfderiv_circleExp`, `TauCeti.surjective_mfderiv_circleExp`: the derivative of
   `Circle.exp : ℝ → S¹` is bijective.
 * `TauCeti.toSpanSingleton_deriv_comp_circleExp`: the chain rule for a map of the circle read
@@ -68,6 +71,8 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 * `TauCeti.injective_mfderiv_of_deriv_comp_circleExp_ne_zero`: conversely, a map of the circle
   whose lift along `Circle.exp` has nonzero derivative at `t` has injective derivative at
   `exp (t i)`.
+* `TauCeti.smul_deriv_coe_comp_circleExp`: the chain rule for a loop in a sphere read along
+  `Circle.exp` in the ambient space.
 * `TauCeti.inner_deriv_coe_comp_circleExp_eq_zero`,
   `TauCeti.deriv_coe_comp_circleExp_ne_zero`: the velocity of a loop in a sphere, read along
   `Circle.exp` in the ambient space, is tangent to the sphere, and nonzero where the loop is
@@ -228,6 +233,30 @@ theorem isSmoothEmbedding_unitSphereMap : IsSmoothEmbedding (𝓡 m) (𝓡 n) k 
 
 end LinearIsometry
 
+/-! ### Smooth families of linear isometries acting on the sphere -/
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)] {EM H M : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM]
+  [TopologicalSpace H] {J : ModelWithCorners ℝ EM H} [TopologicalSpace M] [ChartedSpace H M]
+  {k : ℕ∞ω} [IsManifold J k M]
+
+/-- A family `R` of linear isometries depending smoothly on a real parameter acts smoothly on the
+unit sphere: for smooth `t : M → ℝ` and `x : M → Sⁿ`, the map `p ↦ R (t p) (x p)` into the sphere
+is smooth. -/
+theorem contMDiff_unitSphereEquiv_apply {R : ℝ → E ≃ₗᵢ[ℝ] E}
+    (hR : ContDiff ℝ k fun p : ℝ × E => R p.1 p.2) {t : M → ℝ} {x : M → sphere (0 : E) 1}
+    (ht : ContMDiff J 𝓘(ℝ) k t) (hx : ContMDiff J (𝓡 n) k x) :
+    ContMDiff J (𝓡 n) k fun p => (R (t p)).unitSphereEquiv (x p) := by
+  have h : (fun p => (R (t p)).unitSphereEquiv (x p)) =
+      Set.codRestrict (fun p => R (t p) (x p)) (sphere (0 : E) 1) fun p => by simp :=
+    funext fun p => Subtype.ext (LinearIsometryEquiv.coe_unitSphereEquiv_apply _ _)
+  rw [h]
+  exact (hR.contMDiff.comp (ht.prodMk_space (contMDiff_coe_sphere.comp hx))).codRestrict_sphere _
+
+end TauCeti
+
 /-! ### The derivative of the circle exponential -/
 
 namespace TauCeti
@@ -338,7 +367,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 `s` times the derivative of `r ↦ f (exp (r i))` at `t` is the derivative of `f` at `exp (t i)`
 applied to the derivative of `Circle.exp` at `t` in the direction `s`, read in the ambient space
 through the inclusion of the sphere. -/
-private theorem smul_deriv_coe_comp_circleExp
+theorem smul_deriv_coe_comp_circleExp
     (hf : MDifferentiableAt (𝓡 1) (𝓡 n) f (Circle.exp t)) (s : ℝ) :
     s • deriv (fun r => (f (Circle.exp r) : E)) t =
       mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) (f (Circle.exp t))
