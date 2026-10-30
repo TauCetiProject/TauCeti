@@ -60,7 +60,9 @@ universe w
 
 namespace TauCeti
 
-variable {k : Type w} [CommRing k] (R N : ModuleCat.{w} k) [Module.Projective k R]
+section GeneralCoefficients
+
+variable {k : Type*} [CommRing k] (R N : ModuleCat.{w} k) [Module.Projective k R]
   {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [NormedAddCommGroup E]
   [NormedSpace ℝ E] [FiniteDimensional ℝ E] (φ : OpenPartialHomeomorph M E) {x : M}
   (hx : x ∈ φ.source)
@@ -129,6 +131,13 @@ lemma singularCohomologyComplSingletonFinrankEquiv_apply
   rw [singularCohomologyComplSingletonFinrankEquiv, LinearEquiv.trans_apply,
     singularCohomologyComplSingletonKroneckerEquiv_apply, Linear.homCongr_apply]
   simp
+
+end GeneralCoefficients
+
+variable {k : Type w} [CommRing k] (N : ModuleCat.{w} k)
+  {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [FiniteDimensional ℝ E] (φ : OpenPartialHomeomorph M E) {x : M}
+  (hx : x ∈ φ.source)
 
 /-- **Local cohomology with coefficients in the ring**: at a point with a chart to a real normed
 space of dimension `d`, the local cohomology `Hᵈ(M, M ∖ {x}; k, N)` is one copy of `N`. A class is
