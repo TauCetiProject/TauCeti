@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.CrossedProduct
-public import Mathlib.CategoryTheory.Preadditive.Opposite
 
 /-!
 # Clifford operators on multiplicity spaces
@@ -49,12 +48,6 @@ variable [CommRing k] (A : FDRep k N) (W : FDRep k (inertia A))
 private theorem implementers_inv_snd (p : implementers A) : (p⁻¹).1.2 = p.1.2.symm := by
   ext x
   simp only [Subgroup.coe_inv, Prod.snd_inv, LinearEquiv.coe_inv]
-
-omit [N.Normal] in
-/-- The native opposite-endomorphism action is precomposition on underlying vectors. -/
-private theorem op_smul_apply {B : FDRep k N} (d : End A) (f : A ⟶ B) (x : A) :
-    (op d • f).hom.hom.hom x = f.hom.hom.hom (d.asHom.hom.hom.hom x) := by
-  simp [End.smul_left]
 
 private noncomputable def implementerMap (p : implementers A)
     (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
