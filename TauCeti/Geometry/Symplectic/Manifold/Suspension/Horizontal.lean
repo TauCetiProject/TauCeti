@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
-public import TauCeti.Geometry.Symplectic.Manifold.Suspension
+public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
 
 /-!
 # Horizontal tangent planes and the vertical energy density of a symplectic suspension
@@ -19,9 +19,10 @@ let `X_φ = (ℝ / ℤ)_s × Y_φ`. At each point of `X_φ` this file splits the
 
 `T X_φ = H ⊕ V`,
 
-where the *horizontal plane* `H = span(∂_s, T)` (`TauCeti.SmoothMappingTorus.horizontalSubspace`)
-consists of the vectors whose mapping torus component is a multiple of `T`, and the *vertical
-space* `V` (`TauCeti.SmoothMappingTorus.verticalSubspace`) is the pullback along the projection
+where the *horizontal plane* `H = span(∂_s, T)`
+(`TauCeti.SmoothMappingTorus.suspensionHorizontalSubspace`) consists of the vectors whose mapping
+torus component is a multiple of `T`, and the *vertical space* `V`
+(`TauCeti.SmoothMappingTorus.suspensionVerticalSubspace`) is the pullback along the projection
 `X_φ → Y_φ` of the vertical tangent space `ker dp` of the mapping torus. The vertical component
 `ξ_V` of a tangent vector `ξ` is its image under Mathlib's projection
 `Submodule.projection` onto `V` along `H`.
@@ -33,7 +34,7 @@ preserves `V`. Then `J` preserves `H` too, and
 
 `ω_v(ξ, J ξ) = ω_v(ξ_V, J ξ_V)`
 
-(`TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_apply_eq_verticalProjection`).
+(`TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_apply_eq_projection`).
 If moreover `ω_v` tames the restriction of `J` to `V`, this is nonnegative, and it vanishes exactly
 when `ξ` is horizontal. For a smooth map `u` from an almost complex manifold `(C, j)` that is
 pseudoholomorphic at `c`, the Cauchy–Riemann equation `du (j e) = J (du e)` turns this into the
@@ -50,23 +51,27 @@ compatibility of `J` with the full symplectic form `Ω = ds ∧ dt + σ_v` is ne
 
 ## Main definitions
 
-* `TauCeti.SmoothMappingTorus.horizontalSubspace φ q`: the plane `H = span(∂_s, T)` at `q`.
-* `TauCeti.SmoothMappingTorus.verticalSubspace φ q`: the vertical space `V`, the pullback of
-  `ker dp`.
+* `TauCeti.SmoothMappingTorus.suspensionHorizontalSubspace φ q`: the plane `H = span(∂_s, T)`
+  at `q`.
+* `TauCeti.SmoothMappingTorus.suspensionVerticalSubspace φ q`: the vertical space `V`, the pullback
+  of `ker dp`.
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.horizontalSubspace_eq_span`: `H` is the span of `∂_s` and `T`.
-* `TauCeti.SmoothMappingTorus.isCompl_verticalSubspace_horizontalSubspace`: `T X_φ = V ⊕ H`.
-* `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_verticalProjection`: `ω_v` only sees
+* `TauCeti.SmoothMappingTorus.suspensionHorizontalSubspace_eq_span`: `H` is the span of `∂_s`
+  and `T`.
+* `TauCeti.SmoothMappingTorus.isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace`:
+  `T X_φ = V ⊕ H`.
+* `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_projection_projection`: `ω_v` only sees
   vertical components.
-* `TauCeti.SmoothMappingTorus.apply_mem_horizontalSubspace`: a block structure preserves `H`.
-* `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_apply_eq_verticalProjection`:
+* `TauCeti.SmoothMappingTorus.apply_mem_suspensionHorizontalSubspace`: a block structure
+  preserves `H`.
+* `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_apply_eq_projection`:
   `ω_v(ξ, J ξ) = ω_v(ξ_V, J ξ_V)` for a block structure.
 * `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_apply_nonneg`,
   `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_apply_eq_zero_iff`: under vertical
   tameness, `ω_v(ξ, J ξ) ≥ 0`, with equality exactly for horizontal `ξ`.
-* `TauCeti.SmoothMappingTorus.eval₂_mpullback_mpullback_snd_fiberForm_apply_eq`,
+* `TauCeti.SmoothMappingTorus.eval₂_mpullback_mpullback_snd_fiberForm_apply_eq_projection`,
   `TauCeti.SmoothMappingTorus.eval₂_mpullback_mpullback_snd_fiberForm_apply_nonneg`,
   `TauCeti.SmoothMappingTorus.eval₂_mpullback_mpullback_snd_fiberForm_apply_eq_zero_iff`: the
   vertical energy density of a pseudoholomorphic map.
@@ -100,7 +105,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
 
 /-- The horizontal plane `H = span(∂_s, T)` of `X_φ = (ℝ / ℤ)_s × Y_φ` at `q`: the tangent vectors
 whose mapping torus component is a multiple of the vector field `T = ∂_t`. -/
-def horizontalSubspace (q : UnitAddCircle × SmoothMappingTorus φ) :
+def suspensionHorizontalSubspace (q : UnitAddCircle × SmoothMappingTorus φ) :
     Submodule ℝ (TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) :=
   ((⊤ : Submodule ℝ (TangentSpace 𝓘(ℝ) q.1)).prod (ℝ ∙ timeVectorField φ q.2)).comap
     (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) q).toLinearEquiv.toLinearMap
@@ -108,7 +113,7 @@ def horizontalSubspace (q : UnitAddCircle × SmoothMappingTorus φ) :
 /-- The vertical space `V` of `X_φ = (ℝ / ℤ)_s × Y_φ` at `q`: the pullback along the projection
 `X_φ → Y_φ` of the vertical tangent space `ker dp` of the mapping torus, so the tangent vectors
 with zero circle component and vertical mapping torus component. -/
-def verticalSubspace (q : UnitAddCircle × SmoothMappingTorus φ) :
+def suspensionVerticalSubspace (q : UnitAddCircle × SmoothMappingTorus φ) :
     Submodule ℝ (TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) :=
   ((⊥ : Submodule ℝ (TangentSpace 𝓘(ℝ) q.1)).prod
       (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) q.2).ker).comap
@@ -120,73 +125,74 @@ variable {φ} {q : UnitAddCircle × SmoothMappingTorus φ}
 /-- A tangent vector of `X_φ` is horizontal exactly when its mapping torus component is a multiple
 of `T`. -/
 @[simp]
-theorem mem_horizontalSubspace_iff :
-    ξ ∈ horizontalSubspace φ q ↔
+theorem mem_suspensionHorizontalSubspace_iff :
+    ξ ∈ suspensionHorizontalSubspace φ q ↔
       (Manifold.tangentSpaceProdEquiv q ξ).2 ∈ ℝ ∙ timeVectorField φ q.2 := by
-  simp only [horizontalSubspace, Submodule.mem_comap, Submodule.mem_prod, Submodule.mem_top,
-    true_and, LinearEquiv.coe_toLinearMap, ContinuousLinearEquiv.coe_toLinearEquiv]
+  simp only [suspensionHorizontalSubspace, Submodule.mem_comap, Submodule.mem_prod,
+    Submodule.mem_top, true_and, LinearEquiv.coe_toLinearMap,
+    ContinuousLinearEquiv.coe_toLinearEquiv]
 
 /-- A tangent vector of `X_φ` is vertical exactly when its circle component vanishes and its
 mapping torus component is vertical. -/
 @[simp]
-theorem mem_verticalSubspace_iff :
-    ξ ∈ verticalSubspace φ q ↔
+theorem mem_suspensionVerticalSubspace_iff :
+    ξ ∈ suspensionVerticalSubspace φ q ↔
       (Manifold.tangentSpaceProdEquiv q ξ).1 = 0 ∧
         mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) q.2 (Manifold.tangentSpaceProdEquiv q ξ).2 = 0 := by
-  simp only [verticalSubspace, Submodule.mem_comap, Submodule.mem_prod, Submodule.mem_bot,
+  simp only [suspensionVerticalSubspace, Submodule.mem_comap, Submodule.mem_prod, Submodule.mem_bot,
     LinearMap.mem_ker, LinearEquiv.coe_toLinearMap, ContinuousLinearEquiv.coe_toLinearEquiv,
     ContinuousLinearMap.coe_coe]
 
 variable (φ q) in
 /-- The vector `∂_s` of the circle factor is horizontal. -/
-theorem symm_one_zero_mem_horizontalSubspace :
-    (Manifold.tangentSpaceProdEquiv q).symm ((1 : ℝ), 0) ∈ horizontalSubspace φ q := by
-  rw [mem_horizontalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply]
+theorem symm_one_zero_mem_suspensionHorizontalSubspace :
+    (Manifold.tangentSpaceProdEquiv q).symm ((1 : ℝ), 0) ∈ suspensionHorizontalSubspace φ q := by
+  rw [mem_suspensionHorizontalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply]
   exact Submodule.zero_mem _
 
 variable (φ q) in
 /-- The vector field `T` of the mapping torus factor is horizontal. -/
-theorem symm_zero_timeVectorField_mem_horizontalSubspace :
+theorem symm_zero_timeVectorField_mem_suspensionHorizontalSubspace :
     (Manifold.tangentSpaceProdEquiv q).symm ((0 : ℝ), timeVectorField φ q.2) ∈
-      horizontalSubspace φ q := by
-  rw [mem_horizontalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply]
+      suspensionHorizontalSubspace φ q := by
+  rw [mem_suspensionHorizontalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply]
   exact Submodule.mem_span_singleton_self _
 
 variable (φ q) in
 /-- The horizontal plane is the span of `∂_s` and `T`. -/
-theorem horizontalSubspace_eq_span :
-    horizontalSubspace φ q = Submodule.span ℝ
+theorem suspensionHorizontalSubspace_eq_span :
+    suspensionHorizontalSubspace φ q = Submodule.span ℝ
       {(Manifold.tangentSpaceProdEquiv q).symm ((1 : ℝ), 0),
         (Manifold.tangentSpaceProdEquiv q).symm ((0 : ℝ), timeVectorField φ q.2)} := by
   refine le_antisymm (fun ξ hξ ↦ Submodule.mem_span_pair.2 ?_) (Submodule.span_le.2 ?_)
   · set e := Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) q
-    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.1 (mem_horizontalSubspace_iff.1 hξ)
-    -- The circle component of `ξ` is a real number.
+    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.1 (mem_suspensionHorizontalSubspace_iff.1 hξ)
+    -- The circle tangent space `TangentSpace 𝓘(ℝ) q.1` is `ℝ` by definition, so the circle
+    -- component of `ξ` is a real number `a`, the coefficient of `∂_s`.
     obtain ⟨a, ha⟩ : ∃ a : ℝ, (e ξ).1 = a := ⟨_, rfl⟩
     refine ⟨a, b, e.injective ?_⟩
     rw [map_add, map_smul, map_smul, e.apply_symm_apply, e.apply_symm_apply]
     refine Prod.ext ?_ ?_
-    · simp only [Prod.fst_add, Prod.smul_fst]
-      -- The circle components are real numbers, so `a • 1 + b • 0 = a`.
-      exact (ha.trans ((mul_one a).symm.trans ((add_zero _).symm.trans
-        (congrArg (a * 1 + ·) (mul_zero b).symm)))).symm
+    · simp only [Prod.fst_add, Prod.smul_fst, ha]
+      -- In `ℝ`, the scalar action is multiplication.
+      exact (show a * 1 + b * 0 = a by ring)
     · simp only [Prod.snd_add, Prod.smul_snd, smul_zero, zero_add]
       exact hb
-  · exact Set.insert_subset (symm_one_zero_mem_horizontalSubspace φ q)
-      (Set.singleton_subset_iff.2 (symm_zero_timeVectorField_mem_horizontalSubspace φ q))
+  · exact Set.insert_subset (symm_one_zero_mem_suspensionHorizontalSubspace φ q)
+      (Set.singleton_subset_iff.2 (symm_zero_timeVectorField_mem_suspensionHorizontalSubspace φ q))
 
 variable [IsManifold I ∞ M]
 
 variable (φ q) in
 /-- The tangent space of `X_φ` is the direct sum `V ⊕ H` of the vertical space and the horizontal
 plane `span(∂_s, T)`. -/
-theorem isCompl_verticalSubspace_horizontalSubspace :
-    IsCompl (verticalSubspace φ q) (horizontalSubspace φ q) := by
+theorem isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace :
+    IsCompl (suspensionVerticalSubspace φ q) (suspensionHorizontalSubspace φ q) := by
   have hY := isCompl_span_timeVectorField_ker_mfderiv_proj φ q.2
   set e := Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) q
   refine ⟨Submodule.disjoint_def.2 fun ξ hV hH ↦ ?_, codisjoint_iff.2 ?_⟩
-  · rw [mem_verticalSubspace_iff] at hV
-    rw [mem_horizontalSubspace_iff] at hH
+  · rw [mem_suspensionVerticalSubspace_iff] at hV
+    rw [mem_suspensionHorizontalSubspace_iff] at hH
     -- The mapping torus component lies in `ℝ T ⊓ ker dp = 0`.
     have h₂ : (e ξ).2 = 0 := Submodule.disjoint_def.1 hY.disjoint _ hH (LinearMap.mem_ker.2 hV.2)
     exact e.map_eq_zero_iff.1 (Prod.ext hV.1 h₂)
@@ -195,9 +201,9 @@ theorem isCompl_verticalSubspace_horizontalSubspace :
     obtain ⟨c, hc, w, hw, hcw⟩ :=
       Submodule.mem_sup.1 (hY.sup_eq_top.symm ▸ Submodule.mem_top : (e ξ).2 ∈ _)
     refine Submodule.mem_sup.2 ⟨e.symm (0, w), ?_, e.symm ((e ξ).1, c), ?_, ?_⟩
-    · rw [mem_verticalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply]
+    · rw [mem_suspensionVerticalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply]
       exact ⟨rfl, hw⟩
-    · rw [mem_horizontalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply]
+    · rw [mem_suspensionHorizontalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply]
       exact hc
     · rw [← map_add, e.symm_apply_eq]
       exact Prod.ext (zero_add _) ((add_comm _ _).trans hcw)
@@ -209,47 +215,47 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {σ : SmoothForm
 
 /-- The fiber form `σ_v`, pulled back to `X_φ`, vanishes when a horizontal vector fills its first
 slot. -/
-theorem eval₂_mpullback_snd_fiberForm_of_mem_horizontalSubspace_left
-    (hξ : ξ ∈ horizontalSubspace φ q) (η : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) :
+theorem eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_left
+    (hξ : ξ ∈ suspensionHorizontalSubspace φ q) (η : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) :
     SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)) q ξ
       η = 0 := by
-  obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.1 (mem_horizontalSubspace_iff.1 hξ)
+  obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.1 (mem_suspensionHorizontalSubspace_iff.1 hξ)
   rw [SmoothForm.eval₂_mpullback_snd, ← hb, SmoothBundleForm.eval₂_smul_left,
     eval₂_fiberForm_timeVectorField_left, smul_zero]
 
 /-- The fiber form `σ_v`, pulled back to `X_φ`, vanishes when a horizontal vector fills its second
 slot. -/
-theorem eval₂_mpullback_snd_fiberForm_of_mem_horizontalSubspace_right
-    (η : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) (hξ : ξ ∈ horizontalSubspace φ q) :
+theorem eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_right
+    (η : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) (hξ : ξ ∈ suspensionHorizontalSubspace φ q) :
     SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)) q η
       ξ = 0 := by
   rw [SmoothBundleForm.eval₂_swap,
-    eval₂_mpullback_snd_fiberForm_of_mem_horizontalSubspace_left hξ, neg_zero]
+    eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_left hξ, neg_zero]
 
 /-- The fiber form `σ_v`, pulled back to `X_φ`, only sees vertical components:
 `ω_v(ξ, η) = ω_v(ξ_V, η_V)`. -/
-theorem eval₂_mpullback_snd_fiberForm_verticalProjection
+theorem eval₂_mpullback_snd_fiberForm_projection_projection
     (ξ η : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) :
     SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)) q
-        ((verticalSubspace φ q).projection (horizontalSubspace φ q)
-          (isCompl_verticalSubspace_horizontalSubspace φ q) ξ)
-        ((verticalSubspace φ q).projection (horizontalSubspace φ q)
-          (isCompl_verticalSubspace_horizontalSubspace φ q) η) =
+        ((suspensionVerticalSubspace φ q).projection (suspensionHorizontalSubspace φ q)
+          (isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace φ q) ξ)
+        ((suspensionVerticalSubspace φ q).projection (suspensionHorizontalSubspace φ q)
+          (isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace φ q) η) =
       SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)) q
         ξ η := by
-  set hc := isCompl_verticalSubspace_horizontalSubspace φ q
+  set hc := isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace φ q
   -- Split both vectors into their vertical and horizontal components.
   conv_rhs => rw [← Submodule.projection_add_projection_eq_self hc ξ,
     ← Submodule.projection_add_projection_eq_self hc η]
   have hH (ζ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) :
-      (horizontalSubspace φ q).projection (verticalSubspace φ q) hc.symm ζ ∈
-        horizontalSubspace φ q :=
+      (suspensionHorizontalSubspace φ q).projection (suspensionVerticalSubspace φ q) hc.symm ζ ∈
+        suspensionHorizontalSubspace φ q :=
     Submodule.projection_apply_mem _ _
   rw [SmoothBundleForm.eval₂_add_left, SmoothBundleForm.eval₂_add_right,
     SmoothBundleForm.eval₂_add_right,
-    eval₂_mpullback_snd_fiberForm_of_mem_horizontalSubspace_right _ (hH η),
-    eval₂_mpullback_snd_fiberForm_of_mem_horizontalSubspace_left (hH ξ),
-    eval₂_mpullback_snd_fiberForm_of_mem_horizontalSubspace_left (hH ξ)]
+    eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_right _ (hH η),
+    eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_left (hH ξ),
+    eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_left (hH ξ)]
   simp
 
 /-! ### Block almost complex structures -/
@@ -266,11 +272,11 @@ theorem apply_symm_zero_timeVectorField
   rw [← hS, SmoothAlmostComplexStructure.apply_apply]
 
 /-- An almost complex structure with `J ∂_s = T` preserves the horizontal plane `span(∂_s, T)`. -/
-theorem apply_mem_horizontalSubspace
+theorem apply_mem_suspensionHorizontalSubspace
     (hS : J q ((Manifold.tangentSpaceProdEquiv q).symm ((1 : ℝ), 0)) =
       (Manifold.tangentSpaceProdEquiv q).symm ((0 : ℝ), timeVectorField φ q.2))
-    (hξ : ξ ∈ horizontalSubspace φ q) : J q ξ ∈ horizontalSubspace φ q := by
-  rw [horizontalSubspace_eq_span, Submodule.mem_span_pair] at hξ ⊢
+    (hξ : ξ ∈ suspensionHorizontalSubspace φ q) : J q ξ ∈ suspensionHorizontalSubspace φ q := by
+  rw [suspensionHorizontalSubspace_eq_span, Submodule.mem_span_pair] at hξ ⊢
   obtain ⟨a, b, rfl⟩ := hξ
   -- `J (a ∂_s + b T) = a T - b ∂_s`.
   have hJ : J q (a • (Manifold.tangentSpaceProdEquiv q).symm ((1 : ℝ), 0) +
@@ -286,34 +292,37 @@ theorem apply_mem_horizontalSubspace
 /-- For an almost complex structure of block form at `q`, with `J ∂_s = T` and `J V ⊆ V`, the
 fiber form `σ_v` pulled back to `X_φ` evaluates on `ξ` and `J ξ` through the vertical component:
 `ω_v(ξ, J ξ) = ω_v(ξ_V, J ξ_V)`. -/
-theorem eval₂_mpullback_snd_fiberForm_apply_eq_verticalProjection
+theorem eval₂_mpullback_snd_fiberForm_apply_eq_projection
     (hS : J q ((Manifold.tangentSpaceProdEquiv q).symm ((1 : ℝ), 0)) =
       (Manifold.tangentSpaceProdEquiv q).symm ((0 : ℝ), timeVectorField φ q.2))
-    (hV : ∀ v ∈ verticalSubspace φ q, J q v ∈ verticalSubspace φ q)
+    (hV : ∀ v ∈ suspensionVerticalSubspace φ q, J q v ∈ suspensionVerticalSubspace φ q)
     (ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) :
     SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)) q ξ
         (J q ξ) =
       SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)) q
-        ((verticalSubspace φ q).projection (horizontalSubspace φ q)
-          (isCompl_verticalSubspace_horizontalSubspace φ q) ξ)
-        (J q ((verticalSubspace φ q).projection (horizontalSubspace φ q)
-          (isCompl_verticalSubspace_horizontalSubspace φ q) ξ)) := by
-  set hc := isCompl_verticalSubspace_horizontalSubspace φ q
-  set v := (verticalSubspace φ q).projection (horizontalSubspace φ q) hc ξ
-  set h := (horizontalSubspace φ q).projection (verticalSubspace φ q) hc.symm ξ
-  have hv : v ∈ verticalSubspace φ q := Submodule.projection_apply_mem _ _
-  have hh : h ∈ horizontalSubspace φ q := Submodule.projection_apply_mem _ _
+        ((suspensionVerticalSubspace φ q).projection (suspensionHorizontalSubspace φ q)
+          (isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace φ q) ξ)
+        (J q ((suspensionVerticalSubspace φ q).projection (suspensionHorizontalSubspace φ q)
+          (isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace φ q) ξ)) := by
+  set hc := isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace φ q
+  set v := (suspensionVerticalSubspace φ q).projection (suspensionHorizontalSubspace φ q) hc ξ
+  set h := (suspensionHorizontalSubspace φ q).projection (suspensionVerticalSubspace φ q) hc.symm ξ
+  have hv : v ∈ suspensionVerticalSubspace φ q := Submodule.projection_apply_mem _ _
+  have hh : h ∈ suspensionHorizontalSubspace φ q := Submodule.projection_apply_mem _ _
   -- Write `ξ = v + h`; then `J ξ = J v + J h` with `J v` vertical and `J h` horizontal.
   have hξ : ξ = v + h := (Submodule.projection_add_projection_eq_self hc ξ).symm
   have hJ : J q ξ = J q v + J q h := by
     rw [hξ]
     -- `J q` is the underlying continuous linear endomorphism of the tangent space.
     exact map_add (J.toEndomorphism q) v h
-  have hJv : (verticalSubspace φ q).projection (horizontalSubspace φ q) hc (J q v) = J q v :=
+  have hJv : (suspensionVerticalSubspace φ q).projection (suspensionHorizontalSubspace φ q) hc
+      (J q v) = J q v :=
     Submodule.projection_apply_of_mem_left hc (hV v hv)
-  have hJh : (verticalSubspace φ q).projection (horizontalSubspace φ q) hc (J q h) = 0 :=
-    (Submodule.projection_apply_eq_zero_iff hc).2 (apply_mem_horizontalSubspace hS hh)
-  rw [← eval₂_mpullback_snd_fiberForm_verticalProjection ξ (J q ξ), hJ, map_add, hJv, hJh, add_zero]
+  have hJh : (suspensionVerticalSubspace φ q).projection (suspensionHorizontalSubspace φ q) hc
+      (J q h) = 0 :=
+    (Submodule.projection_apply_eq_zero_iff hc).2 (apply_mem_suspensionHorizontalSubspace hS hh)
+  rw [← eval₂_mpullback_snd_fiberForm_projection_projection ξ (J q ξ), hJ, map_add, hJv, hJh,
+    add_zero]
 
 /-- For an almost complex structure of block form at `q` whose restriction to the vertical space is
 tamed by `ω_v`, the fiber form `σ_v` pulled back to `X_φ` is nonnegative on `ξ` and `J ξ`. -/
@@ -321,18 +330,19 @@ theorem eval₂_mpullback_snd_fiberForm_apply_nonneg {σ : SmoothTwoForm I M}
     {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
     (hS : J q ((Manifold.tangentSpaceProdEquiv q).symm ((1 : ℝ), 0)) =
       (Manifold.tangentSpaceProdEquiv q).symm ((0 : ℝ), timeVectorField φ q.2))
-    (hV : ∀ v ∈ verticalSubspace φ q, J q v ∈ verticalSubspace φ q)
-    (htame : ∀ v ∈ verticalSubspace φ q, v ≠ 0 →
+    (hV : ∀ v ∈ suspensionVerticalSubspace φ q, J q v ∈ suspensionVerticalSubspace φ q)
+    (htame : ∀ v ∈ suspensionVerticalSubspace φ q, v ≠ 0 →
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) q v (J q v))
     (ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) :
     0 ≤ SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)) q ξ
       (J q ξ) := by
-  rw [eval₂_mpullback_snd_fiberForm_apply_eq_verticalProjection hS hV]
-  set v := (verticalSubspace φ q).projection (horizontalSubspace φ q)
-    (isCompl_verticalSubspace_horizontalSubspace φ q) ξ
+  rw [eval₂_mpullback_snd_fiberForm_apply_eq_projection hS hV]
+  set v := (suspensionVerticalSubspace φ q).projection (suspensionHorizontalSubspace φ q)
+    (isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace φ q) ξ
   rcases eq_or_ne v 0 with hv | hv
-  · rw [hv, eval₂_mpullback_snd_fiberForm_of_mem_horizontalSubspace_left (Submodule.zero_mem _)]
+  · rw [hv,
+      eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_left (Submodule.zero_mem _)]
   · exact (htame v (Submodule.projection_apply_mem _ _) hv).le
 
 /-- For an almost complex structure of block form at `q` whose restriction to the vertical space is
@@ -342,21 +352,22 @@ theorem eval₂_mpullback_snd_fiberForm_apply_eq_zero_iff {σ : SmoothTwoForm I 
     {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
     (hS : J q ((Manifold.tangentSpaceProdEquiv q).symm ((1 : ℝ), 0)) =
       (Manifold.tangentSpaceProdEquiv q).symm ((0 : ℝ), timeVectorField φ q.2))
-    (hV : ∀ v ∈ verticalSubspace φ q, J q v ∈ verticalSubspace φ q)
-    (htame : ∀ v ∈ verticalSubspace φ q, v ≠ 0 →
+    (hV : ∀ v ∈ suspensionVerticalSubspace φ q, J q v ∈ suspensionVerticalSubspace φ q)
+    (htame : ∀ v ∈ suspensionVerticalSubspace φ q, v ≠ 0 →
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) q v (J q v))
     (ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) :
     SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)) q ξ
-        (J q ξ) = 0 ↔ ξ ∈ horizontalSubspace φ q := by
-  set hc := isCompl_verticalSubspace_horizontalSubspace φ q
-  rw [eval₂_mpullback_snd_fiberForm_apply_eq_verticalProjection hS hV,
+        (J q ξ) = 0 ↔ ξ ∈ suspensionHorizontalSubspace φ q := by
+  set hc := isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace φ q
+  rw [eval₂_mpullback_snd_fiberForm_apply_eq_projection hS hV,
     ← Submodule.projection_apply_eq_zero_iff hc]
-  set v := (verticalSubspace φ q).projection (horizontalSubspace φ q) hc ξ
+  set v := (suspensionVerticalSubspace φ q).projection (suspensionHorizontalSubspace φ q) hc ξ
   refine ⟨fun h ↦ ?_, fun hv ↦ ?_⟩
   · by_contra hv
     exact (htame v (Submodule.projection_apply_mem _ _) hv).ne' h
-  · rw [hv, eval₂_mpullback_snd_fiberForm_of_mem_horizontalSubspace_left (Submodule.zero_mem _)]
+  · rw [hv,
+      eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_left (Submodule.zero_mem _)]
 
 /-! ### The vertical energy density of a pseudoholomorphic map -/
 
@@ -368,24 +379,26 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*}
 /-- For a smooth map `u` that is pseudoholomorphic at `c`, into `X_φ` with an almost complex
 structure of block form at `u c`, the pullback of `ω_v` evaluates on `e` and `j e` through the
 vertical component of `du e`: `(u^* ω_v)(e, j e) = ω_v((du e)_V, J (du e)_V)`. -/
-theorem eval₂_mpullback_mpullback_snd_fiberForm_apply_eq (hhol : IsPseudoholomorphicAt j J u c)
+theorem eval₂_mpullback_mpullback_snd_fiberForm_apply_eq_projection
+    (hhol : IsPseudoholomorphicAt j J u c)
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
     (hS : J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
       (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
-    (hV : ∀ v ∈ verticalSubspace φ (u c), J (u c) v ∈ verticalSubspace φ (u c))
+    (hV : ∀ v ∈ suspensionVerticalSubspace φ (u c), J (u c) v ∈ suspensionVerticalSubspace φ (u c))
     (e : TangentSpace I' c) :
     SmoothBundleForm.eval₂ (SmoothForm.mpullback u hu
         (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))) c e (j c e) =
       SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))
         (u c)
-        ((verticalSubspace φ (u c)).projection (horizontalSubspace φ (u c))
-          (isCompl_verticalSubspace_horizontalSubspace φ (u c))
+        ((suspensionVerticalSubspace φ (u c)).projection (suspensionHorizontalSubspace φ (u c))
+          (isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace φ (u c))
           (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e))
-        (J (u c) ((verticalSubspace φ (u c)).projection (horizontalSubspace φ (u c))
-          (isCompl_verticalSubspace_horizontalSubspace φ (u c))
+        (J (u c) ((suspensionVerticalSubspace φ (u c)).projection
+          (suspensionHorizontalSubspace φ (u c))
+          (isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace φ (u c))
           (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e))) := by
   rw [SmoothForm.eval₂_mpullback, hhol.mfderiv_apply_commute,
-    eval₂_mpullback_snd_fiberForm_apply_eq_verticalProjection hS hV]
+    eval₂_mpullback_snd_fiberForm_apply_eq_projection hS hV]
 
 /-- For a smooth map `u` that is pseudoholomorphic at `c`, into `X_φ` with an almost complex
 structure of block form at `u c` whose vertical restriction is tamed by `ω_v`, the vertical energy
@@ -395,8 +408,8 @@ theorem eval₂_mpullback_mpullback_snd_fiberForm_apply_nonneg {σ : SmoothTwoFo
     (hhol : IsPseudoholomorphicAt j J u c) (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
     (hS : J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
       (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
-    (hV : ∀ v ∈ verticalSubspace φ (u c), J (u c) v ∈ verticalSubspace φ (u c))
-    (htame : ∀ v ∈ verticalSubspace φ (u c), v ≠ 0 →
+    (hV : ∀ v ∈ suspensionVerticalSubspace φ (u c), J (u c) v ∈ suspensionVerticalSubspace φ (u c))
+    (htame : ∀ v ∈ suspensionVerticalSubspace φ (u c), v ≠ 0 →
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (e : TangentSpace I' c) :
@@ -414,14 +427,14 @@ theorem eval₂_mpullback_mpullback_snd_fiberForm_apply_eq_zero_iff {σ : Smooth
     (hhol : IsPseudoholomorphicAt j J u c) (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
     (hS : J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
       (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
-    (hV : ∀ v ∈ verticalSubspace φ (u c), J (u c) v ∈ verticalSubspace φ (u c))
-    (htame : ∀ v ∈ verticalSubspace φ (u c), v ≠ 0 →
+    (hV : ∀ v ∈ suspensionVerticalSubspace φ (u c), J (u c) v ∈ suspensionVerticalSubspace φ (u c))
+    (htame : ∀ v ∈ suspensionVerticalSubspace φ (u c), v ≠ 0 →
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (e : TangentSpace I' c) :
     SmoothBundleForm.eval₂ (SmoothForm.mpullback u hu
         (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))) c e (j c e) = 0 ↔
-      mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ horizontalSubspace φ (u c) := by
+      mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c) := by
   rw [SmoothForm.eval₂_mpullback, hhol.mfderiv_apply_commute]
   exact eval₂_mpullback_snd_fiberForm_apply_eq_zero_iff hS hV htame _
 
