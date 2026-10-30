@@ -79,27 +79,6 @@ lemma mem_joinFiber_iff (p : X ⟶ Δ[1]) (e : Fin 2) {d : ℕ} (x : X _⦋d⦌)
     x ∈ (joinFiber p e).obj _ ↔ ∀ j, p.app _ x j = e := by
   simp [joinFiber]
 
-lemma joinFiber_comp (g : Y ⟶ X) (p : X ⟶ Δ[1]) (e : Fin 2) :
-    joinFiber (g ≫ p) e = (joinFiber p e).preimage g :=
-  rfl
-
-/-- The map between the parts over the vertex `e` of `Δ[1]` induced by a map `g : Y ⟶ X`. This is
-`Subcomplex.fromPreimage`, with its source written as a part of `Y` over `Δ[1]`. -/
-def joinFiberMap (g : Y ⟶ X) (p : X ⟶ Δ[1]) (e : Fin 2) :
-    (joinFiber (g ≫ p) e : SSet) ⟶ (joinFiber p e : SSet) :=
-  (joinFiber p e).fromPreimage g
-
-@[simp]
-lemma joinFiberMap_app_coe (g : Y ⟶ X) (p : X ⟶ Δ[1]) (e : Fin 2) {n : SimplexCategoryᵒᵖ}
-    (x : (joinFiber (g ≫ p) e : SSet).obj n) :
-    dsimp% ((joinFiberMap g p e).app n x).1 = g.app n x.1 :=
-  (rfl)
-
-@[reassoc (attr := simp)]
-lemma joinFiberMap_ι (g : Y ⟶ X) (p : X ⟶ Δ[1]) (e : Fin 2) :
-    joinFiberMap g p e ≫ (joinFiber p e).ι = (joinFiber (g ≫ p) e).ι ≫ g :=
-  (rfl)
-
 /-- The whole of `X` lies over the vertex `e` along the constant map at `e`. -/
 @[simp]
 lemma joinFiber_const_self (e : Fin 2) :
@@ -169,8 +148,8 @@ lemma congr_right_app {d d' : JoinData X K L} (h : d = d') {n : SimplexCategory�
 @[expose, simps p]
 def precomp (d : JoinData X K L) (g : Y ⟶ X) : JoinData Y K L where
   p := g ≫ d.p
-  left := joinFiberMap g d.p 0 ≫ d.left
-  right := joinFiberMap g d.p 1 ≫ d.right
+  left := (joinFiber d.p 0).fromPreimage g ≫ d.left
+  right := (joinFiber d.p 1).fromPreimage g ≫ d.right
 
 @[simp]
 lemma precomp_left_app (d : JoinData X K L) (g : Y ⟶ X) {n : SimplexCategoryᵒᵖ} (y : Y.obj n)
@@ -579,7 +558,7 @@ private lemma exists_precomp_horn_ι_eq_of_forall_eq_zero [Quasicategory K]
   refine ⟨⟨q, (joinFiber q 0).ι ≫ τ, (Subcomplex.eqToIso hbot).hom ≫
     Subcomplex.isInitialBot.to L⟩, ext rfl (fun k x _ _ ↦ ?_) (fun k x _ hx ↦ ?_)⟩
   · exact (ConcreteCategory.congr_hom (NatTrans.congr_app hτ k) x).symm
-  · rw [joinFiber_comp, hbot] at hx
+  · rw [joinFiber, Subcomplex.preimage_comp, ← joinFiber, hbot] at hx
     simp at hx
 
 include h₀ hₙ in
@@ -606,7 +585,7 @@ private lemma exists_precomp_horn_ι_eq_of_forall_eq_one [Quasicategory L]
     ((Subcomplex.topIso _).inv ≫ Subcomplex.homOfLE htop.ge ≫ r) h₀ hₙ
   refine ⟨⟨q, (Subcomplex.eqToIso hbot).hom ≫ Subcomplex.isInitialBot.to K,
     (joinFiber q 1).ι ≫ τ⟩, ext rfl (fun k x _ hx ↦ ?_) (fun k x _ _ ↦ ?_)⟩
-  · rw [joinFiber_comp, hbot] at hx
+  · rw [joinFiber, Subcomplex.preimage_comp, ← joinFiber, hbot] at hx
     simp at hx
   · exact (ConcreteCategory.congr_hom (NatTrans.congr_app hτ k) x).symm
 
