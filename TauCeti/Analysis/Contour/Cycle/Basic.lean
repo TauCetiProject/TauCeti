@@ -373,6 +373,7 @@ theorem integral_congr {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f
   simp only [h (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)]
 
 /-- The integral over a cycle is additive in integrands continuous on its trace. -/
+@[simp]
 theorem integral_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g : ℂ → E}
     {C : Cycle} (hf : ContinuousOn f (trace C)) (hg : ContinuousOn g (trace C)) :
     integral (fun z ↦ f z + g z) C = integral f C + integral g C := by
@@ -383,6 +384,7 @@ theorem integral_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g
   simp only [smul_add]
 
 /-- Scalar multiples can be taken out of the integral over a cycle. -/
+@[simp]
 theorem integral_smul {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℂ E]
     [NormedSpace 𝕜 E] [SMulCommClass 𝕜 ℂ E] (c : 𝕜) (f : ℂ → E) (C : Cycle) :
     integral (fun z ↦ c • f z) C = c • integral f C := by

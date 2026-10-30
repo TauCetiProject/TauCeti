@@ -40,8 +40,8 @@ No normalization `‖1‖ = 1` of the norm is assumed.
 * `TauCeti.Contour.Cycle.integral_resolvent`: `∫_Γ (z1 - a)⁻¹ dz = 2πi · 1`.
 * `TauCeti.Contour.Cycle.integral_pow_smul_resolvent`: `∫_Γ zⁿ (z1 - a)⁻¹ dz = 2πi · aⁿ`.
 * `TauCeti.Contour.Cycle.integral_eval_smul_resolvent`: `∫_Γ p(z) (z1 - a)⁻¹ dz = 2πi · p(a)`.
-* `TauCeti.Contour.Cycle.commute_integral_smul_resolvent`: elements commuting with `a` commute
-  with the resolvent integral.
+* `Commute.integral_smul_resolvent_right`: elements commuting with `a` commute with the resolvent
+  integral.
 
 ## References
 
@@ -195,22 +195,25 @@ theorem integral_eval_smul_resolvent (hΓ : IsIn Γ (resolventSet ℂ a))
       ← Algebra.smul_def]
     rw [integral_smul, integral_pow_smul_resolvent hΓ hwind, smul_comm]
 
+end TauCeti.Contour.Cycle
+
+open TauCeti.Contour
+
 /-- Every element commuting with `a` commutes with the resolvent integral
 `∫_Γ f(z) (z1 - a)⁻¹ dz`, for `f` continuous on the trace of a cycle `Γ` avoiding the spectrum. -/
-theorem commute_integral_smul_resolvent {b : A} (hb : Commute b a) {f : ℂ → ℂ}
-    (hf : ContinuousOn f (trace Γ)) (hΓ : IsIn Γ (resolventSet ℂ a)) :
-    Commute b (integral (fun z ↦ f z • resolvent a z) Γ) := by
+theorem Commute.integral_smul_resolvent_right {A : Type*} [NormedRing A] [NormedAlgebra ℂ A]
+    [CompleteSpace A] {a b : A} (hb : Commute b a) {Γ : Cycle} {f : ℂ → ℂ}
+    (hf : ContinuousOn f (Cycle.trace Γ)) (hΓ : Cycle.IsIn Γ (resolventSet ℂ a)) :
+    Commute b (Cycle.integral (fun z ↦ f z • resolvent a z) Γ) := by
   have hint : ∀ γ ∈ FreeAbelianGroup.support Γ,
       IntervalIntegrable (fun t ↦ deriv γ t • (f (γ t) • resolvent a (γ t)))
         MeasureTheory.volume γ.a γ.b :=
-    fun _ ↦ intervalIntegrable_of_mem_support (hf.smul (continuousOn_resolvent hΓ))
-  have hl := integral_comp_comm (f := fun z ↦ f z • resolvent a z) hint
+    fun _ ↦ Cycle.intervalIntegrable_of_mem_support (hf.smul (Cycle.continuousOn_resolvent hΓ))
+  have hl := Cycle.integral_comp_comm (f := fun z ↦ f z • resolvent a z) hint
     (ContinuousLinearMap.mul ℂ A b)
-  have hr := integral_comp_comm (f := fun z ↦ f z • resolvent a z) hint
+  have hr := Cycle.integral_comp_comm (f := fun z ↦ f z • resolvent a z) hint
     ((ContinuousLinearMap.mul ℂ A).flip b)
   simp only [ContinuousLinearMap.mul_apply', ContinuousLinearMap.flip_apply] at hl hr
   rw [Commute, SemiconjBy, ← hl, ← hr]
-  exact integral_congr fun z _ ↦ by
+  exact Cycle.integral_congr fun z _ ↦ by
     rw [mul_smul_comm, smul_mul_assoc, (hb.resolvent_right z).eq]
-
-end TauCeti.Contour.Cycle
