@@ -106,7 +106,7 @@ theorem doubleGlueData_false_ne_true : (⟨false⟩ : (doubleGlueData X U).J) �
 
 /-- Two points of the double coming from the charts `i` and `j` are equal exactly when they come
 from the same point of `X`, which lies in `U` if `i ≠ j`. -/
-@[simp]
+@[simp, grind =]
 theorem doubleGlueData_ι_eq_iff {i j : (doubleGlueData X U).J} {x y : X} :
     (doubleGlueData X U).toGlueData.ι i x = (doubleGlueData X U).toGlueData.ι j y ↔
       x = y ∧ (i = j ∨ x ∈ U) := by
@@ -121,7 +121,7 @@ theorem doubleGlueData_ι_eq_iff {i j : (doubleGlueData X U).J} {x y : X} :
 
 /-- A point of the relation between the charts `i` and `j` of the double is a point of the
 diagonal of `X`, lying in `U` if `i ≠ j`. -/
-@[simp]
+@[simp, grind =]
 theorem mem_doubleGlueData_chartRel_iff {i j : (doubleGlueData X U).J} {p : X × X} :
     p ∈ (doubleGlueData X U).chartRel i j ↔ p.1 = p.2 ∧ (i = j ∨ p.1 ∈ U) :=
   ((doubleGlueData X U).mem_chartRel_iff).trans doubleGlueData_ι_eq_iff
