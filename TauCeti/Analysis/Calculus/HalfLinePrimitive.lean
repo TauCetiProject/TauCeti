@@ -10,13 +10,13 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 /-!
 # The primitive of a function on the nonnegative half-line
 
-Given `f : ℝ → ℝ`, this file constructs `TauCeti.halfLinePrimitive f`, the primitive `t ↦ ∫₀ᵗ f`
-of `f` on `[0, ∞)`. To make the function total on `ℝ`, the integrand is composed with `max · 0`,
-so on `[0, ∞)` the value is the ordinary integral `∫₀ᵗ f` and on `(-∞, 0]` it is the linear
-extension `t ↦ t * f 0`.
+Given `f : ℝ → E` with values in a real normed space, this file constructs
+`TauCeti.halfLinePrimitive f`, the primitive `t ↦ ∫₀ᵗ f` of `f` on `[0, ∞)`. To make the function
+total on `ℝ`, the integrand is composed with `max · 0`, so on `[0, ∞)` the value is the ordinary
+integral `∫₀ᵗ f` and on `(-∞, 0]` it is the linear extension `t ↦ t • f 0`.
 
 The construction is generic calculus: it depends only on Mathlib's fundamental theorem of
-calculus and knows nothing about complete monotonicity or Bernstein functions.
+calculus.
 
 ## Main declarations
 
@@ -26,35 +26,45 @@ calculus and knows nothing about complete monotonicity or Bernstein functions.
 * `TauCeti.halfLinePrimitive_eq_integral_of_nonneg`, `TauCeti.halfLinePrimitive_of_nonpos`: the
   value of the primitive on each half-line.
 * `TauCeti.continuous_halfLinePrimitive`: the primitive is continuous on all of `ℝ` whenever `f`
-  is continuous on `[0, ∞)`.
+  is locally integrable on `[0, ∞)`.
 * `TauCeti.hasDerivAt_halfLinePrimitive`, `TauCeti.deriv_halfLinePrimitive`: its derivative is
-  `f` at every nonnegative point.
+  `f t` at every nonnegative point `t` at which `f` is continuous within `[0, ∞)`.
 -/
 
 public section
 
-open Set intervalIntegral
+open MeasureTheory Set intervalIntegral
 
 namespace TauCeti
 
-variable {f : ℝ → ℝ} {t : ℝ}
+variable {E : Type*} [NormedAddCommGroup E] {f : ℝ → E} {t : ℝ}
+
+/-- If `f` is locally integrable on `[0, ∞)`, then its extension `x ↦ f (max x 0)` is interval
+integrable on every interval. -/
+private theorem intervalIntegrable_comp_max_zero (hf : LocallyIntegrableOn f (Ici 0)) (a b : ℝ) :
+    IntervalIntegrable (fun x ↦ f (max x 0)) volume a b := by
+  suffices h : ∀ x, IntervalIntegrable (fun x ↦ f (max x 0)) volume 0 x from
+    (h a).symm.trans (h b)
+  intro x
+  rcases le_total 0 x with hx | hx
+  · refine (intervalIntegrable_iff_integrableOn_Icc_of_le hx).2 <|
+      (hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).congr_fun
+        (fun y hy ↦ by rw [max_eq_left hy.1]) measurableSet_Icc
+  · refine (intervalIntegrable_const (c := f 0)).congr fun y hy ↦ ?_
+    rw [uIoc_of_ge hx] at hy
+    simp only [max_eq_right hy.2]
+
+variable [NormedSpace ℝ E]
 
 /-- The primitive of `f` on the nonnegative half-line. The `max` canonically extends the
 integrand to negative arguments; on `[0, ∞)` this is `∫₀ᵗ f`. -/
-noncomputable def halfLinePrimitive (f : ℝ → ℝ) (t : ℝ) : ℝ :=
+noncomputable def halfLinePrimitive (f : ℝ → E) (t : ℝ) : E :=
   ∫ x in (0 : ℝ)..t, f (max x 0)
 
 /-- The unconditional defining equation of `halfLinePrimitive`, usable in downstream files where
 the body of the definition is not available. -/
-theorem halfLinePrimitive_def (f : ℝ → ℝ) (t : ℝ) :
+theorem halfLinePrimitive_def (f : ℝ → E) (t : ℝ) :
     halfLinePrimitive f t = ∫ x in (0 : ℝ)..t, f (max x 0) := by rfl
-
-/-- If `f` is continuous on `[0, ∞)`, then its extension `x ↦ f (max x 0)` is continuous on all
-of `ℝ`. -/
-private theorem continuous_comp_max_zero (hf : ContinuousOn f (Ici 0)) :
-    Continuous fun x : ℝ ↦ f (max x 0) := by
-  simpa [Function.comp_def] using
-    hf.comp_continuous (continuous_id'.max continuous_const) fun x ↦ mem_Ici.mpr (le_max_right x 0)
 
 /-- On the nonnegative half-line, `halfLinePrimitive` is the ordinary integral of `f` from
 zero. -/
@@ -62,50 +72,53 @@ zero. -/
 theorem halfLinePrimitive_eq_integral_of_nonneg (ht : 0 ≤ t) :
     halfLinePrimitive f t = ∫ x in (0 : ℝ)..t, f x := by
   rw [halfLinePrimitive_def]
-  apply intervalIntegral.integral_congr
-  intro x hx
-  simp only [uIcc_of_le ht] at hx
+  refine integral_congr fun x hx ↦ ?_
+  rw [uIcc_of_le ht] at hx
   simp only [max_eq_left hx.1]
 
-/-- On the nonpositive half-line, `halfLinePrimitive` is the linear extension `t ↦ t * f 0`. -/
-theorem halfLinePrimitive_of_nonpos (ht : t ≤ 0) : halfLinePrimitive f t = t * f 0 := by
-  rw [halfLinePrimitive_def]
-  have hconst : (∫ x in (0 : ℝ)..t, f (max x 0)) = ∫ _ in (0 : ℝ)..t, f 0 :=
-    intervalIntegral.integral_congr fun x hx ↦ by
-      simp only [uIcc_of_ge ht] at hx
-      simp only [max_eq_right hx.2]
-  rw [hconst]
-  simp
+/-- On the nonpositive half-line, `halfLinePrimitive` is the linear extension `t ↦ t • f 0`. -/
+theorem halfLinePrimitive_of_nonpos [CompleteSpace E] (ht : t ≤ 0) :
+    halfLinePrimitive f t = t • f 0 := by
+  rw [halfLinePrimitive_def, integral_congr (g := fun _ ↦ f 0) fun x hx ↦ ?_]
+  · simp
+  · rw [uIcc_of_ge ht] at hx
+    simp only [max_eq_right hx.2]
 
 /-- The value of `halfLinePrimitive f` at the origin is `0`. -/
 @[simp]
-theorem halfLinePrimitive_zero (f : ℝ → ℝ) : halfLinePrimitive f 0 = 0 := by
+theorem halfLinePrimitive_zero (f : ℝ → E) : halfLinePrimitive f 0 = 0 := by
   simp [halfLinePrimitive_def]
 
-/-- If `f` is continuous on `[0, ∞)`, then `halfLinePrimitive f` is continuous on all of `ℝ`; the
-`max` extension of the integrand makes the primitive continuous through the origin. -/
-theorem continuous_halfLinePrimitive (hf : ContinuousOn f (Ici 0)) :
+/-- If `f` is locally integrable on `[0, ∞)`, then `halfLinePrimitive f` is continuous on all of
+`ℝ`; the `max` extension of the integrand makes the primitive continuous through the origin. -/
+theorem continuous_halfLinePrimitive (hf : LocallyIntegrableOn f (Ici 0)) :
     Continuous (halfLinePrimitive f) := by
   unfold halfLinePrimitive
-  exact intervalIntegral.continuous_primitive
-    (fun a b ↦ (continuous_comp_max_zero hf).intervalIntegrable a b) 0
+  exact continuous_primitive (intervalIntegrable_comp_max_zero hf) 0
 
-/-- If `f` is continuous on `[0, ∞)`, then `halfLinePrimitive f` has derivative `f t` at every
-`t ≥ 0`. The `max` extension of the integrand makes the derivative at `t = 0` two-sided. -/
-theorem hasDerivAt_halfLinePrimitive (hf : ContinuousOn f (Ici 0)) (ht : 0 ≤ t) :
+/-- If `f` is locally integrable on `[0, ∞)` and continuous within `[0, ∞)` at `t ≥ 0`, then
+`halfLinePrimitive f` has derivative `f t` at `t`. The `max` extension of the integrand makes the
+derivative at `t = 0` two-sided. -/
+theorem hasDerivAt_halfLinePrimitive [CompleteSpace E] (hf : LocallyIntegrableOn f (Ici 0))
+    (hft : ContinuousWithinAt f (Ici 0) t) (ht : 0 ≤ t) :
     HasDerivAt (halfLinePrimitive f) (f t) t := by
-  have hcont := continuous_comp_max_zero hf
+  have hint := intervalIntegrable_comp_max_zero hf
+  have hcont : ContinuousAt (fun x ↦ f (max x 0)) t :=
+    (continuousWithinAt_univ _ _).1 <|
+      hft.comp_of_eq (continuous_id.max continuous_const).continuousWithinAt
+        (fun x _ ↦ le_max_right x 0) (max_eq_left ht)
   unfold halfLinePrimitive
-  simpa only [max_eq_left ht] using
-    intervalIntegral.integral_hasDerivAt_right (a := (0 : ℝ)) (hcont.intervalIntegrable 0 t)
-      hcont.aestronglyMeasurable.stronglyMeasurableAtFilter hcont.continuousAt
+  simpa only [max_eq_left ht] using integral_hasDerivAt_right (hint 0 t)
+    (AEStronglyMeasurable.stronglyMeasurableAtFilter_of_mem (hint (t - 1) (t + 1)).1.1
+      (Ioc_mem_nhds (sub_one_lt t) (lt_add_one t))) hcont
 
-/-- If `f` is continuous on `[0, ∞)`, then the derivative of `halfLinePrimitive f` is `f` at
-every `t ≥ 0`. -/
+/-- If `f` is locally integrable on `[0, ∞)` and continuous within `[0, ∞)` at `t ≥ 0`, then the
+derivative of `halfLinePrimitive f` at `t` is `f t`. -/
 @[grind =>]
-theorem deriv_halfLinePrimitive (hf : ContinuousOn f (Ici 0)) (ht : 0 ≤ t) :
+theorem deriv_halfLinePrimitive [CompleteSpace E] (hf : LocallyIntegrableOn f (Ici 0))
+    (hft : ContinuousWithinAt f (Ici 0) t) (ht : 0 ≤ t) :
     deriv (halfLinePrimitive f) t = f t :=
-  (hasDerivAt_halfLinePrimitive hf ht).deriv
+  (hasDerivAt_halfLinePrimitive hf hft ht).deriv
 
 end TauCeti
 
