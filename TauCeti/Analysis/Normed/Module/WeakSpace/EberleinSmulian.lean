@@ -38,7 +38,7 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜
 
 /-- The sequence used in the separable reduction: every weak subsequential limit represents
 the prescribed weak-star cluster point in the bidual. -/
-theorem exists_seq_inclusionInDoubleDual_eq_of_mem_closure {K : Set E}
+theorem exists_seq_inclusionInDoubleDualWeak_eq_of_mem_closure {K : Set E}
     {φ : WeakDual 𝕜 (StrongDual 𝕜 E)}
     (hφ : φ ∈ closure (NormedSpace.inclusionInDoubleDualWeak 𝕜 E ''
       (toWeakSpace 𝕜 E '' K))) :
@@ -141,7 +141,7 @@ theorem isCompact_closure_toWeakSpace_iff {K : Set E} :
   · rw [Set.preimage_image_eq _ (toWeakSpace 𝕜 E).injective]
     exact isBounded_of_forall_tendsto_subseq_toWeakSpace hK
   · intro φ hφ
-    obtain ⟨u, hu, huniq⟩ := exists_seq_inclusionInDoubleDual_eq_of_mem_closure hφ
+    obtain ⟨u, hu, huniq⟩ := exists_seq_inclusionInDoubleDualWeak_eq_of_mem_closure hφ
     obtain ⟨x, σ, hσ, hlim⟩ := hK u hu
     exact ⟨toWeakSpace 𝕜 E x, huniq x σ hσ hlim⟩
 
@@ -162,7 +162,7 @@ theorem isCompact_toWeakSpace_iff_isSeqCompact {K : Set E} :
     intro z hz
     have hφ := mem_closure_image
       (NormedSpace.inclusionInDoubleDualWeak 𝕜 E).continuous.continuousAt hz
-    obtain ⟨u, hu, huniq⟩ := exists_seq_inclusionInDoubleDual_eq_of_mem_closure hφ
+    obtain ⟨u, hu, huniq⟩ := exists_seq_inclusionInDoubleDualWeak_eq_of_mem_closure hφ
     obtain ⟨_, ⟨x, hx, rfl⟩, σ, hσ, hlim⟩ :=
       hK (fun n ↦ mem_image_of_mem (toWeakSpace 𝕜 E) (hu n))
     have hxz : toWeakSpace 𝕜 E x = z := by
