@@ -31,19 +31,19 @@ namespace TauCeti
 
 variable {K : Type u} [CommSemiring K] {L : Type v} [CommRing L] [Algebra K L]
 
-private theorem ulift_compatible
-    (σ : ULift.{w} L ≃ₐ[ULift.{w} K] ULift.{w} L) (x : L) :
-    ULift.ringEquiv.symm (AlgEquiv.uliftAutEquiv.symm σ x) = σ (ULift.ringEquiv.symm x) := by
-  apply ULift.down_injective
-  exact AlgEquiv.uliftAutEquiv_symm_apply σ x
-
 namespace TwoCocycle
 
 /-- Lift both rings and the values of a cocycle, identifying automorphisms by conjugation
 with the up/down maps. -/
 def ulift (c : TwoCocycle K L) : TwoCocycle (ULift.{w} K) (ULift.{w} L) :=
   c.comap (AlgEquiv.uliftAutEquiv (R := K) (A := L)).symm ULift.ringEquiv.symm
-    ulift_compatible
+    AlgEquiv.uliftAutEquiv_symm_apply_up
+
+/-- Simultaneous universe lifting is transport along the up maps and automorphism equivalence. -/
+theorem ulift_eq_comap (c : TwoCocycle K L) :
+    (c.ulift : TwoCocycle (ULift.{w} K) (ULift.{w} L)) =
+      c.comap (AlgEquiv.uliftAutEquiv (R := K) (A := L)).symm ULift.ringEquiv.symm
+        AlgEquiv.uliftAutEquiv_symm_apply_up := (rfl)
 
 /-- The lifted cocycle evaluates by lifting its unit values. -/
 @[simp]
@@ -51,7 +51,8 @@ theorem ulift_toFun (c : TwoCocycle K L)
     (σ τ : ULift.{w} L ≃ₐ[ULift.{w} K] ULift.{w} L) :
     c.ulift.toFun σ τ = Units.map ULift.ringEquiv.symm.toMonoidHom
       (c.toFun (AlgEquiv.uliftAutEquiv.symm σ) (AlgEquiv.uliftAutEquiv.symm τ)) := by
-  rw [ulift, comap_toFun]
+  rw [ulift_eq_comap, comap_toFun]
+  -- The ring-equivalence coercion and its toMonoidHom have the same bundled multiplication map.
   rfl
 
 @[simp]
@@ -104,13 +105,20 @@ lifted base ring. This is an isomorphism of the actual algebras, not one defined
 Brauer classes or cohomology. -/
 def uliftEquiv : CrossedProduct c.ulift ≃ₐ[ULift.{w} K] ULift.{w} (CrossedProduct c) :=
   (AlgEquiv.ofRingEquiv (R := ULift.{w} K) (f := comapRingEquiv c ULift.ringEquiv.symm
-    AlgEquiv.uliftAutEquiv.symm ulift_compatible) (by
+    AlgEquiv.uliftAutEquiv.symm AlgEquiv.uliftAutEquiv_symm_apply_up) (by
       rintro ⟨r⟩
       exact
         comapRingEquiv_algebraMap c ULift.ringEquiv.symm AlgEquiv.uliftAutEquiv.symm
-          ulift_compatible ULift.ringEquiv.symm.toRingHom
-          (fun _ ↦ rfl) r)).trans ULift.algEquiv.symm
+          AlgEquiv.uliftAutEquiv_symm_apply_up ULift.ringEquiv.symm.toRingHom
+          (by
+            intro k
+            -- The up ring equivalence is ULift.up; use the lifted algebra instances.
+            simp [ULift.algebraMap_apply', ULift.algebraMap_eq, ULift.ringEquiv]) r)).trans
+    ULift.algEquiv.symm
 
+-- Normalize dependent source types locally: rewriting ulift_eq_comap in a basis or
+-- coefficient argument alone gives an ill-typed motive because uliftEquiv has that source.
+-- The public equation is available for consumers without exposing the definition's body.
 @[simp]
 theorem uliftEquiv_basis (σ : ULift.{w} L ≃ₐ[ULift.{w} K] ULift.{w} L) :
     uliftEquiv c (basis c.ulift σ) =
@@ -125,7 +133,8 @@ theorem uliftEquiv_inc (x : ULift.{w} L) :
   unfold TwoCocycle.ulift
   apply ULift.down_injective
   simp only [uliftEquiv, AlgEquiv.trans_apply, ULift.down_algEquiv_symm_apply,
-    AlgEquiv.ofRingEquiv_apply, comapRingEquiv_inc]
+    AlgEquiv.ofRingEquiv_apply, comapRingEquiv_inc, RingEquiv.symm_symm]
+  -- ULift.ringEquiv evaluates by down.
   rfl
 
 /-- Coefficient scalar multiplication is carried to the lifted scalar multiplication. -/
@@ -135,7 +144,8 @@ theorem uliftEquiv_smul (x : ULift.{w} L) (a : CrossedProduct c.ulift) :
   unfold TwoCocycle.ulift at a ⊢
   apply ULift.down_injective
   simp only [uliftEquiv, AlgEquiv.trans_apply, ULift.down_algEquiv_symm_apply,
-    AlgEquiv.ofRingEquiv_apply, comapRingEquiv_smul]
+    AlgEquiv.ofRingEquiv_apply, comapRingEquiv_smul, RingEquiv.symm_symm]
+  -- ULift.ringEquiv evaluates by down.
   rfl
 
 @[simp]
@@ -152,6 +162,7 @@ theorem uliftEquiv_symm_inc (x : L) :
   unfold TwoCocycle.ulift
   simp only [uliftEquiv, AlgEquiv.symm_trans_apply, AlgEquiv.symm_symm, ULift.algEquiv_apply,
     AlgEquiv.ofRingEquiv_symm_apply, comapRingEquiv_symm_inc]
+  -- The inverse of ULift.ringEquiv evaluates by up.
   rfl
 
 /-- Transport acts coefficientwise in the two crossed-product bases. -/
@@ -163,7 +174,7 @@ theorem repr_uliftEquiv (a : CrossedProduct c.ulift) (σ : L ≃ₐ[K] L) :
   simp only [uliftEquiv, AlgEquiv.trans_apply, ULift.down_algEquiv_symm_apply,
     AlgEquiv.ofRingEquiv_apply]
   exact repr_comapRingEquiv c ULift.ringEquiv.symm AlgEquiv.uliftAutEquiv.symm
-    ulift_compatible a σ
+    AlgEquiv.uliftAutEquiv_symm_apply_up a σ
 
 end CrossedProduct
 end TauCeti
