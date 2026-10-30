@@ -137,7 +137,7 @@ theorem IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub {γ : ℝ → ℂ} {a b : ℝ
     CauchyPVExistsAt γ a b (fun z => (z - s)⁻¹) s := by
   classical
   rcases hab.eq_or_lt with rfl | hab
-  · exact CauchyPVExistsAt.of_eq γ rfl _ s
+  · exact CauchyPVExistsAt.refl γ a _ s
   set T : Finset ℝ := (h_imm.finite_crossings (z₀ := s)).toFinset with hT_def
   have hT_mem : ∀ {t : ℝ}, t ∈ T ↔ t ∈ Icc a b ∧ γ t = s := fun {_} => by
     rw [hT_def, h_imm.mem_toFinset_finite_crossings_of_le hab.le]
