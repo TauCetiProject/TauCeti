@@ -35,6 +35,12 @@ variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A]
   [Ring B] [Algebra R B]
 variable (τ : A →ₗ[R] R) (hτ : ∀ x y, τ (x * y) = τ (y * x))
 
+/-- Precomposing a tracial linear functional with an algebra map preserves traciality. -/
+theorem comp_algHom_mul_comm (hτ : ∀ x y, τ (x * y) = τ (y * x))
+    (f : B →ₐ[R] A) (x y : B) :
+    (τ ∘ₗ f.toLinearMap) (x * y) = (τ ∘ₗ f.toLinearMap) (y * x) := by
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, map_mul, hτ]
+
 /-- The two-sided radical of the multiplication pairing of a tracial linear functional. -/
 def traceRadical : Ideal A where
   carrier := {x | ∀ y, τ (x * y) = 0}

@@ -39,22 +39,16 @@ open TypeAHeckeAlgebra
 variable {R : Type*} [CommRing R] {q : Rˣ} {z : R}
   {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
 
-/-- Restriction to a finite presentation preserves traciality. -/
-theorem comp_toInfinite_mul_comm (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ)
-    (x y : TypeAHeckeAlgebra R q n) :
-    (τ ∘ₗ (toInfinite R q n).toLinearMap) (x * y) =
-      (τ ∘ₗ (toInfinite R q n).toLinearMap) (y * x) := by
-  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, map_mul, hτ]
-
 /-- The two-sided trace radical on the finite `n`-strand presentation. -/
 def finiteRadical (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
     Ideal (TypeAHeckeAlgebra R q n) :=
-  (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadical (comp_toInfinite_mul_comm hτ n)
+  (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadical
+    (τ.comp_algHom_mul_comm hτ (toInfinite R q n))
 
 /-- Identify the finite radical with the general trace radical. -/
 theorem finiteRadical_def (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
     finiteRadical hτ n = (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadical
-      (comp_toInfinite_mul_comm hτ n) := (rfl)
+      (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) := (rfl)
 
 /-- An element belongs to the finite radical exactly when it pairs to zero with all elements
 of that finite presentation, not with all elements of the infinite algebra. -/
@@ -77,7 +71,7 @@ theorem mem_finiteRadical_iff_Tw (hτ : ∀ x y, τ (x * y) = τ (y * x)) {n : �
   simpa only [finiteRadical_def, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
     coe_basisTw] using
     (τ ∘ₗ (toInfinite R q n).toLinearMap).mem_traceRadical_iff_basis
-      (comp_toInfinite_mul_comm hτ n) (basisTw q cs) (x := x)
+      (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) (basisTw q cs) (x := x)
 
 /-- Pulling back a later finite radical along a tower map lands in the earlier radical. -/
 theorem comap_finiteRadical_strandIncl_le (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
@@ -90,7 +84,8 @@ theorem comap_finiteRadical_strandIncl_le (hτ : ∀ x y, τ (x * y) = τ (y * x
 /-- The tracial functional induced on the finite trace-radical quotient. -/
 def finiteQuotientTrace (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ) :
     TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ n →ₗ[R] R :=
-  (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient (comp_toInfinite_mul_comm hτ n)
+  (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient
+    (τ.comp_algHom_mul_comm hτ (toInfinite R q n))
 
 /-- The finite quotient trace agrees with the original trace on representatives. -/
 @[simp]
@@ -99,7 +94,7 @@ theorem finiteQuotientTrace_mk (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ
     finiteQuotientTrace hτ n (Ideal.Quotient.mk (finiteRadical hτ n) x) =
       τ (toInfinite R q n x) := by
   exact (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient_mk
-    (comp_toInfinite_mul_comm hτ n) x
+    (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) x
 
 /-- The finite quotient preserves the value at the identity. -/
 @[simp]
@@ -117,14 +112,14 @@ theorem finiteQuotientTrace_mul_comm (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n
     (x y : TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ n) :
     finiteQuotientTrace hτ n (x * y) = finiteQuotientTrace hτ n (y * x) := by
   exact (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient_mul_comm
-    (comp_toInfinite_mul_comm hτ n) x y
+    (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) x y
 
 /-- The finite quotient multiplication pairing is algebraically nondegenerate. -/
 theorem finiteQuotientTrace_nondegenerate (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ)
     (x : TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ n)
     (hx : ∀ y, finiteQuotientTrace hτ n (x * y) = 0) : x = 0 := by
   exact (τ ∘ₗ (toInfinite R q n).toLinearMap).traceRadicalQuotient_nondegenerate
-    (comp_toInfinite_mul_comm hτ n) x hx
+    (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) x hx
 
 /-- At the index-character parameter, the finite radical is the kernel of that character
 pulled back to the finite presentation. -/
