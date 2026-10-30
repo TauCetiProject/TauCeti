@@ -84,6 +84,34 @@ public section
 
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
 
+namespace ProbabilityTheory
+
+/-- The cdf of the zero measure is the default step cdf at zero. -/
+@[simp]
+theorem cdf_zero (x : ℝ) : cdf (0 : Measure ℝ) x = if 0 ≤ x then 1 else 0 := by
+  have hdirac (y : ℝ) : cdf (Measure.dirac 0) y = if 0 ≤ y then 1 else 0 := by
+    rw [cdf_eq_real, measureReal_def]
+    by_cases h : (0 : ℝ) ≤ y <;> simp [Measure.dirac_apply' _ measurableSet_Iic, h]
+  have hstep : cdf (0 : Measure ℝ) x = cdf (Measure.dirac 0) x := by
+    set f : Unit → ℚ → ℝ := fun a r ↦ (preCDF (0 : Measure (Unit × ℝ)) r a).toReal
+    have hf : f () = fun _ ↦ f () 0 := funext fun r ↦ by simp [f, preCDF, Measure.IicSnd]
+    have hnot : ¬IsRatStieltjesPoint f () := fun h ↦ by
+      have h1 := h.tendsto_atTop_one
+      have h0 := h.tendsto_atBot_zero
+      rw [hf, tendsto_const_nhds_iff] at h1 h0
+      exact one_ne_zero (h1.symm.trans h0)
+    rw [← StieltjesFunction.iInf_rat_gt_eq, ← StieltjesFunction.iInf_rat_gt_eq]
+    congr! 2 with q
+    rw [cdf, Measure.prod_zero, condCDF, stieltjesOfMeasurableRat_eq, hdirac]
+    -- The rewrites spell out the function `fun a r ↦ (preCDF 0 r a).toReal` of `condCDF`, which
+    -- is `f` by definition: `set` folds only the occurrences present when it ran. Restate the
+    -- goal through `f` so that `hnot` applies.
+    change toRatCDF f () q = _
+    simp only [toRatCDF, hnot, ↓reduceIte, defaultRatCDF, ← not_lt, ite_not, Rat.cast_lt_zero]
+  exact hstep.trans (hdirac x)
+
+end ProbabilityTheory
+
 namespace MeasureTheory.Measure
 
 /-- The cdf of a convolution is the average of the translated cdfs of its second factor. -/
