@@ -15,12 +15,12 @@ import Mathlib.Tactic.Ring
 # Group algebras over formally real rings are reduced
 
 Let `R` be a formally real commutative semiring, such as `ℕ`, `ℤ`, `ℚ` or `ℝ`, and let `G` be a
-commutative group. Inversion on `G` induces the ring involution `x ↦ x̄` of `R[G]` with
-`x̄ g = x g⁻¹`. The coefficient of the identity in `x * x̄` is the sum of the squares of the
+commutative group. Inversion on `G` induces the ring involution `σ` of `R[G]` with
+`σ x g = x g⁻¹`. The coefficient of the identity in `x * σ x` is the sum of the squares of the
 coefficients of `x` (`MonoidAlgebra.coeff_mul_mapDomainRingEquiv_inv_one`), so it vanishes only
 when `x = 0`.
 
-If `x ^ 2 = 0`, then `y = x * x̄` satisfies `y * ȳ = x ^ 2 * x̄ ^ 2 = 0`, so `y = 0` and then
+If `x ^ 2 = 0`, then `y = x * σ x` satisfies `y * σ y = x ^ 2 * σ x ^ 2 = 0`, so `y = 0` and then
 `x = 0`. Hence `R[G]` is reduced (`MonoidAlgebra.isReduced_of_isFormallyReal`). No finiteness of
 `G` is needed, and `G` may have torsion: for instance `ℤ[G]` is reduced for every commutative
 group `G`. Positive integers are non-zero-divisors of `R[M]` for every monoid `M`
@@ -42,10 +42,10 @@ section Group
 
 variable {R G : Type*} [CommSemiring R] [CommGroup G]
 
-/-- The coefficient of the identity in `x * x̄`, where `x̄` is the image of `x` under the
+/-- The coefficient of the identity in `x * σ x`, where `σ x` is the image of `x` under the
 involution induced by inversion, is the sum of the squares of the coefficients of `x`. -/
 @[to_additive (dont_translate := R) coeff_mul_mapDomainRingEquiv_neg_zero
-/-- The coefficient of zero in `x * x̄`, where `x̄` is the image of `x` under the involution
+/-- The coefficient of zero in `x * σ x`, where `σ x` is the image of `x` under the involution
 induced by negation, is the sum of the squares of the coefficients of `x`. -/]
 theorem coeff_mul_mapDomainRingEquiv_inv_one (x : MonoidAlgebra R G) :
     (x * mapDomainRingEquiv R (MulEquiv.inv G) x).coeff 1 =
@@ -77,7 +77,7 @@ instance isReduced_of_isFormallyReal : IsReduced (MonoidAlgebra R G) := by
   have hσ (z : MonoidAlgebra R G) :
       mapDomainRingEquiv R (MulEquiv.inv G) (mapDomainRingEquiv R (MulEquiv.inv G) z) = z := by
     ext; simp
-  -- `y = x * x̄` satisfies `y * ȳ = x ^ 2 * x̄ ^ 2 = 0`, so `y = 0`.
+  -- `y = x * σ x` satisfies `y * σ y = x ^ 2 * σ x ^ 2 = 0`, so `y = 0`.
   have hy : x * mapDomainRingEquiv R (MulEquiv.inv G) x = 0 := by
     refine eq_zero_of_coeff_mul_mapDomainRingEquiv_inv_one ?_
     rw [map_mul, hσ]
