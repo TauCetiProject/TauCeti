@@ -96,6 +96,7 @@ theorem cartanEquivDual_killingCartanProjection (x : L) :
   (cartanEquivDual H).apply_symm_apply _
 
 /-- **The characteristic property of the projection**: `κ(π x, h) = κ(x, h)` for every `h ∈ H`. -/
+@[simp]
 theorem killingForm_killingCartanProjection (x : L) (h : H) :
     killingForm K L (killingCartanProjection H x) h = killingForm K L x h := by
   rw [← cartanEquivDual_apply_apply_eq_killingForm, cartanEquivDual_killingCartanProjection,
@@ -219,6 +220,7 @@ theorem map_dualMap_killingSymmetricEquiv (p : SymmetricAlgebra K L) :
 /-- **The restriction, read on the weights.** Viewing `S(L)` as the polynomial functions on `L*`
 and `S(H)` as the polynomial functions on the weights `H*`, the value of `lieCartanRestriction H p`
 at a weight `λ` is the value of `p` at the extension `TauCeti.killingExtend λ` of `λ` to `L`. -/
+@[simp]
 theorem lift_lieCartanRestriction (lam : Dual K H) (p : SymmetricAlgebra K L) :
     SymmetricAlgebra.lift lam (lieCartanRestriction H p) =
       SymmetricAlgebra.lift (killingExtend lam) p := by
