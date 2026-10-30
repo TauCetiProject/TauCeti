@@ -32,11 +32,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {Ω : Opens E} {n : ℕ∞}
 
 /-- A test function is a finite sum of test functions supported in members of an open cover
-of its topological support. -/
+of its topological support. The summands are pointwise no larger in norm than the test function
+itself. -/
 theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → Set E)
     (hU : ∀ i, IsOpen (U i)) (hcover : tsupport φ ⊆ ⋃ i, U i) :
     ∃ (s : Finset ι) (ψ : s → 𝓓^{n}(Ω, F)),
-      (∀ i, tsupport (ψ i) ⊆ U i) ∧ ∑ i, ψ i = φ := by
+      (∀ i, tsupport (ψ i) ⊆ U i) ∧ ∑ i, ψ i = φ ∧ ∀ i x, ‖ψ i x‖ ≤ ‖φ x‖ := by
   classical
   obtain ⟨s, hs⟩ := φ.hasCompactSupport.elim_finite_subcover U hU hcover
   have hs' : tsupport φ ⊆ ⋃ i : s, U i := by
@@ -50,14 +51,17 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
       ((ρ i).contMDiff.contDiff.of_le (by simp)).smul φ.contDiff,
       φ.hasCompactSupport.smul_left,
       (tsupport_smul_subset_right _ _).trans φ.tsupport_subset⟩
-  refine ⟨s, ψ, fun i ↦ (tsupport_smul_subset_left _ _).trans (hρ i), ?_⟩
-  ext x
-  simp only [sum_apply]
-  by_cases hx : x ∈ tsupport φ
-  · have hsum : ∑ i : s, ρ i x = 1 := by
-      simpa only [finsum_eq_sum_of_fintype] using ρ.sum_eq_one hx
-    simp only [ψ, coe_mk, ← Finset.sum_smul, hsum, one_smul]
-  · simp [ψ, image_eq_zero_of_notMem_tsupport hx]
+  refine ⟨s, ψ, fun i ↦ (tsupport_smul_subset_left _ _).trans (hρ i), ?_, fun i x ↦ ?_⟩
+  · ext x
+    simp only [sum_apply]
+    by_cases hx : x ∈ tsupport φ
+    · have hsum : ∑ i : s, ρ i x = 1 := by
+        simpa only [finsum_eq_sum_of_fintype] using ρ.sum_eq_one hx
+      simp only [ψ, coe_mk, ← Finset.sum_smul, hsum, one_smul]
+    · simp [ψ, image_eq_zero_of_notMem_tsupport hx]
+  · -- Each summand is `ρ i • φ` with `0 ≤ ρ i ≤ 1`.
+    simpa [ψ, norm_smul, abs_of_nonneg (ρ.nonneg i x)] using
+      mul_le_of_le_one_left (norm_nonneg (φ x)) (ρ.le_one i x)
 
 end TestFunction
 
@@ -75,7 +79,7 @@ theorem eq_zero_of_locally_vanishing (T : 𝓓^{n}(Ω, F) →+ G)
   classical
   choose U hU hxU hT using fun x : Ω ↦ h x x.2
   ext φ
-  obtain ⟨s, ψ, hψ, hsum⟩ := φ.exists_sum_subordinate U hU fun x hx ↦
+  obtain ⟨s, ψ, hψ, hsum, -⟩ := φ.exists_sum_subordinate U hU fun x hx ↦
     mem_iUnion.mpr ⟨⟨x, φ.tsupport_subset hx⟩, hxU _⟩
   rw [← hsum, map_sum]
   exact Finset.sum_eq_zero fun i _ ↦ hT i (ψ i) (hψ i)

@@ -71,7 +71,7 @@ Each statement about `thetaCoset` has a `thetaSeries` counterpart, obtained from
 
 public section
 
-open Complex Filter Topology
+open Complex Filter
 open UpperHalfPlane (ofComplex ofComplex_apply_of_im_pos mdifferentiable_iff)
 open scoped Real Manifold UpperHalfPlane
 
@@ -81,10 +81,7 @@ namespace Complex
 the term of index `v` of a theta series. -/
 theorem norm_exp_pi_mul_I_mul_ofReal_mul (t : ℝ) (z : ℂ) :
     ‖cexp (π * I * t * z)‖ = Real.exp (-(π * t) * z.im) := by
-  rw [Complex.norm_exp]
-  congr 1
-  simp only [mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im]
-  ring
+  simp [Complex.norm_exp]
 
 /-- For `0 ≤ t`, on the half-plane `{z | y ≤ im z}` the function `exp (π i t z)` is bounded in
 norm by `exp (-π y t)`; this dominates the terms of a theta series by a Gaussian. -/
@@ -113,10 +110,13 @@ noncomputable def thetaCoset (L : Submodule ℤ E) (γ : E) (τ : ℍ) : ℂ :=
 
 variable (L : Submodule ℤ E)
 
+/-- The value of the theta series at `τ`: `Θ_L(τ) = ∑_{v ∈ L} exp (π i ‖v‖² τ)`. -/
 theorem thetaSeries_apply (τ : ℍ) :
     thetaSeries L τ = ∑' v : L, cexp (π * I * (‖(v : E)‖ ^ 2 : ℝ) * τ) :=
   (rfl)
 
+/-- The value of the theta series of the translate `γ + L` at `τ`:
+`θ_{γ+L}(τ) = ∑_{v ∈ L} exp (π i ‖γ + v‖² τ)`. -/
 theorem thetaCoset_apply (γ : E) (τ : ℍ) :
     thetaCoset L γ τ = ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ) :=
   (rfl)
