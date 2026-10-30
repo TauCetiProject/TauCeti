@@ -54,9 +54,11 @@ sum; in particular the mirror image of a connected sum of knots in `S³ ⊆ ℝ�
 unknot, is the connected sum of the mirror images
 (`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
 
-Not formalized here: that every knot is ambient isotopic to one in connected-sum position, and
-that the resulting operation on isotopy or concordance classes does not depend on the choices.
-Those are the steps from this construction to the knot concordance group.
+Concordances in connected-sum position can themselves be summed, giving a concordance between
+the connected sums (`TauCeti.KnotTheory.ConnectedSum.Concordance`). Not formalized here: that
+every knot is ambient isotopic to one in connected-sum position, and that the resulting operation
+on isotopy or concordance classes does not depend on the choices. Those are the steps from this
+construction to the knot concordance group.
 
 ## Main definitions
 
