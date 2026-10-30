@@ -23,7 +23,8 @@ We also prove local continuity of inversion for Hom-bundle sections with a Banac
 source. This local result does not require finite rank or invertibility away from the
 point under consideration. The inverse is Mathlib's `ContinuousLinearMap.inverse`,
 which is zero at noninvertible maps. In the same generality, invertibility of the fibre
-maps is an open condition along a continuous Hom-bundle section.
+maps is an open condition along a continuous Hom-bundle section, and composition of
+continuous Hom-bundle sections is continuous.
 
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
 the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom`.
@@ -199,6 +200,65 @@ theorem Continuous.clm_bundle_inverse
   continuous_iff_continuousAt.mpr fun x ↦ hϕ.continuousAt.clm_bundle_inverse (hinv x)
 
 end Inverse
+
+section Comp
+
+variable {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+  {E₃ : B → Type*} [∀ x, AddCommGroup (E₃ x)] [∀ x, Module 𝕜 (E₃ x)]
+  [∀ x, TopologicalSpace (E₃ x)] [TopologicalSpace (TotalSpace F₃ E₃)]
+  [FiberBundle F₃ E₃] [VectorBundle 𝕜 F₃ E₃]
+  [∀ x, IsTopologicalAddGroup (E₃ x)] [∀ x, ContinuousSMul 𝕜 (E₃ x)]
+  {b : M → B} {ψ : ∀ m, E₂ (b m) →L[𝕜] E₃ (b m)} {ϕ : ∀ m, E₁ (b m) →L[𝕜] E₂ (b m)}
+  {s : Set M} {x : M}
+
+/-- Composition of Hom-bundle sections continuous within a set is continuous within it. -/
+theorem ContinuousWithinAt.clm_bundle_comp
+    (hψ : ContinuousWithinAt (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+      (E := fun y ↦ E₂ y →L[𝕜] E₃ y) (b m) (ψ m)) s x)
+    (hϕ : ContinuousWithinAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) (b m) (ϕ m)) s x) :
+    ContinuousWithinAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+      (E := fun y ↦ E₁ y →L[𝕜] E₃ y) (b m) ((ψ m).comp (ϕ m))) s x := by
+  simp only [continuousWithinAt_hom_bundle] at hψ hϕ ⊢
+  have h₂ := mem_baseSet_trivializationAt F₂ E₂ (b x)
+  refine ⟨hϕ.1, (hψ.2.clm_comp hϕ.2).congr_of_eventuallyEq ?_
+    (ContinuousLinearMap.inCoordinates_comp _ _ h₂)⟩
+  filter_upwards [hϕ.1.preimage_mem_nhdsWithin
+    ((trivializationAt F₂ E₂ (b x)).open_baseSet.mem_nhds h₂)] with m hm
+  exact ContinuousLinearMap.inCoordinates_comp _ _ hm
+
+/-- Composition of Hom-bundle sections continuous at a point is continuous there. -/
+theorem ContinuousAt.clm_bundle_comp
+    (hψ : ContinuousAt (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+      (E := fun y ↦ E₂ y →L[𝕜] E₃ y) (b m) (ψ m)) x)
+    (hϕ : ContinuousAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) (b m) (ϕ m)) x) :
+    ContinuousAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+      (E := fun y ↦ E₁ y →L[𝕜] E₃ y) (b m) ((ψ m).comp (ϕ m))) x := by
+  rw [← continuousWithinAt_univ] at hψ hϕ ⊢
+  exact hψ.clm_bundle_comp hϕ
+
+/-- Composition of Hom-bundle sections continuous on a set is continuous on it. -/
+theorem ContinuousOn.clm_bundle_comp
+    (hψ : ContinuousOn (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+      (E := fun y ↦ E₂ y →L[𝕜] E₃ y) (b m) (ψ m)) s)
+    (hϕ : ContinuousOn (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) (b m) (ϕ m)) s) :
+    ContinuousOn (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+      (E := fun y ↦ E₁ y →L[𝕜] E₃ y) (b m) ((ψ m).comp (ϕ m))) s :=
+  fun x hx ↦ (hψ x hx).clm_bundle_comp (hϕ x hx)
+
+/-- Composition of continuous Hom-bundle sections is continuous. -/
+theorem Continuous.clm_bundle_comp
+    (hψ : Continuous (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+      (E := fun y ↦ E₂ y →L[𝕜] E₃ y) (b m) (ψ m)))
+    (hϕ : Continuous (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) (b m) (ϕ m))) :
+    Continuous (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+      (E := fun y ↦ E₁ y →L[𝕜] E₃ y) (b m) ((ψ m).comp (ϕ m))) :=
+  continuous_iff_continuousAt.mpr fun _ ↦ hψ.continuousAt.clm_bundle_comp hϕ.continuousAt
+
+end Comp
 
 namespace TauCeti
 

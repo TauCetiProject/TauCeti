@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.VectorBundle.Basic
+public import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Descent of vector-bundle maps from coordinates
@@ -22,7 +22,18 @@ all the prescribed coordinates, and `CoordinateHom.fiberMap_injective` proves un
 Thus coordinate descent loses no morphism data. The identity is represented by the
 transition functions themselves, not by constant identity matrices in different charts.
 
-The construction uses Mathlib's `VectorBundleCore` and its local trivializations.
+Conversely, `CoordinateHom.ofContinuous` extracts the chart operators of any continuous
+section of Mathlib's Hom bundle between two cores; continuity in a pair of charts on their
+whole common domain is `VectorBundleCore.continuousOn_inChartCoordinates`.
+`CoordinateHom.fiberMapEquiv` identifies coordinate morphisms with these continuous
+sections. For a finite-dimensional source model these are exactly the continuous
+fibrewise linear maps of total spaces, by `TauCeti.continuous_hom_bundle_iff`.
+`CoordinateHom.comp` composes coordinate morphisms; in charts it multiplies the chart
+operators through any intermediate chart (`CoordinateHom.operator_comp`), and it is
+associative and unital for `CoordinateHom.id`.
+
+The construction uses Mathlib's `VectorBundleCore`, its local trivializations and the
+trivializations `Bundle.Trivialization.continuousLinearMap` of the Hom bundle.
 -/
 
 public section
@@ -31,9 +42,103 @@ open Bundle Set Topology
 
 namespace VectorBundleCore
 
-variable {𝕜 B F G ι κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+variable {𝕜 B F G H ι κ ν : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- The fibres of a vector bundle core are topological additive groups, as is the model fibre.
+This makes the Hom bundle between two cores available. -/
+instance isTopologicalAddGroupFiber (Z : VectorBundleCore 𝕜 B F ι) (x : B) :
+    IsTopologicalAddGroup (Z.Fiber x) :=
+  inferInstanceAs (IsTopologicalAddGroup F)
+
+/-- Scalar multiplication on the fibres of a vector bundle core is continuous. -/
+instance continuousSMulFiber (Z : VectorBundleCore 𝕜 B F ι) (x : B) :
+    ContinuousSMul 𝕜 (Z.Fiber x) :=
+  inferInstanceAs (ContinuousSMul 𝕜 F)
+
+/-- The expression of a fibre map `ϕ` over `x` in the source chart `i` and the target chart
+`j`. Unlike `ContinuousLinearMap.inCoordinates`, the charts need not be preferred charts of
+base points. -/
+def inChartCoordinates (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B G κ)
+    (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) : F →L[𝕜] G :=
+  (W.coordChange (W.indexAt x) j x).comp (ϕ.comp (Z.coordChange i (Z.indexAt x) x))
+
+section inChartCoordinates
+
+variable (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B G κ)
+  (V : VectorBundleCore 𝕜 B H ν)
+
+@[simp] theorem inChartCoordinates_apply (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) (v : F) :
+    Z.inChartCoordinates W i j x ϕ v =
+      W.coordChange (W.indexAt x) j x (ϕ (Z.coordChange i (Z.indexAt x) x v)) := (rfl)
+
+/-- In the preferred charts the coordinate expression of a fibre map is the map itself. -/
+@[simp] theorem inChartCoordinates_indexAt (x : B) (ϕ : F →L[𝕜] G) :
+    Z.inChartCoordinates W (Z.indexAt x) (W.indexAt x) x ϕ = ϕ := by
+  ext v
+  simp [Z.coordChange_self _ x (Z.mem_baseSet_at x),
+    W.coordChange_self _ x (W.mem_baseSet_at x)]
+
+/-- Mathlib's coordinate expression centred at `x₀` is the expression in the preferred charts
+of `x₀`. -/
+theorem inCoordinates_eq_inChartCoordinates {x₀ x : B} (hZ : x ∈ Z.baseSet (Z.indexAt x₀))
+    (hW : x ∈ W.baseSet (W.indexAt x₀)) (ϕ : F →L[𝕜] G) :
+    ContinuousLinearMap.inCoordinates F Z.Fiber G W.Fiber x₀ x x₀ x ϕ =
+      Z.inChartCoordinates W (Z.indexAt x₀) (W.indexAt x₀) x ϕ :=
+  Z.inCoordinates_eq W ϕ hZ hW
+
+/-- Coordinate expressions of a composite compose through any intermediate chart containing
+the base point. -/
+theorem inChartCoordinates_comp (i : ι) {j : κ} (k : ν) {x : B} (hj : x ∈ W.baseSet j)
+    (ψ : G →L[𝕜] H) (ϕ : F →L[𝕜] G) :
+    Z.inChartCoordinates V i k x (ψ.comp ϕ) =
+      (W.inChartCoordinates V j k x ψ).comp (Z.inChartCoordinates W i j x ϕ) := by
+  ext v
+  simp only [inChartCoordinates_apply, ContinuousLinearMap.comp_apply,
+    W.coordChange_comp _ j _ x ⟨⟨W.mem_baseSet_at x, hj⟩, W.mem_baseSet_at x⟩,
+    W.coordChange_self _ x (W.mem_baseSet_at x)]
+
+variable {Z W}
+
+/-- A section of the Hom bundle between two cores that is continuous on the common domain of
+a source chart and a target chart is continuous in those charts there. -/
+theorem continuousOn_inChartCoordinates {f : B → F →L[𝕜] G} {i : ι} {j : κ}
+    (hf : ContinuousOn (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x))
+      (Z.baseSet i ∩ W.baseSet j)) :
+    ContinuousOn (fun x ↦ Z.inChartCoordinates W i j x (f x)) (Z.baseSet i ∩ W.baseSet j) := by
+  have : MemTrivializationAtlas (Z.localTriv i) := ⟨⟨i, rfl⟩⟩
+  have : MemTrivializationAtlas (W.localTriv j) := ⟨⟨j, rfl⟩⟩
+  -- Read the section in the Hom-bundle trivialization built from the two fixed charts.
+  let e := (Z.localTriv i).continuousLinearMap (RingHom.id 𝕜) (W.localTriv j)
+  have he : ContinuousOn (fun x ↦ (e ⟨x, f x⟩).2) (Z.baseSet i ∩ W.baseSet j) :=
+    (e.continuousOn.comp hf fun _ hx ↦ e.mem_source.2 hx).snd
+  refine he.congr fun x hx ↦ ContinuousLinearMap.ext fun v ↦ ?_
+  simp only [e, Trivialization.continuousLinearMap_apply, localTriv_continuousLinearMapAt _ hx.2,
+    localTriv_symmL _ hx.1, inChartCoordinates_apply]
+  -- The remaining composite is stated between the core fibres, which are `F` and `G`.
+  rfl
+
+/-- A family of fibre maps is a continuous section of the Hom bundle between two cores exactly
+when it is continuous in every pair of charts. -/
+theorem continuous_hom_bundle_iff_forall_continuousOn {f : B → F →L[𝕜] G} :
+    (Continuous fun x ↦
+      TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x)) ↔
+    ∀ i j, ContinuousOn (fun x ↦ Z.inChartCoordinates W i j x (f x))
+      (Z.baseSet i ∩ W.baseSet j) := by
+  refine ⟨fun hf _ _ ↦ continuousOn_inChartCoordinates hf.continuousOn,
+    fun h ↦ continuous_iff_continuousAt.2 fun x₀ ↦ ?_⟩
+  have hx₀ : x₀ ∈ Z.baseSet (Z.indexAt x₀) ∩ W.baseSet (W.indexAt x₀) :=
+    ⟨Z.mem_baseSet_at x₀, W.mem_baseSet_at x₀⟩
+  have hU := ((Z.isOpen_baseSet _).inter (W.isOpen_baseSet _)).mem_nhds hx₀
+  rw [continuousAt_hom_bundle]
+  refine ⟨continuousAt_id, ((h _ _).continuousAt hU).congr ?_⟩
+  filter_upwards [hU] with x hx
+  exact (inCoordinates_eq_inChartCoordinates Z W hx.1 hx.2 (f x)).symm
+
+end inChartCoordinates
 
 /-- Continuous chart operators intertwining source and target transition functions.
 Only values on actual chart intersections are part of the data. -/
@@ -72,11 +177,9 @@ theorem coordChange_fiberMap (a : CoordinateHom Z W) (i : ι) (j : κ) {x : B}
 /-- Recovery of a chart operator from the descended fibre map. -/
 theorem operator_eq (a : CoordinateHom Z W) (i : ι) (j : κ)
     (x : ↥(Z.baseSet i ∩ W.baseSet j)) :
-    a.operator i j x = (W.coordChange (W.indexAt x.1) j x.1).comp
-      ((a.fiberMap x.1).comp (Z.coordChange i (Z.indexAt x.1) x.1)) := by
+    a.operator i j x = Z.inChartCoordinates W i j x.1 (a.fiberMap x.1) := by
   ext v
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    a.coordChange_fiberMap i j x.2.1 x.2.2,
+  rw [inChartCoordinates_apply, a.coordChange_fiberMap i j x.2.1 x.2.2,
     Z.coordChange_comp i (Z.indexAt x.1) i x.1
       ⟨⟨x.2.1, Z.mem_baseSet_at x.1⟩, x.2.1⟩,
     Z.coordChange_self i x.1 x.2.1]
@@ -172,6 +275,108 @@ def id (Z : VectorBundleCore 𝕜 B F ι) : CoordinateHom Z Z where
   funext p
   simp only [totalSpaceMap, fiberMap_id]
   rfl
+
+/-- The descended fibre maps of a coordinate morphism form a continuous section of the Hom
+bundle. -/
+theorem continuous_fiberMap (a : CoordinateHom Z W) :
+    Continuous fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
+      (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (a.fiberMap x) :=
+  continuous_hom_bundle_iff_forall_continuousOn.2 fun i j ↦
+    continuousOn_iff_continuous_domRestrict.2 <|
+      (a.operator i j).continuous.congr fun x ↦ a.operator_eq i j x
+
+/-- The coordinate morphism of a continuous section of the Hom bundle. Its chart operators
+are the coordinate expressions of the section. -/
+def ofContinuous (f : B → F →L[𝕜] G)
+    (hf : Continuous fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
+      (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x)) :
+    CoordinateHom Z W where
+  operator i j :=
+    ⟨_, continuousOn_iff_continuous_domRestrict.1
+      (continuousOn_inChartCoordinates hf.continuousOn)⟩
+  compatible i i' j j' x hi hi' hj hj' v := by
+    simp only [ContinuousMap.coe_mk, Set.domRestrict_apply, inChartCoordinates_apply]
+    rw [W.coordChange_comp _ j j' x ⟨⟨W.mem_baseSet_at x, hj⟩, hj'⟩,
+      Z.coordChange_comp i i' _ x ⟨⟨hi, hi'⟩, Z.mem_baseSet_at x⟩]
+
+section ofContinuous
+
+variable (f : B → F →L[𝕜] G)
+  (hf : Continuous fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
+    (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x))
+
+theorem operator_ofContinuous (i : ι) (j : κ) (x : ↥(Z.baseSet i ∩ W.baseSet j)) :
+    (ofContinuous f hf).operator i j x = Z.inChartCoordinates W i j x.1 (f x.1) := (rfl)
+
+/-- Descent recovers the continuous section a coordinate morphism was extracted from. -/
+@[simp] theorem fiberMap_ofContinuous : (ofContinuous f hf).fiberMap = f :=
+  funext fun x ↦ inChartCoordinates_indexAt Z W x (f x)
+
+end ofContinuous
+
+/-- Every coordinate morphism is extracted from its descended fibre maps. -/
+@[simp] theorem ofContinuous_fiberMap (a : CoordinateHom Z W) :
+    ofContinuous a.fiberMap a.continuous_fiberMap = a :=
+  fiberMap_injective (fiberMap_ofContinuous _ _)
+
+variable (Z W) in
+/-- Coordinate morphisms correspond exactly to continuous sections of the Hom bundle, by
+preferred-chart descent. -/
+def fiberMapEquiv : CoordinateHom Z W ≃ {f : B → F →L[𝕜] G // Continuous fun x ↦
+    TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x)} where
+  toFun a := ⟨a.fiberMap, a.continuous_fiberMap⟩
+  invFun f := ofContinuous f.1 f.2
+  left_inv := ofContinuous_fiberMap
+  right_inv f := Subtype.ext (fiberMap_ofContinuous f.1 f.2)
+
+@[simp] theorem coe_fiberMapEquiv_apply (a : CoordinateHom Z W) :
+    (fiberMapEquiv Z W a : B → F →L[𝕜] G) = a.fiberMap := (rfl)
+
+@[simp] theorem fiberMapEquiv_symm_apply (f : {f : B → F →L[𝕜] G // Continuous fun x ↦
+    TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x)}) :
+    (fiberMapEquiv Z W).symm f = ofContinuous f.1 f.2 := (rfl)
+
+variable {V : VectorBundleCore 𝕜 B H ν}
+
+/-- Composition of coordinate morphisms, descending to the composite of the fibre maps. -/
+def comp (b : CoordinateHom W V) (a : CoordinateHom Z W) : CoordinateHom Z V :=
+  ofContinuous (fun x ↦ (b.fiberMap x).comp (a.fiberMap x))
+    (b.continuous_fiberMap.clm_bundle_comp (E₁ := Z.Fiber) (E₂ := W.Fiber) (E₃ := V.Fiber)
+      (b := fun x ↦ x) a.continuous_fiberMap)
+
+@[simp] theorem fiberMap_comp (b : CoordinateHom W V) (a : CoordinateHom Z W) (x : B) :
+    (b.comp a).fiberMap x = (b.fiberMap x).comp (a.fiberMap x) :=
+  congrFun (fiberMap_ofContinuous _ _) x
+
+/-- In charts, composition of coordinate morphisms is composition of the chart operators,
+through any intermediate chart. -/
+theorem operator_comp (b : CoordinateHom W V) (a : CoordinateHom Z W) (i : ι) (j : κ) (k : ν)
+    {x : B} (hi : x ∈ Z.baseSet i) (hj : x ∈ W.baseSet j) (hk : x ∈ V.baseSet k) :
+    (b.comp a).operator i k ⟨x, hi, hk⟩ =
+      (b.operator j k ⟨x, hj, hk⟩).comp (a.operator i j ⟨x, hi, hj⟩) := by
+  rw [operator_eq, operator_eq, operator_eq, fiberMap_comp, inChartCoordinates_comp Z W V i k hj]
+
+@[simp] theorem totalSpaceMap_comp (b : CoordinateHom W V) (a : CoordinateHom Z W) :
+    (b.comp a).totalSpaceMap = b.totalSpaceMap ∘ a.totalSpaceMap := by
+  funext p
+  simp only [totalSpaceMap, fiberMap_comp, Function.comp_apply]
+  -- `ContinuousLinearMap.comp_apply` does not fire on a vector of the core fibre `Z.Fiber`,
+  -- which is the model fibre `F` only up to unfolding.
+  rfl
+
+@[simp] theorem id_comp (a : CoordinateHom Z W) : (id W).comp a = a :=
+  fiberMap_injective <| funext fun x ↦ by
+    rw [fiberMap_comp, fiberMap_id, ContinuousLinearMap.id_comp]
+
+@[simp] theorem comp_id (a : CoordinateHom Z W) : a.comp (id Z) = a :=
+  fiberMap_injective <| funext fun x ↦ by
+    rw [fiberMap_comp, fiberMap_id, ContinuousLinearMap.comp_id]
+
+theorem comp_assoc {μ : Type*} {K : Type*} [NormedAddCommGroup K] [NormedSpace 𝕜 K]
+    {U : VectorBundleCore 𝕜 B K μ} (c : CoordinateHom V U) (b : CoordinateHom W V)
+    (a : CoordinateHom Z W) : (c.comp b).comp a = c.comp (b.comp a) :=
+  fiberMap_injective <| funext fun x ↦ by
+    simp only [fiberMap_comp, ContinuousLinearMap.comp_assoc]
 
 end CoordinateHom
 end VectorBundleCore
