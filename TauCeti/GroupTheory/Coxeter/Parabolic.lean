@@ -76,7 +76,7 @@ That theorem factors an element along the standard parabolic subgroup on a pair 
 * `CoxeterSystem.IsMinimalCosetRep.simple_mul_of_isLeftDescent` and
   `CoxeterSystem.IsMinimalCosetRep.simple_mul_or_exists_eq_mul_simple` (Deodhar's lemma): left
   multiplication by a simple reflection keeps a minimal coset representative minimal when it
-  shortens it, and when it lengthens it either keeps it minimal or stays in the same coset.
+  shortens it, and in general either keeps it minimal or stays in the same coset.
 * `CoxeterSystem.parabolic_le_iff`: the universal property of a standard parabolic subgroup.
 * `CoxeterSystem.length_mul_of_forall_not_isLeftDescent` and
   `CoxeterSystem.existsUnique_mem_parabolic_mul`: the same length additivity and unique
@@ -382,11 +382,14 @@ theorem IsMinimalCosetRep.simple_mul_of_isLeftDescent {J : Set B} {u : W}
   rcases cs.length_simple_mul (u * s j) i with h | h <;> rw [← mul_assoc] at h <;> omega
 
 /-- **Deodhar's lemma.** Let `u` be a minimal coset representative for `cs.parabolic J` and let
-`s i * u` be longer than `u`. Then either `s i * u` is again a minimal coset representative, or
-`s i * u = u * s j` for some `j ∈ J`, so that `s i * u` lies in the coset of `u`. -/
+`s i` be a simple reflection. Then either `s i * u` is again a minimal coset representative, or
+`s i * u = u * s j` for some `j ∈ J`, so that `s i * u` lies in the coset of `u`. The second case
+can only occur when `s i * u` is longer than `u`. -/
 theorem IsMinimalCosetRep.simple_mul_or_exists_eq_mul_simple {J : Set B} {u : W}
-    (hu : cs.IsMinimalCosetRep J u) {i : B} (hi : ¬cs.IsLeftDescent u i) :
+    (hu : cs.IsMinimalCosetRep J u) (i : B) :
     cs.IsMinimalCosetRep J (s i * u) ∨ ∃ j ∈ J, s i * u = u * s j := by
+  by_cases hi : cs.IsLeftDescent u i
+  · exact Or.inl (hu.simple_mul_of_isLeftDescent cs hi)
   by_cases hmin : cs.IsMinimalCosetRep J (s i * u)
   · exact Or.inl hmin
   -- A right descent `s j`, `j ∈ J`, of `s i * u` is not one of `u`; lengths then force equality.

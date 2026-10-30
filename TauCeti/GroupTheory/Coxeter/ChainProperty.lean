@@ -105,7 +105,7 @@ theorem IsMinimalCosetRep.exists_bruhatStep_of_bruhatLE {y x : W}
   have hyz' := hyz.simple_mul_of_not_isLeftDescent i hzi
   rw [cs.simple_mul_simple_cancel_left] at hyz'
   have hizlen := cs.not_isLeftDescent_iff.mp hzi
-  rcases hz.simple_mul_or_exists_eq_mul_simple cs hzi with hiz | ⟨j, hj, hzj⟩
+  rcases hz.simple_mul_or_exists_eq_mul_simple cs i with hiz | ⟨j, hj, hzj⟩
   · -- `s i * z` is a minimal coset representative, joined to `x` by the conjugate reflection.
     obtain ⟨t, ht, hxt, -⟩ := cs.bruhatStep_iff.mp hzx
     refine ⟨s i * z, hiz, hyz',
