@@ -215,7 +215,9 @@ namespace SymplecticForm
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] (ω : SymplecticForm V)
+section Algebraic
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] (ω : SymplecticForm V)
 
 /-- The **moment map of the linear symplectic action**: for a symplectic vector space `(V, ω)`,
 the skew-adjoint endomorphisms `A ∈ sp(V, ω)` act by the vector fields `x ↦ A x`, and
@@ -230,7 +232,10 @@ theorem linearMomentMap_apply (x : V) (A : skewAdjointLieSubalgebra ω.toBilinFo
     ω.linearMomentMap x A = ω ((A : Module.End ℝ V) x) x / 2 :=
   (rfl)
 
-variable [FiniteDimensional ℝ V]
+end Algebraic
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] (ω : SymplecticForm V)
+  [FiniteDimensional ℝ V]
 
 /-- The component `μ_A` is the continuous bilinear expression `y ↦ ω(A y, y) / 2`. -/
 private theorem linearMomentMap_eq_comp (A : skewAdjointLieSubalgebra ω.toBilinForm) :
