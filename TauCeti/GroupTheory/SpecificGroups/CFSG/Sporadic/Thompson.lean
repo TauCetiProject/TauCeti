@@ -312,11 +312,25 @@ the chain ac = (us)³ = [u, s]⁴ in group (6) is counted as its two equations. 
 that some of its relators are redundant, kept for clarity or to aid the coset enumeration, so the
 list is deliberately not minimal. The independent source-to-Lean read-through checked all six
 groups and 39 relators. The FiniteSimpleGroups permutation construction does not cover Th. -/
-@[expose]
 def presentation : GroupPresentation where
   generatorCount := 8
   expectedRelatorCount := 39
   transcribed := relatorList
+
+/-- The number of generators in the Thompson presentation. -/
+@[simp]
+theorem presentation_generatorCount : presentation.generatorCount = 8 := by
+  rw [presentation]
+
+/-- The expected number of relators in the Thompson presentation. -/
+@[simp]
+theorem presentation_expectedRelatorCount : presentation.expectedRelatorCount = 39 := by
+  rw [presentation]
+
+/-- The transcribed relators, transported along `presentation_generatorCount`.
+This is not `@[simp]` because `simp` cannot see through the cast; rewrite with it instead. -/
+theorem presentation_transcribed : presentation.transcribed = cast (by simp) relatorList := by
+  rfl
 
 /-! ### The transcription checks -/
 
@@ -375,7 +389,9 @@ terminates. Its value is that it checks the transcription against a published nu
 of `TauCeti.Sporadic.Thompson.matchesMetadata_presentation` do not see. -/
 theorem cosetTableColumns :
     generatorsWithSquareRelator.length +
-      2 * (presentation.generatorCount - generatorsWithSquareRelator.length) = 11 := rfl
+      2 * (presentation.generatorCount - generatorsWithSquareRelator.length) = 11 := by
+  rw [presentation_generatorCount, generatorsWithSquareRelator_eq]
+  decide
 
 /-! ### The letter counts of the compiled words -/
 

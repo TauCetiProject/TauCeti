@@ -37,9 +37,10 @@ Here the source uses `x^y = y^-1 x y`, and its decoder compiles an equality `x =
 `x^-1 y`. The Coxeter path contributes six square relations and fifteen pair relations, so the
 complete list has `21 + 8 = 29` relators.
 
-The row's body is sealed, so the equations below are what publish it: one per record field, and one
-spelling the compiled words out letter by letter. The proved metadata theorem checks the generator
-and relator counts, and two further decidable checks show that the compiled words contain `172`
+The row's body is sealed, so the equations below publish its generator count, expected relator
+count, and relator expressions, and spell the compiled words out letter by letter. Its docstring
+records the sources, generator convention, and transcription notes. The metadata theorem checks
+the relator count, and two further decidable checks show that the compiled words contain `172`
 signed letters and are cyclically reduced. GPL records no relator total or presentation length, so
 the figures `29` and `172` compare the compiler's output with the hand expansion of the path and
 eight auxiliary words, rather than with published figures. As a separate transcription check, GAP

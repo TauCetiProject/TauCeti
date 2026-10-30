@@ -499,9 +499,8 @@ def fi24PrimePresentation : GroupPresentation where
   expectedRelatorCount := 136
   transcribed := fi24PrimeRelators
 
-/-- The number of generators in the presentation of `Fi₂₄'`. The row's body is sealed, so this is
-what lets a
-consumer see that it is an eleven-generator presentation and what each index names. -/
+/-- The presentation of `Fi₂₄'` has eleven generators. Their names and order are documented in
+`fi24PrimePresentation`. -/
 @[simp]
 theorem fi24PrimePresentation_generatorCount : fi24PrimePresentation.generatorCount = 11 := by
   simp only [fi24PrimePresentation]

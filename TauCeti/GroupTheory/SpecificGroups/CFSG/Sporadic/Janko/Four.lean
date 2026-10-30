@@ -48,7 +48,8 @@ the roadmap does not cover `J₄`, so no cross-check against that development is
 
 An independent read-through used the bytes of the ATLAS Magma source `J4G2-P1.M` whose SHA-256
 digest is `0ed9ed620f24b22490d2cb32f202ecbeb422ff665b4614b9ad8c6a6d7b118135`. Its constructor
-`G<x,y,t>` fixes exactly the three-generator order published by `j4Presentation_generatorCount`.
+`G<x,y,t>` fixes the generator order documented for `j4Presentation`; the numeric count is
+`j4Presentation_generatorCount`.
 
 The first seven constructor entries are, one for one, the seven active `M₂₄`-presentation words
 on `x,y` displayed above. The remaining five entries extend them in this source order:
