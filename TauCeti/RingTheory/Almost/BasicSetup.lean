@@ -13,7 +13,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Submodule
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
-public import TauCeti.LinearAlgebra.TensorProduct.Torsion
+public import TauCeti.RingTheory.Ideal.TensorProduct
 
 /-!
 # Basic setups for almost mathematics
@@ -425,42 +425,6 @@ private noncomputable abbrev baseChangeIdealMap :
     W ⊗[V] S.ideal →ₗ[W] S.ideal.map (algebraMap V W) :=
   (Algebra.idealMap W S.ideal).liftBaseChange W
 
-private theorem baseChangeIdealMap_surjective : Function.Surjective (S.baseChangeIdealMap W) := by
-  let J := S.ideal.map (algebraMap V W)
-  have hle : J ≤ (LinearMap.range (S.baseChangeIdealMap W)).map J.subtype :=
-    Ideal.map_le_iff_le_comap.mpr fun a ha ↦
-      ⟨⟨algebraMap V W a, Ideal.mem_map_of_mem _ ha⟩, ⟨1 ⊗ₜ ⟨a, ha⟩, by ext; simp⟩, rfl⟩
-  intro y
-  obtain ⟨z, hz, hzy⟩ := hle y.2
-  obtain ⟨x, rfl⟩ := hz
-  exact ⟨x, Subtype.ext hzy⟩
-
-/-- The kernel of `W ⊗[V] m → mW` is killed by `mW`. -/
-private theorem isTorsionBySet_ker_baseChangeIdealMap :
-    Module.IsTorsionBySet W (LinearMap.ker (S.baseChangeIdealMap W))
-      (S.ideal.map (algebraMap V W)) := by
-  rw [Module.isTorsionBySet_iff_subset_annihilator, SetLike.coe_subset_coe,
-    Ideal.map_le_iff_le_comap]
-  intro ε hε
-  rw [Ideal.mem_comap, Module.mem_annihilator]
-  rintro ⟨k, hk⟩
-  -- `w ⊗ a ↦ w ⊗ (a ε) = (ε w) ⊗ a` factors multiplication by `ε` through `W ⊗[V] m → mW`.
-  have key : ∀ x : W ⊗[V] S.ideal, (S.baseChangeIdealMap W x : W) • (1 ⊗ₜ[V] ⟨ε, hε⟩) =
-      algebraMap V W ε • x := by
-    intro x
-    induction x using TensorProduct.inductionOn with
-    | tmul w a =>
-      simp only [LinearMap.liftBaseChange_tmul, SetLike.val_smul, Algebra.idealMap_apply_coe,
-        TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      rw [mul_comm, ← Algebra.smul_def, ← Algebra.smul_def, TensorProduct.smul_tmul,
-        TensorProduct.smul_tmul]
-      congr 1
-      ext; simp [mul_comm]
-    | add x y hx hy => simp only [map_add, Submodule.coe_add, add_smul, hx, hy, smul_add]
-  apply Subtype.ext
-  rw [Submodule.coe_smul, ← key, LinearMap.mem_ker.mp hk, Submodule.coe_zero, zero_smul,
-    Submodule.coe_zero]
-
 /-- `mW • (W ⊗[V] m) = W ⊗[V] m`. -/
 private theorem smul_top_baseChange_eq_top :
     S.ideal.map (algebraMap V W) • (⊤ : Submodule W (W ⊗[V] S.ideal)) = ⊤ := by
@@ -480,13 +444,13 @@ private theorem smul_top_baseChange_eq_top :
 `mW • (W ⊗[V] m) = W ⊗[V] m`. -/
 private theorem map_baseChangeIdealMap_bijective :
     Function.Bijective (TensorProduct.map (S.baseChangeIdealMap W) (S.baseChangeIdealMap W)) := by
-  have hπ := S.baseChangeIdealMap_surjective W
+  have hπ := Ideal.liftBaseChange_idealMap_surjective W S.ideal
   have hex := LinearMap.exact_subtype_ker_map (S.baseChangeIdealMap W)
   refine ⟨?_, TensorProduct.map_surjective hπ hπ⟩
   have := subsingleton_tensorProduct_of_isTorsionBySet_right (S.smul_top_baseChange_eq_top W)
-    (S.isTorsionBySet_ker_baseChangeIdealMap W)
+    (Ideal.isTorsionBySet_ker_liftBaseChange_idealMap W S.ideal)
   have := subsingleton_tensorProduct_of_isTorsionBySet_left
-    (S.isTorsionBySet_ker_baseChangeIdealMap W) (S.smul_top_baseChange_eq_top W)
+    (Ideal.isTorsionBySet_ker_liftBaseChange_idealMap W S.ideal) (S.smul_top_baseChange_eq_top W)
   refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
   have hx : x ∈ LinearMap.ker (TensorProduct.map (S.baseChangeIdealMap W)
       (S.baseChangeIdealMap W)) := hx
@@ -537,8 +501,8 @@ theorem baseChange_quotient_eq_zero : S.baseChange (V ⧸ S.ideal) = zero (V ⧸
 
 /-- Inverting an element of `m` makes the setup classical (Gabber–Ramero Remark 2.1.4(ii)); this
 includes `ε = 0`, where `V[1/ε] = 0`. -/
-theorem baseChange_away_eq_classical {ε : V} (hε : ε ∈ S.ideal) :
-    S.baseChange (Localization.Away ε) = classical (Localization.Away ε) := by
+theorem baseChange_away_eq_classical {ε : V} (hε : ε ∈ S.ideal) [IsLocalization.Away ε W] :
+    S.baseChange W = classical W := by
   ext1
   exact Ideal.eq_top_of_isUnit_mem _ (Ideal.mem_map_of_mem _ hε)
     (IsLocalization.Away.algebraMap_isUnit ε)

@@ -28,7 +28,9 @@ provided `I M ∩ J M = (I ⊓ J) M`.
 
 Along a flat ring map `R → S` the base change `S ⊗[R] I` is the extended ideal `I S`, so the
 fibres of `I` and `I S` at a field-valued point of `S` have the same dimension
-(`Ideal.finrank_tensor_map_of_flat`).
+(`Ideal.finrank_tensor_map_of_flat`). Without flatness, over a commutative `S`, the map
+`S ⊗[R] I → I S` is still surjective (`Ideal.liftBaseChange_idealMap_surjective`) and its kernel
+is killed by `I S` (`Ideal.isTorsionBySet_ker_liftBaseChange_idealMap`).
 -/
 
 public section
@@ -141,5 +143,49 @@ theorem finrank_tensor_map_of_flat [Module.Flat R S] (I : Ideal R) :
     LinearEquiv.ofInjective f hf ≪≫ₗ LinearEquiv.ofEq _ _ hrange
   rw [← (e.baseChange S F _ _).finrank_eq,
     (AlgebraTensorModule.cancelBaseChange R S F F I).finrank_eq]
+
+end Ideal
+
+namespace Ideal
+
+variable {R : Type*} (S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] (I : Ideal R)
+
+/-- The map `S ⊗[R] I → I S` induced by `I → I S` is surjective. -/
+theorem liftBaseChange_idealMap_surjective :
+    Function.Surjective ((Algebra.idealMap S I).liftBaseChange S) := by
+  let J := I.map (algebraMap R S)
+  have hle : J ≤ (LinearMap.range ((Algebra.idealMap S I).liftBaseChange S)).map J.subtype :=
+    map_le_iff_le_comap.mpr fun a ha ↦
+      ⟨⟨algebraMap R S a, mem_map_of_mem _ ha⟩, ⟨1 ⊗ₜ ⟨a, ha⟩, by ext; simp⟩, rfl⟩
+  intro y
+  obtain ⟨z, hz, hzy⟩ := hle y.2
+  obtain ⟨x, rfl⟩ := hz
+  exact ⟨x, Subtype.ext hzy⟩
+
+/-- The kernel of the surjection `S ⊗[R] I → I S` is killed by the extended ideal `I S`. -/
+theorem isTorsionBySet_ker_liftBaseChange_idealMap :
+    Module.IsTorsionBySet S (LinearMap.ker ((Algebra.idealMap S I).liftBaseChange S))
+      (I.map (algebraMap R S)) := by
+  rw [Module.isTorsionBySet_iff_subset_annihilator, SetLike.coe_subset_coe,
+    map_le_iff_le_comap]
+  intro ε hε
+  rw [mem_comap, Module.mem_annihilator]
+  rintro ⟨k, hk⟩
+  -- `s ⊗ a ↦ s ⊗ (a ε) = (ε s) ⊗ a` factors multiplication by `ε` through `S ⊗[R] I → I S`.
+  have key : ∀ x : S ⊗[R] I, ((Algebra.idealMap S I).liftBaseChange S x : S) •
+      (1 ⊗ₜ[R] ⟨ε, hε⟩) = algebraMap R S ε • x := by
+    intro x
+    induction x using TensorProduct.inductionOn with
+    | tmul w a =>
+      simp only [LinearMap.liftBaseChange_tmul, SetLike.val_smul, Algebra.idealMap_apply_coe,
+        TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+      rw [mul_comm, ← Algebra.smul_def, ← Algebra.smul_def, TensorProduct.smul_tmul,
+        TensorProduct.smul_tmul]
+      congr 1
+      ext; simp [mul_comm]
+    | add x y hx hy => simp only [map_add, Submodule.coe_add, add_smul, hx, hy, smul_add]
+  apply Subtype.ext
+  rw [Submodule.coe_smul, ← key, LinearMap.mem_ker.mp hk, Submodule.coe_zero, zero_smul,
+    Submodule.coe_zero]
 
 end Ideal
