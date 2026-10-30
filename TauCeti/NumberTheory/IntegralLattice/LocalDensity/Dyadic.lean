@@ -12,7 +12,7 @@ import Mathlib.LinearAlgebra.Matrix.Unique
 # Dyadic local densities in rank one and for the hyperbolic plane
 
 The bilinear congruence count gives density `4` for both the rank-one unit form and the
-hyperbolic plane over `ℤ_[2]`. Rescaling a rank-one form by a nonzero `a` gives density
+hyperbolic plane over `ℤ_[2]`. Rescaling the rank-one unit form by a nonzero `a` gives density
 `4 * 2 ^ a.valuation`, in particular density `8` for `⟨2⟩`.
 
 These values distinguish the bilinear congruence count from the count for the half-norm
