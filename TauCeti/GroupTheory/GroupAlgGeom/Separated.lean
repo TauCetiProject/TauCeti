@@ -68,17 +68,6 @@ variable {G H K X : Type*} [Group G] [Group H] [Group K] {ι : G →* H} {κ : G
 
 namespace GX
 
-/-- A surjective `G`-homomorphism `π : G[X] →* K` induces a `G`-isomorphism `G[X] ⧸ N → K` from
-the quotient by its kernel `N`. -/
-theorem exists_bijective_gHom_of_eq_ker (π : GHom (inl : G →* GX G X) κ)
-    (hπ : Function.Surjective π) {N : Subgroup (GX G X)} [N.Normal]
-    (hN : N = (π : GX G X →* K).ker) :
-    ∃ ψ : GHom (quotientCoeff N) κ, Function.Bijective ψ ∧
-      ∀ w : GX G X, ψ (w : GX G X ⧸ N) = π w := by
-  let e := QuotientGroup.liftEquiv N (φ := (π : GX G X →* K)) hπ hN
-  refine ⟨⟨e.toMonoidHom, fun g => ?_⟩, e.bijective, fun w => rfl⟩
-  simp [e]
-
 /-- A quotient `G[X] ⧸ N` is separated by `H` over `G` if and only if `N` is its own radical
 over `H`. -/
 theorem isSeparatedBy_quotientCoeff_iff (N : Subgroup (GX G X)) [N.Normal] :
@@ -89,9 +78,7 @@ theorem isSeparatedBy_quotientCoeff_iff (N : Subgroup (GX G X)) [N.Normal] :
     by_contra hwN
     obtain ⟨φ, hφ⟩ := h (w : GX G X ⧸ N) ((QuotientGroup.eq_one_iff w).not.2 hwN)
     have he := mem_Rad.1 hw _ (quotientHomEquiv ι N φ).2
-    rw [show (quotientHomEquiv ι N φ : X → H) = fun x => φ (inr (FreeGroup.of x) : GX G X) from
-      funext (quotientHomEquiv_apply_coe φ), eval_eq_comp_mk', MonoidHom.comp_apply,
-      QuotientGroup.mk'_apply] at he
+    rw [eval_quotientHomEquiv] at he
     exact hφ he
   · -- Conversely an element outside `N` lies outside the radical, so some solution sees it.
     obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
