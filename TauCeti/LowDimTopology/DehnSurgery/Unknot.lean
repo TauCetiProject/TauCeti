@@ -260,12 +260,12 @@ private theorem unknotExteriorTwist_exteriorBoundaryInclusion_prodShear (n : ℤ
     (q : Circle × Circle) :
     (unknotExteriorTwist n (isSolidTorusNeighborhood_unknotSolidTorus.exteriorBoundaryInclusion
         ((MonoidHom.prodShear (zpowGroupHom (-n))
-          (by simpa [zpowGroupHom] using continuous_zpow (G := Circle) (-n))).toHomeomorph q)) :
+          (continuous_zpowGroupHom (-n))).toHomeomorph q)) :
       sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) =
       unknotSolidTorus (SolidTorus.boundaryInclusion q) := by
   have htwist : SolidTorus.twist n (SolidTorus.boundaryInclusion
       ((MonoidHom.prodShear (zpowGroupHom (-n))
-        (by simpa [zpowGroupHom] using continuous_zpow (G := Circle) (-n))).toHomeomorph
+        (continuous_zpowGroupHom (-n))).toHomeomorph
           q).swap) =
       SolidTorus.boundaryInclusion q.swap := by
     rw [SolidTorus.twist_boundaryInclusion]
@@ -294,7 +294,7 @@ def unknotInvIntDehnFilling (n : ℤ) :
   isClosedEmbedding_solidTorusEmbedding :=
     isSolidTorusNeighborhood_unknotSolidTorus.isClosedEmbedding
   gluing := (MonoidHom.prodShear (zpowGroupHom (-n))
-    (by simpa [zpowGroupHom] using continuous_zpow (G := Circle) (-n))).toHomeomorph
+    (continuous_zpowGroupHom (-n))).toHomeomorph
   exteriorEmbedding_exteriorBoundaryInclusion q := by
     exact unknotExteriorTwist_exteriorBoundaryInclusion_prodShear n q
   range_union_range := by
@@ -341,7 +341,7 @@ theorem unknotInvIntDehnFilling_solidTorusEmbedding (n : ℤ) :
 theorem unknotInvIntDehnFilling_gluing (n : ℤ) :
     (unknotInvIntDehnFilling n).gluing =
       (MonoidHom.prodShear (zpowGroupHom (-n))
-        (by simpa [zpowGroupHom] using continuous_zpow (G := Circle) (-n))).toHomeomorph :=
+        (continuous_zpowGroupHom (-n))).toHomeomorph :=
   (rfl)
 
 end InvIntSurgery

@@ -92,7 +92,7 @@ theorem torusCurve_apply (p q : ℤ) (t : unitInterval) :
 /-- The shear carries the meridian curve `(1, 0)` to the `(1, -n)` curve. -/
 theorem prodShear_torusCurve (n : ℤ) (t : unitInterval) :
     (MonoidHom.prodShear (zpowGroupHom (-n))
-      (by simpa [zpowGroupHom] using continuous_zpow (G := Circle) (-n))).toHomeomorph
+      (continuous_zpowGroupHom (-n))).toHomeomorph
       (torusCurve 1 0 t) = torusCurve 1 (-n) t := by
   simp only [ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass,
     MonoidHom.prodShear_apply, zpowGroupHom_apply, torusCurve_apply]
