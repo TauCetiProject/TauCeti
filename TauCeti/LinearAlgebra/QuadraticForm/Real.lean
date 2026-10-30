@@ -91,6 +91,13 @@ theorem map_inv_sqrt_smul_eq_one {Q : QuadraticForm ℝ M} {v : M} (hpos : 0 < Q
     _ = (Q v)⁻¹ * Q v := by rw [hsquare]
     _ = 1 := inv_mul_cancel₀ hpos.ne'
 
+/-- Scaling a vector by the inverse square root of the absolute value of its quadratic value gives
+value `Q v / |Q v|`, which is `1`, `-1` or `0` according to the sign of `Q v`. -/
+theorem map_inv_sqrt_abs_smul (Q : QuadraticForm ℝ M) (v : M) :
+    Q ((√|Q v|)⁻¹ • v) = Q v / |Q v| := by
+  rw [QuadraticMap.map_smul, smul_eq_mul, ← mul_inv, Real.mul_self_sqrt (abs_nonneg _),
+    div_eq_inv_mul]
+
 end QuadraticMap
 
 namespace QuadraticForm
