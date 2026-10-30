@@ -90,17 +90,13 @@ theorem exists_notMem_smul_le_span_singleton_of_map_eq [IsNoetherianRing A] {P :
   obtain ⟨r₁, hr₁P, hr₁⟩ := key (q ⧸ Submodule.comap q.subtype (span {a})) <| by
     intro m
     obtain ⟨⟨b, hb⟩, rfl⟩ := Submodule.Quotient.mk_surjective _ m
-    obtain ⟨c, hc⟩ := mem_span_singleton'.mp (hq ▸ mem_map_of_mem (algebraMap A S) hb)
-    obtain ⟨⟨r, s⟩, rfl⟩ := IsLocalization.mk'_surjective P.primeCompl c
-    dsimp only at hc
-    have hrs : algebraMap A S (r * a) = algebraMap A S (s * b) := by
-      rw [map_mul, map_mul, ← hc, ← IsLocalization.mk'_spec' S r s]
-      ring
-    obtain ⟨u, hu⟩ := (IsLocalization.eq_iff_exists P.primeCompl S).mp hrs
-    refine ⟨u * s, P.primeCompl.mul_mem u.2 s.2, ?_⟩
-    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Submodule.mem_comap,
-      Submodule.subtype_apply, SetLike.val_smul, smul_eq_mul, mem_span_singleton']
-    exact ⟨u * r, by linear_combination hu⟩
+    have hb' := mem_map_of_mem (algebraMap A S) hb
+    rw [hq, ← Set.image_singleton, ← map_span,
+      IsLocalization.algebraMap_mem_map_algebraMap_iff P.primeCompl] at hb'
+    obtain ⟨u, hu, hub⟩ := hb'
+    refine ⟨u, hu, ?_⟩
+    rwa [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Submodule.mem_comap,
+      Submodule.subtype_apply, SetLike.val_smul, smul_eq_mul]
   -- Every element killed by `a` is killed by an element outside `P`.
   obtain ⟨r₂, hr₂P, hr₂⟩ := key (span {a}).annihilator <| by
     rintro ⟨b, hb⟩
