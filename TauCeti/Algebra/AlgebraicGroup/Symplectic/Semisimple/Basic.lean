@@ -26,7 +26,7 @@ representation identifies its defining ideal with the augmentation ideal.
 
 The argument is `HopfIdeal.eq_augmentation_of_isFaithful_of_isNormal_of_isSolvable_of_pow_eq_one`
 applied to the standard symplectic comodule, as in
-`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Semisimple` with the determinant replaced by the
+`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Semisimple.Basic` with the determinant replaced by the
 alternating form. Reducedness of the subgroup is needed: this does not assert triviality of the
 nonreduced connected central subgroup scheme `μ₂` in characteristic two. The rank-zero case,
 where the carrier of the standard representation is a singleton, is handled separately.
