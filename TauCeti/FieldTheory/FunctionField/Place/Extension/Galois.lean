@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
+public import TauCeti.Algebra.Algebra.Tower
 public import TauCeti.FieldTheory.FunctionField.Place.Equiv
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- `TauCeti.Place.restrict_surjective_of_finiteDimensional` is what makes the fibre of a place of a
