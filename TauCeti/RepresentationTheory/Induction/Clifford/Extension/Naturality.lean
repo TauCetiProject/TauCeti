@@ -230,18 +230,24 @@ theorem cliffordImplementersEquiv_kernelLift (e : A ≅ B) (d : (End A)ˣ) :
   · intro x
     simp only [cliffordImplementersEquiv_snd_apply, kernelLift_snd_apply,
       Units.coe_map, MulEquiv.coe_toMonoidHom]
-    exact (FDRep.Iso.conj_asHom_apply e _ x).symm
+    exact (FDRep.Iso.conj_apply_asHom_apply e _ x).symm
+
+/-- The Clifford isomorphism carries the inclusion of commutant units to the inclusion
+of conjugated commutant units. -/
+theorem inl_cliffordExtensionEquiv (e : A ≅ B) (d : (End A)ˣ) :
+    e.cliffordExtensionEquiv (inl A d) = inl B (Units.map e.conj.toMonoidHom d) := by
+  rw [inl_apply, inl_apply, cliffordExtensionEquiv_mk, cliffordImplementersEquiv_kernelLift]
 
 /-- Changing the representation intertwines the full commutant algebra actions. -/
 theorem conjAlgEquiv_commutantAction (e : A ≅ B) (c : Carrier A) (f : End A) :
-    e.conjAlgEquiv (R := k) (commutantAction c f) =
-      commutantAction (e.cliffordExtensionEquiv c) (e.conjAlgEquiv (R := k) f) := by
+    e.conjAlgEquiv k (commutantAction c f) =
+      commutantAction (e.cliffordExtensionEquiv c) (e.conjAlgEquiv k f) := by
   refine QuotientGroup.induction_on c fun p ↦ ?_
   simp only [cliffordExtensionEquiv_mk, commutantAction_mk]
   apply End.ext
   ext x
-  rw [FDRep.Iso.conjAlgEquiv_asHom_apply, implementerConj_apply, implementerConj_apply,
-    FDRep.Iso.conjAlgEquiv_asHom_apply]
+  rw [FDRep.Iso.conjAlgEquiv_apply_asHom_apply, implementerConj_apply, implementerConj_apply,
+    FDRep.Iso.conjAlgEquiv_apply_asHom_apply]
   simp
 
 end CategoryTheory.Iso

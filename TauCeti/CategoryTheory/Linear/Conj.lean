@@ -24,6 +24,7 @@ namespace CategoryTheory.Iso
 variable {R C : Type*} [CommSemiring R] [Category* C] [Preadditive C] [Linear R C]
   {X Y Z : C}
 
+variable (R) in
 /-- Conjugation by an isomorphism identifies endomorphism algebras in a linear category. -/
 def conjAlgEquiv (e : X ≅ Y) : End X ≃ₐ[R] End Y where
   __ := e.conj
@@ -33,30 +34,30 @@ def conjAlgEquiv (e : X ≅ Y) : End X ≃ₐ[R] End Y where
 /-- The underlying multiplicative equivalence is Mathlib's conjugation equivalence. -/
 @[simp]
 theorem conjAlgEquiv_toMulEquiv (e : X ≅ Y) :
-    (e.conjAlgEquiv (R := R)).toMulEquiv = e.conj := (rfl)
+    (e.conjAlgEquiv R).toMulEquiv = e.conj := (rfl)
 
 /-- The underlying morphism is conjugated by the specified isomorphism. -/
 @[simp]
-theorem conjAlgEquiv_asHom (e : X ≅ Y) (f : End X) :
-    (e.conjAlgEquiv (R := R) f).asHom = e.inv ≫ f.asHom ≫ e.hom := (rfl)
+theorem conjAlgEquiv_apply_asHom (e : X ≅ Y) (f : End X) :
+    (e.conjAlgEquiv R f).asHom = e.inv ≫ f.asHom ≫ e.hom := (rfl)
 
 /-- Conjugation by the identity is the identity algebra equivalence. -/
 @[simp]
-theorem refl_conjAlgEquiv : (Iso.refl X).conjAlgEquiv (R := R) = AlgEquiv.refl := by
+theorem refl_conjAlgEquiv : (Iso.refl X).conjAlgEquiv R = AlgEquiv.refl := by
   ext f
   simp
 
 /-- Conjugating successively agrees with conjugation by the composite. -/
 @[simp]
 theorem trans_conjAlgEquiv (e : X ≅ Y) (f : Y ≅ Z) :
-    (e ≪≫ f).conjAlgEquiv (R := R) = e.conjAlgEquiv.trans f.conjAlgEquiv := by
+    (e ≪≫ f).conjAlgEquiv R = (e.conjAlgEquiv R).trans (f.conjAlgEquiv R) := by
   ext g
   simp
 
 /-- Reversing the isomorphism reverses the induced algebra equivalence. -/
 @[simp]
 theorem symm_conjAlgEquiv (e : X ≅ Y) :
-    e.symm.conjAlgEquiv (R := R) = e.conjAlgEquiv.symm := by
+    e.symm.conjAlgEquiv R = (e.conjAlgEquiv R).symm := by
   ext f
   rfl
 
