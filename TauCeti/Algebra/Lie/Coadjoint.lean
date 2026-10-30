@@ -22,8 +22,10 @@ orbit through `ν`, and the injective map `[ξ] ↦ ⁅ξ, ν⁆` from `L ⧸ L_
 These names carry their geometric meaning only when `L` is the Lie algebra of a Lie group `G`
 whose coadjoint orbit through `ν` is a smooth homogeneous space `G / G_ν` (for instance a real
 finite-dimensional Lie group). In that case the coadjoint action is the derivative of
-`ν ↦ ν ∘ Ad_(g⁻¹)`, the tangent space of the orbit at `ν` is `L ⧸ L_ν`, and
-`coadjointTangentMap ν` is the derivative at the identity of the orbit map `g ↦ g · ν`.
+`ν ↦ ν ∘ Ad_(g⁻¹)`, the derivative at the identity of the orbit map `g ↦ g · ν` is `ξ ↦ ⁅ξ, ν⁆` on
+`L` with kernel `L_ν`, the tangent space of the orbit at `ν` is `L ⧸ L_ν`, and
+`coadjointTangentMap ν` is the map induced on this quotient: the derivative at the identity coset
+of the map `G / G_ν → L*`, `[g] ↦ g · ν`.
 
 The **Kirillov form** `B_ν(ξ, η) = ν ⁅ξ, η⁆` on `L` (`Module.Dual.kirillovForm ν`) is alternating,
 and its kernel is exactly the stabilizer `L_ν` (`Module.Dual.ker_kirillovForm`). It therefore
@@ -104,8 +106,9 @@ theorem ker_kirillovForm :
 
 /-- The algebraic orbit derivative `[ξ] ↦ ⁅ξ, ν⁆`, identifying the algebraic tangent model
 `L ⧸ L_ν` with the subspace `L · ν = {⁅ξ, ν⁆}` of `L*`. When `L` integrates to a Lie group `G` whose
-coadjoint orbit through `ν` is a smooth homogeneous space `G / G_ν`, this is the derivative at the
-identity of the orbit map `g ↦ Ad*_g ν`. -/
+coadjoint orbit through `ν` is a smooth homogeneous space `G / G_ν`, this is the map induced on
+`L ⧸ L_ν` by the derivative `ξ ↦ ⁅ξ, ν⁆` at the identity of the orbit map `g ↦ Ad*_g ν`, that is,
+the derivative at the identity coset of the map `G / G_ν → L*`, `[g] ↦ Ad*_g ν`. -/
 def coadjointTangentMap : (L ⧸ (lieAnnihilator R L ν).toSubmodule) →ₗ[R] Dual R L :=
   (lieAnnihilator R L ν).toSubmodule.liftQ
     ((LieModule.toEnd R L (Dual R L)).toLinearMap.flip ν)
