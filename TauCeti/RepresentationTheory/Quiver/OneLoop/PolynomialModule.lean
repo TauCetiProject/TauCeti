@@ -104,6 +104,8 @@ instance : (oneLoopPolynomialFunctor.{u, v} (k := k)).Full where
         simp [g, ← Module.AEval'.X_smul_of]
     refine ⟨h, ?_⟩
     ext x
+    -- At the unique vertex, liftNatTrans selects g, and AEval'.of and its inverse
+    -- are identity maps on the underlying carrier, so the two transports cancel.
     rfl
 
 end TauCeti.QuiverRep
