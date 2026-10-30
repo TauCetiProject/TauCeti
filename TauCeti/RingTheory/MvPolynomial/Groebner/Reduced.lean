@@ -6,24 +6,37 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Basic
+import Mathlib.Data.Finsupp.PWO
 
 /-!
-# Uniqueness of reduced monic Gröbner bases
+# Reduced monic Gröbner bases
 
 A reduced monic Gröbner basis contains no zero polynomial, all its elements are monic, and
 no monomial of any basis element is divisible by the leading monomial of another element.
 The restriction applies to the entire support, including the leading monomial.
 
-`MonomialOrder.IsReducedGroebnerBasis.eq` proves that two such bases of the same ideal are
-equal as sets. The proof first matches their minimal leading exponents, then uses cancellation
-of equal monic leading terms to identify the polynomials. Neither the variable type nor the
-bases need be finite. The coefficients may be any commutative ring, including a ring with
-zero divisors. This file proves uniqueness, not existence of a reduced basis.
+## Main results
+
+* `MonomialOrder.IsReducedGroebnerBasis.eq`: two reduced monic Gröbner bases of the same ideal
+  are equal as sets. The proof first matches their minimal leading exponents, then uses
+  cancellation of equal monic leading terms to identify the polynomials.
+* `MonomialOrder.IsGroebnerBasis.exists_isReducedGroebnerBasis`: an ideal with a Gröbner basis
+  whose nonzero members have unit leading coefficients has a reduced monic Gröbner basis. Its
+  elements are `X^a - r`, for `a` minimal for divisibility among the leading exponents of `I`
+  and `r` a remainder of `X^a`.
+* `MonomialOrder.existsUnique_isReducedGroebnerBasis`: over a field, every ideal has exactly
+  one reduced monic Gröbner basis.
+* `MonomialOrder.IsReducedGroebnerBasis.finite`: in finitely many variables a reduced monic
+  Gröbner basis is finite, by Dickson's lemma.
+
+Apart from finiteness, neither the variable type nor the bases need be finite. The coefficients
+may be any commutative ring, including a ring with zero divisors; only the field corollaries
+assume a field.
 
 ## References
 
 * D. Cox, J. Little, D. O'Shea, *Ideals, Varieties, and Algorithms*, Chapter 2, §7,
-  uniqueness of the reduced Gröbner basis.
+  Theorem 5: existence and uniqueness of the reduced Gröbner basis.
 -/
 
 public section
@@ -97,6 +110,16 @@ theorem IsReducedGroebnerBasis.eq_empty_iff (hG : m.IsReducedGroebnerBasis G I) 
     apply hG.ne_zero g hg
     simpa [h] using hG.isGroebnerBasis.subset hg
 
+/-- **Finiteness of reduced Gröbner bases.** In finitely many variables a reduced monic
+Gröbner basis is finite. -/
+theorem IsReducedGroebnerBasis.finite [Finite σ] (hG : m.IsReducedGroebnerBasis G I) :
+    G.Finite := by
+  have hinj : Set.InjOn m.degree G := fun _ hg _ hh hgh ↦ hG.eq_of_degree_le hh hg hgh.le
+  refine Set.Finite.of_finite_image ?_ hinj
+  refine WellQuasiOrderedLE.finite_of_isAntichain ?_
+  rintro _ ⟨g, hg, rfl⟩ _ ⟨h, hh, rfl⟩ hne hle
+  exact hne (congrArg m.degree (hG.eq_of_degree_le hh hg hle))
+
 end CommSemiring
 
 section CommRing
@@ -151,6 +174,87 @@ theorem IsReducedGroebnerBasis.eq_iff_ideal_eq (hG : m.IsReducedGroebnerBasis G 
   refine ⟨fun h ↦ ?_, fun h ↦ hG.eq (h ▸ hH)⟩
   rw [hG.isGroebnerBasis.ideal_eq_span, hH.isGroebnerBasis.ideal_eq_span, h]
 
+/-- If `r` is a remainder of `X^a` on division by a Gröbner basis of `I`, and `a` is the leading
+exponent of a nonzero element of `I`, then `X^a - r` is a nonzero monic element of `I` with
+leading exponent `a`. -/
+private theorem IsGroebnerBasis.monic_monomial_sub_of_isRemainder (h : m.IsGroebnerBasis G I)
+    {a : σ →₀ ℕ} {r : MvPolynomial σ R} (hr : m.IsRemainder (monomial a 1) G r)
+    {p : MvPolynomial σ R} (hp : p ∈ I) (hp0 : p ≠ 0) (hpa : m.degree p = a) :
+    monomial a 1 - r ∈ I ∧ monomial a 1 - r ≠ 0 ∧ m.degree (monomial a 1 - r) = a ∧
+      m.Monic (monomial a 1 - r) := by
+  classical
+  have hmem : monomial a 1 - r ∈ I := Ideal.span_le.2 h.subset hr.sub_mem_span
+  have hcoeff : (monomial a 1 - r).coeff a = 1 := by
+    have : a ∉ r.support := fun hc ↦ h.not_degree_le_of_isRemainder hr hc hp hp0 hpa.le
+    simp [notMem_support_iff.1 this]
+  have hne : monomial a 1 - r ≠ 0 := by
+    have : Nontrivial R := nontrivial_of_ne _ _ (m.leadingCoeff_ne_zero_iff.2 hp0)
+    exact fun h0 ↦ by simp [h0] at hcoeff
+  -- The leading monomial is not a monomial of `r`, so it is `a`.
+  have hdeg : m.degree (monomial a 1 - r) = a := by
+    rcases Finset.mem_union.1 (support_sub σ _ _ (m.degree_mem_support hne)) with hc | hc
+    · exact Finset.mem_singleton.1 (support_monomial_subset hc)
+    · exact absurd le_rfl (h.not_degree_le_of_isRemainder hr hc hmem hne)
+  exact ⟨hmem, hne, hdeg, by rw [Monic, leadingCoeff, hdeg, hcoeff]⟩
+
+/-- **Existence of the reduced monic Gröbner basis.** An ideal with a Gröbner basis whose
+nonzero members have unit leading coefficients has a reduced monic Gröbner basis.
+
+For each exponent `a` minimal, for divisibility, among the leading exponents of nonzero elements
+of `I`, the basis element is `X^a - r`, where `r` is a remainder of `X^a` on division by `G`. -/
+theorem IsGroebnerBasis.exists_isReducedGroebnerBasis (h : m.IsGroebnerBasis G I)
+    (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
+    ∃ H, m.IsReducedGroebnerBasis H I := by
+  classical
+  -- The leading exponents of the nonzero elements of `I`.
+  let D : Set (σ →₀ ℕ) := m.degree '' {p | p ∈ I ∧ p ≠ 0}
+  choose r hr using fun a : σ →₀ ℕ ↦ exists_isRemainder hG (monomial a (1 : R))
+  let red (a : σ →₀ ℕ) : MvPolynomial σ R := monomial a 1 - r a
+  have hred {a : σ →₀ ℕ} (ha : a ∈ D) :
+      red a ∈ I ∧ red a ≠ 0 ∧ m.degree (red a) = a ∧ m.Monic (red a) := by
+    obtain ⟨p, ⟨hp, hp0⟩, rfl⟩ := ha
+    exact h.monic_monomial_sub_of_isRemainder (hr _) hp hp0 rfl
+  refine ⟨red '' {a | Minimal (· ∈ D) a}, ⟨?_, ?_, ?_, ?_⟩⟩
+  · refine (isGroebnerBasis_iff_forall_exists_degree_le_degree ?_).2 ⟨?_, ?_⟩
+    · rintro _ ⟨a, ha, rfl⟩ -
+      rw [(hred ha.prop).2.2.2.leadingCoeff_eq_one]
+      exact isUnit_one
+    · rintro _ ⟨a, ha, rfl⟩
+      exact (hred ha.prop).1
+    · intro p hp hp0
+      obtain ⟨a, hap, ha⟩ := exists_minimal_le_of_wellFoundedLT (· ∈ D) (m.degree p)
+        ⟨p, ⟨hp, hp0⟩, rfl⟩
+      exact ⟨red a, ⟨a, ha, rfl⟩, (hred ha.prop).2.1, by rw [(hred ha.prop).2.2.1]; exact hap⟩
+  · rintro _ ⟨a, ha, rfl⟩
+    exact (hred ha.prop).2.1
+  · rintro _ ⟨a, ha, rfl⟩
+    exact (hred ha.prop).2.2.2
+  · rintro _ ⟨a, ha, rfl⟩ c hc _ ⟨b, hb, rfl⟩ hne hle
+    rw [(hred hb.prop).2.2.1] at hle
+    rcases Finset.mem_union.1 (support_sub σ _ _ hc) with hc | hc
+    · -- The other leading exponent divides `a`, so by minimality of `a` the two are equal.
+      rw [Finset.mem_singleton.1 (support_monomial_subset hc)] at hle
+      exact hne (congrArg red (le_antisymm hle (ha.le_of_le hb.prop hle)))
+    · obtain ⟨q, ⟨hq, hq0⟩, hqb⟩ := hb.prop
+      exact h.not_degree_le_of_isRemainder (hr a) hc hq hq0 (hqb ▸ hle)
+
 end CommRing
+
+section Field
+
+variable {k : Type*} [Field k]
+
+/-- Over a field, every ideal has a reduced monic Gröbner basis. -/
+theorem exists_isReducedGroebnerBasis (m : MonomialOrder σ) (I : Ideal (MvPolynomial σ k)) :
+    ∃ G, m.IsReducedGroebnerBasis G I :=
+  (isGroebnerBasis_self I).exists_isReducedGroebnerBasis fun _ _ hg ↦ m.isUnit_leadingCoeff.2 hg
+
+/-- Over a field, every ideal has exactly one reduced monic Gröbner basis. -/
+theorem existsUnique_isReducedGroebnerBasis (m : MonomialOrder σ)
+    (I : Ideal (MvPolynomial σ k)) : ∃! G, m.IsReducedGroebnerBasis G I :=
+  let ⟨G, hG⟩ := m.exists_isReducedGroebnerBasis I
+  ⟨G, hG, fun _ hH ↦ hH.eq hG⟩
+
+end Field
 
 end MonomialOrder

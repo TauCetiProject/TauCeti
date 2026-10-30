@@ -265,6 +265,14 @@ theorem IsGroebnerBasis.exists_degree_le_degree (h : m.IsGroebnerBasis G I)
   rw [m.support_leadingTerm' hp0]
   exact Finset.mem_singleton_self _
 
+/-- No monomial of a remainder on division by a Gröbner basis of `I` is divisible by the leading
+monomial of a nonzero element of `I`. -/
+theorem IsGroebnerBasis.not_degree_le_of_isRemainder (h : m.IsGroebnerBasis G I)
+    (hr : m.IsRemainder f G r) {c : σ →₀ ℕ} (hc : c ∈ r.support) {p : MvPolynomial σ R}
+    (hp : p ∈ I) (hp0 : p ≠ 0) : ¬ m.degree p ≤ c := fun hle ↦
+  let ⟨_, hg, hg0, hgp⟩ := h.exists_degree_le_degree hp hp0
+  hr.not_degree_le hc hg hg0 (hgp.trans hle)
+
 /-- A subset `G` of `I` whose nonzero members have unit leading coefficients is a Gröbner basis of
 `I` if and only if the leading monomial of every nonzero element of `I` is divisible by the
 leading monomial of a nonzero element of `G`. -/
