@@ -181,6 +181,7 @@ def extend [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x �
   fun y ↦ ∑ i, (hX.basis hx).equivFun u i • X i y
 
 /-- The constant-coefficient extension of `u` by a local frame takes the value `u` at `x`. -/
+@[simp]
 theorem extend_apply_self [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M}
     (hx : x ∈ U) (u : D x) : hX.extend hx u x = u := by
   have h := congrArg Subtype.val ((hX.basis hx).sum_repr u)
@@ -200,12 +201,14 @@ theorem contMDiffOn_extend [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {
   ContMDiffOn.sum_section fun i _ ↦ (hX.contMDiffOn i).const_smul_section
 
 /-- The constant-coefficient extension by a local frame is additive. -/
+@[simp]
 theorem extend_add [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U)
     (u u' : D x) : hX.extend hx (u + u') = hX.extend hx u + hX.extend hx u' := by
   funext y
   simp [extend, add_smul, Finset.sum_add_distrib]
 
 /-- The constant-coefficient extension by a local frame commutes with scalar multiplication. -/
+@[simp]
 theorem extend_smul [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U)
     (c : 𝕜) (u : D x) : hX.extend hx (c • u) = c • hX.extend hx u := by
   funext y
