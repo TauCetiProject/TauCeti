@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Commutant
-public import TauCeti.CategoryTheory.Linear.Conj
 
 /-!
 # Changing the representation in a Clifford extension
@@ -46,30 +45,18 @@ private noncomputable def implementersMap (e : A ≅ B) : implementers A →* im
       congrArg (FDRep.isoToLinearEquiv e)
         ((mem_implementers_iff A _).mp p.2 n ((FDRep.isoToLinearEquiv e).symm x))⟩
   map_one' := by
-    apply Subtype.ext
-    refine Prod.ext (by ext; rfl) ?_
-    ext x
-    simp
+    ext <;> simp
   map_mul' p q := by
-    apply Subtype.ext
-    refine Prod.ext (by ext; rfl) ?_
-    ext x
-    simp
+    ext <;> simp
 
 /-- Isomorphic normal-subgroup representations have isomorphic groups of implementing pairs. -/
 noncomputable def cliffordImplementersEquiv (e : A ≅ B) : implementers A ≃* implementers B where
   __ := implementersMap e
   invFun := implementersMap e.symm
   left_inv p := by
-    apply Subtype.ext
-    refine Prod.ext (by ext; rfl) ?_
-    ext x
-    simp [implementersMap]
+    ext <;> simp [implementersMap]
   right_inv p := by
-    apply Subtype.ext
-    refine Prod.ext (by ext; rfl) ?_
-    ext x
-    simp [implementersMap]
+    ext <;> simp [implementersMap]
 
 /-- Transport preserves the underlying inertia element. -/
 @[simp]
@@ -94,10 +81,7 @@ theorem refl_cliffordImplementersEquiv :
     (Iso.refl A).cliffordImplementersEquiv = MulEquiv.refl (implementers A) := by
   apply MulEquiv.ext
   intro p
-  apply Subtype.ext
-  refine Prod.ext (by ext; rfl) ?_
-  ext x
-  simp
+  ext <;> simp
 
 /-- Transport of implementing pairs respects composition of representation isomorphisms. -/
 @[simp]
@@ -106,10 +90,7 @@ theorem trans_cliffordImplementersEquiv (e : A ≅ B) (f : B ≅ C) :
       e.cliffordImplementersEquiv.trans f.cliffordImplementersEquiv := by
   apply MulEquiv.ext
   intro p
-  apply Subtype.ext
-  refine Prod.ext (by ext; rfl) ?_
-  ext x
-  simp
+  ext <;> simp
 
 /-- The inverse transport is given by the inverse representation isomorphism. -/
 @[simp]
@@ -123,11 +104,11 @@ theorem symm_cliffordImplementersEquiv (e : A ≅ B) :
 @[simp]
 theorem cliffordImplementersEquiv_diagonal (e : A ≅ B) (n : N) :
     e.cliffordImplementersEquiv (diagonal A n) = diagonal B n := by
-  apply Subtype.ext
-  refine Prod.ext (by ext; simp) ?_
-  ext x
-  simpa [cliffordImplementersEquiv_snd_apply] using
-    LinearMap.congr_fun (FDRep.Iso.conj_ρ e n) x |>.symm
+  apply implementers.ext
+  · simp
+  · intro x
+    simpa [cliffordImplementersEquiv_snd_apply] using
+      LinearMap.congr_fun (FDRep.Iso.conj_ρ e n) x |>.symm
 
 private theorem map_diagonal_range (e : A ≅ B) :
     (diagonal A).range.map e.cliffordImplementersEquiv = (diagonal B).range := by
@@ -153,7 +134,8 @@ theorem refl_cliffordEquiv : (Iso.refl A).cliffordEquiv = MulEquiv.refl (Carrier
   apply MulEquiv.ext
   intro c
   refine QuotientGroup.induction_on c fun p ↦ ?_
-  simp only [cliffordEquiv_mk, refl_cliffordImplementersEquiv]
+  simp only [cliffordEquiv_mk, refl_cliffordImplementersEquiv, MulEquiv.refl_apply]
+  -- The remaining constructors are the same quotient map, viewed in Carrier A and its definition.
   rfl
 
 /-- Clifford transport respects composition of representation isomorphisms. -/
@@ -165,6 +147,7 @@ theorem trans_cliffordEquiv (e : A ≅ B) (f : B ≅ C) :
   rw [MulEquiv.trans_apply]
   refine QuotientGroup.induction_on c fun p ↦ ?_
   simp only [cliffordEquiv_mk, trans_cliffordImplementersEquiv, MulEquiv.trans_apply]
+  -- Carrier C and its defining quotient have the same quotient constructor.
   rfl
 
 /-- The inverse representation isomorphism induces the inverse Clifford isomorphism. -/
@@ -183,7 +166,7 @@ noncomputable def cliffordQuotientEquiv (e : A ≅ B) :
   QuotientGroup.congr _ _ (MulEquiv.subgroupCongr (inertia_congr e)) (by
     rw [Subgroup.map_equiv_eq_comap_symm]
     ext t
-    rfl)
+    simp [Subgroup.mem_comap, Subgroup.mem_subgroupOf])
 
 /-- The induced inertia quotient map keeps the underlying group element. -/
 @[simp]
@@ -197,19 +180,21 @@ theorem rightHom_cliffordEquiv (e : A ≅ B) (c : Carrier A) :
     rightHom B (e.cliffordEquiv c) = e.cliffordQuotientEquiv (rightHom A c) := by
   refine QuotientGroup.induction_on c fun p ↦ ?_
   simp only [cliffordEquiv_mk, rightHom_mk, cliffordQuotientEquiv_mk]
-  rfl
+  apply congrArg QuotientGroup.mk
+  apply Subtype.ext
+  simp
 
 /-- Transport of a kernel unit agrees with conjugation of its equivariant endomorphism. -/
 @[simp]
 theorem cliffordImplementersEquiv_kernelLift (e : A ≅ B) (d : (End A)ˣ) :
     e.cliffordImplementersEquiv (kernelLift A d) =
       kernelLift B (Units.map e.conj.toMonoidHom d) := by
-  apply Subtype.ext
-  refine Prod.ext (by ext; simp) ?_
-  ext x
-  simp only [cliffordImplementersEquiv_snd_apply, kernelLift_snd_apply,
-    Units.coe_map, MulEquiv.coe_toMonoidHom]
-  exact (FDRep.Iso.conj_asHom_apply e _ x).symm
+  apply implementers.ext
+  · simp
+  · intro x
+    simp only [cliffordImplementersEquiv_snd_apply, kernelLift_snd_apply,
+      Units.coe_map, MulEquiv.coe_toMonoidHom]
+    exact (FDRep.Iso.conj_asHom_apply e _ x).symm
 
 /-- Changing the representation intertwines the full commutant algebra actions. -/
 theorem conjAlgEquiv_commutantAction (e : A ≅ B) (c : Carrier A) (f : End A) :
@@ -219,11 +204,8 @@ theorem conjAlgEquiv_commutantAction (e : A ≅ B) (c : Carrier A) (f : End A) :
   simp only [cliffordEquiv_mk, commutantAction_mk]
   apply End.ext
   ext x
-  have hc (g : End A) (y : B) :
-      (e.conjAlgEquiv (R := k) g).asHom.hom.hom.hom y =
-        FDRep.isoToLinearEquiv e (g.asHom.hom.hom.hom ((FDRep.isoToLinearEquiv e).symm y)) := by
-    rw [conjAlgEquiv_asHom, ← conj_apply_asHom, FDRep.Iso.conj_asHom_apply]
-  rw [hc, implementerConj_apply, implementerConj_apply, hc]
+  rw [FDRep.Iso.conjAlgEquiv_asHom_apply, implementerConj_apply, implementerConj_apply,
+    FDRep.Iso.conjAlgEquiv_asHom_apply]
   simp
 
 end CategoryTheory.Iso

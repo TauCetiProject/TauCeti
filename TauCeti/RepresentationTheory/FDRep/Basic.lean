@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Finiteness.Small
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Rep.Res
 public import TauCeti.RepresentationTheory.Subrepresentation
+public import TauCeti.CategoryTheory.Linear.Conj
 
 /-!
 # Finite-dimensional representations
@@ -483,6 +484,13 @@ theorem Iso.conj_asHom_apply {V W : FDRep R G} (i : V ≅ W) (f : End V) (w : W)
     (i.conj f).asHom.hom.hom.hom w =
       isoToLinearEquiv i (f.asHom.hom.hom.hom ((isoToLinearEquiv i).symm w)) :=
   (rfl)
+
+/-- Algebra conjugation of an endomorphism conjugates its underlying linear map. -/
+theorem Iso.conjAlgEquiv_asHom_apply {V W : FDRep R G} (i : V ≅ W) (f : End V) (w : W) :
+    (i.conjAlgEquiv (R := R) f).asHom.hom.hom.hom w =
+      isoToLinearEquiv i (f.asHom.hom.hom.hom ((isoToLinearEquiv i).symm w)) := by
+  rw [CategoryTheory.Iso.conjAlgEquiv_asHom, ← CategoryTheory.Iso.conj_apply_asHom,
+    Iso.conj_asHom_apply]
 
 end IsoToEquiv
 
