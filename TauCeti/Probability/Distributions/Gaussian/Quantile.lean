@@ -35,7 +35,7 @@ to `⊥` at level zero and to `⊤` at level one, while the zero-variance law ha
 * `TauCeti.Probability.quantile_gaussianReal` — the quantile of `gaussianReal m v`;
 * `TauCeti.Probability.quantile_gaussianReal_zero_one` — the standard Gaussian quantile;
 * `TauCeti.Probability.quantile_gaussianReal_eq_add_mul` — the affine form `m + √v * z(u)`;
-* `TauCeti.Probability.quantile_map_inner_multivariateGaussian` — the quantile of a real linear
+* `EuclideanSpace.quantile_map_inner_multivariateGaussian` — the quantile of a real linear
   projection of a multivariate Gaussian;
 * `TauCeti.Probability.tendsto_quantile_gaussianReal_nhdsGT_zero` and
   `TauCeti.Probability.tendsto_quantile_gaussianReal_nhdsLT_one` — the one-sided endpoint limits.
@@ -120,9 +120,13 @@ theorem tendsto_quantile_gaussianReal_nhdsLT_one (m : ℝ) (v : ℝ≥0) :
     exact ((Measure.lt_quantile_iff _
       ((cdf_nonneg (gaussianReal m v) b).trans_lt hu.1) hu.2).2 hu.1).le
 
-section Multivariate
+end TauCeti.Probability
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+namespace EuclideanSpace
+
+open TauCeti.Probability
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {u : ℝ}
 
 /-- The quantile of a real linear projection of a multivariate Gaussian is its directional mean
 plus its directional standard deviation times the standard Gaussian quantile. This includes
@@ -171,6 +175,4 @@ theorem tendsto_quantile_map_inner_multivariateGaussian_nhdsLT_one
     tendsto_quantile_gaussianReal_nhdsLT_one ⟪q, m⟫
       ⟪q, S.toEuclideanLin q⟫.toNNReal
 
-end Multivariate
-
-end TauCeti.Probability
+end EuclideanSpace

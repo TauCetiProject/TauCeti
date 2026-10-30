@@ -33,7 +33,9 @@ noncomputable section
 open Filter MeasureTheory ProbabilityTheory Real Set Topology
 open scoped Matrix NNReal
 
-namespace TauCeti.Probability
+namespace Matrix
+
+open TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
@@ -98,4 +100,4 @@ theorem tendsto_quantile_map_trace_transpose_mul_matrixNormalMeasure_nhdsLT_one
     tendsto_quantile_gaussianReal_nhdsLT_one (Tᵀ * M).trace
       (Tᵀ * U * T * V).trace.toNNReal
 
-end TauCeti.Probability
+end Matrix
