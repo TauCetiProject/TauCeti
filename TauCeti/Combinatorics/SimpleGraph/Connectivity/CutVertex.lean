@@ -7,12 +7,16 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.CutVertex
 
+import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
+
 /-!
 # Cut vertices of simple graphs
 
 A vertex of a simple graph is a cut vertex when deleting it separates two vertices that were
 previously connected. The predicate is defined through the native multigraph cut-vertex API for
-`Graph.ofSimpleGraph`.
+`Graph.ofSimpleGraph`, and `SimpleGraph.isCutVertex_iff_exists_forall_walk_mem_support` restates it
+with walks of the simple graph itself: a cut vertex lies on every walk between two other mutually
+reachable vertices.
 -/
 
 public section
@@ -35,6 +39,20 @@ def IsCutVertex (G : SimpleGraph V) (v : V) : Prop :=
 theorem isCutVertex_def (G : SimpleGraph V) (v : V) :
     G.IsCutVertex v ↔ (Graph.ofSimpleGraph G).IsCutVertex v :=
   Iff.rfl
+
+/-- A vertex is a cut vertex exactly when it lies on every walk between some two other vertices
+that are reachable from each other. -/
+theorem isCutVertex_iff_exists_forall_walk_mem_support {G : SimpleGraph V} {v : V} :
+    G.IsCutVertex v ↔
+      ∃ u w, u ≠ v ∧ w ≠ v ∧ G.Reachable u w ∧ ∀ p : G.Walk u w, v ∈ p.support := by
+  rw [isCutVertex_def, Graph.isCutVertex_def]
+  simp only [reachable_ofSimpleGraph_iff, Graph.reachable_deleteVerts_iff_exists_walk,
+    Set.mem_singleton_iff, not_exists, not_and, not_forall, not_not]
+  refine exists₂_congr fun u w ↦ and_congr_right fun _ ↦ and_congr_right fun _ ↦
+    and_congr_right fun _ ↦ ⟨fun h p ↦ ?_, fun h p _ ↦ ?_⟩
+  · obtain ⟨z, hz, rfl⟩ := h p.toGraph (by simp)
+    simpa using hz
+  · exact ⟨v, by simpa using h p.toSimpleGraph, rfl⟩
 
 /-- A graph induced on a singleton has no cut vertex. -/
 theorem not_isCutVertex_induce_singleton (G : SimpleGraph V) (v : V)

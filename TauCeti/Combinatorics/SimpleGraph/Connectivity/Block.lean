@@ -23,8 +23,17 @@ This file introduces the block predicate and its basic maximality API. It proves
 vertex, and both ends of every edge, lie in some block when the vertex type is finite. Distinct
 blocks meet in at most one vertex, so the block containing the endpoints of an edge is unique.
 
-The definition follows R. Diestel, *Graph Theory*, 5th ed., Graduate Texts in Mathematics 173,
-Springer, 2017, Section 3.1, with isolated vertices included as singleton blocks.
+Adding the vertices of a path between two vertices of a connected vertex set without cut vertices
+preserves the absence of cut vertices
+(`SimpleGraph.Walk.IsPath.not_isCutVertex_induce_union_support`).
+With maximality of blocks this shows that a vertex lying in two distinct blocks is a cut vertex.
+Conversely, in a finite graph a cut vertex lies in two distinct blocks, giving
+`SimpleGraph.isCutVertex_iff_exists_isBlock_ne`; a vertex that is not a cut vertex lies in exactly
+one block. These are the incidences of the block--cut forest.
+
+The definition and the cut-vertex characterization follow R. Diestel, *Graph Theory*, 5th ed.,
+Graduate Texts in Mathematics 173, Springer, 2017, Section 3.1, with isolated vertices included as
+singleton blocks.
 -/
 
 public section
@@ -141,8 +150,11 @@ theorem Adj.exists_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
 
 /-! ### Intersections and edge uniqueness -/
 
-private theorem IsBlock.exists_walk_avoiding (hB : G.IsBlock B)
-    {a z x : V} (ha : a ∈ B) (hz : z ∈ B) (hax : a ≠ x) (hzx : z ≠ x) :
+/-- In a connected induced graph without cut vertices, two vertices other than `x` are joined by a
+walk avoiding `x`. -/
+private theorem exists_walk_avoiding (hconn : (G.induce B).Connected)
+    (hcut : ∀ v, ¬(G.induce B).IsCutVertex v) {a z x : V} (ha : a ∈ B) (hz : z ∈ B)
+    (hax : a ≠ x) (hzx : z ≠ x) :
     ∃ p : (G.induce B).Walk ⟨a, ha⟩ ⟨z, hz⟩,
       ∀ y ∈ p.support, (y : V) ≠ x := by
   by_cases hx : x ∈ B
@@ -150,10 +162,10 @@ private theorem IsBlock.exists_walk_avoiding (hB : G.IsBlock B)
     let zB : B := ⟨z, hz⟩
     let xB : B := ⟨x, hx⟩
     have hreach : (Graph.ofSimpleGraph (G.induce B)).Reachable aB zB :=
-      (reachable_ofSimpleGraph_iff _ _ _).2 (hB.connected.preconnected aB zB)
+      (reachable_ofSimpleGraph_iff _ _ _).2 (hconn.preconnected aB zB)
     have hdel : ((Graph.ofSimpleGraph (G.induce B)).deleteVerts {xB}).Reachable aB zB := by
       by_contra hn
-      apply hB.not_isCutVertex xB
+      apply hcut xB
       rw [SimpleGraph.isCutVertex_def, Graph.isCutVertex_def]
       exact ⟨aB, zB, by simpa [aB, xB], by simpa [zB, xB], hreach, hn⟩
     obtain ⟨p, -, hp⟩ := Graph.reachable_deleteVerts_iff_exists_walk.mp hdel
@@ -163,7 +175,7 @@ private theorem IsBlock.exists_walk_avoiding (hB : G.IsBlock B)
     apply hyp
     simp only [Set.mem_singleton_iff]
     exact Subtype.ext hyx
-  · exact (hB.connected.preconnected ⟨a, ha⟩ ⟨z, hz⟩).elim fun p ↦
+  · exact (hconn.preconnected ⟨a, ha⟩ ⟨z, hz⟩).elim fun p ↦
       ⟨p, fun y _ hyx ↦ hx (hyx ▸ y.property)⟩
 
 private theorem IsBlock.not_isCutVertex_induce_union (hB : G.IsBlock B)
@@ -201,9 +213,9 @@ private theorem IsBlock.not_isCutVertex_induce_union (hB : G.IsBlock B)
       exact ⟨q, hq⟩
     have haU : a.1 ∈ B ∨ a.1 ∈ C := a.property
     rcases haU with haB | haC
-    · obtain ⟨p, hp⟩ := hB.exists_walk_avoiding haB hzB hax' hzx
+    · obtain ⟨p, hp⟩ := exists_walk_avoiding hB.connected hB.not_isCutVertex haB hzB hax' hzx
       exact map_avoiding Set.subset_union_left p hp
-    · obtain ⟨p, hp⟩ := hC.exists_walk_avoiding haC hzC hax' hzx
+    · obtain ⟨p, hp⟩ := exists_walk_avoiding hC.connected hC.not_isCutVertex haC hzC hax' hzx
       exact map_avoiding Set.subset_union_right p hp
   rw [SimpleGraph.isCutVertex_def, Graph.isCutVertex_def]
   rintro ⟨a, b, hax, hbx, -, hn⟩
@@ -252,5 +264,173 @@ theorem Adj.existsUnique_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
   rintro C ⟨hC, huvC⟩
   exact hC.eq_of_adj_mem hB h (huvC (by simp)) (huvC (by simp))
     (huvB (by simp)) (huvB (by simp))
+
+/-! ### Adding an ear -/
+
+/-- A version of `exists_walk_avoiding` producing a walk of `G` whose support stays in the vertex
+set. -/
+private theorem exists_walk_support_subset_avoiding (hconn : (G.induce B).Connected)
+    (hcut : ∀ v, ¬(G.induce B).IsCutVertex v) {a z x : V} (ha : a ∈ B) (hz : z ∈ B)
+    (hax : a ≠ x) (hzx : z ≠ x) :
+    ∃ p : G.Walk a z, ∀ y ∈ p.support, y ∈ B ∧ y ≠ x := by
+  obtain ⟨p, hp⟩ := exists_walk_avoiding hconn hcut ha hz hax hzx
+  have hq : ∀ y ∈ (p.map (Embedding.induce B).toHom).support, y ∈ B ∧ y ≠ x := by
+    intro y hy
+    simp only [Walk.support_map, List.mem_map] at hy
+    obtain ⟨y, hy, rfl⟩ := hy
+    exact ⟨y.property, hp y hy⟩
+  exact ⟨_, hq⟩
+
+/-- A vertex set induces a graph without cut vertices when, for each vertex `x`, any two other
+vertices of the set are joined by a walk of `G` inside the set avoiding `x`. -/
+private theorem not_isCutVertex_induce_of_exists_walk
+    (h : ∀ x ∈ B, ∀ a ∈ B, ∀ b ∈ B, a ≠ x → b ≠ x →
+      ∃ p : G.Walk a b, ∀ y ∈ p.support, y ∈ B ∧ y ≠ x) (x : B) :
+    ¬(G.induce B).IsCutVertex x := by
+  rw [isCutVertex_iff_exists_forall_walk_mem_support]
+  rintro ⟨a, b, hax, hbx, -, hall⟩
+  obtain ⟨p, hp⟩ := h x x.property a a.property b b.property
+    (fun h ↦ hax (Subtype.ext h)) (fun h ↦ hbx (Subtype.ext h))
+  have hx := hall (p.induce B fun y hy ↦ (hp y hy).1)
+  rw [Walk.support_induce, List.mem_attachWith] at hx
+  exact (hp x hx).2 rfl
+
+/-- **Adding an ear.** If a vertex set induces a connected graph without cut vertices, then adding
+the vertices of a path between two of its vertices gives a vertex set whose induced graph still
+has no cut vertex. -/
+theorem Walk.IsPath.not_isCutVertex_induce_union_support (hconn : (G.induce B).Connected)
+    (hcut : ∀ v, ¬(G.induce B).IsCutVertex v) {a b : V} {p : G.Walk a b} (hp : p.IsPath)
+    (ha : a ∈ B) (hb : b ∈ B) (x : ↑(B ∪ {y | y ∈ p.support})) :
+    ¬(G.induce (B ∪ {y | y ∈ p.support})).IsCutVertex x := by
+  apply not_isCutVertex_induce_of_exists_walk
+  intro x _
+  -- Each vertex other than `x` reaches a vertex of `B` other than `x` inside the union.
+  have hreach : ∀ c ∈ B ∪ {y | y ∈ p.support}, c ≠ x → ∃ z ∈ B, z ≠ x ∧
+      ∃ q : G.Walk c z, ∀ y ∈ q.support, y ∈ B ∪ {y | y ∈ p.support} ∧ y ≠ x := by
+    rintro c (hcB | hcp) hcx
+    · exact ⟨c, hcB, hcx, Walk.nil, by simp [hcB, hcx]⟩
+    · -- Split the path at `c`; since it is a path, `x` lies on at most one of the two pieces.
+      obtain ⟨q, r, -, -, hqr⟩ := hp.mem_support_iff_exists_append.mp hcp
+      have hsupp : ∀ y, y ∈ q.support ∨ y ∈ r.support → y ∈ B ∪ {y | y ∈ p.support} :=
+        fun y hy ↦ Or.inr (by rw [Set.mem_ofPred_eq, hqr, Walk.mem_support_append_iff]; exact hy)
+      by_cases hxq : x ∈ q.support
+      · have hxr : x ∉ r.support := fun hxr ↦
+          (hqr ▸ hp).ne_of_mem_support_of_append (Ne.symm hcx) hxq hxr rfl
+        refine ⟨b, hb, fun hbx ↦ hxr (hbx ▸ r.end_mem_support), r, fun y hy ↦
+          ⟨hsupp y (Or.inr hy), fun hyx ↦ hxr (hyx ▸ hy)⟩⟩
+      · refine ⟨a, ha, fun hax ↦ hxq (hax ▸ q.start_mem_support), q.reverse, fun y hy ↦ ?_⟩
+        rw [Walk.support_reverse, List.mem_reverse] at hy
+        exact ⟨hsupp y (Or.inl hy), fun hyx ↦ hxq (hyx ▸ hy)⟩
+  intro c hc d hd hcx hdx
+  obtain ⟨z, hzB, hzx, q, hq⟩ := hreach c hc hcx
+  obtain ⟨z', hz'B, hz'x, r, hr⟩ := hreach d hd hdx
+  obtain ⟨m, hm⟩ := exists_walk_support_subset_avoiding hconn hcut hzB hz'B hzx hz'x
+  refine ⟨(q.append m).append r.reverse, fun y hy ↦ ?_⟩
+  simp only [Walk.mem_support_append_iff, Walk.support_reverse, List.mem_reverse] at hy
+  rcases hy with (hy | hy) | hy
+  · exact hq y hy
+  · exact ⟨Or.inl (hm y hy).1, (hm y hy).2⟩
+  · exact hr y hy
+
+/-! ### Cut vertices and blocks -/
+
+/-- A vertex lying in two distinct blocks has a neighbour in the first of them. -/
+private theorem IsBlock.exists_adj_of_ne (hB : G.IsBlock B) (hC : G.IsBlock C) (hBC : B ≠ C)
+    (hvB : v ∈ B) (hvC : v ∈ C) : ∃ u ∈ B, G.Adj v u := by
+  -- A vertex of a block other than `v` yields a neighbour of `v` inside that block.
+  have hadj {D : Set V} (hD : G.IsBlock D) (hvD : v ∈ D) {d : V} (hdD : d ∈ D) (hdv : d ≠ v) :
+      ∃ u ∈ D, G.Adj v u := by
+    obtain ⟨p⟩ := hD.connected.preconnected ⟨v, hvD⟩ ⟨d, hdD⟩
+    have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ hdv (congrArg Subtype.val h).symm
+    exact ⟨p.snd, p.snd.property, induce_adj.1 (Walk.adj_snd hp)⟩
+  by_cases h : ∃ d ∈ B, d ≠ v
+  · obtain ⟨d, hdB, hdv⟩ := h
+    exact hadj hB hvB hdB hdv
+  · -- Otherwise `B = {v}`, so `v` is isolated and `C = {v}` as well.
+    simp only [not_exists, not_and, not_not] at h
+    have hBv : B = {v} := Set.eq_singleton_iff_unique_mem.2 ⟨hvB, h⟩
+    have hiso : G.IsIsolated v := (G.isBlock_singleton_iff_isIsolated v).1 (hBv ▸ hB)
+    refine (hBC ?_).elim
+    rw [hBv, eq_comm, Set.eq_singleton_iff_unique_mem]
+    refine ⟨hvC, fun c hcC ↦ by_contra fun hcv ↦ ?_⟩
+    obtain ⟨u, -, hvu⟩ := hadj hC hvC hcC hcv
+    exact hiso u hvu
+
+/-- A vertex lying in two distinct blocks is a cut vertex. -/
+theorem IsBlock.isCutVertex_of_ne (hB : G.IsBlock B) (hC : G.IsBlock C) (hBC : B ≠ C)
+    (hvB : v ∈ B) (hvC : v ∈ C) : G.IsCutVertex v := by
+  classical
+  obtain ⟨u, huB, hvu⟩ := hB.exists_adj_of_ne hC hBC hvB hvC
+  obtain ⟨w, hwC, hvw⟩ := hC.exists_adj_of_ne hB hBC.symm hvC hvB
+  rw [isCutVertex_iff_exists_forall_walk_mem_support]
+  refine ⟨u, w, hvu.ne', hvw.ne', hvu.symm.reachable.trans hvw.reachable, fun p ↦ ?_⟩
+  by_contra hvp
+  -- A path from `w` to `u` avoiding `v`, closed up by the edge `uv`, is an ear of `C`
+  -- containing `u`; maximality of `C` then puts `u` in `B ∩ C`.
+  have hvp' : v ∉ p.bypass.reverse.support := by
+    rw [Walk.support_reverse, List.mem_reverse]
+    exact fun h ↦ hvp (p.support_bypass_subset_support h)
+  let P := p.bypass.reverse.concat hvu.symm
+  have hP : P.IsPath := p.bypass_isPath.reverse.concat hvp' hvu.symm
+  have hconn : (G.induce (C ∪ {y | y ∈ P.support})).Connected :=
+    induce_union_connected hC.connected.preconnected P.connected_induce_support.preconnected
+      ⟨w, hwC, P.start_mem_support⟩
+  have hCP := hC.eq_of_subset hconn
+    (hP.not_isCutVertex_induce_union_support hC.connected hC.not_isCutVertex hwC hvC)
+    Set.subset_union_left
+  have huC : u ∈ C := hCP ▸ Or.inr (by simp [P, Walk.support_concat])
+  exact hvu.ne (hB.inter_subsingleton hC hBC ⟨hvB, hvC⟩ ⟨huB, huC⟩)
+
+/-- In a finite graph, a cut vertex lies in two distinct blocks. -/
+theorem IsCutVertex.exists_isBlock_ne [Finite V] (h : G.IsCutVertex v) :
+    ∃ B C, G.IsBlock B ∧ G.IsBlock C ∧ B ≠ C ∧ v ∈ B ∧ v ∈ C := by
+  classical
+  rw [isCutVertex_iff_exists_forall_walk_mem_support] at h
+  obtain ⟨u, w, huv, hwv, ⟨p⟩, hall⟩ := h
+  -- A vertex `c ≠ v` reaching `v` reaches a neighbour of `v` along a walk avoiding `v`.
+  have hnbr {c : V} (hc : G.Reachable c v) (hcv : c ≠ v) :
+      ∃ a, G.Adj a v ∧ ∃ q : G.Walk c a, v ∉ q.support := by
+    obtain ⟨p⟩ := hc
+    let S : Set V := {y | ∃ q : G.Walk c y, v ∉ q.support}
+    have hcS : c ∈ S := ⟨Walk.nil, by simpa using hcv.symm⟩
+    have hvS : v ∉ S := fun ⟨q, hq⟩ ↦ hq q.end_mem_support
+    obtain ⟨d, -, ⟨q, hq⟩, hd⟩ := p.exists_boundary_dart S hcS hvS
+    refine ⟨d.fst, ?_, q, hq⟩
+    by_cases hdv : d.snd = v
+    · exact hdv ▸ d.adj
+    · exact (hd ⟨q.concat d.adj, by simp [Walk.support_concat, hq, Ne.symm hdv]⟩).elim
+  obtain ⟨a, hav, qa, hqa⟩ := hnbr ⟨p.takeUntil v (hall p)⟩ huv
+  obtain ⟨b, hbv, qb, hqb⟩ := hnbr ⟨(p.dropUntil v (hall p)).reverse⟩ hwv
+  obtain ⟨B, hB, havB⟩ := hav.exists_isBlock_superset_pair
+  obtain ⟨C, hC, hbvC⟩ := hbv.exists_isBlock_superset_pair
+  refine ⟨B, C, hB, hC, fun hBC ↦ ?_, havB (by simp), hbvC (by simp)⟩
+  -- Inside a common block, `a` and `b` are joined avoiding `v`, so `u` reaches `w` avoiding `v`.
+  subst hBC
+  obtain ⟨r, hr⟩ := exists_walk_support_subset_avoiding hB.connected hB.not_isCutVertex
+    (havB (by simp)) (hbvC (by simp)) hav.ne hbv.ne
+  have hv := hall ((qa.append r).append qb.reverse)
+  simp only [Walk.mem_support_append_iff, Walk.support_reverse, List.mem_reverse] at hv
+  rcases hv with (hv | hv) | hv
+  · exact hqa hv
+  · exact (hr v hv).2 rfl
+  · exact hqb hv
+
+/-- **Cut vertices and blocks.** In a finite graph, a vertex is a cut vertex exactly when it lies
+in two distinct blocks. -/
+theorem isCutVertex_iff_exists_isBlock_ne [Finite V] :
+    G.IsCutVertex v ↔ ∃ B C, G.IsBlock B ∧ G.IsBlock C ∧ B ≠ C ∧ v ∈ B ∧ v ∈ C :=
+  ⟨IsCutVertex.exists_isBlock_ne, fun ⟨_, _, hB, hC, hBC, hvB, hvC⟩ ↦
+    hB.isCutVertex_of_ne hC hBC hvB hvC⟩
+
+/-- In a finite graph, a vertex is not a cut vertex exactly when it lies in a unique block. -/
+theorem not_isCutVertex_iff_existsUnique_isBlock_mem [Finite V] :
+    ¬G.IsCutVertex v ↔ ∃! B, G.IsBlock B ∧ v ∈ B := by
+  rw [isCutVertex_iff_exists_isBlock_ne]
+  constructor
+  · intro h
+    obtain ⟨B, hB, hvB⟩ := G.exists_isBlock_mem v
+    refine ⟨B, ⟨hB, hvB⟩, fun C ⟨hC, hvC⟩ ↦ by_contra fun hCB ↦ h ⟨C, B, hC, hB, hCB, hvC, hvB⟩⟩
+  · rintro ⟨B, -, huniq⟩ ⟨C, D, hC, hD, hCD, hvC, hvD⟩
+    exact hCD ((huniq C ⟨hC, hvC⟩).trans (huniq D ⟨hD, hvD⟩).symm)
 
 end SimpleGraph
