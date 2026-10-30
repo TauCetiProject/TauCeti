@@ -443,6 +443,7 @@ theorem depth_modelWithCornersEuclideanHalfSpace_le_one (x : M) : (𝓡∂ n).de
 
 /-- On a manifold modelled on the half-space `𝓡∂ n`, the points of depth `1` are exactly the
 boundary points; the others are the interior points, of depth `0`. -/
+@[simp]
 theorem depth_modelWithCornersEuclideanHalfSpace_eq_one_iff {x : M} :
     (𝓡∂ n).depth x = 1 ↔ (𝓡∂ n).IsBoundaryPoint x := by
   rw [← depth_pos_iff]
