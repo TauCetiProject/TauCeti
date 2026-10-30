@@ -11,8 +11,6 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Generation
 public import TauCeti.CategoryTheory.GrothendieckGroup.BoundedComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
 public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
-public import Mathlib.Order.SuccPred.Int
-public import Mathlib.Order.Interval.Finset.SuccPred
 
 /-!
 # Split `K₀` and the bounded homotopy category
@@ -123,20 +121,6 @@ private lemma toBoundedHomotopy_of (X : C) :
     toBoundedHomotopy C (of X) =
       TriangulatedK0.of ((HomotopyCategory.Bounded.singleFunctor C 0).obj X) := by
   simp [toBoundedHomotopy]
-
-/-- **Splitting off the top term of an Euler characteristic**: over an interval `[a, b + 1]`, the
-Euler characteristic of `K` is the signed class of its term in degree `b + 1` plus the Euler
-characteristic over `[a, b]` of its brutal truncation in degrees `≤ b`. -/
-private lemma eulerChar_Icc_add_one (K : CochainComplex C ℤ) {a b : ℤ} (hab : a ≤ b + 1) :
-    eulerChar K (Finset.Icc a (b + 1)) = ((b + 1).negOnePow : ℤ) • of (K.X (b + 1)) +
-      eulerChar (K.stupidTrunc (ComplexShape.embeddingUpIntLE b)) (Finset.Icc a b) := by
-  rw [← Order.succ_eq_add_one, ← Finset.insert_Icc_right_eq_Icc_succ (by simpa using hab),
-    eulerChar_insert K (by simp), Order.succ_eq_add_one, eulerChar_def, eulerChar_def]
-  congr 1
-  -- In degrees `≤ b` the truncation has the terms of `K`.
-  refine Finset.sum_congr rfl fun n hn ↦ ?_
-  have := K.isIso_πStupidTruncLE_f b (Finset.mem_Icc.1 hn).2
-  rw [of_congr (asIso ((K.πStupidTruncLE b).f n))]
 
 end SplitK0
 
