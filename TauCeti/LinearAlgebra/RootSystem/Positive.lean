@@ -74,6 +74,8 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`, and `RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support` says every
   coroot functional takes an integer value on a weight on which the simple ones do.
+* `RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone` says a member of `Q⁺` is nonnegative
+  at a point of the coweight space where every simple root is nonnegative.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
   nonnegative integer combination of the simple coroots, and
   `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
@@ -423,6 +425,17 @@ theorem _root_.RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support {x : 
   | smul z n _ hn =>
     obtain ⟨m, hm⟩ := hn
     exact ⟨z * m, by simp [hm]⟩
+
+omit [CharZero R] in
+variable {P b} in
+/-- An element of the positive root cone is nonnegative at a point where every simple root is
+nonnegative. -/
+theorem _root_.RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone [Preorder R]
+    [IsOrderedAddMonoid R] {x : N} (hx : ∀ i ∈ b.support, 0 ≤ P.root' i x) {v : M}
+    (hv : v ∈ posRootCone P b) : 0 ≤ P.toLinearMap v x := by
+  obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
+  simp only [map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
+  exact Finset.sum_nonneg fun i hi ↦ nsmul_nonneg (hx i hi) _
 
 /-- **The positive root cone is pointed**: the only member whose negative is again a member is
 zero. Expanding a member and its negative in the simple roots, the total coefficient vector is
