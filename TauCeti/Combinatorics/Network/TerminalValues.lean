@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Network.Hoffman
 public import TauCeti.Combinatorics.Network.MinimumCut.Residual
-import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.NormNum
 
 /-!
