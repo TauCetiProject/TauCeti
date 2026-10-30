@@ -31,7 +31,8 @@ degree-one invariant `e₁ = ∑ᵢ xᵢ` is a genuine invariant linear form, no
 conventions: it spans the invariant linear forms on `K[σ]`. When `n` is invertible in `K`, `K[σ]`
 is the direct sum of the fixed line spanned by `∑ᵢ i` and the trace-zero hyperplane `e₁ = 0`, on
 which `S_σ` acts by its reflection representation. That representation omits the trivial summand
-and its basic invariants have degrees `2, …, n` instead; it is not treated here.
+and its basic invariants have degrees `2, …, n` instead; see
+`TauCeti.RepresentationTheory.SymmetricAlgebra.Standard`.
 
 No hypothesis on `K` beyond commutativity is needed: the fundamental theorem holds over every
 commutative ring, including in characteristic dividing `n!`, where the group order is not
