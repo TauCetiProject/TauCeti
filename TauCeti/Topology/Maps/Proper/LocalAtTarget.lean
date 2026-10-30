@@ -57,8 +57,3 @@ theorem Continuous.isProperMap_of_locally (hf : Continuous f)
   have hcover : IsOpenCover V := IsOpenCover.of_sets (fun y ↦ (V y).isOpen)
     (iUnion_eq_univ_iff.2 fun y ↦ ⟨y, hy y⟩)
   exact (hcover.isProperMap_iff_restrictPreimage hf).2 hV
-
-/-- The domain of a proper map to a compact space is compact. No separation axiom is needed. -/
-theorem IsProperMap.compactSpace [CompactSpace Y] (hf : IsProperMap f) : CompactSpace X := by
-  refine ⟨?_⟩
-  simpa only [preimage_univ] using hf.isCompact_preimage (isCompact_univ : IsCompact (univ : Set Y))
