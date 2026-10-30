@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Polynomial.RingDivision
 import Mathlib.RingTheory.Coprime.Lemmas
+import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 
 /-!

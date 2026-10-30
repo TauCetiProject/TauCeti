@@ -28,8 +28,6 @@ partial-fraction expansion of a rational function with a pole of order `m` at `a
 ## Main results
 
 * `Polynomial.iteratedDeriv`: the iterated derivative of a polynomial function.
-* `Polynomial.prod_X_add_C_eq_pow_card_filter_mul_prod_filter_ne`: a product of linear factors
-  grouped according to whether their constant term equals a given value.
 * `Polynomial.X_sub_C_pow_dvd_sub_sum_iteratedDeriv_mul`: `(X - a) ^ m` divides `P - T * Q`,
   where `T` is the order-`m` Taylor polynomial of `P / Q` at `a`.
 -/
@@ -39,28 +37,6 @@ public section
 open Finset Nat
 
 namespace Polynomial
-
-noncomputable section ProductGrouping
-
-variable {R : Type*} [CommSemiring R] {ι : Type*} [Fintype ι]
-
-/-- A local classical equality decision used to group the constant terms. -/
-local instance instDecidableEqProductGrouping : DecidableEq R := Classical.decEq R
-
-/-- The product of the linear factors whose constant term equals `a` is the corresponding power
-of `X + C a`. -/
-theorem pow_card_filter_eq_prod_X_add_C (f : ι → R) (a : R) :
-    (X + C a) ^ #{i | f i = a} = ∏ i with f i = a, (X + C (f i)) := by
-  rw [← prod_const]
-  exact prod_congr rfl fun i hi ↦ by rw [(mem_filter.1 hi).2]
-
-/-- Group a product of linear factors according to whether their constant term equals `a`. -/
-theorem prod_X_add_C_eq_pow_card_filter_mul_prod_filter_ne (f : ι → R) (a : R) :
-    ∏ i, (X + C (f i)) =
-      (X + C a) ^ #{i | f i = a} * ∏ i with f i ≠ a, (X + C (f i)) := by
-  rw [pow_card_filter_eq_prod_X_add_C, prod_filter_mul_prod_filter_not]
-
-end ProductGrouping
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
