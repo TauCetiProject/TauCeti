@@ -29,6 +29,8 @@ relative spectra over `Y` and over `X` are related under base change, is natural
   algebras `q_* 𝒪_W ⟶ p_* 𝒪_V` induced by `g : V ⟶ W` with `h : g ≫ q = p`;
 * `AlgebraicGeometry.Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply`: on
   sections over `U`, it is the map `Γ(W, q⁻¹ U) ⟶ Γ(V, p⁻¹ U)` induced by `g`;
+* `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_sectionsAlgHom`:
+  on global sections, it is `g.appTop : Γ(W, ⊤) ⟶ Γ(V, ⊤)`;
 * `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_id` and
   `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_comp`: functoriality;
 * `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_hom_naturality`: the
@@ -98,6 +100,21 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.sectionsAlgHom_pushforwardStructureAlg
   -- restriction `Γ(V, (g ≫ q)⁻¹ U) ⟶ Γ(V, p⁻¹ U)` of the structure sheaf, and
   -- `unitToPushforwardObjUnit` is `g.app (q⁻¹ U)`; their composite is `appLE` by definition.
   rfl
+
+/-- On global sections, the morphism of function algebras induced by `g : V ⟶ W` over `X` is the
+pullback `Γ(W, ⊤) ⟶ Γ(V, ⊤)` of global functions along `g`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_sectionsAlgHom
+    (g : V ⟶ W) (h : g ≫ q = p) (x : Γ(q.pushforwardStructureAlgebra.X, ⊤)) :
+    p.pushforwardStructureAlgebraΓRingEquiv.symm
+        (CommMon.sectionsAlgHom (Scheme.Hom.pushforwardStructureAlgebraMap g h) ⊤ x) =
+      g.appTop (q.pushforwardStructureAlgebraΓRingEquiv.symm x) := by
+  subst h
+  rw [Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply,
+    Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply,
+    Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply, RingEquiv.apply_symm_apply,
+    ← CommRingCat.comp_apply, Scheme.Hom.appLE_map, Scheme.Hom.appLE, CommRingCat.comp_apply]
+  exact (ConcreteCategory.congr_hom
+    (g.naturality (homOfLE (by simp : (⊤ : W.Opens) ≤ q ⁻¹ᵁ ⊤)).op) _).symm
 
 /-- The identity of a scheme over `X` induces the identity of its function algebra. -/
 @[simp]
