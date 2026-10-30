@@ -221,8 +221,7 @@ of `x` under `φ`. -/
 theorem mk_mem_range_closedOrbit_iff {t : ℝ} {y : M} :
     mk φ t y ∈ range (closedOrbit φ h) ↔ ∃ j : ℕ, (⇑φ)^[j] x = y := by
   have hd : 0 < d := Nat.cast_pos.1 (Fact.out : (0 : ℝ) < d)
-  change y ∈ mk φ t ⁻¹' range (closedOrbit φ h) ↔ _
-  rw [mk_preimage_range_closedOrbit h hd]
+  rw [← Set.mem_preimage, mk_preimage_range_closedOrbit h hd]
   constructor
   · rintro ⟨j, -, rfl⟩
     exact ⟨j, rfl⟩
@@ -327,6 +326,19 @@ theorem injective_mfderiv_closedOrbit (hn : n ≠ 0) (θ : AddCircle (d : ℝ)) 
     mfderiv_proj_comp_mfderiv_closedOrbit h hn θ] at hvw'
   exact hvw'
 
+/-- The closed orbit is an immersion at every point: the differential of the projection to the
+circle is a continuous linear left inverse of its differential. This holds for `C^n` Banach
+manifolds `M` with `1 ≤ n`, with no finite-dimensionality assumption. -/
+theorem isImmersionAt_closedOrbit [CompleteSpace E] [I.Boundaryless] (hn : 1 ≤ n)
+    (θ : AddCircle (d : ℝ)) :
+    IsImmersionAt 𝓘(ℝ) (𝓘(ℝ).prod I) n (closedOrbit φ h) θ := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  refine (contMDiff_closedOrbit h).contMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv
+    isOpen_univ (mem_univ θ) hn ?_
+  -- Both tangent spaces of the circle are `ℝ`, read in the charts of the circle.
+  exact ⟨(mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (closedOrbit φ h θ) : ℝ × E →L[ℝ] ℝ),
+    fun c ↦ congrArg (fun L ↦ L c) (mfderiv_proj_comp_mfderiv_closedOrbit h hn0 θ)⟩
+
 variable [I.Boundaryless] [FiniteDimensional ℝ E]
 
 /-- The closed orbit is an immersion of the circle, for every positive period `d`. -/
@@ -378,24 +390,6 @@ theorem mfderiv_closedOrbit (θ : AddCircle (d : ℝ)) :
     mfderiv 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ hx) θ =
       (1 : ℝ →L[ℝ] ℝ).smulRight (timeVectorField φ (closedOrbit φ hx θ)) :=
   (hasMFDerivAt_closedOrbit hx θ).mfderiv
-
-/-- The closed orbit is an immersion at every point: the differential of the projection to the
-circle is a continuous linear left inverse of its differential. This holds for Banach manifolds
-`M`, with no finite-dimensionality assumption. -/
-theorem isImmersionAt_closedOrbit [CompleteSpace E] [I.Boundaryless] (θ : AddCircle (d : ℝ)) :
-    IsImmersionAt 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ (closedOrbit φ hx) θ := by
-  refine (contMDiff_closedOrbit hx).contMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv
-    isOpen_univ (mem_univ θ) (by simp) ?_
-  rw [mfderiv_closedOrbit]
-  -- The differential of the projection sends `c • T` to `c`.
-  have key : ∀ c : ℝ, mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (closedOrbit φ hx θ)
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (timeVectorField φ (closedOrbit φ hx θ)) c) = c := fun c ↦ by
-    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, map_smul,
-      mfderiv_proj_timeVectorField]
-    -- The tangent space of the circle is `ℝ`, so `c • 1` is the product `c * 1`.
-    exact mul_one c
-  -- Both tangent spaces of the circle are `ℝ`, read in the charts of the circle.
-  exact ⟨(mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (closedOrbit φ hx θ) : ℝ × E →L[ℝ] ℝ), key⟩
 
 end VectorField
 
