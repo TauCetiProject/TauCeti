@@ -16,9 +16,8 @@ to be scalar-linear. It imposes no linear structure on the auxiliary categories 
 pseudofunctor. Thus it constrains the actual fiber transport, not a choice of presentation.
 
 A strong transformation between the normalized transport pseudofunctors, with scalar-linear
-component equivalences, preserves and reflects this condition. This applies in particular to
-an equivariant comparison; no additional equivariance assumption is needed for scalar linearity.
-Pullback along a functor of parameter categories also preserves linearity.
+component equivalences, preserves and reflects this condition. Pullback along a functor of
+parameter categories also preserves linearity.
 
 The underlying coherent transport and fiber comparisons are those of
 `EquivariantGroupoidLift`; no new coherence data or choices of inverse equivalences are added.
@@ -56,6 +55,12 @@ attribute [instance] IsLinear.linear_transport
 
 variable (L : EquivariantGroupoidLift Γ actions)
 
+/-- Transport along a parameter isomorphism is a scalar-linear equivalence. -/
+instance linear_transportEquivalence_functor [IsLinear R L] {p q : Γ} (g : p ≅ q) :
+    (L.transportEquivalence g).functor.Linear R := by
+  rw [transportEquivalence_functor]
+  infer_instance
+
 /-- A lift is scalar-linear precisely when all its actual fiber transport functors are. -/
 lemma isLinear_iff : IsLinear R L ↔ ∀ (p q : Γ) (g : p ⟶ q), (L.transport g).Linear R :=
   ⟨fun _ _ _ _ => inferInstance, fun h => ⟨fun g => h _ _ g⟩⟩
@@ -79,8 +84,8 @@ lemma linear_transport_iff_jointMap {p q : Γ} (g : p ⟶ q) :
       Functor.associator _ _ _
   exact (Functor.linear_iff_of_comp_iso R _ _ _ _ e).symm
 
-/-- A scalar-linear joint presentation constructs a scalar-linear lift, and conversely,
-provided that the chosen fiber comparisons themselves are scalar-linear. -/
+/-- If the joint fibers are scalar-linear and the fiber comparisons are scalar-linear
+functors, `L` is scalar-linear if and only if every `jointMap` is. -/
 lemma isLinear_iff_jointMap : IsLinear R L ↔
     ∀ (p q : Γ) (g : p ⟶ q), (L.jointMap g).Linear R := by
   simp only [isLinear_iff]
@@ -103,9 +108,8 @@ variable {actions' : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
     (η.app ⟨p⟩).toFunctor).IsEquivalence]
 
 include η in
-/-- A scalar-linear fiberwise equivalence of normalized transport pseudofunctors preserves
-and reflects linearity along each parameter arrow. Strong naturality supplies the comparison
-square; its mixed equivariance conditions are not needed for this conclusion. -/
+/-- A strong transformation of normalized transport pseudofunctors whose components are
+scalar-linear equivalences preserves and reflects linearity along each parameter arrow. -/
 lemma linear_transport_iff_of_strongTrans {p q : Γ} (g : p ⟶ q) :
     (L.transport g).Linear R ↔ (L'.transport g).Linear R := by
   -- The native `Cat` naturality cell has the required endpoints after converting its
@@ -117,9 +121,8 @@ lemma linear_transport_iff_of_strongTrans {p q : Γ} (g : p ⟶ q) :
   exact Functor.linear_iff_of_comp_iso R _ _ U V e
 
 include η in
-/-- Scalar linearity of coherent fiber transport is invariant under a strong comparison
-whose components are scalar-linear equivalences. In particular it is invariant under linear
-equivariant equivalence of the transport data. -/
+/-- Scalar linearity of coherent fiber transport is invariant under a strong transformation
+of normalized transport pseudofunctors whose components are scalar-linear equivalences. -/
 lemma isLinear_iff_of_strongTrans : IsLinear R L ↔ IsLinear R L' := by
   simp only [isLinear_iff]
   exact forall_congr' fun p => forall_congr' fun q => forall_congr' fun g =>
