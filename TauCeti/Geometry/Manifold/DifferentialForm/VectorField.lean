@@ -20,6 +20,11 @@ vector fields as an alternating sum of directional derivatives and a sum of Lie-
 It is useful when the fields are adapted to a distribution rather than to a coordinate chart.
 The within-set statements also apply at boundary and corner points.
 
+For vector fields `V` and `W` tangent to the kernel of a real one-form `α` near `x`, the formula
+reduces to `α_x ([V, W]_x) = -dα_x (V_x, W_x)`
+(`TauCeti.RoughForm.apply_mlieBracket_eq_neg_mextDeriv`), so the bracket stays in the kernel
+exactly when `dα` vanishes on the fields (`TauCeti.RoughForm.mlieBracket_mem_ker_iff`).
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition 14.29 and
@@ -197,6 +202,45 @@ theorem mextDeriv_apply_one {φ : RoughForm I M F 1}
   simpa only [mextDerivWithin_univ, mvfderivWithin_univ, mlieBracketWithin_univ] using
     mextDerivWithin_apply_one hφ.mdifferentiableWithinAt hV.mdifferentiableWithinAt
       hW.mdifferentiableWithinAt (uniqueMDiffWithinAt_univ I)
+
+section Kernel
+
+variable {α : RoughForm I M ℝ 1} {V W : (y : M) → TangentSpace I y}
+
+namespace RoughForm
+
+/-- **Cartan's formula for the Levi form.** For vector fields `V` and `W` tangent to the kernel of
+a one-form `α` near `x`, `α_x ([V, W]_x) = -dα_x (V_x, W_x)`. -/
+theorem apply_mlieBracket_eq_neg_mextDeriv
+    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
+    (hVα : ∀ᶠ y in 𝓝 x, V y ∈ α.ker y) (hWα : ∀ᶠ y in 𝓝 x, W y ∈ α.ker y) :
+    α x ![mlieBracket I V W x] = -mextDeriv α x ![V x, W x] := by
+  have hzero {U : (y : M) → TangentSpace I y} (hU : ∀ᶠ y in 𝓝 x, U y ∈ α.ker y) :
+      mvfderiv I (fun y ↦ α y ![U y]) x = 0 := by
+    have hU' : (fun y ↦ α y ![U y]) =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
+      filter_upwards [hU] with y hy using mem_ker.mp hy
+    ext v
+    simp [mvfderiv, hU'.mfderiv_eq]
+  rw [mextDeriv_apply_one hα hV hW, hzero hVα, hzero hWα]
+  simp
+
+/-- For vector fields `V` and `W` tangent to the kernel of a one-form `α` near `x`, the bracket
+`[V, W]_x` lies in `ker α_x` exactly when `dα_x (V_x, W_x) = 0`. -/
+theorem mlieBracket_mem_ker_iff
+    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
+    (hVα : ∀ᶠ y in 𝓝 x, V y ∈ α.ker y) (hWα : ∀ᶠ y in 𝓝 x, W y ∈ α.ker y) :
+    mlieBracket I V W x ∈ α.ker x ↔ mextDeriv α x ![V x, W x] = 0 := by
+  rw [mem_ker, apply_mlieBracket_eq_neg_mextDeriv hα hV hW hVα hWα, neg_eq_zero]
+
+end RoughForm
+
+end Kernel
 
 namespace SmoothForm
 

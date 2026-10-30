@@ -19,8 +19,11 @@ division. Conversely, `washnitzerAlgebra.optionC` views an overconvergent series
 `Option σ` that is constant in `Y`; along it, `washnitzerAlgebra.polynomialToOption` evaluates
 polynomials over the coefficient ring at `Y`. No claim is made that an arbitrary series of
 overconvergent coefficients is itself overconvergent: the coefficients must satisfy a common
-radius bound. The split polyradius `splitRadius r ρ`, with radius `r` in `Y` and `ρ` elsewhere,
-is the unequal-radius setting in which overconvergent preparation and division are carried out.
+radius bound. The split polyradius `MvPowerSeries.splitRadius r ρ`, with radius `r` in `Y` and
+`ρ` elsewhere, is the unequal-radius setting in which overconvergent preparation and division
+are carried out. By `MvPowerSeries.isRestricted_of_map_subtype_eq_optionEquivLeft`, separating `Y`
+in a series restricted at `r` gives a series in `Y` restricted at `r` over the series restricted
+at `ρ ≤ r`.
 
 ## References
 
@@ -57,27 +60,6 @@ theorem optionEquivLeft_symm_C_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
   have hg : (g : MvPowerSeries (Option σ) R) = (optionEquivLeft σ R).symm (PowerSeries.C f) := by
     simp [g]
   exact hg ▸ g.2
-
-/-- The split polyradius on `Option σ`: radius `r` in the separated variable `Y = X none` and
-radius `ρ` in the remaining variables. -/
-abbrev splitRadius (r ρ : ℝ) : Option σ → ℝ
-  | none => r
-  | some _ => ρ
-
-/-- For `ρ ≤ r`, the split polyradius is bounded below by `ρ`. -/
-theorem le_splitRadius {r ρ : ℝ} (h : ρ ≤ r) : ∀ i : Option σ, ρ ≤ splitRadius r ρ i
-  | none => h
-  | some _ => le_rfl
-
-/-- For `ρ ≤ r`, the split polyradius is bounded above by `r`. -/
-theorem splitRadius_le {r ρ : ℝ} (h : ρ ≤ r) : ∀ i : Option σ, splitRadius r ρ i ≤ r
-  | none => le_rfl
-  | some _ => h
-
-/-- For `0 < ρ ≤ r`, the split polyradius is positive. -/
-theorem splitRadius_pos {r ρ : ℝ} (hρ : 0 < ρ) (h : ρ ≤ r) (i : Option σ) :
-    0 < splitRadius r ρ i :=
-  hρ.trans_le (le_splitRadius h i)
 
 namespace washnitzerAlgebra
 

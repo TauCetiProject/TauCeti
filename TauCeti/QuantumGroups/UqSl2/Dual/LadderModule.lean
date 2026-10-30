@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.QuantumGroups.UqSl2.Dual.Basic
-public import TauCeti.QuantumGroups.UqSl2.LadderModule
+public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 
 /-!
 # Contragredients of the signed ladder modules
