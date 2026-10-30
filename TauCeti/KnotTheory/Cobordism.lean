@@ -212,7 +212,7 @@ one copy of `ℚ`. -/
 theorem genus_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
     (ofConcordance F).genus = 0 := by
   -- The cylinder `S¹ × ℝ` is homotopy equivalent to the one-circle torus `Unit → S¹`.
-  obtain ⟨e⟩ := ContractibleSpace.prod_hequiv_left Circle ℝ
+  let e := ContinuousMap.HomotopyEquiv.prodContractible Circle ℝ
   have h := ((e.trans (Homeomorph.ulift.symm.trans
       (Homeomorph.funUnique Unit (ULift.{0} Circle)).symm).toHomotopyEquiv).singularHomologyIso
     (ModuleCat.of ℚ ℚ) 1).toLinearEquiv.finrank_eq

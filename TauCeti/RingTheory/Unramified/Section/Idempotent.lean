@@ -42,13 +42,11 @@ theorem exists_isIdempotentElem_ker_eq_span [Algebra.EssFiniteType R S]
   obtain ⟨d, hd, hker⟩ := exists_isIdempotentElem_ker_lmul_eq_span R S
   let g : S →ₐ[R] S := (Algebra.ofId R S).comp σ
   let p : S ⊗[R] S →ₐ[R] S := Algebra.TensorProduct.productMap g (AlgHom.id R S)
-  have hσp : σ.comp p = σ.comp (Algebra.TensorProduct.lmul' R) := by
-    ext s <;> simp [p, g]
   have hdker : Algebra.TensorProduct.lmul' R d = 0 :=
     RingHom.mem_ker.mp (hker ▸ Ideal.mem_span_singleton_self d)
-  have hσd : σ (p d) = 0 := by
-    have h := DFunLike.congr_fun hσp d
-    simpa only [AlgHom.comp_apply, hdker, map_zero] using h
+  have hσd : σ (p d) = 0 :=
+    Algebra.TensorProduct.map_productMap_eq_zero_of_comp_eq hdker σ (f := g) (g := AlgHom.id R S)
+      (by ext s; simp [g])
   refine ⟨1 - p d, (hd.map p).one_sub, by simp [hσd], ?_⟩
   rw [sub_sub_cancel]
   apply le_antisymm

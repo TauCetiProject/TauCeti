@@ -31,7 +31,9 @@ boundary are not required.
 
 For the convention
 `R(w,u)v = κ (⟨u,v⟩ w - ⟨w,v⟩ u)`, the scalar curvature is `n (n - 1) κ` in
-real dimension `n`.
+real dimension `n`. Consequently, in dimension at least two, a function `κ` for which the curvature
+has this form near a point is differentiable there
+(`CovariantDerivative.mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub`).
 
 The definition and convention follow J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7.
@@ -40,7 +42,7 @@ Springer GTM 176 (2018), Chapter 7.
 public section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -177,6 +179,24 @@ theorem scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ
     map_smul, TauCeti.bilinFormTrace_inner]
   simp only [smul_eq_mul]
   ring
+
+/-- In dimension at least two, a function `κ` for which the curvature tensor has the pointwise
+constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)` at every point `y` near `x` is
+differentiable at `x`: near `x` it is the smooth scalar curvature divided by `n (n - 1)`. -/
+theorem mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)]
+    (hdim : 2 ≤ Module.finrank ℝ E) {κ : M → ℝ} {x : M}
+    (hκ : ∀ᶠ y in 𝓝 x, ∀ (w u v : TangentSpace I y),
+      curvature y w u v = κ y • (inner ℝ u v • w - inner ℝ w v • u)) :
+    MDifferentiableAt I 𝓘(ℝ) κ x := by
+  have hn : ((Module.finrank ℝ E : ℝ) * (Module.finrank ℝ E - 1)) ≠ 0 := by
+    have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hdim
+    nlinarith
+  refine (((cov.contMDiff_scalarCurvature.div_const ((Module.finrank ℝ E : ℝ) *
+    (Module.finrank ℝ E - 1))).mdifferentiable (by simp)) x).congr_of_eventuallyEq ?_
+  filter_upwards [hκ] with y hy
+  rw [cov.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub y (κ y) hy, eq_div_iff hn]
+  exact mul_comm _ _
 
 end CovariantDerivative
 

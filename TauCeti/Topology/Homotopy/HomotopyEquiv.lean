@@ -22,7 +22,7 @@ This is the prerequisite for the base-point-free homotopy-group statements in
 `TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv`, which need the target space to be path
 connected before base-point change is available there. The file also records that the product
 `ContinuousMap.HomotopyEquiv.prodCongr` of two homotopy equivalences acts componentwise, and that
-a product with a contractible factor is homotopy equivalent to the other factor.
+the projection `X × Y → X` is a homotopy equivalence when `Y` is contractible.
 
 ## Main declarations
 
@@ -30,8 +30,8 @@ a product with a contractible factor is homotopy equivalent to the other factor.
   connected space is path connected.
 * `ContinuousMap.HomotopyEquiv.prodCongr_apply`: the product of two homotopy equivalences acts
   componentwise.
-* `ContractibleSpace.prod_hequiv_left`: `X × Y` is homotopy equivalent to `X` when `Y` is
-  contractible.
+* `ContinuousMap.HomotopyEquiv.prodContractible`: the homotopy equivalence `X × Y ≃ₕ X` given by
+  the projection, for `Y` contractible.
 -/
 
 public section
@@ -64,10 +64,31 @@ theorem _root_.ContinuousMap.HomotopyEquiv.prodCongr_apply (h₁ : X ≃ₕ Y) (
   (rfl)
 
 variable (X Y) in
-/-- The product `X × Y` with a contractible space `Y` is homotopy equivalent to `X`. -/
-theorem _root_.ContractibleSpace.prod_hequiv_left [ContractibleSpace Y] : Nonempty (X × Y ≃ₕ X) :=
-  (ContractibleSpace.hequiv_unit Y).map fun e =>
-    ((ContinuousMap.HomotopyEquiv.refl X).prodCongr e).trans
-      (Homeomorph.prodUnique X Unit).toHomotopyEquiv
+/-- The projection `X × Y → X` is a homotopy equivalence when `Y` is contractible: its homotopy
+inverse includes `X` at a point of `Y` to which `Y` contracts. -/
+noncomputable def _root_.ContinuousMap.HomotopyEquiv.prodContractible [ContractibleSpace Y] :
+    (X × Y) ≃ₕ X where
+  toFun := ContinuousMap.fst
+  invFun := (ContinuousMap.id X).prodMk (ContinuousMap.const X (id_nullhomotopic Y).choose)
+  left_inv := by
+    obtain ⟨H⟩ := (id_nullhomotopic Y).choose_spec
+    exact ContinuousMap.Homotopic.symm ⟨{
+      toFun q := (q.2.1, H (q.1, q.2.2))
+      continuous_toFun := by fun_prop
+      map_zero_left _ := by simp
+      map_one_left _ := by simp }⟩
+  right_inv := ContinuousMap.Homotopic.refl _
+
+/-- The underlying map of the homotopy equivalence `X × Y ≃ₕ X` for contractible `Y` is the
+projection. -/
+theorem _root_.ContinuousMap.HomotopyEquiv.prodContractible_toFun [ContractibleSpace Y] :
+    (ContinuousMap.HomotopyEquiv.prodContractible X Y).toFun = ContinuousMap.fst :=
+  (rfl)
+
+/-- The homotopy equivalence `X × Y ≃ₕ X` for contractible `Y` is the projection. -/
+@[simp]
+theorem _root_.ContinuousMap.HomotopyEquiv.coe_prodContractible [ContractibleSpace Y] :
+    ⇑(ContinuousMap.HomotopyEquiv.prodContractible X Y) = Prod.fst :=
+  (rfl)
 
 end TauCeti
