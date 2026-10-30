@@ -39,7 +39,7 @@ product, `m₄ = μ`, and `m n = 0` otherwise. It is minimal and strictly unital
 is a strictly unital minimal `A∞` deformation of the strict zigzag algebra. Its operation `m n`
 has cohomological degree `2 - n`, and degree `n - 2` for the Adams grading, which is the negative
 of path length. Such deformations include the operation of Liu--Wang's Example 4.7 for affine
-`D₄`; see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD4`.
+`D₄`; see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Four`.
 
 Nontriviality of such a deformation modulo `A∞` isomorphism is not addressed here.
 

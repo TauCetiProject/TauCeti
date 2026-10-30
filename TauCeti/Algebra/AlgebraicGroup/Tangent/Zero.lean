@@ -65,7 +65,8 @@ theorem augmentation_eq_bot_iff_finrank_lie_eq_zero
       Module.finrank k
         (Derivation k H (Bialgebra.CounitAlgebra k H k)) = 0 := by
   let _ : Module.Finite k (Bialgebra.CotangentSpace k H) :=
-    AlgHom.finite_cotangent_ker_of_fg (Bialgebra.counitAlgHom k H) hfg
+    AlgHom.finite_cotangent_ker_of_fg (Bialgebra.counitAlgHom k H)
+      (fun r ↦ ⟨algebraMap k H r, (Bialgebra.counitAlgHom k H).commutes r⟩) hfg
   constructor
   · intro haugmentation
     rw [Derivation.finrank_eq_finrank_cotangentSpace]
