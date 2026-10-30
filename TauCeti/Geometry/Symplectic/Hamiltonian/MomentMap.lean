@@ -101,7 +101,7 @@ namespace IsMomentMap
 
 /-- The defining identity of a moment map: `σ(Z_M x, v) = d μ_Z (v)`. -/
 theorem eval₂_apply (h : σ.IsMomentMap a μ) (Z : 𝔤) (x : M) (v : TangentSpace I x) :
-    SmoothForm.eval₂ σ x (a Z x) v = mvfderiv I (fun y ↦ μ y Z) x v :=
+    SmoothBundleForm.eval₂ σ x (a Z x) v = mvfderiv I (fun y ↦ μ y Z) x v :=
   isHamiltonianVectorField_iff.1 (h.isHamiltonianVectorField Z) x v
 
 /-- The components of a moment map are differentiable. -/
@@ -128,7 +128,7 @@ theorem neg (h : σ.IsMomentMap a μ) : (-σ).IsMomentMap a fun x ↦ -μ x wher
     exact (h.contMDiff Z).neg
   isHamiltonianVectorField Z := isHamiltonianVectorField_iff.2 fun x v ↦ by
     simp only [LinearMap.neg_apply]
-    rw [mvfderiv_fun_neg, SmoothForm.eval₂_neg, h.eval₂_apply, _root_.neg_apply]
+    rw [mvfderiv_fun_neg, SmoothBundleForm.eval₂_neg, h.eval₂_apply, _root_.neg_apply]
 
 /-- **Restriction of moment maps.** Along a Lie algebra homomorphism `f : 𝔥 → 𝔤`, for instance the
 inclusion of a Lie subalgebra, a moment map `μ` of `a` gives the moment map `x ↦ μ x ∘ f` of the
@@ -195,7 +195,7 @@ vector fields: `{μ_Z, μ_Z'} = σ(Z_M, Z'_M)`. -/
 theorem poissonBracket_eq_eval₂ (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (Z Z' : 𝔤)
     (x : M) :
     σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z') x =
-      SmoothForm.eval₂ σ x (a Z x) (a Z' x) := by
+      SmoothBundleForm.eval₂ σ x (a Z x) (a Z' x) := by
   rw [h.poissonBracket_eq_mvfderiv hσ, h.eval₂_apply]
 
 /-- **Noether's theorem.** The derivative of a function `f` along the generated vector field `Z_M`

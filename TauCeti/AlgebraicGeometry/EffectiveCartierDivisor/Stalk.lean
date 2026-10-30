@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 import Mathlib.RingTheory.Flat.Localization
+import TauCeti.RingTheory.Localization.Away.Basic
 import TauCeti.RingTheory.Localization.Ideal
 
 /-!
@@ -22,7 +23,7 @@ On an arbitrary scheme, the stalks of an effective Cartier divisor are generated
 nonzerodivisors, since `𝒪_{X,x}` is a flat localization of `Γ(X, U)`. On a locally noetherian
 scheme the converse holds: an equation of the stalk can be taken in `I(U)`, and it generates `I`
 and is a nonzerodivisor on a basic open neighbourhood of `x` in `U`
-(`IsLocalization.exists_away_isSMulRegular_and_map_eq_span_singleton`).
+(`Ideal.exists_notMem_smul_le_span_singleton_of_map_eq`).
 
 This is how a divisor is recognised from local algebra at a single point, for instance from the
 local rings of a fibre in the fibrewise criterion for relative effective Cartier divisors.
@@ -83,20 +84,32 @@ theorem isEffectiveCartier_of_exists_map_germ_eq_span_singleton [IsLocallyNoethe
     I.IsEffectiveCartier := by
   refine (isEffectiveCartier_iff I).mpr fun x ↦ ?_
   obtain ⟨U, hx, a, ha, hIa⟩ := h x
-  -- The stalk is the localization of the noetherian ring `Γ(X, U)` at the prime of `x`; spread
-  -- the equation of the stalk to a basic open `D(r) ∋ x` of `U`.
+  -- The stalk is the localization of the noetherian ring `Γ(X, U)` at the prime of `x`.
   let _ := TopCat.Presheaf.algebra_section_stalk X.presheaf ⟨x, hx⟩
   have := U.2.isLocalization_stalk ⟨x, hx⟩
   have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian U
-  obtain ⟨r, hr, t, -, ht⟩ := IsLocalization.exists_away_isSMulRegular_and_map_eq_span_singleton
-    (U.2.primeIdealOf ⟨x, hx⟩).asIdeal.primeCompl ha hIa
+  -- Write `a = t / s` with `t ∈ I(U)`; then the image of `t` is also a generator.
+  obtain ⟨⟨⟨t, htI⟩, s⟩, hts⟩ := (IsLocalization.mem_map_algebraMap_iff
+    (U.2.primeIdealOf ⟨x, hx⟩).asIdeal.primeCompl (X.presheaf.stalk x)).mp
+    (hIa ▸ Ideal.mem_span_singleton_self a)
+  have hs : IsUnit (algebraMap Γ(X, U) (X.presheaf.stalk x) s) :=
+    IsLocalization.map_units (X.presheaf.stalk x) s
+  have hIt : (I.ideal U).map (algebraMap Γ(X, U) (X.presheaf.stalk x)) =
+      Ideal.span {algebraMap Γ(X, U) (X.presheaf.stalk x) t} := by
+    rw [← hts, Ideal.span_singleton_mul_right_unit hs]
+    exact hIa
+  have ht : IsSMulRegular (X.presheaf.stalk x) (algebraMap Γ(X, U) (X.presheaf.stalk x) t) :=
+    hts ▸ ha.mul (hs.isSMulRegular _)
+  -- Spread the equation of the stalk to a basic open `D(r) ∋ x` of `U`.
+  obtain ⟨r, hrP, hrI, hrt⟩ := Ideal.exists_notMem_smul_le_span_singleton_of_map_eq
+    (P := (U.2.primeIdealOf ⟨x, hx⟩).asIdeal) _ hIt ht
   have := U.2.isLocalization_basicOpen r
-  obtain ⟨hreg, hspan⟩ := ht Γ(X, X.basicOpen r)
-  refine ⟨X.affineBasicOpen r, ?_, _, hreg, ?_⟩
-  · exact (X.mem_basicOpen r x hx).mpr (IsLocalization.map_units (X.presheaf.stalk x)
-      (⟨r, hr⟩ : (U.2.primeIdealOf ⟨x, hx⟩).asIdeal.primeCompl))
+  refine ⟨X.affineBasicOpen r, ?_, _, (IsLocalization.Away.isSMulRegular_algebraMap hrt :
+    IsSMulRegular Γ(X, X.basicOpen r) (algebraMap Γ(X, U) _ t)), ?_⟩
+  · exact (X.mem_basicOpen r x hx).mpr
+      ((IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x) _ r).mpr hrP)
   · rw [← I.map_ideal_basicOpen]
-    exact hspan
+    exact Ideal.map_algebraMap_away_eq_span_singleton htI hrI
 
 /-- **Stalkwise characterization of effective Cartier divisors.** On a locally noetherian scheme,
 an ideal sheaf `I` is an effective Cartier divisor if and only if, at every point `x` of every
