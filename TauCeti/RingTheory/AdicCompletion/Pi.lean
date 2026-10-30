@@ -16,7 +16,8 @@ holds for adic precompleteness and completeness. In particular a finite free mod
 over an `I`-adically complete ring is `I`-adically complete, which is what the complete Nakayama
 lemma (`surjective_of_mkQ_comp_surjective`) requires of the source of a map out of a finite free
 module. For a principal ideal `(π)`, the `(π)`-adic filtration of a product `ι → R` is read off
-coordinatewise: `x ∈ (π)^n • ⊤` exactly when `π ^ n` divides every coordinate of `x`.
+coordinatewise: `x ∈ (π)^n • ⊤` exactly when `π ^ n` divides every coordinate of `x`. Hence
+`π`-adic limits and separation of finite coordinate families can be stated with divisibility alone.
 
 ## Main results
 
@@ -27,6 +28,10 @@ coordinatewise: `x ∈ (π)^n • ⊤` exactly when `π ^ n` divides every coord
 * `IsHausdorff.pi`: adic Hausdorffness passes to products.
 * `IsPrecomplete.pi`, `IsAdicComplete.pi`: adic precompleteness and completeness pass to finite
   products.
+* `TauCeti.exists_forall_pow_dvd_sub`: a `π`-adically Cauchy sequence of finite coordinate families
+  over a precomplete ring has a limit.
+* `TauCeti.eq_zero_of_forall_pow_dvd`: over a Hausdorff ring, a coordinate family divisible by every
+  power of `π` vanishes.
 -/
 
 public section
@@ -78,3 +83,36 @@ instance IsPrecomplete.pi [Finite ι] [∀ i, IsPrecomplete I (M i)] : IsPrecomp
 /-- A finite product of `I`-adically complete modules is `I`-adically complete. -/
 instance IsAdicComplete.pi [Finite ι] [∀ i, IsAdicComplete I (M i)] :
     IsAdicComplete I (∀ i, M i) where
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] {ι : Type*}
+
+/-- **Limits of coordinate families.** Over a `π`-adically precomplete ring, a sequence of finite
+coordinate families whose consecutive terms are congruent modulo `π ^ (m + 1)` has a limit,
+congruent to the `m`-th term modulo `π ^ m`. -/
+theorem exists_forall_pow_dvd_sub [Finite ι] (π : R) [IsPrecomplete (Ideal.span {π}) R]
+    (x : ℕ → ι → R) (hx : ∀ m i, π ^ (m + 1) ∣ x (m + 1) i - x m i) :
+    ∃ L : ι → R, ∀ m i, π ^ m ∣ L i - x m i := by
+  have hcauchy {m m' : ℕ} (hm : m ≤ m') (i : ι) : π ^ m ∣ x m' i - x m i := by
+    induction m', hm using Nat.le_induction with
+    | base => simp
+    | succ m' hm ih =>
+      rw [← sub_add_sub_cancel]
+      exact dvd_add ((pow_dvd_pow π (by omega)).trans (hx m' i)) ih
+  obtain ⟨L, hL⟩ := IsPrecomplete.prec (I := Ideal.span {π}) inferInstance (f := x)
+    fun {m m'} hm ↦ by
+      rw [SModEq.sub_mem, mem_span_singleton_pow_smul_top_iff]
+      exact fun i ↦ dvd_sub_comm.mp (hcauchy hm i)
+  exact ⟨L, fun m i ↦ dvd_sub_comm.mp
+    ((mem_span_singleton_pow_smul_top_iff π _ m).1 (SModEq.sub_mem.1 (hL m)) i)⟩
+
+/-- Over a `π`-adically Hausdorff ring, a coordinate family whose coordinates are divisible by
+every power of `π` vanishes. -/
+theorem eq_zero_of_forall_pow_dvd (π : R) [IsHausdorff (Ideal.span {π}) R] {x : ι → R}
+    (hx : ∀ m i, π ^ m ∣ x i) : x = 0 :=
+  IsHausdorff.haus (I := Ideal.span {π}) inferInstance x fun m ↦ by
+    rw [SModEq.zero, mem_span_singleton_pow_smul_top_iff]
+    exact hx m
+
+end TauCeti

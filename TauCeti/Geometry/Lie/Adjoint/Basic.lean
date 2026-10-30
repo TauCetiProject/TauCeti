@@ -19,6 +19,10 @@ bracket then shows that it is a Lie algebra automorphism, and the composition la
 gives the representation law. A subsequent file transports this construction to the roadmap-facing
 Lie algebra of left-invariant derivations.
 
+The construction works over any nontrivially normed field. Its differential only requires a
+`C¹` Lie group; preservation of the bracket uses Mathlib's regularity threshold
+`minSmoothness 𝕜 3`, which is `3` over the real and complex numbers.
+
 This advances Deliverable A, Layer 1 of
 `TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
 
@@ -49,31 +53,30 @@ namespace TauCeti.Lie
 
 open scoped Manifold ContDiff
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
 
 section Differential
 
 variable [LieGroup I 1 G]
 
-attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
-
 /-- The continuous linear equivalence given by the differential of conjugation at the identity. -/
 def adjointContinuousLinearEquiv (g : G) :
-    GroupLieAlgebra I G ≃L[ℝ] GroupLieAlgebra I G :=
+    GroupLieAlgebra I G ≃L[𝕜] GroupLieAlgebra I G :=
   (conjDiffeomorph (I := I) (n := 1) g).mfderivToContinuousLinearEquiv (by simp) 1
 
 @[simp]
 theorem adjointContinuousLinearEquiv_coe (g : G) :
     (adjointContinuousLinearEquiv (I := I) g :
-      GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I G) =
+      GroupLieAlgebra I G →L[𝕜] GroupLieAlgebra I G) =
         mfderiv I I (conjDiffeomorph (I := I) (n := 1) g) 1 := by
   exact Diffeomorph.mfderivToContinuousLinearEquiv_coe _ _
 
 /-- The continuous linear map underlying the differential of conjugation at the identity. -/
 def adjointContinuousLinearMap (g : G) :
-    GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I G :=
+    GroupLieAlgebra I G →L[𝕜] GroupLieAlgebra I G :=
   adjointContinuousLinearEquiv (I := I) g
 
 @[simp]
@@ -86,11 +89,11 @@ theorem adjointContinuousLinearMap_apply (g : G) (X : GroupLieAlgebra I G) :
 @[simp]
 theorem adjointContinuousLinearMap_one :
     adjointContinuousLinearMap (I := I) (1 : G) =
-      ContinuousLinearMap.id ℝ (GroupLieAlgebra I G) := by
+      ContinuousLinearMap.id 𝕜 (GroupLieAlgebra I G) := by
   rw [adjointContinuousLinearMap]
   rw [adjointContinuousLinearEquiv_coe]
   -- `GroupLieAlgebra I G` is the tangent model space `E`; expose it for `mfderiv_id`.
-  change @Eq (E →L[ℝ] E) _ _
+  change @Eq (E →L[𝕜] E) _ _
   rw [← mfderiv_id]
   apply mfderiv_congr
   have h := congrArg
@@ -105,7 +108,7 @@ theorem adjointContinuousLinearMap_mul (g h : G) :
         (adjointContinuousLinearMap (I := I) h) := by
   simp only [adjointContinuousLinearMap, adjointContinuousLinearEquiv_coe]
   -- The tangent fibers in this model-with-corners presentation share the model space `E`.
-  change @Eq (E →L[ℝ] E) _ _
+  change @Eq (E →L[𝕜] E) _ _
   have hfun :
       conjDiffeomorph (I := I) (n := 1) (g * h) =
         (conjDiffeomorph (I := I) (n := 1) g) ∘
@@ -161,8 +164,7 @@ theorem mfderiv_conjugation_mulInvariantVectorField (g x : G)
       mulInvariantVectorField (adjointContinuousLinearMap (I := I) g X)
         (conjDiffeomorph (I := I) (n := 1) g x) := by
   simp only [mulInvariantVectorField]
-  have hreg : minSmoothness ℝ 1 ≠ 0 :=
-    (lt_of_lt_of_le (by simp) le_minSmoothness).ne'
+  have hreg : (1 : ℕ∞ω) ≠ 0 := by simp
   have hfun :
       (conjDiffeomorph (I := I) (n := 1) g) ∘ (fun y : G ↦ x * y) =
         (fun y : G ↦ conjDiffeomorph (I := I) (n := 1) g x * y) ∘
@@ -237,12 +239,11 @@ end Differential
 
 section Bracket
 
-variable [LieGroup I 3 G]
-
-attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+variable [LieGroup I (minSmoothness 𝕜 3) G]
 
 local instance lieGroupOne : LieGroup I 1 G :=
-  LieGroup.of_le (I := I) (G := G) (m := 1) (n := 3) (by norm_num)
+  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness 𝕜 3)
+    ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
 
 /-- The differential of conjugation preserves the manifold Lie bracket. -/
 theorem adjointContinuousLinearMap_lie [CompleteSpace E] (g : G)
@@ -251,15 +252,15 @@ theorem adjointContinuousLinearMap_lie [CompleteSpace E] (g : G)
       ⁅adjointContinuousLinearMap (I := I) g X,
         adjointContinuousLinearMap (I := I) g Y⁆ := by
   have h := VectorField.mpullback_mlieBracket
-    (I := I) (I' := I) (n := 3)
-    (f := conjDiffeomorph (I := I) (n := 3) g⁻¹)
+    (I := I) (I' := I) (n := minSmoothness 𝕜 3)
+    (f := conjDiffeomorph (I := I) (n := minSmoothness 𝕜 3) g⁻¹)
     (V := mulInvariantVectorField X) (W := mulInvariantVectorField Y) (x₀ := (1 : G))
     (mdifferentiableAt_mulInvariantVectorField X)
     (mdifferentiableAt_mulInvariantVectorField Y)
-    (conjDiffeomorph (I := I) (n := 3) g⁻¹).contMDiffAt
-      (by norm_num)
+    (conjDiffeomorph (I := I) (n := minSmoothness 𝕜 3) g⁻¹).contMDiffAt
+      (minSmoothness_monotone (by norm_num))
   have hconj :
-      (conjDiffeomorph (I := I) (n := 3) g⁻¹ : G → G) =
+      (conjDiffeomorph (I := I) (n := minSmoothness 𝕜 3) g⁻¹ : G → G) =
         (conjDiffeomorph (I := I) (n := 1) g⁻¹ : G → G) := by
     funext x
     simp only [conjDiffeomorph_apply]
@@ -271,7 +272,7 @@ theorem adjointContinuousLinearMap_lie [CompleteSpace E] (g : G)
 
 /-- The group adjoint automorphism: the differential at the identity of conjugation by `g`. -/
 def tangentAd [CompleteSpace E] (g : G) :
-    GroupLieAlgebra I G ≃ₗ⁅ℝ⁆ GroupLieAlgebra I G where
+    GroupLieAlgebra I G ≃ₗ⁅𝕜⁆ GroupLieAlgebra I G where
   toFun := (adjointContinuousLinearEquiv (I := I) g).toLinearEquiv
   invFun := (adjointContinuousLinearEquiv (I := I) g).toLinearEquiv.symm
   left_inv := (adjointContinuousLinearEquiv (I := I) g).toLinearEquiv.left_inv
@@ -302,7 +303,7 @@ theorem tangentAd_mul [CompleteSpace E] (g h : G) :
   ext X
   rw [tangentAd_apply, LieEquiv.trans_apply, tangentAd_apply, tangentAd_apply]
   exact congrArg
-    (fun f : GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I G ↦ f X)
+    (fun f : GroupLieAlgebra I G →L[𝕜] GroupLieAlgebra I G ↦ f X)
     (adjointContinuousLinearMap_mul (I := I) g h)
 
 /-- The tangent adjoint automorphism of `g⁻¹` is the inverse of that of `g`. -/
@@ -316,7 +317,7 @@ theorem tangentAd_inv [CompleteSpace E] (g : G) :
     tangentAd (I := I) g ((tangentAd (I := I) g).symm X)
   rw [LieEquiv.apply_symm_apply]
   have h := congrArg
-    (fun e : GroupLieAlgebra I G ≃ₗ⁅ℝ⁆ GroupLieAlgebra I G ↦ e X)
+    (fun e : GroupLieAlgebra I G ≃ₗ⁅𝕜⁆ GroupLieAlgebra I G ↦ e X)
     (tangentAd_mul (I := I) g g⁻¹)
   simpa using h.symm
 

@@ -36,6 +36,8 @@ Gram matrix.
   nondegenerate form in a basis and in its `B`-dual basis are inverse to each other.
 * `LinearMap.BilinForm.Nondegenerate.repr_eq_sum_inv_toMatrix₂_mul_apply`: the coordinates of a
   vector in a basis are its pairings with the basis, contracted against the inverse Gram matrix.
+* `LinearMap.BilinForm.separatingLeft_of_toMatrix_mul_eq_smul`: over a domain, a form whose Gram
+  matrix has a right inverse up to a nonzero scalar is nondegenerate.
 -/
 
 public section
@@ -100,5 +102,21 @@ theorem Nondegenerate.repr_eq_sum_inv_toMatrix₂_mul_apply {B : LinearMap.Bilin
   have hc : c = G⁻¹ *ᵥ r := by
     rw [← hGc, Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hG, Matrix.one_mulVec]
   exact congrFun hc k
+
+section Domain
+
+variable {R M n : Type*} [CommRing R] [IsDomain R] [AddCommGroup M] [Module R M] [Fintype n]
+  [DecidableEq n]
+
+/-- A bilinear form whose Gram matrix in some basis, times some matrix, is a nonzero scalar matrix
+is nondegenerate: its Gram determinant divides a power of a nonzero element of a domain. -/
+theorem separatingLeft_of_toMatrix_mul_eq_smul {B : LinearMap.BilinForm R M} (b : Basis n R M)
+    {H : Matrix n n R} {c : R} (hc : c ≠ 0) (hH : B.toMatrix b * H = c • 1) : B.SeparatingLeft := by
+  refine ((nondegenerate_iff_det_ne_zero b).mpr fun h ↦ ?_).1
+  have := congrArg Matrix.det hH
+  rw [Matrix.det_mul, h, zero_mul, Matrix.det_smul, Matrix.det_one, mul_one] at this
+  exact pow_ne_zero _ hc this.symm
+
+end Domain
 
 end LinearMap.BilinForm
