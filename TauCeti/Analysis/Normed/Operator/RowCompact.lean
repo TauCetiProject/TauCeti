@@ -474,4 +474,27 @@ theorem IsRowCompact.clm_comp [DiscreteTopology I] {u : C₀(J, R) →L[R] C₀(
 
 end Ideal
 
+/-- A norm-convergent power series with zero constant term in a row-compact operator has a
+row-compact value. Entirety of the scalar series is not required. -/
+theorem IsRowCompact.of_tendsto_opNorm_sum_pow [DiscreteTopology I] [DecidableEq I]
+    [NormedCommRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
+    {u v : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {b : ℕ → R}
+    (hb : b 0 = 0)
+    (hv : Tendsto (fun n ↦ ‖v - ∑ k ∈ Finset.range n, b k • u ^ k‖) atTop (𝓝 0)) :
+    v.IsRowCompact := by
+  refine isRowCompact_of_tendsto hv (Eventually.of_forall fun n ↦ ?_)
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Finset.sum_range_succ]
+    apply ih.add
+    cases n with
+    | zero =>
+      have hz : b 0 • u ^ 0 = 0 := by ext x; simp [hb]
+      rw [hz]
+      exact isRowCompact_zero
+    | succ n =>
+      rw [pow_succ]
+      exact (hu.clm_comp (u ^ n)).smul _
+
 end ContinuousLinearMap
