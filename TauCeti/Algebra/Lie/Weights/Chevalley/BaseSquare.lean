@@ -30,6 +30,8 @@ square condition holds automatically and a Chevalley system exists over the grou
   system over the ground field.
 * `TauCeti.IsChevalleySystem.simple_eq_or_eq_neg_of_lieBasis`: a Chevalley system for the same
   involution agrees with the basis at each simple root up to one simultaneous sign.
+* `TauCeti.IsChevalleySystem.exists_isChevalleySystem_simple_eq_lieBasis`: changing signs, a
+  Chevalley system for that involution can be made to agree with the basis at every simple root.
 
 ## References
 
@@ -225,6 +227,59 @@ theorem simple_eq_or_eq_neg_of_lieBasis
     exact .inl ⟨by simpa [ha_one] using ha, by simpa [hd_one] using hd⟩
   · have hd_neg : d = -1 := had_eq.symm.trans ha_neg
     exact .inr ⟨by simpa [ha_neg] using ha, by simpa [hd_neg] using hd⟩
+
+/-- **Pinning a Chevalley system to a Lie-algebra basis.** If the automorphism exchanges each
+simple raising generator of `b` with the negative of the matching lowering generator, a sign
+change turns any Chevalley system for it into one whose root vectors at `αᵢ` and `-αᵢ` are exactly
+the generators `eᵢ` and `fᵢ` of `b`.
+
+Two Chevalley systems for the same automorphism differ by signs
+(`TauCeti.IsChevalleySystem.eq_or_eq_neg`), so these simple-root equations fix the system only
+up to signs at the non-simple roots. -/
+theorem exists_isChevalleySystem_simple_eq_lieBasis
+    {ι : Type*} [Fintype ι] (b : LieAlgebra.Basis ι H)
+    (he : ∀ i, omega (b.e i) = -b.f i) :
+    ∃ y : Weight K H L → L, IsChevalleySystem omega y ∧
+      ∀ i, y (b.baseSupportEquiv i) = b.e i ∧ y (-b.baseSupportEquiv i) = b.f i := by
+  classical
+  -- The simultaneous sign by which `x` differs from the basis at each simple root.
+  have hsign : ∀ i : b.base.support, ∃ s : K, s * s = 1 ∧
+      x i = s • b.e (b.baseSupportEquiv.symm i) ∧
+        x (-i) = s • b.f (b.baseSupportEquiv.symm i) := by
+    intro i
+    rcases hx.simple_eq_or_eq_neg_of_lieBasis b i (he _) with h | h
+    · exact ⟨1, one_mul 1, by rw [h.1, one_smul], by rw [h.2, one_smul]⟩
+    · exact ⟨-1, by norm_num, by rw [h.1, neg_one_smul], by rw [h.2, neg_one_smul]⟩
+  choose s hs using hsign
+  -- The simple root `αᵢ` is the only one of the weights `±αⱼ` equal to `±αᵢ`.
+  have hsimple (i j : b.base.support) :
+      ((j : Weight K H L) = i ∨ (j : Weight K H L) = -(i : Weight K H L)) ↔ j = i := by
+    refine ⟨fun h ↦ h.elim (fun h ↦ Subtype.ext (Subtype.ext h)) fun h ↦ ?_, fun h ↦ .inl (h ▸ rfl)⟩
+    by_cases hji : j = i
+    · subst hji
+      exact absurd h (Weight.ne_neg_of_isNonZero (H.isNonZero_coe_root j))
+    · refine absurd ?_ (b.base.root_ne_neg_of_ne j.2 i.2 fun h' ↦ hji (Subtype.ext h'))
+      simpa using congrArg (Weight.toLinear K H L) h
+  -- The sign at `α` is that of `αᵢ` when `α = ±αᵢ`, and `1` at the other weights.
+  let u : Weight K H L → K := fun α ↦
+    ∏ j : b.base.support, if (j : Weight K H L) = α ∨ (j : Weight K H L) = -α then s j else 1
+  have hu_neg (α : Weight K H L) : u (-α) = u α := by
+    simp only [u, neg_neg, or_comm]
+  have hu_sq (α : Weight K H L) : u α * u α = 1 := by
+    rw [← Finset.prod_mul_distrib]
+    exact Finset.prod_eq_one fun j _ ↦ by split_ifs <;> simp [(hs j).1]
+  have hu_simple (i : b.base.support) : u i = s i := by
+    simp only [u, hsimple i, Fintype.prod_ite_eq']
+  refine ⟨fun α ↦ u α • x α,
+    hx.smul u (fun α _ ↦ by rw [hu_neg]; exact hu_sq α) (fun α _ ↦ hu_neg α), fun i ↦ ⟨?_, ?_⟩⟩
+  · have h := (hs (b.baseSupportEquiv i)).2.1
+    rw [Equiv.symm_apply_apply] at h
+    dsimp only
+    rw [hu_simple, h, smul_smul, (hs _).1, one_smul]
+  · have h := (hs (b.baseSupportEquiv i)).2.2
+    rw [Equiv.symm_apply_apply] at h
+    dsimp only
+    rw [hu_neg, hu_simple, h, smul_smul, (hs _).1, one_smul]
 
 end IsChevalleySystem
 
