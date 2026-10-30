@@ -180,9 +180,9 @@ theorem eq_descend_iff {K : SmoothAlmostComplexStructure I' N} :
 end Descend
 
 omit [IsManifold I' ∞ N] in
-/-- A smooth almost complex structure is consistent with a smooth map `q` when every two points of
-each fiber of `q` are related by a deck transformation `g`, a map with `q ∘ g = q`, whose
-differential intertwines `J`. -/
+/-- A smooth almost complex structure is consistent with a smooth map `q` when the differential
+`dq` is injective at every point and every two points of each fiber of `q` are related by a deck
+transformation `g`, a map with `q ∘ g = q`, whose differential intertwines `J`. -/
 theorem mfderiv_apply_eq_of_deck {J : SmoothAlmostComplexStructure I M}
     (hq : MDifferentiable I I' q)
     (hdeck : ∀ x y : M, q x = q y → ∃ g : M → M, g x = y ∧ q ∘ g = q ∧
