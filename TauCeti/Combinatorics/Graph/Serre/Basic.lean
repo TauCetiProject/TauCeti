@@ -217,6 +217,24 @@ attribute [simp] Hom.map_src Hom.map_rev
     (f : Γ.Hom Δ) {a b : Γ.V} (e : Quiver.Hom a b) :
     (f.toPrefunctor.map e).1 = f.mapE e.1 := rfl
 
+/-- A vertex-surjective graph morphism carries preconnectedness to its target. -/
+theorem Hom.preconnected_of_surjective {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) (hf : Function.Surjective f.mapV)
+    (hΓ : Γ.Preconnected) : Δ.Preconnected := by
+  apply (preconnected_iff Δ).2
+  intro a b
+  obtain ⟨x, rfl⟩ := hf a
+  obtain ⟨y, rfl⟩ := hf b
+  obtain ⟨p⟩ := (preconnected_iff Γ).1 hΓ x y
+  exact ⟨f.toPrefunctor.mapPath p⟩
+
+/-- A vertex-surjective graph morphism carries connectedness to its target. -/
+theorem Hom.connected_of_surjective {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) (hf : Function.Surjective f.mapV)
+    (hΓ : Γ.Connected) : Δ.Connected := by
+  obtain ⟨⟨x⟩, hpre⟩ := (connected_iff Γ).1 hΓ
+  exact (connected_iff Δ).2 ⟨⟨f.mapV x⟩, f.preconnected_of_surjective hf hpre⟩
+
 /-- Identity morphism of a Serre graph. -/
 def Hom.id : Γ.Hom Γ where
   mapV := _root_.id
