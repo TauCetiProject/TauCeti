@@ -121,11 +121,17 @@ theorem evalTimed_shiftTimed_of_mem_Icc (hp : IsTimed p) (χ : V) {t : 𝕜}
     evalTimed (shiftTimed χ p) t = evalTimed p t + t • χ := by
   rw [evalTimed_shiftTimed hp, min_eq_left ht.2, max_eq_right ht.1]
 
+omit [IsStrictOrderedRing 𝕜] in
 /-- A linear form annihilating the added velocity has unchanged running height. -/
-theorem apply_evalTimed_shiftTimed (hp : IsTimed p) {f : Module.Dual 𝕜 V} {χ : V}
+@[simp]
+theorem apply_evalTimed_shiftTimed {f : Module.Dual 𝕜 V} {χ : V}
     (hχ : f χ = 0) (t : 𝕜) :
     f (evalTimed (shiftTimed χ p) t) = f (evalTimed p t) := by
-  simp [evalTimed_shiftTimed hp, hχ]
+  induction p generalizing t with
+  | nil => simp
+  | cons x p ih =>
+    rcases x with ⟨d, v⟩
+    simp [evalTimed_cons, map_add, hχ, ih]
 
 /-- A linear form annihilating the added velocity has unchanged minimum height. -/
 theorem minHeight_ofSegments_shiftTimed {f : Module.Dual 𝕜 V} {χ : V} (hχ : f χ = 0)
