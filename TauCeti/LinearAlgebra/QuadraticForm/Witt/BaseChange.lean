@@ -292,6 +292,11 @@ theorem WittRing.dimMod2_baseChange (x : WittRing K) :
   obtain ⟨q, rfl⟩ := wittClass_surjective x
   simp
 
+/-- A Witt class killed by scalar extension has even dimension modulo two. -/
+theorem WittRing.dimMod2_eq_zero_of_baseChange_eq_zero {x : WittRing K}
+    (h : WittRing.baseChange (L := L) x = 0) : WittRing.dimMod2 x = 0 := by
+  simpa only [WittRing.dimMod2_baseChange, map_zero] using congrArg WittRing.dimMod2 h
+
 /-- Scalar extension sends the fundamental ideal into the fundamental ideal. -/
 theorem WittRing.baseChange_mem_fundamentalIdeal {x : WittRing K}
     (hx : x ∈ fundamentalIdeal K) :

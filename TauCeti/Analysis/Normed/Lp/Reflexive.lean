@@ -67,8 +67,8 @@ theorem surjective_inclusionInDoubleDual {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp�
     Surjective (inclusionInDoubleDual 𝕜 (lp (fun _ : ι ↦ 𝕜) p)) := by
   have : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
   have hq : p.conjExponent ≠ ∞ := ((ENNReal.HolderConjugate.lt_top_iff_one_lt _ p).2 hp₁).ne
-  let D := dualEquiv 𝕜 ι p p.conjExponent hp hq
-  let D' := dualEquiv 𝕜 ι p.conjExponent p hq hp
+  let D := dualEquiv 𝕜 ι p.conjExponent p hp
+  let D' := dualEquiv 𝕜 ι p p.conjExponent hq
   intro Φ
   -- The preimage of `Φ` is the element of `ℓᵖ` representing `Φ ∘ D` on `ℓᑫ`.
   set φ := Φ.comp D.toContinuousLinearEquiv.toContinuousLinearMap
