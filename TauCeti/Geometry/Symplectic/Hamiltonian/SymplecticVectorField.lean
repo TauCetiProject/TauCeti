@@ -103,7 +103,7 @@ variable {σ}
 /-- A smooth vector field is symplectic exactly when its contraction is closed. -/
 @[simp]
 theorem mem_symplecticVectorFields_iff {X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯} :
-    X ∈ σ.symplecticVectorFields ↔ mextDeriv (σ.1.interior X) = 0 := by
+    X ∈ σ.symplecticVectorFields ↔ mextDeriv (RoughForm.interior X σ.1) = 0 := by
   rw [symplecticVectorFields, Submodule.mem_comap, mem_closedForms, coe_interiorₗ]
 
 /-- For a closed two-form, a smooth vector field is symplectic exactly when its Lie derivative

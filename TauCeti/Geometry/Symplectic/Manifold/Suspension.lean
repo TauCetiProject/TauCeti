@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus.ClosedOrbit
 public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.DeRham.Wedge
@@ -119,14 +120,14 @@ theorem suspensionForm_def :
 circle and mapping torus components. -/
 theorem eval₂_suspensionForm (p : UnitAddCircle × SmoothMappingTorus φ)
     (v w : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) p) :
-    (suspensionForm φ σ hσ).eval₂ p v w =
+    SmoothBundleForm.eval₂ (suspensionForm φ σ hσ) p v w =
       (AddCircle.timeForm 1).1 p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] *
           (timeForm φ).1 p.2 ![(Manifold.tangentSpaceProdEquiv p w).2] -
         (AddCircle.timeForm 1).1 p.1 ![(Manifold.tangentSpaceProdEquiv p w).1] *
           (timeForm φ).1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] +
-        (fiberForm φ σ hσ).eval₂ p.2 (Manifold.tangentSpaceProdEquiv p v).2
+        SmoothBundleForm.eval₂ (fiberForm φ σ hσ) p.2 (Manifold.tangentSpaceProdEquiv p v).2
           (Manifold.tangentSpaceProdEquiv p w).2 := by
-  rw [suspensionForm_def, SmoothForm.eval₂_add, SmoothForm.eval₂_wedge_one_one,
+  rw [suspensionForm_def, SmoothBundleForm.eval₂_add, SmoothForm.eval₂_wedge_one_one,
     SmoothForm.eval₂_mpullback_snd]
   simp only [SmoothForm.mpullback_fst_apply, SmoothForm.mpullback_snd_apply,
     Matrix.vec_single_eq_const]
@@ -137,14 +138,14 @@ Here `b ∂_t + v` is the image of the tangent vector `(b, v)` of `ℝ × M` und
 `(t, x) ↦ [t, x]`. -/
 theorem eval₂_suspensionForm_mk (θ : UnitAddCircle) (t : ℝ) (x : M) (a a' b b' : ℝ)
     (v v' : TangentSpace I x) :
-    (suspensionForm φ σ hσ).eval₂ (θ, mk φ t x)
+    SmoothBundleForm.eval₂ (suspensionForm φ σ hσ) (θ, mk φ t x)
         ((Manifold.tangentSpaceProdEquiv _).symm
           (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
             ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))))
         ((Manifold.tangentSpaceProdEquiv _).symm
           (a', mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
             ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b', v')))) =
-      a * b' - a' * b + σ.eval₂ x v v' := by
+      a * b' - a' * b + SmoothBundleForm.eval₂ σ x v v' := by
   rw [eval₂_suspensionForm]
   simp only [ContinuousLinearEquiv.apply_symm_apply, AddCircle.timeForm_apply]
   rw [timeForm_apply_mfderiv_uncurry_mk, timeForm_apply_mfderiv_uncurry_mk,
@@ -243,7 +244,8 @@ theorem isNondegenerate_suspensionForm_iff :
     obtain ⟨⟨t, x⟩, rfl⟩ : ∃ p : ℝ × M, mk φ p.1 p.2 = y := uncurry_mk_surjective φ y
     obtain ⟨a, b, v, rfl⟩ := exists_eq_symm_tangentSpaceProdEquiv θ t x V
     -- Pair `a ∂_s + b ∂_t + v` with `∂_s`, `∂_t` and the vectors `v'` tangent to the fiber.
-    have hz : σ.eval₂ x v 0 = 0 := by rw [← SmoothForm.bilinFormAt_apply, map_zero]
+    have hz : SmoothBundleForm.eval₂ σ x v 0 = 0 := by
+      rw [← SmoothForm.bilinFormAt_apply, map_zero]
     have hb : b = 0 := by
       have h₁ := hV ((Manifold.tangentSpaceProdEquiv _).symm
         ((1 : ℝ), mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
