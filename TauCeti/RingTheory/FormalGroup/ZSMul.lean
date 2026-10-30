@@ -163,12 +163,13 @@ theorem zsmulHom_applyPoint [F.IsComm] {σ : Type*} (x : F.Point σ) (n : ℤ) :
 @[simp]
 theorem zsmulSeries_𝔾ₐ (n : ℤ) :
     (𝔾ₐ (R := R)).zsmulSeries n = (n : PowerSeries R) * PowerSeries.X := by
+  have subst_neg_X {a : PowerSeries R} (ha : PowerSeries.HasSubst a) :
+      PowerSeries.subst a (-PowerSeries.X : PowerSeries R) = -a := by
+    rw [← PowerSeries.coe_substAlgHom ha, map_neg, PowerSeries.substAlgHom_X]
   rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
   · simp
-  · rw [zsmulSeries_neg, zsmulSeries_natCast, addInvX_𝔾ₐ,
-      ← PowerSeries.coe_substAlgHom
-        (.of_constantCoeff_zero ((𝔾ₐ (R := R)).constantCoeff_nsmulSeries k)),
-      map_neg, PowerSeries.substAlgHom_X, nsmulSeries_𝔾ₐ]
+  · rw [zsmulSeries_neg, addInvX_𝔾ₐ,
+      subst_neg_X ((𝔾ₐ (R := R)).hasSubst_zsmulSeries k)]
     simp
 
 end FormalGroup
@@ -182,9 +183,10 @@ commutativity assumption on its source or target. -/
 theorem subst_zsmulSeries (f : FormalGroupHom F G) (n : ℤ) :
     PowerSeries.subst (F.zsmulSeries n) f.toPowerSeries =
       PowerSeries.subst f.toPowerSeries (G.zsmulSeries n) := by
-  rw [FormalGroup.zsmulSeries, ← applyPoint_val, ← toAddMonoidHom_apply,
-    map_zsmul, toAddMonoidHom_apply, ← G.subst_zsmulSeries, applyPoint_val,
+  rw [FormalGroup.zsmulSeries]
+  simpa only [toAddMonoidHom_apply, applyPoint_val, ← G.subst_zsmulSeries,
     FormalGroup.val_tautologicalPoint, PowerSeries.X_subst]
+    using congrArg Subtype.val (map_zsmul (f.toAddMonoidHom Unit) n F.tautologicalPoint)
 
 end TauCeti.FormalGroupHom
 
