@@ -8,16 +8,22 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.EvenPrimeDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminants
+public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+import Mathlib.Tactic.IntervalCases
+import Mathlib.Tactic.NormNum.LegendreSymbol
 
 /-!
 # The character attached to a prime discriminant
 
 Genus theory attaches to a prime discriminant `P` the primitive real character modulo `|P|`
-cutting out the quadratic field `ℚ(√P)`. Mathlib has no Kronecker symbol, so this file assembles
-that character from the pieces Mathlib does have: it is `ZMod.χ₄`, `ZMod.χ₈` and `ZMod.χ₈'` at the
-three even prime discriminants `-4`, `8` and `-8`, and the Legendre symbol `(· / p)`, written as a
-Jacobi symbol, at an odd prime discriminant `p* = ±p`.
+cutting out the quadratic field `ℚ(√P)`. This file writes that character out case by case: it is
+`ZMod.χ₄`, `ZMod.χ₈` and `ZMod.χ₈'` at the three even prime discriminants `-4`, `8` and `-8`, and
+the Legendre symbol `(· / p)`, written as a Jacobi symbol, at an odd prime discriminant `p* = ±p`.
+At a prime discriminant it is the Kronecker symbol `TauCeti.kroneckerSym P`
+(`primeDiscriminantCharFun_eq_kroneckerSym`), and the bundled Dirichlet character is the Kronecker
+character `TauCeti.kroneckerChar`; the function here is total, and differs from the Kronecker
+symbol away from the prime discriminants.
 
 `primeDiscriminantCharFun_mul_right` and `primeDiscriminantCharFun_eq_one_or_eq_neg_one` record
 that it is a `±1`-valued completely multiplicative function on the integers coprime to `P`, and
@@ -50,6 +56,8 @@ to Eisenstein*, §2.2.
   is the Legendre symbol `legendreSym q P`.
 * `TauCeti.Multiquadratic.primeDiscriminantCharFun_two`: its value at `2` is `χ₈ P`.
 * `TauCeti.Multiquadratic.primeDiscriminantCharFun_neg_one`: its value at `-1` is the sign of `P`.
+* `TauCeti.Multiquadratic.primeDiscriminantCharFun_eq_kroneckerSym`: at a prime discriminant it is
+  the Kronecker symbol `(P / ·)`.
 * `TauCeti.Multiquadratic.exists_primeDiscriminantCharFun_eq_neg_one` and
   `TauCeti.Multiquadratic.exists_primeDiscriminantCharFun_eq`: the character is nontrivial, so it
   takes each of the values `±1` at some natural number.
@@ -262,6 +270,31 @@ theorem primeDiscriminantCharFun_neg_one {P : ℤ} (hP : IsPrimeDiscriminant P) 
     split_ifs
     · rw [Int.sign_eq_one_of_pos hp0]
     · rw [Int.sign_neg, Int.sign_eq_one_of_pos hp0]
+
+/-! ### The Kronecker symbol -/
+
+/-- **At a prime discriminant `P`, the character is the Kronecker symbol `(P / ·)`.** For an odd
+prime discriminant this is `(p* / n) = J(n | p)`, the reciprocity form of the Kronecker symbol of a
+discriminant `≡ 1 (mod 4)`; at `-4`, `8` and `-8` both sides are periodic modulo `4` or `8` and
+agree on the residues. The hypothesis is needed: `primeDiscriminantCharFun 3 (-1) = J(-1 | 3) = -1`,
+but `kroneckerSym 3 (-1) = 1`. -/
+theorem primeDiscriminantCharFun_eq_kroneckerSym {P : ℤ} (hP : IsPrimeDiscriminant P) (n : ℤ) :
+    primeDiscriminantCharFun P n = kroneckerSym P n := by
+  rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨p, -, hodd, rfl⟩
+  · have hP₀ : (0 : ℤ) < P.natAbs := by rcases hev with rfl | rfl | rfl <;> decide
+    rw [primeDiscriminantCharFun_mod_right' (Int.emod_emod n P.natAbs).symm,
+      kroneckerSym_mod_right' (.inl (by rcases hev with rfl | rfl | rfl <;> decide))
+        (n := n % P.natAbs) (by rw [Int.emod_emod_of_dvd _ (by simp)])]
+    have h0 := Int.emod_nonneg n hP₀.ne'
+    have h1 := Int.emod_lt_of_pos n hP₀
+    generalize n % P.natAbs = r at h0 h1 ⊢
+    rcases hev with rfl | rfl | rfl <;> norm_num at h1 <;> interval_cases r <;>
+      first
+      | (rw [kroneckerSym_eq_zero_iff.mpr (by decide)]; decide)
+      | (rw [kroneckerSym_of_odd _ (by decide)]; norm_num)
+  · rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd,
+      kroneckerSym_eq_jacobiSym_natAbs (oddPrimeDiscriminant_mod_four_eq_one hodd),
+      oddPrimeDiscriminant_natAbs]
 
 /-! ### Nontriviality -/
 
