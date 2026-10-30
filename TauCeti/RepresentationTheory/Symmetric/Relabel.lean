@@ -52,6 +52,8 @@ namespace TauCeti
 
 namespace YoungTableau
 
+variable {R : Type*} [CommRing R]
+
 section GroupAlgebra
 
 variable {G : Type*} [Group G]
@@ -59,24 +61,25 @@ variable {G : Type*} [Group G]
 /-- The group-algebra basis element of `g`, as a unit whose inverse is the basis element of `g⁻¹`.
 Private: this is the group-algebra plumbing for the conjugation computations and for the
 right-translation equivalence below. -/
-private noncomputable def singleUnit (g : G) : (MonoidAlgebra ℚ G)ˣ :=
-  Units.map (MonoidAlgebra.of ℚ G) (toUnits g)
+private noncomputable def singleUnit (g : G) : (MonoidAlgebra R G)ˣ :=
+  Units.map (MonoidAlgebra.of R G) (toUnits g)
 
 @[simp]
 private theorem coe_singleUnit (g : G) :
-    ((singleUnit g : (MonoidAlgebra ℚ G)ˣ) : MonoidAlgebra ℚ G) = MonoidAlgebra.single g 1 :=
+    ((singleUnit (R := R) g : (MonoidAlgebra R G)ˣ) : MonoidAlgebra R G) = MonoidAlgebra.single
+      g 1 :=
   rfl
 
 @[simp]
 private theorem coe_inv_singleUnit (g : G) :
-    (((singleUnit g)⁻¹ : (MonoidAlgebra ℚ G)ˣ) : MonoidAlgebra ℚ G) =
+    (((singleUnit (R := R) g)⁻¹ : (MonoidAlgebra R G)ˣ) : MonoidAlgebra R G) =
       MonoidAlgebra.single g⁻¹ 1 :=
   rfl
 
 /-- Conjugating in the group algebra conjugates the indices of the coefficients.  Private: this is
 group-algebra plumbing for the conjugation computations below. -/
-private theorem coeff_conj (g h : G) (x : MonoidAlgebra ℚ G) :
-    (MonoidAlgebra.single g (1 : ℚ) * x * MonoidAlgebra.single g⁻¹ 1).coeff h =
+private theorem coeff_conj (g h : G) (x : MonoidAlgebra R G) :
+    (MonoidAlgebra.single g (1 : R) * x * MonoidAlgebra.single g⁻¹ 1).coeff h =
       x.coeff (g⁻¹ * h * g) := by
   simp [mul_assoc]
 
@@ -121,8 +124,8 @@ theorem mem_colSubgroup_relabel {τ : Equiv.Perm (Fin μ.card)} :
 /-- Relabeling by `σ` conjugates the row symmetrizer by `σ`. -/
 @[simp]
 theorem rowSymmetrizer_relabel :
-    rowSymmetrizer (relabel σ t) =
-      MonoidAlgebra.single σ 1 * rowSymmetrizer t * MonoidAlgebra.single σ⁻¹ 1 := by
+    rowSymmetrizer (R := R) (relabel σ t) =
+      MonoidAlgebra.single σ 1 * rowSymmetrizer (R := R) t * MonoidAlgebra.single σ⁻¹ 1 := by
   ext τ
   rw [coeff_conj, rowSymmetrizer_coeff, rowSymmetrizer_coeff]
   by_cases h : σ⁻¹ * τ * σ ∈ rowSubgroup t
@@ -133,8 +136,8 @@ theorem rowSymmetrizer_relabel :
 conjugate permutations having equal signs. -/
 @[simp]
 theorem columnAntisymmetrizer_relabel :
-    columnAntisymmetrizer (relabel σ t) =
-      MonoidAlgebra.single σ 1 * columnAntisymmetrizer t * MonoidAlgebra.single σ⁻¹ 1 := by
+    columnAntisymmetrizer (R := R) (relabel σ t) =
+      MonoidAlgebra.single σ 1 * columnAntisymmetrizer (R := R) t * MonoidAlgebra.single σ⁻¹ 1 := by
   ext τ
   rw [coeff_conj, columnAntisymmetrizer_coeff, columnAntisymmetrizer_coeff]
   have hsign : Equiv.Perm.sign (σ⁻¹ * τ * σ) = Equiv.Perm.sign τ := by
@@ -146,14 +149,14 @@ theorem columnAntisymmetrizer_relabel :
 /-- Relabeling by `σ` conjugates the Young symmetrizer by `σ`: `c_{σt} = σ c_t σ⁻¹`. -/
 @[simp]
 theorem youngSymmetrizer_relabel :
-    youngSymmetrizer (relabel σ t) =
-      MonoidAlgebra.single σ 1 * youngSymmetrizer t * MonoidAlgebra.single σ⁻¹ 1 := by
-  have hσ : MonoidAlgebra.single σ⁻¹ (1 : ℚ) * MonoidAlgebra.single σ 1 = 1 := by
-    simpa using (singleUnit σ).inv_mul
+    youngSymmetrizer (R := R) (relabel σ t) =
+      MonoidAlgebra.single σ 1 * youngSymmetrizer (R := R) t * MonoidAlgebra.single σ⁻¹ 1 := by
+  have hσ : MonoidAlgebra.single σ⁻¹ (1 : R) * MonoidAlgebra.single σ 1 = 1 := by
+    simpa using (singleUnit (R := R) σ).inv_mul
   rw [youngSymmetrizer_def, youngSymmetrizer_def, rowSymmetrizer_relabel,
     columnAntisymmetrizer_relabel]
   simp only [mul_assoc]
-  rw [← mul_assoc (MonoidAlgebra.single σ⁻¹ (1 : ℚ)), hσ, one_mul]
+  rw [← mul_assoc (MonoidAlgebra.single σ⁻¹ (1 : R)), hσ, one_mul]
 
 /-- Relabeling by `σ` conjugates the transported Young symmetrizer, as it does the rational
 one. -/
@@ -170,9 +173,9 @@ theorem youngSymmetrizerOver_relabel (k : Type*) [CommSemiring k] [Algebra ℚ k
 theorem mem_spechtIdeal_relabel_iff {x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))} :
     x ∈ spechtIdeal (relabel σ t) ↔ x * MonoidAlgebra.single σ 1 ∈ spechtIdeal t := by
   have hσ : MonoidAlgebra.single σ⁻¹ (1 : ℚ) * MonoidAlgebra.single σ 1 = 1 := by
-    simpa using (singleUnit σ).inv_mul
+    simpa using (singleUnit (R := ℚ) σ).inv_mul
   have hσ' : MonoidAlgebra.single σ (1 : ℚ) * MonoidAlgebra.single σ⁻¹ 1 = 1 := by
-    simpa using (singleUnit σ).mul_inv
+    simpa using (singleUnit (R := ℚ) σ).mul_inv
   rw [mem_spechtIdeal_iff, mem_spechtIdeal_iff]
   constructor
   · rintro ⟨a, rfl⟩
@@ -194,7 +197,7 @@ two ideals. -/
 def spechtIdealRelabelEquiv :
     spechtIdeal (relabel σ t) ≃ₗ[MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))] spechtIdeal t :=
   (Units.mulRightLinearEquiv (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))
-      (singleUnit σ)).ofSubmodules _ _ <| by
+      (singleUnit (R := ℚ) σ)).ofSubmodules _ _ <| by
     refine Submodule.ext fun x => ?_
     rw [Submodule.mem_map_equiv, Units.symm_mulRightLinearEquiv_apply,
       mem_spechtIdeal_relabel_iff, ← coe_singleUnit σ, Units.inv_mul_cancel_right]
