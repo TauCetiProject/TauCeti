@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 public import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
+import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 
 /-!
 # Green's formula for bilinear pairings on rectangles and annuli
@@ -74,8 +74,9 @@ private theorem extDeriv_bilinearPullbackOneForm_apply
     extDeriv (bilinearPullbackOneForm B u) z ![v, w] =
       B (fderiv ℝ u z v) (fderiv ℝ u z w) - B (fderiv ℝ u z w) (fderiv ℝ u z v) := by
   have hσ (x v w : V) : extDeriv (bilinearOneForm B) x ![v, w] = B v w - B w v := by
-    rw [extDeriv_apply_pair, (bilinearOneForm B).fderiv]
-    simp [bilinearOneForm]
+    rw [ContinuousLinearMap.extDeriv_eq, bilinearOneForm,
+      ContinuousAlternatingMap.alternatizeUncurryFin_ofSubsingletonLIE_comp]
+    simp
   have h := congrArg (fun A ↦ A ![v, w])
     (extDeriv_pullback (ω := bilinearOneForm B) (bilinearOneForm B).differentiableAt
       hu (by norm_num))
