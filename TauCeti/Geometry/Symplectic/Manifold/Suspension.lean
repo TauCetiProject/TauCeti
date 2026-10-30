@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.DeRham.Wedge
 
@@ -31,6 +31,10 @@ exactly when `σ` is. Since `ds ∧ dt` is closed, and `σ_v` is closed exactly 
 closed exactly when `σ` is. So a symplectomorphism `φ` of a symplectic manifold `(M, σ)` makes
 `(X_φ, Ω)` a symplectic manifold. No compactness of `M` is needed.
 
+On the mapping torus itself the fiber form `σ_v` of a nondegenerate `σ` is degenerate in exactly
+one direction: its kernel at every point is the line spanned by the vector field `T = ∂_t`
+(`TauCeti.SmoothMappingTorus.ker_bilinFormAt_fiberForm`).
+
 ## Main definitions
 
 * `TauCeti.SmoothMappingTorus.suspensionForm φ σ hσ`: the two-form `Ω = ds ∧ dt + σ_v` on
@@ -42,6 +46,12 @@ closed exactly when `σ` is. So a symplectomorphism `φ` of a symplectic manifol
   of `(ℝ / ℤ) × Y_φ`, through their components.
 * `TauCeti.SmoothMappingTorus.eval₂_suspensionForm_mk`: in the coordinates `(s, t, x)`, `Ω` pairs
   `a ∂_s + b ∂_t + v` with `a' ∂_s + b' ∂_t + v'` to `a b' - a' b + σ(v, v')`.
+* `TauCeti.SmoothMappingTorus.ker_bilinFormAt_fiberForm`: the kernel of the fiber form `σ_v` of a
+  nondegenerate `σ` is the line spanned by `T = ∂_t`.
+* `TauCeti.SmoothMappingTorus.mpullback_prodMap_map_suspensionForm`: for a smooth map `g`
+  intertwining `φ` and `ψ`, the map `(θ, [t, x]) ↦ (θ, [t, g x])` pulls the form `Ω` built from
+  `τ` back to the form `Ω` built from `g^* τ`. So a conjugacy of symplectomorphisms that is itself
+  a symplectomorphism induces a symplectomorphism of the suspensions.
 * `TauCeti.SmoothMappingTorus.isClosed_suspensionForm_iff`,
   `TauCeti.SmoothMappingTorus.isNondegenerate_suspensionForm_iff`,
   `TauCeti.SmoothMappingTorus.isSymplectic_suspensionForm_iff`: `Ω` is closed, nondegenerate or
@@ -168,6 +178,36 @@ private theorem symm_tangentSpaceProdEquiv_eq_zero_iff [T2Space M] [LocallyCompa
     exact e.symm.map_eq_zero_iff.2
       (Prod.ext rfl ((congrArg D (e'.symm.map_eq_zero_iff.2 rfl)).trans D.map_zero))
 
+/-- The fiber form `σ_v` of a nondegenerate two-form `σ` preserved by `φ` has kernel the line
+spanned by the vector field `T = ∂_t` at every point of the mapping torus. -/
+theorem ker_bilinFormAt_fiberForm (h : σ.IsNondegenerate) (y : SmoothMappingTorus φ) :
+    LinearMap.ker ((fiberForm φ σ hσ).bilinFormAt y) = ℝ ∙ timeVectorField φ y := by
+  obtain ⟨⟨t, x⟩, rfl⟩ : ∃ p : ℝ × M, mk φ p.1 p.2 = y := uncurry_mk_surjective φ y
+  set D := mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
+  set B := (fiberForm φ σ hσ).bilinFormAt (mk φ t x)
+  -- The vector `T` pairs to zero with every vector.
+  have hT : B (timeVectorField φ (mk φ t x)) = 0 := LinearMap.ext fun w' ↦ by
+    rw [SmoothForm.bilinFormAt_apply, eval₂_fiberForm_timeVectorField_left, LinearMap.zero_apply]
+  refine le_antisymm (fun w hw ↦ ?_)
+    ((Submodule.span_singleton_le_iff_mem _ _).2 (LinearMap.mem_ker.2 hT))
+  obtain ⟨b, v, rfl⟩ := exists_mfderiv_uncurry_mk_eq φ t x w
+  -- Pairing with the vectors `v'` tangent to the fiber gives `σ(v, v') = 0`, so `v = 0`.
+  obtain rfl : v = 0 := (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 h) x v fun v' ↦ by
+    have h₁ := eval₂_fiberForm_mfderiv_uncurry_mk (hτ := hσ) t x
+      ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))
+      ((Manifold.tangentSpaceProdEquiv (t, x)).symm (0, v'))
+    simp only [ContinuousLinearEquiv.apply_symm_apply] at h₁
+    have h₂ := LinearMap.congr_fun (LinearMap.mem_ker.1 hw)
+      (D ((Manifold.tangentSpaceProdEquiv (t, x)).symm (0, v')))
+    exact h₁.symm.trans ((SmoothForm.bilinFormAt_apply _ _ _ _).symm.trans
+      (h₂.trans (LinearMap.zero_apply _)))
+  -- The vector `b ∂_t` is the image of `(b, 0) = b • (1, 0)`.
+  refine Submodule.mem_span_singleton.2
+    ⟨b, (congrArg (b • ·) (timeVectorField_mk φ t x)).trans ?_⟩
+  refine (D.map_smul b _).symm.trans (congrArg D
+    (((Manifold.tangentSpaceProdEquiv (t, x)).symm.map_smul b _).symm.trans ?_))
+  exact congrArg (Manifold.tangentSpaceProdEquiv (t, x)).symm (Prod.ext (mul_one b) (smul_zero b))
+
 /-- The form `Ω = ds ∧ dt + σ_v` is fiberwise nondegenerate exactly when `σ` is. -/
 @[simp]
 theorem isNondegenerate_suspensionForm_iff :
@@ -243,6 +283,49 @@ theorem isSymplectic_suspensionForm_iff :
       isNondegenerate_suspensionForm_iff.1 h.isNondegenerate⟩,
     fun h ↦ ⟨isClosed_suspensionForm_iff.2 h.isClosed,
       isNondegenerate_suspensionForm_iff.2 h.isNondegenerate⟩⟩
+
+/-- For a smooth map `g` intertwining `φ` and `ψ`, the map `(θ, [t, x]) ↦ (θ, [t, g x])` of
+`(ℝ / ℤ) × Y_φ` to `(ℝ / ℤ) × Y_ψ` pulls the form `Ω = ds ∧ dt + τ_v` back to the form
+`Ω = ds ∧ dt + σ_v` of `σ = g^* τ`. -/
+theorem mpullback_prodMap_map_suspensionForm {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N] [T2Space N]
+    [LocallyCompactSpace N] {ψ : N ≃ₘ⟮J, J⟯ N} {g : M → N} (h : Semiconj g φ ψ)
+    (hg : ContMDiff I J ∞ g) {τ : SmoothTwoForm J N}
+    (hτ : SmoothForm.mpullback ψ ψ.contMDiff τ = τ) (hgτ : SmoothForm.mpullback g hg τ = σ) :
+    SmoothForm.mpullback (Prod.map id (map φ ψ g h))
+        (contMDiff_id.prodMap (contMDiff_map φ ψ g h hg)) (suspensionForm ψ τ hτ) =
+      suspensionForm φ σ hσ := by
+  have hm : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) ∞ (map φ ψ g h) := contMDiff_map φ ψ g h hg
+  have hfst : Prod.fst ∘ Prod.map id (map φ ψ g h) =
+      (Prod.fst : UnitAddCircle × SmoothMappingTorus φ → _) :=
+    rfl
+  have hsnd : Prod.snd ∘ Prod.map (id : UnitAddCircle → UnitAddCircle) (map φ ψ g h) =
+      map φ ψ g h ∘ Prod.snd :=
+    rfl
+  -- Pulling back along `Prod.map id (map φ ψ g h)` fixes the forms pulled back from the circle
+  -- factor, and pulls back along `map φ ψ g h` the forms pulled back from the mapping torus factor.
+  have hcircle : SmoothForm.mpullback (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm)
+      (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1)) =
+        SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1) := by
+    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
+    simp only [hfst]
+  have htorus {k : ℕ} (β : SmoothForm (𝓘(ℝ).prod J) (SmoothMappingTorus ψ) ℝ k) :
+      SmoothForm.mpullback (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm)
+          (SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod J))
+            (Prod.snd : UnitAddCircle × SmoothMappingTorus ψ → SmoothMappingTorus ψ)
+            contMDiff_snd β) =
+        SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
+          (Prod.snd : UnitAddCircle × SmoothMappingTorus φ → SmoothMappingTorus φ) contMDiff_snd
+          (SmoothForm.mpullback (map φ ψ g h) hm β) := by
+    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp, ← LinearMap.comp_apply,
+      ← SmoothForm.mpullback_comp]
+    simp only [hsnd]
+  rw [suspensionForm_def, suspensionForm_def, map_add, htorus, mpullback_map_fiberForm h hg hτ hgτ]
+  -- The wedge `ds ∧ dt` has degree `1 + 1`, which `rw` does not match with the degree `2` of `Ω`.
+  refine congrArg (· + _) ((SmoothForm.mpullback_wedge (k := 1) (l := 1)
+    (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm) _ _).trans ?_)
+  rw [hcircle, htorus, mpullback_map_timeForm φ ψ h hg]
 
 end SmoothMappingTorus
 

@@ -28,6 +28,8 @@ square of commutative rings and as `IsBaseChange` for the linear map above.
 
 * `TauCeti.AlgebraicGeometry.baseRingToStructurePresheaf_app_comp_appLE_of_isPullback`: pulling
   back sections along `g` commutes with the base-ring maps.
+* `TauCeti.AlgebraicGeometry.appTop_baseRingToGlobalSections_of_isPullback`: the same on global
+  sections, for the base-ring maps to global functions.
 * `TauCeti.AlgebraicGeometry.isPushout_baseRingToStructurePresheaf_app_of_flat`: flat base change
   for sections of the structure sheaf, as a pushout square of commutative rings.
 * `TauCeti.AlgebraicGeometry.sectionsBaseChange`: pulling back sections along `g`, as an `R`-linear
@@ -77,6 +79,19 @@ lemma baseRingToStructurePresheaf_app_comp_appLE_of_isPullback {W : X.Opens} {W'
   exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
     (Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom (algebraMap R R'))).symm).trans
       (Category.assoc _ _ _))
+
+include H in
+/-- The base change `g` carries the action of the base ring `R` on global functions to the action
+of `R'`, through `algebraMap R R'`. -/
+lemma appTop_baseRingToGlobalSections_of_isPullback (r : R) :
+    g.appTop (Scheme.Modules.baseRingToGlobalSections R X r) =
+      Scheme.Modules.baseRingToGlobalSections R' Y (algebraMap R R' r) := by
+  have h := congrArg (fun φ ↦ φ.hom r)
+    (baseRingToStructurePresheaf_app_comp_appLE_of_isPullback H (W := ⊤) (W' := ⊤) le_top)
+  simp only [Scheme.baseRingToStructurePresheaf_app_top, CommRingCat.comp_apply,
+    CommRingCat.hom_ofHom] at h
+  rw [Scheme.Hom.appTop, Scheme.Hom.app_eq_appLE]
+  exact h
 
 include H in
 /-- **Flat base change for sections of the structure sheaf**, as a pushout square of commutative

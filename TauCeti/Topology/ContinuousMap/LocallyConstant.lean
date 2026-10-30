@@ -16,6 +16,9 @@ On a profinite space `X`, every continuous function to a uniform space is a unif
 locally constant functions: `LocallyConstant.denseRange_toContinuousMap`. This is the density
 statement used to extend functionals from locally constant test functions to all continuous
 ones, for instance to extend the coefficients of measures on profinite spaces.
+
+`ContinuousMap.intCastLocallyConstant` casts integer-valued continuous functions to locally
+constant functions with values in any type with an integer cast.
 -/
 
 public section
@@ -38,3 +41,18 @@ theorem denseRange_toContinuousMap :
   exact ⟨_, ⟨⟨g ∘ q, (IsLocallyConstant.of_discrete g).comp_continuous hq⟩, rfl⟩, hqg⟩
 
 end LocallyConstant
+
+namespace ContinuousMap
+
+/-- Cast an integer-valued continuous function to a locally constant function. -/
+def intCastLocallyConstant {X R : Type*} [TopologicalSpace X] [IntCast R]
+    (f : C(X, ℤ)) : LocallyConstant X R :=
+  ⟨fun x ↦ (f x : R), ((IsLocallyConstant.iff_continuous _).mpr f.continuous).comp Int.cast⟩
+
+/-- The locally constant integer cast agrees pointwise with the integer cast. -/
+@[simp]
+theorem intCastLocallyConstant_apply {X R : Type*} [TopologicalSpace X] [IntCast R]
+    (f : C(X, ℤ)) (x : X) : f.intCastLocallyConstant (R := R) x = (f x : R) :=
+  (rfl)
+
+end ContinuousMap

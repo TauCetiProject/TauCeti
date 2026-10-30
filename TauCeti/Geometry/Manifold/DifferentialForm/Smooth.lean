@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 
 /-!
 # Smooth bundle-valued differential forms
@@ -21,6 +22,11 @@ specialization.  These carriers are the input for smooth wedge products and pull
 
 The degree-two adapters below evaluate smooth forms on ordered pairs and expose real-valued fibres
 as alternating bilinear forms.
+
+In the trivialization at any point, the fiber coordinate of a form at `y` is the form pulled back
+along the inverse tangent trivialization at `y` (`TauCeti.RoughForm.trivializationAt_apply_snd`),
+with no chart-domain hypothesis. Hence a form is `C^n` exactly when its values on the frames of
+these trivializations are (`TauCeti.isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply`).
 
 Smoothness is expressed through the total-space charts of the topological alternating bundle.  The
 module operations use Mathlib's smooth-section API, so this carrier does not require a chosen
@@ -292,6 +298,34 @@ theorem IsSmoothForm.of_le [IsManifold I 1 M] {m n : WithTop ℕ∞} {φ : Rough
     (hφ : IsSmoothForm I n φ) (hmn : m ≤ n) : IsSmoothForm I m φ :=
   (isSmoothForm_def m φ).mpr (hφ.contMDiff.of_le hmn)
 
+/-- The fiber coordinate of a form in the alternating-bundle trivialization at `x` is the form
+pulled back along the inverse tangent trivialization at `x`. -/
+theorem RoughForm.trivializationAt_apply_snd [IsManifold I 1 M] (φ : RoughForm I M F k)
+    (x y : M) :
+    (trivializationAt (E [⋀^Fin k]→L[ℝ] F) (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) x
+      ⟨y, φ y⟩).2 =
+      (φ y).compContinuousLinearMap ((trivializationAt E (TangentSpace I) x).symmL ℝ y) := by
+  rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply]
+  simp only [ContinuousAlternatingMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization]
+  -- Composition with the identity of the trivial coefficient bundle is the identity.
+  rfl
+
+/-- **Smoothness of a form read in tangent trivializations**: for a finite-dimensional model
+space, a form is `C^n` exactly when, near each point `x`, its values on the frame
+`e.symmL y ∘ v` of the tangent trivialization `e` at `x`, for each fixed tuple `v` of model
+vectors, are `C^n` at `x`. -/
+theorem isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply [IsManifold I 1 M]
+    [FiniteDimensional ℝ E]
+    {n : WithTop ℕ∞} {φ : RoughForm I M F k} :
+    IsSmoothForm I n φ ↔ ∀ (x : M) (v : Fin k → E), ContMDiffAt I 𝓘(ℝ, F) n
+      (fun y ↦ φ y ((trivializationAt E (TangentSpace I) x).symmL ℝ y ∘ v)) x := by
+  rw [isSmoothForm_def]
+  refine forall_congr' fun x ↦ ?_
+  simp only [contMDiffAt_section, RoughForm.trivializationAt_apply_snd,
+    contMDiffAt_continuousAlternatingMap_apply,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply]
+
 /-- The submodule of smooth fixed-coefficient `F`-valued rough forms. -/
 def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
@@ -389,6 +423,15 @@ theorem mdifferentiableAt (φ : SmoothForm I M F k) (x : M) :
         TotalSpace (E [⋀^Fin k]→L[ℝ] F)
           (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Bundle.Trivial M F x))) x :=
   φ.contMDiff.mdifferentiableAt (by simp)
+
+/-- Evaluating a smooth form on vector fields differentiable at a point gives a function
+differentiable at that point. -/
+theorem mdifferentiableAt_apply_vectorField (φ : SmoothForm I M F k)
+    {V : Fin k → (y : M) → TangentSpace I y} {x : M}
+    (hV : ∀ i, MDifferentiableAt I I.tangent (fun y ↦ (V i y : TangentBundle I M)) x) :
+    MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ φ.1 y (V · y)) x := by
+  have h := (φ.mdifferentiableAt x).continuousAlternatingMap_bundle_apply (b := id) hV
+  simpa using ((mdifferentiableAt_totalSpace _ _).1 h).2
 
 /-- The smooth section underlying a fixed-coefficient smooth form. -/
 def toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
@@ -541,6 +584,11 @@ theorem eval₂_add (φ ψ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x
     (φ + ψ).eval₂ x v w = φ.eval₂ x v w + ψ.eval₂ x v w :=
   (rfl)
 
+/-- Evaluation of the negative of a degree-two form is the negative of the evaluation. -/
+theorem eval₂_neg (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
+    (-φ).eval₂ x v w = -φ.eval₂ x v w :=
+  (rfl)
+
 
 section Evaluation
 
@@ -662,6 +710,18 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
   apply MultilinearMap.isAlt_toBilinForm
   intro v
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
+
+/-- The bilinear form represented by a degree-two smooth form at a point vanishes exactly when the
+form vanishes there. -/
+@[simp]
+theorem bilinFormAt_eq_zero_iff (φ : SmoothForm I M ℝ 2) (x : M) :
+    φ.bilinFormAt x = 0 ↔ φ.1 x = 0 := by
+  refine ⟨fun h => ContinuousAlternatingMap.ext fun v => ?_, fun h => ?_⟩
+  · have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+    rw [hv]
+    simpa using LinearMap.congr_fun₂ h (v 0) (v 1)
+  · ext v w
+    simp [h]
 
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
 theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :

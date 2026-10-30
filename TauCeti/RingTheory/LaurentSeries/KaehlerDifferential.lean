@@ -28,10 +28,12 @@ its universal derivation `d = TauCeti.ContinuousKaehlerDifferential.D K`, and sh
 * `Ω¹_cont(F/K)` carries the module topology over `F`, for which this equivalence is a
   homeomorphism; thus it is the valuation topology of `F` transported along it, and `d` is
   continuous.
-* For every `F`-module `M` with its module topology, a `K`-derivation `δ : F → M` is continuous
-  if and only if `δ f = D f • δ X` for all `f`, and then it factors uniquely as `ℓ ∘ d` with
-  `ℓ : Ω¹_cont(F/K) → M` an `F`-linear map, which is automatically continuous. Conversely every
-  `ℓ ∘ d` is continuous. So `d` is the universal continuous derivation.
+* For every Hausdorff `F`-module `M` with continuous scalar multiplication, a `K`-derivation
+  `δ : F → M` is continuous if and only if `δ f = D f • δ X` for all `f`, and then it factors
+  uniquely as `ℓ ∘ d` with `ℓ : Ω¹_cont(F/K) → M` an `F`-linear map, which is automatically
+  continuous. Conversely every `ℓ ∘ d` is continuous, even without Hausdorffness. These
+  continuity statements use the rank-one normal form and require no continuity of addition on
+  `M`. So `d` is the universal continuous derivation.
 
 The classification of such derivations is
 `Derivation.continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul`, from
@@ -60,6 +62,8 @@ that of `φ⁻¹`, which preserves residues.
 ## Main results
 
 * `TauCeti.ContinuousKaehlerDifferential.continuous_D`: the universal derivation is continuous.
+* `TauCeti.ContinuousKaehlerDifferential.continuous_of_linearMap`: every linear map from the
+  continuous differentials to a module with continuous scalar multiplication is continuous.
 * `TauCeti.ContinuousKaehlerDifferential.existsUnique_compDer_eq`: every continuous derivation
   factors uniquely through `d`.
 * `TauCeti.ContinuousKaehlerDifferential.derivative_smul_D_single_one`: `d f = Df dX`.
@@ -191,10 +195,9 @@ theorem finrank_eq_one : Module.finrank K⸨X⸩ (ContinuousKaehlerDifferential 
 
 /-- The universal derivation `d` is continuous. -/
 theorem continuous_D : Continuous (D K) :=
-  (Derivation.continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul.mpr
-    ⟨D K (single 1 1), fun f ↦ by
-      rw [laurentSeriesDerivation_apply, ← equivLaurentSeries_D,
-        equivLaurentSeries_smul_D_single_one]⟩)
+  (equivLaurentSeries K).toHomeomorph.comp_continuous_iff.mp <| by
+    simpa only [ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_def,
+      equivLaurentSeries_D] using (LaurentSeries.continuous_derivative (K := K))
 
 variable {K}
 
@@ -206,8 +209,21 @@ theorem hom_ext {S N : Type*} [Semiring S] [AddCommMonoid N] [Module S N] {σ : 
   ext ω
   rw [← equivLaurentSeries_smul_D_single_one K ω, map_smulₛₗ, map_smulₛₗ, h]
 
+/-- Every linear map from the continuous differentials to a module with continuous scalar
+multiplication is continuous. -/
+@[fun_prop]
+theorem continuous_of_linearMap {M : Type*} [AddCommMonoid M] [Module K⸨X⸩ M]
+    [TopologicalSpace M] [ContinuousSMul K⸨X⸩ M]
+    (ℓ : ContinuousKaehlerDifferential K →ₗ[K⸨X⸩] M) : Continuous ℓ :=
+  ((equivLaurentSeries K).continuous.fun_smul continuous_const).congr fun ω ↦ by
+    simpa only [map_smul] using congrArg ℓ (equivLaurentSeries_smul_D_single_one K ω)
+
 variable {M : Type*} [AddCommGroup M] [Module K⸨X⸩ M] [Module K M]
-  [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M] [IsModuleTopology K⸨X⸩ M]
+  [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M] [ContinuousSMul K⸨X⸩ M]
+
+section Hausdorff
+
+variable [T2Space M]
 
 /-- For a continuous derivation `δ`, the map `Ω[K⸨X⸩⁄K] → M` it induces is `λ` followed by
 `f ↦ f • δ X`, where `λ` is the map induced by the formal derivative. -/
@@ -244,8 +260,7 @@ theorem compDer_lift (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ) :
 /-- The factorization of a continuous derivation is continuous. -/
 theorem continuous_lift (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ) :
     Continuous (lift δ hδ) :=
-  have := IsModuleTopology.toContinuousAdd K⸨X⸩ M
-  IsModuleTopology.continuous_of_linearMap _
+  continuous_of_linearMap _
 
 /-- The factorization of `δ` through `d` is unique. -/
 theorem lift_unique (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ)
@@ -254,17 +269,19 @@ theorem lift_unique (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ)
   hom_ext <| by rw [lift_D, ← h]; simp
 
 /-- **Universal property of continuous differentials.** Every continuous `K`-derivation of
-`K⸨X⸩` into a module with its module topology factors uniquely through `d` by a
-`K⸨X⸩`-linear map. -/
+`K⸨X⸩` into a Hausdorff module with continuous scalar multiplication factors uniquely through
+`d` by a `K⸨X⸩`-linear map. -/
 theorem existsUnique_compDer_eq (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ) :
     ∃! ℓ : ContinuousKaehlerDifferential K →ₗ[K⸨X⸩] M, ℓ.compDer (D K) = δ :=
   ⟨lift δ hδ, compDer_lift δ hδ, fun ℓ h ↦ lift_unique δ hδ ℓ h⟩
 
-/-- Conversely, every derivation factoring through `d` is continuous. -/
+end Hausdorff
+
+/-- Every derivation factoring through `d` is continuous when scalar multiplication on its
+target is continuous. -/
 theorem continuous_compDer (ℓ : ContinuousKaehlerDifferential K →ₗ[K⸨X⸩] M) :
     Continuous (ℓ.compDer (D K)) :=
-  have := IsModuleTopology.toContinuousAdd K⸨X⸩ M
-  (IsModuleTopology.continuous_of_linearMap ℓ).comp (continuous_D K)
+  (continuous_of_linearMap ℓ).comp (continuous_D K)
 
 /-! ### Substitution into one-forms -/
 

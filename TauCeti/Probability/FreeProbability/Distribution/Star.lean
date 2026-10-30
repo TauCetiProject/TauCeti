@@ -46,15 +46,17 @@ variable {R A B ι κ : Type*} [CommSemiring R] [StarRing R]
 apply `φ`. Normalization and positivity are separate conditions. -/
 noncomputable def starDistribution (φ : A →ₗ[R] R) (a : ι → A) :
     StarPolynomial R ι →ₗ[R] R :=
-  φ.comp (lift R a : StarPolynomial R ι →ₐ[R] A).toLinearMap
+  φ.comp (lift (R := R) a : StarPolynomial R ι →ₐ[R] A).toLinearMap
 
 /-- A star distribution is the pullback of the functional along star polynomial evaluation. -/
 theorem starDistribution_def (φ : A →ₗ[R] R) (a : ι → A) :
-    starDistribution φ a = φ.comp (lift R a : StarPolynomial R ι →ₐ[R] A).toLinearMap := (rfl)
+    starDistribution φ a =
+      φ.comp (lift (R := R) a : StarPolynomial R ι →ₐ[R] A).toLinearMap :=
+  (rfl)
 
 @[simp]
 theorem starDistribution_apply (φ : A →ₗ[R] R) (a : ι → A) (p : StarPolynomial R ι) :
-    starDistribution φ a p = φ (lift R a p) := (rfl)
+    starDistribution φ a p = φ (lift a p) := (rfl)
 
 /-- The star distribution of `a` is the joint algebraic distribution of the variables and their
 adjoints, read through the identification of star polynomials with the free algebra. -/
@@ -68,7 +70,7 @@ theorem starDistribution_eq_jointDistribution_comp (φ : A →ₗ[R] R) (a : ι 
 the corresponding word in the variables and their adjoints. For the empty word this is
 `φ 1`. -/
 theorem starDistribution_list_prod (φ : A →ₗ[R] R) (a : ι → A) (w : List (ι × Bool)) :
-    starDistribution φ a (w.map (generator R ι)).prod = φ (w.map (withStar a)).prod := by
+    starDistribution φ a (w.map (withStar (X (R := R)))).prod = φ (w.map (withStar a)).prod := by
   simp [map_list_prod, List.map_map, Function.comp_def]
 
 /-- A star distribution is determined by the moments of all words in the variables and their
@@ -83,7 +85,7 @@ theorem starDistribution_eq_iff {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R} {a : �
 /-- Evaluating the formal variables recovers the original functional on star polynomials. -/
 @[simp]
 theorem starDistribution_X (φ : StarPolynomial R ι →ₗ[R] R) :
-    starDistribution φ (X R ι) = φ := by
+    starDistribution φ (X (R := R) (ι := ι)) = φ := by
   ext p
   simp
 
@@ -97,23 +99,23 @@ theorem starDistribution_map (φ : B →ₗ[R] R) (f : A →⋆ₐ[R] B) (a : ι
 /-- The star distribution of a family obtained by evaluating star polynomials is obtained by
 applying the same substitution to the star distribution. -/
 theorem starDistribution_subst (φ : A →ₗ[R] R) (a : ι → A) (p : κ → StarPolynomial R ι) :
-    starDistribution φ (fun j => lift R a (p j)) =
+    starDistribution φ (fun j => lift a (p j)) =
       starDistribution (starDistribution φ a) p := by
   simpa only [starDistribution_def, Function.comp_def] using
-    (starDistribution_map φ (lift R a) p).symm
+    (starDistribution_map φ (lift a) p).symm
 
 /-- Relabeling, including restriction to a subfamily, is pullback by the corresponding
 substitution of variables. The label map need not be injective. -/
 theorem starDistribution_comp (φ : A →ₗ[R] R) (a : ι → A) (r : κ → ι) :
-    starDistribution φ (a ∘ r) = starDistribution (starDistribution φ a) (X R ι ∘ r) := by
-  simpa [Function.comp_def] using starDistribution_subst φ a (X R ι ∘ r)
+    starDistribution φ (a ∘ r) = starDistribution (starDistribution φ a) (X ∘ r) := by
+  simpa [Function.comp_def] using starDistribution_subst φ a (X ∘ r)
 
 /-- Equality of star distributions is preserved by evaluating any family of star
 polynomials. -/
 theorem starDistribution_subst_eq {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R} {a : ι → A} {b : ι → B}
     (h : starDistribution φ a = starDistribution ψ b) (p : κ → StarPolynomial R ι) :
-    starDistribution φ (fun j => lift R a (p j)) =
-      starDistribution ψ (fun j => lift R b (p j)) := by
+    starDistribution φ (fun j => lift a (p j)) =
+      starDistribution ψ (fun j => lift b (p j)) := by
   rw [starDistribution_subst, starDistribution_subst, h]
 
 /-- Equal star distributions have equal star distributions on every relabeled family,
@@ -127,13 +129,9 @@ theorem starDistribution_comp_eq {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R} {a : 
 polynomials without adjoints. -/
 theorem jointDistribution_eq_starDistribution_comp (φ : A →ₗ[R] R) (a : ι → A) :
     jointDistribution φ a =
-      (starDistribution φ a).comp (FreeAlgebra.lift R (X R ι)).toLinearMap := by
-  have h : (lift R a : StarPolynomial R ι →ₐ[R] A).comp (FreeAlgebra.lift R (X R ι)) =
-      FreeAlgebra.lift R a := by
-    ext i
-    simp
+      (starDistribution φ a).comp (ofFreeAlgebra R ι).toLinearMap := by
   ext p
-  simpa using congrArg φ (AlgHom.congr_fun h p).symm
+  simp
 
 /-- Equal star distributions have equal joint algebraic distributions. -/
 theorem jointDistribution_eq_of_starDistribution_eq {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
@@ -149,10 +147,10 @@ theorem starDistribution_eq_iff_eqOn_adjoin {φ ψ : A →ₗ[R] R} {a : ι → 
   rw [← range_lift (R := R)]
   constructor
   · rintro h x ⟨p, rfl⟩
-    exact LinearMap.congr_fun h p
+    simpa using LinearMap.congr_fun h p
   · intro h
     ext p
-    exact h ⟨p, rfl⟩
+    simpa using h ⟨p, rfl⟩
 
 /-- A functional commuting with `star` has star distributions commuting with `star`. -/
 theorem starDistribution_star {φ : A →ₗ[R] R} (hφ : ∀ x, φ (star x) = star (φ x))
@@ -165,6 +163,6 @@ same property. -/
 theorem starDistribution_star_mul_self_nonneg [PartialOrder R] {φ : A →ₗ[R] R}
     (hφ : ∀ x, 0 ≤ φ (star x * x)) (a : ι → A) (p : StarPolynomial R ι) :
     0 ≤ starDistribution φ a (star p * p) := by
-  simpa [map_star] using hφ (lift R a p)
+  simpa [map_star] using hφ (lift a p)
 
 end TauCeti
