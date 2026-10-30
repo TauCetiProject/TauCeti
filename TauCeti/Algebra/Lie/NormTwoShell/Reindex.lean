@@ -42,6 +42,7 @@ positive pinning. The relabellings are functorial (`Matrix.ShellLieAlgebra.reind
 
 * `Matrix.ShellLieAlgebra.reindex_cartan`, `Matrix.ShellLieAlgebra.reindex_root`: the values on
   Cartan and root vectors.
+* `Matrix.ShellLieAlgebra.reindex_basis`: the relabelling permutes the integral basis up to sign.
 * `Matrix.ShellLieAlgebra.reindex_root_single`, `Matrix.ShellLieAlgebra.reindex_root_neg_single`:
   the relabelling preserves the simple root vectors.
 * `Matrix.ShellLieAlgebra.reindex_rootBracket`: the relabelling of a root bracket.
@@ -96,6 +97,18 @@ theorem reindex_cartan (h : I → ℤ) : reindex e he (cartan B h) = cartan B' (
         ← basis_inl, LinearEquiv.coe_coe, reindex, Basis.equiv_apply]
       simp [Basis.unitsSMul_apply]
   exact congr($key h)
+
+/-- **The relabelling on the integral basis.** The relabelling sends the basis vector indexed by
+`k : I ⊕ Φ` to the basis vector indexed by its image under `e` and `Matrix.normTwoShellCongr`,
+multiplied by the inversion sign `σ(a)` when `k` is a root `a` and by `1` when `k` is a vertex. -/
+theorem reindex_basis (k : I ⊕ B.normTwoShell) :
+    reindex e he (basis B k) =
+      Sum.elim (fun _ ↦ (1 : ℤˣ)) (fun a : B.normTwoShell ↦ inversionSign B e a) k •
+        basis B' (e.sumCongr (normTwoShellCongr he) k) := by
+  rcases k with i | a
+  · rw [basis_inl, reindex_cartan, Pi.single_comp_equiv, Equiv.symm_symm]
+    simp
+  · simp
 
 /-- The relabelling sends the simple root vector `x_(αᵢ)` to `x_(α_(e i))`. -/
 theorem reindex_root_single [DecidableEq I] [DecidableEq J] (i : I)
