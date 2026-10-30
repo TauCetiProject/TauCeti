@@ -20,6 +20,8 @@ of an integrally closed domain `R`, `S` is integrally closed in its generic fibr
 
 * `TauCeti.Algebra.Smooth.isIntegrallyClosedIn_tensorProduct`: a smooth algebra `S` over `R` is
   integrally closed in `S ⊗[R] B` whenever `R` is integrally closed in `B`. It is an instance.
+* `TauCeti.Algebra.Smooth.exists_includeRight_eq_of_isIntegral`: the same with the factors in the
+  other order: every element of `B ⊗[R] S` integral over `R` comes from `S`.
 
 ## References
 
@@ -67,5 +69,16 @@ instance isIntegrallyClosedIn_tensorProduct [Algebra.Smooth R S] :
       obtain ⟨s₁, hs₁⟩ := h₁
       obtain ⟨s₂, hs₂⟩ := h₂
       exact ⟨s₁ + s₂, by rw [map_add, hs₁, hs₂, map_add]⟩
+
+/-- Every element of `B ⊗[R] S` that is integral over `R` comes from the smooth `R`-algebra `S`,
+when `R` is integrally closed in `B`. This is `isIntegrallyClosedIn_tensorProduct` with the factors
+in the other order. -/
+theorem exists_includeRight_eq_of_isIntegral [Algebra.Smooth R S] {z : B ⊗[R] S}
+    (hz : IsIntegral R z) : ∃ s : S, Algebra.TensorProduct.includeRight s = z := by
+  let σ := Algebra.TensorProduct.comm R B S
+  obtain ⟨s, hs⟩ := (isIntegrallyClosedIn_iff.mp
+    (inferInstance : IsIntegrallyClosedIn S (S ⊗[R] B))).2 ((hz.map σ).tower_top (A := S))
+  refine ⟨s, σ.injective ?_⟩
+  simpa [σ, Algebra.TensorProduct.algebraMap_apply] using hs
 
 end TauCeti.Algebra.Smooth
