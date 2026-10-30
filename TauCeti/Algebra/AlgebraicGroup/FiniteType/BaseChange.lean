@@ -33,6 +33,9 @@ base-changed object is identified with the original points evaluated on `K`-alge
 * `FiniteTypeCommHopfAlgCat.baseChangeMap_includeLeft_injective` and
   `FiniteTypeCommHopfAlgCat.baseChangeMap_includeRight_injective`: the base-changed coordinate
   inclusions into a product are injective.
+* `FiniteTypeCommHopfAlgCat.baseChangeTowerIso`: base change along a tower `k → E → K` agrees
+  with base change along the composite; `baseChangeTowerIso_hom_apply` and
+  `baseChangeTowerIso_inv_apply` give its action on pure tensors.
 * `FiniteTypeCommHopfAlgCat.baseChangeIsoOfObjIso`: lift an isomorphism between specified
   underlying base-changed objects to the finite-type full subcategory.
 * `FiniteTypeCommHopfAlgCat.baseChangePointsMulEquiv`: the inherited point equivalence
@@ -246,6 +249,49 @@ theorem baseChangeIsoOfObjIso_hom
       (eqToIso (congrArg (CommHopfAlgCat.baseChange (K := K)) hH) ≪≫ e ≪≫
         eqToIso hH'.symm).hom := by
   simp only [baseChangeIsoOfObjIso, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom]
+
+section Tower
+
+variable (k K) {E : Type v} [CommRing E] [Algebra k E] [Algebra E K] [IsScalarTower k E K]
+
+/-- **Base change of finite-type commutative Hopf algebras composes in stages.** For a tower
+`k → E → K`, extending a finite-type coordinate Hopf algebra to `E` and then to `K` agrees with
+extending it to `K` in one step. This is `CommHopfAlgCat.baseChangeTowerIso` in the finite-type
+full subcategory. -/
+noncomputable def baseChangeTowerIso (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
+    baseChange (K := K) (baseChange (K := E) H) ≅ baseChange (K := K) H :=
+  ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso k K H.obj)
+
+/-- The underlying morphism of the finite-type tower comparison is the bundled tower
+comparison `CommHopfAlgCat.baseChangeTowerIso`. -/
+theorem baseChangeTowerIso_hom_hom (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
+    (baseChangeTowerIso (E := E) k K H).hom.hom =
+      (CommHopfAlgCat.baseChangeTowerIso (E := E) k K H.obj).hom := by
+  simp only [baseChangeTowerIso, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom]
+
+/-- The underlying morphism of the inverse finite-type tower comparison is the inverse bundled
+tower comparison `CommHopfAlgCat.baseChangeTowerIso`. -/
+theorem baseChangeTowerIso_inv_hom (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
+    (baseChangeTowerIso (E := E) k K H).inv.hom =
+      (CommHopfAlgCat.baseChangeTowerIso (E := E) k K H.obj).inv := by
+  simp only [baseChangeTowerIso, ObjectProperty.isoMk_inv, ObjectProperty.homMk_hom]
+
+/-- The finite-type tower comparison absorbs the intermediate scalar. -/
+@[simp]
+lemma baseChangeTowerIso_hom_apply (H : FiniteTypeCommHopfAlgCat.{u, v} k) (s : K) (e : E)
+    (h : H) :
+    toBialgHom (baseChangeTowerIso k K H).hom (s ⊗ₜ[E] (e ⊗ₜ[k] h)) = (e • s) ⊗ₜ[k] h := by
+  rw [toBialgHom, baseChangeTowerIso_hom_hom]
+  exact CommHopfAlgCat.baseChangeTowerIso_hom_apply k K H.obj s e h
+
+/-- The inverse finite-type tower comparison inserts the unit of the intermediate ring. -/
+@[simp]
+lemma baseChangeTowerIso_inv_apply (H : FiniteTypeCommHopfAlgCat.{u, v} k) (s : K) (h : H) :
+    toBialgHom (baseChangeTowerIso (E := E) k K H).inv (s ⊗ₜ[k] h) = s ⊗ₜ[E] (1 ⊗ₜ[k] h) := by
+  rw [toBialgHom, baseChangeTowerIso_inv_hom]
+  exact CommHopfAlgCat.baseChangeTowerIso_inv_apply k K H.obj s h
+
+end Tower
 
 variable (A : CommAlgCat.{x} K)
 

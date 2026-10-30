@@ -28,6 +28,8 @@ by its base change.
 * `TauCeti.Isogeny.mapDifferential_pullback_invariantDifferential`: base change commutes with the
   pullback of the invariant differential.
 * `TauCeti.Isogeny.isSeparable_map_iff`: an isogeny is separable if and only if its base change is.
+* `TauCeti.Isogeny.isSeparable_baseChange`: the base change `φ.baseChange K` of a separable
+  isogeny is separable, as an instance.
 
 No material is copied from an external formalisation.
 -/
@@ -82,6 +84,14 @@ theorem isSeparable_of_map [W₁.IsElliptic] [W₂.IsElliptic] (φ : Isogeny W�
     [Algebra.IsSeparable (φ.map f).fieldPullback.fieldRange (W₁.map f).FunctionField] :
     Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField :=
   (isSeparable_map_iff φ f).1 inferInstance
+
+open WeierstrassCurve in
+/-- The base change of a separable isogeny is separable. -/
+instance isSeparable_baseChange [Algebra F K] {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic]
+    [W₂.IsElliptic] (φ : Isogeny W₁.toAffine W₂.toAffine)
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField] :
+    Algebra.IsSeparable (φ.baseChange K).fieldPullback.fieldRange (W₁⁄K).toAffine.FunctionField :=
+  isSeparable_map φ (algebraMap F K)
 
 end Isogeny
 

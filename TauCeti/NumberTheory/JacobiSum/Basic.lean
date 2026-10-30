@@ -11,14 +11,22 @@ public import Mathlib.NumberTheory.MulChar.Lemmas
 public import TauCeti.FieldTheory.Finite.PowerSum
 
 /-!
-# Absolute value and reduction of Jacobi sums
+# Transport, absolute value and reduction of Jacobi sums
 
-This file adds two classical facts about Jacobi sums `J(χ, φ)` of multiplicative characters of a
-finite field `F` with `q` elements to Mathlib's theory in `Mathlib.NumberTheory.JacobiSum.Basic`.
+This file adds three facts about Jacobi sums `J(χ, φ) = ∑ x, χ x * φ (1 - x)` to Mathlib's theory
+in `Mathlib.NumberTheory.JacobiSum.Basic`.
 
-If `χ`, `φ` and `χ φ` are nontrivial and complex valued, Mathlib's `jacobiSum_mul_jacobiSum_inv`
-computes `J(χ, φ) J(χ⁻¹, φ⁻¹) = q`, and `J(χ⁻¹, φ⁻¹)` is the complex conjugate of `J(χ, φ)`
-because the values of a character are roots of unity. Hence `|J(χ, φ)| = √q`.
+Mathlib's `jacobiSum_ringHomComp` moves a Jacobi sum along a homomorphism of the coefficient
+ring. Here we also change the domain: if a ring isomorphism `e : R ≃+* S` of finite rings and a
+coefficient homomorphism `f` carry `χ` to `χ'` and `φ` to `φ'`, in the sense that
+`f (χ a) = χ' (e a)` and `f (φ a) = φ' (e a)`, then `f (J(χ, φ)) = J(χ', φ')`. This is how a ring
+isomorphism of rings of integers acts on Jacobi sums of characters of their residue fields, such
+as power residue symbols.
+
+For multiplicative characters of a finite field `F` with `q` elements: if `χ`, `φ` and `χ φ` are
+nontrivial and complex valued, Mathlib's `jacobiSum_mul_jacobiSum_inv` computes
+`J(χ, φ) J(χ⁻¹, φ⁻¹) = q`, and `J(χ⁻¹, φ⁻¹)` is the complex conjugate of `J(χ, φ)` because the
+values of a character are roots of unity. Hence `|J(χ, φ)| = √q`.
 
 If a ring homomorphism `f` from the coefficient ring to `F` reduces `χ` and `φ` to the power maps
 `x ↦ x ^ a` and `x ↦ x ^ b`, then `f (J(χ, φ)) = ∑ x, x ^ a (1 - x) ^ b`, which vanishes when
@@ -28,6 +36,8 @@ cubic and quartic residue characters with a generator of `P`.
 
 ## Main results
 
+* `TauCeti.map_jacobiSum`: `f (J(χ, φ)) = J(χ', φ')` when `f` and a ring isomorphism of the
+  domains carry `χ` to `χ'` and `φ` to `φ'`.
 * `TauCeti.jacobiSum_star`: `J(star χ, star φ) = star J(χ, φ)`.
 * `TauCeti.norm_jacobiSum`: `‖J(χ, φ)‖ = √q` for complex characters with `χ`, `φ`, `χ φ`
   nontrivial.
@@ -43,6 +53,21 @@ cubic and quartic residue characters with a generator of `P`.
 public section
 
 namespace TauCeti
+
+section Transport
+
+variable {R S R' R'' F : Type*} [CommRing R] [Fintype R] [CommRing S] [Fintype S] [CommRing R']
+  [CommRing R''] [FunLike F R' R''] [RingHomClass F R' R'']
+
+/-- **Transport of Jacobi sums.** If a ring isomorphism `e` of the domains and a homomorphism
+`f` of the coefficients carry `χ` to `χ'` and `ψ` to `ψ'`, then `f (J(χ, ψ)) = J(χ', ψ')`. -/
+theorem map_jacobiSum {f : F} {e : R ≃+* S} {χ ψ : MulChar R R'} {χ' ψ' : MulChar S R''}
+    (hχ : ∀ a, f (χ a) = χ' (e a)) (hψ : ∀ a, f (ψ a) = ψ' (e a)) :
+    f (jacobiSum χ ψ) = jacobiSum χ' ψ' := by
+  simp only [jacobiSum, map_sum, map_mul, hχ, hψ, map_sub, map_one]
+  exact e.toEquiv.sum_comp fun x => χ' x * ψ' (1 - x)
+
+end Transport
 
 /-- **Conjugating a Jacobi sum.** For multiplicative characters `χ` and `φ` with values in a
 commutative star ring, the Jacobi sum of the conjugate characters is the conjugate of `J(χ, φ)`. -/

@@ -241,6 +241,18 @@ theorem hasFDerivAt_spatialFDeriv {P : Type*} [NormedAddCommGroup P] [NormedSpac
     (Set.mem_univ x)
   simpa only [fderivWithin_univ] using h
 
+/-- The parameter derivative of a jointly `C²` map, applied to a fixed direction, is
+spatially differentiable. Its derivative is evaluation of the spatial derivative of the
+parameter-derivative family at that direction. -/
+theorem hasFDerivAt_parameterFDeriv_apply {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {F : P × E → F'} {p : P} {x : E} (hF : ContDiffAt 𝕜 2 F (p, x)) (h : P) :
+    HasFDerivAt (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p h)
+      ((fderiv 𝕜 (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p) x).flip h) x := by
+  have hswap : ContDiffAt 𝕜 2 (Function.uncurry fun y q ↦ F (q, y)) (x, p) :=
+    hF.comp (x, p) (contDiffAt_snd.prodMk contDiffAt_fst)
+  exact ((hswap.fderiv (m := 1) contDiffAt_const (by norm_num)).differentiableAt
+    one_ne_zero).hasFDerivAt.clm_apply_const h
+
 /-- **Mixed derivatives within a set, scalar parameter.** The case `P = 𝕜` of
 `hasFDerivAt_fderivWithin_slice`, with the parameter derivative written as `deriv`. -/
 theorem hasDerivAt_fderivWithin_slice {F : 𝕜 × E → F'} {s : Set E} {t : 𝕜} {x : E}
@@ -295,14 +307,10 @@ theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (t, x)) :
     HasDerivAt (spatialFDeriv F x) (fderiv 𝕜 (timeFDeriv F t) x) t := by
   have hSlice := (TauCeti.hasFDerivAt_spatialFDeriv hF).hasDerivAt
-  have hswap : ContDiffAt 𝕜 (minSmoothness 𝕜 2)
-      (Function.uncurry (fun y s ↦ F (s, y))) (x, t) :=
-    hF.comp (x, t) (contDiffAt_snd.prodMk contDiffAt_fst)
-  have hParameter := (hswap.fderiv (m := 1) contDiffAt_const
-    (le_trans (by norm_num) le_minSmoothness)).differentiableAt one_ne_zero
   have hcurve := (hF.of_le (le_trans (by norm_num) le_minSmoothness))
     |>.deriv_parameterCurve_eventuallyEq_timeFDeriv
-  have hTime := (hParameter.hasFDerivAt.clm_apply_const 1).congr_of_eventuallyEq
+  have hTime := (TauCeti.hasFDerivAt_parameterFDeriv_apply
+    (hF.of_le le_minSmoothness) 1).congr_of_eventuallyEq
     (f₁ := timeFDeriv F t) (by
       simpa only [← fderiv_apply_one_eq_deriv] using
         hcurve.symm)

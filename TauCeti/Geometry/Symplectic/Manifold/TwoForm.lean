@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.TwoForm.Closed
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 /-!
@@ -93,6 +93,15 @@ lemma isNondegenerate_iff_separatingLeft :
     intro w
     simpa only [SmoothForm.bilinFormAt_apply] using hv w
 
+/-- On a manifold of positive dimension, a fiberwise nondegenerate smooth two-form vanishes
+nowhere. -/
+theorem IsNondegenerate.apply_ne_zero [Nontrivial E] (h : form.IsNondegenerate) (x : M) :
+    form.1 x ≠ 0 := by
+  -- `TangentSpace I x` is the model space `E` by definition
+  have : Nontrivial (TangentSpace I x) := ‹Nontrivial E›
+  rw [ne_eq, ← SmoothForm.bilinFormAt_eq_zero_iff]
+  exact (h x).ne_zero
+
 /-- The negative of a fiberwise nondegenerate smooth two-form is fiberwise nondegenerate. -/
 theorem IsNondegenerate.neg (h : form.IsNondegenerate) : (-form).IsNondegenerate := by
   rw [isNondegenerate_iff_separatingLeft] at h ⊢
@@ -149,6 +158,11 @@ end Transport
 def Tames (form : SmoothTwoForm I M) (J : SmoothAlmostComplexStructure I M) : Prop :=
   ∀ (x : M) (v : TangentSpace I x), v ≠ 0 → 0 < SmoothForm.eval₂ form x v (J x v)
 
+/-- Tameness is positivity on each nonzero tangent vector and its complex rotation. -/
+theorem tames_iff : form.Tames J ↔
+    ∀ (x : M) (v : TangentSpace I x), v ≠ 0 → 0 < form.eval₂ x v (J x v) :=
+  Iff.rfl
+
 /-- Manifold-level tameness is the pointwise linear tameness condition once nondegeneracy has
 identified each tangent-space form as a `SymplecticForm`. -/
 lemma IsNondegenerate.tames_iff (h : form.IsNondegenerate) :
@@ -171,6 +185,11 @@ structure in both tangent arguments leaves the form unchanged. -/
 def Invariant (form : SmoothTwoForm I M) (J : SmoothAlmostComplexStructure I M) : Prop :=
   ∀ (x : M) (v w : TangentSpace I x),
     SmoothForm.eval₂ form x (J x v) (J x w) = SmoothForm.eval₂ form x v w
+
+/-- Invariance is preservation of the form on each tangent fibre. -/
+theorem invariant_iff : form.Invariant J ↔ ∀ (x : M) (v w : TangentSpace I x),
+    form.eval₂ x (J x v) (J x w) = form.eval₂ x v w :=
+  Iff.rfl
 
 /-- Apply invariance at a point and two tangent vectors. -/
 lemma Invariant.apply (h : form.Invariant J) (x : M) (v w : TangentSpace I x) :
