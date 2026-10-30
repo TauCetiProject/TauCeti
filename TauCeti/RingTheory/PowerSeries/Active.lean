@@ -130,7 +130,7 @@ theorem index_le_of_norm_coeff_mul_pow_eq (hr : 0 < r) (hrs : r < s)
     rw [← pow_add, Nat.sub_add_cancel hji.le]
   have hsi : s ^ i = s ^ (i - j) * s ^ j := by
     rw [← pow_add, Nat.sub_add_cancel hji.le]
-  have hfr := hfs.of_le hr.le hrs.le
+  have hfr := hfs.of_le norm_nonneg hr.le hrs.le
   have h₁ := le_gaussNorm norm r f hfr j
   have h₂ := le_gaussNorm norm s f hfs i
   rw [← hi, hri, ← mul_assoc, mul_le_mul_iff_left₀ (pow_pos hr j)] at h₁
@@ -178,9 +178,9 @@ theorem norm_coeff_mul_pow_eq_iff_of_attains_at_endpoints (hr : 0 < r)
     (hi' : ‖f.coeff i‖ * s ^ i = f.gaussNorm norm s) (j : ℕ) :
     ‖f.coeff j‖ * t ^ j = f.gaussNorm norm t ↔ j = i := by
   have ht : 0 < t := hr.trans hrt
-  have hfr := hf.of_le hr.le (hrt.trans hts).le
+  have hfr := hf.of_le norm_nonneg hr.le (hrt.trans hts).le
   have hft := hf.isRestricted_of_abs_lt (c := t) (by simpa [abs_of_pos ht] using hts)
-  have hbt := hf.of_le ht.le hts.le
+  have hbt := hf.of_le norm_nonneg ht.le hts.le
   have hpr := gaussNorm_pos hr hfr hf0
   have hpt := gaussNorm_pos ht hbt hf0
   have heq (k : ℕ) (hk : ‖f.coeff k‖ * t ^ k = f.gaussNorm norm t) : k = i :=

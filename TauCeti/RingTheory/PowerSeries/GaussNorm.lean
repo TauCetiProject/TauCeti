@@ -235,13 +235,14 @@ theorem gaussNorm_eq_of_forall_le {S : Type*} [Semiring S] {v : S → ℝ} {a : 
   le_antisymm ((PowerSeries.gaussNorm_eq v c a).trans_le (ciSup_le h))
     (PowerSeries.le_gaussNorm v c a ⟨_, Set.forall_mem_range.mpr h⟩ s)
 
-/-- Bounded weighted coefficient norms at `s` remain bounded at every radius `0 ≤ r ≤ s`. -/
-theorem _root_.PowerSeries.HasGaussNorm.of_le {r s : ℝ}
-    (hf : f.HasGaussNorm norm s) (hr : 0 ≤ r) (hrs : r ≤ s) : f.HasGaussNorm norm r := by
+/-- Bounded nonnegative weighted coefficients at `s` remain bounded at every radius `0 ≤ r ≤ s`. -/
+theorem _root_.PowerSeries.HasGaussNorm.of_le {S : Type*} [Semiring S] {v : S → ℝ}
+    {a : PowerSeries S} {r s : ℝ} (ha : a.HasGaussNorm v s) (hv : ∀ x, 0 ≤ v x)
+    (hr : 0 ≤ r) (hrs : r ≤ s) : a.HasGaussNorm v r := by
   rw [PowerSeries.HasGaussNorm]
-  exact ⟨f.gaussNorm norm s, Set.forall_mem_range.mpr fun n ↦
-    (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hr hrs n) (norm_nonneg _)).trans
-      (PowerSeries.le_gaussNorm norm s f hf n)⟩
+  exact ⟨a.gaussNorm v s, Set.forall_mem_range.mpr fun n ↦
+    (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hr hrs n) (hv _)).trans
+      (PowerSeries.le_gaussNorm v s a ha n)⟩
 
 /-- **The Gauss norm is monotone in the radius**: if the weighted coefficients of `a` at radius
 `s` are bounded, the Gauss norm at a radius `0 ≤ r ≤ s` is at most the one at `s`. -/
