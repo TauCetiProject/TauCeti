@@ -9,6 +9,7 @@ public import Mathlib.Probability.Martingale.Upcrossing
 import TauCeti.Probability.Martingale.Reverse
 import TauCeti.Probability.Martingale.Crossings.Pathwise
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
 
 /-!
 # Crossings: uniform upcrossing bound for reverse martingales
@@ -29,7 +30,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory
+open MeasureTheory TauCeti.MeasureTheory
 
 open scoped ENNReal
 
@@ -37,46 +38,6 @@ namespace MeasureTheory
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
-
-/-- Positive-part L¹ bound for the conditional expectations along `𝔽`: for integrable `f`, the
-integral of `(μ[f | 𝔽 k] · - a)⁺` is bounded by `‖f‖₁ + |a| · μ(univ)`, uniformly in `k`. -/
-private lemma lintegral_pos_part_condExp_le
-    (f : Ω → ℝ) (hf : Integrable f μ) (a : ℝ) (k : ℕ) :
-    ∫⁻ ω, ENNReal.ofReal ((μ[f | 𝔽 k] ω - a)⁺) ∂μ
-      ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
-  -- Use (x - a)⁺ ≤ |x - a| ≤ |x| + |a|, integrate, then convert to `eLpNorm` and apply the
-  -- L¹ contraction of conditional expectation.
-  calc ∫⁻ ω, ENNReal.ofReal ((μ[f | 𝔽 k] ω - a)⁺) ∂μ
-      ≤ ∫⁻ ω, ENNReal.ofReal (|μ[f | 𝔽 k] ω| + |a|) ∂μ := by
-        apply lintegral_mono
-        intro ω
-        apply ENNReal.ofReal_le_ofReal
-        calc (μ[f | 𝔽 k] ω - a)⁺
-            = max (μ[f | 𝔽 k] ω - a) 0 := rfl
-          _ ≤ |μ[f | 𝔽 k] ω - a| := by
-              simp only [le_abs_self, max_le_iff, abs_nonneg, and_self]
-          _ ≤ |μ[f | 𝔽 k] ω| + |a| := by
-              rw [sub_eq_add_neg]
-              simpa using abs_add_le (μ[f | 𝔽 k] ω) (-a)
-    _ = ∫⁻ ω, (ENNReal.ofReal |μ[f | 𝔽 k] ω| + ENNReal.ofReal |a|) ∂μ := by
-        simp [ENNReal.ofReal_add]
-    _ = ∫⁻ ω, ENNReal.ofReal |μ[f | 𝔽 k] ω| ∂μ
-          + ENNReal.ofReal |a| * μ Set.univ := by
-        rw [lintegral_add_right _ measurable_const, lintegral_const]
-    _ ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
-        gcongr
-        have hmeas : AEStronglyMeasurable (μ[f | 𝔽 k]) μ :=
-          integrable_condExp.aestronglyMeasurable
-        have hconv : ∫⁻ ω, ENNReal.ofReal |μ[f | 𝔽 k] ω| ∂μ = eLpNorm (μ[f | 𝔽 k]) 1 μ := by
-          rw [eLpNorm_one_eq_lintegral_enorm hmeas]
-          congr 1; ext ω
-          exact (Real.enorm_eq_ofReal_abs _).symm
-        rw [hconv]
-        calc eLpNorm (μ[f | 𝔽 k]) 1 μ
-            ≤ eLpNorm f 1 μ := eLpNorm_condExp_le_eLpNorm f le_rfl
-          _ = ENNReal.ofReal (eLpNorm f 1 μ).toReal := by
-              rw [ENNReal.ofReal_toReal]
-              exact (memLp_one_iff_integrable.mpr hf).eLpNorm_ne_top
 
 /-- Surrogate bound (kept private): uniform (in `N`) bound on upcrossings for the reversed
 conditional-expectation process.
@@ -91,16 +52,13 @@ private lemma lintegral_upcrossings_condExp_rev_bdd [IsFiniteMeasure μ]
     ∃ C : ENNReal, C < ⊤ ∧ ∀ N,
       ∫⁻ ω, (upcrossings (↑a) (↑b) (fun n => μ[f | 𝔽 (N - n)]) ω) ∂μ ≤ C := by
   -- `C = (‖f‖₁ + |a| · μ(univ)) / (b - a)` via Doob's upcrossing inequality.
-  set C := (ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ)
-      / ENNReal.ofReal (b - a)
+  set C := (eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ) / ENNReal.ofReal (b - a)
   have hC_finite : C < ⊤ := by
     refine ENNReal.div_lt_top ?h1 ?h2
     · -- Numerator ≠ ⊤ (finite measure keeps `μ Set.univ < ⊤`)
       refine (ENNReal.add_lt_top.2 ⟨?_, ?_⟩).ne
-      · rw [ENNReal.ofReal_toReal]
-        · exact (memLp_one_iff_integrable.mpr hf).eLpNorm_lt_top
-        · exact (memLp_one_iff_integrable.mpr hf).eLpNorm_ne_top
-      · exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top μ Set.univ)
+      · exact (memLp_one_iff_integrable.mpr hf).eLpNorm_lt_top
+      · exact ENNReal.mul_lt_top enorm_lt_top (measure_lt_top μ Set.univ)
     · -- Denominator ≠ 0
       exact (ENNReal.ofReal_pos.2 (sub_pos.2 hab)).ne'
   refine ⟨C, hC_finite, fun N => ?_⟩
@@ -110,8 +68,8 @@ private lemma lintegral_upcrossings_condExp_rev_bdd [IsFiniteMeasure μ]
   have key := hsub.mul_lintegral_upcrossings_le_lintegral_pos_part a b
   simp only [revFiltration_apply] at key
   have sup_bdd : ⨆ M, ∫⁻ ω, ENNReal.ofReal ((μ[f | 𝔽 (N - M)] ω - a)⁺) ∂μ
-      ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ :=
-    iSup_le fun M => lintegral_pos_part_condExp_le f hf a (N - M)
+      ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ :=
+    iSup_le fun M => lintegral_ofReal_posPart_condExp_sub_le f a
   have step1 : (∫⁻ ω, upcrossings (↑a) (↑b) (fun n => μ[f | 𝔽 (N - n)]) ω ∂μ)
       * ENNReal.ofReal (b - a)
       ≤ ⨆ M, ∫⁻ ω, ENNReal.ofReal ((μ[f | 𝔽 (N - M)] ω - a)⁺) ∂μ := by
@@ -122,8 +80,7 @@ private lemma lintegral_upcrossings_condExp_rev_bdd [IsFiniteMeasure μ]
         refine (ENNReal.le_div_iff_mul_le ?_ ?_).2 step1
         · left; exact (ENNReal.ofReal_pos.2 (sub_pos.2 hab)).ne'
         · left; exact ENNReal.ofReal_ne_top
-    _ ≤ (ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ)
-          / ENNReal.ofReal (b - a) := by
+    _ ≤ (eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ) / ENNReal.ofReal (b - a) := by
         gcongr
     _ = C := rfl
 
