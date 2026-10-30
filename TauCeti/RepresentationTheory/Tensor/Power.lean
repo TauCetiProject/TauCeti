@@ -68,9 +68,8 @@ representations to the tensor power indexed by their sum. -/
 noncomputable def tensorPowerAddEquiv (ρ : Representation R G M) (d e : ℕ) :
     ((ρ.tensorPower d).tprod (ρ.tensorPower e)).Equiv (ρ.tensorPower (d + e)) :=
   .mk TensorPower.mulEquiv fun g => by
-    have h : Fin.append (fun _ : Fin d => ρ g) (fun _ : Fin e => ρ g) = fun _ => ρ g := by
-      funext i
-      refine Fin.addCases (fun j => ?_) (fun j => ?_) i <;> simp
+    have h : Fin.append (fun _ : Fin d => ρ g) (fun _ : Fin e => ρ g) = fun _ => ρ g :=
+      Fin.append_castAdd_natAdd (f := fun _ : Fin (d + e) => ρ g)
     simpa only [tprod_apply, tensorPower_apply, h] using
       TauCeti.TensorPower.mulEquiv_comp_map (fun _ : Fin d => ρ g) (fun _ : Fin e => ρ g)
 

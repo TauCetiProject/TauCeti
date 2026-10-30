@@ -73,7 +73,7 @@ theorem mulEquiv_comp_map {d e : ℕ} (f : Fin d → M →ₗ[R] N) (g : Fin e �
     LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, TensorProduct.map_tmul,
     PiTensorProduct.map_tprod, ← TensorPower.gMul_def, TensorPower.tprod_mul_tprod]
   congr 1 with i
-  refine Fin.addCases (fun j => ?_) (fun j => ?_) i <;> simp
+  refine Fin.addCases (fun _ ↦ ?_) (fun _ ↦ ?_) i <;> simp
 
 /-- Conjugating by `TensorPower.mulEquiv` turns the tensor product of two tensor-power
 endomorphisms into the tensor-power endomorphism of the appended family. -/
