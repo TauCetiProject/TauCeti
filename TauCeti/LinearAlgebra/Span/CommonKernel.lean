@@ -25,10 +25,10 @@ that again have an `R`-structure. For modular forms with integral `q`-expansions
 a space of forms defined by the vanishing of finitely many `q`-coefficients inherits a spanning
 set of integral forms from the ambient space.
 
-The proof eliminates one functional at a time: if `φ l₀ ≠ 0` for some `l₀ ∈ L` in the current
-subspace, then `v ↦ φ l₀ • v - φ v • l₀` maps that subspace into its intersection with
-`ker φ`, keeps `L` inside `L`, and is multiplication by `φ l₀` on `ker φ`. Finite-dimensionality
-reduces an arbitrary family to a finite one.
+The proof eliminates one functional at a time (`TauCeti.le_span_inter_inf_ker`): if `φ l₀ ≠ 0`
+for some `l₀ ∈ L` in the current subspace, then `v ↦ φ l₀ • v - φ v • l₀` maps that subspace
+into its intersection with `ker φ`, keeps `L` inside `L`, and is multiplication by `φ l₀` on
+`ker φ`. Finite-dimensionality reduces an arbitrary family to a finite one.
 -/
 
 public section
@@ -42,7 +42,7 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {R : Subring K}
 
 /-- One elimination step: intersecting with the kernel of a functional that is `R`-valued on
 `L` preserves the property of being spanned by elements of `L`. -/
-private theorem le_span_inter_inf_ker (hL : ∀ r ∈ R, ∀ v ∈ L, r • v ∈ L) {W : Submodule K V}
+theorem le_span_inter_inf_ker (hL : ∀ r ∈ R, ∀ v ∈ L, r • v ∈ L) {W : Submodule K V}
     (hW : W ≤ span K ((L : Set V) ∩ W)) {φ : V →ₗ[K] K} (hφ : ∀ v ∈ L, φ v ∈ R) :
     W ⊓ LinearMap.ker φ ≤ span K ((L : Set V) ∩ ↑(W ⊓ LinearMap.ker φ)) := by
   by_cases h₀ : ∃ l₀ ∈ L, l₀ ∈ W ∧ φ l₀ ≠ 0
