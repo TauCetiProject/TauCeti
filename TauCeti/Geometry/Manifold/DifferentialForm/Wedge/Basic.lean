@@ -402,6 +402,30 @@ theorem wedge_apply (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l)
   simpa [wedge, ContinuousLinearMap.mul_apply'] using
     (wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v)
 
+/-- The wedge of the `0`-form of a function `f` with a real form `φ` is `f • φ`, read in degree
+`l` through the identification `0 + l = l`. -/
+@[simp]
+theorem ofFunction_wedge_apply (f : M → ℝ) (φ : RoughForm I M ℝ l) (x : M)
+    (v : Fin (0 + l) → TangentSpace I x) :
+    (RoughForm.ofFunction I f).wedge φ x v =
+      f x * φ x (v ∘ Fin.cast (Nat.zero_add l).symm) := by
+  let e : Fin l ≃ Fin (0 + l) := finCongr (Nat.zero_add l).symm
+  -- Each summand is the same: `φ` changes sign with the permutation of its arguments.
+  have hσ (σ : Equiv.Perm (Fin (0 + l))) :
+      φ x (fun j ↦ v (σ (Fin.natAdd 0 j))) =
+        Equiv.Perm.sign σ • φ x (v ∘ Fin.cast (Nat.zero_add l).symm) := by
+    calc φ x (fun j ↦ v (σ (Fin.natAdd 0 j)))
+        = (φ x).toAlternatingMap ((v ∘ e) ∘ e.symm.permCongr σ) :=
+          congrArg (φ x) (funext fun j ↦ by simp [e, Equiv.permCongr_apply, Fin.natAdd_zero])
+      _ = Equiv.Perm.sign σ • φ x (v ∘ Fin.cast (Nat.zero_add l).symm) := by
+          rw [AlternatingMap.map_perm, Equiv.Perm.sign_permCongr]
+          rfl
+  simp only [wedge_apply, RoughForm.ofFunction_apply, hσ, mul_smul_comm, smul_smul,
+    Int.units_mul_self, one_smul, Finset.sum_const, Finset.card_univ, Fintype.card_perm,
+    Fintype.card_fin, nsmul_eq_mul, Nat.factorial_zero, Nat.cast_one, one_mul, Nat.zero_add,
+    smul_eq_mul]
+  field_simp
+
 /-- The wedge of real-valued one-forms has the determinant normalization. -/
 @[simp]
 theorem wedge_apply_one_one (φ : RoughForm I M ℝ 1) (ψ : RoughForm I M ℝ 1)

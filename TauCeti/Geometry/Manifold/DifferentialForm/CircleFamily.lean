@@ -65,10 +65,6 @@ private def angle (z : CircleFamily) : AddCircle (1 : ℝ) := (normalization ∞
 private theorem contMDiff_angle : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ) ∞ angle :=
   contMDiff_snd.comp (normalization ∞).contMDiff
 
-private theorem contMDiff_periodReal {n : ℕ∞ω} :
-    ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ) n fun z : CircleFamily ↦ (z.period : ℝ) :=
-  contMDiff_subtype_val.comp (contMDiff_period n)
-
 /-! ### The angle form -/
 
 /-- The angle form `β = (pr₂ ∘ N)^* dt_1` of the family of positive-period circles: the pullback
@@ -78,6 +74,7 @@ def angleForm : SmoothForm (𝓘(ℝ).prod 𝓘(ℝ)) CircleFamily ℝ 1 :=
 
 /-- The angle form is the differential of the normalized angle `pr₂ ∘ N`, read in the real
 tangent lines of the unit-period circle. -/
+@[simp]
 theorem angleForm_apply (z : CircleFamily) (v : Fin 1 → TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) z) :
     angleForm.1 z v =
       mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ) (fun z ↦ (normalization ∞ z).2) z (v 0) := by
@@ -112,6 +109,7 @@ def timeForm : SmoothForm (𝓘(ℝ).prod 𝓘(ℝ)) CircleFamily ℝ 1 :=
     (angleForm.isSmoothForm.fun_smul contMDiff_periodReal).mem_smoothForms⟩
 
 /-- The time form is the angle form rescaled by the period. -/
+@[simp]
 theorem timeForm_apply (z : CircleFamily) (v : Fin 1 → TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) z) :
     timeForm.1 z v = z.period * angleForm.1 z v :=
   (rfl)
@@ -137,10 +135,11 @@ theorem mextDeriv_timeForm :
         angleForm.1 := by
   funext z
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  have h := mextDeriv_fun_smul_apply (contMDiff_periodReal (n := 1) z)
+  have h := mextDeriv_fun_smul_apply
+    (contMDiff_periodReal (n := 1).mdifferentiableAt one_ne_zero (x := z))
     (angleForm.mdifferentiableAt z) v
-  rw [show mextDeriv angleForm.1 z = 0 from
-    congrFun ((SmoothForm.isClosed_def _).mp isClosed_angleForm) z] at h
+  rw [(SmoothForm.isClosed_iff_forall_mextDeriv_apply_eq_zero angleForm).mp
+    isClosed_angleForm z] at h
   simp only [Nat.reduceAdd, Fin.cast_refl, CompTriple.comp_eq, ContinuousAlternatingMap.coe_zero,
     Pi.zero_apply, smul_eq_mul, mul_zero, add_zero] at h
   -- `timeForm.1` is `fun z ↦ z.period • angleForm.1 z` by definition.
