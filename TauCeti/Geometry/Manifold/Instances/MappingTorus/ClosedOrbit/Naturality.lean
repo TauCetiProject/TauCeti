@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Cover
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit
-public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Iterate
+public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Iterate.Basic
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Map
 
 /-!
