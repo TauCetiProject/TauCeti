@@ -47,7 +47,7 @@ positions. Together with multiplicativity this gives the recurrence
 
 public section
 
-open Finset IncidenceAlgebra
+open Finset Finpartition IncidenceAlgebra
 
 namespace TauCeti.NoncrossingPartition
 
@@ -91,137 +91,7 @@ theorem mu_bot_eq_prod_mu (π : NoncrossingPartition s) :
   rw [hsum, mu_eq_neg_sum_Ico_of_ne (Ne.symm hbot), Ico_bot]
   exact congrArg _ (sum_congr rfl fun σ hσ => ihπ σ (mem_Iio.1 hσ))
 
-section Atom
 
-/-! ### Weisner's theorem at the atom joining the two smallest positions -/
-
-variable {i j : α}
-
-/-- The partition of `s` with the part `{i, j}`, all other positions forming singletons. -/
-private noncomputable def pairPartition (s : Finset α) (i j : α) (hij : {i, j} ⊆ s) :
-    Finpartition s :=
-  (⊥ : Finpartition (s \ {i, j})).extend (insert_ne_empty i {j}) sdiff_disjoint
-    (sdiff_union_of_subset hij)
-
-private theorem mem_parts_pairPartition {hij : {i, j} ⊆ s} {B : Finset α} :
-    B ∈ (pairPartition s i j hij).parts ↔ B = {i, j} ∨ ∃ k ∈ s \ {i, j}, {k} = B := by
-  rw [pairPartition, Finpartition.extend_parts, mem_insert, Finpartition.mem_bot_iff]
-
-/-- A part of `pairPartition s i j` with two different positions is `{i, j}`. -/
-private theorem eq_pair_of_mem_parts_pairPartition {hij : {i, j} ⊆ s} {B : Finset α}
-    (hB : B ∈ (pairPartition s i j hij).parts) {a c : α} (ha : a ∈ B) (hc : c ∈ B)
-    (hac : a < c) : B = {i, j} := by
-  obtain h | ⟨k, -, rfl⟩ := mem_parts_pairPartition.1 hB
-  · exact h
-  · rw [mem_singleton] at ha hc
-    exact absurd hac (by rw [ha, hc]; exact lt_irrefl k)
-
-private theorem isNoncrossing_pairPartition (hij : {i, j} ⊆ s) :
-    (pairPartition s i j hij).IsNoncrossing :=
-  Finpartition.isNoncrossing_iff.2 fun _ hB _ hC _ ha _ hb _ hc _ hd hab hbc hcd =>
-    (eq_pair_of_mem_parts_pairPartition hB ha hc (hab.trans hbc)).trans
-      (eq_pair_of_mem_parts_pairPartition hC hb hd (hbc.trans hcd)).symm
-
-private theorem part_pairPartition (hij : {i, j} ⊆ s) :
-    (pairPartition s i j hij).part i = {i, j} :=
-  Finpartition.part_eq_of_mem _ (mem_parts_pairPartition.2 (Or.inl rfl)) (mem_insert_self i _)
-
-/-- A partition in which `i` and `j` share a part is coarser than `pairPartition s i j`. -/
-private theorem pairPartition_le {hij : {i, j} ⊆ s} {R : Finpartition s} (hR : j ∈ R.part i) :
-    pairPartition s i j hij ≤ R := by
-  have hi : i ∈ s := hij (mem_insert_self i _)
-  refine fun B hB => ?_
-  obtain rfl | ⟨k, hk, rfl⟩ := mem_parts_pairPartition.1 hB
-  · refine ⟨R.part i, R.part_mem.2 hi, fun z hz => ?_⟩
-    rcases mem_insert.1 hz with rfl | hz
-    exacts [R.mem_part_self.2 hi, mem_singleton.1 hz ▸ hR]
-  · exact ⟨R.part k, R.part_mem.2 (sdiff_subset hk),
-      singleton_subset_iff.2 (R.mem_part_self.2 (sdiff_subset hk))⟩
-
-private theorem pairPartition_ne_bot {hij : {i, j} ⊆ s} (hne : i ≠ j) :
-    pairPartition s i j hij ≠ ⊥ := fun h => by
-  have h' : {i, j} ∈ (pairPartition s i j hij).parts := mem_parts_pairPartition.2 (Or.inl rfl)
-  rw [h, Finpartition.mem_bot_iff] at h'
-  obtain ⟨k, -, hk⟩ := h'
-  exact hne ((mem_singleton.1 (hk ▸ mem_insert_self i _)).trans
-    (mem_singleton.1 (hk ▸ mem_insert_of_mem (mem_singleton_self j))).symm)
-
-/-- Let `i ≤ j` be positions of `s` with no position of `s` strictly between them. A noncrossing
-partition `x` joins with `pairPartition s i j` to the partition into one part exactly when the
-parts of `x` through `i` and `j` cover `s`. -/
-private theorem sup_pairPartition_eq_top_iff (hij : {i, j} ⊆ s) (hle : i ≤ j)
-    (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) (x : NoncrossingPartition s) :
-    x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩ = ⊤ ↔
-      x.1.part i ∪ x.1.part j = s := by
-  have hi : i ∈ s := hij (mem_insert_self i _)
-  have hj : j ∈ s := hij (mem_insert_of_mem (mem_singleton_self j))
-  refine ⟨fun hx => ?_, fun hx => ?_⟩
-  · -- Merging the parts of `x` through `i` and `j` gives an upper bound of `x` and the atom.
-    obtain ⟨Q, hQ, hxQ, hQi⟩ := x.2.exists_part_eq_union hi hj hle hadj
-    have hsup : x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩ ≤ ⟨Q, hQ⟩ :=
-      sup_le (Subtype.coe_le_coe.1 hxQ)
-        (pairPartition_le (hij := hij) (hQi ▸ mem_union_right _ (x.1.mem_part_self.2 hj)))
-    rw [hx, top_le_iff] at hsup
-    exact hQi.symm.trans ((congrArg (fun P : NoncrossingPartition s => P.1.part i) hsup).trans
-      (Finpartition.part_top hi))
-  · set R := x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩
-    have hjR : j ∈ R.1.part i := Finpartition.part_mono (le_sup_right : _ ≤ R) i
-      (by rw [part_pairPartition]; exact mem_insert_of_mem (mem_singleton_self j))
-    have hsR : s ⊆ R.1.part i := calc
-      s = x.1.part i ∪ x.1.part j := hx.symm
-      _ ⊆ R.1.part i ∪ R.1.part j := union_subset_union
-        (Finpartition.part_mono (le_sup_left : x ≤ R) i)
-        (Finpartition.part_mono (le_sup_left : x ≤ R) j)
-      _ = R.1.part i := by rw [(R.1.mem_part_iff_part_eq_part hj hi).1 hjR, union_self]
-    have hR := R.1.part_mem.2 hi
-    rw [(R.1.part_subset i).antisymm hsR] at hR
-    exact Subtype.ext (Finpartition.eq_top_of_mem_parts hR)
-
-end Atom
-
-section Split
-
-/-! ### Partitions into two parts, one of them convex -/
-
-variable {C : Finset α}
-
-/-- The partition of `s` into a nonempty part `C ⊆ s` and the rest `s \ C`. -/
-private noncomputable def splitPartition (s C : Finset α) (hC : C.Nonempty) (hCs : C ⊆ s) :
-    Finpartition s :=
-  (⊤ : Finpartition (s \ C)).extend hC.ne_empty sdiff_disjoint (sdiff_union_of_subset hCs)
-
-variable {hC : C.Nonempty} {hCs : C ⊆ s}
-
-private theorem parts_splitPartition (hsC : (s \ C).Nonempty) :
-    (splitPartition s C hC hCs).parts = {C, s \ C} := by
-  rw [splitPartition, Finpartition.extend_parts, Finpartition.parts_top hsC.ne_empty]
-
-private theorem part_splitPartition_of_mem {z : α} (hz : z ∈ C) :
-    (splitPartition s C hC hCs).part z = C :=
-  Finpartition.part_eq_of_mem _ (by simp [splitPartition]) hz
-
-private theorem part_splitPartition_of_notMem {z : α} (hz : z ∈ s) (hzC : z ∉ C) :
-    (splitPartition s C hC hCs).part z = s \ C := by
-  have hzsC : z ∈ s \ C := mem_sdiff.2 ⟨hz, hzC⟩
-  exact Finpartition.part_eq_of_mem _
-    (by rw [parts_splitPartition ⟨z, hzsC⟩]; exact mem_insert_of_mem (mem_singleton_self _)) hzsC
-
-/-- Splitting off a part `C` that contains every position of `s` between two of its elements
-gives a noncrossing partition. -/
-private theorem isNoncrossing_splitPartition
-    (hconv : ∀ a ∈ C, ∀ c ∈ C, ∀ b ∈ s, a < b → b < c → b ∈ C) :
-    (splitPartition s C hC hCs).IsNoncrossing := by
-  refine Finpartition.isNoncrossing_iff_part.2 fun a ha b hb c hc d hd hab hbc hcd => ?_
-  by_cases haC : a ∈ C <;> by_cases hbC : b ∈ C
-  · rw [part_splitPartition_of_mem haC, part_splitPartition_of_mem hbC]
-  · rw [part_splitPartition_of_mem haC] at hc
-    exact absurd (hconv a haC c hc b hb hab hbc) hbC
-  · rw [part_splitPartition_of_mem hbC] at hd
-    rw [part_splitPartition_of_notMem ha haC] at hc
-    exact absurd (hconv b hbC d hd c (mem_sdiff.1 hc).1 hbc hcd) (mem_sdiff.1 hc).2
-  · rw [part_splitPartition_of_notMem ha haC, part_splitPartition_of_notMem hb hbC]
-
-end Split
 
 section Recurrence
 
@@ -232,15 +102,6 @@ variable {m₁ m₂ : α}
 variable (hm₁ : m₁ ∈ s) (hm₂ : m₂ ∈ s.erase m₁) {x : NoncrossingPartition s}
   (hx : x.1.part m₁ ∪ x.1.part m₂ = s) (hne : x.1.part m₁ ≠ x.1.part m₂)
 include hm₁ hm₂ hx hne
-
-/-- If the parts through `m₁` and `m₂` are different and cover `s`, they are complementary. -/
-private theorem part_eq_sdiff_part : x.1.part m₁ = s \ x.1.part m₂ := by
-  have hm₂s := mem_of_mem_erase hm₂
-  ext w
-  refine ⟨fun hw => mem_sdiff.2 ⟨x.1.part_subset m₁ hw, fun hw₂ => hne ?_⟩, fun hw => ?_⟩
-  · rw [← (x.1.mem_part_iff_part_eq_part (x.1.part_subset m₁ hw) hm₁).1 hw,
-      (x.1.mem_part_iff_part_eq_part (x.1.part_subset m₁ hw) hm₂s).1 hw₂]
-  · exact (mem_union.1 (hx.symm ▸ (mem_sdiff.1 hw).1)).resolve_right (mem_sdiff.1 hw).2
 
 variable (hmin₁ : ∀ z ∈ s, m₁ ≤ z) (hmin₂ : ∀ z ∈ s.erase m₁, m₂ ≤ z)
 include hmin₁ hmin₂
@@ -344,7 +205,7 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
     · rw [part_splitPartition_of_mem (hCx.symm ▸ hzC), hCx,
         (x.1.mem_part_iff_part_eq_part hz hm₂s).1 hzC]
     · rw [part_splitPartition_of_notMem hz (hCx.symm ▸ hzC), hCx,
-        ← part_eq_sdiff_part hm₁ hm₂ hu hne,
+        ← x.1.part_eq_sdiff_part hm₁ hm₂s hu hne,
         (x.1.mem_part_iff_part_eq_part hz hm₁).1
           ((mem_union.1 (hu.symm ▸ hz)).resolve_right hzC)]
   · -- The Möbius function at the split partition is a product over its two parts.
