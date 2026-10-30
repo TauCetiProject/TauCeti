@@ -31,14 +31,6 @@ and *not* injective, while the claimed bound `‖deriv g c‖ < 0` is false.
 * `TauCeti.norm_deriv_lt_div_of_not_injOn` — the strict bound.
 * `TauCeti.norm_deriv_lt_one_of_not_injOn` — its equal-radius form.
 
-## Coordination with upstream Mathlib
-
-The Riemann mapping theorem is being formalized upstream at
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), which proves its
-prerequisites internally as private lemmas. The declaration here is an explicitly
-**temporary shim**: delete it and refactor downstream consumers onto the exported Mathlib version
-once that lands.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 6 §1.2.
