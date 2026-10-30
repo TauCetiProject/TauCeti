@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
@@ -22,6 +23,8 @@ Relabelling the indices of a square matrix `M` along `e : I ≃ J` is an isometr
 * `LinearIndependent.exists_dotProduct_ne_zero`: `n` linearly independent forms on `K ^ n` do not
   all vanish at a nonzero point.
 * `Matrix.comp_equiv_symm_dotProduct_reindex_mulVec`: relabelling the indices is an isometry.
+* `Matrix.funCongrLeft_symm_dotProduct_reindex_mulVec`: the same for the linear equivalence
+  `LinearEquiv.funCongrLeft R R e.symm`.
 -/
 
 public section
@@ -45,3 +48,15 @@ theorem Matrix.comp_equiv_symm_dotProduct_reindex_mulVec {I J α : Type*} [Finty
     [NonUnitalNonAssocSemiring α] (e : I ≃ J) (M : Matrix I I α) (u v : I → α) :
     u ∘ e.symm ⬝ᵥ M.reindex e e *ᵥ (v ∘ e.symm) = u ⬝ᵥ M *ᵥ v := by
   simp [submatrix_mulVec_equiv, Function.comp_assoc]
+
+/-- **Relabelling the vertices is a linear isometry**: for a relabelling `e : I ≃ J` of the indices
+of a square matrix `M`, the linear equivalence `LinearEquiv.funCongrLeft R R e.symm`,
+`u ↦ u ∘ e.symm`, carries the pairing of `M` to that of `M.reindex e e`. -/
+theorem Matrix.funCongrLeft_symm_dotProduct_reindex_mulVec {I J R : Type*} [Fintype I]
+    [Fintype J] [Semiring R] (e : I ≃ J) (M : Matrix I I R) (u v : I → R) :
+    LinearEquiv.funCongrLeft R R e.symm u ⬝ᵥ
+        M.reindex e e *ᵥ LinearEquiv.funCongrLeft R R e.symm v = u ⬝ᵥ M *ᵥ v := by
+  have hc (w : I → R) : LinearEquiv.funCongrLeft R R e.symm w = w ∘ e.symm :=
+    funext fun j => by
+      rw [LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, Function.comp_apply]
+  rw [hc, hc, comp_equiv_symm_dotProduct_reindex_mulVec]
