@@ -166,11 +166,13 @@ theorem m_mem_totalGrading_piece {n : ℕ} (d : Fin n → ℤ) (x : Fin n → To
 from the homogeneous morphisms `Xₙ₋₁ ⟶ Xₙ, …, X₀ ⟶ X₁` to the morphisms `X₀ ⟶ Xₙ`. -/
 noncomputable def pathOperation {n : ℕ} (X : Fin (n + 1) → C) : PathOperation R X (2 - n) :=
   fun d ↦ MultilinearMap.codRestrict
-    (((𝒞.isPathCompatible_m n).restrictToPath X).compLinearMap fun i ↦
+    (((𝒞.m n).restrictToPath id X).compLinearMap fun i ↦
       ((grading (R := R) (X i.rev.castSucc) (X i.rev.succ)).piece (d i)).subtype)
-    _ fun y ↦ homProjection_mem_piece
-      (𝒞.m_mem_totalGrading_piece d _ fun i ↦
-        (homInclusion_mem_totalGrading_piece_iff _ _).2 (y i).property) _ _
+    _ fun y ↦ by
+      rw [MultilinearMap.compLinearMap_apply, MultilinearMap.restrictToPath_apply]
+      exact homProjection_mem_piece
+        (𝒞.m_mem_totalGrading_piece d _ fun i ↦
+          (homInclusion_mem_totalGrading_piece_iff _ _).2 (y i).property) _ _
 
 /-- The operation on a composable string is the component, between the endpoints of the string, of
 the total operation on the included morphisms. -/
@@ -178,8 +180,8 @@ theorem coe_pathOperation_apply {n : ℕ} (X : Fin (n + 1) → C) (d : Fin n →
     (x : ∀ i, grHom R (X i.rev.castSucc) (X i.rev.succ) (d i)) :
     (𝒞.pathOperation X d x : homModule (R := R) (X 0) (X (Fin.last n))) =
       homProjection (X 0) (X (Fin.last n))
-        (𝒞.m n fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (x i).1) :=
-  (rfl)
+        (𝒞.m n fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (x i).1) := by
+  exact MultilinearMap.restrictToPath_apply (𝒞.m n) id X fun i ↦ (x i).1
 
 /-- **The operation on a composable string is the total operation.** Including the value of the
 operation on a composable string into the total module gives the total operation on the included

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.AInfinity.Basic
-public import TauCeti.CategoryTheory.Graded.Multilinear.Brace
+public import TauCeti.CategoryTheory.Graded.WordPathCochain
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hochschild.Complex
 public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 
@@ -59,32 +59,44 @@ theorem mem_cochains {p : ℤ}
   simp only [cochains, Submodule.mem_inf, AInfinityAlgebra.PositiveHochschild.mem_cochains,
     mem_wordPathCochains, 𝒞.grading_eq]
 
-/-- The brace of homogeneous path cochains, with a normalized output degree. -/
+/-- The brace preserves homogeneous path cochains. -/
+theorem brace_mem_cochains {p q n : ℤ} (h : p + q = n)
+    {F G : ReducedTensorWords R (TotalHom R C) →ₗ[R] TotalHom R C}
+    (hF : F ∈ cochains 𝒞 p) (hG : G ∈ cochains 𝒞 q) :
+    ReducedTensorWords.brace ((totalGrading R C).shift 1) F G q ∈ cochains 𝒞 n := by
+  rw [mem_cochains, ← h]
+  refine ⟨isHomogeneous_brace ((mem_cochains 𝒞).mp hF).1 ((mem_cochains 𝒞).mp hG).1, ?_⟩
+  rw [ReducedTensorWords.brace_def]
+  exact ((mem_cochains 𝒞).mp hF).2.comp_gradedCoderiv ((mem_cochains 𝒞).mp hG).2 1 q
+
+/-- The brace of homogeneous path cochains of degrees `p` and `q`, landing in degree `n`
+for `h : p + q = n`. -/
 def brace {p q n : ℤ} (h : p + q = n) :
     cochains 𝒞 p →ₗ[R] cochains 𝒞 q →ₗ[R] cochains 𝒞 n :=
-  let B := ((WordPathCochain.brace (R := R) (C := C) 1 q).compl₁₂
-    (Submodule.inclusion (show cochains 𝒞 p ≤ wordPathCochains id from inf_le_right))
-    (Submodule.inclusion (show cochains 𝒞 q ≤ wordPathCochains id from inf_le_right))).compr₂
-      (wordPathCochains id).subtype
+  let B : cochains 𝒞 p →ₗ[R] cochains 𝒞 q →ₗ[R]
+      (ReducedTensorWords R (TotalHom R C) →ₗ[R] TotalHom R C) :=
+    ((WordPathCochain.brace (R := R) (C := C) 1 q).compl₁₂
+      (Submodule.inclusion (p := cochains 𝒞 p) inf_le_right)
+      (Submodule.inclusion (p := cochains 𝒞 q) inf_le_right)).compr₂
+        (wordPathCochains id).subtype
   B.codRestrict₂ (cochains 𝒞 n).subtype (Submodule.injective_subtype _) fun F G ↦ by
     rw [Submodule.range_subtype]
-    change (WordPathCochain.brace 1 q
-      (Submodule.inclusion inf_le_right F) (Submodule.inclusion inf_le_right G)).val ∈ cochains 𝒞 n
-    have hpath := (WordPathCochain.brace 1 q
-      (Submodule.inclusion inf_le_right F) (Submodule.inclusion inf_le_right G)).property
-    rw [mem_cochains, WordPathCochain.coe_brace, ← h]
-    exact ⟨isHomogeneous_brace ((mem_cochains 𝒞).mp F.property).1
-      ((mem_cochains 𝒞).mp G.property).1, by
-        simpa only [mem_wordPathCochains, WordPathCochain.coe_brace] using hpath⟩
+    dsimp only [B]
+    simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, Submodule.subtype_apply,
+      WordPathCochain.coe_brace]
+    exact brace_mem_cochains 𝒞 h F.property G.property
 
 @[simp]
 theorem coe_brace {p q n : ℤ} (h : p + q = n) (F : cochains 𝒞 p) (G : cochains 𝒞 q) :
     (brace 𝒞 h F G).val = ReducedTensorWords.brace ((totalGrading R C).shift 1) F G q := by
-  change (cochains 𝒞 n).subtype _ = _
+  -- Expose the restriction wrapper, then use its evaluation lemma at the subtype injection.
+  rw [← Submodule.subtype_apply (brace 𝒞 h F G)]
   unfold brace
   rw [LinearMap.codRestrict₂_apply]
   simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, Submodule.subtype_apply,
-    WordPathCochain.coe_brace, Submodule.coe_inclusion]
+    WordPathCochain.coe_brace]
+  -- Submodule inclusions leave the underlying Taylor maps unchanged.
+  rfl
 
 /-- The Hochschild differential restricts to path cochains. Its square-zero law is inherited
 from the total morphism algebra, not imposed as additional categorical data. -/
@@ -109,9 +121,10 @@ theorem coe_d (p q : ℤ) (h : p + 1 = q) (F : cochains 𝒞 p) :
 theorem d_d (p q r : ℤ) (hpq : p + 1 = q) (hqr : q + 1 = r) (F : cochains 𝒞 p) :
     d 𝒞 q r hqr (d 𝒞 p q hpq F) = 0 := by
   apply Subtype.ext
-  simp only [coe_d, ZeroMemClass.coe_zero, ← hpq, add_comm p 1]
-  exact 𝒞.toAInfinityAlgebra.hochschildDifferential_hochschildDifferential
-    ((AInfinityAlgebra.PositiveHochschild.mem_cochains _).mp F.property.1)
+  simpa only [coe_d, AInfinityAlgebra.PositiveHochschild.coe_d, ZeroMemClass.coe_zero] using
+    congrArg (fun x ↦ x.val)
+      (AInfinityAlgebra.PositiveHochschild.d_d 𝒞.toAInfinityAlgebra p q r hpq hqr
+        ⟨F.val, F.property.1⟩)
 
 /-- The positive-arity suspended Hochschild complex of an A-infinity category. -/
 abbrev complex : CochainComplex (ModuleCat R) ℤ :=

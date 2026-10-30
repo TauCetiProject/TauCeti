@@ -80,14 +80,35 @@ The positive arity excludes empty words from the reduced tensor coalgebra. -/
 def component (F : WordPathCochain (R := R) φ) {n : ℕ} (hn : 0 < n) (X : Fin (n + 1) → C) :
     MultilinearMap R (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
       (homModule (R := R) (φ (X 0)) (φ (X (Fin.last n)))) :=
-  (isWordPathCompatible_iff.mp F.property n hn).restrictToPath X
+  ((F.val ∘ₗ of R _ ⟨n, hn⟩).compMultilinearMap
+    (PiTensorProduct.tprod R)).restrictToPath φ X
 
 theorem component_apply (F : WordPathCochain (R := R) φ) {n : ℕ} (hn : 0 < n)
     (X : Fin (n + 1) → C)
     (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
     F.component hn X x = homProjection (φ (X 0)) (φ (X (Fin.last n)))
       (F.val (of R _ ⟨n, hn⟩ (PiTensorProduct.tprod R fun i ↦ homInclusion _ _ (x i)))) :=
-  (rfl)
+  MultilinearMap.restrictToPath_apply _ φ X x
+
+@[simp]
+theorem component_zero {n : ℕ} (hn : 0 < n) (X : Fin (n + 1) → C) :
+    (0 : WordPathCochain (R := R) φ).component hn X = 0 := by
+  ext x
+  simp [component_apply]
+
+@[simp]
+theorem component_add (F G : WordPathCochain (R := R) φ) {n : ℕ} (hn : 0 < n)
+    (X : Fin (n + 1) → C) :
+    (F + G).component hn X = F.component hn X + G.component hn X := by
+  ext x
+  simp [component_apply]
+
+@[simp]
+theorem component_smul (r : R) (F : WordPathCochain (R := R) φ) {n : ℕ} (hn : 0 < n)
+    (X : Fin (n + 1) → C) :
+    (r • F).component hn X = r • F.component hn X := by
+  ext x
+  simp [component_apply]
 
 /-- Evaluating on a path and then including the output recovers the total-module evaluation. -/
 @[simp]
