@@ -109,9 +109,13 @@ theorem circleIntegral_twoPrincipalParts {A B c s₁ s₂ : ℂ} {R : ℝ}
     (hs₁ : A = 0 ∨ s₁ ∈ ball c R) (hs₂ : B = 0 ∨ s₂ ∈ ball c R) :
     circleIntegral (twoPrincipalParts A B s₁ s₂) c R =
       2 * (Real.pi : ℂ) * Complex.I * (A + B) := by
-  rw [twoPrincipalParts_eq, circleIntegral.integral_add (circleIntegrable_const_mul_sub_inv hs₁)
-    (circleIntegrable_const_mul_sub_inv hs₂), circleIntegral_const_mul_sub_inv hs₁,
-    circleIntegral_const_mul_sub_inv hs₂, mul_add]
+  have hsphere {s : ℂ} (hs : s ∈ ball c R) : R = 0 ∨ s ∉ sphere c |R| := by
+    rw [abs_of_pos (pos_of_mem_ball hs)]
+    exact Or.inr (sphere_disjoint_ball.notMem_of_mem_right hs)
+  rw [twoPrincipalParts_eq, circleIntegral.integral_add
+    (circleIntegrable_const_mul_sub_inv (hs₁.imp_right hsphere))
+    (circleIntegrable_const_mul_sub_inv (hs₂.imp_right hsphere)),
+    circleIntegral_const_mul_sub_inv hs₁, circleIntegral_const_mul_sub_inv hs₂, mul_add]
 
 /-- The two-pole calculation in residue-theorem form: for distinct designated points, with the
 point of each nonzero principal part inside the circle, the integral is `2πi` times the sum of the

@@ -11,12 +11,14 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 /-!
 # Circle integrals of a simple principal part
 
-The principal part `z ↦ A · (z − s)⁻¹` is circle integrable on `C(c, R)`, with integral `2πi A`,
-whenever it is not a genuine pole on or outside the circle: either `A = 0` or `s` lies strictly
-inside the circle. Stating the hypothesis as this disjunction lets sums of principal parts be
-integrated termwise without case splits on vanishing coefficients.
+The principal part `z ↦ A · (z − s)⁻¹` is circle integrable on `C(c, R)` unless it has a genuine
+pole on a nondegenerate circle: it suffices that `A = 0`, `R = 0`, or `s ∉ sphere c |R|`. Its
+integral is `2πi A` whenever `A = 0` or `s` lies strictly inside the circle. Stating the
+hypotheses as disjunctions lets sums of principal parts be integrated termwise without case splits
+on vanishing coefficients.
 
-The interior case is Mathlib's `circleIntegral.integral_sub_inv_of_mem_ball`.
+The integrability statement reduces to Mathlib's `circleIntegrable_sub_inv_iff`, and the interior
+integral is Mathlib's `circleIntegral.integral_sub_inv_of_mem_ball`.
 
 ## Main results
 
@@ -32,15 +34,13 @@ open Metric
 
 namespace TauCeti.Contour
 
-/-- A principal part `A / (z - s)` is circle integrable on `C(c, R)` if it vanishes or `s` lies
-strictly inside the circle. -/
+/-- A principal part `A / (z - s)` is circle integrable on `C(c, R)` if it vanishes, the circle
+is degenerate, or `s` does not lie on the circle. -/
 theorem circleIntegrable_const_mul_sub_inv {A c s : ℂ} {R : ℝ}
-    (hs : A = 0 ∨ s ∈ ball c R) : CircleIntegrable (fun z => A * (z - s)⁻¹) c R := by
+    (hs : A = 0 ∨ R = 0 ∨ s ∉ sphere c |R|) : CircleIntegrable (fun z => A * (z - s)⁻¹) c R := by
   rcases hs with rfl | hs
   · simp
-  refine (circleIntegrable_sub_inv_iff.2 (Or.inr fun hsp => ?_)).const_fun_smul (a := A)
-  rw [abs_of_pos (pos_of_mem_ball hs)] at hsp
-  exact (mem_ball.1 hs).ne (mem_sphere.1 hsp)
+  exact (circleIntegrable_sub_inv_iff.2 hs).const_fun_smul (a := A)
 
 /-- The integral of a principal part `A / (z - s)` over `C(c, R)` is `2πi A` if it vanishes or `s`
 lies strictly inside the circle. -/
