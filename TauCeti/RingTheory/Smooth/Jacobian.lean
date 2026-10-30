@@ -74,7 +74,6 @@ theorem formallySmooth_quotient_of_basis_kaehlerDifferential (b : Module.Basis (
     [IsLocalRing (Q ⧸ Ideal.span (Set.range g))] :
     Algebra.FormallySmooth K (Q ⧸ Ideal.span (Set.range g)) := by
   classical
-  have := Fintype.ofFinite τ
   have : Module.Free Q Ω[Q⁄K] := .of_basis b
   have : Module.Finite Q Ω[Q⁄K] := .of_basis b
   have hN : RingHom.ker (algebraMap Q (Q ⧸ Ideal.span (Set.range g))) =
@@ -99,14 +98,8 @@ theorem formallySmooth_quotient_of_basis_kaehlerDifferential (b : Module.Basis (
   have himg (t : τ) : cotangentComplexBaseChange K _ Q κ ((1 : κ) ⊗ₜ v t) = bκ (.inl t) := by
     rw [cotangentComplexBaseChange_tmul, one_smul, kerToTensor_apply,
       Algebra.TensorProduct.basis_apply, hb]
-  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
-  intro z hz
-  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun κ).1
-    (hv.ge (Submodule.mem_top (x := z)))
-  have hz' : ∑ t, c t • bκ (.inl t) = 0 := by
-    rw [← LinearMap.mem_ker.1 hz, map_sum]
-    refine Finset.sum_congr rfl fun t _ ↦ ?_
-    rw [map_smul, himg]
-  simp [Fintype.linearIndependent_iff.1 (bκ.linearIndependent.comp _ Sum.inl_injective) c hz']
+  refine LinearMap.injective_of_linearIndependent hv ?_
+  rw [show _ ∘ _ = bκ ∘ Sum.inl from funext himg]
+  exact bκ.linearIndependent.comp _ Sum.inl_injective
 
 end TauCeti

@@ -129,10 +129,12 @@ theorem finrank_cotangentSpace_eq_two (h : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
 
 end LocalRing
 
-variable {K A : Type*} [Field K] [CommRing A] [Algebra K A] [Algebra.EssFiniteType K A]
+section Localization
+
+variable {K A : Type*} [CommRing K] [CommRing A] [Algebra K A] [Algebra.EssFiniteType K A]
   [Algebra.FormallyUnramified K (A ⧸ fittingIdeal A Ω[A⁄K] 1)]
 
-/-- **The unramified singular locus localizes.** Let `A` be essentially of finite type over a field
+/-- **The unramified singular locus localizes.** Let `A` be essentially of finite type over a ring
 `K`, with `A ⧸ Fitt₁(Ω[A⁄K])` unramified over `K`. Then the same holds for every localization of
 `A`: its singular locus is the localization of that of `A`. -/
 theorem formallyUnramified_localization_quotient_fittingIdeal (M : Submonoid A) :
@@ -147,6 +149,11 @@ theorem formallyUnramified_localization_quotient_fittingIdeal (M : Submonoid A) 
   have : Algebra.FormallyUnramified K (Aₘ ⧸ I.map (algebraMap A Aₘ)) := .comp K (A ⧸ I) _
   exact .of_equiv (Ideal.quotientEquivAlgOfEq K
     ((KaehlerDifferential.isBaseChange_of_formallyEtale K A Aₘ).fittingIdeal_eq_map 1).symm)
+
+end Localization
+
+variable {K A : Type*} [Field K] [CommRing A] [Algebra K A] [Algebra.EssFiniteType K A]
+  [Algebra.FormallyUnramified K (A ⧸ fittingIdeal A Ω[A⁄K] 1)]
 
 /-- **The differentials along an unramified singular locus.** Let `A` be essentially of
 finite type over a field `K`, with `A ⧸ Fitt₁(Ω[A⁄K])` unramified over `K`. At every point of
