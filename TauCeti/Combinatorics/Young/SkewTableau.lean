@@ -13,9 +13,9 @@ public import TauCeti.Combinatorics.Young.Kostka
 
 For Young diagrams `λ ≤ ν`, a **semistandard tableau of skew shape `ν / λ`** fills the cells of `ν`
 that do not lie in `λ` with natural numbers, weakly increasing along each row and strictly
-increasing down each column. Skew tableaux are the objects counted by the Littlewood–Richardson
-coefficients, which expand a product of Schur polynomials in Schur polynomials, and they index the
-monomials of skew Schur polynomials.
+increasing down each column. Skew tableaux index the monomials of skew Schur polynomials, and the
+Littlewood–Richardson coefficients, which expand a product of Schur polynomials in Schur
+polynomials, count the skew tableaux of prescribed content whose reading word is a lattice word.
 
 As for Mathlib's `SemistandardYoungTableau`, a tableau is a function `ℕ → ℕ → ℕ`, required to vanish
 off the skew cells, so that it is determined by its entries on those cells
@@ -184,9 +184,10 @@ theorem rowReadingWord_eq_cons (T : SkewSemistandardYoungTableau inner outer) {i
     ⟨outer.rowLen i - inner.rowLen i - 1, by omega⟩
   refine ⟨((List.range' (inner.rowLen i) n).map (T i)).reverse, ?_⟩
   rw [rowReadingWord_def, hn, List.range'_concat, List.map_append, List.reverse_append]
+  have hlast : inner.rowLen i + 1 * n = outer.rowLen i - 1 := by omega
   simp only [List.map_cons, List.map_nil, List.reverse_singleton, List.cons_append,
     List.nil_append, List.cons.injEq, and_true]
-  rw [show inner.rowLen i + 1 * n = outer.rowLen i - 1 by omega]
+  rw [hlast]
 
 /-- The **reading word** of a skew tableau: its rows read from top to bottom, each from right to
 left. -/
@@ -213,6 +214,7 @@ theorem flatMap_range_append_prefix_readingWord (T : SkewSemistandardYoungTablea
 
 /-- **The reading word has the content of the tableau**: it contains each letter `k` as often as
 the tableau does. -/
+@[simp]
 theorem count_readingWord (T : SkewSemistandardYoungTableau inner outer) (k : ℕ) :
     T.readingWord.count k = T.content k := by
   have hsdiff : (outer.cells \ inner.cells).filter (fun c => T c.1 c.2 = k) =
