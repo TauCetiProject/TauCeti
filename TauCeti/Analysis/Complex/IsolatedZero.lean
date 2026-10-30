@@ -7,12 +7,16 @@ module
 
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.Analysis.Analytic.IsolatedZeros
 
 /-!
-# Estimates near an isolated zero
+# Estimates and null sets for isolated zeros
 
 A lower bound on a circle around a point at whose centre the function has its only zero, and two
-ways of concluding that the analytic order at a point is finite.
+ways of concluding that the analytic order at a point is finite. Zeros of a nonzero analytic
+function on an interior circle also occur at a null set of angles.
 
 The first two are the standing hypotheses of every Rouché comparison made on such a disc: both
 `TauCeti.Analysis.Complex.Conformal.LocalDegree` and
@@ -31,13 +35,15 @@ Rouché's theorem, so this module does not import it:
   so the count Rouché produces is a natural number rather than `⊤`.
 * `TauCeti.analyticOrderAt_ne_top_of_zeros_subset`: the same finiteness under the hypothesis a
   global zero count comes with, that the zeros in an open set lie in a finite set.
+* `AnalyticOnNhd.volume_setOf_circleMap_eq_zero`: the angles where a nonzero analytic function
+  vanishes on an interior circle form a null set.
 
-They are separated here only because several files need them.
+These results collect isolated-zero estimates used across complex analysis.
 -/
 
 public section
 
-open Complex Metric Filter Topology
+open Complex Metric Filter Topology MeasureTheory
 
 namespace TauCeti
 
@@ -91,3 +97,14 @@ theorem analyticOrderAt_ne_top_of_zeros_subset {f : ℂ → ℂ} {U : Set ℂ} {
     (hball hw).2 ⟨hzeros w (hball hw).1 hw0, hwz⟩
 
 end TauCeti
+
+/-- If `f` is analytic on `ball c R` and nonzero somewhere there, the angles at which it vanishes on
+a circle about `c` of radius `r ∈ (0, R)` form a null set. -/
+theorem AnalyticOnNhd.volume_setOf_circleMap_eq_zero {f : ℂ → ℂ} {c : ℂ} {r R : ℝ}
+    (hf : AnalyticOnNhd ℂ f (ball c R)) {w : ℂ}
+    (hw : w ∈ ball c R) (hfw : f w ≠ 0) (hr : 0 < r) (hrR : r < R) :
+    volume {θ | f (circleMap c r θ) = 0} = 0 := by
+  refine Set.Countable.measure_zero (((hf.finite_setOf_mem_and_eq_zero_of_isCompact
+    (convex_ball c R).isPreconnected hw hfw (isCompact_sphere c r)
+    (sphere_subset_ball hrR)).countable.preimage_circleMap c hr.ne').mono ?_) _
+  exact fun θ hθ ↦ ⟨circleMap_mem_sphere c hr.le θ, hθ⟩

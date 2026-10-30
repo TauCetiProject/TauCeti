@@ -38,7 +38,8 @@ zeros or poles, and since `F` is the exact constant field of `F(W₁)`, `a` is a
 * `TauCeti.Isogeny.existsUnique_pullbackDifferential_invariantDifferential_eq_smul`:
   `φ^*ω₂ = c ω₁` for a unique `c ∈ F`.
 * `TauCeti.Isogeny.isSeparable_iff_ne_zero_of_pullbackDifferential_eq_smul`: this constant is
-  nonzero exactly when `φ` is separable.
+  nonzero exactly when `φ` is separable, and `ne_zero_of_pullbackDifferential_eq_smul`: in
+  characteristic zero it is always nonzero.
 * `TauCeti.Isogeny.Hom.existsUnique_pullbackDifferential_invariantDifferential_eq_smul`: the same
   for every morphism `W₁ → W₂`.
 
@@ -160,6 +161,13 @@ theorem isSeparable_iff_ne_zero_of_pullbackDifferential_eq_smul (φ : Isogeny W�
     Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField ↔ c ≠ 0 := by
   rw [isSeparable_iff_pullbackDifferential_ne_zero, hc,
     smul_ne_zero_iff_left (invariantDifferential_ne_zero W₁)]
+
+/-- **In characteristic zero the constant is nonzero**: every isogeny is separable, so if
+`φ^*ω₂ = c ω₁` then `c ≠ 0`. -/
+theorem ne_zero_of_pullbackDifferential_eq_smul [CharZero F] (φ : Isogeny W₁ W₂) {c : F}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁) :
+    c ≠ 0 :=
+  (isSeparable_iff_ne_zero_of_pullbackDifferential_eq_smul φ hc).mp inferInstance
 
 /-- **A morphism pulls the invariant differential back to a constant multiple**: for every
 morphism `f : W₁ → W₂`, `f^*ω₂ = c ω₁` for a unique constant `c ∈ F`, with `c = 0` for the zero

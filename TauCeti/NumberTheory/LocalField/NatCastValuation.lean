@@ -12,6 +12,8 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
+-- Proof-only: the valuation of a valuative extension extends that of the base.
+import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
 # The normalized valuation of a natural number in a local field
@@ -42,6 +44,8 @@ characteristic is the absolute ramification index of `K`.
   characteristic is nonzero in `K`.
 * `TauCeti.natCast_ne_zero_of_residueField_natCast_ne_zero`: a natural number nonzero in the
   residue field is nonzero in every nontrivial `K`-algebra.
+* `TauCeti.valuation_natCast_eq_one_of_residueField_natCast_ne_zero`: such a natural number has
+  valuation `1` in every valuative extension of `K`.
 * `TauCeti.normalizedValuation_natCast`: the characteristic equation, which also records that
   the value is nonnegative.
 * `TauCeti.toAdd_normalizedValuation_natCast` and `TauCeti.valuation_natCast_eq_pow`: the
@@ -95,6 +99,18 @@ theorem natCast_ne_zero_of_residueField_natCast_ne_zero {A : Type*} [Semiring A]
     [Algebra K A] {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0) : (n : A) ≠ 0 :=
   IsUnit.natCast_ne_zero_of_algebra (K := K) (natCast_ne_zero_of_isUnit
     ((IsLocalRing.residue_ne_zero_iff_isUnit _).1 (by rwa [map_natCast]))).isUnit
+
+/-- A natural number that is nonzero in the residue field of `K` has valuation `1` in every
+valuative extension `L` of `K`, being a unit of `𝒪[K]`. So it lies outside the maximal ideal of
+the valuation ring of `L`. -/
+theorem valuation_natCast_eq_one_of_residueField_natCast_ne_zero {L : Type*} [Field L]
+    [ValuativeRel L] [Algebra K L] [ValuativeExtension K L] {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0) :
+    valuation L (n : L) = 1 := by
+  have hu : IsUnit (n : 𝒪[K]) :=
+    (IsLocalRing.residue_ne_zero_iff_isUnit _).1 (by rwa [map_natCast])
+  rw [← map_natCast (algebraMap K L),
+    Valuation.HasExtension.val_map_eq_one_iff (vR := valuation K) (vA := valuation L)]
+  simpa using (Valuation.integer.integers (valuation K)).isUnit_iff_valuation_eq_one.mp hu
 
 variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 

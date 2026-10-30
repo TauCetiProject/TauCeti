@@ -9,6 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.Calculus.Gradient
 
 /-!
 # Real powers of the norm away from the origin
@@ -19,7 +21,8 @@ origin.  This file supplies the corresponding local derivative, Hessian, and Lap
 under the explicit hypothesis `x ≠ 0`, together with the Laplacian of the dipole-type product
 `x ↦ ⟪a, x⟫ ‖x‖^p`.  The critical exponents give the functions `‖x‖^(2 - dim E)` and
 `⟪a, x⟫ ‖x‖^(-dim E)`, harmonic away from the origin, from which the Poisson kernel of a ball is
-assembled.
+assembled. The logarithm of the norm, the limit of `(‖x‖ ^ p - 1) / p` as `p → 0`, has
+derivative `‖x‖⁻² ⟨x, ·⟩` and Laplacian `(dim E - 2) / ‖x‖²` away from the origin.
 
 The Hessian is bounded by `‖x‖ ^ (p - 2)` in size and, for `p ≤ 3`, by `‖a - b‖ ‖b‖ ^ (p - 3)`
 in its variation between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.  For negative `p` these are
@@ -43,6 +46,8 @@ chain-rule argument while replacing the global exponent hypothesis with the loca
   `Δ (⟪a, x⟫ ‖x‖^p) = p (p + dim E) ⟪a, x⟫ ‖x‖^(p-2)` away from zero.
 * `harmonicAt_norm_rpow_two_sub_finrank`, `harmonicAt_inner_mul_norm_rpow_neg_finrank`: the
   harmonic radial and dipole powers.
+* `hasFDerivAt_log_norm_of_ne`, `laplacian_log_norm_of_ne`: the derivative and the Laplacian of
+  `x ↦ log ‖x‖` away from zero.
 -/
 
 public section
@@ -70,6 +75,26 @@ theorem hasFDerivAt_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
 theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • innerSL ℝ x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
+
+/-- Away from the origin, the derivative of `x ↦ log ‖x‖` is `‖x‖⁻² ⟨x, ·⟩`. -/
+theorem hasFDerivAt_log_norm_of_ne {x : E} (hx : x ≠ 0) :
+    HasFDerivAt (fun y : E ↦ Real.log ‖y‖) ((‖x‖ ^ 2)⁻¹ • innerSL ℝ x) x := by
+  have h := ((Real.hasDerivAt_log (pow_pos (norm_pos_iff.2 hx) 2).ne').div_const 2
+    ).comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt
+  convert h using 1
+  · funext y
+    simp only [Function.comp_apply, Real.log_pow]
+    ring
+  · ext v
+    simp only [smul_apply, coe_innerSL_apply, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat]
+    ring
+
+/-- Away from the origin, the derivative of `x ↦ log ‖x‖` has norm `‖x‖⁻¹`. -/
+theorem norm_fderiv_log_norm_of_ne {x : E} (hx : x ≠ 0) :
+    ‖fderiv ℝ (fun y : E ↦ Real.log ‖y‖) x‖ = ‖x‖⁻¹ := by
+  have : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
+  simp [(hasFDerivAt_log_norm_of_ne hx).fderiv, norm_smul, innerSL_apply_norm]
+  field_simp
 
 /-- Away from the origin, the derivative of the norm is `‖x‖⁻¹ ⟨x, ·⟩`. -/
 theorem hasFDerivAt_norm_of_ne {x : E} (hx : x ≠ 0) :
@@ -338,6 +363,24 @@ theorem harmonicAt_inner_mul_norm_rpow_neg_finrank (a : E) {x : E} (hx : x ≠ 0
     ((contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx)), ?_⟩
   filter_upwards [eventually_ne_nhds hx] with y hy
   rw [laplacian_inner_mul_norm_rpow_of_ne a _ hy, Pi.zero_apply]
+  ring
+
+/-- The Laplacian of `x ↦ log ‖x‖` away from the origin is `(dim E - 2) / ‖x‖²`. -/
+theorem laplacian_log_norm_of_ne {x : E} (hx : x ≠ 0) :
+    Δ (fun y : E ↦ Real.log ‖y‖) x = (Module.finrank ℝ E - 2) / ‖x‖ ^ 2 := by
+  have ht : ‖x‖ ^ 2 ≠ 0 := by positivity
+  have hcomp : (fun y : E ↦ Real.log ‖y‖) = (fun t ↦ Real.log t / 2) ∘ fun y : E ↦ ‖y‖ ^ 2 := by
+    funext y
+    simp only [Function.comp_apply, Real.log_pow]
+    ring
+  have hlog : deriv (fun t : ℝ ↦ Real.log t / 2) = fun t ↦ t⁻¹ / 2 := by
+    funext t
+    simp
+  rw [hcomp, ContDiffAt.laplacian_comp (q := fun y : E ↦ ‖y‖ ^ 2)
+    ((Real.contDiffAt_log.2 ht).div_const _) (contDiff_norm_sq ℝ).contDiffAt, laplacian_norm_sq,
+    hlog, norm_gradient_eq_norm_fderiv]
+  simp [fderiv_norm_sq_apply, RCLike.norm_nsmul ℝ, innerSL_apply_norm]
+  field_simp
   ring
 
 end TauCeti
