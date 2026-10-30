@@ -41,11 +41,11 @@ namespace TauCeti.GTPattern
 
 variable {n : ℕ}
 
-/-- **The Gelfand-Tsetlin eigencharacter separates patterns.** Over a domain of characteristic
-zero, two Gelfand-Tsetlin patterns are equal as soon as, at every level `j ≤ n`, their rows of
-length `j` have the same highest-weight eigenvalues of the Gelfand invariants of `gl j` in degrees
-`1, …, j`. -/
-theorem eq_of_forall_gelfandEigenvalue_eq {K : Type*} [CommRing K] [IsDomain K] [CharZero K]
+/-- **The Gelfand-Tsetlin eigencharacter separates patterns.** Over a commutative ring of
+characteristic zero, two Gelfand-Tsetlin patterns are equal as soon as, at every level `j ≤ n`,
+their rows of length `j` have the same highest-weight eigenvalues of the Gelfand invariants of
+`gl j` in degrees `1, …, j`. -/
+theorem eq_of_forall_gelfandEigenvalue_eq {K : Type*} [CommRing K] [CharZero K]
     {P Q : GTPattern n}
     (h : ∀ j ≤ n, ∀ r ∈ Finset.Icc 1 j,
       gelfandEigenvalue (fun i : Fin j => (P i j : K)) r =

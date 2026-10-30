@@ -18,11 +18,11 @@ import Mathlib.Order.WellFounded
 
 For a weight `μ` of `gl n`, `TauCeti.gelfandEigenvalue μ r` is the scalar by which the Gelfand
 invariant `Cᵣ = trace (𝔼 ^ r)` acts on a highest-weight vector of weight `μ`. This file shows that
-these scalars determine an integral dominant weight: over a domain of characteristic zero, two
-weakly decreasing integer weights `μ`, `μ'` of `gl n` with the same eigenvalues `Cᵣ(μ) = Cᵣ(μ')`
-for `1 ≤ r ≤ n` are equal. Applied at each corner `gl k` of the chain `gl 1 ⊆ ⋯ ⊆ gl n`, this is
-the statement that the joint eigencharacter of the Gelfand-Tsetlin generators separates
-Gelfand-Tsetlin patterns.
+these scalars determine an integral dominant weight: over a commutative ring of characteristic zero,
+two weakly decreasing integer weights `μ`, `μ'` of `gl n` with the same eigenvalues `Cᵣ(μ) = Cᵣ(μ')`
+for `1 ≤ r ≤ n` are equal. Applied at each corner `gl k` of the chain `gl 1 ⊆ ⋯ ⊆ gl n`, this is the
+statement that the joint eigencharacter of the Gelfand-Tsetlin generators separates Gelfand-Tsetlin
+patterns.
 
 The proof goes through the generating function of the eigenvalues. Write
 `lᵢ = μᵢ + #{j | i < j}` for the `ρ`-shifted weight. Then, as formal power series in `X`,
@@ -230,10 +230,8 @@ private theorem prod_X_sub_C_eq_of_gelfandEigenvalue_eq [IsDomain K] [CharZero K
   · exact absurd h0 (Nat.cast_ne_zero.mpr (by omega))
   · exact hD0 (leadingCoeff_eq_zero.mp h0)
 
-/-- **The Gelfand invariants separate dominant weights.** Over a domain of characteristic zero, two
-weakly decreasing integer weights of `gl n` on which the Gelfand invariants of degrees `1, …, n`
-have the same highest-weight eigenvalues are equal. -/
-theorem eq_of_forall_gelfandEigenvalue_eq [IsDomain K] [CharZero K] {μ μ' : n → ℤ}
+private theorem eq_of_forall_gelfandEigenvalue_eq_of_isDomain [IsDomain K] [CharZero K]
+    {μ μ' : n → ℤ}
     (hμ : Antitone μ) (hμ' : Antitone μ')
     (h : ∀ r ∈ Icc 1 (Fintype.card n),
       gelfandEigenvalue (fun i => (μ i : K)) r = gelfandEigenvalue (fun i => (μ' i : K)) r) :
@@ -264,6 +262,22 @@ theorem eq_of_forall_gelfandEigenvalue_eq [IsDomain K] [CharZero K] {μ μ' : n 
     (strictAnti_add_card_filter_lt hμ')).mp hrange
   funext i
   simpa [L, L'] using congrFun hLL i
+
+/-- **The Gelfand invariants separate dominant weights.** Over a commutative ring of characteristic
+zero, two weakly decreasing integer weights of `gl n` on which the Gelfand invariants of degrees
+`1, …, n` have the same highest-weight eigenvalues are equal. -/
+theorem eq_of_forall_gelfandEigenvalue_eq [CharZero K] {μ μ' : n → ℤ}
+    (hμ : Antitone μ) (hμ' : Antitone μ')
+    (h : ∀ r ∈ Icc 1 (Fintype.card n),
+      gelfandEigenvalue (fun i => (μ i : K)) r = gelfandEigenvalue (fun i => (μ' i : K)) r) :
+    μ = μ' := by
+  -- The eigenvalues of integer weights are integers, so it suffices to separate over `ℤ`.
+  refine eq_of_forall_gelfandEigenvalue_eq_of_isDomain (K := ℤ) hμ hμ' fun r hr => ?_
+  refine Int.cast_injective (α := K) ?_
+  have hcast (ν : n → ℤ) : ((gelfandEigenvalue ν r : ℤ) : K) =
+      gelfandEigenvalue (fun i => (ν i : K)) r :=
+    map_gelfandEigenvalue (Int.castRingHom K) ν r
+  simpa only [Int.cast_id, hcast] using h r hr
 
 end Separation
 
