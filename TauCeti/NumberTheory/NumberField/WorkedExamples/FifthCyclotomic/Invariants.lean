@@ -36,8 +36,8 @@ and the subfield lattice in `TauCeti.NumberTheory.NumberField.Cyclotomic.Subfiel
 * `TauCeti.NumberField.FifthCyclotomic.finrank_eq_four`, `discr_eq_one_hundred_twenty_five`,
   `nrRealPlaces_eq_zero`, `nrComplexPlaces_eq_two`: degree `4`, discriminant `125`, signature
   `(0, 2)`; `hasLMFDBIntrinsicLabel`: the intrinsic label prefix is `4.0.125`.
-* `TauCeti.NumberField.FifthCyclotomic.isMonogenic`, `classNumber_eq_one`: `𝓞 K = ℤ[ζ₅]` is a
-  principal ideal domain.
+* `TauCeti.NumberField.FifthCyclotomic.isMonogenic`, `classNumber_eq_one`: `K` is monogenic
+  and its class number is `1`.
 * `TauCeti.NumberField.FifthCyclotomic.units_rank_eq_one`, `torsionOrder_eq_ten`: the unit
   group has rank `1` and torsion of order `10`.
 * `TauCeti.NumberField.FifthCyclotomic.five_mem_ramifiedPrimes`, `ncard_primesOver_five_eq_one`,
@@ -86,7 +86,11 @@ theorem hasLMFDBIntrinsicLabel : HasLMFDBIntrinsicLabel K 4 0 125 := by
   rw [hasLMFDBIntrinsicLabel_iff, discr_eq_one_hundred_twenty_five K]
   exact ⟨finrank_eq_four K, nrRealPlaces_eq_zero K, rfl⟩
 
-/-- A fifth cyclotomic field is monogenic: `𝓞 K = ℤ[ζ₅]`. -/
+/-- A fifth cyclotomic field is monogenic: some integral element generates its ring of integers.
+
+For the explicit equality `𝓞 K = ℤ[ζ₅]` for a chosen primitive fifth root, use
+`IsCyclotomicExtension.Rat.adjoin_singleton_eq_top`; this theorem records its existential
+consequence. -/
 theorem isMonogenic : IsMonogenic K :=
   isMonogenic_of_isCyclotomicExtension 5
 
