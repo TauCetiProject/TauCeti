@@ -48,6 +48,8 @@ no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integ
   `extendCoefficients j hj μ` are those of `μ` with `j` applied to the coefficients.
 * `AbstractMeasure.extendCoefficients_apply_comp_eq_sum`: integration of a function factoring
   through a finite discrete quotient.
+* `AbstractMeasure.extendCoefficients_apply_locallyConstant`: agreement with `j` on
+  locally constant source-valued tests, without assuming continuity of `j`.
 * `AbstractMeasure.norm_toCLMEquiv_extendCoefficients_le`: the extension has norm at most `1`.
 * `AbstractMeasure.extendCoefficients_apply_comp`: `ι_j(μ)(j ∘ f) = j(μ(f))` for continuous `j`.
 * `AbstractMeasure.eq_extendCoefficients_of_apply_comp`: this property characterises `ι_j(μ)`.
@@ -270,6 +272,26 @@ theorem extendCoefficients_apply_comp_eq_sum {A : Type*} [TopologicalSpace A]
   rw [← coe_toCLMEquiv, toCLMEquiv_extendCoefficients, extendCoefficientsCLM_apply_comp j μ hj,
     cylinderSum]
 
+/-- Extension agrees with the coefficient homomorphism on locally constant source-valued tests,
+without assuming that the coefficient homomorphism is continuous. -/
+@[simp]
+theorem extendCoefficients_apply_locallyConstant
+    (f : LocallyConstant X O) :
+    extendCoefficients j hj μ (f.map j) = j (μ f) := by
+  classical
+  let q : C(X, f.discreteQuotient) := ⟨_, f.discreteQuotient.proj_continuous⟩
+  let := Fintype.ofFinite f.discreteQuotient
+  have hf : (f : C(X, O)) = (equivFnOfDiscrete.symm f.lift).comp q := by
+    ext x
+    exact (congrFun f.lift_comp_proj x).symm
+  have hjf : (f.map j : C(X, K)) =
+      (equivFnOfDiscrete.symm (j ∘ f.lift)).comp q := by
+    ext x
+    exact congrArg j (congrFun f.lift_comp_proj x).symm
+  rw [hjf, extendCoefficients_apply_comp_eq_sum, hf,
+    apply_comp_eq_sum_finiteProjection, map_sum]
+  simp
+
 /-- Extension of coefficients is semilinear along `j`. -/
 @[simp]
 theorem extendCoefficients_smul (a : O) :
@@ -303,16 +325,11 @@ theorem extendCoefficients_apply_comp (hjc : Continuous j) (f : C(X, O)) :
   refine congrFun (LocallyConstant.denseRange_toContinuousMap.equalizer
     ((map_continuous (extendCoefficients j hj μ)).comp (continuous_postcomp _))
     (hjc.comp (map_continuous μ)) (funext fun φ ↦ ?_)) f
-  have hφ : (φ : C(X, O)) = (equivFnOfDiscrete.symm φ.lift).comp (quotientMap φ) := by
+  have hjφ : (⟨j, hjc⟩ : C(O, K)).comp φ = (φ.map j : C(X, K)) := by
     ext x
-    simp [lift_quotientMap]
-  have hjφ : (⟨j, hjc⟩ : C(O, K)).comp φ =
-      (equivFnOfDiscrete.symm (j ∘ φ.lift)).comp (quotientMap φ) := by
-    ext x
-    simp [lift_quotientMap]
-  simp only [Function.comp_apply]
-  rw [hjφ, extendCoefficients_apply_comp_eq_sum, hφ, apply_comp_eq_sum_finiteProjection, map_sum]
-  simp
+    rfl
+  simpa only [Function.comp_apply, hjφ] using
+    extendCoefficients_apply_locallyConstant j μ hj φ
 
 /-- A `K`-valued measure taking the value `j (μ f)` on every test function `j ∘ f` is the extension
 of coefficients of `μ`. -/
