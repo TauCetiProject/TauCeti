@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Reflection
 public import TauCeti.RepresentationTheory.LSPath.PLPath
 import Mathlib.Algebra.Order.Group.MinMax
+import TauCeti.LinearAlgebra.Reflection
 
 /-!
 # Running heights and root operators on piecewise-linear paths
@@ -41,7 +42,8 @@ The operators are defined on segment lists (`TauCeti.PLPath.reflectRecords`,
 `TauCeti.PLPath.listLower`) and then on `TauCeti.PLPath`, using its reduced presentation. The
 main result of this file is that the operators do not depend on the chosen presentation: the
 elementary moves (subdividing a segment, inserting a stationary segment) commute with them up to
-the same moves. The weight changes by `-α` under `f_α` and by `α` under `e_α`.
+the same moves. The weight changes by `-α` under `f_α` and by `α` under `e_α`, while the minimal
+height changes by `-1` and `+1`, respectively, when `f x = 2`.
 
 This file works with the ambient operators on all paths. That `e_α` and `f_α` are partial
 inverses is proved in `TauCeti.RepresentationTheory.LSPath.PartialInverse`, and the lengths
@@ -69,6 +71,9 @@ of the root strings through a path in `TauCeti.RepresentationTheory.LSPath.Strin
   `f (π 1) - h < 1`, and `e_α π = 0` exactly when `-1 < h`.
 * `TauCeti.PLPath.endpoint_of_lower_eq_some`, `TauCeti.PLPath.endpoint_of_raise_eq_some`: the
   root operators change the endpoint by `∓ α`.
+* `TauCeti.PLPath.listMinHeight_reflectRecords`: the minimal height of capped reflection.
+* `TauCeti.PLPath.minHeight_of_lower_eq_some`, `TauCeti.PLPath.minHeight_of_raise_eq_some`:
+  `f_α` lowers and `e_α` raises the minimal height by one.
 * `TauCeti.PLPath.lower_straight`: lowering a straight path `t ↦ t • v` with `f v ≥ 1`.
 
 ## References
@@ -349,6 +354,47 @@ theorem sum_reflectRecords (c : 𝕜) (l : List V) :
     · rw [reflectRecords_cons_of_nonpos (not_lt.1 h), max_eq_left (not_lt.1 h)]
       simp only [List.sum_cons, ih]
       module
+
+/-- Reflecting the records up to height `c` lowers the minimal height by the increase, along the
+path, of the minimum of `c` and the later minimal height. Compare
+`TauCeti.PLPath.sum_reflectRecords`, by which the final height drops by twice this amount. -/
+theorem listMinHeight_reflectRecords (hx : f x = 2) (c : 𝕜) (l : List V) :
+    listMinHeight f (reflectRecords f x c l) =
+      listMinHeight f l - (min (f l.sum) c - min (listMinHeight f l) c) := by
+  induction l generalizing c with
+  | nil => simp
+  | cons v l ih =>
+    have hl := listMinHeight_nonpos (f := f) l
+    have hls := listMinHeight_le_apply_sum (f := f) l
+    by_cases h : 0 < min (f v + listMinHeight f l) c
+    · set r := min (f v + listMinHeight f l) c with hr
+      have hfv : f v ≠ 0 := (h.trans_le ((min_le_left _ _).trans (by linarith))).ne'
+      -- The reflected initial piece of `v` descends by `r`; the kept piece climbs by `f v - r`.
+      have h₁ : f (preReflection x f ((r / f v) • v)) = -r := by
+        rw [apply_preReflection hx, map_smul, smul_eq_mul, div_mul_cancel₀ _ hfv]
+      have h₂ : f ((1 - r / f v) • v) = f v - r := by
+        rw [map_smul, smul_eq_mul, sub_mul, one_mul, div_mul_cancel₀ _ hfv]
+      have hr₁ : r ≤ f v + listMinHeight f l := min_le_left _ _
+      have hr₂ : r ≤ c := min_le_right _ _
+      have hpos : 0 < f v + listMinHeight f l := h.trans_le hr₁
+      have hc : 0 < c := h.trans_le hr₂
+      rw [reflectRecords_cons_of_pos h, ← hr]
+      simp only [listMinHeight_cons, ih, h₁, h₂, List.sum_cons, map_add, min_eq_left hpos.le,
+        min_eq_left hc.le]
+      rcases min_choice (f v + listMinHeight f l) c with hr₃ | hr₃ <;> rw [← hr] at hr₃
+      · -- The whole of `v` lies below the cap, so the cap on `l` is above its minimal height.
+        rw [min_eq_left (show listMinHeight f l ≤ c - f v by linarith)]
+        simp only [min_def]
+        split_ifs <;> linarith
+      · -- The cap is reached inside `v`, so it stays below every later height.
+        rw [min_eq_right (show c - f v ≤ f l.sum by linarith),
+          min_eq_right (show c - f v ≤ listMinHeight f l by linarith)]
+        simp only [min_def]
+        split_ifs <;> linarith
+    · rw [reflectRecords_cons_of_nonpos (not_lt.1 h)]
+      simp only [listMinHeight_cons, ih, List.sum_cons, map_add]
+      simp only [min_def] at h ⊢
+      split_ifs at h ⊢ <;> linarith
 
 omit [IsStrictOrderedRing 𝕜] in
 @[simp]
@@ -660,6 +706,33 @@ theorem endpoint_of_raise_eq_some (h : raise f x p = some q) : q.endpoint = p.en
   obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
   rw [endpoint_reverse, endpoint_of_lower_eq_some hr, endpoint_reverse]
   abel
+
+/-- **Lowering lowers the minimal height by one**: `min H(f_α π) = min H(π) - 1`. -/
+theorem minHeight_of_lower_eq_some (hx : f x = 2) (h : lower f x p = some q) :
+    q.minHeight f = p.minHeight f - 1 := by
+  rw [← ofSegments_segments p, lower_ofSegments] at h
+  obtain ⟨l, hl, rfl⟩ := Option.map_eq_some_iff.1 h
+  rw [listLower_def] at hl
+  split_ifs at hl with hdef
+  obtain rfl := Option.some.inj hl
+  rw [minHeight_ofSegments, listMinHeight_reflectRecords hx, minHeight_def,
+    min_eq_right (by linarith), min_eq_left (by linarith)]
+  ring
+
+/-- **Raising raises the minimal height by one**: `min H(e_α π) = min H(π) + 1`. -/
+theorem minHeight_of_raise_eq_some (hx : f x = 2) (h : raise f x p = some q) :
+    q.minHeight f = p.minHeight f + 1 := by
+  rw [raise_def] at h
+  obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+  rw [minHeight_reverse, minHeight_of_lower_eq_some hx hr, endpoint_of_lower_eq_some hr,
+    minHeight_reverse, map_sub, endpoint_reverse, map_neg, hx]
+  ring
+
+/-- Lowering shortens the lowering string by one: `H(1) - min H` drops by one under `f_α`. -/
+theorem apply_endpoint_sub_minHeight_of_lower_eq_some (hx : f x = 2) (h : lower f x p = some q) :
+    f q.endpoint - q.minHeight f + 1 = f p.endpoint - p.minHeight f := by
+  rw [endpoint_of_lower_eq_some h, minHeight_of_lower_eq_some hx h, map_sub, hx]
+  ring
 
 /-- Lowering the straight path `t ↦ t • v` with `f v ≥ 1` reflects its initial piece, up to the
 time `1 / f v` at which the height reaches `1`. -/
