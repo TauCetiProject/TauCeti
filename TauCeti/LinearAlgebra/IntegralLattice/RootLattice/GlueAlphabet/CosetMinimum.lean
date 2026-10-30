@@ -125,6 +125,20 @@ theorem glueMinimum_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (hn : Odd n)
   subst hb
   simp only [glueMinimum, dite_eq_right (Nat.not_even_iff_odd.mpr hn)]
 
+/-- Every nonzero label of `D₄` has shortest norm `1`: the vector class has norm `1`, and the two
+spinor classes have norm `4/4`. -/
+theorem glueMinimum_D_four_of_ne_zero {a : (D 4).glueAlphabet (isSimplyLaced_D 4)} (ha : a ≠ 0) :
+    (D 4).glueMinimum (isSimplyLaced_D 4) a = 1 := by
+  obtain ⟨b, hb⟩ : ∃ b : ZMod 2 × ZMod 2,
+      FiniteQuadraticModule.Isometry.ofEq
+        (glueAlphabet_D_of_even 4 (isSimplyLaced_D 4) (by decide)) a = b := ⟨_, rfl⟩
+  rw [glueMinimum_D_of_even 4 _ (by decide) a b hb]
+  have hb0 : b ≠ 0 := by
+    rintro rfl
+    exact ha ((FiniteQuadraticModule.Isometry.ofEq _).injective (hb.trans (map_zero _).symm))
+  simp only [hb0, ↓reduceIte]
+  split_ifs <;> norm_num
+
 /-- The nonzero labels of `E₆` have shortest norm `4/3`. -/
 @[simp]
 theorem glueMinimum_E6 (ht : E6.IsSimplyLaced) (a : ZMod 3) :
