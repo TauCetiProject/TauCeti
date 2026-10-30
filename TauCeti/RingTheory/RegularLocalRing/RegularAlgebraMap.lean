@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Flat.Localization
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
+public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.RegularLocalRing.GeometricallyRegular
 
 /-!
@@ -26,6 +28,12 @@ excellent rings.
 * `TauCeti.Excellence.RegularAlgebraMap.of_isLocalization`: localizations are regular, for
   instance `R → R_p` and `ℤ → ℚ`.
 * `AlgEquiv.regularAlgebraMap`: regularity is invariant under isomorphisms of `R`-algebras.
+* `TauCeti.Excellence.RegularAlgebraMap.of_bijective_algebraMap`: regularity is invariant under
+  isomorphisms of the base ring.
+* `RingEquiv.regularAlgebraMap_adicCompletion`: regularity of the completion map `A → Â` along an
+  ideal is transported along a ring isomorphism matching the ideals.
+* `Ideal.regularAlgebraMap_adicCompletion_of_isAdicComplete`: the completion map of a ring along an
+  ideal it is complete for is regular.
 
 ## References
 
@@ -95,7 +103,57 @@ theorem _root_.AlgEquiv.regularAlgebraMap (e : B ≃ₐ[R] B') [RegularAlgebraMa
     (Algebra.TensorProduct.congr (AlgEquiv.refl : p.ResidueField ≃ₐ[p.ResidueField] _)
       e).geometricallyRegular
 
+/-- Regularity of an algebra does not see an isomorphism of base rings: if `algebraMap R R'` is
+bijective and `B` is an `R'`-algebra that is regular over `R`, then `B` is regular over `R'`. -/
+theorem of_bijective_algebraMap {R' : Type u} [CommRing R'] [Algebra R R'] [Algebra R' B]
+    [IsScalarTower R R' B] (h : Function.Bijective (algebraMap R R')) [RegularAlgebraMap R B] :
+    RegularAlgebraMap R' B where
+  flat :=
+    have : IsLocalization (⊥ : Submonoid R) R' :=
+      IsLocalization.of_le_isUnit_of_bijective (by
+        rintro _ ⟨y, hy, rfl⟩
+        rw [Submonoid.mem_bot.mp hy, map_one]
+        exact isUnit_one) h
+    (Module.flat_iff_of_isLocalization R' (⊥ : Submonoid R) B).mpr inferInstance
+  geometricallyRegular_fiber p' _ := by
+    let p := p'.comap (algebraMap R R')
+    let : Algebra p.ResidueField p'.ResidueField :=
+      (Ideal.ResidueField.map p p' (algebraMap R R') rfl).toAlgebra
+    have : IsScalarTower R p.ResidueField p'.ResidueField := .of_algebraMap_eq fun r ↦
+      (IsScalarTower.algebraMap_apply R R' _ r).trans
+        (Ideal.ResidueField.map_algebraMap p p' _ rfl r).symm
+    have hκ : Function.Bijective (algebraMap p.ResidueField p'.ResidueField) :=
+      (RingHom.surjectiveOnStalks_of_surjective h.2).residueFieldMap_bijective p p' rfl
+    have := (geometricallyRegular_tensorProduct_iff_of_bijective hκ (p.Fiber B)).mpr inferInstance
+    have : TensorProduct.CompatibleSMul R R' p'.ResidueField B :=
+      .of_algebraMap_surjective _ _ h.2
+    -- `κ(p') ⊗[κ(p)] (κ(p) ⊗[R] B) ≃ κ(p') ⊗[R] B ≃ κ(p') ⊗[R'] B` as `κ(p')`-algebras.
+    exact ((Algebra.TensorProduct.cancelBaseChange R p.ResidueField p'.ResidueField
+      p'.ResidueField B).trans (Algebra.TensorProduct.equivOfCompatibleSMul R R'
+        p'.ResidueField p'.ResidueField B).symm).geometricallyRegular
+
 end RegularAlgebraMap
+
+/-! ### Completion maps -/
+
+/-- Regularity of the completion map `A → Â` along an ideal `I` is transported along a ring
+isomorphism `e : A ≃+* A'` carrying `I` onto `I'`: then `A' → Â'` along `I'` is regular. For local
+rings and their maximal ideals, `IsLocalRing.map_ringEquiv_maximalIdeal e` supplies the
+hypothesis. -/
+theorem _root_.RingEquiv.regularAlgebraMap_adicCompletion {A A' : Type u} [CommRing A]
+    [CommRing A'] (e : A ≃+* A') {I : Ideal A} {I' : Ideal A'} (he : I.map e = I')
+    [RegularAlgebraMap A (AdicCompletion I A)] :
+    RegularAlgebraMap A' (AdicCompletion I' A') := by
+  let : Algebra A A' := e.toRingHom.toAlgebra
+  let e' : A ≃ₐ[A] A' := AlgEquiv.ofRingEquiv (f := e) fun _ ↦ rfl
+  have := (AdicCompletion.congrₐ e' he).regularAlgebraMap
+  exact .of_bijective_algebraMap e.bijective
+
+/-- The completion map `A → Â` of a ring along an ideal `I` for which `A` is `I`-adically complete
+is regular, being an isomorphism. -/
+theorem _root_.Ideal.regularAlgebraMap_adicCompletion_of_isAdicComplete {A : Type u} [CommRing A]
+    (I : Ideal A) [IsAdicComplete I A] : RegularAlgebraMap A (AdicCompletion I A) :=
+  (AdicCompletion.ofAlgEquiv I).regularAlgebraMap
 
 /-! ### Checks -/
 

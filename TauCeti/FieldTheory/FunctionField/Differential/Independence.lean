@@ -171,8 +171,12 @@ private theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_c
     ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx).extendScalars k'
   have hy' : Transcendental k' (algebraMap F F' y) :=
     ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hy).extendScalars k'
-  have := isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) (x := x) h
-  have := isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) (x := y) h
+  have : Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F' := by
+    have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) (S := {x}) h
+    rwa [Set.image_singleton] at hsep
+  have : Algebra.IsSeparable k'⟮algebraMap F F' y⟯ F' := by
+    have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) (S := {y}) h
+    rwa [Set.image_singleton] at hsep
   have := isSeparable_of_constantCompositum_eq_top (k := k) h
   let := weilDifferentialSpaceModule hF'
   have he := Place.ramificationIdx_eq_one_of_constantCompositum_eq_top (k := k) h P'

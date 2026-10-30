@@ -71,7 +71,7 @@ Each statement about `thetaCoset` has a `thetaSeries` counterpart, obtained from
 
 public section
 
-open Complex Filter Topology
+open Complex Filter
 open UpperHalfPlane (ofComplex ofComplex_apply_of_im_pos mdifferentiable_iff)
 open scoped Real Manifold UpperHalfPlane
 
@@ -81,10 +81,7 @@ namespace Complex
 the term of index `v` of a theta series. -/
 theorem norm_exp_pi_mul_I_mul_ofReal_mul (t : ℝ) (z : ℂ) :
     ‖cexp (π * I * t * z)‖ = Real.exp (-(π * t) * z.im) := by
-  rw [Complex.norm_exp]
-  congr 1
-  simp only [mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im]
-  ring
+  simp [Complex.norm_exp]
 
 /-- For `0 ≤ t`, on the half-plane `{z | y ≤ im z}` the function `exp (π i t z)` is bounded in
 norm by `exp (-π y t)`; this dominates the terms of a theta series by a Gaussian. -/
@@ -113,10 +110,13 @@ noncomputable def thetaCoset (L : Submodule ℤ E) (γ : E) (τ : ℍ) : ℂ :=
 
 variable (L : Submodule ℤ E)
 
+/-- The value of the theta series at `τ`: `Θ_L(τ) = ∑_{v ∈ L} exp (π i ‖v‖² τ)`. -/
 theorem thetaSeries_apply (τ : ℍ) :
     thetaSeries L τ = ∑' v : L, cexp (π * I * (‖(v : E)‖ ^ 2 : ℝ) * τ) :=
   (rfl)
 
+/-- The value of the theta series of the translate `γ + L` at `τ`:
+`θ_{γ+L}(τ) = ∑_{v ∈ L} exp (π i ‖γ + v‖² τ)`. -/
 theorem thetaCoset_apply (γ : E) (τ : ℍ) :
     thetaCoset L γ τ = ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ) :=
   (rfl)
@@ -154,6 +154,28 @@ theorem thetaCoset_neg (γ : E) : thetaCoset L (-γ) = thetaCoset L γ := by
   refine tsum_congr fun v => ?_
   rw [Equiv.neg_apply, Submodule.coe_neg, ← neg_add, norm_neg]
 
+/-- The sum of theta terms over the fiber of the quotient map `L → L / M` is the theta
+series of the translate of `M` by a representative of that class. -/
+theorem tsum_thetaTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L)
+    (y : L ⧸ M.submoduleOf L) (τ : ℍ) :
+    ∑' b : (Submodule.Quotient.mk ⁻¹' {y} : Set L),
+      cexp (π * I * (‖((b : L) : E)‖ ^ 2 : ℝ) * τ) =
+        thetaCoset M (Quotient.out y : L) τ := by
+  -- The fiber is identified with the kernel `M.submoduleOf L`, and then with `M`.
+  let f := (M.submoduleOf L).mkQ.toAddMonoidHom
+  have hker (x : L) : x ∈ M.submoduleOf L ↔ x ∈ f.ker := by simp [f]
+  have hset : f ⁻¹' {f (Quotient.out y)} = Submodule.Quotient.mk ⁻¹' {y} := by ext; simp [f]
+  let e : M ≃ (Submodule.Quotient.mk ⁻¹' {y} : Set L) :=
+    ((Submodule.submoduleOfEquivOfLe hML).toEquiv.symm.trans (Equiv.subtypeEquivRight hker)).trans
+      ((f.fiberEquivKer (Quotient.out y)).symm.trans (Set.equivOfEq hset))
+  -- `e v = out y + v`, by `AddMonoidHom.fiberEquivKer_symm_apply` and the definition of the
+  -- inverse of `Submodule.submoduleOfEquivOfLe`.
+  have he (v : M) : ((e v : L) : E) = ((Quotient.out y : L) : E) + v := by
+    have hv : (((Submodule.submoduleOfEquivOfLe hML).symm v : L) : E) = v := rfl
+    simp [e, AddMonoidHom.fiberEquivKer_symm_apply, hv]
+  rw [thetaCoset_apply, ← e.tsum_eq]
+  exact tsum_congr fun v => by rw [he]
+
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
 /-- The theta series of a translate of a discrete subgroup converges at every point of
@@ -176,25 +198,7 @@ The sum is finite when `M` has finite index in `L`. -/
 theorem hasSum_thetaCoset_out {M : Submodule ℤ E} (hML : M ≤ L) (τ : ℍ) :
     HasSum (fun y : L ⧸ M.submoduleOf L => thetaCoset M ((Quotient.out y : L) : E) τ)
       (thetaSeries L τ) := by
-  -- The vectors of `L` in the class `y` are the translates `out y + v`, `v ∈ M`: the fibre of
-  -- the quotient map over `y` is identified with its kernel `M.submoduleOf L`, and then with `M`.
-  have hfiber (y : L ⧸ M.submoduleOf L) :
-      ∑' b : (Submodule.Quotient.mk ⁻¹' {y} : Set L), cexp (π * I * (‖((b : L) : E)‖ ^ 2 : ℝ) * τ) =
-        thetaCoset M (Quotient.out y : L) τ := by
-    let f := (M.submoduleOf L).mkQ.toAddMonoidHom
-    have hker (x : L) : x ∈ M.submoduleOf L ↔ x ∈ f.ker := by simp [f]
-    have hset : f ⁻¹' {f (Quotient.out y)} = Submodule.Quotient.mk ⁻¹' {y} := by ext; simp [f]
-    let e : M ≃ (Submodule.Quotient.mk ⁻¹' {y} : Set L) :=
-      ((Submodule.submoduleOfEquivOfLe hML).toEquiv.symm.trans (Equiv.subtypeEquivRight hker)).trans
-        ((f.fiberEquivKer (Quotient.out y)).symm.trans (Set.equivOfEq hset))
-    -- `e v = out y + v`, by `AddMonoidHom.fiberEquivKer_symm_apply` and the definition of the
-    -- inverse of `Submodule.submoduleOfEquivOfLe`.
-    have he (v : M) : ((e v : L) : E) = ((Quotient.out y : L) : E) + v := by
-      have hv : (((Submodule.submoduleOfEquivOfLe hML).symm v : L) : E) = v := rfl
-      simp [e, AddMonoidHom.fiberEquivKer_symm_apply, hv]
-    rw [thetaCoset_apply, ← e.tsum_eq]
-    exact tsum_congr fun v => by rw [he]
-  rw [← funext hfiber, thetaSeries_apply]
+  rw [← funext (fun y ↦ tsum_thetaTerm_fiber L hML y τ), thetaSeries_apply]
   exact (summable_thetaSeries L τ).hasSum.tsum_fiberwise _
 
 /-- The theta series of a translate converges uniformly on each half-plane `{τ | y ≤ im τ}` with

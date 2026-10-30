@@ -93,12 +93,6 @@ private theorem second_bottom_eq
   exact D.first.map_of_ne D.second.left
     (fun h => D.second.left_ne_right (h.trans hcommon)) hother.symm
 
-private theorem second_top_eq_first_top
-    (D : GridRectangleInitialPentagonDecomposition a s x z)
-    (hcommon : D.first.left = D.second.right) : D.second.top = D.first.top := by
-  rw [GridRectangleBetween.top_def, hcommon.symm, GridRectangleBetween.top_def]
-  exact D.first.map_left
-
 /-- The first rectangle in the generic recut starts on the replaced grid line. -/
 @[simp]
 theorem leftRightRecut_first_left
@@ -151,7 +145,8 @@ theorem recutLeftEqRight_turn
           Equiv.swap_apply_left]
       refine ⟨hsecondLeft, ?_⟩
       have hturnWhole : s ∈ Grid.cIco D.second.bottom D.first.top := by
-        simpa only [D.second_top_eq_first_top hcommon] using D.second_turn_mem
+        simpa only [D.toGridRectangleDecomposition.second_top_eq_first_top_of_left_eq_right hcommon]
+          using D.second_turn_mem
       have hparts := Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hbranch.1
       have hturnParts :
           s ∈ Grid.cIco D.second.bottom D.first.bottom ∪
@@ -166,7 +161,8 @@ theorem recutLeftEqRight_turn
     · have hfirstTop : E.first.top = D.first.top := by
         simpa only [E, leftRightRecut] using hbranch.2.2.1
       have hturnWhole : s ∈ Grid.cIco D.second.bottom D.first.top := by
-        simpa only [D.second_top_eq_first_top hcommon] using D.second_turn_mem
+        simpa only [D.toGridRectangleDecomposition.second_top_eq_first_top_of_left_eq_right hcommon]
+          using D.second_turn_mem
       exact (hturn (by simpa only [hfirstBottom, hfirstTop] using hturnWhole)).elim
 
 /-- Promote the first generic recut rectangle to an initial-side pentagon when it contains the

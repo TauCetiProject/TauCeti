@@ -26,6 +26,8 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   bracket of vector fields on that space.
 * `TauCeti.mlieBracket_const_model_space`: constant model-space vector fields have zero
   manifold Lie bracket.
+* `TauCeti.mlieBracket_continuousLinearMap_model_space`: the manifold Lie bracket of the linear
+  vector fields `y ↦ A y` and `y ↦ B y` is `x ↦ B (A x) - A (B x)`.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
 * `TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt`: tested against the extended chart at a point,
@@ -34,6 +36,7 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   bracket of the coordinate expressions of two fields is their manifold bracket.
 * `VectorField.lieBracketWithin_neg_right` and `VectorField.mlieBracket_neg_right`: the flat and
   manifold brackets are odd in their second argument.
+* `VectorField.mlieBracket_neg_left`: the manifold bracket is odd in its first argument.
 * `VectorField.jacobi_identity_mlieBracket_apply`: the cyclic Jacobi identity for the manifold
   bracket.
 * `VectorField.contMDiff_mlieBracket`: the bracket of two smooth vector fields is smooth.
@@ -97,6 +100,13 @@ theorem mlieBracket_eq_lieBracket {V W : ∀ y : F, TangentSpace 𝓘(𝕜, F) y
     VectorField.mlieBracket 𝓘(𝕜, F) V W = VectorField.lieBracket 𝕜 V W := by
   rw [← VectorField.mlieBracketWithin_univ, VectorField.mlieBracketWithin_eq_lieBracketWithin]
   exact VectorField.lieBracketWithin_univ
+
+/-- The manifold Lie bracket of the linear vector fields `y ↦ A y` and `y ↦ B y` on a normed
+vector space is the linear vector field `x ↦ B (A x) - A (B x)`. -/
+theorem mlieBracket_continuousLinearMap_model_space (A B : F →L[𝕜] F) (x : F) :
+    VectorField.mlieBracket 𝓘(𝕜, F) (fun y ↦ A y) (fun y ↦ B y) x = B (A x) - A (B x) := by
+  refine (congrFun mlieBracket_eq_lieBracket x).trans ?_
+  rw [VectorField.lieBracket, A.fderiv, B.fderiv]
 
 end TauCeti
 
@@ -314,6 +324,12 @@ theorem mlieBracket_neg_right {V W : ∀ y : M, TangentSpace I y} {x : M} :
   rw [← mlieBracketWithin_univ, ← mlieBracketWithin_univ]
   simp only [mlieBracketWithin_apply, mpullbackWithin_neg]
   exact (congrArg _ (lieBracketWithin_neg_right hs)).trans (map_neg _ _)
+
+omit [CompleteSpace E] in
+/-- Negating the first vector field negates the manifold Lie bracket. -/
+theorem mlieBracket_neg_left {V W : ∀ y : M, TangentSpace I y} {x : M} :
+    mlieBracket I (-V) W x = -mlieBracket I V W x := by
+  rw [mlieBracket_swap_apply, mlieBracket_neg_right, neg_neg, mlieBracket_swap_apply]
 
 /-- The **Jacobi identity** for the manifold Lie bracket, in cyclic form:
 `[U, [V, W]] + [V, [W, U]] + [W, [U, V]] = 0`. This rearranges Mathlib's Leibniz form

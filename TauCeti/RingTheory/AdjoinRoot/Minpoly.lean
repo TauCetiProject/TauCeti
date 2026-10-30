@@ -24,6 +24,8 @@ under `g` of the roots of `f` when `f` is irreducible: it divides `p` exactly wh
 * `AdjoinRoot.natDegree_minpoly_mk_le`: for `f ≠ 0`, the minimal polynomial has degree at most
   `f.natDegree`.
 * `AdjoinRoot.irreducible_minpoly_mk`: for `f` irreducible, the minimal polynomial is irreducible.
+* `AdjoinRoot.minpoly_root_of_monic`: over any commutative ring, the minimal polynomial of the
+  adjoined root of a monic `f` is `f`.
 -/
 
 public section
@@ -56,5 +58,16 @@ theorem irreducible_minpoly_mk {f : K[X]} (g : K[X]) (hf : Irreducible f) :
   have := Fact.mk hf
   have := (powerBasis hf.ne_zero).finite
   exact minpoly.irreducible (Algebra.IsIntegral.isIntegral _)
+
+/-- Over any commutative ring, the minimal polynomial of the adjoined root of a monic polynomial
+`f` is `f` itself: no nonzero polynomial of smaller degree vanishes at `root f`, because
+`1, root f, …, root f ^ (deg f - 1)` is a basis. Over a field this is
+`AdjoinRoot.minpoly_powerBasis_gen_of_monic`. -/
+theorem minpoly_root_of_monic {R : Type*} [CommRing R] {f : R[X]} (hf : f.Monic) :
+    minpoly R (root f) = f := by
+  refine (minpoly.unique' R (root f) hf (aeval_eq f ▸ mk_self) fun q hq ↦
+    or_iff_not_imp_left.2 fun hq0 hroot ↦ ?_).symm
+  exact (hq.trans_le degree_le_natDegree).not_ge
+    ((powerBasis' hf).dim_le_degree_of_root hq0 hroot)
 
 end AdjoinRoot

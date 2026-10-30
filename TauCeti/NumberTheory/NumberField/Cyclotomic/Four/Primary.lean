@@ -38,7 +38,12 @@ The unit `1` is primary, so the reciprocity statements carry their nonunit hypot
 * `TauCeti.existsUnique_unit_mul_isPrimaryGaussian`: an element of odd norm has exactly one
   primary multiple by a unit.
 * `TauCeti.IsPrimaryGaussian.norm_sub_one_div_four`: for primary `a + b i`,
-  `(N(a + b i) - 1) / 4 ≡ (a - 1) / 2 (mod 2)`.
+  `(N(a + b i) - 1) / 4 ≡ (a - 1) / 2 (mod 2)`;
+  `TauCeti.IsPrimaryGaussian.norm_sub_one_div_four_modEq_four` refines this to
+  `(N(a + b i) - 1) / 4 ≡ -((a - 1) / 2) (mod 4)`.
+* `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_coprime_four`: a primary element generates
+  an ideal of norm prime to `4`, and `TauCeti.IsPrimaryGaussian.natCast_absNorm_sub_one_div_four`
+  identifies `(N(λ 𝓞 K) - 1) / 4` with the integer `(N(a + b i) - 1) / 4`.
 * `TauCeti.IsPrimaryGaussian.exists_multiset_prod_eq`: a primary element is a product of primary
   primes.
 
@@ -164,6 +169,53 @@ theorem IsPrimaryGaussian.norm_sub_one_div_four {ζ : K} {hζ : IsPrimitiveRoot 
       show 4 * k + 3 - 1 = 2 * (2 * k + 1) by ring, Int.mul_ediv_cancel_left _ (by norm_num),
       Int.mul_ediv_cancel_left _ (by norm_num)]
     exact Int.modEq_iff_dvd.mpr ⟨-2 * k ^ 2 - 2 * k - 2 * l ^ 2 - 2 * l - 1, by ring⟩
+
+/-- **The norm congruence of a primary Gaussian integer modulo `4`.** For primary `a + b i`,
+`(N(a + b i) - 1) / 4 ≡ -((a - 1) / 2) (mod 4)`. This is the exponent comparison of the
+supplementary law for `i` in quartic reciprocity. -/
+theorem IsPrimaryGaussian.norm_sub_one_div_four_modEq_four {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
+    {a b : ℤ} (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    (Algebra.norm ℤ ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) - 1) / 4 ≡ -((a - 1) / 2)
+      [ZMOD 4] := by
+  rw [hζ.isPrimaryGaussian_add_mul_iff] at hx
+  rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four, Int.ModEq]
+  simp only [Int.ModEq] at hx
+  rcases hx with ⟨ha, hb⟩ | ⟨ha, hb⟩
+  · obtain ⟨k, rfl⟩ : ∃ k, a = 4 * k + 1 := ⟨a / 4, by omega⟩
+    obtain ⟨l, rfl⟩ : ∃ l, b = 4 * l := ⟨b / 4, by omega⟩
+    ring_nf
+    omega
+  · obtain ⟨k, rfl⟩ : ∃ k, a = 4 * k + 3 := ⟨a / 4, by omega⟩
+    obtain ⟨l, rfl⟩ : ∃ l, b = 4 * l + 2 := ⟨b / 4, by omega⟩
+    ring_nf
+    omega
+
+/-- A primary element of `𝓞 K = ℤ[i]` generates an ideal whose norm is odd, hence prime to `4`. -/
+theorem IsPrimaryGaussian.absNorm_span_singleton_coprime_four (hx : IsPrimaryGaussian x) :
+    (Ideal.absNorm (Ideal.span {x})).Coprime 4 := by
+  rw [Ideal.absNorm_span_singleton]
+  -- `4 = 2 ^ 2` holds by `rfl`, so coprimality to `2` suffices.
+  exact Nat.Coprime.pow_right 2 (Nat.coprime_two_right.mpr (Int.natAbs_odd.mpr hx.odd_norm))
+
+/-- For primary `λ = a + b i`, the natural number `(N(λ 𝓞 K) - 1) / 4`, with `N` the absolute
+ideal norm, is the integer `(N(a + b i) - 1) / 4` of `IsPrimaryGaussian.norm_sub_one_div_four`.
+This converts the exponent of a power residue symbol at `λ 𝓞 K` into the integer exponent whose
+congruences are computed above. -/
+theorem IsPrimaryGaussian.natCast_absNorm_sub_one_div_four {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
+    {a b : ℤ} (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    (((Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) - 1) / 4 : ℕ) : ℤ) =
+      (Algebra.norm ℤ ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) - 1) / 4 := by
+  have hcop := hx.absNorm_span_singleton_coprime_four
+  have hN : (Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) : ℤ) =
+      Algebra.norm ℤ ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) := by
+    rw [Ideal.absNorm_span_singleton, Int.natCast_natAbs, abs_of_nonneg]
+    rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four]
+    positivity
+  have h₀ : Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) ≠ 0 := by
+    intro h
+    rw [h, Nat.coprime_zero_left] at hcop
+    exact absurd hcop (by norm_num)
+  omega
 
 /-- A rational integer is primary exactly when it is congruent to `1` modulo `4`. -/
 @[simp]

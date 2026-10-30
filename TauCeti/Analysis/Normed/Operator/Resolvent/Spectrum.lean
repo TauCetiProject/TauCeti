@@ -11,8 +11,10 @@ public import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
 # Spectrum of a partial linear map
 
 The spectrum `LinearPMap.spectrum`, defined in
-`TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic`, is closed on Banach spaces.
-For bounded, everywhere-defined operators it agrees with Mathlib's Banach-algebra spectrum.
+`TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic`, is closed when the continuous
+endomorphism algebra has summable geometric series, in particular on Banach spaces.
+The comparison with Mathlib's algebraic spectrum for continuous, everywhere-defined operators
+is developed in that topological module.
 -/
 
 public section
@@ -24,22 +26,14 @@ open _root_.LinearPMap
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- The spectrum of a partial linear map on a Banach space is closed. -/
-theorem _root_.LinearPMap.isClosed_spectrum [CompleteSpace E] (A : E →ₗ.[𝕜] E) :
+/-- The spectrum of a partial linear map is closed when the continuous endomorphism algebra
+has summable geometric series. -/
+theorem _root_.LinearPMap.isClosed_spectrum [HasSummableGeomSeries (E →L[𝕜] E)] (A : E →ₗ.[𝕜] E) :
     IsClosed A.spectrum := by
   have h : A.spectrum = A.resolventSetᶜ := by
     ext z
     simp only [mem_spectrum_iff, Set.mem_compl_iff]
   rw [h]
   exact A.isOpen_resolventSet.isClosed_compl
-
-/-- For a bounded operator on the full domain, the partial-operator spectrum agrees with
-Mathlib's Banach-algebra spectrum. -/
-@[simp]
-theorem _root_.ContinuousLinearMap.spectrum_toPMap_top (T : E →L[𝕜] E) :
-    (T.toLinearMap.toPMap ⊤).spectrum = _root_.spectrum 𝕜 T := by
-  ext z
-  simp only [mem_spectrum_iff, ContinuousLinearMap.mem_resolventSet_toPMap_top_iff,
-    _root_.spectrum.mem_iff, _root_.spectrum.mem_resolventSet_iff]
 
 end TauCeti

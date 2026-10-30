@@ -8,6 +8,7 @@ module
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Kernels
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
 
 /-!
@@ -15,7 +16,8 @@ public import TauCeti.CategoryTheory.Linear.FullSubcategory
 
 Taking the cokernel of the even-to-odd differential gives an additive functor to finitely
 generated modules over the coefficient ring. The projection and its universal property retain
-the ordinary categorical cokernel API. The functor uses Mathlib's
+the ordinary categorical cokernel API; on elements, the projection is surjective with kernel the
+image of `d₀`. The functor uses Mathlib's
 `CategoryTheory.Limits.coker` on the arrows supplied by the differential.
 
 Composing scalar extension with this functor gives cokernels over a target ring with arbitrary
@@ -25,7 +27,10 @@ hypersurface comparisons; no vanishing condition is required for the cokernel co
 For a factorization of the zero potential, `d₀ ≫ d₁ = 0`, so `d₁` descends to a map
 `coker d₀ ⟶ X₀` (`TauCeti.MatrixFactorization.cokernelDesc`). On cokernels, the boundary of an
 odd map `(h₀, h₁)` is this descent followed by `h₀` and the projection
-(`TauCeti.MatrixFactorization.cokernelFunctor_map_hom_eq`).
+(`TauCeti.MatrixFactorization.cokernelFunctor_map_hom_eq`). The cokernel also carries a
+componentwise short exact sequence of such factorizations whose third term is exact at its even
+component to a short exact sequence of modules
+(`TauCeti.MatrixFactorization.shortExact_map_cokernelFunctor_comp_forget₂`).
 
 This construction requires only commutative rings; it does not assert that its values are maximal
 Cohen–Macaulay, which requires additional hypotheses. After reduction modulo the potential, the
@@ -100,6 +105,12 @@ theorem cokernelπ_naturality {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
       g.hom.f₁.hom ≫ cokernelπ Y := by
   exact cokernel.π_desc _ _ _
 
+/-- On elements, the cokernel projection is natural with respect to closed even maps. -/
+theorem cokernelπ_naturality_apply {X Y : MatrixFactorization S w} (g : X ⟶ Y)
+    (y : X.obj.X₁.obj) :
+    (cokernelFunctor.map g).hom.hom (cokernelπ X y) = cokernelπ Y (g.hom.f₁.hom.hom y) :=
+  congrArg (fun k ↦ k.hom y) (cokernelπ_naturality g)
+
 /-- The projection exhibits the underlying finite module as the categorical cokernel.
 This supplies the full existence and uniqueness API for maps killing the even differential. -/
 def isColimitCokernelπ (X : MatrixFactorization S w) :
@@ -111,6 +122,18 @@ instance cokernelπ_epi (X : MatrixFactorization S w) :
   epi_of_isColimit_cofork
     (c := CokernelCofork.ofπ (cokernelπ X) (d₀_cokernelπ X))
     (isColimitCokernelπ X)
+
+/-- The cokernel projection is surjective. -/
+theorem cokernelπ_surjective (X : MatrixFactorization S w) :
+    Function.Surjective (cokernelπ X) :=
+  (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+/-- On elements, the even differential and the cokernel projection form an exact pair: the
+kernel of the projection is the image of `d₀`. -/
+theorem exact_d₀_cokernelπ (X : MatrixFactorization S w) :
+    Function.Exact X.obj.d₀.hom.hom (cokernelπ X).hom :=
+  (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    ((ShortComplex.mk _ _ (d₀_cokernelπ X)).exact_of_g_is_cokernel (isColimitCokernelπ X))
 
 /-- Under the object comparisons, a closed even map acts by the map induced on categorical
 cokernels by its components. -/
@@ -170,5 +193,66 @@ theorem cokernelFunctor_map_hom_eq (hw : w = 0) {X Y : MatrixFactorization S w}
   apply (cancel_epi (cokernelπ X)).mp
   rw [cokernelπ_naturality, cokernelπ_cokernelDesc_hom_assoc, ← hg]
   simp
+
+/-- For factorizations of the zero potential, cokernels of even-to-odd differentials carry a short
+complex `X₁ ⟶ X₂ ⟶ X₃` that is short exact in both components to a short exact sequence of
+modules, provided `X₃` is exact at its even component (`ker d₀ = im d₁`). The right exactness
+is that of cokernels; the injectivity on the left uses the exactness of `X₃`. -/
+theorem shortExact_map_cokernelFunctor_comp_forget₂ (hw : w = 0)
+    {T : ShortComplex (MatrixFactorization S w)}
+    (hf₁ : Function.Injective T.f.hom.f₁.hom.hom)
+    (h₀ : Function.Exact T.f.hom.f₀.hom.hom T.g.hom.f₀.hom.hom)
+    (h₁ : Function.Exact T.f.hom.f₁.hom.hom T.g.hom.f₁.hom.hom)
+    (hg₀ : Function.Surjective T.g.hom.f₀.hom.hom)
+    (hg₁ : Function.Surjective T.g.hom.f₁.hom.hom)
+    (hX₃ : Function.Exact T.X₃.obj.d₁.hom.hom T.X₃.obj.d₀.hom.hom) :
+    (T.map (cokernelFunctor ⋙ forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S))).ShortExact := by
+  subst hw
+  -- Exactness in the middle: lift along `cokernelπ`, correct by `d₀`, and use exactness of the
+  -- odd components.
+  have hex :
+      Function.Exact (cokernelFunctor.map T.f).hom.hom (cokernelFunctor.map T.g).hom.hom := by
+    intro c
+    obtain ⟨b, rfl⟩ := cokernelπ_surjective T.X₂ c
+    refine ⟨fun hc ↦ ?_, ?_⟩
+    · rw [cokernelπ_naturality_apply] at hc
+      obtain ⟨a₃, ha₃⟩ := ((exact_d₀_cokernelπ T.X₃) _).1 hc
+      obtain ⟨a₂, rfl⟩ := hg₀ a₃
+      obtain ⟨b₁, hb₁⟩ := (h₁ (b - T.X₂.obj.d₀.hom.hom a₂)).1 (by
+        rw [map_sub, ← comm₀_apply, ha₃, sub_self])
+      refine ⟨cokernelπ T.X₁ b₁, ?_⟩
+      rw [cokernelπ_naturality_apply, hb₁, map_sub, ((exact_d₀_cokernelπ T.X₂) _).2 ⟨a₂, rfl⟩,
+        sub_zero]
+    · rintro ⟨c₁, hc₁⟩
+      rw [← hc₁]
+      simpa only [FGModuleCat.hom_hom_comp, LinearMap.comp_apply, T.zero, Functor.map_zero,
+        ObjectProperty.zero_hom, ModuleCat.hom_zero, LinearMap.zero_apply] using
+        congrArg (fun k ↦ k.hom.hom c₁) (cokernelFunctor.map_comp T.f T.g).symm
+  -- Injectivity on the left: the snake-lemma connecting map vanishes because `ker d₀ = im d₁`
+  -- in `X₃` and `d₀ d₁ = 0` in `X₂`.
+  have hinj : Function.Injective (cokernelFunctor.map T.f).hom.hom := by
+    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+    intro c hc
+    obtain ⟨b, rfl⟩ := cokernelπ_surjective T.X₁ c
+    rw [cokernelπ_naturality_apply] at hc
+    obtain ⟨a₂, ha₂⟩ := ((exact_d₀_cokernelπ T.X₂) _).1 hc
+    obtain ⟨b₃, hb₃⟩ := (hX₃ (T.g.hom.f₀.hom.hom a₂)).1 (by
+      rw [comm₀_apply, ha₂, h₁.apply_apply_eq_zero])
+    obtain ⟨b₂, rfl⟩ := hg₁ b₃
+    obtain ⟨a₁, ha₁⟩ := (h₀ (a₂ - T.X₂.obj.d₁.hom.hom b₂)).1 (by
+      rw [map_sub, ← hb₃, ← comm₁_apply, sub_self])
+    refine ((exact_d₀_cokernelπ T.X₁) _).2 ⟨a₁, hf₁ ?_⟩
+    rw [← comm₀_apply, ha₁, map_sub, d₁_comp_d₀_apply, zero_smul, sub_zero, ha₂]
+  -- Surjectivity on the right: both `cokernelπ` and the odd component of `T.g` are surjective.
+  have hsurj : Function.Surjective (cokernelFunctor.map T.g).hom.hom := by
+    intro c
+    obtain ⟨b₃, rfl⟩ := cokernelπ_surjective T.X₃ c
+    obtain ⟨b₂, rfl⟩ := hg₁ b₃
+    exact ⟨cokernelπ T.X₂ b₂, cokernelπ_naturality_apply T.g b₂⟩
+  -- Forgetting finite generation does not change the underlying linear maps.
+  exact
+    { exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 hex
+      mono_f := (ModuleCat.mono_iff_injective _).2 hinj
+      epi_g := (ModuleCat.epi_iff_surjective _).2 hsurj }
 
 end TauCeti.MatrixFactorization
