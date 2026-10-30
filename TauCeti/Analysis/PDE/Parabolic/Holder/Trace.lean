@@ -77,21 +77,31 @@ theorem holderWith_iteratedFDeriv_two_spatialSlice
     simp [e, Fin.init, f.iteratedFDeriv_two_apply]
   simpa [Function.comp_def, he] using e.isometry.lipschitzWith.holderWith.comp hh
 
-private theorem norm_iteratedFDeriv_spatialSlice_le
-    (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (i : ℕ) (hi : i ≤ 2) (x : E) :
-    ‖iteratedFDeriv ℝ i (fun y ↦ f (slabMk y t)) x‖ ≤
-      if i = 0 then ‖valueL f‖ else if i = 1 then ‖spatialFDerivL f‖
-      else ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ := by
-  interval_cases i
-  · simpa using (valueL f).norm_coe_le_norm (slabMk x t)
-  · simpa using (spatialFDerivL f).norm_coe_le_norm (slabMk x t)
-  · simpa [f.norm_iteratedFDeriv_two t x] using
-      (spatialSecondFDerivL f).toBoundedContinuousFunction.norm_coe_le_norm (slabMk x t)
+private theorem norm_iteratedFDeriv_zero_spatialSlice_le
+    (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :
+    ‖iteratedFDeriv ℝ 0 (fun y ↦ f (slabMk y t)) x‖ ≤ ‖valueL f‖ := by
+  simpa using (valueL f).norm_coe_le_norm (slabMk x t)
+
+private theorem norm_iteratedFDeriv_one_spatialSlice_le
+    (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :
+    ‖iteratedFDeriv ℝ 1 (fun y ↦ f (slabMk y t)) x‖ ≤ ‖spatialFDerivL f‖ := by
+  simpa using (spatialFDerivL f).norm_coe_le_norm (slabMk x t)
+
+private theorem norm_iteratedFDeriv_two_spatialSlice_le
+    (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :
+    ‖iteratedFDeriv ℝ 2 (fun y ↦ f (slabMk y t)) x‖ ≤
+      ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ := by
+  simpa [f.norm_iteratedFDeriv_two t x] using
+    (spatialSecondFDerivL f).toBoundedContinuousFunction.norm_coe_le_norm (slabMk x t)
 
 private theorem bounded_iteratedFDeriv_spatialSlice
     (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) :
-    ∀ i ≤ 2, ∃ C, ∀ x, ‖iteratedFDeriv ℝ i (fun y ↦ f (slabMk y t)) x‖ ≤ C :=
-  fun i hi ↦ ⟨_, norm_iteratedFDeriv_spatialSlice_le f t i hi⟩
+    ∀ i ≤ 2, ∃ C, ∀ x, ‖iteratedFDeriv ℝ i (fun y ↦ f (slabMk y t)) x‖ ≤ C := by
+  intro i hi
+  interval_cases i
+  · exact ⟨_, norm_iteratedFDeriv_zero_spatialSlice_le f t⟩
+  · exact ⟨_, norm_iteratedFDeriv_one_spatialSlice_le f t⟩
+  · exact ⟨_, norm_iteratedFDeriv_two_spatialSlice_le f t⟩
 
 /-- Restrict a bounded order-two parabolic Hölder map to any time in the closed slab,
 with values in the spatial sum-norm `C_b^{2,α}` space. -/
@@ -125,26 +135,45 @@ theorem iteratedFDeriv_two_spatialTrace (f : ParabolicC2HolderSpace α E F hab)
       spatialSecondFDerivL f (slabMk x t) (v 0) (v 1) := by
   rw [coe_spatialTrace, f.iteratedFDeriv_two_apply]
 
+private theorem norm_iteratedFDeriv_spatialTrace_le
+    (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (i : Fin 3)
+    {C : ℝ} (hC : 0 ≤ C)
+    (h : ∀ x, ‖iteratedFDeriv ℝ (i : ℕ) (fun y ↦ f (slabMk y t)) x‖ ≤ C) :
+    ‖(f.spatialTrace t).iteratedFDeriv i‖ ≤ C := by
+  apply (BoundedContinuousFunction.norm_le hC).2
+  intro x
+  rw [← CkHolderSpace.iteratedFDeriv_eq, coe_spatialTrace]
+  exact h x
+
+/-- The supremum norm of the trace's order-zero field is bounded by the slab value norm. -/
+theorem norm_iteratedFDeriv_zero_spatialTrace_le
+    (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) :
+    ‖(f.spatialTrace t).iteratedFDeriv 0‖ ≤ ‖valueL f‖ :=
+  norm_iteratedFDeriv_spatialTrace_le f t 0 (norm_nonneg (valueL f))
+    (norm_iteratedFDeriv_zero_spatialSlice_le f t)
+
+/-- The supremum norm of the trace's first derivative is bounded by the slab gradient norm. -/
+theorem norm_iteratedFDeriv_one_spatialTrace_le
+    (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) :
+    ‖(f.spatialTrace t).iteratedFDeriv 1‖ ≤ ‖spatialFDerivL f‖ :=
+  norm_iteratedFDeriv_spatialTrace_le f t 1 (norm_nonneg (spatialFDerivL f))
+    (norm_iteratedFDeriv_one_spatialSlice_le f t)
+
+/-- The supremum norm of the trace's second derivative is bounded by the slab Hessian norm. -/
+theorem norm_iteratedFDeriv_two_spatialTrace_le
+    (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) :
+    ‖(f.spatialTrace t).iteratedFDeriv 2‖ ≤
+      ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ :=
+  norm_iteratedFDeriv_spatialTrace_le f t 2
+    (norm_nonneg (spatialSecondFDerivL f).toBoundedContinuousFunction)
+    (norm_iteratedFDeriv_two_spatialSlice_le f t)
+
 /-- Spatial restriction is a contraction for the sum-norm spatial space, uniformly in time. -/
 theorem norm_spatialTrace_le (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) :
     ‖f.spatialTrace t‖ ≤ ‖f‖ := by
-  have h0 : ‖(f.spatialTrace t).iteratedFDeriv 0‖ ≤ ‖valueL f‖ := by
-    apply (BoundedContinuousFunction.norm_le (norm_nonneg (valueL f))).2
-    intro x
-    rw [← CkHolderSpace.iteratedFDeriv_eq, Fin.val_zero, coe_spatialTrace]
-    simpa using norm_iteratedFDeriv_spatialSlice_le f t 0 (by norm_num) x
-  have h1 : ‖(f.spatialTrace t).iteratedFDeriv 1‖ ≤ ‖spatialFDerivL f‖ := by
-    apply (BoundedContinuousFunction.norm_le (norm_nonneg (spatialFDerivL f))).2
-    intro x
-    rw [← CkHolderSpace.iteratedFDeriv_eq, Fin.val_one, coe_spatialTrace]
-    simpa using norm_iteratedFDeriv_spatialSlice_le f t 1 (by norm_num) x
-  have h2 : ‖(f.spatialTrace t).iteratedFDeriv 2‖ ≤
-      ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ := by
-    apply (BoundedContinuousFunction.norm_le
-      (norm_nonneg (spatialSecondFDerivL f).toBoundedContinuousFunction)).2
-    intro x
-    rw [← CkHolderSpace.iteratedFDeriv_eq, Fin.val_two, coe_spatialTrace]
-    simpa using norm_iteratedFDeriv_spatialSlice_le f t 2 le_rfl x
+  have h0 := f.norm_iteratedFDeriv_zero_spatialTrace_le t
+  have h1 := f.norm_iteratedFDeriv_one_spatialTrace_le t
+  have h2 := f.norm_iteratedFDeriv_two_spatialTrace_le t
   have hh := (f.holderWith_iteratedFDeriv_two_spatialSlice t).nnholderNorm_le
   have hh' : (nnHolderNorm α (iteratedFDeriv ℝ 2 (fun x ↦ f (slabMk x t))) : ℝ) ≤
       nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) :=
