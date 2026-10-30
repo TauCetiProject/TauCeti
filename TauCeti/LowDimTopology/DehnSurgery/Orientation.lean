@@ -36,7 +36,8 @@ knot exteriors in the same oriented manifold.
 ## Main results
 
 * `TauCeti.DehnFilling.IsOrientationCompatible.unique`: on a connected filled space there is at
-  most one orientation compatible with a given orientation of the ambient space.
+  most one orientation compatible with a given orientation of the ambient space, provided the open
+  exterior is nonempty.
 * `TauCeti.DehnFilling.isOrientationCompatible_neg_iff`: reversing both orientations preserves
   compatibility.
 * `TauCeti.DehnFilling.isOrientationCompatible_transHomeomorph_iff`: compatibility after transport

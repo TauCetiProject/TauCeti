@@ -359,17 +359,12 @@ theorem range_openExteriorEmbedding (F : DehnFilling h s Y) :
   · intro hy
     obtain ⟨x, rfl⟩ := (eq_univ_iff_forall.1 F.range_union_range y).resolve_right hy
     refine ⟨⟨x, ?_⟩, rfl⟩
-    rw [h.mem_openExterior]
-    rintro ⟨p, hp⟩
-    have hp1 : ‖(p.1 : ℂ)‖ = 1 :=
-      le_antisymm (mem_closedBall_zero_iff.mp p.1.2)
-        (not_lt.mp fun hlt ↦ mem_knotExterior.1 x.2 ⟨p, hlt, hp⟩)
-    obtain ⟨q, rfl⟩ : p ∈ range SolidTorus.boundaryInclusion := by
-      rw [SolidTorus.range_boundaryInclusion]
-      exact hp1
+    rw [← SetLike.mem_coe, h.coe_openExterior, ← knotExterior_sdiff_range]
+    refine ⟨x.2, ?_⟩
+    rintro ⟨q, hq⟩
     have hx : x = h.exteriorBoundaryInclusion (F.gluing (F.gluing.symm q)) := by
       rw [Homeomorph.apply_symm_apply]
-      exact Subtype.ext (by rw [h.coe_exteriorBoundaryInclusion_apply]; exact hp.symm)
+      exact Subtype.ext (by rw [h.coe_exteriorBoundaryInclusion_apply]; exact hq.symm)
     exact hy ⟨_, by rw [hx, F.exteriorEmbedding_exteriorBoundaryInclusion]⟩
 
 /-- The open exterior is openly embedded in the filled space. -/

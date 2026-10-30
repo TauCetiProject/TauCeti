@@ -35,8 +35,8 @@ its negation, `TauCeti.YasuiTheorem`; neither is proved.
   right-handed trefoil and its mirror image are not concordant, as their signatures differ.
   The sphere `S³` is simply connected (`TauCeti.simplyConnectedSpace_sphere_euclideanSpace`), so
   it has orientations (`TauCeti.HomologicalOrientation.nonempty_of_simplyConnectedSpace`); on a
-  connected filled space the compatible orientation is unique
-  (`TauCeti.DehnFilling.IsOrientationCompatible.unique`).
+  connected filled space with nonempty open exterior (always the case for a knot in `S³`) the
+  compatible orientation is unique (`TauCeti.DehnFilling.IsOrientationCompatible.unique`).
 * **Concordance** is smooth concordance of the parametrized knots
   (`TauCeti.SmoothEmbedding.Concordant`), and the conclusion allows reversing the orientation of
   one knot (`TauCeti.SmoothCircleEmbedding.reverse`). The `0`-surgery does not see the orientation
@@ -80,10 +80,12 @@ concordant to `K'` or to its reverse.
 The `0`-surgery on `K`, for a solid torus neighbourhood `Φ`, is a Dehn filling `F` of its exterior
 along the longitude of the preferred framing
 (`TauCeti.IsSolidTorusNeighborhood.preferredFramedBoundaryTorus`), defined because the reduced
-integral homology of `S³` vanishes in degrees `1` and `2`. The filled spaces `Y`, `Y'` are
-topological `3`-manifolds oriented by the orientations `oY`, `oY'` compatible with an orientation
-`o` of `S³`, and the homeomorphism `e : Y ≃ₜ Y'` preserves orientation when it pulls `oY'` back
-to `oY`. Yasui proved that the conjecture is false (`TauCeti.YasuiTheorem`). -/
+integral homology of `S³` vanishes in degrees `1` and `2`
+(`TauCeti.isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four` and
+`TauCeti.isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four`). The filled
+spaces `Y`, `Y'` are topological `3`-manifolds oriented by the orientations `oY`, `oY'` compatible
+with an orientation `o` of `S³`, and the homeomorphism `e : Y ≃ₜ Y'` preserves orientation when it
+pulls `oY'` back to `oY`. Yasui proved that the conjecture is false (`TauCeti.YasuiTheorem`). -/
 def AkbulutKirbyConjecture : Prop :=
   ∀ (o : HomologicalOrientation (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1)
       (EuclideanSpace ℝ (Fin 3)) 3)
@@ -94,14 +96,12 @@ def AkbulutKirbyConjecture : Prop :=
     [TopologicalSpace Y'] [T2Space Y'] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) Y']
     (F : DehnFilling h
       (h.preferredFramedBoundaryTorus
-        (isZero_reducedSingularHomologyFunctor_sphere_of_ne _ (n := 3) (by simp) (by norm_num))
-        (isZero_reducedSingularHomologyFunctor_sphere_of_ne _ (n := 3) (by simp)
-          (by norm_num))).longitude Y)
+        (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
+        (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _)).longitude Y)
     (F' : DehnFilling h'
       (h'.preferredFramedBoundaryTorus
-        (isZero_reducedSingularHomologyFunctor_sphere_of_ne _ (n := 3) (by simp) (by norm_num))
-        (isZero_reducedSingularHomologyFunctor_sphere_of_ne _ (n := 3) (by simp)
-          (by norm_num))).longitude Y')
+        (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
+        (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _)).longitude Y')
     (oY : HomologicalOrientation Y (EuclideanSpace ℝ (Fin 3)) 3)
     (oY' : HomologicalOrientation Y' (EuclideanSpace ℝ (Fin 3)) 3) (e : Y ≃ₜ Y'),
     F.IsOrientationCompatible o oY → F'.IsOrientationCompatible o oY' →
@@ -156,16 +156,14 @@ theorem yasuiTheorem_iff :
         (_ : ChartedSpace (EuclideanSpace ℝ (Fin 3)) Y')
         (F : DehnFilling h
           (h.preferredFramedBoundaryTorus
-            (isZero_reducedSingularHomologyFunctor_sphere_of_ne _ (n := 3) (by simp)
-              (by norm_num))
-            (isZero_reducedSingularHomologyFunctor_sphere_of_ne _ (n := 3) (by simp)
-              (by norm_num))).longitude Y)
+            (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
+            (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _)).longitude
+          Y)
         (F' : DehnFilling h'
           (h'.preferredFramedBoundaryTorus
-            (isZero_reducedSingularHomologyFunctor_sphere_of_ne _ (n := 3) (by simp)
-              (by norm_num))
-            (isZero_reducedSingularHomologyFunctor_sphere_of_ne _ (n := 3) (by simp)
-              (by norm_num))).longitude Y')
+            (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
+            (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _)).longitude
+          Y')
         (oY : HomologicalOrientation Y (EuclideanSpace ℝ (Fin 3)) 3)
         (oY' : HomologicalOrientation Y' (EuclideanSpace ℝ (Fin 3)) 3) (e : Y ≃ₜ Y'),
         F.IsOrientationCompatible o oY ∧ F'.IsOrientationCompatible o oY' ∧
