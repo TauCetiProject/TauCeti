@@ -106,7 +106,6 @@ theorem mem_rightUcbSubalgebra_iff_uniformContinuous {f : G →ᵇ 𝕜} :
 variable (G) in
 /-- The subalgebra of real bounded continuous functions uniformly continuous under small right
 multiplication, the case `𝕜 = ℝ` of `rightUcbSubalgebra 𝕜 G`. -/
-@[expose]
 def rightUcb : Subalgebra ℝ (G →ᵇ ℝ) :=
   rightUcbSubalgebra ℝ G
 
@@ -114,6 +113,11 @@ variable (G) in
 /-- The real Banach algebra of bounded functions uniformly continuous under small right
 multiplication, with the inherited supremum norm and pointwise order. -/
 abbrev RightUCB : Type _ := rightUcb G
+
+variable (G) in
+/-- `rightUcb G` is the case `𝕜 = ℝ` of `rightUcbSubalgebra 𝕜 G`. -/
+theorem rightUcb_eq_rightUcbSubalgebra : rightUcb G = rightUcbSubalgebra ℝ G :=
+  (rfl)
 
 /-- Membership in the real right-multiplication space is membership in `ucb G` after inversion. -/
 theorem mem_rightUcb_iff_comp_inv {f : G →ᵇ ℝ} :
@@ -123,7 +127,7 @@ theorem mem_rightUcb_iff_comp_inv {f : G →ᵇ ℝ} :
 /-- The defining right-multiplication condition for real functions. -/
 theorem mem_rightUcb_iff {f : G →ᵇ ℝ} :
     f ∈ rightUcb G ↔ ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, |f (x * u) - f x| < ε := by
-  simp only [rightUcb, mem_rightUcbSubalgebra_iff, Real.norm_eq_abs]
+  simp only [rightUcb_eq_rightUcbSubalgebra, mem_rightUcbSubalgebra_iff, Real.norm_eq_abs]
 
 /-- The real right-multiplication condition is uniform continuity for Mathlib's left uniformity. -/
 theorem mem_rightUcb_iff_uniformContinuous {f : G →ᵇ ℝ} :
