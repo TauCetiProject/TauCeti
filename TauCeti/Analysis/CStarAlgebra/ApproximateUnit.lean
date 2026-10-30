@@ -17,9 +17,10 @@ unit under a surjective homomorphism is an increasing approximate unit of the ta
 `Filter.IsIncreasingApproximateUnit.map`. This transfers approximate-unit limits, such as the
 norm of a positive functional, from a C⋆-algebra to its quotients.
 
-Since an increasing approximate unit eventually lies in the closed unit ball, the convergence
-`e * a → a` is uniform for `a` in a compact set,
-`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`. This controls
+Since an increasing approximate unit eventually lies in the closed unit ball, the convergences
+`e * a → a` and `a * e → a` are uniform for `a` in a compact set,
+`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right` and
+`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`. This controls
 `e * α_r(b) → α_r(b)` uniformly along a compact set of group elements `r` for a continuous action
 `α`.
 -/
@@ -58,6 +59,18 @@ theorem tendstoUniformlyOn_mul_right {l : Filter A} (hl : l.IsIncreasingApproxim
         · exact hc c hct
         · exact hmul.trans_lt (by rw [dist_comm]; exact Metric.mem_ball.1 hac)
     _ = ε := by ring
+
+/-- Along an increasing approximate unit, `a * e → a` uniformly for `a` in a compact set. -/
+theorem tendstoUniformlyOn_mul_left [StarOrderedRing A] {l : Filter A}
+    (hl : l.IsIncreasingApproximateUnit) {K : Set A} (hK : IsCompact K) :
+    TendstoUniformlyOn (fun e a => a * e) id l K := by
+  -- Apply the left-hand statement to `star '' K`: `a * e = star (e * star a)` for `e` self-adjoint.
+  have h := Metric.tendstoUniformlyOn_iff.1 (hl.tendstoUniformlyOn_mul_right
+    (hK.image continuous_star))
+  refine Metric.tendstoUniformlyOn_iff.2 fun ε hε => ?_
+  filter_upwards [h ε hε, hl.eventually_nonneg] with e he he0 a ha
+  rw [id, ← dist_star_star, star_mul, (IsSelfAdjoint.of_nonneg he0).star_eq]
+  exact he (star a) (Set.mem_image_of_mem star ha)
 
 end Uniform
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Group.SymmetricBump
 public import TauCeti.Order.Filter.SmallSets
 public import TauCeti.RepresentationTheory.Compact.Convolution
 public import Mathlib.Topology.UrysohnsLemma
@@ -53,12 +54,11 @@ Uniform continuity is obtained from the same currying trick that builds the kern
 assemble into a *continuous* map `G → C(G, 𝕜)` for the uniform norm, and continuity at `z = 1` is
 exactly the uniform estimate. No uniform structure on `G` is mentioned.
 
-The kernels themselves come from Urysohn's lemma, in the form that asks for a regular, locally
-compact space: a compact topological group is both whether or not it is Hausdorff, so the
-construction needs no `T2Space G`, and the mollifier results below do not assume it. A bump at the
-identity supported in a *symmetric* neighbourhood is made inversion invariant by adding its
-composition with inversion, and then normalized by its mass, which is positive because Haar measure
-is positive on nonempty open sets.
+The kernels themselves are the symmetric bumps of `TauCeti.exists_symmetric_bump`, which come from
+Urysohn's lemma in the form that asks for a regular, locally compact space: a compact topological
+group is both whether or not it is Hausdorff, so the construction needs no `T2Space G`, and the
+mollifier results below do not assume it. A bump is normalized by its mass, which is positive
+because Haar measure is positive on nonempty open sets.
 
 Kernels take values in `𝕜` rather than in `ℝ` because that is what `convolutionCLM` consumes;
 nonnegativity is stated with the scoped `ComplexOrder` instance on an `RCLike` field, for which
@@ -179,49 +179,16 @@ theorem integral_norm_eq_one (h : IsMollifier U k) : ∫ g, ‖k g‖ ∂(haarPr
 
 end IsMollifier
 
-omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
-/-- **A symmetric open neighbourhood of the identity carries a symmetric bump.** If `W` is open,
-contains `1`, and is closed under inversion, then some continuous real function is nonnegative,
-invariant under inversion, vanishes off `W`, and is positive at `1`. -/
-private theorem exists_symmetric_bump [LocallyCompactSpace G] {W : Set G} (hWopen : IsOpen W)
-    (hW1 : (1 : G) ∈ W) (hWsymm : ∀ g ∈ W, g⁻¹ ∈ W) :
-    ∃ ψ : C(G, ℝ), (∀ g, 0 ≤ ψ g) ∧ (∀ g, ψ g⁻¹ = ψ g) ∧ (∀ g ∉ W, ψ g = 0) ∧ 0 < ψ 1 := by
-  obtain ⟨φ, hφ1, hφ0, -, hφIcc⟩ :=
-    exists_continuous_one_zero_of_isCompact (X := G) isCompact_singleton hWopen.isClosed_compl
-      (disjoint_compl_right_iff_subset.2 (singleton_subset_iff.2 hW1))
-  -- symmetrize the Urysohn bump by adding its composition with inversion
-  refine ⟨φ + φ.comp ⟨Inv.inv, continuous_inv⟩, fun g => ?_, fun g => ?_, fun g hg => ?_, ?_⟩
-  · simpa only [ContinuousMap.add_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk] using
-      add_nonneg (hφIcc g).1 (hφIcc g⁻¹).1
-  · simp only [ContinuousMap.add_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk, inv_inv]
-    exact add_comm _ _
-  · have hg' : g⁻¹ ∉ W := fun hc => hg (by simpa using hWsymm _ hc)
-    simp only [ContinuousMap.add_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk,
-      hφ0 hg, hφ0 hg', Pi.zero_apply, add_zero]
-  · simp only [ContinuousMap.add_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk, inv_one,
-      hφ1 rfl]
-    norm_num
-
 variable (𝕜) in
 /-- **Mollifying kernels exist, supported in any prescribed neighbourhood of the identity.**
 
-The kernel is built from a Urysohn bump at the identity supported in a symmetric open
-neighbourhood, made inversion invariant by adding its composition with inversion, and normalized by
-its mass, which is positive because Haar measure is positive on nonempty open sets. -/
+The kernel is a symmetric bump at the identity supported in `U` (`TauCeti.exists_symmetric_bump`),
+normalized by its mass, which is positive because Haar measure is positive on nonempty open sets. -/
 theorem exists_isMollifier {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
     ∃ k : C(G, 𝕜), IsMollifier U k := by
-  obtain ⟨V, hVU, hVopen, hV1⟩ := mem_nhds_iff.1 hU
-  -- A symmetric open neighbourhood of `1` inside `U`.
-  set W : Set G := V ∩ V⁻¹
-  have hWopen : IsOpen W := hVopen.inter hVopen.inv
-  have hW1 : (1 : G) ∈ W := ⟨hV1, by simpa using hV1⟩
-  have hWU : W ⊆ U := inter_subset_left.trans hVU
-  have hWsymm : ∀ g : G, g ∈ W → g⁻¹ ∈ W := by
-    rintro g ⟨h1, h2⟩
-    exact ⟨by simpa using h2, by simpa using h1⟩
-  obtain ⟨ψ, hψ_nonneg, hψ_inv, hψ_zero, hψ_one⟩ := exists_symmetric_bump hWopen hW1 hWsymm
+  obtain ⟨ψ, hψ_nonneg, hψ_inv, hψ_supp, hψ_one⟩ := exists_symmetric_bump hU
   -- Its mass is positive, so it can be normalized.
-  have hψ_int : Integrable ψ (haarProb G) := integrable_continuousMap G ψ
+  have hψ_int : Integrable ψ (haarProb G) := ψ.integrable
   have hmass : 0 < ∫ g, ψ g ∂(haarProb G) := by
     refine (integral_pos_iff_support_of_nonneg hψ_nonneg hψ_int).2 ?_
     exact ψ.continuous.isOpen_support.measure_pos _
@@ -235,8 +202,8 @@ theorem exists_isMollifier {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
     rw [integral_ofReal, integral_const_mul, ← hcdef, inv_mul_cancel₀ hmass.ne',
       RCLike.ofReal_one]
   · exact fun g hg => by
-      simp only [ContinuousMap.coe_mk, hψ_zero g fun hc => hg (hWU hc), mul_zero,
-        RCLike.ofReal_zero]
+      simp only [ContinuousMap.coe_mk, Function.notMem_support.1 fun hc => hg (hψ_supp hc),
+        mul_zero, RCLike.ofReal_zero]
 
 /-! ### Approximate-identity estimates -/
 

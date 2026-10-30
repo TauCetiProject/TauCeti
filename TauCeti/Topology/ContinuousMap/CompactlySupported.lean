@@ -16,6 +16,9 @@ functions it is inverse to `CompactlySupportedContinuousMap.nnrealPart`.
 
 The forgetful map from compactly supported to continuous functions preserves
 addition and constant scalar multiplication whenever those operations are defined.
+
+`CompactlySupportedContinuousMap.smulRight` multiplies a compactly supported scalar function by a
+fixed vector, as `ContinuousLinearMap.smulRight` does for linear maps.
 -/
 
 public section
@@ -40,6 +43,20 @@ theorem toContinuousMap_smul {R Y : Type*} [TopologicalSpace Y]
     (r : R) (f : C_c(X, Y)) :
     (r • f).toContinuousMap = r • f.toContinuousMap :=
   rfl
+
+/-- The compactly supported function `x ↦ f x • a`, for a compactly supported scalar function
+`f` and a fixed vector `a`. -/
+def smulRight {R M : Type*} [TopologicalSpace R] [TopologicalSpace M] [Zero R] [Zero M]
+    [SMulWithZero R M] [ContinuousSMul R M] (f : C_c(X, R)) (a : M) : C_c(X, M) where
+  toFun x := f x • a
+  continuous_toFun := f.continuous.smul continuous_const
+  hasCompactSupport' := f.hasCompactSupport.smul_right (f' := fun _ => a)
+
+@[simp]
+theorem smulRight_apply {R M : Type*} [TopologicalSpace R] [TopologicalSpace M] [Zero R] [Zero M]
+    [SMulWithZero R M] [ContinuousSMul R M] (f : C_c(X, R)) (a : M) (x : X) :
+    f.smulRight a x = f x • a :=
+  (rfl)
 
 /-- `toReal` sends the zero function to the zero function. -/
 @[simp]
