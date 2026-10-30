@@ -488,6 +488,27 @@ theorem normCoeff_eq_eulerProduct (hf : f.IsMultiplicative) :
   rw [normCoeff_supportedPart hf S] at hcoeff
   exact hcoeff.symm.trans hprod
 
+/-- The norm coefficients of a multiplicative ideal arithmetic function form a multiplicative
+arithmetic function. -/
+theorem IsMultiplicative.normCoeff (hf : f.IsMultiplicative) : (normCoeff K f).IsMultiplicative :=
+  normCoeff_eq_eulerProduct hf ▸ isMultiplicative_eulerProduct hf.map_one
+
+/-- **A norm coefficient from finitely many local factors.** If a finite set `S` of height-one
+primes contains every prime containing the integer `n`, then the `n`-th norm coefficient of a
+multiplicative ideal arithmetic function is the `n`-th coefficient of the product of its local
+factors at the primes of `S`. An ideal of norm `n` contains `n`, so all of its prime factors lie
+in `S`. -/
+theorem normCoeff_apply_eq_prod_localArithmeticFactor_apply (hf : f.IsMultiplicative) {n : ℕ}
+    (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hS : ∀ P : HeightOneSpectrum (𝓞 K), (n : 𝓞 K) ∈ P.asIdeal → P ∈ S) :
+    normCoeff K f n = (∏ P ∈ S, localArithmeticFactor f P) n := by
+  rw [← normCoeff_supportedPart hf S, normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
+  refine Finset.sum_congr rfl fun A hA ↦ (supportedPart_apply_of_isPrimeTo_compl ?_).symm
+  refine Ideal.isPrimeTo_iff.mpr ⟨nonZeroDivisors.coe_ne_zero A, fun P hP hPA ↦ hP ?_⟩
+  refine Finset.mem_coe.mpr (hS P ?_)
+  rw [← (mem_normFiber K).mp hA]
+  exact Ideal.le_of_dvd hPA (Ideal.absNorm_mem _)
+
 end IdealArithmeticFunction
 
 end TauCeti
