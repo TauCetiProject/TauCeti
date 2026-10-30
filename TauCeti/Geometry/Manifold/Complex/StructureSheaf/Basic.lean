@@ -18,6 +18,8 @@ public import Mathlib.Topology.Sheaves.Functors
 public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.Complex.Chart
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+-- Supplies `exists_germ_eq` for stalks of ring-valued presheaves.
+import Mathlib.Algebra.Category.Ring.FilteredColimits
 
 /-!
 # The holomorphic structure sheaf
@@ -36,7 +38,8 @@ The function coercions and algebra instance use the bundled analytic-map represe
 Pointwise computation is provided by section evaluation lemmas.
 The sheaf of modules has exactly the same underlying presheaf of functions.
 Evaluation of germs gives a surjective ring homomorphism from each stalk to `ℂ`.
-Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition.
+Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition,
+and pull back holomorphic germs (`stalkPrecomp`), preserving their values.
 
 The sheaf construction follows `smoothSheafCommRing` in
 `Mathlib/Geometry/Manifold/Sheaf/Smooth.lean` by Heather Macbeth and Adam Topaz, using
@@ -317,6 +320,38 @@ theorem homOfMDifferentiable_app {X Y : Type} [TopologicalSpace X] [TopologicalS
       CommRingCat.ofHom (precomp 𝓘(ℂ) X f hf.contMDiff U) := (by
   unfold homOfMDifferentiable
   exact homOfContMDiff_app 𝓘(ℂ) X f hf.contMDiff U)
+
+/-- A complex analytic map `f` pulls holomorphic germs at `f x` back to holomorphic germs at `x`,
+by precomposition: the stalk map of `homOfContMDiff`. -/
+def stalkPrecomp (f : X → Y) (hf : ContMDiff I J ω f) (x : X) :
+    (holomorphicStructureSheaf J Y).presheaf.stalk (f x) →+*
+      (holomorphicStructureSheaf I X).presheaf.stalk x :=
+  ((TopCat.Presheaf.stalkFunctor CommRingCat (f x)).map (homOfContMDiff I X f hf).hom ≫
+    (holomorphicStructureSheaf I X).presheaf.stalkPushforward CommRingCat
+      (TopCat.ofHom ⟨f, hf.continuous⟩) x).hom
+
+/-- The pullback of the germ of a section is the germ of the precomposed section. -/
+theorem stalkPrecomp_germ (f : X → Y) (hf : ContMDiff I J ω f) (x : X) (U : Opens Y)
+    (hx : f x ∈ U) (g : (holomorphicStructureSheaf J Y).obj.obj (op U)) :
+    stalkPrecomp I X f hf x
+      (ConcreteCategory.hom ((holomorphicStructureSheaf J Y).presheaf.germ U (f x) hx) g) =
+      ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ
+        ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U) x hx) (precomp I X f hf (op U) g) :=
+  (congrArg ((holomorphicStructureSheaf I X).presheaf.stalkPushforward CommRingCat
+      (TopCat.ofHom ⟨f, hf.continuous⟩) x)
+    (TopCat.Presheaf.stalkFunctor_map_germ_apply U (f x) hx (homOfContMDiff I X f hf).hom g)).trans
+    (TopCat.Presheaf.stalkPushforward_germ_apply CommRingCat (TopCat.ofHom ⟨f, hf.continuous⟩)
+      (holomorphicStructureSheaf I X).presheaf U x hx (precomp I X f hf (op U) g))
+
+/-- Pulling a germ back along `f` preserves its value: the value at `x` of the pullback is the
+value at `f x` of the germ. -/
+@[simp]
+theorem eval_stalkPrecomp (f : X → Y) (hf : ContMDiff I J ω f) (x : X)
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk (f x)) :
+    eval I X x (stalkPrecomp I X f hf x s) = eval J Y (f x) s := by
+  obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf J Y).presheaf.exists_germ_eq s
+  rw [stalkPrecomp_germ, eval_germ]
+  exact (eval_germ I X _ x hx _).trans (precomp_apply I X f hf (op U) g ⟨x, hx⟩)
 
 end holomorphicStructureSheaf
 
