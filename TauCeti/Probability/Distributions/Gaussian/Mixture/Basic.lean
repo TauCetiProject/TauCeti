@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Probability.Distributions.Categorical
 public import TauCeti.Probability.Density
+import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
 import TauCeti.Probability.Distributions.Mixture
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
@@ -359,11 +360,9 @@ theorem variance_id_gaussianMixtureMeasure (p : StdSimplex ℝ≥0 ι) (m : ι �
   rw [variance_eq_sub hmem]
   simp only [id_eq, Pi.pow_apply, integral_sq_gaussianMixtureMeasure,
     integral_id_gaussianMixtureMeasure]
-  set μ := ∑ j, (p.weights j : ℝ) * m j
-  have hexpand (i : ι) : (p.weights i : ℝ) * (v i + (m i - μ) ^ 2) =
-      (p.weights i : ℝ) * (v i + m i ^ 2) - 2 * μ * ((p.weights i : ℝ) * m i) +
-        μ ^ 2 * (p.weights i : ℝ) := by ring
-  simp only [hexpand, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, hw]
+  have h := Finset.sum_mul_sub_sq_eq Finset.univ hw 0 m
+  simp only [zero_sub, neg_sq] at h
+  simp only [mul_add, Finset.sum_add_distrib, h, sub_sq_comm (m _)]
   ring
 
 /-- The mean of a random variable whose law is a Gaussian mixture. -/
