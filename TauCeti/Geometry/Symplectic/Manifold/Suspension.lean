@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus.ClosedOrbit
-public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.DeRham.Wedge
 
