@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Smooth.Fiber
 public import Mathlib.RingTheory.Smooth.Flat
+public import TauCeti.RingTheory.Unramified.LocalRing
+import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Étaleness at a prime: flatness and unramifiedness of the local ring
@@ -34,6 +36,10 @@ as in Mathlib's proof of `Algebra.IsSmoothAt.of_formallySmooth_fiber`.
 * `Algebra.IsEtaleAt.flat_localization`: the flatness half of the forward direction.
 * `Algebra.IsEtaleAt.of_flat_of_isUnramifiedAt`: the reverse direction, the pointwise form of
   Mathlib's `Algebra.IsEtaleAt.of_isUnramifiedAt_of_flat`.
+* `Algebra.IsEtaleAt.of_isUnramifiedAt_of_isDedekindDomain`: if `R_p` is a Dedekind domain, for
+  instance a discrete valuation ring, and `S_q` is a domain but not a field, then flatness is
+  automatic, so `S` is étale over `R` at `q` as soon as it is unramified there. This is the case of
+  dimension one of purity of the branch locus.
 
 ## References
 
@@ -41,6 +47,8 @@ as in Mathlib's proof of `Algebra.IsSmoothAt.of_formallySmooth_fiber`.
   global form: étale is flat, unramified and of finite presentation.
 * [The Stacks Project, Tag 00TF](https://stacks.math.columbia.edu/tag/00TF), smoothness at a prime
   from flatness and a smooth fibre.
+* [The Stacks Project, Lemma 58.21.4 (0BMB)](https://stacks.math.columbia.edu/tag/0BMB), purity of
+  the branch locus, whose proof starts from the case of dimension one.
 -/
 
 public section
@@ -112,5 +120,22 @@ theorem isEtaleAt_iff_flat_and_isUnramifiedAt [FinitePresentation R S] (q : Idea
     IsEtaleAt R q ↔ Module.Flat R (Localization.AtPrime q) ∧ IsUnramifiedAt R q :=
   ⟨fun _ ↦ ⟨IsEtaleAt.flat_localization q, inferInstance⟩,
     fun ⟨_, _⟩ ↦ IsEtaleAt.of_flat_of_isUnramifiedAt q⟩
+
+/-- **Purity in dimension one.** Let `S` be finitely presented over `R`, and `q` a prime of `S`
+over `p` such that `R_p` is a Dedekind domain, for instance a discrete valuation ring, and `S_q`
+is a domain but not a field. If `S` is unramified over `R` at `q`, then it is étale over `R` at
+`q`. -/
+theorem IsEtaleAt.of_isUnramifiedAt_of_isDedekindDomain [FinitePresentation R S] (q : Ideal S)
+    [q.IsPrime] [IsDedekindDomain (Localization.AtPrime (q.under R))]
+    [IsDomain (Localization.AtPrime q)] (hq : ¬IsField (Localization.AtPrime q))
+    [IsUnramifiedAt R q] : IsEtaleAt R q := by
+  let Rp := Localization.AtPrime (q.under R)
+  let := Localization.AtPrime.algebraOfLiesOver (q.under R) q
+  have : FormallyUnramified Rp (Localization.AtPrime q) := .of_restrictScalars R _ _
+  have : EssFiniteType Rp (Localization.AtPrime q) := .of_comp R _ _
+  -- `S_q` is torsion-free over the Dedekind domain `R_p`, hence flat over it and so over `R`.
+  have := FormallyUnramified.faithfulSMul_of_not_isField (R := Rp) hq
+  have : Module.Flat R (Localization.AtPrime q) := .trans R Rp _
+  exact .of_flat_of_isUnramifiedAt q
 
 end Algebra
