@@ -18,13 +18,13 @@ possibly nonunital C⋆-algebra `A`. Its von Neumann algebra is the double commu
 Covariance says `U_g π(a) U_g⁻¹ = π(α_g a)`, so conjugation by the unitary `U_g` maps `π(A)` onto
 itself, and therefore maps `M` into itself. This gives the action
 `CovariantRepresentation.vonNeumannAction : G →* (M ≃⋆ₐ[ℂ] M)`,
-`τ̄_g(x) = U_g x U_g⁻¹`, which extends `α` along `π`
+`τ_g(x) = U_g x U_g⁻¹`, which extends `α` along `π`
 (`CovariantRepresentation.vonNeumannAction_coefficient`). Its orbits are continuous for the
-strong operator topology: `g ↦ τ̄_g(x) v` is norm continuous for every `x ∈ M` and every vector
-`v` (`CovariantRepresentation.continuous_vonNeumannAction_apply_apply`). Since each `τ̄_g` is a
-star map, the same holds for `g ↦ τ̄_g(x)⋆ v`.
+strong operator topology: `g ↦ τ_g(x) v` is norm continuous for every `x ∈ M` and every vector
+`v` (`CovariantRepresentation.continuous_vonNeumannAction_apply_apply`). Since each `τ_g` is a
+star map, the same holds for `g ↦ τ_g(x)⋆ v`.
 
-Each `τ̄_g` is implemented by a unitary, which is the source of its normality. The σ-weak
+Each `τ_g` is implemented by a unitary, which is the source of its normality. The σ-weak
 topology is not available in Mathlib, so normality itself is not stated here.
 
 Applied to the GNS covariant representation `CStarAction.gnsCovariantRepresentation` of an
@@ -91,7 +91,7 @@ theorem group_mul_mul_group_inv_mem_vonNeumannAlgebra (g : G) {x : H →L[ℂ] H
   exact ⟨α g a, by rw [P.star_group, P.coefficient_action]⟩
 
 /-- The action of `G` on the von Neumann algebra `π(A)''` of a covariant pair implemented by its
-unitary group: `τ̄_g(x) = U_g x U_g⁻¹`. It extends the C⋆-action along the coefficient
+unitary group: `τ_g(x) = U_g x U_g⁻¹`. It extends the C⋆-action along the coefficient
 representation, `CovariantRepresentation.vonNeumannAction_coefficient`. -/
 noncomputable def vonNeumannAction :
     G →* (P.vonNeumannAlgebra.toStarSubalgebra ≃⋆ₐ[ℂ] P.vonNeumannAlgebra.toStarSubalgebra) where
@@ -125,14 +125,14 @@ theorem coe_vonNeumannAction_apply (g : G) (x : P.vonNeumannAlgebra.toStarSubalg
     (P.vonNeumannAction g x : H →L[ℂ] H) = P.group g * x * P.group g⁻¹ :=
   (rfl)
 
-/-- The implemented action extends the C⋆-action: `τ̄_g(π(a)) = π(α_g a)`. -/
+/-- The implemented action extends the C⋆-action: `τ_g(π(a)) = π(α_g a)`. -/
 theorem vonNeumannAction_coefficient (g : G) (a : A) :
     P.vonNeumannAction g ⟨P.coefficient a, P.coefficient_mem_vonNeumannAlgebra a⟩ =
       ⟨P.coefficient (α g a), P.coefficient_mem_vonNeumannAlgebra (α g a)⟩ :=
   Subtype.ext (P.coefficient_action g a).symm
 
 /-- The implemented action is continuous for the strong operator topology: for every `x` in
-`π(A)''` and every vector `v`, the orbit `g ↦ τ̄_g(x) v` is norm continuous. Continuity of inversion
+`π(A)''` and every vector `v`, the orbit `g ↦ τ_g(x) v` is norm continuous. Continuity of inversion
 in `G` is not needed. -/
 theorem continuous_vonNeumannAction_apply_apply (x : P.vonNeumannAlgebra.toStarSubalgebra)
     (v : H) : Continuous fun g => (P.vonNeumannAction g x : H →L[ℂ] H) v := by
