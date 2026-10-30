@@ -6,7 +6,11 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
+public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.KrullDimension.Field
+
+import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
+import Mathlib.RingTheory.Localization.Submodule
 
 /-!
 # Integrally closed local domains of dimension one
@@ -22,6 +26,8 @@ the dimension.
 * `IsDiscreteValuationRing.of_krullDimLE_one`: a Noetherian integrally closed local domain of
   Krull dimension at most one that is not a field is a discrete valuation ring.
 * `IsDiscreteValuationRing.of_ringKrullDim_eq_one`: the dimension-one specialization.
+* `IsLocalization.AtPrime.isDiscreteValuationRing_of_height_eq_one`: the localization of a
+  Noetherian integrally closed domain at a prime of height one is a discrete valuation ring.
 
 ## References
 
@@ -66,3 +72,16 @@ theorem of_ringKrullDim_eq_one {R : Type*} [CommRing R] [IsDomain R] [IsLocalRin
   exact zero_ne_one h
 
 end IsDiscreteValuationRing
+
+/-- The localization of a Noetherian integrally closed domain at a prime of height one is a
+discrete valuation ring. Stacks, Lemma 10.119.7 (00PD). -/
+@[stacks 00PD "the localization at a height-one prime"]
+theorem IsLocalization.AtPrime.isDiscreteValuationRing_of_height_eq_one {A : Type*} [CommRing A]
+    [IsDomain A] [IsNoetherianRing A] [IsIntegrallyClosed A] {P : Ideal A} [P.IsPrime]
+    (hP : P.height = 1) (Aₚ : Type*) [CommRing Aₚ] [IsDomain Aₚ] [Algebra A Aₚ]
+    [IsLocalization.AtPrime Aₚ P] : IsDiscreteValuationRing Aₚ := by
+  have := IsLocalization.AtPrime.isLocalRing Aₚ P
+  have := IsLocalization.isNoetherianRing P.primeCompl Aₚ inferInstance
+  have := isIntegrallyClosed_of_isLocalization Aₚ P.primeCompl P.primeCompl_le_nonZeroDivisors
+  refine IsDiscreteValuationRing.of_ringKrullDim_eq_one ?_
+  rw [IsLocalization.AtPrime.ringKrullDim_eq_height P Aₚ, hP, WithBot.coe_one]

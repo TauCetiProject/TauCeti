@@ -178,26 +178,19 @@ theorem IsPseudoIsomorphism.exists_mem_annihilator_notMem [IsNoetherianRing A] [
     ∃ γ ∈ Module.annihilator A (LinearMap.ker f),
       γ ∈ Module.annihilator A (N ⧸ LinearMap.range f) ∧
         ∀ 𝔭 ∈ Module.support A N, 𝔭.asIdeal.height ≤ 1 → γ ∉ 𝔭.asIdeal := by
-  have := hf.isPseudoNull_ker.finite
-  have := hf.isPseudoNull_coker.finite
   -- None of the finitely many primes of height at most one in the support of `N` contains either
   -- annihilator, so none contains their intersection.
-  suffices ∃ γ ∈ Module.annihilator A (LinearMap.ker f) ⊓
-      Module.annihilator A (N ⧸ LinearMap.range f),
-      ∀ 𝔭 ∈ {𝔭 ∈ Module.support A N | 𝔭.asIdeal.height ≤ 1}, γ ∉ 𝔭.asIdeal by
-    obtain ⟨γ, hγJ, hγ⟩ := this
-    exact ⟨γ, (Submodule.mem_inf.mp hγJ).1, (Submodule.mem_inf.mp hγJ).2,
-      fun 𝔭 hmem h𝔭 ↦ hγ 𝔭 ⟨hmem, h𝔭⟩⟩
-  by_contra! h
-  obtain ⟨_, ⟨𝔭, ⟨-, hht⟩, rfl⟩, hJ⟩ :=
-    (Ideal.subset_union_prime_finite (f := id)
-      (hN.finite_setOf_mem_support_height_le_one.image PrimeSpectrum.asIdeal) ⊥ ⊥
-      fun _ ⟨𝔭, _, h⟩ _ _ ↦ h ▸ 𝔭.isPrime).mp fun x hx ↦ by simpa using h x hx
-  rcases 𝔭.isPrime.inf_le.mp hJ with hJ | hJ
-  · exact (hf.isPseudoNull_ker.one_lt_height
-      (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
-  · exact (hf.isPseudoNull_coker.one_lt_height
-      (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
+  have := hf.isPseudoNull_ker.finite
+  have := hf.isPseudoNull_coker.finite
+  obtain ⟨γ, hγJ, hγ⟩ := hN.exists_mem_forall_notMem_of_forall_not_le
+    (I := Module.annihilator A (LinearMap.ker f) ⊓ Module.annihilator A (N ⧸ LinearMap.range f))
+    fun 𝔭 _ hht hJ ↦ by
+      rcases 𝔭.isPrime.inf_le.mp hJ with hJ | hJ
+      · exact (hf.isPseudoNull_ker.one_lt_height
+          (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
+      · exact (hf.isPseudoNull_coker.one_lt_height
+          (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
+  exact ⟨γ, (Submodule.mem_inf.mp hγJ).1, (Submodule.mem_inf.mp hγJ).2, hγ⟩
 
 /-- Over a noetherian ring, a pseudo-isomorphism `M → N` onto a finitely generated torsion module
 can be reversed: there is a pseudo-isomorphism `N → M`. Without the torsion hypothesis the
