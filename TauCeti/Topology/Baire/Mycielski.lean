@@ -12,6 +12,9 @@ public import TauCeti.SetTheory.Descriptive.Antichain
 import Mathlib.Data.Set.Finite.List
 import Mathlib.Topology.Baire.BaireMeasurable
 import Mathlib.Topology.MetricSpace.CantorScheme
+import TauCeti.Topology.Constructions.Pi
+import TauCeti.Topology.MetricSpace.Perfect
+import TauCeti.Topology.MetricSpace.PiNat
 
 /-!
 # Mycielski's theorem
@@ -31,21 +34,17 @@ by the Kuratowski–Ulam theorem.
 
 The proof builds a scheme of nonempty open sets indexed by finite binary words, level by level.
 Each set contains the closures of its two children, which are disjoint and have diameter at most
-`1 / (j + 1)` at level `j + 1`. After splitting, the sets of the new level are shrunk so that,
-for every injective tuple of distinct sets of the level, their product lies in finitely many of
-the dense open sets whose intersection misses `R n` (`TauCeti.exists_forall_univ_pi_subset`).
-Two distinct branches of Cantor space pass through distinct sets from their first difference on,
-so the induced map sends an injective tuple into every one of these dense open sets, hence
-outside `R n`. Avoidance holds only in the limit: a dense meagre set meets every product of
-nonempty open sets, so no finite stage avoids it.
+`1 / (j + 1)` at level `j + 1` (`IsOpen.exists_disjoint_closure_subset`). After splitting, the
+sets of the new level are shrunk so that, for every injective tuple of distinct sets of the
+level, their product lies in finitely many of the dense open sets whose intersection misses `R n`
+(`TauCeti.exists_forall_univ_pi_subset`). Two distinct branches of Cantor space pass through
+distinct sets from their first difference on (`PiNat.eventually_injective_res`), so the induced
+map sends an injective tuple into every one of these dense open sets, hence outside `R n`.
+Avoidance holds only in the limit: a dense meagre set meets every product of nonempty open sets,
+so no finite stage avoids it.
 
 ## Main results
 
-* `TauCeti.exists_forall_univ_pi_subset`: nonempty open sets indexed by a finite type can be
-  shrunk so that the products along injective tuples of indices lie in finitely many given dense
-  open sets.
-* `TauCeti.IsOpen.exists_disjoint_closure_subset`: in a perfect extended metric space, a nonempty
-  open set contains two disjoint nonempty open sets of small diameter, with closures inside it.
 * `TauCeti.mycielski`: Mycielski's theorem.
 * `TauCeti.mycielski_prod`: the binary case, for one meagre subset of `X × X`.
 * `Setoid.hasCantorAntichainOn_univ_of_isMeagre`: a meagre equivalence relation has a Cantor
@@ -64,115 +63,6 @@ public section
 
 open Set Function Filter Topology CantorScheme
 open scoped ENNReal
-
-namespace TauCeti
-
-section Shrink
-
-variable {X : Type*} [TopologicalSpace X]
-
-/-- Shrinking along one injective tuple: nonempty open sets `V i` can be shrunk to nonempty open
-sets `W i ⊆ V i` so that the box `∏ j, W (t j)` along an injective finite tuple `t` of indices
-lies in a given dense open set. This is the inductive step of `exists_forall_univ_pi_subset`. -/
-private theorem exists_univ_pi_subset {I κ : Type*} [Finite κ] {V : I → Set X}
-    (hVo : ∀ i, IsOpen (V i)) (hVne : ∀ i, (V i).Nonempty) {t : κ → I} (ht : Injective t)
-    {U : Set (κ → X)} (hUo : IsOpen U) (hUd : Dense U) :
-    ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧ (∀ i, W i ⊆ V i) ∧
-      univ.pi (fun j => W (t j)) ⊆ U := by
-  classical
-  -- a point of `U` in the box `∏ j, V (t j)`, and an open box around it inside `U`
-  obtain ⟨y, hyV, hyU⟩ := hUd.inter_open_nonempty (univ.pi fun j => V (t j))
-    (isOpen_set_pi finite_univ fun j _ => hVo (t j)) (univ_pi_nonempty_iff.2 fun j => hVne (t j))
-  obtain ⟨u, hu, huU⟩ := isOpen_pi_iff'.1 hUo y hyU
-  -- cut `V (t j)` down by `u j`, leaving the other sets alone
-  let u' : I → Set X := extend t u fun _ => univ
-  have hu'o (i : I) : IsOpen (u' i) := by
-    by_cases hi : ∃ j, t j = i
-    · obtain ⟨j, rfl⟩ := hi
-      simpa [u', ht.extend_apply] using (hu j).1
-    · simp [u', extend_apply' _ _ _ hi]
-  refine ⟨fun i => V i ∩ u' i, fun i => (hVo i).inter (hu'o i), fun i => ?_,
-    fun i => inter_subset_left, fun x hx => huU fun j _ => ?_⟩
-  · by_cases hi : ∃ j, t j = i
-    · obtain ⟨j, rfl⟩ := hi
-      exact ⟨y j, hyV j (mem_univ j), by simpa [u', ht.extend_apply] using (hu j).2⟩
-    · simpa [u', extend_apply' _ _ _ hi] using hVne i
-  · simpa [u', ht.extend_apply] using (hx j (mem_univ j)).2
-
-/-- **Shrinking along all injective tuples.** Nonempty open sets `V i`, indexed by a finite type,
-can be shrunk to nonempty open sets `W i ⊆ V i` so that for each of finitely many dense open sets
-`U c ⊆ κ c → X`, every box `∏ j, W (t j)` along an injective tuple `t : κ c → I` lies in `U c`. -/
-theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C → Type*}
-    [∀ c, Finite (κ c)] {V : I → Set X} (hVo : ∀ i, IsOpen (V i)) (hVne : ∀ i, (V i).Nonempty)
-    {U : ∀ c, Set (κ c → X)} (hUo : ∀ c, IsOpen (U c)) (hUd : ∀ c, Dense (U c)) :
-    ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧ (∀ i, W i ⊆ V i) ∧
-      ∀ c (t : κ c → I), Injective t → univ.pi (fun j => W (t j)) ⊆ U c := by
-  classical
-  -- treat the finitely many pairs of a set `U c` and an injective tuple one at a time
-  let Q := Σ c, {t : κ c → I // Injective t}
-  have : Fintype Q := Fintype.ofFinite Q
-  suffices h : ∀ s : Finset Q, ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧
-      (∀ i, W i ⊆ V i) ∧ ∀ q ∈ s, univ.pi (fun j => W (q.2.1 j)) ⊆ U q.1 by
-    obtain ⟨W, hWo, hWne, hWV, hW⟩ := h Finset.univ
-    exact ⟨W, hWo, hWne, hWV, fun c t ht => hW ⟨c, t, ht⟩ (Finset.mem_univ _)⟩
-  intro s
-  induction s using Finset.induction_on with
-  | empty => exact ⟨V, hVo, hVne, fun _ => subset_rfl, by simp⟩
-  | insert q s _ ih =>
-    obtain ⟨W, hWo, hWne, hWV, hW⟩ := ih
-    obtain ⟨W', hW'o, hW'ne, hW'W, hW'⟩ :=
-      exists_univ_pi_subset hWo hWne q.2.2 (hUo q.1) (hUd q.1)
-    refine ⟨W', hW'o, hW'ne, fun i => (hW'W i).trans (hWV i), fun q' hq' => ?_⟩
-    rcases Finset.mem_insert.1 hq' with rfl | hq'
-    · exact hW'
-    · exact (pi_mono fun j _ => hW'W _).trans (hW q' hq')
-
-end Shrink
-
-end TauCeti
-
-section Split
-
-variable {X : Type*} [EMetricSpace X]
-
-/-- **Splitting a nonempty open set** in a perfect extended metric space: a nonempty open set `V`
-contains two disjoint nonempty open sets of diameter at most `ε`, with closures inside `V`. -/
-theorem IsOpen.exists_disjoint_closure_subset [PerfectSpace X] {V : Set X} (hV : IsOpen V)
-    (hne : V.Nonempty) {ε : ℝ≥0∞} (hε : 0 < ε) :
-    ∃ W : Bool → Set X, (∀ b, IsOpen (W b)) ∧ (∀ b, (W b).Nonempty) ∧
-      (∀ b, closure (W b) ⊆ V) ∧ (∀ b, Metric.ediam (W b) ≤ ε) ∧ Disjoint (W false) (W true) := by
-  -- an open neighbourhood of `z` inside the ball of radius `r`, with closure inside `V`
-  have hsmall (z : X) (hz : z ∈ V) (r : ℝ≥0∞) (hr : 0 < r) : ∃ W, IsOpen W ∧ z ∈ W ∧
-      closure W ⊆ V ∧ W ⊆ Metric.eball z r := by
-    obtain ⟨t, ht, htc, htV⟩ := exists_mem_nhds_isClosed_subset (hV.mem_nhds hz)
-    refine ⟨interior t ∩ Metric.eball z r, isOpen_interior.inter Metric.isOpen_eball,
-      ⟨mem_interior_iff_mem_nhds.2 ht, Metric.mem_eball_self hr⟩, ?_, inter_subset_right⟩
-    exact (htc.closure_subset_iff.2 (inter_subset_left.trans interior_subset)).trans htV
-  -- two distinct points of `V`, at positive distance `d`
-  obtain ⟨x, hx⟩ := hne
-  obtain ⟨y, hyV, hyx⟩ :=
-    (𝓝[≠] x).nonempty_of_mem (sdiff_mem_nhdsWithin_compl (hV.mem_nhds hx) {x})
-  have hd : 0 < edist x y := edist_pos.2 (Ne.symm hyx)
-  set r := min (edist x y / 2) (ε / 2)
-  have hr : 0 < r := lt_min (ENNReal.half_pos hd.ne') (ENNReal.half_pos hε.ne')
-  obtain ⟨W₀, hW₀o, hxW₀, hW₀V, hW₀r⟩ := hsmall x hx r hr
-  obtain ⟨W₁, hW₁o, hyW₁, hW₁V, hW₁r⟩ := hsmall y hyV r hr
-  have h2r : 2 * r ≤ ε :=
-    calc 2 * r ≤ 2 * (ε / 2) := by gcongr; exact min_le_right _ _
-      _ = ε := ENNReal.mul_div_cancel two_ne_zero ENNReal.ofNat_ne_top
-  have hdiam {z : X} {W : Set X} (hW : W ⊆ Metric.eball z r) : Metric.ediam W ≤ ε :=
-    ((Metric.ediam_mono hW).trans Metric.ediam_eball_le).trans h2r
-  refine ⟨fun b => cond b W₁ W₀, fun b => ?_, fun b => ?_, fun b => ?_, fun b => ?_, ?_⟩
-  · cases b <;> assumption
-  · cases b
-    exacts [⟨x, hxW₀⟩, ⟨y, hyW₁⟩]
-  · cases b <;> assumption
-  · cases b
-    exacts [hdiam hW₀r, hdiam hW₁r]
-  · refine (Metric.eball_disjoint ?_).mono hW₀r hW₁r
-    exact (add_le_add (min_le_left _ _) (min_le_left _ _)).trans (ENNReal.add_halves _).le
-
-end Split
 
 namespace TauCeti
 
@@ -268,20 +158,6 @@ private theorem exists_mycielski_scheme [MetricSpace X] [PerfectSpace X] [Nonemp
     have h := hnextD j (lvl j) (hgood j).1 (hgood j).2 n (by omega) m (by omega) t ht htl
     simpa [A, htl, hlvl] using h
 
-/-- Distinct branches of a tree eventually separate: for an injective finite family `a` of
-sequences, the initial segments `PiNat.res (a i) j` of length `j` are pairwise distinct for all
-large `j`. -/
-private theorem eventually_injective_res {ι β : Type*} [Finite ι] {a : ι → ℕ → β}
-    (ha : Injective a) : ∀ᶠ j in atTop, Injective fun i => PiNat.res (a i) j := by
-  have (p : ι × ι) : ∀ᶠ j in atTop, PiNat.res (a p.1) j = PiNat.res (a p.2) j → p.1 = p.2 := by
-    by_cases hp : p.1 = p.2
-    · exact Eventually.of_forall fun _ _ => hp
-    obtain ⟨q, hq⟩ := Function.ne_iff.1 (ha.ne hp)
-    filter_upwards [eventually_gt_atTop q] with j hj hres
-    exact absurd (PiNat.res_eq_res.1 hres hj) hq
-  filter_upwards [eventually_all.2 this] with j hj i i' hii'
-  exact hj (i, i') hii'
-
 /-- **Mycielski's theorem.** Let `X` be a nonempty perfect completely metrizable space, for
 example a nonempty perfect Polish space, and let `R n` be a meagre set of `k n`-tuples of points
 of `X` for each `n`. There is a continuous injection `f` of Cantor space into `X` such that for
@@ -320,7 +196,7 @@ theorem mycielski [TopologicalSpace X] [TopologicalSpace.IsCompletelyMetrizableS
   -- sets of the scheme, hence in `D n m`
   refine hDR n (mem_iInter.2 fun m => ?_) hR
   obtain ⟨j, ⟨hj, hjn⟩, hjm⟩ :=
-    (((eventually_injective_res ha).and (eventually_gt_atTop n)).and
+    (((PiNat.eventually_injective_res ha).and (eventually_gt_atTop n)).and
       (eventually_gt_atTop m)).exists
   exact hAD n m j hjn hjm _ hj (fun i => PiNat.res_length _ _) fun i _ =>
     map_mem ⟨a i, hdom (a i)⟩ j
