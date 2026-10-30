@@ -63,6 +63,10 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
   `SymplecticForm.hamiltonianCurvature_comp_add_right`: the curvature is local in the domain and
   commutes with domain translations.
 
+* `SymplecticForm.hamiltonianCurvature_const_smul`,
+  `SymplecticForm.abs_hamiltonianCurvature_const_smul_le`: constant scaling has a quadratic
+  Poisson-bracket correction, uniformly bounded by one quarter of the absolute bracket.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, Section 8.1, on
@@ -94,6 +98,45 @@ theorem hamiltonianCurvature_def (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ →
       fderiv ℝ (fun w ↦ Kt w x) z stdComplexLineReal -
         fderiv ℝ (fun w ↦ Ks w x) z stdComplexLineImag - ω.poissonBracket (Ks z) (Kt z) x :=
   (rfl)
+
+/-- Scaling a Hamiltonian one-form has a quadratic Poisson-bracket correction to curvature.
+No differentiability is required: constant scaling respects the totalized derivatives. -/
+theorem hamiltonianCurvature_const_smul (ω : SymplecticForm V) (r : ℝ)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ) (x : V) :
+    ω.hamiltonianCurvature (r • Ks) (r • Kt) z x =
+      r * ω.hamiltonianCurvature Ks Kt z x +
+        (r - r ^ 2) * ω.poissonBracket (Ks z) (Kt z) x := by
+  have hscale (K : ℝ × ℝ → V → ℝ) :
+      fderiv ℝ (fun w ↦ r * K w x) z = r • fderiv ℝ (fun w ↦ K w x) z :=
+    congrFun (fderiv_const_smul_field r) z
+  simp only [hamiltonianCurvature_def, Pi.smul_apply, smul_eq_mul,
+    poissonBracket_const_smul_left, poissonBracket_const_smul_right]
+  rw [hscale Kt, hscale Ks]
+  simp only [smul_apply, smul_eq_mul]
+  ring
+
+/-- Turning off a perturbation costs at most one quarter of the absolute Poisson bracket,
+in addition to the original absolute curvature. The bound is uniform for `r ∈ [0, 1]`. -/
+theorem abs_hamiltonianCurvature_const_smul_le (ω : SymplecticForm V) {r : ℝ}
+    (hr : r ∈ Icc (0 : ℝ) 1) (Ks Kt : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ) (x : V) :
+    |ω.hamiltonianCurvature (r • Ks) (r • Kt) z x| ≤
+      |ω.hamiltonianCurvature Ks Kt z x| + |ω.poissonBracket (Ks z) (Kt z) x| / 4 := by
+  have hnonneg : 0 ≤ r - r ^ 2 := by nlinarith [hr.1, hr.2]
+  have hquarter : r - r ^ 2 ≤ 1 / 4 := by nlinarith [sq_nonneg (r - 1 / 2)]
+  rw [hamiltonianCurvature_const_smul]
+  calc
+    |r * ω.hamiltonianCurvature Ks Kt z x +
+        (r - r ^ 2) * ω.poissonBracket (Ks z) (Kt z) x| ≤
+        r * |ω.hamiltonianCurvature Ks Kt z x| +
+          (r - r ^ 2) * |ω.poissonBracket (Ks z) (Kt z) x| := by
+      exact (abs_add_le _ _).trans_eq (by
+        rw [abs_mul, abs_mul, abs_of_nonneg hr.1, abs_of_nonneg hnonneg])
+    _ ≤ _ := by
+      have h₁ := mul_le_mul_of_nonneg_right hr.2
+        (abs_nonneg (ω.hamiltonianCurvature Ks Kt z x))
+      have h₂ := mul_le_mul_of_nonneg_right hquarter
+        (abs_nonneg (ω.poissonBracket (Ks z) (Kt z) x))
+      linarith
 
 /-- Without a `ds` component, the curvature of `K = K_t dt` is `∂_s K_t`. -/
 theorem hamiltonianCurvature_zero_left (ω : SymplecticForm V) (Kt : ℝ × ℝ → V → ℝ)
