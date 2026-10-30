@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Data.Matrix.Basis
+public import TauCeti.LinearAlgebra.Matrix.Submatrix
 
 /-!
 # Corner embeddings of general linear Lie algebras
@@ -47,14 +48,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable (R : Type*) [CommRing R]
 variable {l m n : Type*} [Fintype l] [DecidableEq l] [Fintype m] [DecidableEq m]
   [Fintype n] [DecidableEq n]
-
-omit [Fintype m] in
-/-- The `n × m` matrix of an injection `f : m ↪ n` and its transpose compose to the identity of
-`m`: the columns of the first are distinct standard basis vectors. -/
-private theorem submatrix_one_mul_submatrix_one (f : m ↪ n) :
-    (1 : Matrix n n R).submatrix f id * (1 : Matrix n n R).submatrix id f = 1 := by
-  rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, Matrix.one_mul,
-    submatrix_one_embedding]
 
 /-- The **corner embedding** `gl m → gl n` of an injection `f : m ↪ n`, sending a matrix `A` to the
 matrix with `A a b` in position `(f a, f b)` and zeros elsewhere. -/
