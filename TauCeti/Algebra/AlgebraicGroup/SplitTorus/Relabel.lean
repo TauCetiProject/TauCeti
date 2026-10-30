@@ -111,8 +111,8 @@ noncomputable def characterRelabelHom (τ : Equiv.Perm sigma) :
 
 /-- The underlying monoid homomorphism of `characterRelabelHom`. -/
 @[simp]
-theorem toMonoidHom_characterRelabelHom (τ : Equiv.Perm sigma) :
-    FGCommGrpCat.toMonoidHom (characterRelabelHom τ) =
+theorem hom_hom_characterRelabelHom (τ : Equiv.Perm sigma) :
+    (characterRelabelHom τ).hom.hom =
       characterRelabel τ :=
   (rfl)
 
@@ -122,8 +122,8 @@ theorem characterRelabelHom_comp (τ ν : Equiv.Perm sigma) :
     characterRelabelHom ν ≫ characterRelabelHom τ =
       characterRelabelHom (sigma := sigma) (τ * ν) := by
   apply FGCommGrpCat.hom_ext
-  rw [FGCommGrpCat.toMonoidHom_comp, toMonoidHom_characterRelabelHom,
-    toMonoidHom_characterRelabelHom, toMonoidHom_characterRelabelHom,
+  rw [FGCommGrpCat.hom_hom_comp, hom_hom_characterRelabelHom,
+    hom_hom_characterRelabelHom, hom_hom_characterRelabelHom,
     characterRelabel_comp]
 
 /-- Relabelling of character groups by the identity permutation is the identity. -/
@@ -131,8 +131,8 @@ theorem characterRelabelHom_comp (τ ν : Equiv.Perm sigma) :
 theorem characterRelabelHom_one :
     characterRelabelHom (sigma := sigma) 1 = CategoryStruct.id _ := by
   apply FGCommGrpCat.hom_ext
-  rw [toMonoidHom_characterRelabelHom, characterRelabel_one,
-    FGCommGrpCat.toMonoidHom_id]
+  rw [hom_hom_characterRelabelHom, characterRelabel_one,
+    FGCommGrpCat.hom_hom_id]
 
 section CoordinateRing
 

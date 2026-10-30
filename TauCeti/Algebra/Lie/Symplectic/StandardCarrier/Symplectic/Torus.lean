@@ -79,8 +79,8 @@ private def symplecticCharacterIso :
     apply FGCommGrpCat.hom_ext
     apply MonoidHom.ext
     intro x
-    simp only [FGCommGrpCat.toMonoidHom_comp, FGCommGrpCat.toMonoidHom_ofHom,
-      FGCommGrpCat.toMonoidHom_id, MonoidHom.comp_apply, MonoidHom.id_apply,
+    simp only [FGCommGrpCat.hom_hom_comp, FGCommGrpCat.hom_hom_ofHom,
+      FGCommGrpCat.hom_hom_id, MonoidHom.comp_apply, MonoidHom.id_apply,
       weightCharacterMap_eq_symplecticCharacterEquiv, MulEquiv.coe_toMonoidHom]
     apply Multiplicative.toAdd.injective
     exact (symplecticCharacterEquiv n).symm_apply_apply x.toAdd
@@ -88,8 +88,8 @@ private def symplecticCharacterIso :
     apply FGCommGrpCat.hom_ext
     apply MonoidHom.ext
     intro x
-    simp only [FGCommGrpCat.toMonoidHom_comp, FGCommGrpCat.toMonoidHom_ofHom,
-      FGCommGrpCat.toMonoidHom_id, MonoidHom.comp_apply, MonoidHom.id_apply,
+    simp only [FGCommGrpCat.hom_hom_comp, FGCommGrpCat.hom_hom_ofHom,
+      FGCommGrpCat.hom_hom_id, MonoidHom.comp_apply, MonoidHom.id_apply,
       weightCharacterMap_eq_symplecticCharacterEquiv, MulEquiv.coe_toMonoidHom]
     apply Multiplicative.toAdd.injective
     exact (symplecticCharacterEquiv n).apply_symm_apply x.toAdd
@@ -130,7 +130,7 @@ theorem schemePointsMulEquiv_symplecticTorusIso
         (DynkinType.TypeC.weight (n + 1) i) := by
   rw [symplecticTorusIso_hom, SplitTorus.schemePointsMulEquiv_eq_freeAbelianCharEquiv,
     DiagonalizableGroup.schemePointsMulEquiv_groupSchemeMap, freeAbelianCharEquiv_apply,
-    MonoidHom.comp_apply, FGCommGrpCat.toMonoidHom_ofHom,
+    MonoidHom.comp_apply, FGCommGrpCat.hom_hom_ofHom,
     GeneralLinear.weightCharacterMap_ofAdd_single]
   have hweight :
       Multiplicative.ofAdd
@@ -174,12 +174,12 @@ theorem diagonalTorusCoordinateMap_comp_symplecticCharacters :
     · simp only [finSumFinEquiv_apply_left, finSumFinEquiv_symm_apply_castAdd,
         Symplectic.diagonalTorusWeight_inl, basisWeight_apply, weight_inl,
         Finsupp.equivFunOnFinite_symm_coe,
-        FGCommGrpCat.toMonoidHom_ofHom]
+        FGCommGrpCat.hom_hom_ofHom]
       exact GeneralLinear.weightCharacterMap_ofAdd_single _ i
     · simp only [finSumFinEquiv_apply_right, finSumFinEquiv_symm_apply_natAdd,
         Symplectic.diagonalTorusWeight_inr, basisWeight_apply, weight_inr,
         Finsupp.equivFunOnFinite_symm_coe,
-        FGCommGrpCat.toMonoidHom_ofHom]
+        FGCommGrpCat.hom_hom_ofHom]
       rw [ofAdd_neg, map_inv,
         GeneralLinear.weightCharacterMap_ofAdd_single, ← ofAdd_neg]
       apply congrArg Multiplicative.ofAdd

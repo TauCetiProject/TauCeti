@@ -78,36 +78,32 @@ abbrev ofHom {G H : Type v} [CommGroup G] [Group.FG G] [CommGroup H] [Group.FG H
     (φ : G →* H) : of G ⟶ of H :=
   ObjectProperty.homMk (CommGrpCat.ofHom φ)
 
-/-- The group homomorphism underlying a morphism in `FGCommGrpCat`. -/
-abbrev toMonoidHom {G H : FGCommGrpCat.{v}} (φ : G ⟶ H) : G →* H :=
-  φ.hom.hom
-
 @[simp]
-theorem ofHom_toMonoidHom {G H : FGCommGrpCat.{v}} (φ : G ⟶ H) :
-    ofHom (toMonoidHom φ) = φ :=
+theorem ofHom_hom_hom {G H : FGCommGrpCat.{v}} (φ : G ⟶ H) :
+    ofHom φ.hom.hom = φ :=
   rfl
 
 @[simp]
-theorem toMonoidHom_ofHom {G H : Type v} [CommGroup G] [Group.FG G]
+theorem hom_hom_ofHom {G H : Type v} [CommGroup G] [Group.FG G]
     [CommGroup H] [Group.FG H] (φ : G →* H) :
-    toMonoidHom (ofHom φ) = φ :=
+    (ofHom φ).hom.hom = φ :=
   rfl
 
 /-- Two morphisms in `FGCommGrpCat` are equal when their underlying group homomorphisms
 are equal. -/
 @[ext]
 theorem hom_ext {G H : FGCommGrpCat.{v}} {φ ψ : G ⟶ H}
-    (h : toMonoidHom φ = toMonoidHom ψ) : φ = ψ :=
+    (h : φ.hom.hom = ψ.hom.hom) : φ = ψ :=
   ObjectProperty.hom_ext _ (CommGrpCat.hom_ext h)
 
 @[simp]
-theorem toMonoidHom_id {G : FGCommGrpCat.{v}} :
-    toMonoidHom (𝟙 G) = MonoidHom.id G :=
+theorem hom_hom_id {G : FGCommGrpCat.{v}} :
+    (𝟙 G : G ⟶ G).hom.hom = MonoidHom.id G :=
   rfl
 
 @[simp]
-theorem toMonoidHom_comp {G H K : FGCommGrpCat.{v}} (φ : G ⟶ H) (ψ : H ⟶ K) :
-    toMonoidHom (φ ≫ ψ) = (toMonoidHom ψ).comp (toMonoidHom φ) :=
+theorem hom_hom_comp {G H K : FGCommGrpCat.{v}} (φ : G ⟶ H) (ψ : H ⟶ K) :
+    (φ ≫ ψ).hom.hom = ψ.hom.hom.comp φ.hom.hom :=
   rfl
 
 end FGCommGrpCat
