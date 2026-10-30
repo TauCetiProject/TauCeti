@@ -39,7 +39,7 @@ For the adjoint action, `h` grades `L` by its eigenspaces `L(μ)`. The case `μ 
 openness of the orbit of `e` in `L(2)` under a group with Lie algebra `L(0)`: the differential at
 the identity of that orbit map is `x ↦ ⁅x, e⁆`.
 
-In a finite-dimensional module over an algebraically closed field of characteristic zero the
+In a finite-dimensional module over a field of characteristic zero the
 eigenspaces of `h` at the integers span `M`, and `f` lowers weights by `2`, so the kernel of `f` is
 spanned by its homogeneous parts. By the injectivity of `f` these have weights `-n` with `n : ℕ`
 (`IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace`).
@@ -51,8 +51,8 @@ spanned by its homogeneous parts. By the injectivity of `f` these have weights `
 * `IsSl2Triple.map_toEnd_e_eigenspace`: `e` maps `M_μ` onto `M_(μ + 2)` unless `μ + 2 = -n`.
 * `IsSl2Triple.map_toEnd_f_eigenspace`: `f` maps `M_μ` onto `M_(μ - 2)` unless `μ - 2 = n`.
 * `IsSl2Triple.map_ad_e_eigenspace_zero`: `⁅e, L(0)⁆ = L(2)` in the adjoint grading.
-* `IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace`: in a finite-dimensional module over an
-  algebraically closed field of characteristic zero, the kernel of `f` is spanned by the vectors it
+* `IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace`: in a finite-dimensional module over a
+  field of characteristic zero, the kernel of `f` is spanned by the vectors it
   contains of weight `-n`, `n : ℕ`.
 
 ## References
