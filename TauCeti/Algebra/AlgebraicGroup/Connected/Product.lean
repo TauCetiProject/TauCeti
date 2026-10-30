@@ -50,10 +50,6 @@ open AlgebraicGeometry
 
 universe u
 
-private instance geometricallyConnected_respectsIso :
-    MorphismProperty.RespectsIso @GeometricallyConnected :=
-  MorphismProperty.IsStableUnderBaseChange.respectsIso
-
 variable {k : Type u} [Field k]
 
 namespace geometricallyConnectedCommHopfAlgProperty
