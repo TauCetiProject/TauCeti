@@ -13,8 +13,11 @@ import Mathlib.Basic.Finite.Sigma
 # Shrinking open sets into dense open sets of finite products
 
 Given nonempty open sets `V i` in a topological space `X` and a dense open set `U ⊆ κ → X` for a
-finite type `κ`, the sets `V i` can be shrunk to nonempty open subsets so that every box
-`∏ j, W (t j)` along an injective tuple `t : κ → I` lies in `U`. Such shrinking steps are the
+finite type `κ`, the sets `V i` can be shrunk to nonempty open subsets so that the box
+`∏ j, W (t j)` along one given injective tuple `t : κ → I` lies in `U`. When the index type `I`
+is also finite, iterating this shrinks the `V i` so that, for finitely many dense open sets
+`U c ⊆ κ c → X` with each `κ c` finite, every box along every injective tuple `t : κ c → I` lies
+in `U c`. Such shrinking steps are the
 basic move in Baire category constructions of perfect sets of independent points, such as the
 proof of Mycielski's theorem.
 
