@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.Topology.Covering.Basic
 public import TauCeti.Analysis.Polynomial.SimpleRoots.Basic
@@ -16,7 +15,7 @@ import TauCeti.Analysis.Analytic.Inverse
 # The roots of a family of separable polynomials form a covering space
 
 Let `F : B → 𝕜[X]` be a family of polynomials of constant degree `d` over an algebraically closed
-`RCLike` field (that is, over `ℂ`), whose coefficients depend continuously on the parameter `b`.
+complete nontrivially normed field, whose coefficients depend continuously on the parameter `b`.
 Its *root space* is the subtype `{q : B × 𝕜 // (F q.1).IsRoot q.2}` of pairs `(b, z)` with `z` a
 root of `F b`, and it comes with the projection `(b, z) ↦ b`. Over the parameters at which `F b`
 is separable, that is, at which its discriminant does not vanish, this projection is a covering
@@ -120,7 +119,7 @@ end Analytic
 
 section Covering
 
-variable {𝕜 : Type*} [RCLike 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 
 /-- Near a coefficient tuple whose monic polynomial has `n` distinct roots, the roots of the nearby
 monic polynomials are labelled by a tuple `Ψ c` which is continuous in `c` and pairwise distinct. -/
@@ -255,11 +254,10 @@ end Covering
 
 section Fibre
 
-variable {K : Type*} [CommRing K] [IsDomain K] {B : Type*} {F : B → K[X]}
+variable {K : Type*} [Semiring K] {B : Type*}
 
 /-- The fibre of the root space over `b` is the set of roots of `F b`: a point `(b, z)` of the
 fibre corresponds to the root `z`. -/
-@[expose, simps]
 def preimageFstIsRootEquiv (F : B → K[X]) (b : B) :
     (fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b} ≃ {z // (F b).IsRoot z} where
   toFun q := ⟨q.1.1.2, (mem_singleton_iff.1 q.2).subst (motive := fun b' => (F b').IsRoot q.1.1.2)
@@ -268,8 +266,19 @@ def preimageFstIsRootEquiv (F : B → K[X]) (b : B) :
   left_inv q := Subtype.ext (Subtype.ext (Prod.ext (mem_singleton_iff.1 q.2).symm rfl))
   right_inv _ := rfl
 
+@[simp]
+theorem preimageFstIsRootEquiv_apply_coe (F : B → K[X]) (b : B)
+    (q : (fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b}) :
+    (preimageFstIsRootEquiv F b q : K) = q.1.1.2 := (rfl)
+
+@[simp]
+theorem preimageFstIsRootEquiv_symm_apply_coe_coe (F : B → K[X]) (b : B)
+    (z : {z // (F b).IsRoot z}) :
+    ((preimageFstIsRootEquiv F b).symm z).1.1 = (b, z.1) := (rfl)
+
 /-- The fibre of the root space over a parameter `b` with `F b ≠ 0` is finite. -/
-theorem finite_preimage_fst_isRoot {b : B} (hb : F b ≠ 0) :
+theorem finite_preimage_fst_isRoot {K : Type*} [CommRing K] [IsDomain K]
+    {F : B → K[X]} {b : B} (hb : F b ≠ 0) :
     Finite ((fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b}) :=
   have : Finite {z // (F b).IsRoot z} := (finite_setOfPred_isRoot hb).to_subtype
   .of_equiv _ (preimageFstIsRootEquiv F b).symm

@@ -38,6 +38,8 @@ square divides `disc O`. In particular an order with squarefree discriminant is 
 
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.discr_eq_index_sq_mul`:
   `disc O = [𝓞 K : O] ^ 2 * disc K`.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.index_dvd_index_of_le`: a larger order has an
+  index dividing that of a smaller one.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.natCast_index_mem_conductor`: the index lies in
   the conductor.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.conductor_ne_bot`: the conductor is nonzero.
@@ -71,6 +73,12 @@ def index : ℕ :=
 /-- The index of an order is the cardinality of the additive quotient `𝓞 K / O`. -/
 theorem index_def : O.index = Nat.card (𝓞 K ⧸ Subalgebra.toSubmodule O.toRingOfIntegers) :=
   Submodule.cardQuot_apply _
+
+/-- The index of an order is the index of `O` as an additive subgroup of `𝓞 K`. This
+unfolds `Submodule.cardQuot`, through which `NumberFieldOrder.index` is defined. -/
+theorem index_eq_addSubgroup_index :
+    O.index = (Subalgebra.toSubmodule O.toRingOfIntegers).toAddSubgroup.index := by
+  rw [index, Submodule.cardQuot]
 
 /-- The discriminant of an order: the discriminant of a `ℤ`-basis of it. By
 `NumberFieldOrder.discr_eq_discr` it does not depend on the basis. -/
@@ -152,6 +160,15 @@ theorem index_ne_zero : O.index ≠ 0 := by
   apply O.discr_ne_zero
   rw [discr_eq_index_sq_mul, h]
   simp
+
+instance : NeZero O.index :=
+  ⟨O.index_ne_zero⟩
+
+/-- A larger order has smaller index: if `O ⊆ O'`, then `[𝓞 K : O']` divides `[𝓞 K : O]`. -/
+theorem index_dvd_index_of_le {O O' : NumberFieldOrder K} (h : O.toSubalgebra ≤ O'.toSubalgebra) :
+    O'.index ∣ O.index := by
+  rw [index_eq_addSubgroup_index, index_eq_addSubgroup_index]
+  exact AddSubgroup.index_dvd_of_le fun _ hx ↦ toRingOfIntegers_le_toRingOfIntegers_iff.mpr h hx
 
 /-- The index annihilates `𝓞 K / O`, so it lies in the conductor of `O`. -/
 theorem natCast_index_mem_conductor : (O.index : 𝓞 K) ∈ O.conductor := by

@@ -26,8 +26,8 @@ structure on a many-object quiver be stated as structure on a single graded modu
 many-object analogue of an algebra over the product of copies of the ground ring indexed by the
 objects.
 
-The total module, its grading, and the inclusion and projection maps work over any ring.
-The Koszul twists and multilinear operations in this file use commutative scalars.
+The total module, its grading, the inclusion and projection maps, and their Koszul-twist
+compatibilities work over any ring. The multilinear operations use commutative scalars.
 
 The inclusion and projection of a single hom module are `homInclusion` and `homProjection`.
 They are `DirectSum.lof` and `DirectSum.component`; `homInclusion` is defined with classical
@@ -212,19 +212,13 @@ theorem isHomogeneous_homInclusion (X Y : C) :
   intro p f hf
   rwa [add_zero, homInclusion_mem_totalGrading_piece_iff]
 
-end Ring
-
-section CommRing
-
-variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
-
 /-- The Koszul twist of the total module of morphisms acts on each hom module by its own Koszul
 twist. -/
 @[simp]
 theorem koszulTwist_homInclusion (q : ℤ) (X Y : C) (f : homModule (R := R) X Y) :
     (totalGrading R C).koszulTwist q (homInclusion X Y f) =
       homInclusion X Y ((grading (R := R) X Y).koszulTwist q f) := by
-  simpa using LinearMap.congr_fun ((isHomogeneous_homInclusion X Y).koszulTwist_comp q) f
+  simpa using (isHomogeneous_homInclusion X Y).koszulTwist_apply q f
 
 /-- The Koszul twist of the total module of morphisms preserves each hom module. -/
 theorem koszulTwist_mem_range_homInclusion (q : ℤ) {X Y : C} {u : TotalHom R C}
@@ -233,6 +227,12 @@ theorem koszulTwist_mem_range_homInclusion (q : ℤ) {X Y : C} {u : TotalHom R C
   obtain ⟨f, rfl⟩ := hu
   rw [koszulTwist_homInclusion]
   exact LinearMap.mem_range_self _ _
+
+end Ring
+
+section CommRing
+
+variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
 
 /-- **Multilinear maps on homogeneous elements are controlled by homogeneous morphisms.** A
 multilinear map out of the total module of morphisms sends every tuple of elements of degrees `d`
@@ -281,6 +281,38 @@ structure IsPathCompatible {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] 
   eq_zero_of_ne (s t : Fin n → C) (x : ∀ i, homModule (R := R) (s i) (t i)) (i j : Fin n)
       (hij : (j : ℕ) = i + 1) (hne : t j ≠ s i) :
     f (fun k ↦ homInclusion (s k) (t k) (x k)) = 0
+
+/-- Restrict a multilinear map to a composable string and project its value to the Hom module
+between the images of the endpoints. No path-compatibility hypothesis is needed for projection. -/
+noncomputable def _root_.MultilinearMap.restrictToPath {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {n : ℕ}
+    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C'))
+    (φ : C → C') (X : Fin (n + 1) → C) :
+    MultilinearMap R
+      (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
+      (homModule (R := R) (φ (X 0)) (φ (X (Fin.last n)))) :=
+  (homProjection _ _).compMultilinearMap
+    (f.compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+
+theorem _root_.MultilinearMap.restrictToPath_apply {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {n : ℕ}
+    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C'))
+    (φ : C → C') (X : Fin (n + 1) → C)
+    (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    f.restrictToPath φ X x = homProjection (φ (X 0)) (φ (X (Fin.last n)))
+      (f fun i ↦ homInclusion _ _ (x i)) := (rfl)
+
+/-- Including a path restriction recovers the original total-module evaluation. -/
+@[simp]
+theorem IsPathCompatible.homInclusion_restrictToPath {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    (hf : IsPathCompatible φ f) (X : Fin (n + 1) → C)
+    (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    homInclusion (φ (X 0)) (φ (X (Fin.last n))) (f.restrictToPath φ X x) =
+      f (fun i ↦ homInclusion _ _ (x i)) := by
+  rw [MultilinearMap.restrictToPath_apply]
+  exact homInclusion_homProjection_of_mem_range (hf.mem_range_homInclusion X x)
 
 /-- A string of morphisms in which the target of each morphism is the source of the one before it
 comes from a string of objects. -/

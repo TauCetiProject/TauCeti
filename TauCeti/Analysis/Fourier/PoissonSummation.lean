@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
 public import TauCeti.Analysis.Fourier.ChangeOfVariables
@@ -309,29 +310,13 @@ theorem tsum_eq_tsum_dual_fourier (v : E) :
     ∑' ℓ : L, f (v + ℓ) = (ZLattice.covolume L : ℂ)⁻¹ *
       ∑' m : ZLattice.dual L, 𝓕 (f : E → ℂ) m * cexp (2 * π * I * ⟪v, (m : E)⟫) := by
   let o := stdOrthonormalBasis ℝ E
-  -- `A` carries the lattice `Λ` spanned by `o` onto `L`, and the adjoint `B` of `A` carries `L^∨`
-  -- onto `Λ`, with inverse the adjoint `B'` of `A⁻¹`.
+  -- `A` carries the lattice `Λ` spanned by `o` onto `L`, and its adjoint carries `L^∨` onto `Λ`.
   obtain ⟨A, hA, hAd, hdet⟩ := ZLattice.exists_comap_span_orthonormalBasis_eq L o
-  let B : E →L[ℝ] E := ContinuousLinearMap.adjoint (A : E →L[ℝ] E)
-  let B' : E →L[ℝ] E := ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E)
-  have hBB' (x : E) : B (B' x) = x := by
-    simp [B, B', ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
-      ContinuousLinearMap.adjoint_id]
-  have hB'B (x : E) : B' (B x) = x := by
-    simp [B, B', ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
-      ContinuousLinearMap.adjoint_id]
-  have hmemL (x : E) : x ∈ L ↔ A.symm x ∈ span ℤ (Set.range o) := by
-    rw [← hA]
-    exact Iff.rfl
-  have hmemD (x : E) : x ∈ ZLattice.dual L ↔ B x ∈ span ℤ (Set.range o) := by
-    rw [← hAd]
-    exact Iff.rfl
-  let eL : span ℤ (Set.range o) ≃ L := A.toEquiv.subtypeEquiv fun μ ↦ by simp [hmemL]
+  let eL : span ℤ (Set.range o) ≃ L := A.toEquiv.subtypeEquiv fun μ ↦ by simp [← hA]
   let eD : ZLattice.dual L ≃ span ℤ (Set.range o) :=
-    { toFun m := ⟨B m, (hmemD m).1 m.2⟩
-      invFun n := ⟨B' n, (hmemD _).2 (by simp [hBB'])⟩
-      left_inv m := Subtype.ext (hB'B m)
-      right_inv n := Subtype.ext (hBB' n) }
+    (ContinuousLinearEquiv.adjointEquiv A).toEquiv.subtypeEquiv fun m ↦ by
+      simp only [← hAd, ZLattice.mem_comap, ContinuousLinearMap.coe_coe, LinearEquiv.coe_toEquiv,
+        ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.adjointEquiv_apply]
   -- Apply Poisson summation over `Λ` to `g = f ∘ A` at `A⁻¹ v`, and reindex both sides.
   let g := compCLMOfContinuousLinearEquiv ℂ A f
   calc ∑' ℓ : L, f (v + ℓ) = ∑' μ : span ℤ (Set.range o), g (A.symm v + μ) := by
@@ -344,14 +329,13 @@ theorem tsum_eq_tsum_dual_fourier (v : E) :
     _ = ∑' m : ZLattice.dual L, (ZLattice.covolume L : ℂ)⁻¹ *
           (𝓕 (f : E → ℂ) m * cexp (2 * π * I * ⟪v, (m : E)⟫)) := by
         congr 1 with m
-        -- The Fourier change of variables turns `𝓕 g (B m)` into `|det A|⁻¹ • 𝓕 f m`.
-        have hinner : ⟪A.symm v, B m⟫ = ⟪v, (m : E)⟫ := by
-          simp [B, ContinuousLinearMap.adjoint_inner_right]
-        have hm : ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) (B m) = m := hB'B m
-        simp only [g, eD, Equiv.coe_fn_mk, compCLMOfContinuousLinearEquiv_apply, hinner,
-          ContinuousLinearEquiv.fourier_comp]
-        rw [hm, Complex.real_smul, mul_assoc]
-        simp [← hdet]
+        -- The Fourier change of variables turns `𝓕 g (Aᵀ m)` into `|det A|⁻¹ • 𝓕 f m`.
+        have hm : (eD m : E) = ContinuousLinearMap.adjoint (A : E →L[ℝ] E) m := by
+          simp only [eD, Equiv.subtypeEquiv_apply, LinearEquiv.coe_toEquiv,
+            ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.adjointEquiv_apply]
+        simp [g, hm, ContinuousLinearEquiv.fourier_comp,
+          ContinuousLinearEquiv.adjoint_symm_adjoint_apply, ContinuousLinearMap.adjoint_inner_right,
+          ← hdet, Complex.real_smul, mul_assoc]
     _ = _ := tsum_mul_left
 
 /-- Poisson's summation formula in **reflected form**: reindexing the dual side by `m ↦ -m`

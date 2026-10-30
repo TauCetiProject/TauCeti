@@ -96,17 +96,6 @@ to the ball.
   containing the intersection of the two pieces and with preconnected complement in the image
   boundary contains one of the two pieces.
 
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and the
-pinned Mathlib has no boundary correspondence for conformal maps. So this file is new Lean
-formalization rather than a temporary shim. It consumes, through
-`Conformal/ClusterSet.lean`, the L0–L3 shim
-`TauCeti.isOpen_image_of_differentiableOn_of_injOn`, to be refactored onto Mathlib's open mapping
-API once the upstream work lands.
-
 ## References
 
 * C. Carathéodory, *Über die gegenseitige Beziehung der Ränder bei der konformen Abbildung*,

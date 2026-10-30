@@ -210,10 +210,8 @@ theorem exists_paths_vertexSeparator_card_eq [Finite V] (hst : s ≠ t) (hadj : 
     have h2 : 1 < #{l | v ∈ (P l).vertices} :=
       one_lt_card.2 ⟨i, by simpa using hvi, j, by simpa using hvj, hij⟩
     exact (hPv v hv.1 hv.2).not_gt h2
-  refine ⟨k, P, X, fun i j hij ↦ ?_, hP, hdisj, hs, ht, hX, by simpa using hk⟩
-  by_contra hne
-  obtain ⟨v, hv, hvs, hvt⟩ := (P i).exists_mem_vertices_ne_ne hst hadj
-  exact (ArrowWalk.internallyDisjoint_def.1 (hdisj hne) v hv (hij ▸ hv)).elim hvs hvt
+  exact ⟨k, P, X, injective_of_pairwise_internallyDisjoint hdisj
+    fun i ↦ (P i).exists_mem_vertices_ne_ne hst hadj, hP, hdisj, hs, ht, hX, by simpa using hk⟩
 
 /-- **Menger's theorem for internally vertex-disjoint directed paths, predicate form.** Let `s ≠ t`
 be vertices of an arrow family on a finite vertex type, with no arrow from `s` to `t`. Then `t`

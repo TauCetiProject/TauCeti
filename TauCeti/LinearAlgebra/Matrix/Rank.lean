@@ -32,6 +32,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
   exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
   `(p + 1) × (p + 1)` minor vanishes.
+* `Matrix.finrank_ker_mulVecLin_of_linearIndependent_rows`: the kernel dimension of a matrix
+  over a field with independent rows.
 * `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
@@ -47,7 +49,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `LinearMap.rank_toMatrix`: the rank of the matrix of a linear map is the dimension of its range.
 * `Matrix.natCard_range_mulVec_eq_pow_rank`: the column space of a matrix over a field `K` has
   `|K| ^ rank` elements.
-* `Matrix.rank_conjAct_smul`: conjugation by an invertible matrix preserves the rank.
+* `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
+  negation preserve the rank.
 * `Matrix.exists_eq_mul_fin_rank`: a rectangular matrix factors through `Fin A.rank`.
 * `Matrix.exists_eq_mul_of_rank_le` and `Matrix.rank_le_iff_exists_eq_mul`: a matrix has rank at
   most `r` exactly when it factors through `Fin r`.
@@ -162,6 +165,19 @@ theorem linearIndependent_rat_row_iff {A : Matrix m n ℤ} :
 
 end LinearIndependent
 
+section KernelDimension
+
+/-- The kernel of a matrix over a field with independent rows has dimension equal to its
+number of columns minus its number of rows. -/
+theorem finrank_ker_mulVecLin_of_linearIndependent_rows {K m ι : Type*} [Field K]
+    [Fintype m] [Fintype ι] {A : Matrix m ι K} (hA : LinearIndependent K A.row) :
+    Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - Fintype.card m := by
+  have h := A.mulVecLin.finrank_range_add_finrank_ker
+  rw [← Matrix.rank, hA.rank_matrix, Module.finrank_fintype_fun_eq_card] at h
+  omega
+
+end KernelDimension
+
 section FullColumnRank
 
 variable {R m n : Type*} [CommSemiring R] [OrzechProperty R] [Nontrivial R] [Fintype n]
@@ -230,6 +246,12 @@ theorem rank_conjAct_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
     (g : ConjAct (GL n R)) (A : Matrix n n R) : (g • A).rank = A.rank := by
   rw [ConjAct.units_smul_def, rank_mul_eq_left_of_isUnit_det _ _ (isUnits_det_units _),
     rank_mul_eq_right_of_isUnit_det _ _ (isUnits_det_units _)]
+
+/-- Negation preserves the rank. -/
+@[simp]
+theorem rank_neg {m n R : Type*} [Fintype n] [CommRing R] (A : Matrix m n R) :
+    (-A).rank = A.rank := by
+  simpa using rank_smul_of_mem_nonZeroDivisors A (isUnit_one (M := R)).neg.mem_nonZeroDivisors
 
 end Conjugation
 

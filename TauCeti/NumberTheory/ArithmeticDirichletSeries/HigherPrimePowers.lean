@@ -370,10 +370,12 @@ multiple of the standard logarithmic weight on the higher prime powers has `o(x)
 function. -/
 theorem primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight
     (K : Type*) [Field K] [NumberField K] {E : Type*} [NormedAddCommGroup E]
-    {w : IdealPrimePower K → E} {C : ℝ} (hC : 0 ≤ C)
+    {w : IdealPrimePower K → E} {C : ℝ}
     (hw : ∀ A, ‖w A‖ ≤ C * higherPrimePowerWeight A) :
     (fun x ↦ primePowerSummatory K w x) =o[atTop] fun x : ℝ ↦ x :=
-  (primePowerSummatory_isBigO_of_le_higherPrimePowerWeight K hC hw).trans_isLittleO
+  (primePowerSummatory_isBigO_of_le_higherPrimePowerWeight K (abs_nonneg C)
+    (fun A ↦ (hw A).trans (mul_le_mul_of_nonneg_right (le_abs_self C)
+      (higherPrimePowerWeight_nonneg A)))).trans_isLittleO
     isLittleO_sqrt_mul_log_sq
 
 /-- Restricting to the prime powers whose base lies in a set `S` of primes only removes
@@ -384,7 +386,7 @@ theorem primePowerSummatory_indicator_isLittleO (K : Type*) [Field K] [NumberFie
     (fun x ↦ primePowerSummatory K
         ({A : IdealPrimePower K | primePowerBase A ∈ S}.indicator higherPrimePowerWeight) x)
       =o[atTop] fun x : ℝ ↦ x :=
-  primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight K zero_le_one
+  primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight K
     fun A ↦ by
       rw [norm_indicator_eq_indicator_norm, one_mul]
       exact Set.indicator_apply_le'

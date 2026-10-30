@@ -14,7 +14,8 @@ public import Mathlib.Analysis.Calculus.MeanValue
 
 A differentiable map with zero differential on an open subset of a real manifold is locally
 constant there. Both manifolds may have boundary or corners, and neither needs to be finite
-dimensional. On a preconnected source the map is constant.
+dimensional. On a preconnected source the map is constant. Conversely, a locally constant map is
+smooth (`IsLocallyConstant.contMDiff`).
 
 These results turn infinitesimal independence of a parameter into independence of that
 parameter itself, for example when separating the factors of a product isometry.
@@ -140,3 +141,19 @@ theorem apply_eq_of_mfderiv_eq_zero [PreconnectedSpace M] (hf : MDifferentiable 
   (hf.isLocallyConstant_of_mfderiv_eq_zero hzero).apply_eq_of_preconnectedSpace x y
 
 end MDifferentiable
+
+namespace IsLocallyConstant
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H G : Type*} [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
+  {M N : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace G N] {f : M → N}
+
+/-- Conversely, a locally constant map between manifolds is `C^n` for every `n`: near each point it
+agrees with a constant map. -/
+theorem contMDiff (hf : IsLocallyConstant f) {n : WithTop ℕ∞} : ContMDiff I J n f := fun x ↦
+  contMDiffAt_const.congr_of_eventuallyEq ((IsLocallyConstant.iff_eventually_eq f).mp hf x)
+
+end IsLocallyConstant

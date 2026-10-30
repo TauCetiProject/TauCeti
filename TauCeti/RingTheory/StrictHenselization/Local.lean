@@ -54,8 +54,8 @@ variable (R Ω : Type u) [CommRing R] [CommRing Ω] [Algebra R Ω]
 unit of the colimit: localizing that neighbourhood at the element is a further pointed
 neighbourhood in which the element is a unit. -/
 theorem isUnit_stage_of_isUnit_point (B : Neighbourhood R Ω) (b : B.obj.left)
-    (hpoint : IsUnit (B.obj.hom.hom b)) : IsUnit (stage R Ω B b) := by
-  obtain ⟨target, refinement, hunit⟩ := Neighbourhood.exists_refinement_isUnit R Ω B b hpoint
+    (hpoint : IsUnit (B.point b)) : IsUnit (stage R Ω B b) := by
+  obtain ⟨target, refinement, hunit⟩ := Neighbourhood.exists_refinement_isUnit B b hpoint
   rw [← stage_hom_apply R Ω refinement b]
   exact hunit.map (stage R Ω target).toRingHom
 
@@ -64,11 +64,7 @@ under the induced map `toTarget` is a unit. -/
 theorem isUnit_iff_isUnit_toTarget (x : algebra R Ω) : IsUnit x ↔ IsUnit (toTarget R Ω x) := by
   refine ⟨fun h ↦ h.map (toTarget R Ω).toRingHom, fun h ↦ ?_⟩
   obtain ⟨B, b, rfl⟩ := exists_stage_eq R Ω x
-  have hdown : IsUnit ((B.obj.hom.hom b).down) := by
-    rwa [toTarget_stage_apply] at h
-  have hpoint : IsUnit (B.obj.hom.hom b) :=
-    (MulEquiv.isUnit_map (ULift.ringEquiv (R := Ω))).mp hdown
-  exact isUnit_stage_of_isUnit_point R Ω B b hpoint
+  exact isUnit_stage_of_isUnit_point R Ω B b (by rwa [toTarget_stage_apply] at h)
 
 /-- The map induced by the pointings of the pointed étale neighbourhoods is a local
 homomorphism. -/
