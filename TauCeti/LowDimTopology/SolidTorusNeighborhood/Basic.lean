@@ -363,8 +363,8 @@ onto its normal planes: `ψ z w = re w • n₁ z + im w • n₂ z` for the fra
 `exists_normalFrame`. -/
 private theorem exists_normalDisc {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, ℝ³) 2 f)
     (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ³) f z)) :
-    ∃ ψ : Circle → ℂ → ℝ³, Continuous (fun q : SolidTorus => ψ q.2 q.1) ∧ ∀ z,
-      (∀ w, ψ z w ∈ normalSubspace (𝓡 1) f z) ∧ (∀ w, ‖ψ z w‖ = ‖w‖) ∧ Injective (ψ z) ∧
+    ∃ ψ : Circle → ℂ →ₗᵢ[ℝ] ℝ³, Continuous (fun q : SolidTorus => ψ q.2 q.1) ∧ ∀ z,
+      (∀ w, ψ z w ∈ normalSubspace (𝓡 1) f z) ∧
       ∀ v ∈ normalSubspace (𝓡 1) f z, ∃ w, ψ z w = v := by
   obtain ⟨n₁, n₂, hc₁, hc₂, hn⟩ := exists_normalFrame hf himm
   -- The coordinates of `ψ z w` in the frame are the real and imaginary parts of `w`.
@@ -373,16 +373,21 @@ private theorem exists_normalDisc {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1
   have h₂ : ∀ z (w : ℂ), ⟪n₂ z, w.re • n₁ z + w.im • n₂ z⟫ = w.im := fun z w => by
     simp [inner_add_right, real_inner_smul_right, (hn z).2.1, real_inner_comm (n₁ z),
       (hn z).2.2.1]
-  refine ⟨fun z w => w.re • n₁ z + w.im • n₂ z, by fun_prop, fun z => ⟨fun w => ?_, fun w => ?_,
-    fun w w' h => ?_, fun v hv => ⟨⟪n₁ z, v⟫ + ⟪n₂ z, v⟫ * Complex.I, ?_⟩⟩⟩
-  · rw [(hn z).2.2.2, h₁, h₂]
-  · rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply,
-      ← real_inner_self_eq_norm_sq, inner_add_left, real_inner_smul_left, real_inner_smul_left,
-      h₁, h₂]
-  · dsimp only at h
-    exact Complex.ext ((h₁ z w).symm.trans (h ▸ h₁ z w')) ((h₂ z w).symm.trans (h ▸ h₂ z w'))
+  let ψ : Circle → ℂ →ₗᵢ[ℝ] ℝ³ := fun z =>
+    { toLinearMap := Complex.reLm.smulRight (n₁ z) + Complex.imLm.smulRight (n₂ z)
+      norm_map' := fun w => by
+        change ‖w.re • n₁ z + w.im • n₂ z‖ = ‖w‖
+        rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply,
+          ← real_inner_self_eq_norm_sq, inner_add_left, real_inner_smul_left, real_inner_smul_left,
+          h₁, h₂] }
+  refine ⟨ψ, ?_, fun z => ⟨fun w => ?_,
+    fun v hv => ⟨⟪n₁ z, v⟫ + ⟪n₂ z, v⟫ * Complex.I, ?_⟩⟩⟩
+  · change Continuous (fun q : SolidTorus => (q.1 : ℂ).re • n₁ q.2 + (q.1 : ℂ).im • n₂ q.2)
+    fun_prop
+  · change w.re • n₁ z + w.im • n₂ z ∈ normalSubspace (𝓡 1) f z
+    rw [(hn z).2.2.2, h₁, h₂]
   · rw [(hn z).2.2.2] at hv
-    simp [← hv]
+    simpa [ψ] using hv.symm
 
 /-- **Solid torus neighbourhoods of knots in `ℝ³`.** A `C²` embedded circle in `ℝ³` has a solid
 torus neighbourhood inside any neighbourhood of its image. -/
@@ -400,7 +405,7 @@ theorem exists_isSolidTorusNeighborhood {f : Circle → ℝ³} (hf : ContMDiff (
   -- `Φ (w, z)` is the point `r w` of the normal disc at `z`.
   obtain ⟨ψ, hψc, hψ⟩ := exists_normalDisc hf himm
   have hnorm : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ = r * ‖(q.1 : ℂ)‖ := fun q => by
-    rw [norm_smul, (hψ q.2).2.1, Real.norm_of_nonneg hr.le]
+    rw [norm_smul, (ψ q.2).norm_map, Real.norm_of_nonneg hr.le]
   have hle : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ ≤ r := fun q => by
     rw [hnorm]
     exact mul_le_of_le_one_right hr.le (mem_closedBall_zero_iff.mp q.1.2)
@@ -411,12 +416,11 @@ theorem exists_isSolidTorusNeighborhood {f : Circle → ℝ³} (hf : ContMDiff (
     simp only [Subtype.mk.injEq, Prod.mk.injEq] at h'
     obtain ⟨h₂, h₁⟩ := h'
     rw [h₂] at h₁
-    exact Prod.ext (Subtype.ext ((hψ _).2.2.1 (smul_right_injective _ hr.ne' h₁))) h₂
+    exact Prod.ext (Subtype.ext ((ψ _).injective (smul_right_injective _ hr.ne' h₁))) h₂
   refine ⟨fun q => f q.2 + r • ψ q.2 q.1, ⟨((hf.continuous.comp continuous_snd).add
     (hψc.const_smul r)).isClosedEmbedding hinj |>.isEmbedding, fun z => ?_, ?_⟩, ?_⟩
   · dsimp only
-    rw [Metric.unitClosedBall.coe_zero, norm_eq_zero.mp (((hψ z).2.1 0).trans norm_zero),
-      smul_zero, add_zero]
+    rw [Metric.unitClosedBall.coe_zero, map_zero, smul_zero, add_zero]
   · -- The open solid torus is mapped onto the normal vectors of length less than `r`.
     convert hemb.isOpenMap {q | ‖(q : Circle × ℝ³).2‖ < r}
       (isOpen_lt (continuous_norm.comp (continuous_snd.comp continuous_subtype_val))
@@ -429,9 +433,9 @@ theorem exists_isSolidTorusNeighborhood {f : Circle → ℝ³} (hf : ContMDiff (
       exact mul_lt_of_lt_one_right hr hq
     · rintro ⟨⟨⟨z, v⟩, hzv⟩, hvr, rfl⟩
       rw [mem_ofPred_eq] at hvr
-      obtain ⟨w, hw⟩ := (hψ z).2.2.2 _ (Submodule.smul_mem _ r⁻¹ (mem_normalTube.mp hzv).1)
+      obtain ⟨w, hw⟩ := (hψ z).2 _ (Submodule.smul_mem _ r⁻¹ (mem_normalTube.mp hzv).1)
       have hwn : ‖w‖ < 1 := by
-        rw [← (hψ z).2.1, hw, norm_smul, norm_inv, Real.norm_of_nonneg hr.le]
+        rw [← (ψ z).norm_map, hw, norm_smul, norm_inv, Real.norm_of_nonneg hr.le]
         exact (inv_mul_lt_one₀ hr).mpr hvr
       refine ⟨(⟨w, mem_closedBall_zero_iff.mpr hwn.le⟩, z), hwn, ?_⟩
       simp [hw, smul_smul, mul_inv_cancel₀ hr.ne']
