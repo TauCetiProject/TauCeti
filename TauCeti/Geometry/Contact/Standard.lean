@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.Distribution
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
@@ -19,7 +19,8 @@ On `ℝ³ = ℝ × ℝ × ℝ` with coordinates `(x, y, z)`, the one-form `α = 
 Its exterior derivative is `dα = -dx ∧ dy`, and its kernel is the standard contact distribution
 `TauCeti.standardContactDistribution ℝ`, spanned at `(x, y, z)` by `(1, 0, 0)` and `(0, 1, x)`
 (`TauCeti.kerDistribution_standardContactForm`). On this frame `dα` takes the value `-1`, which is
-the nondegeneracy of `dα` on the kernel.
+the nondegeneracy of `dα` on the kernel. The Reeb vector field of `α` is the constant field
+`∂z = (0, 0, 1)` (`TauCeti.reebField_standardContactForm`).
 
 The form is assembled from the constant forms `dz` and `dy` and the coordinate function `x`, so its
 exterior derivative is computed by the Leibniz rule `d(x dy) = dx ∧ dy`.
@@ -132,5 +133,20 @@ theorem isContactForm_standardContactForm : standardContactForm.IsContactForm :=
   -- The last goal `0 = (0 : TangentSpace _ p).2.2` holds by `rfl`: the zero tangent vector is by
   -- definition the zero vector `(0, 0, 0)` of `ℝ × ℝ × ℝ`.
   exact Prod.ext h₂ (Prod.ext h₁ (by rw [hv, h₁, mul_zero]; rfl))
+
+/-- The Reeb vector field of the standard contact form `dz - x dy` on `ℝ³` is the constant field
+`∂z = (0, 0, 1)`. -/
+theorem reebField_standardContactForm (p : ℝ × ℝ × ℝ) :
+    standardContactForm.reebField p = ((0, 0, 1) : ℝ × ℝ × ℝ) := by
+  -- Name the vector field, so that its values keep their tangent-space type.
+  obtain ⟨R, hR⟩ : ∃ R : (q : ℝ × ℝ × ℝ) → TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) q,
+      R = fun _ ↦ ((0, 0, 1) : ℝ × ℝ × ℝ) := ⟨_, rfl⟩
+  have hReeb : standardContactForm.IsReebField R := by
+    refine SmoothForm.isReebField_iff.2 fun q ↦ ⟨?_, fun v ↦ ?_⟩
+    · rw [standardContactForm_apply, hR]
+      norm_num
+    · rw [mextDeriv_standardContactForm_apply, hR]
+      norm_num
+  rw [← isContactForm_standardContactForm.isReebField_iff_eq.1 hReeb, hR]
 
 end TauCeti

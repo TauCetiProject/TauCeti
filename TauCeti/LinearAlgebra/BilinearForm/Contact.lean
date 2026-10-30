@@ -28,6 +28,12 @@ contact together whenever `f` vanishes nowhere.
 For an alternating `B`, the hyperplane `ker a` carries a nondegenerate alternating form, so it has
 even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`).
 
+A **Reeb vector** of `a` and `B` is a vector `r` with `a r = 1` and `B r = 0`
+(`Module.Dual.IsReebVector`). For a contact covector it is unique, and for an alternating `B` in
+finite dimension it exists (`Module.Dual.IsContact.existsUnique_isReebVector`): it is the preimage
+of `a` under the injective map `v ↦ B v + a v • a` from `V` to its dual. This is the pointwise
+linear algebra of the Reeb vector field of a contact form.
+
 ## Main declarations
 
 * `Module.Dual.IsContact`: `a ≠ 0` and `B` is nondegenerate on `ker a`.
@@ -38,6 +44,10 @@ even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`).
   under nonzero rescaling of `a` and of `B`.
 * `Module.Dual.IsContact.even_finrank_ker`, `Module.Dual.IsContact.odd_finrank`: the dimension
   count.
+* `Module.Dual.IsReebVector`: `a r = 1` and `B r v = 0` for every `v`.
+* `Module.Dual.IsContact.isReebVector_iff_forall_add_mul_eq`: the Reeb vector is the preimage of
+  `a` under `v ↦ B v + a v • a`.
+* `Module.Dual.IsContact.existsUnique_isReebVector`: existence and uniqueness of the Reeb vector.
 
 ## References
 
@@ -123,5 +133,78 @@ theorem IsContact.odd_finrank [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsCo
     Odd (finrank K V) := by
   rw [← finrank_ker_add_one_of_ne_zero h.ne_zero]
   exact (h.even_finrank_ker hB).add_one
+
+/-! ### Reeb vectors -/
+
+/-- A vector `r` is a **Reeb vector** of a covector `a` and a bilinear form `B` when `a r = 1` and
+`B r v = 0` for every `v`. For a contact form `α` on a manifold, the Reeb vector of `α_x` and
+`dα_x` is the value at `x` of the Reeb vector field. -/
+def IsReebVector (a : Module.Dual K V) (B : LinearMap.BilinForm K V) (r : V) : Prop :=
+  a r = 1 ∧ ∀ v, B r v = 0
+
+theorem isReebVector_iff {r : V} : a.IsReebVector B r ↔ a r = 1 ∧ ∀ v, B r v = 0 :=
+  Iff.rfl
+
+/-- If `r` is a Reeb vector of `a` and `B`, then `c⁻¹ r` is a Reeb vector of `c a` and `c B`, for
+a nonzero scalar `c`. -/
+theorem IsReebVector.smul {r : V} (hr : a.IsReebVector B r) {c : K} (hc : c ≠ 0) :
+    (c • a).IsReebVector (c • B) (c⁻¹ • r) :=
+  ⟨by simp [hr.1, hc], fun v ↦ by simp [hr.2]⟩
+
+/-- A Reeb vector of a contact covector is unique. -/
+theorem IsContact.isReebVector_unique (h : a.IsContact B) {r r' : V} (hr : a.IsReebVector B r)
+    (hr' : a.IsReebVector B r') : r = r' := by
+  have hker : r - r' ∈ LinearMap.ker a := by
+    rw [LinearMap.mem_ker, map_sub, hr.1, hr'.1, sub_self]
+  have h₀ := h.nondegenerate_restrict.1 ⟨r - r', hker⟩ fun w ↦ by
+    simp [hr.2, hr'.2]
+  exact sub_eq_zero.1 (congrArg Subtype.val h₀)
+
+/-- For an alternating `B` and a contact covector `a`, the linear map `v ↦ B v + a v • a` from `V`
+to its dual is injective: a vector `v` with `B v w + a v * a w = 0` for every `w` is zero. -/
+theorem IsContact.eq_zero_of_forall_add_mul_eq_zero (hB : B.IsAlt) (h : a.IsContact B) {v : V}
+    (hv : ∀ w, B v w + a v * a w = 0) : v = 0 := by
+  -- Testing against `v` itself gives `a v ^ 2 = 0`, so `v ∈ ker a`, and then `B v` vanishes.
+  have hav : a v = 0 := by
+    simpa [hB.self_eq_zero v] using hv v
+  have h₀ := h.nondegenerate_restrict.1 ⟨v, hav⟩ fun w ↦ by
+    simpa [hav] using hv w
+  simpa using congrArg Subtype.val h₀
+
+/-- For an alternating `B` and a contact covector `a`, the Reeb vector is the preimage of `a`
+under the linear map `v ↦ B v + a v • a`: a vector `r` is a Reeb vector exactly when
+`B r w + a r * a w = a w` for every `w`. -/
+theorem IsContact.isReebVector_iff_forall_add_mul_eq (hB : B.IsAlt) (h : a.IsContact B)
+    {r : V} : a.IsReebVector B r ↔ ∀ w, B r w + a r * a w = a w := by
+  refine ⟨fun hr w ↦ by rw [hr.1, hr.2, zero_add, one_mul], fun hr ↦ ?_⟩
+  -- Testing against `r` gives `a r ^ 2 = a r`. The case `a r = 0` would put `r` in `ker a` with
+  -- `B r = a`, forcing first `r = 0` and then `a = 0`.
+  have har : a r = 1 := by
+    have hsq : a r * a r = a r := by simpa [hB.self_eq_zero r] using hr r
+    refine (mul_left_eq_self₀.1 hsq).resolve_right fun har ↦ h.ne_zero ?_
+    have hr' : ∀ w, B r w = a w := fun w ↦ by simpa [har] using hr w
+    have h₀ := h.nondegenerate_restrict.1 ⟨r, har⟩ fun w ↦ by
+      simp [hr']
+    have hr₀ : r = 0 := by simpa using congrArg Subtype.val h₀
+    ext w
+    simp [← hr' w, hr₀]
+  exact ⟨har, fun w ↦ by simpa [har] using hr w⟩
+
+/-- **Existence and uniqueness of the Reeb vector.** In finite dimension, a covector which is
+contact for an alternating bilinear form has a unique Reeb vector. -/
+theorem IsContact.existsUnique_isReebVector [FiniteDimensional K V] (hB : B.IsAlt)
+    (h : a.IsContact B) : ∃! r, a.IsReebVector B r := by
+  -- The map `v ↦ B v + a v • a` is injective, hence onto the dual, which has the same dimension.
+  let Φ : V →ₗ[K] Module.Dual K V := B + a.smulRight a
+  have hΦ : Function.Injective Φ := by
+    refine (injective_iff_map_eq_zero Φ).2 fun v hv ↦ h.eq_zero_of_forall_add_mul_eq_zero hB ?_
+    intro w
+    simpa [Φ] using LinearMap.congr_fun hv w
+  obtain ⟨r, hr⟩ :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      Subspace.dual_finrank_eq.symm).1 hΦ a
+  have hrReeb : a.IsReebVector B r :=
+    (h.isReebVector_iff_forall_add_mul_eq hB).2 fun w ↦ by simpa [Φ] using LinearMap.congr_fun hr w
+  exact ⟨r, hrReeb, fun r' hr' ↦ h.isReebVector_unique hr' hrReeb⟩
 
 end Module.Dual
