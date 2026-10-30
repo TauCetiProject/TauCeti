@@ -30,9 +30,7 @@ spheres. These iterated structure maps and their laws are developed in
 
 The commutative sphere action also gives a native sphere bimodule via
 `CategoryTheory.Mod.toBimod`: the right action is obtained by swapping the sphere and
-spectrum factors before applying the left action. This fully faithful adapter is the
-input to the native balanced bimodule tensor construction; it does not yet equip spectra
-with a smash product.
+spectrum factors before applying the left action. This adapter is fully faithful.
 
 ## Main definitions
 

@@ -36,7 +36,7 @@ namespace Bimod
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] (A B : Mon C)
 
 /-- Forget the right action of a bimodule, retaining its native left module. -/
--- An abbreviation keeps the unchanged carrier reducible in morphism types.
+-- Reducibility lets action and map equalities compare morphisms on the unchanged carrier.
 abbrev toLeftMod : Bimod A B ⥤ Mod C A.X where
   obj M :=
     { X := M.X
@@ -63,7 +63,7 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
 /-- Regard modules over a commutative monoid object as bimodules. The right
 action moves the scalar to the left using the inverse braiding. -/
--- An abbreviation keeps the unchanged carrier reducible in morphism types.
+-- Reducibility lets action and map equalities compare morphisms on the unchanged carrier.
 abbrev toBimod : Mod C A ⥤ Bimod (Mon.mk A) (Mon.mk A) where
   obj M :=
     { X := M.X
@@ -79,13 +79,13 @@ abbrev toBimod : Mod C A ⥤ Bimod (Mon.mk A) (Mon.mk A) where
         rw [braiding_inv_naturality_right_assoc,
           ModObj.mul_smul_self, braiding_inv_naturality_left_assoc]
         simp only [braiding_tensor_left_inv, braiding_tensor_right_inv, Category.assoc,
-          Iso.hom_inv_id_assoc, ModObj.mul_smul_self_flip]
-        rw [← comp_whiskerRight_assoc, IsCommMonObj.mul_comm']
+          Iso.hom_inv_id_assoc, ModObj.mul_smul_self_flip,
+          ← comp_whiskerRight_assoc, IsCommMonObj.mul_comm']
       middle_assoc := by
         rw [braiding_inv_naturality_left_assoc, ModObj.mul_smul_self_flip]
         simp only [braiding_tensor_right_inv, Category.assoc, Iso.hom_inv_id_assoc,
-          whiskerLeft_comp, ModObj.mul_smul_self_flip]
-        rw [← comp_whiskerRight_assoc, IsCommMonObj.mul_comm'] }
+          whiskerLeft_comp, ModObj.mul_smul_self_flip,
+          ← comp_whiskerRight_assoc, IsCommMonObj.mul_comm'] }
   map f :=
     { hom := f.hom
       left_act_hom := IsModHom.smul_hom (f := f.hom)
@@ -126,11 +126,9 @@ def toBimodCompToLeftModIso :
   NatIso.ofComponents (fun M ↦
     { hom := Hom.mk' (𝟙 M.X) (IsModHom.smul_hom (A := A) (f := 𝟙 M.X))
       inv := Hom.mk' (𝟙 M.X) (IsModHom.smul_hom (A := A) (f := 𝟙 M.X))
-      hom_inv_id := Hom.ext (Category.id_comp _)
-      inv_hom_id := Hom.ext (Category.id_comp _) })
-    (fun f ↦ by
-      apply hom_ext
-      exact (Category.comp_id f.hom).trans (Category.id_comp f.hom).symm)
+      hom_inv_id := by ext; simp
+      inv_hom_id := by ext; simp })
+    (fun f ↦ by ext; simp)
 
 @[simp]
 theorem toBimodCompToLeftModIso_hom_app_hom (M : Mod C A) :
@@ -142,9 +140,8 @@ theorem toBimodCompToLeftModIso_inv_app_hom (M : Mod C A) :
 
 /-- For the regular left module, the added right action is multiplication. -/
 def toBimodRegularIso :
-    letI := ModObj.regular A
-    toBimod.obj (Mod.mk (A := A) A) ≅ Bimod.regular (Mon.mk A) := by
-  letI := ModObj.regular A
+    toBimod.obj (Mod.regular A) ≅ Bimod.regular (Mon.mk A) := by
+  dsimp [Mod.regular]
   exact Bimod.isoOfIso (Iso.refl A) (by
     dsimp [toBimod, Bimod.regular]
     simp) (by
@@ -153,11 +150,11 @@ def toBimodRegularIso :
 
 @[simp]
 theorem toBimodRegularIso_hom_hom :
-    toBimodRegularIso.hom.hom = 𝟙 A := (rfl)
+    toBimodRegularIso.hom.hom = eqToHom (Mod.regular_X A) := (rfl)
 
 @[simp]
 theorem toBimodRegularIso_inv_hom :
-    toBimodRegularIso.inv.hom = 𝟙 A := (rfl)
+    toBimodRegularIso.inv.hom = eqToHom (Mod.regular_X A).symm := (rfl)
 
 end Mod
 
@@ -168,27 +165,22 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
 /-- A bimodule whose right action is induced from its left action is recovered
 from that left module. Both comparison maps are the identity on the carrier. -/
-def toBimodToLeftModIso (M : Bimod (Mon.mk A) (Mon.mk A))
+def toLeftModToBimodIsoOfActRightEq (M : Bimod (Mon.mk A) (Mon.mk A))
     (h : M.actRight = (β_ A M.X).inv ≫ M.actLeft) :
     Mod.toBimod.obj ((toLeftMod (Mon.mk A) (Mon.mk A)).obj M) ≅ M :=
   Bimod.isoOfIso (Iso.refl M.X) (by
-    rw [Iso.refl_hom, Category.comp_id, whiskerLeft_id, Category.id_comp,
-      Mod.toBimod_obj_actLeft]
-    exact toLeftMod_smul (Mon.mk A) (Mon.mk A) M) (by
-    rw [Iso.refl_hom, Category.comp_id, id_whiskerRight, Category.id_comp,
-      Mod.toBimod_obj_actRight]
-    exact (congrArg ((β_ A M.X).inv ≫ ·)
-      (toLeftMod_smul (Mon.mk A) (Mon.mk A) M)).trans h.symm)
+    simpa using toLeftMod_smul (Mon.mk A) (Mon.mk A) M) (by
+    simpa [h] using toLeftMod_smul (Mon.mk A) (Mon.mk A) M)
 
 @[simp]
-theorem toBimodToLeftModIso_hom_hom (M : Bimod (Mon.mk A) (Mon.mk A))
+theorem toLeftModToBimodIsoOfActRightEq_hom_hom (M : Bimod (Mon.mk A) (Mon.mk A))
     (h : M.actRight = (β_ A M.X).inv ≫ M.actLeft) :
-    (toBimodToLeftModIso M h).hom.hom = 𝟙 M.X := (rfl)
+    (toLeftModToBimodIsoOfActRightEq M h).hom.hom = 𝟙 M.X := (rfl)
 
 @[simp]
-theorem toBimodToLeftModIso_inv_hom (M : Bimod (Mon.mk A) (Mon.mk A))
+theorem toLeftModToBimodIsoOfActRightEq_inv_hom (M : Bimod (Mon.mk A) (Mon.mk A))
     (h : M.actRight = (β_ A M.X).inv ≫ M.actLeft) :
-    (toBimodToLeftModIso M h).inv.hom = 𝟙 M.X := (rfl)
+    (toLeftModToBimodIsoOfActRightEq M h).inv.hom = 𝟙 M.X := (rfl)
 
 end Bimod
 
