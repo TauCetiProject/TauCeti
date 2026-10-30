@@ -358,13 +358,13 @@ variable [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M �
 def selfDualPart : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ k :=
   haveI : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   (RoughForm.selfDualPart o).restrict fun α hα ↦
-    ((SmoothForm.isSmoothForm ⟨α, hα⟩).selfDualPart o).mem_smoothForms
+    ((SmoothForm.isSmoothForm ⟨α, hα⟩).selfDualPart o).mem_smoothBundleForms
 
 /-- The anti-self-dual part `α⁻ = (α - ⋆α) / 2` of a smooth middle-degree form. -/
 def antiSelfDualPart : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ k :=
   haveI : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   (RoughForm.antiSelfDualPart o).restrict fun α hα ↦
-    ((SmoothForm.isSmoothForm ⟨α, hα⟩).antiSelfDualPart o).mem_smoothForms
+    ((SmoothForm.isSmoothForm ⟨α, hα⟩).antiSelfDualPart o).mem_smoothBundleForms
 
 /-- The self-dual part of a smooth form is that of the underlying rough form. -/
 @[simp]
