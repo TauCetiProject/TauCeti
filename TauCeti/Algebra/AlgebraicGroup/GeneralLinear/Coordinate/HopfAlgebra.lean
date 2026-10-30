@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.Bialgebra
+public import TauCeti.Algebra.AlgebraicGroup.MatrixMonoid.Bialgebra
 public import TauCeti.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!

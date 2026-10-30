@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.Bialgebra
+public import TauCeti.Algebra.AlgebraicGroup.MatrixMonoid.Bialgebra
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Structure
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 import TauCeti.LinearAlgebra.TensorProduct.Submodule
