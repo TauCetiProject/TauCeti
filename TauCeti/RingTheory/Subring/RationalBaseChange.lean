@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
 # Extending the scalars of a subring of a rational algebra
@@ -25,9 +26,10 @@ Consequently it is an isomorphism exactly when that span is everything, which is
 Injectivity holds with no hypothesis on `R` and is the reason the file exists: every element of
 `ℚ ⊗[ℤ] M`, for any additive group `M`, has a common denominator, so it is a single elementary
 tensor `(n : ℚ)⁻¹ ⊗ₜ m` rather than a sum of them. That normal form,
-`TensorProduct.exists_eq_inv_natCast_tmul`, is proved first and is purely module-theoretic. It
-also turns the spanning hypothesis into the concrete statement `Subring.exists_natCast_smul_mem`,
-that every element of `A` is carried into `R` by some nonzero natural number.
+`TensorProduct.exists_eq_inv_natCast_tmul`, is purely module-theoretic and lives in
+`TauCeti.RingTheory.Localization.TensorProduct`. It also turns the spanning hypothesis into the
+concrete statement `Subring.exists_natCast_smul_mem`, that every element of `A` is carried into `R`
+by some nonzero natural number.
 
 ## Main definitions
 
@@ -36,7 +38,6 @@ that every element of `A` is carried into `R` by some nonzero natural number.
 
 ## Main results
 
-* `TensorProduct.exists_eq_inv_natCast_tmul`: an element of `ℚ ⊗[ℤ] M` has a common denominator.
 * `Subring.ratBaseChange_injective`: the comparison map is injective.
 * `Subring.range_ratBaseChange`: its range is the `ℚ`-span of `R`.
 * `Subring.span_eq_top_iff_exists_natCast_smul_mem`: a subring spans exactly when denominators can
@@ -46,29 +47,6 @@ that every element of `A` is carried into `R` by some nonzero natural number.
 public section
 
 open scoped TensorProduct
-
-namespace TensorProduct
-
-/-! ## A common denominator in `ℚ ⊗[ℤ] M` -/
-
-variable {M : Type*} [AddCommGroup M]
-
-/-- Every element of `ℚ ⊗[ℤ] M` is a single elementary tensor with a natural-number denominator:
-the rational coefficients of a finite sum can be put over a common denominator, and the numerators
-absorbed into the right-hand factor. -/
-theorem exists_eq_inv_natCast_tmul (z : ℚ ⊗[ℤ] M) :
-    ∃ n : ℕ, ∃ m : M, n ≠ 0 ∧ z = (n : ℚ)⁻¹ ⊗ₜ[ℤ] m := by
-  -- `ℚ ⊗[ℤ] M` is the localization of `M` at the positive integers, so `z` is a fraction `m / s`
-  -- with `0 < s`; such an `s` is a natural number.
-  have := IsLocalization.tensorProduct_isLocalizedModule (M := M) (Submonoid.pos ℤ) ℚ
-  obtain ⟨⟨m, s, hs : 0 < s⟩, rfl⟩ :=
-    IsLocalizedModule.mk'_surjective (Submonoid.pos ℤ) (mk ℤ ℚ M 1) z
-  lift s to ℕ using hs.le
-  have hs' : (s : ℚ) ≠ 0 := by norm_cast; omega
-  refine ⟨s, m, by omega, IsLocalizedModule.mk'_eq_iff.mpr ?_⟩
-  simp [Submonoid.smul_def, smul_tmul', hs']
-
-end TensorProduct
 
 namespace Subring
 
