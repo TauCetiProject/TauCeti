@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
+public import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.KnotTheory.SmoothCircle
 
@@ -241,23 +242,16 @@ theorem genus_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
 
 /-! ### Reversal and ambient transport -/
 
-/-- The reflection `t ↦ 1 - t` of the real line, which exchanges the two ends `0` and `1` of the
-slab. -/
-private def reflectHeight : ℝ ≃ₘ^∞⟮𝓘(ℝ), 𝓘(ℝ)⟯ ℝ where
-  toFun t := 1 - t
-  invFun t := 1 - t
-  left_inv t := sub_sub_cancel 1 t
-  right_inv t := sub_sub_cancel 1 t
-  contMDiff_toFun := (contDiff_const.sub contDiff_id).contMDiff
-  contMDiff_invFun := (contDiff_const.sub contDiff_id).contMDiff
-
 /-- The **reverse** of a knot cobordism from `K₀` to `K₁`: the same surface, with its heights
 reflected by `t ↦ 1 - t`, is a knot cobordism from `K₁` to `K₀`. -/
 def symm (S : KnotCobordism K₀ K₁) : KnotCobordism K₁ K₀ where
   carrier := S.carrier
   toFun x := ((S.toFun x).1, 1 - (S.toFun x).2)
-  isSmoothEmbedding := isSmoothEmbedding_diffeomorph_comp S.isSmoothEmbedding
-    ((Diffeomorph.refl (𝓡 n) (sphere (0 : E) 1) ∞).prodCongr reflectHeight)
+  isSmoothEmbedding := by
+    convert isSmoothEmbedding_diffeomorph_comp S.isSmoothEmbedding
+      ((Diffeomorph.refl (𝓡 n) (sphere (0 : E) 1) ∞).prodCongr (Diffeomorph.subLeft ℝ ∞ 1))
+      using 1
+    ext x <;> simp [Diffeomorph.coe_prodCongr]
   isCompact_preimage_Icc := by
     have h : {x | ((S.toFun x).1, 1 - (S.toFun x).2).2 ∈ Icc (0 : ℝ) 1} =
         {x | (S.toFun x).2 ∈ Icc (0 : ℝ) 1} := by
