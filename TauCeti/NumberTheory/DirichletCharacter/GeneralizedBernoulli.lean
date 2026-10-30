@@ -181,6 +181,7 @@ theorem natCast_mul_generalizedBernoulli_one_of_ne_one [IsDomain R] [NeZero N]
 
 /-- The generalized Bernoulli number `Bₖ,χ` vanishes when `k ≠ 1` and
 `χ (-1) = -(-1) ^ k`. -/
+@[simp]
 theorem generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg [NeZero N]
     {χ : DirichletCharacter R N} {k : ℕ} (hk : k ≠ 1) (hχ : χ (-1) = -(-1) ^ k) :
     χ.generalizedBernoulli k = 0 := by
