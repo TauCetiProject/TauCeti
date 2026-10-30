@@ -45,7 +45,8 @@ prescribed multiplicities it takes the form
 
 ## Main results
 
-* `PowerSeries.IsRestricted.evalAt_eq_zero_iff`: the factor theorem for restricted series.
+* `PowerSeries.IsRestricted.evalAt_eq_zero_iff`: the factor theorem for restricted series, over
+  any complete ultrametric normed commutative ring.
 * `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_prod`: the Schwarz lemma for a multiset
   of zeros.
 * `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_prod_pow`: the Schwarz lemma for distinct
@@ -63,17 +64,17 @@ open TauCeti.PowerSeries
 
 namespace PowerSeries
 
-section Field
+section CommRing
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {c : ℝ}
-  {f q : PowerSeries K}
+variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+  {c : ℝ} {f : PowerSeries R}
 
-/-- **Factor theorem for restricted series.** A series restricted at a radius `c > 0` vanishes at
-a point `a` of the closed disc of radius `c` exactly when it is `X - a` times a series restricted
-at `c`. -/
-theorem IsRestricted.evalAt_eq_zero_iff (hf : f.IsRestricted c) (hc : 0 < c) {a : K}
+/-- **Factor theorem for restricted series.** Over a complete ultrametric normed commutative ring,
+a series restricted at a radius `c > 0` vanishes at a point `a` of the closed disc of radius `c`
+exactly when it is `X - a` times a series restricted at `c`. -/
+theorem IsRestricted.evalAt_eq_zero_iff (hf : f.IsRestricted c) (hc : 0 < c) {a : R}
     (ha : ‖a‖ ≤ c) :
-    f.evalAt a = 0 ↔ ∃ q : PowerSeries K, q.IsRestricted c ∧ f = (X - C a) * q := by
+    f.evalAt a = 0 ↔ ∃ q : PowerSeries R, q.IsRestricted c ∧ f = (X - C a) * q := by
   have hX := isRestricted_X_sub_C (c := c) a
   refine ⟨fun h0 ↦ ?_, ?_⟩
   · obtain ⟨q, r, hq, hr, hqr⟩ := (isMulDistinguished_X_sub_C hc ha).exists_mul_add_eq hc hX hf
@@ -92,6 +93,13 @@ theorem IsRestricted.evalAt_eq_zero_iff (hf : f.IsRestricted c) (hc : 0 < c) {a 
   · rintro ⟨q, hq, rfl⟩
     rw [hX.evalAt_mul hq ha, evalAt_X_sub_C]
     simp
+
+end CommRing
+
+section Field
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {c : ℝ}
+  {f q : PowerSeries K}
 
 /-- Splitting off a zero `a` keeps the vanishing conditions at the other points: if `f = (X - a) q`
 and the Hasse derivatives of `f` of order less than the multiplicity of each point in `a ::ₘ Z`
