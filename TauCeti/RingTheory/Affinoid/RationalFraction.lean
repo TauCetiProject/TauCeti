@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.Restricted
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 
+import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.LocalizationTopology.Quotient
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.Topology.Algebra.Ring.Ideal
@@ -32,6 +34,12 @@ which `φ g` is a unit and every `φ fᵢ / φ g` is power-bounded. No continuit
 algebra maps between affinoid algebras are automatically continuous; the extension is continuous
 for the quotient topology of `A⟨f/g⟩`.
 
+Under the same hypothesis `A⟨f/g⟩` is the Huber rational localisation `A⟨T/g⟩` for the numerators
+`T = {g, f₁, …, fₘ}`, the completion of `A[1/g]` for its Huber topology: the two are isomorphic as
+topological rings, compatibly with the structure maps from `A` and the ratios `fᵢ/g`. In
+particular the image of `A[1/g]` is dense in `A⟨f/g⟩`. This is the comparison through which
+results on adic rational localisations apply to rational fraction algebras.
+
 Without the unit-ideal hypothesis the denominator need not become invertible: for `g = 0` and
 `f = 0` the ideal is zero, and `A⟨0/0⟩ = A⟨X⟩`
 (`TauCeti.RationalFraction.not_isUnit_algebraMap_zero`).
@@ -44,6 +52,8 @@ Weierstrass fractions `A⟨f⟩` are the case `g = 1`.
 * `TauCeti.RationalFraction.ratio g f i`: the class of `Xᵢ`, written `fᵢ/g`.
 * `TauCeti.RationalFraction.lift`: the `K`-algebra map `A⟨f/g⟩ → B` extending `φ : A → B` and
   sending `fᵢ/g` to a power-bounded `bᵢ` with `φ g * bᵢ = φ fᵢ`.
+* `TauCeti.RationalFraction.completionLocEquiv`: the isomorphism `A⟨f/g⟩ ≃ A⟨T/g⟩` with the Huber
+  rational localisation.
 
 ## Main results
 
@@ -55,18 +65,24 @@ Weierstrass fractions `A⟨f⟩` are the case `g = 1`.
 * `TauCeti.RationalFraction.continuous_lift`: the extension is continuous.
 * `TauCeti.RationalFraction.algHom_ext`: maps out of `A⟨f/g⟩` are determined on `A`.
 * `TauCeti.RationalFraction.existsUnique_algHom`: the universal property.
+* `TauCeti.RationalFraction.continuous_completionLocEquiv` and
+  `TauCeti.RationalFraction.continuous_completionLocEquiv_symm`: the comparison with the Huber
+  rational localisation is a homeomorphism.
+* `TauCeti.RationalFraction.denseRange_awayLift`: `A[1/g]` is dense in `A⟨f/g⟩`.
 
 ## References
 
 * [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§6.1.4 and
   7.2.2.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition and Definition 5.51 and Example 6.38.
 -/
 
 public section
 
 namespace TauCeti
 
-open _root_.MvPowerSeries TauCeti.MvPowerSeries TauCeti.Huber
+open _root_.MvPowerSeries TauCeti.MvPowerSeries TauCeti.Huber TauCeti.Huber.PairOfDefinition
+  TauCeti.Localization
 
 variable {A : Type*} [NormedCommRing A] [IsUltrametricDist A] {m : ℕ}
 
@@ -121,6 +137,17 @@ private theorem huberEquiv_weightedX (i : Fin m) :
     huberEquiv g f (Ideal.Quotient.mk _ (weightedX _ isWeightFamily_one_weight i)) =
       ratio g f i :=
   congrArg (Ideal.Quotient.mk _) (restrictedMvPowerSeriesGaussEquiv_weightedX i)
+
+-- The Huber presentation of `A⟨f/g⟩` is a homeomorphism. Both quotients carry the coinduced
+-- topology, and composed with the quotient map each direction is by definition the quotient map
+-- composed with the Gauss comparison, which is continuous in both directions.
+private theorem continuous_huberEquiv : Continuous (huberEquiv g f) :=
+  continuous_coinduced_dom.mpr <|
+    continuous_quot_mk.comp continuous_restrictedMvPowerSeriesGaussEquiv
+
+private theorem continuous_huberEquiv_symm : Continuous (huberEquiv g f).symm :=
+  continuous_coinduced_dom.mpr <|
+    continuous_quot_mk.comp continuous_restrictedMvPowerSeriesGaussEquiv_symm
 
 /-- **`g · (fᵢ/g) = fᵢ`** in the rational fraction algebra. -/
 @[simp]
@@ -254,6 +281,140 @@ theorem existsUnique_algHom (h : Ideal.span (insert g (Set.range f)) = ⊤) (φ 
       rw [mul_comm, mul_assoc, Ring.inverse_mul_cancel _ hg, mul_one]
     exact ⟨lift hA hB φ hb hφ, lift_algebraMap hA hB φ hb hφ, fun ψ hψ ↦
       algHom_ext hA hB h fun a ↦ by rw [hψ, lift_algebraMap]⟩
+
+/-! ### Comparison with the Huber rational localisation -/
+
+section HuberLocalization
+
+variable (P : PairOfDefinition A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away g S]
+  (hden : P.HasDenominatorPower (insert g (Set.range f)) g S)
+  (h : Ideal.span (insert g (Set.range f)) = ⊤)
+
+include hA in
+-- Every ideal of the noetherian Banach algebra `A⟨X₁, …, Xₘ⟩` is closed, and the Gauss comparison
+-- carries the Huber relation ideal onto `rationalIdeal g f`.
+private theorem isClosed_rationalRelationIdeal :
+    IsClosed (rationalRelationIdeal f g : Set (weightedRestrictedSubring
+      (fun _ : Fin m ↦ ({1} : Set A)) isWeightFamily_one_weight)) := by
+  have := (hA.isRestricted_subring (τ := Fin m)).isNoetherianRing
+  have := IsTateRing.of_normedAlgebra K (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1))
+  have hJ : rationalRelationIdeal f g =
+      (rationalIdeal g f).comap restrictedMvPowerSeriesGaussEquiv := by
+    rw [rationalIdeal, Ideal.comap_map_of_bijective _ restrictedMvPowerSeriesGaussEquiv.bijective]
+  rw [hJ, Ideal.coe_comap]
+  exact (isClosed_of_isNoetherian (rationalIdeal g f)).preimage
+    continuous_restrictedMvPowerSeriesGaussEquiv
+
+include hA h in
+/-- **`A⟨f/g⟩` is the Huber rational localisation `A⟨T/g⟩`** for the numerators
+`T = {g, f₁, …, fₘ}` ([Wedhorn, *Adic Spaces*][wedhorn_adic], Example 6.38): when `g, f₁, …, fₘ`
+generate the unit ideal of the affinoid algebra `A`, the rational fraction algebra is isomorphic to
+the completion of the localisation `S = A[1/g]` for its Huber topology. The isomorphism is the
+structure map on `A` (`completionLocEquiv_algebraMap`), sends `fᵢ/g` to the fraction `fᵢ/g` of `S`
+(`completionLocEquiv_ratio`), and is a homeomorphism (`continuous_completionLocEquiv` and
+`continuous_completionLocEquiv_symm`).
+
+The standing hypothesis `hden` of the Huber construction always holds here, by
+`TauCeti.Huber.PairOfDefinition.hasDenominatorPower_of_isOpen_span`, because the numerators span
+the unit ideal; it is an argument because the topology of `A[1/g]` is stated in terms of it. -/
+noncomputable def completionLocEquiv :
+    letI := locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+    RationalFraction g f ≃+* UniformSpace.Completion S :=
+  letI := locUniformSpace P (insert g (Set.range f)) g S hden
+  letI := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+  letI := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+  have := IsTateRing.of_normedAlgebra K A
+  (huberEquiv g f).symm.trans <| rationalQuotientRingEquiv P _ g S hden f
+    (fun i ↦ Set.mem_insert_of_mem _ ⟨i, rfl⟩) (fun _ ↦ Set.mem_insert_iff.mp)
+    (by rwa [Set.insert_idem]) (isClosed_rationalRelationIdeal hA)
+
+/-- `completionLocEquiv` is the structure map on `A`. -/
+@[simp]
+theorem completionLocEquiv_algebraMap (a : A) :
+    letI := locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+    completionLocEquiv hA P S hden h (algebraMap A _ a) =
+      toCompletionLoc P (insert g (Set.range f)) g S hden a := by
+  have := IsTateRing.of_normedAlgebra K A
+  rw [completionLocEquiv, RingEquiv.trans_apply, ← huberEquiv_weightedC,
+    RingEquiv.symm_apply_apply, rationalQuotientRingEquiv_quotientMk_weightedC]
+
+/-- `completionLocEquiv` sends the ratio `fᵢ/g` of `A⟨f/g⟩` to the fraction `fᵢ/g` of `A[1/g]`. -/
+@[simp]
+theorem completionLocEquiv_ratio (i : Fin m) :
+    letI := locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+    completionLocEquiv hA P S hden h (ratio g f i) =
+      ((divBy (f i) g : S) : UniformSpace.Completion S) := by
+  have := IsTateRing.of_normedAlgebra K A
+  rw [completionLocEquiv, RingEquiv.trans_apply, ← huberEquiv_weightedX,
+    RingEquiv.symm_apply_apply, rationalQuotientRingEquiv_quotientMk_weightedX]
+
+/-- `completionLocEquiv` is continuous. -/
+theorem continuous_completionLocEquiv :
+    letI := locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+    Continuous (completionLocEquiv hA P S hden h) :=
+  have := IsTateRing.of_normedAlgebra K A
+  (continuous_rationalQuotientRingEquiv ..).comp continuous_huberEquiv_symm
+
+/-- The inverse of `completionLocEquiv` is continuous. -/
+theorem continuous_completionLocEquiv_symm :
+    letI := locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+    Continuous (completionLocEquiv hA P S hden h).symm :=
+  have := IsTateRing.of_normedAlgebra K A
+  continuous_huberEquiv.comp (continuous_rationalQuotientRingEquiv_symm ..)
+
+/-- On `A[1/g]`, `completionLocEquiv` inverts the map `A[1/g] → A⟨f/g⟩` induced by the unit `g`:
+it sends the image of `x` to the image of `x` in the completion. -/
+@[simp]
+theorem completionLocEquiv_awayLift (x : S) :
+    letI := locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+    completionLocEquiv hA P S hden h (IsLocalization.Away.lift g (isUnit_algebraMap h) x) =
+      (x : UniformSpace.Completion S) := by
+  let _ := locUniformSpace P (insert g (Set.range f)) g S hden
+  have _ := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+  have _ := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+  -- both sides are ring maps out of `S` agreeing on `A`
+  have hext : (completionLocEquiv hA P S hden h).toRingHom.comp
+      (IsLocalization.Away.lift g (isUnit_algebraMap h) : S →+* RationalFraction g f) =
+        (UniformSpace.Completion.coeRingHom : S →+* UniformSpace.Completion S) :=
+    IsLocalization.ringHom_ext (Submonoid.powers g) <| RingHom.ext fun a ↦ by simp
+  exact DFunLike.congr_fun hext x
+
+end HuberLocalization
+
+include hA in
+/-- **`A[1/g]` is dense in `A⟨f/g⟩`.** When `g, f₁, …, fₘ` generate the unit ideal of the affinoid
+algebra `A`, the map from a localisation `S = A[1/g]` to `A⟨f/g⟩` induced by the unit `g` has dense
+range. -/
+theorem denseRange_awayLift (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away g S]
+    (h : Ideal.span (insert g (Set.range f)) = ⊤) :
+    DenseRange (IsLocalization.Away.lift g (isUnit_algebraMap h) : S → RationalFraction g f) := by
+  have := IsTateRing.of_normedAlgebra K A
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+  have hden := hasDenominatorPower_of_isOpen_span P (insert g (Set.range f)) g S
+    (by simp [h])
+  let _ := locUniformSpace P (insert g (Set.range f)) g S hden
+  have _ := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+  have _ := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+  -- the map is the completion map followed by the homeomorphism `completionLocEquiv` inverted
+  have hlift : (IsLocalization.Away.lift g (isUnit_algebraMap h) : S → RationalFraction g f) =
+      (completionLocEquiv hA P S hden h).symm ∘ ((↑) : S → UniformSpace.Completion S) := by
+    funext x
+    rw [Function.comp_apply, RingEquiv.eq_symm_apply, completionLocEquiv_awayLift]
+  rw [hlift]
+  exact (completionLocEquiv hA P S hden h).symm.surjective.denseRange.comp
+    UniformSpace.Completion.denseRange_coe (continuous_completionLocEquiv_symm hA P S hden h)
 
 end Affinoid
 
