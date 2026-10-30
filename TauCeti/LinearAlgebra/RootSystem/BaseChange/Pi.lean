@@ -24,7 +24,10 @@ same reflection permutation.
 Only the target pairing is chosen here: it is again the dot product, which is perfect on `κ → S` for
 every commutative ring `S` by `TauCeti.dotProductBilin_isPerfPair`. So the construction asks the
 source pairing to be the dot product too, and every axiom of `RootPairing` then transports along
-`Pi.algebraMap`, entrywise application of `algebraMap R S`.
+`Pi.algebraMap`, entrywise application of `algebraMap R S`. The extension of scalars of an
+arbitrary root pairing, on `S ⊗[R] M` and `S ⊗[R] N`, is `RootPairing.baseChange` in
+`TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic`; this file instead stays in the coordinates
+`κ → S`, so that no tensor product appears.
 
 The properties a downstream Lie-theoretic consumer needs are transported separately, each under its
 own hypotheses: being crystallographic, being reduced, spanning, carrying a base with a prescribed
