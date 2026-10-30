@@ -269,10 +269,9 @@ differentiable at any `t > 0`, with derivative the `(k+1)`-th iterated derivativ
 lemma hasDerivAt_iteratedDerivWithin_succ
     (hcm : IsCompletelyMonotone f) (k : ℕ) {t : ℝ} (ht : 0 < t) :
     HasDerivAt (iteratedDerivWithin k f (Ici 0))
-      (iteratedDerivWithin (k + 1) f (Ici 0) t) t := by
-  have horder : ((k + 1 : ℕ) : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
-  exact ContDiffOn.hasDerivAt_iteratedDerivWithin (k := k)
-    (hcm.contDiffOn.of_le horder) (uniqueDiffOn_Ici 0) (Ici_mem_nhds ht)
+      (iteratedDerivWithin (k + 1) f (Ici 0) t) t :=
+  hcm.contDiffOn.hasDerivAt_iteratedDerivWithin (mod_cast ENat.natCast_lt_top k)
+    (uniqueDiffOn_Ici 0) (Ici_mem_nhds ht)
 
 /-- Completely monotone functions are closed under addition. -/
 lemma add (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :

@@ -370,7 +370,7 @@ theorem concordant_of_forall_inner_eq_cylinder [I.Boundaryless] [CompactSpace M]
   obtain ⟨c, hpsc, hc⟩ :=
     ((eventually_hasPositiveScalarCurvature_compTime_mul hG hpos h₀ h₁).filter_mono
       nhdsWithin_le_nhds |>.and self_mem_nhdsWithin).exists (f := 𝓝[>] (0 : ℝ))
-  refine concordant_of_inner_eq_cylinder_of_le (L := c⁻¹) hpsc (fun p hp ↦ ?_) fun p hp ↦ ?_
+  refine concordant_of_inner_eq_cylinder hpsc (a := 0) (b := c⁻¹) (fun p hp ↦ ?_) fun p hp ↦ ?_
   · exact compTime_mul_inner_of_eq hG (h₀ _ (mul_nonpos_of_nonneg_of_nonpos (le_of_lt hc) hp))
   · refine compTime_mul_inner_of_eq hG (h₁ _ ?_)
     calc 1 = c * c⁻¹ := (mul_inv_cancel₀ hc.ne').symm

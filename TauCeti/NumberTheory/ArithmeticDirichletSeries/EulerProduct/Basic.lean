@@ -45,6 +45,14 @@ no analytic convergence hypothesis enters.
 * `TauCeti.IdealArithmeticFunction.normCoeff_eq_eulerProduct`: the norm coefficients of a
   multiplicative ideal arithmetic function are Mathlib's formal Euler product of its canonical
   local factors.
+* `TauCeti.IdealArithmeticFunction.normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor`:
+  at a power `p ^ k` of a rational prime, the norm coefficient is read off from the finitely many
+  local factors at the primes above `p`;
+  `TauCeti.IdealArithmeticFunction.normCoeff_apply_prime_pow_eq_localArithmeticFactor` is the case
+  of a single prime above `p`.
+* `TauCeti.IdealArithmeticFunction.localArithmeticFactor_one_apply_pow` and
+  `TauCeti.IdealArithmeticFunction.localArithmeticFactor_one_mul_apply_pow`: the local factors of
+  the trivial function at one prime, and the convolution of those at two primes of norm `p`.
 
 ## Implementation notes
 
@@ -487,6 +495,60 @@ theorem normCoeff_eq_eulerProduct (hf : f.IsMultiplicative) :
     (tendsTo_eulerProduct_localArithmeticFactor f hf.map_one n)).exists
   rw [normCoeff_supportedPart hf S] at hcoeff
   exact hcoeff.symm.trans hprod
+
+/-- **The local Euler factor at a rational prime.** For a multiplicative ideal arithmetic function
+and a rational prime `p`, the norm coefficient at `p ^ k` is the coefficient at `p ^ k` of the
+product of the local factors over any finite set `S` of height-one primes containing every prime
+above `p`: an ideal of norm `p ^ k` has only prime factors above `p`. -/
+theorem normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor (hf : f.IsMultiplicative)
+    {p : ℕ} (hp : p.Prime) (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hS : ∀ P : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ P.asIdeal → P ∈ S) (k : ℕ) :
+    normCoeff K f (p ^ k) = (∏ P ∈ S, localArithmeticFactor f P) (p ^ k) := by
+  rw [← normCoeff_supportedPart hf, normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
+  refine Finset.sum_congr rfl fun A hA ↦ (supportedPart_apply_of_isPrimeTo_compl ?_).symm
+  refine Ideal.isPrimeTo_iff.mpr ⟨nonZeroDivisors.coe_ne_zero A, fun P hP hdvd ↦ hP (hS P ?_)⟩
+  -- `N(P)` divides `N(A) = p ^ k`, so it is a positive power of `p`, and `p ∈ P`.
+  obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow hp).mp
+    ((mem_normFiber K).mp hA ▸ map_dvd Ideal.absNorm hdvd)
+  have hj0 : j ≠ 0 := by
+    rintro rfl
+    exact P.isPrime.ne_top (Ideal.absNorm_eq_one_iff.mp (by simpa using hj))
+  have hmem := Ideal.absNorm_mem P.asIdeal
+  rw [hj, Nat.cast_pow] at hmem
+  exact P.isPrime.mem_of_pow_mem _ hmem
+
+/-- If `P` is the only height-one prime containing the rational prime `p`, the norm coefficient
+of a multiplicative ideal arithmetic function at `p ^ k` is the coefficient at `p ^ k` of the
+local factor at `P`. -/
+theorem normCoeff_apply_prime_pow_eq_localArithmeticFactor (hf : f.IsMultiplicative)
+    {p : ℕ} (hp : p.Prime) (P : HeightOneSpectrum (𝓞 K))
+    (hP : ∀ Q : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ Q.asIdeal → Q = P) (k : ℕ) :
+    normCoeff K f (p ^ k) = localArithmeticFactor f P (p ^ k) := by
+  rw [normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor hf hp {P}
+    (fun Q hQ ↦ Finset.mem_singleton.mpr (hP Q hQ)), Finset.prod_singleton]
+
+/-- At a prime of norm `q`, the local factor of the trivial function is `1` at every power of
+`q`. -/
+theorem localArithmeticFactor_one_apply_pow {P : HeightOneSpectrum (𝓞 K)} {q : ℕ}
+    (hP : Ideal.absNorm P.asIdeal = q) (k : ℕ) :
+    (1 : IdealArithmeticFunction K).localArithmeticFactor P (q ^ k) = 1 := by
+  rw [← hP, localArithmeticFactor_apply_pow, Pi.one_apply]
+
+/-- The local factors of the trivial function at two primes of norm `p` convolve to `k + 1` at
+`p ^ k`, the number of ways to write `p ^ k` as a product of two powers of `p`. -/
+theorem localArithmeticFactor_one_mul_apply_pow {p : ℕ} (hp : p.Prime)
+    {P Q : HeightOneSpectrum (𝓞 K)} (hP : Ideal.absNorm P.asIdeal = p)
+    (hQ : Ideal.absNorm Q.asIdeal = p) (k : ℕ) :
+    ((1 : IdealArithmeticFunction K).localArithmeticFactor P *
+      (1 : IdealArithmeticFunction K).localArithmeticFactor Q) (p ^ k) = k + 1 := by
+  rw [ArithmeticFunction.mul_apply, Nat.sum_divisorsAntidiagonal
+    (fun a b ↦ (1 : IdealArithmeticFunction K).localArithmeticFactor P a *
+      (1 : IdealArithmeticFunction K).localArithmeticFactor Q b),
+    Nat.sum_divisors_prime_pow hp]
+  rw [Finset.sum_congr rfl fun i hi ↦ by
+    rw [Nat.pow_div (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) hp.pos,
+      localArithmeticFactor_one_apply_pow hP, localArithmeticFactor_one_apply_pow hQ, one_mul]]
+  simp
 
 end IdealArithmeticFunction
 

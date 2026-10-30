@@ -15,7 +15,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 If `X ^ r ≤ C * X ^ (r - 1)` for a finite `X`, then `X ≤ C`: the factor `X ^ (r - 1)` cancels,
 since it is neither `0` nor `∞` unless `X = 0`, in which case the conclusion is trivial. This is
 the last step of every norming argument for `Lᵖ` norms, where `X` is a norm and `X ^ r` is its
-pairing with the extremal function.
+pairing with the extremal function. In the same way, `m ≤ K * m ^ p` for a finite `m` and an
+exponent `p < 1` gives `m ^ (1 - p) ≤ K`, which turns an estimate `μ(A) ≤ K μ(A) ^ (1/n)` into the
+isoperimetric form `μ(A) ^ (1 - 1/n) ≤ K`.
 
 For an exponent `p ∈ [0, 1]` the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`, with no
 finiteness or positivity hypothesis on `x`. This is the case `s = t` of geometric interpolations
@@ -46,6 +48,8 @@ closed intervals for a reciprocal radius parameter `α / r`.
 
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
+* `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
+  `m` and `p < 1`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
@@ -79,6 +83,16 @@ theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ 
   have hpow0 : X ^ (r - 1) ≠ 0 := by simp [rpow_eq_zero_iff, hX0, hX]
   rw [hXr, mul_comm C] at h
   exact (ENNReal.mul_le_mul_iff_right hpow0 (rpow_ne_top_of_ne_zero hX0 hX)).1 h
+
+/-- If `m ≤ K * m ^ p` for a finite `m` and an exponent `p < 1`, then `m ^ (1 - p) ≤ K`: the
+factor `m ^ p` cancels. -/
+theorem rpow_one_sub_le_of_le_mul_rpow {m K : ℝ≥0∞} {p : ℝ} (hp : p < 1) (hm : m ≠ ∞)
+    (h : m ≤ K * m ^ p) : m ^ (1 - p) ≤ K := by
+  rcases eq_or_ne m 0 with rfl | h0
+  · rw [zero_rpow_of_pos (sub_pos.2 hp)]
+    exact zero_le
+  rwa [rpow_sub _ _ h0 hm, rpow_one, ENNReal.div_le_iff
+    (rpow_pos (pos_iff_ne_zero.2 h0) hm).ne' (rpow_ne_top_of_ne_zero h0 hm)]
 
 /-- For `p ∈ [0, 1]`, the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`. -/
 theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :

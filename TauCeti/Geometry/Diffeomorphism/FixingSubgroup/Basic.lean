@@ -8,7 +8,7 @@ module
 import Mathlib.GroupTheory.GroupAction.SubMulAction.OfFixingSubgroup
 
 public import TauCeti.Geometry.Diffeomorphism.Action
-public import TauCeti.Algebra.GroupAction.FixingSubgroup
+public import TauCeti.GroupTheory.GroupAction.FixingSubgroup
 
 /-!
 # Diffeomorphisms fixing a subset pointwise

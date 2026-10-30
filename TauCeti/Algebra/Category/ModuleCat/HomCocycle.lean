@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.HomCocycle.Range
+public import TauCeti.Algebra.Module.HomCocycle.Presentation
 public import TauCeti.Algebra.Homology.Ext.Presentation
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
@@ -22,6 +23,8 @@ The comparison descends cocycles to `range f`, then applies
 `TauCeti.homCokernelEquivExt` to the short exact sequence
 `0 → range f → P₀ → P₀ / range f → 0`. This connects the cocycle form
 of the Auslander–Reiten pairing to the usual extension group.
+Precomposition by a square of presentations agrees with pullback along its
+induced cokernel map; postcomposition agrees with pushforward in the coefficients.
 
 ## References
 
@@ -104,6 +107,53 @@ theorem homCocycleQuotientEquivExt_naturality (f : P₁ →ₗ[A] P₀)
       simp only [rangeHomEquivCocycles_apply_val, comp_assoc]
     rw [hmap, homCocycleQuotientEquivExt_mk, homCocycleQuotientEquivExt_mk]
     simp
+
+section Presentation
+
+variable {Q₀ Q₁ : Type max u v w}
+  [AddCommGroup Q₀] [Module A Q₀] [Module.Projective A Q₀]
+  [AddCommGroup Q₁] [Module A Q₁]
+  {p : P₁ →ₗ[A] P₀} {q : Q₁ →ₗ[A] Q₀}
+
+/-- Precomposition by a presentation square computes pullback of extension classes
+along its induced cokernel map. -/
+theorem homCocycleQuotientEquivExt_precomp
+    (f₀ : P₀ →ₗ[A] Q₀) (f₁ : P₁ →ₗ[A] Q₁) (hf : f₀.comp p = q.comp f₁)
+    (g : (P₀ ⧸ range p) →ₗ[A] (Q₀ ⧸ range q))
+    (hg : g.comp (range p).mkQ = (range q).mkQ.comp f₀)
+    (N : ModuleCat.{max u v w} A) (x : HomCocycleQuotient (k := k) q N) :
+    homCocycleQuotientEquivExt (k := k) p N (homCocycleQuotientPrecomp f₀ f₁ hf x) =
+      (Ext.mk₀ (ModuleCat.ofHom g)).comp
+        (homCocycleQuotientEquivExt (k := k) q N x) (zero_add 1) := by
+  let r : range p →ₗ[A] range q := (f₀.comp (range p).subtype).codRestrict _ (by
+    rintro ⟨_, y, rfl⟩
+    exact ⟨f₁ y, (LinearMap.congr_fun hf y).symm⟩)
+  let φ : (range p).quotientShortComplex ⟶ (range q).quotientShortComplex :=
+    { τ₁ := ModuleCat.ofHom r
+      τ₂ := ModuleCat.ofHom f₀
+      τ₃ := ModuleCat.ofHom g
+      comm₁₂ := by ext; rfl
+      comm₂₃ := ModuleCat.hom_ext hg.symm }
+  have hclass := (range p).shortExact_quotientShortComplex.extClass_naturality
+    (range q).shortExact_quotientShortComplex φ
+  induction x using Submodule.Quotient.induction_on with
+  | _ a =>
+    obtain ⟨h, rfl⟩ := (rangeHomEquivCocycles (k := k) q).surjective a
+    have hmap : homCocycleQuotientPrecomp f₀ f₁ hf
+        (Submodule.Quotient.mk (rangeHomEquivCocycles (k := k) q h)) =
+        Submodule.Quotient.mk (rangeHomEquivCocycles (k := k) p (h.comp r)) := by
+      rw [homCocycleQuotientPrecomp_mk]
+      congr 1
+      apply Subtype.ext
+      ext y
+      simp only [rangeHomEquivCocycles_apply_val, comp_apply]
+      congr 1
+      exact Subtype.ext (LinearMap.congr_fun hf y).symm
+    rw [hmap, homCocycleQuotientEquivExt_mk, homCocycleQuotientEquivExt_mk]
+    simpa [φ] using congrArg
+      (fun α ↦ α.comp (Ext.mk₀ (ModuleCat.ofHom h)) (add_zero 1)) hclass
+
+end Presentation
 
 /-- The first extension group of a cokernel is finite-dimensional when its presenting
 source and the coefficient module are finite-dimensional. The presenting arrow need
