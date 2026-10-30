@@ -223,8 +223,7 @@ theorem transport_homotopic_fiberHomotopyEquiv (α : C(I, B)) :
   obtain ⟨K, hK₀, hK₁, hK⟩ := Λ.isHurewiczFibration.{u}.exists_homotopy_endpoints Γ
     (Λ.liftFamily f Γ hΓ) α' (Λ.apply_liftFamily f Γ hΓ) hα' fun y ↦ by
       rw [Λ.liftFamily_zero]
-      change (y : E) = (G (0, PathPullback.inclusion 0 y)).val.2
-      rw [hG₀, PathPullback.inclusion_val]
+      simp only [f, α', ContinuousMap.coe_mk, hG₀, PathPullback.inclusion_val]
   refine ContinuousMap.homotopic_of_fiber _ _ K
     (fun y ↦ (hK₀ y).trans (Λ.liftFamily_comp_snd_one f γ hΓ y y rfl)) (fun y ↦ ?_) hK
   rw [hK₁]
