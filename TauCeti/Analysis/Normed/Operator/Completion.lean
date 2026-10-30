@@ -13,7 +13,7 @@ public import Mathlib.Analysis.Normed.Module.Completion
 A bounded semilinear map `f : E →SL[σ₁₂] F` between seminormed spaces extends to the bounded
 map `f.completion` between the completions, and, when `F` is complete and Hausdorff, to the
 bounded map `f.fromCompletion` from the completion of `E` to `F`. Since `E` has dense image in
-its completion and the embedding preserves norms, neither extension changes the operator norm.
+its completion and the canonical map preserves norms, neither extension changes the operator norm.
 
 These are the continuous semilinear analogues of Mathlib's `NormedAddGroupHom.norm_completion`.
 They make extension to completions an isometric operation, as needed for the norm-preserving
