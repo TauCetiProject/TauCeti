@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic
 public import Mathlib.Data.Rat.Lemmas
 import Mathlib.Algebra.GCDMonoid.FinsetLemmas
 import Mathlib.Data.Int.NatAbs
-import TauCeti.NumberTheory.LegendreSymbol.SquareClass
+import TauCeti.Algebra.Prime.Basic
 
 /-!
 # Prime discriminants
@@ -195,12 +195,13 @@ theorem dvd_primeDiscriminant_iff_dvd_radicand (D : ℤ) (hq : q ≠ 2) :
     intro hdiv
     have hdiv_nat : q ∣ 2 := by exact_mod_cast hdiv
     exact hq ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp hdiv_nat)
+  have hqZ : Prime (q : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
   rcases eq_or_ne D (-4) with rfl | hneg4
-  · simpa [pow_two] using (TauCeti.dvd_mul_sq_iff (p := q) (a := (-1 : ℤ)) (u := 2) hq2)
+  · simpa [pow_two] using hqZ.dvd_mul_pow_iff (a := (-1 : ℤ)) (n := 2) hq2
   rcases eq_or_ne D 8 with rfl | h8
-  · simpa [pow_two] using (TauCeti.dvd_mul_sq_iff (p := q) (a := (2 : ℤ)) (u := 2) hq2)
+  · simpa [pow_two] using hqZ.dvd_mul_pow_iff (a := (2 : ℤ)) (n := 2) hq2
   rcases eq_or_ne D (-8) with rfl | hneg8
-  · simpa [pow_two] using (TauCeti.dvd_mul_sq_iff (p := q) (a := (-2 : ℤ)) (u := 2) hq2)
+  · simpa [pow_two] using hqZ.dvd_mul_pow_iff (a := (-2 : ℤ)) (n := 2) hq2
   · simp [primeDiscriminantRadicand, hneg4, h8, hneg8]
 
 /-- Away from `2`, an indexed family of integers and its associated prime-discriminant

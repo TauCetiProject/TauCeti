@@ -61,7 +61,7 @@ private theorem standardDz_apply (u : Fin 1 → ℝ × ℝ × ℝ) : standardDz 
 private def standardNegXDy : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1 :=
   ⟨fun p ↦ (-p.1) • (SmoothForm.const standardDy).1 p,
     ((SmoothForm.const standardDy).isSmoothForm.fun_smul
-      contDiff_fst.neg.contMDiff).mem_smoothForms⟩
+      contDiff_fst.neg.contMDiff).mem_smoothBundleForms⟩
 
 private theorem standardNegXDy_toRoughForm :
     standardNegXDy.1 = fun p ↦ (-p.1) • (SmoothForm.const standardDy).1 p :=

@@ -37,6 +37,8 @@ characteristic polynomial, not on the basis or on the eigenvector choice, and it
 
 * `Matrix.spectralMeasure_eq_of_charpoly_eq` — Hermitian matrices with the same characteristic
   polynomial have the same spectral measure;
+* `Matrix.spectralMeasure_units_conj`, `Matrix.eigenvalueMeasure_units_conj` — both measures are
+  invariant under conjugation by an invertible matrix;
 * `Matrix.eigenvalueMeasure_apply` — the eigenvalue measure of a set is the proportion of
   characteristic roots in it, counted with algebraic multiplicity;
 * `Matrix.map_spectralMeasure_ofReal` — for a complex Hermitian matrix, the eigenvalue measure is
@@ -104,6 +106,20 @@ theorem spectralMeasure_eq_of_charpoly_eq {A B : Matrix n n 𝕜} (hA : A.IsHerm
     A.spectralMeasure hA = B.spectralMeasure hB := by
   rw [spectralMeasure_def, spectralMeasure_def, (hA.eigenvalues_eq_eigenvalues_iff hB).2 h]
 
+/-- Conjugating a Hermitian matrix by an invertible matrix does not change its spectral measure,
+provided the conjugate is again Hermitian. -/
+@[simp]
+theorem spectralMeasure_units_conj {A : Matrix n n 𝕜} (hA : A.IsHermitian) (M : (Matrix n n 𝕜)ˣ)
+    (hMA : (M.val * A * M.val⁻¹).IsHermitian) :
+    (M.val * A * M.val⁻¹).spectralMeasure hMA = A.spectralMeasure hA :=
+  spectralMeasure_eq_of_charpoly_eq hMA hA (charpoly_units_conj M A)
+
+/-- The Lebesgue integral against the spectral measure is the average over the eigenvalues. -/
+theorem lintegral_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (f : ℝ → ℝ≥0∞) :
+    ∫⁻ x, f x ∂(A.spectralMeasure hA : Measure ℝ) =
+      ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, f (hA.eigenvalues i) := by
+  simp [spectralMeasure_def, lintegral_finsetSum_measure, lintegral_dirac, Finset.mul_sum]
+
 /-- The empirical measure `(card n)⁻¹ ∑ δ_z` of a complex square matrix of positive size, the
 sum running over the roots `z` of its characteristic polynomial with algebraic multiplicity. -/
 def eigenvalueMeasure (A : Matrix n n ℂ) : ProbabilityMeasure ℂ :=
@@ -148,6 +164,14 @@ theorem integral_eigenvalueMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpa
     integral_empiricalFiniteMeasure_of_measurableSingletonClass, Finset.sum_eq_multiset_sum,
     Multiset.map_univ, Multiset.card_coe, IsAlgClosed.card_roots_eq_natDegree,
     charpoly_natDegree_eq_dim]
+
+/-- Conjugating a complex square matrix by an invertible matrix does not change its eigenvalue
+measure. -/
+@[simp]
+theorem eigenvalueMeasure_units_conj (M : (Matrix n n ℂ)ˣ) (A : Matrix n n ℂ) :
+    (M.val * A * M.val⁻¹).eigenvalueMeasure = A.eigenvalueMeasure := by
+  apply ProbabilityMeasure.toMeasure_injective
+  rw [eigenvalueMeasure_toMeasure, eigenvalueMeasure_toMeasure, charpoly_units_conj]
 
 /-- For a complex Hermitian matrix, the eigenvalue measure is the pushforward of the spectral
 measure along `ℝ → ℂ`. -/

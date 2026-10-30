@@ -8,13 +8,16 @@ module
 public import Mathlib.Topology.Algebra.Module.Complement
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
+import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
-# Transport of complemented submodules
+# Complemented submodules and continuous linear sections
 
 Topological complementedness is preserved by continuous semilinear equivalences, allowing
 continuous projections to be transported between different presentations of a module. It is also
 preserved by restriction of scalars.
+A continuous linear quotient map with continuously complemented kernel admits a continuous
+linear section, obtained by descending the complementary projection through the quotient.
 -/
 
 public section
@@ -70,3 +73,41 @@ theorem ClosedComplemented.restrictScalars {p : Submodule A M} (hp : p.ClosedCom
 end RestrictScalars
 
 end Submodule
+
+namespace ContinuousLinearMap
+
+open Topology
+
+variable {R E F : Type*} [Ring R] [AddCommGroup E] [Module R E]
+  [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [AddCommGroup F] [Module R F] [TopologicalSpace F]
+
+/-- A continuous linear quotient map with continuously complemented kernel admits
+a continuous linear right inverse. -/
+theorem exists_rightInverse_of_isQuotientMap_of_closedComplemented_ker
+    (f : E →L[R] F) (hf : IsQuotientMap f) (h : f.ker.ClosedComplemented) :
+    ∃ s : F →L[R] E, Function.RightInverse s f := by
+  obtain ⟨r, hr⟩ := h
+  let P : E →L[R] E := f.ker.subtypeL.comp r
+  have hP (x : E) (hx : x ∈ f.ker) : P x = x := by
+    simpa [P] using congrArg Subtype.val (hr ⟨x, hx⟩)
+  have hfP (x : E) : f (P x) = 0 := by
+    simp only [P, comp_apply, Submodule.subtypeL_apply]
+    exact LinearMap.mem_ker.mp (r x).property
+  have hker : f.ker ≤ (LinearMap.id - P.toLinearMap).ker := by
+    intro x hx
+    apply LinearMap.mem_ker.mpr
+    simp [hP x hx]
+  let s : F →ₗ[R] E := f.toLinearMap.liftOfSurjective hf.surjective
+    ⟨LinearMap.id - P.toLinearMap, hker⟩
+  have hs (x : E) : s (f x) = x - P x := by
+    simpa only [s, LinearMap.sub_apply, LinearMap.id_apply, coe_coe] using
+      (LinearMap.equivOfSurjective_apply (f := f.toLinearMap) hf.surjective hker (m := x))
+  have hscont : Continuous s := by
+    apply hf.continuous_iff.mpr
+    exact (continuous_id.sub P.continuous).congr (fun x ↦ (hs x).symm)
+  refine ⟨⟨s, hscont⟩, fun y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := hf.surjective y
+  simp [hs, hfP]
+
+end ContinuousLinearMap
