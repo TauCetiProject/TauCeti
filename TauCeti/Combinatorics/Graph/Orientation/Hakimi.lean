@@ -341,7 +341,7 @@ theorem orientationEndpointEquiv_symm_indegree {a b : G.vertexSet → ℕ}
       (endpointBound b)) (x : G.vertexSet) :
     (((orientationEndpointEquiv a b).symm f).1.indegree x : ℤ) =
       excessAt f.1 (.inr x) := by
-  change endpointBound ((orientationEndpointEquiv a b).symm f).1.indegree (.inr x) = _
+  rw [← endpointBound_inr]
   rw [← Orientation.excessAt_headAssignment]
   have h := congrArg Subtype.val ((orientationEndpointEquiv a b).apply_symm_apply f)
   exact congrArg (fun g : Assignment G.EndpointHom ℤ ↦ excessAt g (.inr x)) <|
@@ -467,9 +467,9 @@ theorem forall_cutBound_endpointBound_iff [DecidableEq (G.edgeSet ⊕ G.vertexSe
         · exact hxS (Subtype.ext hxv ▸ hv)⟩
     have hS := h.2 T
     rw [hcut, sum_endpointBound] at hS
+    have hT : (#T.toLeft : ℤ) ≤ ∑ x ∈ T.toRight, (b x : ℤ) := by omega
     have hS' : (#(G.internalEdges S) : ℤ) ≤ ∑ x ∈ S, (b x : ℤ) := by
-      simpa only [T, toLeft_disjSum, toRight_disjSum, neg_zero] using (show
-        (#T.toLeft : ℤ) ≤ ∑ x ∈ T.toRight, (b x : ℤ) by omega)
+      simpa only [T, toLeft_disjSum, toRight_disjSum, neg_zero] using hT
     exact_mod_cast hS'
   · intro S
     let T := (G.incidentEdges S).disjSum S
@@ -485,9 +485,9 @@ theorem forall_cutBound_endpointBound_iff [DecidableEq (G.edgeSet ⊕ G.vertexSe
         exact heS (G.mem_incidentEdges.2 ⟨x, hxS, p.inc⟩)⟩
     have hS := h.1 T
     rw [hcut, sum_endpointBound] at hS
+    have hT : ∑ x ∈ T.toRight, (a x : ℤ) ≤ (#T.toLeft : ℤ) := by omega
     have hS' : ∑ x ∈ S, (a x : ℤ) ≤ #(G.incidentEdges S) := by
-      simpa only [T, toLeft_disjSum, toRight_disjSum] using (show
-        ∑ x ∈ T.toRight, (a x : ℤ) ≤ (#T.toLeft : ℤ) by omega)
+      simpa only [T, toLeft_disjSum, toRight_disjSum] using hT
     exact_mod_cast hS'
 
 end Cuts
