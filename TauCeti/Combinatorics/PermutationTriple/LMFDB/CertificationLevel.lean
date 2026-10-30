@@ -229,25 +229,26 @@ end StoredField
 variable {n : ℕ}
 
 /-- **Validity reads only certified fields.** Two passport rows that agree on every intrinsic and
-finite-certificate field, and on the primitivization block and the automorphism-group generators,
-are valid at the same triples: validity does not read the aggregations, the carrier-only passport
-label, or the name of the automorphism group. -/
+finite-certificate field other than the primitivization label, and on the primitivization block and
+the automorphism-group generators, are valid at the same triples: validity does not read the
+aggregations, the carrier-only passport label, the name of the automorphism group, or the
+primitivization label, which is certified separately by `BelyiRecord.IsPrimitivizationOf`. -/
 theorem isValidAt_congr {r r' : PassportRecord n}
-    (h : ∀ f : StoredField, f.certificationLevel = .intrinsicTheorem ∨
+    (h : ∀ f : StoredField, f ≠ .primitivization → f.certificationLevel = .intrinsicTheorem ∨
       f.certificationLevel = .finiteCertificate → f.get r = f.get r')
     (hblock : r.primitivizationBlock = r'.primitivizationBlock)
     (hgen : r.autGroupGenerators = r'.autGroupGenerators) {t : ConnectedTriple n} :
     r.IsValidAt t ↔ r'.IsValidAt t := by
-  have hdeg : r.deg = r'.deg := h .deg (.inl rfl)
-  have hgroup : r.group = r'.group := h .group (.inr rfl)
-  have habc : r.abc = r'.abc := h .abc (.inl rfl)
-  have hsorted : r.sortedAbc = r'.sortedAbc := h .sortedAbc (.inl rfl)
-  have hlambdas : r.lambdas = r'.lambdas := h .lambdas (.inl rfl)
-  have hg : r.g = r'.g := h .g (.inl rfl)
-  have hgeom : r.geomtype = r'.geomtype := h .geomtype (.inl rfl)
-  have hpass : r.passSize = r'.passSize := h .passSize (.inl rfl)
-  have hprim : r.isPrimitive = r'.isPrimitive := h .isPrimitive (.inl rfl)
-  have htriples : r.triples = r'.triples := h .triples (.inr rfl)
+  have hdeg : r.deg = r'.deg := h .deg nofun (.inl rfl)
+  have hgroup : r.group = r'.group := h .group nofun (.inr rfl)
+  have habc : r.abc = r'.abc := h .abc nofun (.inl rfl)
+  have hsorted : r.sortedAbc = r'.sortedAbc := h .sortedAbc nofun (.inl rfl)
+  have hlambdas : r.lambdas = r'.lambdas := h .lambdas nofun (.inl rfl)
+  have hg : r.g = r'.g := h .g nofun (.inl rfl)
+  have hgeom : r.geomtype = r'.geomtype := h .geomtype nofun (.inl rfl)
+  have hpass : r.passSize = r'.passSize := h .passSize nofun (.inl rfl)
+  have hprim : r.isPrimitive = r'.isPrimitive := h .isPrimitive nofun (.inl rfl)
+  have htriples : r.triples = r'.triples := h .triples nofun (.inr rfl)
   cases r
   cases r'
   dsimp only at hdeg hgroup habc hsorted hlambdas hg hgeom hpass hprim htriples hblock hgen
@@ -302,7 +303,7 @@ noncomputable def mapRowClasses (r : PassportRecord n) (rows : List (BelyiRecord
   classical
   exact (((r.mapRows rows).flatMap BelyiRecord.triples).map fun s ↦ IsoClass.mk s.toTriple).toFinset
 
-theorem mem_mapRowClasses {r : PassportRecord n} {rows : List (BelyiRecord n)}
+@[simp] theorem mem_mapRowClasses {r : PassportRecord n} {rows : List (BelyiRecord n)}
     {c : IsoClass n} : c ∈ r.mapRowClasses rows ↔ ∃ q ∈ r.mapRows rows, c ∈ q.storedClasses := by
   classical
   simp only [mapRowClasses, List.mem_toFinset, List.mem_map, List.mem_flatMap,
