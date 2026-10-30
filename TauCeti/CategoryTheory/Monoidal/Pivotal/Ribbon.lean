@@ -46,8 +46,8 @@ section Balanced
 
 variable [BalancedCategory C]
 
-/-- The trace formulas in this section use the pivotal structure induced by the chosen twist. -/
-noncomputable local instance : PivotalCategory C := pivotalOfBalanced C
+-- The trace formulas in this section use the pivotal structure induced by the chosen twist.
+attribute [local instance] pivotalOfBalanced
 
 /-- For the pivotal structure induced by a twist, the right trace is a braided loop
 with a twist on its object strand. -/
@@ -67,7 +67,7 @@ theorem leftTrace_pivotalOfBalanced {X : C} (f : X ⟶ X) :
   simp only [Functor.id_obj, Category.assoc, coevaluation_comp_drinfeldIso_inv_assoc]
 
 /-- The pivotal structure of a ribbon category has equal left and right traces. -/
-theorem leftTrace_eq_rightTrace_of_ribbon [RibbonCategory C] {X : C} (f : X ⟶ X) :
+theorem leftTrace_eq_rightTrace_pivotalOfBalanced [RibbonCategory C] {X : C} (f : X ⟶ X) :
     leftTrace f = rightTrace f := by
   -- Balancing changes the crossing at the cup. Slide the dual twist onto the object
   -- strand, then move the inverse twist backwards through the crossing to cancel it.
@@ -86,17 +86,17 @@ theorem leftTrace_eq_rightTrace_of_ribbon [RibbonCategory C] {X : C} (f : X ⟶ 
 
 /-- The pivotal structure induced by a ribbon twist is spherical. This is not a global
 instance: it applies specifically to `pivotalOfBalanced C`, not an arbitrary pivotal structure. -/
-theorem sphericalCategory_of_ribbonCategory [RibbonCategory C] : SphericalCategory C where
-  leftTrace_eq_rightTrace := leftTrace_eq_rightTrace_of_ribbon
+theorem sphericalCategory_pivotalOfBalanced [RibbonCategory C] : SphericalCategory C where
+  leftTrace_eq_rightTrace := leftTrace_eq_rightTrace_pivotalOfBalanced
 
 end Balanced
 
 /-- A pivotal structure is spherical if its associated twist is ribbon. -/
-theorem spherical_of_ribbon [PivotalCategory C]
+theorem sphericalCategory_of_ribbonCategory [PivotalCategory C]
     (h : letI := balancedOfBraidedPivotal C; RibbonCategory C) : SphericalCategory C := by
   have hs : @SphericalCategory C _ _ _
       (@pivotalOfBalanced C _ _ _ _ (balancedOfBraidedPivotal C)) :=
-    @sphericalCategory_of_ribbonCategory C _ _ _ _ (balancedOfBraidedPivotal C) h
+    @sphericalCategory_pivotalOfBalanced C _ _ _ _ (balancedOfBraidedPivotal C) h
   rwa [pivotalOfBalanced_balancedOfBraidedPivotal] at hs
 
 end
