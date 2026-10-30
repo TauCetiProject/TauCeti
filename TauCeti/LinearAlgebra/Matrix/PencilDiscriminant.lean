@@ -33,7 +33,7 @@ bound. Supplying that instance is the work of the Weil pairing and is not done h
 Two forms of the hypothesis are given. The first asks for the three determinants directly. The
 second asks instead for the **symplectic multipliers** `Aᵀ J A = d • J` of the same three matrices,
 which is what a pairing scaling by the degree supplies, and reads the determinants off them with
-`Matrix.det_eq_of_transpose_mul_J_mul_eq_smul`. Since `Matrix.J` lives on `l ⊕ l` for a singleton
+`Matrix.transpose_mul_J_mul_eq_smul_iff`. Since `Matrix.J` lives on `l ⊕ l` for a singleton
 `l` rather than on `Fin 2`, the second form quantifies over matrices there and reindexes.
 
 Neither statement constrains the sign of `q`, and neither concludes anything about the value of the
@@ -75,7 +75,7 @@ realising integer is quantified existentially per `(r, s)` here, since nothing n
 cohere into a function. Primality of `p` is not assumed: the per-prime family only ever excludes
 `p`, and the locus only needs `p` to be a non-unit, so `p ≠ 1` suffices. Finally,
 `frob_det_data_of_scaling` is not reproduced: it is the conjunction of three applications of
-`Matrix.det_eq_of_transpose_mul_J_mul_eq_smul`, and is taken inline.
+`Matrix.transpose_mul_J_mul_eq_smul_iff`, and is taken inline.
 
 ## References
 
@@ -118,7 +118,7 @@ variable {l : Type*} [DecidableEq l] [Fintype l] [Unique l]
 /-- **The discriminant bound from per-prime symplectic multipliers.** The hypothesis of
 `sq_le_four_mul_of_exists_nonneg_pencil_det` with each determinant replaced by the symplectic
 multiplier that forces it: `Aᵀ * J * A = d • J` gives `A.det = d` in rank two, by
-`Matrix.det_eq_of_transpose_mul_J_mul_eq_smul`.
+`Matrix.transpose_mul_J_mul_eq_smul_iff`.
 
 This is the shape a pairing supplies. On the `ℓ`-torsion of an elliptic curve the Weil pairing `e`
 satisfies `e (A S) (A T) = e S T ^ deg A` for every isogeny `A` separately — no additivity in `A`,
@@ -145,10 +145,10 @@ theorem sq_le_four_mul_of_exists_nonneg_symplectic_multiplier (hp : p ≠ 1)
     simp [submatrix_sub, submatrix_smul, Pi.sub_apply, Pi.smul_apply]
   refine ⟨M.submatrix e e, ?_, ?_, ?_⟩
   · rw [det_submatrix_equiv_self]
-    exact det_eq_of_transpose_mul_J_mul_eq_smul hdet
+    exact transpose_mul_J_mul_eq_smul_iff.1 hdet
   · rw [hone', det_submatrix_equiv_self]
-    exact det_eq_of_transpose_mul_J_mul_eq_smul hone
+    exact transpose_mul_J_mul_eq_smul_iff.1 hone
   · rw [hpencil', det_submatrix_equiv_self]
-    exact det_eq_of_transpose_mul_J_mul_eq_smul hpencil
+    exact transpose_mul_J_mul_eq_smul_iff.1 hpencil
 
 end TauCeti.Matrix
