@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Multilinear.Basic
+public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 
 /-!
@@ -27,7 +28,9 @@ map is assumed.
 This is the multilinear companion of `LinearMap.continuous_of_finiteDimensional`. Mathlib's
 `MultilinearMap.continuous_of_bound` asks for an explicit bound, which is exactly what one does
 not have when the multilinear map arrives from algebra — a tensor or symmetric-power
-construction, say — rather than from analysis.
+construction, say — rather than from analysis. In particular alternating maps on such a space
+are the same as continuous alternating maps: `AlternatingMap.toContinuousAlternatingMap` is the
+alternating companion of `LinearMap.toContinuousLinearMap`.
 
 In the same setting every seminorm on a finite-dimensional Hausdorff topological vector space is
 continuous: `Seminorm.continuous_of_finiteDimensional`. Such a seminorm is dominated by a multiple
@@ -101,6 +104,38 @@ theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuo
     (continuous_apply i)).congr fun m ↦ Module.Basis.coord_apply _ _ _
 
 end MultilinearMap
+
+namespace AlternatingMap
+
+variable {𝕜 ι M N : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Finite ι]
+  [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [ContinuousSMul 𝕜 M] [T2Space M] [FiniteDimensional 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+  [TopologicalSpace N] [ContinuousAdd N] [ContinuousSMul 𝕜 N]
+
+/-- On a finite-dimensional Hausdorff topological vector space over a complete nontrivially
+normed field, every alternating map is continuous, so alternating maps and continuous alternating
+maps form linearly equivalent spaces. -/
+def toContinuousAlternatingMap : (M [⋀^ι]→ₗ[𝕜] N) ≃ₗ[𝕜] M [⋀^ι]→L[𝕜] N where
+  toFun f := { f with cont := f.toMultilinearMap.continuous_of_finiteDimensional }
+  invFun f := f.toAlternatingMap
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- An alternating map and its continuous version have the same values. -/
+@[simp]
+theorem coe_toContinuousAlternatingMap (f : M [⋀^ι]→ₗ[𝕜] N) :
+    ⇑(toContinuousAlternatingMap f) = f :=
+  (rfl)
+
+/-- The inverse of `AlternatingMap.toContinuousAlternatingMap` forgets continuity. -/
+@[simp]
+theorem toContinuousAlternatingMap_symm_apply (f : M [⋀^ι]→L[𝕜] N) :
+    toContinuousAlternatingMap.symm f = f.toAlternatingMap :=
+  (rfl)
+
+end AlternatingMap
 
 namespace Seminorm
 

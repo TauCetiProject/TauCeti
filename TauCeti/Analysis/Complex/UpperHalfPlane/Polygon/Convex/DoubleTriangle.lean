@@ -34,6 +34,8 @@ Its side pairing by products of reflections, used to construct hyperbolic triang
   side of a convex polygon fixes the ends of that side.
 * `ConvexPolygon.doubleTriangle`: the double of a triangle across side `0`.
 * `ConvexPolygon.carrier_doubleTriangle`: it is the union of the triangle and its mirror image.
+* `ConvexPolygon.isRight_doubleTriangle_vertex`, `ConvexPolygon.isLeft_doubleTriangle_vertex`: a
+  vertex of the double is ideal or finite as the vertex of `P` it comes from is.
 * `ConvexPolygon.interiorAngle_doubleTriangle_zero`,
   `ConvexPolygon.interiorAngle_doubleTriangle_two`: the angles at `P 0` and `P 1` double.
 * `ConvexPolygon.interiorAngle_doubleTriangle_one`,
@@ -136,6 +138,20 @@ theorem doubleTriangle_vertex :
     (P.doubleTriangle h₀ h₁).vertex = ![P.vertex 0,
       extGeodesicReflection (P.sideGeodesic 0) (P.vertex 2), P.vertex 1, P.vertex 2] :=
   (rfl)
+
+/-- A vertex of the double is ideal exactly when the vertex of `P` it comes from is: the vertices
+`P 0`, `P 2'`, `P 1`, `P 2` of the double come from the vertices `0`, `2`, `1`, `2` of `P`. -/
+theorem isRight_doubleTriangle_vertex (j : Fin 4) :
+    ((P.doubleTriangle h₀ h₁).vertex j).isRight =
+      (P.vertex ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).isRight := by
+  fin_cases j <;> simp
+
+/-- A vertex of the double is finite exactly when the vertex of `P` it comes from is: the vertices
+`P 0`, `P 2'`, `P 1`, `P 2` of the double come from the vertices `0`, `2`, `1`, `2` of `P`. -/
+theorem isLeft_doubleTriangle_vertex (j : Fin 4) :
+    ((P.doubleTriangle h₀ h₁).vertex j).isLeft =
+      (P.vertex ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).isLeft := by
+  fin_cases j <;> simp
 
 /-- The double of a triangle contains the triangle. -/
 private theorem carrier_subset_carrier_doubleTriangle :

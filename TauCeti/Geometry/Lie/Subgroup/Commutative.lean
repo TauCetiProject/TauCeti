@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 import TauCeti.Geometry.Lie.Exponential.Classification
-import TauCeti.Geometry.Lie.Exponential.CommutativeGroup
+import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 import TauCeti.Geometry.Lie.Subgroup.Differential
 
 /-!
@@ -69,7 +69,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- **The adjoint action fixes the generator of a commuting one-parameter subgroup**: if `g`

@@ -107,15 +107,8 @@ theorem negIsogeny_comp_mulByIntIsogeny {n : ℤ} (hn : psiFunctionField W n ≠
   have hone : psiFunctionField W (-1) ≠ 0 :=
     psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero (neg_ne_zero.2 one_ne_zero)
   have hmul : psiFunctionField W (-1 * n) ≠ 0 := by rwa [neg_one_mul]
-  -- `[·]` depends only on the integer: at equal indices two non-vanishing witnesses name the
-  -- same isogeny, by proof irrelevance. This transports the composition law from the index
-  -- `(-1) * n` it produces to the index `-n`.
-  have hcongr : ∀ {k : ℤ} (hk : psiFunctionField W k ≠ 0), k = -n →
-      mulByIntIsogeny W hk = mulByIntIsogeny W hneg := by
-    rintro k hk rfl
-    rfl
   rw [← mulByIntIsogeny_neg_one W hone, mulByIntIsogeny_comp_mulByIntIsogeny W hone hn hmul]
-  exact hcongr hmul (neg_one_mul n)
+  simp_rw [← neg_one_mul n]
 
 /-- **`[-n]` is `[n]` followed by negation, for nonzero `n`**, the non-vanishing hypotheses
 discharged from the discriminant as in `mulByIntIsogenyOfNeZero`. -/

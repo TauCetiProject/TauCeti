@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
+import TauCeti.Geometry.Manifold.Riemannian.Hessian.Conformal
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
 
 /-!
@@ -59,6 +60,8 @@ examples, and the transformation law of scalar curvature:
   of `ĝ = u ^ (4 / (n - 2)) g` is `u ^ (-(n + 2) / (n - 2)) L_g u`.
 * `TauCeti.Yamabe.scalarCurvature_rescale_eq_iff_conformalLaplacian_eq`: `ĝ` has scalar
   curvature `c` exactly where `L_g u = c u ^ (pₙ - 1)`.
+* `TauCeti.Yamabe.conformalLaplacian_rescale`: the conformal covariance
+  `L_ĝ v = u ^ (-(n + 2) / (n - 2)) L_g (u v)`.
 
 ## References
 
@@ -149,7 +152,7 @@ theorem conformalLaplacian_eq_conformalCoefficient_mul_neg_laplacian {u : F → 
     (hu : DifferentiableAt ℝ (∇ u) x) :
     conformalLaplacian (modelWithCornersSelf ℝ F) u x =
       conformalCoefficient (finrank ℝ F) * -Δ u x := by
-  rw [conformalLaplacian_def, laplaceBeltrami_eq_laplacian hu,
+  rw [conformalLaplacian_def, laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient hu,
     scalarCurvature_leviCivitaConnection_model_space, zero_mul, add_zero]
 
 /-- **The bubbles solve the Yamabe equation of the sphere.** In dimension `n ≠ 2`, every bubble
@@ -252,6 +255,56 @@ theorem scalarCurvature_rescale_eq_iff_conformalLaplacian_eq
   rw [scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian g hn hu_pos x, hp,
     Real.rpow_neg (hu_pos x).le, eq_mul_inv_iff_mul_eq₀ (Real.rpow_pos_of_pos (hu_pos x) _).ne',
     mul_comm]
+
+/-- **The conformal Laplacian of a conformal metric.** In dimension `n ≠ 2`, let `u` be a
+positive function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. Then the conformal
+Laplacians of `ĝ` and `g` are related by `L_ĝ v = u ^ (-(n + 2) / (n - 2)) L_g (u v)` for every
+`C²` function `v`. For `v = 1` this is the scalar curvature law
+`scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian`. -/
+theorem conformalLaplacian_rescale
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
+    {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
+    {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {v : M → ℝ}
+    (hv : ContMDiff I 𝓘(ℝ) 2 v) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos).toRiemannianMetric⟩;
+      conformalLaplacian I v x) =
+      u x ^ (-((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2)) *
+        (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+          conformalLaplacian I (u * v) x) := by
+  have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
+  set p := 4 / ((finrank ℝ E : ℝ) - 2)
+  have hux := hu_pos x
+  -- `u = (u ^ p) ^ p⁻¹` is smooth because the conformal factor `u ^ p` is.
+  have hu : ContMDiff I 𝓘(ℝ) ∞ u :=
+    (hf.rpow_const_of_ne (fun y ↦ (hf_pos y).ne') _).congr fun y ↦
+      (Real.rpow_rpow_inv (hu_pos y).le (div_ne_zero four_ne_zero hn')).symm
+  have hu₂ : ContMDiff I 𝓘(ℝ) 2 u := hu.of_le (by simp)
+  -- The gradient of the conformal factor: `grad (u ^ p) = p u ^ (p - 1) grad u`.
+  have hgrad : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      mgradient I (fun y ↦ u y ^ p) x) =
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+        (p * u x ^ (p - 1)) • mgradient I u x) := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    exact mgradient_comp_hasDerivAt (g := fun t ↦ t ^ p)
+      (Real.hasDerivAt_rpow_const (Or.inl hux.ne')) (hu.mdifferentiableAt (by simp))
+  have hpow : u x ^ (-((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2)) =
+      (u x ^ p)⁻¹ * (u x)⁻¹ := by
+    rw [show -((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2) = -p + -1 by
+      simp only [p]; field_simp; ring, Real.rpow_add hux, Real.rpow_neg hux.le, Real.rpow_neg_one]
+  have hpow' : u x ^ (p - 1) = u x ^ p * (u x)⁻¹ := by
+    rw [Real.rpow_sub_one hux.ne', div_eq_mul_inv]
+  have hf0 : u x ^ p ≠ 0 := (hf_pos x).ne'
+  rw [conformalLaplacian_def, ← (g.rescale (fun x ↦ u x ^ p) hf hf_pos).scalarCurvature_def x,
+    scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian g hn hu_pos x,
+    g.laplaceBeltrami_rescale (by simp) hf hf_pos (hv.contMDiffAt), hgrad]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  rw [conformalLaplacian_def, conformalLaplacian_def, laplaceBeltrami_mul I hu₂ hv x,
+    real_inner_smul_left, hpow, hpow', conformalCoefficient_def]
+  simp only [Pi.mul_apply, p]
+  field_simp
+  ring
 
 end Rescale
 

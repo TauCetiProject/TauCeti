@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import Mathlib.Data.ENat.Monoid
 import TauCeti.Analysis.Analytic.Order
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # The local multiplicity of a holomorphic map between Riemann surfaces
@@ -315,9 +316,7 @@ theorem eventually_localMultiplicity_eq_one
   have hderiv : ∀ᶠ z in 𝓝[≠] c x, deriv (fun z ↦ c' (f (c.symm z))) z ≠ 0 := by
     refine hFa.deriv.eventually_eq_zero_or_eventually_ne_zero.resolve_left fun h ↦ htop ?_
     rw [← hFa.analyticOrderAt_deriv_add_one, analyticOrderAt_eq_top.2 h, top_add]
-  have hc : Tendsto c (𝓝[≠] x) (𝓝[≠] c x) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      ((c.continuousAt hcx).mono_left nhdsWithin_le_nhds) (c.eventually_ne_nhdsWithin hcx)
+  have hc : Tendsto c (𝓝[≠] x) (𝓝[≠] c x) := c.tendsto_nhdsNE hcx
   -- At a nearby point `y ≠ x`, compute the local multiplicity in the charts `c` and `c'`.
   filter_upwards [hc.eventually hderiv,
     nhdsWithin_le_nhds ((c.continuousAt hcx).eventually hFa.eventually_analyticAt),

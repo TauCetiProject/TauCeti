@@ -3,8 +3,9 @@ name: pick-runner
 # Staging tries eligible dedicated machines before cloud-capacity discovery. Machines
 # advertise class, permanent machine, and ephemeral instance labels. All limits
 # are approximate: concurrent pickers can observe the same free capacity.
-# Full or unknown cloud capacity queues on GitHub instead of bypassing the
-# Namespace cap. Picker/control jobs do not count towards the build-job cap.
+# Capacity observations are advisory. Partial Namespace observations retain
+# their known load; unobserved pools fall back to the native GitHub queue.
+# Picker/control jobs do not count towards the build-job cap.
 # Preserve the repository API reserve for status and merge automation.
 on:
   workflow_call:
@@ -73,10 +74,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d6801a3438aa7e86fc9745b8232d5817f585dbbd
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          tools-ref: d6801a3438aa7e86fc9745b8232d5817f585dbbd
           project-directory: .
       - name: Select destination in configured preference order
         id: pick

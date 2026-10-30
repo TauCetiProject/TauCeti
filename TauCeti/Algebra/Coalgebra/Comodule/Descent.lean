@@ -51,14 +51,13 @@ def comoduleOfFactor (f : C →ₗc[R] D) (ρ : M →ₗ[R] M ⊗[R] C)
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
     have hm : f.toLinearMap.lTensor M (ρ m) = coact (R := R) (C := D) m := by
       simpa only [LinearMap.comp_apply] using LinearMap.congr_fun hρ m
-    rw [← f.assoc_rTensor_lTensor_comp ρ, hρ, ← f.comul_lTensor_lTensor, hm,
-      coassoc_apply]
+    rw [← LinearMap.assoc_rTensor_lTensor_comp f.toLinearMap f.toLinearMap ρ,
+      hρ, ← LinearMap.lTensor_def, ← LinearMap.lTensor_comp_apply,
+      f.map_comp_comul, LinearMap.lTensor_comp_apply, hm, coassoc_apply]
   lTensor_counit_comp_coact := by
-    ext m
-    have hm : f.toLinearMap.lTensor M (ρ m) = coact (R := R) (C := D) m := by
-      simpa only [LinearMap.comp_apply] using LinearMap.congr_fun hρ m
-    rw [LinearMap.comp_apply, ← f.counit_lTensor_lTensor, hm]
-    exact LinearMap.congr_fun lTensor_counit_comp_coact m
+    have h := Comodule.lTensor_counit_comp_coact (R := R) (C := D) (M := M)
+    rw [← hρ, ← LinearMap.comp_assoc, ← LinearMap.lTensor_comp, f.counit_comp] at h
+    exact h
 
 /-- The descended coaction is the specified linear factorization. -/
 @[simp]
