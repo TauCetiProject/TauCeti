@@ -293,10 +293,8 @@ theorem schemePointsMulEquiv_relabel {A : Type u} [CommRing A] [Algebra R A]
       schemePointsMulEquiv p (τ i) := by
   rw [relabel, schemePointsMulEquiv_eq_freeAbelianCharEquiv,
     schemePointsMulEquiv_eq_freeAbelianCharEquiv,
-    DiagonalizableGroup.schemePointsMulEquiv_groupSchemeMap,
-    toMonoidHom_characterRelabelHom, freeAbelianCharEquiv_apply, freeAbelianCharEquiv_apply,
-    MonoidHom.comp_apply, MonoidHom.coe_ofClass, characterRelabel_ofAdd,
-    Finsupp.equivMapDomain_single]
+    DiagonalizableGroup.schemePointsMulEquiv_groupSchemeMap]
+  simp
 
 /-- The group-scheme relabelling is the spectrum of the coordinate relabelling, read across the
 canonical presentation of the split torus. -/
