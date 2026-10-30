@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.PseudoCoherent.Basic
 public import TauCeti.Algebra.Homology.Single.Cokernel
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
 
 /-!
 # Pseudo-coherent sheaves are finitely presented
@@ -69,36 +69,26 @@ hypothesis is required. -/
 theorem IsPseudoCoherent.isFinitePresentation (h : F.IsPseudoCoherent) :
     F.IsFinitePresentation := by
   choose U hx hU using isPseudoCoherent_iff.mp h
-  choose p hp using fun x ↦ (hU x).exists_isFinite_presentation
-  let e (x : X) : ((overEquiv (U x)).inverse.obj (F.restrict (U x).ι)) ≅ F.over (U x) :=
-    (overEquiv (U x)).inverse.mapIso ((overFunctorEquiv (U x)).app F).symm ≪≫
-      (overEquiv (U x)).unitIso.symm.app (F.over (U x))
-  -- Spell out the sheaf-category type so that presentation transport finds colimit preservation.
-  let T (x : X) : SheafOfModules (U x).toScheme.ringCatSheaf ⥤
-      SheafOfModules (X.ringCatSheaf.over (U x)) := (overEquiv (U x)).inverse
-  have (x : X) : PreservesColimitsOfSize.{u, u} (T x) :=
-    (overEquiv (U x)).symm.toAdjunction.leftAdjoint_preservesColimits
-  let q : F.QuasicoherentData :=
-    { I := X
-      X := U
-      coversTop := by
-        rw [Opens.coversTop_iff]
-        exact top_le_iff.mp fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hx x⟩
-      presentation x :=
-        @SheafOfModules.Presentation.ofIsIso _ _ _ _ _ _ _ _ (e x).hom (Iso.isIso_hom (e x))
-          ((p x).map (T x)
-            ((U x).sheafOfModulesEquivOverInverseUnit X.ringCatSheaf).symm) }
-  have : q.IsFinitePresentation := by
-    refine { isFinite_presentation := fun x ↦ ?_ }
-    have := hp x
-    dsimp only [q]
-    apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
-    apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
-  exact SheafOfModules.IsFinitePresentation.mk (M := F) ⟨q, inferInstance⟩
+  have (x : X) : (F.over (U x)).IsFinitePresentation := by
+    obtain ⟨p, hp⟩ := (hU x).exists_isFinite_presentation
+    obtain ⟨q, hq⟩ := F.exists_isFinite_presentation_over_of_restrict (U x) p
+    let d := q.quasicoherentData
+    have : d.IsFinitePresentation := by
+      constructor
+      intro V
+      dsimp only [d, SheafOfModules.Presentation.quasicoherentData]
+      -- Let the presentation determine the slice-site universes before synthesizing sheafification.
+      apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
+    exact SheafOfModules.IsFinitePresentation.mk (M := F.over (U x)) ⟨d, inferInstance⟩
+  exact SheafOfModules.IsFinitePresentation.of_coversTop F U (by
+    rw [Opens.coversTop_iff]
+    exact top_le_iff.mp fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩)
 
 /-- Every pseudo-coherent module sheaf on a scheme is quasi-coherent. -/
 theorem IsPseudoCoherent.isQuasicoherent (h : F.IsPseudoCoherent) : F.IsQuasicoherent := by
   have : F.IsFinitePresentation := h.isFinitePresentation
+  -- Instance search does not match the scheme-module wrapper to Mathlib's sheaf-module
+  -- instance, even with an explicit sheaf-category target. Supply the object explicitly.
   exact SheafOfModules.instIsQuasicoherentOfIsFinitePresentation F
 
 end

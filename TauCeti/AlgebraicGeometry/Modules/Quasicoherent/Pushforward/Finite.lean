@@ -87,17 +87,7 @@ private theorem exists_isFinite_presentation_over_pushforward [IsLocallyNoetheri
   have : Q.IsFinite := by
     apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
     exact SheafOfModules.Presentation.isFinite_map _ _ _
-  let G : SheafOfModules U.1.toScheme.ringCatSheaf ⥤
-      SheafOfModules (Y.ringCatSheaf.over U.1) := (overEquiv U.1).inverse
-  have : CategoryTheory.Limits.PreservesColimitsOfSize.{u, u} G :=
-    (overEquiv U.1).symm.toAdjunction.leftAdjoint_preservesColimits
-  let e' : G.obj (N.restrict U.1.ι) ≅ N.over U.1 :=
-    (overEquiv U.1).inverse.mapIso ((overFunctorEquiv U.1).app N).symm ≪≫
-      ((overEquiv U.1).unitIso.app (N.over U.1)).symm
-  let P' := (Q.map G (U.1.sheafOfModulesEquivOverInverseUnit Y.ringCatSheaf).symm).ofIsIso e'.hom
-  refine ⟨P', ?_⟩
-  apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
-  exact SheafOfModules.Presentation.isFinite_map _ _ _
+  exact N.exists_isFinite_presentation_over_of_restrict U.1 Q
 
 /-- Finite pushforward on a locally Noetherian target preserves finite presentation.
 It suffices that the source coefficient is quasi-coherent and of finite type. -/
