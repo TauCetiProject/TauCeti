@@ -14,22 +14,26 @@ public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basi
 # Admissible moduli and ramification
 
 Let `L/K` be a finite abelian extension of number fields and `𝔪` a modulus of `K` admissible for
-`L/K`. This file shows that `𝔪` bounds the local conductors of `L/K` and, in particular, that
-every prime of `K` ramified in `L` divides `𝔪`.
+`L/K`. This file shows that the exponents of the conductor of `L/K` are its local conductor
+exponents, so that `𝔪` bounds them, and, in particular, that every prime of `K` ramified in `L`
+divides `𝔪`.
 
-Let `v` be a finite place of `K` and `w` a place of `L` above it. If `u ∈ K_vˣ` lies in the step
-`U(K_v, n)` of the unit filtration, where `n` is the exponent of `v` in `𝔪`, then the idele
-concentrated at `v` with component `u` satisfies the congruence conditions of `𝔪`. By
-admissibility its class is a norm from `C_L`, so its global Artin symbol is trivial. By
-local–global compatibility (`globalArtinMap_local`) that symbol is the local Artin symbol of `u`,
-and for an abelian extension the local Artin symbols that vanish are exactly the norms from `L_w`
-(`localArtinAt_eq_one_iff_mem_normGroup`). Hence `U(K_v, n) ⊆ N_{L_w/K_v}(L_wˣ)`, that is, the
-conductor exponent of `L_w/K_v` is at most `n`
+Let `v` be a finite place of `K` and `w` a place of `L` above it. The class of the idele
+concentrated at `v` with component `u ∈ K_vˣ` is a norm from `C_L` exactly when its global Artin
+symbol is trivial. By local–global compatibility (`globalArtinMap_local`) that symbol is the local
+Artin symbol of `u`, and for an abelian extension the local Artin symbols that vanish are exactly
+the norms from `L_w` (`localArtinAt_eq_one_iff_mem_normGroup`). So that class is a norm exactly
+when `u` is a norm from `L_w` (`ofAdicCompletion_mem_range_ideleClassNormMap_iff`). Since the
+exponent of `v` in the conductor is read off from these classes
+(`exponent_abelianConductor_le_iff`), it is the conductor exponent of `L_w/K_v`
+(`exponent_abelianConductor`). As `𝔪` is a multiple of the conductor, the conductor exponent of
+`L_w/K_v` is at most the exponent of `v` in `𝔪`
 (`IsAdmissibleModulus.conductorExponent_le_exponent`).
 
-If `v` is not in the support of `𝔪`, then `n = 0`, so every unit of `K_v` is a norm from `L_w`. By
-the unramified criterion of local class field theory (`conductorExponent_eq_zero_iff`), `L_w/K_v`
-is unramified, and since the local ramification index is the global one, so is `w` over `v`
+If `v` is not in the support of `𝔪`, then its exponent in `𝔪` is `0`, so every unit of `K_v` is a
+norm from `L_w`. By the unramified criterion of local class field theory
+(`conductorExponent_eq_zero_iff`), `L_w/K_v` is unramified, and since the local ramification
+index is the global one, so is `w` over `v`
 (`IsAdmissibleModulus.isUnramifiedAt_of_notMem_support`). Contrapositively, a prime of `K` below
 a ramified prime of `L` lies in the support of every admissible modulus
 (`IsAdmissibleModulus.mem_support_of_ramified`). Equivalently, the support of an admissible
@@ -42,6 +46,10 @@ whole idele class group, so the trivial modulus is admissible for it, although `
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.ofAdicCompletion_mem_range_ideleClassNormMap_iff`: the class of an
+  idele concentrated at `v` is a norm from `L` exactly when its component is a norm from `L_w`.
+* `TauCeti.ClassFieldTheory.exponent_abelianConductor`: the exponent of `v` in the conductor of
+  `L/K` is the conductor exponent of `L_w/K_v`.
 * `TauCeti.ClassFieldTheory.IsAdmissibleModulus.conductorExponent_le_exponent`: the conductor
   exponent of `L_w/K_v` is at most the exponent of `v` in an admissible modulus.
 * `TauCeti.ClassFieldTheory.IsAdmissibleModulus.isUnramifiedAt_of_notMem_support`: a prime of `L`
@@ -71,6 +79,32 @@ open scoped AdicCompletionExtension
 variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsAbelianGalois K L] {𝔪 : Modulus K}
 
+section LocalConductor
+
+variable (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal]
+
+/-- **Idele classes concentrated at one place that are norms.** For an abelian extension `L/K`, a
+finite place `v` of `K` and a place `w` of `L` above it, the class of the idele concentrated at
+`v` with component `u` is a norm from `L` exactly when `u` is a norm from `L_w`. -/
+theorem ofAdicCompletion_mem_range_ideleClassNormMap_iff (u : (v.adicCompletion K)ˣ) :
+    (IdeleGroup.ofAdicCompletion (𝓞 K) K v u : IdeleClassGroup (𝓞 K) K) ∈
+        (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range ↔
+      u ∈ normGroup (v.adicCompletion K) (w.adicCompletion L) := by
+  rw [← globalArtinMap_eq_zero_iff K L IsSepClosed.lift, globalArtinMap_local, ofMul_eq_zero,
+    localArtinAt_eq_one_iff_mem_normGroup v w]
+
+/-- **The exponents of the conductor are the local conductor exponents.** For an
+abelian extension `L/K`, a finite place `v` of `K` and a place `w` of `L` above it, the exponent
+of `v` in the conductor of `L/K` is the conductor exponent of `L_w/K_v`. -/
+theorem exponent_abelianConductor :
+    (abelianConductor K L).exponent v =
+      conductorExponent (v.adicCompletion K) (w.adicCompletion L) :=
+  eq_of_forall_ge_iff fun n ↦ by
+    rw [exponent_abelianConductor_le_iff, conductorExponent_le_iff]
+    exact forall₂_congr fun u _ ↦ ofAdicCompletion_mem_range_ideleClassNormMap_iff v w u
+
+end LocalConductor
+
 namespace IsAdmissibleModulus
 
 /-- **An admissible modulus bounds the local conductors.** For an abelian extension `L/K`, a
@@ -78,17 +112,9 @@ modulus `𝔪` admissible for `L/K`, a finite place `v` of `K` and a place `w` o
 conductor exponent of `L_w/K_v` is at most the exponent of `v` in `𝔪`. -/
 theorem conductorExponent_le_exponent (h : IsAdmissibleModulus K L 𝔪)
     (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal] :
-    conductorExponent (v.adicCompletion K) (w.adicCompletion L) ≤ 𝔪.exponent v := by
-  refine (conductorExponent_le_iff _ _).2 fun u hu ↦ ?_
-  -- The idele concentrated at `v` with component `u` is a congruence idele for `𝔪`, so its class
-  -- is a norm from `C_L` and its global Artin symbol vanishes.
-  have hray : (IdeleGroup.ofAdicCompletion (𝓞 K) K v u : IdeleClassGroup (𝓞 K) K) ∈
-      raySubgroup 𝔪 :=
-    mem_raySubgroup_iff.2 ⟨_, ofAdicCompletion_mem_ideleCongruenceSubgroup_iff.2 hu, rfl⟩
-  have hArt := (globalArtinMap_eq_zero_iff K L IsSepClosed.lift _).2
-    (isAdmissibleModulus_iff.1 h hray)
-  rw [globalArtinMap_local, ofMul_eq_zero] at hArt
-  exact (localArtinAt_eq_one_iff_mem_normGroup v w u).1 hArt
+    conductorExponent (v.adicCompletion K) (w.adicCompletion L) ≤ 𝔪.exponent v :=
+  (exponent_abelianConductor v w).symm.trans_le <|
+    Modulus.exponent_mono ((isAdmissibleModulus_iff_abelianConductor_dvd 𝔪).1 h) v
 
 /-- **Primes outside an admissible modulus are unramified.** For an abelian extension `L/K` and a
 modulus `𝔪` admissible for `L/K`, every prime of `L` above a finite place `v` of `K` outside the

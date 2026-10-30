@@ -65,6 +65,9 @@ subgroups, since an idele can be split placewise into two factors.
 * `TauCeti.GlobalNumberFields.ofAdicCompletion_mem_ideleCongruenceSubgroup_iff`: an idele
   concentrated at a finite place `v` lies in the congruence subgroup exactly when its component
   lies in `U(K_v, 𝔪.exponent v)`.
+* `TauCeti.GlobalNumberFields.ideleCongruenceSubgroup.inv_ofAdicCompletion_mul_mem`: removing its
+  component at one place from a congruence idele leaves a congruence idele for any modulus that
+  imposes no further conditions away from that place.
 * `TauCeti.GlobalNumberFields.isOpen_ideleCongruenceSubgroup`: the congruence subgroup is open.
 * `TauCeti.GlobalNumberFields.unitEmbedding_mem_ideleCongruenceSubgroup_iff`: the principal
   ideles lying in the congruence subgroup are the images of the units of `𝓞 K` congruent to one
@@ -319,6 +322,38 @@ theorem ofAdicCompletion_mem_ideleCongruenceSubgroup_iff {𝔪 : Modulus K}
         exact hu.2
       · simp [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hv']
     · simp
+
+/-- **Removing the component at one place from a congruence idele.** Let `v` be a finite place
+and let the modulus `𝔪` impose, away from `v`, no condition that `𝔫` does not. Dividing an idele
+of the congruence subgroup of `𝔫` by the idele concentrated at `v` with the same `v`-component
+gives an idele of the congruence subgroup of `𝔪`. -/
+theorem ideleCongruenceSubgroup.inv_ofAdicCompletion_mul_mem {𝔪 𝔫 : Modulus K}
+    {v : HeightOneSpectrum (𝓞 K)} (hexp : ∀ v' ≠ v, 𝔪.exponent v' ≤ 𝔫.exponent v')
+    (hinf : 𝔪.infinitePart ⊆ 𝔫.infinitePart) {x : IdeleGroup (𝓞 K) K}
+    (hx : x ∈ ideleCongruenceSubgroup 𝔫) :
+    (IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x))⁻¹ * x ∈
+      ideleCongruenceSubgroup 𝔪 := by
+  -- The coordinates of the quotient are `1` at `v` and those of `x` at every other place.
+  have hfin (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ≠ v) :
+      v'.ideleFiniteCoord ((IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x))⁻¹ * x) =
+        v'.ideleFiniteCoord x := by
+    rw [map_mul, map_inv, ideleFiniteCoord_ofAdicCompletion_of_ne v' hv', inv_one, one_mul]
+  have hv : v.ideleFiniteCoord
+      ((IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x))⁻¹ * x) = 1 := by
+    rw [map_mul, map_inv, ideleFiniteCoord_ofAdicCompletion_self, inv_mul_cancel]
+  refine mem_ideleCongruenceSubgroup_iff.2 ⟨fun v' _ ↦ ?_, fun v' _ ↦ ?_, fun w hw ↦ ?_⟩
+  · rcases eq_or_ne v' v with rfl | hne
+    · rw [hv, Units.val_one, map_one]
+    · rw [hfin v' hne]
+      exact ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx v'
+  · rcases eq_or_ne v' v with rfl | hne
+    · rw [hv, Units.val_one, sub_self, map_zero]
+      exact zero_le
+    · rw [hfin v' hne]
+      exact ((mem_unitFiltration_adicCompletion_iff v').1 (TauCeti.unitFiltration_antitone
+        (hexp v' hne) (ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration hx v'))).2
+  · rw [map_mul, map_inv, InfinitePlace.ideleInfiniteCoord_ofAdicCompletion, inv_one, one_mul]
+    exact ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hx (hinf hw)
 
 /-! ### Openness -/
 

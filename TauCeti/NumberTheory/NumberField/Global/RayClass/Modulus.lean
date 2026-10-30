@@ -60,6 +60,10 @@ away from a finite set of primes.
   `TauCeti.GlobalNumberFields.Modulus.mem_finitePart_of_forall_mem_pow_exponent`: the prime power
   prescribed by the exponent divides the finite part, and membership in the finite part is
   detected by those prime powers.
+* `TauCeti.GlobalNumberFields.Modulus.exponent_eq_multiplicity`: the exponent is the multiplicity
+  of the prime in the finite part.
+* `TauCeti.GlobalNumberFields.Modulus.exists_exponent_eq_and_forall_ne`: the exponent of a modulus
+  at one finite place can be changed to any value without changing the rest of the modulus.
 * `TauCeti.GlobalNumberFields.Modulus.valued_eq_one_of_valued_sub_one_le`: an element of the
   `v`-adic completion congruent to one at a divisor of the finite part is a unit there.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup_le_primeToSubgroup`: an element congruent to one
@@ -238,6 +242,50 @@ theorem mem_finitePart_of_forall_mem_pow_exponent (𝔪 : Modulus K) {y : 𝓞 K
       exact hv ((mem_support_iff 𝔪 v).mp ((mem_support_iff_exponent_ne_zero 𝔪 v).mpr hne))
     rw [hzero, pow_zero, Ideal.one_eq_top]
     exact Submodule.mem_top
+
+/-- **The exponent is the multiplicity of the prime in the finite part**, in the normalization of
+Mathlib's `multiplicity`, which `Ideal.finprod_heightOneSpectrum_pow_multiplicity` uses to recover
+an ideal from its prime factors. -/
+theorem exponent_eq_multiplicity (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
+    𝔪.exponent v = multiplicity v.asIdeal 𝔪.finitePart := by
+  rw [exponent_def, Ideal.count_associates_factors_eq 𝔪.finitePart_ne_zero v.isPrime v.ne_bot,
+    v.count_normalizedFactors_eq_multiplicity 𝔪.finitePart_ne_bot]
+
+/-- **Changing the exponent at one place.** For a modulus `𝔪`, a finite place `v` and `n : ℕ`,
+there is a modulus with the infinite part of `𝔪`, with exponent `n` at `v`, and with the exponents
+of `𝔪` at every other finite place. -/
+theorem exists_exponent_eq_and_forall_ne (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) (n : ℕ) :
+    ∃ 𝔫 : Modulus K, 𝔫.infinitePart = 𝔪.infinitePart ∧ 𝔫.exponent v = n ∧
+      ∀ v' ≠ v, 𝔫.exponent v' = 𝔪.exponent v' := by
+  -- Write `𝔪 = v ^ e * J` and replace `v ^ e` by `v ^ n`.
+  obtain ⟨J, hJ⟩ := 𝔪.pow_exponent_dvd_finitePart v
+  have hJ0 : J ≠ ⊥ := by
+    rintro rfl
+    exact 𝔪.finitePart_ne_bot (by rw [hJ, Ideal.mul_bot])
+  have hv0 : Associates.mk v.asIdeal ≠ 0 := by simpa using v.ne_bot
+  let 𝔫 : Modulus K := ⟨v.asIdeal ^ n * J, mul_ne_zero (pow_ne_zero n v.ne_bot) hJ0, 𝔪.infinitePart⟩
+  have hcount (k : ℕ) (v' : HeightOneSpectrum (𝓞 K)) :
+      (Associates.mk v'.asIdeal).count (Associates.mk (v.asIdeal ^ k * J)).factors =
+        k * (Associates.mk v'.asIdeal).count (Associates.mk v.asIdeal).factors +
+          (Associates.mk v'.asIdeal).count (Associates.mk J).factors := by
+    rw [← Associates.mk_mul_mk, Associates.mk_pow,
+      Associates.count_mul (pow_ne_zero _ hv0) (by simpa using hJ0) v'.associates_irreducible,
+      Associates.count_pow hv0 v'.associates_irreducible]
+  have h𝔪 (v' : HeightOneSpectrum (𝓞 K)) : 𝔪.exponent v' =
+      (Associates.mk v'.asIdeal).count (Associates.mk (v.asIdeal ^ 𝔪.exponent v * J)).factors := by
+    rw [exponent_def, ← hJ]
+  have h𝔫 (v' : HeightOneSpectrum (𝓞 K)) : 𝔫.exponent v' =
+      (Associates.mk v'.asIdeal).count (Associates.mk (v.asIdeal ^ n * J)).factors :=
+    exponent_def _ _
+  refine ⟨𝔫, rfl, ?_, fun v' hv' ↦ ?_⟩
+  · have := h𝔪 v
+    rw [hcount, Associates.count_self v.associates_irreducible, mul_one] at this
+    rw [h𝔫, hcount, Associates.count_self v.associates_irreducible, mul_one]
+    omega
+  · have hne : Associates.mk v'.asIdeal ≠ Associates.mk v.asIdeal := fun h ↦ hv' <|
+      HeightOneSpectrum.ext (associated_iff_eq.1 (Associates.mk_eq_mk_iff_associated.1 h))
+    rw [h𝔫, h𝔪, hcount, hcount, Associates.count_eq_zero_of_ne v'.associates_irreducible
+      v.associates_irreducible hne, mul_zero, mul_zero]
 
 /-- Exponents grow with the modulus. -/
 theorem exponent_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (v : HeightOneSpectrum (𝓞 K)) :

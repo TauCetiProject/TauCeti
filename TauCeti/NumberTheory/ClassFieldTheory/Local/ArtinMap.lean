@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ConjugateSubgroups
+import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!
@@ -74,6 +75,9 @@ for instance from a completion of a number field to a concrete model such as `�
   Artin map are the finite local Artin maps.
 * `TauCeti.ClassFieldTheory.mem_normGroup_of_mk_eq_artinMap_of_fixes`: an element whose Artin
   symbol fixes a finite Galois extension `M/K` is a norm from `M`.
+* `TauCeti.ClassFieldTheory.mem_normGroup_fixedField_iff`: for a finite abelian extension `M/K`,
+  an element is a norm from the fixed field of `H ≤ Gal(M/K)` exactly when its norm residue
+  symbol lies in `H`.
 * `TauCeti.ClassFieldTheory.denseRange_artinMap`: the absolute local Artin map has dense image.
 * `TauCeti.ClassFieldTheory.exists_artinMap_mem_iff`: the preimage of an open subgroup of
   `G_K^ab` is a norm subgroup.
@@ -182,6 +186,28 @@ theorem mem_normGroup_of_mk_eq_artinMap_of_fixes {x : Kˣ} (σ : Field.absoluteG
     rw [hιy, hσM y]
     exact hιy.symm
   rw [← localArtinMap_eq_zero_iff K M ι, artinMap_restrict K M ι x σ hσ, h1, map_one, ofMul_one]
+
+variable {K} {M : Type*} [Field M] [Algebra K M] [FiniteDimensional K M] [IsAbelianGalois K M] in
+/-- **Norms from a subextension of an abelian extension.** Let `M/K` be a finite abelian extension
+and `H` a subgroup of `Gal(M/K)`. If `σ ∈ Gal(M/K)` is the norm residue symbol of `u ∈ Kˣ`, then
+`u` is a norm from the fixed field of `H` exactly when `σ ∈ H`. -/
+theorem mem_normGroup_fixedField_iff (H : Subgroup Gal(M/K)) {u : Kˣ} {σ : Gal(M/K)}
+    (hσ : Abelianization.of σ = normResidue K M u) :
+    u ∈ normGroup K (IntermediateField.fixedField H) ↔ σ ∈ H := by
+  have := IsAbelianGalois.tower_bot K (IntermediateField.fixedField H) M
+  let ι : M →ₐ[K] SeparableClosure K := IsSepClosed.lift
+  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (artinMap K u)
+  -- `σ` is the restriction of a representative `τ` of the absolute Artin symbol of `u`, and the
+  -- Artin symbol of `u` for the fixed field is the restriction of `σ`.
+  have hστ : σ = ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K τ) := by
+    refine Abelianization.of_injective ?_
+    rw [hσ, normResidue_mk K M ι, artinMap_restrict K M ι u τ hτ, toMul_ofMul]
+  rw [← localArtinMap_eq_zero_iff K _ (ι.comp (IntermediateField.fixedField H).val),
+    artinMap_restrict K _ _ u τ hτ, ← AlgHom.restrictNormalHom_restrictNormalHom, ← hστ,
+    IntermediateField.restrictNormalHom_val, ofMul_eq_zero,
+    ← map_one (Abelianization.of (G := Gal(IntermediateField.fixedField H/K))),
+    Abelianization.of_injective.eq_iff, ← MonoidHom.mem_ker,
+    IntermediateField.restrictNormalHom_ker, IntermediateField.fixingSubgroup_fixedField]
 
 /-- **The absolute local Artin map has dense image**: it reaches every finite quotient of
 `G_K^ab`, because every finite local Artin map is surjective. -/

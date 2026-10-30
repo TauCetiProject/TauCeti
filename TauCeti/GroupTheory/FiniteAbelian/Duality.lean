@@ -39,6 +39,9 @@ complete list of linear characters.
 * `CommGroup.card_monoidHom_not_le_ker`: for a finite commutative group `G` and a subgroup `H`,
   the characters of `G` that are nontrivial on `H` are `#G - #(G ⧸ H)` in number, since those
   trivial on `H` are the characters of `G ⧸ H` (Mathlib's `CommGroup.card_domRestrictHom_ker`).
+* `CommGroup.finsum_domRestrictHom`: for a subgroup `H` of a finite commutative group `G`, a
+  function of the restriction to `H`, summed over the characters of `G`, is `#(G ⧸ H)` times its
+  sum over the characters of `H`.
 
 ## References
 
@@ -78,5 +81,31 @@ theorem card_monoidHom_not_le_ker (H : Subgroup G) :
     exact Nat.card_congr (Equiv.subtypeEquivRight fun φ ↦ by simp [IsConcreteLE.le_iff])
   rw [← card_monoidHom_of_hasEnoughRootsOfUnity G M, ← hle, Nat.card_eq_fintype_card,
     Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Fintype.card_subtype_compl]
+
+/-- **Summing over characters through a restriction.** If `M` has enough roots of unity, every
+character of a subgroup `H` of a finite commutative group `G` extends to exactly `#(G ⧸ H)`
+characters of `G`. So a function `g` of the restriction to `H`, summed over the characters of `G`,
+is `#(G ⧸ H)` times its sum over the characters of `H`. -/
+theorem finsum_domRestrictHom {N : Type*} [AddCommMonoid N] (H : Subgroup G)
+    (g : (H →* Mˣ) → N) :
+    ∑ᶠ χ : G →* Mˣ, g (MonoidHom.domRestrictHom H Mˣ χ) =
+      Nat.card (G ⧸ H) • ∑ᶠ ψ : H →* Mˣ, g ψ := by
+  classical
+  have : HasEnoughRootsOfUnity M (Monoid.exponent H) :=
+    HasEnoughRootsOfUnity.of_dvd M (Monoid.exponent_submonoid_dvd H.toSubmonoid)
+  have := Fintype.ofFinite (G →* Mˣ)
+  have := Fintype.ofFinite (H →* Mˣ)
+  set r := MonoidHom.domRestrictHom H Mˣ
+  -- Restriction is surjective, so each fibre is a coset of its kernel, of order `#(G ⧸ H)`.
+  have hr := MonoidHom.domRestrict_surjective M H
+  rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype, Finset.smul_sum,
+    ← Finset.sum_fiberwise Finset.univ r]
+  refine Finset.sum_congr rfl fun ψ _ ↦ ?_
+  rw [Finset.sum_congr rfl fun χ hχ ↦ by rw [(Finset.mem_filter.1 hχ).2], Finset.sum_const,
+    ← card_domRestrictHom_ker M H, ← Nat.card_congr (r.fiberEquivKerOfSurjective hr ψ),
+    Nat.card_eq_card_toFinset]
+  congr 2
+  ext χ
+  simp
 
 end CommGroup
