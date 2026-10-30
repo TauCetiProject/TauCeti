@@ -95,11 +95,11 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 `ι_X σ = df`: `σ(X x, v) = df_x(v)` for every tangent vector `v` at every point `x`. -/
 def IsHamiltonianVectorField (σ : SmoothTwoForm I M) (f : M → ℝ)
     (X : (x : M) → TangentSpace I x) : Prop :=
-  ∀ x v, SmoothForm.eval₂ σ x (X x) v = mvfderiv I f x v
+  ∀ x v, SmoothBundleForm.eval₂ σ x (X x) v = mvfderiv I f x v
 
 /-- The defining characterization of a Hamiltonian vector field. -/
 theorem isHamiltonianVectorField_iff :
-    σ.IsHamiltonianVectorField f X ↔ ∀ x v, SmoothForm.eval₂ σ x (X x) v = mvfderiv I f x v :=
+    σ.IsHamiltonianVectorField f X ↔ ∀ x v, SmoothBundleForm.eval₂ σ x (X x) v = mvfderiv I f x v :=
   Iff.rfl
 
 /-- A Hamiltonian vector field is one whose flat is the differential of the Hamiltonian. -/
@@ -111,7 +111,7 @@ theorem isHamiltonianVectorField_iff_flat :
 exterior derivative of the `0`-form of the Hamiltonian. -/
 theorem isHamiltonianVectorField_iff_interior_eq :
     σ.IsHamiltonianVectorField f X ↔
-      σ.1.interior X = mextDeriv (RoughForm.ofFunction I f) := by
+      RoughForm.interior X σ.1 = mextDeriv (RoughForm.ofFunction I f) := by
   -- Both sides are one-forms of one vector, the images of `σ♭ X` and `df` respectively.
   simp only [isHamiltonianVectorField_iff_flat, funext_iff, interior_apply_eq_ofSubsingleton_flat,
     mextDeriv_ofFunction, EmbeddingLike.apply_eq_iff_eq]
@@ -208,7 +208,7 @@ theorem flat_hamiltonianVectorField (f : M → ℝ) (x : M) :
 /-- **Contraction with the Hamiltonian vector field** is the differential of the Hamiltonian,
 `σ(X_f, v) = df(v)`. -/
 theorem eval₂_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I x) :
-    SmoothForm.eval₂ σ x (σ.hamiltonianVectorField f x) v = mvfderiv I f x v := by
+    SmoothBundleForm.eval₂ σ x (σ.hamiltonianVectorField f x) v = mvfderiv I f x v := by
   rw [← flat_apply, h.flat_hamiltonianVectorField]
 
 /-- The simp normal form of `eval₂_hamiltonianVectorField`, with `eval₂` unfolded:
@@ -216,7 +216,7 @@ theorem eval₂_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace
 @[simp]
 theorem apply_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I x) :
     σ.1 x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v := by
-  rw [← SmoothForm.eval₂_apply, h.eval₂_hamiltonianVectorField]
+  rw [← SmoothBundleForm.eval₂_apply, h.eval₂_hamiltonianVectorField]
 
 /-- The Hamiltonian vector field of `f` is a Hamiltonian vector field of `f`. -/
 theorem isHamiltonianVectorField_hamiltonianVectorField (f : M → ℝ) :
@@ -248,23 +248,23 @@ end IsNondegenerate
 form on a finite-dimensional manifold it is `{f, g} = df(X_g)`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`). -/
 def poissonBracket (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) : ℝ :=
-  SmoothForm.eval₂ σ x (σ.hamiltonianVectorField f x) (σ.hamiltonianVectorField g x)
+  SmoothBundleForm.eval₂ σ x (σ.hamiltonianVectorField f x) (σ.hamiltonianVectorField g x)
 
 /-- The Poisson bracket unfolds as `σ` evaluated on the two Hamiltonian vector fields. -/
 theorem poissonBracket_def (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) :
     σ.poissonBracket f g x =
-      SmoothForm.eval₂ σ x (σ.hamiltonianVectorField f x) (σ.hamiltonianVectorField g x) :=
+      SmoothBundleForm.eval₂ σ x (σ.hamiltonianVectorField f x) (σ.hamiltonianVectorField g x) :=
   (rfl)
 
 /-- The Poisson bracket is antisymmetric. -/
 theorem neg_poissonBracket (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) :
     -σ.poissonBracket g f x = σ.poissonBracket f g x := by
-  rw [poissonBracket_def, poissonBracket_def, SmoothForm.eval₂_swap σ x, neg_neg]
+  rw [poissonBracket_def, poissonBracket_def, SmoothBundleForm.eval₂_swap σ x, neg_neg]
 
 @[simp]
 theorem poissonBracket_self (σ : SmoothTwoForm I M) (f : M → ℝ) (x : M) :
     σ.poissonBracket f f x = 0 :=
-  SmoothForm.eval₂_self σ x _
+  SmoothBundleForm.eval₂_self σ x _
 
 @[simp]
 theorem poissonBracket_const_left (σ : SmoothTwoForm I M) (c : ℝ) (g : M → ℝ) (x : M) :
