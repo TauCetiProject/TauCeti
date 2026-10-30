@@ -152,7 +152,8 @@ theorem closedOrbit_apply_iterate (k : ℕ) (θ : AddCircle (d : ℝ)) :
 /-- The closed orbits through the points of one periodic orbit of `φ` have the same image. -/
 theorem range_closedOrbit_apply_iterate (k : ℕ) :
     range (closedOrbit φ (h.apply_iterate k)) = range (closedOrbit φ h) := by
-  rw [funext (closedOrbit_apply_iterate h k), (add_right_surjective _).range_comp]
+  rw [funext (closedOrbit_apply_iterate h k)]
+  exact (add_right_surjective _).range_comp _
 
 /-- The closed orbit is injective exactly when its period `d` is the least period of `x`. -/
 theorem injective_closedOrbit_iff : Injective (closedOrbit φ h) ↔ minimalPeriod φ x = d := by
