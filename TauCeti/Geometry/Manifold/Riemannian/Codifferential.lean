@@ -150,17 +150,6 @@ theorem tsupport_codifferential_subset (o : Manifold.Orientation I M (Fin m))
   refine (RoughForm.tsupport_mextDeriv_subset _).trans ?_
   exact RoughForm.tsupport_hodgeStar_subset o hkl β.1
 
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- `TauCeti.RoughForm.wedge_hodgeStar_apply`, `α ∧ ⋆β = ⟨α, β⟩ vol`, read through the wedge of
-rough forms rather than the wedge of their values. -/
-private theorem wedge_hodgeStar_apply' (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
-    (α β : RoughForm I M ℝ k) (x : M) (v : Fin (k + l) → TangentSpace I x) :
-    α.wedge (RoughForm.hodgeStar o hkl β) x v =
-      alternatingFormInner (TangentSpace I x) k (α x) (β x) *
-        riemannianVolumeForm o x (v ∘ finCongr hkl.symm) := by
-  rw [RoughForm.wedge_def, RoughForm.wedgeWith_apply', ← ContinuousAlternatingMap.wedge_def,
-    RoughForm.wedge_hodgeStar_apply]
-
 /-- The top form `⟨α, β⟩ vol` is the degree transport of the smooth form `α ∧ ⋆β`. -/
 private theorem inner_smul_riemannianVolumeForm_eq (o : Manifold.Orientation I M (Fin m))
     (hkl : k + l = m) (α β : SmoothForm I M ℝ k) :
@@ -170,7 +159,8 @@ private theorem inner_smul_riemannianVolumeForm_eq (o : Manifold.Orientation I M
         (wedge α (hodgeStar o hkl β)) : RoughForm I M ℝ m) := by
   funext x
   ext v
-  rw [cast_apply, coe_wedge, coe_hodgeStar, wedge_hodgeStar_apply',
+  rw [cast_apply, coe_wedge, coe_hodgeStar, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
+    ← ContinuousAlternatingMap.wedge_def, RoughForm.wedge_hodgeStar_apply,
     ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   simp only [Function.comp_def, finCongr_apply, Fin.cast_cast, Fin.cast_eq_self]
 
@@ -202,7 +192,8 @@ theorem mextDeriv_wedge_hodgeStar (o : Manifold.Orientation I M (Fin (k + l + 1)
     ← mextDerivₗ_apply I l (hodgeStar o _ β), hdβ, Submodule.coe_smul,
     RoughForm.wedge_smul_right, ← mextDerivₗ_apply I k α]
   simp only [coe_hodgeStar, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
-    wedge_hodgeStar_apply', smul_eq_mul, Function.comp_def,
+    RoughForm.wedge_def, RoughForm.wedgeWith_apply', ← ContinuousAlternatingMap.wedge_def,
+    RoughForm.wedge_hodgeStar_apply, smul_eq_mul, Function.comp_def,
     finCongr_apply, Fin.cast_cast, Fin.cast_eq_self]
   linear_combination (alternatingFormInner (TangentSpace I x) k (α.1 x)
     ((codifferential o _ β).1 x) * riemannianVolumeForm o x v) * hsign
