@@ -32,6 +32,8 @@ available to the categorical exactness and extension APIs.
 
 * `ModuleCat.comp_conj_mapQ`: the map induced by `f` on two presented quotients composed with the
   projection of the source is the projection of the target composed with `f`.
+* `Submodule.shortExact_quotientInfSupShortComplex`: for submodules `S` and `T`, the Mayer–Vietoris
+  sequence `0 → M ⧸ (S ⊓ T) → M ⧸ S × M ⧸ T → M ⧸ (S ⊔ T) → 0` is short exact.
 -/
 
 public section
@@ -74,5 +76,53 @@ theorem shortExact_quotientShortComplex (S : Submodule A M) :
     S.quotientShortComplex.ShortExact :=
   ModuleCat.shortComplex_shortExact _ (LinearMap.exact_subtype_mkQ S)
     S.injective_subtype S.mkQ_surjective
+
+/-- The Mayer–Vietoris short complex `M ⧸ (S ⊓ T) → M ⧸ S × M ⧸ T → M ⧸ (S ⊔ T)` of two
+submodules, sending `x` to `(x, x)` and `(x, y)` to `x - y`. -/
+abbrev quotientInfSupShortComplex (S T : Submodule A M) : ShortComplex (ModuleCat.{v} A) :=
+  ModuleCat.shortComplexOfCompEqZero
+    ((factor (inf_le_left : S ⊓ T ≤ S)).prod (factor (inf_le_right : S ⊓ T ≤ T)))
+    ((factor (le_sup_left : S ≤ S ⊔ T)).coprod (-factor (le_sup_right : T ≤ S ⊔ T))) (by
+      ext x
+      simp)
+
+/-- The Mayer–Vietoris short complex of two submodules is short exact. -/
+theorem shortExact_quotientInfSupShortComplex (S T : Submodule A M) :
+    (quotientInfSupShortComplex S T).ShortExact := by
+  set f := (factor (inf_le_left : S ⊓ T ≤ S)).prod (factor (inf_le_right : S ⊓ T ≤ T))
+  set g := (factor (le_sup_left : S ≤ S ⊔ T)).coprod (-factor (le_sup_right : T ≤ S ⊔ T))
+  have hf (x : M) : f (mkQ _ x) = (mkQ S x, mkQ T x) := rfl
+  have hg (y z : M) : g (mkQ S y, mkQ T z) = mkQ _ (y - z) := by simp [g, sub_eq_add_neg]
+  have exact : Function.Exact f g := by
+    rintro ⟨y, z⟩
+    obtain ⟨y, rfl⟩ := mkQ_surjective _ y
+    obtain ⟨z, rfl⟩ := mkQ_surjective _ z
+    rw [hg, mkQ_apply, Quotient.mk_eq_zero]
+    refine ⟨fun h ↦ ?_, ?_⟩
+    · -- If `y - z = s + t` with `s ∈ S` and `t ∈ T`, then `y - s = z + t` maps to `(y, z)`.
+      obtain ⟨s, hs, t, ht, hst⟩ := mem_sup.1 h
+      refine ⟨mkQ _ (y - s), ?_⟩
+      rw [hf, Prod.mk.injEq, mkQ_apply, mkQ_apply, mkQ_apply, mkQ_apply, Quotient.eq,
+        Quotient.eq, show y - s - z = t by rw [sub_right_comm, ← hst]; abel]
+      exact ⟨by simpa using hs, ht⟩
+    · rintro ⟨x, hx⟩
+      obtain ⟨x, rfl⟩ := mkQ_surjective _ x
+      rw [hf, Prod.mk.injEq, mkQ_apply, mkQ_apply, mkQ_apply, mkQ_apply, Quotient.eq,
+        Quotient.eq] at hx
+      rw [show y - z = -(x - y) + (x - z) by abel]
+      exact add_mem (neg_mem (mem_sup_left hx.1)) (mem_sup_right hx.2)
+  have inj : Function.Injective f := by
+    intro x y h
+    obtain ⟨x, rfl⟩ := mkQ_surjective _ x
+    obtain ⟨y, rfl⟩ := mkQ_surjective _ y
+    rw [hf, hf, Prod.mk.injEq, mkQ_apply, mkQ_apply, mkQ_apply, mkQ_apply, Quotient.eq,
+      Quotient.eq] at h
+    rw [mkQ_apply, mkQ_apply, Quotient.eq]
+    exact ⟨h.1, h.2⟩
+  have surj : Function.Surjective g := by
+    intro z
+    obtain ⟨z, rfl⟩ := mkQ_surjective _ z
+    exact ⟨(mkQ _ z, 0), by simpa using hg z 0⟩
+  exact ModuleCat.shortComplex_shortExact _ exact inj surj
 
 end Submodule
