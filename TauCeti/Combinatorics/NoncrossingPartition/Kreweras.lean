@@ -104,8 +104,8 @@ theorem mem_part_kreweras_iff {x y : α} :
 
 /-- A partition `Q` of the bars is finer than the Kreweras complement of `P` exactly when no part
 of `Q` crosses a part of `P` in the interlaced order of positions and bars: there are no positions
-`a, b` in a common part of `P` and bars after `x, y` in a common part of `Q` with
-`a < x̄ < b < ȳ` or `x̄ < a < ȳ < b`, that is, with `a ≤ x < b ≤ y` or `x < a ≤ y < b`. Together
+`a, b` in a common part of `P` and bars `x', y'` after `x, y` in a common part of `Q` with
+`a < x' < b < y'` or `x' < a < y' < b`, that is, with `a ≤ x < b ≤ y` or `x < a ≤ y < b`. Together
 with `isNoncrossing_kreweras`, this makes `K(P)` the largest noncrossing partition of the bars
 complementary to `P`. -/
 theorem le_kreweras_iff :
