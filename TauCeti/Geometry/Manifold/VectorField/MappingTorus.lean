@@ -242,7 +242,7 @@ theorem mfderiv_map_timeVectorField {E' : Type*} [NormedAddCommGroup E'] [Normed
 @[simp]
 theorem interior_timeVectorField_fiberForm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {k : ℕ} {σ : SmoothForm I M F (k + 1)} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ} :
-    (fiberForm φ σ hσ).1.interior (timeVectorField φ) = 0 := by
+    RoughForm.interior (F := F) (timeVectorField φ) (fiberForm φ σ hσ).1 = 0 := by
   -- The unit vector field `(1, 0)` of `ℝ × M`, related to `T` by `(t, x) ↦ [t, x]` and to the zero
   -- field of `M` by the second projection.
   let X : (p : ℝ × M) → TangentSpace (𝓘(ℝ).prod I) p :=
@@ -265,7 +265,7 @@ theorem fiberForm_apply_vecCons_timeVectorField {F : Type*} [NormedAddCommGroup 
     {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ} (y : SmoothMappingTorus φ)
     (v : Fin k → TangentSpace (𝓘(ℝ).prod I) y) :
     (fiberForm φ σ hσ).1 y (Matrix.vecCons (timeVectorField φ y) v) = 0 := by
-  rw [← RoughForm.interior_apply, interior_timeVectorField_fiberForm]
+  rw [← RoughForm.interior_apply (F := F), interior_timeVectorField_fiberForm]
   rfl
 
 /-- The field `T` lies in the kernel of the fiber form of every two-form `σ` preserved by `φ`:

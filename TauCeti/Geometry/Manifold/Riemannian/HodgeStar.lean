@@ -232,7 +232,7 @@ def hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) :
     SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ l :=
   haveI : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   (RoughForm.hodgeStar o hkl).restrict fun φ hφ ↦
-    ((SmoothForm.isSmoothForm ⟨φ, hφ⟩).hodgeStar o hkl).mem_smoothForms
+    ((SmoothForm.isSmoothForm ⟨φ, hφ⟩).hodgeStar o hkl).mem_smoothBundleForms
 
 /-- The Hodge star of a smooth form is the Hodge star of the underlying rough form. -/
 @[simp]

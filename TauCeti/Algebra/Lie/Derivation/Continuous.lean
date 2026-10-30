@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Derivation.Basic
+public import TauCeti.Algebra.Lie.Derivation.Center
 public import TauCeti.Topology.Algebra.Lie.Quotient
 
 /-!
@@ -63,6 +63,14 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 universe u v
 
 open Topology
+
+/-- Multiplying a continuous derivation by a central element preserves continuity. -/
+theorem derivationLieAlgebra.continuous_center_smul {R A : Type*} [CommRing R] [Ring A]
+    [Algebra R A] [TopologicalSpace A] [SeparatelyContinuousMul A]
+    (z : Subalgebra.center R A) {D : derivationLieAlgebra R A}
+    (hD : Continuous (D : Module.End R A)) :
+    Continuous ((z • D : derivationLieAlgebra R A) : Module.End R A) :=
+  (continuous_const_mul (z : A)).comp hD
 
 section ContinuousDerivations
 

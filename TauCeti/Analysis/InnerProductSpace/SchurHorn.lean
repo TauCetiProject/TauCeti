@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.Analysis.Convex.DoublyStochasticMatrix
+public import TauCeti.Analysis.Convex.Majorization
 public import TauCeti.Analysis.Convex.PermutationOrbit
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 
 import Mathlib.Analysis.Convex.Mul
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 /-!
-# The forward Schur–Horn inequality
+# The Schur–Horn theorem
 
 Let `T` be a symmetric endomorphism of a finite-dimensional inner product space over `ℝ` or `ℂ`,
 with eigenvalues `λᵢ` and orthonormal eigenbasis `(vᵢ)`, and let `(eₖ)` be any orthonormal basis.
@@ -35,6 +37,14 @@ matrices, so the diagonal lies in the convex hull of the rearrangements of the s
 The case `φ = x²` says that the Euclidean norm of the diagonal is at most that of the spectrum.
 The sum of the diagonal entries is the trace, so it equals the sum of the eigenvalues in every
 orthonormal basis.
+
+Conversely (Horn), every point of that convex hull is the diagonal of `T` in some orthonormal
+basis. Rotating two basis vectors `eᵢ, eⱼ` in the plane they span moves the diagonal entry at `i`
+continuously from `dᵢ` to `dⱼ` while keeping `dᵢ + dⱼ` and the other entries fixed, so the
+diagonals of `T` are closed under Robin Hood transfers. Since they contain the spectrum, the
+transfer closure theorem of `TauCeti.Analysis.Convex.Majorization` and Rado's description of the
+permutohedron by majorization show that they fill the convex hull. Thus the diagonals of `T` are
+exactly the tuples majorized by its spectrum.
 
 ## Main definitions
 
@@ -61,13 +71,23 @@ orthonormal basis.
   `∑ₖ dₖ² ≤ ∑ᵢ λᵢ²`.
 * `LinearMap.IsSymmetric.sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues`: for a decreasing
   weight sequence `c`, `∑ₖ cₖ dₖ ≤ ∑ₖ cₖ λₖ`, with the eigenvalues listed in decreasing order.
+* `LinearMap.IsSymmetric.exists_orthonormalBasis_re_inner_apply_self_eq_robinHood`: a rotation in
+  a coordinate plane realizes any Robin Hood transfer from a diagonal entry to a smaller one.
+* `LinearMap.IsSymmetric.exists_orthonormalBasis_re_inner_apply_self_eq_of_mem_convexHull`:
+  Horn's theorem, every point of the permutohedron of the spectrum is a diagonal of `T`.
+* `LinearMap.IsSymmetric.range_re_inner_apply_self_eq_convexHull_eigenvalues_comp_perm`: the
+  Schur–Horn theorem, the diagonals of `T` are exactly the permutohedron of its spectrum.
+* `LinearMap.IsSymmetric.exists_orthonormalBasis_re_inner_apply_self_eq_iff`: the Schur–Horn
+  theorem in majorization form.
 
 ## References
 
 * I. Schur, *Über eine Klasse von Mittelbildungen mit Anwendungen auf die
   Determinantentheorie*, Sitzungsber. Berl. Math. Ges. **22** (1923), 9–20.
+* A. Horn, *Doubly stochastic matrices and the diagonal of a rotation matrix*, Amer. J. Math.
+  **76** (1954), 620–630.
 * A. W. Marshall, I. Olkin, B. C. Arnold, *Inequalities: Theory of Majorization and Its
-  Applications*, 2nd ed., Springer (2011), Theorem 9.B.1.
+  Applications*, 2nd ed., Springer (2011), Theorems 9.B.1 and 9.B.2.
 * R. Bhatia, *Matrix Analysis*, Graduate Texts in Mathematics 169, Springer (1997), §II.1.
 -/
 
@@ -212,5 +232,194 @@ theorem sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues (hT : T.IsSymmetric)
   rw [hdiag]
   exact (hc.monovary (hT.eigenvalues_antitone hn)).dotProduct_mulVec_le_of_mem_doublyStochastic
     (e.schurWeight_mem_doublyStochastic _)
+
+end LinearMap.IsSymmetric
+
+/-! ### The converse: Horn's theorem -/
+
+namespace OrthonormalBasis
+
+variable [DecidableEq ι]
+
+/-- The family obtained from `e` by rotating the pair `e i, e j` through the angle `θ` in the
+plane they span, fixing the other vectors. -/
+private noncomputable def planeRotation (e : OrthonormalBasis ι 𝕜 E) (i j : ι) (θ : ℝ) :
+    ι → E := fun k ↦
+  if k = i then (Real.cos θ : 𝕜) • e i + (Real.sin θ : 𝕜) • e j
+  else if k = j then -((Real.sin θ : 𝕜) • e i) + (Real.cos θ : 𝕜) • e j else e k
+
+private theorem orthonormal_planeRotation (e : OrthonormalBasis ι 𝕜 E) {i j : ι} (hij : i ≠ j)
+    (θ : ℝ) : Orthonormal 𝕜 (e.planeRotation i j θ) := by
+  have he := orthonormal_iff_ite.1 e.orthonormal
+  have hcs : (Real.cos θ : 𝕜) * Real.cos θ + Real.sin θ * Real.sin θ = 1 := by
+    rw [← RCLike.ofReal_mul, ← RCLike.ofReal_mul, ← RCLike.ofReal_add, ← sq, ← sq,
+      Real.cos_sq_add_sin_sq, RCLike.ofReal_one]
+  rw [orthonormal_iff_ite]
+  intro a b
+  -- Expand both vectors in the basis `e`, case by case on the positions of `a` and `b`.
+  rcases eq_or_ne a i with rfl | hai
+  · rcases eq_or_ne b a with rfl | hba
+    · simp only [planeRotation, ite_true, inner_add_left, inner_add_right, inner_smul_left,
+        inner_smul_right, he, hij, hij.symm, ite_false, RCLike.conj_ofReal]
+      linear_combination hcs
+    rcases eq_or_ne b j with rfl | hbj
+    · simp only [planeRotation, ite_true, inner_add_left, inner_add_right, inner_smul_left,
+        inner_smul_right, inner_neg_right, he, hij, hij.symm, ite_false, RCLike.conj_ofReal]
+      ring
+    · simp only [planeRotation, ite_true, hba, hbj, inner_add_left, inner_smul_left, he,
+        hba.symm, hbj.symm, ite_false]
+      ring
+  rcases eq_or_ne a j with rfl | haj
+  · rcases eq_or_ne b a with rfl | hba
+    · simp only [planeRotation, ite_true, hai, inner_add_left, inner_add_right, inner_smul_left,
+        inner_smul_right, inner_neg_left, inner_neg_right, he, hij, ite_false,
+        RCLike.conj_ofReal]
+      linear_combination hcs
+    rcases eq_or_ne b i with rfl | hbi
+    · simp only [planeRotation, ite_true, hai, hba, inner_add_left, inner_add_right,
+        inner_smul_left, inner_smul_right, inner_neg_left, he, ite_false,
+        RCLike.conj_ofReal]
+      ring
+    · simp only [planeRotation, ite_true, hai, hba, hbi, inner_add_left, inner_smul_left,
+        inner_neg_left, he, hba.symm, hbi.symm, ite_false]
+      ring
+  · rcases eq_or_ne b i with rfl | hbi
+    · simp only [planeRotation, hai, haj, ite_true, ite_false, inner_add_right, inner_smul_right,
+        he]
+      ring
+    rcases eq_or_ne b j with rfl | hbj
+    · simp only [planeRotation, hai, haj, hbi, ite_true, ite_false, inner_add_right,
+        inner_neg_right, inner_smul_right, he]
+      ring
+    · simp only [planeRotation, hai, haj, hbi, hbj, ite_false, he]
+
+variable {T : E →ₗ[𝕜] E}
+
+private theorem planeRotation_apply_of_ne (e : OrthonormalBasis ι 𝕜 E) {i j k : ι} (hki : k ≠ i)
+    (hkj : k ≠ j) (θ : ℝ) : e.planeRotation i j θ k = e k := by
+  simp [planeRotation, hki, hkj]
+
+/-- The diagonal entry of a symmetric operator at the first rotated vector. -/
+private theorem re_inner_planeRotation_left (hT : T.IsSymmetric) (e : OrthonormalBasis ι 𝕜 E)
+    (i j : ι) (θ : ℝ) :
+    RCLike.re ⟪T (e.planeRotation i j θ i), e.planeRotation i j θ i⟫_𝕜 =
+      Real.cos θ ^ 2 * RCLike.re ⟪T (e i), e i⟫_𝕜 +
+        Real.sin θ ^ 2 * RCLike.re ⟪T (e j), e j⟫_𝕜 +
+          2 * Real.cos θ * Real.sin θ * RCLike.re ⟪T (e i), e j⟫_𝕜 := by
+  have hsym : RCLike.re ⟪T (e j), e i⟫_𝕜 = RCLike.re ⟪T (e i), e j⟫_𝕜 := by
+    rw [hT, inner_re_symm]
+  simp only [planeRotation, ite_true, map_add, map_smul, inner_add_left, inner_add_right,
+    inner_smul_left, inner_smul_right, RCLike.conj_ofReal, RCLike.re_ofReal_mul, hsym]
+  ring
+
+/-- The diagonal entry of a symmetric operator at the second rotated vector. -/
+private theorem re_inner_planeRotation_right (hT : T.IsSymmetric) (e : OrthonormalBasis ι 𝕜 E)
+    {i j : ι} (hij : i ≠ j) (θ : ℝ) :
+    RCLike.re ⟪T (e.planeRotation i j θ j), e.planeRotation i j θ j⟫_𝕜 =
+      Real.sin θ ^ 2 * RCLike.re ⟪T (e i), e i⟫_𝕜 +
+        Real.cos θ ^ 2 * RCLike.re ⟪T (e j), e j⟫_𝕜 -
+          2 * Real.cos θ * Real.sin θ * RCLike.re ⟪T (e i), e j⟫_𝕜 := by
+  have hsym : RCLike.re ⟪T (e j), e i⟫_𝕜 = RCLike.re ⟪T (e i), e j⟫_𝕜 := by
+    rw [hT, inner_re_symm]
+  simp only [planeRotation, hij.symm, ite_true, ite_false, map_add, map_neg, map_smul,
+    inner_add_left, inner_add_right, inner_neg_left, inner_neg_right, inner_smul_left,
+    inner_smul_right, RCLike.conj_ofReal, RCLike.re_ofReal_mul, map_neg, hsym]
+  ring
+
+end OrthonormalBasis
+
+namespace LinearMap.IsSymmetric
+
+open TauCeti
+
+variable {T : E →ₗ[𝕜] E} {n : ℕ}
+
+/-- **A plane rotation realizes a Robin Hood transfer of the diagonal.** Let `dₖ = Re⟪T eₖ, eₖ⟫`
+be the diagonal of a symmetric operator `T` in an orthonormal basis `e`. For `0 ≤ δ ≤ dᵢ - dⱼ`,
+rotating `eᵢ` and `eⱼ` in the plane they span gives an orthonormal basis in which the diagonal of
+`T` is `robinHood d i j δ`: the entry at `i` drops by `δ`, the entry at `j` rises by `δ`, and the
+other entries are unchanged. -/
+theorem exists_orthonormalBasis_re_inner_apply_self_eq_robinHood [DecidableEq ι]
+    (hT : T.IsSymmetric) (e : OrthonormalBasis ι 𝕜 E) (i j : ι) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hδ' : δ ≤ RCLike.re ⟪T (e i), e i⟫_𝕜 - RCLike.re ⟪T (e j), e j⟫_𝕜) :
+    ∃ e' : OrthonormalBasis ι 𝕜 E, (fun k ↦ RCLike.re ⟪T (e' k), e' k⟫_𝕜) =
+      robinHood (fun k ↦ RCLike.re ⟪T (e k), e k⟫_𝕜) i j δ := by
+  rcases eq_or_ne i j with rfl | hij
+  · exact ⟨e, by simp⟩
+  have : FiniteDimensional 𝕜 E := .of_basis e.toBasis
+  -- The diagonal entry at `i` after rotating by `θ` moves continuously from its value at `i` for
+  -- `θ = 0` to its value at `j` for `θ = π / 2`, so it takes every value in between.
+  set g : ℝ → ℝ := fun θ ↦
+    Real.cos θ ^ 2 * RCLike.re ⟪T (e i), e i⟫_𝕜 + Real.sin θ ^ 2 * RCLike.re ⟪T (e j), e j⟫_𝕜 +
+      2 * Real.cos θ * Real.sin θ * RCLike.re ⟪T (e i), e j⟫_𝕜
+  have hg : Continuous g := by fun_prop
+  obtain ⟨θ, -, hθ⟩ := intermediate_value_Icc' Real.pi_div_two_pos.le hg.continuousOn
+    (show RCLike.re ⟪T (e i), e i⟫_𝕜 - δ ∈ Set.Icc (g (Real.pi / 2)) (g 0) by
+      simp only [g, Real.cos_pi_div_two, Real.sin_pi_div_two, Real.cos_zero, Real.sin_zero]
+      constructor <;> linarith)
+  have hon := e.orthonormal_planeRotation hij θ
+  refine ⟨OrthonormalBasis.mk hon (hon.linearIndependent.span_eq_top_of_card_eq_finrank'
+    (Module.finrank_eq_card_basis e.toBasis).symm).ge, funext fun k ↦ ?_⟩
+  simp only [OrthonormalBasis.coe_mk]
+  rcases eq_or_ne k i with rfl | hki
+  · rw [e.re_inner_planeRotation_left hT, robinHood_apply_left _ hij]
+    exact hθ
+  rcases eq_or_ne k j with rfl | hkj
+  · rw [e.re_inner_planeRotation_right hT hij, robinHood_apply_right _ hij]
+    linear_combination (RCLike.re ⟪T (e i), e i⟫_𝕜 + RCLike.re ⟪T (e k), e k⟫_𝕜) *
+      Real.cos_sq_add_sin_sq θ - hθ
+  · rw [e.planeRotation_apply_of_ne hki hkj, robinHood_apply_of_ne _ hki hkj]
+
+variable [FiniteDimensional 𝕜 E]
+
+/-- **Horn's theorem.** Every point `d` of the convex hull of the rearrangements of the spectrum
+of a symmetric operator `T` is the diagonal of `T` in some orthonormal basis: there is an
+orthonormal basis `e` with `Re⟪T eₖ, eₖ⟫ = dₖ` for every `k`. -/
+theorem exists_orthonormalBasis_re_inner_apply_self_eq_of_mem_convexHull (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) {d : Fin n → ℝ}
+    (hd : d ∈ convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ hT.eigenvalues hn ∘ σ)) :
+    ∃ e : OrthonormalBasis (Fin n) 𝕜 E, ∀ k, RCLike.re ⟪T (e k), e k⟫_𝕜 = d k := by
+  -- The diagonals of `T` contain its spectrum and are closed under Robin Hood transfers.
+  set K := Set.range fun (e : OrthonormalBasis (Fin n) 𝕜 E) (k : Fin n) ↦
+    RCLike.re ⟪T (e k), e k⟫_𝕜
+  have hK : ∀ x ∈ K, ∀ (i j : Fin n) (δ : ℝ), 0 ≤ δ → δ ≤ x i - x j → robinHood x i j δ ∈ K := by
+    rintro _ ⟨e, rfl⟩ i j δ hδ hδ'
+    exact hT.exists_orthonormalBasis_re_inner_apply_self_eq_robinHood e i j hδ hδ'
+  have hspec : hT.eigenvalues hn ∈ K := ⟨hT.eigenvectorBasis hn, funext fun k ↦ by
+    simp [hT.apply_eigenvectorBasis, inner_smul_left]⟩
+  -- The decreasing rearrangement of `d` is majorized by the spectrum, hence a diagonal of `T`.
+  obtain ⟨hle, hsum⟩ := (mem_convexHull_range_comp_perm_iff_of_antitone
+    (hT.eigenvalues_antitone hn) (Tuple.antitone_sortDesc d)).1
+      (comp_perm_mem_convexHull_range_comp_perm hd (Tuple.sortDesc d))
+  obtain ⟨e, he⟩ := mem_of_prefixSum_le_of_sum_eq hK hspec (Tuple.antitone_sortDesc d) hle hsum
+  refine ⟨e.reindex (Tuple.sortDesc d), fun k ↦ ?_⟩
+  simpa using congrFun he ((Tuple.sortDesc d).symm k)
+
+/-- **The Schur–Horn theorem.** The diagonals `(Re⟪T eₖ, eₖ⟫)ₖ` of a symmetric operator `T` in
+the orthonormal bases `e` indexed by `Fin n` form exactly the convex hull of the rearrangements of
+the spectrum of `T`. -/
+theorem range_re_inner_apply_self_eq_convexHull_eigenvalues_comp_perm (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) :
+    (Set.range fun (e : OrthonormalBasis (Fin n) 𝕜 E) (k : Fin n) ↦ RCLike.re ⟪T (e k), e k⟫_𝕜) =
+      convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ hT.eigenvalues hn ∘ σ) := by
+  ext d
+  refine ⟨?_, fun hd ↦ ?_⟩
+  · rintro ⟨e, rfl⟩
+    exact hT.re_inner_apply_self_mem_convexHull_eigenvalues_comp_perm hn e
+  · obtain ⟨e, he⟩ := hT.exists_orthonormalBasis_re_inner_apply_self_eq_of_mem_convexHull hn hd
+    exact ⟨e, funext he⟩
+
+/-- **The Schur–Horn theorem**, majorization form. A real tuple `d` is the diagonal
+`(Re⟪T eₖ, eₖ⟫)ₖ` of a symmetric operator `T` in some orthonormal basis `e` exactly when `d` is
+majorized by the spectrum of `T`: the prefix sums of the decreasing rearrangement of `d` are at
+most the corresponding sums of the largest eigenvalues, and the sum of `d` is the trace. -/
+theorem exists_orthonormalBasis_re_inner_apply_self_eq_iff (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) {d : Fin n → ℝ} :
+    (∃ e : OrthonormalBasis (Fin n) 𝕜 E, ∀ k, RCLike.re ⟪T (e k), e k⟫_𝕜 = d k) ↔
+      (∀ k, prefixSum k (d ∘ Tuple.sortDesc d) ≤ prefixSum k (hT.eigenvalues hn)) ∧
+        ∑ i, d i = ∑ i, hT.eigenvalues hn i := by
+  rw [← mem_convexHull_range_comp_perm_iff (hT.eigenvalues_antitone hn),
+    ← hT.range_re_inner_apply_self_eq_convexHull_eigenvalues_comp_perm hn]
+  simp only [Set.mem_range, funext_iff]
 
 end LinearMap.IsSymmetric
