@@ -71,7 +71,7 @@ structure NDRPair (A : Set X) where
   deformation_of_mem (t : I) {x : X} (hx : x ∈ A) : deformation (t, x) = x
   deformation_one_mem {x : X} (hx : control x < 1) : deformation (1, x) ∈ A
 
-attribute [simp] NDRPair.deformation_zero NDRPair.deformation_of_mem
+attribute [simp] NDRPair.control_eq_zero_iff NDRPair.deformation_zero NDRPair.deformation_of_mem
 
 namespace NDRPair
 
