@@ -1,0 +1,140 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Diffeomorph.Cotangent
+public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
+
+/-!
+# Cotangent lifts preserve the Liouville and canonical symplectic forms
+
+Let `h : M → N` be a smooth diffeomorphism and `T*h : T*M → T*N` its cotangent lift
+`(x, p) ↦ (h x, p ∘ (dh_x)⁻¹)` (`Diffeomorph.cotangent`). The Liouville forms are natural:
+
+`(T*h)^* λ_N = λ_M` (`Diffeomorph.mpullback_cotangent_liouvilleForm`).
+
+Indeed `T*h` covers `h`, so `dπ_N ∘ d(T*h) = dh ∘ dπ_M`, and the lifted covector pairs with
+`dh (dπ_M v)` as the original covector pairs with `dπ_M v`. Since exterior differentiation commutes
+with pullback, the canonical symplectic forms `ω = -dλ` are preserved as well:
+
+`(T*h)^* ω_N = ω_M` (`Diffeomorph.mpullback_cotangent_symplecticForm`).
+
+So every diffeomorphism of the base gives an exact symplectomorphism of cotangent bundles. The base
+may have boundary or corners and need not be finite-dimensional. In particular, cotangent lifts
+carry exact Lagrangian maps for `λ_M` to exact Lagrangian maps for `λ_N` with the same primitive
+(`Diffeomorph.isExactLagrangianMap_cotangent_comp_iff`).
+
+In particular, if a group `G` acts on `M` by smooth maps, its cotangent-lifted action on `T*M`
+(`TauCeti.CotangentBundle.instMulAction`) preserves `λ` and `ω`
+(`TauCeti.CotangentBundle.mpullback_smul_liouvilleForm`,
+`TauCeti.CotangentBundle.mpullback_smul_symplecticForm`): it is an action by exact
+symplectomorphisms.
+
+## References
+
+* A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
+  Springer, 2001, Section 2.
+* D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
+  Section 3.2.
+-/
+
+public section
+
+noncomputable section
+
+open Bundle
+open scoped Manifold ContDiff
+
+namespace Diffeomorph
+
+open TauCeti TauCeti.CotangentBundle
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F H' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+section Liouville
+
+variable [IsManifold I 2 M] [IsManifold J 2 N]
+
+/-- **Naturality of the Liouville form.** The cotangent lift of a smooth diffeomorphism
+pulls the Liouville form of `T*N` back to the Liouville form of `T*M`. -/
+@[simp]
+theorem mpullback_cotangent_liouvilleForm (h : M ≃ₘ⟮I, J⟯ N) :
+    SmoothForm.mpullback h.cotangent h.cotangent.contMDiff (liouvilleForm J N) =
+      liouvilleForm I M := by
+  apply Subtype.ext
+  funext z
+  ext v
+  rw [mpullback_liouvilleForm_apply_of_proj_apply_eq h.cotangent.contMDiff
+    (proj_cotangent h) z (h.mdifferentiable (by simp) z.proj), liouvilleForm_apply]
+  exact cotangent_snd_apply_mfderiv h z _
+
+end Liouville
+
+section Symplectic
+
+variable [IsManifold I ∞ M] [IsManifold J ∞ N]
+
+/-- **Cotangent lifts are symplectic.** The cotangent lift of a smooth diffeomorphism pulls the
+canonical symplectic form of `T*N` back to the canonical symplectic form of `T*M`. -/
+@[simp]
+theorem mpullback_cotangent_symplecticForm (h : M ≃ₘ⟮I, J⟯ N) :
+    SmoothForm.mpullback h.cotangent h.cotangent.contMDiff (symplecticForm J N) =
+      symplecticForm I M := by
+  rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
+    ← SmoothForm.mextDerivₗ_mpullback, mpullback_cotangent_liouvilleForm]
+
+/-- **Cotangent lifts preserve exact Lagrangian maps.** For a smooth diffeomorphism `h : M → N`
+and a differentiable map `f` into `T*M`, the composite `T*h ∘ f` is an exact Lagrangian map for
+the Liouville form of `T*N`, with primitive `u`, exactly when `f` is one for the Liouville form of
+`T*M`, with the same primitive. -/
+theorem isExactLagrangianMap_cotangent_comp_iff {E'' H'' : Type*} [NormedAddCommGroup E'']
+    [NormedSpace ℝ E''] [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} {P : Type*}
+    [TopologicalSpace P] [ChartedSpace H'' P] (h : M ≃ₘ⟮I, J⟯ N)
+    {f : P → CotangentBundle I M} (hf : MDifferentiable K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) f)
+    {u : P → ℝ} :
+    (isSymplectic_symplecticForm (I := J) (M := N)).isNondegenerate.IsExactLagrangianMap K
+        (liouvilleForm J N) (h.cotangent ∘ f) u ↔
+      (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap K
+        (liouvilleForm I M) f u :=
+  h.cotangent.isExactLagrangianMap_comp_iff_of_mpullback_eq (mpullback_cotangent_symplecticForm h)
+    (mpullback_cotangent_liouvilleForm h) hf
+
+end Symplectic
+
+end Diffeomorph
+
+namespace TauCeti.CotangentBundle
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+
+/-- **The cotangent-lifted action preserves the Liouville form.** For a group acting on `M` by
+smooth maps, each element acting on `T*M` by the cotangent-lifted action pulls the Liouville form
+back to itself. -/
+@[simp]
+theorem mpullback_smul_liouvilleForm [IsManifold I 2 M] (g : G) :
+    SmoothForm.mpullback (fun z : CotangentBundle I M ↦ g • z) (contMDiff_const_smul g)
+      (liouvilleForm I M) = liouvilleForm I M := by
+  simp only [smul_def]
+  exact (Diffeomorph.constSmul I ∞ g).mpullback_cotangent_liouvilleForm
+
+/-- **The cotangent-lifted action is symplectic.** For a group acting on `M` by smooth maps, each
+element acting on `T*M` by the cotangent-lifted action pulls the canonical symplectic form back to
+itself. -/
+@[simp]
+theorem mpullback_smul_symplecticForm [IsManifold I ∞ M] (g : G) :
+    SmoothForm.mpullback (fun z : CotangentBundle I M ↦ g • z) (contMDiff_const_smul g)
+      (symplecticForm I M) = symplecticForm I M := by
+  simp only [smul_def]
+  exact (Diffeomorph.constSmul I ∞ g).mpullback_cotangent_symplecticForm
+
+end TauCeti.CotangentBundle

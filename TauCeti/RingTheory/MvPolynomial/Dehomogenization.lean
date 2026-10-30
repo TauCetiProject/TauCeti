@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Field.Fin.Tuple
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.Nullstellensatz
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
@@ -282,11 +283,7 @@ theorem eval_dehomogenize_div (i : Fin (n + 1))
     (b : Fin (n + 1) → k) (hi : b i ≠ 0) :
     eval (fun j ↦ b (i.succAbove j) / b i) (dehomogenize i p) =
       (b i)⁻¹ ^ d * eval b p := by
-  rw [eval_dehomogenize]
-  have h : i.insertNth 1 (fun j ↦ b (i.succAbove j) / b i) = (b i)⁻¹ • b := by
-    ext l
-    refine Fin.succAboveCases i ?_ (fun j ↦ ?_) l <;> simp [hi, div_eq_mul_inv, mul_comm]
-  rw [h, hp.eval_smul, smul_eq_mul]
+  rw [eval_dehomogenize, Fin.insertNth_one_div_eq_inv_smul i b hi, hp.eval_smul, smul_eq_mul]
 
 /-- Over a semifield, a nonzero homogeneous coordinate can be normalized to one without
 changing whether the gradient vanishes. The derivatives of the affine equation are

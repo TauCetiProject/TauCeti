@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Homology.Periodic.DifferentialModule.Basic
-public import TauCeti.Algebra.Homology.Periodic.HomotopicallyProjective
+public import TauCeti.Algebra.Homology.Periodic.ProjectiveFlag
 
 /-!
 # Acyclic differential modules need not be contractible
@@ -23,7 +23,8 @@ contractibility at the boundary between homotopy and derived categories: the one
 is nonzero in the periodic homotopy category but zero in the periodic derived category. Since
 it is acyclic and not contractible, it is not homotopically projective, although its unique term
 is projective (`dualNumberDifferentialModule_projective`). Thus acyclicity does not imply
-contractibility, and projectivity of the terms does not imply homotopical projectivity.
+contractibility, and projectivity of the terms does not imply homotopical projectivity. For the
+same reason the complex has no projective flag (`not_hasProjectiveFlag_dualNumberPeriodicComplex`).
 
 ## References
 
@@ -158,5 +159,11 @@ theorem not_isHomotopicallyProjective_dualNumberPeriodicComplex [Nontrivial k] :
     ((HomotopyCategory.isZero_quotient_obj_iff _).mpr ?_)
   exact (PeriodicComplex.isHomotopicallyProjective_and_acyclic_iff _).mp
     ⟨h, dualNumberPeriodicComplex_acyclic⟩
+
+/-- The dual-number periodic complex has no projective flag, although its unique term is
+projective by `dualNumberDifferentialModule_projective`. -/
+theorem not_hasProjectiveFlag_dualNumberPeriodicComplex [Nontrivial k] :
+    ¬ PeriodicComplex.HasProjectiveFlag (dualNumberPeriodicComplex (k := k)) :=
+  fun h ↦ not_isHomotopicallyProjective_dualNumberPeriodicComplex h.isHomotopicallyProjective
 
 end TauCeti

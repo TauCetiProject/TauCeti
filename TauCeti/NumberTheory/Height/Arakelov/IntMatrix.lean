@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
+public import TauCeti.LinearAlgebra.Matrix.MaximalMinor
 public import TauCeti.NumberTheory.Height.Arakelov.Covolume
+import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
 # The height of the row space and the kernel of an integer matrix
 
-Let `A` be a `p × ι` integer matrix and let `g` be the greatest common divisor of its maximal
-minors, the Plücker coordinates `TauCeti.plucker A.row` of its rows. The absolute Euclidean height
+Let `A` be a `p × ι` integer matrix and let `g = Matrix.minorGcd A` be the greatest common divisor
+of its maximal minors, equivalently of the Plücker coordinates `TauCeti.plucker A.row` of its rows
+(`Matrix.minorGcd_eq_gcd_plucker`). The absolute Euclidean height
 of the rational row space of `A`, and that of the rational solution space of `A y = 0`, satisfy
 `g · subspaceHeight (ker A) = √det (A Aᵀ)`,
 which holds without any rank hypothesis: if the rows of `A` are linearly dependent, then all
@@ -27,9 +31,14 @@ replaced by any integer matrix with the same rational row space.
 
 ## Main results
 
-* `Matrix.gcd_plucker_row_mul_subspaceHeight_span_range_row`: the identity for the row space.
-* `Matrix.gcd_plucker_row_mul_subspaceHeight_ker_mulVecLin`: the identity for the kernel.
+* `Matrix.minorGcd_mul_subspaceHeight_span_range_row`: the identity for the row space.
+* `Matrix.minorGcd_mul_subspaceHeight_ker_mulVecLin`: the identity for the kernel.
 * `Matrix.covolume_intLattice_ker_mulVecLin`: the covolume of the lattice of integral solutions.
+* `Matrix.sqrt_det_div_minorGcd_mul_left` and `Matrix.sqrt_det_div_minorGcd_unit_mul`: the
+  quotient `√det (A Aᵀ) / g` is unchanged by `A ↦ B * A` for `det B ≠ 0`, in particular for
+  `B ∈ GL_m(ℤ)`, unlike Siegel's bound in terms of the entries of `A`. This is proved directly,
+  without a rank hypothesis: the maximal minors are multiplied by `det B` and the Gram determinant
+  by `det B ^ 2`.
 
 ## Implementation notes
 
@@ -66,31 +75,31 @@ variable {ι : Type*} [Fintype ι] [LinearOrder ι] {p : ℕ}
 /-- **The height of the row space of an integer matrix.** The greatest common divisor of the
 maximal minors of an integer matrix `A`, times the absolute Euclidean height of the rational row
 space of `A`, is `√det (A Aᵀ)`. If the rows are linearly dependent, both sides vanish. -/
-theorem gcd_plucker_row_mul_subspaceHeight_span_range_row (A : Matrix (Fin p) ι ℤ) :
-    ((Finset.univ.gcd (plucker A.row) : ℤ) : ℝ) *
-        (span ℚ (range (A.map ((↑) : ℤ → ℚ)).row)).subspaceHeight =
+theorem minorGcd_mul_subspaceHeight_span_range_row (A : Matrix (Fin p) ι ℤ) :
+    (A.minorGcd : ℝ) * (span ℚ (range (A.map ((↑) : ℤ → ℚ)).row)).subspaceHeight =
       √((A * Aᵀ).det : ℝ) := by
-  rw [det_mul_transpose_eq_sum_plucker_sq]
+  rw [minorGcd_eq_gcd_plucker, det_mul_transpose_eq_sum_plucker_sq]
   by_cases hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row
   · have h := plucker_row_map (Int.castRingHom ℚ) A
     rw [Int.coe_castRingHom] at h
     rw [subspaceHeight_span_range hA, h, gcd_mul_height2_intCast]
     simp
   · -- Dependent rows have vanishing maximal minors.
-    have h0 : plucker A.row = 0 := funext fun s ↦
-      Finset.gcd_eq_zero_iff.mp ((gcd_plucker_row_eq_zero_iff A).mpr hA) s (Finset.mem_univ s)
+    have hg : A.minorGcd = 0 :=
+      not_not.1 (mt minorGcd_ne_zero_iff.1 (mt linearIndependent_rat_row_iff.2 hA))
+    rw [minorGcd_eq_gcd_plucker] at hg
+    have h0 : plucker A.row = 0 := funext fun s ↦ Finset.gcd_eq_zero_iff.mp hg s (Finset.mem_univ s)
     simp [h0, Finset.gcd_eq_zero_iff.mpr]
 
 /-- **The height of the kernel of an integer matrix.** The greatest common divisor of the maximal
 minors of an integer matrix `A`, times the absolute Euclidean height of the space of rational
 solutions of `A y = 0`, is `√det (A Aᵀ)`. If the rows are linearly dependent, both sides
 vanish. -/
-theorem gcd_plucker_row_mul_subspaceHeight_ker_mulVecLin (A : Matrix (Fin p) ι ℤ) :
-    ((Finset.univ.gcd (plucker A.row) : ℤ) : ℝ) *
-        (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).subspaceHeight =
+theorem minorGcd_mul_subspaceHeight_ker_mulVecLin (A : Matrix (Fin p) ι ℤ) :
+    (A.minorGcd : ℝ) * (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).subspaceHeight =
       √((A * Aᵀ).det : ℝ) := by
   rw [← checkedBy_def, checkedBy_eq_euclideanDual_generatedBy, subspaceHeight_euclideanDual,
-    generatedBy_eq_span_rows, gcd_plucker_row_mul_subspaceHeight_span_range_row]
+    generatedBy_eq_span_rows, minorGcd_mul_subspaceHeight_span_range_row]
 
 /-- **The covolume of the lattice of integral solutions of `A y = 0`.** For an integer matrix `A`
 with linearly independent rows, the lattice of integral solutions of `A y = 0` has covolume
@@ -98,10 +107,33 @@ with linearly independent rows, the lattice of integral solutions of `A y = 0` h
 theorem covolume_intLattice_ker_mulVecLin {A : Matrix (Fin p) ι ℤ}
     (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
     ZLattice.covolume (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).intLattice =
-      √((A * Aᵀ).det : ℝ) / ((Finset.univ.gcd (plucker A.row) : ℤ) : ℝ) := by
-  have hg : Finset.univ.gcd (plucker A.row) ≠ 0 := fun h ↦ (gcd_plucker_row_eq_zero_iff A).mp h hA
-  rw [covolume_intLattice, ← gcd_plucker_row_mul_subspaceHeight_ker_mulVecLin,
+      √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
+  have hg : A.minorGcd ≠ 0 := minorGcd_ne_zero_iff.2 (linearIndependent_rat_row_iff.1 hA)
+  rw [covolume_intLattice, ← minorGcd_mul_subspaceHeight_ker_mulVecLin,
     mul_div_cancel_left₀ _ (Int.cast_ne_zero.mpr hg)]
+
+section Invariance
+
+variable {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n]
+
+/-- The quotient `√det (A * Aᵀ) / minorGcd A` is unchanged by `A ↦ B * A` for any square integer
+matrix `B` with `det B ≠ 0`: both numerator and denominator are multiplied by `|det B|`. -/
+theorem sqrt_det_div_minorGcd_mul_left {B : Matrix m m ℤ} (hB : B.det ≠ 0)
+    (A : Matrix m n ℤ) :
+    √((B * A * (B * A)ᵀ).det : ℝ) / ((B * A).minorGcd : ℝ) =
+      √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
+  rw [det_mul_transpose_mul_left, minorGcd_mul_left, ← Int.abs_eq_normalize]
+  push_cast [-Int.cast_det]
+  rw [Real.sqrt_mul (by positivity), Real.sqrt_sq_eq_abs, mul_div_mul_left _ _ (by simpa)]
+
+/-- The quotient `√det (A * Aᵀ) / minorGcd A` is invariant under `A ↦ U * A` for `U ∈ GL_m(ℤ)`. -/
+theorem sqrt_det_div_minorGcd_unit_mul (U : GL m ℤ) (A : Matrix m n ℤ) :
+    √(((U : Matrix m m ℤ) * A * ((U : Matrix m m ℤ) * A)ᵀ).det : ℝ) /
+        (((U : Matrix m m ℤ) * A).minorGcd : ℝ) =
+      √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) :=
+  sqrt_det_div_minorGcd_mul_left (isUnits_det_units U).ne_zero A
+
+end Invariance
 
 end Matrix
 
@@ -125,8 +157,8 @@ example : (LinearMap.ker (!![(2 : ℚ), 2]).mulVecLin).subspaceHeight = √2 := 
   have hdet : (!![(2 : ℤ), 2] * (!![(2 : ℤ), 2])ᵀ).det = 8 := by
     rw [Matrix.det_unique]
     decide
-  have h := (!![(2 : ℤ), 2]).gcd_plucker_row_mul_subspaceHeight_ker_mulVecLin
-  rw [hA, hp, hg, hdet] at h
+  have h := (!![(2 : ℤ), 2]).minorGcd_mul_subspaceHeight_ker_mulVecLin
+  rw [minorGcd_eq_gcd_plucker, hA, hp, hg, hdet] at h
   have h8 : √(8 : ℝ) = 2 * √2 := by
     rw [show (8 : ℝ) = 2 ^ 2 * 2 by norm_num, Real.sqrt_mul (by norm_num),
       Real.sqrt_sq (by norm_num)]

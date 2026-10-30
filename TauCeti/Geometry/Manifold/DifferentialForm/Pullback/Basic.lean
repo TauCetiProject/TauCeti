@@ -18,6 +18,8 @@ bundle. Both within-set and unrestricted pullbacks are total; their chain rules 
 the differentiability and unique-derivative hypotheses of Mathlib's `mfderivWithin`.
 For a trivial value bundle, `mpullbackWithin` and `mpullback` retain the fixed coefficient
 space. On model spaces they agree with precomposition by the Fréchet derivative.
+Pullback at `x` only depends on the germ of `f` at `x`, and when the derivative of `f` at `x`
+is surjective it determines the form at `f x`.
 
 This construction follows Lee, *Introduction to Smooth Manifolds*, second edition,
 Chapter 14. The proofs reuse Mathlib's manifold chain rule and alternating-map composition.
@@ -118,18 +120,22 @@ theorem bundleMpullback_add [∀ y, ContinuousAdd (V y)] (f : M → M')
   simpa only [bundleMpullbackWithin_univ] using
     (bundleMpullbackWithin_add (I := I) (I' := I') f univ ω η)
 
-/-- Within-set pullback commutes with scalar multiplication. -/
+/-- Within-set pullback commutes with scalar multiplication of the values, by any scalars
+acting continuously on the fibres and commuting with the real action. -/
 @[simp]
-theorem bundleMpullbackWithin_smul [∀ y, ContinuousConstSMul ℝ (V y)]
-    (f : M → M') (s : Set M) (c : ℝ) (ω : RoughBundleForm I' M' V k) :
+theorem bundleMpullbackWithin_smul {S : Type*} [Monoid S] [∀ y, DistribMulAction S (V y)]
+    [∀ y, ContinuousConstSMul S (V y)] [∀ y, SMulCommClass ℝ S (V y)]
+    (f : M → M') (s : Set M) (c : S) (ω : RoughBundleForm I' M' V k) :
     bundleMpullbackWithin I I' f s (c • ω) = c • bundleMpullbackWithin I I' f s ω := by
   ext x v
   simp
 
-/-- Pullback commutes with scalar multiplication. -/
+/-- Pullback commutes with scalar multiplication of the values, by any scalars acting
+continuously on the fibres and commuting with the real action. -/
 @[simp]
-theorem bundleMpullback_smul [∀ y, ContinuousConstSMul ℝ (V y)]
-    (f : M → M') (c : ℝ) (ω : RoughBundleForm I' M' V k) :
+theorem bundleMpullback_smul {S : Type*} [Monoid S] [∀ y, DistribMulAction S (V y)]
+    [∀ y, ContinuousConstSMul S (V y)] [∀ y, SMulCommClass ℝ S (V y)]
+    (f : M → M') (c : S) (ω : RoughBundleForm I' M' V k) :
     bundleMpullback I I' f (c • ω) = c • bundleMpullback I I' f ω := by
   simpa only [bundleMpullbackWithin_univ] using
     (bundleMpullbackWithin_smul (I := I) (I' := I') f univ c ω)
@@ -255,6 +261,29 @@ theorem mpullbackWithin_eq_mpullback {f : M → M'} {s : Set M} {x : M}
     (ω : RoughForm I' M' F k) : mpullbackWithin I I' f s ω x = mpullback I I' f ω x :=
   bundleMpullbackWithin_eq_bundleMpullback hs hf ω
 
+/-- Maps that agree near `x` pull a form back to the same value at `x`. -/
+theorem _root_.Filter.EventuallyEq.mpullback_eq {f g : M → M'} {x : M} (h : f =ᶠ[𝓝 x] g)
+    (ω : RoughForm I' M' F k) : mpullback I I' f ω x = mpullback I I' g ω x := by
+  have hx : f x = g x := h.eq_of_nhds
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  rw [mpullback_apply, mpullback_apply, h.mfderiv_eq]
+  -- `tangentSpaceCast` is the identity of the model space, so only the base point differs.
+  change ω (f x) (fun i ↦ mfderiv I I' g x (v i)) = ω (g x) (fun i ↦ mfderiv I I' g x (v i))
+  rw [hx]
+
+/-- If the derivative of `f` at `x` is surjective, two forms have the same pullback along `f` at
+`x` exactly when they agree at `f x`. -/
+theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
+    (hf : Function.Surjective (mfderiv I I' f x)) {ω η : RoughForm I' M' F k} :
+    mpullback I I' f ω x = mpullback I I' f η x ↔ ω (f x) = η (f x) := by
+  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, fun h ↦ ?_⟩
+  · choose w hw using fun i ↦ hf (v i)
+    have h₁ := DFunLike.congr_fun h w
+    simp only [mpullback_apply, hw] at h₁
+    exact h₁
+  · refine ContinuousAlternatingMap.ext fun v ↦ ?_
+    rw [mpullback_apply, mpullback_apply, h]
+
 /-- Within-set pullback preserves zero. -/
 @[simp]
 theorem mpullbackWithin_zero (f : M → M') (s : Set M) :
@@ -280,16 +309,20 @@ theorem mpullback_add [ContinuousAdd F] (f : M → M') (ω η : RoughForm I' M' 
     mpullback I I' f (ω + η) = mpullback I I' f ω + mpullback I I' f η :=
   bundleMpullback_add f ω η
 
-/-- Within-set pullback respects scalar multiplication. -/
+/-- Within-set pullback respects scalar multiplication of the coefficients, by any scalars
+acting continuously on the coefficient space and commuting with the real action. -/
 @[simp]
-theorem mpullbackWithin_smul [ContinuousConstSMul ℝ F] (f : M → M') (s : Set M)
-    (c : ℝ) (ω : RoughForm I' M' F k) :
+theorem mpullbackWithin_smul {S : Type*} [Monoid S] [DistribMulAction S F]
+    [ContinuousConstSMul S F] [SMulCommClass ℝ S F] (f : M → M') (s : Set M)
+    (c : S) (ω : RoughForm I' M' F k) :
     mpullbackWithin I I' f s (c • ω) = c • mpullbackWithin I I' f s ω :=
   bundleMpullbackWithin_smul f s c ω
 
-/-- Pullback respects scalar multiplication. -/
+/-- Pullback respects scalar multiplication of the coefficients, by any scalars acting
+continuously on the coefficient space and commuting with the real action. -/
 @[simp]
-theorem mpullback_smul [ContinuousConstSMul ℝ F] (f : M → M') (c : ℝ)
+theorem mpullback_smul {S : Type*} [Monoid S] [DistribMulAction S F]
+    [ContinuousConstSMul S F] [SMulCommClass ℝ S F] (f : M → M') (c : S)
     (ω : RoughForm I' M' F k) : mpullback I I' f (c • ω) = c • mpullback I I' f ω :=
   bundleMpullback_smul f c ω
 

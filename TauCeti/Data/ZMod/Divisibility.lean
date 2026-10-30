@@ -5,6 +5,7 @@ Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Pi.Units
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.Data.ZMod.QuotientRing
 
@@ -32,8 +33,14 @@ consumed there and in `HeckeRing/GL2/Gamma1/CoprimeCosets.lean`.
 arbitrary divisor `d ∣ N` rather than only for the reduction modulo `N / l`, which is all its
 proof uses, and the name places the divisibility in Mathlib's operand order.
 
+## Main definitions
+
+* `ZMod.unitsEquivPi`: the Chinese remainder isomorphism for units,
+  `(ℤ/n)ˣ ≃* Π p ∣ n, (ℤ/p ^ v_p(n))ˣ`.
+
 ## Main results
 
+* `ZMod.natCast_eq_neg_of_dvd_add`: if `n ∣ b + b'`, then `b' = -b` in `ZMod n`.
 * `ZMod.natCast_val_div_eq_intCast_div`: division of a residue representative agrees with
   division of the original integer modulo the corresponding divisor of the residue modulus.
 * `ZMod.exists_dvd_sub_val_mul`: the congruence `j b ≡ a (mod n)` has a solution `j : ZMod n`
@@ -50,6 +57,7 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
   `ZMod.unitsMap`.
 * `ZMod.equivPi_apply`: the components of Mathlib's Chinese remainder isomorphism `ZMod.equivPi`
   are the reductions modulo the prime powers exactly dividing `n`.
+* `ZMod.unitsEquivPi_apply`, `ZMod.unitsMap_unitsEquivPi_symm`: the same for `ZMod.unitsEquivPi`.
 * `ZMod.dvd_of_forall_mul_eq_zero`: divisibility inside `ZMod n` from annihilators: if every `r`
   with `r d = 0` has `r x = 0`, then `d ∣ x`.
 -/
@@ -57,6 +65,11 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
 public section
 
 namespace ZMod
+
+/-- If `n ∣ b + b'`, then `b' = -b` in `ZMod n`. -/
+theorem natCast_eq_neg_of_dvd_add {n b b' : ℕ} (h : n ∣ b + b') : (b' : ZMod n) = -b := by
+  rw [eq_neg_iff_add_eq_zero, add_comm, ← Nat.cast_add, ZMod.natCast_eq_zero_iff]
+  exact h
 
 /-- Dividing a residue representative by `d` agrees modulo `m` with dividing the original
 integer, when `d` divides that integer and `m * d` divides the residue modulus. -/
@@ -158,6 +171,26 @@ theorem equivPi_apply (n : ℕ) (hn : n ≠ 0) (x : ZMod n) (p : n.primeFactors)
   RingHom.congr_fun
     (Subsingleton.elim ((Pi.evalRingHom _ p).comp (equivPi n hn).toRingHom)
       (castHom (Nat.ordProj_dvd n p) (ZMod (p ^ n.factorization p)))) x
+
+/-- **The Chinese remainder theorem for units**: `(ℤ/n)ˣ` is the product of the unit groups
+modulo the prime powers exactly dividing `n`. -/
+noncomputable def unitsEquivPi {n : ℕ} (hn : n ≠ 0) :
+    (ZMod n)ˣ ≃* Π p : n.primeFactors, (ZMod (p ^ n.factorization p))ˣ :=
+  (Units.mapEquiv (equivPi n hn).toMulEquiv).trans MulEquiv.piUnits
+
+/-- The component at `p` of `ZMod.unitsEquivPi` is reduction modulo `p ^ v_p(n)`. -/
+@[simp]
+theorem unitsEquivPi_apply {n : ℕ} (hn : n ≠ 0) (u : (ZMod n)ˣ) (p : n.primeFactors) :
+    unitsEquivPi hn u p = unitsMap (Nat.ordProj_dvd n p) u := by
+  ext
+  simp [unitsEquivPi, MulEquiv.piUnits, unitsMap_def]
+
+/-- The unit of `ℤ/n` with components `v` reduces to `v p` modulo `p ^ v_p(n)`. -/
+@[simp]
+theorem unitsMap_unitsEquivPi_symm {n : ℕ} (hn : n ≠ 0)
+    (v : Π p : n.primeFactors, (ZMod (p ^ n.factorization p))ˣ) (p : n.primeFactors) :
+    unitsMap (Nat.ordProj_dvd n p) ((unitsEquivPi hn).symm v) = v p := by
+  rw [← unitsEquivPi_apply hn, MulEquiv.apply_symm_apply]
 
 /-- **Divisibility in `ℤ/nℤ` from annihilators.** If every `r : ZMod n` with `r * d = 0` also has
 `r * x = 0`, then `d ∣ x`. With `g = gcd(d, n)`, the element `n / g` kills `d`, hence `x`, so `g`

@@ -16,8 +16,8 @@ import Mathlib.RingTheory.SimpleRing.Matrix
 A Wedderburn presentation `e : k[G] ≃ₐ[k] Π i, Matₙᵢ(k)` of a finite group algebra over an
 algebraically closed field carries an irreducible representation on each block, and distinct blocks
 carry inequivalent ones (`TauCeti/RepresentationTheory/CharacterTable/BlockRepresentation.lean`).
-This file supplies the missing half, that the list is **complete**: every finite-dimensional
-irreducible representation of `G` over `k` is equivalent to a block representation. The block index
+This file supplies the missing half, that the list is **complete**: every irreducible
+representation of `G` over `k` is equivalent to a block representation. The block index
 is therefore a faithful index of the irreducible representations up to equivalence, and everything
 read off a presentation — first of all the multiset of degrees `nᵢ` — is an invariant of `G`.
 
@@ -82,7 +82,7 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k
   (e : k[G] ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k)
 
 /-- **The Wedderburn blocks are a complete list of the irreducible representations.** Every
-finite-dimensional irreducible representation of `G` over an algebraically closed field whose
+irreducible representation of `G` over an algebraically closed field whose
 characteristic does not divide `|G|` is equivalent to the representation carried by one of the
 blocks of any Wedderburn presentation of `k[G]`.
 
@@ -90,7 +90,7 @@ Together with `TauCeti.isIrreducible_blockRepresentation` and
 `TauCeti.isEmpty_equiv_blockRepresentation` this makes the block index a faithful index of the
 irreducible representations up to equivalence. -/
 theorem exists_nonempty_equiv_blockRepresentation {W : Type w'} [AddCommGroup W] [Module k W]
-    [FiniteDimensional k W] (σ : Representation k G W) [σ.IsIrreducible] :
+    (σ : Representation k G W) [σ.IsIrreducible] :
     ∃ i, Nonempty (σ.Equiv (blockRepresentation e i)) := by
   have : ∀ i, (blockRepresentation e i).IsIrreducible := fun i =>
     isIrreducible_blockRepresentation e i
@@ -101,7 +101,7 @@ theorem exists_nonempty_equiv_blockRepresentation {W : Type w'} [AddCommGroup W]
 include e in
 /-- **The dimension of an irreducible representation is one of the Wedderburn degrees.** -/
 theorem exists_degree_eq_finrank {W : Type w'} [AddCommGroup W] [Module k W]
-    [FiniteDimensional k W] (σ : Representation k G W) [σ.IsIrreducible] :
+    (σ : Representation k G W) [σ.IsIrreducible] :
     ∃ i, d i = Module.finrank k W := by
   obtain ⟨i, ⟨φ⟩⟩ := exists_nonempty_equiv_blockRepresentation e σ
   refine ⟨i, ?_⟩

@@ -13,7 +13,8 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f`.  An arbitrary
 map adds weights over its fibres.  An injective map embeds a standard simplex as a face of a larger
 one and keeps the weights of a point, so it is injective.  For `f = j.succAbove` its image is the
-facet on which the `j`-th weight vanishes, so a function taking a constant value on every facet
+facet on which the `j`-th weight vanishes; for the last vertex this facet is the smaller simplex
+with a zero last weight appended.  A function taking a constant value on every facet
 takes that value wherever some weight vanishes.  Two facets, opposite `j < k`, meet in the
 codimension-two face opposite both: a common point of the two facets comes from that face through
 both composites of face maps, the two sides of the simplicial identity
@@ -92,6 +93,26 @@ theorem weights_map_succAbove_of_eq {n : ℕ} {j k : Fin (n + 1)} {i : Fin n}
     (x.map j.succAbove).weights k = x.weights i :=
   h ▸ weights_map_apply_of_injective Fin.succAbove_right_injective x i
 
+/-- The facet of the standard simplex on `Fin (n + 1)` opposite its last vertex, the points with
+vanishing last weight, is the standard simplex on `Fin n` with a zero last weight appended. -/
+theorem range_snoc_weights_zero (n : ℕ) :
+    (Set.range fun s : StdSimplex R (Fin n) => (Fin.snoc ⇑s.weights 0 : Fin (n + 1) → R)) =
+      {y ∈ Set.range fun s : StdSimplex R (Fin (n + 1)) => ⇑s.weights | y (Fin.last n) = 0} := by
+  -- Appending a zero weight is the face map onto the facet opposite the last vertex.
+  have hsnoc (s : StdSimplex R (Fin n)) :
+      ⇑(s.map (Fin.last n).succAbove).weights = Fin.snoc ⇑s.weights 0 := by
+    funext k
+    induction k using Fin.lastCases with
+    | last => rw [weights_map_succAbove_self, Fin.snoc_last]
+    | cast j => rw [weights_map_succAbove_of_eq (Fin.succAbove_last_apply j), Fin.snoc_castSucc]
+  ext y
+  constructor
+  · rintro ⟨s, rfl⟩
+    exact ⟨⟨_, hsnoc s⟩, by simp⟩
+  · rintro ⟨⟨t, rfl⟩, ht⟩
+    obtain ⟨s, rfl⟩ := (mem_range_map_succAbove_iff _ t).2 ht
+    exact ⟨s, (hsnoc s).symm⟩
+
 /-- A function on a standard simplex which takes the value `z` on every facet takes the value `z`
 at every point with a vanishing weight. -/
 theorem apply_eq_of_weights_eq_zero {n : ℕ} {Z : Type*} {φ : StdSimplex R (Fin (n + 1)) → Z}
@@ -122,5 +143,6 @@ theorem exists_map_succAbove_of_map_succAbove_eq {n : ℕ} {j k : Fin (n + 2)} (
     have := Fin.succAbove_succAbove_succAbove_predAbove j (k.pred (Fin.ne_zero_of_lt hjk)) m
     rwa [Fin.succAbove_pred_of_lt _ _ hjk, Fin.predAbove_of_le_castSucc _ _ hle] at this
   rw [← h, ← map_comp, ← hcomp, map_comp]
+
 
 end Convexity.StdSimplex

@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Affine.Isometry
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 public import Mathlib.Topology.MetricSpace.Lipschitz
-public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -78,34 +77,30 @@ namespace TauCeti
 open Metric Set Filter Topology
 open scoped NNReal Pointwise
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [SeminormedAddCommGroup E]
 
 /-- The open product cylinder of normal radius `a` and tangential radius `b`, centred at the
 origin of `WithLp 2 (ℝ × E)`. -/
 def normalCylinder (a b : ℝ) : Set (WithLp 2 (ℝ × E)) :=
   {x | x.fst ∈ Ioo (-a) a ∧ x.snd ∈ ball 0 b}
 
-omit [NormedSpace ℝ E] in
 /-- Membership in the normal product cylinder, in terms of its two coordinates. -/
 @[simp]
 theorem mem_normalCylinder {a b : ℝ} {x : WithLp 2 (ℝ × E)} :
     x ∈ normalCylinder a b ↔ -a < x.fst ∧ x.fst < a ∧ ‖x.snd‖ < b := by
   simp [normalCylinder, and_assoc]
 
-omit [NormedSpace ℝ E] in
 /-- A normal product cylinder is open. -/
 theorem isOpen_normalCylinder (a b : ℝ) : IsOpen (normalCylinder (E := E) a b) := by
   exact (isOpen_Ioo.preimage (WithLp.prod_continuous_ofLp 2 ℝ E).fst).inter
     (isOpen_ball.preimage (WithLp.prod_continuous_ofLp 2 ℝ E).snd)
 
-omit [NormedSpace ℝ E] in
 /-- A normal product cylinder is bounded. -/
 theorem isBounded_normalCylinder (a b : ℝ) :
     Bornology.IsBounded (normalCylinder (E := E) a b) :=
   (WithLp.prod_antilipschitzWith_ofLp 2 ℝ E).isBounded_preimage
     ((isBounded_Ioo (-a) a).prod isBounded_ball)
 
-omit [NormedSpace ℝ E] in
 /-- Shrinking either radius shrinks the normal product cylinder. -/
 theorem normalCylinder_mono {a b a' b' : ℝ} (ha : a' ≤ a) (hb : b' ≤ b) :
     normalCylinder (E := E) a' b' ⊆ normalCylinder a b := by
@@ -113,18 +108,19 @@ theorem normalCylinder_mono {a b a' b' : ℝ} (ha : a' ≤ a) (hb : b' ≤ b) :
   simp only [mem_normalCylinder] at hx ⊢
   exact ⟨lt_of_le_of_lt (neg_le_neg ha) hx.1, hx.2.1.trans_le ha, hx.2.2.trans_le hb⟩
 
-omit [NormedSpace ℝ E] in
 /-- A normal product cylinder with positive radii contains its centre. -/
 theorem zero_mem_normalCylinder {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     (0 : WithLp 2 (ℝ × E)) ∈ normalCylinder a b := by
   simp [ha, hb]
 
 /-- Dilating a normal product cylinder by `c > 0` multiplies both radii by `c`. -/
-theorem smul_normalCylinder {c : ℝ} (hc : 0 < c) (a b : ℝ) :
+theorem smul_normalCylinder [MulAction ℝ E] [NormSMulClass ℝ E] {c : ℝ} (hc : 0 < c)
+    (a b : ℝ) :
     c • normalCylinder (E := E) a b = normalCylinder (c * a) (c * b) := by
   ext z
   rw [mem_smul_set_iff_inv_smul_mem₀ hc.ne']
-  simp only [mem_normalCylinder, WithLp.smul_fst, WithLp.smul_snd, smul_eq_mul, norm_smul,
+  simp only [mem_normalCylinder, ← WithLp.ofLp_fst, ← WithLp.ofLp_snd, WithLp.ofLp_smul,
+    Prod.smul_fst, Prod.smul_snd, smul_eq_mul, norm_smul,
     norm_inv, Real.norm_eq_abs, abs_of_pos hc, inv_mul_lt_iff₀ hc, lt_inv_mul_iff₀ hc, mul_neg]
 
 
@@ -770,23 +766,24 @@ namespace TauCeti
 open Metric Set
 open scoped NNReal
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
-  {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {Omega : Set F} {L : ℝ≥0}
+  {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
 
 /-- The points whose chart coordinates lie strictly above the graph of `φ`. -/
-def chartEpigraph (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
-    (hφ : Continuous φ) : TopologicalSpace.Opens (WithLp 2 (ℝ × E)) :=
+def chartEpigraph (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+    (hφ : Continuous φ) : TopologicalSpace.Opens F :=
   TopologicalSpace.Opens.comap ⟨e, e.continuous⟩ (normalEpigraph ⟨φ, hφ⟩)
 
 /-- Membership in the chart epigraph is the graph inequality in chart coordinates. -/
 @[simp]
-theorem mem_chartEpigraph {hφ : Continuous φ} {x : WithLp 2 (ℝ × E)} :
+theorem mem_chartEpigraph {hφ : Continuous φ} {x : F} :
     x ∈ chartEpigraph e hφ ↔ φ (e x).snd < (e x).fst :=
   mem_normalEpigraph _ _
 
 /-- The epigraph in chart coordinates is the inverse-chart preimage of the chart epigraph. -/
-theorem coe_normalEpigraph_eq_preimage (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+theorem coe_normalEpigraph_eq_preimage (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
     (hφ : Continuous φ) :
     (normalEpigraph ⟨φ, hφ⟩ : Set (WithLp 2 (ℝ × E))) =
       e.symm ⁻¹' chartEpigraph e hφ := by
@@ -795,14 +792,14 @@ theorem coe_normalEpigraph_eq_preimage (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] W
 
 /-- On a cutoff supported in the chart cylinder, the chart epigraph lies in the domain. -/
 theorem chartEpigraph_inter_tsupport_subset
-    (h : Omega.IsLipschitzChartWith L e φ a b) {ψ : WithLp 2 (ℝ × E) → ℝ}
+    (h : Omega.IsLipschitzChartWith L e φ a b) {ψ : F → ℝ}
     (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) :
     (chartEpigraph e h.lipschitzWith.continuous : Set _) ∩ tsupport ψ ⊆ Omega :=
   fun _ hx => (h.mem_iff (hs hx.2)).2 (mem_chartEpigraph.1 hx.1)
 
 /-- On a cutoff supported in the chart cylinder, the domain lies in the chart epigraph. -/
 theorem inter_tsupport_subset_chartEpigraph
-    (h : Omega.IsLipschitzChartWith L e φ a b) {ψ : WithLp 2 (ℝ × E) → ℝ}
+    (h : Omega.IsLipschitzChartWith L e φ a b) {ψ : F → ℝ}
     (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) :
     Omega ∩ tsupport ψ ⊆ chartEpigraph e h.lipschitzWith.continuous :=
   fun _ hx => mem_chartEpigraph.2 ((h.mem_iff (hs hx.2)).1 hx.1)

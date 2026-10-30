@@ -24,9 +24,6 @@ open FirstOrder FirstOrder.Language
 
 attribute [local instance] orderStructure
 
--- Under `orderStructure`, the order symbol is interpreted as the order.
-local instance {M : Type*} [LE M] : Language.order.OrderedStructure M := ⟨fun _ => Iff.rfl⟩
-
 -- The rational numbers have internal Scott rank one.
 example : internalScottRank (L := Language.order) ℚ = 1 := by simp
 

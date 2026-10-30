@@ -105,14 +105,6 @@ theorem isFrobeniusFunctional_iff :
   simp [IsFrobeniusFunctional, Nondegenerate, SeparatingLeft,
     SeparatingRight]
 
-end CommSemiring
-
-section CommRing
-
-variable {k : Type v} [CommRing k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
-
-section Nondegenerate
-
 /-- An element pairing to zero from the left against a Frobenius functional is zero. -/
 theorem IsFrobeniusFunctional.eq_zero_of_forall_left
     (hφ : φ.IsFrobeniusFunctional) {a : A} (h : ∀ b, φ (a * b) = 0) : a = 0 :=
@@ -123,11 +115,6 @@ theorem IsFrobeniusFunctional.eq_zero_of_forall_right
     (hφ : φ.IsFrobeniusFunctional) {b : A} (h : ∀ a, φ (a * b) = 0) : b = 0 :=
   (isFrobeniusFunctional_iff.mp hφ).2 b h
 
-/-- Two elements pairing identically from the right against a Frobenius functional are equal. -/
-theorem IsFrobeniusFunctional.eq_of_forall_apply_mul_eq
-    (hφ : φ.IsFrobeniusFunctional) {x y : A} (h : ∀ b, φ (b * x) = φ (b * y)) : x = y :=
-  sub_eq_zero.mp <| hφ.eq_zero_of_forall_right fun b => by rw [mul_sub, map_sub, h, sub_self]
-
 /-- A Frobenius functional on `A` is a Frobenius functional on `Aᵐᵒᵖ`, through `unop`. -/
 theorem IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctional) :
     (φ ∘ₗ (MulOpposite.opLinearEquiv k (M := A)).symm.toLinearMap).IsFrobeniusFunctional := by
@@ -137,7 +124,16 @@ theorem IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctional) :
   · refine MulOpposite.unop_injective (hφ.eq_zero_of_forall_left fun c => ?_)
     simpa using h (MulOpposite.op c)
 
-end Nondegenerate
+end CommSemiring
+
+section CommRing
+
+variable {k : Type v} [CommRing k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
+
+/-- Two elements pairing identically from the right against a Frobenius functional are equal. -/
+theorem IsFrobeniusFunctional.eq_of_forall_apply_mul_eq
+    (hφ : φ.IsFrobeniusFunctional) {x y : A} (h : ∀ b, φ (b * x) = φ (b * y)) : x = y :=
+  sub_eq_zero.mp <| hφ.eq_zero_of_forall_right fun b => by rw [mul_sub, map_sub, h, sub_self]
 
 end CommRing
 

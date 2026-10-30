@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.InvariantDerivation
+public import TauCeti.RingTheory.Derivation.TaylorExp
 
 /-!
 # Invariant derivations of closed subgroups
@@ -21,8 +23,20 @@ bialgebra morphism. Conversely, the counit vanishes on `I`, so preservation by t
 invariant extension forces its value at the identity to vanish on `I`.
 
 This is the differential-ideal input to restricting polynomial exponential maps to
-closed unipotent subgroups. It works over arbitrary commutative base rings, without
-smoothness, reducedness, finite type, or a characteristic assumption.
+closed unipotent subgroups. The ideal-preservation results work over arbitrary commutative
+base rings, without smoothness, reducedness, finite type, or a characteristic assumption.
+
+Over a `ℚ`-algebra, if the invariant vector field `D` of a subgroup tangent vector is locally
+nilpotent, its Taylor exponential `∑ Dⁿ / n!` therefore also preserves `I`. Polynomial subgroup
+membership is proved in
+`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.OneParameter`.
+
+## Main declarations
+
+* `TauCeti.HopfIdeal.mem_lieSubalgebra_iff_leftInvariantDerivation_mem`: a tangent vector lies in
+  the subgroup Lie algebra exactly when its invariant vector field preserves the defining ideal.
+* `TauCeti.HopfIdeal.taylorExp_leftInvariantDerivation_mem`: the Taylor exponential of the
+  invariant vector field of a subgroup tangent vector preserves the defining ideal.
 
 ## References
 
@@ -80,5 +94,21 @@ theorem mem_lieSubalgebra_iff_leftInvariantDerivation_mem (I : HopfIdeal R H)
     apply (CounitAlgebra.algEquivSelf R H R).injective
     rw [← counit_leftInvariantDerivation, map_zero]
     exact I.counit_eq_zero (mem_toIdeal.mp (hd x hx))
+
+section Exponential
+
+variable [Algebra ℚ H]
+
+/-- **The Taylor exponential preserves closed subgroups.** If a tangent vector lies in the Lie
+algebra of a closed subgroup and its invariant vector field is locally nilpotent, the Taylor
+exponential of that vector field maps the defining Hopf ideal into itself. -/
+theorem taylorExp_leftInvariantDerivation_mem (I : HopfIdeal R H)
+    {d : Derivation R H (CounitAlgebra R H R)} (hd : d ∈ I.lieSubalgebra (B := R))
+    (hD : ∀ h, ∃ n, (leftInvariantDerivation d)^[n] h = 0) {x : H} (hx : x ∈ I.toIdeal) :
+    (leftInvariantDerivation d).taylorExp hD x ∈ I.toIdeal :=
+  (leftInvariantDerivation d).taylorExp_apply_mem hD
+    (fun _ hy => I.leftInvariantDerivation_mem hd hy) hx
+
+end Exponential
 
 end TauCeti.HopfIdeal

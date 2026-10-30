@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Field
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.LocalAtTarget
+public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 
 /-!
 # Collared tracks
@@ -49,6 +50,8 @@ in the product region.
   `TauCeti.IsCollaredTrack.stack`: the constant, reversed and stacked tracks are collared tracks.
 * `TauCeti.IsCollaredTrack.isEmbedding_stack`: the stack of two collared tracks which are
   topological embeddings is a topological embedding.
+* `TauCeti.IsCollaredTrack.isClosedEmbedding`: a continuous injective collared track with compact
+  source and Hausdorff target is a closed embedding.
 
 ## References
 
@@ -398,6 +401,30 @@ theorem isEmbedding_stack (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h
         funext fun p => hF.stack_eqOn_upper hG p.2
       rw [heq]
       exact hG3.comp IsEmbedding.subtypeVal
+
+/-- A continuous injective collared track with compact source `M` and Hausdorff target `N` is a
+closed embedding. -/
+theorem isClosedEmbedding [CompactSpace M] [T2Space N]
+    (hF : IsCollaredTrack f g F) (hc : Continuous F) (hinj : Function.Injective F) :
+    IsClosedEmbedding F := by
+  -- Outside `[0, 1]` the track is a product, so it moves no time level across `0` or `1`, and
+  -- the preimage of a bounded set of times lies in a compact slab `M × [a, b]`.
+  have hproper : IsProperMap (Prod.snd ∘ F) := by
+    refine isProperMap_iff_isCompact_preimage.2 ⟨continuous_snd.comp hc, fun K hK => ?_⟩
+    obtain ⟨a, ha⟩ := hK.bddBelow
+    obtain ⟨b, hb⟩ := hK.bddAbove
+    refine (isCompact_univ.prod (isCompact_Icc (a := min a 0) (b := max b 1))).of_isClosed_subset
+      (hK.isClosed.preimage (continuous_snd.comp hc)) ?_
+    rintro ⟨x, t⟩ hp
+    have hlo : a ≤ (F (x, t)).2 := ha hp
+    have hhi : (F (x, t)).2 ≤ b := hb hp
+    refine ⟨mem_univ x, le_of_not_gt fun ht => ?_, le_of_not_gt fun ht => ?_⟩
+    · rw [hF.apply_of_nonpos x (ht.le.trans (min_le_right _ _))] at hlo
+      exact (ht.trans_le (min_le_left _ _)).not_ge hlo
+    · rw [hF.apply_of_one_le x ((le_max_right _ _).trans ht.le)] at hhi
+      exact ((le_max_left _ _).trans_lt ht).not_ge hhi
+  exact .of_continuous_injective_isClosedMap hc hinj
+    (isProperMap_of_comp_of_t2 hc continuous_snd hproper).isClosedMap
 
 end IsCollaredTrack
 

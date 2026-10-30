@@ -17,8 +17,10 @@ For a commutative semiring `R`, the coordinate ring of the upper-unitriangular m
 ones on the diagonal and zeros below it. Matrix multiplication and the identity matrix give its
 comultiplication and counit.
 
-This is the semiring-level dependency layer for the upper-unitriangular coordinate Hopf algebra;
-the antipode and finite-type Hopf package are constructed separately over commutative rings.
+The coordinate-bialgebra constructions form the semiring-level dependency layer for the
+upper-unitriangular coordinate Hopf algebra. This file also gives the commutative-ring evaluation
+lemma `map_aeval_genericMatrix_sub_one` for the generic matrix minus the identity.
+The antipode and finite-type Hopf package are constructed separately over commutative rings.
 
 ## Main declarations
 
@@ -221,5 +223,22 @@ theorem comul_lTensor_counit :
   · simp
 
 end Bialgebra
+
+/-- Evaluating the strict-upper coordinates of the generic matrix minus one at a strictly
+upper-triangular matrix recovers that matrix. -/
+theorem map_aeval_genericMatrix_sub_one (R : Type u) [CommRing R]
+    (m : Type v) [LinearOrder m] {A : Type w} [CommRing A] [Algebra R A]
+    (M : Matrix m m A) (hM : M.IsUpperTriangular) (hdiag : ∀ i, M i i = 0) :
+    (genericMatrix R m - 1).map
+        (MvPolynomial.aeval fun ij : Index m ↦ M ij.1.1 ij.1.2) = M := by
+  have hU : (M + 1).IsUpperUnitriangular := (Matrix.isUpperUnitriangular_def _).mpr
+    ⟨hM.add Matrix.blockTriangular_one, by intro i; simp [hdiag]⟩
+  have hf : (fun ij : Index m ↦ (M + 1) ij.1.1 ij.1.2) =
+      (fun ij : Index m ↦ M ij.1.1 ij.1.2) := by
+    funext ij
+    simp [Matrix.one_apply_ne ij.2.ne]
+  have h := map_aeval_genericMatrix R m (M + 1) hU
+  rw [hf] at h
+  simp [Matrix.map_sub, Matrix.map_one, h]
 
 end TauCeti.UpperUnitriangular

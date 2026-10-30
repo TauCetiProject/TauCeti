@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Chart Gram matrices of a Riemannian metric
@@ -34,9 +35,13 @@ API replace them.
 * `Riemannian.Tensor.chartLocalFrame` and `Riemannian.Tensor.chartLocalFrame_def`: the frame
   induced by the tangent trivialization at a chart centre and `Module.finBasis`, and its
   identification with that trivialization's local frame.
+* `Riemannian.Tensor.chartLocalFrame_eq_symmL`: the frame is the inverse trivialization applied to
+  the basis of the model space.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
 * `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
   inner product in the basis given by the trivialization.
+* `Riemannian.Tensor.gram_basisAt_finBasis_reindex`: it is the Gram matrix of the basis of the
+  tangent space given by the trivialization and a reindexing of the basis of the model space.
 * `Riemannian.Tensor.posDef_chartGramMatrix`: positive-definiteness on the base set.
 * `Riemannian.Tensor.chartGramMatrix_det_pos`: strict positivity of its determinant there.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
@@ -94,6 +99,17 @@ theorem chartLocalFrame_apply_of_mem_chart_source (α : M) {x : M}
       (Module.finBasis ℝ E) (i := i) (by
         simpa only [TangentBundle.trivializationAt_baseSet] using hx)
 
+/-- The chart-local frame is the inverse tangent trivialization at `α` applied to the
+`Module.finBasis` basis of the model space. Both sides vanish off the trivialization base set, so
+no membership hypothesis is needed. -/
+theorem chartLocalFrame_eq_symmL (α x : M) (i : Fin (Module.finrank ℝ E)) :
+    chartLocalFrame (I := I) α i x =
+      (trivializationAt E (TangentSpace I) α).symmL ℝ x (Module.finBasis ℝ E i) := by
+  by_cases hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet
+  · rw [chartLocalFrame_def, TauCeti.Manifold.symmL_basis_eq_localFrame _ hx]
+  · rw [chartLocalFrame_def, Trivialization.localFrame_apply_of_notMem _ _ hx,
+      Trivialization.symmL_apply_of_notMem _ hx]
+
 /-- Each member of `chartLocalFrame` is `C^n` on the tangent-trivialization base set. -/
 theorem contMDiffOn_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (α : M) (i : Fin (Module.finrank ℝ E)) :
@@ -119,6 +135,16 @@ def chartGramMatrix (α : M) (x : M) :
 theorem chartGramMatrix_apply (α : M) (x : M) (i j : Fin (Module.finrank ℝ E)) :
     chartGramMatrix (I := I) α x i j =
       inner ℝ (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := (rfl)
+
+/-- The chart Gram matrix, reindexed along `σ`, is the Gram matrix of the basis of the tangent
+space given by the trivialization at `α` and the reindexed basis `Module.finBasis ℝ E`. -/
+theorem gram_basisAt_finBasis_reindex {ι : Type*} (σ : Fin (Module.finrank ℝ E) ≃ ι) (α : M)
+    {x : M} (hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet) :
+    Matrix.gram ℝ ((trivializationAt E (TangentSpace I) α).basisAt
+      ((Module.finBasis ℝ E).reindex σ) hx) =
+      (chartGramMatrix (I := I) α x).submatrix σ.symm σ.symm := by
+  ext i j
+  simp [Matrix.gram_apply, TauCeti.Manifold.basisAt_apply, chartLocalFrame_eq_symmL]
 
 /-- On the chart domain, the Gram matrix at `α` is the matrix of the inner product in the basis
 of the tangent space given by the trivialization at `α`. -/
@@ -230,6 +256,11 @@ tangent-trivialization base set this is the inverse of a positive-definite matri
 def chartInvGramMatrix (α : M) (x : M) :
     Matrix (Fin (Module.finrank ℝ E)) (Fin (Module.finrank ℝ E)) ℝ :=
   (chartGramMatrix (I := I) α x)⁻¹
+
+/-- The inverse coordinate-metric matrix is the matrix inverse of the chart Gram matrix. This
+unfolds `Riemannian.Tensor.chartInvGramMatrix` outside the module where it is defined. -/
+theorem chartInvGramMatrix_def (α x : M) :
+    chartInvGramMatrix (I := I) α x = (chartGramMatrix (I := I) α x)⁻¹ := (rfl)
 
 /-- On the chart source, the inverse Gram matrix is a left inverse. -/
 @[simp]

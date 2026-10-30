@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
@@ -26,6 +27,8 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
   `W^{1,p}(U)` for `U ⊆ Ω`.
 * `TauCeti.W1p.value_restrictL` and `TauCeti.W1p.gradient_restrictL`: restriction commutes with
   the value and weak-gradient projections; their `_ae` variants identify representatives.
+* `TauCeti.W1p.value_restrictL_ofTestFunctionₗ_ae`: a restricted test function has its original
+  value almost everywhere on the smaller open set.
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
 * `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
   finite-measure subset depends continuously on the Sobolev function.
@@ -145,9 +148,7 @@ private theorem Sobolev1JetLp.restrictL_mem_w1pSubmodule (hU : U ≤ Omega)
     rw [hJg, hug, hJu]
   refine ((W1p.hasWeakFDerivOn u).mono hU).congr_ae hvalue.symm |>.congr_ae_deriv ?_
   filter_upwards [hgradient] with x hx
-  apply ContinuousLinearMap.ext
-  intro v
-  rw [Sobolev1JetLp.candidateWeakFDeriv_apply, innerSL_apply_apply, real_inner_comm, hx]
+  rw [Sobolev1JetLp.candidateWeakFDeriv_def, hx]
 
 /-- **Restriction of first-order Sobolev functions.**  If `U ⊆ Ω`, this is the continuous
 linear map `W^{1,p}(Ω) → W^{1,p}(U)` obtained by restricting both the value and weak gradient.
@@ -193,6 +194,14 @@ theorem W1p.value_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
   exact Lp.coeFn_LpToLpOfMeasureLeSMul (by simp)
     (by simpa only [one_smul] using
       Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.value u)
+
+/-- Restricting a test function from `Omega` to `U` preserves its value almost everywhere on
+`U`. -/
+theorem W1p.value_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (φ : 𝓓(Omega, ℝ)) :
+    W1p.value (W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p φ)) =ᵐ[mu.restrict U] φ :=
+  (W1p.value_restrictL_ae hU _).trans
+    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
+      (W1p.value_ofTestFunctionₗ_ae φ))
 
 /-- Restriction keeps the same weak-gradient representative on the smaller open set. -/
 theorem W1p.gradient_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :

@@ -351,7 +351,7 @@ end GridInitialPentagonRectangleDecomposition
 
 namespace GridDiagram
 
-variable (G : GridDiagram n) (C : ColumnCommutationData G)
+variable (G : GridDiagram n) (C : ColumnTurn n)
 
 local notation "b" => finRotate n C.column
 
@@ -424,9 +424,7 @@ theorem toPentagonRectangle_mem_pentagonRectangleDecompositions
   simp only [GridRectangleInitialPentagonDecomposition.toPentagonRectangle,
     GridPentagonRectangleDecomposition.pentagon,
     GridPentagonBetween.ofRightEq_toGridRectangleBetween]
-  refine ⟨⟨hD.1.1, hX.1⟩, ?_, hX.2⟩
-  simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween] using
-    hD.2.1
+  exact ⟨⟨hD.1.1, hX.1⟩, D.underlying_second_isEmpty hD.2.1, hX.2⟩
 
 /-- A counted pentagon followed by a rectangle of the commuted diagram starting on the replaced
 line and spanning the turn row, read as a rectangle followed by an initial-side pentagon, is

@@ -42,6 +42,15 @@ theorem poissonMeasure_zero : poissonMeasure 0 = Measure.dirac 0 := by
   intro n
   cases n <;> simp [poissonMeasure_singleton]
 
+/-- A Poisson law of rate `r` has mass `exp (-r)` at zero. -/
+theorem poissonMeasure_real_singleton_zero (r : ℝ≥0) : Po(r).real {0} = exp (-(r : ℝ)) := by
+  simp [poissonMeasure_real_singleton]
+
+/-- A Poisson law puts all its mass at zero exactly at rate zero. -/
+theorem poissonMeasure_singleton_zero_eq_one_iff {r : ℝ≥0} : Po(r) {0} = 1 ↔ r = 0 := by
+  rw [poissonMeasure_singleton, ENNReal.ofReal_eq_one]
+  simp
+
 /-- The probability-generating series of a Poisson law: weighted by the Poisson masses, the powers
 `z ^ k` sum to `exp ((z - 1) * r)`. -/
 theorem hasSum_pow_poissonMeasure (r : ℝ≥0) (z : ℝ) :
@@ -119,6 +128,11 @@ theorem integrableExpSet_id_map_cast_poissonMeasure (r : ℝ≥0) :
   ext t
   simpa [integrableExpSet] using integrable_exp_mul_id_map_cast_poissonMeasure r t
 
+/-- A real-valued Poisson law has finite moments of every order. -/
+theorem memLp_id_map_cast_poissonMeasure (r p : ℝ≥0) : MemLp id p Po(ℝ, r) := by
+  have h : integrableExpSet id Po(ℝ, r) = Set.univ := integrableExpSet_id_map_cast_poissonMeasure r
+  exact memLp_of_mem_interior_integrableExpSet (by simp [h]) p
+
 /-- The cumulant-generating function of a real-valued Poisson law of rate `r` is
 `t ↦ r * (exp t - 1)`. -/
 @[simp]
@@ -173,13 +187,7 @@ theorem integral_sq_map_cast_poissonMeasure (r : ℝ≥0) :
 @[simp]
 theorem variance_id_map_cast_poissonMeasure (r : ℝ≥0) :
     variance id Po(ℝ, r) = r := by
-  have hsq : Integrable (fun x : ℝ ↦ x ^ 2) Po(ℝ, r) :=
-    integrable_pow_of_integrable_exp_mul (by norm_num : (1 : ℝ) ≠ 0)
-      (integrable_exp_mul_id_map_cast_poissonMeasure r 1)
-      (integrable_exp_mul_id_map_cast_poissonMeasure r (-1)) 2
-  have hid : MemLp id 2 Po(ℝ, r) :=
-    (memLp_two_iff_integrable_sq measurable_id'.aestronglyMeasurable).2 (by simpa using hsq)
-  rw [variance_eq_sub hid]
+  rw [variance_eq_sub (memLp_id_map_cast_poissonMeasure r 2)]
   simp only [Pi.pow_apply, id_eq]
   rw [integral_sq_map_cast_poissonMeasure,
     integral_id_map_cast_poissonMeasure]

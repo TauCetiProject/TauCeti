@@ -5,17 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.Algebra.Homology.SingleHomology
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 
 /-!
-# Acyclicity of the singular chains of a contractible space, on elements
+# Acyclicity of the singular chains of a contractible space
 
 The singular homology of a contractible space vanishes in positive degrees, and the reduced
 homology of a path-connected space vanishes in degree zero.  For chains with coefficients in a
 ring, this file states these facts on elements: a cycle of positive degree is a boundary, and a
-`0`-chain of augmentation zero is a boundary.
+`0`-chain of augmentation zero is a boundary.  It also states them for the whole complex: the
+augmented singular chain complex of a contractible space is exact, that is, the augmentation onto
+the coefficient ring in degree `0` is a quasi-isomorphism (a `QuasiIso` instance).
 
 ## Main results
 
@@ -23,6 +27,8 @@ ring, this file states these facts on elements: a cycle of positive degree is a 
   space are boundaries.
 * `TauCeti.singularChains_exists_d_eq_of_augment_eq_zero`: `0`-chains of augmentation zero of a
   path-connected space are boundaries.
+* `TauCeti.quasiIso_singularChainsAugmentation`: the augmented singular chain complex of a
+  contractible space is exact.
 -/
 
 public section
@@ -90,5 +96,39 @@ theorem singularChains_exists_d_eq_of_augment_eq_zero (X : TopCat.{u}) [PathConn
     (SSet.isColimitCokernelCoforkChainComplexDOneZero _ _)
   rw [ShortComplex.moduleCat_exact_iff] at hexact
   exact hexact z (singularAugment_eq_zero hz)
+
+variable (k) in
+/-- **The augmented singular chain complex of a contractible space is exact**: the augmentation
+is a quasi-isomorphism onto the coefficient ring in degree `0`. -/
+instance quasiIso_singularChainsAugmentation (X : TopCat.{u}) [ContractibleSpace X] :
+    QuasiIso (singularChainsAugmentation k X) where
+  quasiIsoAt m := by
+    cases m with
+    | zero =>
+      rw [ChainComplex.quasiIsoAt₀_iff,
+        ShortComplex.quasiIso_iff_of_zeros' _ (by simp) rfl rfl]
+      have hε : ((singularChains k).obj X).d 1 0 ≫ ModuleCat.ofHom (singularAugment k X) = 0 := by
+        ext x
+        exact singularAugment_d X x
+      have hex : (ShortComplex.mk _ _ hε).Exact := by
+        rw [ShortComplex.moduleCat_exact_iff]
+        exact fun z hz ↦ singularChains_exists_d_eq_of_augment_eq_zero X z hz
+      obtain ⟨x⟩ := (inferInstance : Nonempty X)
+      refine ⟨(ShortComplex.exact_iff_of_iso ?_).1 hex, ?_⟩
+      · exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _)
+          (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 _).symm (by simp)
+          (by
+            simp only [HomologicalComplex.shortComplexFunctor'_map_τ₂, Iso.refl_hom,
+              singularChainsAugmentation_f_zero, ChainComplex.single₀ObjXSelf]
+            exact (Category.comp_id _).symm)
+      · rw [HomologicalComplex.shortComplexFunctor'_map_τ₂, singularChainsAugmentation_f_zero]
+        -- In degree `0` the single complex is `k` by definition, so an element of it is a scalar.
+        exact (ModuleCat.epi_iff_surjective _).2 fun (a : k) ↦
+          ⟨simplexChain (TopCat.toSSetObj₀Equiv.symm x) a, singularAugment_simplexChain X _ a⟩
+    | succ m =>
+      rw [quasiIsoAt_iff_exactAt' (hL := ChainComplex.exactAt_succ_single_obj ..)]
+      exact (HomologicalComplex.exactAt_iff_isZero_homology _ _).2
+        (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of k k) X
+          (Nat.succ_ne_zero m))
 
 end TauCeti

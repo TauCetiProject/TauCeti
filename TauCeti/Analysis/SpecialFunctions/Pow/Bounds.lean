@@ -42,6 +42,9 @@ If `2 ≤ q ≤ q'` and `q ^ p < q (q + q')`, then `q ^ (p - 1) < 2 q'`, so
 This reads off the growth of consecutive continued-fraction denominators from the lower error
 bound `1 / (q (q + q')) < |ξ - p / q|`.
 
+For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditive up to the constant
+`2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces.
+
 ## Main results
 
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
@@ -55,6 +58,8 @@ bound `1 / (q (q + q')) < |ξ - p / q|`.
 * `Real.rpow_neg_le_one_div_two_mul_sq`: `d ^ (-p) ≤ 1 / (2 d ^ 2)` for `2 ≤ d ^ (p - 2)`.
 * `Real.lt_log_div_log_of_rpow_lt`: `t < log q' / log q` for `2 ≤ q ≤ q'`,
   `q ^ p < q (q + q')` and `log 2 < (p - 1 - t) log q`.
+* `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
+  for `0 ≤ s`.
 -/
 
 public section
@@ -177,3 +182,28 @@ theorem lt_log_div_log_of_rpow_lt {q q' p t : ℝ} (hq : 2 ≤ q) (hqq' : q ≤ 
   nlinarith
 
 end Real
+
+namespace TauCeti
+
+/-- The weight `(1 + ‖x‖) ^ s` is subadditive up to a constant: for `s ≥ 0`,
+`(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`. -/
+theorem one_add_norm_add_rpow_le {E : Type*} [SeminormedAddGroup E] {s : ℝ} (hs : 0 ≤ s)
+    (x y : E) :
+    (1 + ‖x + y‖) ^ s ≤ 2 ^ s * ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s) := by
+  have hx : 0 ≤ 1 + ‖x‖ := by positivity
+  have hy : 0 ≤ 1 + ‖y‖ := by positivity
+  calc (1 + ‖x + y‖) ^ s ≤ (2 * max (1 + ‖x‖) (1 + ‖y‖)) ^ s := by
+        gcongr
+        linarith [norm_add_le x y, le_max_left (1 + ‖x‖) (1 + ‖y‖),
+          le_max_right (1 + ‖x‖) (1 + ‖y‖)]
+    _ = 2 ^ s * max (1 + ‖x‖) (1 + ‖y‖) ^ s :=
+        Real.mul_rpow zero_le_two (hx.trans (le_max_left _ _))
+    _ ≤ 2 ^ s * ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s) := by
+        gcongr
+        rcases le_total (1 + ‖x‖) (1 + ‖y‖) with h | h
+        · rw [max_eq_right h]
+          exact le_add_of_nonneg_left (Real.rpow_nonneg hx s)
+        · rw [max_eq_left h]
+          exact le_add_of_nonneg_right (Real.rpow_nonneg hy s)
+
+end TauCeti

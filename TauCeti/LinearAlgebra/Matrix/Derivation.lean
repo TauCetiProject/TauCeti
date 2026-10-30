@@ -60,31 +60,8 @@ theorem leibniz_iff_exists_matrix_eq_mulLeft_sub_mulRight
       ext a b
       have hab := congrArg (fun M : Matrix ι ι R => M a r)
         (hD (Matrix.single i j 1) (Matrix.single b r 1))
-      have hprod : Matrix.single i j (1 : R) * Matrix.single b r 1 =
-          if j = b then Matrix.single i r 1 else 0 := by
-        by_cases h : j = b
-        · subst b
-          simp
-        · simp [single_mul_single_of_ne _ _ _ _ h, h]
-      rw [hprod] at hab
-      simp only [apply_ite D, map_zero, Matrix.add_apply, mul_single_apply_same, mul_one] at hab
-      simp only [Matrix.sub_apply]
-      by_cases hjb : j = b
-      · subst b
-        by_cases hai : a = i
-        · subst a
-          simp only [ite_true, single_mul_apply_same, one_mul,
-            mul_single_apply_same, mul_one] at hab ⊢
-          dsimp only [X, of_apply]
-          exact eq_sub_of_add_eq hab.symm
-        · simp [hai] at hab ⊢
-          simpa only [X, of_apply] using hab.symm
-      · by_cases hai : a = i
-        · subst a
-          simp [hjb, Ne.symm hjb] at hab ⊢
-          simpa only [X, of_apply] using eq_neg_of_add_eq_zero_left hab.symm
-        · simp [hjb, Ne.symm hjb, hai] at hab ⊢
-          simpa only [X, of_apply] using hab.symm
+      by_cases hjb : j = b <;> by_cases hai : a = i <;>
+        simp_all [single_mul_single_of_ne, X, of_apply, ne_comm]
   · rintro ⟨X, rfl⟩
     simpa only [LieAlgebra.ad_eq_lmul_left_sub_lmul_right, Pi.sub_apply,
       LinearMap.sub_apply] using
@@ -95,6 +72,27 @@ end LinearMap
 namespace Matrix
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+
+section CoordinateMatrix
+
+variable (R ι : Type*) [Semiring R] [DecidableEq ι]
+
+private def adCoordinateMatrix (p : ι) :
+    ({ij : ι × ι // ij ≠ (p, p)} → R) →ₗ[R] Matrix ι ι R :=
+  (ofLinearEquiv R).toLinearMap.comp <|
+    LinearMap.pi fun i => LinearMap.pi fun j =>
+      if h : (i, j) = (p, p) then 0 else LinearMap.proj ⟨(i, j), h⟩
+
+private lemma adCoordinateMatrix_apply (p : ι)
+    (c : {ij : ι × ι // ij ≠ (p, p)} → R) :
+    adCoordinateMatrix R ι p c =
+      (of fun i j => if h : (i, j) = (p, p) then 0 else c ⟨(i, j), h⟩) := by
+  ext i j
+  simp only [adCoordinateMatrix, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    coe_ofLinearEquiv, of_apply, LinearMap.pi_apply]
+  split_ifs <;> rfl
+
+end CoordinateMatrix
 
 variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
 
@@ -108,41 +106,6 @@ theorem ad_eq_zero_iff (X : Matrix ι ι R) :
 noncomputable section
 
 variable (R ι)
-
-private def adCoordinateMatrix (p : ι) :
-    ({ij : ι × ι // ij ≠ (p, p)} → R) →ₗ[R] Matrix ι ι R := by
-  classical
-  exact
-    { toFun := fun c => of fun i j => if h : (i, j) = (p, p) then 0 else c ⟨(i, j), h⟩
-      map_add' := by
-        intro c d
-        ext i j
-        simp only [of_apply, add_apply, Pi.add_apply]
-        by_cases h : (i, j) = (p, p)
-        · simp only [dite_eq_left h, add_zero]
-        · simp only [dite_eq_right h]
-      map_smul' := by
-        intro a c
-        ext i j
-        simp only [of_apply, smul_apply, Pi.smul_apply, RingHom.id_apply]
-        by_cases h : (i, j) = (p, p)
-        · simp only [dite_eq_left h, smul_zero]
-        · simp only [dite_eq_right h] }
-
-omit [Fintype ι] in
-private lemma adCoordinateMatrix_diag (p : ι)
-    (c : {ij : ι × ι // ij ≠ (p, p)} → R) :
-    adCoordinateMatrix R ι p c p p = 0 := by
-  classical
-  simp [adCoordinateMatrix, LinearMap.coe_mk, AddHom.coe_mk]
-
-omit [Fintype ι] in
-private lemma adCoordinateMatrix_apply (p : ι)
-    (c : {ij : ι × ι // ij ≠ (p, p)} → R)
-    (ij : {ij : ι × ι // ij ≠ (p, p)}) :
-    adCoordinateMatrix R ι p c ij.1.1 ij.1.2 = c ij := by
-  classical
-  simp only [adCoordinateMatrix, LinearMap.coe_mk, AddHom.coe_mk, of_apply, dite_eq_right ij.2]
 
 private def adFromCoordinates (p : ι) :
     ({ij : ι × ι // ij ≠ (p, p)} → R) →ₗ[R]
@@ -161,11 +124,12 @@ private lemma adFromCoordinates_injective (p : ι) :
   obtain ⟨a, ha⟩ := (ad_eq_zero_iff _).mp had
   have ha0 : a = 0 := by
     have h := congrArg (fun X : Matrix ι ι R => X p p) ha
-    simpa [adCoordinateMatrix_diag] using h
+    simpa [adCoordinateMatrix_apply] using h
   have hm : adCoordinateMatrix R ι p c = 0 := by simpa [ha0] using ha.symm
   funext ij
   have h := congrArg (fun X : Matrix ι ι R => X ij.1.1 ij.1.2) hm
-  simpa only [adCoordinateMatrix_apply, zero_apply, Pi.zero_apply] using h
+  simpa only [adCoordinateMatrix_apply, of_apply, dite_eq_right ij.2, zero_apply,
+    Pi.zero_apply] using h
 
 private lemma adFromCoordinates_normalize (p : ι) (X : Matrix ι ι R) :
     adFromCoordinates R ι p
@@ -178,8 +142,8 @@ private lemma adFromCoordinates_normalize (p : ι) (X : Matrix ι ι R) :
     ext i j
     by_cases h : (i, j) = (p, p)
     · obtain ⟨rfl, rfl⟩ := Prod.mk.inj h
-      simp [adCoordinateMatrix_diag]
-    · simp only [adCoordinateMatrix, LinearMap.coe_mk, AddHom.coe_mk, of_apply,
+      simp [adCoordinateMatrix_apply]
+    · simp only [adCoordinateMatrix_apply, of_apply,
         dite_eq_right h, c, sub_apply, scalar_apply, diagonal_apply]
   apply Subtype.ext
   dsimp only [adFromCoordinates, LinearMap.comp_apply, LieHom.coe_toLinearMap,
@@ -230,7 +194,7 @@ theorem adRangeEquivPi_symm_apply (p : ι)
   simp only [adRangeEquivPi, LinearEquiv.symm_symm, LinearEquiv.ofBijective_apply,
     adFromCoordinates, LinearMap.comp_apply, LieHom.coe_toLinearMap,
     LieHom.rangeRestrict_apply, LieAlgebra.ad_apply, Ring.lie_def,
-    adCoordinateMatrix, LinearMap.coe_mk, AddHom.coe_mk]
+    adCoordinateMatrix_apply]
 
 /-- A coordinate unit corresponds to commutation with the same matrix unit. -/
 @[simp]

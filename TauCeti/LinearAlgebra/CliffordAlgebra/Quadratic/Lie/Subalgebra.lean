@@ -9,7 +9,7 @@ import Mathlib.Tactic.NoncommRing
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 import TauCeti.Algebra.Lie.Derivation.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 
 /-!
 # The quadratic elements of a Clifford algebra as a Lie subalgebra

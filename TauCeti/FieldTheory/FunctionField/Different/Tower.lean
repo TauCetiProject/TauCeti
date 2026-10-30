@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.Different.Localization
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 public import TauCeti.RingTheory.DedekindDomain.Different.Tower
+import TauCeti.FieldTheory.FunctionField.Different.Derivative
 
 /-!
 # The different in a tower of function fields
@@ -33,6 +34,11 @@ This is Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Corollary 3
 ## Main results
 
 * `TauCeti.Place.differentExponent_restrict_add`: transitivity of different exponents.
+* `TauCeti.Place.differentExponent_eq_of_finrank_left_eq_one` and
+  `TauCeti.Place.differentExponent_eq_restrict_of_finrank_right_eq_one`: a degree-one step on
+  either side of a tower leaves the different exponent unchanged.
+* `TauCeti.Place.differentExponent_map_restrictScalars`: an `F₀`-algebra isomorphism preserves
+  the different exponent.
 * `TauCeti.Divisor.different_eq_conorm_add`: transitivity of different divisors.
 -/
 
@@ -155,6 +161,62 @@ theorem differentExponent_restrict_add (P₂ : Place k₂ F₂) :
       rw [← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply B C F₂,
         ← IsScalarTower.algebraMap_apply]
   exact differentExponent_restrict_add_of_affineModel P₀.integers B P₂ hC
+
+/-- **A degree-one bottom step in a tower does not change the different exponent**: when
+`[F₁ : F₀] = 1`, the different exponent of `P₂` over `F₀` is its different exponent over `F₁`. -/
+theorem differentExponent_eq_of_finrank_left_eq_one (P₂ : Place k₂ F₂)
+    (h : Module.finrank F₀ F₁ = 1) :
+    haveI : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+    haveI : Algebra.IsSeparable F₀ F₂ := Algebra.IsSeparable.trans F₀ F₁ F₂
+    differentExponent k₀ F₀ P₂ = differentExponent k₁ F₁ P₂ := by
+  let _ : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+  let _ : Algebra.IsSeparable F₀ F₂ := Algebra.IsSeparable.trans F₀ F₁ F₂
+  rw [differentExponent_restrict_add (k₁ := k₁) (F₁ := F₁),
+    differentExponent_eq_zero_of_finrank_eq_one k₀ F₀ _ h, mul_zero, zero_add]
+
+/-- **A degree-one top step in a tower does not change the different exponent**: when
+`[F₂ : F₁] = 1`, the different exponent of `P₂` over `F₀` is the different exponent of its
+restriction to `F₁`. -/
+theorem differentExponent_eq_restrict_of_finrank_right_eq_one (P₂ : Place k₂ F₂)
+    (h : Module.finrank F₁ F₂ = 1) :
+    haveI : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+    haveI : Algebra.IsSeparable F₀ F₂ := Algebra.IsSeparable.trans F₀ F₁ F₂
+    differentExponent k₀ F₀ P₂ = differentExponent k₀ F₀ (P₂.restrict k₁ F₁) := by
+  let _ : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+  let _ : Algebra.IsSeparable F₀ F₂ := Algebra.IsSeparable.trans F₀ F₁ F₂
+  have he : ramificationIdx F₁ P₂ = 1 :=
+    le_antisymm ((ramificationIdx_le_finrank F₁ P₂).trans_eq h) (ramificationIdx_pos F₁ P₂)
+  rw [differentExponent_restrict_add (k₁ := k₁) (F₁ := F₁),
+    differentExponent_eq_zero_of_finrank_eq_one k₁ F₁ _ h, he, one_mul, add_zero]
+
+omit [Field k₁] [Field k₂] [Algebra k₀ k₁] [Algebra k₁ k₂] [Algebra k₀ k₂] [Algebra F₁ F₂]
+  [IsScalarTower F₀ F₁ F₂] [Algebra k₁ F₁] [Algebra k₂ F₂] [Algebra k₁ F₂]
+  [IsScalarTower k₀ k₁ F₁] [IsScalarTower k₁ k₂ F₂] [IsScalarTower k₁ F₁ F₂]
+  [IsScalarTower k₀ k₂ F₂] [FiniteDimensional F₁ F₂] [Algebra.IsSeparable F₁ F₂] in
+/-- **Transport along an `F₀`-algebra isomorphism preserves the different exponent**: for
+`e : F₁ ≃ₐ[F₀] F₂`, the place `P₁.map (e.restrictScalars k₀)` of `F₂` has the same different
+exponent over `F₀` as `P₁` does. -/
+@[simp]
+theorem differentExponent_map_restrictScalars [FiniteDimensional F₀ F₂] [Algebra.IsSeparable F₀ F₂]
+    (P₁ : Place k₀ F₁) (e : F₁ ≃ₐ[F₀] F₂) :
+    differentExponent k₀ F₀ (P₁.map (e.restrictScalars k₀)) = differentExponent k₀ F₀ P₁ := by
+  let _ : Algebra F₁ F₂ := e.toAlgHom.toRingHom.toAlgebra
+  have : IsScalarTower F₀ F₁ F₂ := .of_algebraMap_eq fun x ↦ (e.commutes x).symm
+  have : IsScalarTower k₀ F₁ F₂ := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply k₀ F₀ F₁, IsScalarTower.algebraMap_apply k₀ F₀ F₂]
+    exact (e.commutes (algebraMap k₀ F₀ c)).symm
+  have hfin1 : Module.finrank F₁ F₂ = 1 :=
+    Module.finrank_of_bijective_algebraMap e.bijective
+  let _ : FiniteDimensional F₁ F₂ := FiniteDimensional.right F₀ F₁ F₂
+  let _ : Algebra.IsSeparable F₁ F₂ := Algebra.isSeparable_tower_top_of_isSeparable F₀ F₁ F₂
+  have hres : (P₁.map (e.restrictScalars k₀)).restrict k₀ F₁ = P₁ := by
+    rw [restrict_eq_iff_integers_le]
+    intro f hf
+    simpa only [mem_integers_map_iff, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom, AlgEquiv.coe_toAlgHom,
+      AlgEquiv.symm_restrictScalars, AlgEquiv.restrictScalars_apply,
+      AlgEquiv.symm_apply_apply] using hf
+  rw [differentExponent_eq_restrict_of_finrank_right_eq_one (k₁ := k₀) (F₁ := F₁) _ hfin1, hres]
 
 end Place
 

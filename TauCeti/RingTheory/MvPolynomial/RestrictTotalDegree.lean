@@ -24,7 +24,7 @@ a linear statement about polynomials of bounded degree reduces to monomials.
   degree at most `m`.
 * `MvPolynomial.restrictTotalDegree_eq_span`: the monomials of degree at most `m` span the
   polynomials of total degree at most `m`.
-* `TauCeti.MvPolynomial.apply_mem_of_basis`: a bilinear map takes values in a submodule on
+* `Module.Basis.apply_mem_of_monomial_degree_le`: a bilinear map takes values in a submodule on
   bounded-degree polynomials if it does so on basis vectors and bounded-degree monomials.
 * `Module.Basis.constr_X_mul_mem_restrictTotalDegree`: multiplication by a linear form raises
   total degree by at most one.
@@ -61,9 +61,11 @@ theorem restrictTotalDegree_eq_span (m : ℕ) :
 
 end MvPolynomial
 
-namespace TauCeti.MvPolynomial
+namespace Module.Basis
 
-open _root_.MvPolynomial
+open MvPolynomial
+
+section Bilinear
 
 variable {σ κ R L M : Type*} [CommSemiring R] [AddCommMonoid L] [Module R L]
   [AddCommMonoid M] [Module R M]
@@ -71,7 +73,7 @@ variable {σ κ R L M : Type*} [CommSemiring R] [AddCommMonoid L] [Module R L]
 /-- A bilinear map out of a module and a polynomial algebra takes values in a submodule on
 polynomials of total degree at most `d` if it does so on basis vectors and monomials of degree at
 most `d`. -/
-theorem apply_mem_of_basis (b : Module.Basis κ R L)
+theorem apply_mem_of_monomial_degree_le (b : Basis κ R L)
     (Φ : L →ₗ[R] MvPolynomial σ R →ₗ[R] M) (N : Submodule R M) (d : ℕ)
     (h : ∀ (l : κ) (s : σ →₀ ℕ), s.degree ≤ d → Φ (b l) (monomial s 1) ∈ N)
     (x : L) {p : MvPolynomial σ R} (hp : p ∈ restrictTotalDegree σ R d) : Φ x p ∈ N := by
@@ -83,11 +85,7 @@ theorem apply_mem_of_basis (b : Module.Basis κ R L)
   rw [b.span_eq, ← restrictTotalDegree_eq_span] at hle
   exact Submodule.map₂_le.1 hle x Submodule.mem_top p hp
 
-end TauCeti.MvPolynomial
-
-namespace Module.Basis
-
-open MvPolynomial
+end Bilinear
 
 variable {ι R L : Type*} [CommSemiring R] [AddCommMonoid L] [Module R L]
 
@@ -96,7 +94,7 @@ most one. -/
 theorem constr_X_mul_mem_restrictTotalDegree (b : Basis ι R L) {d : ℕ} (x : L)
     {p : MvPolynomial ι R} (hp : p ∈ restrictTotalDegree ι R d) :
     b.constr R X x * p ∈ restrictTotalDegree ι R (d + 1) := by
-  refine TauCeti.MvPolynomial.apply_mem_of_basis b
+  refine b.apply_mem_of_monomial_degree_le
     ((LinearMap.mul R _).comp (b.constr R X)) _ d (fun l σ hσ ↦ ?_) x hp
   have hm : (monomial (Finsupp.single l 1 + σ) 1 : MvPolynomial ι R) ∈
       restrictTotalDegree ι R (d + 1) :=

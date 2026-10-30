@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
-public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis.Basic
+public import TauCeti.RingTheory.MvPolynomial.SquarefreeBasis.Basic
 
 /-!
 # Ambient polynomial orders on sectors
 
 On a sector of a polynomial delineation, every member with a nonzero fiber has
-nonzero value, hence ambient Taylor order zero. For an irreducible basis whose
+nonzero value, hence ambient Taylor order zero. For a squarefree basis whose
 fibers are nonzero, the ambient order of each original input on a sector is
 therefore exactly the order of its content at the base point. This includes
 inputs nullified by vanishing content: their ambient order need not be zero.
@@ -53,7 +53,7 @@ theorem orderAt_eq_zero_of_mem_sectorSet (i : ι) {j : Fin (D.count + 1)}
 
 end TauCeti.Delineation
 
-namespace Finset.IsIrreducibleBasis
+namespace Finset.IsSquarefreeBasis
 
 variable {n : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) ℝ))} {S : Set (Fin n → ℝ)}
@@ -61,7 +61,7 @@ variable {n : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
 /-- On a sector of a delineation of the basis, the ambient order of an input
 is exactly the order of its content. All basis fibers at the base point are
 assumed nonzero; the input itself may be nullified by its content. -/
-theorem orderAt_eq_content_of_mem_sectorSet (hB : F.IsIrreducibleBasis B)
+theorem orderAt_eq_content_of_mem_sectorSet (hB : F.IsSquarefreeBasis B)
     (D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.1.map (MvPolynomial.eval x.1))
     {f : Polynomial (MvPolynomial (Fin n) ℝ)} (hf : f ∈ F)
     {j : Fin (D.count + 1)} {a : Fin (n + 1) → ℝ}
@@ -80,7 +80,7 @@ theorem orderAt_eq_content_of_mem_sectorSet (hB : F.IsIrreducibleBasis B)
 across all sectors of a basis delineation, provided no basis member is nullified.
 Vanishing contents and zero inputs are allowed. For McCallum lifting, the content
 order hypothesis follows from its membership in the projection. -/
-theorem orderAt_eq_of_mem_sectorSet (hB : F.IsIrreducibleBasis B)
+theorem orderAt_eq_of_mem_sectorSet (hB : F.IsSquarefreeBasis B)
     (D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.1.map (MvPolynomial.eval x.1))
     {f : Polynomial (MvPolynomial (Fin n) ℝ)} (hf : f ∈ F)
     (hc : ∀ x ∈ S, ∀ y ∈ S, f.content.orderAt x = f.content.orderAt y)
@@ -95,4 +95,4 @@ theorem orderAt_eq_of_mem_sectorSet (hB : F.IsIrreducibleBasis B)
     hB.orderAt_eq_content_of_mem_sectorSet D hf (fun b hmem ↦ hb b hmem _ haS') ha']
   exact hc _ haS _ haS'
 
-end Finset.IsIrreducibleBasis
+end Finset.IsSquarefreeBasis

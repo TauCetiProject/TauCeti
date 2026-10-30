@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Calculus.Morse.Linearization
 -- integral curve, and scalar multiplication of the gradient are used only inside proofs; no
 -- declaration below exposes their APIs.
 import TauCeti.Analysis.Calculus.Gradient
-import Mathlib.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.Gronwall
 import Mathlib.Analysis.ODE.Transform
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
@@ -95,35 +95,13 @@ namespace IsIntegralCurveOn
 
 variable {T lam : ℝ}
 
-/-- **Exponential decay of the energy.** If along a trajectory the energy is nonnegative and
-satisfies Łojasiewicz's inequality with constant `lam`, then it decays like `exp (-lam * t)`,
-by Grönwall's inequality. -/
-private theorem energy_le_mul_exp
-    (hderiv : ∀ t ∈ Ici T, HasDerivAt γ (-∇ f (γ t)) t)
-    (hdiff : ∀ t ∈ Ici T, DifferentiableAt ℝ f (γ t))
-    (hloj : ∀ t ∈ Ici T, lam * (f (γ t) - f p) ≤ ‖∇ f (γ t)‖ ^ 2)
-    {t : ℝ} (ht : T ≤ t) :
-    f (γ t) - f p ≤ (f (γ T) - f p) * Real.exp (-(lam * (t - T))) := by
-  let g : ℝ → ℝ := fun s ↦ f (γ s) - f p
-  let g' : ℝ → ℝ := fun s ↦ -‖∇ f (γ s)‖ ^ 2
-  have hgderiv : ∀ s ∈ Ici T, HasDerivAt g (g' s) s := by
-    intro s hs
-    have hc := (hdiff s hs).hasFDerivAt.comp_hasDerivAt s (hderiv s hs)
-    have hcomp : HasDerivAt (fun u ↦ f (γ u)) (-‖∇ f (γ s)‖ ^ 2) s := by
-      refine hc.congr_deriv ?_
-      rw [map_neg, ← inner_gradient_left, real_inner_self_eq_norm_sq]
-    exact hcomp.sub_const _
-  have hgronwall := le_gronwallBound_of_liminf_deriv_right_le
-    (f := g) (f' := g') (δ := g T) (K := -lam) (ε := 0) (a := T) (b := t)
-    (fun s hs ↦ (hgderiv s (mem_Ici.2 hs.1)).continuousAt.continuousWithinAt)
-    (fun s hs r hr ↦
-      (hgderiv s (mem_Ici.2 hs.1)).hasDerivWithinAt.liminf_right_slope_le hr)
-    le_rfl (fun s hs ↦ by
-      have hlj := hloj s (mem_Ici.2 hs.1)
-      dsimp [g, g']
-      linarith)
-    t ⟨ht, le_rfl⟩
-  simpa only [g, gronwallBound_ε0, neg_mul] using hgronwall
+/-- Along a negative gradient trajectory the energy `f (γ t) - f p` has derivative
+`-‖∇ f (γ t)‖ ^ 2`. -/
+private theorem hasDerivAt_energy {t : ℝ} (hderiv : HasDerivAt γ (-∇ f (γ t)) t)
+    (hdiff : DifferentiableAt ℝ f (γ t)) :
+    HasDerivAt (fun s ↦ f (γ s) - f p) (-‖∇ f (γ t)‖ ^ 2) t := by
+  refine ((hdiff.hasFDerivAt.comp_hasDerivAt t hderiv).congr_deriv ?_).sub_const _
+  rw [map_neg, ← inner_gradient_left, real_inner_self_eq_norm_sq]
 
 /-- **The unit-time step estimate.** Over a time interval of length one the trajectory moves by at
 most `(α * energy + 1 / α) / 2`, for every `α > 0`. The distance travelled is at most the integral
@@ -240,21 +218,8 @@ theorem exists_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x ↦ -�
     (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atTop (𝓝 p)) :
     ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atTop, f (γ t) - f p ≤ C * Real.exp (-(μ * t)) := by
   obtain ⟨lam, hlam, T, _, hderiv, hdiff, _, hloj, _⟩ := exists_time_of_tendsto hγ hp hconv
-  refine ⟨lam, hlam, (|f (γ T) - f p| + 1) * Real.exp (lam * T), by positivity, ?_⟩
-  filter_upwards [eventually_ge_atTop T] with t ht
-  have hmain := energy_le_mul_exp hderiv hdiff hloj ht
-  have hbound : f (γ T) - f p ≤ |f (γ T) - f p| + 1 := by
-    have := le_abs_self (f (γ T) - f p)
-    linarith
-  have hexp : Real.exp (-(lam * (t - T))) = Real.exp (lam * T) * Real.exp (-(lam * t)) := by
-    rw [← Real.exp_add]
-    congr 1
-    ring
-  calc f (γ t) - f p ≤ (f (γ T) - f p) * Real.exp (-(lam * (t - T))) := hmain
-    _ ≤ (|f (γ T) - f p| + 1) * Real.exp (-(lam * (t - T))) :=
-        mul_le_mul_of_nonneg_right hbound (Real.exp_pos _).le
-    _ = (|f (γ T) - f p| + 1) * Real.exp (lam * T) * Real.exp (-(lam * t)) := by
-        rw [hexp]; ring
+  exact ⟨lam, hlam, exists_le_mul_exp_atTop_of_hasDerivAt_le_neg_mul (lam := lam)
+    (fun s hs ↦ hasDerivAt_energy (hderiv s hs) (hdiff s hs)) fun s hs ↦ by linarith [hloj s hs]⟩
 
 /-- **A negative gradient trajectory converging to a nondegenerate critical point converges to it
 exponentially fast.** The rate is half the Łojasiewicz constant of the critical point, which for a
@@ -275,7 +240,9 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
   -- the energy is dominated by `G * exp (-lam * (t - T))`
   have hdecay : ∀ t ∈ Ici T, f (γ t) - f p ≤ G * Real.exp (-(lam * (t - T))) := by
     intro t ht
-    refine (energy_le_mul_exp hderiv hdiff hloj ht).trans ?_
+    refine (le_mul_exp_of_hasDerivAt_le_neg_mul (lam := lam)
+      (fun s hs ↦ hasDerivAt_energy (hderiv s hs) (hdiff s hs))
+      (fun s hs ↦ by linarith [hloj s hs]) ht).trans ?_
     exact mul_le_mul_of_nonneg_right (by simp [hGdef]) (Real.exp_pos _).le
   -- the trajectory moves by at most `sqrt (energy)` in unit time
   have hstep : ∀ t ∈ Ici T, ‖γ (t + 1) - γ t‖ ≤ q * Real.exp (-(lam / 2 * (t - T))) := by

@@ -5,6 +5,7 @@ on:
     types: [in_progress]
 permissions:
   contents: read
+  pull-requests: read  # confirm the immutable PR head before recovery
   actions: write
   statuses: write  # terminal recovery failure must not leave bors pending indefinitely
 concurrency:
@@ -12,7 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   recover:
-    if: ${{ vars.FLEET_CI_ENABLED == 'true' && github.event.workflow_run.event == 'repository_dispatch' && github.event.workflow_run.run_attempt == 1 && startsWith(github.event.workflow_run.display_title, 'bors branch=') }}
+    if: ${{ vars.FLEET_CI_ENABLED == 'true' && (github.event.workflow_run.event == 'repository_dispatch' || github.event.workflow_run.event == 'pull_request_target') && (startsWith(github.event.workflow_run.display_title, 'bors branch=') || startsWith(github.event.workflow_run.display_title, 'pr-build pr=')) }}
     runs-on:
       - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
       - namespace-features:github.run-id=${{ github.run_id }}
@@ -27,13 +28,17 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@02db6ea51c27553cb6271e605612a56169ae72f6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 02db6ea51c27553cb6271e605612a56169ae72f6
+          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
           project-directory: .
-      - name: Recover an unacquired dedicated runner on Namespace
+      - name: Retry an unacquired dedicated runner within the same run
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_READ_TOKEN: ${{ github.token }}
+          TAUCETI_GITHUB_READ_ROLE: ci-workflow-read
+          TAUCETI_GITHUB_WRITE_ROLE: ci-workflow-write
+          FLEET_ROUTING_POLICY_ENABLED: "true"
           FLEET_RUN_ID: ${{ github.event.workflow_run.id }}
         run: python3 scripts/fleet_recovery.py

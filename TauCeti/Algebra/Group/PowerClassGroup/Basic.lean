@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.PowMonoidHom
+import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 
 /-!
 # The group of `n`th power classes `G ⧸ Gⁿ`
@@ -74,6 +75,11 @@ theorem powerClassHom_apply (g : G) : powerClassHom G n g = QuotientGroup.mk g :
 theorem mem_powerSubgroup_iff {g : G} : g ∈ powerSubgroup G n ↔ ∃ h : G, h ^ n = g := by
   rw [powerSubgroup, MonoidHom.mem_range]
   exact exists_congr fun h => by rw [powMonoidHom_apply]
+
+/-- **`n` kills the power classes**: every element of `G ⧸ Gⁿ` has `n`th power `1`. -/
+@[simp]
+theorem powerClassQuotient_pow_eq_one (x : powerClassQuotient G n) : x ^ n = 1 :=
+  QuotientGroup.pow_eq_one_quotient_range_powMonoidHom n x
 
 /-- **A subgroup contains the powers to the exponent of its index**: `(G ⧸ H)` has order
 `[G : H]`, so `g ^ [G : H] ∈ H` for every `g`. When `H` has infinite index the exponent is `0`

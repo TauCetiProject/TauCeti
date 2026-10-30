@@ -214,7 +214,8 @@ theorem map_permTensorAction_harmonicTensors (σ : Equiv.Perm (Fin d)) :
 /-- **At an invertible loop value the harmonic tensors avoid the image of an arc.** An arc acts on
 its own image by the loop value `n`, so a harmonic tensor in that image is `n⁻¹` times zero. This
 is the easy half of the statement that the trace filtration of `V^{⊗d}` splits off its harmonic
-part in the semisimple range. -/
+part, which over a star-ordered field is
+`TauCeti.isCompl_harmonicTensors_iSup_range_orthogonalCupCapAt`. -/
 theorem harmonicTensors_inf_range_orthogonalCupCapAt [Invertible (n : k)] {i j : Fin d}
     (hij : i ≠ j) :
     harmonicTensors k n d ⊓ LinearMap.range (orthogonalCupCapAt k n d i j) = ⊥ := by

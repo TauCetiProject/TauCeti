@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.BorelCandidate
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Candidate
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus

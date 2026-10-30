@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Combinatorics.Quiver.BoundedPaths
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Corner
+public import TauCeti.RepresentationTheory.Quiver.LastArrow
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 
 /-!
@@ -27,6 +28,11 @@ results apply to path algebras independently of any relations.
 * `TauCeti.PathAlgebra.mem_pathsBetween_iff`: membership in that degree-`n` corner.
 * `TauCeti.PathAlgebra.finrank_pathsBetween`: the dimension of that corner is the number of
   paths of the prescribed length between the vertices.
+* `TauCeti.PathAlgebra.pathBetweenSuccEquiv`: a path of length `n + 1` is a path of length `n`
+  followed by a last arrow.
+* `TauCeti.PathAlgebra.card_pathBetween_zero` and
+  `TauCeti.PathAlgebra.card_pathBetween_mul_card_arrow_eq`: the last-arrow recursion for the
+  number of paths of a given length between two vertices.
 * `TauCeti.PathAlgebra.mul_mem_pathsInto`: multiplication adds path lengths.
 * `TauCeti.PathAlgebra.exists_eq_sum_ofArrow_mul` and
   `TauCeti.PathAlgebra.sum_ofArrow_mul_eq_zero_iff`: existence and uniqueness of the last-arrow
@@ -83,34 +89,75 @@ instance finite_pathBetween [Finite R] [∀ a b : R, Finite (a ⟶ b)]
       simp only [Subtype.mk.injEq, Sigma.mk.injEq, heq_eq_eq, true_and] at h
       exact Subtype.ext h
 
+/-- The only path of length zero is the trivial path at a vertex. -/
+theorem card_pathBetween_zero [DecidableEq R] (i j : R) :
+    Nat.card (PathBetween R 0 i j) = if i = j then 1 else 0 := by
+  split_ifs with h
+  · subst h
+    refine Nat.card_eq_one_iff_unique.mpr ⟨⟨fun p q => Subtype.ext ?_⟩, ⟨⟨Path.nil, rfl⟩⟩⟩
+    rw [Path.eq_nil_of_length_zero p.1 p.2, Path.eq_nil_of_length_zero q.1 q.2]
+  · have : IsEmpty (PathBetween R 0 i j) := ⟨fun p => h (Path.eq_of_length_zero p.1 p.2)⟩
+    exact Nat.card_of_isEmpty
+
+/-- **The last-arrow decomposition of paths of length `n + 1`.** Appending an arrow `l ⟶ j` to a
+path of length `n` from `i` to `l` gives every path of length `n + 1` from `i` to `j`, uniquely.
+This is `TauCeti.pathLastArrowEquiv` restricted to paths of length `n + 1`, where the trivial path
+does not occur. -/
+noncomputable def pathBetweenSuccEquiv (n : ℕ) (i j : R) :
+    (Σ l : R, PathBetween R n i l × (l ⟶ j)) ≃ PathBetween R (n + 1) i j :=
+  Equiv.ofBijective (fun x => ⟨x.2.1.1.cons x.2.2, by simp [x.2.1.2]⟩) <| by
+    refine ⟨?_, ?_⟩
+    · rintro ⟨l, ⟨p, hp⟩, b⟩ ⟨l', ⟨p', hp'⟩, b'⟩ h
+      have h' := congrArg (pathLastArrowEquiv i j) (congrArg Subtype.val h)
+      simp only [pathLastArrowEquiv_cons, Sum.inr.injEq, Sigma.mk.injEq] at h'
+      obtain ⟨rfl, h'⟩ := h'
+      simp only [heq_eq_eq, Prod.mk.injEq] at h'
+      obtain ⟨rfl, rfl⟩ := h'
+      rfl
+    · rintro ⟨p, hp⟩
+      have hx := (pathLastArrowEquiv i j).symm_apply_apply p
+      generalize pathLastArrowEquiv i j p = x at hx
+      subst hx
+      rcases x with ⟨⟨rfl⟩⟩ | ⟨l, q, b⟩
+      · simp at hp
+      · simp only [pathLastArrowEquiv_symm_inr, Path.length_cons,
+          Nat.add_right_cancel_iff] at hp
+        exact ⟨⟨l, ⟨q, hp⟩, b⟩, Subtype.ext (pathLastArrowEquiv_symm_inr l q b).symm⟩
+
+/-- Appending an arrow to a path of length `n` from `i` to `l` is the path of length `n + 1`
+recorded by `TauCeti.PathAlgebra.pathBetweenSuccEquiv`. -/
+@[simp]
+theorem pathBetweenSuccEquiv_apply (n : ℕ) (i j : R)
+    (x : Σ l : R, PathBetween R n i l × (l ⟶ j)) :
+    (pathBetweenSuccEquiv n i j x).1 = x.2.1.1.cons x.2.2 :=
+  (rfl)
+
+/-- Every path of length `n + 1` from `i` to `j` is a unique path of length `n` from `i` to some
+`l`, followed by an arrow `l ⟶ j`. -/
+theorem card_pathBetween_mul_card_arrow_eq [Fintype R] [∀ a b : R, Finite (a ⟶ b)]
+    (n : ℕ) (i j : R) :
+    ∑ l : R, Nat.card (PathBetween R n i l) * Nat.card (l ⟶ j) =
+      Nat.card (PathBetween R (n + 1) i j) := by
+  rw [← Nat.card_congr (pathBetweenSuccEquiv n i j), Nat.card_sigma]
+  exact Finset.sum_congr rfl fun l _ => (Nat.card_prod _ _).symm
+
+/-- The paths of length `n` into `j` are the paths of length `n` from each source vertex. -/
+private theorem card_pathInto_eq_sum [Fintype R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ) (j : R) :
+    Nat.card (PathInto R n j) = ∑ s : R, Nat.card (PathBetween R n s j) := by
+  rw [← Nat.card_sigma]
+  exact Nat.card_congr
+    { toFun := fun p => ⟨p.1.1, p.1.2, p.2⟩
+      invFun := fun x => ⟨⟨x.1, x.2.1⟩, x.2.2⟩ }
+
 /-- Every path of length `n + 1` into `j` has a unique last arrow and a length-`n` prefix. -/
 theorem card_arrow_mul_card_pathInto_eq [Fintype R] [∀ a b : R, Fintype (a ⟶ b)]
     (n : ℕ) (j : R) :
     ∑ i : R, Fintype.card (i ⟶ j) * Nat.card (PathInto R n i) =
       Nat.card (PathInto R (n + 1) j) := by
-  let g : (Σ i : R, (i ⟶ j) × PathInto R n i) → PathInto R (n + 1) j :=
-    fun x => ⟨⟨x.2.2.1.1, x.2.2.1.2.cons x.2.1⟩, by simp [x.2.2.2]⟩
-  have hg : Function.Injective g := by
-    rintro ⟨i, b, ⟨⟨s, p⟩, hp⟩⟩ ⟨i', b', ⟨⟨s', p'⟩, hp'⟩⟩ h
-    simp only [g, Subtype.mk.injEq, Sigma.mk.injEq] at h
-    obtain ⟨rfl, h⟩ := h
-    have h' := eq_of_heq h
-    obtain rfl := Path.obj_eq_of_cons_eq_cons h'
-    simp only [Path.cons.injEq, heq_eq_eq, true_and] at h'
-    obtain ⟨rfl, rfl⟩ := h'
-    rfl
-  have hs : Function.Surjective g := by
-    rintro ⟨⟨s, p⟩, hp⟩
-    cases p with
-    | nil => simp at hp
-    | @cons i _ q b =>
-      simp only [Path.length_cons, Nat.add_right_cancel_iff] at hp
-      exact ⟨⟨i, b, ⟨⟨s, q⟩, hp⟩⟩, rfl⟩
-  calc ∑ i : R, Fintype.card (i ⟶ j) * Nat.card (PathInto R n i)
-      = Nat.card (Σ i : R, (i ⟶ j) × PathInto R n i) := by
-        rw [Nat.card_sigma]
-        simp [Nat.card_prod, Nat.card_eq_fintype_card]
-    _ = Nat.card (PathInto R (n + 1) j) := Nat.card_congr (Equiv.ofBijective g ⟨hg, hs⟩)
+  simp only [card_pathInto_eq_sum, ← card_pathBetween_mul_card_arrow_eq, Finset.mul_sum,
+    ← Nat.card_eq_fintype_card]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun s _ => Finset.sum_congr rfl fun i _ => mul_comm _ _
 
 variable (k : Type w)
 

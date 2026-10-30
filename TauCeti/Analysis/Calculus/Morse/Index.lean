@@ -116,6 +116,13 @@ theorem hessianQuadraticForm_neg (f : E → ℝ) (x : E) :
   rw [hfd, fderiv_neg]
   rfl
 
+/-- Scaling a function by a real constant scales its Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_smul (a : ℝ) (f : E → ℝ) (x : E) :
+    hessianQuadraticForm (a • f) x = a • hessianQuadraticForm f x := by
+  ext v
+  simp [fderiv_fderiv_const_smul]
+
 /-- At a critical point the Hessian quadratic form pulls back along the derivative of a `C²`
 change of variables. -/
 theorem hessianQuadraticForm_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))

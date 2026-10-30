@@ -15,7 +15,8 @@ expansion in the simple roots. This file records that height respects every inte
 among the roots: a vanishing integral combination of roots has a vanishing combination of heights,
 so two integral combinations with the same value have the same combination of heights. When the
 roots span the weight space, it also extends height to the linear functional which sums the
-coordinates in the simple-root basis.
+coordinates in the simple-root basis. Ahead of all this, it records the extensionality of bases:
+a base is determined by the indices of its simple roots.
 
 ## Main definitions
 
@@ -24,6 +25,7 @@ coordinates in the simple-root basis.
 
 ## Main results
 
+* `RootPairing.Base.ext`: a base is determined by its support, the indices of its simple roots.
 * `TauCeti.apply_root_eq_height_zsmul` says that an additive map taking the constant value `c`
   on the simple roots takes the value `ht(α) • c` on every root.
 * `TauCeti.sum_mul_height_eq_zero_of_sum_zsmul_root_eq_zero` says that height respects integral
@@ -37,6 +39,22 @@ The argument follows Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
 -/
 
 public section
+
+namespace RootPairing.Base
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N}
+
+/-- **A base is determined by its simple roots.** The other fields of a base are propositions about
+its support. -/
+@[ext]
+theorem ext {b b' : P.Base} (h : b.support = b'.support) : b = b' := by
+  cases b
+  cases b'
+  subst h
+  rfl
+
+end RootPairing.Base
 
 namespace TauCeti
 

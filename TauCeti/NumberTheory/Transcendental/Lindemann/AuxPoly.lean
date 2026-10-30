@@ -19,8 +19,8 @@ For a finite set `S` of `t` elements of a field `K`, natural numbers `l` and `p`
 `f = l ^ (t p) / (p - 1)! * (X - γ) ^ (p - 1) * ∏_{γ' ∈ S, γ' ≠ γ} (X - γ') ^ p`.
 In Hermite's proof of the Lindemann–Weierstrass theorem `S` is the support of a vanishing
 exponential sum `∑ δ_γ' exp γ'` with algebraic `δ_γ'` and `γ'`, `l` is a common denominator of the
-exponents and `p` is a large prime. The number `∑_γ' δ_γ' (sumIDeriv f)(γ')` is then an algebraic
-integer that is nonzero but small, which is impossible.
+exponents and `p` is a large prime. The number `∑_γ' δ_γ' (sumIDeriv f)(γ')` is then a nonzero
+algebraic integer all of whose conjugates have absolute value less than one, which is impossible.
 
 This file proves the algebraic half of that argument: the values of the derivatives of `f` at the
 points of `S`. With `A = l ^ t ∏_{γ' ∈ S, γ' ≠ γ} (γ - γ')`,
@@ -34,9 +34,8 @@ points of `S`. With `A = l ^ t ∏_{γ' ∈ S, γ' ≠ γ} (γ - γ')`,
 * `exists_eval_sumIDeriv_auxPoly_eq`: consequently `(sumIDeriv f)(γ')` is `A ^ p` at `γ' = γ`, and
   `0` at the other points of `S`, up to `p` times an algebraic integer.
 
-We also record the degree `t p - 1` of `f` (`natDegree_auxPoly`), the compatibility of `auxPoly`
-with field homomorphisms (`auxPoly_map`), used to conjugate it by Galois automorphisms, and the
-integrality of `A` (`isIntegral_pow_card_mul_prod_sub`).
+We also record the degree `t p - 1` of `f` (`natDegree_auxPoly`) and the compatibility of `auxPoly`
+with field homomorphisms (`auxPoly_map`), used to conjugate it by Galois automorphisms.
 
 ## References
 
@@ -73,10 +72,12 @@ theorem auxPoly_map {L : Type*} [Field L] [DecidableEq L] (φ : K →+* L) (S : 
   simp [auxPoly, Polynomial.map_prod, card_image_of_injective _ φ.injective,
     ← image_erase φ.injective, prod_image φ.injective.injOn]
 
-/-- For `γ ∈ S` and nonzero `l`, `p`, the polynomial `auxPoly S l p γ` has degree `t p - 1`, where
-`t` is the cardinality of `S`. -/
+/-- For `γ ∈ S` and nonzero `l`, the polynomial `auxPoly S l p γ` has natural degree `t p - 1`,
+where `t` is the cardinality of `S`. This includes `p = 0`, when the polynomial is `1`. -/
 theorem natDegree_auxPoly [CharZero K] {S : Finset K} {l p : ℕ} {γ : K} (hγ : γ ∈ S)
-    (hl : l ≠ 0) (hp : p ≠ 0) : (auxPoly S l p γ).natDegree = #S * p - 1 := by
+    (hl : l ≠ 0) : (auxPoly S l p γ).natDegree = #S * p - 1 := by
+  by_cases hp : p = 0
+  · simp [auxPoly, hp]
   have hc : (l : K) ^ (#S * p) / (p - 1)! ≠ 0 :=
     div_ne_zero (pow_ne_zero _ (Nat.cast_ne_zero.2 hl))
       (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _))
@@ -125,16 +126,6 @@ theorem eval_iterate_derivative_auxPoly_of_ne {S : Finset K} (l : ℕ) {p j : �
         ← mul_prod_erase _ _ (mem_erase.2 ⟨hne, hγ'⟩)]
       ring) hj
   rwa [coe_aeval_eq_eval] at h
-
-/-- If `γ ∈ S` and `l γ'` is an algebraic integer for every `γ' ∈ S`, then
-`l ^ t ∏_{γ' ∈ S, γ' ≠ γ} (γ - γ')` is an algebraic integer. -/
-theorem isIntegral_pow_card_mul_prod_sub {S : Finset K} {l : ℕ} {γ : K} (hγ : γ ∈ S)
-    (hS : ∀ γ' ∈ S, IsIntegral ℤ ((l : K) * γ')) :
-    IsIntegral ℤ ((l : K) ^ #S * ∏ γ' ∈ S.erase γ, (γ - γ')) := by
-  rw [← card_erase_add_one hγ, pow_succ', mul_assoc, ← prod_const, ← prod_mul_distrib]
-  refine (isIntegral_natCast l).mul (IsIntegral.prod _ fun γ' hγ' ↦ ?_)
-  rw [mul_sub]
-  exact (hS γ hγ).sub (hS γ' (mem_of_mem_erase hγ'))
 
 /-- The key computation behind the integrality of the derivatives of `auxPoly S l p γ`: every
 derivative satisfies `(p - 1)! f⁽ʲ⁾(z) = j! y` for an algebraic integer `y`, provided that `l z` is

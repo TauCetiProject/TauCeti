@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
 # The geometric series in a complete nonarchimedean ring
@@ -43,7 +43,7 @@ Ported from AINTLIB's `projects/AdicSpaces/Adic spaces/GeometricSeries.lean`, br
 entirely on Mathlib primitives. Two deliberate differences from the source: the ring here is only a
 `Ring`, the unit being built from both one-sided geometric identities instead of from
 commutativity; and the negation-stability lemma the `1 + a` form needs lives in
-`TauCeti/Topology/Algebra/TopologicallyNilpotent.lean`, stated at the hypotheses it actually
+`TauCeti/Topology/Algebra/TopologicallyNilpotent/Basic.lean`, stated at the hypotheses it actually
 requires rather than under this file's uniform nonarchimedean block. The `omit` annotations record
 which hypotheses each proof uses.
 

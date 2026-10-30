@@ -31,8 +31,8 @@ chain-rule argument while replacing the global exponent hypothesis with the loca
 
 ## Main declarations
 
-* `norm_rpow_eq_norm_sq_rpow`: a real power of the norm as a power of the squared norm.
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
+* `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
 * `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
@@ -56,14 +56,6 @@ open scoped RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-omit [InnerProductSpace ℝ E] in
-/-- A real power of the norm, written as a power of the squared norm. -/
-theorem norm_rpow_eq_norm_sq_rpow (x : E) (p : ℝ) : ‖x‖ ^ p = (‖x‖ ^ 2) ^ (p / 2) := by
-  rw [← Real.rpow_natCast_mul (norm_nonneg x)]
-  congr 1
-  push_cast
-  ring
-
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` is
 `p ‖x‖ ^ (p - 2) ⟨x, ·⟩`.  Unlike Mathlib's `hasFDerivAt_norm_rpow`, this local form
 allows every real exponent. -/
@@ -78,6 +70,13 @@ theorem hasFDerivAt_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
 theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • innerSL ℝ x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
+
+/-- Away from the origin, the derivative of the norm is `‖x‖⁻¹ ⟨x, ·⟩`. -/
+theorem hasFDerivAt_norm_of_ne {x : E} (hx : x ≠ 0) :
+    HasFDerivAt (fun y : E ↦ ‖y‖) (‖x‖⁻¹ • innerSL ℝ x) x := by
+  convert hasFDerivAt_norm_rpow_of_ne 1 hx using 1
+  · simp
+  · norm_num [Real.rpow_neg_one]
 
 /-- The Hessian of `x ↦ ‖x‖ ^ p` away from the origin, evaluated on two directions. -/
 theorem iteratedFDeriv_two_norm_rpow_apply (p : ℝ) {x : E} (hx : x ≠ 0) (v w : E) :

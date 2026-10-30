@@ -46,6 +46,8 @@ continuity hold trivially.
 * `Convex.continuousOn_volume_real_hyperplaneSection`: continuity of hyperplane sections.
 * `Convex.hasDerivAt_volume_real_sep_inner_le`: the volume below a hyperplane has the section
   volume as derivative.
+* `TauCeti.volume_hyperplaneSection_rpow_mul_volume_hyperplaneSection_rpow_le`: multiplicative
+  Brunn–Minkowski for the hyperplane sections of two sets, at the weighted height.
 
 ## References
 
@@ -59,7 +61,7 @@ continuity hold trivially.
 public section
 
 open MeasureTheory Set
-open scoped ENNReal RealInnerProductSpace
+open scoped ENNReal Pointwise RealInnerProductSpace
 
 section Fiber
 
@@ -154,6 +156,18 @@ private theorem fst_image_hyperplaneFibers (e : E) (he : ‖e‖ = 1) (s : Set E
     refine ⟨(⟪e, x⟫, ((orthogonalLineEquiv e he).symm x).1), ?_, rfl⟩
     simpa [hyperplaneFibers, orthogonalLineEquiv_symm_fst] using hx
 
+/-- A weighted sum of hyperplane sections of two sets lies in the hyperplane section of their
+weighted sum, at the weighted height. -/
+theorem smul_hyperplaneSection_add_smul_hyperplaneSection_subset (e : E) (K L : Set E)
+    (a b s t : ℝ) :
+    a • {y : (ℝ ∙ e)ᗮ | (y : E) + s • e ∈ K} + b • {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ L} ⊆
+      {y : (ℝ ∙ e)ᗮ | (y : E) + (a * s + b * t) • e ∈ a • K + b • L} := by
+  rintro _ ⟨_, ⟨y, hy, rfl⟩, _, ⟨z, hz, rfl⟩, rfl⟩
+  refine ⟨a • ((y : E) + s • e), smul_mem_smul_set hy, b • ((z : E) + t • e),
+    smul_mem_smul_set hz, ?_⟩
+  simp only [Submodule.coe_add, Submodule.coe_smul, smul_add, add_smul, smul_smul]
+  abel
+
 variable [FiniteDimensional ℝ E]
 
 variable [MeasurableSpace E] [BorelSpace E]
@@ -243,5 +257,21 @@ theorem _root_.Convex.hasDerivAt_volume_real_sep_inner_le {s : Set E} (hs : Conv
   exact (intervalIntegral.integral_hasDerivAt_right hφi.intervalIntegrable
     hm.ennreal_toReal.stronglyMeasurable.stronglyMeasurableAtFilter hcont).congr_of_eventuallyEq
     hvol
+
+/-- **Multiplicative Brunn–Minkowski for hyperplane sections.** The weighted geometric mean of the
+volumes of a section of `K` and a section of `L` is at most the volume of the section of
+`(1 - θ) • K + θ • L` at the weighted height. -/
+theorem volume_hyperplaneSection_rpow_mul_volume_hyperplaneSection_rpow_le (e : E) {K L : Set E}
+    (hK : MeasurableSet K) (hL : MeasurableSet L) {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1)
+    (s t : ℝ) :
+    volume {y : (ℝ ∙ e)ᗮ | (y : E) + s • e ∈ K} ^ (1 - θ) *
+        volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ L} ^ θ ≤
+      volume {y : (ℝ ∙ e)ᗮ | (y : E) + ((1 - θ) * s + θ * t) • e ∈ (1 - θ) • K + θ • L} := by
+  have hsec {u : ℝ} {S : Set E} (hS : MeasurableSet S) :
+      MeasurableSet {y : (ℝ ∙ e)ᗮ | (y : E) + u • e ∈ S} :=
+    hS.preimage (continuous_subtype_val.add continuous_const).measurable
+  exact (volume_rpow_mul_volume_rpow_le (hsec hK).nullMeasurableSet (hsec hL).nullMeasurableSet
+    hθ₀ hθ₁).trans (measure_mono
+      (smul_hyperplaneSection_add_smul_hyperplaneSection_subset e K L (1 - θ) θ s t))
 
 end TauCeti

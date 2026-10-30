@@ -197,7 +197,7 @@ end TauCeti.GridRectanglePentagonDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted mixed `right = left` overlap with one common side whose turn row lies outside the
 rows from the rectangle's top to the pentagon's top is a terminal self-pair: its recut is a

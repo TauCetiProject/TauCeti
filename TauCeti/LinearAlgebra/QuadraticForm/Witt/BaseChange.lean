@@ -194,12 +194,7 @@ theorem WittGrothendieckRing.baseChange_mem_hyperbolicIdeal
     {x : WittGrothendieckRing K} (hx : x ∈ hyperbolicIdeal K) :
     WittGrothendieckRing.baseChange (L := L) x ∈ hyperbolicIdeal L := by
   obtain ⟨n, rfl⟩ := mem_hyperbolicIdeal_iff.mp hx
-  have hhyper : RegularFormClass.baseChange L (hyperbolicClass K) = hyperbolicClass L := by
-    have hinst : ((Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm) =
-        (inferInstance : Invertible (2 : L)) := Subsingleton.elim _ _
-    exact (RegularFormClass.baseChange_hyperbolicClass (K := K) (L := L)).trans
-      (congrArg (fun i : Invertible (2 : L) => @hyperbolicClass L _ i) hinst)
-  rw [map_zsmul, baseChange_toWittGrothendieck, hhyper]
+  rw [map_zsmul, baseChange_toWittGrothendieck, RegularFormClass.baseChange_hyperbolicClass]
   have h : toWittGrothendieck (hyperbolicClass L) ∈ hyperbolicIdeal L := by
     apply mem_hyperbolicIdeal_iff.mpr
     refine ⟨1, ?_⟩
@@ -296,6 +291,11 @@ theorem WittRing.dimMod2_baseChange (x : WittRing K) :
     WittRing.dimMod2 (WittRing.baseChange (L := L) x) = WittRing.dimMod2 x := by
   obtain ⟨q, rfl⟩ := wittClass_surjective x
   simp
+
+/-- A Witt class killed by scalar extension has even dimension modulo two. -/
+theorem WittRing.dimMod2_eq_zero_of_baseChange_eq_zero {x : WittRing K}
+    (h : WittRing.baseChange (L := L) x = 0) : WittRing.dimMod2 x = 0 := by
+  simpa only [WittRing.dimMod2_baseChange, map_zero] using congrArg WittRing.dimMod2 h
 
 /-- Scalar extension sends the fundamental ideal into the fundamental ideal. -/
 theorem WittRing.baseChange_mem_fundamentalIdeal {x : WittRing K}

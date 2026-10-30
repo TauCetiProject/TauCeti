@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
+import TauCeti.Data.Int.MulPred
 
 /-!
 # Characteristic vectors in unimodular lattices
@@ -33,55 +34,19 @@ namespace IntegralLattice
 /-- Every unimodular integral lattice has a characteristic vector. -/
 theorem IsUnimodular.exists_isCharacteristicVector {L : IntegralLattice V}
     (hL : L.IsUnimodular) : ∃ w : L, L.IsCharacteristicVector w := by
-  let _ : L.IsNondegenerate := ⟨hL.nondegenerate⟩
-  let b := Module.Free.chooseBasis ℤ L
-  let f : Module.Dual ℤ L := b.constr ℤ (fun i ↦ L.integralNorm (b i))
-  have hparity :
-      (Int.castAddHom (ZMod 2)).toIntLinearMap.comp f =
-        (normParity L).toIntLinearMap := by
-    apply b.ext
-    intro i
-    simp [f]
-  refine ⟨(L.integralPairingEquiv hL).symm f, ?_⟩
-  rw [L.isCharacteristicVector_iff_forall_integralForm_eq_normParity]
-  intro x
-  have hx := LinearMap.congr_fun hparity x
-  have hnorm : ((f x : ℤ) : ZMod 2) = L.normParity x := by
-    simpa using hx
-  have hpair := LinearMap.congr_fun (L.integralPairingEquiv_toLinearMap hL)
-    ((L.integralPairingEquiv hL).symm f)
-  have heval := congrArg (fun p : Module.Dual ℤ L => p x) hpair
-  rw [← heval]
-  have hident : (L.integralPairingEquiv hL).toLinearMap
-      ((L.integralPairingEquiv hL).symm f) = f :=
-    (L.integralPairingEquiv hL).apply_symm_apply f
-  rw [hident]
-  exact hnorm
+  have := hL.isPerfPair_integralForm
+  simpa only [isCharacteristicVector_iff_isCharacteristic] using
+    L.isSymm_integralForm.exists_isCharacteristic Int.two_dvd_sq_sub_self
 
 /-- Two characteristic vectors of a unimodular lattice differ by twice a lattice vector. -/
 theorem IsUnimodular.exists_characteristicVector_sub_eq_two_smul {L : IntegralLattice V}
     (hL : L.IsUnimodular) {w₁ w₂ : L}
     (h₁ : L.IsCharacteristicVector w₁) (h₂ : L.IsCharacteristicVector w₂) :
     ∃ v : L, w₁ - w₂ = (2 : ℤ) • v := by
-  let _ : L.IsNondegenerate := ⟨hL.nondegenerate⟩
-  let b := Module.Free.chooseBasis ℤ L
-  choose c hc using fun i ↦ h₁.even_integralForm_sub h₂ (b i)
-  let f : Module.Dual ℤ L := b.constr ℤ c
-  have hf : (2 : ℤ) • f = L.integralPairingEquiv hL (w₁ - w₂) := by
-    apply b.ext
-    intro i
-    simp only [LinearMap.smul_apply, f, b.constr_basis]
-    have hpair := LinearMap.congr_fun (L.integralPairingEquiv_toLinearMap hL) (w₁ - w₂)
-    have heval := congrArg (fun p : Module.Dual ℤ L => p (b i)) hpair
-    calc
-      (2 : ℤ) • c i = L.integralForm (w₁ - w₂) (b i) := by
-        rw [Int.zsmul_eq_mul, two_mul]
-        exact (hc i).symm
-      _ = (L.integralPairingEquiv hL (w₁ - w₂)) (b i) := heval.symm
-  refine ⟨(L.integralPairingEquiv hL).symm f, ?_⟩
-  apply (L.integralPairingEquiv hL).injective
-  rw [map_zsmul, LinearEquiv.apply_symm_apply]
-  exact hf.symm
+  have := hL.isPerfPair_integralForm
+  simpa only [sub_eq_iff_eq_add'] using
+    ((L.isCharacteristicVector_iff_isCharacteristic w₂).1 h₂).exists_eq_add_two_smul
+      ((L.isCharacteristicVector_iff_isCharacteristic w₁).1 h₁)
 
 /-- The characteristic vectors of a unimodular lattice form a single coset of twice its
 carrier. -/
@@ -101,9 +66,12 @@ theorem IsUnimodular.characteristicVector_integralNorm_modEq {L : IntegralLattic
     (hL : L.IsUnimodular) {w₁ w₂ : L}
     (h₁ : L.IsCharacteristicVector w₁) (h₂ : L.IsCharacteristicVector w₂) :
     L.integralNorm w₁ ≡ L.integralNorm w₂ [ZMOD 8] := by
-  obtain ⟨v, hv⟩ := (hL.isCharacteristicVector_iff h₂ w₁).mp h₁
-  rw [hv]
-  exact h₂.integralNorm_add_two_smul_modEq v
+  have := hL.isPerfPair_integralForm
+  refine (Int.modEq_iff_dvd.2 ?_).symm
+  rw [L.integralNorm_apply, L.integralNorm_apply]
+  exact ((L.isCharacteristicVector_iff_isCharacteristic w₂).1
+    h₂).eight_dvd_apply_self_sub_apply_self L.isSymm_integralForm
+      ((L.isCharacteristicVector_iff_isCharacteristic w₁).1 h₁)
 
 end IntegralLattice
 

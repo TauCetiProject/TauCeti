@@ -7,12 +7,15 @@ module
 
 public import Mathlib.Probability.Moments.CovarianceBilin
 import Mathlib.Analysis.Matrix.Hermitian
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
-# Covariance matrices of Euclidean-valued measures
+# Covariances and covariance matrices
 
-This file packages the coordinate covariances of a measure on a finite-dimensional Euclidean
-space as a matrix and connects that matrix to Mathlib's basis-free `covarianceBilin`.
+Covariance is unchanged by almost-everywhere changes to either observable. This file also
+packages the coordinate covariances of a measure on a finite-dimensional Euclidean space as a
+matrix and connects that matrix to Mathlib's basis-free `covarianceBilin`.
 
 The `MemLp id 2 μ` hypothesis in the comparison theorem is essential. Mathlib deliberately sets
 `covarianceBilin μ` to zero when this hypothesis fails, whereas its scalar `covariance` is
@@ -27,6 +30,9 @@ totalized coordinate by coordinate.
   the same moment hypotheses.
 * `TauCeti.integral_norm_sq_eq_norm_integral_sq_add_trace_covMatrix` decomposes the second
   moment into the squared norm of the mean and the trace of the covariance matrix.
+* `TauCeti.covarianceBilin_eq_smul_innerSL` shows that a law invariant under every linear
+  isometry has covariance equal to its second moment divided by the dimension, times the inner
+  product.
 
 ## References
 
@@ -43,6 +49,15 @@ open MeasureTheory ProbabilityTheory
 open scoped RealInnerProductSpace
 
 namespace TauCeti
+
+/-- Covariance is unchanged by almost-everywhere changes to either observable. -/
+theorem covariance_congr_ae {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {X X' Y Y' : Ω → ℝ} (hX : X =ᵐ[μ] X') (hY : Y =ᵐ[μ] Y') :
+    cov[X, Y; μ] = cov[X', Y'; μ] := by
+  simp only [covariance, integral_congr_ae hX, integral_congr_ae hY]
+  apply integral_congr_ae
+  filter_upwards [hX, hY] with x hx hy
+  rw [hx, hy]
 
 variable {ι : Type*}
 
@@ -131,5 +146,80 @@ theorem integral_norm_sq_eq_norm_integral_sq_add_trace_covMatrix [Fintype ι]
     covariance_self (hcoord i).aemeasurable, variance_eq_sub (hcoord i), hmean]
   ring_nf
   rfl
+
+section IsometryInvariant
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
+
+/-- For a measure with finite second moment invariant under every linear isometry, the variance
+in a direction depends only on the length of the direction vector. -/
+private lemma covarianceBilin_self_eq_of_norm_eq [IsFiniteMeasure μ]
+    (hμ : ∀ f : E ≃ₗᵢ[ℝ] E, μ.map f = μ) (h : MemLp id 2 μ) {x y : E} (hxy : ‖x‖ = ‖y‖) :
+    covarianceBilin μ x x = covarianceBilin μ y y := by
+  -- The reflection exchanging `x` and `y` is an isometry whose adjoint sends `y` to `x`.
+  set f := (ℝ ∙ (x - y))ᗮ.reflection
+  have hfy : f.symm y = x := by
+    rw [LinearIsometryEquiv.symm_apply_eq, Submodule.reflection_sub hxy]
+  have := covarianceBilin_map h (f : E →L[ℝ] E) y y
+  simp only [LinearIsometryEquiv.adjoint_eq_symm] at this
+  simpa [hμ f, hfy] using this.symm
+
+/-- **Covariance of an isotropic law.** A finite measure on a finite-dimensional real inner
+product space that is invariant under every linear isometry has covariance a multiple of the inner
+product, the multiple being the second moment divided by the dimension. No moment hypothesis is
+needed: without a finite second moment both sides vanish. -/
+theorem covarianceBilin_eq_smul_innerSL [IsFiniteMeasure μ]
+    (hμ : ∀ f : E ≃ₗᵢ[ℝ] E, μ.map f = μ) :
+    covarianceBilin μ = ((∫ x, ‖x‖ ^ 2 ∂μ) / Module.finrank ℝ E) • innerSL ℝ := by
+  by_cases h : MemLp id 2 μ
+  swap
+  · have : ¬ Integrable (fun x ↦ ‖x‖ ^ 2) μ := by
+      rwa [memLp_two_iff_integrable_sq_norm aestronglyMeasurable_id] at h
+    rw [covarianceBilin_of_not_memLp h, integral_undef this]
+    ext
+    simp
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · ext x y
+    simp [Subsingleton.elim x 0]
+  -- Invariance under `-1` makes the mean vanish, so covariance is the second-moment form.
+  have hm : ∫ x, x ∂μ = 0 := by
+    have : μ.IsNegInvariant := ⟨hμ (LinearIsometryEquiv.neg ℝ)⟩
+    exact integral_eq_zero_of_odd fun x ↦ rfl
+  set Q : E → ℝ := fun x ↦ covarianceBilin μ x x
+  set d := Module.finrank ℝ E
+  have hd : (d : ℝ) ≠ 0 := by exact_mod_cast Module.finrank_pos.ne'
+  set b := stdOrthonormalBasis ℝ E
+  set e := b ⟨0, Module.finrank_pos⟩
+  have he : ‖e‖ = 1 := b.orthonormal.1 _
+  -- Summing the common value of `Q` over an orthonormal basis gives the second moment.
+  have htrace : (d : ℝ) * Q e = ∫ x, ‖x‖ ^ 2 ∂μ := by
+    have hQb : ∀ i, Q (b i) = Q e := fun i ↦
+      covarianceBilin_self_eq_of_norm_eq hμ h (by rw [b.orthonormal.1 i, he])
+    have hint : ∀ i, Integrable (fun z ↦ ⟪b i, z⟫ ^ 2) μ := fun i ↦ by
+      have := ((innerSL ℝ (b i)).comp_memLp' h).integrable_mul ((innerSL ℝ (b i)).comp_memLp' h)
+      simpa [sq, Pi.mul_def] using this
+    calc (d : ℝ) * Q e = ∑ i, Q (b i) := by simp [hQb, d]
+      _ = ∫ x, ∑ i, ⟪b i, x⟫ ^ 2 ∂μ := by
+        rw [integral_finsetSum _ fun i _ ↦ hint i]
+        simp [Q, covarianceBilin_apply h, hm, sq]
+      _ = ∫ x, ‖x‖ ^ 2 ∂μ := by simp_rw [b.sum_sq_inner_right]
+  have hQ : ∀ x, Q x = ‖x‖ ^ 2 * Q e := fun x ↦ by
+    have := covarianceBilin_self_eq_of_norm_eq hμ h (x := x) (y := ‖x‖ • e)
+      (by simp [norm_smul, he])
+    simp only [Q, this, map_smul, smul_apply, smul_eq_mul]
+    ring
+  -- Polarization recovers the bilinear form from the quadratic form `Q`.
+  ext x y
+  have hpol : Q (x + y) = Q x + 2 * covarianceBilin μ x y + Q y := by
+    simp only [Q, map_add, add_apply, covarianceBilin_comm y x]
+    ring
+  have hxy : covarianceBilin μ x y = Q e * ⟪x, y⟫ := by
+    rw [hQ, hQ x, hQ y, norm_add_sq_real] at hpol
+    linarith
+  rw [hxy, ← htrace, smul_apply, smul_apply, innerSL_apply_apply, smul_eq_mul,
+    mul_div_cancel_left₀ _ hd]
+
+end IsometryInvariant
 
 end TauCeti

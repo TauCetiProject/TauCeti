@@ -46,26 +46,11 @@ private theorem det_exteriorPower_two_sq [IsDomain R] (A : Matrix (Fin 4) (Fin 4
       b.exteriorPowerTopEquiv
   have hcomp : B.comp (exteriorPower.map 2 A.toLin') (exteriorPower.map 2 A.toLin') =
       A.det • B := by
-    apply exteriorPower.linearMap_ext
-    apply AlternatingMap.ext
-    intro u
-    apply exteriorPower.linearMap_ext
-    apply AlternatingMap.ext
-    intro v
-    simp only [LinearMap.compAlternatingMap_apply, LinearMap.BilinForm.comp_apply,
-      exteriorPower.map_apply_ιMulti, hpair, LinearMap.smul_apply, LinearMap.compr₂_apply]
-    rw [exteriorPower.wedge_ιMulti, exteriorPower.wedge_ιMulti]
-    simp only [smul_eq_mul]
-    have happ : Fin.append (A.toLin' ∘ u) (A.toLin' ∘ v) = A.toLin' ∘ Fin.append u v := by
-      funext i
-      refine Fin.addCases ?_ ?_ i <;> intro j <;>
-        simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
-    -- Expose the linear equivalence behind the volume map's linear-map coercion.
-    change b.exteriorPowerTopEquiv (exteriorPower.ιMulti R 4
-      (Fin.append (A.toLin' ∘ u) (A.toLin' ∘ v))) =
-        A.det * b.exteriorPowerTopEquiv (exteriorPower.ιMulti R 4 (Fin.append u v))
-    rw [happ, Basis.exteriorPowerTopEquiv_apply_ιMulti,
-      Basis.exteriorPowerTopEquiv_apply_ιMulti, Basis.det_comp, LinearMap.det_toLin']
+    rw [hpair]
+    simpa only [LinearMap.BilinForm.comp, LinearMap.det_toLin'] using
+      exteriorPower.wedge_compr₂_compl₁₂_exteriorPower_map_eq_det_smul
+        (k := 2) (l := 2) (by simp) rfl
+        b.exteriorPowerTopEquiv.toLinearMap A.toLin'
   let e := b.exteriorPower 2
   have hG : (LinearMap.BilinForm.toMatrix e B).det ≠ 0 :=
     (LinearMap.separatingLeft_iff_det_ne_zero e).mp hB.separatingLeft

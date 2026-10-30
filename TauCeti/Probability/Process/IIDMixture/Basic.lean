@@ -90,6 +90,24 @@ theorem iidMixtureLaw_map_directing (hP : Measurable P) :
   have hcomp : (fun ω : T × (ℕ → α) => P ω.1) = P ∘ Prod.fst := rfl
   rw [hcomp, ← Measure.map_map hP measurable_fst, iidMixtureLaw_map_fst hP]
 
+/-- **Transport of the canonical law.** If the path map `g` carries each power `(P t)^{⊗ℕ}` to
+`(Q (f t))^{⊗ℕ}`, then relabelling the parameter by `f` and the path by `g` carries
+`iidMixtureLaw π P` to `iidMixtureLaw (π.map f) Q`. -/
+theorem map_prodMap_iidMixtureLaw {T' β : Type*} [MeasurableSpace T'] [MeasurableSpace β]
+    {Q : T' → ProbabilityMeasure β} {f : T → T'} {g : (ℕ → α) → ℕ → β}
+    (hP : Measurable P) (hQ : Measurable Q) (hf : Measurable f) (hg : Measurable g)
+    (hfib : ∀ t, (Measure.infinitePi fun _ : ℕ => (P t : Measure α)).map g =
+      Measure.infinitePi fun _ : ℕ => (Q (f t) : Measure β)) :
+    (iidMixtureLaw π P).map (Prod.map f g) = iidMixtureLaw (π.map f) Q := by
+  rw [iidMixtureLaw_def, iidMixtureLaw_def,
+    Measure.map_bind
+      (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const P hP).aemeasurable
+      (hf.prodMap hg).aemeasurable,
+    Measure.bind_map hf.aemeasurable
+      (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const Q hQ).aemeasurable]
+  refine congrArg π.bind (funext fun t => ?_)
+  rw [← Measure.map_prod_map _ _ hf hg, Measure.map_dirac' hf, hfib]
+
 /-- **The canonical law from a parameter and i.i.d. noise.** Draw a parameter `t` from `π` and an
 independent i.i.d. sequence `r` from `ρ`, and apply a jointly measurable `h t` to each noise
 variable. If `h t` pushes `ρ` forward to `P t`, the resulting pair `(t, (h t (r i))ᵢ)` has the

@@ -190,6 +190,18 @@ theorem image_generalizedParetoMap_Ioi {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
             linarith)) hξ
       · exact generalizedParetoMap_log_div hs.ne' hξ hb
 
+/-- At nonzero scale and shape, the image of the whole line is the generalized Pareto domain
+where the affine support factor is positive. -/
+theorem image_generalizedParetoMap_univ {s ξ : ℝ} (hs : s ≠ 0) (hξ : ξ ≠ 0) :
+    generalizedParetoMap s ξ '' univ = {x | 0 < 1 + ξ * x / s} := by
+  ext x
+  constructor
+  · rintro ⟨e, -, rfl⟩
+    rw [Set.mem_ofPred_eq, one_add_mul_generalizedParetoMap_div hs]
+    exact Real.exp_pos _
+  · intro hx
+    exact ⟨_, mem_univ _, generalizedParetoMap_log_div hs hξ hx⟩
+
 /-- The generalized Pareto measure with scale `s` and shape `ξ`.
 
 For positive scale this is the pushforward of a rate-one exponential law by

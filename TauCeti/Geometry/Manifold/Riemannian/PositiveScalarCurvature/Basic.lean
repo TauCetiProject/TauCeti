@@ -44,9 +44,14 @@ On a compact manifold the scalar curvature of every smooth metric is bounded bel
   manifold, positive scalar curvature is equivalent to a uniform positive lower bound.
 * `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_pullback_iff`: the pullback of a
   metric along a diffeomorphism has positive scalar curvature exactly when the metric does.
+* `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.pullback_of_isInvertible`: the
+  pullback of a metric of positive scalar curvature along a smooth map with invertible
+  differential has positive scalar curvature.
 * `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.restrictOpenTangentSpace`: the
   restriction of a metric of positive scalar curvature to an open submanifold has positive scalar
   curvature.
+* `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.restrictIcc`: the restriction of a
+  metric of positive scalar curvature on `M × ℝ` to `M × [a, b]` has positive scalar curvature.
 * `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_sumTangentSpace_iff`: the disjoint
   union of two metrics has positive scalar curvature exactly when both metrics do.
 * `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_rescale_const_iff`: rescaling a
@@ -135,6 +140,15 @@ theorem HasPositiveScalarCurvature.pullback (h : g.HasPositiveScalarCurvature)
     (g.pullback Φ hf hinj).HasPositiveScalarCurvature :=
   (hasPositiveScalarCurvature_pullback_iff g Φ hf hinj).2 h
 
+variable {g : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)} in
+/-- Pulling a metric of positive scalar curvature back along a smooth map whose differential is
+invertible at every point gives a metric of positive scalar curvature. -/
+theorem HasPositiveScalarCurvature.pullback_of_isInvertible (h : g.HasPositiveScalarCurvature)
+    {f : M → N} (hf : ContMDiff I J (∞ + 1) f) (hinv : ∀ x, (mfderiv I J f x).IsInvertible) :
+    (g.pullback f hf fun x ↦ (hinv x).injective).HasPositiveScalarCurvature := fun x ↦ by
+  rw [scalarCurvature_pullback_of_isInvertible g hf hinv x]
+  exact h (f x)
+
 end Pullback
 
 variable {g} in
@@ -145,6 +159,15 @@ theorem HasPositiveScalarCurvature.restrictOpenTangentSpace (h : g.HasPositiveSc
   fun x ↦ by
     rw [scalarCurvature_restrictOpenTangentSpace]
     exact h x
+
+/-- The restriction to `M × [a, b]` of a metric of positive scalar curvature on `M × ℝ` has
+positive scalar curvature. -/
+theorem HasPositiveScalarCurvature.restrictIcc {a b : ℝ} [Fact (a < b)]
+    {G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
+      (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)} (h : G.HasPositiveScalarCurvature) :
+    (G.restrictIcc a b).HasPositiveScalarCurvature := by
+  rw [restrictIcc_eq_pullback]
+  exact h.pullback_of_isInvertible _ TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc
 
 section Sum
 

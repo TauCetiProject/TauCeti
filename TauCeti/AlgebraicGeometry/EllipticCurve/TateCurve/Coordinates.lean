@@ -170,7 +170,8 @@ private theorem summable_xTerm_nat (q : K) (hq : ‖q‖ < 1) (u : K) :
     simpa [Nat.cofinite_eq_atTop] using
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hq).mul_const u
   have hs : Summable (fun n : ℕ ↦ ‖q ^ n * u‖) := by
-    simpa only [norm_mul] using (summable_norm_geometric_of_norm_lt_one hq).mul_right ‖u‖
+    simpa only [norm_mul] using
+      (_root_.summable_norm_geometric_of_norm_lt_one hq).mul_right ‖u‖
   have hi : Tendsto (fun n : ℕ ↦ ((1 - q ^ n * u) ^ 2)⁻¹) cofinite (𝓝 1) := by
     simpa using ((tendsto_const_nhds (x := (1 : K))).sub hp).pow 2 |>.inv₀ (by simp)
   simpa only [xTerm, div_eq_mul_inv] using hs.mul_tendsto_const hi
@@ -181,7 +182,8 @@ private theorem summable_yTerm_nat (q : K) (hq : ‖q‖ < 1) (u : K) :
     simpa [Nat.cofinite_eq_atTop] using
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hq).mul_const u
   have hs : Summable (fun n : ℕ ↦ ‖q ^ n * u‖) := by
-    simpa only [norm_mul] using (summable_norm_geometric_of_norm_lt_one hq).mul_right ‖u‖
+    simpa only [norm_mul] using
+      (_root_.summable_norm_geometric_of_norm_lt_one hq).mul_right ‖u‖
   have hi : Tendsto (fun n : ℕ ↦ q ^ n * u / (1 - q ^ n * u) ^ 3) cofinite (𝓝 0) := by
     simpa only [Pi.div_def, zero_div] using
       hp.div (((tendsto_const_nhds (x := (1 : K))).sub hp).pow 3) (by simp)
@@ -210,6 +212,42 @@ theorem summable_tateUniformizationY (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ
   · simpa only [yTerm_zpow_neg, zpow_natCast] using
       (summable_yTerm_nat (q : K) hq (u : K)⁻¹).neg.sub
         (summable_xTerm_nat (q : K) hq (u : K)⁻¹)
+
+/-- The first Tate coordinate as its central term plus two one-sided series:
+`X(u) = u / (1 - u)² + ∑_{n ≥ 1} qⁿu / (1 - qⁿu)² + ∑_{n ≥ 1} qⁿu⁻¹ / (1 - qⁿu⁻¹)² - 2 s₁(q)`. -/
+theorem tateUniformizationX_eq_tsum_nat (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ) :
+    tateUniformizationX q u =
+      (u : K) / (1 - u) ^ 2 +
+        ∑' n : ℕ, (q : K) ^ (n + 1) * u / (1 - (q : K) ^ (n + 1) * u) ^ 2 +
+        ∑' n : ℕ, (q : K) ^ (n + 1) * (u : K)⁻¹ / (1 - (q : K) ^ (n + 1) * (u : K)⁻¹) ^ 2 -
+        2 * divisorSumAt 1 (q : K) := by
+  have e (n : ℤ) : (q : K) ^ (-n) * u / (1 - (q : K) ^ (-n) * u) ^ 2 =
+      (q : K) ^ n * (u : K)⁻¹ / (1 - (q : K) ^ n * (u : K)⁻¹) ^ 2 := by
+    simpa only [xTerm] using xTerm_zpow_neg q u n
+  rw [tateUniformizationX_def, tsum_int_eq_zero_add_tsum_pnat (summable_tateUniformizationX q hq u),
+    tsum_pnat_eq_tsum_succ
+      (f := fun n : ℕ ↦ (q : K) ^ (n : ℤ) * u / (1 - (q : K) ^ (n : ℤ) * u) ^ 2),
+    tsum_pnat_eq_tsum_succ
+      (f := fun n : ℕ ↦ (q : K) ^ (-(n : ℤ)) * u / (1 - (q : K) ^ (-(n : ℤ)) * u) ^ 2)]
+  simp only [e, zpow_natCast, zpow_zero, one_mul]
+
+/-- The second Tate coordinate as its central term plus two one-sided series:
+`Y(u) = u² / (1 - u)³ + ∑_{n ≥ 1} (qⁿu)² / (1 - qⁿu)³ - ∑_{n ≥ 1} qⁿu⁻¹ / (1 - qⁿu⁻¹)³ + s₁(q)`. -/
+theorem tateUniformizationY_eq_tsum_nat (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ) :
+    tateUniformizationY q u =
+      (u : K) ^ 2 / (1 - u) ^ 3 +
+        ∑' n : ℕ, ((q : K) ^ (n + 1) * u) ^ 2 / (1 - (q : K) ^ (n + 1) * u) ^ 3 +
+        ∑' n : ℕ, -((q : K) ^ (n + 1) * (u : K)⁻¹) / (1 - (q : K) ^ (n + 1) * (u : K)⁻¹) ^ 3 +
+        divisorSumAt 1 (q : K) := by
+  have e (n : ℤ) : ((q : K) ^ (-n) * u) ^ 2 / (1 - (q : K) ^ (-n) * u) ^ 3 =
+      -((q : K) ^ n * (u : K)⁻¹) / (1 - (q : K) ^ n * (u : K)⁻¹) ^ 3 := by
+    rw [← inv_sq_div_one_sub_inv_cube, zpow_neg, mul_inv, inv_inv]
+  rw [tateUniformizationY_def, tsum_int_eq_zero_add_tsum_pnat (summable_tateUniformizationY q hq u),
+    tsum_pnat_eq_tsum_succ
+      (f := fun n : ℕ ↦ ((q : K) ^ (n : ℤ) * u) ^ 2 / (1 - (q : K) ^ (n : ℤ) * u) ^ 3),
+    tsum_pnat_eq_tsum_succ
+      (f := fun n : ℕ ↦ ((q : K) ^ (-(n : ℤ)) * u) ^ 2 / (1 - (q : K) ^ (-(n : ℤ)) * u) ^ 3)]
+  simp only [e, zpow_natCast, zpow_zero, one_mul]
 
 /-- Inversion gives the negation formula of the Tate equation `y² + xy = x³ + a₄x + a₆`:
 `Y(u⁻¹) = -Y(u) - X(u)`. -/

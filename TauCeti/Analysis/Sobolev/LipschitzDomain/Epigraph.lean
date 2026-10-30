@@ -37,7 +37,7 @@ namespace TauCeti
 open Metric Set TopologicalSpace
 open scoped NNReal
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A globally Lipschitz graph function defines a Lipschitz domain with the same constant. -/
 theorem _root_.LipschitzWith.isLipschitzDomainWith_normalEpigraph {L : ℝ≥0} {φ : C(E, ℝ)}

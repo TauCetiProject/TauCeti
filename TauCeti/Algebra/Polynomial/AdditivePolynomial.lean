@@ -18,13 +18,14 @@ For a finite additive subgroup `V` of a commutative ring `R`, the monic polynomi
 is Lagrange's `nodal` polynomial at the nodes `V`; it has degree `|V|`. Since `V` is a subgroup,
 translating by an element of `V` permutes the factors, so `a_V (x + c) = a_V x` for `c ∈ V`.
 
-Over a field `K`, evaluation of `a_V` in any domain `A` is additive:
+Over a field `K`, evaluation of `a_V` in any commutative `K`-algebra `A` is additive:
 
 `a_V (x + y) = a_V x + a_V y`.
 
-For fixed `y`, the polynomial `a_V (X + y) - a_V X - a_V y` over `A` has degree less than `|V|`,
-since both `a_V (X + y)` and `a_V X` are monic of degree `|V|`, and it vanishes at the `|V|`
-distinct points of `V`. No characteristic hypothesis is needed; in characteristic zero the only
+In a domain, the polynomial `a_V (X + y) - a_V X - a_V y` has degree less than `|V|`, since both
+`a_V (X + y)` and `a_V X` are monic of degree `|V|`, and it vanishes at the `|V|` distinct points
+of `V`. This gives an identity in a polynomial domain, which evaluates to the identity in any
+commutative `K`-algebra. No characteristic hypothesis is needed; in characteristic zero the only
 finite additive subgroup is `0`. In characteristic `p`, a monic separable additive polynomial all
 of whose roots lie in `K` is `a_V` for its group of roots `V`.
 
@@ -43,9 +44,14 @@ characteristic `p`, `a_V = X ^ p - X`.
 * `AddSubgroup.aeval_additivePolynomial_eq_zero_iff`: the roots of `a_V` in a domain are the
   elements of `V`.
 * `AddSubgroup.aeval_additivePolynomial_add`: `a_V (x + y) = a_V x + a_V y`.
+* `AddSubgroup.map_additivePolynomial_sub_C_eq_prod`: `a_V - u = ∏_{c ∈ V} (X - (y + c))`.
+* `AddSubgroup.splits_additivePolynomial_sub_C`: `a_V - u` splits in any commutative `K`-algebra
+  containing one of its roots.
 * `AddSubgroup.derivative_additivePolynomial`: the derivative of `a_V` is the constant
   `∏_{c ∈ V, c ≠ 0} (-c)`.
+* `AddSubgroup.isIntegral_of_aeval_additivePolynomial_eq`: a root of `a_V - u` is integral.
 * `AddSubgroup.separable_additivePolynomial`: `a_V` is separable.
+* `AddSubgroup.separable_additivePolynomial_sub_C`: `a_V - u` is separable.
 
 ## References
 
@@ -97,6 +103,15 @@ theorem natDegree_additivePolynomial_sub_C [Nontrivial R] (u : R) :
     (V.additivePolynomial - C u).natDegree = Fintype.card V := by
   rw [natDegree_sub_C, natDegree_additivePolynomial]
 
+/-- A root of `a_V - u` is integral over the base ring. -/
+theorem isIntegral_of_aeval_additivePolynomial_eq {A : Type*} [Ring A] [Algebra R A]
+    {u : R} {y : A}
+    (hy : aeval y V.additivePolynomial = algebraMap R A u) : IsIntegral R y := by
+  nontriviality A using Subsingleton.elim y 0, isIntegral_zero
+  have := (algebraMap R A).domain_nontrivial
+  exact ⟨_, V.monic_additivePolynomial_sub_C u, by
+    rw [← aeval_def, map_sub, hy, aeval_C, sub_self]⟩
+
 section Algebra
 
 variable {A : Type*} [CommRing A] [Algebra R A]
@@ -125,53 +140,81 @@ end CommRing
 section Field
 
 variable {K : Type*} [Field K] (V : AddSubgroup K) [Fintype V]
-variable {A : Type*} [CommRing A] [IsDomain A] [Algebra K A]
+variable {A : Type*} [CommRing A] [Algebra K A]
 
 /-- The roots of `a_V` in a domain are exactly the elements of `V`. -/
-theorem aeval_additivePolynomial_eq_zero_iff {x : A} :
+theorem aeval_additivePolynomial_eq_zero_iff [IsDomain A] {x : A} :
     aeval x V.additivePolynomial = 0 ↔ ∃ c ∈ V, algebraMap K A c = x := by
   simp only [aeval_additivePolynomial, Finset.prod_eq_zero_iff, Finset.mem_univ, true_and,
     sub_eq_zero, Subtype.exists, exists_prop]
   exact exists_congr fun c ↦ and_congr_right fun _ ↦ eq_comm
 
 /-- **Additivity of `a_V`.** For a finite additive subgroup `V` of a field `K`, evaluation of
-`a_V` in any domain `A` that is a `K`-algebra is additive: `a_V (x + y) = a_V x + a_V y`. -/
+`a_V` in any commutative `K`-algebra is additive: `a_V (x + y) = a_V x + a_V y`. -/
 @[simp]
 theorem aeval_additivePolynomial_add (x y : A) :
     aeval (x + y) V.additivePolynomial =
       aeval x V.additivePolynomial + aeval y V.additivePolynomial := by
-  -- For fixed `y`, the polynomial `a_V (X + y) - a_V X - a_V y` has degree less than `|V|` and
-  -- vanishes on `V`, so it is zero.
-  set f := V.additivePolynomial.map (algebraMap K A)
-  have hf : f.degree = Fintype.card V := by
-    rw [degree_map, degree_additivePolynomial]
-  have hf0 : f ≠ 0 := (V.monic_additivePolynomial.map _).ne_zero
-  -- `taylor y f = f (X + y)` and `f` are monic of degree `|V|`, so their difference has smaller
-  -- degree, and so does `taylor y f - f - a_V y`.
-  have hlt : (taylor y f - f - C (aeval y V.additivePolynomial)).degree <
-      (Finset.univ : Finset V).card := by
-    rw [Finset.card_univ, ← hf]
-    refine lt_of_le_of_lt (degree_sub_le _ _) (max_lt ?_ (degree_C_le.trans_lt ?_))
-    · rw [← degree_taylor f y]
-      exact degree_sub_lt_left (degree_taylor f y) ((taylor_eq_zero y f).not.mpr hf0)
-        (leadingCoeff_taylor y f)
-    · rw [hf]
-      exact_mod_cast Fintype.card_pos
-  have hzero := eq_zero_of_degree_lt_of_eval_index_eq_zero (s := Finset.univ)
-    (v := fun c : V ↦ algebraMap K A c)
-    ((algebraMap K A).injective.comp Subtype.val_injective).injOn hlt fun c _ ↦ by
-      simp only [eval_sub, taylor_eval, eval_C, f, eval_map_algebraMap]
-      rw [add_comm, aeval_additivePolynomial_add_algebraMap _ _ c.2,
-        aeval_additivePolynomial_algebraMap _ c.2, sub_zero, sub_self]
-  have := congrArg (eval x) hzero
-  simp only [eval_sub, taylor_eval, eval_C, f, eval_map_algebraMap, eval_zero] at this
-  rw [← sub_eq_zero, ← sub_sub, this]
+  -- In a domain, the degree bound and the values on `V` force the difference to vanish.
+  have hadd (s t : K[X][X]) :
+      aeval (s + t) V.additivePolynomial =
+        aeval s V.additivePolynomial + aeval t V.additivePolynomial := by
+    set f := V.additivePolynomial.map (algebraMap K K[X][X])
+    have hf : f.degree = Fintype.card V := by
+      rw [degree_map, degree_additivePolynomial]
+    have hf0 : f ≠ 0 := (V.monic_additivePolynomial.map _).ne_zero
+    -- The equal leading terms of `taylor t f` and `f` cancel.
+    have hlt : (taylor t f - f - C (aeval t V.additivePolynomial)).degree <
+        (Finset.univ : Finset V).card := by
+      rw [Finset.card_univ, ← hf]
+      refine lt_of_le_of_lt (degree_sub_le _ _) (max_lt ?_ (degree_C_le.trans_lt ?_))
+      · rw [← degree_taylor f t]
+        exact degree_sub_lt_left (degree_taylor f t) ((taylor_eq_zero t f).not.mpr hf0)
+          (leadingCoeff_taylor t f)
+      · rw [hf]
+        exact_mod_cast Fintype.card_pos
+    have hzero := eq_zero_of_degree_lt_of_eval_index_eq_zero (s := Finset.univ)
+      (v := fun c : V ↦ algebraMap K K[X][X] c)
+      ((algebraMap K K[X][X]).injective.comp Subtype.val_injective).injOn hlt fun c _ ↦ by
+        simp only [eval_sub, taylor_eval, eval_C, f, eval_map_algebraMap]
+        rw [add_comm, aeval_additivePolynomial_add_algebraMap _ _ c.2,
+          aeval_additivePolynomial_algebraMap _ c.2, sub_zero, sub_self]
+    have := congrArg (eval s) hzero
+    simp only [eval_sub, taylor_eval, eval_C, f, eval_map_algebraMap, eval_zero] at this
+    rw [← sub_eq_zero, ← sub_sub, this]
+  -- Evaluate the universal identity at the two elements of the commutative algebra.
+  let φ : K[X][X] →ₐ[K] A := aevalTower (aeval y) x
+  have h := congrArg φ (hadd (X : K[X][X]) (C X))
+  simpa only [map_add, ← aeval_algHom_apply, φ, aevalTower_X, aevalTower_C, aeval_X] using h
 
 @[simp]
 theorem aeval_additivePolynomial_sub (x y : A) :
     aeval (x - y) V.additivePolynomial =
       aeval x V.additivePolynomial - aeval y V.additivePolynomial := by
   rw [eq_sub_iff_add_eq, ← aeval_additivePolynomial_add, sub_add_cancel]
+
+/-- If `y` is a root of `a_V - u`, then `a_V - u` is the product of `X - (y + c)` over `c ∈ V`. -/
+theorem map_additivePolynomial_sub_C_eq_prod {u : K} {y : A}
+    (hy : aeval y V.additivePolynomial = algebraMap K A u) :
+    (V.additivePolynomial - C u).map (algebraMap K A) =
+      ∏ c : V, (X - C (y + algebraMap K A c)) := by
+  have hX : aeval (X : A[X]) V.additivePolynomial = V.additivePolynomial.map (algebraMap K A) := by
+    rw [← aeval_map_algebraMap A, aeval_X_left_apply]
+  have h := V.aeval_additivePolynomial_sub (A := A[X]) X (C y)
+  rw [hX, ← algebraMap_eq (R := A), aeval_algebraMap_apply, hy, algebraMap_eq,
+    aeval_additivePolynomial] at h
+  rw [Polynomial.map_sub, map_C, ← h]
+  refine Fintype.prod_congr _ _ fun c ↦ ?_
+  rw [IsScalarTower.algebraMap_apply K A A[X], algebraMap_eq, C_add]
+  ring
+
+/-- `a_V - u` splits in any commutative `K`-algebra containing one of its roots. -/
+theorem splits_additivePolynomial_sub_C {u : K} {y : A}
+    (hy : aeval y V.additivePolynomial = algebraMap K A u) :
+    ((V.additivePolynomial - C u).map (algebraMap K A)).Splits := by
+  rw [V.map_additivePolynomial_sub_C_eq_prod hy]
+  exact Splits.prod fun c _ ↦ Splits.X_sub_C _
+
 
 /-- **The derivative of `a_V` is constant**: `a_V' = ∏_{c ∈ V, c ≠ 0} (-c)`. In particular it is
 a unit, which makes `a_V - u` separable for every `u`. -/
@@ -196,10 +239,17 @@ theorem derivative_additivePolynomial :
     exact Finset.prod_nbij' (fun d ↦ d - c) (fun e ↦ e + c) (by simp [sub_eq_zero]) (by simp)
       (by simp) (by simp) (by simp)
 
+/-- `a_V - u` is separable. -/
+theorem separable_additivePolynomial_sub_C (u : K) : (V.additivePolynomial - C u).Separable := by
+  rw [separable_def, derivative_sub, derivative_C, sub_zero, V.derivative_additivePolynomial]
+  have hc : (∏ᶠ c : {c : V // c ≠ 0}, -(c : K)) ≠ 0 :=
+    finprod_ne_zero fun c ↦ by simpa using c.property
+  refine ⟨0, C (∏ᶠ c : {c : V // c ≠ 0}, -(c : K))⁻¹, ?_⟩
+  simp [← C_mul, hc]
+
 /-- `a_V` is separable: its roots, the elements of `V`, are distinct. -/
 theorem separable_additivePolynomial : V.additivePolynomial.Separable := by
-  rw [additivePolynomial_eq_prod]
-  exact separable_prod_X_sub_C_iff'.mpr Subtype.val_injective.injOn
+  simpa using V.separable_additivePolynomial_sub_C 0
 
 end Field
 

@@ -58,6 +58,7 @@ any of its simplices followed by the orbit map; it does not depend on the chosen
 
 * `TauCeti.universalGSpaceVertexOrder_lt_iff`: on a face, the vertex order is the order of the
   indices.
+* `TauCeti.face_smul_universalGSpace`: translation commutes with taking faces of simplices.
 * `TauCeti.smul_characteristicMap_universalGSpace` and `TauCeti.smul_map_universalGSpace`:
   translation carries characteristic maps to characteristic maps.
 * `TauCeti.smul_openCell_universalGSpace`, `TauCeti.smul_closedCell_universalGSpace` and
@@ -259,6 +260,15 @@ theorem vertexEmbedding_smul_universalGSpace (g : G)
   rw [smul_realizationCell_eq_map]
   exact congrFun
     (c.vertexEmbedding_map (smulSimplicialMap g) (smulSimplicialMap_strictMonoOn g c)) j
+
+/-- Translation commutes with deleting a vertex: the `j`-th face of a translated simplex of the
+countable join is the translate of its `j`-th face. -/
+@[simp]
+theorem face_smul_universalGSpace (g : G)
+    (c : (indexedJoin fun _ : ℕ => G).RealizationCell (n + 1)) (j : Fin (n + 2)) :
+    (g • c).face j = g • c.face j := by
+  refine Subtype.ext (Subtype.ext ?_)
+  simp [RealizationCell.face_val, smul_realizationCell_face, Finset.map_erase]
 
 end RealizationCell
 

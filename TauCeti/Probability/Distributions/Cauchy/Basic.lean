@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High
 -/
 module
 
@@ -44,10 +44,10 @@ The characteristic function is obtained from the Fourier inversion theorem appli
 `TauCeti.fourier_exp_neg_mul_abs`: the Fourier transform of the two-sided exponential of rate
 `2 π γ` is the centred Cauchy density of scale `γ`, so inverting it pairs that density against
 `exp (i t x)` and returns the two-sided exponential again. The exponent in the resulting formula
-is linear in `x₀` and `γ`, so products of characteristic functions add the locations and scales;
-scaling the sum by the reciprocal of the sample size restores the original parameters. Thus the
-sample mean of independent Cauchy variables with a common location and scale has exactly the
-parent law.
+is linear in `x₀` and `γ`, so products of characteristic functions add the locations and scales.
+Hence convolving Cauchy laws adds their parameters, and scaling a sum of `n` independent copies by
+`1 / n` restores the original parameters. Thus the sample mean of independent Cauchy variables with
+a common location and scale has exactly the parent law.
 
 ## Main results
 
@@ -67,11 +67,16 @@ parent law.
 * `TauCeti.Probability.integrableExpSet_id_cauchyMeasure_zero_scale`,
   `TauCeti.Probability.mgf_id_cauchyMeasure_zero_scale`, and
   `TauCeti.Probability.cgf_id_cauchyMeasure_zero_scale` — the zero-scale exponential moments;
+* `TauCeti.Probability.cauchyPDFReal_zero_loc_isBigO_rpow_neg_two` — centred Cauchy density
+  has quadratic decay at infinity;
 * `TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` and
   `TauCeti.Probability.integral_exp_mul_I_mul_cauchyPDFReal_zero_loc` — the Fourier pair behind the
   transform;
 * `TauCeti.Probability.cauchyMeasure_map_add_const` — translation changes the location parameter;
 * `TauCeti.Probability.charFun_cauchyMeasure` — the characteristic function of `cauchyMeasure x₀ γ`;
+* `TauCeti.Probability.cauchyMeasure_conv_cauchyMeasure` — convolution adds locations and scales;
+* `ProbabilityTheory.IndepFun.hasLaw_add_cauchyMeasure` — the same for sums of independent
+  Cauchy variables;
 * `ProbabilityTheory.iIndepFun.hasLaw_average_cauchyMeasure` — stability of the family under
   averaging.
 
@@ -79,14 +84,50 @@ parent law.
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   2nd ed., Wiley, 1994.
+
+## Provenance
+
+The centred-density quadratic decay estimate is adapted from the Cauchy-lattice
+Poisson development in the [AIQ-Kitware DKPS formalization]
+(https://github.com/AIQ-Kitware/aiq-dkps-formalization), Apache-2.0;
+Jon Crall and GPT 5.6 High.
 -/
 
 public section
 
-open Filter MeasureTheory ProbabilityTheory Set
+open Filter MeasureTheory ProbabilityTheory Set Asymptotics
 open scoped ENNReal NNReal ProbabilityTheory
 
 namespace TauCeti.Probability
+
+/-- The centred Cauchy density is `O(|x|⁻²)` at infinity, including zero scale. -/
+theorem cauchyPDFReal_zero_loc_isBigO_rpow_neg_two (γ : ℝ≥0) :
+    (fun x : ℝ => cauchyPDFReal 0 γ x)
+      =O[cocompact ℝ] (fun x : ℝ => |x| ^ (-2 : ℝ)) := by
+  refine IsBigO.of_bound ((γ : ℝ) / Real.pi) ?_
+  filter_upwards [isCompact_Icc.compl_mem_cocompact] with x hx
+  have hxabs : 1 ≤ |x| := by
+    have hnle : ¬ |x| ≤ 1 := by
+      simpa only [mem_compl_iff, mem_Icc, abs_le] using hx
+    exact (lt_of_not_ge hnle).le
+  have hx0 : x ≠ 0 := by
+    intro h
+    subst x
+    norm_num at hxabs
+  have hpdf_nonneg : 0 ≤ cauchyPDFReal 0 γ x := by
+    rw [cauchyPDFReal_def]
+    positivity
+  simp only [Real.norm_eq_abs, abs_of_nonneg hpdf_nonneg,
+    Real.rpow_neg (abs_nonneg x), Real.rpow_two, sq_abs]
+  rw [abs_of_nonneg (inv_nonneg.mpr (sq_nonneg x)), cauchyPDFReal_def]
+  simp only [sub_zero]
+  calc
+    Real.pi⁻¹ * (γ : ℝ) * (x ^ 2 + (γ : ℝ) ^ 2)⁻¹ =
+        ((γ : ℝ) / Real.pi) / (x ^ 2 + (γ : ℝ) ^ 2) := by ring
+    _ ≤ ((γ : ℝ) / Real.pi) / x ^ 2 := by
+      exact div_le_div_of_nonneg_left (by positivity) (sq_pos_of_ne_zero hx0)
+        (by nlinarith [sq_nonneg (γ : ℝ)])
+    _ = ((γ : ℝ) / Real.pi) * (x ^ 2)⁻¹ := div_eq_mul_inv _ _
 
 /-- The scaled arctangent has the Cauchy density as its derivative. -/
 theorem hasDerivAt_arctan_div_pi (x₀ : ℝ) (γ : ℝ≥0) (y : ℝ) :
@@ -401,6 +442,16 @@ theorem charFun_cauchyMeasure (x₀ : ℝ) (γ : ℝ≥0) (t : ℝ) :
     push_cast
     ring
 
+/-- **The Cauchy family is closed under convolution.** Convolving two Cauchy laws adds their
+locations and their scales, including the zero-scale Dirac laws. -/
+theorem cauchyMeasure_conv_cauchyMeasure (x₁ x₂ : ℝ) (γ₁ γ₂ : ℝ≥0) :
+    cauchyMeasure x₁ γ₁ ∗ cauchyMeasure x₂ γ₂ = cauchyMeasure (x₁ + x₂) (γ₁ + γ₂) := by
+  refine Measure.ext_of_charFun (funext fun t ↦ ?_)
+  rw [charFun_conv, charFun_cauchyMeasure, charFun_cauchyMeasure, charFun_cauchyMeasure,
+    ← Complex.exp_add]
+  push_cast
+  ring_nf
+
 end CharFun
 
 end TauCeti.Probability
@@ -431,5 +482,15 @@ theorem iIndepFun.hasLaw_average_cauchyMeasure {Ω ι : Type*} [MeasurableSpace 
   rw [habs]
   push_cast
   field_simp
+
+/-- The sum of independent Cauchy variables is Cauchy, with the locations and the scales
+added. -/
+theorem IndepFun.hasLaw_add_cauchyMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X Y : Ω → ℝ} {x₁ x₂ : ℝ} {γ₁ γ₂ : ℝ≥0} (hXY : IndepFun X Y P)
+    (hX : HasLaw X (cauchyMeasure x₁ γ₁) P) (hY : HasLaw Y (cauchyMeasure x₂ γ₂) P) :
+    HasLaw (X + Y) (cauchyMeasure (x₁ + x₂) (γ₁ + γ₂)) P := by
+  have := hX.isProbabilityMeasure
+  rw [← cauchyMeasure_conv_cauchyMeasure]
+  exact hXY.hasLaw_add hX hY
 
 end ProbabilityTheory

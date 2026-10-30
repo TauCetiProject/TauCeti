@@ -27,6 +27,8 @@ of squares.
 * `QuadraticMap.nondegenerate_weightedSumSquares`: over a ring in which two is invertible, a
   diagonal form with regular weights is nondegenerate.
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
+* `QuadraticMap.neg_weightedSumSquares`: negating a diagonal form negates its weights.
+* `QuadraticMap.weightedSumSquares_fin_two_apply`: evaluating a binary diagonal form.
 * `QuadraticMap.weightedSumSquares_apply_three_single` and
   `QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero`: evaluating a diagonal form
   on a linear combination of three distinct basis vectors, and deducing that a ternary solution with
@@ -181,6 +183,11 @@ theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
   ext x
   simp [QuadraticMap.weightedSumSquares_apply, Units.smul_def]
 
+/-- Evaluate a binary diagonal form `⟨a, b⟩` on a vector of `R²`. -/
+theorem _root_.QuadraticMap.weightedSumSquares_fin_two_apply (a b : R) (x : Fin 2 → R) :
+    QuadraticMap.weightedSumSquares R ![a, b] x = a * (x 0 * x 0) + b * (x 1 * x 1) := by
+  simp [QuadraticMap.weightedSumSquares_apply, Fin.sum_univ_two]
+
 /-- Evaluate a diagonal form on a linear combination of three distinct coordinate vectors. -/
 -- Apply before the generic `weightedSumSquares_apply` expansion.
 @[simp high]
@@ -214,6 +221,19 @@ theorem _root_.QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zer
   exact hz hz0
 
 end CommSemiring
+
+section CommRing
+
+variable [CommRing R] [Fintype ι]
+
+/-- Negating a weighted sum of squares negates its weights. -/
+theorem _root_.QuadraticMap.neg_weightedSumSquares {S : Type*} [Ring S] [Module S R]
+    [SMulCommClass S R R] (w : ι → S) :
+    -QuadraticMap.weightedSumSquares R w = QuadraticMap.weightedSumSquares R (-w) := by
+  ext x
+  simp [Finset.sum_neg_distrib]
+
+end CommRing
 
 section Discriminant
 
