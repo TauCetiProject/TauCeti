@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.SymplecticGroup
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
 # The determinant of a rank-two matrix from its symplectic multiplier
@@ -56,17 +57,6 @@ public section
 namespace Matrix
 
 variable {l R : Type*} [DecidableEq l] [Fintype l] [Unique l] [CommRing R]
-
-/-- The determinant of a matrix on `l ⊕ l`, for a singleton `l`, in coordinates. -/
-private theorem det_sum_unique (A : Matrix (l ⊕ l) (l ⊕ l) R) :
-    A.det = A (Sum.inl default) (Sum.inl default) * A (Sum.inr default) (Sum.inr default)
-      - A (Sum.inl default) (Sum.inr default) * A (Sum.inr default) (Sum.inl default) := by
-  -- Reindex along `Fin 2 ≃ l ⊕ l`. It sends `0` to `Sum.inl default` and `1` to `Sum.inr default`
-  -- by definition, so `det_fin_two` is the claim up to `rfl`; `simp` cannot see through the
-  -- numerals `0, 1 : Fin 2` to evaluate `finSumFinEquiv.symm` on them.
-  rw [← det_submatrix_equiv_self (finSumFinEquiv.symm.trans <|
-    (Equiv.ofUnique (Fin 1) l).sumCongr (Equiv.ofUnique (Fin 1) l)) A, det_fin_two]
-  rfl
 
 /-- **A rank-two matrix scales the standard symplectic form by its determinant.** -/
 @[simp]
