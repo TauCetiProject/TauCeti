@@ -110,6 +110,8 @@ theorem homologyCauchyTheorem {f : ℂ → ℂ} {Ω : Set ℂ} (hΩ : IsOpen Ω)
     (hf : DifferentiableOn ℂ f Ω) (hnull : IsNullHomologous γ a b Ω) :
     ∫ t in a..b, deriv γ t • f (γ t) = 0 := by
   obtain ⟨P, hP, hγ_diff⟩ := hγ_pc1.exists_countable_differentiableAt
+  -- Mathlib keeps path-connectedness of real vector spaces out of instance search.
+  have : PathConnectedSpace ℂ := IsTopologicalAddGroup.pathConnectedSpace
   obtain ⟨w₀, hw₀Ω, hw₀off⟩ := exists_mem_off_curve hΩ hγ_pc1.continuousOn hγ
   exact homologyCauchyTheorem_of_point_off_curve hΩ hf hγ_pc1.continuousOn hγ
     hγ_pc1.intervalIntegrable_deriv hclosed hP hγ_diff hnull hw₀Ω hw₀off

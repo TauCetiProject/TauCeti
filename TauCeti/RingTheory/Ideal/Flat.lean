@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.EquationalCriterion
-public import Mathlib.RingTheory.Perfection
+public import TauCeti.RingTheory.Perfection
 import Mathlib.Data.Finset.Order
 import Mathlib.Algebra.Regular.SMul
 
@@ -76,10 +76,8 @@ theorem flat_span_range_of_isSMulRegular {p : ℕ} [NeZero p] (r : Perfection R 
     Module.Flat R (Ideal.span (Set.range fun n ↦ Perfection.coeffMonoidHom R p n r)) := by
   apply Ideal.flat_span_range_of_directed_dvd
   · have hdvd {i j : ℕ} (hij : i ≤ j) :
-        Perfection.coeffMonoidHom R p j r ∣ Perfection.coeffMonoidHom R p i r := by
-      obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hij
-      rw [← Perfection.coeffMonoidHom_pow_p_pow' r i k]
-      exact dvd_pow_self _ (pow_ne_zero k (NeZero.ne p))
+        Perfection.coeffMonoidHom R p j r ∣ Perfection.coeffMonoidHom R p i r :=
+      TauCeti.dvd_of_compatible_roots (fun n ↦ r.2 n) hij
     exact fun i j ↦ ⟨max i j, hdvd (le_max_left i j), hdvd (le_max_right i j)⟩
   · intro n
     apply (IsSMulRegular.pow_iff (pow_pos (NeZero.pos p) n)).mp

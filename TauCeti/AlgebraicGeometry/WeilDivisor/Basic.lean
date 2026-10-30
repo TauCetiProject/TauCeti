@@ -9,6 +9,7 @@ public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.Finsupp.Order
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Algebra.Order.Ring.Int
+public import Mathlib.Topology.Separation.Basic
 import Mathlib.Tactic.NormNum.Basic
 import Mathlib.Tactic.Ring
 
@@ -24,7 +25,8 @@ The API here records the free-abelian-group operations: point divisors, effectiv
 formal sums along a map of point sets, and both the unweighted degree and the weighted degree used
 for curves over a field. It also packages the degree-zero subgroups: when principal divisors have
 degree zero, they lie in these subgroups, and the resulting quotient identifies with the abstract
-`Pic⁰` kernel.
+`Pic⁰` kernel. When the points form a `T1` space, a divisor vanishes on a punctured
+neighbourhood of every point, since its support is finite.
 
 For a curve over `k`, the intended weighted degree has weight
 `x ↦ [κ(x) : k]`; this file only supplies the formal finite-sum operation against an arbitrary
@@ -90,6 +92,14 @@ is the `coeff`-level restatement of `Finsupp.mem_support_iff`. -/
 @[grind =]
 lemma mem_support_iff {D : WeilDivisor X} {x : X} : x ∈ D.support ↔ coeff D x ≠ 0 :=
   Finsupp.mem_support_iff
+
+open scoped Topology in
+/-- A Weil divisor on a `T1` space vanishes on a punctured neighbourhood of every point, since
+its support is finite. -/
+lemma eventually_eq_zero_nhdsNE [TopologicalSpace X] [T1Space X] (D : WeilDivisor X) (x : X) :
+    ∀ᶠ y in 𝓝[≠] x, D y = 0 :=
+  (D.support.eventually_cofinite_notMem.filter_mono (nhdsNE_le_cofinite x)).mono
+    fun _ hy ↦ Finsupp.notMem_support_iff.1 hy
 
 /-- The prime/point divisor supported at a single point with coefficient `1`. -/
 noncomputable def ofPoint (x : X) : WeilDivisor X :=
