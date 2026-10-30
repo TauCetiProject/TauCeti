@@ -11,8 +11,9 @@ public import TauCeti.Probability.StrongLaw
 /-!
 # The almost-sure renewal law of large numbers
 
-For nonnegative i.i.d. increments that are not almost surely zero, the number of arrivals
-per unit time converges almost surely to the reciprocal of the extended mean increment.
+For pairwise independent, identically distributed nonnegative increments that are not almost
+surely zero, the number of arrivals per unit time converges almost surely to the reciprocal of
+the extended mean increment.
 The reciprocal is taken before conversion to a real number, so infinite mean gives rate zero.
 Zero increments, including genuine arrivals at time zero, are allowed.
 
@@ -121,14 +122,48 @@ theorem ae_tendsto_natCast_div_arrival
 
 /-- **Almost-sure renewal law of large numbers.** The count per unit time converges to the
 reciprocal of the extended mean increment, with rate zero for infinite mean. The convergence
-holds along the full nonnegative real time axis on a single event of probability one. -/
-theorem ae_tendsto_renewalCountNat_div (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
+holds along the full nonnegative real time axis on a single event of probability one.
+Pairwise independence suffices; the identical-distribution hypothesis supplies almost-everywhere
+measurability of the increments. -/
+theorem ae_tendsto_renewalCountNat_div
+    (hindep : Pairwise fun i j ↦ IndepFun (T i) (T j) P)
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hzero : P {ω | T 0 ω = 0} < 1) :
     ∀ᵐ ω ∂P, Tendsto (fun t : ℝ≥0 ↦ (renewalCountNat T t ω : ℝ) / (t : ℝ)) atTop
       (𝓝 (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹.toReal) := by
-  filter_upwards [ae_tendsto_arrival_atTop hT hindep hid hzero,
-    ae_tendsto_natCast_div_arrival (fun _ _ hij ↦ hindep.indepFun hij) hid hzero] with ω hω hlimit
-  exact tendsto_renewalCountNat_div_of_tendsto hω hlimit
+  -- Bounded increments have positive mean, so their strong law gives nonexplosion without
+  -- requiring full independence or pointwise measurability of the original increments.
+  let Y (n : ℕ) (ω : Ω) : ℝ := min (T n ω : ℝ) 1
+  have hm : Measurable (fun t : ℝ≥0 ↦ min (t : ℝ) 1) :=
+    measurable_coe_nnreal_real.min measurable_const
+  have hpos : 0 ≤ Y 0 := fun ω ↦ le_min (T 0 ω).coe_nonneg zero_le_one
+  have hint : Integrable (Y 0) P := by
+    refine (integrable_const (1 : ℝ)).mono'
+      (hm.comp_aemeasurable (hid 0).aemeasurable_fst).aestronglyMeasurable ?_
+    exact Eventually.of_forall fun ω ↦ by
+      simpa only [Real.norm_eq_abs, abs_of_nonneg (hpos ω)] using
+        min_le_right (T 0 ω : ℝ) 1
+  have hμpos : 0 < ∫ ω, Y 0 ω ∂P := by
+    refine lt_of_le_of_ne (integral_nonneg hpos) ?_
+    intro heq
+    have hz := (integral_eq_zero_iff_of_nonneg hpos hint).1 heq.symm
+    have hz' : ∀ᵐ ω ∂P, T 0 ω = 0 := by
+      filter_upwards [hz] with ω hω
+      have hz : T 0 ω = 0 ∧ T 0 ω ≤ 1 := by
+        simpa [Y, min_eq_iff, (T 0 ω).coe_nonneg] using hω
+      exact hz.1
+    have hfull : {ω | T 0 ω = 0} =ᵐ[P] univ := hz'.mono fun ω hω ↦ by simp [hω]
+    exact (ne_of_lt hzero) ((measure_congr hfull).trans measure_univ)
+  have hsl := strong_law_ae_real Y hint
+    (fun i j hij ↦ (hindep hij).comp hm hm) (fun n ↦ (hid n).comp hm)
+  filter_upwards [hsl, ae_tendsto_natCast_div_arrival hindep hid hzero] with ω hω hlimit
+  apply tendsto_renewalCountNat_div_of_tendsto _ hlimit
+  apply NNReal.tendsto_coe_atTop.1
+  refine tendsto_atTop_mono' _ ?_
+    (tendsto_natCast_atTop_atTop.atTop_mul_pos hμpos hω)
+  filter_upwards [eventually_gt_atTop (0 : ℕ)] with n hn
+  rw [mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn.ne')]
+  simpa [arrival_def] using
+    (Finset.sum_le_sum fun i (_ : i ∈ Finset.range n) ↦ min_le_left (T i ω : ℝ) 1)
 
 end TauCeti.Probability
