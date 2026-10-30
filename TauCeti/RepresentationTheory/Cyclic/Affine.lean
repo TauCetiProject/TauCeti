@@ -60,8 +60,9 @@ iterates has a nontrivial linear part or a nonzero partial norm.
   `k`-th iterate of its linear part plus the `k`-th partial norm of its translation part.
 * `AddEquiv.partialNorm_def`: the partial norm as its defining finite sum.
 * `AddEquiv.partialNorm_add`, `AddEquiv.partialNorm_neg`, `AddEquiv.partialNorm_sub`,
-  `AddEquiv.partialNorm_add_exponent`: the partial norm is additive in its translation argument and
-  splits over the exponent.
+  `AddEquiv.partialNorm_zero_right`, `AddEquiv.partialNorm_add_exponent`: the partial norm is
+  additive in its translation argument, vanishes on the zero translation part, and splits over the
+  exponent.
 * `AddEquiv.cyclicRepresentation_norm_eq_partialNorm`: the norm of the cyclic representation of `A`
   is the partial norm of order `m`.
 * `AddEquiv.affineEquiv_iterate_eq_id_iff`, `AddEquiv.affineEquiv_pow_eq_one_iff`: the affine
@@ -97,10 +98,12 @@ below are those of the underlying permutation. -/
 def affineEquiv (A : T ≃+ T) (t : T) : T ≃ T :=
   (A : T ≃ T).trans (Equiv.addRight t)
 
+/-- The affine equivalence sends `x` to `A x + t`. -/
 @[simp]
 theorem affineEquiv_apply (A : T ≃+ T) (t x : T) : affineEquiv A t x = A x + t := by
   simp [affineEquiv]
 
+/-- The inverse of the affine equivalence sends `y` to `A⁻¹ (y - t)`. -/
 @[simp]
 theorem affineEquiv_symm_apply (A : T ≃+ T) (t y : T) :
     (affineEquiv A t).symm y = A.symm (y - t) := by
@@ -118,10 +121,12 @@ theorem partialNorm_def (A : T ≃+ T) (k : ℕ) (t : T) :
     partialNorm A k t = ∑ i ∈ Finset.range k, (⇑A)^[i] t := by
   simp only [partialNorm, birkhoffSum, id_eq]
 
+/-- The partial norm of zero iterates is zero. -/
 @[simp]
 theorem partialNorm_zero (A : T ≃+ T) (t : T) : partialNorm A 0 t = 0 := by
   simpa only [partialNorm] using birkhoffSum_zero_apply (⇑A) id t
 
+/-- The partial norm of one iterate is the translation part itself. -/
 @[simp]
 theorem partialNorm_one (A : T ≃+ T) (t : T) : partialNorm A 1 t = t := by
   simpa only [partialNorm, id_eq] using birkhoffSum_one_apply (⇑A) id t
@@ -143,6 +148,11 @@ theorem partialNorm_neg (A : T ≃+ T) (k : ℕ) (u : T) :
 theorem partialNorm_sub (A : T ≃+ T) (k : ℕ) (u v : T) :
     partialNorm A k (u - v) = partialNorm A k u - partialNorm A k v := by
   simp only [sub_eq_add_neg, partialNorm_add, partialNorm_neg]
+
+/-- The partial norm vanishes on the zero translation part. -/
+@[simp]
+theorem partialNorm_zero_right (A : T ≃+ T) (k : ℕ) : partialNorm A k 0 = 0 := by
+  simp only [partialNorm_def, iterate_map_zero, Finset.sum_const_zero]
 
 /-- Shifting the linear part through the partial norm: `A (N_{A,k} t) = N_{A,k} (A t)`. -/
 theorem map_partialNorm (A : T ≃+ T) (k : ℕ) (t : T) :
