@@ -17,8 +17,8 @@ integral matrices commuting with it. Explicitly, if `M` is parabolic, then
 `1 + r (2 M - tr(M) I)`, for `r ∈ ℤ`, gives distinct such matrices. No invertibility assumption
 on `M` is needed.
 
-This is the centralizer calculation behind the zero automorphism weight of parabolic conjugacy
-classes in the level-one trace formula.
+In particular, the natural-number cardinality of such a centralizer is zero by the convention
+for infinite types. This fact alone does not compute a trace-formula class weight.
 
 ## References
 
