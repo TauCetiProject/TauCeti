@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Basic
+public import TauCeti.Topology.Constructions.Basic
 
 /-!
 # Pulling a covering map back along a continuous map
@@ -22,8 +23,6 @@ the curve `{(x, y) | h x = y ^ n}` is a covering of `X`.
 
 ## Main results
 
-* `Function.Pullback.ext`, `Function.Pullback.continuous_fst`, `Function.Pullback.continuous_snd`:
-  a point of the fibre product is determined by its coordinates, which depend continuously on it.
 * `IsEvenlyCovered.pullback_fst`: a point evenly covered by `g` pulls back to evenly covered points
   of the projection, with the same fibre.
 * `IsCoveringMap.pullback_fst`: the pullback of a covering map is a covering map.
@@ -42,27 +41,8 @@ public section
 
 open Function
 
-variable {X Y Z : Type*} {f : X → Y} {g : Z → Y}
-
-/-- A point of the fibre product `X ×_Y Z` is determined by its two coordinates. -/
-@[ext]
-theorem Function.Pullback.ext {p q : f.Pullback g} (h₁ : p.fst = q.fst) (h₂ : p.snd = q.snd) :
-    p = q :=
-  Subtype.ext (Prod.ext h₁ h₂)
-
-variable [TopologicalSpace X] [TopologicalSpace Z]
-
-/-- The projection `X ×_Y Z → X` is continuous. -/
-@[fun_prop]
-theorem Function.Pullback.continuous_fst : Continuous (Pullback.fst : f.Pullback g → X) :=
-  _root_.continuous_fst.comp continuous_subtype_val
-
-/-- The projection `X ×_Y Z → Z` is continuous. -/
-@[fun_prop]
-theorem Function.Pullback.continuous_snd : Continuous (Pullback.snd : f.Pullback g → Z) :=
-  _root_.continuous_snd.comp continuous_subtype_val
-
-variable [TopologicalSpace Y]
+variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] {f : X → Y}
+  {g : Z → Y}
 
 /-- If `f x` is evenly covered by `g` with fibre `I`, then `x` is evenly covered with fibre `I` by
 the projection `X ×_Y Z → X` of the fibre product of `f` and `g`. -/

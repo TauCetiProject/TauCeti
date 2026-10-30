@@ -15,6 +15,7 @@ public import TauCeti.Topology.Covering.Pullback
 
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Set.Prod
 
 /-!
 # Cyclic covers of the thrice-punctured sphere

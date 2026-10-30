@@ -8,9 +8,10 @@ module
 public import Mathlib.Topology.Constructions
 
 /-!
-# Quotients of topological spaces by setoids
+# Quotients by setoids and fibre products of topological spaces
 
-This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s : Setoid X`.
+This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s : Setoid X`, and to
+the topology of the fibre product `Function.Pullback f g`, a subspace of the product.
 
 ## Main results
 
@@ -19,6 +20,8 @@ This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s 
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
+* `Function.Pullback.continuous_fst`, `Function.Pullback.continuous_snd`: the projections of the
+  fibre product are continuous.
 -/
 
 public section
@@ -70,3 +73,19 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     exact hfix x.2 hxy ▸ mem_image_of_mem _ hx
 
 end Setoid
+
+section Pullback
+
+variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Z] {f : X → Y} {g : Z → Y}
+
+/-- The projection `X ×_Y Z → X` is continuous. -/
+@[fun_prop]
+theorem Function.Pullback.continuous_fst : Continuous (Pullback.fst : f.Pullback g → X) :=
+  _root_.continuous_fst.comp continuous_subtype_val
+
+/-- The projection `X ×_Y Z → Z` is continuous. -/
+@[fun_prop]
+theorem Function.Pullback.continuous_snd : Continuous (Pullback.snd : f.Pullback g → Z) :=
+  _root_.continuous_snd.comp continuous_subtype_val
+
+end Pullback
