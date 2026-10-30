@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Subdisc
 
+import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.Topology.Homeomorph.SetCongr
@@ -510,12 +511,6 @@ private theorem isRat_setOf_vle_or_vle (f : 𝒯 K) {r σ : K} (hr : r ≠ 0) (h
   rw [← valuation_lt_iff]
   exact (closedPolydisc_valuation_weightedC_lt_iff ⟨v, closedPolydisc_def 1 K ▸ hv⟩ r σ).mpr hrσ
 
-omit [NonarchimedeanRing K] in
-/-- The ultrametric triangle inequality, measured from a common point `y`. -/
-private theorem norm_sub_le_max_norm_sub (x y z : K) : ‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖ := by
-  rw [norm_sub_rev z y, ← sub_add_sub_cancel x y z]
-  exact IsUltrametricDist.norm_add_le_max _ _
-
 omit [IsUltrametricDist K] in
 /-- `T - a = (T - b) + (b - a)`. -/
 private theorem weightedX_sub_weightedC_eq_add (a b : K) :
@@ -553,14 +548,6 @@ private theorem setOf_vle_eq_of_norm_sub_lt {a b s : K} (hab : ‖a - b‖ < ‖
     rwa [valuation_weightedX_sub_weightedC_eq_of_le hab h]
   · intro h
     rwa [valuation_weightedX_sub_weightedC_eq_of_le (by rwa [norm_sub_rev]) h]
-
-/-- A disc of nonzero radius is cut out by its defining inequality alone. -/
-private theorem closedSubdisc_eq_setOf_vle (a : K) {c : K} (hc : c ≠ 0) :
-    closedSubdisc a c = {v | v.1.toValuativeRel.vle (T - C a) (C c)} := by
-  ext v
-  rw [mem_closedSubdisc, Set.mem_ofPred_eq, and_iff_left_iff_imp, ← map_zero C,
-    closedPolydisc_vle_weightedC_iff, norm_zero, norm_le_zero_iff]
-  exact fun _ ↦ hc
 
 /-- The complement of an open disc of radius more than one is empty. -/
 private theorem setOf_vle_eq_empty {σ : K} (hσ : 1 < ‖σ‖) :
@@ -730,7 +717,7 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
   have hτa {q : K × K} (hq : q ∈ F) : ‖q.1 - q₁.1‖ ≤ ‖τ‖ :=
     hτ _ (Finset.mem_union_right _ (Finset.mem_image_of_mem (fun q ↦ q.1 - q₁.1) hq))
   have hdist {q q' : K × K} (hq : q ∈ F) (hq' : q' ∈ F) : ‖q.1 - q'.1‖ ≤ ‖τ‖ :=
-    (norm_sub_le_max_norm_sub q.1 q₁.1 q'.1).trans (max_le (hτa hq) (hτa hq'))
+    (IsUltrametricDist.norm_sub_le_max_norm_sub q.1 q₁.1 q'.1).trans (max_le (hτa hq) (hτa hq'))
   by_cases hA : ∃ q₀ ∈ F, ‖τ‖ ≤ ‖q₀.2‖
   · -- one of the discs contains all the others
     obtain ⟨q₀, hq₀, hτq₀⟩ := hA
@@ -751,7 +738,7 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
   have hτ₀ : τ ≠ 0 := norm_pos_iff.mp ((norm_nonneg _).trans_lt (hA q₁ hq₁))
   have hτs : ‖τ‖ < ‖s‖ := by
     rw [← hτq']
-    exact (norm_sub_le_max_norm_sub q'.1 b q₁.1).trans_lt
+    exact (IsUltrametricDist.norm_sub_le_max_norm_sub q'.1 b q₁.1).trans_lt
       (max_lt (hF q' hq').2.1 (hF q₁ hq₁).2.1)
   -- `ρ`: the largest radius, smaller than `τ`
   obtain ⟨ρ, hρF, hρ⟩ := (F.image Prod.snd).exists_max_image (‖·‖)
@@ -766,7 +753,7 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
   have hGF {q : K × K} (hq : q ∈ F) : G q ⊂ F := by
     refine Finset.filter_ssubset.mpr ?_
     by_contra! h
-    have h' := norm_sub_le_max_norm_sub q'.1 q.1 q₁.1
+    have h' := IsUltrametricDist.norm_sub_le_max_norm_sub q'.1 q.1 q₁.1
     rw [hτq'] at h'
     exact (h'.trans_lt (max_lt (h q' hq') (h q₁ hq₁))).false
   have hGrat {q : K × K} (hq : q ∈ F) :
