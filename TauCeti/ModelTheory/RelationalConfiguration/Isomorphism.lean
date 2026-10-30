@@ -7,6 +7,8 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Structure
 public import TauCeti.ModelTheory.RelationalConfiguration.Topology
+public import TauCeti.MeasureTheory.Constructions.Polish.Analytic
+public import Mathlib.GroupTheory.GroupAction.Blocks
 
 /-!
 # Isomorphism of relational configurations
@@ -23,12 +25,22 @@ isomorphic exactly when their encodings are.
 
 On a finite carrier the permutation group is finite and acts continuously, so the graph of
 isomorphism is a finite union of graphs of continuous maps. It is therefore closed, and Borel in
-a countable relational vocabulary.
+a countable relational vocabulary. On a countable carrier, in a countable relational vocabulary,
+the graph of isomorphism is analytic: a permutation is a pair of mutually inverse self-maps of
+the carrier, these pairs form a closed subset of a Polish space, and relabelling is jointly
+continuous. Hence the saturation of an analytic set under the logic action is analytic.
+
+A set of configurations is *isomorphism invariant* when it contains every configuration
+isomorphic to one of its members. Equivalently, every permutation of the carrier maps it into
+itself (Mathlib's `MulAction.IsInvariantBlock` for the logic action), or it equals its saturation
+`Quotient.mk _ ⁻¹' (Quotient.mk _ '' A)` under isomorphism.
 
 ## Main definitions
 
 * `TauCeti.RelationalConfiguration.isoSetoid L V` — isomorphism of decoded structures, as a setoid
   on the configurations on `V`.
+* `TauCeti.RelationalConfiguration.IsomorphismInvariant` — a set of configurations closed under
+  isomorphism.
 
 ## Main results
 
@@ -39,7 +51,15 @@ a countable relational vocabulary.
   isomorphic exactly when the structures are;
 * `TauCeti.RelationalConfiguration.isClosed_setOf_isoSetoid` and
   `TauCeti.RelationalConfiguration.measurableSet_setOf_isoSetoid` — on a finite carrier the graph
-  of isomorphism is closed and Borel.
+  of isomorphism is closed and Borel;
+* `TauCeti.RelationalConfiguration.analyticSet_setOf_isoSetoid` — on a countable carrier the graph
+  of isomorphism is analytic;
+* `TauCeti.RelationalConfiguration.isomorphismInvariant_iff_isInvariantBlock` and
+  `TauCeti.RelationalConfiguration.isomorphismInvariant_iff_preimage_image_quotientMk` —
+  isomorphism invariance is invariance under the logic action, and is equality with the
+  saturation;
+* `TauCeti.RelationalConfiguration.analyticSet_iUnion_smul` — on a countable carrier the
+  saturation of an analytic set under the logic action is analytic.
 
 ## References
 
@@ -52,7 +72,9 @@ public section
 
 universe u v w w' w''
 
-open FirstOrder FirstOrder.Language
+open FirstOrder FirstOrder.Language MeasureTheory Set
+
+open scoped Pointwise
 
 namespace TauCeti.RelationalConfiguration
 
@@ -159,5 +181,148 @@ theorem measurableSet_setOf_isoSetoid [∀ n, Countable (L.Relations n)] [Finite
     MeasurableSet {p : RelationalConfiguration L V × RelationalConfiguration L V |
       isoSetoid L V p.1 p.2} :=
   isClosed_setOf_isoSetoid.measurableSet
+
+/-- On a countable carrier, in a countable relational vocabulary, the graph of isomorphism is
+analytic. -/
+theorem analyticSet_setOf_isoSetoid [∀ n, Countable (L.Relations n)] [Countable V] :
+    AnalyticSet {p : RelationalConfiguration L V × RelationalConfiguration L V |
+      isoSetoid L V p.1 p.2} := by
+  -- With the discrete topology on the countable carrier, `V → V` is Polish. Recording that `V`
+  -- itself is Polish lets instance search find the Polish structure of `V → V`.
+  let _ : TopologicalSpace V := ⊥
+  have : DiscreteTopology V := ⟨rfl⟩
+  have : PolishSpace V := inferInstance
+  have hev (v : V) : Continuous fun q : (V → V) × (V → V) => q.1 (q.2 v) := by
+    have h : Continuous fun r : (V → V) × V => r.1 r.2 :=
+      continuous_prod_of_discrete_right.2 fun w => continuous_apply w
+    exact h.comp (continuous_fst.prodMk ((continuous_apply v).comp continuous_snd))
+  -- The pairs of mutually inverse self-maps of `V`.
+  let S : Set ((V → V) × (V → V)) := {q | (∀ v, q.1 (q.2 v) = v) ∧ ∀ v, q.2 (q.1 v) = v}
+  have hS : IsClosed S := by
+    simp only [S, ofPred_and, ofPred_forall]
+    exact (isClosed_iInter fun v => isClosed_eq (hev v) continuous_const).inter
+      (isClosed_iInter fun v => isClosed_eq ((hev v).comp continuous_swap) continuous_const)
+  -- The graph of isomorphism is the image of `S × univ` under relabelling along the inverse map.
+  have h : {p : RelationalConfiguration L V × RelationalConfiguration L V |
+      isoSetoid L V p.1 p.2} = (fun q => (q.2, q.2.restrict q.1.2)) '' (S ×ˢ univ) := by
+    ext ⟨c, d⟩
+    simp only [mem_ofPred_eq, isoSetoid_iff_exists_perm_smul_eq, mem_image, mem_prod, mem_univ,
+      and_true, Prod.exists, Prod.mk.injEq]
+    constructor
+    · rintro ⟨σ, rfl⟩
+      refine ⟨σ, σ.symm, c, ⟨σ.apply_symm_apply, σ.symm_apply_apply⟩, rfl, ?_⟩
+      rw [perm_smul_def, Equiv.Perm.inv_def]
+    · rintro ⟨f, g, c, ⟨hfg, hgf⟩, rfl, rfl⟩
+      refine ⟨⟨f, g, hgf, hfg⟩, ?_⟩
+      rw [perm_smul_def, Equiv.Perm.inv_def, Equiv.coe_fn_symm_mk]
+  rw [h]
+  exact (hS.prod isClosed_univ).analyticSet.image_of_continuous
+    (continuous_snd.prodMk (continuous_uncurry_restrict.comp
+      ((continuous_snd.comp continuous_fst).prodMk continuous_snd)))
+
+/-! ### Isomorphism-invariant sets -/
+
+/-- A set of configurations is **isomorphism invariant** when it contains every configuration
+isomorphic to one of its members. -/
+def IsomorphismInvariant (A : Set (RelationalConfiguration L V)) : Prop :=
+  ∀ ⦃c d⦄, isoSetoid L V c d → c ∈ A → d ∈ A
+
+variable {A B : Set (RelationalConfiguration L V)}
+
+/-- Unfolding lemma for `IsomorphismInvariant`. -/
+theorem isomorphismInvariant_iff :
+    IsomorphismInvariant A ↔ ∀ ⦃c d⦄, isoSetoid L V c d → c ∈ A → d ∈ A :=
+  Iff.rfl
+
+/-- Isomorphic configurations lie in the same isomorphism-invariant sets. -/
+theorem IsomorphismInvariant.mem_iff (hA : IsomorphismInvariant A)
+    {c d : RelationalConfiguration L V} (h : isoSetoid L V c d) : c ∈ A ↔ d ∈ A :=
+  ⟨hA h, hA ((isoSetoid L V).symm h)⟩
+
+/-- **Isomorphism invariance is invariance under the logic action**: a set of configurations is
+isomorphism invariant exactly when every permutation of the carrier maps it into itself. -/
+theorem isomorphismInvariant_iff_isInvariantBlock :
+    IsomorphismInvariant A ↔ MulAction.IsInvariantBlock (Equiv.Perm V) A := by
+  refine ⟨fun hA σ => ?_, fun hA c d h hc => ?_⟩
+  · rintro _ ⟨c, hc, rfl⟩
+    exact hA (isoSetoid_perm_smul σ c) hc
+  · obtain ⟨σ, rfl⟩ := isoSetoid_iff_exists_perm_smul_eq.1 h
+    exact hA σ (smul_mem_smul_set hc)
+
+/-- The saturation of a set under isomorphism is the union of its images under the logic
+action. -/
+theorem preimage_image_quotientMk_eq_iUnion_smul (A : Set (RelationalConfiguration L V)) :
+    Quotient.mk (isoSetoid L V) ⁻¹' (Quotient.mk (isoSetoid L V) '' A) =
+      ⋃ σ : Equiv.Perm V, σ • A := by
+  rw [isoSetoid_eq_orbitRel]
+  simp only [← image_smul]
+  -- Mathlib states this with `Quotient.mk'`, which is `Quotient.mk` of the instance.
+  exact MulAction.quotient_preimage_image_eq_union_mul A
+
+/-- The preimage of any set of isomorphism classes is isomorphism invariant. -/
+theorem isomorphismInvariant_preimage_quotientMk (s : Set (Quotient (isoSetoid L V))) :
+    IsomorphismInvariant (Quotient.mk (isoSetoid L V) ⁻¹' s) :=
+  fun _ _ h hc => by rwa [mem_preimage, ← Quotient.sound h]
+
+/-- A set is isomorphism invariant exactly when it is its own saturation under isomorphism. -/
+theorem isomorphismInvariant_iff_preimage_image_quotientMk :
+    IsomorphismInvariant A ↔
+      Quotient.mk (isoSetoid L V) ⁻¹' (Quotient.mk (isoSetoid L V) '' A) = A := by
+  refine ⟨fun hA => (subset_preimage_image _ _).antisymm' ?_, fun h => ?_⟩
+  · rintro d ⟨c, hc, hcd⟩
+    exact hA (Quotient.exact hcd) hc
+  · rw [← h]
+    exact isomorphismInvariant_preimage_quotientMk _
+
+/-- The union of the images of a set under the logic action is isomorphism invariant. -/
+theorem isomorphismInvariant_iUnion_smul (A : Set (RelationalConfiguration L V)) :
+    IsomorphismInvariant (⋃ σ : Equiv.Perm V, σ • A) := by
+  rw [← preimage_image_quotientMk_eq_iUnion_smul]
+  exact isomorphismInvariant_preimage_quotientMk _
+
+/-- The empty set is isomorphism invariant. -/
+@[simp]
+theorem isomorphismInvariant_empty :
+    IsomorphismInvariant (∅ : Set (RelationalConfiguration L V)) :=
+  fun _ _ _ h => h
+
+/-- The set of all configurations is isomorphism invariant. -/
+@[simp]
+theorem isomorphismInvariant_univ :
+    IsomorphismInvariant (univ : Set (RelationalConfiguration L V)) :=
+  fun _ _ _ _ => mem_univ _
+
+/-- The complement of an isomorphism-invariant set is isomorphism invariant. -/
+theorem IsomorphismInvariant.compl (hA : IsomorphismInvariant A) : IsomorphismInvariant Aᶜ :=
+  fun _ _ h hc hd => hc (hA ((isoSetoid L V).symm h) hd)
+
+/-- The intersection of two isomorphism-invariant sets is isomorphism invariant. -/
+theorem IsomorphismInvariant.inter (hA : IsomorphismInvariant A) (hB : IsomorphismInvariant B) :
+    IsomorphismInvariant (A ∩ B) :=
+  fun _ _ h hc => ⟨hA h hc.1, hB h hc.2⟩
+
+/-- The union of two isomorphism-invariant sets is isomorphism invariant. -/
+theorem IsomorphismInvariant.union (hA : IsomorphismInvariant A) (hB : IsomorphismInvariant B) :
+    IsomorphismInvariant (A ∪ B) :=
+  fun _ _ h hc => hc.imp (hA h) (hB h)
+
+/-- An intersection of isomorphism-invariant sets is isomorphism invariant. -/
+theorem isomorphismInvariant_iInter {ι : Sort*} {A : ι → Set (RelationalConfiguration L V)}
+    (hA : ∀ i, IsomorphismInvariant (A i)) : IsomorphismInvariant (⋂ i, A i) :=
+  fun _ _ h hc => mem_iInter.2 fun i => hA i h (mem_iInter.1 hc i)
+
+/-- A union of isomorphism-invariant sets is isomorphism invariant. -/
+theorem isomorphismInvariant_iUnion {ι : Sort*} {A : ι → Set (RelationalConfiguration L V)}
+    (hA : ∀ i, IsomorphismInvariant (A i)) : IsomorphismInvariant (⋃ i, A i) :=
+  fun _ _ h hc => by
+    obtain ⟨i, hi⟩ := mem_iUnion.1 hc
+    exact mem_iUnion.2 ⟨i, hA i h hi⟩
+
+/-- On a countable carrier, in a countable relational vocabulary, the saturation of an analytic
+set of configurations under the logic action is analytic. -/
+theorem analyticSet_iUnion_smul [∀ n, Countable (L.Relations n)] [Countable V]
+    (hA : AnalyticSet A) : AnalyticSet (⋃ σ : Equiv.Perm V, σ • A) := by
+  rw [← preimage_image_quotientMk_eq_iUnion_smul]
+  exact analyticSet_setOf_isoSetoid.preimage_image_quotientMk hA
 
 end TauCeti.RelationalConfiguration
