@@ -282,19 +282,8 @@ private theorem tangentVector_ne_zero_and_mem_normalSubspace_iff {f : Circle →
     deriv_comp_circleExp_ne_zero_and_range_mfderiv hf himm t
   rw [tangentVector_circleExp]
   refine ⟨hne, fun v => ?_⟩
-  set D : EuclideanSpace ℝ (Fin 1) →L[ℝ] V := mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)
-  rw [mem_normalSubspace_iff]
-  constructor
-  · intro hv
-    obtain ⟨w, hw⟩ : deriv (f ∘ Circle.exp) t ∈ (D : EuclideanSpace ℝ (Fin 1) →ₗ[ℝ] V).range :=
-      hrange ▸ Submodule.mem_span_singleton_self _
-    rw [real_inner_comm, ← hw]
-    exact hv w
-  · intro hv w
-    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
-      (hrange ▸ LinearMap.mem_range_self (D : EuclideanSpace ℝ (Fin 1) →ₗ[ℝ] V) w)
-    refine (congrArg (fun x => ⟪v, x⟫) hc.symm).trans ?_
-    rw [real_inner_smul_right, real_inner_comm, hv, mul_zero]
+  rw [normalSubspace, hrange]
+  exact Submodule.mem_orthogonal_singleton_iff_inner_right
 
 /-- Some vector is nowhere tangent to a `C²` loop in a space of dimension at least three: the
 tangent lines of the loop form the image of a `C¹` map from the plane. -/
@@ -399,9 +388,8 @@ theorem exists_isSolidTorusNeighborhood {f : Circle → ℝ³} (hf : ContMDiff (
   obtain ⟨ε, hε, hemb⟩ := exists_isOpenEmbedding_normalTube hf himm hinj
   obtain ⟨δ, hδ, hδU⟩ := (isCompact_range hf.continuous).exists_thickening_subset_open
     isOpen_interior (subset_interior_iff_mem_nhdsSet.mpr hU)
-  obtain ⟨r, hr, hrε, hrδ⟩ : ∃ r, 0 < r ∧ r < ε ∧ r < δ :=
-    ⟨min (ε / 2) (δ / 2), lt_min (half_pos hε) (half_pos hδ),
-      (min_le_left _ _).trans_lt (half_lt_self hε), (min_le_right _ _).trans_lt (half_lt_self hδ)⟩
+  obtain ⟨r, hr, hrmin⟩ := exists_between (lt_min hε hδ)
+  obtain ⟨hrε, hrδ⟩ := lt_min_iff.mp hrmin
   -- `Φ (w, z)` is the point `r w` of the normal disc at `z`.
   obtain ⟨ψ, hψc, hψ⟩ := exists_normalDisc hf himm
   have hnorm : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ = r * ‖(q.1 : ℂ)‖ := fun q => by
