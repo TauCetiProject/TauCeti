@@ -457,6 +457,33 @@ theorem toLinearEquiv_isoToEquiv {V W : FDRep R G} (i : V ≅ W) :
     (isoToEquiv i).toLinearEquiv = isoToLinearEquiv i :=
   (rfl)
 
+/-- The linear equivalence underlying the identity isomorphism is the identity. -/
+@[simp]
+theorem isoToLinearEquiv_refl (V : FDRep R G) :
+    isoToLinearEquiv (Iso.refl V) = LinearEquiv.refl R V :=
+  (rfl)
+
+/-- The linear equivalence underlying the inverse isomorphism is the inverse linear
+equivalence. -/
+@[simp]
+theorem isoToLinearEquiv_symm {V W : FDRep R G} (i : V ≅ W) :
+    isoToLinearEquiv i.symm = (isoToLinearEquiv i).symm :=
+  (rfl)
+
+/-- The linear equivalence underlying a composite isomorphism is the composite of the
+underlying linear equivalences. -/
+@[simp]
+theorem isoToLinearEquiv_trans {V W X : FDRep R G} (i : V ≅ W) (j : W ≅ X) :
+    isoToLinearEquiv (i ≪≫ j) = (isoToLinearEquiv i).trans (isoToLinearEquiv j) :=
+  (rfl)
+
+/-- Conjugating an endomorphism by an isomorphism of representations conjugates its underlying
+linear map by `FDRep.isoToLinearEquiv`. -/
+theorem Iso.conj_apply_asHom_apply {V W : FDRep R G} (i : V ≅ W) (f : End V) (w : W) :
+    (i.conj f).asHom.hom.hom.hom w =
+      isoToLinearEquiv i (f.asHom.hom.hom.hom ((isoToLinearEquiv i).symm w)) :=
+  (rfl)
+
 end IsoToEquiv
 
 end FDRep

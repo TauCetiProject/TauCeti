@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.OfMulAction
-public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.GroupTheory.GroupAction.Orbit.Card
 
 /-!
@@ -23,6 +22,8 @@ it agrees with averaging over any positive period, including a nonminimal period
 ## Main declarations
 
 * `TauCeti.ofMulActionOrbitBasis`: the basis of normalized orbit sums.
+* `TauCeti.ofMulActionOrbitBasis_eq_inv_smul_invariantOrbitSumBasis`: the orbit averages are
+  the orbit sums divided by the orbit sizes.
 * `TauCeti.ofMulActionOrbitProjection`: projection onto the actual invariant subspace.
 * `TauCeti.ofMulActionOrbitBasis_repr_projection`: projection coordinates as native
   finitely supported orbit sums.
@@ -45,6 +46,13 @@ def ofMulActionOrbitBasis :
     Basis (orbitRel.Quotient Γ I) ℚ (ofMulAction ℚ Γ I).invariants :=
   (invariantOrbitSumBasis ℚ Γ I).unitsSMul fun O ↦
     (Units.mk0 (Nat.card O.orbit : ℚ) (Nat.cast_ne_zero.mpr O.card_orbit_ne_zero))⁻¹
+
+variable {Γ I} in
+/-- The normalized orbit average of an orbit `O` is the orbit sum of `O` divided by the size
+of `O`. -/
+theorem ofMulActionOrbitBasis_eq_inv_smul_invariantOrbitSumBasis (O : orbitRel.Quotient Γ I) :
+    ofMulActionOrbitBasis Γ I O = (Nat.card O.orbit : ℚ)⁻¹ • invariantOrbitSumBasis ℚ Γ I O := by
+  simp [ofMulActionOrbitBasis, Basis.unitsSMul_apply, Units.smul_def]
 
 /-- The coordinate of a fixed vector is its coefficient at an orbit representative,
 multiplied by the size of that orbit. -/
@@ -72,7 +80,7 @@ size on its orbit, and zero coefficient elsewhere. -/
 theorem ofMulActionOrbitBasis_coeff (O : orbitRel.Quotient Γ I) (i : I) :
     ((ofMulActionOrbitBasis Γ I O).val).coeff i =
       if Quotient.mk (orbitRel Γ I) i = O then (Nat.card O.orbit : ℚ)⁻¹ else 0 := by
-  simp [ofMulActionOrbitBasis, Basis.unitsSMul_apply, Units.smul_def, Set.indicator_apply,
+  simp [ofMulActionOrbitBasis_eq_inv_smul_invariantOrbitSumBasis, Set.indicator_apply,
     orbitRel.Quotient.mem_orbit]
 
 open Classical in

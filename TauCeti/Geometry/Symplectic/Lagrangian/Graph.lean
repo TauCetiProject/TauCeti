@@ -51,7 +51,9 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
   have hpoint (x : M) :
       ((hσ.twistedProd hτ).symplecticFormAt (x, φ x)).IsLagrangian
           (LinearMap.range (mfderiv I (I.prod J) (fun y ↦ (y, φ y)) x).toLinearMap) ↔
-        ∀ v w, τ.eval₂ (φ x) (mfderiv I J φ x v) (mfderiv I J φ x w) = σ.eval₂ x v w := by
+        ∀ v w, SmoothBundleForm.eval₂ τ (φ x)
+          (mfderiv I J φ x v) (mfderiv I J φ x w) =
+          SmoothBundleForm.eval₂ σ x v w := by
     rw [← SymplecticForm.isLagrangian_map_transport_iff
       (e := (Manifold.tangentSpaceProdEquiv (I := I) (J := J) (x, φ x)).toLinearEquiv),
       IsNondegenerate.symplecticFormAt_twistedProd hσ hτ,
@@ -72,7 +74,7 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
   rw [IsNondegenerate.isLagrangianMap_iff_forall]
   constructor
   · intro h
-    apply SmoothForm.ext
+    apply SmoothBundleForm.ext_eval₂
     intro x v w
     rw [SmoothForm.eval₂_mpullback]
     exact (hpoint x).mp (h x) v w

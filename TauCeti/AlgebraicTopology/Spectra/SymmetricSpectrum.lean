@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Spectra.SmashPow
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Module
 public import TauCeti.CategoryTheory.Monoidal.Mod.InternalHom
+public import TauCeti.CategoryTheory.Monoidal.Mod.Bimodule
 
 /-!
 # The sphere symmetric sequence and symmetric spectra
@@ -34,6 +35,10 @@ function spectra `Hom_S(X, Y) = (Mod.internalHom X).obj Y`: the equalizer of the
 and on `Y`, with the sphere acting through `X`. Spectrum maps `X ⊗ K ⟶ Y` out of the Day
 convolution of `X` with a symmetric sequence `K` are the maps of symmetric sequences
 `K ⟶ Hom_S(X, Y)` (`Mod.ihomAdjunction`).
+
+The commutative sphere action also gives a native sphere bimodule via
+`CategoryTheory.Mod.toBimod`: the right action is obtained by swapping the sphere and
+spectrum factors before applying the left action. This adapter is fully faithful.
 
 ## Main definitions
 
@@ -79,5 +84,10 @@ noncomputable example (X Y : SymmetricSpectrum) : SymmetricSpectrum := (Mod.inte
 /- Spectrum maps `X ⊗ K ⟶ Y` are the maps of symmetric sequences `K ⟶ Hom_S(X, Y)`. -/
 noncomputable example (X : SymmetricSpectrum) : Mod.tensorLeft X ⊣ Mod.ihom X :=
   Mod.ihomAdjunction X
+
+/- The native bimodule adapter applies to the actual sphere-module carrier. -/
+noncomputable example :
+    (Mod.toBimod (C := SymmetricSequence.{0}) (A := SymmetricSequence.sphere)).FullyFaithful :=
+  Mod.fullyFaithfulToBimod
 
 end TauCeti
