@@ -109,6 +109,18 @@ def normalizationEquiv : Pullback p ≃ B × AddCircle (1 : ℝ) where
   right_inv z :=
     Prod.ext rfl ((AddCircle.diffeomorphAddCircle (p z.1 : ℝ) 1 ⊤).apply_symm_apply _)
 
+/-- Normalization keeps the base point and rescales the circle point to period one. -/
+@[simp]
+theorem normalizationEquiv_apply (z : Pullback p) :
+    normalizationEquiv p z =
+      (z.base, AddCircle.diffeomorphAddCircle (p z.base : ℝ) 1 ⊤ z.point) := (rfl)
+
+/-- The inverse normalization rescales the unit-period circle back to the period at the base. -/
+@[simp]
+theorem normalizationEquiv_symm_apply (z : B × AddCircle (1 : ℝ)) :
+    (normalizationEquiv p).symm z =
+      ⟨z.1, (AddCircle.diffeomorphAddCircle (p z.1 : ℝ) 1 ⊤).symm z.2⟩ := (rfl)
+
 /-- The normalization of a point of the circle over `b` is its rescaling to period one. -/
 private theorem normalizationEquiv_mk (b : B) (x : AddCircle (p b : ℝ)) :
     normalizationEquiv p (mk b x) = (b, AddCircle.diffeomorphAddCircle (p b : ℝ) 1 ⊤ x) := (rfl)
@@ -258,6 +270,13 @@ one. -/
 theorem normalizationHomeomorph_apply (z : Pullback p) :
     normalizationHomeomorph p z =
       (z.base, AddCircle.diffeomorphAddCircle (p z.base : ℝ) 1 ⊤ z.point) := (rfl)
+
+/-- The inverse normalization homeomorphism rescales the unit-period circle back to the period at
+the base. -/
+@[simp]
+theorem normalizationHomeomorph_symm_apply (z : B × AddCircle (1 : ℝ)) :
+    (normalizationHomeomorph p).symm z =
+      ⟨z.1, (AddCircle.diffeomorphAddCircle (p z.1 : ℝ) 1 ⊤).symm z.2⟩ := (rfl)
 
 /-- A map into the family is continuous when its normalization is. -/
 private theorem continuous_of_normalizationEquiv_comp {X : Type*} [TopologicalSpace X]
