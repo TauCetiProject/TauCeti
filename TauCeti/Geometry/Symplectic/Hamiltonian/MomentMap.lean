@@ -32,6 +32,11 @@ This file proves the basic laws of moment maps:
 * a moment map stays a moment map after adding a constant `ν ∈ 𝔤*`, after restricting the action
   along a Lie algebra homomorphism `𝔥 → 𝔤` (composing with the dual map), and, negated, for the
   opposite form `-σ`;
+* a moment map pulls back to a moment map along a smooth map relating two actions, so equivariant
+  symplectomorphisms transport moment maps (`TauCeti.SmoothTwoForm.IsMomentMap.mpullback`), and
+  the moment maps `μ` and `ν` of actions of one Lie algebra on two manifolds add up to the moment
+  map `(x, y) ↦ μ x + ν y` of the diagonal action on the product
+  (`TauCeti.SmoothTwoForm.IsMomentMap.prod`);
 * on a preconnected manifold any two moment maps of the same action differ by a constant, so the
   moment maps of an action are exactly the constant shifts of any one of them
   (`TauCeti.SmoothTwoForm.IsMomentMap.isMomentMap_iff_exists_eq_add`);
@@ -140,6 +145,35 @@ theorem comp {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] (h : σ.IsMomen
   isHamiltonianVectorField Z := by
     simpa only [InfinitesimalAction.comp_apply, LinearMap.comp_apply, LieHom.coe_toLinearMap]
       using h.isHamiltonianVectorField (f Z)
+
+/-- **Transport of moment maps.** Let a smooth map `φ : M' → M` relate an infinitesimal action
+`a'` on `M'` to `a`, that is `dφ (Z_{M'} x) = Z_M (φ x)`. Then `μ ∘ φ` is a moment map of `a'` for
+the pullback `φ^* σ`. For instance, an equivariant symplectomorphism carries moment maps to moment
+maps. -/
+theorem mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' ∞ M'] {a' : InfinitesimalAction 𝔤 I' M'}
+    (h : σ.IsMomentMap a μ) {φ : M' → M} (hφ : ContMDiff I' I ∞ φ)
+    (hφa : ∀ Z x, mfderiv I' I φ x (a' Z x) = a Z (φ x)) :
+    IsMomentMap (SmoothForm.mpullback φ hφ σ) a' (μ ∘ φ) where
+  contMDiff Z := (h.contMDiff Z).comp hφ
+  isHamiltonianVectorField Z :=
+    (h.isHamiltonianVectorField Z).mpullback hφ (fun x ↦ h.mdifferentiableAt Z (φ x)) (hφa Z)
+
+/-- **Moment maps of products.** If `μ` and `ν` are moment maps of infinitesimal actions of the
+same Lie algebra on `(M, σ)` and on `(N, τ)`, then `(x, y) ↦ μ x + ν y` is a moment map of the
+diagonal action on `M × N` for the product form `pr₁^* σ + pr₂^* τ`. -/
+theorem prod {F H' N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+    [CompleteSpace E] [CompleteSpace F] {τ : SmoothTwoForm J N}
+    {b : InfinitesimalAction 𝔤 J N} {ν : N → Module.Dual ℝ 𝔤} (h : σ.IsMomentMap a μ)
+    (h' : τ.IsMomentMap b ν) :
+    (σ.prod τ).IsMomentMap (a.prod b) fun p ↦ μ p.1 + ν p.2 where
+  contMDiff Z := ((h.contMDiff Z).comp contMDiff_fst).add ((h'.contMDiff Z).comp contMDiff_snd)
+  isHamiltonianVectorField Z := by
+    simpa only [LinearMap.add_apply, InfinitesimalAction.prod_apply] using
+      (h.isHamiltonianVectorField Z).prod (h'.isHamiltonianVectorField Z) (h.mdifferentiableAt Z)
+        (h'.mdifferentiableAt Z)
 
 /-- Two moment maps of the same action have components differing by functions with vanishing
 differential. -/

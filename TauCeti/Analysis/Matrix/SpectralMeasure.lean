@@ -111,6 +111,17 @@ theorem integral_spectralMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace
     toFiniteMeasure_empiricalMeasureOfFintype,
     integral_empiricalFiniteMeasure_of_measurableSingletonClass]
 
+/-- Integrating against the spectral measure is averaging over the decreasingly sorted
+eigenvalues. -/
+theorem integral_spectralMeasure_eq_sum_eigenvalues₀ {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (A : Matrix n n 𝕜) (hA : A.IsHermitian) (f : ℝ → E) :
+    ∫ x, f x ∂(A.spectralMeasure hA : Measure ℝ) =
+      ((Fintype.card n : ℕ) : ℝ)⁻¹ • ∑ i, f (hA.eigenvalues₀ i) := by
+  rw [spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
+    ← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+    toFiniteMeasure_empiricalMeasureOfFintype,
+    integral_empiricalFiniteMeasure_of_measurableSingletonClass, Fintype.card_fin]
+
 /-- Hermitian matrices with the same characteristic polynomial have the same spectral measure.
 In particular the spectral measure does not depend on a choice of basis. -/
 theorem spectralMeasure_eq_of_charpoly_eq {A B : Matrix n n 𝕜} (hA : A.IsHermitian)

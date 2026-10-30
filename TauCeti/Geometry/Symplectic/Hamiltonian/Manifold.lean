@@ -7,10 +7,13 @@ module
 
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.VectorField.Prod
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
+public import TauCeti.Geometry.Symplectic.Manifold.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -41,6 +44,12 @@ The **Poisson bracket** of two functions is `{f, g} = σ(X_f, X_g)`
 finite-dimensional manifold. It is antisymmetric and agrees with the Poisson bracket of the linear
 theory for a constant symplectic form (`TauCeti.SymplecticForm.poissonBracket_constSmooth`).
 
+Hamiltonian vector fields pull back: if a smooth map `φ` carries a vector field `X` to a
+Hamiltonian vector field of `g`, then `X` is a Hamiltonian vector field of `g ∘ φ` for the pulled
+back form (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback`). On a product `M × N` with
+the product form, the product of Hamiltonian vector fields of `f` and `g` is a Hamiltonian vector
+field of `(x, y) ↦ f x + g y` (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.prod`).
+
 Both constructions are natural: a smooth map `φ` pulling a nondegenerate form `σ₂` back to `σ`
 carries the Hamiltonian vector field of `g ∘ φ` to that of `g`, wherever its differential is
 surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`), and so
@@ -58,6 +67,9 @@ surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorFiel
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on open preconnected sets of times, with the global case
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`.
+* `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback`,
+  `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.prod`: Hamiltonian vector fields under pullback
+  along related fields and on products.
 * `TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`: comparison with the vector-space
   construction.
 * `TauCeti.SmoothTwoForm.poissonBracket`: the Poisson bracket `{f, g} = σ(X_f, X_g)`, with
@@ -336,6 +348,44 @@ theorem poissonBracket_eq_neg_mvfderiv (f g : M → ℝ) (x : M) :
   rw [← neg_poissonBracket, h.poissonBracket_eq_mvfderiv]
 
 end IsNondegenerate
+
+/-! ### Pullbacks and products -/
+
+section PullbackProd
+
+variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
+  {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace M₂] [ChartedSpace H₂ M₂] [IsManifold I₂ ∞ M₂]
+  {σ₂ : SmoothTwoForm I₂ M₂} {g : M₂ → ℝ} {Y : (y : M₂) → TangentSpace I₂ y}
+
+/-- **Hamiltonian vector fields pull back along related fields.** Let `Y` be a Hamiltonian vector
+field of `g` for `σ₂` and let a smooth map `φ` carry a vector field `X` to `Y`, that is
+`dφ (X x) = Y (φ x)`. Then `X` is a Hamiltonian vector field of `g ∘ φ` for the pullback `φ^* σ₂`.
+No nondegeneracy is needed. -/
+theorem IsHamiltonianVectorField.mpullback (hY : σ₂.IsHamiltonianVectorField g Y) {φ : M → M₂}
+    (hφ : ContMDiff I I₂ ∞ φ) (hg : ∀ x, MDifferentiableAt I₂ 𝓘(ℝ) g (φ x))
+    (hXY : ∀ x, mfderiv I I₂ φ x (X x) = Y (φ x)) :
+    IsHamiltonianVectorField (SmoothForm.mpullback φ hφ σ₂) (g ∘ φ) X := fun x v ↦ by
+  rw [SmoothForm.eval₂_mpullback, hXY, hY,
+    mvfderiv_comp_apply x (hg x) ((hφ x).mdifferentiableAt (by simp))]
+
+/-- **Hamiltonian vector fields of products.** If `X` is a Hamiltonian vector field of `f` for
+`σ` on `M` and `Y` one of `g` for `σ₂` on `M₂`, then the product field `(X, Y)` is a Hamiltonian
+vector field of `(x, y) ↦ f x + g y` for the product form `pr₁^* σ + pr₂^* σ₂` on `M × M₂`. -/
+theorem IsHamiltonianVectorField.prod (hX : σ.IsHamiltonianVectorField f X)
+    (hY : σ₂.IsHamiltonianVectorField g Y) (hf : MDifferentiable I 𝓘(ℝ) f)
+    (hg : MDifferentiable I₂ 𝓘(ℝ) g) :
+    (σ.prod σ₂).IsHamiltonianVectorField (fun p ↦ f p.1 + g p.2)
+      (Manifold.prodVectorField X Y) := fun p v ↦ by
+  have hf' : MDifferentiableAt (I.prod I₂) 𝓘(ℝ) (fun q : M × M₂ ↦ f q.1) p :=
+    (hf p.1).comp p mdifferentiableAt_fst
+  have hg' : MDifferentiableAt (I.prod I₂) 𝓘(ℝ) (fun q : M × M₂ ↦ g q.2) p :=
+    (hg p.2).comp p mdifferentiableAt_snd
+  rw [eval₂_prod, Manifold.tangentSpaceProdEquiv_prodVectorField, hX, hY,
+    Manifold.tangentSpaceProdEquiv_apply, mvfderiv_fun_add hf' hg', add_apply]
+  exact congrArg₂ (· + ·) (mvfderiv_comp_fst_apply f p v).symm
+    (mvfderiv_comp_snd_apply g p v).symm
+
+end PullbackProd
 
 /-! ### Naturality under symplectic maps -/
 

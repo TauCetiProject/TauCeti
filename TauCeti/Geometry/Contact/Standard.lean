@@ -21,6 +21,9 @@ Its exterior derivative is `dα = -dx ∧ dy`, and its kernel is the standard co
 (`TauCeti.kerDistribution_standardContactForm`). On this frame `dα` takes the value `-1`, which is
 the nondegeneracy of `dα` on the kernel.
 
+The constant vector field `∂_z` (`TauCeti.standardReebField`) satisfies the Reeb equations
+`α(∂_z) = 1` and `ι_{∂_z} dα = 0`.
+
 The form is assembled from the constant forms `dz` and `dy` and the coordinate function `x`, so its
 exterior derivative is computed by the Leibniz rule `d(x dy) = dx ∧ dy`.
 
@@ -97,7 +100,8 @@ theorem mextDeriv_standardContactForm_apply (p : ℝ × ℝ × ℝ)
     rw [← mextDerivₗ_apply, standardContactForm, map_add, SmoothForm.add_toRoughForm,
       mextDerivₗ_apply, mextDerivₗ_apply]
   rw [hsum, hdz, zero_add, standardNegXDy_toRoughForm,
-    mextDeriv_fun_smul_apply contDiff_fst.neg.contMDiff.contMDiffAt
+    mextDeriv_fun_smul_apply
+      (contDiff_fst.neg.contMDiff.contMDiffAt.mdifferentiableAt one_ne_zero)
       ((SmoothForm.const standardDy).mdifferentiableAt p), hdy]
   simp only [SmoothForm.const_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero, mul_zero,
     add_zero]
@@ -132,5 +136,45 @@ theorem isContactForm_standardContactForm : standardContactForm.IsContactForm :=
   -- The last goal `0 = (0 : TangentSpace _ p).2.2` holds by `rfl`: the zero tangent vector is by
   -- definition the zero vector `(0, 0, 0)` of `ℝ × ℝ × ℝ`.
   exact Prod.ext h₂ (Prod.ext h₁ (by rw [hv, h₁, mul_zero]; rfl))
+
+/-- The Reeb vector field `∂_z` of `dz - x dy`, characterized by
+`TauCeti.standardContactForm_apply_standardReebField` and
+`TauCeti.mextDeriv_standardContactForm_standardReebField`. -/
+def standardReebField (p : ℝ × ℝ × ℝ) : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p :=
+  ((0, 0, 1) : ℝ × ℝ × ℝ)
+
+/-- In coordinates, the Reeb vector field of `dz - x dy` is the constant vector `(0, 0, 1)`. -/
+theorem standardReebField_apply (p : ℝ × ℝ × ℝ) :
+    standardReebField p = ((0, 0, 1) : ℝ × ℝ × ℝ) :=
+  (rfl)
+
+/-- The `x`-coordinate of the Reeb vector field of `dz - x dy` is `0`. -/
+@[simp]
+theorem standardReebField_fst (p : ℝ × ℝ × ℝ) : (standardReebField p).1 = 0 :=
+  (rfl)
+
+/-- The `y`-coordinate of the Reeb vector field of `dz - x dy` is `0`. -/
+@[simp]
+theorem standardReebField_snd_fst (p : ℝ × ℝ × ℝ) : (standardReebField p).2.1 = 0 :=
+  (rfl)
+
+/-- The `z`-coordinate of the Reeb vector field of `dz - x dy` is `1`. -/
+@[simp]
+theorem standardReebField_snd_snd (p : ℝ × ℝ × ℝ) : (standardReebField p).2.2 = 1 :=
+  (rfl)
+
+/-- The form `dz - x dy` takes the value `1` on its Reeb vector field `∂_z`. -/
+theorem standardContactForm_apply_standardReebField (p : ℝ × ℝ × ℝ) :
+    standardContactForm.1 p ![standardReebField p] = 1 := by
+  simp
+
+/-- The contraction of the Reeb vector field `∂_z` with the exterior derivative of `dz - x dy`
+vanishes. -/
+@[simp]
+theorem mextDeriv_standardContactForm_standardReebField (p : ℝ × ℝ × ℝ)
+    (w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    mextDeriv standardContactForm.1 p ![standardReebField p, w] = 0 := by
+  rw [mextDeriv_standardContactForm_apply]
+  simp [standardReebField]
 
 end TauCeti

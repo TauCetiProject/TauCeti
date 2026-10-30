@@ -14,13 +14,10 @@ import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 /-!
 # Legendre symbols of even prime discriminants
 
-The genus-field layer of the multiquadratic roadmap normalizes the radicands of a quadratic
-discriminant to **prime discriminants**. The odd prime discriminants `p* = (-1)^((p-1)/2) p`
-are handled in `TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Basic`, where the
-splitting symbol is governed by quadratic reciprocity. This file records the complementary
-**even** list `-4, 8, -8` (radicands `-1, 2, -2`), whose splitting at an odd prime `q` is
-governed not by reciprocity but by the supplementary laws: the quadratic characters `χ₄`,
-`χ₈`, and `χ₈'` on `q`.
+The even prime discriminants are `-4`, `8`, and `-8`, with radicands `-1`, `2`, and `-2`; they
+are defined in `TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Even`. Their Legendre
+symbols at an odd prime `q` are governed not by quadratic reciprocity but by its supplementary
+laws: they are the quadratic characters `χ₄`, `χ₈`, and `χ₈'` evaluated at `q`.
 
 Concretely, for an odd prime `q`,
 * `(-1 / q) = χ₄ q`, the radicand of `-4`;
@@ -28,8 +25,13 @@ Concretely, for an odd prime `q`,
 * `(-2 / q) = χ₈' q`, the radicand of `-8`.
 
 Since an even prime discriminant `D` is four times its radicand and `4` is a square, the
-Legendre symbol of `D` itself agrees with that of its radicand at every odd prime; this is
-what lets the genus field use the prime discriminant `D` as the splitting character.
+Legendre symbol of `D` itself agrees with that of its radicand at every odd prime. Each symbol is
+therefore decided by a congruence on `q` modulo `4` or `8`: the classical criteria for `q` to
+split in `ℚ(i)`, `ℚ(√2)`, and `ℚ(√-2)`.
+
+The odd prime discriminants `p*`, whose symbols are governed by quadratic reciprocity, are treated
+in `TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Basic`, and the two cases are
+combined in `TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminants`.
 
 ## Main results
 
