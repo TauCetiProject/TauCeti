@@ -87,6 +87,16 @@ lemma ofSubsetMap_comp_ofSubsetMap_of_comp_eq {g'' : X ⟶ Z} (h : Set.MapsTo g'
   subst hg
   exact (ofSubsetMap_comp _ _ _ _ _).symm
 
+variable {g g'} in
+/-- Two composites of maps of pairs induced by continuous maps agree when the composites of the
+underlying continuous maps agree. -/
+lemma ofSubsetMap_comp_ofSubsetMap_eq {Y' : TopCat.{u}} {S' : Set Y'} {a' : X ⟶ Y'}
+    {b' : Y' ⟶ Z} (ha' : Set.MapsTo a' B S') (hb' : Set.MapsTo b' S' B'')
+    (h : g ≫ g' = a' ≫ b') :
+    ofSubsetMap g hB ≫ ofSubsetMap g' hB' = ofSubsetMap a' ha' ≫ ofSubsetMap b' hb' := by
+  rw [ofSubsetMap_comp_ofSubsetMap_of_comp_eq hB hB' (hB'.comp hB) rfl,
+    ofSubsetMap_comp_ofSubsetMap_of_comp_eq ha' hb' (hB'.comp hB) h.symm]
+
 /-- A homeomorphism `e : X ≃ₜ Y` carrying `B` onto `B'` induces an isomorphism of pairs
 `(X, B) ≅ (Y, B')`. -/
 def ofSubsetIso (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') : ofSubset B ≅ ofSubset B' where
