@@ -12,10 +12,12 @@ public import TauCeti.Algebra.Order.Field.Clipping
 /-!
 # Fourth-moment bounds for clipping
 
-For `M > 0`, clipping a real number to `[-M, M]` has squared error at most its fourth
-power divided by `16 M²`. Integrating this estimate controls the `L²` error of clipping a random
-variable using only its fourth moment. In particular it applies to Gaussian linear
-observables in the truncation proof of Grothendieck's inequality.
+`MeasureTheory.MemLp.max_min` shows that clipping a real `Lᵖ` function to `[-M, M]`, for
+`0 ≤ M`, preserves `Lᵖ` membership for any measure. For `M > 0`,
+`MeasureTheory.integral_sq_sub_max_min_le` bounds the integrated squared clipping error by
+the fourth moment divided by `16 M²`, using the pointwise inequality from
+`TauCeti.Algebra.Order.Field.Clipping`. This controls the `L²` error of clipping Gaussian
+linear observables in the truncation proof of Grothendieck's inequality.
 
 The expression `max (-M) (min M x)` is the real-valued form of `Set.projIcc`.
 

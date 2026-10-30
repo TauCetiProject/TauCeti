@@ -10,9 +10,8 @@ public import Mathlib.Algebra.Order.Group.Abs
 /-!
 # Clamping in ordered additive groups
 
-Clamping to a symmetric interval does not increase absolute value.
-
-In a linearly ordered additive group, clamping `t` to the interval `[0, a + b]`, for `0 ≤ a` and
+In a linearly ordered additive group, clamping to a symmetric interval is bounded by its
+height and does not increase absolute value. Clamping `t` to `[0, a + b]`, for `0 ≤ a` and
 `0 ≤ b`, is the sum of clamping `t` to `[0, a]` and clamping the remaining time `t - a` to
 `[0, b]`. This is how a constant-speed run along a segment of duration `a + b` splits into its
 runs along the two pieces of durations `a` and `b`.
@@ -20,6 +19,8 @@ runs along the two pieces of durations `a` and `b`.
 ## Main results
 
 * `TauCeti.max_zero_min_add`: `max 0 (min t (a + b)) = max 0 (min t a) + max 0 (min (t - a) b)`.
+* `TauCeti.abs_max_min_le`: the max-min clipping formula is bounded by `|M|` for any height `M`.
+* `TauCeti.abs_max_min_le_abs`: clipping at a nonnegative height does not increase absolute value.
 -/
 
 public section
