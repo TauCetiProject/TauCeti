@@ -231,6 +231,7 @@ noncomputable def hermiteBasis (A : Matrix (Fin m) (Fin n) ℤ) : Matrix (Fin m)
 variable {A : Matrix (Fin m) (Fin n) ℤ}
 
 /-- The Hermite basis of `A` is in Hermite normal form. -/
+@[simp]
 theorem isHermiteNormalForm_hermiteBasis (A : Matrix (Fin m) (Fin n) ℤ) :
     A.hermiteBasis.IsHermiteNormalForm :=
   (exists_isHermiteNormalForm_rank A).choose_spec.1
