@@ -32,6 +32,9 @@ once `I ⊗[R] (B ⧸ (g)) → R ⊗[R] (B ⧸ (g))` is injective for every fini
 
 ## Main results
 
+* `Module.Flat.of_exact_of_lTensor_quotient_injective`: the chase for an arbitrary exact pair
+  `N → P → Q → 0` with `P` flat; the cokernel `Q` is flat when `N → P` stays injective after
+  tensoring with every `R ⧸ I`.
 * `Module.Flat.quotient_span_singleton_of_lTensor_mulLeft_injective`: the statement above.
 * `Module.Flat.lTensor_mulLeft_injective_of_quotient_span_singleton`: flatness of `B ⧸ (g)`
   makes multiplication by a regular `g` stay injective after tensoring with any module.
@@ -55,7 +58,8 @@ module on the left, matching the orientation of Mathlib's flatness API.
 The equivalences allow test modules and algebras in any universe at least that of `R`.
 Their reverse implications test universe lifts of the quotients `R ⧸ I`.
 
-The chase, for a finitely generated ideal `I`: an element of `I ⊗ (B ⧸ (g))` killed in
+The chase is carried out once for an exact pair `N → P → Q → 0` with `P` flat. For
+`B ⧸ (g)` it reads, for a finitely generated ideal `I`: an element of `I ⊗ (B ⧸ (g))` killed in
 `R ⊗ (B ⧸ (g))` lifts to `I ⊗ B`, is there the image of `g` times some `w` in `R ⊗ B`, and
 injectivity of `g` on `(R ⧸ I) ⊗ B` shows that `w` comes from `I ⊗ B`, so the element is `g`
 times an element of `I ⊗ B` and dies in `I ⊗ (B ⧸ (g))`. Flatness of `B` enters twice: as
@@ -112,6 +116,47 @@ theorem isSMulRegular_one_tmul_of_quotient_span_singleton {g : B}
 
 /-! ### Universal regularity gives a flat quotient -/
 
+/-- **A cokernel is flat when the presentation stays injective modulo ideals.** Let
+`f : N → P` and `g : P → Q` be exact with `g` surjective and `P` flat over `R`. If
+`id ⊗ f : (R ⧸ I) ⊗[R] N → (R ⧸ I) ⊗[R] P` is injective for every finitely generated ideal `I`,
+then `Q` is flat over `R`. In terms of `Tor`, the hypothesis kills the image of
+`Tor₁(R ⧸ I, Q)` in `(R ⧸ I) ⊗[R] N`, and flatness of `P` makes `Tor₁(R ⧸ I, Q) → (R ⧸ I) ⊗[R] N`
+injective. No flatness of `N` and no injectivity of `f` is needed. -/
+theorem of_exact_of_lTensor_quotient_injective {N : Type*} {P : Type*} {Q : Type*}
+    [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q]
+    [Flat R P] (f : N →ₗ[R] P) (g : P →ₗ[R] Q) (hexact : Function.Exact f g)
+    (hg : Function.Surjective g)
+    (hf : ∀ ⦃I : Ideal R⦄, I.FG → Function.Injective (LinearMap.lTensor (R ⧸ I) f)) :
+    Flat R Q := by
+  rw [iff_rTensor_injective]
+  intro I hI
+  have hgf : g ∘ₗ f = 0 := hexact.linearMap_comp_eq_zero
+  have hqι : I.mkQ ∘ₗ I.subtype = 0 := (LinearMap.exact_subtype_mkQ I).linearMap_comp_eq_zero
+  rw [injective_iff_map_eq_zero]
+  intro z hz
+  obtain ⟨z', rfl⟩ := LinearMap.lTensor_surjective I hg z
+  -- `rTensor P I.subtype z'` is killed by `lTensor R g`, so it is the image of some `w`.
+  have h1 : LinearMap.lTensor R g (LinearMap.rTensor P I.subtype z') = 0 := by
+    simpa only [← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
+      LinearMap.rTensor_comp_lTensor] using hz
+  obtain ⟨w, hw⟩ := ((_root_.lTensor_exact R hexact hg) _).mp h1
+  -- The image of `w` in `(R ⧸ I) ⊗ N` is killed by `id ⊗ f`, hence zero, so `w` comes from
+  -- `I ⊗ N`.
+  have h2 : LinearMap.lTensor (R ⧸ I) f (LinearMap.rTensor N I.mkQ w) = 0 := by
+    rw [← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor, ← LinearMap.rTensor_comp_lTensor,
+      LinearMap.comp_apply, hw, ← LinearMap.comp_apply, ← LinearMap.rTensor_comp, hqι,
+      LinearMap.rTensor_zero, LinearMap.zero_apply]
+  obtain ⟨z₀, hz₀⟩ := ((_root_.rTensor_exact N (LinearMap.exact_subtype_mkQ I)
+      I.mkQ_surjective) _).mp
+    ((injective_iff_map_eq_zero _).mp (hf hI) _ h2)
+  -- Flatness of `P` makes `I ⊗ P → R ⊗ P` injective, so `z'` is the image of `z₀`.
+  have h4 : LinearMap.lTensor I f z₀ = z' :=
+    rTensor_preserves_injective_linearMap I.subtype I.injective_subtype <| by
+      simpa only [← hz₀, ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
+        LinearMap.rTensor_comp_lTensor] using hw
+  rw [← h4, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hgf, LinearMap.lTensor_zero,
+    LinearMap.zero_apply]
+
 /-- **A flat algebra modulo an element acting injectively on each `(R ⧸ I) ⊗[R] B` is flat.**
 Let `B` be a flat `R`-algebra and `g ∈ B`. If `id ⊗ (g • ·) : (R ⧸ I) ⊗[R] B → (R ⧸ I) ⊗[R] B` is
 injective for every finitely generated ideal `I`, then `B ⧸ (g)` is a flat `R`-module. This is the
@@ -120,37 +165,11 @@ generated module, as Wedhorn states it, passes it at `M = R ⧸ I`. -/
 theorem quotient_span_singleton_of_lTensor_mulLeft_injective [Flat R B] (g : B)
     (hg : ∀ ⦃I : Ideal R⦄, I.FG →
       Function.Injective (LinearMap.lTensor (R ⧸ I) (LinearMap.mulLeft R g))) :
-    Flat R (B ⧸ Ideal.span {g}) := by
-  rw [iff_rTensor_injective]
-  intro I hI
-  let v : B →ₗ[R] B := LinearMap.mulLeft R g
-  let π : B →ₗ[R] B ⧸ Ideal.span {g} := (Ideal.Quotient.mkₐ R (Ideal.span {g})).toLinearMap
-  have hexact : Function.Exact v π := fun y ↦ by
-    simp [v, π, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton', mul_comm]
-  have hπv : π ∘ₗ v = 0 := hexact.linearMap_comp_eq_zero
-  have hqι : I.mkQ ∘ₗ I.subtype = 0 := (LinearMap.exact_subtype_mkQ I).linearMap_comp_eq_zero
-  rw [injective_iff_map_eq_zero]
-  intro z hz
-  obtain ⟨z', rfl⟩ := LinearMap.lTensor_surjective I (g := π) Ideal.Quotient.mk_surjective z
-  -- `rTensor B I.subtype z'` is killed by `lTensor R π`, so it is `g` times some `w`.
-  have h1 : LinearMap.lTensor R π (LinearMap.rTensor B I.subtype z') = 0 := by
-    simpa only [← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
-      LinearMap.rTensor_comp_lTensor] using hz
-  obtain ⟨w, hw⟩ := ((lTensor_exact R hexact) _).mp h1
-  -- The image of `w` in `(R ⧸ I) ⊗ B` is killed by `g`, hence zero, so `w` comes from `I ⊗ B`.
-  have h2 : LinearMap.lTensor (R ⧸ I) v (LinearMap.rTensor B I.mkQ w) = 0 := by
-    rw [← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor, ← LinearMap.rTensor_comp_lTensor,
-      LinearMap.comp_apply, hw, ← LinearMap.comp_apply, ← LinearMap.rTensor_comp, hqι,
-      LinearMap.rTensor_zero, LinearMap.zero_apply]
-  obtain ⟨z₀, hz₀⟩ := ((rTensor_exact B (LinearMap.exact_subtype_mkQ I)) _).mp
-    ((injective_iff_map_eq_zero _).mp (hg hI) _ h2)
-  -- Flatness of `B` makes `I ⊗ B → R ⊗ B` injective, so `z' = g • z₀`.
-  have h4 : LinearMap.lTensor I v z₀ = z' :=
-    rTensor_preserves_injective_linearMap I.subtype I.injective_subtype <| by
-      simpa only [← hz₀, ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
-        LinearMap.rTensor_comp_lTensor] using hw
-  rw [← h4, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hπv, LinearMap.lTensor_zero,
-    LinearMap.zero_apply]
+    Flat R (B ⧸ Ideal.span {g}) :=
+  of_exact_of_lTensor_quotient_injective (LinearMap.mulLeft R g)
+    (Ideal.Quotient.mkₐ R (Ideal.span {g})).toLinearMap
+    (fun y ↦ by simp [Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton', mul_comm])
+    Ideal.Quotient.mk_surjective hg
 
 /-- For a flat `R`-algebra `B` and a nonzerodivisor `g`, the quotient `B ⧸ (g)` is flat over `R`
 if and only if multiplication by `g` remains injective after tensoring with every `R`-module. -/
