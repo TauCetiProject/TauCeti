@@ -20,8 +20,9 @@ derivation of the symmetric algebra `SymmetricAlgebra R M`, sending each generat
 algebra. It is natural with respect to symmetric-algebra maps, and each induced derivation
 preserves every homogeneous submodule.
 
-Specialising `f` to the adjoint endomorphisms of a Lie algebra gives the adjoint action on its
-symmetric algebra; see `TauCeti.LinearAlgebra.SymmetricAlgebra.AdjointAction`.
+Specialising `f` to the endomorphisms `⁅x, -⁆` of a Lie module gives the action of a Lie algebra
+on its symmetric algebra, including the adjoint action; see
+`TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule`.
 
 ## Main definitions and results
 

@@ -81,7 +81,7 @@ theorem enorm_apply_le_sum_localMass_mul {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(�
     (hφc : ∀ i, ∀ x ∈ W i, ‖φ x‖ₑ ≤ c i) :
     ‖T φ‖ₑ ≤ ∑ i, localMass T (W i) * c i := by
   classical
-  obtain ⟨s, ψ, hψW, hψφ, rfl⟩ := φ.exists_sum_subordinate W hW hφW
+  obtain ⟨s, ψ, hψW, rfl, hψφ⟩ := φ.exists_sum_subordinate W hW hφW
   -- Each piece `ψ i` is bounded by `c i`: on `W i` by `‖ψ i‖ ≤ ‖φ‖`, and off `W i` it vanishes.
   have hψc (i : s) (x : E) : ‖ψ i x‖ₑ ≤ c i := by
     by_cases hx : x ∈ W i

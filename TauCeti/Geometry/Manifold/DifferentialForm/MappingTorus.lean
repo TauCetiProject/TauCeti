@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient
-public import TauCeti.Geometry.Manifold.Instances.MappingTorus
+public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Map
 
 /-!
 # The time form and fiber forms of a smooth mapping torus
@@ -56,6 +56,10 @@ symplectic suspension of `φ`.
   fiber.
 * `TauCeti.SmoothMappingTorus.isClosed_fiberForm_iff`: the fiber form is closed exactly when `σ`
   is.
+* `TauCeti.SmoothMappingTorus.mpullback_map_timeForm`,
+  `TauCeti.SmoothMappingTorus.mpullback_map_fiberForm`: the map `[t, x] ↦ [t, g x]` induced by a
+  smooth map `g` intertwining `φ` and `ψ` pulls the time form back to the time form, and the fiber
+  form of `τ` back to the fiber form of `g^* τ`.
 
 ## References
 
@@ -246,6 +250,42 @@ theorem isClosed_fiberForm_iff : (fiberForm φ σ hσ).IsClosed ↔ σ.IsClosed 
   refine ⟨fun h ↦ ?_, fun h ↦ SmoothForm.isClosed_descend_iff.mpr (h.mpullback _ _)⟩
   rw [← mpullback_mk_fiberForm (hσ := hσ) 0]
   exact h.mpullback _ _
+
+/-! ### Naturality under maps of mapping tori -/
+
+section Map
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*}
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} {N : Type*} [TopologicalSpace N]
+  [ChartedSpace H' N] [IsManifold J ∞ N] [T2Space N] [LocallyCompactSpace N]
+  (φ) (ψ : N ≃ₘ⟮J, J⟯ N) {g : M → N} (h : Semiconj g φ ψ) (hg : ContMDiff I J ∞ g)
+
+/-- The map `[t, x] ↦ [t, g x]` of mapping tori pulls the time form back to the time form. -/
+@[simp]
+theorem mpullback_map_timeForm :
+    SmoothForm.mpullback (map φ ψ g h) (contMDiff_map φ ψ g h hg) (timeForm ψ) = timeForm φ := by
+  rw [timeForm_def, timeForm_def, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
+  simp only [proj_comp_map]
+
+variable {φ ψ}
+
+/-- The map `[t, x] ↦ [t, g x]` of mapping tori pulls the fiber form of `τ` back to the fiber form
+of `σ = g^* τ`. -/
+theorem mpullback_map_fiberForm {τ : SmoothForm J N F k}
+    (hτ : SmoothForm.mpullback ψ ψ.contMDiff τ = τ)
+    (hgτ : SmoothForm.mpullback g hg τ = σ) :
+    SmoothForm.mpullback (map φ ψ g h) (contMDiff_map φ ψ g h hg) (fiberForm ψ τ hτ) =
+      fiberForm φ σ hσ := by
+  have hsnd : Prod.snd ∘ Prod.map id g = g ∘ (Prod.snd : ℝ × M → M) := rfl
+  rw [eq_fiberForm_iff, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
+  simp only [map_comp_uncurry_mk]
+  rw [SmoothForm.mpullback_comp _ _ (contMDiff_id.prodMap hg) (contMDiff_uncurry_mk ψ),
+    LinearMap.comp_apply, mpullback_uncurry_mk_fiberForm, ← LinearMap.comp_apply,
+    ← SmoothForm.mpullback_comp]
+  simp only [hsnd]
+  rw [SmoothForm.mpullback_comp _ _ contMDiff_snd hg, LinearMap.comp_apply, hgτ]
+
+end Map
 
 end SmoothMappingTorus
 
