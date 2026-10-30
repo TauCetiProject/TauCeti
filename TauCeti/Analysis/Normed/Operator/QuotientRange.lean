@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.QuotientRange
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Fixed complements to nearby operator ranges
@@ -19,8 +20,11 @@ quotients through `ContinuousLinearMap.quotientRangeEquiv`. This is the local
 linear input for quotient bundles, such as the intrinsic normal bundle of an immersion.
 
 The proof uses Mathlib's `ContinuousLinearEquiv.equivOfRightInverse` and openness of
-invertibility. Complementary coordinate operators are continuous on a domain of valid
-splittings, using Mathlib's regularity of operator inversion.
+invertibility. Completeness of the nearby complements — the complete model fibres above —
+follows from `ContinuousLinearMap.completeSpace_of_isInvertible`, which transfers completeness
+of the codomain back to the domain of an invertible operator.
+Complementary coordinate operators are continuous on a domain of valid splittings, using
+Mathlib's regularity of operator inversion.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 the normal-bundle construction preceding Theorem 6.24.
@@ -48,7 +52,8 @@ theorem ContinuousAt.exists_isInvertible_coprod_subtypeL
   let e := ContinuousLinearEquiv.equivOfRightInverse h₀.leftInverse (A x₀)
     h₀.leftInverse_leftInverse
   have : CompleteSpace (E × Q) :=
-    (e.isUniformEmbedding.completeSpace_congr e.surjective).mp inferInstance
+    ContinuousLinearMap.completeSpace_of_isInvertible
+      (ContinuousLinearMap.isInvertible_equiv (f := e.symm))
   have he : ((A x₀).coprod Q.subtypeL).IsInvertible := by
     refine ⟨e.symm, ?_⟩
     apply ContinuousLinearMap.ext
