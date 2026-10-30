@@ -47,6 +47,14 @@ namespace GTopology
 variable {X : Type u} {B : Type v} [SemilatticeInf B] [OrderTop B] {ι : B ↪o Set X}
   {B' : Type v'} [SemilatticeInf B'] [OrderTop B'] {ι' : B' ↪o Set X}
 
+/-- A continuous map of G-topologies on the same space which is the identity on points sends an
+admissible open to an admissible open with the same underlying set. -/
+theorem ContinuousMap.coe_comap_of_forall_eq {G : GTopology ι} {G' : GTopology ι'}
+    (f : G'.ContinuousMap G) (hf : ∀ x, f x = x) (U : B) : ι' (f.comap U) = ι U := by
+  rw [f.coe_comap]
+  ext x
+  simp [hf]
+
 /-- The G-topology `G'` on `X` is slightly finer than `G` [BGR, 9.1.2/1]: it is finer, the
 admissible opens of `G` form a basis of `G'`, and every `G'`-cover of a `G`-admissible open is
 refined by a `G`-cover. -/
@@ -205,10 +213,7 @@ theorem SlightlyFiner.exists_continuousMap_finestSlightlyFiner {G : GTopology ι
     {G' : GTopology ι'} (h : G'.SlightlyFiner G) :
     ∃ f : G.finestSlightlyFiner.ContinuousMap G', ∀ x, f x = x := by
   obtain ⟨g, hg⟩ := h.exists_continuousMap
-  have hgU (U : B) : ι' (g.comap U) = ι U := by
-    rw [g.coe_comap]
-    ext x
-    simp [hg]
+  have hgU := g.coe_comap_of_forall_eq hg
   -- Every admissible open of `G'` is a union of admissible opens of `G`.
   have hopen (V : B') : IsOpen[generateFrom (Set.range ι)] (ι' V) := by
     rw [G.isOpen_generateFrom_range_iff]

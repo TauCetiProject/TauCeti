@@ -23,7 +23,8 @@ preorder categories of admissible opens. Together with the preservation of admis
 this makes it a continuous functor of the associated sites
 (`GTopology.ContinuousMap.isContinuous_comapFunctor`). Consequently Mathlib's
 `Functor.sheafPushforwardContinuous` provides the direct image of sheaves along a continuous map
-of G-topologies, compatibly with identities and composition.
+of G-topologies, compatibly with identities and composition. For a surjective continuous map the
+preimage functor is fully faithful (`GTopology.ContinuousMap.full_comapFunctor`).
 
 For the G-topologies of ordinary open covers, continuous maps of G-topologies are exactly
 continuous maps (`GTopology.ContinuousMap.topologicalEquiv`).
@@ -177,6 +178,16 @@ admissible opens has finite limits computed by finite meets. -/
 instance representablyFlat_comapFunctor (f : G.ContinuousMap G') :
     RepresentablyFlat f.comapFunctor :=
   flat_of_preservesFiniteLimits (OrderHom.ofClass f.comapInfTopHom).toFunctor
+
+/-- The preimage functor of a surjective continuous map of G-topologies is full. It is faithful
+because the preorder of admissible opens is thin. -/
+theorem full_comapFunctor (f : G.ContinuousMap G') (hf : Function.Surjective f) :
+    f.comapFunctor.Full where
+  map_surjective {U V} g := ⟨homOfLE <| ι'.le_iff_le.mp <| by
+    have hg := leOfHom g
+    rw [comapFunctor_obj, comapFunctor_obj] at hg
+    rw [← hf.preimage_subset_preimage_iff, ← f.coe_comap, ← f.coe_comap]
+    exact ι.monotone hg, Subsingleton.elim _ _⟩
 
 /-- A continuous map sends covering sieves of admissible opens to covering sieves of their
 preimages. -/
