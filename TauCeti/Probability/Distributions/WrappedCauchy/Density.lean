@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.WrappedCauchy.Basic
 public import TauCeti.Probability.Density
 import TauCeti.Analysis.Complex.Poisson.Basic
 import TauCeti.Analysis.Complex.Poisson.Integral
+import TauCeti.MeasureTheory.Integral.Circle.Haar
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Fourier
 
 /-!
@@ -95,11 +96,12 @@ private theorem poissonKernel_eq_wrappedCauchyPDFReal (m : AddCircle (2 * π)) (
   rw [hden]
   simp only [Circle.norm_coe, Complex.norm_mul, Complex.norm_real, Real.norm_eq_abs,
     abs_exp, one_pow, mul_one]
-  change
-    (1 - Real.exp (-(γ : ℝ)) ^ 2) /
-        (1 + Real.exp (-(γ : ℝ)) ^ 2 -
-          2 * Real.exp (-(γ : ℝ)) * Real.cos (x - a)) = _
-  rfl
+  rw [← QuotientAddGroup.mk_sub]
+  -- `Real.Angle.cos_coe` is stated for the coercion `ℝ → Real.Angle`, which agrees with the
+  -- quotient map to `AddCircle (2 * π)` only after unfolding `Real.Angle`, so it cannot rewrite.
+  exact congrArg (fun c ↦ (1 - Real.exp (-(γ : ℝ)) ^ 2) /
+      (1 + Real.exp (-(γ : ℝ)) ^ 2 - 2 * Real.exp (-(γ : ℝ)) * c))
+    (Real.Angle.cos_coe (x - a)).symm
 
 /-- At scale zero the totalized real density is identically zero, reflecting the singular Dirac
 law at that scale. -/
@@ -108,28 +110,6 @@ theorem wrappedCauchyPDFReal_zero_scale (m θ : AddCircle (2 * π)) :
     wrappedCauchyPDFReal m 0 θ = 0 := by
   rw [wrappedCauchyPDFReal_apply]
   simp
-
-private lemma toCircle_arg_of_mem_sphere {z : ℂ} (hz : z ∈ Metric.sphere 0 1) :
-    (AddCircle.toCircle (Complex.arg z : AddCircle (2 * π)) : ℂ) = z := by
-  let u : Circle := ⟨z, by simpa [Submonoid.unitSphere] using hz⟩
-  have hu := Circle.exp_arg u
-  simpa [u, AddCircle.toCircle_apply_mk, circleMap] using congrArg Subtype.val hu
-
-private lemma integral_haarAddCircle_eq_circleAverage_arg
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (g : AddCircle (2 * π) → E) :
-    ∫ θ, g θ ∂AddCircle.haarAddCircle =
-      circleAverage (fun z ↦ g (Complex.arg z)) 0 1 := by
-  rw [AddCircle.integral_haarAddCircle, circleAverage,
-    ← AddCircle.intervalIntegral_preimage (2 * π) 0]
-  rw [zero_add]
-  congr 1
-  apply intervalIntegral.integral_congr
-  intro θ _
-  apply congrArg g
-  apply AddCircle.injective_toCircle (mul_ne_zero two_ne_zero pi_ne_zero)
-  simpa [AddCircle.toCircle_apply_mk, circleMap] using
-    (Circle.exp_arg (Circle.exp θ)).symm
 
 private lemma wrappedCauchy_pole_mem_ball (m : AddCircle (2 * π)) {γ : ℝ≥0}
     (hγ : 0 < γ) :
@@ -140,10 +120,7 @@ private lemma wrappedCauchy_pole_mem_ball (m : AddCircle (2 * π)) {γ : ℝ≥0
 
 private theorem continuous_wrappedCauchyPDFReal_of_pos (m : AddCircle (2 * π))
     {γ : ℝ≥0} (hγ : 0 < γ) : Continuous (wrappedCauchyPDFReal m γ) := by
-  rw [show wrappedCauchyPDFReal m γ = fun θ ↦
-      poissonKernel 0 ((Real.exp (-(γ : ℝ)) : ℂ) * (AddCircle.toCircle m : ℂ))
-        (AddCircle.toCircle θ) from
-    funext fun θ ↦ (poissonKernel_eq_wrappedCauchyPDFReal m γ θ).symm]
+  refine Continuous.congr ?_ (poissonKernel_eq_wrappedCauchyPDFReal m γ)
   have hnot : (Real.exp (-(γ : ℝ)) : ℂ) * (AddCircle.toCircle m : ℂ) ∉
       Metric.sphere 0 |(1 : ℝ)| := by
     intro hs
@@ -161,9 +138,7 @@ private theorem continuous_wrappedCauchyPDFReal_of_pos (m : AddCircle (2 * π))
 theorem continuous_wrappedCauchyPDFReal (m : AddCircle (2 * π)) (γ : ℝ≥0) :
     Continuous (wrappedCauchyPDFReal m γ) := by
   rcases eq_or_ne γ 0 with rfl | hγ
-  · rw [show wrappedCauchyPDFReal m 0 = fun _ ↦ 0 from
-      funext (wrappedCauchyPDFReal_zero_scale m)]
-    fun_prop
+  · exact continuous_const.congr fun θ ↦ (wrappedCauchyPDFReal_zero_scale m θ).symm
   · exact continuous_wrappedCauchyPDFReal_of_pos m (pos_iff_ne_zero.mpr hγ)
 
 /-- The extended wrapped Cauchy density is measurable at every scale. -/
@@ -186,7 +161,7 @@ theorem wrappedCauchyPDFReal_nonneg (m : AddCircle (2 * π)) (γ : ℝ≥0)
 measure. -/
 theorem integral_wrappedCauchyPDFReal (m : AddCircle (2 * π)) {γ : ℝ≥0} (hγ : 0 < γ) :
     ∫ θ, wrappedCauchyPDFReal m γ θ ∂AddCircle.haarAddCircle = 1 := by
-  rw [integral_haarAddCircle_eq_circleAverage_arg]
+  rw [AddCircle.integral_haarAddCircle_eq_circleAverage_arg]
   calc
     circleAverage (fun z ↦ wrappedCauchyPDFReal m γ (Complex.arg z)) 0 1 =
         circleAverage
@@ -194,9 +169,9 @@ theorem integral_wrappedCauchyPDFReal (m : AddCircle (2 * π)) {γ : ℝ≥0} (h
             (AddCircle.toCircle m : ℂ))) 0 1 := by
       apply circleAverage_congr_sphere
       intro z hz
-      change wrappedCauchyPDFReal m γ (Complex.arg z) = poissonKernel 0 _ z
+      dsimp only
       rw [← poissonKernel_eq_wrappedCauchyPDFReal,
-        toCircle_arg_of_mem_sphere (by simpa only [abs_one] using hz)]
+        AddCircle.toCircle_arg_of_mem_sphere (by simpa only [abs_one] using hz)]
     _ = 1 := by
       apply circleAverage_poissonKernel (R := (1 : ℝ))
       simpa only [abs_one] using wrappedCauchy_pole_mem_ball m hγ
@@ -206,7 +181,7 @@ private theorem integral_wrappedCauchyPDFReal_smul_fourier_nat
     ∫ θ, wrappedCauchyPDFReal m γ θ • fourier (n : ℤ) θ
         ∂AddCircle.haarAddCircle =
       fourier (n : ℤ) m * (Real.exp (-(γ : ℝ)) : ℂ) ^ n := by
-  rw [integral_haarAddCircle_eq_circleAverage_arg]
+  rw [AddCircle.integral_haarAddCircle_eq_circleAverage_arg]
   calc
     circleAverage
         (fun z ↦ wrappedCauchyPDFReal m γ (Complex.arg z) •
@@ -216,17 +191,10 @@ private theorem integral_wrappedCauchyPDFReal_smul_fourier_nat
           (AddCircle.toCircle m : ℂ)) • fun z : ℂ ↦ z ^ n) 0 1 := by
       apply circleAverage_congr_sphere
       intro z hz
-      have harg := toCircle_arg_of_mem_sphere (by simpa only [abs_one] using hz)
-      change wrappedCauchyPDFReal m γ (Complex.arg z) •
-          (AddCircle.toCircle ((n : ℤ) •
-            (Complex.arg z : AddCircle (2 * π))) : ℂ) = _
-      rw [← poissonKernel_eq_wrappedCauchyPDFReal, AddCircle.toCircle_zsmul,
-        Circle.coe_zpow]
-      change (poissonKernel 0 _ (AddCircle.toCircle
-          (Complex.arg z : AddCircle (2 * π))) : ℂ) *
-        (AddCircle.toCircle (Complex.arg z : AddCircle (2 * π)) : ℂ) ^ n = _
-      rw [harg]
-      rfl
+      have harg := AddCircle.toCircle_arg_of_mem_sphere (by simpa only [abs_one] using hz)
+      dsimp only [Pi.smul_apply']
+      rw [fourier_apply, AddCircle.toCircle_zsmul,
+        Circle.coe_zpow, zpow_natCast, ← poissonKernel_eq_wrappedCauchyPDFReal, harg]
     _ = ((Real.exp (-(γ : ℝ)) : ℂ) *
           (AddCircle.toCircle m : ℂ)) ^ n := by
       apply (differentiable_id.pow n).diffContOnCl.circleAverage_poissonKernel_smul
@@ -254,13 +222,8 @@ private theorem integral_wrappedCauchyPDFReal_smul_fourier
                 ∂AddCircle.haarAddCircle := by
           apply integral_congr_ae
           filter_upwards with θ
-          rw [hn, fourier_neg]
-          change (wrappedCauchyPDFReal m γ θ : ℂ) *
-              starRingEnd ℂ (fourier (n + 1 : ℕ) θ) =
-            starRingEnd ℂ
-              ((wrappedCauchyPDFReal m γ θ : ℂ) * fourier (n + 1 : ℕ) θ)
-          rw [map_mul]
-          simp
+          rw [hn, fourier_neg, Complex.real_smul, Complex.real_smul, map_mul,
+            Complex.conj_ofReal]
         _ = starRingEnd ℂ
               (∫ θ, wrappedCauchyPDFReal m γ θ • fourier (n + 1 : ℕ) θ
                 ∂AddCircle.haarAddCircle) := integral_conj
@@ -270,61 +233,40 @@ private theorem integral_wrappedCauchyPDFReal_smul_fourier
           simp only [Int.natAbs_negSucc, conj_ofReal]
           rw [hn, fourier_neg]
 
-private lemma probabilityMeasure_ext_of_forall_integral_fourier_eq
-    {μ ν : ProbabilityMeasure (AddCircle (2 * π))}
-    (h : ∀ n : ℤ, ∫ x, fourier n x ∂(μ : Measure (AddCircle (2 * π))) =
-      ∫ x, fourier n x ∂(ν : Measure (AddCircle (2 * π)))) :
-    μ = ν := by
-  have hlim : Tendsto (fun _ : ℕ ↦ μ) atTop (𝓝 ν) :=
-    ProbabilityMeasure.tendsto_iff_forall_integral_fourier_tendsto.2 fun n ↦ by
-      simpa only [h n] using
-        (tendsto_const_nhds : Tendsto (fun _ : ℕ ↦
-          ∫ x, fourier n x ∂(ν : Measure (AddCircle (2 * π)))) atTop
-            (𝓝 (∫ x, fourier n x ∂(ν : Measure (AddCircle (2 * π))))))
-  exact tendsto_nhds_unique tendsto_const_nhds hlim
-
 /-- At positive scale the wrapped Cauchy law is normalized Haar measure weighted by its named
 Poisson-kernel density. -/
 theorem wrappedCauchyMeasure_eq_withDensity (m : AddCircle (2 * π)) {γ : ℝ≥0}
     (hγ : 0 < γ) :
     wrappedCauchyMeasure m γ = AddCircle.haarAddCircle.withDensity (wrappedCauchyPDF m γ) := by
-  let ν : Measure (AddCircle (2 * π)) :=
-    AddCircle.haarAddCircle.withDensity (wrappedCauchyPDF m γ)
+  have hpdf : wrappedCauchyPDF m γ = fun θ ↦ ENNReal.ofReal (wrappedCauchyPDFReal m γ θ) :=
+    funext (wrappedCauchyPDF_apply m γ)
   have hcont := continuous_wrappedCauchyPDFReal m γ
   have hnonneg : ∀ θ, 0 ≤ wrappedCauchyPDFReal m γ θ :=
     wrappedCauchyPDFReal_nonneg m γ
   have hint : Integrable (wrappedCauchyPDFReal m γ) AddCircle.haarAddCircle := by
     simpa only [integrableOn_univ] using hcont.continuousOn.integrableOn_compact'
       (μ := AddCircle.haarAddCircle) isCompact_univ MeasurableSet.univ
-  have hν_univ : ν Set.univ = 1 := by
-    change (AddCircle.haarAddCircle.withDensity (wrappedCauchyPDF m γ)) Set.univ = 1
-    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
-    change (∫⁻ θ, ENNReal.ofReal (wrappedCauchyPDFReal m γ θ)
-      ∂AddCircle.haarAddCircle) = 1
-    rw [← ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ hnonneg),
+  have hν_univ :
+      AddCircle.haarAddCircle.withDensity (wrappedCauchyPDF m γ) Set.univ = 1 := by
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ, hpdf,
+      ← ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ hnonneg),
       integral_wrappedCauchyPDFReal m hγ]
     simp
-  let _ : IsProbabilityMeasure ν := ⟨hν_univ⟩
-  have hprob : (wrappedCauchyMeasure m γ).toProbabilityMeasure = ν.toProbabilityMeasure := by
-    apply probabilityMeasure_ext_of_forall_integral_fourier_eq
+  have : IsProbabilityMeasure (AddCircle.haarAddCircle.withDensity (wrappedCauchyPDF m γ)) :=
+    ⟨hν_univ⟩
+  have hprob : (wrappedCauchyMeasure m γ).toProbabilityMeasure =
+      (AddCircle.haarAddCircle.withDensity (wrappedCauchyPDF m γ)).toProbabilityMeasure := by
+    apply ProbabilityMeasure.ext_of_forall_integral_fourier_eq
     intro n
     rw [Measure.coe_toProbabilityMeasure, Measure.coe_toProbabilityMeasure,
-      integral_fourier_wrappedCauchyMeasure]
-    change _ = ∫ θ, fourier n θ ∂ν
-    change _ = ∫ θ, fourier n θ ∂(AddCircle.haarAddCircle.withDensity
-      fun θ ↦ ENNReal.ofReal (wrappedCauchyPDFReal m γ θ))
+      integral_fourier_wrappedCauchyMeasure, hpdf]
     rw [Probability.integral_withDensity_ofReal
       hcont.measurable.aemeasurable (ae_of_all _ hnonneg)]
     rw [integral_wrappedCauchyPDFReal_smul_fourier m hγ n]
     congr 1
     rw [← Complex.ofReal_pow, ← Real.exp_nat_mul]
     congr 2
-    rw [mul_comm]
-    rw [show (n.natAbs : ℝ) = |(n : ℝ)| by
-      calc
-        (n.natAbs : ℝ) = ((n.natAbs : ℤ) : ℝ) := by norm_num
-        _ = ((|n| : ℤ) : ℝ) := by rw [Int.natCast_natAbs]
-        _ = |(n : ℝ)| := Int.cast_abs]
+    rw [mul_comm, Nat.cast_natAbs, Int.cast_abs]
     ring
   exact congrArg ProbabilityMeasure.toMeasure hprob
 
