@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Topology.Homotopy.AddCircle
 public import TauCeti.Topology.Homotopy.Proper
 public import TauCeti.Topology.Homotopy.Trans
+import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
 # Simple connectivity at infinity
@@ -137,15 +138,12 @@ theorem simplyConnectedAtInfinity_of_two_lt_rank {E : Type*} [NormedAddCommGroup
   refine ⟨closedBall 0 R, isCompact_closedBall 0 R, hKR, fun f hf => ?_⟩
   have hfR (z) : R < ‖f z‖ := not_le.1 fun h => hf z (mem_closedBall_zero_iff.2 h)
   have hf0 (z) : 0 < ‖f z‖ := (le_max_right r 0).trans_lt (hfR z)
-  have hR : 0 ≤ R + 1 := by positivity
-  have := simplyConnectedSpace_sphere h (0 : E) hR
+  have hR : 0 < R + 1 := by positivity
+  have := simplyConnectedSpace_sphere h (0 : E) hR.le
   -- the radial projection of `f` onto the sphere of radius `R + 1`
-  have hmem (z) : ((R + 1) / ‖f z‖) • f z ∈ sphere (0 : E) (R + 1) := by
-    rw [mem_sphere_zero_iff_norm, norm_smul, Real.norm_eq_abs, abs_div, abs_of_nonneg hR,
-      abs_norm, div_mul_cancel₀ _ (hf0 z).ne']
-  have hcont : Continuous fun z => ((R + 1) / ‖f z‖) • f z :=
-    (continuous_const.div (by fun_prop) fun z => (hf0 z).ne').smul f.continuous
-  let g : C(AddCircle (1 : ℝ), sphere (0 : E) (R + 1)) := ⟨_, hcont.subtype_mk hmem⟩
+  let g : C(AddCircle (1 : ℝ), sphere (0 : E) (R + 1)) :=
+    (radialProjectionToSphere (V := univ) hR).comp
+      ⟨fun z => ⟨f z, mem_univ _, norm_ne_zero_iff.1 (hf0 z).ne'⟩, f.continuous.subtype_mk _⟩
   obtain ⟨q, ⟨G⟩⟩ := nullhomotopic_addCircle_of_simplyConnectedSpace g
   let ι : C(sphere (0 : E) (R + 1), E) := ContinuousMap.subtypeVal _
   have hι (y : sphere (0 : E) (R + 1)) : ι y ∉ K := hout (by

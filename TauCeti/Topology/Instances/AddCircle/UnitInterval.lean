@@ -12,7 +12,7 @@ public import Mathlib.Topology.UnitInterval
 # The unit interval wound once around the additive circle
 
 For a real period `p`, the continuous map `AddCircle.ofUnitInterval p : C(I, AddCircle p)` sends
-`t` to the class of `t * p`. It winds the unit interval once around the circle: for `0 < p` it is
+`t` to the class of `t * p`. For `0 < p` it winds the unit interval once around the circle: it is
 surjective, and it identifies exactly the two endpoints `0` and `1`, both of which go to `0`. It
 is therefore the quotient map through which loops on the unit interval are read as maps out of
 the circle, and maps out of the circle as loops.
@@ -40,7 +40,8 @@ namespace AddCircle
 
 variable {p : ℝ}
 
-/-- The map `t ↦ t * p` from the unit interval onto `AddCircle p`, winding once around. -/
+/-- The map `t ↦ t * p` from the unit interval to `AddCircle p`. For `0 < p` it is onto and
+winds once around the circle. -/
 def ofUnitInterval (p : ℝ) : C(I, AddCircle p) :=
   ⟨fun t => ((t * p : ℝ) : AddCircle p), by fun_prop⟩
 
