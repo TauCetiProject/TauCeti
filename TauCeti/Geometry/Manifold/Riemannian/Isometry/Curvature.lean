@@ -43,7 +43,8 @@ pulls back each of the three terms in `R(X, Y) Z = ∇_X ∇_Y Z - ∇_Y ∇_X Z
 In the namespace `TauCeti.IsLocalRiemannianIsometry`:
 
 * `mfderiv_curvatureOperator_mpullback`: the curvature operator of pulled-back smooth vector fields
-  is the pullback of the curvature operator.
+  is the pullback of the curvature operator; `curvatureOperator_mpullback` is its vector-field
+  form.
 * `mfderiv_curvatureTensor`: **naturality of the Riemann curvature tensor**.
 * `inner_curvatureTensor_mfderiv` and `sectionalCurvature_mfderiv`: preservation of the curvature
   tensor paired with the metric, and of sectional curvature.
@@ -122,7 +123,30 @@ theorem mfderiv_curvatureOperator_mpullback (hf : IsLocalRiemannianIsometry I J 
     hf.mfderiv_leviCivitaConnection_mpullback (hZd (f x)),
     hf.mfderiv_apply_mpullback, hf.mfderiv_apply_mpullback, hf.mfderiv_apply_mpullback]
 
+/-- The vector-field form of the naturality of the curvature operator: for smooth vector fields
+`X`, `Y`, `Z` on `N`, `R(f^* X, f^* Y) (f^* Z) = f^* (R(X, Y) Z)`. -/
+theorem curvatureOperator_mpullback (hf : IsLocalRiemannianIsometry I J f)
+    {X Y Z : Π y : N, TangentSpace J y} (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y))
+    (hZ : CMDiff ∞ (T% Z)) :
+    (leviCivitaConnection I M).curvatureOperator
+        (mpullback I J f X) (mpullback I J f Y) (mpullback I J f Z) =
+      mpullback I J f ((leviCivitaConnection J N).curvatureOperator X Y Z) :=
+  funext fun x ↦ ((hf.mpullback_apply_eq_iff _ _).2
+    (hf.mfderiv_curvatureOperator_mpullback hX hY hZ x).symm).symm
+
 variable [T2Space M] [T2Space N]
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
+/-- Every tangent vector `u` at `x` is the value at `x` of the pullback of a smooth vector field
+on `N`, namely of any smooth field taking the value `df_x u` at `f x`. -/
+theorem exists_contMDiff_mpullback_apply_eq (hf : IsLocalRiemannianIsometry I J f) {x : M}
+    (u : TangentSpace I x) :
+    ∃ X : Π y : N, TangentSpace J y,
+      CMDiff ∞ (T% X) ∧ mpullback I J f X x = u ∧ X (f x) = mfderiv I J f x u := by
+  obtain ⟨X, hX, hXu⟩ := exists_contMDiff_section_eq J F (mfderiv I J f x u)
+  exact ⟨X, hX, (hf.mpullback_apply_eq_iff X u).2 hXu, hXu⟩
 
 /-- **Naturality of the Riemann curvature tensor under local Riemannian isometries:**
 `df_x (R(u, v) w) = R(df_x u, df_x v) (df_x w)`. -/
@@ -133,13 +157,9 @@ theorem mfderiv_curvatureTensor (hf : IsLocalRiemannianIsometry I J f) (x : M)
       (leviCivitaConnection J N).curvatureTensor (f x) (mfderiv I J f x u)
         (mfderiv I J f x v) (mfderiv I J f x w) := by
   -- Extend the images of `u`, `v`, `w` to smooth vector fields on `N` and pull them back.
-  have hext : ∀ u : TangentSpace I x, ∃ X : Π y : N, TangentSpace J y,
-      CMDiff ∞ (T% X) ∧ mpullback I J f X x = u ∧ X (f x) = mfderiv I J f x u := fun u ↦ by
-    obtain ⟨X, hX, hXu⟩ := exists_contMDiff_section_eq J F (mfderiv I J f x u)
-    exact ⟨X, hX, (hf.mpullback_apply_eq_iff X u).2 hXu, hXu⟩
-  obtain ⟨X, hX, hXu, hXf⟩ := hext u
-  obtain ⟨Y, hY, hYv, hYf⟩ := hext v
-  obtain ⟨Z, hZ, hZw, hZf⟩ := hext w
+  obtain ⟨X, hX, hXu, hXf⟩ := hf.exists_contMDiff_mpullback_apply_eq u
+  obtain ⟨Y, hY, hYv, hYf⟩ := hf.exists_contMDiff_mpullback_apply_eq v
+  obtain ⟨Z, hZ, hZw, hZf⟩ := hf.exists_contMDiff_mpullback_apply_eq w
   rw [← hXf, ← hYf, ← hZf, curvatureTensor_apply _ _ hX hY hZ, ← hXu, ← hYv, ← hZw,
     curvatureTensor_apply _ _ (hf.contMDiff_mpullback hX) (hf.contMDiff_mpullback hY)
       (hf.contMDiff_mpullback hZ)]
