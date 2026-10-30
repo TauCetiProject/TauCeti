@@ -8,9 +8,9 @@ module
 public import Mathlib.Algebra.QuadraticDiscriminant
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.RingTheory.Etale.StandardEtale
-public import Mathlib.RingTheory.TensorProduct.Quotient
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 public import TauCeti.RingTheory.Node.Basic
+public import TauCeti.RingTheory.RingHom.Quotient
 public import TauCeti.RingTheory.Spectrum.Prime.Point
 
 /-!
@@ -18,17 +18,19 @@ public import TauCeti.RingTheory.Spectrum.Prime.Point
 
 Let `W` be a smooth `A`-algebra with étale coordinates `p, q`, that is, elements whose
 differentials `dp, dq` form a basis of `Ω[W⁄A]`, and let `P` be a prime of `W` on the section
-`p = q = 0`. Suppose that `W` carries the equation
+`p = q = 0`. Consider the zero locus in `Spec W` of
 
-`a p² + b p q + c q² = h`, with `a, b, c ∈ W` and `h ∈ A`,
+`f = a p² + b p q + c q² - h`, with `a, b, c ∈ W` and `h ∈ A`,
 
-whose quadratic form is nondegenerate at `P` (its discriminant `b² - 4ac` does not vanish in
-`κ(P)`) and split at `P` (it is a product of two linear forms over `κ(P)`). Near a split node, the
-equation of a nodal curve inside a smooth relative surface takes this shape once it is normalized
-to second order; producing that normalization is not done here. This file shows that, étale
-locally around `P` and without changing the residue field, the equation becomes `s t = h` in new
-étale coordinates `s, t` vanishing at `P`. Consequently the zero locus of
-`a p² + b p q + c q² - h` is étale over the node chart `A[u, v] ⧸ (uv - h)`.
+where the quadratic form `a p² + b p q + c q²` is nondegenerate at `P` (its discriminant
+`b² - 4ac` does not vanish in `κ(P)`) and split at `P` (it is a product of two linear forms over
+`κ(P)`). Near a split node, the equation of a nodal curve inside a smooth relative surface takes
+this shape once it is normalized to second order; producing that normalization is not done here.
+This file shows that, étale locally around `P` and without changing the residue field, the
+quadratic form becomes `s t` in new étale coordinates `s, t` vanishing at `P`. Consequently the
+zero locus of `f` is étale over the node chart `A[u, v] ⧸ (uv - h)`. No hypothesis relates `h`
+to `P`, so `P` need not lie on this zero locus; when `algebraMap A W h ∈ P` it does, and then the
+point `P'` above `P` maps into the section `u = v = 0` of the node chart.
 
 The proof is algebraic. Let `ρ` be a root of `X² + bX + ac` with `2ρ + b` and `ρ + b` invertible;
 adjoining it to `W` is a standard étale extension `W₁`, and a residue root of `X² + bX + ac` at
@@ -52,8 +54,8 @@ Jacobian criterion `TauCeti.etale_aeval_of_basis`. The node chart is its base ch
   `Y ↦ t` is étale, then so is the map `A[u, v] ⧸ (uv - h) → T ⧸ (st - h)` given by `u ↦ s` and
   `v ↦ t`.
 * `TauCeti.exists_etale_nodeAlgebra_hom`: étale locally around `P`, the zero locus of
-  `a p² + b p q + c q² - h` is étale over the node chart `A[u, v] ⧸ (uv - h)`, with `P` going to
-  the section `u = v = 0`.
+  `a p² + b p q + c q² - h` is étale over the node chart `A[u, v] ⧸ (uv - h)`, by a map sending
+  `u, v` to elements `s, t` of the prime `P'` above `P`.
 
 ## References
 
@@ -67,7 +69,7 @@ public section
 
 noncomputable section
 
-open KaehlerDifferential MvPolynomial TensorProduct
+open KaehlerDifferential MvPolynomial
 
 namespace TauCeti
 
@@ -90,36 +92,21 @@ former along `R[X, Y] → R[X, Y] ⧸ (XY - a)`. -/
 theorem etale_lift_of_etale_aeval {T : Type u} [CommRing T] [Algebra R T] (x y : T)
     (H : (aeval (R := R) ![x, y]).toRingHom.Etale) :
     (lift a _ _ (quotient_mk_mul_mk a x y)).toRingHom.Etale := by
-  let := (aeval (R := R) ![x, y]).toAlgebra
-  have : Algebra.Etale (MvPolynomial (Fin 2) R) T := H
   let I : Ideal (MvPolynomial (Fin 2) R) := RingHom.ker (mk a)
-  have hI : I.map (algebraMap _ T) = Ideal.span {x * y - algebraMap R T a} := by
+  have hI : I.map (aeval (R := R) ![x, y]) = Ideal.span {x * y - algebraMap R T a} := by
     rw [show I = Ideal.span {X 0 * X 1 - C a} from ker_mk a, Ideal.map_span,
       Set.image_singleton]
-    simp [RingHom.algebraMap_toAlgebra]
-  -- `T ⧸ I T` is the base change `(R[X, Y] ⧸ I) ⊗ T`, hence étale over `R[X, Y] ⧸ I`.
-  have : Algebra.Etale (MvPolynomial (Fin 2) R ⧸ I) (T ⧸ I.map (algebraMap _ T)) :=
-    .of_equiv (A := (MvPolynomial (Fin 2) R ⧸ I) ⊗[MvPolynomial (Fin 2) R] T)
-      (Algebra.TensorProduct.quotIdealMapEquivQuotTensor T I).symm
+    simp
   let e₀ := Ideal.quotientKerAlgEquivOfSurjective (mk_surjective a)
-  have heq : (lift a _ _ (quotient_mk_mul_mk a x y)).toRingHom =
-      ((Ideal.quotEquivOfEq hI).toRingHom.comp (algebraMap _ _)).comp e₀.symm.toRingHom := by
-    refine RingHom.ext fun z ↦ ?_
-    obtain ⟨f, rfl⟩ := mk_surjective a z
-    -- Unfold the composite ring homomorphisms to their values; `simp` cannot rewrite inside them,
-    -- since the type of `algebraMap _ (T ⧸ I T)` mentions the algebra structure being unfolded.
-    change lift a _ _ (quotient_mk_mul_mk a x y) (mk a f) =
-      Ideal.quotEquivOfEq hI (algebraMap _ _ (e₀.symm (mk a f)))
-    rw [Ideal.quotientKerAlgEquivOfSurjective_symm_apply,
-      Ideal.Quotient.algebraMap_quotient_map_quotient, Ideal.quotEquivOfEq_mk,
-      RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, lift_mk,
-      ← Ideal.Quotient.mkₐ_eq_mk R, comp_aeval_apply]
-    congr 1
-    ext i
-    fin_cases i <;> simp
+  have heq : lift a _ _ (quotient_mk_mul_mk a x y) =
+      ((Ideal.quotientEquivAlgOfEq R hI).toAlgHom.comp
+        (Ideal.quotientMapₐ _ (aeval (R := R) ![x, y]) Ideal.le_comap_map)).comp
+        e₀.symm.toAlgHom := by
+    ext <;> simp [e₀, I, ← mk_X]
   rw [heq]
   exact RingHom.Etale.respectsIso.2 _ e₀.symm.toRingEquiv <|
-    RingHom.Etale.respectsIso.1 _ (Ideal.quotEquivOfEq hI) (RingHom.etale_algebraMap.mpr this)
+    RingHom.Etale.respectsIso.1 _ (Ideal.quotientEquivAlgOfEq R hI).toRingEquiv <|
+      RingHom.Etale.isStableUnderBaseChange.quotientMap RingHom.Etale.respectsIso _ I H
 
 end NodeAlgebra
 
@@ -155,6 +142,47 @@ private theorem exists_root_add_ne_zero {K : Type*} [Field K] {b e : K}
     exact ⟨0, h0, h₂ 0 h0, by simpa using h₂ 0 h0⟩
   · exact ⟨r, hr, h₂ r hr, hrb⟩
 
+/-- A residue root of `X² + bX + e` with nonzero discriminant gives a point of `splittingPair b e`
+with values in `K`, sending the adjoined root to a root `r` with `2r + b ≠ 0`. -/
+private theorem exists_lift_splittingPair {W K : Type*} [CommRing W] [Field K] [Algebra W K]
+    {b e : W} (hdisc : discrim 1 (algebraMap W K b) (algebraMap W K e) ≠ 0)
+    (hroot : ∃ r : K, r ^ 2 + algebraMap W K b * r + algebraMap W K e = 0) :
+    ∃ (r : K) (ψ : (splittingPair b e).Ring →ₐ[W] K), ψ (splittingPair b e).X = r ∧
+      r ^ 2 + algebraMap W K b * r + algebraMap W K e = 0 ∧ 2 * r + algebraMap W K b ≠ 0 := by
+  obtain ⟨r, hr, hr₂, hr₁⟩ := exists_root_add_ne_zero hdisc hroot
+  exact ⟨r, (splittingPair b e).lift r
+    ((splittingPair_hasMap_iff b e r).mpr ⟨hr, hr₂.isUnit, hr₁.isUnit⟩),
+    (splittingPair b e).lift_X _ _, hr, hr₂⟩
+
+/-- If `ρ` is a root of `X² + bX + ac` and `v` is an inverse of `u = ρ + b`, then
+`a p² + b p q + c q² = (u p + c q) (v (a p + u q))`. -/
+private theorem mul_eq_quadratic_of_root {W : Type*} [CommRing W] {a b c ρ v : W}
+    (hρ : ρ ^ 2 + b * ρ + a * c = 0) (huv : (ρ + b) * v = 1) (p q : W) :
+    ((ρ + b) * p + c * q) * (v * (a * p + (ρ + b) * q)) = a * p ^ 2 + b * p * q + c * q ^ 2 := by
+  linear_combination (v * p * q) * hρ + (a * p ^ 2 + b * p * q + c * q ^ 2) * huv
+
+/-- Modulo `p` and `q`, the determinant of `d(u p + c q), d(v (a p + u q))` in a basis `dp, dq`
+of `Ω[S⁄A]` is `u (v u) - v a c`. -/
+private theorem det_D_eq {A S K : Type*} [CommRing A] [CommRing S] [Algebra A S] [CommRing K]
+    (B : Module.Basis (Fin 2) S Ω[S⁄A]) {p q : S} (hB₀ : D A S p = B 0) (hB₁ : D A S q = B 1)
+    (ψ : S →+* K) (hp : ψ p = 0) (hq : ψ q = 0) (u v a c : S) :
+    ψ (B.det ![D A S (u * p + c * q), D A S (v * (a * p + u * q))]) =
+      ψ u * (ψ v * ψ u) - ψ v * ψ a * ψ c := by
+  simp [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, hB₀, hB₁, hp, hq]
+
+/-- Along a formally étale extension `S → T`, the determinant of the images of differentials in
+the induced basis of `Ω[T⁄R]` is the image of their determinant. -/
+private theorem det_kaehlerBasisOfFormallyEtale (R S T : Type*) [CommRing R] [CommRing S]
+    [CommRing T] [Algebra R S] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
+    [Algebra.FormallyEtale S T] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι S Ω[S⁄R]) (v : ι → Ω[S⁄R]) :
+    (kaehlerBasisOfFormallyEtale R S T b).det (fun i ↦ map R R S T (v i)) =
+      algebraMap S T (b.det v) := by
+  simp only [Module.Basis.det_apply, RingHom.map_det]
+  congr 1
+  ext i j
+  simp [Module.Basis.toMatrix_apply]
+
 section
 
 variable {A : Type u} {W : Type v} [CommRing A] [CommRing W] [Algebra A W]
@@ -180,22 +208,18 @@ theorem exists_etale_mul_eq_quadratic [Algebra.Smooth A W] {p q : W}
       s ∈ P' ∧ t ∈ P' ∧ s * t = algebraMap W W' (a * p ^ 2 + b * p * q + c * q ^ 2) ∧
       (aeval (R := A) ![s, t]).toRingHom.Etale := by
   set κ := P.ResidueField
-  -- A residue root `r` of `X² + bX + ac` at which `2X + b` and `X + b` do not vanish.
+  -- Adjoin a root `ρ` of `X² + bX + ac` lifting a residue root `r`, inverting `2ρ + b`, `ρ + b`.
   have hd : discrim 1 (algebraMap W κ b) (algebraMap W κ (a * c)) =
       algebraMap W κ (discrim a b c) := by
     simp only [discrim, map_sub, map_mul, map_pow, map_ofNat]
     ring
-  obtain ⟨r, hr, hr₂, hr₁⟩ := exists_root_add_ne_zero (hd ▸ hdisc) hsplit
-  -- Adjoin a root `ρ` of `X² + bX + ac` lifting `r`, with `2ρ + b` and `ρ + b` inverted.
+  obtain ⟨r, ψ₁, hψ₁ρ, hr, hr₂⟩ := exists_lift_splittingPair (hd ▸ hdisc) hsplit
   let E := splittingPair b (a * c)
   let W₁ := E.Ring
   let : Algebra A W₁ := Algebra.compHom W₁ (algebraMap A W)
   have : IsScalarTower A W W₁ := .of_algebraMap_eq fun _ ↦ rfl
   let ρ : W₁ := E.X
   obtain ⟨hρ, -, hρ₁⟩ := (splittingPair_hasMap_iff b (a * c) ρ).mp E.hasMap_X
-  let ψ₁ : W₁ →ₐ[W] κ := E.lift r ((splittingPair_hasMap_iff b (a * c) r).mpr
-    ⟨hr, hr₂.isUnit, hr₁.isUnit⟩)
-  have hψ₁ρ : ψ₁ ρ = r := E.lift_X _ _
   have hψ₁ (w : W) : ψ₁ (algebraMap W W₁ w) = algebraMap W κ w := ψ₁.commutes w
   have hφp : algebraMap W κ p = 0 := Ideal.algebraMap_residueField_eq_zero.mpr hp
   have hφq : algebraMap W κ q = 0 := Ideal.algebraMap_residueField_eq_zero.mpr hq
@@ -207,11 +231,7 @@ theorem exists_etale_mul_eq_quadratic [Algebra.Smooth A W] {p q : W}
   let t₁ : W₁ := v * (algebraMap W W₁ a * algebraMap W W₁ p + u * algebraMap W W₁ q)
   have hst₁ : s₁ * t₁ = algebraMap W W₁ (a * p ^ 2 + b * p * q + c * q ^ 2) := by
     rw [map_mul] at hρ
-    simp only [s₁, t₁, map_add, map_mul, map_pow]
-    linear_combination (v * algebraMap W W₁ p * algebraMap W W₁ q) * hρ +
-      (v * algebraMap W W₁ p * algebraMap W W₁ q * (u + ρ)) * hu +
-      (algebraMap W W₁ a * algebraMap W W₁ p ^ 2 + algebraMap W W₁ b * algebraMap W W₁ p *
-        algebraMap W W₁ q + algebraMap W W₁ c * algebraMap W W₁ q ^ 2) * huv
+    simpa using mul_eq_quadratic_of_root hρ huv (algebraMap W W₁ p) (algebraMap W W₁ q)
   -- The determinant `d` of `ds₁, dt₁` in the basis `dp, dq` is `2r + b ≠ 0` at the point `ψ₁`.
   let bW₁ := kaehlerBasisOfFormallyEtale A W W₁ bW
   have hb₀ : D A W₁ (algebraMap W W₁ p) = bW₁ 0 := by simp [bW₁, hbW₀]
@@ -219,15 +239,13 @@ theorem exists_etale_mul_eq_quadratic [Algebra.Smooth A W] {p q : W}
   let d : W₁ := bW₁.det ![D A W₁ s₁, D A W₁ t₁]
   have hψd : ψ₁ d ≠ 0 := by
     have hU : ψ₁ u = r + algebraMap W κ b := by rw [hu, map_add, hψ₁ρ, hψ₁]
-    have hwU : ψ₁ v * ψ₁ u = 1 := by rw [← map_mul, mul_comm, huv, map_one]
+    have hwU : ψ₁ v * ψ₁ u = 1 := by rw [← map_mul, mul_comm v u, huv, map_one]
+    have hdet := det_D_eq bW₁ hb₀ hb₁ (ψ₁ : W₁ →+* κ) (by simp [hψ₁, hφp]) (by simp [hψ₁, hφq])
+      u v (algebraMap W W₁ a) (algebraMap W W₁ c)
+    simp only [RingHom.coe_coe, hψ₁] at hdet
+    rw [map_mul] at hr
     have : ψ₁ d = 2 * r + algebraMap W κ b := by
-      simp only [d, Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply,
-        Matrix.cons_val_zero, Matrix.cons_val_one, s₁, t₁, Derivation.leibniz, hb₀, hb₁,
-        map_add, map_smul, Finsupp.add_apply, Finsupp.smul_apply, Module.Basis.repr_self,
-        smul_eq_mul, map_mul, map_sub, hψ₁, hφp, hφq, zero_mul, mul_zero, add_zero, zero_add,
-        Finsupp.single_eq_same, Finsupp.single_eq_of_ne zero_ne_one,
-        Finsupp.single_eq_of_ne one_ne_zero, mul_one]
-      rw [map_mul] at hr
+      rw [hdet]
       linear_combination (ψ₁ u + r) * hwU + (1 - ψ₁ v * r) * hU - ψ₁ v * hr
     rw [this]
     exact hr₂
@@ -249,15 +267,11 @@ theorem exists_etale_mul_eq_quadratic [Algebra.Smooth A W] {p q : W}
   · simp only [s, t, ← map_mul, hst₁, ← IsScalarTower.algebraMap_apply]
   -- `ds, dt` is a basis of `Ω[W'⁄A]`: its determinant in the basis `dp, dq` is the unit `d`.
   let bW' := kaehlerBasisOfFormallyEtale A W₁ W' bW₁
-  have hD (w : W₁) : D A W' (algebraMap W₁ W' w) = map A A W₁ W' (D A W₁ w) := (map_D ..).symm
   have hdet : bW'.det ![D A W' s, D A W' t] = algebraMap W₁ W' d := by
-    simp only [d, Module.Basis.det_apply]
-    rw [RingHom.map_det]
+    rw [← det_kaehlerBasisOfFormallyEtale]
     congr 1
-    ext i j
-    simp only [RingHom.mapMatrix_apply, Matrix.map_apply, Module.Basis.toMatrix_apply]
-    fin_cases j <;> simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero,
-      Matrix.cons_val_one, s, t, hD, bW', kaehlerBasisOfFormallyEtale_repr_map]
+    ext i
+    fin_cases i <;> simp [s, t]
   obtain ⟨hli, hspan⟩ := bW'.is_basis_iff_det.mpr
     (hdet ▸ IsLocalization.Away.algebraMap_isUnit d)
   have : Algebra.Smooth A W₁ := .comp A W W₁
