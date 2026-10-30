@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.Hensel
 public import TauCeti.RingTheory.Polynomial.Roots
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Finite ball partitions and root counts
@@ -50,18 +49,12 @@ theorem exists_finset_addVal_eq_biUnion [Finite (ResidueField A)] {s r : ℕ} (h
       (C : Set A).PairwiseDisjoint (fun c ↦ {x : A | (r : ℕ∞) ≤ addVal A (x - c)}) := by
   classical
   let I := maximalIdeal A ^ r
-  have hcard : Nat.card (A ⧸ I) = Nat.card (ResidueField A) ^ r := by
-    rw [← Submodule.cardQuot_apply, cardQuot_pow_of_prime
-      (_root_.IsDiscreteValuationRing.not_a_field A), Submodule.cardQuot_apply]
-    rfl
-  have : Finite (A ⧸ I) := Nat.finite_of_card_ne_zero (hcard ▸ pow_ne_zero r Nat.card_pos.ne')
   let f := Ideal.Quotient.mk I
   obtain ⟨S, hS, hinj, himage⟩ :=
     (Set.surjOn_image f {x : A | addVal A x = s}).exists_subset_injOn_image_eq
   have hfin : S.Finite := (Set.toFinite (f '' S)).of_finite_image hinj
-  have heq (x y : A) : f x = f y ↔ (r : ℕ∞) ≤ addVal A (x - y) := by
-    rw [Ideal.Quotient.mk_eq_mk_iff_sub_mem,
-      IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+  have heq (x y : A) : f x = f y ↔ (r : ℕ∞) ≤ addVal A (x - y) :=
+    IsDiscreteValuationRing.quotient_mk_eq_iff_le_addVal
   refine ⟨hfin.toFinset, fun c hc ↦ hS (hfin.mem_toFinset.mp hc), ?_, ?_⟩
   · ext x
     simp only [Set.mem_ofPred, Set.mem_iUnion, hfin.mem_toFinset]

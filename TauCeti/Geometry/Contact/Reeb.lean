@@ -85,7 +85,8 @@ theorem IsContactForm.eq_reebVectorField_iff_kerDistribution (hα : α.IsContact
     v = α.reebVectorField x ↔
       α.1 x ![v] = 1 ∧ ∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0 := by
   rw [reebVectorField, (isContactForm_def.1 hα x).eq_reebVector_iff]
-  simp only [degreeOneEquiv_coe_apply, bilinFormAt_apply, eval₂_apply, mextDerivₗ_apply]
+  simp only [degreeOneEquiv_coe_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
+    mextDerivₗ_apply]
 
 /-- A contact form takes the value `1` on its Reeb vector field. -/
 theorem IsContactForm.apply_reebVectorField (hα : α.IsContactForm) (x : M) :
@@ -96,13 +97,13 @@ theorem IsContactForm.apply_reebVectorField (hα : α.IsContactForm) (x : M) :
 theorem IsContactForm.mextDeriv_reebVectorField_left (hα : α.IsContactForm) (x : M)
     (w : TangentSpace I x) : mextDeriv α.1 x ![α.reebVectorField x, w] = 0 := by
   have := (isContactForm_def.1 hα x).apply_reebVector_left (isAlt_bilinFormAt _ x) w
-  rwa [bilinFormAt_apply, eval₂_apply, mextDerivₗ_apply] at this
+  rwa [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] at this
 
 /-- The Reeb vector field spans the kernel of `dα`, with the Reeb field as second argument. -/
 theorem IsContactForm.mextDeriv_reebVectorField_right (hα : α.IsContactForm) (x : M)
     (w : TangentSpace I x) : mextDeriv α.1 x ![w, α.reebVectorField x] = 0 := by
   have := (isContactForm_def.1 hα x).apply_reebVector_right (isAlt_bilinFormAt _ x) w
-  rwa [bilinFormAt_apply, eval₂_apply, mextDerivₗ_apply] at this
+  rwa [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] at this
 
 /-- **Characterization of the Reeb vector field**: `R_α(x)` is the unique tangent vector `v` with
 `α(v) = 1` and `ι_v dα = 0`. -/
@@ -158,12 +159,14 @@ theorem IsContactForm.reebVectorField_eq_inv_smul_add_iff (hα : α.IsContactFor
     intro v w hw
     have hβ' : β.1 = fun y ↦ f y • α.1 y := funext hβ
     rw [ha] at hw
-    simp only [bilinFormAt_apply, eval₂_apply, mextDerivₗ_apply, hβ',
-      mextDeriv_fun_smul_apply hf (α.mdifferentiableAt x), hw, ha, ContinuousLinearMap.coe_coe]
+    simp only [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply, hβ',
+      mextDeriv_fun_smul_apply (hf.mdifferentiableAt one_ne_zero)
+        (α.mdifferentiableAt x), hw, ha, ContinuousLinearMap.coe_coe]
     ring
   rw [reebVectorField, reebVectorField, hb,
     (isContactForm_def.1 hα x).reebVector_smul_eq_inv_smul_add_iff hf₀ hdβ y]
-  simp only [degreeOneEquiv_coe_apply, bilinFormAt_apply, eval₂_apply, mextDerivₗ_apply]
+  simp only [degreeOneEquiv_coe_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
+    mextDerivₗ_apply]
   simp only [ContinuousLinearMap.coe_coe]
 
 /-- Multiplying a contact form by a nonzero constant `c` divides its Reeb vector field by `c`. -/
@@ -176,7 +179,7 @@ theorem IsContactForm.reebVectorField_smul (hα : α.IsContactForm) {c : ℝ} (h
       ContinuousAlternatingMap.smul_apply]
   have hB : (mextDerivₗ I 1 (c • α)).bilinFormAt x = c • (mextDerivₗ I 1 α).bilinFormAt x := by
     ext v w
-    simp only [map_smul, bilinFormAt_apply, eval₂_apply, LinearMap.smul_apply,
+    simp only [map_smul, bilinFormAt_apply, SmoothBundleForm.eval₂_apply, LinearMap.smul_apply,
       Submodule.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
   rw [reebVectorField, reebVectorField, ha, hB, Module.Dual.reebVector_smul_bilinForm hc,
     (isContactForm_def.1 hα x).reebVector_smul hc]

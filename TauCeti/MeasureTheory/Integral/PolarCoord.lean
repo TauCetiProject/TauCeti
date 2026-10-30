@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.PolarCoord
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Group.Integral
@@ -13,6 +14,7 @@ import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Tactic.Module
 
 /-!
@@ -40,6 +42,24 @@ open scoped Real
 namespace TauCeti
 
 open Complex
+
+/-- The translated inverse complex polar map is smooth, including at zero radius. -/
+theorem contDiff_add_polarCoord_symm (z₀ : ℂ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (fun p ↦ z₀ + Complex.polarCoord.symm p) := by
+  simp only [Complex.polarCoord_symm_apply, ← Complex.ofRealCLM_apply]
+  fun_prop
+
+/-- A polar point whose radius lies in a nonnegative closed interval maps into the annulus. -/
+theorem add_polarCoord_symm_mem_annulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
+    {p : ℝ × ℝ} (hp : p.1 ∈ Icc a b) :
+    z₀ + Complex.polarCoord.symm p ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+  simpa only [mem_Icc, mem_ofPred_eq, add_sub_cancel_left, Complex.norm_polarCoord_symm,
+    abs_of_nonneg (ha.trans hp.1)] using hp
+
+/-- A constant-radius slice of the translated polar map is the circle parametrization. -/
+theorem add_polarCoord_symm_eq_circleMap (z₀ : ℂ) (p : ℝ × ℝ) :
+    z₀ + Complex.polarCoord.symm p = circleMap z₀ p.1 p.2 := by
+  simp [Complex.polarCoord_symm_apply, circleMap, Complex.exp_mul_I]
 
 /-- The derivative of the translated inverse complex polar-coordinate map at any `(r, θ)`.
 No restriction to the positive-radius chart is needed for this derivative formula. -/
@@ -162,10 +182,7 @@ theorem integral_annulus_eq_integral_circleMap {f : ℂ → F} {z₀ : ℂ} {a b
       (isCompact_Icc.prod isCompact_Icc)
   rw [← Complex.integral_comp_polarCoord_symm_Icc f z₀ ha, Icc_prod_eq,
     Measure.volume_eq_prod]
-  have hP_eq (p : ℝ × ℝ) : z₀ + Complex.polarCoord.symm p =
-      circleMap z₀ p.1 p.2 := by
-    simp [Complex.polarCoord_symm_apply, circleMap, Complex.exp_mul_I]
-  simp_rw [hP_eq]
+  simp_rw [add_polarCoord_symm_eq_circleMap]
   rw [setIntegral_prod _ hint]
   simp_rw [integral_smul, integral_Icc_eq_integral_Ioc]
   rw [← intervalIntegral.integral_of_le hab]

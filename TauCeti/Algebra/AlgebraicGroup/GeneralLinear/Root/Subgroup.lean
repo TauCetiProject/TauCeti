@@ -60,6 +60,8 @@ Chevalley–Demazure group of type `A` base changes from.
   elementary matrix of the parameter.
 * `TauCeti.GeneralLinear.rootSubgroupPoints_injective`: the homomorphism on points is injective.
 * `TauCeti.GeneralLinear.mapValue_rootSubgroupPoints`: it is natural in the value algebra.
+* `TauCeti.GeneralLinear.mapDomain_rootSubgroupCoordinateMap`: precomposition by the coordinate
+  morphism is the homomorphism on points.
 * `TauCeti.GeneralLinear.schemePointsMulEquiv_rootSubgroup`: on scheme-valued points, composing
   with the group-scheme morphism is again the elementary matrix of the parameter.
 
@@ -190,6 +192,14 @@ theorem mapPointsFunctor_rootSubgroupCoordinateMap_app (hij : i ≠ j)
       rootSubgroupPoints hij f := by
   rw [mapPointsFunctor_rootSubgroupCoordinateMap, rootSubgroupPointsMap_app]
   rfl
+
+/-- **Precomposition by the root-subgroup coordinate morphism** sends a point `c` of `𝔾ₐ` to the
+point of `GLₙ` given by the elementary matrix `xᵢⱼ(c)`. -/
+theorem mapDomain_rootSubgroupCoordinateMap (hij : i ≠ j) {A : Type u} [CommRing A]
+    [Algebra R A] (f : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
+    BialgHom.mapDomain (rootSubgroupCoordinateMap (R := R) (N := N) hij).hom f =
+      rootSubgroupPoints hij f :=
+  mapPointsFunctor_rootSubgroupCoordinateMap_app hij (CommAlgCat.of R A) f
 
 /-- The root-subgroup coordinate map sends a generic matrix entry to the corresponding entry
 of `1 + X Eᵢⱼ`. -/

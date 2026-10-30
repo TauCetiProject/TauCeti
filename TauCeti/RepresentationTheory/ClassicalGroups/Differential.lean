@@ -57,6 +57,8 @@ to rational representations of the group, and conversely.
   matrix multiplication.
 * `TauCeti.IsRationalRep.mem_invtSubmodule_iff_forall_mem_invtSubmodule_differential`: the
   invariant subspaces of `ρ` are the subspaces stable under `dρ`.
+* `TauCeti.IsRationalRep.isIrreducible_differential`: an irreducible rational representation is
+  irreducible for `𝔤𝔩ₙ`.
 * `TauCeti.IsRationalRep.mem_invariants_iff_forall_differential_apply_eq_zero`: the invariants of
   `ρ` are the vectors killed by `dρ`.
 * `TauCeti.IsRationalRep.isIntertwiningMap_iff_forall_map_differential`: the intertwiners of two
@@ -174,6 +176,16 @@ theorem basePointsRepresentation_comodule (hρ : IsRationalRep ρ) (g : GL (Fin 
     Comodule.coefficientMatrix_apply, Comodule.apply_matrixCoefficient,
     Module.Basis.coord_apply]
 
+/-- Every complex point `p` of `GLₙ` acts on `TauCeti.IsRationalRep.comodule` by `ρ` of the
+invertible matrix `p` names. -/
+theorem basePointsRepresentation_comodule_eq_pointsMulEquiv (hρ : IsRationalRep ρ)
+    (p : WithConv (coordinateHopfAlgebra ℂ n →ₐ[ℂ] ℂ)) :
+    letI := hρ.comodule
+    Comodule.basePointsRepresentation (H := coordinateHopfAlgebra ℂ n) W p =
+      ρ (pointsMulEquiv n p) := by
+  have h := basePointsRepresentation_comodule hρ (pointsMulEquiv n p)
+  rwa [← pointsMulEquiv_symm_apply, MulEquiv.symm_apply_apply] at h
+
 /-- The coefficient matrix of a comodule integrating a representation is evaluated, point by
 point, by the matrices of the representation. -/
 private theorem apply_coefficientMatrix_of_basePointsRepresentation_eq {ι : Type*} [Fintype ι]
@@ -270,10 +282,9 @@ theorem mem_invtSubmodule_iff_forall_mem_invtSubmodule_differential (hρ : IsRat
     · intro h
       refine ⟨Subcomodule.ofEndOfPointStable (K := ℂ) U fun f m hm ↦ ?_,
         Subcomodule.ofEndOfPointStable_toSubmodule _ _⟩
-      have hf := basePointsRepresentation_comodule hρ (pointToGeneralLinear n (toConv f))
-      rw [generalLinearToPoint_pointToGeneralLinear] at hf
       rw [Comodule.endOfPoint_tmul, one_smul,
-        Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation (g := toConv f), hf]
+        Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation (g := toConv f),
+        hρ.basePointsRepresentation_comodule_eq_pointsMulEquiv]
       exact Submodule.tmul_mem_baseChange_of_mem 1 (h _ hm)
     · rintro ⟨N, rfl⟩ g w hw
       have hN := Comodule.basePointsRepresentation_mem N (generalLinearToPoint n g) hw
@@ -282,6 +293,25 @@ theorem mem_invtSubmodule_iff_forall_mem_invtSubmodule_differential (hρ : IsRat
   refine ⟨fun h X w hw ↦ h _ w hw, fun h d w hw ↦ ?_⟩
   have hd := h (tangentLieEquivMatrix n d) hw
   rwa [differential_apply, LieEquiv.symm_apply_apply] at hd
+
+/-- **An irreducible rational representation is irreducible for `𝔤𝔩ₙ`**: through its
+differential, an irreducible rational representation is an irreducible module over the matrix Lie
+algebra `𝔤𝔩ₙ(ℂ)`. -/
+theorem isIrreducible_differential (hρ : IsRationalRep ρ) [ρ.IsIrreducible] :
+    letI := LieRingModule.compLieHom W hρ.differential
+    LieModule.IsIrreducible ℂ (Matrix (Fin n) (Fin n) ℂ) W := by
+  let _ := LieRingModule.compLieHom W hρ.differential
+  have := Representation.IsIrreducible.nontrivial (ρ := ρ) inferInstance
+  refine LieModule.IsIrreducible.mk fun N hN ↦ ?_
+  have hN' : N.toSubmodule ∈ ρ.invtSubmodule :=
+    (hρ.mem_invtSubmodule_iff_forall_mem_invtSubmodule_differential _).mpr
+      fun X _ hw ↦ N.lie_mem (x := X) hw
+  let S : Subrepresentation ρ :=
+    ⟨N.toSubmodule, fun g _ hw ↦ (Representation.mem_invtSubmodule ρ).mp hN' g hw⟩
+  rcases IsSimpleOrder.eq_bot_or_eq_top S with h | h
+  · exact absurd ((LieSubmodule.toSubmodule_eq_bot N).mp
+      (congrArg Subrepresentation.toSubmodule h)) hN
+  · exact (LieSubmodule.toSubmodule_eq_top N).mp (congrArg Subrepresentation.toSubmodule h)
 
 /-- **The invariants of a rational representation are the vectors killed by `𝔤𝔩ₙ`**: a vector
 is fixed by every `ρ g` exactly when every `dρ X` sends it to zero. -/
@@ -293,9 +323,7 @@ theorem mem_invariants_iff_forall_differential_apply_eq_zero (hρ : IsRationalRe
   trans Comodule.coact (R := ℂ) (C := H) w = w ⊗ₜ 1
   · rw [Comodule.coact_eq_tmul_one_iff_forall_basePointsRepresentation_eq]
     refine ⟨fun h g ↦ ?_, fun h g ↦ ?_⟩
-    · have hg := basePointsRepresentation_comodule hρ (pointToGeneralLinear n g)
-      rw [generalLinearToPoint_pointToGeneralLinear] at hg
-      rw [hg]
+    · rw [hρ.basePointsRepresentation_comodule_eq_pointsMulEquiv]
       exact h _
     · rw [← basePointsRepresentation_comodule hρ g]
       exact h _

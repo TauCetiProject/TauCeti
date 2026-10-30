@@ -20,7 +20,10 @@ On `ℝ³ = ℝ × ℝ × ℝ` with coordinates `(x, y, z)`, the one-form `α = 
 Its exterior derivative is `dα = -dx ∧ dy`, and its kernel is the standard contact distribution
 `TauCeti.standardContactDistribution ℝ`, spanned at `(x, y, z)` by `(1, 0, 0)` and `(0, 1, x)`
 (`TauCeti.kerDistribution_standardContactForm`). On this frame `dα` takes the value `-1`, which is
-the nondegeneracy of `dα` on the kernel. Its Reeb vector field is `∂_z`
+the nondegeneracy of `dα` on the kernel.
+
+The constant vector field `∂_z` (`TauCeti.standardReebField`) satisfies the Reeb equations
+`α(∂_z) = 1` and `ι_{∂_z} dα = 0`, so it is the Reeb vector field of `α`
 (`TauCeti.reebVectorField_standardContactForm`).
 
 The Reeb field depends on the contact form, not only on the distribution: the form `eˣ (dz - x dy)`
@@ -64,7 +67,7 @@ private theorem standardDz_apply (u : Fin 1 → ℝ × ℝ × ℝ) : standardDz 
 private def standardNegXDy : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1 :=
   ⟨fun p ↦ (-p.1) • (SmoothForm.const standardDy).1 p,
     ((SmoothForm.const standardDy).isSmoothForm.fun_smul
-      contDiff_fst.neg.contMDiff).mem_smoothForms⟩
+      contDiff_fst.neg.contMDiff).mem_smoothBundleForms⟩
 
 private theorem standardNegXDy_toRoughForm :
     standardNegXDy.1 = fun p ↦ (-p.1) • (SmoothForm.const standardDy).1 p :=
@@ -103,7 +106,8 @@ theorem mextDeriv_standardContactForm_apply (p : ℝ × ℝ × ℝ)
     rw [← mextDerivₗ_apply, standardContactForm, map_add, SmoothForm.add_toRoughForm,
       mextDerivₗ_apply, mextDerivₗ_apply]
   rw [hsum, hdz, zero_add, standardNegXDy_toRoughForm,
-    mextDeriv_fun_smul_apply contDiff_fst.neg.contMDiff.contMDiffAt
+    mextDeriv_fun_smul_apply
+      (contDiff_fst.neg.contMDiff.contMDiffAt.mdifferentiableAt one_ne_zero)
       ((SmoothForm.const standardDy).mdifferentiableAt p), hdy]
   simp only [SmoothForm.const_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero, mul_zero,
     add_zero]
@@ -139,17 +143,52 @@ theorem isContactForm_standardContactForm : standardContactForm.IsContactForm :=
   -- definition the zero vector `(0, 0, 0)` of `ℝ × ℝ × ℝ`.
   exact Prod.ext h₂ (Prod.ext h₁ (by rw [hv, h₁, mul_zero]; rfl))
 
+/-- The Reeb vector field `∂_z` of `dz - x dy`, characterized by
+`TauCeti.standardContactForm_apply_standardReebField` and
+`TauCeti.mextDeriv_standardContactForm_standardReebField`. -/
+def standardReebField (p : ℝ × ℝ × ℝ) : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p :=
+  ((0, 0, 1) : ℝ × ℝ × ℝ)
+
+/-- In coordinates, the Reeb vector field of `dz - x dy` is the constant vector `(0, 0, 1)`. -/
+theorem standardReebField_apply (p : ℝ × ℝ × ℝ) :
+    standardReebField p = ((0, 0, 1) : ℝ × ℝ × ℝ) :=
+  (rfl)
+
+/-- The `x`-coordinate of the Reeb vector field of `dz - x dy` is `0`. -/
+@[simp]
+theorem standardReebField_fst (p : ℝ × ℝ × ℝ) : (standardReebField p).1 = 0 :=
+  (rfl)
+
+/-- The `y`-coordinate of the Reeb vector field of `dz - x dy` is `0`. -/
+@[simp]
+theorem standardReebField_snd_fst (p : ℝ × ℝ × ℝ) : (standardReebField p).2.1 = 0 :=
+  (rfl)
+
+/-- The `z`-coordinate of the Reeb vector field of `dz - x dy` is `1`. -/
+@[simp]
+theorem standardReebField_snd_snd (p : ℝ × ℝ × ℝ) : (standardReebField p).2.2 = 1 :=
+  (rfl)
+
+/-- The form `dz - x dy` takes the value `1` on its Reeb vector field `∂_z`. -/
+theorem standardContactForm_apply_standardReebField (p : ℝ × ℝ × ℝ) :
+    standardContactForm.1 p ![standardReebField p] = 1 := by
+  simp
+
+/-- The contraction of the Reeb vector field `∂_z` with the exterior derivative of `dz - x dy`
+vanishes. -/
+@[simp]
+theorem mextDeriv_standardContactForm_standardReebField (p : ℝ × ℝ × ℝ)
+    (w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    mextDeriv standardContactForm.1 p ![standardReebField p, w] = 0 := by
+  rw [mextDeriv_standardContactForm_apply]
+  simp [standardReebField]
+
 /-- The Reeb vector field of the standard contact form `dz - x dy` is `∂_z`. -/
 theorem reebVectorField_standardContactForm (p : ℝ × ℝ × ℝ) :
-    (standardContactForm.reebVectorField p : ℝ × ℝ × ℝ) = (0, 0, 1) := by
-  -- Name the candidate vector, so that it keeps its tangent-space type.
-  obtain ⟨e, he⟩ : ∃ e : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p, e = (0, 0, 1) := ⟨_, rfl⟩
-  rw [← he]
-  refine (isContactForm_standardContactForm.eq_reebVectorField_iff.2 ⟨?_, fun w ↦ ?_⟩).symm
-  · rw [standardContactForm_apply, he]
-    norm_num
-  · rw [mextDeriv_standardContactForm_apply, he]
-    norm_num
+    standardContactForm.reebVectorField p = standardReebField p :=
+  (isContactForm_standardContactForm.eq_reebVectorField_iff.2
+    ⟨standardContactForm_apply_standardReebField p,
+      mextDeriv_standardContactForm_standardReebField p⟩).symm
 
 private theorem mvfderiv_exp_fst (p : ℝ × ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
     mvfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1) p v = Real.exp p.1 * v.1 := by
@@ -172,7 +211,7 @@ theorem reebVectorField_of_eq_exp_smul_standardContactForm
       y = Real.exp (-p.1) • ((0, 1, p.1) : ℝ × ℝ × ℝ) := ⟨_, rfl⟩
   have key := (isContactForm_standardContactForm.reebVectorField_eq_inv_smul_add_iff hf
     (Real.exp_pos _).ne' hβ y).2 ⟨?_, fun w hw ↦ ?_⟩
-  · rw [key, hy, reebVectorField_standardContactForm]
+  · rw [key, hy, reebVectorField_standardContactForm, standardReebField_apply]
     -- The tangent space of `ℝ × ℝ × ℝ` carries the vector operations of `ℝ × ℝ × ℝ` by
     -- definition. Restate the goal there, where the `Prod` simp lemmas apply.
     change (Real.exp p.1)⁻¹ • ((0, 0, 1) : ℝ × ℝ × ℝ) +
