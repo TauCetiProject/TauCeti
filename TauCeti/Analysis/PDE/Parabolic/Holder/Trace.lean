@@ -69,14 +69,14 @@ theorem holderWith_iteratedFDeriv_two_spatialSlice
     intro x y
     simpa [edist_slabMk] using
       (spatialSecondFDerivL f).memHolder.holderWith (slabMk x t) (slabMk y t)
-  have he : (fun x ↦ (continuousMultilinearCurryFin2 E F).symm
+  have he : (fun x ↦ (continuousMultilinearCurryFin2 ℝ E F).symm
       (spatialSecondFDerivL f (slabMk x t))) =
       iteratedFDeriv ℝ 2 (fun x ↦ f (slabMk x t)) := by
     funext x
     ext v
     rw [continuousMultilinearCurryFin2_symm_apply, f.iteratedFDeriv_two_apply]
   simpa [Function.comp_def, he] using
-    (continuousMultilinearCurryFin2 E F).symm.isometry.lipschitzWith.holderWith.comp hh
+    (continuousMultilinearCurryFin2 ℝ E F).symm.isometry.lipschitzWith.holderWith.comp hh
 
 private theorem norm_iteratedFDeriv_zero_spatialSlice_le
     (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :

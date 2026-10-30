@@ -23,21 +23,27 @@ namespace TauCeti
 
 section CurryFin2
 
-variable (E F : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
+variable (𝕜 E F : Type*) [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The currying linear isometry from continuous multilinear maps on `Fin 2` to
 continuous bilinear maps in curried form. -/
 noncomputable def continuousMultilinearCurryFin2 :
-    (E [×2]→L[ℝ] F) ≃ₗᵢ[ℝ] E →L[ℝ] E →L[ℝ] F :=
-  (continuousMultilinearCurryRightEquiv' ℝ 1 E F).trans
-    (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F))
+    (E [×2]→L[𝕜] F) ≃ₗᵢ[𝕜] E →L[𝕜] E →L[𝕜] F :=
+  (continuousMultilinearCurryRightEquiv' 𝕜 1 E F).trans
+    (continuousMultilinearCurryFin1 𝕜 E (E →L[𝕜] F))
+
+/-- The currying isometry evaluates a multilinear map on its two arguments in order. -/
+@[simp]
+theorem continuousMultilinearCurryFin2_apply (f : E [×2]→L[𝕜] F) (x y : E) :
+    continuousMultilinearCurryFin2 𝕜 E F f x y = f ![x, y] := by
+  simp [continuousMultilinearCurryFin2]
 
 /-- The inverse currying isometry evaluates its arguments in their original order. -/
 @[simp]
 theorem continuousMultilinearCurryFin2_symm_apply
-    (g : E →L[ℝ] E →L[ℝ] F) (m : Fin 2 → E) :
-    (continuousMultilinearCurryFin2 (E := E) (F := F)).symm g m = g (m 0) (m 1) := by
+    (g : E →L[𝕜] E →L[𝕜] F) (m : Fin 2 → E) :
+    (continuousMultilinearCurryFin2 𝕜 E F).symm g m = g (m 0) (m 1) := by
   simp [continuousMultilinearCurryFin2, Fin.init]
 
 end CurryFin2

@@ -274,7 +274,7 @@ theorem memHolder_secondFDeriv (f : C2HolderSpace α E F) :
 
 private theorem iteratedFDeriv_two_eq (f : C2HolderSpace α E F) :
     iteratedFDeriv ℝ 2 (f : E → F) =
-      ((continuousMultilinearCurryFin2 (E := E) (F := F)).symm : _ → _) ∘
+      ((continuousMultilinearCurryFin2 ℝ E F).symm : _ → _) ∘
         _root_.fderiv ℝ (_root_.fderiv ℝ (f : E → F)) := by
   funext x
   ext m
@@ -285,7 +285,7 @@ theorem memHolder_iteratedFDeriv_two (f : C2HolderSpace α E F) :
     MemHolder α (iteratedFDeriv ℝ 2 (f : E → F)) := by
   rw [f.iteratedFDeriv_two_eq]
   simpa using f.memHolder_secondFDeriv.comp
-    (continuousMultilinearCurryFin2 (E := E) (F := F)).symm.lipschitzWith.holderWith.memHolder
+    (continuousMultilinearCurryFin2 ℝ E F).symm.lipschitzWith.holderWith.memHolder
 
 /-- Two bounded `C^{2,α}` maps are equal when their underlying functions agree pointwise. -/
 @[ext]
