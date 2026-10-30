@@ -282,9 +282,9 @@ theorem apply_dualVector (hb : ∀ i, f (b₁ i) = b₂ i)
   have h : (⟨f (P₁.dualVector b₁ i), hW' _⟩ : P₂.W') = P₂.dualVector b₂ i := by
     apply P₂.pairingEquiv.injective
     refine b₂.ext fun j => ?_
-    rw [pairingEquiv_dualVector, P₂.pairingEquiv_apply, ← hb, QuadraticMap.Isometry.polar_apply,
-      polar_dualVector, Module.Basis.coord_apply, Module.Basis.repr_self,
-      Finsupp.single_apply]
+    rw [pairingEquiv_dualVector, P₂.pairingEquiv_apply, ← hb,
+      QuadraticMap.Isometry.polar_apply]
+    simp [Module.Basis.coord_apply, Finsupp.single_apply]
   exact congrArg Subtype.val h
 
 /-- The remainder vector is orthogonal to the image of the embedding. -/
@@ -293,9 +293,9 @@ theorem polar_apply_line (z : P₂.line) (hline : P₁.line = ⊥) (hb : ∀ i, 
     QuadraticMap.polar Q₂ (f v) (z : V₂) = 0 := by
   obtain ⟨⟨⟨w, y⟩, l⟩, rfl⟩ := P₁.decompositionEquiv.surjective v
   have hl : (l : V₁) = 0 := by simpa [hline] using l.property
-  rw [P₁.decompositionEquiv_apply, hl, add_zero, map_add, QuadraticMap.polar_add_left,
-    apply_coe_eq_basisEquiv P₁ P₂ b₁ b₂ hb, QuadraticMap.polar_comm, P₂.line_orthogonal_W,
-    QuadraticMap.polar_comm, P₂.line_orthogonal_W' z ⟨f y, hW' y⟩, add_zero]
+  rw [QuadraticMap.polar_comm, P₁.decompositionEquiv_apply]
+  simp [hl, QuadraticMap.polar_add_right, apply_coe_eq_basisEquiv P₁ P₂ b₁ b₂ hb,
+    P₂.line_orthogonal_W' z ⟨f y, hW' y⟩]
 
 end Transport
 

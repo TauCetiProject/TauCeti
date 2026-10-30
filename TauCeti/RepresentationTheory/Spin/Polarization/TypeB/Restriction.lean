@@ -129,11 +129,18 @@ theorem map_typeDQuadraticEquiv (hline : P₁.line = ⊥) (hb : ∀ i, f (b₁ i
     · have hmap : map f ⁅q, CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c)⁆ =
           ⁅map f q, map f (CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c))⁆ :=
         (map f).toLieHom.map_lie _ _
-      rw [← apply_typeDBasis P₁ P₂ b₁ b₂ z hz hline hb hW' c, ← map_apply_ι,
-        ← hmap, P₁.typeDQuadraticEquiv_lie_ι,
-        map_apply_ι, Matrix.toLinAlgEquiv_self, apply_typeDBasis P₁ P₂ b₁ b₂ z hz hline hb hW',
-        Matrix.toLinAlgEquiv_self]
-      simp [Fintype.sum_sum_type, map_sum, hb, apply_dualVector P₁ P₂ b₁ b₂ hb hW']
+      calc
+        _ = map f ⁅q, CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c)⁆ := by
+          simpa only [map_apply_ι, apply_typeDBasis P₁ P₂ b₁ b₂ z hz hline hb hW']
+            using hmap.symm
+        _ = CliffordAlgebra.ι Q₂
+            (f (Matrix.toLinAlgEquiv (P₁.typeDBasis b₁ hline) A
+              (P₁.typeDBasis b₁ hline c))) := by
+          rw [P₁.typeDQuadraticEquiv_lie_ι, map_apply_ι]
+        _ = _ := by
+          simp only [Matrix.toLinAlgEquiv_self, map_sum, map_smul,
+            apply_typeDBasis P₁ P₂ b₁ b₂ z hz hline hb hW']
+          simp [Fintype.sum_sum_type]
   have h : LieAlgebra.ad K (CliffordAlgebra Q₂) (map f q) ∘ₗ CliffordAlgebra.ι Q₂ =
       CliffordAlgebra.ι Q₂ ∘ₗ Matrix.toLinAlgEquiv (P₂.typeBBasis b₂ z hz)
         (LieAlgebra.Orthogonal.typeB.ofTypeD A) :=
