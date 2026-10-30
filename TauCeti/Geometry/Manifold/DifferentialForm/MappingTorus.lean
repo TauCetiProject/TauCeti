@@ -30,6 +30,9 @@ direction.
 For a symplectic form `σ` preserved by `φ`, the fiber form is the closed two-form `ω_v` of the
 symplectic suspension of `φ`.
 
+Along the flow lines `t ↦ [t, x]` of the suspension flow, the time form integrates to the elapsed
+time.
+
 ## Main definitions
 
 * `TauCeti.SmoothMappingTorus.timeForm φ`: the time form `dt` of the mapping torus.
@@ -60,6 +63,8 @@ symplectic suspension of `φ`.
   `TauCeti.SmoothMappingTorus.mpullback_map_fiberForm`: the map `[t, x] ↦ [t, g x]` induced by a
   smooth map `g` intertwining `φ` and `ψ` pulls the time form back to the time form, and the fiber
   form of `τ` back to the fiber form of `g^* τ`.
+* `TauCeti.SmoothMappingTorus.pathIntegral_timeForm_mk`: the time form integrates to `b - a` along
+  the flow line `t ↦ [t, x]` from `a` to `b`.
 
 ## References
 
@@ -233,12 +238,13 @@ theorem mpullback_mk_fiberForm (t : ℝ) :
 theorem eval₂_fiberForm_mfderiv_uncurry_mk {τ : SmoothForm I M F 2}
     {hτ : SmoothForm.mpullback φ φ.contMDiff τ = τ} (t : ℝ) (x : M)
     (w w' : TangentSpace (𝓘(ℝ).prod I) (t, x)) :
-    (fiberForm φ τ hτ).eval₂ (mk φ t x)
+    SmoothBundleForm.eval₂ (fiberForm φ τ hτ) (mk φ t x)
         (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x) w)
         (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x) w') =
-      τ.eval₂ x (Manifold.tangentSpaceProdEquiv (t, x) w).2
+      SmoothBundleForm.eval₂ τ x (Manifold.tangentSpaceProdEquiv (t, x) w).2
         (Manifold.tangentSpaceProdEquiv (t, x) w').2 := by
-  have h := congrArg (fun β ↦ β.eval₂ (t, x) w w') (mpullback_uncurry_mk_fiberForm (hσ := hτ))
+  have h := congrArg (fun β ↦ SmoothBundleForm.eval₂ β (t, x) w w')
+    (mpullback_uncurry_mk_fiberForm (hσ := hτ))
   simp only [SmoothForm.eval₂_mpullback, mfderiv_snd] at h
   rw [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_apply]
   -- `uncurry (mk φ) (t, x)` is `mk φ t x`, and `ContinuousLinearMap.snd` is `Prod.snd`.
@@ -286,6 +292,22 @@ theorem mpullback_map_fiberForm {τ : SmoothForm J N F k}
   rw [SmoothForm.mpullback_comp _ _ contMDiff_snd hg, LinearMap.comp_apply, hgτ]
 
 end Map
+
+/-! ### Flow lines -/
+
+/-- The time form integrates to `b - a` along the flow line `t ↦ [t, x]` of the suspension flow
+from `a` to `b`. -/
+@[simp]
+theorem pathIntegral_timeForm_mk (x : M) (a b : ℝ) :
+    pathIntegral (timeForm φ).1 (fun t ↦ mk φ t x) a b = b - a := by
+  have hcomp : proj φ ∘ (fun t ↦ mk φ t x) = ((↑) : ℝ → UnitAddCircle) :=
+    funext fun t ↦ proj_mk φ t x
+  have hline : ContMDiff 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ fun t ↦ mk φ t x :=
+    (contMDiff_uncurry_mk φ).comp (contMDiff_id.prodMk contMDiff_const)
+  rw [timeForm_def, SmoothForm.coe_mpullback,
+    pathIntegral_mpullback _ (fun t _ ↦ ((contMDiff_proj φ).mdifferentiable (by simp)) _)
+      (fun t _ ↦ (hline.mdifferentiable (by simp)) t),
+    hcomp, AddCircle.pathIntegral_timeForm_coe]
 
 end SmoothMappingTorus
 

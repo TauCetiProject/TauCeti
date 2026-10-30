@@ -10,12 +10,13 @@ public import Mathlib.Analysis.Calculus.DSlope
 /-!
 # Elementary facts about `dslope`
 
-Divided-slope facts that need no differentiability, collected for the Schwarz-lemma consumers.
-Away from its base point `dslope` is the plain difference quotient, so these are statements about
-a normed field and its norm, with no calculus in them.
+Divided-slope facts that need no differentiability. Away from its base point `dslope` is the plain
+difference quotient, so these are statements about a normed field and its norm, with no calculus
+in them.
 
 ## Main results
 
+* `TauCeti.dslope_comm`: `dslope` is symmetric in its two point arguments.
 * `TauCeti.norm_dslope_eq_one_of_norm_sub_map_eq`: a map that moves two points exactly as far
   apart as they already are has unimodular difference quotient between them. This is the
   hypothesis the equality case of Schwarz's lemma
@@ -27,6 +28,14 @@ a normed field and its norm, with no calculus in them.
 public section
 
 namespace TauCeti
+
+/-- `dslope` is symmetric in its two point arguments: off the diagonal both sides are the same
+difference quotient, and on the diagonal they coincide trivially. -/
+theorem dslope_comm {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (f : 𝕜 → E) (a b : 𝕜) : dslope f a b = dslope f b a := by
+  rcases eq_or_ne b a with rfl | h
+  · rfl
+  · rw [dslope_of_ne f h, dslope_of_ne f h.symm, slope_comm]
 
 /-- **A map preserving the distance between two points has unit difference quotient between
 them.** For `y ≠ x` with `‖g y - g x‖ = ‖y - x‖`, the difference quotient `dslope g x y` is

@@ -7,11 +7,13 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Over
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+public import Mathlib.CategoryTheory.Monoidal.Limits.Preserves
 public import Mathlib.CategoryTheory.WithTerminal.Cone
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Closed
 public import TauCeti.CategoryTheory.FiniteBijection
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Braided
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Closed
+public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Colimits
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Unit
 
 /-!
@@ -48,8 +50,9 @@ and Smith write it as the product `∏_k Map_{Σ_k}(X_k, Y_(k+n))` of equivarian
 identification is not formalized here.
 
 Symmetric spectra are the modules over the commutative monoid of spheres in this symmetric
-monoidal category. Limits of symmetric sequences are computed levelwise, using the equivalence
-`DayFunctor.equiv` with the underlying functor category.
+monoidal category. Limits and colimits of symmetric sequences are computed levelwise, using the
+equivalence `DayFunctor.equiv` with the underlying functor category. Day convolution preserves
+colimits separately in each variable.
 
 ## Main definitions
 
@@ -93,6 +96,38 @@ noncomputable instance SymmetricSequence.hasLimitsOfShape (J : Type w) [Category
 /-- Symmetric sequences of small pointed simplicial sets have all small limits. -/
 noncomputable instance SymmetricSequence.hasLimits : HasLimits SymmetricSequence.{u} where
   has_limits_of_shape := inferInstance
+
+/-- Colimits of symmetric sequences are the colimits of their underlying functors. -/
+noncomputable instance SymmetricSequence.hasColimitsOfShape (J : Type w) [Category.{v} J]
+    [HasColimitsOfShape J PointedSSet.{u}] : HasColimitsOfShape J SymmetricSequence.{u} :=
+  Adjunction.hasColimitsOfShape_of_equivalence
+    (DayFunctor.equiv FiniteBijection PointedSSet.{u}).functor
+
+/-- Symmetric sequences have all colimits small in the universe of their simplices. -/
+noncomputable instance SymmetricSequence.hasColimits : HasColimits SymmetricSequence.{u} where
+  has_colimits_of_shape := inferInstance
+
+/-- Day convolution with a fixed symmetric sequence preserves levelwise colimits. -/
+instance SymmetricSequence.preservesColimitsOfShape_tensorLeft
+    (J : Type w) [Category.{v} J] [HasColimitsOfShape J PointedSSet.{u}]
+    (X : SymmetricSequence.{u}) : PreservesColimitsOfShape J (tensorLeft X) := by
+  have : PreservesColimitsOfShape J
+      (LawfulDayConvolutionMonoidalCategoryStruct.ι
+        FiniteBijection PointedSSet.{u} SymmetricSequence.{u}) :=
+    inferInstanceAs (PreservesColimitsOfShape J
+      (DayFunctor.equiv FiniteBijection PointedSSet.{u}).functor)
+  have : ReflectsColimitsOfShape J
+      (LawfulDayConvolutionMonoidalCategoryStruct.ι
+        FiniteBijection PointedSSet.{u} SymmetricSequence.{u}) :=
+    inferInstanceAs (ReflectsColimitsOfShape J
+      (DayFunctor.equiv FiniteBijection PointedSSet.{u}).functor)
+  exact LawfulDayConvolutionMonoidalCategoryStruct.preservesColimitsOfShape_tensorLeft
+    FiniteBijection PointedSSet.{u} SymmetricSequence.{u} X
+
+/-- Day convolution preserves all colimits small in the simplex universe. -/
+instance SymmetricSequence.preservesColimits_tensorLeft (X : SymmetricSequence.{u}) :
+    PreservesColimits (tensorLeft X) where
+  preservesColimitsOfShape := inferInstance
 
 /- Day convolution makes symmetric sequences of pointed simplicial sets a symmetric monoidal
 category, through the instance `DayFunctor.symmetricCategory`. -/

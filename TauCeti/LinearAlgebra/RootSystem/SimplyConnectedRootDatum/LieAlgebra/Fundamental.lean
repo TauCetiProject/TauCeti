@@ -36,6 +36,8 @@ the remark after Lemma 27).
 * `TauCeti.DynkinType.fundamentalWeight`: the basis of fundamental weights `ϖᵢ`.
 * `TauCeti.DynkinType.isDominantIntegral_fundamentalWeight`: each `ϖᵢ` is dominant integral for
   the pinned base.
+* `TauCeti.DynkinType.span_fundamentalWeight_eq_integralWeightLattice`: the `ϖᵢ` span the integral
+  weight lattice over `ℤ`.
 * `TauCeti.DynkinType.fundamentalModule`: the fundamental module `L(ϖᵢ)` over `ℚ`.
 * `TauCeti.DynkinType.fundamentalModuleGenerator`: its highest weight vector `v⁺ᵢ`.
 * `TauCeti.DynkinType.instFiniteDimensionalFundamentalModule` and
@@ -89,6 +91,13 @@ theorem fundamentalWeight_apply_coroot (i j : Fin t.rank) :
 theorem isDominantIntegral_fundamentalWeight (i : Fin t.rank) :
     IsDominantIntegral (t.lieBasis ht).base (t.fundamentalWeight ht i) :=
   (t.lieBasis ht).isDominantIntegral_cartanBasis_dualBasis i
+
+/-- **The fundamental weights span the weight lattice**: over `ℤ`, the `ϖᵢ` span the lattice of
+integral weights of the pinned Lie algebra. -/
+theorem span_fundamentalWeight_eq_integralWeightLattice :
+    Submodule.span ℤ (Set.range (t.fundamentalWeight ht)) =
+      integralWeightLattice (t.cartanSubalgebra ht) :=
+  (t.lieBasis ht).span_cartanBasis_dualBasis_eq_integralWeightLattice
 
 /-! ### The fundamental modules -/
 
