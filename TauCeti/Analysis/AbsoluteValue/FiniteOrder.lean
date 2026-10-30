@@ -24,6 +24,7 @@ variable {R S : Type*} [Semiring R] [Nontrivial R] [Ring S] [LinearOrder S]
   [IsStrictOrderedRing S]
 
 /-- An absolute value takes the value `1` at every element of finite order. -/
+@[simp]
 theorem map_eq_one_of_isOfFinOrder (abv : AbsoluteValue R S) {x : R} (hx : IsOfFinOrder x) :
     abv x = 1 := by
   obtain ⟨n, hn, hxn⟩ := hx.exists_pow_eq_one
