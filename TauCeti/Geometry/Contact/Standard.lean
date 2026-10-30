@@ -262,12 +262,7 @@ private theorem extDeriv_innerProductContactFormFun_apply (x : V × V × ℝ) (v
     Fin.sum_univ_two,
     (hasFDerivAt_innerProductContactFormFun_apply V _ x).fderiv,
     (hasFDerivAt_innerProductContactFormFun_apply V _ x).fderiv]
-  simp only [Int.reduceNeg, Nat.reduceAdd, Fin.isValue, Fin.coe_ofNat_eq_mod, Nat.zero_mod,
-    pow_zero, Fin.removeNth, Fin.zero_succAbove, Fin.succ_zero_eq_one, neg_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst',
-    coe_innerSL_apply, smul_neg, one_smul, Nat.mod_succ, pow_one, ne_eq, one_ne_zero,
-    not_false_eq_true, Fin.succAbove_ne_zero_zero, neg_smul, neg_neg, stdSymplecticForm_apply]
-  linarith [real_inner_comm (v 0).2.1 (v 1).1]
+  simp [Fin.removeNth, stdSymplecticForm_apply, real_inner_comm (v 1).1, neg_add_eq_sub]
 
 /-- The exterior derivative of the standard contact form is the standard symplectic form of the
 `(q, p)` coordinates: `d(dz - ⟪p, dq⟫) = Σᵢ dqᵢ ∧ dpᵢ`. -/
@@ -324,14 +319,26 @@ theorem mextDeriv_innerProductContactForm_euclideanSpace_apply {n : ℕ}
       ∑ i, (v.1 i * w.2.1 i - v.2.1 i * w.1 i) := by
   simp [mextDeriv_innerProductContactForm_apply, PiLp.inner_apply, Finset.sum_sub_distrib, mul_comm]
 
-/-- Evaluate the pullback of the inner product contact form along a continuous linear map. -/
-private theorem mpullback_innerProductContactForm_linear_apply
-    (L : (V × V × ℝ) →L[ℝ] V × V × ℝ) (x : V × V × ℝ)
-    (v : Fin 1 → TangentSpace 𝓘(ℝ, V × V × ℝ) x) :
-    mpullback 𝓘(ℝ, V × V × ℝ) 𝓘(ℝ, V × V × ℝ) L (innerProductContactForm V).1 x v =
-      (L (v 0)).2.2 - ⟪(L x).2.1, (L (v 0)).1⟫_ℝ := by
+/-- A continuous linear map `L` pulls the inner product contact form back to any one-form `β`
+taking the value `(L w).2.2 - ⟪(L x).2.1, (L w).1⟫` on each tangent vector `w` at `x`. -/
+private theorem mpullback_innerProductContactForm_linear_eq {f : V × V × ℝ → V × V × ℝ}
+    (L : (V × V × ℝ) →L[ℝ] V × V × ℝ) (hf : f = L)
+    (β : RoughForm 𝓘(ℝ, V × V × ℝ) (V × V × ℝ) ℝ 1)
+    (hβ : ∀ x (w : TangentSpace 𝓘(ℝ, V × V × ℝ) x),
+      (L w).2.2 - ⟪(L x).2.1, (L w).1⟫_ℝ = β x ![w]) :
+    mpullback 𝓘(ℝ, V × V × ℝ) 𝓘(ℝ, V × V × ℝ) f (innerProductContactForm V).1 = β := by
+  subst hf
+  funext x
+  ext v
+  -- A one-form only sees the single entry `v 0` of `v`.
+  have hv : v = ![v 0] := by
+    ext i
+    fin_cases i
+    rfl
   rw [mpullback_apply, L.mfderiv_eq, innerProductContactForm_toRoughForm]
-  exact innerProductContactFormFun_apply V (L x) (fun i ↦ L (v i))
+  refine (innerProductContactFormFun_apply V (L x) fun i ↦ L (v i)).trans ?_
+  conv_rhs => rw [hv]
+  exact hβ x (v 0)
 
 /-- For `V = ℝ`, the standard contact form is the form `dz - x dy` of
 `TauCeti.standardContactForm` in the coordinates `(q, p, z) = (y, x, z)`: pulling `dz - p dq` back
@@ -343,20 +350,11 @@ theorem mpullback_innerProductContactForm_real :
     ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))).prod
       ((ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)).prod
         ((ContinuousLinearMap.snd ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))))
-  have hL : (fun p : ℝ × ℝ × ℝ ↦ (p.2.1, p.1, p.2.2)) = L := by
-    funext p
-    simp [L]
-  funext p
-  ext v
-  have hv : v = ![v 0] := by
-    ext i
-    fin_cases i
-    rfl
-  rw [hL, mpullback_innerProductContactForm_linear_apply]
-  conv_rhs => rw [hv, standardContactForm_apply]
-  generalize v 0 = w
-  obtain ⟨a, b, c⟩ := w
-  simp [L, mul_comm]
+  exact mpullback_innerProductContactForm_linear_eq ℝ L (by funext p; simp [L]) _
+    fun p w ↦ by
+      rw [standardContactForm_apply]
+      obtain ⟨a, b, c⟩ := w
+      simp [L, mul_comm]
 
 /-- The linear map `(q, p, z) ↦ (q, -p, -z)` reverses the coorientation of the standard contact
 structure: it pulls the standard contact form `α` back to `-α`. -/
@@ -366,21 +364,12 @@ theorem mpullback_innerProductContactForm_neg :
   let L : (V × V × ℝ) →L[ℝ] V × V × ℝ :=
     (ContinuousLinearMap.fst ℝ V (V × ℝ)).prod
       (-(ContinuousLinearMap.snd ℝ V (V × ℝ)))
-  have hL : (fun x : V × V × ℝ ↦ (x.1, -x.2.1, -x.2.2)) = L := by
-    funext x
-    simp [L, Prod.ext_iff]
-  funext x
-  ext v
-  have hv : v = ![v 0] := by
-    ext i
-    fin_cases i
-    rfl
-  rw [hL, mpullback_innerProductContactForm_linear_apply]
-  conv_rhs => rw [hv, SmoothForm.neg_toRoughForm, Pi.neg_apply,
-    ContinuousAlternatingMap.neg_apply, innerProductContactForm_apply]
-  generalize v 0 = w
-  obtain ⟨a, b, c⟩ := w
-  simp [L, neg_add_eq_sub]
+  exact mpullback_innerProductContactForm_linear_eq V L (by funext x; simp [L, Prod.ext_iff]) _
+    fun x w ↦ by
+      rw [SmoothForm.neg_toRoughForm, Pi.neg_apply, ContinuousAlternatingMap.neg_apply,
+        innerProductContactForm_apply]
+      obtain ⟨a, b, c⟩ := w
+      simp [L, neg_add_eq_sub]
 
 end InnerProductSpace
 
