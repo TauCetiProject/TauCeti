@@ -237,7 +237,8 @@ theorem mpullback_suspensionCover_suspensionForm :
     SmoothForm.mpullback (suspensionCover φ) (isLocalDiffeomorph_suspensionCover φ).contMDiff
         (suspensionForm φ σ hσ) =
       (stdSymplecticForm (V := ℝ)).constSmooth.prod σ := by
-  ext p v w
+  apply SmoothBundleForm.ext_eval₂
+  intro p v w
   obtain ⟨⟨s, t⟩, x⟩ := p
   rw [SmoothForm.eval₂_mpullback, mfderiv_suspensionCover_apply, mfderiv_suspensionCover_apply,
     suspensionCover_apply, eval₂_suspensionForm_mk, SmoothTwoForm.eval₂_prod,
