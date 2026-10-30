@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.CochainComplex.Opcycles
 public import TauCeti.Algebra.Homology.DerivedCategory.ProjectiveResolution
 public import TauCeti.Algebra.Homology.DerivedCategory.Singularity
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
@@ -30,14 +31,11 @@ complex of projective objects.
 
 ## Main results
 
-* `CochainComplex.retractOpcyclesOfHomotopy`: if the projection of a cochain complex to its
-  opcycles in degree `i`, viewed as a chain map to a complex concentrated in degree `i`, is
-  null-homotopic, then the opcycles in degree `i + 1` are a retract of the term in degree `i + 1`.
 * `DerivedCategory.exists_homSingle_eq_zero_of_perfect`: a perfect object has no morphisms to
   objects of `C` placed in sufficiently negative degrees.
 * `DerivedCategory.exists_bounded_projective_of_perfect`: a perfect object is represented by a
   bounded complex of projective objects.
-* `TauCeti.DerivedCategory.Bounded.perfect_iff`: an object of the bounded derived category is
+* `DerivedCategory.Bounded.perfect_iff`: an object of the bounded derived category is
   perfect if and only if it is the image of a bounded complex of projective objects.
 -/
 
@@ -46,54 +44,6 @@ public section
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated ZeroObject
 
 universe w v u
-
-namespace CochainComplex
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] (K : CochainComplex C ℤ)
-
-/-- If the differential `K^i ⟶ K^j` followed by `r : K^j ⟶ K.opcycles i` is the projection
-`K^i ⟶ K.opcycles i`, then `K.opcycles j` is a retract of `K^j`. -/
-noncomputable def retractOpcycles {i j : ℤ} (hij : i + 1 = j) [K.HasHomology i] [K.HasHomology j]
-    (r : K.X j ⟶ K.opcycles i) (hr : K.d i j ≫ r = K.pOpcycles i) :
-    Retract (K.opcycles j) (K.X j) where
-  i := K.descOpcycles (𝟙 _ - r ≫ K.fromOpcycles i j) i (by simp; lia) (by
-    rw [Preadditive.comp_sub, Category.comp_id, reassoc_of% hr, K.p_fromOpcycles, sub_self])
-  r := K.pOpcycles j
-  retract := by
-    have : K.fromOpcycles i j ≫ K.pOpcycles j = 0 := by
-      rw [← cancel_epi (K.pOpcycles i), K.p_fromOpcycles_assoc, K.d_pOpcycles, comp_zero]
-    rw [← cancel_epi (K.pOpcycles j), K.p_descOpcycles_assoc, Preadditive.sub_comp,
-      Category.assoc, this, comp_zero, sub_zero, Category.id_comp, Category.comp_id]
-
-variable [HasZeroObject C]
-
-/-- The projection of `K` onto its opcycles in degree `i`, as a chain map to the complex
-concentrated in degree `i`. -/
-noncomputable def toSingleOpcycles (i : ℤ) [K.HasHomology i] :
-    K ⟶ (HomologicalComplex.single C (.up ℤ) i).obj (K.opcycles i) :=
-  HomologicalComplex.mkHomToSingle (K.pOpcycles i) fun k _ ↦ K.d_pOpcycles k i
-
-/-- The component of `K.toSingleOpcycles i` in degree `i` is the projection onto the opcycles. -/
-lemma toSingleOpcycles_f_self (i : ℤ) [K.HasHomology i] :
-    (K.toSingleOpcycles i).f i =
-      K.pOpcycles i ≫ (HomologicalComplex.singleObjXSelf (.up ℤ) i _).inv :=
-  HomologicalComplex.mkHomToSingle_f _ _
-
-/-- If the projection of `K` onto its opcycles in degree `i` is null-homotopic as a chain map to
-the complex concentrated in degree `i`, then `K.opcycles j` is a retract of `K^j`, where
-`j = i + 1`. -/
-noncomputable def retractOpcyclesOfHomotopy {i j : ℤ} (hij : i + 1 = j) [K.HasHomology i]
-    [K.HasHomology j] (h : Homotopy (K.toSingleOpcycles i) 0) :
-    Retract (K.opcycles j) (K.X j) :=
-  K.retractOpcycles hij (h.hom j i ≫ (HomologicalComplex.singleObjXSelf (.up ℤ) i _).hom) (by
-    have := h.comm i
-    rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel i j from hij),
-      prevD_eq _ (show (ComplexShape.up ℤ).Rel (i - 1) i by simp),
-      HomologicalComplex.single_obj_d, comp_zero, add_zero, HomologicalComplex.zero_f, add_zero,
-      toSingleOpcycles_f_self] at this
-    rw [← Category.assoc, ← this, Category.assoc, Iso.inv_hom_id, Category.comp_id])
-
-end CochainComplex
 
 namespace DerivedCategory
 
@@ -205,23 +155,27 @@ theorem exists_bounded_projective_of_perfect [EnoughProjectives C] {X : DerivedC
 
 end DerivedCategory
 
-namespace TauCeti.DerivedCategory.Bounded
+namespace DerivedCategory.Bounded
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
+open TauCeti.DerivedCategory.Bounded in
 /-- **Perfect objects are the bounded complexes of projectives**: in an abelian category with
 enough projectives, an object of the bounded derived category is perfect if and only if it is the
 image of a bounded complex of projective objects. -/
-theorem perfect_iff [EnoughProjectives C] (X : _root_.DerivedCategory.Bounded C) :
-    perfect C X ↔ ∃ K : CochainComplex.Bounded C, (∀ n, Projective (K.obj.X n)) ∧
-      Nonempty ((Qh C).obj ((HomotopyCategory.Bounded.quotient C).obj K) ≅ X) := by
+theorem perfect_iff [EnoughProjectives C] (X : DerivedCategory.Bounded C) :
+    TauCeti.DerivedCategory.Bounded.perfect C X ↔
+      ∃ K : CochainComplex.Bounded C, (∀ n, Projective (K.obj.X n)) ∧
+        Nonempty ((TauCeti.DerivedCategory.Bounded.Qh C).obj
+          ((TauCeti.HomotopyCategory.Bounded.quotient C).obj K) ≅ X) := by
   refine ⟨fun hX ↦ ?_, fun ⟨K, hK, ⟨e⟩⟩ ↦ (perfect C).prop_of_iso e
     (perfect_Qh_obj_quotient_obj C K hK)⟩
-  obtain ⟨K, a, b, _, _, hK, ⟨e⟩⟩ := _root_.DerivedCategory.exists_bounded_projective_of_perfect hX
-  let K' : CochainComplex.Bounded C := ⟨K, (CochainComplex.bounded_iff _ _).2 ⟨a, b, ‹_›, ‹_›⟩⟩
-  exact ⟨K', hK, ⟨_root_.DerivedCategory.Bounded.ι.preimageIso
-    ((QhCompιIsoιCompQh C).app _ ≪≫ _root_.DerivedCategory.Qh.mapIso (eqToIso
-      (HomotopyCategory.Bounded.quotient_obj_obj C K')) ≪≫
-      (_root_.DerivedCategory.quotientCompQhIso C).app K ≪≫ e)⟩⟩
+  obtain ⟨K, a, b, _, _, hK, ⟨e⟩⟩ := exists_bounded_projective_of_perfect hX
+  let K' : CochainComplex.Bounded C :=
+    ⟨K, (CochainComplex.bounded_iff _ _).2 ⟨a, b, ‹_›, ‹_›⟩⟩
+  exact ⟨K', hK, ⟨ι.preimageIso
+    ((QhCompιIsoιCompQh C).app _ ≪≫ DerivedCategory.Qh.mapIso (eqToIso
+      (TauCeti.HomotopyCategory.Bounded.quotient_obj_obj C K')) ≪≫
+      (quotientCompQhIso C).app K ≪≫ e)⟩⟩
 
-end TauCeti.DerivedCategory.Bounded
+end DerivedCategory.Bounded
