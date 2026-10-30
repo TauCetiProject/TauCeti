@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
+public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 public import TauCeti.Probability.Process.EmpiricalMeasure
 
@@ -35,6 +36,8 @@ characteristic polynomial, not on the basis or on the eigenvector choice, and it
 
 ## Main results
 
+* `Matrix.integral_pow_spectralMeasure` — the `k`-th moment of the spectral measure is the
+  normalized trace `n⁻¹ Re tr (A ^ k)`;
 * `Matrix.spectralMeasure_eq_of_charpoly_eq` — Hermitian matrices with the same characteristic
   polynomial have the same spectral measure;
 * `Matrix.eigenvalueMeasure_apply` — the eigenvalue measure of a set is the proportion of
@@ -96,6 +99,22 @@ theorem integral_spectralMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace
   rw [spectralMeasure_def, ← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
     toFiniteMeasure_empiricalMeasureOfFintype,
     integral_empiricalFiniteMeasure_of_measurableSingletonClass]
+
+/-- The moments of the spectral measure are normalized traces of powers:
+`∫ x ^ k dL_A = n⁻¹ tr (A ^ k)`, read in the scalar field of `A`. -/
+theorem ofReal_integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
+    ((∫ x, x ^ k ∂(A.spectralMeasure hA : Measure ℝ) : ℝ) : 𝕜) =
+      ((Fintype.card n : ℕ) : 𝕜)⁻¹ * (A ^ k).trace := by
+  rw [integral_spectralMeasure, hA.trace_pow_eq_sum_eigenvalues_pow, smul_eq_mul]
+  simp
+
+/-- The moments of the spectral measure are normalized traces of powers:
+`∫ x ^ k dL_A = n⁻¹ Re tr (A ^ k)`. -/
+theorem integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
+    ∫ x, x ^ k ∂(A.spectralMeasure hA : Measure ℝ) =
+      ((Fintype.card n : ℕ) : ℝ)⁻¹ * RCLike.re (A ^ k).trace := by
+  have h := congr_arg RCLike.re (ofReal_integral_pow_spectralMeasure A hA k)
+  rwa [RCLike.ofReal_re, ← RCLike.ofReal_natCast, ← RCLike.ofReal_inv, RCLike.re_ofReal_mul] at h
 
 /-- Hermitian matrices with the same characteristic polynomial have the same spectral measure.
 In particular the spectral measure does not depend on a choice of basis. -/
