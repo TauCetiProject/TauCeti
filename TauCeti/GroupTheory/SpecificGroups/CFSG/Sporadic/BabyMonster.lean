@@ -347,8 +347,8 @@ theorem length_relatorList : relatorList.length = 69 := by
 
 /-- **The recorded relator count agrees with the transcribed data.** -/
 theorem matchesMetadata_presentation : presentation.matchesMetadata := by
-  rw [GroupPresentation.matchesMetadata_iff]
-  change relatorList.length = 69
+  rw [GroupPresentation.matchesMetadata_iff, presentation_transcribed,
+    presentation_expectedRelatorCount]
   exact length_relatorList
 
 /-! ### Letter counts -/
