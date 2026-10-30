@@ -157,42 +157,31 @@ variable {K : Type*} [Field K] (F : FormalGroup K) [F.IsComm]
 formal group, obtained by factoring its `p`-series. -/
 noncomputable def heightFrobeniusIso {h : ℕ} (hh : F.height p = h) :
     TauCeti.FormalGroupIso (F.map (iterateFrobenius K p h)) F :=
-  let f : TauCeti.FormalGroupHom F F :=
-    { toPowerSeries := F.nsmulSeries p
-      zero_constantCoeff := F.constantCoeff_nsmulSeries p
-      hom := F.subst_toPowerSeries_nsmulSeries p }
-  f.iterateFrobeniusIso h (F.height_eq_natCast_iff.mp hh)
+  (F.nsmulHom p).iterateFrobeniusIso h
+    (by simpa only [nsmulHom_toPowerSeries] using F.height_eq_natCast_iff.mp hh)
 
 /-- The height factor selects coefficients of the `p`-series in degrees divisible by `p ^ h`. -/
 @[simp]
 theorem coeff_heightFrobeniusIso {h : ℕ} (hh : F.height p = h) (n : ℕ) :
     PowerSeries.coeff n (F.heightFrobeniusIso hh).toHom.toPowerSeries =
       PowerSeries.coeff (p ^ h * n) (F.nsmulSeries p) := by
-  simp only [heightFrobeniusIso, TauCeti.FormalGroupHom.coeff_iterateFrobeniusIso]
+  simp only [heightFrobeniusIso, TauCeti.FormalGroupHom.coeff_iterateFrobeniusIso,
+    nsmulHom_toPowerSeries]
 
 /-- The height factor composed with the height-fold relative Frobenius is the `p`-series. -/
 @[simp]
-theorem heightFrobeniusIso_subst_X_pow {h : ℕ} (hh : F.height p = h) :
-    PowerSeries.subst (PowerSeries.X ^ (p ^ h)) (F.heightFrobeniusIso hh).toHom.toPowerSeries =
-      F.nsmulSeries p := by
-  unfold heightFrobeniusIso
-  rw [← iterateFrobeniusHom_toPowerSeries F h,
-    ← TauCeti.FormalGroupHom.comp_toPowerSeries,
+theorem heightFrobeniusIso_comp_iterateFrobeniusHom {h : ℕ} (hh : F.height p = h) :
+    (F.heightFrobeniusIso hh).toHom.comp (F.iterateFrobeniusHom p h) = F.nsmulHom p := by
+  simp only [heightFrobeniusIso,
     TauCeti.FormalGroupHom.iterateFrobeniusIso_comp_iterateFrobeniusHom]
 
 /-- For a formal group of finite height `h`, multiplication by `p` is the `h`-fold relative
 Frobenius followed by a unique isomorphism from the Frobenius twist back to the group. -/
-theorem existsUnique_iso_subst_X_pow_eq_nsmulSeries_of_height_eq {h : ℕ}
+theorem existsUnique_iso_comp_iterateFrobeniusHom_eq_nsmulHom_of_height_eq {h : ℕ}
     (hh : F.height p = h) :
     ∃! g : TauCeti.FormalGroupIso (F.map (iterateFrobenius K p h)) F,
-      PowerSeries.subst (PowerSeries.X ^ (p ^ h)) g.toHom.toPowerSeries = F.nsmulSeries p := by
-  let f : TauCeti.FormalGroupHom F F :=
-    { toPowerSeries := F.nsmulSeries p
-      zero_constantCoeff := F.constantCoeff_nsmulSeries p
-      hom := F.subst_toPowerSeries_nsmulSeries p }
-  have hf : f.toPowerSeries.order = (p ^ h : ℕ) := F.height_eq_natCast_iff.mp hh
-  simpa only [TauCeti.FormalGroupHom.ext_iff, TauCeti.FormalGroupHom.comp_toPowerSeries,
-    iterateFrobeniusHom_toPowerSeries] using
-    f.existsUnique_iso_comp_iterateFrobeniusHom_of_order h hf
+      g.toHom.comp (F.iterateFrobeniusHom p h) = F.nsmulHom p :=
+  (F.nsmulHom p).existsUnique_iso_comp_iterateFrobeniusHom_of_order h
+    (by simpa only [nsmulHom_toPowerSeries] using F.height_eq_natCast_iff.mp hh)
 
 end FormalGroup
