@@ -163,15 +163,15 @@ theorem normalize_homotopy : (c.normalize hd).homotopy =
   simp only [normalize, normalizedHomotopy, reducedHomotopy, complement,
     Module.End.mul_eq_comp, LinearMap.comp_assoc]
 
-/-- Normalization preserves the degree-minus-one condition on the homotopy. -/
-theorem isHomogeneous_normalize_homotopy {σM σN : Type*}
+/-- For a differential of degree `q`, normalization preserves homotopy degree `-q`. -/
+theorem isHomogeneous_normalize_homotopy {ι σM σN : Type*} [AddGroup ι]
     [SetLike σM M] [AddSubgroupClass σM M] [SetLike σN N]
-    {𝒜 : ℤ → σM} {ℬ : ℤ → σN}
-    (hdM : LinearMap.IsHomogeneous dM 𝒜 𝒜 1)
+    {𝒜 : ι → σM} {ℬ : ι → σN} {q : ι}
+    (hdM : LinearMap.IsHomogeneous dM 𝒜 𝒜 q)
     (hi : LinearMap.IsHomogeneous c.incl ℬ 𝒜 0)
     (hp : LinearMap.IsHomogeneous c.proj 𝒜 ℬ 0)
-    (hh : LinearMap.IsHomogeneous c.homotopy 𝒜 𝒜 (-1)) :
-    LinearMap.IsHomogeneous (c.normalize hd).homotopy 𝒜 𝒜 (-1) := by
+    (hh : LinearMap.IsHomogeneous c.homotopy 𝒜 𝒜 (-q)) :
+    LinearMap.IsHomogeneous (c.normalize hd).homotopy 𝒜 𝒜 (-q) := by
   have hψ := (LinearMap.isHomogeneous_id 𝒜).sub (by simpa using hi.comp hp)
   have hk := hψ.comp (hh.comp hψ)
   simp only [add_zero, zero_add] at hk
