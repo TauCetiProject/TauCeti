@@ -13,9 +13,11 @@ public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Primary
 
 Let `K = ℚ(i)`, given as a number field with `IsCyclotomicExtension {4} ℚ K`, so that
 `𝓞 K = ℤ[i]`, and let `χ` be a multiplicative character on a finite field `F` with `q` elements,
-with values in `𝓞 K`. This file identifies the Jacobi sum `J(χ, χ)` with a primary element of
-`ℤ[i]`, the identification `-χ (-1) J(χ, χ) = π` for the quartic residue symbol `χ = (· / π)_4`
-of a primary prime `π` on which the proof of biquadratic reciprocity rests.
+with values in `𝓞 K`. This file shows that the normalised Jacobi sum `-χ (-1) J(χ, χ)` is
+primary, that `J(χ, χ)` has norm `q`, and that `-χ (-1) J(χ, χ)` equals every primary divisor
+`π` of `J(χ, χ)` of norm `q`. For the quartic residue symbol `χ = (· / π)_4` of a primary prime
+`π`, this gives the identification `-χ (-1) J(χ, χ) = π` on which the proof of biquadratic
+reciprocity rests, once `π ∣ J(χ, χ)` is known; that divisibility is not proved in this file.
 
 * If `χ ^ 4 = 1` and `q ≡ 1 (mod 4)`, then `-χ (-1) J(χ, χ)` is primary: it is congruent to `1`
   modulo `(1 + i) ^ 3`. This applies to the quartic residue symbol `χ = (· / P)_4` at a prime `P`
@@ -26,9 +28,9 @@ of a primary prime `π` on which the proof of biquadratic reciprocity rests.
   `J(χ, χ)` has norm `q`.
 * Consequently, if `χ` has order `4` and `J(χ, χ)` is divisible by a primary element `π` of
   norm `q`, then `-χ (-1) J(χ, χ)` is an associate of `π` that is primary, so it is `π`
-  (`TauCeti.existsUnique_unit_mul_isPrimaryGaussian`). For `χ = (· / π)_4` the divisibility
-  holds because `χ (t) ≡ t ^ ((q - 1) / 4)` modulo `π`, which makes `J(χ, χ)` a combination of
-  power sums `∑ t, t ^ j` with `0 < j < q - 1` modulo `π`.
+  (`TauCeti.existsUnique_unit_mul_isPrimaryGaussian`). This file takes the divisibility as a
+  hypothesis. For `χ = (· / π)_4` it holds because `χ (t) ≡ t ^ ((q - 1) / 4)` modulo `π`,
+  which makes `J(χ, χ)` a combination of power sums `∑ t, t ^ j` with `0 < j < q - 1` modulo `π`.
 
 ## Main results
 
@@ -104,11 +106,11 @@ theorem norm_jacobiSum_eq_card_of_orderOf_eq_four {χ : MulChar F (𝓞 K)} (hχ
   rw [intCast_norm_eq_mul_of_four (σ := σ) hσ, Int.cast_natCast]
   exact hf hprod
 
-/-- **The quartic Jacobi sum is its primary divisor of norm `#F`.** Let `χ` be a multiplicative
-character of order `4` on a finite field `F`, with values in `𝓞 K = ℤ[i]`, and let `π` be a primary
-element of norm `#F` dividing `J(χ, χ)`. Then `-χ (-1) J(χ, χ) = π`. This applies to the quartic
-residue symbol `χ = (· / π)_4` at a primary prime `π` of norm `p ≡ 1 (mod 4)`, whose Jacobi sum
-`J(χ, χ)` is divisible by `π`. -/
+/-- **The normalised quartic Jacobi sum is its primary divisor of norm `#F`.** Let `χ` be a
+multiplicative character of order `4` on a finite field `F`, with values in `𝓞 K = ℤ[i]`, and let
+`π` be a primary element of norm `#F` dividing `J(χ, χ)`. Then `-χ (-1) J(χ, χ) = π`. This applies
+to the quartic residue symbol `χ = (· / π)_4` at a primary prime `π` of norm `p ≡ 1 (mod 4)`, once
+the divisibility `π ∣ J(χ, χ)`, which is not proved here, is supplied. -/
 theorem neg_apply_neg_one_mul_jacobiSum_eq_of_dvd {χ : MulChar F (𝓞 K)} (hχ : orderOf χ = 4)
     {π : 𝓞 K} (hπ : IsPrimaryGaussian π) (hN : Algebra.norm ℤ π = Fintype.card F)
     (hdvd : π ∣ jacobiSum χ χ) : -χ (-1) * jacobiSum χ χ = π := by
