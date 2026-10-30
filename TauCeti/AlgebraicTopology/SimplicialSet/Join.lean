@@ -36,6 +36,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
   (`SSet.join.objEquiv`).
 * `SSet.join.π`: the projection `K ⋆ L ⟶ Δ[1]`.
 * `SSet.join.inl`, `SSet.join.inr`: the inclusions of `K` and `L` as the parts over `0` and `1`.
+* `SSet.join.joinFiberZeroIso`, `SSet.join.joinFiberOneIso`: the parts of `K ⋆ L` over the vertices
+  `0` and `1` are `K` and `L`, through the inverses of the inclusions.
 * `SSet.join.map`: the functoriality of the join in both variables.
 
 ## Main results
@@ -99,6 +101,15 @@ lemma joinFiber_const_of_ne {e e' : Fin 2} (h : e ≠ e') :
   simp only [mem_joinFiber_iff, stdSimplex.const_app_apply, Subfunctor.bot_obj,
     Set.mem_empty_iff_false, iff_false, not_forall]
   exact ⟨0, h⟩
+
+/-- The part of `X` over the vertex `e` lies over `e`. -/
+@[reassoc (attr := simp)]
+lemma joinFiber_ι_comp (p : X ⟶ Δ[1]) (e : Fin 2) :
+    (joinFiber p e).ι ≫ p = const (stdSimplex.const 1 e _) := by
+  ext n ⟨x, hx⟩
+  induction n using Opposite.rec with | op n
+  induction n using SimplexCategory.rec with | _ n
+  exact stdSimplex.ext _ _ ((mem_joinFiber_iff p e x).1 hx)
 
 /-- The data of a map from `X` to the join of `K` and `L`: a map `p : X ⟶ Δ[1]`, a map to `K` from
 the part of `X` over the vertex `0`, and a map to `L` from the part of `X` over the vertex `1`. -/
@@ -267,11 +278,18 @@ lemma mem_joinFiber_π_iff {n : SimplexCategory} (x : (join K L).obj (op n)) (e 
     Category.id_comp]
 
 variable (K L) in
-/-- The map to `K` from the part of the join over the vertex `0`: the map to `K` of the join data
-of a simplex, evaluated on the top simplex. -/
-private def leftOfFiber : (joinFiber (π K L) 0 : SSet) ⟶ K where
-  app n := ↾fun x ↦ (objEquiv x.1).left.app n
-    ⟨yonedaEquiv (𝟙 _), (mem_joinFiber_π_iff x.1 0).1 x.2⟩
+/-- The map to `T` from the part of the join over the vertex `e` given by a component `c` of join
+data on standard simplices compatible with restriction: the component `c` of the join data of a
+simplex, evaluated on the top simplex. -/
+private def ofFiber (e : Fin 2) {T : SSet.{u}}
+    (c : ∀ {n : SimplexCategory} (d : JoinData (stdSimplex.obj n) K L),
+      (joinFiber d.p e : SSet) ⟶ T)
+    (hc : ∀ {n m : SimplexCategory} (d : JoinData (stdSimplex.obj n) K L)
+      (g : stdSimplex.obj m ⟶ stdSimplex.obj n),
+      c (d.precomp g) = (joinFiber d.p e).fromPreimage g ≫ c d) :
+    (joinFiber (π K L) e : SSet) ⟶ T where
+  app n := ↾fun x ↦ (c (objEquiv x.1)).app n
+    ⟨yonedaEquiv (𝟙 _), (mem_joinFiber_π_iff x.1 e).1 x.2⟩
   naturality n m f := by
     ext ⟨x, hx⟩
     induction n using Opposite.rec with | op n
@@ -280,46 +298,21 @@ private def leftOfFiber : (joinFiber (π K L) 0 : SSet) ⟶ K where
         (stdSimplex.obj n).map f (yonedaEquiv (𝟙 _)) := by
       conv_rhs => rw [← Quiver.Hom.op_unop f]
       rw [yonedaEquiv_naturality, Category.comp_id]
-    have hx' := (mem_joinFiber_π_iff x 0).1 hx
-    have hy : yonedaEquiv (stdSimplex.{u}.map f.unop) ∈
-        (joinFiber (objEquiv x).p 0).obj (op m) := by
-      rw [hs]
-      exact (joinFiber (objEquiv x).p 0).map f hx'
     dsimp
     rw [← NatTrans.naturality_apply]
-    refine ((objEquiv x).precomp_yonedaEquiv_symm_left_app _ hy _).trans ?_
-    exact congrArg _ (Subtype.ext hs)
-
-variable (K L) in
-/-- The map to `L` from the part of the join over the vertex `1`: the map to `L` of the join data
-of a simplex, evaluated on the top simplex. -/
-private def rightOfFiber : (joinFiber (π K L) 1 : SSet) ⟶ L where
-  app n := ↾fun x ↦ (objEquiv x.1).right.app n
-    ⟨yonedaEquiv (𝟙 _), (mem_joinFiber_π_iff x.1 1).1 x.2⟩
-  naturality n m f := by
-    ext ⟨x, hx⟩
-    induction n using Opposite.rec with | op n
-    induction m using Opposite.rec with | op m
-    have hs : yonedaEquiv (stdSimplex.{u}.map f.unop) =
-        (stdSimplex.obj n).map f (yonedaEquiv (𝟙 _)) := by
-      conv_rhs => rw [← Quiver.Hom.op_unop f]
-      rw [yonedaEquiv_naturality, Category.comp_id]
-    have hx' := (mem_joinFiber_π_iff x 1).1 hx
-    have hy : yonedaEquiv (stdSimplex.{u}.map f.unop) ∈
-        (joinFiber (objEquiv x).p 1).obj (op m) := by
-      rw [hs]
-      exact (joinFiber (objEquiv x).p 1).map f hx'
-    dsimp
-    rw [← NatTrans.naturality_apply]
-    refine ((objEquiv x).precomp_yonedaEquiv_symm_right_app _ hy _).trans ?_
-    exact congrArg _ (Subtype.ext hs)
+    -- The join data of the face of `x` along `f` is the restriction of the join data of `x`.
+    refine (ConcreteCategory.congr_hom
+      (NatTrans.congr_app (hc (objEquiv x) (stdSimplex.map f.unop)) (op m)) _).trans ?_
+    refine congrArg _ (Subtype.ext ((?_ : _ = yonedaEquiv (stdSimplex.{u}.map f.unop)).trans hs))
+    exact (yonedaEquiv_comp (𝟙 (stdSimplex.obj m)) (stdSimplex.map f.unop)).symm.trans
+      (congrArg _ (Category.id_comp _))
 
 variable (K L) in
 /-- The tautological join data on the join `K ⋆ L`, corresponding to its identity map. -/
 def univ : JoinData (join K L) K L where
   p := π K L
-  left := leftOfFiber K L
-  right := rightOfFiber K L
+  left := ofFiber K L 0 (fun d ↦ d.left) (fun _ _ ↦ rfl)
+  right := ofFiber K L 1 (fun d ↦ d.right) (fun _ _ ↦ rfl)
 
 @[simp]
 lemma univ_p : (univ K L).p = π K L :=
@@ -495,6 +488,110 @@ lemma univ_right_app_inr_app {n : SimplexCategoryᵒᵖ} (x : L.obj n)
     (univ K L).right.app n ⟨(inr K L).app n x, hx⟩ = x :=
   JoinData.congr_right_app (homEquiv.apply_symm_apply _) x hx (by simp)
 
+variable (K L) in
+/-- Every simplex of the join over the vertex `0` is the inclusion of its image in `K` under the map
+to `K` of the tautological join data. -/
+@[simp]
+lemma univ_left_comp_inl : (univ K L).left ≫ inl K L = (joinFiber (univ K L).p 0).ι := by
+  apply homEquiv.injective
+  rw [homEquiv_comp, inl, Equiv.apply_symm_apply, homEquiv_apply]
+  refine JoinData.ext (by simpa using (joinFiber_ι_comp (univ K L).p 0).symm)
+    (fun _ _ _ _ ↦ rfl) (fun _ _ hx _ ↦ ?_)
+  simp at hx
+
+variable (K L) in
+/-- Every simplex of the join over the vertex `1` is the inclusion of its image in `L` under the map
+to `L` of the tautological join data. -/
+@[simp]
+lemma univ_right_comp_inr : (univ K L).right ≫ inr K L = (joinFiber (univ K L).p 1).ι := by
+  apply homEquiv.injective
+  rw [homEquiv_comp, inr, Equiv.apply_symm_apply, homEquiv_apply]
+  refine JoinData.ext (by simpa using (joinFiber_ι_comp (univ K L).p 1).symm)
+    (fun _ _ hx _ ↦ ?_) (fun _ _ _ _ ↦ rfl)
+  simp at hx
+
+/-- On the part of the join over the vertex `0`, the map to `K` of the tautological join data is
+inverse to the inclusion of `K`. -/
+lemma inl_app_univ_left_app {n : SimplexCategoryᵒᵖ} (x : (join K L).obj n)
+    (hx : x ∈ (joinFiber (univ K L).p 0).obj n) :
+    (inl K L).app n ((univ K L).left.app n ⟨x, hx⟩) = x :=
+  -- Elaborated without the expected type, which is only definitionally equal.
+  (ConcreteCategory.congr_hom (NatTrans.congr_app (univ_left_comp_inl K L) n) ⟨x, hx⟩ :)
+
+/-- On the part of the join over the vertex `1`, the map to `L` of the tautological join data is
+inverse to the inclusion of `L`. -/
+lemma inr_app_univ_right_app {n : SimplexCategoryᵒᵖ} (x : (join K L).obj n)
+    (hx : x ∈ (joinFiber (univ K L).p 1).obj n) :
+    (inr K L).app n ((univ K L).right.app n ⟨x, hx⟩) = x :=
+  -- Elaborated without the expected type, which is only definitionally equal.
+  (ConcreteCategory.congr_hom (NatTrans.congr_app (univ_right_comp_inr K L) n) ⟨x, hx⟩ :)
+
+variable (K L) in
+/-- The inclusion of `K` lands in the part of the join over the vertex `0`. -/
+lemma range_inl_le_joinFiber : Subcomplex.range (inl K L) ≤ joinFiber (univ K L).p 0 := by
+  rw [← Subcomplex.preimage_eq_top_iff]
+  change joinFiber (inl K L ≫ π K L) 0 = ⊤
+  rw [inl_π, joinFiber_const_self]
+
+variable (K L) in
+/-- The inclusion of `L` lands in the part of the join over the vertex `1`. -/
+lemma range_inr_le_joinFiber : Subcomplex.range (inr K L) ≤ joinFiber (univ K L).p 1 := by
+  rw [← Subcomplex.preimage_eq_top_iff]
+  change joinFiber (inr K L ≫ π K L) 1 = ⊤
+  rw [inr_π, joinFiber_const_self]
+
+variable (K L) in
+/-- The part of the join `K ⋆ L` over the vertex `0` is `K`, through the map to `K` of the
+tautological join data and the inclusion of `K`. -/
+def joinFiberZeroIso : (joinFiber (univ K L).p 0 : SSet) ≅ K where
+  hom := (univ K L).left
+  inv := Subcomplex.lift (inl K L) (range_inl_le_joinFiber K L)
+  hom_inv_id := by
+    rw [← cancel_mono (Subcomplex.ι _), Category.assoc, Subcomplex.lift_ι, Category.id_comp]
+    exact univ_left_comp_inl K L
+  inv_hom_id := by
+    ext n x
+    exact univ_left_app_inl_app x _
+
+variable (K L) in
+/-- The part of the join `K ⋆ L` over the vertex `1` is `L`, through the map to `L` of the
+tautological join data and the inclusion of `L`. -/
+def joinFiberOneIso : (joinFiber (univ K L).p 1 : SSet) ≅ L where
+  hom := (univ K L).right
+  inv := Subcomplex.lift (inr K L) (range_inr_le_joinFiber K L)
+  hom_inv_id := by
+    rw [← cancel_mono (Subcomplex.ι _), Category.assoc, Subcomplex.lift_ι, Category.id_comp]
+    exact univ_right_comp_inr K L
+  inv_hom_id := by
+    ext n x
+    exact univ_right_app_inr_app x _
+
+variable (K L) in
+/-- The isomorphism `joinFiberZeroIso` is the map to `K` of the tautological join data. -/
+@[simp]
+lemma joinFiberZeroIso_hom : (joinFiberZeroIso K L).hom = (univ K L).left := by
+  rfl
+
+variable (K L) in
+/-- The isomorphism `joinFiberOneIso` is the map to `L` of the tautological join data. -/
+@[simp]
+lemma joinFiberOneIso_hom : (joinFiberOneIso K L).hom = (univ K L).right := by
+  rfl
+
+variable (K L) in
+/-- The inverse of `joinFiberZeroIso` is the inclusion of `K`. -/
+@[reassoc (attr := simp)]
+lemma joinFiberZeroIso_inv_ι :
+    (joinFiberZeroIso K L).inv ≫ (joinFiber (univ K L).p 0).ι = inl K L :=
+  Subcomplex.lift_ι _ (range_inl_le_joinFiber K L)
+
+variable (K L) in
+/-- The inverse of `joinFiberOneIso` is the inclusion of `L`. -/
+@[reassoc (attr := simp)]
+lemma joinFiberOneIso_inv_ι :
+    (joinFiberOneIso K L).inv ≫ (joinFiber (univ K L).p 1).ι = inr K L :=
+  Subcomplex.lift_ι _ (range_inr_le_joinFiber K L)
+
 @[reassoc (attr := simp)]
 lemma inl_map (f : K ⟶ K') (g : L ⟶ L') : inl K L ≫ map f g = f ≫ inl K' L' := by
   apply homEquiv.injective
@@ -533,6 +630,35 @@ namespace JoinData
 variable {n : ℕ} {i : Fin (n + 3)} (h₀ : 0 < i) (hₙ : i < Fin.last (n + 2))
   {q : Δ[n + 2] ⟶ Δ[1]}
 
+/-- If every vertex of `Δ[n + 2]` lies over the vertex `e` of `Δ[1]`, nothing lies over a
+different vertex `e'`. -/
+private lemma joinFiber_eq_bot_of_forall_eq {e e' : Fin 2} (h : e ≠ e')
+    (hq : ∀ v, yonedaEquiv q v = e) : joinFiber q e' = ⊥ := by
+  ext k x
+  induction k using Opposite.rec with | op k
+  induction k using SimplexCategory.rec with | _ k
+  simp only [mem_joinFiber_iff, stdSimplex.hom_app_apply, hq, Subfunctor.bot_obj,
+    Set.mem_empty_iff_false, iff_false, not_forall]
+  exact ⟨0, h⟩
+
+include h₀ hₙ in
+/-- If every vertex of `Δ[n + 2]` lies over the vertex `e` of `Δ[1]`, a map to a quasicategory `T`
+from the part of the inner horn over `e` extends to the part of `Δ[n + 2]` over `e`. -/
+private lemma exists_fromPreimage_horn_ι_comp_eq {T : SSet.{u}} [Quasicategory T] {e : Fin 2}
+    (hq : ∀ v, yonedaEquiv q v = e) (φ : (joinFiber (Λ[n + 2, i].ι ≫ q) e : SSet) ⟶ T) :
+    ∃ τ : (joinFiber q e : SSet) ⟶ T, (joinFiber q e).fromPreimage Λ[n + 2, i].ι ≫ τ = φ := by
+  have htop : joinFiber (Λ[n + 2, i].ι ≫ q) e = ⊤ := by
+    ext k x
+    induction k using Opposite.rec with | op k
+    induction k using SimplexCategory.rec with | _ k
+    simp only [Subfunctor.top_obj, Set.mem_univ, iff_true, mem_joinFiber_iff]
+    exact fun j ↦ (stdSimplex.hom_app_apply q x.1 j).trans (hq _)
+  obtain ⟨τ, hτ⟩ := Quasicategory.hornFilling'
+    ((Subcomplex.topIso _).inv ≫ Subcomplex.homOfLE htop.ge ≫ φ) h₀ hₙ
+  refine ⟨(joinFiber q e).ι ≫ τ, ?_⟩
+  ext k x
+  exact (ConcreteCategory.congr_hom (NatTrans.congr_app hτ k) x.1).symm
+
 include h₀ hₙ in
 /-- Join data on an inner horn lying entirely over the vertex `0` of `Δ[1]` is the restriction of
 join data on the simplex when `K` is a quasicategory. -/
@@ -540,24 +666,11 @@ private lemma exists_precomp_horn_ι_eq_of_forall_eq_zero [Quasicategory K]
     (hq : ∀ v, yonedaEquiv q v = 0) (l : (joinFiber (Λ[n + 2, i].ι ≫ q) 0 : SSet) ⟶ K)
     (r : (joinFiber (Λ[n + 2, i].ι ≫ q) 1 : SSet) ⟶ L) :
     ∃ D : JoinData Δ[n + 2] K L, D.precomp Λ[n + 2, i].ι = ⟨Λ[n + 2, i].ι ≫ q, l, r⟩ := by
-  have hbot : joinFiber q 1 = ⊥ := by
-    ext k x
-    induction k using Opposite.rec with | op k
-    induction k using SimplexCategory.rec with | _ k
-    simp only [mem_joinFiber_iff, stdSimplex.hom_app_apply, hq, Subfunctor.bot_obj,
-      Set.mem_empty_iff_false, iff_false, not_forall]
-    exact ⟨0, by decide⟩
-  have htop : joinFiber (Λ[n + 2, i].ι ≫ q) 0 = ⊤ := by
-    ext k x
-    induction k using Opposite.rec with | op k
-    induction k using SimplexCategory.rec with | _ k
-    simp only [Subfunctor.top_obj, Set.mem_univ, iff_true, mem_joinFiber_iff]
-    exact fun j ↦ (stdSimplex.hom_app_apply q x.1 j).trans (hq _)
-  obtain ⟨τ, hτ⟩ := Quasicategory.hornFilling'
-    ((Subcomplex.topIso _).inv ≫ Subcomplex.homOfLE htop.ge ≫ l) h₀ hₙ
-  refine ⟨⟨q, (joinFiber q 0).ι ≫ τ, (Subcomplex.eqToIso hbot).hom ≫
-    Subcomplex.isInitialBot.to L⟩, ext rfl (fun k x _ _ ↦ ?_) (fun k x _ hx ↦ ?_)⟩
-  · exact (ConcreteCategory.congr_hom (NatTrans.congr_app hτ k) x).symm
+  obtain ⟨τ, hτ⟩ := exists_fromPreimage_horn_ι_comp_eq h₀ hₙ hq l
+  have hbot := joinFiber_eq_bot_of_forall_eq (e' := 1) (by decide) hq
+  refine ⟨⟨q, τ, (Subcomplex.eqToIso hbot).hom ≫ Subcomplex.isInitialBot.to L⟩,
+    ext rfl (fun k x _ _ ↦ ?_) (fun k x _ hx ↦ ?_)⟩
+  · exact ConcreteCategory.congr_hom (NatTrans.congr_app hτ k) ⟨x, _⟩
   · rw [joinFiber, Subcomplex.preimage_comp, ← joinFiber, hbot] at hx
     simp at hx
 
@@ -568,26 +681,13 @@ private lemma exists_precomp_horn_ι_eq_of_forall_eq_one [Quasicategory L]
     (hq : ∀ v, yonedaEquiv q v = 1) (l : (joinFiber (Λ[n + 2, i].ι ≫ q) 0 : SSet) ⟶ K)
     (r : (joinFiber (Λ[n + 2, i].ι ≫ q) 1 : SSet) ⟶ L) :
     ∃ D : JoinData Δ[n + 2] K L, D.precomp Λ[n + 2, i].ι = ⟨Λ[n + 2, i].ι ≫ q, l, r⟩ := by
-  have hbot : joinFiber q 0 = ⊥ := by
-    ext k x
-    induction k using Opposite.rec with | op k
-    induction k using SimplexCategory.rec with | _ k
-    simp only [mem_joinFiber_iff, stdSimplex.hom_app_apply, hq, Subfunctor.bot_obj,
-      Set.mem_empty_iff_false, iff_false, not_forall]
-    exact ⟨0, by decide⟩
-  have htop : joinFiber (Λ[n + 2, i].ι ≫ q) 1 = ⊤ := by
-    ext k x
-    induction k using Opposite.rec with | op k
-    induction k using SimplexCategory.rec with | _ k
-    simp only [Subfunctor.top_obj, Set.mem_univ, iff_true, mem_joinFiber_iff]
-    exact fun j ↦ (stdSimplex.hom_app_apply q x.1 j).trans (hq _)
-  obtain ⟨τ, hτ⟩ := Quasicategory.hornFilling'
-    ((Subcomplex.topIso _).inv ≫ Subcomplex.homOfLE htop.ge ≫ r) h₀ hₙ
-  refine ⟨⟨q, (Subcomplex.eqToIso hbot).hom ≫ Subcomplex.isInitialBot.to K,
-    (joinFiber q 1).ι ≫ τ⟩, ext rfl (fun k x _ hx ↦ ?_) (fun k x _ _ ↦ ?_)⟩
+  obtain ⟨τ, hτ⟩ := exists_fromPreimage_horn_ι_comp_eq h₀ hₙ hq r
+  have hbot := joinFiber_eq_bot_of_forall_eq (e' := 0) (by decide) hq
+  refine ⟨⟨q, (Subcomplex.eqToIso hbot).hom ≫ Subcomplex.isInitialBot.to K, τ⟩,
+    ext rfl (fun k x _ hx ↦ ?_) (fun k x _ _ ↦ ?_)⟩
   · rw [joinFiber, Subcomplex.preimage_comp, ← joinFiber, hbot] at hx
     simp at hx
-  · exact (ConcreteCategory.congr_hom (NatTrans.congr_app hτ k) x).symm
+  · exact ConcreteCategory.congr_hom (NatTrans.congr_app hτ k) ⟨x, _⟩
 
 include h₀ hₙ in
 /-- If the first vertex of `Δ[n + 2]` lies over `0` and the last over `1`, the parts of
