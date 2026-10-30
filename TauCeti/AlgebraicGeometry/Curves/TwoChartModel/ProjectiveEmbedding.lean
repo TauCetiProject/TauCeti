@@ -41,10 +41,8 @@ Since the two-chart model does not depend on the transcendental function it is b
 projective**: it is a closed subscheme over `k` of a projective space `Proj (Sym_k V)` with `V`
 finite-dimensional. Every regular proper curve over `k` is the two-chart model of its function
 field (`AlgebraicGeometry.Scheme.isoTwoChartModel`), so every regular proper curve is projective
-as well. Mathlib has no
-class of projective morphisms, so projectivity is stated as the existence of such a closed
-immersion over `k`; properness of `Proj (Sym_k V)` over `k` is
-`TauCeti.SymmetricAlgebra.instIsProperProjToSpec`.
+as well. Projectivity is the predicate `AlgebraicGeometry.Scheme.IsProjectiveOver`: the existence
+of such a closed immersion over `k`.
 
 ## Main definitions
 
@@ -59,9 +57,9 @@ immersion over `k`; properness of `Proj (Sym_k V)` over `k` is
   closed immersion.
 * `TauCeti.AlgebraicGeometry.twoChartModel.toProjSymmetricAlgebra_projToSpec`: it lies over
   `Spec k`.
-* `TauCeti.AlgebraicGeometry.twoChartModel.exists_isClosedImmersion_proj`: **the two-chart
-  model of a function field is projective**.
-* `AlgebraicGeometry.Scheme.exists_isClosedImmersion_proj`: **a regular proper curve is
+* `TauCeti.AlgebraicGeometry.twoChartModel.isProjectiveOver`: **the two-chart model of a
+  function field is projective**.
+* `AlgebraicGeometry.Scheme.isProjectiveOver_of_isCurveOver`: **a regular proper curve is
   projective**.
 
 ## References
@@ -146,10 +144,8 @@ instance : (toProjSymmetricAlgebra hF z hgen).IsOver (Spec (.of k)) :=
 /-- **The two-chart model is projective.** Over any field `k`, the two-chart model built from any
 transcendental `x` is a closed subscheme, over `k`, of the projective space `Proj (Sym_k V)` of a
 finite-dimensional `k`-vector space `V`. -/
-theorem exists_isClosedImmersion_proj {x : F} (hx : Transcendental k x) :
-    ∃ (V : Submodule k F) (_ : FiniteDimensional k V)
-      (f : twoChartModel hF hx.ne_zero ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k V)),
-      IsClosedImmersion f ∧ f.IsOver (Spec (.of k)) := by
+theorem isProjectiveOver {x : F} (hx : Transcendental k x) :
+    (twoChartModel hF hx.ne_zero).IsProjectiveOver k := by
   -- Embed the model built from `z = x ^ e`, with `e ≥ 1` and `e ≥ 2g` for the genus `g` over the
   -- full constant field, by the sections of `(z)_∞`, and identify it with the model built from `x`.
   let e := 2 * genus (algebraicClosure k F) F + 1
@@ -164,8 +160,7 @@ theorem exists_isClosedImmersion_proj {x : F} (hx : Transcendental k x) :
   have : i.hom.IsOver (Spec (.of k)) := by
     rw [isoOfAlgEquiv_hom]
     infer_instance
-  exact ⟨_, inferInstance, i.hom ≫ toProjSymmetricAlgebra hF z hgen, inferInstance,
-    inferInstance⟩
+  exact .of_isClosedImmersion (i.hom ≫ toProjSymmetricAlgebra hF z hgen)
 
 end AlgebraicGeometry.twoChartModel
 
@@ -184,13 +179,12 @@ variable {k : Type u} [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))] [X.IsCu
 local rings are discrete valuation rings, then `X` is a closed subscheme, over `k`, of the
 projective space `Proj (Sym_k V)` of a finite-dimensional `k`-vector space `V`. No hypothesis on
 the constants of the function field `k(X)` is needed. -/
-theorem exists_isClosedImmersion_proj :
-    ∃ (V : Submodule k X.functionField) (_ : FiniteDimensional k V)
-      (f : X ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k V)),
-      IsClosedImmersion f ∧ f.IsOver (Spec (.of k)) := by
+theorem isProjectiveOver_of_isCurveOver : X.IsProjectiveOver k := by
   have hF := IsCurveOver.isFunctionField (k := k) (X := X)
   obtain ⟨x, hx⟩ := hF.exists_transcendental
-  obtain ⟨V, hV, f, hf, hfk⟩ := twoChartModel.exists_isClosedImmersion_proj hF hx
-  exact ⟨V, hV, (X.isoTwoChartModel hx.ne_zero hx).hom ≫ f, inferInstance, inferInstance⟩
+  have := twoChartModel.isProjectiveOver hF hx
+  obtain ⟨M, _, _, _, f, _, _⟩ :=
+    IsProjectiveOver.exists_isClosedImmersion (X := twoChartModel hF hx.ne_zero) (R := k)
+  exact .of_isClosedImmersion ((X.isoTwoChartModel hx.ne_zero hx).hom ≫ f)
 
 end AlgebraicGeometry.Scheme

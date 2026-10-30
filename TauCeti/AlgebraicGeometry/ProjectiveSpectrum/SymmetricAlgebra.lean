@@ -28,9 +28,15 @@ also requires `IsNoetherianRing R`. The chart formula describes this morphism on
 standard affine charts, and the standard opens of a spanning family of linear forms cover
 the projective spectrum. Its source is Jacobson whenever `Spec R` is Jacobson.
 
+A scheme `X` over `R` is projective over `R` (`AlgebraicGeometry.Scheme.IsProjectiveOver`) when
+it is a closed subscheme over `R` of `Proj(Sym M)` for some finite `R`-module `M`. Such a scheme
+is proper over `R`, because `Proj(Sym M)` is.
+
 ## References
 
 * Stacks Project, §27.8, the projective spectrum of a graded ring.
+* A. Grothendieck, *Éléments de géométrie algébrique II*, Publ. Math. IHÉS 8 (1961),
+  Définition 5.5.2, projective morphisms.
 * J. S. Milne, *Algebraic Groups* (2017), §§7.d–7.f, projective orbits.
 -/
 
@@ -142,3 +148,39 @@ instance instJacobsonSpaceProj [Module.Finite R M] [JacobsonSpace (Spec (.of R))
   LocallyOfFiniteType.jacobsonSpace (projToSpec R M)
 
 end TauCeti.SymmetricAlgebra
+
+namespace AlgebraicGeometry.Scheme
+
+universe u
+
+variable (X : Scheme.{u}) (R : Type u) [CommRing R] [X.Over (Spec (.of R))]
+
+/-- A scheme `X` over a ring `R` is **projective over `R`** if it is a closed subscheme, over `R`,
+of the projective spectrum `Proj (Sym_R M)` of a finite `R`-module `M`. This is Grothendieck's
+notion of a projective morphism `X ⟶ Spec R`; over a field it says that `X` is a closed subscheme
+of a projective space. -/
+class IsProjectiveOver : Prop where
+  exists_isClosedImmersion : ∃ (M : Type u) (_ : AddCommMonoid M) (_ : Module R M)
+    (_ : Module.Finite R M) (f : X ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M)),
+    IsClosedImmersion f ∧ f.IsOver (Spec (.of R))
+
+variable {X R} in
+/-- A scheme over `R` with a closed immersion over `R` into `Proj (Sym_R M)`, for a finite
+`R`-module `M`, is projective over `R`. -/
+theorem IsProjectiveOver.of_isClosedImmersion {M : Type u} [AddCommMonoid M] [Module R M]
+    [Module.Finite R M] (f : X ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M))
+    [IsClosedImmersion f] [f.IsOver (Spec (.of R))] : X.IsProjectiveOver R :=
+  ⟨⟨M, inferInstance, inferInstance, inferInstance, f, inferInstance, inferInstance⟩⟩
+
+/-- The projective spectrum `Proj (Sym_R M)` of a finite `R`-module `M` is projective over `R`. -/
+instance isProjectiveOver_proj (M : Type u) [AddCommMonoid M] [Module R M] [Module.Finite R M] :
+    (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M)).IsProjectiveOver R :=
+  .of_isClosedImmersion (𝟙 _)
+
+/-- A scheme projective over `R` is proper over `R`. -/
+instance IsProjectiveOver.isProper [X.IsProjectiveOver R] : IsProper (X ↘ Spec (.of R)) := by
+  obtain ⟨M, _, _, _, f, _, _⟩ := IsProjectiveOver.exists_isClosedImmersion (X := X) (R := R)
+  rw [← comp_over f (Spec (.of R))]
+  infer_instance
+
+end AlgebraicGeometry.Scheme
