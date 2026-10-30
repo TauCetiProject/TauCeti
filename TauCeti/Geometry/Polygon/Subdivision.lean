@@ -28,6 +28,7 @@ is what keeps the diagram read off from a projection of a polygonal knot unchang
 
 ## Main results
 
+* `Polygon.IsSimple.insertVertex_edgePath`: an interior subdivision preserves simplicity.
 * `Polygon.doublePoints_insertVertex_edgePath`: subdividing an edge does not change the double
   points.
 * `Polygon.isRegularProjection_insertVertex_edgePath_iff`: a projection is regular for the
@@ -74,6 +75,43 @@ section Subdivide
 
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
   [AddTorsor V P] (poly : Polygon P n) (i : Fin n) {s : R}
+
+/-- Subdividing an edge of a simple polygon at an interior point preserves simplicity. -/
+theorem IsSimple.insertVertex_edgePath {poly : Polygon P n} (hp : poly.IsSimple R)
+    (i : Fin n) (hs : s ∈ Ioo (0 : R) 1) :
+    (poly.insertVertex i (poly.edgePath R i s)).IsSimple R := by
+  have hinj := AffineMap.lineMap_injective R (hp.hasNondegenerateEdges i)
+  have hleft : poly i ≠ poly.edgePath R i s := by
+    intro h
+    have : (0 : R) = s := hinj ((AffineMap.lineMap_apply_zero _ _).trans h)
+    exact hs.1.ne' this.symm
+  have hright : poly.edgePath R i s ≠ poly (finRotate n i) := by
+    rw [edgePath, ne_eq, AffineMap.lineMap_eq_right_iff]
+    exact not_or.mpr ⟨hp.hasNondegenerateEdges i, hs.2.ne⟩
+  apply hp.insertVertex hleft hright
+  · refine Subset.antisymm ?_ ?_
+    · rintro x ⟨⟨u, hu, rfl⟩, v, hv, he⟩
+      rw [edgePath, AffineMap.lineMap_lineMap_right, AffineMap.lineMap_lineMap_left] at he
+      have hev := hinj he
+      have heu : u * s = s := by
+        nlinarith [mul_nonneg hv.1 (sub_nonneg.mpr hs.2.le),
+          mul_nonneg (sub_nonneg.mpr hu.2) hs.1.le]
+      simp only [edgePath, AffineMap.lineMap_lineMap_right, heu, mem_singleton_iff]
+    · rintro x rfl
+      exact ⟨right_mem_affineSegment _ _ _, left_mem_affineSegment _ _ _⟩
+  · intro k hk x hx
+    have hxold : x ∈ poly.edgeSet R i := by
+      rcases hx.2 with ⟨u, hu, rfl⟩ | ⟨u, hu, rfl⟩
+      · refine ⟨u * s, ⟨mul_nonneg hu.1 hs.1.le, ?_⟩, ?_⟩
+        · exact (mul_le_mul hu.2 hs.2.le hs.1.le zero_le_one).trans (by simp)
+        · simp [edgePath]
+      · refine ⟨1 - (1 - u) * (1 - s), ⟨?_, ?_⟩, ?_⟩
+        · nlinarith [mul_nonneg (sub_nonneg.mpr hs.2.le) hu.1, hs.1]
+        · exact sub_le_self _ (mul_nonneg (sub_nonneg.mpr hu.2) (sub_nonneg.mpr hs.2.le))
+        · simp only [edgePath, AffineMap.lineMap_lineMap_left]
+    rcases hp.eq_vertex_of_mem_edgeSet hk hx.1 hxold with ⟨_, rfl⟩ | ⟨rfl, rfl⟩
+    · exact Or.inl rfl
+    · exact Or.inr rfl
 
 /-- Subdividing an edge does not change the double points of a map. -/
 theorem doublePoints_insertVertex_edgePath (π : P → Q) (hs : s ∈ Icc (0 : R) 1) :
