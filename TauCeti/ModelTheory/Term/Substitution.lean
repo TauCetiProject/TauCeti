@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.ModelTheory.Syntax
+public import TauCeti.ModelTheory.Syntax
 
 /-!
 # Substitution in first-order terms
@@ -23,8 +23,7 @@ substitution into formulas.
 * `FirstOrder.Language.Term.relabel_eq_subst`: relabelling is substitution of variables.
 * `FirstOrder.Language.Term.relabel_subst`, `FirstOrder.Language.Term.subst_relabel`:
   relabelling after and before a substitution.
-* `FirstOrder.Language.LHom.onTerm_subst`, `FirstOrder.Language.LHom.onTerm_relabel`: language
-  maps commute with substitution and relabelling.
+* `FirstOrder.Language.LHom.onTerm_subst`: language maps commute with substitution.
 -/
 
 public section
@@ -84,14 +83,6 @@ variable {L' : Language.{u', v'}}
 @[simp]
 theorem onTerm_subst (g : L →ᴸ L') (t : L.Term α) (f : α → L.Term β) :
     g.onTerm (t.subst f) = (g.onTerm t).subst fun a => g.onTerm (f a) := by
-  induction t with
-  | var => rfl
-  | func F ts ih => simp [ih]
-
-/-- A language map commutes with relabelling of variables. -/
-@[simp]
-theorem onTerm_relabel (g : L →ᴸ L') (t : L.Term α) (f : α → β) :
-    g.onTerm (t.relabel f) = (g.onTerm t).relabel f := by
   induction t with
   | var => rfl
   | func F ts ih => simp [ih]
