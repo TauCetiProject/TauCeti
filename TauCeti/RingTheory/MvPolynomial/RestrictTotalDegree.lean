@@ -71,7 +71,7 @@ open Polynomial in
 /-- If each `q k` with `k ≤ m` is a combination of the `p j` with `j ≤ k`, then the products
 `∏ᵢ q_{τ i}(Xᵢ)` with `τ.degree ≤ m` lie in the span of the products `∏ᵢ p_{τ i}(Xᵢ)` with
 `τ.degree ≤ m`. -/
-theorem span_prod_aeval_X_le {σ R : Type*} [Fintype σ] [CommRing R] {p q : ℕ → R[X]} {m : ℕ}
+theorem span_prod_aeval_X_le {σ R : Type*} [Fintype σ] [CommSemiring R] {p q : ℕ → R[X]} {m : ℕ}
     (h : ∀ k ≤ m, q k ∈ Submodule.span R (p '' Set.Iic k)) :
     Submodule.span R ((fun τ : σ →₀ ℕ ↦ ∏ i, Polynomial.aeval (X (R := R) i) (q (τ i))) ''
         {τ | τ.degree ≤ m}) ≤
