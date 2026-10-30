@@ -62,7 +62,8 @@ function `X₁ / X₀` on that chart going to `X`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.iSup_basicOpen_coord_eq_top`,
   `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_awayι` and
   `TauCeti.AlgebraicGeometry.projectiveLine.basicOpen_coord_sup_eq_top`: the two charts cover
-  `ℙ¹_R`.
+  `ℙ¹_R`, and by `TauCeti.AlgebraicGeometry.projectiveLine.isAffineOpen_basicOpen_coord` each
+  chart is affine.
 * `TauCeti.AlgebraicGeometry.projectiveLine.chartSectionsEquiv_awayToSection`: on the chart
   `D₊(Xᵢ)`, `chartSectionsEquiv` agrees with the chart isomorphism on the fractions
   `Proj.awayToSection a`, and `TauCeti.AlgebraicGeometry.projectiveLine.awayToSection_algebraMap`:
@@ -246,6 +247,11 @@ theorem basicOpen_coord_sup_eq_top :
   refine eq_top_iff.mpr fun p _ ↦ TopologicalSpace.Opens.mem_sup.mpr ?_
   have hp : p ∈ (⊤ : (projectiveLine R).Opens) := trivial
   rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup, Fin.exists_fin_two] at hp
+
+/-- The standard chart `D₊(Xᵢ)` is an affine open of the projective line. -/
+theorem isAffineOpen_basicOpen_coord (i : Fin 2) :
+    IsAffineOpen (Proj.basicOpen 𝒜 (coord R i)) :=
+  Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i) one_pos
 
 /-- **The projective line over a domain is integral**: `R[X₀, X₁]` is a domain with a nonzero form
 of positive degree. -/

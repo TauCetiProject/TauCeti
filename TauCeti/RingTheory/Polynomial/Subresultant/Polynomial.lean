@@ -36,6 +36,8 @@ that controls the subresultant gcd criterion.
   `j`.
 * `Polynomial.subresultant_map_map`: fixed-bound subresultant polynomials commute with
   coefficient maps.
+* `Polynomial.subresultant_map_of_natDegree_eq`: at the actual degrees, they commute with
+  coefficient maps that preserve both degrees.
 * `Polynomial.subresultant_comm`: swapping the inputs gives the Sylvester block-swap
   sign.
 * `Polynomial.psc_C_mul_left`, `Polynomial.psc_C_mul_right`: scaling one polynomial by a constant
@@ -211,6 +213,15 @@ theorem subresultantCoeff_map_map [CommRing R] [CommRing S]
       f (subresultantCoeff p q m n j k) := by
   simp [subresultantCoeff_def, RingHom.map_det]
 
+/-- At the actual degrees, subresultant coefficient minors commute with a coefficient map that
+preserves both degrees. -/
+theorem subresultantCoeff_map_of_natDegree_eq [CommRing R] [CommRing S] (f : R →+* S)
+    {p q : R[X]} (hp : (p.map f).natDegree = p.natDegree) (hq : (q.map f).natDegree = q.natDegree)
+    (j k : ℕ) :
+    subresultantCoeff (p.map f) (q.map f) (p.map f).natDegree (q.map f).natDegree j k =
+      f (subresultantCoeff p q p.natDegree q.natDegree j k) := by
+  rw [hp, hq, subresultantCoeff_map_map]
+
 /-- Swapping the inputs changes every coefficient minor by the Sylvester block-swap sign. -/
 theorem subresultantCoeff_comm [CommRing R]
     (p q : R[X]) (m n j k : ℕ) :
@@ -338,6 +349,18 @@ theorem subresultant_map_map [CommRing R] [CommRing S]
       (subresultant p q m n j).map f := by
   ext k
   by_cases hj : j < min m n <;> by_cases hkj : k ≤ j <;> simp [hj, hkj]
+
+/-- At the actual degrees, subresultant polynomials commute with a coefficient map that preserves
+both degrees, for instance one that does not kill the leading coefficients
+(`Polynomial.natDegree_map_of_leadingCoeff_ne_zero`). When a degree drops, the degree-drop formulas
+`Polynomial.map_subresultant_of_right_degree_drop` and
+`Polynomial.map_subresultant_of_left_degree_drop` apply instead. -/
+theorem subresultant_map_of_natDegree_eq [CommRing R] [CommRing S] (f : R →+* S)
+    {p q : R[X]} (hp : (p.map f).natDegree = p.natDegree) (hq : (q.map f).natDegree = q.natDegree)
+    (j : ℕ) :
+    subresultant (p.map f) (q.map f) (p.map f).natDegree (q.map f).natDegree j =
+      (subresultant p q p.natDegree q.natDegree j).map f := by
+  rw [hp, hq, subresultant_map_map]
 
 /-- Scaling the left input by `r` scales its subresultant polynomial at index `j` by
 `r ^ (n - j)`. -/

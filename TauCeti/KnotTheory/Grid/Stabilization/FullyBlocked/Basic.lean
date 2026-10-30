@@ -391,6 +391,16 @@ theorem fullyBlockedStabilizeXCycles_snd (z : (G').fullyBlockedCycles) :
     (G.fullyBlockedStabilizeXMap s ∘ₗ (G').fullyBlockedCycles.subtype)]
   exact G.fullyBlockedStabilizeXMap_snd s z
 
+/-- The first cycle representative is the first component of the chain comparison. -/
+theorem coe_fst_fullyBlockedStabilizeXCycles (z : (G').fullyBlockedCycles) :
+    ((G.fullyBlockedStabilizeXCycles s z).1 : C) = (G.fullyBlockedStabilizeXMap s z).1 :=
+  (G.fullyBlockedStabilizeXCycles_fst s z).trans (G.fullyBlockedStabilizeXMap_fst s z).symm
+
+/-- The second cycle representative is the second component of the chain comparison. -/
+theorem coe_snd_fullyBlockedStabilizeXCycles (z : (G').fullyBlockedCycles) :
+    ((G.fullyBlockedStabilizeXCycles s z).2 : C) = (G.fullyBlockedStabilizeXMap s z).2 :=
+  (G.fullyBlockedStabilizeXCycles_snd s z).trans (G.fullyBlockedStabilizeXMap_snd s z).symm
+
 /-- The stabilization equivalence sends the class of a cycle to the classes of the two
 specified comparison cycles. -/
 @[simp]

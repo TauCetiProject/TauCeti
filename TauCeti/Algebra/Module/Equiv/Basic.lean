@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Group.Action.End
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Module.Submodule.Equiv
+public import Mathlib.LinearAlgebra.BilinearMap
 
 /-!
 # Linear equivalences and their underlying maps
@@ -22,15 +23,22 @@ submodule.
 Postcomposition with an isomorphism of targets also transports hom spaces over auxiliary
 scalars, even when the ring defining the linear maps is noncommutative.
 For coordinate transport, forgetting linearity gives the corresponding additive word
-equivalence, with the same direction on coordinates.
+equivalence, with the same direction on coordinates. A commutative square of linear maps with
+isomorphisms on its vertical sides transports the ranges of precomposition on hom spaces.
+Conjugating an endomorphism by a semilinear equivalence commutes with powers and moves its kernel
+by the equivalence.
 
 ## Main results
 
+* `LinearEquiv.map_range_lcomp`: transport of precomposition ranges along an isomorphism
+  of arrows, over a semiring and with any compatible hom-space scalars and target.
 * `LinearEquiv.homCongrRight`: an isomorphism of targets induces an equivalence of hom spaces
   over the auxiliary scalar semiring.
 
 * `LinearEquiv.map_ker_of_intertwine` and `LinearEquiv.map_range_of_intertwine`: transport of
   kernels and ranges across an intertwining semilinear equivalence.
+* `LinearEquiv.conj_pow` and `LinearEquiv.ker_conj`: conjugation by a semilinear equivalence
+  commutes with powers and transports kernels.
 * `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
   automorphism moves the set underlying a submodule to the set underlying its image.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
@@ -88,6 +96,33 @@ theorem homCongrRight_symm_apply (e : N ≃ₗ[A] P) (f : S →ₗ[A] P) (s : S)
 
 end HomCongrRight
 
+section Precomposition
+
+variable {R P₀ P₁ Q₀ Q₁ : Type*} [Semiring R]
+  [AddCommMonoid P₀] [Module R P₀] [AddCommMonoid P₁] [Module R P₁]
+  [AddCommMonoid Q₀] [Module R Q₀] [AddCommMonoid Q₁] [Module R Q₁]
+
+/-- An isomorphism of arrows transports the range of precomposition on hom spaces.
+The common target and its commuting scalar action are arbitrary; in particular, the target
+may be `R` with scalars `Rᵐᵒᵖ`, as for opposite module duals. -/
+theorem map_range_lcomp (e₀ : P₀ ≃ₗ[R] Q₀) (e₁ : P₁ ≃ₗ[R] Q₁)
+    (S N : Type*) [Semiring S] [AddCommMonoid N] [Module R N] [Module S N]
+    [SMulCommClass R S N] {p : P₁ →ₗ[R] P₀} {q : Q₁ →ₗ[R] Q₀}
+    (hsquare : e₀.toLinearMap ∘ₗ p = q ∘ₗ e₁.toLinearMap) :
+    (LinearMap.range (p.lcomp S N)).map (e₁.congrLeft N S).toLinearMap =
+      LinearMap.range (q.lcomp S N) := by
+  rw [← LinearMap.range_comp]
+  have hcomp :
+      (e₁.congrLeft N S).toLinearMap.comp (p.lcomp S N) =
+        (q.lcomp S N).comp (e₀.congrLeft N S).toLinearMap := by
+    ext φ x
+    simp only [LinearMap.comp_apply, LinearMap.lcomp_apply]
+    apply congrArg φ
+    simpa using congrArg e₀.symm (LinearMap.congr_fun hsquare (e₁.symm x))
+  rw [hcomp, LinearEquiv.range_comp]
+
+end Precomposition
+
 section Intertwining
 
 variable {R S M N : Type*} [Semiring R] [Semiring S] [AddCommMonoid M] [AddCommMonoid N]
@@ -125,6 +160,26 @@ theorem map_range_of_intertwine
     exact ⟨f (e.symm b), ⟨e.symm b, rfl⟩, by rw [← h, e.apply_symm_apply]⟩
 
 end Intertwining
+
+section Conj
+
+variable {R S M N : Type*} [CommSemiring R] [CommSemiring S] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module S N] {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ']
+  [RingHomInvPair σ' σ]
+
+/-- Conjugation by a semilinear equivalence commutes with powers. -/
+@[simp]
+theorem conj_pow (e : M ≃ₛₗ[σ] N) (f : Module.End R M) (k : ℕ) :
+    e.conj (f ^ k) = e.conj f ^ k :=
+  map_pow e.conjRingEquiv f k
+
+/-- Conjugation by a semilinear equivalence `e` carries the kernel of `f` to its image under `e`. -/
+@[simp]
+theorem ker_conj (e : M ≃ₛₗ[σ] N) (f : Module.End R M) :
+    LinearMap.ker (e.conj f) = (LinearMap.ker f).map (e : M →ₛₗ[σ] N) :=
+  (map_ker_of_intertwine e f (e.conj f) fun d => by simp).symm
+
+end Conj
 
 section PermHom
 

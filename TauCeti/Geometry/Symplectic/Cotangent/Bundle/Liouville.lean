@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
-public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Cotangent.Liouville
@@ -198,9 +198,39 @@ theorem mpullback_liouvilleForm (α : SmoothForm I M ℝ 1) :
   rw [ContinuousAlternatingMap.ofSubsingleton_apply_apply, SmoothForm.degreeOneEquiv_apply_apply]
   exact congrArg (α.1 x) (funext fun i ↦ by rw [Fin.fin_one_eq_zero i])
 
+variable {F H' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J 2 N] in
+/-- The Liouville form pulled back by a smooth map `ψ : T*M → T*N` covering a map `f : M → N`
+evaluates a tangent vector at `z` by applying the covector `ψ z` to `df (dπ v)`, provided `f` is
+differentiable at the base point of `z`. -/
+theorem mpullback_liouvilleForm_apply_of_proj_apply_eq
+    {ψ : CotangentBundle I M → CotangentBundle J N}
+    (hψ : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞ ψ)
+    {f : M → N} (hproj : ∀ z, (ψ z).proj = f z.proj) (z : CotangentBundle I M)
+    (hf : MDifferentiableAt I J f z.proj)
+    (v : Fin 1 → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
+    (SmoothForm.mpullback ψ hψ (liouvilleForm J N)).1 z v =
+      (ψ z).2 (mfderiv I J f z.proj (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
+        (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0))) := by
+  rw [SmoothForm.mpullback_apply, liouvilleForm_apply]
+  -- Since `ψ` covers `f`, the chain rule gives `dπ_N ∘ dψ = df ∘ dπ_M`.
+  have hcomp : π (F →L[ℝ] ℝ) (fun y : N ↦ TangentSpace J y →L[ℝ] ℝ) ∘ ψ =
+      f ∘ π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) :=
+    funext hproj
+  have hN := mfderiv_comp_apply z
+    ((contMDiff_proj (fun y : N ↦ TangentSpace J y →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
+    ((hψ z).mdifferentiableAt (by simp)) (v 0)
+  have hM := mfderiv_comp_apply z hf
+    ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
+    (v 0)
+  rw [hcomp, hM] at hN
+  exact congrArg (ψ z).2 hN.symm
+
 /-- The Liouville form pulled back by a smooth self-map `g` of the cotangent bundle covering the
 identity evaluates a tangent vector at `z` by applying the covector `g z` to its image under the
-derivative of the projection. -/
+derivative of the projection. This is the `f = id` case of
+`mpullback_liouvilleForm_apply_of_proj_apply_eq`. -/
 theorem mpullback_liouvilleForm_apply_of_proj_eq {g : CotangentBundle I M → CotangentBundle I M}
     (hg : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ g)
     (hproj : ∀ z, (g z).proj = z.proj) (z : CotangentBundle I M)
@@ -208,9 +238,8 @@ theorem mpullback_liouvilleForm_apply_of_proj_eq {g : CotangentBundle I M → Co
     (SmoothForm.mpullback g hg (liouvilleForm I M)).1 z v =
       (g z).2 (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
         (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0)) := by
-  rw [SmoothForm.mpullback_apply, liouvilleForm_apply]
-  exact congrArg (g z).2 (DFunLike.congr_fun
-    (mfderiv_proj_comp_mfderiv_of_proj_eq ((hg z).mdifferentiableAt (by simp)) hproj) (v 0))
+  rw [mpullback_liouvilleForm_apply_of_proj_apply_eq hg (f := id) hproj z mdifferentiableAt_id,
+    mfderiv_id, ContinuousLinearMap.id_apply]
 
 end Liouville
 

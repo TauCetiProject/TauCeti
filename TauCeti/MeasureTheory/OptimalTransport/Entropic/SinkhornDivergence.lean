@@ -199,7 +199,7 @@ private theorem mul_one_sub_le_sinkhornDivergence [IsProbabilityMeasure μ]
   have hexp := integrable_entropicGibbsFactor_of_le (μ := μ) (ν := ν) (ε := ε) hc hp hq
     (fun x ↦ le_of_abs_le (hpC x)) (fun x ↦ le_of_abs_le (hqC x))
   have hdual := entropicDualValue_le_toReal_entropicTransportCost
-    (entropicTransportCost_ne_top_of_forall_le hcB ε) hc.aemeasurable hε
+    (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε) hc.aemeasurable hε
     (.of_bound hp.aestronglyMeasurable Cp (ae_of_all _ hpC))
     (.of_bound hq.aestronglyMeasurable Cq (ae_of_all _ hqC)) hexp
   rw [entropicDualValue_def, kantorovichDualValue_def, integral_sub hexp (integrable_const _),

@@ -11,6 +11,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.Support
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Gamma
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Density
 
@@ -78,6 +79,34 @@ theorem betaPDFReal_nonneg {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (x : ℝ)
 theorem betaMeasure_eq_withDensity_ofReal (α β : ℝ) :
     betaMeasure α β = volume.withDensity fun x ↦ ENNReal.ofReal (betaPDFReal α β x) :=
   (rfl)
+
+/-- At first shape zero the beta density vanishes identically: `Real.Gamma 0 = 0`, so the
+normalizing factor `1 / ProbabilityTheory.beta 0 β` is zero. -/
+@[simp]
+theorem betaPDFReal_zero_left (β x : ℝ) : betaPDFReal 0 β x = 0 := by
+  simp [betaPDFReal, ProbabilityTheory.beta]
+
+/-- At first shape zero the extended beta density vanishes identically. -/
+@[simp]
+theorem betaPDF_zero_left (β x : ℝ) : betaPDF 0 β x = 0 := by
+  simp [betaPDF]
+
+/-- At first shape zero the totalized beta measure is the zero measure, not a point mass. -/
+@[simp]
+theorem betaMeasure_zero_left (β : ℝ) : betaMeasure 0 β = 0 := by
+  have h : betaPDF 0 β = 0 := funext (betaPDF_zero_left β)
+  rw [betaMeasure, h, withDensity_zero]
+
+/-- Raising the first shape by one multiplies the beta density by `x * (α + β) / α`. -/
+theorem betaPDFReal_add_one_left {α β : ℝ} (hα : α ≠ 0) (hαβ : α + β ≠ 0) (x : ℝ) :
+    betaPDFReal (α + 1) β x = x * ((α + β) / α) * betaPDFReal α β x := by
+  unfold betaPDFReal
+  split_ifs with hx
+  · rw [beta_add_one_left hα hαβ, add_sub_cancel_right, Real.rpow_sub_one hx.1.ne', one_div,
+      mul_inv, inv_div]
+    field_simp
+    rw [mul_right_comm _ x, mul_div_mul_right _ _ hx.1.ne']
+  · simp
 
 section Transfer
 
@@ -234,6 +263,18 @@ theorem integral_pow_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (n 
         ne_of_gt (Real.Gamma_pos_of_pos (add_pos hα hβ)),
         ne_of_gt (Real.Gamma_pos_of_pos (add_pos hαn hβ))]
       ring_nf
+
+/-- Natural Beta moments as finite products of shape ratios. -/
+theorem integral_pow_betaMeasure_eq_prod {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (n : ℕ) :
+    ∫ x, x ^ n ∂betaMeasure α β =
+      ∏ i ∈ Finset.range n, (α + i) / (α + β + i) := by
+  rw [integral_pow_betaMeasure hα hβ, Finset.prod_div_distrib,
+    ← Real.prod_range_add_mul_Gamma hα n,
+    ← Real.prod_range_add_mul_Gamma (add_pos hα hβ) n]
+  have hp : (∏ i ∈ Finset.range n, (α + β + i)) ≠ 0 :=
+    Finset.prod_ne_zero_iff.mpr fun i _ ↦ (by positivity)
+  field_simp [(Real.Gamma_pos_of_pos hα).ne',
+    (Real.Gamma_pos_of_pos (add_pos hα hβ)).ne']
 
 /-- `Real.Gamma` two steps up: `Γ (x + 2) = (x + 1) * x * Γ x`. The second raw moment of a beta
 law evaluates `Real.Gamma` at `α + 2` and at `α + β + 2`, and this is the shape in which those two
