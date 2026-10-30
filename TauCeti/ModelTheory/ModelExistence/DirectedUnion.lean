@@ -33,8 +33,8 @@ omits is omitted by the union.
 * D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, Chapter 1.
 * Ported from `cameronfreer/infinitary-logic` at commit
   `518a366cba97b1ae8c4dc64a297a396939bc3e0b`, `InfinitaryLogic/ModelTheory/AElementaryChains.lean`.
-* Divergences from that source: the type-omission predicate is `OmitsType`, the roadmap's name,
-  rather than `OmitsFiniteType`, and its passage to substructures is stated for arbitrary
+* Divergences from that source: the type-omission predicate is named `OmitsType` rather than
+  `OmitsFiniteType`, and its passage to substructures is stated for arbitrary
   `A`-elementary embeddings, beside `AElementary`; the step that places a tuple of the union in one
   member is `Substructure.exists_forall_mem_of_directed`; the chain form assumes a directed order
   rather than a linear order.
