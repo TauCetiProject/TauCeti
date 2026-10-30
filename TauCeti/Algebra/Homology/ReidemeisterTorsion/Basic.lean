@@ -10,6 +10,7 @@ import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Ring.NegOnePow
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
@@ -304,7 +305,7 @@ theorem reidemeisterTorsion_eq_zero_iff (hn : {i | n i ≠ 0}.Finite) :
 
 include c in
 /-- The boundaries vanish in a degree where the complex vanishes. -/
-private theorem finrank_range_d_eq_zero {j : ℤ} (hj : n j = 0) :
+theorem finrank_range_d_eq_zero {j : ℤ} (hj : n j = 0) :
     finrank F (LinearMap.range (C.d (j + 1) j).hom) = 0 := by
   have : Module.Finite F (C.X j) := .of_basis (c j)
   have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
@@ -362,13 +363,6 @@ private theorem finprod_torsionBracket_eq
   have hδ₁ : Function.HasFiniteMulSupport fun j : ℤ ↦ δ (j + 1) ^ (j.negOnePow : ℤ) :=
     hn'.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
       rw [hδ_one (by simpa using hj), one_zpow]
-  -- The factors `δ (j + 1)` enter with the exponents opposite to those of the factors `δ j`.
-  have hshift :
-      ∏ᶠ j : ℤ, δ (j + 1) ^ (j.negOnePow : ℤ) = (∏ᶠ j : ℤ, δ j ^ (j.negOnePow : ℤ))⁻¹ := by
-    rw [← finprod_inv_distrib,
-      ← finprod_comp_equiv (Equiv.addRight (1 : ℤ)) (f := fun j ↦ (δ j ^ (j.negOnePow : ℤ))⁻¹)]
-    refine finprod_congr fun j ↦ ?_
-    simp [Int.negOnePow_succ, zpow_neg]
   calc ∏ᶠ j : ℤ, torsionBracket c (h (j + 1)) (b' (j + 1)) (b' j) (s' j) (hs' j) ^
         (j.negOnePow : ℤ)
       = ∏ᶠ j : ℤ, torsionBracket c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^
@@ -378,7 +372,9 @@ private theorem finprod_torsionBracket_eq
           mul_assoc]
     _ = ∏ᶠ j : ℤ, torsionBracket c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^
           (j.negOnePow : ℤ) := by
-        rw [finprod_mul_distrib (hT.fun_mul hδ₁) hδ₀, finprod_mul_distrib hT hδ₁, hshift, mul_assoc,
+        -- The factors `δ (j + 1)` enter with the exponents opposite to those of the factors `δ j`.
+        rw [finprod_mul_distrib (hT.fun_mul hδ₁) hδ₀, finprod_mul_distrib hT hδ₁,
+          TauCeti.finprod_zpow_negOnePow_add_one, mul_assoc,
           inv_mul_cancel₀ (finprod_ne_zero fun j ↦ zpow_ne_zero _ (hδ j)), mul_one]
 
 include hn in

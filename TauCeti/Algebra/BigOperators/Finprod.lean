@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Algebra.Ring.NegOnePow
 
 /-!
 # Regrouping finitely supported products
@@ -14,7 +15,9 @@ public import Mathlib.Algebra.BigOperators.Finprod
 both index types to be finite.  This file records the `finprod` analogue, which only needs the two
 restricted families to have finite multiplicative support. Regrouping by the fibers of an
 arbitrary map is also available, without finiteness assumptions on the fibers, as is cancelling a
-finitely supported factor whose product is `1`.
+finitely supported factor whose product is `1`. Finally, shifting the index of an alternating
+product over `ℤ` by one inverts it, which is how changes of boundary bases cancel in Reidemeister
+torsion.
 
 ## Main results
 
@@ -26,6 +29,8 @@ finitely supported factor whose product is `1`.
   with product `1` preserves a product, without any finiteness assumption on the other factor.
 * `TauCeti.finprod_comm`: the two iterated products of a family of two variables agree when the
   family has finite multiplicative support jointly in both variables.
+* `TauCeti.finprod_zpow_negOnePow_add_one`: `∏ᶠ j, f (j + 1) ^ (-1) ^ j` is the inverse of
+  `∏ᶠ j, f j ^ (-1) ^ j`.
 -/
 
 public section
@@ -121,5 +126,15 @@ theorem finprod_comm {ι κ : Type*} {f : ι → κ → M} (hf : HasFiniteMulSup
     _ = ∏ᶠ x : κ × ι, f x.2 x.1 :=
       (finprod_comp_equiv (Equiv.prodComm κ ι) (f := fun x : ι × κ ↦ f x.1 x.2)).symm
     _ = ∏ᶠ k, ∏ᶠ i, f i k := finprod_curry _ hf'
+
+/-- Shifting the index of an alternating product over `ℤ` by one inverts it: the factor `f (j + 1)`
+enters `∏ᶠ j, f (j + 1) ^ (-1) ^ j` with the exponent opposite to its exponent `(-1) ^ (j + 1)` in
+`∏ᶠ j, f j ^ (-1) ^ j`. No finiteness assumption is needed. -/
+theorem finprod_zpow_negOnePow_add_one {G : Type*} [DivisionCommMonoid G] (f : ℤ → G) :
+    ∏ᶠ j : ℤ, f (j + 1) ^ (j.negOnePow : ℤ) = (∏ᶠ j : ℤ, f j ^ (j.negOnePow : ℤ))⁻¹ := by
+  rw [← finprod_inv_distrib,
+    ← finprod_comp_equiv (Equiv.addRight (1 : ℤ)) (f := fun j ↦ (f j ^ (j.negOnePow : ℤ))⁻¹)]
+  refine finprod_congr fun j ↦ ?_
+  simp [Int.negOnePow_succ, zpow_neg]
 
 end TauCeti
