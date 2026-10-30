@@ -174,4 +174,7 @@ theorem isGorensteinProjective_isExtensionClosed :
   prop_X₂ hS h₁ h₃ :=
     isGorensteinProjective_X₂_of_shortExact ((ExactStructure.abelian_conflation _).1 hS) h₁ h₃
 
+instance : (isGorensteinProjective C).IsClosedUnderBinaryProducts :=
+  isGorensteinProjective_isExtensionClosed.isClosedUnderBinaryProducts
+
 end CategoryTheory

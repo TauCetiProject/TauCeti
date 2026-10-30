@@ -66,9 +66,6 @@ namespace CategoryTheory
 
 variable (C : Type u) [Category.{v} C] [Abelian C]
 
-instance : (isGorensteinProjective C).IsClosedUnderBinaryProducts :=
-  isGorensteinProjective_isExtensionClosed.isClosedUnderBinaryProducts
-
 /-- The full subcategory of Gorenstein-projective objects of an abelian category. -/
 abbrev GorensteinProjective := (isGorensteinProjective C).FullSubcategory
 
