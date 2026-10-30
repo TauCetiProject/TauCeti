@@ -25,6 +25,8 @@ nonzero width `h` factors through its cusp function along the parameter.
 * `TauCeti.Periodic.qParam_add_mul_I_pow`: along the vertical ray from `z`, the powers of the
   local parameter acquire the factor `e^{-2πmt/h}`; this decays when `h > 0` and `m > 0`.
 * `TauCeti.Periodic.qParam_nat_mul_pow`: `𝕢 (m * h) z ^ m = 𝕢 h z` for `m ≠ 0`.
+* `TauCeti.Periodic.exp_pi_mul_I_mul_eq_qParam_pow`: `exp (π I t z) = 𝕢 h z ^ m` when
+  `h t = 2 m` and `h ≠ 0`.
 * `TauCeti.Periodic.sum_qParam_natCast_pow`: the roots-of-unity orthogonality relation
   `∑_{b < p} 𝕢 p b ^ m = if p ∣ m then p else 0`.
 * `TauCeti.Periodic.hasDerivAt_qParam` (with `deriv_qParam`): the `q`-parameter
@@ -75,6 +77,21 @@ period `h`. -/
 theorem qParam_nat_mul_pow {m : ℕ} (hm : m ≠ 0) (z : ℂ) : 𝕢 (m * h) z ^ m = 𝕢 h z := by
   simp only [qParam, ← Complex.exp_nat_mul, ofReal_mul, ofReal_natCast]
   rw [mul_div_assoc', mul_div_mul_left _ _ (Nat.cast_ne_zero.mpr hm)]
+
+/-- If `h t = 2 m` with `m ∈ ℕ` and `h ≠ 0`, then `exp (π I t z)` is the `m`-th power of the
+local parameter `𝕢 h z = exp (2 π I z / h)`. This is how a term `exp (π I t z)` whose exponent
+`t` lies in the progression `(2 / h) ℕ` becomes a power of the local parameter. -/
+theorem exp_pi_mul_I_mul_eq_qParam_pow (hh : h ≠ 0) {t : ℝ} {m : ℕ} (ht : h * t = 2 * m)
+    (z : ℂ) : exp (π * I * t * z) = 𝕢 h z ^ m := by
+  rw [qParam, ← Complex.exp_nat_mul]
+  congr 1
+  have ht' : t = 2 * m / h := by
+    rw [eq_div_iff hh]
+    linarith
+  have hh' : (h : ℂ) ≠ 0 := ofReal_ne_zero.mpr hh
+  rw [ht']
+  push_cast
+  field_simp
 
 /-- **Orthogonality of the `p`-th roots of unity**, in the local-parameter spelling: the
 values `𝕢 p b = exp (2 π I b / p)` at the integer offsets `b < p` are the `p`-th roots of

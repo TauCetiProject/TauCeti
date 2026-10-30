@@ -19,7 +19,10 @@ pushforward of its structure sheaf.
 The construction uses Mathlib's `Functor.mapCommMon` and `CommMon.trivial`, together with the
 canonical lax monoidal pushforward of sheaves of modules. The section calculation identifies
 its multiplication with multiplication of regular functions; it is needed to recover coordinate
-algebras from affine morphisms.
+algebras from affine morphisms. For `q : T ⟶ Y` and `f : Y ⟶ X`, the identification
+`f_* q_* ≅ (q ≫ f)_*` of lax monoidal functors gives the comparison
+`AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso` of function algebras
+`f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T`.
 
 ## References
 
@@ -87,6 +90,34 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSectionsRin
     ((X.structureAlgebraSectionsRingEquiv (f ⁻¹ᵁ U)).symm x)).trans
       (X.structureAlgebraSectionsRingEquiv_symm_apply (f ⁻¹ᵁ U) x)
 
+/-- The global functions on `X` are the sections over `Y` of the function algebra: restriction
+to `f ⁻¹ᵁ ⊤ = ⊤`, followed by the inverse section-ring equivalence over `⊤`. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv :
+    Γ(X, ⊤) ≃+* Γ(f.pushforwardStructureAlgebra.X, ⊤) :=
+  (X.presheaf.mapIso (⟨homOfLE le_top, homOfLE (by simp), Subsingleton.elim _ _,
+    Subsingleton.elim _ _⟩ : f ⁻¹ᵁ ⊤ ≅ ⊤).op).commRingCatIsoToRingEquiv.trans
+    (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤).symm
+
+/-- The identification of global functions with global sections of the function algebra is
+restriction to `f ⁻¹ᵁ ⊤`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_apply
+    (b : Γ(X, ⊤)) :
+    f.pushforwardStructureAlgebraΓRingEquiv b =
+      (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤).symm
+        (X.presheaf.map (homOfLE (le_top : f ⁻¹ᵁ ⊤ ≤ ⊤)).op b) :=
+  (rfl)
+
+/-- The inverse identification of global sections of the function algebra with global functions
+is restriction from `f ⁻¹ᵁ ⊤` to `⊤`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply
+    (x : Γ(f.pushforwardStructureAlgebra.X, ⊤)) :
+    f.pushforwardStructureAlgebraΓRingEquiv.symm x =
+      X.presheaf.map (homOfLE (by simp : ⊤ ≤ f ⁻¹ᵁ ⊤)).op
+        (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤ x) :=
+  (rfl)
+
 /-- The structure map on sections of the function algebra is pullback of regular functions
 along the scheme morphism. -/
 @[simp]
@@ -145,6 +176,41 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_toSections
     Scheme.Hom.pushforwardStructureAlgebraPresheafIso_hom_app]
   exact (f.pushforwardStructureAlgebraSectionsRingEquiv_apply U _).trans
     (f.pushforwardStructureAlgebra_algebraMap U r)
+
+end
+
+noncomputable section
+
+variable {X Y T : Scheme.{u}}
+
+/-- The function algebra of a composite is the pushforward of the function algebra:
+`f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T` as `𝒪_X`-algebras, for `q : T ⟶ Y` and `f : Y ⟶ X`. It is
+the identification `f_* q_* ≅ (q ≫ f)_*` of lax monoidal functors, applied to the tensor-unit
+algebra of `T`. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso (q : T ⟶ Y)
+    (f : Y ⟶ X) :
+    (Scheme.Modules.pushforward f).mapCommMon.obj q.pushforwardStructureAlgebra ≅
+      (q ≫ f).pushforwardStructureAlgebra :=
+  Functor.mapCommMonCompIso.symm.app (CommMon.trivial T.Modules) ≪≫
+    (Functor.mapCommMonNatIso (Scheme.Modules.pushforwardComp q f)).app _
+
+/-- As a morphism of modules, the comparison `f_* (q_* 𝒪_T) ⟶ (q ≫ f)_* 𝒪_T` is the
+identification `f_* q_* ≅ (q ≫ f)_*` of pushforwards. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_hom_hom_hom
+    (q : T ⟶ Y) (f : Y ⟶ X) :
+    (q.pushforwardStructureAlgebraCompIso f).hom.hom.hom =
+      (Scheme.Modules.pushforwardComp q f).hom.app _ :=
+  (rfl)
+
+/-- As a morphism of modules, the comparison `(q ≫ f)_* 𝒪_T ⟶ f_* (q_* 𝒪_T)` is the inverse
+identification of pushforwards. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_inv_hom_hom
+    (q : T ⟶ Y) (f : Y ⟶ X) :
+    (q.pushforwardStructureAlgebraCompIso f).inv.hom.hom =
+      (Scheme.Modules.pushforwardComp q f).inv.app _ :=
+  (rfl)
 
 end
 

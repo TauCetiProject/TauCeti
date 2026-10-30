@@ -8,8 +8,9 @@ description: >-
 # To re-pin, replace the SHA everywhere at once:
 #   git grep -l <old-sha> | xargs sed -i 's/<old-sha>/<new-sha>/g'
 #
-# Callers run this from their own trusted checkout of TauCeti (never from PR-controlled code), so a
-# sparse checkout must include .github/actions/checkout-merge-policy.
+# Production callers use a trusted checkout. The independent infrastructure tests also
+# use this action from an unprivileged PR checkout, without secrets or write access.
+# A sparse checkout must include .github/actions/checkout-merge-policy.
 
 runs:
   using: composite
@@ -17,7 +18,7 @@ runs:
     - uses: actions/checkout@v4
       with:
         repository: TauCetiProject/TauCetiReview
-        ref: dff64733b34e4e4e69d768242f198dd79411d9a8
+        ref: ea28bc91b0ee34855ddd84a91a607aa05a0667ac
         path: .tauceti-review
         sparse-checkout: runner
         persist-credentials: false

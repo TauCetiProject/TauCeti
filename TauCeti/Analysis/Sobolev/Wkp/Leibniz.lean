@@ -24,7 +24,8 @@ the recorded weak derivatives of any Sobolev function whose value is `ζ u`:
 
   (`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul`), where `D²w` is
   `TauCeti.Wkp.iteratedGradient 1 w`, a field of endomorphisms of `E`, and `a ⊗ b` denotes the
-  rank-one map `v ↦ ⟪a, v⟫ b`.
+  rank-one map `v ↦ ⟪a, v⟫ b`. The remainder `∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` is at most
+  `2 ‖∇ζ‖ ‖∇u‖ + ‖D²ζ‖ |u|` pointwise in operator norm (`TauCeti.norm_leibnizRemainder_le`).
 
 Nothing is assumed about `ζ` beyond smoothness, nor about `Ω` beyond openness: the formulas follow
 from uniqueness of weak derivatives, so they hold for every `w` with value `ζ u`, however it was
@@ -51,6 +52,26 @@ applied to `ζ u`, controls `ζ D²u` by `ζ L u` and lower-order norms of `u`.
 public section
 
 namespace TauCeti
+
+open scoped Gradient
+
+section LeibnizRemainder
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+
+/-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` of the weak Hessian of `ζ u`
+(`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul`, with `v = ∇u` and `s = u`) is at
+most `2 ‖∇ζ‖ ‖v‖ + ‖D²ζ‖ |s|` in operator norm. -/
+theorem norm_leibnizRemainder_le (zeta : E → ℝ) (v : E) (s : ℝ) (x : E) :
+    ‖(innerSL ℝ (∇ zeta x)).smulRight v + (innerSL ℝ v).smulRight (∇ zeta x)
+        + s • fderiv ℝ (∇ zeta) x‖ ≤
+      2 * ‖∇ zeta x‖ * ‖v‖ + ‖fderiv ℝ (∇ zeta) x‖ * ‖s‖ := by
+  refine norm_add₃_le.trans (le_of_eq ?_)
+  rw [ContinuousLinearMap.norm_smulRight_apply, ContinuousLinearMap.norm_smulRight_apply,
+    innerSL_apply_norm, innerSL_apply_norm, norm_smul]
+  ring
+
+end LeibnizRemainder
 
 namespace Wkp
 

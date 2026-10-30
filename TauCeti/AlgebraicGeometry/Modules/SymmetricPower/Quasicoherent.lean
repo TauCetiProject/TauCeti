@@ -63,13 +63,22 @@ namespace QuasicoherentSheaf
 
 variable (X : Scheme.{u})
 
+variable {X} in
+/-- The symmetric powers of the underlying module sheaf of a quasicoherent sheaf are
+quasicoherent. This restates `Scheme.Modules.isQuasicoherent_symmetricPower` for the underlying
+object of a quasicoherent sheaf, whose type `SheafOfModules X.ringCatSheaf` instance search does
+not identify with `X.Modules`. -/
+instance isQuasicoherent_symmetricPower_obj (n : ℕ) (M : QuasicoherentSheaf X) :
+    ((SheafOfModules.symmetricPower X.sheaf n).obj M.obj).IsQuasicoherent :=
+  Scheme.Modules.isQuasicoherent_symmetricPower n M.obj
+
 /-- The symmetric-power endofunctor of quasicoherent sheaves on a scheme, inherited from
 the symmetric-power endofunctor of all module sheaves. -/
 def symmetricPower (n : ℕ) : QuasicoherentSheaf X ⥤ QuasicoherentSheaf X :=
   (SheafOfModules.isQuasicoherent X.ringCatSheaf).lift
     ((SheafOfModules.isQuasicoherent X.ringCatSheaf).ι ⋙
       SheafOfModules.symmetricPower X.sheaf n)
-    fun M ↦ Scheme.Modules.isQuasicoherent_symmetricPower n M.obj
+    fun M ↦ isQuasicoherent_symmetricPower_obj n M
 
 /-- The underlying module sheaf of a quasicoherent symmetric power. -/
 @[simp]

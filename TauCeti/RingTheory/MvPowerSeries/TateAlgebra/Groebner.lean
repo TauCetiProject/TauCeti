@@ -16,7 +16,7 @@ import Mathlib.Data.Finsupp.WellFounded
 /-!
 # Restricted power series over a Euclidean normed ring are noetherian
 
-Let `R` be a complete commutative ring whose norm is multiplicative and ultrametric, and let
+Let `R` be a complete ring whose norm is multiplicative and ultrametric, and let
 `deg : R → ℕ` be a *Euclidean degree compatible with the norm*:
 
 * `deg y = deg x` whenever `‖x - y‖ < ‖x‖`, so the degree only sees the leading part of an
@@ -25,14 +25,14 @@ Let `R` be a complete commutative ring whose norm is multiplicative and ultramet
   `deg w < deg x`.
 
 Then for every finite set of variables `σ` and all positive radii `c : σ → ℝ`, the ring
-`R{T/c}` of restricted power series with the Gauss norm at the radii `c` is noetherian
+`R{T/c}` of restricted power series with the Gauss norm at the radii `c` is left noetherian
 (`TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_division`). This is Kedlaya's
 analogue of the Hilbert basis theorem, stated for an abstract Euclidean normed ring. Kedlaya
 proves it for the completion `A^r` of `W(𝒪_L)[[x] : x ∈ L]` for the Gauss norm `λ_r`, which is
 Euclidean in this sense for the degree read off from its Newton polygon (his Remark 2.7 and
 Proposition 2.9), and deduces that the rings `B^I` of the Fargues–Fontaine curve are strongly
-noetherian. A complete nonarchimedean field satisfies the
-hypotheses with `deg = 0`, so its Tate algebras at arbitrary radii are noetherian
+noetherian. A complete nonarchimedean division ring satisfies the
+hypotheses with `deg = 0`, so its Tate algebras at arbitrary radii are left noetherian
 (`TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring`).
 
 ## Proof
@@ -64,9 +64,10 @@ contradiction on an infinite reduction sequence is replaced by the well-founded 
 
 * `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_division`: restricted power
   series at arbitrary positive radii in finitely many variables over a complete ring with a
-  multiplicative ultrametric norm and a compatible Euclidean degree form a noetherian ring.
+  multiplicative ultrametric norm and a compatible Euclidean degree form a left noetherian ring.
 * `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring`: Tate algebras in finitely many
-  variables at arbitrary positive radii over a complete nonarchimedean field are noetherian.
+  variables at arbitrary positive radii over a complete nonarchimedean division ring are
+  left noetherian.
 
 ## References
 
@@ -81,7 +82,7 @@ namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries Filter Topology
 
-variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
+variable {σ R : Type*} [NormedRing R] [IsUltrametricDist R] {c : σ → ℝ}
   [∀ i, Fact (0 < c i)]
 
 /-- `J` is the *leading index* of `f` for the monomial order `m`: the weighted coefficient norm
@@ -169,7 +170,7 @@ private theorem potential_apply (m : MonomialOrder σ) (deg : R → ℕ) {θ : �
     potential m deg hθ y (m.toSyn t) =
       if θ < ‖coeff t (y : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) then
         deg (coeff t (y : MvPowerSeries σ R)) + 1 else 0 := by
-  simp [potential]
+  rw [potential, Finsupp.ofSupportFinite_coe, AddEquiv.symm_apply_apply]
 
 /-- A change of weighted norm at most `θ` in the coefficient at `t` leaves the potential entry at
 `t` unchanged: by the ultrametric inequality, a coefficient above the threshold keeps its norm,
@@ -186,10 +187,7 @@ private theorem potential_apply_eq_of_le (m : MonomialOrder σ) (deg : R → ℕ
   set v := coeff t (y' : MvPowerSeries σ R)
   by_cases hu : θ < ‖u‖ * t.prod (c · ^ ·)
   · have huv : ‖u - v‖ < ‖u‖ := lt_of_mul_lt_mul_right (h.trans_lt hu) hw
-    have hv : ‖u‖ ≤ ‖v‖ := by
-      have := IsUltrametricDist.norm_add_le_max v (u - v)
-      rw [add_sub_cancel] at this
-      exact (le_max_iff.mp this).resolve_right huv.not_ge
+    have hv : ‖u‖ ≤ ‖v‖ := (IsUltrametricDist.norm_eq_of_norm_sub_lt_left huv).le
     rw [ite_eq_left (hu.trans_le (mul_le_mul_of_nonneg_right hv hw)), ite_eq_left hu,
       hdeg u v huv]
   · have hv : ‖v‖ * t.prod (c · ^ ·) ≤ θ := by
@@ -279,7 +277,7 @@ private theorem exists_reduction_step (m : MonomialOrder σ) (deg : R → ℕ)
     rw [hna, ← hI₁, norm_mul, ← hKI, prod_pow_add]
     ring
   have hzc : ‖z * cx‖ ≤ ‖coeff J (y : MvPowerSeries σ R)‖ := by
-    have : z * cx = coeff J (y : MvPowerSeries σ R) - w := by rw [hzw]; ring
+    have : z * cx = coeff J (y : MvPowerSeries σ R) - w := by rw [hzw, add_sub_cancel_right]
     rw [this]
     exact (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le le_rfl hwle)
   have haxM : ‖a‖ * ‖x‖ ≤ M := by
@@ -301,8 +299,7 @@ private theorem exists_reduction_step (m : MonomialOrder σ) (deg : R → ℕ)
     exact mul_le_mul_of_nonneg_left haxM hε0.le
   · -- At `J` it drops: the leading coefficient of `y` is replaced by the remainder `w`.
     have hwJ : coeff J ((y - a * x : IsRestricted.subring (R := R) c) : MvPowerSeries σ R) = w := by
-      rw [hcoeff, ite_eq_left hKJ, hJK, hzw]
-      ring
+      rw [hcoeff, ite_eq_left hKJ, hJK, hzw, add_sub_cancel_left]
     simp only [ofColex_toColex, potential_apply]
     rw [hwJ, ite_eq_left (hyθ.trans_eq hJ.1.symm)]
     split_ifs with hθw
@@ -352,11 +349,11 @@ private theorem exists_approx (m : MonomialOrder σ) (deg : R → ℕ)
 
 /-- **Kedlaya's Hilbert basis theorem for restricted power series**, the argument of Kedlaya's
 Theorem 3.2 for an abstract Euclidean normed ring.
-Let `R` be a complete commutative ring with a multiplicative ultrametric norm, and `deg : R → ℕ`
+Let `R` be a complete ring with a multiplicative ultrametric norm, and `deg : R → ℕ`
 a degree such that `deg y = deg x` whenever `‖x - y‖ < ‖x‖`, and such that for `x ≠ 0` every `y`
 can be divided as `y = z * x + w` with `‖w‖ ≤ ‖y‖` and either `w = 0` or `deg w < deg x`. Then
 for finitely many variables and all positive radii `c`, the ring of restricted power series
-with its Gauss norm at the radii `c` is noetherian. -/
+with its Gauss norm at the radii `c` is left noetherian. -/
 theorem isNoetherianRing_isRestricted_subring_of_division [CompleteSpace R] [Finite σ]
     (deg : R → ℕ) (hdeg : ∀ x y : R, ‖x - y‖ < ‖x‖ → deg y = deg x)
     (hdiv : ∀ x y : R, x ≠ 0 → ∃ z w, y = z * x + w ∧ ‖w‖ ≤ ‖y‖ ∧ (w = 0 ∨ deg w < deg x)) :
@@ -372,12 +369,13 @@ theorem isNoetherianRing_isRestricted_subring_of_division [CompleteSpace R] [Fin
   · exact ⟨0, fun x _ ↦ by simp, by simp⟩
   exact exists_approx m deg hdeg hdiv hFH hF hε0 hε (mul_pos hε0 (norm_pos_iff.mpr hy0)) y hy le_rfl
 
-/-- **Tate algebras are noetherian.** Over a complete nonarchimedean field `K`, the ring of
-restricted power series in finitely many variables at arbitrary positive radii `c` is noetherian:
-`K` satisfies the hypotheses of `isNoetherianRing_isRestricted_subring_of_division` with the zero
-degree. -/
-theorem isNoetherianRing_isRestricted_subring {K : Type*} [NormedField K] [IsUltrametricDist K]
-    [CompleteSpace K] [Finite σ] : IsNoetherianRing (IsRestricted.subring (R := K) c) :=
+/-- **Tate algebras are left noetherian.** Over a complete nonarchimedean division ring `K`,
+the ring of restricted power series in finitely many variables at arbitrary positive radii `c` is
+left noetherian: `K` satisfies the hypotheses of
+`isNoetherianRing_isRestricted_subring_of_division` with the zero degree. -/
+theorem isNoetherianRing_isRestricted_subring {K : Type*} [NormedDivisionRing K]
+    [IsUltrametricDist K] [CompleteSpace K] [Finite σ] :
+    IsNoetherianRing (IsRestricted.subring (R := K) c) :=
   isNoetherianRing_isRestricted_subring_of_division (fun _ ↦ 0) (fun _ _ _ ↦ rfl)
     fun x y hx ↦ ⟨y * x⁻¹, 0, by rw [add_zero, inv_mul_cancel_right₀ hx], by simp, Or.inl rfl⟩
 

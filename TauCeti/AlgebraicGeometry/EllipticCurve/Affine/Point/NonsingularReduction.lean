@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Henselian
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Reduction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 -- Proof-only: one Bosma–Lenstra law computes a sum over a local ring and all its residue fields.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.AdditionLaw.LocalRing
 
@@ -27,6 +29,13 @@ with the points whose `x`-coordinate has a pole. This is the left-exact part of 
 sequence `0 → E₁(F) → E₀(F) → W_k,ns(k) → 0` (AEC VII.2.1), for an arbitrary valuation and an
 arbitrary integral model. The hypotheses are those of the statement: neither ellipticity of `W`,
 minimality of `W_O`, discreteness of `v` nor completeness of `F` is assumed.
+
+The subgroup `E₀(F)` depends on the integral model, but only up to changes of variables over `O`:
+such a change `C` carries the integral model of `C • W` to `C` applied to that of `W`, and the
+isomorphism `(C • W)(F) ≃+ W(F)` it induces carries `E₀` onto `E₀`, since it preserves the points
+with a pole in `x` and acts on the reductions of the others by the reduction of `C`. In particular
+the index `[W(F) : E₀(F)]` is unchanged, which is what lets it be computed on whichever integral
+model of `W` is most convenient, such as the one at which Tate's algorithm stops.
 
 The sequence is also right-exact when `O` is Henselian, for instance complete: the reduction
 homomorphism is then surjective. This is Hensel's lemma applied to the Weierstrass equation in
@@ -49,6 +58,11 @@ whichever variable has a nonvanishing partial derivative at the point of `W_k`
   of the reduced curve.
 * `WeierstrassCurve.Affine.mem_nonsingularReduction_of_one_lt`: the kernel of reduction is
   contained in `E₀(F)`.
+* `WeierstrassCurve.Affine.equivVariableChange_mem_nonsingularReduction_iff` and
+  `WeierstrassCurve.Affine.nonsingularReduction_baseChange_smul`: a change of variables over `O`
+  identifies `E₀` of the two integral models.
+* `WeierstrassCurve.Affine.index_nonsingularReduction_baseChange_smul`: so the index of `E₀(F)` is
+  invariant under changes of variables over `O`.
 * `WeierstrassCurve.Affine.nonsingularReductionHom_eq_zero_iff`: the kernel of the reduction
   homomorphism is the kernel of reduction `E₁(F)`.
 * `WeierstrassCurve.Affine.mem_ker_nonsingularReductionHom_iff`: the same statement for the kernel
@@ -158,6 +172,77 @@ theorem mem_nonsingularReduction_of_one_lt {P : W.Point} (hP : 1 < v P.xCoord) :
   rw [mem_nonsingularReduction_iff, (Point.reduction_eq_zero_iff v P).mpr (.inr hP),
     Projective.nonsingularLift_iff]
   exact Projective.nonsingular_zero
+
+/-! ### Changes of variables over the valuation ring -/
+
+section VariableChange
+
+variable (C : VariableChange v.valuationSubring)
+
+/-- **A change of variables over the valuation ring preserves nonsingular reduction.** For a change
+of variables `C` defined over `O`, the isomorphism `(C • W)(F) ≃ W(F)` it induces sends a point to
+a point with nonsingular reduction exactly when the point has nonsingular reduction, for the
+integral models `C • W_O` and `W_O`. -/
+theorem equivVariableChange_mem_nonsingularReduction_iff {P : (C.baseChange F • W).toAffine.Point} :
+    Point.equivVariableChange W (C.baseChange F) P ∈ W.nonsingularReduction v ↔
+      P ∈ (C.baseChange F • W).toAffine.nonsingularReduction v := by
+  rcases P with _ | ⟨x, y, h⟩
+  · simp only [← Point.zero_def, Point.equivVariableChange_zero, zero_mem]
+  rw [Point.equivVariableChange_some]
+  -- the coefficients of `C`, read in `F`
+  have hu : ((C.baseChange F).u : F) = (C.u : v.valuationSubring) := by
+    simp [VariableChange.baseChange]
+  have hr : (C.baseChange F).r = C.r := by simp [VariableChange.baseChange]
+  have hs : (C.baseChange F).s = C.s := by simp [VariableChange.baseChange]
+  have ht : (C.baseChange F).t = C.t := by simp [VariableChange.baseChange]
+  have hv : v ((C.u : v.valuationSubring) : F) = 1 :=
+    (Valuation.valuationSubring.integers v).one_of_isUnit C.u.isUnit
+  by_cases hx : v x ≤ 1
+  · -- both points have integral coordinates, and their reductions correspond under the reduction
+    -- of `C`
+    have hx' : v (((C.baseChange F).u : F) ^ 2 * x + (C.baseChange F).r) ≤ 1 := by
+      rw [hu, hr]
+      exact v.map_add_le (by rw [map_mul, map_pow, hv, one_pow, one_mul]; exact hx) C.r.2
+    rw [some_mem_nonsingularReduction_iff v _ hx', some_mem_nonsingularReduction_iff v _ hx,
+      integralModel_baseChange_smul, ← map_variableChange]
+    convert variableChange_nonsingular ((integralModel v.valuationSubring W).map
+      (residue v.valuationSubring)) (C.map (residue v.valuationSubring))
+      (residue _ ⟨x, (v.mem_valuationSubring_iff x).2 hx⟩) (residue _ ⟨y,
+        (v.mem_valuationSubring_iff y).2 (valuation_y_le_one_of_valuation_x_le_one v h.left hx)⟩)
+      using 2
+    · simp only [VariableChange.map_u, Units.coe_map, MonoidHom.coe_ofClass, VariableChange.map_r,
+        ← map_pow, ← map_mul, ← map_add]
+      exact congrArg _ (Subtype.ext (by simp [hu, hr]))
+    · simp only [VariableChange.map_u, Units.coe_map, MonoidHom.coe_ofClass, VariableChange.map_s,
+        VariableChange.map_t, ← map_pow, ← map_mul, ← map_add]
+      exact congrArg _ (Subtype.ext (by simp [hu, hs, ht]))
+  · -- both points have a pole in `x`, so both lie in the kernel of reduction
+    rw [not_le] at hx
+    have hx' : 1 < v (((C.baseChange F).u : F) ^ 2 * x + (C.baseChange F).r) := by
+      have hux : v (((C.baseChange F).u : F) ^ 2 * x) = v x := by
+        rw [map_mul, map_pow, hu, hv, one_pow, one_mul]
+      rwa [Valuation.map_add_eq_of_lt_left _ (by rw [hux, hr]; exact C.r.2.trans_lt hx), hux]
+    exact iff_of_true (mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some]))
+      (mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some]))
+
+/-- **`E₀` of `C • W` is the preimage of `E₀` of `W`** under the isomorphism of point groups induced
+by a change of variables `C` over the valuation ring. -/
+theorem nonsingularReduction_baseChange_smul :
+    (C.baseChange F • W).toAffine.nonsingularReduction v = (W.nonsingularReduction v).comap
+      (Point.addEquivVariableChange W (C.baseChange F)).toAddMonoidHom :=
+  AddSubgroup.ext fun _ ↦ by
+    simp only [AddSubgroup.mem_comap, AddEquiv.coe_toAddMonoidHom,
+      Point.coe_addEquivVariableChange, equivVariableChange_mem_nonsingularReduction_iff]
+
+/-- **The index of `E₀` is invariant under changes of variables over the valuation ring**:
+`[(C • W)(F) : E₀] = [W(F) : E₀]` for a change of variables `C` defined over `O`. -/
+theorem index_nonsingularReduction_baseChange_smul :
+    ((C.baseChange F • W).toAffine.nonsingularReduction v).index =
+      (W.nonsingularReduction v).index := by
+  rw [nonsingularReduction_baseChange_smul,
+    AddSubgroup.index_comap_of_surjective _ (AddEquiv.surjective _)]
+
+end VariableChange
 
 variable [DecidableEq (ResidueField v.valuationSubring)]
 

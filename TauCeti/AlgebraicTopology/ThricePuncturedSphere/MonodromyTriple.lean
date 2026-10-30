@@ -38,7 +38,8 @@ For a cover, the triple records the cover faithfully in the following senses.
 * It is connected exactly when the total space is path connected: path lifting identifies the
   monodromy orbits on the fibre with the path components of `E`, and a nonempty fibre is the
   same as a nonempty total space.
-* It is unchanged by a map of covers over `U` that respects the numberings.
+* It is unchanged by a map of covers over `U` that respects the numberings, and any map of
+  covers over `U` intertwines the triples on the two numbered fibres.
 * Renumbering the fibre by a permutation `τ` relabels the triple by `τ`. Hence the
   isomorphism class of the triple does not depend on the numbering, and is an invariant of the
   cover up to homeomorphism over `U`.
@@ -55,6 +56,8 @@ For a cover, the triple records the cover faithfully in the following senses.
   space is path connected.
 * `IsCoveringMap.monodromyTriple_eq_of_comp_eq`: a map of covers respecting the numberings
   preserves the triple.
+* `IsCoveringMap.semiconj_component_monodromyTriple`: any map of covers intertwines the
+  components of the two triples.
 * `IsCoveringMap.monodromyTriple_trans`: renumbering the fibre relabels the triple.
 * `IsCoveringMap.isoClass_monodromyTriple_eq` and
   `IsCoveringMap.isoClass_monodromyTriple_eq_of_homeomorph`: the isomorphism class of the triple
@@ -148,7 +151,7 @@ end ThricePuncturedSphere
 
 open ThricePuncturedSphere
 
-variable {n : ℕ} {E F : Type u} [TopologicalSpace E] [TopologicalSpace F]
+variable {n : ℕ} {E : Type u} {F : Type*} [TopologicalSpace E] [TopologicalSpace F]
   {p : E → ThricePuncturedSphere} {q : F → ThricePuncturedSphere}
 
 /-- The monodromy triple of a covering map `p : E → ℂ ∖ {0, 1}` whose fibre over the basepoint
@@ -225,6 +228,25 @@ theorem _root_.IsCoveringMap.monodromyTriple_eq_of_comp_eq (hq : IsCoveringMap q
   rw [hq.monodromyTriple_def, hp.monodromyTriple_def]
   exact congrArg permutationTriple
     (hp.permutationRepresentation_eq_of_fiberMap hq basePt ν ν' f hf hν)
+
+/-- **A map of covers intertwines the monodromy triples.** If `f` is a map over `ℂ ∖ {0, 1}` from
+a cover `p` to a cover `q` whose fibres over `1/2` are numbered by `ν` and `ν'`, the map it induces
+between the numbered fibres carries each component of the monodromy triple of `p` to the
+corresponding component of the monodromy triple of `q`. -/
+theorem _root_.IsCoveringMap.semiconj_component_monodromyTriple {m : ℕ} (hq : IsCoveringMap q)
+    (ν' : q ⁻¹' {basePt} ≃ Fin m) (f : C(E, F)) (hf : q ∘ f = p) (j : Fin 3) :
+    Semiconj (ν' ∘ fiberMap f hf basePt ∘ ν.symm) ((hp.monodromyTriple ν).component j)
+      ((hq.monodromyTriple ν').component j) := by
+  -- Each component is the monodromy along a peripheral element, which `f` intertwines.
+  have key (g : FundamentalGroup ThricePuncturedSphere basePt) :
+      Semiconj (ν' ∘ fiberMap f hf basePt ∘ ν.symm) (ν.permCongr (hp.monodromyPerm basePt g))
+        (ν'.permCongr (hq.monodromyPerm basePt g)) := fun i ↦ by
+    simp only [comp_apply, permCongr_apply, symm_apply_apply, IsCoveringMap.coe_monodromyPerm,
+      hp.fiberMap_monodromy hq f hf]
+  fin_cases j
+  · simpa using key periph0
+  · simpa using key periph1
+  · simpa using key periphInf
 
 /-- Renumbering the fibre by a permutation `τ` of `Fin n` relabels the monodromy triple by `τ`. -/
 theorem _root_.IsCoveringMap.monodromyTriple_trans (τ : Perm (Fin n)) :

@@ -49,7 +49,7 @@ theorem exists_isLeftAlmostSplit (h : IsFiniteRepType.{u, v, w, t} k Q)
     ∃ (E : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q))
       (f : Y ⟶ E), IsLeftAlmostSplit f := by
   classical
-  let V := irreducibleMorphismQuiver.{u, v, w, t} k Q
+  let V := IrreducibleMorphismQuiver k (IsFinDim.{u, v, w, t} k Q)
   have : Finite V := (finite_irreducibleMorphismQuiver_iff k Q).mpr h
   let := Fintype.ofFinite V
   let e := Fintype.equivFin V
@@ -76,10 +76,10 @@ theorem exists_isLeftAlmostSplit (h : IsFiniteRepType.{u, v, w, t} k Q)
     obtain ⟨m, P, hiP, hP, ⟨d⟩⟩ := exists_indecomposable_iso_biproduct W.obj W.property
     have factors (j : Fin m) : ∃ a : E.obj ⟶ P j, f ≫ a =
         g.hom ≫ d.hom ≫ biproduct.π P j := by
-      let c := irreducibleMorphismQuiver.representativeIso (hP j) (hiP j)
-      let i := e (irreducibleMorphismQuiver.of (hP j) (hiP j))
+      let c := IrreducibleMorphismQuiver.representativeIso k (hP j) (hiP j)
+      let i := e (IrreducibleMorphismQuiver.of k (hP j) (hiP j))
       let hc : X i ≅ P j :=
-        eqToIso (congrArg irreducibleMorphismQuiver.representative (e.symm_apply_apply _)) ≪≫ c
+        eqToIso (congrArg IrreducibleMorphismQuiver.representative (e.symm_apply_apply _)) ≪≫ c
       obtain ⟨a, ha⟩ := hfactor i (g.hom ≫ d.hom ≫ biproduct.π P j ≫ hc.inv)
         (comp_mem_jacobsonRadical_right hrad _)
       refine ⟨a ≫ hc.hom, ?_⟩

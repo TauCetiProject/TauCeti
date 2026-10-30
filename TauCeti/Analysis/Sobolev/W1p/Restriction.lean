@@ -145,9 +145,7 @@ private theorem Sobolev1JetLp.restrictL_mem_w1pSubmodule (hU : U ≤ Omega)
     rw [hJg, hug, hJu]
   refine ((W1p.hasWeakFDerivOn u).mono hU).congr_ae hvalue.symm |>.congr_ae_deriv ?_
   filter_upwards [hgradient] with x hx
-  apply ContinuousLinearMap.ext
-  intro v
-  rw [Sobolev1JetLp.candidateWeakFDeriv_apply, innerSL_apply_apply, real_inner_comm, hx]
+  rw [Sobolev1JetLp.candidateWeakFDeriv_def, hx]
 
 /-- **Restriction of first-order Sobolev functions.**  If `U ⊆ Ω`, this is the continuous
 linear map `W^{1,p}(Ω) → W^{1,p}(U)` obtained by restricting both the value and weak gradient.

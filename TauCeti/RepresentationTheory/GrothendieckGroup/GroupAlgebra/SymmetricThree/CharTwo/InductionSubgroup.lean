@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SymmetricThree.CharTwo.Simple
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SymmetricThree.CharTwo
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.InducedClasses
 import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SymmetricThree.Alternating
 import TauCeti.RepresentationTheory.Symmetric.Modular.Three.Alternating
 import TauCeti.RingTheory.CompositionSeries.Regular
@@ -45,8 +46,6 @@ local notation "G" => Equiv.Perm (Fin 3)
 local notation "A" => alternatingGroup (Fin 3)
 local notation "K₀" => ExactK0 (finiteModulesExactStructure k[G])
 local notation "K₀A" => ExactK0 (finiteModulesExactStructure k[A])
-local notation "I" => ⨆ (H : Subgroup G) (_ : IsCyclic H ∧ ¬ 2 ∣ Nat.card H),
-  AddMonoidHom.range (indK0 k H)
 
 local instance : IsArtinianRing k[A] := IsArtinianRing.of_finite k k[A]
 
@@ -164,10 +163,10 @@ theorem mem_range_indK0_alternating_perm_fin_three_zmod_two_iff (x : K₀) :
 
 /-- Over 𝔽₂, induction from A₃ already supplies every class induced from a cyclic
 subgroup of odd order in S₃. -/
-theorem iSup_range_indK0_cyclic_coprime_perm_fin_three_zmod_two_eq_range_alternating :
-    I = (indK0 k A).range := by
-  apply le_antisymm
-  · refine iSup_le fun H ↦ iSup_le fun hH ↦ ?_
+theorem indCyclicCoprimeK0_perm_fin_three_zmod_two_eq_range_alternating :
+    indCyclicCoprimeK0 k G 2 = (indK0 k A).range := by
+  refine le_antisymm ((indClassesK0_le_iff k).2 fun H hH y ↦ ?_) ?_
+  · have hnd : ¬ 2 ∣ Nat.card H := Nat.prime_two.coprime_iff_not_dvd.mp hH.2
     have hle : H ≤ A := by
       intro g hg
       by_contra h
@@ -175,13 +174,12 @@ theorem iSup_range_indK0_cyclic_coprime_perm_fin_three_zmod_two_eq_range_alterna
       have hsign : Equiv.Perm.sign g ≠ 1 := h
       have hne : g ≠ 1 := by rintro rfl; simp at hsign
       have horder : orderOf g = 2 := orderOf_eq_prime (hpow g hsign) hne
-      exact hH.2 (horder ▸ H.orderOf_dvd_natCard hg)
+      exact hnd (horder ▸ H.orderOf_dvd_natCard hg)
     have hcard : Nat.card H ∣ 3 := by
       simpa only [card_alternatingGroup_fin_three] using Subgroup.card_dvd_of_le hle
     rcases (Nat.dvd_prime (by decide : Nat.Prime 3)).mp hcard with h | h
     · have hbot : H = ⊥ := Subgroup.card_eq_one.mp h
-      subst H
-      rintro x ⟨y, rfl⟩
+      subst hbot
       have hy := eq_finrankK0_smul_trivial_of_isPGroup 2
         (IsPGroup.of_subsingleton 2 (⊥ : Subgroup G)) y
       rw [← exactK0_one_eq_of_trivial] at hy
@@ -191,19 +189,21 @@ theorem iSup_range_indK0_cyclic_coprime_perm_fin_three_zmod_two_eq_range_alterna
         indK0 k (MulAction.stabilizer G (0 : Fin 3)) 1, (smul_comm _ _ _).symm⟩
     · have hA : H = A := Subgroup.eq_of_le_of_card_ge hle (by
         rw [card_alternatingGroup_fin_three, h])
-      rw [hA]
+      subst hA
+      exact ⟨y, rfl⟩
   · have hcyclic : IsCyclic A := isCyclic_of_prime_card (p := 3)
       card_alternatingGroup_fin_three
-    exact le_iSup_of_le A (le_iSup_of_le ⟨hcyclic, by
-      rw [card_alternatingGroup_fin_three]; decide⟩ le_rfl)
+    rintro _ ⟨y, rfl⟩
+    exact indK0_mem_indCyclicCoprimeK0 k hcyclic (by
+      rw [card_alternatingGroup_fin_three]; decide) y
 
 /-- The prime-to-two cyclic induction subgroup of S₃ over 𝔽₂ is precisely `2 · G₀`.
 Here multiplication by two is in the integral Grothendieck group, not in the coefficient field. -/
--- Apply before simplification replaces nondivisibility by a remainder test.
+-- Apply before membership unfolds into the family of inducing subgroups.
 @[simp↓]
-theorem mem_iSup_range_indK0_cyclic_coprime_perm_fin_three_zmod_two_iff (x : K₀) :
-    x ∈ I ↔ ∃ y : K₀, 2 • y = x := by
-  rw [iSup_range_indK0_cyclic_coprime_perm_fin_three_zmod_two_eq_range_alternating,
+theorem mem_indCyclicCoprimeK0_perm_fin_three_zmod_two_iff (x : K₀) :
+    x ∈ indCyclicCoprimeK0 k G 2 ↔ ∃ y : K₀, 2 • y = x := by
+  rw [indCyclicCoprimeK0_perm_fin_three_zmod_two_eq_range_alternating,
     mem_range_indK0_alternating_perm_fin_three_zmod_two_iff]
 
 end TauCeti

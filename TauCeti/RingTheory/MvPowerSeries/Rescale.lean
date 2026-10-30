@@ -15,7 +15,9 @@ public import TauCeti.Analysis.Normed.Ring.MulUnit
 This file records general facts about Mathlib's coefficientwise rescaling of multivariate
 power series. Rescaling by multiplicative units transports weighted coefficient norms, and hence
 restrictedness, when the weights are changed by the corresponding scalar norms. Rescaling by a
-family of units and then by their inverses is the identity.
+family of units and then by their inverses is the identity. Substituting a family into a rescaled
+power series is substituting the rescaled family: `f(a X)` at `X = v` is `f(a v)`; in particular,
+`s • g = f(s X)` gives `s • g(v) = f(s v)`.
 -/
 
 public section
@@ -66,5 +68,22 @@ theorem rescale_inv_rescale {A : Type*} [CommSemiring A] (u : σ → Aˣ) (f : M
     funext i
     simp
   rw [rescale_rescale, h, rescale_one, RingHom.id_apply]
+
+/-- Substituting a family `v` into the rescaling `f(a X)` of `f` substitutes the rescaled family:
+`f(a X)` at `X = v` is `f(a v)`. -/
+theorem subst_rescale {τ A : Type*} [CommRing A] (a : σ → A) (f : MvPowerSeries σ A)
+    {v : σ → MvPowerSeries τ A} (hv : HasSubst v) : (rescale a f).subst v = f.subst (a • v) := by
+  rw [rescale_eq_subst, subst_comp_subst_apply (HasSubst.smul_X a) hv]
+  congr 1
+  funext i
+  simp only [Pi.smul_apply', subst_smul hv, subst_X hv]
+
+/-- If `s • g = f(s X)`, then `s • g(v) = f(s v)` at every substitutable family `v`. -/
+theorem smul_subst_of_smul_eq_rescale {τ A : Type*} [CommRing A] {f g : MvPowerSeries σ A}
+    {s : A} (h : s • g = rescale (fun _ ↦ s) f) {v : σ → MvPowerSeries τ A} (hv : HasSubst v) :
+    s • g.subst v = f.subst (s • v) := by
+  rw [← subst_smul hv, h, subst_rescale _ _ hv]
+  -- The pointwise action of the constant family `fun _ ↦ s` is the action of `s`.
+  rfl
 
 end MvPowerSeries

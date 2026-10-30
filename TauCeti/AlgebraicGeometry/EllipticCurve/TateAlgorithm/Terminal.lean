@@ -61,6 +61,11 @@ at least `2`.
 * `WeierstrassCurve.exists_isTateTerminal`: **Tate's algorithm terminates.** Over a discrete
   valuation ring with perfect residue field, a minimal equation with nonzero discriminant is carried
   by a change of variables over `R` to an equation on which the algorithm stops.
+* `WeierstrassCurve.IsTateTerminal.isTateOddStage_zero_of_IStar`: every positive `Iₙ*`
+  stopping condition implies the stage-one normal form.
+* `WeierstrassCurve.IsTateTerminal.isTateOddStage_of_IStar_two_mul_add_one` and
+  `WeierstrassCurve.IsTateTerminal.isTateEvenStage_of_IStar_two_mul_add_two`: the odd and even
+  stopping conditions supply their respective stage and discriminant tests.
 * `WeierstrassCurve.isTateTerminal_map_iff`: the stopping conditions transfer along a ring map
   that reflects divisibility by powers of the uniformiser.
 * `WeierstrassCurve.IsTateTerminal.addVal_Δ_eq`: at a symbol `Iₙ`, the discriminant has valuation
@@ -159,6 +164,41 @@ theorem isTateTerminal_IStar_add_one {n : ℕ} : W.IsTateTerminal ϖ (.IStar (n 
     (∃ k, n = 2 * k ∧ IsTateOddStage ϖ k W ∧ ¬ ϖ ^ (2 * k + 5) ∣ W.b₆) ∨
       ∃ k, n = 2 * k + 1 ∧ IsTateEvenStage ϖ k W ∧ ¬ ϖ ^ (2 * k + 7) ∣ discrim W.a₂ W.a₄ W.a₆ :=
   Iff.rfl
+
+/-- Both branches of the stopping test for `Iₙ*` satisfy the normal form of stage `1` of the
+subprocedure: `ϖ ∣ a₁`, `ϖ ∥ a₂`, `ϖ² ∣ a₃`, `ϖ³ ∣ a₄` and `ϖ⁴ ∣ a₆`. -/
+theorem IsTateTerminal.isTateOddStage_zero_of_IStar {n : ℕ}
+    (h : W.IsTateTerminal ϖ (.IStar (n + 1))) :
+    IsTateOddStage ϖ 0 W := by
+  rcases isTateTerminal_IStar_add_one.1 h with ⟨k, -, hs, -⟩ | ⟨k, -, hs, -⟩
+  · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateOddStage_iff.1 hs
+    exact isTateOddStage_iff.2 ⟨h₁, h₂, h₂', (pow_dvd_pow ϖ (by omega)).trans h₃,
+      (pow_dvd_pow ϖ (by omega)).trans h₄, (pow_dvd_pow ϖ (by omega)).trans h₆⟩
+  · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateEvenStage_iff.1 hs
+    exact isTateOddStage_iff.2 ⟨h₁, h₂, h₂', (pow_dvd_pow ϖ (by omega)).trans h₃,
+      (pow_dvd_pow ϖ (by omega)).trans h₄, (pow_dvd_pow ϖ (by omega)).trans h₆⟩
+
+/-- The stopping test at `I*_{2k+1}` is the odd stage `k` with `ϖ^(2k+5) ∤ b₆`. -/
+theorem IsTateTerminal.isTateOddStage_of_IStar_two_mul_add_one {k : ℕ}
+    (h : W.IsTateTerminal ϖ (.IStar (2 * k + 1))) :
+    IsTateOddStage ϖ k W ∧
+      ¬ ϖ ^ (2 * k + 5) ∣ W.b₆ := by
+  rcases isTateTerminal_IStar_add_one.1 h with ⟨k', hk, hs, hb⟩ | ⟨k', hk, -, -⟩
+  · obtain rfl : k' = k := by omega
+    exact ⟨hs, hb⟩
+  · omega
+
+/-- The stopping test at `I*_{2k+2}` is the even stage `k` with
+`ϖ^(2k+7) ∤ a₄² − 4 a₂ a₆`. -/
+theorem IsTateTerminal.isTateEvenStage_of_IStar_two_mul_add_two {k : ℕ}
+    (h : W.IsTateTerminal ϖ (.IStar (2 * k + 2))) :
+    IsTateEvenStage ϖ k W ∧
+      ¬ ϖ ^ (2 * k + 7) ∣ discrim W.a₂
+        W.a₄ W.a₆ := by
+  rcases isTateTerminal_IStar_add_one.1 h with ⟨k', hk, -, -⟩ | ⟨k', hk, hs, hb⟩
+  · omega
+  · obtain rfl : k' = k := by omega
+    exact ⟨hs, hb⟩
 
 @[simp]
 theorem isTateTerminal_IVStar : W.IsTateTerminal ϖ .IVStar ↔

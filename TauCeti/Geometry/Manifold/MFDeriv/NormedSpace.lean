@@ -19,7 +19,11 @@ with `F`, so one vanishes exactly when the other does.
 
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
+* `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
+  the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
+* `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
+* `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
   some tangent vector is differentiable there.
@@ -28,7 +32,7 @@ with `F`, so one vanishes exactly when the other does.
 
 public section
 
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -58,6 +62,15 @@ theorem _root_.NormedSpace.fromTangentSpace_symm_apply (x : E) (v : E) :
   rw [mvfderiv, ContinuousLinearMap.comp_apply]
   exact NormedSpace.fromTangentSpace_apply _ _
 
+/-- The derivative at `x` of a vector-valued function, read in the target space, depends only on
+the germ of the function at `x`. -/
+theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : f₁ =ᶠ[𝓝 x] f) :
+    mvfderiv I f₁ x = mvfderiv I f x := by
+  ext v
+  rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, hf.mfderiv_eq]
+  -- `tangentSpaceCast` identifies two tangent spaces of `F`, both of which are `F` itself.
+  rfl
+
 /-- The chain rule for a vector-valued function on a manifold followed by a map between normed
 spaces that is differentiable at the relevant point, evaluated on a tangent vector. -/
 theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x : M}
@@ -66,6 +79,20 @@ theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x
   rw [mvfderiv_comp_apply x hφ.mdifferentiableAt hg, mvfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     NormedSpace.fromTangentSpace_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- The derivative of a vector-valued function, read in the target space, commutes with
+multiplication by a constant scalar acting continuously on the target, such as a complex scalar on
+a complex normed space regarded as a real one. -/
+theorem mvfderiv_const_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass 𝕜 R F]
+    [ContinuousConstSMul R F] {g : M → F} {x : M} (hg : MDiffAt g x) (c : R) :
+    mvfderiv I (fun y ↦ c • g y) x = c • mvfderiv I g x := by
+  have hcg : MDiffAt (fun y ↦ c • g y) x :=
+    ((c • ContinuousLinearMap.id 𝕜 F).mdifferentiableAt (x := g x)).comp x hg
+  rw [hcg.mvfderiv, hg.mvfderiv]
+  have hd := hg.differentiableWithinAt_writtenInExtChartAt
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    Function.comp_def, id] at hd ⊢
+  exact fderivWithin_const_smul I.uniqueDiffWithinAt_image hd c
 
 /-- The derivative of a vector-valued function, read in the target space, vanishes exactly when
 its manifold derivative does. -/
@@ -87,5 +114,18 @@ theorem mdifferentiableAt_of_mvfderiv_apply_ne_zero {g : M → F} {x : M} {v : T
 theorem mfderiv_neg_eq_zero_iff {g : M → F} {x : M} :
     mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0 := by
   rw [← mvfderiv_eq_zero_iff, mvfderiv_neg, neg_eq_zero, mvfderiv_eq_zero_iff]
+
+/-- The derivative of a component of a function into a finite product of normed spaces is the
+component of its derivative, at a point where the function is differentiable. This is the
+manifold version of `fderiv_apply`. -/
+theorem mvfderiv_apply {ι : Type*} [Fintype ι] {F'' : ι → Type*}
+    [∀ i, NormedAddCommGroup (F'' i)] [∀ i, NormedSpace 𝕜 (F'' i)] {Φ : M → (i : ι) → F'' i}
+    {x : M} (hΦ : MDifferentiableAt I 𝓘(𝕜, (i : ι) → F'' i) Φ x) (i : ι) :
+    mvfderiv I (fun y ↦ Φ y i) x = (ContinuousLinearMap.proj i).comp (mvfderiv I Φ x) := by
+  ext v
+  have := mvfderiv_comp_apply_of_differentiableAt
+    (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).differentiableAt hΦ v
+  -- The component `fun y ↦ Φ y i` is `proj i ∘ Φ` by definition of the projection.
+  rwa [ContinuousLinearMap.fderiv] at this
 
 end TauCeti

@@ -31,9 +31,9 @@ and its scalar curvature is the sum of the scalar curvatures of the factors:
 So mixed curvature terms vanish, and a flat factor contributes nothing to the Ricci tensor. This
 reduces the Ricci tensor of the product geometries `S² × ℝ` and `ℍ² × ℝ` to that of their surface
 factor. Since every isometry preserves the Ricci tensor
-(`TauCeti.RiemannianIsometry.ricciTensor_mfderiv`), it is the curvature input for showing that the
-isometries of these geometries preserve the line factor. The scalar curvature formula is the
-input for constructing metrics of positive scalar curvature on products.
+(`TauCeti.IsLocalRiemannianIsometry.ricciTensor_mfderiv`), it is the curvature input for showing
+that the isometries of these geometries preserve the line factor. The scalar curvature formula is
+the input for constructing metrics of positive scalar curvature on products.
 
 The curvature tensor is evaluated on smooth product fields, on which the Levi-Civita connection
 of the product acts factor by factor (`TauCeti.Manifold.leviCivitaConnection_prodVectorField`) and

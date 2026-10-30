@@ -115,3 +115,24 @@ theorem mem_standardGeometricComplex_space_iff {K : AbstractSimplicialComplex ι
   Geometry.SimplicialComplex.mem_space_onFinsupp_iff (K := K.toPreAbstractSimplicialComplex)
 
 end TauCeti
+
+namespace AbstractSimplicialComplex
+
+variable {ι : Type*} [Fintype ι]
+
+/-- On a finite vertex type, a coordinate vector is the coordinate vector of a point of the
+realization exactly when it is nonnegative, sums to one, and its support is a face. -/
+theorem mem_range_realization_coe_iff {K : AbstractSimplicialComplex ι} {z : ι → ℝ} :
+    z ∈ range (fun x : Realization K => (x.1 : ι → ℝ)) ↔
+      (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1 ∧ (Finsupp.equivFunOnFinite.symm z).support ∈ K := by
+  constructor
+  · rintro ⟨x, rfl⟩
+    obtain ⟨hnn, hsum, hsupp⟩ := TauCeti.mem_standardGeometricComplex_space_iff.mp x.2
+    refine ⟨hnn, ?_, by simpa using hsupp⟩
+    rwa [Finsupp.sum_fintype _ _ (fun _ => rfl)] at hsum
+  · rintro ⟨hnn, hsum, hsupp⟩
+    refine ⟨⟨Finsupp.equivFunOnFinite.symm z, TauCeti.mem_standardGeometricComplex_space_iff.mpr
+      ⟨hnn, ?_, hsupp⟩⟩, by simp⟩
+    rwa [Finsupp.sum_fintype _ _ (fun _ => rfl)]
+
+end AbstractSimplicialComplex

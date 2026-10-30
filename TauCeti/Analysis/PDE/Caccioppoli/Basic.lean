@@ -15,7 +15,7 @@ import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 Let `u ∈ H¹(Ω)` be a weak solution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`, with `f ∈ L²(Ω)`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, with `f ∈ L²(Ω)`,
 
 meaning `∫_Ω ⟨a ∇u, ∇v⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`; no boundary condition is imposed on
 `u`. If the coefficient `a` is measurable and uniformly elliptic with constants `0 < λ ≤ Λ`,
@@ -218,7 +218,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
   intro mu _ Omega w A B x₀ r R hA hB hr hrR hball hcacc
   -- A cutoff equal to one on `ball x₀ r` and supported in
   -- `closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R`.
-  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad⟩ := hC x₀ hr (by linarith : r < (r + R) / 2)
+  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad, -⟩ := hC x₀ hr.le (by linarith : r < (r + R) / 2)
   have htsR : tsupport ψ ⊆ ball x₀ R :=
     hts.trans (closedBall_subset_ball (by linarith))
   have hcpt : HasCompactSupport ψ :=
@@ -256,7 +256,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
 variable [DecidableEq ι]
 
 /-- **The Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on `Ω` with
-constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`, in
+constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, in
 the sense that `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`.
 Then for every smooth `ψ` compactly supported in `Ω`,
 

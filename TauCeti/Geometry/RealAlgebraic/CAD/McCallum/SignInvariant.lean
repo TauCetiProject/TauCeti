@@ -17,7 +17,8 @@ on a base cell are omitted from its root stack and have sign zero throughout its
 
 Unlike an intermediate order-invariant lift, this final sign-invariant lift needs no
 well-orientedness assumption at the top level. The lower CAD must still be order-invariant
-for the projection; mere sign-invariance of that projection is not substituted for it.
+for the projection; mere sign-invariance of that projection does not suffice
+(`TauCeti.exists_signInvariant_mcCallumProjection_stackCells_not_signInvariant`).
 
 ## References
 
@@ -37,11 +38,11 @@ variable {n : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
   {𝒟 : Set (Set (Fin n → ℝ))}
 
 /-- **Final sign-invariant CAD lifting.** An analytic base CAD that is order-invariant for
-McCallum's projection lifts to a sign-invariant CAD for the original family, with analytic
-cells and exactly the given base projections. Nullified basis members are allowed at this
-final level, including over positive-dimensional cells. -/
+McCallum's projection of a squarefree basis lifts to a sign-invariant CAD for the original
+family, with analytic cells and exactly the given base projections. Nullified basis members
+are allowed at this final level, including over positive-dimensional cells. -/
 theorem exists_isCAD_signInvariant_of_mcCallumProjection (h𝒟 : IsCAD n 𝒟)
-    (hB : F.IsIrreducibleBasis B)
+    (hB : F.IsSquarefreeBasis B)
     (hanalytic : ∀ C ∈ 𝒟, ∃ d, IsAnalyticSubmanifold d C)
     (hproj : ∀ q ∈ F.mcCallumProjection B, ∀ C ∈ 𝒟, ∀ x ∈ C, ∀ y ∈ C,
       q.orderAt x = q.orderAt y) :
@@ -52,9 +53,10 @@ theorem exists_isCAD_signInvariant_of_mcCallumProjection (h𝒟 : IsCAD n 𝒟)
   apply h𝒟.exists_succ_of_forall_exists_stack
   intro C hC
   obtain ⟨d, hd⟩ := hanalytic C hC
-  obtain ⟨k, θ, hθ, hsign⟩ := hB.exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
-    hd (h𝒟.isConnected hC).isPreconnected (h𝒟.isSemialgebraic hC)
-    (fun q hq ↦ hproj q hq C hC)
+  obtain ⟨k, θ, hθ, hsign⟩ :=
+    hB.exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
+      hd (h𝒟.isConnected hC).isPreconnected (h𝒟.isSemialgebraic hC)
+      (fun q hq ↦ hproj q hq C hC)
   refine ⟨k, θ, hθ, fun E hE ↦ ?_⟩
   obtain ⟨⟨e, -, he⟩, hE⟩ := hsign E hE
   exact ⟨⟨e, he⟩, hE⟩

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
-import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
+import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.CategoryTheory.Monoidal.FunctorCategory
@@ -99,6 +99,24 @@ theorem pullback_map_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
     (η : L ⟶ K) (x : FundamentalGroupoid X) :
     ((pullback (R := R) f).map η).app x =
       η.app ((FundamentalGroupoid.map f).obj x) :=
+  rfl
+
+/-- Transport along corresponding morphisms, with propositionally equal targets, gives
+corresponding coefficients. -/
+theorem map_apply_heq (L : LocalCoefficientSystem.{u, v, w} R X)
+    {x y y' : FundamentalGroupoid X} {p : x ⟶ y} {p' : x ⟶ y'} (hy : y = y') (hp : p ≍ p')
+    (a : L.obj x) : L.map p a ≍ L.map p' a := by
+  subst hy
+  rw [eq_of_heq hp]
+
+/-- Transport in a pulled back system, after transport in the original system, is transport
+along the composite. -/
+theorem pullback_map_map_heq {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) {x : FundamentalGroupoid Y}
+    {y z : FundamentalGroupoid X} (p : x ⟶ (FundamentalGroupoid.map f).obj y) (q : y ⟶ z)
+    (a : L.obj x) :
+    ((pullback f).obj L).map q (L.map p a) ≍ L.map (p ≫ (FundamentalGroupoid.map f).map q) a := by
+  rw [Functor.map_comp, ModuleCat.comp_apply]
   rfl
 
 /-- Pullback along the identity map is naturally isomorphic to the identity functor. -/
@@ -246,11 +264,8 @@ theorem pullbackHomotopyIso_hom_app_app (H : f.Homotopy g)
     ((pullbackHomotopyIso (R := R) H).hom.app L).app x =
       L.map ⟦H.evalAt x.as⟧ := by
   -- As in `pullbackCompIso_hom_app_app`, `(pullback f).obj L` is only definitionally a
-  -- whiskered functor, so the whiskered component is exposed with `change`.  Mathlib states no
-  -- `app` lemma for `homotopicMapsNatIso`, so its component is read off from the definition.
-  change L.map ((FundamentalGroupoidFunctor.homotopicMapsNatIso H).app x) = _
-  unfold FundamentalGroupoidFunctor.homotopicMapsNatIso
-  rfl
+  -- whiskered functor, so the whiskered component is matched up to definitional unfolding.
+  exact congrArg L.map (FundamentalGroupoidFunctor.homotopicMapsNatIso_app H x)
 
 /-- At a point, the inverse pullback comparison acts by the local system on the reversed path
 traced by the homotopy. -/

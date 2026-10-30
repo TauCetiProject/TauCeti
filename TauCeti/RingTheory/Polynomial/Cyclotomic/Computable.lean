@@ -36,8 +36,7 @@ power basis, and reducing a product modulo `Φ_e` needs the coefficients of `Φ_
 
 public section
 
-open Polynomial hiding ofCoeffList ofCoeffList_cons ofCoeffList_nil coeff_ofCoeffList
-  ofCoeffList_coeffList ofCoeffList_map_neg ofCoeffList_zero_cons
+open Polynomial
 open TauCeti.Polynomial
 
 namespace TauCeti
@@ -47,10 +46,11 @@ namespace TauCeti
   (1 :: List.replicate (n - 1) 0) ++ [-1]
 
 /-- `TauCeti.xPowSubOneCoeffs` lists the coefficients of `X ^ n - 1`. -/
-theorem ofCoeffList_xPowSubOneCoeffs {n : ℕ} (hn : n ≠ 0) :
-    ofCoeffList (xPowSubOneCoeffs n) = X ^ n - 1 := by
-  rw [xPowSubOneCoeffs, ofCoeffList_concat, ofCoeffList_cons]
-  simp only [List.length_replicate, ofCoeffList_replicate_zero, add_zero, map_one, one_mul]
+theorem ofCoeffList_reverse_xPowSubOneCoeffs {n : ℕ} (hn : n ≠ 0) :
+    ofCoeffList (xPowSubOneCoeffs n).reverse = X ^ n - 1 := by
+  rw [xPowSubOneCoeffs, ofCoeffList_reverse_concat, ofCoeffList_reverse_cons]
+  simp only [List.length_replicate, List.reverse_replicate, ofCoeffList_replicate_zero,
+    add_zero, map_one, one_mul]
   rw [← pow_succ, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hn)]
   simp [sub_eq_add_neg]
 
@@ -74,16 +74,6 @@ genuine `def`: `cyclotomicCoeffs 12 = [1, 0, -1, 0, 1]`, the coefficients of `X 
 `Polynomial.cyclotomic n ℤ`. -/
 @[expose] def cyclotomicCoeffs (n : ℕ) : List ℤ := cyclotomicCoeffsAux n n
 
-/-- Dropping leading zeros from a coefficient list does not change the polynomial. -/
-private theorem ofCoeffList_dropWhile_beq_zero (l : List ℤ) :
-    ofCoeffList (l.dropWhile (· == 0)) = ofCoeffList l := by
-  induction l with
-  | nil => simp
-  | cons a t ih =>
-    by_cases ha : a = 0
-    · subst ha; simpa [List.dropWhile_cons] using ih
-    · simp [ha]
-
 /-- The computed coefficient list never starts with a zero: it is either `[1]` or the result of
 dropping the leading zeros. -/
 private theorem headD_cyclotomicCoeffsAux_ne_zero (fuel n : ℕ)
@@ -106,18 +96,19 @@ private theorem headD_cyclotomicCoeffsAux_ne_zero (fuel n : ℕ)
 /-- **Dividing out a known family of monic factors.**  If the polynomial of `l` is `A` times the
 product of the cyclotomic polynomials indexed by `L`, then dividing successively by those factors
 leaves `A`.  The factors are supplied as coefficient lists through `f`, in the form
-`TauCeti.divByMonicList` consumes them. -/
-private theorem ofCoeffList_foldl_divByMonicList (f : ℕ → List ℤ) (A : ℤ[X]) (L : List ℕ)
+`TauCeti.Polynomial.divByMonicList` consumes them. -/
+private theorem ofCoeffList_reverse_foldl_divByMonicList (f : ℕ → List ℤ) (A : ℤ[X]) (L : List ℕ)
     (l : List ℤ)
-    (hf : ∀ d ∈ L, X ^ (f d).tail.length + ofCoeffList (f d).tail = cyclotomic d ℤ)
-    (hl : ofCoeffList l = A * (L.map fun d => cyclotomic d ℤ).prod) :
-    ofCoeffList (L.foldl (fun l d => divByMonicList (f d).tail l) l) = A := by
+    (hf : ∀ d ∈ L, X ^ (f d).tail.length + ofCoeffList ((f d).tail).reverse = cyclotomic d ℤ)
+    (hl : ofCoeffList l.reverse = A * (L.map fun d => cyclotomic d ℤ).prod) :
+    ofCoeffList (L.foldl (fun l d => divByMonicList (f d).tail l) l).reverse = A := by
   induction L generalizing l with
   | nil => simpa using hl
   | cons d L ih =>
     refine ih _ (fun e he => hf e (List.mem_cons_of_mem _ he)) ?_
-    rw [ofCoeffList_divByMonicList, hf d List.mem_cons_self, hl, List.map_cons, List.prod_cons,
-      ← mul_assoc, mul_comm A, mul_assoc, mul_divByMonic_cancel_left _ (cyclotomic.monic d ℤ)]
+    rw [ofCoeffList_reverse_divByMonicList, hf d List.mem_cons_self, hl,
+      List.map_cons, List.prod_cons, ← mul_assoc, mul_comm A, mul_assoc,
+      mul_divByMonic_cancel_left _ (cyclotomic.monic d ℤ)]
 
 /-- The list the recursion folds over is exactly the set of proper divisors of `n`. -/
 private theorem mem_filter_range_iff_mem_properDivisors {n d : ℕ} :
@@ -126,8 +117,8 @@ private theorem mem_filter_range_iff_mem_properDivisors {n d : ℕ} :
 
 /-- **The recursion computes the cyclotomic polynomial**, once it is given enough fuel: `n` steps
 suffice for `Φ_n`, since each recursive call is at a proper divisor. -/
-private theorem ofCoeffList_cyclotomicCoeffsAux (fuel : ℕ) :
-    ∀ n ≤ fuel, ofCoeffList (cyclotomicCoeffsAux fuel n) = cyclotomic n ℤ := by
+private theorem ofCoeffList_reverse_cyclotomicCoeffsAux (fuel : ℕ) :
+    ∀ n ≤ fuel, ofCoeffList (cyclotomicCoeffsAux fuel n).reverse = cyclotomic n ℤ := by
   induction fuel with
   | zero =>
     intro n hn
@@ -139,37 +130,38 @@ private theorem ofCoeffList_cyclotomicCoeffsAux (fuel : ℕ) :
     by_cases hn0 : n = 0
     · rw [ite_eq_left hn0, hn0]
       simp [ofCoeffList_cons]
-    rw [ite_eq_right hn0, ofCoeffList_dropWhile_beq_zero]
+    rw [ite_eq_right hn0, ofCoeffList_reverse_dropWhile_beq_zero]
     have hnodup : ((List.range n).filter (fun d => n % d == 0)).Nodup :=
       (List.nodup_range).filter _
     have htoFinset : ((List.range n).filter (fun d => n % d == 0)).toFinset = n.properDivisors := by
       ext d
       simpa using mem_filter_range_iff_mem_properDivisors
-    refine ofCoeffList_foldl_divByMonicList _ _ _ _ (fun d hd => ?_) ?_
+    refine ofCoeffList_reverse_foldl_divByMonicList _ _ _ _ (fun d hd => ?_) ?_
     · have hd' := mem_filter_range_iff_mem_properDivisors.1 hd
       have hdn : d < n := (Nat.mem_properDivisors.1 hd').2
-      have hIH : ofCoeffList (cyclotomicCoeffsAux fuel d) = cyclotomic d ℤ := ih d (by omega)
+      have hIH : ofCoeffList (cyclotomicCoeffsAux fuel d).reverse = cyclotomic d ℤ :=
+        ih d (by omega)
       have hne : cyclotomicCoeffsAux fuel d ≠ [] := by
         intro h0
-        rw [h0, ofCoeffList_nil] at hIH
+        rw [h0, List.reverse_nil, ofCoeffList_nil] at hIH
         exact cyclotomic_ne_zero d ℤ hIH.symm
-      rw [X_pow_add_ofCoeffList_tail (headD_cyclotomicCoeffsAux_ne_zero fuel d hne)
+      rw [X_pow_add_ofCoeffList_reverse_tail (headD_cyclotomicCoeffsAux_ne_zero fuel d hne)
         (hIH ▸ cyclotomic.monic d ℤ), hIH]
-    · rw [ofCoeffList_xPowSubOneCoeffs hn0, ← List.prod_toFinset _ hnodup, htoFinset,
+    · rw [ofCoeffList_reverse_xPowSubOneCoeffs hn0, ← List.prod_toFinset _ hnodup, htoFinset,
         ← Polynomial.prod_cyclotomic_eq_X_pow_sub_one (Nat.pos_of_ne_zero hn0) ℤ,
         ← Nat.cons_self_properDivisors hn0, Finset.prod_cons]
 
 /-- **The computed coefficients are the coefficients of the cyclotomic polynomial.** -/
 @[simp]
-theorem ofCoeffList_cyclotomicCoeffs (n : ℕ) :
-    ofCoeffList (cyclotomicCoeffs n) = cyclotomic n ℤ :=
-  ofCoeffList_cyclotomicCoeffsAux n n le_rfl
+theorem ofCoeffList_reverse_cyclotomicCoeffs (n : ℕ) :
+    ofCoeffList (cyclotomicCoeffs n).reverse = cyclotomic n ℤ :=
+  ofCoeffList_reverse_cyclotomicCoeffsAux n n le_rfl
 
 /-- The computed list is nonempty, `Φ_n` being nonzero. -/
 theorem cyclotomicCoeffs_ne_nil (n : ℕ) : cyclotomicCoeffs n ≠ [] := by
   intro h
-  have := ofCoeffList_cyclotomicCoeffs n
-  rw [h, ofCoeffList_nil] at this
+  have := ofCoeffList_reverse_cyclotomicCoeffs n
+  rw [h, List.reverse_nil, ofCoeffList_nil] at this
   exact cyclotomic_ne_zero n ℤ this.symm
 
 /-- The computed list has no leading zero. -/
@@ -181,14 +173,14 @@ theorem headD_cyclotomicCoeffs_ne_zero (n : ℕ) : (cyclotomicCoeffs n).headD 0 
 This is deliberately not a `simp` lemma: `List.headD_eq_head?_getD` is itself `simp`, so the
 left-hand side is not in simp normal form and the `simpNF` linter rejects the annotation. -/
 theorem headD_cyclotomicCoeffs (n : ℕ) : (cyclotomicCoeffs n).headD 0 = 1 := by
-  rw [← leadingCoeff_ofCoeffList (Or.inr (headD_cyclotomicCoeffs_ne_zero n)),
-    ofCoeffList_cyclotomicCoeffs, (cyclotomic.monic n ℤ).leadingCoeff]
+  rw [← leadingCoeff_ofCoeffList_reverse (Or.inr (headD_cyclotomicCoeffs_ne_zero n)),
+    ofCoeffList_reverse_cyclotomicCoeffs, (cyclotomic.monic n ℤ).leadingCoeff]
 
 /-- The computed list has one entry for each coefficient of `Φ_n`, whose degree is `φ n`. -/
 @[simp]
 theorem length_cyclotomicCoeffs (n : ℕ) : (cyclotomicCoeffs n).length = n.totient + 1 := by
-  have h := natDegree_ofCoeffList (Or.inr (headD_cyclotomicCoeffs_ne_zero n))
-  rw [ofCoeffList_cyclotomicCoeffs, natDegree_cyclotomic] at h
+  have h := natDegree_ofCoeffList_reverse (Or.inr (headD_cyclotomicCoeffs_ne_zero n))
+  rw [ofCoeffList_reverse_cyclotomicCoeffs, natDegree_cyclotomic] at h
   have : (cyclotomicCoeffs n).length ≠ 0 := by simpa using cyclotomicCoeffs_ne_nil n
   omega
 
@@ -200,8 +192,8 @@ This is deliberately not a `simp` lemma: it would rewrite `cyclotomicCoeffs` awa
 left-hand side that is no longer in simp normal form, which the `simpNF` linter rejects. -/
 theorem cyclotomicCoeffs_eq_coeffList (n : ℕ) :
     cyclotomicCoeffs n = (cyclotomic n ℤ).coeffList := by
-  rw [← ofCoeffList_cyclotomicCoeffs n,
-    coeffList_ofCoeffList (Or.inr (headD_cyclotomicCoeffs_ne_zero n))]
+  rw [← ofCoeffList_reverse_cyclotomicCoeffs n,
+    coeffList_ofCoeffList_reverse (Or.inr (headD_cyclotomicCoeffs_ne_zero n))]
 
 /-- **Reduction modulo `Φ_e`**, on coefficient lists: the residue of the polynomial with
 coefficient list `l`, returned as its `φ e` coordinates on the power basis
@@ -213,18 +205,20 @@ of multiplication in the exact cyclotomic integers. -/
 /-- The computed list, presented as `TauCeti.Polynomial.divByMonicList` and
 `TauCeti.Polynomial.modByMonicList` consume a monic divisor: `Φ_e` is `X ^ φ e` plus the polynomial
 of the remaining coefficients. -/
-theorem X_pow_add_ofCoeffList_tail_cyclotomicCoeffs (e : ℕ) :
-    X ^ (cyclotomicCoeffs e).tail.length + ofCoeffList (cyclotomicCoeffs e).tail
+theorem X_pow_add_ofCoeffList_reverse_tail_cyclotomicCoeffs (e : ℕ) :
+    X ^ (cyclotomicCoeffs e).tail.length + ofCoeffList ((cyclotomicCoeffs e).tail).reverse
       = cyclotomic e ℤ := by
-  rw [X_pow_add_ofCoeffList_tail (headD_cyclotomicCoeffs_ne_zero e)
-    (ofCoeffList_cyclotomicCoeffs e ▸ cyclotomic.monic e ℤ), ofCoeffList_cyclotomicCoeffs]
+  rw [X_pow_add_ofCoeffList_reverse_tail (headD_cyclotomicCoeffs_ne_zero e)
+    (ofCoeffList_reverse_cyclotomicCoeffs e ▸ cyclotomic.monic e ℤ),
+    ofCoeffList_reverse_cyclotomicCoeffs]
 
 /-- **Reduction modulo `Φ_e` is computed correctly**: it is Mathlib's `%ₘ` by
 `Polynomial.cyclotomic e ℤ`. -/
 @[simp]
-theorem ofCoeffList_modByCyclotomic (e : ℕ) (l : List ℤ) :
-    ofCoeffList (modByCyclotomic e l) = ofCoeffList l %ₘ cyclotomic e ℤ := by
-  rw [modByCyclotomic, ofCoeffList_modByMonicList, X_pow_add_ofCoeffList_tail_cyclotomicCoeffs]
+theorem ofCoeffList_reverse_modByCyclotomic (e : ℕ) (l : List ℤ) :
+    ofCoeffList (modByCyclotomic e l).reverse = ofCoeffList l.reverse %ₘ cyclotomic e ℤ := by
+  rw [modByCyclotomic, ofCoeffList_reverse_modByMonicList,
+    X_pow_add_ofCoeffList_reverse_tail_cyclotomicCoeffs]
 
 /-- A residue modulo `Φ_e` is a vector of `φ e` coordinates, one for each element of the power
 basis of `ℤ[ζ_e]`. -/

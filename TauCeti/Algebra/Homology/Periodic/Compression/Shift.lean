@@ -190,77 +190,95 @@ section Bounded
 
 variable [HasFiniteCoproducts C]
 
+/-- The compression of the shift by `k` of the underlying complex, as a functor on bounded
+complexes. -/
+noncomputable def shiftCompressionFunctor :
+    CochainComplex.Bounded C ⥤ HomologicalComplex C (ComplexShape.up (ZMod n)) where
+  obj K := compression n (K.obj⟦k⟧)
+  map f := compressionMap n (f.hom⟦k⟧')
+  map_id K := by simp
+  map_comp f g := by simp
+
+/-- The functor `shiftCompressionFunctor` sends a bounded complex to the compression of the shift
+of its underlying complex. -/
+@[simp]
+lemma shiftCompressionFunctor_obj (K : CochainComplex.Bounded C) :
+    (shiftCompressionFunctor n k).obj K = compression n (K.obj⟦k⟧) :=
+  (rfl)
+
+/-- The functor `shiftCompressionFunctor` acts on a morphism by compressing the shift of the
+underlying chain map, after transporting along the object equations. -/
+@[simp]
+lemma shiftCompressionFunctor_map {K L : CochainComplex.Bounded C} (f : K ⟶ L) :
+    (shiftCompressionFunctor n k).map f =
+      eqToHom (shiftCompressionFunctor_obj n k K) ≫ compressionMap n (f.hom⟦k⟧') ≫
+        eqToHom (shiftCompressionFunctor_obj n k L).symm := by
+  -- Unfold the map field and identify the transports along its definitional object equations
+  -- with identities.
+  change compressionMap n (f.hom⟦k⟧') = 𝟙 _ ≫ compressionMap n (f.hom⟦k⟧') ≫ 𝟙 _
+  simp
+
+/-- Compressing the shift of a bounded complex agrees, naturally in the complex, with compressing
+the shift of its underlying complex. -/
+noncomputable def shiftCompCompressionFunctorIso :
+    CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k ⋙ compressionFunctor n ≅
+      shiftCompressionFunctor n k :=
+  NatIso.ofComponents (fun K ↦
+    eqToIso (compressionFunctor_obj n (K⟦k⟧)) ≪≫
+      compressionMapIso (K := (K⟦k⟧).obj) (L := K.obj⟦k⟧) n
+        (((CochainComplex.Bounded.ι C).commShiftIso k).app K) ≪≫
+      eqToIso (shiftCompressionFunctor_obj n k K).symm)
+    (fun {K L} f ↦ by
+      have hcomp :
+          compressionMap (K := (K⟦k⟧).obj) (L := (L⟦k⟧).obj) n (f⟦k⟧').hom ≫
+              compressionMap (K := (L⟦k⟧).obj) (L := L.obj⟦k⟧) n
+                (((CochainComplex.Bounded.ι C).commShiftIso k).hom.app L) =
+            compressionMap (K := (K⟦k⟧).obj) (L := K.obj⟦k⟧) n
+                (((CochainComplex.Bounded.ι C).commShiftIso k).hom.app K) ≫
+              compressionMap n (f.hom⟦k⟧') := by
+        rw [← compressionMap_comp, ← compressionMap_comp]
+        congr 1
+        exact Functor.commShiftIso_hom_naturality (CochainComplex.Bounded.ι C) f k
+      simp only [Functor.comp_map, compressionFunctor_map, shiftCompressionFunctor_map,
+        Iso.trans_hom, eqToIso.hom, compressionMapIso_hom, Iso.app_hom, Category.assoc,
+        eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+      rw [reassoc_of% hcomp])
+
+/-- The forward component of `shiftCompCompressionFunctorIso` compresses the comparison between
+the underlying complex of the shift and the shift of the underlying complex. -/
+@[simp]
+lemma shiftCompCompressionFunctorIso_hom_app (K : CochainComplex.Bounded C) :
+    (shiftCompCompressionFunctorIso n k).hom.app K =
+      eqToHom (compressionFunctor_obj n (K⟦k⟧)) ≫
+        compressionMap (K := (K⟦k⟧).obj) (L := K.obj⟦k⟧) n
+          (((CochainComplex.Bounded.ι C).commShiftIso k).hom.app K) ≫
+          eqToHom (shiftCompressionFunctor_obj n k K).symm := by
+  simp only [shiftCompCompressionFunctorIso, NatIso.ofComponents_hom_app, Iso.trans_hom,
+    eqToIso.hom, compressionMapIso_hom, Iso.app_hom]
+
+/-- The inverse component of `shiftCompCompressionFunctorIso` compresses the inverse comparison
+between the underlying complex of the shift and the shift of the underlying complex. -/
+@[simp]
+lemma shiftCompCompressionFunctorIso_inv_app (K : CochainComplex.Bounded C) :
+    (shiftCompCompressionFunctorIso n k).inv.app K =
+      eqToHom (shiftCompressionFunctor_obj n k K) ≫
+        compressionMap (K := K.obj⟦k⟧) (L := (K⟦k⟧).obj) n
+          (((CochainComplex.Bounded.ι C).commShiftIso k).inv.app K) ≫
+          eqToHom (compressionFunctor_obj n (K⟦k⟧)).symm := by
+  simp only [shiftCompCompressionFunctorIso, NatIso.ofComponents_inv_app, Iso.trans_inv,
+    eqToIso.inv, compressionMapIso_inv, Iso.app_inv, Category.assoc]
+
 /-- Compression of bounded complexes commutes naturally with the shift by `k`. -/
 noncomputable def compressionFunctorShiftIso :
     CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k ⋙ compressionFunctor n ≅
       compressionFunctor n ⋙
         CategoryTheory.shiftFunctor (HomologicalComplex C (.up (ZMod n))) k :=
-  NatIso.ofComponents (fun K ↦
-    let : HasCompression n
-        ((CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k ⋙
-          CochainComplex.Bounded.ι C).obj K) :=
-      hasCompression_of_bounded n (K⟦k⟧).property
-    have hK : CochainComplex.bounded C (K.obj⟦k⟧) :=
-      (CochainComplex.bounded C).prop_of_iso
-        (((CochainComplex.Bounded.ι C).commShiftIso k).app K) (K⟦k⟧).property
-    let : HasCompression n
-        ((CochainComplex.Bounded.ι C ⋙
-          CategoryTheory.shiftFunctor (CochainComplex C ℤ) k).obj K) :=
-      hasCompression_of_bounded n hK
-    let : HasCompression n (K.obj⟦k⟧) := hasCompression_of_bounded n hK
-    eqToIso (compressionFunctor_obj n (K⟦k⟧)) ≪≫
-      compressionMapIso n (((CochainComplex.Bounded.ι C).commShiftIso k).app K) ≪≫
-      compressionShiftIso n K.obj k ≪≫
-      eqToIso (congrArg (fun X ↦ X⟦k⟧) (compressionFunctor_obj n K)).symm)
-    (fun {K L} f ↦ by
-      let : HasCompression n
-          ((CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k ⋙
-            CochainComplex.Bounded.ι C).obj K) :=
-        hasCompression_of_bounded n (K⟦k⟧).property
-      let : HasCompression n
-          ((CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k ⋙
-            CochainComplex.Bounded.ι C).obj L) :=
-        hasCompression_of_bounded n (L⟦k⟧).property
-      have hK : CochainComplex.bounded C (K.obj⟦k⟧) :=
-        (CochainComplex.bounded C).prop_of_iso
-          (((CochainComplex.Bounded.ι C).commShiftIso k).app K) (K⟦k⟧).property
-      have hL : CochainComplex.bounded C (L.obj⟦k⟧) :=
-        (CochainComplex.bounded C).prop_of_iso
-          (((CochainComplex.Bounded.ι C).commShiftIso k).app L) (L⟦k⟧).property
-      let : HasCompression n
-          ((CochainComplex.Bounded.ι C ⋙
-            CategoryTheory.shiftFunctor (CochainComplex C ℤ) k).obj K) :=
-        hasCompression_of_bounded n hK
-      let : HasCompression n
-          ((CochainComplex.Bounded.ι C ⋙
-            CategoryTheory.shiftFunctor (CochainComplex C ℤ) k).obj L) :=
-        hasCompression_of_bounded n hL
-      let : HasCompression n (K.obj⟦k⟧) := hasCompression_of_bounded n hK
-      let : HasCompression n (L.obj⟦k⟧) := hasCompression_of_bounded n hL
-      let : HasCompression n K.obj := hasCompression_of_bounded n K.property
-      let : HasCompression n L.obj := hasCompression_of_bounded n L.property
-      let : HasCompression n ((CochainComplex.Bounded.ι C).obj K) :=
-        hasCompression_of_bounded n K.property
-      let : HasCompression n ((CochainComplex.Bounded.ι C).obj L) :=
-        hasCompression_of_bounded n L.property
-      rw [← cancel_epi (eqToHom (compressionFunctor_obj n (K⟦k⟧)).symm)]
-      rw [← cancel_mono (eqToHom
-        (congrArg (fun X ↦ X⟦k⟧) (compressionFunctor_obj n L)))]
-      have hcomp :
-          compressionMap n ((CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k).map f).hom ≫
-              compressionMap n (((CochainComplex.Bounded.ι C).commShiftIso k).app L).hom =
-            compressionMap n (((CochainComplex.Bounded.ι C).commShiftIso k).app K).hom ≫
-              compressionMap n (f.hom⟦k⟧') := by
-        rw [← compressionMap_comp, ← compressionMap_comp]
-        congr 1
-        exact Functor.commShiftIso_hom_naturality (CochainComplex.Bounded.ι C) f k
-      simp only [Functor.comp_map, compressionFunctor_map, Iso.trans_hom, eqToIso.hom,
-        compressionMapIso_hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-        Category.id_comp, Functor.map_comp, eqToHom_map]
-      rw [← Category.assoc, hcomp]
-      simp only [Category.assoc]
-      rw [compressionShiftIso_hom_naturality_assoc]
-      rfl)
+  shiftCompCompressionFunctorIso n k ≪≫
+    NatIso.ofComponents (fun K ↦
+      eqToIso (shiftCompressionFunctor_obj n k K) ≪≫ compressionShiftIso n K.obj k ≪≫
+        eqToIso (congrArg (fun X ↦ X⟦k⟧) (compressionFunctor_obj n K)).symm)
+      (fun {K L} f ↦ by
+        simp [eqToHom_map, compressionShiftIso_hom_naturality_assoc])
 
 /-- The forward component of bounded shift compatibility is the composite of the underlying
 bounded-complex comparison with the shift comparison for compression. -/
@@ -272,31 +290,23 @@ lemma compressionFunctorShiftIso_hom_app (K : CochainComplex.Bounded C) :
           (((CochainComplex.Bounded.ι C).commShiftIso k).hom.app K) ≫
           (compressionShiftIso n K.obj k).hom ≫
             eqToHom (congrArg (fun X ↦ X⟦k⟧) (compressionFunctor_obj n K)).symm := by
-  simp only [compressionFunctorShiftIso, NatIso.ofComponents_hom_app, Iso.trans_hom, eqToIso.hom,
-    compressionMapIso_hom, Iso.app_hom]
+  simp only [compressionFunctorShiftIso, Iso.trans_hom, NatTrans.comp_app,
+    shiftCompCompressionFunctorIso_hom_app, NatIso.ofComponents_hom_app, eqToIso.hom,
+    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
 /-- The inverse component of bounded shift compatibility is the reverse composite of the
 underlying shift comparison and the inverse compression comparison. -/
 @[simp]
 lemma compressionFunctorShiftIso_inv_app (K : CochainComplex.Bounded C) :
     (compressionFunctorShiftIso n k).inv.app K =
-      let _ : HasCompression n
-          ((CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k ⋙
-            CochainComplex.Bounded.ι C).obj K) :=
-        hasCompression_of_bounded n (K⟦k⟧).property
-      let hK : CochainComplex.bounded C (K.obj⟦k⟧) :=
-        (CochainComplex.bounded C).prop_of_iso
-          (((CochainComplex.Bounded.ι C).commShiftIso k).app K) (K⟦k⟧).property
-      let _ : HasCompression n
-          ((CochainComplex.Bounded.ι C ⋙
-            CategoryTheory.shiftFunctor (CochainComplex C ℤ) k).obj K) :=
-        hasCompression_of_bounded n hK
-      ((eqToIso (compressionFunctor_obj n (K⟦k⟧))) ≪≫
-        compressionMapIso n (((CochainComplex.Bounded.ι C).commShiftIso k).app K) ≪≫
-          compressionShiftIso n K.obj k ≪≫
-            eqToIso
-              (congrArg (fun X ↦ X⟦k⟧) (compressionFunctor_obj n K)).symm).inv :=
-  (rfl)
+      eqToHom (congrArg (fun X ↦ X⟦k⟧) (compressionFunctor_obj n K)) ≫
+        (compressionShiftIso n K.obj k).inv ≫
+          compressionMap (K := K.obj⟦k⟧) (L := (K⟦k⟧).obj) n
+            (((CochainComplex.Bounded.ι C).commShiftIso k).inv.app K) ≫
+            eqToHom (compressionFunctor_obj n (K⟦k⟧)).symm := by
+  simp only [compressionFunctorShiftIso, Iso.trans_inv, NatTrans.comp_app,
+    shiftCompCompressionFunctorIso_inv_app, NatIso.ofComponents_inv_app, eqToIso.inv,
+    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
 /-- The shift compatibility of bounded compression for the shift by zero is induced by the
 identifications `X⟦0⟧ ≅ X`. -/

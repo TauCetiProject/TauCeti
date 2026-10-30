@@ -68,6 +68,21 @@ theorem conductor_le_toRingOfIntegers (O : NumberFieldOrder K) :
     (O.conductor : Set (𝓞 K)) ⊆ O.toRingOfIntegers :=
   fun _ hx ↦ O.mem_toRingOfIntegers.mpr (O.conductor_le_order hx)
 
+/-- An algebraic integer congruent to one modulo the conductor lies in the order. -/
+theorem mem_toRingOfIntegers_of_sub_one_mem_conductor (O : NumberFieldOrder K) {α : 𝓞 K}
+    (hα : α - 1 ∈ O.conductor) : α ∈ O.toRingOfIntegers := by
+  simpa using O.toRingOfIntegers.add_mem (O.conductor_le_toRingOfIntegers hα)
+    O.toRingOfIntegers.one_mem
+
+/-- An algebraic integer congruent to an element of the order modulo the conductor lies in the
+order. -/
+theorem mem_toRingOfIntegers_of_mk_eq (O : NumberFieldOrder K) {α β : 𝓞 K}
+    (hβ : β ∈ O.toRingOfIntegers)
+    (h : Ideal.Quotient.mk O.conductor α = Ideal.Quotient.mk O.conductor β) :
+    α ∈ O.toRingOfIntegers := by
+  simpa using O.toRingOfIntegers.add_mem
+    (O.conductor_le_toRingOfIntegers (Ideal.Quotient.eq.mp h)) hβ
+
 /-- Every maximal-order ideal contained in an order lies in its conductor. -/
 theorem le_conductor_iff (O : NumberFieldOrder K) (I : Ideal (𝓞 K)) :
     I ≤ O.conductor ↔ ∀ x : 𝓞 K, x ∈ I → (x : K) ∈ O.toSubalgebra := by

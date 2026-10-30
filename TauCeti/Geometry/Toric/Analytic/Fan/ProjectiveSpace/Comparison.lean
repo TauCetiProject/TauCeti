@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Analytic.Fan.ProjectiveSpace.Transition
-public import TauCeti.Topology.ComplexProjectiveSpace.Basic
+public import TauCeti.Topology.ComplexProjectiveSpace.Charts
 import TauCeti.Geometry.Toric.Analytic.Fan.Topology
 public import Mathlib.Analysis.Normed.Module.Normalize
 
@@ -22,6 +22,14 @@ also on coordinate hyperplanes and in dimension zero.
 The comparison uses the affine homogeneous-coordinate charts and their ratio transitions.
 The sphere quotient is `TauCeti.ComplexProjectiveSpace`, and normalization uses Mathlib's
 `NormedSpace.normalize`.
+
+The comparison matches the toric charts with the standard affine opens of the sphere quotient:
+the maximal cone omitting the ray `k` corresponds to the affine open where `X_k` is nonzero, and
+on it the homogeneous ratios `X_j / X_k` are the toric homogeneous coordinates
+(`TauCeti.Toric.preimage_projectiveSpaceHomeomorph_affineOpen`,
+`TauCeti.Toric.ratio_projectiveSpaceHomeomorph_analyticAffineChartι`,
+`TauCeti.Toric.affineChart_projectiveSpaceHomeomorph_analyticAffineChartι`, and
+`TauCeti.Toric.projectiveSpaceHomeomorph_symm_eq_of_mem_affineOpen`).
 
 ## References
 
@@ -314,5 +322,79 @@ theorem projectiveSpaceHomeomorph_apply_chart (k : Option (Fin n))
   apply (projectiveSpaceHomeomorph b hi).symm.injective
   rw [Homeomorph.symm_apply_apply, projectiveSpaceHomeomorph_symm_apply, projectivePoint_mk]
   exact (spherePoint_homogeneousSphere b hi k x).symm
+
+/-- On the toric chart of the maximal cone omitting `k`, the homogeneous ratios `X_j / X_k` of the
+comparison with the sphere quotient are the normalized toric homogeneous coordinates. -/
+@[simp]
+theorem ratio_projectiveSpaceHomeomorph_analyticAffineChartι (k : Option (Fin n))
+    (x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)))
+    (j : Fin (n + 1)) :
+    ComplexProjectiveSpace.ratio ((finSuccEquiv n).symm k) j
+        (projectiveSpaceHomeomorph b hi
+          ((Fan.projectiveSpace b hi).analyticAffineChartι (Fan.isRegular_projectiveSpace b hi)
+            (Fan.projectiveSpaceMaximalCone b hi k) x)) =
+      projectiveSpaceHomogeneousCoordinate b hi k x (finSuccEquiv n j) := by
+  have hn := norm_ne_zero_iff.2 (projectiveSpaceHomogeneousVector_ne_zero b hi k x)
+  rw [projectiveSpaceHomeomorph_apply_chart, ComplexProjectiveSpace.ratio_mk]
+  simp only [NormedSpace.normalize, PiLp.smul_apply, projectiveSpaceHomogeneousVector_apply,
+    Equiv.apply_symm_apply, projectiveSpaceHomogeneousCoordinate_self, Complex.real_smul,
+    mul_one]
+  exact mul_div_cancel_left₀ _ (Complex.ofReal_ne_zero.mpr (inv_ne_zero hn))
+
+/-- On the toric chart of the maximal cone omitting `k`, the standard affine chart of the sphere
+quotient where `X_k` is nonzero reads the comparison as the toric homogeneous coordinates. -/
+theorem affineChart_projectiveSpaceHomeomorph_analyticAffineChartι (k : Option (Fin n))
+    (x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ))) :
+    ComplexProjectiveSpace.affineChart ((finSuccEquiv n).symm k)
+        (projectiveSpaceHomeomorph b hi
+          ((Fan.projectiveSpace b hi).analyticAffineChartι (Fan.isRegular_projectiveSpace b hi)
+            (Fan.projectiveSpaceMaximalCone b hi k) x)) =
+      fun j ↦ projectiveSpaceHomogeneousCoordinate b hi k x
+        (finSuccEquiv n (((finSuccEquiv n).symm k).succAbove j)) := by
+  funext j
+  rw [ComplexProjectiveSpace.affineChart_apply]
+  exact ratio_projectiveSpaceHomeomorph_analyticAffineChartι b hi k x _
+
+/-- The standard affine open of complex projective space where the homogeneous coordinate `k` is
+nonzero corresponds to the toric chart of the maximal cone omitting the ray `k`. -/
+theorem preimage_projectiveSpaceHomeomorph_affineOpen (k : Option (Fin n)) :
+    projectiveSpaceHomeomorph b hi ⁻¹'
+        ComplexProjectiveSpace.affineOpen ((finSuccEquiv n).symm k) =
+      range ((Fan.projectiveSpace b hi).analyticAffineChartι (Fan.isRegular_projectiveSpace b hi)
+        (Fan.projectiveSpaceMaximalCone b hi k)) := by
+  ext p
+  constructor
+  · intro hp
+    obtain ⟨v, hv⟩ := ComplexProjectiveSpace.mk_surjective n (projectiveSpaceHomeomorph b hi p)
+    have hk : v.1 ((finSuccEquiv n).symm k) ≠ 0 := by simpa [← hv] using hp
+    refine ⟨_, (projectiveSpaceHomeomorph_symm_mk b hi v k hk).symm.trans ?_⟩
+    rw [hv, Homeomorph.symm_apply_apply]
+  · rintro ⟨x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)),
+      rfl⟩
+    have h := ratio_projectiveSpaceHomeomorph_analyticAffineChartι b hi k x
+      ((finSuccEquiv n).symm k)
+    rw [Equiv.apply_symm_apply, projectiveSpaceHomogeneousCoordinate_self] at h
+    exact (ComplexProjectiveSpace.mem_affineOpen_iff _ _).2 (ne_of_eq_of_ne h one_ne_zero)
+
+/-- On the standard affine open where `X_k` is nonzero, the inverse comparison is the point of
+the toric chart of the maximal cone omitting `k` with toric coordinates the homogeneous ratios
+`X_j / X_k`. -/
+theorem projectiveSpaceHomeomorph_symm_eq_of_mem_affineOpen (k : Option (Fin n))
+    {p : ComplexProjectiveSpace n}
+    (hp : p ∈ ComplexProjectiveSpace.affineOpen ((finSuccEquiv n).symm k)) :
+    let _ := affinePointTopology ((Fan.projectiveSpace b hi).analyticChartGenerators
+      (Fan.projectiveSpaceMaximalCone b hi k)).2
+    (projectiveSpaceHomeomorph b hi).symm p =
+      (Fan.projectiveSpace b hi).analyticAffineChartι (Fan.isRegular_projectiveSpace b hi)
+        (Fan.projectiveSpaceMaximalCone b hi k)
+        ((projectiveSpacePointHomeomorph b hi k
+          ((Fan.projectiveSpace b hi).analyticChartGenerators
+            (Fan.projectiveSpaceMaximalCone b hi k)).2).symm
+          (fun j ↦ ComplexProjectiveSpace.ratio ((finSuccEquiv n).symm k)
+            ((finSuccEquiv n).symm j) p)) := by
+  obtain ⟨v, rfl⟩ := ComplexProjectiveSpace.mk_surjective n p
+  have hk : v.1 ((finSuccEquiv n).symm k) ≠ 0 := by simpa using hp
+  simp only [ComplexProjectiveSpace.ratio_mk]
+  exact projectiveSpaceHomeomorph_symm_mk b hi v k hk
 
 end TauCeti.Toric

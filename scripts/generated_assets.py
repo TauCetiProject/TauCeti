@@ -1,38 +1,11 @@
 #!/usr/bin/env python3
-"""The generated data assets the Pages build carries from `build-data` to `build-site`.
-
-One list, in one place, printed one per line for the workflow to read.
-
-It used to be written out by hand in pages.yml. That made adding a chart two edits in two
-different files, and when they landed in two different pull requests the list was silently
-wrong: `merges-by-roadmap-and-contributor.svg` and `reviews-by-roadmap-and-contributor.svg`
-were generated into `web/static_files` and then not carried, so the site referenced two images
-that never arrived. Nothing failed -- the artifact was simply missing them.
-
-Derive the pull-request, daily CI, and roadmap completion assets from each generator's
-`ASSET_NAMES`. The rest is named here because those generators take their output path
-from the workflow rather than declaring it, so there is nothing to import.
-"""
-
-import ci_daily_graphs
-import pr_stats_graphs
-import roadmap_completion
-
-OTHER_ASSETS = [
-    "loc-tauceti.svg",        # scripts/loc_graph.py, TauCeti
-    "loc-per-roadmap.svg",    # scripts/loc_roadmap_graph.py
-    "participation.svg",      # scripts/participant_graph.py
-    "progress.json",          # scripts/roadmap_progress.py
-    "pipeline-health.json",   # scripts/pipeline_health.py
-    "ci-fleet-72h.svg",       # scripts/ci_stats_graphs.py
-    "ci-fleet-30d.svg",       # scripts/ci_stats_graphs.py
-    "ci-stats.json",          # scripts/ci_stats_graphs.py
-    "ci-freshness.json",      # independent CI chart coverage/status
-]
-
-GENERATED_ASSETS = (list(pr_stats_graphs.ASSET_NAMES) + list(ci_daily_graphs.ASSET_NAMES)
-                    + list(roadmap_completion.ASSET_NAMES) + OTHER_ASSETS)
-
+"""Compatibility entrypoint; implementation is pinned through TauCetiTools."""
+import sys
+from tauceti_tools.templates import import_shared, run_script
 
 if __name__ == "__main__":
-    print("\n".join(GENERATED_ASSETS))
+    raise SystemExit(run_script('generated_assets.py', sys.argv[1:]))
+else:
+    implementation = import_shared('generated_assets.py', __name__)
+    globals().update(vars(implementation))
+    sys.modules[__name__] = implementation

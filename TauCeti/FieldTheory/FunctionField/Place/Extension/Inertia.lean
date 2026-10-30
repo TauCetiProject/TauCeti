@@ -691,10 +691,6 @@ theorem ramificationIdx_mul_finInsepDegree_restrict_eq_relIndex
       card_inertiaSubgroup_eq_ramificationIdx_mul_finInsepDegree E P]
   have hidx := E.fixingSubgroup.relIndex_mul_card
     ((P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype)
-  have : Algebra.IsAlgebraic ((P.restrict k E).restrict k F).ResidueField
-      (P.restrict k E).ResidueField :=
-    have := finiteDimensional_residueField_restrict k F (P.restrict k E)
-    Algebra.IsAlgebraic.of_finite _ _
   rw [hcard, Subgroup.card_map_of_injective (Subgroup.subtype_injective _),
     card_inertiaSubgroup_eq_ramificationIdx_mul_finInsepDegree F P,
     ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E),

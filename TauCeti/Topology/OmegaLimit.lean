@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.IntermediateValue
 public import TauCeti.Topology.Continuum
 import Mathlib.Dynamics.OmegaLimit
+import TauCeti.Topology.Connected.TotallyDisconnected
 
 /-!
 # The ω-limit set of a curve
@@ -47,6 +48,8 @@ locus, to be a single point.
   the closures of its tails.
 * `TauCeti.isPreconnected_setOf_mapClusterPt_atTop` — the ω-limit set of such a curve, continuous
   on the half-line carrying that tail, is preconnected.
+* `TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset` — such a curve whose ω-limit set lies
+  in a finite set converges to a point of that set.
 * `Flow.mapClusterPt_atTop_flow` — the ω-limit set of an orbit of a flow of `ℝ` is invariant
   under the flow.
 
@@ -97,6 +100,20 @@ theorem isPreconnected_setOf_mapClusterPt_atTop [T2Space X] (hK : IsCompact K)
       hK.isClosed)
   · exact ((isPreconnected_Ici (a := (T : ℝ))).image u
       (hu.mono (Ici_subset_Ici.mpr (mem_Ici.mp T.2)))).closure
+
+/-- **A curve with finitely many ω-limit points converges.** If a curve, continuous on a half-line
+`[a, ∞)`, maps it into a compact set and its ω-limit set lies in a finite set `C`, then it
+converges to a point of `C`: its ω-limit set is nonempty and preconnected, hence a single point. -/
+theorem exists_tendsto_atTop_of_setOf_mapClusterPt_subset [T2Space X] (hK : IsCompact K)
+    (hu : ContinuousOn u (Ici a)) (hmaps : MapsTo u (Ici a) K) {C : Set X} (hC : C.Finite)
+    (hsub : {x | MapClusterPt x atTop u} ⊆ C) : ∃ x ∈ C, Tendsto u atTop (𝓝 x) := by
+  have hev : ∀ᶠ t in atTop, u t ∈ K := by
+    filter_upwards [eventually_ge_atTop a] with t ht using hmaps ht
+  obtain ⟨p, -, hp⟩ := hK.exists_mapClusterPt (tendsto_principal.mpr hev)
+  have hone : ∀ x ∈ K, MapClusterPt x atTop u → x = p := fun x _ hx ↦
+    (hC.subset hsub).isTotallyDisconnected _ subset_rfl
+      (isPreconnected_setOf_mapClusterPt_atTop hK hu hmaps) hx hp
+  exact ⟨p, hsub hp, hK.tendsto_nhds_of_unique_mapClusterPt hev hone⟩
 
 end TauCeti
 

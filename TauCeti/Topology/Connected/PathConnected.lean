@@ -21,11 +21,16 @@ holds for the summands of a wedge sum.
 Finite partial unions are path connected when each member is path connected and each new
 member meets the preceding union. The partial unions use Mathlib's `partialSups`.
 
+If a set is covered by two path-connected subsets but is not itself path connected, then each of
+the two subsets is a path component of it.
+
 ## Main declarations
 
 * `TauCeti.isPathConnected_inter_of_pairwise`: pairwise intersections of such a family are path
   connected.
 * `TauCeti.isPathConnected_partialSups`: path connectedness of successive finite unions.
+* `IsPathConnected.pathComponentIn_eq_of_not_isPathConnected`: if a set that is not path connected
+  is covered by two path-connected subsets, each of them is one of its path components.
 -/
 
 public section
@@ -61,5 +66,17 @@ theorem isPathConnected_partialSups (U : ℕ → Set X) (n : ℕ)
     exact (ih (fun i hi => hU i (by omega))
       (fun i hi => hOverlap i (by omega))).union (hU (n + 1) le_rfl)
         (hOverlap n (by omega))
+
+/-- If a set `A` is covered by two path-connected subsets `B` and `C` but is not itself path
+connected, then `B` is a path component of `A`. -/
+theorem _root_.IsPathConnected.pathComponentIn_eq_of_not_isPathConnected {A B : Set X} {x : X}
+    (hB : IsPathConnected B) (hC : IsPathConnected C) (hBA : B ⊆ A) (hCA : C ⊆ A)
+    (hABC : A ⊆ B ∪ C) (hx : x ∈ B) (hA : ¬IsPathConnected A) : pathComponentIn A x = B := by
+  refine Subset.antisymm (fun q hq ↦ ?_) (hB.subset_pathComponentIn hx hBA)
+  by_contra hqB
+  have hqC : q ∈ C := (hABC (pathComponentIn_subset hq)).resolve_left hqB
+  exact hA ⟨x, hBA hx, fun {z} hz ↦
+    (hABC hz).elim (fun hzB ↦ hB.joinedIn _ hx _ hzB |>.mono hBA)
+      (fun hzC ↦ (hq : JoinedIn A _ q).trans ((hC.joinedIn _ hqC _ hzC).mono hCA))⟩
 
 end TauCeti

@@ -49,6 +49,11 @@ theorem _root_.AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_comp
   constructor
   exact eq_bot_iff.mpr ((Scheme.Hom.le_ker_comp f g).trans (f ≫ g).ker_eq_bot.le)
 
+/-- Precomposition with a scheme-theoretically dominant morphism does not change the kernel. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant
+    (f : W ⟶ X) [IsSchemeTheoreticallyDominant f] (g : X ⟶ Y) : (f ≫ g).ker = g.ker := by
+  rw [Scheme.Hom.ker_comp, f.ker_eq_bot, Scheme.IdealSheafData.map_bot]
+
 /-- Two morphisms into a separated scheme over a base agree if they agree after precomposition
 with a scheme-theoretically dominant morphism. The source need not be reduced. -/
 theorem ext_of_isSchemeTheoreticallyDominant

@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Perfect
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Character
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Perfect
-import TauCeti.RingTheory.FiniteType.PointSeparation
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 
@@ -39,7 +38,7 @@ images.
 
 public section
 
-open CategoryTheory WithConv
+open CategoryTheory
 
 namespace TauCeti.SpecialLinear
 
@@ -54,31 +53,18 @@ including its points with values in nonreduced algebras. -/
 theorem derivedDefiningIdeal_eq_bot :
     CommHopfAlgCat.derivedDefiningIdeal (R := k) (coordinateHopfAlgebra k n) = ⊥ := by
   classical
-  apply le_bot_iff.mp
-  rw [← HopfIdeal.toIdeal_le_toIdeal, HopfIdeal.bot_toIdeal]
-  intro x hx
-  rw [Ideal.mem_bot]
   let K := AlgebraicClosure k
   let _ : IsReduced (coordinateHopfAlgebra k n) := isReduced_of_smooth k _
-  apply eq_of_forall_algHom_apply_eq (k := k) (K := K)
-  intro f
-  rw [map_zero]
   obtain ⟨a, ha⟩ := Infinite.exists_notMem_finset ({0, 1, -1} : Finset K)
   have ha' : a ≠ 0 ∧ a ≠ 1 ∧ a ≠ -1 := by
     simpa only [Finset.mem_insert, Finset.mem_singleton, not_or] using ha
   have hSL : commutator (Matrix.SpecialLinearGroup (Fin n) K) = ⊤ :=
     Matrix.SpecialLinearGroup.commutator_eq_top ha'.1 (sq_ne_one_iff.mpr ha'.2)
   let e := pointsMulEquiv (R := k) (A := K) n
-  have hpoints : commutator (WithConv (coordinateHopfAlgebra k n →ₐ[k] K)) = ⊤ := by
-    apply Subgroup.map_injective (f := e.toMonoidHom) e.injective
-    rw [Subgroup.map_commutator_eq_commutator e.surjective, hSL,
-      Subgroup.map_top_of_surjective e.toMonoidHom e.surjective]
-  have hg : toConv f ∈ commutator (WithConv (coordinateHopfAlgebra k n →ₐ[k] K)) := by
-    rw [hpoints]
-    trivial
-  exact (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mp
-    (CommHopfAlgCat.commutator_le_quotientPointsSubgroup_of_le_derivedDefiningIdeal
-      (coordinateHopfAlgebra k n) _ le_rfl (CommAlgCat.of k K) hg) x hx
+  apply _root_.CommHopfAlgCat.derivedDefiningIdeal_eq_bot_of_commutator_eq_top (K := K)
+  apply Subgroup.map_injective (f := e.toMonoidHom) e.injective
+  rw [Subgroup.map_commutator_eq_commutator e.surjective, hSL,
+    Subgroup.map_top_of_surjective e.toMonoidHom e.surjective]
 
 /-- Every homomorphism from `SLₙ` to a commutative affine group is trivial, in every
 characteristic. The target need not be of finite type. -/

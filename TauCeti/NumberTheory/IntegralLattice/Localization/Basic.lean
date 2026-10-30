@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
 /-!
 # Localizing an integral lattice at a prime
@@ -37,6 +38,11 @@ applies at `p = 2` exactly as at odd `p`.  The Gram matrix of `L_p` in a base-ch
 image of the integral Gram matrix of `L`, and both local forms are nondegenerate exactly when `B`
 is.
 
+An isometry of the integral localizations of two lattices extends to an isometry of their
+completed rational spaces, so integral local isometry implies rational local isometry
+(`completedRationalForm_equivalent_of_localIntegralForm_equivalent`). This is what carries the
+local data of the genus over to the rational quadratic spaces.
+
 ## Main definitions
 
 * `TauCeti.IntegralLattice.LocalCarrier`: the integral localization `ℤ_p ⊗[ℤ] L`.
@@ -47,6 +53,10 @@ is.
 * `TauCeti.IntegralLattice.Isometry.localCarrierIsometry` and
   `TauCeti.IntegralLattice.Isometry.completedIsometry`: an isometry `L ≅ M` induces isometries
   `L_p ≅ M_p` and `V_p ≅ W_p`.
+* `TauCeti.IntegralLattice.completedRationalFormIsometryEquiv`: the scalar extension of the
+  localized integral form to `ℚ_p` is the completed rational form.
+* `TauCeti.IntegralLattice.completedIsometryEquiv`: an isometry `L_p ≅ M_p` of the localized
+  integral forms extends to an isometry `V_p ≅ W_p` of the completed rational forms.
 
 ## Main results
 
@@ -65,6 +75,8 @@ is.
   nondegenerate exactly when the rational form of `L` is.
 * `TauCeti.IntegralLattice.Isometry.localizationToCompletion_localCarrierIsometry`: the canonical
   map is natural in isometries.
+* `TauCeti.IntegralLattice.completedRationalForm_equivalent_of_localIntegralForm_equivalent`:
+  isometric integral localizations have isometric completed rational spaces.
 
 ## References
 
@@ -216,7 +228,7 @@ of the integral Gram matrix of the lattice. -/
 theorem toMatrix_localIntegralForm (e : Basis ι ℤ L) :
     LinearMap.BilinForm.toMatrix (e.baseChange ℤ_[p]) (L.localIntegralForm p) =
       (L.gramMatrix e).map (Int.cast : ℤ → ℤ_[p]) := by
-  rw [localIntegralForm, bilinForm_toMatrix_baseChange, gramMatrix_eq_toMatrix,
+  rw [localIntegralForm, LinearMap.BilinForm.toMatrix_baseChange, gramMatrix_eq_toMatrix,
     algebraMap_int_eq, Int.coe_castRingHom]
 
 /-- The determinant of the localized integral form in any base-changed carrier basis is the
@@ -233,14 +245,65 @@ is. -/
 theorem nondegenerate_localIntegralForm_iff :
     (L.localIntegralForm p).Nondegenerate ↔ L.form.Nondegenerate := by
   rw [localIntegralForm,
-    nondegenerate_baseChange_iff L.integralForm (Module.Free.chooseBasis ℤ L),
+    L.integralForm.nondegenerate_baseChange_iff (Module.Free.chooseBasis ℤ L),
     nondegenerate_integralForm_iff]
 
 /-- The completed rational form is nondegenerate exactly when the rational form of the lattice
 is. -/
 theorem nondegenerate_completedRationalForm_iff :
     (L.completedRationalForm p).Nondegenerate ↔ L.form.Nondegenerate := by
-  rw [completedRationalForm, nondegenerate_baseChange_iff L.form L.rationalBasis]
+  rw [completedRationalForm, L.form.nondegenerate_baseChange_iff L.rationalBasis]
+
+section LocalIsometry
+
+/-- The scalar extension from `ℤ_p` to `ℚ_p` of the localized integral form is the completed
+rational form, through the canonical isomorphism `ℚ_p ⊗[ℤ_p] L_p ≃ V_p`. -/
+noncomputable def completedRationalFormIsometryEquiv :
+    ((L.localIntegralForm p).baseChange ℚ_[p]).IsometryEquiv (L.completedRationalForm p) :=
+  (L.isBaseChange_localizationToCompletion p).bilinFormIsometryEquiv _ _
+    (L.completedRationalForm_localizationToCompletion p)
+
+/-- The isomorphism `ℚ_p ⊗[ℤ_p] L_p ≃ V_p` sends `a ⊗ x` to `a` times the image of `x` in the
+completion. -/
+@[simp]
+theorem completedRationalFormIsometryEquiv_tmul (a : ℚ_[p]) (x : L.LocalCarrier p) :
+    L.completedRationalFormIsometryEquiv p (a ⊗ₜ x) = a • L.localizationToCompletion p x := by
+  rw [completedRationalFormIsometryEquiv, IsBaseChange.bilinFormIsometryEquiv_apply,
+    IsBaseChange.equiv_tmul]
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {L} {M : IntegralLattice W}
+
+/-- **An isometry of integral localizations extends to the completed rational spaces.** An
+isometry `L_p ≃ M_p` of the localized integral forms extends `ℚ_p`-linearly to an isometry
+`V_p ≃ W_p` of the completed rational forms. -/
+noncomputable def completedIsometryEquiv
+    (e : (L.localIntegralForm p).IsometryEquiv (M.localIntegralForm p)) :
+    (L.completedRationalForm p).IsometryEquiv (M.completedRationalForm p) :=
+  (L.completedRationalFormIsometryEquiv p).symm.trans
+    ((e.baseChange ℚ_[p]).trans (M.completedRationalFormIsometryEquiv p))
+
+/-- The completed isometry extends the integral one along the canonical maps `L_p → V_p` and
+`M_p → W_p`. -/
+@[simp]
+theorem completedIsometryEquiv_localizationToCompletion
+    (e : (L.localIntegralForm p).IsometryEquiv (M.localIntegralForm p)) (x : L.LocalCarrier p) :
+    completedIsometryEquiv p e (L.localizationToCompletion p x) =
+      M.localizationToCompletion p (e x) := by
+  have hx : L.localizationToCompletion p x = L.completedRationalFormIsometryEquiv p (1 ⊗ₜ x) := by
+    rw [completedRationalFormIsometryEquiv_tmul, one_smul]
+  rw [hx, completedIsometryEquiv]
+  simp only [LinearMap.BilinForm.IsometryEquiv.trans_apply,
+    LinearMap.BilinForm.IsometryEquiv.symm_apply_apply]
+  simp
+
+/-- **Integral local isometry implies rational local isometry**: if the integral localizations of
+`L` and `M` at `p` are isometric, then so are their completed rational spaces. -/
+theorem completedRationalForm_equivalent_of_localIntegralForm_equivalent
+    (h : (L.localIntegralForm p).Equivalent (M.localIntegralForm p)) :
+    (L.completedRationalForm p).Equivalent (M.completedRationalForm p) :=
+  h.map (completedIsometryEquiv p)
+
+end LocalIsometry
 
 namespace Isometry
 
@@ -279,6 +342,18 @@ theorem localizationToCompletion_localCarrierIsometry (e : Isometry L M)
   induction x using TensorProduct.inductionOn with
   | add x₁ x₂ h₁ h₂ => simp only [map_add, h₁, h₂]
   | tmul a x => simp
+
+/-- Extending the localized isometry of a lattice isometry to the completions recovers the
+completed isometry. -/
+@[simp]
+theorem completedIsometryEquiv_localCarrierIsometry (e : Isometry L M) :
+    completedIsometryEquiv p (e.localCarrierIsometry p) = e.completedIsometry p := by
+  -- Both are `ℚ_p`-linear, so they agree once they agree on the image of `L_p`, which spans.
+  have h := (L.isBaseChange_localizationToCompletion p).algHom_ext
+    (completedIsometryEquiv p (e.localCarrierIsometry p)).toLinearEquiv.toLinearMap
+    (e.completedIsometry p).toLinearEquiv.toLinearMap fun x ↦ by
+      simp [localizationToCompletion_localCarrierIsometry]
+  exact DFunLike.ext _ _ fun v ↦ by simpa using LinearMap.congr_fun h v
 
 end Isometry
 

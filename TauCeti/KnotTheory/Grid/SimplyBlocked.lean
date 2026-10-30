@@ -34,6 +34,8 @@ specialization.
 * `TauCeti.GridChainHat`: the free module underlying the one-variable specialization.
 * `TauCeti.simplyBlockedRingHom`: setting `V_i` to zero, as a ring homomorphism.
 * `TauCeti.simplyBlockedSpecialization`: coefficientwise specialization of `GC⁻` at `V_i = 0`.
+* `TauCeti.simplyBlockedRenameEquiv`: rename surviving variables and transport the blocked column.
+* `TauCeti.simplyBlockedMap`: the endomorphism of `GC^` induced by an endomorphism of `GC⁻`.
 * `TauCeti.GridDiagram.simplyBlockedRectangles`: the empty, `X`-avoiding rectangles which also
   avoid the chosen `O`-marking.
 * `TauCeti.GridDiagram.simplyBlockedCoefficient`: the matrix coefficient of the specialized map.
@@ -42,6 +44,10 @@ specialization.
 
 ## Main results
 
+* `TauCeti.simplyBlockedRingHom_rename`: blocking commutes with column renaming when the
+  blocked column is transported.
+* `TauCeti.simplyBlockedSpecialization_apply_linearMap`: specialization intertwines an
+  endomorphism of `GC⁻` with its specialization `TauCeti.simplyBlockedMap`.
 * `TauCeti.simplyBlockedSpecialization_surjective` and
   `TauCeti.exact_X_smul_simplyBlockedSpecialization`: specialization presents the specialized
   chain module as the quotient of `GC⁻` by the multiples of `V_i`, which
@@ -129,6 +135,137 @@ theorem simplyBlockedSpecialization_single {n : ℕ} (R : Type*) [CommSemiring R
   rw [simplyBlockedSpecialization, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single,
     RingHom.coe_toSemilinearMap, simplyBlockedRingHom_apply]
 
+/-- Renaming the unblocked columns also renames the surviving variables, carrying the blocked
+column `i` to `e i`. -/
+noncomputable def simplyBlockedRenameEquiv {n m : ℕ} (R : Type*) [CommSemiring R]
+    (e : Fin n ≃ Fin m) (i : Fin n) :
+    MvPolynomial {c : Fin n // c ≠ i} R ≃ₐ[R]
+      MvPolynomial {c : Fin m // c ≠ e i} R :=
+  renameEquiv R (e.subtypeEquiv fun _ => not_congr e.injective.eq_iff.symm)
+
+/-- A surviving variable is renamed by the underlying column equivalence. -/
+@[simp]
+theorem simplyBlockedRenameEquiv_X {n m : ℕ} (R : Type*) [CommSemiring R]
+    (e : Fin n ≃ Fin m) (i : Fin n) (c : {c : Fin n // c ≠ i}) :
+    simplyBlockedRenameEquiv R e i (X c) = X ⟨e c, fun h => c.2 (e.injective h)⟩ := by
+  simp [simplyBlockedRenameEquiv, Equiv.subtypeEquiv]
+
+/-- Blocking a column and then renaming the surviving variables agrees with renaming all
+columns first and blocking the image column. -/
+theorem simplyBlockedRingHom_rename {n m : ℕ} (R : Type*) [CommSemiring R]
+    (e : Fin n ≃ Fin m) (i : Fin n) (p : MvPolynomial (Fin n) R) :
+    simplyBlockedRingHom R (e i) (rename e p) =
+      simplyBlockedRenameEquiv R e i (simplyBlockedRingHom R i p) := by
+  have h : (killCompl (R := R) (f := (Subtype.val : {c : Fin m // c ≠ e i} → Fin m))
+      Subtype.val_injective).comp (rename e) =
+      (simplyBlockedRenameEquiv R e i).toAlgHom.comp
+        (killCompl (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+          Subtype.val_injective) := by
+    ext c
+    by_cases hc : c = i
+    · subst c
+      simp
+    · have hec : e c ≠ e i := fun h => hc (e.injective h)
+      have hX : X c = rename Subtype.val (X (R := R) (⟨c, hc⟩ : {c // c ≠ i})) := by
+        simp
+      have heX : X (e c) = rename Subtype.val
+          (X (R := R) (⟨e c, hec⟩ : {c // c ≠ e i})) := by simp
+      simp only [AlgHom.comp_apply, rename_X]
+      rw [hX, killCompl_rename_app, heX, killCompl_rename_app]
+      simp
+  exact DFunLike.congr_fun h p
+
+/-! ### Specializing linear maps -/
+
+section LinearMap
+
+variable {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n)
+
+/-- Specialization at `V_i = 0` intertwines a linear map of `GC⁻` with a linear map of `GC^` as
+soon as it does so on the generators. -/
+theorem simplyBlockedSpecialization_apply_eq_of_single
+    {f : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n}
+    {g : GridChainHat R n i →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] GridChainHat R n i}
+    (h : ∀ x, simplyBlockedSpecialization R i (f (Finsupp.single x 1)) = g (Finsupp.single x 1))
+    (c : GridChainMinus R n) :
+    simplyBlockedSpecialization R i (f c) = g (simplyBlockedSpecialization R i c) := by
+  induction c using Finsupp.induction with
+  | zero => simp only [map_zero]
+  | single_add x a c _ _ ih =>
+    rw [← Finsupp.smul_single_one x a]
+    simp only [map_add, map_smul, LinearMap.map_smulₛₗ, h, ih,
+      simplyBlockedSpecialization_single, map_one]
+
+/-- The endomorphism of `GC^` obtained from an endomorphism `f` of `GC⁻` by setting `V_i = 0`:
+it sends each generator to the specialization of its image under `f`. -/
+noncomputable def simplyBlockedMap
+    (f : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n) :
+    GridChainHat R n i →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] GridChainHat R n i :=
+  Finsupp.linearCombination _ fun x => simplyBlockedSpecialization R i (f (Finsupp.single x 1))
+
+variable (f : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n)
+
+/-- On a generator, the specialized map is the specialization of the original map. -/
+theorem simplyBlockedMap_single (x : GridState n) :
+    simplyBlockedMap R i f (Finsupp.single x 1) =
+      simplyBlockedSpecialization R i (f (Finsupp.single x 1)) := by
+  rw [simplyBlockedMap, Finsupp.linearCombination_single, one_smul]
+
+/-- The matrix entries of the specialized map are the specialized matrix entries. -/
+@[simp]
+theorem simplyBlockedMap_single_apply (x y : GridState n) :
+    simplyBlockedMap R i f (Finsupp.single x 1) y =
+      MvPolynomial.killCompl (f := Subtype.val) Subtype.val_injective
+        (f (Finsupp.single x 1) y) := by
+  rw [simplyBlockedMap_single, simplyBlockedSpecialization_apply]
+
+/-- The specialized map multiplies a chain by the specialized matrix. -/
+@[simp 900] -- Prefer the generator formula to the general chain expansion.
+theorem simplyBlockedMap_apply_apply (c : GridChainHat R n i) (y : GridState n) :
+    simplyBlockedMap R i f c y =
+      c.sum fun x p => p * MvPolynomial.killCompl (f := Subtype.val) Subtype.val_injective
+        (f (Finsupp.single x 1) y) := by
+  rw [simplyBlockedMap, Finsupp.linearCombination_apply]
+  simp only [Finsupp.sum_apply, Finsupp.smul_apply, smul_eq_mul,
+    simplyBlockedSpecialization_apply]
+
+/-- Specialization at `V_i = 0` intertwines a map of `GC⁻` with its specialization.
+
+Not a `simp` lemma: its left-hand side matches every specialized linear-map application, which
+would bypass the intertwining lemmas of named specialized maps. -/
+theorem simplyBlockedSpecialization_apply_linearMap (c : GridChainMinus R n) :
+    simplyBlockedSpecialization R i (f c) =
+      simplyBlockedMap R i f (simplyBlockedSpecialization R i c) :=
+  simplyBlockedSpecialization_apply_eq_of_single R i
+    (fun x => (simplyBlockedMap_single R i f x).symm) c
+
+/-- Setting `V_i = 0` in a squarefree monomial discards it if it contains `V_i`; otherwise it
+leaves the product of the same variables. -/
+theorem killCompl_monomial_sum_single_one (s : Finset (Fin n)) :
+    MvPolynomial.killCompl (R := R) (f := Subtype.val)
+      (Subtype.val_injective : Function.Injective
+        (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+      (monomial (∑ c ∈ s, Finsupp.single c 1) 1) =
+      if i ∈ s then 0 else ∏ c ∈ s.subtype (· ≠ i), X c := by
+  split_ifs with hi
+  · refine killCompl_monomial_eq_zero_of_notMem_range _ 1 (a := i) ?_ ?_
+    · rw [Finsupp.support_sum_eq_biUnion _ (by simp)]
+      simpa using hi
+    · rintro ⟨⟨c, hc⟩, hci⟩
+      exact hc hci
+  · have hrename :
+        rename (Subtype.val : {c : Fin n // c ≠ i} → Fin n)
+            (∏ c ∈ s.subtype (· ≠ i), X (R := R) c) =
+          monomial (∑ c ∈ s, Finsupp.single c 1) 1 := by
+      rw [map_prod, monomial_sum_one]
+      simp only [rename_X]
+      simpa only [← X_pow_eq_monomial, pow_one] using
+        Finset.prod_subtype_of_mem (s := s) (p := fun c : Fin n => c ≠ i) (X (R := R))
+          (fun c hc (hci : c = i) => hi (hci ▸ hc))
+    rw [← hrename, killCompl_rename_app]
+
+end LinearMap
+
 /-! ### Specialization as a quotient map -/
 
 section Specialization
@@ -204,13 +341,7 @@ theorem killCompl_OMonomial_eq_zero_of_mem {i : Fin n} {r : GridRectangle n}
       (Subtype.val_injective : Function.Injective
         (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
       (G.OMonomial R r) = 0 := by
-  rw [G.OMonomial_eq_monomial R]
-  refine MvPolynomial.killCompl_monomial_eq_zero_of_notMem_range _ 1
-    (a := i) ?_ ?_
-  · rw [Finsupp.support_sum_eq_biUnion _ (by simp)]
-    simpa using hi
-  · rintro ⟨⟨c, hc⟩, hci⟩
-    exact hc hci
+  rw [G.OMonomial_eq_monomial R, killCompl_monomial_sum_single_one, ite_eq_left hi]
 
 /-- A rectangle avoiding the blocked `O`-marking keeps as its weight the product of the variables
 of the other `O`-markings it covers. -/
@@ -221,17 +352,7 @@ theorem killCompl_OMonomial_eq_prod_of_notMem {i : Fin n} {r : GridRectangle n}
       (Subtype.val_injective : Function.Injective
         (Subtype.val : {c : Fin n // c ≠ i} → Fin n)) (G.OMonomial R r) =
       ∏ c ∈ (G.OColumns r).subtype (· ≠ i), MvPolynomial.X c := by
-  have hrename :
-      MvPolynomial.rename (Subtype.val : {c : Fin n // c ≠ i} → Fin n)
-          (∏ c ∈ (G.OColumns r).subtype (· ≠ i), MvPolynomial.X (R := R) c) =
-        G.OMonomial R r := by
-    rw [map_prod, G.OMonomial_eq_monomial R, MvPolynomial.monomial_sum_one]
-    simp only [MvPolynomial.rename_X]
-    simpa only [← MvPolynomial.X_pow_eq_monomial, pow_one] using
-      Finset.prod_subtype_of_mem (s := G.OColumns r) (p := fun c : Fin n => c ≠ i)
-        (MvPolynomial.X (R := R))
-        (fun c hc (hci : c = i) => hi (hci ▸ hc))
-  rw [← hrename, MvPolynomial.killCompl_rename_app]
+  rw [G.OMonomial_eq_monomial R, killCompl_monomial_sum_single_one, ite_eq_right hi]
 
 /-- The rectangles counted after blocking column `i`: unblocked rectangles which do not cover
 the `O`-marking in column `i`. -/
@@ -362,38 +483,16 @@ theorem simplyBlockedDifferential_apply_apply (i : Fin n)
   rw [G.simplyBlockedDifferential_apply R i c]
   simp [Finsupp.sum_apply]
 
-private theorem simplyBlockedSpecialization_unblockedDifferential_single (i : Fin n)
-    (x : GridState n) (a : MvPolynomial (Fin n) R) :
-    simplyBlockedSpecialization R i
-        (G.unblockedDifferential R (Finsupp.single x a)) =
-      G.simplyBlockedDifferential R i
-        (simplyBlockedSpecialization R i (Finsupp.single x a)) := by
-  rw [simplyBlockedSpecialization_single]
-  nth_rewrite 1 [← Finsupp.smul_single_one x a]
-  rw [map_smul, map_smulₛₗ,
-    G.unblockedDifferential_single R x,
-    G.simplyBlockedSpecialization_unblockedDifferentialOnGenerator R i x,
-    ← Finsupp.smul_single_one x
-      (MvPolynomial.killCompl (f := Subtype.val) Subtype.val_injective a),
-    map_smul, G.simplyBlockedDifferential_single R i x]
-  rw [simplyBlockedRingHom_apply]
-
 /-- Coefficientwise specialization intertwines the unblocked and simply blocked maps. -/
 @[simp]
 theorem simplyBlockedSpecialization_unblockedDifferential (i : Fin n)
     (c : GridChainMinus R n) :
     simplyBlockedSpecialization R i (G.unblockedDifferential R c) =
-      G.simplyBlockedDifferential R i (simplyBlockedSpecialization R i c) := by
-  induction c using Finsupp.induction with
-  | zero =>
-      rw [(G.unblockedDifferential R).map_zero,
-        (simplyBlockedSpecialization R i).map_zero,
-        (G.simplyBlockedDifferential R i).map_zero]
-  | single_add x a c _ _ ih =>
-      rw [(G.unblockedDifferential R).map_add, (simplyBlockedSpecialization R i).map_add,
-        (simplyBlockedSpecialization R i).map_add,
-        (G.simplyBlockedDifferential R i).map_add, ih,
-        G.simplyBlockedSpecialization_unblockedDifferential_single R i x a]
+      G.simplyBlockedDifferential R i (simplyBlockedSpecialization R i c) :=
+  simplyBlockedSpecialization_apply_eq_of_single R i (fun x => by
+    rw [G.unblockedDifferential_single R x,
+      G.simplyBlockedSpecialization_unblockedDifferentialOnGenerator R i x,
+      G.simplyBlockedDifferential_single R i x]) c
 
 end GridDiagram
 

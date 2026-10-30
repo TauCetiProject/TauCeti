@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.CompactOpen
 public import Mathlib.Topology.Connected.PathConnected
+public import Mathlib.Topology.Homotopy.Contractible
 
 /-!
 # The wedge sum of a family of pointed spaces
@@ -29,7 +30,8 @@ the universal property `TauCeti.WedgeSum.lift`.
 
 * `TauCeti.WedgeSum`: the wedge sum of a family of pointed spaces, with its wedge point
   `TauCeti.WedgeSum.base` and the inclusions `TauCeti.WedgeSum.incl` of the summands.
-* `TauCeti.WedgeSum.isOpen_iff`: a set is open exactly when its preimage in every summand is.
+* `TauCeti.WedgeSum.isOpen_iff`, `TauCeti.WedgeSum.isClosed_iff`: a set is open (closed)
+  exactly when its preimage in every summand is.
 * `TauCeti.WedgeSum.lift`: the universal property, with `TauCeti.WedgeSum.hom_ext`, and
   `TauCeti.WedgeSum.liftProd`, its form for maps out of `Z × ⋁ᵢ Xᵢ`, which builds homotopies out
   of a wedge sum.
@@ -38,6 +40,8 @@ the universal property `TauCeti.WedgeSum.lift`.
 * `TauCeti.WedgeSum.proj`: the retraction of a wedge sum onto one summand, collapsing the others
   to the base point. The retractions separate points, so a wedge sum of Hausdorff spaces is
   Hausdorff.
+* `TauCeti.WedgeSum.contractibleSpace`: a wedge sum of spaces which deformation retract onto their
+  base points is contractible.
 
 ## References
 
@@ -179,6 +183,10 @@ theorem isQuotientMap_sumElim :
 theorem isOpen_iff {S : Set (WedgeSum x)} : IsOpen S ↔ ∀ i, IsOpen (incl x i ⁻¹' S) := by
   rw [← isQuotientMap_sumElim.isOpen_preimage, isOpen_sum_iff, isOpen_sigma_iff]
   exact and_iff_right (isOpen_discrete _)
+
+/-- A subset of the wedge sum is closed exactly when its preimage in every summand is closed. -/
+theorem isClosed_iff {S : Set (WedgeSum x)} : IsClosed S ↔ ∀ i, IsClosed (incl x i ⁻¹' S) := by
+  simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
 
 section Lift
 
@@ -373,6 +381,18 @@ theorem proj_injective : Function.Injective fun w : WedgeSum x => fun i => proj 
         have hz : x j = z := by simpa [Ne.symm hij] using h' j
         rw [hy, ← hz, incl_apply_self, incl_apply_self]
 
+/-- A point of the wedge sum whose retraction onto the `i`-th summand is not the base point lies in
+the `i`-th summand. -/
+theorem incl_proj_of_proj_ne {i : ι} {w : WedgeSum x} (hw : proj x i w ≠ x i) :
+    incl x i (proj x i w) = w := by
+  induction w using ind with
+  | base => exact absurd (proj_base i) hw
+  | incl j z =>
+    by_cases hj : j = i
+    · subst hj
+      rw [proj_incl_self]
+    · exact absurd (proj_incl_of_ne hj z) hw
+
 /-- **The wedge sum of Hausdorff spaces is Hausdorff**: the retractions onto the summands
 separate its points. -/
 instance [∀ i, T2Space (X i)] : T2Space (WedgeSum x) :=
@@ -389,6 +409,21 @@ instance [∀ i, PathConnectedSpace (X i)] : PathConnectedSpace (WedgeSum x) := 
       rw [← incl_apply_self (x := x) i]
       exact (PathConnectedSpace.joined (x i) y).map (incl x i).continuous
   exact ⟨⟨base x⟩, fun v w => (h v).symm.trans (h w)⟩
+
+/-- **A wedge sum of spaces which deformation retract onto their base points is contractible.**
+The contraction moves each summand `X i` by a deformation retraction onto `x i` relative to `x i`;
+these agree at the base points, so they glue to a homotopy on the wedge sum. -/
+theorem contractibleSpace
+    (H : ∀ i, Nonempty ((ContinuousMap.id (X i)).HomotopyRel (.const (X i) (x i)) {x i})) :
+    ContractibleSpace (WedgeSum x) := by
+  let F i := (H i).some
+  have hF (i : ι) (t : unitInterval) : F i (t, x i) = x i := (F i).eq_fst t rfl
+  refine (contractible_iff_id_nullhomotopic _).2 ⟨base x, ⟨?_⟩⟩
+  exact
+    { toContinuousMap := liftProd (fun i => (incl x i).comp (F i).toContinuousMap)
+        (.const _ (base x)) fun i t => (congrArg (incl x i) (hF i t)).trans (incl_apply_self i)
+      map_zero_left w := by induction w using ind <;> simp [ContinuousMap.toFun_eq_coe]
+      map_one_left w := by induction w using ind <;> simp [ContinuousMap.toFun_eq_coe] }
 
 end WedgeSum
 

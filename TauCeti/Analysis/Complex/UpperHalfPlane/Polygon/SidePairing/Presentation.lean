@@ -227,8 +227,7 @@ theorem relatorQuotient_partialCycleWord_eq_of_partialCycleMap_eq {j : Fin n} {z
   wlog h : a ≤ b generalizing a b
   · exact (this hab.symm (le_of_not_ge h)).symm
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
-  have hk : P.vertex (σ.next^[a] j) = .inl (σ.partialCycleMap j a • z) := by
-    rw [← σ.partialCycleMap_smul_vertex, hj, Sum.smul_inl]
+  have hk := σ.vertex_next_iterate_eq_inl hj a
   rw [partialCycleMap_add, right_eq_mul] at hab
   rw [partialCycleWord_add, map_mul, σ.relatorQuotient_partialCycleWord_eq_one hk hab, one_mul]
 
@@ -241,7 +240,7 @@ private theorem of_eq_inv_mk_partialCycleWord {i j : Fin n} {z : ℍ} (hj : P.ve
   have hzP : z ∈ P.carrier := P.vertex_mem_carrier hj
   have hzi : z ∈ σ.map i • P.carrier := by
     rw [h, mem_smul_set_iff_inv_smul_mem, inv_inv]
-    exact P.vertex_mem_carrier (by rw [← σ.partialCycleMap_smul_vertex, hj, Sum.smul_inl])
+    exact P.vertex_mem_carrier (σ.vertex_next_iterate_eq_inl hj m)
   have hside : z ∈ P.side (σ.pair i) := P.carrier_inter_range_sideGeodesic _ ▸
     ⟨hzP, σ.inter_smul_carrier_subset_range_sideGeodesic i ⟨hzP, hzi⟩⟩
   rcases P.eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side hj hside with rfl | rfl
@@ -282,7 +281,7 @@ private theorem mk_partialCycleWord_eq_of_partialCycleMap_eq (hmap : ∀ i, σ.m
   have hmem {k : Fin n} {w : ℍ} (hk : P.vertex k = .inl w) (l : ℕ) :
       w ∈ (σ.partialCycleMap k l)⁻¹ • P.carrier := by
     rw [mem_smul_set_iff_inv_smul_mem, inv_inv]
-    exact P.vertex_mem_carrier (by rw [← σ.partialCycleMap_smul_vertex, hk, Sum.smul_inl])
+    exact P.vertex_mem_carrier (σ.vertex_next_iterate_eq_inl hk l)
   have hzz' : z ≠ z' := fun he ↦ hjj' (P.vertex_injective (by rw [hj, hj', he]))
   -- the common translate is convex and contains both vertices
   have hseg : geodesicSegment z z' ⊆ (σ.partialCycleMap j m)⁻¹ • P.carrier := by
@@ -361,16 +360,11 @@ private theorem sideWord_inv_partialCycleMap_mul (hmap : ∀ i, σ.map i ∈ Γ)
     σ.sideWord (σ.partialCycleMap j a)⁻¹ *
         σ.sideWord (σ.partialCycleMap j a * (σ.partialCycleMap j b)⁻¹) =
       σ.sideWord (σ.partialCycleMap j b)⁻¹ := by
-  set N := orderOf (σ.cycleMap j) * σ.cycleLength j with hN
-  -- a full turn around the vertex returns to the identity
-  have hN1 : σ.partialCycleMap j N = 1 := by
-    rw [hN, partialCycleMap_mul_cycleLength, pow_orderOf_eq_one]
-  have hper : σ.next^[N] j = j := P.vertex_injective <| by
-    rw [← σ.partialCycleMap_smul_vertex, hN1, one_smul]
+  set N := orderOf (σ.cycleMap j) * σ.cycleLength j
+  -- after a full turn around the vertex the partial cycle products start again
   have hNb : σ.partialCycleMap j (N + b) = σ.partialCycleMap j b := by
-    rw [partialCycleMap_add, hper, hN1, mul_one]
-  have hk : P.vertex (σ.next^[a] j) = .inl (σ.partialCycleMap j a • z) := by
-    rw [← σ.partialCycleMap_smul_vertex, hj, Sum.smul_inl]
+    simpa using σ.partialCycleMap_mul_orderOf_mul_cycleLength_add j 1 b
+  have hk := σ.vertex_next_iterate_eq_inl hj a
   obtain ⟨c, hc⟩ : ∃ c, N + b = a + c := ⟨N + b - a, by omega⟩
   have ht : σ.partialCycleMap j a * (σ.partialCycleMap j b)⁻¹ =
       (σ.partialCycleMap (σ.next^[a] j) c)⁻¹ := by

@@ -77,6 +77,22 @@ theorem mkPrincipal_eq_one_of_norm_pos (O : NumberFieldOrder K)
   rw [mkPrincipal_apply, mk_eq_one_iff, O.mem_narrowPrincipal_iff_exists_norm_pos hK]
   exact ⟨x, hx, rfl⟩
 
+/-- If all order units have positive norm, a negative-norm generator defines a
+nontrivial narrow principal class. -/
+theorem mkPrincipal_ne_one_of_norm_neg (O : NumberFieldOrder K)
+    (hunit : ∀ u : O.toSubalgebraˣ, 0 < Algebra.norm ℚ ((u : O.toSubalgebra) : K))
+    {x : Kˣ} (hx : Algebra.norm ℚ (x : K) < 0) : mkPrincipal O x ≠ 1 := by
+  intro h
+  obtain ⟨u, hu⟩ := (mkPrincipal_eq_one_iff O).mp h
+  have hu0 : ((u : O.toSubalgebra) : K) ≠ 0 :=
+    (u.isUnit.map (algebraMap O.toSubalgebra K)).ne_zero
+  have hsmul : u • (x : K) = ((u : O.toSubalgebra) : K) * (x : K) := by
+    rw [Units.smul_def, Algebra.smul_def, Subalgebra.algebraMap_apply]
+  have hpos := NumberField.norm_pos_of_isTotallyPositive
+    (by rw [hsmul]; exact mul_ne_zero hu0 x.ne_zero) hu
+  rw [hsmul, map_mul] at hpos
+  exact (mul_neg_of_pos_of_neg (hunit u) hx).not_gt hpos
+
 end NarrowPic
 
 end TauCeti.GlobalNumberFields

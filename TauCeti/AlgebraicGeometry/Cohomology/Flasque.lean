@@ -8,14 +8,14 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Flasque
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
-public import TauCeti.Topology.Sheaves.Flasque
+public import TauCeti.Topology.Sheaves.Flasque.Basic
 
 /-!
 # Flasque sheaves of modules and the cohomology of rational functions
 
 A sheaf of modules on a scheme is flasque when its underlying abelian presheaf is, that is, when
-all of its restriction maps are surjective. `TauCeti/Topology/Sheaves/Flasque.lean` proves that a
-flasque abelian sheaf has no higher cohomology; this file transports that statement to the
+all of its restriction maps are surjective. `TauCeti/Topology/Sheaves/Flasque/Basic.lean` proves
+that a flasque abelian sheaf has no higher cohomology; this file transports that statement to the
 cohomology `Hⁿ(X, M)` of `TauCeti/AlgebraicGeometry/Cohomology/Basic.lean` and applies it to the
 sheaf `𝒦_X` of rational functions on an irreducible scheme.
 

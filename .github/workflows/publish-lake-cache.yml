@@ -77,12 +77,20 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: publisher-tools
           sparse-checkout: |
+            tauceti.toml
             scripts/lake_cache_publish.py
             scripts/ci_publication_observation.py
             scripts/lake_cache_probe.py
             scripts/lake_cache_reuse.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
+
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: publisher-tools
 
       - name: Download the staged oleans
         uses: actions/download-artifact@v4
@@ -114,7 +122,20 @@ jobs:
           ./elan-init -y --default-toolchain none
           rm -f elan.tar.gz elan-init
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-          "$HOME/.elan/bin/elan" toolchain install "$TOOLCHAIN"
+          # Retry the identical official release after transient download failures.
+          # Exhaustion stays fatal; later validation/publication must not run.
+          for toolchain_attempt in 1 2 3; do
+            if "$HOME/.elan/bin/elan" toolchain install "$TOOLCHAIN"; then
+              break
+            else
+              toolchain_status=$?
+            fi
+            if [ "$toolchain_attempt" -eq 3 ]; then
+              exit "$toolchain_status"
+            fi
+            echo "::warning::official toolchain install failed; retry $toolchain_attempt/3"
+            sleep "$((toolchain_attempt * 5))"
+          done
           printf 'name=%s\n' "$TOOLCHAIN" >> "$GITHUB_OUTPUT"
 
       - name: Validate staged data and verify inherited objects without credentials

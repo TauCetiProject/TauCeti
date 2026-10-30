@@ -21,6 +21,8 @@ base extends to a PL map on its cone.
 
 This supplies the PL regularity needed when extending maps of links to maps of
 vertex stars. The PL extension assumes a compact base in a real coordinate product.
+The affine map `coneToJoin b` reads a cone point as a point of the join of the base with a
+point `b`, placing the apex at `b`.
 
 ## References
 
@@ -149,6 +151,17 @@ variable {ι : Type*}
   {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
   [IsTopologicalAddGroup F] [ContinuousSMul ℝ F]
   {s : Set (ι → ℝ)} {f : (ι → ℝ) → F}
+
+/-- The affine map `(p, t) ↦ p - t • b + b` from cone coordinates to the join with `b`. It sends
+the apex to `b` and the ray point `(t • x, t)` to `t • x + (1 - t) • b`, so the cone point at
+height `t` over `x` goes to the point at parameter `1 - t` on the segment from `x` to `b`. -/
+def coneToJoin (b : F) : (F × ℝ) →ᴬ[ℝ] F :=
+  (ContinuousLinearMap.fst ℝ F ℝ -
+      (ContinuousLinearMap.snd ℝ F ℝ).smulRight b).toContinuousAffineMap +
+    ContinuousAffineMap.const ℝ (F × ℝ) b
+
+@[simp]
+theorem coneToJoin_apply (b : F) (p : F × ℝ) : coneToJoin b p = p.1 - p.2 • b + b := (rfl)
 
 /-- A PL map on a compact base extends to a PL map of geometric cones, including at the apex.
 The target may be any real topological vector space. -/

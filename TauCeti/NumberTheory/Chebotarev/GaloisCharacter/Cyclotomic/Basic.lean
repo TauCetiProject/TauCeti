@@ -192,7 +192,8 @@ private theorem ray_le_ker_cyclotomicArtinAway :
   rcases eq_or_ne m 1 with rfl | hm1
   · exact Subsingleton.elim _ _
   -- Write `x = a / b` with `a ≡ b ≡ 1 mod m`.
-  obtain ⟨a, b, ha, hb, hab⟩ := hx.exists_sub_one_mem_and_algebraMap_eq_mul
+  obtain ⟨a, b, ha, hb, -, -, hab⟩ :=
+    hx.exists_sub_one_mem_and_ne_zero_and_isTotallyPositive_and_algebraMap_eq_mul
   rw [cyclotomicModulus_finitePart] at ha hb
   have hne0 {c : 𝓞 K} (hc : c - 1 ∈ Ideal.span {(m : 𝓞 K)}) : c ≠ 0 := fun h ↦
     hm1 (Ideal.span_singleton_natCast_eq_top_iff.mp

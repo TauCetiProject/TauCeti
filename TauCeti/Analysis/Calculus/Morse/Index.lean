@@ -99,6 +99,13 @@ theorem hessianQuadraticForm_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     hessianQuadraticForm f x = hessianQuadraticForm g x := by
   rw [hessianQuadraticForm, hessianQuadraticForm, hfg.fderiv.fderiv_eq]
 
+/-- The Hessian quadratic form is additive on functions which are `C²` at the point. -/
+theorem hessianQuadraticForm_add (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
+    hessianQuadraticForm (f + g) x = hessianQuadraticForm f x + hessianQuadraticForm g x := by
+  ext v
+  simpa [iteratedFDeriv_two_apply] using
+    congr($(iteratedFDeriv_add_apply (i := 2) hf hg) ![v, v])
+
 /-- Negating a function negates its Hessian quadratic form. -/
 @[simp]
 theorem hessianQuadraticForm_neg (f : E → ℝ) (x : E) :
@@ -108,6 +115,13 @@ theorem hessianQuadraticForm_neg (f : E → ℝ) (x : E) :
   simp only [hessianQuadraticForm_apply, neg_apply]
   rw [hfd, fderiv_neg]
   rfl
+
+/-- Scaling a function by a real constant scales its Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_smul (a : ℝ) (f : E → ℝ) (x : E) :
+    hessianQuadraticForm (a • f) x = a • hessianQuadraticForm f x := by
+  ext v
+  simp [fderiv_fderiv_const_smul]
 
 /-- At a critical point the Hessian quadratic form pulls back along the derivative of a `C²`
 change of variables. -/

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.BoundaryPrevertex
+import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.InvertedCoordinate
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
@@ -97,14 +98,6 @@ theorem exists_eventually_mem_of_inverted_coordinate_eq_zero {ι : Type*} {U : S
     · exact Or.inr (mem_biUnion (x := j) hji hj)
   exact ⟨i, Metric.mem_nhdsWithin_iff.mpr ⟨r, hr, fun z hz => hsub (mem_image_of_mem f hz)⟩⟩
 
-/-- If the inverted coordinate tends to `0` without vanishing, the corresponding point in the
-normalized half-strip coordinate `(q + g⁻¹ - c) / b` tends to infinity. -/
-private theorem tendsto_cobounded_div_of_tendsto_nhdsNE_zero {α : Type*} {l : Filter α}
-    {g : α → ℂ} {c b : ℂ} (hb : b ≠ 0) (hg : Tendsto g l (𝓝[≠] 0)) :
-    Tendsto (fun a => (q + (g a)⁻¹ - c) / b) l (cobounded ℂ) :=
-  tendsto_sub_div_of_tendsto_cobounded hb
-    ((tendsto_const_add_cobounded q).comp (tendsto_inv₀_nhdsNE_zero.comp hg))
-
 /-- Near a zero of the inverted coordinate whose end is the half-strip
 `{ρ < re ζ, 0 < im ζ < π}`, `ζ = (w - c) / b`, the normalized coordinate
 `ζ = (q + g⁻¹ - c) / b` lies in the closed half-strip `{0 ≤ re ζ, 0 ≤ im ζ ≤ π}` wherever `g` is
@@ -166,11 +159,8 @@ private theorem exists_ball_halfStrip_of_inverted_coordinate
   by_contra hne
   rw [not_or] at hne
   -- otherwise the boundary value would be a value of `f` at an interior point
-  obtain ⟨y, hy, hyz⟩ := hS (a := q + (g z)⁻¹)
-    ⟨(le_abs_self ρ).trans_lt hlt, him.1.lt_of_ne (Ne.symm hne.1), him.2.lt_of_ne hne.2⟩
-  have hgy : g y = g z := by rw [hgf hy]; simp [hyz]
-  have hyz' := hgi ⟨le_of_lt hy, hgy ▸ hgz⟩ ⟨hzH.ge, hgz⟩ hgy
-  exact absurd (hyz' ▸ hy : 0 < z.im) (by simp [hzH])
+  exact add_inv_notMem_image_of_inverted_coordinate hgf hgi hzH hgz
+    (hS ⟨(le_abs_self ρ).trans_lt hlt, him.1.lt_of_ne (Ne.symm hne.1), him.2.lt_of_ne hne.2⟩)
 
 /-- The exponential coordinate `exp (π * I - ζ)` of the normalized half-strip coordinate
 `ζ = (q + g⁻¹ - c) / b`, filled in with `0` at the zeros of `g`, is continuous wherever `ζ` stays

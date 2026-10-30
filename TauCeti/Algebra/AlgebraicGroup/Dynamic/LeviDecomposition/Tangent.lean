@@ -77,12 +77,8 @@ theorem disjoint_lieSubalgebra_unipotent_levi (l : H →ₐc[R] LaurentPolynomia
       ((leviDefiningHopfIdeal l).lieSubalgebra (B := B)).toSubmodule := by
   rw [Submodule.disjoint_def]
   intro d hu hz
-  have hmem : (derivationMulEquivTangentKer R H B (.ofAdd d)).val ∈
-      unipotent (DualNumber (Bialgebra.CounitAlgebra R H B)) l ⊓
-        levi (DualNumber (Bialgebra.CounitAlgebra R H B)) l :=
-    ⟨(tangentPoint_mem_unipotent_iff l d).mpr hu,
-      (tangentPoint_mem_levi_iff l d).mpr hz⟩
-  rw [unipotent_inf_levi, Subgroup.mem_bot] at hmem
+  have hmem := eq_one_of_mem_unipotent_of_mem_levi ((tangentPoint_mem_unipotent_iff l d).mpr hu)
+    ((tangentPoint_mem_levi_iff l d).mpr hz)
   have hzero : derivationMulEquivTangentKer R H B (.ofAdd d) = 1 := Subtype.ext hmem
   exact Multiplicative.ofAdd.injective
     ((derivationMulEquivTangentKer R H B).injective (hzero.trans (map_one _).symm))

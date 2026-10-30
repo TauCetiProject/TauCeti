@@ -84,16 +84,6 @@ private theorem eq_zero_of_support_subset_Icc (hg : Continuous g)
   by_contra h
   exact absurd (hsupp (Function.mem_support.2 fun h' => h h'.symm)).1 (not_le.2 ht)
 
-/-- A function supported in the degenerate interval `Set.Icc a a` and vanishing at `a` vanishes
-identically. -/
-private theorem eq_zero_of_support_subset_Icc_self (hsupp : Function.support g ⊆ Icc a a)
-    (hga : g a = 0) (t : ℝ) : g t = 0 := by
-  by_cases h : g t = 0
-  · exact h
-  · have htm := hsupp (Function.mem_support.2 h)
-    rw [le_antisymm htm.2 htm.1]
-    exact hga
-
 /-- The support of `‖g ·‖ₑ ^ r` lies in the half-open interval `Set.Ioc a b`: the left endpoint
 is excluded because `g` vanishes there. -/
 private theorem support_enorm_rpow_subset_Ioc (hsupp : Function.support g ⊆ Icc a b)
@@ -128,7 +118,8 @@ private theorem enorm_le_lintegral_enorm_deriv
 
 /-- **The one-dimensional Poincaré inequality**, in the `∫⁻` form the Fubini argument below
 consumes: a `C¹` function on `ℝ` that vanishes outside `Set.Icc a b` satisfies
-`∫ ‖g‖^r ≤ (b - a)^r ∫ ‖g'‖^r` for every `1 ≤ r`.
+`∫ ‖g‖^r ≤ (b - a)^r ∫ ‖g'‖^r` for every `1 ≤ r`. The endpoints may be in either
+order: an empty or degenerate interval carries only the zero function.
 
 The two ingredients are the fundamental theorem of calculus, which bounds `‖g t‖` by the total
 variation `∫ ‖g'‖` over the interval, and the nesting `L^r ⊆ L^1` of the `Lᵖ` scale on the
@@ -136,16 +127,18 @@ finite measure space `Set.Ioc a b`, which converts that `L^1` bound into an `L^r
 of the factor `(b - a)^{r-1}`.
 
 `F` need not be complete. -/
-theorem lintegral_enorm_rpow_le_of_support_subset_Icc (hab : a ≤ b)
+theorem lintegral_enorm_rpow_le_of_support_subset_Icc
     (hg : ∀ t, HasDerivAt g (g' t) t) (hg' : Continuous g')
     (hsupp : Function.support g ⊆ Icc a b) {r : ℝ} (hr : 1 ≤ r) :
     ∫⁻ t, ‖g t‖ₑ ^ r ≤ ENNReal.ofReal ((b - a) ^ r) * ∫⁻ t, ‖g' t‖ₑ ^ r := by
   have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
   have hgc : Continuous g := continuous_iff_continuousAt.2 fun t => (hg t).continuousAt
   have hga : g a = 0 := eq_zero_of_support_subset_Icc hgc hsupp
-  -- The degenerate slab carries no function at all.
-  rcases hab.eq_or_lt with rfl | hab'
-  · simp [eq_zero_of_support_subset_Icc_self hsupp hga, ENNReal.zero_rpow_of_pos hr0]
+  -- The half-open integration interval is empty when the endpoints are reversed or equal.
+  rcases le_or_gt b a with hba | hab'
+  · rw [← setLIntegral_eq_of_support_subset (support_enorm_rpow_subset_Ioc hsupp hga hr0),
+      Ioc_eq_empty_of_le hba, setLIntegral_empty]
+    exact bot_le
   have hba : (0 : ℝ) < b - a := sub_pos.2 hab'
   have hpow : ENNReal.ofReal (b - a) ^ (r - 1) * ENNReal.ofReal (b - a)
       = ENNReal.ofReal ((b - a) ^ r) := by
@@ -191,11 +184,12 @@ private theorem enorm_le_mul_of_support_subset_Icc
   · simp [Function.notMem_support.mp ht]
 
 /-- **The one-dimensional Poincaré inequality**: a `C¹` function on `ℝ` supported in an interval
-of length `b - a` obeys `‖g‖_p ≤ (b - a) ‖g'‖_p` for every `1 ≤ p ≤ ∞`.
+of length `b - a` obeys `‖g‖_p ≤ (b - a) ‖g'‖_p` for every `1 ≤ p ≤ ∞`. The endpoints may
+be in either order: an empty or degenerate interval carries only the zero function.
 
 The interval hypothesis is essential; `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv`
 shows no such bound holds uniformly over all compactly supported functions. -/
-theorem eLpNorm_le_eLpNorm_deriv_of_support_subset_Icc (hab : a ≤ b)
+theorem eLpNorm_le_eLpNorm_deriv_of_support_subset_Icc
     (hg : ∀ t, HasDerivAt g (g' t) t) (hg' : Continuous g')
     (hsupp : Function.support g ⊆ Icc a b) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm g p volume ≤ ENNReal.ofReal (b - a) * eLpNorm g' p volume := by
@@ -206,9 +200,12 @@ theorem eLpNorm_le_eLpNorm_deriv_of_support_subset_Icc (hab : a ≤ b)
     exact enorm_le_mul_of_support_subset_Icc hg hg' hsupp
       ((enorm_ae_le_eLpNormEssSup g' volume).mono fun _ ht =>
         ht.trans eLpNormEssSup_le_eLpNorm_top)
+  rcases lt_or_ge b a with hba | hab
+  · rw [Icc_eq_empty_of_lt hba, subset_empty_iff, Function.support_eq_empty_iff] at hsupp
+    simp [hsupp]
   exact eLpNorm_le_eLpNorm_of_lintegral_rpow_le (sub_nonneg.2 hab)
     (zero_lt_one.trans_le hp).ne' hp' hgc.aestronglyMeasurable
-    (lintegral_enorm_rpow_le_of_support_subset_Icc hab hg hg' hsupp
+    (lintegral_enorm_rpow_le_of_support_subset_Icc hg hg' hsupp
       (by simpa using ENNReal.toReal_mono hp' hp))
 
 end OneDimensional
@@ -276,11 +273,11 @@ derivative along it, and the support of the restriction. -/
 private theorem lintegral_enorm_rpow_comp_slabChart_le {y : Fin n → ℝ}
     (hu : ∀ t : ℝ, DifferentiableAt ℝ u (slabChart i (t, y)))
     (hfc : Continuous fun t : ℝ => fderiv ℝ u (slabChart i (t, y)) (EuclideanSpace.single i 1))
-    (hab : a ≤ b) (hsupp : Function.support (fun t : ℝ => u (slabChart i (t, y))) ⊆ Icc a b)
+    (hsupp : Function.support (fun t : ℝ => u (slabChart i (t, y))) ⊆ Icc a b)
     {r : ℝ} (hr : 1 ≤ r) :
     ∫⁻ t, ‖u (slabChart i (t, y))‖ₑ ^ r
       ≤ ENNReal.ofReal ((b - a) ^ r) * ∫⁻ t, ‖fderiv ℝ u (slabChart i (t, y))‖ₑ ^ r := by
-  refine le_trans (lintegral_enorm_rpow_le_of_support_subset_Icc hab
+  refine le_trans (lintegral_enorm_rpow_le_of_support_subset_Icc
     (fun t => hasDerivAt_comp_slabChart y (hu t)) hfc hsupp hr) ?_
   gcongr with t
   rw [← ofReal_norm, ← ofReal_norm]
@@ -324,12 +321,19 @@ bounded — being trapped between two parallel hyperplanes is enough — and the
 be dropped, by `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv`.
 
 This is the estimate that passes to `W^{1,p}_0(Ω)` by density of `C_c^∞(Ω)`, for any `Ω`
-contained in such a slab. -/
-theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (hu : ContDiff ℝ 1 u) (hab : a ≤ b)
+contained in such a slab. The endpoints may be in either order: an empty slab carries only the
+zero function. -/
+theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (hu : ContDiff ℝ 1 u)
     (hsupp : ∀ x ∈ Function.support u, x i ∈ Icc a b) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm u p volume ≤ ENNReal.ofReal (b - a) * eLpNorm (fderiv ℝ u) p volume := by
   obtain rfl | hp' := eq_or_ne p ∞
   · exact eLpNorm_top_le_eLpNorm_top_fderiv_of_support_subset_slab hu hsupp
+  rcases lt_or_ge b a with hba | hab
+  · have hu0 : u = 0 := by
+      apply Function.support_eq_empty_iff.mp
+      exact eq_empty_iff_forall_notMem.mpr fun x hx =>
+        hba.not_ge ((hsupp x hx).1.trans (hsupp x hx).2)
+    simp [hu0]
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   have hfc : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
   refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (sub_nonneg.2 hab)
@@ -344,7 +348,7 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (hu : ContDiff ℝ 1 u)
     lintegral_enorm_rpow_comp_slabChart_le
       (fun _ => (hu.differentiable one_ne_zero).differentiableAt)
       (((hfc.comp (by simp only [slabChart_eq_add_smul_single]; fun_prop)).clm_apply
-        continuous_const)) hab
+        continuous_const))
       (fun t ht => by simpa using hsupp _ (Function.mem_support.2 ht)) hr
   calc ∫⁻ x, ‖u x‖ₑ ^ r
       = ∫⁻ y, ∫⁻ t, ‖u (slabChart i (t, y))‖ₑ ^ r := lintegral_eq_lintegral_slabChart hmu
@@ -367,9 +371,6 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_ball
     {c : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hu : ContDiff ℝ 1 u)
     (hsupp : Function.support u ⊆ Metric.ball c R) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm u p volume ≤ ENNReal.ofReal (2 * R) * eLpNorm (fderiv ℝ u) p volume := by
-  rcases le_or_gt R 0 with hR | hR
-  · rw [Metric.ball_eq_empty.2 hR, subset_empty_iff, Function.support_eq_empty_iff] at hsupp
-    simp [hsupp]
   have hslab : ∀ x ∈ Function.support u,
       x (0 : Fin (n + 1)) ∈ Icc (c 0 - R) (c 0 + R) :=
     fun x hx => by
@@ -377,8 +378,7 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_ball
       exact (PiLp.dist_apply_le x c 0).trans (Metric.mem_ball.1 (hsupp hx)).le
   have hwidth : (c 0 + R) - (c 0 - R) = 2 * R := by ring
   simpa [hwidth] using
-    eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab hu
-      (by linarith : c 0 - R ≤ c 0 + R) hslab hp
+    eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab hu hslab hp
 
 end Slab
 

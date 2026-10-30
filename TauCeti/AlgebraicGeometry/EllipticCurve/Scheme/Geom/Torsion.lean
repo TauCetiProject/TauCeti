@@ -174,6 +174,16 @@ theorem exists_comp_torsionι_iff (x : Z ⟶ Over.mk E.structureMap) :
     (∃ y : Z ⟶ (E.torsion n).X, y ≫ E.torsionι n = x) ↔ x ≫ E.mulBy n = 1 :=
   ⟨by rintro ⟨y, rfl⟩; simp, fun hx ↦ ⟨torsionLift x hx, by simp⟩⟩
 
+/-- A homomorphism `φ : (ℤ/Nℤ)² →* E(Z)` takes values in the `N`-torsion of `E(Z)`. -/
+theorem range_le_ker_mulBy {N : ℕ}
+    (φ : Multiplicative (ZMod N × ZMod N) →* (Z ⟶ Over.mk E.structureMap)) :
+    φ.range ≤ (IsMonHom.monoidHom (E.mulBy N) Z).ker := by
+  rintro _ ⟨a, rfl⟩
+  have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
+    ext <;> simp [nsmul_eq_mul]
+  rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply, comp_mulBy, zpow_natCast, ← map_pow, ha,
+    map_one]
+
 variable (E n Z)
 
 /-- **The points of `E[n]`.** The points of the `n`-torsion `E[n]` with values in `Z` form the

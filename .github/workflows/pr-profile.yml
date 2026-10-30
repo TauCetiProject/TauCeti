@@ -191,6 +191,12 @@ jobs:
 
       # Current main is policy input only: a bump must move forward from it. The measured base is
       # the PR's merge base (or the immutable queue base), checked out separately below.
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: gate
       - name: Checkout current policy base (trusted)
         uses: actions/checkout@v4
         with:

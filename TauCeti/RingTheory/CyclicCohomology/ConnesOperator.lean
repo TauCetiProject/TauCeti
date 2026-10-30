@@ -57,6 +57,7 @@ The bicomplex identities hold for nonunital and nonassociative `A`; among the re
 * `TauCeti.connesB_comp_connesB`: `B ∘ B = 0`.
 * `TauCeti.hochschildCoboundary_comp_connesB_add_connesB_comp_hochschildCoboundary`:
   `b B + B b = 0`.
+* `TauCeti.connesB_hochschildCoboundary_zero`: `B b = 0` on degree-zero cochains.
 
 ## References
 
@@ -189,6 +190,25 @@ theorem cyclicNorm_mem_cyclicCochains (φ : MultilinearMap R (fun _ : Fin (n + 1
     cyclicNorm R A M n φ ∈ cyclicCochains R A M n := by
   rw [mem_cyclicCochains_iff_cyclicOperator_apply_eq_self, ← Module.End.mul_apply,
     cyclicOperator_mul_cyclicNorm]
+
+/-- On a cyclic cochain, the cyclic norm is multiplication by the number of arguments. -/
+theorem cyclicNorm_apply_of_mem_cyclicCochains
+    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    (hφ : φ ∈ cyclicCochains R A M n) :
+    cyclicNorm R A M n φ = (n + 1 : R) • φ := by
+  have hfix := mem_cyclicCochains_iff_cyclicOperator_apply_eq_self.1 hφ
+  simp only [cyclicNorm_def, LinearMap.sum_apply, Module.End.pow_apply,
+    Function.iterate_fixed hfix]
+  rw [Finset.sum_const, Finset.card_range, ← Nat.cast_smul_eq_nsmul R,
+    Nat.cast_add, Nat.cast_one]
+
+/-- The fixed-point submodule of the cyclic operator is the kernel of `1 - λ`. -/
+theorem ker_one_sub_cyclicOperator :
+    LinearMap.ker (1 - cyclicOperator R A M n) = cyclicCochains R A M n := by
+  ext φ
+  simp only [LinearMap.mem_ker, LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero,
+    mem_cyclicCochains_iff_cyclicOperator_apply_eq_self]
+  exact eq_comm
 
 end CyclicOperator
 
@@ -539,6 +559,13 @@ theorem hochschildCoboundary_comp_connesB_add_connesB_comp_hochschildCoboundary 
     hochschildCoboundary R A M n ∘ₗ connesB R A M n +
       connesB R A M (n + 1) ∘ₗ hochschildCoboundary R A M (n + 1) = 0 :=
   LinearMap.ext hochschildCoboundary_connesB_add_connesB_hochschildCoboundary
+
+/-- The mixed-complex identity at the bottom degree: `B (b φ) = 0` for every degree-zero
+cochain `φ`. -/
+@[simp]
+theorem connesB_hochschildCoboundary_zero (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) :
+    connesB R A M 0 (hochschildCoboundary R A M 0 φ) = 0 :=
+  connesB_eq_zero_of_mem_cyclicCochains (hochschildCoboundary_mem_cyclicCochains R A M (by simp))
 
 end ConnesB
 

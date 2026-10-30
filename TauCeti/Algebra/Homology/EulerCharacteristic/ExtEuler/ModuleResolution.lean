@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Resolution
+-- Non-public: Hom-finiteness of finitely generated modules is used only inside a proof.
+import TauCeti.Algebra.Category.ModuleCat.Algebra
 
 /-!
 # Ext-Euler admissibility from module resolutions
@@ -50,8 +52,6 @@ theorem isEulerAdmissibleOn_isFG [FiniteDimensional k A]
     refine r.isEulerAdmissible (finiteProjectiveModules_le_isProjective A) fun Z hZ => ?_
     have : Module.Finite A Z := (finiteProjectiveModules_iff.mp hZ).1
     have : Module.Finite A Y := (ModuleCat.isFG_iff Y).mp hY
-    have : FiniteDimensional k Z := Module.Finite.trans A Z
-    have : FiniteDimensional k Y := Module.Finite.trans A Y
-    exact Module.Finite.equiv (ModuleCat.homLinearEquiv (S := k)).symm
+    exact ModuleCat.finite_hom_of_finite Z Y
 
 end TauCeti

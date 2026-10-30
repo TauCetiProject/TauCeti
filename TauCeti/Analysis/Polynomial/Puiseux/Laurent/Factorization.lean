@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Basic
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Basic
-import TauCeti.Analysis.Analytic.Laurent.Exponent
+import TauCeti.Analysis.Analytic.Laurent.Global
 
 /-!
 # Construction of nonmonic Puiseux Laurent factorizations
@@ -15,8 +15,8 @@ import TauCeti.Analysis.Analytic.Laurent.Exponent
 A polynomial family with analytic coefficients and nonzero discriminant off a distinguished
 hyperplane splits after substitution by the factorial of its degree. When its leading and
 constant coefficients are powers of the distinguished coordinate times analytic units,
-the roots have Laurent power times unit forms near every point of the hyperplane.
-The integer exponents are independent of the parameter throughout the simply connected base,
+the roots have Laurent power times unit forms on the whole parameter product.
+Both the integer exponents and the analytic units are global throughout the simply connected base,
 and their pole orders are bounded by the substituted leading-coefficient exponent. Degree drops
 and nullified fibers on the hyperplane are allowed.
 
@@ -45,9 +45,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 /-- **Nonmonic Puiseux Laurent factorization with parameters.** Analytic coefficients,
 constant degree and nonzero discriminant off `y = 0`, and power-times-unit leading and
 constant coefficients suffice to construct a complete distinct splitting after `y = t ^ d!`.
-All roots simultaneously have the form `t ^ e * w` near every point of `t = 0`, with one
-integer exponent vector `e ≥ -(d! * a)` on the entire base and point-dependent analytic
-nowhere-zero units.
+All roots simultaneously have the form `t ^ e * w` throughout the punctured product, with one
+integer exponent vector `e ≥ -(d! * a)` and one analytic nowhere-zero unit per label on the
+entire product, including `t = 0`.
 The same root labels have analytic extensions after multiplication by `t ^ (d! * a)`.
 The original fibers on the hyperplane may drop degree or be zero. Degree zero is included. -/
 theorem exists_analyticOnNhd_nonmonic_laurent
@@ -71,11 +71,11 @@ theorem exists_analyticOnNhd_nonmonic_laurent
           Injective (fun i ↦ r i b) ∧
           F (b.1, b.2 ^ d.factorial) =
             C ((F (b.1, b.2 ^ d.factorial)).coeff d) * ∏ i, (X - C (r i b))) ∧
-        ∃ e : Fin d → ℤ, ∀ x ∈ U, ∃ w : Fin d → E × ℂ → ℂ,
+        ∃ e : Fin d → ℤ, ∃ w : Fin d → E × ℂ → ℂ,
           (∀ i, -(d.factorial * a : ℤ) ≤ e i) ∧
-          (∀ i, AnalyticAt ℂ (w i) (x, 0)) ∧ (∀ i, w i (x, 0) ≠ 0) ∧
-          ∀ᶠ b in 𝓝 (x, (0 : ℂ)), (∀ i, w i b ≠ 0) ∧
-            (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * w i b) := by
+          (∀ i, AnalyticOnNhd ℂ (w i) (U ×ˢ ball 0 R')) ∧
+          (∀ i, ∀ b ∈ U ×ˢ ball 0 R', w i b ≠ 0) ∧
+          ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), ∀ i, r i b = b.2 ^ e i * w i b := by
   -- Choose a substituted disc and construct roots with analytically removable poles.
   let R' := min R 1 / 2
   have hR' : 0 < R' := by dsimp only [R']; positivity
@@ -136,14 +136,37 @@ theorem exists_analyticOnNhd_nonmonic_laurent
     · push_cast
       omega
     · simpa only [sub_zero] using (hform.mono fun b hb hb0 ↦ hb.2 hb0 i)
+  have hr0 (i : Fin d) (b : E × ℂ) (hb : b ∈ U ×ˢ (ball 0 R' \ {0})) :
+      r i b ≠ 0 := by
+    have hroot : (F (b.1, b.2 ^ d.factorial)).IsRoot (r i b) := by
+      rw [(hr b hb).2, IsRoot, eval_mul]
+      simp [eval_prod, Finset.prod_eq_zero (Finset.mem_univ i)]
+    have hconst0 : (F (b.1, b.2 ^ d.factorial)).coeff 0 ≠ 0 := by
+      rw [hconst (b.1, b.2 ^ d.factorial)
+        ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2.1⟩]
+      exact mul_ne_zero (pow_ne_zero _ (pow_ne_zero _ hb.2.2))
+        (hv0 _ ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2.1⟩)
+    intro hri
+    apply hconst0
+    rw [coeff_zero_eq_eval_zero]
+    simpa only [hri, IsRoot] using hroot
+  -- Globalize each branch's Laurent unit germs using nonvanishing off the hyperplane.
+  have hUc : IsConnected U := isConnected_iff_connectedSpace.mpr inferInstance
+  have hglobal (i : Fin d) := TauCeti.exists_analyticOnNhd_eq_zpow_mul
+    hU hUc isOpen_ball (mem_ball_self hR') (hra i) (hr0 i) (fun x hx ↦ by
+      obtain ⟨e, -, w, hw⟩ := hlocal i x hx
+      exact ⟨e, w, hw⟩)
+  choose e w hw hw0 hform using hglobal
+  refine ⟨e, w, ?_, hw, hw0, fun b hb i ↦ hform i b hb⟩
+  -- Uniqueness identifies the global exponent with a bounded local exponent.
   obtain ⟨x₀, hx₀⟩ := (inferInstance : Nonempty U)
-  obtain ⟨e, he, hform⟩ := exists_laurentExponents_of_isPreconnected
-    ⟨x₀, hx₀⟩ (isPreconnected_iff_preconnectedSpace.mpr inferInstance) r hlocal
-  refine ⟨e, fun x hx ↦ ?_⟩
-  choose w hw hw0 hweq using fun i ↦ hform i x hx
-  refine ⟨w, he, hw, hw0, ?_⟩
-  filter_upwards [eventually_all.2 fun i ↦ (hw i).continuousAt.eventually_ne (hw0 i),
-    eventually_all.2 hweq] with b hbne hbeq
-  exact ⟨hbne, fun hb i ↦ hbeq i hb⟩
+  intro i
+  obtain ⟨n, hn, v, hv, hv0, hvform⟩ := hlocal i x₀ hx₀
+  have hx₀' : (x₀, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx₀, mem_ball_self hR'⟩
+  have heq : e i = n := TauCeti.laurentExponent_eq (hw i _ hx₀') (hw0 i _ hx₀')
+    hv hv0 (by
+      filter_upwards [(hU.prod isOpen_ball).mem_nhds hx₀'] with b hb hb0
+      exact hform i b ⟨hb.1, hb.2, hb0⟩) hvform
+  rwa [heq]
 
 end TauCeti.Polynomial

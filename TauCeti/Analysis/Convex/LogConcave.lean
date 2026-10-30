@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.Analysis.Convex.Function
+public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+-- Proof-only: convexity of powers of a nonnegative convex function.
+import Mathlib.Analysis.Convex.Mul
 
 /-!
 # Log-concave functions
@@ -33,6 +36,8 @@ the slices of a convex body, and are the objects of Vaaler's cube-slicing theore
 
 * `TauCeti.logConcave_ofReal_exp_iff`: `x ↦ exp (g x)` is log-concave if and only if `g` is
   concave.
+* `TauCeti.logConcave_ofReal_exp_neg_mul_sq_norm`: the Gaussian `x ↦ exp (-c ‖x‖ ^ 2)` is
+  log-concave.
 * `TauCeti.logConcave_indicator_iff`: the indicator of a set at a nonzero value is log-concave if
   and only if the set is convex.
 * `TauCeti.LogConcave.convex_support`, `TauCeti.LogConcave.convex_ge`,
@@ -167,5 +172,15 @@ theorem logConcave_ofReal_exp_iff {g : E → ℝ} :
     simpa only [smul_eq_mul] using this
   · rw [key x y ha hb]
     exact ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 (h.2 trivial trivial ha hb hab))
+
+/-- The Gaussian `x ↦ exp (-c ‖x‖ ^ 2)` on a real normed space is log-concave for `0 ≤ c`. -/
+theorem logConcave_ofReal_exp_neg_mul_sq_norm {G : Type*} [SeminormedAddCommGroup G]
+    [NormedSpace ℝ G] {c : ℝ} (hc : 0 ≤ c) :
+    LogConcave fun x : G ↦ ENNReal.ofReal (Real.exp (-c * ‖x‖ ^ 2)) := by
+  refine logConcave_ofReal_exp_iff.2 ?_
+  have h := ((convexOn_norm (convex_univ (𝕜 := ℝ) (E := G))).pow
+    (fun x _ ↦ norm_nonneg x) 2).neg.smul hc
+  convert h using 2 with x
+  simp [neg_mul, smul_eq_mul]
 
 end TauCeti

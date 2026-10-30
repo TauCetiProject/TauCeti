@@ -19,6 +19,8 @@ Facts about the invariants of an elliptic curve, complementing
   has `a₁ ≠ 0` or `a₃ ≠ 0`;
 * `WeierstrassCurve.Δ_eq_of_c₄_eq_of_c₆_eq`: two equations with the same `c`-invariants have the
   same discriminant, wherever `1728` is a regular element, by `WeierstrassCurve.c_relation`;
+* `WeierstrassCurve.Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero`: an equation with `a₃ = a₄ = 0` has
+  `Δ = -a₆ (b₂³ + 432 a₆)`, the form in which a node at the origin is studied;
 * `WeierstrassCurve.j_eq_1728_iff`: `j = 1728 ↔ c₆ = 0`, the analogue for `j = 1728` of Mathlib's
   `WeierstrassCurve.j_eq_zero_iff` (`j = 0 ↔ c₄ = 0`), together with its unreduced companion
   `WeierstrassCurve.j_eq_1728_iff'` mirroring `WeierstrassCurve.j_eq_zero_iff'`;
@@ -40,9 +42,10 @@ complement.
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Weierstrass.lean` at commit `bc2fe8ff7396`
 (FLT PR #1088), Apache 2.0, by Kevin Buzzard and Claude). Every result here except the cusp curve
-is adapted from that file, and all are generalised from FLT's field-level statements to a
-commutative ring: the two `j`-criteria, and the base-change pair `baseChange_c₄_ne_zero` /
-`baseChange_c₆_ne_zero`, which FLT states only for a field extension.
+and `WeierstrassCurve.Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero` is adapted from that file, and all are
+generalised from FLT's field-level statements to a commutative ring: the two `j`-criteria, and the
+base-change pair `baseChange_c₄_ne_zero` / `baseChange_c₆_ne_zero`, which FLT states only for a
+field extension.
 -/
 
 public section
@@ -59,6 +62,14 @@ theorem Δ_eq_of_c₄_eq_of_c₆_eq (h1728 : IsRegular (1728 : R)) {W W' : Weier
     (h₄ : W.c₄ = W'.c₄) (h₆ : W.c₆ = W'.c₆) : W.Δ = W'.Δ := by
   have h : (1728 : R) * W.Δ = 1728 * W'.Δ := by rw [c_relation, c_relation, h₄, h₆]
   exact h1728.left h
+
+/-- **The discriminant of an equation with `a₃ = a₄ = 0`** is `-a₆ (b₂³ + 432 a₆)`: here `b₄ = 0`,
+`b₆ = 4 a₆` and `b₈ = b₂ a₆`. When the reduction is singular at the origin and `b₂` is a unit, the
+second factor is a unit, so `a₆` and `Δ` have the same valuation. -/
+theorem Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero {W : WeierstrassCurve R} (h₃ : W.a₃ = 0)
+    (h₄ : W.a₄ = 0) : W.Δ = -W.a₆ * (W.b₂ ^ 3 + 432 * W.a₆) := by
+  simp only [Δ, b₂, b₄, b₆, b₈, h₃, h₄]
+  ring
 
 variable (E : WeierstrassCurve R)
 

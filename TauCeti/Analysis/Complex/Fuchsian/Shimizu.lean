@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.GroupTheory.JorgensenSequence
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.Topology.Algebra.Matrix.SpecialLinearGroup
 
 /-!
 # Shimizu's lemma
@@ -51,7 +53,7 @@ open scoped MatrixGroups Topology
 
 namespace Subgroup
 
-open Matrix.ProjectiveSpecialLinearGroup Matrix.SpecialLinearGroup
+open Matrix.ProjectiveSpecialLinearGroup Matrix.SpecialLinearGroup TauCeti
 
 attribute [local simp] Matrix.adjugate_fin_two
 
@@ -98,41 +100,26 @@ private theorem conj_transSL_apply_one_one (w : ℝ) (A : SL(2, ℝ)) :
   simp [Matrix.mul_apply, Fin.sum_univ_two, transSL, SpecialLinearGroup.transvection_coe]
   linear_combination h
 
-/-- Jørgensen's iteration `A ↦ A T A⁻¹` starting from `A`, where `T` is the transvection of
-parameter `w`. -/
-private noncomputable def jorgensen (w : ℝ) (A : SL(2, ℝ)) : ℕ → SL(2, ℝ)
-  | 0 => A
-  | n + 1 => jorgensen w A n * transSL w * (jorgensen w A n)⁻¹
-
-private theorem jorgensen_succ (w : ℝ) (A : SL(2, ℝ)) (n : ℕ) :
-    jorgensen w A (n + 1) = jorgensen w A n * transSL w * (jorgensen w A n)⁻¹ := rfl
-
 variable {Γ : Subgroup PSL(2, ℝ)} {w : ℝ} {A : SL(2, ℝ)}
 
-private theorem jorgensen_mem (hT : upperRightHom w ∈ Γ) (hA : (A : PSL(2, ℝ)) ∈ Γ) (n : ℕ) :
-    ((jorgensen w A n : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
-  induction n with
-  | zero => exact hA
-  | succ n ih =>
-      rw [jorgensen_succ, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
-        coe_transSL]
-      exact Γ.mul_mem (Γ.mul_mem ih hT) (Γ.inv_mem ih)
+/-! Jørgensen's iteration `A ↦ A T A⁻¹` starting from `A`, where `T` is the transvection of
+parameter `w`, is `TauCeti.jorgensenSeq (transSL w) A`. -/
 
 private theorem jorgensen_apply_one_zero_ne_zero (hw : w ≠ 0) (hA : A 1 0 ≠ 0) (n : ℕ) :
-    jorgensen w A n 1 0 ≠ 0 := by
+    jorgensenSeq (transSL w) A n 1 0 ≠ 0 := by
   induction n with
-  | zero => exact hA
+  | zero => rwa [jorgensenSeq_zero]
   | succ n ih =>
-      rw [jorgensen_succ, conj_transSL_apply_one_zero]
+      rw [jorgensenSeq_succ, conj_transSL_apply_one_zero]
       simpa using ⟨hw, ih⟩
 
 private theorem abs_jorgensen_apply_one_zero (hw : 0 ≤ w) (n : ℕ) :
-    w * |jorgensen w A n 1 0| = (w * |A 1 0|) ^ 2 ^ n := by
+    w * |jorgensenSeq (transSL w) A n 1 0| = (w * |A 1 0|) ^ 2 ^ n := by
   induction n with
-  | zero => simp [jorgensen]
+  | zero => simp
   | succ n ih =>
       have h2 : (2 : ℕ) ^ (n + 1) = 2 ^ n * 2 := pow_succ 2 n
-      rw [jorgensen_succ, conj_transSL_apply_one_zero, abs_neg, abs_mul, abs_of_nonneg hw,
+      rw [jorgensenSeq_succ, conj_transSL_apply_one_zero, abs_neg, abs_mul, abs_of_nonneg hw,
         abs_pow, h2, pow_mul, ← ih]
       ring
 
@@ -142,13 +129,13 @@ private theorem abs_jorgensen_apply_one_zero (hw : 0 ≤ w) (n : ℕ) :
 transvection `T`. The lower-left entries are squared at each step, and the upper-left entries
 stay bounded because they satisfy `a_{n+1} = 1 - w * a_n * c_n`. -/
 private theorem tendsto_jorgensen (hw : 0 < w) (hlt : w * |A 1 0| < 1) :
-    Tendsto (jorgensen w A) atTop (𝓝 (transSL w)) := by
+    Tendsto (jorgensenSeq (transSL w) A) atTop (𝓝 (transSL w)) := by
   set ε := w * |A 1 0| with hεdef
   have hε0 : 0 ≤ ε := by positivity
-  have hεle : ∀ n, w * |jorgensen w A n 1 0| ≤ ε ^ n := fun n => by
+  have hεle : ∀ n, w * |jorgensenSeq (transSL w) A n 1 0| ≤ ε ^ n := fun n => by
     rw [abs_jorgensen_apply_one_zero hw.le, ← hεdef]
     exact pow_le_pow_of_le_one hε0 hlt.le Nat.lt_two_pow_self.le
-  have hεle1 : ∀ n, w * |jorgensen w A n 1 0| ≤ ε := fun n => by
+  have hεle1 : ∀ n, w * |jorgensenSeq (transSL w) A n 1 0| ≤ ε := fun n => by
     have h := pow_le_pow_of_le_one hε0 hlt.le (Nat.one_le_two_pow (n := n))
     rw [pow_one] at h
     exact (abs_jorgensen_apply_one_zero hw.le n).trans_le (hεdef ▸ h)
@@ -162,57 +149,58 @@ private theorem tendsto_jorgensen (hw : 0 < w) (hlt : w * |A 1 0| < 1) :
     nlinarith
   have htri : ∀ t : ℝ, |1 - t| ≤ 1 + |t| := fun t => by
     simpa [sub_eq_add_neg] using abs_add_le (1 : ℝ) (-t)
-  have habs : ∀ n, |jorgensen w A n 0 0| ≤ C := by
+  have habs : ∀ n, |jorgensenSeq (transSL w) A n 0 0| ≤ C := by
     intro n
     induction n with
-    | zero => exact le_max_left _ _
+    | zero => rw [jorgensenSeq_zero]; exact le_max_left _ _
     | succ n ih =>
-        rw [jorgensen_succ, conj_transSL_apply_zero_zero]
-        calc |1 - w * jorgensen w A n 0 0 * jorgensen w A n 1 0|
-            ≤ 1 + |w * jorgensen w A n 0 0 * jorgensen w A n 1 0| := htri _
-          _ = 1 + |jorgensen w A n 0 0| * (w * |jorgensen w A n 1 0|) := by
+        rw [jorgensenSeq_succ, conj_transSL_apply_zero_zero]
+        calc |1 - w * jorgensenSeq (transSL w) A n 0 0 * jorgensenSeq (transSL w) A n 1 0|
+            ≤ 1 + |w * jorgensenSeq (transSL w) A n 0 0 * jorgensenSeq (transSL w) A n 1 0| :=
+              htri _
+          _ = 1 + |jorgensenSeq (transSL w) A n 0 0| *
+                (w * |jorgensenSeq (transSL w) A n 1 0|) := by
               rw [abs_mul, abs_mul, abs_of_nonneg hw.le]; ring
           _ ≤ 1 + C * ε := by
               have := mul_le_mul ih (hεle1 n) (by positivity) hC0
               linarith
           _ ≤ C := hCε
   have hprod : Tendsto
-      (fun n => w * jorgensen w A n 0 0 * jorgensen w A n 1 0) atTop (𝓝 0) := by
+      (fun n => w * jorgensenSeq (transSL w) A n 0 0 * jorgensenSeq (transSL w) A n 1 0) atTop
+      (𝓝 0) := by
     refine squeeze_zero_norm (a := fun n => C * ε ^ n) (fun n => ?_) ?_
     · rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_of_nonneg hw.le]
-      calc w * |jorgensen w A n 0 0| * |jorgensen w A n 1 0|
-          = |jorgensen w A n 0 0| * (w * |jorgensen w A n 1 0|) := by ring
+      calc w * |jorgensenSeq (transSL w) A n 0 0| * |jorgensenSeq (transSL w) A n 1 0|
+          = |jorgensenSeq (transSL w) A n 0 0| * (w * |jorgensenSeq (transSL w) A n 1 0|) := by
+            ring
         _ ≤ C * ε ^ n := mul_le_mul (habs n) (hεle n) (by positivity) hC0
     · simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hε0 hlt).const_mul C
-  have ha : Tendsto (fun n => jorgensen w A n 0 0) atTop (𝓝 1) := by
+  have ha : Tendsto (fun n => jorgensenSeq (transSL w) A n 0 0) atTop (𝓝 1) := by
     refine (tendsto_add_atTop_iff_nat 1).mp ?_
-    simp only [jorgensen_succ, conj_transSL_apply_zero_zero]
+    simp only [jorgensenSeq_succ, conj_transSL_apply_zero_zero]
     simpa using tendsto_const_nhds.sub hprod
-  have hb : Tendsto (fun n => jorgensen w A n 0 1) atTop (𝓝 w) := by
+  have hb : Tendsto (fun n => jorgensenSeq (transSL w) A n 0 1) atTop (𝓝 w) := by
     refine (tendsto_add_atTop_iff_nat 1).mp ?_
-    simp only [jorgensen_succ, conj_transSL_apply_zero_one]
+    simp only [jorgensenSeq_succ, conj_transSL_apply_zero_one]
     simpa using (ha.pow 2).const_mul w
-  have hc : Tendsto (fun n => jorgensen w A n 1 0) atTop (𝓝 0) := by
+  have hc : Tendsto (fun n => jorgensenSeq (transSL w) A n 1 0) atTop (𝓝 0) := by
     refine squeeze_zero_norm (a := fun n => w⁻¹ * ε ^ n) (fun n => ?_) ?_
-    · have hsplit : |jorgensen w A n 1 0| = w⁻¹ * (w * |jorgensen w A n 1 0|) := by
+    · have hsplit : |jorgensenSeq (transSL w) A n 1 0| =
+          w⁻¹ * (w * |jorgensenSeq (transSL w) A n 1 0|) := by
         field_simp
       rw [Real.norm_eq_abs, hsplit]
       exact mul_le_mul_of_nonneg_left (hεle n) (by positivity)
     · simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hε0 hlt).const_mul w⁻¹
-  have hd : Tendsto (fun n => jorgensen w A n 1 1) atTop (𝓝 1) := by
+  have hd : Tendsto (fun n => jorgensenSeq (transSL w) A n 1 1) atTop (𝓝 1) := by
     refine (tendsto_add_atTop_iff_nat 1).mp ?_
-    simp only [jorgensen_succ, conj_transSL_apply_one_one]
+    simp only [jorgensenSeq_succ, conj_transSL_apply_one_one]
     simpa using tendsto_const_nhds.add hprod
-  have hmat : Tendsto
-      (fun n => ((jorgensen w A n : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ)) atTop
-      (𝓝 ((transSL w : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ)) := by
-    refine tendsto_pi_nhds.mpr (Fin.forall_fin_two.mpr ⟨tendsto_pi_nhds.mpr
-      (Fin.forall_fin_two.mpr ⟨?_, ?_⟩), tendsto_pi_nhds.mpr (Fin.forall_fin_two.mpr ⟨?_, ?_⟩)⟩)
-    · simpa using ha
-    · simpa using hb
-    · simpa using hc
-    · simpa using hd
-  exact Matrix.SpecialLinearGroup.isClosedEmbedding_val.isInducing.tendsto_nhds_iff.mpr hmat
+  refine tendsto_iff_tendsto_apply.mpr (Fin.forall_fin_two.mpr ⟨Fin.forall_fin_two.mpr ⟨?_, ?_⟩,
+    Fin.forall_fin_two.mpr ⟨?_, ?_⟩⟩)
+  · simpa using ha
+  · simpa using hb
+  · simpa using hc
+  · simpa using hd
 
 /-! ### Shimizu's lemma -/
 
@@ -224,20 +212,16 @@ private theorem inv_le_abs_apply_one_zero_of_upperRightHom_mem_of_pos [DiscreteT
   by_contra hlt
   rw [not_le] at hlt
   -- the iterates converge to the transvection inside the discrete subgroup `Γ`
-  have hmem := jorgensen_mem hT hA
-  have hcont : Continuous (fun a : SL(2, ℝ) => (a : PSL(2, ℝ))) := continuous_quot_mk
-  have hconv : Tendsto (fun n => (⟨((jorgensen w A n : SL(2, ℝ)) : PSL(2, ℝ)), hmem n⟩ : Γ)) atTop
-      (𝓝 (⟨upperRightHom w, hT⟩ : Γ)) :=
-    tendsto_subtype_rng.mpr <| by
-      simpa only [Function.comp_def, coe_transSL] using
-        (hcont.tendsto (transSL w)).comp (tendsto_jorgensen hw hlt)
-  rw [nhds_discrete, tendsto_pure] at hconv
-  obtain ⟨n, hn⟩ := hconv.exists
+  have hT' : ((transSL w : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by rwa [coe_transSL]
+  have hmem (n : ℕ) : ((jorgensenSeq (transSL w) A n : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
+    rw [← QuotientGroup.mk'_apply, map_jorgensenSeq]
+    exact jorgensenSeq_mem hT' hA n
+  obtain ⟨n, hval⟩ := (eventually_mk_eq_of_tendsto hmem hT' (tendsto_jorgensen hw hlt)).exists
+  rw [coe_transSL] at hval
   -- but no iterate can equal the transvection: their lower-left entries never vanish
   refine jorgensen_apply_one_zero_ne_zero hw.ne' hA0 n ?_
-  have hval : ((jorgensen w A n : SL(2, ℝ)) : PSL(2, ℝ)) = upperRightHom w := by
-    simpa using congrArg Subtype.val hn
-  have hinfty : ((jorgensen w A n : SL(2, ℝ)) : PSL(2, ℝ)) • (∞ : OnePoint ℝ) = ∞ := by
+  have hinfty :
+      ((jorgensenSeq (transSL w) A n : SL(2, ℝ)) : PSL(2, ℝ)) • (∞ : OnePoint ℝ) = ∞ := by
     rw [hval, upperRightHom_smul_infty]
   rwa [OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
     SpecialLinearGroup.coe_GL_coe_matrix] at hinfty

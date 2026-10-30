@@ -7,11 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
-public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.LocalProperties.Projective
 public import Mathlib.RingTheory.Localization.Finiteness
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.AdicCompletion.Pi
+public import TauCeti.RingTheory.Subring.Torsion
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
@@ -29,13 +29,13 @@ inverting only the nonzero elements of `𝒪[K]`.
 ## Main results
 
 * `TauCeti.integerRingHasFiniteQuotients`: `𝒪[K]` has finite quotients by nonzero ideals.
-* `TauCeti.subsingleton_torsionBy_integerRing`, `TauCeti.finite_quotSMulTop_integerRing`: for
-  `n ≠ 0` in `K`, `𝒪[K]` has no `n`-torsion and `𝒪[K] ⧸ n𝒪[K]` is finite.
 * `TauCeti.integerRingModuleFinite`: `𝒪[L]` is a finite `𝒪[K]`-module.
 * `TauCeti.integerRingModuleFree`: `𝒪[L]` is a free `𝒪[K]`-module.
 * `TauCeti.isLocalization_integerRing`: `L` is the localization of `𝒪[L]` at the image of the
   nonzero elements of `𝒪[K]`.
 * `TauCeti.finrank_integerRing`: the rank of `𝒪[L]` over `𝒪[K]` is `[L : K]`.
+* `TauCeti.integerRingIsQuadraticExtension`: `𝒪[L]` is a quadratic extension of `𝒪[K]` when
+  `L/K` is quadratic.
 * `TauCeti.finite_of_valuativeExtension`: `L` is a finite extension of `K`.
 
 ## References
@@ -65,39 +65,6 @@ instance integerRingHasFiniteQuotients : Ring.HasFiniteQuotients 𝒪[K] where
     rw [IsLocalRing.finite_quotient_iff]
     exact ⟨n, by rw [hn, (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ,
       Ideal.span_singleton_pow]⟩
-
-section
-
-variable {K}
-
-/-- `𝒪[K]` has no `n`-torsion when `n ≠ 0` in `K`. -/
-instance subsingleton_torsionBy_integerRing (n : ℕ) [NeZero (n : K)] :
-    Subsingleton (Submodule.torsionBy ℤ 𝒪[K] (n : ℤ)) := by
-  refine ⟨fun x y ↦ Subtype.ext ?_⟩
-  have hx := (Submodule.mem_torsionBy_iff _ _).mp x.property
-  have hy := (Submodule.mem_torsionBy_iff _ _).mp y.property
-  have hn : (n : 𝒪[K]) ≠ 0 := fun h ↦ NeZero.ne (n : K) (congrArg Subtype.val h)
-  rw [natCast_zsmul, nsmul_eq_mul, mul_eq_zero] at hx hy
-  rw [hx.resolve_left hn, hy.resolve_left hn]
-
-/-- When `n ≠ 0` in `K`, the reduction `𝒪[K] ⧸ n𝒪[K]` is finite. -/
-instance finite_quotSMulTop_integerRing (n : ℕ) [NeZero (n : K)] :
-    Finite (QuotSMulTop (n : ℤ) 𝒪[K]) := by
-  have hn : (n : 𝒪[K]) ≠ 0 := fun h ↦ NeZero.ne (n : K) (congrArg Subtype.val h)
-  have h : ((n : ℤ) • ⊤ : Submodule ℤ 𝒪[K]).toAddSubgroup =
-      (Ideal.span {(n : 𝒪[K])}).toAddSubgroup := by
-    ext x
-    rw [Submodule.mem_toAddSubgroup, Submodule.mem_toAddSubgroup,
-      Submodule.mem_smul_pointwise_iff_exists, Ideal.mem_span_singleton']
-    simp only [Submodule.mem_top, true_and, natCast_zsmul, nsmul_eq_mul, mul_comm]
-  have : Finite (𝒪[K] ⧸ Ideal.span {(n : 𝒪[K])}) :=
-    Ring.HasFiniteQuotients.finiteQuotient (Ideal.span_singleton_eq_bot.not.mpr hn)
-  -- a quotient by a submodule is by definition the quotient by its additive subgroup
-  change Finite (𝒪[K] ⧸ ((n : ℤ) • ⊤ : Submodule ℤ 𝒪[K]).toAddSubgroup)
-  rw [h]
-  exact this
-
-end
 
 /-- The reduction `𝒪[L] / 𝓂[K] 𝒪[L]` is finite: `𝓂[K] 𝒪[L]` is a nonzero ideal of `𝒪[L]`, which
 has finite quotients. -/
@@ -181,6 +148,13 @@ theorem finrank_integerRing : Module.finrank 𝒪[K] 𝒪[L] = Module.finrank K 
     (isLocalizedModule_iff_isLocalization ..).2 this
   exact (Module.finrank_of_isLocalizedModule_of_free K (nonZeroDivisors 𝒪[K])
     (IsScalarTower.toAlgHom 𝒪[K] 𝒪[L] L).toLinearMap).symm
+
+/-- The ring of integers of a quadratic extension of nonarchimedean local fields is a quadratic
+extension of the ring of integers of the base. -/
+instance integerRingIsQuadraticExtension [Algebra.IsQuadraticExtension K L] :
+    Algebra.IsQuadraticExtension 𝒪[K] 𝒪[L] where
+  finrank_eq_two' :=
+    (finrank_integerRing K L).trans (Algebra.IsQuadraticExtension.finrank_eq_two K L)
 
 /-- An extension of nonarchimedean local fields with compatible valuations is finite. -/
 theorem finite_of_valuativeExtension : Module.Finite K L :=

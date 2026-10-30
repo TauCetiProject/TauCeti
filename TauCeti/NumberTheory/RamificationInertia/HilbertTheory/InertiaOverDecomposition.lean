@@ -94,9 +94,9 @@ variable (E 𝓞E : Type*) [Field E] [Algebra E L] [IsInertiaField K L P E] [Com
   [IsScalarTower 𝓞E B L] [Algebra 𝓞D 𝓞E] [IsScalarTower 𝓞D 𝓞E B]
 
 variable [IsGalois K L] [FiniteDimensional K L] [IsDedekindDomain A] [IsDomain B]
-  [Module.Finite A B] [Module.IsTorsionFree A B]
-  [Algebra A 𝓞D] [Module.Finite A 𝓞D] [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D]
-  [Algebra A 𝓞E] [Module.Finite A 𝓞E] [IsScalarTower A 𝓞E B] [IsDedekindDomain 𝓞E]
+  [Module.Finite A B]
+  [Algebra A 𝓞D] [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D]
+  [Algebra A 𝓞E] [IsScalarTower A 𝓞E B] [IsDedekindDomain 𝓞E]
   [P.IsMaximal]
 
 include A K L D E P in
@@ -105,10 +105,7 @@ has ramification index `1` over `P.under 𝓞D`. No separability of the residue 
 assumed. -/
 theorem ramificationIdx_under_eq_one_of_isDecompositionField :
     (P.under 𝓞E).ramificationIdx 𝓞D = 1 := by
-  have : Module.Finite 𝓞E B := Module.Finite.right A 𝓞E B
-  have : Module.IsTorsionFree 𝓞E B := by
-    rw [Module.isTorsionFree_iff_faithfulSMul]
-    exact Algebra.IsAlgebraic.faithfulSMul_tower_top A 𝓞E B
+  have : FaithfulSMul 𝓞E B := .of_field_isFractionRing 𝓞E B E L
   have h := ramificationIdx_tower (R := 𝓞D) (P.under 𝓞E) P
   rw [IsDecompositionField.ramificationIdx_eq A K L P D 𝓞D,
     ramificationIdx_eq A K L P E 𝓞E] at h

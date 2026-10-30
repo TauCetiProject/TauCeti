@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Topology.VectorBundle.Riemannian
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Orthogonal representatives of normal classes
@@ -155,5 +156,39 @@ theorem inner_normalRepresentative_mfderiv
   exact Submodule.inner_left_of_mem_orthogonal
     ((f.mem_tangentRange_iff x hn _).2 ⟨w, rfl⟩)
     (f.normalRepresentative_mem_orthogonal x hn v)
+
+/-- The orthogonal representative is obtained by subtracting the tangential component.
+The inverse of the induced metric recovers that component from the ambient metric covector.
+This pointwise identity needs no regularity assumption on the ambient metric. -/
+theorem normalRepresentative_normalClass_eq_sub_mfderiv_inverse
+    [FiniteDimensional ℝ E]
+    (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    (v : TangentSpace J (f x)) :
+    let d := mfderiv I J f x
+    let φ := (RiemannianBundle.g.inner (f x) v).comp d
+    let a := (ContinuousLinearMap.precomp ℝ d).comp
+      ((RiemannianBundle.g.inner (f x)).comp d)
+    f.normalRepresentative x hn (f.normalClass x hn v) = v - d (a.inverse φ) := by
+  dsimp only
+  let d := mfderiv I J f x
+  let a := (ContinuousLinearMap.precomp ℝ d).comp
+    ((RiemannianBundle.g.inner (f x)).comp d)
+  let : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have ha : a.IsInvertible := ContinuousLinearMap.isInvertible_of_pos (E := E) fun w hw0 ↦
+    RiemannianBundle.g.pos (f x) (d w)
+      ((map_ne_zero_iff d (f.isImmersion.mfderiv_injective hn x)).mpr hw0)
+  apply (f.normalRepresentative_eq_iff x hn _ _).mpr
+  constructor
+  · apply (Submodule.mem_orthogonal' _ _).mpr
+    intro w hw
+    obtain ⟨z, rfl⟩ := (f.mem_tangentRange_iff x hn w).mp hw
+    have hpair := DFunLike.congr_fun
+      (ha.self_apply_inverse ((RiemannianBundle.g.inner (f x) v).comp d)) z
+    simp only [a, ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply] at hpair
+    -- The RiemannianBundle inner-product instance is defined by its stored metric pairing.
+    have hpair' : inner ℝ (d (a.inverse ((RiemannianBundle.g.inner (f x) v).comp d))) (d z) =
+        inner ℝ v (d z) := hpair
+    simpa only [inner_sub_left, sub_eq_zero] using hpair'.symm
+  · simp only [map_sub, normalClass_mfderiv, sub_zero]
 
 end TauCeti.SmoothEmbedding

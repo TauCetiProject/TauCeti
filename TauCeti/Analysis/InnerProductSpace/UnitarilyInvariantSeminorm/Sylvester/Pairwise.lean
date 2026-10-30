@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Basic
 import TauCeti.Analysis.Fourier.HaagerupZsido.Fourier
 import TauCeti.Analysis.Fourier.HaagerupZsido.Mass
-import TauCeti.Analysis.InnerProductSpace.SymmetricFunctionalCalculus
+import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
 
 /-!
 # The pairwise Sylvester bound in unitarily invariant seminorms

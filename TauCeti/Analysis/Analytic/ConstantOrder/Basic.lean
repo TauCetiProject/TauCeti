@@ -19,8 +19,11 @@ Let `G (x, y)` be analytic near `(x₀, y₀)`, over `ℝ` or `ℂ`, with `y` a 
 variable. This file shows that `G` vanishes to order exactly `m` in `y` along `y = y₀` for every
 `x` near `x₀` if and only if `G (x, y) = (y - y₀) ^ m • u (x, y)` near `(x₀, y₀)` with `u` analytic
 and `u (x₀, y₀) ≠ 0` (`AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff`). This is
-McCallum–Parusiński–Paunescu, Lemma 4.4. Since `u` is then nonzero near `(x₀, y₀)`, it writes a
-function of constant order in a distinguished variable as a centered power `(y - y₀) ^ m` times a
+McCallum–Parusiński–Paunescu, Lemma 4.4. Since `u` is then nonzero near `(x₀, y₀)`, the
+factorization holds on a product of balls `ball x₀ r ×ˢ ball y₀ r`, a polydisc when `E` is `ι → 𝕜`,
+on which `u` is analytic and nowhere zero (`AnalyticAt.exists_ball_prod_eq_pow_smul` and
+`AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff_exists_ball`). This writes a function of
+constant order in a distinguished variable as a centered power `(y - y₀) ^ m` times a
 nowhere-vanishing analytic factor, the form of the hypotheses of the Puiseux theorem with
 parameters (op. cit., §4).
 
@@ -38,6 +41,27 @@ distinguished variable (`AnalyticAt.exists_eventuallyEq_sub_smul`): a function a
 public section
 
 open Filter Set Topology
+
+section NontriviallyNormedField
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- **Shrinking to a nowhere-vanishing unit.** A local factorization
+`G (x, y) = (y - y₀) ^ m • u (x, y)` with `u` analytic at `(x₀, y₀)` and `u (x₀, y₀) ≠ 0` holds on
+a product of balls `ball x₀ r ×ˢ ball y₀ r` on which `u` is analytic and nowhere zero. When `E` is
+`ι → 𝕜` with its sup norm, this product is a polydisc. -/
+theorem AnalyticAt.exists_ball_prod_eq_pow_smul {G u : E × 𝕜 → F} {x₀ : E} {y₀ : 𝕜} {m : ℕ}
+    (hu : AnalyticAt 𝕜 u (x₀, y₀)) (hu0 : u (x₀, y₀) ≠ 0)
+    (hGu : ∀ᶠ p in 𝓝 (x₀, y₀), G p = (p.2 - y₀) ^ m • u p) :
+    ∃ r > 0, AnalyticOnNhd 𝕜 u (Metric.ball x₀ r ×ˢ Metric.ball y₀ r) ∧
+      ∀ p ∈ Metric.ball x₀ r ×ˢ Metric.ball y₀ r, u p ≠ 0 ∧ G p = (p.2 - y₀) ^ m • u p := by
+  obtain ⟨r, hr, h⟩ := Metric.eventually_nhds_iff_ball.1
+    (hu.eventually_analyticAt.and ((hu.continuousAt.eventually_ne hu0).and hGu))
+  rw [← ball_prod_same] at h
+  exact ⟨r, hr, fun p hp ↦ (h p hp).1, fun p hp ↦ (h p hp).2⟩
+
+end NontriviallyNormedField
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
@@ -164,3 +188,22 @@ theorem AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff {G : E × 𝕜 → 
     filter_upwards [hGu.curry, hG.eventually_analyticAt_curry_right,
       hu.eventually_analyticAt_curry_right, hne] with x hGux hGx hux hnex
     exact hGx.analyticOrderAt_eq_natCast.2 ⟨_, hux, hnex, hGux⟩
+
+/-- **Order in a distinguished variable on a product of balls.** A function `G` analytic at
+`(x₀, y₀)` vanishes to order exactly `m` in `y` at `y₀` along every slice `x = const` near `x₀` if
+and only if, on some product of balls around `(x₀, y₀)`, `G (x, y) = (y - y₀) ^ m • u (x, y)` with
+`u` analytic and nowhere zero there. When `E` is `ι → 𝕜` with its sup norm, this product is a
+polydisc. -/
+theorem AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff_exists_ball {G : E × 𝕜 → F}
+    {x₀ : E} {y₀ : 𝕜} (hG : AnalyticAt 𝕜 G (x₀, y₀)) {m : ℕ} :
+    (∀ᶠ x in 𝓝 x₀, analyticOrderAt (fun y ↦ G (x, y)) y₀ = m) ↔
+      ∃ r > 0, ∃ u : E × 𝕜 → F, AnalyticOnNhd 𝕜 u (Metric.ball x₀ r ×ˢ Metric.ball y₀ r) ∧
+        ∀ p ∈ Metric.ball x₀ r ×ˢ Metric.ball y₀ r, u p ≠ 0 ∧ G p = (p.2 - y₀) ^ m • u p := by
+  rw [hG.eventually_analyticOrderAt_eq_natCast_iff]
+  refine ⟨fun ⟨u, hu, hu0, hGu⟩ ↦ ?_, fun ⟨r, hr, u, hu, h⟩ ↦ ?_⟩
+  · obtain ⟨r, hr, h⟩ := hu.exists_ball_prod_eq_pow_smul hu0 hGu
+    exact ⟨r, hr, u, h⟩
+  · have hc : (x₀, y₀) ∈ Metric.ball x₀ r ×ˢ Metric.ball y₀ r :=
+      ⟨Metric.mem_ball_self hr, Metric.mem_ball_self hr⟩
+    exact ⟨u, hu _ hc, (h _ hc).1, eventually_of_mem
+      ((Metric.isOpen_ball.prod Metric.isOpen_ball).mem_nhds hc) fun p hp ↦ (h p hp).2⟩

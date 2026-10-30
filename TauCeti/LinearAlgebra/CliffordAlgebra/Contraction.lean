@@ -24,7 +24,9 @@ grading statement itself, and it is what makes an annihilation operator odd; ant
 the grade involution is its operator shadow, and is what makes the grade involution usable as an
 *even* operator alongside exterior multiplication and contraction — for instance because an
 anisotropic vector orthogonal to a polarization acts on a spinor module by its scalar coordinate
-times the grade involution.
+times the grade involution. More precisely, contraction is a derivation twisted by the grade
+involution, `d ⌋ (x * y) = (d ⌋ x) * y + involute x * (d ⌋ y)`, the graded Leibniz rule of an odd
+operator.
 
 The degree bookkeeping is in `ZMod 2`, where lowering and raising the degree by one are the same
 map, so `evenOdd Q (i + 1)` and `evenOdd Q (i - 1)` are the same submodule; the statement below
@@ -46,11 +48,17 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
 
 ## Main results
 
+* `CliffordAlgebra.contractLeft_map`: contraction is natural under quadratic isometries.
+
 * `CliffordAlgebra.contractLeft_mem_evenOdd`: **contraction shifts the parity**.
 * `CliffordAlgebra.involute_contractLeft`: `involute (d ⌋ x) = -(d ⌋ involute x)`.
+* `CliffordAlgebra.contractLeft_mul`: the graded Leibniz rule
+  `d ⌋ (x * y) = (d ⌋ x) * y + involute x * (d ⌋ y)`.
 * `CliffordAlgebra.contractLeft_mul_ι` and `CliffordAlgebra.contractRight_ι_mul`: the graded
   Leibniz rules for a vector factor on the far side.
 * `CliffordAlgebra.contractRight_contractLeft`: `(d ⌋ x) ⌊ d' = d ⌋ (x ⌊ d')`.
+* `CliffordAlgebra.contractLeft_prod_map_ι_eq_zero`: a contraction kills a product of vectors in
+  its kernel.
 * `CliffordAlgebra.changeForm_mul_ι`: `changeForm` on a right vector factor.
 * `CliffordAlgebra.changeForm_involute` and `CliffordAlgebra.changeForm_reverse`: `changeForm`
   commutes with the grade involution, and with reversion for a symmetric form.
@@ -58,6 +66,8 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
   for the isomorphism with the exterior algebra.
 * `CliffordAlgebra.equivExterior_ι_mul` and `CliffordAlgebra.equivExterior_mul_ι`: that
   isomorphism on left and right vector factors.
+* `CliffordAlgebra.equivExterior_prod_map_ι_of_pairwise_isOrtho`: that isomorphism sends a product
+  of pairwise orthogonal vectors to their exterior product.
 
 ## References
 
@@ -68,12 +78,32 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
 public section
 
 
-universe u v
+universe u v w
 
 namespace CliffordAlgebra
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M}
+
+section Naturality
+
+variable {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+/-- Contraction against a linear functional commutes with the algebra map induced by a
+quadratic isometry, after pulling back the functional. -/
+theorem contractLeft_map (f : Q₁ →qᵢ Q₂) (d : Module.Dual R M₂)
+    (x : CliffordAlgebra Q₁) :
+    contractLeft d (map f x) = map f (contractLeft (d ∘ₗ f.toLinearMap) x) := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r => simp only [AlgHom.commutes, contractLeft_algebraMap, map_zero]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | ι_mul x m hx =>
+    simp only [map_mul, map_apply_ι, contractLeft_ι_mul, hx, map_sub,
+      map_smul, LinearMap.comp_apply, QuadraticMap.Isometry.coe_toLinearMap]
+
+end Naturality
 
 /-- **The grade involution anticommutes with contraction.** Contracting against a linear
 functional lowers the degree by one, hence swaps the even and odd parts of the Clifford algebra,
@@ -122,20 +152,28 @@ theorem contractLeft_mem_evenOdd (d : Module.Dual R M) {i : ZMod 2} {x : Cliffor
     rw [add_comm]
     exact SetLike.mul_mem_graded (ι_mem_evenOdd_one Q m₁) h₁
 
+/-- **The graded Leibniz rule for contraction.** Contraction against `d` is a derivation twisted
+by the grade involution: `d ⌋ (x * y) = (d ⌋ x) * y + involute x * (d ⌋ y)`.  On a homogeneous
+multivector `x` of degree `n` the involution is the sign `(-1) ^ n`, which gives the familiar
+odd-derivation rule. -/
+theorem contractLeft_mul (d : Module.Dual R M) (x y : CliffordAlgebra Q) :
+    contractLeft d (x * y) = contractLeft d x * y + involute x * contractLeft d y := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r =>
+    rw [contractLeft_algebraMap_mul, contractLeft_algebraMap, zero_mul, zero_add,
+      AlgHom.commutes]
+  | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']; abel
+  | ι_mul x a hx =>
+    rw [mul_assoc, contractLeft_ι_mul, hx, contractLeft_ι_mul, map_mul, involute_ι]
+    simp only [mul_add, sub_mul, smul_mul_assoc, neg_mul, mul_assoc]
+    abel
+
 /-- **The graded Leibniz rule for a right vector factor.** Contraction against `d` passes through
 a right factor `ι Q m`, at the cost of the term `d m • involute x` produced by contracting that
 factor itself after it has moved past `x`. -/
 theorem contractLeft_mul_ι (d : Module.Dual R M) (x : CliffordAlgebra Q) (m : M) :
     contractLeft d (x * ι Q m) = contractLeft d x * ι Q m + d m • involute x := by
-  induction x using CliffordAlgebra.left_induction with
-  | algebraMap r =>
-    rw [contractLeft_algebraMap_mul, contractLeft_ι, contractLeft_algebraMap, zero_mul, zero_add,
-      AlgHom.commutes, Algebra.smul_def, Algebra.commutes]
-  | add x y hx hy => simp only [add_mul, map_add, hx, hy, smul_add]; abel
-  | ι_mul x a hx =>
-    rw [mul_assoc, contractLeft_ι_mul, hx, contractLeft_ι_mul, map_mul, involute_ι]
-    simp only [mul_add, sub_mul, smul_mul_assoc, mul_smul_comm, neg_mul, smul_neg, mul_assoc]
-    abel
+  rw [contractLeft_mul, contractLeft_ι, ← Algebra.commutes, ← Algebra.smul_def]
 
 /-- **The graded Leibniz rule for right contraction and a left vector factor**, the mirror image of
 `CliffordAlgebra.contractLeft_mul_ι` under reversion: `(ι Q a * x) ⌊ d` is
@@ -154,6 +192,15 @@ theorem contractRight_contractLeft (d d' : Module.Dual R M) (x : CliffordAlgebra
   | ι_mul x a hx =>
     simp [contractLeft_ι_mul, contractRight_ι_mul, hx, involute_contractLeft]
     abel
+
+/-- Contraction against a functional `d` kills a product of vectors that `d` annihilates. -/
+theorem contractLeft_prod_map_ι_eq_zero (d : Module.Dual R M) {l : List M}
+    (h : ∀ m ∈ l, d m = 0) : contractLeft d (l.map (ι Q)).prod = 0 := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.map_cons, List.prod_cons, contractLeft_ι_mul, h a List.mem_cons_self, zero_smul,
+      ih fun m hm ↦ h m (List.mem_cons_of_mem a hm), mul_zero, sub_zero]
 
 section changeForm
 
@@ -243,6 +290,21 @@ Not a `simp` lemma, for the same reason as `CliffordAlgebra.equivExterior_involu
 theorem equivExterior_reverse (x : CliffordAlgebra Q) :
     equivExterior Q (reverse x) = reverse (equivExterior Q x) :=
   changeForm_reverse changeForm.associated_neg_proof (QuadraticForm.associated_isSymm R (-Q)) x
+
+/-- **`CliffordAlgebra.equivExterior` sends a product of pairwise orthogonal vectors to their
+exterior product.** Each correction term of `CliffordAlgebra.equivExterior_ι_mul` contracts the
+later factors against the first, and vanishes by orthogonality. No hypothesis on `Q` is needed;
+in particular `Q` may be degenerate. -/
+theorem equivExterior_prod_map_ι_of_pairwise_isOrtho {l : List M} (hl : l.Pairwise Q.IsOrtho) :
+    equivExterior Q (l.map (ι Q)).prod = (l.map (ExteriorAlgebra.ι R)).prod := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.pairwise_cons] at hl
+    rw [List.map_cons, List.prod_cons, equivExterior_ι_mul, ih hl.2,
+      contractLeft_prod_map_ι_eq_zero, sub_zero, List.map_cons, List.prod_cons]
+    intro m hm
+    simp [hl.1 m hm]
 
 end equivExterior
 

@@ -51,8 +51,9 @@ determinant of its restriction to the rows and columns indexed by a finite set o
 * `Matrix.principalMinor_empty`: the empty principal minor is `1`.
 * `Matrix.principalMinor_submatrix`: principal minors of a restriction along an embedding of
   index types, in particular their invariance under reindexing.
-* `Matrix.principalMinor_transpose`, `Matrix.principalMinor_map`, `Matrix.principalMinor_smul`:
-  principal minors under transposition, ring morphisms and scaling.
+* `Matrix.principalMinor_transpose`, `Matrix.principalMinor_map`, `Matrix.principalMinor_smul`,
+  `Matrix.principalMinor_mul_column`: principal minors under transposition, ring morphisms,
+  scaling, and scaling of each row.
 * `Matrix.principalMinor_eq_zero_of_row_eq_zero`: a principal minor through a vanishing row is
   zero.
 * `Matrix.principalMinor_eq_of_diagonal_intertwining`: principal minors are unchanged by
@@ -195,6 +196,14 @@ theorem principalMinor_map {S : Type*} [CommRing S] (f : R →+* S) (A : Matrix 
 theorem principalMinor_smul (c : R) (A : Matrix ι ι R) (s : Finset ι) :
     (c • A).principalMinor s = c ^ s.card * A.principalMinor s := by
   rw [principalMinor_def, principalMinor_def, ← Fintype.card_coe s, ← det_smul]
+  congr 1
+
+/-- Scaling each row `i` of a matrix by `v i` scales its principal minor on `s` by
+`∏ i ∈ s, v i`. -/
+@[simp]
+theorem principalMinor_mul_column (v : ι → R) (A : Matrix ι ι R) (s : Finset ι) :
+    (of fun i j ↦ v i * A i j).principalMinor s = (∏ i ∈ s, v i) * A.principalMinor s := by
+  rw [principalMinor_def, principalMinor_def, ← Finset.prod_coe_sort s v, ← det_mul_column]
   congr 1
 
 /-- A principal minor vanishes on a set containing an index whose row vanishes on that set. -/

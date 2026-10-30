@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Tangent
 
 /-!
 # Covariant differentiation along curves under Riemannian isometries
@@ -77,7 +78,7 @@ theorem mfderiv_alongCurveWithin_mpullback (Φ : RiemannianIsometry I J M N)
       (hasMFDerivWithinAt_curveVelocityWithin
         ((Φ.mdifferentiableAt (γ t)).comp_mdifferentiableWithinAt t hγ)) hY]
   rw [TauCeti.Manifold.curveVelocityWithin_map (Φ.mdifferentiableAt (γ t)) hs hγ]
-  exact Φ.mfderiv_leviCivitaConnection_mpullback hY _
+  exact Φ.isLocalRiemannianIsometry.mfderiv_leviCivitaConnection_mpullback hY _
 
 /-- For a differentiable curve, the unrestricted along-curve Levi-Civita derivative of a
 pulled-back ambient field is carried to the derivative of that field along the image curve. -/
@@ -120,7 +121,8 @@ theorem mfderiv_alongCurveWithin (Φ : RiemannianIsometry I J M N)
       (sectionCoord (F := F) (Φ ∘ γ)
         (fun r ↦ mfderiv I J Φ (γ r) (V r)) (Φ (γ t))) s t := by
     simpa only [coe_toDiffeomorph] using
-      Φ.toDiffeomorph.differentiableWithinAt_sectionCoord_mfderiv hγ hV
+      Φ.toDiffeomorph.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv
+        (by simp) hγ hV
   -- Test both sides against pullbacks of differentiable fields `Y` on the target: the
   -- metric-compatible product rules on source and target differentiate the same inner product.
   refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (Φ (γ t)) ?_

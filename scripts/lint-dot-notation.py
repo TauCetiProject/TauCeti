@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""Command-line wrapper for the shared Lean source parser's dot-notation lint."""
-
-from lean_source import main
-
+"""Compatibility entrypoint; implementation is pinned through TauCetiTools."""
+import sys
+from tauceti_tools.templates import import_shared, run_script
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(run_script('lint-dot-notation.py', sys.argv[1:]))
+else:
+    implementation = import_shared('lint-dot-notation.py', __name__)
+    globals().update(vars(implementation))
+    sys.modules[__name__] = implementation

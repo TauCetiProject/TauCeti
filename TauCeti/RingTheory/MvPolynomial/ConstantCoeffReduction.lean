@@ -12,8 +12,9 @@ public import TauCeti.RingTheory.MvPolynomial.Ideal
 /-!
 # Constant coefficient reduction of maps between free polynomial modules
 
-Setting every variable to zero reduces a linear map between free modules over `MvPolynomial σ R`
-to an `R`-linear map. This file constructs that reduction over a commutative semiring and records
+Setting every variable to zero reduces a semilinear map between free modules over
+`MvPolynomial σ R` to an `R`-linear map when its scalar homomorphism preserves constant
+coefficients. This file constructs that reduction over a commutative semiring and records
 its compatibility with composition and linear operations.
 
 For inputs in the `k`-th power of the ideal of variables, the coefficients of total degree `k`
@@ -33,7 +34,7 @@ variable {R σ ι κ : Type*}
 
 section Reduction
 
-variable [CommSemiring R] {μ : Type*}
+variable [CommSemiring R] {μ : Type*} {τ : MvPolynomial σ R →+* MvPolynomial σ R}
 
 /-- If `f₀` and `g₀` are the reductions of `f` and `g` modulo the variables, then `g₀ ∘ f₀` is the
 reduction of `g ∘ f`. -/
@@ -52,7 +53,7 @@ theorem comp_apply_mapRange_constantCoeff
 /-- A reduction modulo the variables is determined by the map it reduces: reductions `f₀` of `f`
 and `f₀'` of `f'` agree when `f = f'`. -/
 theorem eq_of_mapRange_constantCoeff (f₀ f₀' : (ι →₀ R) →ₗ[R] (κ →₀ R))
-    {f f' : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
+    {f f' : (ι →₀ MvPolynomial σ R) →ₛₗ[τ] (κ →₀ MvPolynomial σ R)}
     (hf₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
       (f x).mapRange constantCoeff (map_zero _))
     (hf₀' : ∀ x, f₀' (x.mapRange constantCoeff (map_zero _)) =
@@ -63,12 +64,13 @@ theorem eq_of_mapRange_constantCoeff (f₀ f₀' : (ι →₀ R) →ₗ[R] (κ �
     (fun c ↦ ⟨C c, constantCoeff_C σ c⟩) x
   rw [hf₀, hf₀', h]
 
-/-- The reduction of an `S`-linear map `f : (ι →₀ S) → (κ →₀ S)` modulo the variables, for
+/-- The reduction of a semilinear map `f : (ι →₀ S) → (κ →₀ S)` modulo the variables, for
 `S = R[V_v : v ∈ σ]`: the `R`-linear map `(ι →₀ R) → (κ →₀ R)` whose matrix coefficients are the
-constant coefficients of those of `f`. It commutes with taking constant coefficients
+constant coefficients of those of `f`. When the scalar homomorphism preserves constant
+coefficients, it commutes with taking constant coefficients
 (`LinearMap.constantCoeffReduction_mapRange_constantCoeff`). -/
 noncomputable def constantCoeffReduction
-    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) :
+    (f : (ι →₀ MvPolynomial σ R) →ₛₗ[τ] (κ →₀ MvPolynomial σ R)) :
     (ι →₀ R) →ₗ[R] (κ →₀ R) :=
   Finsupp.linearCombination R fun i ↦
     (f (Finsupp.single i 1)).mapRange constantCoeff (map_zero _)
@@ -77,7 +79,7 @@ noncomputable def constantCoeffReduction
 coefficients of those of `f`. -/
 @[simp]
 theorem constantCoeffReduction_single_apply
-    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) (i : ι) (c : R)
+    (f : (ι →₀ MvPolynomial σ R) →ₛₗ[τ] (κ →₀ MvPolynomial σ R)) (i : ι) (c : R)
     (j : κ) :
     f.constantCoeffReduction (Finsupp.single i c) j =
       c * constantCoeff (f (Finsupp.single i 1) j) := by
@@ -85,22 +87,22 @@ theorem constantCoeffReduction_single_apply
 
 /-- **The reduction commutes with setting the variables to zero.** Applying
 `constantCoeffReduction f` to the constant coefficients of `x` gives the constant coefficients of
-`f x`. -/
+`f x`, provided the scalar homomorphism preserves constant coefficients. The default
+hypothesis handles linear maps. -/
 @[simp]
 theorem constantCoeffReduction_mapRange_constantCoeff
-    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R))
-    (x : ι →₀ MvPolynomial σ R) :
+    (f : (ι →₀ MvPolynomial σ R) →ₛₗ[τ] (κ →₀ MvPolynomial σ R))
+    (x : ι →₀ MvPolynomial σ R)
+    (hτ : ∀ p, constantCoeff (τ p) = constantCoeff p := by intro p; rfl) :
     f.constantCoeffReduction (x.mapRange constantCoeff (map_zero _)) =
       (f x).mapRange constantCoeff (map_zero _) := by
   induction x using Finsupp.induction_linear with
   | zero => simp
-  | add x y hx hy =>
-    rw [Finsupp.mapRange_add (map_add _), map_add, hx, hy, map_add,
-      Finsupp.mapRange_add (map_add _)]
+  | add x y hx hy => simp [Finsupp.mapRange_add, hx, hy]
   | single i p =>
     ext j
     rw [Finsupp.mapRange_single, constantCoeffReduction_single_apply, Finsupp.mapRange_apply,
-      ← Finsupp.smul_single_one i p, map_smul, Finsupp.smul_apply, smul_eq_mul, map_mul]
+      ← Finsupp.smul_single_one i p, map_smulₛₗ, Finsupp.smul_apply, smul_eq_mul, map_mul, hτ]
 
 /-- The reduction of a composite is the composite of the reductions. -/
 @[simp]

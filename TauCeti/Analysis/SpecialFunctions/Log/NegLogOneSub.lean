@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -17,7 +18,8 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 This file bounds the quadratic remainder `-log (1 - x) - x`, then specializes the estimate to
 `x = y ^ (-s)`. The sharp factor `2` in the denominator comes from reading Mathlib's complex
 logarithm bound along the reals. It also records the coarser estimate
-`-log (1 - x) ≤ x + 2 x ^ 2` for `0 ≤ x ≤ 1/2`.
+`-log (1 - x) ≤ x + 2 x ^ 2` for `0 ≤ x ≤ 1/2`, and the real series `∑ xⁿ / n = -log (1 - x)`
+together with its exact domain of summability.
 
 ## Main results
 
@@ -28,6 +30,9 @@ logarithm bound along the reals. It also records the coarser estimate
 * `Real.neg_log_one_sub_rpow_sub_le`: for `2 ≤ y` and `1 ≤ s`, it is at most `y⁻²`.
 * `Real.neg_log_one_sub_le_add_two_mul_sq`: for `0 ≤ x ≤ 1/2`, `-log (1 - x)` is at most
   `x + 2 x ^ 2`.
+* `Real.log_one_sub_neg`: `log (1 - x) < 0` for `0 < x < 1`.
+* `Real.hasSum_pow_div_natCast` and `Real.summable_pow_div_natCast_iff`: the series
+  `∑ xⁿ / n` sums to `-log (1 - x)` for `|x| < 1` and is summable exactly there.
 * `Complex.norm_neg_log_one_sub_sub_le`: for complex `z` with `‖z‖ ≤ 1/2`, the remainder
   `-log (1 - z) - z` has norm at most `‖z‖ ^ 2`.
 
@@ -121,6 +126,29 @@ theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx0 : 0 ≤ x) (hx : x ≤ 
     rw [div_le_iff₀ (by linarith)]
     nlinarith [sq_nonneg x]
   linarith [(abs_le.mp h).1]
+
+/-- For `0 < x < 1`, the logarithm `log (1 - x)` is negative. -/
+theorem log_one_sub_neg {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) : log (1 - x) < 0 :=
+  log_neg (sub_pos.mpr hx1) (by linarith)
+
+/-- The series `∑ xⁿ / n` converges to `-log (1 - x)` for `|x| < 1`. Its zeroth term vanishes
+because division by zero is zero. This is the real counterpart of
+`Complex.hasSum_taylorSeries_neg_log`. -/
+theorem hasSum_pow_div_natCast {x : ℝ} (h : |x| < 1) :
+    HasSum (fun n : ℕ => x ^ n / n) (-log (1 - x)) := by
+  refine (hasSum_nat_add_iff' 1).mp ?_
+  simpa using hasSum_pow_div_log_of_abs_lt_one h
+
+/-- The series `∑ xⁿ / n` is summable exactly when `|x| < 1`. For `|x| ≥ 1` its terms dominate
+the harmonic series in absolute value. -/
+theorem summable_pow_div_natCast_iff {x : ℝ} :
+    Summable (fun n : ℕ => x ^ n / n) ↔ |x| < 1 := by
+  refine ⟨fun hs => ?_, fun h => (hasSum_pow_div_natCast h).summable⟩
+  by_contra hx
+  have habs : Summable (fun n : ℕ => |x| ^ n / n) := by
+    simpa [abs_div, abs_pow] using hs.abs
+  refine not_summable_one_div_natCast (habs.of_nonneg_of_le (fun n => by positivity) fun n => ?_)
+  exact div_le_div_of_nonneg_right (one_le_pow₀ (not_lt.mp hx)) n.cast_nonneg
 
 end Real
 

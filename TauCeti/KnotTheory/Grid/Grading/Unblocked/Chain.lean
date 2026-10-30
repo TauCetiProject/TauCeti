@@ -86,9 +86,10 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
 * `TauCeti.OddComponentGridDiagram.matrixMap_mem_bigradedChainMinusPiece` and
   `TauCeti.OddComponentGridDiagram.matrixMap_mem_alexanderChainMinusPiece`: a renamed matrix map
   whose weighted transitions preserve bidegree or Alexander degree preserves the corresponding
-  homogeneous pieces. More generally, one whose weighted transitions raise the bidegree by `δ`
-  raises the bidegree of homogeneous chains by `δ`
-  (`TauCeti.OddComponentGridDiagram.matrixMap_mem_bigradedChainMinusPiece_add`).
+  homogeneous pieces. More generally, one whose weighted transitions raise the bidegree, or the
+  Alexander degree, by `δ` raises it by `δ` on homogeneous chains
+  (`TauCeti.OddComponentGridDiagram.matrixMap_mem_bigradedChainMinusPiece_add`,
+  `TauCeti.OddComponentGridDiagram.matrixMap_mem_alexanderChainMinusPiece_add`).
 * `TauCeti.OddComponentGridDiagram.isInternal_bigradedChainMinusPiece`: `GC⁻` is the internal
   direct sum of its homogeneous pieces.
 * `TauCeti.OddComponentGridDiagram.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading`
@@ -656,6 +657,22 @@ theorem matrixMap_mem_bigradedChainMinusPiece
     (by simpa using hgrade) hc
 
 omit hgrade in
+/-- A renamed matrix map whose weighted transitions raise the Alexander degree by `δ` sends an
+Alexander-homogeneous chain of degree `a` for `G` to a chain of Alexander degree `a + δ` for
+`G'`. -/
+theorem matrixMap_mem_alexanderChainMinusPiece_add (δ : ℤ)
+    (hAlexander : ∀ x y, ∀ w ∈ (M x y).support, ∀ d : Fin n →₀ ℕ,
+      (G'.monomialBidegree y (Finsupp.mapDomain σ d + w)).2 = (G.monomialBidegree x d).2 + δ)
+    {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
+    f c ∈ G'.alexanderChainMinusPiece R (a + δ) := by
+  rw [mem_alexanderChainMinusPiece] at hc ⊢
+  intro y e he
+  rw [hf] at he
+  obtain ⟨x, d, hd, w, hw, rfl⟩ :=
+    GridChain.exists_eq_mapDomain_add_of_mem_support_sum_rename_mul R c σ M he
+  rw [← monomialBidegree_snd, hAlexander x y w hw d, monomialBidegree_snd, hc x d hd]
+
+omit hgrade in
 /-- A renamed matrix map whose weighted transitions preserve Alexander degree sends an
 Alexander-homogeneous chain for `G` to a chain of the same Alexander degree for `G'`. -/
 theorem matrixMap_mem_alexanderChainMinusPiece
@@ -663,12 +680,8 @@ theorem matrixMap_mem_alexanderChainMinusPiece
       (G'.monomialBidegree y (Finsupp.mapDomain σ d + w)).2 = (G.monomialBidegree x d).2)
     {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     f c ∈ G'.alexanderChainMinusPiece R a := by
-  rw [mem_alexanderChainMinusPiece] at hc ⊢
-  intro y e he
-  rw [hf] at he
-  obtain ⟨x, d, hd, w, hw, rfl⟩ :=
-    GridChain.exists_eq_mapDomain_add_of_mem_support_sum_rename_mul R c σ M he
-  rw [← monomialBidegree_snd, hAlexander x y w hw d, monomialBidegree_snd, hc x d hd]
+  simpa using G.matrixMap_mem_alexanderChainMinusPiece_add R G' σ M f hf 0
+    (by simpa using hAlexander) hc
 
 end RenameMatrixMap
 

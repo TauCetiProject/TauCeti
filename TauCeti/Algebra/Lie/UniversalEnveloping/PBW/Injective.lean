@@ -71,15 +71,6 @@ section Basis
 
 variable {R L} {ι : Type w} [LinearOrder ι] (b : Module.Basis ι R L)
 
-/-- Multiplying by a linear form raises total degree by at most one. -/
-private theorem constr_X_mul_mem {d : ℕ} (x : L) {p : MvPolynomial ι R}
-    (hp : p ∈ restrictTotalDegree ι R d) :
-    b.constr R X x * p ∈ restrictTotalDegree ι R (d + 1) := by
-  have h := Submodule.sub_mem _ (b.pbwPolynomialRep_mem_restrictTotalDegree x hp)
-    ((restrictTotalDegree_mono ι R (Nat.le_succ d))
-      (b.pbwPolynomialRep_sub_mul_mem_restrictTotalDegree x hp))
-  rwa [sub_sub_cancel] at h
-
 private theorem pbwEval_prod_mem (l : List L) :
     b.pbwEval (l.map (_root_.UniversalEnvelopingAlgebra.ι R)).prod ∈
       restrictTotalDegree ι R l.length := by
@@ -116,7 +107,7 @@ private theorem pbwEval_prod_sub_mem (x : L) (l : List L) :
         List.length_cons]
       have h := Submodule.add_mem _
         (b.pbwPolynomialRep_sub_mul_mem_restrictTotalDegree x (pbwEval_prod_mem b (y :: l)))
-        (constr_X_mul_mem b x (ih y))
+        (b.constr_X_mul_mem_restrictTotalDegree x (ih y))
       rwa [mul_sub, sub_add_sub_cancel] at h
 
 /-- The degree-`n` homogeneous component of the evaluation, as a linear map on the `n`-th PBW

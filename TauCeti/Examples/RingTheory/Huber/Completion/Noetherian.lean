@@ -12,8 +12,9 @@ import TauCeti.RingTheory.Huber.Completion.Noetherian
 
 The completion of a ring with the `I`-adic topology, `I` finitely generated, is complete for the
 extended ideal. These examples apply this at the zero ideal (discrete topology), at the unit ideal
-(indiscrete topology, whose Hausdorff completion is the zero ring) and at the ideal `(X)` of
-`ℤ[X]` with its `X`-adic topology, where the completion is moreover Noetherian.
+(indiscrete topology, whose Hausdorff completion is the zero ring), at the ideal `(p)` of `ℤ` with
+its `(p)`-adic topology and additive uniformity, and at the ideal `(X)` of `ℤ[X]` with its
+`X`-adic topology; in the last two cases the completion is moreover Noetherian.
 
 ## References
 
@@ -40,6 +41,25 @@ example (h : IsAdic (⊤ : Ideal R)) :
   h.isAdicComplete_map_coeRingHom ⟨{1}, by simp⟩
 
 end Generic
+
+section Integers
+
+-- `ℤ` with the `(p)`-adic topology and its additive uniformity: the completion is complete for the
+-- extended ideal `(p)` and Noetherian.
+example (p : ℤ) :
+    letI := (Ideal.span {p}).adicTopology
+    letI := IsTopologicalAddGroup.rightUniformSpace ℤ
+    haveI := isUniformAddGroup_of_addCommGroup (G := ℤ)
+    IsAdicComplete ((Ideal.span {p}).map (Completion.coeRingHom : ℤ →+* Completion ℤ))
+        (Completion ℤ) ∧ IsNoetherianRing (Completion ℤ) := by
+  let := (Ideal.span {p}).adicTopology
+  let := IsTopologicalAddGroup.rightUniformSpace ℤ
+  have := isUniformAddGroup_of_addCommGroup (G := ℤ)
+  have hI : IsAdic (Ideal.span {p}) := rfl
+  exact ⟨hI.isAdicComplete_map_coeRingHom (Submodule.fg_span_singleton p),
+    hI.isNoetherianRing_completion⟩
+
+end Integers
 
 section Polynomial
 

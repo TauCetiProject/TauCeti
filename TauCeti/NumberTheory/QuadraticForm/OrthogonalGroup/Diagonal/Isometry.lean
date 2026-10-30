@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.AwayAdelic
+public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.Away
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.Finite
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.Full
 public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
@@ -18,8 +20,9 @@ at almost every prime, they identify the finite adelic groups and carry the rati
 subgroups onto one another. This is the left-subgroup compatibility needed to transport adelic
 double-coset spaces. Adding the real place, the full adelic transports built from the scalar
 extensions of the rational isometry carry the full adelic diagonal subgroups onto one another in
-the same way. The assertions hold for orthogonal, special orthogonal and Spin points, without
-nondegeneracy assumptions on the quadratic forms.
+the same way, and so do the transports away from a set `S` of primes, built from the scalar
+extensions at the primes outside `S`. The assertions hold for orthogonal, special orthogonal and
+Spin points, without nondegeneracy assumptions on the quadratic forms.
 
 ## References
 
@@ -227,5 +230,99 @@ theorem map_range_fullAdelicSpecialOrthogonalDiagonal_of_isometry
     ← MonoidHom.range_eq_map]
 
 end Full
+
+/-! ### Diagonals away from a set of primes -/
+
+section Away
+
+variable (S : Set Nat.Primes)
+
+/-- Transport away from `S` by a rational isometry commutes with the orthogonal diagonal. -/
+theorem awayAdelicOrthogonalCongr_comp_awayAdelicOrthogonalDiagonal
+    (he : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
+      Set.BijOn (e.baseChange ℚ_[p.1]).orthogonalGroupCongr
+        (U.orthogonal p.1) (U'.orthogonal p.1)) :
+    (U.awayAdelicOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) he :
+        U.awayAdelicOrthogonal S →* U'.awayAdelicOrthogonal S).comp
+        (U.awayAdelicOrthogonalDiagonal S) =
+      (U'.awayAdelicOrthogonalDiagonal S).comp (e.orthogonalGroupCongr : _ →* _) := by
+  ext g p : 2
+  simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, awayAdelicOrthogonalCongr_apply,
+    awayAdelicOrthogonalDiagonal_apply]
+  exact (e.orthogonalGroupBaseChange_congr (A := ℚ_[p.1]) g).symm
+
+/-- Transport away from `S` by a rational isometry carries the rational orthogonal diagonal
+subgroup onto the target rational diagonal subgroup. -/
+theorem map_range_awayAdelicOrthogonalDiagonal_of_isometry
+    (he : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
+      Set.BijOn (e.baseChange ℚ_[p.1]).orthogonalGroupCongr
+        (U.orthogonal p.1) (U'.orthogonal p.1)) :
+    (U.awayAdelicOrthogonalDiagonal S).range.map
+        (U.awayAdelicOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) he :
+          U.awayAdelicOrthogonal S →* U'.awayAdelicOrthogonal S) =
+      (U'.awayAdelicOrthogonalDiagonal S).range := by
+  rw [MonoidHom.map_range,
+    U.awayAdelicOrthogonalCongr_comp_awayAdelicOrthogonalDiagonal U' e S he,
+    MonoidHom.range_comp, MonoidHom.range_eq_top.mpr e.orthogonalGroupCongr.surjective,
+    ← MonoidHom.range_eq_map]
+
+/-- Transport away from `S` by a rational isometry commutes with the Spin diagonal. -/
+theorem awayAdelicSpinCongr_comp_awayAdelicSpinDiagonal
+    (hs : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
+      Set.BijOn (e.baseChange ℚ_[p.1]).spinGroupEquiv (U.spin p.1) (U'.spin p.1)) :
+    (U.awayAdelicSpinCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) hs :
+        U.awayAdelicSpin S →* U'.awayAdelicSpin S).comp (U.awayAdelicSpinDiagonal S) =
+      (U'.awayAdelicSpinDiagonal S).comp (e.spinGroupEquiv : _ →* _) := by
+  ext x p : 2
+  simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, awayAdelicSpinCongr_apply,
+    awayAdelicSpinDiagonal_apply]
+  exact (e.spinGroupBaseChange_spinGroupEquiv (A := ℚ_[p.1]) x).symm
+
+/-- Transport away from `S` by a rational isometry carries the rational Spin diagonal subgroup
+onto the target rational diagonal subgroup. -/
+theorem map_range_awayAdelicSpinDiagonal_of_isometry
+    (hs : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
+      Set.BijOn (e.baseChange ℚ_[p.1]).spinGroupEquiv (U.spin p.1) (U'.spin p.1)) :
+    (U.awayAdelicSpinDiagonal S).range.map
+        (U.awayAdelicSpinCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) hs :
+          U.awayAdelicSpin S →* U'.awayAdelicSpin S) =
+      (U'.awayAdelicSpinDiagonal S).range := by
+  rw [MonoidHom.map_range, U.awayAdelicSpinCongr_comp_awayAdelicSpinDiagonal U' e S hs,
+    MonoidHom.range_comp, MonoidHom.range_eq_top.mpr e.spinGroupEquiv.surjective,
+    ← MonoidHom.range_eq_map]
+
+variable [FiniteDimensional ℚ V] [FiniteDimensional ℚ W]
+
+/-- Transport away from `S` by a rational isometry commutes with the special orthogonal
+diagonal. -/
+theorem awayAdelicSpecialOrthogonalCongr_comp_awayAdelicSpecialOrthogonalDiagonal
+    (hso : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
+      Set.BijOn (e.baseChange ℚ_[p.1]).specialOrthogonalGroupCongr
+        (U.specialOrthogonal p.1) (U'.specialOrthogonal p.1)) :
+    (U.awayAdelicSpecialOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) hso :
+        U.awayAdelicSpecialOrthogonal S →* U'.awayAdelicSpecialOrthogonal S).comp
+        (U.awayAdelicSpecialOrthogonalDiagonal S) =
+      (U'.awayAdelicSpecialOrthogonalDiagonal S).comp (e.specialOrthogonalGroupCongr : _ →* _) := by
+  ext g p : 2
+  simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, awayAdelicSpecialOrthogonalCongr_apply,
+    awayAdelicSpecialOrthogonalDiagonal_apply]
+  exact (e.specialOrthogonalGroupBaseChange_congr (A := ℚ_[p.1]) g).symm
+
+/-- Transport away from `S` by a rational isometry carries the rational special orthogonal
+diagonal subgroup onto the target rational diagonal subgroup. -/
+theorem map_range_awayAdelicSpecialOrthogonalDiagonal_of_isometry
+    (hso : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
+      Set.BijOn (e.baseChange ℚ_[p.1]).specialOrthogonalGroupCongr
+        (U.specialOrthogonal p.1) (U'.specialOrthogonal p.1)) :
+    (U.awayAdelicSpecialOrthogonalDiagonal S).range.map
+        (U.awayAdelicSpecialOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) hso :
+          U.awayAdelicSpecialOrthogonal S →* U'.awayAdelicSpecialOrthogonal S) =
+      (U'.awayAdelicSpecialOrthogonalDiagonal S).range := by
+  rw [MonoidHom.map_range,
+    U.awayAdelicSpecialOrthogonalCongr_comp_awayAdelicSpecialOrthogonalDiagonal U' e S hso,
+    MonoidHom.range_comp, MonoidHom.range_eq_top.mpr e.specialOrthogonalGroupCongr.surjective,
+    ← MonoidHom.range_eq_map]
+
+end Away
 
 end TauCeti.QuadraticMap.OrthogonalCompactOpens

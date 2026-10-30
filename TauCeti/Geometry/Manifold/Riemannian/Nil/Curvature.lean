@@ -169,10 +169,10 @@ theorem mfderiv_central_iff (Φ : Isom J Nil) (p : Nil) (u : TangentSpace J p) :
   constructor
   · intro h v
     have hv := h (mfderiv J J Φ p v)
-    rwa [Φ.ricciTensor_mfderiv, Φ.inner_mfderiv] at hv
+    rwa [Φ.isLocalRiemannianIsometry.ricciTensor_mfderiv, Φ.inner_mfderiv] at hv
   · intro h v
     obtain ⟨w, rfl⟩ := Φ.mfderiv_surjective p v
-    rw [Φ.ricciTensor_mfderiv, Φ.inner_mfderiv]
+    rw [Φ.isLocalRiemannianIsometry.ricciTensor_mfderiv, Φ.inner_mfderiv]
     exact h w
 
 end TauCeti.Nil

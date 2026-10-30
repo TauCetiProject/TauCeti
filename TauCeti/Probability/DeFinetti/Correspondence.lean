@@ -13,7 +13,7 @@ public import TauCeti.Probability.Exchangeability.PathSpace.Law.Extreme
 public import TauCeti.Probability.Exchangeability.PathSpace.Law.Convex
 -- Non-public: used only inside proofs — injectivity of the mixture is what makes the
 -- correspondence injective.
-import TauCeti.MeasureTheory.Measure.MixtureInjective
+import TauCeti.MeasureTheory.Measure.Mixture.Injective
 
 /-!
 # The de Finetti correspondence

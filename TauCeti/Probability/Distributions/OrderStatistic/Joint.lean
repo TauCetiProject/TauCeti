@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Data.Fin.Tuple.OrderStatistic
+public import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
 public import TauCeti.Probability.Distributions.Uniform.Basic
 import TauCeti.Probability.Independence.InfinitePi
 
@@ -49,12 +50,8 @@ theorem map_orderStatistics_pi :
   let ρ := Measure.pi fun _ : Fin n => μ
   let S : (Fin n → α) → (Fin n → α) := fun x i => orderStatistic i x
   let C : Equiv.Perm (Fin n) → Set (Fin n → α) := fun σ => {x | StrictMono (x ∘ σ)}
-  have hS : Measurable S := Measurable.of_eval fun i => measurable_orderStatistic i
-  have hmono : MeasurableSet {x : Fin n → α | StrictMono x} := by
-    simp only [StrictMono, ofPred_forall]
-    exact MeasurableSet.iInter fun i => MeasurableSet.iInter fun j =>
-      MeasurableSet.iInter fun _ => measurableSet_lt (measurable_pi_apply i)
-        (measurable_pi_apply j)
+  have hS : Measurable S := by fun_prop
+  have hmono : MeasurableSet {x : Fin n → α | StrictMono x} := measurableSet_setOf_strictMono
   have hC (σ) : MeasurableSet (C σ) :=
     hmono.preimage (Measurable.of_eval fun i => measurable_pi_apply (σ i))
   -- The chambers are disjoint, and sorting covers every tuple with distinct entries.
@@ -122,14 +119,8 @@ theorem map_orderStatistics_pi_uniformMeasure (n : ℕ) :
       volume.restrict (univ.pi fun _ : Fin n => Ioo (0 : ℝ) 1) := by
     simp_rw [hunit]
     exact (Measure.restrict_pi_pi _ _).symm
-  have hmeas : MeasurableSet
-      {y : Fin n → ℝ | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1} := by
-    simp only [StrictMono, ofPred_and, ofPred_forall]
-    exact (MeasurableSet.iInter fun i => MeasurableSet.iInter fun j =>
-      MeasurableSet.iInter fun _ => measurableSet_lt (measurable_pi_apply i)
-        (measurable_pi_apply j)).inter
-      (MeasurableSet.iInter fun i => measurable_pi_apply i measurableSet_Ioo)
-  rw [map_orderStatistics_pi, hprod, withDensity_indicator hmeas, withDensity_const]
+  rw [map_orderStatistics_pi, hprod,
+    withDensity_indicator (measurableSet_strictMono_mem_Ioo n 0 1), withDensity_const]
   have hsets : {y : Fin n → ℝ | StrictMono y} ∩
       (univ.pi fun _ : Fin n => Ioo (0 : ℝ) 1) =
         {y | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1} := by
@@ -148,7 +139,8 @@ theorem hasLaw_orderStatistics_iid_uniformMeasure {Ω : Type*} [MeasurableSpace 
         ({y : Fin n → ℝ | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1}.indicator
           fun _ => (n.factorial : ℝ≥0∞))) P := by
   rw [← map_orderStatistics_pi_uniformMeasure]
-  exact (hasLaw_map (Measurable.of_eval fun i => measurable_orderStatistic i).aemeasurable).comp
+  have hs : Measurable (fun x : Fin n → ℝ => fun i => orderStatistic i x) := by fun_prop
+  exact (hasLaw_map hs.aemeasurable).comp
     (hindep.hasLaw_pi hlaw)
 
 end TauCeti.Probability

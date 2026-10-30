@@ -179,6 +179,13 @@ theorem dualEquiv_symm_apply (Λ : StrongDual 𝕜 C₀(ι, 𝕜)) (i : ι) :
     ((dualEquiv 𝕜 ι).apply_symm_apply Λ)
   rwa [dualEquiv_apply_single, mul_one] at h
 
+/-- The coordinate evaluations of `C₀(ι, 𝕜)` correspond to the unit vectors of `ℓ¹`. -/
+@[simp]
+theorem dualEquiv_symm_evalCLM (i : ι) :
+    (dualEquiv 𝕜 ι).symm (evalCLM 𝕜 i) = lp.single 1 i 1 := by
+  ext j
+  simp [lp.single_apply, single_apply, Pi.single_apply, eq_comm]
+
 /-- The norm of a functional on `C₀(ι, 𝕜)` is the sum of the norms of its coordinate values. -/
 theorem norm_eq_tsum_norm_apply_single_one (Λ : StrongDual 𝕜 C₀(ι, 𝕜)) :
     ‖Λ‖ = ∑' i, ‖Λ (single i 1)‖ := by

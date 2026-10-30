@@ -7,6 +7,7 @@ module
 
 import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
 import TauCeti.Analysis.Complex.RiemannSurface.OpenMapping
+import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalDegree
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Order.Lattice.Nat

@@ -8,24 +8,27 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Jordan.CrossRatio
 public import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
+import TauCeti.Analysis.Complex.PlaneSeparation.RiemannSphere
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
 # Two-point normalization of conformal maps onto unbounded Jordan domains
 
 Let `U ⊆ ℂ` be an unbounded Jordan domain of the Riemann sphere: its frontier together with the
-point at infinity is a Jordan curve, and some point `q` lies outside its closure. Let `f` and `g`
-be holomorphic bijections of the upper half-plane onto `U` that tend to infinity at infinity.
-Then `g⁻¹ ∘ f` is an automorphism of the upper half-plane fixing infinity, so it is a real affine
-map, and it is determined by its values at two real points. Accordingly, if `f` and `g` have the
-same boundary limits at two distinct real points, they coincide. This is the analogue, for
+point at infinity is a Jordan curve. Let `f` and `g` be holomorphic bijections of the upper
+half-plane onto `U` that tend to infinity at infinity. Then `g⁻¹ ∘ f` is an automorphism of the
+upper half-plane fixing infinity, so it is a real affine map, and it is determined by its values at
+two real points. Accordingly, if `f` and `g` have the same boundary limits at two distinct real
+points, they coincide. This is the analogue, for
 domains with a boundary point at infinity, of the three-point normalization
 `TauCeti.eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn` for bounded Jordan domains.
 
 Both results are reduced to the bounded case. The real Möbius map `z ↦ c - z⁻¹` sends `0` to
-infinity and preserves the upper half-plane, and the inversion `w ↦ (w - q)⁻¹` carries `U` onto
-a bounded Jordan domain. After these changes of variable, infinity becomes the real point `0`,
-where both maps have the boundary limit `0`.
+infinity and preserves the upper half-plane, and the inversion `w ↦ (w - q)⁻¹` about a point `q`
+outside the closure of `U`, which exists by
+`TauCeti.exists_notMem_closure_of_isJordanCurve_insert_infty`, carries `U` onto a bounded Jordan
+domain. After these changes of variable, infinity becomes the real point `0`, where both maps have
+the boundary limit `0`.
 
 ## Main results
 
@@ -100,20 +103,21 @@ private theorem tendsto_inv_sub_comp_const_sub_inv_zero {f : ℂ → ℂ}
     Tendsto (fun z => (f ((c : ℂ) - z⁻¹) - q)⁻¹) (𝓝[upperHalfPlaneSet] ((0 : ℝ) : ℂ)) (𝓝 0) := by
   have hφ : Tendsto (fun z : ℂ => (c : ℂ) - z⁻¹) (𝓝[upperHalfPlaneSet] ((0 : ℝ) : ℂ))
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) := by
-    refine tendsto_inf.mpr ⟨(tendsto_const_sub_cobounded _).comp ?_, tendsto_principal.mpr
-      (eventually_nhdsWithin_of_forall (bijOn_const_sub_inv_upperHalfPlaneSet c).mapsTo)⟩
+    have hsub : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} \ {0} := fun z (hz : 0 < z.im) =>
+      ⟨hz.le, by rintro rfl; simp at hz⟩
     rw [ofReal_zero]
-    exact tendsto_inv₀_nhdsNE_zero.mono_left
-      (nhdsWithin_mono _ fun z (hz : 0 < z.im) (h : z = 0) => by simp [h] at hz)
+    refine tendsto_inf.mpr ⟨((tendsto_const_sub_inv_nhdsWithin_zero c).mono_left
+      (nhdsWithin_mono _ hsub)).mono_right inf_le_left, tendsto_principal.mpr
+      (eventually_nhdsWithin_of_forall (bijOn_const_sub_inv_upperHalfPlaneSet c).mapsTo)⟩
   exact (tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded q)).comp (hf.comp hφ)
 
 /-- **Two-point normalization of conformal maps onto an unbounded Jordan domain.** Let `U` be an
-unbounded Jordan domain of the Riemann sphere with a point `q` outside its closure, and let `f`
-and `g` be holomorphic bijections of the upper half-plane onto `U` that tend to infinity at
-infinity. If, at each of two distinct real points, `f` and `g` have the same limit along the upper
-half-plane, then `f` and `g` coincide on the upper half-plane. -/
+unbounded Jordan domain of the Riemann sphere, and let `f` and `g` be holomorphic bijections of the
+upper half-plane onto `U` that tend to infinity at infinity. If, at each of two distinct real
+points, `f` and `g` have the same limit along the upper half-plane, then `f` and `g` coincide on the
+upper half-plane. -/
 theorem eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn_of_isJordanCurve_insert_infty
-    (hq : q ∉ closure U) (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U)))
+    (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U)))
     {f g : ℂ → ℂ} (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hg : DifferentiableOn ℂ g upperHalfPlaneSet) (hfU : BijOn f upperHalfPlaneSet U)
     (hgU : BijOn g upperHalfPlaneSet U)
@@ -127,6 +131,8 @@ theorem eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn_of_isJordanCurve_insert_infty
     EqOn f g upperHalfPlaneSet := by
   have hUo : IsOpen U := hfU.image_eq ▸
     isOpen_image_of_differentiableOn_of_injOn isOpen_upperHalfPlaneSet hf hfU.injOn
+  obtain ⟨q, hq⟩ := exists_notMem_closure_of_isJordanCurve_insert_infty hUo
+    (hfU.image_eq ▸ (convex_halfSpace_im_gt (r := 0)).isPreconnected.image f hf.continuousOn) hUJ
   -- the point `c` goes to infinity, so it must differ from `x₁` and `x₂`
   set c : ℝ := max x₁ x₂ + 1
   have h₁ : x₁ ≠ c := ((le_max_left x₁ x₂).trans_lt (lt_add_one _)).ne
@@ -149,16 +155,17 @@ theorem eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn_of_isJordanCurve_insert_infty
   simpa using hFG hz'
 
 /-- **Distinct real points have distinct boundary limits.** If a holomorphic bijection of the upper
-half-plane onto an unbounded Jordan domain of the Riemann sphere, with a point outside its closure,
-has the same finite limit along the upper half-plane at two real points, then these points are
-equal. -/
+half-plane onto an unbounded Jordan domain of the Riemann sphere has the same finite limit along
+the upper half-plane at two real points, then these points are equal. -/
 theorem eq_of_tendsto_of_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty
-    (hq : q ∉ closure U) (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U)))
+    (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U)))
     {g : ℂ → ℂ} (hg : DifferentiableOn ℂ g upperHalfPlaneSet) (hgU : BijOn g upperHalfPlaneSet U)
     {x y : ℝ} {w : ℂ} (hx : Tendsto g (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 w))
     (hy : Tendsto g (𝓝[upperHalfPlaneSet] (y : ℂ)) (𝓝 w)) : x = y := by
   have hUo : IsOpen U := hgU.image_eq ▸
     isOpen_image_of_differentiableOn_of_injOn isOpen_upperHalfPlaneSet hg hgU.injOn
+  obtain ⟨q, hq⟩ := exists_notMem_closure_of_isJordanCurve_insert_infty hUo
+    (hgU.image_eq ▸ (convex_halfSpace_im_gt (r := 0)).isPreconnected.image g hg.continuousOn) hUJ
   set c : ℝ := max x y + 1
   have hxc : x ≠ c := ((le_max_left x y).trans_lt (lt_add_one _)).ne
   have hyc : y ≠ c := ((le_max_right x y).trans_lt (lt_add_one _)).ne

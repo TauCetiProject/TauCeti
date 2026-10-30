@@ -14,9 +14,9 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricBaseChange
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
-public import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
-public import TauCeti.RingTheory.Localization.Away
+public import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # The projective line over a commutative ring
@@ -62,7 +62,8 @@ function `X₁ / X₀` on that chart going to `X`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.iSup_basicOpen_coord_eq_top`,
   `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_awayι` and
   `TauCeti.AlgebraicGeometry.projectiveLine.basicOpen_coord_sup_eq_top`: the two charts cover
-  `ℙ¹_R`.
+  `ℙ¹_R`, and by `TauCeti.AlgebraicGeometry.projectiveLine.isAffineOpen_basicOpen_coord` each
+  chart is affine.
 * `TauCeti.AlgebraicGeometry.projectiveLine.chartSectionsEquiv_awayToSection`: on the chart
   `D₊(Xᵢ)`, `chartSectionsEquiv` agrees with the chart isomorphism on the fractions
   `Proj.awayToSection a`, and `TauCeti.AlgebraicGeometry.projectiveLine.awayToSection_algebraMap`:
@@ -227,20 +228,9 @@ theorem awayι_over (i : Fin 2) :
   rw [SymmetricAlgebra.over_eq_projToSpec, SymmetricAlgebra.awayι_projToSpec]
 
 /-- **The standard charts `D₊(Xᵢ)` cover the projective line.** -/
-theorem iSup_basicOpen_coord_eq_top : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ := by
-  refine Proj.iSup_basicOpen_eq_top' 𝒜 _ (fun i ↦ ⟨1, coord_mem R i⟩) (top_unique ?_)
-  -- the homogeneous coordinates generate the symmetric algebra
-  rintro a -
-  induction a using _root_.SymmetricAlgebra.induction with
-  | algebraMap r =>
-    exact Subalgebra.algebraMap_mem _ (algebraMap R (𝒜 0) r)
-  | ι m =>
-    rw [ι_eq_smul_coord_add_smul_coord R 0 m, Algebra.smul_def, Algebra.smul_def]
-    refine add_mem (mul_mem ?_ (Algebra.subset_adjoin ⟨0, rfl⟩))
-      (mul_mem ?_ (Algebra.subset_adjoin ⟨Fin.rev 0, rfl⟩)) <;>
-    exact Subalgebra.algebraMap_mem _ (algebraMap R (𝒜 0) _)
-  | mul a b ha hb => exact mul_mem ha hb
-  | add a b ha hb => exact add_mem ha hb
+theorem iSup_basicOpen_coord_eq_top : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ :=
+  SymmetricAlgebra.iSup_basicOpen_ι_eq_top R (Fin 2 → R) (fun i ↦ Pi.single i 1) (by
+    rw [← funext (Pi.basisFun_apply R (Fin 2)), (Pi.basisFun R (Fin 2)).span_eq])
 
 /-- **The two standard charts cover the projective line.** -/
 theorem exists_eq_awayι (p : projectiveLine R) : ∃ i q, awayι R i q = p := by
@@ -257,6 +247,11 @@ theorem basicOpen_coord_sup_eq_top :
   refine eq_top_iff.mpr fun p _ ↦ TopologicalSpace.Opens.mem_sup.mpr ?_
   have hp : p ∈ (⊤ : (projectiveLine R).Opens) := trivial
   rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup, Fin.exists_fin_two] at hp
+
+/-- The standard chart `D₊(Xᵢ)` is an affine open of the projective line. -/
+theorem isAffineOpen_basicOpen_coord (i : Fin 2) :
+    IsAffineOpen (Proj.basicOpen 𝒜 (coord R i)) :=
+  Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i) one_pos
 
 /-- **The projective line over a domain is integral**: `R[X₀, X₁]` is a domain with a nonzero form
 of positive degree. -/

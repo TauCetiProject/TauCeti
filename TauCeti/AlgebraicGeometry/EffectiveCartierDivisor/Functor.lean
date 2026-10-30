@@ -70,7 +70,7 @@ variable {S X : Scheme.{u}} (f : X ⟶ S)
 Cartier divisors on `X_T = T ×_S X` over `T`. -/
 def relativeEffectiveCartierSubfunctor : Subfunctor (baseChangeIdealSheafFunctor f) where
   obj T := {I | I.IsRelativeEffectiveCartier (pullback.fst T.unop.hom f)}
-  map φ _ hI := hI.comap_of_isPullback (isPullback_over_pullback_map_left f φ.unop)
+  map φ _ hI := hI.comap_of_isPullback (Over.isPullback_pullback_map_left f φ.unop)
 
 /-- An ideal sheaf on `T ×_S X` lies in `relativeEffectiveCartierSubfunctor f` exactly when it is
 a relative effective Cartier divisor over `T`. -/

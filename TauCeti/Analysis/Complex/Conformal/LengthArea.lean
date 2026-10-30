@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Analysis.Complex.Conformal.Area
-public import TauCeti.MeasureTheory.Integral.CircleLIntegral
+public import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 
@@ -19,7 +19,7 @@ The **length–area method** converts the finiteness of the Dirichlet integral
 with the area of `f '' s` — into a statement about *lengths*: among the circles `‖z - ζ‖ = ρ`
 with `r < ρ < R`, at least one has a short image. This file is the holomorphic half of that
 method. The measure-theoretic half is
-`TauCeti/MeasureTheory/Integral/CircleLIntegral.lean`, which proves the length–area inequality and
+`TauCeti/MeasureTheory/Integral/Circle/LIntegral.lean`, which proves the length–area inequality and
 Wolff's lemma for an arbitrary measurable weight `g : ℂ → ℝ≥0∞` on the plane, out of
 Cauchy–Schwarz on each circle and polar Fubini. All this file does is instantiate that weight at
 the **length density of `f`**, namely `‖deriv f‖ₑ` cut off outside `s`, and identify what the two
@@ -182,7 +182,7 @@ theorem circleImageLength_eq_lintegral_Ioc (f : ℂ → ℂ) (s : Set ℂ) (ζ :
 /-! ### The length–area inequality and Wolff's lemma -/
 
 /-- The length density of `f` cut off outside a measurable set is measurable, so the estimates of
-`TauCeti/MeasureTheory/Integral/CircleLIntegral.lean` apply to it. -/
+`TauCeti/MeasureTheory/Integral/Circle/LIntegral.lean` apply to it. -/
 private theorem measurable_indicator_enorm_deriv (f : ℂ → ℂ) (hs : MeasurableSet s) :
     Measurable (s.indicator fun z => ‖deriv f z‖ₑ) :=
   (measurable_deriv f).enorm.indicator hs

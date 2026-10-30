@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerBasis
 public import TauCeti.Algebra.Group.Coprime
-public import TauCeti.RingTheory.LaurentSeries.Puiseux
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
 
 /-!
 # Power bases of ramified Laurent-series levels
@@ -56,6 +56,8 @@ The contraction and decomposition API follows the design proposed in
 * `TauCeti.puiseuxField.level_inf_level`: levels `n` and `m` intersect in level `gcd n m`.
 * `TauCeti.puiseuxField.level_sup_level`: levels `n` and `m` generate level `lcm n m`.
 * `TauCeti.puiseuxField.iSup_level`: the levels exhaust the Puiseux field.
+* `IntermediateField.exists_le_level`: a finite-dimensional intermediate field of the Puiseux
+  field lies in a single level.
 -/
 
 public section
@@ -385,7 +387,7 @@ theorem isAlgebraic_laurentSeries (K : Type*) [Field K] :
 /-- The generator of the level-`d` power basis is the monomial `t ^ (1 / d)`. -/
 theorem coe_levelPowerBasis_gen (K : Type*) [Field K] (d : ℕ+) :
     (((levelPowerBasis K d).gen : TauCeti.puiseuxField K) : HahnSeries ℚ K) =
-      single (d⁻¹ : ℚ) 1 := by
+      HahnSeries.single (d⁻¹ : ℚ) 1 := by
   simp
 
 /-- The level parameters are compatible: if `L = e * k`, then `(t ^ (1 / L)) ^ k = t ^ (1 / e)`. -/
@@ -393,8 +395,8 @@ theorem coe_levelPowerBasis_gen_pow (K : Type*) [Field K] {e L : ℕ+} {k : ℕ}
     (h : (L : ℕ) = e * k) :
     ((levelPowerBasis K L).gen : TauCeti.puiseuxField K) ^ k = (levelPowerBasis K e).gen := by
   apply Subtype.ext
-  rw [SubmonoidClass.coe_pow, coe_levelPowerBasis_gen, coe_levelPowerBasis_gen, single_pow,
-    one_pow]
+  rw [SubmonoidClass.coe_pow, coe_levelPowerBasis_gen, coe_levelPowerBasis_gen,
+    HahnSeries.single_pow, one_pow]
   have hk : (k : ℚ) ≠ 0 := by
     have := L.ne_zero
     rw [h] at this
@@ -484,3 +486,21 @@ theorem iSup_level (K : Type*) [Field K] : ⨆ d : ℕ+, level K d = ⊤ := by
   exact le_iSup (level K) d ((mem_level_iff K d x).mpr hd)
 
 end TauCeti.puiseuxField
+
+namespace IntermediateField
+
+open TauCeti.puiseuxField
+
+/-- A finite-dimensional intermediate field of the Puiseux field over `K⸨X⸩` lies in a single
+ramified level. -/
+theorem exists_le_level {K : Type*} [Field K]
+    (E : IntermediateField K⸨X⸩ (TauCeti.puiseuxField K)) [FiniteDimensional K⸨X⸩ E] :
+    ∃ n : ℕ+, E ≤ level K n := by
+  let b := Module.finBasis K⸨X⸩ E
+  obtain ⟨n, hn⟩ := exists_forall_mem_range_levelEmbedding fun i ↦ (b i : TauCeti.puiseuxField K)
+  refine ⟨n, fun x hx ↦ ?_⟩
+  lift x to E using hx
+  rw [← b.sum_repr x, coe_sum]
+  exact sum_mem fun i _ ↦ smul_mem _ ((mem_level_iff K n _).mpr (hn i))
+
+end IntermediateField

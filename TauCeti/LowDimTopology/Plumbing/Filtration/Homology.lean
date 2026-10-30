@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.LowDimTopology.Plumbing.Filtration.Colimit
 
