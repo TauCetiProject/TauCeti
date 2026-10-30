@@ -7,52 +7,71 @@ module
 
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Finset.Option
-public import Mathlib.Order.Hom.WithTopBot
+public import Mathlib.Order.Interval.Finset.Defs
 
 /-!
 # Finite sets of `WithBot α`
 
 A finite set of `WithBot α` either avoids `⊥`, and is then the image of a finite set of `α` under
-the coercion, or contains `⊥`, and is then `insert ⊥` of such an image. These lemmas compare the
-two kinds of finite sets and count their elements below a given element; they are used to split a
-cube indexed by `WithBot ι` into its two faces in the direction of `⊥`.
+the coercion, or contains `⊥`, and is then `WithBot.insertBot` of a finite set of `α`. These lemmas
+compare the two kinds of finite sets and count their elements below a given element; they are used
+to split a cube indexed by `WithBot ι` into its two faces in the direction of `⊥`.
 
 ## Main results
 
-* `Finset.exists_eq_map_coeWithBot_or_exists_eq_insert_bot`: every finite set of `WithBot α` is
-  `S.map Function.Embedding.coeWithBot` or `insert ⊥ (S.map Function.Embedding.coeWithBot)`.
-* `Finset.map_coeWithBot_ne_insert_bot`: the two kinds of finite sets are distinct.
-* `Finset.card_filter_lt_coe_map_coeWithBot` and
-  `Finset.card_filter_lt_coe_insert_bot_map_coeWithBot` count their elements below a given
-  element of `α`.
+* `WithBot.insertBot_eq_insert`, `WithBot.card_insertBot`: `WithBot.insertBot S` is
+  `insert ⊥ (S.map Function.Embedding.coeWithBot)`, with one more element than `S`.
+* `WithBot.map_coeWithBot_subset_insertBot`: the image of `S` is contained in
+  `WithBot.insertBot S`.
+* `Finset.exists_eq_map_coeWithBot_or_exists_eq_insertBot`: every finite set of `WithBot α` is
+  `S.map Function.Embedding.coeWithBot` or `WithBot.insertBot S`.
+* `Finset.map_coeWithBot_ne_insertBot`: the two kinds of finite sets are distinct.
+* `Finset.card_filter_lt_coe_map_coeWithBot` and `Finset.card_filter_lt_coe_insertBot` count their
+  elements below a given element of `α`.
 -/
 
 public section
 
-namespace Finset
+open Finset
 
 variable {α : Type*}
 
-section DecidableEq
+namespace WithBot
 
-variable [DecidableEq α]
+/-- `WithBot.insertBot S` inserts `⊥` into the image of `S` under the coercion. -/
+theorem insertBot_eq_insert [DecidableEq α] (S : Finset α) :
+    insertBot S = insert ⊥ (S.map Function.Embedding.coeWithBot) :=
+  cons_eq_insert _ _ (by simp)
+
+/-- The image of `S` under the coercion is contained in `WithBot.insertBot S`. -/
+theorem map_coeWithBot_subset_insertBot (S : Finset α) :
+    S.map Function.Embedding.coeWithBot ⊆ insertBot S :=
+  subset_cons (by simp)
+
+@[simp]
+theorem card_insertBot (S : Finset α) : #(insertBot S) = #S + 1 := by
+  classical
+  rw [insertBot_eq_insert, card_insert_of_notMem (by simp), card_map]
+
+end WithBot
+
+namespace Finset
 
 /-- Every finite set of `WithBot α` is the image of a finite set of `α`, possibly with `⊥`
 inserted. -/
-theorem exists_eq_map_coeWithBot_or_exists_eq_insert_bot (T : Finset (WithBot α)) :
+theorem exists_eq_map_coeWithBot_or_exists_eq_insertBot (T : Finset (WithBot α)) :
     (∃ S : Finset α, T = S.map Function.Embedding.coeWithBot) ∨
-      ∃ S : Finset α, T = insert ⊥ (S.map Function.Embedding.coeWithBot) := by
+      ∃ S : Finset α, T = WithBot.insertBot S := by
+  classical
   have h : (eraseNone T).map Function.Embedding.coeWithBot = T.erase ⊥ := map_some_eraseNone T
   by_cases hT : ⊥ ∈ T
-  · exact .inr ⟨eraseNone T, by rw [h, insert_erase hT]⟩
+  · exact .inr ⟨eraseNone T, by rw [WithBot.insertBot_eq_insert, h, insert_erase hT]⟩
   · exact .inl ⟨eraseNone T, by rw [h, erase_eq_of_notMem hT]⟩
 
-/-- The image of a finite set of `α` never equals an image with `⊥` inserted. -/
-theorem map_coeWithBot_ne_insert_bot (S T : Finset α) :
-    S.map Function.Embedding.coeWithBot ≠ insert ⊥ (T.map Function.Embedding.coeWithBot) :=
+/-- The image of a finite set of `α` never equals `WithBot.insertBot` of a finite set. -/
+theorem map_coeWithBot_ne_insertBot (S T : Finset α) :
+    S.map Function.Embedding.coeWithBot ≠ WithBot.insertBot T :=
   fun e ↦ by simpa using congrArg (⊥ ∈ ·) e
-
-end DecidableEq
 
 variable [LT α] [DecidableLT α]
 
@@ -64,10 +83,11 @@ theorem card_filter_lt_coe_map_coeWithBot (S : Finset α) (a : α) :
   simp
 
 /-- Inserting `⊥` into the image of a finite set adds one element below each `a : α`. -/
-theorem card_filter_lt_coe_insert_bot_map_coeWithBot [DecidableEq α] (S : Finset α) (a : α) :
-    #{b ∈ insert ⊥ (S.map Function.Embedding.coeWithBot) | b < (a : WithBot α)} =
-      #{b ∈ S | b < a} + 1 := by
-  rw [filter_insert, ite_eq_left_of_eq_true _ _ (eq_true (WithBot.bot_lt_coe a)),
-    card_insert_of_notMem (by simp), card_filter_lt_coe_map_coeWithBot]
+theorem card_filter_lt_coe_insertBot (S : Finset α) (a : α) :
+    #{b ∈ WithBot.insertBot S | b < (a : WithBot α)} = #{b ∈ S | b < a} + 1 := by
+  classical
+  rw [WithBot.insertBot_eq_insert, filter_insert,
+    ite_eq_left_of_eq_true _ _ (eq_true (WithBot.bot_lt_coe a)), card_insert_of_notMem (by simp),
+    card_filter_lt_coe_map_coeWithBot]
 
 end Finset
