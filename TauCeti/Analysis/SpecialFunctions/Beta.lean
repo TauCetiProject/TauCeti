@@ -61,6 +61,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   Cauchy-type kernel `(1 + x ^ 2 / ν) ^ (-s)` is integrable on the line for `0 < ν` and
   `1 / 2 < s`, with total mass `√ν * Β(1 / 2, s - 1 / 2)`;
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
+* `ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self` — Legendre's duplication
+  formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
 * `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
 * `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
@@ -497,6 +499,27 @@ variable {a b : ℝ}
 /-- Euler's beta function is symmetric in its two parameters. -/
 theorem beta_comm (a b : ℝ) : beta a b = beta b a := by
   rw [ProbabilityTheory.beta, ProbabilityTheory.beta, mul_comm (Real.Gamma a), add_comm a b]
+
+/-- Legendre's duplication formula expressed through the symmetric beta integral. -/
+theorem beta_one_half_left_eq_two_rpow_mul_beta_self (ha : 0 < a) :
+    beta (1 / 2) a = (2 : ℝ) ^ (2 * a - 1) * beta a a := by
+  have hΓ₂ : Real.Gamma (2 * a) ≠ 0 := (Real.Gamma_pos_of_pos (by positivity)).ne'
+  have hΓh : Real.Gamma (a + 1 / 2) ≠ 0 :=
+    (Real.Gamma_pos_of_pos (by positivity)).ne'
+  have hpow : (2 : ℝ) ^ (2 * a - 1) * (2 : ℝ) ^ (1 - 2 * a) = 1 := by
+    rw [← Real.rpow_add (by norm_num)]
+    ring_nf
+    exact Real.rpow_zero 2
+  have hdup := Real.Gamma_mul_Gamma_add_half a
+  have hdup' : √Real.pi * Real.Gamma (2 * a) =
+      (2 : ℝ) ^ (2 * a - 1) * (Real.Gamma a * Real.Gamma (a + 1 / 2)) := by
+    calc
+      _ = ((2 : ℝ) ^ (2 * a - 1) * (2 : ℝ) ^ (1 - 2 * a)) *
+          (√Real.pi * Real.Gamma (2 * a)) := by rw [hpow, one_mul]
+      _ = _ := by rw [hdup]; ring
+  rw [beta, beta, Real.Gamma_one_half_eq, add_comm (1 / 2) a, ← two_mul a]
+  rw [← mul_div_assoc, div_eq_div_iff hΓh hΓ₂]
+  linear_combination Real.Gamma a * hdup'
 
 /-- Euler's beta function at second parameter `1`. -/
 @[simp]
