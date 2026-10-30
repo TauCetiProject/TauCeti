@@ -293,6 +293,7 @@ lemma cohomologyδBaseLinear_apply (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n�
 omit hS in
 /-- The base-linear map induced on cohomology by a morphism of sheaves of modules has the same
 underlying function as `cohomologyMap`. -/
+@[simp]
 lemma coe_cohomologyMapBaseLinear {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
     ⇑(cohomologyMapBaseLinear R X f n) = ⇑(cohomologyMap f n) := by
   funext x
@@ -301,6 +302,7 @@ lemma coe_cohomologyMapBaseLinear {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
 
 omit hS in
 /-- The base-linear connecting map has the same underlying function as `cohomologyδ`. -/
+@[simp]
 lemma coe_cohomologyδBaseLinear (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     ⇑(cohomologyδBaseLinear R X hS n₀ n₁ h) = ⇑(cohomologyδ hS n₀ n₁ h) :=
   funext (cohomologyδBaseLinear_apply R X hS n₀ n₁ h)
@@ -343,9 +345,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
     FiniteDimensional k (Cohomology S.X₁ n₁) := by
   have hex : Function.Exact (cohomologyδBaseLinear k X hS n₀ n₁ h)
       (cohomologyMapBaseLinear k X S.f n₁) := by
-    intro x
-    rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-    exact exact_cohomologyδ_cohomologyMap hS n₀ n₁ h x
+    simpa only [coe_cohomologyδBaseLinear, coe_cohomologyMapBaseLinear] using
+      exact_cohomologyδ_cohomologyMap hS n₀ n₁ h
   exact finiteDimensional_of_exact hex
 
 omit hS in
@@ -354,9 +355,8 @@ finite-dimensional as soon as `H⁰(X, N)` is. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_zero_of_mono
     {M N : X.Modules} (f : M ⟶ N) [Mono f] [FiniteDimensional k (Cohomology N 0)] :
     FiniteDimensional k (Cohomology M 0) := by
-  refine Module.Finite.of_injective (cohomologyMapBaseLinear k X f 0) fun a b hab ↦ ?_
-  rw [cohomologyMapBaseLinear_apply, cohomologyMapBaseLinear_apply, cohomologyFunctor_map] at hab
-  exact cohomologyMap_injective f hab
+  exact Module.Finite.of_injective (cohomologyMapBaseLinear k X f 0)
+    (by simpa only [coe_cohomologyMapBaseLinear] using cohomologyMap_injective f)
 
 end Field
 

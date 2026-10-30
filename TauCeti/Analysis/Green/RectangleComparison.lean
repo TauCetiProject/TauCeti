@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Green.Division.Rectangle
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.Calculus.Bilinear
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 
 /-!
 # Agreement with existing rectangle formulas

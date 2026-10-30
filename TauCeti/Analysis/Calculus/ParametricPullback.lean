@@ -48,8 +48,8 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
 namespace VectorField
 
 private theorem isInvertible_spatialFDeriv_of_eq_id {F : 𝕜 × E → E} {t₀ : 𝕜} {x : E}
-    (hA0 : spatialFDeriv F x t₀ = ContinuousLinearMap.id 𝕜 E) :
-    (spatialFDeriv F x t₀).IsInvertible := by
+    (hA0 : spatialFDeriv (𝕜 := 𝕜) F x t₀ = ContinuousLinearMap.id 𝕜 E) :
+    (spatialFDeriv (𝕜 := 𝕜) F x t₀).IsInvertible := by
   rw [hA0]
   exact ⟨ContinuousLinearEquiv.refl 𝕜 E, rfl⟩
 
@@ -60,8 +60,8 @@ pullback of `W` along `F` is the Lie bracket `[V, W]`, where `V` is the paramete
 at `t₀`. -/
 theorem hasDerivAt_parametric_pullback {F : 𝕜 × E → E} {W : E → E} {t₀ : 𝕜} {x : E}
     (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (t₀, x)) (hF0 : F (t₀, x) = x)
-    (hA0 : spatialFDeriv F x t₀ = ContinuousLinearMap.id 𝕜 E)
-    (hInvDiff : DifferentiableAt 𝕜 (fun t => (spatialFDeriv F x t).inverse) t₀)
+    (hA0 : spatialFDeriv (𝕜 := 𝕜) F x t₀ = ContinuousLinearMap.id 𝕜 E)
+    (hInvDiff : DifferentiableAt 𝕜 (fun t => (spatialFDeriv (𝕜 := 𝕜) F x t).inverse) t₀)
     (hW : DifferentiableAt 𝕜 W x) :
     HasDerivAt
       (fun t => pullback 𝕜 (fun y => F (t, y)) W x)
@@ -76,13 +76,13 @@ theorem hasDerivAt_parametric_pullback {F : 𝕜 × E → E} {W : E → E} {t₀
   have hpull := hA.clm_inverse_apply (isInvertible_spatialFDeriv_of_eq_id hA0) hInvDiff
     (hW0.comp_hasDerivAt t₀ hz)
   have hslice : (fun t => pullback 𝕜 (fun y => F (t, y)) W x) =ᶠ[𝓝 t₀]
-      fun t => (spatialFDeriv F x t).inverse (W (F (t, x))) := by
+      fun t => (spatialFDeriv (𝕜 := 𝕜) F x t).inverse (W (F (t, x))) := by
     have hpath : ContinuousAt (fun t : 𝕜 => (t, x)) t₀ := by fun_prop
     filter_upwards [hpath.eventually (hF.eventually (by norm_num))] with t ht
     simp only [pullback,
       fderiv_timeSlice ((ht.of_le le_minSmoothness).differentiableAt two_ne_zero)]
   have hpull' : HasDerivAt
-      (fun t => (spatialFDeriv F x t).inverse (W (F (t, x))))
+      (fun t => (spatialFDeriv (𝕜 := 𝕜) F x t).inverse (W (F (t, x))))
       (lieBracket 𝕜 (timeFDeriv F t₀) W x) t₀ := by
     simpa only [Function.comp_apply, hF0, hA0, ContinuousLinearMap.inverse_id,
       ContinuousLinearMap.id_apply, lieBracket] using hpull
@@ -94,7 +94,7 @@ point. -/
 theorem hasDerivAt_parametric_pullback_of_completeSpace [CompleteSpace E]
     {F : 𝕜 × E → E} {W : E → E} {t₀ : 𝕜} {x : E}
     (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (t₀, x)) (hF0 : F (t₀, x) = x)
-    (hA0 : spatialFDeriv F x t₀ = ContinuousLinearMap.id 𝕜 E)
+    (hA0 : spatialFDeriv (𝕜 := 𝕜) F x t₀ = ContinuousLinearMap.id 𝕜 E)
     (hW : DifferentiableAt 𝕜 W x) :
     HasDerivAt (fun t => pullback 𝕜 (fun y => F (t, y)) W x)
       (lieBracket 𝕜 (timeFDeriv F t₀) W x) t₀ := by
