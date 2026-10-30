@@ -96,9 +96,8 @@ theorem closed_prod (C : Set X) {D : Set X} [RelCWComplex C D] (A : Set (X × Y)
     · rw [← RelCWComplex.union (C := C), mem_union, mem_iUnion₂] at hxC
       obtain hxD | ⟨n, j, hxj⟩ := hxC
       exacts [hslice hD hxD, hslice (hcell n j) hxj]
-    · rw [show {y | (x, y) ∈ A} = ∅ from
-        eq_empty_of_forall_notMem fun y (hy : (x, y) ∈ A) ↦ hxC (hA hy).1]
-      exact isClosed_empty
+    · convert isClosed_empty using 1
+      exact eq_empty_of_forall_notMem fun y (hy : (x, y) ∈ A) ↦ hxC (hA hy).1
   -- The projection to `X` of the part of `A` over a closed subset `F` of `Y` is closed, by the
   -- weak topology of `C`, because the projection `X × Y → X` is a closed map.
   have hproj {F : Set Y} (hF : IsClosed F) : IsClosed (Prod.fst '' (A ∩ univ ×ˢ F)) := by
@@ -148,7 +147,7 @@ private def intervalCellMap : PartialEquiv ℝ I where
     dsimp only
     ring
   right_inv' s _ := by
-    rw [show (2 * (s : ℝ) - 1 + 1) / 2 = s by ring, projIcc_val]
+    rw [sub_add_cancel, mul_div_cancel_left₀ _ two_ne_zero, projIcc_val]
 
 private theorem intervalCellMap_source : intervalCellMap.source = ball 0 1 :=
   (rfl)
@@ -170,7 +169,7 @@ private theorem image_closedBall_intervalCellMap : intervalCellMap '' closedBall
   refine eq_univ_of_forall fun s ↦ ⟨2 * s - 1, ?_, ?_⟩
   · rw [Real.closedBall_eq_Icc, zero_sub, zero_add, mem_Icc]
     constructor <;> linarith [s.2.1, s.2.2]
-  · rw [intervalCellMap_apply, show (2 * (s : ℝ) - 1 + 1) / 2 = s by ring, projIcc_val]
+  · rw [intervalCellMap_apply, sub_add_cancel, mul_div_cancel_left₀ _ two_ne_zero, projIcc_val]
 
 private theorem image_sphere_intervalCellMap : intervalCellMap '' sphere 0 1 = {0, 1} := by
   rw [Real.sphere_eq_pair 0 zero_le_one, image_pair, intervalCellMap_apply, intervalCellMap_apply]
