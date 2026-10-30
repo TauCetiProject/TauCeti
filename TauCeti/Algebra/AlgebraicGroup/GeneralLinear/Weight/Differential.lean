@@ -59,22 +59,13 @@ theorem weightCocharacter_apply_X (w : Fin N → ℤ) (a b : Fin N) :
     weightCocharacter (R := R) w
         (coordinateHopfAlgebraAlgEquiv R N (coordinateRingMap R N (MvPolynomial.X (a, b)))) =
       if a = b then LaurentPolynomial.T (w a) else 0 := by
-  let f : WithConv (LaurentPolynomial R →ₐ[R] LaurentPolynomial R) :=
-    WithConv.toConv (AlgHom.id R _)
   have h := congrArg (fun p ↦ (pointsMulEquiv N p).val a b)
-    (mapDomain_weightCocharacter (R := R) w f)
-  beta_reduce at h
-  rw [pointsMulEquiv_weightCocharacterPoints, diagGL_apply, BialgHom.mapDomain_apply,
-    pointsMulEquiv_apply, pointToGeneralLinear_apply, WithConv.ofConv_toConv, AlgHom.comp_apply,
-    BialgHom.coe_toAlgHom] at h
-  refine h.trans ?_
-  have hf : laurentEval (MultiplicativeGroup.pointsMulEquiv f) =
-      AlgHom.id R (LaurentPolynomial R) := by
-    rw [MultiplicativeGroup.pointsMulEquiv_apply, laurentEval_laurentEvalEquiv_symm]
-  split_ifs with hab
-  · subst hab
-    rw [weightDiagonalUnits_apply, ← laurentEval_T (R := R), hf, AlgHom.id_apply]
-  · rfl
+    (mapDomain_weightCocharacter (R := R) w (WithConv.toConv (AlgHom.id R _)))
+  rw [pointsMulEquiv_weightCocharacterPoints] at h
+  simp only [BialgHom.mapDomain_apply, AlgHom.id_comp, pointsMulEquiv_apply,
+    pointToGeneralLinear_apply, BialgHom.coe_toAlgHom, MultiplicativeGroup.pointsMulEquiv_apply,
+    diagGL_apply, weightDiagonalUnits_apply] at h
+  rw [h, ← laurentEval_T (R := R), laurentEval_laurentEvalEquiv_symm, AlgHom.id_apply]
 
 /-- **The differential of the weight cocharacter** `t ↦ diag(t ^ w a)` is the diagonal matrix of
 its weights, multiplied by the tangent parameter. -/

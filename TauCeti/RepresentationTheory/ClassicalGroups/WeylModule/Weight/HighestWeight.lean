@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.Basic
+import TauCeti.RepresentationTheory.ClassicalGroups.Weight.HighestWeight
+import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 
 /-!
 # The highest weight determines a Weyl module
@@ -43,6 +46,9 @@ of irreducible representations, `TauCeti.SimpleFDRepClasses k (GL n k)`
 * `TauCeti.weightSpace_rationalWeylRep_self_ne_bot` and
   `TauCeti.sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot`: **`λ` is the highest weight of the
   rational Weyl module of `λ`.**
+* `TauCeti.rationalWeylRep_apply_transvectionUnit_eq_self`: over `ℂ`, the vectors of weight `λ`
+  in `V_λ` are fixed by every transvection `xᵢⱼ(c)` with `i < j`, so they are highest weight
+  vectors.
 * `TauCeti.nonempty_equiv_rationalWeylRep_iff` and `TauCeti.nonempty_iso_rationalWeylFDRep_iff`:
   **rational Weyl modules of distinct dominant weights are not isomorphic.**
 * `TauCeti.rationalWeylFDRepClass` and `TauCeti.rationalWeylFDRepClass_injective`: the
@@ -99,6 +105,29 @@ theorem sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot {k : Type u} [Field k] 
     rw [← l.natCast_rowLen_detShiftShape_add_detShift j, add_sub_cancel_right]
   simp only [hl, Finset.sum_sub_distrib] at h
   linarith
+
+/-- **The vectors of weight `λ` in the rational Weyl module `V_λ` are highest weight vectors**:
+every transvection `xᵢⱼ(c)` with `i < j` fixes each vector of weight `λ`. -/
+theorem rationalWeylRep_apply_transvectionUnit_eq_self (l : DominantWeight n)
+    {i j : Fin n} (hij : i < j) {v : (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule}
+    (hv : v ∈ weightSpace (rationalWeylRep ℂ n l) l.1) (c : ℂ) :
+    rationalWeylRep ℂ n l (transvectionUnit hij.ne c) v = v := by
+  classical
+  refine (isRationalRep_rationalWeylRep n l).apply_transvectionUnit_eq_self hij.ne hv
+    (fun m hm ↦ ?_) c
+  by_contra hne
+  have h := sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot hne ((i : ℕ) + 1)
+  have hsingle (a : Fin n) :
+      ∑ k ∈ Finset.univ.filter fun k : Fin n ↦ (k : ℕ) < (i : ℕ) + 1,
+        (Pi.single a (1 : ℤ) : Fin n → ℤ) k = if (a : ℕ) < (i : ℕ) + 1 then 1 else 0 := by
+    rw [Finset.sum_pi_single']
+    simp
+  have hj : ¬ (j : ℕ) < (i : ℕ) + 1 := by have := Fin.lt_def.mp hij; omega
+  simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_sub, Finset.sum_add_distrib,
+    Finset.sum_sub_distrib, ← Finset.smul_sum, hsingle, Nat.lt_succ_self, ite_true, hj,
+    ite_false] at h
+  rw [nsmul_zero, sub_zero, Int.nsmul_eq_mul, mul_one] at h
+  omega
 
 section Field
 

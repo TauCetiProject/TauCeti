@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import TauCeti.RepresentationTheory.ClassicalGroups.Differential
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basic
@@ -55,6 +56,8 @@ it to `lᵢ φ(w)`.
   `l`, the diagonal matrix `diag(a)` acts by the scalar `∑ᵢ aᵢ lᵢ`.
 * `TauCeti.IsRationalRep.differential_single_apply_eq_zero`: a vector fixed by the root subgroup
   `xᵢⱼ` is killed by `Eᵢⱼ`.
+* `TauCeti.IsRationalRep.isGlHighestWeightVector_differential`: a highest weight vector for the
+  transvections is a highest weight vector for `𝔤𝔩ₙ` through the differential.
 
 ## References
 
@@ -94,13 +97,8 @@ theorem differential_single_apply_eq_zero (hρ : IsRationalRep ρ) {i j : Fin n}
     Comodule.Corestrict φ.toCoalgHom
   refine Comodule.differential_eq_zero_of_coact_eq_tmul_one
     ((Comodule.coact_eq_tmul_one_iff_forall_basePointsRepresentation_eq w).mpr fun g ↦ ?_) d
-  have hg : φ.mapDomain g = generalLinearToPoint n
-      (transvectionUnit hij (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv g))) := by
-    rw [← pointsMulEquiv_symm_apply, ← pointsMulEquiv_rootSubgroupPoints,
-      MulEquiv.symm_apply_apply,
-      ← mapPointsFunctor_rootSubgroupCoordinateMap_app hij (CommAlgCat.of ℂ ℂ),
-      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, BialgHom.mapDomain_apply]
-  rw [Comodule.basePointsRepresentation_corestrict, hg, basePointsRepresentation_comodule]
+  rw [Comodule.basePointsRepresentation_corestrict, mapDomain_rootSubgroupCoordinateMap,
+    hρ.basePointsRepresentation_comodule_eq_pointsMulEquiv, pointsMulEquiv_rootSubgroupPoints]
   exact hw _
 
 /-- **A weight vector is an eigenvector of each diagonal matrix unit**: if every diagonal matrix
@@ -139,14 +137,11 @@ theorem differential_single_self_apply_of_mem_weightSpace (hρ : IsRationalRep �
     have hp := Comodule.apply_matrixCoefficient (H := LaurentPolynomial ℂ) (toConv p) φ w
     rw [ofConv_toConv] at hp
     rw [hp, Comodule.basePointsRepresentation_corestrict, mapDomain_weightCocharacter,
-      ← MulEquiv.symm_apply_apply (pointsMulEquiv (R := ℂ) (A := ℂ) n)
-        (weightCocharacterPoints _ _),
-      pointsMulEquiv_weightCocharacterPoints, pointsMulEquiv_symm_apply,
-      basePointsRepresentation_comodule, (mem_weightSpace_iff ρ l w).mp hw]
+      hρ.basePointsRepresentation_comodule_eq_pointsMulEquiv,
+      pointsMulEquiv_weightCocharacterPoints, (mem_weightSpace_iff ρ l w).mp hw]
     have hu :
         p = laurentEval (MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := ℂ) (toConv p)) := by
-      rw [MultiplicativeGroup.pointsMulEquiv_apply, ofConv_toConv,
-        laurentEval_laurentEvalEquiv_symm]
+      simp [laurentEval_laurentEvalEquiv_symm]
     set u := MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := ℂ) (toConv p)
     have hchar : weightChar ℂ l (weightDiagonalUnits (Pi.single i 1) u) = u ^ l i := by
       rw [weightChar_apply, torusCharacter_def, Finset.prod_eq_single i (fun b _ hb ↦ by simp [hb])
@@ -166,6 +161,21 @@ theorem differential_diagonal_apply_of_mem_weightSpace (hρ : IsRationalRep ρ)
     simp [Matrix.smul_single]
   simp only [ha, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
     hρ.differential_single_self_apply_of_mem_weightSpace hw, smul_smul, Finset.sum_smul]
+
+/-- **A highest weight vector differentiates to a highest weight vector**: a nonzero vector of
+weight `l` fixed by every transvection `xᵢⱼ(c)` with `i < j` is a highest weight vector of weight
+`l` for `𝔤𝔩ₙ(ℂ)` through the differential of `ρ`. -/
+theorem isGlHighestWeightVector_differential (hρ : IsRationalRep ρ) {l : Fin n → ℤ}
+    {w : W} (hw0 : w ≠ 0) (hwl : w ∈ weightSpace ρ l)
+    (hw : ∀ (i j : Fin n) (hij : i < j) (c : ℂ), ρ (transvectionUnit hij.ne c) w = w) :
+    letI := LieRingModule.compLieHom W hρ.differential
+    IsGlHighestWeightVector (fun k ↦ (l k : ℂ)) w := by
+  let _ := LieRingModule.compLieHom W hρ.differential
+  refine isGlHighestWeightVector_iff.mpr ⟨hw0, fun i ↦ ?_, fun i j hij ↦ ?_⟩
+  · rw [LieRingModule.compLieHom_apply, Module.End.lie_apply,
+      hρ.differential_single_self_apply_of_mem_weightSpace hwl]
+  · rw [LieRingModule.compLieHom_apply, Module.End.lie_apply,
+      hρ.differential_single_apply_eq_zero hij.ne (hw i j hij)]
 
 end IsRationalRep
 
