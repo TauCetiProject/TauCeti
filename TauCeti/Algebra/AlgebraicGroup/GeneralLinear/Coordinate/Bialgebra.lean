@@ -97,8 +97,8 @@ theorem counit_X (i j : Fin n) :
 @[simp]
 theorem map_counit_genericMatrix :
     (Matrix.mvPolynomialX (Fin n) (Fin n) R).map (counit R n) = 1 := by
-  simpa only [counit, AlgHom.mapMatrix_apply] using
-    Matrix.mvPolynomialX_mapMatrix_aeval R (1 : Matrix (Fin n) (Fin n) R)
+  ext i j
+  simp [Matrix.one_apply]
 
 /-- Applying the comultiplication entrywise to the generic matrix gives the product of its
 left-tensor and right-tensor copies. The order represents ordinary matrix multiplication, not
@@ -124,31 +124,10 @@ local scope. -/
 noncomputable def bialgebra : Bialgebra R (CoordinateRing R n) :=
   Bialgebra.ofAlgHom (comul R n) (counit R n)
     (by
-      apply MvPolynomial.algHom_ext
-      rintro ⟨i, j⟩
-      simp only [AlgHom.comp_apply, comul_X, map_sum, map_tmul, AlgHom.id_apply]
-      simp only [TensorProduct.sum_tmul, TensorProduct.tmul_sum]
-      simp only [map_sum]
-      rw [Finset.sum_comm]
-      rfl)
-    (by
-      apply MvPolynomial.algHom_ext
-      rintro ⟨i, j⟩
-      simp only [AlgHom.comp_apply, comul_X, map_sum, map_tmul, counit_X, AlgHom.id_apply]
-      rw [Finset.sum_eq_single i]
-      · simp
-      · intro k _ hki
-        simp [hki.symm]
-      · simp)
-    (by
-      apply MvPolynomial.algHom_ext
-      rintro ⟨i, j⟩
-      simp only [AlgHom.comp_apply, comul_X, map_sum, map_tmul, counit_X, AlgHom.id_apply]
-      rw [Finset.sum_eq_single j]
-      · simp
-      · intro k _ hkj
-        simp [hkj]
-      · simp)
+      ext ⟨i, j⟩
+      simpa [TensorProduct.sum_tmul, TensorProduct.tmul_sum] using Finset.sum_comm)
+    (by ext ⟨i, j⟩; simp [TensorProduct.ite_tmul])
+    (by ext ⟨i, j⟩; simp [TensorProduct.tmul_ite, eq_comm])
 
 /-- Selecting `bialgebra R n` makes its comultiplication the explicit matrix-multiplication map
 `comul R n`. The equality is heterogeneous because opacity also hides the dictionary's stored
@@ -174,8 +153,7 @@ theorem bialgebra_comul_X (i j : Fin n) :
     letI : Coalgebra R (CoordinateRing R n) := (bialgebra R n).toCoalgebra
     Coalgebra.comul (R := R) (A := CoordinateRing R n) (MvPolynomial.X (i, j)) =
       ∑ k : Fin n, MvPolynomial.X (i, k) ⊗ₜ[R] MvPolynomial.X (k, j) := by
-  rw [eq_of_heq (bialgebra_comul R n), AlgHom.toLinearMap_apply]
-  exact comul_X R n i j
+  rw [eq_of_heq (bialgebra_comul R n), AlgHom.toLinearMap_apply, comul_X]
 
 /-- Under `bialgebra R n`, the counit has the identity-matrix formula on generators. -/
 @[simp]
@@ -184,8 +162,7 @@ theorem bialgebra_counit_X (i j : Fin n) :
     letI : Coalgebra R (CoordinateRing R n) := (bialgebra R n).toCoalgebra
     Coalgebra.counit (R := R) (A := CoordinateRing R n) (MvPolynomial.X (i, j)) =
       if i = j then 1 else 0 := by
-  rw [eq_of_heq (bialgebra_counit R n), AlgHom.toLinearMap_apply]
-  exact counit_X R n i j
+  rw [eq_of_heq (bialgebra_counit R n), AlgHom.toLinearMap_apply, counit_X]
 
 end Semiring
 
@@ -197,7 +174,7 @@ variable (R : Type u) [CommRing R] (n : ℕ)
 @[simp]
 theorem counit_determinant :
     counit R n (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R)) = 1 := by
-  rw [AlgHom.map_det, AlgHom.mapMatrix_apply, map_counit_genericMatrix, Matrix.det_one]
+  simp [AlgHom.map_det]
 
 /-- Matrix-multiplication comultiplication sends the generic determinant to its tensor square. -/
 @[simp]
@@ -206,14 +183,7 @@ theorem comul_determinant :
       Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R) ⊗ₜ[R]
         Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R) := by
   rw [AlgHom.map_det, AlgHom.mapMatrix_apply, map_comul_genericMatrix, Matrix.det_mul]
-  rw [← AlgHom.mapMatrix_apply (includeLeft : CoordinateRing R n →ₐ[R]
-        CoordinateRing R n ⊗[R] CoordinateRing R n)
-          (Matrix.mvPolynomialX (Fin n) (Fin n) R),
-      ← AlgHom.mapMatrix_apply (includeRight : CoordinateRing R n →ₐ[R]
-        CoordinateRing R n ⊗[R] CoordinateRing R n)
-          (Matrix.mvPolynomialX (Fin n) (Fin n) R)]
-  rw [← AlgHom.map_det, ← AlgHom.map_det]
-  simp
+  simp [← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
 
 /-- The polynomial coordinate algebra of the matrix monoid, bundled with the selected
 matrix-coordinate bialgebra structure.
@@ -227,9 +197,9 @@ noncomputable def coordinateBialgebra : CommBialgCat R :=
 /-- The canonical algebra equivalence from the polynomial coordinate ring to the carrier of its
 bundled matrix-coordinate bialgebra. -/
 noncomputable def coordinateBialgebraAlgEquiv :
-    CoordinateRing R n ≃ₐ[R] coordinateBialgebra R n := by
+    CoordinateRing R n ≃ₐ[R] coordinateBialgebra R n :=
   letI : Bialgebra R (CoordinateRing R n) := bialgebra R n
-  exact AlgEquiv.refl
+  AlgEquiv.refl
 
 /-- Mathlib has no `CommBialgCat.of_comul` lemma exposing the comultiplication stored by
 `CommBialgCat.of`. This bridge isolates the two definitional equalities needed here:
@@ -241,13 +211,8 @@ private theorem coordinateBialgebra_comul_transport (x : CoordinateRing R n) :
         (coordinateBialgebraAlgEquiv R n x) =
       Algebra.TensorProduct.map (coordinateBialgebraAlgEquiv R n).toAlgHom
           (coordinateBialgebraAlgEquiv R n).toAlgHom
-          ((bialgebra R n).toCoalgebra.toCoalgebraStruct.comul x) := by
-  change (bialgebra R n).toCoalgebra.toCoalgebraStruct.comul x =
-    Algebra.TensorProduct.map (AlgHom.id R (CoordinateRing R n))
-      (AlgHom.id R (CoordinateRing R n))
-      ((bialgebra R n).toCoalgebra.toCoalgebraStruct.comul x)
-  rw [Algebra.TensorProduct.map_id]
-  rfl
+          ((bialgebra R n).toCoalgebra.toCoalgebraStruct.comul x) :=
+  (DFunLike.congr_fun Algebra.TensorProduct.map_id _).symm
 
 /-- Mathlib has no `CommBialgCat.of_counit` lemma exposing the counit stored by
 `CommBialgCat.of`. This bridge isolates the definitional equalities that `coordinateBialgebra`
@@ -256,7 +221,7 @@ stores `(bialgebra R n).toCoalgebra` on the raw coordinate ring and that
 private theorem coordinateBialgebra_counit_transport (x : CoordinateRing R n) :
     Coalgebra.counit (R := R) (A := coordinateBialgebra R n)
         (coordinateBialgebraAlgEquiv R n x) =
-      (bialgebra R n).toCoalgebra.toCoalgebraStruct.counit x := by
+      (bialgebra R n).toCoalgebra.toCoalgebraStruct.counit x :=
   rfl
 
 /-- Comultiplication on the bundled coordinate bialgebra agrees with the explicit
@@ -289,8 +254,7 @@ theorem coordinateBialgebra_comul_X (i j : Fin n) :
         coordinateBialgebraAlgEquiv R n (MvPolynomial.X (i, k)) ⊗ₜ[R]
           coordinateBialgebraAlgEquiv R n (MvPolynomial.X (k, j)) :
         coordinateBialgebra R n ⊗[R] coordinateBialgebra R n) := by
-  rw [coordinateBialgebra_comul_apply, comul_X, map_sum]
-  simp
+  simp [coordinateBialgebra_comul_apply]
 
 /-- The bundled coordinate bialgebra retains the identity-matrix counit on its generic
 entries. -/
@@ -299,19 +263,14 @@ theorem coordinateBialgebra_counit_X (i j : Fin n) :
     Coalgebra.counit (R := R) (A := coordinateBialgebra R n)
         (coordinateBialgebraAlgEquiv R n (MvPolynomial.X (i, j))) =
       if i = j then 1 else 0 := by
-  rw [coordinateBialgebra_counit_apply]
-  exact counit_X R n i j
+  rw [coordinateBialgebra_counit_apply, counit_X]
 
 /-- The determinant of the generic matrix is group-like in the matrix-coordinate bialgebra. -/
 theorem isGroupLikeElem_determinant :
     IsGroupLikeElem (A := coordinateBialgebra R n) R
       (coordinateBialgebraAlgEquiv R n
         (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R))) := by
-  constructor
-  · rw [coordinateBialgebra_counit_apply]
-    exact counit_determinant R n
-  · rw [coordinateBialgebra_comul_apply, comul_determinant]
-    simp
+  constructor <;> simp [coordinateBialgebra_comul_apply]
 
 end Ring
 

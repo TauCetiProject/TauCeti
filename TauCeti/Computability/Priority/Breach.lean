@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.Priority.Injury
+public import TauCeti.Computability.Priority.Injury.Basic
 public import Mathlib.Data.Nat.PSub
 
 /-!

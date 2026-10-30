@@ -30,12 +30,13 @@ almost surely unique such a plan is determined by its endpoint law
 (`MeasureTheory.Measure.eq_of_endpointLaw_eq_of_ae_subsingleton`), so the two geodesic segments
 have the same laws at all times.
 
-In a strictly convex separable Banach space `E` the only geodesic between two points is the affine
-segment, so when the optimal coupling `π` is unique the geodesic segments of `P_p (E)` from `μ` to
-`ν` are exactly the linear interpolation `t ↦ ((1 - t) • x + t • y)₊ π`. On a finite-dimensional
-real inner product space, Brenier's theorem makes the quadratic optimal coupling out of an
-absolutely continuous law `μ` unique, and the graph plan of the Brenier map `T`. Every geodesic
-segment of `P₂ (E)` out of `μ` is then McCann's displacement interpolation
+In a strictly convex separable Banach space `E` the geodesic segments of `P_p (E)` from `μ` to `ν`
+are exactly the linear interpolations `t ↦ ((1 - t) • x + t • y)₊ π` of the optimal couplings `π`
+of `μ` and `ν` (`TauCeti.WassersteinSpace.isGeodesicSegment_iff_exists_isOptimalCoupling`), so
+when the optimal coupling is unique they are exactly the linear interpolation of `π`. On a
+finite-dimensional real inner product space, Brenier's theorem makes the quadratic optimal coupling
+out of an absolutely continuous law `μ` unique, and the graph plan of the Brenier map `T`. Every
+geodesic segment of `P₂ (E)` out of `μ` is then McCann's displacement interpolation
 `t ↦ ((1 - t) • id + t • T)₊ μ`, and in particular there is only one.
 
 ## Main results
@@ -133,17 +134,9 @@ theorem isGeodesicSegment_iff_coe_eq_map_smul_add_smul (hp1 : 1 < p) (hp : p ≠
   -- An optimal coupling exists, so it is `π`.
   obtain ⟨π₀, hπ₀, hπ₀opt⟩ := exists_isCoupling_eLpNorm_eq_wassersteinEDist hp0 hp _ _
     (exists_isCoupling_of_wassersteinEDist_ne_top (wassersteinEDist_ne_top measurable_edist μ ν))
-  obtain rfl := hπ π₀ ((isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).2
-    ⟨hπ₀, hπ₀opt⟩)
-  obtain ⟨γ₀, hγ₀, hγ₀t⟩ := exists_isGeodesicSegment_map_smul_add_smul hπ₀ hπ₀opt
-  -- Geodesic paths of `E` are affine segments, so they are determined by their endpoints.
-  have hgeo : ∀ᵐ z ∂π₀, {c | c ∈ geodesicPaths E ∧ c 0 = z.1 ∧ c 1 = z.2}.Subsingleton :=
-    .of_forall fun z c ⟨hc, hc0, hc1⟩ c' ⟨hc', hc0', hc1'⟩ ↦ by
-      rw [eq_segmentPath_of_mem_geodesicPaths hc, eq_segmentPath_of_mem_geodesicPaths hc', hc0,
-        hc1, hc0', hc1']
-  refine ⟨fun h t ht ↦ ?_, fun h ↦ hγ₀.congr fun t ht ↦ ?_⟩
-  · rw [eqOn_of_isGeodesicSegment_of_ae_subsingleton hp1 hp hπ hgeo h hγ₀ ht, hγ₀t t ht]
-  · exact ext (ProbabilityMeasure.toMeasure_injective ((h t ht).trans (hγ₀t t ht).symm))
+  have h₀ := (isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).2 ⟨hπ₀, hπ₀opt⟩
+  rw [isGeodesicSegment_iff_exists_isOptimalCoupling hp1 hp]
+  exact ⟨fun ⟨π', h', ht⟩ ↦ hπ π' h' ▸ ht, fun ht ↦ ⟨π, hπ π₀ h₀ ▸ h₀, ht⟩⟩
 
 end Normed
 

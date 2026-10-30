@@ -33,6 +33,10 @@ scalar form Mathlib gives having no other square roots of `1` to offer.
 The general positive-size center is identified with the corresponding roots-of-unity group by
 specializing Mathlib's finite-index-type equivalence to `Fin n`.
 
+For any finite index type `ι`, the kernel of reduction `SL(ι, ℤ) → SL(ι, ℤ/Nℤ)`, the principal
+congruence subgroup of level `N`, is described entrywise: it consists of the matrices congruent
+to the identity modulo `N`.
+
 The surjectivity is ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck). It realizes every unit of
 `ZMod N` as the lower-right entry of a matrix in `Γ₀(N)`, providing the lifts used to define
@@ -49,6 +53,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`: strong approximation for `SL₂`,
   with `Matrix.SpecialLinearGroup.map_intCast_zmod_prod_surjective` its two-modulus form:
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
+* `Matrix.SpecialLinearGroup.mem_ker_map_intCast_zmod_iff`: an element of `SL(ι, ℤ)` lies in
+  the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
 * `Matrix.SpecialLinearGroup.map_comp` and `Matrix.SpecialLinearGroup.map_id`: the two functor
   laws for base change, which support whole-matrix reduction arguments such as the level
   antitonicity of the principal congruence subgroups.
@@ -561,5 +567,15 @@ theorem map_intCast_zmod_prod_surjective {d d' : ℕ} (hcop : d.Coprime d') :
   · ext i j
     simpa only [MonoidHom.prod_apply, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
       Int.coe_castRingHom] using congrArg Prod.snd (hpair i j)
+
+/-- **Entrywise kernel test**: `γ ∈ SL(ι, ℤ)` lies in the principal congruence subgroup of level
+`N`, the kernel of reduction modulo `N`, iff it is congruent to the identity modulo `N`
+entrywise. -/
+theorem mem_ker_map_intCast_zmod_iff {ι : Type*} [Fintype ι] [DecidableEq ι] {N : ℕ}
+    {γ : SpecialLinearGroup ι ℤ} :
+    γ ∈ (map (Int.castRingHom (ZMod N))).ker ↔
+      ∀ i j, (N : ℤ) ∣ (γ : Matrix ι ι ℤ) i j - if i = j then 1 else 0 := by
+  simp [SpecialLinearGroup.ext_iff, Matrix.one_apply, apply_ite,
+    ← ZMod.intCast_zmod_eq_zero_iff_dvd, sub_eq_zero]
 
 end Matrix.SpecialLinearGroup

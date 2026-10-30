@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 -/
 module
 
@@ -38,8 +38,18 @@ Compressing the square of the difference `P_U - P_V` to `U`, from either side, g
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
 complement of its kernel whenever the kernel admits an orthogonal projection.
 
+## Provenance
+
+The submodule inclusion-adjoint identity is adapted from
+`ForTauCeti/Analysis/InnerProductSpace/SinTheta/Perturbation.lean` in the
+AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
+
 ## Main results
 
+* `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
+  onto that subspace.
+* `Submodule.adjoint_orthogonalProjectionOnto_toLinearMap`: the adjoint of restricted
+  orthogonal projection is subspace inclusion.
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
 * `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
@@ -238,6 +248,29 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   have hQ := V.isIdempotentElem_starProjection
   simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.eq, hP.mul_self_mul]
   abel
+
+/-- The adjoint of the inclusion `U → E` is the orthogonal projection `E → U`.
+Both maps are regarded as finite-dimensional algebraic linear maps. -/
+@[simp]
+theorem adjoint_subtype [FiniteDimensional 𝕜 E] :
+    LinearMap.adjoint U.subtype = U.orthogonalProjectionOnto.toLinearMap := by
+  rw [eq_comm]
+  apply (LinearMap.eq_adjoint_iff
+    U.orthogonalProjectionOnto.toLinearMap U.subtype).2
+  intro x y
+  -- Identify the ambient action of the restricted orthogonal projection with
+  -- `starProjection`; the inner-product identity is then a projection property.
+  change ⟪U.starProjection x, (y : E)⟫_𝕜 = ⟪x, (y : E)⟫_𝕜
+  rw [U.inner_starProjection_left_eq_right,
+    U.starProjection_eq_self_iff.mpr y.2]
+
+/-- The algebraic adjoint of the orthogonal projection `E → U` is the inclusion `U → E`.
+This is the elementary simplification rule for the adjoints of cross-projections and
+self-adjoint compressions, together with `LinearMap.adjoint_comp`. -/
+@[simp]
+theorem adjoint_orthogonalProjectionOnto_toLinearMap [FiniteDimensional 𝕜 E] :
+    LinearMap.adjoint U.orthogonalProjectionOnto.toLinearMap = U.subtype := by
+  rw [← U.adjoint_subtype, LinearMap.adjoint_adjoint]
 
 end Submodule
 
