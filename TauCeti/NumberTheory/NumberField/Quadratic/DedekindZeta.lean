@@ -15,7 +15,6 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 import TauCeti.NumberTheory.EffectiveBounds.Regulator
 import TauCeti.NumberTheory.LSeries.ZetaMul
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
-import TauCeti.NumberTheory.NumberField.Quadratic.Inert
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
 import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
@@ -134,7 +133,11 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
     obtain ⟨𝔭, hT⟩ := Set.ncard_eq_one.mp hone
     have h𝔭 : 𝔭 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ rfl
     have := h𝔭.1; have := h𝔭.2
-    have hN := absNorm_eq_sq_of_primesOver_eq_singleton hK hp.out hunram 𝔭 hT
+    have he : 𝔭.ramificationIdx ℤ = 1 :=
+      (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp
+        (by simpa [hp.out] using hunram)) 𝔭 inferInstance
+    have hN : absNorm 𝔭 = p ^ 2 := by
+      rw [absNorm_eq_pow_finrank_of_primesOver_eq_singleton 𝔭 hT he, hK]
     rw [normCoeff_apply_prime_pow_eq_localArithmeticFactor isMultiplicative_one hp.out _
       (eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton 𝔭 hT), h, Int.cast_neg,
       Int.cast_one, neg_one_geom_sum]

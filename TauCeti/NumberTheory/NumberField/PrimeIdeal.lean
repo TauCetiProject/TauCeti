@@ -14,7 +14,9 @@ public import Mathlib.RingTheory.Ideal.Int
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import Mathlib.RingTheory.KrullDimension.Basic
 import Mathlib.RingTheory.RamificationInertia.Basic
+import Mathlib.RingTheory.RamificationInertia.Inertia
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.RamificationInertia.Inert
 
 /-!
 # Prime ideals of rings of integers
@@ -34,6 +36,8 @@ prime into them.
   as a height-one prime.
 * `TauCeti.NumberField.eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton`: if a single
   prime lies above `p`, it is the only height-one prime containing `p`.
+* `TauCeti.NumberField.absNorm_eq_pow_finrank_of_primesOver_eq_singleton`: an unramified prime
+  that is the only prime above `p` has norm `p ^ [K : ℚ]`, so `p` is inert.
 * `TauCeti.NumberField.card_primesOverFinset_le_finrank`: at most `[K : ℚ]` primes of `𝓞 K`
   lie over a nonzero prime of `ℤ`.
 * `TauCeti.NumberField.span_natCast_eq_prod_primesOverFinset`: a rational prime unramified in
@@ -134,6 +138,18 @@ theorem eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton (𝔭 : Ideal 
     exact Finset.mem_singleton.mpr (HeightOneSpectrum.ext hQ)) P hP
 
 end HeightOne
+
+/-- **An unramified prime with a single prime above it is inert.** If `𝔭` is the only prime of
+`𝓞 K` above the rational prime `p` and `e(𝔭) = 1`, the fundamental identity `∑ e f = [K : ℚ]`
+gives `f(𝔭) = [K : ℚ]`, so `N(𝔭) = p ^ [K : ℚ]`. -/
+theorem absNorm_eq_pow_finrank_of_primesOver_eq_singleton {p : ℕ} (𝔭 : Ideal (𝓞 K))
+    [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
+    (hT : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) = {𝔭}) (he : 𝔭.ramificationIdx ℤ = 1) :
+    absNorm 𝔭 = p ^ Module.finrank ℚ K := by
+  have : (span {(p : ℤ)} : Ideal ℤ).IsPrime := over_def 𝔭 (span {(p : ℤ)}) ▸ inferInstance
+  rw [← pow_inertiaDeg p 𝔭, ← _root_.NumberField.RingOfIntegers.rank K,
+    RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one (span {(p : ℤ)}) 𝔭
+      (by simp [hT]) he]
 
 /-- At most `[K : ℚ]` primes of `𝓞 K` lie over a given nonzero prime of `ℤ`, since each
 contributes a positive `ramificationIdx * inertiaDeg` to the fundamental identity. -/
