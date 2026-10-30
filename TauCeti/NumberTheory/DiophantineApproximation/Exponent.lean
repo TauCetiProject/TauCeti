@@ -15,8 +15,11 @@ public import TauCeti.Data.Rat.BoundedDen
 This file defines the irrationality exponent of a real number as the supremum of the exponents
 for which it satisfies Mathlib's `LiouvilleWith` predicate.  It establishes the order-theoretic
 API of this definition, identifies infinite irrationality exponent with the Liouville property,
-computes the exponent of rational numbers, and records its elementary rational affine
-invariances.
+computes the exponent of rational numbers, and records its invariance under rational Möbius
+transformations `ξ ↦ (a ξ + b) / (c ξ + d)` with `a d - b c ≠ 0`
+(`irrationalityExponent_mul_add_div_mul_add`). The new ingredient beyond Mathlib's affine API for
+`LiouvilleWith` is inversion, `LiouvilleWith.inv`; the general transformation is a composition
+of affine maps and one inversion.
 
 It then relates the exponent to approximation by reduced fractions: `irrationalityExponent ξ` is
 the supremum of the `p` for which infinitely many `r : ℚ` satisfy `|ξ - r| < r.den ^ (-p)`
@@ -27,7 +30,8 @@ on the irrational numbers (`two_le_irrationalityExponent_iff`), and Mathlib's me
 (`ae_irrationalityExponent_eq_two`).
 
 The definition follows Sondow, *Irrationality measures, irrationality bases, and a theorem of
-Jarnik*, Definition 2.
+Jarnik*, Definition 2. The invariance under rational Möbius transformations is classical; see
+Bugeaud, *Approximation by Algebraic Numbers*, Cambridge Tracts in Mathematics 160 (2004).
 -/
 
 public section
@@ -128,6 +132,113 @@ theorem irrational_of_one_lt_irrationalityExponent {ξ : ℝ}
   rw [lt_iSup_iff] at hp
   obtain ⟨hpL, hp_one⟩ := hp
   exact hpL.irrational <| (ENNReal.ofReal_lt_ofReal_iff'.mp <| by simpa using hp_one).1
+
+/-! ### Inversion and Möbius transformations -/
+
+/-- The reciprocal of a Liouville number with exponent `p` is a Liouville number with exponent
+`p`. -/
+theorem _root_.LiouvilleWith.inv {p x : ℝ} (h : LiouvilleWith p x) : LiouvilleWith p x⁻¹ := by
+  rcases le_or_gt p 1 with hp | hp
+  · exact (liouvilleWith_one _).mono hp
+  wlog hx : 0 < x generalizing x
+  · have hx' : 0 < -x := neg_pos.2 <| (not_lt.1 hx).lt_of_ne (h.irrational hp).ne_zero
+    simpa only [inv_neg, LiouvilleWith.neg_iff] using this h.neg hx'
+  -- For `1 < p`, the approximations `m / n` to `x` give the approximations `n / m` to `x⁻¹`.
+  obtain ⟨C, hC₀, hC⟩ := h.exists_pos
+  refine ⟨2 * C * (2 * x) ^ p / x ^ 2, frequently_atTop.2 fun N₀ ↦ ?_⟩
+  -- Past a threshold, an approximation `m / n` lies within `x / 2` of `x`, and `n` is so large
+  -- that the new denominator `m`, which is at least `x n / 2`, is at least `N₀`.
+  have hsmall : ∀ᶠ n : ℕ in atTop, C / (n : ℝ) ^ p < x / 2 :=
+    (((tendsto_rpow_atTop (zero_lt_one.trans hp)).comp
+      tendsto_natCast_atTop_atTop).const_div_atTop C).eventually (gt_mem_nhds (half_pos hx))
+  have hlarge : ∀ᶠ n : ℕ in atTop, (N₀ : ℝ) ≤ x / 2 * n :=
+    (tendsto_natCast_atTop_atTop.const_mul_atTop (half_pos hx)).eventually_ge_atTop _
+  obtain ⟨n, ⟨hsm, hlg⟩, hn, m, hne, hlt⟩ := ((hsmall.and hlarge).and_frequently hC).exists
+  have hn' : (0 : ℝ) < n := by exact_mod_cast hn
+  set y : ℝ := m / n
+  have hym : y * n = m := div_mul_cancel₀ _ hn'.ne'
+  have hxy := abs_sub_lt_iff.1 (hlt.trans hsm)
+  have hy₀ : 0 < y := by linarith
+  have hm : (0 : ℝ) < m := hym ▸ mul_pos hy₀ hn'
+  have hmN : ((m.toNat : ℕ) : ℝ) = m := by
+    exact_mod_cast Int.toNat_of_nonneg (show (0 : ℤ) ≤ m by exact_mod_cast hm.le)
+  have hmx : (m : ℝ) ≤ 2 * x * n := by
+    rw [← hym]
+    gcongr
+    linarith
+  have hbound : C / (n : ℝ) ^ p ≤ C * (2 * x) ^ p / (m : ℝ) ^ p := by
+    rw [div_le_div_iff₀ (by positivity) (by positivity), mul_assoc,
+      ← Real.mul_rpow (by positivity) hn'.le]
+    gcongr
+  refine ⟨m.toNat, ?_, n, ?_⟩
+  · have hN₀ : (N₀ : ℝ) ≤ m.toNat := hmN ▸ hlg.trans (by rw [← hym]; gcongr; linarith)
+    exact_mod_cast hN₀
+  rw [Int.cast_natCast, hmN, ← inv_div]
+  refine ⟨inv_injective.ne hne, ?_⟩
+  rw [inv_sub_inv hx.ne' hy₀.ne', abs_div, abs_sub_comm, abs_of_pos (mul_pos hx hy₀)]
+  calc |x - y| / (x * y) ≤ |x - y| / (x * (x / 2)) := by gcongr; linarith
+    _ < C / (n : ℝ) ^ p / (x * (x / 2)) := by gcongr
+    _ ≤ C * (2 * x) ^ p / (m : ℝ) ^ p / (x * (x / 2)) := by gcongr
+    _ = 2 * C * (2 * x) ^ p / x ^ 2 / (m : ℝ) ^ p := by field_simp
+
+/-- A real number is a Liouville number with exponent `p` exactly when its reciprocal is. -/
+@[simp]
+theorem _root_.LiouvilleWith.inv_iff {p x : ℝ} : LiouvilleWith p x⁻¹ ↔ LiouvilleWith p x :=
+  ⟨fun h ↦ inv_inv x ▸ h.inv, LiouvilleWith.inv⟩
+
+/-- A real number is a Liouville number with exponent `p` exactly when its image under a Möbius
+transformation `x ↦ (a x + b) / (c x + d)` with rational coefficients and nonzero determinant
+`a d - b c` is. -/
+theorem _root_.LiouvilleWith.mul_add_div_mul_add_iff {p x : ℝ} {a b c d : ℚ}
+    (h : a * d - b * c ≠ 0) :
+    LiouvilleWith p ((a * x + b) / (c * x + d)) ↔ LiouvilleWith p x := by
+  rcases le_or_gt p 1 with hp | hp
+  · exact iff_of_true ((liouvilleWith_one _).mono hp) ((liouvilleWith_one _).mono hp)
+  rcases eq_or_ne c 0 with rfl | hc
+  · -- An affine map `x ↦ (a / d) x + b / d`.
+    have hd : d ≠ 0 := by rintro rfl; simp at h
+    have ha : a ≠ 0 := by rintro rfl; simp at h
+    have hmap : ((a : ℝ) * x + b) / (((0 : ℚ) : ℝ) * x + d) =
+        ((a / d : ℚ) : ℝ) * x + ((b / d : ℚ) : ℝ) := by
+      simp only [Rat.cast_zero, zero_mul, zero_add, Rat.cast_div]
+      field_simp
+    rw [hmap, LiouvilleWith.add_rat_iff, LiouvilleWith.rat_mul_iff (div_ne_zero ha hd)]
+  by_cases hx : (c : ℝ) * x + d = 0
+  · -- The pole `x = -d / c` is rational, and so is its image `0`.
+    have hxq : x = ((-d / c : ℚ) : ℝ) := by
+      push_cast
+      field_simp
+      linarith
+    rw [hx, div_zero]
+    exact iff_of_false (fun h' ↦ not_irrational_zero (h'.irrational hp))
+      (fun h' ↦ Rat.not_irrational _ (hxq ▸ h'.irrational hp))
+  · -- The partial-fraction decomposition `a / c + ((b c - a d) / c) (c x + d)⁻¹`.
+    have hmap : ((a : ℝ) * x + b) / (c * x + d) =
+        (((b * c - a * d) / c : ℚ) : ℝ) * (c * x + d)⁻¹ + ((a / c : ℚ) : ℝ) := by
+      have hc' : (c : ℝ) ≠ 0 := Rat.cast_ne_zero.2 hc
+      have hnum : (a : ℝ) * x + b = a / c * (c * x + d) + (b * c - a * d) / c := by
+        field_simp
+        ring
+      rw [hnum, add_div, mul_div_cancel_right₀ _ hx, div_eq_mul_inv _ ((c : ℝ) * x + d)]
+      push_cast
+      ring
+    have hk : (b * c - a * d) / c ≠ 0 :=
+      div_ne_zero (fun h' ↦ h (by linear_combination -h')) hc
+    rw [hmap, LiouvilleWith.add_rat_iff, LiouvilleWith.rat_mul_iff hk, LiouvilleWith.inv_iff,
+      LiouvilleWith.add_rat_iff, LiouvilleWith.rat_mul_iff hc]
+
+/-- The irrationality exponent is invariant under inversion. -/
+@[simp]
+theorem irrationalityExponent_inv (ξ : ℝ) :
+    irrationalityExponent ξ⁻¹ = irrationalityExponent ξ := by
+  simp only [irrationalityExponent, LiouvilleWith.inv_iff]
+
+/-- The irrationality exponent is invariant under a Möbius transformation
+`ξ ↦ (a ξ + b) / (c ξ + d)` with rational coefficients and nonzero determinant `a d - b c`. -/
+theorem irrationalityExponent_mul_add_div_mul_add (ξ : ℝ) {a b c d : ℚ}
+    (h : a * d - b * c ≠ 0) :
+    irrationalityExponent ((a * ξ + b) / (c * ξ + d)) = irrationalityExponent ξ := by
+  simp only [irrationalityExponent, LiouvilleWith.mul_add_div_mul_add_iff h]
 
 /-! ### Approximation by reduced fractions -/
 

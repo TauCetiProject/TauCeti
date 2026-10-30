@@ -22,6 +22,8 @@ defines the words and the braid each word represents.
 * `TauCeti.BraidWord.strandIncl`: the same word on one strand more, the new strand uncrossed.
 * `TauCeti.BraidWord.stabilize`: the Markov stabilization of a word, which adds a strand and
   crosses it once with the previous last strand.
+* `TauCeti.BraidWord.levelAt` and `TauCeti.BraidWord.signAt`: the level and the sign of the letter
+  at a given position of a word.
 
 ## Main results
 
@@ -31,6 +33,10 @@ defines the words and the braid each word represents.
 * `TauCeti.BraidWord.toBraid_strandIncl` and `TauCeti.BraidWord.toBraid_stabilize`: these word
   operations represent `TauCeti.BraidGroup.strandIncl` and the stabilization of
   `TauCeti.IsMarkovMove`.
+* `TauCeti.BraidWord.levelAt_stabilize_of_lt` and `TauCeti.BraidWord.signAt_stabilize_of_lt`:
+  stabilization keeps the level and the sign of every letter of the original word, while
+  `TauCeti.BraidWord.levelAt_stabilize_length` and `TauCeti.BraidWord.signAt_stabilize_length`
+  describe the new stabilizing letter.
 
 ## References
 
@@ -150,6 +156,12 @@ theorem length_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
     List.length (α := Fin (n + 1) × ℤˣ) (w.stabilize ε) = w.length + 1 := by
   rw [stabilize_def, List.length_append, length_strandIncl, List.length_singleton]
 
+/-- Stabilization keeps every letter of the original word, now read on one strand more. -/
+theorem getElem?_stabilize_of_lt (w : BraidWord (n + 1)) (ε : ℤˣ) {k : ℕ} (hk : k < w.length) :
+    (w.stabilize ε)[k]? = w[k]?.map fun x ↦ ((x.1.castSucc : Fin (n + 1)), x.2) := by
+  rw [stabilize_def, List.getElem?_append_left (by simpa using hk), strandIncl_def,
+    List.getElem?_map]
+
 /-- A stabilized word represents the braid `strandIncl b * σ (Fin.last n) ^ ε`, the stabilization
 of the braid `b` of the word, as in `TauCeti.IsMarkovMove.stabilize` and
 `TauCeti.IsMarkovMove.stabilizeInv`. -/
@@ -157,6 +169,84 @@ of the braid `b` of the word, as in `TauCeti.IsMarkovMove.stabilize` and
 theorem toBraid_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
     (w.stabilize ε).toBraid = BraidGroup.strandIncl w.toBraid * sigma (Fin.last n) ^ (ε : ℤ) := by
   rw [stabilize_def, toBraid_append, toBraid_strandIncl, toBraid_cons, toBraid_nil, mul_one]
+
+/-! ### Letters at a position -/
+
+section Positions
+
+variable (w : BraidWord n)
+
+-- Exposed so that downstream modules can evaluate `seifertLoops` and `seifertMatrix` of concrete
+-- words by `decide`, as in `TauCeti.BraidWord.seifertMatrix_trefoil`; proofs use `levelAt_def`.
+/-- The level `i` of the letter `σ i ^ ε` at position `k` of a braid word, or `none` if the word
+has no position `k`. In the closure of the braid, the letters of level `i` are the crossings of
+the strand positions `i` and `i + 1`. -/
+@[expose] def levelAt (k : ℕ) : Option ℕ :=
+  w[k]?.map fun x ↦ (x.1 : ℕ)
+
+-- Exposed so that downstream modules can evaluate `seifertLoops` and `seifertMatrix` of concrete
+-- words by `decide`, as in `TauCeti.BraidWord.seifertMatrix_trefoil`; proofs use `signAt_def`.
+/-- The sign `ε` of the letter `σ i ^ ε` at position `k` of a braid word, or `0` if the word has no
+position `k`. -/
+@[expose] def signAt (k : ℕ) : ℤ :=
+  (w[k]?.map fun x ↦ (x.2 : ℤ)).getD 0
+
+/-- The defining equation of `TauCeti.BraidWord.levelAt`: the index of the letter, if any. -/
+theorem levelAt_def (k : ℕ) : w.levelAt k = w[k]?.map fun x ↦ (x.1 : ℕ) :=
+  (rfl)
+
+/-- The defining equation of `TauCeti.BraidWord.signAt`: the sign of the letter, or `0`. -/
+theorem signAt_def (k : ℕ) : w.signAt k = (w[k]?.map fun x ↦ (x.2 : ℤ)).getD 0 :=
+  (rfl)
+
+/-- The level of a letter of the word. -/
+@[simp]
+theorem levelAt_of_lt {k : ℕ} (hk : k < w.length) : w.levelAt k = some (w[k].1 : ℕ) := by
+  simp [levelAt, hk]
+
+/-- Past the end of the word there is no level. -/
+@[simp]
+theorem levelAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.levelAt k = none := by
+  simp [levelAt, hk]
+
+/-- A position carries a level exactly when it lies in the word. -/
+@[simp]
+theorem levelAt_ne_none_iff {k : ℕ} : w.levelAt k ≠ none ↔ k < w.length := by
+  simp [levelAt]
+
+/-- The sign of a letter of the word. -/
+@[simp]
+theorem signAt_of_lt {k : ℕ} (hk : k < w.length) : w.signAt k = (w[k].2 : ℤ) := by
+  simp [signAt, hk]
+
+/-- Past the end of the word the sign is `0`. -/
+@[simp]
+theorem signAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.signAt k = 0 := by
+  simp [signAt, hk]
+
+/-- Stabilization keeps the level of every letter of the original word. -/
+@[simp]
+theorem levelAt_stabilize_of_lt (w : BraidWord (n + 1)) (ε : ℤˣ) {k : ℕ} (hk : k < w.length) :
+    (w.stabilize ε).levelAt k = w.levelAt k := by
+  simp [levelAt, getElem?_stabilize_of_lt w ε hk, Option.map_map, Function.comp_def]
+
+/-- Stabilization keeps the sign of every letter of the original word. -/
+@[simp]
+theorem signAt_stabilize_of_lt (w : BraidWord (n + 1)) (ε : ℤˣ) {k : ℕ} (hk : k < w.length) :
+    (w.stabilize ε).signAt k = w.signAt k := by
+  simp [signAt, getElem?_stabilize_of_lt w ε hk, Option.map_map, Function.comp_def]
+
+/-- The stabilizing letter of `w.stabilize ε` lies on the new top level `n`. -/
+theorem levelAt_stabilize_length (w : BraidWord (n + 1)) (ε : ℤˣ) :
+    (w.stabilize ε).levelAt w.length = some n := by
+  simp [levelAt, stabilize_def, length_strandIncl]
+
+/-- The stabilizing letter of `w.stabilize ε` has sign `ε`. -/
+theorem signAt_stabilize_length (w : BraidWord (n + 1)) (ε : ℤˣ) :
+    (w.stabilize ε).signAt w.length = ε := by
+  simp [signAt, stabilize_def, length_strandIncl]
+
+end Positions
 
 end BraidWord
 

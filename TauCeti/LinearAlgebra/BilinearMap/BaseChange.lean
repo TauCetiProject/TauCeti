@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
 
 /-!
 # Base change of bilinear maps along algebra maps
@@ -14,6 +15,11 @@ The scalar extension `LinearMap.BilinMap.baseChange S C` of an `R`-bilinear map 
 the commutative `R`-algebra `S`: an `R`-algebra map `φ : S →ₐ[R] T` intertwines the base changes
 to `S` and to `T`. It is also natural in the modules: it commutes with precomposition by linear
 maps of the arguments and with postcomposition by a linear map of the target.
+
+An `R`-bilinear map `C` with values in an `A`-module `N` also has an `A`-bilinear extension
+`LinearMap.BilinMap.liftBaseChange A C : BilinMap A (A ⊗[R] M) N`, the bilinear analogue of
+`LinearMap.liftBaseChange`. For `R = ℝ` and `A = ℂ` it is the complex-bilinear extension to the
+complexification `ℂ ⊗[ℝ] M` of a real bilinear map with values in a complex vector space.
 
 ## Main declarations
 
@@ -26,6 +32,8 @@ maps of the arguments and with postcomposition by a linear map of the target.
   map.
 * `LinearMap.BilinMap.baseChange_mul`: the base change of the multiplication of an `R`-algebra
   `B` is the multiplication of `S ⊗[R] B`.
+* `LinearMap.BilinMap.liftBaseChange`: the `A`-bilinear extension of an `R`-bilinear map with
+  values in an `A`-module, characterized by `LinearMap.BilinMap.eq_liftBaseChange_iff`.
 -/
 
 public section
@@ -109,5 +117,32 @@ theorem BilinMap.baseChange_mul {B : Type*} [Semiring B] [Algebra R B] (S : Type
     induction y using TensorProduct.inductionOn with
     | add y y' hy hy' => simp only [map_add, hy, hy', mul_add]
     | tmul t c => simp
+
+section LiftBaseChange
+
+variable {A N : Type*} [CommSemiring A] [Algebra R A] [AddCommMonoid N] [Module R N] [Module A N]
+  [IsScalarTower R A N]
+
+variable (A) in
+/-- The `A`-bilinear extension `A ⊗[R] M → A ⊗[R] M → N` of an `R`-bilinear map `C` with values in
+an `A`-module `N`: the base change of `C` followed by the action map `A ⊗[R] N → N`. This is the
+bilinear analogue of `LinearMap.liftBaseChange`. -/
+noncomputable def BilinMap.liftBaseChange (C : BilinMap R M N) : BilinMap A (A ⊗[R] M) N :=
+  (BilinMap.baseChange A C).compr₂ (LinearMap.liftBaseChange A LinearMap.id)
+
+@[simp]
+theorem BilinMap.liftBaseChange_tmul (C : BilinMap R M N) (a b : A) (m n : M) :
+    BilinMap.liftBaseChange A C (a ⊗ₜ m) (b ⊗ₜ n) = (a * b) • C m n := by
+  simp [BilinMap.liftBaseChange]
+
+/-- An `A`-bilinear map on `A ⊗[R] M` is the extension of an `R`-bilinear map `C` exactly when it
+agrees with `C` on the vectors `1 ⊗ m`. -/
+theorem BilinMap.eq_liftBaseChange_iff {B : BilinMap A (A ⊗[R] M) N} {C : BilinMap R M N} :
+    B = BilinMap.liftBaseChange A C ↔ ∀ m n, B (1 ⊗ₜ m) (1 ⊗ₜ n) = C m n := by
+  refine ⟨fun h m n ↦ by simp [h], fun h ↦ ?_⟩
+  ext m n
+  simp [h]
+
+end LiftBaseChange
 
 end LinearMap
