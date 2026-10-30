@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Ring.Hom.Defs
 
 import Mathlib.Tactic
 
@@ -138,6 +139,11 @@ noncomputable def quantumInteger (q : K) (r : ℤ) : K :=
 theorem quantumInteger_def (q : K) (r : ℤ) :
     quantumInteger q r = (q ^ r - q ^ (-r)) / (q - q⁻¹) := by
   rw [quantumInteger]
+
+/-- Ring homomorphisms between fields commute with the quantum integers. -/
+theorem map_quantumInteger {L : Type*} [Field L] (φ : K →+* L) (q : K) (r : ℤ) :
+    φ (quantumInteger q r) = quantumInteger (φ q) r := by
+  simp [quantumInteger_def]
 
 /-- `(q - q⁻¹) [n]_q = q^n - q^(-n)` for natural `n`. -/
 theorem sub_inv_mul_quantumInteger_natCast {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
