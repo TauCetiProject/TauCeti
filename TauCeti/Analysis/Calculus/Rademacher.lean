@@ -32,7 +32,9 @@ domain lies in a proper affine subspace and is itself null.
   functions;
 * `Convex.ae_mem_interior` — almost every point of a convex set is an interior point;
 * `ConvexOn.ae_differentiableAt_of_mem` — a convex function is differentiable at almost every
-  point of its domain.
+  point of its domain;
+* `LipschitzOnWith.memLp_lineDeriv` — the directional derivatives of a real function Lipschitz on
+  an open set are essentially bounded there.
 
 ## References
 
@@ -103,3 +105,20 @@ theorem ae_differentiableAt_of_mem (hf : ConvexOn ℝ s f) :
   exact h₂ (h₁ hx)
 
 end ConvexOn
+
+namespace LipschitzOnWith
+
+open scoped NNReal
+
+omit [FiniteDimensional ℝ E] [IsAddHaarMeasure μ] in
+/-- The directional derivatives of a real function that is Lipschitz on an open set are
+essentially bounded there. This is the local form of `LipschitzWith.memLp_lineDeriv`. -/
+theorem memLp_lineDeriv {f : E → ℝ} {K : ℝ≥0} (hf : LipschitzOnWith K f s) (hs : IsOpen s)
+    (v : E) : MemLp (fun x => lineDeriv ℝ f x v) ⊤ (μ.restrict s) := by
+  obtain ⟨g, hg, hgf⟩ := hf.extend_real
+  refine ((hg.memLp_lineDeriv v).restrict s).ae_eq ?_
+  filter_upwards [ae_restrict_mem hs.measurableSet] with x hx
+  have hgf' : g =ᶠ[𝓝 x] f := eventually_of_mem (hs.mem_nhds hx) fun y hy => (hgf hy).symm
+  exact hgf'.lineDeriv_eq
+
+end LipschitzOnWith
