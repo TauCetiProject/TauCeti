@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.Process.Adapted
-import TauCeti.MeasureTheory.MeasurableSpace.Sup
+import TauCeti.Probability.Independence.Sup
 
 /-!
 # Increments independent of the past
@@ -19,8 +19,6 @@ file derives the consequences that do not depend on the law of the increments.
 
 ## Main declarations
 
-* `ProbabilityTheory.Indep.sup_left`: if `m₁` is independent of `m` and `m₂` is independent of
-  `m₁ ⊔ m`, then `m₁ ⊔ m₂` is independent of `m`.
 * `MeasureTheory.Adapted.indep_comap_sub_of_indep_comap_sub`: increments independent of the past
   on `[s, u]` and on `[u, t]` give an increment independent of the past on `[s, t]`.
 * `MeasureTheory.Adapted.hasIndepIncrements`: increments independent of the past are independent
@@ -30,30 +28,6 @@ file derives the consequences that do not depend on the law of the increments.
 public section
 
 open MeasureTheory
-
-namespace ProbabilityTheory
-
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-
-/-- If `m₁` is independent of `m` and `m₂` is independent of `m₁ ⊔ m`, then the join `m₁ ⊔ m₂` is
-independent of `m`. -/
-theorem Indep.sup_left [IsZeroOrProbabilityMeasure μ] {m₁ m₂ m : MeasurableSpace Ω}
-    (h₁ : Indep m₁ m μ) (h₂ : Indep m₂ (m₁ ⊔ m) μ) (hm₁ : m₁ ≤ mΩ) (hm₂ : m₂ ≤ mΩ)
-    (hm : m ≤ mΩ) : Indep (m₁ ⊔ m₂) m μ := by
-  refine IndepSets.indep (sup_le hm₁ hm₂) hm
-    (MeasurableSpace.isPiSystem_inter_measurableSet m₁ m₂)
-    (@MeasurableSpace.isPiSystem_measurableSet Ω m)
-    (MeasurableSpace.sup_eq_generateFrom_inter_measurableSet m₁ m₂)
-    (@MeasurableSpace.generateFrom_measurableSet Ω m).symm ?_
-  rw [IndepSets_iff]
-  rintro _ c ⟨a, b, ha, hb, rfl⟩ hc
-  have hac : MeasurableSet[m₁ ⊔ m] (a ∩ c) :=
-    (le_sup_left (b := m) _ ha).inter (le_sup_right (a := m₁) _ hc)
-  rw [show a ∩ b ∩ c = b ∩ (a ∩ c) by grind, (Indep_iff _ _ _).1 h₂ b _ hb hac,
-    (Indep_iff _ _ _).1 h₁ a c ha hc, Set.inter_comm a b,
-    (Indep_iff _ _ _).1 h₂ b a hb (le_sup_left (b := m) _ ha), mul_assoc]
-
-end ProbabilityTheory
 
 namespace MeasureTheory.Adapted
 
