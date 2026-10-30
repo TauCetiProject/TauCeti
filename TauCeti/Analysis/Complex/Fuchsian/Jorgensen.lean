@@ -314,10 +314,12 @@ theorem one_le_abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_of_
   -- move to the frame where `A` is the dilation: `X = P⁻¹ B P` in `Γ' = P⁻¹ Γ P`
   let Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (P : PSL(2, ℝ))⁻¹ • Γ
   have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
-  have hD : ((P⁻¹ * A * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' :=
-    (Γ.mk_inv_mul_mul_mem_conjAct_smul_iff P A).2 hA
-  have hXmem : ((P⁻¹ * B * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' :=
-    (Γ.mk_inv_mul_mul_mem_conjAct_smul_iff P B).2 hB
+  have hD : ((P⁻¹ * A * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
+    rw [mk_inv_mul_mul]
+    exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hA
+  have hXmem : ((P⁻¹ * B * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
+    rw [mk_inv_mul_mul]
+    exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hB
   rw [mk_inv_mul_mul, hAg] at hD
   group at hD
   set X : SL(2, ℝ) := P⁻¹ * B * P with hX
@@ -470,10 +472,12 @@ theorem one_le_abs_trace_commutatorElement_sub_two_of_isParabolic [DiscreteTopol
   obtain ⟨S, rfl⟩ := QuotientGroup.mk_surjective σ
   let Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹ • Γ
   have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
-  have hTmem : ((S⁻¹ * A * S : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' :=
-    (Γ.mk_inv_mul_mul_mem_conjAct_smul_iff S A).2 hA
-  have hXmem : ((S⁻¹ * B * S : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' :=
-    (Γ.mk_inv_mul_mul_mem_conjAct_smul_iff S B).2 hB
+  have hTmem : ((S⁻¹ * A * S : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
+    rw [mk_inv_mul_mul]
+    exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hA
+  have hXmem : ((S⁻¹ * B * S : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
+    rw [mk_inv_mul_mul]
+    exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hB
   set T : SL(2, ℝ) := S⁻¹ * A * S with hT
   set X : SL(2, ℝ) := S⁻¹ * B * S with hX
   have hTx : (T : PSL(2, ℝ)) = upperRightHom x := (mk_inv_mul_mul S A).trans hAx
