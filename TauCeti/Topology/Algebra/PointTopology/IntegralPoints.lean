@@ -16,10 +16,10 @@ Let `E` be a field whose topology comes from its valuation, with valuation ring 
 let `A` be an `O`-algebra, the coordinate ring of an affine `O`-scheme `𝒳 = Spec A`. Its integral
 points `𝒳(O) = Hom_O(A, O)` map to the points `X(E) = Hom_O(A, E)` of the generic fibre by
 composition with the inclusion `O → E`. The image consists of the points all of whose values are
-integral, and it suffices to test this on a generating family of `A`. Since `O` is open in `E`, the
-map is an open embedding when `A` is of finite type over `O`. When `E` is a nonarchimedean local
-field, `O` is compact, so `𝒳(O)` is compact (`TauCeti.PointTopology.instCompactSpace`, which needs
-no finiteness), and the map is also a closed embedding, `X(E)` being Hausdorff.
+integral, and it suffices to test this on a generating family of `A`. Since `O` is closed in `E`,
+the map is a closed embedding for every `A`, and since `O` is open in `E`, it is an open embedding
+when `A` is of finite type over `O`. When `E` is a nonarchimedean local field, `O` is compact, so
+`𝒳(O)` is compact (`TauCeti.PointTopology.instCompactSpace`, which needs no finiteness).
 
 For an affine group scheme `𝒢 = Spec H` over `O`, the map is the group homomorphism
 `AlgHom.mapValue (Algebra.ofId O E)` from `𝒢(O)` to `G(E)`. When `H` is of finite type, its image
@@ -34,8 +34,8 @@ subgroups of it, and so of `G(E)`.
   the set of points with integral values, tested on all of `A` or on a generating family.
 * `TauCeti.PointTopology.isOpenEmbedding_integralPoints`: for `A` of finite type, `𝒳(O) → X(E)` is
   an open embedding.
-* `TauCeti.PointTopology.isClosedEmbedding_integralPoints`: over a nonarchimedean local field,
-  `𝒳(O) → X(E)` is a closed embedding.
+* `TauCeti.PointTopology.isClosedEmbedding_integralPoints`: for every `A`, `𝒳(O) → X(E)` is a
+  closed embedding.
 * `TauCeti.PointTopology.isOpenEmbedding_mapValue_integralPoints`: the homomorphism `𝒢(O) → G(E)`
   is an open embedding.
 * `TauCeti.PointTopology.integralPointsSubgroup`: `𝒢(O)` as an open subgroup of `G(E)`, with
@@ -88,14 +88,11 @@ theorem isOpenEmbedding_integralPoints [IsValuativeTopology E] [Semiring A] [Alg
     IsOpenEmbedding fun x : A →ₐ[𝒪[E]] 𝒪[E] ↦ (Algebra.ofId 𝒪[E] E).comp x :=
   isOpenEmbedding_map_codomain _ Valuation.isOpen_integer.isOpenEmbedding_subtypeVal
 
-/-- Over a nonarchimedean local field `E`, the integral points of `Spec A` form a closed subspace of
-its points over `E`, for every `𝒪[E]`-algebra `A`: they are compact, and the points over `E` are
-Hausdorff. -/
-theorem isClosedEmbedding_integralPoints [IsNonarchimedeanLocalField E] [CommRing A]
-    [Algebra 𝒪[E] A] :
+/-- The integral points of `Spec A` form a closed subspace of its points over `E`, for every
+`𝒪[E]`-algebra `A`: the inclusion `𝒪[E] → E` is a closed embedding. -/
+theorem isClosedEmbedding_integralPoints [IsValuativeTopology E] [Semiring A] [Algebra 𝒪[E] A] :
     IsClosedEmbedding fun x : A →ₐ[𝒪[E]] 𝒪[E] ↦ (Algebra.ofId 𝒪[E] E).comp x :=
-  (continuous_map_codomain _ continuous_subtype_val).isClosedEmbedding
-    fun _ _ h ↦ (AlgHom.cancel_left Subtype.val_injective).1 h
+  isClosedEmbedding_map_codomain _ Valuation.isClosed_integer.isClosedEmbedding_subtypeVal
 
 end Topology
 
