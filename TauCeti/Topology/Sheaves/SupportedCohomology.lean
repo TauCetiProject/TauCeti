@@ -501,6 +501,26 @@ lemma supportedHPresheafPostcomp_app_apply {F G : Sheaf (Opens.grothendieckTopol
     (supportedHPresheafPostcomp S α hk).app W x = x.comp α hk :=
   (rfl)
 
+/-- The Yoneda product with the identity class `Ext.mk₀ (𝟙 F)` is the identity of
+`H_Sⁿ(-, F)`. -/
+@[simp]
+lemma supportedHPresheafPostcomp_mk₀_id (F : Sheaf (Opens.grothendieckTopology X)
+    AddCommGrpCat.{u}) (n : ℕ) :
+    supportedHPresheafPostcomp S (Ext.mk₀ (𝟙 F)) (add_zero n) = 𝟙 _ := by
+  ext W x
+  exact Ext.comp_mk₀_id x
+
+/-- Successive Yoneda products with `α : Extⁿ(F, G)` and `β : Extⁿ'(G, H)` agree with the
+Yoneda product with `α.comp β : Extᵖ(F, H)`, where `n + n' = p`. -/
+@[reassoc]
+lemma supportedHPresheafPostcomp_comp {F G H : Sheaf (Opens.grothendieckTopology X)
+    AddCommGrpCat.{u}} {m n n' k l p : ℕ} (α : Ext F G n) (β : Ext G H n') (hk : m + n = k)
+    (hl : k + n' = l) (hp : n + n' = p) :
+    supportedHPresheafPostcomp S α hk ≫ supportedHPresheafPostcomp S β hl =
+      supportedHPresheafPostcomp S (α.comp β hp) (by lia) := by
+  ext W x
+  exact Ext.comp_assoc x α β hk hp (by lia)
+
 /-- The connecting morphism `H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` of presheaves of cohomology with
 supports attached to a short exact sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` of sheaves. -/
 noncomputable def supportedHPresheafδ (hT : T.ShortExact) (n : ℕ) :
