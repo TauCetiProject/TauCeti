@@ -138,34 +138,6 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
     rwa [show (y : ℚ) - 1 = -x by linarith, padicNorm.neg, padicNorm.eq_zpow_of_nonzero hx0,
       show padicValRat p (x : ℚ) = (N : ℤ) by omega, Rat.cast_zpow, Rat.cast_natCast] at h
 
-/-- The final real estimate: if `(e N) ^ (-C) ≤ q ^ (-N)` with `q ≥ 2` and `N ≥ 1`, then
-`N log 2 ≤ C (1 + log N)`, hence `N ≤ (2C / log 2) log(2C / log 2)` by
-`Real.le_two_mul_add_of_le_add_mul_log`. -/
-private theorem le_max_of_rpow_neg_le {C : ℝ} (hC : 0 ≤ C) {q N : ℕ} (hq : 2 ≤ q) (hN : 1 ≤ N)
-    (h : (Real.exp 1 * max 1 (N : ℝ)) ^ (-C) ≤ (q : ℝ) ^ (-(N : ℤ))) :
-    (N : ℝ) ≤ max 1 (2 * C / Real.log 2 * Real.log (2 * C / Real.log 2)) := by
-  have hN' : (1 : ℝ) ≤ N := by exact_mod_cast hN
-  have hq' : (2 : ℝ) ≤ q := by exact_mod_cast hq
-  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
-  rw [max_eq_right hN'] at h
-  -- taking logarithms: `N log q ≤ C (1 + log N)`
-  have hlog := Real.log_le_log (by positivity) h
-  rw [Real.log_rpow (by positivity), Real.log_zpow, Real.log_mul (by positivity) (by positivity),
-    Real.log_exp] at hlog
-  have hNlog : N * Real.log 2 ≤ C * (1 + Real.log N) := by
-    have := Real.log_le_log (by norm_num) hq'
-    push_cast at hlog
-    nlinarith
-  -- with `b = C / log 2`, `N ≤ b + b log N`
-  set b := C / Real.log 2 with hb
-  have hNb : (N : ℝ) ≤ b + b * Real.log N := by
-    rw [← mul_one_add, hb, div_mul_eq_mul_div, le_div_iff₀ hlog2]
-    linarith
-  have h2b : 2 * C / Real.log 2 = 2 * b := by rw [hb, mul_div_assoc]
-  refine le_max_of_le_right ?_
-  rw [h2b]
-  linarith [Real.le_two_mul_add_of_le_add_mul_log (div_nonneg hC hlog2.le) (by positivity) hNb]
-
 /-- **The exponent bound for the rational `S`-unit equation** (Evertse, Theorem 5.17). Let `S` be
 a finite set of primes and `C ≥ 0` a constant such that for every `p ∈ S`, every sign `ε` and every
 `b : S → ℤ` with `b p = 0` and `z = ε ∏_{q ∈ S} q ^ b q ≠ 1`,
@@ -203,12 +175,17 @@ theorem abs_padicValRat_le_of_add_eq_one (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (
   obtain ⟨q, hqS, hq⟩ := Finset.exists_mem_eq_sup S
     (Finset.nonempty_iff_ne_empty.2 fun h ↦ by simp [N, h] at hNpos)
     fun q ↦ max (padicValRat q (x : ℚ)).natAbs (padicValRat q (y : ℚ)).natAbs
-  have hq2 : 2 ≤ q := (hS q hqS).two_le
-  refine le_max_of_rpow_neg_le hC hq2 hNpos ?_
-  rcases le_total (padicValRat q (y : ℚ)).natAbs (padicValRat q (x : ℚ)).natAbs with h | h
-  · exact rpow_neg_le_zpow_neg hS hC hLB hx hy hxy hNx hNy ⟨q, hqS⟩
-      (hq.trans (max_eq_left h)).symm hNpos.ne'
-  · exact rpow_neg_le_zpow_neg hS hC hLB hy hx ((add_comm _ _).trans hxy) hNy hNx ⟨q, hqS⟩
-      (hq.trans (max_eq_right h)).symm hNpos.ne'
+  have hq2 : (2 : ℝ) ≤ q := by exact_mod_cast (hS q hqS).two_le
+  have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hNpos
+  have key : (Real.exp 1 * max 1 (N : ℝ)) ^ (-C) ≤ (q : ℝ) ^ (-(N : ℤ)) := by
+    rcases le_total (padicValRat q (y : ℚ)).natAbs (padicValRat q (x : ℚ)).natAbs with h | h
+    · exact rpow_neg_le_zpow_neg hS hC hLB hx hy hxy hNx hNy ⟨q, hqS⟩
+        (hq.trans (max_eq_left h)).symm hNpos.ne'
+    · exact rpow_neg_le_zpow_neg hS hC hLB hy hx ((add_comm _ _).trans hxy) hNy hNx ⟨q, hqS⟩
+        (hq.trans (max_eq_right h)).symm hNpos.ne'
+  rw [max_eq_right hN1, ← Real.rpow_intCast, Int.cast_neg, Int.cast_natCast] at key
+  -- `q ^ (-N) ≤ 2 ^ (-N)`, since `q ≥ 2`
+  exact le_max_of_le_right (Real.le_mul_log_of_rpow_neg_le_rpow_neg hC one_lt_two hN1
+    (key.trans (Real.rpow_le_rpow_of_nonpos two_pos hq2 (by linarith))))
 
 end TauCeti
