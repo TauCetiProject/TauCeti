@@ -159,20 +159,15 @@ private theorem fderiv_fderiv_lieLocalBCH_representative_apply_swap
     have h := Lie.conj_lieExp (I := I) (lieExp (t • X)) (t • Y)
     rw [map_smul, LeftInvariantDerivation.Ad_lieExp_apply, map_smul, map_smul] at h
     exact mul_inv_eq_iff_eq_mul.mp h
-  let ρ : ℝ → 𝔤 × 𝔤 := fun t ↦ t • (X, Y)
+  let ρ : ℝ → 𝔤 × 𝔤 := fun t ↦ (0, 0) + t • (X, Y)
   let γ : ℝ → 𝔤 × 𝔤 := fun t ↦ (t • B t Y, t • X)
   have hργ : f ∘ ρ = f ∘ γ := by
     funext t
     simp [f, ρ, γ, hconj]
   have hρ0 : ρ 0 = (0, 0) := by simp [ρ]
   have hγ0 : γ 0 = (0, 0) := by simp [γ]
-  have hρ' : deriv ρ 0 = (X, Y) := by
-    simpa [ρ] using ((hasDerivAt_id (0 : ℝ)).smul_const ((X, Y) : 𝔤 × 𝔤)).deriv
-  have hρ'' : iteratedDeriv 2 ρ 0 = 0 := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one,
-      show deriv ρ = fun _ ↦ (X, Y) from funext fun t ↦ by
-        simpa [ρ] using ((hasDerivAt_id t).smul_const ((X, Y) : 𝔤 × 𝔤)).deriv,
-      deriv_const]
+  have hρ' : deriv ρ 0 = (X, Y) := congrFun (deriv_const_add_smul _ _) 0
+  have hρ'' : iteratedDeriv 2 ρ 0 = 0 := congrFun (iteratedDeriv_two_const_add_smul _ _) 0
   have hγ' : deriv γ = fun t ↦ (t • B t (A Y) + B t Y, X) := funext fun t ↦ by
     simpa using (((hasDerivAt_id t).smul (hB Y t)).prodMk ((hasDerivAt_id t).smul_const X)).deriv
   have hγ'' : iteratedDeriv 2 γ 0 = (A Y + A Y, 0) := by
@@ -185,7 +180,7 @@ private theorem fderiv_fderiv_lieLocalBCH_representative_apply_swap
       (contDiffAt_id.smul_const A)).clm_apply contDiffAt_const)).prodMk
         (contDiffAt_id.smul contDiffAt_const)
   have h := iteratedDeriv_two_comp (f := f) (γ := ρ) (t := 0) (by rwa [hρ0])
-    (contDiffAt_id.smul contDiffAt_const)
+    (contDiffAt_const.add (contDiffAt_id.smul contDiffAt_const))
   rw [hργ, iteratedDeriv_two_comp (by rwa [hγ0]) hγc, hρ0, hγ0, hρ', hρ'', hγ', hγ'', hDf] at h
   simpa [hB0, A] using h.symm
 
@@ -245,7 +240,8 @@ theorem isBigO_lieLocalBCH_representative_sub_bracket :
       (.of_forall fun p ↦ by simp only [Prod.mk_zero_zero, sub_zero])
   dsimp only
   rw [hasFDerivAt_lieLocalBCH_representative.fderiv, fderiv_fderiv_lieLocalBCH_representative_apply]
-  simp
+  simp only [lieExp_zero, mul_one, lieLog_one, sub_zero, add_apply, ContinuousLinearMap.coe_fst',
+    ContinuousLinearMap.coe_snd', Prod.fst_sub, Prod.snd_sub]
   module
 
 /-- **The bracket term for an arbitrary representative** of the local Baker--Campbell--Hausdorff

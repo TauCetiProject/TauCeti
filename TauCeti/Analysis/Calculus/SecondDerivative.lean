@@ -314,20 +314,26 @@ theorem iteratedDeriv_two_comp {f : E → F} {γ : 𝕜 → E} {t : 𝕜}
   rw [fderiv_fderiv_apply_eq_smul_iteratedDeriv, fderiv_fderiv_apply_eq_smul_iteratedDeriv] at h
   simpa [fderiv_apply_one_eq_deriv] using h
 
+/-- The derivative of the affine line `t ↦ a + t • b` is constantly `b`. -/
+theorem deriv_const_add_smul (a b : F) : deriv (fun t : 𝕜 ↦ a + t • b) = fun _ ↦ b :=
+  funext fun t ↦ by simpa using (((hasDerivAt_id t).smul_const b).const_add a).deriv
+
+/-- The second derivative of the affine line `t ↦ a + t • b` vanishes. -/
+theorem iteratedDeriv_two_const_add_smul (a b : F) :
+    iteratedDeriv 2 (fun t : 𝕜 ↦ a + t • b) = 0 := by
+  simp only [iteratedDeriv_succ, iteratedDeriv_zero, deriv_const_add_smul, deriv_const',
+    Pi.zero_def]
+
 /-- **A line along which a map is affine is isotropic for its second derivative.** If `f` is `C²`
 at `x` and `f (x + t • v) = f x + t • z` for all `t` near `0`, then `D²f(x)(v, v) = 0`. -/
 theorem fderiv_fderiv_apply_self_eq_zero_of_eventually_eq_add_smul {f : E → F} {x v : E} {z : F}
     (hf : ContDiffAt 𝕜 2 f x) (hv : ∀ᶠ t in 𝓝 (0 : 𝕜), f (x + t • v) = f x + t • z) :
     fderiv 𝕜 (fderiv 𝕜 f) x v v = 0 := by
-  have hd : ∀ (a : E) (b : E), deriv (fun t : 𝕜 ↦ a + t • b) = fun _ ↦ b := fun a b ↦
-    funext fun t ↦ by simpa using (((hasDerivAt_id t).smul_const b).const_add a).deriv
   have h := iteratedDeriv_two_comp (f := f) (γ := fun t : 𝕜 ↦ x + t • v) (t := 0)
     (by simpa using hf) (contDiffAt_const.add (contDiffAt_id.smul contDiffAt_const))
-  have hz : deriv (fun t : 𝕜 ↦ f x + t • z) = fun _ ↦ z := funext fun t ↦ by
-    simpa using (((hasDerivAt_id t).smul_const z).const_add (f x)).deriv
-  rw [(show f ∘ (fun t : 𝕜 ↦ x + t • v) =ᶠ[𝓝 0] fun t ↦ f x + t • z from hv).iteratedDeriv_eq,
-    iteratedDeriv_succ, iteratedDeriv_one, hz, deriv_const, iteratedDeriv_succ, iteratedDeriv_one,
-    hd, deriv_const] at h
+  rw [(show f ∘ (fun t : 𝕜 ↦ x + t • v) =ᶠ[𝓝 0] fun t ↦ f x + t • z from hv).iteratedDeriv_eq]
+    at h
+  simp only [iteratedDeriv_two_const_add_smul, deriv_const_add_smul] at h
   simpa using h.symm
 
 section RestrictScalars
