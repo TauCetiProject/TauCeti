@@ -35,6 +35,8 @@ exactness of closed `1`-forms on simply connected manifolds and the period homom
 ## Main declarations
 
 * `TauCeti.IsPrimitiveOn φ g U`: `g` is a primitive of `φ` on the open set `U`.
+* `TauCeti.IsPrimitiveOn.mpullback`: composing with a differentiable map gives a primitive of the
+  pulled back form.
 * `TauCeti.PrimitiveSpace φ`: the space of points and values with the topology of local primitives.
 * `TauCeti.PrimitiveSpace.isCoveringMap_proj`: its projection is a covering map when `φ` is closed.
 * `TauCeti.PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq`: near each parameter, a
@@ -103,6 +105,29 @@ theorem IsPrimitiveOn.const_smul (hg : IsPrimitiveOn φ g U) (c : ℝ) :
     IsPrimitiveOn (c • φ) (c • g) U := by
   refine ⟨hg.isOpen, hg.mdifferentiableOn.const_smul c, fun y hy ↦ ?_⟩
   rw [RoughForm.ofFunction_smul, mextDeriv_smul, Pi.smul_apply, Pi.smul_apply, hg.mextDeriv_eq y hy]
+
+section Pullback
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+
+/-- Composing a primitive `g` of `θ` on `U` with a differentiable map `f` gives a primitive of the
+pullback of `θ` along `f` on the preimage of `U`. -/
+theorem IsPrimitiveOn.mpullback {θ : RoughForm I' M' F 1} {g : M' → F} {U : Set M'}
+    (hg : IsPrimitiveOn θ g U) {f : M → M'} (hf : MDifferentiable I I' f) :
+    IsPrimitiveOn (mpullback I I' f θ) (g ∘ f) (f ⁻¹' U) := by
+  have hgf (x : M) (hx : x ∈ f ⁻¹' U) : MDifferentiableAt I' 𝓘(ℝ, F) g (f x) :=
+    (hg.mdifferentiableOn (f x) hx).mdifferentiableAt (hg.isOpen.mem_nhds hx)
+  refine ⟨hg.isOpen.preimage hf.continuous,
+    fun x hx ↦ ((hgf x hx).comp x (hf x)).mdifferentiableWithinAt, fun x hx ↦ ?_⟩
+  ext v
+  rw [mpullback_apply, ← hg.mextDeriv_eq (f x) hx]
+  simp only [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv]
+  rw [mfderiv_comp x (hgf x hx) (hf x)]
+  -- `NormedSpace.fromTangentSpace` is the identity of `F`
+  rfl
+
+end Pullback
 
 /-- The set where two primitives of the same `1`-form agree is open: their difference has zero
 differential, so it is locally constant. -/
