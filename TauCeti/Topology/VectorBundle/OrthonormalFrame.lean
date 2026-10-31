@@ -39,6 +39,15 @@ orthonormal frame bundle is locally trivial with structure group the orthogonal 
 trivializations equivariant for the action
 (`TauCeti.OrthonormalFrameBundle.exists_trivialization`).
 
+The frame bundle recovers `E` as its associated bundle with fibre the standard representation of
+the orthogonal group on `V`. Two pairs of a frame and a vector give the same point `p v` of the
+total space exactly when they have the form `(p, g w)` and `(p • g, w)`
+(`TauCeti.OrthonormalFrameBundle.totalSpaceMk_frame_apply_eq_iff`), and applying frames to vectors
+is an open map (`TauCeti.OrthonormalFrameBundle.isOpenMap_totalSpaceMk_frame_apply`): local frames
+through a given frame provide continuous local sections. So when `V` has the dimension of `F`, the
+quotient of `OrthonormalFrameBundle F E V × V` by this relation is homeomorphic to the total space
+of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
+
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameBundle F E V`: the orthonormal frames of the fibres of `E` modelled
@@ -46,6 +55,10 @@ trivializations equivariant for the action
 * `Bundle.Trivialization.orthonormalFrame`: the Gram–Schmidt orthonormal frame over the base set
   of a linear trivialization.
 * `Bundle.Trivialization.orthonormalFrameBundle`: the induced trivialization of the frame bundle.
+* `TauCeti.OrthonormalFrameBundle.associatedRel`: the relation `(p, g w) ∼ (p • g, w)` on pairs of
+  a frame and a vector, whose quotient is the associated bundle with fibre `V`.
+* `TauCeti.OrthonormalFrameBundle.associatedHomeomorph`: the homeomorphism from that associated
+  bundle onto the total space of `E`.
 
 ## Main results
 
@@ -55,14 +68,16 @@ trivializations equivariant for the action
   `TauCeti.OrthonormalFrameBundle.exists_smul_eq_iff`: the action is free and transitive on fibres.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization`: the frame bundle is locally trivial,
   equivariantly for the action.
+* `TauCeti.OrthonormalFrameBundle.isOpenQuotientMap_totalSpaceMk_frame_apply`: applying frames to
+  vectors is an open quotient map onto the total space of `E`.
 
 ## References
 
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
   Princeton (1974), §2 (Euclidean vector bundles and orthonormal frames by Gram–Schmidt).
 * D. Husemoller, *Fibre Bundles*, third edition, Graduate Texts in Mathematics 20, Springer
-  (1994), Chapter 4, §1 (principal bundles) and Chapter 5, §§4–5 (the principal bundle of
-  orthonormal frames).
+  (1994), Chapter 4 (principal bundles and their associated fibre bundles) and Chapter 5, §§4–5
+  (the principal bundle of orthonormal frames).
 -/
 
 public section
@@ -153,6 +168,45 @@ theorem exists_smul_eq_iff {p q : OrthonormalFrameBundle F E V} :
   refine ⟨Unitary.linearIsometryEquiv.symm (ψ.trans φ.symm), mk_eq_mk_iff.2 ?_⟩
   ext v
   simp
+
+/-- Two frames applied to two vectors give the same point of the total space exactly when the
+pairs differ by an orthogonal transformation, as `(p, g w)` and `(p • g, w)` do. -/
+theorem totalSpaceMk_frame_apply_eq_iff {p q : OrthonormalFrameBundle F E V}
+    {v w : V} :
+    (⟨p.proj, p.frame v⟩ : TotalSpace F E) = ⟨q.proj, q.frame w⟩ ↔
+      ∃ g : unitary (V →L[ℝ] V), q = op g • p ∧ v = (g : V →L[ℝ] V) w := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain ⟨g, rfl⟩ := exists_smul_eq_iff.2 (congrArg TotalSpace.proj h)
+    exact ⟨g, rfl, p.frame.injective ((TotalSpace.mk_inj.1 h).trans (frame_smul_apply _ _ _))⟩
+  · rintro ⟨g, rfl, rfl⟩
+    rfl
+
+variable (F E V) in
+/-- The relation on pairs of an orthonormal frame and a vector of `V` whose quotient is the vector
+bundle associated to the orthonormal frame bundle and the standard representation of the
+orthogonal group on `V`: the pair `(p, g w)` is related to `(p • g, w)`. -/
+def associatedRel : Setoid (OrthonormalFrameBundle F E V × V) where
+  r x y := ∃ g : unitary (V →L[ℝ] V), y.1 = op g • x.1 ∧ x.2 = (g : V →L[ℝ] V) y.2
+  -- By `totalSpaceMk_frame_apply_eq_iff`, the relation says that the two pairs give the same
+  -- point of the total space.
+  iseqv.refl _ := totalSpaceMk_frame_apply_eq_iff.1 rfl
+  iseqv.symm h := totalSpaceMk_frame_apply_eq_iff.1 (totalSpaceMk_frame_apply_eq_iff.2 h).symm
+  iseqv.trans h h' := totalSpaceMk_frame_apply_eq_iff.1
+    ((totalSpaceMk_frame_apply_eq_iff.2 h).trans (totalSpaceMk_frame_apply_eq_iff.2 h'))
+
+/-- Unfolds `associatedRel`: two pairs are related when they differ by an orthogonal
+transformation. -/
+theorem associatedRel_iff {x y : OrthonormalFrameBundle F E V × V} :
+    associatedRel F E V x y ↔
+      ∃ g : unitary (V →L[ℝ] V), y.1 = op g • x.1 ∧ x.2 = (g : V →L[ℝ] V) y.2 :=
+  Iff.rfl
+
+/-- The relation `associatedRel` is the kernel of applying frames to vectors. -/
+theorem associatedRel_eq_ker :
+    associatedRel F E V =
+      Setoid.ker fun x : OrthonormalFrameBundle F E V × V ↦
+        (⟨x.1.proj, x.1.frame x.2⟩ : TotalSpace F E) :=
+  Setoid.ext fun _ _ ↦ totalSpaceMk_frame_apply_eq_iff.symm
 
 end Action
 
@@ -305,6 +359,23 @@ private theorem frameAt_of_mem {y : B} (h : y ∈ e.baseSet) :
     frameAt e c b y = e.orthonormalFrame c b ⟨y, h⟩ := by
   simp [frameAt, h]
 
+/-- Over the base set of `e`, reading a vector of the total space in the chosen frame is
+continuous. -/
+private theorem continuousOn_frameAt_symm :
+    ContinuousOn (fun x : TotalSpace F E ↦ (frameAt e c b x.proj).symm x.2)
+      (TotalSpace.proj ⁻¹' e.baseSet) := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  have hσ (i : ι) : Continuous fun x : (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) ↦
+      (⟨x.1.proj, e.orthonormalBasis c ⟨x.1.proj, x.2⟩ i⟩ : TotalSpace F E) :=
+    (e.continuous_orthonormalBasis c i).comp
+      (((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _)
+  -- Over the base set, the chosen frame is the Gram–Schmidt frame, so the coordinates of `x`
+  -- in the orthonormal basis `b` are its inner products with the Gram–Schmidt basis vectors.
+  refine (continuous_finsetSum Finset.univ fun i _ ↦
+    ((hσ i).inner_bundle continuous_subtype_val).smul
+      (continuous_const (y := b i))).congr fun x ↦ ?_
+  simp [frameAt_of_mem e c b x.2, orthonormalFrame_symm_apply]
+
 variable [FiniteDimensional ℝ V]
 
 /-- The trivialization of the orthonormal frame bundle over the base set of a linear
@@ -333,19 +404,8 @@ def orthonormalFrameBundle :
     refine continuous_proj.continuousOn.prodMk ?_
     refine Topology.IsInducing.subtypeVal.continuousOn_iff.2
       (continuousOn_clm_apply.2 fun v ↦ ?_)
-    rw [continuousOn_iff_continuous_domRestrict]
-    have hσ (i : ι) : Continuous fun p : (proj ⁻¹' e.baseSet : Set (OrthonormalFrameBundle F E V)) ↦
-        (⟨p.1.proj, e.orthonormalBasis c ⟨p.1.proj, p.2⟩ i⟩ : TotalSpace F E) :=
-      (e.continuous_orthonormalBasis c i).comp
-        ((continuous_proj.comp continuous_subtype_val).subtype_mk _)
-    have hφ : Continuous fun p : (proj ⁻¹' e.baseSet : Set (OrthonormalFrameBundle F E V)) ↦
-        (⟨p.1.proj, p.1.frame v⟩ : TotalSpace F E) :=
-      (continuous_totalSpaceMk_frame v).comp continuous_subtype_val
-    -- Over the base set, the quotient by the local frame applied to `v` has the coordinates
-    -- `⟪σ i, φ v⟫` in the orthonormal basis `b`.
-    refine (continuous_finsetSum Finset.univ fun i _ ↦
-      ((hσ i).inner_bundle hφ).smul (continuous_const (y := b i))).congr fun p ↦ ?_
-    simp [frameAt_of_mem e c b p.2, orthonormalFrame_symm_apply]
+    exact (continuousOn_frameAt_symm e c b).comp (continuous_totalSpaceMk_frame v).continuousOn
+      fun p hp ↦ hp
   continuousOn_invFun := by
     rw [continuousOn_iff_continuous_domRestrict]
     have hσ : Continuous fun q : (e.baseSet ×ˢ univ : Set (B × unitary (V →L[ℝ] V))) ↦
@@ -425,5 +485,84 @@ theorem exists_trivialization [FiniteDimensional ℝ F] [FiniteDimensional ℝ V
   ⟨(trivializationAt F E x).orthonormalFrameBundle (Module.finBasisOfFinrankEq ℝ F h.symm)
       (stdOrthonormalBasis ℝ V),
     mem_baseSet_trivializationAt F E x, Trivialization.orthonormalFrameBundle_smul _ _ _⟩
+
+/-- Applying frames to vectors is an open map from pairs of an orthonormal frame and a vector of
+`V` to the total space of `E`. -/
+theorem isOpenMap_totalSpaceMk_frame_apply [FiniteDimensional ℝ V] :
+    IsOpenMap fun q : OrthonormalFrameBundle F E V × V ↦
+      (⟨q.1.proj, q.1.frame q.2⟩ : TotalSpace F E) := by
+  refine IsOpenMap.of_sections fun q₀ ↦ ?_
+  obtain ⟨⟨y₀, φ₀⟩, v₀⟩ := q₀
+  -- The frame `φ₀` identifies `V` with `E y₀`, which a trivialization identifies with `F`.
+  let e := trivializationAt F E y₀
+  have hy₀ : y₀ ∈ e.baseSet := mem_baseSet_trivializationAt F E y₀
+  let L : V ≃ₗ[ℝ] F := φ₀.toLinearEquiv.trans (e.continuousLinearEquivAt ℝ y₀ hy₀).toLinearEquiv
+  have : FiniteDimensional ℝ F := L.finiteDimensional
+  let c := Module.finBasisOfFinrankEq ℝ F L.finrank_eq.symm
+  let σ := Trivialization.frameAt e c (stdOrthonormalBasis ℝ V)
+  -- The local section through `(φ₀, v₀)`: the chosen frame `σ`, corrected at every point by the
+  -- orthogonal transformation `h₀` that carries `σ y₀` to `φ₀`.
+  let h₀ : V ≃ₗᵢ[ℝ] V := φ₀.trans (σ y₀).symm
+  refine ⟨fun x ↦ (⟨x.proj, h₀.trans (σ x.proj)⟩, h₀.symm ((σ x.proj).symm x.2)), ?_, ?_,
+    fun x ↦ by simp⟩
+  · have hU : TotalSpace.proj ⁻¹' e.baseSet ∈ 𝓝 (⟨y₀, φ₀ v₀⟩ : TotalSpace F E) :=
+      (e.open_baseSet.preimage (FiberBundle.continuous_proj F E)).mem_nhds hy₀
+    refine ContinuousAt.prodMk ?_ (h₀.symm.continuous.continuousAt.comp
+      ((Trivialization.continuousOn_frameAt_symm e c _).continuousAt hU))
+    -- The corrected frame is the inverse of the frame bundle trivialization at `(x.proj, h₀)`.
+    let T := e.orthonormalFrameBundle c (stdOrthonormalBasis ℝ V)
+    have hT : ContinuousAt T.toOpenPartialHomeomorph.symm
+        (y₀, Unitary.linearIsometryEquiv.symm h₀) :=
+      T.toOpenPartialHomeomorph.continuousOn_symm.continuousAt
+        (T.open_target.mem_nhds ⟨hy₀, mem_univ _⟩)
+    refine (hT.comp_of_eq ((FiberBundle.continuous_proj F E).prodMk
+      (continuous_const (y := Unitary.linearIsometryEquiv.symm h₀))).continuousAt rfl).congr
+      (Filter.Eventually.of_forall fun x ↦ ?_)
+    exact mk_eq_mk_iff.2 (by ext; simp [σ])
+  · simp only [h₀, Prod.mk.injEq, mk_eq_mk_iff]
+    exact ⟨by ext; simp, by simp⟩
+
+/-- When `V` has the dimension of the model fibre, applying frames to vectors is an open quotient
+map from pairs of an orthonormal frame and a vector of `V` onto the total space of `E`. -/
+theorem isOpenQuotientMap_totalSpaceMk_frame_apply [FiniteDimensional ℝ F] [FiniteDimensional ℝ V]
+    (h : Module.finrank ℝ V = Module.finrank ℝ F) :
+    IsOpenQuotientMap fun q : OrthonormalFrameBundle F E V × V ↦
+      (⟨q.1.proj, q.1.frame q.2⟩ : TotalSpace F E) where
+  surjective x := by
+    let φ := (trivializationAt F E x.proj).orthonormalFrame
+      (Module.finBasisOfFinrankEq ℝ F h.symm) (stdOrthonormalBasis ℝ V)
+      ⟨x.proj, mem_baseSet_trivializationAt F E x.proj⟩
+    exact ⟨(⟨x.proj, φ⟩, φ.symm x.2), by simp⟩
+  continuous := continuous_totalSpaceMk_frame_apply
+  isOpenMap := isOpenMap_totalSpaceMk_frame_apply
+
+/-- The orthonormal frame bundle reconstructs `E` as its associated bundle with fibre the
+standard representation of the orthogonal group on `V`: when `V` has the dimension of the model
+fibre, applying frames to vectors descends to a homeomorphism from the quotient of
+`OrthonormalFrameBundle F E V × V` by `(p, g w) ∼ (p • g, w)` onto the total space of `E`. It
+sends the class of `(p, v)` to `p v` in the fibre over `p.proj`
+(`TauCeti.OrthonormalFrameBundle.associatedHomeomorph_mk`). -/
+def associatedHomeomorph [FiniteDimensional ℝ F] [FiniteDimensional ℝ V]
+    (h : Module.finrank ℝ V = Module.finrank ℝ F) :
+    Quotient (associatedRel F E V) ≃ₜ TotalSpace F E :=
+  (Homeomorph.Quotient.congrRight (Setoid.ext_iff.1 associatedRel_eq_ker)).trans
+    (Topology.IsQuotientMap.homeomorph (f := ⟨_, continuous_totalSpaceMk_frame_apply⟩)
+      (isOpenQuotientMap_totalSpaceMk_frame_apply h).isQuotientMap)
+
+/-- The homeomorphism `associatedHomeomorph` sends the class of `(p, v)` to the vector `p v` of the
+fibre over `p.proj`. -/
+@[simp]
+theorem associatedHomeomorph_mk [FiniteDimensional ℝ F] [FiniteDimensional ℝ V]
+    (h : Module.finrank ℝ V = Module.finrank ℝ F) (p : OrthonormalFrameBundle F E V) (v : V) :
+    associatedHomeomorph h (Quotient.mk _ (p, v)) = ⟨p.proj, p.frame v⟩ :=
+  (rfl)
+
+/-- The inverse of `associatedHomeomorph` reads a vector of the fibre over `p.proj` in the frame
+`p`. -/
+theorem associatedHomeomorph_symm_apply [FiniteDimensional ℝ F] [FiniteDimensional ℝ V]
+    (h : Module.finrank ℝ V = Module.finrank ℝ F) (p : OrthonormalFrameBundle F E V)
+    (x : E p.proj) :
+    (associatedHomeomorph h).symm ⟨p.proj, x⟩ = Quotient.mk _ (p, p.frame.symm x) := by
+  rw [Homeomorph.symm_apply_eq, associatedHomeomorph_mk, LinearIsometryEquiv.apply_symm_apply]
 
 end TauCeti.OrthonormalFrameBundle

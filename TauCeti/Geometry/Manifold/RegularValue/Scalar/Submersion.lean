@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level
 public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 public import Mathlib.Geometry.Manifold.Submersion
 
@@ -32,7 +32,7 @@ coordinates (`TauCeti.apply_scalarSubmersionChartAt_extend_symm`). With the char
 submersion at `x` with complement `ker D` (`TauCeti.IsRegularPoint.isSubmersionAtOfComplement`).
 
 On a regular level `f⁻¹(c)` the second coordinate is all that remains: the chart restricts on the
-level to the preferred level chart `TauCeti.scalarRegularLevelChartAt`, built from the same `D`,
+level to the preferred level chart `TauCeti.regularLevelChartAt`, built from the same `D`,
 `P` and implicit-function chart, followed by the inverse of the same identification
 `K : ker D ≃ (Fin (dim E - 1) → ℝ)` (`TauCeti.scalarSubmersionChartAt_extend_coe`), and the two
 charts have the same domain on the level (`TauCeti.preimage_coe_scalarSubmersionChartAt_source`).
@@ -422,7 +422,7 @@ variable {c : ℝ} (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hreg
 
 /-- **On a regular level, the submersion chart is the level chart.** At a point `x` of a regular
 level `f⁻¹(c)`, the extended submersion chart sends each point `w` of the level in the preferred
-chart at `x` to the kernel vector `K⁻¹ (scalarRegularLevelChartAt x w)` of the derivative `D` of
+chart at `x` to the kernel vector `K⁻¹ (regularLevelChartAt x w)` of the derivative `D` of
 `f` in the preferred extended chart at `x`, where `K : ker D ≃ (Fin (dim E - 1) → ℝ)` is the
 identification used by the level atlas. -/
 theorem scalarSubmersionChartAt_extend_coe (x : {x : M // f x = c}) {w : {x : M // f x = c}}
@@ -431,8 +431,8 @@ theorem scalarSubmersionChartAt_extend_coe (x : {x : M // f x = c}) {w : {x : M 
       let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       ((D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
         (hreg.isRegularPoint x.2).finrank_ker_fderiv_comp_extChartAt_symm).symm
-          (scalarRegularLevelChartAt hf hreg x w) : E) := by
-  rw [scalarSubmersionChartAt_extend_apply _ _ hw, scalarRegularLevelChartAt_apply]
+          (regularLevelChartAt (n := finrank ℝ E - 1) hf hreg (by rw [finrank_self]) x w) : E) := by
+  rw [scalarSubmersionChartAt_extend_apply _ _ hw, regularLevelChartAt_apply]
   dsimp only
   rw [ContinuousLinearEquiv.symm_apply_apply, w.2, x.2, sub_self,
     ContinuousLinearMap.implicitCoordEquiv_symm_apply_zero_mk]
@@ -442,14 +442,14 @@ of a regular level `f⁻¹(c)` lies in the source of the submersion chart at a p
 exactly when it lies in the source of the preferred level chart at `x`. -/
 theorem preimage_coe_scalarSubmersionChartAt_source (x : {x : M // f x = c}) :
     Subtype.val ⁻¹' (scalarSubmersionChartAt (hf x x.2) (hreg.isRegularPoint x.2)).source =
-      (scalarRegularLevelChartAt hf hreg x).source := by
+      (regularLevelChartAt (n := finrank ℝ E - 1) hf hreg (by rw [finrank_self]) x).source := by
   have hfun : (fun y ↦ f ((extChartAt I (x : M)).symm y) - f x) =
       fun y ↦ f ((extChartAt I (x : M)).symm y) - c := by
     rw [x.2]
   have hD := hasStrictFDerivAt_coord (hf x x.2)
   have hD' := range_eq_top (hreg.isRegularPoint x.2)
   have hker := closedComplemented_ker (f := f) (I := I) (x : M)
-  rw [scalarSubmersionChartAt_source, scalarRegularLevelChartAt_source]
+  rw [scalarSubmersionChartAt_source, regularLevelChartAt_source]
   dsimp only
   rw [HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_congr hD (hfun ▸ hD) hfun rfl
       hD' hker,

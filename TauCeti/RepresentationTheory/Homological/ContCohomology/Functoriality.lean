@@ -48,8 +48,9 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
 ## Main results
 
 * `TauCeti.ContinuousCohomology.resolutionMap_d_apply` and
-  `TauCeti.ContinuousCohomology.resolutionMap_ρ_apply`: coefficient maps on the coinduced
-  resolution commute with the differential and group action, on elements.
+  `TauCeti.ContinuousCohomology.resolutionMap_ρ_apply`: the map of a compatible pair on the
+  coinduced resolutions commutes with the differentials and intertwines the group actions, on
+  elements.
 * `TauCeti.ContinuousCohomology.resolutionMap_injective` and
   `TauCeti.ContinuousCohomology.cochainsMap_f_injective`: a surjective group map paired with an
   injective coefficient map induces injective maps on resolutions and homogeneous cochains.
@@ -88,6 +89,39 @@ open _root_.ContinuousCohomology
 
 universe u v w
 
+section ResolutionMapApply
+
+open TopRep
+
+variable {R : Type u} [Ring R] [TopologicalSpace R]
+  {G H : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H] (φ : H →ₜ* G)
+  {X : TopRep.{max v w} R G} {Y : TopRep.{max v w} R H}
+
+/-- The map of a compatible pair on the coinduced resolutions commutes with their differentials,
+on elements. -/
+theorem resolutionMap_d_apply (f : TopRep.res (φ : H →* G) X ⟶ Y) (n : ℕ)
+    (x : (resolutionX X n).V) :
+    (d Y n).hom ((_root_.ContinuousCohomology.resolutionMap φ f n).hom x) =
+      (_root_.ContinuousCohomology.resolutionMap φ f (n + 1)).hom ((d X n).hom x) := by
+  have h := congrArg (fun g ↦ g.hom.toContinuousLinearMap x)
+    (_root_.ContinuousCohomology.resolutionMap_comp_d φ f n)
+  simpa only [TopRep.hom_comp, hom_ofHom, ContIntertwiningMap.toContinuousLinearMap_comp,
+    ContinuousLinearMap.comp_apply, resFunctor_map_hom,
+    ContIntertwiningMap.toContinuousLinearMap_apply, ContIntertwiningMap.restrict_apply] using h
+
+/-- The map of a compatible pair on the coinduced resolutions intertwines the action of `φ h`
+with that of `h`. -/
+theorem resolutionMap_ρ_apply (f : TopRep.res (φ : H →* G) X ⟶ Y) (n : ℕ) (h : H)
+    (x : (resolutionX X n).V) :
+    (_root_.ContinuousCohomology.resolutionMap φ f n).hom ((resolutionX X n).ρ (φ h) x) =
+      (resolutionX Y n).ρ h ((_root_.ContinuousCohomology.resolutionMap φ f n).hom x) := by
+  have h' := hom_comm_apply (_root_.ContinuousCohomology.resolutionMap φ f n) h x
+  simpa only [res, ContRepresentation.restrict_apply_apply,
+    MonoidHom.coe_ofClass] using h'
+
+end ResolutionMapApply
+
 section ResolutionMaps
 
 open TopRep
@@ -95,31 +129,6 @@ open TopRep
 variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {X Y : TopRep.{max v w} R G}
-
-/-- A coefficient morphism commutes with the coinduced resolution differential, on elements. -/
-theorem resolutionMap_d_apply (f : X ⟶ Y) (n : ℕ)
-    (x : (resolutionX X n).V) :
-    (d Y n).hom
-        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) =
-      (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom
-        ((d X n).hom x) := by
-  have h := congrArg (fun g ↦ g.hom.toContinuousLinearMap x)
-    (_root_.ContinuousCohomology.resolutionMap_comp_d (ContinuousMonoidHom.id G) f n)
-  simpa only [TopRep.hom_comp, hom_ofHom, ContIntertwiningMap.toContinuousLinearMap_comp,
-    ContinuousLinearMap.comp_apply, resFunctor_map_hom,
-    ContIntertwiningMap.toContinuousLinearMap_apply, ContIntertwiningMap.restrict_apply] using h
-
-/-- A coefficient morphism on the coinduced resolution commutes with the group action. -/
-theorem resolutionMap_ρ_apply (f : X ⟶ Y) (n : ℕ) (g : G)
-    (x : (resolutionX X n).V) :
-    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom
-        ((resolutionX X n).ρ g x) =
-      (resolutionX Y n).ρ g
-        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) := by
-  have h := hom_comm_apply
-    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n) g x
-  simpa only [res, ContRepresentation.restrict_apply_apply,
-    MonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq] using h
 
 /-- The chain map of shifted coinduced resolutions `TopRep.resolution' X ⟶ TopRep.resolution' Y`
 induced by a coefficient morphism, `F ↦ f ∘ F` in every degree. Taking invariants gives the map

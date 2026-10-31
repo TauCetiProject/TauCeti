@@ -94,6 +94,18 @@ namespace TauCeti.GLSymplecticFin
 
 variable {R : Type*} [CommRing R] {m : ℕ}
 
+/-- A symplectic element whose underlying matrix is scalar is central. -/
+theorem mem_center_of_val_eq_scalar {g : GLSymplecticFin m R} {c : R}
+    (hc : (g.val : Matrix _ _ R) = Matrix.scalar (Fin (m + m)) c) :
+    g ∈ Subgroup.center (GLSymplecticFin m R) := by
+  rw [Subgroup.mem_center_iff]
+  intro h
+  apply Subtype.ext
+  apply Units.ext
+  simpa only [Subgroup.coe_mul, Units.val_mul, hc] using
+    (Matrix.scalar_commute c (fun r ↦ Commute.all c r)
+      (h.val : Matrix (Fin (m + m)) (Fin (m + m)) R)).eq.symm
+
 /-- In positive rank the center of the symplectic group consists exactly of scalar matrices
 whose scalar squares to one. No reducedness or characteristic assumption is needed. -/
 theorem mem_center_iff (hm : m ≠ 0) (g : GLSymplecticFin m R) :
@@ -111,13 +123,29 @@ theorem mem_center_iff (hm : m ≠ 0) (g : GLSymplecticFin m R) :
     simpa only [← hc, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal] using
       GLSymplecticFin.mem_iff.mp g.property
   · rintro ⟨c, hc, -⟩
-    rw [Subgroup.mem_center_iff]
-    intro h
-    apply Subtype.ext
-    apply Units.ext
-    simpa only [Subgroup.coe_mul, Units.val_mul, hc] using
-      (Matrix.scalar_commute c (fun r ↦ Commute.all c r)
-        (h.val : Matrix (Fin (m + m)) (Fin (m + m)) R)).eq.symm
+    exact mem_center_of_val_eq_scalar hc
+
+/-- In positive rank over a nontrivial ring, the central quotient of the symplectic group is
+nontrivial: a long-root transvection with parameter one is not scalar. -/
+instance instNontrivialQuotientCenter [Nontrivial R] [NeZero m] :
+    Nontrivial (GLSymplecticFin m R ⧸ Subgroup.center (GLSymplecticFin m R)) := by
+  apply QuotientGroup.nontrivial_iff.mpr
+  intro htop
+  let i : Fin m := ⟨0, Nat.pos_of_ne_zero (NeZero.ne m)⟩
+  have hg : positiveLongRootTransvectionUnit i (1 : R) ∈
+      Subgroup.center (GLSymplecticFin m R) := htop ▸ Subgroup.mem_top _
+  obtain ⟨c, hc, -⟩ := (mem_center_iff (NeZero.ne m) _).mp hg
+  have hij : Fin.castAdd m i ≠ i.addNat m := by
+    simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
+      Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr i i
+  have he := congrArg (fun M : Matrix (Fin (m + m)) (Fin (m + m)) R ↦
+    M (Fin.castAdd m i) (i.addNat m)) hc
+  simp only [coe_positiveLongRootTransvectionUnit,
+    TauCeti.coe_transvectionUnit_eq_one_add_single, finSumFinEquiv_apply_left,
+    finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat, Matrix.add_apply,
+    Matrix.one_apply_ne hij, Matrix.single_apply_same, zero_add,
+    Matrix.scalar_apply, Matrix.diagonal_apply_ne _ hij] at he
+  exact one_ne_zero he
 
 variable (m)
 

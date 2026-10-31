@@ -33,6 +33,8 @@ a Gröbner basis decide ideal membership.
   element of `I` is divisible by the leading monomial of a nonzero element of a Gröbner basis.
 * `MonomialOrder.isGroebnerBasis_iff_forall_exists_degree_le_degree`: the converse, for a family
   whose nonzero members have unit leading coefficients.
+* `MonomialOrder.IsGroebnerBasis.image_leadingTerm`: the leading terms of such a Gröbner basis of
+  `I` form a Gröbner basis of the ideal of leading terms of `I`.
 * `MonomialOrder.IsGroebnerBasis.sub_mem_iff`: for remainders `r₁`, `r₂` of `f₁`, `f₂` on division
   by a Gröbner basis of `I`, `f₁ - f₂ ∈ I` if and only if `r₁ = r₂`. In particular remainders on
   division by a Gröbner basis are unique (`MonomialOrder.IsGroebnerBasis.eq_of_isRemainder`) and
@@ -300,6 +302,30 @@ theorem isGroebnerBasis_iff_forall_exists_degree_le_degree
     simp [leadingTerm, monomial_mul_monomial, tsub_add_cancel_of_le hgp, mul_assoc]
   rw [Set.mem_preimage, SetLike.mem_coe, hlt]
   exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨g, hgG, rfl⟩)
+
+/-- If the nonzero members of `G` have unit leading coefficients, then so do the nonzero leading
+terms of members of `G`. -/
+theorem isUnit_leadingCoeff_of_mem_image_leadingTerm
+    (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
+    ∀ p ∈ m.leadingTerm '' G, p ≠ 0 → IsUnit (m.leadingCoeff p) := by
+  rintro _ ⟨g, hg, rfl⟩ hg0
+  rw [leadingCoeff_leadingTerm]
+  exact hG g hg (by rintro rfl; simp at hg0)
+
+/-- The leading terms of a Gröbner basis `G` of `I` whose nonzero members have unit leading
+coefficients form a Gröbner basis of the ideal of leading terms of `I`. -/
+theorem IsGroebnerBasis.image_leadingTerm (h : m.IsGroebnerBasis G I)
+    (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
+    m.IsGroebnerBasis (m.leadingTerm '' G) (Ideal.span (m.leadingTerm '' I)) := by
+  refine (isGroebnerBasis_iff_forall_exists_degree_le_degree
+    (isUnit_leadingCoeff_of_mem_image_leadingTerm hG)).2 ⟨?_, fun p hp hp0 ↦ ?_⟩
+  · rw [h.span_leadingTerm_image]
+    exact Ideal.subset_span
+  · rw [h.span_leadingTerm_image] at hp
+    obtain ⟨g, hg, hg0, hgp⟩ :=
+      exists_degree_le_of_mem_span_leadingTerm hp (m.degree_mem_support hp0)
+    exact ⟨m.leadingTerm g, ⟨g, hg, rfl⟩, (m.leadingTerm_eq_zero_iff g).not.2 hg0,
+      (m.degree_leadingTerm g).symm ▸ hgp⟩
 
 end CommSemiring
 

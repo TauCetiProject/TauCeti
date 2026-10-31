@@ -18,15 +18,16 @@ without changing its ramification behaviour.
 
 More generally, a commutative square of semilinear isomorphisms, `σK : K ≃+* K'` below and
 `τ : L ≃+* L'` above, carrying the constants `k` onto `k'` along `σ`, carries the place of `L` over
-`P` to a place of `L'` over the transport of `P`, with the same ramification index
-(`TauCeti.Place.restrict_equivOfRingEquiv` and
-`TauCeti.Place.ramificationIdx_equivOfRingEquiv_of_comm`). The constants need not be fixed, so this
+`P` to a place of `L'` over the transport of `P`, with the same ramification index and the same
+relative degree (`TauCeti.Place.restrict_equivOfRingEquiv`,
+`TauCeti.Place.ramificationIdx_equivOfRingEquiv_of_comm` and
+`TauCeti.Place.relativeDegree_equivOfRingEquiv_of_comm`). The constants need not be fixed, so this
 is how a Galois automorphism of the constants acts on the places of a base-changed extension.
 
-Over the identity of the constants these are `TauCeti.Place.restrict_map` and
-`TauCeti.Place.ramificationIdx_map`, for `k`-algebra isomorphisms. With `K = K'` and `L = L'` as
-fields, this is how a change of the embedding of the base field by an automorphism moves places
-and their ramification.
+Over the identity of the constants these are `TauCeti.Place.restrict_map`,
+`TauCeti.Place.ramificationIdx_map` and `TauCeti.Place.relativeDegree_map`, for `k`-algebra
+isomorphisms. With `K = K'` and `L = L'` as fields, this is how a change of the embedding of the
+base field by an automorphism moves places and their ramification.
 -/
 
 public section
@@ -72,6 +73,35 @@ theorem restrict_equivOfRingEquiv [Algebra k K] [Algebra k' K'] [IsScalarTower k
     τ.symm_apply_eq.mpr (by rw [hK, σK.apply_symm_apply] :
       algebraMap K' L' f = τ (algebraMap K L (σK.symm f)))]
 
+include hK in
+/-- **The relative degree is invariant under a commutative square of semilinear isomorphisms**:
+if `τ : L ≃+* L'` carries the image of `K` onto the image of `K'` along `σK : K ≃+* K'`, which
+carries the constants along `σ`, then transporting a place of `L` along `τ` does not change its
+relative degree over the place below. The residue fields above and below are matched by `τ` and
+by `σK`. -/
+theorem relativeDegree_equivOfRingEquiv_of_comm [Algebra k K] [Algebra k' K']
+    [IsScalarTower k K L] [IsScalarTower k' K' L'] [Algebra.IsIntegral K L]
+    [Algebra.IsIntegral K' L'] (hσK : ∀ c, σK (algebraMap k K c) = algebraMap k' K' (σ c))
+    (Q : Place k L) :
+    relativeDegree k' K' (equivOfRingEquiv σ τ h Q) = relativeDegree k K Q := by
+  have hr := restrict_equivOfRingEquiv σ τ h σK hK hσK Q
+  -- `σK` matches the valuation rings of the two places below.
+  let i : (Q.restrict k K).integers ≃+* ((equivOfRingEquiv σ τ h Q).restrict k' K').integers :=
+    (integersEquivOfRingEquiv σ σK hσK (Q.restrict k K)).trans
+      (RingEquiv.subringCongr (congrArg (fun P ↦ P.integers.toSubring) hr.symm))
+  rw [relativeDegree_def, relativeDegree_def]
+  refine (Algebra.finrank_eq_of_equiv_equiv (IsLocalRing.ResidueField.mapEquiv i)
+    (IsLocalRing.ResidueField.mapEquiv (integersEquivOfRingEquiv σ τ h Q))
+    (RingHom.ext fun x ↦ ?_)).symm
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    IsLocalRing.ResidueField.mapEquiv_apply, IsLocalRing.ResidueField.map_residue,
+    IsLocalRing.ResidueField.algebraMap_residue]
+  congr 1
+  ext
+  refine (congrArg (algebraMap K' L') (coe_integersEquivOfRingEquiv σ σK hσK _ x)).trans ?_
+  simpa using (hK x).symm
+
 end Semilinear
 
 variable {k F L L' : Type*} [Field k] [Field F] [Field L] [Field L']
@@ -110,6 +140,16 @@ theorem restrict_map [Algebra k K] [Algebra k K'] [IsScalarTower k K L] [IsScala
     (Q.map e).restrict k K' = (Q.restrict k K).map σ := by
   rw [map_eq_equivOfRingEquiv, map_eq_equivOfRingEquiv]
   exact restrict_equivOfRingEquiv _ _ _ σ.toRingEquiv he _ Q
+
+/-- **The relative degree is invariant under a commutative square of isomorphisms**: if
+`e : L ≃ₐ[k] L'` carries the image of `K` onto the image of `K'` along a `k`-algebra isomorphism
+`σ`, then transporting a place of `L` along `e` does not change its relative degree. -/
+theorem relativeDegree_map [Algebra k K] [Algebra k K'] [IsScalarTower k K L]
+    [IsScalarTower k K' L'] [Algebra.IsIntegral K L] [Algebra.IsIntegral K' L'] (σ : K ≃ₐ[k] K')
+    (he : ∀ x, e (algebraMap K L x) = algebraMap K' L' (σ x)) (Q : Place k L) :
+    relativeDegree k K' (Q.map e) = relativeDegree k K Q := by
+  rw [map_eq_equivOfRingEquiv]
+  exact relativeDegree_equivOfRingEquiv_of_comm _ _ _ σ.toRingEquiv he σ.commutes Q
 
 end Commute
 

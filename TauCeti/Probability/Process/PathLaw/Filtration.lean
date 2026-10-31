@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Process.Filtration
+public import Mathlib.Probability.Process.Adapted
 
 /-!
 # The natural filtration of path space through finite prefixes
@@ -14,12 +14,19 @@ Mathlib's natural filtration `MeasureTheory.Filtration.piLE` of a product `Π n,
 at time `n` by the restriction to `Finset.Iic n`. On one-sided path space `ℕ → α`, statements about
 processes are usually phrased with `Fin`-indexed prefixes `(x 0, …, x n)` instead, as in the prefix
 laws of a process. This file identifies the two σ-algebras, so that conditional expectations with
-respect to `piLE` can be computed on events of the form `{(x 0, …, x n) ∈ A}`.
+respect to `piLE` can be computed on events of the form `{(x 0, …, x n) ∈ A}`, and records that the
+coordinate process is adapted to `piLE`.
 -/
 
 public section
 
 namespace MeasureTheory.Filtration
+
+/-- The coordinates of a product `Π i, X i` are adapted to its natural filtration `piLE`. -/
+theorem adapted_piLE {ι : Type*} [Preorder ι] {X : ι → Type*} [∀ i, MeasurableSpace (X i)] :
+    Adapted (piLE (X := X)) fun i x => x i := fun i =>
+  (measurable_pi_apply (⟨i, Set.mem_Iic.2 le_rfl⟩ : Set.Iic i)).comp
+    (comap_measurable (Preorder.restrictLe i))
 
 variable {α : Type*} [MeasurableSpace α]
 

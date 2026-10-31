@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.PosDef
 
 /-!
-# Eigen-coordinates of a Hermitian matrix
+# Eigen-coordinates and eigenvalue multisets of a Hermitian matrix
 
 Let `B` be a Hermitian matrix over an `RCLike` field with orthonormal eigenvector basis
 `hB.eigenvectorBasis` and real eigenvalues `hB.eigenvalues`. Writing `U` for the eigenvector
@@ -25,6 +25,14 @@ These are the spectral facts behind the moment-generating function of a Gaussian
 whose exponential-integrability domain is a positive-definiteness condition on such a pencil and
 whose value is a power of its determinant.
 
+The eigenvalues of a Hermitian matrix, counted with multiplicity, are the roots of its
+characteristic polynomial. So if `A.charpoly = X ^ k * B.charpoly` for Hermitian `A` and `B`,
+possibly of different sizes, then the eigenvalues of `A` are those of `B` together with `k`
+zeros. Mathlib's `Matrix.charpoly_mul_comm_of_le` gives this relation for the two Gram matrices
+`Aᴴ * A` and `A * Aᴴ` of a rectangular matrix, which therefore have the same nonzero eigenvalues.
+This is how the spectra of sample covariance matrices `X * Xᴴ` and of their companions `Xᴴ * X`
+are compared.
+
 ## Main results
 
 * `Matrix.IsHermitian.apply_eq_sum_eigenvalues` — the entrywise spectral expansion
@@ -39,7 +47,20 @@ whose value is a power of its determinant.
   `Matrix.IsHermitian.det_one_sub_smul` — `1 - c • B` is conjugate to a diagonal matrix, and its
   determinant is `∏ j, (1 - c * hB.eigenvalues j)`;
 * `Matrix.IsHermitian.trace_pow_eq_sum_eigenvalues_pow` — the trace of `B ^ k` is
-  `∑ j, hB.eigenvalues j ^ k` for every natural `k`.
+  `∑ j, hB.eigenvalues j ^ k` for every natural `k`;
+* `Matrix.IsHermitian.map_eigenvalues_of_charpoly_eq_X_pow_mul` — if
+  `A.charpoly = X ^ k * B.charpoly`, the eigenvalue multiset of `A` is that of `B` plus `k`
+  zeros;
+* `Matrix.filter_map_eigenvalues_conjTranspose_mul_self` — `Aᴴ * A` and `A * Aᴴ` have the same
+  nonzero eigenvalues, counted with multiplicity;
+* `Matrix.IsHermitian.eigenvalues_eq_zero_of_inner_ne_zero` — if the kernel of `B` lies in the
+  kernel of a Hermitian `A`, an eigenvector of `B` with eigenvalue zero is orthogonal to every
+  eigenvector of `A` with nonzero eigenvalue.
+
+## References
+
+* R. A. Horn, C. R. Johnson, *Matrix Analysis*, 2nd ed., Cambridge University Press (2013),
+  Theorem 1.3.22 (`AB` and `BA` have the same nonzero eigenvalues).
 -/
 
 public section
@@ -140,3 +161,76 @@ theorem eventually_posDef_one_sub_smul (hB : B.IsHermitian) :
       (gt_mem_nhds zero_lt_one)
 
 end Matrix.IsHermitian
+
+namespace Matrix.IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι] {A B : Matrix ι ι 𝕜}
+
+/-- If the kernel of `B` lies in the kernel of the Hermitian matrix `A`, then an eigenvector of `B`
+with eigenvalue zero is orthogonal to every eigenvector of `A` with nonzero eigenvalue: a nonzero
+overlap forces the eigenvalue of `A` to vanish. -/
+theorem eigenvalues_eq_zero_of_inner_ne_zero (hA : A.IsHermitian) (hB : B.IsHermitian)
+    (h : LinearMap.ker B.mulVecLin ≤ LinearMap.ker A.mulVecLin) {i j : ι}
+    (hij : ⟪hA.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜 ≠ 0) (hj : hB.eigenvalues j = 0) :
+    hA.eigenvalues i = 0 := by
+  have hker : A *ᵥ ⇑(hB.eigenvectorBasis j) = 0 := by
+    have hv : B *ᵥ ⇑(hB.eigenvectorBasis j) = 0 := by
+      rw [hB.mulVec_eigenvectorBasis, hj, zero_smul]
+    exact h hv
+  have hsymm := isSymmetric_toEuclideanLin_iff.mpr hA (hA.eigenvectorBasis i)
+    (hB.eigenvectorBasis j)
+  simp only [toLpLin_apply, hA.mulVec_eigenvectorBasis, hker, WithLp.toLp_zero, inner_zero_right,
+    RCLike.real_smul_eq_coe_smul (K := 𝕜), WithLp.toLp_smul, WithLp.toLp_ofLp, inner_smul_left,
+    RCLike.conj_ofReal, mul_eq_zero, RCLike.ofReal_eq_zero] at hsymm
+  exact hsymm.resolve_right hij
+
+end Matrix.IsHermitian
+
+namespace Matrix
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+  [DecidableEq κ]
+
+open Polynomial in
+/-- If the characteristic polynomial of a Hermitian matrix `A` is `X ^ k` times that of a
+Hermitian matrix `B`, then the eigenvalues of `A`, counted with multiplicity, are those of `B`
+together with `k` additional zeros. -/
+theorem IsHermitian.map_eigenvalues_of_charpoly_eq_X_pow_mul {A : Matrix ι ι 𝕜}
+    {B : Matrix κ κ 𝕜} (hA : A.IsHermitian) (hB : B.IsHermitian) {k : ℕ}
+    (h : A.charpoly = X ^ k * B.charpoly) :
+    Finset.univ.val.map hA.eigenvalues =
+      Multiset.replicate k 0 + Finset.univ.val.map hB.eigenvalues := by
+  apply Multiset.map_injective (RCLike.ofReal_injective (K := 𝕜))
+  rw [Multiset.map_map, ← hA.roots_charpoly_eq_eigenvalues, h,
+    roots_mul ((monic_X_pow k).mul B.charpoly_monic).ne_zero, roots_X_pow,
+    hB.roots_charpoly_eq_eigenvalues]
+  simp [Multiset.map_map, Multiset.nsmul_singleton]
+
+open Polynomial in
+/-- If the characteristic polynomial of a Hermitian matrix `A` is `X ^ k` times that of a
+Hermitian matrix `B`, then summing a function over the eigenvalues of `A` gives its sum over the
+eigenvalues of `B` plus `k` copies of its value at `0`. -/
+theorem IsHermitian.sum_comp_eigenvalues_of_charpoly_eq_X_pow_mul {M : Type*} [AddCommMonoid M]
+    {A : Matrix ι ι 𝕜} {B : Matrix κ κ 𝕜} (hA : A.IsHermitian) (hB : B.IsHermitian) {k : ℕ}
+    (h : A.charpoly = X ^ k * B.charpoly) (g : ℝ → M) :
+    ∑ i, g (hA.eigenvalues i) = k • g 0 + ∑ j, g (hB.eigenvalues j) := by
+  have := congrArg (fun s => (s.map g).sum) (hA.map_eigenvalues_of_charpoly_eq_X_pow_mul hB h)
+  simp only [Multiset.map_add, Multiset.sum_add, Multiset.map_replicate, Multiset.sum_replicate,
+    Multiset.map_map, Function.comp_def] at this
+  rwa [Finset.sum_eq_multiset_sum, Finset.sum_eq_multiset_sum]
+
+/-- `Aᴴ * A` and `A * Aᴴ` have the same nonzero eigenvalues, counted with multiplicity. -/
+theorem filter_map_eigenvalues_conjTranspose_mul_self (A : Matrix ι κ 𝕜) :
+    (Finset.univ.val.map (isHermitian_conjTranspose_mul_self A).eigenvalues).filter (· ≠ 0) =
+      (Finset.univ.val.map (isHermitian_mul_conjTranspose_self A).eigenvalues).filter
+        (· ≠ 0) := by
+  rcases le_total (Fintype.card ι) (Fintype.card κ) with hle | hle
+  · rw [IsHermitian.map_eigenvalues_of_charpoly_eq_X_pow_mul _
+      (isHermitian_mul_conjTranspose_self A) (charpoly_mul_comm_of_le Aᴴ A hle)]
+    simp +contextual [Multiset.mem_replicate]
+  · rw [IsHermitian.map_eigenvalues_of_charpoly_eq_X_pow_mul
+      (isHermitian_mul_conjTranspose_self A) (isHermitian_conjTranspose_mul_self A)
+      (charpoly_mul_comm_of_le A Aᴴ hle)]
+    simp +contextual [Multiset.mem_replicate]
+
+end Matrix

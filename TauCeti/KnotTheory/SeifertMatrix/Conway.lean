@@ -18,8 +18,8 @@ an even matrix it is the existing normalized Alexander polynomial after doubling
 Allowing odd sizes is essential: smoothing a crossing changes the rank of a Seifert surface's
 first homology by one.
 
-Changing the last diagonal entry of `V` by `r` changes this determinant by
-`r (s - s⁻¹)` times the determinant for the matrix with its last row and column deleted.
+Changing a diagonal entry of `V` by `r` changes this determinant by
+`r (s - s⁻¹)` times the determinant for the matrix with that row and column deleted.
 This is the algebraic calculation underlying the Conway skein relation. For the negative-normal
 push-off convention, decreasing that entry by one gives the factor `s⁻¹ - s`. No construction
 of Seifert surfaces for a diagram skein triple is asserted here.
@@ -28,6 +28,9 @@ of Seifert surfaces for a diagram skein triple is asserted here.
 
 * W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997),
   Chapters 6 and 8, especially Theorem 8.6 (the Conway-normalized skein relation).
+
+The determinant is unchanged by reindexing and by a congruence `V ↦ P V Pᵀ` with
+`(det P)² = 1`, such as an integral change of basis of the first homology of the surface.
 
 The normalization comparison uses `TauCeti.KnotTheory.alexander`. The minor calculation uses
 `Matrix.det_updateCol_last_single` and Mathlib's column multilinearity of the determinant.
@@ -126,6 +129,40 @@ theorem seifertConwayDeterminant_of_isEmpty [IsEmpty ι] (V : Matrix ι ι R) :
     V.seifertConwayDeterminant = 1 := by
   simp [seifertConwayDeterminant]
 
+/-- The Seifert determinant is unchanged by a simultaneous bijective reindexing of the rows and
+columns, including between different finite index types. -/
+@[simp]
+theorem seifertConwayDeterminant_submatrix_equiv_self {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (V : Matrix ι ι R) (e : κ ≃ ι) :
+    (V.submatrix e e).seifertConwayDeterminant = V.seifertConwayDeterminant := by
+  rw [seifertConwayDeterminant_def, seifertConwayMatrix_submatrix, det_submatrix_equiv_self,
+    seifertConwayDeterminant_def]
+
+omit [DecidableEq ι] in
+/-- A change of basis of the Seifert form, `V ↦ P V Pᵀ`, acts on the half-power Seifert matrix
+by the same congruence. -/
+theorem seifertConwayMatrix_mul_mul_transpose (P V : Matrix ι ι R) :
+    (P * V * Pᵀ).seifertConwayMatrix =
+      P.map C * V.seifertConwayMatrix * (P.map C)ᵀ := by
+  simp only [seifertConwayMatrix, Matrix.map_mul, transpose_mul, transpose_transpose,
+    Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_assoc,
+    transpose_map]
+
+/-- Congruence multiplies the Seifert determinant by the square of the determinant of the
+congruence matrix. -/
+theorem seifertConwayDeterminant_congruence (P V : Matrix ι ι R) :
+    (P * V * Pᵀ).seifertConwayDeterminant = C P.det ^ 2 * V.seifertConwayDeterminant := by
+  rw [seifertConwayDeterminant_def, seifertConwayMatrix_mul_mul_transpose, det_mul, det_mul,
+    det_transpose, ← RingHom.mapMatrix_apply, ← RingHom.map_det, seifertConwayDeterminant_def]
+  ring
+
+/-- **The Seifert determinant is a congruence invariant** as soon as the determinant of the
+congruence matrix squares to `1`, as it does for a change of basis over `ℤ`. -/
+theorem seifertConwayDeterminant_congruence_of_det_sq_eq_one {P : Matrix ι ι R}
+    (V : Matrix ι ι R) (hP : P.det ^ 2 = 1) :
+    (P * V * Pᵀ).seifertConwayDeterminant = V.seifertConwayDeterminant := by
+  rw [seifertConwayDeterminant_congruence, ← map_pow, hP, map_one, one_mul]
+
 /-- The half-power Seifert determinant is fixed by `s ↦ -s⁻¹`, in every matrix size. -/
 @[simp] theorem signedInvert_seifertConwayDeterminant (V : Matrix ι ι R) :
     signedInvert V.seifertConwayDeterminant = V.seifertConwayDeterminant := by
@@ -177,10 +214,8 @@ private theorem seifertConwayMatrix_add_diagonal_single {n : ℕ}
       simp [seifertConwayMatrix_apply, hj]
     · simp [seifertConwayMatrix_apply, hi, Ne.symm hi, hj]
 
-/-- **The Seifert determinant skein calculation.** Increasing the last diagonal entry by `r`
-changes `det(s V - s⁻¹ Vᵀ)` by `r (s - s⁻¹)` times the determinant of the deleted minor.
-This includes rank one, where the minor is empty and its determinant is one. -/
-theorem seifertConwayDeterminant_add_diagonal_single {n : ℕ}
+/-- The skein calculation for the last diagonal entry of a matrix indexed by `Fin (n + 1)`. -/
+private theorem seifertConwayDeterminant_add_diagonal_single_last {n : ℕ}
     (V : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (r : R) :
     (V + diagonal (Pi.single (Fin.last n) r)).seifertConwayDeterminant -
         V.seifertConwayDeterminant =
@@ -197,5 +232,43 @@ theorem seifertConwayDeterminant_add_diagonal_single {n : ℕ}
     det_updateCol_last_single, seifertConwayDeterminant_def,
     seifertConwayDeterminant_def, seifertConwayMatrix_submatrix]
   abel
+
+/-- **The Seifert determinant skein calculation.** Increasing the diagonal entry of `V` at `x`
+by `r` changes `det(s V - s⁻¹ Vᵀ)` by `r (s - s⁻¹)` times the determinant of the minor with the
+row and column of `x` deleted. This includes rank one, where the minor is empty and its
+determinant is one. -/
+theorem seifertConwayDeterminant_add_diagonal_single (V : Matrix ι ι R) (x : ι) (r : R) :
+    (V + diagonal (Pi.single x r)).seifertConwayDeterminant - V.seifertConwayDeterminant =
+      (T 1 - T (-1)) * C r *
+        (V.submatrix ((↑) : {y // y ≠ x} → ι) (↑)).seifertConwayDeterminant := by
+  -- enumerate `ι` by `Fin (k + 1)` with `x` last, and apply the calculation for the last entry
+  let E : Fin (Fintype.card {y // y ≠ x} + 1) ≃ ι := finSuccEquivLast.trans
+    ((Equiv.optionCongr (Fintype.equivFin {y // y ≠ x}).symm).trans (Equiv.optionSubtypeNe x))
+  have hlast : E (Fin.last _) = x := by
+    simp only [E, Equiv.trans_apply, finSuccEquivLast_last, Equiv.optionCongr_apply,
+      Option.map_none, Equiv.optionSubtypeNe_none]
+  have hcast (j : Fin (Fintype.card {y // y ≠ x})) :
+      E j.castSucc = ((Fintype.equivFin {y // y ≠ x}).symm j : ι) := by
+    simp only [E, Equiv.trans_apply, finSuccEquivLast_castSucc, Equiv.optionCongr_apply,
+      Option.map_some, Equiv.optionSubtypeNe_some]
+  have hsingle : (Pi.single x r : ι → R) ∘ E = Pi.single (Fin.last _) r := by
+    ext j
+    induction j using Fin.lastCases with
+    | last => simp [hlast]
+    | cast j =>
+      have hj := ((Fintype.equivFin {y // y ≠ x}).symm j).2
+      simp [hcast, hj, Fin.castSucc_ne_last]
+  have hminor : (V.submatrix E E).submatrix Fin.castSucc Fin.castSucc =
+      (V.submatrix ((↑) : {y // y ≠ x} → ι) (↑)).submatrix (Fintype.equivFin _).symm
+        (Fintype.equivFin _).symm := by
+    ext j k
+    simp [hcast]
+  have hsum : (V + diagonal (Pi.single x r)).submatrix E E =
+      V.submatrix E E + diagonal (Pi.single (Fin.last _) r) := by
+    rw [← hsingle, ← submatrix_diagonal_equiv, submatrix_add, Pi.add_apply, Pi.add_apply]
+  rw [← seifertConwayDeterminant_submatrix_equiv_self (V + _) E,
+    ← seifertConwayDeterminant_submatrix_equiv_self V E, hsum,
+    seifertConwayDeterminant_add_diagonal_single_last, hminor,
+    seifertConwayDeterminant_submatrix_equiv_self]
 
 end Matrix
