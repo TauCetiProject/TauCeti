@@ -9,8 +9,8 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Algebraic.Defs
 public import Mathlib.RingTheory.Jacobson.Ideal
 import Mathlib.Algebra.Polynomial.FieldDivision
-import Mathlib.RingTheory.Polynomial.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.Algebraic.Basic
 import TauCeti.RingTheory.Idempotents.Jacobson
 import TauCeti.RingTheory.Jacobson.Basic
 
@@ -34,7 +34,6 @@ source of the idempotents in the structure theory of separating ideals of Banach
 
 * `IsAlgebraic.exists_isIdempotentElem_aeval_mul_ne_zero`: an algebraic element `x` that is not
   nilpotent has a multiple `p (x) * x` that is a nonzero idempotent.
-* `Submodule.isAlgebraic_of_mem`: elements of finite-dimensional left ideals are algebraic.
 * `Submodule.exists_isIdempotentElem_ne_zero_mem_of_isAlgebraic`: a left ideal of algebraic
   elements not contained in the Jacobson radical contains a nonzero idempotent.
 * `Submodule.exists_isIdempotentElem_ne_zero_mem`: a finite-dimensional left ideal not contained
@@ -93,20 +92,6 @@ theorem exists_isIdempotentElem_aeval_mul_ne_zero {x : B} (hx : IsAlgebraic K x)
 end IsAlgebraic
 
 namespace Submodule
-
-/-- Every element of a finite-dimensional left ideal of an algebra over a field, given as a scalar
-submodule closed under left multiplication, is algebraic. -/
-theorem isAlgebraic_of_mem (J : Submodule K B) [FiniteDimensional K J]
-    (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J) {x : B} (hxJ : x ∈ J) : IsAlgebraic K x := by
-  -- `p ↦ p (x) * x` maps the infinite-dimensional `K[X]` into `J`, so it has a nonzero kernel.
-  let φ : K[X] →ₗ[K] J := LinearMap.codRestrict J
-    (LinearMap.mulRight K x ∘ₗ (aeval x).toLinearMap) fun p ↦ hJ _ hxJ
-  obtain ⟨p, hp, hp0⟩ : ∃ p, φ p = 0 ∧ p ≠ 0 := by
-    by_contra! h
-    exact Polynomial.not_finite (Module.Finite.of_injective φ
-      ((injective_iff_map_eq_zero φ).2 h))
-  have hpx : aeval x p * x = 0 := congrArg Subtype.val hp
-  exact ⟨p * X, mul_ne_zero hp0 X_ne_zero, by rw [map_mul, aeval_X, hpx]⟩
 
 /-- **Idempotents in left ideals outside the radical.** A left ideal `J` of an algebra `B` over a
 field, given as a scalar submodule closed under left multiplication, whose elements are algebraic
