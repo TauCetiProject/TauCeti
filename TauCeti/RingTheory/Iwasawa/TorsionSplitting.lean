@@ -30,16 +30,13 @@ The proof is local at the finitely many primes of height one in the support of `
 prime `𝔭` the ring `A_𝔭` is a discrete valuation ring, so the finitely generated torsion-free
 module `(M ⧸ T)_𝔭` is free and the localized sequence splits. Its splitting descends to a map
 `φ : M → T` restricting to multiplication by some `s ∉ 𝔭` on `T`, and by prime avoidance one `s`
-works at every such prime. The final step, `TauCeti.Iwasawa.isPseudoIsomorphism_prod_mkQ`, holds
-for any submodule over a noetherian ring: if `φ : M → N` restricts to multiplication by `a` on `N`,
-then `(φ, mod N)` is a pseudo-isomorphism once `a` lies in no prime of height at most one in the
+works at every such prime. The final step is `TauCeti.Iwasawa.isPseudoIsomorphism_prod_mkQ`: if
+`φ : M → N` restricts to multiplication by `a` on a finitely generated submodule `N`, then
+`(φ, mod N)` is a pseudo-isomorphism once `a` lies in no prime of height at most one in the
 support of `N`.
 
 ## Main results
 
-* `TauCeti.Iwasawa.isPseudoIsomorphism_prod_mkQ`: if `φ : M → N` restricts to multiplication by
-  `a` on the submodule `N`, and `a` lies in no prime of height at most one in the support of `N`,
-  then `φ.prod N.mkQ : M → N × M ⧸ N` is a pseudo-isomorphism.
 * `TauCeti.Iwasawa.exists_isPseudoIsomorphism_prod_torsion_mkQ`: over a noetherian integrally
   closed domain, a finitely generated module `M` admits a pseudo-isomorphism
   `M → torsion A M × M ⧸ torsion A M` whose second component is the quotient map.
@@ -57,51 +54,6 @@ namespace TauCeti.Iwasawa
 open Submodule
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommGroup M] [Module A M]
-
-/-- Over a noetherian ring, a finitely generated module killed by `a` and supported inside the
-support of `N` is pseudo-null, provided `a` lies in no prime of height at most one in the support
-of `N`. -/
-private theorem isPseudoNull_of_mem_annihilator {N X : Type*} [AddCommGroup N] [Module A N]
-    [AddCommGroup X] [Module A X] [Module.Finite A X] {a : A}
-    (ha : ∀ 𝔭 ∈ Module.support A N, 𝔭.asIdeal.height ≤ 1 → a ∉ 𝔭.asIdeal)
-    (haX : a ∈ Module.annihilator A X) (hX : Module.support A X ⊆ Module.support A N) :
-    IsPseudoNull A X :=
-  isPseudoNull_iff_support.mpr ⟨‹_›, fun 𝔭 h𝔭 ↦ not_le.mp fun hht ↦
-    ha 𝔭 (hX h𝔭) hht (Module.annihilator_le_of_mem_support h𝔭 haX)⟩
-
-/-- Let `N` be a submodule of a finitely generated module `M` over a noetherian ring, and let
-`φ : M → N` restrict to multiplication by `a` on `N`. If `a` lies in no prime of height at most
-one in the support of `N`, then `m ↦ (φ m, m mod N)` is a pseudo-isomorphism `M → N × M ⧸ N`. -/
-theorem isPseudoIsomorphism_prod_mkQ [IsNoetherianRing A] [Module.Finite A M]
-    {N : Submodule A M} {φ : M →ₗ[A] N} {a : A} (hφ : φ ∘ₗ N.subtype = LinearMap.lsmul A N a)
-    (ha : ∀ 𝔭 ∈ Module.support A N, 𝔭.asIdeal.height ≤ 1 → a ∉ 𝔭.asIdeal) :
-    IsPseudoIsomorphism (φ.prod N.mkQ) := by
-  have hφa (n : N) : φ n = a • n := by simpa using congr($hφ n)
-  -- The kernel lies in `N`, where `φ` is multiplication by `a`.
-  have hkerN : LinearMap.ker (φ.prod N.mkQ) ≤ N := fun m hm ↦ by
-    simpa using (Prod.ext_iff.mp hm).2
-  -- The cokernel is a quotient of `N`: modulo the image, `(n, m mod N) ≡ (n - φ m, 0)`.
-  let π : N →ₗ[A] (N × M ⧸ N) ⧸ LinearMap.range (φ.prod N.mkQ) :=
-    (LinearMap.range (φ.prod N.mkQ)).mkQ ∘ₗ LinearMap.inl A N (M ⧸ N)
-  have hπ : Function.Surjective π := by
-    rintro ⟨⟨n, q⟩⟩
-    obtain ⟨m, rfl⟩ := N.mkQ_surjective q
-    refine ⟨n - φ m, (Submodule.Quotient.eq _).mpr ⟨-m, ?_⟩⟩
-    simp
-  refine ⟨isPseudoNull_of_mem_annihilator ha ?_
-    (Module.support_subset_of_injective (Submodule.inclusion hkerN)
-      (Submodule.inclusion_injective hkerN)),
-    isPseudoNull_of_mem_annihilator ha ?_ (Module.support_subset_of_surjective π hπ)⟩
-  · refine Module.mem_annihilator.mpr fun ⟨m, hm⟩ ↦ Subtype.ext ?_
-    have h₁ : φ m = 0 := (Prod.ext_iff.mp hm).1
-    have h₂ := hφa ⟨m, hkerN hm⟩
-    simpa [h₁, eq_comm] using congr(($h₂ : M))
-  · -- `a • (n, 0) = (φ n, n mod N)` lies in the image.
-    refine Module.mem_annihilator.mpr fun x ↦ ?_
-    obtain ⟨n, rfl⟩ := hπ x
-    rw [← map_smul]
-    simp only [π, LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact ⟨n, by simp [hφa]⟩
 
 /-- Over a noetherian integrally closed domain, at a prime `𝔭` of height one, some `φ : M → T`
 restricts to multiplication by an element `s ∉ 𝔭` on the torsion submodule `T`: the localized
