@@ -10,6 +10,7 @@ import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.FiberBundle.Trivialization
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The Legendre map of a Lagrangian
@@ -36,14 +37,27 @@ Explicitly `θ_L(v)(ξ) = FL(v)(dπ ξ)` (`TauCeti.cartanForm_apply`). These are
 through which a Lagrangian system on `TM` is compared with a Hamiltonian system on `T*M`: when `FL`
 is a diffeomorphism, the corresponding Hamiltonian is `E_L ∘ FL⁻¹`.
 
-Subtracting a potential `V : M → 𝕜` changes neither the Legendre map nor the Cartan forms, and adds
-`V` to the energy (`TauCeti.legendreMap_sub_comp_proj`, `TauCeti.cartanForm_sub_comp_proj`,
+Differentiating the Legendre map once more along the fibre gives the **fibre Hessian**
+(`TauCeti.fiberHessian`): at a tangent vector `v` at `x` it is the bilinear form on `T_x M` given by
+the second derivative at `v` of `L` restricted to `T_x M`, in coordinates the matrix
+`∂²L/∂v∂v`. A Lagrangian is **regular** when all its fibre Hessians are invertible
+(`TauCeti.IsRegularLagrangian`). Regularity is the standard hypothesis for inverting the Legendre
+map locally, which relates the Lagrangian and Hamiltonian descriptions of a mechanical system.
+
+Subtracting a potential `V : M → 𝕜` changes neither the Legendre map, nor the fibre Hessian, nor the
+Cartan forms, and adds `V` to the energy (`TauCeti.legendreMap_sub_comp_proj`,
+`TauCeti.fiberHessian_sub_comp_proj`, `TauCeti.cartanForm_sub_comp_proj`,
 `TauCeti.cartanTwoForm_sub_comp_proj`, `TauCeti.lagrangianEnergy_sub_comp_proj`).
 The basic example is the Lagrangian `L(v) = ½ g(v, v) - V(x)` of a mechanical system with kinetic
 energy given by a fibrewise symmetric bilinear form `g`, such as the `inner` field of a Riemannian
 metric (`TauCeti.mechanicalLagrangian`). Its Legendre map is `v ↦ g(v, ·)`, the index-lowering map
 of `g`, and its energy is the total energy `½ g(v, v) + V(x)`
 (`TauCeti.legendreMap_mechanicalLagrangian_snd`, `TauCeti.lagrangianEnergy_mechanicalLagrangian`).
+Its fibre Hessian is `g` itself (`TauCeti.fiberHessian_mechanicalLagrangian`), so it is regular
+exactly when each `g x` is invertible as a map from `T_x M` onto its continuous dual
+(`TauCeti.isRegularLagrangian_mechanicalLagrangian_iff`). On a finite-dimensional manifold this
+means `g` is nondegenerate, and holds in particular when `g` is positive definite, as for a
+Riemannian metric (`TauCeti.isRegularLagrangian_mechanicalLagrangian`).
 
 ## Main declarations
 
@@ -51,10 +65,13 @@ of `g`, and its energy is the total energy `½ g(v, v) + V(x)`
 * `TauCeti.contMDiff_legendreMap`: `FL` is `C^m` when `L` is `C^n` and `m + 1 ≤ n`.
 * `TauCeti.lagrangianEnergy`: the energy `E_L(v) = FL(v)(v) - L(v)`, with
   `TauCeti.contMDiff_lagrangianEnergy`.
+* `TauCeti.fiberHessian`, `TauCeti.IsRegularLagrangian`: the fibre Hessian of a Lagrangian, and
+  regular Lagrangians.
 * `TauCeti.cartanForm`, `TauCeti.cartanTwoForm`: the Cartan forms `θ_L = FL^*λ` and
   `ω_L = -dθ_L = FL^*ω`.
-* `TauCeti.mechanicalLagrangian`: the Lagrangian `½ g(v, v) - V(x)`, with its Legendre map and
-  energy.
+* `TauCeti.mechanicalLagrangian`: the Lagrangian `½ g(v, v) - V(x)`, with its Legendre map,
+  energy and fibre Hessian, and its regularity for `g` invertible onto the dual, in particular
+  for positive definite `g` in finite dimensions.
 
 ## References
 
@@ -197,6 +214,63 @@ theorem contMDiff_lagrangianEnergy [IsManifold I 2 M] {L : TangentBundle I M →
   exact fun v ↦ (contMDiffAt_totalSpace.1 (h v)).2.sub (hL.of_le (le_self_add.trans hmn) v)
 
 end LegendreMap
+
+section FiberHessian
+
+variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M]
+
+/-- The **fibre Hessian** of a Lagrangian `L : TM → 𝕜` at a tangent vector `v` at `x`: the second
+derivative at `v` of the restriction of `L` to the tangent space `T_x M`. It is a bilinear form on
+`T_x M`, the derivative at `v` of the Legendre map restricted to this fibre
+(`TauCeti.fiberHessian_eq_fderiv_legendreMap`). -/
+def fiberHessian (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) :
+    TangentSpace I v.proj →L[𝕜] TangentSpace I v.proj →L[𝕜] 𝕜 :=
+  fderiv 𝕜 (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w))) v.2
+
+/-- The fibre Hessian is the second derivative of the Lagrangian restricted to a fibre. -/
+theorem fiberHessian_def (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) :
+    fiberHessian L v = fderiv 𝕜 (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w))) v.2 :=
+  (rfl)
+
+/-- The fibre Hessian is the derivative of the Legendre map along the fibre: on `T_x M` the
+Legendre map is the derivative of `L`, so its derivative at `v` is the fibre Hessian. -/
+theorem fiberHessian_eq_fderiv_legendreMap (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) :
+    fiberHessian L v =
+      fderiv 𝕜 (fun w : E ↦ ((legendreMap L (TotalSpace.mk' E v.proj w)).2 : E →L[𝕜] 𝕜)) v.2 :=
+  (rfl)
+
+/-- Subtracting a potential, a function of the base point only, does not change the fibre
+Hessian. -/
+@[simp]
+theorem fiberHessian_sub_comp_proj (L : TangentBundle I M → 𝕜) (V : M → 𝕜) :
+    fiberHessian (fun v ↦ L v - V v.proj) = fiberHessian L := by
+  funext v
+  rw [fiberHessian_def, fiberHessian_def]
+  congr 1
+  exact funext fun w ↦
+    fderiv_sub_const (𝕜 := 𝕜) (f := fun w : E ↦ L (TotalSpace.mk' E v.proj w)) (V v.proj)
+
+/-- A Lagrangian `L : TM → 𝕜` is **regular** when its fibre Hessian is invertible at every
+tangent vector: contraction with the fibre Hessian is an isomorphism from each tangent space onto
+its dual. -/
+def IsRegularLagrangian (L : TangentBundle I M → 𝕜) : Prop :=
+  ∀ v : TangentBundle I M, (fiberHessian L v).IsInvertible
+
+/-- A Lagrangian is regular exactly when its fibre Hessian is invertible at every tangent
+vector. -/
+theorem isRegularLagrangian_iff {L : TangentBundle I M → 𝕜} :
+    IsRegularLagrangian L ↔ ∀ v : TangentBundle I M, (fiberHessian L v).IsInvertible :=
+  Iff.rfl
+
+/-- Subtracting a potential does not change whether a Lagrangian is regular. -/
+@[simp]
+theorem isRegularLagrangian_sub_comp_proj_iff {L : TangentBundle I M → 𝕜} {V : M → 𝕜} :
+    IsRegularLagrangian (fun v ↦ L v - V v.proj) ↔ IsRegularLagrangian L := by
+  simp only [isRegularLagrangian_iff, fiberHessian_sub_comp_proj]
+
+end FiberHessian
 
 section Cartan
 
@@ -367,6 +441,38 @@ theorem cartanForm_mechanicalLagrangian_apply [IsManifold I ∞ M]
   rw [cartanForm_apply, legendreMap_mechanicalLagrangian_snd hg]
   -- The two sides differ only in the fibre in which `g v` is typed.
   rfl
+
+/-- **The fibre Hessian of a mechanical Lagrangian** is its kinetic form: for symmetric `g`, the
+fibre Hessian at every tangent vector at `x` is `g x`. -/
+theorem fiberHessian_mechanicalLagrangian
+    {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    (hg : ∀ x v w, g x v w = g x w v) (V : M → ℝ) (v : TangentBundle I M) :
+    fiberHessian (mechanicalLagrangian g V) v = g v.proj := by
+  -- On the fibre `T_x M`, the Legendre map is the linear map `g x`.
+  have h : (fun w : E ↦ ((legendreMap (mechanicalLagrangian g V)
+      (TotalSpace.mk' E v.proj w)).2 : E →L[ℝ] ℝ)) = g v.proj :=
+    funext fun w ↦ legendreMap_mechanicalLagrangian_snd hg V (TotalSpace.mk' E v.proj w)
+  rw [fiberHessian_eq_fderiv_legendreMap, h]
+  exact (g v.proj).fderiv
+
+/-- **A mechanical Lagrangian is regular** exactly when its kinetic form is invertible: for
+symmetric `g`, its fibre Hessians are invertible exactly when each `g x` is an isomorphism from
+`T_x M` onto its continuous dual. In finite dimensions this is nondegeneracy of `g`. -/
+theorem isRegularLagrangian_mechanicalLagrangian_iff
+    {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    (hg : ∀ x v w, g x v w = g x w v) (V : M → ℝ) :
+    IsRegularLagrangian (mechanicalLagrangian g V) ↔ ∀ x, (g x).IsInvertible := by
+  simp only [isRegularLagrangian_iff, fiberHessian_mechanicalLagrangian hg]
+  exact ⟨fun h x ↦ h (TotalSpace.mk' E x 0), fun h v ↦ h v.proj⟩
+
+/-- **A mechanical Lagrangian with positive definite kinetic form is regular**, on a
+finite-dimensional manifold. This covers the Lagrangian `½ |v|² - V(x)` of a Riemannian metric. -/
+theorem isRegularLagrangian_mechanicalLagrangian [FiniteDimensional ℝ E]
+    {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    (hg : ∀ x v w, g x v w = g x w v) (hpos : ∀ x v, v ≠ 0 → 0 < g x v v) (V : M → ℝ) :
+    IsRegularLagrangian (mechanicalLagrangian g V) :=
+  (isRegularLagrangian_mechanicalLagrangian_iff hg V).2 fun x ↦
+    ContinuousLinearMap.isInvertible_of_pos (E := E) (hpos x)
 
 end Mechanical
 
