@@ -53,6 +53,8 @@ balls cover `K`. Consequently the smooth functions which are Morse on `K` form a
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapter 1.
+* M. Hirsch, *Differential Topology*, Graduate Texts in Mathematics 33, Springer, 1976,
+  Chapter 6, §1, for the openness of Morse functions on compact sets.
 * J. Milnor, *Lectures on the h-cobordism theorem*, Princeton University Press, 1965, §2.
 -/
 
