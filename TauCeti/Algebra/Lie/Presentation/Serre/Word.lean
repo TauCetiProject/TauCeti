@@ -41,8 +41,8 @@ letters, all equal to `i`, and such a word vanishes for `m ≥ 2`. So:
 These are the simple-root cases of Serre's theorem identifying `Matrix.ToLieAlgebra K CM`, for a
 Cartan matrix `CM` over a field `K` of characteristic zero, with the finite-dimensional split
 semisimple Lie algebra of that Cartan matrix: once the Weyl group acts on the weight spaces, every
-root space is carried to a simple-root one, which is a line, and every multiple of a root other
-than `±1` to a multiple of a simple root, whose weight space vanishes.
+root space is carried to a simple-root one, which is a line, and every integer multiple `m • α`
+of a root `α` with `|m| ≥ 2` to such a multiple of a simple root, whose weight space vanishes.
 
 ## Main results
 
