@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Localization
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 
@@ -35,6 +36,8 @@ components.
   sheaves is quasicoherent;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_isClosedUnderColimitsOfShape`: quasicoherence
   is closed under small colimits;
+* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.hasBinaryBiproducts`: quasicoherent sheaves have
+  binary biproducts;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_sigma`: a small coproduct of quasicoherent
   sheaves is quasicoherent;
 * `AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso`: over an affine
@@ -112,6 +115,14 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_isClosedUnderCo
     (X : Scheme.{u}) :
     (SheafOfModules.isQuasicoherent X.ringCatSheaf).IsClosedUnderColimitsOfShape J where
   colimitsOfShape_le _ := fun ⟨h⟩ ↦ isQuasicoherent_of_isColimit h.prop_diag_obj h.isColimit
+
+/-- Quasicoherent sheaves are closed under binary coproducts in `X.Modules`, so the preadditive
+category `QuasicoherentSheaf X` has binary biproducts. -/
+instance QuasicoherentSheaf.hasBinaryBiproducts (X : Scheme.{u}) :
+    HasBinaryBiproducts (QuasicoherentSheaf X) :=
+  have : HasBinaryCoproducts (QuasicoherentSheaf X) :=
+    hasColimitsOfShape_of_closedUnderColimits _ _
+  HasBinaryBiproducts.of_hasBinaryCoproducts
 
 /-- The coproduct of a small family of quasicoherent sheaves on any scheme is quasicoherent. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_sigma {X : Scheme.{u}}

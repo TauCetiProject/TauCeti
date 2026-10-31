@@ -51,13 +51,6 @@ noncomputable section
 
 variable {X : Scheme.{u}}
 
-/-- Quasicoherent sheaves are closed under binary coproducts in `X.Modules`, so the preadditive
-category `QuasicoherentSheaf X` has binary biproducts. -/
-local instance : HasBinaryBiproducts (QuasicoherentSheaf X) :=
-  have : HasBinaryCoproducts (QuasicoherentSheaf X) :=
-    hasColimitsOfShape_of_closedUnderColimits _ _
-  HasBinaryBiproducts.of_hasBinaryCoproducts
-
 /-- The binary fan in schemes over `X` whose cone point is `Spec_X (Sym (F ⊞ G))` and whose
 projections are the relative spectra of the symmetric algebras of the inclusions
 `F ⟶ F ⊞ G ⟵ G`. -/
