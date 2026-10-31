@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Galois.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import TauCeti.AlgebraicGeometry.AffineScheme
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Colimits
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Conservative
 public import TauCeti.CategoryTheory.Limits.Shapes.SingleObj
@@ -18,8 +19,8 @@ public import TauCeti.RingTheory.Invariant.Basic
 Let `R` be a commutative ring and `x : Spec Ω ⟶ Spec R` a geometric point, with `Ω` separably
 closed. The geometric fibre functor `FiniteEtaleScheme.fiber x` preserves quotients by finite
 groups: if a finite group `G` acts on a finite étale `Spec R`-scheme `Y`, the geometric fibre of
-the quotient `Y / G` is the set of `G`-orbits on the geometric fibre of `Y`. This is the last
-of the exactness axioms (G5) of a fibre functor in the sense of Lenstra.
+the quotient `Y / G` is the set of `G`-orbits on the geometric fibre of `Y`. This is the quotient
+part of Lenstra's axiom (G5) for a fibre functor.
 
 Together with the axioms already established for finite étale schemes, it follows that
 `FiniteEtaleScheme (Spec R)` is a `CategoryTheory.PreGaloisCategory`, that every geometric fibre
@@ -93,27 +94,16 @@ private theorem exists_comp_map_eq [Finite G] (hc : IsColimit c) {Ω : Type u} [
     ∃ g : G, u₁ ≫ (F.map g).hom = u₂ := by
   let Y := (F.obj (SingleObj.star G)).obj.left
   have : IsAffine Y := isAffine_of_isAffineHom (F.obj (SingleObj.star G)).obj.hom
-  -- `g` acts on `Γ(Y, ⊤)` through `act g⁻¹`, where `act g` is pullback along `F.map g`.
-  let act (g : G) : Γ(Y, ⊤) →+* Γ(Y, ⊤) := (F.map g).hom.left.appTop.hom
-  have act_mul (g h : G) (a : Γ(Y, ⊤)) : act (g * h) a = act h (act g a) := by
-    have := F.map_comp (X := SingleObj.star G) (Y := SingleObj.star G) (Z := SingleObj.star G) h g
-    rw [SingleObj.comp_as_mul] at this
-    simp only [act, this, ObjectProperty.FullSubcategory.comp_hom, Over.comp_left,
-      Scheme.Hom.comp_appTop, CommRingCat.hom_comp, RingHom.comp_apply]
-  have act_one (a : Γ(Y, ⊤)) : act 1 a = a := by
-    have : F.map (1 : G) = 𝟙 _ := F.map_id (SingleObj.star G)
-    simp only [act, this, ObjectProperty.FullSubcategory.id_hom, Over.id_left, Scheme.Hom.id_appTop,
-      CommRingCat.hom_id]
-    -- The identity is stated on `Γ(Y, ⊤)` with `Y` unfolded; `RingHom.id_apply` does not fire.
+  -- `g` acts on `Γ(Y, ⊤)` by pullback along `F.map g⁻¹`.
+  let σ : G →* Aut Y :=
+    ((F ⋙ (finiteEtaleSchemeProperty (Spec R)).ι ⋙ Over.forget _).mapAut (SingleObj.star G)).comp
+      ((Units.toAut G).toMonoidHom.comp toUnits.toMonoidHom)
+  let _ : MulSemiringAction G Γ(Y, ⊤) := Scheme.globalSectionsMulSemiringAction σ
+  have hsmul (g : G) (a : Γ(Y, ⊤)) : g • a = (F.map g⁻¹).hom.left.appTop a := by
+    rw [Scheme.globalSectionsMulSemiringAction_smul_def]
+    -- `(σ g⁻¹).asIso.hom` is `F.map g⁻¹` on underlying schemes, by `Functor.mapAut` and
+    -- `Units.toAut`.
     rfl
-  let ρ : G →* RingAut Γ(Y, ⊤) :=
-    { toFun g := RingEquiv.ofRingHom (act g⁻¹) (act g)
-        (RingHom.ext fun a ↦ by simp [← act_mul, act_one])
-        (RingHom.ext fun a ↦ by simp [← act_mul, act_one])
-      map_one' := RingEquiv.ext fun a ↦ by simp [act_one]
-      map_mul' g h := RingEquiv.ext fun a ↦ by simp [act_mul] }
-  let _ : MulSemiringAction G Γ(Y, ⊤) := MulSemiringAction.compHom _ ρ
-  have hsmul (g : G) (a : Γ(Y, ⊤)) : g • a = act g⁻¹ a := (rfl)
   -- The ring maps given by `u₁` and `u₂` agree on the invariants, which come from the quotient.
   have hfix : u₁.left.appTop.hom.comp (algebraMap (FixedPoints.subring Γ(Y, ⊤) G) Γ(Y, ⊤)) =
       u₂.left.appTop.hom.comp (algebraMap (FixedPoints.subring Γ(Y, ⊤) G) Γ(Y, ⊤)) := by
@@ -126,8 +116,11 @@ private theorem exists_comp_map_eq [Finite G] (hc : IsColimit c) {Ω : Type u} [
     (FixedPoints.subring Γ(Y, ⊤) G) G (K := Γ(Spec (.of Ω), ⊤)) _ _ hfix
   refine ⟨g⁻¹, Over.OverMorphism.ext (ext_of_isAffine (CommRingCat.hom_ext
     (RingHom.ext fun a ↦ ?_)))⟩
-  -- `hg` evaluated at `a` reads `u₁.appTop (act g⁻¹ a) = u₂.appTop a` by `hsmul`.
-  exact congr($hg a)
+  have := congr($hg a)
+  rw [RingHom.comp_apply, MulSemiringAction.toRingHom_apply, hsmul] at this
+  -- `this` reads `u₁.appTop ((F.map g⁻¹).appTop a) = u₂.appTop a`, which is the goal since
+  -- `appTop` of a composite is the composite of the `appTop`s.
+  exact this
 
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
