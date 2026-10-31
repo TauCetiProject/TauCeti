@@ -51,7 +51,10 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
 * `Polynomial.newtonPolygon_ne_top_iff`: if only zero has infinite valuation (for example
   over a division ring), a nonzero polynomial has a polygon whose finite domain is the
   interval from its order of vanishing at zero to its degree; in particular the polygon is
-  nonempty by `Polynomial.newtonPolygon_ne_top_of_ne_zero`.
+  nonempty by `Polynomial.newtonPolygon_ne_top_of_ne_zero`. More generally, by
+  `Polynomial.newtonPolygon_ne_top_iff_of_ne_top` and
+  `Polynomial.finiteEdges_newtonPolygon_of_ne_top`, the same holds for any valuation as soon as
+  the trailing and leading coefficients have finite valuation.
 * `Polynomial.Monic.newtonPolygon_ne_top`: a monic polynomial has a nonempty Newton polygon,
   whatever the valuation.
 * `Polynomial.newtonPolygon_natTrailingDegree` and `Polynomial.newtonPolygon_natDegree`:
@@ -341,18 +344,24 @@ theorem newtonPolygon_natDegree : f.newtonPolygon v f.natDegree = v f.leadingCoe
   lowerConvexEnvelope_eq_of_forall_gt fun k hk => by
     rw [coeff_eq_zero_of_natDegree_lt hk, AddValuation.map_zero]
 
+/-- If the trailing and leading coefficients of `f` have finite valuation, the finite domain of
+the Newton polygon of `f` runs from its order of vanishing at zero to its degree. -/
+theorem newtonPolygon_ne_top_iff_of_ne_top {f : R[X]} (htr : v f.trailingCoeff ≠ ⊤)
+    (hld : v f.leadingCoeff ≠ ⊤) {n : ℕ} :
+    f.newtonPolygon v n ≠ ⊤ ↔ f.natTrailingDegree ≤ n ∧ n ≤ f.natDegree := by
+  rw [newtonPolygon_def, lowerConvexEnvelope_ne_top_iff (isAdmissible_addValuation_coeff f v)]
+  exact ⟨fun ⟨i, hin, k, hnk, hi, hk⟩ =>
+    ⟨(natTrailingDegree_le_of_ne_zero fun h => hi (h ▸ v.map_zero)).trans hin,
+      hnk.trans (le_natDegree_of_ne_zero fun h => hk (h ▸ v.map_zero))⟩,
+    fun ⟨hn, hn'⟩ => ⟨_, hn, _, hn', htr, hld⟩⟩
+
 /-- If only zero has infinite valuation, the finite domain of the Newton polygon of a nonzero
 polynomial runs from its order of vanishing at zero to its degree. Over a division ring the
 hypothesis on `v` is `AddValuation.top_iff`. -/
 theorem newtonPolygon_ne_top_iff (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (hf : f ≠ 0) {n : ℕ} :
-    f.newtonPolygon v n ≠ ⊤ ↔ f.natTrailingDegree ≤ n ∧ n ≤ f.natDegree := by
-  rw [newtonPolygon_def, lowerConvexEnvelope_ne_top_iff (isAdmissible_addValuation_coeff f v)]
-  refine ⟨fun ⟨i, hin, k, hnk, hi, hk⟩ =>
-    ⟨(natTrailingDegree_le_of_ne_zero fun h => hi (h ▸ v.map_zero)).trans hin,
-      hnk.trans (le_natDegree_of_ne_zero fun h => hk (h ▸ v.map_zero))⟩,
-    fun ⟨hn, hn'⟩ => ⟨_, hn, _, hn', ?_, ?_⟩⟩
-  · exact mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf)
-  · exact mt (hv _) (leadingCoeff_ne_zero.mpr hf)
+    f.newtonPolygon v n ≠ ⊤ ↔ f.natTrailingDegree ≤ n ∧ n ≤ f.natDegree :=
+  newtonPolygon_ne_top_iff_of_ne_top v (mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf))
+    (mt (hv _) (leadingCoeff_ne_zero.mpr hf))
 
 variable {f v} in
 /-- If only zero has infinite valuation, a nonzero polynomial has a nonempty Newton polygon.
@@ -367,6 +376,15 @@ zero. -/
 theorem Monic.newtonPolygon_ne_top (hf : f.Monic) : f.newtonPolygon v ≠ ⊤ := fun h => by
   simpa [hf.leadingCoeff] using (newtonPolygon_eq_top_iff f v).mp h f.natDegree
 
+/-- If the trailing and leading coefficients of `f` have finite valuation, the finite unit edges
+of the Newton polygon of `f` are those between its order of vanishing at zero and its degree. -/
+theorem finiteEdges_newtonPolygon_of_ne_top (htr : v f.trailingCoeff ≠ ⊤)
+    (hld : v f.leadingCoeff ≠ ⊤) :
+    finiteEdges (f.newtonPolygon v) = Set.Ico f.natTrailingDegree f.natDegree := by
+  ext n
+  simp only [mem_finiteEdges, newtonPolygon_ne_top_iff_of_ne_top v htr hld, Set.mem_Ico]
+  omega
+
 /-- If only zero has infinite valuation, the finite unit edges of the Newton polygon of a
 polynomial are those between its order of vanishing at zero and its degree. -/
 theorem finiteEdges_newtonPolygon (hv : ∀ x, v x = ⊤ → x = 0) :
@@ -374,9 +392,8 @@ theorem finiteEdges_newtonPolygon (hv : ∀ x, v x = ⊤ → x = 0) :
   rcases eq_or_ne f 0 with rfl | hf
   · ext n
     simp
-  ext n
-  simp only [mem_finiteEdges, newtonPolygon_ne_top_iff v hv hf, Set.mem_Ico]
-  omega
+  exact finiteEdges_newtonPolygon_of_ne_top f v
+    (mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf)) (mt (hv _) (leadingCoeff_ne_zero.mpr hf))
 
 /-- If only zero has infinite valuation, a polynomial of degree `d` and order of vanishing `a`
 at zero has exactly `d - a` finite unit edges. -/

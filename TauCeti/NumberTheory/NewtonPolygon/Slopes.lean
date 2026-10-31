@@ -20,6 +20,19 @@ of valuation `-m`; for a linear polynomial `X - C α` with `v α` finite this is
 `Polynomial.newtonSlopes_X_sub_C`. These multisets are the invariants in which the slopes of
 products and of split polynomials are stated.
 
+A polynomial `f` is *pure of slope `m`* when every finite slope of its Newton polygon equals
+`m`. Write `a` for the order of vanishing of `f` at zero and `d` for its degree. If the trailing
+and leading coefficients have finite valuation, the polygon runs from the trailing point
+`(a, v (coeff a f))` to the leading point `(d, v (coeff d f))`, so purity says that the polygon is
+the segment joining these two points. Purity of slope `m` is therefore equivalent to two
+conditions on the coefficients: the line of slope `m` through the trailing point passes through
+the leading point, and every coefficient point lies on or above that line. Interior coefficient
+points may lie on the line; for instance `1 + p X + p ^ 2 X ^ 2` is pure of slope `1` for the
+`p`-adic valuation. The basic example is an Eisenstein polynomial: if the leading coefficient of
+`f` has valuation zero, its constant coefficient has valuation one and its other coefficients
+below the degree have valuation at least one, then its polygon is the segment from `(0, 1)` to
+`(d, 0)` and every finite slope equals `-1 / d`.
+
 The multiset depends only on the polygon. Whenever the polygon is nonempty it is represented
 by finite slope data, and the finite slope multiset is the slope multiset of that
 presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMultiset` apply.
@@ -58,9 +71,17 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
 * `Polynomial.newtonSlopes_monomial`: a monomial, in particular a constant, has no finite
   slopes.
 * `Polynomial.newtonSlopes_X_sub_C`: the only finite slope of `X - C α` is `-v α`.
+* `Polynomial.forall_mem_newtonSlopes_eq_iff`: the purity criterion. If the trailing and leading
+  coefficients have finite valuation, every finite slope equals `m` exactly when the leading
+  point lies on the line of slope `m` through the trailing point and no coefficient point lies
+  below that line.
+* `Polynomial.newtonSlopes_eq_replicate_of_eisenstein`: an Eisenstein polynomial of degree `d`
+  has `d` finite slopes, all equal to `-1 / d`.
 
 ## References
 
+* J. Neukirch, *Algebraic Number Theory*, Grundlehren 322, Springer, 1999, Chapter II §6,
+  Proposition 6.3 and its corollary.
 * N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
   Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §3.
 -/
@@ -356,5 +377,122 @@ theorem newtonSlopes_X_sub_C {α : R} (hα : v α ≠ ⊤) :
     rw [newtonPolygon_def, ha, d.isConvexSeq_heights.lowerConvexEnvelope_eq]
   rw [newtonSlopes_eq_slopeMultiset hd, FiniteSlopeData.slopeMultiset_def]
   simp [d]
+
+/-! ### Pure polynomials -/
+
+section Pure
+
+variable {f v}
+
+/-- If the trailing and leading coefficients of `f` have finite valuation and every finite slope
+of `f` equals `m`, the Newton polygon of `f` lies on the line of slope `m` through the trailing
+point, between the order of vanishing at zero and the degree. -/
+private theorem newtonPolygon_eq_of_forall_mem_newtonSlopes_eq (htr : v f.trailingCoeff ≠ ⊤)
+    (hld : v f.leadingCoeff ≠ ⊤) {m : ℝ} (hm : ∀ s ∈ f.newtonSlopes v, s = m) {n : ℕ}
+    (han : f.natTrailingDegree ≤ n) (hnd : n ≤ f.natDegree) :
+    f.newtonPolygon v n =
+      (((v f.trailingCoeff).untop₀ + m * ((n : ℝ) - f.natTrailingDegree) : ℝ) : WithTop ℝ) := by
+  have hn : f.newtonPolygon v n ≠ ⊤ :=
+    (newtonPolygon_ne_top_iff_of_ne_top v htr hld).mpr ⟨han, hnd⟩
+  have hsum : ∑ k ∈ Finset.Ico f.natTrailingDegree n, unitSlope (f.newtonPolygon v) k =
+      ∑ _k ∈ Finset.Ico f.natTrailingDegree n, m := by
+    refine Finset.sum_congr rfl fun k hk => hm _ ((mem_newtonSlopes f v).mpr ⟨k, ?_, rfl⟩)
+    rw [finiteEdges_newtonPolygon_of_ne_top f v htr hld, Set.mem_Ico]
+    have := Finset.mem_Ico.mp hk
+    omega
+  rw [eq_coe_add_sum_unitSlope hn han, newtonPolygon_natTrailingDegree, hsum, Finset.sum_const,
+    Nat.card_Ico, nsmul_eq_mul, Nat.cast_sub han]
+  ring_nf
+
+/-- **Purity criterion.** If the trailing and leading coefficients of `f` have finite valuation,
+every finite slope of `f` equals `m` exactly when the line of slope `m` through the trailing point
+`(a, v (coeff a f))`, where `a` is the order of vanishing of `f` at zero, passes through the
+leading point and lies on or below every coefficient point. -/
+theorem forall_mem_newtonSlopes_eq_iff (htr : v f.trailingCoeff ≠ ⊤)
+    (hld : v f.leadingCoeff ≠ ⊤) {m : ℝ} :
+    (∀ s ∈ f.newtonSlopes v, s = m) ↔
+      (v f.leadingCoeff).untop₀ =
+          (v f.trailingCoeff).untop₀ + m * ((f.natDegree : ℝ) - f.natTrailingDegree) ∧
+        ∀ n : ℕ, (((v f.trailingCoeff).untop₀ + m * ((n : ℝ) - f.natTrailingDegree) : ℝ) :
+          WithTop ℝ) ≤ v (f.coeff n) := by
+  constructor
+  · intro hm
+    refine ⟨?_, fun n => ?_⟩
+    · rw [← WithTop.untop₀_coe (_ + _), ← newtonPolygon_eq_of_forall_mem_newtonSlopes_eq htr hld
+        hm (natTrailingDegree_le_natDegree f) le_rfl, newtonPolygon_natDegree]
+    · by_cases han : f.natTrailingDegree ≤ n
+      · by_cases hnd : n ≤ f.natDegree
+        · exact (newtonPolygon_eq_of_forall_mem_newtonSlopes_eq htr hld hm han hnd).symm.trans_le
+            (f.newtonPolygon_le v n)
+        · rw [coeff_eq_zero_of_natDegree_lt (not_le.mp hnd), v.map_zero]
+          exact le_top
+      · rw [coeff_eq_zero_of_lt_natTrailingDegree (not_le.mp han), v.map_zero]
+        exact le_top
+  · rintro ⟨hlead, hle⟩ s hs
+    obtain ⟨k, hk, rfl⟩ := (mem_newtonSlopes f v).mp hs
+    rw [finiteEdges_newtonPolygon_of_ne_top f v htr hld, Set.mem_Ico] at hk
+    -- The line of slope `m` through the trailing point, in the form `c + m * n`.
+    have hH : (fun n : ℕ => (((v f.trailingCoeff).untop₀ - m * f.natTrailingDegree + m * n : ℝ) :
+        WithTop ℝ)) ≤ f.newtonPolygon v :=
+      le_newtonPolygon (isConvexSeq_affine _ m) fun n => by
+        convert hle n using 2
+        ring
+    have htrail : f.newtonPolygon v f.natTrailingDegree = (((v f.trailingCoeff).untop₀ -
+        m * f.natTrailingDegree + m * f.natTrailingDegree : ℝ) : WithTop ℝ) := by
+      rw [newtonPolygon_natTrailingDegree, sub_add_cancel, WithTop.coe_untop₀_of_ne_top htr]
+    have hlead' : f.newtonPolygon v f.natDegree = (((v f.trailingCoeff).untop₀ -
+        m * f.natTrailingDegree + m * f.natDegree : ℝ) : WithTop ℝ) := by
+      rw [newtonPolygon_natDegree, ← WithTop.coe_untop₀_of_ne_top hld, hlead, WithTop.coe_eq_coe]
+      ring
+    have hon {n : ℕ} (han : f.natTrailingDegree ≤ n) (hnd : n ≤ f.natDegree) :=
+      (f.isConvexSeq_newtonPolygon v).eq_affine_of_affine_le htrail hlead' han hnd (hH n)
+    rw [unitSlope_def, hon (by omega) hk.2, hon hk.1 hk.2.le, WithTop.untop₀_coe,
+      WithTop.untop₀_coe]
+    push_cast
+    ring
+
+/-- **Eisenstein polygons.** If `f` has leading coefficient of valuation zero, constant
+coefficient of valuation one, and all other coefficients below the degree of valuation at least
+one, then the Newton polygon of `f` is the segment from `(0, 1)` to `(d, 0)`, where `d` is the
+degree of `f`: it has `d` finite slopes, all equal to `-1 / d`. -/
+theorem newtonSlopes_eq_replicate_of_eisenstein (hlead : v f.leadingCoeff = 0)
+    (h0 : v (f.coeff 0) = 1) (hmem : ∀ n, 0 < n → n < f.natDegree → 1 ≤ v (f.coeff n)) :
+    f.newtonSlopes v = Multiset.replicate f.natDegree (-(f.natDegree : ℝ)⁻¹) := by
+  have hc0 : f.coeff 0 ≠ 0 := fun h => by simp [h] at h0
+  have ha : f.natTrailingDegree = 0 := natTrailingDegree_eq_zero_of_constantCoeff_ne_zero hc0
+  have hd : 0 < f.natDegree := Nat.pos_of_ne_zero fun hd => by
+    rw [leadingCoeff, hd, h0] at hlead
+    exact one_ne_zero hlead
+  have htr : v f.trailingCoeff ≠ ⊤ := by
+    rw [trailingCoeff, ha, h0]
+    exact WithTop.one_ne_top
+  have hld : v f.leadingCoeff ≠ ⊤ := by
+    rw [hlead]
+    exact WithTop.zero_ne_top
+  have htrail : (v f.trailingCoeff).untop₀ = 1 := by
+    rw [trailingCoeff, ha, h0, WithTop.untop₀_one]
+  refine Multiset.eq_replicate.mpr ⟨?_, ?_⟩
+  · rw [newtonSlopes_def, Multiset.card_map, Finset.card_val,
+      ← Set.ncard_eq_toFinset_card _ (f.finite_finiteEdges_newtonPolygon v),
+      finiteEdges_newtonPolygon_of_ne_top f v htr hld, Set.ncard_Ico_nat, ha, Nat.sub_zero]
+  refine (forall_mem_newtonSlopes_eq_iff htr hld).mpr ⟨?_, fun n => ?_⟩
+  · rw [hlead, htrail, ha, WithTop.untop₀_zero]
+    field_simp
+    ring
+  rw [htrail, ha, Nat.cast_zero, sub_zero]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [h0]
+  rcases lt_trichotomy n f.natDegree with hnd | rfl | hnd
+  · refine le_trans ?_ (hmem n hn hnd)
+    rw [← WithTop.coe_one, WithTop.coe_le_coe]
+    have : (0 : ℝ) ≤ (f.natDegree : ℝ)⁻¹ * n := by positivity
+    linarith
+  · rw [← leadingCoeff, hlead, ← WithTop.coe_zero, WithTop.coe_le_coe]
+    field_simp
+    simp
+  · rw [coeff_eq_zero_of_natDegree_lt hnd, v.map_zero]
+    exact le_top
+
+end Pure
 
 end Polynomial
