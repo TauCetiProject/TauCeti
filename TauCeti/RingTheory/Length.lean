@@ -163,12 +163,7 @@ theorem surjective_of_injective_of_length_eq {N : Type*} [AddCommGroup N] [Modul
   rw [← h] at hlen
   rw [← LinearMap.range_eq_top, ← Submodule.Quotient.subsingleton_iff,
     ← Module.length_eq_zero_iff (R := A)]
-  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp hM
-  generalize Module.length A (N ⧸ LinearMap.range f) = c at hlen ⊢
-  rw [← hn] at hlen
-  induction c using ENat.recTopCoe with
-  | top => simp at hlen
-  | coe k => norm_cast at hlen ⊢; omega
+  exact WithTop.add_left_cancel hM (hlen.symm.trans (add_zero _).symm)
 
 end Ring
 
