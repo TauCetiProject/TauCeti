@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Decomposition
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
+public import TauCeti.Combinatorics.Graph.Delete
 
 import Mathlib.SetTheory.Cardinal.NatCard
 
@@ -37,13 +38,17 @@ bridge, and `Graph.IsLink.reachable_deleteEdges_iff_of_not_reachable` that reach
 is unchanged.  Counting components, `Graph.isBridge_iff_componentCount_deleteEdges_eq_add_one`
 shows that, when there are finitely many components, an edge is a bridge exactly when deleting it
 increases the number of connected components by one; deleting any other edge leaves the number
-unchanged (`Graph.componentCount_deleteEdges_of_not_isBridge`).
+unchanged (`Graph.componentCount_deleteEdges_of_not_isBridge`).  Collecting the bridges into
+`Graph.bridgeSet`, `Graph.componentCount_deleteEdges_bridgeSet` shows that, with finitely many
+actual vertices, `G` has finitely many bridges (`Graph.finite_bridgeSet`) and deleting all of
+them leaves exactly `G.componentCount + G.bridgeSet.ncard` components.
 
 A multigraph is a forest, `Graph.IsForest`, when it has no cycles; since loops and pairs of
 parallel edges are cycles of multigraphs, a forest has neither.
 `Graph.isForest_iff_forall_isBridge` shows that a multigraph is a forest exactly when every actual
-edge is a bridge.  Only the component count after deleting a bridge assumes finitely many
-components; the other statements need no finiteness assumptions.
+edge is a bridge.  Only the component counts assume finiteness: of the components when deleting
+one bridge, and of the actual vertices when deleting several; the other statements need no
+finiteness assumptions.
 
 The statements follow the corresponding results for simple graphs in Mathlib,
 `SimpleGraph.isBridge_iff`, `SimpleGraph.isBridge_iff_forall_walk_mem_edges`,
@@ -115,6 +120,16 @@ theorem IsLink.not_isBridge_of_isLink_of_ne (he : G.IsLink e x y) (hf : G.IsLink
   apply IsLink.reachable (e := f)
   rw [deleteEdges_isLink]
   exact ⟨hf, hfe⟩
+
+/-- The set of bridges of `G`. -/
+@[expose] def bridgeSet (G : Graph α β) : Set β := {e | G.IsBridge e}
+
+@[simp]
+theorem mem_bridgeSet : e ∈ G.bridgeSet ↔ G.IsBridge e := Iff.rfl
+
+/-- Every bridge is an actual edge. -/
+theorem bridgeSet_subset_edgeSet (G : Graph α β) : G.bridgeSet ⊆ E(G) :=
+  fun _ he ↦ IsBridge.mem_edgeSet he
 
 /-! ### Bridges and connected components -/
 
@@ -200,6 +215,45 @@ theorem isBridge_iff_componentCount_deleteEdges_eq_add_one [Finite G.ConnectedCo
     G.IsBridge e ↔ (G.deleteEdges {e}).componentCount = G.componentCount + 1 :=
   ⟨IsBridge.componentCount_deleteEdges, fun h ↦ by_contra fun he ↦ by
     simp [componentCount_deleteEdges_of_not_isBridge he] at h⟩
+
+/-- Deleting a finite set of bridges increases the number of connected components by the number
+of deleted bridges. -/
+private theorem componentCount_deleteEdges_of_subset_bridgeSet_of_finite [Finite V(G)] {F : Set β}
+    (hF : F ⊆ G.bridgeSet) (hFfin : F.Finite) :
+    (G.deleteEdges F).componentCount = G.componentCount + F.ncard := by
+  induction F, hFfin using Set.Finite.induction_on with
+  | empty => simp
+  | @insert e F heF hFfin ih =>
+    have he : G.IsBridge e := hF (mem_insert e F)
+    -- A bridge of `G` remains a bridge after deleting other edges.
+    have he' : (G.deleteEdges F).IsBridge e :=
+      he.anti_of_mem deleteEdges_le (by simpa using ⟨he.mem_edgeSet, heF⟩)
+    have : Finite V(G.deleteEdges F) := by rwa [vertexSet_deleteEdges]
+    rw [ncard_insert_of_notMem heF hFfin, ← union_singleton, ← deleteEdges_deleteEdges,
+      he'.componentCount_deleteEdges, ih ((subset_insert e F).trans hF), add_assoc]
+
+/-- A multigraph with finitely many actual vertices has finitely many bridges. -/
+theorem finite_bridgeSet [Finite V(G)] : G.bridgeSet.Finite := by
+  by_contra h
+  obtain ⟨F, hF, hcard⟩ := Set.Infinite.exists_subset_ncard_eq h (V(G).ncard + 1)
+  have hFfin : F.Finite := finite_of_ncard_pos (by omega)
+  have : Finite V(G.deleteEdges F) := by rwa [vertexSet_deleteEdges]
+  have hle := (G.deleteEdges F).componentCount_le_ncard_vertexSet
+  rw [componentCount_deleteEdges_of_subset_bridgeSet_of_finite hF hFfin,
+    vertexSet_deleteEdges] at hle
+  omega
+
+/-- With finitely many actual vertices, deleting a set of bridges increases the number of connected
+components by the number of deleted bridges. -/
+theorem componentCount_deleteEdges_of_subset_bridgeSet [Finite V(G)] {F : Set β}
+    (hF : F ⊆ G.bridgeSet) : (G.deleteEdges F).componentCount = G.componentCount + F.ncard :=
+  componentCount_deleteEdges_of_subset_bridgeSet_of_finite hF (finite_bridgeSet.subset hF)
+
+/-- **Counting bridges.**  With finitely many actual vertices, deleting all bridges leaves as
+many connected components as `G` has components and bridges together. -/
+theorem componentCount_deleteEdges_bridgeSet [Finite V(G)] :
+    (G.deleteEdges G.bridgeSet).componentCount = G.componentCount + G.bridgeSet.ncard :=
+  componentCount_deleteEdges_of_subset_bridgeSet subset_rfl
 
 /-! ### Bridges and cycles -/
 

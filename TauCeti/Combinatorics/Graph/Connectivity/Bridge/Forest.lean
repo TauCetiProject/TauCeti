@@ -34,17 +34,16 @@ The bridge forest records how the bridgeless pieces of `G` are held together:
   bridge forest is a tree exactly when `G` is connected (`Graph.connected_bridgeForest_iff`).
 * `Graph.BridgeComponent.not_isBridge`: every bridge component is a connected graph without
   bridges.
-* `Graph.componentCount_deleteEdges_bridgeSet`: with finitely many actual vertices, `G` has
-  finitely many bridges (`Graph.finite_bridgeSet`), and deleting all of them leaves exactly
-  `G.componentCount + G.bridgeSet.ncard` components.
 
-Only the counting results assume finiteness, and then only of the actual vertex set.  Loops,
-parallel edges, disconnected graphs and the empty graph are all allowed; the empty graph has the
-empty bridge forest.
+No statement here assumes finiteness.  Loops, parallel edges, disconnected graphs and the empty
+graph are all allowed; the empty graph has the empty bridge forest.
 
 The construction is the edge analogue of the block graph of R. Diestel, *Graph Theory*, 5th ed.,
 Graduate Texts in Mathematics 173, Springer, 2017, Section 3.1, which contracts the blocks of a
-graph instead of its bridgeless pieces.
+graph instead of its bridgeless pieces.  The choice of the bridge components as vertices, and
+the names `Graph.bridgeSet`, `Graph.BridgeComponent` and `Graph.bridgeComponentOf`, follow an
+earlier Tau Ceti attempt at this construction, https://github.com/TauCetiProject/TauCeti/pull/20726
+by @fzaiser.
 -/
 
 public section
@@ -58,21 +57,6 @@ namespace Graph
 variable {α : Type u} {β : Type v} {G : Graph α β} {e : β} {x y : α}
 
 /-! ### Bridge components -/
-
-/-- The set of bridges of `G`. -/
-def bridgeSet (G : Graph α β) : Set β := {e | G.IsBridge e}
-
-@[simp]
-theorem mem_bridgeSet : e ∈ G.bridgeSet ↔ G.IsBridge e := Iff.rfl
-
-/-- Every bridge is an actual edge. -/
-theorem bridgeSet_subset_edgeSet (G : Graph α β) : G.bridgeSet ⊆ E(G) :=
-  fun _ he ↦ IsBridge.mem_edgeSet he
-
-/-- Deleting all bridges removes at least the edges of any set of bridges. -/
-theorem deleteEdges_bridgeSet_le {F : Set β} (hF : F ⊆ G.bridgeSet) :
-    G.deleteEdges G.bridgeSet ≤ G.deleteEdges F := by
-  simpa [union_eq_right.mpr hF] using (G.deleteEdges F).deleteEdges_le (F := G.bridgeSet)
 
 /-- The ends of an edge that is not a bridge remain reachable from each other after deleting
 all bridges. -/
@@ -134,7 +118,7 @@ theorem IsBridge.bridgeComponentOf_ne (he : G.IsBridge e) (h : G.IsLink e x y) :
     G.bridgeComponentOf x h.left_mem ≠ G.bridgeComponentOf y h.right_mem := by
   rw [Ne, bridgeComponentOf_eq_bridgeComponentOf_iff]
   exact fun hxy ↦ he.not_reachable_deleteEdges h
-    (hxy.mono (deleteEdges_bridgeSet_le (singleton_subset_iff.mpr he)))
+    (hxy.mono (G.deleteEdges_anti_right (singleton_subset_iff.mpr he)))
 
 /-- Deleting all bridges leaves a graph without bridges. -/
 theorem not_isBridge_deleteEdges_bridgeSet (G : Graph α β) (e : β) :
@@ -216,18 +200,16 @@ between any vertices of its end components. -/
 private theorem Walk.reachable_deleteEdges_of_bridgeForest {F : Set β} (hF : F ⊆ G.bridgeSet)
     {C D : G.BridgeComponent} (q : G.bridgeForest.Walk C D) (hq : ∀ f ∈ q.edges, f ∉ F)
     (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) : (G.deleteEdges F).Reachable x y := by
-  revert hq
   induction q generalizing x with
-  | nil => exact fun _ ↦ (BridgeComponent.reachable hx hy).mono (deleteEdges_bridgeSet_le hF)
+  | nil => exact (BridgeComponent.reachable hx hy).mono (G.deleteEdges_anti_right hF)
   | cons e h q ih =>
-    intro hq
     have heF : e ∉ F := hq e (by simp)
     have hq' : ∀ f ∈ q.edges, f ∉ F := fun f hf ↦ hq f (by simp [hf])
     obtain ⟨-, a, ha, b, hb, hab⟩ := h
-    have hxa := (BridgeComponent.reachable hx ha).mono (deleteEdges_bridgeSet_le hF)
+    have hxa := (BridgeComponent.reachable hx ha).mono (G.deleteEdges_anti_right hF)
     have hab' : (G.deleteEdges F).Reachable a b :=
       IsLink.reachable (e := e) ((deleteEdges_isLink ..).mpr ⟨hab, heF⟩)
-    exact hxa.trans (hab'.trans (ih hb hy hq'))
+    exact hxa.trans (hab'.trans (ih hq' hb hy))
 
 /-- **Separation in the bridge forest.**  After deleting a set `F` of bridges, two actual
 vertices are reachable from each other exactly when their bridge components are reachable in the
@@ -237,13 +219,12 @@ theorem reachable_deleteEdges_iff_reachable_bridgeForest_deleteEdges {F : Set β
     (G.deleteEdges F).Reachable x y ↔
       (G.bridgeForest.deleteEdges F).Reachable (G.bridgeComponentOf x hx)
         (G.bridgeComponentOf y hy) := by
-  rw [reachable_deleteEdges_iff_exists_walk, reachable_deleteEdges_iff_exists_walk]
-  refine ⟨fun ⟨_, p, hp⟩ ↦ ?_, fun ⟨_, q, hq⟩ ↦ ?_⟩
-  · exact reachable_deleteEdges_iff_exists_walk.mp
-      (Walk.reachable_bridgeForest_deleteEdges p hx hy hp)
-  · exact reachable_deleteEdges_iff_exists_walk.mp
-      (Walk.reachable_deleteEdges_of_bridgeForest hF q hq
-        (mem_vertexSet_bridgeComponentOf_self hx) (mem_vertexSet_bridgeComponentOf_self hy))
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨-, p, hp⟩ := reachable_deleteEdges_iff_exists_walk.mp h
+    exact Walk.reachable_bridgeForest_deleteEdges p hx hy hp
+  · obtain ⟨-, q, hq⟩ := reachable_deleteEdges_iff_exists_walk.mp h
+    exact Walk.reachable_deleteEdges_of_bridgeForest hF q hq
+      (mem_vertexSet_bridgeComponentOf_self hx) (mem_vertexSet_bridgeComponentOf_self hy)
 
 /-- Two actual vertices are reachable from each other exactly when their bridge components are
 reachable in the bridge forest. -/
@@ -314,46 +295,5 @@ theorem componentCount_bridgeForest (G : Graph α β) :
 @[simp]
 theorem connected_bridgeForest_iff : G.bridgeForest.Connected ↔ G.Connected := by
   rw [← componentCount_eq_one_iff, ← componentCount_eq_one_iff, componentCount_bridgeForest]
-
-/-! ### Counting bridges -/
-
-/-- Deleting a finite set of bridges increases the number of connected components by the number
-of deleted bridges. -/
-private theorem componentCount_deleteEdges_of_subset_bridgeSet_of_finite [Finite V(G)] {F : Set β}
-    (hF : F ⊆ G.bridgeSet) (hFfin : F.Finite) :
-    (G.deleteEdges F).componentCount = G.componentCount + F.ncard := by
-  induction F, hFfin using Set.Finite.induction_on with
-  | empty => simp
-  | @insert e F heF hFfin ih =>
-    have he : G.IsBridge e := hF (mem_insert e F)
-    -- A bridge of `G` remains a bridge after deleting other edges.
-    have he' : (G.deleteEdges F).IsBridge e :=
-      he.anti_of_mem deleteEdges_le (by simpa using ⟨he.mem_edgeSet, heF⟩)
-    have : Finite V(G.deleteEdges F) := by rwa [vertexSet_deleteEdges]
-    rw [ncard_insert_of_notMem heF hFfin, ← union_singleton, ← deleteEdges_deleteEdges,
-      he'.componentCount_deleteEdges, ih ((subset_insert e F).trans hF), add_assoc]
-
-/-- A multigraph with finitely many actual vertices has finitely many bridges. -/
-theorem finite_bridgeSet [Finite V(G)] : G.bridgeSet.Finite := by
-  by_contra h
-  obtain ⟨F, hF, hcard⟩ := Set.Infinite.exists_subset_ncard_eq h (V(G).ncard + 1)
-  have hFfin : F.Finite := finite_of_ncard_pos (by omega)
-  have : Finite V(G.deleteEdges F) := by rwa [vertexSet_deleteEdges]
-  have hle := (G.deleteEdges F).componentCount_le_ncard_vertexSet
-  rw [componentCount_deleteEdges_of_subset_bridgeSet_of_finite hF hFfin,
-    vertexSet_deleteEdges] at hle
-  omega
-
-/-- With finitely many actual vertices, deleting a set of bridges increases the number of connected
-components by the number of deleted bridges. -/
-theorem componentCount_deleteEdges_of_subset_bridgeSet [Finite V(G)] {F : Set β}
-    (hF : F ⊆ G.bridgeSet) : (G.deleteEdges F).componentCount = G.componentCount + F.ncard :=
-  componentCount_deleteEdges_of_subset_bridgeSet_of_finite hF (finite_bridgeSet.subset hF)
-
-/-- **Counting bridges.**  With finitely many actual vertices, deleting all bridges leaves as
-many connected components as `G` has components and bridges together. -/
-theorem componentCount_deleteEdges_bridgeSet [Finite V(G)] :
-    (G.deleteEdges G.bridgeSet).componentCount = G.componentCount + G.bridgeSet.ncard :=
-  componentCount_deleteEdges_of_subset_bridgeSet subset_rfl
 
 end Graph

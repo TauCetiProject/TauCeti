@@ -469,7 +469,8 @@ theorem componentCount_eq_one_iff : G.componentCount = 1 ↔ G.Connected := by
 vertices. -/
 theorem componentCount_le_ncard_vertexSet [Finite V(G)] : G.componentCount ≤ V(G).ncard := by
   rw [componentCount_eq_natCard_toSimpleGraph, ← Nat.card_coe_set_eq]
-  exact Nat.card_le_card_of_surjective _ Quot.mk_surjective
+  exact Nat.card_le_card_of_surjective G.toSimpleGraph.connectedComponentMk
+    fun C ↦ C.ind fun v ↦ ⟨v, rfl⟩
 
 /-! ### Subgraph inclusions -/
 
