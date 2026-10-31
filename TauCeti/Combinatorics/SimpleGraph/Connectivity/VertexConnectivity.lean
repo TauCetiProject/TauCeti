@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger
 public import TauCeti.Data.ENat.Lattice
 
@@ -60,6 +61,11 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
   most the number of vertices, where `κ` is the vertex connectivity.
 * `SimpleGraph.vertexConnectivity_top`: the complete graph has vertex connectivity
   `ENat.card V - 1`.
+* `SimpleGraph.IsVertexConnected.isEdgeConnected`,
+  `SimpleGraph.vertexConnectivity_le_edgeConnectivity`: **Whitney's inequality**: a
+  `k`-vertex-connected graph is `k`-edge-connected, so vertex connectivity is at most edge
+  connectivity. No finiteness is assumed.
+* `SimpleGraph.IsVertexReachable.isEdgeReachable`: the local form, for nonadjacent vertices.
 * `SimpleGraph.isVertexReachable_iff_exists_paths`: **Menger's theorem**, predicate form, for
   nonadjacent vertices.
 * `SimpleGraph.isVertexConnected_iff_forall_exists_paths`: the **global form of Menger's
@@ -67,6 +73,14 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
   existence of `k` distinct internally disjoint paths between every two distinct vertices.
 
 ## Implementation notes
+
+Whitney's inequality is from H. Whitney, *Congruent graphs and the connectivity of graphs*,
+Amer. J. Math. 54 (1932), 150–168; see also Diestel, Proposition 1.4.2. To delete fewer than `k`
+edges without separating `u` from `v`, pick an end other than `u` and `v` of each deleted edge; a
+walk avoiding these fewer than `k` vertices, which `k`-vertex-reachability provides, uses no
+deleted edge. Only a deleted edge `s(u, v)` has no such end. Then fewer than `k - 1` other edges
+are deleted, so `v`, respectively `u`, can be deleted as well, and a vertex `w` outside all of
+these, which exists since there are more than `k` vertices, is reachable from both `u` and `v`.
 
 The Menger statements are derived from the witness forms in
 `TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger`. For adjacent vertices `s` and `t` of a
@@ -291,6 +305,107 @@ theorem vertexConnectivity_top : (⊤ : SimpleGraph V).vertexConnectivity = ENat
     rw [← isVertexConnected_iff_le_vertexConnectivity, isVertexConnected_top_iff,
       (ENat.addLECancellable_of_ne_top ENat.one_ne_top).le_tsub_iff_right
         ((ENat.one_le_card_iff_nonempty V).2 ‹_›)]
+
+/-! ### Whitney's inequality -/
+
+/-- An edge of `G` other than `s(u, v)` has an end other than `u` and `v`. -/
+private theorem exists_mem_ne_ne_of_mem_edgeSet {e : Sym2 V} (he : e ∈ G.edgeSet)
+    (hne : e ≠ s(u, v)) : ∃ x ∈ e, x ≠ u ∧ x ≠ v := by
+  induction e using Sym2.ind with
+  | _ a b =>
+    have hab : a ≠ b := G.ne_of_adj (G.mem_edgeSet.1 he)
+    by_contra! H
+    have hb := H b (Sym2.mem_mk_right a b)
+    rcases eq_or_ne a u with rfl | hau
+    · exact hne (by rw [hb hab.symm])
+    · obtain rfl := H a (Sym2.mem_mk_left a b) hau
+      rcases eq_or_ne b u with rfl | hbu
+      · exact hne Sym2.eq_swap
+      · exact hab (hb hbu).symm
+
+/-- If every edge of `G` in `s` has an end in `X`, a walk avoiding `X` survives deleting `s`. -/
+private theorem reachable_deleteEdges_of_forall_exists_mem {s : Set (Sym2 V)} {X : Set V}
+    (hX : ∀ e ∈ s, e ∈ G.edgeSet → ∃ x ∈ e, x ∈ X) (p : G.Walk u v)
+    (hp : ∀ x ∈ p.support, x ∉ X) : (G.deleteEdges s).Reachable u v :=
+  ⟨p.toDeleteEdges s fun e he hes ↦
+    let ⟨x, hxe, hxX⟩ := hX e hes (p.edges_subset_edgeSet he)
+    hp x (Walk.mem_support_of_mem_edges he hxe) hxX⟩
+
+/-- Choosing one end of each edge of `G` in `s` other than `s(u, v)`, and different from `u` and
+`v`, gives a set of at most as many vertices, avoiding `u` and `v`, that meets each such edge. -/
+private theorem exists_encard_le_forall_exists_mem (s : Set (Sym2 V)) :
+    ∃ X : Set V, X.encard ≤ (s \ {s(u, v)}).encard ∧ u ∉ X ∧ v ∉ X ∧
+      ∀ e ∈ s, e ∈ G.edgeSet → e ≠ s(u, v) → ∃ x ∈ e, x ∈ X := by
+  have : Nonempty V := ⟨u⟩
+  choose! c hc using fun e (he : e ∈ {e ∈ s \ {s(u, v)} | e ∈ G.edgeSet}) ↦
+    exists_mem_ne_ne_of_mem_edgeSet he.2 he.1.2
+  refine ⟨c '' {e ∈ s \ {s(u, v)} | e ∈ G.edgeSet},
+    (Set.encard_image_le _ _).trans (Set.encard_mono (Set.sep_subset _ _)), ?_, ?_,
+    fun e hes he hne ↦ ⟨c e, (hc e ⟨⟨hes, hne⟩, he⟩).1, Set.mem_image_of_mem _ ⟨⟨hes, hne⟩, he⟩⟩⟩
+  · rintro ⟨e, he, heu⟩
+    exact (hc e he).2.1 heu
+  · rintro ⟨e, he, hev⟩
+    exact (hc e he).2.2 hev
+
+/-- Two `k`-vertex-reachable vertices `u` and `v` stay reachable after deleting any set of fewer
+than `k` edges, provided that the set does not contain an edge joining `u` and `v`. -/
+theorem IsVertexReachable.reachable_deleteEdges {s : Set (Sym2 V)} (h : G.IsVertexReachable k u v)
+    (hs : s.encard < k) (huv : G.Adj u v → s(u, v) ∉ s) : (G.deleteEdges s).Reachable u v := by
+  obtain ⟨X, hX, hu, hv, hcover⟩ := G.exists_encard_le_forall_exists_mem (u := u) (v := v) s
+  obtain ⟨p, hp⟩ := isVertexReachable_iff_exists_walk.1 h
+    (hX.trans_lt ((Set.encard_mono Set.sdiff_subset).trans_lt hs)) hu hv
+  refine reachable_deleteEdges_of_forall_exists_mem (fun e hes he ↦ hcover e hes he ?_) p hp
+  rintro rfl
+  exact huv he hes
+
+/-- **Whitney's inequality**, local form: two nonadjacent `k`-vertex-reachable vertices are
+`k`-edge-reachable. Adjacent vertices are `k`-vertex-reachable for every `k`, so the adjacency
+hypothesis cannot be dropped. -/
+theorem IsVertexReachable.isEdgeReachable (h : G.IsVertexReachable k u v) (huv : ¬G.Adj u v) :
+    G.IsEdgeReachable k u v :=
+  fun _ hs ↦ h.reachable_deleteEdges hs (absurd · huv)
+
+/-- **Whitney's inequality** between vertex and edge connectivity, predicate form: a
+`k`-vertex-connected graph is `k`-edge-connected. -/
+theorem IsVertexConnected.isEdgeConnected (h : G.IsVertexConnected k) : G.IsEdgeConnected k := by
+  intro u v s hs
+  by_cases huv : G.Adj u v ∧ s(u, v) ∈ s
+  swap
+  · exact (h.2 u v).reachable_deleteEdges hs fun hadj hus ↦ huv ⟨hadj, hus⟩
+  -- The deleted edge `s(u, v)` leaves room to delete `u` or `v` together with one end of each
+  -- other deleted edge; a vertex `w` outside these sets is reachable from both `u` and `v`.
+  obtain ⟨hadj, huvs⟩ := huv
+  obtain ⟨X, hX, hu, hv, hcover⟩ := G.exists_encard_le_forall_exists_mem (u := u) (v := v) s
+  have hXk : X.encard + 1 < k := by
+    grw [hX, Set.encard_sdiff_singleton_add_one huvs]
+    exact hs
+  have hlt : (insert u (insert v X)).encard < ENat.card V := by
+    grw [Set.encard_insert_le, Set.encard_insert_le, ← h.add_one_le_card]
+    exact (ENat.add_lt_add_iff_right ENat.one_ne_top).2 hXk
+  obtain ⟨w, hw⟩ : ∃ w, w ∉ insert u (insert v X) := by
+    by_contra! H
+    rw [Set.eq_univ_of_forall H, Set.encard_univ] at hlt
+    exact hlt.false
+  simp only [Set.mem_insert_iff, not_or] at hw
+  obtain ⟨hwu, hwv, hwX⟩ := hw
+  -- Every deleted edge of `G` has an end in `X` or is `s(u, v)`, which contains both `u` and `v`.
+  have hcover' (y : V) (hy : y = u ∨ y = v) :
+      ∀ e ∈ s, e ∈ G.edgeSet → ∃ x ∈ e, x ∈ insert y X := fun e hes he ↦ by
+    obtain rfl | hne := eq_or_ne e s(u, v)
+    · exact ⟨y, by rcases hy with rfl | rfl <;> simp, Set.mem_insert _ _⟩
+    · obtain ⟨x, hxe, hxX⟩ := hcover e hes he hne
+      exact ⟨x, hxe, Set.mem_insert_of_mem _ hxX⟩
+  obtain ⟨p, hp⟩ := isVertexReachable_iff_exists_walk.1 (h.2 u w) (s := insert v X)
+    ((Set.encard_insert_le _ _).trans_lt hXk) (by simp [hadj.ne, hu]) (by simp [hwv, hwX])
+  obtain ⟨q, hq⟩ := isVertexReachable_iff_exists_walk.1 (h.2 w v) (s := insert u X)
+    ((Set.encard_insert_le _ _).trans_lt hXk) (by simp [hwu, hwX]) (by simp [hadj.ne', hv])
+  exact (reachable_deleteEdges_of_forall_exists_mem (hcover' v (.inr rfl)) p hp).trans
+    (reachable_deleteEdges_of_forall_exists_mem (hcover' u (.inl rfl)) q hq)
+
+/-- **Whitney's inequality** between vertex and edge connectivity: the vertex connectivity of a
+simple graph is at most its edge connectivity. -/
+theorem vertexConnectivity_le_edgeConnectivity : G.vertexConnectivity ≤ G.edgeConnectivity :=
+  iSup₂_le fun _ hk ↦ isEdgeConnected_iff_le_edgeConnectivity.1 hk.isEdgeConnected
 
 /-! ### Menger's theorem -/
 

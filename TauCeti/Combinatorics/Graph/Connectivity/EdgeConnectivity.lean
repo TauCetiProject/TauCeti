@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Delete
 public import TauCeti.Combinatorics.Graph.Incidence
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 public import TauCeti.Data.ENat.Lattice
 
 /-!
@@ -48,6 +49,8 @@ actual vertex set.
   with the simple-graph predicates.
 * `Graph.isEdgeReachable_iff_le_edgeReachability`, `Graph.isEdgeConnected_iff_le_edgeConnectivity`:
   the numerical invariants record exactly the thresholds at which the predicates hold.
+* `Graph.edgeConnectivity_ofSimpleGraph`: the edge connectivity of `Graph.ofSimpleGraph H` is the
+  simple-graph edge connectivity `SimpleGraph.edgeConnectivity H`.
 * `Graph.edgeConnectivity_eq_iInf_edgeReachability`: edge connectivity is the least local edge
   reachability between actual vertices.
 * `Graph.edgeReachability_le_nonloopIncidenceCount`: local edge reachability between distinct
@@ -327,6 +330,15 @@ theorem edgeConnectivity_eq_top_of_subsingleton (hG : V(G).Subsingleton) :
     G.edgeConnectivity = ⊤ :=
   ENat.eq_top_iff_forall_ge.mpr fun _ ↦
     (isEdgeConnected_iff_le_edgeConnectivity _).mp (.of_subsingleton hG)
+
+/-- The edge connectivity of `Graph.ofSimpleGraph H` is the simple-graph edge connectivity of
+`H`. -/
+@[simp]
+theorem edgeConnectivity_ofSimpleGraph (H : SimpleGraph α) :
+    (Graph.ofSimpleGraph H).edgeConnectivity = H.edgeConnectivity :=
+  ENat.eq_of_forall_natCast_le_iff fun k ↦ by
+    rw [← isEdgeConnected_iff_le_edgeConnectivity, isEdgeConnected_ofSimpleGraph_iff,
+      SimpleGraph.isEdgeConnected_iff_le_edgeConnectivity]
 
 /-! ### Bounds by incident edges -/
 
