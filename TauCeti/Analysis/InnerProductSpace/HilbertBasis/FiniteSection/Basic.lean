@@ -69,6 +69,12 @@ theorem coordinateCutoff_apply (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H)
     HilbertBasis.repr_apply_apply] using
     (b.orthonormal.comp Fin.val Fin.val_injective).adjoint_synthesisMapIsometry_apply x i
 
+/-- The adjoint of finite-coordinate inclusion is coordinate restriction.
+Not a simp rule: unfolding `coordinateCutoff` uses the opposite direction. -/
+theorem adjoint_finiteInclusion (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (b.finiteInclusion n).toContinuousLinearMap.adjoint = b.coordinateCutoff n :=
+  (rfl)
+
 /-- The adjoint of coordinate restriction is the finite-coordinate inclusion. -/
 @[simp]
 theorem adjoint_coordinateCutoff (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
