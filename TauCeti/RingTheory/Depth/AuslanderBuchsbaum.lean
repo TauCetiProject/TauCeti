@@ -61,6 +61,7 @@ public section
 universe v u
 
 open CategoryTheory Abelian IsLocalRing
+open scoped TensorProduct
 
 namespace IsLocalRing
 
@@ -86,7 +87,8 @@ private theorem depth_add_eq_of_projectiveDimension_eq (p : ℕ) (M : Type v) [A
     obtain ⟨n, g, hg, hker⟩ : ∃ (n : ℕ) (g : (Fin n → Shrink.{v} R) →ₗ[R] M),
         Function.Surjective g ∧ LinearMap.ker g ≤ maximalIdeal R • ⊤ := by
       obtain ⟨f, hf, hfker⟩ := TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul R M
-      let e : (Fin _ → Shrink.{v} R) ≃ₗ[R] (Fin _ → R) :=
+      let e : (Fin (Module.finrank (ResidueField R) (ResidueField R ⊗[R] M)) → Shrink.{v} R) ≃ₗ[R]
+          (Fin (Module.finrank (ResidueField R) (ResidueField R ⊗[R] M)) → R) :=
         LinearEquiv.piCongrRight fun _ ↦ Shrink.linearEquiv R R
       refine ⟨_, f ∘ₗ e.toLinearMap, hf.comp e.surjective, ?_⟩
       rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm]
