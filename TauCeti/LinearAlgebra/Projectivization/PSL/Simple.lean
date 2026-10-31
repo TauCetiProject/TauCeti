@@ -94,7 +94,6 @@ theorem iSup_iwasawaT_eq_top : iSup (PSL.iwasawaT (F := F) (ι := ι)) = ⊤ := 
 `p` is the image of `lineStab p`; these subgroups are commutative, permuted by conjugation as the
 lines are permuted, and generate `PSL ι F`. This extends Mathlib's `PSL2.Iwasawa` from `Fin 2` to
 every finite coordinate type. -/
-@[expose, simps T]
 noncomputable def iwasawaStructure :
     IwasawaStructure (ProjectiveSpecialLinearGroup ι F) (ℙ F (ι → F)) where
   T := PSL.iwasawaT
@@ -109,6 +108,11 @@ noncomputable def iwasawaStructure :
     rw [smul_proj_mk, PSL.smul_submodule, SpecialLinearGroup.lineStab_smul,
       PSL.iwasawaT_map_conj]
   is_generator := iSup_iwasawaT_eq_top
+
+/-- The subgroup that `iwasawaStructure` attaches to a line `p` is the image of `lineStab p`. -/
+@[simp]
+theorem iwasawaStructure_T (p : ℙ F (ι → F)) : iwasawaStructure.T p = PSL.iwasawaT p :=
+  (rfl)
 
 /-- **Iwasawa's theorem for `PSL`.** On at least two coordinates, the projective special linear
 group is simple as soon as the special linear group is perfect. -/
