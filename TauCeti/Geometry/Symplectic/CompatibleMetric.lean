@@ -36,6 +36,8 @@ against exactly this metric.
   `g(J v, w) = -g(v, J w)`.
 * `TauCeti.SymplecticForm.Invariant.associatedBilinForm_add_apply_self`: the symmetric
   polarization identity for `g(a + J b, a + J b)`.
+* `TauCeti.SymplecticForm.associatedBilinForm_apply_apply_of_isComplexLinearMap`: symplectic
+  complex-linear maps preserve the metric.
 * `TauCeti.SymplecticForm.Compatible.innerProductCore`: the metric of a compatible pair as an
   `InnerProductSpace.Core ℝ V`.
 * `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: when the inner product of `V` is the
@@ -123,6 +125,16 @@ lemma associatedBilinForm_self_eq_zero
   · simpa [LinearMap.BilinMap.toQuadraticMap_apply] using hv
   · rintro rfl
     simp
+
+/-- A linear map carrying `ω` to `ω₂` and complex linear from `J` to `J₂` carries the metric
+`ω(·, J ·)` to the metric `ω₂(·, J₂ ·)`. In particular a symplectic map commuting with `J`
+preserves the metric of `(ω, J)`. -/
+lemma associatedBilinForm_apply_apply_of_isComplexLinearMap {W : Type*} [AddCommGroup W]
+    [Module ℝ W] {ω₂ : SymplecticForm W} {J₂ : AlmostComplexStructure W} {F : V →ₗ[ℝ] W}
+    (hω : ∀ v w, ω₂ (F v) (F w) = ω v w) (hF : IsComplexLinearMap J J₂ F) (v w : V) :
+    ω₂.associatedBilinForm J₂ (F v) (F w) = ω.associatedBilinForm J v w := by
+  rw [associatedBilinForm_apply, associatedBilinForm_apply,
+    ← (isComplexLinearMap_iff_apply J J₂ F).mp hF, hω]
 
 namespace Compatible
 
