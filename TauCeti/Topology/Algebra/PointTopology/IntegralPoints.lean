@@ -35,6 +35,9 @@ whose topology is defined by its valuation.
   `TauCeti.PointTopology.range_integralPoints_of_adjoin_eq_top`: the image of the integral points
   consists of the points whose values are all integral, equivalently integral on a generating
   family.
+* `TauCeti.PointTopology.isClosedEmbedding_ofId_integer` and
+  `TauCeti.PointTopology.isOpenEmbedding_ofId_integer`: the inclusion `𝒪[E] → E` is a closed and
+  open embedding.
 * `TauCeti.PointTopology.isClosedEmbedding_integralPoints` and
   `TauCeti.PointTopology.isOpenEmbedding_integralPoints`: the integral points form a closed
   subspace, and an open one for a coordinate algebra of finite type.
@@ -91,17 +94,25 @@ theorem range_integralPoints_of_adjoin_eq_top {ι : Type*} {a : ι → A}
 
 variable [TopologicalSpace E] [IsValuativeTopology E]
 
+/-- The inclusion of the valuation ring `𝒪[E]` into `E` is a closed embedding. -/
+theorem isClosedEmbedding_ofId_integer : IsClosedEmbedding (Algebra.ofId 𝒪[E] E) := by
+  rw [coe_ofId_integer]
+  exact Valuation.isClosed_integer.isClosedEmbedding_subtypeVal
+
+/-- The inclusion of the valuation ring `𝒪[E]` into `E` is an open embedding. -/
+theorem isOpenEmbedding_ofId_integer : IsOpenEmbedding (Algebra.ofId 𝒪[E] E) := by
+  rw [coe_ofId_integer]
+  exact Valuation.isOpen_integer.isOpenEmbedding_subtypeVal
+
 /-- The integral points form a closed subspace of the points over `E`. -/
 theorem isClosedEmbedding_integralPoints :
     IsClosedEmbedding fun x : A →ₐ[𝒪[E]] 𝒪[E] ↦ (Algebra.ofId 𝒪[E] E).comp x :=
-  isClosedEmbedding_map_codomain _
-    (by rw [coe_ofId_integer]; exact Valuation.isClosed_integer.isClosedEmbedding_subtypeVal)
+  isClosedEmbedding_map_codomain _ isClosedEmbedding_ofId_integer
 
 /-- The integral points of a finite type algebra form an open subspace of the points over `E`. -/
 theorem isOpenEmbedding_integralPoints [Algebra.FiniteType 𝒪[E] A] :
     IsOpenEmbedding fun x : A →ₐ[𝒪[E]] 𝒪[E] ↦ (Algebra.ofId 𝒪[E] E).comp x :=
-  isOpenEmbedding_map_codomain _
-    (by rw [coe_ofId_integer]; exact Valuation.isOpen_integer.isOpenEmbedding_subtypeVal)
+  isOpenEmbedding_map_codomain _ isOpenEmbedding_ofId_integer
 
 variable {H : Type*} [Semiring H] [Bialgebra 𝒪[E] H]
 
@@ -109,15 +120,13 @@ variable {H : Type*} [Semiring H] [Bialgebra 𝒪[E] H]
 `E`. -/
 theorem isClosedEmbedding_mapValue_integer :
     IsClosedEmbedding (AlgHom.mapValue (H := H) (Algebra.ofId 𝒪[E] E)) :=
-  AlgHom.isClosedEmbedding_mapValue
-    (by rw [coe_ofId_integer]; exact Valuation.isClosed_integer.isClosedEmbedding_subtypeVal)
+  AlgHom.isClosedEmbedding_mapValue isClosedEmbedding_ofId_integer
 
 /-- The integral points of a bialgebra of finite type over `𝒪[E]` form an open subspace of its
 points over `E`. -/
 theorem isOpenEmbedding_mapValue_integer [Algebra.FiniteType 𝒪[E] H] :
     IsOpenEmbedding (AlgHom.mapValue (H := H) (Algebra.ofId 𝒪[E] E)) :=
-  AlgHom.isOpenEmbedding_mapValue
-    (by rw [coe_ofId_integer]; exact Valuation.isOpen_integer.isOpenEmbedding_subtypeVal)
+  AlgHom.isOpenEmbedding_mapValue isOpenEmbedding_ofId_integer
 
 end Valuative
 
@@ -131,9 +140,7 @@ type, this subset is also open by `isOpenEmbedding_mapValue_integer`; for the co
 affine group it is then a compact open subgroup. -/
 theorem isCompact_range_mapValue_integer {H : Type*} [CommRing H] [Bialgebra 𝒪[E] H] :
     IsCompact (Set.range (AlgHom.mapValue (H := H) (Algebra.ofId 𝒪[E] E))) :=
-  isCompact_range <| AlgHom.continuous_mapValue <| by
-    rw [coe_ofId_integer]
-    exact continuous_subtype_val
+  isCompact_range <| AlgHom.continuous_mapValue isClosedEmbedding_ofId_integer.continuous
 
 end LocalField
 
