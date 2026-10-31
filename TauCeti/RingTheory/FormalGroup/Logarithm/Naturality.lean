@@ -55,16 +55,6 @@ namespace FormalGroup
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra ℚ R] [Algebra ℚ S] (F : FormalGroup R)
 
-/-! ### Recovering a series from its logarithm -/
-
-/-- `exp_F(log_F(a)) = a` for every power series `a` that can be substituted. -/
-@[simp]
-theorem subst_subst_log_exp {σ : Type*} {a : MvPowerSeries σ R} (ha : PowerSeries.HasSubst a) :
-    PowerSeries.subst (PowerSeries.subst a F.log) F.exp = a := by
-  rw [← PowerSeries.subst_comp_subst_apply
-      (PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_log) ha,
-    subst_log_exp, PowerSeries.subst_X ha]
-
 /-! ### Base change -/
 
 /-- **The logarithm commutes with base change**: applying a ring homomorphism `f : R →+* S` of

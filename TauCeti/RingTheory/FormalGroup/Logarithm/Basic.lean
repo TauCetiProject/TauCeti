@@ -449,6 +449,14 @@ theorem subst_exp_log : PowerSeries.subst F.exp F.log = PowerSeries.X :=
 theorem subst_log_exp : PowerSeries.subst F.log F.exp = PowerSeries.X :=
   PowerSeries.subst_substInvOfIsUnit_left _ F.constantCoeff_log _
 
+/-- `exp_F(log_F(a)) = a` for every power series `a` that can be substituted. -/
+@[simp]
+theorem subst_subst_log_exp {σ : Type*} {a : MvPowerSeries σ R} (ha : PowerSeries.HasSubst a) :
+    PowerSeries.subst (PowerSeries.subst a F.log) F.exp = a := by
+  rw [← PowerSeries.subst_comp_subst_apply
+      (PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_log) ha,
+    subst_log_exp, PowerSeries.subst_X ha]
+
 /-- The formal exponential solves the invariant differential equation
 `exp_F'(T) = F_X(0, exp_F(T))`. -/
 theorem derivative_exp :
