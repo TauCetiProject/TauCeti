@@ -196,11 +196,10 @@ variable [Group G] [MulAction G X] [TopologicalSpace X] [ChartedSpace H X]
 theorem contMDiff_inverse :
     ContMDiff I I n fun f : Quiver.Total (ActionCategory G X) ↦
       (⟨f.right, f.left, inv f.hom⟩ : Quiver.Total (ActionCategory G X)) := by
-  refine (contMDiff_arrows_iff I n).2 ⟨?_, contMDiff_target I n G X⟩
-  apply (arrowHomeomorph G X).isInducing.continuous_iff.mpr
-  simpa only [Function.comp_def, arrowHomeomorph_apply, inv_hom, Pi.inv_apply,
-    objectHomeomorph_apply] using (continuous_label G X).inv.prodMk
-      ((objectHomeomorph G X).continuous.comp (contMDiff_target I n G X).continuous)
+  -- A discrete group acting by continuous maps acts continuously.
+  have := ContMDiffConstSMul.continuousConstSMul (I := I) n (Γ := G) (M := X)
+  have : ContinuousSMul G X := ⟨continuous_prod_of_discrete_left.mpr continuous_const_smul⟩
+  exact (contMDiff_arrows_iff I n).2 ⟨continuous_inverse G X, contMDiff_target I n G X⟩
 
 /-- Inversion of arrows, as a `C^n` diffeomorphism of the arrow manifold of the action groupoid of
 a discrete group acting by `C^n` maps. -/
