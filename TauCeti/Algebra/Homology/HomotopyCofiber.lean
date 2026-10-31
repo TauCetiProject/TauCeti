@@ -41,7 +41,10 @@ Finally, a morphism of arrows `α` from `φ : F ⟶ G` to `φ' : F' ⟶ G'` indu
 cones `homotopyCofiber.mapArrowHom φ φ' _ α`. If both components of `α` are
 quasi-isomorphisms, so is the induced map of cones. For grid stabilization, this transfers a
 quasi-isomorphism on the off-center states to the comparison map for the whole stabilized
-complex.
+complex. Both cones sit in the degreewise split short exact sequences
+`G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)` (`homotopyCofiber.coneShortComplex`), whose
+last term is `F` shifted by one degree with negated differential; the same sequence computes the
+torsion of a mapping cone of based complexes.
 
 ## Main definitions
 
@@ -52,9 +55,19 @@ complex.
 * `HomologicalComplex.homotopyCofiber.homotopyToZeroOfId`: a contraction of the mapping cone of
   an identity.
 * `HomologicalComplex.homotopyCofiber.acyclic_id`: the mapping cone of an identity is acyclic.
+* `HomologicalComplex.homotopyCofiber.coneShortComplex`: the degreewise split short complex
+  `G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)` of a mapping cone.
 
 ## Main results
 
+* `HomologicalComplex.homotopyCofiber.fstX_inlX_add_sndX_inrX`: the projections and inclusions of
+  the summands of a term of a mapping cone decompose its identity.
+* `HomologicalComplex.homotopyCofiber.XIsoBiprod_hom_snd`: under `XIsoBiprod`, the projection
+  `sndX` is the second biproduct projection.
+* `HomologicalComplex.homotopyCofiber.fstX_inlX_zero`: the term of the mapping cone of `F ⟶ 0` is
+  identified with a term of `F` by `fstX` and `inlX`.
+* `HomologicalComplex.homotopyCofiber.coneShortComplex_shortExact`: the short complex
+  `G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)` is short exact.
 * `CategoryTheory.ShortComplex.Splitting.quasiIso_homotopyCofiberDesc`: the map from the mapping
   cone of `S.f` to `S.X₃` induced by `S.g` is a quasi-isomorphism.
 * `HomologicalComplex.homotopyCofiber.inr_mapArrowHom`,
@@ -200,6 +213,44 @@ theorem isoOfSplitting_inv_f :
 
 end HomologicalComplex.homotopyCofiber
 
+/-! ### The decomposition of the terms of a mapping cone -/
+
+namespace HomologicalComplex.homotopyCofiber
+
+open Limits ZeroObject
+
+variable {C ι : Type*} [Category* C] [Preadditive C] {c : ComplexShape ι} [DecidableRel c.Rel]
+  {F G : HomologicalComplex C c} (φ : F ⟶ G) [HasHomotopyCofiber φ]
+
+/-- In a degree `i` with `c.Rel i j`, the term of the mapping cone of `φ : F ⟶ G` is the biproduct
+of `F.X j` and `G.X i`: the projections `fstX`, `sndX` and the inclusions `inlX`, `inrX` decompose
+its identity. -/
+lemma fstX_inlX_add_sndX_inrX (i j : ι) (hij : c.Rel i j) :
+    fstX φ i j hij ≫ inlX φ j i hij + sndX φ i ≫ inrX φ i = 𝟙 _ :=
+  ext_from_X φ j i hij (by simp) (by simp)
+
+/-- In a degree `i` with `c.Rel i j`, the second projection `sndX` is the second biproduct
+projection under the identification `XIsoBiprod` of the term of the mapping cone with
+`F.X j ⊞ G.X i`. -/
+@[reassoc (attr := simp)]
+lemma XIsoBiprod_hom_snd (i j : ι) (hij : c.Rel i j) :
+    haveI := HasHomotopyCofiber.hasBinaryBiproduct φ _ _ hij
+    (XIsoBiprod φ i j hij).hom ≫ biprod.snd = sndX φ i := by
+  have := HasHomotopyCofiber.hasBinaryBiproduct φ _ _ hij
+  rw [← Category.id_comp (XIsoBiprod φ i j hij).hom, ← fstX_inlX_add_sndX_inrX φ i j hij]
+  simp
+
+/-- In the mapping cone of `F ⟶ 0`, the composite of the projection `fstX` and the inclusion
+`inlX` is the identity, as the other summand vanishes. -/
+lemma fstX_inlX_zero [HasZeroObject C] [HasHomotopyCofiber (0 : F ⟶ 0)] (i j : ι)
+    (hij : c.Rel i j) : fstX (0 : F ⟶ 0) i j hij ≫ inlX (0 : F ⟶ 0) j i hij = 𝟙 _ := by
+  have h₀ : IsZero ((0 : HomologicalComplex C c).X i) :=
+    (eval C c i).map_isZero (Limits.isZero_zero _)
+  rw [← fstX_inlX_add_sndX_inrX (0 : F ⟶ 0) i j hij, h₀.eq_of_tgt (sndX _ i) 0, zero_comp,
+    add_zero]
+
+end HomologicalComplex.homotopyCofiber
+
 /-! ### The mapping cone of an identity is contractible -/
 
 namespace HomologicalComplex.homotopyCofiber
@@ -297,17 +348,15 @@ section QuasiIso
 variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι} [DecidableRel c.Rel]
   {F G F' G' : HomologicalComplex C c} (φ : F ⟶ G) (φ' : F' ⟶ G') (hc : ∀ j, ∃ i, c.Rel i j)
 
-/-- The projection of the mapping cone of `φ : F ⟶ G` onto the mapping cone of `F ⟶ 0`, which
-forgets the summand `G`. -/
-private noncomputable abbrev toCone₀ : homotopyCofiber φ ⟶ homotopyCofiber (0 : F ⟶ 0) :=
-  mapArrowHom φ 0 hc (Arrow.homMk (𝟙 F) 0)
-
 /-- The degreewise split short exact sequence `G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)`
-of a mapping cone. -/
-private noncomputable abbrev coneShortComplex : ShortComplex (HomologicalComplex C c) :=
-  ShortComplex.mk (inr φ) (toCone₀ φ hc) (by ext i; simp)
+of a mapping cone: the inclusion of `G`, followed by the projection onto the mapping cone of
+`F ⟶ 0`, which forgets the summand `G`. -/
+noncomputable abbrev coneShortComplex : ShortComplex (HomologicalComplex C c) :=
+  ShortComplex.mk (inr φ) (mapArrowHom φ (0 : F ⟶ 0) hc (Arrow.homMk (𝟙 F) 0)) (by ext i; simp)
 
-private lemma coneShortComplex_shortExact : (coneShortComplex φ hc).ShortExact := by
+/-- The sequence `G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)` of a mapping cone is short
+exact. -/
+lemma coneShortComplex_shortExact : (coneShortComplex φ hc).ShortExact := by
   refine shortExact_of_degreewise_shortExact _ fun i => ?_
   have h₀ : IsZero ((0 : HomologicalComplex C c).X i) :=
     (eval C c i).map_isZero (Limits.isZero_zero _)

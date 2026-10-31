@@ -75,45 +75,24 @@ presume it; in particular the naive route to it, through winding numbers of curv
 `K`, is unavailable, since a compact connected set can separate the plane while containing no arc
 at all.
 
-## Roadmap role
+## Janiszewski's theorem and enclosure
 
-**Plane separation for Jordan curves** was an open frontier item of layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md`, the Carathéodory boundary correspondence.
-`TauCeti.image_inter_ball_subset_filledHull_of_diam_lt_of_isPreconnected_sdiff_singleton` of
-`TauCeti/Analysis/Complex/Conformal/Crosscut/Inside.lean` avoids the plane-separation hypothesis
-entirely by taking `IsPreconnected (K \ {f z₀})` instead, which
-`IsJordanCurve.isPathConnected_sdiff_singleton` discharges; `Caratheodory.lean` is now
-unconditional. The remaining open statement is
-`frontier Ω ∩ closure A ∩ closure B ⊆ closure γ`, the input
-`TauCeti/Analysis/Complex/Conformal/Crosscut/BoundarySplit.lean` names as missing before its
-dichotomy `TauCeti.subset_or_subset_of_isPreconnected_frontier_image_sdiff` can be fed a boundary
-arc.
+The classical route to the separation theorems of the plane runs through Janiszewski's theorem,
+proved as `TauCeti.janiszewski` in `TauCeti/Analysis/Complex/PlaneSeparation/Basic.lean`: if two
+*bounded* closed sets `S`, `T ⊆ ℂ` have preconnected intersection and neither separates `a` from
+`b`, then `S ∪ T` does not separate them either. Boundedness cannot be dropped: two opposite closed
+rays from the origin meet in a point and neither separates the plane, yet their union is a line.
+The proof translates "does not separate" into "the Borsuk map has a continuous logarithm" and
+glues the two logarithms over the intersection. This file supplies that translation in the
+direction that needs no boundedness, together with the gluing; the converse direction, which uses
+boundedness of `S ∪ T`, is added in `TauCeti/Analysis/Complex/PlaneSeparation/Basic.lean`.
 
-The classical route to both runs through Janiszewski's theorem — two closed sets with connected
-intersection, neither of which separates a pair of points, have a union that does not separate it
-either — and Janiszewski is proved by translating "does not separate" into "the Borsuk map has a
-continuous logarithm" and gluing the two logarithms over the connected intersection. This file
-supplies that translation in the direction that holds without duality, together with the gluing;
-`TauCeti/Analysis/Complex/PlaneSeparation/Basic.lean` adds the converse direction and assembles the
-three into `TauCeti.janiszewski`.
-
-The one statement below already phrased in the vocabulary of that development is
-`TauCeti.mem_filledHull_or_mem_filledHull_of_not_hasContinuousLogOn`: a bounded closed set on which
-the Borsuk map has no continuous logarithm encloses `a` or `b` in its filled hull. It reads the
-criterion through `TauCeti.mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn` of
+The criterion is also stated in terms of filled hulls, as
+`TauCeti.mem_filledHull_or_mem_filledHull_of_not_hasContinuousLogOn`: a bounded closed set on
+which the Borsuk map has no continuous logarithm encloses `a` or `b` in its filled hull. It reads
+the criterion through `TauCeti.mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn` of
 `TauCeti/Analysis/Normed/Module/FilledHull.lean`, so a source of logarithm obstructions becomes a
 source of the enclosure hypothesis `Conformal/Crosscut/Inside.lean` consumes.
-
-## Coordination with upstream Mathlib
-
-Mathlib has continuous branches of the logarithm on simply connected open sets
-(`Complex.exists_continuousOn_eqOn_exp_comp` of `Mathlib/Analysis/Complex/BranchLogRoot.lean`,
-which layer L3 consumes), but no predicate for a logarithm on an arbitrary set, no gluing theorem
-for logarithms, and no separation theory for the plane. Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself. So this
-file is new Lean formalization rather than a temporary shim, and it consumes no L0–L3 shim: its
-only complex-analytic input is the principal branch `Complex.log` on `Complex.slitPlane`.
 
 ## Main results
 

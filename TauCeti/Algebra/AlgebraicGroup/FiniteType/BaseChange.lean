@@ -300,7 +300,7 @@ on the same algebra, with scalars restricted from `K` to `k`. -/
 noncomputable def baseChangePointsMulEquiv (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
     HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A ≃*
       HopfAlgebra.points (R := k) (H := H)
-        (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
+        (CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
   CommHopfAlgCat.baseChangePointsMulEquiv (K := K) A H.obj
 
 /-- Applying the base-change points equivalence restricts a `K`-point along `h ↦ 1 ⊗ h`. -/
@@ -316,7 +316,7 @@ lemma baseChangePointsMulEquiv_apply_apply (H : FiniteTypeCommHopfAlgCat.{u, v} 
 lemma baseChangePointsMulEquiv_symm_apply_tmul
     (H : FiniteTypeCommHopfAlgCat.{u, v} k)
     (f : HopfAlgebra.points (R := k) (H := H)
-      (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A))
+      (CommAlgCat.restrictScalarsObj (algebraMap k K) A))
     (s : K) (h : H) :
     ((baseChangePointsMulEquiv (K := K) A H).symm f).ofConv (s ⊗ₜ[k] h) = s • f.ofConv h :=
   CommHopfAlgCat.baseChangePointsMulEquiv_symm_apply_tmul (K := K) A H.obj f s h
@@ -329,7 +329,7 @@ lemma baseChangePointsMulEquiv_mapValue
     (χ : A ⟶ B) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A) :
     baseChangePointsMulEquiv (K := K) B H (HopfAlgebra.mapPoints (H := baseChange (K := K) H) χ f) =
       HopfAlgebra.mapPoints (H := H)
-        ((_root_.TauCeti.CommAlgCat.restrictScalars (algebraMap k K)).map χ)
+        ((CommAlgCat.restrictScalars (algebraMap k K)).map χ)
         (baseChangePointsMulEquiv (K := K) A H f) :=
   CommHopfAlgCat.baseChangePointsMulEquiv_mapValue (K := K) H.obj χ f
 
@@ -339,7 +339,7 @@ lemma baseChangePointsMulEquiv_mapDomain {H L : FiniteTypeCommHopfAlgCat.{u, v} 
     baseChangePointsMulEquiv (K := K) A H
         (BialgHom.mapDomain (A := A) (toBialgHom (baseChangeMap (K := K) φ)) f) =
       BialgHom.mapDomain
-        (A := _root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)
+        (A := CommAlgCat.restrictScalarsObj (algebraMap k K) A)
         (toBialgHom φ)
         (baseChangePointsMulEquiv (K := K) A L f) :=
   CommHopfAlgCat.baseChangePointsMulEquiv_mapDomain (K := K) φ.hom f
