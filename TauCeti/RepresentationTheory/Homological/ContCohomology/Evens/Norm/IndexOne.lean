@@ -55,15 +55,6 @@ section Group
 variable {G : Type u} [Group G] [TopologicalSpace G] {U : OpenSubgroup G}
   (hU : U.toSubgroup.index = 1)
 
-include hU in
-private theorem card_quotient_eq_one [Fintype (G ⧸ U.toSubgroup)] :
-    Fintype.card (G ⧸ U.toSubgroup) = 1 := by
-  rw [← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, hU]
-
-include hU in
-private theorem subsingleton_quotient : Subsingleton (G ⧸ U.toSubgroup) :=
-  Subgroup.index_eq_one.1 hU ▸ QuotientGroup.subsingleton_quotient_top
-
 /-- The transversal `{1}` of a subgroup of index one. -/
 private noncomputable def oneTransversal : U.toSubgroup.LeftTransversal :=
   ⟨{1}, Subgroup.isComplement_singleton_left.2 (by
@@ -112,14 +103,14 @@ private noncomputable abbrev inducedResolution : TopRep ℤ G :=
 
 /-- An element of `U` acts on the single factor of the tensor-induced resolution by itself. -/
 private theorem subsingletonEquiv_ρ (u : U.toSubgroup) (x : (inducedResolution hU).V) :
-    haveI := subsingleton_quotient hU
+    haveI := QuotientGroup.subsingleton_iff.2 (Subgroup.index_eq_one.1 hU)
     PiTensorProduct.subsingletonEquiv (R := ℤ)
         (s := fun _ : G ⧸ U.toSubgroup ↦ (resolutionRep (U := U)).V) (QuotientGroup.mk 1)
         ((inducedResolution hU).ρ u x) =
       (trivialF2 U.toSubgroup).gradedResolutionTopRep.ρ u
         (PiTensorProduct.subsingletonEquiv (R := ℤ)
           (s := fun _ : G ⧸ U.toSubgroup ↦ (resolutionRep (U := U)).V) (QuotientGroup.mk 1) x) := by
-  have := subsingleton_quotient hU
+  have := QuotientGroup.subsingleton_iff.2 (Subgroup.index_eq_one.1 hU)
   obtain ⟨y, rfl⟩ := PiTensorProduct.exists_eq_tprod_of_subsingleton (QuotientGroup.mk 1) x
   have hword : (U.toSubgroup.monomialHom (oneTransversal hU) (u : G)).left (QuotientGroup.mk 1) =
       u := Subtype.ext (monomialHom_oneTransversal_left hU _ _)
@@ -138,7 +129,7 @@ private noncomputable def indexOneProj :
     TopRep.res ((ContinuousMonoidHom.subgroupSubtype U.toSubgroup : U.toSubgroup →ₜ* G) :
         U.toSubgroup →* G) (inducedResolution hU) ⟶
       (trivialF2 U.toSubgroup).gradedResolutionTopRep :=
-  haveI := subsingleton_quotient hU
+  haveI := QuotientGroup.subsingleton_iff.2 (Subgroup.index_eq_one.1 hU)
   haveI := ((smoothTensorInducedGradedResolutionFunctor U.toSubgroup U.isOpen'
     (oneTransversal hU)).obj (coeffs (U := U))).property.discreteTopology
   let e := (PiTensorProduct.subsingletonEquiv (R := ℤ)
@@ -156,7 +147,7 @@ private noncomputable def indexOneProj :
         exact subsingletonEquiv_ρ hU u x } }
 
 private theorem indexOneProj_apply (x : (inducedResolution hU).V) :
-    haveI := subsingleton_quotient hU
+    haveI := QuotientGroup.subsingleton_iff.2 (Subgroup.index_eq_one.1 hU)
     (indexOneProj hU).hom x =
       PiTensorProduct.subsingletonEquiv (R := ℤ)
         (s := fun _ : G ⧸ U.toSubgroup ↦ (resolutionRep (U := U)).V) (QuotientGroup.mk 1) x :=
@@ -176,7 +167,7 @@ private theorem indexOneProj_comp_differential :
   -- Instance search would pick `AddCommGroup.toIntModule` on the target carrier, which is not
   -- the module structure of the topological representation.
   let : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionTopRep.V := TopRep.hV2 _
-  have := subsingleton_quotient hU
+  have := QuotientGroup.subsingleton_iff.2 (Subgroup.index_eq_one.1 hU)
   refine TopRep.hom_ext (ContIntertwiningMap.ext (ContinuousLinearMap.ext fun x ↦ ?_))
   rw [TopRep.hom_comp, TopRep.hom_comp, ContIntertwiningMap.toContinuousLinearMap_comp,
     ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
@@ -205,7 +196,7 @@ private theorem indexOneProj_ι_apply [LinearOrder (G ⧸ U.toSubgroup)] : ∀ x
   let : Module ℤ (DiscreteRep.trivialF2 U.toSubgroup).V :=
     (DiscreteRep.trivialF2 U.toSubgroup).module
   let : Module ℤ (coeffs (U := U)).obj.V := TopRep.hV2 _
-  have := subsingleton_quotient hU
+  have := QuotientGroup.subsingleton_iff.2 (Subgroup.index_eq_one.1 hU)
   intro x
   obtain ⟨a, rfl⟩ := PiTensorProduct.exists_eq_tprod_of_subsingleton (QuotientGroup.mk 1) x
   rw [indexOneProj_apply]
@@ -233,8 +224,8 @@ theorem trivialF2ResMap_evensNorm_of_index_eq_one {n : ℕ}
     (x : continuousCohomology n (trivialF2 U.toSubgroup)) :
     trivialF2ResMap G U.toSubgroup (Fintype.card (G ⧸ U.toSubgroup) * n) (U.evensNorm x) =
       (ContinuousCohomology.degreeCast (trivialF2 U.toSubgroup)
-        (by rw [card_quotient_eq_one hU, one_mul])).hom x := by
-  have := subsingleton_quotient hU
+        (by rw [← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, hU, one_mul])).hom x := by
+  have := QuotientGroup.subsingleton_iff.2 (Subgroup.index_eq_one.1 hU)
   obtain ⟨z, hz, rfl⟩ := TopRep.exists_cochainClass_eq x
   let : LinearOrder (G ⧸ U.toSubgroup) :=
     LinearOrder.lift' _ (Fintype.equivFin (G ⧸ U.toSubgroup)).injective
@@ -266,7 +257,7 @@ theorem evensNorm_trivialF2ResMap_of_index_eq_one {n : ℕ}
     (y : continuousCohomology n (trivialF2 G)) :
     U.evensNorm (trivialF2ResMap G U.toSubgroup n y) =
       (ContinuousCohomology.degreeCast (trivialF2 G)
-        (by rw [card_quotient_eq_one hU, one_mul])).hom y := by
+        (by rw [← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, hU, one_mul])).hom y := by
   apply trivialF2ResMap_injective_of_index_eq_one hU
   rw [trivialF2ResMap_evensNorm_of_index_eq_one hU]
   rw [← ConcreteCategory.comp_apply,
