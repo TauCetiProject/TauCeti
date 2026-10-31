@@ -95,30 +95,30 @@ theorem finrank_spechtIdeal (t : YoungTableau μ) :
 of `c_t` is `c_t` scaled by `n !` over the number `f^μ` of standard Young tableaux of its
 shape. -/
 theorem youngSymmetrizer_sq_eq_factorial_div_standardCount (t : YoungTableau μ) :
-    youngSymmetrizer t * youngSymmetrizer t =
-      ((μ.card ! : ℚ) / (standardCount μ : ℚ)) • youngSymmetrizer t := by
+    youngSymmetrizer (R := ℚ) t * youngSymmetrizer (R := ℚ) t =
+      ((μ.card ! : ℚ) / (standardCount μ : ℚ)) • youngSymmetrizer (R := ℚ) t := by
   rw [← finrank_spechtIdeal t, youngSymmetrizer_sq]
 
 /-- **Essential idempotence of the Young symmetrizer, read off the shape.** The square of `c_t` is
 `c_t` scaled by the product of the hook lengths of its shape -- a product of positive integers, so
 this form of the identity carries no division. -/
 theorem youngSymmetrizer_sq_eq_prod_hookLength (t : YoungTableau μ) :
-    youngSymmetrizer t * youngSymmetrizer t =
-      (∏ c ∈ μ.cells, (μ.hookLength c : ℚ)) • youngSymmetrizer t := by
+    youngSymmetrizer (R := ℚ) t * youngSymmetrizer (R := ℚ) t =
+      (∏ c ∈ μ.cells, (μ.hookLength c : ℚ)) • youngSymmetrizer (R := ℚ) t := by
   rw [youngSymmetrizer_sq_eq_factorial_div_standardCount,
     cast_factorial_div_standardCount_eq_prod_hookLength]
 
 /-- **The normalised Young symmetrizer is idempotent**, with the normalisation
 `(f^μ / n !) • c_t`. -/
 theorem isIdempotentElem_standardCount_div_factorial_smul_youngSymmetrizer (t : YoungTableau μ) :
-    IsIdempotentElem (((standardCount μ : ℚ) / (μ.card ! : ℚ)) • youngSymmetrizer t) := by
+    IsIdempotentElem (((standardCount μ : ℚ) / (μ.card ! : ℚ)) • youngSymmetrizer (R := ℚ) t) := by
   rw [← finrank_spechtIdeal t]
   exact isIdempotentElem_smul_youngSymmetrizer t
 
 /-- **The normalised Young symmetrizer is idempotent**, with the normalisation read off the shape:
 dividing `c_t` by the product of the hook lengths of its shape makes it idempotent. -/
 theorem isIdempotentElem_prod_hookLength_inv_smul_youngSymmetrizer (t : YoungTableau μ) :
-    IsIdempotentElem ((∏ c ∈ μ.cells, (μ.hookLength c : ℚ))⁻¹ • youngSymmetrizer t) := by
+    IsIdempotentElem ((∏ c ∈ μ.cells, (μ.hookLength c : ℚ))⁻¹ • youngSymmetrizer (R := ℚ) t) := by
   rw [← one_div, ← cast_factorial_div_standardCount_eq_prod_hookLength, one_div_div]
   exact isIdempotentElem_standardCount_div_factorial_smul_youngSymmetrizer t
 

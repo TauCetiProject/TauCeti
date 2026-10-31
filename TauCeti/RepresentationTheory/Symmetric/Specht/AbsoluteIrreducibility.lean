@@ -49,24 +49,24 @@ variable {mu : YoungDiagram}
 private theorem intertwiningMap_eq_smul_one_of_apply_polytabloid_eq
     (t : YoungTableau mu)
     (f : Representation.IntertwiningMap
-      (spechtSubrepresentation mu).toRepresentation
-      (spechtSubrepresentation mu).toRepresentation)
+      (spechtSubrepresentation (R := ℚ) mu).toRepresentation
+      (spechtSubrepresentation (R := ℚ) mu).toRepresentation)
     (kappa : ℚ)
-    (h : f ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩ =
-      kappa • ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩) :
+    (h : f ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩ =
+      kappa • ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩) :
     f = kappa • 1 := by
-  let et : (spechtSubrepresentation mu).toSubmodule :=
-    ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩
-  let orbit : Set (spechtSubrepresentation mu).toSubmodule :=
+  let et : (spechtSubrepresentation (R := ℚ) mu).toSubmodule :=
+    ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩
+  let orbit : Set (spechtSubrepresentation (R := ℚ) mu).toSubmodule :=
     Set.range fun sigma : Equiv.Perm (Fin mu.card) =>
-      (spechtSubrepresentation mu).toRepresentation sigma et
+      (spechtSubrepresentation (R := ℚ) mu).toRepresentation sigma et
   have hspan : Submodule.span ℚ orbit = ⊤ := by
     apply Submodule.map_injective_of_injective
-      (spechtSubrepresentation mu).toSubmodule.injective_subtype
+      (spechtSubrepresentation (R := ℚ) mu).toSubmodule.injective_subtype
     rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span]
-    have himage : (spechtSubrepresentation mu).toSubmodule.subtype '' orbit =
+    have himage : (spechtSubrepresentation (R := ℚ) mu).toSubmodule.subtype '' orbit =
         Set.range (fun sigma : Equiv.Perm (Fin mu.card) =>
-          (permutationModule (shapePartition mu)).ρ sigma (polytabloid t)) := by
+          (permutationModule (R := ℚ) (shapePartition mu)).ρ sigma (polytabloid (R := ℚ) t)) := by
       ext x
       constructor
       · rintro ⟨y, ⟨sigma, rfl⟩, rfl⟩
@@ -79,8 +79,8 @@ private theorem intertwiningMap_eq_smul_one_of_apply_polytabloid_eq
   refine (Submodule.linearMap_eq_iff_of_span_eq_top _ _ hspan).2 ?_
   rintro ⟨_, ⟨sigma, rfl⟩⟩
   have hf := Representation.IntertwiningMap.isIntertwining
-    (spechtSubrepresentation mu).toRepresentation
-    (spechtSubrepresentation mu).toRepresentation f sigma et
+    (spechtSubrepresentation (R := ℚ) mu).toRepresentation
+    (spechtSubrepresentation (R := ℚ) mu).toRepresentation f sigma et
   have het : f et = kappa • et := by simpa only [et] using h
   rw [het] at hf
   simpa only [Representation.IntertwiningMap.toLinearMap_apply,
@@ -104,13 +104,13 @@ private theorem algebraMap_intertwiningMap_spechtSubrepresentation_injective
     (mu : YoungDiagram) :
     Function.Injective
       (algebraMap ℚ (Representation.IntertwiningMap
-        (spechtSubrepresentation mu).toRepresentation
-        (spechtSubrepresentation mu).toRepresentation)) := by
+        (spechtSubrepresentation (R := ℚ) mu).toRepresentation
+        (spechtSubrepresentation (R := ℚ) mu).toRepresentation)) := by
   obtain ⟨t⟩ := YoungTableau.nonempty mu
   refine algebraMap_intertwiningMap_injective
-    (v := (⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩ :
-      (spechtSubrepresentation mu).toSubmodule)) ?_
-  simpa only [ne_eq, Submodule.mk_eq_zero] using polytabloid_ne_zero t
+    (v := (⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩ :
+      (spechtSubrepresentation (R := ℚ) mu).toSubmodule)) ?_
+  simpa only [ne_eq, Submodule.mk_eq_zero] using polytabloid_ne_zero (R := ℚ) t
 
 /-- Every equivariant endomorphism of the diagram-indexed rational Specht representation is a
 scalar.  In the canonical algebra structure on intertwining endomorphisms, this says that the
@@ -118,30 +118,30 @@ algebra map from `ℚ` is bijective. -/
 theorem algebraMap_intertwiningMap_spechtSubrepresentation_bijective (mu : YoungDiagram) :
     Function.Bijective
       (algebraMap ℚ (Representation.IntertwiningMap
-        (spechtSubrepresentation mu).toRepresentation
-        (spechtSubrepresentation mu).toRepresentation)) := by
+        (spechtSubrepresentation (R := ℚ) mu).toRepresentation
+        (spechtSubrepresentation (R := ℚ) mu).toRepresentation)) := by
   constructor
   · exact algebraMap_intertwiningMap_spechtSubrepresentation_injective mu
   · intro f
     obtain ⟨t⟩ := YoungTableau.nonempty mu
     obtain ⟨v, hv, hbv⟩ :=
       exists_mem_asAlgebraHom_columnAntisymmetrizer_eq_polytabloid t
-    let v' : (spechtSubrepresentation mu).toSubmodule := ⟨v, hv⟩
+    let v' : (spechtSubrepresentation (R := ℚ) mu).toSubmodule := ⟨v, hv⟩
     have hmap : f
-        ((spechtSubrepresentation mu).toRepresentation.asAlgebraHom
-          (columnAntisymmetrizer t) v') =
-        (spechtSubrepresentation mu).toRepresentation.asAlgebraHom
-          (columnAntisymmetrizer t) (f v') :=
+        ((spechtSubrepresentation (R := ℚ) mu).toRepresentation.asAlgebraHom
+          (columnAntisymmetrizer (R := ℚ) t) v') =
+        (spechtSubrepresentation (R := ℚ) mu).toRepresentation.asAlgebraHom
+          (columnAntisymmetrizer (R := ℚ) t) (f v') :=
       (Representation.IntertwiningMap.equivLinearMapAsModule _ _ f).map_smul'
-        (columnAntisymmetrizer t) v'
+        (columnAntisymmetrizer (R := ℚ) t) v'
     obtain ⟨kappa, hkappa⟩ := exists_eq_smul_polytabloid t (f v' : _)
-    have hpoly : f ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩ =
-        kappa • ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩ := by
+    have hpoly : f ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩ =
+        kappa • ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩ := by
       apply Subtype.ext
       have hmap' := congrArg Subtype.val hmap
-      have hbv' : (spechtSubrepresentation mu).toRepresentation.asAlgebraHom
-          (columnAntisymmetrizer t) v' =
-          ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩ := by
+      have hbv' : (spechtSubrepresentation (R := ℚ) mu).toRepresentation.asAlgebraHom
+          (columnAntisymmetrizer (R := ℚ) t) v' =
+          ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩ := by
         apply Subtype.ext
         simpa only [Subrepresentation.coe_toRepresentation_asAlgebraHom_apply] using hbv
       rw [hbv'] at hmap'
@@ -156,24 +156,25 @@ theorem algebraMap_intertwiningMap_spechtSubrepresentation_bijective (mu : Young
 /-- Every equivariant endomorphism of the partition-indexed rational Specht module is scalar. -/
 theorem algebraMap_intertwiningMap_spechtModule_bijective {n : ℕ} (mu : n.Partition) :
     Function.Bijective
-      (algebraMap ℚ (Representation.IntertwiningMap (spechtModule mu).ρ (spechtModule mu).ρ)) := by
+      (algebraMap ℚ (Representation.IntertwiningMap (spechtModule (R := ℚ) mu).ρ (spechtModule
+        (R := ℚ) mu).ρ)) := by
   constructor
   · obtain ⟨t⟩ := YoungTableau.nonempty (YoungDiagram.ofPartition mu)
-    let et : (spechtModule mu).V :=
-      ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩
+    let et : (spechtModule (R := ℚ) mu).V :=
+      ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩
     refine algebraMap_intertwiningMap_injective (v := et) ?_
     intro het
     -- Expose the concrete Specht subtype hidden by the `FDRep.of` carrier.
-    refine polytabloid_ne_zero t ?_
+    refine polytabloid_ne_zero (R := ℚ) t ?_
     simpa only [et, ZeroMemClass.coe_zero] using congrArg
-      (fun v : (spechtModule mu).V =>
-        ((v : (spechtSubrepresentation (YoungDiagram.ofPartition mu)).toSubmodule) :
-          (permutationModule (shapePartition (YoungDiagram.ofPartition mu))).V)) het
+      (fun v : (spechtModule (R := ℚ) mu).V =>
+        ((v : (spechtSubrepresentation (R := ℚ) (YoungDiagram.ofPartition mu)).toSubmodule) :
+          (permutationModule (R := ℚ) (shapePartition (YoungDiagram.ofPartition mu))).V)) het
   · intro f
     let e := (finCongr (YoungDiagram.card_ofPartition mu).symm).permCongrHom
     let f' : Representation.IntertwiningMap
-        (spechtSubrepresentation (YoungDiagram.ofPartition mu)).toRepresentation
-        (spechtSubrepresentation (YoungDiagram.ofPartition mu)).toRepresentation :=
+        (spechtSubrepresentation (R := ℚ) (YoungDiagram.ofPartition mu)).toRepresentation
+        (spechtSubrepresentation (R := ℚ) (YoungDiagram.ofPartition mu)).toRepresentation :=
       { toLinearMap := f.toLinearMap
         isIntertwining' g := by
           have hf := f.isIntertwining' (e.symm g)
@@ -193,28 +194,31 @@ theorem algebraMap_intertwiningMap_spechtModule_bijective {n : ℕ} (mu : n.Part
     exact hx
 
 private noncomputable def spechtModuleScalarAlgEquiv {n : ℕ} (mu : n.Partition) :
-    ℚ ≃ₐ[ℚ] Representation.IntertwiningMap (spechtModule mu).ρ (spechtModule mu).ρ := by
+    ℚ ≃ₐ[ℚ] Representation.IntertwiningMap (spechtModule (R := ℚ) mu).ρ (spechtModule (R := ℚ)
+      mu).ρ := by
   apply AlgEquiv.ofBijective (Algebra.ofId ℚ _)
   have hfun : ⇑(Algebra.ofId ℚ
-      (Representation.IntertwiningMap (spechtModule mu).ρ (spechtModule mu).ρ)) =
+      (Representation.IntertwiningMap (spechtModule (R := ℚ) mu).ρ (spechtModule (R := ℚ) mu).ρ)) =
       ⇑(algebraMap ℚ
-        (Representation.IntertwiningMap (spechtModule mu).ρ (spechtModule mu).ρ)) := by
+        (Representation.IntertwiningMap (spechtModule (R := ℚ) mu).ρ (spechtModule (R := ℚ)
+          mu).ρ)) := by
     funext q
     exact Algebra.ofId_apply
-      (Representation.IntertwiningMap (spechtModule mu).ρ (spechtModule mu).ρ) q
+      (Representation.IntertwiningMap (spechtModule (R := ℚ) mu).ρ (spechtModule (R := ℚ) mu).ρ) q
   rw [hfun]
   exact algebraMap_intertwiningMap_spechtModule_bijective mu
 
 /-- The algebra of intertwining endomorphisms of a rational Specht module is `ℚ`. -/
 noncomputable def spechtModuleIntertwiningEndAlgEquiv {n : ℕ} (mu : n.Partition) :
-    Representation.IntertwiningMap (spechtModule mu).ρ (spechtModule mu).ρ ≃ₐ[ℚ] ℚ :=
+    Representation.IntertwiningMap (spechtModule (R := ℚ) mu).ρ (spechtModule (R := ℚ) mu).ρ
+      ≃ₐ[ℚ] ℚ :=
   (spechtModuleScalarAlgEquiv mu).symm
 
 /-- The algebra of `ℚ[S_n]`-linear endomorphisms of a rational Specht module is `ℚ`. -/
 noncomputable def spechtModuleEndAlgEquiv {n : ℕ} (mu : n.Partition) :
     Module.End (MonoidAlgebra ℚ (Equiv.Perm (Fin n)))
-      (_root_.Representation.asModule (spechtModule mu).ρ) ≃ₐ[ℚ] ℚ :=
-  (Representation.IntertwiningMap.equivAlgEnd (ρ := (spechtModule mu).ρ)).symm.trans
+      (_root_.Representation.asModule (spechtModule (R := ℚ) mu).ρ) ≃ₐ[ℚ] ℚ :=
+  (Representation.IntertwiningMap.equivAlgEnd (ρ := (spechtModule (R := ℚ) mu).ρ)).symm.trans
     (spechtModuleIntertwiningEndAlgEquiv mu)
 
 end TauCeti

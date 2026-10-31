@@ -20,8 +20,8 @@ public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 # Young symmetrizers
 
 For a Young tableau `t`, this file defines the row symmetrizer `a_t`, the column
-antisymmetrizer `b_t`, and the Young symmetrizer `c_t = a_t b_t` in the rational group
-algebra of the symmetric group on the entries of `t`.
+antisymmetrizer `b_t`, and the Young symmetrizer `c_t = a_t b_t` in the group algebra of the
+  symmetric group on the entries of `t` over any commutative ring.
 
 The defining coefficient formulas are accompanied by the translation laws that characterize
 the two factors: the row group fixes `a_t`, while the column group acts on `b_t` through the
@@ -53,14 +53,11 @@ For a partition `μ` of `d`, `Nat.Partition.youngSymmetrizer` is the transported
 of the row-superstandard tableau of the diagram of `μ`, with the labels of the diagram identified
 with `Fin d`: the partition-indexed element `c_μ ∈ k[S_d]`.
 
-The symmetrizers are built over `ℚ`, which is what the essential-idempotence theorem and the
-Specht-module constructions downstream of this file work over.  The coefficients of `c_t` are in
-fact integral -- each is a sum of signs -- so nothing about `c_t` itself demands rational
-coefficients; it is *this* definition, over `ℚ`, whose coefficients are transported when `c_t` is
-made to act on a module over another ring, which is `youngSymmetrizerOver`.  That transport goes
-along `algebraMap ℚ k`, so it asks the target ring to be a `ℚ`-algebra.  The restriction is one
-of the present implementation, not of the mathematics: an integral `c_t`, over `ℤ` or over an
-arbitrary commutative ring, would remove it, and is a separate construction.
+The elementary symmetrizers and their coefficient, translation, and relabeling identities are
+valid over any commutative ring. Their coefficients are integral sums of signs; nonvanishing of
+`c_t` needs only a nontrivial coefficient ring. The separate transport `youngSymmetrizerOver`
+retains the rational specialization as its source and also permits noncommutative target
+`ℚ`-algebras. The direct construction `youngSymmetrizer` needs no `ℚ`-algebra structure.
 
 ## References
 
@@ -75,7 +72,7 @@ open scoped BigOperators
 
 namespace YoungTableau
 
-variable {μ : YoungDiagram}
+variable {R : Type*} [CommRing R] {μ : YoungDiagram}
 
 noncomputable section
 
@@ -90,54 +87,54 @@ local instance decidablePredMemColSubgroup (t : YoungTableau μ) :
 
 /-- The **row symmetrizer** `a_t`, the sum of the permutations preserving the rows of `t`. -/
 noncomputable def rowSymmetrizer (t : YoungTableau μ) :
-    MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)) :=
-  ∑ p : rowSubgroup t, MonoidAlgebra.of ℚ (Equiv.Perm (Fin μ.card)) p
+    MonoidAlgebra R (Equiv.Perm (Fin μ.card)) :=
+  ∑ p : rowSubgroup t, MonoidAlgebra.of R (Equiv.Perm (Fin μ.card)) p
 
 /-- The **column antisymmetrizer** `b_t`, the signed sum of the permutations preserving the
 columns of `t`. -/
 noncomputable def columnAntisymmetrizer (t : YoungTableau μ) :
-    MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)) :=
+    MonoidAlgebra R (Equiv.Perm (Fin μ.card)) :=
   ∑ q : colSubgroup t,
-    ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) •
-      MonoidAlgebra.of ℚ (Equiv.Perm (Fin μ.card)) q
+    ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : R) •
+      MonoidAlgebra.of R (Equiv.Perm (Fin μ.card)) q
 
 /-- The **Young symmetrizer** of `t`, with the convention `c_t = a_t b_t`. On a left module it
 acts by column-antisymmetrization followed by row-symmetrization. -/
 noncomputable def youngSymmetrizer (t : YoungTableau μ) :
-    MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)) :=
-  rowSymmetrizer t * columnAntisymmetrizer t
+    MonoidAlgebra R (Equiv.Perm (Fin μ.card)) :=
+  rowSymmetrizer (R := R) t * columnAntisymmetrizer (R := R) t
 
 /-- The row symmetrizer is the sum of the basis elements indexed by the row group. -/
 theorem rowSymmetrizer_def (t : YoungTableau μ) :
-    rowSymmetrizer t =
-      ∑ p : rowSubgroup t, MonoidAlgebra.of ℚ (Equiv.Perm (Fin μ.card)) p :=
+    rowSymmetrizer (R := R) t =
+      ∑ p : rowSubgroup t, MonoidAlgebra.of R (Equiv.Perm (Fin μ.card)) p :=
   (rfl)
 
 /-- The column antisymmetrizer is the sign-weighted sum of the basis elements indexed by the
 column group. -/
 theorem columnAntisymmetrizer_def (t : YoungTableau μ) :
-    columnAntisymmetrizer t =
+    columnAntisymmetrizer (R := R) t =
       ∑ q : colSubgroup t,
-        ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) •
-          MonoidAlgebra.of ℚ (Equiv.Perm (Fin μ.card)) q :=
+        ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : R) •
+          MonoidAlgebra.of R (Equiv.Perm (Fin μ.card)) q :=
   (rfl)
 
 /-- The Young symmetrizer is the product `c_t = a_t b_t`. -/
 theorem youngSymmetrizer_def (t : YoungTableau μ) :
-    youngSymmetrizer t = rowSymmetrizer t * columnAntisymmetrizer t :=
+    youngSymmetrizer (R := R) t = rowSymmetrizer (R := R) t * columnAntisymmetrizer (R := R) t :=
   (rfl)
 
 /-- The row symmetrizer is the character sum of the trivial character over the row group. -/
 theorem rowSymmetrizer_eq_subgroupCharSum (t : YoungTableau μ) :
-    rowSymmetrizer t = subgroupCharSum 1 (rowSubgroup t) := by
+    rowSymmetrizer (R := R) t = subgroupCharSum 1 (rowSubgroup t) := by
   rw [rowSymmetrizer_def, subgroupCharSum_def]
   simp
 
 /-- The column antisymmetrizer is the character sum of the sign character over the column
 group. -/
 theorem columnAntisymmetrizer_eq_subgroupCharSum (t : YoungTableau μ) :
-    columnAntisymmetrizer t =
-      subgroupCharSum ((Units.coeHom ℚ).comp (signLinearCharacter ℚ (Fin μ.card)))
+    columnAntisymmetrizer (R := R) t =
+      subgroupCharSum ((Units.coeHom R).comp (signLinearCharacter R (Fin μ.card)))
         (colSubgroup t) := by
   rw [columnAntisymmetrizer_def, subgroupCharSum_def]
   simp
@@ -145,7 +142,7 @@ theorem columnAntisymmetrizer_eq_subgroupCharSum (t : YoungTableau μ) :
 /-- The coefficient of a permutation in the row symmetrizer is its row-group indicator. -/
 @[simp]
 theorem rowSymmetrizer_coeff (t : YoungTableau μ) (σ : Equiv.Perm (Fin μ.card)) :
-    (rowSymmetrizer t).coeff σ = if σ ∈ rowSubgroup t then 1 else 0 := by
+    (rowSymmetrizer (R := R) t).coeff σ = if σ ∈ rowSubgroup t then 1 else 0 := by
   rw [rowSymmetrizer_eq_subgroupCharSum, subgroupCharSum_coeff]
   simp
 
@@ -153,24 +150,24 @@ theorem rowSymmetrizer_coeff (t : YoungTableau μ) (σ : Equiv.Perm (Fin μ.card
 group and zero off that group. -/
 @[simp]
 theorem columnAntisymmetrizer_coeff (t : YoungTableau μ) (σ : Equiv.Perm (Fin μ.card)) :
-    (columnAntisymmetrizer t).coeff σ =
-      if σ ∈ colSubgroup t then ((Equiv.Perm.sign σ : ℤ) : ℚ) else 0 := by
+    (columnAntisymmetrizer (R := R) t).coeff σ =
+      if σ ∈ colSubgroup t then ((Equiv.Perm.sign σ : ℤ) : R) else 0 := by
   rw [columnAntisymmetrizer_eq_subgroupCharSum, subgroupCharSum_coeff]
   simp
 
 /-- Left multiplication by a member of the row group fixes the row symmetrizer. -/
 @[simp]
 theorem mul_rowSymmetrizer_left (t : YoungTableau μ) (p : rowSubgroup t) :
-    MonoidAlgebra.single (p : Equiv.Perm (Fin μ.card)) 1 * rowSymmetrizer t =
-      rowSymmetrizer t := by
+    MonoidAlgebra.single (p : Equiv.Perm (Fin μ.card)) 1 * rowSymmetrizer (R := R) t =
+      rowSymmetrizer (R := R) t := by
   rw [rowSymmetrizer_eq_subgroupCharSum, single_mul_subgroupCharSum]
   simp
 
 /-- Right multiplication by a member of the row group fixes the row symmetrizer. -/
 @[simp]
 theorem mul_rowSymmetrizer_right (t : YoungTableau μ) (p : rowSubgroup t) :
-    rowSymmetrizer t * MonoidAlgebra.single (p : Equiv.Perm (Fin μ.card)) 1 =
-      rowSymmetrizer t := by
+    rowSymmetrizer (R := R) t * MonoidAlgebra.single (p : Equiv.Perm (Fin μ.card)) 1 =
+      rowSymmetrizer (R := R) t := by
   rw [rowSymmetrizer_eq_subgroupCharSum, subgroupCharSum_mul_single]
   simp
 
@@ -178,9 +175,9 @@ theorem mul_rowSymmetrizer_right (t : YoungTableau μ) (p : rowSubgroup t) :
 the sign of that member. -/
 @[simp]
 theorem mul_columnAntisymmetrizer_left (t : YoungTableau μ) (q : colSubgroup t) :
-    MonoidAlgebra.single (q : Equiv.Perm (Fin μ.card)) 1 * columnAntisymmetrizer t =
-      ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) •
-        columnAntisymmetrizer t := by
+    MonoidAlgebra.single (q : Equiv.Perm (Fin μ.card)) 1 * columnAntisymmetrizer (R := R) t =
+      ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : R) •
+        columnAntisymmetrizer (R := R) t := by
   rw [columnAntisymmetrizer_eq_subgroupCharSum, single_mul_subgroupCharSum]
   simp only [MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
     coe_signLinearCharacter_apply, Equiv.Perm.sign_inv]
@@ -189,9 +186,9 @@ theorem mul_columnAntisymmetrizer_left (t : YoungTableau μ) (q : colSubgroup t)
 the sign of that member. -/
 @[simp]
 theorem mul_columnAntisymmetrizer_right (t : YoungTableau μ) (q : colSubgroup t) :
-    columnAntisymmetrizer t * MonoidAlgebra.single (q : Equiv.Perm (Fin μ.card)) 1 =
-      ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) •
-        columnAntisymmetrizer t := by
+    columnAntisymmetrizer (R := R) t * MonoidAlgebra.single (q : Equiv.Perm (Fin μ.card)) 1 =
+      ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : R) •
+        columnAntisymmetrizer (R := R) t := by
   rw [columnAntisymmetrizer_eq_subgroupCharSum, subgroupCharSum_mul_single]
   simp only [MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
     coe_signLinearCharacter_apply, Equiv.Perm.sign_inv]
@@ -199,36 +196,36 @@ theorem mul_columnAntisymmetrizer_right (t : YoungTableau μ) (q : colSubgroup t
 /-- The row symmetrizer squares to the order of the row group times itself. -/
 @[simp]
 theorem rowSymmetrizer_sq (t : YoungTableau μ) :
-    rowSymmetrizer t * rowSymmetrizer t =
-      Nat.card (rowSubgroup t) • rowSymmetrizer t := by
+    rowSymmetrizer (R := R) t * rowSymmetrizer (R := R) t =
+      Nat.card (rowSubgroup t) • rowSymmetrizer (R := R) t := by
   rw [rowSymmetrizer_eq_subgroupCharSum, subgroupCharSum_mul_self]
 
 /-- The column antisymmetrizer squares to the order of the column group times itself. -/
 @[simp]
 theorem columnAntisymmetrizer_sq (t : YoungTableau μ) :
-    columnAntisymmetrizer t * columnAntisymmetrizer t =
-      Nat.card (colSubgroup t) • columnAntisymmetrizer t := by
+    columnAntisymmetrizer (R := R) t * columnAntisymmetrizer (R := R) t =
+      Nat.card (colSubgroup t) • columnAntisymmetrizer (R := R) t := by
   rw [columnAntisymmetrizer_eq_subgroupCharSum, subgroupCharSum_mul_self]
 
 /-- The row group fixes the Young symmetrizer on the left. -/
 @[simp]
 theorem mul_youngSymmetrizer_left (t : YoungTableau μ) (p : rowSubgroup t) :
-    MonoidAlgebra.single (p : Equiv.Perm (Fin μ.card)) 1 * youngSymmetrizer t =
-      youngSymmetrizer t := by
+    MonoidAlgebra.single (p : Equiv.Perm (Fin μ.card)) 1 * youngSymmetrizer (R := R) t =
+      youngSymmetrizer (R := R) t := by
   rw [youngSymmetrizer_def, ← mul_assoc, mul_rowSymmetrizer_left]
 
 /-- The column group acts on the Young symmetrizer on the right through its sign character. -/
 @[simp]
 theorem mul_youngSymmetrizer_right (t : YoungTableau μ) (q : colSubgroup t) :
-    youngSymmetrizer t * MonoidAlgebra.single (q : Equiv.Perm (Fin μ.card)) 1 =
-      ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) •
-        youngSymmetrizer t := by
+    youngSymmetrizer (R := R) t * MonoidAlgebra.single (q : Equiv.Perm (Fin μ.card)) 1 =
+      ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : R) •
+        youngSymmetrizer (R := R) t := by
   rw [youngSymmetrizer_def, mul_assoc, mul_columnAntisymmetrizer_right, mul_smul_comm]
 
 /-- The coefficient of the identity permutation in a Young symmetrizer is one. -/
 @[simp]
 theorem youngSymmetrizer_coeff_one (t : YoungTableau μ) :
-    (youngSymmetrizer t).coeff 1 = 1 := by
+    (youngSymmetrizer (R := R) t).coeff 1 = 1 := by
   rw [youngSymmetrizer_def, rowSymmetrizer_def, columnAntisymmetrizer_def,
     Finset.sum_mul]
   simp only [Finset.mul_sum, MonoidAlgebra.coeff_sum, MonoidAlgebra.of_apply]
@@ -254,7 +251,11 @@ theorem youngSymmetrizer_coeff_one (t : YoungTableau μ) :
             (p : Equiv.Perm (Fin μ.card))⁻¹).symm.trans (hmul p q))
   simp_rw [heq]
   rw [Finset.sum_eq_single (1 : rowSubgroup t)]
-  · rw [Finset.sum_eq_single (1 : colSubgroup t)] <;> simp
+  · rw [Finset.sum_eq_single (1 : colSubgroup t)]
+    · simp
+    · intro q _ hq
+      simp [hq]
+    · simp
   · exact fun p _ hp => by simp [hp]
   · simp
 
@@ -263,14 +264,15 @@ translates `c_t` to itself, so all of its coefficients on the row group agree wi
 coefficient at the identity. -/
 theorem youngSymmetrizer_coeff_eq_one_of_mem_rowSubgroup (t : YoungTableau μ)
     {p : Equiv.Perm (Fin μ.card)} (hp : p ∈ rowSubgroup t) :
-    (youngSymmetrizer t).coeff p = 1 := by
-  have h := congrArg (fun x => MonoidAlgebra.coeff x p) (mul_youngSymmetrizer_left t ⟨p, hp⟩)
+    (youngSymmetrizer (R := R) t).coeff p = 1 := by
+  have h := congrArg (fun x => MonoidAlgebra.coeff x p) (mul_youngSymmetrizer_left (R := R) t
+    ⟨p, hp⟩)
   simpa using h.symm
 
 /-- A Young symmetrizer is nonzero. -/
 @[simp]
-theorem youngSymmetrizer_ne_zero (t : YoungTableau μ) :
-    youngSymmetrizer t ≠ 0 := by
+theorem youngSymmetrizer_ne_zero [Nontrivial R] (t : YoungTableau μ) :
+    youngSymmetrizer (R := R) t ≠ 0 := by
   intro h
   have := congrArg (fun x =>
     x.coeff (1 : Equiv.Perm (Fin μ.card))) h
@@ -280,37 +282,37 @@ theorem youngSymmetrizer_ne_zero (t : YoungTableau μ) :
 
 /-- A trivial row group leaves the row symmetrizer as the empty symmetrization, `1`. -/
 theorem rowSymmetrizer_eq_one (t : YoungTableau μ) (h : rowSubgroup t = ⊥) :
-    rowSymmetrizer t = 1 := by
+    rowSymmetrizer (R := R) t = 1 := by
   rw [rowSymmetrizer_eq_subgroupCharSum, subgroupCharSum_eq_one _ _ h]
 
 /-- A trivial column group leaves the column antisymmetrizer as the empty antisymmetrization,
 `1`. -/
 theorem columnAntisymmetrizer_eq_one (t : YoungTableau μ) (h : colSubgroup t = ⊥) :
-    columnAntisymmetrizer t = 1 := by
+    columnAntisymmetrizer (R := R) t = 1 := by
   rw [columnAntisymmetrizer_eq_subgroupCharSum, subgroupCharSum_eq_one _ _ h]
 
 /-- With a trivial column group the Young symmetrizer is the row symmetrizer. -/
 theorem youngSymmetrizer_eq_rowSymmetrizer (t : YoungTableau μ) (h : colSubgroup t = ⊥) :
-    youngSymmetrizer t = rowSymmetrizer t := by
+    youngSymmetrizer (R := R) t = rowSymmetrizer (R := R) t := by
   rw [youngSymmetrizer_def, columnAntisymmetrizer_eq_one t h, mul_one]
 
 /-- With a trivial row group the Young symmetrizer is the column antisymmetrizer. -/
 theorem youngSymmetrizer_eq_columnAntisymmetrizer (t : YoungTableau μ) (h : rowSubgroup t = ⊥) :
-    youngSymmetrizer t = columnAntisymmetrizer t := by
+    youngSymmetrizer (R := R) t = columnAntisymmetrizer (R := R) t := by
   rw [youngSymmetrizer_def, rowSymmetrizer_eq_one t h, one_mul]
 
 /-- On a shape with at most one row every group element fixes the Young symmetrizer. -/
 theorem single_mul_youngSymmetrizer_of_rowSubgroup_eq_top (t : YoungTableau μ)
     (h : rowSubgroup t = ⊤) (g : Equiv.Perm (Fin μ.card)) :
-    MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer t = youngSymmetrizer t :=
+    MonoidAlgebra.single g (1 : R) * youngSymmetrizer (R := R) t = youngSymmetrizer (R := R) t :=
   mul_youngSymmetrizer_left t ⟨g, by rw [h]; exact Subgroup.mem_top g⟩
 
 /-- On a shape with at most one column every group element scales the Young symmetrizer by its
 sign. -/
 theorem single_mul_youngSymmetrizer_of_colSubgroup_eq_top (t : YoungTableau μ)
     (h : colSubgroup t = ⊤) (g : Equiv.Perm (Fin μ.card)) :
-    MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer t =
-      ((Equiv.Perm.sign g : ℤ) : ℚ) • youngSymmetrizer t := by
+    MonoidAlgebra.single g (1 : R) * youngSymmetrizer (R := R) t =
+      ((Equiv.Perm.sign g : ℤ) : R) • youngSymmetrizer (R := R) t := by
   rw [youngSymmetrizer_eq_columnAntisymmetrizer t (rowSubgroup_eq_bot_of_colSubgroup_eq_top t h)]
   exact mul_columnAntisymmetrizer_left t ⟨g, by rw [h]; exact Subgroup.mem_top g⟩
 
@@ -318,11 +320,11 @@ theorem single_mul_youngSymmetrizer_of_colSubgroup_eq_top (t : YoungTableau μ)
 
 /-- The column antisymmetrizer of `t` acts on any representation as the signed sum of the
 permutations in the column group of `t`. -/
-theorem asAlgebraHom_columnAntisymmetrizer_apply {V : Type*} [AddCommGroup V] [Module ℚ V]
-    (ρ : Representation ℚ (Equiv.Perm (Fin μ.card)) V) (t : YoungTableau μ) (v : V) :
-    ρ.asAlgebraHom (columnAntisymmetrizer t) v =
+theorem asAlgebraHom_columnAntisymmetrizer_apply {V : Type*} [AddCommGroup V] [Module R V]
+    (ρ : Representation R (Equiv.Perm (Fin μ.card)) V) (t : YoungTableau μ) (v : V) :
+    ρ.asAlgebraHom (columnAntisymmetrizer (R := R) t) v =
       ∑ q : colSubgroup t,
-        ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) • ρ q v := by
+        ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : R) • ρ q v := by
   rw [columnAntisymmetrizer_eq_subgroupCharSum, asAlgebraHom_subgroupCharSum_apply]
   simp
 
@@ -333,8 +335,9 @@ variable (k : Type*) [Semiring k] [Algebra ℚ k]
 /-- The Young symmetrizer `c_t` with the coefficients of its rational form transported into a
 `ℚ`-algebra `k`, so that it can act on a `k`-module. The algebra `k` need not be commutative.
 
-The `ℚ`-algebra hypothesis comes from `youngSymmetrizer` being defined over `ℚ` here, not from
-`c_t`, whose coefficients are integral. -/
+This transport uses the rational specialization as its source. The direct
+`youngSymmetrizer` construction is available over every commutative ring without an
+`ℚ`-algebra hypothesis. -/
 noncomputable def youngSymmetrizerOver (t : YoungTableau μ) :
     MonoidAlgebra k (Equiv.Perm (Fin μ.card)) :=
   MonoidAlgebra.mapAlgHom _ (Algebra.ofId ℚ k) (youngSymmetrizer t)

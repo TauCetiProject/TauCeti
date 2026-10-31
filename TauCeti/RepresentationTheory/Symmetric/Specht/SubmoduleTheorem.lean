@@ -91,9 +91,10 @@ permutation. -/
 private theorem exists_asAlgebraHom_columnAntisymmetrizer_single_eq_sign_smul
     (s t : YoungTableau μ) (h : ¬ RowMeetsColumnTwice s t) :
     ∃ q : Equiv.Perm (Fin μ.card),
-      (permutationModule (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer t)
+      (permutationModule (R := ℚ) (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer (R
+        := ℚ) t)
         (MonoidAlgebra.single (tabloid s) 1)
-          = ((Equiv.Perm.sign q : ℤ) : ℚ) • polytabloid t := by
+          = ((Equiv.Perm.sign q : ℤ) : ℚ) • polytabloid (R := ℚ) t := by
   -- Writing `s = relabel σ t`, the permutation `σ⁻¹` factors as a row permutation times a
   -- column permutation; the row part fixes `{t}`, and `b_t` absorbs the column part `q⁻¹` by
   -- its sign.
@@ -103,11 +104,12 @@ private theorem exists_asAlgebraHom_columnAntisymmetrizer_single_eq_sign_smul
   have hσ : σ = q⁻¹ * p⁻¹ := by rw [← mul_inv_rev, hpq, inv_inv]
   refine ⟨q, ?_⟩
   have htab : MonoidAlgebra.single (tabloid (relabel σ t)) (1 : ℚ) =
-      (permutationModule (shapePartition μ)).ρ q⁻¹
+      (permutationModule (R := ℚ) (shapePartition μ)).ρ q⁻¹
         (MonoidAlgebra.single (tabloid t) 1) := by
     rw [Representation.ofMulAction_single, tabloid_relabel, hσ, mul_smul,
       smul_tabloid_eq_self_iff.mpr (inv_mem (SetLike.mem_coe.mp hp))]
-  rw [htab, ← Representation.asAlgebraHom_single_one (permutationModule (shapePartition μ)).ρ,
+  rw [htab, ← Representation.asAlgebraHom_single_one (permutationModule (R := ℚ) (shapePartition
+    μ)).ρ,
     ← Module.End.mul_apply, ← map_mul,
     mul_columnAntisymmetrizer_right t ⟨q⁻¹, inv_mem (SetLike.mem_coe.mp hq)⟩,
     Equiv.Perm.sign_inv, map_smul, LinearMap.smul_apply, ← polytabloid_def]
@@ -122,8 +124,9 @@ row and column groups of `t`, of which the row part fixes `{t}`. -/
 theorem exists_eq_smul_polytabloid_single (t : YoungTableau μ)
     (T : Equiv.Perm (Fin μ.card) ⧸ youngSubgroup (shapePartition μ)) :
     ∃ κ : ℚ, (κ = 0 ∨ κ = 1 ∨ κ = -1) ∧
-      (permutationModule (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer t)
-          (MonoidAlgebra.single T 1) = κ • polytabloid t := by
+      (permutationModule (R := ℚ) (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer (R
+        := ℚ) t)
+          (MonoidAlgebra.single T 1) = κ • polytabloid (R := ℚ) t := by
   obtain ⟨s, rfl⟩ := tabloid_surjective T
   by_cases h : RowMeetsColumnTwice s t
   · -- The transposition of the two shared labels is an odd element of the column group of `t`
@@ -142,15 +145,18 @@ theorem exists_eq_smul_polytabloid_single (t : YoungTableau μ)
 is the linear extension of `TauCeti.YoungTableau.exists_eq_smul_polytabloid_single` from the
 tabloid basis to the whole Young permutation module. -/
 theorem exists_eq_smul_polytabloid (t : YoungTableau μ)
-    (v : (permutationModule (shapePartition μ)).V) :
+    (v : (permutationModule (R := ℚ) (shapePartition μ)).V) :
     ∃ κ : ℚ,
-      (permutationModule (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer t) v =
-        κ • polytabloid t := by
-  have hv : v ∈ Submodule.span ℚ (Set.range (permutationModuleBasis (shapePartition μ))) := by
+      (permutationModule (R := ℚ) (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer (R
+        := ℚ) t) v =
+        κ • polytabloid (R := ℚ) t := by
+  have hv : v ∈ Submodule.span ℚ (Set.range (permutationModuleBasis (R := ℚ) (shapePartition
+    μ))) := by
     rw [Module.Basis.span_eq]
     exact Submodule.mem_top
-  have hspan : (permutationModule (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer t) v ∈
-      Submodule.span ℚ {polytabloid t} := by
+  have hspan : (permutationModule (R := ℚ) (shapePartition μ)).ρ.asAlgebraHom
+    (columnAntisymmetrizer (R := ℚ) t) v ∈
+      Submodule.span ℚ {polytabloid (R := ℚ) t} := by
     induction hv using Submodule.span_induction with
     | mem w hw =>
       obtain ⟨T, rfl⟩ := hw
@@ -169,11 +175,15 @@ theorem exists_eq_smul_polytabloid (t : YoungTableau μ)
 on `M^μ` by isometries, so moving a permutation across the form inverts it, and inversion is a
 sign-preserving involution of the column group. -/
 theorem tabloidForm_asAlgebraHom_columnAntisymmetrizer (t : YoungTableau μ)
-    (v w : (permutationModule (shapePartition μ)).V) :
-    tabloidForm (shapePartition μ)
-        ((permutationModule (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer t) v) w =
-      tabloidForm (shapePartition μ) v
-        ((permutationModule (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer t) w) := by
+    (v w : (permutationModule (R := ℚ) (shapePartition μ)).V) :
+    tabloidForm (R := ℚ) (shapePartition μ)
+        ((permutationModule (R := ℚ) (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer
+          (R := ℚ)
+          t) v) w =
+      tabloidForm (R := ℚ) (shapePartition μ) v
+        ((permutationModule (R := ℚ) (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer
+          (R := ℚ)
+          t) w) := by
   rw [asAlgebraHom_columnAntisymmetrizer_apply, asAlgebraHom_columnAntisymmetrizer_apply,
     map_sum, LinearMap.sum_apply, map_sum]
   refine Fintype.sum_equiv (Equiv.inv (colSubgroup t)) _ _ fun q => ?_
@@ -196,12 +206,13 @@ contains the orbit of `e_t`, which spans `S^μ`.  If every `b_t` annihilates eve
 then self-adjointness of `b_t` moves it off each polytabloid `e_t = b_t · {t}` and onto the vector
 of `U`, where it vanishes. -/
 theorem spechtSubrepresentation_le_or_le_orthogonal (μ : YoungDiagram)
-    (U : Subrepresentation (permutationModule (shapePartition μ)).ρ) :
-    spechtSubrepresentation μ ≤ U ∨
-      U ≤ orthogonalSubrepresentation (spechtSubrepresentation μ) := by
-  by_cases hex : ∃ (t : YoungTableau μ) (v : (permutationModule (shapePartition μ)).V),
+    (U : Subrepresentation (permutationModule (R := ℚ) (shapePartition μ)).ρ) :
+    spechtSubrepresentation (R := ℚ) μ ≤ U ∨
+      U ≤ orthogonalSubrepresentation (spechtSubrepresentation (R := ℚ) μ) := by
+  by_cases hex : ∃ (t : YoungTableau μ) (v : (permutationModule (R := ℚ) (shapePartition μ)).V),
       v ∈ U.toSubmodule ∧
-      (permutationModule (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer t) v ≠ 0
+      (permutationModule (R := ℚ) (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer (R
+        := ℚ) t) v ≠ 0
   · obtain ⟨t, v, hvU, hne⟩ := hex
     refine Or.inl ?_
     obtain ⟨κ, hκ⟩ := exists_eq_smul_polytabloid t v
@@ -209,10 +220,10 @@ theorem spechtSubrepresentation_le_or_le_orthogonal (μ : YoungDiagram)
       rintro rfl
       exact hne (by rw [hκ, zero_smul])
     -- the polytabloid itself lies in `U`, after rescaling
-    have hmem : polytabloid t ∈ U.toSubmodule := by
-      have hsmul : κ • polytabloid t ∈ U.toSubmodule :=
+    have hmem : polytabloid (R := ℚ) t ∈ U.toSubmodule := by
+      have hsmul : κ • polytabloid (R := ℚ) t ∈ U.toSubmodule :=
         hκ ▸ Representation.asAlgebraHom_mem_of_forall_mem _ U.toSubmodule
-          (fun g _ hv => U.apply_mem_toSubmodule g hv) v hvU (columnAntisymmetrizer t)
+          (fun g _ hv => U.apply_mem_toSubmodule g hv) v hvU (columnAntisymmetrizer (R := ℚ) t)
       have := U.toSubmodule.smul_mem κ⁻¹ hsmul
       rwa [smul_smul, inv_mul_cancel₀ hκ0, one_smul] at this
     -- and `U` then contains the whole orbit of the polytabloid, which spans `S^μ`
@@ -243,19 +254,19 @@ theorem spechtSubrepresentation_le_or_le_orthogonal (μ : YoungDiagram)
 strictly inside `S^μ` would, by the submodule theorem, be orthogonal to `S^μ` while lying in it,
 and the tabloid form is positive definite. -/
 theorem isAtom_spechtSubrepresentation (μ : YoungDiagram) :
-    IsAtom (spechtSubrepresentation μ) := by
+    IsAtom (spechtSubrepresentation (R := ℚ) μ) := by
   refine ⟨spechtSubrepresentation_ne_bot μ, fun U hU => ?_⟩
   rcases spechtSubrepresentation_le_or_le_orthogonal μ U with hle | hle
   · exact absurd (le_antisymm hU.le hle) hU.ne
   · exact le_bot_iff.mp
       ((isCompl_orthogonalSubrepresentation_permutationModule (shapePartition μ)
-        (spechtSubrepresentation μ)).disjoint hU.le hle)
+        (spechtSubrepresentation (R := ℚ) μ)).disjoint hU.le hle)
 
 /-- **The Specht module is irreducible.**  This is James's Corollary 4.9 over a field of
 characteristic zero, in the concrete presentation of `S^μ` as the span of the polytabloids inside
 the Young permutation module. -/
 theorem isIrreducible_spechtSubrepresentation (μ : YoungDiagram) :
-    (spechtSubrepresentation μ).toRepresentation.IsIrreducible :=
+    (spechtSubrepresentation (R := ℚ) μ).toRepresentation.IsIrreducible :=
   Representation.isIrreducible_toRepresentation_of_isAtom (isAtom_spechtSubrepresentation μ)
 
 /-- **The Specht module of a partition is irreducible**, in the partition-indexed packaging
@@ -263,9 +274,9 @@ theorem isIrreducible_spechtSubrepresentation (μ : YoungDiagram) :
 `Fin n ≃ Fin (YoungDiagram.ofPartition μ).card` is an isomorphism of groups, and restriction along
 an isomorphism preserves irreducibility. -/
 instance isIrreducible_spechtModule {n : ℕ} (μ : n.Partition) :
-    _root_.Representation.IsIrreducible (spechtModule μ).ρ :=
+    _root_.Representation.IsIrreducible (spechtModule (R := ℚ) μ).ρ :=
   (MulEquiv.isIrreducible_comp_equiv_iff (finCongr (card_ofPartition μ).symm).permCongrHom
-    (spechtSubrepresentation (ofPartition μ)).toRepresentation).mpr
+    (spechtSubrepresentation (R := ℚ) (ofPartition μ)).toRepresentation).mpr
     (isIrreducible_spechtSubrepresentation (ofPartition μ))
 
 end TauCeti

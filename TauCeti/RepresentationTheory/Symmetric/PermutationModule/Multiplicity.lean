@@ -60,14 +60,14 @@ are absolutely irreducible, so this intertwiner dimension is the number of copie
 `M^μ`.  Young's rule identifies it with the Kostka number of the same two shapes. -/
 noncomputable def spechtMultiplicity (lam : YoungDiagram) (μ : lam.card.Partition) : ℕ :=
   Module.finrank ℚ
-    (Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
-      (permutationModule μ).ρ)
+    (Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) lam).toRepresentation
+      (permutationModule (R := ℚ) μ).ρ)
 
 /-- The Specht multiplicity is the dimension of the corresponding intertwiner space. -/
 theorem spechtMultiplicity_def (lam : YoungDiagram) (μ : lam.card.Partition) :
     spechtMultiplicity lam μ = Module.finrank ℚ
-      (Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
-        (permutationModule μ).ρ) := (rfl)
+      (Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) lam).toRepresentation
+        (permutationModule (R := ℚ) μ).ρ) := (rfl)
 
 /-- **The Specht multiplicity vanishes outside the dominance cone.**  This is the zero region of
 the unitriangular multiplicity matrix in Young's rule. -/
@@ -75,8 +75,8 @@ the unitriangular multiplicity matrix in Young's rule. -/
 theorem spechtMultiplicity_eq_zero_of_not_dominates (μ : lam.card.Partition)
     (h : ¬(shapePartition lam).Dominates μ) : spechtMultiplicity lam μ = 0 := by
   have : Subsingleton
-      (Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
-        (permutationModule μ).ρ) :=
+      (Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) lam).toRepresentation
+        (permutationModule (R := ℚ) μ).ρ) :=
     ⟨fun f g => sub_eq_zero.mp
       (intertwiningMap_eq_zero_of_not_dominates μ h (f - g))⟩
   exact Module.finrank_zero_of_subsingleton
@@ -92,45 +92,45 @@ theorem dominates_of_spechtMultiplicity_ne_zero (μ : lam.card.Partition)
 /-- Every intertwiner `S^lam → M^lam` is a scalar multiple of the canonical inclusion.  This
 characterizes the diagonal intertwiner space and yields the diagonal case of Young's rule. -/
 private theorem exists_intertwiningMap_eq_smul_subtype
-    (f : Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
-      (permutationModule (shapePartition lam)).ρ) :
-    ∃ κ : ℚ, f = κ • (spechtSubrepresentation lam).subtype := by
+    (f : Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) lam).toRepresentation
+      (permutationModule (R := ℚ) (shapePartition lam)).ρ) :
+    ∃ κ : ℚ, f = κ • (spechtSubrepresentation (R := ℚ) lam).subtype := by
   obtain ⟨t⟩ := YoungTableau.nonempty lam
   obtain ⟨v, hv, hbv⟩ :=
     exists_mem_asAlgebraHom_columnAntisymmetrizer_eq_polytabloid t
-  let v' : (spechtSubrepresentation lam).toSubmodule := ⟨v, hv⟩
-  let et : (spechtSubrepresentation lam).toSubmodule :=
-    ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩
+  let v' : (spechtSubrepresentation (R := ℚ) lam).toSubmodule := ⟨v, hv⟩
+  let et : (spechtSubrepresentation (R := ℚ) lam).toSubmodule :=
+    ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩
   have hmap : f
-      ((spechtSubrepresentation lam).toRepresentation.asAlgebraHom
-        (columnAntisymmetrizer t) v') =
-      (permutationModule (shapePartition lam)).ρ.asAlgebraHom
-        (columnAntisymmetrizer t) (f v') :=
+      ((spechtSubrepresentation (R := ℚ) lam).toRepresentation.asAlgebraHom
+        (columnAntisymmetrizer (R := ℚ) t) v') =
+      (permutationModule (R := ℚ) (shapePartition lam)).ρ.asAlgebraHom
+        (columnAntisymmetrizer (R := ℚ) t) (f v') :=
     (Representation.IntertwiningMap.equivLinearMapAsModule _ _ f).map_smul'
-      (columnAntisymmetrizer t) v'
+      (columnAntisymmetrizer (R := ℚ) t) v'
   have hbet :
-      (spechtSubrepresentation lam).toRepresentation.asAlgebraHom
-          (columnAntisymmetrizer t) v' = et := by
+      (spechtSubrepresentation (R := ℚ) lam).toRepresentation.asAlgebraHom
+          (columnAntisymmetrizer (R := ℚ) t) v' = et := by
     apply Subtype.ext
     simpa only [v', et, Subrepresentation.coe_toRepresentation_asAlgebraHom_apply] using hbv
   obtain ⟨κ, hκ⟩ := exists_eq_smul_polytabloid t (f v')
   refine ⟨κ, ?_⟩
-  have het : f et = κ • (et : (permutationModule (shapePartition lam)).V) := by
+  have het : f et = κ • (et : (permutationModule (R := ℚ) (shapePartition lam)).V) := by
     rw [← hbet, hmap, hκ]
     simpa only [et] using congrArg
-      (fun x : (spechtSubrepresentation lam).toSubmodule =>
-        κ • (x : (permutationModule (shapePartition lam)).V)) hbet.symm
+      (fun x : (spechtSubrepresentation (R := ℚ) lam).toSubmodule =>
+        κ • (x : (permutationModule (R := ℚ) (shapePartition lam)).V)) hbet.symm
   have hspan : Submodule.span ℚ
       (Set.range fun σ : Equiv.Perm (Fin lam.card) =>
-        (spechtSubrepresentation lam).toRepresentation σ et) = ⊤ := by
+        (spechtSubrepresentation (R := ℚ) lam).toRepresentation σ et) = ⊤ := by
     apply Submodule.map_injective_of_injective
-      (spechtSubrepresentation lam).toSubmodule.injective_subtype
+      (spechtSubrepresentation (R := ℚ) lam).toSubmodule.injective_subtype
     rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span]
-    have himage : (spechtSubrepresentation lam).toSubmodule.subtype ''
+    have himage : (spechtSubrepresentation (R := ℚ) lam).toSubmodule.subtype ''
         Set.range (fun σ : Equiv.Perm (Fin lam.card) =>
-          (spechtSubrepresentation lam).toRepresentation σ et) =
+          (spechtSubrepresentation (R := ℚ) lam).toRepresentation σ et) =
         Set.range (fun σ : Equiv.Perm (Fin lam.card) =>
-          (permutationModule (shapePartition lam)).ρ σ (polytabloid t)) := by
+          (permutationModule (R := ℚ) (shapePartition lam)).ρ σ (polytabloid (R := ℚ) t)) := by
       ext x
       constructor
       · rintro ⟨y, ⟨σ, rfl⟩, rfl⟩
@@ -143,8 +143,8 @@ private theorem exists_intertwiningMap_eq_smul_subtype
   refine (Submodule.linearMap_eq_iff_of_span_eq_top _ _ hspan).2 ?_
   rintro ⟨_, ⟨σ, rfl⟩⟩
   have hf := Representation.IntertwiningMap.isIntertwining
-    (spechtSubrepresentation lam).toRepresentation
-    (permutationModule (shapePartition lam)).ρ f σ et
+    (spechtSubrepresentation (R := ℚ) lam).toRepresentation
+    (permutationModule (R := ℚ) (shapePartition lam)).ρ f σ et
   rw [het] at hf
   simpa only [Representation.IntertwiningMap.toLinearMap_apply,
     Representation.IntertwiningMap.smul_apply, Subrepresentation.coe_subtype,
@@ -153,9 +153,9 @@ private theorem exists_intertwiningMap_eq_smul_subtype
 /-- Scalar multiplication of the inclusion `S^lam ↪ M^lam`, as a linear map into the diagonal
 intertwiner space. -/
 private noncomputable def scalarToSpechtIntertwiningMap (lam : YoungDiagram) :
-    ℚ →ₗ[ℚ] Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
-      (permutationModule (shapePartition lam)).ρ where
-  toFun κ := κ • (spechtSubrepresentation lam).subtype
+    ℚ →ₗ[ℚ] Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) lam).toRepresentation
+      (permutationModule (R := ℚ) (shapePartition lam)).ρ where
+  toFun κ := κ • (spechtSubrepresentation (R := ℚ) lam).subtype
   map_add' κ ν := by rw [add_smul]
   map_smul' κ ν := by rw [smul_eq_mul, mul_smul, RingHom.id_apply]
 
@@ -163,17 +163,18 @@ private theorem scalarToSpechtIntertwiningMap_injective (lam : YoungDiagram) :
     Function.Injective (scalarToSpechtIntertwiningMap lam) := by
   intro κ ν hκν
   obtain ⟨t⟩ := YoungTableau.nonempty lam
-  let et : (spechtSubrepresentation lam).toSubmodule :=
-    ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩
-  have happ : κ • (polytabloid t : (permutationModule (shapePartition lam)).V) =
-      ν • (polytabloid t : (permutationModule (shapePartition lam)).V) := by
+  let et : (spechtSubrepresentation (R := ℚ) lam).toSubmodule :=
+    ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩
+  have happ : κ • (polytabloid (R := ℚ) t : (permutationModule (R := ℚ) (shapePartition lam)).V) =
+      ν • (polytabloid (R := ℚ) t : (permutationModule (R := ℚ) (shapePartition lam)).V) := by
     simpa only [scalarToSpechtIntertwiningMap,
       LinearMap.coe_mk, AddHom.coe_mk, Representation.IntertwiningMap.smul_apply,
       Subrepresentation.coe_subtype, et] using
       DFunLike.congr_fun hκν et
-  have hpoly : (polytabloid t : (permutationModule (shapePartition lam)).V) ≠ 0 :=
+  have hpoly : (polytabloid (R := ℚ) t : (permutationModule (R := ℚ) (shapePartition lam)).V) ≠ 0 :=
     polytabloid_ne_zero t
-  have hsub : (κ - ν) • (polytabloid t : (permutationModule (shapePartition lam)).V) = 0 := by
+  have hsub : (κ - ν) • (polytabloid (R := ℚ) t : (permutationModule (R := ℚ) (shapePartition
+    lam)).V) = 0 := by
     rw [sub_smul]
     exact sub_eq_zero.mpr happ
   exact sub_eq_zero.mp ((smul_eq_zero.mp hsub).resolve_right hpoly)
@@ -181,8 +182,8 @@ private theorem scalarToSpechtIntertwiningMap_injective (lam : YoungDiagram) :
 /-- **The diagonal intertwiner space is one-dimensional.**  The equivalence sends a scalar `κ`
 to `κ` times the canonical inclusion `S^lam ↪ M^lam`. -/
 noncomputable def spechtSelfMultiplicityEquiv (lam : YoungDiagram) :
-    ℚ ≃ₗ[ℚ] Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
-      (permutationModule (shapePartition lam)).ρ :=
+    ℚ ≃ₗ[ℚ] Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) lam).toRepresentation
+      (permutationModule (R := ℚ) (shapePartition lam)).ρ :=
   LinearEquiv.ofBijective (scalarToSpechtIntertwiningMap lam)
     ⟨scalarToSpechtIntertwiningMap_injective lam,
       fun f => by
@@ -192,7 +193,7 @@ noncomputable def spechtSelfMultiplicityEquiv (lam : YoungDiagram) :
 /-- The diagonal equivalence sends `κ` to `κ` times the inclusion. -/
 @[simp]
 theorem spechtSelfMultiplicityEquiv_apply (lam : YoungDiagram) (κ : ℚ) :
-    spechtSelfMultiplicityEquiv lam κ = κ • (spechtSubrepresentation lam).subtype := (rfl)
+    spechtSelfMultiplicityEquiv lam κ = κ • (spechtSubrepresentation (R := ℚ) lam).subtype := (rfl)
 
 /-- **The diagonal Specht multiplicity is one.**  There is exactly one copy of `S^lam` in
 `M^lam`: every equivariant map `S^lam → M^lam` is a scalar multiple of the inclusion. -/

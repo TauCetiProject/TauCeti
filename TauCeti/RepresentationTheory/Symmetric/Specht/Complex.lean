@@ -90,16 +90,16 @@ private noncomputable instance : Invertible ((Nat.card (Equiv.Perm (Fin n)) : �
 over the partitions of `n` these exhaust the simple objects of `FDRep ℂ Sₙ` without repetition
 (`TauCeti.partitionEquivSimpleFDRepClassesℂ`). -/
 noncomputable def spechtModuleℂ (μ : n.Partition) : FDRep ℂ (Equiv.Perm (Fin n)) :=
-  FDRep.of (Representation.baseChange ℂ (spechtModule μ).ρ)
+  FDRep.of (Representation.baseChange ℂ (spechtModule (R := ℚ) μ).ρ)
 
 /-- The complex Specht module is the object of `FDRep ℂ Sₙ` carrying the base change of the
 rational Specht representation. -/
 theorem spechtModuleℂ_def (μ : n.Partition) :
-    spechtModuleℂ μ = FDRep.of (Representation.baseChange ℂ (spechtModule μ).ρ) := (rfl)
+    spechtModuleℂ μ = FDRep.of (Representation.baseChange ℂ (spechtModule (R := ℚ) μ).ρ) := (rfl)
 
 /-- **The complex character is the rational character read in `ℂ`.** -/
 theorem character_spechtModuleℂ (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
-    (spechtModuleℂ μ).character σ = algebraMap ℚ ℂ ((spechtModule μ).character σ) := by
+    (spechtModuleℂ μ).character σ = algebraMap ℚ ℂ ((spechtModule (R := ℚ) μ).character σ) := by
   rw [spechtModuleℂ_def, FDRep.character, FDRep.of_ρ']
   exact Representation.character_baseChange _ σ
 
@@ -114,7 +114,7 @@ theorem character_spechtModuleℂ_intCast (μ : n.Partition) (σ : Equiv.Perm (F
 
 /-- **Extending the scalars does not change the dimension.** -/
 theorem finrank_spechtModuleℂ (μ : n.Partition) :
-    finrank ℂ (spechtModuleℂ μ) = finrank ℚ (spechtModule μ) := by
+    finrank ℂ (spechtModuleℂ μ) = finrank ℚ (spechtModule (R := ℚ) μ) := by
   rw [spechtModuleℂ_def]
   exact Module.finrank_baseChange
 
@@ -123,7 +123,8 @@ mechanism of the file: the rational intertwiner dimensions, `1` on the diagonal 
 are inherited verbatim by the complex Specht modules. -/
 private theorem finrank_intertwiningMap_spechtModuleℂ (μ ν : n.Partition) :
     finrank ℂ (Representation.IntertwiningMap (spechtModuleℂ μ).ρ (spechtModuleℂ ν).ρ)
-      = finrank ℚ (Representation.IntertwiningMap (spechtModule μ).ρ (spechtModule ν).ρ) := by
+      = finrank ℚ (Representation.IntertwiningMap (spechtModule (R := ℚ) μ).ρ (spechtModule (R
+        := ℚ) ν).ρ) := by
   rw [spechtModuleℂ_def, spechtModuleℂ_def, FDRep.of_ρ', FDRep.of_ρ']
   exact Representation.finrank_intertwiningMap_baseChange _ _
 
@@ -132,7 +133,7 @@ private theorem finrank_intertwiningMap_spechtModuleℂ (μ ν : n.Partition) :
 /-- Specht modules of distinct shapes are inequivalent as rational representations. This is
 `TauCeti.spechtModule_iso_iff` read at the level of `Representation.Equiv`. -/
 private theorem isEmpty_equiv_spechtModule {μ ν : n.Partition} (h : μ ≠ ν) :
-    IsEmpty (Representation.Equiv (spechtModule μ).ρ (spechtModule ν).ρ) := by
+    IsEmpty (Representation.Equiv (spechtModule (R := ℚ) μ).ρ (spechtModule (R := ℚ) ν).ρ) := by
   rw [← not_nonempty_iff]
   intro hne
   exact h ((spechtModule_iso_iff μ ν).mp (nonempty_fdRepIso_iff.mpr hne))
@@ -140,11 +141,13 @@ private theorem isEmpty_equiv_spechtModule {μ ν : n.Partition} (h : μ ≠ ν)
 /-- Schur's lemma over `ℚ`: there are no nonzero intertwiners between Specht modules of distinct
 shapes. -/
 private theorem finrank_intertwiningMap_spechtModule_eq_zero {μ ν : n.Partition} (h : μ ≠ ν) :
-    finrank ℚ (Representation.IntertwiningMap (spechtModule μ).ρ (spechtModule ν).ρ) = 0 := by
-  have _ : Representation.IsIrreducible (spechtModule μ).ρ := isIrreducible_spechtModule μ
-  have _ : Representation.IsIrreducible (spechtModule ν).ρ := isIrreducible_spechtModule ν
+    finrank ℚ (Representation.IntertwiningMap (spechtModule (R := ℚ) μ).ρ (spechtModule (R := ℚ)
+      ν).ρ) = 0 := by
+  have _ : Representation.IsIrreducible (spechtModule (R := ℚ) μ).ρ := isIrreducible_spechtModule μ
+  have _ : Representation.IsIrreducible (spechtModule (R := ℚ) ν).ρ := isIrreducible_spechtModule ν
   have _ := isEmpty_equiv_spechtModule h
-  have : Subsingleton (Representation.IntertwiningMap (spechtModule μ).ρ (spechtModule ν).ρ) :=
+  have : Subsingleton (Representation.IntertwiningMap (spechtModule (R := ℚ) μ).ρ (spechtModule
+    (R := ℚ) ν).ρ) :=
     inferInstance
   exact Module.finrank_zero_of_subsingleton
 
@@ -155,7 +158,8 @@ private theorem sum_character_spechtModuleℂ_mul_character_spechtModuleℂ_inv_
     (μ ν : n.Partition) :
     ∑ σ : Equiv.Perm (Fin n),
         (spechtModuleℂ μ).character σ * (spechtModuleℂ ν).character σ⁻¹
-      = (finrank ℚ (Representation.IntertwiningMap (spechtModule ν).ρ (spechtModule μ).ρ) : ℂ) *
+      = (finrank ℚ (Representation.IntertwiningMap (spechtModule (R := ℚ) ν).ρ (spechtModule (R
+        := ℚ) μ).ρ) : ℂ) *
         (Nat.card (Equiv.Perm (Fin n)) : ℂ) := by
   have h := Representation.card_inv_mul_sum_char_mul_char_eq_finrank
     (spechtModuleℂ ν).ρ (spechtModuleℂ μ).ρ
@@ -172,7 +176,8 @@ dimension survives complexification; over `ℂ` a one-dimensional endomorphism a
 simplicity. -/
 instance instSimpleSpechtModuleℂ (μ : n.Partition) : Simple (spechtModuleℂ μ) := by
   have hend : finrank ℚ
-      (Representation.IntertwiningMap (spechtModule μ).ρ (spechtModule μ).ρ) = 1 := by
+      (Representation.IntertwiningMap (spechtModule (R := ℚ) μ).ρ (spechtModule (R := ℚ) μ).ρ) =
+        1 := by
     rw [(spechtModuleIntertwiningEndAlgEquiv μ).toLinearEquiv.finrank_eq]
     exact Module.finrank_self ℚ
   rw [FDRep.simple_iff_char_is_norm_one,

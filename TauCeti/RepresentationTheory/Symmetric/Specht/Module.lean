@@ -14,7 +14,8 @@ public import TauCeti.RepresentationTheory.Symmetric.TableauSubgroupConjugacy
 /-!
 # Polytabloids and the Specht module
 
-The Young permutation module `M^μ` is the rational representation of `Sₙ` on the `μ`-tabloids,
+The Young permutation module `M^μ` over a commutative ring `R` is the representation of `Sₙ` on the
+  `μ`-tabloids,
 which are the left cosets of the Young subgroup of the shape of `μ`.  A `μ`-tableau `t` names one
 of them, its **tabloid** `{t}`, and antisymmetrizing that tabloid over the column group of `t`
 produces the **polytabloid**
@@ -38,11 +39,12 @@ consecutive-block labeling of the shape of `μ` to the labeling of `t`: its cose
 column group meets the row group trivially, so the tabloids appearing in `e_t` are pairwise
 distinct and the coefficient of `{t}` itself is `1`.
 
-The identification of `S^μ` with the left ideal `ℚ[Sₙ] c_t` of
-`TauCeti/RepresentationTheory/Symmetric/Specht/Ideal/Basic.lean` is a separate milestone and is not
-proved here.  Neither is James's submodule theorem, which rests on the nonvanishing recorded below
-and lives in `TauCeti/RepresentationTheory/Symmetric/Specht/SubmoduleTheorem.lean` together with
-the irreducibility it yields.
+The rational specialization is identified with the left ideal `ℚ[Sₙ] c_t` in
+`TauCeti/RepresentationTheory/Symmetric/Specht/Comparison.lean`. James's submodule theorem
+and the rational irreducibility result live in
+`TauCeti/RepresentationTheory/Symmetric/Specht/SubmoduleTheorem.lean`. In positive characteristic
+Specht modules need not be irreducible; their construction and the nonzero coefficient argument
+here do not require characteristic zero.
 
 ## Main definitions
 
@@ -50,7 +52,7 @@ the irreducibility it yields.
 * `TauCeti.YoungTableau.polytabloid`: the polytabloid `e_t = b_t · {t}`.
 * `TauCeti.spechtSubrepresentation`: the span of the polytabloids, as a subrepresentation of `M^μ`.
 * `TauCeti.spechtModule`: the Specht module `S^μ` of a partition `μ` of `n`, that subrepresentation
-  of the diagram of `μ` bundled as a finite-dimensional representation of `Sₙ`.
+  of the diagram of `μ` bundled as a finitely generated representation of `Sₙ`.
 
 ## Main results
 
@@ -79,6 +81,10 @@ the irreducibility it yields.
 public section
 
 namespace TauCeti
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
 
 open scoped BigOperators
 
@@ -166,14 +172,15 @@ attribute [local instance] YoungTableau.decidablePredMemColSubgroup
 /-- The **polytabloid** `e_t = b_t · {t}`: the column antisymmetrizer of `t` acting on the tabloid
 of `t` inside the Young permutation module of the shape of `μ`. -/
 noncomputable def polytabloid (t : YoungTableau μ) :
-    (permutationModule (shapePartition μ)).V :=
-  (permutationModule (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer t)
+    (permutationModule (R := R) (shapePartition μ)).V :=
+  (permutationModule (R := R) (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer (R := R) t)
     (MonoidAlgebra.single (tabloid t) 1)
 
 /-- The polytabloid is the column antisymmetrizer applied to the tabloid. -/
 theorem polytabloid_def (t : YoungTableau μ) :
-    polytabloid t =
-      (permutationModule (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer t)
+    polytabloid (R := R) t =
+      (permutationModule (R := R) (shapePartition μ)).ρ.asAlgebraHom (columnAntisymmetrizer (R
+        := R) t)
         (MonoidAlgebra.single (tabloid t) 1) :=
   (rfl)
 
@@ -183,23 +190,23 @@ of interest, by `TauCeti.YoungTableau.colSubgroup_eq_bot_of_rowSubgroup_eq_top`.
 @[simp]
 theorem polytabloid_eq_single_of_colSubgroup_eq_bot (t : YoungTableau μ)
     (h : colSubgroup t = ⊥) :
-    polytabloid t = MonoidAlgebra.single (tabloid t) (1 : ℚ) := by
+    polytabloid (R := R) t = MonoidAlgebra.single (tabloid t) (1 : R) := by
   rw [polytabloid_def, columnAntisymmetrizer_eq_one t h, map_one, Module.End.one_apply]
 
 /-- The polytabloid is the signed sum of the tabloids obtained from `{t}` by the column group. -/
 theorem polytabloid_eq_sum (t : YoungTableau μ) :
-    polytabloid t =
+    polytabloid (R := R) t =
       ∑ q : colSubgroup t,
-        ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) •
-          MonoidAlgebra.single ((q : Equiv.Perm (Fin μ.card)) • tabloid t) (1 : ℚ) := by
+        ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : R) •
+          MonoidAlgebra.single ((q : Equiv.Perm (Fin μ.card)) • tabloid t) (1 : R) := by
   rw [polytabloid, columnAntisymmetrizer_def]
   simp [MonoidAlgebra.of_apply, Representation.asAlgebraHom_single]
 
 /-- Relabeling a tableau translates its polytabloid: `e_{σt} = σ · e_t`. -/
 @[simp]
 theorem polytabloid_relabel (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ) :
-    polytabloid (relabel σ t) =
-      (permutationModule (shapePartition μ)).ρ σ (polytabloid t) := by
+    polytabloid (R := R) (relabel σ t) =
+      (permutationModule (R := R) (shapePartition μ)).ρ σ (polytabloid (R := R) t) := by
   rw [polytabloid, polytabloid, columnAntisymmetrizer_relabel, map_mul, map_mul,
     Representation.asAlgebraHom_single_one, Representation.asAlgebraHom_single_one,
     tabloid_relabel]
@@ -214,9 +221,10 @@ This is not a `simp` lemma: its left-hand side is the one of
 `TauCeti.YoungTableau.polytabloid_relabel`, which applies to every permutation. -/
 theorem polytabloid_relabel_of_mem_colSubgroup {t : YoungTableau μ}
     {q : Equiv.Perm (Fin μ.card)} (hq : q ∈ colSubgroup t) :
-    polytabloid (relabel q t) = ((Equiv.Perm.sign q : ℤ) : ℚ) • polytabloid t := by
-  have hmul : MonoidAlgebra.single q (1 : ℚ) * columnAntisymmetrizer t =
-      ((Equiv.Perm.sign q : ℤ) : ℚ) • columnAntisymmetrizer t :=
+    polytabloid (R := R) (relabel q t) = ((Equiv.Perm.sign q : ℤ) : R) • polytabloid (R := R) t
+      := by
+  have hmul : MonoidAlgebra.single q (1 : R) * columnAntisymmetrizer (R := R) t =
+      ((Equiv.Perm.sign q : ℤ) : R) • columnAntisymmetrizer (R := R) t :=
     mul_columnAntisymmetrizer_left t ⟨q, hq⟩
   rw [polytabloid_relabel, polytabloid_def, ← Representation.asAlgebraHom_single_one,
     ← Module.End.mul_apply, ← map_mul, hmul, map_smul, LinearMap.smul_apply]
@@ -225,8 +233,8 @@ theorem polytabloid_relabel_of_mem_colSubgroup {t : YoungTableau μ}
 permutation `q` of `t` is the sign of `q`. -/
 @[simp]
 theorem polytabloid_coeff_smul_tabloid (t : YoungTableau μ) (q : colSubgroup t) :
-    (polytabloid t).coeff ((q : Equiv.Perm (Fin μ.card)) • tabloid t) =
-      ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) := by
+    (polytabloid (R := R) t).coeff ((q : Equiv.Perm (Fin μ.card)) • tabloid t) =
+      ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : R) := by
   classical
   rw [polytabloid_eq_sum, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply,
     Finset.sum_eq_single q]
@@ -243,15 +251,15 @@ theorem polytabloid_coeff_smul_tabloid (t : YoungTableau μ) (q : colSubgroup t)
 nonzero element of `M^μ`. -/
 @[simp]
 theorem polytabloid_coeff_tabloid (t : YoungTableau μ) :
-    (polytabloid t).coeff (tabloid t) = 1 := by
-  have h := polytabloid_coeff_smul_tabloid t 1
+    (polytabloid (R := R) t).coeff (tabloid t) = 1 := by
+  have h := polytabloid_coeff_smul_tabloid (R := R) t 1
   simpa using h
 
 /-- Only the tabloids reachable from `{t}` by a column permutation occur in the polytabloid
 `e_t`. -/
 theorem polytabloid_coeff_eq_zero_of_forall_ne (t : YoungTableau μ)
     {X : Equiv.Perm (Fin μ.card) ⧸ youngSubgroup (shapePartition μ)}
-    (h : ∀ q ∈ colSubgroup t, q • tabloid t ≠ X) : (polytabloid t).coeff X = 0 := by
+    (h : ∀ q ∈ colSubgroup t, q • tabloid t ≠ X) : (polytabloid (R := R) t).coeff X = 0 := by
   classical
   rw [polytabloid_eq_sum, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply]
   refine Finset.sum_eq_zero fun q _ => ?_
@@ -260,26 +268,26 @@ theorem polytabloid_coeff_eq_zero_of_forall_ne (t : YoungTableau μ)
 
 /-- Polytabloids are nonzero. -/
 @[simp]
-theorem polytabloid_ne_zero (t : YoungTableau μ) : polytabloid t ≠ 0 := by
+theorem polytabloid_ne_zero [Nontrivial R] (t : YoungTableau μ) : polytabloid (R := R) t ≠ 0 := by
   intro h
-  have := polytabloid_coeff_tabloid t
+  have := polytabloid_coeff_tabloid (R := R) t
   rw [h] at this
   simp at this
 
 /-- **The tabloid form evaluates a polytabloid against itself to the order of the column group.**
-This nonvanishing is the input that James's submodule theorem converts into irreducibility of the
-Specht module. -/
+Over `ℚ` this value is nonzero and feeds the irreducibility argument. In positive characteristic
+the displayed group order may vanish; the equality itself holds over every commutative ring. -/
 theorem tabloidForm_polytabloid_self (t : YoungTableau μ) :
-    tabloidForm (shapePartition μ) (polytabloid t) (polytabloid t) =
-      (Nat.card (colSubgroup t) : ℚ) := by
+    tabloidForm (R := R) (shapePartition μ) (polytabloid (R := R) t) (polytabloid (R := R) t) =
+      (Nat.card (colSubgroup t) : R) := by
   classical
   nth_rewrite 1 [polytabloid_eq_sum]
   rw [map_sum, LinearMap.sum_apply]
   have hterm : ∀ q : colSubgroup t,
-      tabloidForm (shapePartition μ)
-          (((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) •
-            MonoidAlgebra.single ((q : Equiv.Perm (Fin μ.card)) • tabloid t) (1 : ℚ))
-          (polytabloid t) = 1 := by
+      tabloidForm (R := R) (shapePartition μ)
+          (((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : R) •
+            MonoidAlgebra.single ((q : Equiv.Perm (Fin μ.card)) • tabloid t) (1 : R))
+          (polytabloid (R := R) t) = 1 := by
     intro q
     rw [map_smul, LinearMap.smul_apply, tabloidForm, permutationForm_single_left,
       polytabloid_coeff_smul_tabloid]
@@ -300,13 +308,13 @@ permutation module `M^μ` spanned by the polytabloids of the `μ`-tableaux.
 It is stable under the symmetric group because relabeling a tableau translates its polytabloid,
 and the polytabloids of the relabelings of a fixed tableau are all of them. -/
 noncomputable def spechtSubrepresentation (μ : YoungDiagram) :
-    Subrepresentation (permutationModule (shapePartition μ)).ρ where
-  toSubmodule := Submodule.span ℚ (Set.range (polytabloid (μ := μ)))
+    Subrepresentation (permutationModule (R := R) (shapePartition μ)).ρ where
+  toSubmodule := Submodule.span R (Set.range (polytabloid (R := R) (μ := μ)))
   apply_mem_toSubmodule σ _ hv := by
     -- stability of a span is checked on its generators
-    have h : Submodule.span ℚ (Set.range (polytabloid (μ := μ))) ≤
-        (Submodule.span ℚ (Set.range (polytabloid (μ := μ)))).comap
-          ((permutationModule (shapePartition μ)).ρ σ) := by
+    have h : Submodule.span R (Set.range (polytabloid (R := R) (μ := μ))) ≤
+        (Submodule.span R (Set.range (polytabloid (R := R) (μ := μ)))).comap
+          ((permutationModule (R := R) (shapePartition μ)).ρ σ) := by
       rw [Submodule.span_le]
       rintro _ ⟨t, rfl⟩
       exact Submodule.subset_span ⟨relabel σ t, polytabloid_relabel σ t⟩
@@ -315,22 +323,22 @@ noncomputable def spechtSubrepresentation (μ : YoungDiagram) :
 /-- The underlying submodule of the Specht module is the span of the polytabloids. -/
 @[simp]
 theorem spechtSubrepresentation_toSubmodule (μ : YoungDiagram) :
-    (spechtSubrepresentation μ).toSubmodule =
-      Submodule.span ℚ (Set.range (polytabloid (μ := μ))) :=
+    (spechtSubrepresentation (R := R) μ).toSubmodule =
+      Submodule.span R (Set.range (polytabloid (R := R) (μ := μ))) :=
   (rfl)
 
 /-- Every polytabloid lies in the Specht module. -/
 theorem polytabloid_mem_spechtSubrepresentation (t : YoungTableau μ) :
-    polytabloid t ∈ spechtSubrepresentation μ :=
+    polytabloid (R := R) t ∈ spechtSubrepresentation (R := R) μ :=
   Submodule.subset_span ⟨t, rfl⟩
 
 /-- **The Specht module is cyclic.** It is the span of the orbit of a single polytabloid, because
 the symmetric group permutes the `μ`-tableaux transitively. -/
 theorem spechtSubrepresentation_eq_span_orbit (t : YoungTableau μ) :
-    (spechtSubrepresentation μ).toSubmodule =
-      Submodule.span ℚ
+    (spechtSubrepresentation (R := R) μ).toSubmodule =
+      Submodule.span R
         (Set.range fun σ : Equiv.Perm (Fin μ.card) =>
-          (permutationModule (shapePartition μ)).ρ σ (polytabloid t)) := by
+          (permutationModule (R := R) (shapePartition μ)).ρ σ (polytabloid (R := R) t)) := by
   rw [spechtSubrepresentation_toSubmodule]
   congr 1
   apply Set.eq_of_subset_of_subset
@@ -342,20 +350,25 @@ theorem spechtSubrepresentation_eq_span_orbit (t : YoungTableau μ) :
 
 /-- The Specht module is nonzero. -/
 @[simp]
-theorem spechtSubrepresentation_ne_bot (μ : YoungDiagram) : spechtSubrepresentation μ ≠ ⊥ := by
+theorem spechtSubrepresentation_ne_bot [Nontrivial R] (μ : YoungDiagram) :
+  spechtSubrepresentation (R := R) μ ≠
+  ⊥ := by
   obtain ⟨t⟩ := YoungTableau.nonempty μ
   intro h
-  have hmem : polytabloid t ∈ (⊥ : Subrepresentation (permutationModule (shapePartition μ)).ρ) :=
+  have hmem : polytabloid (R := R) t ∈ (⊥ : Subrepresentation (permutationModule (R := R)
+    (shapePartition μ)).ρ) :=
     h ▸ polytabloid_mem_spechtSubrepresentation t
-  exact polytabloid_ne_zero t (Submodule.mem_bot ℚ |>.mp hmem)
+  exact polytabloid_ne_zero t (Submodule.mem_bot R |>.mp hmem)
 
-/-- The Specht module is finite-dimensional, being a submodule of the finite-dimensional Young
-permutation module.  This is what lets it be bundled as an `FDRep`. -/
+/-- The Specht module is finitely generated: there are only finitely many tableaux, and their
+polytabloids span it. This lets it be bundled as an `FDRep` over any commutative ring. -/
 instance (μ : YoungDiagram) :
-    FiniteDimensional ℚ (spechtSubrepresentation μ).toSubmodule :=
-  FiniteDimensional.finiteDimensional_submodule _
+    Module.Finite R (spechtSubrepresentation (R := R) μ).toSubmodule :=
+  Module.Finite.of_fg <| by
+    rw [spechtSubrepresentation_toSubmodule]
+    exact Submodule.fg_span (Set.finite_range _)
 
-/-- The **Specht module** `S^μ` of a partition `μ` of `n`, bundled as a finite-dimensional
+/-- The **Specht module** `S^μ` of a partition `μ` of `n`, bundled as a finitely generated
 representation of `Sₙ`: the span of the polytabloids of the tableaux of the Young diagram
 `YoungDiagram.ofPartition μ`, with the symmetric group on the `(YoungDiagram.ofPartition μ).card`
 entries of such a tableau identified with `Sₙ` along `YoungDiagram.card_ofPartition`.
@@ -366,14 +379,18 @@ name.  Its representation unfolds to `spechtSubrepresentation (YoungDiagram.ofPa
 `FDRep.of_ρ'`, and `spechtSubrepresentation_toSubmodule` identifies the underlying module with the
 span of the polytabloids. -/
 noncomputable abbrev spechtModule {n : ℕ} (μ : n.Partition) :
-    FDRep ℚ (Equiv.Perm (Fin n)) :=
-  FDRep.of ((spechtSubrepresentation (YoungDiagram.ofPartition μ)).toRepresentation.comp
+    FDRep R (Equiv.Perm (Fin n)) :=
+  FDRep.of ((spechtSubrepresentation (R := R) (YoungDiagram.ofPartition μ)).toRepresentation.comp
     (finCongr (YoungDiagram.card_ofPartition μ).symm).permCongrHom.toMonoidHom)
 
-/-- The Specht module is nontrivial, so it has positive dimension. -/
+end CommRing
+
+variable {R : Type*} [Field R]
+
+/-- Over a field the Specht module is nontrivial, so it has positive dimension. -/
 theorem finrank_spechtModule_pos {n : ℕ} (μ : n.Partition) :
-    0 < Module.finrank ℚ (spechtModule μ) :=
-  have : Nontrivial (spechtSubrepresentation (YoungDiagram.ofPartition μ)).toSubmodule :=
+    0 < Module.finrank R (spechtModule (R := R) μ) :=
+  have : Nontrivial (spechtSubrepresentation (R := R) (YoungDiagram.ofPartition μ)).toSubmodule :=
     Submodule.nontrivial_iff_ne_bot.mpr fun h =>
       spechtSubrepresentation_ne_bot _ (Subrepresentation.toSubmodule_injective h)
   Module.finrank_pos

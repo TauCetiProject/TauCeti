@@ -148,16 +148,17 @@ theorem rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_zero (t : YoungTa
     (σ : Equiv.Perm (Fin μ.card)) {x y : Fin μ.card} (hxy : x ≠ y)
     (hrow : rowIndex t x = rowIndex t y)
     (hcol : colIndex t (σ⁻¹ x) = colIndex t (σ⁻¹ y)) :
-    rowSymmetrizer t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer t = 0 := by
+    rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer (R := ℚ)
+      t = 0 := by
   have hxy' : σ⁻¹ x ≠ σ⁻¹ y := fun h => hxy ((σ⁻¹ : Equiv.Perm (Fin μ.card)).injective h)
   -- absorbing the transposition of `x` and `y` into the row symmetrizer
-  have habsorb : rowSymmetrizer t * MonoidAlgebra.single (Equiv.swap x y) (1 : ℚ) =
-      rowSymmetrizer t :=
+  have habsorb : rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single (Equiv.swap x y) (1 : ℚ) =
+      rowSymmetrizer (R := ℚ) t :=
     mul_rowSymmetrizer_right t ⟨Equiv.swap x y, swap_mem_rowSubgroup hrow⟩
   -- its conjugate transposes two labels of a common column, so it acts by its sign
   have hsign : MonoidAlgebra.single (Equiv.swap (σ⁻¹ x) (σ⁻¹ y)) (1 : ℚ) *
-      columnAntisymmetrizer t =
-      ((Equiv.Perm.sign (Equiv.swap (σ⁻¹ x) (σ⁻¹ y)) : ℤ) : ℚ) • columnAntisymmetrizer t :=
+      columnAntisymmetrizer (R := ℚ) t =
+      ((Equiv.Perm.sign (Equiv.swap (σ⁻¹ x) (σ⁻¹ y)) : ℤ) : ℚ) • columnAntisymmetrizer (R := ℚ) t :=
     mul_columnAntisymmetrizer_left t ⟨Equiv.swap (σ⁻¹ x) (σ⁻¹ y), swap_mem_colSubgroup hcol⟩
   -- multiplying by `σ` on the right turns the swap of `x` and `y` into the swap of their
   -- `σ`-preimages: this is the step that moves the swap from the row side to the column side
@@ -169,21 +170,26 @@ theorem rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_zero (t : YoungTa
   have hneg : ((Equiv.Perm.sign (Equiv.swap (σ⁻¹ x) (σ⁻¹ y)) : ℤ) : ℚ) = -1 := by
     rw [Equiv.Perm.sign_swap hxy']
     simp
-  have key : rowSymmetrizer t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer t =
-      -(rowSymmetrizer t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer t) :=
-    calc rowSymmetrizer t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer t
-        = rowSymmetrizer t * (MonoidAlgebra.single (Equiv.swap x y) (1 : ℚ) *
-            MonoidAlgebra.single σ (1 : ℚ)) * columnAntisymmetrizer t := by
-          rw [← mul_assoc (rowSymmetrizer t), habsorb]
-      _ = rowSymmetrizer t * MonoidAlgebra.single σ (1 : ℚ) *
+  have key : rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer
+    (R := ℚ) t =
+      -(rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer (R :=
+        ℚ) t) :=
+    calc rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer (R
+      := ℚ) t
+        = rowSymmetrizer (R := ℚ) t * (MonoidAlgebra.single (Equiv.swap x y) (1 : ℚ) *
+            MonoidAlgebra.single σ (1 : ℚ)) * columnAntisymmetrizer (R := ℚ) t := by
+          rw [← mul_assoc (rowSymmetrizer (R := ℚ) t), habsorb]
+      _ = rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ (1 : ℚ) *
             (MonoidAlgebra.single (Equiv.swap (σ⁻¹ x) (σ⁻¹ y)) (1 : ℚ) *
-              columnAntisymmetrizer t) := by
+              columnAntisymmetrizer (R := ℚ) t) := by
           rw [hswap]
           simp only [mul_assoc]
-      _ = -(rowSymmetrizer t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer t) := by
+      _ = -(rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer
+        (R := ℚ) t) := by
           rw [hsign, hneg, neg_one_smul, mul_neg]
   have h2 : (2 : ℚ) •
-      (rowSymmetrizer t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer t) = 0 := by
+      (rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer (R :=
+        ℚ) t) = 0 := by
     rw [two_smul]
     nth_rewrite 2 [key]
     exact add_neg_cancel _
@@ -194,7 +200,8 @@ theorem rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_zero (t : YoungTa
 @[simp]
 theorem RowMeetsColumnTwice.rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_zero
     {t : YoungTableau μ} {σ : Equiv.Perm (Fin μ.card)} (h : RowMeetsColumnTwice t (relabel σ t)) :
-    rowSymmetrizer t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer t = 0 := by
+    rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer (R := ℚ)
+      t = 0 := by
   obtain ⟨x, y, hxy, hrow, hcol⟩ := (rowMeetsColumnTwice_relabel_iff t σ).mp h
   exact YoungTableau.rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_zero t σ hxy hrow hcol
 
@@ -204,12 +211,14 @@ the Young symmetrizer, up to the sign of its column part. -/
 theorem rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_sign_smul_youngSymmetrizer
     (t : YoungTableau μ) {p q : Equiv.Perm (Fin μ.card)} (hp : p ∈ rowSubgroup t)
     (hq : q ∈ colSubgroup t) :
-    rowSymmetrizer t * MonoidAlgebra.single (p * q) (1 : ℚ) * columnAntisymmetrizer t =
-      ((Equiv.Perm.sign q : ℤ) : ℚ) • youngSymmetrizer t := by
-  have hrow : rowSymmetrizer t * MonoidAlgebra.single p (1 : ℚ) = rowSymmetrizer t :=
+    rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single (p * q) (1 : ℚ) * columnAntisymmetrizer (R
+      := ℚ) t =
+      ((Equiv.Perm.sign q : ℤ) : ℚ) • youngSymmetrizer (R := ℚ) t := by
+  have hrow : rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single p (1 : ℚ) = rowSymmetrizer (R :=
+    ℚ) t :=
     mul_rowSymmetrizer_right t ⟨p, hp⟩
-  have hcol : MonoidAlgebra.single q (1 : ℚ) * columnAntisymmetrizer t =
-      ((Equiv.Perm.sign q : ℤ) : ℚ) • columnAntisymmetrizer t :=
+  have hcol : MonoidAlgebra.single q (1 : ℚ) * columnAntisymmetrizer (R := ℚ) t =
+      ((Equiv.Perm.sign q : ℤ) : ℚ) • columnAntisymmetrizer (R := ℚ) t :=
     mul_columnAntisymmetrizer_left t ⟨q, hq⟩
   have hpq : MonoidAlgebra.single (p * q) (1 : ℚ) =
       MonoidAlgebra.single p (1 : ℚ) * MonoidAlgebra.single q (1 : ℚ) := by
@@ -220,7 +229,8 @@ theorem rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_sign_smul_youngSy
 sandwich. -/
 theorem rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_ne_zero (t : YoungTableau μ)
     {p q : Equiv.Perm (Fin μ.card)} (hp : p ∈ rowSubgroup t) (hq : q ∈ colSubgroup t) :
-    rowSymmetrizer t * MonoidAlgebra.single (p * q) (1 : ℚ) * columnAntisymmetrizer t ≠ 0 := by
+    rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single (p * q) (1 : ℚ) * columnAntisymmetrizer (R
+      := ℚ) t ≠ 0 := by
   rw [rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_sign_smul_youngSymmetrizer t hp hq]
   refine smul_ne_zero ?_ (youngSymmetrizer_ne_zero t)
   simp
@@ -256,7 +266,8 @@ theorem exists_rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_zero (t : 
     {x y u v : Fin μ.card} (hxy : x ≠ y) (hrow : rowIndex t x = rowIndex t y) (huv : u ≠ v)
     (hcol : colIndex t u = colIndex t v) :
     ∃ σ : Equiv.Perm (Fin μ.card),
-      rowSymmetrizer t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer t = 0 :=
+      rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer (R :=
+        ℚ) t = 0 :=
   let ⟨σ, hσ⟩ := exists_rowMeetsColumnTwice_relabel t hxy hrow huv hcol
   ⟨σ, hσ.rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_zero⟩
 
@@ -264,7 +275,8 @@ theorem exists_rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_zero (t : 
 labels of a common row of `t` into distinct columns of `relabel σ t`. -/
 theorem not_rowMeetsColumnTwice_relabel_of_ne_zero {t : YoungTableau μ}
     {σ : Equiv.Perm (Fin μ.card)}
-    (h : rowSymmetrizer t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer t ≠ 0) :
+    (h : rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ (1 : ℚ) * columnAntisymmetrizer (R
+      := ℚ) t ≠ 0) :
     ¬RowMeetsColumnTwice t (relabel σ t) :=
   fun hc => h hc.rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_zero
 

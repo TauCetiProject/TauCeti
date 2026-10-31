@@ -81,8 +81,8 @@ variable {n : ℕ}
 `TauCeti.spechtSubrepresentation (YoungDiagram.ofPartition μ)`, read through the identification of
 `Sₙ` with the permutations of the `(YoungDiagram.ofPartition μ).card = n` cells. -/
 theorem character_spechtModule_apply (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
-    (spechtModule μ).character σ =
-      (spechtSubrepresentation (YoungDiagram.ofPartition μ)).toRepresentation.character
+    (spechtModule (R := ℚ) μ).character σ =
+      (spechtSubrepresentation (R := ℚ) (YoungDiagram.ofPartition μ)).toRepresentation.character
         ((finCongr (YoungDiagram.card_ofPartition μ).symm).permCongr σ) :=
   (rfl)
 
@@ -92,28 +92,28 @@ theorem character_spechtModule_apply (μ : n.Partition) (σ : Equiv.Perm (Fin n)
 rational values, and those values are integers (`FDRep.intCharacter`); this is the
 integer-valued refinement, related to the rational character by `TauCeti.spechtChar_cast`. -/
 noncomputable def spechtChar (μ : n.Partition) : Equiv.Perm (Fin n) → ℤ :=
-  FDRep.intCharacter (spechtModule μ)
+  FDRep.intCharacter (spechtModule (R := ℚ) μ)
 
 theorem spechtChar_def (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
-    spechtChar μ σ = FDRep.intCharacter (spechtModule μ) σ := (rfl)
+    spechtChar μ σ = FDRep.intCharacter (spechtModule (R := ℚ) μ) σ := (rfl)
 
 /-- **The integer character of `S^μ` casts to its rational character.** This is the whole content
 of `TauCeti.spechtChar`: the character of a Specht module is integer-valued. -/
 @[simp]
 theorem spechtChar_cast (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
-    (spechtChar μ σ : ℚ) = (spechtModule μ).character σ := by
+    (spechtChar μ σ : ℚ) = (spechtModule (R := ℚ) μ).character σ := by
   rw [spechtChar_def, FDRep.intCharacter_cast]
 
 /-- **The integer character is a class function.** -/
 @[simp]
 theorem spechtChar_conj (μ : n.Partition) (σ τ : Equiv.Perm (Fin n)) :
     spechtChar μ (τ * σ * τ⁻¹) = spechtChar μ σ :=
-  FDRep.intCharacter_conj (spechtModule μ) σ τ
+  FDRep.intCharacter_conj (spechtModule (R := ℚ) μ) σ τ
 
 /-- Conjugate permutations have the same integer character. -/
 theorem spechtChar_eq_of_isConj (μ : n.Partition) {σ τ : Equiv.Perm (Fin n)} (h : IsConj σ τ) :
     spechtChar μ σ = spechtChar μ τ :=
-  FDRep.intCharacter_eq_of_isConj (spechtModule μ) h
+  FDRep.intCharacter_eq_of_isConj (spechtModule (R := ℚ) μ) h
 
 /-- **The integer character depends only on the cycle type**, two permutations of `Fin n` being
 conjugate exactly when they have the same partition. -/
@@ -123,8 +123,8 @@ theorem spechtChar_eq_of_partition_eq (μ : n.Partition) {σ τ : Equiv.Perm (Fi
 
 /-- **The value at the identity is the degree** `dim_ℚ S^μ`. -/
 @[simp]
-theorem spechtChar_one (μ : n.Partition) : spechtChar μ 1 = finrank ℚ (spechtModule μ) :=
-  FDRep.intCharacter_one (spechtModule μ)
+theorem spechtChar_one (μ : n.Partition) : spechtChar μ 1 = finrank ℚ (spechtModule (R := ℚ) μ) :=
+  FDRep.intCharacter_one (spechtModule (R := ℚ) μ)
 
 /-- **The value at the identity is positive**, the Specht module `S^μ` being nonzero. -/
 theorem spechtChar_one_pos (μ : n.Partition) : 0 < spechtChar μ 1 := by
@@ -139,12 +139,12 @@ is the integer character of the Specht module of the shape partition of `D`.  Th
 diagram-indexed Specht modules be read against `χ^μ`. -/
 theorem spechtChar_shapePartition (D : YoungDiagram) (σ : Equiv.Perm (Fin D.card)) :
     (spechtChar (shapePartition D) σ : ℚ) =
-      (spechtSubrepresentation D).toRepresentation.character σ := by
+      (spechtSubrepresentation (R := ℚ) D).toRepresentation.character σ := by
   rw [spechtChar_cast, character_spechtModule_apply]
   -- transport along an equality of diagrams is the identity once the equality is `rfl`
   suffices h : ∀ (D' : YoungDiagram), D' = D → ∀ (p : D.card = D'.card),
-      (spechtSubrepresentation D').toRepresentation.character ((finCongr p).permCongr σ) =
-        (spechtSubrepresentation D).toRepresentation.character σ from
+      (spechtSubrepresentation (R := ℚ) D').toRepresentation.character ((finCongr p).permCongr σ) =
+        (spechtSubrepresentation (R := ℚ) D).toRepresentation.character σ from
     h _ (ofPartition_shapePartition D) _
   rintro D' rfl p
   rw [finCongr_refl, Equiv.permCongr_def, Equiv.refl_symm, Equiv.refl_trans, Equiv.trans_refl]
@@ -155,11 +155,11 @@ theorem spechtChar_shapePartition (D : YoungDiagram) (σ : Equiv.Perm (Fin D.car
 (`TauCeti.ClassFunction.toConjClasses`) of the class function `FDRep.intClassFunction` of
 `S^μ`. -/
 noncomputable def spechtCharConjClasses (μ : n.Partition) : ConjClasses (Equiv.Perm (Fin n)) → ℤ :=
-  ClassFunction.toConjClasses (FDRep.intClassFunction (spechtModule μ))
+  ClassFunction.toConjClasses (FDRep.intClassFunction (spechtModule (R := ℚ) μ))
 
 theorem spechtCharConjClasses_def (μ : n.Partition) :
     spechtCharConjClasses μ =
-      ClassFunction.toConjClasses (FDRep.intClassFunction (spechtModule μ)) := (rfl)
+      ClassFunction.toConjClasses (FDRep.intClassFunction (spechtModule (R := ℚ) μ)) := (rfl)
 
 @[simp]
 theorem spechtCharConjClasses_mk (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
@@ -216,13 +216,13 @@ theorem symmetricCharacterTable_apply (μ ν : n.Partition) :
 theorem intCast_symmetricCharacterTable_apply (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
     ((symmetricCharacterTable n μ
         ((partitionEquivConjClasses n).symm (ConjClasses.mk σ)) : ℤ) : ℚ) =
-      (spechtModule μ).character σ := by
+      (spechtModule (R := ℚ) μ).character σ := by
   rw [symmetricCharacterTable_apply, ← spechtChar_eq_value, spechtChar_cast]
 
 /-- **The column of the identity holds the degrees** `dim_ℚ S^μ`. -/
 theorem symmetricCharacterTable_one (μ : n.Partition) :
     symmetricCharacterTable n μ ((partitionEquivConjClasses n).symm (ConjClasses.mk 1)) =
-      finrank ℚ (spechtModule μ) := by
+      finrank ℚ (spechtModule (R := ℚ) μ) := by
   rw [symmetricCharacterTable_apply, ← spechtChar_eq_value, spechtChar_one]
 
 end TauCeti

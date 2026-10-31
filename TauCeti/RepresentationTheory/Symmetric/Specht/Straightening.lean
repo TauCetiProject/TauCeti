@@ -123,20 +123,21 @@ theorem card_nsmul_polytabloid_add_sum_sign_smul_polytabloid_relabel_eq_zero (t 
     (hcard : r < X.card)
     [DecidablePred fun σ : Equiv.Perm (Fin μ.card) => ∀ k ∉ X, σ k = k] :
     ({σ : Equiv.Perm (Fin μ.card) | (∀ k ∉ X, σ k = k) ∧ σ ∈ colSubgroup t} :
-        Finset (Equiv.Perm (Fin μ.card))).card • polytabloid t +
+        Finset (Equiv.Perm (Fin μ.card))).card • polytabloid (R := ℚ) t +
       ∑ σ ∈ ({σ : Equiv.Perm (Fin μ.card) | (∀ k ∉ X, σ k = k) ∧ σ ∉ colSubgroup t} :
           Finset (Equiv.Perm (Fin μ.card))),
-        ((Equiv.Perm.sign σ : ℤ) : ℚ) • polytabloid (relabel σ t) = 0 := by
+        ((Equiv.Perm.sign σ : ℤ) : ℚ) • polytabloid (R := ℚ) (relabel σ t) = 0 := by
   have hsplit := Finset.sum_filter_add_sum_filter_not
     ({σ : Equiv.Perm (Fin μ.card) | ∀ k ∉ X, σ k = k} : Finset (Equiv.Perm (Fin μ.card)))
     (fun σ => σ ∈ colSubgroup t)
-    (fun σ => ((Equiv.Perm.sign σ : ℤ) : ℚ) • polytabloid (relabel σ t))
+    (fun σ => ((Equiv.Perm.sign σ : ℤ) : ℚ) • polytabloid (R := ℚ) (relabel σ t))
   rw [sum_sign_smul_polytabloid_relabel_eq_zero t hX hcard, Finset.filter_filter,
     Finset.filter_filter] at hsplit
   -- an internal permutation scales `e_t` by its sign twice over, so contributes `e_t`
   have hconst : ∀ σ ∈ ({σ : Equiv.Perm (Fin μ.card) | (∀ k ∉ X, σ k = k) ∧ σ ∈ colSubgroup t} :
       Finset (Equiv.Perm (Fin μ.card))),
-      ((Equiv.Perm.sign σ : ℤ) : ℚ) • polytabloid (relabel σ t) = polytabloid t := by
+      ((Equiv.Perm.sign σ : ℤ) : ℚ) • polytabloid (R := ℚ) (relabel σ t) = polytabloid (R := ℚ)
+        t := by
     intro σ hσ
     have hsq : ((Equiv.Perm.sign σ : ℤ) : ℚ) * ((Equiv.Perm.sign σ : ℤ) : ℚ) = 1 := by
       rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h <;> simp [h]
@@ -154,8 +155,8 @@ This is the division-free reading of
 multiple of `e_t` is nonzero. -/
 theorem polytabloid_mem_span_polytabloid_relabel (t : YoungTableau μ) {X : Finset (Fin μ.card)}
     {r : ℕ} (hX : ∀ k ∈ X, μ.colLen (colIndex t k) ≤ r) (hcard : r < X.card) :
-    polytabloid t ∈ Submodule.span ℚ
-      ((fun σ => polytabloid (relabel σ t)) ''
+    polytabloid (R := ℚ) t ∈ Submodule.span ℚ
+      ((fun σ => polytabloid (R := ℚ) (relabel σ t)) ''
         {σ : Equiv.Perm (Fin μ.card) | (∀ k ∉ X, σ k = k) ∧ σ ∉ colSubgroup t}) := by
   have hpos : 0 < ({σ : Equiv.Perm (Fin μ.card) | (∀ k ∉ X, σ k = k) ∧ σ ∈ colSubgroup t} :
       Finset (Equiv.Perm (Fin μ.card))).card :=
@@ -179,8 +180,8 @@ Applied at a cell where the rows of `t` fail to increase, this is the rewriting 
 algorithm performs on the way to the standard basis of the Specht module. -/
 theorem polytabloid_mem_span_polytabloid_relabel_garnirSet (t : YoungTableau μ) {i j : ℕ}
     (h : (i, j + 1) ∈ μ) :
-    polytabloid t ∈ Submodule.span ℚ
-      ((fun σ => polytabloid (relabel σ t)) ''
+    polytabloid (R := ℚ) t ∈ Submodule.span ℚ
+      ((fun σ => polytabloid (R := ℚ) (relabel σ t)) ''
         {σ : Equiv.Perm (Fin μ.card) | (∀ k ∉ garnirSet t i j, σ k = k) ∧
           (garnirSetLeft t i j).image σ ≠ garnirSetLeft t i j}) := by
   have hindex : {σ : Equiv.Perm (Fin μ.card) | (∀ k ∉ garnirSet t i j, σ k = k) ∧
@@ -428,8 +429,9 @@ private theorem polytabloid_mem_span_of_lt (t : YoungTableau μ)
     (hns : ¬ ((∀ x y : Fin μ.card,
           colIndex t x = colIndex t y → rowIndex t x < rowIndex t y → x < y) ∧
         ∀ x y : Fin μ.card, rowIndex t x = rowIndex t y → colIndex t x < colIndex t y → x < y)) :
-    polytabloid t ∈ Submodule.span ℚ
-      {v | ∃ t' : YoungTableau μ, straightWeight t < straightWeight t' ∧ v = polytabloid t'} := by
+    polytabloid (R := ℚ) t ∈ Submodule.span ℚ
+      {v | ∃ t' : YoungTableau μ, straightWeight t < straightWeight t' ∧ v = polytabloid (R :=
+        ℚ) t'} := by
   classical
   by_cases hinc : ∀ x y : Fin μ.card,
       colIndex t x = colIndex t y → rowIndex t x < rowIndex t y → x < y
@@ -463,12 +465,12 @@ private theorem polytabloid_mem_span_of_lt (t : YoungTableau μ)
       rcases eq_or_ne k y with rfl | hky
       · rw [Equiv.swap_apply_right, hcol]
       · rw [Equiv.swap_apply_of_ne_of_ne hkx hky]
-    have hsign : polytabloid (relabel (Equiv.swap x y) t) = -polytabloid t := by
+    have hsign : polytabloid (R := ℚ) (relabel (Equiv.swap x y) t) = -polytabloid (R := ℚ) t := by
       rw [polytabloid_relabel_of_mem_colSubgroup hswap, Equiv.Perm.sign_swap hne]
       simp
-    have hmem : polytabloid (relabel (Equiv.swap x y) t) ∈ Submodule.span ℚ
+    have hmem : polytabloid (R := ℚ) (relabel (Equiv.swap x y) t) ∈ Submodule.span ℚ
         {v | ∃ t' : YoungTableau μ,
-          straightWeight t < straightWeight t' ∧ v = polytabloid t'} :=
+          straightWeight t < straightWeight t' ∧ v = polytabloid (R := ℚ) t'} :=
       Submodule.subset_span
         ⟨_, straightWeight_lt_of_swap hcol hrow (lt_of_le_of_ne hyx (Ne.symm hne)), rfl⟩
     rw [hsign] at hmem
@@ -479,12 +481,12 @@ polytabloids of the standard tableaux of the same shape.  The straightening meas
 every rewriting step and is bounded, so the rewriting terminates, and it terminates only at a
 tableau increasing down its columns and along its rows. -/
 theorem polytabloid_mem_span_polytabloid_standard (t : YoungTableau μ) :
-    polytabloid t ∈ Submodule.span ℚ
-      (Set.range fun T : StandardYoungTableau μ => polytabloid T.toTableau) := by
+    polytabloid (R := ℚ) t ∈ Submodule.span ℚ
+      (Set.range fun T : StandardYoungTableau μ => polytabloid (R := ℚ) T.toTableau) := by
   classical
   suffices H : ∀ (N : ℕ) (t : YoungTableau μ), straightBound μ - straightWeight t ≤ N →
-      polytabloid t ∈ Submodule.span ℚ
-        (Set.range fun T : StandardYoungTableau μ => polytabloid T.toTableau) from
+      polytabloid (R := ℚ) t ∈ Submodule.span ℚ
+        (Set.range fun T : StandardYoungTableau μ => polytabloid (R := ℚ) T.toTableau) from
     H _ t le_rfl
   intro N
   induction N using Nat.strong_induction_on with

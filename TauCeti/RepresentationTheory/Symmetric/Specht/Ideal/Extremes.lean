@@ -88,8 +88,9 @@ variable {χ : Equiv.Perm (Fin μ.card) → ℚ}
 /-- If every group element multiplies the Young symmetrizer by a scalar, then the left ideal it
 generates is already the `ℚ`-line through it: the whole group algebra acts through the scalars. -/
 private theorem restrictScalars_spechtIdeal_eq_span (t : YoungTableau μ)
-    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer t = χ g • youngSymmetrizer t) :
-    (spechtIdeal t).restrictScalars ℚ = ℚ ∙ youngSymmetrizer t := by
+    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer (R := ℚ) t = χ g •
+      youngSymmetrizer (R := ℚ) t) :
+    (spechtIdeal t).restrictScalars ℚ = ℚ ∙ youngSymmetrizer (R := ℚ) t := by
   refine le_antisymm (fun x hx => ?_) ?_
   · rw [Submodule.restrictScalars_mem] at hx
     obtain ⟨a, rfl⟩ := (mem_spechtIdeal_iff t x).mp hx
@@ -107,7 +108,8 @@ private theorem restrictScalars_spechtIdeal_eq_span (t : YoungTableau μ)
 
 /-- A Young symmetrizer scaled by the group generates a one-dimensional left ideal. -/
 private theorem finrank_spechtIdeal_eq_one (t : YoungTableau μ)
-    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer t = χ g • youngSymmetrizer t) :
+    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer (R := ℚ) t = χ g •
+      youngSymmetrizer (R := ℚ) t) :
     Module.finrank ℚ (spechtIdeal t) = 1 := by
   have hline : Module.finrank ℚ ((spechtIdeal t).restrictScalars ℚ) = 1 := by
     rw [restrictScalars_spechtIdeal_eq_span t h]
@@ -118,19 +120,20 @@ private theorem finrank_spechtIdeal_eq_one (t : YoungTableau μ)
 /-- A Young symmetrizer scaled by the group spans its left ideal, so the group acts on that ideal
 through the same scalars. -/
 private theorem spechtIdealRep_ρ_apply (t : YoungTableau μ)
-    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer t = χ g • youngSymmetrizer t)
+    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer (R := ℚ) t = χ g •
+      youngSymmetrizer (R := ℚ) t)
     (g : Equiv.Perm (Fin μ.card)) (x : spechtIdeal t) :
     (spechtIdealRep t).ρ g x = χ g • x := by
-  have hx : (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) ∈ ℚ ∙ youngSymmetrizer t := by
+  have hx : (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) ∈ ℚ ∙ youngSymmetrizer (R := ℚ) t := by
     rw [← restrictScalars_spechtIdeal_eq_span t h, Submodule.restrictScalars_mem]
     exact x.2
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hx
   refine Subtype.ext ?_
   calc ((spechtIdealRep t).ρ g x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))
-      = MonoidAlgebra.single g (1 : ℚ) * (c • youngSymmetrizer t) := by
+      = MonoidAlgebra.single g (1 : ℚ) * (c • youngSymmetrizer (R := ℚ) t) := by
         rw [spechtIdealRep_ρ_apply_coe, hc]
-    _ = c • (χ g • youngSymmetrizer t) := by rw [mul_smul_comm, h g]
-    _ = χ g • (c • youngSymmetrizer t) := smul_comm c (χ g) _
+    _ = c • (χ g • youngSymmetrizer (R := ℚ) t) := by rw [mul_smul_comm, h g]
+    _ = χ g • (c • youngSymmetrizer (R := ℚ) t) := smul_comm c (χ g) _
     _ = ((χ g • x : spechtIdeal t) : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) := by
         rw [hc, Submodule.coe_smul_of_tower]
 
@@ -188,7 +191,8 @@ can be read off directly, and they check the normalisation. -/
 /-- On a shape with at most one row the square of the Young symmetrizer is `n!` times itself. -/
 theorem youngSymmetrizer_sq_of_rowSubgroup_eq_top (t : YoungTableau μ)
     (h : rowSubgroup t = ⊤) :
-    youngSymmetrizer t * youngSymmetrizer t = (μ.card.factorial : ℚ) • youngSymmetrizer t := by
+    youngSymmetrizer (R := ℚ) t * youngSymmetrizer (R := ℚ) t = (μ.card.factorial : ℚ) •
+      youngSymmetrizer (R := ℚ) t := by
   rw [youngSymmetrizer_sq t, finrank_spechtIdeal_of_rowSubgroup_eq_top t h,
     Nat.cast_one, div_one]
 
@@ -196,7 +200,8 @@ theorem youngSymmetrizer_sq_of_rowSubgroup_eq_top (t : YoungTableau μ)
 itself. -/
 theorem youngSymmetrizer_sq_of_colSubgroup_eq_top (t : YoungTableau μ)
     (h : colSubgroup t = ⊤) :
-    youngSymmetrizer t * youngSymmetrizer t = (μ.card.factorial : ℚ) • youngSymmetrizer t := by
+    youngSymmetrizer (R := ℚ) t * youngSymmetrizer (R := ℚ) t = (μ.card.factorial : ℚ) •
+      youngSymmetrizer (R := ℚ) t := by
   rw [youngSymmetrizer_sq t, finrank_spechtIdeal_of_colSubgroup_eq_top t h,
     Nat.cast_one, div_one]
 

@@ -276,7 +276,7 @@ open YoungTableau
 a nonzero coefficient, one of largest weight has a tabloid that no other standard polytabloid of
 the combination reaches, so its coefficient is read off the combination. -/
 theorem linearIndependent_polytabloid (μ : YoungDiagram) :
-    LinearIndependent ℚ fun T : StandardYoungTableau μ ↦ polytabloid T.toTableau := by
+    LinearIndependent ℚ fun T : StandardYoungTableau μ ↦ polytabloid (R := ℚ) T.toTableau := by
   classical
   rw [linearIndependent_iff']
   intro s g hsum T₁ hT₁
@@ -286,11 +286,11 @@ theorem linearIndependent_polytabloid (μ : YoungDiagram) :
   obtain ⟨hT₀s, hg₀⟩ := Finset.mem_filter.mp hT₀
   -- no other standard polytabloid of the combination reaches the tabloid of `T₀`
   have hzero : ∀ T ∈ s, T ≠ T₀ →
-      (g T • polytabloid T.toTableau).coeff (tabloid T₀.toTableau) = 0 := by
+      (g T • polytabloid (R := ℚ) T.toTableau).coeff (tabloid T₀.toTableau) = 0 := by
     intro T hTs hTne
     rcases eq_or_ne (g T) 0 with h0 | h0
     · simp [h0]
-    have hvanish : (polytabloid T.toTableau).coeff (tabloid T₀.toTableau) = 0 := by
+    have hvanish : (polytabloid (R := ℚ) T.toTableau).coeff (tabloid T₀.toTableau) = 0 := by
       refine polytabloid_coeff_eq_zero_of_forall_ne _ fun q hq hcontra ↦ hTne ?_
       have hdom : TabloidDominates T.toTableau (relabel q T.toTableau) :=
         tabloidDominates_relabel_of_mem_colSubgroup T hq
@@ -303,7 +303,8 @@ theorem linearIndependent_polytabloid (μ : YoungDiagram) :
         ((rowIndex_eq_of_tabloidDominates hdom hw).symm.trans hrow)
     simp [hvanish]
   -- so the coefficient of that tabloid in the combination is the coefficient of `T₀`
-  have hcoeff : (∑ T ∈ s, g T • polytabloid T.toTableau).coeff (tabloid T₀.toTableau) = 0 := by
+  have hcoeff : (∑ T ∈ s, g T • polytabloid (R := ℚ) T.toTableau).coeff (tabloid T₀.toTableau) =
+    0 := by
     rw [hsum]
     simp
   rw [MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply,
@@ -321,8 +322,9 @@ open YoungTableau
 definition, and every one of them is a combination of the standard ones by
 `TauCeti.YoungTableau.polytabloid_mem_span_polytabloid_standard`. -/
 theorem spechtSubrepresentation_eq_span_standard (μ : YoungDiagram) :
-    (spechtSubrepresentation μ).toSubmodule =
-      Submodule.span ℚ (Set.range fun T : StandardYoungTableau μ ↦ polytabloid T.toTableau) := by
+    (spechtSubrepresentation (R := ℚ) μ).toSubmodule =
+      Submodule.span ℚ (Set.range fun T : StandardYoungTableau μ ↦ polytabloid (R := ℚ)
+        T.toTableau) := by
   refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
   · rw [spechtSubrepresentation_toSubmodule]
     refine Submodule.span_le.mpr ?_
@@ -336,7 +338,7 @@ the Specht module `S^μ`: they are linearly independent by
 `TauCeti.linearIndependent_polytabloid` and they span by
 `TauCeti.spechtSubrepresentation_eq_span_standard`. -/
 noncomputable def standardPolytabloidBasis (μ : YoungDiagram) :
-    Module.Basis (StandardYoungTableau μ) ℚ (spechtSubrepresentation μ).toSubmodule :=
+    Module.Basis (StandardYoungTableau μ) ℚ (spechtSubrepresentation (R := ℚ) μ).toSubmodule :=
   (Module.Basis.span (linearIndependent_polytabloid μ)).map
     (LinearEquiv.ofEq _ _ (spechtSubrepresentation_eq_span_standard μ).symm)
 
@@ -348,8 +350,9 @@ noncomputable def standardPolytabloidBasis (μ : YoungDiagram) :
 the polytabloid of `T`. -/
 @[simp]
 theorem coe_standardPolytabloidBasis (μ : YoungDiagram) (T : StandardYoungTableau μ) :
-    (dsimp% only (standardPolytabloidBasis μ T : (permutationModule (shapePartition μ)).V)) =
-      polytabloid T.toTableau := by
+    (dsimp% only (standardPolytabloidBasis μ T : (permutationModule (R := ℚ) (shapePartition
+      μ)).V)) =
+      polytabloid (R := ℚ) T.toTableau := by
   simp [standardPolytabloidBasis]
 
 /-- **The standard basis of the Specht module `S^μ` of a partition `μ` of `n`**, the
@@ -357,7 +360,7 @@ partition-indexed packaging `TauCeti.spechtModule` of
 `TauCeti.standardPolytabloidBasis`: `S^μ` has the polytabloids of the standard tableaux of shape
 `YoungDiagram.ofPartition μ` as a basis. -/
 noncomputable def spechtModuleStandardBasis {n : ℕ} (μ : n.Partition) :
-    Module.Basis (StandardYoungTableau (ofPartition μ)) ℚ (spechtModule μ) :=
+    Module.Basis (StandardYoungTableau (ofPartition μ)) ℚ (spechtModule (R := ℚ) μ) :=
   standardPolytabloidBasis (ofPartition μ)
 
 -- `simp` also rewrites the `FGModuleCat` carrier of `spechtModule μ` by
@@ -369,15 +372,16 @@ tableau `T` is the polytabloid of `T`. -/
 theorem coe_spechtModuleStandardBasis {n : ℕ} (μ : n.Partition)
     (T : StandardYoungTableau (ofPartition μ)) :
     (dsimp% only [FGModuleCat.of_carrier]
-        (spechtModuleStandardBasis μ T : (permutationModule (shapePartition (ofPartition μ))).V)) =
-      polytabloid T.toTableau :=
+        (spechtModuleStandardBasis μ T : (permutationModule (R := ℚ) (shapePartition
+          (ofPartition μ))).V)) =
+      polytabloid (R := ℚ) T.toTableau :=
   coe_standardPolytabloidBasis (ofPartition μ) T
 
 /-- **The dimension of the Specht module is the number of standard Young tableaux**, `dim S^μ =
 f^μ`. -/
 @[simp]
 theorem finrank_spechtSubrepresentation (μ : YoungDiagram) :
-    (dsimp% only (Module.finrank ℚ (spechtSubrepresentation μ).toSubmodule)) =
+    (dsimp% only (Module.finrank ℚ (spechtSubrepresentation (R := ℚ) μ).toSubmodule)) =
       standardCount μ := by
   rw [standardCount_def]
   exact Module.finrank_eq_card_basis (standardPolytabloidBasis μ)
@@ -389,7 +393,7 @@ theorem finrank_spechtSubrepresentation (μ : YoungDiagram) :
 /-- **The dimension of the Specht module `S^μ` of a partition `μ` of `n` is the number `f^μ` of
 standard Young tableaux of shape `μ`.** -/
 theorem finrank_spechtModule {n : ℕ} (μ : n.Partition) :
-    Module.finrank ℚ (spechtModule μ) = standardCount (ofPartition μ) :=
+    Module.finrank ℚ (spechtModule (R := ℚ) μ) = standardCount (ofPartition μ) :=
   finrank_spechtSubrepresentation (ofPartition μ)
 
 end TauCeti

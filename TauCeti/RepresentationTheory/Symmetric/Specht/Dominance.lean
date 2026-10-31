@@ -77,20 +77,21 @@ intersection of the two summands and vanishes.
 This is what lets `b_t` be moved across a map that is defined only on the Specht module: the
 tabloid `{t}` itself is not available there, but `e` is. -/
 theorem exists_mem_asAlgebraHom_columnAntisymmetrizer_eq_polytabloid (t : YoungTableau lam) :
-    ∃ e ∈ (spechtSubrepresentation lam).toSubmodule,
-      (permutationModule (shapePartition lam)).ρ.asAlgebraHom (columnAntisymmetrizer t) e =
-        polytabloid t := by
-  have hc : IsCompl (spechtSubrepresentation lam)
-      (orthogonalSubrepresentation (spechtSubrepresentation lam)) :=
+    ∃ e ∈ (spechtSubrepresentation (R := ℚ) lam).toSubmodule,
+      (permutationModule (R := ℚ) (shapePartition lam)).ρ.asAlgebraHom (columnAntisymmetrizer (R
+        := ℚ) t) e =
+        polytabloid (R := ℚ) t := by
+  have hc : IsCompl (spechtSubrepresentation (R := ℚ) lam)
+      (orthogonalSubrepresentation (spechtSubrepresentation (R := ℚ) lam)) :=
     isCompl_orthogonalSubrepresentation_permutationModule (shapePartition lam) _
-  have hstable : ∀ (σ : Subrepresentation (permutationModule (shapePartition lam)).ρ)
+  have hstable : ∀ (σ : Subrepresentation (permutationModule (R := ℚ) (shapePartition lam)).ρ)
       (g : Equiv.Perm (Fin lam.card)), ∀ v ∈ σ.toSubmodule,
-      (permutationModule (shapePartition lam)).ρ g v ∈ σ.toSubmodule :=
+      (permutationModule (R := ℚ) (shapePartition lam)).ρ g v ∈ σ.toSubmodule :=
     fun σ g _ hv => σ.apply_mem_toSubmodule g hv
   -- split the tabloid along the invariant decomposition
   have hsup : MonoidAlgebra.single (tabloid t) (1 : ℚ) ∈
-      (spechtSubrepresentation lam).toSubmodule ⊔
-        (orthogonalSubrepresentation (spechtSubrepresentation lam)).toSubmodule := by
+      (spechtSubrepresentation (R := ℚ) lam).toSubmodule ⊔
+        (orthogonalSubrepresentation (spechtSubrepresentation (R := ℚ) lam)).toSubmodule := by
     have h := congrArg Subrepresentation.toSubmodule hc.sup_eq_top
     rw [Subrepresentation.toSubmodule_sup, Subrepresentation.toSubmodule_top] at h
     rw [h]
@@ -98,28 +99,35 @@ theorem exists_mem_asAlgebraHom_columnAntisymmetrizer_eq_polytabloid (t : YoungT
   obtain ⟨e, he, w, hw, hsum⟩ := Submodule.mem_sup.mp hsup
   refine ⟨e, he, ?_⟩
   -- the two images stay in their summands
-  have hmemS : (permutationModule (shapePartition lam)).ρ.asAlgebraHom (columnAntisymmetrizer t) e ∈
-      (spechtSubrepresentation lam).toSubmodule :=
+  have hmemS : (permutationModule (R := ℚ) (shapePartition lam)).ρ.asAlgebraHom
+    (columnAntisymmetrizer (R := ℚ) t) e ∈
+      (spechtSubrepresentation (R := ℚ) lam).toSubmodule :=
     Representation.asAlgebraHom_mem_of_forall_mem _ _ (hstable _) e he _
-  have hmemW : (permutationModule (shapePartition lam)).ρ.asAlgebraHom (columnAntisymmetrizer t) w ∈
-      (orthogonalSubrepresentation (spechtSubrepresentation lam)).toSubmodule :=
+  have hmemW : (permutationModule (R := ℚ) (shapePartition lam)).ρ.asAlgebraHom
+    (columnAntisymmetrizer (R := ℚ) t) w ∈
+      (orthogonalSubrepresentation (spechtSubrepresentation (R := ℚ) lam)).toSubmodule :=
     Representation.asAlgebraHom_mem_of_forall_mem _ _ (hstable _) w hw _
   -- their sum is the polytabloid, so the second image lies in both summands
-  have hadd : (permutationModule (shapePartition lam)).ρ.asAlgebraHom (columnAntisymmetrizer t) e +
-      (permutationModule (shapePartition lam)).ρ.asAlgebraHom (columnAntisymmetrizer t) w =
-      polytabloid t := by
+  have hadd : (permutationModule (R := ℚ) (shapePartition lam)).ρ.asAlgebraHom
+    (columnAntisymmetrizer (R := ℚ) t) e +
+      (permutationModule (R := ℚ) (shapePartition lam)).ρ.asAlgebraHom (columnAntisymmetrizer (R
+        := ℚ) t) w =
+      polytabloid (R := ℚ) t := by
     rw [← map_add, hsum, polytabloid_def]
-  have hmemW' : (permutationModule (shapePartition lam)).ρ.asAlgebraHom
-      (columnAntisymmetrizer t) w ∈ (spechtSubrepresentation lam).toSubmodule := by
-    have : (permutationModule (shapePartition lam)).ρ.asAlgebraHom (columnAntisymmetrizer t) w =
-        polytabloid t -
-          (permutationModule (shapePartition lam)).ρ.asAlgebraHom (columnAntisymmetrizer t) e := by
+  have hmemW' : (permutationModule (R := ℚ) (shapePartition lam)).ρ.asAlgebraHom
+      (columnAntisymmetrizer (R := ℚ) t) w ∈ (spechtSubrepresentation (R := ℚ) lam).toSubmodule
+        := by
+    have : (permutationModule (R := ℚ) (shapePartition lam)).ρ.asAlgebraHom
+      (columnAntisymmetrizer (R := ℚ) t) w =
+        polytabloid (R := ℚ) t -
+          (permutationModule (R := ℚ) (shapePartition lam)).ρ.asAlgebraHom
+            (columnAntisymmetrizer (R := ℚ) t) e := by
       rw [← hadd]
       exact (add_sub_cancel_left _ _).symm
     rw [this]
     exact Submodule.sub_mem _ (polytabloid_mem_spechtSubrepresentation t) hmemS
-  have hdisj : Disjoint (spechtSubrepresentation lam).toSubmodule
-      (orthogonalSubrepresentation (spechtSubrepresentation lam)).toSubmodule :=
+  have hdisj : Disjoint (spechtSubrepresentation (R := ℚ) lam).toSubmodule
+      (orthogonalSubrepresentation (spechtSubrepresentation (R := ℚ) lam)).toSubmodule :=
     disjoint_iff.mpr (by
       rw [← Subrepresentation.toSubmodule_inf, hc.inf_eq_bot, Subrepresentation.toSubmodule_bot])
   rw [← hadd, Submodule.disjoint_def.mp hdisj _ hmemW' hmemW, add_zero]
@@ -141,34 +149,39 @@ of `S^{lam}` with `b_t · e = e_t`; then `f e_t ≠ 0` and, because `f` intertwi
 `b_t · f e = f (b_t · e) = f e_t`, so `b_t` does not annihilate `M^μ` and James's dominance lemma
 applies. -/
 theorem dominates_of_intertwiningMap_ne_zero (μ : lam.card.Partition)
-    {f : Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
-      (permutationModule μ).ρ} (hf : f ≠ 0) :
+    {f : Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) lam).toRepresentation
+      (permutationModule (R := ℚ) μ).ρ} (hf : f ≠ 0) :
     (shapePartition lam).Dominates μ := by
   obtain ⟨t⟩ := YoungTableau.nonempty lam
   obtain ⟨e, he, hbe⟩ := exists_mem_asAlgebraHom_columnAntisymmetrizer_eq_polytabloid t
-  have : (spechtSubrepresentation lam).toRepresentation.IsIrreducible :=
+  have : (spechtSubrepresentation (R := ℚ) lam).toRepresentation.IsIrreducible :=
     isIrreducible_spechtSubrepresentation lam
   have hinj : Function.Injective f :=
     (Representation.IsIrreducible.injective_or_eq_zero f).resolve_right hf
   -- the signed sum of the column translates of `e` is the polytabloid, hence nonzero
-  set E : (spechtSubrepresentation lam).toSubmodule :=
+  set E : (spechtSubrepresentation (R := ℚ) lam).toSubmodule :=
     ∑ q : colSubgroup t, ((Equiv.Perm.sign (q : Equiv.Perm (Fin lam.card)) : ℤ) : ℚ) •
-      (spechtSubrepresentation lam).toRepresentation q ⟨e, he⟩ with hE
+      (spechtSubrepresentation (R := ℚ) lam).toRepresentation q ⟨e, he⟩ with hE
   -- the action on the Specht module is the restriction of the ambient action
-  have hact : ∀ (g : Equiv.Perm (Fin lam.card)) (v : (spechtSubrepresentation lam).toSubmodule),
-      ((spechtSubrepresentation lam).toRepresentation g v :
-          (permutationModule (shapePartition lam)).V) =
-        (permutationModule (shapePartition lam)).ρ g v :=
+  have hact : ∀ (g : Equiv.Perm (Fin lam.card)) (v : (spechtSubrepresentation (R := ℚ)
+    lam).toSubmodule),
+      ((spechtSubrepresentation (R := ℚ) lam).toRepresentation g v :
+          (permutationModule (R := ℚ) (shapePartition lam)).V) =
+        (permutationModule (R := ℚ) (shapePartition lam)).ρ g v :=
     fun g v =>
-      LinearMap.coe_restrict_apply ((spechtSubrepresentation lam).apply_mem_toSubmodule g) v
-  have hEcoe : (E : (permutationModule (shapePartition lam)).V) = polytabloid t := by
+      LinearMap.coe_restrict_apply ((spechtSubrepresentation (R := ℚ) lam).apply_mem_toSubmodule
+        g) v
+  have hEcoe : (E : (permutationModule (R := ℚ) (shapePartition lam)).V) = polytabloid (R := ℚ)
+    t := by
     rw [hE, ← hbe, asAlgebraHom_columnAntisymmetrizer_apply]
     push_cast
     exact Finset.sum_congr rfl fun q _ => by rw [hact]
   have hEne : E ≠ 0 := fun h =>
     polytabloid_ne_zero t (by rw [← hEcoe, h, ZeroMemClass.coe_zero])
   -- and `f` carries it to `b_t` applied to `f ⟨e, he⟩`
-  have hfE : (permutationModule μ).ρ.asAlgebraHom (columnAntisymmetrizer t) (f ⟨e, he⟩) = f E := by
+  have hfE : (permutationModule (R := ℚ) μ).ρ.asAlgebraHom (columnAntisymmetrizer (R := ℚ) t) (f
+    ⟨e, he⟩)
+    = f E := by
     rw [asAlgebraHom_columnAntisymmetrizer_apply, hE, map_sum]
     exact Finset.sum_congr rfl fun q _ => by
       rw [map_smul, f.isIntertwining]
@@ -181,8 +194,8 @@ theorem dominates_of_intertwiningMap_ne_zero (μ : lam.card.Partition)
 `μ`, every map of representations from the Specht module of `lam` to `M^μ` is zero. -/
 theorem intertwiningMap_eq_zero_of_not_dominates (μ : lam.card.Partition)
     (h : ¬(shapePartition lam).Dominates μ)
-    (f : Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
-      (permutationModule μ).ρ) :
+    (f : Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) lam).toRepresentation
+      (permutationModule (R := ℚ) μ).ρ) :
     f = 0 := by
   by_contra hf
   exact h (dominates_of_intertwiningMap_ne_zero μ hf)

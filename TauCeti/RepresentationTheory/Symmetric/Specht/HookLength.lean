@@ -59,7 +59,8 @@ Equivalently, the degree of `S^μ` is the number of standard Young tableaux of s
 quotient form `dim_ℚ S^μ = n ! / ∏ hooks` is
 `TauCeti.finrank_spechtModule_eq_factorial_div_prod_hookLength`. -/
 theorem finrank_spechtModule_mul_prod_hookLength :
-    finrank ℚ (spechtModule μ) * ∏ c ∈ (ofPartition μ).cells, (ofPartition μ).hookLength c =
+    finrank ℚ (spechtModule (R := ℚ) μ) * ∏ c ∈ (ofPartition μ).cells, (ofPartition
+      μ).hookLength c =
       n ! := by
   rw [finrank_spechtModule, standardCount_mul_prod_hookLength, card_ofPartition]
 
@@ -68,14 +69,14 @@ product of the hook lengths of the shape `μ`. The division is exact, by
 `YoungDiagram.prod_hookLength_dvd_factorial` at the shape `YoungDiagram.ofPartition μ`, which has
 `n` cells. -/
 theorem finrank_spechtModule_eq_factorial_div_prod_hookLength :
-    finrank ℚ (spechtModule μ)
+    finrank ℚ (spechtModule (R := ℚ) μ)
       = n ! / ∏ c ∈ (ofPartition μ).cells, (ofPartition μ).hookLength c := by
   rw [finrank_spechtModule, standardCount_eq_factorial_div_prod_hookLength, card_ofPartition]
 
 /-- **The hook-length formula in quotient form over `ℚ`**, the field the Specht modules live
 over. -/
 theorem cast_finrank_spechtModule_eq_factorial_div_prod_hookLength :
-    (finrank ℚ (spechtModule μ) : ℚ)
+    (finrank ℚ (spechtModule (R := ℚ) μ) : ℚ)
       = (n ! : ℚ) / ∏ c ∈ (ofPartition μ).cells, ((ofPartition μ).hookLength c : ℚ) := by
   rw [finrank_spechtModule, cast_standardCount_eq_factorial_div_prod_hookLength, card_ofPartition]
 

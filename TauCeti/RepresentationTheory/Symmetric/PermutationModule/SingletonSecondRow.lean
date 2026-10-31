@@ -103,7 +103,7 @@ theorem singletonSecondRowTabloidEquiv_smul (n : ℕ) (σ : Equiv.Perm (Fin (n +
 `(n+1, 1)`-tabloids are the points of `Fin (n+2)`, the module `M^{(n+1,1)}` is `ℚ[Fin (n+2)]` with
 the symmetric group permuting the standard basis. -/
 noncomputable def permutationModuleSingletonSecondRowIso (n : ℕ) :
-    permutationModule (Nat.Partition.singletonSecondRow n) ≅
+    permutationModule (R := ℚ) (Nat.Partition.singletonSecondRow n) ≅
       Rep.ofMulAction ℚ (Equiv.Perm (Fin (n + 2))) (Fin (n + 2)) :=
   ofMulActionIsoCongr ℚ (singletonSecondRowTabloidEquiv n) (singletonSecondRowTabloidEquiv_smul n)
 
@@ -129,7 +129,8 @@ theorem permutationModuleSingletonSecondRowIso_inv_hom_single (n : ℕ) (x : Fin
 rather than the multinomial coefficient `(n+2)! / (n+1)!` in the shape it is presented by. -/
 @[simp]
 theorem finrank_permutationModule_singletonSecondRow (n : ℕ) :
-    Module.finrank ℚ (permutationModule (Nat.Partition.singletonSecondRow n)).V = n + 2 := by
+    Module.finrank ℚ (permutationModule (R := ℚ) (Nat.Partition.singletonSecondRow n)).V = n + 2
+      := by
   rw [(Representation.equivOfIso
       (permutationModuleSingletonSecondRowIso n)).toLinearEquiv.finrank_eq,
     Module.finrank_eq_card_basis (MonoidAlgebra.basis (Fin (n + 2)) ℚ), Fintype.card_fin]
@@ -138,7 +139,7 @@ theorem finrank_permutationModule_singletonSecondRow (n : ℕ) :
 character counts fixed tabloids; for the shape `(n+1, 1)` those are the points of `Fin (n+2)`, so
 it is the natural permutation character. -/
 theorem char_permutationModule_singletonSecondRow (n : ℕ) (σ : Equiv.Perm (Fin (n + 2))) :
-    (permutationModule (Nat.Partition.singletonSecondRow n)).ρ.character σ =
+    (permutationModule (R := ℚ) (Nat.Partition.singletonSecondRow n)).ρ.character σ =
       (Nat.card {x : Fin (n + 2) // σ x = x} : ℚ) := by
   rw [Representation.char_iso
       (Representation.equivOfIso (permutationModuleSingletonSecondRowIso n)), char_ofMulAction]
@@ -155,7 +156,7 @@ invertible in `ℚ` -- decomposes it as a product of two representations, the se
 standard representation by `TauCeti.toRepresentation_augmentationSubrepresentation`.  In short,
 `M^{(n-1,1)} = triv ⊕ standard`. -/
 noncomputable def permutationModuleSingletonSecondRowEquivProd (n : ℕ) :
-    (permutationModule (Nat.Partition.singletonSecondRow n)).ρ.Equiv
+    (permutationModule (R := ℚ) (Nat.Partition.singletonSecondRow n)).ρ.Equiv
       ((Representation.trivial ℚ (Equiv.Perm (Fin (n + 2))) ℚ).prod
         (standardRepresentation ℚ (Fin (n + 2)))) :=
   (Representation.equivOfIso (permutationModuleSingletonSecondRowIso n)).trans
@@ -173,7 +174,7 @@ tabloids with the labels.**  The two components of a vector are therefore comput
 `g` is the standard basis vector of `g (Fin.last (n+1))`. -/
 @[simp]
 theorem permutationModuleSingletonSecondRowEquivProd_apply (n : ℕ)
-    (v : (permutationModule (Nat.Partition.singletonSecondRow n)).V) :
+    (v : (permutationModule (R := ℚ) (Nat.Partition.singletonSecondRow n)).V) :
     permutationModuleSingletonSecondRowEquivProd n v =
       ofMulActionEquivProdAugmentation ℚ (Equiv.Perm (Fin (n + 2))) (Fin (n + 2))
         (by rw [isUnit_iff_ne_zero, Fintype.card_fin]; positivity)
@@ -210,7 +211,7 @@ point-stabilizer identity
 `TauCeti.char_ind_trivial_stabilizer_eq_one_add_char_standardRepresentation`. -/
 theorem char_permutationModule_singletonSecondRow_eq_one_add_char_standardRepresentation (n : ℕ)
     (σ : Equiv.Perm (Fin (n + 2))) :
-    (permutationModule (Nat.Partition.singletonSecondRow n)).ρ.character σ =
+    (permutationModule (R := ℚ) (Nat.Partition.singletonSecondRow n)).ρ.character σ =
       1 + (standardRepresentation ℚ (Fin (n + 2))).character σ := by
   rw [char_permutationModule_singletonSecondRow, ← char_ind_trivial_stabilizer ℚ (Fin.last (n + 1))]
   exact char_ind_trivial_stabilizer_eq_one_add_char_standardRepresentation ℚ _ σ

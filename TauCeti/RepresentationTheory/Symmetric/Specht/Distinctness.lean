@@ -37,14 +37,14 @@ variable {lam m : YoungDiagram}
 private noncomputable def transportedColumnAntisymmetrizer
     (e : Fin lam.card ≃ Fin m.card) (t : YoungTableau lam) :
     MonoidAlgebra ℚ (Equiv.Perm (Fin m.card)) :=
-  MonoidAlgebra.mapDomainAlgHom ℚ ℚ e.permCongrHom.toMonoidHom (columnAntisymmetrizer t)
+  MonoidAlgebra.mapDomainAlgHom ℚ ℚ e.permCongrHom.toMonoidHom (columnAntisymmetrizer (R := ℚ) t)
 
 private theorem asAlgebraHom_comp_apply (e : Fin lam.card ≃ Fin m.card)
     (a : MonoidAlgebra ℚ (Equiv.Perm (Fin lam.card)))
-    (x : (permutationModule (shapePartition m)).V) :
+    (x : (permutationModule (R := ℚ) (shapePartition m)).V) :
     Representation.asAlgebraHom
-        ((permutationModule (shapePartition m)).ρ.comp e.permCongrHom.toMonoidHom) a x =
-      (permutationModule (shapePartition m)).ρ.asAlgebraHom
+        ((permutationModule (R := ℚ) (shapePartition m)).ρ.comp e.permCongrHom.toMonoidHom) a x =
+      (permutationModule (R := ℚ) (shapePartition m)).ρ.asAlgebraHom
         (MonoidAlgebra.mapDomainAlgHom ℚ ℚ e.permCongrHom.toMonoidHom a) x := by
   induction a using MonoidAlgebra.induction_linear with
   | zero => simp
@@ -93,13 +93,13 @@ private theorem transportedColumnAntisymmetrizer_single_eq_zero
     {x y : Fin m.card} (hxy : x ≠ y)
     (hcol : colIndex t (e.symm x) = colIndex t (e.symm y))
     (hfix : Equiv.swap x y • q = q) :
-    (permutationModule (shapePartition m)).ρ.asAlgebraHom
+    (permutationModule (R := ℚ) (shapePartition m)).ρ.asAlgebraHom
         (transportedColumnAntisymmetrizer e t) (MonoidAlgebra.single q 1) = 0 := by
-  have hfix' : (permutationModule (shapePartition m)).ρ (Equiv.swap x y)
+  have hfix' : (permutationModule (R := ℚ) (shapePartition m)).ρ (Equiv.swap x y)
       (MonoidAlgebra.single q (1 : ℚ)) = MonoidAlgebra.single q 1 := by
     rw [Representation.ofMulAction_single, hfix]
   -- the permutation module is a `ℚ`-vector space, so doubling is injective on it
-  have : HasUniqueDiv (permutationModule (shapePartition m)) := .of_module_rat _
+  have : HasUniqueDiv (permutationModule (R := ℚ) (shapePartition m)) := .of_module_rat _
   exact Representation.asAlgebraHom_eq_zero_of_mul_single_eq_neg
     (nsmul_right_injective two_ne_zero) _ hfix'
     (transportedColumnAntisymmetrizer_mul_single_swap e t hxy hcol)
@@ -112,22 +112,22 @@ private theorem coe_toRepresentation_apply {G V : Type*} [Group G]
 
 private theorem sum_take_rowLens_le_of_transportedColumnAntisymmetrizer_ne_zero
     (e : Fin lam.card ≃ Fin m.card) (t : YoungTableau lam)
-    {v : (permutationModule (shapePartition m)).V}
-    (hv : (permutationModule (shapePartition m)).ρ.asAlgebraHom
+    {v : (permutationModule (R := ℚ) (shapePartition m)).V}
+    (hv : (permutationModule (R := ℚ) (shapePartition m)).ρ.asAlgebraHom
       (transportedColumnAntisymmetrizer e t) v ≠ 0) (k : ℕ) :
     (m.rowLens.take k).sum ≤ (lam.rowLens.take k).sum := by
   have hex : ∃ q : Equiv.Perm (Fin m.card) ⧸ youngSubgroup (shapePartition m),
-      (permutationModule (shapePartition m)).ρ.asAlgebraHom
+      (permutationModule (R := ℚ) (shapePartition m)).ρ.asAlgebraHom
         (transportedColumnAntisymmetrizer e t) (MonoidAlgebra.single q 1) ≠ 0 := by
     by_contra h
     push Not at h
     have hspan : v ∈ Submodule.span ℚ
-        (Set.range (permutationModuleBasis (shapePartition m))) := by
+        (Set.range (permutationModuleBasis (R := ℚ) (shapePartition m))) := by
       rw [Module.Basis.span_eq]
       exact Submodule.mem_top
     have hzero : ∀ w ∈ Submodule.span ℚ
-        (Set.range (permutationModuleBasis (shapePartition m))),
-        (permutationModule (shapePartition m)).ρ.asAlgebraHom
+        (Set.range (permutationModuleBasis (R := ℚ) (shapePartition m))),
+        (permutationModule (R := ℚ) (shapePartition m)).ρ.asAlgebraHom
           (transportedColumnAntisymmetrizer e t) w = 0 := by
       intro w hw
       induction hw using Submodule.span_induction with
@@ -148,34 +148,34 @@ private theorem sum_take_rowLens_le_of_transportedColumnAntisymmetrizer_ne_zero
 
 private theorem sum_take_rowLens_le_of_intertwiningMap_ne_zero
     (e : Fin lam.card ≃ Fin m.card)
-    {f : Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
-      ((permutationModule (shapePartition m)).ρ.comp e.permCongrHom.toMonoidHom)}
+    {f : Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) lam).toRepresentation
+      ((permutationModule (R := ℚ) (shapePartition m)).ρ.comp e.permCongrHom.toMonoidHom)}
     (hf : f ≠ 0) (k : ℕ) :
     (m.rowLens.take k).sum ≤ (lam.rowLens.take k).sum := by
   obtain ⟨t⟩ := YoungTableau.nonempty lam
   obtain ⟨v, hv, hbv⟩ :=
     YoungTableau.exists_mem_asAlgebraHom_columnAntisymmetrizer_eq_polytabloid t
-  let v' : (spechtSubrepresentation lam).toSubmodule := ⟨v, hv⟩
-  have : (spechtSubrepresentation lam).toRepresentation.IsIrreducible :=
+  let v' : (spechtSubrepresentation (R := ℚ) lam).toSubmodule := ⟨v, hv⟩
+  have : (spechtSubrepresentation (R := ℚ) lam).toRepresentation.IsIrreducible :=
     isIrreducible_spechtSubrepresentation lam
   have hinj : Function.Injective f :=
     (Representation.IsIrreducible.injective_or_eq_zero f).resolve_right hf
   have hmap : f
-      ((spechtSubrepresentation lam).toRepresentation.asAlgebraHom
-        (columnAntisymmetrizer t) v') =
-      (permutationModule (shapePartition m)).ρ.asAlgebraHom
+      ((spechtSubrepresentation (R := ℚ) lam).toRepresentation.asAlgebraHom
+        (columnAntisymmetrizer (R := ℚ) t) v') =
+      (permutationModule (R := ℚ) (shapePartition m)).ρ.asAlgebraHom
         (transportedColumnAntisymmetrizer e t) (f v') := by
     rw [transportedColumnAntisymmetrizer, ← asAlgebraHom_comp_apply]
     exact (Representation.IntertwiningMap.equivLinearMapAsModule _ _ f).map_smul'
-      (columnAntisymmetrizer t) v'
+      (columnAntisymmetrizer (R := ℚ) t) v'
   apply sum_take_rowLens_le_of_transportedColumnAntisymmetrizer_ne_zero e t (k := k)
   rw [← hmap]
   intro h
   have hawne :
-      (spechtSubrepresentation lam).toRepresentation.asAlgebraHom
-        (columnAntisymmetrizer t) v' ≠ 0 := by
+      (spechtSubrepresentation (R := ℚ) lam).toRepresentation.asAlgebraHom
+        (columnAntisymmetrizer (R := ℚ) t) v' ≠ 0 := by
     intro haw
-    apply YoungTableau.polytabloid_ne_zero t
+    apply YoungTableau.polytabloid_ne_zero (R := ℚ) t
     rw [← hbv]
     have haw' := congrArg Subtype.val haw
     rw [Subrepresentation.coe_toRepresentation_asAlgebraHom_apply] at haw'
@@ -183,12 +183,13 @@ private theorem sum_take_rowLens_le_of_intertwiningMap_ne_zero
   exact hawne (hinj (h.trans (map_zero f).symm))
 
 private noncomputable def spechtIntertwiningMapOfIso {n : ℕ} {μ ν : n.Partition}
-    (i : spechtModule μ ≅ spechtModule ν) :
-    Representation.IntertwiningMap (spechtSubrepresentation (ofPartition μ)).toRepresentation
-      ((spechtSubrepresentation (ofPartition ν)).toRepresentation.comp
+    (i : spechtModule (R := ℚ) μ ≅ spechtModule (R := ℚ) ν) :
+    Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) (ofPartition
+      μ)).toRepresentation
+      ((spechtSubrepresentation (R := ℚ) (ofPartition ν)).toRepresentation.comp
         (finCongr
           ((card_ofPartition μ).trans (card_ofPartition ν).symm)).permCongrHom.toMonoidHom) := by
-  let f : Representation.Equiv (spechtModule μ).ρ (spechtModule ν).ρ :=
+  let f : Representation.Equiv (spechtModule (R := ℚ) μ).ρ (spechtModule (R := ℚ) ν).ρ :=
     Representation.equivOfIso
     ((forget₂ (FDRep ℚ (Equiv.Perm (Fin n))) (Rep ℚ (Equiv.Perm (Fin n)))).mapIso i)
   let eμ := (finCongr (card_ofPartition μ).symm).permCongrHom
@@ -204,16 +205,18 @@ private noncomputable def spechtIntertwiningMapOfIso {n : ℕ} {μ ν : n.Partit
     eμ, eν, e, MulEquiv.apply_symm_apply, he] using hf
 
 private theorem spechtIntertwiningMapOfIso_injective {n : ℕ} {μ ν : n.Partition}
-    (i : spechtModule μ ≅ spechtModule ν) : Function.Injective (spechtIntertwiningMapOfIso i) := by
-  let f : Representation.Equiv (spechtModule μ).ρ (spechtModule ν).ρ :=
+    (i : spechtModule (R := ℚ) μ ≅ spechtModule (R := ℚ) ν) : Function.Injective
+      (spechtIntertwiningMapOfIso i) := by
+  let f : Representation.Equiv (spechtModule (R := ℚ) μ).ρ (spechtModule (R := ℚ) ν).ρ :=
     Representation.equivOfIso
       ((forget₂ (FDRep ℚ (Equiv.Perm (Fin n))) (Rep ℚ (Equiv.Perm (Fin n)))).mapIso i)
   exact fun _ _ h => f.injective h
 
 private noncomputable def spechtToPermutationIntertwiningMapOfIso {n : ℕ}
-    {μ ν : n.Partition} (i : spechtModule μ ≅ spechtModule ν) :
-    Representation.IntertwiningMap (spechtSubrepresentation (ofPartition μ)).toRepresentation
-      ((permutationModule (shapePartition (ofPartition ν))).ρ.comp
+    {μ ν : n.Partition} (i : spechtModule (R := ℚ) μ ≅ spechtModule (R := ℚ) ν) :
+    Representation.IntertwiningMap (spechtSubrepresentation (R := ℚ) (ofPartition
+      μ)).toRepresentation
+      ((permutationModule (R := ℚ) (shapePartition (ofPartition ν))).ρ.comp
         (finCongr ((card_ofPartition μ).trans
           (card_ofPartition ν).symm)).permCongrHom.toMonoidHom) :=
   { toLinearMap := (Submodule.subtype _).comp (spechtIntertwiningMapOfIso i).toLinearMap
@@ -227,17 +230,17 @@ private noncomputable def spechtToPermutationIntertwiningMapOfIso {n : ℕ}
       simpa only [f, LinearMap.comp_apply, Submodule.coe_subtype, MonoidHom.comp_apply] using h }
 
 private theorem spechtToPermutationIntertwiningMapOfIso_apply {n : ℕ}
-    {μ ν : n.Partition} (i : spechtModule μ ≅ spechtModule ν)
-    (v : (spechtSubrepresentation (ofPartition μ)).toSubmodule) :
+    {μ ν : n.Partition} (i : spechtModule (R := ℚ) μ ≅ spechtModule (R := ℚ) ν)
+    (v : (spechtSubrepresentation (R := ℚ) (ofPartition μ)).toSubmodule) :
     spechtToPermutationIntertwiningMapOfIso i v =
       ((spechtIntertwiningMapOfIso i v :
-        (spechtSubrepresentation (ofPartition ν)).toSubmodule) :
-          (permutationModule (shapePartition (ofPartition ν))).V) :=
+        (spechtSubrepresentation (R := ℚ) (ofPartition ν)).toSubmodule) :
+          (permutationModule (R := ℚ) (shapePartition (ofPartition ν))).V) :=
   rfl
 
 /-- An isomorphism from `S^μ` to `S^ν` forces `μ` to dominate `ν`. -/
 private theorem dominates_of_spechtModule_iso {n : ℕ} {μ ν : n.Partition}
-    (i : spechtModule μ ≅ spechtModule ν) : μ.Dominates ν := by
+    (i : spechtModule (R := ℚ) μ ≅ spechtModule (R := ℚ) ν) : μ.Dominates ν := by
   refine Nat.Partition.dominates_iff.mpr fun k => ?_
   simpa only [YoungDiagram.rowLens_ofPartition_eq_sort_parts] using
     sum_take_rowLens_le_of_intertwiningMap_ne_zero
@@ -245,11 +248,11 @@ private theorem dominates_of_spechtModule_iso {n : ℕ} {μ ν : n.Partition}
       (f := spechtToPermutationIntertwiningMapOfIso i) (k := k) (by
         intro hzero
         obtain ⟨t⟩ := YoungTableau.nonempty (ofPartition μ)
-        let v : (spechtSubrepresentation (ofPartition μ)).toSubmodule :=
-          ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩
+        let v : (spechtSubrepresentation (R := ℚ) (ofPartition μ)).toSubmodule :=
+          ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩
         have hv : v ≠ 0 := by
           intro h
-          apply polytabloid_ne_zero t
+          apply polytabloid_ne_zero (R := ℚ) t
           simpa only [v, ZeroMemClass.coe_zero] using congrArg Subtype.val h
         have heval := congrArg (fun f => f v) hzero
         rw [spechtToPermutationIntertwiningMapOfIso_apply] at heval
@@ -263,7 +266,7 @@ private theorem dominates_of_spechtModule_iso {n : ℕ} {μ ν : n.Partition}
 isomorphic if and only if their indexing partitions are equal. -/
 @[simp]
 theorem spechtModule_iso_iff {n : ℕ} (μ ν : n.Partition) :
-    Nonempty (spechtModule μ ≅ spechtModule ν) ↔ μ = ν := by
+    Nonempty (spechtModule (R := ℚ) μ ≅ spechtModule (R := ℚ) ν) ↔ μ = ν := by
   constructor
   · rintro ⟨i⟩
     exact (dominates_of_spechtModule_iso i).antisymm
