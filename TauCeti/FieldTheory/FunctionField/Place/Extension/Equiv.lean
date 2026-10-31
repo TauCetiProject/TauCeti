@@ -87,17 +87,8 @@ theorem relativeDegree_equivOfRingEquiv_of_comm [Algebra k K] [Algebra k' K']
   have hr := restrict_equivOfRingEquiv σ τ h σK hK hσK Q
   -- `σK` matches the valuation rings of the two places below.
   let i : (Q.restrict k K).integers ≃+* ((equivOfRingEquiv σ τ h Q).restrict k' K').integers :=
-    { toFun x := ⟨σK x, by
-        rw [hr, mem_integers_iff, valuation_equivOfRingEquiv, σK.symm_apply_apply,
-          ← mem_integers_iff]
-        exact x.2⟩
-      invFun y := ⟨σK.symm y, by
-        have hy : (y : K') ∈ (equivOfRingEquiv σ σK hσK (Q.restrict k K)).integers := hr ▸ y.2
-        rwa [mem_integers_iff, valuation_equivOfRingEquiv, ← mem_integers_iff] at hy⟩
-      left_inv x := Subtype.ext (σK.symm_apply_apply x)
-      right_inv y := Subtype.ext (σK.apply_symm_apply y)
-      map_mul' x y := Subtype.ext (map_mul σK _ _)
-      map_add' x y := Subtype.ext (map_add σK _ _) }
+    (integersEquivOfRingEquiv σ σK hσK (Q.restrict k K)).trans
+      (RingEquiv.subringCongr (congrArg (fun P ↦ P.integers.toSubring) hr.symm))
   rw [relativeDegree_def, relativeDegree_def]
   refine (Algebra.finrank_eq_of_equiv_equiv (IsLocalRing.ResidueField.mapEquiv i)
     (IsLocalRing.ResidueField.mapEquiv (integersEquivOfRingEquiv σ τ h Q))
@@ -108,7 +99,8 @@ theorem relativeDegree_equivOfRingEquiv_of_comm [Algebra k K] [Algebra k' K']
     IsLocalRing.ResidueField.algebraMap_residue]
   congr 1
   ext
-  simpa [i] using (hK x).symm
+  refine (congrArg (algebraMap K' L') (coe_integersEquivOfRingEquiv σ σK hσK _ x)).trans ?_
+  simpa using (hK x).symm
 
 end Semilinear
 
