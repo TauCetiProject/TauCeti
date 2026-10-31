@@ -27,7 +27,7 @@ multiplicative, so its Pontryagin product lives on `TopCat.of (Multiplicative (E
 the same topological space as `E / L`. The Pontryagin map `⋀ⁿ H₁(E / L; ℤ) → Hₙ(E / L; ℤ)`
 (`TopCat.pontryaginExteriorPower`) is bijective
 (`Submodule.bijective_pontryaginExteriorPower_orbitRelQuotient`): the circle coordinates of a
-lattice basis (`Module.Basis.latticeCircleCoordinates`) identify `E / L` with the torus `ι → S¹`
+lattice basis (`Module.Basis.quotientLatticeEquiv`) identify `E / L` with the torus `ι → S¹`
 as topological groups, and for the torus this is `TauCeti.bijective_pontryaginExteriorPower_torus`.
 Composing with the exterior powers of `H₁(E / L; ℤ) ≃ L`
 (`AddSubgroup.orbitRelQuotientFirstHomologyEquiv`) gives the isomorphism. Its inverse sends
@@ -158,84 +158,43 @@ section CircleCoordinates
 
 variable {ι : Type} [Fintype ι] (b : Module.Basis ι ℤ L)
 
-/-- The circle coordinates of a vector: its real coordinates in the lattice basis `b`, modulo one,
-read on the unit circle. -/
-private def latticeCircleHom : E →+ Additive (ι → ULift Circle) :=
+/-- Circle coordinates on the quotient `E / L`: the identification
+`Module.Basis.quotientLatticeEquiv` of `E ⧸ L` with the additive torus, read on the orbit space
+through `Submodule.orbitRelQuotientAddEquiv` and on the unit circle through
+`AddCircle.homeomorphCircle`. -/
+private def circleCoord : AddAction.orbitRel.Quotient L E ≃ (ι → ULift Circle) :=
   haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
-  { toFun v := Additive.ofMul fun i ↦ ULift.up (AddCircle.toCircle
-      (Module.Basis.latticeCircleCoordinates (L := L.toAddSubgroup) b v i))
-    map_zero' := by ext i; simp
-    map_add' v w := by
-      apply Additive.toMul.injective
-      ext i
-      simp [AddCircle.toCircle_add] }
+  (L.orbitRelQuotientAddEquiv.trans
+      (Module.Basis.quotientLatticeEquiv (L := L.toAddSubgroup) b).toAddEquiv).toEquiv.trans <|
+    Equiv.piCongrRight fun _ ↦
+      (AddCircle.homeomorphCircle (one_ne_zero : (1 : ℝ) ≠ 0)).toEquiv.trans Equiv.ulift.symm
 
-private theorem continuous_latticeCircleHom : Continuous (latticeCircleHom L b) := by
+private theorem circleCoord_apply (x : AddAction.orbitRel.Quotient L E) (i : ι) :
+    haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
+    circleCoord L b x i = ULift.up (AddCircle.toCircle ((L.orbitRelQuotientAddEquiv.trans
+      (Module.Basis.quotientLatticeEquiv (L := L.toAddSubgroup) b).toAddEquiv) x i)) := by
+  simp [circleCoord, AddCircle.homeomorphCircle_apply]
+
+private theorem continuous_circleCoord : Continuous (circleCoord L b) := by
   have : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
-  refine continuous_ofMul.comp (continuous_pi fun i ↦ continuous_uliftUp.comp ?_)
-  exact AddCircle.continuous_toCircle.comp ((continuous_apply i).comp
-    (map_continuous (Module.Basis.latticeCircleCoordinates (L := L.toAddSubgroup) b)))
-
-private theorem latticeCircleHom_eq_zero_iff {v : E} : latticeCircleHom L b v = 0 ↔ v ∈ L := by
-  have : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
-  rw [← Submodule.mem_toAddSubgroup,
-    ← Module.Basis.ker_latticeCircleCoordinates (L := L.toAddSubgroup) b, AddMonoidHom.mem_ker,
-    ← Additive.toMul.injective.eq_iff, funext_iff, funext_iff]
-  simp only [latticeCircleHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk, toMul_ofMul, toMul_zero,
-    Pi.one_apply, AddMonoidHom.coe_ofClass, Pi.zero_apply]
-  refine forall_congr' fun i ↦ ?_
-  rw [← (AddCircle.injective_toCircle one_ne_zero).eq_iff, AddCircle.toCircle_zero, ULift.ext_iff,
-    ULift.one_down]
-
-private theorem surjective_latticeCircleHom : Function.Surjective (latticeCircleHom L b) := by
-  have : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
-  intro z
-  have hc (i : ι) : ∃ x : UnitAddCircle, AddCircle.toCircle x = (Additive.toMul z i).down := by
-    simpa only [AddCircle.homeomorphCircle_apply] using
-      (AddCircle.homeomorphCircle (one_ne_zero : (1 : ℝ) ≠ 0)).surjective _
-  choose x hx using hc
-  obtain ⟨v, hv⟩ := Module.Basis.latticeCircleCoordinates_surjective (L := L.toAddSubgroup) b x
-  refine ⟨v, Additive.toMul.injective (funext fun i ↦ ULift.ext_iff.2 ?_)⟩
-  simp [latticeCircleHom, hv, hx]
-
-/-- Circle coordinates on the quotient `E / L`. -/
-private def circleCoord (x : AddAction.orbitRel.Quotient L E) : ι → ULift Circle :=
-  Additive.toMul (_root_.Quotient.lift (latticeCircleHom L b) (fun v w h ↦ by
-    rw [← sub_eq_zero, ← map_sub, latticeCircleHom_eq_zero_iff]
-    exact L.orbitRel_apply_iff_sub_mem.1 h) x)
-
-private theorem circleCoord_mk (v : E) :
-    circleCoord L b (_root_.Quotient.mk _ v) = Additive.toMul (latticeCircleHom L b v) :=
-  (rfl)
-
-private theorem continuous_circleCoord : Continuous (circleCoord L b) :=
-  isQuotientMap_quotient_mk'.continuous_iff.2 <|
-    (continuous_toMul.comp (continuous_latticeCircleHom L b)).congr fun v ↦
-      (circleCoord_mk L b v).symm
-
-private theorem bijective_circleCoord : Function.Bijective (circleCoord L b) := by
-  refine ⟨fun x y hxy ↦ ?_, fun z ↦ ?_⟩
-  · induction x using _root_.Quotient.inductionOn
-    induction y using _root_.Quotient.inductionOn
-    rw [circleCoord_mk, circleCoord_mk, Additive.toMul.injective.eq_iff, ← sub_eq_zero, ← map_sub,
-      latticeCircleHom_eq_zero_iff] at hxy
-    exact _root_.Quotient.sound (L.orbitRel_apply_iff_sub_mem.2 hxy)
-  · obtain ⟨v, hv⟩ := surjective_latticeCircleHom L b (Additive.ofMul z)
-    exact ⟨_root_.Quotient.mk _ v, by rw [circleCoord_mk, hv, toMul_ofMul]⟩
+  -- the orbit space and `E ⧸ L` are both quotients of `E` by the same relation
+  have he : Continuous L.orbitRelQuotientAddEquiv :=
+    isQuotientMap_quotient_mk'.continuous_iff.2 <|
+      continuous_quotient_mk'.congr fun v ↦ (L.orbitRelQuotientAddEquiv_mk v).symm
+  refine continuous_pi fun i ↦ continuous_uliftUp.comp <|
+    (AddCircle.homeomorphCircle _).continuous.comp <| (continuous_apply i).comp <|
+      (Module.Basis.quotientLatticeEquiv (L := L.toAddSubgroup) b).continuous.comp he
 
 /-- Circle coordinates, as a continuous homomorphism from the multiplicative form of `E / L`. -/
 private def circleCoordMul :
     Multiplicative (AddAction.orbitRel.Quotient L E) →ₜ* (ι → ULift Circle) where
   toFun x := circleCoord L b (Multiplicative.toAdd x)
   map_one' := by
-    rw [toAdd_one, ← L.orbitRelQuotient_mk_zero, circleCoord_mk, map_zero, toMul_zero]
+    ext i
+    simp [circleCoord_apply]
   map_mul' x y := by
-    induction x using Multiplicative.rec with | ofAdd x => ?_
-    induction y using Multiplicative.rec with | ofAdd y => ?_
-    induction x using _root_.Quotient.inductionOn
-    induction y using _root_.Quotient.inductionOn
-    rw [toAdd_mul, toAdd_ofAdd, toAdd_ofAdd, ← L.orbitRelQuotient_mk_add, circleCoord_mk,
-      circleCoord_mk, circleCoord_mk, map_add, toMul_add]
+    ext i
+    simp [circleCoord_apply, AddCircle.toCircle_add]
   continuous_toFun := (continuous_circleCoord L b).comp continuous_toAdd
 
 end CircleCoordinates
@@ -254,7 +213,7 @@ theorem bijective_pontryaginExteriorPower_orbitRelQuotient (n : ℕ) :
   -- `Multiplicative (E / L)` is a type synonym carrying the topology of `E / L`
   have : IsIso f := (TopCat.isIso_iff_isHomeomorph f).2 <|
     (isHomeomorph_iff_continuous_bijective (X := AddAction.orbitRel.Quotient L E)).2
-      ⟨continuous_circleCoord L b, bijective_circleCoord L b⟩
+      ⟨continuous_circleCoord L b, (circleCoord L b).bijective⟩
   exact TopCat.bijective_pontryaginExteriorPower_of_isIso f
     (bijective_pontryaginExteriorPower_torus ℤ _ n)
 
