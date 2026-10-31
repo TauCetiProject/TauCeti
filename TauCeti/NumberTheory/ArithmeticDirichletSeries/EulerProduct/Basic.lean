@@ -45,6 +45,9 @@ no analytic convergence hypothesis enters.
 * `TauCeti.IdealArithmeticFunction.normCoeff_eq_eulerProduct`: the norm coefficients of a
   multiplicative ideal arithmetic function are Mathlib's formal Euler product of its canonical
   local factors.
+* `TauCeti.IdealArithmeticFunction.IsMultiplicative.normCoeff`: consequently, the norm
+  coefficients of a multiplicative ideal arithmetic function form a multiplicative arithmetic
+  function.
 * `TauCeti.IdealArithmeticFunction.normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor`:
   at a power `p ^ k` of a rational prime, the norm coefficient is read off from the finitely many
   local factors at the primes above `p`;
@@ -495,6 +498,11 @@ theorem normCoeff_eq_eulerProduct (hf : f.IsMultiplicative) :
     (tendsTo_eulerProduct_localArithmeticFactor f hf.map_one n)).exists
   rw [normCoeff_supportedPart hf S] at hcoeff
   exact hcoeff.symm.trans hprod
+
+/-- The norm coefficients of a multiplicative ideal arithmetic function form a multiplicative
+arithmetic function. -/
+theorem IsMultiplicative.normCoeff (hf : f.IsMultiplicative) : (normCoeff K f).IsMultiplicative :=
+  normCoeff_eq_eulerProduct hf ▸ isMultiplicative_eulerProduct hf.map_one
 
 /-- **The local Euler factor at a rational prime.** For a multiplicative ideal arithmetic function
 and a rational prime `p`, the norm coefficient at `p ^ k` is the coefficient at `p ^ k` of the

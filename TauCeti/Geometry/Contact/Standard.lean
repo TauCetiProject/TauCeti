@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import TauCeti.Geometry.Contact.Flat
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.Distribution
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
@@ -24,7 +25,9 @@ the nondegeneracy of `dα` on the kernel.
 
 The constant vector field `∂_z` (`TauCeti.standardReebField`) satisfies the Reeb equations
 `α(∂_z) = 1` and `ι_{∂_z} dα = 0`, so it is the Reeb vector field of `α`
-(`TauCeti.reebVectorField_standardContactForm`).
+(`TauCeti.reebVectorField_standardContactForm`). Equivalently, it is the vector field
+corresponding to `α` itself under the contact flat equivalence
+(`TauCeti.contactFlatEquiv_symm_standardContactForm`).
 
 The Reeb field depends on the contact form, not only on the distribution: the form `eˣ (dz - x dy)`
 has the same kernel but Reeb vector field `e^(-x) (∂_y + (x + 1) ∂_z)`
@@ -182,6 +185,17 @@ theorem mextDeriv_standardContactForm_standardReebField (p : ℝ × ℝ × ℝ)
     mextDeriv standardContactForm.1 p ![standardReebField p, w] = 0 := by
   rw [mextDeriv_standardContactForm_apply]
   simp [standardReebField]
+
+/-- For the standard contact form `dz - x dy` on `ℝ³`, the vector field corresponding to the form
+itself under the contact flat equivalence is its Reeb vector field `∂_z`. -/
+theorem contactFlatEquiv_symm_standardContactForm :
+    ⇑(isContactForm_standardContactForm.contactFlatEquiv.symm standardContactForm) =
+      standardReebField :=
+  funext fun p ↦ (isContactForm_standardContactForm.isInvertible_contactFlat p).injective <| by
+    rw [SmoothForm.IsContactForm.contactFlat_contactFlatEquiv_symm,
+      isContactForm_standardContactForm.contactFlat_apply_eq_iff.2
+        ⟨standardContactForm_apply_standardReebField p,
+          mextDeriv_standardContactForm_standardReebField p⟩]
 
 /-- The Reeb vector field of the standard contact form `dz - x dy` is `∂_z`. -/
 theorem reebVectorField_standardContactForm (p : ℝ × ℝ × ℝ) :

@@ -365,6 +365,14 @@ theorem withStar_mk_true {A : Type*} [Star A] (a : ι → A) (i : ι) :
     withStar a (i, true) = star (a i) :=
   (rfl)
 
+/-- For a selfadjoint family, `withStar a` forgets whether a letter is an adjoint. -/
+theorem withStar_eq_comp_fst {A : Type*} [Star A] {a : ι → A} (ha : ∀ i, IsSelfAdjoint (a i)) :
+    withStar a = a ∘ Prod.fst := by
+  funext x
+  obtain ⟨i, _ | _⟩ := x
+  · rfl
+  · exact (ha i).star_eq
+
 variable (R ι) in
 /-- The identification of the star polynomials with the free algebra on the letters `(i, false)`,
 standing for `Xᵢ`, and `(i, true)`, standing for `Xᵢ*`. It forgets the star structure. -/

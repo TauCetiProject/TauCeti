@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
+public import TauCeti.KnotTheory.Cobordism
 public import TauCeti.KnotTheory.Slice.TopologicalGenus
 
 /-!
@@ -32,8 +33,8 @@ the elementary properties of mirroring that this rests on:
 * smooth and topological sliceness, and the smooth and topological slice genera, are invariant
   under mirroring, since a slice disc or slice surface in the four-ball is reflected along with
   the knot (`TauCeti.isSmoothlySlice_congr_linearIsometryEquiv` and its companions);
-* smooth concordance is preserved and reflected by mirroring, since the reflection is an ambient
-  diffeomorphism.
+* smooth concordance is preserved and reflected by mirroring, and the cobordism distance is
+  unchanged by mirroring both knots, since the reflection is an ambient diffeomorphism.
 
 Any two orientation-reversing linear isometries of `ℝⁿ⁺¹` differ by a rotation, which is isotopic to
 the identity, so mathematically the choice of hyperplane only matters up to ambient isotopy; that
@@ -56,6 +57,7 @@ independence is not formalized here.
   genera are invariant under mirroring.
 * `TauCeti.SmoothEmbedding.concordant_mirror_iff`: mirroring preserves and reflects smooth
   concordance.
+* `TauCeti.cobordismDistance_mirror`: mirroring both knots keeps their cobordism distance.
 
 ## References
 
@@ -219,5 +221,13 @@ theorem SmoothEmbedding.Concordant.mirror (h : SmoothEmbedding.Concordant K K') 
 theorem SmoothEmbedding.concordant_mirror_iff :
     SmoothEmbedding.Concordant K.mirror K'.mirror ↔ SmoothEmbedding.Concordant K K' :=
   ⟨fun h ↦ by simpa using h.mirror, fun h ↦ h.mirror⟩
+
+/-! ### The cobordism distance -/
+
+/-- Mirroring two knots does not change their cobordism distance: the reflection, times the
+identity of the height, carries knot cobordisms to knot cobordisms. -/
+@[simp]
+theorem cobordismDistance_mirror : cobordismDistance K.mirror K'.mirror = cobordismDistance K K' :=
+  cobordismDistance_transDiffeomorph _
 
 end TauCeti
