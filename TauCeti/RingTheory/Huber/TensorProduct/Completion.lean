@@ -12,6 +12,7 @@ import TauCeti.RingTheory.Huber.Completion.Basic
 
 import TauCeti.RingTheory.Huber.AdicHom.Completion
 import TauCeti.Topology.Algebra.UniformRing
+import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Surjective
 import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
@@ -196,6 +197,19 @@ theorem ker_toCompletion : RingHom.ker (toCompletion A B C) = (⊥ : Ideal (B �
 /-- Algebraic tensors are dense in the separated completed tensor ring. -/
 theorem denseRange_toCompletion : DenseRange (toCompletion A B C) := Completion.denseRange_coe
 
+/-- The completed tensor ring is the uniform completion of `B ⊗[A] C` for the tensor topology. -/
+noncomputable def equivCompletion : CompletedTensor A B C ≃+* Completion (B ⊗[A] C) :=
+  RingEquiv.refl _
+
+/-- The identification with the uniform completion sends the image of `x ∈ B ⊗[A] C` to the
+canonical image of `x`. -/
+@[simp] theorem equivCompletion_toCompletion (x : B ⊗[A] C) :
+    equivCompletion A B C (toCompletion A B C x) = x := (rfl)
+
+/-- The identification with the uniform completion is a homeomorphism. -/
+theorem isHomeomorph_equivCompletion : IsHomeomorph (equivCompletion A B C) :=
+  (Homeomorph.refl (Completion (B ⊗[A] C))).isHomeomorph
+
 /-- The closure of the image of a ring of integral elements of `B ⊗[A] C` with the tensor
 topology is a ring of integral elements of the completed tensor ring (Wedhorn, Lemma 7.47). -/
 theorem isRingOfIntegralElements_topologicalClosure_map_toCompletion
@@ -217,6 +231,39 @@ theorem hom_ext {S : Type*} [Semiring S] [TopologicalSpace S] [T2Space S]
     (hC : f.comp (inr A B C) = g.comp (inr A B C)) : f = g := by
   apply Completion.ringHom_ext_of_continuous hf hg
   exact Algebra.TensorProduct.ringHom_ext hB hC
+
+section OpenQuotient
+
+variable {A' B' C' : Type*} [CommRing A'] [CommRing B'] [CommRing C'] [Algebra A' B']
+  [Algebra A' C'] [TopologicalSpace A'] [TopologicalSpace B'] [TopologicalSpace C']
+  [IsTopologicalRing A'] [IsTopologicalRing B'] [IsTopologicalRing C']
+  [IsAdicHom (algebraMap A' B')] [IsAdicHom (algebraMap A' C')]
+
+/-- **Completion preserves open quotient maps of tensor products.** A continuous ring map `F` of
+completed tensor rings which, on algebraic tensors, is an open quotient map `f` for the two
+tensor topologies, is itself an open quotient map. Huber rings have countable bases of open
+subgroups at zero, so this is the completion of an open surjection of first-countable
+nonarchimedean groups (`AddMonoidHom.surjective_completion`). -/
+theorem isOpenQuotientMap_of_comp_toCompletion
+    (F : CompletedTensor A B C →+* CompletedTensor A' B' C') (hF : Continuous F)
+    (f : B ⊗[A] C →+* B' ⊗[A'] C')
+    (hf : letI := tensorTopology A B C
+      letI := tensorTopology A' B' C'
+      IsOpenQuotientMap f)
+    (hFf : F.comp (toCompletion A B C) = (toCompletion A' B' C').comp f) :
+    IsOpenQuotientMap F := by
+  have hfc : Continuous f := hf.continuous
+  have hFeq : (F : Completion (B ⊗[A] C) → Completion (B' ⊗[A'] C')) =
+      f.toAddMonoidHom.completion hfc :=
+    Completion.ext hF (AddMonoidHom.continuous_completion _ hfc) fun x ↦
+      (RingHom.congr_fun hFf x).trans (AddMonoidHom.completion_coe f.toAddMonoidHom hfc x).symm
+  refine ⟨?_, hF, ?_⟩
+  · rw [hFeq]
+    exact f.toAddMonoidHom.surjective_completion hfc hf.surjective hf.isOpenMap
+  · rw [hFeq]
+    exact f.toAddMonoidHom.isOpenMap_completion hfc hf.isOpenMap
+
+end OpenQuotient
 
 variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
   [NonarchimedeanRing R] [CompleteSpace R] [T0Space R]

@@ -64,6 +64,12 @@ supported in `S` glues with zero on `W ∖ S` to a unique section over `W` suppo
   `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `F₂` flasque are bijective;
 * `CategoryTheory.Sheaf.supportedHRestrict`: the restriction map `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)` for
   `W' ≤ W`, and `CategoryTheory.Sheaf.supportedHPresheaf F S n`, the presheaf `W ↦ H_Sⁿ(W, F)`;
+* `CategoryTheory.Sheaf.relativeH'.mk₀_g_postcomp_bijective_of_isFlasque`: for such a sequence
+  with `F₁` flasque, the maps `Hⁿ⁺¹(V, U; F₂) ⟶ Hⁿ⁺¹(V, U; F₃)` are bijective;
+* `CategoryTheory.Sheaf.supportedHPresheafPostcomp`: the morphism of presheaves
+  `H_Sᵐ(-, F) ⟶ H_Sᵏ(-, G)` given by the Yoneda product with a class in `Extⁿ(F, G)`, an
+  isomorphism when the Yoneda products are bijective on every open
+  (`CategoryTheory.Sheaf.isIso_supportedHPresheafPostcomp`);
 * `CategoryTheory.Sheaf.supportedHPresheafδ`: the connecting morphism
   `H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` of presheaves attached to a short exact sequence
   `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`, an isomorphism in positive degrees when `F₂` is flasque
@@ -454,6 +460,19 @@ theorem extClass_postcomp_bijective_of_isFlasque
     rw [Subsingleton.elim z 0, Abelian.Ext.zero_comp]
   · exact Abelian.Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) rfl
 
+/-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is a short exact sequence of sheaves with `F₁` flasque, the map
+`Hⁿ⁺¹(V, U; F₂) ⟶ Hⁿ⁺¹(V, U; F₃)` induced by `F₂ ⟶ F₃` is bijective. -/
+theorem mk₀_g_postcomp_bijective_of_isFlasque
+    {T : ShortComplex (Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
+    (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₁.obj] {U V : Opens X} (i : U ⟶ V)
+    (n : ℕ) :
+    Function.Bijective ((Abelian.Ext.mk₀ T.g).postcomp _ (add_zero (n + 1)) :
+      T.X₂.relativeH' i (n + 1) →+ T.X₃.relativeH' i (n + 1)) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · obtain ⟨z, rfl⟩ := Abelian.Ext.covariant_sequence_exact₂ _ hT x hx
+    rw [Subsingleton.elim z 0, Abelian.Ext.zero_comp]
+  · exact Abelian.Ext.covariant_sequence_exact₃ _ hT x rfl (Subsingleton.elim _ _)
+
 end relativeH'
 
 section connecting
@@ -463,14 +482,50 @@ open Abelian
 variable {X : TopCat.{u}} (S : Closeds X)
   {T : ShortComplex (Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
 
+/-- The morphism of presheaves `H_Sᵐ(-, F) ⟶ H_Sᵏ(-, G)` given by the Yoneda product with an `Ext`
+class `α : Extⁿ(F, G)`, where `m + n = k`. For `α = Ext.mk₀ f` this is the map induced by a
+morphism of sheaves `f : F ⟶ G`, and for the class of a short exact sequence it is the connecting
+morphism `CategoryTheory.Sheaf.supportedHPresheafδ`. -/
+noncomputable def supportedHPresheafPostcomp {F G : Sheaf (Opens.grothendieckTopology X)
+    AddCommGrpCat.{u}} {m n k : ℕ} (α : Ext F G n) (hk : m + n = k) :
+    F.supportedHPresheaf S m ⟶ G.supportedHPresheaf S k where
+  app W := AddCommGrpCat.ofHom (α.postcomp _ hk)
+  naturality W W' f := by
+    ext x
+    exact (F.supportedHRestrict_comp S (leOfHom f.unop) x α hk).symm
+
+@[simp]
+lemma supportedHPresheafPostcomp_app_apply {F G : Sheaf (Opens.grothendieckTopology X)
+    AddCommGrpCat.{u}} {m n k : ℕ} (α : Ext F G n) (hk : m + n = k) (W : (Opens X)ᵒᵖ)
+    (x : F.supportedH S W.unop m) :
+    (supportedHPresheafPostcomp S α hk).app W x = x.comp α hk :=
+  (rfl)
+
+/-- The Yoneda product with the identity class `Ext.mk₀ (𝟙 F)` is the identity of
+`H_Sⁿ(-, F)`. -/
+@[simp]
+lemma supportedHPresheafPostcomp_mk₀_id (F : Sheaf (Opens.grothendieckTopology X)
+    AddCommGrpCat.{u}) (n : ℕ) :
+    supportedHPresheafPostcomp S (Ext.mk₀ (𝟙 F)) (add_zero n) = 𝟙 _ := by
+  ext W x
+  exact Ext.comp_mk₀_id x
+
+/-- Successive Yoneda products with `α : Extⁿ(F, G)` and `β : Extⁿ'(G, H)` agree with the
+Yoneda product with `α.comp β : Extᵖ(F, H)`, where `n + n' = p`. -/
+@[reassoc]
+lemma supportedHPresheafPostcomp_comp {F G H : Sheaf (Opens.grothendieckTopology X)
+    AddCommGrpCat.{u}} {m n n' k l p : ℕ} (α : Ext F G n) (β : Ext G H n') (hk : m + n = k)
+    (hl : k + n' = l) (hp : n + n' = p) :
+    supportedHPresheafPostcomp S α hk ≫ supportedHPresheafPostcomp S β hl =
+      supportedHPresheafPostcomp S (α.comp β hp) (by lia) := by
+  ext W x
+  exact Ext.comp_assoc x α β hk hp (by lia)
+
 /-- The connecting morphism `H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` of presheaves of cohomology with
 supports attached to a short exact sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` of sheaves. -/
 noncomputable def supportedHPresheafδ (hT : T.ShortExact) (n : ℕ) :
-    T.X₃.supportedHPresheaf S n ⟶ T.X₁.supportedHPresheaf S (n + 1) where
-  app W := AddCommGrpCat.ofHom (hT.extClass.postcomp _ rfl)
-  naturality W W' f := by
-    ext x
-    exact (T.X₃.supportedHRestrict_comp S (leOfHom f.unop) x hT.extClass rfl).symm
+    T.X₃.supportedHPresheaf S n ⟶ T.X₁.supportedHPresheaf S (n + 1) :=
+  supportedHPresheafPostcomp S hT.extClass rfl
 
 /-- The connecting morphism of presheaves is the Yoneda product with the class of the short exact
 sequence. -/
@@ -480,14 +535,50 @@ lemma supportedHPresheafδ_app_apply (hT : T.ShortExact) (n : ℕ) (W : (Opens X
     (supportedHPresheafδ S hT n).app W x = x.comp hT.extClass rfl :=
   (rfl)
 
+/-- If the Yoneda products `H_Sᵐ(W, F) ⟶ H_Sᵏ(W, G)` with `α` are bijective for every open `W`,
+then `CategoryTheory.Sheaf.supportedHPresheafPostcomp` is an isomorphism of presheaves. -/
+theorem isIso_supportedHPresheafPostcomp {F G : Sheaf (Opens.grothendieckTopology X)
+    AddCommGrpCat.{u}} {m n k : ℕ} (α : Ext F G n) (hk : m + n = k)
+    (h : ∀ W : Opens X, Function.Bijective
+      (α.postcomp _ hk : F.supportedH S W m →+ G.supportedH S W k)) :
+    IsIso (supportedHPresheafPostcomp S α hk) := by
+  have (W : (Opens X)ᵒᵖ) : IsIso ((supportedHPresheafPostcomp S α hk).app W) := by
+    rw [ConcreteCategory.isIso_iff_bijective,
+      funext (supportedHPresheafPostcomp_app_apply S α hk W)]
+    exact h W.unop
+  exact NatIso.isIso_of_isIso_app _
+
+/-- An isomorphism of sheaves `e : F ≅ G` induces an isomorphism of presheaves
+`H_Sⁿ(-, F) ≅ H_Sⁿ(-, G)`. -/
+instance isIso_supportedHPresheafPostcomp_mk₀_hom {F G : Sheaf (Opens.grothendieckTopology X)
+    AddCommGrpCat.{u}} (e : F ≅ G) (n : ℕ) :
+    IsIso (supportedHPresheafPostcomp S (Ext.mk₀ e.hom) (add_zero n)) :=
+  isIso_supportedHPresheafPostcomp S _ _ fun _ ↦
+    Function.bijective_iff_has_inverse.2 ⟨(Ext.mk₀ e.inv).postcomp _ (add_zero n),
+      fun x ↦ by simp, fun x ↦ by simp⟩
+
+/-- If `F₂` is flasque, the connecting morphism `H_Sᵃ⁺¹(-, F₃) ⟶ H_Sᵏ(-, F₁)`, for `k = a + 2`, is
+an isomorphism of presheaves. -/
+theorem isIso_supportedHPresheafPostcomp_extClass (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₂.obj] {a k : ℕ} (hk : a + 1 + 1 = k) :
+    IsIso (supportedHPresheafPostcomp S hT.extClass hk) :=
+  isIso_supportedHPresheafPostcomp S _ _ fun W ↦ by
+    subst hk
+    exact relativeH'.extClass_postcomp_bijective_of_isFlasque hT _ a
+
+/-- If `F₁` is flasque, the morphism `H_Sᵃ⁺¹(-, F₂) ⟶ H_Sᵃ⁺¹(-, F₃)` induced by `F₂ ⟶ F₃` is an
+isomorphism of presheaves. -/
+theorem isIso_supportedHPresheafPostcomp_mk₀_g (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₁.obj] (a : ℕ) :
+    IsIso (supportedHPresheafPostcomp S (Ext.mk₀ T.g) (add_zero (a + 1))) :=
+  isIso_supportedHPresheafPostcomp S _ _ fun _ ↦
+    relativeH'.mk₀_g_postcomp_bijective_of_isFlasque hT _ a
+
 /-- If `F₂` is flasque, the connecting morphism `H_Sⁿ⁺¹(-, F₃) ⟶ H_Sⁿ⁺²(-, F₁)` is an
 isomorphism of presheaves. -/
 instance isIso_supportedHPresheafδ_succ (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₂.obj]
-    (n : ℕ) : IsIso (supportedHPresheafδ S hT (n + 1)) := by
-  have (W : (Opens X)ᵒᵖ) : IsIso ((supportedHPresheafδ S hT (n + 1)).app W) :=
-    (ConcreteCategory.isIso_iff_bijective _).2
-      (relativeH'.extClass_postcomp_bijective_of_isFlasque hT (S.complInclusion W.unop) n)
-  exact NatIso.isIso_of_isIso_app _
+    (n : ℕ) : IsIso (supportedHPresheafδ S hT (n + 1)) :=
+  isIso_supportedHPresheafPostcomp_extClass S hT rfl
 
 end connecting
 

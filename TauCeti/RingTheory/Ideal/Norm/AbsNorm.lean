@@ -13,7 +13,8 @@ import TauCeti.RingTheory.Norm.Congruence
 # The absolute ideal norm under a ring isomorphism, and congruences of norms
 
 Identifying two rings along an isomorphism identifies their ideals, and the absolute norm is
-insensitive to that identification. Over `ℤ` itself, the absolute norm of the ideal `(n)` is `|n|`.
+insensitive to that identification. A proper ideal contains no natural number prime to its
+absolute norm. Over `ℤ` itself, the absolute norm of the ideal `(n)` is `|n|`.
 
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
@@ -24,6 +25,8 @@ have nonnegative product generate principal ideals with congruent absolute norms
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
   arbitrary commutative ring is the cardinality of the original quotient.
+* `Ideal.natCast_notMem_of_coprime_absNorm`: a natural number prime to the absolute norm of a
+  proper ideal does not lie in it.
 * `Int.absNorm_span_singleton`, `Int.absNorm_le_natAbs_of_dvd_span_singleton`: the absolute norm
   of the ideal `(n)` of `ℤ` is `|n|`, and that of an ideal dividing `(n)`, for `n ≠ 0`, is at most
   `|n|`.
@@ -68,6 +71,14 @@ theorem absNorm_map_of_ringEquiv_eq_natCard {A : Type*} [CommRing A] [Infinite R
     absNorm (I.map e) = Nat.card (A ⧸ I) := by
   rw [absNorm_eq_natCard]
   exact Nat.card_congr (Ideal.quotientEquiv I _ (RingEquivClass.toRingEquiv e) rfl).toEquiv.symm
+
+/-- A natural number prime to the absolute norm of a proper ideal `I` does not lie in `I`, since
+`I` contains its norm (`Ideal.absNorm_mem`). -/
+theorem natCast_notMem_of_coprime_absNorm [Infinite R] {I : Ideal R} (hI : I ≠ ⊤) {a : ℕ}
+    (ha : a.Coprime (absNorm I)) : (a : R) ∉ I := fun h ↦ hI <| by
+  obtain ⟨u, v, huv⟩ := (Nat.isCoprime_iff_coprime.mpr ha).map (Int.castRingHom R)
+  rw [eq_top_iff_one, ← huv]
+  simpa using I.add_mem (I.mul_mem_left u h) (I.mul_mem_left v (absNorm_mem I))
 
 end Ideal
 

@@ -37,6 +37,8 @@ object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
   root of unity `ζ` of `𝓞 K`.
 * `Ideal.powerResidueSymbol_pow_div`: `((x / P)_n) ^ (n / d) = (x / P)_d` for `d ∣ n`.
 * `Ideal.orderOf_powerResidueSymbol`: the symbol has order `n`.
+* `Ideal.powerResidueSymbol_intCast_eq_one`: `(m / P)_n = 1` for an integer `m` prime to the
+  rational prime `q ∈ P` when `n (q - 1) ∣ N P - 1`.
 * `Ideal.map_powerResidueSymbol`: Galois equivariance, `σ ((α / P)_n) = (σ α / σ P)_n` for a ring
   isomorphism `σ : 𝓞 K ≃+* 𝓞 L`.
 
@@ -167,6 +169,33 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
 @[simp]
 theorem powerResidueSymbol_one : powerResidueSymbol P 1 = 1 :=
   orderOf_eq_one_iff.mp (orderOf_powerResidueSymbol (Nat.coprime_one_right _))
+
+/-- **Rational integers at a prime of large residue degree.** Let `q` be a rational prime in `P`
+with `n (q - 1) ∣ N P - 1`. Then `(m / P)_n = 1` for every integer `m` prime to `q`, since
+`m ^ (q - 1) ≡ 1 (mod q)`. For instance, this applies with `n = 4` at a rational prime
+`q ≡ 3 (mod 4)` of norm `N P = q²` in `ℤ[i]`. -/
+theorem powerResidueSymbol_intCast_eq_one {q : ℕ} (hq : q.Prime)
+    (hqP : (q : 𝓞 K) ∈ P) (hdvd : n * (q - 1) ∣ absNorm P - 1) {m : ℤ} (hm : IsCoprime m q) :
+    powerResidueSymbol P n (m : 𝓞 K ⧸ P) = 1 := by
+  let _ := Ideal.Quotient.field P
+  -- Fermat's little theorem `q ∣ m ^ (q - 1) - 1`, read modulo `P ∋ q`.
+  obtain ⟨t, ht⟩ := (Int.ModEq.pow_card_sub_one_eq_one hq hm).symm.dvd
+  have hq0 : (q : 𝓞 K ⧸ P) = 0 := by
+    rw [← map_natCast (Quotient.mk P)]
+    exact Quotient.eq_zero_iff_mem.mpr hqP
+  have hpow : (m : 𝓞 K ⧸ P) ^ (q - 1) = 1 := by
+    have h := congrArg (Int.cast : ℤ → 𝓞 K ⧸ P) ht
+    rwa [Int.cast_mul, Int.cast_natCast, hq0, zero_mul, Int.cast_sub, Int.cast_pow, Int.cast_one,
+      sub_eq_zero] at h
+  have hm0 : (m : 𝓞 K ⧸ P) ≠ 0 := by
+    rintro h
+    rw [h, zero_pow (Nat.sub_ne_zero_of_lt hq.one_lt)] at hpow
+    exact zero_ne_one hpow
+  by_cases hP : (absNorm P).Coprime n
+  · obtain ⟨k, hk⟩ := hdvd
+    rw [powerResidueSymbol_eq_iff hP hm0 (one_pow n), map_one, hk, mul_assoc,
+      Nat.mul_div_cancel_left _ (NeZero.pos n), pow_mul, hpow, one_pow]
+  · rw [powerResidueSymbol_of_not_coprime hP, MulChar.one_apply hm0.isUnit]
 
 variable {L : Type*} [Field L] [NumberField L] [HasEnoughRootsOfUnity (𝓞 L) n]
 

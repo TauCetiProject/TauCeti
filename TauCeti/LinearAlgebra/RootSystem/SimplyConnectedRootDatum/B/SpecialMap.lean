@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.LinearAlgebra.Matrix.SpecialMap
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.RankTwo
 
@@ -304,8 +304,8 @@ theorem b2SpecialIsogenyExponent_mul_pairing (i j : Fin (2 * 2 ^ 2)) :
       b2SpecialIsogenyExponent j * (typeBSimplyConnectedRootDatum 2).pairing i j := by
   rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_typeBSimplyConnectedRootDatum,
     ← RootPairing.root_coroot_eq_pairing, toLinearMap_typeBSimplyConnectedRootDatum]
-  exact mul_dotProduct_eq_of_mulVec_eq_smul b2SpecialIsogenyMatrix_mulVec_root
-    b2SpecialIsogenyMatrix_transpose_mulVec_coroot i j
+  exact mul_dotProduct_eq_of_mulVec_eq_smul (b2SpecialIsogenyMatrix_mulVec_root i)
+    (b2SpecialIsogenyMatrix_transpose_mulVec_coroot j)
 
 private theorem b2SpecialIsogenyExponent_b2Index_simple (i : Fin 2) :
     b2SpecialIsogenyExponent (b2Index (Fin.castLE (by omega) i)) =

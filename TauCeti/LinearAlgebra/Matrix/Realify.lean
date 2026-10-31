@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.LinearAlgebra.SymplecticGroup
+public import Mathlib.Analysis.Complex.Basic
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # The realification of a matrix over an RCLike field
@@ -27,6 +29,9 @@ Realification is injective, so on square matrices it is an embedding of `ℝ`-al
 commute with the standard alternating matrix `Matrix.J`, the realification of multiplication by
 `i` when `𝕜 = ℂ`. A matrix is therefore unitary exactly when its realification is orthogonal, and
 exactly when its realification is symplectic.
+
+The determinant formula reuses `LinearMap.det_restrictScalars_eq_normSq`, expressing the
+realification in the real basis induced by `Complex.basisOneI`.
 
 ## Main definitions
 
@@ -46,6 +51,7 @@ exactly when its realification is symplectic.
 * `Matrix.IsHermitian.isSymm_realify`: a Hermitian matrix realifies to a symmetric one.
 * `Matrix.realify_map_ofReal`: a real matrix realifies to two diagonal copies of itself.
 * `Matrix.isUnit_det_realify`: realification preserves invertibility.
+* `Matrix.det_realify`: the real determinant is the squared modulus of the complex determinant.
 * `Matrix.realify_map_starRingEnd`: entrywise conjugation becomes congruence by the reflection
   `TauCeti.realifyReflection` that negates the imaginary coordinates.
 * `Matrix.realify_injective` and `Matrix.realifyAlgHom`: realification is injective, and on square
@@ -179,6 +185,26 @@ theorem isUnit_det_realify {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [DecidableE
   refine Matrix.isUnit_det_of_left_inverse (B := (A⁻¹).realify) ?_
   rw [← realify_mul, Matrix.nonsing_inv_mul _ h, realify_one]
 
+/-- The determinant of a complex matrix's realification is the squared modulus of its
+complex determinant, including singular matrices and empty index types. -/
+@[simp]
+theorem det_realify [Fintype ι] [DecidableEq ι] (A : Matrix ι ι ℂ) :
+    A.realify.det = Complex.normSq A.det := by
+  let e : ι ⊕ ι ≃ ι × Fin 2 :=
+    { toFun := Sum.elim (fun i ↦ (i, 0)) (fun i ↦ (i, 1))
+      invFun := fun p ↦ if p.2 = 0 then Sum.inl p.1 else Sum.inr p.1
+      left_inv := by intro i; cases i <;> simp
+      right_inv := by intro ⟨i, j⟩; fin_cases j <;> simp }
+  let b := (Complex.basisOneI.smulTower' (Pi.basisFun ℂ ι)).reindex e.symm
+  have h : LinearMap.toMatrix b b (A.mulVecLin.restrictScalars ℝ) = A.realify := by
+    ext i j
+    cases i <;> cases j <;>
+      simp [b, e, LinearMap.toMatrix_apply, Module.Basis.smulTower'_repr,
+        Module.Basis.smulTower'_apply, Complex.mul_re, Complex.mul_im]
+  rw [← h, LinearMap.det_toMatrix, LinearMap.det_restrictScalars_eq_normSq]
+  congr 1
+  exact LinearMap.det_toLin' A
+
 /-- Entrywise conjugation becomes congruence by the reflection negating the imaginary
 coordinates. -/
 theorem realify_map_starRingEnd {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
@@ -190,6 +216,25 @@ theorem realify_map_starRingEnd {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [Decid
   rcases p with i | i <;> rcases q with j | j <;>
     simp [realifyReflection, Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply,
       Finset.sum_ite_eq', Finset.sum_ite_eq]
+
+/-- The quadratic form of a realified matrix is the real part of its original quadratic
+form, evaluated at the split real and imaginary coordinates. -/
+theorem dotProduct_realify_mulVec {𝕜 : Type*} [RCLike 𝕜] [Fintype n]
+    (A : Matrix n n 𝕜) (z : n → 𝕜) :
+    Sum.elim (fun i ↦ RCLike.re (z i)) (fun i ↦ RCLike.im (z i)) ⬝ᵥ
+        A.realify *ᵥ Sum.elim (fun i ↦ RCLike.re (z i)) (fun i ↦ RCLike.im (z i)) =
+      RCLike.re (star z ⬝ᵥ A *ᵥ z) := by
+  simp only [dotProduct, mulVec, Fintype.sum_sum_type, RCLike.mul_re, RCLike.mul_im,
+    Sum.elim_inl, Sum.elim_inr, realify_apply_inl_inl, realify_apply_inl_inr,
+    realify_apply_inr_inl, realify_apply_inr_inr, Pi.star_apply, map_sum,
+    RCLike.star_def, RCLike.conj_re, RCLike.conj_im]
+  simp_rw [Finset.mul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro i _
+  simp_rw [Finset.mul_sum, ← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro j _
+  ring
 
 /-- Realification is injective: the real and imaginary parts of the entries are read off the first
 block column. -/

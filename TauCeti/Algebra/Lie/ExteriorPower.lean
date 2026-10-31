@@ -23,25 +23,19 @@ commutators to commutators, hence defines a Lie algebra representation.
 
 * `exteriorPower.lieMap_apply_ιMulti`: the action on a decomposable wedge is the sum of the terms
   obtained by applying the endomorphism to one factor.
-
-## References
-
-* [Highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md),
-  Layer 8, where the Vinberg model of `E₈` uses the `sl₉` action on `⋀³(K⁹)`.
+* `exteriorPower.lieMap_two_apply_ιMulti`: on two-vectors this is the derivation rule
+  `f (u ∧ w) = f u ∧ w + u ∧ f w`.
 -/
 
 public section
-
-open scoped BigOperators
 
 namespace exteriorPower
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-universe u v
+variable {K V : Type*} [CommRing K] [AddCommGroup V] [Module K V]
 
-variable {K : Type u} {V : Type v} [CommRing K] [AddCommGroup V] [Module K V]
-
+/-- The multilinear map `v ↦ ∑ i, ιMulti K d (update v i (f (v i)))`. -/
 private noncomputable def actionMultilinear (d : ℕ) (f : Module.End K V) :
     MultilinearMap K (fun _ : Fin d => V) (⋀[K]^d V) :=
   ∑ i : Fin d, (ιMulti K d).toMultilinearMap.compLinearMap
@@ -51,65 +45,24 @@ private theorem actionMultilinear_apply (d : ℕ) (f : Module.End K V) (v : Fin 
     actionMultilinear d f v =
       ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) := by
   simp only [actionMultilinear, sum_apply, MultilinearMap.compLinearMap_apply]
-  apply Finset.sum_congr rfl
-  intro i _
-  apply congrArg (ιMulti K d)
-  funext j
-  by_cases hji : j = i <;> simp [hji]
+  refine Finset.sum_congr rfl fun i _ => congrArg (ιMulti K d) (funext fun j => ?_)
+  rcases eq_or_ne j i with rfl | hji <;> simp [*]
 
 private theorem actionMultilinear_map_eq_zero_of_eq (d : ℕ) (f : Module.End K V)
     (v : Fin d → V) (i j : Fin d) (hv : v i = v j) (hij : i ≠ j) :
     actionMultilinear d f v = 0 := by
-  rw [actionMultilinear_apply]
-  let term : Fin d → ⋀[K]^d V := fun k => ιMulti K d (Function.update v k (f (v k)))
-  have hpair : term i + term j = 0 := by
-    dsimp only [term]
-    have hfun : Function.update v j (f (v j)) =
-        Function.update v i (f (v i)) ∘ Equiv.swap i j := by
-      funext k
-      by_cases hki : k = i
-      · subst k
-        simpa [Function.update_apply, hij, Ne.symm hij] using hv
-      · by_cases hkj : k = j
-        · subst k
-          simpa [Function.update_apply, hij, Ne.symm hij] using congrArg f hv.symm
-        · simp [Equiv.swap_apply_of_ne_of_ne hki hkj, hki, hkj]
-    rw [hfun]
-    exact (ιMulti K d).map_add_swap _ hij
-  -- The swap pairs the `i` and `j` terms; every remaining term vanishes by alternation.
-  apply Finset.sum_involution (s := Finset.univ) (f := term)
-      (fun k _ => Equiv.swap i j k)
-  · intro k _
-    by_cases hki : k = i
-    · subst k
-      rw [Equiv.swap_apply_left]
-      exact hpair
-    · by_cases hkj : k = j
-      · subst k
-        rw [Equiv.swap_apply_right]
-        rw [add_comm]
-        exact hpair
-      · rw [Equiv.swap_apply_of_ne_of_ne hki hkj]
-        have hzero : term k = 0 := by
-          apply (ιMulti K d).map_eq_zero_of_eq _ _ hij
-          simp [Function.update_of_ne (Ne.symm hki),
-            Function.update_of_ne (Ne.symm hkj), hv]
-        simp [hzero]
-  · intro k _ hk
-    exact (Equiv.swap_apply_ne_self_iff.mpr
-      ⟨hij, by
-        by_contra h
-        have hki : k ≠ i := fun hki => h (Or.inl hki)
-        have hkj : k ≠ j := fun hkj => h (Or.inr hkj)
-        apply hk
-        apply (ιMulti K d).map_eq_zero_of_eq _ _ hij
-        simp [Function.update_of_ne (Ne.symm hki),
-          Function.update_of_ne (Ne.symm hkj), hv]⟩)
-  · intro k _
-    exact Finset.mem_univ _
-  · intro k _
-    exact Equiv.swap_apply_self i j k
+  rw [actionMultilinear_apply, Fintype.sum_eq_add i j hij fun k ⟨hki, hkj⟩ =>
+    (ιMulti K d).map_eq_zero_of_eq _ (i := i) (j := j) (by simp [hki.symm, hkj.symm, hv]) hij]
+  -- The `j`-th term is the `i`-th term with the two factors swapped.
+  have hswap : Function.update v j (f (v j)) =
+      Function.update v i (f (v i)) ∘ Equiv.swap i j := by
+    funext k
+    simp only [Function.comp_apply, Function.update_apply, Equiv.swap_apply_def]
+    split_ifs <;> simp_all
+  rw [hswap]
+  exact (ιMulti K d).map_add_swap _ hij
 
+/-- `actionMultilinear d f`, bundled as an alternating map. -/
 private noncomputable def actionAlternating (d : ℕ) (f : Module.End K V) :
     V [⋀^Fin d]→ₗ[K] (⋀[K]^d V) where
   toMultilinearMap := actionMultilinear d f
@@ -119,40 +72,30 @@ private noncomputable def actionAlternating (d : ℕ) (f : Module.End K V) :
 @[simp]
 private theorem actionAlternating_apply (d : ℕ) (f : Module.End K V) (v : Fin d → V) :
     actionAlternating d f v =
-      ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) :=
-  by
-    -- The alternating-map constructor has no application lemma for its multilinear projection.
-    rw [show actionAlternating d f v = actionMultilinear d f v from rfl]
-    exact actionMultilinear_apply d f v
+      ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) := by
+  simp [actionAlternating, actionMultilinear_apply]
 
+/-- The induced endomorphism of `⋀[K]^d V`, as a linear function of `f`. -/
 private noncomputable def actionLinear (d : ℕ) :
     Module.End K V →ₗ[K] Module.End K (⋀[K]^d V) where
   toFun f := alternatingMapLinearEquiv (actionAlternating d f)
-  map_add' f g := by
-    apply linearMap_ext
-    ext v
-    simp [actionAlternating_apply, Finset.sum_add_distrib]
-  map_smul' r f := by
-    apply linearMap_ext
-    ext v
-    simp [actionAlternating_apply, Finset.smul_sum]
+  map_add' f g := linearMap_ext <| AlternatingMap.ext fun v => by
+    simp [Finset.sum_add_distrib]
+  map_smul' r f := linearMap_ext <| AlternatingMap.ext fun v => by
+    simp [Finset.smul_sum]
 
 @[simp]
 private theorem actionLinear_apply_ιMulti (d : ℕ) (f : Module.End K V) (v : Fin d → V) :
     actionLinear d f (ιMulti K d v) =
       ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) := by
-  simp [actionLinear, actionAlternating_apply]
+  simp [actionLinear]
 
+/-- The term of `actionLinear d f (actionLinear d g (ιMulti K d v))` in which `g` acts on the
+`i`-th factor and then `f` acts on the `j`-th factor. -/
 private def actionTerm (d : ℕ) (f g : Module.End K V) (v : Fin d → V)
     (i j : Fin d) : ⋀[K]^d V :=
   ιMulti K d (Function.update (Function.update v i (g (v i))) j
     (f (Function.update v i (g (v i)) j)))
-
-@[simp]
-private theorem actionTerm_same (d : ℕ) (f g : Module.End K V) (v : Fin d → V)
-    (i : Fin d) :
-    actionTerm d f g v i i = ιMulti K d (Function.update v i (f (g (v i)))) := by
-  simp [actionTerm]
 
 private theorem actionTerm_swap (d : ℕ) (f g : Module.End K V) (v : Fin d → V)
     {i j : Fin d} (hij : i ≠ j) :
@@ -162,61 +105,44 @@ private theorem actionTerm_swap (d : ℕ) (f g : Module.End K V) (v : Fin d → 
   simp only [Function.update_apply]
   split_ifs <;> simp_all
 
-private theorem actionLinear_comp_apply_ιMulti (d : ℕ) (f g : Module.End K V)
-    (v : Fin d → V) :
-    actionLinear d f (actionLinear d g (ιMulti K d v)) =
-      (∑ i : Fin d, actionTerm d f g v i i) +
-        ∑ i : Fin d, ∑ j ∈ Finset.univ.erase i, actionTerm d f g v i j := by
-  rw [actionLinear_apply_ιMulti]
-  simp only [map_sum, actionLinear_apply_ιMulti]
-  simp only [actionTerm]
-  rw [← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ i), add_comm]
-
-private theorem actionTerm_offdiag_sum_comm (d : ℕ) (f g : Module.End K V)
-    (v : Fin d → V) :
-    (∑ i : Fin d, ∑ j ∈ Finset.univ.erase i, actionTerm d f g v i j) =
-      ∑ i : Fin d, ∑ j ∈ Finset.univ.erase i, actionTerm d g f v i j := by
-  rw [Finset.sum_comm' (s := Finset.univ) (t := fun i => Finset.univ.erase i)
-    (t' := Finset.univ) (s' := fun j => Finset.univ.erase j) (by simp [ne_comm])]
-  apply Finset.sum_congr rfl
-  intro i _
-  apply Finset.sum_congr rfl
-  intro j hj
-  exact actionTerm_swap d f g v (Finset.ne_of_mem_erase hj)
-
-private theorem actionLinear_map_lie (d : ℕ) (f g : Module.End K V) :
-    actionLinear d ⁅f, g⁆ = ⁅actionLinear d f, actionLinear d g⁆ := by
-  apply linearMap_ext
-  apply AlternatingMap.ext
-  intro v
-  -- Extensionality leaves reducible alternating-map and endomorphism-bracket wrappers; this
-  -- reshaping exposes the associative commutators used by the explicit calculation below.
-  change actionLinear d (f * g - g * f) (ιMulti K d v) =
-    actionLinear d f (actionLinear d g (ιMulti K d v)) -
-      actionLinear d g (actionLinear d f (ιMulti K d v))
-  rw [map_sub, LinearMap.sub_apply, actionLinear_apply_ιMulti,
-    actionLinear_comp_apply_ιMulti, actionLinear_comp_apply_ιMulti,
-    actionTerm_offdiag_sum_comm d f g v]
-  rw [actionLinear_apply_ιMulti]
-  simp only [Module.End.mul_apply, actionTerm_same]
-  abel
+/-- `actionLinear d` carries commutators to commutators. -/
+private theorem actionLinear_mul_sub_mul (d : ℕ) (f g : Module.End K V) :
+    actionLinear d (f * g - g * f) =
+      actionLinear d f * actionLinear d g - actionLinear d g * actionLinear d f := by
+  have hcomp (f g : Module.End K V) (v : Fin d → V) :
+      actionLinear d f (actionLinear d g (ιMulti K d v)) =
+        ∑ i : Fin d, ∑ j : Fin d, actionTerm d f g v i j := by
+    simp [actionTerm]
+  refine linearMap_ext (AlternatingMap.ext fun v => ?_)
+  simp only [LinearMap.compAlternatingMap_apply, LinearMap.sub_apply, Module.End.mul_apply]
+  -- Off-diagonal terms of the two composites cancel in pairs by `actionTerm_swap`, leaving the
+  -- diagonal terms, where the commutator acts on a single factor.
+  rw [hcomp, hcomp, actionLinear_apply_ιMulti, Finset.sum_comm (f := actionTerm d g f v),
+    ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [← Finset.sum_sub_distrib, Fintype.sum_eq_single i fun j hj =>
+    sub_eq_zero.mpr (actionTerm_swap d f g v (Ne.symm hj))]
+  simp [actionTerm]
 
 /-- The infinitesimal action of endomorphisms on an exterior power. -/
 noncomputable def lieMap (d : ℕ) :
     Module.End K V →ₗ⁅K⁆ Module.End K (⋀[K]^d V) :=
-  { actionLinear d with map_lie' := fun {f g} => actionLinear_map_lie d f g }
+  { actionLinear d with
+    map_lie' := fun {f g} => by
+      rw [Ring.lie_def, Ring.lie_def]
+      exact actionLinear_mul_sub_mul d f g }
 
 /-- An endomorphism acts on a decomposable wedge by acting on one factor at a time. -/
 @[simp]
 theorem lieMap_apply_ιMulti (d : ℕ) (f : Module.End K V) (v : Fin d → V) :
     lieMap d f (ιMulti K d v) =
-      ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) :=
-  by
-    -- The Lie-hom constructor has no application lemma for its underlying linear map.
-    rw [show lieMap d f = actionLinear d f from rfl]
-    exact actionLinear_apply_ιMulti d f v
+      ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) := by
+  rw [lieMap, ← LieHom.coe_toLinearMap, actionLinear_apply_ιMulti]
+
+/-- On two-vectors an endomorphism acts by the derivation rule `f (u ∧ w) = f u ∧ w + u ∧ f w`. -/
+theorem lieMap_two_apply_ιMulti (f : Module.End K V) (u w : V) :
+    lieMap 2 f (ιMulti K 2 ![u, w]) = ιMulti K 2 ![f u, w] + ιMulti K 2 ![u, f w] := by
+  rw [lieMap_apply_ιMulti, Fin.sum_univ_two]
+  congr 2 <;> ext i <;> fin_cases i <;> rfl
 
 end exteriorPower

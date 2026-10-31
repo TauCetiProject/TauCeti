@@ -30,6 +30,9 @@ The same dominant-term argument works for power series at any slope where suppor
 touch the coefficient heights of both factors, with no convergence hypothesis. There the
 supporting values of the product are again the sums of those of the factors. When `v` comes
 from an absolute value, this is the multiplicativity of Gauss norms at the corresponding radius.
+If such contacts exist at every slope, the Newton polygon of the product is the Minkowski sum
+of the Newton polygons of the factors; the polynomial identity is the case of finitely many
+finite heights.
 
 ## Main results
 
@@ -45,6 +48,11 @@ from an absolute value, this is the multiplicativity of Gauss norms at the corre
 * `PowerSeries.minkowskiSum_newtonPolygon_le_newtonPolygon_mul`: for admissible coefficient
   heights, the Minkowski sum of the Newton polygons of two power series lies below the Newton
   polygon of their product.
+* `PowerSeries.supportingValue_newtonPolygon_mul`: the same additivity for the supporting
+  values of the Newton polygons.
+* `PowerSeries.newtonPolygon_mul_of_forall_exists_mem_supportingFace`: if the coefficient
+  heights of both factors touch supporting lines of every slope, the Newton polygon of the
+  product is the Minkowski sum of the Newton polygons of the factors.
 * `Polynomial.newtonPolygon_mul`: the Newton polygon of a product of polynomials is the
   Minkowski sum of the Newton polygons of the factors. No hypothesis is needed: if either
   factor has the empty polygon, so does the product.
@@ -197,22 +205,76 @@ theorem minkowskiSum_newtonPolygon_le_newtonPolygon_mul
     fun n => (minkowskiSum_mono (newtonPolygon_le hf) (newtonPolygon_le hg) n).trans
       (minkowskiSum_le_addValuation_coeff_mul v n)
 
+/-- If supporting lines of a common slope `σ` touch the coefficient heights of `f` and `g`, then
+the supporting value at `σ` of the Newton polygon of `f * g` is the sum of those of the Newton
+polygons of `f` and `g`. No convergence hypothesis is needed beyond these two contacts. -/
+theorem supportingValue_newtonPolygon_mul {σ c d : ℝ} {i j : ℕ}
+    (hf : IsSupportingLine (fun n => v (coeff n f)) σ c)
+    (hi : i ∈ supportingFace (fun n => v (coeff n f)) σ c)
+    (hg : IsSupportingLine (fun n => v (coeff n g)) σ d)
+    (hj : j ∈ supportingFace (fun n => v (coeff n g)) σ d) :
+    supportingValue ((f * g).newtonPolygon v) σ =
+      supportingValue (f.newtonPolygon v) σ + supportingValue (g.newtonPolygon v) σ := by
+  have hfg : IsAdmissible fun n => v (coeff n (f * g)) :=
+    (hf.minkowskiSum hg).isAdmissible.mono (minkowskiSum_le_addValuation_coeff_mul v)
+  rw [supportingValue_newtonPolygon hfg, supportingValue_newtonPolygon hf.isAdmissible,
+    supportingValue_newtonPolygon hg.isAdmissible]
+  exact supportingValue_addValuation_coeff_mul v hf hi hg hj
+
+/-- If the coefficient heights of `f` touch a supporting line of some slope, the Newton polygon
+of `f` is nonempty. -/
+private theorem newtonPolygon_ne_top_of_mem_supportingFace {σ c : ℝ} {i : ℕ}
+    (hf : IsSupportingLine (fun n => v (coeff n f)) σ c)
+    (hi : i ∈ supportingFace (fun n => v (coeff n f)) σ c) : f.newtonPolygon v ≠ ⊤ := by
+  intro htop
+  have hle := newtonPolygon_le hf.isAdmissible i
+  rw [htop, mem_supportingFace.mp hi] at hle
+  exact WithTop.coe_ne_top (top_le_iff.mp hle)
+
+/-- The Newton polygon of a product is the Minkowski sum of the Newton polygons of the factors,
+provided that at every slope the coefficient heights of each factor touch a supporting line.
+This holds for polynomials with nonempty Newton polygons, and for nonzero entire series when the
+valuation comes from the norm. Without contact the identity can fail: `1 - X` and the geometric
+series `∑ Xⁿ` have product `1`, a single point, while the Minkowski sum of their polygons is a
+horizontal half-line. -/
+theorem newtonPolygon_mul_of_forall_exists_mem_supportingFace
+    (hf : ∀ σ : ℝ, ∃ (c : ℝ) (i : ℕ), IsSupportingLine (fun n => v (coeff n f)) σ c ∧
+      i ∈ supportingFace (fun n => v (coeff n f)) σ c)
+    (hg : ∀ σ : ℝ, ∃ (d : ℝ) (j : ℕ), IsSupportingLine (fun n => v (coeff n g)) σ d ∧
+      j ∈ supportingFace (fun n => v (coeff n g)) σ d) :
+    (f * g).newtonPolygon v = minkowskiSum (f.newtonPolygon v) (g.newtonPolygon v) := by
+  obtain ⟨c₀, i₀, hc₀, hi₀⟩ := hf 0
+  obtain ⟨d₀, j₀, hd₀, hj₀⟩ := hg 0
+  refine le_antisymm ?_
+    (minkowskiSum_newtonPolygon_le_newtonPolygon_mul v hc₀.isAdmissible hd₀.isAdmissible)
+  -- Compare supporting values: those of the product are the sums at every slope.
+  rw [(isConvexSeq_newtonPolygon _ v).le_iff_forall_supportingValue_le]
+  intro σ
+  obtain ⟨c, i, hc, hi⟩ := hf σ
+  obtain ⟨d, j, hd, hj⟩ := hg σ
+  rw [supportingValue_minkowskiSum (newtonPolygon_ne_top_of_mem_supportingFace v hc₀ hi₀)
+    (newtonPolygon_ne_top_of_mem_supportingFace v hd₀ hj₀),
+    supportingValue_newtonPolygon_mul v hc hi hd hj]
+
 end PowerSeries
 
 namespace Polynomial
 
 variable {R : Type*} [Ring R] (f g : R[X]) (v : AddValuation R (WithTop ℝ))
 
-/-- A polynomial with a nonempty Newton polygon has a supporting line of each slope, touching
-its coefficient heights at a least index. -/
-private theorem exists_isSupportingLine_isLeast_coeff_coe (hf : f.newtonPolygon v ≠ ⊤)
-    (σ : ℝ) : ∃ (c : ℝ) (i : ℕ),
+/-- A polynomial with a nonempty Newton polygon has coefficient heights touching a supporting
+line of each slope. -/
+private theorem exists_isSupportingLine_mem_supportingFace_coeff_coe
+    (hf : f.newtonPolygon v ≠ ⊤) (σ : ℝ) : ∃ (c : ℝ) (i : ℕ),
       IsSupportingLine (fun n => v (PowerSeries.coeff n (f : PowerSeries R))) σ c ∧
-        IsLeast (supportingFace (fun n => v (PowerSeries.coeff n (f : PowerSeries R))) σ c) i := by
-  refine exists_isSupportingLine_isLeast_supportingFace ?_ ?_ σ
-  · simpa only [coeff_coe] using finite_setOf_addValuation_coeff_ne_top f v
-  · obtain ⟨n, hn⟩ := not_forall.mp (mt (newtonPolygon_eq_top_iff f v).mpr hf)
-    exact ⟨n, by rwa [Set.mem_ofPred_eq, coeff_coe]⟩
+        i ∈ supportingFace (fun n => v (PowerSeries.coeff n (f : PowerSeries R))) σ c := by
+  obtain ⟨c, i, hc, hi⟩ := exists_isSupportingLine_isLeast_supportingFace
+    (h := fun n => v (PowerSeries.coeff n (f : PowerSeries R)))
+    (by simpa only [coeff_coe] using finite_setOf_addValuation_coeff_ne_top f v)
+    (by
+      obtain ⟨n, hn⟩ := not_forall.mp (mt (newtonPolygon_eq_top_iff f v).mpr hf)
+      exact ⟨n, by rwa [Set.mem_ofPred_eq, coeff_coe]⟩) σ
+  exact ⟨c, i, hc, hi.1⟩
 
 /-- The Newton polygon of a product of polynomials is the Minkowski sum of the Newton polygons
 of the factors. If either factor has the empty Newton polygon, for example if it is zero, so
@@ -229,14 +291,10 @@ theorem newtonPolygon_mul :
   · simp [hf]
   rcases eq_or_ne (g.newtonPolygon v) ⊤ with hg | hg
   · simp [hg]
-  -- Compare supporting values. Those of a Newton polygon are those of the coefficient heights.
-  rw [(isConvexSeq_newtonPolygon _ v).le_iff_forall_supportingValue_le]
-  intro σ
-  obtain ⟨c, i, hc, hi⟩ := exists_isSupportingLine_isLeast_coeff_coe f v hf σ
-  obtain ⟨d, j, hd, hj⟩ := exists_isSupportingLine_isLeast_coeff_coe g v hg σ
-  simp only [supportingValue_minkowskiSum hf hg, supportingValue_newtonPolygon, ← coeff_coe,
-    coe_mul]
-  exact (PowerSeries.supportingValue_addValuation_coeff_mul v hc hi.1 hd hj.1).le
+  simpa only [← newtonPolygon_coe, coe_mul] using
+    (PowerSeries.newtonPolygon_mul_of_forall_exists_mem_supportingFace v
+      (exists_isSupportingLine_mem_supportingFace_coeff_coe f v hf)
+      (exists_isSupportingLine_mem_supportingFace_coeff_coe g v hg)).le
 
 /-- Supporting values of coefficient heights add under multiplication of polynomials. When `v`
 comes from an absolute value, this is the multiplicativity of Gauss norms at every radius.

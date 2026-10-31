@@ -10,6 +10,8 @@ public import TauCeti.GroupTheory.SpecificGroups.Braid.Word
 public import TauCeti.KnotTheory.Signature
 public import TauCeti.KnotTheory.TristramLevine.Basic
 
+import TauCeti.Data.List.Rotate
+
 /-!
 # The Seifert matrix of a closed braid
 
@@ -71,7 +73,10 @@ strands, the empty word gives the `0 × 0` matrix while `σ₁ σ₁⁻¹` gives
 to the two-component unlink. Among words using every level, the remaining moves generating Markov
 equivalence of braid words (the braid relation, and free cancellation that keeps every level used)
 change the matrix only up to S-equivalence, as for any two Seifert matrices of isotopic links; that
-is what makes its Alexander polynomial and Tristram–Levine signatures invariants of the closure.
+is what makes its Alexander polynomial an invariant of the closure. The Tristram–Levine signatures
+need no condition on the levels: free cancellation on an unused level only adds a zero row and
+column, so for every word they are invariant under Markov equivalence
+(`TauCeti.MarkovEquiv.tristramLevineSignature_eq` in `TauCeti.KnotTheory.Markov.TristramLevine`).
 Those comparisons are not made here.
 
 ## Main definitions
@@ -94,6 +99,7 @@ Those comparisons are not made here.
   keeps the Alexander polynomial and the Tristram–Levine signatures of the Seifert matrix.
 * `TauCeti.BraidWord.alexander_seifertMatrix_trefoil` and
   `TauCeti.BraidWord.signature_seifertMatrix_trefoil`: the right-handed trefoil.
+* `TauCeti.BraidWord.signature_seifertMatrix_mirrorTrefoil`: the left-handed trefoil.
 * `TauCeti.BraidWord.alexander_seifertMatrix_figureEight` and
   `TauCeti.BraidWord.signature_seifertMatrix_figureEight`: the figure-eight knot.
 
@@ -158,6 +164,32 @@ theorem mem_seifertLoops {p : ℕ × ℕ} : p ∈ w.seifertLoops ↔ w.IsSeifert
   simp only [seifertLoops, Finset.mem_filter, Finset.mem_product, Finset.mem_range,
     and_iff_right_iff_imp]
   exact fun h ↦ ⟨h.1.trans h.2.1, h.2.1⟩
+
+/-- A loop of `w ++ [y]` not running through the appended letter is a loop of `w`. -/
+theorem isSeifertLoop_append_singleton_iff (y : Fin (n - 1) × ℤˣ) {p : ℕ × ℕ}
+    (hp : p.2 < w.length) : (w ++ [y]).IsSeifertLoop p ↔ w.IsSeifertLoop p := by
+  simp only [isSeifertLoop_iff, List.length_append, List.length_singleton]
+  constructor
+  · rintro ⟨h12, -, hl, hb⟩
+    rw [levelAt_append_singleton_of_lt w y hp,
+      levelAt_append_singleton_of_lt w y (h12.trans hp)] at hl
+    refine ⟨h12, hp, hl, fun k hk hk' ↦ ?_⟩
+    have := hb k hk hk'
+    rwa [levelAt_append_singleton_of_lt w y (hk.trans hp),
+      levelAt_append_singleton_of_lt w y (h12.trans hp)] at this
+  · rintro ⟨h12, -, hl, hb⟩
+    refine ⟨h12, by omega, ?_, fun k hk hk' ↦ ?_⟩
+    · rwa [levelAt_append_singleton_of_lt w y hp,
+        levelAt_append_singleton_of_lt w y (h12.trans hp)]
+    · rw [levelAt_append_singleton_of_lt w y (hk.trans hp),
+        levelAt_append_singleton_of_lt w y (h12.trans hp)]
+      exact hb k hk hk'
+
+/-- The loops of `w ++ [(i, ε)]` do not depend on the sign `ε` of the appended letter. -/
+theorem mem_seifertLoops_append_singleton_iff (i : Fin (n - 1)) (ε ε' : ℤˣ) (p : ℕ × ℕ) :
+    p ∈ (w ++ [(i, ε)]).seifertLoops ↔ p ∈ (w ++ [(i, ε')]).seifertLoops := by
+  simp only [mem_seifertLoops, isSeifertLoop_iff, levelAt_append_singleton, List.length_append,
+    List.length_singleton]
 
 /-- The linking number `lk(γ_a, γ_b⁺)` of two loops of the canonical Seifert surface, labelled by
 their pairs of positions. -/
@@ -593,57 +625,45 @@ private theorem sub_one_add_one_pair {c : ℕ × ℕ} (h₁ : c.1 ≠ 0) (h₂ :
     (c.1 - 1 + 1, c.2 - 1 + 1) = c :=
   Prod.ext (Nat.sub_one_add_one h₁) (Nat.sub_one_add_one h₂)
 
-private theorem levelAt_append_singleton_of_lt {k : ℕ} (hk : k < v.length) :
+private theorem levelAt_append_singleton_of_lt_cons {k : ℕ} (hk : k < v.length) :
     (v ++ [x]).levelAt k = levelAt (n := n) (x :: v) (k + 1) := by
   simp [levelAt, List.getElem?_append_left hk]
-
-private theorem levelAt_append_singleton_length :
-    (v ++ [x]).levelAt v.length = some (x.1 : ℕ) := by
-  simp
 
 private theorem levelAt_cons_zero : levelAt (n := n) (x :: v) 0 = some (x.1 : ℕ) := by
   simp
 
-private theorem signAt_append_singleton_of_lt {k : ℕ} (hk : k < v.length) :
+private theorem signAt_append_singleton_of_lt_cons {k : ℕ} (hk : k < v.length) :
     (v ++ [x]).signAt k = signAt (n := n) (x :: v) (k + 1) := by
   simp [signAt_def, List.getElem?_append_left hk]
 
-private theorem signAt_append_singleton_length :
-    (v ++ [x]).signAt v.length = signAt (n := n) (x :: v) 0 := by
-  simp
-
 /-- Loops of `v ++ [x]` avoiding the moved letter are the loops of `x :: v` avoiding its first
 letter, shifted by one position. -/
-private theorem isSeifertLoop_append_singleton_iff {p : ℕ × ℕ} (hp : p.2 < v.length) :
+private theorem isSeifertLoop_append_singleton_iff_cons {p : ℕ × ℕ} (hp : p.2 < v.length) :
     (v ++ [x]).IsSeifertLoop p ↔
       IsSeifertLoop (n := n) (x :: v) (p.1 + 1, p.2 + 1) := by
   simp only [isSeifertLoop_iff, List.length_append, List.length_cons]
   constructor
   · rintro ⟨h12, -, hl, hb⟩
     refine ⟨by omega, by omega, ?_, fun k hk hk' ↦ ?_⟩
-    · rwa [levelAt_append_singleton_of_lt x v hp,
-        levelAt_append_singleton_of_lt x v (h12.trans hp)] at hl
+    · rwa [levelAt_append_singleton_of_lt_cons x v hp,
+        levelAt_append_singleton_of_lt_cons x v (h12.trans hp)] at hl
     · obtain ⟨k, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
       have := hb k (by omega) (by omega)
-      rwa [levelAt_append_singleton_of_lt x v (by omega),
-        levelAt_append_singleton_of_lt x v (h12.trans hp)] at this
+      rwa [levelAt_append_singleton_of_lt_cons x v (by omega),
+        levelAt_append_singleton_of_lt_cons x v (h12.trans hp)] at this
   · rintro ⟨h12, -, hl, hb⟩
     refine ⟨by omega, by omega, ?_, fun k hk hk' ↦ ?_⟩
-    · rwa [levelAt_append_singleton_of_lt x v hp,
-        levelAt_append_singleton_of_lt x v (by omega)]
-    · rw [levelAt_append_singleton_of_lt x v (by omega),
-        levelAt_append_singleton_of_lt x v (by omega)]
+    · rwa [levelAt_append_singleton_of_lt_cons x v hp,
+        levelAt_append_singleton_of_lt_cons x v (by omega)]
+    · rw [levelAt_append_singleton_of_lt_cons x v (by omega),
+        levelAt_append_singleton_of_lt_cons x v (by omega)]
       exact hb (k + 1) (by omega) (by omega)
 
 /-- The level of `x` in `x :: v` has a last letter. -/
 private theorem exists_levelAt_cons_last : ∃ m, levelAt (n := n) (x :: v) m = some (x.1 : ℕ) ∧
     ∀ k, m < k → levelAt (n := n) (x :: v) k ≠ some (x.1 : ℕ) := by
-  refine ⟨Nat.findGreatest (fun k ↦ levelAt (n := n) (x :: v) k = some (x.1 : ℕ)) v.length,
-    Nat.findGreatest_spec (P := fun k ↦ levelAt (n := n) (x :: v) k = some (x.1 : ℕ))
-      (Nat.zero_le _) (levelAt_cons_zero x v), fun k hk hkl ↦ ?_⟩
-  have hklen : k < v.length + 1 := by
-    simpa using (levelAt_ne_none_iff (x :: v : BraidWord n)).1 (by simp [hkl])
-  exact Nat.findGreatest_is_greatest hk (by omega) hkl
+  obtain ⟨m, -, hm⟩ := exists_last_levelAt (x :: v : BraidWord n) ⟨x, List.mem_cons_self, rfl⟩
+  exact ⟨m, hm⟩
 
 variable {x v}
 
@@ -665,13 +685,13 @@ private theorem fst_add_one_eq_of_snd_eq_length {m : ℕ}
     (hm' : ∀ k, m < k → levelAt (n := n) (x :: v) k ≠ some (x.1 : ℕ)) {a : ℕ × ℕ}
     (ha : (v ++ [x]).IsSeifertLoop a) (h : a.2 = v.length) : a.1 + 1 = m := by
   obtain ⟨h12, -, hl, hb⟩ := ha
-  rw [h, levelAt_append_singleton_length, levelAt_append_singleton_of_lt x v (h ▸ h12)] at hl
+  rw [h, levelAt_append_singleton_length, levelAt_append_singleton_of_lt_cons x v (h ▸ h12)] at hl
   have hle : a.1 + 1 ≤ m := not_lt.1 fun hlt ↦ hm' _ hlt hl.symm
   have hmlen := lt_length_of_levelAt_cons hm
   by_contra hne
   refine hb (m - 1) (by omega) (by omega) ?_
-  rw [levelAt_append_singleton_of_lt x v (by omega), levelAt_append_singleton_of_lt x v (by omega),
-    Nat.sub_add_cancel (by omega), hm, hl]
+  rw [levelAt_append_singleton_of_lt_cons x v (by omega),
+    levelAt_append_singleton_of_lt_cons x v (by omega), Nat.sub_add_cancel (by omega), hm, hl]
 
 /-- Conversely, if `x` is not the only letter of its level, the last other letter of that level and
 the moved letter span a loop of `v ++ [x]`. -/
@@ -682,11 +702,11 @@ private theorem isSeifertLoop_sub_one_length {m : ℕ}
   have hmlen := lt_length_of_levelAt_cons hm
   refine ⟨by simp only; omega, by simp, ?_, fun k hk hk' ↦ ?_⟩
   · simp only
-    rw [levelAt_append_singleton_length, levelAt_append_singleton_of_lt x v (by omega),
+    rw [levelAt_append_singleton_length, levelAt_append_singleton_of_lt_cons x v (by omega),
       Nat.sub_add_cancel (by omega), hm]
   · simp only at hk hk'
-    rw [levelAt_append_singleton_of_lt x v hk, levelAt_append_singleton_of_lt x v (by omega),
-      Nat.sub_add_cancel (by omega), hm]
+    rw [levelAt_append_singleton_of_lt_cons x v hk,
+      levelAt_append_singleton_of_lt_cons x v (by omega), Nat.sub_add_cancel (by omega), hm]
     exact hm' _ (by omega)
 
 variable (x v) in
@@ -709,16 +729,17 @@ private theorem sum_rotateRow_mul {a : ℕ × ℕ} (ha : (v ++ [x]).IsSeifertLoo
       Finset.sum_const_zero, add_zero, Finset.sum_neg_distrib]
   · have hlt := snd_lt_length_of_ne ha h
     simp only [rotateRow, h, ↓reduceIte, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq',
-      mem_seifertLoops, (isSeifertLoop_append_singleton_iff x v hlt).1 ha]
+      mem_seifertLoops, (isSeifertLoop_append_singleton_iff_cons x v hlt).1 ha]
 
 /-- Away from the moved letter, the two Seifert matrices have the same entries. -/
 private theorem seifertEntry_append_singleton_of_lt {a b : ℕ × ℕ} (ha : a.1 < a.2)
     (ha' : a.2 < v.length) (hb : b.1 < b.2) (hb' : b.2 < v.length) :
     seifertEntry (v ++ [x]) a b =
       seifertEntry (n := n) (x :: v) (a.1 + 1, a.2 + 1) (b.1 + 1, b.2 + 1) := by
-  simp only [seifertEntry, levelAt_append_singleton_of_lt x v (ha.trans ha'),
-    levelAt_append_singleton_of_lt x v (hb.trans hb'), signAt_append_singleton_of_lt x v ha',
-    signAt_append_singleton_of_lt x v (ha.trans ha'), Prod.ext_iff, Nat.add_right_cancel_iff,
+  simp only [seifertEntry, levelAt_append_singleton_of_lt_cons x v (ha.trans ha'),
+    levelAt_append_singleton_of_lt_cons x v (hb.trans hb'),
+    signAt_append_singleton_of_lt_cons x v ha',
+    signAt_append_singleton_of_lt_cons x v (ha.trans ha'), Prod.ext_iff, Nat.add_right_cancel_iff,
     Nat.add_lt_add_iff_right]
 
 variable {m : ℕ} (hm : levelAt (n := n) (x :: v) m = some (x.1 : ℕ))
@@ -753,12 +774,12 @@ private theorem seifertEntry_append_singleton_eq_neg_sum_left {a b : ℕ × ℕ}
   have ha1 := fst_add_one_eq_of_snd_eq_length hm hm' ha ha2
   have hal : a.1 < v.length := ha2 ▸ ha.1
   have hblt := snd_lt_length_of_ne hb hb2
-  have hB := (isSeifertLoop_append_singleton_iff x v hblt).1 hb
+  have hB := (isSeifertLoop_append_singleton_iff_cons x v hblt).1 hb
   have hab : a ≠ b := fun h ↦ hb2 (h ▸ ha2)
   have hla : (v ++ [x]).levelAt a.1 = some (x.1 : ℕ) := by
-    rw [levelAt_append_singleton_of_lt x v hal, ha1, hm]
+    rw [levelAt_append_singleton_of_lt_cons x v hal, ha1, hm]
   have hlb : (v ++ [x]).levelAt b.1 = levelAt (n := n) (x :: v) (b.1 + 1) :=
-    levelAt_append_singleton_of_lt x v (hb.1.trans hblt)
+    levelAt_append_singleton_of_lt_cons x v (hb.1.trans hblt)
   have hb12 := hb.1
   by_cases h₁ : levelAt (n := n) (x :: v) (b.1 + 1) = some (x.1 : ℕ)
   · -- `b` lies on the level of `x`
@@ -768,7 +789,7 @@ private theorem seifertEntry_append_singleton_eq_neg_sum_left {a b : ℕ × ℕ}
       ((mem_filter_seifertLoops_cons hm' hc).2.1.trans h₁.symm),
       sum_seifertLoops_levelAt_sub_cons hm hm']
     simp only [seifertEntry, hab, hla, hlb, h₁, ↓reduceIte, columnPotential,
-      signAt_append_singleton_of_lt x v hal, ha1]
+      signAt_append_singleton_of_lt_cons x v hal, ha1]
     have hs := signAt_eq_one_or_eq_neg_one (x :: v : BraidWord n) (lt_length_of_levelAt_cons hm)
     rcases eq_or_ne (b.2 + 1) m with h | h
     · rw [← h] at hs ⊢
@@ -804,12 +825,12 @@ private theorem seifertEntry_append_singleton_eq_neg_sum_right {a b : ℕ × ℕ
   have hb1 := fst_add_one_eq_of_snd_eq_length hm hm' hb hb2
   have hbl : b.1 < v.length := hb2 ▸ hb.1
   have halt := snd_lt_length_of_ne ha ha2
-  have hA := (isSeifertLoop_append_singleton_iff x v halt).1 ha
+  have hA := (isSeifertLoop_append_singleton_iff_cons x v halt).1 ha
   have hab : a ≠ b := fun h ↦ ha2 (h ▸ hb2)
   have hlb : (v ++ [x]).levelAt b.1 = some (x.1 : ℕ) := by
-    rw [levelAt_append_singleton_of_lt x v hbl, hb1, hm]
+    rw [levelAt_append_singleton_of_lt_cons x v hbl, hb1, hm]
   have hla : (v ++ [x]).levelAt a.1 = levelAt (n := n) (x :: v) (a.1 + 1) :=
-    levelAt_append_singleton_of_lt x v (ha.1.trans halt)
+    levelAt_append_singleton_of_lt_cons x v (ha.1.trans halt)
   have ha12 := ha.1
   by_cases h₁ : levelAt (n := n) (x :: v) (a.1 + 1) = some (x.1 : ℕ)
   · -- `a` lies on the level of `x`
@@ -819,7 +840,7 @@ private theorem seifertEntry_append_singleton_eq_neg_sum_right {a b : ℕ × ℕ
       (h₁.trans (mem_filter_seifertLoops_cons hm' hd).2.1.symm),
       sum_seifertLoops_levelAt_sub_cons hm hm']
     simp only [seifertEntry, hab, hla, hlb, h₁, ↓reduceIte, rowPotential,
-      signAt_append_singleton_of_lt x v halt]
+      signAt_append_singleton_of_lt_cons x v halt]
     have hlt : a.2 + 1 < v.length + 1 := by omega
     have hs := signAt_eq_one_or_eq_neg_one (x :: v : BraidWord n) hlt
     split_ifs <;> first | contradiction | omega
@@ -876,8 +897,9 @@ private theorem seifertEntry_append_singleton_eq_sum_sum {a : ℕ × ℕ}
       | (rw [h']; split_ifs <;> omega)
       | (split_ifs <;> omega)
   rw [Finset.sum_congr rfl hrow, sum_seifertLoops_levelAt_sub_cons hm hm']
-  simp only [seifertEntry, ↓reduceIte, hg, signAt_append_singleton_of_lt x v hal, ha2,
-    signAt_append_singleton_length, ha1]
+  have hs : (v ++ [x]).signAt v.length = signAt (n := n) (x :: v) 0 := by simp
+  simp only [seifertEntry, ↓reduceIte, hg, signAt_append_singleton_of_lt_cons x v hal, ha2, hs,
+    ha1]
   have hs₀ := signAt_eq_one_or_eq_neg_one (x :: v : BraidWord n) (Nat.succ_pos v.length)
   have hs₁ := signAt_eq_one_or_eq_neg_one (x :: v : BraidWord n) (lt_length_of_levelAt_cons hm)
   split_ifs <;> omega
@@ -946,7 +968,7 @@ theorem exists_seifertMatrix_append_singleton :
       split_ifs with h0
       · exact isSeifertLoop_sub_one_length hm hm' (hm0 c h0)
       · have := hlen c
-        rw [isSeifertLoop_append_singleton_iff x v (by omega),
+        rw [isSeifertLoop_append_singleton_iff_cons x v (by omega),
           sub_one_add_one_pair h0 (by omega)]
         exact (mem_seifertLoops _).1 c.2⟩
   have hκ : ∀ c : seifertLoops (n := n) (x :: v), c.1.1 ≠ 0 →
@@ -983,7 +1005,7 @@ theorem exists_seifertMatrix_append_singleton :
         exact Prod.ext (by simp only; omega) ha2.symm
       · have ha2' := snd_lt_length_of_ne ha ha2
         refine ⟨⟨(a.1.1 + 1, a.1.2 + 1), (mem_seifertLoops _).2
-          ((isSeifertLoop_append_singleton_iff x v ha2').1 ha)⟩, Subtype.ext ?_⟩
+          ((isSeifertLoop_append_singleton_iff_cons x v ha2').1 ha)⟩, Subtype.ext ?_⟩
         rw [hκ _ (Nat.succ_ne_zero _)]
         simp
   set P : Matrix (seifertLoops (n := n) (x :: v)) (seifertLoops (n := n) (x :: v)) ℤ :=
@@ -1100,33 +1122,19 @@ theorem tristramLevineSignature_seifertMatrix_append_singleton (ω : ℂ) :
 /-- Cyclically rotating a braid word keeps the Alexander polynomial of the Seifert matrix. -/
 @[simp]
 theorem alexander_seifertMatrix_rotate (w : BraidWord n) (k : ℕ) :
-    alexander (seifertMatrix (n := n) (w.rotate k)) = alexander w.seifertMatrix := by
-  induction k with
-  | zero => rw [List.rotate_zero]
-  | succ k ih =>
-    rw [← List.rotate_rotate]
-    rcases h : w.rotate k with _ | ⟨y, u⟩
-    · rw [h] at ih
-      rw [List.rotate_nil, ih]
-    · rw [h] at ih
-      rw [List.rotate_cons_succ, List.rotate_zero, alexander_seifertMatrix_append_singleton, ih]
+    alexander (seifertMatrix (n := n) (w.rotate k)) = alexander w.seifertMatrix :=
+  List.apply_rotate_of_append_singleton (fun w : BraidWord n ↦ alexander w.seifertMatrix)
+    alexander_seifertMatrix_append_singleton w k
 
 /-- Cyclically rotating a braid word keeps the Tristram–Levine signatures of the Seifert
 matrix. -/
 @[simp]
 theorem tristramLevineSignature_seifertMatrix_rotate (w : BraidWord n) (k : ℕ) (ω : ℂ) :
     tristramLevineSignature ((seifertMatrix (n := n) (w.rotate k)).map ((↑) : ℤ → ℝ)) ω =
-      tristramLevineSignature (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω := by
-  induction k with
-  | zero => rw [List.rotate_zero]
-  | succ k ih =>
-    rw [← List.rotate_rotate]
-    rcases h : w.rotate k with _ | ⟨y, u⟩
-    · rw [h] at ih
-      rw [List.rotate_nil, ih]
-    · rw [h] at ih
-      rw [List.rotate_cons_succ, List.rotate_zero,
-        tristramLevineSignature_seifertMatrix_append_singleton, ih]
+      tristramLevineSignature (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω :=
+  List.apply_rotate_of_append_singleton
+    (fun w : BraidWord n ↦ tristramLevineSignature (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω)
+    (fun x v ↦ tristramLevineSignature_seifertMatrix_append_singleton x v ω) w k
 
 end Invariants
 
@@ -1163,6 +1171,26 @@ theorem signature_seifertMatrix_trefoil :
   obtain ⟨e, he⟩ := seifertMatrix_trefoil
   rw [← Matrix.signature_submatrix_equiv_self e.symm, e.symm_symm, Matrix.submatrix_map, he,
     Matrix.transpose_map, Matrix.signature_transpose, signature_trefoilSeifertMatrix]
+
+/-- The closure of `σ₁⁻³` is the left-handed trefoil, the mirror image of the closure of `σ₁³`.
+Its canonical Seifert surface has the two loops `(0, 1)` and `(1, 2)`, and in that basis its Seifert
+matrix is the negative of `TauCeti.KnotTheory.trefoilSeifertMatrix`. -/
+theorem seifertMatrix_mirrorTrefoil :
+    ∃ e : Fin 2 ≃ seifertLoops (n := 2) [(0, -1), (0, -1), (0, -1)],
+      (seifertMatrix (n := 2) [(0, -1), (0, -1), (0, -1)]).submatrix e e =
+        -trefoilSeifertMatrix := by
+  have htrefoil : trefoilSeifertMatrix = !![-1, 1; 0, -1] := Matrix.ext trefoilSeifertMatrix_apply
+  rw [htrefoil]
+  exact ⟨Equiv.ofBijective ![⟨(0, 1), by decide⟩, ⟨(1, 2), by decide⟩] (by decide),
+    by decide +kernel⟩
+
+/-- The Seifert matrix of the braid `σ₁⁻³` has the signature `2` of the left-handed trefoil. -/
+theorem signature_seifertMatrix_mirrorTrefoil :
+    Matrix.signature ((seifertMatrix (n := 2) [(0, -1), (0, -1), (0, -1)]).map ((↑) : ℤ → 𝕜)) =
+      2 := by
+  obtain ⟨e, he⟩ := seifertMatrix_mirrorTrefoil
+  rw [← Matrix.signature_submatrix_equiv_self e.symm, e.symm_symm, Matrix.submatrix_map, he,
+    Matrix.map_neg _ Int.cast_neg, Matrix.signature_neg, signature_trefoilSeifertMatrix, neg_neg]
 
 /-- The closure of `σ₁ σ₂⁻¹ σ₁ σ₂⁻¹` is the figure-eight knot. Its canonical Seifert surface has
 the loop `(1, 3)` on the upper level and `(0, 2)` on the lower one, and in that basis its Seifert
