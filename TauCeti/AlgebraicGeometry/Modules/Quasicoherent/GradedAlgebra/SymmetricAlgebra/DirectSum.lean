@@ -433,25 +433,6 @@ theorem symmetricAlgebra_map_comp_lift {F' : QuasicoherentSheaf X} (g : F' ⟶ F
 /-! ### The free-forgetful adjunction -/
 
 variable (X) in
--- Exposed so that the underlying module of `(QuasicoherentAlgebra.forget X).obj A` is seen to be
--- `A.obj.X`, which the statements about the adjunction below need in order to typecheck.
-/-- The forgetful functor from quasicoherent commutative `𝒪_X`-algebras to quasicoherent
-sheaves, sending an algebra to its underlying module. -/
-@[expose]
-def QuasicoherentAlgebra.forget : QuasicoherentAlgebra X ⥤ QuasicoherentSheaf X :=
-  ObjectProperty.lift _ (ObjectProperty.ι _ ⋙ CommMon.forget X.Modules) fun A ↦ A.property
-
-@[simp]
-theorem QuasicoherentAlgebra.forget_obj_obj (A : QuasicoherentAlgebra X) :
-    ((QuasicoherentAlgebra.forget X).obj A).obj = A.obj.X :=
-  (rfl)
-
-@[simp]
-theorem QuasicoherentAlgebra.forget_map_hom {A A' : QuasicoherentAlgebra X} (f : A ⟶ A') :
-    ((QuasicoherentAlgebra.forget X).map f).hom = f.hom.hom.hom :=
-  (rfl)
-
-variable (X) in
 /-- **The symmetric algebra is the free quasicoherent algebra**: `Sym` is left adjoint to the
 forgetful functor from quasicoherent commutative `𝒪_X`-algebras to quasicoherent sheaves. This
 packages the universal property `symmetricAlgebraHomEquiv`, restricted to quasicoherent algebras,

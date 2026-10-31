@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Basic
 public import Mathlib.CategoryTheory.MorphismProperty.Comma
 
@@ -21,6 +22,10 @@ opposite category of quasi-coherent algebras to affine schemes over the base. Th
 functor provides the geometric side of the correspondence between quasi-coherent
 commutative algebras and affine schemes over the base, and is an input to the natural
 universal property of relative Spec.
+
+The file also defines the forgetful functor
+`TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.forget` from quasi-coherent algebras to
+quasicoherent sheaves.
 
 ## References
 
@@ -160,6 +165,26 @@ abbrev QuasicoherentAlgebra (X : Scheme.{u}) :=
   (show ObjectProperty (CommMon X.Modules) from fun A ↦ A.X.IsQuasicoherent).FullSubcategory
 
 instance (A : QuasicoherentAlgebra X) : A.obj.X.IsQuasicoherent := A.property
+
+variable (X) in
+-- Exposed so that the underlying module of `(QuasicoherentAlgebra.forget X).obj A` is seen to be
+-- `A.obj.X`, which statements about the free-forgetful adjunction
+-- `TauCeti.AlgebraicGeometry.symmetricAlgebraAdjunction` need in order to typecheck.
+/-- The forgetful functor from quasicoherent commutative `𝒪_X`-algebras to quasicoherent
+sheaves, sending an algebra to its underlying module. -/
+@[expose]
+def QuasicoherentAlgebra.forget : QuasicoherentAlgebra X ⥤ QuasicoherentSheaf X :=
+  ObjectProperty.lift _ (ObjectProperty.ι _ ⋙ CommMon.forget X.Modules) fun A ↦ A.property
+
+@[simp]
+theorem QuasicoherentAlgebra.forget_obj_obj (A : QuasicoherentAlgebra X) :
+    ((QuasicoherentAlgebra.forget X).obj A).obj = A.obj.X :=
+  (rfl)
+
+@[simp]
+theorem QuasicoherentAlgebra.forget_map_hom {A A' : QuasicoherentAlgebra X} (f : A ⟶ A') :
+    ((QuasicoherentAlgebra.forget X).map f).hom = f.hom.hom.hom :=
+  (rfl)
 
 /-- Affine schemes over `X`: the structure morphism, not necessarily the scheme, is affine.
 Morphisms are arbitrary scheme morphisms over `X`. -/
