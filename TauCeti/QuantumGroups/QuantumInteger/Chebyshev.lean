@@ -126,7 +126,11 @@ theorem qInt_neg_two_left (n : ℕ) : qInt R (-2) n = (-1) ^ (n + 1) * n := by
 
 end CommRing
 
-namespace _root_.RingHom
+end TauCeti
+
+namespace RingHom
+
+open TauCeti
 
 variable {R R' : Type*} [CommRing R] [CommRing R']
 
@@ -135,7 +139,9 @@ variable {R R' : Type*} [CommRing R] [CommRing R']
 theorem map_qInt (f : R →+* R') (δ : R) (n : ℕ) : f (qInt R δ n) = qInt R' (f δ) n := by
   simp only [qInt_def, ← Polynomial.eval_map_apply, map_S]
 
-end _root_.RingHom
+end RingHom
+
+namespace TauCeti
 
 /-! ### A computable evaluator -/
 
