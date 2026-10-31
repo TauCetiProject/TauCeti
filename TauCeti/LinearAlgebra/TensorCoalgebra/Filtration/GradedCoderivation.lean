@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.Brace
 public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 
 /-!
-# Tensor-length bounds for graded coderivations
+# Tensor-length bounds for coderivations
 
 A Taylor map vanishing on the words of length at most `j` produces a coderivation which shortens
 reduced tensor words by at least `j`. In particular a Taylor map with zero unary component produces
@@ -21,7 +21,9 @@ tensor-trick homotopy preserves word length. The general bound, and its conseque
 controls which operations a gauge transformation of an `A∞` structure can change.
 
 The length argument does not depend on the grading or the Koszul twist. It uses the formula for
-the graded Taylor expansion and the conilpotence filtration of reduced tensor words. For a Taylor
+the graded Taylor expansion and the conilpotence filtration of reduced tensor words, and the same
+argument gives the bounds for the ungraded Taylor expansion `TauCeti.ReducedTensorWords.coderiv`
+(`TauCeti.ReducedTensorWords.coderiv_filtration_add_le`). For a Taylor
 map concentrated on the words of a single length `a`, the bound is exact: its coderivation sends
 the words of length `j + a - 1` to words of length `j`, and the words of every other length to
 words of other lengths (`TauCeti.ReducedTensorWords.lengthProj_comp_gradedCoderiv`).
@@ -37,6 +39,51 @@ open scoped DirectSum TensorProduct
 universe uR uM
 
 namespace TauCeti.ReducedTensorWords
+
+section Ungraded
+
+variable (R : Type uR) {M : Type uM} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- A coderivation whose Taylor map vanishes on the words of length at most `j` lowers tensor
+length by at least `j`: each of its summands collapses a block of more than `j` letters to a single
+letter. -/
+theorem coderiv_filtration_add_le (F : ReducedTensorWords R M →ₗ[R] M) {j : ℕ}
+    (hF : ∀ z ∈ filtration R M j, F z = 0) (n : ℕ) :
+    Submodule.map (coderiv R F) (filtration R M (n + j)) ≤ filtration R M n := by
+  rw [Submodule.map_le_iff_le_comap, filtration_le_iff]
+  intro k hk
+  rintro _ ⟨z, rfl⟩
+  simp only [Submodule.mem_comap]
+  induction z using PiTensorProduct.induction_on with
+  | smul_tprod a x =>
+      rw [map_smul, map_smul, of_tprod_eq_subword R k.2, coderiv_subword R F x le_rfl]
+      apply Submodule.smul_mem
+      refine Submodule.sum_mem _ fun p _ ↦ Submodule.sum_mem _ fun d _ ↦ ?_
+      by_cases hdj : d ≤ j
+      · rw [hF _ (subword_mem_filtration R M x _ hdj), splice_zero]
+        exact zero_mem _
+      by_cases hfit : p + d ≤ k.1
+      · rw [splice_eq_of_tprod R _ _ (by omega) hfit (by omega)]
+        exact of_mem_filtration R M (k := ⟨k.1 + 1 - d, by omega⟩) (by dsimp only; omega) _
+      · rw [splice_eq_zero_of_block_lt_add R _ _ (by omega)]
+        exact zero_mem _
+  | add x y hx hy =>
+      rw [map_add, map_add]
+      exact add_mem hx hy
+
+/-- A coderivation with no unary Taylor component lowers tensor length by at least one. -/
+theorem coderiv_filtration_lowering (F : ReducedTensorWords R M →ₗ[R] M)
+    (hF : F ∘ₗ ofLetter R M = 0) (n : ℕ) :
+    Submodule.map (coderiv R F) (filtration R M (n + 1)) ≤ filtration R M n :=
+  coderiv_filtration_add_le R F (apply_eq_zero_of_mem_filtration_one R M hF) n
+
+/-- A coderivation does not increase tensor length. -/
+theorem coderiv_mem_filtration (F : ReducedTensorWords R M →ₗ[R] M) {n : ℕ}
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M n) :
+    coderiv R F z ∈ filtration R M n :=
+  coderiv_filtration_add_le R F (apply_eq_zero_of_mem_filtration_zero R M F) n ⟨z, hz, rfl⟩
+
+end Ungraded
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommMonoid M] [Module R M]
 
