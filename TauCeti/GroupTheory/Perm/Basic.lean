@@ -54,7 +54,8 @@ front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
 involution `σ` by left multiplication with `Equiv.swap a (σ a)` leaves an involution that agrees
 with `σ` off the pair (`Function.Involutive.swap_mul`,
 `Function.Involutive.swap_mul_apply_eq_self_or`), and multiplying back on the right recovers `σ`
-(`Function.Involutive.swap_mul_mul_swap`).
+(`Function.Involutive.swap_mul_mul_swap`). A permutation of a finite type sends as many points
+into a set as out of it (`Equiv.Perm.card_filter_not_and_apply_eq`).
 -/
 
 public section
@@ -266,6 +267,20 @@ theorem apply_inv_eq_comp_of_apply_apply_eq {β γ : Sort*} (F : α → β → �
     (hF : ∀ a b, F (σ a) (f b) = F a b) : (fun a => F (σ⁻¹ a)) = fun a => F a ∘ f := by
   funext a b
   simpa using (hF (σ⁻¹ a) b).symm
+
+open _root_.Finset in
+/-- A permutation of a finite type sends as many points from outside `p` into `p` as from
+inside `p` out of it. -/
+theorem card_filter_not_and_apply_eq [Fintype α] (p : α → Prop) [DecidablePred p] :
+    #{x | ¬p x ∧ p (σ x)} = #{x | ¬p (σ x) ∧ p x} := by
+  have hσ : #{x | p (σ x)} = #{x | p x} := card_equiv σ fun x ↦ by simp
+  have h₁ := card_filter_add_card_filter_not (s := {x | p x}) fun x ↦ p (σ x)
+  have h₂ := card_filter_add_card_filter_not (s := {x | p (σ x)}) p
+  simp only [filter_filter] at h₁ h₂
+  have h₃ : #{x | p (σ x) ∧ p x} = #{x | p x ∧ p (σ x)} := by simp only [and_comm]
+  have h₄ : #{x | p x ∧ ¬p (σ x)} = #{x | ¬p (σ x) ∧ p x} := by simp only [and_comm]
+  have h₅ : #{x | p (σ x) ∧ ¬p x} = #{x | ¬p x ∧ p (σ x)} := by simp only [and_comm]
+  omega
 
 end Equiv.Perm
 
