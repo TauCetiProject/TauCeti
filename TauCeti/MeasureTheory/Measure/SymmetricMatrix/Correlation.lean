@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
+public import TauCeti.Analysis.Matrix.PartialCorrelation
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Convex.Measure
@@ -72,10 +73,6 @@ noncomputable section
 open MeasureTheory Topology Filter Set
 
 namespace TauCeti
-
-/-- The strictly lower positions `(i, j)`, `j < i`, of a `p × p` matrix. A unit-diagonal
-symmetric matrix, in particular a correlation matrix, is determined by its entries there. -/
-abbrev strictLowerTriangle (p : ℕ) := {ij : Fin p × Fin p // ij.2 < ij.1}
 
 variable (p : ℕ)
 
@@ -303,6 +300,22 @@ matrix. -/
 theorem zero_mem_posDefCorrelationRegion : (0 : strictLowerTriangle p → ℝ) ∈
     posDefCorrelationRegion p := by
   simpa using Matrix.PosDef.one
+
+/-- The Gram matrix of partial correlations in the open cube lies in the positive-definite
+correlation region when expressed in strictly lower coordinates. -/
+theorem partialCorrelationGram_mem_posDefCorrelationRegion {z : strictLowerTriangle p → ℝ}
+    (hz : ∀ ij, |z ij| < 1) :
+    (fun ij : strictLowerTriangle p ↦ partialCorrelationGram z ij.1.1 ij.1.2) ∈
+      posDefCorrelationRegion p := by
+  let A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
+    ⟨partialCorrelationGram z,
+      Matrix.isHermitian_iff_isSelfAdjoint.1 (posSemidef_partialCorrelationGram z).isHermitian⟩
+  have hdiag : ∀ i, (A : Matrix (Fin p) (Fin p) ℝ) i i = 1 :=
+    partialCorrelationGram_apply_self fun ij ↦ (hz ij).le
+  have hcoords := correlationMatrix_correlationCoordinates hdiag
+  rw [mem_posDefCorrelationRegion]
+  convert posDef_partialCorrelationGram hz using 1
+  exact congrArg Subtype.val hcoords
 
 /-- Every off-diagonal entry of a positive-definite correlation matrix lies in `(-1, 1)`: its
 `2 × 2` principal minor `1 - x (i, j) ^ 2` is positive. -/
