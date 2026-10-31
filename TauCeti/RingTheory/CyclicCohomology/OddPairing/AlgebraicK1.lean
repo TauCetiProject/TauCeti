@@ -16,9 +16,9 @@ Let `A` be a unital complex algebra and `M` a complex vector space. Connes' odd 
 through the matrix extension `φ#Tr` (`TauCeti.cyclicCohomology.oddPairing`). This file shows that
 it descends to algebraic `K₁(A) = GL_∞(A) / E_∞(A)`:
 
-* relabelling the rows and columns of `u` does not change the pairing, and neither does the
-  stabilization `u ↦ u ⊕ 1`, so the pairings of the groups `GL (Fin n) A` assemble into a
-  homomorphism on `GL_∞(A)`;
+* relabelling the rows and columns of `u` does not change the pairing
+  (`Equiv.oddPairing_reindexGL`), and neither does the stabilization `u ↦ u ⊕ 1`, so the
+  pairings of the groups `GL (Fin n) A` assemble into a homomorphism on `GL_∞(A)`;
 * the pairing is multiplicative and takes values in an abelian group, so this homomorphism
   factors through the abelianization `K₁(A)` of `GL_∞(A)`.
 
@@ -32,8 +32,6 @@ The result is a homomorphism from `K₁(A)` to the additive group of functionals
 
 ## Main results
 
-* `TauCeti.cyclicCohomology.oddPairing_reindexGL`: the odd pairing is invariant under relabelling
-  matrix indices.
 * `TauCeti.cyclicCohomology.oddPairing_stabilizeGL`: the odd pairing is invariant under
   stabilization `GL (Fin m) A → GL (Fin n) A`.
 * `TauCeti.AlgebraicK1.oddPairing_mk`: on the class of an invertible matrix, the pairing on `K₁`
@@ -55,25 +53,6 @@ variable {A M : Type*} [Ring A] [Algebra ℂ A] [AddCommGroup M] [Module ℂ M]
 
 namespace cyclicCohomology
 
-/-- **Relabelling invariance of the odd pairing**: reindexing the rows and columns of an invertible
-matrix along an equivalence of index types does not change its odd pairing. -/
-theorem oddPairing_reindexGL {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
-    [DecidableEq κ] (e : ι ≃ κ) (u : GL ι A) (m : ℕ) (c : cyclicCohomology ℂ A M (2 * m + 1)) :
-    oddPairing (e.reindexGL A u) m (matrixExtension M κ (2 * m + 1) c) =
-      oddPairing u m (matrixExtension M ι (2 * m + 1) c) := by
-  obtain ⟨φ, rfl⟩ := mk_surjective ℂ A M (2 * m + 1) c
-  have hinv : (↑(e.reindexGL A u)⁻¹ : Matrix κ κ A) =
-      (↑u⁻¹ : Matrix ι ι A).submatrix e.symm e.symm := by
-    rw [← map_inv, Equiv.coe_reindexGL]
-  have hx : (fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ) then
-        (↑(e.reindexGL A u)⁻¹ - 1 : Matrix κ κ A) else ↑(e.reindexGL A u) - 1) =
-      fun k : Fin (2 * m + 2) ↦
-        (if Even (k : ℕ) then (↑u⁻¹ - 1 : Matrix ι ι A) else ↑u - 1).submatrix e.symm e.symm := by
-    funext k
-    split_ifs <;> simp [hinv, Matrix.submatrix_sub, Matrix.submatrix_one_equiv]
-  simp only [oddPairing_matrixExtension_mk, hx,
-    matrixCochainExtension_submatrix_equiv κ ι e.symm]
-
 /-- **Stabilization invariance of the odd pairing**: the stabilization `u ↦ u ⊕ 1` from
 `GL (Fin m) A` to `GL (Fin n) A` does not change the odd pairing. -/
 theorem oddPairing_stabilizeGL {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) (k : ℕ)
@@ -81,7 +60,7 @@ theorem oddPairing_stabilizeGL {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) (k :
     oddPairing (stabilizeGL A h u) k (matrixExtension M (Fin n) (2 * k + 1) c) =
       oddPairing u k (matrixExtension M (Fin m) (2 * k + 1) c) := by
   obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [stabilizeGL_eq_reindexGL_fromBlocksGL, oddPairing_reindexGL]
+  rw [stabilizeGL_eq_reindexGL_fromBlocksGL, Equiv.oddPairing_reindexGL]
   exact oddPairing_matrixExtension_of_val_eq_fromBlocks_one (by simp) k c
 
 end cyclicCohomology

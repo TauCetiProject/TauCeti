@@ -209,7 +209,7 @@ theorem hom_ext {G : Type*} [Monoid G] {f g : StableGeneralLinearGroup A →* G}
 /-- The **universal property of `GL_∞(A)`**: a family of homomorphisms out of the groups
 `GL (Fin n) A` which is compatible with stabilization induces a homomorphism out of the stable
 general linear group. -/
-def lift {G : Type*} [Group G] (f : ∀ n, GL (Fin n) A →* G)
+def lift {G : Type*} [Monoid G] (f : ∀ n, GL (Fin n) A →* G)
     (hf : ∀ m n (h : m ≤ n) u, f n (stabilizeGL A h u) = f m u) :
     StableGeneralLinearGroup A →* G where
   toFun := DirectLimit.lift _ (fun n ↦ f n) fun m n h u ↦ (hf m n h u).symm
@@ -218,7 +218,7 @@ def lift {G : Type*} [Group G] (f : ∀ n, GL (Fin n) A →* G)
 
 /-- The homomorphism induced by a compatible family restricts to the family. -/
 @[simp]
-theorem lift_of {G : Type*} [Group G] (f : ∀ n, GL (Fin n) A →* G)
+theorem lift_of {G : Type*} [Monoid G] (f : ∀ n, GL (Fin n) A →* G)
     (hf : ∀ m n (h : m ≤ n) u, f n (stabilizeGL A h u) = f m u) (n : ℕ) (u : GL (Fin n) A) :
     lift f hf (of A n u) = f n u :=
   (rfl)
@@ -270,7 +270,7 @@ private theorem of_mem_elementarySubgroup_of_fromBlocksGL {n : ℕ} {u : GL (Fin
     of A n u ∈ elementarySubgroup A := by
   rw [← of_stabilizeGL (Nat.le_add_right n n), stabilizeGL_eq_reindexGL_fromBlocksGL]
   exact of_mem_elementarySubgroup
-    (map_reindexGL_elementarySubgroup (A := A) finSumFinEquiv ▸ ⟨_, hu, rfl⟩)
+    (finSumFinEquiv.map_reindexGL_elementarySubgroup (A := A) ▸ ⟨_, hu, rfl⟩)
 
 /-- **The stable elementary subgroup is normal.** This is Whitehead's lemma in the limit: a
 conjugate `g e g⁻¹` becomes elementary after stabilization. -/
