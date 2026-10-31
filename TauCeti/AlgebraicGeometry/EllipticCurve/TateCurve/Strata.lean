@@ -62,24 +62,6 @@ namespace TauCeti
 
 variable {K : Type*} [NormedField K]
 
-/-- Dividing by a power of `1 - w` with `‖w‖ < 1` does not change norms. -/
-private theorem norm_div_one_sub_pow [IsUltrametricDist K] (z : K) {w : K} (hw : ‖w‖ < 1)
-    (k : ℕ) : ‖z / (1 - w) ^ k‖ = ‖z‖ := by
-  rw [norm_div, norm_pow, norm_one_sub_of_norm_lt_one hw, one_pow, div_one]
-
-/-- A one-sided Tate series `∑_{n ≥ 1} f(qⁿ w)` whose terms are bounded by their arguments has
-norm at most `‖q w‖`. -/
-private theorem norm_tsum_le_norm_mul [IsUltrametricDist K] (f : K → K)
-    (hf : ∀ w : K, ‖w‖ < 1 → ‖f w‖ ≤ ‖w‖) {q w : K} (hq : ‖q‖ ≤ 1) (hw : ‖q * w‖ < 1) :
-    ‖∑' n : ℕ, f (q ^ (n + 1) * w)‖ ≤ ‖q * w‖ := by
-  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg _) fun n ↦ ?_
-  have h : ‖q ^ (n + 1) * w‖ ≤ ‖q * w‖ :=
-    calc ‖q ^ (n + 1) * w‖ = ‖q‖ ^ n * ‖q * w‖ := by
-          rw [norm_mul, norm_mul, norm_pow, pow_succ]
-          ring
-      _ ≤ ‖q * w‖ := mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg q) hq)
-  exact (hf _ (h.trans_lt hw)).trans h
-
 /-- The hypotheses `‖q‖ < ‖u‖ < ‖q‖⁻¹` of the annulus estimates, unpacked: both one-sided series
 are evaluated inside the open unit disc, `‖q‖ < 1`, and `‖q‖` is at most the error bound. -/
 private theorem annulus_bounds {q u : Kˣ} (hqu : ‖(q : K)‖ < ‖(u : K)‖)
@@ -96,13 +78,6 @@ private theorem annulus_bounds {q u : Kˣ} (hqu : ‖(q : K)‖ < ‖(u : K)‖)
   · exact ⟨hqu.trans_le hu, le_max_of_le_right (le_div_self hq0.le hu0 hu)⟩
   · have h := le_mul_of_one_le_right hq0.le hu
     exact ⟨h.trans_lt h₁, le_max_of_le_left h⟩
-
-/-- If `a` and the error `b - a` both have norm at most `C`, so does `b`. -/
-private theorem norm_le_of_norm_sub_le [IsUltrametricDist K] {a b : K} {C : ℝ} (ha : ‖a‖ ≤ C)
-    (h : ‖b - a‖ ≤ C) :
-    ‖b‖ ≤ C := by
-  rw [← add_sub_cancel a b]
-  exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ha h)
 
 /-- Every class in `Kˣ ⧸ q^ℤ` has a representative in the fundamental annulus. -/
 private theorem exists_mk_eq_of_mem_annulus (q : Kˣ) (hq : ‖(q : K)‖ < 1)
@@ -208,13 +183,14 @@ theorem norm_tateUniformizationX_of_norm_one_sub_lt_one (q u : Kˣ) (hq : ‖(q 
 /-- **Points with nonsingular reduction: the first coordinate is integral.** -/
 theorem norm_tateUniformizationX_le_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) : ‖tateUniformizationX q u‖ ≤ 1 :=
-  norm_le_of_norm_sub_le (by rw [norm_div, norm_pow, hu, h, one_pow, div_one])
+  IsUltrametricDist.norm_le_of_norm_sub_le (by rw [norm_div, norm_pow, hu, h, one_pow, div_one])
     ((norm_tateUniformizationX_sub_le_of_norm_eq_one q u hq hu).trans hq.le)
 
 /-- **Points with nonsingular reduction: the second coordinate is integral.** -/
 theorem norm_tateUniformizationY_le_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) : ‖tateUniformizationY q u‖ ≤ 1 :=
-  norm_le_of_norm_sub_le (by rw [norm_div, norm_pow, norm_pow, hu, h, one_pow, one_pow, div_one])
+  IsUltrametricDist.norm_le_of_norm_sub_le
+    (by rw [norm_div, norm_pow, norm_pow, hu, h, one_pow, one_pow, div_one])
     ((norm_tateUniformizationY_sub_le_of_norm_eq_one q u hq hu).trans hq.le)
 
 /-- **Points with nonsingular reduction avoid the node.** If `‖u‖ = ‖1 - u‖ = 1`, then
@@ -242,7 +218,7 @@ theorem norm_tateUniformizationX_le_max (q u : Kˣ) (hqu : ‖(q : K)‖ < ‖(u
   have hq : ‖(q : K)‖ < 1 := hqu.trans hu
   have huq : ‖(u : K)‖ < ‖(q : K)‖⁻¹ :=
     hu.trans ((one_lt_inv₀ (norm_pos_iff.mpr q.ne_zero)).mpr hq)
-  refine norm_le_of_norm_sub_le
+  refine IsUltrametricDist.norm_le_of_norm_sub_le
     (le_max_of_le_left (norm_div_one_sub_pow _ hu 2).le)
     ((norm_tateUniformizationX_sub_le q u hqu huq).trans (max_le_max_right _ ?_))
   exact mul_le_of_le_one_left (norm_nonneg _) hq.le
@@ -255,7 +231,7 @@ theorem norm_tateUniformizationY_le_max (q u : Kˣ) (hqu : ‖(q : K)‖ < ‖(u
   have hq : ‖(q : K)‖ < 1 := hqu.trans hu
   have huq : ‖(u : K)‖ < ‖(q : K)‖⁻¹ :=
     hu.trans ((one_lt_inv₀ (norm_pos_iff.mpr q.ne_zero)).mpr hq)
-  refine norm_le_of_norm_sub_le (le_max_of_le_left ?_)
+  refine IsUltrametricDist.norm_le_of_norm_sub_le (le_max_of_le_left ?_)
     ((norm_tateUniformizationY_sub_le q u hqu huq).trans (max_le_max_right _ ?_))
   · rw [norm_div_one_sub_pow _ hu, norm_pow]
     exact pow_le_of_le_one (norm_nonneg _) hu.le two_ne_zero
@@ -296,8 +272,9 @@ theorem norm_tateQuotientCoordinates_fst_lt_one_and_snd_lt_one_iff (q : Kˣ)
   · rintro ⟨hX, hY⟩
     obtain ⟨r, rfl, hr₁, hr₂⟩ := exists_mk_eq_of_mem_annulus q hq x
     refine ⟨r, rfl, hr₁, hr₂.lt_of_ne fun heq ↦ ?_⟩
-    rcases (show ‖1 - (r : K)‖ ≤ 1 by
-        simpa [heq] using IsUltrametricDist.norm_sub_le_max (1 : K) r).lt_or_eq with hlt | h1
+    have hbound : ‖1 - (r : K)‖ ≤ 1 := by
+      simpa [heq] using IsUltrametricDist.norm_sub_le_max (1 : K) r
+    rcases hbound.lt_or_eq with hlt | h1
     · exact hX.not_gt ((one_lt_norm_tateQuotientCoordinates_fst_iff q hq hx).mpr ⟨r, rfl, hlt⟩)
     · rw [tateQuotientCoordinates_mk] at hX hY
       have := norm_tateUniformizationX_add_tateUniformizationY q r hq heq h1
