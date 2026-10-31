@@ -68,20 +68,6 @@ namespace HalfBraiding
 
 variable {X : C} (b : HalfBraiding X)
 
-/-- Moving `X` from the right of `U` to its left and then contracting `U ⊗ V` against the unit
-is the same as contracting first. -/
-private theorem inv_whiskerRight_comp_whiskerLeft {U V : C} (g : U ⊗ V ⟶ 𝟙_ C) :
-    (b.β U).inv ▷ V ⊗≫ X ◁ g ⊗≫ 𝟙 X = 𝟙 _ ⊗≫ U ◁ (b.β V).hom ⊗≫ g ▷ X ⊗≫ 𝟙 X := by
-  have h := b.naturality g
-  rw [b.monoidal, β_tensorUnit_hom] at h
-  calc
-    _ = (b.β U).inv ▷ V ⊗≫ (X ◁ g ≫ (ρ_ X).hom ≫ (λ_ X).inv) ⊗≫ 𝟙 X := by monoidal
-    _ = (b.β U).inv ▷ V ⊗≫ (b.β U).hom ▷ V ⊗≫ U ◁ (b.β V).hom ⊗≫ g ▷ X ⊗≫ 𝟙 X := by
-      rw [h]; monoidal
-    _ = 𝟙 _ ⊗≫ ((b.β U).inv ▷ V ≫ (b.β U).hom ▷ V) ⊗≫ U ◁ (b.β V).hom ⊗≫ g ▷ X ⊗≫ 𝟙 X := by
-      monoidal
-    _ = _ := by rw [← comp_whiskerRight, Iso.inv_hom_id, id_whiskerRight]; monoidal
-
 variable (X' : C) [ExactPairing X X']
 
 /-- The component at `U` of the half-braiding induced on a right dual `X'` of `X`: the mate of

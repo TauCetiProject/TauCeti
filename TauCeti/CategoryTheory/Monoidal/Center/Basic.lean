@@ -13,7 +13,8 @@ public import Mathlib.CategoryTheory.Monoidal.Center
 A half-braiding `b : HalfBraiding X` on an object `X` of a monoidal category `C` is a natural
 family of isomorphisms `b.β U : X ⊗ U ≅ U ⊗ X`, monoidal in `U`. This file records consequences of
 these axioms that Mathlib does not state: the component at the unit object is forced to be the
-composite of the unitors, and the inverse components are again monoidal and natural in `U`.
+composite of the unitors, the inverse components are again monoidal and natural in `U`, and
+contracting `U ⊗ X ⊗ V` against the unit does not depend on which way `X` is moved out.
 
 ## Main declarations
 
@@ -21,7 +22,10 @@ composite of the unitors, and the inverse components are again monoidal and natu
   the unitors;
 * `CategoryTheory.HalfBraiding.monoidal_inv`: the inverse of a half-braiding at a tensor product,
   computed from the factors;
-* `CategoryTheory.HalfBraiding.naturality_inv`: naturality of the inverse of a half-braiding.
+* `CategoryTheory.HalfBraiding.naturality_inv`: naturality of the inverse of a half-braiding;
+* `CategoryTheory.HalfBraiding.inv_whiskerRight_comp_whiskerLeft`: for `g : U ⊗ V ⟶ 𝟙_ C`,
+  contracting `U ⊗ X ⊗ V` with `g` after moving `X` to the left of `U` agrees with doing so after
+  moving `X` to the right of `V`.
 
 ## References
 
@@ -76,6 +80,21 @@ theorem monoidal_inv (U U' : C) :
 theorem naturality_inv {U U' : C} (f : U ⟶ U') :
     f ▷ X ≫ (b.β U').inv = (b.β U).inv ≫ X ◁ f := by
   rw [Iso.comp_inv_eq, Category.assoc, b.naturality, Iso.inv_hom_id_assoc]
+
+/-- For `g : U ⊗ V ⟶ 𝟙_ C`, moving `X` from the right of `U` to its left with the inverse
+half-braiding and then contracting `U ⊗ V` with `g` is the same as moving `X` from the left of `V`
+to its right with the half-braiding and then contracting with `g`. -/
+theorem inv_whiskerRight_comp_whiskerLeft {U V : C} (g : U ⊗ V ⟶ 𝟙_ C) :
+    (b.β U).inv ▷ V ⊗≫ X ◁ g ⊗≫ 𝟙 X = 𝟙 _ ⊗≫ U ◁ (b.β V).hom ⊗≫ g ▷ X ⊗≫ 𝟙 X := by
+  have h := b.naturality g
+  rw [b.monoidal, β_tensorUnit_hom] at h
+  calc
+    _ = (b.β U).inv ▷ V ⊗≫ (X ◁ g ≫ (ρ_ X).hom ≫ (λ_ X).inv) ⊗≫ 𝟙 X := by monoidal
+    _ = (b.β U).inv ▷ V ⊗≫ (b.β U).hom ▷ V ⊗≫ U ◁ (b.β V).hom ⊗≫ g ▷ X ⊗≫ 𝟙 X := by
+      rw [h]; monoidal
+    _ = 𝟙 _ ⊗≫ ((b.β U).inv ▷ V ≫ (b.β U).hom ▷ V) ⊗≫ U ◁ (b.β V).hom ⊗≫ g ▷ X ⊗≫ 𝟙 X := by
+      monoidal
+    _ = _ := by rw [← comp_whiskerRight, Iso.inv_hom_id, id_whiskerRight]; monoidal
 
 end HalfBraiding
 
