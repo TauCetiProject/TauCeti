@@ -76,6 +76,13 @@ theorem continuousAlternatingMapLinearEquiv_apply_ιMulti (f : E [⋀^Fin k]→L
     (v : Fin k → E) : continuousAlternatingMapLinearEquiv 𝕜 E k N f (ιMulti 𝕜 k v) = f v := by
   simp [continuousAlternatingMapLinearEquiv_apply]
 
+/-- The continuous alternating map induced by a linear map `F` on `⋀[𝕜]^k E` sends `v` to
+`F (v₁ ∧ ⋯ ∧ vₖ)`. -/
+@[simp]
+theorem continuousAlternatingMapLinearEquiv_symm_apply (F : ⋀[𝕜]^k E →ₗ[𝕜] N) (v : Fin k → E) :
+    (continuousAlternatingMapLinearEquiv 𝕜 E k N).symm F v = F (ιMulti 𝕜 k v) := by
+  rw [← continuousAlternatingMapLinearEquiv_apply_ιMulti, LinearEquiv.apply_symm_apply]
+
 end ContinuousAlternatingMap
 
 /-- The identification of the `k`-vectors `⋀[𝕜]^k E` of a finite-dimensional normed space with the
