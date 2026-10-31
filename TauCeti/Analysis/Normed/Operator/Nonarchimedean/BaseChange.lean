@@ -14,9 +14,10 @@ public import TauCeti.RingTheory.PowerSeries.Entire.GoodZero
 # Coefficientwise base change of Fredholm series, resolvents and Riesz projectors
 
 Let `f : R →+* S` be a bounded unital homomorphism of complete ultrametric normed commutative
-rings, and let `u_S = u.mapCoeffs f hf` be the coefficientwise extension of an endomorphism `u`
-of the model space `C₀(I, R)`. The Fredholm series of `u_S` is the coefficientwise image of
-that of `u`, by continuity of `f` on the convergent principal-minor sums
+rings, with `R` Tate (`TauCeti.NormedRing.IsTate R`), and let `u_S = u.mapCoeffs f hf` be the
+coefficientwise extension of an endomorphism `u` of the model space `C₀(I, R)`. The Fredholm
+series of `u_S` is the coefficientwise image of that of `u`, by continuity of `f` on the
+convergent principal-minor sums
 (`ContinuousLinearMap.IsRowCompact.charPowerSeries_map`).
 
 For row-compact `u` the whole spectral calculus at a scalar `a` follows, at the scalar `f a`:
@@ -24,10 +25,12 @@ For row-compact `u` the whole spectral calculus at a scalar `a` follows, at the 
 * the values of the Hasse derivatives of the Fredholm series, hence the Fredholm determinant and
   good zeros (`ContinuousLinearMap.IsRowCompact.fredholmDet_mapCoeffs`,
   `ContinuousLinearMap.IsRowCompact.isGoodZero_charPowerSeries_mapCoeffs`);
-* the coefficients of the Fredholm resolvent and the values of its Hasse derivatives
+* the coefficients of the Fredholm resolvent
+  (`ContinuousLinearMap.IsRowCompact.resolventCoeff_mapCoeffs`) and, when `S` is also Tate
+  (`TauCeti.NormedRing.IsTate S`), the values of its Hasse derivatives
   (`ContinuousLinearMap.IsRowCompact.resolventHasseDerivAt_mapCoeffs`), since coefficient
   extension is a continuous ring homomorphism on endomorphisms;
-* Riesz projections, which need no compactness at all
+* when `S` is Tate, Riesz projections, which need no compactness at all
   (`ContinuousLinearMap.IsRieszProjection.mapCoeffs`), and the explicit Riesz projector
   (`ContinuousLinearMap.IsRowCompact.rieszProjection_mapCoeffs`).
 
