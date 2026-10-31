@@ -18,9 +18,11 @@ public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 Mathlib's `WeakFEPair` packages the Mellin-transform argument behind the functional equations of
 zeta and L-functions for a transformation law `f (1 / x) = ε x ^ k g x`. Theta kernels attached to
 a lattice or an ideal satisfy this law only after a rescaling: the natural law reads
-`f (1 / (N t)) = ε t ^ k g t` for a level `N > 0`. This file adds that level by transport, as the
-note in Mathlib's `Mathlib/NumberTheory/LSeries/AbstractFuncEq.lean` proposes, and develops no
-second Mellin theory.
+`f (1 / (N t)) = ε t ^ k g t` for a level `N > 0`. This file adds that level by transport and
+develops no second Mellin theory. It adapts the wrapper proposed in the note in Mathlib's
+`Mathlib/NumberTheory/LSeries/AbstractFuncEq.lean`: that note writes the law as
+`f (N' / x) = (const) • x ^ k • g x`, so its `N'` corresponds to `1 / N` here, and where the note
+rescales both `f` and `g`, the transport here rescales only `g`.
 
 A `TauCeti.FEPairWithLevel` carries the hypotheses of `WeakFEPair` together with a level `N > 0`.
 Its transport `TauCeti.FEPairWithLevel.toWeakFEPair` replaces `g` by `g (· / N)` and `ε` by
