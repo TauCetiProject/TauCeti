@@ -137,12 +137,13 @@ theorem IsJacobiFieldOn.eq_zero_of_eq_zero_of_alongCurveWithin_eq_zero
           gcongr
           exact two_mul_le_add_sq _ _
   -- Grönwall: the energy vanishes at `t₀`, hence on the whole interval.
-  have hft := TauCeti.eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc
-    (fun r hr ↦ (h.hasDerivWithinAt_norm_sq_add_norm_sq (hab hr)).mono hab) hbound
-    ⟨min_le_left t₀ t, le_max_left t₀ t⟩ (by simpa [hV] using hDV) t
-    ⟨min_le_right t₀ t, le_max_right t₀ t⟩
+  have hft : ‖V t‖ ^ 2 + ‖D t‖ ^ 2 = 0 :=
+    TauCeti.eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc
+      (fun r hr ↦ (h.hasDerivWithinAt_norm_sq_add_norm_sq (hab hr)).mono hab) hbound
+      ⟨min_le_left t₀ t, le_max_left t₀ t⟩ (by simpa [hV] using hDV) t
+      ⟨min_le_right t₀ t, le_max_right t₀ t⟩
   exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm
-    (by linarith [sq_nonneg ‖D t‖, show ‖V t‖ ^ 2 + ‖D t‖ ^ 2 = 0 from hft]) (sq_nonneg _)))
+    (by linarith [sq_nonneg ‖D t‖]) (sq_nonneg _)))
 
 /-- **Uniqueness of Jacobi fields.** Two Jacobi fields along the same geodesic with the same value
 and covariant derivative at one parameter of a preconnected parameter set agree on that set. -/
