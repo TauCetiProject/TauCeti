@@ -35,6 +35,8 @@ slice `x ↦ G (p, x)` is one in the sense of differentials, as for the space-ti
 embedded submanifold. Likewise, postcomposing an immersion with a diffeomorphism onto a manifold
 with a different finite-dimensional model gives an immersion (`Diffeomorph.isImmersion_comp`), for
 example after exchanging the factors of a product.
+In particular, a `C^n` map with a left inverse near a point, differentiable at the image of that
+point, is an immersion there (`ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id`).
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 1, §3 (the local immersion
 theorem), and Chapter 8, §1 (its use in isotopy extension).
@@ -263,6 +265,19 @@ theorem ContMDiffOn.isImmersionAt_iff_injective_mfderiv [FiniteDimensional 𝕜 
   have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
   exact hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn
     (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
+
+/-- A `C^n` map on an open subset of a boundaryless manifold, with values in a boundaryless
+manifold, is an immersion at any point `x` near which it has a left inverse `g` differentiable at
+`f x`: the manifold derivative of `g` at `f x` is then a continuous linear left inverse of that of
+`f` at `x`. -/
+theorem ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id {g : N → M}
+    (hf : ContMDiffOn I J n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n)
+    (hg : MDifferentiableAt J I g (f x)) (hgf : g ∘ f =ᶠ[𝓝 x] id) :
+    IsImmersionAt I J n f x := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have hcomp := mfderiv_comp x hg ((hf.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt hn0)
+  rw [hgf.mfderiv_eq, mfderiv_id] at hcomp
+  exact hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn ⟨_, fun u ↦ congr($hcomp u).symm⟩
 
 variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [CompleteSpace EP]
   [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P]
