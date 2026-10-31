@@ -40,6 +40,8 @@ Coxeter number `h = n + 1` of `Aₙ`; that paths of length `n - 1` survive is no
 
 ## Main results
 
+* `TauCeti.signlessArrow_A_one_zero_mul_signlessArrow_A_zero_one`: the backtrack at the end vertex
+  `0` vanishes.
 * `TauCeti.signlessPreprojectiveMk_A_ofPath_eq_zero_of_endpoint_bound`: the finer vanishing
   bound depending on the two endpoints.
 * `TauCeti.signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley`: length-preserving
@@ -230,6 +232,15 @@ theorem signlessArrow_A_relation (v : ℕ) :
   signlessArrow_relation_of_consecutive k
     (fun i j hij => (diagramGraph_A_adj n i j).mp hij) v
 
+/-- The relation at the end vertex `0` of `Aₙ`: its single backtrack vanishes. -/
+theorem signlessArrow_A_one_zero_mul_signlessArrow_A_zero_one :
+    signlessArrow k AG 1 0 * signlessArrow k AG 0 1 = 0 := by
+  have hzero : signlessArrow k AG 0 0 = 0 :=
+    signlessArrow_eq_zero_of_not_consecutive k (n := (DynkinType.A n).rank)
+      (G := AG) (fun i j => diagramGraph_A_adj n i j) (by omega)
+  simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
+    signlessArrow_A_relation k (n := n) 0
+
 /-- A path from `a` to `b` in the signless algebra of `Aₙ` vanishes when its length exceeds
 `min (a + b) (2(n - 1) - a - b)`. -/
 theorem signlessPreprojectiveMk_A_ofPath_eq_zero_of_endpoint_bound
@@ -255,11 +266,7 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
     (u := fun w => signlessArrow k AG w (w + 1))
     (d := fun w => signlessArrow k AG (w + 1) w) ?_ ?_ ?_ p
   · simpa only [vertexEquiv_symm_vertex, vertexIdempotent_eq_ofPath] using h
-  · have hzero : signlessArrow k AG 0 0 = 0 :=
-      signlessArrow_eq_zero_of_not_consecutive k (n := (DynkinType.A n).rank)
-        (G := AG) (fun i j => diagramGraph_A_adj n i j) (by omega)
-    simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
-      signlessArrow_A_relation k (n := n) 0
+  · exact signlessArrow_A_one_zero_mul_signlessArrow_A_zero_one k
   · intro w
     simpa [add_comm] using signlessArrow_A_relation k (n := n) (w + 1)
   · intro i j hij

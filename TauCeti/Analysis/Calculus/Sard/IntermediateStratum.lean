@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Calculus.ImplicitContDiff
-import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -27,9 +28,11 @@ image under `θ` of any prescribed neighbourhood of the origin, and `θ` itself 
 scalar level set containing that zero set. This is the induction-on-source-dimension input for
 proving that the images of the intermediate strata `Σ_i \ Σ_{i+1}` are null.
 
-The scalar component is obtained by Hahn--Banach from a nonzero value of the derivative of
-`iteratedFDeriv ℝ i f`. The parametrization is Mathlib's implicit function for that scalar
-component. This is the second stratification step following the flat-stratum estimate in
+The scalar component is `ℓ ∘ iteratedFDeriv 𝕜 i f` for a continuous linear functional `ℓ`,
+supplied by Hahn--Banach through `SeparatingDual`, that does not vanish on a nonzero value of the
+derivative of `iteratedFDeriv 𝕜 i f` at `a`. The parametrization is Mathlib's implicit function
+for that scalar component. The statement holds over any `RCLike` field `𝕜`; Sard's theorem uses
+the real case. This is the second stratification step following the flat-stratum estimate in
 `TauCeti.Analysis.Calculus.Sard.FlatStratum`.
 
 ## Main result
@@ -53,153 +56,106 @@ open scoped ContDiff Topology
 
 namespace TauCeti
 
-variable {E F : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {f : E → F} {a : E} {i r : ℕ}
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {f : E → F} {a : E} {i : ℕ} {r : ℕ∞ω}
 
 /-- **Local hypersurface reduction for an intermediate Sard stratum.** Suppose `f` is `C^{r+i}`
-at `a`, with `r > 0`, its `i`th iterated derivative vanishes at `a`, and its `(i+1)`st derivative
-does not. Then there are a scalar component `g` of the `i`th derivative, its nonzero derivative
-`g'`, and a `C^r` parametrization `θ` from `ker g'` such that:
+at `a`, with `r ≠ 0`, its `i`th iterated derivative vanishes at `a`, and its `(i+1)`st derivative
+does not. Then there are a scalar component `g` of the `i`th derivative, its nonzero strict
+derivative `g'`, and a `C^r` parametrization `θ` from `ker g'` such that:
 
-* every zero of `iteratedFDeriv ℝ i f` is a zero of `g`;
-* locally at `a`, every zero of `iteratedFDeriv ℝ i f` lies in the image under `θ` of any
+* every zero of `iteratedFDeriv 𝕜 i f` is a zero of `g`;
+* locally at `a`, every zero of `iteratedFDeriv 𝕜 i f` lies in the image under `θ` of any
   prescribed neighbourhood of the origin;
 * locally at the origin, `θ` lies in the regular level set `g = 0`; and
 * `ker g'` has dimension one less than `E`.
 
 In particular, the intermediate stratum where all derivatives through order `i` vanish but the
-next does not is locally carried by a smooth map from a strictly lower-dimensional source. -/
+next does not is locally carried by a `C^r` map from a strictly lower-dimensional source. -/
 theorem exists_parametrization_iteratedFDeriv_eq_zero
-    (hf : ContDiffAt ℝ (r + i : ℕ) f a) (hr : r ≠ 0)
-    (hi : iteratedFDeriv ℝ i f a = 0)
-    (hnext : iteratedFDeriv ℝ (i + 1) f a ≠ 0) :
-    ∃ (g : E → ℝ) (g' : E →L[ℝ] ℝ) (θ : ↥g'.ker → E),
-      ContDiffAt ℝ r g a ∧
-      HasFDerivAt g g' a ∧
+    (hf : ContDiffAt 𝕜 (r + i) f a) (hr : r ≠ 0)
+    (hi : iteratedFDeriv 𝕜 i f a = 0)
+    (hnext : iteratedFDeriv 𝕜 (i + 1) f a ≠ 0) :
+    ∃ (g : E → 𝕜) (g' : E →L[𝕜] 𝕜) (θ : ↥g'.ker → E),
+      ContDiffAt 𝕜 r g a ∧
+      HasStrictFDerivAt g g' a ∧
       g'.range = ⊤ ∧
-      (∀ x, iteratedFDeriv ℝ i f x = 0 → g x = 0) ∧
+      (∀ x, iteratedFDeriv 𝕜 i f x = 0 → g x = 0) ∧
       θ 0 = a ∧
-      ContDiffAt ℝ r θ 0 ∧
+      ContDiffAt 𝕜 r θ 0 ∧
       (∀ᶠ z in 𝓝 0, g (θ z) = 0) ∧
-      (∀ V ∈ 𝓝 (0 : ↥g'.ker), ∀ᶠ x in 𝓝 a, iteratedFDeriv ℝ i f x = 0 → x ∈ θ '' V) ∧
-      finrank ℝ ↥g'.ker + 1 = finrank ℝ E := by
-  let instCompleteE : CompleteSpace E := FiniteDimensional.complete ℝ E
-  have hr' : (r : ℕ∞ω) ≠ 0 := by exact_mod_cast hr
-  let D : E →L[ℝ] E [×i]→L[ℝ] F := fderiv ℝ (iteratedFDeriv ℝ i f) a
-  have hD : D ≠ 0 := by
-    intro hDzero
-    apply hnext
-    rw [iteratedFDeriv_succ_eq_comp_left, comp_apply]
-    -- The successor derivative is presented through the currying isometry, while `D` names its
-    -- uncurried input; spelling out that input lets injectivity of the isometry do the work.
-    change (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (i + 1) ↦ E) F).symm D = 0
-    rw [← (continuousMultilinearCurryLeftEquiv ℝ
-      (fun _ : Fin (i + 1) ↦ E) F).symm.map_zero]
-    exact congrArg _ hDzero
-  obtain ⟨v, hv⟩ : ∃ v : E, D v ≠ 0 := by
-    by_contra h
-    push Not at h
-    exact hD (ContinuousLinearMap.ext h)
-  obtain ⟨ell, _, hell⟩ := exists_dual_vector ℝ (D v) (norm_ne_zero_iff.mpr hv)
-  let g : E → ℝ := fun x ↦ ell (iteratedFDeriv ℝ i f x)
-  let g' : E →L[ℝ] ℝ := ell.comp D
-  have hg' : g' ≠ 0 := by
-    intro hg'zero
-    have happly := congrArg (fun L : E →L[ℝ] ℝ ↦ L v) hg'zero
-    simp only [g', ContinuousLinearMap.comp_apply, zero_apply] at happly
-    exact (norm_ne_zero_iff.mpr hv) (hell.symm.trans happly)
-  have hg'_linear : g'.toLinearMap ≠ 0 := by
-    intro hzero
-    apply hg'
-    ext x
-    exact LinearMap.congr_fun hzero x
-  have hsurj : g'.range = ⊤ := by
-    exact Module.Dual.range_eq_top_of_ne_zero hg'_linear
-  have hiter : ContDiffAt ℝ r (iteratedFDeriv ℝ i f) a :=
-    hf.iteratedFDeriv_right le_rfl
-  have hg : ContDiffAt ℝ r g a := ell.contDiff.contDiffAt.comp a hiter
-  have hgderiv : HasFDerivAt g g' a := by
-    exact ell.hasFDerivAt.comp a (hiter.differentiableAt hr').hasFDerivAt
-  have hga : g a = 0 := by simp [g, hi]
-  have hstrict : HasStrictFDerivAt g g' a := hg.hasStrictFDerivAt' hgderiv hr'
-  let hker : g'.ker.ClosedComplemented :=
-    g'.ker_closedComplemented_of_finiteDimensional_range
-  let projection : E →L[ℝ] ↥g'.ker := Classical.choose hker
-  let phi : ImplicitFunctionData ℝ E ℝ ↥g'.ker :=
+      (∀ V ∈ 𝓝 (0 : ↥g'.ker), ∀ᶠ x in 𝓝 a, iteratedFDeriv 𝕜 i f x = 0 → x ∈ θ '' V) ∧
+      finrank 𝕜 ↥g'.ker + 1 = finrank 𝕜 E := by
+  have := FiniteDimensional.complete 𝕜 E
+  -- A scalar component `g = ℓ ∘ iteratedFDeriv 𝕜 i f` with nonzero derivative at `a`.
+  have hD : fderiv 𝕜 (iteratedFDeriv 𝕜 i f) a ≠ 0 := by
+    rw [← norm_ne_zero_iff (a := fderiv 𝕜 (iteratedFDeriv 𝕜 i f) a)]
+    rwa [norm_fderiv_iteratedFDeriv, norm_ne_zero_iff]
+  obtain ⟨v, hv⟩ := ContinuousLinearMap.exists_ne_zero hD
+  obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_ne_zero (R := 𝕜) hv
+  let g : E → 𝕜 := fun x ↦ ℓ (iteratedFDeriv 𝕜 i f x)
+  let g' : E →L[𝕜] 𝕜 := ℓ.comp (fderiv 𝕜 (iteratedFDeriv 𝕜 i f) a)
+  have hg' : (g' : Module.Dual 𝕜 E) ≠ 0 := fun h ↦
+    hℓ (by simpa [g'] using LinearMap.congr_fun h v)
+  have hsurj : g'.range = ⊤ := Module.Dual.range_eq_top_of_ne_zero hg'
+  have hiter : ContDiffAt 𝕜 r (iteratedFDeriv 𝕜 i f) a := hf.iteratedFDeriv_right le_rfl
+  have hg : ContDiffAt 𝕜 r g a := ℓ.contDiff.contDiffAt.comp a hiter
+  have hstrict : HasStrictFDerivAt g g' a :=
+    hg.hasStrictFDerivAt' (ℓ.hasFDerivAt.comp a (hiter.differentiableAt hr).hasFDerivAt) hr
+  have hzero : ∀ x, iteratedFDeriv 𝕜 i f x = 0 → g x = 0 := fun x hx ↦ by simp [g, hx]
+  -- The implicit function theorem for `g`, with kernel coordinate `x ↦ π (x - a)` for a
+  -- projection `π` onto `ker g'`; `θ` parametrizes the level set `g = 0` near `a`. This is the
+  -- data of `HasStrictFDerivAt.implicitFunctionDataOfComplemented`, spelled out because that
+  -- definition does not expose its fields, which the smoothness of `θ` needs.
+  have hker : g'.ker.ClosedComplemented := g'.ker_closedComplemented_of_finiteDimensional_range
+  let π : E →L[𝕜] ↥g'.ker := Classical.choose hker
+  let φ : ImplicitFunctionData 𝕜 E 𝕜 ↥g'.ker :=
     { leftFun := g
       leftDeriv := g'
-      rightFun x := projection (x - a)
-      rightDeriv := projection
+      rightFun x := π (x - a)
+      rightDeriv := π
       pt := a
       hasStrictFDerivAt_leftFun := hstrict
       hasStrictFDerivAt_rightFun :=
-        projection.hasStrictFDerivAt.comp a ((hasStrictFDerivAt_id a).sub_const a)
+        π.hasStrictFDerivAt.comp a ((hasStrictFDerivAt_id a).sub_const a)
       range_leftDeriv := hsurj
       range_rightDeriv := LinearMap.range_eq_of_proj (Classical.choose_spec hker)
       isCompl_ker := LinearMap.isCompl_of_proj (Classical.choose_spec hker) }
-  let theta : ↥g'.ker → E :=
-    phi.implicitFunction 0
-  have hprod : phi.prodFun phi.pt = (0, (0 : ↥g'.ker)) := by
-    ext <;> simp [phi, projection, hga]
-  have htheta_zero : theta 0 = a := by
-    have hleft : phi.leftFun phi.pt = 0 := by simp [phi, hga]
-    have hright : phi.rightFun phi.pt = 0 := by simp [phi, projection]
-    dsimp only [theta]
-    rw [← hleft, ← hright, ImplicitFunctionData.implicitFunction_apply]
-    rw [← ImplicitFunctionData.toOpenPartialHomeomorph_apply]
-    simpa only [phi] using
-      phi.toOpenPartialHomeomorph.left_inv phi.pt_mem_toOpenPartialHomeomorph_source
-  have htheta_smooth : ContDiffAt ℝ r theta 0 := by
-    have hright : ContDiffAt ℝ r phi.rightFun phi.pt := by
-      simp only [phi]
+  let θ : ↥g'.ker → E := φ.implicitFunction 0
+  -- The implicit-function API is stated for `φ.leftFun`; record that this field is `g`.
+  have hleft : φ.leftFun = g := by simp only [φ]
+  have hright : φ.rightFun φ.pt = 0 := by simp [φ]
+  have hpt : φ.prodFun φ.pt = (0, 0) := by simp [φ, hzero a hi]
+  have hθa : θ 0 = a := by
+    have h := φ.implicitFunction_apply_image.self_of_nhds
+    rwa [hright, hleft, hzero a hi] at h
+  have hθ : ContDiffAt 𝕜 r θ 0 := by
+    have hrightφ : ContDiffAt 𝕜 r φ.rightFun φ.pt := by
+      simp only [φ]
       fun_prop
-    have himplicit : ContDiffAt ℝ r phi.implicitFunction.uncurry (phi.prodFun phi.pt) :=
-      phi.contDiffAt_implicitFunction (by simpa only [phi] using hg) hright hr'
-    have hin : ContDiffAt ℝ r (fun z : ↥g'.ker ↦ ((0 : ℝ), z)) 0 := by fun_prop
-    rw [hprod] at himplicit
-    have hcomp := himplicit.comp 0 hin
-    have heq : phi.implicitFunction.uncurry ∘ (fun z : ↥g'.ker ↦ ((0 : ℝ), z)) =
-        phi.implicitFunction 0 := by
-      funext z
-      rfl
-    rw [heq] at hcomp
-    exact hcomp
-  have htheta_level : ∀ᶠ z in 𝓝 0, g (theta z) = 0 := by
-    have hmap := phi.leftFun_implicitFunction
-    have htend : Tendsto (fun z : ↥g'.ker ↦ ((0 : ℝ), z)) (𝓝 0)
-        (𝓝 (phi.prodFun phi.pt)) := by
-      rw [hprod]
-      exact continuousAt_const.prodMk continuousAt_id
-    have hmap' := htend hmap
-    rw [Filter.mem_map] at hmap'
-    have hmap'' : ∀ᶠ z : ↥g'.ker in 𝓝 0,
-        phi.leftFun (phi.implicitFunction 0 z) = 0 := by
-      exact hmap'
-    simpa only [theta, phi] using hmap''
-  have hzero : ∀ x, iteratedFDeriv ℝ i f x = 0 → g x = 0 := by
-    intro x hx
-    simp [g, hx]
+    have himplicit := φ.contDiffAt_implicitFunction hg hrightφ hr
+    rw [hpt] at himplicit
+    simpa only [comp_def, uncurry_apply_pair] using
+      himplicit.comp 0 (contDiffAt_const.prodMk contDiffAt_id)
+  have hθg : ∀ᶠ z in 𝓝 0, g (θ z) = 0 := by
+    have h : Tendsto (fun z : ↥g'.ker ↦ ((0 : 𝕜), z)) (𝓝 0) (𝓝 (φ.prodFun φ.pt)) := by
+      rw [hpt]
+      exact tendsto_const_nhds.prodMk_nhds tendsto_id
+    exact h.eventually φ.leftFun_implicitFunction
   have hcover : ∀ V ∈ 𝓝 (0 : ↥g'.ker),
-      ∀ᶠ x in 𝓝 a, iteratedFDeriv ℝ i f x = 0 → x ∈ theta '' V := by
+      ∀ᶠ x in 𝓝 a, iteratedFDeriv 𝕜 i f x = 0 → x ∈ θ '' V := by
     intro V hV
-    -- The witness is `phi.rightFun x = projection (x - a)`, which tends to `0` as `x` tends to
-    -- `a`, so it lands in `V` for `x` close enough to `a`.
-    have hright : ContinuousAt phi.rightFun a := by
-      simp only [phi]
-      fun_prop
-    have hzeroright : phi.rightFun a = 0 := by simp [phi, projection]
-    have hmem : ∀ᶠ x in 𝓝 a, phi.rightFun x ∈ V := hright.eventually_mem (by rwa [hzeroright])
-    filter_upwards [phi.implicitFunction_apply_image, hmem] with x hx hxV hxi
-    refine ⟨phi.rightFun x, hxV, ?_⟩
-    dsimp only [theta]
-    rw [← hzero x hxi]
-    simpa only [phi] using hx
-  have hfinrank : finrank ℝ ↥g'.ker + 1 = finrank ℝ E := by
-    exact Module.Dual.finrank_ker_add_one_of_ne_zero hg'_linear
-  exact ⟨g, g', theta, hg, hgderiv, hsurj, hzero, htheta_zero, htheta_smooth,
-    htheta_level, hcover, hfinrank⟩
+    -- Near `a`, each `x` is `φ.implicitFunction (g x) (φ.rightFun x)`, and the kernel
+    -- coordinate `φ.rightFun x` tends to `0` as `x` tends to `a`.
+    have htend : Tendsto φ.rightFun (𝓝 a) (𝓝 0) :=
+      hright ▸ φ.hasStrictFDerivAt_rightFun.continuousAt.tendsto
+    filter_upwards [φ.implicitFunction_apply_image, htend hV] with x hx hxV hxi
+    rw [hleft, hzero x hxi] at hx
+    exact ⟨φ.rightFun x, hxV, hx⟩
+  exact ⟨g, g', θ, hg, hstrict, hsurj, hzero, hθa, hθ, hθg, hcover,
+    Module.Dual.finrank_ker_add_one_of_ne_zero hg'⟩
 
 end TauCeti
 
