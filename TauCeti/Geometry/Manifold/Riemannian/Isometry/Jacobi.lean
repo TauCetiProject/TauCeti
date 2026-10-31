@@ -71,15 +71,25 @@ private theorem isJacobiFieldOn_comp (Φ : RiemannianIsometry I J M N)
   refine ⟨Φ.isGeodesicCurveOn_comp_iff.2 h.isGeodesicCurveOn, ?_, fun r hr ↦ ?_⟩
   · exact (Φ.toDiffeomorph.contMDiff.contMDiff_tangentMap (m := 2) (by simp)).comp_contMDiffOn
       h.contMDiffOn
-  -- Transport each term of the Jacobi equation at `r` through the differential of `Φ`.
-  rw [alongCurveWithin_congr _ _ _ (mem_of_superset self_mem_nhdsWithin hfirst) (hfirst r hr),
-    ← Φ.mfderiv_alongCurveWithin (h.uniqueDiffOn r hr)
+  -- The differential of `Φ` carries the second covariant derivative and the velocity along `γ`
+  -- to those along `Φ ∘ γ`.
+  have hsecond : alongCurveWithin (leviCivitaConnection J N) (Φ ∘ γ)
+      (alongCurveWithin (leviCivitaConnection J N) (Φ ∘ γ)
+        (fun r ↦ mfderiv I J Φ (γ r) (V r)) s) s r =
+        mfderiv I J Φ (γ r) (alongCurveWithin (leviCivitaConnection I M) γ
+          (alongCurveWithin (leviCivitaConnection I M) γ V s) s r) := by
+    rw [alongCurveWithin_congr _ _ _ (mem_of_superset self_mem_nhdsWithin hfirst) (hfirst r hr)]
+    exact (Φ.mfderiv_alongCurveWithin (h.uniqueDiffOn r hr)
       (h.isGeodesicCurveOn.mdifferentiableOn r hr)
-      (h.differentiableWithinAt_sectionCoord_alongCurveWithin hr),
+      (h.differentiableWithinAt_sectionCoord_alongCurveWithin hr)).symm
+  have hvel : curveVelocityWithin J (Φ ∘ γ) s r =
+      mfderiv I J Φ (γ r) (curveVelocityWithin I γ s r) :=
     curveVelocityWithin_map (Φ.mdifferentiableAt (γ r)) (h.uniqueDiffOn r hr)
-      (h.isGeodesicCurveOn.mdifferentiableOn r hr),
-    Function.comp_apply, ← Φ.isLocalRiemannianIsometry.mfderiv_curvatureTensor, ← map_add,
-    h.equation r hr, map_zero]
+      (h.isGeodesicCurveOn.mdifferentiableOn r hr)
+  -- Apply `dΦ` to the Jacobi equation along `γ` at `r`.
+  have heq := congrArg (mfderiv I J Φ (γ r)) (h.equation r hr)
+  rw [map_add, map_zero, Φ.isLocalRiemannianIsometry.mfderiv_curvatureTensor] at heq
+  rwa [hsecond, hvel]
 
 /-- **Riemannian isometries preserve Jacobi fields.** For a smooth Riemannian isometry `Φ`, the
 field `t ↦ dΦ (V t)` along `Φ ∘ γ` is a Jacobi field exactly when `V` is a Jacobi field

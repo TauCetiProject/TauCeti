@@ -82,19 +82,24 @@ theorem IsJacobiFieldOn.comp_affine (h : IsJacobiFieldOn I γ V s) (a b : ℝ)
   refine ⟨h.isGeodesicCurveOn.comp_affine a b hu hmaps, ?_, fun r hr ↦ ?_⟩
   · have hφ' : ContDiff ℝ 2 (fun t : ℝ ↦ a * t + b) := by fun_prop
     exact h.contMDiffOn.comp hφ'.contMDiff.contMDiffOn hmaps
-  -- Each covariant derivative and the velocity gain a factor `a`, so both terms of the Jacobi
-  -- equation at `r` are `a²` times the terms of the original equation at `a * r + b`.
-  rw [alongCurveWithin_congr _ _ _ (mem_of_superset self_mem_nhdsWithin hfirst) (hfirst r hr),
-    alongCurveWithin_const_smul,
-    alongCurveWithin_comp _ γ _ _ (hφ r).differentiableWithinAt hmaps
-      (hasDerivWithinAt_extChartAt_comp_curve (hasMFDerivWithinAt_curveVelocityWithin
-        (h.isGeodesicCurveOn.mdifferentiableOn _ (hmaps hr)))).differentiableWithinAt
-      (h.differentiableWithinAt_sectionCoord_alongCurveWithin (hmaps hr)),
-    (hφ r).derivWithin (hu r hr),
-    curveVelocityWithin_comp (hφ r) hmaps (h.isGeodesicCurveOn.mdifferentiableOn _ (hmaps hr))
-      (hu r hr)]
-  simp only [Function.comp_apply, map_smul, LinearMap.smul_apply, smul_smul]
-  rw [← smul_add, h.equation _ (hmaps hr), smul_zero]
+  -- The second covariant derivative gains a factor `a` from each differentiation.
+  have hsecond : alongCurveWithin (leviCivitaConnection I M) (γ ∘ fun t : ℝ ↦ a * t + b)
+      (alongCurveWithin (leviCivitaConnection I M) (γ ∘ fun t : ℝ ↦ a * t + b)
+        (fun r ↦ V (a * r + b)) u) u r =
+        a • a • alongCurveWithin (leviCivitaConnection I M) γ
+          (alongCurveWithin (leviCivitaConnection I M) γ V s) s (a * r + b) := by
+    rw [alongCurveWithin_congr _ _ _ (mem_of_superset self_mem_nhdsWithin hfirst) (hfirst r hr),
+      alongCurveWithin_const_smul,
+      alongCurveWithin_comp _ γ _ _ (hφ r).differentiableWithinAt hmaps
+        (hasDerivWithinAt_extChartAt_comp_curve (hasMFDerivWithinAt_curveVelocityWithin
+          (h.isGeodesicCurveOn.mdifferentiableOn _ (hmaps hr)))).differentiableWithinAt
+        (h.differentiableWithinAt_sectionCoord_alongCurveWithin (hmaps hr)),
+      (hφ r).derivWithin (hu r hr)]
+  have hvel := curveVelocityWithin_comp (hφ r) hmaps
+    (h.isGeodesicCurveOn.mdifferentiableOn _ (hmaps hr)) (hu r hr)
+  -- Both terms of the Jacobi equation at `r` are `a²` times those of the original equation.
+  rw [hsecond, hvel]
+  simpa [smul_smul, ← smul_add] using congrArg ((a * a) • ·) (h.equation _ (hmaps hr))
 
 /-- **Time translation of Jacobi fields.** A Jacobi field remains a Jacobi field after the
 translation `t ↦ t + b` of its parameter. -/
