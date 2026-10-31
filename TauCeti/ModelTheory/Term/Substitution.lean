@@ -23,7 +23,6 @@ substitution into formulas.
 * `FirstOrder.Language.Term.relabel_eq_subst`: relabelling is substitution of variables.
 * `FirstOrder.Language.Term.relabel_subst`, `FirstOrder.Language.Term.subst_relabel`:
   relabelling after and before a substitution.
-* `FirstOrder.Language.Term.subst_constants`: substitution fixes constant terms.
 * `FirstOrder.Language.LHom.onTerm_subst`: language maps commute with substitution.
 -/
 
@@ -73,15 +72,6 @@ theorem subst_relabel (t : L.Term α) (f : α → β) (g : β → L.Term γ) :
   induction t with
   | var => rfl
   | func F ts ih => simp [ih]
-
-/-- A constant term has no variables, so substitution leaves it unchanged. -/
-@[simp]
-theorem subst_constants (c : L.Constants) (f : α → L.Term β) :
-    (c.term : L.Term α).subst f = c.term := by
-  simp only [Constants.term, subst]
-  congr
-  funext i
-  exact i.elim0
 
 end Term
 

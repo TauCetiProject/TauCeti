@@ -39,6 +39,8 @@ and more generally instantiates the `n` bound positions of a formula at a tuple 
   `FirstOrder.Language.BoundedFormulaInf.substBounds_substBounds`: identity and composition.
 * `FirstOrder.Language.BoundedFormulaInf.mapBound_eq_substBounds`: relabelling is substitution of
   bound positions for bound positions.
+* `FirstOrder.Language.BoundedFormulaInf.inst_substBounds_liftSubst`: instantiating the body of a
+  quantified formula after substituting closed terms extends the tuple of substituted terms.
 * `FirstOrder.Language.BoundedFormulaInf.IsAtomic.substBounds`: bound substitution keeps atomic
   formulas atomic.
 * `FirstOrder.Language.LHom.onBoundedFormulaInf_substBounds`: language maps commute with bound
@@ -307,6 +309,25 @@ theorem realize_inst {M : Type w} [L.Structure M] (φ : L.BoundedFormulaInf ι �
     (t : L.Term (α ⊕ Fin 0)) (v : α → M) :
     (φ.inst t).Realize v ↔ φ.Realize v fun _ => t.realize (Sum.elim v default) :=
   (FormulaInf.realize_def _ v).trans (realize_substBounds _ φ v default)
+
+/-- Instantiating at `t` the body of a quantified formula whose outer bound positions were
+substituted by the closed terms `σ` substitutes the extended tuple `Fin.snoc σ t`. -/
+theorem inst_substBounds_liftSubst {n : ℕ} (σ : Fin n → L.Term (α ⊕ Fin 0))
+    (φ : L.BoundedFormulaInf ι α (n + 1)) (t : L.Term (α ⊕ Fin 0)) :
+    (substBounds (liftSubst σ) φ).inst t = substBounds (Fin.snoc σ t) φ := by
+  rw [inst_def, substBounds_substBounds]
+  congr 1
+  funext i
+  induction i using Fin.lastCases with
+  | last => simp
+  | cast i =>
+    rw [liftSubst_castSucc, subst_relabel, Fin.snoc_castSucc]
+    conv_rhs => rw [← subst_var (σ i)]
+    congr 1
+    funext a
+    rcases a with a | a
+    · rfl
+    · exact a.elim0
 
 /-- Bound substitution sends atomic formulas to atomic formulas. -/
 theorem IsAtomic.substBounds {m k : ℕ} {φ : L.BoundedFormulaInf ι α m} (h : φ.IsAtomic)

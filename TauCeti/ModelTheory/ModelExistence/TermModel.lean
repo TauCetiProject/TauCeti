@@ -24,14 +24,12 @@ to the corresponding closed term, and a relation holds of classes when `S` conta
 corresponding relational sentence. Every element of the term model is the interpretation of a
 Henkin constant, and the term model is countable.
 
-The **truth lemma** consists of two forward implications, proved by one simultaneous induction
-on formulas with `n` bound positions, for all tuples of Henkin constants at once: if `S` contains
-the instance `φ[c]` then `φ` holds of the constants `c` in the term model, and if `S` contains
-`¬φ[c]` then it does not. The induction runs over formulas rather than sentences because an
-instance `φ[c]` of the body of `∀φ` is not a component of `∀φ`. No maximality of `S` and no
-decision between `φ` and `¬φ` is used. When in addition `S` contains neither `⊥` nor a sentence
-together with its negation, the term model is a model of `S`
-(`ConsistencyProperty.HenkinComplete.model`).
+Suppose in addition that `S` contains neither `⊥` nor a sentence together with its negation.
+The **truth lemma** then consists of two forward implications, for every formula `φ` with `n`
+bound positions and every tuple `c` of `n` Henkin constants: if `S` contains the instance `φ[c]`
+then `φ` holds of the constants `c` in the term model, and if `S` contains `¬φ[c]` then it does
+not. No maximality of `S` and no decision between `φ` and `¬φ` is needed. Under the same
+hypotheses the term model is a model of `S` (`ConsistencyProperty.HenkinComplete.model`).
 
 ## Main definitions
 
@@ -345,18 +343,6 @@ theorem realize_iff_mem_of_isAtomic {φ : L[[ℕ]].Sentenceω} (hφ : φ.IsAtomi
 
 /-! ### The truth lemma -/
 
-omit hS in
-/-- The instance at `d` of the body of an instantiated universal formula is the instance at the
-tuple extended by `d`. -/
-private theorem inst_substBounds_liftSubst {n : ℕ} (φ : L[[ℕ]].BoundedFormulaω Empty (n + 1))
-    (c : Fin n → ℕ) (d : ℕ) :
-    (substBounds (liftSubst fun i => (L.con (c i)).term) φ).inst (L.con d).term =
-      substBounds (fun i => (L.con (Fin.snoc (α := fun _ => ℕ) c d i)).term) φ := by
-  rw [inst_def, substBounds_substBounds]
-  congr 1
-  funext i
-  induction i using Fin.lastCases <;> simp
-
 /-- Both halves of the truth lemma, by one simultaneous induction. -/
 private theorem truth (hbot : (⊥ : L[[ℕ]].Sentenceω) ∉ S)
     (hcon : ∀ φ ∈ S, φ.not ∉ S) {n : ℕ} (φ : L[[ℕ]].BoundedFormulaω Empty n) (c : Fin n → ℕ) :
@@ -374,12 +360,15 @@ private theorem truth (hbot : (⊥ : L[[ℕ]].Sentenceω) ∉ S)
     simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_substBounds,
       realize_constants] at hr
     exact ⟨hr.2, fun h h' => hcon _ (hr.1 h') h⟩
-  -- extending the tuple of constants extends the tuple of their interpretations
+  -- extending the tuple of constants extends the tuples of their terms and interpretations
+  have hterm {n : ℕ} (c : Fin n → ℕ) (d : ℕ) :
+      (fun i => (L.con (Fin.snoc (α := fun _ => ℕ) c d i)).term : _ → L[[ℕ]].Term (Empty ⊕ Fin 0)) =
+        Fin.snoc (fun i => (L.con (c i)).term) (L.con d).term :=
+    Fin.comp_snoc (fun k : ℕ => (L.con k).term) c d
   have hsnoc {n : ℕ} (c : Fin n → ℕ) (d : ℕ) :
       (fun i => (L.con (Fin.snoc (α := fun _ => ℕ) c d i) : hS.TermModel)) =
-        Fin.snoc (fun i => (L.con (c i) : hS.TermModel)) (L.con d) := by
-    funext i
-    induction i using Fin.lastCases <;> simp
+        Fin.snoc (fun i => (L.con (c i) : hS.TermModel)) (L.con d) :=
+    Fin.comp_snoc (fun k : ℕ => (L.con k : hS.TermModel)) c d
   induction φ with
   | falsum =>
     refine ⟨fun h => (hbot ?_).elim, fun _ h => h⟩
@@ -398,10 +387,11 @@ private theorem truth (hbot : (⊥ : L[[ℕ]].Sentenceω) ∉ S)
     simp only [substBounds_all, realize_all]
     refine ⟨fun h y => ?_, fun h hall => ?_⟩
     · obtain ⟨d, rfl⟩ := hS.con_surjective y
-      have := (ih (Fin.snoc c d)).1 (inst_substBounds_liftSubst φ c d ▸ hS.all _ h d)
+      have := (ih (Fin.snoc c d)).1
+        (by rw [hterm, ← inst_substBounds_liftSubst]; exact hS.all _ h d)
       rwa [hsnoc] at this
     · obtain ⟨d, hd⟩ := hS.not_all _ h
-      have := (ih (Fin.snoc c d)).2 (inst_substBounds_liftSubst φ c d ▸ hd)
+      have := (ih (Fin.snoc c d)).2 (by rw [hterm, ← inst_substBounds_liftSubst]; exact hd)
       rw [hsnoc] at this
       exact this (hall _)
   | iSup φs ih =>
