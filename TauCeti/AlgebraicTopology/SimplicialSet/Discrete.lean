@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
 public import Mathlib.AlgebraicTopology.SimplicialSet.NonDegenerateSimplices
 public import Mathlib.CategoryTheory.Sites.ConstantSheaf
+public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 
 /-!
 # Discrete simplicial sets
@@ -25,6 +27,9 @@ the number of nondegenerate simplices, such as cardinal filteredness.
 * `SSet.constHomEquiv`: maps from the discrete simplicial set on `ι` are families of vertices.
 * `SSet.constNEquiv`: the nondegenerate simplices of the discrete simplicial set on `ι` are the
   elements of `ι`.
+* `SSet.kanComplex_const`: discrete simplicial sets are Kan complexes.
+* `SSet.toπ₀`: the map from a simplicial set to the discrete simplicial set on its connected
+  components.
 -/
 
 public section
@@ -78,5 +83,58 @@ def constNEquiv : SSet.N ((Functor.const SimplexCategoryᵒᵖ).obj ι) ≃ ι w
     · rfl
     · simp [nonDegenerate, const_degenerate_succ] at hs
   right_inv _ := rfl
+
+/-- Discrete simplicial sets are Kan complexes: the faces of a horn in a discrete simplicial set
+are all the same element, which is then a filler. -/
+instance kanComplex_const : KanComplex ((Functor.const SimplexCategoryᵒᵖ).obj ι) := by
+  rw [KanComplex.iff]
+  intro n i f hf
+  refine ⟨(yonedaEquiv (n := ⦋n + 1⦌)).symm (yonedaEquiv (f _ (i.succAbove_ne 0)) : ι),
+    fun j hj ↦ yonedaEquiv.injective ?_⟩
+  rw [stdSimplex.yonedaEquiv_δ_comp, Equiv.apply_symm_apply]
+  -- The faces of a discrete simplicial set are identities, so faces of simplices are dropped by
+  -- `change` here and in the compatibility conditions below.
+  change yonedaEquiv (f _ (i.succAbove_ne 0)) = yonedaEquiv (f j hj)
+  obtain _ | n := n
+  · obtain rfl : j = i.succAbove 0 := by have := i.succAbove_ne 0; omega
+    rfl
+  · rw [horn.isCompatible_iff] at hf
+    rcases lt_trichotomy (i.succAbove 0) j with h | h | h
+    · have := congrArg yonedaEquiv (hf _ _ (i.succAbove_ne 0) hj h)
+      rwa [stdSimplex.yonedaEquiv_δ_comp, stdSimplex.yonedaEquiv_δ_comp] at this
+    · subst h
+      rfl
+    · have := congrArg yonedaEquiv (hf _ _ hj (i.succAbove_ne 0) h)
+      rw [stdSimplex.yonedaEquiv_δ_comp, stdSimplex.yonedaEquiv_δ_comp] at this
+      exact this.symm
+
+variable (X) in
+/-- The map from a simplicial set to the discrete simplicial set on its connected components,
+sending a simplex to the component of its vertices. -/
+noncomputable def toπ₀ : X ⟶ (Functor.const SimplexCategoryᵒᵖ).obj (π₀ X) where
+  app n := ↾fun σ ↦ π₀.mk (X.map (⦋0⦌.const n.unop 0).op σ)
+  naturality := by
+    rintro ⟨⟨n⟩⟩ ⟨⟨m⟩⟩ ⟨φ⟩
+    ext σ
+    -- `change` unfolds the components of `toπ₀` and the identity maps of a discrete simplicial
+    -- set. All vertices of `σ` lie in one component, because `Δ[n]` is connected.
+    change π₀.mk (X.map (⦋0⦌.const ⦋m⦌ 0).op (X.map φ.op σ)) =
+      π₀.mk (X.map (⦋0⦌.const ⦋n⦌ 0).op σ)
+    rw [← Functor.map_comp_apply, ← op_comp, ← yonedaEquiv_symm_app_objEquiv_symm,
+      ← yonedaEquiv_symm_app_objEquiv_symm, ← mapπ₀_mk, ← mapπ₀_mk]
+    exact congrArg _ (Subsingleton.elim _ _)
+
+/-- The map to the discrete simplicial set on the connected components sends a simplex to the
+component of its initial vertex. -/
+lemma toπ₀_app {n : SimplexCategoryᵒᵖ} (σ : X.obj n) :
+    (toπ₀ X).app n σ = π₀.mk (X.map (⦋0⦌.const n.unop 0).op σ) :=
+  (rfl)
+
+/-- The map to the discrete simplicial set on the connected components sends a vertex to its
+component. -/
+@[simp]
+lemma toπ₀_app_zero (x : X _⦋0⦌) : dsimp% (toπ₀ X).app _ x = π₀.mk x := by
+  rw [toπ₀_app, Subsingleton.elim (⦋0⦌.const ⦋0⦌ 0) (𝟙 _)]
+  simp
 
 end SSet
