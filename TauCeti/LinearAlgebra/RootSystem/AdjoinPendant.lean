@@ -10,9 +10,12 @@ public import Mathlib.Data.Matrix.Basic
 /-!
 # Adjoining a pendant vertex to a matrix
 
-This file defines the matrix obtained by adjoining one further vertex, joined by a single edge to a
-chosen vertex of a square matrix over an additive group with one. The construction is independent
-of finite type and is used to assemble Cartan matrices of diagrams with a pendant vertex.
+This file defines the matrix obtained from a square matrix over an additive group with one by
+adjoining one further index: the new diagonal entry is `2`, the two new entries in the row and
+column of a chosen index `i` are `-1`, and the other new entries are `0`. For an integer Cartan
+matrix (or one over a ring of characteristic zero) this adjoins a pendant vertex, joined by a
+single edge to the vertex `i` of the diagram. The construction is independent of finite type and is
+used to assemble Cartan matrices of diagrams with a pendant vertex.
 
 ## Main definitions
 
@@ -34,9 +37,11 @@ namespace TauCeti
 
 variable {α R : Type*} [DecidableEq α] [AddGroupWithOne R] {M : Matrix α α R} {i : α}
 
-/-- **Adjoining a pendant vertex.** The diagram of `TauCeti.adjoinPendant M i` is the diagram of
-`M` together with one further vertex, written `none`, joined to the vertex `i` by a single edge and
-to nothing else. -/
+/-- **Adjoining a pendant vertex.** `TauCeti.adjoinPendant M i` extends `M` by one further index,
+written `none`, with diagonal entry `2`, entries `-1` against `i` in both directions, and entries
+`0` against every other index. For an integer Cartan matrix (or one over a ring of characteristic
+zero) its diagram is the diagram of `M` together with one further vertex joined to the vertex `i`
+by a single edge and to nothing else. -/
 def adjoinPendant (M : Matrix α α R) (i : α) : Matrix (Option α) (Option α) R :=
   Matrix.of fun v w ↦
     match v, w with
@@ -49,11 +54,11 @@ def adjoinPendant (M : Matrix α α R) (i : α) : Matrix (Option α) (Option α)
 -- parenthesised form keeps these equations out of the exported definitional-equality check.
 @[simp] lemma adjoinPendant_none_none : adjoinPendant M i none none = 2 := (rfl)
 
-/-- The pendant vertex is joined to `i` alone. -/
+/-- The row of the new index is `-1` at `i` and `0` at every other index of `M`. -/
 @[simp] lemma adjoinPendant_none_some (j : α) :
     adjoinPendant M i none (some j) = if j = i then -1 else 0 := (rfl)
 
-/-- The pendant vertex is joined to `i` alone. -/
+/-- The column of the new index is `-1` at `i` and `0` at every other index of `M`. -/
 @[simp] lemma adjoinPendant_some_none (j : α) :
     adjoinPendant M i (some j) none = if j = i then -1 else 0 := (rfl)
 
@@ -65,8 +70,8 @@ def adjoinPendant (M : Matrix α α R) (i : α) : Matrix (Option α) (Option α)
 @[simp] lemma adjoinPendant_submatrix_some :
     (adjoinPendant M i).submatrix some some = M := (rfl)
 
-/-- The pendant edge is a single edge, so transposition leaves it alone and reverses only the
-edges of `M`. -/
+/-- The entries adjoined against `i` are symmetric, so transposing `TauCeti.adjoinPendant M i`
+transposes only `M`. -/
 @[simp] lemma adjoinPendant_transpose : (adjoinPendant M i)ᵀ = adjoinPendant Mᵀ i := by
   ext (_ | v) (_ | w) <;> simp
 
