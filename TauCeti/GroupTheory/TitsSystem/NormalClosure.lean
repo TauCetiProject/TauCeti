@@ -8,13 +8,15 @@ module
 public import TauCeti.GroupTheory.TitsSystem.NormalSubgroup
 public import TauCeti.GroupTheory.TitsSystem.Comap
 public import TauCeti.GroupTheory.DerivedCentralQuotient
+import TauCeti.GroupTheory.Commutator
 
 /-!
 # Tits's simplicity criterion for the normal closure of a split unipotent subgroup
 
 Let `G` carry a Tits system `(B, N)` with irreducible Weyl group, and let `U` be a solvable
-subgroup normalized by `B` with `B = U (B ∩ N)`, as for the unipotent radical of the Borel
-subgroup of a split BN-pair. Put
+subgroup normalized by `B` with `B ≤ U (B ∩ N)`. Neither `U ≤ B` nor equality is assumed; the
+split case `B = U (B ∩ N)`, as for the unipotent radical of the Borel subgroup of a split BN-pair,
+is the main example. Put
 
 ```text
 Z  = ⋂_{g : G} g B g⁻¹,        H⁺ = normal closure of U in G.
@@ -40,8 +42,6 @@ of the perfect group `H⁺` cannot be all of `H⁺` unless `H⁺` is trivial.
 
 ## Main results
 
-* `TauCeti.TitsSystem.isIrreducible_comap_iff`: a pulled-back Tits system is irreducible exactly
-  when the original one is.
 * `TauCeti.TitsSystem.le_normalCore_subgroupOf_or_eq_top_of_normal`: the normal-subgroup theorem
   for `H⁺`.
 * `TauCeti.TitsSystem.center_normalClosure_eq_normalCore_subgroupOf`: the centre of `H⁺` is
@@ -62,56 +62,13 @@ public section
 
 namespace TauCeti.TitsSystem
 
-universe u v
+universe u
 
 variable {G : Type u} [Group G] (T : TitsSystem G)
-
-/-! ### Irreducibility of a pulled-back Tits system -/
-
-variable {H : Type v} [Group H] {f : H →* G}
-  (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g)
-
-/-- **A pulled-back Tits system is irreducible exactly when the original one is**, since the two
-Weyl groups are identified together with their simple reflections. -/
-@[simp]
-theorem isIrreducible_comap_iff : (T.comap f hf).IsIrreducible ↔ T.IsIrreducible := by
-  refine ⟨fun h ↦ h.of_mulEquiv (T.comapWeylGroupMulEquiv f hf).symm ?_,
-    fun h ↦ h.of_mulEquiv (T.comapWeylGroupMulEquiv f hf) (T.comap_simple f hf).symm⟩
-  ext w
-  simp
 
 /-! ### The normal closure of a split unipotent subgroup -/
 
 variable {U : Subgroup G}
-
-/-- If `B = U (B ∩ N)` and `H⁺ B = G` for the normal closure `H⁺` of `U`, then `G = H⁺ (B ∩ N)`:
-this is the hypothesis under which `(B, N)` pulls back to `H⁺`. -/
-private theorem exists_mul_eq_of_sup_eq_top
-    (hsplit : T.subgroupB ≤ U ⊔ T.subgroupB ⊓ T.subgroupN)
-    (htop : Subgroup.normalClosure (U : Set G) ⊔ T.subgroupB = ⊤) (g : G) :
-    ∃ x : Subgroup.normalClosure (U : Set G), ∃ t ∈ T.subgroupB ⊓ T.subgroupN,
-      (Subgroup.normalClosure (U : Set G)).subtype x * t = g := by
-  obtain ⟨h, hh, b, hb, rfl⟩ := Subgroup.mem_sup_of_normal_left.mp (htop ▸ Subgroup.mem_top g)
-  obtain ⟨h', hh', t, ht, rfl⟩ := Subgroup.mem_sup_of_normal_left.mp
-    (sup_le_sup_right Subgroup.le_normalClosure _ (hsplit hb))
-  exact ⟨⟨h * h', mul_mem hh hh'⟩, t, ht, by simp [mul_assoc]⟩
-
-/-- An element of `Z` commutes with every element of `U` when `Z ∩ U = 1`: their commutator lies
-in `Z`, which is normal, and in `U`, which `Z ≤ B` normalizes. -/
-private theorem commute_of_mem_normalCore
-    (hBU : T.subgroupB ≤ Subgroup.normalizer (U : Set G))
-    (hZU : T.subgroupB.normalCore ⊓ U = ⊥) {z u : G} (hz : z ∈ T.subgroupB.normalCore)
-    (hu : u ∈ U) : z * u = u * z := by
-  have hZ : z * u * z⁻¹ * u⁻¹ ∈ T.subgroupB.normalCore := by
-    simpa only [mul_assoc] using mul_mem hz
-      ((T.subgroupB.normalCore_normal).conj_mem _ (inv_mem hz) u)
-  have hU : z * u * z⁻¹ * u⁻¹ ∈ U :=
-    mul_mem ((Subgroup.mem_normalizer_iff.mp (hBU (T.subgroupB.normalCore_le hz)) u).mp hu)
-      (inv_mem hu)
-  have h1 : z * u * z⁻¹ * u⁻¹ = 1 := by
-    simpa using (Subgroup.mem_bot.mp (hZU ▸ Subgroup.mem_inf.mpr ⟨hZ, hU⟩))
-  calc z * u = z * u * z⁻¹ * u⁻¹ * (u * z) := by group
-    _ = u * z := by rw [h1, one_mul]
 
 variable (hirr : T.IsIrreducible) [Group.IsSolvable U]
   (hBU : T.subgroupB ≤ Subgroup.normalizer (U : Set G))
@@ -120,7 +77,7 @@ variable (hirr : T.IsIrreducible) [Group.IsSolvable U]
 include hirr hBU hsplit
 
 /-- **Tits's theorem on normal subgroups of the normal closure of `U`.** Suppose the Weyl group is
-irreducible, `U` is a solvable subgroup normalized by `B` with `B = U (B ∩ N)`, and the normal
+irreducible, `U` is a solvable subgroup normalized by `B` with `B ≤ U (B ∩ N)`, and the normal
 closure `H⁺` of `U` is perfect. Then every normal subgroup of `H⁺` either lies in `Z ∩ H⁺`, where
 `Z = ⋂ g B g⁻¹` is the normal core of `B`, or is all of `H⁺`. -/
 theorem le_normalCore_subgroupOf_or_eq_top_of_normal
@@ -131,8 +88,15 @@ theorem le_normalCore_subgroupOf_or_eq_top_of_normal
   intro K _
   rcases T.le_normalCore_or_sup_eq_top_of_normal hirr P with hP | hP
   · exact Or.inl fun x _ ↦ Subgroup.mem_subgroupOf.mpr (hP x.2)
-  -- Now `G = P (B ∩ N)`, so `(B, N)` pulls back to an irreducible Tits system `T'` on `P`.
-  have hf := T.exists_mul_eq_of_sup_eq_top hsplit hP
+  -- Now `G = P B ≤ P (B ∩ N)` since `U ≤ P`, so `(B, N)` pulls back to an irreducible Tits
+  -- system on `P`.
+  have hf : ∀ g : G, ∃ x : P, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, P.subtype x * t = g := by
+    have htop : P ⊔ T.subgroupB ⊓ T.subgroupN = ⊤ :=
+      top_le_iff.mp (hP ▸ sup_le le_sup_left (hsplit.trans
+        (sup_le_sup_right Subgroup.le_normalClosure _)))
+    intro g
+    obtain ⟨x, hx, t, ht, rfl⟩ := Subgroup.mem_sup_of_normal_left.mp (htop ▸ Subgroup.mem_top g)
+    exact ⟨⟨x, hx⟩, t, ht, rfl⟩
   have hUP : U ≤ P := Subgroup.le_normalClosure
   have : Group.IsSolvable (U.subgroupOf P) :=
     Group.isSolvable_of_isSolvable_injective (f := (Subgroup.subgroupOfEquivOfLe hUP).toMonoidHom)
@@ -159,7 +123,7 @@ theorem le_normalCore_subgroupOf_or_eq_top_of_normal
     obtain ⟨z, hz, hzx⟩ := Subgroup.mem_map.mp (hle x.2)
     rwa [← Subtype.ext hzx]
   rcases (T.comap P.subtype hf).le_normalCore_or_eq_top_of_normal
-    ((T.isIrreducible_comap_iff hf).mpr hirr) hBU' hU' K with hK | hK
+    ((T.isIrreducible_comap_iff P.subtype hf).mpr hirr) hBU' hU' K with hK | hK
   · -- The normal core of `B ∩ P` in `P` lies in `Z`: write a conjugator as `t⁻¹ y⁻¹`.
     refine Or.inl (hK.trans fun x hx ↦ Subgroup.mem_subgroupOf.mpr fun g ↦ ?_)
     obtain ⟨y, t, ht, hyt⟩ := hf g⁻¹
@@ -181,7 +145,7 @@ theorem center_normalClosure_eq_normalCore_subgroupOf
     (hZU : T.subgroupB.normalCore ⊓ U = ⊥) :
     Subgroup.center (Subgroup.normalClosure (U : Set G)) =
       T.subgroupB.normalCore.subgroupOf (Subgroup.normalClosure (U : Set G)) := by
-  set P := Subgroup.normalClosure (U : Set G) with hPdef
+  set P := Subgroup.normalClosure (U : Set G)
   refine le_antisymm ?_ fun x hx ↦ Subgroup.mem_center_iff.mpr fun y ↦ Subtype.ext ?_
   · rcases T.le_normalCore_subgroupOf_or_eq_top_of_normal hirr hBU hsplit
       (Subgroup.center P) with h | h
@@ -191,19 +155,11 @@ theorem center_normalClosure_eq_normalCore_subgroupOf
     intro x _
     rw [Subsingleton.elim x 1]
     exact one_mem _
-  -- `Z` centralizes `U`, hence each conjugate of `U`, hence `P`.
-  have hZ : T.subgroupB.normalCore ≤ Subgroup.centralizer (P : Set G) := by
-    intro z hz
-    rw [hPdef, Subgroup.normalClosure, Subgroup.centralizer_closure,
-      Subgroup.mem_centralizer_iff]
-    intro w hw
-    obtain ⟨u, hu, hconj⟩ := Group.mem_conjugatesOfSet_iff.mp hw
-    obtain ⟨c, rfl⟩ := isConj_iff.mp hconj
-    have hc := T.commute_of_mem_normalCore hBU hZU
-      ((inferInstance : Subgroup.Normal _).conj_mem z hz c⁻¹) hu
-    calc c * u * c⁻¹ * z = c * (u * (c⁻¹ * z * c⁻¹⁻¹)) * c⁻¹ := by group
-      _ = c * (c⁻¹ * z * c⁻¹⁻¹ * u) * c⁻¹ := by rw [hc]
-      _ = z * (c * u * c⁻¹) := by group
+  -- `Z` centralizes `U`, so `U` lies in the normal subgroup centralizing `Z`, and so does `P`.
+  have hZ : T.subgroupB.normalCore ≤ Subgroup.centralizer (P : Set G) :=
+    Subgroup.le_centralizer_iff.mpr (Subgroup.normalClosure_le_normal
+      (Subgroup.le_centralizer_iff.mp (TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot
+        (T.subgroupB.normalCore_le.trans hBU) hZU)))
   exact Subgroup.mem_centralizer_iff.mp (hZ (Subgroup.mem_subgroupOf.mp hx)) y y.2
 
 /-- **Tits's simplicity criterion for the normal closure of `U`.** Under the hypotheses of
@@ -230,7 +186,7 @@ theorem isSimpleGroup_quotient_normalCore_subgroupOf
     exact Or.inr rfl
 
 /-- **Simplicity of the derived central quotient from a split Tits system.** Suppose the Weyl group
-is irreducible, `U` is a solvable subgroup normalized by `B` with `B = U (B ∩ N)` and
+is irreducible, `U` is a solvable subgroup normalized by `B` with `B ≤ U (B ∩ N)` and
 `Z ∩ U = 1` for `Z = ⋂ g B g⁻¹`, the normal closure of `U` is the derived subgroup `[G, G]`, and
 `[G, G]` is perfect. Then the derived central quotient `[G, G] / Z([G, G])` is simple whenever it
 is nontrivial. -/
