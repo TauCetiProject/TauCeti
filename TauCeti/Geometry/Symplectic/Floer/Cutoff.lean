@@ -29,8 +29,8 @@ linear and its Poisson bracket part is quadratic. For a cutoff `β` this gives
 (`SymplecticForm.hamiltonianCurvature_const_mul`). Since `0 ≤ ρ - ρ² ≤ 1/4` for `ρ ∈ [0, 1]`, the
 curvature of `ρ K` is bounded by `|R_K| + |{K_s, K_t}| / 4` for every `ρ ∈ [0, 1]`, including the
 cutoff-zero end `ρ = 0` where the perturbation and its curvature vanish. Hence the integrated
-curvature and the defect between the Floer energy and its topological part (symplectic area plus
-the boundary integral of `K`) are bounded uniformly along the whole family.
+curvature and the defect between the Floer energy of `ρ K` and its topological part (symplectic
+area plus `ρ` times the boundary integral of `K(u)`) are bounded uniformly along the whole family.
 
 ## Main results
 
