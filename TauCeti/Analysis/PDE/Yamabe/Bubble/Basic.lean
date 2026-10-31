@@ -86,6 +86,24 @@ def criticalExponent (n : ℕ) : ℝ := 2 * n / (n - 2)
 /-- Unfolding lemma for `TauCeti.Yamabe.criticalExponent`. -/
 theorem criticalExponent_def (n : ℕ) : criticalExponent n = 2 * n / (n - 2) := (rfl)
 
+/-- The critical exponent is positive in every dimension `n > 2`. -/
+theorem criticalExponent_pos {n : ℕ} (hn : 2 < n) : 0 < criticalExponent n := by
+  have h : (2 : ℝ) < n := by exact_mod_cast hn
+  rw [criticalExponent_def]
+  exact div_pos (by linarith) (by linarith)
+
+/-- The exponent `2 / pₙ` of the critical norm is `(n - 2) / n`; at `n = 0` and `n = 2` both sides
+vanish by the convention for division by zero. -/
+theorem two_div_criticalExponent (n : ℕ) : 2 / criticalExponent n = ((n : ℝ) - 2) / n := by
+  rcases eq_or_ne n 0 with rfl | h₀
+  · simp [criticalExponent_def]
+  rcases eq_or_ne n 2 with rfl | h₂
+  · norm_num [criticalExponent_def]
+  have h₀' : (n : ℝ) ≠ 0 := by exact_mod_cast h₀
+  have h₂' : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast h₂)
+  rw [criticalExponent_def]
+  field_simp
+
 /-- The coefficient `aₙ = 4 (n - 1) / (n - 2)`; for `n > 2` it is the coefficient of the
 nonnegative Laplacian in the conformal Laplacian `aₙ Δ⁺ + Scal` in dimension `n`. At `n = 2` it is
 `0` by the convention for division by zero. -/

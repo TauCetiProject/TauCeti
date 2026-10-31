@@ -88,10 +88,7 @@ theorem integrable_norm_fderiv_bubble_sq (hn : 2 < finrank ℝ E) {t : ℝ} (ht 
 /-- In dimension `n > 2`, a bubble lies in `L^{pₙ}` for every additive Haar measure. -/
 theorem memLp_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) :
     MemLp (bubble t b) (ENNReal.ofReal (criticalExponent (finrank ℝ E))) μ := by
-  have hp : 0 < criticalExponent (finrank ℝ E) := by
-    have : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
-    rw [criticalExponent_def]
-    exact div_pos (by linarith) (by linarith)
+  have hp := criticalExponent_pos hn
   refine (integrable_norm_rpow_iff
     (contDiff_bubble (m := 0) ht.ne' b).continuous.aestronglyMeasurable
     (by simpa using hp) ENNReal.ofReal_ne_top).mp ?_
