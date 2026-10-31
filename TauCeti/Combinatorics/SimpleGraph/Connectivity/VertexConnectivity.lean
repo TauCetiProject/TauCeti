@@ -14,8 +14,9 @@ public import TauCeti.Data.ENat.Lattice
 Two vertices `u, v` of a simple graph `G` are `k`-vertex-reachable, `G.IsVertexReachable k u v`,
 when they remain reachable after deleting any set of fewer than `k` vertices other than `u` and
 `v`; deletion of a set `s` is the subgraph `G.induce sᶜ` induced on the remaining vertices. The
-graph is `k`-vertex-connected, `G.IsVertexConnected k`, when it has more than `k` vertices and any
-two vertices are `k`-vertex-reachable. Thus a single vertex is `0`- but not `1`-vertex-connected,
+graph is `k`-vertex-connected, `G.IsVertexConnected k`, when it has at least `k + 1` vertices (more
+than `k` for finite `k`, infinitely many for `k = ⊤`) and any two vertices are
+`k`-vertex-reachable. Thus a single vertex is `0`- but not `1`-vertex-connected,
 and the complete graph on `n` vertices is `(n - 1)`- but not `n`-vertex-connected. The numerical
 vertex connectivity `G.vertexConnectivity` is the supremum in `ℕ∞` of the natural thresholds at
 which `G` is vertex-connected; it is `0` on the empty vertex type and finite on a finite one.
@@ -38,7 +39,7 @@ in Mathematics 173, Springer, 2017, Section 1.4.
 
 * `SimpleGraph.IsVertexReachable G k u v`: `u` and `v` stay reachable after deleting fewer than
   `k` other vertices.
-* `SimpleGraph.IsVertexConnected G k`: `G` has more than `k` vertices, any two of which are
+* `SimpleGraph.IsVertexConnected G k`: `G` has at least `k + 1` vertices, any two of which are
   `k`-vertex-reachable.
 * `SimpleGraph.vertexConnectivity G`: the supremum in `ℕ∞` of the natural thresholds at which `G`
   is vertex-connected.
@@ -47,8 +48,8 @@ in Mathematics 173, Springer, 2017, Section 1.4.
 
 * `SimpleGraph.isVertexReachable_one`, `SimpleGraph.isVertexConnected_one`: the threshold `1` is
   reachability, respectively connectedness on at least two vertices.
-* `SimpleGraph.isVertexConnected_iff`: `G` is `k`-vertex-connected exactly when it has more than
-  `k` vertices and stays preconnected after deleting fewer than `k` vertices.
+* `SimpleGraph.isVertexConnected_iff`: `G` is `k`-vertex-connected exactly when it has at least
+  `k + 1` vertices and stays preconnected after deleting fewer than `k` vertices.
 * `SimpleGraph.isVertexReachable_of_pairwise_internallyDisjoint`: `k` walks pairwise sharing no
   vertex other than their ends make their ends `k`-vertex-reachable.
 * `SimpleGraph.isVertexConnected_iff_le_vertexConnectivity`: on a nonempty vertex type, the
@@ -93,11 +94,16 @@ def IsVertexReachable : Prop :=
   ∀ ⦃s : Set V⦄, s.encard < k → (hu : u ∉ s) → (hv : v ∉ s) →
     (G.induce sᶜ).Reachable ⟨u, hu⟩ ⟨v, hv⟩
 
+theorem isVertexReachable_def : G.IsVertexReachable k u v ↔
+    ∀ ⦃s : Set V⦄, s.encard < k → (hu : u ∉ s) → (hv : v ∉ s) →
+      (G.induce sᶜ).Reachable ⟨u, hu⟩ ⟨v, hv⟩ :=
+  Iff.rfl
+
 /-- Vertex reachability through walks: after deleting fewer than `k` vertices other than `u` and
 `v`, some walk from `u` to `v` avoids the deleted vertices. -/
 theorem isVertexReachable_iff_exists_walk : G.IsVertexReachable k u v ↔
     ∀ ⦃s : Set V⦄, s.encard < k → u ∉ s → v ∉ s → ∃ p : G.Walk u v, ∀ x ∈ p.support, x ∉ s := by
-  simp only [IsVertexReachable, reachable_induce_iff, Set.mem_compl_iff]
+  simp only [isVertexReachable_def, reachable_induce_iff, Set.mem_compl_iff]
 
 @[refl, simp]
 protected theorem IsVertexReachable.rfl : G.IsVertexReachable k u u :=
@@ -127,7 +133,7 @@ theorem IsVertexReachable.mono (hGH : G ≤ H) (h : G.IsVertexReachable k u v) :
 
 @[simp]
 protected theorem IsVertexReachable.zero : G.IsVertexReachable 0 u v := by
-  simp [IsVertexReachable]
+  simp [isVertexReachable_def]
 
 /-- Reachability is `1`-vertex-reachability. -/
 @[simp]
@@ -160,12 +166,17 @@ theorem isVertexReachable_of_pairwise_internallyDisjoint {n : ℕ} {P : Fin n �
 /-! ### Vertex connectivity -/
 
 variable (G k) in
-/-- A graph is `k`-vertex-connected if it has more than `k` vertices and any two vertices are
-`k`-vertex-reachable. -/
+/-- A graph is `k`-vertex-connected if it has at least `k + 1` vertices and any two vertices are
+`k`-vertex-reachable. For finite `k` this asks for more than `k` vertices; for `k = ⊤` it asks for
+infinitely many. -/
 def IsVertexConnected : Prop :=
   k + 1 ≤ ENat.card V ∧ ∀ u v, G.IsVertexReachable k u v
 
-/-- A graph is `k`-vertex-connected exactly when it has more than `k` vertices and stays
+theorem isVertexConnected_def :
+    G.IsVertexConnected k ↔ k + 1 ≤ ENat.card V ∧ ∀ u v, G.IsVertexReachable k u v :=
+  Iff.rfl
+
+/-- A graph is `k`-vertex-connected exactly when it has at least `k + 1` vertices and stays
 preconnected after deleting any set of fewer than `k` vertices. -/
 theorem isVertexConnected_iff : G.IsVertexConnected k ↔
     k + 1 ≤ ENat.card V ∧ ∀ ⦃s : Set V⦄, s.encard < k → (G.induce sᶜ).Preconnected :=
@@ -198,13 +209,13 @@ theorem IsVertexConnected.mono (hGH : G ≤ H) (h : G.IsVertexConnected k) :
 /-- A graph is `0`-vertex-connected exactly when its vertex type is nonempty. -/
 @[simp]
 theorem isVertexConnected_zero : G.IsVertexConnected 0 ↔ Nonempty V := by
-  simp [IsVertexConnected, ENat.one_le_card_iff_nonempty]
+  simp [isVertexConnected_def, ENat.one_le_card_iff_nonempty]
 
 /-- A graph is `1`-vertex-connected exactly when it is connected and has at least two
 vertices. -/
 @[simp]
 theorem isVertexConnected_one : G.IsVertexConnected 1 ↔ G.Connected ∧ Nontrivial V := by
-  rw [IsVertexConnected, ENat.add_one_le_iff ENat.one_ne_top, ENat.one_lt_card_iff_nontrivial,
+  rw [isVertexConnected_def, ENat.add_one_le_iff ENat.one_ne_top, ENat.one_lt_card_iff_nontrivial,
     connected_iff]
   simp only [isVertexReachable_one]
   exact ⟨fun ⟨_, h⟩ ↦ ⟨⟨h, inferInstance⟩, inferInstance⟩, fun ⟨⟨h, _⟩, _⟩ ↦ ⟨‹_›, h⟩⟩
@@ -216,7 +227,7 @@ theorem IsVertexConnected.preconnected (hk : k ≠ 0) (h : G.IsVertexConnected k
 theorem IsVertexConnected.connected (hk : k ≠ 0) (h : G.IsVertexConnected k) : G.Connected :=
   (connected_iff G).2 ⟨h.preconnected hk, h.nonempty⟩
 
-/-- The complete graph is `k`-vertex-connected exactly when it has more than `k` vertices. -/
+/-- The complete graph is `k`-vertex-connected exactly when it has at least `k + 1` vertices. -/
 @[simp]
 theorem isVertexConnected_top_iff : (⊤ : SimpleGraph V).IsVertexConnected k ↔
     k + 1 ≤ ENat.card V := by
