@@ -206,9 +206,13 @@ theorem extChartAt_homeomorph_apply (x y : TotalSpace F E) :
     extChartAt (IB.prod IF) (homeomorph F E x) (homeomorph F E y) =
       (extChartAt IB x.proj (trivializationAt F E x.proj y).1,
         extChartAt IF (trivializationAt F E x.proj x).2 (trivializationAt F E x.proj y).2) := by
-  rw [extChartAt_coe, extChartAt_coe, extChartAt_coe, Function.comp_apply, chartAt_homeomorph]
-  -- The model and the chart of the product act componentwise.
-  rfl
+  -- Unfold the extended chart into the trivialization followed by the product model and chart.
+  simp only [extChartAt_coe, Function.comp_apply, chartAt_homeomorph,
+    Homeomorph.transOpenPartialHomeomorph_apply, Homeomorph.symm_apply_apply,
+    OpenPartialHomeomorph.coe_trans, Trivialization.coe_coe, modelWithCorners_prod_coe]
+  -- The product chart acts componentwise. Its codomain is the synonym `ModelProd HB HF`, which
+  -- keeps `simp` from matching `OpenPartialHomeomorph.prod_apply`, so it is rewritten instead.
+  rw [OpenPartialHomeomorph.prod_apply, Prod.map_apply]
 
 /-- A map into the total space is `C^n` within a set at a point, for the charts through the fibre,
 exactly when its projection to the base and its fibre coordinate in the trivialization at the base
