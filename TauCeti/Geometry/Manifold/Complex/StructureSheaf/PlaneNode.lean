@@ -76,12 +76,14 @@ def planeSndCoordinate :
   planeGerm Prod.snd (contMDiff_iff_contDiff.2 contDiff_snd)
 
 /-- The coordinate germ `x` is the germ of the first projection. -/
+@[simp]
 theorem toFilterGerm_planeFstCoordinate :
     toFilterGerm 𝓘(ℂ, ℂ × ℂ) (ℂ × ℂ) _ (𝓝 ((0 : ℂ), (0 : ℂ))) le_rfl planeFstCoordinate =
       (Prod.fst : ℂ × ℂ → ℂ) :=
   toFilterGerm_planeGerm _ _
 
 /-- The coordinate germ `y` is the germ of the second projection. -/
+@[simp]
 theorem toFilterGerm_planeSndCoordinate :
     toFilterGerm 𝓘(ℂ, ℂ × ℂ) (ℂ × ℂ) _ (𝓝 ((0 : ℂ), (0 : ℂ))) le_rfl planeSndCoordinate =
       (Prod.snd : ℂ × ℂ → ℂ) :=

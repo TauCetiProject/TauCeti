@@ -39,7 +39,7 @@ Pointwise computation is provided by section evaluation lemmas.
 The sheaf of modules has exactly the same underlying presheaf of functions.
 Evaluation of germs gives a surjective ring homomorphism from each stalk to `ℂ`.
 Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition,
-and pull back holomorphic germs (`stalkPrecomp`), preserving their values.
+and pull back holomorphic germs (`stalkPrecomp`), functorially and preserving their values.
 
 The sheaf construction follows `smoothSheafCommRing` in
 `Mathlib/Geometry/Manifold/Sheaf/Smooth.lean` by Heather Macbeth and Adam Topaz, using
@@ -352,6 +352,29 @@ theorem eval_stalkPrecomp (f : X → Y) (hf : ContMDiff I J ω f) (x : X)
   obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf J Y).presheaf.exists_germ_eq s
   rw [stalkPrecomp_germ, eval_germ]
   exact (eval_germ I X _ x hx _).trans (precomp_apply I X f hf (op U) g ⟨x, hx⟩)
+
+/-- Pulling germs back along the identity does nothing. -/
+@[simp]
+theorem stalkPrecomp_id (x : X) : stalkPrecomp I X id contMDiff_id x = RingHom.id _ := by
+  ext s
+  obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf I X).presheaf.exists_germ_eq s
+  exact stalkPrecomp_germ I X id contMDiff_id x U hx g
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E'']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''}
+  {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z]
+
+/-- Pulling germs back along `g ∘ f` is pulling back along `g` and then along `f`. -/
+theorem stalkPrecomp_comp (g : Y → Z) (hg : ContMDiff J K ω g) (f : X → Y)
+    (hf : ContMDiff I J ω f) (x : X)
+    (s : (holomorphicStructureSheaf K Z).presheaf.stalk (g (f x))) :
+    stalkPrecomp I X (g ∘ f) (hg.comp hf) x s =
+      stalkPrecomp I X f hf x (stalkPrecomp J Y g hg (f x) s) := by
+  obtain ⟨U, hx, h, rfl⟩ := (holomorphicStructureSheaf K Z).presheaf.exists_germ_eq s
+  rw [stalkPrecomp_germ J Y g hg (f x) U hx h]
+  exact (stalkPrecomp_germ I X (g ∘ f) (hg.comp hf) x U hx h).trans
+    (stalkPrecomp_germ I X f hf x ((Opens.map (TopCat.ofHom ⟨g, hg.continuous⟩)).obj U) hx
+      (precomp J Y g hg (op U) h)).symm
 
 end holomorphicStructureSheaf
 
