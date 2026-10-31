@@ -143,7 +143,7 @@ instance modObjRelativeSpecSymmetricAlgebra :
         η[𝔸(PUnit.{u + 1}; X).asOver X] = 1 := by
       rw [Hom.one_def, toUnit_unique (fst _ _) (toUnit _)]
     rw [relativeSpecSymmetricAlgebraHomEquiv_comp_smul, whiskerRight_fst, whiskerRight_snd, h,
-      ← AffineSpace.homAsOverRingEquiv_apply, map_one, Pi.one_apply,
+      AffineSpace.homAsOverEquiv_one, Pi.one_apply,
       Scheme.Modules.globalSectionsSmul_one, CategoryTheory.Functor.map_id, leftUnitor_hom]
     exact Category.comp_id _
   mul_smul := by
@@ -161,7 +161,7 @@ instance modObjRelativeSpecSymmetricAlgebra :
     simp only [Category.assoc, whiskerRight_fst, whiskerRight_snd, whiskerLeft_snd]
     simp only [← Category.assoc, relativeSpecSymmetricAlgebraHomEquiv_comp_smul]
     simp only [Category.assoc, whiskerLeft_fst, associator_hom_fst, associator_hom_snd_fst,
-      associator_hom_snd_snd, h, ← AffineSpace.homAsOverRingEquiv_apply, map_mul, Pi.mul_apply,
+      associator_hom_snd_snd, h, AffineSpace.homAsOverEquiv_mul, Pi.mul_apply,
       Scheme.Modules.globalSectionsSmul_mul, CategoryTheory.Functor.map_comp]
     -- `simp only [Category.assoc]` does not apply across the mixed category instances
     exact (Category.assoc _ _ _).symm
@@ -185,14 +185,9 @@ lemma lift_add_right_comp_relativeSpecSymmetricAlgebraSMul {T : Over X}
     lift a (t₁ + t₂) ≫ relativeSpecSymmetricAlgebraSMul F =
       lift a t₁ ≫ relativeSpecSymmetricAlgebraSMul F +
         lift a t₂ ≫ relativeSpecSymmetricAlgebraSMul F := by
-  apply (relativeSpecSymmetricAlgebraHomAddEquiv F T).injective
-  rw [map_add, relativeSpecSymmetricAlgebraHomAddEquiv_apply,
-    relativeSpecSymmetricAlgebraHomAddEquiv_apply, relativeSpecSymmetricAlgebraHomAddEquiv_apply,
-    relativeSpecSymmetricAlgebraHomEquiv_lift_comp_smul,
-    relativeSpecSymmetricAlgebraHomEquiv_lift_comp_smul,
-    relativeSpecSymmetricAlgebraHomEquiv_lift_comp_smul,
-    ← relativeSpecSymmetricAlgebraHomAddEquiv_apply, map_add,
-    relativeSpecSymmetricAlgebraHomAddEquiv_apply, relativeSpecSymmetricAlgebraHomAddEquiv_apply]
+  apply (relativeSpecSymmetricAlgebraHomEquiv F T).injective
+  simp only [relativeSpecSymmetricAlgebraHomEquiv_add,
+    relativeSpecSymmetricAlgebraHomEquiv_lift_comp_smul]
   exact Preadditive.add_comp (C := X.Modules) _ _ _ _ _ _
 
 /-- The scalar multiplication of `Spec_X (Sym F)` distributes over the addition of scalars:
@@ -204,15 +199,10 @@ lemma lift_add_left_comp_relativeSpecSymmetricAlgebraSMul {T : Over X}
     lift (a₁ + a₂) t ≫ relativeSpecSymmetricAlgebraSMul F =
       lift a₁ t ≫ relativeSpecSymmetricAlgebraSMul F +
         lift a₂ t ≫ relativeSpecSymmetricAlgebraSMul F := by
-  apply (relativeSpecSymmetricAlgebraHomAddEquiv F T).injective
-  rw [map_add, relativeSpecSymmetricAlgebraHomAddEquiv_apply,
-    relativeSpecSymmetricAlgebraHomAddEquiv_apply, relativeSpecSymmetricAlgebraHomAddEquiv_apply,
-    relativeSpecSymmetricAlgebraHomEquiv_lift_comp_smul,
-    relativeSpecSymmetricAlgebraHomEquiv_lift_comp_smul,
-    relativeSpecSymmetricAlgebraHomEquiv_lift_comp_smul, ← AffineSpace.homAsOverRingEquiv_apply,
-    map_add, Pi.add_apply, Scheme.Modules.globalSectionsSmul_add,
-    (Scheme.Modules.pushforward T.hom).map_add,
-    AffineSpace.homAsOverRingEquiv_apply, AffineSpace.homAsOverRingEquiv_apply]
+  apply (relativeSpecSymmetricAlgebraHomEquiv F T).injective
+  simp only [relativeSpecSymmetricAlgebraHomEquiv_add,
+    relativeSpecSymmetricAlgebraHomEquiv_lift_comp_smul, AffineSpace.homAsOverEquiv_add,
+    Pi.add_apply, Scheme.Modules.globalSectionsSmul_add, (Scheme.Modules.pushforward T.hom).map_add]
   exact Preadditive.comp_add (C := X.Modules) _ _ _ _ _ _
 
 /-- **Morphisms of linear schemes are linear.** For a map `a : F' ⟶ F` of quasicoherent sheaves,

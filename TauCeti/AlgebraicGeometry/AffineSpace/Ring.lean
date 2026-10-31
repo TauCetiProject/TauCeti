@@ -128,6 +128,25 @@ lemma homAsOverRingEquiv_symm_apply (T : Over S) (v : n → Γ(T.left, ⊤)) :
   CommRingObj.homRingEquivOfRepresentableBy_symm_apply _ (functionsPresheaf n S)
     representableByAsOver T v
 
+/-- The point `1` of affine space is the tuple of constant functions `1`. -/
+@[simp]
+lemma homAsOverEquiv_one (T : Over S) : homAsOverEquiv (n := n) T 1 = 1 := by
+  rw [← homAsOverRingEquiv_apply, map_one]
+
+/-- The tuple of functions of a product of points of affine space is the product of their tuples
+of functions. -/
+@[simp]
+lemma homAsOverEquiv_mul (T : Over S) (f g : T ⟶ 𝔸(n; S).asOver S) :
+    homAsOverEquiv T (f * g) = homAsOverEquiv T f * homAsOverEquiv T g := by
+  simp only [← homAsOverRingEquiv_apply, map_mul]
+
+/-- The tuple of functions of a sum of points of affine space is the sum of their tuples of
+functions. -/
+@[simp]
+lemma homAsOverEquiv_add (T : Over S) (f g : T ⟶ 𝔸(n; S).asOver S) :
+    homAsOverEquiv T (f + g) = homAsOverEquiv T f + homAsOverEquiv T g := by
+  simp only [← homAsOverRingEquiv_apply, map_add]
+
 end
 
 end AlgebraicGeometry.AffineSpace

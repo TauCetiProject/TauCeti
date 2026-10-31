@@ -11,18 +11,21 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Monoidal.Ring
 
 /-!
-# Representable presheaves of commutative rings
+# Representable presheaves of rings
 
 Let `C` be a braided cartesian monoidal category. If an object `X` of `C` represents a presheaf
-of commutative rings `F`, that is, `Hom(Y, X) ≃ F(Y)` naturally in `Y`, then `X` is a
-commutative ring object of `C` (`CategoryTheory.CommRingObj.ofRepresentableBy`): its zero,
-addition, negation, one and multiplication are the morphisms which correspond, under the
-representation, to the operations of the rings `F(Y)`. For this structure the representation is
-an isomorphism of commutative rings `Hom(Y, X) ≃+* F(Y)` for every `Y`
+of rings `F`, that is, `Hom(Y, X) ≃ F(Y)` naturally in `Y`, then `X` is a ring object of `C`
+(`CategoryTheory.RingObj.ofRepresentableBy`): its zero, addition, negation, one and
+multiplication are the morphisms which correspond, under the representation, to the operations of
+the rings `F(Y)`. For this structure the representation is an isomorphism of rings
+`Hom(Y, X) ≃+* F(Y)` for every `Y` (`CategoryTheory.RingObj.homRingEquivOfRepresentableBy`). If
+`F` is a presheaf of commutative rings, then `X` is a commutative ring object
+(`CategoryTheory.CommRingObj.ofRepresentableBy`), with the same ring isomorphisms
 (`CategoryTheory.CommRingObj.homRingEquivOfRepresentableBy`).
 
-This is the ring analogue of Mathlib's `MonObj.ofRepresentableBy` and `GrpObj.ofRepresentableBy`,
-and is how ring schemes such as affine space are constructed from their functors of points.
+This is the ring analogue of Mathlib's `MonObj.ofRepresentableBy`, `GrpObj.ofRepresentableBy` and
+`IsCommMonObj.ofRepresentableBy`, and is how ring schemes such as affine space are constructed
+from their functors of points.
 -/
 
 public section
@@ -34,21 +37,21 @@ namespace CategoryTheory
 
 universe w v u
 
-variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C]
-  (X : C) (F : Cᵒᵖ ⥤ CommRingCat.{w}) (α : (F ⋙ forget _).RepresentableBy X)
+variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C] (X : C)
 
-namespace CommRingObj
+namespace RingObj
+
+variable (F : Cᵒᵖ ⥤ RingCat.{w}) (α : (F ⋙ forget _).RepresentableBy X)
 
 /-- The additive group object structure of `X` whose operations correspond, under the
 representation `α`, to the additive groups of the rings `F(Y)`. -/
 private abbrev addGrpObjOfRepresentableBy : AddGrpObj X :=
-  .ofRepresentableBy X (F ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat ⋙
-    forget₂ AddCommGrpCat AddGrpCat) α
+  .ofRepresentableBy X (F ⋙ forget₂ RingCat AddCommGrpCat ⋙ forget₂ AddCommGrpCat AddGrpCat) α
 
 /-- The monoid object structure of `X` whose operations correspond, under the representation
 `α`, to the multiplicative monoids of the rings `F(Y)`. -/
 private abbrev monObjOfRepresentableBy : MonObj X :=
-  .ofRepresentableBy X (F ⋙ forget₂ CommRingCat CommMonCat ⋙ forget₂ CommMonCat MonCat) α
+  .ofRepresentableBy X (F ⋙ forget₂ RingCat SemiRingCat ⋙ forget₂ SemiRingCat MonCat) α
 
 private lemma homEquiv'_add (Y : C) (a b : Y ⟶ X) :
     letI := addGrpObjOfRepresentableBy X F α
@@ -75,15 +78,14 @@ private lemma homEquiv'_mul (Y : C) (a b : Y ⟶ X) :
 
 variable [BraidedCategory C]
 
-/-- If `X` represents a presheaf of commutative rings `F`, then `X` is a commutative ring object:
-its operations correspond under the representation to the ring operations of the `F(Y)`
-(`CommRingObj.homRingEquivOfRepresentableBy`). -/
+/-- If `X` represents a presheaf of rings `F`, then `X` is a ring object: its operations
+correspond under the representation to the ring operations of the `F(Y)`
+(`RingObj.homRingEquivOfRepresentableBy`). -/
 @[instance_reducible]
-def ofRepresentableBy : CommRingObj X :=
+def ofRepresentableBy : RingObj X :=
   letI := addGrpObjOfRepresentableBy X F α
   letI := monObjOfRepresentableBy X F α
-  { __ := IsCommMonObj.ofRepresentableBy X (F ⋙ forget₂ CommRingCat CommMonCat) α
-    add_comm := by
+  { add_comm := by
       -- the addition `σ` is the sum of the two projections, which the braiding exchanges
       have h : fst X X + snd X X = σ := by
         rw [Hom.add_def, lift_fst_snd, Category.id_comp]
@@ -95,16 +97,58 @@ def ofRepresentableBy : CommRingObj X :=
     add_mul := (add_mul_iff X).2 fun Y a b c ↦ α.homEquiv'.injective (by
       simp only [homEquiv'_add, homEquiv'_mul, _root_.add_mul]) }
 
-open scoped CommRingObj in
-/-- For the commutative ring object structure `CommRingObj.ofRepresentableBy`, the
-representation `α` is an isomorphism of commutative rings `Hom(Y, X) ≃+* F(Y)`. -/
+open scoped RingObj in
+/-- For the ring object structure `RingObj.ofRepresentableBy`, the representation `α` is an
+isomorphism of rings `Hom(Y, X) ≃+* F(Y)`. -/
 def homRingEquivOfRepresentableBy (Y : C) :
-    letI := ofRepresentableBy X F α
+    letI := RingObj.ofRepresentableBy X F α
     (Y ⟶ X) ≃+* F.obj (op Y) :=
-  letI := ofRepresentableBy X F α
+  letI := RingObj.ofRepresentableBy X F α
   { toEquiv := α.homEquiv'
     map_add' := homEquiv'_add X F α Y
     map_mul' := homEquiv'_mul X F α Y }
+
+open scoped RingObj in
+/-- The ring isomorphism `homRingEquivOfRepresentableBy` is the representation. -/
+lemma homRingEquivOfRepresentableBy_apply (Y : C) (f : Y ⟶ X) :
+    letI := RingObj.ofRepresentableBy X F α
+    homRingEquivOfRepresentableBy X F α Y f = α.homEquiv' f :=
+  (rfl)
+
+open scoped RingObj in
+/-- The inverse of the ring isomorphism `homRingEquivOfRepresentableBy` is the inverse of the
+representation. -/
+lemma homRingEquivOfRepresentableBy_symm_apply (Y : C) (x : F.obj (op Y)) :
+    letI := RingObj.ofRepresentableBy X F α
+    (homRingEquivOfRepresentableBy X F α Y).symm x = α.homEquiv'.symm x :=
+  (rfl)
+
+end RingObj
+
+namespace CommRingObj
+
+variable [BraidedCategory C] (F : Cᵒᵖ ⥤ CommRingCat.{w}) (α : (F ⋙ forget _).RepresentableBy X)
+
+/-- If `X` represents a presheaf of commutative rings `F`, then `X` is a commutative ring object:
+the ring object `RingObj.ofRepresentableBy` of the underlying presheaf of rings, whose
+multiplication is commutative. -/
+@[instance_reducible]
+def ofRepresentableBy : CommRingObj X :=
+  letI := RingObj.ofRepresentableBy X (F ⋙ forget₂ CommRingCat RingCat) α
+  { mul_comm := by
+      -- the monoid object structures of `RingObj.ofRepresentableBy` and of
+      -- `IsCommMonObj.ofRepresentableBy` are equal only after unfolding the forgetful functors,
+      -- which `exact` does but the structure instance notation `__ :=` does not
+      exact (IsCommMonObj.ofRepresentableBy X (F ⋙ forget₂ CommRingCat CommMonCat) α).mul_comm }
+
+open scoped CommRingObj in
+/-- For the commutative ring object structure `CommRingObj.ofRepresentableBy`, the
+representation `α` is an isomorphism of commutative rings `Hom(Y, X) ≃+* F(Y)`: the ring
+isomorphism `RingObj.homRingEquivOfRepresentableBy` of the underlying presheaf of rings. -/
+def homRingEquivOfRepresentableBy (Y : C) :
+    letI := ofRepresentableBy X F α
+    (Y ⟶ X) ≃+* F.obj (op Y) :=
+  RingObj.homRingEquivOfRepresentableBy X (F ⋙ forget₂ CommRingCat RingCat) α Y
 
 open scoped CommRingObj in
 /-- The ring isomorphism `homRingEquivOfRepresentableBy` is the representation. -/
