@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Sobolev.Mollification.Basic
+import TauCeti.Analysis.Sobolev.Mollification.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
 /-!
@@ -46,8 +46,10 @@ fields that are merely Lipschitz, such as those produced by flattening a `C²` b
 mollifies a Lipschitz extension of `ψ` by normalized bumps `ρₙ` of radius `1 / (n + 1)` and
 applies the smooth rule to `ψₙ = ρₙ ⋆ ψ`. The factors `ψₙ` converge to `ψ` uniformly, while
 `∂_v ψₙ = ρₙ ⋆ ∂_v ψ` stays bounded by the Lipschitz constant and converges to `∂_v ψ` almost
-everywhere by the Lebesgue differentiation theorem. Dominated convergence passes the identity
-tested against a fixed `φ` to the limit.
+everywhere by the Lebesgue differentiation theorem; these estimates are
+`LipschitzWith.norm_fderiv_normed_convolution_apply_le` and
+`LipschitzWith.ae_tendsto_fderiv_normed_convolution_apply`. Dominated convergence passes the
+identity tested against a fixed `φ` to the limit.
 
 ## Why this is the localization tool
 
@@ -270,34 +272,16 @@ theorem HasWeakLineDerivOn.lipschitzWith_smul (h : HasWeakLineDerivOn μ Ω u u'
   have hval : ∀ x, Tendsto (fun n => ψn n x) atTop (𝓝 (ψ x)) := fun x =>
     (ContDiffBump.tendstoUniformly_normed_convolution hρ hψ.uniformContinuous).tendsto_at x
   have hvalb : ∀ n x, ‖ψn n x‖ ≤ ‖ψ x‖ + K := fun n x => by
-    have hd : dist (ψn n x) (ψ x) ≤ K :=
-      (ρ n).dist_normed_convolution_le hψ.continuous.aestronglyMeasurable fun y hy => by
-        refine (hψ.dist_le_mul y x).trans ?_
-        calc (K : ℝ) * dist y x ≤ K * 1 :=
-              mul_le_mul_of_nonneg_left ((mem_ball.1 hy).le.trans (hρ1 n)) K.2
-          _ = K := mul_one _
+    have hd := hψ.dist_normed_convolution_le (μ := μ) (ρ n) x
+    have hK : (K : ℝ) * (ρ n).rOut ≤ K := mul_le_of_le_one_right K.2 (hρ1 n)
     linarith [norm_le_norm_add_norm_sub' (ψn n x) (ψ x), dist_eq_norm (ψn n x) (ψ x)]
-  -- Their derivatives are the mollified almost-everywhere derivatives of `ψ`.
-  have hweakψ : HasWeakLineDerivOn μ ⊤ ψ ψ' v :=
-    hψ.locallyLipschitz.locallyLipschitzOn.hasWeakLineDerivOn
-      ((hψ.ae_lineDifferentiableAt v).mono fun x hx _ => hx.hasLineDerivAt)
-  have hderiv : ∀ n x, fderiv ℝ (ψn n) x v = ((ρ n).normed μ ⋆[lsmul ℝ ℝ, μ] ψ') x := by
-    intro n x
-    have hl := hweakψ.lineDeriv_convolution_right hψ.continuous.locallyIntegrable
-      ((ρ n).normed μ) (ρ n).contDiff_normed (ρ n).hasCompactSupport_normed x (by simp)
-    rw [convolution_flip, convolution_flip] at hl
-    rw [← hl, ((hsmooth n).differentiable (by simp) x).lineDeriv_eq_fderiv]
-  have hderivb : ∀ n x, ‖fderiv ℝ (ψn n) x v‖ ≤ K * ‖v‖ := fun n x => by
-    rw [hderiv, ← dist_zero_right]
-    exact dist_convolution_le (by positivity) (ρ n).support_normed_eq.subset (ρ n).nonneg_normed
-      (ρ n).integral_normed hψ'm.aestronglyMeasurable fun y _ => by
-        rw [dist_zero_right]; exact hψ'b y
-  have hderivt : ∀ᵐ x ∂μ, Tendsto (fun n => fderiv ℝ (ψn n) x v) atTop (𝓝 (ψ' x)) := by
-    have hli : LocallyIntegrable ψ' μ := (hψ.memLp_lineDeriv v).locallyIntegrable le_top
-    filter_upwards [ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable (μ := μ) hρ
-      (K := 2) (Eventually.of_forall fun n => le_of_eq (by
-        simp only [ρ, leibnizBump]; field_simp)) hli] with x hx
-    simpa only [hderiv] using hx
+  -- Their derivatives are the mollified almost-everywhere derivatives of `ψ`, bounded by
+  -- `K ‖v‖` and converging to `ψ'` almost everywhere.
+  have hderivb : ∀ n x, ‖fderiv ℝ (ψn n) x v‖ ≤ K * ‖v‖ := fun n x =>
+    hψ.norm_fderiv_normed_convolution_apply_le (ρ n) x v
+  have hderivt : ∀ᵐ x ∂μ, Tendsto (fun n => fderiv ℝ (ψn n) x v) atTop (𝓝 (ψ' x)) :=
+    hψ.ae_tendsto_fderiv_normed_convolution_apply hρ (C := 2)
+      (Eventually.of_forall fun n => le_of_eq (by simp only [ρ, leibnizBump]; field_simp)) v
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨h.completeSpace, hu1,
     (h.locallyIntegrableOn_deriv.continuousOn_smul hΩ hψ.continuous.continuousOn).add hu2,

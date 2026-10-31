@@ -13,6 +13,9 @@ public import Mathlib.Analysis.Distribution.TestFunction
 -- uniqueness, so downstream importers pay for neither.
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+-- This import is private: `locallyIntegrableOn_finsetSum` is used only inside the proof of
+-- `HasWeakFDerivOn.locallyIntegrableOn_deriv`.
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 -- This import is public: directional derivatives of test functions vanish off their support
 -- (`TauCeti.lineDeriv_of_notMem_tsupport`), which the files building on this one also use.
 public import TauCeti.Analysis.Calculus.LineDeriv.Basic
@@ -313,8 +316,7 @@ theorem HasWeakFDerivOn.locallyIntegrableOn_deriv [FiniteDimensional ℝ E] {U :
     (ContinuousLinearMap.smulRightL ℝ E F _).locallyIntegrableOn_comp
       (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv
   have hsum : LocallyIntegrableOn (fun x => ∑ i, g i x) Ω μ :=
-    (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun k hk hkc =>
-      integrable_finsetSum (f := g) _ fun i _ => (hg i).integrableOn_compact_subset hk hkc
+    locallyIntegrableOn_finsetSum Finset.univ fun i _ => hg i
   rwa [hU]
 
 /-- Integration by parts on the whole space against every `C¹` function with compact support
