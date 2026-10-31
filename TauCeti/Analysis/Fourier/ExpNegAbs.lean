@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import TauCeti.MeasureTheory.Integral.ExpDecay
+public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# The Fourier transform of the two-sided exponential
+# Fourier transform and decay of the two-sided exponential
 
 For `0 < a` the function `x ↦ exp (-(a * |x|))` on `ℝ` is integrable, and pairing it against the
 oscillation `exp (b * x * I)` produces the Lorentzian `2 * a / (a ^ 2 + b ^ 2)`. In Mathlib's
@@ -21,15 +22,20 @@ The proof splits the line at the origin, where `|x|` becomes `∓x`, and evaluat
 resulting complex exponential integrals with `integral_exp_mul_complex_Iic` and
 `integral_exp_mul_complex_Ioi`.
 
+The two-sided exponential also decays faster than every real power at both ends of
+the line. Its real- and complex-valued forms supply decay estimates for Fourier analysis.
+
 ## Main results
 
 * `TauCeti.integral_exp_mul_I_mul_exp_neg_mul_abs`: the Lorentzian pairing;
-* `TauCeti.fourier_exp_neg_mul_abs`: the Fourier transform itself.
+* `TauCeti.fourier_exp_neg_mul_abs`: the Fourier transform itself;
+* `TauCeti.cexp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: decay with a complex rate of
+  positive real part.
 -/
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set Filter Asymptotics
 open scoped FourierTransform Real
 
 namespace TauCeti
@@ -113,5 +119,22 @@ theorem fourier_exp_neg_mul_abs (ha : 0 < a) (ξ : ℝ) :
     _ = _ := by
       rw [integral_exp_mul_I_mul_exp_neg_mul_abs ha]
       norm_num
+
+/-- **Two-sided complex exponential decay beats every real power.** If a complex rate
+has positive real part, then `exp (-(a * |x|))` is little-o of `|x| ^ s` as
+`|x|` tends to infinity, for every real `s`.
+
+The real-valued estimate is `exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`.
+
+Adapted from `ForTauCeti/Analysis/Fourier/ExponentialAbs.lean` in
+[AIQ-Kitware/aiq-dkps-formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
+(Apache-2.0; copyright 2026 Kitware, Inc.; authors Jon Crall and GPT 5.6 High). -/
+theorem cexp_neg_mul_abs_isLittleO_abs_rpow_cocompact
+    {a : ℂ} (ha : 0 < a.re) (s : ℝ) :
+    (fun x : ℝ => Complex.exp (-(a * |x|)))
+      =o[cocompact ℝ] (fun x : ℝ => |x| ^ s) := by
+  apply IsLittleO.of_norm_left
+  simpa only [Complex.norm_exp, Complex.neg_re, Complex.re_mul_ofReal] using
+    (exp_neg_mul_abs_isLittleO_abs_rpow_cocompact ha s)
 
 end TauCeti
