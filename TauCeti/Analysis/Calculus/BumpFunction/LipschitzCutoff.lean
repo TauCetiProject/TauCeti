@@ -19,10 +19,11 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 /-!
 # Radial cutoffs with almost optimal Lipschitz constant
 
-A function equal to one on `closedBall x₀ r` and vanishing off `ball x₀ R` has Lipschitz constant
-at least `1 / (R - r)`, and the piecewise affine radial profile attains this bound but is not
-smooth. This file shows that every larger constant is attained by a smooth cutoff
-(`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith`).
+When `E` is nontrivial, a function equal to one on `closedBall x₀ r` and vanishing off
+`ball x₀ R` has Lipschitz constant at least `1 / (R - r)`, and the piecewise affine radial profile
+attains this bound but is not smooth. This file shows that every larger constant is attained by a
+smooth cutoff (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith`), so for nontrivial `E`
+the bound `1 / (R - r)` is the infimum of the Lipschitz constants of smooth cutoffs.
 
 Cutoffs with a universal but non-optimal constant `c / (R - r)` suffice for iteration arguments.
 Limits in which the width `R - r` of the transition shell shrinks to zero need the sharp constant
@@ -47,8 +48,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- **Smooth radial cutoffs with almost optimal Lipschitz constant.** For radii `0 ≤ r < R` and
 every constant `K > 1 / (R - r)`, there is a smooth `ψ` with values in `[0, 1]`, equal to one on
-`closedBall x₀ r`, vanishing off `ball x₀ R`, and `K`-Lipschitz. The bound `1 / (R - r)` itself
-is the optimal Lipschitz constant of such a function. -/
+`closedBall x₀ r`, vanishing off `ball x₀ R`, and `K`-Lipschitz. When `E` is nontrivial, the
+bound `1 / (R - r)` is the optimal Lipschitz constant of such a function. -/
 theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ} (hr : 0 ≤ r)
     (hrR : r < R) {K : ℝ≥0} (hK : (R - r)⁻¹ < K) :
     ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (closedBall x₀ r) ∧

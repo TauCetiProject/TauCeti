@@ -27,11 +27,13 @@ for almost every radius `r`,
 `P(s ∩ ball x₀ r) ≤ P(s; ball x₀ r) + m'(r)`
 
 (`TauCeti.ae_perimeter_inter_ball_le`). Neither finite perimeter nor finite measure of `s` is
-assumed. Classically, polar integration identifies `m'(r)` with the `(n - 1)`-dimensional measure
-of `s ∩ sphere x₀ r` for almost every `r`, which turns this into the estimate
-`P(s ∩ B_r) ≤ P(s; B_r) + Hⁿ⁻¹(s ∩ ∂B_r)`; that identification is not made here. Combined with the
-relative isoperimetric inequality, the estimate gives the differential inequalities for `m` behind
-the density estimates of the boundary structure theory of sets of finite perimeter.
+assumed. Classically, when `E` has positive dimension `n` and `μ` is Lebesgue measure on
+`E ≃ ℝⁿ`, polar integration identifies `m'(r)` with the `(n - 1)`-dimensional measure of
+`s ∩ sphere x₀ r` for almost every `r`, which turns this into the estimate
+`P(s ∩ B_r) ≤ P(s; B_r) + Hⁿ⁻¹(s ∩ ∂B_r)`; for another Haar measure, both `m'(r)` and the
+perimeter scale by the normalization constant. That identification is not made here. Combined
+with the relative isoperimetric inequality, the estimate gives the differential inequalities for
+`m` behind the density estimates of the boundary structure theory of sets of finite perimeter.
 
 The estimate holds at every radius in a form with a lower difference quotient: for every open `U`
 containing `closedBall x₀ r`,
@@ -43,8 +45,8 @@ wherever `m` has a right derivative (`TauCeti.perimeter_inter_ball_le_add_of_has
 The almost-everywhere form follows because `m` and `ρ ↦ P(s; ball x₀ ρ)` are monotone.
 
 The proof multiplies the indicator of `s` by smooth radial cutoffs `ψ`, equal to one on
-`closedBall x₀ r` and vanishing off `ball x₀ (r + h)`, whose Lipschitz constant exceeds the optimal
-value `1 / h` by an arbitrarily small factor
+`closedBall x₀ r` and vanishing off `ball x₀ (r + h)`, whose Lipschitz constant exceeds `1 / h`
+(the optimal value when `E` is nontrivial) by an arbitrarily small factor
 (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith`). The Leibniz bound
 `TauCeti.totalVariationOn_mul_le` controls the variation of `ψ 1_s` by `P(s; U)` plus `1 / h`
 times the measure of `s` in the shell where `ψ` varies, and lower semicontinuity of the total

@@ -305,8 +305,9 @@ theorem inner_const (hf : LocallyIntegrable f μ) (c : E) :
 
 /-- Restricting a locally integrable function to a null-measurable set preserves local
 integrability, the analogue of Mathlib's `MeasureTheory.Integrable.indicator₀`. -/
-theorem indicator₀ {F : Type*} [NormedAddCommGroup F] {g : X → F} (hg : LocallyIntegrable g μ)
-    {s : Set X} (hs : NullMeasurableSet s μ) : LocallyIntegrable (s.indicator g) μ :=
+theorem indicator₀ {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] {g : X → F}
+    (hg : LocallyIntegrable g μ) {s : Set X} (hs : NullMeasurableSet s μ) :
+    LocallyIntegrable (s.indicator g) μ :=
   (hg.indicator (measurableSet_toMeasurable μ s)).congr
     (indicator_ae_eq_of_ae_eq_set hs.toMeasurable_ae_eq)
 
