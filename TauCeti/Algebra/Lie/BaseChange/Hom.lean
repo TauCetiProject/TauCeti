@@ -51,6 +51,8 @@ complex Lie algebra.
 * `LieHom.ker_baseChange` and `LieHom.ker_baseChange_of_surjective`: **the kernel of an extended
   homomorphism is the extension of its kernel**, over a flat coefficient algebra, respectively for
   a surjective homomorphism over an arbitrary one.
+* `LieHom.baseChange_ext` and `LieHom.eq_liftBaseChange_iff`: a homomorphism out of `A ⊗[R] L` is
+  determined by its values on `1 ⊗ x`, so `LieHom.liftBaseChange` is the unique extension.
 -/
 
 public section
@@ -180,6 +182,25 @@ theorem coe_liftBaseChange :
 theorem liftBaseChange_tmul (a : A) (x : L) : liftBaseChange A f (a ⊗ₜ[R] x) = a • f x :=
   (rfl)
 
+omit [LieAlgebra R L'] [IsScalarTower R A L'] in
+variable {A} in
+/-- Homomorphisms of Lie algebras over `A` out of `A ⊗[R] L` are determined by their values on
+the elements `1 ⊗ x`, since `a ⊗ x = a • (1 ⊗ x)`. -/
+@[ext]
+theorem baseChange_ext ⦃g h : A ⊗[R] L →ₗ⁅A⁆ L'⦄ (H : ∀ x, g (1 ⊗ₜ[R] x) = h (1 ⊗ₜ[R] x)) :
+    g = h := by
+  ext u
+  induction u with
+  | tmul a x => rw [← mul_one a, ← smul_eq_mul, ← TensorProduct.smul_tmul', map_smul, map_smul, H]
+  | add u v hu hv => rw [map_add, map_add, hu, hv]
+
+/-- **Uniqueness in the universal property of extension of scalars**: `LieHom.liftBaseChange A f`
+is the only homomorphism of Lie algebras over `A` out of `A ⊗[R] L` sending `1 ⊗ x` to `f x`. -/
+theorem eq_liftBaseChange_iff {g : A ⊗[R] L →ₗ⁅A⁆ L'} :
+    g = liftBaseChange A f ↔ ∀ x, g (1 ⊗ₜ[R] x) = f x :=
+  ⟨fun h x ↦ by rw [h, liftBaseChange_tmul, one_smul], fun h ↦
+    baseChange_ext fun x ↦ by rw [h, liftBaseChange_tmul, one_smul]⟩
+
 end LieHom
 
 namespace IsBaseChange
@@ -201,6 +222,7 @@ theorem lieEquiv_tmul (a : A) (x : L) : h.lieEquiv (a ⊗ₜ[R] x) = a • f x :
 theorem lieEquiv_symm_apply (x : L) : h.lieEquiv.symm (f x) = 1 ⊗ₜ[R] x := by
   rw [LieEquiv.symm_apply_eq, lieEquiv_tmul, one_smul]
 
+@[simp]
 theorem toLinearEquiv_lieEquiv : h.lieEquiv.toLinearEquiv = h.equiv := by
   ext t
   induction t with
