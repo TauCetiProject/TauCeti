@@ -59,7 +59,7 @@ example : ¬ (ofValuationRing h).IsAlmostZero (V ⧸ Ideal.span {(0 : V)}) := by
 
 -- Conditions (A) and (B).
 example : (ofValuationRing h).PowersGenerate :=
-  (ofValuationRing_isFilteredPrincipal h).powersGenerate
+  (isFilteredPrincipal_of_preValuationRing _).powersGenerate
 
 end General
 
@@ -85,8 +85,7 @@ example : ¬ (ofValuationRing (TauCeti.PadicComplexInt.not_fg_maximalIdeal p)).I
   rw [ofValuationRing_isAlmostZero_quotient_span_singleton_iff]
   have hp : (1 : NNReal) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
   have hpv : Valued.v ((p : 𝓞_ℂ_[p]) : ℂ_[p]) < 1 := by
-    change Valued.v (p : ℂ_[p]) < 1
-    rw [PadicComplex.valuation_p]
+    rw [SubringClass.coe_natCast, PadicComplex.valuation_p]
     exact (div_lt_one (zero_lt_one.trans hp)).mpr hp
   exact (mem_maximalIdeal _).mp
     ((Valuation.mem_maximalIdeal_iff (v := (PadicComplex.valued p).v)).mpr hpv)
