@@ -291,8 +291,8 @@ theorem realizedFunctions_polynomialRealizeWeights (A : MLPSpec K L)
   rw [A.polynomialRealization_polynomialRealizeWeights hq, realizedFunctions_def,
     realizedFunctions_def, A.weightEquiv.surjective.range_comp]
 
-/-- A linear network, with identity hidden activations, is a jointly polynomial model whose
-hidden activation polynomials are `X`. -/
+/-- An MLP with identity hidden activations (an affine network) is a jointly polynomial model
+whose hidden activation polynomials are `X`. -/
 theorem polynomialRealization_polynomialRealize_linear (d : Fin (L + 1) → ℕ) :
     polynomialRealization ((linear d : MLPSpec K L).polynomialRealize fun _ => Polynomial.X) =
       (linear d).realize ∘ (linear d).parameterEquiv :=
