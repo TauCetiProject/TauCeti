@@ -231,7 +231,7 @@ theorem ker_map (hφ : IsOpenQuotientMap φ) (hψ : IsOpenQuotientMap ψ) :
         simp [F, (RingHom.mem_ker).mp hb]) (Ideal.map_le_iff_le_comap.mpr fun c hc ↦ by
         simp [F, (RingHom.mem_ker).mp hc])
     have hclosed : IsClosed (RingHom.ker F : Set (CompletedTensor A B C)) :=
-      isClosed_singleton.preimage (continuous_map ..)
+      RingHom.ker_eq F ▸ isClosed_singleton.preimage (continuous_map ..)
     rw [← SetLike.mem_coe, Ideal.coe_closure] at hx
     exact closure_minimal hJF hclosed hx
 

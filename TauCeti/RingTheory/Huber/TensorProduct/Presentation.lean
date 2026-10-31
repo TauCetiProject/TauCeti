@@ -151,8 +151,7 @@ theorem ker_baseChangePresentation (hσ : IsOpenQuotientMap σ) :
   have hcomap : RingHom.ker (baseChangePresentation B hσA hσ.continuous) =
       (RingHom.ker (map (RingHom.id A) σ (RingHom.id B) hσA (RingHom.id_comp _) hσ.continuous
         continuous_id)).comap (weightedRestrictedEquiv B hT).symm :=
-    Ideal.ext fun x ↦ by rw [RingHom.mem_ker, Ideal.mem_comap, RingHom.mem_ker,
-      coe_baseChangePresentation, Function.comp_apply]
+    (RingHom.comap_ker _ _).symm
   have he := isHomeomorph_weightedRestrictedEquiv_symm B hT
   apply SetLike.coe_injective
   rw [hcomap, hker, ← hinl, ← Ideal.map_map, RingEquiv.toRingHom_eq_coe, Ideal.map_comap_of_equiv]
