@@ -34,6 +34,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `TauCeti.QuotientGroup.congrOfMapEq`: its coset-space companion — an isomorphism carrying `A`
   onto `B` gives a bijection `G ⧸ A ≃ H ⧸ B`. Neither subgroup need be normal, which is what
   distinguishes it from Mathlib's `QuotientGroup.congr`.
+* `TauCeti.QuotientGroup.congrComapOfSurjectiveMk`: a homomorphism `ψ : G →* H` meeting every
+  coset of `B` gives a bijection `G ⧸ ψ⁻¹(B) ≃ H ⧸ B`.
 
 ## Main results
 
@@ -466,5 +468,35 @@ theorem QuotientGroup.congrOfSurjectiveOfKerLe_mk (ψ : G →* H)
   -- Downstream code rewrites with this lemma and never sees either wrapper, which is what
   -- keeps the implementation free to move.
   rfl
+
+/-- **Coset spaces transport to a preimage.** If `ψ : G →* H` meets every left coset of `B`, that
+is, `G` acts transitively on `H ⧸ B` through `ψ`, then the map `G ⧸ ψ⁻¹(B) → H ⧸ B` induced by
+`ψ` on representatives is a bijection.
+
+Injectivity holds for every `ψ`, because the denominator is the full preimage of `B`; the
+hypothesis supplies surjectivity. When `ψ` is the inclusion of a subgroup `K`, it says `KB = H`.
+Unlike `QuotientGroup.congrOfSurjectiveOfKerLe`, `ψ` itself need not be surjective, and neither
+subgroup need be normal. -/
+noncomputable def QuotientGroup.congrComapOfSurjectiveMk (ψ : G →* H) (B : Subgroup H)
+    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) : G ⧸ B.comap ψ ≃ H ⧸ B := by
+  have key : ∀ a b : G, a⁻¹ * b ∈ B.comap ψ ↔ (ψ a)⁻¹ * ψ b ∈ B := fun a b ↦ by
+    rw [Subgroup.mem_comap, map_mul, map_inv]
+  refine Equiv.ofBijective (Quotient.map' ψ fun a b hab ↦
+    QuotientGroup.leftRel_apply.mpr ((key a b).mp (QuotientGroup.leftRel_apply.mp hab))) ⟨?_, ?_⟩
+  · intro x y hxy
+    induction x using QuotientGroup.induction_on with | _ a =>
+    induction y using QuotientGroup.induction_on with | _ b =>
+    exact QuotientGroup.eq.mpr ((key a b).mpr (QuotientGroup.eq.mp hxy))
+  · intro q
+    obtain ⟨g, hg⟩ := hψ q
+    exact ⟨QuotientGroup.mk g, hg⟩
+
+/-- `QuotientGroup.congrComapOfSurjectiveMk` sends the coset of `a` to the coset of `ψ a`. -/
+@[simp]
+theorem QuotientGroup.congrComapOfSurjectiveMk_mk (ψ : G →* H) (B : Subgroup H)
+    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) (a : G) :
+    QuotientGroup.congrComapOfSurjectiveMk ψ B hψ (QuotientGroup.mk a) =
+      QuotientGroup.mk (ψ a) :=
+  (rfl)
 
 end TauCeti
