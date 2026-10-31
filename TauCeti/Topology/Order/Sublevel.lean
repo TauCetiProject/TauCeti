@@ -24,9 +24,10 @@ needed only on the one compact sublevel, not on the entire space.
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
 homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`); here
-`TauCeti.sublevelInclusion` is the inclusion of `{f ≤ a}` into `{f ≤ b}`. This
-is the topological half of the deformation of sublevels across a band without critical points,
-where the motion is the flow of a vector field `X` with `df(X) = -1` on the band.
+`TauCeti.sublevelInclusion` is the inclusion of `{f ≤ a}` into `{f ≤ b}`, a closed embedding when
+`f` is continuous (`TauCeti.isClosedEmbedding_sublevelInclusion`). This is the topological half
+of the deformation of sublevels across a band without critical points, where the motion is the
+flow of a vector field `X` with `df(X) = -1` on the band.
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -83,6 +84,13 @@ def sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X �
 theorem coe_sublevelInclusion_apply {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
     {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) : (sublevelInclusion f a b hab x : X) = x :=
   (rfl)
+
+/-- For continuous `f`, the inclusion `{f ≤ a} → {f ≤ b}` of sublevels is a closed embedding. -/
+theorem isClosedEmbedding_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
+    [TopologicalSpace β] [ClosedIicTopology β] {f : X → β} (hf : Continuous f) {a b : β}
+    (hab : a ≤ b) : Topology.IsClosedEmbedding (sublevelInclusion f a b hab) :=
+  .inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab)
+    ((isClosed_Iic.preimage hf).preimage continuous_subtype_val)
 
 /-- **Deformation of sublevels along a unit-speed descent.** Let `φ t` be a continuous motion of
 `X`, with `φ 0` the identity, which lowers `f` at unit speed through the band `a ≤ f ≤ b`: if
