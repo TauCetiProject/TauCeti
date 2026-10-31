@@ -8,8 +8,8 @@ module
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Operator.Extend
-public import Mathlib.MeasureTheory.Integral.FinMeasAdditive
 public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
+public import TauCeti.MeasureTheory.Integral.AddContent
 public import TauCeti.MeasureTheory.Measure.AddContent
 public import TauCeti.Topology.ContinuousMap.Bounded.SimpleFunc
 
@@ -29,8 +29,8 @@ value `ν univ` at the constant one. This is the correspondence between means an
 probabilities; neither side involves countable additivity.
 
 We use Mathlib's bounded continuous characteristic functions, with a small API for clopen sets
-that also applies without discreteness. The finite sums are Mathlib's
-`MeasureTheory.SimpleFunc.setToSimpleFunc`, the density of finite-valued functions is
+that also applies without discreteness. The finite sums are
+`MeasureTheory.AddContent.integralSimple`, the density of finite-valued functions is
 `MeasureTheory.SimpleFunc.denseRange_toBoundedContinuousFunction`, and the extension is
 `LinearMap.extendOfNorm`.
 
@@ -128,77 +128,33 @@ section ofAddContent
 /-! ### Integration against a nonnegative content
 
 A nonnegative real content `ν` on all subsets of `X` is integrated first on finite-valued
-functions, by `∑ c, c * ν {x | f x = c}`, and then on all bounded functions by uniform
-approximation. For the finite sums we use Mathlib's `SimpleFunc.setToSimpleFunc`, with every
-subset measurable. We take the zero measure there: for it, `FinMeasAdditive` is plain finite
-additivity on disjoint sets, and every function is integrable. -/
+functions, by `∑ c, c * ν {x | f x = c}` (`MeasureTheory.AddContent.integralSimple`, with every
+subset measurable), and then on all bounded functions by uniform approximation. -/
 
 /-- Every subset is measurable, so every finite-valued function on `X` is a simple function. -/
 private local instance : MeasurableSpace X := ⊤
 
 variable (ν : AddContent ℝ (univ : Set (Set X)))
 
-/-- The set function `s ↦ ν s • id`, in the form used by `SimpleFunc.setToSimpleFunc`. -/
-private def contentCLM (s : Set X) : ℝ →L[ℝ] ℝ :=
-  ν s • ContinuousLinearMap.id ℝ ℝ
-
-omit [TopologicalSpace X] [DiscreteTopology X] in
-private theorem finMeasAdditive_contentCLM :
-    FinMeasAdditive (0 : Measure X) (contentCLM ν) := by
-  intro s t _ _ _ _ hst
-  simp [contentCLM, addContent_union isSetRing_univ (mem_univ s) (mem_univ t) hst, add_smul]
-
-/-- The integral of finite-valued functions against `ν`. -/
-private def integralSimple : SimpleFunc X ℝ →ₗ[ℝ] ℝ where
-  toFun := SimpleFunc.setToSimpleFunc (contentCLM ν)
-  map_add' _ _ := SimpleFunc.setToSimpleFunc_add _ (finMeasAdditive_contentCLM ν)
-    integrable_zero_measure integrable_zero_measure
-  map_smul' c _ := SimpleFunc.setToSimpleFunc_smul_real _ (finMeasAdditive_contentCLM ν) c
-    integrable_zero_measure
-
-omit [TopologicalSpace X] [DiscreteTopology X] in
-private theorem integralSimple_apply (g : SimpleFunc X ℝ) :
-    integralSimple ν g = SimpleFunc.setToSimpleFunc (contentCLM ν) g :=
-  (rfl)
-
-omit [TopologicalSpace X] [DiscreteTopology X] in
-private theorem integralSimple_piecewise {s : Set X} (hs : MeasurableSet s) (c : ℝ) :
-    integralSimple ν (SimpleFunc.piecewise s hs
-      (SimpleFunc.const X c) (SimpleFunc.const X 0)) = c * ν s := by
-  rw [integralSimple_apply, SimpleFunc.setToSimpleFunc_indicator _ (by simp [contentCLM])]
-  simp [contentCLM, mul_comm]
-
-/-- The integral of bounded functions against `ν`, extending `integralSimple ν` by
-continuity. It is meaningful when `ν` is nonnegative. -/
+/-- The integral of bounded functions against `ν`, extending `ν.integralSimple` by continuity. It
+is meaningful when `ν` is nonnegative. -/
 private def integral : (X →ᵇ ℝ) →L[ℝ] ℝ :=
-  (integralSimple ν).extendOfNorm (SimpleFunc.toBoundedContinuousFunctionLinearMap ℝ)
+  (ν.integralSimple fun s _ => mem_univ s).extendOfNorm
+    (SimpleFunc.toBoundedContinuousFunctionLinearMap ℝ)
 
 variable {ν} (hν : ∀ s, 0 ≤ ν s)
 include hν
 
-omit [TopologicalSpace X] [DiscreteTopology X] in
-private theorem integralSimple_le {g : SimpleFunc X ℝ} {c : ℝ} (h : ∀ x, g x ≤ c) :
-    integralSimple ν g ≤ c * ν univ := by
-  have := SimpleFunc.setToSimpleFunc_mono (finMeasAdditive_contentCLM ν)
-    (fun s _ _ x hx => by simpa [contentCLM] using mul_nonneg (hν s) hx)
-    integrable_zero_measure integrable_zero_measure
-    ((SimpleFunc.coe_le_coe (f := g) (g := SimpleFunc.const X c)).1 fun x => by
-      simpa using h x)
-  rw [SimpleFunc.setToSimpleFunc_const _ (by simp [contentCLM])] at this
-  simpa [integralSimple_apply, contentCLM, mul_comm] using this
-
 private theorem norm_integralSimple_le (g : SimpleFunc X ℝ) :
-    ‖integralSimple ν g‖ ≤ ν univ * ‖SimpleFunc.toBoundedContinuousFunctionLinearMap ℝ g‖ := by
-  have h x : |g x| ≤ ‖SimpleFunc.toBoundedContinuousFunctionLinearMap ℝ g‖ := by
+    ‖ν.integralSimple (fun s _ => mem_univ s) g‖ ≤
+      ν univ * ‖SimpleFunc.toBoundedContinuousFunctionLinearMap ℝ g‖ := by
+  rw [Real.norm_eq_abs, mul_comm]
+  exact AddContent.abs_integralSimple_le _ (fun s _ => hν s) fun x => by
     simpa using g.toBoundedContinuousFunction.norm_coe_le_norm x
-  rw [Real.norm_eq_abs, abs_le, mul_comm]
-  refine ⟨?_, integralSimple_le hν fun x => (le_abs_self _).trans (h x)⟩
-  have := integralSimple_le hν (g := -g) fun x => (neg_le_abs _).trans (h x)
-  rw [map_neg] at this
-  linarith
 
 private theorem integral_toBoundedContinuousFunctionLinearMap (g : SimpleFunc X ℝ) :
-    integral ν (SimpleFunc.toBoundedContinuousFunctionLinearMap ℝ g) = integralSimple ν g :=
+    integral ν (SimpleFunc.toBoundedContinuousFunctionLinearMap ℝ g) =
+      ν.integralSimple (fun s _ => mem_univ s) g :=
   LinearMap.extendOfNorm_eq SimpleFunc.denseRange_toBoundedContinuousFunctionLinearMap
     ⟨_, norm_integralSimple_le hν⟩ g
 
@@ -211,42 +167,23 @@ private theorem integral_indicator (s : Set X) :
   have := integral_toBoundedContinuousFunctionLinearMap hν (SimpleFunc.piecewise s
     MeasurableSpace.measurableSet_top (SimpleFunc.const X 1) (SimpleFunc.const X 0))
   rwa [SimpleFunc.toBoundedContinuousFunctionLinearMap_apply,
-    SimpleFunc.toBoundedContinuousFunction_piecewise_const, integralSimple_piecewise, one_smul,
-    one_mul] at this
+    SimpleFunc.toBoundedContinuousFunction_piecewise_const, AddContent.integralSimple_piecewise,
+    one_smul, one_mul] at this
 
 /-- The integral against a nonnegative content is positive. -/
 private theorem integral_nonneg {f : X →ᵇ ℝ} (hf : 0 ≤ f) : 0 ≤ integral ν f := by
-  -- For `0 ≤ f`, the function `‖f‖ - f` has norm at most `‖f‖`, so applying the bound
-  -- `|integral g| ≤ ν univ * ‖g‖` to it gives `‖f‖ * ν univ - integral f ≤ ‖f‖ * ν univ`.
-  have hbound := norm_integral_apply_le hν (‖f‖ • 1 - f)
-  have hnorm : ‖‖f‖ • (1 : X →ᵇ ℝ) - f‖ ≤ ‖f‖ :=
-    (BoundedContinuousFunction.norm_le (norm_nonneg f)).2 fun x => by
-      have h₁ := f.apply_le_norm x
-      have h₀ : 0 ≤ f x := by simpa using hf x
-      simp only [BoundedContinuousFunction.coe_sub, BoundedContinuousFunction.coe_smul,
-        BoundedContinuousFunction.coe_one, Pi.sub_apply, Pi.one_apply, smul_eq_mul, mul_one,
-        Real.norm_eq_abs]
-      rw [abs_of_nonneg (by linarith)]
-      linarith
   have h₁ : integral ν 1 = ν univ := by
     simpa using integral_indicator hν univ
-  rw [map_sub, map_smul, h₁, smul_eq_mul, Real.norm_eq_abs] at hbound
-  have := (le_abs_self _).trans hbound
-  nlinarith [mul_le_mul_of_nonneg_left hnorm (hν univ)]
-
-omit hν in
-/-- A positive functional on bounded functions integrates finite-valued functions against its
-content. -/
-private theorem comp_toBoundedContinuousFunctionLinearMap (m : (X →ᵇ ℝ) →ₚ[ℝ] ℝ) :
-    m.toLinearMap ∘ₗ SimpleFunc.toBoundedContinuousFunctionLinearMap ℝ =
-      integralSimple m.toLinearMap.toAddContent := by
-  ext g
-  induction g using SimpleFunc.induction with
-  | const c hs =>
-    rw [LinearMap.comp_apply, SimpleFunc.toBoundedContinuousFunctionLinearMap_apply,
-      SimpleFunc.toBoundedContinuousFunction_piecewise_const, integralSimple_piecewise]
-    simp
-  | add _ hf hg => simp_all
+  refine (integral ν).toLinearMap.apply_nonneg_of_norm_smul_sub_le (u := 1)
+    (fun g => by simpa [h₁, ← Real.norm_eq_abs] using norm_integral_apply_le hν g) ?_
+  refine (BoundedContinuousFunction.norm_le (norm_nonneg f)).2 fun x => ?_
+  have hle := f.apply_le_norm x
+  have h₀ : 0 ≤ f x := by simpa using hf x
+  simp only [BoundedContinuousFunction.coe_sub, BoundedContinuousFunction.coe_smul,
+    BoundedContinuousFunction.coe_one, Pi.sub_apply, Pi.one_apply, smul_eq_mul, mul_one,
+    Real.norm_eq_abs]
+  rw [abs_of_nonneg (by linarith)]
+  linarith
 
 omit hν in
 /-- A positive functional on bounded functions is the integral against its content. -/
@@ -256,9 +193,14 @@ private theorem integral_toAddContent (m : (X →ᵇ ℝ) →ₚ[ℝ] ℝ) (f : 
     { toLinearMap := m.toLinearMap
       cont := PositiveLinearMap.continuous_of_forall_le_norm_smul m (u := 1) fun f x => by
         simpa using f.apply_le_norm x }
+  -- On finite-valued functions, `m` is the integral against its content.
+  have hm := AddContent.eq_integralSimple m.toLinearMap.toAddContent (fun s _ => mem_univ s)
+    (L := m.toLinearMap ∘ₗ SimpleFunc.toBoundedContinuousFunctionLinearMap ℝ) fun s hs c => by
+      rw [LinearMap.comp_apply, SimpleFunc.toBoundedContinuousFunctionLinearMap_apply,
+        SimpleFunc.toBoundedContinuousFunction_piecewise_const]
+      simp
   have h := LinearMap.extendOfNorm_unique SimpleFunc.denseRange_toBoundedContinuousFunctionLinearMap
-    _ (norm_integralSimple_le m.toAddContent_nonneg) mL
-    (comp_toBoundedContinuousFunctionLinearMap m)
+    _ (norm_integralSimple_le m.toAddContent_nonneg) mL hm
   exact congrArg (· f) h
 
 end ofAddContent

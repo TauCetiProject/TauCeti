@@ -29,10 +29,11 @@ unlike measures, they cannot be replaced by countably additive set functions on 
   `ℝ≥0∞`-valued one. They are inverse on `C`, hence inverse when `C` is the set of all subsets.
 * `MeasureTheory.isSetRing_univ`: all subsets form a ring of sets, so a set function on all subsets
   that vanishes at `∅` and is additive on disjoint pairs is a content
-  (`MeasureTheory.IsSetRing.addContent_of_union`). A content on all subsets with canonically
-  ordered values is bounded by its total mass, so an `ℝ≥0∞`-valued one is finite when its total
-  mass is. A content on all subsets takes complements to differences with the total mass, for
-  values in an additive group, or for `ℝ≥0∞` values at sets of finite content.
+  (`MeasureTheory.IsSetRing.addContent_of_union`). The same holds for the measurable sets of a
+  measurable space (`MeasureTheory.isSetRing_measurableSet`). A content on all subsets with
+  canonically ordered values is bounded by its total mass, so an `ℝ≥0∞`-valued one is finite when
+  its total mass is. A content on all subsets takes complements to differences with the total
+  mass, for values in an additive group, or for `ℝ≥0∞` values at sets of finite content.
 * `MeasureTheory.AddContent.map` pushes a content forward along a map, with identity and
   composition laws. Pushforward along an equivariant map preserves invariance under a group
   action, and invariance of a content on all subsets is invariance under pushforward by every
@@ -60,6 +61,12 @@ theorem isSetRing_univ : IsSetRing (univ : Set (Set α)) where
   empty_mem := mem_univ _
   union_mem _ _ _ _ := mem_univ _
   sdiff_mem _ _ _ _ := mem_univ _
+
+/-- The measurable sets of a measurable space form a ring of sets. -/
+theorem isSetRing_measurableSet [MeasurableSpace α] : IsSetRing {s : Set α | MeasurableSet s} where
+  empty_mem := MeasurableSet.empty
+  union_mem _ _ hs ht := MeasurableSet.union hs ht
+  sdiff_mem _ _ hs ht := MeasurableSet.diff hs ht
 
 section Ring
 

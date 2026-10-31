@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
+public import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
 # Left translation on `Lᵖ` of a group
@@ -40,6 +41,8 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
 * `MeasureTheory.Lp.leftTranslation_le_leftTranslation_iff`: left translation is an order
   automorphism of real `Lᵖ`.
 * `MeasureTheory.Lp.leftTranslation_linftyOne`: it fixes the constant class one in `L∞`.
+* `MeasureTheory.Lp.leftTranslation_indicatorConstLpTop`: it moves the indicator class of `s` in
+  `L∞` to that of `g • s`.
 * `MeasureTheory.Lp.integral_leftTranslation`: left translation preserves integrals.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
   function commutes with left translation.
@@ -50,7 +53,7 @@ public section
 noncomputable section
 
 open Filter
-open scoped ENNReal BoundedContinuousFunction
+open scoped ENNReal BoundedContinuousFunction Pointwise
 
 namespace MeasureTheory.Lp
 
@@ -116,6 +119,21 @@ theorem leftTranslation_linftyOne (g : G) :
     (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae TauCeti.coeFn_linftyOne]
     with x hx h1 h1'
   rw [hx, h1, h1']
+
+/-- Left translation of the indicator class of `s` in `L∞` is the indicator class of `g • s`. -/
+theorem leftTranslation_indicatorConstLpTop (g : G) {s : Set G} (hs : MeasurableSet s) (c : E) :
+    leftTranslation μ ∞ 𝕜 g (indicatorConstLpTop μ hs c) =
+      indicatorConstLpTop μ (hs.const_smul g) c := by
+  refine ext ?_
+  filter_upwards [coeFn_leftTranslation (𝕜 := 𝕜) g (indicatorConstLpTop μ hs c),
+    indicatorConstLpTop_coeFn μ (hs.const_smul g) c,
+    (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae
+      (indicatorConstLpTop_coeFn μ hs c)] with x hx hg h
+  rw [hx, hg, h]
+  have hmem : x ∈ g • s ↔ g⁻¹ * x ∈ s := Set.mem_smul_set_iff_inv_smul_mem
+  by_cases hxs : g⁻¹ * x ∈ s
+  · rw [Set.indicator_of_mem hxs, Set.indicator_of_mem (hmem.2 hxs)]
+  · rw [Set.indicator_of_notMem hxs, Set.indicator_of_notMem (mt hmem.1 hxs)]
 
 /-- Left translation preserves the integral of an `Lᵖ` class, since `μ` is left invariant. -/
 @[simp]

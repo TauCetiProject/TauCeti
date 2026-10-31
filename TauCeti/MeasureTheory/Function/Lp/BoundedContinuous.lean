@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpOrder
-public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import TauCeti.MeasureTheory.Function.Lp.One
@@ -102,10 +101,9 @@ function is its supremum norm. -/
 @[simp]
 theorem norm_toLpTop (f : α →ᵇ E) : ‖toLpTop μ 𝕜 f‖ = ‖f‖ := by
   refine (norm_toLpTop_le μ f).antisymm ((norm_le (norm_nonneg _)).2 fun x => ?_)
-  have h := ae_le_lpNorm_exponent_top (Lp.memLp (toLpTop μ 𝕜 f))
-  rw [← toReal_eLpNorm, ← Lp.norm_def] at h
   have hae : ∀ᵐ x ∂μ, ‖f x‖ ≤ ‖toLpTop μ 𝕜 f‖ := by
-    filter_upwards [coeFn_toLpTop μ (𝕜 := 𝕜) f, h] with x hx h
+    filter_upwards [coeFn_toLpTop μ (𝕜 := 𝕜) f, Lp.ae_norm_le_norm_top (toLpTop μ 𝕜 f)]
+      with x hx h
     exact hx ▸ h
   -- A closed conull set is everything, since `μ` charges every nonempty open set.
   have hclosed : IsClosed {x | ‖f x‖ ≤ ‖toLpTop μ 𝕜 f‖} := isClosed_le (by fun_prop) (by fun_prop)
