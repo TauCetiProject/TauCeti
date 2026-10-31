@@ -72,11 +72,20 @@ theorem gradedResolutionCupPairing_lof (m n : ℕ)
       (DirectSum.lof R ℕ (fun k ↦ (TopRep.resolutionX Z (k + 1)).V) (m + n))) a) n b
 
 /-- The cup of elements of degrees `m` and `n` has degree `m + n`. -/
-theorem gradedResolutionCupPairing_mem {m n : ℕ}
+theorem gradedResolutionCupPairing_mem {m n : ℤ}
     {a : X.gradedResolutionModule} {b : Y.gradedResolutionModule}
     (ha : a ∈ X.gradedResolutionPiece m) (hb : b ∈ Y.gradedResolutionPiece n) :
-    P.gradedResolutionCupPairing a b ∈ Z.gradedResolutionPiece (m + n : ℕ) := by
-  rw [TopRep.gradedResolutionPiece_natCast] at ha hb ⊢
+    P.gradedResolutionCupPairing a b ∈ Z.gradedResolutionPiece (m + n) := by
+  by_cases hm : m < 0
+  · rw [X.gradedResolutionPiece_of_neg hm, Submodule.mem_bot] at ha
+    simp [ha]
+  by_cases hn : n < 0
+  · rw [Y.gradedResolutionPiece_of_neg hn, Submodule.mem_bot] at hb
+    simp [hb]
+  lift m to ℕ using le_of_not_gt hm
+  lift n to ℕ using le_of_not_gt hn
+  rw [← Nat.cast_add, TopRep.gradedResolutionPiece_natCast]
+  rw [TopRep.gradedResolutionPiece_natCast] at ha hb
   obtain ⟨a, rfl⟩ := ha
   obtain ⟨b, rfl⟩ := hb
   exact ⟨_, (P.gradedResolutionCupPairing_lof m n a b).symm⟩
