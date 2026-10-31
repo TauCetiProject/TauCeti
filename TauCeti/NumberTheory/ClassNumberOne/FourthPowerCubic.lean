@@ -78,12 +78,8 @@ private theorem exists_heegner_of_coeffs {a b c : ℤ} (hc : c ^ 4 = 16)
     (c = 2 ∨ c = -2) ∧
       ∃ u y : ℤ, y ^ 2 = 2 * u * (u ^ 3 + 1) ∧ a = -c * u ∧ b = 4 * u ^ 2 - 2 * y := by
   have hc' : c = 2 ∨ c = -2 := by
-    have h4 : (c - 2) * (c + 2) * (c ^ 2 + 4) = 0 := by linear_combination hc
-    rcases mul_eq_zero.1 h4 with h4 | h4
-    · rcases mul_eq_zero.1 h4 with h4 | h4
-      · exact Or.inl (by linarith)
-      · exact Or.inr (by linarith)
-    · nlinarith [sq_nonneg c]
+    simpa [Nat.even_iff] using (pow_eq_pow_iff_of_ne_zero (by decide : (4 : ℕ) ≠ 0)).mp
+      (show c ^ 4 = (2 : ℤ) ^ 4 by simpa using hc)
   refine ⟨hc', ?_⟩
   -- `(2b - a²)² = 2(b² - 2ac)` is even, hence so are `2b - a²`, `a²` and `a`.
   have ha : Even a := by
