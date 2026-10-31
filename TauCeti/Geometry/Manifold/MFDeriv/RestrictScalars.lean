@@ -39,8 +39,8 @@ its complex tangent coordinate changes regarded as `ℝ`-linear maps.
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
-* `tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those over
-  `𝕜'` with scalars restricted to `𝕜`.
+* `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
+  over `𝕜'` with scalars restricted to `𝕜`.
 -/
 
 public section
@@ -146,6 +146,8 @@ theorem MDifferentiableAt.mfderiv_restrictScalars
   simpa only [mfderivWithin_univ] using
     (h.mdifferentiableWithinAt.restrictScalars_mfderivWithin 𝕜 (uniqueMDiffWithinAt_univ _)).symm
 
+namespace TauCeti
+
 /-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the model over
 `𝕜` is the tangent coordinate change for the model over `𝕜'`, with scalars restricted to `𝕜`: both
 are the derivative of the same chart transition. For instance, the tangent coordinate changes of
@@ -159,3 +161,5 @@ theorem tangentCoordChange_restrictScalars [IsManifold 𝓘(𝕜', E) 1 M] [IsMa
   have h₂ := hasFDerivWithinAt_tangentCoordChange (I := 𝓘(𝕜, E)) h'
   simp only [modelWithCornersSelf_coe, range_id] at h₁ h₂
   exact (h₂.hasFDerivAt Filter.univ_mem).unique (h₁.hasFDerivAt Filter.univ_mem)
+
+end TauCeti
