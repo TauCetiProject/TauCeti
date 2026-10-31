@@ -23,8 +23,11 @@ built from satisfiable theories and the omitting types theorem are set up, since
 negation, the existential closure or a relabelling of a member must stay inside the fragment.
 
 Marker's fragments are also closed under a formal negation and under substitution of terms. The
-syntax here has no formal negation (`¬φ` is `φ.imp ⊥`), and atomic formulas over arbitrary terms
-already belong, so neither closure is imposed.
+syntax here has no formal negation: `¬φ` is `φ.imp ⊥`, so closure under implication and
+containing `⊥` already give closure under negation. Closure under substitution of terms does not
+follow from the other conditions (substituting into a countable conjunction of members need not
+give a member), and it is not imposed because nothing built on formation-closed fragments here
+uses it.
 
 Unlike a fragment, a formation-closed fragment determines the size of the language: every function
 and relation symbol occurs in an atomic member. So the formation closure of a countable set is
@@ -117,6 +120,7 @@ variable {A : Fragment L} (hA : A.FormationClosed) {n : ℕ}
 include hA
 
 /-- An implication belongs to a formation-closed fragment exactly when both sides do. -/
+@[simp]
 theorem imp_mem_iff {φ ψ : L.BoundedFormulaω Empty n} :
     (⟨n, φ.imp ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ↔
       (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ∧
@@ -125,48 +129,74 @@ theorem imp_mem_iff {φ ψ : L.BoundedFormulaω Empty n} :
 
 /-- A universal quantification belongs to a formation-closed fragment exactly when its body
 does. -/
+@[simp]
 theorem all_mem_iff {φ : L.BoundedFormulaω Empty (n + 1)} :
     (⟨n, φ.all⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ↔
       (⟨n + 1, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
   ⟨A.all_mem, hA.all_mem⟩
 
 /-- A negation belongs to a formation-closed fragment exactly when the negated formula does. -/
+@[simp]
 theorem not_mem_iff {φ : L.BoundedFormulaω Empty n} :
     (⟨n, φ.not⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ↔
       (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
   hA.imp_mem_iff.trans (and_iff_left (hA.bot_mem n))
 
 /-- `⊤` is a member of a formation-closed fragment at every arity. -/
+@[simp]
 theorem top_mem (n : ℕ) : (⟨n, ⊤⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
   rw [top_def]
   exact hA.not_mem_iff.2 (hA.bot_mem n)
+
+/-- A conjunction belongs to a formation-closed fragment exactly when both conjuncts do. -/
+@[simp]
+theorem inf_mem_iff {φ ψ : L.BoundedFormulaω Empty n} :
+    (⟨n, φ ⊓ ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ↔
+      (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ∧
+        (⟨n, ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  rw [inf_def, hA.not_mem_iff, hA.imp_mem_iff, hA.not_mem_iff]
 
 /-- The conjunction of two members of a formation-closed fragment is a member. -/
 theorem inf_mem {φ ψ : L.BoundedFormulaω Empty n}
     (hφ : (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A)
     (hψ : (⟨n, ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
-    (⟨n, φ ⊓ ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
-  rw [inf_def]
-  exact hA.not_mem_iff.2 (hA.imp_mem hφ (hA.not_mem_iff.2 hψ))
+    (⟨n, φ ⊓ ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
+  hA.inf_mem_iff.2 ⟨hφ, hψ⟩
+
+/-- A disjunction belongs to a formation-closed fragment exactly when both disjuncts do. -/
+@[simp]
+theorem sup_mem_iff {φ ψ : L.BoundedFormulaω Empty n} :
+    (⟨n, φ ⊔ ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ↔
+      (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ∧
+        (⟨n, ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  rw [sup_def, hA.imp_mem_iff, hA.not_mem_iff]
 
 /-- The disjunction of two members of a formation-closed fragment is a member. -/
 theorem sup_mem {φ ψ : L.BoundedFormulaω Empty n}
     (hφ : (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A)
     (hψ : (⟨n, ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
-    (⟨n, φ ⊔ ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
-  rw [sup_def]
-  exact hA.imp_mem (hA.not_mem_iff.2 hφ) hψ
+    (⟨n, φ ⊔ ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
+  hA.sup_mem_iff.2 ⟨hφ, hψ⟩
+
+/-- A biconditional belongs to a formation-closed fragment exactly when both sides do. -/
+@[simp]
+theorem iff_mem_iff {φ ψ : L.BoundedFormulaω Empty n} :
+    (⟨n, φ.iff ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ↔
+      (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ∧
+        (⟨n, ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  rw [BoundedFormulaInf.iff_def, hA.inf_mem_iff, hA.imp_mem_iff, hA.imp_mem_iff]
+  exact ⟨fun h => h.1, fun h => ⟨h, h.2, h.1⟩⟩
 
 /-- The biconditional of two members of a formation-closed fragment is a member. -/
 theorem iff_mem {φ ψ : L.BoundedFormulaω Empty n}
     (hφ : (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A)
     (hψ : (⟨n, ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
-    (⟨n, φ.iff ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
-  rw [BoundedFormulaInf.iff_def]
-  exact hA.inf_mem (hA.imp_mem hφ hψ) (hA.imp_mem hψ hφ)
+    (⟨n, φ.iff ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
+  hA.iff_mem_iff.2 ⟨hφ, hψ⟩
 
 /-- An existential quantification belongs to a formation-closed fragment exactly when its body
 does. -/
+@[simp]
 theorem ex_mem_iff {φ : L.BoundedFormulaω Empty (n + 1)} :
     (⟨n, φ.ex⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ↔
       (⟨n + 1, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
@@ -359,27 +389,13 @@ private theorem formationStage_countable [Countable (Σ l, L.Functions l)]
   | succ k ih => exact formationStep_countable ih
 
 /-- The union of the stages of the formation closure of `S`, as a fragment. -/
-private def formationLimit (S : Set (Σ n, L.BoundedFormulaω Empty n)) : Fragment L where
-  toSet := ⋃ k, formationStage S k
-  imp_left_mem' h := by
-    obtain ⟨k, hk⟩ := Set.mem_iUnion.1 h
-    exact Set.mem_iUnion.2 ⟨k + 1, (formationStep _).imp_left_mem (subset_formationStep _ hk)⟩
-  imp_right_mem' h := by
-    obtain ⟨k, hk⟩ := Set.mem_iUnion.1 h
-    exact Set.mem_iUnion.2 ⟨k + 1, (formationStep _).imp_right_mem (subset_formationStep _ hk)⟩
-  all_mem' h := by
-    obtain ⟨k, hk⟩ := Set.mem_iUnion.1 h
-    exact Set.mem_iUnion.2 ⟨k + 1, (formationStep _).all_mem (subset_formationStep _ hk)⟩
-  iInf_mem' h i := by
-    obtain ⟨k, hk⟩ := Set.mem_iUnion.1 h
-    exact Set.mem_iUnion.2 ⟨k + 1, (formationStep _).iInf_mem (subset_formationStep _ hk) i⟩
-  iSup_mem' h i := by
-    obtain ⟨k, hk⟩ := Set.mem_iUnion.1 h
-    exact Set.mem_iUnion.2 ⟨k + 1, (formationStep _).iSup_mem (subset_formationStep _ hk) i⟩
+private def formationLimit (S : Set (Σ n, L.BoundedFormulaω Empty n)) : Fragment L :=
+  ⨆ k, formationStep (formationStage S k)
 
 private theorem mem_formationLimit {S : Set (Σ n, L.BoundedFormulaω Empty n)}
-    {p : Σ n, L.BoundedFormulaω Empty n} : p ∈ formationLimit S ↔ ∃ k, p ∈ formationStage S k :=
-  Set.mem_iUnion
+    {p : Σ n, L.BoundedFormulaω Empty n} : p ∈ formationLimit S ↔ ∃ k, p ∈ formationStage S k := by
+  rw [formationLimit, _root_.iSup, mem_sSup, Set.exists_range_iff]
+  exact ⟨fun ⟨k, hk⟩ => ⟨k + 1, hk⟩, fun ⟨k, hk⟩ => ⟨k, subset_formationStep _ hk⟩⟩
 
 private theorem formationClosed_formationLimit (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
     (formationLimit S).FormationClosed where
@@ -406,7 +422,8 @@ theorem formationClosure_countable [Countable (Σ l, L.Functions l)]
     [Countable (Σ l, L.Relations l)] {S : Set (Σ n, L.BoundedFormulaω Empty n)}
     (hS : S.Countable) :
     ((formationClosure S : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)).Countable := by
-  refine (Set.countable_iUnion (formationStage_countable hS)).mono
+  refine ((Set.countable_iUnion (formationStage_countable hS)).mono
+    fun p hp => Set.mem_iUnion.2 (mem_formationLimit.1 hp)).mono
     (SetLike.coe_subset_coe.2 ((formationClosure_le_iff (formationClosed_formationLimit S)).2 ?_))
   exact fun p hp => mem_formationLimit.2 ⟨0, Or.inl (Or.inl hp)⟩
 
