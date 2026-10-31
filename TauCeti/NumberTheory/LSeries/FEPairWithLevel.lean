@@ -25,8 +25,11 @@ second Mellin theory.
 A `TauCeti.FEPairWithLevel` carries the hypotheses of `WeakFEPair` together with a level `N > 0`.
 Its transport `TauCeti.FEPairWithLevel.toWeakFEPair` replaces `g` by `g (· / N)` and `ε` by
 `ε N ^ (-k)` and leaves `f` alone, so the completed function `TauCeti.FEPairWithLevel.Λ` of `f` is
-Mathlib's `WeakFEPair.Λ` of the transported pair. Conversely `WeakFEPair.toFEPairWithLevel`
-presents any weak pair at any level, and the two constructions are mutually inverse.
+Mathlib's `WeakFEPair.Λ` of the transported pair. Unlike Mathlib's carrier, `f` and `g` vanish
+on `(-∞, 0]`, so a pair is determined by the values its laws actually use (`ext`). Conversely
+`WeakFEPair.toFEPairWithLevel` presents any weak pair at any level, extending its functions by zero
+off `(0, ∞)`. The round trip from a pair is the identity, and the round trip from a weak pair
+changes only values at nonpositive inputs, so it keeps the completed function.
 
 The one fact the level adds is that the continued Mellin transform of `g (· / N)` is `N ^ s` times
 that of `g`. Combined with Mathlib's functional equation it gives the Mellin principle at level `N`
@@ -36,6 +39,8 @@ that of `g`. Combined with Mathlib's functional equation it gives the Mellin pri
 ## Main declarations
 
 * `TauCeti.FEPairWithLevel`: a functional-equation pair with a level.
+* `TauCeti.FEPairWithLevel.ext`: a pair is determined by its functions on `(0, ∞)` and its
+  constants.
 * `TauCeti.FEPairWithLevel.toWeakFEPair`: its transport to Mathlib's `WeakFEPair`.
 * `WeakFEPair.toFEPairWithLevel`: a weak pair presented at a given level.
 * `TauCeti.FEPairWithLevel.symm`: the pair read backwards at the same level.
@@ -69,7 +74,8 @@ namespace TauCeti
 functions `f` and `g` locally integrable on `(0, ∞)`, equal to the constants `f₀` and `g₀` at `∞` up
 to an error decaying faster than every power, a weight `k > 0` and a root number `ε ≠ 0`. The
 transformation law is taken at a level `N > 0`: `f (1 / (N t)) = ε t ^ k g t`. At `N = 1` it is
-Mathlib's law. -/
+Mathlib's law. Only the values of `f` and `g` on `(0, ∞)` enter the laws, so both are required to
+vanish elsewhere. -/
 structure FEPairWithLevel (E : Type*) [NormedAddCommGroup E] [NormedSpace ℂ E] where
   /-- The function whose completed Mellin transform is studied. -/
   f : ℝ → E
@@ -88,40 +94,96 @@ structure FEPairWithLevel (E : Type*) [NormedAddCommGroup E] [NormedSpace ℂ E]
   hN : 0 < N
   hf_int : LocallyIntegrableOn f (Ioi 0)
   hg_int : LocallyIntegrableOn g (Ioi 0)
+  hf_nonpos : ∀ t ≤ 0, f t = 0
+  hg_nonpos : ∀ t ≤ 0, g t = 0
   hk : 0 < k
   hε : ε ≠ 0
   h_feq : ∀ t ∈ Ioi (0 : ℝ), f (1 / (N * t)) = (ε * ↑(t ^ k)) • g t
   hf_top (r : ℝ) : (f · - f₀) =O[atTop] (· ^ r)
   hg_top (r : ℝ) : (g · - g₀) =O[atTop] (· ^ r)
 
+namespace FEPairWithLevel
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- A pair is determined by the values of its functions on `(0, ∞)`, its weight, root number,
+constant terms and level. -/
+theorem ext {P Q : FEPairWithLevel E} (hf : EqOn P.f Q.f (Ioi 0)) (hg : EqOn P.g Q.g (Ioi 0))
+    (hk : P.k = Q.k) (hε : P.ε = Q.ε) (hf₀ : P.f₀ = Q.f₀) (hg₀ : P.g₀ = Q.g₀) (hN : P.N = Q.N) :
+    P = Q := by
+  have key {u v : ℝ → E} (huv : EqOn u v (Ioi 0)) (hu : ∀ t ≤ 0, u t = 0)
+      (hv : ∀ t ≤ 0, v t = 0) : u = v := by
+    funext t
+    rcases le_or_gt t 0 with ht | ht
+    · rw [hu t ht, hv t ht]
+    · exact huv ht
+  have hf' := key hf P.hf_nonpos Q.hf_nonpos
+  have hg' := key hg P.hg_nonpos Q.hg_nonpos
+  cases P
+  cases Q
+  dsimp only at hf' hg' hk hε hf₀ hg₀ hN
+  subst hf' hg' hk hε hf₀ hg₀ hN
+  rfl
+
+end FEPairWithLevel
+
 end TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- A weak functional-equation pair presented at level `N > 0`: `g` is replaced by `g (N ·)` and
-`ε` by `ε N ^ k`, so that `f (1 / (N t)) = (ε N ^ k) t ^ k g (N t)`. -/
-@[expose, simps]
+`ε` by `ε N ^ k`, so that `f (1 / (N t)) = (ε N ^ k) t ^ k g (N t)`. Both functions are extended by
+zero off `(0, ∞)`, where the laws do not see them. -/
 def WeakFEPair.toFEPairWithLevel (Q : WeakFEPair E) (N : ℝ) (hN : 0 < N) :
     TauCeti.FEPairWithLevel E where
-  f := Q.f
-  g t := Q.g (N * t)
+  f := (Ioi 0).indicator Q.f
+  g := (Ioi 0).indicator fun t ↦ Q.g (N * t)
   k := Q.k
   ε := Q.ε * ↑(N ^ Q.k)
   f₀ := Q.f₀
   g₀ := Q.g₀
   N := N
   hN := hN
-  hf_int := Q.hf_int
-  hg_int := Q.hg_int.comp_smul_of_mapsTo hN.ne' fun _ ht ↦ mul_pos hN ht
+  hf_int := Q.hf_int.congr <| (ae_restrict_mem measurableSet_Ioi).mono fun _ ht ↦
+    (indicator_of_mem ht _).symm
+  hg_int := (Q.hg_int.comp_smul_of_mapsTo hN.ne' fun _ ht ↦ mul_pos hN ht).congr <|
+    (ae_restrict_mem measurableSet_Ioi).mono fun _ ht ↦ (indicator_of_mem ht _).symm
+  hf_nonpos _ ht := indicator_of_notMem (notMem_Ioi.mpr ht) _
+  hg_nonpos _ ht := indicator_of_notMem (notMem_Ioi.mpr ht) _
   hk := Q.hk
   hε := mul_ne_zero Q.hε (ofReal_ne_zero.mpr (rpow_pos_of_pos hN _).ne')
   h_feq t ht := by
-    rw [Q.h_feq _ (mul_pos hN ht), Real.mul_rpow hN.le (le_of_lt ht)]
+    have ht' : (0 : ℝ) < t := ht
+    rw [indicator_of_mem (mem_Ioi.mpr (one_div_pos.mpr (mul_pos hN ht'))), indicator_of_mem ht,
+      Q.h_feq _ (mul_pos hN ht'), Real.mul_rpow hN.le ht'.le]
     congr 1
     push_cast
     ring
-  hf_top := Q.hf_top
-  hg_top r := (Q.hg_top r).comp_const_mul_rpow hN
+  hf_top r := (Q.hf_top r).congr' ((eventually_gt_atTop 0).mono fun _ ht ↦ by
+    simp only [indicator_of_mem (mem_Ioi.mpr ht)]) EventuallyEq.rfl
+  hg_top r := ((Q.hg_top r).comp_const_mul_rpow hN).congr' ((eventually_gt_atTop 0).mono
+    fun _ ht ↦ by simp only [indicator_of_mem (mem_Ioi.mpr ht)]) EventuallyEq.rfl
+
+namespace WeakFEPair
+
+variable (Q : WeakFEPair E) (N : ℝ) (hN : 0 < N)
+
+@[simp] theorem toFEPairWithLevel_f : (Q.toFEPairWithLevel N hN).f = (Ioi 0).indicator Q.f := (rfl)
+
+@[simp] theorem toFEPairWithLevel_g :
+    (Q.toFEPairWithLevel N hN).g = (Ioi 0).indicator fun t ↦ Q.g (N * t) := (rfl)
+
+@[simp] theorem toFEPairWithLevel_k : (Q.toFEPairWithLevel N hN).k = Q.k := (rfl)
+
+@[simp] theorem toFEPairWithLevel_ε : (Q.toFEPairWithLevel N hN).ε = Q.ε * ↑(N ^ Q.k) := (rfl)
+
+@[simp] theorem toFEPairWithLevel_f₀ : (Q.toFEPairWithLevel N hN).f₀ = Q.f₀ := (rfl)
+
+@[simp] theorem toFEPairWithLevel_g₀ : (Q.toFEPairWithLevel N hN).g₀ = Q.g₀ := (rfl)
+
+@[simp] theorem toFEPairWithLevel_N : (Q.toFEPairWithLevel N hN).N = N := (rfl)
+
+end WeakFEPair
 
 namespace TauCeti.FEPairWithLevel
 
@@ -130,7 +192,6 @@ variable (P : FEPairWithLevel E)
 /-- The level transport to Mathlib's pair: `g` becomes `g (· / N)` and `ε` becomes `ε N ^ (-k)`.
 The law at `t = x / N` reads `f (1 / x) = (ε N ^ (-k)) x ^ k g (x / N)`, which is Mathlib's law.
 The transport moves neither `f`, `k`, `f₀` nor `g₀`. -/
-@[expose, simps]
 def toWeakFEPair : WeakFEPair E where
   f := P.f
   g x := P.g (x / P.N)
@@ -156,29 +217,46 @@ def toWeakFEPair : WeakFEPair E where
   hg_top r := by
     simpa only [div_eq_inv_mul] using (P.hg_top r).comp_const_mul_rpow (inv_pos.2 P.hN)
 
-/-- Transporting a weak pair presented at level `N` returns the weak pair. -/
-@[simp]
-theorem _root_.WeakFEPair.toWeakFEPair_toFEPairWithLevel (Q : WeakFEPair E) {N : ℝ} (hN : 0 < N) :
-    (Q.toFEPairWithLevel N hN).toWeakFEPair = Q := by
-  have hN' : ((N ^ Q.k : ℝ) : ℂ) * ((N ^ (-Q.k) : ℝ) : ℂ) = 1 := by
-    rw [← ofReal_mul, ← Real.rpow_add hN, add_neg_cancel, Real.rpow_zero, ofReal_one]
-  cases Q
-  simp only [toWeakFEPair, WeakFEPair.toFEPairWithLevel, mul_div_cancel₀ _ hN.ne', mul_assoc,
-    hN', mul_one]
+@[simp] theorem toWeakFEPair_f : P.toWeakFEPair.f = P.f := (rfl)
+
+@[simp] theorem toWeakFEPair_g : P.toWeakFEPair.g = fun x ↦ P.g (x / P.N) := (rfl)
+
+@[simp] theorem toWeakFEPair_k : P.toWeakFEPair.k = P.k := (rfl)
+
+@[simp] theorem toWeakFEPair_ε : P.toWeakFEPair.ε = P.ε * ↑(P.N ^ (-P.k)) := (rfl)
+
+@[simp] theorem toWeakFEPair_f₀ : P.toWeakFEPair.f₀ = P.f₀ := (rfl)
+
+@[simp] theorem toWeakFEPair_g₀ : P.toWeakFEPair.g₀ = P.g₀ := (rfl)
+
+/-- Transporting a weak pair presented at level `N` returns its functions on `(0, ∞)`. -/
+theorem _root_.WeakFEPair.toWeakFEPair_toFEPairWithLevel_f (Q : WeakFEPair E) {N : ℝ}
+    (hN : 0 < N) : EqOn (Q.toFEPairWithLevel N hN).toWeakFEPair.f Q.f (Ioi 0) :=
+  fun _ ht ↦ indicator_of_mem ht _
+
+/-- Transporting a weak pair presented at level `N` returns its dual function on `(0, ∞)`. -/
+theorem _root_.WeakFEPair.toWeakFEPair_toFEPairWithLevel_g (Q : WeakFEPair E) {N : ℝ}
+    (hN : 0 < N) : EqOn (Q.toFEPairWithLevel N hN).toWeakFEPair.g Q.g (Ioi 0) := fun x hx ↦ by
+  simp [indicator_of_mem (mem_Ioi.mpr (div_pos hx hN)), mul_div_cancel₀ _ hN.ne']
+
+/-- Transporting a weak pair presented at level `N` returns its root number. -/
+theorem _root_.WeakFEPair.toWeakFEPair_toFEPairWithLevel_ε (Q : WeakFEPair E) {N : ℝ}
+    (hN : 0 < N) : (Q.toFEPairWithLevel N hN).toWeakFEPair.ε = Q.ε := by
+  rw [toWeakFEPair_ε, WeakFEPair.toFEPairWithLevel_ε, WeakFEPair.toFEPairWithLevel_k,
+    WeakFEPair.toFEPairWithLevel_N, mul_assoc, ← ofReal_mul, ← Real.rpow_add hN, add_neg_cancel,
+    Real.rpow_zero, ofReal_one, mul_one]
 
 /-- Presenting the transport of a pair at its own level returns the pair. -/
 @[simp]
 theorem toFEPairWithLevel_toWeakFEPair :
     P.toWeakFEPair.toFEPairWithLevel P.N P.hN = P := by
-  have hN' : ((P.N ^ (-P.k) : ℝ) : ℂ) * ((P.N ^ P.k : ℝ) : ℂ) = 1 := by
-    rw [← ofReal_mul, ← Real.rpow_add P.hN, neg_add_cancel, Real.rpow_zero, ofReal_one]
-  obtain ⟨f, g, k, ε, f₀, g₀, N, hN, _⟩ := P
-  simp only [toWeakFEPair, WeakFEPair.toFEPairWithLevel, mul_div_cancel_left₀ _ hN.ne',
-    mul_assoc] at hN' ⊢
-  simp only [hN', mul_one]
+  refine ext (fun t ht ↦ ?_) (fun t ht ↦ ?_) rfl ?_ rfl rfl rfl
+  · exact indicator_of_mem ht _
+  · simp [indicator_of_mem ht, mul_div_cancel_left₀ _ P.hN.ne']
+  · rw [WeakFEPair.toFEPairWithLevel_ε, toWeakFEPair_ε, toWeakFEPair_k, mul_assoc, ← ofReal_mul,
+      ← Real.rpow_add P.hN, neg_add_cancel, Real.rpow_zero, ofReal_one, mul_one]
 
 /-- The pair read backwards at the same level: `g (1 / (N t)) = (ε⁻¹ N ^ k) t ^ k f t`. -/
-@[expose, simps]
 def symm : FEPairWithLevel E where
   f := P.g
   g := P.f
@@ -190,6 +268,8 @@ def symm : FEPairWithLevel E where
   hN := P.hN
   hf_int := P.hg_int
   hg_int := P.hf_int
+  hf_nonpos := P.hg_nonpos
+  hg_nonpos := P.hf_nonpos
   hk := P.hk
   hε := mul_ne_zero (inv_ne_zero P.hε) (ofReal_ne_zero.mpr (rpow_pos_of_pos P.hN _).ne')
   h_feq t ht := by
@@ -208,12 +288,26 @@ def symm : FEPairWithLevel E where
   hf_top := P.hg_top
   hg_top := P.hf_top
 
+@[simp] theorem symm_f : P.symm.f = P.g := (rfl)
+
+@[simp] theorem symm_g : P.symm.g = P.f := (rfl)
+
+@[simp] theorem symm_k : P.symm.k = P.k := (rfl)
+
+@[simp] theorem symm_ε : P.symm.ε = P.ε⁻¹ * ↑(P.N ^ P.k) := (rfl)
+
+@[simp] theorem symm_f₀ : P.symm.f₀ = P.g₀ := (rfl)
+
+@[simp] theorem symm_g₀ : P.symm.g₀ = P.f₀ := (rfl)
+
+@[simp] theorem symm_N : P.symm.N = P.N := (rfl)
+
 /-- Reading a pair backwards twice returns the pair. -/
 @[simp]
 theorem symm_symm : P.symm.symm = P := by
   have h : ((P.N ^ P.k : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.mpr (rpow_pos_of_pos P.hN _).ne'
-  obtain ⟨f, g, k, ε, f₀, g₀, N, hN, _⟩ := P
-  simp only [symm, mul_inv, inv_inv, mul_assoc, inv_mul_cancel₀ h, mul_one]
+  refine ext (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) rfl ?_ rfl rfl rfl
+  simp only [symm_ε, symm_k, symm_N, mul_inv, inv_inv, mul_assoc, inv_mul_cancel₀ h, mul_one]
 
 /-- The completed function `Λ(f, s)`: Mathlib's `WeakFEPair.Λ` of the transported pair, which
 agrees with the Mellin transform of `f - f₀` on `Re s > k` (`hasMellin`) and continues it
@@ -222,6 +316,25 @@ def Λ : ℂ → E := P.toWeakFEPair.Λ
 
 @[simp]
 theorem toWeakFEPair_Λ : P.toWeakFEPair.Λ = P.Λ := (rfl)
+
+/-- A weak pair presented at any level keeps its completed function: the presentation changes its
+functions only at nonpositive inputs, which the Mellin transform does not see. -/
+@[simp]
+theorem _root_.WeakFEPair.toFEPairWithLevel_Λ (Q : WeakFEPair E) {N : ℝ} (hN : 0 < N) :
+    (Q.toFEPairWithLevel N hN).Λ = Q.Λ := by
+  have hε := Q.toWeakFEPair_toFEPairWithLevel_ε hN
+  have hmod : EqOn (Q.toFEPairWithLevel N hN).toWeakFEPair.f_modif Q.f_modif (Ioi 0) :=
+    fun t ht ↦ by
+      simp only [WeakFEPair.f_modif, Pi.add_apply, indicator_apply, hε, toWeakFEPair_f₀,
+        toWeakFEPair_g₀, toWeakFEPair_k, WeakFEPair.toFEPairWithLevel_f₀,
+        WeakFEPair.toFEPairWithLevel_g₀, WeakFEPair.toFEPairWithLevel_k,
+        Q.toWeakFEPair_toFEPairWithLevel_f hN ht]
+  funext s
+  rw [← toWeakFEPair_Λ]
+  simp only [WeakFEPair.Λ, WeakFEPair.Λ₀, mellin, hε, toWeakFEPair_f₀, toWeakFEPair_g₀,
+    toWeakFEPair_k, WeakFEPair.toFEPairWithLevel_f₀, WeakFEPair.toFEPairWithLevel_g₀,
+    WeakFEPair.toFEPairWithLevel_k]
+  rw [setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ by rw [hmod ht]]
 
 /-- On `Re s > k`, `Λ s` is the Mellin transform of `f - f₀`. -/
 theorem hasMellin [CompleteSpace E] {s : ℂ} (hs : P.k < s.re) :
