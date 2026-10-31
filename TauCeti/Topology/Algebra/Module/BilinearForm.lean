@@ -61,9 +61,9 @@ use.
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
   among all continuous bilinear forms in finite dimensions, without imposing symmetry.
-* `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, the quadratic forms
-  `v ↦ B v (A x v)` that are positive on nonzero vectors for a family of operators `A x`,
-  continuous on a compact set, are bounded below by one positive multiple of the squared norm.
+* `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
+  bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
+  below on the diagonal by one positive multiple of the squared norm.
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
@@ -255,53 +255,19 @@ theorem isOpen_setOf_forall_bilinear_apply_self_pos
   rw [heq]
   exact isOpen_setOfPred_dotProduct_mulVec_pos.preimage hA
 
-/-- On a finite-dimensional real normed space, a continuous bilinear form positive on
-nonzero diagonal vectors has a bounded unit sublevel set. Symmetry is not needed. -/
-theorem _root_.ContinuousLinearMap.isVonNBounded_setOf_lt_one_of_pos
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    (b : E →L[ℝ] E →L[ℝ] ℝ) (hb : ∀ v, v ≠ 0 → 0 < b v v) :
-    Bornology.IsVonNBounded ℝ {v : E | b v v < 1} := by
-  have hcont : Continuous (fun v : E ↦ b v v) := b.continuous.clm_apply continuous_id
-  obtain ⟨c, hc, hbound⟩ := (isCompact_sphere (0 : E) 1).exists_forall_le'
-    hcont.continuousOn (fun v hv ↦ hb v (by
-      intro h
-      simp [h] at hv))
-  rw [NormedSpace.isVonNBounded_iff']
-  refine ⟨Real.sqrt c⁻¹, fun v hv ↦ ?_⟩
-  by_cases hv0 : v = 0
-  · simp [hv0]
-  have hn : 0 < ‖v‖ := norm_pos_iff.mpr hv0
-  have hu : ‖v‖⁻¹ • v ∈ Metric.sphere (0 : E) 1 := by
-    simp [norm_smul, hn.ne']
-  have hh := hbound (‖v‖⁻¹ • v) hu
-  have heq : ‖v‖ ^ 2 * b (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) = b v v := by
-    simp only [map_smul, smul_apply, smul_eq_mul]
-    field_simp
-  have hcv : c * ‖v‖ ^ 2 < 1 := by
-    have := mul_le_mul_of_nonneg_left hh (sq_nonneg ‖v‖)
-    rw [heq] at this
-    exact lt_of_le_of_lt (by simpa [mul_comm] using this) hv
-  apply Real.le_sqrt_of_sq_le
-  rw [inv_eq_one_div, le_div_iff₀ hc]
-  linarith
-
 /-- **Uniform coercivity over a compact family.** On a finite-dimensional real normed space, let
-`B` be a bilinear form and `A x` a family of operators, continuous on a compact set `K`, such
-that `B v (A x v)` is positive for every `x ∈ K` and every nonzero `v`. Then one positive constant
-`c` gives `c ‖v‖² ≤ B v (A x v)` for every `x ∈ K` and every `v`. Neither symmetry of `B` nor
-any algebraic condition on `A x` is needed. -/
+`b x` be a family of continuous bilinear forms, continuous on a compact set `K`, such that
+`b x v v` is positive for every `x ∈ K` and every nonzero `v`. Then one positive constant `c`
+gives `c ‖v‖² ≤ b x v v` for every `x ∈ K` and every `v`. Symmetry of the forms is not needed. -/
 theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
     {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] {K : Set X} (hK : IsCompact K) (B : LinearMap.BilinForm ℝ E)
-    {A : X → E →L[ℝ] E} (hA : ContinuousOn A K)
-    (hpos : ∀ x ∈ K, ∀ v, v ≠ 0 → 0 < B v (A x v)) :
-    ∃ c > 0, ∀ x ∈ K, ∀ v, c * ‖v‖ ^ 2 ≤ B v (A x v) := by
+    [FiniteDimensional ℝ E] {K : Set X} (hK : IsCompact K) {b : X → E →L[ℝ] E →L[ℝ] ℝ}
+    (hb : ContinuousOn b K) (hpos : ∀ x ∈ K, ∀ v, v ≠ 0 → 0 < b x v v) :
+    ∃ c > 0, ∀ x ∈ K, ∀ v, c * ‖v‖ ^ 2 ≤ b x v v := by
   -- The minimum over the compact set `K × S`, with `S` the unit sphere, is the constant.
-  have hcont : ContinuousOn (fun p : X × E ↦ B p.2 (A p.1 p.2))
-      (K ×ˢ Metric.sphere (0 : E) 1) := by
-    simpa only [Function.comp_apply, LinearMap.toContinuousBilinearMap_apply] using
-      (B.toContinuousBilinearMap.continuous.comp_continuousOn continuousOn_snd).clm_apply
-        ((hA.comp continuousOn_fst fun _ (hp : _ ∈ K ×ˢ _) ↦ hp.1).clm_apply continuousOn_snd)
+  have hcont : ContinuousOn (fun p : X × E ↦ b p.1 p.2 p.2) (K ×ˢ Metric.sphere (0 : E) 1) :=
+    ((hb.comp continuousOn_fst fun _ (hp : _ ∈ K ×ˢ _) ↦ hp.1).clm_apply
+      continuousOn_snd).clm_apply continuousOn_snd
   obtain ⟨c, hc, hle⟩ := (hK.prod (isCompact_sphere 0 1)).exists_forall_le' hcont
     fun p hp ↦ hpos p.1 hp.1 p.2 (ne_zero_of_mem_sphere one_ne_zero ⟨p.2, hp.2⟩)
   refine ⟨c, hc, fun x hx v ↦ ?_⟩
@@ -311,11 +277,24 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
   have hu : ‖v‖⁻¹ • v ∈ Metric.sphere (0 : E) 1 := by
     simp [norm_smul, hn.ne']
   have hh := hle (x, ‖v‖⁻¹ • v) ⟨hx, hu⟩
-  have heq : B (‖v‖⁻¹ • v) (A x (‖v‖⁻¹ • v)) = (‖v‖ ^ 2)⁻¹ * B v (A x v) := by
-    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
+  have heq : b x (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) = (‖v‖ ^ 2)⁻¹ * b x v v := by
+    simp only [map_smul, smul_apply, smul_eq_mul]
     ring
   rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
   linarith
+
+/-- On a finite-dimensional real normed space, a continuous bilinear form positive on
+nonzero diagonal vectors has a bounded unit sublevel set. Symmetry is not needed. -/
+theorem _root_.ContinuousLinearMap.isVonNBounded_setOf_lt_one_of_pos
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    (b : E →L[ℝ] E →L[ℝ] ℝ) (hb : ∀ v, v ≠ 0 → 0 < b v v) :
+    Bornology.IsVonNBounded ℝ {v : E | b v v < 1} := by
+  obtain ⟨c, hc, hbound⟩ := (isCompact_singleton (x := ())).exists_pos_forall_mul_norm_sq_le
+    (b := fun _ ↦ b) continuousOn_const fun _ _ ↦ hb
+  rw [NormedSpace.isVonNBounded_iff']
+  refine ⟨Real.sqrt c⁻¹, fun v hv ↦ Real.le_sqrt_of_sq_le ?_⟩
+  rw [inv_eq_one_div, le_div_iff₀ hc]
+  linarith [hbound () rfl v, show b v v < 1 from hv]
 
 end TauCeti
 

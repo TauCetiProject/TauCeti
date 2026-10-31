@@ -311,6 +311,19 @@ theorem floerEnergyDensity_nonneg (ω : SymplecticForm V) {J : AlmostComplexStru
   simpa only [floerEnergyDensity_def, ContinuousLinearMap.coe_coe] using
     h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
 
+/-- For a solution of the Floer equation at `z`, the `t`-component of the perturbed derivative is
+`J` applied to its `s`-component `a = ∂_s u - X_{K_s}`, so the Floer energy density is
+`ω(a, J a)`. -/
+theorem floerEnergyDensity_eq_of_isComplexLinearMap (ω : SymplecticForm V)
+    {J : AlmostComplexStructure V}
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ω.floerEnergyDensity Ks Kt u z =
+      ω (ω.perturbedFDeriv Ks Kt u z stdComplexLineReal)
+        (J (ω.perturbedFDeriv Ks Kt u z stdComplexLineReal)) := by
+  rw [floerEnergyDensity_def]
+  exact congrArg _ h.apply_stdComplexLineImag
+
 /-- For a solution of the Floer equation with `J` tamed by `ω`, the Floer energy density at `z`
 vanishes exactly when the perturbed derivative `du - X_K` vanishes at `z`. -/
 theorem floerEnergyDensity_eq_zero_iff (ω : SymplecticForm V) {J : AlmostComplexStructure V}
@@ -318,12 +331,10 @@ theorem floerEnergyDensity_eq_zero_iff (ω : SymplecticForm V) {J : AlmostComple
     (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
     ω.floerEnergyDensity Ks Kt u z = 0 ↔ ω.perturbedFDeriv Ks Kt u z = 0 := by
-  have himag := h.apply_stdComplexLineImag
-  simp only [ContinuousLinearMap.coe_coe] at himag
-  rw [floerEnergyDensity_def, himag, ← ContinuousLinearMap.coe_inj,
-    ContinuousLinearMap.toLinearMap_zero, h.eq_zero_iff_apply_stdComplexLineReal,
-    ContinuousLinearMap.coe_coe]
-  refine ⟨fun h0 => by_contra fun hne => (hJ _ hne).ne' h0, fun h0 => by simp [h0]⟩
+  -- The metric energy density of a solution is twice its Floer energy density.
+  rw [← ω.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff hJ,
+    h.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm, floerEnergyDensity_def]
+  simp only [ContinuousLinearMap.coe_coe, mul_eq_zero, two_ne_zero, false_or]
 
 /-- **Coercivity of the Floer energy density.** Let `u` solve the Floer equation at `z` for an
 almost complex structure `J` with `c ‖v‖² ≤ ω(v, J v)` and `‖J v‖ ≤ M ‖v‖` for all `v`, where
@@ -339,13 +350,13 @@ theorem mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity
     c * (‖ω.perturbedFDeriv Ks Kt u z stdComplexLineReal‖ ^ 2 +
         ‖ω.perturbedFDeriv Ks Kt u z stdComplexLineImag‖ ^ 2) ≤
       (1 + M ^ 2) * ω.floerEnergyDensity Ks Kt u z := by
-  have himag := h.apply_stdComplexLineImag
-  simp only [ContinuousLinearMap.coe_coe] at himag
-  rw [floerEnergyDensity_def, himag]
+  rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap h]
   set a := ω.perturbedFDeriv Ks Kt u z stdComplexLineReal
-  -- The `t`-component `J a` has norm at most `M ‖a‖`, and `ω(a, J a)` dominates `c ‖a‖²`.
-  have hM : ‖J a‖ ^ 2 ≤ M ^ 2 * ‖a‖ ^ 2 := by
-    simpa only [mul_pow] using pow_le_pow_left₀ (norm_nonneg _) (hJM a) 2
+  -- The `t`-component is `J a`, of norm at most `M ‖a‖`, and `ω(a, J a)` dominates `c ‖a‖²`.
+  have hM : ‖ω.perturbedFDeriv Ks Kt u z stdComplexLineImag‖ ^ 2 ≤ M ^ 2 * ‖a‖ ^ 2 := by
+    rw [show ω.perturbedFDeriv Ks Kt u z stdComplexLineImag = J a from
+      h.apply_stdComplexLineImag, ← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg _) (hJM a) 2
   nlinarith [hJc a, mul_le_mul_of_nonneg_left hM hc, sq_nonneg M, sq_nonneg ‖a‖]
 
 end Density
