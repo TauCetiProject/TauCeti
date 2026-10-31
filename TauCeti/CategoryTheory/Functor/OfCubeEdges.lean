@@ -65,26 +65,6 @@ namespace Functor
 
 namespace OfCubeEdges
 
-/-- A proper inclusion of finite sets starts with an edge: some set covering `S` lies in `T`. -/
-private lemma exists_covBy_subset {S T : Finset ι} (h : S ⊆ T) (hST : S ≠ T) :
-    ∃ U, S ⋖ U ∧ U ⊆ T := by
-  classical
-  obtain ⟨a, haT, haS⟩ := exists_of_ssubset (ssubset_of_subset_of_ne h hST)
-  exact ⟨insert a S, covBy_insert haS, insert_subset haT h⟩
-
-/-- A step along an edge inside `T` brings `S` closer to `T`. -/
-private lemma card_sub_card_lt {S U T : Finset ι} (hSU : S ⋖ U) (hUT : U ⊆ T) :
-    #T - #U < #T - #S := by
-  have h₁ : #S + 1 = #U := Nat.covBy_iff_add_one_eq.1 hSU.card_finset
-  have h₂ := card_le_card hUT
-  omega
-
-/-- Two distinct sets covering `S` are both covered by their union. -/
-private lemma covBy_sup [DecidableEq ι] {S U V : Finset ι} (hSU : S ⋖ U) (hSV : S ⋖ V)
-    (hUV : U ≠ V) : U ⋖ U ⊔ V := by
-  apply covBy_sup_of_inf_covBy_right
-  rwa [hSU.wcovBy.inf_eq hSV.wcovBy hUV]
-
 variable {X : Finset ι → C} (d : ∀ ⦃S T : Finset ι⦄, S ⋖ T → (X S ⟶ X T))
 
 open scoped Classical in
@@ -94,12 +74,12 @@ edge maps commute. This is the map along `S ⊆ T` of `CategoryTheory.Functor.of
 def map (S T : Finset ι) (h : S ⊆ T) : X S ⟶ X T :=
   if hST : S = T then eqToHom (congrArg X hST)
   else
-    d (exists_covBy_subset h hST).choose_spec.1 ≫
-      map (exists_covBy_subset h hST).choose T (exists_covBy_subset h hST).choose_spec.2
+    have hU := exists_covBy_le_of_lt (h.lt_of_ne hST)
+    d hU.choose_spec.1 ≫ map hU.choose T hU.choose_spec.2
 termination_by #T - #S
 decreasing_by
-  exact card_sub_card_lt (exists_covBy_subset h hST).choose_spec.1
-    (exists_covBy_subset h hST).choose_spec.2
+  exact Nat.sub_lt_sub_left (card_lt_card (h.lt_of_ne hST))
+    (card_lt_card hU.choose_spec.1.lt)
 
 /-- The empty chain from `S` to itself gives the identity. -/
 theorem map_self (S : Finset ι) (h : S ⊆ S) : map d S S h = 𝟙 _ := by
@@ -107,8 +87,9 @@ theorem map_self (S : Finset ι) (h : S ⊆ S) : map d S S h = 𝟙 _ := by
 
 private lemma exists_map_eq_comp {S T : Finset ι} (h : S ⊆ T) (hST : S ≠ T) :
     ∃ U, ∃ (hSU : S ⋖ U) (hUT : U ⊆ T), map d S T h = d hSU ≫ map d U T hUT :=
-  ⟨(exists_covBy_subset h hST).choose, (exists_covBy_subset h hST).choose_spec.1,
-    (exists_covBy_subset h hST).choose_spec.2, by rw [map, dite_eq_right hST]⟩
+  ⟨(exists_covBy_le_of_lt (h.lt_of_ne hST)).choose,
+    (exists_covBy_le_of_lt (h.lt_of_ne hST)).choose_spec.1,
+    (exists_covBy_le_of_lt (h.lt_of_ne hST)).choose_spec.2, by rw [map, dite_eq_right hST]⟩
 
 variable {d}
   (hd : ∀ ⦃S T₁ T₂ U : Finset ι⦄ (h₁ : S ⋖ T₁) (h₁' : T₁ ⋖ U) (h₂ : S ⋖ T₂) (h₂' : T₂ ⋖ U),
@@ -130,11 +111,15 @@ private lemma map_eq_comp {S U T : Finset ι} (hSU : S ⋖ U) (hUT : U ⊆ T) (h
   obtain rfl | hUV := eq_or_ne U V
   · rfl
   -- Both routes continue to `U ⊔ V`, and the square face through `U` and `V` commutes.
-  have hUW := covBy_sup hSU hSV hUV
-  have hVW : V ⋖ U ⊔ V := sup_comm U V ▸ covBy_sup hSV hSU hUV.symm
+  have hUV' : U ⊓ V = S := hSU.wcovBy.inf_eq hSV.wcovBy hUV
+  have hUW : U ⋖ U ⊔ V := covBy_sup_of_inf_covBy_right (hUV' ▸ hSV)
+  have hVW : V ⋖ U ⊔ V := covBy_sup_of_inf_covBy_left (hUV' ▸ hSU)
   have hWT : U ⊔ V ⊆ T := sup_le hUT hVT
-  rw [ih _ (hk ▸ card_sub_card_lt hSU hUT) hUW hWT hUT rfl,
-    ih _ (hk ▸ card_sub_card_lt hSV hVT) hVW hWT hVT rfl, ← assoc, ← assoc, hd hSV hVW hSU hUW]
+  rw [ih _ (hk ▸ Nat.sub_lt_sub_left (card_lt_card (h.lt_of_ne hST)) (card_lt_card hSU.lt))
+      hUW hWT hUT rfl,
+    ih _ (hk ▸ Nat.sub_lt_sub_left (card_lt_card (h.lt_of_ne hST)) (card_lt_card hSV.lt))
+      hVW hWT hVT rfl,
+    ← assoc, ← assoc, hd hSV hVW hSU hUW]
 
 /-- Once the square faces commute, the composites of edge maps along chains compose. -/
 theorem map_comp {S T U : Finset ι} (h₁ : S ⊆ T) (h₂ : T ⊆ U) :
@@ -144,7 +129,8 @@ theorem map_comp {S T U : Finset ι} (h₁ : S ⊆ T) (h₂ : T ⊆ U) :
   obtain rfl | hST := eq_or_ne S T
   · rw [map_self, id_comp]
   obtain ⟨V, hSV, hVT, e⟩ := exists_map_eq_comp d h₁ hST
-  rw [e, map_eq_comp hd hSV (hVT.trans h₂), assoc, ih _ (hk ▸ card_sub_card_lt hSV hVT) hVT rfl]
+  rw [e, map_eq_comp hd hSV (hVT.trans h₂), assoc,
+    ih _ (hk ▸ Nat.sub_lt_sub_left (card_lt_card (h₁.lt_of_ne hST)) (card_lt_card hSV.lt)) hVT rfl]
 
 end OfCubeEdges
 
@@ -194,10 +180,10 @@ private lemma naturality_homOfLE {S T : Finset ι} (h : S ⊆ T) :
   | _ k ih =>
   obtain rfl | hST := eq_or_ne S T
   · simp
-  obtain ⟨U, hSU, hUT⟩ := Functor.OfCubeEdges.exists_covBy_subset h hST
+  obtain ⟨U, hSU, hUT⟩ := exists_covBy_le_of_lt (h.lt_of_ne hST)
   rw [← homOfLE_comp hSU.le hUT, F.map_comp, G.map_comp, assoc,
-    ih _ (hk ▸ Functor.OfCubeEdges.card_sub_card_lt hSU hUT) hUT rfl, ← assoc, naturality hSU,
-    assoc]
+    ih _ (hk ▸ Nat.sub_lt_sub_left (card_lt_card (h.lt_of_ne hST)) (card_lt_card hSU.lt)) hUT rfl,
+    ← assoc, naturality hSU, assoc]
 
 /-- The map of cubes `F ⟶ G` with components `app`, which need only be natural along the edges
 `S ⋖ T` of the cube. -/
