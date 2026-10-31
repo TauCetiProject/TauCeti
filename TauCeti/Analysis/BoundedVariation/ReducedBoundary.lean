@@ -39,12 +39,12 @@ proves their basic properties.
   (`TauCeti.locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary`), so otherwise
   `∂*s` is empty (`TauCeti.reducedBoundary_eq_empty_of_not`).
 * Every point of the reduced boundary lies in the support of `|Dχ_s|`
-  (`TauCeti.variationMeasure_preimage_closedBall_ne_zero`), and hence in the topological
-  frontier of `s` (`TauCeti.reducedBoundary_subset_frontier`).
+  (`TauCeti.variationMeasure_preimage_closedBall_ne_zero`), and hence, when `μ` is an additive
+  Haar measure, in the topological frontier of `s` (`TauCeti.reducedBoundary_subset_frontier`).
 * The reduced boundary and the outer normal only depend on `s` almost everywhere on `Ω`
-  (`TauCeti.reducedBoundary_congr_ae`, `TauCeti.outerNormal_congr_ae`), and the complement has the
-  same reduced boundary with the opposite normal (`TauCeti.reducedBoundary_compl`,
-  `TauCeti.outerNormal_compl`).
+  (`TauCeti.reducedBoundary_congr_ae`, `TauCeti.outerNormal_congr_ae`). When `μ` is an additive
+  Haar measure, the complement has the same reduced boundary with the opposite normal
+  (`TauCeti.reducedBoundary_compl`, `TauCeti.outerNormal_compl`).
 
 The definition uses closed balls, matching `TauCeti.HasDensityAt`; it does not require `x` to lie
 in the support of `|Dχ_s|`, since a unit limit forces this. When `s` does not have locally finite
