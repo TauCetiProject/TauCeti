@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Recut
+public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.SameSideRecut
 
 /-!
 # Off-diagonal unpaired hexagon composites have a mixed-side overlap
@@ -24,13 +25,9 @@ The argument has two independent parts.
   therefore be the single one. Its hexagon carries no `X`-marking, the other piece carries none
   either, and the repartition is a counted composite
   (`GridDiagram.exists_toRectangleDecomposition_eq_of_isRepartition`).
-* *Shapes.* For a same-side overlap, the recut cuts the L-shaped union the other way. Its two
-  pieces keep the outer sides of the original rectangles in the same position, and their rows
-  are either the rows of the corresponding original rectangle or the union of both row
-  intervals. The replaced grid line is a side of the original hexagon. If it is that hexagon's
-  outer side, the corresponding recut piece keeps it; if it is the common side, the recut piece
-  spanning both row intervals has it. In both cases the two turn rows remain on that side, in
-  the same order, so this piece has the shape of a commutation hexagon of the same kind.
+* *Shapes.* For a same-side overlap, the recut cuts the L-shaped union the other way, and one of
+  its pieces again underlies a commutation hexagon of the same kind
+  (`GridHexagonCompositeDecomposition.exists_hexagon_of_isRecut`).
 
 ## Main results
 
@@ -154,149 +151,6 @@ theorem exists_toRectangleDecomposition_eq_of_isRepartition {x z : GridState n}
     · simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
         GridRectangleHexagonDecomposition.toRectangleDecomposition, hP]
 
-/-! ### Hexagon shapes in a same-side recut -/
-
-/-- An oriented rectangle has the shape of a commutation hexagon of `C`: its terminal side is the
-replaced grid line, carrying the opposite turn row and above it the turn row, or its initial side
-is the replaced grid line, carrying the turn row and above it the opposite turn row. -/
-private def IsHexagonShape {u v : GridState n} (e : GridRectangleBetween u v) : Prop :=
-  (e.right = b ∧ C.oppositeTurnRow ∈ Grid.cIco e.bottom e.top ∧
-      C.turnRow ∈ Grid.cIoo C.oppositeTurnRow e.top) ∨
-    (e.left = b ∧ C.turnRow ∈ Grid.cIco e.bottom e.top ∧
-      C.oppositeTurnRow ∈ Grid.cIoo C.turnRow e.top)
-
-/-- An oriented rectangle of hexagon shape underlies a commutation hexagon. -/
-private theorem exists_of_isHexagonShape {u v : GridState n} {e : GridRectangleBetween u v}
-    (he : G.IsHexagonShape C e) :
-    ∃ P : GridCommutationHexagonBetween a C.turnRow C.oppositeTurnRow u v,
-      P.toGridRectangleBetween = e := by
-  rcases he with ⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩
-  · exact ⟨Sum.inl ⟨e, hr, hs, hs'⟩, GridCommutationHexagonBetween.toGridRectangleBetween_inl _⟩
-  · exact ⟨Sum.inr ⟨e, hl, hs, hs'⟩, GridCommutationHexagonBetween.toGridRectangleBetween_inr _⟩
-
-/-- The rectangle under the hexagon of a composite has hexagon shape. -/
-private theorem isHexagonShape_first_or_isHexagonShape_second {x z : GridState n}
-    (F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z) :
-    G.IsHexagonShape C F.toRectangleDecomposition.first ∨
-      G.IsHexagonShape C F.toRectangleDecomposition.second := by
-  -- The composite is rewritten as a whole: its pieces have types depending on its middle state.
-  rcases F with ⟨m, P | P, r⟩ | ⟨m, r, P | P⟩
-  · rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
-    dsimp only [GridHexagonRectangleDecomposition.toRectangleDecomposition]
-    rw [GridCommutationHexagonBetween.toGridRectangleBetween_inl]
-    exact Or.inl (Or.inl ⟨P.right_eq, P.lower_mem, P.upper_mem⟩)
-  · rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
-    dsimp only [GridHexagonRectangleDecomposition.toRectangleDecomposition]
-    rw [GridCommutationHexagonBetween.toGridRectangleBetween_inr]
-    exact Or.inl (Or.inr ⟨P.left_eq, P.lower_mem, P.upper_mem⟩)
-  · rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
-    dsimp only [GridRectangleHexagonDecomposition.toRectangleDecomposition]
-    rw [GridCommutationHexagonBetween.toGridRectangleBetween_inl]
-    exact Or.inr (Or.inl ⟨P.right_eq, P.lower_mem, P.upper_mem⟩)
-  · rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
-    dsimp only [GridRectangleHexagonDecomposition.toRectangleDecomposition]
-    rw [GridCommutationHexagonBetween.toGridRectangleBetween_inr]
-    exact Or.inr (Or.inr ⟨P.left_eq, P.lower_mem, P.upper_mem⟩)
-
-/-- In the recut of two empty rectangles sharing their terminal side, a piece has hexagon shape
-when one of the original rectangles has. -/
-private theorem isHexagonShape_recut_of_right_eq_right {x z : GridState n}
-    (D : GridRectangleDecomposition x z) (hcommon : D.first.right = D.second.right)
-    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
-    (hD : G.IsHexagonShape C D.first ∨ G.IsHexagonShape C D.second) :
-    G.IsHexagonShape C (D.recut hone hfirst hsecond).first ∨
-      G.IsHexagonShape C (D.recut hone hfirst hsecond).second := by
-  have hleft : D.first.left ≠ D.second.left := fun h =>
-    D.sideColumns_ne_of_hasOneCommonSide hone (by
-      rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, h, hcommon])
-  -- The second rectangle lies directly below the first; their rows join at the first's bottom.
-  obtain ⟨-, hrow⟩ := D.cyclicOrder_of_isEmpty_of_right_eq_right hcommon hleft hfirst hsecond
-  have htop : D.second.top = D.first.bottom := by
-    rw [GridRectangleBetween.top_def, GridRectangleBetween.bottom_def, ← hcommon]
-    exact D.first.map_right
-  have hdata := D.isRecutOfRightEqRight_recut hcommon hone hfirst hsecond
-  obtain ⟨hfl, hsl⟩ := hdata.recut_sides
-  unfold IsHexagonShape at hD ⊢
-  rw [hfl, hsl]
-  rcases hdata.recut_branch with ⟨hcol, -, -, hsr⟩ | ⟨hcol, -, hfr, -⟩
-  · -- The first piece has the second rectangle's rows; the second spans both row intervals.
-    obtain ⟨-, -, hfb, hft, hsb, hst⟩ :=
-      D.recut_geometry_of_right_eq_right_of_mem_cIoo hcommon hcol hfirst hsecond
-    rw [hfb, hft, hsb, hst, hsr]
-    rcases hD with (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩) | (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩)
-    · exact Or.inr (Or.inl ⟨hr, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
-    · exact Or.inr (Or.inr ⟨hl, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
-    · rw [htop] at hs hs'
-      exact Or.inr (Or.inl ⟨hcommon.trans hr, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
-        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
-    · rw [htop] at hs hs'
-      exact Or.inl (Or.inr ⟨hl, hs, hs'⟩)
-  · -- The first piece spans both row intervals; the second has the first rectangle's rows.
-    obtain ⟨-, -, hfb, hft, hsb, hst⟩ :=
-      D.recut_geometry_of_right_eq_right_of_second_left_mem_cIoo hcommon hcol hfirst hsecond
-    rw [hfb, hft, hsb, hst, hfr]
-    rcases hD with (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩) | (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩)
-    · exact Or.inl (Or.inl ⟨hr, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
-    · exact Or.inr (Or.inr ⟨hl, hs, hs'⟩)
-    · rw [htop] at hs hs'
-      exact Or.inl (Or.inl ⟨hcommon.trans hr, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
-        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
-    · rw [htop] at hs hs'
-      exact Or.inl (Or.inr ⟨hl, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
-        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
-
-/-- In the recut of two empty rectangles sharing their initial side, a piece has hexagon shape
-when one of the original rectangles has. -/
-private theorem isHexagonShape_recut_of_left_eq_left {x z : GridState n}
-    (D : GridRectangleDecomposition x z) (hcommon : D.first.left = D.second.left)
-    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
-    (hD : G.IsHexagonShape C D.first ∨ G.IsHexagonShape C D.second) :
-    G.IsHexagonShape C (D.recut hone hfirst hsecond).first ∨
-      G.IsHexagonShape C (D.recut hone hfirst hsecond).second := by
-  have hright : D.first.right ≠ D.second.right := fun h =>
-    D.sideColumns_ne_of_hasOneCommonSide hone (by
-      rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, h, hcommon])
-  -- The second rectangle lies directly above the first; their rows join at the first's top.
-  obtain ⟨hcol, hrow⟩ := D.cyclicOrder_of_isEmpty_of_left_eq_left hcommon hright hfirst hsecond
-  have hbottom := D.second_bottom_eq_first_top_of_left_eq_left hcommon
-  have hdata := D.isRecutOfLeftEqLeft_recut hcommon hone hfirst hsecond
-  obtain ⟨hfr, hsr⟩ := hdata.recut_sides
-  unfold IsHexagonShape at hD ⊢
-  rcases hcol with hcol | hcol
-  · -- The first piece has the second rectangle's rows; the second spans both row intervals.
-    obtain ⟨-, -, hsl, -⟩ :=
-      D.recut_sides_of_left_eq_left_of_first_right_mem_cIoo hcommon hcol hfirst hsecond
-    obtain ⟨hfb, hft⟩ := D.recut_first_bottom_top_of_left_eq_left_of_first_right_mem_cIoo
-      hcommon hcol hfirst hsecond
-    obtain ⟨hsb, hst⟩ := D.recut_second_bottom_top_of_left_eq_left_of_first_right_mem_cIoo
-      hcommon hcol hfirst hsecond
-    rw [hfr, hsr, hfb, hft, hsb, hst, hsl]
-    rcases hD with (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩) | (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩)
-    · exact Or.inr (Or.inl ⟨hr, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
-        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
-    · exact Or.inr (Or.inr ⟨hl, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
-        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
-    · rw [hbottom] at hs
-      exact Or.inl (Or.inl ⟨hr, hs, hs'⟩)
-    · rw [hbottom] at hs
-      exact Or.inr (Or.inr ⟨hcommon.trans hl, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
-  · -- The first piece spans both row intervals; the second has the first rectangle's rows.
-    obtain ⟨hfl, -, -, -⟩ :=
-      D.recut_sides_of_left_eq_left_of_mem_cIoo hcommon hcol hfirst hsecond
-    obtain ⟨hfb, hft⟩ :=
-      D.recut_first_bottom_top_of_left_eq_left_of_mem_cIoo hcommon hcol hfirst hsecond
-    obtain ⟨hsb, hst⟩ :=
-      D.recut_second_bottom_top_of_left_eq_left_of_mem_cIoo hcommon hcol hfirst hsecond
-    rw [hfr, hsr, hfb, hft, hsb, hst, hfl]
-    rcases hD with (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩) | (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩)
-    · exact Or.inr (Or.inl ⟨hr, hs, hs'⟩)
-    · exact Or.inl (Or.inr ⟨hl, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
-        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
-    · rw [hbottom] at hs
-      exact Or.inl (Or.inl ⟨hr, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
-    · rw [hbottom] at hs
-      exact Or.inl (Or.inr ⟨hcommon.trans hl, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
-
 /-! ### Same-side composites are paired -/
 
 /-- The recut of a counted composite whose two rectangles share a side column with the same
@@ -309,17 +163,11 @@ theorem exists_isRecut_of_hasSameSideOverlap {x z : GridState n}
     ∃ F' ∈ G.hexagonCompositeDecompositions C x z,
       F.toRectangleDecomposition.IsRecut F'.toRectangleDecomposition := by
   obtain ⟨hfirst, hsecond⟩ := G.isEmpty_of_mem_hexagonCompositeDecompositions C hF
-  obtain ⟨hone, hside⟩ := F.toRectangleDecomposition.hasSameSideOverlap_iff.mp hsame
-  have hrecut := F.toRectangleDecomposition.isRecut_recut hone hfirst hsecond
-  have hshape := G.isHexagonShape_first_or_isHexagonShape_second C F
-  have hshape' : G.IsHexagonShape C (F.toRectangleDecomposition.recut hone hfirst hsecond).first ∨
-      G.IsHexagonShape C (F.toRectangleDecomposition.recut hone hfirst hsecond).second := by
-    rcases hside with hcommon | hcommon
-    · exact G.isHexagonShape_recut_of_left_eq_left C _ hcommon hone hfirst hsecond hshape
-    · exact G.isHexagonShape_recut_of_right_eq_right C _ hcommon hone hfirst hsecond hshape
+  have hrecut := F.toRectangleDecomposition.isRecut_recut
+    (F.toRectangleDecomposition.hasSameSideOverlap_iff.mp hsame).1 hfirst hsecond
   obtain ⟨F', hF', hF'E⟩ := G.exists_toRectangleDecomposition_eq_of_isRepartition C hF
     hrecut.isRepartition hrecut.isEmpty_first hrecut.isEmpty_second
-    (hshape'.imp (G.exists_of_isHexagonShape C) (G.exists_of_isHexagonShape C))
+    (F.exists_hexagon_of_isRecut hsame hfirst hsecond hrecut)
   exact ⟨F', hF', hF'E ▸ hrecut⟩
 
 /-- Off the diagonal, every unpaired hexagon composite has a mixed-side overlap: its two
