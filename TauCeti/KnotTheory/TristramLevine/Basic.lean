@@ -94,7 +94,8 @@ theorem isHermitian_tristramLevineForm (V : Matrix ι ι ℝ) (ω : ℂ) :
 
 /-- The Tristram--Levine form of the zero matrix vanishes. -/
 @[simp]
-theorem tristramLevineForm_zero (ω : ℂ) : tristramLevineForm (0 : Matrix ι ι ℝ) ω = 0 := by
+theorem tristramLevineForm_zero_matrix (ω : ℂ) :
+    tristramLevineForm (0 : Matrix ι ι ℝ) ω = 0 := by
   simp [tristramLevineForm]
 
 /-- The Tristram--Levine form vanishes at `ω = 1`. -/
@@ -185,10 +186,10 @@ theorem tristramLevineSignature_one (V : Matrix ι ι ℝ) : tristramLevineSigna
 
 /-- The zero matrix has Tristram--Levine signature zero. -/
 @[simp]
-theorem tristramLevineSignature_zero (ω : ℂ) :
+theorem tristramLevineSignature_zero_matrix (ω : ℂ) :
     tristramLevineSignature (0 : Matrix ι ι ℝ) ω = 0 := by
   unfold tristramLevineSignature
-  simpa only [tristramLevineForm_zero] using (Matrix.IsHermitian.signature_zero (ι := ι))
+  simpa only [tristramLevineForm_zero_matrix] using (Matrix.IsHermitian.signature_zero (ι := ι))
 
 /-- **At `ω = -1` the Tristram--Levine signature is the classical signature** of the Seifert
 matrix. -/

@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Markov.Basic
-public import TauCeti.KnotTheory.BraidWord.Equivalence
 public import TauCeti.KnotTheory.BraidWord.SeifertMatrix.Basic
-import TauCeti.KnotTheory.BraidWord.FreeCancellation.SeifertMatrix
-import TauCeti.KnotTheory.BraidWord.SeifertMatrix.BraidRelation
+import TauCeti.KnotTheory.BraidWord.SeifertMatrix.Equivalence
 
 /-!
 # The Tristram–Levine signature of a closed braid
@@ -20,24 +18,21 @@ Tristram–Levine signatures `σ_ω` of that matrix depend only on the Markov eq
 braid `w` represents, so they are invariants of the oriented link obtained by closing it (by
 Markov's theorem, which is not formalized here).
 
-The moves relating braid words are handled one at a time. Artin relations
-(`TauCeti.BraidWord.tristramLevineSignature_seifertMatrix_eq_of_artinStep`) and free insertion
-or deletion of an inverse pair
-(`TauCeti.BraidWord.FreeCancelStep.tristramLevineSignature_seifertMatrix_eq`) change the matrix
-by a congruence, an elementary enlargement, or a zero row and column, so two words representing
-the same braid have the same signatures
-(`TauCeti.BraidWord.tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq`). This defines
-`TauCeti.MarkovBraid.tristramLevineSignature` on braids. Since inserting `σᵢ σᵢ⁻¹` on every unused
-level gives a word whose canonical surface is connected, the value is the signature of a connected
-Seifert surface of the closure. Conjugation `c b c⁻¹` is a cyclic rotation
-of a word followed by a free cancellation
+Two words representing the same braid have the same signatures
+(`TauCeti.BraidWord.tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq`), since Artin
+relations and free cancellation change the matrix by a congruence, an elementary enlargement, or a
+zero row and column. This defines `TauCeti.MarkovBraid.tristramLevineSignature` on braids. Since
+inserting `σᵢ σᵢ⁻¹` on every unused level gives a word whose canonical surface is connected, the
+value is the signature of a connected Seifert surface of the closure. Conjugation `c b c⁻¹` is a
+cyclic rotation of a word followed by a free cancellation
 (`TauCeti.BraidWord.tristramLevineSignature_seifertMatrix_rotate`), and stabilization only relabels
 the loops (`TauCeti.BraidWord.tristramLevineSignature_seifertMatrix_stabilize`), so the signature is
 constant on Markov equivalence classes (`TauCeti.MarkovEquiv.tristramLevineSignature_eq`).
 
-Unlike the Alexander polynomial, which is symmetric under `t ↦ t⁻¹`, the signature tells a knot
-from its mirror image. The braid `σ₀³` closes to the right-handed trefoil, of signature `-2`, and
-`σ₀⁻³` to the left-handed one, of signature `2`, so the two braids are not Markov equivalent
+Unlike the Alexander polynomial, which is symmetric under `t ↦ t⁻¹`, the signature can tell a
+knot from its mirror image: mirroring negates it, so it separates the two whenever it is nonzero.
+The braid `σ₀³` closes to the right-handed trefoil, of signature `-2`, and `σ₀⁻³` to the
+left-handed one, of signature `2`, so the two braids are not Markov equivalent
 (`TauCeti.not_markovEquiv_sigma_pow_three_sigma_inv_pow_three`). Informally, by Markov's theorem,
 the trefoil is not isotopic to its mirror image.
 
@@ -48,9 +43,6 @@ the trefoil is not isotopic to its mirror image.
 
 ## Main results
 
-* `TauCeti.BraidWord.WordEquiv.tristramLevineSignature_seifertMatrix_eq` and
-  `TauCeti.BraidWord.tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq`: words representing the
-  same braid have Seifert matrices with the same Tristram–Levine signatures.
 * `TauCeti.MarkovBraid.tristramLevineSignature_eq_of_toBraid_eq`: the signature of a braid is that
   of the Seifert matrix of any word representing it.
 * `TauCeti.IsMarkovMove.tristramLevineSignature_eq` and
@@ -77,29 +69,6 @@ public section
 namespace TauCeti
 
 open BraidGroup BraidWord KnotTheory
-
-namespace BraidWord
-
-variable {n : ℕ} {w w' : BraidWord n}
-
-/-- Braid words connected by Artin relations and free cancellation have Seifert matrices with the
-same Tristram–Levine signatures. -/
-theorem WordEquiv.tristramLevineSignature_seifertMatrix_eq (h : WordEquiv w w') (ω : ℂ) :
-    tristramLevineSignature (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω =
-      tristramLevineSignature (w'.seifertMatrix.map ((↑) : ℤ → ℝ)) ω :=
-  WordEquiv.induction (fun h ↦ tristramLevineSignature_seifertMatrix_eq_of_artinStep h ω)
-    (fun h ↦ h.tristramLevineSignature_seifertMatrix_eq ω) (fun _ ↦ rfl) (fun _ ih ↦ ih.symm)
-    (fun _ _ ih ih' ↦ ih.trans ih') h
-
-/-- **The signatures of the Seifert matrix depend only on the braid.** Two braid words
-representing the same braid have Seifert matrices with the same Tristram–Levine signatures. -/
-theorem tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq (h : w.toBraid = w'.toBraid)
-    (ω : ℂ) :
-    tristramLevineSignature (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω =
-      tristramLevineSignature (w'.seifertMatrix.map ((↑) : ℤ → ℝ)) ω :=
-  (toBraid_eq_iff_wordEquiv.mp h).tristramLevineSignature_seifertMatrix_eq ω
-
-end BraidWord
 
 namespace MarkovBraid
 

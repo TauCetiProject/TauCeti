@@ -844,11 +844,9 @@ section Unused
 variable (u v : BraidWord n) (i : Fin (n - 1)) (ε : ℤˣ)
 
 private theorem levelAt_ne_of_not_exists (h : ¬∃ x ∈ u ++ v, x.1 = i) (k : ℕ) :
-    (u ++ v).levelAt k ≠ some (i : ℕ) := by
-  intro hk
-  have hlt : k < (u ++ v).length := (levelAt_ne_none_iff _).1 (by simp [hk])
-  rw [levelAt_of_lt _ hlt, Option.some_inj] at hk
-  exact h ⟨_, List.getElem_mem hlt, Fin.ext hk⟩
+    (u ++ v).levelAt k ≠ some (i : ℕ) := fun hk ↦
+  let ⟨hlt, hk⟩ := (levelAt_eq_some_iff _).1 hk
+  h ⟨_, List.getElem_mem hlt, Fin.ext hk⟩
 
 /-- The loops after inserting on an unused level: the moved loops of `u ++ v` and the loop
 between the two inserted bands. -/
@@ -975,7 +973,8 @@ theorem tristramLevineSignature_seifertMatrix_insert (ε : ℤˣ) (ω : ℂ) :
   · obtain ⟨ι, hι⟩ := exists_seifertMatrix_insert_eq_fromBlocks u v i ε h
     have := congrArg (fun M ↦ tristramLevineSignature (M.map ((↑) : ℤ → ℝ)) ω) hι
     simp only [fromBlocks_map, Matrix.map_zero _ Int.cast_zero, ← submatrix_map,
-      tristramLevineSignature_fromBlocks_zero, tristramLevineSignature_zero, add_zero] at this
+      tristramLevineSignature_fromBlocks_zero, tristramLevineSignature_zero_matrix,
+      add_zero] at this
     rwa [← ι.symm_symm, tristramLevineSignature_submatrix_equiv_self] at this
   simp only [← Int.coe_castRingHom]
   rcases Int.units_eq_one_or ε with rfl | rfl

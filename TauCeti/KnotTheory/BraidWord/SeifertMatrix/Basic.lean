@@ -71,7 +71,10 @@ strands, the empty word gives the `0 × 0` matrix while `σ₁ σ₁⁻¹` gives
 to the two-component unlink. Among words using every level, the remaining moves generating Markov
 equivalence of braid words (the braid relation, and free cancellation that keeps every level used)
 change the matrix only up to S-equivalence, as for any two Seifert matrices of isotopic links; that
-is what makes its Alexander polynomial and Tristram–Levine signatures invariants of the closure.
+is what makes its Alexander polynomial an invariant of the closure. The Tristram–Levine signatures
+need no condition on the levels: free cancellation on an unused level only adds a zero row and
+column, so for every word they are invariant under Markov equivalence
+(`TauCeti.MarkovEquiv.tristramLevineSignature_eq` in `TauCeti.KnotTheory.Markov.TristramLevine`).
 Those comparisons are not made here.
 
 ## Main definitions
