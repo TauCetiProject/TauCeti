@@ -21,9 +21,14 @@ submonoid `S`:
 * `LocalizedModule.map_comp`: localization is functorial, `(g ∘ f)ₛ = gₛ ∘ fₛ`.
 * `LocalizedModule.bijective_map_lsmul`: multiplication by an element of `S` becomes bijective
   after localizing at `S`.
+* `LocalizedModule.bijective_map_single`: the inclusion of a factor of a finite product becomes
+  bijective after localizing at `S` if every other factor vanishes there.
 * `LinearMap.exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id`: if `M` is finitely
   presented and `N` is finitely generated, a left inverse of the localization `iₛ` of
   `i : N → M` descends to a map `φ : M → N` with `φ ∘ i` multiplication by some element of `S`.
+* `Module.FinitePresentation.exists_bijective_map_of_isLocalizedModule`: if `M` is finitely
+  presented, an isomorphism between localizations of `M` and `N` at `S` gives a map `M → N` whose
+  localization at `S` is bijective.
 * `LocalizedModule.bijective_map_dual_eval_iff`: if `M` and its dual are finitely presented, the
   map `M → M**` becomes bijective after localizing at `S` exactly when the localization `Mₛ` is
   reflexive over `Rₛ`. Taking duals commutes with localization for finitely presented modules,
@@ -58,6 +63,36 @@ theorem bijective_map_lsmul {s : R} (hs : s ∈ S) :
   ext x
   induction x using induction_on with
   | h m t => simp [smul'_mk]
+
+variable {S} in
+/-- Localizing the inclusion `E i → ∏ⱼ E j` of a factor of a finite product gives a bijection when
+every other factor vanishes after localizing at `S`. -/
+theorem bijective_map_single {ι : Type*} [Finite ι] [DecidableEq ι] {E : ι → Type*}
+    [∀ i, AddCommMonoid (E i)] [∀ i, Module R (E i)] (i : ι)
+    (h : ∀ j ≠ i, Subsingleton (LocalizedModule S (E j))) :
+    Function.Bijective (map S (LinearMap.single R E i)) := by
+  have := Fintype.ofFinite ι
+  refine ⟨map_injective S _ (Pi.single_injective i), fun y ↦ ?_⟩
+  induction y using induction_on with
+  | h x s =>
+    -- Some `u ∈ S` kills every coordinate of `x` other than the `i`-th.
+    have hc (j : ι) : ∃ c : S, j ≠ i → c • x j = 0 := by
+      by_cases hj : j = i
+      · exact ⟨1, fun h ↦ (h hj).elim⟩
+      · have := h j hj
+        obtain ⟨c, hc⟩ := (IsLocalizedModule.eq_zero_iff S (mkLinearMap S (E j))).mp
+          (Subsingleton.elim _ 0)
+        exact ⟨c, fun _ ↦ hc⟩
+    choose c hc using hc
+    have hux : (∏ j, c j) • x = Pi.single i ((∏ j, c j) • x i) := by
+      funext j
+      by_cases hj : j = i
+      · subst hj
+        simp
+      · rw [Pi.single_eq_of_ne hj, Pi.smul_apply, ← Finset.prod_erase_mul _ _ (Finset.mem_univ j),
+          mul_smul, hc j hj, smul_zero]
+    refine ⟨mk ((∏ j, c j) • x i) ((∏ j, c j) * s), ?_⟩
+    rw [map_mk, LinearMap.coe_single, ← hux, mk_cancel_common_left]
 
 end LocalizedModule
 
@@ -94,6 +129,28 @@ theorem exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id
   simpa [Submonoid.smul_def, mul_smul] using congr($hu n)
 
 end LinearMap
+
+namespace Module.FinitePresentation
+
+variable {R : Type*} [CommRing R] (S : Submonoid R) {M N M' N' : Type*} [AddCommGroup M]
+  [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup M'] [Module R M'] [AddCommGroup N']
+  [Module R N'] (f : M →ₗ[R] M') [IsLocalizedModule S f] (g : N →ₗ[R] N') [IsLocalizedModule S g]
+
+/-- Let `M` be finitely presented. An isomorphism `l : M' ≃ N'` between localizations of `M` and
+`N` at `S` comes, up to multiplication by an element of `S`, from a linear map `h : M → N`; in
+particular the localization of `h` is bijective. This is the first step of the proof of Mathlib's
+`Module.FinitePresentation.exists_lift_equiv_of_isLocalizedModule`. -/
+theorem exists_bijective_map_of_isLocalizedModule [FinitePresentation R M] (l : M' ≃ₗ[R] N') :
+    ∃ h : M →ₗ[R] N, Function.Bijective (IsLocalizedModule.map S f g h) := by
+  obtain ⟨h, s, hh⟩ := exists_lift_of_isLocalizedModule S g (l.toLinearMap ∘ₗ f)
+  refine ⟨h, ?_⟩
+  have : IsLocalizedModule.map S f g h = (s • LinearMap.id) ∘ₗ l.toLinearMap := by
+    refine IsLocalizedModule.ext S f (IsLocalizedModule.map_units g) (LinearMap.ext fun x ↦ ?_)
+    simpa using congr($hh x)
+  rw [this]
+  exact ((Module.End.isUnit_iff _).mp (IsLocalizedModule.map_units g s)).comp l.bijective
+
+end Module.FinitePresentation
 
 namespace LocalizedModule
 
