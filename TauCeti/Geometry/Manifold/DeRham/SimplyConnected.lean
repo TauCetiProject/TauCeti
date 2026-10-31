@@ -122,6 +122,9 @@ private def PrimitiveSpace.graph (g : M → F) (y : M) : PrimitiveSpace φ := ((
 
 private theorem PrimitiveSpace.proj_graph (y : M) : proj φ (graph φ g y) = y := rfl
 
+private theorem PrimitiveSpace.snd_graph (y : M) :
+    Prod.snd (α := M) (β := F) (graph φ g y) = g y := rfl
+
 /-- Every element of `PrimitiveSpace φ` lies on the graph of the constant function at its
 value. -/
 private theorem PrimitiveSpace.eq_graph (e : PrimitiveSpace φ) :
@@ -188,7 +191,7 @@ private theorem PrimitiveSpace.isCoveringMap_proj {r : ℕ∞} (hr : 1 ≤ r) (h
     refine mem_iUnion.mpr ⟨WithTopology.toTopology _ (Prod.snd (α := M) (β := F) e -
       g x (proj φ e)), proj φ e, he, ?_⟩
     refine Prod.ext_iff.mpr ⟨rfl, ?_⟩
-    change g x (proj φ e) + c _ = Prod.snd (α := M) (β := F) e
+    rw [snd_graph]
     simp only [c, WithTopology.ofTopology_toTopology, add_sub_cancel]
 
 /-! ### Exactness on simply connected manifolds -/
@@ -216,7 +219,11 @@ theorem exists_mextDeriv_eq_of_simplyConnectedSpace [SimplyConnectedSpace M] {r 
   obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
   refine ⟨g, f x - g x, hg x, ?_, hgU.2.2 x hxU⟩
   have hmem : s x ∈ PrimitiveSpace.graph φ (fun y ↦ g y + (f x - g x)) '' U :=
-    ⟨x, hxU, by rw [hsf]; exact Prod.ext_iff.mpr ⟨rfl, show g x + (f x - g x) = f x by abel⟩⟩
+    ⟨x, hxU, by
+      rw [hsf]
+      refine Prod.ext_iff.mpr ⟨rfl, ?_⟩
+      rw [PrimitiveSpace.snd_graph, PrimitiveSpace.snd_graph]
+      abel⟩
   filter_upwards [s.continuous.continuousAt.preimage_mem_nhds
     ((PrimitiveSpace.isOpen_image_graph (hgU.add_const (f x - g x))).mem_nhds hmem)]
     with y hy

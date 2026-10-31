@@ -39,8 +39,8 @@ differentiation commutes with this extension.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`: the exterior
   derivative lowers regularity by one.
 * `TauCeti.mextDeriv_mem_smoothBundleForms`: the exterior derivative preserves smooth forms.
-* `TauCeti.exists_mextDeriv_eq_of_forall_eventuallyEq_add_const`: local primitives of a `1`-form
-  which differ by constants glue to a global primitive.
+* `TauCeti.exists_mextDeriv_eq_of_forall_eventuallyEq_add_const`: a global function which near
+  every point differs by a constant from a local primitive of a `1`-form is itself a primitive.
 * `TauCeti.mextDerivₗ`: the exterior derivative as a linear map on smooth fixed-coefficient forms.
 * `TauCeti.mdifferentiableAt_ofFunction`: the `0`-form of a differentiable function is a
   differentiable section.
