@@ -58,6 +58,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_comp` and `Matrix.SpecialLinearGroup.map_id`: the two functor
   laws for base change, which support whole-matrix reduction arguments such as the level
   antitonicity of the principal congruence subgroups.
+* `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
+  along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
@@ -134,6 +136,31 @@ theorem toGL_map {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
   intro i j
   simp only [coe_GL_coe_matrix, map_apply_coe, GeneralLinearGroup.map_apply,
     RingHom.mapMatrix_apply, Matrix.map_apply]
+
+/-- Base change of special linear groups along an injective ring hom is injective. -/
+theorem map_injective {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
+    [DecidableEq n] {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (map (n := n) f) :=
+  fun _ _ h ↦ Subtype.ext (Matrix.map_injective hf (congrArg Subtype.val h))
+
+/-- Along an injective ring hom, a special linear matrix comes by base change exactly when each of
+its entries lies in the range of the ring hom. Injectivity lifts the determinant-one condition.
+
+This is not a `simp` lemma: `MonoidHom.mem_range` already unfolds the left-hand side into an
+existential, so it is not in `simp`-normal form. -/
+theorem mem_range_map_iff {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
+    [DecidableEq n] {f : R →+* S} (hf : Function.Injective f) (g : SpecialLinearGroup n S) :
+    g ∈ (map (n := n) f).range ↔ ∀ i j, g i j ∈ f.range := by
+  constructor
+  · rintro ⟨g₀, rfl⟩ i j
+    exact ⟨g₀ i j, rfl⟩
+  · intro hg
+    choose A hA using hg
+    have hmap : (Matrix.of A).map f = g := Matrix.ext hA
+    have hdet : (Matrix.of A).det = 1 := by
+      apply hf
+      rw [RingHom.map_det, RingHom.mapMatrix_apply, hmap, g.property, map_one]
+    exact ⟨⟨Matrix.of A, hdet⟩, Subtype.ext hmap⟩
 
 /-- Right multiplication of row vectors by `g ∈ SL(n, R)` is inverted by `g⁻¹`. -/
 theorem vecMul_eq_iff_eq_vecMul_inv {R : Type*} [CommRing R] {n : Type*} [Fintype n]

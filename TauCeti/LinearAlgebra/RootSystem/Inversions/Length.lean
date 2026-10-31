@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
+import Mathlib.Data.Set.Finite.List
+
 /-!
 # Length equals inversions
 
@@ -40,6 +42,8 @@ length-function axioms in their inversion-count spelling.
 * `TauCeti.ncard_inversions_wordProd_modEq_length` and
   `TauCeti.length_modEq_length_of_wordProd_eq`: every word spelling a given element has the same
   length parity, namely that of the inversion count.
+* `RootPairing.finite_weylGroup_of_base`: the Weyl group of a base with finitely many roots is
+  finite, whether or not the roots span.
 * `TauCeti.ncard_inversions_inv` and `TauCeti.ncard_inversions_mul_le`: the inversion count is
   invariant under inversion and subadditive.
 * `TauCeti.ncard_inversions_mul_ofIdx_lt_of_mem`,
@@ -151,6 +155,17 @@ theorem isLeast_ncard_inversions (w : P.weylGroup) :
   refine ⟨exists_wordProd_eq_and_length_eq_ncard_inversions P b w, ?_⟩
   rintro n ⟨l, rfl, rfl⟩
   exact ncard_inversions_wordProd_le_length P b l
+
+include b in
+/-- **The Weyl group of a base with finitely many roots is finite.** Each element is spelled by a
+word in the finitely many simple reflections with as many letters as it has inversions, and there
+are at most as many inversions as positive roots. The roots need not span. -/
+theorem _root_.RootPairing.finite_weylGroup_of_base : Finite P.weylGroup := by
+  refine Set.finite_univ_iff.mp
+    (((List.finite_length_le b.support (posRoots P b).ncard).image (wordProd P b)).subset ?_)
+  rintro w -
+  obtain ⟨l, hl, hlen⟩ := exists_wordProd_eq_and_length_eq_ncard_inversions P b w
+  exact ⟨l, hlen.trans_le (ncard_inversions_le P b w), hl⟩
 
 /-- **The inversion count is invariant under inversion**: reversing a word spelling `w` spells
 `w⁻¹`, since a simple reflection is its own inverse. -/

@@ -573,6 +573,13 @@ composite of the extended reflections. -/
 def geodesicReflectionComp (g h : PSL(2, ℝ)) : PSL(2, ℝ) :=
   g * pslConjJ (g⁻¹ * h) * h⁻¹
 
+-- The body of `geodesicReflectionComp` is not `@[expose]`d, so downstream modules rewrite with
+-- this.
+/-- The product of two geodesic reflections, unfolded. -/
+theorem geodesicReflectionComp_def (g h : PSL(2, ℝ)) :
+    geodesicReflectionComp g h = g * pslConjJ (g⁻¹ * h) * h⁻¹ :=
+  (rfl)
+
 /-- The product of two geodesic reflections acts on `ℍ ∪ ∂ℍ` as the composite of the
 reflections. -/
 theorem geodesicReflectionComp_smul_eq_extGeodesicReflection (g h : PSL(2, ℝ))

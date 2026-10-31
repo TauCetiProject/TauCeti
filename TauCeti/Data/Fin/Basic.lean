@@ -63,6 +63,7 @@ range, so the value is a `dite` rather than a plain application.
   summands split off.
 * `Fin.natCast_ne_zero`: the cast of a natural number `0 < a < n` to `Fin n` (under
   `open Fin.NatCast`) is nonzero.
+* `Fin.val_one_of_two_le`: the element `1` of `Fin m` has value `1` once `2 ≤ m`.
 * `Fin.insertNth_insertNth`: two insertions into a tuple commute, up to reindexing by `succAbove`
   and `predAbove`; the dual of Mathlib's `Fin.removeNth_removeNth_eq_swap`.
 * `Fin.insertNth_append_castAdd` and `Fin.insertNth_append_natAdd`: insertion into either block
@@ -474,6 +475,11 @@ open Fin.NatCast in
 /-- The cast of a natural number `0 < a < n` to `Fin n` is nonzero. -/
 theorem natCast_ne_zero {n a : ℕ} [NeZero n] (ha : a ≠ 0) (han : a < n) : (a : Fin n) ≠ 0 :=
   natCast_eq_zero.not.2 (Nat.not_dvd_of_pos_of_lt (Nat.pos_of_ne_zero ha) han)
+
+/-- The element `1` of `Fin m` has value `1` once `2 ≤ m`. Unlike `Fin.val_one`, this applies
+when `m` is not syntactically of the form `n + 2`. -/
+theorem val_one_of_two_le {m : ℕ} [NeZero m] (hm : 2 ≤ m) : ((1 : Fin m) : ℕ) = 1 := by
+  rw [val_one', Nat.mod_eq_of_lt hm]
 
 /-- Below the top element of `Fin n`, the order successor increments the value. -/
 theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :

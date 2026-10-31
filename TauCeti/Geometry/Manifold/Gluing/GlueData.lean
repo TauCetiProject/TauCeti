@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Gluing
 public import TauCeti.Geometry.Manifold.Gluing.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
 # Manifold atlases on spaces glued from open pieces
@@ -20,9 +22,11 @@ The overlap `D.V (i, j)` maps to its two adjacent pieces, by `D.f i j` into `D.U
 `D.f j i ∘ D.t i j` into `D.U j`. The pieces and overlaps are *compatible*,
 `TopCat.GlueData.IsCompatible I n`, when both maps are `C^n` local diffeomorphisms: the atlas of
 the overlap is then compatible with the atlases of both pieces, and the second map records the
-transition between the pieces. If moreover every piece is a `C^n` manifold, then the glued space
-is a `C^n` manifold and every canonical map is a `C^n` local diffeomorphism, hence a `C^n`
-diffeomorphism onto its open image.
+transition between the pieces. Equivalently, every inclusion `D.f i j` and every transition
+`D.t i j` is a `C^n` local diffeomorphism (`TopCat.GlueData.isCompatible_iff`). If moreover
+every piece is a `C^n` manifold, then the glued space is a `C^n` manifold, every canonical map is
+a `C^n` local diffeomorphism, hence a `C^n` diffeomorphism onto its open image, and a map out of
+the glued space is `C^m`, for `m ≤ n`, exactly when its restriction to every piece is.
 For `𝕜 = ℂ` this glues complex manifolds along holomorphic transitions.
 
 The relation identifying points of different pieces is consumed through `D.ι_eq_iff_rel`; it is
@@ -32,11 +36,15 @@ not copied into a new structure. Empty pieces need no special treatment.
 
 * `TopCat.GlueData.chartedSpace`: the atlas on the glued space transported from the pieces.
 * `TopCat.GlueData.IsCompatible`: the overlap compatibility condition.
+* `TopCat.GlueData.isCompatible_iff`: compatibility means that the overlap inclusions and the
+  transition maps are local diffeomorphisms.
 * `TopCat.GlueData.IsCompatible.isManifold`: compatible pieces glue to a `C^n` manifold.
 * `TopCat.GlueData.IsCompatible.isLocalDiffeomorph_ι`: the canonical maps are `C^n` local
   diffeomorphisms.
 * `TopCat.GlueData.IsCompatible.partialDiffeomorphι`: a canonical map as a `C^n` diffeomorphism
   from a piece onto its image.
+* `TopCat.GlueData.IsCompatible.contMDiff_iff`: smoothness of a map out of the glued manifold is
+  tested on the pieces.
 
 ## References
 
@@ -97,6 +105,22 @@ theorem IsCompatible.of_isLocalDiffeomorph_t (hf : ∀ i j, IsLocalDiffeomorph I
     (ht : ∀ i j, IsLocalDiffeomorph I I n (D.t i j)) : D.IsCompatible I n where
   isLocalDiffeomorph_f := hf
   isLocalDiffeomorph_f_comp_t i j x := (ht i j x).comp (hg := hf j i (D.t i j x))
+
+/-- For compatible pieces and overlaps, every transition map `D.t i j` is a `C^n` local
+diffeomorphism: it is the transition into the second piece followed by a local inverse of the
+inclusion `D.f j i`. -/
+theorem IsCompatible.isLocalDiffeomorph_t (h : D.IsCompatible I n) (i j : D.J) :
+    IsLocalDiffeomorph I I n (D.t i j) := fun x ↦
+  (h.isLocalDiffeomorph_f_comp_t i j x).of_comp_left (h.isLocalDiffeomorph_f j i _)
+    (D.t i j).hom.continuous.continuousAt
+
+/-- The pieces and overlaps of `D` are `C^n` compatible exactly when every overlap inclusion
+`D.f i j` and every transition map `D.t i j` is a `C^n` local diffeomorphism. -/
+theorem isCompatible_iff :
+    D.IsCompatible I n ↔
+      (∀ i j, IsLocalDiffeomorph I I n (D.f i j)) ∧ ∀ i j, IsLocalDiffeomorph I I n (D.t i j) :=
+  ⟨fun h ↦ ⟨h.isLocalDiffeomorph_f, h.isLocalDiffeomorph_t⟩, fun ⟨hf, ht⟩ ↦
+    .of_isLocalDiffeomorph_t hf ht⟩
 
 /-- **Transitions of a compatible gluing.** If a point `x` of the piece `D.U i` and a point `y` of
 the piece `D.U j` have the same image in the glued space, then near `x` the canonical map of `D.U i`
@@ -177,14 +201,17 @@ theorem IsCompatible.isLocalDiffeomorph_ι (h : D.IsCompatible I n) (i : D.J) :
   TauCeti.isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding D.ι_isOpenEmbedding
     D.ι_jointly_surjective (fun _ _ _ _ ↦ h.exists_contMDiffAt_transition) i
 
-/-- **Smooth maps out of a compatible gluing.** A map out of the glued space is `C^n` exactly when
-its composite with the canonical map of every piece is `C^n`. -/
+/-- **Smooth maps out of a compatible gluing.** For `m ≤ n`, a map out of the glued space is `C^m`
+exactly when its composite with the canonical map of every piece is `C^m`. -/
 theorem IsCompatible.contMDiff_iff (h : D.IsCompatible I n) {E' : Type*} [NormedAddCommGroup E']
     [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
-    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {g : D.toGlueData.glued → N} :
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {m : ℕ∞ω} (hm : m ≤ n)
+    {g : D.toGlueData.glued → N} :
     letI := D.chartedSpace H
-    ContMDiff I I' n g ↔ ∀ i, ContMDiff I I' n (g ∘ D.toGlueData.ι i) :=
-  TauCeti.contMDiff_iff_chartedSpaceOfIsOpenEmbedding D.ι_isOpenEmbedding D.ι_jointly_surjective
-    fun _ _ _ _ ↦ h.exists_contMDiffAt_transition
+    ContMDiff I I' m g ↔ ∀ i, ContMDiff I I' m (g ∘ D.toGlueData.ι i) := by
+  let := D.chartedSpace H
+  refine ⟨fun hg i ↦ hg.comp ((h.isLocalDiffeomorph_ι i).contMDiff.of_le hm), fun hg x ↦ ?_⟩
+  obtain ⟨i, y, rfl⟩ := D.ι_jointly_surjective x
+  exact ((h.isLocalDiffeomorph_ι i y).contMDiffAt_comp_iff hm).1 (hg i y)
 
 end TopCat.GlueData
