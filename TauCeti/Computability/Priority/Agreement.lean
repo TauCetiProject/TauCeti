@@ -12,8 +12,9 @@ public import TauCeti.Computability.Priority.Injury.Basic
 # Preservation of agreement along a stage enumeration
 
 In Sacks's constructions a set is enumerated in finite stages `A s`, and the requirement
-`C ≠ Φ_e^A` holds as its restraint the agreement restraint of `Φ_e` against the answers of `A s`
-(`TauCeti.Oracle.Single.Code.setAnswers`) with fuel `s` and the target `C s`, Soare's `r(e, s)`.
+`C ≠ Φ_e^A` holds a restraint at least the agreement restraint of `Φ_e` against the answers of
+`A s` (`TauCeti.Oracle.Single.Code.setAnswers`) with fuel `s` and the target `C s`, Soare's
+`r(e, s)`.
 This file specializes the preservation theorems of
 `TauCeti.Computability.SingleOracle.Agreement` to that setting: a transition that does not injure
 the requirement keeps the answers at and below the restraint, hence the computations up to and
@@ -50,30 +51,34 @@ theorem eqOn_setAnswers_of_injuriesAt_eq_empty (hA : A s ⊆ A (s + 1)) (hr : r 
     EqOn (setAnswers (A s)) (setAnswers (A (s + 1))) (Iic b) :=
   eqOn_setAnswers_iff.2 fun _ hz => mem_iff_mem_succ_of_injuriesAt_eq_empty hA hr hI hz
 
-/-- **One-step preservation of computations.** Let requirement `e` hold, at stage `s`, the
-agreement restraint of `c` against the answers of `A s` with fuel `s` and the target `C s`. If no
-number injures `e` in the transition to stage `s + 1`, and `A s ⊆ A (s + 1)`, then every successful
-stage-`s` run at an argument up to and including the length of agreement is a successful
-stage-`s + 1` run, with the same output and use. The target `C` may change. -/
+/-- **One-step preservation of computations.** Let requirement `e` hold, at stage `s`, a restraint
+`b` at least the agreement restraint of `c` against the answers of `A s` with fuel `s` and the
+target `C s`. If no number injures `e` in the transition to stage `s + 1`, and
+`A s ⊆ A (s + 1)`, then every successful stage-`s` run at an argument up to and including the
+length of agreement is a successful stage-`s + 1` run, with the same output and use. The target
+`C` may change. -/
 theorem evaln_succ_eq_some_of_injuriesAt_eq_empty (hA : A s ⊆ A (s + 1))
-    (hr : r e s = some (agreementRestraint (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1)))
+    (hr : r e s = some b)
+    (hb : agreementRestraint (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) ≤ b)
     (hI : injuriesAt A r e s = ∅)
     (hx : x ≤ agreementLength (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1))
     (hd : evaln (setAnswers (A s)) s c x = some d) :
     evaln (setAnswers (A (s + 1))) (s + 1) c x = some d :=
   evaln_eq_some_of_eqOn_agreementRestraint s.le_succ
-    (eqOn_setAnswers_of_injuriesAt_eq_empty hA hr hI) hx hd
+    ((eqOn_setAnswers_of_injuriesAt_eq_empty hA hr hI).mono (Iic_subset_Iic.2 hb)) hx hd
 
 /-- **One-step preservation of agreement.** Under the hypotheses of
 `evaln_succ_eq_some_of_injuriesAt_eq_empty`, agreement at an argument below the length of agreement
 persists to stage `s + 1` when membership of that argument in `C` does not change. -/
 theorem agreesAt_succ_of_injuriesAt_eq_empty (hA : A s ⊆ A (s + 1))
-    (hr : r e s = some (agreementRestraint (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1)))
+    (hr : r e s = some b)
+    (hb : agreementRestraint (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) ≤ b)
     (hI : injuriesAt A r e s = ∅)
     (hx : x < agreementLength (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1))
     (hC : x ∈ C (s + 1) ↔ x ∈ C s) :
     AgreesAt (setAnswers (A (s + 1))) (s + 1) c ((C (s + 1) : Set ℕ).indicator 1) x :=
-  agreesAt_of_eqOn_agreementRestraint s.le_succ (eqOn_setAnswers_of_injuriesAt_eq_empty hA hr hI)
-    hx (by simp [indicator_apply, hC])
+  agreesAt_of_eqOn_agreementRestraint s.le_succ
+    ((eqOn_setAnswers_of_injuriesAt_eq_empty hA hr hI).mono (Iic_subset_Iic.2 hb)) hx
+    (by simp [indicator_apply, hC])
 
 end TauCeti.Oracle.Single.Code
