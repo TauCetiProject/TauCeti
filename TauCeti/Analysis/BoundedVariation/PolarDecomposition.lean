@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.MeasureTheory.Integral.Lebesgue.OpenSet
 
 /-!
 # The polar decomposition of the derivative of a function of locally bounded variation
@@ -201,26 +202,9 @@ private theorem ae_norm_eq_one_of_le_one {σ : Ω → E}
         (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
     · have : φΩ x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (φ.tsupport_subset h)
       simp [this]
-  -- Hence `1 ≤ ‖σ‖` almost everywhere on every open set of finite measure.
-  have hloc (V : Set Ω) (hV : IsOpen V) (hVfin : lam V ≠ ∞) :
-      ∀ᵐ x ∂lam.restrict V, 1 ≤ ‖σ x‖ₑ := by
-    have hle : ∀ᵐ x ∂lam.restrict V, ‖σ x‖ₑ ≤ 1 := ae_restrict_of_ae <| hσ1.mono fun x hx => by
-      rwa [← ofReal_norm, ENNReal.ofReal_le_one]
-    have hint : ∫⁻ x in V, ‖σ x‖ₑ ∂lam ≠ ∞ :=
-      ne_top_of_le_ne_top hVfin ((lintegral_mono_ae hle).trans_eq (by simp))
-    filter_upwards [ae_eq_of_ae_le_of_lintegral_le hle hint aemeasurable_const
-      (by simpa using hopen V hV)] with x hx
-    exact hx.symm.le
-  -- Cover `Ω` by countably many open sets of finite measure.
-  choose V hKV hVo hVfin using fun n =>
-    (isCompact_compactCovering Ω n).exists_open_superset_measure_lt_top lam
-  have hVU : ⋃ n, V n = univ :=
-    eq_univ_of_univ_subset ((iUnion_compactCovering Ω).symm.subset.trans (iUnion_mono hKV))
-  rw [← Measure.restrict_univ (μ := lam), ← hVU, ae_restrict_iUnion_iff]
-  intro n
-  filter_upwards [hloc (V n) (hVo n) (hVfin n).ne, ae_restrict_of_ae hσ1] with x h1 h2
-  rw [← ofReal_norm, ENNReal.one_le_ofReal] at h1
-  exact le_antisymm h2 h1
+  filter_upwards [ae_eq_one_of_forall_isOpen_le_setLIntegral
+    (hσ1.mono fun x hx => by rwa [← ofReal_norm, ENNReal.ofReal_le_one]) hopen] with x hx
+  rwa [← ofReal_norm, ENNReal.ofReal_eq_one] at hx
 
 private theorem exists_polarDensity :
     ∃ σ : Ω → E, Measurable σ ∧ (∀ᵐ x ∂variationMeasure μ Ω u, ‖σ x‖ = 1) ∧
