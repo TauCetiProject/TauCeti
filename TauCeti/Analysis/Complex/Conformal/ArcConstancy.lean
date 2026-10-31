@@ -67,15 +67,6 @@ and preconnected approach regions) and does not consume this file.
   map, which is constant on no boundary arc and each of whose boundary fibres therefore has empty
   interior in the circle.
 
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and the
-pinned Mathlib has neither a boundary uniqueness theorem of this shape nor Painlevé removability.
-So this file is new Lean formalization rather than a temporary shim; it consumes only the L4
-removability layer, which is likewise new.
-
 ## References
 
 * L. V. Ahlfors, *Complex Analysis*, Ch. 6, §1.4 (the reflection and removability circle of ideas).

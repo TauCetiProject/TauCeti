@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.Sard.OutermostStratum
 import TauCeti.Analysis.Fredholm.NormalForm
 import TauCeti.Analysis.Fredholm.Proper
 import TauCeti.Analysis.Normed.Operator.Surjective
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Constructions.SumProd
 
 /-!
@@ -204,7 +205,8 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
   have : CompleteSpace pkg.decDom.X₀ := pkg.decDom.isTopCompl.isClosed'.completeSpace_coe
   have : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.completeSpace_coe
   have : CompleteSpace pkg.decCodom.X₁ :=
-    (pkg.equiv.isUniformEmbedding.completeSpace_congr pkg.equiv.surjective).mp inferInstance
+    ContinuousLinearMap.completeSpace_of_isInvertible
+      (ContinuousLinearMap.isInvertible_equiv (f := pkg.equiv.symm))
   have : FiniteDimensional ℝ pkg.decDom.X₀ := pkg.decDom.finite_X₀
   have : FiniteDimensional ℝ pkg.decCodom.X₀ := pkg.decCodom.finite_X₀
   have hkbound :

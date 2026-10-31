@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.Basic
 
@@ -21,10 +22,16 @@ the `0`-eigenspace of `r` is zero, while the kernel of `r ⊗ id` on `X` is its 
 When `f` is the action of an element `a` of a `k`-algebra `A` acting on `S`, the endomorphism
 `(f - μ) ⊗ id` is the action of `a - μ` on `S ⊗[k] X` through the left factor.
 
+A linear map `l` from `S` to a vector space over a field `K` extending `k` with `l ∘ f = μ • l`
+has a `K`-linear extension `l.liftBaseChange K` to `K ⊗[k] S` vanishing on every eigenspace of the
+base change of `f` for an eigenvalue other than `μ`.
+
 ## Main results
 
 * `Module.End.exact_rTensor_eigenspace`: `Eig(f, μ) ⊗ X → S ⊗ X → S ⊗ X` is exact for flat `X`.
 * `TauCeti.rTensor_lsmul_sub_smul_apply`: `(a - μ) ⊗ id` acts as `a - μ` on the left factor.
+* `LinearMap.liftBaseChange_eq_zero_of_mem_eigenspace_baseChange`: the extension of an
+  eigenvector of precomposition by `f` kills the other eigenspaces of the base change of `f`.
 -/
 
 public section
@@ -42,6 +49,20 @@ theorem Module.End.exact_rTensor_eigenspace (f : Module.End k S) (μ : k) (X : T
   rw [LinearMap.exact_iff, Submodule.range_subtype]
   ext s
   simp [sub_eq_zero]
+
+/-- If `l (f v) = μ • l v` for all `v`, the `K`-linear extension of `l` vanishes on the eigenspace
+of the base change of `f` for every eigenvalue `ν ≠ μ`. -/
+theorem LinearMap.liftBaseChange_eq_zero_of_mem_eigenspace_baseChange {K N : Type*} [Field K]
+    [Algebra k K] [AddCommGroup N] [Module k N] [Module K N] [IsScalarTower k K N]
+    (l : S →ₗ[k] N) (f : Module.End k S) {μ ν : K} (hl : ∀ v, l (f v) = μ • l v) (hνμ : ν ≠ μ)
+    {X : K ⊗[k] S} (hX : X ∈ Module.End.eigenspace (f.baseChange K) ν) :
+    l.liftBaseChange K X = 0 := by
+  have hcomm : l.liftBaseChange K ∘ₗ f.baseChange K = μ • l.liftBaseChange K := by
+    ext v
+    simp [hl]
+  have h : ν • l.liftBaseChange K X = μ • l.liftBaseChange K X := by
+    simpa [Module.End.mem_eigenspace_iff.1 hX] using LinearMap.congr_fun hcomm X
+  exact (smul_eq_zero.1 (by rw [sub_smul, h, sub_self])).resolve_left (sub_ne_zero.2 hνμ)
 
 namespace TauCeti
 

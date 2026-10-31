@@ -51,6 +51,8 @@ inclusion of class fields, and the layer `G_K` itself, which cuts out `K`, has n
 * `TauCeti.ClassFieldTheory.globalNormSubgroup_mono`: inclusion of layer subgroups gives inclusion
   of norm subgroups.
 * `TauCeti.ClassFieldTheory.globalNormSubgroup_top`: the ground field has norm subgroup `C_K`.
+* `TauCeti.ClassFieldTheory.index_globalGroundOrderIso`: the ground-level identification preserves
+  the index of an idele-class subgroup.
 
 ## References
 
@@ -157,6 +159,17 @@ theorem mem_globalGroundOrderIso {H : Subgroup (IdeleClassGroup (𝓞 K) K)}
     {a : (globalFormation K).level ⊤} :
     a ∈ globalGroundOrderIso K H ↔ ((globalGroundEquiv K).symm a).toMul ∈ H :=
   Iff.rfl
+
+variable (K) in
+/-- The ground-level order isomorphism preserves the index of every idele-class subgroup. -/
+theorem index_globalGroundOrderIso (N : Subgroup (IdeleClassGroup (𝓞 K) K)) :
+    (globalGroundOrderIso K N).toAddSubgroup.index = N.index := by
+  have : (globalGroundOrderIso K N).toAddSubgroup =
+      N.toAddSubgroup.comap (globalGroundEquiv K).symm.toAddMonoidHom := by
+    ext a
+    exact mem_globalGroundOrderIso
+  rw [this, ← Subgroup.index_toAddSubgroup]
+  exact AddSubgroup.index_comap_of_surjective _ (globalGroundEquiv K).symm.surjective
 
 variable (K) in
 /-- `globalGroundOrderIso` carries the global norm subgroup of `V` to the norm subgroup of the

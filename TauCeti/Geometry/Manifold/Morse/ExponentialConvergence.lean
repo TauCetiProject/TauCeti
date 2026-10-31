@@ -105,7 +105,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradien
   obtain ⟨lam, hlam, hloj⟩ :=
     ((isManifoldNondegenerateCriticalPoint_iff I).1 hp).exists_mul_abs_sub_le_norm_fderiv_sq
   obtain ⟨C, hC, hbd⟩ :=
-    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) f p
+    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) p
   refine ⟨lam / C ^ 2, by positivity, ?_⟩
   filter_upwards [(continuousAt_extChartAt (I := I) p).eventually hloj, hbd,
     extChartAt_source_mem_nhds (I := I) p] with y hy hyb hys
@@ -113,7 +113,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradien
     (extChartAt I p).left_inv (mem_extChartAt_source p)] at hy
   calc lam / C ^ 2 * |f y - f p| = lam * |f y - f p| / C ^ 2 := by ring
     _ ≤ ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ^ 2 / C ^ 2 := by gcongr
-    _ ≤ (C * ‖mgradient I f y‖) ^ 2 / C ^ 2 := by gcongr
+    _ ≤ (C * ‖mgradient I f y‖) ^ 2 / C ^ 2 := by gcongr; exact hyb f
     _ = ‖mgradient I f y‖ ^ 2 := by field_simp
 
 end Lojasiewicz
