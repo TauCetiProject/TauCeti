@@ -151,20 +151,6 @@ private theorem prod_pow_single {K : Type*} [CommMonoid K] (v : Fin N → K) (i 
   rw [prod_eq_single i (fun j _ hj ↦ by simp [hj]) (by simp)]
   simp
 
-/-- Multiplying monomials adds exponent vectors. -/
-private theorem prod_pow_add {K : Type*} [CommMonoid K] (v : Fin N → K) (α β : Fin N → ℕ) :
-    ∏ j, v j ^ (α + β) j = (∏ j, v j ^ α j) * ∏ j, v j ^ β j := by
-  simp [pow_add, prod_mul_distrib]
-
-/-- The degree of `Pi.single i a` is `a`. -/
-private theorem sum_single (i : Fin N) (a : ℕ) : ∑ j, Pi.single (M := fun _ ↦ ℕ) i a j = a := by
-  simp
-
-/-- Adding `a e_i` to an exponent vector adds `a` to its degree. -/
-private theorem sum_add_single (β : Fin N → ℕ) (i : Fin N) (a : ℕ) :
-    ∑ j, (β + Pi.single i a : Fin N → ℕ) j = ∑ j, β j + a := by
-  simp [sum_add_distrib]
-
 /-- An exponent vector with a positive `i`-th entry is of the form `γ + e_i`. -/
 private theorem exists_eq_add_single {β : Fin N → ℕ} {i : Fin N} (h : 0 < β i) :
     ∃ γ : Fin N → ℕ, β = γ + Pi.single i 1 := by
@@ -209,8 +195,8 @@ private theorem induction_on_single {d : ℕ} (i : Fin N) {P : (Fin N → ℕ) �
   | succ m ih =>
     obtain ⟨j, hji, hj⟩ := exists_ne_pos_of_apply_lt (i := i) hα (by omega)
     obtain ⟨β, rfl⟩ := exists_eq_add_single hj
-    rw [sum_add_single] at hα
-    refine step β j hji hα (ih (by rw [sum_add_single, hα]) ?_)
+    simp only [Pi.add_apply, sum_add_distrib, Fintype.sum_pi_single'] at hα
+    refine step β j hji hα (ih (by simp [sum_add_distrib, hα]) ?_)
     simp [hji.symm] at hm ⊢
     omega
 
@@ -219,7 +205,8 @@ powers `v i ^ d`. -/
 theorem veroneseMonomials_ne_zero {K : Type*} [CommSemiring K] [NoZeroDivisors K] (d : ℕ)
     {v : Fin N → K} (hv : v ≠ 0) : veroneseMonomials d v ≠ 0 := by
   obtain ⟨i, hi⟩ := Function.ne_iff.mp hv
-  refine Function.ne_iff.mpr ⟨(veroneseExponentEquiv N d).symm ⟨Pi.single i d, sum_single i d⟩, ?_⟩
+  refine Function.ne_iff.mpr
+    ⟨(veroneseExponentEquiv N d).symm ⟨Pi.single i d, Fintype.sum_pi_single' i d⟩, ?_⟩
   simpa [prod_pow_single] using pow_ne_zero d hi
 
 /-! ### Relations among monomials -/
@@ -251,7 +238,7 @@ theorem eval_veroneseMonomials_veroneseRelation {R : Type*} [CommRing R] {d : �
     (q : VeroneseRelationIndex N d) (v : Fin N → R) :
     eval (veroneseMonomials d v) (veroneseRelation R N d q) = 0 := by
   simp only [veroneseRelation, map_sub, map_mul, eval_X, veroneseMonomials_apply,
-    ← prod_pow_add, q.2, sub_self]
+    ← prod_mul_distrib, ← pow_add, ← Pi.add_apply, q.2, sub_self]
 
 /-- From a nonzero coordinate `Y α` with `0 < α i`, the binomial relations reach a nonzero
 pure power `Y (d e_i)`. -/
@@ -264,12 +251,12 @@ private theorem apply_single_ne_zero {K : Type*} [Field K] {d : ℕ} {Y : (Fin N
   refine induction_on_single (P := fun α ↦ Y α ≠ 0 → 0 < α i → Y (Pi.single i d) ≠ 0) i
     (fun h _ ↦ h) (fun β j hji hβ ih hYβ hi ↦ ?_) hα
   obtain ⟨γ, rfl⟩ := exists_eq_add_single (show 0 < β i by simpa [hji.symm] using hi)
-  rw [sum_add_single] at hβ
+  simp only [Pi.add_apply, sum_add_distrib, Fintype.sum_pi_single'] at hβ
   -- `2 (γ + e_i + e_j) = (γ + 2 e_i) + (γ + 2 e_j)`
   have hrel := hY (γ + Pi.single i 1 + Pi.single j 1) (γ + Pi.single i 1 + Pi.single j 1)
     (γ + Pi.single i 1 + Pi.single i 1) (γ + Pi.single j 2)
-    (by simp only [sum_add_single]; omega) (by simp only [sum_add_single]; omega)
-    (by simp only [sum_add_single]; omega) (by simp only [sum_add_single]; omega) (by
+    (by simp [sum_add_distrib]; omega) (by simp [sum_add_distrib]; omega)
+    (by simp [sum_add_distrib]; omega) (by simp [sum_add_distrib]; omega) (by
       rw [show (Pi.single j 2 : Fin N → ℕ) = Pi.single j 1 + Pi.single j 1 by
         rw [← Pi.single_add]]
       abel)
@@ -291,9 +278,9 @@ private theorem pow_mul_apply_eq_prod {K : Type*} [Field K] {d : ℕ} (hd : d �
     ∏ j, Y (Pi.single i (d - 1) + Pi.single j 1) ^ α j) i ?_ (fun β j hji hβ ih ↦ ?_) hα
   · rw [prod_pow_single, hsingle, ← pow_succ, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hd)]
   have hrel := hY (β + Pi.single j 1) (Pi.single i d) (β + Pi.single i 1)
-    (Pi.single i (d - 1) + Pi.single j 1) (by rw [sum_add_single, hβ])
-    (sum_single i d) (by rw [sum_add_single, hβ])
-    (by rw [sum_add_single, sum_single]; omega) (by
+    (Pi.single i (d - 1) + Pi.single j 1) (by simp [sum_add_distrib, hβ])
+    (Fintype.sum_pi_single' i d) (by simp [sum_add_distrib, hβ])
+    (by simp [sum_add_distrib]; omega) (by
       rw [← hsingle]
       abel)
   refine mul_right_cancel₀ hYi ?_
@@ -301,7 +288,8 @@ private theorem pow_mul_apply_eq_prod {K : Type*} [Field K] {d : ℕ} (hd : d �
       = Y (Pi.single i d) ^ (d - 1) * Y (β + Pi.single i 1) *
           Y (Pi.single i (d - 1) + Pi.single j 1) := by rw [mul_assoc, hrel, mul_assoc]
     _ = _ := by
-      rw [ih, prod_pow_add, prod_pow_add, prod_pow_single, prod_pow_single, hsingle]
+      simp only [Pi.add_apply, pow_add, prod_mul_distrib] at ih ⊢
+      rw [ih, prod_pow_single, prod_pow_single, hsingle]
       ring
 
 /-! ### Linear forms in the monomials -/
@@ -394,9 +382,10 @@ theorem veronese_injective {d : ℕ} (hd : d ≠ 0) :
   -- the coordinate of the monomial `x_i ^ (d - 1) * x_j`
   have hcoord (j : Fin N) : a * (w i ^ (d - 1) * w j) = v i ^ (d - 1) * v j := by
     have hsum : ∑ k, (Pi.single i (d - 1) + Pi.single j 1 : Fin N → ℕ) k = d := by
-      rw [sum_add_single, sum_single]; omega
+      simp [sum_add_distrib]; omega
     simpa only [Pi.smul_apply, smul_eq_mul, veroneseMonomials_apply,
-      veroneseExponent_veroneseExponentEquiv_symm, prod_pow_add, prod_pow_single, pow_one] using
+      veroneseExponent_veroneseExponentEquiv_symm, Pi.add_apply, pow_add, prod_mul_distrib,
+      prod_pow_single, pow_one] using
       congrFun ha ((veroneseExponentEquiv N d).symm ⟨_, hsum⟩)
   have hd' : d - 1 + 1 = d := Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hd)
   have hii := hcoord i
