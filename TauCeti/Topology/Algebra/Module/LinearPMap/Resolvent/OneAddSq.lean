@@ -28,7 +28,8 @@ For a self-adjoint operator on a Hilbert space, `±i` always lie in the resolven
 `(1 + A²)⁻¹` is the positive operator `R(i)* R(i)`; the spectral consequences are developed in
 `TauCeti.Analysis.InnerProductSpace.LinearPMap.CompactResolvent`. Here we also record the
 algebraic facts behind them: an eigenvector of `(1 + A²)⁻¹` for a nonzero eigenvalue lies in
-every iterated domain `D(Aⁿ)`, and `A` preserves each eigenspace of `(1 + A²)⁻¹`.
+every iterated domain `D(Aⁿ)`, `A` preserves each eigenspace of `(1 + A²)⁻¹`, and an eigenvector
+of `A` for the eigenvalue `c` is an eigenvector of `(1 + A²)⁻¹` for `(1 + c²)⁻¹`.
 
 ## Main definitions
 
@@ -43,6 +44,8 @@ every iterated domain `D(Aⁿ)`, and `A` preserves each eigenspace of `(1 + A²)
 * `LinearPMap.eigenspace_invOneAddSq_le_domainPow`: eigenvectors of `(1 + A²)⁻¹` for nonzero
   eigenvalues lie in every `D(Aⁿ)`.
 * `LinearPMap.apply_mem_eigenspace_invOneAddSq`: `A` preserves the eigenspaces of `(1 + A²)⁻¹`.
+* `LinearPMap.eigenspace_invOneAddSq_zero`: `(1 + A²)⁻¹` has trivial kernel.
+* `LinearPMap.invOneAddSq_apply_of_apply_eq_smul`: `(1 + A²)⁻¹ x = (1 + c²)⁻¹ x` when `A x = c x`.
 
 ## References
 
@@ -128,6 +131,11 @@ theorem invOneAddSq_injective : Function.Injective A.invOneAddSq := by
   have h0' : (⟨A ⟨A.invOneAddSq y, h₁⟩, h₂.1⟩ : A.domain) = 0 := Subtype.ext (by simp [h0])
   rw [← invOneAddSq_add_apply_apply hp hm y h₁ h₂.1, h0', map_zero, hy, add_zero]
 
+/-- The eigenspace of `(1 + A²)⁻¹` for the eigenvalue `0`, its kernel, is trivial. -/
+theorem eigenspace_invOneAddSq_zero : eigenspace (A.invOneAddSq : End ℂ X) 0 = ⊥ := by
+  rw [eigenspace_zero, LinearMap.ker_eq_bot, ContinuousLinearMap.coe_coe]
+  exact invOneAddSq_injective hp hm
+
 /-- `(1 + A²)⁻¹` commutes with `A` on its domain. -/
 theorem invOneAddSq_apply_comm (x : A.domain) :
     A.invOneAddSq (A x) = A ⟨A.invOneAddSq x, invOneAddSq_mem_domain hm x⟩ := by
@@ -159,6 +167,22 @@ theorem apply_mem_eigenspace_invOneAddSq {μ : ℂ} (x : A.domain)
     Subtype.ext hKx
   rw [mem_eigenspace_iff, ContinuousLinearMap.coe_coe, invOneAddSq_apply_comm hp hm, hK,
     map_smul]
+
+/-- `(1 + A²)⁻¹` acts on an eigenvector of `A` for the eigenvalue `c` as multiplication by
+`(1 + c²)⁻¹`. For `c = ±i` both sides vanish: `±i` lies in the resolvent set, so `A` has no
+nonzero eigenvector for it. -/
+theorem invOneAddSq_apply_of_apply_eq_smul {c : ℂ} (x : A.domain) (h : A x = c • (x : X)) :
+    A.invOneAddSq x = (1 + c ^ 2)⁻¹ • (x : X) := by
+  have hAx : A x ∈ A.domain := h ▸ A.domain.smul_mem c x.2
+  have hAAx : A ⟨A x, hAx⟩ = c ^ 2 • (x : X) := by
+    rw [show (⟨A x, hAx⟩ : A.domain) = c • x from Subtype.ext h, map_smul, h, smul_smul, sq]
+  have key := invOneAddSq_apply_add_apply hp hm x hAx
+  rw [hAAx, show (x : X) + c ^ 2 • (x : X) = (1 + c ^ 2) • (x : X) by rw [add_smul, one_smul],
+    ContinuousLinearMap.map_smul] at key
+  rcases eq_or_ne (1 + c ^ 2) 0 with hc | hc
+  · rw [hc, zero_smul] at key
+    simp [← key]
+  · exact (eq_inv_smul_iff₀ hc).2 key
 
 omit hm in
 /-- For an operator with compact resolvent, `(1 + A²)⁻¹ = R(-i) R(i)` is a compact operator. -/
