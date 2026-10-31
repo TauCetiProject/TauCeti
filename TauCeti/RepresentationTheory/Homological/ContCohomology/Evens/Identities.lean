@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestrict
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Character
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.IndexTwoNorm
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.NormOfRestriction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Norm.OfRestriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Polarization
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Restriction
 
