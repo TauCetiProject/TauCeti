@@ -28,10 +28,6 @@ When `P` is self-adjoint every `Γ_t` is unitary, and `t ↦ Γ_t α_t(·) Γ_t�
 point-norm continuous action, the perturbed dynamics `CStarAction.perturb`. Its generator has the
 same domain as `δ` and equals `δ + i[P, ·]` there (`CStarAction.generator_perturb`).
 
-Uniqueness and the cocycle identity follow from uniqueness of solutions of Lipschitz differential
-equations, Mathlib's `ODE_solution_unique_univ`. For self-adjoint `P`, `Γ_t Γ_t⋆` has derivative
-zero, and the cocycle identity supplies a left inverse of `Γ_t`; together they give unitarity.
-
 ## References
 
 Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
@@ -188,6 +184,8 @@ private theorem lipschitzOnWith_smul_mul (u : ℝ) :
 theorem eq_dysonCocycle_of_hasDerivAt {Y : ℝ → B}
     (hY : ∀ t, HasDerivAt Y (I • (Y t * α (Multiplicative.ofAdd t) P)) t) (h0 : Y 0 = 1) :
     Y = α.dysonCocycle P :=
+  -- Uniqueness of solutions of Lipschitz differential equations, Mathlib's
+  -- `ODE_solution_unique_univ`.
   ODE_solution_unique_univ (s := fun _ => univ) (α.lipschitzOnWith_smul_mul P)
     (fun t => ⟨hY t, mem_univ _⟩) (fun t => ⟨α.hasDerivAt_dysonCocycle P t, mem_univ _⟩)
     (t₀ := 0) (by simp [h0])
@@ -196,7 +194,8 @@ theorem eq_dysonCocycle_of_hasDerivAt {Y : ℝ → B}
 theorem dysonCocycle_add (s t : ℝ) :
     α.dysonCocycle P (s + t) =
       α.dysonCocycle P s * α (Multiplicative.ofAdd s) (α.dysonCocycle P t) := by
-  -- Both sides solve `Y' = i Y α_{s+t}(P)` with value `Γ_s` at `t = 0`.
+  -- Both sides solve `Y' = i Y α_{s+t}(P)` with value `Γ_s` at `t = 0`, so they agree by
+  -- Mathlib's ODE uniqueness theorem `ODE_solution_unique_univ`.
   have hv (u : ℝ) := α.lipschitzOnWith_smul_mul P (s + u)
   have hf (u : ℝ) : HasDerivAt (fun u => α.dysonCocycle P (s + u))
       (I • (α.dysonCocycle P (s + u) * α (Multiplicative.ofAdd (s + u)) P)) u :=
@@ -217,8 +216,10 @@ theorem dysonCocycle_add (s t : ℝ) :
 variable {P}
 
 /-- For self-adjoint `P`, the Dyson cocycle is a coisometry. -/
+@[simp]
 theorem dysonCocycle_mul_star (hP : IsSelfAdjoint P) (t : ℝ) :
     α.dysonCocycle P t * star (α.dysonCocycle P t) = 1 := by
+  -- `Γ_u Γ_u⋆` has derivative zero, so it is constantly `Γ_0 Γ_0⋆ = 1`.
   have hd (u : ℝ) : HasDerivAt (fun u => α.dysonCocycle P u * star (α.dysonCocycle P u)) 0 u := by
     have h := α.hasDerivAt_dysonCocycle P u
     convert h.fun_mul h.star using 1
@@ -228,6 +229,7 @@ theorem dysonCocycle_mul_star (hP : IsSelfAdjoint P) (t : ℝ) :
   simpa using this
 
 /-- For self-adjoint `P`, the Dyson cocycle is an isometry. -/
+@[simp]
 theorem star_dysonCocycle_mul (hP : IsSelfAdjoint P) (t : ℝ) :
     star (α.dysonCocycle P t) * α.dysonCocycle P t = 1 := by
   -- `w = α_t(Γ_{-t})` is a two-sided inverse of `Γ_t` by the cocycle identity.
