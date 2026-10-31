@@ -34,8 +34,10 @@ half-space restrictions of them is a `C^m` manifold with boundary
 
 * `OpenPartialHomeomorph.halfSpaceChart`, with its source, target, apply and inverse laws, and
   `OpenPartialHomeomorph.contDiffOn_halfSpaceChart_symm_trans`.
-* `OpenPartialHomeomorph.IsExtendTransChart` and
-  `OpenPartialHomeomorph.isManifold_of_forall_mem_atlas_halfSpaceChart`: an atlas of half-space
+* `OpenPartialHomeomorph.IsExtendTransChart`, with its intro lemma
+  `OpenPartialHomeomorph.isExtendTransChart_extendTrans` and its smooth transition maps
+  `OpenPartialHomeomorph.IsExtendTransChart.contDiffOn_comp_symm`.
+* `OpenPartialHomeomorph.isManifold_of_forall_mem_atlas_halfSpaceChart`: an atlas of half-space
   restrictions of smoothly moved charts from the maximal atlas makes `s` a manifold with boundary.
 
 ## References
@@ -155,11 +157,29 @@ variable {𝕜 E F H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGro
 the model vector space `E` and moved to `F` by a `C^m` homeomorphism `Ψ` with `C^m` inverse. The
 transition maps between such charts are `C^m`
 (`OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`). -/
-@[expose] def IsExtendTransChart (e : OpenPartialHomeomorph M F) (I : ModelWithCorners 𝕜 E H)
+def IsExtendTransChart (e : OpenPartialHomeomorph M F) (I : ModelWithCorners 𝕜 E H)
     [I.Boundaryless] (m : ℕ∞ω) : Prop :=
   ∃ (c : OpenPartialHomeomorph M H) (Ψ : E ≃ₜ F),
     c ∈ IsManifold.maximalAtlas I m M ∧ ContDiff 𝕜 m Ψ ∧ ContDiff 𝕜 m Ψ.symm ∧
       e = c.extendTrans I Ψ
+
+variable {I : ModelWithCorners 𝕜 E H} [I.Boundaryless] {m : ℕ∞ω}
+
+/-- A chart `c` from the maximal atlas for `C^m`, moved by a `C^m` homeomorphism `Ψ` with `C^m`
+inverse, satisfies `OpenPartialHomeomorph.IsExtendTransChart`. -/
+theorem isExtendTransChart_extendTrans {c : OpenPartialHomeomorph M H}
+    (hc : c ∈ IsManifold.maximalAtlas I m M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 m Ψ)
+    (hΨ' : ContDiff 𝕜 m Ψ.symm) : (c.extendTrans I Ψ).IsExtendTransChart I m :=
+  ⟨c, Ψ, hc, hΨ, hΨ', rfl⟩
+
+/-- The transition map between two charts satisfying `OpenPartialHomeomorph.IsExtendTransChart`
+for `C^m` is `C^m`. -/
+theorem IsExtendTransChart.contDiffOn_comp_symm {e₁ e₂ : OpenPartialHomeomorph M F}
+    (he₁ : e₁.IsExtendTransChart I m) (he₂ : e₂.IsExtendTransChart I m) :
+    ContDiffOn 𝕜 m (e₂ ∘ e₁.symm) (e₁.symm ≫ₕ e₂).source := by
+  obtain ⟨c₁, Ψ₁, hc₁, -, hΨ₁, rfl⟩ := he₁
+  obtain ⟨c₂, Ψ₂, hc₂, hΨ₂, -, rfl⟩ := he₂
+  exact contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂
 
 end ExtendTrans
 
@@ -180,10 +200,9 @@ theorem isManifold_of_forall_mem_atlas_halfSpaceChart {m : ℕ∞ω} {n : ℕ} {
         e'.IsExtendTransChart I m ∧ e = e'.halfSpaceChart he' x) :
     IsManifold (𝓡∂ (n + 1)) m s := by
   refine isManifold_of_contDiffOn _ _ _ fun e₁ e₂ h₁ h₂ ↦ ?_
-  obtain ⟨_, he₁, x₁, ⟨c₁, Ψ₁, hc₁, -, hΨ₁, rfl⟩, rfl⟩ := h e₁ h₁
-  obtain ⟨_, he₂, x₂, ⟨c₂, Ψ₂, hc₂, hΨ₂, -, rfl⟩, rfl⟩ := h e₂ h₂
-  exact contDiffOn_halfSpaceChart_symm_trans he₁ he₂ x₁ x₂
-    (contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂)
+  obtain ⟨_, he₁, x₁, hc₁, rfl⟩ := h e₁ h₁
+  obtain ⟨_, he₂, x₂, hc₂, rfl⟩ := h e₂ h₂
+  exact contDiffOn_halfSpaceChart_symm_trans he₁ he₂ x₁ x₂ (hc₁.contDiffOn_comp_symm hc₂)
 
 end IsManifold
 

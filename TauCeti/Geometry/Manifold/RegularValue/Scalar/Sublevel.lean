@@ -89,9 +89,9 @@ as above.
 public section
 
 open Function Metric Module Set
-open OpenPartialHomeomorph (contDiffOn_extendTrans_comp_symm contDiffOn_halfSpaceChart_symm_trans
-  coe_halfSpaceChart_apply coe_halfSpaceChart_symm_apply halfSpaceChart_source
-  halfSpaceChart_target isManifold_of_forall_mem_atlas_halfSpaceChart)
+open OpenPartialHomeomorph (coe_halfSpaceChart_apply coe_halfSpaceChart_symm_apply
+  halfSpaceChart_source halfSpaceChart_target isExtendTransChart_extendTrans
+  isManifold_of_forall_mem_atlas_halfSpaceChart)
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
@@ -386,8 +386,8 @@ smooth homeomorphism with smooth inverse. -/
 private theorem exists_interiorChart_eq_extendTrans {m : ℕ∞ω} [IsManifold I m M] {U : Set M}
     (hU : IsOpen U) (hn : finrank ℝ E = n + 1) {x : M} (hx : x ∈ U) :
     (interiorChart I hU hn hx).IsExtendTransChart I m := by
-  refine ⟨_, _, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas _)
-    (isOpen_interiorDomain hU hn hx), ?_, ?_, rfl⟩
+  refine isExtendTransChart_extendTrans (restr_mem_maximalAtlas _
+    (IsManifold.chart_mem_maximalAtlas _) (isOpen_interiorDomain hU hn hx)) ?_ ?_
   · exact ((modelEquiv hn).contDiff.comp (contDiff_id.sub contDiff_const)).add contDiff_const
   · convert ((modelEquiv hn).symm.contDiff.comp (contDiff_id.sub (contDiff_const
       (c := EuclideanSpace.single 0 (2 * interiorRadius I hU hn hx))))).add
@@ -401,9 +401,9 @@ private theorem isExtendTransChart_restrFaceChart {m : ℕ∞ω} [IsManifold I m
     (hfm : ContMDiff I 𝓘(ℝ) m f) {x : M} (hx : IsRegularPoint I 𝓘(ℝ) f x) {V : Set M}
     (hV : IsOpen V) (Ψ : E ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) :
     (restrFaceChart I (hfm.of_le hm).contMDiffAt hx V Ψ).IsExtendTransChart I m :=
-  ⟨_, _, restr_mem_maximalAtlas _
-    (scalarSubmersionChartAt_mem_maximalAtlas _ _ hm fun _ _ ↦ hfm.contMDiffAt) hV,
-    Ψ.contDiff, Ψ.symm.contDiff, rfl⟩
+  isExtendTransChart_extendTrans (restr_mem_maximalAtlas _
+    (scalarSubmersionChartAt_mem_maximalAtlas _ _ hm fun _ _ ↦ hfm.contMDiffAt) hV)
+    Ψ.contDiff Ψ.symm.contDiff
 
 end Atlas
 
@@ -922,6 +922,29 @@ theorem scalarRegularBandChartAt_apply_zero_of_eq_left {w : f ⁻¹' Icc a b}
       (mem_chartAt_source_of_mem_restrFaceChart_source hf _
         (isOpen_Iio.preimage hf.continuous) _ hw).1, hx]
 
+/-- At a point `x` of the lower level `f⁻¹(a)`, the coordinates of the preferred chart in slots
+`1, …, n` are the tangential coordinates `K (P (extChartAt I x w - extChartAt I x x))`, reindexed
+along `dim E - 1 = n`. Here `D` is the derivative of `f` in the preferred extended chart at `x`,
+`P` the chosen projection onto `ker D` and `K : ker D ≃ (Fin (dim E - 1) → ℝ)` the identification
+used by the level atlas. -/
+theorem scalarRegularBandChartAt_apply_succ_of_eq_left {w : f ⁻¹' Icc a b}
+    (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) (i : Fin n) :
+    (scalarRegularBandChartAt hf hn ha hb x w).1 i.succ =
+      let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
+      D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
+        (ha.isRegularPoint hx).finrank_ker_fderiv_comp_extChartAt_symm
+        (Classical.choose D.isFredholm_of_finiteDimensional.closedComplemented_ker
+          (extChartAt I (x : M) w - extChartAt I (x : M) x)) (Fin.cast (by omega) i) := by
+  have hw' := hw
+  rw [scalarRegularBandChartAt_of_eq_left hf hn ha hb hx, halfSpaceChart_source,
+    mem_preimage] at hw'
+  rw [scalarRegularBandChartAt_apply_of_eq_left hf hn ha hb hx hw,
+    scalarRegularBandLowerFaceEquiv_apply_succ,
+    scalarRegularSublevelFaceEquiv_extend_apply hn _ _
+      (mem_chartAt_source_of_mem_restrFaceChart_source hf _
+        (isOpen_Iio.preimage hf.continuous) _ hw').1,
+    euclideanFinConsEquiv_apply_succ]
+
 /-- **On the lower level, the tangential coordinates are those of the level chart.** At a point `x`
 of the lower level `f⁻¹(a)`, the coordinates in slots `1, …, n` of the preferred chart of the
 band at a point `w` of that level are the coordinates of the preferred level chart
@@ -932,16 +955,7 @@ theorem scalarRegularBandChartAt_apply_succ_eq_regularLevelChartAt_of_eq_left
     (scalarRegularBandChartAt hf hn ha hb x w).1 i.succ =
       regularLevelChartAt (n := finrank ℝ E - 1) (fun y _ ↦ hf.contMDiffAt) ha
         (by rw [finrank_self]) ⟨x, hx⟩ ⟨w, hwa⟩ (Fin.cast (by omega) i) := by
-  have hw' := hw
-  rw [scalarRegularBandChartAt_of_eq_left hf hn ha hb hx, halfSpaceChart_source,
-    mem_preimage] at hw'
-  rw [scalarRegularBandChartAt_apply_of_eq_left hf hn ha hb hx hw,
-    scalarRegularBandLowerFaceEquiv_apply_succ,
-    scalarRegularSublevelFaceEquiv_extend_apply hn _ _
-      (mem_chartAt_source_of_mem_restrFaceChart_source hf _
-        (isOpen_Iio.preimage hf.continuous) _ hw').1,
-    euclideanFinConsEquiv_apply_succ,
-    regularLevelChartAt_apply]
+  rw [scalarRegularBandChartAt_apply_succ_of_eq_left hf hn ha hb hx hw, regularLevelChartAt_apply]
 
 end LowerFace
 
@@ -1009,6 +1023,28 @@ theorem scalarRegularBandChartAt_apply_zero_of_eq_right {w : f ⁻¹' Icc a b}
       (mem_chartAt_source_of_mem_restrFaceChart_source hf _
         (isOpen_Ioi.preimage hf.continuous) _ hw).1, hx]
 
+/-- At a point `x` of the upper level `f⁻¹(b)`, the coordinates of the preferred chart in slots
+`1, …, n` are the tangential coordinates `K (P (extChartAt I x w - extChartAt I x x))`, reindexed
+along `dim E - 1 = n`. Here `D` is the derivative of `f` in the preferred extended chart at `x`,
+`P` the chosen projection onto `ker D` and `K : ker D ≃ (Fin (dim E - 1) → ℝ)` the identification
+used by the level atlas. -/
+theorem scalarRegularBandChartAt_apply_succ_of_eq_right {w : f ⁻¹' Icc a b}
+    (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) (i : Fin n) :
+    (scalarRegularBandChartAt hf hn ha hb x w).1 i.succ =
+      let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
+      D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
+        (hb.isRegularPoint hx).finrank_ker_fderiv_comp_extChartAt_symm
+        (Classical.choose D.isFredholm_of_finiteDimensional.closedComplemented_ker
+          (extChartAt I (x : M) w - extChartAt I (x : M) x)) (Fin.cast (by omega) i) := by
+  have hw' := hw
+  rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_source,
+    mem_preimage] at hw'
+  rw [scalarRegularBandChartAt_apply_of_eq_right hf hn ha hb hab hx hw,
+    scalarRegularSublevelFaceEquiv_extend_apply hn _ _
+      (mem_chartAt_source_of_mem_restrFaceChart_source hf _
+        (isOpen_Ioi.preimage hf.continuous) _ hw').1,
+    euclideanFinConsEquiv_apply_succ]
+
 /-- **On the upper level, the tangential coordinates are those of the level chart.** At a point `x`
 of the upper level `f⁻¹(b)`, the coordinates in slots `1, …, n` of the preferred chart of the
 band at a point `w` of that level are the coordinates of the preferred level chart
@@ -1019,14 +1055,7 @@ theorem scalarRegularBandChartAt_apply_succ_eq_regularLevelChartAt_of_eq_right
     (scalarRegularBandChartAt hf hn ha hb x w).1 i.succ =
       regularLevelChartAt (n := finrank ℝ E - 1) (fun y _ ↦ hf.contMDiffAt) hb
         (by rw [finrank_self]) ⟨x, hx⟩ ⟨w, hwb⟩ (Fin.cast (by omega) i) := by
-  have hw' := hw
-  rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_source,
-    mem_preimage] at hw'
-  rw [scalarRegularBandChartAt_apply_of_eq_right hf hn ha hb hab hx hw,
-    scalarRegularSublevelFaceEquiv_extend_apply hn _ _
-      (mem_chartAt_source_of_mem_restrFaceChart_source hf _
-        (isOpen_Ioi.preimage hf.continuous) _ hw').1,
-    euclideanFinConsEquiv_apply_succ,
+  rw [scalarRegularBandChartAt_apply_succ_of_eq_right hf hn ha hb hab hx hw,
     regularLevelChartAt_apply]
 
 end UpperFace
