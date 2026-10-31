@@ -408,21 +408,41 @@ variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable [AddCommGroup V'] [Module R V'] [Module K V'] [IsScalarTower R K V']
 
 variable (K) in
-/-- The inclusion of a free full lattice submodule localizes it at the nonzero divisors of `R`. -/
-theorem isLocalizedModule_subtype (S : Submodule R V') [Module.Free R S] [S.IsLattice K] :
-    IsLocalizedModule (nonZeroDivisors R) S.subtype :=
-  (isLocalizedModule_iff_isBaseChange (nonZeroDivisors R) K _).mpr
-    (Submodule.isBaseChange_subtype S)
+/-- Some nonzero multiple of every ambient vector lies in a full lattice submodule. -/
+theorem exists_ne_zero_smul_mem (S : Submodule R V') [S.IsLattice K]
+    (v : V') : ∃ r : R, r ≠ 0 ∧ r • v ∈ S := by
+  have hv : v ∈ Submodule.span K (S : Set V') := by
+    rw [Submodule.IsLattice.span_eq_top]
+    trivial
+  induction hv using Submodule.span_induction with
+  | mem x hx => exact ⟨1, one_ne_zero, by simpa using hx⟩
+  | zero => exact ⟨1, one_ne_zero, by simp⟩
+  | add x y _ _ hx hy =>
+    obtain ⟨a, ha, hx⟩ := hx
+    obtain ⟨b, hb, hy⟩ := hy
+    refine ⟨a * b, mul_ne_zero ha hb, ?_⟩
+    simpa only [smul_add, mul_smul, smul_comm a b x] using
+      S.add_mem (S.smul_mem b hx) (S.smul_mem a hy)
+  | smul c x _ hx =>
+    obtain ⟨a, ha, hx⟩ := hx
+    obtain ⟨b, d, hd, rfl⟩ := IsFractionRing.div_surjective R c
+    refine ⟨d * a, mul_ne_zero (mem_nonZeroDivisors_iff_ne_zero.mp hd) ha, ?_⟩
+    have hd' : algebraMap R K d ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors
+      hd
+    convert S.smul_mem b hx using 1
+    rw [mul_smul, smul_comm a (algebraMap R K b / algebraMap R K d),
+      ← algebraMap_smul K d, smul_smul, mul_div_cancel₀ _ hd', algebraMap_smul]
 
 variable (K) in
-/-- Some nonzero multiple of every ambient vector lies in a free full lattice submodule. -/
-theorem exists_ne_zero_smul_mem (S : Submodule R V') [Module.Free R S] [S.IsLattice K]
-    (v : V') : ∃ r : R, r ≠ 0 ∧ r • v ∈ S := by
-  have hS := isLocalizedModule_subtype K S
-  obtain ⟨⟨x, r⟩, hr⟩ := hS.surj v
-  refine ⟨r, nonZeroDivisors.coe_ne_zero r, ?_⟩
-  rw [Submonoid.smul_def] at hr
-  rw [hr]
-  exact x.2
+/-- The inclusion of a full lattice submodule localizes it at the nonzero divisors of `R`. -/
+theorem isLocalizedModule_subtype (S : Submodule R V') [S.IsLattice K] :
+    IsLocalizedModule (nonZeroDivisors R) S.subtype := by
+  have := isLocalizedModule_id (nonZeroDivisors R) V' K
+  refine ⟨IsLocalizedModule.map_units (LinearMap.id : V' →ₗ[R] V'), ?_, ?_⟩
+  · intro v
+    obtain ⟨r, hr, hv⟩ := exists_ne_zero_smul_mem K S v
+    exact ⟨⟨⟨r • v, hv⟩, ⟨r, mem_nonZeroDivisors_of_ne_zero hr⟩⟩, rfl⟩
+  · intro x y h
+    exact ⟨1, by simpa using Subtype.ext h⟩
 
 end Submodule.IsLattice
