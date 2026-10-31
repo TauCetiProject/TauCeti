@@ -35,11 +35,14 @@ nonzero vectors `m`, that is, the images of the identity point under the orbit m
 nonzero vectors. One direction applies the description of closed points of `Proj (Sym N)` by
 nonzero functionals to `N = M∨`
 (`ProjectiveSpectrum.exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed`); the other
-is Mathlib's `pointEquivClosedPoint`. This part needs neither finite generation nor
-reducedness of the Hopf algebra.
+holds over any field, because the image of a rational group point is the image of a section of
+projective space over `Spec k`, which is a closed immersion. This part needs neither finite
+generation nor reducedness of the Hopf algebra.
 
 ## Main declarations
 
+* `TauCeti.Comodule.projectiveOrbitMap_kernelPoint_mem_closedPoints`: over any field, images of
+  rational group points are closed.
 * `ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq`: the closed points of
   projective space are the identity images of orbit morphisms of nonzero vectors.
 * `TauCeti.Comodule.range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints`: the
@@ -58,8 +61,42 @@ namespace TauCeti.Comodule
 
 universe u
 
-variable {k H M : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
+variable {k H M : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
   [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
+
+/-- Over any field, the image of a rational point of the group under a projective orbit morphism
+is a closed point: it is the image of a section of projective space over `Spec k`. -/
+theorem projectiveOrbitMap_kernelPoint_mem_closedPoints (m : M) (hm : Module.IsUnimodular k m)
+    (g : H →ₐ[k] k) :
+    projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint g) ∈ closedPoints _ := by
+  let p := Spec.map (CommRingCat.ofHom (g : H →+* k)) ≫ projectiveOrbitMap (H := H) m hm
+  have hp : p ≫ TauCeti.SymmetricAlgebra.projToSpec k (Module.Dual k M) = 𝟙 _ := by
+    rw [Category.assoc, projectiveOrbitMap_projToSpec, ← Spec.map_comp, ← Spec.map_id]
+    congr 1
+    ext r
+    simp
+  have hpt : p (IsLocalRing.closedPoint k) =
+      projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint g) := by
+    have h : Spec.map (CommRingCat.ofHom (g : H →+* k)) (IsLocalRing.closedPoint k) =
+        AlgHom.kernelPoint g := by
+      apply PrimeSpectrum.ext
+      -- `IsLocalRing.closedPoint k` is a point of `PrimeSpectrum k`, not syntactically of
+      -- `Spec (.of k)`, so `Spec.map_apply` is applied by unification rather than by rewriting.
+      rw [congrArg PrimeSpectrum.asIdeal (Spec.map_apply
+          (CommRingCat.ofHom (g : H →+* k)) (IsLocalRing.closedPoint k)),
+        PrimeSpectrum.comap_asIdeal, AlgHom.kernelPoint_asIdeal]
+      dsimp only [IsLocalRing.closedPoint]
+      rw [IsLocalRing.maximalIdeal_eq_bot, RingHom.ker_eq_comap_bot]
+      rfl
+    rw [← h]
+    rfl
+  -- A section over the one-point scheme `Spec k` is a closed immersion with one-point range.
+  have := isClosedImmersion_of_comp_eq_id _ p hp
+  rw [← hpt, mem_closedPoints_iff, ← Set.range_eq_singleton
+    (fun x ↦ congrArg p (Subsingleton.elim x (IsLocalRing.closedPoint k)))]
+  exact p.isClosedEmbedding.isClosed_range
+
+variable [IsAlgClosed k]
 
 /-- Over an algebraically closed field, the closed points of the projective space of lines in a
 finite-dimensional representation are exactly the images of the identity point under the
@@ -88,31 +125,7 @@ theorem _root_.ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap
     simp only [AlgHom.convOne_def, Algebra.ofId_self, AlgHom.id_comp] at h
     rw [h, hv n hn s hs, hmv]
   · rintro ⟨m, hm, rfl⟩
-    let p := Spec.map (CommRingCat.ofHom (Bialgebra.counitAlgHom k H : H →+* k)) ≫
-      projectiveOrbitMap (H := H) m hm
-    have hp : p ≫ TauCeti.SymmetricAlgebra.projToSpec k (Module.Dual k M) = 𝟙 _ := by
-      rw [Category.assoc, projectiveOrbitMap_projToSpec, ← Spec.map_comp, ← Spec.map_id]
-      congr 1
-      ext r
-      simp
-    have hpt : p (IsLocalRing.closedPoint k) =
-        projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) := by
-      have h : Spec.map (CommRingCat.ofHom (Bialgebra.counitAlgHom k H : H →+* k))
-          (IsLocalRing.closedPoint k) = AlgHom.kernelPoint (Bialgebra.counitAlgHom k H) := by
-        apply PrimeSpectrum.ext
-        -- `IsLocalRing.closedPoint k` is a point of `PrimeSpectrum k`, not syntactically of
-        -- `Spec (.of k)`, so `Spec.map_apply` is applied by unification rather than by rewriting.
-        rw [congrArg PrimeSpectrum.asIdeal (Spec.map_apply
-            (CommRingCat.ofHom (Bialgebra.counitAlgHom k H : H →+* k)) (IsLocalRing.closedPoint k)),
-          PrimeSpectrum.comap_asIdeal, AlgHom.kernelPoint_asIdeal]
-        dsimp only [IsLocalRing.closedPoint]
-        rw [IsLocalRing.maximalIdeal_eq_bot, RingHom.ker_eq_comap_bot]
-        rfl
-      rw [← h]
-      rfl
-    rw [← hpt]
-    exact (pointEquivClosedPoint (TauCeti.SymmetricAlgebra.projToSpec k (Module.Dual k M))
-      ⟨p, hp⟩).2
+    exact projectiveOrbitMap_kernelPoint_mem_closedPoints m hm _
 
 variable [Algebra.FiniteType k H]
 

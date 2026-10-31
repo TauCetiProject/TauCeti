@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Weight
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import Mathlib.RingTheory.HopfAlgebra.GroupLike
@@ -34,7 +34,6 @@ the action of the multiplicative group on the projective line.
 
 ## Main results
 
-* `GroupLike.matrixCoefficient_of_mem_weightSpace`: matrix coefficients of a weight vector.
 * `TauCeti.Comodule.mem_projectiveOrbitMap_iff`: the homogeneous ideal of the image of a point.
 * `TauCeti.Comodule.notMem_range_projectiveOrbitMap_of_isUnit`: points on the zero locus of a form
   with invertible orbit coordinate lie outside the orbit.
@@ -57,20 +56,6 @@ namespace TauCeti.Comodule
 
 universe u
 
-section Coalgebra
-
-variable {R C M : Type*} [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
-variable [AddCommMonoid M] [Module R M] [Comodule R C M]
-
-/-- A matrix coefficient of a weight vector `m` of weight `c` is the multiple `φ(m) c` of `c`. -/
-theorem _root_.GroupLike.matrixCoefficient_of_mem_weightSpace {c : GroupLike R C} {m : M}
-    (hc : m ∈ GroupLike.weightSpace (M := M) c) (φ : Module.Dual R M) :
-    matrixCoefficient (C := C) φ m = φ m • c.val := by
-  rw [matrixCoefficient_def, GroupLike.mem_weightSpace.mp hc]
-  simp
-
-end Coalgebra
-
 section Bialgebra
 
 variable {R H M : Type*} [CommSemiring R] [CommSemiring H] [Bialgebra R H]
@@ -84,14 +69,12 @@ theorem orbitCoordinates_of_mem_weightSpace {c : GroupLike R H} {m : M}
     (hs : s ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M) n) :
     orbitCoordinates (H := H) m s =
       algebraMap R H (SymmetricAlgebra.lift (Module.Dual.eval R M m) s) * c.val ^ n := by
-  induction hs using Submodule.pow_induction_on_left' with
-  | algebraMap a => simp
-  | add x y i _ _ ihx ihy => simp only [map_add, ihx, ihy, add_mul]
-  | mem_mul x hx i y _ ih =>
-      obtain ⟨φ, rfl⟩ := hx
-      rw [map_mul, ih, orbitCoordinates_ι, GroupLike.matrixCoefficient_of_mem_weightSpace hc]
-      simp [Algebra.smul_def, pow_succ]
-      ring
+  rw [mul_comm]
+  exact AlgHom.apply_eq_pow_mul_of_forall_ι_eq
+    ((Algebra.ofId R H).comp (SymmetricAlgebra.lift (Module.Dual.eval R M m)))
+    (orbitCoordinates m) c.val (fun φ ↦ by
+      simp [orbitCoordinates_ι, GroupLike.matrixCoefficient_of_mem_weightSpace hc,
+        Algebra.smul_def, mul_comm]) hs
 
 end Bialgebra
 

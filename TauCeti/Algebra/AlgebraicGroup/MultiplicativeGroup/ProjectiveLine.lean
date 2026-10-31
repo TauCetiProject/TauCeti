@@ -22,8 +22,7 @@ the full images of the projective orbit morphisms `𝔾ₘ ⟶ ℙ¹`, nonclosed
 field `k`:
 
 * the lines `[1 : 0]` and `[0 : 1]` through the two standard basis vectors are fixed by the whole
-  group scheme, so their orbits are single points, which are closed when `k` is algebraically
-  closed;
+  group scheme, so their orbits are single closed points;
 * the orbit of `[1 : 1]` is dense in `ℙ¹` (over any domain) but misses both fixed points, so it is
   not closed;
 * when `k` is algebraically closed, the boundary of that orbit, its closure minus the orbit, is
@@ -93,11 +92,11 @@ theorem scalingWeight_one : scalingWeight R 1 = 1 :=
   (rfl)
 
 /-- The coefficient matrix `diag(T, 1)` of the representation `t • (u, v) = (t u, v)`. -/
-noncomputable def scalingMatrix : Matrix (Fin 2) (Fin 2) R[T;T⁻¹] :=
+private noncomputable def scalingMatrix : Matrix (Fin 2) (Fin 2) R[T;T⁻¹] :=
   Matrix.diagonal fun i ↦ (scalingWeight R i).val
 
 /-- The diagonal matrix of group-like elements `diag(T, 1)` is multiplicative. -/
-theorem map_comul_scalingMatrix :
+private theorem map_comul_scalingMatrix :
     (scalingMatrix R).map (Bialgebra.comulAlgHom R R[T;T⁻¹]) =
       (scalingMatrix R).map (Algebra.TensorProduct.includeLeft (R := R) (S := R)) *
         (scalingMatrix R).map (Algebra.TensorProduct.includeRight (R := R)) := by
@@ -107,7 +106,7 @@ theorem map_comul_scalingMatrix :
       Algebra.TensorProduct.one_def]
 
 /-- The counit sends `diag(T, 1)` to the identity matrix. -/
-theorem counit_scalingMatrix (i j : Fin 2) :
+private theorem counit_scalingMatrix (i j : Fin 2) :
     Coalgebra.counit (R := R) (scalingMatrix R i j) =
       (Pi.basisFun R (Fin 2)).repr ((Pi.basisFun R (Fin 2)) j) i := by
   fin_cases i <;> fin_cases j <;> simp [scalingMatrix, scalingWeight, counit_T]
@@ -170,7 +169,7 @@ theorem orbitCoordinates_one_comp_map_toDual :
       Polynomial.toLaurentAlg.comp (AlgebraicGeometry.projectiveLine.dehomogenize R 1) := by
   refine SymmetricAlgebra.algHom_ext ((Pi.basisFun R (Fin 2)).ext fun i ↦ ?_)
   have hX := AlgebraicGeometry.projectiveLine.dehomogenize_coord_rev R 1
-  rw [show (1 : Fin 2).rev = 0 from rfl] at hX
+  rw [show (1 : Fin 2).rev = 0 by simp] at hX
   have hdual (i' j : Fin 2) : (Pi.basisFun R (Fin 2)).toDual (Pi.single i' 1) (Pi.single j 1) =
       if i' = j then 1 else 0 := by
     simpa using (Pi.basisFun R (Fin 2)).toDual_apply i' j
@@ -225,6 +224,13 @@ theorem range_projectiveOrbitMap_single (i : Fin 2) :
         (AlgHom.kernelPoint (Bialgebra.counitAlgHom k k[T;T⁻¹]))} :=
   range_projectiveOrbitMap_of_mem_weightSpace (single_mem_weightSpace k i) _
 
+/-- The orbits of `[1 : 0]` and `[0 : 1]` are closed. -/
+theorem isClosed_range_projectiveOrbitMap_single (i : Fin 2) :
+    IsClosed (Set.range
+      (projectiveOrbitMap (H := k[T;T⁻¹]) (Pi.single i 1) (isUnimodular_single k i))) := by
+  rw [range_projectiveOrbitMap_single, ← mem_closedPoints_iff]
+  exact projectiveOrbitMap_kernelPoint_mem_closedPoints _ _ _
+
 /-- The fixed points `[1 : 0]` and `[0 : 1]` are not on the orbit of `[1 : 1]`. -/
 theorem projectiveOrbitMap_single_notMem_range_one (i : Fin 2) :
     projectiveOrbitMap (H := k[T;T⁻¹]) (Pi.single i 1) (isUnimodular_single k i)
@@ -253,14 +259,6 @@ theorem not_isClosed_range_projectiveOrbitMap_one :
   trivial
 
 variable [IsAlgClosed k]
-
-/-- Over an algebraically closed field the orbits of `[1 : 0]` and `[0 : 1]` are closed. -/
-theorem isClosed_range_projectiveOrbitMap_single (i : Fin 2) :
-    IsClosed (Set.range
-      (projectiveOrbitMap (H := k[T;T⁻¹]) (Pi.single i 1) (isUnimodular_single k i))) := by
-  rw [range_projectiveOrbitMap_single, ← mem_closedPoints_iff,
-    ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq (H := k[T;T⁻¹])]
-  exact ⟨_, _, rfl⟩
 
 /-- Over an algebraically closed field, a closed point of the projective line off the orbit of
 `[1 : 1]` is one of the fixed points `[1 : 0]` and `[0 : 1]`: every other closed point is the line
