@@ -35,13 +35,13 @@ is exactly the input the Skolem-Noether theorem needs, in
 
 ## Main results
 
-* `TauCeti.IsIsotypicOfType.of_isSimpleRing`: over a simple Artinian ring, every module is isotypic
+* `IsIsotypicOfType.of_isSimpleRing`: over a simple Artinian ring, every module is isotypic
   of the type of any fixed simple module. This upgrades Mathlib's `IsSimpleRing.isIsotypic`, which
   compares simple submodules of a single module, to a comparison against a fixed simple module,
   which is what lets two different modules be compared with each other.
-* `TauCeti.IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`: two finite-dimensional modules over a
+* `IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`: two finite-dimensional modules over a
   finite-dimensional simple `K`-algebra with the same `K`-dimension are isomorphic.
-* `TauCeti.IsSimpleRing.nonempty_linearEquiv_iff_finrank_eq`: the two-way form, the classification
+* `IsSimpleRing.nonempty_linearEquiv_iff_finrank_eq`: the two-way form, the classification
   itself.
 
 ## Implementation notes
@@ -54,7 +54,7 @@ and can be cancelled.
 
 The two classification statements ask `R` to be finite-dimensional over `K` and do not also ask it
 to be Artinian: `IsArtinianRing.of_finite` derives that from finite-dimensionality, so callers never
-have to supply it. Only `TauCeti.IsIsotypicOfType.of_isSimpleRing`, which has no field in sight,
+have to supply it. Only `IsIsotypicOfType.of_isSimpleRing`, which has no field in sight,
 takes `IsArtinianRing R` as a hypothesis.
 
 Simplicity of `R` is not weakened to semisimplicity: over a semisimple ring with more than one block
@@ -63,16 +63,11 @@ over the blocks in different ways.
 
 ## References
 
-This supplies the classification of modules over a simple Artinian ring used by the Layer 5 target
-`skolemNoether` of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, Chapter 1, and R. S. Pierce,
 *Associative Algebras*, GTM 88, Chapter 3.
 -/
 
 public section
-
-namespace TauCeti
 
 open Module
 
@@ -84,15 +79,15 @@ simple module `S`: every simple submodule of every `R`-module is isomorphic to `
 
 Mathlib's `IsSimpleRing.isIsotypic` compares two simple submodules of one and the same module. The
 content added here is that the comparison can be made against a simple module fixed once and for
-all, so that simple submodules of *different* modules become comparable: because `R` is semisimple,
-a simple submodule of `M` and `S` itself are both isomorphic to ideals of `R`, and those two ideals
-are isomorphic because `R` is isotypic over itself. -/
+all, so that simple submodules of *different* modules become comparable. -/
 theorem IsIsotypicOfType.of_isSimpleRing [IsArtinianRing R] (S : Type*) [AddCommGroup S]
     [Module R S] [IsSimpleModule R S] (M : Type*) [AddCommGroup M] [Module R M] :
     IsIsotypicOfType R M S := by
   intro m _
-  obtain ⟨I, ⟨e⟩⟩ := IsSemisimpleRing.exists_linearEquiv_ideal_of_isSimpleModule (R := R) (M := m)
-  obtain ⟨J, ⟨eS⟩⟩ := IsSemisimpleRing.exists_linearEquiv_ideal_of_isSimpleModule (R := R) (M := S)
+  -- `R` is semisimple, so `m` and `S` are both isomorphic to minimal left ideals of `R`, and those
+  -- two ideals are isomorphic because `R` is isotypic over itself.
+  obtain ⟨I, ⟨e⟩⟩ := IsSemisimpleRing.exists_linearEquiv_ideal_of_isSimpleModule R m
+  obtain ⟨J, ⟨eS⟩⟩ := IsSemisimpleRing.exists_linearEquiv_ideal_of_isSimpleModule R S
   have : IsSimpleModule R I := IsSimpleModule.congr e.symm
   have : IsSimpleModule R J := IsSimpleModule.congr eS.symm
   exact ⟨(e.trans (IsSimpleRing.isIsotypic R R I J).some.symm).trans eS.symm⟩
@@ -107,40 +102,28 @@ variable (K : Type*) [Field K] [Algebra K R] [FiniteDimensional K R]
 
 /-- **Modules over a simple Artinian algebra are classified by their dimension.** If `R` is a
 finite-dimensional simple `K`-algebra and `M`, `N` are `R`-modules which are finite-dimensional over
-`K`, then equal `K`-dimension forces an `R`-linear isomorphism.
-
-Both modules are direct sums of copies of one and the same simple module `S`
-(`TauCeti.IsIsotypicOfType.of_isSimpleRing`), say `Sⁿ` and `Sᵐ`; comparing dimensions gives
-`n * finrank K S = m * finrank K S`, and `finrank K S ≠ 0`, so `n = m`. -/
+`K`, then equal `K`-dimension forces an `R`-linear isomorphism. -/
 theorem nonempty_linearEquiv_of_finrank_eq (h : finrank K M = finrank K N) :
     Nonempty (M ≃ₗ[R] N) := by
   have : IsArtinianRing R := IsArtinianRing.of_finite K R
-  obtain ⟨S, hS⟩ := IsAtomic.exists_atom (Submodule R R)
-  rw [← isSimpleModule_iff_isAtom] at hS
+  obtain ⟨S, _⟩ := IsSemisimpleModule.exists_simple_submodule R R
   have : Module.Finite R M := Module.Finite.of_restrictScalars_finite K R M
   have : Module.Finite R N := Module.Finite.of_restrictScalars_finite K R N
+  -- Both modules are powers `Sⁿ` and `Sᵐ` of the same minimal left ideal `S`.
   obtain ⟨n, ⟨eM⟩⟩ := (IsIsotypicOfType.of_isSimpleRing R ↥S M).linearEquiv_fun
   obtain ⟨m, ⟨eN⟩⟩ := (IsIsotypicOfType.of_isSimpleRing R ↥S N).linearEquiv_fun
   have : Nontrivial S := IsSimpleModule.nontrivial R S
-  have hSpos : 0 < finrank K S := Module.finrank_pos
-  -- `Sᵏ` has `K`-dimension `k * finrank K S`; this is the only dimension count the proof makes.
-  have hpow : ∀ k : ℕ, finrank K (Fin k → S) = k * finrank K S := fun k ↦ by
-    rw [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-      smul_eq_mul]
-  have hM : finrank K M = n * finrank K S := by
-    rw [(eM.restrictScalars K).finrank_eq, hpow]
-  have hN : finrank K N = m * finrank K S := by
-    rw [(eN.restrictScalars K).finrank_eq, hpow]
-  obtain rfl : n = m := Nat.eq_of_mul_eq_mul_right hSpos (hM.symm.trans (h.trans hN))
+  -- Comparing `K`-dimensions gives `n * finrank K S = m * finrank K S` with `finrank K S ≠ 0`.
+  obtain rfl : n = m := by
+    simpa [(eM.restrictScalars K).finrank_eq, (eN.restrictScalars K).finrank_eq,
+      Module.finrank_pi_fintype, Module.finrank_pos.ne'] using h
   exact ⟨eM.trans eN.symm⟩
 
 /-- **The classification of finite-dimensional modules over a simple Artinian algebra**: the
 `K`-dimension is a complete invariant. The forward implication holds over any ring; the content is
-the converse, `TauCeti.IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`. -/
+the converse, `IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`. -/
 theorem nonempty_linearEquiv_iff_finrank_eq :
     Nonempty (M ≃ₗ[R] N) ↔ finrank K M = finrank K N :=
   ⟨fun ⟨e⟩ ↦ (e.restrictScalars K).finrank_eq, nonempty_linearEquiv_of_finrank_eq K⟩
 
 end IsSimpleRing
-
-end TauCeti

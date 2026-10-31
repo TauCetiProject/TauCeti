@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Congr
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.MapDegreeTwo
 
 /-!
 # Unit-valued Galois cohomology of isomorphic fields
@@ -15,7 +15,11 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFu
 A field isomorphism transports the discrete unit modules of the chosen separable closures,
 continuous two-cocycles, and their explicit second cohomology groups. The group map is
 contravariant, and the coefficient map is covariant. Their compatibility follows from the
-conjugation equation for the chosen absolute-Galois-group equivalence.
+conjugation equation for the chosen absolute-Galois-group equivalence. The same compatible pair
+also identifies Mathlib's canonical `continuousCohomology 2` groups, by
+`TauCeti.ContCohomology.continuousCohomologyMap2Equiv`, and the comparison with the explicit model
+carries one identification to the other
+(`RingEquiv.explicitH2AddEquivContinuousCohomology_unitsH2Congr`).
 
 The compatible-pair construction is extracted from
 `TauCeti.ClassFieldTheory.brCongr` and specializes continuous cohomology's `cocyclesMap2`
@@ -126,5 +130,42 @@ theorem unitsH2Congr_symm_mk (e : K ≃+* L)
     (AbsoluteGaloisGroup L) (UnitsCoeff L) _ _ _ _ _ _).trans
       (explicitMap2_mk (AbsoluteGaloisGroup L) (UnitsCoeff L)
         (AbsoluteGaloisGroup K) (UnitsCoeff K) _ _ _ _ c)
+
+/-- The absolute Galois group is locally compact, being compact and Hausdorff. Instance search
+does not find this within its default budget, so it is assembled here from the Krull topology
+being Hausdorff, as in `TauCeti.Algebra.CrossedProduct.Comparison`. -/
+local instance locallyCompactSpace_absoluteGaloisGroup {F : Type*} [Field F] :
+    LocallyCompactSpace (AbsoluteGaloisGroup F) :=
+  have : R1Space (AbsoluteGaloisGroup F) := @T2Space.r1Space _ _ krullTopology_t2
+  have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup F) :=
+    ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
+  WeaklyLocallyCompactSpace.locallyCompactSpace
+
+/-- A field isomorphism identifies Mathlib's canonical second continuous Galois cohomology groups
+with unit coefficients, along the same group and coefficient maps as `RingEquiv.unitsH2Congr`.
+The field universes remain independent. -/
+def unitsContinuousH2Congr (e : K ≃+* L) :
+    continuousCohomology 2 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K)) ≃+
+      continuousCohomology 2 (ofDiscreteModule ℤ (AbsoluteGaloisGroup L) (UnitsCoeff L)) :=
+  continuousCohomologyMap2Equiv _ _ _ _ e.absoluteGaloisGroupCongr e.unitsCoeffCongr
+    e.unitsCoeffCongr_smul
+
+/-- Canonical field transport is the pullback along the transported automorphisms and the
+coefficient transport. -/
+theorem unitsContinuousH2Congr_apply (e : K ≃+* L)
+    (x : continuousCohomology 2 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :
+    e.unitsContinuousH2Congr x =
+      continuousCohomologyMap2 _ _ _ _ e.absoluteGaloisGroupCongr e.unitsCoeffCongr.toAddMonoidHom
+        e.unitsCoeffCongr_smul x :=
+  continuousCohomologyMap2Equiv_apply _ _ _ _ _ _ _ x
+
+/-- The comparison of the explicit `H²` with Mathlib's continuous cohomology carries explicit
+field transport `RingEquiv.unitsH2Congr` to canonical field transport. -/
+@[simp]
+theorem explicitH2AddEquivContinuousCohomology_unitsH2Congr (e : K ≃+* L)
+    (x : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
+    e.unitsContinuousH2Congr (explicitH2AddEquivContinuousCohomology _ _ x) =
+      explicitH2AddEquivContinuousCohomology _ _ (e.unitsH2Congr x) := by
+  simp [unitsContinuousH2Congr, unitsH2Congr]
 
 end RingEquiv

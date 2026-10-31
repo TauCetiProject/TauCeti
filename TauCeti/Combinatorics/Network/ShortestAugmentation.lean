@@ -314,6 +314,13 @@ theorem exists_isMaximum (f : BoundedFlow lo hi s t) : ∃ g : BoundedFlow lo hi
   let ⟨g, _, hg⟩ := exists_reflTransGen_shortestAugmentationStep_isMaximum f
   ⟨g, hg⟩
 
+/-- A feasible bounded terminal problem has a minimum assignment, including when its values
+are all negative. -/
+theorem exists_isMinimum (f : BoundedFlow lo hi s t) :
+    ∃ g : BoundedFlow lo hi s t, g.IsMinimum := by
+  obtain ⟨g, hg⟩ := f.swap.exists_isMaximum
+  exact ⟨g.swap, (isMaximum_swap _).1 (by simpa using hg)⟩
+
 /-- **Max-flow/min-cut theorem for bounded assignments.** If some bounded `s`–`t` assignment
 between distinct terminals exists, then some bounded `s`–`t` assignment has value equal to the cut
 bound of some vertex set containing `s` but not `t`. By weak duality

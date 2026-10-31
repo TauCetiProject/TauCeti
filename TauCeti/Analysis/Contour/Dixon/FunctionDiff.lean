@@ -34,7 +34,7 @@ there, so the `h₁`/`h₂` identity collapses.
   integrand hypothesis above, needing only `f` continuous on `U`).
 
 This is the analyticity input to the Liouville step of Dixon's proof of the homology form of
-Cauchy's theorem (`homologyCauchyTheorem`, `TauCetiRoadmap/ContourIntegration/Suggested.lean`).
+Cauchy's theorem, recorded as `TauCeti.Contour.homologyCauchyTheorem`.
 
 ## Provenance
 

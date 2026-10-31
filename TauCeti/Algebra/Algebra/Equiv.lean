@@ -13,7 +13,8 @@ import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 
 These lemmas recover the action of an algebra automorphism on one factor from its action on a
 product or quotient and a fixed cancellable factor. An automorphism negating a nonzero element
-is nontrivial when multiplication by `2` is injective.
+is nontrivial when multiplication by `2` is injective. An automorphism multiplying an element by a
+fixed factor `c` multiplies it by `cᵏ` under its `k`-th power.
 -/
 
 public section
@@ -42,5 +43,14 @@ theorem apply_eq_neg_of_apply_div_eq_neg {F L : Type*} [CommSemiring F] [Divisio
     (hσe : σ e = e) (h : σ (x / e) = -(x / e)) : σ x = -x := by
   rw [map_div₀, hσe, div_eq_iff he] at h
   rw [h, neg_mul, div_mul_cancel₀ _ he]
+
+/-- If an automorphism `σ` multiplies `u` by a factor `c` that it fixes, then `σᵏ` multiplies `u`
+by `cᵏ`. -/
+theorem pow_apply_eq_mul_pow {F L : Type*} [CommSemiring F] [Semiring L] [Algebra F L]
+    (σ : L ≃ₐ[F] L) {u c : L} (hc : σ c = c) (h : σ u = u * c) (k : ℕ) :
+    (σ ^ k) u = u * c ^ k := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [pow_succ', mul_apply, ih, map_mul, map_pow, h, hc, mul_assoc, pow_succ']
 
 end AlgEquiv

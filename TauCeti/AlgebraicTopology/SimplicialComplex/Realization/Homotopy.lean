@@ -14,7 +14,8 @@ public import Mathlib.Topology.Homotopy.Basic
 A family on a weak realization, with a locally compact parameter space, is jointly continuous
 if and only if its restrictions to all closed simplex cylinders are continuous. The same
 criterion holds on the actual polyhedron of a precomplex, with the subspace topology, even
-when that precomplex omits vertices.
+when that precomplex omits vertices. On an open subset of the realization, continuity is detected
+on the traces of that subset in the closed simplex cylinders.
 
 Compatible homotopies on the closed simplices therefore glue to a homotopy on the entire
 realization. The computation rule on each simplex also detects whether the glued homotopy
@@ -134,6 +135,41 @@ theorem continuous_prod_subtype_iff_faceInclusion [LocallyCompactSpace P]
           support_faceInclusion_mem hL p.1.2 p.2.1⟩)) :=
       continuous_sigma fun σ => (hf σ.1 σ.2).comp continuous_swap
     exact hc.comp (e.continuous.comp continuous_swap)
+
+/-- Joint continuity on an open subset of a weak realization, with a locally compact parameter,
+is detected on the traces of that subset in the closed simplex cylinders. Unlike a subcomplex, an
+open subset meets a closed simplex in a set which need not be a union of faces. -/
+theorem continuous_prod_subtype_iff_faceInclusion_of_isOpen [LocallyCompactSpace P]
+    {U : Set (Realization K)} (hU : IsOpen U) {f : P × U → X} :
+    Continuous f ↔ ∀ σ : Face K,
+      Continuous (fun p : P × (faceInclusion K σ ⁻¹' U) =>
+        f (p.1, ⟨faceInclusion K σ p.2, p.2.2⟩)) := by
+  constructor
+  · intro hf σ
+    exact hf.comp (continuous_id.prodMap (continuous_faceInclusion K σ).restrictPreimage)
+  · intro hf
+    rw [continuous_def]
+    intro V hV
+    rw [(IsOpenEmbedding.id.prodMap hU.isOpenEmbedding_subtypeVal).isOpen_iff_image_isOpen,
+      isOpen_iff_continuous_mem, continuous_prod_iff_faceInclusion]
+    intro σ
+    -- On each cylinder, the trace of the image is the image of an open subset of an open piece.
+    have he : IsOpenEmbedding
+        (Prod.map id Subtype.val : P × (faceInclusion K σ ⁻¹' U) → P × StandardSimplex σ.1) :=
+      IsOpenEmbedding.id.prodMap
+        (hU.preimage (continuous_faceInclusion K σ)).isOpenEmbedding_subtypeVal
+    convert isOpen_iff_continuous_mem.mp (he.isOpenMap _ ((hf σ).isOpen_preimage V hV)) using 1
+    ext ⟨p, x⟩
+    simp only [mem_image, mem_preimage, Prod.exists, Prod.map, id, Prod.mk.injEq]
+    constructor
+    · rintro ⟨q, y, hy, rfl, hyx⟩
+      have hx : x ∈ faceInclusion K σ ⁻¹' U := by
+        rw [mem_preimage, ← hyx]
+        exact y.2
+      have hxy : (⟨faceInclusion K σ x, hx⟩ : U) = y := Subtype.ext hyx.symm
+      exact ⟨q, ⟨x, hx⟩, by rwa [hxy], rfl, rfl⟩
+    · rintro ⟨q, y, hy, rfl, rfl⟩
+      exact ⟨q, ⟨faceInclusion K σ y, y.2⟩, hy, rfl, rfl⟩
 
 variable (K) {f₀ f₁ : C(Realization K, X)}
   (H : ∀ σ : Face K,

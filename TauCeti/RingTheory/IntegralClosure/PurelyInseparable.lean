@@ -9,38 +9,40 @@ public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.Exponent
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Noetherian.Defs
--- Proof-only: the integral basis of a finite extension of the fraction field.
-import Mathlib.RingTheory.DedekindDomain.IntegralClosure
--- Proof-only: polynomial rings over a field are Noetherian UFDs, hence integrally closed.
+public import TauCeti.RingTheory.Japanese
+-- Proof-only: polynomial rings over a Noetherian ring are Noetherian, and over an integrally
+-- closed domain they are integrally closed.
 import Mathlib.RingTheory.Polynomial.Basic
-import Mathlib.RingTheory.Polynomial.RationalRoot
-import Mathlib.RingTheory.Polynomial.UniqueFactorization
--- Proof-only: the five Tau Ceti prerequisites — the `expand`/`map` ring maps on polynomial
--- rings, root adjunction, the purely inseparable embedding criterion, and integral-closure
--- transfer. No statement below mentions them, so none is re-exported.
+import TauCeti.RingTheory.MvPolynomial.IntegrallyClosed
+-- Proof-only: the six Tau Ceti prerequisites — the `expand`/`map` ring maps on polynomial
+-- rings, root adjunction, the purely inseparable embedding criterion, denominator-cleared bases,
+-- and integral-closure transfer. No statement below mentions them, so none is re-exported.
 import TauCeti.RingTheory.MvPolynomial.Basic
 import TauCeti.RingTheory.MvPolynomial.Expand
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Roots
 import TauCeti.FieldTheory.PurelyInseparable.Embedding
+import TauCeti.FieldTheory.PurelyInseparable.Exponent
 import TauCeti.RingTheory.IntegralClosure.Transfer
 
 /-!
 # The integral closure of a polynomial ring in a purely inseparable extension is finite
 
-Let `k` be a field, `P = k[X_1, …, X_r]`, `K` its fraction field and `M / K` a finite purely
-inseparable extension of exponent `e`, `q = p ^ e`. The integral closure of `P` in `M` is a finite
-`P`-module. This is the purely inseparable half of normalization-finiteness, the only part that
-is genuinely absent from Mathlib (whose `IsIntegralClosure.finite` argues through the trace form
-and needs separability), and it is Stacks, Lemma 10.161.13 (tag 032O) run once for `r` variables
-over a field.
+Let `R` be a Noetherian Japanese domain, for instance a field, let `P = R[X_1, …, X_r]`, `K` its
+fraction field and `M / K` a finite purely inseparable extension of exponent `e`, `q = p ^ e`. The
+integral closure of `P` in `M` is a finite `P`-module. This is the purely inseparable half of
+normalization-finiteness, the only part that is genuinely absent from Mathlib (whose
+`IsIntegralClosure.finite` argues through the trace form and needs separability), and it is the
+second paragraph of the proof of Stacks, Lemma 10.161.13 (tag 032O), run once for `r` variables.
 
-The argument. Pick a `K`-basis `m_j` of `M` inside the integral closure. Each `m_j ^ q` lies in
-`K` and is integral over `P`, hence lies in `P` (`P` is a UFD). Let `k' / k` be a finite
-extension containing `q`-th roots of the finitely many coefficients of the `m_j ^ q`, and let
-`P' = k'[X_1, …, X_r]` be a `P`-algebra through `X_i ↦ X_i ^ q`. Then `P'` is a finite `P`-module,
-integrally closed with fraction field `K'`, and `M` embeds over `K` into `K'` because the `q`-th
-powers of the `m_j` become `q`-th powers there. So the integral closure of `P` in `M` maps
-injectively and `P`-linearly into the integral closure of `P` in `K'`, which is `P'`, and a
+The argument. Pick a `K`-basis `m_j` of `M` and scale each vector by a denominator of `m_j ^ q`,
+an element of `K`, so that every `m_j ^ q` lies in `P`. Let `F` be the fraction field of `R`,
+let `F' / F` be a finite extension containing `q`-th roots of the finitely many coefficients of
+the `m_j ^ q`, and let `R'` be the integral closure of `R` in `F'`: it is finite over `R` because
+`R` is Japanese, it is integrally closed, and it contains those roots. Let
+`P' = R'[X_1, …, X_r]` be a `P`-algebra through `X_i ↦ X_i ^ q`. Then `P'` is a finite
+`P`-module, integrally closed with fraction field `K'`, and `M` embeds over `K` into `K'` because
+the `q`-th powers of the `m_j` become `q`-th powers there. So the integral closure of `P` in `M`
+maps injectively and `P`-linearly into the integral closure of `P` in `K'`, which is `P'`, and a
 submodule of a finite module over a Noetherian ring is finite.
 
 ## Main results
@@ -52,7 +54,7 @@ submodule of a finite module over a Noetherian ring is finite.
   over the base, and an integral closure of it in a larger field, absorbs the `q`-th powers of a
   generating set.
 * `TauCeti.IsIntegralClosure.finite_mvPolynomial_of_isPurelyInseparable`: the theorem for
-  polynomial rings over a field.
+  polynomial rings over a Noetherian Japanese domain.
 
 ## Provenance
 
@@ -109,10 +111,12 @@ theorem IsIntegralClosure.finite_of_forall_exists_pow_eq (A K M C A' K' : Type*)
   -- (i) the root hypothesis embeds `M` into `K'` over `K` (leaf B2)
   obtain ⟨ι⟩ := IsPurelyInseparable.nonempty_algHom_of_forall_exists_pow_eq K M p hn K' hs
     fun x hx ↦ ((h x hx).elim fun y hy ↦ ⟨algebraMap A' K' y, hy⟩)
-  -- (ii) finiteness then descends along that embedding, `A'` being the integral closure of `A`
+  -- (ii) finiteness then descends along `C → M → K'`, `A'` being the integral closure of `A`
   -- in `K'` by hypothesis (leaf T2)
-  exact IsIntegralClosure.finite_of_injective (C' := A') (ι.restrictScalars A)
-    (ι.restrictScalars A).toRingHom.injective
+  have := IsIntegralClosure.isIntegral_algebra A (A := C) M
+  exact IsIntegralClosure.finite_of_injective (C' := A')
+    ((ι.restrictScalars A).comp (IsScalarTower.toAlgHom A C M))
+    (ι.toRingHom.injective.comp (IsIntegralClosure.algebraMap_injective C A M))
 
 /-! ### Steps of the polynomial-ring case
 
@@ -122,34 +126,37 @@ readable. Its `Algebra`/`IsScalarTower` plumbing is deliberately *not* split out
 instances away from their use site creates diamonds against
 `OreLocalization.instSMulOfIsScalarTower`. -/
 
-/-- A `K`-basis of `M` consisting of elements integral over `A`, together with the preimages in
-`A` of the `p ^ n`-th powers of its vectors. This is Mathlib's integral basis fed through
-`IsIntegral.exists_algebraMap_eq_iterateFrobenius` one vector at a time. -/
-private theorem exists_basis_iterateFrobenius_eq_algebraMap (A K M : Type*) [CommRing A]
-    [IsDomain A] [IsIntegrallyClosed A] [Field K] [Algebra A K] [IsFractionRing A K] [Field M]
-    [Algebra K M] [Algebra A M] [IsScalarTower A K M] [FiniteDimensional K M]
-    [IsPurelyInseparable.HasExponent K M] (p : ℕ) [ExpChar K p] {n : ℕ}
-    (hn : IsPurelyInseparable.exponent K M ≤ n) :
-    ∃ (sb : Finset M) (b : Module.Basis sb K M) (g : sb → A), ∀ j,
-      algebraMap A K (g j) = IsPurelyInseparable.iterateFrobenius K M p hn (b j) := by
-  obtain ⟨sb, b, hb⟩ := FiniteDimensional.exists_is_basis_integral A K M
-  choose g hgg using fun j ↦ (hb j).exists_algebraMap_eq_iterateFrobenius p hn
-  exact ⟨sb, b, g, hgg⟩
-
-/-- A finite extension of `k` in which every coefficient of each of the finitely many polynomials
-`g j` has an `m`-th root. This is `exists_finiteDimensional_forall_exists_pow_eq` applied to the
-union of their coefficient sets; keeping the `Finset` bookkeeping here lets the caller pass the
-root hypothesis on to `MvPolynomial.exists_pow_eq_map_expand` unchanged. -/
-private theorem exists_finiteDimensional_forall_coeff_exists_pow_eq {k : Type u} [Field k]
-    {σ ι : Type*} [Finite ι] (g : ι → MvPolynomial σ k) {m : ℕ} (hm : 0 < m) :
-    ∃ (k' : Type u) (_ : Field k') (_ : Algebra k k'), FiniteDimensional k k' ∧
-      ∀ j, ∀ d ∈ (g j).support, ∃ y : k', y ^ m = algebraMap k k' ((g j).coeff d) := by
+/-- A finite integrally closed extension `R'` of a Japanese domain `R` in which every coefficient
+of each of the finitely many polynomials `g j` has an `m`-th root. Take a finite extension `F'`
+of the fraction field `F` of `R` containing `m`-th roots of these coefficients
+(`exists_finiteDimensional_forall_exists_pow_eq`), and let `R'` be the integral closure of `R`
+in `F'`. It is finite over `R` because `R` is Japanese, and it contains the roots because they
+are integral over `R`. -/
+private theorem exists_finite_forall_coeff_exists_pow_eq {R : Type u} [CommRing R] [IsDomain R]
+    [Ring.IsJapanese R] {σ ι : Type*} [Finite ι] (g : ι → MvPolynomial σ R) {m : ℕ} (hm : 0 < m) :
+    ∃ (R' : Type u) (_ : CommRing R') (_ : IsDomain R') (_ : Algebra R R'),
+      Module.Finite R R' ∧ IsIntegrallyClosed R' ∧ Function.Injective (algebraMap R R') ∧
+      ∀ j, ∀ d ∈ (g j).support, ∃ y : R', y ^ m = algebraMap R R' ((g j).coeff d) := by
   classical
   have := Fintype.ofFinite ι
-  obtain ⟨k', _, _, hfin, hroot⟩ := exists_finiteDimensional_forall_exists_pow_eq k
-    (Finset.univ.biUnion fun j ↦ (g j).support.image fun d ↦ (g j).coeff d) hm
-  exact ⟨k', inferInstance, inferInstance, hfin, fun j d hd ↦ hroot _
-    (Finset.mem_biUnion.mpr ⟨j, Finset.mem_univ j, Finset.mem_image.mpr ⟨d, hd, rfl⟩⟩)⟩
+  let F := FractionRing R
+  obtain ⟨F', _, _, _, hroot⟩ := exists_finiteDimensional_forall_exists_pow_eq F
+    (Finset.univ.biUnion fun j ↦ (g j).support.image fun d ↦ algebraMap R F ((g j).coeff d)) hm
+  let _ : Algebra R F' := ((algebraMap F F').comp (algebraMap R F)).toAlgebra
+  have : IsScalarTower R F F' := .of_algebraMap_eq' rfl
+  have hRF' : Function.Injective (algebraMap R F') := by
+    rw [IsScalarTower.algebraMap_eq R F F']
+    exact (algebraMap F F').injective.comp (IsFractionRing.injective R F)
+  refine ⟨integralClosure R F', inferInstance, inferInstance, inferInstance,
+    Ring.IsJapanese.finite_integralClosure F F',
+    integralClosure.isIntegrallyClosedOfFiniteExtension F, fun x y hxy ↦ hRF' ?_,
+    fun j d hd ↦ ?_⟩
+  · simpa using congrArg (algebraMap (integralClosure R F') F') hxy
+  obtain ⟨y, hy⟩ := hroot _ (Finset.mem_biUnion.mpr
+    ⟨j, Finset.mem_univ j, Finset.mem_image.mpr ⟨d, hd, rfl⟩⟩)
+  rw [← IsScalarTower.algebraMap_apply] at hy
+  -- the root `y` is integral over `R`, since its `m`-th power comes from `R`
+  exact ⟨⟨y, IsIntegral.of_pow hm (hy ▸ isIntegral_algebraMap)⟩, Subtype.ext (by simpa using hy)⟩
 
 /-- Adjoining a `K`-basis of `M` to `K` gives all of `M`: the basis already spans, and `adjoin`
 contains the span. -/
@@ -160,67 +167,73 @@ private theorem adjoin_range_eq_top_of_basis {K M ι : Type*} [Field K] [Field M
       (IntermediateField.subset_adjoin K _) (b.mem_span x)
 
 /-- Source: Stacks, Lemma 10.161.13 (tag 032O): "If `R` is N-2 then `R[x]` is N-2", second
-paragraph of the proof, for `R = k` a field and `r` variables at once. **The purely inseparable
-core of normalization-finiteness.** For `P = k[X_1, …, X_r]` with fraction field `K` and a finite
-purely inseparable extension `M / K`, any integral closure `C` of `P` in `M` is a finite
-`P`-module. No separability is assumed; characteristic zero is the case `q = 1`. -/
-theorem IsIntegralClosure.finite_mvPolynomial_of_isPurelyInseparable (k : Type*) [Field k]
-    {σ : Type*} [Finite σ] (K M : Type*) [Field K] [Field M] [Algebra (MvPolynomial σ k) K]
-    [IsFractionRing (MvPolynomial σ k) K] [Algebra K M] [Algebra (MvPolynomial σ k) M]
-    [IsScalarTower (MvPolynomial σ k) K M] [IsPurelyInseparable K M] [FiniteDimensional K M]
-    (C : Type*) [CommRing C] [Algebra (MvPolynomial σ k) C] [Algebra C M]
-    [IsScalarTower (MvPolynomial σ k) C M] [IsIntegralClosure C (MvPolynomial σ k) M] :
-    Module.Finite (MvPolynomial σ k) C := by
+paragraph of the proof, for `r` variables at once. **The purely inseparable core of
+normalization-finiteness.** Let `R` be a Noetherian Japanese domain, for instance a field. For
+`P = R[X_1, …, X_r]` with fraction field `K` and a finite purely inseparable extension `M / K`, any
+integral closure `C` of `P` in `M` is a finite `P`-module. No separability is assumed;
+characteristic zero is the case `q = 1`. -/
+theorem IsIntegralClosure.finite_mvPolynomial_of_isPurelyInseparable (R : Type*) [CommRing R]
+    [IsDomain R] [IsNoetherianRing R] [Ring.IsJapanese R]
+    {σ : Type*} [Finite σ] (K M : Type*) [Field K] [Field M] [Algebra (MvPolynomial σ R) K]
+    [IsFractionRing (MvPolynomial σ R) K] [Algebra K M] [Algebra (MvPolynomial σ R) M]
+    [IsScalarTower (MvPolynomial σ R) K M] [IsPurelyInseparable K M] [FiniteDimensional K M]
+    (C : Type*) [CommRing C] [Algebra (MvPolynomial σ R) C] [Algebra C M]
+    [IsScalarTower (MvPolynomial σ R) C M] [IsIntegralClosure C (MvPolynomial σ R) M] :
+    Module.Finite (MvPolynomial σ R) C := by
   classical
-  obtain ⟨p, _⟩ := ExpChar.exists k
-  -- `Algebra k K` is NOT an instance (Lean does not compose algebra maps), so the exponential
-  -- characteristic is transported along `k → MvPolynomial σ k → K` in two steps instead.
+  obtain ⟨p, _⟩ := ExpChar.exists R
+  -- `Algebra R K` is NOT an instance (Lean does not compose algebra maps), so the exponential
+  -- characteristic is transported along `R → MvPolynomial σ R → K` in two steps instead.
   have _ : ExpChar K p := expChar_of_injective_algebraMap
-    (IsFractionRing.injective (MvPolynomial σ k) K) p
+    (IsFractionRing.injective (MvPolynomial σ R) K) p
   set n := IsPurelyInseparable.exponent K M
-  -- a `K`-basis of `M` integral over `P`, and (D1) the preimages in `P` of the `p ^ n`-th powers
-  obtain ⟨sb, b, g, hgg⟩ :=
-    exists_basis_iterateFrobenius_eq_algebraMap (MvPolynomial σ k) K M p (le_refl n)
-  -- B1: a finite extension of `k` holding `p ^ n`-th roots of the coefficients of the `g j`
-  obtain ⟨k', _, _, hk'fin, hk'root⟩ :=
-    exists_finiteDimensional_forall_coeff_exists_pow_eq g (pow_pos (expChar_pos k p) n)
-  have _ : ExpChar k' p := expChar_of_injective_algebraMap (algebraMap k k').injective p
+  -- a `K`-basis of `M`, and (D1) preimages in `P` of the `p ^ n`-th powers of its vectors
+  obtain ⟨m, b, g, hgg⟩ :=
+    IsPurelyInseparable.exists_basis_iterateFrobenius_eq_algebraMap (MvPolynomial σ R) K M p
+      (le_refl n)
+  -- B1: a finite integrally closed extension of `R` holding `p ^ n`-th roots of the coefficients
+  -- of the `g j`
+  obtain ⟨R', _, _, _, hR'fin, _, hR'inj, hR'root⟩ :=
+    exists_finite_forall_coeff_exists_pow_eq g (pow_pos (expChar_pos K p) n)
+  have _ : ExpChar R' p := expChar_of_injective_algebraMap hR'inj p
   -- the coefficient extension `P → P'`, injective and finite
-  set f : MvPolynomial σ k →+* MvPolynomial σ k' :=
-    (MvPolynomial.map (algebraMap k k')).comp
-      (MvPolynomial.expand (σ := σ) (R := k) (p ^ n)).toRingHom
+  set f : MvPolynomial σ R →+* MvPolynomial σ R' :=
+    (MvPolynomial.map (algebraMap R R')).comp
+      (MvPolynomial.expand (σ := σ) (R := R) (p ^ n)).toRingHom
   have hfinj : Function.Injective f :=
-    (MvPolynomial.map_injective _ (algebraMap k k').injective).comp
-      (MvPolynomial.expand_injective (pow_pos (expChar_pos k p) n))
+    (MvPolynomial.map_injective _ hR'inj).comp
+      (MvPolynomial.expand_injective (pow_pos (expChar_pos K p) n))
   have hffin : f.Finite :=
-    RingHom.Finite.comp (MvPolynomial.finite_map (RingHom.finite_algebraMap.mpr hk'fin))
-      (MvPolynomial.finite_expand (pow_pos (expChar_pos k p) n))
+    RingHom.Finite.comp (MvPolynomial.finite_map (RingHom.finite_algebraMap.mpr hR'fin))
+      (MvPolynomial.finite_expand (pow_pos (expChar_pos K p) n))
   -- make `P'` a finite `P`-algebra, and `K' := Frac P'` a `P`-algebra through it
-  let _ : Algebra (MvPolynomial σ k) (MvPolynomial σ k') := f.toAlgebra
-  have : Module.Finite (MvPolynomial σ k) (MvPolynomial σ k') := hffin
+  let _ : Algebra (MvPolynomial σ R) (MvPolynomial σ R') := f.toAlgebra
+  have : Module.Finite (MvPolynomial σ R) (MvPolynomial σ R') := hffin
   -- `Algebra P (Frac P')` and its scalar tower are NOT built by hand: `FractionRing` is an
   -- `OreLocalization`, which already derives them from `Algebra P P'`. Introducing them manually
   -- creates a diamond against `OreLocalization.instSMulOfIsScalarTower`.
   have hPK' : Function.Injective
-      (algebraMap (MvPolynomial σ k) (FractionRing (MvPolynomial σ k'))) :=
-    (IsFractionRing.injective (MvPolynomial σ k') _).comp hfinj
+      (algebraMap (MvPolynomial σ R) (FractionRing (MvPolynomial σ R'))) :=
+    (IsFractionRing.injective (MvPolynomial σ R') _).comp hfinj
   -- `K` is an ABSTRACT fraction field of `P`, so the map to `K'` is `IsFractionRing.lift`, not
   -- `FractionRing.liftAlgebra`: no diamond arises because `K` is not `FractionRing P`.
-  let _ : Algebra K (FractionRing (MvPolynomial σ k')) := (IsFractionRing.lift hPK').toAlgebra
-  have : IsScalarTower (MvPolynomial σ k) K (FractionRing (MvPolynomial σ k')) :=
+  let _ : Algebra K (FractionRing (MvPolynomial σ R')) := (IsFractionRing.lift hPK').toAlgebra
+  have : IsScalarTower (MvPolynomial σ R) K (FractionRing (MvPolynomial σ R')) :=
     IsScalarTower.of_algebraMap_eq fun x ↦ (IsFractionRing.lift_algebraMap hPK' x).symm
-  refine IsIntegralClosure.finite_of_forall_exists_pow_eq (MvPolynomial σ k) K M C
-    (MvPolynomial σ k') (FractionRing (MvPolynomial σ k')) p (le_refl n)
+  -- `P'` is integrally closed (`TauCeti.MvPolynomial.isIntegrallyClosed`) and finite over `P`,
+  -- so it is the integral closure of `P` in `K'`
+  refine IsIntegralClosure.finite_of_forall_exists_pow_eq (MvPolynomial σ R) K M C
+    (MvPolynomial σ R') (FractionRing (MvPolynomial σ R')) p (le_refl n)
     (s := Set.range b) ?_ ?_
   · exact adjoin_range_eq_top_of_basis b
   · -- the root hypothesis, from A5 applied to `g j`
     rintro _ ⟨j, rfl⟩
-    obtain ⟨y, hy⟩ := MvPolynomial.exists_pow_eq_map_expand (algebraMap k k') p n
-      (g := g j) (hk'root j)
+    obtain ⟨y, hy⟩ := MvPolynomial.exists_pow_eq_map_expand (algebraMap R R') p n
+      (g := g j) (hR'root j)
     refine ⟨y, ?_⟩
     rw [← map_pow, hy]
-    have hfg : MvPolynomial.map (algebraMap k k') (MvPolynomial.expand (p ^ n) (g j))
-        = algebraMap (MvPolynomial σ k) (MvPolynomial σ k') (g j) := by
+    have hfg : MvPolynomial.map (algebraMap R R') (MvPolynomial.expand (p ^ n) (g j))
+        = algebraMap (MvPolynomial σ R) (MvPolynomial σ R') (g j) := by
       rw [RingHom.algebraMap_toAlgebra]
       rfl
     rw [hfg, ← IsScalarTower.algebraMap_apply, ← hgg j, ← IsScalarTower.algebraMap_apply]

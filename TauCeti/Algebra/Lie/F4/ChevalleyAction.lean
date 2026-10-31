@@ -57,7 +57,7 @@ noncomputable def f4ChevalleyRootVector :
 /-- The chosen F₄ root vectors form a Chevalley system for the pinned involution. -/
 theorem f4ChevalleyRootVector_isChevalleySystem :
     IsChevalleySystem (F4.chevalleyInvolution valid_F4) f4ChevalleyRootVector :=
-  Classical.choose_spec (F4.exists_isChevalleySystem valid_F4)
+  (Classical.choose_spec (F4.exists_isChevalleySystem valid_F4)).1
 
 /-- The rational root-system equivalence carries a pinned root to its Killing root. -/
 theorem f4KillingRoot_weightEquiv (i : Fin 48) :
@@ -233,7 +233,7 @@ theorem f4RootCartanWeight_simple (α : Fin 48) (i : Fin F4.rank) :
   rw [intCast_rootCartanWeight_apply]
   rw [← rootSystem_pairing_apply (F4.cartanSubalgebra valid_F4)
     ((F4.lieBasis valid_F4).baseSupportEquiv i) (f4KillingRootLabel α)]
-  rw [← F4.rationalRootSystemEquiv_indexEquiv_simpleIndex valid_F4 i,
+  rw [← F4.rootEquiv_simpleIndex valid_F4 i, F4.rootEquiv_eq_indexEquiv valid_F4,
     (F4.rationalRootSystemEquiv valid_F4).toHom.pairing,
     F4.pairing_rationalRootSystem, simplyConnectedRootDatum_F4]
   norm_cast

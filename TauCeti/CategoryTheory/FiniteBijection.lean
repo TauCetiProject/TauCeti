@@ -178,6 +178,18 @@ lemma toEquiv_tensorHom_natAdd {n m n' m' : FiniteBijection} (f : n ⟶ m) (g : 
     (f ⊗ₘ g).toEquiv (Fin.natAdd n.len i) = Fin.natAdd m.len (g.toEquiv i) := by
   simp [toEquiv_tensorHom, finSumFinEquiv_symm_apply_natAdd i]
 
+/-- A tensor product of bijections determines its two factors. -/
+@[simp]
+lemma tensorHom_inj {n m n' m' : FiniteBijection} {f f' : n ⟶ m} {g g' : n' ⟶ m'} :
+    f ⊗ₘ g = f' ⊗ₘ g' ↔ f = f' ∧ g = g' := by
+  refine ⟨fun h ↦ ⟨hom_ext fun i ↦ ?_, hom_ext fun j ↦ ?_⟩, fun h ↦ h.1 ▸ h.2 ▸ rfl⟩
+  · have := congrArg (·.toEquiv (Fin.castAdd n'.len i)) h
+    simp only [toEquiv_tensorHom_castAdd] at this
+    exact Fin.castAdd_injective _ _ this
+  · have := congrArg (·.toEquiv (Fin.natAdd n.len j)) h
+    simp only [toEquiv_tensorHom_natAdd] at this
+    exact Fin.natAdd_injective _ _ this
+
 /- Whiskering is defined as tensoring with an identity, so the whisker block lemmas are the
 tensor block lemmas at `𝟙 n` and `𝟙 m`. -/
 @[simp]

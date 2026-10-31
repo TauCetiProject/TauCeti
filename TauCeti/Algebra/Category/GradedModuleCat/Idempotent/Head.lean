@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.SimpleFamily
 public import TauCeti.Algebra.Category.GradedModuleCat.Ideal
+import TauCeti.Algebra.Category.GradedModuleCat.Concentrated
 
 /-!
 # Graded simple modules of a nonnegatively graded algebra with split degree-zero part
@@ -31,7 +32,11 @@ of its maximal graded submodules, so `Sᵢ = A eᵢ / A₊eᵢ` is the graded he
 * every simple finite graded module `M` is isomorphic to an internal shift `Sᵢ{p}`: take `p` to be
   the top degree of `M` and `m ∈ Mₚ` with `eᵢ m ≠ 0`; positive-degree elements kill `eᵢ m`, so
   `x eᵢ ↦ x eᵢ m` descends to a nonzero map `Sᵢ{p} ⟶ M`, which is injective because `Sᵢ` is
-  one-dimensional, and surjective because `M` is simple.
+  simple, and surjective because `M` is simple.
+
+The last argument uses only simplicity of the quotients `Aeᵢ / A₊eᵢ`, not the splitting of the
+degree-zero piece; `TauCeti.Algebra.Category.GradedModuleCat.Idempotent.PrimitiveHead` applies it
+to primitive idempotents over a semisimple degree-zero piece.
 
 ## Main definitions
 
@@ -46,8 +51,11 @@ of its maximal graded submodules, so `Sᵢ = A eᵢ / A₊eᵢ` is the graded he
 * `TauCeti.gradedPositiveMulQuotientMk_eq_zero_iff`: the kernel of `Ae ⟶ Ae / A₊e` is `A₊e`.
 * `TauCeti.mem_gradedPositiveMulQuotient_piece_iff`: the degree-`p` piece of `Ae / A₊e` consists
   of the classes of the degree-`p` elements of `Ae`.
-* `TauCeti.gradedPositiveMulQuotient_piece_eq_bot`: over a nonnegatively graded algebra, `Ae / A₊e`
-  is concentrated in degree zero when `e` is idempotent.
+* `TauCeti.gradedPositiveMulQuotient_piece_eq_bot`,
+  `TauCeti.gradedPositiveMulQuotient_piece_zero_eq_top`: over a nonnegatively graded algebra,
+  `Ae / A₊e` is concentrated in degree zero when `e` is idempotent.
+* `TauCeti.nontrivial_gradedPositiveMulQuotient`: over a nonnegatively graded algebra, `Ae / A₊e`
+  is nonzero when `e` is.
 * `TauCeti.decompose_eq_zero_of_mem_gradedPositiveMulIdeal`: over a nonnegatively graded algebra,
   the elements of `A₊e` have no component in degrees `≤ 0`.
 * `TauCeti.gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk`,
@@ -57,6 +65,9 @@ of its maximal graded submodules, so `Sᵢ = A eᵢ / A₊eᵢ` is the graded he
   `TauCeti.isEmpty_linearEquiv_gradedIdempotentHead`: the underlying heads are one-dimensional,
   simple, and pairwise nonisomorphic.
 * `TauCeti.simple_gradedIdempotentHead`: each graded head `Sᵢ` is a simple graded module.
+* `TauCeti.isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient`: for any complete family of
+  orthogonal idempotents of degree zero whose nonzero members have simple quotients `Aeᵢ / A₊eᵢ`,
+  every simple finite graded module is isomorphic to a shift of one of these quotients.
 * `TauCeti.isExhaustiveGradedSimpleFamily_gradedIdempotentHead`: every simple finite graded module
   is isomorphic to a shift of some `Sᵢ`.
 ## References
@@ -244,6 +255,14 @@ theorem gradedPositiveMulQuotient_piece_eq_bot (hneg : ∀ p < 0, 𝒜 p = ⊥)
   · rw [← (mem_span_singleton_iff_mul_eq_self he).1 x.2]
     exact mul_mem_gradedPositiveMulIdeal 𝒜 hp hx
 
+/-- **`Ae / A₊e` is its own degree-zero piece** for an idempotent `e` of degree zero of a
+nonnegatively graded algebra. -/
+theorem gradedPositiveMulQuotient_piece_zero_eq_top (hneg : ∀ p < 0, 𝒜 p = ⊥)
+    (he : IsIdempotentElem e) (he₀ : e ∈ 𝒜 0) :
+    (gradedPositiveMulQuotient 𝒜 he₀).grading.piece 0 = ⊤ :=
+  GradedModuleCat.piece_eq_top_of_concentrated fun _ hp =>
+    gradedPositiveMulQuotient_piece_eq_bot hneg he he₀ hp
+
 end CommRing
 
 /-! ### Nonnegative gradings with split degree-zero part -/
@@ -300,6 +319,87 @@ private theorem smul_headGenerator [DecidableEq I] (he : OrthogonalIdempotents e
     congr 1
     exact Subtype.ext (he.ortho hji)
 
+/-- **Every simple finite graded module is a shift of some `A eᵢ / A₊eᵢ`**, for a complete family
+of orthogonal idempotents `eᵢ` of degree zero such that `A eᵢ / A₊eᵢ` is a simple module whenever
+`eᵢ ≠ 0`. If `p` is the top degree of `M` and `m ∈ Mₚ` satisfies `eᵢ m ≠ 0`, then
+`x eᵢ ↦ x eᵢ m` is an isomorphism `(A eᵢ / A₊eᵢ){p} ≅ M`. No positivity of the grading and no
+splitting of the degree-zero part is needed. -/
+theorem isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient [Fintype I] [Module.Finite k A]
+    (hcomplete : CompleteOrthogonalIdempotents e) (he₀ : ∀ i, e i ∈ 𝒜 0)
+    (hsimple : ∀ i, e i ≠ 0 → IsSimpleModule A (gradedPositiveMulQuotient 𝒜 (he₀ i))) :
+    IsExhaustiveGradedSimpleFamily fun i =>
+      (⟨gradedPositiveMulQuotient 𝒜 (he₀ i),
+        gradedFiniteModules_gradedPositiveMulQuotient 𝒜 (he₀ i)⟩ :
+        (gradedFiniteModules 𝒜).FullSubcategory) := by
+  rw [isExhaustiveGradedSimpleFamily_iff]
+  intro M hM
+  classical
+  -- `M` has a nonzero element, hence a nonzero homogeneous piece.
+  obtain ⟨x, hx⟩ : ∃ x : M.obj, x ≠ 0 := by
+    by_contra! h
+    exact id_nonzero M.obj (GradedModuleCat.hom_ext (LinearMap.ext h))
+  have hfin := M.obj.grading.finite_piece_ne_bot
+  have hne' : hfin.toFinset.Nonempty := by
+    by_contra h
+    apply hx
+    rw [← M.obj.grading.sum_decompose_toFinset hfin x, Finset.not_nonempty_iff_eq_empty.1 h,
+      Finset.sum_empty]
+  -- Let `p` be the top degree of `M`.
+  set p := hfin.toFinset.max' hne'
+  have htop : ∀ q, p < q → M.obj.grading.piece q = ⊥ := fun q hq => by
+    by_contra h
+    exact (hfin.toFinset.le_max' q (hfin.mem_toFinset.2 h)).not_gt hq
+  obtain ⟨m, hm, hm₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    (hfin.mem_toFinset.1 (hfin.toFinset.max'_mem hne'))
+  -- Some `eᵢ` does not kill `m`, since the `eᵢ` sum to one.
+  obtain ⟨i, hi⟩ : ∃ i, e i • m ≠ 0 := by
+    by_contra! h
+    apply hm₀
+    rw [← one_smul A m, ← hcomplete.complete, Finset.sum_smul]
+    exact Finset.sum_eq_zero fun i _ => h i
+  have hm' : e i • m ∈ M.obj.grading.piece p := by
+    simpa using SetLike.GradedSMul.smul_mem (B := M.obj.grading.piece) (he₀ i) hm
+  -- Positive-degree elements kill `eᵢ m`, since `p` is the top degree.
+  have hkill : ∀ y ∈ gradedPositiveMulIdeal 𝒜 (e i), y • (e i • m) = 0 := by
+    intro y hy
+    induction hy using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨q, hq, x, hx, rfl⟩ := hy
+      have h := SetLike.GradedSMul.smul_mem (B := M.obj.grading.piece)
+        (SetLike.GradedMul.mul_mem hx (he₀ i)) hm'
+      rw [vadd_eq_add, htop _ (by omega), Submodule.mem_bot] at h
+      exact h
+    | zero => exact zero_smul A _
+    | add y z _ _ hy hz => rw [add_smul, hy, hz, add_zero]
+    | smul a y _ hy => rw [smul_eq_mul, mul_smul, hy, smul_zero]
+  -- The induced map `(A eᵢ / A₊eᵢ){p} ⟶ M` is a nonzero monomorphism into a simple object.
+  let φ : (gradedPositiveMulQuotient 𝒜 (he₀ i)).shiftObj p ⟶ M.obj :=
+    GradedModuleCat.ofHom (gradedPositiveMulQuotientLift (he₀ i) (e i • m) hkill) <|
+      LinearMap.isHomogeneous_def.2 fun q y hy => by
+        rw [GradedModuleCat.mem_shiftObj_piece_iff] at hy
+        obtain ⟨x, hx, rfl⟩ := (mem_gradedPositiveMulQuotient_piece_iff (he₀ i)).1 hy
+        have h := SetLike.GradedSMul.smul_mem (B := M.obj.grading.piece) hx hm'
+        rw [vadd_eq_add, sub_add_cancel] at h
+        rwa [gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk, add_zero]
+  have hφg : φ.hom (headGenerator e he₀ i) = e i • m := by
+    rw [GradedModuleCat.hom_ofHom, headGenerator,
+      gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk,
+      ← mul_smul, (hcomplete.idem i).eq]
+  -- The kernel of `φ` is a proper submodule of the simple module `A eᵢ / A₊eᵢ`.
+  have hinj : Function.Injective φ.hom := by
+    -- A shift has the same underlying module.
+    have : IsSimpleModule A ((gradedPositiveMulQuotient 𝒜 (he₀ i)).shiftObj p) :=
+      hsimple i fun h => hi (by rw [h, zero_smul])
+    rw [← LinearMap.ker_eq_bot]
+    refine (IsSimpleOrder.eq_bot_or_eq_top (LinearMap.ker φ.hom)).resolve_right fun h => hi ?_
+    rw [← hφg]
+    exact LinearMap.mem_ker.1 (h ▸ Submodule.mem_top)
+  have : Mono φ := (GradedModuleCat.mono_iff_injective φ).2 hinj
+  have : Epi φ := epi_of_nonzero_to_simple fun h => hi <| by
+    rw [← hφg, h, GradedModuleCat.hom_zero, LinearMap.zero_apply]
+  have : IsIso φ := isIso_of_mono_of_epi φ
+  exact ⟨i, p, ⟨(asIso φ).symm⟩⟩
+
 variable (hneg : ∀ p < 0, 𝒜 p = ⊥)
 include hneg
 
@@ -343,14 +443,28 @@ private theorem mem_gradedPositiveMulIdeal_of_decompose_eq_zero {f : A} (hf : Is
   · simp [hx₀]
   · exact mul_mem_gradedPositiveMulIdeal 𝒜 hp (decompose 𝒜 x p).2
 
+/-- **The class of `f` in `A f / A₊f` is nonzero** for a nonzero element `f` of degree zero of a
+nonnegatively graded algebra: `A₊f` has no degree-zero component. -/
+theorem gradedPositiveMulQuotientMk_spanSingletonGenerator_ne_zero {f : A} (hf₀ : f ∈ 𝒜 0)
+    (hne : f ≠ 0) : gradedPositiveMulQuotientMk hf₀ (spanSingletonGenerator f) ≠ 0 := by
+  rw [Ne, gradedPositiveMulQuotientMk_eq_zero_iff, coe_spanSingletonGenerator]
+  intro h
+  have h₀ := decompose_eq_zero_of_mem_gradedPositiveMulIdeal hneg hf₀ h le_rfl
+  rw [decompose_of_mem_same 𝒜 hf₀] at h₀
+  exact hne h₀
+
+/-- `A f / A₊f` is a nonzero module for a nonzero element `f` of degree zero of a nonnegatively
+graded algebra. -/
+theorem nontrivial_gradedPositiveMulQuotient {f : A} (hf₀ : f ∈ 𝒜 0) (hne : f ≠ 0) :
+    Nontrivial (gradedPositiveMulQuotient 𝒜 hf₀) :=
+  ⟨_, 0, gradedPositiveMulQuotientMk_spanSingletonGenerator_ne_zero hneg hf₀ hne⟩
+
 /-- The class of `eᵢ` in the head of `A eᵢ` is nonzero. -/
 private theorem headGenerator_ne_zero (he₀ : ∀ i, e i ∈ 𝒜 0) (i : I) (hne : e i ≠ 0) :
     headGenerator e he₀ i ≠ 0 := by
-  rw [headGenerator, Ne, gradedPositiveMulQuotientMk_eq_zero_iff]
-  intro h
-  have h₀ := decompose_eq_zero_of_mem_gradedPositiveMulIdeal hneg (he₀ i) h le_rfl
-  rw [decompose_of_mem_same 𝒜 (he₀ i)] at h₀
-  exact hne h₀
+  rw [headGenerator, show (⟨e i, Ideal.subset_span rfl⟩ : (Ideal.span {e i} : Ideal A)) =
+    spanSingletonGenerator (e i) from Subtype.ext (coe_spanSingletonGenerator _).symm]
+  exact gradedPositiveMulQuotientMk_spanSingletonGenerator_ne_zero hneg (he₀ i) hne
 
 section Orthogonal
 
@@ -465,82 +579,18 @@ theorem simple_gradedIdempotentHead (i : I) (hne : e i ≠ 0) :
 
 end Orthogonal
 
-/-- **Every simple finite graded module is a shift of a graded head `Sᵢ`.** If `p` is the top
-degree of `M` and `m ∈ Mₚ` satisfies `eᵢ m ≠ 0`, then `x eᵢ ↦ x eᵢ m` is an isomorphism
-`Sᵢ{p} ≅ M`. -/
+/-- **Every simple finite graded module is a shift of a graded head `Sᵢ`**, for a nonnegatively
+graded algebra whose degree-zero piece is spanned by a complete family of orthogonal idempotents
+`eᵢ`: each nonzero `eᵢ` has a simple head (`TauCeti.isSimpleModule_gradedIdempotentHead`). -/
 theorem isExhaustiveGradedSimpleFamily_gradedIdempotentHead [Fintype I] [Module.Finite k A]
     (he₀ : ∀ i, e i ∈ 𝒜 0) (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e))
     (hcomplete : CompleteOrthogonalIdempotents e) :
     IsExhaustiveGradedSimpleFamily fun i =>
       (⟨gradedPositiveMulQuotient 𝒜 (he₀ i),
         gradedFiniteModules_gradedPositiveMulQuotient 𝒜 (he₀ i)⟩ :
-        (gradedFiniteModules 𝒜).FullSubcategory) := by
-  rw [isExhaustiveGradedSimpleFamily_iff]
-  intro M hM
-  classical
-  -- `M` has a nonzero element, hence a nonzero homogeneous piece.
-  obtain ⟨x, hx⟩ : ∃ x : M.obj, x ≠ 0 := by
-    by_contra! h
-    exact id_nonzero M.obj (GradedModuleCat.hom_ext (LinearMap.ext h))
-  have hfin := M.obj.grading.finite_piece_ne_bot
-  have hne' : hfin.toFinset.Nonempty := by
-    by_contra h
-    apply hx
-    rw [← M.obj.grading.sum_decompose_toFinset hfin x, Finset.not_nonempty_iff_eq_empty.1 h,
-      Finset.sum_empty]
-  -- Let `p` be the top degree of `M`.
-  set p := hfin.toFinset.max' hne'
-  have htop : ∀ q, p < q → M.obj.grading.piece q = ⊥ := fun q hq => by
-    by_contra h
-    exact (hfin.toFinset.le_max' q (hfin.mem_toFinset.2 h)).not_gt hq
-  obtain ⟨m, hm, hm₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (hfin.mem_toFinset.1 (hfin.toFinset.max'_mem hne'))
-  -- Some `eᵢ` does not kill `m`, since the `eᵢ` sum to one.
-  obtain ⟨i, hi⟩ : ∃ i, e i • m ≠ 0 := by
-    by_contra! h
-    apply hm₀
-    rw [← one_smul A m, ← hcomplete.complete, Finset.sum_smul]
-    exact Finset.sum_eq_zero fun i _ => h i
-  have hm' : e i • m ∈ M.obj.grading.piece p := by
-    simpa using SetLike.GradedSMul.smul_mem (B := M.obj.grading.piece) (he₀ i) hm
-  -- Positive-degree elements kill `eᵢ m`, since `p` is the top degree.
-  have hkill : ∀ y ∈ gradedPositiveMulIdeal 𝒜 (e i), y • (e i • m) = 0 := by
-    intro y hy
-    induction hy using Submodule.span_induction with
-    | mem y hy =>
-      obtain ⟨q, hq, x, hx, rfl⟩ := hy
-      have h := SetLike.GradedSMul.smul_mem (B := M.obj.grading.piece)
-        (SetLike.GradedMul.mul_mem hx (he₀ i)) hm'
-      rw [vadd_eq_add, htop _ (by omega), Submodule.mem_bot] at h
-      exact h
-    | zero => exact zero_smul A _
-    | add y z _ _ hy hz => rw [add_smul, hy, hz, add_zero]
-    | smul a y _ hy => rw [smul_eq_mul, mul_smul, hy, smul_zero]
-  -- The induced map `Sᵢ{p} ⟶ M` is a nonzero monomorphism into a simple object.
-  let φ : (gradedPositiveMulQuotient 𝒜 (he₀ i)).shiftObj p ⟶ M.obj :=
-    GradedModuleCat.ofHom (gradedPositiveMulQuotientLift (he₀ i) (e i • m) hkill) <|
-      LinearMap.isHomogeneous_def.2 fun q y hy => by
-        rw [GradedModuleCat.mem_shiftObj_piece_iff] at hy
-        obtain ⟨x, hx, rfl⟩ := (mem_gradedPositiveMulQuotient_piece_iff (he₀ i)).1 hy
-        have h := SetLike.GradedSMul.smul_mem (B := M.obj.grading.piece) hx hm'
-        rw [vadd_eq_add, sub_add_cancel] at h
-        rwa [gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk, add_zero]
-  have hφg : φ.hom (headGenerator e he₀ i) = e i • m := by
-    rw [GradedModuleCat.hom_ofHom, headGenerator,
-      gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk,
-      ← mul_smul, (hcomplete.idem i).eq]
-  have hinj : Function.Injective φ.hom := by
-    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-    intro y hy
-    obtain ⟨c, rfl⟩ :=
-      exists_eq_smul_headGenerator hneg hcomplete.toOrthogonalIdempotents he₀ hspan i y
-    rw [LinearMap.mem_ker, LinearMap.map_smul_of_tower, hφg, smul_eq_zero] at hy
-    rw [hy.resolve_right hi, zero_smul]
-  have : Mono φ := (GradedModuleCat.mono_iff_injective φ).2 hinj
-  have : Epi φ := epi_of_nonzero_to_simple fun h => hi <| by
-    rw [← hφg, h, GradedModuleCat.hom_zero, LinearMap.zero_apply]
-  have : IsIso φ := isIso_of_mono_of_epi φ
-  exact ⟨i, p, ⟨(asIso φ).symm⟩⟩
+        (gradedFiniteModules 𝒜).FullSubcategory) :=
+  isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient hcomplete he₀ fun i hi =>
+    isSimpleModule_gradedIdempotentHead hneg hcomplete.toOrthogonalIdempotents he₀ hspan i hi
 
 end Field
 

@@ -108,8 +108,7 @@ private theorem IsNegativeGradient.orbit_eq_of_const_value (hφ : IsNegativeGrad
   apply is_const_of_deriv_eq_zero (fun v ↦ (hγ v).differentiableAt) _ t u
   intro v
   have hgrad : ∇ f (γ v) = 0 :=
-    TauCeti.IsIntegralCurve.gradient_eq_zero_of_eventually_const_value hγ (hf v)
-      (Eventually.of_forall hc)
+    hγ.gradient_eq_zero_of_eventually_const_value (hf v) (Eventually.of_forall hc)
   rw [(hγ v).deriv]
   simp only [hgrad, neg_zero]
 
@@ -201,7 +200,7 @@ private theorem antitoneOn_add_mul_dist {γ : ℝ → E}
         (fderiv ℝ (‖·‖) (γ τ - x) (-∇ f (γ τ))) τ :=
       ((contDiffAt_norm ℝ (sub_ne_zero.2 (hann τ hτ).1)).differentiableAt
         one_ne_zero).hasFDerivAt.comp_hasDerivAt τ ((hγ τ).sub_const x)
-    exact ((TauCeti.IsIntegralCurve.hasDerivAt_comp_neg_gradient hγ (hf τ)).add
+    exact ((hγ.hasDerivAt_comp_neg_gradient (hf τ)).add
       (hnorm.const_mul c)).hasDerivWithinAt
   · intro τ hτ
     rw [interior_Icc] at hτ
