@@ -5,51 +5,46 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Basic
+public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Hom
 
 /-!
 # The bicategory of equivariant groupoid lifts
 
 Fix a category `Γ`, a monoid `H` and a family `actions p` of categorical actions of `H`, presented
 as pseudofunctors `LocallyDiscrete (SingleObj H) ⥤ᵖ Cat`. This file makes the coherent
-equivariant lifts `EquivariantGroupoidLift Γ actions` of these actions into a bicategory.
+equivariant lifts `EquivariantGroupoidLift Γ actions` of these actions into a bicategory, whose
+`1`-morphisms are the morphisms of lifts `EquivariantGroupoidLift.Hom` and whose `2`-morphisms
+are the compatible modifications `EquivariantGroupoidLift.Hom.Hom₂`, with the identities
+`Hom.id` and composites `Hom.comp`.
 
-* A 1-morphism `φ : L ⟶ L'` is a strong transformation `φ.joint : L.joint ⟶ L'.joint` of joint
-  pseudofunctors, together with, for each `p : Γ`, an invertible modification
-  `φ.comparisonIso p : φ.joint|_p ≫ L'.comparison p ≅ L.comparison p`. Here `φ.joint|_p` is the
-  restriction of `φ.joint` to the fiber `{p} × SingleObj H`. So `φ` is compatible, up to a
-  specified equivariant isomorphism, with the comparisons of both lifts with the prescribed
-  fibers and actions.
-* A 2-morphism `φ ⟶ ψ` is a modification `φ.joint ⟶ ψ.joint` whose restriction to each fiber
-  carries `φ.comparisonIso p` to `ψ.comparisonIso p`.
-
-Identities, composites, whiskerings, associators and unitors are those of the bicategory of
-pseudofunctors `LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ Cat`, with the comparison isomorphisms
-composed by whiskering. A 2-morphism is determined by its underlying modification, so the
-coherence axioms are inherited from that bicategory.
+Whiskerings, associators and unitors are those of the bicategory of pseudofunctors
+`LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ Cat` on the joint strong transformations. Their
+compatibility with the fiber isomorphisms is checked componentwise, where it follows from the
+compatibility of the whiskered `2`-morphism and the coherence theorem for bicategories. A
+`2`-morphism is determined by its joint modification, so the coherence axioms are inherited from
+the bicategory of pseudofunctors.
 
 ## Main declarations
 
-* `TauCeti.EquivariantGroupoidLift.Hom`: 1-morphisms of lifts, with identities `Hom.id` and
-  composites `Hom.comp`;
-* `TauCeti.EquivariantGroupoidLift.Hom₂`: 2-morphisms of lifts;
-* `TauCeti.EquivariantGroupoidLift.Hom₂.isoMk`: an invertible 2-morphism from an invertible
-  modification compatible with the comparison isomorphisms;
+* `TauCeti.EquivariantGroupoidLift.Hom.whiskerLeft`,
+  `TauCeti.EquivariantGroupoidLift.Hom.whiskerRight`: whiskering of compatible modifications by
+  morphisms of lifts;
+* `TauCeti.EquivariantGroupoidLift.Hom.associator`,
+  `TauCeti.EquivariantGroupoidLift.Hom.leftUnitor`,
+  `TauCeti.EquivariantGroupoidLift.Hom.rightUnitor`: the associator and unitors of morphisms of
+  lifts;
 * `TauCeti.EquivariantGroupoidLift.instBicategory`: the bicategory of lifts, with the
-  characterizing lemmas `comp_joint`, `comp_comparisonIso`, `whiskerLeft_joint`,
+  characterizing lemmas `comp_joint`, `comp_fiberIso`, `whiskerLeft_joint`,
   `associator_hom_joint` and their siblings.
 
 ## References
 
-* Niles Johnson and Donald Yau, *2-Dimensional Categories*, Oxford University Press (2021):
-  the bicategory of pseudofunctors, strong transformations and modifications.
-* Mathlib's bicategory of pseudofunctors and strong transformations,
-  `Mathlib/CategoryTheory/Bicategory/FunctorBicategory/Pseudo.lean`: the identities,
-  composites, whiskerings, associators and unitors of lifts are its operations on the joint
-  pseudofunctors, and its coherence axioms are inherited here.
+* Niles Johnson and Donald Yau, [2-Dimensional Categories](https://arxiv.org/abs/2002.06055),
+  Oxford University Press (2021): the bicategory of pseudofunctors, strong transformations and
+  modifications.
 * Mathlib's bicategory of adjunctions, `Mathlib/CategoryTheory/Bicategory/Adjunction/Adj.lean`:
-  the pattern of a `Hom₂` structure of 2-morphisms carrying a compatibility condition, with a
-  bicategory structure whose axioms are checked on the underlying 2-morphisms.
+  the pattern of 2-morphisms carrying a compatibility condition, with a bicategory structure
+  whose axioms are checked on the underlying 2-morphisms.
 * Edward Frenkel,
   [Langlands Correspondence for Loop Groups](https://math.berkeley.edu/~frenkel/loop.pdf),
   Cambridge Studies in Advanced Mathematics 103 (2007): families of local categories over the
@@ -63,263 +58,121 @@ universe w v u₂ v₁ u₁
 namespace TauCeti.EquivariantGroupoidLift
 
 open CategoryTheory Bicategory Pseudofunctor.StrongTrans
-open scoped Pseudofunctor.StrongTrans
 
 variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
   {actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
 
-/-- A 1-morphism of equivariant groupoid lifts `L ⟶ L'`: a strong transformation of joint
-pseudofunctors, with an invertible modification, for each `p : Γ`, from its restriction to the
-fiber over `p` followed by the comparison of `L'` to the comparison of `L`. -/
-structure Hom (L L' : EquivariantGroupoidLift Γ actions) where
-  /-- The strong transformation of joint pseudofunctors. -/
-  joint : L.joint ⟶ L'.joint
-  /-- The isomorphism of fiber comparisons over `p`. -/
-  comparisonIso (p : Γ) :
-    (joint.restrictFiber p ≫ L'.comparison p : L.joint.restrictFiber p ⟶ actions p) ≅
-      L.comparison p
-
-/-- A 2-morphism of 1-morphisms of equivariant groupoid lifts: a modification of the strong
-transformations of joint pseudofunctors, whose restriction to each fiber is compatible with the
-comparison isomorphisms. -/
-@[ext]
-structure Hom₂ {L L' : EquivariantGroupoidLift Γ actions} (φ ψ : Hom L L') where
-  /-- The modification of strong transformations of joint pseudofunctors. -/
-  joint : φ.joint ⟶ ψ.joint
-  /-- Compatibility with the comparison isomorphisms on each fiber. -/
-  comm (p : Γ) :
-    restrictFiberMap joint p ▷ L'.comparison p ≫ (ψ.comparisonIso p).hom =
-      (φ.comparisonIso p).hom := by cat_disch
-
-attribute [reassoc (attr := simp)] Hom₂.comm
-
 namespace Hom
-
-variable {L L' L'' : EquivariantGroupoidLift Γ actions}
-
-/-! `Hom.id` and `Hom.comp` are exposed: the types of 2-morphisms between composites, and the
-statements of the characterizing lemmas such as `whiskerLeft_joint`, only typecheck by unfolding
-`(φ ≫ ψ).joint` to `φ.joint ≫ ψ.joint`. -/
-
-variable (L) in
-/-- The identity 1-morphism of a lift: the identity strong transformation, with the left unitors
-as comparison isomorphisms. -/
-@[expose] def id : Hom L L where
-  joint := 𝟙 L.joint
-  -- The restriction of the identity is the identity, by `Pseudofunctor.whiskerLeft_id`.
-  comparisonIso p := (λ_ (L.comparison p) : 𝟙 (L.joint.restrictFiber p) ≫ _ ≅ _)
-
-/-- The composite of 1-morphisms of lifts. Its comparison isomorphism over `p` is the composite
-of the associator, the comparison isomorphism of `ψ` whiskered by the restriction of `φ`, and the
-comparison isomorphism of `φ`. -/
-@[expose] def comp (φ : Hom L L') (ψ : Hom L' L'') : Hom L L'' where
-  joint := φ.joint ≫ ψ.joint
-  -- The restriction of a composite is the composite of restrictions, by
-  -- `Pseudofunctor.whiskerLeft_comp`.
-  comparisonIso p :=
-    (α_ (φ.joint.restrictFiber p) (ψ.joint.restrictFiber p) (L''.comparison p) ≪≫
-      whiskerLeftIso (φ.joint.restrictFiber p) (ψ.comparisonIso p) ≪≫ φ.comparisonIso p :
-      (φ.joint.restrictFiber p ≫ ψ.joint.restrictFiber p) ≫ L''.comparison p ≅ L.comparison p)
-
-end Hom
-
-namespace Hom₂
-
-variable {L L' : EquivariantGroupoidLift Γ actions} {φ ψ χ : Hom L L'}
-
-variable (φ) in
-/-- The identity 2-morphism. -/
-def id : Hom₂ φ φ where
-  joint := 𝟙 φ.joint
-
-/-- The vertical composite of 2-morphisms. -/
-def vcomp (Θ : Hom₂ φ ψ) (Ξ : Hom₂ ψ χ) : Hom₂ φ χ where
-  joint := Θ.joint ≫ Ξ.joint
-  comm p := by simp
-
-end Hom₂
-
-/-- The category of 1-morphisms `L ⟶ L'` of lifts and their 2-morphisms. -/
-instance homCategory (L L' : EquivariantGroupoidLift Γ actions) : Category (Hom L L') where
-  Hom := Hom₂
-  id := Hom₂.id
-  comp := Hom₂.vcomp
-  id_comp Θ := Hom₂.ext (by exact Category.id_comp Θ.joint)
-  comp_id Θ := Hom₂.ext (by exact Category.comp_id Θ.joint)
-  assoc Θ Ξ Ψ := Hom₂.ext (by exact Category.assoc Θ.joint Ξ.joint Ψ.joint)
-
-namespace Hom₂
-
-variable {L L' : EquivariantGroupoidLift Γ actions} {φ ψ χ : Hom L L'}
-
-/-- An isomorphism of 1-morphisms of lifts from an isomorphism of their strong transformations
-of joint pseudofunctors whose forward modification is compatible with the comparison
-isomorphisms. -/
-def isoMk (e : φ.joint ≅ ψ.joint)
-    (comm : ∀ p, restrictFiberMap e.hom p ▷ L'.comparison p ≫ (ψ.comparisonIso p).hom =
-      (φ.comparisonIso p).hom) : φ ≅ ψ where
-  hom := ⟨e.hom, comm⟩
-  inv :=
-    { joint := e.inv
-      comm p := by
-        rw [← comm p, ← comp_whiskerRight_assoc (restrictFiberMap e.inv p)
-          (restrictFiberMap e.hom p), ← Pseudofunctor.whiskerLeftMap_comp, e.inv_hom_id,
-          Pseudofunctor.whiskerLeftMap_id, id_whiskerRight, Category.id_comp] }
-  hom_inv_id := Hom₂.ext e.hom_inv_id
-  inv_hom_id := Hom₂.ext e.inv_hom_id
-
-@[simp]
-lemma isoMk_hom_joint (e : φ.joint ≅ ψ.joint)
-    (comm : ∀ p, restrictFiberMap e.hom p ▷ L'.comparison p ≫ (ψ.comparisonIso p).hom =
-      (φ.comparisonIso p).hom) : (isoMk e comm).hom.joint = e.hom :=
-  (rfl)
-
-@[simp]
-lemma isoMk_inv_joint (e : φ.joint ≅ ψ.joint)
-    (comm : ∀ p, restrictFiberMap e.hom p ▷ L'.comparison p ≫ (ψ.comparisonIso p).hom =
-      (φ.comparisonIso p).hom) : (isoMk e comm).inv.joint = e.inv :=
-  (rfl)
-
-end Hom₂
-
-section Bicategory
-
-/-! In the proofs below, the restriction of a composite of strong transformations, of a
-whiskered modification, of an associator or of a unitor is definitionally the corresponding
-composite, whiskering, associator or unitor of restrictions (`Pseudofunctor.whiskerLeft_comp`,
-`Pseudofunctor.whiskerLeftMap_whiskerLeft` and their siblings, all proved by `rfl`). These
-lemmas cannot be used for rewriting, because the restricted 2-morphisms are typed by the
-unrestricted composites. Each proof therefore first states its goal in terms of the
-restrictions, then identifies it with the actual goal by `rfl` (in a `calc` step) or by `exact`.
-The bicategorical rewrites take explicit arguments, because their metavariables do not unify
-with the instances of the scoped bicategory of pseudofunctors at reducible transparency. -/
 
 variable {L L' L'' L''' : EquivariantGroupoidLift Γ actions}
 
-/-- Left whiskering of a 2-morphism of lifts by a 1-morphism. -/
-def whiskerLeft (φ : Hom L L') {ψ ψ' : Hom L' L''} (Θ : ψ ⟶ ψ') :
-    Hom.comp φ ψ ⟶ Hom.comp φ ψ' where
-  joint := φ.joint ◁ Θ.joint
-  comm p := calc
-    _ = (restrictFiber φ.joint p ◁ restrictFiberMap Θ.joint p) ▷ L''.comparison p ≫
-          (α_ (restrictFiber φ.joint p) (restrictFiber ψ'.joint p) (L''.comparison p)).hom ≫
-          restrictFiber φ.joint p ◁ (ψ'.comparisonIso p).hom ≫ (φ.comparisonIso p).hom := rfl
-    _ = (α_ (restrictFiber φ.joint p) (restrictFiber ψ.joint p) (L''.comparison p)).hom ≫
-          restrictFiber φ.joint p ◁ (ψ.comparisonIso p).hom ≫ (φ.comparisonIso p).hom := by
-      rw [associator_naturality_middle_assoc (restrictFiber φ.joint p)
-          (restrictFiberMap Θ.joint p),
-        ← whiskerLeft_comp_assoc (restrictFiber φ.joint p) (restrictFiberMap Θ.joint p ▷ _),
-        Θ.comm]
+/-- Left whiskering of a `2`-morphism of lifts by a morphism of lifts. -/
+def whiskerLeft (φ : L.Hom L') {ψ ψ' : L'.Hom L''} (Θ : ψ ⟶ ψ') : φ.comp ψ ⟶ φ.comp ψ' :=
+  ⟨φ.joint ◁ Θ.joint, fun p a => by
+    simp only [comp_fiberIso_hom_as_app, whiskerLeft_as_app]
+    rw [← Θ.comm p a]
+    bicategory⟩
 
-/-- Right whiskering of a 2-morphism of lifts by a 1-morphism. -/
-def whiskerRight {φ φ' : Hom L L'} (Θ : φ ⟶ φ') (ψ : Hom L' L'') :
-    Hom.comp φ ψ ⟶ Hom.comp φ' ψ where
-  joint := Θ.joint ▷ ψ.joint
-  comm p := calc
-    _ = (restrictFiberMap Θ.joint p ▷ restrictFiber ψ.joint p) ▷ L''.comparison p ≫
-          (α_ (restrictFiber φ'.joint p) (restrictFiber ψ.joint p) (L''.comparison p)).hom ≫
-          restrictFiber φ'.joint p ◁ (ψ.comparisonIso p).hom ≫ (φ'.comparisonIso p).hom := rfl
-    _ = (α_ (restrictFiber φ.joint p) (restrictFiber ψ.joint p) (L''.comparison p)).hom ≫
-          restrictFiber φ.joint p ◁ (ψ.comparisonIso p).hom ≫ (φ.comparisonIso p).hom := by
-      rw [associator_naturality_left_assoc (restrictFiberMap Θ.joint p),
-        ← whisker_exchange_assoc (restrictFiberMap Θ.joint p) (ψ.comparisonIso p).hom, Θ.comm]
+/-- Right whiskering of a `2`-morphism of lifts by a morphism of lifts. -/
+def whiskerRight {φ φ' : L.Hom L'} (Θ : φ ⟶ φ') (ψ : L'.Hom L'') : φ.comp ψ ⟶ φ'.comp ψ :=
+  ⟨Θ.joint ▷ ψ.joint, fun p a => by
+    simp only [comp_fiberIso_hom_as_app, whiskerRight_as_app]
+    rw [← Θ.comm p a]
+    -- Exchange the whiskerings by `Θ` and by the fiber isomorphism of `ψ`. The fiber comparison
+    -- is typed by the restriction of `L''.joint`, so this step is a term rather than a rewrite.
+    refine Eq.trans ?_ (congrArg (_ ≫ ·) (whisker_exchange_assoc _ _ _).symm)
+    bicategory⟩
 
-/-- The associator of 1-morphisms of lifts, whose underlying modification is the associator of
+/-- The associator of morphisms of lifts, whose joint modification is the associator of strong
+transformations. -/
+noncomputable def associator (φ : L.Hom L') (ψ : L'.Hom L'') (χ : L''.Hom L''') :
+    (φ.comp ψ).comp χ ≅ φ.comp (ψ.comp χ) where
+  hom := ⟨(α_ φ.joint ψ.joint χ.joint).hom, fun p a => by
+    simp only [comp_fiberIso_hom_as_app, associator_hom_as_app]
+    bicategory⟩
+  inv := ⟨(α_ φ.joint ψ.joint χ.joint).inv, fun p a => by
+    simp only [comp_fiberIso_hom_as_app, associator_inv_as_app]
+    bicategory⟩
+  hom_inv_id := hom₂_ext (α_ φ.joint ψ.joint χ.joint).hom_inv_id
+  inv_hom_id := hom₂_ext (α_ φ.joint ψ.joint χ.joint).inv_hom_id
+
+/-- The left unitor of a morphism of lifts, whose joint modification is the left unitor of strong
+transformations. -/
+noncomputable def leftUnitor (φ : L.Hom L') : (id L).comp φ ≅ φ where
+  hom := ⟨(λ_ φ.joint).hom, fun p a => by
+    simp only [comp_fiberIso_hom_as_app, id_fiberIso_hom_as_app, leftUnitor_hom_as_app]
+    bicategory⟩
+  inv := ⟨(λ_ φ.joint).inv, fun p a => by
+    simp only [comp_fiberIso_hom_as_app, id_fiberIso_hom_as_app, leftUnitor_inv_as_app]
+    bicategory⟩
+  hom_inv_id := hom₂_ext (λ_ φ.joint).hom_inv_id
+  inv_hom_id := hom₂_ext (λ_ φ.joint).inv_hom_id
+
+/-- The right unitor of a morphism of lifts, whose joint modification is the right unitor of
 strong transformations. -/
-def associator (φ : Hom L L') (ψ : Hom L' L'') (χ : Hom L'' L''') :
-    Hom.comp (Hom.comp φ ψ) χ ≅ Hom.comp φ (Hom.comp ψ χ) :=
-  Hom₂.isoMk (α_ φ.joint ψ.joint χ.joint) fun p => calc
-    _ = (α_ (restrictFiber φ.joint p) (restrictFiber ψ.joint p)
-            (restrictFiber χ.joint p)).hom ▷ L'''.comparison p ≫
-          (α_ (restrictFiber φ.joint p) (restrictFiber ψ.joint p ≫ restrictFiber χ.joint p)
-            (L'''.comparison p)).hom ≫
-          restrictFiber φ.joint p ◁ ((α_ (restrictFiber ψ.joint p) (restrictFiber χ.joint p)
-            (L'''.comparison p)).hom ≫
-            restrictFiber ψ.joint p ◁ (χ.comparisonIso p).hom ≫ (ψ.comparisonIso p).hom) ≫
-          (φ.comparisonIso p).hom := rfl
-    _ = (α_ (restrictFiber φ.joint p ≫ restrictFiber ψ.joint p) (restrictFiber χ.joint p)
-            (L'''.comparison p)).hom ≫
-          (restrictFiber φ.joint p ≫ restrictFiber ψ.joint p) ◁ (χ.comparisonIso p).hom ≫
-          (α_ (restrictFiber φ.joint p) (restrictFiber ψ.joint p) (L''.comparison p)).hom ≫
-          restrictFiber φ.joint p ◁ (ψ.comparisonIso p).hom ≫ (φ.comparisonIso p).hom := by
-      rw [whiskerLeft_comp (restrictFiber φ.joint p), whiskerLeft_comp (restrictFiber φ.joint p),
-        Category.assoc, Category.assoc,
-        pentagon_assoc (restrictFiber φ.joint p) (restrictFiber ψ.joint p),
-        associator_naturality_right_assoc (restrictFiber φ.joint p) (restrictFiber ψ.joint p)]
+noncomputable def rightUnitor (φ : L.Hom L') : φ.comp (id L') ≅ φ where
+  hom := ⟨(ρ_ φ.joint).hom, fun p a => by
+    simp only [comp_fiberIso_hom_as_app, id_fiberIso_hom_as_app, rightUnitor_hom_as_app]
+    bicategory⟩
+  inv := ⟨(ρ_ φ.joint).inv, fun p a => by
+    simp only [comp_fiberIso_hom_as_app, id_fiberIso_hom_as_app, rightUnitor_inv_as_app]
+    bicategory⟩
+  hom_inv_id := hom₂_ext (ρ_ φ.joint).hom_inv_id
+  inv_hom_id := hom₂_ext (ρ_ φ.joint).inv_hom_id
 
-/-- The left unitor of a 1-morphism of lifts, whose underlying modification is the left unitor of
-strong transformations. -/
-def leftUnitor (φ : Hom L L') : Hom.comp (Hom.id L) φ ≅ φ :=
-  Hom₂.isoMk (λ_ φ.joint) fun p => by
-    have h : (λ_ (restrictFiber φ.joint p)).hom ▷ L'.comparison p ≫ (φ.comparisonIso p).hom =
-        (α_ (𝟙 (L.joint.restrictFiber p)) (restrictFiber φ.joint p) (L'.comparison p)).hom ≫
-          𝟙 (L.joint.restrictFiber p) ◁ (φ.comparisonIso p).hom ≫
-          (λ_ (L.comparison p) : 𝟙 (L.joint.restrictFiber p) ≫ _ ≅ _).hom := by
-      rw [leftUnitor_naturality (φ.comparisonIso p).hom,
-        leftUnitor_whiskerRight (restrictFiber φ.joint p), Category.assoc]
-    exact h
-
-/-- The right unitor of a 1-morphism of lifts, whose underlying modification is the right unitor
-of strong transformations. -/
-def rightUnitor (φ : Hom L L') : Hom.comp φ (Hom.id L') ≅ φ :=
-  Hom₂.isoMk (ρ_ φ.joint) fun p => by
-    have h : (ρ_ (restrictFiber φ.joint p)).hom ▷ L'.comparison p ≫ (φ.comparisonIso p).hom =
-        (α_ (restrictFiber φ.joint p) (𝟙 (L'.joint.restrictFiber p)) (L'.comparison p)).hom ≫
-          restrictFiber φ.joint p ◁
-            (λ_ (L'.comparison p) : 𝟙 (L'.joint.restrictFiber p) ≫ _ ≅ _).hom ≫
-          (φ.comparisonIso p).hom := by
-      rw [triangle_assoc (restrictFiber φ.joint p)]
-    exact h
-
-end Bicategory
+end Hom
 
 /-- The bicategory of coherent equivariant lifts of a family of categorical actions. Its
-1-morphisms are `EquivariantGroupoidLift.Hom` and its 2-morphisms are
-`EquivariantGroupoidLift.Hom₂`. Since a 2-morphism is determined by its underlying modification,
-the coherence axioms are those of the bicategory of pseudofunctors. -/
-instance instBicategory : Bicategory (EquivariantGroupoidLift Γ actions) where
+`1`-morphisms are the morphisms of lifts `EquivariantGroupoidLift.Hom` and its `2`-morphisms are
+the compatible modifications `EquivariantGroupoidLift.Hom.Hom₂`. Since a `2`-morphism is
+determined by its joint modification, the coherence axioms are those of the bicategory of
+pseudofunctors. -/
+noncomputable instance instBicategory : Bicategory (EquivariantGroupoidLift Γ actions) where
   Hom := Hom
   id := Hom.id
   comp := Hom.comp
-  homCategory := homCategory
-  whiskerLeft := whiskerLeft
-  whiskerRight := whiskerRight
-  associator := associator
-  leftUnitor := leftUnitor
-  rightUnitor := rightUnitor
-  whiskerLeft_id φ ψ := Hom₂.ext (by exact Bicategory.whiskerLeft_id φ.joint ψ.joint)
+  whiskerLeft := Hom.whiskerLeft
+  whiskerRight := Hom.whiskerRight
+  associator := Hom.associator
+  leftUnitor := Hom.leftUnitor
+  rightUnitor := Hom.rightUnitor
+  whiskerLeft_id φ ψ := Hom.hom₂_ext (by exact Bicategory.whiskerLeft_id φ.joint ψ.joint)
   whiskerLeft_comp φ _ _ _ Θ Ξ :=
-    Hom₂.ext (by exact Bicategory.whiskerLeft_comp φ.joint Θ.joint Ξ.joint)
-  id_whiskerLeft Θ := Hom₂.ext (by exact Bicategory.id_whiskerLeft Θ.joint)
+    Hom.hom₂_ext (by
+      exact Bicategory.whiskerLeft_comp φ.joint (Hom.Hom₂.joint Θ) (Hom.Hom₂.joint Ξ))
+  id_whiskerLeft Θ := Hom.hom₂_ext (by exact Bicategory.id_whiskerLeft (Hom.Hom₂.joint Θ))
   comp_whiskerLeft φ ψ _ _ Θ :=
-    Hom₂.ext (by exact Bicategory.comp_whiskerLeft φ.joint ψ.joint Θ.joint)
-  id_whiskerRight φ ψ := Hom₂.ext (by exact Bicategory.id_whiskerRight φ.joint ψ.joint)
+    Hom.hom₂_ext (by exact Bicategory.comp_whiskerLeft φ.joint ψ.joint (Hom.Hom₂.joint Θ))
+  id_whiskerRight φ ψ := Hom.hom₂_ext (by exact Bicategory.id_whiskerRight φ.joint ψ.joint)
   comp_whiskerRight Θ Ξ χ :=
-    Hom₂.ext (by exact Bicategory.comp_whiskerRight Θ.joint Ξ.joint χ.joint)
-  whiskerRight_id Θ := Hom₂.ext (by exact Bicategory.whiskerRight_id Θ.joint)
+    Hom.hom₂_ext (by
+      exact Bicategory.comp_whiskerRight (Hom.Hom₂.joint Θ) (Hom.Hom₂.joint Ξ) χ.joint)
+  whiskerRight_id Θ := Hom.hom₂_ext (by exact Bicategory.whiskerRight_id (Hom.Hom₂.joint Θ))
   whiskerRight_comp Θ ψ χ :=
-    Hom₂.ext (by exact Bicategory.whiskerRight_comp Θ.joint ψ.joint χ.joint)
-  whisker_assoc φ _ _ Θ χ := Hom₂.ext (by exact Bicategory.whisker_assoc φ.joint Θ.joint χ.joint)
-  whisker_exchange Θ Ξ := Hom₂.ext (by exact Bicategory.whisker_exchange Θ.joint Ξ.joint)
-  pentagon φ ψ χ ω := Hom₂.ext (by exact Bicategory.pentagon φ.joint ψ.joint χ.joint ω.joint)
-  triangle φ ψ := Hom₂.ext (by exact Bicategory.triangle φ.joint ψ.joint)
+    Hom.hom₂_ext (by exact Bicategory.whiskerRight_comp (Hom.Hom₂.joint Θ) ψ.joint χ.joint)
+  whisker_assoc φ _ _ Θ χ :=
+    Hom.hom₂_ext (by exact Bicategory.whisker_assoc φ.joint (Hom.Hom₂.joint Θ) χ.joint)
+  whisker_exchange Θ Ξ :=
+    Hom.hom₂_ext (by exact Bicategory.whisker_exchange (Hom.Hom₂.joint Θ) (Hom.Hom₂.joint Ξ))
+  pentagon φ ψ χ ω := Hom.hom₂_ext (by exact Bicategory.pentagon φ.joint ψ.joint χ.joint ω.joint)
+  triangle φ ψ := Hom.hom₂_ext (by exact Bicategory.triangle φ.joint ψ.joint)
 
 section API
 
 variable {L L' L'' L''' : EquivariantGroupoidLift Γ actions}
 
-/-- 2-morphisms of lifts are determined by their underlying modifications. -/
+/-- `2`-morphisms of the bicategory of lifts are determined by their joint modifications. -/
 @[ext]
-lemma Hom₂.hom_ext {φ ψ : L ⟶ L'} {Θ Ξ : φ ⟶ ψ} (h : Θ.joint = Ξ.joint) : Θ = Ξ :=
-  Hom₂.ext h
+lemma hom₂_ext {φ ψ : L ⟶ L'} {Θ Ξ : φ ⟶ ψ} (h : Θ.joint = Ξ.joint) : Θ = Ξ :=
+  Hom.hom₂_ext h
 
 @[simp]
-lemma Hom₂.id_joint (φ : L ⟶ L') : Hom₂.joint (𝟙 φ) = 𝟙 φ.joint :=
+lemma hom₂_id_joint (φ : L ⟶ L') : Hom.Hom₂.joint (𝟙 φ) = 𝟙 φ.joint :=
   (rfl)
 
 @[simp]
-lemma Hom₂.comp_joint {φ ψ χ : L ⟶ L'} (Θ : φ ⟶ ψ) (Ξ : ψ ⟶ χ) :
-    (Θ ≫ Ξ).joint = Θ.joint ≫ Ξ.joint :=
+lemma hom₂_comp_joint {φ ψ χ : L ⟶ L'} (Θ : φ ⟶ ψ) (Ξ : ψ ⟶ χ) :
+    Hom.Hom₂.joint (Θ ≫ Ξ) = Hom.Hom₂.joint Θ ≫ Hom.Hom₂.joint Ξ :=
   (rfl)
 
 @[simp]
@@ -330,18 +183,14 @@ lemma id_joint (L : EquivariantGroupoidLift Γ actions) : Hom.joint (𝟙 L) = �
 lemma comp_joint (φ : L ⟶ L') (ψ : L' ⟶ L'') : (φ ≫ ψ).joint = φ.joint ≫ ψ.joint :=
   (rfl)
 
-/-- The comparison isomorphisms of the identity 1-morphism are the left unitors. -/
-lemma id_comparisonIso (L : EquivariantGroupoidLift Γ actions) (p : Γ) :
-    Hom.comparisonIso (𝟙 L) p = (λ_ (L.comparison p) : 𝟙 (L.joint.restrictFiber p) ≫ _ ≅ _) :=
+/-- The fiber isomorphisms of the identity `1`-morphism are those of `Hom.id`. -/
+lemma id_fiberIso (L : EquivariantGroupoidLift Γ actions) (p : Γ) :
+    Hom.fiberIso (𝟙 L) p = (Hom.id L).fiberIso p :=
   rfl
 
-/-- The comparison isomorphisms of a composite 1-morphism. -/
-lemma comp_comparisonIso (φ : L ⟶ L') (ψ : L' ⟶ L'') (p : Γ) :
-    (φ ≫ ψ).comparisonIso p =
-      (α_ (φ.joint.restrictFiber p) (ψ.joint.restrictFiber p) (L''.comparison p) ≪≫
-        whiskerLeftIso (φ.joint.restrictFiber p) (ψ.comparisonIso p) ≪≫ φ.comparisonIso p :
-        (φ.joint.restrictFiber p ≫ ψ.joint.restrictFiber p) ≫ L''.comparison p ≅
-          L.comparison p) :=
+/-- The fiber isomorphisms of a composite `1`-morphism are those of `Hom.comp`. -/
+lemma comp_fiberIso (φ : L ⟶ L') (ψ : L' ⟶ L'') (p : Γ) :
+    (φ ≫ ψ).fiberIso p = (Hom.comp φ ψ).fiberIso p :=
   rfl
 
 @[simp]
