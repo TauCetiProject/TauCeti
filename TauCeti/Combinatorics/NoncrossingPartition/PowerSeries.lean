@@ -27,8 +27,10 @@ the first position (`TauCeti.NoncrossingPartition.sum_mul_prod_eq_sum_mul_sum`).
 at the position `x`, a noncrossing partition is a noncrossing partition of the positions before `x`
 whose first part is extended by `x`, together with one of the positions after `x`. Weighting the
 first part by the coefficients of an arbitrary series `f`, the total weight of the noncrossing
-partitions of `n` positions is the `n`-th coefficient of `f(z M(z))`: extending the first part
-shifts `f` to `(f(z) - f(0)) / z`, and the positions after `x` contribute the factor `M(z)`.
+partitions of `n ≥ 1` positions is the `n`-th coefficient of `f(z M(z))`: extending the first part
+shifts `f` to `(f(z) - f(0)) / z`, and the positions after `x` contribute the factor `M(z)`. For
+`n = 0` the identity holds with the convention that the empty partition, which has no first part,
+has weight `f(0)`, the constant coefficient of `f(z M(z))`.
 
 ## Main results
 
@@ -52,7 +54,8 @@ variable {R α : Type*} [CommRing R] [LinearOrder α]
 
 /-- The total weight of the noncrossing partitions of `t` when the part through `m` has weight
 the coefficient of `f` at its size and every other part has weight the coefficient of `C` at its
-size. -/
+size. If `m ∉ t`, the part through `m` is empty and contributes `f(0)`; in particular the empty
+partition of `t = ∅` has weight `f(0)` rather than `1`. -/
 private noncomputable def firstPartSum (C f : R⟦X⟧) (m : α) (t : Finset α) : R :=
   ∑ P : NoncrossingPartition t,
     coeff #(P.1.part m) f * ∏ B ∈ P.1.parts with m ∉ B, coeff #B C
@@ -64,7 +67,8 @@ private theorem parts_eq_empty (P : NoncrossingPartition (∅ : Finset α)) : P.
 /-- Assume that the total weight of the noncrossing partitions of every set of fewer than `n`
 positions is the coefficient of `M` at its size. Then for every set `t` of at most `n` positions,
 whose least position is `m` if `t` is nonempty, the total weight with the first part weighted by
-`f` is the coefficient of `f(z M(z))` at `|t|`. -/
+`f` is the coefficient of `f(z M(z))` at `|t|`. For `t = ∅` both sides are `f(0)`, since
+`firstPartSum` gives the empty partition the weight `f(0)`. -/
 private theorem firstPartSum_eq_coeff_subst {C M : R⟦X⟧} {n : ℕ}
     (hZ : ∀ u : Finset α, #u < n →
       ∑ P : NoncrossingPartition u, ∏ B ∈ P.1.parts, coeff #B C = coeff #u M)
