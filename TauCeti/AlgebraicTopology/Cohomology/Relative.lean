@@ -186,6 +186,31 @@ lemma singularCohomologyMap_comp {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P'
   simp [TopPair.singularCohomologyMap, singularCochainComplexMap_comp,
     HomologicalComplex.homologyMap_comp]
 
+/-- The cohomology map of a composite, evaluated at a class. -/
+lemma singularCohomologyMap_comp_apply {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P' ⟶ P'')
+    (n : ℕ) (x : P''.singularCohomology R k M n) :
+    TopPair.singularCohomologyMap (f ≫ g) n x =
+      TopPair.singularCohomologyMap f n (TopPair.singularCohomologyMap g n x) := by
+  rw [singularCohomologyMap_comp, ConcreteCategory.comp_apply]
+
+/-- The cohomology map of the inverse of an isomorphism of pairs is a right inverse of the
+cohomology map of the isomorphism. -/
+@[simp]
+lemma singularCohomologyMap_hom_singularCohomologyMap_inv_apply {P P' : TopPair.{w}}
+    (φ : P ≅ P') (n : ℕ) (x : P.singularCohomology R k M n) :
+    TopPair.singularCohomologyMap φ.hom n (TopPair.singularCohomologyMap φ.inv n x) = x := by
+  rw [← singularCohomologyMap_comp_apply, Iso.hom_inv_id, singularCohomologyMap_id,
+    ConcreteCategory.id_apply]
+
+/-- The cohomology map of the inverse of an isomorphism of pairs is a left inverse of the
+cohomology map of the isomorphism. -/
+@[simp]
+lemma singularCohomologyMap_inv_singularCohomologyMap_hom_apply {P P' : TopPair.{w}}
+    (φ : P ≅ P') (n : ℕ) (x : P'.singularCohomology R k M n) :
+    TopPair.singularCohomologyMap φ.inv n (TopPair.singularCohomologyMap φ.hom n x) = x := by
+  rw [← singularCohomologyMap_comp_apply, Iso.inv_hom_id, singularCohomologyMap_id,
+    ConcreteCategory.id_apply]
+
 /-- The map induced on relative singular cohomology by a map of topological pairs is the one
 induced on the relative cochains of the associated map of pairs of simplicial sets. -/
 lemma singularCohomologyMap_eq {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
