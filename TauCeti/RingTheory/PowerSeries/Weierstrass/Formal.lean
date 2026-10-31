@@ -57,7 +57,7 @@ coefficient, whose least index is the λ-invariant.
 
 * `TauCeti.norm_map_eq_one_iff_isUnit` and `TauCeti.norm_map_lt_one_iff_mem_maximalIdeal`: units
   of `O` map to norm one and the maximal ideal is exactly the preimage of the open unit ball.
-* `TauCeti.PowerSeries.isRestricted_map_of_abs_lt_one` and `TauCeti.PowerSeries.isUnit_mk_map`:
+* `PowerSeries.isRestricted_map_of_abs_lt_one` and `TauCeti.PowerSeries.isUnit_mk_map`:
   series over `O` are restricted inside the unit disc, and formal units stay units of every
   ring of restricted series there.
 * `TauCeti.PowerSeries.eventually_isDistinguished_and_isLowestDominant` and
@@ -84,6 +84,20 @@ coefficient, whose least index is the λ-invariant.
 public section
 
 open Filter Topology IsLocalRing
+
+namespace PowerSeries
+
+variable {O R : Type*} [Semiring O] [NormedRing R] {φ : O →+* R}
+
+/-- A series whose coefficients map into the closed unit ball of a normed ring is restricted at
+every radius of absolute value less than one. -/
+theorem isRestricted_map_of_abs_lt_one (hφ : ∀ x, ‖φ x‖ ≤ 1) (g : PowerSeries O) {r : ℝ}
+    (hr : |r| < 1) :
+    (g.map φ).IsRestricted r :=
+  HasGaussNorm.isRestricted_of_abs_lt
+    ⟨1, Set.forall_mem_range.mpr fun n ↦ by simpa using hφ (g.coeff n)⟩ hr
+
+end PowerSeries
 
 namespace TauCeti
 
@@ -162,24 +176,16 @@ section Restricted
 
 variable {O R : Type*} [Semiring O] [NormedRing R] {φ : O →+* R}
 
-/-- A series whose coefficients map into the closed unit ball of a normed ring is restricted at
-every radius of absolute value less than one. -/
-theorem isRestricted_map_of_abs_lt_one (hφ : ∀ x, ‖φ x‖ ≤ 1) (g : _root_.PowerSeries O) {r : ℝ}
-    (hr : |r| < 1) :
-    (g.map φ).IsRestricted r :=
-  _root_.PowerSeries.HasGaussNorm.isRestricted_of_abs_lt
-    ⟨1, Set.forall_mem_range.mpr fun n ↦ by simpa using hφ (g.coeff n)⟩ hr
-
 /-- **A formal unit is a unit of every ring of series restricted inside the unit disc.** If `φ`
 maps into the closed unit ball, the image of a unit `u` of `O⟦X⟧` is a unit of the ring of series
 restricted at any radius of absolute value less than one, with inverse the image of `u⁻¹`. -/
 theorem isUnit_mk_map [IsUltrametricDist R] (hφ : ∀ x, ‖φ x‖ ≤ 1) {u : _root_.PowerSeries O}
     (hu : IsUnit u) {r : ℝ} (hr : |r| < 1) :
-    IsUnit (⟨u.map φ, isRestricted_map_of_abs_lt_one hφ u hr⟩ :
+    IsUnit (⟨u.map φ, u.isRestricted_map_of_abs_lt_one hφ hr⟩ :
       _root_.PowerSeries.IsRestricted.subring (R := R) r) := by
   obtain ⟨u, rfl⟩ := hu
-  exact ⟨⟨⟨_, isRestricted_map_of_abs_lt_one hφ _ hr⟩,
-    ⟨_, isRestricted_map_of_abs_lt_one hφ (↑u⁻¹ : _root_.PowerSeries O) hr⟩,
+  exact ⟨⟨⟨_, _root_.PowerSeries.isRestricted_map_of_abs_lt_one hφ _ hr⟩,
+    ⟨_, _root_.PowerSeries.isRestricted_map_of_abs_lt_one hφ (↑u⁻¹ : _root_.PowerSeries O) hr⟩,
     Subtype.ext (by simp [← map_mul]), Subtype.ext (by simp [← map_mul])⟩, rfl⟩
 
 end Restricted
@@ -323,7 +329,7 @@ theorem eventually_eq_map_of_mul_eq (H : g.IsWeierstrassFactorization P h)
   have : Nontrivial R := NormOneClass.nontrivial
   have hP : (P.map φ).IsMonicOfDegree P.natDegree :=
     ⟨H.isDistinguishedAt.monic.natDegree_map φ, H.isDistinguishedAt.monic.map φ⟩
-  have hformal : ((⟨h.map φ, isRestricted_map_of_abs_lt_one hφ h hr⟩ :
+  have hformal : ((⟨h.map φ, h.isRestricted_map_of_abs_lt_one hφ hr⟩ :
       PowerSeries.IsRestricted.subring (R := R) r) : PowerSeries R) *
         ((P.map φ : Polynomial R) : PowerSeries R) = g.map φ := by
     rw [H.eq_mul, map_mul, Polynomial.polynomial_map_coe, mul_comm]
