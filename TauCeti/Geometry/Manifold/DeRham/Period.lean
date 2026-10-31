@@ -23,8 +23,8 @@ Equivalently, the monodromy of the covering along `γ` translates values by the 
 (`TauCeti.PrimitiveSpace.value_monodromy`), which gives homotopy invariance for free.
 
 The integral is additive under concatenation (`TauCeti.pathClassIntegral_trans`), linear in the
-form (`TauCeti.pathClassIntegral_smul_add`), equal to the endpoint difference of a primitive for
-exact forms (`TauCeti.pathClassIntegral_mextDeriv_ofFunction`), and equal to the line integral
+form (`TauCeti.pathClassIntegral_smul_add_smul`), equal to the endpoint difference of a primitive
+for exact forms (`TauCeti.pathClassIntegral_mextDeriv_ofFunction`), and equal to the line integral
 `TauCeti.pathIntegral` along `C¹` curves (`TauCeti.pathClassIntegral_mk_eq_pathIntegral`).
 
 On loops at `x` it is the **period homomorphism** `TauCeti.periodHom φ x` from the fundamental
@@ -155,11 +155,8 @@ theorem pathClassIntegral_mextDeriv_ofFunction {g : M → F} (hg : ContMDiff I �
     pathClassIntegral (mextDeriv (RoughForm.ofFunction I g)) γ = g y - g x := by
   induction γ with | mk γ =>
   set φ := mextDeriv (RoughForm.ofFunction I g)
-  have hφ : IsSmoothForm I 1 φ := by
-    rw [isSmoothForm_def]
-    exact (isSmoothBundleForm_def 1 _).mp (isSmoothBundleForm_mextDeriv (n := 1) _
-      ((isSmoothBundleForm_def 2 _).mpr (isSmoothForm_ofFunction_iff.mpr hg).contMDiff)
-      (by norm_num))
+  have hφ : IsSmoothForm I 1 φ :=
+    isSmoothForm_mextDeriv (isSmoothForm_ofFunction_iff.mpr hg) (by norm_num)
   have hgU : IsPrimitiveOn φ g univ :=
     ⟨isOpen_univ, (hg.mdifferentiable (by norm_num)).mdifferentiableOn, fun _ _ ↦ rfl⟩
   -- the graph of the global primitive `g` along `γ` is a lift of `γ`
@@ -216,7 +213,7 @@ theorem pathClassIntegral_mk_eq_pathIntegral (hφ : IsSmoothForm I 1 φ)
 /-! ### Linearity in the form -/
 
 /-- Integration along path classes is linear in the closed `C¹` form. -/
-theorem pathClassIntegral_smul_add (hφ : IsSmoothForm I 1 φ) (hφc : mextDeriv φ = 0)
+theorem pathClassIntegral_smul_add_smul (hφ : IsSmoothForm I 1 φ) (hφc : mextDeriv φ = 0)
     (hψ : IsSmoothForm I 1 ψ) (hψc : mextDeriv ψ = 0) (a b : ℝ)
     (γ : Path.Homotopic.Quotient x y) :
     pathClassIntegral (a • φ + b • ψ) γ =
@@ -269,21 +266,21 @@ theorem pathClassIntegral_smul_add (hφ : IsSmoothForm I 1 φ) (hφc : mextDeriv
 theorem pathClassIntegral_add (hφ : IsSmoothForm I 1 φ) (hφc : mextDeriv φ = 0)
     (hψ : IsSmoothForm I 1 ψ) (hψc : mextDeriv ψ = 0) (γ : Path.Homotopic.Quotient x y) :
     pathClassIntegral (φ + ψ) γ = pathClassIntegral φ γ + pathClassIntegral ψ γ := by
-  simpa using pathClassIntegral_smul_add hφ hφc hψ hψc 1 1 γ
+  simpa using pathClassIntegral_smul_add_smul hφ hφc hψ hψc 1 1 γ
 
 /-- The integral of the zero form vanishes. -/
 @[simp]
 theorem pathClassIntegral_zero (γ : Path.Homotopic.Quotient x y) :
     pathClassIntegral (0 : RoughForm I M F 1) γ = 0 := by
   have h0 := IsSmoothForm.zero (I := I) (M := M) (F := F) (k := 1) 1
-  simpa using pathClassIntegral_smul_add h0 mextDeriv_zero h0 mextDeriv_zero 0 0 γ
+  simpa using pathClassIntegral_smul_add_smul h0 mextDeriv_zero h0 mextDeriv_zero 0 0 γ
 
 /-- Integration along path classes commutes with real scalar multiplication of the form. -/
 @[simp]
 theorem pathClassIntegral_smul (a : ℝ) (γ : Path.Homotopic.Quotient x y) :
     pathClassIntegral (a • φ) γ = a • pathClassIntegral φ γ := by
   by_cases h : IsSmoothForm I 1 φ ∧ mextDeriv φ = 0
-  · simpa using pathClassIntegral_smul_add h.1 h.2 h.1 h.2 a 0 γ
+  · simpa using pathClassIntegral_smul_add_smul h.1 h.2 h.1 h.2 a 0 γ
   · rcases eq_or_ne a 0 with rfl | ha
     · simp
     · have h' : ¬(IsSmoothForm I 1 (a • φ) ∧ mextDeriv (a • φ) = 0) := fun h' ↦ h
@@ -303,9 +300,26 @@ def periodHom (x : M) : Additive (FundamentalGroup M x) →+ F where
     rw [toMul_add, FundamentalGroup.mul_def, add_comm]
     exact pathClassIntegral_trans _ _
 
+@[simp]
 theorem periodHom_apply (x : M) (γ : Additive (FundamentalGroup M x)) :
     periodHom φ x γ = pathClassIntegral φ (Additive.toMul γ).toPath :=
   (rfl)
+
+/-- The periods of a sum of closed `C¹` forms are the sums of their periods. -/
+theorem periodHom_add (hφ : IsSmoothForm I 1 φ) (hφc : mextDeriv φ = 0)
+    (hψ : IsSmoothForm I 1 ψ) (hψc : mextDeriv ψ = 0) (x : M) :
+    periodHom (φ + ψ) x = periodHom φ x + periodHom ψ x :=
+  AddMonoidHom.ext fun _ ↦ pathClassIntegral_add hφ hφc hψ hψc _
+
+/-- The periods of a real multiple of a form are the multiples of its periods. -/
+@[simp]
+theorem periodHom_smul (a : ℝ) (x : M) : periodHom (a • φ) x = a • periodHom φ x :=
+  AddMonoidHom.ext fun _ ↦ pathClassIntegral_smul a _
+
+/-- The periods of the zero form vanish. -/
+@[simp]
+theorem periodHom_zero (x : M) : periodHom (0 : RoughForm I M F 1) x = 0 :=
+  AddMonoidHom.ext fun _ ↦ pathClassIntegral_zero _
 
 /-- The period of a closed `C¹` form along the class of a `C¹` loop is its line integral. -/
 theorem periodHom_ofMul_eq_pathIntegral (hφ : IsSmoothForm I 1 φ) (hclosed : mextDeriv φ = 0)
@@ -344,14 +358,10 @@ namespace deRhamCohomology
 private def periodClosedForms (x : M) :
     closedForms I M 1 →ₗ[ℝ] Additive (FundamentalGroup M x) →+ ℝ where
   toFun φ := periodHom (φ.1 : RoughForm I M ℝ 1) x
-  map_add' φ ψ := by
-    refine AddMonoidHom.ext fun γ ↦ ?_
-    exact pathClassIntegral_add (φ.1.isSmoothForm.of_le (by simp))
-      ((mem_closedForms I _).mp φ.2) (ψ.1.isSmoothForm.of_le (by simp))
-      ((mem_closedForms I _).mp ψ.2) _
-  map_smul' a φ := by
-    refine AddMonoidHom.ext fun γ ↦ ?_
-    exact pathClassIntegral_smul a _
+  map_add' φ ψ :=
+    periodHom_add (φ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.2)
+      (ψ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp ψ.2) x
+  map_smul' a φ := periodHom_smul a x
 
 /-- Exact forms have vanishing periods. -/
 private theorem ker_mk_le_ker_periodClosedForms (x : M) :

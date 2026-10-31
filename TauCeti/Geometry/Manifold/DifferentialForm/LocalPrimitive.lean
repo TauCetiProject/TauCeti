@@ -130,9 +130,8 @@ theorem IsPrimitiveOn.isOpen_setOf_eq [IsManifold I 1 M] (hg : IsPrimitiveOn φ 
 /-! ### The covering space of local primitives -/
 
 /-- Pairs of a point and a value, topologized so that the graphs of the primitives of `φ` on open
-sets form a basis. The body is exposed because the topology is defined on the underlying
-product. -/
-@[expose] def PrimitiveSpace (_φ : RoughForm I M F 1) : Type _ := M × F
+sets form a basis. -/
+def PrimitiveSpace (_φ : RoughForm I M F 1) : Type _ := M × F
 
 namespace PrimitiveSpace
 
