@@ -56,6 +56,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_lsmul_le_of_forall_fg`: the finite-generation reduction for `M ⧸ aM`.
 * `TauCeti.isFiniteLength_quotient_of_nonZeroDivisor_mem`: `A ⧸ I` has finite length when `I`
   contains a non-zero-divisor.
+* `TauCeti.isFiniteLength_of_nonZeroDivisor_mem_annihilator`: over a noetherian ring of dimension
+  at most one, a finitely generated module killed by a non-zero-divisor has finite length.
 * `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
   with `A ⧸ I` of finite length.
 * `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
@@ -240,6 +242,23 @@ theorem isFiniteLength_quotient_of_nonZeroDivisor_mem [IsNoetherianRing A] [Ring
   have hle : Ideal.span {x} ≤ I := (Ideal.span_singleton_le_iff_mem I).mpr hxI
   exact (isFiniteLength_quotient_span_singleton A hx).of_surjective
     (f := Submodule.factor hle) (Submodule.factor_surjective hle)
+
+/-- In a Noetherian ring of Krull dimension at most one, a finitely generated module whose
+annihilator contains a non-zero-divisor has finite length. -/
+theorem isFiniteLength_of_nonZeroDivisor_mem_annihilator [IsNoetherianRing A]
+    [Ring.KrullDimLE 1 A] [Module.Finite A M] {x : A} (hxM : x ∈ Module.annihilator A M)
+    (hx : x ∈ nonZeroDivisors A) : IsFiniteLength A M := by
+  -- `M` is a finitely generated module over the Artinian ring `A ⧸ Ann(M)`.
+  let _ := Module.quotientAnnihilator (R := A) (M := M)
+  obtain ⟨-, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp
+    (isFiniteLength_quotient_of_nonZeroDivisor_mem (Module.annihilator A M) hxM hx)
+  have : IsArtinianRing (A ⧸ Module.annihilator A M) := isArtinian_of_tower A inferInstance
+  have : Module.Finite (A ⧸ Module.annihilator A M) M :=
+    Module.Finite.of_restrictScalars_finite A _ M
+  have : IsArtinian A M :=
+    isArtinian_of_surjective_algebraMap (R := A ⧸ Module.annihilator A M)
+      Ideal.Quotient.mk_surjective
+  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, this⟩
 
 /-- **The length of `I ⧸ aI` for an ideal `I`.** For an ideal `I` with `A ⧸ I` of finite length
 and a non-zero-divisor `a`, `length (I ⧸ aI)` is the order of vanishing `Ring.ord A a`, which is
