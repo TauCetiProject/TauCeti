@@ -104,9 +104,10 @@ private theorem bilin_eq_inner_mul_sum_add_sum_sum [Fintype ι]
     exact Finset.sum_congr rfl fun i _ => by congr 1; ring
   have hg : ⟪g, ν⟫_ℝ • (‖ν‖ ^ 2)⁻¹ • ν +
       ∑ i, ⟪g, b i - (⟪b i, ν⟫_ℝ / ‖ν‖ ^ 2) • ν⟫_ℝ • b i = g := by
+    have hsum : ∑ i, ⟪g, b i⟫_ℝ • b i = g := by
+      simpa only [real_inner_comm] using b.sum_repr' g
     simp only [inner_sub_right, real_inner_smul_right, sub_smul, Finset.sum_sub_distrib, hν]
-    rw [show ∑ i, ⟪g, b i⟫_ℝ • b i = g by simpa only [real_inner_comm] using b.sum_repr' g,
-      smul_smul, div_eq_mul_inv]
+    rw [hsum, smul_smul, div_eq_mul_inv]
     abel
   conv_lhs => rw [← hg]
   simp [hw, Finset.mul_sum, mul_assoc]
@@ -269,19 +270,11 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : 
   -- The coefficients `β p q = ⟪p, a q⟫` are bounded and Lipschitz on `Ω`.
   set β : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → ℝ :=
     fun p q x => matrixBilinearForm (a x) p q
-  have hβL : ∀ p q, LipschitzOnWith (K * ‖p‖₊ * ‖q‖₊) (β p q) Omega := fun p q =>
-    LipschitzOnWith.of_dist_le_mul fun x hx y hy => by
-      have h := (matrixBilinearForm (a x) - matrixBilinearForm (a y)).le_opNorm₂ p q
-      have hd := hK.dist_le_mul x hx y hy
-      rw [dist_eq_norm] at hd
-      have he : β p q x - β p q y =
-          (matrixBilinearForm (a x) - matrixBilinearForm (a y)) p q := by simp [β]
-      rw [Real.dist_eq, ← Real.norm_eq_abs, he]
-      refine h.trans ?_
-      push_cast
-      calc ‖matrixBilinearForm (a x) - matrixBilinearForm (a y)‖ * ‖p‖ * ‖q‖
-          ≤ K * dist x y * ‖p‖ * ‖q‖ := by gcongr
-        _ = K * ‖p‖ * ‖q‖ * dist x y := by ring
+  have hβL : ∀ p q, LipschitzOnWith (K * ‖p‖₊ * ‖q‖₊) (β p q) Omega := fun p q => by
+    convert ((ContinuousLinearMap.lipschitzWith_apply q).comp
+      (ContinuousLinearMap.lipschitzWith_apply p)).comp_lipschitzOnWith hK using 1
+    · ring
+    · rfl
   have hβb : ∀ p q, ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖β p q x‖ ≤ Lam * ‖p‖ * ‖q‖ :=
     fun p q x hx => by
       simpa only [β, Real.norm_eq_abs, matrixBilinearForm_apply] using ha.upper_bound hx p q
@@ -379,9 +372,9 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : 
   -- Every first derivative has a normal derivative, and then a derivative in every direction.
   have hyν : ∀ y, D y ν := fun y => by
     have h := hadd (hsmul (⟪y, ν⟫_ℝ / ‖ν‖ ^ 2) hνν) (hsymm (htan ν (hP y)))
-    rwa [show (⟪y, ν⟫_ℝ / ‖ν‖ ^ 2) • ν + P y = y by simp [P]] at h
+    simpa only [P, add_sub_cancel] using h
   have h := hadd_dir (hsmul_dir (⟪w, ν⟫_ℝ / ‖ν‖ ^ 2) (hyν y)) (htan y (hP w))
-  rwa [show (⟪w, ν⟫_ℝ / ‖ν‖ ^ 2) • ν + P w = w by simp [P]] at h
+  simpa only [P, add_sub_cancel] using h
 
 /-- **`H²` regularity up to the boundary.** Let `ν ≠ 0` and let `Ω` be mapped into itself by every
 translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a slab is. Let `a` be

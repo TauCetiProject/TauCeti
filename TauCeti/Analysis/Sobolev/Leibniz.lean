@@ -237,19 +237,6 @@ private noncomputable def leibnizBump (n : ℕ) : ContDiffBump (0 : E) where
     rw [one_div_lt_one_div (by positivity) (by positivity)]
     linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
-/-- A continuous factor times an integrable function vanishing off a compact set is integrable. -/
-private theorem integrable_smul_of_isCompact {f : E → ℝ} (hf : Continuous f) {w : E → F}
-    (hw : Integrable w μ) {s : Set E} (hs : IsCompact s) (hws : ∀ x ∉ s, w x = 0) :
-    Integrable (fun x => f x • w x) μ := by
-  obtain ⟨M, hM⟩ := hs.exists_bound_of_continuousOn hf.continuousOn
-  refine Integrable.mono' (hw.norm.const_mul M) (hf.aestronglyMeasurable.smul hw.1)
-    (Eventually.of_forall fun x => ?_)
-  by_cases hx : x ∈ s
-  · rw [norm_smul]
-    exact mul_le_mul_of_nonneg_right (hM x hx) (norm_nonneg _)
-  · simp [hws x hx]
-
 /-- **The Leibniz rule for weak directional derivatives with a Lipschitz factor.** If `u'` is a
 weak derivative of `u` in the direction `v` on `Ω` and `ψ` is Lipschitz, then `ψ u` is weakly
 differentiable in the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`, where
@@ -328,6 +315,9 @@ theorem HasWeakLineDerivOn.lipschitzWith_smul (h : HasWeakLineDerivOn μ Ω u u'
     simp [w₁, lineDeriv_of_notMem_tsupport hx]
   have hw₂0 : ∀ x ∉ tsupport (φ : E → ℝ), w₂ x = 0 := fun x hx => by
     simp [w₂, image_eq_zero_of_notMem_tsupport hx]
+  have hw₂c : ∀ f : E → ℝ, Continuous f → Integrable (fun x => f x • w₂ x) μ := fun f hf =>
+    (hw₂.integrableOn.continuousOn_smul hf.continuousOn hK).integrable_of_forall_notMem_eq_zero
+      fun x hx => by simp [hw₂0 x hx]
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hψ.continuous.continuousOn
   -- Dominated convergence for the two terms carrying the factor itself.
   have hlim : ∀ w : E → F, Integrable w μ → (∀ x ∉ tsupport (φ : E → ℝ), w x = 0) →
@@ -358,7 +348,7 @@ theorem HasWeakLineDerivOn.lipschitzWith_smul (h : HasWeakLineDerivOn μ Ω u u'
     have h₃ : Integrable (fun x => fderiv ℝ (ψn n) x v • w₃ x) μ :=
       hw₃.bdd_smul (K * ‖v‖) (((hsmooth n).continuous_fderiv (by simp)).clm_apply
         continuous_const).aestronglyMeasurable (Eventually.of_forall (hderivb n))
-    rw [← integral_add (integrable_smul_of_isCompact (hsmooth n).continuous hw₂ hK hw₂0) h₃]
+    rw [← integral_add (hw₂c _ (hsmooth n).continuous) h₃]
     convert hn using 2
     · ext x; simp only [w₁, smul_comm (ψn n x)]
     · refine integral_congr_ae (Eventually.of_forall fun x => ?_)
@@ -367,7 +357,7 @@ theorem HasWeakLineDerivOn.lipschitzWith_smul (h : HasWeakLineDerivOn μ Ω u u'
     (((hlim w₂ hw₂ hw₂0).add hlim₃).neg.congr fun n => (heq n).symm)
   have h₃ : Integrable (fun x => ψ' x • w₃ x) μ :=
     hw₃.bdd_smul (K * ‖v‖) hψ'm.aestronglyMeasurable (Eventually.of_forall hψ'b)
-  rw [← integral_add (integrable_smul_of_isCompact hψ.continuous hw₂ hK hw₂0) h₃] at hlimit
+  rw [← integral_add (hw₂c ψ hψ.continuous) h₃] at hlimit
   convert hlimit using 2
   · ext x; simp only [w₁, smul_comm (ψ x)]
   · refine integral_congr_ae (Eventually.of_forall fun x => ?_)
