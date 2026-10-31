@@ -47,9 +47,9 @@ noncomputable section
 open Filter MeasureTheory ProbabilityTheory Real Set
 open scoped ENNReal NNReal
 
-local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
-
 namespace TauCeti.Probability
+
+local instance instFactTwoPiPosWrappedNormal : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
 /-- The real density of the wrapped normal law relative to normalized Haar measure: `2 * π` times
 the periodization of the centred Gaussian density, evaluated at `θ - m`. At variance zero it is
