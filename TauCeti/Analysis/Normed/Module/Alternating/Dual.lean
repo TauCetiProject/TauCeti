@@ -30,8 +30,6 @@ product norm in `TauCeti.Analysis.InnerProductSpace.Comass`.
 
 * `exteriorPower.continuousAlternatingMapLinearEquiv`: continuous alternating maps on `E` are the
   linear maps on `⋀[𝕜]^k E`.
-* `ContinuousAlternatingMap.instFiniteDimensionalFin`: these maps form a finite-dimensional space
-  when the codomain is finite-dimensional.
 * `exteriorPower.formDualEquiv`: the linear equivalence
   `⋀[𝕜]^k E ≃ₗ[𝕜] StrongDual 𝕜 (E [⋀^Fin k]→L[𝕜] 𝕜)`.
 * `exteriorPower.formDualEquiv_ιMulti_apply`: a wedge of vectors evaluates forms.
@@ -79,13 +77,6 @@ theorem continuousAlternatingMapLinearEquiv_apply_ιMulti (f : E [⋀^Fin k]→L
   simp [continuousAlternatingMapLinearEquiv_apply]
 
 end ContinuousAlternatingMap
-
-/-- On a finite-dimensional normed space, the continuous alternating `k`-linear maps to a
-finite-dimensional space `N` form a finite-dimensional space. -/
-instance _root_.ContinuousAlternatingMap.instFiniteDimensionalFin (N : Type*) [AddCommGroup N]
-    [Module 𝕜 N] [TopologicalSpace N] [IsTopologicalAddGroup N] [ContinuousSMul 𝕜 N]
-    [FiniteDimensional 𝕜 N] : FiniteDimensional 𝕜 (E [⋀^Fin k]→L[𝕜] N) :=
-  (continuousAlternatingMapLinearEquiv 𝕜 E k N).symm.finiteDimensional
 
 /-- The identification of the `k`-vectors `⋀[𝕜]^k E` of a finite-dimensional normed space with the
 dual of the continuous alternating `k`-forms: `ξ` acts on a form `ω` through the linear map on
