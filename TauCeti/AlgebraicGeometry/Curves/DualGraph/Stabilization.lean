@@ -52,8 +52,8 @@ graphs.
   further step, are isomorphic by an isomorphism preserving the labels.
 * `TauCeti.DualGraph.StabilizationStep.exists_reflGen_iso`: the diamond property of
   stabilization steps up to isomorphism, in the stable range.
-* `TauCeti.DualGraph.nonempty_iso_of_reflTransGen_of_isStable`: in the stable range, any two
-  stable graphs reached from the same graph by stabilization steps are isomorphic.
+* `TauCeti.DualGraph.nonempty_iso_of_reflTransGen_of_isStable`: any two stable graphs reached
+  from the same graph by stabilization steps are isomorphic.
 
 ## References
 
@@ -76,6 +76,50 @@ open Finset Function
 universe u v w
 
 variable {ι : Type v} {G : DualGraph.{u} ι}
+
+/-! ### Isomorphisms of double contractions -/
+
+section SubtypeSubtype
+
+variable {v₁ v₂ : G.Vertex} {hne₁ : v₂ ≠ v₁} {hne₂ : v₁ ≠ v₂}
+  [Fintype {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}]
+  [DecidableEq {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}]
+  {n₁ : Nonempty {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}}
+  [Fintype {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}]
+  [DecidableEq {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}]
+  {n₂ : Nonempty {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}}
+  {E₁ E₂ : Type u} [Fintype E₁] [DecidableEq E₁] [Fintype E₂] [DecidableEq E₂]
+  {f₁ : E₁ → Fin 2 → {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}}
+  {f₂ : E₂ → Fin 2 → {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}}
+  {m₁ : ι → {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}}
+  {m₂ : ι → {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}} {c₁ c₂}
+
+/-- An isomorphism between a graph obtained from `G` by deleting `v₁` and then `v₂` and one
+obtained by deleting `v₂` and then `v₁`, both keeping the genera of the remaining vertices, from a
+bijection of their edges compatible with the ends and the markings in `G`. Contracting tails and
+bridges deletes a vertex in this way, so this applies to any two double contractions of `G`, in
+either order. -/
+private def Iso.ofSubtypeSubtype (τ : E₁ ≃ E₂)
+    (hτ : ∀ e, s((f₂ (τ e) 0).1.1, (f₂ (τ e) 1).1.1) = s((f₁ e 0).1.1, (f₁ e 1).1.1))
+    (hm : ∀ i, (m₂ i).1.1 = (m₁ i).1.1) :
+    Iso ⟨_, E₁, f₁, fun w ↦ G.genus w.1.1, m₁, c₁⟩ ⟨_, E₂, f₂, fun w ↦ G.genus w.1.1, m₂, c₂⟩ :=
+  Iso.ofInjective (Subtype.val ∘ Subtype.val) (Subtype.val ∘ Subtype.val)
+    (Subtype.val_injective.comp Subtype.val_injective)
+    (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
+      fun _ _ ↦ by simp [Subtype.ext_iff])
+    (fun _ ↦ Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _) τ
+    (fun e ↦ by simpa [ends_def] using hτ e)
+    (fun _ ↦ congrArg G.genus (Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _)) hm
+
+/-- The isomorphism `Iso.ofSubtypeSubtype` fixes the underlying vertices of `G`. -/
+private lemma Iso.coe_coe_ofSubtypeSubtype_vertexEquiv_apply (τ : E₁ ≃ E₂)
+    (hτ : ∀ e, s((f₂ (τ e) 0).1.1, (f₂ (τ e) 1).1.1) = s((f₁ e 0).1.1, (f₁ e 1).1.1))
+    (hm : ∀ i, (m₂ i).1.1 = (m₁ i).1.1) (w : {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}) :
+    ((Iso.ofSubtypeSubtype (n₁ := n₁) (n₂ := n₂) (c₁ := c₁) (c₂ := c₂) τ hτ hm).vertexEquiv w).1.1 =
+      w.1.1 := by
+  simp [Iso.ofSubtypeSubtype]
+
+end SubtypeSubtype
 
 /-! ### Auxiliary facts in the stable range -/
 
@@ -154,42 +198,6 @@ private lemma bridgeNeighbor_rev_ne_of_bridgeNeighbor_eq {u w : G.Vertex}
     rw [Fin.rev_rev]
     exact (G.halfEdgeOfValenceEqTwo hu l).2
 
-/-! ### Isomorphisms of double contractions -/
-
-section SubtypeSubtype
-
-variable {v₁ v₂ : G.Vertex} {hne₁ : v₂ ≠ v₁} {hne₂ : v₁ ≠ v₂}
-  [Fintype {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}]
-  [DecidableEq {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}]
-  {n₁ : Nonempty {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}}
-  [Fintype {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}]
-  [DecidableEq {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}]
-  {n₂ : Nonempty {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}}
-  {E₁ E₂ : Type u} [Fintype E₁] [DecidableEq E₁] [Fintype E₂] [DecidableEq E₂]
-  {f₁ : E₁ → Fin 2 → {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}}
-  {f₂ : E₂ → Fin 2 → {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}}
-  {m₁ : ι → {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}}
-  {m₂ : ι → {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}} {c₁ c₂}
-
-/-- An isomorphism between a graph obtained from `G` by deleting `v₁` and then `v₂` and one
-obtained by deleting `v₂` and then `v₁`, both keeping the genera of the remaining vertices, from a
-bijection of their edges compatible with the ends and the markings in `G`. Contracting tails and
-bridges deletes a vertex in this way, so this applies to any two double contractions of `G`, in
-either order. -/
-private def Iso.ofSubtypeSubtype (τ : E₁ ≃ E₂)
-    (hτ : ∀ e, s((f₂ (τ e) 0).1.1, (f₂ (τ e) 1).1.1) = s((f₁ e 0).1.1, (f₁ e 1).1.1))
-    (hm : ∀ i, (m₂ i).1.1 = (m₁ i).1.1) :
-    Iso ⟨_, E₁, f₁, fun w ↦ G.genus w.1.1, m₁, c₁⟩ ⟨_, E₂, f₂, fun w ↦ G.genus w.1.1, m₂, c₂⟩ :=
-  Iso.ofInjective (Subtype.val ∘ Subtype.val) (Subtype.val ∘ Subtype.val)
-    (Subtype.val_injective.comp Subtype.val_injective)
-    (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
-      fun _ _ ↦ by simp [Subtype.ext_iff])
-    (fun _ ↦ Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _) τ
-    (fun e ↦ by simpa [ends_def] using hτ e)
-    (fun _ ↦ congrArg G.genus (Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _)) hm
-
-end SubtypeSubtype
-
 /-! ### The diamond property -/
 
 variable {α : Type w} {P : α → Prop}
@@ -235,7 +243,7 @@ private lemma exists_iso_contractTail_contractTail (c : G.Vertex → α)
     .contractTail _ ((G.contractTail hv₂).isRationalTail_iff.mpr ⟨hg₁, hval₁⟩) hmark₁ hc₁,
     Iso.ofSubtypeSubtype (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
       fun _ _ ↦ by simp [Subtype.ext_iff]) (fun _ ↦ by simp) (fun i ↦ ?_),
-    fun _ ↦ congrArg c (by simp [Iso.ofSubtypeSubtype])⟩
+    fun _ ↦ congrArg c (Iso.coe_coe_ofSubtypeSubtype_vertexEquiv_apply ..)⟩
   by_cases h₁ : G.marking i = v₁ <;> by_cases h₂ : G.marking i = v₂ <;>
     simp [Subtype.ext_iff, h₁, h₂, hatt₁, hatt₂, ha₁, ha₂, hne, hne.symm]
 
@@ -280,7 +288,8 @@ private lemma exists_iso_contractTail_contractBridge_of_ne (c : G.Vertex → α)
               fun i h' ↦ e.2 i (congrArg Subtype.val h')⟩
         left_inv := by rintro (_ | _) <;> rfl
         right_inv := by rintro ⟨_ | _, _⟩ <;> rfl }
-      (fun e ↦ ?_) (fun i ↦ ?_), fun _ ↦ congrArg c (by simp [Iso.ofSubtypeSubtype])⟩
+      (fun e ↦ ?_) (fun i ↦ ?_),
+    fun _ ↦ congrArg c (Iso.coe_coe_ofSubtypeSubtype_vertexEquiv_apply ..)⟩
   · cases e with
     | none =>
       simpa using (sym2_coe_bridgeNeighbor_contractTail hv₁ hv₂ hne.symm hnb hval₂).symm
@@ -351,7 +360,7 @@ private lemma exists_iso_contractTail_contractBridge_of_eq (c : G.Vertex → α)
           · exact (hnone h).elim
           · rfl }
       (fun _ ↦ by simp) (fun i ↦ ?_),
-    fun _ ↦ congrArg c (by simp [Iso.ofSubtypeSubtype])⟩
+    fun _ ↦ congrArg c (Iso.coe_coe_ofSubtypeSubtype_vertexEquiv_apply ..)⟩
   by_cases h₁ : G.marking i = v₁ <;>
     simp [Subtype.ext_iff, h₁, hm₂ i, ha₁, ha₂, hatt]
 
@@ -395,7 +404,7 @@ private lemma exists_iso_contractBridge_contractBridge_of_forall_ne (c : G.Verte
         left_inv := by rintro (_ | ⟨_ | _, _⟩) <;> rfl
         right_inv := by rintro (_ | ⟨_ | _, _⟩) <;> rfl }
       (fun e ↦ ?_) (fun _ ↦ by simp),
-    fun _ ↦ congrArg c (by simp [Iso.ofSubtypeSubtype])⟩
+    fun _ ↦ congrArg c (Iso.coe_coe_ofSubtypeSubtype_vertexEquiv_apply ..)⟩
   rcases e with _ | ⟨_ | e, _⟩
   · simpa using (sym2_coe_bridgeNeighbor_contractBridge hv₁ hloop₁ hm₁ hv₂ hne.symm hnb₂
       hval₂).symm
@@ -460,7 +469,7 @@ private lemma exists_iso_contractBridge_contractBridge_of_eq (c : G.Vertex → �
           · exact (hnone₂ h).elim
           · rfl }
       (fun e ↦ ?_) (fun _ ↦ by simp),
-    fun _ ↦ congrArg c (by simp [Iso.ofSubtypeSubtype])⟩
+    fun _ ↦ congrArg c (Iso.coe_coe_ofSubtypeSubtype_vertexEquiv_apply ..)⟩
   rcases e with _ | ⟨_ | e, h⟩
   · have h₁ := sym2_coe_bridgeNeighbor_contractBridge_of_bridgeNeighbor_eq hv₂ hloop₂ hm₂ hv₁
       hne.symm hl hk' hval₁
@@ -469,28 +478,6 @@ private lemma exists_iso_contractBridge_contractBridge_of_eq (c : G.Vertex → �
     simp [h₁, h₂]
   · exact (hnone₁ h).elim
   · simp
-
-section LabelledIso
-
-variable {x y z : Σ G : DualGraph.{u} ι, G.Vertex → α}
-
-omit [Fintype ι] in
-/-- The inverse of an isomorphism of labelled graphs preserves the labels. -/
-private lemma exists_iso_symm (h : ∃ f : x.1.Iso y.1, ∀ w, y.2 (f.vertexEquiv w) = x.2 w) :
-    ∃ f : y.1.Iso x.1, ∀ w, x.2 (f.vertexEquiv w) = y.2 w := by
-  obtain ⟨f, hf⟩ := h
-  exact ⟨f.symm, fun w ↦ by simpa using (hf (f.vertexEquiv.symm w)).symm⟩
-
-omit [Fintype ι] in
-/-- The composite of two isomorphisms of labelled graphs preserves the labels. -/
-private lemma exists_iso_trans (h₁ : ∃ f : x.1.Iso y.1, ∀ w, y.2 (f.vertexEquiv w) = x.2 w)
-    (h₂ : ∃ g : y.1.Iso z.1, ∀ w, z.2 (g.vertexEquiv w) = y.2 w) :
-    ∃ f : x.1.Iso z.1, ∀ w, z.2 (f.vertexEquiv w) = x.2 w := by
-  obtain ⟨f, hf⟩ := h₁
-  obtain ⟨g, hg⟩ := h₂
-  exact ⟨f.trans g, fun w ↦ by simp [hf, hg]⟩
-
-end LabelledIso
 
 /-- **The diamond property up to isomorphism.** Two labelled stabilization steps from the same
 labelled graph can each be followed by at most one further step so that the results are isomorphic
@@ -619,14 +606,16 @@ theorem exists_iso_of_reflTransGen_labelledStabilizationStep
     (hzl₂.to_reflTransGen.trans hl₂s') hy₂ hs' rfl
   exact exists_iso_trans a (exists_iso_trans g (exists_iso_symm b))
 
-/-- **Stabilization is independent of the order of contractions.** In the stable range
-`2g - 2 + n > 0`, any two stable graphs reached from the same graph by stabilization steps are
-isomorphic. -/
-theorem nonempty_iso_of_reflTransGen_of_isStable
-    (hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι) {H₁ H₂ : DualGraph.{u} ι}
+/-- **Stabilization is independent of the order of contractions.** Any two stable graphs reached
+from the same graph by stabilization steps are isomorphic. The starting graph is then in the stable
+range `2g - 2 + n > 0`, since the steps preserve `g` and `n`. -/
+theorem nonempty_iso_of_reflTransGen_of_isStable {H₁ H₂ : DualGraph.{u} ι}
     (h₁ : Relation.ReflTransGen StabilizationStep G H₁)
     (h₂ : Relation.ReflTransGen StabilizationStep G H₂) (hH₁ : H₁.IsStable) (hH₂ : H₂.IsStable) :
     Nonempty (H₁.Iso H₂) := by
+  have hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι := by
+    simpa [arithmeticGenus_eq_of_reflTransGen h₁] using
+      hH₁.two_mul_arithmeticGenus_sub_two_add_card_pos
   obtain ⟨f, -⟩ := exists_iso_of_reflTransGen_labelledStabilizationStep (fun _ ↦ hrange)
     (reflTransGen_labelledStabilizationStep_of_reflTransGen h₁)
     (reflTransGen_labelledStabilizationStep_of_reflTransGen h₂)

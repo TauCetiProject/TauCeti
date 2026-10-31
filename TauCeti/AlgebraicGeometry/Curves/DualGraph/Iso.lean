@@ -44,6 +44,8 @@ holds for labelled stabilization steps and isomorphisms preserving the labels.
   the arithmetic genus and stability.
 * `TauCeti.DualGraph.StabilizationStep.exists_iso`: a stabilization step transported along an
   isomorphism, and `TauCeti.DualGraph.exists_reflTransGen_iso`, its iterate.
+* `TauCeti.DualGraph.exists_iso_symm` and `TauCeti.DualGraph.exists_iso_trans`: isomorphisms
+  preserving the labels of labelled graphs are closed under inverses and composition.
 * `TauCeti.DualGraph.LabelledStabilizationStep.exists_iso` and
   `TauCeti.DualGraph.exists_reflTransGen_labelledStabilizationStep_iso`: the same for labelled
   stabilization steps and isomorphisms preserving the labels.
@@ -397,6 +399,26 @@ theorem contractBridge_edgeEquiv_some (e : {e // ∀ i, G.endpoint e i ≠ v}) :
 end contractBridge
 
 end Iso
+
+section LabelledIso
+
+variable {α : Type w} {x y z : Σ G : DualGraph.{u} ι, G.Vertex → α}
+
+/-- The inverse of an isomorphism of labelled graphs preserves the labels. -/
+theorem exists_iso_symm (h : ∃ f : x.1.Iso y.1, ∀ w, y.2 (f.vertexEquiv w) = x.2 w) :
+    ∃ f : y.1.Iso x.1, ∀ w, x.2 (f.vertexEquiv w) = y.2 w := by
+  obtain ⟨f, hf⟩ := h
+  exact ⟨f.symm, fun w ↦ by simpa using (hf (f.vertexEquiv.symm w)).symm⟩
+
+/-- The composite of two isomorphisms of labelled graphs preserves the labels. -/
+theorem exists_iso_trans (h₁ : ∃ f : x.1.Iso y.1, ∀ w, y.2 (f.vertexEquiv w) = x.2 w)
+    (h₂ : ∃ g : y.1.Iso z.1, ∀ w, z.2 (g.vertexEquiv w) = y.2 w) :
+    ∃ f : x.1.Iso z.1, ∀ w, z.2 (f.vertexEquiv w) = x.2 w := by
+  obtain ⟨f, hf⟩ := h₁
+  obtain ⟨g, hg⟩ := h₂
+  exact ⟨f.trans g, fun w ↦ by simp [hf, hg]⟩
+
+end LabelledIso
 
 variable [Fintype ι]
 

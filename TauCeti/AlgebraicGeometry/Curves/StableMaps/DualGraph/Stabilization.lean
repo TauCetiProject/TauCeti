@@ -28,15 +28,14 @@ in which only vertices of degree zero may be contracted. The order independence 
 stabilization (`TauCeti.DualGraph.exists_iso_of_reflTransGen_labelledStabilizationStep`) needs the
 stable range `2g - 2 + n > 0` only when every component has degree zero, and then it is the range
 `2g - 2 + n + 3d > 0`. A stable decorated graph admits no labelled step, since a contracted vertex
-has degree zero and nonpositive log-canonical degree.
+has degree zero and nonpositive log-canonical degree. The stable range need not be assumed: a
+stable endpoint lies in it, and the steps preserve the genus, the markings and the total degree.
 
 ## Main results
 
-* `TauCeti.DualGraph.DegreeDecoration.StabilizationStep.labelledStabilizationStep`: a decorated
-  stabilization step is a labelled stabilization step contracting a vertex of degree zero.
-* `TauCeti.DualGraph.DegreeDecoration.exists_iso_of_reflTransGen_of_isStable`: in the stable
-  range, any two stable decorated graphs reached from the same decorated graph by stabilization
-  steps are isomorphic by an isomorphism preserving the component degrees.
+* `TauCeti.DualGraph.DegreeDecoration.exists_iso_of_reflTransGen_of_isStable`: any two stable
+  decorated graphs reached from the same decorated graph by stabilization steps are isomorphic by
+  an isomorphism preserving the component degrees.
 
 ## References
 
@@ -56,56 +55,24 @@ namespace DegreeDecoration
 
 universe u v
 
-variable {ι : Type v} [Fintype ι] {x y : Σ G : DualGraph.{u} ι, G.DegreeDecoration}
+variable {ι : Type v} [Fintype ι]
 
-/-- A stabilization step of decorated graphs is a labelled stabilization step for the labelling of
-the vertices by their degrees, contracting a vertex of degree zero. -/
-theorem StabilizationStep.labelledStabilizationStep (h : StabilizationStep x y) :
-    LabelledStabilizationStep (· = 0) ⟨x.1, x.2.componentDegree⟩ ⟨y.1, y.2.componentDegree⟩ := by
-  cases h with
-  | @contractTail G D v hv hm hd =>
-    dsimp only
-    rw [show (D.contractTail (G.isRationalTail_iff.mp hv).2).componentDegree =
-      fun w ↦ D.componentDegree w.1 from funext (D.componentDegree_contractTail _)]
-    exact .contractTail _ hv hm hd
-  | @contractBridge G D v hv hm hd =>
-    dsimp only
-    rw [show (D.contractBridge (G.isRationalBridge_iff.mp hv).2.1
-        (G.isRationalBridge_iff.mp hv).2.2 hm).componentDegree =
-      fun w ↦ D.componentDegree w.1 from funext (D.componentDegree_contractBridge _ _ _)]
-    exact .contractBridge _ hv hm hd
-
-/-- Iterated stabilization steps of decorated graphs are iterated labelled stabilization steps for
-the labelling of the vertices by their degrees. -/
-theorem reflTransGen_labelledStabilizationStep_of_reflTransGen
-    (h : Relation.ReflTransGen StabilizationStep x y) :
-    Relation.ReflTransGen (LabelledStabilizationStep (· = 0))
-      ⟨x.1, x.2.componentDegree⟩ ⟨y.1, y.2.componentDegree⟩ :=
-  h.lift (fun x : Σ G : DualGraph.{u} ι, G.DegreeDecoration ↦
-      (⟨x.1, x.2.componentDegree⟩ : Σ G : DualGraph.{u} ι, G.Vertex → ℕ))
-    fun _ _ ↦ StabilizationStep.labelledStabilizationStep
-
-/-- A stable decorated graph admits no labelled stabilization step contracting a vertex of degree
-zero: such a vertex would have nonpositive log-canonical degree. -/
-theorem IsStable.not_labelledStabilizationStep {G : DualGraph.{u} ι} {D : G.DegreeDecoration}
-    (hD : D.IsStable) {z : Σ G : DualGraph.{u} ι, G.Vertex → ℕ} :
-    ¬ LabelledStabilizationStep (· = 0) ⟨G, D.componentDegree⟩ z := fun h ↦
-  have ⟨v, hd, hv⟩ := h.exists_logCanonicalDegree_nonpos
-  (D.isStable_iff.mp hD v hd).not_ge hv
-
-/-- **Map-aware stabilization is independent of the order of contractions.** In the stable range
-`2g - 2 + n + 3d > 0`, any two stable decorated graphs reached from the same decorated graph by
-stabilization steps are isomorphic by an isomorphism of dual graphs preserving the component
-degrees. -/
+/-- **Map-aware stabilization is independent of the order of contractions.** Any two stable
+decorated graphs reached from the same decorated graph by stabilization steps are isomorphic by an
+isomorphism of dual graphs preserving the component degrees. The starting graph is then in the
+stable range `2g - 2 + n + 3d > 0`, since the steps preserve `g`, `n` and `d`. -/
 theorem exists_iso_of_reflTransGen_of_isStable {G : DualGraph.{u} ι} {D : G.DegreeDecoration}
-    (hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι + 3 * D.totalDegree)
     {y₁ y₂ : Σ G : DualGraph.{u} ι, G.DegreeDecoration}
     (h₁ : Relation.ReflTransGen StabilizationStep ⟨G, D⟩ y₁)
     (h₂ : Relation.ReflTransGen StabilizationStep ⟨G, D⟩ y₂) (hy₁ : y₁.2.IsStable)
     (hy₂ : y₂.2.IsStable) :
     ∃ f : y₁.1.Iso y₂.1, ∀ w, y₂.2.componentDegree (f.vertexEquiv w) = y₁.2.componentDegree w :=
-  -- If every component has degree zero, the total degree vanishes and the range is that of the
-  -- underlying graph.
+  -- The stable endpoint `y₁` lies in the stable range, which is preserved by the steps. If every
+  -- component has degree zero, the total degree vanishes and the range is that of the underlying
+  -- graph.
+  have hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι + 3 * D.totalDegree := by
+    simpa [arithmeticGenus_eq_of_reflTransGen h₁, totalDegree_eq_of_reflTransGen h₁] using
+      hy₁.two_mul_arithmeticGenus_sub_two_add_card_add_three_mul_totalDegree_pos
   exists_iso_of_reflTransGen_labelledStabilizationStep
     (fun hzero ↦ by simpa [(D.totalDegree_eq_zero_iff).mpr hzero] using hrange)
     (reflTransGen_labelledStabilizationStep_of_reflTransGen h₁)
