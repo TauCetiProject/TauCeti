@@ -15,7 +15,7 @@ Let `K` be a pointed simplicial set. A module `X` over the commutative monoid
 `SymmetricSequence.smashPow K` of smash powers `n ↦ K^∧n` has iterated structure maps
 `K^∧p ∧ X_q → X_(p+q)` (`CategoryTheory.Mod.dayStructureMap`). Restricting to `p = 1` and
 identifying `K^∧1` with `K` gives the single structure maps `σ_n : K ∧ X_n → X_(1+n)`, with the
-`K` coordinate on the left, and their adjoints `σ̃_n : X_n → Map_*(K, X_(1+n))`. For symmetric
+`K` coordinate on the left, and their adjoints `σ'_n : X_n → Map_*(K, X_(1+n))`. For symmetric
 spectra, `K` is the simplicial circle `S¹`, so these are the structure maps `S¹ ∧ X_n → X_(1+n)`
 and their adjoints `X_n → Ω X_(1+n)` into the loop space `PointedSSet.loops`; for the modules
 `SphereModule k` over the higher sphere monoids, `K` is the simplicial `k`-sphere.
@@ -113,7 +113,7 @@ lemma smashPowStructureMap_hom {Y : Mod SymmetricSequence.{u} (SymmetricSequence
   -- The level `mk 1 ⊗ mk n` is `mk (1 + n)` by definition of the block sum.
   rfl
 
-/-- The adjoint structure map `σ̃_n : X_n ⟶ Map_*(K, X_(1+n))`. For a symmetric spectrum it is
+/-- The adjoint structure map `σ'_n : X_n ⟶ Map_*(K, X_(1+n))`. For a symmetric spectrum it is
 the map `X_n ⟶ Ω X_(1+n)` into the loop space `PointedSSet.loops`. -/
 noncomputable def smashPowAdjointStructureMap (n : ℕ) :
     X.X.functor.obj (FiniteBijection.mk n) ⟶
