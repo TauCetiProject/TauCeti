@@ -343,7 +343,7 @@ theorem exists_disjoint_subset_measure_eq_of_laminar [StandardBorelSpace X] (μ 
     ∃ Z : ι → Set X, (∀ i, MeasurableSet (Z i)) ∧ (∀ i, Z i ⊆ A i) ∧
       Pairwise (Disjoint on Z) ∧ ∀ i, μ (Z i) = m i := by
   have hm' (i : ι) : m i + ∑' j, (below A lvl i).indicator m j ≤ μ (A i) := by
-    rw [← tsum_subtype]
+    rw [below, ← tsum_subtype]
     exact hm i
   obtain ⟨Zs, hZs⟩ := exists_isAlloc_seq hA hAfin hlvl hlam hm'
   -- The stages of `i` from the first stage allocating `i` on, and their limit.
@@ -376,8 +376,10 @@ theorem exists_disjoint_subset_measure_eq_of_laminar [StandardBorelSpace X] (μ 
         _ = 2 * ∑' j, (below A lvl i).indicator m j := by
             rw [ENNReal.tsum_mul_left, ← ENNReal.tsum_fiberwise _ lvl]
             refine congrArg (2 * ·) (tsum_congr fun n ↦ ?_)
-            rw [tsum_subtype, indicator_indicator, inter_comm]
-            rfl
+            have hfib : lvl ⁻¹' {n} ∩ below A lvl i = below A lvl i ∩ {j | lvl j = n} := by
+              ext j
+              simp [and_comm]
+            rw [tsum_subtype, indicator_indicator, hfib]
         _ ≤ 2 * μ (A i) := by
             gcongr
             exact le_add_self.trans (hm' i)
