@@ -404,19 +404,8 @@ def orthonormalFrameBundle :
     refine continuous_proj.continuousOn.prodMk ?_
     refine Topology.IsInducing.subtypeVal.continuousOn_iff.2
       (continuousOn_clm_apply.2 fun v ↦ ?_)
-    rw [continuousOn_iff_continuous_domRestrict]
-    have hσ (i : ι) : Continuous fun p : (proj ⁻¹' e.baseSet : Set (OrthonormalFrameBundle F E V)) ↦
-        (⟨p.1.proj, e.orthonormalBasis c ⟨p.1.proj, p.2⟩ i⟩ : TotalSpace F E) :=
-      (e.continuous_orthonormalBasis c i).comp
-        ((continuous_proj.comp continuous_subtype_val).subtype_mk _)
-    have hφ : Continuous fun p : (proj ⁻¹' e.baseSet : Set (OrthonormalFrameBundle F E V)) ↦
-        (⟨p.1.proj, p.1.frame v⟩ : TotalSpace F E) :=
-      (continuous_totalSpaceMk_frame v).comp continuous_subtype_val
-    -- Over the base set, the quotient by the local frame applied to `v` has the coordinates
-    -- `⟪σ i, φ v⟫` in the orthonormal basis `b`.
-    refine (continuous_finsetSum Finset.univ fun i _ ↦
-      ((hσ i).inner_bundle hφ).smul (continuous_const (y := b i))).congr fun p ↦ ?_
-    simp [frameAt_of_mem e c b p.2, orthonormalFrame_symm_apply]
+    exact (continuousOn_frameAt_symm e c b).comp (continuous_totalSpaceMk_frame v).continuousOn
+      fun p hp ↦ hp
   continuousOn_invFun := by
     rw [continuousOn_iff_continuous_domRestrict]
     have hσ : Continuous fun q : (e.baseSet ×ˢ univ : Set (B × unitary (V →L[ℝ] V))) ↦
