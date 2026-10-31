@@ -71,6 +71,13 @@ arbitrary type has a coproduct as soon as only finitely many of its objects are 
 (`TauCeti.hasCoproduct_of_finite_setOf_not_isZero`): the coproduct of the nonzero objects is a
 coproduct of the whole family. This is how a bounded complex has coproducts over the infinitely
 many degrees in a residue class, as used by its periodic compression.
+
+## Coproducts with a single non-initial summand
+
+If every summand of a coproduct other than the one indexed by `i` is an initial object, the
+inclusion of the summand `i` is an isomorphism (`Cofan.IsColimit.isIso_inj_of_isInitial`). This
+computes a Day convolution of symmetric sequences with a symmetric sequence concentrated in level
+zero, whose wedge decomposition has a single summand that is not the point.
 -/
 
 public section
@@ -304,3 +311,19 @@ theorem hasCoproduct_of_finite_setOf_not_isZero {J : Type*} (f : J → C)
 end FiniteSupport
 
 end TauCeti
+
+namespace CategoryTheory.Limits.Cofan.IsColimit
+
+/-- If every summand of a coproduct other than the one indexed by `i` is initial, then the
+inclusion of the summand `i` is an isomorphism. -/
+lemma isIso_inj_of_isInitial {C : Type*} [Category* C] {ι : Type*} {X : ι → C} {c : Cofan X}
+    (hc : IsColimit c) (i : ι) (h : ∀ j, j ≠ i → IsInitial (X j)) : IsIso (c.inj i) := by
+  classical
+  refine ⟨desc hc fun j ↦ if hj : j = i then eqToHom (by rw [hj]) else (h j hj).to _,
+    by simp [fac], hom_ext hc _ _ fun j ↦ ?_⟩
+  by_cases hj : j = i
+  · subst hj
+    simp [fac_assoc]
+  · exact (h j hj).hom_ext _ _
+
+end CategoryTheory.Limits.Cofan.IsColimit
