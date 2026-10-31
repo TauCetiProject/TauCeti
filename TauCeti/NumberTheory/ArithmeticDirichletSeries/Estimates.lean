@@ -52,8 +52,9 @@ of a convergent series of nonnegative terms must become arbitrarily small.
 * `TauCeti.summable_idealTerm_of_bounded_of_one_lt_re`: a uniformly bounded weight has an
   absolutely convergent ideal-indexed Dirichlet series on `Re s > 1`, and
   `TauCeti.summable_idealTerm_of_unitary_of_one_lt_re` is its unitary specialization.
-* `TauCeti.analyticOnNhd_LSeries_of_unitary`: the L-series of a unitary weight is holomorphic on
-  `Re s > 1`.
+* `TauCeti.analyticOnNhd_LSeries_of_bounded`: the L-series of a uniformly bounded weight is
+  holomorphic on `Re s > 1`, and `TauCeti.analyticOnNhd_LSeries_of_unitary` is its unitary
+  specialization.
 * `TauCeti.idealAbscissaOfAbsConv_lt_re_of_bounded`: the same hypothesis places the ideal-indexed
   abscissa of absolute convergence strictly below every `Re s > 1`.
 
@@ -514,15 +515,24 @@ theorem summable_idealTerm_of_unitary_of_one_lt_re {K : Type*} [Field K] [Number
   rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply]
   exact χ.norm_le_one _
 
-/-- **The L-series of a unitary weight is holomorphic on `Re s > 1`**, the half-plane on which it
-converges absolutely by `summable_idealTerm_of_unitary_of_one_lt_re`. -/
+/-- **The L-series of a uniformly bounded weight is holomorphic on `Re s > 1`**, the half-plane
+on which it converges absolutely by `summable_idealTerm_of_bounded_of_one_lt_re`. -/
+theorem analyticOnNhd_LSeries_of_bounded {K : Type*} [Field K] [NumberField K]
+    {f : IdealArithmeticFunction K} {C : ℝ} (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C) :
+    AnalyticOnNhd ℂ (LSeries (normCoeff K f)) {s | 1 < s.re} :=
+  (LSeries_analyticOnNhd _).mono fun s (hs : 1 < s.re) ↦
+    (LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦
+      LSeriesSummable_normCoeff K (summable_idealTerm_of_bounded_of_one_lt_re hf
+        (by simpa using hy))).trans_lt (mod_cast hs)
+
+/-- **The L-series of a unitary weight is holomorphic on `Re s > 1`.** The specialization of
+`analyticOnNhd_LSeries_of_bounded` at `C = 1`, through `TauCeti.UnitaryIdealWeight.norm_le_one`. -/
 theorem analyticOnNhd_LSeries_of_unitary {K : Type*} [Field K] [NumberField K]
     (χ : UnitaryIdealWeight K) :
     AnalyticOnNhd ℂ (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {s | 1 < s.re} :=
-  (LSeries_analyticOnNhd _).mono fun s (hs : 1 < s.re) ↦
-    (LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦
-      LSeriesSummable_normCoeff K (summable_idealTerm_of_unitary_of_one_lt_re χ
-        (by simpa using hy))).trans_lt (mod_cast hs)
+  analyticOnNhd_LSeries_of_bounded (C := 1) fun I ↦ by
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply]
+    exact χ.norm_le_one _
 
 /-- **A uniformly bounded weight has ideal-indexed abscissa below every `Re s > 1`.** This is the
 form in which `summable_idealTerm_of_bounded_of_one_lt_re` feeds results stated strictly to the
