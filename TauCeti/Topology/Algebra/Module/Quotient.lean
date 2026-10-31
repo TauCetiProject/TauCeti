@@ -31,8 +31,9 @@ provide.
 The orbit space `AddAction.orbitRel.Quotient p M` of translation by a submodule, the standard
 carrier for quotients such as complex tori, is second countable when `M` is
 (`Submodule.instSecondCountableTopologyOrbitRelQuotient`), by Mathlib's
-`ContinuousConstVAdd.secondCountableTopology`. The map of orbit spaces induced by a continuous
-semilinear map is continuous (`Submodule.continuous_orbitRelQuotientMap`).
+`ContinuousConstVAdd.secondCountableTopology`. It is a topological additive group when `M` is
+(`Submodule.instIsTopologicalAddGroupOrbitRelQuotient`). The map of orbit spaces induced by a
+continuous semilinear map is continuous (`Submodule.continuous_orbitRelQuotientMap`).
 -/
 
 public section
@@ -61,6 +62,21 @@ instance Submodule.instSecondCountableTopologyOrbitRelQuotient {R M : Type*} [Ri
     [SecondCountableTopology M] (p : Submodule R M) :
     SecondCountableTopology (AddAction.orbitRel.Quotient p M) :=
   ContinuousConstVAdd.secondCountableTopology
+
+/-- The orbit space of translation by a submodule of a topological additive group, with the group
+structure of `M ⧸ p` (`Submodule.instAddCommGroupOrbitRelQuotient`), is a topological additive
+group: the orbit projection is an open quotient map, so its square is a quotient map. -/
+instance Submodule.instIsTopologicalAddGroupOrbitRelQuotient {R M : Type*} [Ring R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    (p : Submodule R M) : IsTopologicalAddGroup (AddAction.orbitRel.Quotient p M) where
+  continuous_add :=
+    (AddAction.isOpenQuotientMap_quotientMk.prodMap
+        AddAction.isOpenQuotientMap_quotientMk).isQuotientMap.continuous_iff.2 <|
+      (continuous_quotient_mk'.comp continuous_add).congr fun x ↦
+        (p.orbitRelQuotient_mk_add x.1 x.2).symm
+  continuous_neg :=
+    AddAction.isOpenQuotientMap_quotientMk.isQuotientMap.continuous_iff.2 <|
+      (continuous_quotient_mk'.comp continuous_neg).congr fun x ↦ (p.orbitRelQuotient_mk_neg x).symm
 
 /-- If a closed submodule `S` contains `p`, its image `S / p` in the orbit space of translation by
 `p` is closed. -/

@@ -57,6 +57,8 @@ isomorphisms in every degree, the description of the homology of a torus as an e
 * `TopCat.surjective_pontryaginExteriorPower_of_comp_eq_id`,
   `TopCat.map_mem_range_pontryaginExteriorPower`: surjectivity of the exterior power map passes to
   retracts, and the image of a morphism of monoid objects lies in its range.
+* `TopCat.bijective_pontryaginExteriorPower_of_isIso`: bijectivity of the exterior power map is
+  invariant under isomorphisms of commutative monoid objects.
 * `TopCat.pontryaginMul_mem_range_pontryaginExteriorPower`: the range of the exterior power map is
   closed under the Pontryagin product with classes of degree one.
 
@@ -428,6 +430,27 @@ theorem surjective_pontryaginExteriorPower_of_comp_eq_id {G' : TopCat.{u}} [MonO
   calc _ = ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).map (g ≫ f) y := by
         rw [Functor.map_comp, CategoryTheory.comp_apply]
     _ = y := by rw [hgf, CategoryTheory.Functor.map_id, CategoryTheory.id_apply]
+
+/-- An isomorphism of commutative monoid objects carries bijectivity of the exterior power map
+`⋀ⁿ H₁ → Hₙ` from its target to its source. -/
+theorem bijective_pontryaginExteriorPower_of_isIso {G' : TopCat.{u}} [MonObj G'] [IsCommMonObj G']
+    (f : G ⟶ G') [IsMonHom f] [IsIso f] {n : ℕ}
+    (h : Function.Bijective (pontryaginExteriorPower k G' n)) :
+    Function.Bijective (pontryaginExteriorPower k G n) := by
+  have hf (m : ℕ) : Function.Bijective
+      (((singularHomologyFunctor (ModuleCat.{u} k) m).obj (𝟙_ _)).map f) :=
+    ConcreteCategory.bijective_of_isIso _
+  -- `f` induces an isomorphism on first homology, hence on its exterior powers
+  have h₁ : Function.Bijective (exteriorPower.map n
+      (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).map f).hom) := by
+    refine ⟨exteriorPower.map_injective
+      (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).map (inv f)).hom ?_,
+      exteriorPower.map_surjective (hf 1).2⟩
+    rw [← ModuleCat.hom_comp, ← Functor.map_comp, IsIso.hom_inv_id,
+      CategoryTheory.Functor.map_id, ModuleCat.hom_id]
+  rw [← (hf n).of_comp_iff', ← LinearMap.coe_comp, pontryaginExteriorPower_naturality,
+    LinearMap.coe_comp]
+  exact h.comp h₁
 
 /-- The image of a class under a morphism of commutative monoid objects whose source has a
 surjective exterior power map `⋀ⁿ H₁ → Hₙ` lies in the image of the exterior power map of the
