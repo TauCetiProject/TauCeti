@@ -149,6 +149,20 @@ variable {M N} in
   apply (tensorEquiv R H M N).injective
   simp
 
+/-- Negating the first factor negates the pure tensor. -/
+@[simp] theorem neg_tmul {M N : Type*} [AddCommGroup M] [Module R M] [Module H M]
+    [IsScalarTower R H M] [AddCommGroup N] [Module R N] [Module H N] [IsScalarTower R H N]
+    (m : M) (n : N) : tmul R H (-m) n = -tmul R H m n := by
+  apply (tensorEquiv R H M N).injective
+  simp [TensorProduct.neg_tmul]
+
+/-- Negating the second factor negates the pure tensor. -/
+@[simp] theorem tmul_neg {M N : Type*} [AddCommGroup M] [Module R M] [Module H M]
+    [IsScalarTower R H M] [AddCommGroup N] [Module R N] [Module H N] [IsScalarTower R H N]
+    (m : M) (n : N) : tmul R H m (-n) = -tmul R H m n := by
+  apply (tensorEquiv R H M N).injective
+  simp [TensorProduct.tmul_neg]
+
 variable {R H M N} in
 /-- Prove a proposition about coproduct tensors by pure tensors and addition. -/
 @[elab_as_elim] theorem Tensor.inductionOn {P : Tensor R H M N → Prop}

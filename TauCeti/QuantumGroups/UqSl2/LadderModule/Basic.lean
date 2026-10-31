@@ -40,6 +40,8 @@ determines a unique module map from `L_m^ε` that sends `v₀` to `v`, and more 
 * `TauCeti.UqSl2.LadderModule.basis`: its basis `v₀, …, v_m`.
 * `TauCeti.UqSl2.LadderModule.vec`: the integer-indexed vectors `v_j`.
 * `TauCeti.UqSl2.LadderModule.rep`: the action as an algebra map to complex endomorphisms.
+* `TauCeti.UqSl2.LadderModule.homOfVec`: a complex-linear map out of `L_m^ε` commuting with
+  `E`, `F`, `K` on the ladder vectors, as a module map.
 * `TauCeti.UqSl2.LadderModule.lift`: the module map determined by a highest vector of weight
   `ε q^m` whose lowering string has length at most `m + 1`.
 
@@ -49,6 +51,8 @@ determines a unique module map from `L_m^ε` that sends `v₀` to `v`, and more 
 * `TauCeti.UqSl2.LadderModule.e_smul_vec`, `f_smul_vec`, `k_smul_vec`, `kInv_smul_vec`:
   the action of the generators.
 * `TauCeti.UqSl2.LadderModule.e_pow_smul_vec`, `f_pow_smul_vec`: the action of their powers.
+* `TauCeti.UqSl2.LadderModule.map_smul_of_vec`: commutation of a complex-linear map out of
+  `L_m^ε` with an element of `UqSl2 q` can be checked on the ladder vectors.
 * `TauCeti.UqSl2.LadderModule.isSimpleModule`: `L_m^ε` is simple at a generic parameter.
 * `TauCeti.UqSl2.LadderModule.hom_ext`: at a generic parameter, module maps out of `L_m^ε` are
   determined by their value at `v₀`.
@@ -501,33 +505,52 @@ end String
 
 /-- Commutation of a complex-linear map out of `L_m^ε` with an element of `UqSl2 q` can be
 checked on the ladder vectors. -/
-private theorem map_smul_of_vec (φ : LadderModule q m ε →ₗ[ℂ] V) (a : UqSl2 q)
+theorem map_smul_of_vec (φ : LadderModule q m ε →ₗ[ℂ] V) (a : UqSl2 q)
     (h : ∀ j : ℕ, j ≤ m → φ (a • vec q m ε j) = a • φ (vec q m ε j))
     (x : LadderModule q m ε) : φ (a • x) = a • φ x := by
   have hext : φ ∘ₗ Algebra.lsmul ℂ ℂ _ a = Algebra.lsmul ℂ ℂ V a ∘ₗ φ :=
     (basis q m ε).ext fun i => by simpa [← vec_coe] using h i (by omega)
   simpa using LinearMap.congr_fun hext x
 
+/-- A complex-linear map out of `L_m^ε` commuting with `E`, `F` and `K` on the ladder vectors
+`v₀, …, v_m` is `UqSl2 q`-linear. -/
+def homOfVec (φ : LadderModule q m ε →ₗ[ℂ] V)
+    (he : ∀ j : ℕ, j ≤ m → φ (e q • vec q m ε j) = e q • φ (vec q m ε j))
+    (hf : ∀ j : ℕ, j ≤ m → φ (f q • vec q m ε j) = f q • φ (vec q m ε j))
+    (hk : ∀ j : ℕ, j ≤ m → φ (k q • vec q m ε j) = k q • φ (vec q m ε j)) :
+    LadderModule q m ε →ₗ[UqSl2 q] V where
+  toFun := φ
+  map_add' := φ.map_add
+  map_smul' :=
+    φ.map_smul_of_commute_uqSl2 (map_smul_of_vec φ _ he) (map_smul_of_vec φ _ hf)
+      (map_smul_of_vec φ _ hk)
+
+/-- `homOfVec φ` agrees with `φ`. -/
+@[simp]
+theorem homOfVec_apply (φ : LadderModule q m ε →ₗ[ℂ] V)
+    (he : ∀ j : ℕ, j ≤ m → φ (e q • vec q m ε j) = e q • φ (vec q m ε j))
+    (hf : ∀ j : ℕ, j ≤ m → φ (f q • vec q m ε j) = f q • φ (vec q m ε j))
+    (hk : ∀ j : ℕ, j ≤ m → φ (k q • vec q m ε j) = k q • φ (vec q m ε j))
+    (x : LadderModule q m ε) : homOfVec φ he hf hk x = φ x :=
+  (rfl)
+
 /-- The `UqSl2 q`-module map `L_m^ε → V` determined by a vector `v` of weight `ε q^m` killed by
 `E` and by `F^(m+1)`. It sends `v_j` to `F^j v / ([1]_q ⋯ [j]_q)`. -/
 def lift (hq : IsGenericQuantumParameter q) {v : V} (hv : v ∈ weightSpace q V (ε * q ^ m))
     (he : e q • v = 0) (hf : f q ^ (m + 1) • v = 0) : LadderModule q m ε →ₗ[UqSl2 q] V :=
   let φ := (basis q m ε).constr ℂ fun i => string q v i
-  { φ.toAddHom with
-    map_smul' := by
-      have hφ := constr_vec (ε := ε) hf
-      have hφ0 : φ (vec q m ε 0) = v := by simpa only [Nat.cast_zero, string_zero] using hφ 0
-      refine φ.map_smul_of_commute_uqSl2 (fun x => ?_) (fun x => ?_) (fun x => ?_)
-      · refine map_smul_of_vec φ _ (fun j _ => ?_) x
-        rcases j with _ | j
-        · rw [e_smul_vec, map_smul, vec_eq_zero_of_neg (by omega), map_zero, smul_zero,
-            Nat.cast_zero, hφ0, he]
-        · rw [e_smul_vec, map_smul, hφ (j + 1), Nat.cast_succ, add_sub_cancel_right,
-            sub_add_eq_sub_sub, sub_add_cancel, hφ, e_smul_string hq hv he]
-      · refine map_smul_of_vec φ _ (fun j _ => ?_) x
-        rw [f_smul_vec, map_smul, ← Nat.cast_succ, hφ, hφ, f_smul_string hq, Nat.cast_succ]
-      · refine map_smul_of_vec φ _ (fun j _ => ?_) x
-        rw [k_smul_vec, map_smul, hφ, k_smul_string hq hv] }
+  have hφ := constr_vec (ε := ε) hf
+  have hφ0 : φ (vec q m ε 0) = v := by simpa only [Nat.cast_zero, string_zero] using hφ 0
+  homOfVec φ
+    (fun j _ => by
+      rcases j with _ | j
+      · rw [e_smul_vec, map_smul, vec_eq_zero_of_neg (by omega), map_zero, smul_zero,
+          Nat.cast_zero, hφ0, he]
+      · rw [e_smul_vec, map_smul, hφ (j + 1), Nat.cast_succ, add_sub_cancel_right,
+          sub_add_eq_sub_sub, sub_add_cancel, hφ, e_smul_string hq hv he])
+    (fun j _ => by
+      rw [f_smul_vec, map_smul, ← Nat.cast_succ, hφ, hφ, f_smul_string hq, Nat.cast_succ])
+    (fun j _ => by rw [k_smul_vec, map_smul, hφ, k_smul_string hq hv])
 
 variable (hq : IsGenericQuantumParameter q) {v : V} (hv : v ∈ weightSpace q V (ε * q ^ m))
   (he : e q • v = 0) (hf : f q ^ (m + 1) • v = 0)
