@@ -25,6 +25,10 @@ the only multiplicative map with this property. Applied to the automorphisms of 
 system, this gives the induced action on the multiplier algebra; `DoubleCentralizer.congrAut`
 records that `e ↦ congr e` is a monoid homomorphism of automorphism groups.
 
+Conjugation `a ↦ u a u⋆` by a unitary multiplier `u` preserves `A`; this gives the monoid
+homomorphism `DoubleCentralizer.conjStarAlgAut : unitary 𝓜(ℂ, A) →* (A ≃⋆ₐ[ℂ] A)`, the
+nonunital analogue of `Unitary.conjStarAlgAut`.
+
 ## References
 
 * Iain Raeburn and Dana Williams, *Morita Equivalence and Continuous-Trace C*-Algebras*,
@@ -222,6 +226,62 @@ theorem eq_congr_of_apply_coe {F : Type*} [FunLike F 𝓜(ℂ, A) 𝓜(ℂ, B)]
     calc ((φ m).snd b : 𝓜(ℂ, B)) = φ (e.symm b : 𝓜(ℂ, A)) * φ m := by
           rw [hφ, e.apply_symm_apply, coe_mul_eq_coe_snd]
       _ = (e (m.snd (e.symm b)) : 𝓜(ℂ, B)) := by rw [← map_mul, coe_mul_eq_coe_snd, hφ]
+
+/-- Conjugation `a ↦ m a m⋆` of `A` by a multiplier `m`, computed through its centralizers. -/
+private def conjMul (m : 𝓜(ℂ, A)) (a : A) : A :=
+  (star m).snd (m.fst a)
+
+private theorem coe_conjMul (m : 𝓜(ℂ, A)) (a : A) :
+    ((conjMul m a : A) : 𝓜(ℂ, A)) = m * a * star m := by
+  simp [conjMul]
+
+/-- The algebraic operations of `A`, read in `𝓜(ℂ, A)` through the canonical inclusion. -/
+private theorem coe_ops (a b : A) (c : ℂ) :
+    ((a + b : A) : 𝓜(ℂ, A)) = a + b ∧ ((a * b : A) : 𝓜(ℂ, A)) = a * b ∧
+      ((star a : A) : 𝓜(ℂ, A)) = star (a : 𝓜(ℂ, A)) ∧ ((c • a : A) : 𝓜(ℂ, A)) = c • a :=
+  ⟨map_add (coeHom (𝕜 := ℂ) (A := A)) a b, map_mul (coeHom (𝕜 := ℂ) (A := A)) a b,
+    map_star (coeHom (𝕜 := ℂ) (A := A)) a, map_smul (coeHom (𝕜 := ℂ) (A := A)) c a⟩
+
+private theorem conjMul_mul_conjMul (u v : 𝓜(ℂ, A)) (a : A) :
+    conjMul u (conjMul v a) = conjMul (u * v) a :=
+  coe_injective (𝕜 := ℂ) <| by simp only [coe_conjMul, star_mul, mul_assoc]
+
+private theorem conjMul_one (a : A) : conjMul 1 a = a :=
+  coe_injective (𝕜 := ℂ) <| by simp [coe_conjMul]
+
+private theorem conjMul_star_conjMul {u : 𝓜(ℂ, A)} (hu : u ∈ unitary 𝓜(ℂ, A)) (a : A) :
+    conjMul (star u) (conjMul u a) = a := by
+  rw [conjMul_mul_conjMul, Unitary.star_mul_self_of_mem hu, conjMul_one]
+
+/-- Conjugation `a ↦ u a u⋆` of `A` by unitary multipliers `u`, as a monoid homomorphism into
+the star-algebra automorphisms of `A`. -/
+def conjStarAlgAut : unitary 𝓜(ℂ, A) →* (A ≃⋆ₐ[ℂ] A) where
+  toFun u :=
+    { toFun := conjMul u
+      invFun := conjMul (star u : 𝓜(ℂ, A))
+      left_inv := conjMul_star_conjMul u.2
+      right_inv a := by
+        simpa using conjMul_star_conjMul (star u).2 a
+      map_add' a b := coe_injective (𝕜 := ℂ) <| by
+        simp only [coe_conjMul, (coe_ops _ _ (1 : ℂ)).1, mul_add, add_mul]
+      map_mul' a b := coe_injective (𝕜 := ℂ) <| by
+        simp only [coe_conjMul, (coe_ops _ _ (1 : ℂ)).2.1, mul_assoc]
+        simp only [← mul_assoc (star (u : 𝓜(ℂ, A))), Unitary.star_mul_self_of_mem u.2, one_mul]
+      map_star' a := coe_injective (𝕜 := ℂ) <| by
+        simp only [coe_conjMul, (coe_ops _ a (1 : ℂ)).2.2.1, star_mul, star_star, mul_assoc]
+      map_smul' c a := coe_injective (𝕜 := ℂ) <| by
+        simp only [coe_conjMul, (coe_ops _ a c).2.2.2, mul_smul_comm, smul_mul_assoc] }
+  map_one' := StarAlgEquiv.ext conjMul_one
+  map_mul' u v := by
+    ext a
+    rw [StarAlgEquiv.mul_apply]
+    exact (conjMul_mul_conjMul (u : 𝓜(ℂ, A)) v a).symm
+
+/-- Conjugation by a unitary multiplier, seen in the multiplier algebra. -/
+@[simp]
+theorem coe_conjStarAlgAut_apply (u : unitary 𝓜(ℂ, A)) (a : A) :
+    ((conjStarAlgAut u a : A) : 𝓜(ℂ, A)) = u * a * star (u : 𝓜(ℂ, A)) :=
+  coe_conjMul _ a
 
 end CStarAlgebra
 

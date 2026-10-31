@@ -73,7 +73,7 @@ theorem spechtMultiplicity_def (lam : YoungDiagram) (μ : lam.card.Partition) :
 the unitriangular multiplicity matrix in Young's rule. -/
 @[simp]
 theorem spechtMultiplicity_eq_zero_of_not_dominates (μ : lam.card.Partition)
-    (h : ¬Dominates (shapePartition lam) μ) : spechtMultiplicity lam μ = 0 := by
+    (h : ¬(shapePartition lam).Dominates μ) : spechtMultiplicity lam μ = 0 := by
   have : Subsingleton
       (Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
         (permutationModule μ).ρ) :=
@@ -83,7 +83,7 @@ theorem spechtMultiplicity_eq_zero_of_not_dominates (μ : lam.card.Partition)
 
 /-- **A nonzero Specht multiplicity forces dominance.** -/
 theorem dominates_of_spechtMultiplicity_ne_zero (μ : lam.card.Partition)
-    (h : spechtMultiplicity lam μ ≠ 0) : Dominates (shapePartition lam) μ := by
+    (h : spechtMultiplicity lam μ ≠ 0) : (shapePartition lam).Dominates μ := by
   by_contra hdom
   exact h (spechtMultiplicity_eq_zero_of_not_dominates μ hdom)
 

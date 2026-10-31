@@ -7,9 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
+public import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-
-import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
 
 /-!
 # Determinant-indexed projective matrix modules
@@ -21,7 +20,9 @@ on representatives provide the descent to the projective group. These are the in
 group-ring calculations in the Popa--Zagier construction of the trace formula.
 
 Inverse right multiplication is written as a left action. Its representative formula is
-`A ↦ A * g⁻¹`, so applying `h` and then `g` gives the action of `g * h`.
+`A ↦ A * g⁻¹`, so applying `h` and then `g` gives the action of `g * h`; in `GL(2, ℚ)`, through
+`FixedDetMatrices.toGL`, it is right multiplication by `g⁻¹`
+(`TauCeti.toGL_traceFormulaMatrixRight`).
 
 The right and conjugation actions are also `MulAction` instances, of `PSL(2, ℤ)ᵐᵒᵖ` and of
 `ConjAct PSL(2, ℤ)`. With `open scoped RightActions`, `x <• g`, that is `MulOpposite.op g • x`,
@@ -159,6 +160,16 @@ public def traceFormulaMatrixRight (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
 theorem val_traceFormulaMatrixRight (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     (traceFormulaMatrixRight g A).1 =
       A.1 * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) := (rfl)
+
+/-- For `n ≠ 0`, inverse right multiplication becomes right multiplication by the image of `g⁻¹`
+in `GL(2, ℚ)`. -/
+theorem toGL_traceFormulaMatrixRight (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    FixedDetMatrices.toGL hn (traceFormulaMatrixRight g A) =
+      FixedDetMatrices.toGL hn A * Matrix.SpecialLinearGroup.mapGL ℚ g⁻¹ := by
+  ext : 1
+  rw [Units.val_mul, FixedDetMatrices.coe_toGL, FixedDetMatrices.coe_toGL,
+    Matrix.SpecialLinearGroup.mapGL_coe_matrix, val_traceFormulaMatrixRight]
+  exact Matrix.map_mul (f := Int.castRingHom ℚ)
 
 /-- Left multiplication makes `ℳₙ` an `SL(2, ℤ)`-set. -/
 instance (n : ℤ) : SMul SL(2, ℤ) (TraceFormulaMatrixModule n) where

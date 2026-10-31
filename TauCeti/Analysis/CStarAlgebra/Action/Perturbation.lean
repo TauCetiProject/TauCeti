@@ -6,297 +6,287 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Generator.Basic
-public import Mathlib.Algebra.Star.UnitaryStarAlgAut
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.Analysis.Calculus.SmoothSeries
-import Mathlib.Analysis.ODE.ExistUnique
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.Analysis.SpecificLimits.Normed
+public import TauCeti.Analysis.CStarAlgebra.Action.Multiplier
+public import TauCeti.Analysis.ODE.DysonSeries
 
 /-!
-# Bounded perturbations of C⋆-dynamics
+# Unitary cocycles of bounded perturbations of C⋆-dynamics
 
-Let `α` be a point-norm continuous real action on a unital C⋆-algebra `B`, with generator `δ`,
-and let `P ∈ B`. The Dyson series, for `t ≥ 0`,
-`Γ_t = 1 + ∑_{n ≥ 1} iⁿ ∫_{0 ≤ t₁ ≤ ⋯ ≤ tₙ ≤ t} α_{t₁}(P) ⋯ α_{tₙ}(P)`,
-is written here, for all real `t`, through its recursive iterated integrals
-`Γ⁽⁰⁾_t = 1` and `Γ⁽ⁿ⁺¹⁾_t = i ∫₀ᵗ Γ⁽ⁿ⁾_s α_s(P) ds`. These satisfy
-`‖Γ⁽ⁿ⁾_t‖ ≤ (‖P‖ |t|)ⁿ / n!`, so the series converges in norm, and its sum is the unique solution
-of `Γ_t' = i Γ_t α_t(P)` with `Γ_0 = 1`. It is a cocycle: `Γ_{s+t} = Γ_s α_s(Γ_t)`.
+Let `τ` be a point-norm continuous real action on a possibly nonunital C⋆-algebra `A` and let
+`P ∈ A`. The perturbation cocycle `Γ t` is the time-ordered exponential of the path
+`s ↦ i τ_s(P)` in the multiplier algebra `𝓜(ℂ, A)`, given by the norm-convergent Dyson series
 
-When `P` is self-adjoint every `Γ_t` is unitary, and `t ↦ Γ_t α_t(·) Γ_t⋆` is again a
-point-norm continuous action, the perturbed dynamics `CStarAction.perturb`. Its generator has the
-same domain as `δ` and equals `δ + i[P, ·]` there (`CStarAction.generator_perturb`).
+`Γ t = 1 + Σ_{n ≥ 1} iⁿ ∫_{0 ≤ s₁ ≤ ⋯ ≤ sₙ ≤ t} τ_{s₁}(P) ⋯ τ_{sₙ}(P) ds` for `t ≥ 0`.
+
+For `t < 0` the `n`-th term instead integrates over `t ≤ sₙ ≤ ⋯ ≤ s₁ ≤ 0`, with an extra
+factor `(-1)ⁿ`.
+
+It is the unique solution of `Γ' t = i Γ t τ_t(P)` with `Γ 0 = 1`. When `P` is self-adjoint,
+each `Γ t` is unitary, and the family satisfies the cocycle identity
+`Γ (s + t) = Γ s τ_s(Γ t)` for the induced action on multipliers.
+
+For self-adjoint `P`, conjugating by these cocycles gives the perturbed dynamics
+`CStarAction.perturb`, acting at time `t` by `a ↦ Γ t τ_t(a) Γ t⋆` on `A`. Its generator has
+the same domain as the generator `δ` of `τ` and equals `δ + i[P, ·]` there
+(`CStarAction.generator_perturb`).
+
+A multiplier-valued cocycle is used so that `A` need not be unital; the path itself is
+norm-continuous because `P` lies in `A`.
+
+## Main declarations
+
+* `TauCeti.CStarAction.perturbationCocycle`: the cocycle `Γ` of the perturbation `P`.
+* `TauCeti.CStarAction.hasDerivAt_perturbationCocycle`: `Γ' t = Γ t * (i τ_t(P))`.
+* `TauCeti.CStarAction.eq_perturbationCocycle`: uniqueness of this initial value problem.
+* `TauCeti.CStarAction.perturbationCocycle_mem_unitary`: unitarity for self-adjoint `P`.
+* `TauCeti.CStarAction.perturbationCocycle_add`: the cocycle identity.
+* `TauCeti.CStarAction.perturbationCocycle_neg`: `Γ (-t) = τ_{-t}(Γ t⋆)`.
+* `TauCeti.CStarAction.perturb`: the perturbed dynamics `a ↦ Γ t τ_t(a) Γ t⋆`.
+* `TauCeti.CStarAction.generator_perturb`: its generator is `δ + i[P, ·]`, with the domain of `δ`.
 
 ## References
 
-Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
-Section 5.4.1, for the perturbation expansion of automorphism groups and its cocycle.
+* Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
+  Section 5.4.1, for the perturbation cocycle, its Dyson expansion and the perturbed dynamics.
 -/
 
 public section
 
 noncomputable section
 
-open Complex MeasureTheory Set
-open scoped Interval Nat
+open Complex
+open scoped MultiplierAlgebra
 
 namespace TauCeti.CStarAction
 
-variable {B : Type*} [CStarAlgebra B]
+variable {A : Type*} [NonUnitalCStarAlgebra A]
 
-/-- The `n`-th Dyson term of a perturbation `P` of a real C⋆-dynamics `α`, defined by the
-iterated integrals `Γ⁽⁰⁾_t = 1` and `Γ⁽ⁿ⁺¹⁾_t = i ∫₀ᵗ Γ⁽ⁿ⁾_s α_s(P) ds`. -/
-def dysonTerm (α : CStarAction (Multiplicative ℝ) B) (P : B) : ℕ → ℝ → B
-  | 0 => fun _ => 1
-  | n + 1 => fun t => I • ∫ s in (0 : ℝ)..t, dysonTerm α P n s * α (Multiplicative.ofAdd s) P
+/-- The path `s ↦ i τ_s(P)` in the multiplier algebra whose time-ordered exponential is the
+perturbation cocycle. -/
+private def perturbationPath (α : CStarAction (Multiplicative ℝ) A) (P : A) (s : ℝ) :
+    𝓜(ℂ, A) :=
+  Complex.I • ((α (Multiplicative.ofAdd s) P : A) : 𝓜(ℂ, A))
 
-variable (α : CStarAction (Multiplicative ℝ) B) (P : B)
+private theorem continuous_perturbationPath (α : CStarAction (Multiplicative ℝ) A) (P : A) :
+    Continuous (perturbationPath α P) := by
+  unfold perturbationPath
+  exact (DoubleCentralizer.isometry_coe.continuous.comp
+    ((α.continuous_orbit P).comp continuous_ofAdd)).const_smul Complex.I
+
+/-- The perturbation cocycle of `P ∈ A` for a real dynamics `α`: the Dyson series of the
+path `s ↦ i α_s(P)` in `𝓜(ℂ, A)`. -/
+def perturbationCocycle (α : CStarAction (Multiplicative ℝ) A) (P : A) (t : ℝ) : 𝓜(ℂ, A) :=
+  dysonSeries (perturbationPath α P) t
+
+variable (α : CStarAction (Multiplicative ℝ) A) (P : A)
+
+/-- The Dyson expansion of the perturbation cocycle, as a norm-convergent series of iterated
+integrals. -/
+theorem hasSum_perturbationCocycle (t : ℝ) :
+    HasSum (fun n => dysonTerm (fun s => Complex.I • ((α (Multiplicative.ofAdd s) P : A) :
+      𝓜(ℂ, A))) n t) (α.perturbationCocycle P t) :=
+  hasSum_dysonSeries (continuous_perturbationPath α P) t
 
 @[simp]
-theorem dysonTerm_zero (t : ℝ) : α.dysonTerm P 0 t = 1 :=
-  (rfl)
+theorem perturbationCocycle_zero : α.perturbationCocycle P 0 = 1 :=
+  dysonSeries_zero _
 
-theorem dysonTerm_succ (n : ℕ) (t : ℝ) :
-    α.dysonTerm P (n + 1) t =
-      I • ∫ s in (0 : ℝ)..t, α.dysonTerm P n s * α (Multiplicative.ofAdd s) P :=
-  (rfl)
+/-- The perturbation cocycle solves `Γ' t = Γ t * (i α_t(P))`. -/
+theorem hasDerivAt_perturbationCocycle (t : ℝ) :
+    HasDerivAt (α.perturbationCocycle P)
+      (α.perturbationCocycle P t * Complex.I • ((α (Multiplicative.ofAdd t) P : A) : 𝓜(ℂ, A)))
+      t :=
+  hasDerivAt_dysonSeries (continuous_perturbationPath α P) t
 
-private theorem continuous_orbit_ofAdd :
-    Continuous fun s : ℝ => α (Multiplicative.ofAdd s) P :=
-  (α.continuous_orbit P).comp continuous_ofAdd
+/-- The perturbation cocycle is norm-continuous. -/
+theorem continuous_perturbationCocycle : Continuous (α.perturbationCocycle P) :=
+  continuous_dysonSeries (continuous_perturbationPath α P)
 
-/-- Every Dyson term is continuous in time. -/
-theorem continuous_dysonTerm : ∀ n, Continuous (α.dysonTerm P n)
-  | 0 => continuous_const
-  | n + 1 => by
-    have h :=
-      ((continuous_dysonTerm n).mul (α.continuous_orbit_ofAdd P)).integral_hasStrictDerivAt 0
-    refine continuous_iff_continuousAt.2 fun t => ?_
-    exact ((h t).hasDerivAt.const_smul I).continuousAt
+/-- The perturbation cocycle is the unique solution of `Γ' t = Γ t * (i α_t(P))` with
+`Γ 0 = 1`. -/
+theorem eq_perturbationCocycle {f : ℝ → 𝓜(ℂ, A)} (hf₀ : f 0 = 1)
+    (hf : ∀ t, HasDerivAt f
+      (f t * Complex.I • ((α (Multiplicative.ofAdd t) P : A) : 𝓜(ℂ, A))) t) :
+    f = α.perturbationCocycle P :=
+  funext fun t => (eq_mul_dysonSeries (continuous_perturbationPath α P) hf t).trans <| by
+    rw [hf₀, one_mul]
+    rfl
 
-/-- The Dyson terms satisfy the recursive differential equation
-`(Γ⁽ⁿ⁺¹⁾)'_t = i Γ⁽ⁿ⁾_t α_t(P)`. -/
-theorem hasDerivAt_dysonTerm_succ (n : ℕ) (t : ℝ) :
-    HasDerivAt (α.dysonTerm P (n + 1))
-      (I • (α.dysonTerm P n t * α (Multiplicative.ofAdd t) P)) t :=
-  (((α.continuous_dysonTerm P n).mul (α.continuous_orbit_ofAdd P)).integral_hasStrictDerivAt
-    0 t).hasDerivAt.const_smul I
+/-- The perturbation cocycle of a self-adjoint perturbation is unitary. -/
+theorem perturbationCocycle_mem_unitary {P : A} (hP : IsSelfAdjoint P) (t : ℝ) :
+    α.perturbationCocycle P t ∈ unitary 𝓜(ℂ, A) :=
+  dysonSeries_mem_unitary (continuous_perturbationPath α P) (fun s => by
+    have hcoe (a : A) : star (a : 𝓜(ℂ, A)) = ((star a : A) : 𝓜(ℂ, A)) :=
+      (map_star (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A)) a).symm
+    simp [perturbationPath, star_smul, hcoe, ← map_star, hP.star_eq]) t
 
-/-- The factorial bound on the Dyson terms. -/
-theorem norm_dysonTerm_le (n : ℕ) (t : ℝ) :
-    ‖α.dysonTerm P n t‖ ≤ (‖P‖ * |t|) ^ n / n ! := by
-  rcases subsingleton_or_nontrivial B with hB | hB
-  · rw [Subsingleton.elim (α.dysonTerm P n t) 0, norm_zero]
-    positivity
-  induction n generalizing t with
-  | zero => simp
-  | succ n ih =>
-    have hf := (α.continuous_dysonTerm P n).mul (α.continuous_orbit_ofAdd P)
-    rw [dysonTerm_succ, norm_smul, norm_I, one_mul]
-    calc ‖∫ s in (0 : ℝ)..t, α.dysonTerm P n s * α (Multiplicative.ofAdd s) P‖
-        ≤ ∫ s in Ι (0 : ℝ) t, ‖α.dysonTerm P n s * α (Multiplicative.ofAdd s) P‖ :=
-          intervalIntegral.norm_integral_le_integral_norm_uIoc
-      _ ≤ ∫ s in Ι (0 : ℝ) t, ‖P‖ ^ (n + 1) / n ! * |s - 0| ^ n := by
-          have hg : Continuous fun s : ℝ => ‖P‖ ^ (n + 1) / n ! * |s - 0| ^ n := by fun_prop
-          refine setIntegral_mono_on hf.norm.integrableOn_uIoc hg.integrableOn_uIoc
-            measurableSet_uIoc fun s _ => ?_
-          calc ‖α.dysonTerm P n s * α (Multiplicative.ofAdd s) P‖
-              ≤ ‖α.dysonTerm P n s‖ * ‖α (Multiplicative.ofAdd s) P‖ := norm_mul_le _ _
-            _ ≤ (‖P‖ * |s|) ^ n / n ! * ‖P‖ := by
-                rw [StarAlgEquiv.norm_map]
-                exact mul_le_mul_of_nonneg_right (ih s) (norm_nonneg P)
-            _ = ‖P‖ ^ (n + 1) / n ! * |s - 0| ^ n := by
-                rw [sub_zero, mul_pow, pow_succ]
-                ring
-      _ = (‖P‖ * |t|) ^ (n + 1) / (n + 1)! := by
-          rw [integral_const_mul, integral_pow_abs_sub_uIoc, sub_zero, Nat.factorial_succ]
-          push_cast
-          field_simp
-          ring
+/-- The cocycle identity `Γ (s + t) = Γ s * α_s(Γ t)`, for the action induced on multipliers. -/
+theorem perturbationCocycle_add (s t : ℝ) :
+    α.perturbationCocycle P (s + t) =
+      α.perturbationCocycle P s *
+        α.multiplier (Multiplicative.ofAdd s) (α.perturbationCocycle P t) := by
+  -- The automorphism `α_s` of `𝓜(ℂ, A)` as a continuous real-linear map.
+  let E : 𝓜(ℂ, A) →L[ℝ] 𝓜(ℂ, A) :=
+    (LinearIsometry.toContinuousLinearMap
+      ⟨(α.multiplier (Multiplicative.ofAdd s) : 𝓜(ℂ, A) →ₗ[ℂ] 𝓜(ℂ, A)),
+        fun m => StarAlgEquiv.norm_map (α.multiplier (Multiplicative.ofAdd s)) m⟩).restrictScalars
+      ℝ
+  have hE (m : 𝓜(ℂ, A)) : E m = α.multiplier (Multiplicative.ofAdd s) m := rfl
+  -- Both sides solve `Y' u = Y u * (i α_{s + u}(P))` and take the value `Γ s` at `u = 0`.
+  have key := eq_of_hasDerivAt_mul
+    ((continuous_perturbationPath α P).comp (continuous_const_add s))
+    (f := fun u => α.perturbationCocycle P (s + u))
+    (g := fun u => α.perturbationCocycle P s *
+      α.multiplier (Multiplicative.ofAdd s) (α.perturbationCocycle P u)) (t₀ := 0)
+    (fun u => (hasDerivAt_perturbationCocycle α P (s + u)).comp_const_add s u)
+    (fun u => by
+      refine ((E.hasFDerivAt.comp_hasDerivAt u (hasDerivAt_perturbationCocycle α P u)).const_mul
+        (α.perturbationCocycle P s)).congr_deriv ?_
+      simp only [hE, map_mul, map_smul, multiplier_coe, ← mul_apply, ← ofAdd_add,
+        Function.comp_apply, perturbationPath, mul_assoc])
+    (by simp)
+  exact congrFun key t
 
-/-- The Dyson series converges in norm at every time. -/
-theorem summable_dysonTerm (t : ℝ) : Summable fun n => α.dysonTerm P n t :=
-  .of_norm_bounded (Real.summable_pow_div_factorial (‖P‖ * |t|)) fun n =>
-    α.norm_dysonTerm_le P n t
+/-- The cocycle at negative times: `Γ (-t) = α_{-t}(Γ t⋆)` for self-adjoint `P`. -/
+theorem perturbationCocycle_neg {P : A} (hP : IsSelfAdjoint P) (t : ℝ) :
+    α.perturbationCocycle P (-t) =
+      α.multiplier (Multiplicative.ofAdd (-t)) (star (α.perturbationCocycle P t)) := by
+  have h := α.perturbationCocycle_add P t (-t)
+  rw [add_neg_cancel, perturbationCocycle_zero] at h
+  have hu := α.perturbationCocycle_mem_unitary hP t
+  have h' : α.multiplier (Multiplicative.ofAdd t) (α.perturbationCocycle P (-t)) =
+      star (α.perturbationCocycle P t) := by
+    rw [← one_mul (α.multiplier _ _), ← Unitary.star_mul_self_of_mem hu, mul_assoc, ← h,
+      mul_one]
+  rw [ofAdd_neg, ← multiplier_symm_apply, ← h', StarAlgEquiv.symm_apply_apply]
 
-/-- The Dyson cocycle `Γ_t = ∑ₙ Γ⁽ⁿ⁾_t` of a perturbation `P` of a real C⋆-dynamics `α`. -/
-def dysonCocycle (t : ℝ) : B :=
-  ∑' n, α.dysonTerm P n t
-
-/-- The Dyson series sums to the Dyson cocycle. -/
-theorem hasSum_dysonCocycle (t : ℝ) :
-    HasSum (fun n => α.dysonTerm P n t) (α.dysonCocycle P t) :=
-  (α.summable_dysonTerm P t).hasSum
-
-/-- The Dyson cocycle is the identity plus the sum of the higher Dyson terms. -/
-theorem dysonCocycle_eq_one_add (t : ℝ) :
-    α.dysonCocycle P t = 1 + ∑' n, α.dysonTerm P (n + 1) t :=
-  (α.summable_dysonTerm P t).tsum_eq_zero_add
-
-/-- The Dyson cocycle is the identity at time zero. -/
+/-- The cocycle of the zero perturbation is the identity. -/
 @[simp]
-theorem dysonCocycle_apply_zero : α.dysonCocycle P 0 = 1 := by
-  simp [dysonCocycle_eq_one_add, dysonTerm_succ]
+theorem perturbationCocycle_zero_left : α.perturbationCocycle 0 = 1 := by
+  have h0 : ((0 : A) : 𝓜(ℂ, A)) = 0 := map_zero (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A))
+  exact (α.eq_perturbationCocycle 0 rfl fun t =>
+    (hasDerivAt_const t (1 : 𝓜(ℂ, A))).congr_deriv (by simp [h0])).symm
 
-/-- The Dyson cocycle solves `Γ_t' = i Γ_t α_t(P)`. -/
-theorem hasDerivAt_dysonCocycle (t : ℝ) :
-    HasDerivAt (α.dysonCocycle P)
-      (I • (α.dysonCocycle P t * α (Multiplicative.ofAdd t) P)) t := by
-  set T := |t| + 1
-  have hT : 0 < T := by positivity
-  have hsum : HasDerivAt (fun y => ∑' n, α.dysonTerm P (n + 1) y)
-      (∑' n, I • (α.dysonTerm P n t * α (Multiplicative.ofAdd t) P)) t := by
-    refine hasDerivAt_tsum_of_isPreconnected (u := fun n => ‖P‖ * ((‖P‖ * T) ^ n / n !))
-      (t := Ioo (-T) T) ((Real.summable_pow_div_factorial _).mul_left _) isOpen_Ioo
-      isPreconnected_Ioo (fun n y _ => α.hasDerivAt_dysonTerm_succ P n y) (fun n y hy => ?_)
-      (y₀ := 0) ⟨by linarith, hT⟩
-      ((summable_nat_add_iff 1).2 (α.summable_dysonTerm P 0))
-      ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
-    have hy : |y| ≤ T := abs_le.2 ⟨hy.1.le, hy.2.le⟩
-    rw [norm_smul, norm_I, one_mul]
-    calc ‖α.dysonTerm P n y * α (Multiplicative.ofAdd y) P‖
-        ≤ ‖α.dysonTerm P n y‖ * ‖P‖ := by
-          simpa only [StarAlgEquiv.norm_map] using norm_mul_le (α.dysonTerm P n y)
-            (α (Multiplicative.ofAdd y) P)
-      _ ≤ (‖P‖ * T) ^ n / n ! * ‖P‖ := by
-          refine mul_le_mul_of_nonneg_right ((α.norm_dysonTerm_le P n y).trans ?_) (norm_nonneg P)
-          gcongr
-      _ = ‖P‖ * ((‖P‖ * T) ^ n / n !) := mul_comm _ _
-  have heq : α.dysonCocycle P = fun y => 1 + ∑' n, α.dysonTerm P (n + 1) y :=
-    funext (α.dysonCocycle_eq_one_add P)
-  convert (hasDerivAt_const t (1 : B)).add hsum using 1
-  rw [zero_add, (((α.hasSum_dysonCocycle P t).mul_right _).const_smul I).tsum_eq]
+/-! ### The perturbed dynamics -/
 
-/-- The Dyson cocycle is continuous in time. -/
-theorem continuous_dysonCocycle : Continuous (α.dysonCocycle P) :=
-  continuous_iff_continuousAt.2 fun t => (α.hasDerivAt_dysonCocycle P t).continuousAt
+/-- The inclusion of `A` into its multiplier algebra, as a real linear isometry. -/
+private def coeIsometry : A →ₗᵢ[ℝ] 𝓜(ℂ, A) where
+  toFun a := a
+  map_add' := map_add (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A))
+  map_smul' r a := by
+    simp only [RCLike.real_smul_eq_coe_smul (K := ℂ) r, RingHom.id_apply]
+    exact map_smul (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A)) (r : ℂ) a
+  norm_map' := DoubleCentralizer.norm_coe
 
-/-- The linear vector field `Y ↦ i Y α_u(P)` is Lipschitz with constant `‖P‖`. -/
-private theorem lipschitzOnWith_smul_mul (u : ℝ) :
-    LipschitzOnWith ‖P‖₊ (fun Y : B => I • (Y * α (Multiplicative.ofAdd u) P)) univ := by
-  refine (LipschitzWith.of_dist_le_mul fun Y Z => ?_).lipschitzOnWith
-  rw [dist_eq_norm, dist_eq_norm, ← smul_sub, ← sub_mul, norm_smul, norm_I, one_mul,
-    coe_nnnorm, mul_comm ‖P‖]
-  simpa only [StarAlgEquiv.norm_map] using norm_mul_le (Y - Z) (α (Multiplicative.ofAdd u) P)
+private theorem hasDerivAt_coe {f : ℝ → A} {d : A} {x : ℝ} (h : HasDerivAt f d x) :
+    HasDerivAt (fun t => (f t : 𝓜(ℂ, A))) (d : 𝓜(ℂ, A)) x :=
+  (coeIsometry (A := A)).toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt x h
 
-/-- The Dyson cocycle is the unique solution of `Y_t' = i Y_t α_t(P)` with `Y_0 = 1`. -/
-theorem eq_dysonCocycle_of_hasDerivAt {Y : ℝ → B}
-    (hY : ∀ t, HasDerivAt Y (I • (Y t * α (Multiplicative.ofAdd t) P)) t) (h0 : Y 0 = 1) :
-    Y = α.dysonCocycle P :=
-  -- Uniqueness of solutions of Lipschitz differential equations, Mathlib's
-  -- `ODE_solution_unique_univ`.
-  ODE_solution_unique_univ (s := fun _ => univ) (α.lipschitzOnWith_smul_mul P)
-    (fun t => ⟨hY t, mem_univ _⟩) (fun t => ⟨α.hasDerivAt_dysonCocycle P t, mem_univ _⟩)
-    (t₀ := 0) (by simp [h0])
-
-/-- The cocycle identity `Γ_{s+t} = Γ_s α_s(Γ_t)`. -/
-theorem dysonCocycle_add (s t : ℝ) :
-    α.dysonCocycle P (s + t) =
-      α.dysonCocycle P s * α (Multiplicative.ofAdd s) (α.dysonCocycle P t) := by
-  -- Both sides solve `Y' = i Y α_{s+t}(P)` with value `Γ_s` at `t = 0`, so they agree by
-  -- Mathlib's ODE uniqueness theorem `ODE_solution_unique_univ`.
-  have hv (u : ℝ) := α.lipschitzOnWith_smul_mul P (s + u)
-  have hf (u : ℝ) : HasDerivAt (fun u => α.dysonCocycle P (s + u))
-      (I • (α.dysonCocycle P (s + u) * α (Multiplicative.ofAdd (s + u)) P)) u :=
-    (α.hasDerivAt_dysonCocycle P (s + u)).comp_const_add s u
-  have hg (u : ℝ) : HasDerivAt
-      (fun u => α.dysonCocycle P s * α (Multiplicative.ofAdd s) (α.dysonCocycle P u))
-      (I • (α.dysonCocycle P s * α (Multiplicative.ofAdd s) (α.dysonCocycle P u) *
-        α (Multiplicative.ofAdd (s + u)) P)) u := by
-    have h := ((α.toStronglyContinuousGroup s).hasFDerivAt.comp_hasDerivAt u
-      (α.hasDerivAt_dysonCocycle P u)).const_mul (α.dysonCocycle P s)
-    simp only [Function.comp_def, toStronglyContinuousGroup_apply] at h
-    convert h using 1
-    simp only [map_smul, map_mul, ofAdd_add, mul_apply, mul_assoc, mul_smul_comm]
-  have := ODE_solution_unique_univ (s := fun _ => univ) hv (fun u => ⟨hf u, mem_univ _⟩)
-    (fun u => ⟨hg u, mem_univ _⟩) (t₀ := 0) (by simp)
-  exact congrFun this t
+/-- A path in `A` is differentiable once it is differentiable in `𝓜(ℂ, A)` with a derivative
+in `A`, since the inclusion is isometric. -/
+private theorem hasDerivAt_of_hasDerivAt_coe {f : ℝ → A} {d : A} {x : ℝ}
+    (h : HasDerivAt (fun t => (f t : 𝓜(ℂ, A))) (d : 𝓜(ℂ, A)) x) : HasDerivAt f d x := by
+  rw [hasDerivAt_iff_isLittleO] at h ⊢
+  refine Asymptotics.isLittleO_norm_left.mp (h.norm_left.congr_left fun y => ?_)
+  rw [← (coeIsometry (A := A)).norm_map, map_sub, map_sub, map_smul]
+  rfl
 
 variable {P}
 
-/-- For self-adjoint `P`, the Dyson cocycle is a coisometry. -/
-@[simp]
-theorem dysonCocycle_mul_star (hP : IsSelfAdjoint P) (t : ℝ) :
-    α.dysonCocycle P t * star (α.dysonCocycle P t) = 1 := by
-  -- `Γ_u Γ_u⋆` has derivative zero, so it is constantly `Γ_0 Γ_0⋆ = 1`.
-  have hd (u : ℝ) : HasDerivAt (fun u => α.dysonCocycle P u * star (α.dysonCocycle P u)) 0 u := by
-    have h := α.hasDerivAt_dysonCocycle P u
-    convert h.fun_mul h.star using 1
-    rw [star_smul, star_mul, (hP.map (α (Multiplicative.ofAdd u))).star_eq, star_def, conj_I]
-    simp [mul_assoc]
-  have := is_const_of_deriv_eq_zero (fun u => (hd u).differentiableAt) (fun u => (hd u).deriv) t 0
-  simpa using this
-
-/-- For self-adjoint `P`, the Dyson cocycle is an isometry. -/
-@[simp]
-theorem star_dysonCocycle_mul (hP : IsSelfAdjoint P) (t : ℝ) :
-    star (α.dysonCocycle P t) * α.dysonCocycle P t = 1 := by
-  -- `w = α_t(Γ_{-t})` is a two-sided inverse of `Γ_t` by the cocycle identity.
-  set w := α (Multiplicative.ofAdd t) (α.dysonCocycle P (-t))
-  have hleft : w * α.dysonCocycle P t = 1 := by
-    have h := α.dysonCocycle_add P (-t) t
-    rw [neg_add_cancel, dysonCocycle_apply_zero] at h
-    have h' := congrArg (α (Multiplicative.ofAdd t)) h
-    rwa [map_one, map_mul, ofAdd_neg, apply_inv_apply, eq_comm] at h'
-  have hstar : star (α.dysonCocycle P t) = w := by
-    calc star (α.dysonCocycle P t)
-        = (w * α.dysonCocycle P t) * star (α.dysonCocycle P t) := by rw [hleft, one_mul]
-      _ = w := by rw [mul_assoc, α.dysonCocycle_mul_star hP, mul_one]
-  rw [hstar, hleft]
-
-/-- For self-adjoint `P`, the Dyson cocycle is unitary. -/
-theorem dysonCocycle_mem_unitary (hP : IsSelfAdjoint P) (t : ℝ) :
-    α.dysonCocycle P t ∈ unitary B :=
-  Unitary.mem_iff.2 ⟨α.star_dysonCocycle_mul hP t, α.dysonCocycle_mul_star hP t⟩
-
 /-- The perturbation of a real C⋆-dynamics `α` by a self-adjoint `P`, acting at time `t` by
-`a ↦ Γ_t α_t(a) Γ_t⋆`, where `Γ` is the Dyson cocycle. -/
-def perturb (hP : IsSelfAdjoint P) : CStarAction (Multiplicative ℝ) B where
+`a ↦ Γ t α_t(a) Γ t⋆`, where `Γ` is the perturbation cocycle. -/
+def perturb (hP : IsSelfAdjoint P) : CStarAction (Multiplicative ℝ) A where
   toMonoidHom :=
-    { toFun := fun t => (α t).trans (Unitary.conjStarAlgAut ℂ B
-        ⟨α.dysonCocycle P t.toAdd, α.dysonCocycle_mem_unitary hP t.toAdd⟩)
+    { toFun := fun t => (α t).trans (DoubleCentralizer.conjStarAlgAut
+        ⟨α.perturbationCocycle P t.toAdd, α.perturbationCocycle_mem_unitary hP t.toAdd⟩)
       map_one' := by
         ext a
-        simp
+        apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
+        simp [one_apply]
       map_mul' := fun s t => by
         ext a
-        simp [dysonCocycle_add, toAdd_mul, mul_apply, mul_assoc, map_star] }
+        apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
+        have h := α.multiplier_coe s (DoubleCentralizer.conjStarAlgAut
+          ⟨α.perturbationCocycle P t.toAdd, α.perturbationCocycle_mem_unitary hP t.toAdd⟩
+          (α t a))
+        simp only [StarAlgEquiv.trans_apply, StarAlgEquiv.mul_apply,
+          DoubleCentralizer.coe_conjStarAlgAut_apply] at h ⊢
+        rw [← h, toAdd_mul, perturbationCocycle_add, ofAdd_toAdd, mul_apply,
+          ← multiplier_coe, map_mul (α.multiplier s), map_mul (α.multiplier s),
+          map_star (α.multiplier s), star_mul]
+        simp only [mul_assoc] }
   continuous_orbit a := by
-    have hΓ := (α.continuous_dysonCocycle P).comp continuous_toAdd
-    exact (hΓ.mul (α.continuous_orbit a)).mul hΓ.star
+    have hc := DoubleCentralizer.isometry_coe (𝕜 := ℂ) (A := A)
+    rw [hc.isEmbedding.continuous_iff]
+    have hΓ := (α.continuous_perturbationCocycle P).comp continuous_toAdd
+    refine ((hΓ.mul (hc.continuous.comp
+      (α.continuous_orbit a))).mul hΓ.star).congr fun t => ?_
+    simp
 
-@[simp]
-theorem perturb_apply (hP : IsSelfAdjoint P) (t : ℝ) (a : B) :
-    α.perturb hP (Multiplicative.ofAdd t) a =
-      α.dysonCocycle P t * α (Multiplicative.ofAdd t) a * star (α.dysonCocycle P t) :=
+theorem perturb_apply (hP : IsSelfAdjoint P) (t : Multiplicative ℝ) (a : A) :
+    α.perturb hP t a = DoubleCentralizer.conjStarAlgAut
+      ⟨α.perturbationCocycle P t.toAdd, α.perturbationCocycle_mem_unitary hP t.toAdd⟩ (α t a) :=
   (rfl)
+
+/-- The perturbed dynamics, seen in the multiplier algebra. -/
+@[simp]
+theorem coe_perturb_apply (hP : IsSelfAdjoint P) (t : ℝ) (a : A) :
+    ((α.perturb hP (Multiplicative.ofAdd t) a : A) : 𝓜(ℂ, A)) =
+      α.perturbationCocycle P t * (α (Multiplicative.ofAdd t) a : 𝓜(ℂ, A)) *
+        star (α.perturbationCocycle P t) := by
+  simp [perturb_apply]
+
+/-- The derivative of the perturbation cocycle at time zero. -/
+private theorem hasDerivAt_perturbationCocycle_zero :
+    HasDerivAt (α.perturbationCocycle P) (I • (P : 𝓜(ℂ, A))) 0 := by
+  simpa [one_apply] using α.hasDerivAt_perturbationCocycle P 0
+
+private theorem star_I_smul_coe (hP : IsSelfAdjoint P) :
+    star (I • (P : 𝓜(ℂ, A))) = -(I • (P : 𝓜(ℂ, A))) := by
+  have hs : star (P : 𝓜(ℂ, A)) = P :=
+    (map_star (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A)) P).symm.trans
+      (congrArg _ hP.star_eq)
+  rw [star_smul, hs, star_def, conj_I, neg_smul]
 
 /-- The perturbed orbit of a generator-domain element has derivative `δ(a) + i(Pa - aP)` at zero. -/
 private theorem hasDerivAt_perturb_zero (hP : IsSelfAdjoint P) (a : α.generator.domain) :
-    HasDerivAt (fun t : ℝ => α.perturb hP (Multiplicative.ofAdd t) (a : B))
+    HasDerivAt (fun t : ℝ => α.perturb hP (Multiplicative.ofAdd t) (a : A))
       (α.generator a + I • (P * a - a * P)) 0 := by
-  have hΓ := α.hasDerivAt_dysonCocycle P 0
-  simp only [dysonCocycle_apply_zero, one_mul, ofAdd_zero, one_apply] at hΓ
-  have hs : star (I • P) = -(I • P) := by rw [star_smul, hP.star_eq, star_def, conj_I, neg_smul]
-  simp only [perturb_apply]
-  convert (hΓ.fun_mul (α.hasDerivAt_zero a)).fun_mul hΓ.star using 1
-  simp only [dysonCocycle_apply_zero, ofAdd_zero, one_apply, star_one, mul_one, one_mul, hs,
-    mul_neg, smul_sub, smul_mul_assoc, mul_smul_comm]
+  have hΓ := α.hasDerivAt_perturbationCocycle_zero (P := P)
+  refine hasDerivAt_of_hasDerivAt_coe ?_
+  simp only [coe_perturb_apply]
+  convert (hΓ.mul (hasDerivAt_coe (α.hasDerivAt_zero a))).mul hΓ.star using 1
+  rw [star_I_smul_coe hP]
+  simp only [Pi.mul_apply, perturbationCocycle_zero, ofAdd_zero, one_apply, star_one, mul_one,
+    one_mul]
+  simp only [← DoubleCentralizer.coeHom_apply (𝕜 := ℂ), map_add, map_sub, map_smul, map_mul,
+    mul_neg, smul_mul_assoc, mul_smul_comm, smul_sub]
   abel
 
 /-- The perturbed dynamics has the same generator domain as the original dynamics. -/
 @[simp]
-theorem mem_generator_perturb_domain_iff (hP : IsSelfAdjoint P) (a : B) :
+theorem mem_generator_perturb_domain_iff (hP : IsSelfAdjoint P) (a : A) :
     a ∈ (α.perturb hP).generator.domain ↔ a ∈ α.generator.domain := by
   refine ⟨fun ha => ?_, fun ha => ?_⟩
-  · -- Undo the unitary conjugation: `α_t(a) = Γ_t⋆ (Γ_t α_t(a) Γ_t⋆) Γ_t`.
-    rw [mem_generator_domain_iff_differentiableAt] at ha ⊢
-    have hΓ := (α.hasDerivAt_dysonCocycle P 0).differentiableAt
-    have h := (hΓ.star.mul ha).mul hΓ
-    refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun t => ?_)
-    simp only [Pi.mul_apply, perturb_apply, mul_assoc, α.star_dysonCocycle_mul hP, mul_one]
-    rw [← mul_assoc, α.star_dysonCocycle_mul hP, one_mul]
+  · -- Undo the unitary conjugation: `α_t(a) = Γ t⋆ (Γ t α_t(a) Γ t⋆) Γ t`.
+    rw [mem_generator_domain_iff_differentiableAt]
+    have hΓ := α.hasDerivAt_perturbationCocycle_zero (P := P)
+    have hb := hasDerivAt_coe ((α.perturb hP).hasDerivAt_zero ⟨a, ha⟩)
+    have h := (hΓ.star.mul hb).mul hΓ
+    refine (hasDerivAt_of_hasDerivAt_coe (d := (α.perturb hP).generator ⟨a, ha⟩ -
+      I • (P * a - a * P)) ?_).differentiableAt
+    convert h using 1
+    · funext t
+      have hu := α.perturbationCocycle_mem_unitary hP t
+      simp only [Pi.mul_apply, coe_perturb_apply, ← mul_assoc, Unitary.star_mul_self_of_mem hu,
+        one_mul]
+      rw [mul_assoc, Unitary.star_mul_self_of_mem hu, mul_one]
+    · rw [star_I_smul_coe hP]
+      simp only [Pi.mul_apply, perturbationCocycle_zero, ofAdd_zero, one_apply, star_one,
+        mul_one, one_mul, coe_perturb_apply]
+      simp only [← DoubleCentralizer.coeHom_apply (𝕜 := ℂ), map_sub, map_smul,
+        map_mul, neg_mul, smul_mul_assoc, mul_smul_comm, smul_sub]
+      abel
   · rw [mem_generator_domain_iff_differentiableAt]
     exact (α.hasDerivAt_perturb_zero hP ⟨a, ha⟩).differentiableAt
 
@@ -318,17 +308,12 @@ theorem generator_perturb (hP : IsSelfAdjoint P) :
   · rw [LinearPMap.vadd_apply]
     exact (α.generator_perturb_apply hP ⟨a, ha⟩).trans (by simp [add_comm])
 
-/-- The Dyson cocycle of the zero perturbation is the identity. -/
-@[simp]
-theorem dysonCocycle_zero : α.dysonCocycle 0 = 1 := by
-  funext t
-  simp [dysonCocycle_eq_one_add, dysonTerm_succ]
-
 /-- Perturbing by zero recovers the original dynamics. -/
 @[simp]
-theorem perturb_zero : α.perturb (IsSelfAdjoint.zero B) = α := by
+theorem perturb_zero : α.perturb (IsSelfAdjoint.zero A) = α := by
   ext t a
-  rw [← ofAdd_toAdd t, perturb_apply]
+  apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
+  rw [← ofAdd_toAdd t, coe_perturb_apply]
   simp
 
 end TauCeti.CStarAction

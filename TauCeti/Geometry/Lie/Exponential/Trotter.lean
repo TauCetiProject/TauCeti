@@ -47,7 +47,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [IsManifold I 1 G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- A tangent-to-identity curve has the expected exponential power limit. The derivative is
@@ -56,7 +56,7 @@ manifold expression for the curve. -/
 theorem tendsto_pow_div_of_hasDerivAt_mulInvariantLog [FiniteDimensional ℝ E]
     [LieGroup I ∞ G] {f : ℝ → G} (X : GroupLieAlgebra I G) (hf0 : f 0 = 1) :
     let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ContinuousAt f 0 →
       HasDerivAt (fun s =>
         (show E from mulInvariantLog (I := I) (G := G) (f s)))
@@ -64,7 +64,7 @@ theorem tendsto_pow_div_of_hasDerivAt_mulInvariantLog [FiniteDimensional ℝ E]
       ∀ t : ℝ, Tendsto (fun n : ℕ => (f (t / n)) ^ n) atTop
         (nhds (mulInvariantExp (I := I) (G := G) (t • X))) := by
   let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   intro hf hlog t
   let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
@@ -96,14 +96,14 @@ theorem tendsto_pow_div_of_hasDerivAt_mulInvariantLog [FiniteDimensional ℝ E]
 theorem tendsto_mulInvariantExp_smul_mul_mulInvariantExp_smul_pow [FiniteDimensional ℝ E]
     [LieGroup I ∞ G] :
     let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ∀ (X Y : GroupLieAlgebra I G) (t : ℝ),
       Tendsto (fun n : ℕ =>
         (mulInvariantExp (I := I) (G := G) ((t / n) • X) *
           mulInvariantExp (I := I) (G := G) ((t / n) • Y)) ^ n) atTop
         (nhds (mulInvariantExp (I := I) (G := G) (t • (X + Y)))) := by
   let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   intro X Y t
   let f : ℝ → G := fun s =>
@@ -123,12 +123,12 @@ theorem tendsto_mulInvariantExp_smul_mul_mulInvariantExp_smul_pow [FiniteDimensi
 theorem tendsto_lieExp_smul_mul_lieExp_smul_pow [FiniteDimensional ℝ E]
     [LieGroup I ∞ G] :
     let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ∀ (X Y : LeftInvariantDerivation I G) (t : ℝ),
       Tendsto (fun n : ℕ => (lieExp ((t / n) • X) * lieExp ((t / n) • Y)) ^ n) atTop
         (nhds (lieExp (t • (X + Y)))) := by
   let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   intro X Y t
   let L := leftInvariantDerivationEquivGroupLieAlgebra
@@ -141,12 +141,12 @@ theorem tendsto_lieExp_smul_mul_lieExp_smul_pow [FiniteDimensional ℝ E]
 of the exponentials.** -/
 theorem lieExp_add_of_commute [FiniteDimensional ℝ E] [LieGroup I ∞ G] :
     let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ∀ {X Y : LeftInvariantDerivation I G},
       (∀ t : ℝ, Commute (lieExp (t • X)) (lieExp (t • Y))) →
         lieExp (X + Y) = lieExp X * lieExp Y := by
   let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   intro X Y h
   -- By the Trotter product formula `lieExp (X + Y)` is the limit of
