@@ -158,7 +158,7 @@ def toWeakFEPair : WeakFEPair E where
 
 /-- Transporting a weak pair presented at level `N` returns the weak pair. -/
 @[simp]
-theorem toWeakFEPair_toFEPairWithLevel (Q : WeakFEPair E) {N : ℝ} (hN : 0 < N) :
+theorem _root_.WeakFEPair.toWeakFEPair_toFEPairWithLevel (Q : WeakFEPair E) {N : ℝ} (hN : 0 < N) :
     (Q.toFEPairWithLevel N hN).toWeakFEPair = Q := by
   have hN' : ((N ^ Q.k : ℝ) : ℂ) * ((N ^ (-Q.k) : ℝ) : ℂ) = 1 := by
     rw [← ofReal_mul, ← Real.rpow_add hN, add_neg_cancel, Real.rpow_zero, ofReal_one]
@@ -196,7 +196,8 @@ def symm : FEPairWithLevel E where
     have ht' : (0 : ℝ) < t := ht
     have hN := P.hN
     have h := P.h_feq (1 / (P.N * t)) (one_div_pos.2 (mul_pos hN ht'))
-    rw [show 1 / (P.N * (1 / (P.N * t))) = t by field_simp] at h
+    have hinv : 1 / (P.N * (1 / (P.N * t))) = t := by field_simp
+    rw [hinv] at h
     rw [h, smul_smul, Real.div_rpow zero_le_one (by positivity), Real.one_rpow,
       Real.mul_rpow hN.le ht'.le]
     have h1 : ((P.N ^ P.k : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.mpr (rpow_pos_of_pos hN _).ne'
