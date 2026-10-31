@@ -128,9 +128,10 @@ private theorem d4TripledWeight_of_repr_ne_zero (a b : Fin 24)
       lattice.toAddSubgroup trialityModuleEquiv_mem_lattice_iff (latticeBasis b)) a ≠ 0)
     (k : Fin 4) :
     d4TripledWeight a (trialityPermD4 k) = d4TripledWeight b k := by
-  obtain rfl := eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial lattice.toAddSubgroup
-    latticeBasis trialitySymmetry.moduleEquiv trialityModuleEquiv_mem_lattice_iff
-    d4TripledTrialityPerm (fun _ => 1) trialityModuleEquiv_latticeBasis hab
+  obtain rfl := AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
+    trialitySymmetry.moduleEquiv.toAddEquiv lattice.toAddSubgroup
+    trialityModuleEquiv_mem_lattice_iff latticeBasis d4TripledTrialityPerm (fun _ => 1)
+    trialityModuleEquiv_latticeBasis hab
   exact d4TripledWeight_d4TripledTrialityPerm_apply b k
 
 

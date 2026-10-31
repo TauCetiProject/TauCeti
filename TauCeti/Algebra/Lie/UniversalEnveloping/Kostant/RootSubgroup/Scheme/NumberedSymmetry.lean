@@ -392,34 +392,6 @@ theorem kostantNumberedSymmetryMatrix_conj_diagGL (A : Type v) [CommRing A] (d d
   · simp [hij]
   · rw [hd i j hij, mul_comm]
 
-/-- **The coordinates of a symmetry acting monomially on the chosen lattice basis.** The image of
-`b j` has the integral scaling coefficient as its coordinate at `basisPerm j` and no other nonzero
-coordinate. -/
-theorem repr_invariantRestrict_basis_of_monomial
-    (basisPerm : Equiv.Perm (Fin n)) (basisScale : Fin n → ℤ)
-    (hbasis : ∀ i, θ ((b i : M) : V) =
-      (((basisScale i) • b (basisPerm i) : M) : V))
-    (i j : Fin n) :
-    b.repr (θ.toAddEquiv.invariantRestrict M hθM (b j)) i =
-      if i = basisPerm j then basisScale j else 0 := by
-  have hsub : θ.toAddEquiv.invariantRestrict M hθM (b j) =
-      (basisScale j) • b (basisPerm j) := by
-    apply Subtype.ext
-    rw [AddEquiv.coe_invariantRestrict_apply]
-    exact hbasis j
-  simp [hsub, Finsupp.single_apply, eq_comm]
-
-/-- A symmetry acting monomially on the chosen lattice basis has a nonzero coordinate of `b i` in
-the image of `b j` only when `i = basisPerm j`. -/
-theorem eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
-    (basisPerm : Equiv.Perm (Fin n)) (basisScale : Fin n → ℤ)
-    (hbasis : ∀ i, θ ((b i : M) : V) =
-      (((basisScale i) • b (basisPerm i) : M) : V))
-    {i j : Fin n} (hij : b.repr (θ.toAddEquiv.invariantRestrict M hθM (b j)) i ≠ 0) :
-    i = basisPerm j := by
-  rw [repr_invariantRestrict_basis_of_monomial M b θ hθM basisPerm basisScale hbasis] at hij
-  exact (ite_ne_right_iff.mp hij).1
-
 /-- **The matrix of a symmetry acting monomially on the chosen lattice basis.** Its `j`th column
 has the integral scaling coefficient at row `basisPerm j` and is zero elsewhere. Allowing the
 coefficient is necessary for graph symmetries whose pinned lift is a signed coordinate
@@ -432,7 +404,8 @@ theorem coe_kostantNumberedSymmetryMatrix_apply_of_monomial
     (kostantNumberedSymmetryMatrix M b θ hθM A : Matrix (Fin n) (Fin n) A) i j =
       if i = basisPerm j then algebraMap ℤ A (basisScale j) else 0 := by
   rw [coe_kostantNumberedSymmetryMatrix_apply,
-    repr_invariantRestrict_basis_of_monomial M b θ hθM basisPerm basisScale hbasis]
+    AddEquiv.repr_invariantRestrict_basis_of_monomial θ.toAddEquiv M hθM b basisPerm basisScale
+      hbasis]
   split_ifs <;> simp
 
 /-- **Conjugating a diagonal matrix by a monomial basis symmetry relabels its entries by the
@@ -447,8 +420,8 @@ theorem kostantNumberedSymmetryMatrix_conj_diagGL_of_monomial (basisPerm : Equiv
         (kostantNumberedSymmetryMatrix M b θ hθM A)⁻¹ =
       diagGL (fun i => d (basisPerm⁻¹ i)) := by
   refine kostantNumberedSymmetryMatrix_conj_diagGL M b θ hθM A d _ fun i j hij => ?_
-  rw [eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial M b θ hθM basisPerm basisScale
-    hbasis hij, Equiv.Perm.inv_def, Equiv.symm_apply_apply]
+  rw [AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial θ.toAddEquiv M hθM b
+    basisPerm basisScale hbasis hij, Equiv.Perm.inv_def, Equiv.symm_apply_apply]
 
 /-- **A numbered symmetry respecting the weights carries the represented weight torus of `wt` to
 the weight torus of `wt'`.** The hypothesis says that the coordinate of `b i` in the image of `b j`

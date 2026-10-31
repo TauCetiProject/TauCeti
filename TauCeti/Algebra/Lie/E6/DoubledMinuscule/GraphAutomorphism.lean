@@ -454,9 +454,9 @@ private theorem matrixWeight_of_repr_ne_zero (i j : Fin 54)
       lattice.toAddSubgroup graphModuleEquiv_mem_lattice_iff (matrixBasis j)) i ≠ 0)
     (k : Fin 6) :
     matrixWeight i (graphPermE6 k) = matrixWeight j k := by
-  obtain rfl := eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial lattice.toAddSubgroup
-    matrixBasis graphModuleEquiv graphModuleEquiv_mem_lattice_iff graphMatrixPerm graphMatrixScale
-    graphModuleEquiv_matrixBasis hij
+  obtain rfl := AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
+    graphModuleEquiv.toAddEquiv lattice.toAddSubgroup graphModuleEquiv_mem_lattice_iff matrixBasis
+    graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis hij
   exact matrixWeight_graphMatrixPerm j k
 
 /-! ## The graph automorphism of the carrier -/

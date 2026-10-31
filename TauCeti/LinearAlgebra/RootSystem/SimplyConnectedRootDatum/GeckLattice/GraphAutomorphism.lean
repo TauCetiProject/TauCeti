@@ -131,11 +131,13 @@ private theorem geckWeightFin_of_repr_ne_zero (hsigma : sigma ∈ t.diagramSymme
         (t.geckCoordinateBasisFin ht j)) i ≠ 0)
     (k : Fin t.rank) :
     t.geckWeightFin ht i (sigma k) = t.geckWeightFin ht j k := by
-  obtain rfl := UniversalEnvelopingAlgebra.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
-    _ _ _ _ (t.geckDiagramFinPerm ht hsigma) (fun _ => 1)
+  obtain rfl := AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
+    (t.geckDiagramModuleEquiv ht hsigma).toAddEquiv (t.geckCoordinateLattice ht).toAddSubgroup
+    (t.geckDiagramModuleEquiv_mem_geckCoordinateLattice_iff ht hsigma)
+    (t.geckCoordinateBasisFin ht) (t.geckDiagramFinPerm ht hsigma) (fun _ => 1)
     (fun i => by
-      simpa only [one_smul] using
-        t.geckDiagramModuleEquiv_geckCoordinateBasisFin ht hsigma i) hij
+      rw [one_smul]
+      exact t.geckDiagramModuleEquiv_geckCoordinateBasisFin ht hsigma i) hij
   exact t.geckWeightFin_geckDiagramFinPerm ht hsigma j k
 
 /-- The Kostant toral-closure symmetry of the pinned Geck data. -/

@@ -46,7 +46,7 @@ Geck's lattice: it permutes the coordinate basis by the induced permutation of t
 coordinates and of the roots, and it permutes the Geck weights contragrediently. More generally it
 holds for every monomial basis action whose permutation is equivariant for the weights, which
 covers pinned lifts, such as the graph symmetry used for `²E₆`, that require signs
-(`eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial`).
+(`AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial`).
 
 Nothing here assumes that `σ` or `τ` comes from a diagram symmetry, that the weights are those of
 an admissible lattice, or that the carrier is reductive.

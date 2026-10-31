@@ -295,9 +295,10 @@ private theorem basisWeight_of_repr_ne_zero (i j : Fin (dimension n))
       (lattice n).toAddSubgroup (graphOperator_mem_lattice_iff n hn) (latticeBasis n j)) i ≠ 0)
     (k : Fin n) :
     basisWeight n i (graphPermD n (by omega) k) = basisWeight n j k := by
-  obtain rfl := eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial _ _ _ _
-    (graphBasisPerm n (by omega)) (graphBasisScale n (by omega))
-    (graphOperator_latticeBasis n (by omega)) hij
+  obtain rfl := AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
+    (graphOperator n (by omega)).toAddEquiv (lattice n).toAddSubgroup
+    (graphOperator_mem_lattice_iff n hn) (latticeBasis n) (graphBasisPerm n (by omega))
+    (graphBasisScale n (by omega)) (graphOperator_latticeBasis n (by omega)) hij
   exact basisWeight_graphBasisPerm n (by omega) j k
 
 /-- The numbered symmetry of the Kostant toral closure attached to the fork exchange. -/
