@@ -19,6 +19,9 @@ compares the valuations of two rational numbers with sum `1`.
   exactly when `p` divides neither its numerator nor its denominator.
 * `padicValRat.eq_zero_of_add_eq_one_of_pos` and `padicValRat.eq_of_add_eq_one_of_neg`: if
   `x + y = 1`, then `v_p(x) > 0` forces `v_p(y) = 0`, and `v_p(x) < 0` forces `v_p(y) = v_p(x)`.
+* `padicValRat.max_natAbs_eq_of_add_eq_one`: if `x + y = 1`, then `x` and `y` have the common
+  denominator `w = x.den`, and `max(|v_p(x)|, |v_p(y)|)` is the largest of the valuations of the
+  three terms of `x.num + y.num = w`.
 -/
 
 public section
@@ -58,5 +61,20 @@ theorem eq_of_add_eq_one_of_neg {p : ℕ} [Fact p.Prime] {x y : ℚ} (hxy : x + 
   have h := add_eq_of_lt (p := p) (q := -x) (r := 1) (hy'.symm ▸ hy) (neg_ne_zero.2 hx0)
     one_ne_zero (by rwa [padicValRat.one, padicValRat.neg])
   rwa [padicValRat.neg, hy'] at h
+
+/-- If `x + y = 1`, write `x = u / w` and `y = v / w` in lowest terms, with `u = x.num`,
+`v = y.num` and the common denominator `w = x.den`, so that `u + v = w`. Then at every prime `p`
+the larger of `|v_p(x)|` and `|v_p(y)|` is the largest of `v_p(u)`, `v_p(v)` and `v_p(w)`. -/
+theorem max_natAbs_eq_of_add_eq_one {p : ℕ} [hp : Fact p.Prime] {x y : ℚ} (hxy : x + y = 1) :
+    max (padicValRat p x).natAbs (padicValRat p y).natAbs =
+      max (padicValInt p x.num) (max (padicValInt p y.num) (padicValNat p x.den)) := by
+  have hden : y.den = x.den := by rw [eq_sub_of_add_eq' hxy]; simp
+  have h₁ := eq_zero_of_add_eq_one_of_pos (p := p) hxy
+  have h₂ := eq_zero_of_add_eq_one_of_pos (p := p) ((add_comm y x).trans hxy)
+  -- a prime cannot divide both the numerator and the denominator of `x`, or of `y`
+  have hx := Rat.num_or_den_zero_padicVal x hp.out
+  have hy := Rat.num_or_den_zero_padicVal y hp.out
+  simp only [padicValRat_def, hden] at h₁ h₂ hy ⊢
+  omega
 
 end padicValRat

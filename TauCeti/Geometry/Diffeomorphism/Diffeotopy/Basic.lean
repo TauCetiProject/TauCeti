@@ -195,6 +195,16 @@ theorem final_def : Φ.final = Φ.timeSlice 1 :=
 theorem final_apply (x : M) : Φ.final x = Φ (1, x) :=
   (rfl)
 
+/-- The final diffeomorphism preserves any set containing a set outside which the diffeotopy
+is the identity. No compactness or openness assumption is needed. -/
+theorem mapsTo_final_of_eqOn_compl {K U : Set M} (hKU : K ⊆ U)
+    (hΦK : ∀ t, Set.EqOn (fun z ↦ Φ (t, z)) id Kᶜ) : Set.MapsTo Φ.final U U := by
+  have hfix : Set.EqOn Φ.final id Uᶜ := by
+    intro z hz
+    simpa only [final_apply] using hΦK 1 (fun hzK => hz (hKU hzK))
+  simpa only [compl_compl] using
+    ((Set.surjOn_id Uᶜ).congr hfix.symm).mapsTo_compl Φ.final.injective
+
 /-- The constant diffeotopy at the identity. -/
 def refl (J : ModelWithCorners ℝ E H) (n : ℕ∞ω) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] : Diffeotopy J n M where
