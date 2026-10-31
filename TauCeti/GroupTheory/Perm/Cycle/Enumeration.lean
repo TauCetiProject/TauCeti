@@ -28,8 +28,9 @@ permutes a basis up to scalars.
 
 ## Main results
 
-* `finCongr_finRotate`: rotation commutes with `finCongr`, for moving between cycle lengths written
-  in different forms.
+* `Equiv.Perm.sameCycle_iterate_right`: iterating `σ` stays on the same cycle.
+* `Equiv.Perm.sameCycle_mk_out_left`: the chosen point of the cycle through `x` shares a cycle with
+  exactly the points that `x` does.
 * `Equiv.Perm.apply_sigmaCycleEquiv`: `σ` acts on the enumeration by `finRotate` on each cycle.
 * `Equiv.Perm.mk_sigmaCycleEquiv`: the point at position `⟨c, i⟩` lies on the cycle `c`.
 * `Equiv.Perm.prod_sigmaCycleEquiv`: a product over the positions of a cycle is the product over
@@ -40,20 +41,28 @@ public section
 
 open Function
 
-/-- Rotation commutes with the identification `Fin m ≃ Fin m'` along an equality `m = m'`. -/
-theorem finCongr_finRotate {m m' : ℕ} (hm : m = m') (i : Fin m) :
-    finCongr hm (finRotate m i) = finRotate m' (finCongr hm i) := by
-  subst hm
-  rfl
-
 namespace Equiv.Perm
 
-variable {α : Type*} [Finite α] (σ : Perm α)
+section SameCycle
 
-omit [Finite α] in
-private theorem sameCycle_iterate_right (x : α) (n : ℕ) : σ.SameCycle x (σ^[n] x) := by
-  rw [← coe_pow]
-  exact sameCycle_pow_right.2 (SameCycle.refl σ x)
+variable {α : Type*} {f : Perm α} {x y : α}
+
+/-- Iterating a permutation on the right stays on the same cycle; the iterate form of
+`Equiv.Perm.sameCycle_pow_right`. -/
+@[simp]
+theorem sameCycle_iterate_right {n : ℕ} : f.SameCycle x (f^[n] y) ↔ f.SameCycle x y := by
+  rw [← coe_pow, sameCycle_pow_right]
+
+/-- The chosen point of the cycle through `x` shares a cycle with exactly the points that `x`
+does. -/
+theorem sameCycle_mk_out_left :
+    f.SameCycle (Quotient.mk (SameCycle.setoid f) x).out y ↔ f.SameCycle x y :=
+  have hx := Quotient.mk_out (s := SameCycle.setoid f) x
+  ⟨hx.symm.trans, hx.trans⟩
+
+end SameCycle
+
+variable {α : Type*} [Finite α] (σ : Perm α)
 
 /-- **Enumeration of the cycles of a permutation.** For a permutation `σ` of a finite type, the
 equivalence sending the position `⟨c, i⟩`, where `c` is a cycle of `σ` and
@@ -67,8 +76,8 @@ noncomputable def sigmaCycleEquiv :
       have hcd : c = d := by
         rw [← Quotient.out_eq c, ← Quotient.out_eq d]
         refine Quotient.sound ?_
-        exact ((σ.sameCycle_iterate_right c.out i).trans
-          (h ▸ (σ.sameCycle_iterate_right d.out j).symm))
+        exact ((sameCycle_iterate_right.2 (SameCycle.refl σ c.out)).trans
+          (h ▸ (sameCycle_iterate_right.2 (SameCycle.refl σ d.out)).symm))
       subst hcd
       exact Sigma.ext rfl (heq_of_eq (Fin.ext (iterate_injOn_Iio_minimalPeriod i.2 j.2 h)))
     · intro y
@@ -91,12 +100,12 @@ theorem sigmaCycleEquiv_apply (c : Quotient (SameCycle.setoid σ))
 theorem mk_sigmaCycleEquiv (p : Σ c : Quotient (SameCycle.setoid σ), Fin (minimalPeriod σ c.out)) :
     Quotient.mk (SameCycle.setoid σ) (σ.sigmaCycleEquiv p) = p.1 := by
   obtain ⟨c, i⟩ := p
-  exact Quotient.mk_eq_iff_out.2 (σ.sameCycle_iterate_right c.out i).symm
+  exact Quotient.mk_eq_iff_out.2 (sameCycle_iterate_right.2 (SameCycle.refl σ c.out)).symm
 
 /-- The point at position `⟨c, i⟩` lies on the same cycle as the chosen point `c.out`. -/
 theorem sameCycle_out_sigmaCycleEquiv (c : Quotient (SameCycle.setoid σ))
     (i : Fin (minimalPeriod σ c.out)) : σ.SameCycle c.out (σ.sigmaCycleEquiv ⟨c, i⟩) :=
-  σ.sameCycle_iterate_right c.out i
+  sameCycle_iterate_right.2 (SameCycle.refl σ c.out)
 
 /-- **`σ` rotates each enumerated cycle.** Applying `σ` to the point at position `⟨c, i⟩` gives the
 point at position `⟨c, finRotate _ i⟩`. -/

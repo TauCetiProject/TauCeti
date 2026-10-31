@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 public import TauCeti.LinearAlgebra.WeightedCycle.Family.Signed
+public import TauCeti.Logic.Equiv.Fin.Rotate
 
 /-!
 # Fixed vectors of a linear map permuting a basis up to sign
@@ -93,7 +94,7 @@ private theorem apply_cycleEnum (c : Quotient (SameCycle.setoid π))
     (i : Fin (minimalPeriod π c.out - 1 + 1)) :
     π (cycleEnum π ⟨c, i⟩) = cycleEnum π ⟨c, finRotate _ i⟩ := by
   simp only [cycleEnum, Equiv.trans_apply, Equiv.sigmaCongrRight_apply, apply_sigmaCycleEquiv,
-    finCongr_finRotate]
+    TauCeti.finCongr_finRotate]
 
 private theorem cycleEnum_zero (c : Quotient (SameCycle.setoid π)) :
     cycleEnum π ⟨c, 0⟩ = c.out := by

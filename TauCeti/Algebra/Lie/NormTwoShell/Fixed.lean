@@ -102,35 +102,11 @@ theorem fixedBasis_repr (hB : B.PosDef) (v : (reindex σ hσ).toLinearMap.fixedS
   rw [fixedBasis]
   exact (basis B).fixedBasisOfPerm_repr _ _ _ v c
 
-omit [LinearOrder I] in
-/-- A point in the orbit of the vertex `i` is a vertex in the `σ`-orbit of `i`. -/
-private theorem sameCycle_inl_iff (i : I) {x : I ⊕ B.normTwoShell} :
-    (basisPerm σ hσ).SameCycle (.inl i) x ↔ x ∈ Sum.inl '' {j | σ.SameCycle i j} := by
-  rcases x with j | b
-  · simp
-  · simp
-
-omit [LinearOrder I] in
-/-- A point in the orbit of the root `a` is a root in the orbit of `a`. -/
-private theorem sameCycle_inr_iff (a : B.normTwoShell) {x : I ⊕ B.normTwoShell} :
-    (basisPerm σ hσ).SameCycle (.inr a) x ↔
-      x ∈ Sum.inr '' {b | Equiv.Perm.SameCycle (normTwoShellCongr hσ) a b} := by
-  rcases x with j | b
-  · simpa using fun h ↦ not_sameCycle_sumCongr_inl_inr σ (normTwoShellCongr hσ) j a h.symm
-  · simp
-
-omit [LinearOrder I] in
-private theorem sameCycle_out_mk_iff (k : I ⊕ B.normTwoShell) {x : I ⊕ B.normTwoShell} :
-    (basisPerm σ hσ).SameCycle (Quotient.mk (SameCycle.setoid (basisPerm σ hσ)) k).out x ↔
-      (basisPerm σ hσ).SameCycle k x :=
-  have hk := Quotient.mk_out (s := SameCycle.setoid (basisPerm σ hσ)) k
-  ⟨hk.symm.trans, hk.trans⟩
-
 private theorem basisSign_eq_one_of_sameCycle (i : I) {x : I ⊕ B.normTwoShell}
     (hx : (basisPerm σ hσ).SameCycle
       (Quotient.mk (SameCycle.setoid (basisPerm σ hσ)) (.inl i)).out x) :
     basisSign σ x = 1 := by
-  obtain ⟨j, -, rfl⟩ := (sameCycle_inl_iff σ hσ i).1 ((sameCycle_out_mk_iff σ hσ _).1 hx)
+  obtain ⟨j, -, rfl⟩ := sameCycle_sumCongr_inl_iff_mem_image.1 (sameCycle_mk_out_left.1 hx)
   rfl
 
 /-- Every orbit of vertices has monodromy `1`. -/
@@ -146,7 +122,7 @@ theorem finprod_basisSign_mk_inr (a : B.normTwoShell) :
     ∏ᶠ (x) (_ : (basisPerm σ hσ).SameCycle
       (Quotient.mk (SameCycle.setoid (basisPerm σ hσ)) (.inr a)).out x), basisSign σ x =
       ∏ᶠ (b) (_ : Equiv.Perm.SameCycle (normTwoShellCongr hσ) a b), inversionSign B σ b := by
-  simp_rw [sameCycle_out_mk_iff, sameCycle_inr_iff]
+  simp_rw [sameCycle_mk_out_left, sameCycle_sumCongr_inr_iff_mem_image]
   exact finprod_mem_image Sum.inr_injective.injOn
 
 /-- **The orbit of a vertex.** The basis vector of the orbit `O` of the vertex `i` is the Cartan
@@ -157,7 +133,7 @@ theorem fixedBasis_mk_inl (hB : B.PosDef) (i : I) :
   have := hB.finite_normTwoShell.to_subtype
   rw [fixedBasis, Basis.fixedBasisOfPerm_apply_of_forall_eq_one _ _ _ _ _
     fun _ hx ↦ basisSign_eq_one_of_sameCycle σ hσ i hx]
-  simp_rw [sameCycle_out_mk_iff, sameCycle_inl_iff]
+  simp_rw [sameCycle_mk_out_left, sameCycle_sumCongr_inl_iff_mem_image]
   rw [finsum_mem_image Sum.inl_injective.injOn]
   simp only [basis_inl, Set.mem_ofPred_eq]
   rw [finsum_cond_eq_sum_of_cond_iff _ (t := Finset.univ.filter (σ.SameCycle i)) (by simp),
@@ -177,7 +153,7 @@ theorem repr_root_eq_zero_of_mem_fixedSubmodule_of_finprod_ne_one (hB : B.PosDef
   have := hB.finite_normTwoShell.to_subtype
   refine (basis B).repr_eq_zero_of_mem_fixedSubmodule_of_finprod_ne_one _ _
     (reindex_basis σ hσ) hv ?_
-  simp_rw [sameCycle_inr_iff]
+  simp_rw [sameCycle_sumCongr_inr_iff_mem_image]
   rwa [finprod_mem_image Sum.inr_injective.injOn]
 
 end Matrix.ShellLieAlgebra
