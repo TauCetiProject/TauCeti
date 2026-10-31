@@ -10,10 +10,11 @@ import TauCeti.RingTheory.Etale.Torsor
 /-!
 # Tests for finite étale torsors
 
-A finite Galois extension is a torsor under its Galois group, and a field with a faithful action
-of a finite group is a torsor over its fixed field. Over the zero ring the zero algebra is a
-torsor under every finite group, which then does not act faithfully. Over a field the zero
-algebra has a bijective Galois map but is not a torsor, because it is not faithfully flat.
+A finite Galois extension is a torsor under its Galois group, and so is its base change along
+any commutative algebra. A field with a faithful action of a finite group is a torsor over its
+fixed field. Over the zero ring the zero algebra is a torsor under every finite group, which then
+does not act faithfully. Over a field the zero algebra has a bijective Galois map but is not a
+torsor, because it is not faithfully flat.
 -/
 
 namespace TauCeti.Algebra
@@ -35,6 +36,33 @@ its fixed field. -/
 example (G L : Type*) [Group G] [Finite G] [Field L] [MulSemiringAction G L] [FaithfulSMul G L] :
     IsFiniteEtaleTorsor G (FixedPoints.subfield G L) L :=
   IsFiniteEtaleTorsor.iff_isGaloisGroup.mpr inferInstance
+
+section BaseChange
+
+open scoped _root_.TensorProduct
+
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction
+
+variable (K L R : Type*) [Field K] [Field L] [Algebra K L] [IsGalois K L] [FiniteDimensional K L]
+  [CommRing R] [Algebra K R]
+
+/-- The base change of a finite Galois extension `L / K` along a commutative `K`-algebra `R` is a
+torsor under `Gal(L / K)` over `R`, of rank `[L : K]` at every prime. -/
+example (p : PrimeSpectrum R) :
+    Module.rankAtStalk (R := R) (R ⊗[K] L) p = Module.finrank K L := by
+  rw [IsFiniteEtaleTorsor.rankAtStalk_eq_card (G := Gal(L/K)),
+    IsGaloisGroup.card_eq_finrank Gal(L/K) K L]
+
+/-- Taking invariants commutes with base change of a finite Galois extension: the
+`Gal(L / K)`-invariants of `R ⊗[K] L` are `R`. -/
+example : Algebra.IsInvariant R (R ⊗[K] L) Gal(L/K) :=
+  inferInstance
+
+/-- Over a nonzero `R`, `Gal(L / K)` acts faithfully on `R ⊗[K] L`, as a Galois group over `R`. -/
+example [Nontrivial R] : IsGaloisGroup Gal(L/K) R (R ⊗[K] L) :=
+  inferInstance
+
+end BaseChange
 
 /-- *test_zero_ring*: over the zero ring the zero algebra is a torsor under every finite group,
 and a nontrivial group does not act faithfully on it. -/
