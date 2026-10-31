@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.AddCircle
+public import TauCeti.Geometry.Symplectic.Manifold.Suspension.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Horizontal
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
@@ -23,6 +25,27 @@ The pullback of `Ω = ds ∧ dt + σ_v` is `ds ∧ dt`, while the pullback of th
 These identities hold for every invariant two-form `σ`; neither its nondegeneracy nor
 compactness of the fiber manifold is needed. The area integral over the fundamental
 parameter rectangle `[0, 1] × [0, d]` is `d`, with the order `ds ∧ dt` fixing the sign.
+
+Give the parameter torus `(ℝ / ℤ) × (ℝ / dℤ)` its standard almost complex structure
+`TauCeti.SmoothAlmostComplexStructure.addCircleProd 1 d`, which sends `∂_s` to `∂_t`. The
+differential of the periodic torus sends `∂_s` to `∂_s` and `∂_t` to the suspension vector field
+`T`, so the periodic torus is pseudoholomorphic for an almost complex structure `J` on
+`(ℝ / ℤ) × Y_φ` exactly when `J ∂_s = T` along it. In particular it is pseudoholomorphic for every
+block structure descended from a periodic family of vertical structures satisfying the seam
+identity (`TauCeti.SmoothMappingTorus.suspensionAlmostComplexStructure`); no `φ`-invariant
+almost complex structure on the fiber is needed.
+
+## Main results
+
+* `TauCeti.SmoothMappingTorus.isSmoothEmbedding_periodicTorus_iff`: the periodic torus is a smooth
+  embedding exactly when `d` is the least period.
+* `TauCeti.SmoothMappingTorus.mpullback_periodicTorus_suspensionForm`,
+  `TauCeti.SmoothMappingTorus.mpullback_periodicTorus_fiberForm`: it pulls `Ω` back to `ds ∧ dt`
+  and the fiber form back to zero.
+* `TauCeti.SmoothMappingTorus.isPseudoholomorphic_periodicTorus_iff`: it is pseudoholomorphic
+  exactly when `J ∂_s = T` at every point of its image.
+* `TauCeti.SmoothMappingTorus.isPseudoholomorphic_periodicTorus_suspensionAlmostComplexStructure`:
+  it is pseudoholomorphic for the descended block structures.
 
 ## References
 
@@ -204,6 +227,93 @@ theorem integral_periodicTorus_suspensionForm :
         (suspensionForm φ σ hσ)).eval₂ ((s : UnitAddCircle), (t : AddCircle (d : ℝ)))
           ((1 : ℝ), (0 : ℝ)) ((0 : ℝ), (1 : ℝ))) = d := by
   simp [eval₂_mpullback_periodicTorus_suspensionForm]
+
+/-! ### Pseudoholomorphicity -/
+
+variable {J : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
+  (UnitAddCircle × SmoothMappingTorus φ)}
+
+/-- In the real coordinates `(a, b)` of the parameter torus, the differential of the periodic
+torus is `a ∂_s + b T`. -/
+private theorem mfderiv_periodicTorus_symm (p : UnitAddCircle × AddCircle (d : ℝ)) (a b : ℝ) :
+    mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (periodicTorus φ hx) p
+        ((Manifold.tangentSpaceProdEquiv p).symm (a, b)) =
+      a • (Manifold.tangentSpaceProdEquiv (periodicTorus φ hx p)).symm ((1 : ℝ), 0) +
+        b • (Manifold.tangentSpaceProdEquiv (periodicTorus φ hx p)).symm
+          ((0 : ℝ), timeVectorField φ (periodicTorus φ hx p).2) := by
+  rw [← map_smul, ← map_smul, ← map_add, Manifold.tangentSpaceProdEquiv_symm_apply]
+  refine (mfderiv_periodicTorus hx p (a, b)).trans (congrArg _ ?_)
+  -- The circle tangent spaces are the real model lines.
+  ext
+  · exact (by simp : a = a * 1 + b * 0)
+  · simp only [Prod.snd_add, Prod.smul_snd, smul_zero, zero_add]
+    -- `(periodicTorus φ hx p).2` is `closedOrbit φ hx p.2` by definition (`periodicTorus_apply`);
+    -- `simp` cannot rewrite it inside the dependent argument of `timeVectorField`.
+    rfl
+
+/-- At a parameter `p`, the periodic torus is pseudoholomorphic, for the standard almost complex
+structure of the parameter torus `(ℝ / ℤ) × (ℝ / dℤ)`, exactly when `J` sends `∂_s` to the
+suspension vector field `T` at the image point. -/
+theorem isPseudoholomorphicAt_periodicTorus_iff (p : UnitAddCircle × AddCircle (d : ℝ)) :
+    IsPseudoholomorphicAt (SmoothAlmostComplexStructure.addCircleProd 1 d) J
+        (periodicTorus φ hx) p ↔
+      J (periodicTorus φ hx p)
+          ((Manifold.tangentSpaceProdEquiv (periodicTorus φ hx p)).symm ((1 : ℝ), 0)) =
+        (Manifold.tangentSpaceProdEquiv (periodicTorus φ hx p)).symm
+          ((0 : ℝ), timeVectorField φ (periodicTorus φ hx p).2) := by
+  rw [isPseudoholomorphicAt_iff_mfderiv]
+  refine ⟨fun h ↦ ?_, fun h ↦ ⟨(contMDiff_periodicTorus hx).mdifferentiableAt (by simp),
+    fun w ↦ ?_⟩⟩
+  · -- The Cauchy-Riemann equation on `∂_s`: its image is `∂_s`, and `j ∂_s = ∂_t` has image `T`.
+    have h₁ := h.2 ((Manifold.tangentSpaceProdEquiv p).symm ((1 : ℝ), (0 : ℝ)))
+    simp only [SmoothAlmostComplexStructure.addCircleProd_apply] at h₁
+    rw [mfderiv_periodicTorus_symm, mfderiv_periodicTorus_symm] at h₁
+    simp only [neg_zero, zero_smul, zero_add, one_smul, add_zero] at h₁
+    exact h₁.symm
+  · -- Write `w = a ∂_s + b ∂_t`, so that `du w = a ∂_s + b T` and `du (j w) = -b ∂_s + a T`, while
+    -- `J (a ∂_s + b T) = a T - b ∂_s` because `J T = -∂_s`.
+    obtain ⟨a, b, rfl⟩ : ∃ a b : ℝ, w = (Manifold.tangentSpaceProdEquiv p).symm (a, b) :=
+      ⟨_, _, ((Manifold.tangentSpaceProdEquiv p).symm_apply_apply w).symm⟩
+    have hT := apply_symm_zero_timeVectorField h
+    simp only [SmoothAlmostComplexStructure.addCircleProd_apply]
+    rw [mfderiv_periodicTorus_symm, mfderiv_periodicTorus_symm, map_add, map_smul, map_smul]
+    -- Beta-reduce the coercion of `J` in `h` and `hT` to the endomorphism form of the goal.
+    simp only at h hT
+    rw [h, hT, smul_neg, neg_smul, add_comm]
+
+/-- The periodic torus is pseudoholomorphic, for the standard almost complex structure of the
+parameter torus `(ℝ / ℤ) × (ℝ / dℤ)`, exactly when `J` is of block form along it: `J` sends `∂_s`
+to the suspension vector field `T` at every point of its image. -/
+theorem isPseudoholomorphic_periodicTorus_iff :
+    IsPseudoholomorphic (SmoothAlmostComplexStructure.addCircleProd 1 d) J
+        (periodicTorus φ hx) ↔
+      ∀ y ∈ range (periodicTorus φ hx),
+        J y ((Manifold.tangentSpaceProdEquiv y).symm ((1 : ℝ), 0)) =
+          (Manifold.tangentSpaceProdEquiv y).symm ((0 : ℝ), timeVectorField φ y.2) := by
+  simp only [isPseudoholomorphic_iff, isPseudoholomorphicAt_periodicTorus_iff,
+    forall_mem_range]
+
+section Block
+
+variable [FiniteDimensional ℝ E]
+  {K : ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2)}
+  {hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+    (fun p ↦ Bundle.TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+      p.2 (K p).toLinearMap.toContinuousLinearMap)}
+  {hs : ∀ p : (ℝ × ℝ) × M, K (p.1 + (1, 0), p.2) = K p}
+  {ht : ∀ (p : (ℝ × ℝ) × M) (v : TangentSpace I p.2),
+    mfderiv I I φ.symm p.2 (K p v) = K (p.1 + (0, 1), φ.symm p.2) (mfderiv I I φ.symm p.2 v)}
+
+/-- The periodic torus is pseudoholomorphic for the block almost complex structure descended from
+any periodic family of vertical structures satisfying the seam identity. -/
+theorem isPseudoholomorphic_periodicTorus_suspensionAlmostComplexStructure :
+    IsPseudoholomorphic (SmoothAlmostComplexStructure.addCircleProd 1 d)
+      (suspensionAlmostComplexStructure φ hK hs ht) (periodicTorus φ hx) :=
+  (isPseudoholomorphic_periodicTorus_iff hx).2 fun y _ ↦
+    suspensionAlmostComplexStructure_apply_symm_one_zero φ hK hs ht y
+
+end Block
 
 end Smooth
 
