@@ -253,26 +253,6 @@ private lemma det_of_mem_doubleCoset_natDiagGL {k : ℕ} (hk : 0 < k) {y : GL (F
     natDiagGL_det 2 _ fun i ↦ by fin_cases i <;> simp [hk]]
   simp
 
-/-- If `σ ∈ SL₂(ℤ)` carries an integral matrix that is `!![1, *; 0, *]` modulo `N` to another
-such matrix, then `σ ∈ Γ₁(N)`: the first column of `σ B = B'` gives `σ₀₀ ≡ 1` and `σ₁₀ ≡ 0`,
-and the determinant then gives `σ₁₁ ≡ 1`. -/
-private lemma mem_Gamma1_of_mul_eq {σ : SL(2, ℤ)} {B B' : Matrix (Fin 2) (Fin 2) ℤ}
-    (hσB : (σ : Matrix (Fin 2) (Fin 2) ℤ) * B = B')
-    (hB00 : ((B 0 0 : ℤ) : ZMod N) = 1) (hB10 : ((B 1 0 : ℤ) : ZMod N) = 0)
-    (hB'00 : ((B' 0 0 : ℤ) : ZMod N) = 1) (hB'10 : ((B' 1 0 : ℤ) : ZMod N) = 0) :
-    σ ∈ Gamma1 N := by
-  have e00 := congrArg (fun M : Matrix (Fin 2) (Fin 2) ℤ ↦ ((M 0 0 : ℤ) : ZMod N)) hσB
-  have e10 := congrArg (fun M : Matrix (Fin 2) (Fin 2) ℤ ↦ ((M 1 0 : ℤ) : ZMod N)) hσB
-  simp only [Matrix.mul_apply, Fin.sum_univ_two] at e00 e10
-  push_cast at e00 e10
-  rw [hB00, hB10, hB'00] at e00
-  rw [hB00, hB10, hB'10] at e10
-  have hσdet := congrArg (Int.cast : ℤ → ZMod N) σ.fin_two_mul_sub_mul_eq_one
-  push_cast at hσdet
-  have hσ00 : ((σ 0 0 : ℤ) : ZMod N) = 1 := by simpa using e00
-  have hσ10 : ((σ 1 0 : ℤ) : ZMod N) = 0 := by simpa using e10
-  exact (Gamma1_mem N σ).mpr ⟨hσ00, by simpa [hσ00, hσ10] using hσdet, hσ10⟩
-
 /-- **Products from coprime double cosets have no extra right-coset collisions.** For coprime
 `m`, `n`, elements `a, a' ∈ Dₘ` and `b, b' ∈ Dₙ` at level `Γ₁(N)`, if `Γ₁(N) a b = Γ₁(N) a' b'`
 then `Γ₁(N) b = Γ₁(N) b'`.
