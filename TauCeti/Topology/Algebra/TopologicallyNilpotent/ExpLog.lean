@@ -211,12 +211,13 @@ theorem hasSum_log_one_sub (ha : IsTopologicallyNilpotent a) :
   rw [← hasSum_nat_add_iff' 1] at h
   convert h using 1
   · funext n
-    have key : ((-1 : ℚ) ^ (n + 1 + 1) / ↑(n + 1)) * (-1) ^ (n + 1) = -((↑(n + 1) : ℚ)⁻¹) := by
-      rw [pow_succ (-1 : ℚ) (n + 1), mul_comm, ← mul_div_assoc, ← mul_assoc, ← pow_add,
-        ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul, neg_div, one_div]
-    rw [sub_sub_cancel_left, neg_pow a,
-      show (-1 : S) ^ (n + 1) = algebraMap ℚ S ((-1) ^ (n + 1)) by simp, ← Algebra.smul_def,
-      smul_smul, key, neg_smul]
+    have hneg : (-a) ^ (n + 1) = ((-1 : ℚ) ^ (n + 1)) • a ^ (n + 1) := by
+      simp [neg_pow a, Algebra.smul_def]
+    have hsign : (-1 : ℚ) ^ (n + 1 + 1) * (-1) ^ (n + 1) = -1 := by
+      rw [← pow_add]
+      exact Odd.neg_one_pow ⟨n + 1, by ring⟩
+    rw [sub_sub_cancel_left, hneg, smul_smul, div_mul_eq_mul_div, hsign, neg_div, one_div,
+      neg_smul]
   · simp
 
 end IsTopologicallyNilpotent
@@ -239,17 +240,18 @@ theorem HasSum.exp_of_mem_ideal [Algebra ℚ S] {ι : Type*} {I : Ideal S}
         (hI _ (hf i)).exp_add (hI _ (hs s))]
   -- Near `a`, `exp (∑ i ∈ s, f i) - exp a = exp a * (exp (∑ i ∈ s, f i - a) - 1)` lies in any
   -- open ideal containing `∑ i ∈ s, f i - a`.
-  unfold HasProd
-  simp_rw [Function.comp_apply, hprod]
-  rw [← tendsto_sub_nhds_zero_iff]
-  have h' := tendsto_sub_nhds_zero_iff.2 h
-  refine IsLinearTopology.hasBasis_ideal.tendsto_right_iff.2 fun J hJ => ?_
-  filter_upwards [h'.eventually (IsLinearTopology.hasBasis_ideal.mem_of_mem hJ)] with s hsJ
-  have hsI : ∑ i ∈ s, f i - a ∈ I := sub_mem (hs s) ha
-  have heq : ∑ i ∈ s, f i = a + (∑ i ∈ s, f i - a) := by abel
-  rw [SetLike.mem_coe, heq, (hI _ ha).exp_add (hI _ hsI),
-    show ∀ x y : S, x * y - x = x * (y - 1) from fun x y => by ring]
-  exact J.mul_mem_left _ ((hI _ hsI).exp_sub_one_mem hsJ)
+  have hexp : Tendsto (fun s : Finset ι => NormedSpace.exp (∑ i ∈ s, f i)) atTop
+      (𝓝 (NormedSpace.exp a)) := by
+    rw [← tendsto_sub_nhds_zero_iff]
+    have h' := tendsto_sub_nhds_zero_iff.2 h
+    refine IsLinearTopology.hasBasis_ideal.tendsto_right_iff.2 fun J hJ => ?_
+    filter_upwards [h'.eventually (IsLinearTopology.hasBasis_ideal.mem_of_mem hJ)] with s hsJ
+    have hsI : ∑ i ∈ s, f i - a ∈ I := sub_mem (hs s) ha
+    have heq : ∑ i ∈ s, f i = a + (∑ i ∈ s, f i - a) := by abel
+    rw [SetLike.mem_coe, heq, (hI _ ha).exp_add (hI _ hsI), ← _root_.mul_sub_one]
+    exact J.mul_mem_left _ ((hI _ hsI).exp_sub_one_mem hsJ)
+  -- As for Mathlib's `HasSum.exp`, the partial products are the exponentials of partial sums.
+  exact Tendsto.congr (fun s => (hprod s).symm) hexp
 
 namespace Ideal
 

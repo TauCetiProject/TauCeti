@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
 public import Mathlib.Topology.Algebra.LinearTopology
+public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 
 /-!
 # Novikov series form a topological ring, and geometric series
@@ -57,6 +58,8 @@ ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients 
   nonnegative subring, with inverse the geometric series `∑ aⁿ`.
 * `TauCeti.NovikovSeries.unitsOneSubSingle`: for `N g > 0`, the unit `1 - r e^g` of the
   nonnegative subring, with inverse the geometric series `∑ₖ rᵏ e^(k • g)`.
+* `TauCeti.NovikovSeries.periodIdeal`: the series of the nonnegative subring lying in `U_C`, an
+  ideal of it.
 
 ## Main results
 
@@ -80,8 +83,8 @@ ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients 
 * `TauCeti.NovikovSeries.one_sub_single_mul_tsum` and
   `TauCeti.NovikovSeries.tsum_mul_one_sub_single`: the two inverse identities of the monomial
   geometric series `∑ₖ rᵏ e^(k • g)` for `N g > 0`.
-* `TauCeti.NovikovSeries.periodIdeal`: the series of the nonnegative subring lying in `U_C`, an
-  ideal of it.
+* `TauCeti.NovikovSeries.coe_zpow_unitsOneSubSingle_sub_one_mem_periodFiltration`: every integer
+  power of `1 - r e^g` is congruent to `1` above the period `N g`.
 * The instances `CompleteSpace`, `IsLinearTopology` and `Algebra` on the nonnegative subring.
 
 ## References
@@ -384,6 +387,15 @@ def periodIdeal (C : ℝ) : Ideal (nonnegSubring R N) where
 theorem mem_periodIdeal {a : nonnegSubring R N} :
     a ∈ periodIdeal R N C ↔ (a : NovikovSeries R H N) ∈ periodFiltration R N C :=
   Iff.rfl
+
+/-- Every integer power of `1 - r e^g` is congruent to `1` above the period `N g`. -/
+theorem coe_zpow_unitsOneSubSingle_sub_one_mem_periodFiltration {g : H} (hg : 0 < N g) (r : R)
+    (m : ℤ) :
+    ((↑(unitsOneSubSingle hg r ^ m) : nonnegSubring R N) : NovikovSeries R H N) - 1 ∈
+      periodFiltration R N (N g) := by
+  have h : unitsOneSubSingle hg r ∈ (periodIdeal R N (N g)).principalUnitGroup := by
+    simpa using neg_mem (single_mem_periodFiltration (R := R) (N := N) g r)
+  simpa using Ideal.mem_principalUnitGroup.1 (zpow_mem h m)
 
 /-- The nonnegative subring is linearly topologized: the ideals `periodIdeal R N C` form a basis
 of neighbourhoods of `0`. This is what makes power series evaluable at its topologically nilpotent
