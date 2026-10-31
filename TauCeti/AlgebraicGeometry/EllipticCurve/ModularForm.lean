@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
@@ -33,10 +34,10 @@ weight-`k` modular forms are exactly the weighted homogeneous elements of weight
 After inverting `6`, every Weierstrass equation is carried by a change of variables
 `(1/6, r, s, t)` to the short equation `y² = x³ - 27c₄x - 54c₆`. Hence an integral modular form
 `f` of weight `k` satisfies `6ᵏ f = f(0, 0, 0, -27c₄, -54c₆)`, a polynomial in `c₄` and `c₆`.
-Conversely, since the universal change of variables is defined over the torsion-free ring
-`ℤ[a₁, ⋯, a₆, u, u⁻¹, r, s, t]`, the transformation law of `n • f` for a nonzero integer `n`
-implies that of `f`. Together these describe the integral modular forms of weight `k` as the
-weighted homogeneous `f` of weight `k` with `6ⁿ f ∈ ℤ[c₄, c₆]` for some `n`
+Conversely, since the universal curve and change of variables are defined together over the
+torsion-free ring `ℤ[u, u⁻¹, r, s, t][a₁, ⋯, a₆]`, the transformation law of `n • f` for a
+nonzero integer `n` implies that of `f`. Together these describe the integral modular forms of
+weight `k` as the weighted homogeneous `f` of weight `k` with `6ⁿ f ∈ ℤ[c₄, c₆]` for some `n`
 (`WeierstrassCurve.isIntegralModularForm_iff_exists_six_pow_mul_mem_adjoin`). Deligne's theorem,
 that every integral modular form lies in `ℤ[c₄, c₆, Δ]`, is the remaining inclusion of the
 invariant ring; it is a statement about the primes `2` and `3`.
@@ -59,7 +60,7 @@ invariant ring; it is a statement about the primes `2` and `3`.
 * `WeierstrassCurve.isIntegralModularForm_iff_of_mem_adjoin`: an element of `ℤ[c₄, c₆, Δ]` is an
   integral modular form of weight `k` exactly when it is weighted homogeneous of weight `k`.
 * `WeierstrassCurve.isIntegralModularForm_iff_universal`: the transformation law need only be
-  checked for the universal curve and change of variables over `ℤ[a₁, ⋯, a₆, u, u⁻¹, r, s, t]`.
+  checked for the universal curve and change of variables over `ℤ[u, u⁻¹, r, s, t][a₁, ⋯, a₆]`.
 * `WeierstrassCurve.isIntegralModularForm_smul_iff`: for a nonzero integer `n`, `n • f` is an
   integral modular form of weight `k` exactly when `f` is.
 * `WeierstrassCurve.IsIntegralModularForm.six_pow_mul_eq_specialize_shortCurve`: an integral
@@ -136,21 +137,24 @@ lemma pow (hf : IsIntegralModularForm k f) (n : ℕ) : IsIntegralModularForm (k 
 
 end IsIntegralModularForm
 
+open TauCeti.WeierstrassChange.Universal (CoordinateRing change) in
 /-- **The universal transformation law.** It suffices to check the transformation law of an
 integral modular form once, for the universal Weierstrass curve and the universal change of
-variables `Universal.variableChange` over `Γ = ℤ[a₁, ⋯, a₆, u, u⁻¹, r, s, t]`
-(`Universal.VariableChangeRing`): every pair `(W, C)` is a specialization of that one. -/
+variables over `Γ = ℤ[u, u⁻¹, r, s, t][a₁, ⋯, a₆]`, the polynomial ring in the Weierstrass
+coefficients over the coordinate ring `TauCeti.WeierstrassChange.Universal.CoordinateRing` of
+the changes of variables: every pair `(W, C)` is a specialization of that one. -/
 theorem isIntegralModularForm_iff_universal : IsIntegralModularForm k f ↔
-    (variableChange (MvPolynomial Coeff ℤ) •
-        Universal.curve.baseChange (VariableChangeRing (MvPolynomial Coeff ℤ))).specialize f =
-      ↑(variableChange (MvPolynomial Coeff ℤ)).u⁻¹ ^ k *
-        (Universal.curve.baseChange (VariableChangeRing (MvPolynomial Coeff ℤ))).specialize f := by
+    (change.map (algebraMap CoordinateRing (MvPolynomial Coeff CoordinateRing)) •
+        Universal.curve.map (MvPolynomial.map (Int.castRingHom CoordinateRing))).specialize f =
+      ↑(change.map (algebraMap CoordinateRing (MvPolynomial Coeff CoordinateRing))).u⁻¹ ^ k *
+        (Universal.curve.map (MvPolynomial.map (Int.castRingHom CoordinateRing))).specialize f := by
   refine ⟨fun hf ↦ hf.specialize_smul _ _, fun h R _ W C ↦ ?_⟩
   -- Specialize `h` along the classifying homomorphism `ψ` of `(W, C)`.
-  set ψ := C.specialize W.specialize with hψ
-  have hW : (Universal.curve.baseChange (VariableChangeRing _)).map ψ = W := by
-    simp only [hψ, baseChange, map_map, VariableChange.specialize_comp_algebraMap, map_specialize]
-  have hC : (variableChange _).map ψ = C := C.map_specialize _
+  set ψ := eval₂Hom C.specialize (Coeff.rec W.a₁ W.a₂ W.a₃ W.a₄ W.a₆) with hψ
+  have hW : (Universal.curve.map (MvPolynomial.map (Int.castRingHom _))).map ψ = W := by
+    ext <;> simp [hψ]
+  have hC : (change.map (algebraMap _ _)).map ψ = C := by
+    ext <;> simp [hψ]
   clear_value ψ
   rw [← hW, ← hC, map_variableChange, specialize_map, specialize_map, RingHom.comp_apply, h,
     map_mul, map_pow]
@@ -160,12 +164,11 @@ theorem isIntegralModularForm_iff_universal : IsIntegralModularForm k f ↔
 theorem isIntegralModularForm_smul_iff {n : ℤ} (hn : n ≠ 0) :
     IsIntegralModularForm k (n • f) ↔ IsIntegralModularForm k f := by
   refine ⟨fun h ↦ isIntegralModularForm_iff_universal.2 ?_, fun hf ↦ hf.smul n⟩
-  -- The ring `Γ = ℤ[a₁, ⋯, a₆, u, u⁻¹, r, s, t]` has no additive torsion, so the universal
+  -- The ring `Γ = ℤ[u, u⁻¹, r, s, t][a₁, ⋯, a₆]` has no additive torsion, so the universal
   -- transformation law of `n • f` can be divided by `n`.
-  have : CharZero (VariableChangeRing (MvPolynomial Coeff ℤ)) :=
+  have : CharZero TauCeti.WeierstrassChange.Universal.CoordinateRing :=
     charZero_of_injective_algebraMap (IsLocalization.injective _
-      (powers_le_nonZeroDivisors_of_noZeroDivisors
-        (X_ne_zero (R := MvPolynomial Coeff ℤ) (σ := Fin 4) 0)))
+      (powers_le_nonZeroDivisors_of_noZeroDivisors (X_ne_zero (R := ℤ) (σ := Fin 4) 0)))
   have := isIntegralModularForm_iff_universal.1 h
   rw [zsmul_eq_mul, map_mul, map_mul, map_intCast, map_intCast, mul_left_comm] at this
   exact mul_left_cancel₀ (Int.cast_ne_zero.mpr hn) this
