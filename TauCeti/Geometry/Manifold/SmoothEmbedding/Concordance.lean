@@ -34,6 +34,8 @@ source is the circle.
 
 * `TauCeti.SmoothEmbedding.Concordance f g`: a `C^n` concordance from `f` to `g`, in collared
   form.
+* `TauCeti.SmoothEmbedding.conjTime`: a smooth embedding of `M × ℝ` into `N × ℝ` conjugated by an
+  affine change of time, as a smooth embedding.
 * `TauCeti.SmoothEmbedding.Concordance.refl`, `symm`, `trans`: the constant concordance, the
   reversed concordance, and the stacked concordance.
 * `TauCeti.SmoothEmbedding.Concordance.ofDiffeotopy`: the trace of a diffeotopy, a concordance
@@ -115,6 +117,48 @@ theorem concordant_iff_nonempty {f g : SmoothEmbedding I J n M N} :
     Concordant f g ↔ Nonempty (Concordance f g) :=
   Iff.rfl
 
+/-! ### Affine changes of time -/
+
+section AffineTime
+
+/-- The affine diffeomorphism `t ↦ a * t + b` of the real line. -/
+private def affineTime (n : ℕ∞ω) (a b : ℝ) (ha : a ≠ 0) : ℝ ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ ℝ where
+  toFun t := a * t + b
+  invFun s := a⁻¹ * (s - b)
+  left_inv t := by field_simp; ring
+  right_inv s := by field_simp; ring
+  contMDiff_toFun := ((contDiff_const.mul contDiff_id).add contDiff_const).contMDiff
+  contMDiff_invFun := (contDiff_const.mul (contDiff_id.sub contDiff_const)).contMDiff
+
+@[simp]
+private theorem affineTime_apply (n : ℕ∞ω) (a b : ℝ) (ha : a ≠ 0) (t : ℝ) :
+    affineTime n a b ha t = a * t + b :=
+  (rfl)
+
+@[simp]
+private theorem affineTime_symm_apply (n : ℕ∞ω) (a b : ℝ) (ha : a ≠ 0) (s : ℝ) :
+    (affineTime n a b ha).symm s = a⁻¹ * (s - b) :=
+  (rfl)
+
+variable [IsManifold I n M] [IsManifold J n N]
+
+/-- The conjugate `TauCeti.conjTime T a b` of a smooth embedding `T` of `M × ℝ` into `N × ℝ` by the
+affine change of time `t ↦ a * t + b`, `a ≠ 0`, as a smooth embedding. -/
+def conjTime (T : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ))
+    (a b : ℝ) (ha : a ≠ 0) : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ) :=
+  (T.compDiffeomorph ((Diffeomorph.refl I M n).prodCongr (affineTime n a b ha))).transDiffeomorph
+    ((Diffeomorph.refl J N n).prodCongr (affineTime n a b ha).symm)
+
+/-- The underlying map of the conjugate smooth embedding is the conjugate map. -/
+@[simp]
+theorem coe_conjTime (T : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ))
+    (a b : ℝ) (ha : a ≠ 0) : ⇑(T.conjTime a b ha) = TauCeti.conjTime T a b := by
+  funext ⟨x, t⟩
+  rw [TauCeti.conjTime_apply, ← inv_mul_eq_div]
+  ext <;> simp [SmoothEmbedding.conjTime]
+
+end AffineTime
+
 namespace Concordance
 
 variable {f g h : SmoothEmbedding I J n M N}
@@ -194,42 +238,7 @@ theorem compDiffeomorph_apply (F : Concordance f g) (e : M' ≃ₘ^n⟮I, I⟯ M
 
 end Diffeomorph
 
-/-! ### Affine changes of time -/
-
-/-- The affine diffeomorphism `t ↦ a * t + b` of the real line. -/
-private def affineTime (n : ℕ∞ω) (a b : ℝ) (ha : a ≠ 0) : ℝ ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ ℝ where
-  toFun t := a * t + b
-  invFun s := a⁻¹ * (s - b)
-  left_inv t := by field_simp; ring
-  right_inv s := by field_simp; ring
-  contMDiff_toFun := ((contDiff_const.mul contDiff_id).add contDiff_const).contMDiff
-  contMDiff_invFun := (contDiff_const.mul (contDiff_id.sub contDiff_const)).contMDiff
-
-@[simp]
-private theorem affineTime_apply (n : ℕ∞ω) (a b : ℝ) (ha : a ≠ 0) (t : ℝ) :
-    affineTime n a b ha t = a * t + b :=
-  (rfl)
-
-@[simp]
-private theorem affineTime_symm_apply (n : ℕ∞ω) (a b : ℝ) (ha : a ≠ 0) (s : ℝ) :
-    (affineTime n a b ha).symm s = a⁻¹ * (s - b) :=
-  (rfl)
-
 variable [IsManifold I n M] [IsManifold J n N]
-
-/-- The conjugate `TauCeti.conjTime T a b` of a smooth embedding `T` of `M × ℝ` into `N × ℝ` by the
-affine change of time `t ↦ a * t + b`, as a smooth embedding. -/
-private def conjTimeEmbedding (T : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ))
-    (a b : ℝ) (ha : a ≠ 0) : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ) :=
-  (T.compDiffeomorph ((Diffeomorph.refl I M n).prodCongr (affineTime n a b ha))).transDiffeomorph
-    ((Diffeomorph.refl J N n).prodCongr (affineTime n a b ha).symm)
-
-private theorem coe_conjTimeEmbedding
-    (T : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ)) (a b : ℝ) (ha : a ≠ 0) :
-    ⇑(conjTimeEmbedding T a b ha) = conjTime T a b := by
-  funext ⟨x, t⟩
-  rw [conjTime_apply, ← inv_mul_eq_div]
-  ext <;> simp [conjTimeEmbedding]
 
 /-! ### The constant and the reversed concordance -/
 
@@ -246,14 +255,14 @@ theorem refl_apply (f : SmoothEmbedding I J n M N) (p : M × ℝ) : refl f p = (
 
 /-- The reversed concordance from `g` to `f`, obtained by reflecting time in `1 / 2`. -/
 def symm (F : Concordance f g) : Concordance g f where
-  toSmoothEmbedding := conjTimeEmbedding F.toSmoothEmbedding (-1) 1 (by norm_num)
+  toSmoothEmbedding := F.toSmoothEmbedding.conjTime (-1) 1 (by norm_num)
   isCollaredTrack_toSmoothEmbedding := by
-    rw [coe_conjTimeEmbedding, coe_toSmoothEmbedding, ← reverseTime_def]
+    rw [coe_conjTime, coe_toSmoothEmbedding, ← reverseTime_def]
     exact F.isCollaredTrack.reverseTime
 
 /-- The track of the reversed concordance is the reversed track. -/
 theorem coe_symm (F : Concordance f g) : ⇑F.symm = reverseTime F := by
-  rw [← coe_toSmoothEmbedding, symm, coe_conjTimeEmbedding, coe_toSmoothEmbedding, reverseTime_def]
+  rw [← coe_toSmoothEmbedding, symm, coe_conjTime, coe_toSmoothEmbedding, reverseTime_def]
 
 @[simp]
 theorem symm_apply (F : Concordance f g) (x : M) (t : ℝ) :
@@ -274,12 +283,12 @@ private theorem isSmoothEmbedding_stack [FiniteDimensional ℝ E'] (F : Concorda
   have hG := G.isCollaredTrack
   have hlow : IsOpen {p : M × ℝ | p.2 < 2 / 3} := isOpen_lt continuous_snd continuous_const
   have hup : IsOpen {p : M × ℝ | 1 / 3 < p.2} := isOpen_lt continuous_const continuous_snd
-  have hF3 : IsImmersion (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (conjTime F 3 0) := by
-    have himm := (conjTimeEmbedding F.toSmoothEmbedding 3 0 (by norm_num)).isImmersion
-    rwa [coe_conjTimeEmbedding, coe_toSmoothEmbedding] at himm
-  have hG3 : IsImmersion (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (conjTime G 3 (-2)) := by
-    have himm := (conjTimeEmbedding G.toSmoothEmbedding 3 (-2) (by norm_num)).isImmersion
-    rwa [coe_conjTimeEmbedding, coe_toSmoothEmbedding] at himm
+  have hF3 : IsImmersion (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (TauCeti.conjTime F 3 0) := by
+    have himm := (F.toSmoothEmbedding.conjTime 3 0 (by norm_num)).isImmersion
+    rwa [coe_conjTime, coe_toSmoothEmbedding] at himm
+  have hG3 : IsImmersion (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (TauCeti.conjTime G 3 (-2)) := by
+    have himm := (G.toSmoothEmbedding.conjTime 3 (-2) (by norm_num)).isImmersion
+    rwa [coe_conjTime, coe_toSmoothEmbedding] at himm
   refine ⟨?_,
     hF.isEmbedding_stack hG F.toSmoothEmbedding.isEmbedding G.toSmoothEmbedding.isEmbedding⟩
   refine isImmersion_iff_forall_isImmersionAt.2 fun p => ?_
