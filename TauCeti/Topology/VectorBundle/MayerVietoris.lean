@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
 public import TauCeti.Topology.VectorBundle.EulerClass
+public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # The Thom pair over finite unions of trivializing open sets
@@ -39,8 +40,6 @@ construction of a Thom class by Mayer–Vietoris over a finite trivializing cove
 
 ## Main definitions
 
-* `TauCeti.thomPairOver F E W`: the Thom pair `(E|_W, E₀|_W)` of the restriction to `W`.
-* `TauCeti.thomPairOverUnivIso`: over the whole base it is the Thom pair `(E, E₀)`.
 * `Bundle.Trivialization.thomPairOverIso`: over a subset of the base set of a linear
   trivialization it is the Thom pair of a product bundle.
 
@@ -71,42 +70,6 @@ open Bundle CategoryTheory Limits Set Module
 
 universe w v u
 
-namespace TauCeti
-
-section Defs
-
-variable {B : Type w} (F : Type*) (E : B → Type w) [∀ b, Zero (E b)]
-  [TopologicalSpace (TotalSpace F E)]
-
-/-- The Thom pair `(E|_W, E₀|_W)` of the restriction of a bundle to a subset `W` of its base: the
-vectors over `W`, relative to the nonzero ones, as subspaces of the total space. -/
-abbrev thomPairOver (W : Set B) : TopPair.{w} :=
-  TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
-    (inter_subset_left : π F E ⁻¹' W ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' W)
-
-/-- The map of pairs `(E|_B, E₀|_B) ⟶ (E, E₀)` forgetting that every vector lies over the base. -/
-private def thomPairOverUnivHom : thomPairOver F E univ ⟶ thomPair F E :=
-  TopPair.ofHom (TopCat.isoOfHomeo ((Homeomorph.setCongr preimage_univ).trans
-      (Homeomorph.Set.univ (TotalSpace F E)))).hom
-    (TopCat.ofHom ⟨fun v ↦ ⟨v.1, v.2.2⟩, by fun_prop⟩) (by ext; rfl)
-
-/-- Over the whole base, the Thom pair `(E|_B, E₀|_B)` of the restriction is the Thom pair
-`(E, E₀)`. -/
-def thomPairOverUnivIso : thomPairOver F E univ ≅ thomPair F E :=
-  have : IsIso (TopPair.Hom.fst (thomPairOverUnivHom F E)) := (TopCat.isoOfHomeo _).isIso_hom
-  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (thomPairOverUnivHom F E) fun v ↦
-    ⟨⟨v.1, trivial, v.2⟩, rfl⟩
-  asIso (thomPairOverUnivHom F E)
-
-@[simp]
-theorem thomPairOverUnivIso_hom_fst_apply (v : π F E ⁻¹' univ) :
-    TopPair.Hom.fst (thomPairOverUnivIso F E).hom v = v.1 :=
-  (rfl)
-
-end Defs
-
-end TauCeti
-
 namespace Bundle.Trivialization
 
 open TauCeti
@@ -114,12 +77,6 @@ open TauCeti
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] (e : Trivialization F (π F E)) [e.IsLinear ℝ]
-
-/-- A linear trivialization sends a vector over its base set to a nonzero vector exactly when the
-vector is nonzero. -/
-private theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
-    (e v).2 ≠ 0 ↔ v.2 ≠ 0 :=
-  (e.linearEquivAt ℝ v.proj hv).map_ne_zero_iff
 
 variable {W : Set B} (hW : W ⊆ e.baseSet)
 
@@ -129,7 +86,7 @@ private def thomPairOverHom : thomPairOver F E W ⟶ prodThomPair W F :=
   TopPair.ofHom (TopCat.isoOfHomeo (e.preimageHomeomorph hW)).hom
     (TopCat.ofHom ⟨fun v ↦ ⟨e.preimageHomeomorph hW ⟨v.1, v.2.1⟩, by
       simpa [preimageHomeomorph_apply] using
-        (e.snd_apply_ne_zero_iff (hW v.2.1)).2 (mem_zeroSectionCompl.1 v.2.2)⟩,
+        (e.snd_apply_ne_zero_iff ℝ (hW v.2.1)).2 (mem_zeroSectionCompl.1 v.2.2)⟩,
       by fun_prop⟩) (by ext; rfl)
 
 /-- Over a subset `W` of the base set of a linear trivialization `e`, the trivialization identifies
@@ -140,7 +97,7 @@ def thomPairOverIso : thomPairOver F E W ≅ prodThomPair W F :=
   have := TopPair.isIso_of_isIso_fst_of_surjective_snd (e.thomPairOverHom hW) fun p ↦ by
     let v := (e.preimageHomeomorph hW).symm p.1
     have hv : e.preimageHomeomorph hW v = p.1 := Homeomorph.apply_symm_apply _ _
-    refine ⟨⟨v.1, v.2, mem_zeroSectionCompl.2 ((e.snd_apply_ne_zero_iff (hW v.2)).1 ?_)⟩,
+    refine ⟨⟨v.1, v.2, mem_zeroSectionCompl.2 ((e.snd_apply_ne_zero_iff ℝ (hW v.2)).1 ?_)⟩,
       Subtype.ext hv⟩
     simpa [preimageHomeomorph_apply, ← hv] using p.2
   asIso (e.thomPairOverHom hW)
@@ -167,15 +124,6 @@ end Bundle.Trivialization
 namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-
-/-- Relative homology of a pair of subspaces only depends on the subspaces, not on how they are
-written. -/
-private theorem isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Set X}
-    (h : S ⊆ A) (h' : S' ⊆ A') (hA : A = A') (hS : S = S') (n : ℕ) :
-    IsZero ((TopPair.ofInclusion h).singularHomology R n) ↔
-      IsZero ((TopPair.ofInclusion h').singularHomology R n) := by
-  subst hA hS
-  rfl
 
 section Empty
 
@@ -224,11 +172,11 @@ theorem isZero_singularHomology_thomPairOver_union (hU : IsOpen U) (hV : IsOpen 
     (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
     (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V)
     (hopen hU _) (hopen hV _) (hopen₀ hU hT) (hopen₀ hV hT) (n := n) hUn hVn fun m hm ↦
-      (isZero_singularHomology_ofInclusion_congr R
+      (TopPair.isZero_singularHomology_ofInclusion_congr R
         (inter_subset_left : π F E ⁻¹' (U ∩ V) ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' (U ∩ V))
         (inter_subset_inter inter_subset_left inter_subset_left) preimage_inter
         (inter_inter_distrib_right _ _ _) m).1 (hUVn m hm)
-  exact (isZero_singularHomology_ofInclusion_congr R
+  exact (TopPair.isZero_singularHomology_ofInclusion_congr R
     (union_subset_union inter_subset_left inter_subset_left)
     (inter_subset_left : π F E ⁻¹' (U ∪ V) ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' (U ∪ V))
     preimage_union.symm (union_inter_distrib_right _ _ _).symm n).1 h
