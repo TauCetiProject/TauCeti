@@ -28,8 +28,7 @@ variable {Ω α E : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Measurable
 /-- Adjoining a coordinate with law `ν` to a probability space preserves the law of an existing
 random variable and gives the pair the product law. Taking the old random variable to be a tuple
 preserves its joint law with all of its components. -/
-theorem HasLaw.prod_extension (hX : HasLaw X μ P) [IsProbabilityMeasure P]
-    [IsProbabilityMeasure ν] :
+theorem HasLaw.prod_extension (hX : HasLaw X μ P) [IsProbabilityMeasure ν] :
     HasLaw (fun z : Ω × E => (X z.1, z.2)) (μ.prod ν) (P.prod ν) := by
   refine ⟨hX.aemeasurable.prodMap measurable_id.aemeasurable, ?_⟩
   change Measure.map (Prod.map X id) (P.prod ν) = μ.prod ν
