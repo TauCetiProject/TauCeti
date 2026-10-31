@@ -14,7 +14,10 @@ Mathlib's `CochainComplex.HomComplex.Cochain.diff K` is the differential of a co
 read as a degree `1` cochain from `K` to itself, and `CochainComplex.HomComplex.δ` is the
 differential of the Hom complex.  This file records the elementary calculus relating the two:
 `δ` is composition with the differential cochains on either side, a morphism of cochain complexes
-commutes with them, and they square to zero.
+commutes with them, and they square to zero. It also records how the components of a cochain
+absorb the identifications `K.X p ≅ K.X p'` of `HomologicalComplex.XIsoOfEq` on the source side,
+complementing Mathlib's `CochainComplex.HomComplex.Cochain.v_comp_XIsoOfEq_hom` on the target
+side.
 
 These are general facts about Mathlib's Hom complex, independent of any particular use.
 
@@ -25,6 +28,8 @@ These are general facts about Mathlib's Hom complex, independent of any particul
 * `TauCeti.ofHom_comp_diff`: a morphism of cochain complexes commutes with the differential
   cochains.
 * `TauCeti.diff_comp_diff`: the differential cochain squares to zero.
+* `TauCeti.XIsoOfEq_hom_comp_v`: precomposing a component of a cochain with an
+  `XIsoOfEq` identification of its source.
 -/
 
 public section
@@ -69,5 +74,14 @@ theorem diff_comp_diff :
   rw [Cochain.comp_v (Cochain.diff F) (Cochain.diff F) (by lia : (1 : ℤ) + 1 = 2)
       p (p + 1) q (by lia) (by lia),
     Cochain.diff_v, Cochain.diff_v, Cochain.zero_v, HomologicalComplex.d_comp_d]
+
+/-- Precomposing a component of a cochain with an identification `K.X p₁ ≅ K.X p₂` along an
+equality `p₁ = p₂` gives the component at `p₁`. -/
+@[reassoc]
+lemma XIsoOfEq_hom_comp_v {n : ℤ} (z : Cochain F G n) {p₁ p₂ q : ℤ} (h : p₁ = p₂)
+    (hpq : p₂ + n = q) :
+    (F.XIsoOfEq h).hom ≫ z.v p₂ q hpq = z.v p₁ q (by rw [h, hpq]) := by
+  subst h
+  simp
 
 end TauCeti

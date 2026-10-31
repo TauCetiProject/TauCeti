@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCocone
 public import Mathlib.CategoryTheory.Abelian.Refinements
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
+public import TauCeti.CategoryTheory.Shift.CommShift
 
 /-!
 # Projections of the mapping cocone and short exact sequences
@@ -33,6 +35,17 @@ compares the mapping cone of the first map with the third term.
   the mapping cocone are natural in commutative squares.
 * `CochainComplex.mappingCocone.quasiIso_lift_of_shortExact`: for a short exact sequence `S` of
   cochain complexes, the lift `S.X₁ ⟶ mappingCocone S.g` of `S.f` is a quasi-isomorphism.
+
+## Mapping cocones of natural transformations and shifts
+
+For a natural transformation `τ : F ⟶ G` of functors `D ⥤ CochainComplex C ℤ`, the mapping
+cocones `X ↦ mappingCocone (τ.app X)` form the functor `TauCeti.mappingCoconeFunctor τ`, the
+composite of `TauCeti.mappingConeFunctor τ` with `⟦-1⟧`. When `F`, `G` and `τ` commute with the
+shifts, so does this functor: the shift of mapping cones is composed with the commutation of
+`⟦-1⟧` with the shifts twisted by the sign `(-1)^a` (`TauCeti.shiftFunctorCommShift`). The two
+signs cancel on the first component, so that the first projections
+`mappingCocone (τ.app X) ⟶ F.obj X` form a natural transformation compatible with the shifts
+(`TauCeti.mappingCoconeFunctorFst`).
 -/
 
 public section
@@ -206,3 +219,96 @@ theorem quasiIso_lift_of_shortExact (hS : S.ShortExact) :
 end Abelian
 
 end CochainComplex.mappingCocone
+
+namespace CochainComplex.mappingCocone
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
+  {K L : CochainComplex C ℤ}
+
+/-- Under the shift of mapping cones `CochainComplex.mappingCone.shiftIso`, followed by the
+commutation `X⟦-1⟧⟦a⟧ ≅ X⟦a⟧⟦-1⟧` twisted by the sign `(-1)^a`, the shifted first projection of the
+mapping cocone of `φ` is the first projection of the mapping cocone of `φ⟦a⟧'`. -/
+lemma shiftFunctor_map_shiftIso_inv_comp_fst (φ : K ⟶ L) (a : ℤ) :
+    (mappingCone.shiftIso φ a).inv⟦(-1 : ℤ)⟧' ≫
+      ((a * -1).negOnePow • (shiftFunctorComm _ a (-1)).hom.app (mappingCone φ)) ≫
+        (fst φ)⟦a⟧' = fst (φ⟦a⟧') := by
+  ext p
+  have h₁ := fst_f φ (p + a)
+  have h₂ := fst_f (φ⟦a⟧') p
+  simp only [HomologicalComplex.comp_f, shiftFunctor_map_f']
+  -- The mapping cocone is `(mappingCone φ)⟦-1⟧` only up to unfolding, so the components of the
+  -- first projections are rewritten up to that unfolding.
+  erw [h₁, h₂]
+  simp [shiftFunctorComm_hom_app_f, TauCeti.XIsoOfEq_hom_comp_v, smul_smul,
+    Linear.units_smul_comp, Linear.comp_units_smul]
+
+end CochainComplex.mappingCocone
+
+namespace TauCeti
+
+open CochainComplex
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
+  {D : Type*} [Category* D] {F G : D ⥤ CochainComplex C ℤ} (τ : F ⟶ G)
+
+/-- The mapping cocone of a natural transformation `τ : F ⟶ G` of functors with values in cochain
+complexes, as the functor `X ↦ mappingCocone (τ.app X) = (mappingCone (τ.app X))⟦-1⟧`. -/
+@[expose]
+noncomputable def mappingCoconeFunctor : D ⥤ CochainComplex C ℤ :=
+  mappingConeFunctor τ ⋙ CategoryTheory.shiftFunctor _ (-1)
+
+theorem mappingCoconeFunctor_obj (X : D) :
+    (mappingCoconeFunctor τ).obj X = mappingCocone (τ.app X) :=
+  (rfl)
+
+theorem mappingCoconeFunctor_map {X Y : D} (f : X ⟶ Y) :
+    (mappingCoconeFunctor τ).map f = (mappingCone.map _ _ (F.map f) (G.map f)
+      (τ.naturality f).symm)⟦(-1 : ℤ)⟧' :=
+  (rfl)
+
+/-- The first projections `mappingCocone (τ.app X) ⟶ F.obj X`, as a natural transformation. -/
+noncomputable def mappingCoconeFunctorFst : mappingCoconeFunctor τ ⟶ F where
+  app X := mappingCocone.fst (τ.app X)
+  naturality _ _ f :=
+    mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ (τ.naturality f).symm
+
+theorem mappingCoconeFunctorFst_app (X : D) :
+    (mappingCoconeFunctorFst τ).app X = mappingCocone.fst (τ.app X) :=
+  (rfl)
+
+variable [HasShift D ℤ] [F.CommShift ℤ] [G.CommShift ℤ] [NatTrans.CommShift τ ℤ]
+
+/-- The mapping cocone of a natural transformation compatible with the shifts commutes with the
+shifts: the mapping cone functor commutes with them, and `⟦-1⟧` commutes with the shift by `a`
+through `shiftFunctorComm` twisted by the sign `(-1)^a`. -/
+noncomputable instance : (mappingCoconeFunctor τ).CommShift ℤ :=
+  letI := shiftFunctorCommShift (CochainComplex C ℤ) (-1)
+  inferInstanceAs ((mappingConeFunctor τ ⋙ CategoryTheory.shiftFunctor _ (-1)).CommShift ℤ)
+
+theorem mappingCoconeFunctor_commShiftIso_hom_app (a : ℤ) (X : D) :
+    ((mappingCoconeFunctor τ).commShiftIso a).hom.app X =
+      (mappingConeFunctorShiftIso τ a X).hom⟦(-1 : ℤ)⟧' ≫
+        ((a * -1).negOnePow •
+          (shiftFunctorComm _ a (-1)).hom.app (mappingCone (τ.app X))) := by
+  let := shiftFunctorCommShift (CochainComplex C ℤ) (-1)
+  exact (Functor.commShiftIso_comp_hom_app (mappingConeFunctor τ)
+    (CategoryTheory.shiftFunctor _ (-1)) a X).trans (by
+      rw [shiftFunctorCommShift_commShiftIso_hom_app, mappingConeFunctor_commShiftIso_hom_app]
+      rfl)
+
+/-- The first projections of the mapping cocones commute with the shifts. -/
+instance : NatTrans.CommShift (mappingCoconeFunctorFst τ) ℤ := ⟨fun a ↦ by
+  refine NatTrans.ext (funext fun X ↦ ?_)
+  have key : (mappingCone.map _ _ ((F.commShiftIso a).hom.app X) ((G.commShiftIso a).hom.app X)
+      (NatTrans.shift_app_comm τ a X).symm ≫ (mappingCone.shiftIso (τ.app X) a).inv)⟦(-1 : ℤ)⟧' ≫
+        ((a * -1).negOnePow • (shiftFunctorComm _ a (-1)).hom.app (mappingCone (τ.app X))) ≫
+          (mappingCocone.fst (τ.app X))⟦a⟧' =
+        mappingCocone.fst (τ.app (X⟦a⟧)) ≫ (F.commShiftIso a).hom.app X := by
+    rw [Functor.map_comp, Category.assoc, mappingCocone.shiftFunctor_map_shiftIso_inv_comp_fst]
+    exact mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ _
+  simp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
+    mappingCoconeFunctor_commShiftIso_hom_app, mappingCoconeFunctorFst_app,
+    mappingConeFunctorShiftIso_hom]
+  exact (Category.assoc _ _ _).trans key⟩
+
+end TauCeti
