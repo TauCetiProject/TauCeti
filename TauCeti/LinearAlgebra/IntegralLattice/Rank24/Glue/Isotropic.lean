@@ -52,11 +52,6 @@ private theorem den_glueWordMinimum_div_two_eq_one (r : RootfulNiemeierType) :
         (glueWordMinimum r.componentType (glueWordAdd r.componentType l l') / 2).den = 1 := by
   cases r <;> decide +kernel
 
-/-- A rational number with denominator one is zero in `ℚ/ℤ`. -/
-private theorem coe_eq_zero_of_den_eq_one {q : ℚ} (hq : q.den = 1) :
-    (q : AddCircle (1 : ℚ)) = 0 :=
-  (AddCircle.coe_eq_zero_iff 1).mpr ⟨q.num, by rw [zsmul_one, Rat.coe_int_num_of_den_eq_one hq]⟩
-
 /-- The quadratic value of a glue word is half the shortest norm read off its digit word. -/
 private theorem quadratic_eq_glueWordMinimum (r : RootfulNiemeierType) (w : r.glueModule) :
     r.glueModule.quadratic w =
@@ -77,7 +72,8 @@ theorem isIsotropic_glueSubgroup (r : RootfulNiemeierType) :
     rw [mem_glueGenerators_iff] at hw hw'
     obtain ⟨h, h'⟩ := den_glueWordMinimum_div_two_eq_one r _ hw _ hw'
     rw [quadratic_eq_glueWordMinimum, quadratic_eq_glueWordMinimum, encodeGlueWord_add]
-    exact ⟨coe_eq_zero_of_den_eq_one h, coe_eq_zero_of_den_eq_one h'⟩
+    exact ⟨(AddCircle.coe_eq_zero_iff_den_eq_one _).mpr h,
+      (AddCircle.coe_eq_zero_iff_den_eq_one _).mpr h'⟩
   rw [glueSubgroup_def, FiniteQuadraticModule.isIsotropic_closure_iff]
   refine ⟨fun w hw ↦ (hq w hw w hw).1, fun w hw w' hw' ↦ ?_⟩
   rw [← FiniteQuadraticModule.polar_eq_pairing, QuadraticMap.polar, (hq w hw w' hw').2,
