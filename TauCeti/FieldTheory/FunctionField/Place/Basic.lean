@@ -525,6 +525,21 @@ theorem residue_aeval (p : Polynomial k) (y : P.integers) :
       Polynomial.aeval (IsLocalRing.residue P.integers y) p := by
   rw [← IsLocalRing.ResidueField.algebraMap_eq, Polynomial.aeval_algebraMap_apply]
 
+/-- **A function is regular wherever a nonconstant polynomial in it is**: if `q(y) ∈ 𝒪_P` for a
+nonconstant `q ∈ k[X]`, then `y ∈ 𝒪_P`, since `y` is a root of the monic polynomial
+`(q(X) - q(y)) / lc(q)` with coefficients in `𝒪_P`. -/
+theorem mem_integers_of_aeval_mem_integers {q : Polynomial k} (hq : q.natDegree ≠ 0) {y : F}
+    (hy : Polynomial.aeval y q ∈ P.integers) : y ∈ P.integers := by
+  have hq0 : q.leadingCoeff ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr (by rintro rfl; simp at hq)
+  have hm : (Polynomial.C q.leadingCoeff⁻¹ * q).Monic :=
+    Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (inv_mul_cancel₀ hq0)
+  refine P.mem_integers_of_isIntegral (R := P.integers) (fun r ↦ r.2)
+    (IsIntegral.of_aeval_monic (hm.map (algebraMap k P.integers)) ?_ ?_)
+  · rwa [hm.natDegree_map, Polynomial.natDegree_C_mul (inv_ne_zero hq0)]
+  · rw [Polynomial.aeval_map_algebraMap, map_mul, Polynomial.aeval_C]
+    have h := mul_mem (P.algebraMap_mem_integers q.leadingCoeff⁻¹) hy
+    simpa using isIntegral_algebraMap (R := P.integers) (A := F) (x := ⟨_, h⟩)
+
 /-- The **degree** `deg P = [F_P : k]` of a place (Stichtenoth, Definition 1.1.14). Its
 finiteness, which guards the junk value of `Module.finrank`, holds whenever `F/k` is a function
 field: see `TauCeti.Place.finiteDimensional_residueField` (Stichtenoth,

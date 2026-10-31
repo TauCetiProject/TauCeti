@@ -92,6 +92,13 @@ theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
     HasSubst (C x) := by
   simpa only [HasSubst, ← constantCoeff_eq, constantCoeff_C] using hx
 
+/-- Substituting into the zero series gives zero, even without a substitutability hypothesis. -/
+@[simp]
+theorem subst_zero {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    {τ : Type*} (a : MvPowerSeries τ S) : (0 : R⟦X⟧).subst a = 0 := by
+  simpa only [subst_def, MvPolynomial.coe_zero, map_zero] using
+    (MvPowerSeries.subst_coe (a := fun _ : Unit ↦ a) (0 : MvPolynomial Unit R))
+
 /-- Substitution preserves the constant series one. -/
 @[simp]
 theorem subst_one {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]

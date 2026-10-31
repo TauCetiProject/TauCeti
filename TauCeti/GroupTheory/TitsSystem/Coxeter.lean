@@ -45,7 +45,7 @@ public section
 
 namespace TauCeti.TitsSystem
 
-universe u
+universe u v
 
 variable {G : Type u} [Group G] (T : TitsSystem G)
 
@@ -94,6 +94,28 @@ theorem isIrreducible_of_subsingleton_simple (h : T.simple.Subsingleton) : T.IsI
     have : Subsingleton T.simple := h.coe_sort
     exact J.eq_empty_or_nonempty.imp_right fun ⟨s, hs⟩ ↦
       Set.eq_univ_of_forall fun t ↦ Subsingleton.elim s t ▸ hs
+
+/-- Irreducibility transfers along an isomorphism of Weyl groups identifying the simple
+reflections. -/
+theorem IsIrreducible.of_mulEquiv {T : TitsSystem G} (hirr : T.IsIrreducible) {H : Type v}
+    [Group H] {T' : TitsSystem H} (e : T'.WeylGroup ≃* T.WeylGroup)
+    (he : e ⁻¹' T.simple = T'.simple) : T'.IsIrreducible := by
+  have hmem : ∀ w, w ∈ T'.simple ↔ e w ∈ T.simple := fun w ↦ by rw [← he, Set.mem_preimage]
+  refine T'.isIrreducible_iff.mpr fun J hJ ↦ ?_
+  -- Transport `J` to the simple reflections of `T`, where irreducibility applies.
+  let J₀ : Set T.simple := {s | ∃ t ∈ J, e t = s}
+  have hJ₀ : ∀ s ∈ J₀, ∀ t ∉ J₀, (s : T.WeylGroup) * t = t * s := by
+    rintro s ⟨s', hs', hs⟩ t ht
+    have ht' : (⟨e.symm t, (hmem _).mpr (by simp)⟩ : T'.simple) ∉ J :=
+      fun h ↦ ht ⟨_, h, by simp⟩
+    simpa [hs] using congrArg e (hJ s' hs' _ ht')
+  have hmemJ₀ : ∀ s : T'.simple, s ∈ J ↔ (⟨e s, (hmem _).mp s.2⟩ : T.simple) ∈ J₀ := by
+    refine fun s ↦ ⟨fun hs ↦ ⟨s, hs, rfl⟩, ?_⟩
+    rintro ⟨t, ht, hts⟩
+    rwa [← Subtype.ext (e.injective hts)]
+  rcases T.isIrreducible_iff.mp hirr J₀ hJ₀ with h | h
+  · exact Or.inl (Set.eq_empty_of_forall_notMem fun s hs ↦ by simpa [h] using (hmemJ₀ s).mp hs)
+  · exact Or.inr (Set.eq_univ_of_forall fun s ↦ (hmemJ₀ s).mpr (by simp [h]))
 
 /-- The canonical map from the Coxeter presentation to the Weyl quotient. -/
 private def coxeterPresentationHom : T.coxeterMatrix.Group →* T.WeylGroup :=

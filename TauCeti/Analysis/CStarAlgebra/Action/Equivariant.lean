@@ -97,6 +97,21 @@ theorem isInvariant_range (hf : α.IsEquivariant β f) :
   rw [NonUnitalStarAlgHom.coe_range]
   exact fun g ↦ (hf g).mapsTo_range
 
+/-- An equivariant map has invariant kernel. -/
+theorem isInvariant_kernel (h : α.IsEquivariant β f) :
+    _root_.IsInvariant (fun g a => α g a) (f ⁻¹' {0}) := by
+  intro g a ha
+  have hz : f a = 0 := ha
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, h.apply g a, hz, map_zero]
+
+/-- A surjective equivariant map determines the target action uniquely. -/
+theorem eq_of_surjective {β γ : CStarAction G B}
+    (hβ : α.IsEquivariant β f) (hγ : α.IsEquivariant γ f)
+    (hf : Function.Surjective f) : β = γ := by
+  ext g b
+  obtain ⟨a, rfl⟩ := hf b
+  exact (hβ.apply g a).symm.trans (hγ.apply g a)
+
 end IsEquivariant
 
 end TauCeti.CStarAction

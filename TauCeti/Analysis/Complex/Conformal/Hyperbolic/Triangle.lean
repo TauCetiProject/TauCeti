@@ -13,8 +13,7 @@ public import TauCeti.Analysis.SpecialFunctions.Artanh
 # The triangle inequality for the hyperbolic distance on the unit disc
 
 This file proves the **triangle inequality** for the hyperbolic (Poincaré) distance
-`hyperbolicDist` on the complex open unit disc, the metric-completeness step deferred in
-`HyperbolicDistance.lean`.
+`hyperbolicDist` on the complex open unit disc.
 
 The core analytic input is the *strong* triangle-type inequality for the pseudo-hyperbolic
 expression `pseudoHyperbolicExpr z w = ‖(z - w) / (1 - conj w * z)‖`, taken here in its
@@ -69,10 +68,10 @@ Each of those five carries a hypothesis-free `Complex.UnitDisc` form, named by t
 `_unitDisc`.
 
 Together with the symmetry, nonnegativity and vanishing-on-the-diagonal lemmas already in
-`HyperbolicDistance.lean`, these give the metric-space axioms for `hyperbolicDist` on the open
+`Hyperbolic/Distance.lean`, these give the metric-space axioms for `hyperbolicDist` on the open
 unit disc. A `MetricSpace` *instance* is deliberately not registered on `Complex.UnitDisc`,
-which already carries the Euclidean subspace metric; recording the Poincaré metric as an
-instance would require a dedicated type synonym and is left to future work.
+which already carries the Euclidean subspace metric; the Poincaré metric is recorded as an
+instance on the type synonym `PoincareDisc` in `Poincare/MetricSpace.lean`.
 
 The origin plays no role in the pseudo-hyperbolic statements: the whole point of
 `pseudoHyperbolicExpr` is that it is invariant under the disc Moebius factors
@@ -86,11 +85,7 @@ formula `Real.artanh_add` is exactly the dictionary translating the additive law
 off `hyperbolicDist_triangle` — which is where the transport already happened — and their
 equality cases off the injectivity of `artanh`.
 
-This advances the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
-`𝔻`" (see `ConformalMapping/README.md`). It reuses Tau Ceti's pseudo-hyperbolic, Moebius and
-Schwarz--Pick API. As with the rest of the L0--L3 conformal-mapping material, it is
-coordinated with the upstream Mathlib RMT effort leanprover-community/mathlib4#33505 and should
-be refactored to upstream API if that work lands a human-curated Poincaré metric.
+This file reuses Tau Ceti's pseudo-hyperbolic, Moebius and Schwarz--Pick API.
 -/
 
 public section

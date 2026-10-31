@@ -43,6 +43,8 @@ distinguishedness, so these divisor hypotheses survive isometric coefficient ext
 * `TauCeti.PowerSeries.IsMulDistinguished.gaussNorm_mul`: left multiplication by a
   multiplicatively distinguished series multiplies the Gauss norm of a restricted series by the
   Gauss norm of the divisor.
+* `TauCeti.PowerSeries.gaussNorm_X_sub_C_mul`: in particular `‖(X - a) * q‖ = c * ‖q‖` at the
+  radius `c` when `‖a‖ ≤ c`.
 * `TauCeti.PowerSeries.isMulDistinguished_monomial` and
   `TauCeti.PowerSeries.isMulDistinguished_X_sub_C`: monomials with multiplicative-unit
   coefficient, and `X - b` for `b` in the closed disc of radius `c`.
@@ -199,6 +201,15 @@ theorem IsMulDistinguished.gaussNorm_mul (hg : IsMulDistinguished c s g) (hc : 0
   · simp [PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
   obtain ⟨k, hk⟩ := exists_isDistinguished hc hq hq0
   exact hg.toIsDistinguished.gaussNorm_mul hk hc (hg.isNormMulUnit_coeff.norm_mul _)
+
+/-- Multiplying a restricted series by `X - a`, for `a` in the closed disc of radius `c > 0`,
+multiplies its Gauss norm at `c` by `c`. -/
+theorem gaussNorm_X_sub_C_mul [NormOneClass R] (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c)
+    (hq : q.IsRestricted c) :
+    ((PowerSeries.X - PowerSeries.C a) * q).gaussNorm norm c = c * q.gaussNorm norm c := by
+  have hd := isMulDistinguished_X_sub_C hc ha
+  rw [hd.gaussNorm_mul hc hq, ← hd.norm_coeff_mul_pow_eq]
+  simp
 
 end NormedRing
 

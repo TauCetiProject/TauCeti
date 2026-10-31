@@ -29,12 +29,14 @@ ideal the polynomials generate.
 In particular two hypersurfaces of `ℙⁿ`, for `n ≥ 2`, always meet. At a common point of the
 factors of a product `a * b`, the product and all its partial derivatives vanish. So a projective
 hypersurface `G = 0` of dimension at least one whose points over `K` are all nonsingular is
-irreducible over `K`. The statement proved here is the affine form used by function fields: the
-equation of `G = 0` in a standard affine chart is irreducible over `K`
-(`TauCeti.irreducible_map_dehomogenize`), unless it is a unit. A factorization in the chart lifts
-to a factorization of `G` up to a power of the omitted coordinate, by homogenization. For a
-nonsingular plane curve `G = 0` with a point `(x : y : 1)` in a function field, this makes
-`G(X₀, X₁, 1)` the irreducible relation between `x` and `y`.
+irreducible (`TauCeti.irreducible_of_isHomogeneous`), since the factors of a homogeneous
+polynomial are homogeneous. This is the form used by the scheme `Proj (k[X₀, …, Xₙ] ⧸ (G))`, which
+is integral for irreducible `G`. Function fields use the affine form: the equation of `G = 0` in a
+standard affine chart is irreducible over `K` (`TauCeti.irreducible_map_dehomogenize`), unless it
+is a unit. A factorization in the chart lifts to a factorization of `G` up to a power of the
+omitted coordinate, by homogenization. For a nonsingular plane curve `G = 0` with a point
+`(x : y : 1)` in a function field, this makes `G(X₀, X₁, 1)` the irreducible relation between `x`
+and `y`.
 
 ## Main results
 
@@ -45,6 +47,8 @@ nonsingular plane curve `G = 0` with a point `(x : y : 1)` in a function field, 
   than the origin.
 * `TauCeti.irreducible_map_dehomogenize`: the affine equation of a nonsingular projective
   hypersurface of dimension at least one is irreducible over an algebraically closed field.
+* `TauCeti.irreducible_of_isHomogeneous`: a nonsingular homogeneous polynomial of positive degree
+  in at least three variables is irreducible.
 
 ## References
 
@@ -146,12 +150,6 @@ theorem irreducible_map_dehomogenize (hn : 2 ≤ n) {G : MvPolynomial (Fin (n + 
   have hfg0 : f * g ≠ 0 := hfg ▸ hG'0
   have hf0 : f ≠ 0 := left_ne_zero_of_mul hfg0
   have hg0 : g ≠ 0 := right_ne_zero_of_mul hfg0
-  -- Nonunits of `K[X₁, …, Xₙ]` have positive total degree.
-  have hdeg {q : MvPolynomial (Fin n) K} (hq : ¬IsUnit q) (hq0 : q ≠ 0) : q.totalDegree ≠ 0 :=
-    fun h ↦ hq (by
-      rw [totalDegree_eq_zero_iff_eq_C] at h
-      rw [h] at hq0 ⊢
-      exact (Ne.isUnit (by simpa using hq0)).map C)
   -- Homogenize `f` and `g`; then `G' = X_i^e F G₁` with `F` and `G₁` vanishing at the origin.
   obtain ⟨F, hF, rfl⟩ := exists_isHomogeneous_dehomogenize_eq i le_rfl (p := f)
   obtain ⟨G₁, hG₁, rfl⟩ := exists_isHomogeneous_dehomogenize_eq i le_rfl (p := g)
@@ -169,9 +167,44 @@ theorem irreducible_map_dehomogenize (hn : 2 ≤ n) {G : MvPolynomial (Fin (n + 
   -- The two factors meet at a point of `ℙⁿ`, where `G'` is singular.
   obtain ⟨x, hx, hx0, hxd⟩ := exists_ne_zero_aeval_mul_eq_zero_and_aeval_pderiv_eq_zero (K := K)
     (by rw [Nat.card_eq_fintype_card, Fintype.card_fin]; omega) (a := X i ^ e * F) (b := G₁)
-    (by rw [map_mul, hF.constantCoeff_eq_zero (hdeg hf hf0), mul_zero])
-    (hG₁.constantCoeff_eq_zero (hdeg hg hg0))
+    (by rw [map_mul, hF.constantCoeff_eq_zero (mt (isUnit_iff_totalDegree_eq_zero hf0).mpr hf),
+      mul_zero])
+    (hG₁.constantCoeff_eq_zero (mt (isUnit_iff_totalDegree_eq_zero hg0).mpr hg))
   obtain ⟨l, hl⟩ := hsm' x hx (by rw [hGP]; exact hx0)
   exact hl (by rw [hGP]; exact hxd l)
+
+/-- **A nonsingular projective hypersurface is irreducible**: let `G ∈ k[X₀, …, Xₙ]` be homogeneous
+of positive degree with `n ≥ 2`, and suppose that at every point of `G = 0` over an algebraically
+closed extension `K` of `k` some partial derivative of `G` is nonzero. Then `G` is irreducible.
+
+Taking `k = K` and the polynomial `G` with coefficients mapped to `K`, a nonsingular `G` is
+absolutely irreducible. Both hypotheses on the dimension and on the degree are needed: the
+binary form `X₀ X₁` is nonsingular in `ℙ¹`, and a nonzero constant is a unit. -/
+theorem irreducible_of_isHomogeneous (hn : 2 ≤ n) {G : MvPolynomial (Fin (n + 1)) k}
+    (hG : G.IsHomogeneous d) (hd : d ≠ 0)
+    (hsm : ∀ b : Fin (n + 1) → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0) :
+    Irreducible G := by
+  -- `G` is nonzero, since `G = 0` would be singular everywhere.
+  have hG0 : G ≠ 0 := by
+    rintro rfl
+    obtain ⟨l, hl⟩ := hsm 1 one_ne_zero (map_zero _)
+    simp at hl
+  refine ⟨fun hu ↦ hd ?_, fun a b hab ↦ ?_⟩
+  · rw [← hG.totalDegree hG0]
+    exact (isUnit_iff_totalDegree_eq_zero hG0).mp hu
+  by_contra! hab'
+  obtain ⟨ha, hb⟩ := hab'
+  have hab0 : a * b ≠ 0 := hab ▸ hG0
+  rw [hab] at hG
+  -- The factors are homogeneous of positive degree, so they vanish at the origin; they meet at a
+  -- point of `ℙⁿ`, where `G` is singular.
+  have ha0 := (hG.of_mul_left hab0).constantCoeff_eq_zero
+    (mt (isUnit_iff_totalDegree_eq_zero (left_ne_zero_of_mul hab0)).mpr ha)
+  have hb0 := (hG.of_mul_right hab0).constantCoeff_eq_zero
+    (mt (isUnit_iff_totalDegree_eq_zero (right_ne_zero_of_mul hab0)).mpr hb)
+  obtain ⟨x, hx, hx0, hxd⟩ := exists_ne_zero_aeval_mul_eq_zero_and_aeval_pderiv_eq_zero (K := K)
+    (by rw [Nat.card_eq_fintype_card, Fintype.card_fin]; omega) ha0 hb0
+  obtain ⟨l, hl⟩ := hsm x hx (hab ▸ hx0)
+  exact hl (hab ▸ hxd l)
 
 end TauCeti
