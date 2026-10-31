@@ -178,6 +178,27 @@ private theorem taylor_sub_taylor_apply_eq_hochschildDifferential (hG : 𝒜.gra
   rw [hochschildDifferential_zero_apply, key]
   abel
 
+/-- Where `𝒜` agrees with `ℋ`, the Hochschild differential of `f.taylor - letter` vanishes, for an
+`A∞` morphism `f : 𝒜 ⟶ ℋ` as in `taylor_sub_taylor_apply_eq_hochschildDifferential`. -/
+private theorem hochschildDifferential_taylor_sub_letter_apply_eq_zero
+    (hG : 𝒜.grading = ℋ.grading) (f : AInfinityHom 𝒜 ℋ) {e k : ℕ} (hk : k ≤ 2 * e + 1)
+    (hf : ∀ z ∈ filtration R A e, f.taylor z = letter R A z)
+    (h : ∀ z ∈ filtration R A k, 𝒜.taylor z = ℋ.taylor z) {z : ReducedTensorWords R A}
+    (hz : z ∈ filtration R A k) :
+    ℋ.hochschildDifferential 0 (f.taylor - letter R A) z = 0 := by
+  rw [← taylor_sub_taylor_apply_eq_hochschildDifferential hG f hk (by omega) hf h hz, h z hz,
+    sub_self]
+
+/-- The Taylor map of an `A∞` morphism between structures with the same grading differs from
+`letter` by a cochain of degree zero. -/
+private theorem isHomogeneous_taylor_sub_letter (hG : 𝒜.grading = ℋ.grading)
+    (f : AInfinityHom 𝒜 ℋ) :
+    LinearMap.IsHomogeneous (f.taylor - letter R A) (gradedPiece (ℋ.grading.shift 1))
+      (ℋ.grading.shift 1).piece 0 := by
+  have hf₀ := f.isHomogeneous_taylor
+  rw [hG] at hf₀
+  exact hf₀.sub (isHomogeneous_letter _)
+
 /-- The quadratic term of the morphism equation.  Let `ψ` be a cochain of degree zero vanishing
 on letters, with `m_𝒜 = m_ℋ ∘ F - ψ{m_𝒜}` for `F` the coalgebra map with Taylor components
 `letter + ψ`.  If `ψ{m_𝒜}` agrees with `ψ{m_ℋ}` on the words of length at most four and `δψ`
@@ -229,10 +250,8 @@ private theorem exists_hochschildDifferential_eq_obstruction_four_of_linearPart_
   set G := ℋ.grading.shift 1
   set ψ := f.taylor - letter R A with hψdef
   have ht : f.taylor = letter R A + ψ := by rw [hψdef, add_sub_cancel]
-  have hψ : LinearMap.IsHomogeneous ψ (gradedPiece G) G.piece 0 := by
-    have hf₀ := f.isHomogeneous_taylor
-    rw [hG] at hf₀
-    exact hf₀.sub (isHomogeneous_letter G)
+  have hψ : LinearMap.IsHomogeneous ψ (gradedPiece G) G.piece 0 :=
+    isHomogeneous_taylor_sub_letter hG f
   have hψ₁ : ∀ z ∈ filtration R A 1, ψ z = 0 := apply_eq_zero_of_mem_filtration_one R A <|
     LinearMap.ext fun a ↦ by
       rw [LinearMap.comp_apply, hψdef, LinearMap.sub_apply, ← AInfinityHom.linearPart_apply, hf,
@@ -247,10 +266,8 @@ private theorem exists_hochschildDifferential_eq_obstruction_four_of_linearPart_
   have hδψ : ∀ z ∈ filtration R A 3, ℋ.hochschildDifferential 0 ψ z = 0 := fun z hz ↦ by
     have hf₁ : ∀ w ∈ filtration R A 1, f.taylor w = letter R A w := fun w hw ↦ by
       simpa only [hψdef, LinearMap.sub_apply, sub_eq_zero] using hψ₁ w hw
-    have e := taylor_sub_taylor_apply_eq_hochschildDifferential hG f (e := 1) (j := 3) le_rfl
-      (by norm_num) hf₁ h hz
-    rw [← hψdef, h z hz, sub_self] at e
-    exact e.symm
+    exact hochschildDifferential_taylor_sub_letter_apply_eq_zero hG f (e := 1) (by norm_num) hf₁ h
+      hz
   -- On the words of length at most four, the quadratic part of `F` gives
   -- `2 (m_𝒜 - m_ℋ) = 2 δψ - δ(ψ{ψ})`.
   have hquad : ∀ z ∈ filtration R A 4, (2 : R) • (𝒜.taylor z - ℋ.taylor z) =
@@ -408,18 +425,13 @@ private theorem exists_taylor_apply_eq_letter_succ (hℋ : ℋ.IsMinimal)
     ∃ g : AInfinityHom 𝒜 ℋ, ∀ z ∈ filtration R A (e + 1), g.taylor z = letter R A z := by
   set G := ℋ.grading.shift 1
   set ψ := f.taylor - letter R A with hψdef
-  have hψ : LinearMap.IsHomogeneous ψ (gradedPiece G) G.piece 0 := by
-    have hf₀ := f.isHomogeneous_taylor
-    rw [hG] at hf₀
-    exact hf₀.sub (isHomogeneous_letter G)
+  have hψ : LinearMap.IsHomogeneous ψ (gradedPiece G) G.piece 0 :=
+    isHomogeneous_taylor_sub_letter hG f
   have hψe : ∀ z ∈ filtration R A e, ψ z = 0 := fun z hz ↦ by
     rw [hψdef, LinearMap.sub_apply, hf z hz, sub_self]
   -- On the words of length at most `e + 2`, `δψ = m_𝒜 - m_ℋ = 0`.
-  have hδψ : ∀ z ∈ filtration R A (e + 2), ℋ.hochschildDifferential 0 ψ z = 0 := fun z hz ↦ by
-    have hz' :=
-      taylor_sub_taylor_apply_eq_hochschildDifferential hG f (by omega) (by omega) hf h hz
-    rw [← hψdef, h z hz, sub_self] at hz'
-    exact hz'.symm
+  have hδψ : ∀ z ∈ filtration R A (e + 2), ℋ.hochschildDifferential 0 ψ z = 0 := fun z hz ↦
+    hochschildDifferential_taylor_sub_letter_apply_eq_zero hG f (by omega) hf h hz
   -- The component `φ₀` of `ψ` on the words of length `e + 1`.
   set φ₀ := ψ ∘ₗ lengthProj R A ⟨e + 1, e.succ_pos⟩ with hφ₀def
   have hφ₀e : ∀ z ∈ filtration R A e, φ₀ z = 0 := fun z hz ↦ by
@@ -500,10 +512,7 @@ private theorem exists_hochschildDifferential_eq_obstruction_of_linearPart_eq_id
       obtain rfl : e = n := by omega
       set ψ := g.taylor - letter R A with hψdef
       have hψ : LinearMap.IsHomogeneous ψ (gradedPiece (ℋ.grading.shift 1))
-          (ℋ.grading.shift 1).piece 0 := by
-        have hg₀ := g.isHomogeneous_taylor
-        rw [hG] at hg₀
-        exact hg₀.sub (isHomogeneous_letter _)
+          (ℋ.grading.shift 1).piece 0 := isHomogeneous_taylor_sub_letter hG g
       have hψe : ∀ z ∈ filtration R A e, ψ z = 0 := fun z hz ↦ by
         rw [hψdef, LinearMap.sub_apply, hg z hz, sub_self]
       refine ⟨ψ ∘ₗ lengthProj R A ⟨e + 1, e.succ_pos⟩, ?_, ?_,

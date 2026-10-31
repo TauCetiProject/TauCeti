@@ -48,6 +48,8 @@ downstream, in the `DGAInfinity` roadmap.
 * `TauCeti.ReducedTensorWords.isCoderivation_coderiv` and
   `TauCeti.ReducedTensorWords.letter_comp_coderiv`: `coderiv F` is a coderivation with Taylor
   components `F`.
+* `TauCeti.ReducedTensorWords.coderiv_filtration_add_le`: a coderivation whose Taylor map
+  vanishes on the words of length at most `j` lowers tensor length by at least `j`.
 * `TauCeti.ReducedTensorWords.coderivEquivTaylor`: coderivations are linearly isomorphic to their
   Taylor components.
 * `TauCeti.ReducedTensorWords.IsCoderivation.eq_zero_iff_taylorComponent_eq_zero`: a coderivation
@@ -209,6 +211,68 @@ theorem coderiv_subword (F : ReducedTensorWords R M →ₗ[R] M) {n : ℕ} (x : 
     symm
     exact Finset.sum_eq_zero fun p _ ↦ Finset.sum_eq_zero fun d _ ↦
       splice_eq_zero_of_length_lt_add R x _ (by omega)
+
+/-! ### Tensor-length bounds -/
+
+/-- A block of `b` letters with a subblock of `d` letters collapsed to one letter has length at most
+`b + 1 - d`. -/
+theorem splice_mem_filtration {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e : M) :
+    splice R x a b p d e ∈ filtration R M (b + 1 - d) := by
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · rw [splice_eq_of_tprod R x e h.1 h.2.1 h.2.2]
+    exact of_mem_filtration R M (k := ⟨b + 1 - d, by omega⟩) le_rfl _
+  · rw [splice_eq_zero R x e h]
+    exact zero_mem _
+
+/-- A summand of a Taylor expansion of a word of length at most `n + j`, by a map `F` vanishing on
+the words of length at most `j`, has length at most `n`: either its collapsed block has at most `j`
+letters and `F` kills it, or it collapses more than `j` letters to one. -/
+theorem splice_apply_subword_mem_filtration (F : ReducedTensorWords R M →ₗ[R] M) {j n : ℕ}
+    (hF : ∀ z ∈ filtration R M j, F z = 0) {m : ℕ} (y : Fin m → M) {b : ℕ} (hb : b ≤ n + j)
+    {l : ℕ} (x : Fin l → M) (a c p d : ℕ) :
+    splice R y a b p d (F (subword R x c d)) ∈ filtration R M n := by
+  by_cases hdj : d ≤ j
+  · rw [hF _ (subword_mem_filtration R M x c hdj), splice_zero]
+    exact zero_mem _
+  · exact filtration_monotone R M (by omega) (splice_mem_filtration R y a b p d _)
+
+/-- A coderivation whose Taylor map vanishes on the words of length at most `j` lowers tensor
+length by at least `j`: each of its summands collapses a block of more than `j` letters to a single
+letter. -/
+theorem coderiv_filtration_add_le (F : ReducedTensorWords R M →ₗ[R] M) {j : ℕ}
+    (hF : ∀ z ∈ filtration R M j, F z = 0) (n : ℕ) :
+    Submodule.map (coderiv R F) (filtration R M (n + j)) ≤ filtration R M n := by
+  rw [Submodule.map_le_iff_le_comap, filtration_le_iff]
+  intro k hk
+  rintro _ ⟨z, rfl⟩
+  simp only [Submodule.mem_comap]
+  induction z using PiTensorProduct.induction_on with
+  | smul_tprod a x =>
+      rw [map_smul, map_smul, of_tprod_eq_subword R k.2, coderiv_subword R F x le_rfl]
+      exact Submodule.smul_mem _ _ (Submodule.sum_mem _ fun p _ ↦ Submodule.sum_mem _ fun d _ ↦
+        splice_apply_subword_mem_filtration R F hF x hk x _ _ _ _)
+  | add x y hx hy =>
+      rw [map_add, map_add]
+      exact add_mem hx hy
+
+/-- A coderivation with no unary Taylor component lowers tensor length by at least one. -/
+theorem coderiv_filtration_lowering (F : ReducedTensorWords R M →ₗ[R] M)
+    (hF : F ∘ₗ ofLetter R M = 0) (n : ℕ) :
+    Submodule.map (coderiv R F) (filtration R M (n + 1)) ≤ filtration R M n :=
+  coderiv_filtration_add_le R F (apply_eq_zero_of_mem_filtration_one R M hF) n
+
+/-- A coderivation does not increase tensor length. -/
+theorem coderiv_mem_filtration (F : ReducedTensorWords R M →ₗ[R] M) {n : ℕ}
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M n) :
+    coderiv R F z ∈ filtration R M n :=
+  coderiv_filtration_add_le R F (apply_eq_zero_of_mem_filtration_zero R M F) n ⟨z, hz, rfl⟩
+
+/-- The `n`-th power of a coderivation with no unary Taylor component kills the words of length at
+most `n`. -/
+theorem pow_coderiv_apply_eq_zero_of_mem_filtration {F : ReducedTensorWords R M →ₗ[R] M}
+    (hF : F ∘ₗ ofLetter R M = 0) {n : ℕ} {z : ReducedTensorWords R M}
+    (hz : z ∈ filtration R M n) : (coderiv R F ^ n) z = 0 :=
+  pow_apply_eq_zero_of_filtration_lowering R M _ (coderiv_filtration_lowering R F hF) hz
 
 
 /-- A linear endomorphism of the reduced tensor coalgebra is a *coderivation* when it satisfies

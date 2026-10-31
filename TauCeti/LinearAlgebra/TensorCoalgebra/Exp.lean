@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Algebra.Rat
 public import TauCeti.LinearAlgebra.TensorCoalgebra.CoalgHom
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration.GradedCoderivation
-import Mathlib.Tactic.FieldSimp
+public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.LinearAlgebra.End.TensorProduct
 
 /-!
@@ -44,6 +44,8 @@ automorphism.
 * `TauCeti.ReducedTensorWords.expCoderiv_apply_eq_sum` and
   `TauCeti.ReducedTensorWords.expCoderiv_apply_eq_sum_of_pow_apply_eq_zero`: on a word killed by
   `Dⁿ`, the exponential is the sum of the first `n` terms of its series.
+* `TauCeti.ReducedTensorWords.deconcatenation_comp_pow_coderiv`: the binomial expansion
+  `Δ ∘ Dʳ = ∑ (r choose a) (Dᵃ ⊗ Dʳ⁻ᵃ) ∘ Δ`, for any coderivation `D = coderiv φ`.
 * `TauCeti.ReducedTensorWords.isCoalgHom_expCoderiv`: the exponential is a coalgebra morphism.
 * `TauCeti.ReducedTensorWords.expCoderiv_comp_ofLetter`: it fixes single letters.
 * `TauCeti.ReducedTensorWords.expCoderiv_apply_of_mem_filtration`: it is `id + D` on the words of
@@ -71,12 +73,33 @@ namespace TauCeti.ReducedTensorWords
 
 variable {R : Type uR} {M : Type uM} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
-/-- The `n`-th power of a coderivation with no unary Taylor component kills the words of length at
-most `n`. -/
-private theorem pow_coderiv_apply_eq_zero_of_mem_filtration {F : ReducedTensorWords R M →ₗ[R] M}
-    (hF : F ∘ₗ ofLetter R M = 0) {n : ℕ} {z : ReducedTensorWords R M}
-    (hz : z ∈ filtration R M n) : (coderiv R F ^ n) z = 0 :=
-  pow_apply_eq_zero_of_filtration_lowering R M _ (coderiv_filtration_lowering R F hF) hz
+/-! ### Powers of a coderivation -/
+
+/-- The binomial expansion of a power of a coderivation `D` against the deconcatenation:
+`Δ ∘ Dʳ = ∑_{a + b = r} (r choose a) (Dᵃ ⊗ Dᵇ) ∘ Δ`. -/
+theorem deconcatenation_comp_pow_coderiv {φ : ReducedTensorWords R M →ₗ[R] M} (r : ℕ) :
+    deconcatenation R M ∘ₗ coderiv R φ ^ r =
+      (∑ ij ∈ Finset.antidiagonal r, r.choose ij.1 •
+        TensorProduct.map (coderiv R φ ^ ij.1) (coderiv R φ ^ ij.2)) ∘ₗ deconcatenation R M := by
+  set X : Module.End R (ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :=
+    LinearMap.rTensor (ReducedTensorWords R M) (coderiv R φ)
+  set Y : Module.End R (ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :=
+    LinearMap.lTensor (ReducedTensorWords R M) (coderiv R φ)
+  have hXY : Commute X Y := Module.End.commute_rTensor_lTensor _ _
+  have hpow : deconcatenation R M ∘ₗ coderiv R φ ^ r = ((X + Y) ^ r) ∘ₗ deconcatenation R M := by
+    induction r with
+    | zero => rw [pow_zero, pow_zero, Module.End.one_eq_id, Module.End.one_eq_id,
+        LinearMap.comp_id, LinearMap.id_comp]
+    | succ r ih =>
+        rw [pow_succ', pow_succ', Module.End.mul_eq_comp, Module.End.mul_eq_comp,
+          ← LinearMap.comp_assoc, isCoderivation_iff.1 (isCoderivation_coderiv R φ),
+          LinearMap.comp_assoc, ih,
+          LinearMap.comp_assoc]
+  rw [hpow, hXY.add_pow']
+  congr 1
+  refine Finset.sum_congr rfl fun ij _ ↦ ?_
+  rw [LinearMap.rTensor_pow, LinearMap.lTensor_pow, Module.End.mul_eq_comp,
+    LinearMap.rTensor_comp_lTensor]
 
 /-! ### The exponential -/
 
@@ -109,7 +132,8 @@ theorem expCoderiv_apply_eq_sum (hφ : φ ∘ₗ ofLetter R M = 0) {n : ℕ}
     refine Finset.sum_subset (Finset.range_subset_range.2 hk) fun r _ hr ↦ ?_
     rw [Finset.mem_range, not_lt] at hr
     rw [Module.End.pow_map_zero_of_le hr
-      (pow_coderiv_apply_eq_zero_of_mem_filtration hφ (of_mem_filtration R M le_rfl x)), smul_zero]
+      (pow_coderiv_apply_eq_zero_of_mem_filtration R hφ (of_mem_filtration R M le_rfl x)),
+      smul_zero]
   simpa only [LinearMap.mem_eqLocus, LinearMap.sum_apply, LinearMap.smul_apply] using h hz
 
 /-- **The exponential on a word killed by a power.**  If `Dᵏ` kills `z`, for `D` a coderivation
@@ -133,7 +157,7 @@ theorem expCoderiv_apply_eq_sum_of_pow_apply_eq_zero (hφ : φ ∘ₗ ofLetter R
       rw [Finset.mem_range, not_lt] at hr
       rw [Module.End.pow_map_zero_of_le (by omega : k ≤ r) hk, smul_zero]
   rw [expCoderiv_apply_eq_sum hφ hn, hext n fun r hr ↦ Module.End.pow_map_zero_of_le hr
-      (pow_coderiv_apply_eq_zero_of_mem_filtration hφ hn),
+      (pow_coderiv_apply_eq_zero_of_mem_filtration R hφ hn),
     hext k fun r hr ↦ Module.End.pow_map_zero_of_le hr hk]
 
 /-- The exponential of a coderivation with no unary Taylor component fixes single letters. -/
@@ -147,7 +171,7 @@ theorem expCoderiv_comp_ofLetter (hφ : φ ∘ₗ ofLetter R M = 0) :
 
 /-- **The exponential to first order.**  If `φ` vanishes on the words of length at most `e`, for
 some `e ≥ 1`, then the exponential of `D = coderiv φ` is `id + D` on the words of length at most
-`2 e`: there `D ∘ D` vanishes, since each application of `D` shortens a word by more than `e`. -/
+`2 e`: there `D ∘ D` vanishes, since each application of `D` shortens a word by at least `e`. -/
 theorem expCoderiv_apply_of_mem_filtration {e : ℕ} (he : 1 ≤ e)
     (hφ : ∀ z ∈ filtration R M e, φ z = 0) {z : ReducedTensorWords R M}
     (hz : z ∈ filtration R M (2 * e)) :
@@ -175,53 +199,11 @@ theorem commute_expCoderiv (hφ : φ ∘ₗ ofLetter R M = 0)
   obtain ⟨n, hn⟩ := exists_mem_filtration R M z
   have hTr : ∀ r, T ((coderiv R φ ^ r) z) = (coderiv R φ ^ r) (T z) := fun r ↦ by
     rw [← Module.End.mul_apply, (hT.pow_right r).eq, Module.End.mul_apply]
-  have hz := pow_coderiv_apply_eq_zero_of_mem_filtration hφ hn
+  have hz := pow_coderiv_apply_eq_zero_of_mem_filtration R hφ hn
   have hTz : (coderiv R φ ^ n) (T z) = 0 := by rw [← hTr, hz, map_zero]
   rw [Module.End.mul_apply, Module.End.mul_apply, expCoderiv_apply_eq_sum hφ hn,
     expCoderiv_apply_eq_sum_of_pow_apply_eq_zero hφ hTz, map_sum]
   simp only [map_smul, hTr]
-
-omit [Algebra ℚ R] in
-/-- The binomial expansion of a power of a coderivation `D` against the deconcatenation:
-`Δ ∘ Dʳ = ∑_{a + b = r} (r choose a) (Dᵃ ⊗ Dᵇ) ∘ Δ`. -/
-private theorem deconcatenation_comp_pow_coderiv (r : ℕ) :
-    deconcatenation R M ∘ₗ coderiv R φ ^ r =
-      (∑ ij ∈ Finset.antidiagonal r, r.choose ij.1 •
-        TensorProduct.map (coderiv R φ ^ ij.1) (coderiv R φ ^ ij.2)) ∘ₗ deconcatenation R M := by
-  set X : Module.End R (ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :=
-    LinearMap.rTensor (ReducedTensorWords R M) (coderiv R φ)
-  set Y : Module.End R (ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :=
-    LinearMap.lTensor (ReducedTensorWords R M) (coderiv R φ)
-  have hXY : Commute X Y := Module.End.commute_rTensor_lTensor _ _
-  have hpow : deconcatenation R M ∘ₗ coderiv R φ ^ r = ((X + Y) ^ r) ∘ₗ deconcatenation R M := by
-    induction r with
-    | zero => rw [pow_zero, pow_zero, Module.End.one_eq_id, Module.End.one_eq_id,
-        LinearMap.comp_id, LinearMap.id_comp]
-    | succ r ih =>
-        rw [pow_succ', pow_succ', Module.End.mul_eq_comp, Module.End.mul_eq_comp,
-          ← LinearMap.comp_assoc, isCoderivation_iff.1 (isCoderivation_coderiv R φ),
-          LinearMap.comp_assoc, ih,
-          LinearMap.comp_assoc]
-  rw [hpow, hXY.add_pow']
-  congr 1
-  refine Finset.sum_congr rfl fun ij _ ↦ ?_
-  rw [LinearMap.rTensor_pow, LinearMap.lTensor_pow, Module.End.mul_eq_comp,
-    LinearMap.rTensor_comp_lTensor]
-
-/-- The divided binomial coefficients: `(r choose a) / r! = 1 / (a! b!)` when `a + b = r`. -/
-private theorem algebraMap_inv_factorial_mul_choose {a b : ℕ} :
-    algebraMap ℚ R ((a + b).factorial : ℚ)⁻¹ * ((a + b).choose a : R) =
-      algebraMap ℚ R (a.factorial : ℚ)⁻¹ * algebraMap ℚ R (b.factorial : ℚ)⁻¹ := by
-  rw [← map_natCast (algebraMap ℚ R), ← map_mul, ← map_mul]
-  congr 1
-  have h : ((a + b).choose a * a.factorial * b.factorial : ℚ) = (a + b).factorial := by
-    have := Nat.choose_mul_factorial_mul_factorial (Nat.le_add_right a b)
-    rw [Nat.add_sub_cancel_left] at this
-    exact_mod_cast this
-  rw [← h]
-  have hc : ((a + b).choose a : ℚ) ≠ 0 := by
-    exact_mod_cast (Nat.choose_pos (Nat.le_add_right a b)).ne'
-  field_simp
 
 /-- **The exponential of a coderivation is a coalgebra morphism**, when the coderivation has no
 unary Taylor component.  This is the binomial theorem for the commuting endomorphisms `D ⊗ 1` and
@@ -238,7 +220,7 @@ theorem isCoalgHom_expCoderiv (hφ : φ ∘ₗ ofLetter R M = 0) :
     (c ij.1 * c ij.2) •
       TensorProduct.map (coderiv R φ ^ ij.1) (coderiv R φ ^ ij.2) (deconcatenation R M z)
   have hkill : ∀ a, ∀ w ∈ filtration R M a, (coderiv R φ ^ a) w = 0 := fun _ _ hw ↦
-    pow_coderiv_apply_eq_zero_of_mem_filtration hφ hw
+    pow_coderiv_apply_eq_zero_of_mem_filtration R hφ hw
   -- The summands `T (a, b)` with `a ≥ N` or `b ≥ N` vanish.
   have hvan : ∀ a b, N ≤ a ∨ N ≤ b → T (a, b) = 0 := fun a b hab ↦ by
     simp only [T]
@@ -285,7 +267,8 @@ theorem isCoalgHom_expCoderiv (hφ : φ ∘ₗ ofLetter R M = 0) :
   rw [Finset.mem_antidiagonal] at hij
   subst hij
   simp only [T, c]
-  rw [← Nat.cast_smul_eq_nsmul R, smul_smul, algebraMap_inv_factorial_mul_choose]
+  rw [← Nat.cast_smul_eq_nsmul R, smul_smul, ← map_natCast (algebraMap ℚ R), ← map_mul, ← map_mul,
+    Nat.inv_factorial_mul_choose _ _ _ rfl]
 
 end TauCeti.ReducedTensorWords
 
