@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Colimit.DirectLimit
+public import TauCeti.Algebra.Colimit.DirectLimit
 public import TauCeti.FieldTheory.Galois.GaloisClosure
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
@@ -364,19 +364,9 @@ instance : TopologicalSpace (IdeleCoeff K) := ⊥
 instance : DiscreteTopology (IdeleCoeff K) := ⟨rfl⟩
 
 variable (K) in
-/-- The canonical map from the ideles of `E` to the direct limit, multiplicatively. -/
-private def ideleLimitOf (E : Ω) :
-    IdeleGroup (𝓞 E) E →* DirectLimit (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K) where
-  toFun a := ⟦⟨E, a⟩⟧
-  map_one' :=
-    (DirectLimit.one_def (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K) E).symm
-  map_mul' a b :=
-    (DirectLimit.mul_def (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K) E a b).symm
-
-variable (K) in
 /-- **The ideles of a finite Galois subextension `E` as ideles of `Kˢ`**, written additively. -/
 def ideleCoeffOf (E : Ω) : Additive (IdeleGroup (𝓞 E) E) →+ IdeleCoeff K :=
-  (ideleLimitOf K E).toAdditive
+  (DirectLimit.Monoid.of (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K) E).toAdditive
 
 /-- An idele of `E` and its extension to `E'` are the same idele of `Kˢ`. -/
 @[simp]
@@ -417,12 +407,10 @@ def IdeleCoeff.lift {M : Type*} [AddCommMonoid M]
     (hφ : ∀ (E E' : Ω) (h : E ≤ E') (a : IdeleGroup (𝓞 E) E),
       φ E' (.ofMul (ideleTransition K E E' h a)) = φ E (.ofMul a)) :
     IdeleCoeff K →+ M :=
-  MonoidHom.toAdditiveLeft
-    { toFun := DirectLimit.lift (ideleTransition K)
-        (fun E a ↦ AddMonoidHom.toMultiplicativeRight (φ E) a)
-        fun E E' h a ↦ congrArg Multiplicative.ofAdd (hφ E E' h a).symm
-      map_one' := DirectLimit.lift_one (fun E ↦ AddMonoidHom.toMultiplicativeRight (φ E)) _
-      map_mul' := DirectLimit.lift_mul (fun E ↦ AddMonoidHom.toMultiplicativeRight (φ E)) _ }
+  MonoidHom.toAdditiveLeft <|
+    DirectLimit.Monoid.lift (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K)
+      (fun E ↦ AddMonoidHom.toMultiplicativeRight (φ E))
+      fun E E' h a ↦ congrArg Multiplicative.ofAdd (hφ E E' h a)
 
 /-- The homomorphism induced by compatible homomorphisms out of the ideles of the finite Galois
 subextensions restricts to each of them on the ideles of that subextension. -/
