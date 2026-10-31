@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+public import TauCeti.AlgebraicGeometry.Curves.Category
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Nonsingular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
@@ -46,6 +47,8 @@ some `∂W/∂Xⱼ` with `j ≠ i` is nonzero there.
   elliptic curve has dimension one.
 * `WeierstrassCurve.isDiscreteValuationRing_stalk_projModel`: over a field, the local rings of the
   projective model of an elliptic curve at its codimension-one points are discrete valuation rings.
+* `WeierstrassCurve.isCurveOver_projModel` and `WeierstrassCurve.projModelCurve`: over a field,
+  the projective model of an elliptic curve is a curve, and a regular proper curve.
 
 ## References
 
@@ -241,6 +244,15 @@ instance fact_coheight_le_one_projModel : Fact (∀ y : W.projModel, coheight y 
   ⟨fun y ↦ by
     exact_mod_cast (coheight_le_topologicalKrullDim y).trans
       (topologicalKrullDim_projModel W).le⟩
+
+/-- The projective model of an elliptic curve is a curve over the base field: an integral scheme,
+proper and of dimension one. -/
+instance isCurveOver_projModel : W.projModel.IsCurveOver K where
+  topologicalKrullDim_eq_one := topologicalKrullDim_projModel W
+
+/-- The projective model of an elliptic curve, as a regular proper curve over the base field. -/
+noncomputable abbrev projModelCurve : RegularProperCurveCat K :=
+  .of W.projModel
 
 end Field
 

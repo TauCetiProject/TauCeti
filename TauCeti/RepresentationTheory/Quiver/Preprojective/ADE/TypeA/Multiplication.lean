@@ -62,13 +62,6 @@ local notation "d" => fun w => signlessArrow k AG (w + 1) w
 private theorem ladder_turn (w : ℕ) : d (w + 1) * u (w + 1) + u w * d w = 0 := by
   simpa only [Nat.add_sub_cancel, add_comm] using signlessArrow_A_relation k (n := n) (w + 1)
 
-/-- The sole turn at the bottom endpoint vanishes. -/
-private theorem ladder_bottom : d 0 * u 0 = 0 := by
-  have hzero : signlessArrow k AG 0 0 = 0 :=
-    signlessArrow_eq_zero k fun _ _ => SimpleGraph.irrefl _
-  simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
-    signlessArrow_A_relation k (n := n) 0
-
 /-- An upward arrow extends the climb of a valley normal form. -/
 @[simp]
 theorem signlessArrow_mul_signlessPreprojectiveAValley_of_succ (a b b' : Fin (DynkinType.A n).rank)
@@ -116,7 +109,8 @@ theorem signlessArrow_mul_signlessPreprojectiveAValley_zero (a b b' : Fin (Dynki
   rw [signlessPreprojectiveAValley_def, ← mul_assoc, ← mul_assoc,
     signlessArrow_mul_vertexIdempotent, ite_eq_left rfl]
   simp only [Nat.sub_zero]
-  rw [← hb, d_mul_ladderValley_zero_eq_zero (ladder_bottom k) (ladder_turn k), zero_mul]
+  rw [← hb, d_mul_ladderValley_zero_eq_zero
+    (signlessArrow_A_one_zero_mul_signlessArrow_A_zero_one k) (ladder_turn k), zero_mul]
 
 /-- An arrow whose source differs from the terminal vertex of a valley annihilates it. -/
 @[simp]
@@ -198,7 +192,8 @@ theorem signlessPreprojectiveAValley_mul_eq_zero (a b c : Fin (DynkinType.A n).r
     rw [target_ladderValley k a b (by omega) (by omega),
       target_ladderValley k a b (by omega) (by omega),
       ← mul_assoc (ladderValley u d l (b.val - l) (c.val - l)),
-      ladderValley_mul_ladderValley_eq_zero (ladder_bottom k (n := n))
+      ladderValley_mul_ladderValley_eq_zero
+        (signlessArrow_A_one_zero_mul_signlessArrow_A_zero_one k (n := n))
         (ladder_turn k (n := n)) (by omega) (by omega), zero_mul, mul_zero]
   · have ha : a.val - m = 0 := by omega
     obtain ⟨r, hr⟩ : ∃ r, b.val - m = r + 1 := ⟨b.val - m - 1, by omega⟩

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Neighborhood
 public import TauCeti.Topology.OpenPartialHomeomorph.Basic
-public import TauCeti.Topology.VectorBundle.Riemannian
+public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!
 # Closed disc neighbourhoods in bundle coordinates

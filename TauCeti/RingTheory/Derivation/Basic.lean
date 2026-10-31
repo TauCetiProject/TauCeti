@@ -18,6 +18,9 @@ does not apply that lemma to it. This file adds the literal form `Derivation.map
 `simp` differentiates polynomial expressions with numeric coefficients, for instance partial
 derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`.
 
+A derivation differentiates a finite product termwise: `D (∏ i ∈ s, f i)` is the sum over
+`j ∈ s` of `D (f j)` times the product of the other factors.
+
 Iterates of a derivation remain linear over the scalars, so they commute with finite scalar
 linear combinations. On products they satisfy the general Leibniz rule
 `Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`.
@@ -29,6 +32,7 @@ unit, without factoring it.
 ## Main results
 
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
+* `Derivation.leibniz_prod`: the Leibniz rule for finite products.
 * `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
@@ -47,6 +51,20 @@ variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [AddCommMonoid M] [Al
 @[simp]
 theorem map_ofNat (n : ℕ) [n.AtLeastTwo] : D (no_index (OfNat.ofNat n : A)) = 0 := by
   rw [← Nat.cast_ofNat, map_natCast]
+
+/-- **Leibniz rule for finite products**: `D (∏ i ∈ s, f i)` is the sum over `j ∈ s` of
+`D (f j)` times the product of the other factors. -/
+theorem leibniz_prod {ι : Type*} [DecidableEq ι] (s : Finset ι) (f : ι → A) :
+    D (∏ i ∈ s, f i) = ∑ j ∈ s, (∏ i ∈ s.erase j, f i) • D (f j) := by
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, leibniz, ih, Finset.sum_insert ha, Finset.erase_insert ha,
+      Finset.smul_sum, add_comm]
+    congr 1
+    refine Finset.sum_congr rfl fun j hj => ?_
+    rw [Finset.erase_insert_of_ne (ne_of_mem_of_not_mem hj ha).symm,
+      Finset.prod_insert fun h => ha (Finset.mem_of_mem_erase h), smul_smul]
 
 /-- Iterated differentiation commutes with finite scalar linear combinations. -/
 theorem iterate_sum_smul {ι : Type*} (D : Derivation R A A) (m : ℕ) (s : Finset ι)

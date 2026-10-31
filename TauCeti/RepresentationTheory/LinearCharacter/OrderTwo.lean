@@ -49,12 +49,7 @@ theorem nonempty_equiv_trivial_or_ofLinearCharacter_of_forall_eq_one_or_eq
     apply IntertwiningMap.ext
     simp only [IntertwiningMap.coe_mul, hTmap, ← map_mul, ht, map_one]
     rfl
-  let e := IntertwiningMap.equivAlgEnd (ρ := ρ)
-  -- Schur's division ring turns the involution equation into the two scalar possibilities.
-  have hcases : T = 1 ∨ T = -1 := by
-    have h := mul_self_eq_one_iff.mp (show e T * e T = 1 by rw [← map_mul, hsq, map_one])
-    exact h.imp (fun h ↦ e.injective (by simpa using h))
-      (fun h ↦ e.injective (by simpa using h))
+  have hcases : T = 1 ∨ T = -1 := hρ.eq_one_or_eq_neg_one_of_mul_self_eq_one hsq
   obtain ⟨ψ, hψ, haction⟩ : ∃ ψ : G →* kˣ, (ψ = 1 ∨ ψ = χ) ∧
       ∀ g, ρ g = (ψ g : k) • (1 : Module.End k V) := by
     rcases hcases with hpos | hneg
@@ -70,19 +65,9 @@ theorem nonempty_equiv_trivial_or_ofLinearCharacter_of_forall_eq_one_or_eq
       · simp
       · ext x
         simpa [hT, hχ] using DFunLike.congr_fun hneg x
-  obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  -- A nonzero vector gives an intertwiner from the resulting line; Schur makes it invertible.
-  let f : IntertwiningMap (Representation.ofLinearCharacter ψ) ρ :=
-    (LinearMap.toSpanSingleton k V v).intertwiningMap_of_isIntertwiningMap _ _ fun g c ↦ by
-      simp [Representation.ofLinearCharacter_apply, haction, mul_smul, mul_comm]
-  have hf : f ≠ 0 := by
-    intro h
-    apply hv
-    simpa [f] using DFunLike.congr_fun h 1
-  have he := (bijective_or_eq_zero f).resolve_right hf
+  have he := (hρ.nonempty_equiv_ofLinearCharacter_iff ψ).mpr haction
   rcases hψ with rfl | rfl
-  · simpa only [Representation.ofLinearCharacter_one] using
-      Or.inl (Nonempty.intro (f.ofBijective he).symm)
-  · exact Or.inr ⟨(f.ofBijective he).symm⟩
+  · exact Or.inl (by simpa only [Representation.ofLinearCharacter_one] using he)
+  · exact Or.inr he
 
 end Representation.IsIrreducible
