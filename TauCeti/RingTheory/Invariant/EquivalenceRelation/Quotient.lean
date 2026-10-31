@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Finiteness.Descent
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.RingTheory.Flat.Localization
-public import Mathlib.RingTheory.LocalProperties.Exactness
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Local
+public import TauCeti.RingTheory.TensorProduct.Free
 
 /-!
 # The quotient of an affine scheme by a finite free equivalence relation
@@ -35,10 +34,11 @@ No hypothesis is made on `C`. The case of a local ring of invariants is
 localization at the maximal ideals `P` of `C`. Base change along the flat map `C → C_P` gives the
 relation `Spec (A' ⊗[A] B) ⇉ Spec A'` with `A' = C_P ⊗[C] A`, which is again finite free, and
 whose ring of invariants is `C_P` because invariants commute with flat base change
-(`RingHom.eqLocus_eq_range_of_isPushout`). By the local case `A'` has a basis `aᵢ` over `C_P`
-whose images `t' aᵢ` form a basis of `A' ⊗[A] B` over `A'`. So `A'` is free over `C_P`, and the
-base change of `A ⊗[C] A → B` along `C → C_P`, which is `A' ⊗[C_P] A' → A' ⊗[A] B`, carries the
-basis `1 ⊗ aᵢ` to the basis `t' aᵢ` and is bijective. Flatness and bijectivity are local at the
+(`RingHom.IsSpecEquivRel.exists_baseChange_ringEquiv_eqLocus`). By the local case `A'` has a
+basis `aᵢ` over `C_P` whose images `t' aᵢ` form a basis of `A' ⊗[A] B` over `A'`. So `A'` is free
+over `C_P`, and the base change of `A ⊗[C] A → B` along `C → C_P`, which is
+`A' ⊗[C_P] A' → A' ⊗[A] B`, carries the basis `1 ⊗ aᵢ` to the basis `t' aᵢ` and is bijective
+(`Algebra.TensorProduct.lift_bijective_of_basis`). Flatness and bijectivity are local at the
 maximal ideals of `C`. Since the points of `Spec C` are the orbits of the relation
 (`RingHom.IsSpecEquivRel.comap_subtype_eqLocus_surjective`), `A` is faithfully flat over `C`, and
 finiteness and finite presentation descend from `A ⊗[C] A ≅ B` along `C → A`.
@@ -87,23 +87,6 @@ private theorem tensorProductLinearMap_tmul (x y : A) :
     tensorProductLinearMap (t := t) (x ⊗ₜ y) = algebraMap A B x * t y :=
   tensorProductMap_tmul x y
 
--- If `u : S → T` carries a basis of `S` over `R` to a basis of `T` over `S`, then
--- `S ⊗[R] S → T`, `x ⊗ y ↦ x * u y`, is bijective. This is stated separately because in the proof
--- of `free_and_bijective_baseChange` the right algebra structure on tensor products is a local
--- instance, which makes the `S`-module structure of `S ⊗[R] S` ambiguous.
-private theorem bijective_lift_of_basis {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
-    [Algebra R S] [Algebra S T] [Algebra R T] [IsScalarTower R S T] (u : S →ₐ[R] T) {ι : Type*}
-    (bS : Module.Basis ι R S) (bT : Module.Basis ι S T) (hb : ∀ i, bT i = u (bS i)) :
-    Function.Bijective (Algebra.TensorProduct.lift (Algebra.ofId S T) u fun _ _ ↦ .all _ _) := by
-  let b := Algebra.TensorProduct.basis S bS
-  have hψ : (Algebra.TensorProduct.lift (Algebra.ofId S T) u fun _ _ ↦ .all _ _).toLinearMap =
-      (b.equiv bT (Equiv.refl ι)).toLinearMap :=
-    b.ext fun i ↦ by
-      rw [LinearEquiv.coe_coe, Module.Basis.equiv_apply]
-      simp [b, hb]
-  rw [← AlgHom.coe_toLinearMap, hψ]
-  exact (b.equiv bT (Equiv.refl ι)).bijective
-
 variable (h : (algebraMap A B).IsSpecEquivRel t) [Module.Finite A B] [Module.Free A B]
 include h
 
@@ -117,46 +100,21 @@ private theorem free_and_bijective_baseChange (C' : Type u) [CommRing C']
       Function.Bijective ((tensorProductLinearMap (t := t)).baseChange C') := by
   let A' := C' ⊗[(algebraMap A B).eqLocus t] A
   let B' := A' ⊗[A] B
-  -- the base change `t' : A' → B'` of `t`
-  have hct : ((algebraMap B B').comp t).comp (algebraMap ((algebraMap A B).eqLocus t) A) =
-      ((algebraMap A' B').comp (algebraMap C' A')).comp
-        (algebraMap ((algebraMap A B).eqLocus t) C') := by
-    ext c
-    have hc : t (algebraMap _ A c) = algebraMap A B (algebraMap _ A c) := (mem_eqLocus.mp c.2).symm
-    simp only [RingHom.comp_apply, hc]
-    rw [← IsScalarTower.algebraMap_apply A B B', IsScalarTower.algebraMap_apply A A' B',
-      ← IsScalarTower.algebraMap_apply _ A A', IsScalarTower.algebraMap_apply _ C' A']
-  let t' : A' →+* B' := Algebra.IsPushout.liftRingHom A' _ _ hct
-  have ht₁ : t'.comp (algebraMap A A') = (algebraMap B B').comp t := by
-    ext; simp [t']
-  have ht₂ : t'.comp (algebraMap C' A') = (algebraMap A' B').comp (algebraMap C' A') := by
-    ext; simp [t']
-  have h' : (algebraMap A' B').IsSpecEquivRel t' :=
-    h.of_isPushout ((algebraMap A B).eqLocus t) ht₁ ht₂
-  have hR' := eqLocus_eq_range_of_isPushout (R' := C') (A := A) (B := B) (A' := A') (B' := B')
-    ((algebraMap A B).eqLocus t).range_subtype.symm ht₁ ht₂
-  -- the invariants of `A'` are a copy of `C'`, a local ring
-  have hinj : Function.Injective (algebraMap C' A') :=
-    Algebra.TensorProduct.includeLeft_injective (S := C') Subtype.val_injective
-  let e : C' ≃+* (algebraMap A' B').eqLocus t' :=
-    (RingEquiv.ofBijective (algebraMap C' A').rangeRestrict ⟨fun x y hxy ↦
-      hinj (congrArg Subtype.val hxy), (algebraMap C' A').rangeRestrict_surjective⟩).trans
-      (RingEquiv.subringCongr hR'.symm)
-  have : IsLocalRing ((algebraMap A' B').eqLocus t') := by
-    have : Nontrivial ((algebraMap A' B').eqLocus t') := e.symm.toEquiv.nontrivial
-    exact .of_surjective' e.toRingHom e.surjective
+  -- the base change `t' : A' → B'` of `t`, whose invariants are a copy `e` of the local ring `C'`
+  obtain ⟨t', e, h', _, ht₁, ht₂, he⟩ := h.exists_baseChange_ringEquiv_eqLocus C'
   -- a basis `aᵢ` of `A'` over `C'` whose images `t' aᵢ` form a basis of `B'` over `A'`
   obtain ⟨b', a', hb'⟩ := h'.exists_basis_eq_apply
-  have he (y : C') : (e y : A') = algebraMap C' A' y := rfl
   let bA' : Module.Basis _ C' A' := (h'.basis b' hb').mapCoeffs e.symm fun c x ↦ by
     rw [Algebra.smul_def, Subring.smul_def, smul_eq_mul, ← he, e.apply_symm_apply]
   refine ⟨.of_basis bA', ?_⟩
   -- so `ψ : A' ⊗[C'] A' → B'`, `x ⊗ y ↦ s' x * t' y`, which carries the basis `1 ⊗ aᵢ` of
   -- `A' ⊗[C'] A'` over `A'` to the basis `t' aᵢ` of `B'`, is bijective
   let u : A' →ₐ[C'] B' := AlgHom.mk t' fun c ↦ by
-    simpa [IsScalarTower.algebraMap_apply C' A' B'] using congr($ht₂ c)
+    rw [IsScalarTower.algebraMap_apply C' A' B']
+    exact congr($ht₂ c)
   let ψ := Algebra.TensorProduct.lift (Algebra.ofId A' B') u fun _ _ ↦ .all _ _
-  have hψ : Function.Bijective ψ := bijective_lift_of_basis u bA' b' fun i ↦ by simp [u, bA', hb']
+  have hψ : Function.Bijective ψ :=
+    Algebra.TensorProduct.lift_bijective_of_basis u bA' b' fun i ↦ by simp [u, bA', hb']
   -- through `C' ⊗[C] (A ⊗[C] A) ≅ A' ⊗[C'] A'` and `B' ≅ C' ⊗[C] B`, the base change of
   -- `A ⊗[C] A → B` is `ψ`
   let eB := Algebra.IsPushout.cancelBaseChange ((algebraMap A B).eqLocus t) C' A A' B
