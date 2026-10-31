@@ -47,6 +47,17 @@ abbrev tail (F : ModuleTower.{v} R) (k : ℕ) : ModuleTower.{v} R :=
 
 variable (F : ModuleTower.{v} R) (k : ℕ)
 
+@[simp high]
+theorem tail_transitionOfLE {n m : ℕ} (h : n ≤ m) :
+    (F.tail k).transitionOfLE h = F.transitionOfLE (Nat.add_le_add_left h k) := by
+  exact F.subsequence_transitionOfLE _ h
+
+@[simp high]
+theorem tail_transition (n : ℕ) : (F.tail k).transition n = F.transition (k + n) := by
+  rw [subsequence_transition]
+  -- Evaluating the shift order hom identifies k + (n + 1) with (k + n) + 1.
+  exact F.transitionOfLE_succ (k + n)
+
 /-- Restriction of a product family to a tail. -/
 def tailRestriction : F.Product →ₗ[R] (F.tail k).Product :=
   LinearMap.pi fun n ↦ LinearMap.proj (k + n)
@@ -60,8 +71,8 @@ theorem tailRestriction_apply (x : F.Product) (n : ℕ) :
 theorem tailRestriction_shift :
     F.tailRestriction k ∘ₗ F.shift = (F.tail k).shift ∘ₗ F.tailRestriction k := by
   ext x n
-  simp only [LinearMap.comp_apply, tailRestriction_apply, shift_apply,
-    ← transitionOfLE_succ, subsequence_transitionOfLE]
+  simp only [LinearMap.comp_apply, tailRestriction_apply, shift_apply, tail_transition]
+  -- The dependent inputs x (k + n + 1) and x (k + (n + 1)) agree by evaluation of addition.
   rfl
 
 /-- Composite transition maps give a morphism from a tail to the original tower. -/
@@ -122,8 +133,7 @@ def limOneTailEquiv : F.limOne ≃ₗ[R] (F.tail k).limOne :=
       have h : F.tailRestriction k (productMap (F.tailToSelf k) x) =
           productMap ((F.tail k).tailToSelf k) ((F.tail k).tailRestriction k x) := by
         ext n
-        simp only [tailRestriction_apply, productMap_apply, tailToSelf_app,
-          subsequence_transitionOfLE]
+        simp only [tailRestriction_apply, productMap_apply, tailToSelf_app, tail_transitionOfLE]
       rw [h]
       exact (F.tail k).limOne_tailToSelf_restriction k x)
     (by
@@ -151,7 +161,7 @@ theorem subsingleton_limOne_of_surjective_of_le
     (h : ∀ n, k ≤ n → Function.Surjective (F.transition n)) : Subsingleton F.limOne :=
   (F.limOneTailEquiv k).toEquiv.subsingleton_congr.2 <|
     (F.tail k).subsingleton_limOne_of_surjective fun n ↦ by
-      erw [subsequence_transition, transitionOfLE_succ]
+      rw [tail_transition]
       exact h _ (Nat.le_add_right k n)
 
 variable {F} {G : ModuleTower.{v} R}
