@@ -16,13 +16,17 @@ Mathlib's `IsAbelianGalois.tower_bot`, and `TauCeti.algEquiv_commute_of_isAbelia
 `IsAbelianGalois` instance as such an explicit hypothesis.
 
 The file also extends Mathlib's `IsAbelianGalois.sup` from two subextensions to an arbitrary
-family: a compositum of abelian Galois subextensions is abelian Galois.
+family: a compositum of abelian Galois subextensions is abelian Galois. Finally, a separable
+quadratic extension is abelian Galois, its Galois group being cyclic; over `ℚ` this lets Mathlib's
+instance `NumberField.IsCMField.of_isAbelianGalois` make every imaginary quadratic field a CM
+field.
 
 ## Main results
 
 * `TauCeti.commute_of_tower`
 * `TauCeti.algEquiv_commute_of_isAbelianGalois`
 * `IntermediateField.isAbelianGalois_iSup`
+* `Algebra.IsQuadraticExtension.isAbelianGalois`
 -/
 
 public section
@@ -97,3 +101,10 @@ instance _root_.IntermediateField.isAbelianGalois_iSup {ι : Type*} (E : ι → 
 end iSup
 
 end TauCeti
+
+/-- **A separable quadratic extension is abelian Galois**, its Galois group being cyclic of order
+two (`Algebra.IsQuadraticExtension.isCyclic`). -/
+instance Algebra.IsQuadraticExtension.isAbelianGalois (K L : Type*) [Field K] [Field L]
+    [Algebra K L] [Algebra.IsQuadraticExtension K L] [Algebra.IsSeparable K L] :
+    IsAbelianGalois K L :=
+  .of_isCyclic K L
