@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.PosSemidef.Basic
-public import TauCeti.Probability.Distributions.Gaussian.Conditional
+public import TauCeti.Probability.Distributions.Gaussian.Conditional.Basic
 
 import TauCeti.MeasureTheory.Constructions.EuclideanSpace
 
@@ -15,17 +15,17 @@ import TauCeti.MeasureTheory.Constructions.EuclideanSpace
 
 A multivariate Gaussian law over a one-element index type is a real Gaussian law read on the
 single coordinate.  Splitting a two-element index type into two singleton blocks turns the
-conditional-law formulas of `TauCeti/Probability/Distributions/Gaussian/Conditional.lean` into
+conditional-law formulas of `TauCeti/Probability/Distributions/Gaussian/Conditional/Basic.lean` into
 the classical bivariate ones: writing `v₁`, `v₂` for the two variances, `c` for the covariance
 and `ρ = c / √(v₁ v₂)` for the correlation, the conditional mean of the first coordinate given
 the second is the regression line `m₁ + ρ √(v₁ / v₂) (x₂ - m₂)` and the conditional variance is
 `v₁ (1 - ρ ^ 2)`.
 
 When the observed block has one coordinate, the retained block can have any finite dimension;
-the covariance formulas also allow arbitrary retained index types. For an arbitrary matrix, the
-mean at retained coordinate `i` has slope `Sᵢ₂ / S₂₂`, and the conditional covariance entry at
-`(i, j)` is `Sᵢⱼ - Sᵢ₂ S₂ⱼ / S₂₂`. These algebraic identities
-need no covariance hypothesis. For a positive-semidefinite covariance, the mean and diagonal
+the covariance formulas also allow arbitrary retained index types. When the observed block is
+positive semidefinite, the mean at retained coordinate `i` has slope `Sᵢ₂ / S₂₂`, and the
+conditional covariance entry at `(i, j)` is `Sᵢⱼ - Sᵢ₂ S₂ⱼ / S₂₂`. These formulas include zero
+observed variance. For a positive-semidefinite covariance, the mean and diagonal
 covariance entries also have the correlation forms above: symmetry identifies `S₂ᵢ` with `Sᵢ₂`,
 and a vanishing variance forces the corresponding covariance to vanish. The variances and
 correlation are named through defining hypotheses to keep the formulas readable.
@@ -35,14 +35,14 @@ vanishes there is no correlation to speak of and `ρ` is instead the totalized v
 the correlation forms are then still true, but as algebraic identities in which every term
 carrying `ρ` has disappeared.  Likewise, the conditional-law statement below is an identity of
 kernels for any positive semidefinite covariance. The regular-conditional-distribution theorem
-assumes a positive observed variance.
+includes zero observed variance.
 
 ## Main results
 
 * `EuclideanSpace.multivariateGaussian_eq_map_single` — over a one-element index type the
   multivariate Gaussian law is a real Gaussian law carried to the unique coordinate;
 * `Matrix.gaussianCondCov_apply_of_unique` — with one observed coordinate, the Schur correction
-  formula for any pair of retained coordinates;
+  formula for any pair of retained coordinates when the observed variance is nonnegative;
 * `EuclideanSpace.gaussianCondMean_apply_of_unique` — the regression formula at each retained
   coordinate when there is one observed coordinate;
 * `EuclideanSpace.gaussianCondMean_apply_of_unique_of_posSemidef` and
@@ -51,7 +51,7 @@ assumes a positive observed variance.
 * `EuclideanSpace.gaussianCondKernel_apply_of_unique_of_posSemidef` — the bivariate conditional
   law itself;
 * `TauCeti.Probability.condDistrib_multivariateGaussian_of_unique` — that law as the regular
-  conditional distribution of a bivariate Gaussian pair, for a positive observed variance.
+  conditional distribution of a bivariate Gaussian pair, including zero observed variance.
 
 ## References
 
@@ -101,15 +101,18 @@ theorem multivariateGaussian_eq_map_single [Unique ι] [DecidableEq ι]
 /-! ### Conditional mean with one observed coordinate -/
 
 /-- With one observed coordinate, each coordinate of the conditional mean is a regression line,
-with slope the ratio of its covariance with the observed coordinate to the observed variance. -/
+with slope the ratio of its covariance with the observed coordinate to the nonnegative observed
+variance. At zero observed variance the slope is zero. -/
 theorem gaussianCondMean_apply_of_unique [Fintype ι] [Unique κ] [DecidableEq κ]
-    (m : EuclideanSpace ℝ (ι ⊕ κ)) (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ)
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
+    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosSemidef)
     (x₂ : EuclideanSpace ℝ κ) (i : ι) :
     m.gaussianCondMean S x₂ i =
       m (Sum.inl i) +
         S (Sum.inl i) (Sum.inr default) / S (Sum.inr default) (Sum.inr default) *
           (x₂ default - m (Sum.inr default)) := by
-  rw [EuclideanSpace.gaussianCondMean_def]
+  rw [EuclideanSpace.gaussianCondMean_def,
+    Matrix.covariancePseudoInverse_eq_inv_of_unique hS₂₂]
   simp [Matrix.toLpLin_apply, Matrix.mulVec, dotProduct, Matrix.mul_apply,
     EuclideanSpace.sumEquivProd, div_eq_mul_inv, Matrix.inv_subsingleton]
 
@@ -144,7 +147,7 @@ theorem gaussianCondMean_apply_of_unique_of_posSemidef [Fintype ι] [Unique κ] 
     rw [hρ, ← hv₂, Real.sqrt_mul hv₁pos.le, Real.sqrt_div hv₁pos.le]
     field_simp
     rw [Real.sq_sqrt hv₂pos.le]
-  rw [gaussianCondMean_apply_of_unique, hslope]
+  rw [gaussianCondMean_apply_of_unique m (hS.submatrix Sum.inr), hslope]
 
 end EuclideanSpace
 
@@ -154,14 +157,16 @@ namespace Matrix
 
 /-- With one observed coordinate, each entry of the conditional covariance is the original
 covariance minus the Schur correction `Sᵢ₂ S₂ⱼ / S₂₂`. The retained block can have arbitrary
-dimension. -/
+dimension; the observed variance is assumed nonnegative. -/
 theorem gaussianCondCov_apply_of_unique [Unique κ] [DecidableEq κ]
-    (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) (i j : ι) :
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
+    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosSemidef) (i j : ι) :
     S.gaussianCondCov i j =
       S (Sum.inl i) (Sum.inl j) -
         S (Sum.inl i) (Sum.inr default) * S (Sum.inr default) (Sum.inl j) /
           S (Sum.inr default) (Sum.inr default) := by
-  simp only [Matrix.gaussianCondCov_def, Matrix.sub_apply, Matrix.mul_apply,
+  rw [Matrix.gaussianCondCov_def, Matrix.covariancePseudoInverse_eq_inv_of_unique hS₂₂]
+  simp only [Matrix.sub_apply, Matrix.mul_apply,
     Matrix.submatrix_apply, Matrix.inv_subsingleton, Matrix.diagonal_apply,
     Fintype.sum_unique, ite_true, Ring.inverse_eq_inv, div_eq_mul_inv]
   ring
@@ -182,7 +187,7 @@ theorem gaussianCondCov_apply_of_unique_of_posSemidef [Unique κ] [DecidableEq �
   have hv₂nonneg : 0 ≤ v₂ := by rw [hv₂]; exact hS.diag_nonneg
   have hsymm : S (Sum.inr default) (Sum.inl i) = S (Sum.inl i) (Sum.inr default) := by
     simpa using hS.isHermitian.apply (Sum.inl i) (Sum.inr default)
-  rw [gaussianCondCov_apply_of_unique, hsymm, ← hv₁, ← hv₂]
+  rw [gaussianCondCov_apply_of_unique (hS.submatrix Sum.inr), hsymm, ← hv₁, ← hv₂]
   rcases hv₁nonneg.eq_or_lt with hv₁zero | hv₁pos
   · -- A vanishing retained variance forces a vanishing covariance, so both sides vanish.
     have hc : S (Sum.inl i) (Sum.inr default) = 0 :=
@@ -208,9 +213,8 @@ is a real Gaussian law with mean `m₁ + ρ √(v₁ / v₂) (x₂ - m₂)` and 
 `v₁ (1 - ρ ^ 2)`, read on the unique coordinate of the retained block.
 
 This is an identity between the conditional Gaussian kernel and a real Gaussian law, and as such
-needs no constraint on the observed variance. The regular-conditional-distribution theorem
-`TauCeti.Probability.condDistrib_multivariateGaussian_of_unique` assumes a positive observed
-variance. -/
+includes zero observed variance. The same formula represents the regular conditional distribution
+in `TauCeti.Probability.condDistrib_multivariateGaussian_of_unique`. -/
 theorem gaussianCondKernel_apply_of_unique_of_posSemidef [Unique ι] [Unique κ] [DecidableEq ι]
     [DecidableEq κ] (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
     (hS : S.PosSemidef) (x₂ : EuclideanSpace ℝ κ) {v₁ v₂ ρ : ℝ}
@@ -230,16 +234,16 @@ end EuclideanSpace
 namespace TauCeti.Probability
 
 /-- **The regular conditional distribution of a bivariate Gaussian pair.**  For a jointly Gaussian
-pair with positive semidefinite covariance and a positive observed variance, the conditional law
+pair with positive-semidefinite covariance, the conditional law
 of the first coordinate given the second is the real Gaussian law with mean
 `m₁ + ρ √(v₁ / v₂) (x₂ - m₂)` and variance `v₁ (1 - ρ ^ 2)`, read on the unique coordinate of the
-first block.  Positive definiteness of the observed block says exactly that `v₂` is positive; if
-`v₁` vanishes as well then `ρ` is again the totalized `0` and the law is the Dirac law at `m₁`. -/
+first block. At zero observed variance the conditional law is the unconditional first marginal.
+At zero retained variance it is the Dirac law at `m₁`. -/
 theorem condDistrib_multivariateGaussian_of_unique {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} [IsFiniteMeasure P] [Unique ι] [Unique κ] [DecidableEq ι] [DecidableEq κ]
     (X : Ω → EuclideanSpace ℝ (ι ⊕ κ)) (m : EuclideanSpace ℝ (ι ⊕ κ))
     {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hX : HasLaw X (multivariateGaussian m S) P)
-    (hS : S.PosSemidef) (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) {v₁ v₂ ρ : ℝ}
+    (hS : S.PosSemidef) {v₁ v₂ ρ : ℝ}
     (hv₁ : v₁ = S (Sum.inl default) (Sum.inl default))
     (hv₂ : v₂ = S (Sum.inr default) (Sum.inr default))
     (hρ : ρ = S (Sum.inl default) (Sum.inr default) / Real.sqrt (v₁ * v₂)) :
@@ -249,7 +253,7 @@ theorem condDistrib_multivariateGaussian_of_unique {Ω : Type*} [MeasurableSpace
         (gaussianReal
             (m (Sum.inl default) + ρ * Real.sqrt (v₁ / v₂) * (x₂ default - m (Sum.inr default)))
             (v₁ * (1 - ρ ^ 2)).toNNReal).map (EuclideanSpace.single default) := by
-  filter_upwards [condDistrib_multivariateGaussian X m hX hS hS₂₂] with x₂ hx₂
+  filter_upwards [condDistrib_multivariateGaussian X m hX hS] with x₂ hx₂
   rw [hx₂, EuclideanSpace.gaussianCondKernel_apply_of_unique_of_posSemidef m hS x₂ hv₁ hv₂ hρ]
 
 end TauCeti.Probability
