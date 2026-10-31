@@ -599,6 +599,49 @@ lemma actId_inv_app (p : Γ) (X : fiber actions p) :
   rw [actId]
   rfl
 
+omit [Category.{v₁, u₁} Γ] in
+/-- Associativity of the composition comparisons of the prescribed action at `p`. -/
+@[reassoc]
+lemma actComp_associativity (p : Γ) (a b c ab bc abc : SingleObj.star H ⟶ SingleObj.star H)
+    (hab : a ≫ b = ab) (hbc : b ≫ c = bc) (habc : ab ≫ c = abc) (habc' : a ≫ bc = abc)
+    (X : fiber actions p) :
+    (actComp actions p ab c abc habc).hom.app X ≫
+        (act actions p c).map ((actComp actions p a b ab hab).hom.app X) =
+      (actComp actions p a bc abc habc').hom.app X ≫
+        (actComp actions p b c bc hbc).hom.app ((act actions p a).obj X) := by
+  have := (actions p).mapComp'₀₂₃_hom_comp_mapComp'_hom_whiskerRight_app a.toLoc b.toLoc c.toLoc
+    ab.toLoc bc.toLoc abc.toLoc (by rw [← Quiver.Hom.comp_toLoc, hab])
+    (by rw [← Quiver.Hom.comp_toLoc, hbc]) (by rw [← Quiver.Hom.comp_toLoc, habc]) X
+  simpa [actComp_hom_app] using this
+
+omit [Category.{v₁, u₁} Γ] in
+/-- Left unitality of the composition comparisons of the prescribed action at `p`. -/
+@[reassoc]
+lemma actComp_left_unitality (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
+    (ha : 𝟙 _ ≫ a = a) (X : fiber actions p) :
+    (actComp actions p (𝟙 _) a a ha).hom.app X ≫
+        (act actions p a).map ((actId actions p).hom.app X) = 𝟙 _ := by
+  have := (actions p).mapComp'_id_comp_hom_app a.toLoc X
+  simp only [actComp_hom_app, actId_hom_app, Quiver.Hom.id_toLoc,
+    Pseudofunctor.mapId'_eq_mapId] at this ⊢
+  rw [this]
+  dsimp only [act]
+  simp [← Functor.map_comp]
+
+omit [Category.{v₁, u₁} Γ] in
+/-- Right unitality of the composition comparisons of the prescribed action at `p`. -/
+@[reassoc]
+lemma actComp_right_unitality (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
+    (ha : a ≫ 𝟙 _ = a) (X : fiber actions p) :
+    (actComp actions p a (𝟙 _) a ha).hom.app X ≫
+        (actId actions p).hom.app ((act actions p a).obj X) = 𝟙 _ := by
+  have := (actions p).mapComp'_comp_id_hom_app a.toLoc X
+  simp only [actComp_hom_app, actId_hom_app, Quiver.Hom.id_toLoc,
+    Pseudofunctor.mapId'_eq_mapId] at this ⊢
+  rw [this]
+  dsimp only [act]
+  simp
+
 /-- Compatibility of the commuting isomorphisms of the joint functors with the composition
 comparisons along `Γ`. -/
 @[reassoc]
