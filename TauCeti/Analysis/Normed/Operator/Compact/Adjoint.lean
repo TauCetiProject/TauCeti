@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
-public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Functoriality
 
 /-!
@@ -160,7 +160,10 @@ theorem totallyBounded_precomp_image_closedBall_iff {T : E →L[𝕜] F} :
   refine ⟨NormedSpace.inclusionInDoubleDual 𝕜 E x, ?_, ?_⟩
   · rw [mem_closedBall_zero_iff] at hx ⊢
     exact (NormedSpace.double_dual_bound 𝕜 E x).trans hx
-  · exact precomp_precomp_inclusionInDoubleDual T x
+  · rw [precomp_apply, precomp_precomp_inclusionInDoubleDual]
+    -- `inclusionInDoubleDualLi` is `inclusionInDoubleDual` bundled as a linear isometry, so the
+    -- two maps agree definitionally.
+    rfl
 
 end RCLike
 
@@ -176,13 +179,10 @@ dual of a normed space is complete. -/
 theorem IsCompactOperator.precomp [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
     [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     {T : E →L[𝕜] F} (hT : IsCompactOperator T) :
-    IsCompactOperator (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) := by
-  obtain ⟨K, hK, hTK⟩ := hT.image_closedBall_subset_compact (σ₁₂ := RingHom.id 𝕜) 1
-  exact (isCompactOperator_iff_isCompact_closure_image_closedBall
-    ((ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
-      StrongDual 𝕜 F →ₗ[𝕜] StrongDual 𝕜 E) one_pos).mpr <|
-    (totallyBounded_precomp_image_closedBall (hK.totallyBounded.subset hTK)).closure
-      |>.isCompact_of_isClosed isClosed_closure
+    IsCompactOperator (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :=
+  isCompactOperator_of_totallyBounded_image_closedBall (σ₁₂ := RingHom.id 𝕜) one_pos <|
+    totallyBounded_precomp_image_closedBall <|
+      hT.totallyBounded_image_closedBall (σ₁₂ := RingHom.id 𝕜) 1
 
 /-- **Schauder's theorem**, reverse direction: an operator into a Banach space over `ℝ` or `ℂ`
 whose adjoint is compact is itself compact. -/
@@ -191,11 +191,10 @@ theorem IsCompactOperator.of_precomp [RCLike 𝕜]
     [CompleteSpace F] {T : E →L[𝕜] F}
     (hT : IsCompactOperator
       (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)) :
-    IsCompactOperator T := by
-  obtain ⟨K, hK, hTK⟩ := hT.image_closedBall_subset_compact (σ₁₂ := RingHom.id 𝕜) 1
-  exact (isCompactOperator_iff_isCompact_closure_image_closedBall (T : E →ₗ[𝕜] F) one_pos).mpr <|
-    (totallyBounded_precomp_image_closedBall_iff.mp (hK.totallyBounded.subset hTK)).closure
-      |>.isCompact_of_isClosed isClosed_closure
+    IsCompactOperator T :=
+  isCompactOperator_of_totallyBounded_image_closedBall (σ₁₂ := RingHom.id 𝕜) one_pos <|
+    totallyBounded_precomp_image_closedBall_iff.mp <|
+      hT.totallyBounded_image_closedBall (σ₁₂ := RingHom.id 𝕜) 1
 
 namespace ContinuousLinearMap
 
