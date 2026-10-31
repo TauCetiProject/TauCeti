@@ -102,11 +102,13 @@ all three are equalities is not covered by the rule; it does not occur in (15). 
   else 0
 
 /-- A first line `x ≤ y ≤ z` of nonzero weight holds. -/
+@[grind →]
 theorem le_of_chainWeight₃_ne_zero {x y z : ℤ} (h : chainWeight₃ x y z ≠ 0) : x ≤ y ∧ y ≤ z := by
   unfold chainWeight₃ at h
   split_ifs at h <;> omega
 
 /-- A first line `w ≤ x ≤ y ≤ z` of nonzero weight holds. -/
+@[grind →]
 theorem le_of_chainWeight₄_ne_zero {w x y z : ℤ} (h : chainWeight₄ w x y z ≠ 0) :
     w ≤ x ∧ x ≤ y ∧ y ≤ z := by
   unfold chainWeight₄ at h
