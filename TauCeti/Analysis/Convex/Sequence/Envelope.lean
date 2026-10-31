@@ -445,14 +445,12 @@ theorem IsLowerConvexEnvelope.map_mul (hh : IsLowerConvexEnvelope a h) {c : ℝ}
     IsLowerConvexEnvelope (fun n => (a n).map (c * ·)) (fun n => (h n).map (c * ·)) := by
   have hmono {r : ℝ} (hr : 0 < r) {x y : WithTop ℝ} : x.map (r * ·) ≤ y.map (r * ·) ↔ x ≤ y :=
     WithTop.map_le_iff _ (mul_le_mul_iff_right₀ hr)
-  have hinv (x : WithTop ℝ) : (x.map (c⁻¹ * ·)).map (c * ·) = x := by
-    cases x <;> simp only [WithTop.map_top, WithTop.map_coe, mul_inv_cancel_left₀ hc.ne']
   refine ⟨hh.isConvexSeq.map_mul hc.le, fun n => (hmono hc).mpr (hh.le n), fun g hg hga n => ?_⟩
   -- Scaling `g` back by `c⁻¹` gives a convex minorant of `a`.
   have hle := hh.greatest (hg.map_mul (inv_nonneg.mpr hc.le)) fun k => by
-    rw [← hmono hc, hinv]
+    rw [← hmono hc, WithTop.map_mul_map_inv_mul hc.ne']
     exact hga k
-  rw [← hinv (g n)]
+  rw [← WithTop.map_mul_map_inv_mul hc.ne' (g n)]
   exact (hmono hc).mpr (hle n)
 
 /-- Scaling a sequence by a positive real factor scales its lower convex envelope by the same
@@ -465,9 +463,7 @@ theorem lowerConvexEnvelope_map_mul (a : ℕ → WithTop ℝ) {c : ℝ} (hc : 0 
   · exact ((isLowerConvexEnvelope_lowerConvexEnvelope ha).map_mul hc
       |>.eq_lowerConvexEnvelope).symm
   · have ha' : ¬IsAdmissible fun n => (a n).map (c * ·) := fun h' => ha <| by
-      have hinv (x : WithTop ℝ) : (x.map (c * ·)).map (c⁻¹ * ·) = x := by
-        cases x <;> simp only [WithTop.map_top, WithTop.map_coe, inv_mul_cancel_left₀ hc.ne']
-      simpa only [hinv] using h'.map_mul (inv_nonneg.mpr hc.le)
+      simpa only [WithTop.map_inv_mul_map_mul hc.ne'] using h'.map_mul (inv_nonneg.mpr hc.le)
     rw [lowerConvexEnvelope_of_not_isAdmissible ha, lowerConvexEnvelope_of_not_isAdmissible ha']
     funext n
     simp

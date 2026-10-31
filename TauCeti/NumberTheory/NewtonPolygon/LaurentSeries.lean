@@ -361,6 +361,8 @@ theorem initialPolynomial_map_expand (P : R⸨X⸩[X]) (q : ℕ+) (σ : ℝ) :
   push_cast
   constructor <;> intro h <;> nlinarith
 
+end Ramified
+
 /-- Substituting `c Y` for `Y`, with `c ≠ 0`, shifts the slopes by `ord(c)` and rescales the
 initial polynomial by the leading coefficient of `c`: the initial polynomial of `P(c Y)` at
 slope `σ` is `Pσ'(lc(c) Y)`, where `Pσ'` is the initial polynomial of `P` at `σ - ord(c)`. -/
@@ -378,12 +380,12 @@ theorem initialPolynomial_comp_C_mul_X (P : R⸨X⸩[X]) {c : R⸨X⸩} (hc : c 
     (by rw [HahnSeries.leadingCoeff_mul, TauCeti.hahnSeries_leadingCoeff_pow]) rfl
   by_cases hm : P.coeff m = 0
   · simp [hm]
-  simp only [ne_eq, mul_eq_zero, hm, pow_eq_zero_iff', hc, false_and, or_self, not_false_eq_true,
-    order_mul hn (pow_ne_zero n hc), order_mul hm (pow_ne_zero m hc), order_pow, nsmul_eq_mul,
-    forall_const]
-  push_cast
+  have hord {k : ℕ} (hk : P.coeff k ≠ 0) :
+      ((P.coeff k * c ^ k).order : ℝ) = (P.coeff k).order + k * c.order := by
+    rw [order_mul hk (pow_ne_zero k hc), order_pow, nsmul_eq_mul]
+    push_cast
+    ring
+  rw [imp_iff_right (mul_ne_zero hm (pow_ne_zero m hc)), imp_iff_right hm, hord hn, hord hm]
   constructor <;> intro h <;> linarith
-
-end Ramified
 
 end Polynomial

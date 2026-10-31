@@ -593,11 +593,21 @@ theorem unitSlope_add_affine {h : ℕ → WithTop ℝ} {n : ℕ} (hn : n ∈ fin
 
 /-! ### Scaling of heights -/
 
-/-- Scaling a height by a real factor scales its real part; an infinite height keeps the real
+/-- Scaling a height by a factor scales its real part; an infinite height keeps the real
 part zero. -/
-theorem _root_.WithTop.untop₀_map_mul (c : ℝ) (x : WithTop ℝ) :
+theorem _root_.WithTop.untop₀_map_mul {α : Type*} [MulZeroClass α] (c : α) (x : WithTop α) :
     (x.map (c * ·)).untop₀ = c * x.untop₀ := by
   cases x <;> simp
+
+/-- Scaling a height by `c⁻¹` and then by a nonzero `c` gives back the height. -/
+theorem _root_.WithTop.map_mul_map_inv_mul {α : Type*} [GroupWithZero α] {c : α} (hc : c ≠ 0)
+    (x : WithTop α) : (x.map (c⁻¹ * ·)).map (c * ·) = x := by
+  cases x <;> simp [hc]
+
+/-- Scaling a height by a nonzero `c` and then by `c⁻¹` gives back the height. -/
+theorem _root_.WithTop.map_inv_mul_map_mul {α : Type*} [GroupWithZero α] {c : α} (hc : c ≠ 0)
+    (x : WithTop α) : (x.map (c * ·)).map (c⁻¹ * ·) = x := by
+  cases x <;> simp [hc]
 
 /-- Scaling the heights by a nonnegative real factor preserves convexity. -/
 theorem IsConvexSeq.map_mul {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) {c : ℝ} (hc : 0 ≤ c) :
