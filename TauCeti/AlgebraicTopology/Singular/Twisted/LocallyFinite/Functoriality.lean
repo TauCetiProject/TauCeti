@@ -45,10 +45,10 @@ is natural in the coefficient system. On homology they give `borelMooreHomologyM
 
 ## Implementation notes
 
-All these maps are built uniformly with `extend`, which applies a properly supported map of
-twisted chains to locally finite chains simplex by simplex. The locally finite boundary is the
-extension of the twisted boundary, and extension takes composites to composites, so the extension
-of a chain map is a chain map.
+All these maps are built uniformly with `extendLocallyFinite`, which applies a properly supported
+map of twisted chains to locally finite chains simplex by simplex. The locally finite boundary is
+the extension of the twisted boundary, and extension takes composites to composites, so the
+extension of a chain map is a chain map.
 
 ## References
 
@@ -82,18 +82,18 @@ variable {L : LocalCoefficientSystem.{u, v, max v w} R X}
   {c : ∀ σ : (TopCat.toSSet.obj X) _⦋a⦌, L.obj (initialVertex σ)}
 
 /-- On a finite chain, the extension of `A` is `A`. -/
-private lemma extendFun_toLocallyFiniteChains (y : (twistedChainComplex L).X a) :
-    extendFun A ((toLocallyFiniteChains L a).hom y : ∀ σ, L.obj (initialVertex σ)) =
+private lemma extendLocallyFiniteFun_toLocallyFiniteChains (y : (twistedChainComplex L).X a) :
+    extendLocallyFiniteFun A ((toLocallyFiniteChains L a).hom y : ∀ σ, L.obj (initialVertex σ)) =
       ((toLocallyFiniteChains K b).hom (A.hom y) : ∀ ρ, K.obj (initialVertex ρ)) :=
   funext fun ρ ↦ by
-    rw [extendFun_apply, toLocallyFiniteChains_apply, ← finsum_matrixCoeff A y ρ]
+    rw [extendLocallyFiniteFun_apply, toLocallyFiniteChains_apply, ← finsum_matrixCoeff A y ρ]
     exact finsum_congr fun σ ↦ by rw [toLocallyFiniteChains_apply]
 
 /-- Extending the identity gives the identity. -/
-private lemma extendFun_id :
-    extendFun (𝟙 ((twistedChainComplex L).X a)) c = c :=
+private lemma extendLocallyFiniteFun_id :
+    extendLocallyFiniteFun (𝟙 ((twistedChainComplex L).X a)) c = c :=
   funext fun ρ ↦ by
-    rw [extendFun_apply, finsum_eq_single _ ρ fun σ hσ ↦ by
+    rw [extendLocallyFiniteFun_apply, finsum_eq_single _ ρ fun σ hσ ↦ by
       simp [matrixCoeff_apply, twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hσ]]
     simp [matrixCoeff_apply]
 
@@ -108,34 +108,40 @@ private lemma isProperlySupported_id : IsProperlySupported (𝟙 ((twistedChainC
 
 /-- The extensions of the components of a properly supported chain map commute with the locally
 finite boundaries. -/
-private lemma locallyFiniteBoundary_comp_extend (φ : twistedChainComplex L ⟶ twistedChainComplex K)
+private lemma locallyFiniteBoundary_comp_extendLocallyFinite
+    (φ : twistedChainComplex L ⟶ twistedChainComplex K)
     (hφ : ∀ k, IsProperlySupported (φ.f k)) (k : ℕ) :
-    locallyFiniteBoundary K k ∘ₗ extend (hφ (k + 1)) =
-      extend (hφ k) ∘ₗ locallyFiniteBoundary L k := by
+    locallyFiniteBoundary K k ∘ₗ extendLocallyFinite (hφ (k + 1)) =
+      extendLocallyFinite (hφ k) ∘ₗ locallyFiniteBoundary L k := by
   refine LinearMap.ext fun ⟨c, hc⟩ ↦ Subtype.ext ?_
   replace hc := mem_locallyFiniteChains.1 hc
-  simp only [LinearMap.comp_apply, coe_locallyFiniteBoundary, coe_extend]
-  rw [← extendFun_d, ← extendFun_d, extendFun_extendFun (hφ (k + 1)) (isProperlySupported_d k) hc,
-    extendFun_extendFun (isProperlySupported_d k) (hφ k) hc, φ.comm]
+  simp only [LinearMap.comp_apply, coe_locallyFiniteBoundary, coe_extendLocallyFinite]
+  rw [← extendLocallyFiniteFun_d, ← extendLocallyFiniteFun_d,
+    extendLocallyFiniteFun_extendLocallyFiniteFun (hφ (k + 1)) (isProperlySupported_d k) hc,
+    extendLocallyFiniteFun_extendLocallyFiniteFun (isProperlySupported_d k) (hφ k) hc, φ.comm]
 
 /-- The chain map of locally finite chains extending a properly supported chain map. -/
 private def extendChainMap (φ : twistedChainComplex L ⟶ twistedChainComplex K)
     (hφ : ∀ k, IsProperlySupported (φ.f k)) :
     locallyFiniteChainComplex L ⟶ locallyFiniteChainComplex K :=
   ChainComplex.ofHom (fun k ↦ eqToHom (locallyFiniteChainComplex_X L k) ≫
-      ModuleCat.ofHom (extend (hφ k)) ≫ eqToHom (locallyFiniteChainComplex_X K k).symm)
+      ModuleCat.ofHom (extendLocallyFinite (hφ k)) ≫
+        eqToHom (locallyFiniteChainComplex_X K k).symm)
     fun k ↦ by
-      have key : ModuleCat.ofHom (extend (hφ (k + 1))) ≫
+      have key : ModuleCat.ofHom (extendLocallyFinite (hφ (k + 1))) ≫
           ModuleCat.ofHom (locallyFiniteBoundary K k) =
-            ModuleCat.ofHom (locallyFiniteBoundary L k) ≫ ModuleCat.ofHom (extend (hφ k)) := by
-        rw [← ModuleCat.ofHom_comp, ← ModuleCat.ofHom_comp, locallyFiniteBoundary_comp_extend]
+            ModuleCat.ofHom (locallyFiniteBoundary L k) ≫
+              ModuleCat.ofHom (extendLocallyFinite (hφ k)) := by
+        rw [← ModuleCat.ofHom_comp, ← ModuleCat.ofHom_comp,
+          locallyFiniteBoundary_comp_extendLocallyFinite]
       simp only [locallyFiniteChainComplex_d, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
         Category.id_comp, reassoc_of% key]
 
 private lemma extendChainMap_f (φ : twistedChainComplex L ⟶ twistedChainComplex K)
     (hφ : ∀ k, IsProperlySupported (φ.f k)) (k : ℕ) :
     (extendChainMap φ hφ).f k = eqToHom (locallyFiniteChainComplex_X L k) ≫
-      ModuleCat.ofHom (extend (hφ k)) ≫ eqToHom (locallyFiniteChainComplex_X K k).symm :=
+      ModuleCat.ofHom (extendLocallyFinite (hφ k)) ≫
+        eqToHom (locallyFiniteChainComplex_X K k).symm :=
   (rfl)
 
 private lemma extendChainMap_congr {φ φ' : twistedChainComplex L ⟶ twistedChainComplex K}
@@ -148,10 +154,10 @@ private lemma extendChainMap_id
     (h : ∀ k, IsProperlySupported (HomologicalComplex.Hom.f (𝟙 (twistedChainComplex L)) k)) :
     extendChainMap (𝟙 _) h = 𝟙 _ := by
   ext k : 1
-  have : extend (h k) = LinearMap.id :=
-    LinearMap.ext fun c ↦ Subtype.ext <| (coe_extend _ c).trans <| by
+  have : extendLocallyFinite (h k) = LinearMap.id :=
+    LinearMap.ext fun c ↦ Subtype.ext <| (coe_extendLocallyFinite _ c).trans <| by
       rw [HomologicalComplex.id_f]
-      exact extendFun_id
+      exact extendLocallyFiniteFun_id
   rw [extendChainMap_f, this, HomologicalComplex.id_f]
   simp
 
@@ -168,10 +174,12 @@ private lemma extendChainMap_comp {φ : twistedChainComplex L ⟶ twistedChainCo
     extendChainMap φ hφ ≫ extendChainMap ψ hψ =
       extendChainMap (φ ≫ ψ) (isProperlySupported_comp_f hφ hψ) := by
   ext k : 1
-  have : extend (hψ k) ∘ₗ extend (hφ k) = extend (isProperlySupported_comp_f hφ hψ k) :=
+  have : extendLocallyFinite (hψ k) ∘ₗ extendLocallyFinite (hφ k) =
+      extendLocallyFinite (isProperlySupported_comp_f hφ hψ k) :=
     LinearMap.ext fun ⟨c, hc⟩ ↦ Subtype.ext <| by
-      rw [LinearMap.comp_apply, coe_extend, coe_extend, coe_extend,
-        extendFun_extendFun (hφ k) (hψ k) (mem_locallyFiniteChains.1 hc),
+      rw [LinearMap.comp_apply, coe_extendLocallyFinite, coe_extendLocallyFinite,
+        coe_extendLocallyFinite,
+        extendLocallyFiniteFun_extendLocallyFiniteFun (hφ k) (hψ k) (mem_locallyFiniteChains.1 hc),
         HomologicalComplex.comp_f]
   rw [HomologicalComplex.comp_f, extendChainMap_f, extendChainMap_f, extendChainMap_f, ← this,
     ModuleCat.ofHom_comp]
@@ -181,11 +189,12 @@ private lemma toLocallyFiniteChainComplex_comp_extendChainMap
     (φ : twistedChainComplex L ⟶ twistedChainComplex K) (hφ : ∀ k, IsProperlySupported (φ.f k)) :
     toLocallyFiniteChainComplex L ≫ extendChainMap φ hφ = φ ≫ toLocallyFiniteChainComplex K := by
   ext k : 1
-  have key : toLocallyFiniteChains L k ≫ ModuleCat.ofHom (extend (hφ k)) =
+  have key : toLocallyFiniteChains L k ≫ ModuleCat.ofHom (extendLocallyFinite (hφ k)) =
       φ.f k ≫ toLocallyFiniteChains K k :=
     ModuleCat.hom_ext <| LinearMap.ext fun y ↦ Subtype.ext <| by
-      simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply, coe_extend]
-      exact extendFun_toLocallyFiniteChains y
+      simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+        coe_extendLocallyFinite]
+      exact extendLocallyFiniteFun_toLocallyFiniteChains y
   simp only [HomologicalComplex.comp_f, toLocallyFiniteChainComplex_f, extendChainMap_f,
     Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, reassoc_of% key]
 
@@ -209,7 +218,7 @@ private lemma isProperlySupported_twistedChainComplexCoefficientMap_f (η : L �
 each coefficient. -/
 def locallyFiniteChainsCoefficientMap (η : L ⟶ K) (k : ℕ) :
     locallyFiniteChains L k →ₗ[R] locallyFiniteChains K k :=
-  extend (isProperlySupported_twistedChainComplexCoefficientMap_f η k)
+  extendLocallyFinite (isProperlySupported_twistedChainComplexCoefficientMap_f η k)
 
 /-- A morphism of local coefficient systems acts on each coefficient of a locally finite chain
 through its component at the initial vertex of the simplex. -/
@@ -218,7 +227,7 @@ lemma coe_locallyFiniteChainsCoefficientMap_apply (η : L ⟶ K) {k : ℕ} (c : 
     (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     (locallyFiniteChainsCoefficientMap η k c : ∀ τ, K.obj (initialVertex τ)) σ =
       (η.app (initialVertex σ)).hom ((c : ∀ τ, L.obj (initialVertex τ)) σ) := by
-  rw [locallyFiniteChainsCoefficientMap, coe_extend, extendFun_apply,
+  rw [locallyFiniteChainsCoefficientMap, coe_extendLocallyFinite, extendLocallyFiniteFun_apply,
     finsum_eq_single _ σ fun τ hτ ↦ by
       simp [matrixCoeff_apply, twistedChainComplexCoefficientMap_f_ι_apply,
         twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne K hτ]]
@@ -306,7 +315,7 @@ include hf in
 in the pullback of `L` to chains with coefficients in `L`. -/
 def locallyFiniteChainsMap :
     locallyFiniteChains ((pullback f.hom).obj L) k →ₗ[R] locallyFiniteChains L k :=
-  extend (isProperlySupported_twistedChainComplexMap_f f hf L k)
+  extendLocallyFinite (isProperlySupported_twistedChainComplexMap_f f hf L k)
 
 /-- The coefficient of the pushforward of a locally finite chain on a simplex `ρ` is the sum of the
 coefficients of the simplices `σ` with `f ∘ σ = ρ`. -/
@@ -316,7 +325,7 @@ lemma coe_locallyFiniteChainsMap_apply (c : locallyFiniteChains ((pullback f.hom
       ∑ᶠ σ, (twistedChainComplexCoeff L ρ).hom ((ιTwistedChainComplex L k
         ((TopCat.toSSet.map f).app _ σ)).hom ((c : ∀ τ, ((pullback f.hom).obj L).obj
           (initialVertex τ)) σ)) := by
-  rw [locallyFiniteChainsMap, coe_extend, extendFun_apply]
+  rw [locallyFiniteChainsMap, coe_extendLocallyFinite, extendLocallyFiniteFun_apply]
   simp only [matrixCoeff_apply, twistedChainComplexMap_f_ι_apply]
 
 include hf in
