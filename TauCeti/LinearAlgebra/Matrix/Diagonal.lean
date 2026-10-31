@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+import Mathlib.Algebra.Group.Pi.Units
 
 /-!
 # Diagonal matrices: products with matrix units, and commutation
@@ -31,6 +32,7 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
   diagonal matrices rescales its entry by the corresponding diagonal coefficients.
 * `TauCeti.isUnit_diagonal_iff`: a diagonal matrix over a possibly noncommutative semiring is a
   unit exactly when its diagonal is.
+* `TauCeti.isUnit_diagonal_snoc_one_iff`: `diagonal (1, …, 1, x)` is a unit exactly when `x` is.
 * `TauCeti.apply_eq_zero_of_commute_diagonal`: a matrix commuting with a diagonal matrix has
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
 * `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
@@ -69,6 +71,11 @@ theorem isUnit_diagonal_iff {R : Type*} [Semiring R] {v : n → R} :
   refine isUnit_iff_exists.2 ⟨fun i ↦ M i i, funext fun i ↦ ?_, funext fun i ↦ ?_⟩
   · simpa [diagonal_mul] using congr_fun₂ h₁ i i
   · simpa [mul_diagonal] using congr_fun₂ h₂ i i
+
+/-- `diagonal (1, …, 1, x)` is a unit exactly when `x` is. -/
+theorem isUnit_diagonal_snoc_one_iff {R : Type*} [Semiring R] {d : ℕ} (x : R) :
+    IsUnit (diagonal (Fin.snoc (α := fun _ ↦ R) (1 : Fin d → R) x)) ↔ IsUnit x := by
+  simp [isUnit_diagonal_iff, Pi.isUnit_iff, Fin.forall_fin_succ']
 
 section Commute
 

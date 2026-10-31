@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.RowCol
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Algebra.Polynomial.DivX
 public import TauCeti.LinearAlgebra.Matrix.Diagonal
-import Mathlib.Algebra.Group.Pi.Units
-import Mathlib.LinearAlgebra.Matrix.Block
+public import TauCeti.LinearAlgebra.Matrix.LastRowTransvection
+public import TauCeti.LinearAlgebra.Matrix.SuperdiagonalShift
 import Mathlib.Topology.Algebra.Polynomial
-public import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # The companion pencil of a polynomial
@@ -60,134 +58,9 @@ namespace TauCeti
 
 variable {A B : Type*}
 
-section Shift
-
-variable [Zero A] [One A]
-
-/-- The nilpotent shift matrix of size `n`, with ones on the superdiagonal and zeros elsewhere. -/
-def superdiagonalShift (n : ℕ) : Matrix (Fin n) (Fin n) A :=
-  of fun i j => if (j : ℕ) = i + 1 then 1 else 0
-
-/-- The entries of the superdiagonal shift. -/
-theorem superdiagonalShift_apply (n : ℕ) (i j : Fin n) :
-    superdiagonalShift n i j = if (j : ℕ) = i + 1 then (1 : A) else 0 :=
-  (rfl)
-
-/-- The last row of the superdiagonal shift vanishes. -/
-@[simp]
-theorem superdiagonalShift_last_apply (d : ℕ) (j : Fin (d + 1)) :
-    superdiagonalShift (d + 1) (Fin.last d) j = (0 : A) := by
-  rw [superdiagonalShift_apply, ite_eq_right_iff]
-  intro h
-  have := j.isLt
-  simp only [Fin.val_last] at h
-  omega
-
-end Shift
-
 section Ring
 
 variable [Ring A] {d : ℕ}
-
-/-- Subtracting a multiple of the superdiagonal shift from the identity gives an upper
-unitriangular matrix. -/
-theorem isUpperUnitriangular_one_sub_smul_superdiagonalShift (n : ℕ) (s : A) :
-    Matrix.IsUpperUnitriangular (1 - s • superdiagonalShift n : Matrix (Fin n) (Fin n) A) := by
-  refine (isUpperUnitriangular_def _).2 ⟨fun i j hij ↦ ?_, fun i ↦ ?_⟩
-  · have hne : i ≠ j := fun h ↦ (lt_irrefl _ (h ▸ hij))
-    have hij' : (j : ℕ) < i := hij
-    simp [superdiagonalShift_apply, one_apply, hne, show (j : ℕ) ≠ i + 1 by omega]
-  · simp [superdiagonalShift_apply]
-
-/-- Subtracting a multiple of the superdiagonal shift from the identity gives a unit. -/
-theorem isUnit_one_sub_smul_superdiagonalShift (n : ℕ) (s : A) :
-    IsUnit (1 - s • superdiagonalShift n : Matrix (Fin n) (Fin n) A) := by
-  have h := (isUpperUnitriangular_one_sub_smul_superdiagonalShift n s).isNilpotent_sub_one
-  rw [← sub_add_cancel (1 - s • superdiagonalShift n) 1]
-  exact h.isUnit_add_one
-
-/-- Row multiplication by a multiple of the superdiagonal shift: the first entry vanishes. -/
-private theorem vecMul_smul_superdiagonalShift_zero (v : Fin (d + 1) → A) (s : A) :
-    (v ᵥ* (s • superdiagonalShift (d + 1))) 0 = 0 := by
-  simp [vecMul, dotProduct, superdiagonalShift_apply]
-
-/-- Row multiplication by a multiple of the superdiagonal shift moves each entry one place to
-the right. -/
-private theorem vecMul_smul_superdiagonalShift_succ (v : Fin (d + 1) → A) (s : A) (j : Fin d) :
-    (v ᵥ* (s • superdiagonalShift (d + 1))) j.succ = v j.castSucc * s := by
-  simp only [vecMul, dotProduct, Matrix.smul_apply, superdiagonalShift_apply, Fin.val_succ,
-    smul_eq_mul, mul_ite, mul_one, mul_zero]
-  rw [Fintype.sum_eq_single j.castSucc fun k hk ↦ ite_eq_right_iff.2 fun h ↦ absurd ?_ hk]
-  · simp
-  · rw [Fin.ext_iff, Fin.val_castSucc]
-    omega
-
-/-- The lower unitriangular matrix of size `d + 1` which agrees with the identity except in its
-last row, where it is `(b 0, …, b (d - 1), 1)`. Multiplying by it on the left adds `b k` times
-row `k` to the last row, for every `k < d`. -/
-def lastRowTransvection (d : ℕ) (b : Fin d → A) : Matrix (Fin (d + 1)) (Fin (d + 1)) A :=
-  (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) A).updateRow (Fin.last d) (Fin.snoc b 1)
-
-/-- The entries of `lastRowTransvection d b`. -/
-theorem lastRowTransvection_apply (b : Fin d → A) (i j : Fin (d + 1)) :
-    lastRowTransvection d b i j =
-      if i = Fin.last d then Fin.snoc (α := fun _ ↦ A) b 1 j else (1 : Matrix _ _ A) i j := by
-  simp [lastRowTransvection, updateRow_apply]
-
-/-- With all multipliers zero, `lastRowTransvection` is the identity. -/
-@[simp]
-theorem lastRowTransvection_zero : lastRowTransvection d (0 : Fin d → A) = 1 := by
-  ext i j
-  rw [lastRowTransvection_apply]
-  split_ifs with hi
-  · subst hi
-    induction j using Fin.lastCases with
-    | last => simp
-    | cast j => simp [one_apply, (Fin.castSucc_lt_last j).ne']
-  · rfl
-
-/-- The row operations `lastRowTransvection` compose by adding their multipliers. -/
-theorem lastRowTransvection_mul_lastRowTransvection (b b' : Fin d → A) :
-    lastRowTransvection d b * lastRowTransvection d b' = lastRowTransvection d (b + b') := by
-  rw [lastRowTransvection, updateRow_mul, one_mul]
-  ext i j
-  rw [updateRow_apply]
-  split_ifs with hi
-  · subst hi
-    simp only [vecMul, dotProduct, Fin.sum_univ_castSucc, Fin.snoc_castSucc, Fin.snoc_last,
-      one_mul, lastRowTransvection_apply, Fin.castSucc_ne_last, ↓reduceIte]
-    induction j using Fin.lastCases with
-    | last => simp [one_apply, Fin.castSucc_ne_last]
-    | cast j => simp [one_apply]
-  · simp [lastRowTransvection_apply, hi]
-
-/-- The elementary matrices `lastRowTransvection d b` are units, with inverse
-`lastRowTransvection d (-b)`. -/
-theorem isUnit_lastRowTransvection (b : Fin d → A) : IsUnit (lastRowTransvection d b) :=
-  isUnit_iff_exists.2 ⟨lastRowTransvection d (-b), by
-    simp [lastRowTransvection_mul_lastRowTransvection]⟩
-
-/-- Right multiplication by `diagonal (1, …, 1, x)` scales the last column by `x`. -/
-private theorem lastRowTransvection_mul_diagonal (b : Fin d → A) (x : A) :
-    lastRowTransvection d b * diagonal (Fin.snoc (α := fun _ ↦ A) 1 x) =
-      (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) A).updateRow (Fin.last d)
-        (Fin.snoc (α := fun _ ↦ A) b x) := by
-  rw [lastRowTransvection, updateRow_mul, one_mul]
-  ext i j
-  rw [updateRow_apply, updateRow_apply]
-  split_ifs with hi
-  · rw [vecMul_diagonal]
-    induction j using Fin.lastCases with
-    | last => simp
-    | cast j => simp
-  · induction i using Fin.lastCases with
-    | last => exact absurd rfl hi
-    | cast i => simp [diagonal_apply, one_apply]
-
-/-- `diagonal (1, …, 1, x)` is a unit exactly when `x` is. -/
-private theorem isUnit_diagonal_snoc_one_iff (x : A) :
-    IsUnit (diagonal (Fin.snoc (α := fun _ ↦ A) (1 : Fin d → A) x)) ↔ IsUnit x := by
-  simp [isUnit_diagonal_iff, Pi.isUnit_iff, Fin.forall_fin_succ']
 
 /-- The companion pencil of `p` in degree `d`, evaluated at `z`: the `(d + 1) × (d + 1)` matrix
 whose first `d` rows are `(…, 0, 1, -z, 0, …)`, with `1` on the diagonal, and whose last row is
@@ -280,22 +153,30 @@ variable {R : Type*} [CommSemiring R] [Algebra R A]
 
 /-- The elementary row and column homotopy from `diagonal (1, …, 1, p(z))` to the companion
 pencil: the off-diagonal entries of both elementary factors of `TauCeti.companionPencil_eq_mul`
-are multiplied by `t`. -/
+are multiplied by `t`. It is `diagonal (1, …, 1, p(z))` at `t = 0` for every `p`, and the
+companion pencil at `t = 1` when `p.natDegree ≤ d` (`TauCeti.companionHomotopy_one`). -/
 noncomputable def companionHomotopy (d : ℕ) (p : A[X]) (z : A) (t : R) :
     Matrix (Fin (d + 1)) (Fin (d + 1)) A :=
   lastRowTransvection d (fun k ↦ t • (divX^[d - k] p).eval z) *
     diagonal (Fin.snoc (α := fun _ ↦ A) 1 (p.eval z)) *
     (1 - (t • z) • superdiagonalShift (d + 1))
 
+/-- The homotopy at an arbitrary parameter `t`, as a product of the scaled elementary factors. -/
+theorem companionHomotopy_def (p : A[X]) (z : A) (t : R) :
+    companionHomotopy d p z t =
+      lastRowTransvection d (fun k ↦ t • (divX^[d - k] p).eval z) *
+        diagonal (Fin.snoc (α := fun _ ↦ A) 1 (p.eval z)) *
+        (1 - (t • z) • superdiagonalShift (d + 1)) := by
+  rw [companionHomotopy]
+
 /-- At `t = 0` the homotopy is `diagonal (1, …, 1, p(z))`. -/
 @[simp]
 theorem companionHomotopy_zero (p : A[X]) (z : A) :
     companionHomotopy d p z (0 : R) = diagonal (Fin.snoc (α := fun _ ↦ A) 1 (p.eval z)) := by
-  simp only [companionHomotopy, zero_smul]
-  rw [show (fun _ : Fin d ↦ (0 : A)) = 0 from rfl, lastRowTransvection_zero]
-  simp
+  simp [companionHomotopy, ← Pi.zero_def]
 
 /-- At `t = 1` the homotopy is the companion pencil. -/
+@[simp]
 theorem companionHomotopy_one {p : A[X]} (hp : p.natDegree ≤ d) (z : A) :
     companionHomotopy d p z (1 : R) = companionPencil d p z := by
   simp only [companionHomotopy, one_smul]
@@ -330,21 +211,13 @@ theorem companionHomotopy_map [Ring B] [Algebra R B] (f : A →ₐ[R] B) (p : A[
     eval_map_apply (f : A →+* B) z
   simp only [companionHomotopy, Matrix.map_mul, hdivX, heval]
   congr 2
-  · ext i j
-    rw [map_apply, lastRowTransvection_apply, lastRowTransvection_apply]
-    split_ifs
-    · induction j using Fin.lastCases with
-      | last => simp
-      | cast j => simp
-    · simp [one_apply, apply_ite f]
-  · ext i j
-    rw [map_apply, diagonal_apply, diagonal_apply]
-    split_ifs with h
-    · subst h
-      induction i using Fin.lastCases with
-      | last => simp
-      | cast i => simp
-    · simp
+  · rw [lastRowTransvection, lastRowTransvection, map_updateRow,
+      Matrix.map_one _ (map_zero f) (map_one f), Fin.comp_snoc, map_one]
+    congr 2
+    ext k
+    simp
+  · rw [diagonal_map (map_zero f), ← Function.comp_def, Fin.comp_snoc, Pi.comp_one, map_one,
+      Function.const_one]
   · ext i j
     simp [superdiagonalShift_apply, one_apply, apply_ite f]
 
