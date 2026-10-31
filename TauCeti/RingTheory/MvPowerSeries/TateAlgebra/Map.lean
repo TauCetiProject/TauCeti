@@ -41,6 +41,8 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 * `MvPowerSeries.restrictedMap_polynomialToRestricted`: `restrictedMap` sends polynomials to their
   coefficientwise images.
 * `TauCeti.MvPowerSeries.norm_restrictedMap_le`: `restrictedMap` is bounded by the same constant.
+* `TauCeti.MvPowerSeries.norm_restrictedMap` and `TauCeti.MvPowerSeries.isometry_restrictedMap`:
+  a norm-preserving `φ` induces an isometry for the Gauss norms.
 * `TauCeti.MvPowerSeries.restrictedMap_eq_zero_iff`: the coefficientwise kernel formula.
 * `TauCeti.MvPowerSeries.continuous_restrictedMap`: continuity for the Gauss norm topologies.
 * `TauCeti.MvPowerSeries.exists_restrictedMap_eq_and_norm_coeff_le`: coefficientwise bounded
@@ -154,6 +156,18 @@ theorem norm_restrictedMap_le [∀ i, Fact (0 < c i)] (hC : 0 ≤ C)
   intro t
   rw [coeff_restrictedMap]
   exact hφ _
+
+/-- A norm-preserving coefficient map preserves the Gauss norm. -/
+@[simp]
+theorem norm_restrictedMap [∀ i, Fact (0 < c i)] (hφ' : ∀ r, ‖φ r‖ = ‖r‖)
+    (f : IsRestricted.subring (R := R) c) :
+    ‖restrictedMap φ hφ f‖ = ‖f‖ := by
+  simp only [norm_eq_gaussNorm, gaussNorm, coe_restrictedMap, coeff_map, hφ']
+
+/-- A norm-preserving coefficient map is an isometry for the Gauss norms. -/
+theorem isometry_restrictedMap [∀ i, Fact (0 < c i)] (hφ' : ∀ r, ‖φ r‖ = ‖r‖) :
+    Isometry (restrictedMap (c := c) φ hφ) :=
+  AddMonoidHomClass.isometry_iff_norm _ |>.mpr (norm_restrictedMap φ hφ hφ')
 
 /-- Bounded coefficient maps are Lipschitz for the Gauss norm. -/
 theorem lipschitzWith_restrictedMap [∀ i, Fact (0 < c i)] (hC : 0 ≤ C) :
