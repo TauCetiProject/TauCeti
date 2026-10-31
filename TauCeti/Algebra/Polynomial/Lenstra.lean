@@ -12,10 +12,11 @@ import Mathlib.Tactic.Ring
 /-!
 # Lenstra's rigid critical-point polynomial
 
-`TauCeti.lenstraPolynomial α` is the antiderivative of `X (X - 1)² (X - α)³` whose constant
-coefficient is zero. For `α ≠ 0, 1`, its three critical points have distinct derivative-root
-multiplicities `1, 2, 3`. Thus an affine change of variable identifying two such polynomials,
-even up to scaling and addition of a constant, must fix `0`, `1`, and the parameter.
+Over a field of characteristic zero, `TauCeti.lenstraPolynomial α` is the antiderivative of
+`X (X - 1)² (X - α)³` whose constant coefficient is zero. For `α ≠ 0, 1`, its three critical
+points have distinct derivative-root multiplicities `1, 2, 3`. Thus an affine change of variable
+identifying two such polynomials, even up to scaling and addition of a constant, must fix `0`,
+`1`, and the parameter.
 
 This is the critical-point encoding used to distinguish conjugate polynomial covers of the
 projective line in Lenstra's proof of faithfulness of the Galois action on dessins.
