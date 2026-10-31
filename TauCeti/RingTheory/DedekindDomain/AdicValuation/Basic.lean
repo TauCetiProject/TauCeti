@@ -56,6 +56,8 @@ by the class-group interface and the multiplicative value can be read off from o
   height one prime contains an element of order of vanishing `1`.
 * `IsDedekindDomain.HeightOneSpectrum.exp_neg_one_le_intValuation_of_squarefree`: in a principal
   ideal domain, a squarefree element vanishes to order at most `1` at every height one prime.
+* `IsDedekindDomain.HeightOneSpectrum.ne_zero_of_span_singleton_eq_pow`: a generator of a power
+  of a height one prime is nonzero.
 * `IsDedekindDomain.HeightOneSpectrum.intValuation_eq_exp_neg_of_span_singleton_eq_pow` and
   `IsDedekindDomain.HeightOneSpectrum.intValuation_eq_one_of_span_singleton_eq_pow`: a generator
   of `w ^ n` vanishes to order `n` at `w` and to order `0` at every other height one prime.
@@ -319,6 +321,11 @@ theorem exp_neg_one_le_intValuation_of_squarefree [IsPrincipalIdealRing R] {r : 
   have hsf : Squarefree (Ideal.span ({r} : Set R)) := Ideal.squarefree_span_singleton.mpr hr
   exact ((squarefree_iff_emultiplicity_le_one _).mp hsf v.asIdeal).resolve_right
     fun h ↦ v.isPrime.ne_top (Ideal.isUnit_iff.mp h)
+
+/-- **A generator of a power of a height one prime is nonzero**, since that power is not `⊥`. -/
+theorem ne_zero_of_span_singleton_eq_pow {r : R} {n : ℕ} (h : Ideal.span {r} = v.asIdeal ^ n) :
+    r ≠ 0 := fun hr ↦
+  pow_ne_zero n v.ne_bot (h ▸ Ideal.span_singleton_eq_bot.mpr hr)
 
 /-- **A generator of `v ^ n` vanishes to order exactly `n` at `v`.** -/
 theorem intValuation_eq_exp_neg_of_span_singleton_eq_pow {r : R} {n : ℕ}
