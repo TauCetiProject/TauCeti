@@ -60,16 +60,6 @@ endpoint values there can repeat only between its endpoints, is
 * `TauCeti.exists_path_range_eq_closure_image_ball_inter_sphere_of_injOn` — for a holomorphic
   injection, the path endpoints lie on the image frontier and no other values repeat.
 
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself. Mathlib
-supplies `Path` and the injectivity of `circleMap` on an interval shorter than a full turn; the
-extension of a curve across the two ends of an open interval is packaged as a path in
-`TauCeti/Topology/Path/Extend/Ioo.lean`. Mathlib has no boundary-crosscut or endpoint-limit result.
-No Mathlib source is vendored.
-
 ## References
 
 * Ch. Pommerenke, *Boundary Behaviour of Conformal Maps*, §2.2–2.3.

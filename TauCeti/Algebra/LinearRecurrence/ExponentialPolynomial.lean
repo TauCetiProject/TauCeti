@@ -18,10 +18,11 @@ one expression as a sum of polynomial multiples of powers of a fixed finite set 
 bases. No degree bound on the coefficient polynomials is needed for uniqueness.
 
 The connection with linear recurrences is the shift operator: the summand with base `θ`
-belongs to its maximal generalized eigenspace for `θ`. Translation of a polynomial preserves
-its leading coefficient, so taking a difference lowers its degree. Mathlib's
-`Module.End.independent_maxGenEigenspace` then separates the summands; the finite-sum
-criterion used here is `iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero`.
+belongs to its generalized eigenspace for `θ`, of any exponent exceeding the degree of its
+coefficient polynomial: translation of a polynomial preserves its leading coefficient, so
+taking a difference lowers its degree. Mathlib's `Module.End.independent_maxGenEigenspace`
+then separates the summands; the finite-sum criterion used here is
+`iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero`.
 
 See R. P. Stanley, *Enumerative Combinatorics*, vol. 1, second edition, Theorem 4.1.1
 and its proof, pp. 535–536, for the closed-form interpretation and uniqueness.
@@ -35,20 +36,29 @@ namespace Polynomial
 
 variable {R : Type*} [CommRing R]
 
-/-- A polynomial multiple of `θ ^ n` lies in the maximal generalized eigenspace of the
-forward shift for `θ`. This holds in arbitrary characteristic, and even when `θ = 0`. -/
-theorem eval_mul_pow_mem_maxGenEigenspace (p : R[X]) (θ : R) :
+/-- A polynomial multiple of `θ ^ n` lies in the generalized eigenspace of the forward shift
+for `θ` of any exponent exceeding the degree of the polynomial: `(shift - θ) ^ k` annihilates
+`n ↦ p.eval n * θ ^ n` once `p.degree < k`. This holds in arbitrary characteristic, and even
+when `θ = 0`. -/
+theorem eval_mul_pow_mem_genEigenspace {p : R[X]} (θ : R) {k : ℕ} (hk : p.degree < k) :
     (fun n : ℕ ↦ p.eval (n : R) * θ ^ n) ∈
-      Module.End.maxGenEigenspace (LinearMap.funLeft R R Nat.succ) θ := by
-  induction p using Polynomial.degree_lt_wf.induction with
-  | h p ih =>
+      Module.End.genEigenspace (LinearMap.funLeft R R Nat.succ) θ k := by
+  induction k generalizing p with
+  | zero =>
+    rw [Nat.cast_zero, Nat.WithBot.lt_zero_iff, degree_eq_bot] at hk
+    simpa only [hk, eval_zero, zero_mul, Pi.zero_def] using
+      (Module.End.genEigenspace (LinearMap.funLeft R R Nat.succ) θ (0 : ℕ)).zero_mem
+  | succ k ih =>
     by_cases hp : p = 0
     · simpa only [hp, eval_zero, zero_mul, Pi.zero_def] using
-        (Module.End.maxGenEigenspace (LinearMap.funLeft R R Nat.succ) θ).zero_mem
+        (Module.End.genEigenspace (LinearMap.funLeft R R Nat.succ) θ (k + 1 : ℕ)).zero_mem
     let q := θ • (taylor 1 p - p)
-    have hq : q.degree < p.degree := by
-      exact (degree_smul_le _ _).trans_lt <|
-        degree_sub_lt_right (degree_taylor p 1) hp (leadingCoeff_taylor 1 p)
+    have hq : q.degree < k := by
+      refine ((degree_smul_le _ _).trans_lt <|
+        degree_sub_lt_right (degree_taylor p 1) hp (leadingCoeff_taylor 1 p)).trans_le ?_
+      have hpk : p.natDegree < k + 1 := (natDegree_lt_iff_degree_lt hp).mpr (by exact_mod_cast hk)
+      rw [degree_eq_natDegree hp]
+      exact_mod_cast Nat.lt_succ_iff.mp hpk
     have hdiff :
         (LinearMap.funLeft R R Nat.succ - θ • 1)
             (fun n : ℕ ↦ p.eval (n : R) * θ ^ n) =
@@ -59,10 +69,18 @@ theorem eval_mul_pow_mem_maxGenEigenspace (p : R[X]) (θ : R) :
         q, smul_eq_C_mul, eval_mul, eval_sub, taylor_apply, eval_comp, eval_add, eval_X,
         eval_C, pow_succ]
       ring
-    obtain ⟨k, hk⟩ := (Module.End.mem_maxGenEigenspace _ _ _).mp (ih q hq)
-    apply (Module.End.mem_maxGenEigenspace _ _ _).mpr
-    refine ⟨k + 1, ?_⟩
-    rw [pow_succ, Module.End.mul_apply, hdiff, hk]
+    have hk' := LinearMap.mem_ker.mp (Module.End.mem_genEigenspace_nat.mp (ih hq))
+    rw [Module.End.mem_genEigenspace_nat, LinearMap.mem_ker, pow_succ, Module.End.mul_apply,
+      hdiff, hk']
+
+/-- A polynomial multiple of `θ ^ n` lies in the maximal generalized eigenspace of the
+forward shift for `θ`. This holds in arbitrary characteristic, and even when `θ = 0`. -/
+theorem eval_mul_pow_mem_maxGenEigenspace (p : R[X]) (θ : R) :
+    (fun n : ℕ ↦ p.eval (n : R) * θ ^ n) ∈
+      Module.End.maxGenEigenspace (LinearMap.funLeft R R Nat.succ) θ :=
+  (Module.End.genEigenspace _ θ).monotone le_top <|
+    eval_mul_pow_mem_genEigenspace θ <|
+      degree_le_natDegree.trans_lt (by exact_mod_cast Nat.lt_succ_self p.natDegree)
 
 end Polynomial
 
