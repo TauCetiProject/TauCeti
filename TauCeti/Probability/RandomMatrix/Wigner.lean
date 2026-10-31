@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 
 /-!
 # Wigner matrices
@@ -220,14 +221,6 @@ private theorem disjoint_cornerIndices_columnIndices (n : ℕ) :
     omega
   · simp [columnIndices] at h₂
 
-/-- Extension by zero of a finite subfamily of the entry array is measurable. -/
-private theorem measurable_extend_val (S : Finset (StrictUpper ⊕ ℕ)) :
-    Measurable fun g : S → ℂ ↦ Function.extend Subtype.val g (fun _ ↦ (0 : ℂ)) := by
-  refine measurable_pi_iff.2 fun k ↦ ?_
-  by_cases h : k ∈ S
-  · simpa [Function.extend_val_apply h] using measurable_pi_apply (⟨k, h⟩ : S)
-  · simp [Function.extend_val_apply' (p := (· ∈ S)) h]
-
 /-- For independent entries, the Wigner matrix of size `n` (the scaled top-left minor of the
 matrix of size `n + 1`) is independent of the strictly upper entries `ξ (i, n)`, `i < n`, of the
 row and column removed from the matrix of size `n + 1`. -/
@@ -242,7 +235,7 @@ theorem indepFun_wignerMatrix_column (hξ : ∀ ij, AEMeasurable (ξ ij) P)
     exact ⟨i.2, trivial⟩
   have hφ : Measurable (wignerOfArray n ∘
       fun g : cornerIndices n → ℂ ↦ Function.extend Subtype.val g (fun _ ↦ (0 : ℂ))) :=
-    (measurable_wignerOfArray n).comp (measurable_extend_val _)
+    (measurable_wignerOfArray n).comp (MeasureTheory.measurable_extend _ _)
   have hψ : Measurable fun (g : columnIndices n → ℂ) (i : Fin n) ↦ g ⟨_, hcol i⟩ :=
     measurable_pi_iff.2 fun i ↦ measurable_pi_apply _
   refine ((hindep.indepFun_finset₀ _ _ (disjoint_cornerIndices_columnIndices n)
