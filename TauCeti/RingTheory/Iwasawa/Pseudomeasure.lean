@@ -37,6 +37,8 @@ and it is the unique `R`-linear extension of `f` from the integral pseudo-measur
 ## Main results
 
 * `TauCeti.Iwasawa.mem_pseudomeasures_iff`: the membership criterion.
+* `TauCeti.Iwasawa.evalAt_cross`: the cleared identity `f (δ h - 1) * evalAt z = f (n_h(z))` holds
+  at every `h`, not only at the admissible clearing element.
 * `TauCeti.Iwasawa.evalAt_unique`: an `R`-linear map on pseudo-measures which extends the
   structure map of `A` on integral elements is `evalAt`.
 * `TauCeti.Iwasawa.evalAt_independent`: the evaluation does not depend on the admissible
@@ -177,6 +179,15 @@ admissible clearing factor `δ g - 1` in `A` gives the image of the cleared nume
 theorem evalAt_spec (g : G) (hg : IsUnit (algebraMap R A (δ g - 1))) (z : pseudomeasures δ Q) :
     algebraMap R A (δ g - 1) * evalAt δ Q A g hg z = algebraMap R A (numerator δ Q g z) := by
   rw [evalAt_apply, ← mul_assoc, IsUnit.mul_val_inv, one_mul]
+
+/-- The cleared identity at every clearing element: for any `h`, multiplying the value of `z`
+by the image of `δ h - 1` in `A` gives the image of the cleared numerator of `z` at `h`, even
+when `δ h - 1` is not a unit of `A`. -/
+theorem evalAt_cross (g h : G) (hg : IsUnit (algebraMap R A (δ g - 1)))
+    (z : pseudomeasures δ Q) :
+    algebraMap R A (δ h - 1) * evalAt δ Q A g hg z = algebraMap R A (numerator δ Q h z) := by
+  apply hg.mul_left_cancel
+  rw [mul_left_comm, evalAt_spec, ← map_mul, ← map_mul, numerator_cross]
 
 /-- The evaluation extends the structure map `R → A` on integral pseudo-measures. -/
 @[simp]
