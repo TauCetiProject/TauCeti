@@ -257,30 +257,16 @@ private lemma faceZeroι_d (r : ℤ) :
     NatTrans.ι_cubeComplexMap_f_assoc, ι_cubeComplex_d_assoc, Preadditive.sum_comp,
     cubeComplexι_faceOneι]
   -- The indices outside the vertex `S` of the `0`-face are `⊥` and the indices outside `S`.
-  let j : Option ↥(S.1ᶜ) → ↥((S.1.map Function.Embedding.coeWithBot)ᶜ) :=
-    fun o ↦ o.elim ⟨⊥, by simp⟩ fun a ↦ ⟨a.1, by simpa using mem_compl.1 a.2⟩
-  have hj : Function.Bijective j := by
-    refine ⟨fun o o' e ↦ ?_, fun a ↦ ?_⟩
-    · replace e := congrArg Subtype.val e
-      rcases o with _ | ⟨a, ha⟩ <;> rcases o' with _ | ⟨a', ha'⟩
-      · rfl
-      · exact absurd e WithBot.bot_ne_coe
-      · exact absurd e WithBot.coe_ne_bot
-      · exact congrArg some (Subtype.ext (WithBot.coe_injective e))
-    · obtain ⟨a, ha⟩ := a
-      induction a using WithBot.recBotCoe with
-      | bot => exact ⟨none, rfl⟩
-      | coe a => exact ⟨some ⟨a, by simpa using ha⟩, rfl⟩
-  refine (Fintype.sum_bijective j hj _ _ fun _ ↦ rfl).symm.trans ?_
-  rw [Fintype.sum_option]
+  rw [← (optionComplEquivComplMapCoeWithBot S.1).sum_comp, Fintype.sum_option]
   refine (congrArg₂ (· + ·) ?_ ?_).trans (add_comm _ _)
-  · simpa [j] using
-      (F.map_homOfLE_comp_cubeComplexι_congr (WithBot.insertBot_eq_insert S.1) _ _).symm
+  · simpa using F.map_homOfLE_comp_cubeComplexι_congr
+      (by rw [coe_optionComplEquivComplMapCoeWithBot_none, WithBot.insertBot_eq_insert]) _ _
   · refine Finset.sum_congr rfl fun a _ ↦ ?_
-    simp only [j, Option.elim_some, Preadditive.zsmul_comp, Category.assoc,
-      cubeComplexι_faceZeroι]
+    simp only [coe_optionComplEquivComplMapCoeWithBot_some, Preadditive.zsmul_comp,
+      Category.assoc, cubeComplexι_faceZeroι]
     refine congrArg₂ (· • ·) (congrArg _ (card_filter_lt_coe_map_coeWithBot _ _)) ?_
-    exact F.map_homOfLE_comp_cubeComplexι_congr (map_insert _ _ _).symm _ _
+    exact F.map_homOfLE_comp_cubeComplexι_congr
+      (by rw [coe_optionComplEquivComplMapCoeWithBot_some]; exact (map_insert _ _ _).symm) _ _
 
 /-- On the `1`-face, the cube differential is the negative of the differential of the `1`-face. -/
 @[reassoc]
@@ -293,21 +279,14 @@ private lemma faceOneι_d {s r s' r' : ℤ} (h : s + 1 = r) (hs : s + 1 = s') (h
     Preadditive.sum_comp, ← Finset.sum_neg_distrib]
   -- The indices outside the vertex `WithBot.insertBot S` of the `1`-face are the indices outside
   -- `S`.
-  let j : ↥(S.1ᶜ) → ↥((WithBot.insertBot S.1)ᶜ) :=
-    fun a ↦ ⟨a.1, by simpa using mem_compl.1 a.2⟩
-  have hj : Function.Bijective j := by
-    refine ⟨fun a a' e ↦ Subtype.ext (by simpa [j] using e), fun a ↦ ?_⟩
-    obtain ⟨a, ha⟩ := a
-    induction a using WithBot.recBotCoe with
-    | bot => simp at ha
-    | coe a => exact ⟨⟨a, by simpa using ha⟩, rfl⟩
-  refine (Fintype.sum_bijective j hj _ _ fun _ ↦ rfl).symm.trans ?_
+  rw [← (complEquivComplInsertBot S.1).sum_comp]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
-  simp only [j, card_filter_lt_coe_insertBot, pow_succ, mul_neg_one, neg_smul,
-    Preadditive.zsmul_comp, Category.assoc, cubeComplexι_faceOneι]
+  simp only [coe_complEquivComplInsertBot, card_filter_lt_coe_insertBot, pow_succ, mul_neg_one,
+    neg_smul, Preadditive.zsmul_comp, Category.assoc, cubeComplexι_faceOneι]
   refine congrArg (fun x ↦ -(_ • x)) ?_
   refine F.map_homOfLE_comp_cubeComplexι_congr ?_ _ _
-  rw [WithBot.insertBot_eq_insert, WithBot.insertBot_eq_insert, map_insert, insert_comm]
+  rw [coe_complEquivComplInsertBot, WithBot.insertBot_eq_insert, WithBot.insertBot_eq_insert,
+    map_insert, insert_comm]
   -- `Function.Embedding.coeWithBot a` is the coercion `↑a`.
   rfl
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Finset.Option
+public import Mathlib.Data.Fintype.WithTopBot
 public import Mathlib.Order.Interval.Finset.Defs
 
 /-!
@@ -14,8 +15,9 @@ public import Mathlib.Order.Interval.Finset.Defs
 
 A finite set of `WithBot α` either avoids `⊥`, and is then the image of a finite set of `α` under
 the coercion, or contains `⊥`, and is then `WithBot.insertBot` of a finite set of `α`. These lemmas
-compare the two kinds of finite sets and count their elements below a given element; they are used
-to split a cube indexed by `WithBot ι` into its two faces in the direction of `⊥`.
+compare the two kinds of finite sets, count their elements below a given element and describe their
+complements; they are used to split a cube indexed by `WithBot ι` into its two faces in the
+direction of `⊥`.
 
 ## Main results
 
@@ -28,6 +30,8 @@ to split a cube indexed by `WithBot ι` into its two faces in the direction of `
 * `Finset.map_coeWithBot_ne_insertBot`: the two kinds of finite sets are distinct.
 * `Finset.card_filter_lt_coe_map_coeWithBot` and `Finset.card_filter_lt_coe_insertBot` count their
   elements below a given element of `α`.
+* `Finset.optionComplEquivComplMapCoeWithBot` and `Finset.complEquivComplInsertBot` identify their
+  complements with `Option ↥Sᶜ` and `↥Sᶜ`.
 -/
 
 public section
@@ -72,6 +76,53 @@ theorem exists_eq_map_coeWithBot_or_exists_eq_insertBot (T : Finset (WithBot α)
 theorem map_coeWithBot_ne_insertBot (S T : Finset α) :
     S.map Function.Embedding.coeWithBot ≠ WithBot.insertBot T :=
   fun e ↦ by simpa using congrArg (⊥ ∈ ·) e
+
+section Compl
+
+variable [Fintype α] [DecidableEq α]
+
+/-- The elements outside the image of `S` in `WithBot α` are `⊥` and the elements outside `S`. -/
+noncomputable def optionComplEquivComplMapCoeWithBot (S : Finset α) :
+    Option ↥Sᶜ ≃ ↥(S.map Function.Embedding.coeWithBot)ᶜ :=
+  .ofBijective (fun o ↦ o.elim ⟨⊥, by simp⟩ fun a ↦ ⟨a.1, by simpa using mem_compl.1 a.2⟩) <| by
+    refine ⟨fun o o' e ↦ ?_, fun a ↦ ?_⟩
+    · replace e := congrArg Subtype.val e
+      rcases o with _ | ⟨a, ha⟩ <;> rcases o' with _ | ⟨a', ha'⟩
+      · rfl
+      · exact absurd e WithBot.bot_ne_coe
+      · exact absurd e WithBot.coe_ne_bot
+      · exact congrArg some (Subtype.ext (WithBot.coe_injective e))
+    · obtain ⟨a, ha⟩ := a
+      induction a using WithBot.recBotCoe with
+      | bot => exact ⟨none, rfl⟩
+      | coe a => exact ⟨some ⟨a, by simpa using ha⟩, rfl⟩
+
+@[simp]
+theorem coe_optionComplEquivComplMapCoeWithBot_none (S : Finset α) :
+    (optionComplEquivComplMapCoeWithBot S none : WithBot α) = ⊥ :=
+  (rfl)
+
+@[simp]
+theorem coe_optionComplEquivComplMapCoeWithBot_some (S : Finset α) (a : ↥Sᶜ) :
+    (optionComplEquivComplMapCoeWithBot S (some a) : WithBot α) = a :=
+  (rfl)
+
+/-- The elements outside `WithBot.insertBot S` are the elements outside `S`. -/
+noncomputable def complEquivComplInsertBot (S : Finset α) :
+    ↥Sᶜ ≃ ↥(WithBot.insertBot S)ᶜ :=
+  .ofBijective (fun a ↦ ⟨a.1, by simpa using mem_compl.1 a.2⟩) <| by
+    refine ⟨fun a a' e ↦ Subtype.ext (by simpa using e), fun a ↦ ?_⟩
+    obtain ⟨a, ha⟩ := a
+    induction a using WithBot.recBotCoe with
+    | bot => simp at ha
+    | coe a => exact ⟨⟨a, by simpa using ha⟩, rfl⟩
+
+@[simp]
+theorem coe_complEquivComplInsertBot (S : Finset α) (a : ↥Sᶜ) :
+    (complEquivComplInsertBot S a : WithBot α) = a :=
+  (rfl)
+
+end Compl
 
 variable [LT α] [DecidableLT α]
 
