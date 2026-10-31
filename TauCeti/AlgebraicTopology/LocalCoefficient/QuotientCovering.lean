@@ -98,10 +98,7 @@ commutes with the action of `G` (`IsQuotientCoveringMap.monodromy_smul`). -/
   obj x := Rep.of (hG.fiberRepresentation k x.as)
   map γ := Rep.ofHom
     { toLinearMap := Finsupp.lmapDomain k k (hG.isCoveringMap.monodromy γ)
-      isIntertwining' g := Finsupp.lhom_ext fun e r ↦ by
-        rw [LinearMap.comp_apply, LinearMap.comp_apply, fiberRepresentation_single,
-          Finsupp.lmapDomain_apply, Finsupp.mapDomain_single, Finsupp.lmapDomain_apply,
-          Finsupp.mapDomain_single, fiberRepresentation_single, monodromy_smul] }
+      isIntertwining' g := Finsupp.lhom_ext fun e r ↦ by simp [monodromy_smul] }
   map_id x := Rep.hom_ext (Representation.IntertwiningMap.ext
     (congrArg ModuleCat.Hom.hom ((hG.isCoveringMap.permutationLocalSystem k).map_id x)))
   map_comp γ δ := Rep.hom_ext (Representation.IntertwiningMap.ext

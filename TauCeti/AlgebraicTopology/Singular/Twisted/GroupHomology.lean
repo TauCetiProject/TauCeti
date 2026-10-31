@@ -96,16 +96,6 @@ private lemma permutationLocalSystemSMul_comp_coinvariantsTensorMkLocalSystem (g
   exact Representation.Coinvariants.mk_self_apply
     (A.ρ.tprod (hG.fiberRepresentation k x.as)) g (a ⊗ₜ[k] (v : p ⁻¹' {x.as} →₀ k))
 
-/-- A morphism of local systems acts on the summand of a simplex through its component at the
-initial vertex, evaluated at an element. -/
-private lemma twistedChainComplexCoefficientMap_f_ι_apply
-    {L K : LocalCoefficientSystem.{u, u, u} k B} (η : L ⟶ K) (n : ℕ)
-    (σ : (TopCat.toSSet.obj B) _⦋n⦌) (v : L.obj (initialVertex σ)) :
-    ((twistedChainComplexCoefficientMap.{u, u, u} η).f n).hom
-        ((ιTwistedChainComplex.{u, u, u} L n σ).hom v) =
-      (ιTwistedChainComplex.{u, u, u} K n σ).hom ((η.app (initialVertex σ)).hom v) :=
-  congrArg (fun f ↦ f.hom v) (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f η n σ)
-
 /-- The comparison of the chains of `E` with the chains of `B` twisted by the permutation local
 system, with its source written as the singular chain complex of `E`. -/
 private def permIso :
@@ -136,13 +126,30 @@ private lemma permIso_hom_smul (n : ℕ) (g : G) (c : ((singularChains k).obj E)
     (L' := ((twistedChainComplexCoefficientMap.{u, u, u} (permutationLocalSystemSMul hG k g)).f
       n).hom ∘ₗ ((permIso hG k).hom.f n).hom) fun τ ↦ ?_) c
   let := hG.mulActionFiber (initialVertex ((TopCat.toSSet.map p).app _ τ)).as
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, singularChainsRepresentation_simplexChain,
-    permIso_hom_simplexChain, permIso_hom_simplexChain,
-    twistedChainComplexCoefficientMap_f_ι_apply, permutationLocalSystemSMul_app_single]
+  simp only [LinearMap.comp_apply, singularChainsRepresentation_simplexChain,
+    permIso_hom_simplexChain, twistedChainComplexCoefficientMap_f_ι_apply]
+  -- `simp` does not apply this lemma here, while `rw` matches it up to unfolding.
+  rw [permutationLocalSystemSMul_app_single]
   -- Translating `τ` does not change `p ∘ τ`, and translates its initial sheet.
   exact congrArg (fun f ↦ f.hom 1)
     (IsCoveringMap.single_initialSheet_ιTwistedChainComplex hG.isCoveringMap k
       ((hG.toSSet_map_app_eq_iff (g • τ) τ).2 ⟨g, rfl⟩) (e := g • initialSheet τ) rfl)
+
+/-- On twisted chains, translating the sheets by `g` and then sending `v` to the class of
+`g a ⊗ v` agrees with sending `v` to the class of `a ⊗ v`. -/
+private lemma twistedChainComplexCoefficientMap_permutationLocalSystemSMul_coinvariantsTensorMk
+    (n : ℕ) (g : G) (a : A)
+    (x : (twistedChainComplex.{u, u, u} (hG.isCoveringMap.permutationLocalSystem k)).X n) :
+    ((twistedChainComplexCoefficientMap.{u, u, u}
+        (coinvariantsTensorMkLocalSystem hG k (A.ρ g a))).f n).hom
+        (((twistedChainComplexCoefficientMap.{u, u, u} (permutationLocalSystemSMul hG k g)).f
+          n).hom x) =
+      ((twistedChainComplexCoefficientMap.{u, u, u} (coinvariantsTensorMkLocalSystem hG k a)).f
+        n).hom x := by
+  have h := congrArg twistedChainComplexCoefficientMap.{u, u, u}
+    (permutationLocalSystemSMul_comp_coinvariantsTensorMkLocalSystem hG k g a)
+  rw [twistedChainComplexCoefficientMap_comp] at h
+  exact congrArg (fun f ↦ (f.f n).hom x) h
 
 /-- The linear map `A ⟶ Cₙ(B; L_A)` attached to a simplex `τ` of `E`: `a` goes to the class of
 `a ⊗ e` in the summand of `p ∘ τ`, where `e` is the initial sheet of `τ`. -/
@@ -186,10 +193,8 @@ private def coinvariantsTensorToTwistedX (n : ℕ) :
       -- appears through `curriedTensor`, under which `simp` cannot rewrite its representation.
       change tensorToTwisted hG k n (A.ρ g a) (singularChainsRepresentation k E G n g c) =
         tensorToTwisted hG k n a c
-      rw [tensorToTwisted_apply, tensorToTwisted_apply, permIso_hom_smul, ← LinearMap.comp_apply,
-        ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f,
-        ← twistedChainComplexCoefficientMap_comp,
-        permutationLocalSystemSMul_comp_coinvariantsTensorMkLocalSystem]
+      rw [tensorToTwisted_apply, tensorToTwisted_apply, permIso_hom_smul,
+        twistedChainComplexCoefficientMap_permutationLocalSystemSMul_coinvariantsTensorMk]
 
 /-- The inverse comparison on the summand of a simplex `σ` of `B` comes from the map of
 representations `k[p⁻¹ x] ⟶ Cₙ(E)` sending a sheet `e` over the initial vertex `x` of `σ` to the
@@ -255,7 +260,7 @@ private lemma twistedToCoinvariantsTensorX_coefficientMap (n : ℕ) (a : A)
         (Rep.coinvariantsTensorMk A (Rep.of (singularChainsRepresentation k E G n)) a))
     fun σ ↦ ModuleCat.hom_ext (LinearMap.ext fun v ↦ ?_))) x
   exact (congrArg (twistedToCoinvariantsTensorX hG k n).hom
-    (twistedChainComplexCoefficientMap_f_ι_apply k (coinvariantsTensorMkLocalSystem hG k a) n σ
+    (twistedChainComplexCoefficientMap_f_ι_apply (coinvariantsTensorMkLocalSystem hG k a) n σ
       v)).trans
       (twistedToCoinvariantsTensorX_ι_mk hG k n σ a v)
 
@@ -279,7 +284,7 @@ private def coinvariantsTensorIsoTwistedX (n : ℕ) :
           ((tensorToTwisted_apply hG k n a _).trans
             ((congrArg _
               (ModuleCat.hom_inv_apply (HomologicalComplex.Hom.isoApp (permIso hG k) n) _)).trans
-              (twistedChainComplexCoefficientMap_f_ι_apply k
+              (twistedChainComplexCoefficientMap_f_ι_apply
                 (coinvariantsTensorMkLocalSystem hG k a) n σ v)))) }
 
 variable (A) in
