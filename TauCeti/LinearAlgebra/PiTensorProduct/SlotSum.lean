@@ -86,6 +86,10 @@ representing cocycle in the tensor-induced resolution.
   additive inverse, the slot homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`.
 * `TauCeti.PiTensorProduct.slotSum_comp_map` and `TauCeti.PiTensorProduct.slotSum_comp_reindex`:
   the slot sum commutes with factorwise maps and with reindexing.
+* `TauCeti.PiTensorProduct.subsingletonEquiv_slotSum` and
+  `TauCeti.PiTensorProduct.isHomogeneous_subsingletonEquiv`: on a tensor product with a single
+  factor, the slot sum is the endomorphism of that factor, and identifying the tensor product with
+  that factor preserves the degree.
 * `TauCeti.PiTensorProduct.isHomogeneous_slotSum`, `TauCeti.PiTensorProduct.isHomogeneous_map`,
   `TauCeti.PiTensorProduct.isHomogeneous_map_update`,
   `TauCeti.PiTensorProduct.isHomogeneous_reindex` and
@@ -232,6 +236,19 @@ theorem slotSum_tprod_eq_zero (f : ∀ i, Module.End R (M i))
     rw [hm i]
     exact (PiTensorProduct.tprod R).map_update_zero m i
 
+/-- On a tensor product with a single factor `i₀`, the slot sum is the endomorphism `f i₀` of that
+factor, read through `PiTensorProduct.subsingletonEquiv`. -/
+@[simp]
+theorem subsingletonEquiv_slotSum [Subsingleton ι] (i₀ : ι) (f : ∀ i, Module.End R (M i))
+    (x : ⨂[R] i, M i) :
+    PiTensorProduct.subsingletonEquiv i₀ (slotSum ι f x) =
+      f i₀ (PiTensorProduct.subsingletonEquiv i₀ x) := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r m =>
+    simp only [map_smul, slotSum_tprod, Fintype.sum_subsingleton _ i₀,
+      PiTensorProduct.subsingletonEquiv_apply_tprod, update_self]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 end SlotSum
 
 section Grading
@@ -351,6 +368,19 @@ theorem map_eq_zero_of_mem_totalDegreePiece_of_pos [LinearOrder A] [IsOrderedAdd
     exact hn.not_ge (Finset.sum_nonpos fun i _ ↦ h i)
   rw [LinearMap.mem_ker, PiTensorProduct.map_tprod]
   exact (PiTensorProduct.tprod R).map_coord_zero i (hπ i _ hi _ (hm i))
+
+/-- On a tensor product with a single factor `i₀`, the identification
+`PiTensorProduct.subsingletonEquiv` with that factor preserves the degree. -/
+theorem isHomogeneous_subsingletonEquiv [Subsingleton ι] (i₀ : ι) :
+    LinearMap.IsHomogeneous (PiTensorProduct.subsingletonEquiv (R := R) (s := M) i₀).toLinearMap
+      (totalDegreePiece ι ℳ) (ℳ i₀) 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro n x hx
+  refine (totalDegreePiece_le_iff (P := (ℳ i₀ (n + 0)).comap _).2 ?_) hx
+  rintro p m hm rfl
+  rw [Submodule.mem_comap, LinearEquiv.coe_coe, PiTensorProduct.subsingletonEquiv_apply_tprod,
+    add_zero, Fintype.sum_subsingleton _ i₀]
+  exact hm i₀
 
 end Grading
 
