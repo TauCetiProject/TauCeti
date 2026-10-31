@@ -66,14 +66,6 @@ ones (`hupper` and `hinj`); the holomorphy of the extension is quoted from
 * `TauCeti.exists_differentiableOn_injOn_eqOn_conj_of_symmetric` — the packaged form: a conformal
   map of the upper part extends to a conformal map of `Ω` obeying the reflection symmetry.
 
-## Coordination with upstream Mathlib
-
-Layer L4 (reflection) and layer L5 (boundary correspondence) are absent from the in-progress
-Mathlib Riemann-mapping draft
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505),
-so this is new Lean formalization rather than a shim; the shared L0--L3 infrastructure it consumes
-(`Conformal/Biholomorph.lean`, `Conformal/Inverse/Function.lean`) carries its own shim notice.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 6.
