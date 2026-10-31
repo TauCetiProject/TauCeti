@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Grp.ForgetCorepresentable
 public import TauCeti.Algebra.AlgebraicGroup.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.Basic
+public import TauCeti.GroupTheory.Finiteness
 
 /-!
 # Scheme-valued points and morphisms of diagonalizable group schemes
@@ -263,7 +264,7 @@ theorem groupSchemePointsMulEquiv_groupSchemeMap {G H : FGCommGrpCat.{u}} (f : G
       (groupScheme R H).X) :
     groupSchemePointsMulEquiv (R := R) (A := A) G
         (p ≫ (groupSchemeMap R f).hom.hom) =
-      pointsMap (R := R) (A := A) (FGCommGrpCat.toMonoidHom f)
+      pointsMap (R := R) (A := A) f.hom.hom
         (groupSchemePointsMulEquiv (R := R) (A := A) H p) := by
   -- This crosses the local `groupSchemeMap` and typed-point wrappers to the existing
   -- coordinate-map action on convolution points; `coordinateMap` supplies the same map.
@@ -339,7 +340,7 @@ theorem schemePointsMulEquiv_groupSchemeMap
     schemePointsMulEquiv (R := R) (A := A) G
         (p ≫ (groupSchemeMap R f).hom.hom) =
       (schemePointsMulEquiv (R := R) (A := A) H p).comp
-        (FGCommGrpCat.toMonoidHom f) := by
+        f.hom.hom := by
   rw [schemePointsMulEquiv, MulEquiv.trans_apply,
     groupSchemePointsMulEquiv_groupSchemeMap, pointsMulEquiv_pointsMap,
     schemePointsMulEquiv, MulEquiv.trans_apply]
@@ -475,7 +476,7 @@ theorem multiplicativeGroupSchemePointsMulEquiv_characterGroupSchemeMap
       schemePointsMulEquiv (R := R) (A := A) G p g := by
   rw [multiplicativeGroupSchemePointsMulEquiv_apply, characterGroupSchemeMap_def,
     schemePointsMulEquiv_groupSchemeMap, MonoidHom.comp_apply,
-    FGCommGrpCat.toMonoidHom_ofHom, uliftZPowersMulEquiv_apply, toAdd_ofAdd, zpow_one]
+    FGCommGrpCat.hom_hom_ofHom, uliftZPowersMulEquiv_apply, toAdd_ofAdd, zpow_one]
 
 /-- A cocharacter `psi : G →* Multiplicative ℤ` gives a group-scheme morphism
 `𝔾ₘ ⟶ D(G)`. The target character lattice is universe-lifted only at this scheme
@@ -508,7 +509,7 @@ theorem schemePointsMulEquiv_cocharacterGroupSchemeMap
         (p ≫ (cocharacterGroupSchemeMap (R := R) G psi).hom.hom) g =
       multiplicativeGroupSchemePointsMulEquiv (R := R) (A := A) p ^ (psi g).toAdd := by
   rw [cocharacterGroupSchemeMap_def, schemePointsMulEquiv_groupSchemeMap,
-    MonoidHom.comp_apply, FGCommGrpCat.toMonoidHom_ofHom]
+    MonoidHom.comp_apply, FGCommGrpCat.hom_hom_ofHom]
   exact schemePointsMulEquiv_multiplicativeCharacterGroup_apply p (psi g)
 
 /-- The `n`-th power endomorphism of the multiplicative group scheme. Its character-lattice
@@ -550,7 +551,7 @@ theorem cocharacterGroupSchemeMap_comp_characterGroupSchemeMap
     powEndGroupSchemeMap_def, characterGroupSchemeMap_def, ← groupSchemeMap_comp]
   congr 1
   apply FGCommGrpCat.hom_ext
-  simp only [FGCommGrpCat.toMonoidHom_comp, FGCommGrpCat.toMonoidHom_ofHom]
+  simp only [FGCommGrpCat.hom_hom_comp, FGCommGrpCat.hom_hom_ofHom]
   apply (uliftZPowersMulEquiv (ULift.{u} (Multiplicative ℤ))).symm.injective
   rw [uliftZPowersMulEquiv_symm_apply, uliftZPowersMulEquiv_symm_apply]
   simp only [MonoidHom.comp_apply, uliftZPowersMulEquiv_apply, toAdd_ofAdd,

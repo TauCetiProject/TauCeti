@@ -80,6 +80,14 @@ theorem shift_shift (G : InternalGrading R M ι) (c d : ι) :
   ext p
   simp [add_assoc]
 
+/-- A Koszul twist preserves the original degree, expressed in any shifted grading. -/
+theorem koszulTwist_mem_shift_piece {R : Type u} {M : Type v}
+    [CommRing R] [AddCommMonoid M] [Module R M] (G : InternalGrading R M)
+    {x : M} {e : ℤ} (hx : x ∈ G.piece e) (q c : ℤ) :
+    G.koszulTwist q x ∈ (G.shift c).piece (e - c) := by
+  rw [shift_piece, sub_add_cancel]
+  exact G.koszulTwist_mem_piece hx q
+
 /-- The Koszul twist of parameter `q` for a grading shifted by `c` differs from the unshifted
 twist by the constant sign `(-1)^(q * c)`: a homogeneous element of degree `p` has degree `p - c`
 after the shift. -/

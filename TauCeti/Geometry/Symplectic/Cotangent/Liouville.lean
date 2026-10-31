@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.StrongDual
-public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 
 /-!
 # The Liouville form on a linear cotangent space

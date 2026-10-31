@@ -112,12 +112,10 @@ theorem integrableOn_carlsonRJ_integrand {x y z p : ℂ} (hx : x ∈ slitPlane �
     IntegrableOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) *
       ((t : ℂ) + z) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + p)⁻¹) (Ioi 0) := by
   -- The first factor is `O(t^(-1/2))`, the next two are bounded and the last is `O((1 + t)⁻¹)`.
-  obtain ⟨Cx, hCx0, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_rpow hx (s := -(1 / 2))
+  obtain ⟨Cx, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hx (r := -(1 / 2))
     (by norm_num)
-  obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hy (s := -(1 / 2))
-    (by norm_num)
-  obtain ⟨Cz, hCz0, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hz (s := -(1 / 2))
-    (by norm_num)
+  obtain ⟨Cy, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hy (r := -(1 / 2)) (by norm_num)
+  obtain ⟨Cz, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hz (r := -(1 / 2)) (by norm_num)
   obtain ⟨Cp, hCp0, hCp⟩ := TauCeti.exists_norm_inv_ofReal_add_le hp
   push_cast at hCx hCy hCz
   have hcpow {w : ℂ} (hw : w ∈ slitPlane ∪ {0}) :
@@ -126,7 +124,7 @@ theorem integrableOn_carlsonRJ_integrand {x y z p : ℂ} (hx : x ∈ slitPlane �
       (TauCeti.ofReal_add_mem_slitPlane_of_mem_union hw ht)).continuousWithinAt
   have hinv : ContinuousOn (fun t : ℝ => ((t : ℂ) + p)⁻¹) (Ioi 0) := fun _ ht =>
     ((continuous_ofReal.add continuous_const).continuousAt.inv₀
-      (slitPlane_ne_zero (TauCeti.ofReal_add_mem_slitPlane_of_nonneg hp (le_of_lt ht)))
+      (slitPlane_ne_zero (TauCeti.ofReal_add_mem_slitPlane hp (le_of_lt ht)))
       ).continuousWithinAt
   have hcont := (((hcpow hx).mul (hcpow (Or.inl hy))).mul (hcpow (Or.inl hz))).mul hinv
   -- The majorant `t^(-1/2) (1 + t)⁻¹` is Euler's second beta integrand with `a = b = 1/2`.
@@ -139,10 +137,14 @@ theorem integrableOn_carlsonRJ_integrand {x y z p : ℂ} (hx : x ∈ slitPlane �
     (hcont.aestronglyMeasurable measurableSet_Ioi) ?_
   refine (ae_restrict_iff' measurableSet_Ioi).mpr (Eventually.of_forall fun t ht => ?_)
   have ht : (0 : ℝ) < t := ht
+  have h1 := hCx t ht
+  have h2 := hCy t ht.le
+  have h3 := hCz t ht.le
+  have h12 := mul_le_mul h1 h2 (norm_nonneg _) ((norm_nonneg _).trans h1)
+  have h123 := mul_le_mul h12 h3 (norm_nonneg _) ((by positivity : (0 : ℝ) ≤ _).trans h12)
   rw [norm_mul, norm_mul, norm_mul]
-  calc _ ≤ Cx * t ^ (-(1 / 2) : ℝ) * Cy * Cz * (Cp * (1 + t)⁻¹) := by
-        gcongr
-        exacts [hCx t ht, hCy t ht.le, hCz t ht.le, hCp t ht.le]
+  calc _ ≤ Cx * t ^ (-(1 / 2) : ℝ) * Cy * Cz * (Cp * (1 + t)⁻¹) :=
+        mul_le_mul h123 (hCp t ht.le) (norm_nonneg _) ((by positivity : (0 : ℝ) ≤ _).trans h123)
     _ = _ := by ring
 
 /-! ### Symmetry -/
@@ -221,7 +223,7 @@ theorem carlsonRD_ofReal_mul {l : ℝ} (hl : 0 < l) (x y z : ℂ) :
 @[simp]
 theorem carlsonRJ_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRJ x x x x = x ^ (-(3 / 2) : ℂ) := by
   have hmem (t : ℝ) (ht : 0 ≤ t) : (t : ℂ) + x ∈ slitPlane :=
-    TauCeti.ofReal_add_mem_slitPlane_of_nonneg hx ht
+    TauCeti.ofReal_add_mem_slitPlane hx ht
   -- `-(2/3) (t + x)^(-3/2)` is an antiderivative of `(t + x)^(-5/2)` on `[0, ∞)`.
   have hderiv : ∀ t ∈ Ici (0 : ℝ),
       HasDerivAt (fun t : ℝ => -(2 / 3) * ((t : ℂ) + x) ^ (-(3 / 2) : ℂ))

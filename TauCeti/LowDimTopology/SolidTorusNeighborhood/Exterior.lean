@@ -36,6 +36,8 @@ topological charted-space structure.
 * `TauCeti.knotExterior`: the exterior of a solid torus neighbourhood.
 * `TauCeti.IsSolidTorusNeighborhood.exteriorBoundaryInclusion`: the boundary torus of the exterior,
   parametrized by `S¹ × S¹` through `Φ`.
+* `TauCeti.IsSolidTorusNeighborhood.openExterior`: the exterior without its boundary torus, the
+  open complement of the closed solid torus.
 * `TauCeti.SolidTorus.halve`: the solid torus of half the radius inside the solid torus.
 * `TauCeti.halveBicollar`: the bicollar of its boundary torus, swept out by the annuli of `Φ`.
 * `TauCeti.IsSolidTorusNeighborhood.exteriorChartedSpace`: the exterior of the half-radius
@@ -141,6 +143,31 @@ theorem coe_exteriorBoundaryInclusion_apply (h : IsSolidTorusNeighborhood f Φ)
 theorem exteriorBoundaryInclusion_injective (h : IsSolidTorusNeighborhood f Φ) :
     Function.Injective h.exteriorBoundaryInclusion := fun _ _ hq ↦
   h.isEmbedding_comp_boundaryInclusion.injective (congrArg Subtype.val hq)
+
+variable [T2Space X]
+
+/-- The **open exterior** of a solid torus neighbourhood `Φ` in a Hausdorff space: the complement
+of the closed solid torus `range Φ`, which is the knot exterior with its boundary torus removed
+(`TauCeti.knotExterior_sdiff_range`). In a `3`-manifold it is the manifold interior of the
+exterior. -/
+def openExterior (h : IsSolidTorusNeighborhood f Φ) : TopologicalSpace.Opens X :=
+  ⟨(range Φ)ᶜ, h.isClosedEmbedding.isClosed_range.isOpen_compl⟩
+
+@[simp]
+theorem coe_openExterior (h : IsSolidTorusNeighborhood f Φ) :
+    (h.openExterior : Set X) = (range Φ)ᶜ :=
+  (rfl)
+
+@[simp]
+theorem mem_openExterior (h : IsSolidTorusNeighborhood f Φ) {x : X} :
+    x ∈ h.openExterior ↔ x ∉ range Φ :=
+  Iff.rfl
+
+/-- The open exterior lies in the knot exterior. -/
+theorem openExterior_subset_knotExterior (h : IsSolidTorusNeighborhood f Φ) :
+    (h.openExterior : Set X) ⊆ knotExterior (Φ := Φ) := by
+  rw [coe_openExterior, ← knotExterior_sdiff_range]
+  exact sdiff_subset
 
 end IsSolidTorusNeighborhood
 
@@ -311,7 +338,7 @@ private theorem isOpen_knotExterior_halve_sdiff_range [T2Space X]
     IsOpen (knotExterior (Φ := Φ ∘ SolidTorus.halve) \
       range (Φ ∘ SolidTorus.halve ∘ SolidTorus.boundaryInclusion)) := by
   rw [← Function.comp_assoc, knotExterior_sdiff_range]
-  exact (isCompact_range (h.comp_halve.isEmbedding.continuous)).isClosed.isOpen_compl
+  exact (_root_.isCompact_range (h.comp_halve.isEmbedding.continuous)).isClosed.isOpen_compl
 
 variable [T2Space X] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) X]
 

@@ -24,6 +24,7 @@ Distributions*, volume 1, Chapter 13.
 * `integral_abs_sub_pow_gaussianReal` evaluates every absolute centered moment.
 * `centralMoment_id_two_mul_gaussianReal` evaluates the even centered moments.
 * `centralMoment_id_two_mul_add_one_gaussianReal` says that every odd centered moment vanishes.
+* `integral_sq_gaussianReal` evaluates the second raw moment.
 -/
 
 public section
@@ -140,6 +141,14 @@ theorem centralMoment_id_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) 
       (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ := by
   simpa only [centralMoment, Pi.sub_apply, Pi.pow_apply, id_eq, integral_id_gaussianReal]
     using integral_sub_pow_two_mul_gaussianReal m v n
+
+/-- The second moment of a real Gaussian distribution is its variance plus its squared mean. -/
+theorem integral_sq_gaussianReal (m : ℝ) (v : ℝ≥0) :
+    ∫ x, x ^ 2 ∂gaussianReal m v = v + m ^ 2 := by
+  have h := variance_eq_sub (memLp_id_gaussianReal' (μ := m) (v := v) 2 ENNReal.ofNat_ne_top)
+  rw [variance_id_gaussianReal] at h
+  simp only [id_eq, Pi.pow_apply, integral_id_gaussianReal] at h
+  linarith
 
 /-- Every odd centered moment of a real Gaussian distribution vanishes. -/
 @[simp]

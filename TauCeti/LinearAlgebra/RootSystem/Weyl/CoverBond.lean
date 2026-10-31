@@ -44,6 +44,9 @@ saturated chain of `W / W_λ` are the integers that the description of Lakshmiba
   of a cover is strictly positive**.
 * `TauCeti.exists_nat_reflectionBond_eq_of_minimalCosetRepCovBy`: **the bond of a cover is a
   positive integer** when `λ` is integral.
+* `TauCeti.exists_mul_sub_eq_intCast_of_minimalCosetRepCovBy`: for a root datum, if `a` times the
+  bond of a cover `y ⋖ x` is an integer, then so is `a (f (x λ) - f (y λ))` for every integral
+  linear form `f`.
 * `TauCeti.minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero` and
   `TauCeti.reflectionBond_simple_smul_one_smul`: a simple reflection `sᵢ` off the walls through `λ`
   covers the identity, with bond `⟨λ, αᵢ^∨⟩`.
@@ -67,7 +70,10 @@ namespace TauCeti
 open RootPairing
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
-  [CommRing R] [CharZero R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+section
+
+variable [CommRing R] [CharZero R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : _root_.RootPairing ι R M N} {b : P.Base}
 
 /-! ### Bonds of covers -/
@@ -182,5 +188,31 @@ theorem reflectionBond_simple_smul_one_smul (i : b.support) :
   have hne : lam ≠ P.reflection i lam := fun h ↦ hi <| CharZero.eq_neg_self_iff.mp <| by
     rw [← coroot'_reflection_self P i lam, ← h]
   rw [reflectionBond_eq_coroot' (b.isPos_of_mem_support i.2) (P.reflection_same i lam) hne]
+
+end
+
+/-! ### Covers of a root datum -/
+
+variable [AddCommGroup M] [AddCommGroup N] {P : _root_.RootPairing ι ℤ M N} {b : P.Base}
+  [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M} {a : ℚ}
+
+/-- **A cover with `a`-integral bond changes integral pairings by `a`-integral amounts.** If `y ⋖ x`
+is a cover
+of `W / W_λ` and `a` times its bond is an integer, then `a (f (x λ) - f (y λ))` is an integer for
+every integral linear form `f` on the weight lattice. Indeed `x λ - y λ = -b_λ(x, y) β` for the
+positive root label `β` of the cover. -/
+theorem exists_mul_sub_eq_intCast_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber P b)
+    {x y : P.weylGroup}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x)
+    (ha : ∃ z : ℤ, a * P.reflectionBond b (x • lam) (y • lam) = z) (f : Module.Dual ℤ M) :
+    ∃ z : ℤ, a * (f (x • lam) - f (y • lam) : ℤ) = z := by
+  obtain ⟨β, ⟨hβ, hβx⟩, -⟩ := existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam h
+  obtain ⟨z, hz⟩ := ha
+  rw [reflectionBond_eq_neg_coroot' hβ hβx (smul_ne_smul_of_minimalCosetRepCovBy hlam h)] at hz
+  refine ⟨-(z * f (P.root β)), ?_⟩
+  rw [← hβx, P.reflection_apply, map_sub, sub_sub_cancel, LinearMap.map_smul, smul_eq_mul]
+  push_cast at hz ⊢
+  rw [← hz]
+  ring
 
 end TauCeti

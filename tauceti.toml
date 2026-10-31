@@ -100,7 +100,7 @@ repo="TauCetiProject/TauCetiTools"
 ref="a8b16c3dd0c0730a1963052cb520808e161222ef"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
-ref="5ddd4024d245eba4ee99bc914232b9c41248f12a"
+ref="32ce2069308080df4e08df14c2160012a51c8152"
 [tools.progress]
 repo="TauCetiProject/TauCetiProgress"
 ref="047029660478ea2af4ad8cdfe0c88db0d5d1ca29"

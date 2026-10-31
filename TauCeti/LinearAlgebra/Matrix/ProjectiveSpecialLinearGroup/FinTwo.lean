@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # Parabolic elements of `PSL(2, R)`
@@ -49,6 +50,8 @@ them; that classification, which runs through the action on the projective line,
   equal diagonal entries represents the translation by the product of its top-row entries.
 * `Matrix.ProjectiveSpecialLinearGroup.exists_eq_upperRightHom_of_commute`: an element commuting
   with a nonzero translation is a translation, in any characteristic.
+* `Matrix.ProjectiveSpecialLinearGroup.trace_commutatorElement_sub_two_of_mk_eq_upperRightHom`:
+  the commutator trace of a translation lift and another special linear matrix.
 
 ## References
 
@@ -60,7 +63,7 @@ them; that classification, which runs through the action on the projective line,
 
 public section
 
-open scoped MatrixGroups
+open scoped MatrixGroups Pointwise commutatorElement
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 
@@ -290,5 +293,19 @@ theorem isParabolic_upperRightHom_iff {x : R} : IsParabolic (upperRightHom x) �
   rw [upperRightHom_apply, isParabolic_mk_iff, GeneralLinearGroup.IsParabolic,
     SpecialLinearGroup.coe_GL_coe_matrix, Matrix.isParabolic_iff_of_upperTriangular] <;>
     simp [SpecialLinearGroup.transvection_coe]
+
+/-- If `T` represents `upperRightHom x`, that is `T = ±!![1, x; 0, 1]`, then
+`tr ⁅T, X⁆ - 2 = x² c²`, where `c` is the lower-left entry of `X`. -/
+theorem trace_commutatorElement_sub_two_of_mk_eq_upperRightHom {T : SL(2, R)} {x : R}
+    (hT : (T : PSL(2, R)) = upperRightHom x) (X : SL(2, R)) :
+    ((⁅T, X⁆ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R).trace - 2 = x ^ 2 * X 1 0 ^ 2 := by
+  have hTe : T 1 0 = 0 ∧ T 1 1 = T 0 0 ∧ T 0 1 ^ 2 = x ^ 2 := by
+    rw [upperRightHom_apply, mk_eq_mk_iff] at hT
+    rcases hT with h | h
+    · simp [← h, SpecialLinearGroup.transvection_coe]
+    · simp [neg_eq_iff_eq_neg.1 h.symm, SpecialLinearGroup.transvection_coe]
+  rw [SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two, Matrix.det_fin_two, ← hTe.2.2]
+  simp only [Matrix.sub_apply, Matrix.mul_apply, Fin.sum_univ_two, hTe.1, hTe.2.1]
+  ring
 
 end Matrix.ProjectiveSpecialLinearGroup

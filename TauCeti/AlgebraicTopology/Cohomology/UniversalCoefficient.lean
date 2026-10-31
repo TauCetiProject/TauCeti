@@ -54,6 +54,9 @@ is an isomorphism `Hⁿ(X; R, M) ≃ₗ[k] Hom(Hₙ(X; R), M)` in every degree
 * `TopPair.singularKronecker_bijective_of_projective_homology` and
   `TopPair.singularKroneckerEquivOfProjectiveHomology`: the same for relative cohomology of a
   pair whose relative homology is projective.
+* `TopPair.singularKronecker_bijective_of_projective_homology_lt`: the relative Kronecker map is
+  bijective in degree `n` when the relative homology is projective below `n`, for instance when it
+  vanishes there.
 * `TopCat.singularExtToCohomology`: the map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`, computed on
   extension classes by `TopCat.singularExtToCohomology_extClass_comp_mk₀`.
 * `TopCat.singularExtToCohomology_injective` and
@@ -250,20 +253,30 @@ namespace TopPair
 
 variable {k : Type*} [CommRing k] (P : TopPair.{w}) (R M : ModuleCat.{w} k)
   [Module.Projective k R]
-  [hP : ∀ n, Projective (P.singularHomology R n)]
+
+/-- **The relative universal coefficient theorem below the first non-projective homology**, over
+any commutative ring `k`: for a projective coefficient module `R`, if the relative singular
+homology modules `Hⱼ(X, A; R)` of a pair are projective for `j < n`, for instance zero, the
+relative Kronecker map `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` is bijective, for every module
+`M`. -/
+theorem singularKronecker_bijective_of_projective_homology_lt
+    [Linear k (ModuleCat.{w} k)] (n : ℕ) (h : ∀ j < n, Projective (P.singularHomology R j)) :
+    Function.Bijective (P.singularKronecker (R := R) (M := M) k n) := by
+  rw [singularKronecker_def]
+  -- `Hⱼ(X, A; R)` is by definition the homology of the relative singular chain complex, whose
+  -- terms are retracts of the absolute singular chain modules, hence projective.
+  exact TauCeti.ChainComplex.kronecker_bijective_of_projective_homology_lt n h
+
+variable [hP : ∀ n, Projective (P.singularHomology R n)]
 
 /-- **The relative universal coefficient theorem with projective homology**, over any commutative
 ring `k`: for a projective coefficient module `R`, if the relative singular homology modules
 `Hₙ(X, A; R)` of a pair are all projective, the relative Kronecker map
-`Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` is bijective in every degree, for every module `M`.  The
-relative singular chain modules are retracts of the absolute ones, hence projective. -/
+`Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` is bijective in every degree, for every module `M`. -/
 theorem singularKronecker_bijective_of_projective_homology
     [Linear k (ModuleCat.{w} k)] (n : ℕ) :
-    Function.Bijective (P.singularKronecker (R := R) (M := M) k n) := by
-  -- `Hₙ(X, A; R)` is by definition the homology of the relative singular chain complex.
-  have (n : ℕ) : Projective ((P.singularChainComplex R).homology n) := hP n
-  rw [singularKronecker_def]
-  exact TauCeti.ChainComplex.kronecker_bijective_of_projective_homology n
+    Function.Bijective (P.singularKronecker (R := R) (M := M) k n) :=
+  P.singularKronecker_bijective_of_projective_homology_lt R M n fun j _ ↦ hP j
 
 /-- **The relative universal coefficient isomorphism with projective homology**: over any
 commutative ring, for a projective coefficient module `R` such that every relative homology module

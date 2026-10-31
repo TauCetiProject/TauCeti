@@ -154,6 +154,12 @@ theorem exists_stage_eq (I : Ideal R) (x : algebra I) :
   simp only [stage_def]
   exact SmallFilteredAlgebraColimit.exists_stage_eq (IsNeighbourhood I).ι x
 
+/-- Finitely many elements of the henselization come from a common étale neighbourhood. -/
+theorem exists_stage_family (I : Ideal R) {ι : Type*} [Finite ι] (x : ι → algebra I) :
+    ∃ (B : Neighbourhood.{u, u} I) (b : ι → B.obj), ∀ i, stage I B (b i) = x i := by
+  simp only [stage_def]
+  exact SmallFilteredAlgebraColimit.exists_stage_family (IsNeighbourhood I).ι x
+
 /-- Two maps from the henselization algebra are equal if they agree on every stage. -/
 @[ext]
 theorem hom_ext {I : Ideal R} {S : Type w} [Semiring S] [Algebra R S]
