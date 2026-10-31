@@ -33,6 +33,11 @@ block.
 ## Main results
 
 * `TauCeti.ReducedTensorWords.splice_congr`: a spliced word depends only on the letters spliced.
+* `TauCeti.ReducedTensorWords.splice_smul`: a spliced word is linear in the letter spliced in.
+* `TauCeti.ReducedTensorWords.exists_splice_eq_of_tprod`: a letter outside the collapsed block
+  survives in the spliced word.
+* `TauCeti.ReducedTensorWords.splice_two_succ_eq_splice_two_pred`: deleting an interior letter by
+  collapsing it with either neighbour gives the same word.
 * `TauCeti.ReducedTensorWords.map_splice`: mapping a spliced word maps each of its letters.
 * `TauCeti.ReducedTensorWords.deconcatenation_splice`: reduced deconcatenation of a spliced word.
 * `TauCeti.ReducedTensorWords.prepend_splice`: prepending the first letter of a tuple commutes with
@@ -156,6 +161,106 @@ theorem splice_zero {n : ℕ} (x : Fin n → M) (a b p d : ℕ) : splice R x a b
   · rw [splice_eq_of_tprod R x 0 h.1 h.2.1 h.2.2,
       (PiTensorProduct.tprod R).map_coord_zero ⟨p, by simp only; omega⟩ (by simp), map_zero]
   · exact splice_eq_zero R x 0 h
+
+/-- A spliced word is linear in the letter spliced in. -/
+theorem splice_smul {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (c : R) (e : M) :
+    splice R x a b p d (c • e) = c • splice R x a b p d e := by
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · rw [splice_eq_of_tprod R x _ h.1 h.2.1 h.2.2, splice_eq_of_tprod R x e h.1 h.2.1 h.2.2,
+      ← map_smul]
+    congr 1
+    -- The two tuples differ only in the spliced position.
+    set i : Fin (b + 1 - d) := ⟨p, by omega⟩
+    have hupd (y : M) : (fun j : Fin (b + 1 - d) ↦
+        if _ : j.1 < p then x ⟨a + j.1, by omega⟩ else if _ : j.1 = p then y
+        else x ⟨a + (j.1 + d - 1), by omega⟩) =
+        Function.update (fun j : Fin (b + 1 - d) ↦
+          if _ : j.1 < p then x ⟨a + j.1, by omega⟩ else if _ : j.1 = p then e
+          else x ⟨a + (j.1 + d - 1), by omega⟩) i y := by
+      funext j
+      by_cases hj : j = i
+      · subst hj
+        simp [i]
+      · have hjp : j.1 ≠ p := fun h ↦ hj (Fin.ext h)
+        simp [Function.update_of_ne hj, hjp]
+    rw [hupd (c • e), (PiTensorProduct.tprod R).map_update_smul, ← hupd e]
+  · rw [splice_eq_zero R x _ h, splice_eq_zero R x e h, smul_zero]
+
+/-- A letter outside the collapsed block survives in a spliced word: the spliced word is a pure
+tensor word one of whose letters is that letter. -/
+theorem exists_splice_eq_of_tprod {n : ℕ} (x : Fin n → M) {p d : ℕ} (hd : 0 < d)
+    (hpd : p + d ≤ n) (e : M) {i : Fin n} (hi : ¬(p ≤ i.1 ∧ i.1 < p + d)) :
+    ∃ y : Fin (n + 1 - d) → M, (∃ j, y j = x i) ∧
+      splice R x 0 n p d e = of R M ⟨n + 1 - d, by omega⟩ (PiTensorProduct.tprod R y) := by
+  have hin := i.isLt
+  refine ⟨_, ?_, splice_eq_of_tprod R x e hd hpd (by omega)⟩
+  by_cases hip : i.1 < p
+  · exact ⟨⟨i.1, by omega⟩, by simp [hip]⟩
+  · refine ⟨⟨i.1 + 1 - d, by omega⟩, ?_⟩
+    simp only [show ¬i.1 + 1 - d < p by omega, show i.1 + 1 - d ≠ p by omega, dite_false]
+    exact congrArg x (Fin.ext (by simp; omega))
+
+/-- Collapsing all letters but the first of a tuple leaves a two-letter word. -/
+theorem splice_collapse_tail_eq {n : ℕ} (hn : 0 < n) (x : Fin (n + 1) → M) (y : M) :
+    splice R x 0 (n + 1) 1 n y = of R M (2 : ℕ+) (PiTensorProduct.tprod R ![x 0, y]) := by
+  rw [splice_eq_of_tprod R x y (a := 0) (b := n + 1) (p := 1) hn (by omega) (by omega)]
+  exact of_tprod_congr R M _ (by omega : n + 1 + 1 - n = 2) fun i ↦ by
+    match i with
+    | ⟨0, _⟩ => simp
+    | ⟨1, _⟩ => simp
+    | ⟨k + 2, hk⟩ => exact absurd hk (by omega)
+
+/-- Collapsing all letters but the last of a tuple leaves a two-letter word. -/
+theorem splice_collapse_init_eq {n : ℕ} (hn : 0 < n) (x : Fin (n + 1) → M) (y : M) :
+    splice R x 0 (n + 1) 0 n y =
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![y, x (Fin.last n)]) := by
+  rw [splice_eq_of_tprod R x y (a := 0) (b := n + 1) (p := 0) hn (by omega) (by omega)]
+  exact of_tprod_congr R M _ (by omega : n + 1 + 1 - n = 2) fun i ↦ by
+    match i with
+    | ⟨0, _⟩ => simp
+    | ⟨1, _⟩ => exact congrArg x (Fin.ext (by simp))
+    | ⟨k + 2, hk⟩ => exact absurd hk (by omega)
+
+/-- Collapsing the two letters at positions `p` and `p + 1` to the second deletes position `p`;
+for `p = 0` this leaves the last `n` letters. -/
+theorem splice_two_succ_eq_subword {n p : ℕ} (hn : 0 < n) (hp : p = 0)
+    (x : Fin (n + 1) → M) :
+    splice R x 0 (n + 1) p 2 (x ⟨p + 1, by omega⟩) = subword R x 1 n := by
+  subst hp
+  rw [splice_eq_of_tprod R x _ two_pos (by omega) (by omega),
+    subword_eq_of_tprod R x hn (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun i ↦ ?_
+  simp only [not_lt_zero, dite_false, Fin.val_cast]
+  split_ifs <;> exact congrArg x (Fin.ext (by simp; omega))
+
+/-- Collapsing the two letters at positions `p` and `p + 1` to the first deletes position `p + 1`;
+for `p + 1 = n` this leaves the first `n` letters. -/
+theorem splice_two_pred_eq_subword {n p : ℕ} (hn : 0 < n) (hp : p + 1 = n)
+    (x : Fin (n + 1) → M) :
+    splice R x 0 (n + 1) p 2 (x ⟨p, by omega⟩) = subword R x 0 n := by
+  rw [splice_eq_of_tprod R x _ two_pos (by omega) (by omega),
+    subword_eq_of_tprod R x hn (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun i ↦ ?_
+  simp only [Fin.val_cast]
+  split_ifs <;> first
+    | omega
+    | exact congrArg x rfl
+    | exact congrArg x (Fin.ext (by dsimp only; omega))
+
+/-- Deleting the letter at an interior position `p` by collapsing it with its right neighbour or
+with its left neighbour gives the same word. -/
+theorem splice_two_succ_eq_splice_two_pred {n p : ℕ} (hp₀ : 0 < p) (hpn : p < n)
+    (x : Fin (n + 1) → M) :
+    splice R x 0 (n + 1) p 2 (x ⟨p + 1, by omega⟩) =
+      splice R x 0 (n + 1) (p - 1) 2 (x ⟨p - 1, by omega⟩) := by
+  rw [splice_eq_of_tprod R x _ two_pos (by omega) (by omega),
+    splice_eq_of_tprod R x _ two_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ rfl fun i ↦ ?_
+  simp only [Fin.val_cast]
+  split_ifs <;> first
+    | omega
+    | exact congrArg x rfl
+    | exact congrArg x (Fin.ext (by dsimp only; omega))
 
 /-- Mapping a spliced tensor word applies the map to the untouched letters and the replacement
 letter. -/

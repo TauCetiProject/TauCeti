@@ -144,7 +144,7 @@ public theorem titsPolarForm_comm (d e : Q → ℤ) :
 /-- **The Euler form against a path-count vector is evaluation.** Pairing the vector counting the
 paths out of `i` against any `e : Q → ℤ` returns `eᵢ`: at each vertex `b` the path count `#(i → b)`
 cancels the arrow-weighted sum `∑ₐ #(a ⟶ b) · #(i → a)` up to the trivial path, by the last-arrow
-recursion `TauCeti.card_path_eq_ite_add_sum`. -/
+recursion `TauCeti.card_path_eq_ite_add_sum_lastArrow`. -/
 public theorem eulerForm_card_path_left (i : Q) [∀ a : Q, Finite (Quiver.Path i a)] (e : Q → ℤ) :
     eulerForm Q (fun v ↦ (Nat.card (Quiver.Path i v) : ℤ)) e = e i := by
   classical

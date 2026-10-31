@@ -48,7 +48,8 @@ The same computation at `x = b` gives the normalization.
 * `TauCeti.Probability.integrable_triangularMeasure_iff` and
   `TauCeti.Probability.integral_triangularMeasure_eq` — integrability and integration against the
   law, transferred to the real density;
-* `TauCeti.Probability.cdf_triangularMeasure_eq` — the piecewise-quadratic cdf;
+* `TauCeti.Probability.cdf_triangularMeasure_eq` — the piecewise-quadratic cdf, which takes the
+  value `(c - a) / (b - a)` at the mode (`TauCeti.Probability.cdf_triangularMeasure_mode`);
 * `TauCeti.Probability.measurable_triangularMeasure` — joint measurability in the parameters.
 
 ## References
@@ -561,5 +562,45 @@ theorem continuous_cdf_triangularMeasure (hab : a < b) (hac : a ≤ c) (hcb : c 
     Continuous (cdf (triangularMeasure a b c)) := by
   simpa only [← funext (cdf_triangularMeasure_eq_triangularSpline hab hac hcb)] using
     continuous_triangularSpline hab hac hcb
+
+/-- The triangular law gives the ray `(-∞, c]` up to its mode the mass `(c - a) / (b - a)`. -/
+@[simp]
+theorem cdf_triangularMeasure_mode (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b) :
+    cdf (triangularMeasure a b c) c = (c - a) / (b - a) := by
+  rw [cdf_triangularMeasure_of_mem_Icc_left hab hcb ⟨hac, le_rfl⟩]
+  rcases hac.eq_or_lt with rfl | hac
+  · simp
+  · field_simp [(sub_pos.2 hac).ne']
+
+/-- The triangular cdf is positive strictly above the lower endpoint. -/
+theorem cdf_triangularMeasure_pos (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b) (hx : a < x) :
+    0 < cdf (triangularMeasure a b c) x := by
+  rcases le_or_gt b x with hbx | hxb
+  · rw [cdf_triangularMeasure_of_le_right hab hac hcb hbx]
+    exact one_pos
+  rcases le_total x c with hxc | hcx
+  · rw [cdf_triangularMeasure_of_mem_Icc_left hab hcb ⟨hx.le, hxc⟩]
+    have : 0 < c - a := sub_pos.2 (hx.trans_le hxc)
+    have : 0 < x - a := sub_pos.2 hx
+    positivity
+  · rw [cdf_triangularMeasure_of_mem_Icc_right hab hac ⟨hcx, hxb.le⟩, sub_pos,
+      div_lt_one (mul_pos (sub_pos.2 hab) (sub_pos.2 (hcx.trans_lt hxb)))]
+    nlinarith
+
+/-- The triangular cdf is less than one strictly below the upper endpoint. -/
+theorem cdf_triangularMeasure_lt_one (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b) (hx : x < b) :
+    cdf (triangularMeasure a b c) x < 1 := by
+  rcases le_or_gt x a with hxa | hax
+  · rw [cdf_triangularMeasure_of_le_left hab hac hcb hxa]
+    exact one_pos
+  rcases le_total x c with hxc | hcx
+  · rw [cdf_triangularMeasure_of_mem_Icc_left hab hcb ⟨hax.le, hxc⟩,
+      div_lt_one (mul_pos (sub_pos.2 hab) (sub_pos.2 (hax.trans_le hxc)))]
+    nlinarith
+  · rw [cdf_triangularMeasure_of_mem_Icc_right hab hac ⟨hcx, hx.le⟩, sub_lt_self_iff]
+    have : 0 < b - c := sub_pos.2 (hcx.trans_lt hx)
+    have : 0 < b - x := sub_pos.2 hx
+    have : 0 < b - a := sub_pos.2 hab
+    positivity
 
 end TauCeti.Probability
