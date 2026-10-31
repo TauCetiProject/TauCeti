@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.GroupTheory.IndexNSmul
+public import Mathlib.LinearAlgebra.FreeModule.ModN
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
@@ -33,7 +34,8 @@ inclusion is a closed embedding, so the compact torus `V / (L ∩ V)` is identif
 subgroup of `E / L`.
 
 For `c : ℕ`, the lattice `cL` is `(c : ℝ) • L`, read in `L` through `Submodule.submoduleOf`. The
-quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite for `c ≠ 0`.
+quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite for `c ≠ 0`, and
+for `c ≠ 0` a `ℤ`-basis of `L` identifies it with `(ℤ / c)^n` by reducing coordinates modulo `c`.
 
 ## Main results
 
@@ -46,6 +48,8 @@ quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite fo
   then `V / (L ∩ V) → E / L` is a closed embedding.
 * `ZLattice.card_quotient_smul_submoduleOf`: `L / cL` has `c ^ n` elements for a full lattice
   `L` of rank `n`; it is finite for `c ≠ 0`.
+* `Module.Basis.quotientSmulEquivPiZMod`: for `c ≠ 0`, the coordinates modulo `c` in a `ℤ`-basis
+  of `L` identify `L / cL` with `(ℤ / c)^n`.
 
 ## References
 
@@ -243,6 +247,33 @@ theorem mem_smul_submoduleOf_iff {c : ℕ} {v : L} :
     exact ⟨⟨w, hw⟩, Subtype.ext (by rw [← h, Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul])⟩
   · rintro ⟨w, rfl⟩
     exact ⟨w, w.2, by rw [Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul]⟩
+
+/-- The lattice `cL` is the image of multiplication by `c` on `L`, the submodule that Mathlib's
+`ModN L c` quotients by. -/
+theorem smul_submoduleOf_eq_range_lsmul (c : ℕ) :
+    ((c : ℝ) • L).submoduleOf L = LinearMap.range (LinearMap.lsmul ℤ L c) := by
+  ext v
+  simp [mem_smul_submoduleOf_iff]
+
+/-- For a `ℤ`-basis `b` of `L` and `c ≠ 0`, reduction modulo `c` of the coordinates in `b`
+identifies `L / cL` with `(ℤ / c)^ι`. This is the coordinate map of the basis `ModN.basis b` of
+`L / cL` over `ℤ / c`. -/
+noncomputable def _root_.Module.Basis.quotientSmulEquivPiZMod {ι : Type*} [Finite ι]
+    (b : Basis ι ℤ L) (c : ℕ) [NeZero c] : (L ⧸ ((c : ℝ) • L).submoduleOf L) ≃ₗ[ℤ] (ι → ZMod c) :=
+  (Submodule.quotEquivOfEq _ _ (smul_submoduleOf_eq_range_lsmul c)).trans
+    ((ModN.basis b).equivFun.restrictScalars ℤ)
+
+/-- The class of `v ∈ L` has the coordinates of `v` in `b`, reduced modulo `c`. -/
+@[simp]
+theorem _root_.Module.Basis.quotientSmulEquivPiZMod_mk {ι : Type*} [Finite ι] (b : Basis ι ℤ L)
+    (c : ℕ) [NeZero c] (v : L) (i : ι) :
+    b.quotientSmulEquivPiZMod c (Submodule.Quotient.mk v) i = (b.repr v i : ZMod c) := by
+  have := Fintype.ofFinite ι
+  have hv : (Submodule.Quotient.mk v : ModN L c) = ∑ j, (b.repr v j : ZMod c) • ModN.basis b j := by
+    conv_lhs => rw [← b.sum_repr v, ← Submodule.mkQ_apply, map_sum]
+    simp [ModN.basis_apply_eq_mkQ, ModN.mkQ, Int.cast_smul_eq_zsmul]
+  rw [Module.Basis.quotientSmulEquivPiZMod, LinearEquiv.trans_apply, quotEquivOfEq_mk,
+    LinearEquiv.restrictScalars_apply, hv, Basis.equivFun_apply, Basis.repr_sum_self]
 
 variable (L) [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
