@@ -308,9 +308,10 @@ private theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜
     ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) _).mdifferentiableAt one_ne_zero)
     ((contMDiff_legendreMap (m := 1) hL (by simpa [one_add_one_eq_two] using hn) v
       ).mdifferentiableAt one_ne_zero)
-  rw [show π (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ∘ legendreMap L =
-      π E (TangentSpace I) from funext (proj_legendreMap L), Bundle.mfderiv_proj,
-    Bundle.mfderiv_proj] at hcomp
+  have hπ : π (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ∘ legendreMap L =
+      π E (TangentSpace I) :=
+    funext (proj_legendreMap L)
+  rw [hπ, Bundle.mfderiv_proj, Bundle.mfderiv_proj] at hcomp
   exact hcomp.symm
 
 /-- **The differential of the Legendre map on vertical vectors.** In bundle charts, the
