@@ -23,9 +23,12 @@ The ring `B ⊗̂_A C` is an adic ring of finite ideal type. The maps `b ↦ b �
 are continuous `A`-algebra homomorphisms `B → B ⊗̂_A C ← C`, and they are universal: a pair of
 continuous `A`-algebra homomorphisms `B → D`, `C → D` into a complete Hausdorff linearly
 topologised `A`-algebra `D` factors uniquely through a continuous `A`-algebra homomorphism
-`B ⊗̂_A C → D`. In formal geometry the structure maps `A → B` and `A → C` are adic
-homomorphisms of adic rings and `B ⊗̂_A C` is the coordinate ring of the fibre product
-`Spf B ×_{Spf A} Spf C`; the construction and the results of this file use no topology on `A`.
+`B ⊗̂_A C → D`. The construction is functorial: continuous homomorphisms `B → B'` and `C → C'`
+over a ring homomorphism `A → A'` induce a continuous homomorphism `B ⊗̂_A C → B' ⊗̂_{A'} C'`.
+Modulo the powers of `J` completion changes nothing: `(B ⊗̂_A C) ⧸ J ^ n ≃ (B ⊗[A] C) ⧸ J ^ n`.
+In formal geometry the structure maps `A → B` and `A → C` are adic homomorphisms of adic rings
+and `B ⊗̂_A C` is the coordinate ring of the fibre product `Spf B ×_{Spf A} Spf C`; the construction
+and the results of this file use no topology on `A`.
 
 The completion is formed with the chosen ideals of definition `TauCeti.IsAdicRing.ideal B` and
 `TauCeti.IsAdicRing.ideal C`.
@@ -40,6 +43,10 @@ The completion is formed with the chosen ideals of definition `TauCeti.IsAdicRin
   the `A`-algebra homomorphisms `b ↦ b ⊗ 1` and `c ↦ 1 ⊗ c`.
 * `TauCeti.AdicRing.CompletedTensorProduct.lift`: the continuous `A`-algebra homomorphism
   `B ⊗̂_A C → D` induced by continuous `A`-algebra homomorphisms `B → D` and `C → D`.
+* `TauCeti.AdicRing.CompletedTensorProduct.mapRingHom`: the continuous ring homomorphism
+  `B ⊗̂_A C → B' ⊗̂_{A'} C'` induced by continuous homomorphisms `B → B'`, `C → C'` over `A → A'`.
+* `TauCeti.AdicRing.CompletedTensorProduct.quotientPowEquiv`: the isomorphism
+  `(B ⊗̂_A C) ⧸ J ^ n (B ⊗̂_A C) ≃ (B ⊗[A] C) ⧸ J ^ n`.
 
 ## Main results
 
@@ -49,10 +56,13 @@ The completion is formed with the chosen ideals of definition `TauCeti.IsAdicRin
   `TauCeti.AdicRing.CompletedTensorProduct.continuous_inr`: the two inclusions are continuous.
 * `TauCeti.AdicRing.CompletedTensorProduct.denseRange_algebraMap`: the image of `B ⊗[A] C` is
   dense.
-* `TauCeti.AdicRing.CompletedTensorProduct.algHom_ext`: continuous `A`-algebra homomorphisms
-  out of `B ⊗̂_A C` into a Hausdorff ring agreeing on `B` and on `C` are equal.
+* `TauCeti.AdicRing.CompletedTensorProduct.ringHom_ext`,
+  `TauCeti.AdicRing.CompletedTensorProduct.algHom_ext`: continuous ring (or `A`-algebra)
+  homomorphisms out of `B ⊗̂_A C` into a Hausdorff ring agreeing on `B` and on `C` are equal.
 * `TauCeti.AdicRing.CompletedTensorProduct.existsUnique_lift`: the universal property of
   `B ⊗̂_A C`.
+* `TauCeti.AdicRing.CompletedTensorProduct.mapRingHom_id`,
+  `TauCeti.AdicRing.CompletedTensorProduct.mapRingHom_comp`: functoriality of `B ⊗̂_A C`.
 
 ## References
 
@@ -193,18 +203,28 @@ theorem continuous_inr : Continuous (inr A B C) :=
 
 variable {A B C}
 
+/-- Two continuous ring homomorphisms out of the completed tensor product into a Hausdorff ring
+are equal as soon as they agree on `B` and on `C`. -/
+theorem ringHom_ext {D : Type*} [Semiring D] [TopologicalSpace D] [T2Space D]
+    {g₁ g₂ : CompletedTensorProduct A B C →+* D} (hg₁ : Continuous g₁) (hg₂ : Continuous g₂)
+    (hl : g₁.comp (inl A B C).toRingHom = g₂.comp (inl A B C).toRingHom)
+    (hr : g₁.comp (inr A B C).toRingHom = g₂.comp (inr A B C).toRingHom) :
+    g₁ = g₂ := by
+  have htensor : g₁.comp (algebraMap (B ⊗[A] C) _) = g₂.comp (algebraMap (B ⊗[A] C) _) :=
+    Algebra.TensorProduct.ringHom_ext (RingHom.ext fun b ↦ congr($hl b))
+      (RingHom.ext fun c ↦ congr($hr c))
+  exact RingHom.ext <| congrFun <| (denseRange_algebraMap A B C).equalizer hg₁ hg₂
+    congr(⇑$htensor)
+
 /-- Two continuous `A`-algebra homomorphisms out of the completed tensor product into a
 Hausdorff ring are equal as soon as they agree on `B` and on `C`. -/
 theorem algHom_ext {D : Type*} [Semiring D] [Algebra A D] [TopologicalSpace D] [T2Space D]
     {g₁ g₂ : CompletedTensorProduct A B C →ₐ[A] D} (hg₁ : Continuous g₁) (hg₂ : Continuous g₂)
     (hl : g₁.comp (inl A B C) = g₂.comp (inl A B C))
     (hr : g₁.comp (inr A B C) = g₂.comp (inr A B C)) :
-    g₁ = g₂ := by
-  have htensor : g₁.comp (IsScalarTower.toAlgHom A (B ⊗[A] C) _) =
-      g₂.comp (IsScalarTower.toAlgHom A (B ⊗[A] C) _) :=
-    Algebra.TensorProduct.ext hl hr
-  exact AlgHom.ext <| congrFun <| (denseRange_algebraMap A B C).equalizer hg₁ hg₂
-    congr(⇑$htensor)
+    g₁ = g₂ :=
+  AlgHom.toRingHom_injective <| ringHom_ext hg₁ hg₂ congr(($hl).toRingHom)
+    congr(($hr).toRingHom)
 
 section Lift
 
@@ -327,6 +347,126 @@ theorem existsUnique_lift (β : B →ₐ[A] D) (γ : C →ₐ[A] D) (hβ : Conti
     fun _ hψ ↦ lift_unique hβ hγ hψ.1 hψ.2.1 hψ.2.2⟩
 
 end Lift
+
+section Map
+
+variable {A' B' C' A'' B'' C'' : Type*} [CommRing A']
+  [CommRing B'] [TopologicalSpace B'] [IsTopologicalRing B'] [IsAdicRing B'] [Algebra A' B']
+  [CommRing C'] [TopologicalSpace C'] [IsTopologicalRing C'] [IsAdicRing C'] [Algebra A' C']
+  [CommRing A'']
+  [CommRing B''] [TopologicalSpace B''] [IsTopologicalRing B''] [IsAdicRing B''] [Algebra A'' B'']
+  [CommRing C''] [TopologicalSpace C''] [IsTopologicalRing C''] [IsAdicRing C''] [Algebra A'' C'']
+  (fA : A →+* A') (fB : B →+* B') (fC : C →+* C')
+  (hB : fB.comp (algebraMap A B) = (algebraMap A' B').comp fA)
+  (hC : fC.comp (algebraMap A C) = (algebraMap A' C').comp fA)
+  (hfB : Continuous fB) (hfC : Continuous fC)
+
+/-- The **functoriality of the completed tensor product**: continuous ring homomorphisms
+`fB : B → B'` and `fC : C → C'` over a ring homomorphism `fA : A → A'` induce a continuous ring
+homomorphism `B ⊗̂_A C → B' ⊗̂_{A'} C'`, the completion of
+`Algebra.TensorProduct.mapRingHom fA fB fC` (EGA I, Ch. 0, 7.7.6). -/
+noncomputable def mapRingHom :
+    CompletedTensorProduct A B C →+* CompletedTensorProduct A' B' C' :=
+  letI : Algebra A (CompletedTensorProduct A' B' C') :=
+    ((algebraMap A' (CompletedTensorProduct A' B' C')).comp fA).toAlgebra
+  (lift (A := A)
+    { (inl A' B' C').toRingHom.comp fB with
+      commutes' a := (congrArg (inl A' B' C') congr($hB a)).trans ((inl A' B' C').commutes _) }
+    { (inr A' B' C').toRingHom.comp fC with
+      commutes' a := (congrArg (inr A' B' C') congr($hC a)).trans ((inr A' B' C').commutes _) }
+    ((continuous_inl A' B' C').comp hfB) ((continuous_inr A' B' C').comp hfC)).toRingHom
+
+/-- The homomorphism `CompletedTensorProduct.mapRingHom` is continuous. -/
+theorem continuous_mapRingHom : Continuous (mapRingHom fA fB fC hB hC hfB hfC) :=
+  letI : Algebra A (CompletedTensorProduct A' B' C') :=
+    ((algebraMap A' (CompletedTensorProduct A' B' C')).comp fA).toAlgebra
+  continuous_lift _ _ _ _
+
+/-- The homomorphism `CompletedTensorProduct.mapRingHom` restricts to `fB` on `B`. -/
+@[simp]
+theorem mapRingHom_inl (b : B) :
+    mapRingHom fA fB fC hB hC hfB hfC (inl A B C b) = inl A' B' C' (fB b) :=
+  letI : Algebra A (CompletedTensorProduct A' B' C') :=
+    ((algebraMap A' (CompletedTensorProduct A' B' C')).comp fA).toAlgebra
+  lift_inl _ _ _ _ b
+
+/-- The homomorphism `CompletedTensorProduct.mapRingHom` restricts to `fC` on `C`. -/
+@[simp]
+theorem mapRingHom_inr (c : C) :
+    mapRingHom fA fB fC hB hC hfB hfC (inr A B C c) = inr A' B' C' (fC c) :=
+  letI : Algebra A (CompletedTensorProduct A' B' C') :=
+    ((algebraMap A' (CompletedTensorProduct A' B' C')).comp fA).toAlgebra
+  lift_inr _ _ _ _ c
+
+/-- On the image of `B ⊗[A] C`, the homomorphism `CompletedTensorProduct.mapRingHom` is the map
+`b ⊗ c ↦ fB b ⊗ fC c` of uncompleted tensor products. -/
+@[simp]
+theorem mapRingHom_algebraMap (x : B ⊗[A] C) :
+    mapRingHom fA fB fC hB hC hfB hfC (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C) x) =
+      algebraMap (B' ⊗[A'] C') (CompletedTensorProduct A' B' C')
+        (Algebra.TensorProduct.mapRingHom fA fB fC hB hC x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul b c => simp [algebraMap_tmul]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The homomorphism `CompletedTensorProduct.mapRingHom` lies over `fA : A → A'`. -/
+@[simp]
+theorem mapRingHom_comp_algebraMap :
+    (mapRingHom fA fB fC hB hC hfB hfC).comp (algebraMap A (CompletedTensorProduct A B C)) =
+      (algebraMap A' (CompletedTensorProduct A' B' C')).comp fA :=
+  RingHom.ext fun a ↦ by
+    simp [IsScalarTower.algebraMap_apply A (B ⊗[A] C) (CompletedTensorProduct A B C),
+      IsScalarTower.algebraMap_apply A' (B' ⊗[A'] C') (CompletedTensorProduct A' B' C'),
+      Algebra.TensorProduct.algebraMap_apply, ← RingHom.comp_apply fB, hB]
+
+variable (A B C) in
+/-- The identity maps induce the identity of the completed tensor product. -/
+@[simp]
+theorem mapRingHom_id (hB : (RingHom.id B).comp (algebraMap A B) =
+      (algebraMap A B).comp (RingHom.id A))
+    (hC : (RingHom.id C).comp (algebraMap A C) = (algebraMap A C).comp (RingHom.id A)) :
+    mapRingHom (RingHom.id A) (RingHom.id B) (RingHom.id C) hB hC continuous_id continuous_id =
+      RingHom.id (CompletedTensorProduct A B C) :=
+  ringHom_ext (continuous_mapRingHom _ _ _ _ _ _ _) continuous_id
+    (RingHom.ext fun b ↦ by simp) (RingHom.ext fun c ↦ by simp)
+
+/-- The maps of completed tensor products induced by composites are the composites of the induced
+maps. -/
+theorem mapRingHom_comp (gA : A' →+* A'') (gB : B' →+* B'') (gC : C' →+* C'')
+    (hB' : gB.comp (algebraMap A' B') = (algebraMap A'' B'').comp gA)
+    (hC' : gC.comp (algebraMap A' C') = (algebraMap A'' C'').comp gA)
+    (hgB : Continuous gB) (hgC : Continuous gC)
+    (hB'' : (gB.comp fB).comp (algebraMap A B) = (algebraMap A'' B'').comp (gA.comp fA))
+    (hC'' : (gC.comp fC).comp (algebraMap A C) = (algebraMap A'' C'').comp (gA.comp fA)) :
+    (mapRingHom gA gB gC hB' hC' hgB hgC).comp (mapRingHom fA fB fC hB hC hfB hfC) =
+      mapRingHom (gA.comp fA) (gB.comp fB) (gC.comp fC) hB'' hC'' (hgB.comp hfB)
+        (hgC.comp hfC) := by
+  refine ringHom_ext ?_ (continuous_mapRingHom _ _ _ _ _ _ _) (RingHom.ext fun b ↦ by simp)
+    (RingHom.ext fun c ↦ by simp)
+  rw [RingHom.coe_comp]
+  exact (continuous_mapRingHom gA gB gC hB' hC' hgB hgC).comp
+    (continuous_mapRingHom fA fB fC hB hC hfB hfC)
+
+end Map
+
+section Quotient
+
+variable (A B C)
+
+/-- Modulo `J ^ n`, the completed tensor product is the uncompleted one:
+`(B ⊗̂_A C) ⧸ J ^ n (B ⊗̂_A C) ≃ (B ⊗[A] C) ⧸ J ^ n` for `J = tensorIdeal A B C`
+(EGA I, Ch. 0, 7.7.1). It is an isomorphism of `B ⊗[A] C`-algebras, so it sends the class of the
+image of `x ∈ B ⊗[A] C` to the class of `x`. -/
+noncomputable def quotientPowEquiv (n : ℕ) :
+    (CompletedTensorProduct A B C ⧸
+        (tensorIdeal A B C).map (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C)) ^ n)
+      ≃ₐ[B ⊗[A] C] (B ⊗[A] C) ⧸ tensorIdeal A B C ^ n :=
+  (Ideal.quotientEquivAlgOfEq (B ⊗[A] C)
+    (J := (tensorIdeal A B C ^ n).map (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C)))
+    (Ideal.map_pow _ _ _).symm).trans
+    (AdicCompletion.quotientMapPowAlgEquiv (tensorIdeal_fg A B C) n)
+
+end Quotient
 
 end CompletedTensorProduct
 
