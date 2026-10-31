@@ -91,6 +91,7 @@ theorem imK_dq (h : Fin 4 → ℝ) : (dq h).imK = h 3 :=
   (rfl)
 
 /-- `dq` sends the `i`-th coordinate vector to the `i`-th unit of `1, i, j, k`. -/
+@[simp]
 theorem dq_single (i : Fin 4) (r : ℝ) :
     dq (Pi.single i r) = r • QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i := by
   rw [QuaternionAlgebra.basisOneIJK, Module.Basis.coe_ofEquivFun, ← map_smul, ← Pi.single_smul',
@@ -157,12 +158,13 @@ theorem imK_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).imK = -minorForm 3 v := by
 /-- On the coordinate triple obtained by deleting the `i`-th direction, `Dq` takes the value
 `(-1) ^ i` times the `i`-th unit of `1, i, j, k`: so `Dq (e_x, e_y, e_z) = 1`,
 `Dq (e_t, e_y, e_z) = -i`, `Dq (e_t, e_x, e_z) = j` and `Dq (e_t, e_x, e_y) = -k`. -/
+@[simp]
 theorem Dq_succAbove (i : Fin 4) :
     Dq (fun r ↦ Pi.single (i.succAbove r) 1) =
       (-1 : ℝ) ^ (i : ℕ) • QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i := by
   rw [← dq_single]
   fin_cases i <;> ext <;>
-    norm_num [minorForm_apply, Matrix.det_fin_three, Pi.single_apply, Fin.succAbove]
+    norm_num [minorForm_apply, Matrix.det_fin_three, Pi.single_apply, Fin.succAbove, -dq_single]
 
 /-- `Dq` is the quaternionic interior product of the volume form: the real inner product of
 `dq w` with `Dq v` is the determinant of the matrix with rows `w, v 0, v 1, v 2`. -/
