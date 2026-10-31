@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.TensorProduct.Quotient
 public import TauCeti.RingTheory.Huber.TensorProduct.Restricted
 public import TauCeti.RingTheory.Huber.TensorProduct.Symmetry
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
+public import TauCeti.Topology.Maps.OpenQuotient
 
 /-!
 # Completed base change of homomorphisms topologically of finite type
@@ -44,8 +45,6 @@ and sheafiness statements for such completed tensor products, are built on.
 
 public section
 
-open UniformSpace
-
 namespace TauCeti.Huber.CompletedTensor
 
 variable {A B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
@@ -67,17 +66,15 @@ theorem isTopologicallyFiniteType_inr (h : IsTopologicallyFiniteType (algebraMap
   have hΦ := isOpenQuotientMap_map hcomm (RingHom.id_comp (algebraMap A B)) hπ
     IsOpenQuotientMap.id
   -- and its source is `B⟨X⟩_{λ(T)}`
-  let e : Completion (weightedRestrictedSubring (fun i ↦ algebraMap A B '' T i)
-      (hAB.isWeightFamily_image hT)) ≃ₜ
-      CompletedTensor A (Completion (weightedRestrictedSubring T hT)) B :=
-    { toEquiv := (weightedRestrictedEquiv B hT).symm.toEquiv
-      continuous_toFun := continuous_weightedRestrictedEquiv_symm B hT
-      continuous_invFun := continuous_weightedRestrictedEquiv B hT }
+  have he : IsHomeomorph (weightedRestrictedEquiv B hT).symm :=
+    (weightedRestrictedEquiv B hT).symm.toEquiv.isHomeomorph_iff.mpr
+      ⟨continuous_weightedRestrictedEquiv_symm B hT, continuous_weightedRestrictedEquiv B hT⟩
+  have hq : IsOpenQuotientMap ((map (RingHom.id A) π (RingHom.id B) hcomm (RingHom.id_comp _)
+      hπ.continuous continuous_id).comp (weightedRestrictedEquiv B hT).symm.toRingHom) := by
+    rw [RingHom.coe_comp, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+    exact hΦ.comp he.isOpenQuotientMap
   refine isTopologicallyFiniteType_iff.mpr ⟨k, fun i ↦ algebraMap A B '' T i,
-    fun i ↦ (hTfin i).image _, hAB.isWeightFamily_image hT,
-    (map (RingHom.id A) π (RingHom.id B) hcomm (RingHom.id_comp _) hπ.continuous
-      continuous_id).comp (weightedRestrictedEquiv B hT).symm.toRingHom,
-    hΦ.comp e.isOpenQuotientMap, ?_⟩
+    fun i ↦ (hTfin i).image _, hAB.isWeightFamily_image hT, _, hq, ?_⟩
   ext b
   simp [algebraMap_completion_weightedRestrictedSubring_apply]
 
@@ -87,9 +84,9 @@ theorem isTopologicallyFiniteType_inr (h : IsTopologicallyFiniteType (algebraMap
 the two factors. -/
 theorem isTopologicallyFiniteType_inl (h : IsTopologicallyFiniteType (algebraMap A C)) :
     IsTopologicallyFiniteType (inl A B C) := by
-  have hc := isHomeomorph_comm A C B
-  have hq : IsOpenQuotientMap (comm A C B).toRingHom :=
-    ⟨hc.surjective, hc.continuous, hc.isOpenMap⟩
+  have hq : IsOpenQuotientMap (comm A C B).toRingHom := by
+    rw [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+    exact (isHomeomorph_comm A C B).isOpenQuotientMap
   have h' := (isTopologicallyFiniteType_inr h).comp_isOpenQuotientMap hq
   convert h' using 1
   ext b

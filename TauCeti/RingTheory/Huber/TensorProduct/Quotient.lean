@@ -148,10 +148,8 @@ theorem idealImage_map (n : ℕ) :
     obtain ⟨w, hw, rfl⟩ := D.mem_idealImage.mp hz
     have hr : (r : B' ⊗[A] C') ∈ D.ringOfDefinition.map f := hF ▸ r.2
     obtain ⟨r₀, hr₀, hr⟩ := Subring.mem_map.mp hr
-    refine ⟨_, D.mem_idealImage.mpr ⟨⟨r₀, hr₀⟩ * w, Ideal.mul_mem_left _ _ hw, rfl⟩, ?_⟩
-    rw [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, Subring.coe_mul, Subring.coe_mul,
-      map_mul, hr]
-    exact congrArg _ hzy
+    exact ⟨_, D.mem_idealImage.mpr ⟨⟨r₀, hr₀⟩ * w, Ideal.mul_mem_left _ _ hw, rfl⟩,
+      by simp [hr, ← hzy]⟩
   · -- `f` maps `F` into `F'` and the image of `Iⁿ` into the image of `Iⁿ`.
     rintro _ ⟨x, hx, rfl⟩
     obtain ⟨y, hy, rfl⟩ := D.mem_idealImage.mp hx
