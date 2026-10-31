@@ -51,6 +51,8 @@ the map induced on the pushout by the inclusion of `M_{c-ε}` and the characteri
   `{‖ψ x‖² ≤ ε, (ψ x)ⱼ = 0 for j ≥ k}`.
 * `TauCeti.closedBall_inter_preimage_morseCellMap_sublevel`: a point of the disc lands in
   `M_{c-ε}` exactly when it lies on the boundary sphere.
+* `TauCeti.preimage_morseCharacteristicMap_sublevel`: the characteristic map is a map of pairs
+  `(D^k, ∂D^k) → (M_{c+ε}, M_{c-ε})`.
 * `TauCeti.isClosedEmbedding_morseCharacteristicMap`: the characteristic map is a closed
   embedding.
 * `TauCeti.morseAttachingMap_comp_sublevelInclusion`: the attaching map is the restriction of the
@@ -96,13 +98,27 @@ theorem morseCellMap_def (hk : k ≤ n) (w : EuclideanSpace ℝ (Fin k)) :
 theorem morseCellMap_zero (hk : k ≤ n) : morseCellMap ψ hk ε 0 = ψ.symm 0 := by
   simp [morseCellMap_def]
 
+private theorem norm_smul_piLpExtendByZero (hk : k ≤ n) (w : EuclideanSpace ℝ (Fin k)) :
+    ‖√ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w‖ = √ε * ‖w‖ := by
+  rw [norm_smul, LinearIsometry.norm_map, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+
+private theorem norm_smul_piLpExtendByZero_sq (hk : k ≤ n) (hε : 0 ≤ ε)
+    (w : EuclideanSpace ℝ (Fin k)) :
+    ‖√ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w‖ ^ 2 = ε * ‖w‖ ^ 2 := by
+  rw [norm_smul_piLpExtendByZero, mul_pow, Real.sq_sqrt hε]
+
+private theorem smul_piLpExtendByZero_apply_of_le (hk : k ≤ n) (a : ℝ)
+    (w : EuclideanSpace ℝ (Fin k)) {j : Fin n} (hj : k ≤ j.val) :
+    (a • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w) j = 0 := by
+  rw [PiLp.smul_apply, piLpExtendByZero_castLEEmb_apply, dite_eq_right (not_lt.2 hj), smul_zero]
+
 variable (hball : closedBall 0 √ε ⊆ ψ.target)
 include hball
 
 private theorem smul_piLpExtendByZero_mem_target (hk : k ≤ n) (hw : ‖w‖ ≤ 1) :
     √ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w ∈ ψ.target :=
   hball <| mem_closedBall_zero_iff.2 <| by
-    rw [norm_smul, LinearIsometry.norm_map, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+    rw [norm_smul_piLpExtendByZero]
     exact mul_le_of_le_one_right (Real.sqrt_nonneg _) hw
 
 /-- A point of the unit disc is sent into the source of the chart. -/
@@ -147,11 +163,9 @@ theorem morseCellMap_image_closedBall (hk : k ≤ n) (hε : 0 < ε) :
   · rintro ⟨w, hw, rfl⟩
     rw [mem_closedBall_zero_iff] at hw
     refine ⟨morseCellMap_mem_source hball hk hw, ?_, fun j hj ↦ ?_⟩
-    · rw [apply_morseCellMap hball hk hw, norm_smul, LinearIsometry.norm_map,
-        Real.norm_of_nonneg hsε.le, mul_pow, Real.sq_sqrt hε.le]
+    · rw [apply_morseCellMap hball hk hw, norm_smul_piLpExtendByZero_sq hk hε.le]
       exact mul_le_of_le_one_right hε.le (pow_le_one₀ (norm_nonneg _) hw)
-    · rw [apply_morseCellMap hball hk hw, PiLp.smul_apply, piLpExtendByZero_castLEEmb_apply,
-        dite_eq_right (not_lt.2 hj), smul_zero]
+    · rw [apply_morseCellMap hball hk hw, smul_piLpExtendByZero_apply_of_le hk _ _ hj]
   · obtain ⟨v, hv⟩ : ψ x ∈ range (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)) := by
       rw [range_piLpExtendByZero_castLEEmb]
       exact hxk
@@ -169,13 +183,12 @@ value `c - ε ‖w‖²` at the image of a point `w` of the unit disc. -/
 theorem apply_morseCellMap_eq_sub_mul_norm_sq (hk : k ≤ n) (hε : 0 ≤ ε) (hw : ‖w‖ ≤ 1) :
     f (morseCellMap ψ hk ε w) = c - ε * ‖w‖ ^ 2 := by
   set y := √ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w
-  have hy : ∀ j : Fin n, ¬j.val < k → y j = 0 := fun j hj ↦ by
-    rw [PiLp.smul_apply, piLpExtendByZero_castLEEmb_apply, dite_eq_right hj, smul_zero]
+  have hy : ∀ j : Fin n, ¬j.val < k → y j = 0 := fun j hj ↦
+    smul_piLpExtendByZero_apply_of_le hk _ w (not_lt.1 hj)
   have hv := EuclideanSpace.snd_sumComplEquivProd_eq_zero_iff.2 hy
   have hnorm := EuclideanSpace.norm_fst_sumComplEquivProd_sq_add_norm_snd_sq
     (p := fun j : Fin n ↦ j.val < k) y
-  rw [hv, norm_zero, zero_pow two_ne_zero, add_zero, norm_smul, LinearIsometry.norm_map,
-    Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_pow, Real.sq_sqrt hε] at hnorm
+  rw [hv, norm_zero, zero_pow two_ne_zero, add_zero, norm_smul_piLpExtendByZero_sq hk hε] at hnorm
   rw [hf _ (morseCellMap_mem_source hball hk hw), apply_morseCellMap hball hk hw,
     EuclideanSpace.sum_ite_neg_one_mul_sq_eq, hv, hnorm, norm_zero]
   ring
@@ -266,6 +279,17 @@ theorem isClosedEmbedding_morseCharacteristicMap [T2Space M] (hk : k ≤ n) (hε
   (morseCharacteristicMap ψ hk hε.le hball hf).hom.continuous.isClosedEmbedding fun v w hvw ↦
     ULift.ext <| Subtype.ext <| injOn_morseCellMap hball hk hε v.down.2 w.down.2
       congr(($hvw : M))
+
+/-- A point of the disc is sent by the characteristic map into the lower sublevel `M_{c-ε}`
+exactly when it lies on the boundary sphere: the characteristic map is a map of pairs
+`(D^k, ∂D^k) → (M_{c+ε}, M_{c-ε})`. -/
+theorem preimage_morseCharacteristicMap_sublevel (hk : k ≤ n) (hε : 0 < ε) :
+    morseCharacteristicMap ψ hk hε.le hball hf ⁻¹' {x | f x ≤ c - ε} =
+      range (TopCat.diskBoundaryInclusion.{u} k) := by
+  refine Set.ext fun w ↦ ?_
+  rw [mem_range_diskBoundaryInclusion_iff, ← mem_sphere_zero_iff_norm,
+    ← closedBall_inter_preimage_morseCellMap_sublevel hball hf hk hε]
+  exact ⟨fun h ↦ ⟨w.down.2, h⟩, fun h ↦ h.2⟩
 
 /-- The image of the characteristic map is the cell `{‖ψ x‖² ≤ ε, (ψ x)ⱼ = 0 for j ≥ k}` of the
 chart, viewed in the sublevel `M_{c+ε}`. -/
