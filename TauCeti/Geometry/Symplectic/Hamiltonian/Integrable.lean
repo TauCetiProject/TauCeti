@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
 public import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 
+import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -350,5 +351,21 @@ theorem isIntegrableSystem_harmonicOscillator :
     field_simp
     ring
   two_mul_card_eq_finrank := by simp
+
+/-- **The energy of the harmonic oscillator is proper.** The map `(q, p) ↦ (q² + p²) / 2` on the
+plane, the integrable system of `TauCeti.isIntegrableSystem_harmonicOscillator`, is a proper map:
+it grows like the square of the norm. -/
+theorem isProperMap_harmonicOscillator :
+    IsProperMap fun z : ℝ × ℝ ↦ fun _ : Fin 1 ↦ (z.1 ^ 2 + z.2 ^ 2) / 2 := by
+  refine isProperMap_iff_tendsto_cocompact.2 ⟨by fun_prop, ?_⟩
+  rw [← Metric.cobounded_eq_cocompact (α := Fin 1 → ℝ), ← tendsto_norm_atTop_iff_cobounded]
+  refine Filter.tendsto_atTop_mono (fun z ↦ ?_)
+    (((Filter.tendsto_pow_atTop two_ne_zero).comp tendsto_norm_cocompact_atTop).atTop_div_const
+      two_pos)
+  -- The sup norm satisfies `‖z‖² = max (q², p²) ≤ q² + p²`.
+  rw [Function.comp_apply, pi_norm_const, Real.norm_of_nonneg (by positivity), Prod.norm_def]
+  gcongr
+  rcases max_cases ‖z.1‖ ‖z.2‖ with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h, Real.norm_eq_abs, sq_abs] <;>
+    nlinarith [sq_nonneg z.1, sq_nonneg z.2]
 
 end TauCeti

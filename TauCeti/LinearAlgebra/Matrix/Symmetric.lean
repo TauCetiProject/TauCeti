@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Ring.Int.Parity
@@ -33,6 +34,10 @@ sums `d` on a block `O`, the Laplacian identity
 `∑_{i, i' ∈ O} A i i' (sᵢ - sᵢ')² = 2 (d ∑ sᵢ² - ∑_{i, i' ∈ O} sᵢ A i i' sᵢ')` bounds the quadratic
 form on `O` below by `d ∑ sᵢ²`.
 
+A symmetric matrix whose entries are divisible by `c` and whose diagonal entries are divisible by
+`2 * c` is `c • (D + Dᵀ)`, the shape in which even forms enter Hensel-type arguments when `2` is
+not a unit. The inverse of an invertible symmetric matrix with even diagonal has even diagonal.
+
 A symmetric `n × n` matrix is determined by its entries on and above the diagonal, that is by a
 function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them.
 
@@ -47,6 +52,10 @@ function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of
 * `Matrix.IsSymm.mulVec_row_of_isIdempotentElem`: a symmetric idempotent matrix fixes its rows.
 * `Matrix.IsSymm.mul_sum_sq_le`: with nonpositive off-diagonal entries and constant row sums `d`
   on a block `O`, `d ∑_{i ∈ O} sᵢ² ≤ ∑_{i, i' ∈ O} sᵢ A i i' sᵢ'`.
+* `Matrix.IsSymm.exists_eq_smul_add_transpose`: a symmetric matrix with entries divisible by `c`
+  and diagonal entries divisible by `2 * c` is `c • (D + Dᵀ)`.
+* `Matrix.IsSymm.two_dvd_inv_apply_self`: the inverse of an invertible symmetric matrix with even
+  diagonal has even diagonal.
 * `Matrix.natCard_isSymm`: the number of symmetric `n × n` matrices over `R` is
   `Nat.card R ^ (n + 1).choose 2`.
 -/
@@ -147,6 +156,38 @@ theorem IsSymm.mul_sum_sq_le {ι R : Type*} [CommRing R] [LinearOrder R] [IsStri
       · simp
       · exact mul_nonpos_of_nonpos_of_nonneg (hoff i i' h) (sq_nonneg _)
   linarith
+
+/-- A symmetric matrix all of whose entries are divisible by `c`, and whose diagonal entries are
+divisible by `2 * c`, is `c • (D + Dᵀ)` for some matrix `D`. -/
+theorem IsSymm.exists_eq_smul_add_transpose {n R : Type*} [CommRing R] {E : Matrix n n R}
+    (hE : E.IsSymm) (c : R) (h₁ : ∀ i i', c ∣ E i i') (h₂ : ∀ i, 2 * c ∣ E i i) :
+    ∃ D : Matrix n n R, E = c • (D + Dᵀ) := by
+  let : LinearOrder n := IsWellOrder.linearOrder WellOrderingRel
+  choose e he using h₁
+  choose f hf using h₂
+  refine ⟨Matrix.of fun i i' ↦ if i < i' then e i i' else if i = i' then f i else 0, ?_⟩
+  ext i i'
+  simp only [smul_apply, add_apply, transpose_apply, of_apply, smul_eq_mul]
+  rcases lt_trichotomy i i' with h | rfl | h
+  · simp [h, h.ne', not_lt_of_gt h, he]
+  · simp [hf, mul_comm 2 c, mul_assoc, two_mul]
+  · have hsymm := congrFun (congrFun hE.eq i) i'
+    rw [transpose_apply] at hsymm
+    simp [not_lt_of_gt h, h.ne', h, ← hsymm, he]
+
+/-- The inverse of an invertible symmetric matrix with even diagonal has even diagonal. -/
+theorem IsSymm.two_dvd_inv_apply_self {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    {U : Matrix n n R} (hU : U.IsSymm) (hdet : IsUnit U.det) (hd : ∀ i, 2 ∣ U i i) (i : n) :
+    2 ∣ U⁻¹ i i := by
+  obtain ⟨K, hK⟩ := hU.exists_eq_smul_add_transpose 1 (fun _ _ ↦ one_dvd _) (by simpa using hd)
+  rw [one_smul] at hK
+  have hinv : (U⁻¹)ᵀ = U⁻¹ := by rw [transpose_nonsing_inv, hU.eq]
+  -- `U⁻¹ = U⁻¹ * U * U⁻¹ = W + Wᵀ` with `W = U⁻¹ * K * U⁻¹`.
+  have : U⁻¹ = U⁻¹ * K * U⁻¹ + (U⁻¹ * K * U⁻¹)ᵀ := by
+    rw [transpose_mul, transpose_mul, hinv, Matrix.mul_assoc, ← Matrix.mul_add,
+      ← Matrix.add_mul, ← hK, mul_nonsing_inv _ hdet, Matrix.mul_one]
+  rw [this, add_apply, transpose_apply, ← two_mul]
+  exact dvd_mul_right _ _
 
 /-- **The number of symmetric matrices**: a symmetric `n × n` matrix over `R` is a function on the
 unordered pairs of indices, so there are `Nat.card R ^ (n + 1).choose 2` of them. -/

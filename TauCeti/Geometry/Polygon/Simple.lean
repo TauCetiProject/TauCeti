@@ -54,10 +54,12 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 
 * `Polygon.isSimple_rotate_iff`: relabelling the vertices cyclically keeps a polygon simple.
 * `Polygon.isSimple_map_iff`: an injective affine map preserves and reflects simplicity.
+* `Polygon.IsSimple.insertVertex`: an intersection criterion for insertion to preserve simplicity.
 * `Polygon.IsSimple.three_le`: a nonempty simple polygon over a densely ordered ring acting
   torsion freely has at least three vertices.
 * `Polygon.IsSimple.subsingleton_edgeSet_inter`: two distinct edges of such a simple polygon have
   at most one common point.
+* `Polygon.boundaryParamCircle_insertVertex_lineMap`: affine dependence on an inserted vertex.
 * `Polygon.range_boundaryParam` and `Polygon.boundaryParam_mem_boundary`: the parametrization runs
   over the whole boundary, and stays on it.
 * `Polygon.boundaryParam_map`: the boundary parametrization of the image of a polygon under an
@@ -217,6 +219,131 @@ theorem IsSimple.subsingleton_edgeSet_inter (h : poly.IsSimple R) {i j : Fin n} 
 
 end ThreeLE
 
+section InsertVertex
+
+variable [Ring R] [PartialOrder R] [IsOrderedRing R] [AddCommGroup V] [Module R V]
+  [AddTorsor V P] {poly : Polygon P n} {i : Fin n} {c : P}
+  (hleft : poly (finRotate n i) ∉ affineSegment R (poly i) c)
+  (hright : poly i ∉ affineSegment R c (poly (finRotate n i)))
+  (hother : ∀ ⦃k : Fin n⦄, k ≠ i →
+    poly.edgeSet R k ∩ (affineSegment R (poly i) c ∪
+      affineSegment R c (poly (finRotate n i))) ⊆ {poly i, poly (finRotate n i)})
+
+include hleft hright hother
+
+omit hright in
+/-- The first replacement segment meets an old edge only at the old initial vertex. -/
+private theorem eq_vertex_of_mem_affineSegment_left (hp : poly.IsSimple R) {k : Fin n}
+    (hk : k ≠ i) {x : P} (hxk : x ∈ poly.edgeSet R k) (hx : x ∈ affineSegment R (poly i) c) :
+    (i.castSucc = finRotate (n + 1) (i.succ.succAbove k) ∧
+        x = poly.insertVertex i c i.castSucc) ∨
+      (i.succ.succAbove k = finRotate (n + 1) i.castSucc ∧
+        x = poly.insertVertex i c (i.succ.succAbove k)) := by
+  rcases hother hk ⟨hxk, Or.inl hx⟩ with rfl | rfl
+  · rcases hp.eq_vertex_of_mem_edgeSet hk hxk (left_mem_affineSegment _ _ _) with
+      ⟨e, -⟩ | ⟨e₁, e₂⟩
+    · refine .inl ⟨?_, (insertVertex_apply_castSucc_self _ _ _).symm⟩
+      rw [Fin.finRotate_succ_succAbove_of_ne hk, ← e, Fin.succAbove_succ_self]
+    · subst e₁
+      exact absurd e₂ (hp.hasNondegenerateEdges i)
+  · exact absurd hx hleft
+
+omit hleft in
+/-- The second replacement segment meets an old edge only at the old final vertex. -/
+private theorem eq_vertex_of_mem_affineSegment_right (hp : poly.IsSimple R) {k : Fin n}
+    (hk : k ≠ i) {x : P} (hxk : x ∈ poly.edgeSet R k)
+    (hx : x ∈ affineSegment R c (poly (finRotate n i))) :
+    (i.succ = finRotate (n + 1) (i.succ.succAbove k) ∧ x = poly.insertVertex i c i.succ) ∨
+      (i.succ.succAbove k = finRotate (n + 1) i.succ ∧
+        x = poly.insertVertex i c (i.succ.succAbove k)) := by
+  rcases hother hk ⟨hxk, Or.inr hx⟩ with rfl | rfl
+  · exact absurd hx hright
+  · rcases hp.eq_vertex_of_mem_edgeSet hk hxk (right_mem_affineSegment _ _ _) with
+      ⟨-, e⟩ | ⟨e, -⟩
+    · exact absurd e.symm (hp.hasNondegenerateEdges i)
+    · subst e
+      exact .inr ⟨(Fin.finRotate_succ_eq_succ_succAbove i).symm,
+        (insertVertex_apply_succAbove _ _ _ _).symm⟩
+
+omit hleft hright hother in
+/-- Inserting a vertex preserves simplicity if the two replacement segments meet only at the
+new vertex, avoid the opposite endpoints, and meet every other edge only at the old endpoints.
+This criterion includes both nondegenerate triangle moves and subdivisions of an edge. -/
+theorem IsSimple.insertVertex (hp : poly.IsSimple R)
+    (hac : poly i ≠ c) (hcb : c ≠ poly (finRotate n i))
+    (hinter : affineSegment R (poly i) c ∩ affineSegment R c (poly (finRotate n i)) = {c})
+    (hother : ∀ ⦃k : Fin n⦄, k ≠ i →
+      poly.edgeSet R k ∩ (affineSegment R (poly i) c ∪
+        affineSegment R c (poly (finRotate n i))) ⊆ {poly i, poly (finRotate n i)}) :
+    (poly.insertVertex i c).IsSimple R := by
+  have hleft : poly (finRotate n i) ∉ affineSegment R (poly i) c := fun hx ↦
+    hcb (hinter.subset ⟨hx, right_mem_affineSegment _ _ _⟩).symm
+  have hright : poly i ∉ affineSegment R c (poly (finRotate n i)) := fun hx ↦
+    hac (hinter.subset ⟨left_mem_affineSegment _ _ _, hx⟩)
+  refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
+  · obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
+    · rw [insertVertex_apply_succ_self, insertVertex_apply_finRotate_succ_self]
+      exact hcb
+    · by_cases hk : k = i
+      · subst hk
+        rw [Fin.succAbove_succ_self, finRotate_apply, Fin.coeSucc_eq_succ,
+          insertVertex_apply_castSucc_self, insertVertex_apply_succ_self]
+        exact hac
+      · rw [Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
+          insertVertex_apply_succAbove]
+        exact hp.hasNondegenerateEdges k
+  -- The two new edges meet only at the new vertex.
+  have new (hx₁ : x ∈ affineSegment R (poly i) c)
+      (hx₂ : x ∈ affineSegment R c (poly (finRotate n i))) :
+      i.succ = finRotate (n + 1) i.castSucc ∧ x = poly.insertVertex i c i.succ := by
+    rw [insertVertex_apply_succ_self]
+    exact ⟨by rw [finRotate_apply, Fin.coeSucc_eq_succ],
+      hinter.subset ⟨hx₁, hx₂⟩⟩
+  -- An index of the new polygon is the second new edge `i.succ`, the first new edge
+  -- `i.succ.succAbove i`, or an old edge `i.succ.succAbove k` with `k ≠ i`.
+  obtain rfl | ⟨k₁, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j₁ <;>
+    obtain rfl | ⟨k₂, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j₂
+  · exact absurd rfl hne
+  · rw [edgeSet_insertVertex_succ_self] at hx₁
+    by_cases hk₂ : k₂ = i
+    · subst hk₂
+      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₂
+      rw [Fin.succAbove_succ_self]
+      exact .inr (new hx₂ hx₁)
+    · rw [edgeSet_insertVertex_succAbove _ _ _ hk₂] at hx₂
+      exact (eq_vertex_of_mem_affineSegment_right hright hother hp hk₂ hx₂ hx₁).symm
+  · rw [edgeSet_insertVertex_succ_self] at hx₂
+    by_cases hk₁ : k₁ = i
+    · subst hk₁
+      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₁
+      rw [Fin.succAbove_succ_self]
+      exact .inl (new hx₁ hx₂)
+    · rw [edgeSet_insertVertex_succAbove _ _ _ hk₁] at hx₁
+      exact eq_vertex_of_mem_affineSegment_right hright hother hp hk₁ hx₁ hx₂
+  · have hk : k₁ ≠ k₂ := fun e => hne (e ▸ rfl)
+    by_cases hk₁ : k₁ = i
+    · subst hk₁
+      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₁
+      rw [edgeSet_insertVertex_succAbove _ _ _ hk.symm] at hx₂
+      rw [Fin.succAbove_succ_self]
+      exact (eq_vertex_of_mem_affineSegment_left hleft hother hp hk.symm hx₂ hx₁).symm
+    by_cases hk₂ : k₂ = i
+    · subst hk₂
+      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₂
+      rw [edgeSet_insertVertex_succAbove _ _ _ hk₁] at hx₁
+      rw [Fin.succAbove_succ_self]
+      exact eq_vertex_of_mem_affineSegment_left hleft hother hp hk₁ hx₁ hx₂
+    -- Two old edges meet in the new polygon as they did in the old one.
+    rw [edgeSet_insertVertex_succAbove _ _ _ hk₁] at hx₁
+    rw [edgeSet_insertVertex_succAbove _ _ _ hk₂] at hx₂
+    rcases hp.eq_vertex_of_mem_edgeSet hk hx₁ hx₂ with ⟨e, rfl⟩ | ⟨e, rfl⟩
+    · exact .inl ⟨by rw [Fin.finRotate_succ_succAbove_of_ne hk₁, e],
+        (insertVertex_apply_succAbove _ _ _ _).symm⟩
+    · exact .inr ⟨by rw [Fin.finRotate_succ_succAbove_of_ne hk₂, e],
+        (insertVertex_apply_succAbove _ _ _ _).symm⟩
+
+end InsertVertex
+
 /-! ### The boundary parametrization -/
 
 section Param
@@ -348,6 +475,26 @@ noncomputable def boundaryParamCircle : AddCircle (n : ℝ) → P :=
 @[simp]
 theorem boundaryParamCircle_coe (t : ℝ) : poly.boundaryParamCircle t = poly.boundaryParam t :=
   poly.periodic_boundaryParam.lift_coe t
+
+omit [NeZero n] in
+/-- The circle parametrization depends affinely on an inserted vertex. This expresses a moving
+polygon as the pointwise affine interpolation of its endpoint parametrizations. -/
+theorem boundaryParamCircle_insertVertex_lineMap {V : Type*} [AddCommGroup V] [Module ℝ V]
+    (poly : Polygon V n) (i : Fin n) (a b : V) (t : ℝ) (z : AddCircle ((n + 1 : ℕ) : ℝ)) :
+    (poly.insertVertex i (AffineMap.lineMap a b t)).boundaryParamCircle z =
+      AffineMap.lineMap ((poly.insertVertex i a).boundaryParamCircle z)
+        ((poly.insertVertex i b).boundaryParamCircle z) t := by
+  have hv (j : Fin (n + 1)) :
+      poly.insertVertex i (AffineMap.lineMap a b t) j =
+        AffineMap.lineMap (poly.insertVertex i a j) (poly.insertVertex i b j) t := by
+    obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
+    · simp only [insertVertex_apply_succ_self]
+    · simp only [insertVertex_apply_succAbove, AffineMap.lineMap_same_apply]
+  obtain ⟨u, rfl⟩ := QuotientAddGroup.mk_surjective z
+  simp only [boundaryParamCircle_coe, boundaryParam_eq_edgePath_edgeIndexAt, edgePath]
+  rw [hv, hv]
+  simp only [AffineMap.lineMap_apply_module]
+  module
 
 /-- The circle parametrization runs over the whole boundary of the polygon. -/
 @[simp]
