@@ -102,54 +102,6 @@ theorem exists_mvPolynomial_sub_mem_weightedNhd_of_mem_weightedSubring {R : Subr
     · simp
     · simpa using not_not.mp fun h ↦ hν (hbad.mem_toFinset.mpr h)
 
-/-- A subring of `A⟨X⟩_T` containing every weighted variable `t Xᵢ` with `t ∈ Tᵢ` contains every
-weighted monomial `t Xν` with `t ∈ Tν`. -/
-private theorem weightedPolynomialHom_monomial_mem {B : Subring (weightedRestrictedSubring T hT)}
-    (hX : ∀ i, ∀ t ∈ T i, weightedC T hT t * weightedX T hT i ∈ B) (ν : Fin k →₀ ℕ) :
-    ∀ t ∈ weightPow T ν, weightedPolynomialHom T hT (MvPolynomial.monomial ν t) ∈ B := by
-  induction ν using Finsupp.induction_linear with
-  | zero =>
-    intro t ht
-    obtain rfl : t = 1 := by simpa using ht
-    simp
-  | add μ ν hμ hν =>
-    intro t ht
-    obtain ⟨a, ha, b, hb, rfl⟩ := Set.mem_mul.mp (weightPow_add T μ ν ▸ ht)
-    rw [← MvPolynomial.monomial_mul_monomial, map_mul]
-    exact mul_mem (hμ a ha) (hν b hb)
-  | single i m =>
-    rw [weightPow_single]
-    induction m with
-    | zero =>
-      intro t ht
-      obtain rfl : t = 1 := by simpa using ht
-      simp
-    | succ m ih =>
-      intro t ht
-      obtain ⟨a, ha, b, hb, rfl⟩ := Set.mem_mul.mp (pow_succ (T i) m ▸ ht)
-      rw [Finsupp.single_add, ← MvPolynomial.monomial_mul_monomial, map_mul,
-        ← MvPolynomial.C_mul_X_eq_monomial, map_mul, weightedPolynomialHom_C,
-        weightedPolynomialHom_X]
-      exact mul_mem (ih a ha) (hX i b hb)
-
-/-- A subring of `A⟨X⟩_T` containing the constants from `R` and every weighted monomial `t Xν`
-with `t ∈ Tν` contains every monomial `a Xν` with `a ∈ Tν · R`. -/
-private theorem weightedPolynomialHom_monomial_mem_of_mem_weightMul
-    {Q : Subring (weightedRestrictedSubring T hT)} {R : Subring A}
-    (hC : ∀ a ∈ R, weightedC T hT a ∈ Q)
-    (hmon : ∀ ν, ∀ t ∈ weightPow T ν, weightedPolynomialHom T hT (MvPolynomial.monomial ν t) ∈ Q)
-    {ν : Fin k →₀ ℕ} {a : A} (ha : a ∈ weightMul T ν R.toAddSubgroup) :
-    weightedPolynomialHom T hT (MvPolynomial.monomial ν a) ∈ Q := by
-  rw [weightMul_def] at ha
-  induction ha using AddSubgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨t, ht, u, hu, rfl⟩ := Set.mem_mul.mp hx
-    rw [mul_comm, ← MvPolynomial.C_mul_monomial, map_mul, weightedPolynomialHom_C]
-    exact mul_mem (hC u hu) (hmon ν t ht)
-  | zero => simp
-  | add x y _ _ hx hy => rw [map_add, map_add]; exact add_mem hx hy
-  | neg x _ hx => rw [map_neg, map_neg]; exact neg_mem hx
-
 end Nonarchimedean
 
 variable [IsTopologicalRing A] [IsHuberRing A]
@@ -207,12 +159,8 @@ theorem weightedC_mem_weighted_plus {a : A} (ha : a ∈ S.plus) :
 
 /-- The plus ring of `A⟨X⟩_T` contains the weighted variables `t Xᵢ` with `t ∈ Tᵢ`. -/
 theorem weightedC_mul_weightedX_mem_weighted_plus {i : Fin k} {t : A} (ht : t ∈ T i) :
-    weightedC T hT t * weightedX T hT i ∈ (S.weighted hT).plus := by
-  refine S.weightedSubring_le_weighted_plus hT ?_
-  rw [← weightedPolynomialHom_C, ← weightedPolynomialHom_X, ← map_mul,
-    MvPolynomial.C_mul_X_eq_monomial, weightedPolynomialHom_monomial_mem_weightedSubring,
-    ← mul_one t]
-  exact mul_mem_weightMul T _ _ (by rwa [weightPow_single, pow_one]) S.plus.one_mem
+    weightedC T hT t * weightedX T hT i ∈ (S.weighted hT).plus :=
+  S.weightedSubring_le_weighted_plus hT (weightedC_mul_weightedX_mem_weightedSubring ht)
 
 /-- **`A⟨X⟩_T⁺` is the smallest closed, integrally closed subring of `A⟨X⟩_T` containing the
 constants from `A⁺` and the weighted variables `t Xᵢ` with `t ∈ Tᵢ`.** -/
