@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Basic
-public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
+public import TauCeti.MeasureTheory.Function.Lp.AddContent
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
 public import TauCeti.RepresentationTheory.Compact.Haar
 
@@ -24,7 +24,10 @@ Consequently a positive linear functional `M` on `L∞(G, μ)` with `M 1 = 1` re
 `f ↦ M [f]` on `UCB G` (`TauCeti.Mean.ofLpTop`), and this mean is left invariant when `M` is.
 So a topological group is amenable as soon as `L∞` of some left-invariant measure carries a
 left-invariant mean; this is one implication of the characterization of amenable locally compact
-groups by invariant means on Haar `L∞`.
+groups by invariant means on Haar `L∞`. Such functionals correspond to finitely additive
+probabilities on the Borel sets vanishing on `μ`-null sets
+(`TauCeti/MeasureTheory/Function/Lp/AddContent.lean`), so a left-invariant such probability also
+makes `G` amenable.
 
 For a compact group, integration against the normalized Haar measure `TauCeti.haarProb G` is
 such a mean on `L∞`, by left invariance of Haar measure. Hence every compact topological group
@@ -41,6 +44,8 @@ is amenable, for its given topology.
   left-invariant mean.
 * `TauCeti.Amenable.of_lpTop`: a topological group with a left-invariant normalized positive
   functional on `L∞` of a left-invariant measure is amenable.
+* `TauCeti.Amenable.of_addContent`: a topological group with a left-invariant finitely additive
+  probability on its Borel sets vanishing on the null sets of a left-invariant measure is amenable.
 * `TauCeti.Amenable.of_compactSpace`: every compact topological group is amenable.
 
 ## References
@@ -54,7 +59,7 @@ public section
 noncomputable section
 
 open MeasureTheory BoundedContinuousFunction
-open scoped ENNReal BoundedContinuousFunction
+open scoped ENNReal BoundedContinuousFunction Pointwise
 
 namespace TauCeti
 
@@ -92,6 +97,18 @@ translation. -/
 theorem Amenable.of_lpTop [μ.IsMulLeftInvariant] (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (hM : M linftyOne = 1)
     (h : ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) : Amenable G :=
   (amenable_iff G).2 ⟨Mean.ofLpTop M hM, Mean.isLeftInvariant_ofLpTop hM h⟩
+
+/-- A topological group is amenable if, for some left-invariant measure `μ` on its Borel sets,
+there is a left-invariant finitely additive probability `ν` on the Borel sets that vanishes on
+`μ`-null sets. Integration against `ν` is then a left-invariant mean on `L∞(G, μ)`. -/
+theorem Amenable.of_addContent [μ.IsMulLeftInvariant]
+    (ν : AddContent ℝ {s : Set G | MeasurableSet s}) (hν₀ : ∀ s, MeasurableSet s → 0 ≤ ν s)
+    (hνμ : ∀ s, MeasurableSet s → μ s = 0 → ν s = 0) (hν₁ : ν Set.univ = 1)
+    (hν : ∀ (g : G) s, MeasurableSet s → ν (g • s) = ν s) : Amenable G := by
+  refine Amenable.of_lpTop (PositiveLinearMap.ofAddContentLpTop ν hν₀ hνμ) (by simpa using hν₁)
+    ((PositiveLinearMap.forall_apply_leftTranslation_eq_iff _).2 fun g s hs => ?_)
+  rw [PositiveLinearMap.toAddContentLpTop_ofAddContentLpTop_apply _ _ hs,
+    PositiveLinearMap.toAddContentLpTop_ofAddContentLpTop_apply _ _ (hs.const_smul g), hν g s hs]
 
 end TauCeti
 
