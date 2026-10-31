@@ -64,6 +64,7 @@ and every `N` there is `M` such that `I_M x` lies in the kernel of the projectio
 * `TauCeti.CurrentAlgebra.exists_forall_limπ_smul_eq_zero`: the orbit maps of the action of `U` on
   `Û` are continuous.
 * `TauCeti.CurrentAlgebra.limπ_mul`: the coordinates of a product, `(x y)_N = x · y_N`.
+* `TauCeti.CurrentAlgebra.limSmul_mul`: on a smooth module, `(x y) · m = x · (y · m)`.
 * `TauCeti.CurrentAlgebra.limπ_one`, `TauCeti.CurrentAlgebra.coe_one_apply`: the coordinates of
   the unit are the classes of `1`.
 * `TauCeti.CurrentAlgebra.exists_forall_mul_mem_completedOrderLeftIdeal`: the right-shift estimate
@@ -138,6 +139,14 @@ theorem limπ_mul (x y : CompletedEnveloping Φ hΦ hΦs a) (n : ℕ) :
           (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a) n)
         x ((orderQuotientTower Φ hΦ hΦs a).limπ n y) :=
   ModuleTower.limπ_limMul _ x y n
+
+/-- The action of a product on a smooth module is the composite of the actions,
+`(x y) • m = x • (y • m)`, for the extension `TauCeti.ModuleTower.limSmul` of the action of `U`. -/
+theorem limSmul_mul {M : ModuleCat UK}
+    (hM : smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) M)
+    (x y : CompletedEnveloping Φ hΦ hΦs a) (m : M) :
+    ModuleTower.limSmul hM (x * y) m = ModuleTower.limSmul hM x (ModuleTower.limSmul hM y m) :=
+  ModuleTower.limSmul_limMul _ hM x y m
 
 /-- The coordinates of the unit of the completed enveloping algebra: `1_n` is the class of `1`. -/
 theorem limπ_one (n : ℕ) :
