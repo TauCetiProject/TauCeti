@@ -26,7 +26,8 @@ commutative; extended ideals are left ideals.
 
 For an ideal `I` and a module `M`, injectivity of `I ⊗ M → R ⊗ M` is the vanishing of
 `Tor₁(R ⧸ I, M)`. `Ideal.sup_subtype_rTensor_injective` propagates it from `I` and `J` to `I ⊔ J`,
-provided `I M ∩ J M = (I ⊓ J) M`.
+provided `I M ∩ J M = (I ⊓ J) M`. For an `M`-regular element `x` it holds for the ideal `(x)`
+(`IsSMulRegular.span_singleton_subtype_rTensor_injective`).
 
 Along a flat ring map `R → S` the base change `S ⊗[R] I` is the extended ideal `I S`, so the
 fibres of `I` and `I S` at a field-valued point of `S` have the same dimension
@@ -128,6 +129,31 @@ theorem sup_subtype_rTensor_injective {I J : Ideal R}
     map_neg, add_neg_cancel]
 
 end Ideal
+
+section IsSMulRegular
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- If `x` is `M`-regular, then `Tor₁ᴿ(R ⧸ (x), M) = 0`: the map `(x) ⊗[R] M → M` is injective. -/
+theorem IsSMulRegular.span_singleton_subtype_rTensor_injective {x : R}
+    (reg : IsSMulRegular M x) :
+    Function.Injective ((Ideal.span {x}).subtype.rTensor M) := by
+  let x' : Ideal.span {x} := ⟨x, Ideal.mem_span_singleton_self x⟩
+  have h (t : Ideal.span {x} ⊗[R] M) : ∃ m, t = x' ⊗ₜ m := by
+    induction t using TensorProduct.inductionOn with
+    | tmul y m =>
+      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp y.2
+      exact ⟨a • m, by rw [← smul_tmul]; congr 1; ext; simp [x', ← ha]⟩
+    | add t u ht hu =>
+      obtain ⟨m, rfl⟩ := ht
+      obtain ⟨n, rfl⟩ := hu
+      exact ⟨m + n, (tmul_add _ _ _).symm⟩
+  refine (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
+  obtain ⟨m, rfl⟩ := h t
+  have : x • m = 0 := by simpa [x'] using congr(TensorProduct.lid R M $ht)
+  rw [reg (this.trans (smul_zero x).symm), tmul_zero]
+
+end IsSMulRegular
 
 namespace Ideal
 

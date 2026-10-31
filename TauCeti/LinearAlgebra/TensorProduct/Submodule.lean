@@ -20,7 +20,8 @@ For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of 
 `p ⊗[R] M` and `q ⊗[R] M` under the maps induced by the inclusions
 (`Submodule.exists_eq_rTensor_inclusion_add`). For an ideal `I` and a submodule `J`, the image of
 `M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`
-(`LinearMap.range_lTensor_inclusion_smul_le`).
+(`LinearMap.range_lTensor_inclusion_smul_le`), and likewise on the right
+(`LinearMap.range_rTensor_inclusion_smul_le`).
 
 Multiplication of tensor products of submodules is compatible with multiplication in each
 factor (`Submodule.map₂_tmul_mul_le`).
@@ -118,6 +119,17 @@ theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Subm
     have := mem_map_of_mem (f := TensorProduct.mk R M J m) hz
     rw [map_smul''] at this
     exact smul_mono le_rfl le_top this
+
+/-- The image of `(I • J) ⊗[R] M` in `J ⊗[R] M` is contained in `I • (J ⊗[R] M)`. -/
+theorem _root_.LinearMap.range_rTensor_inclusion_smul_le (I : Ideal R) (J : Submodule R N) :
+    LinearMap.range ((inclusion (Submodule.smul_le_right : I • J ≤ J)).rTensor M) ≤
+      (I • ⊤ : Submodule R (J ⊗[R] M)) := by
+  rintro _ ⟨u, rfl⟩
+  -- Transport the left-hand statement along the symmetry of the tensor product.
+  have h := mem_map_of_mem (f := ((TensorProduct.comm R J M).symm : M ⊗[R] J →ₗ[R] J ⊗[R] M))
+    (LinearMap.range_lTensor_inclusion_smul_le I J ⟨TensorProduct.comm R _ M u, rfl⟩)
+  rwa [map_smul'', map_top, LinearEquiv.range, LinearMap.lTensor_comm, LinearEquiv.coe_coe,
+    LinearEquiv.symm_apply_apply] at h
 
 end Inclusion
 
