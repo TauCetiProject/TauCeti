@@ -60,6 +60,10 @@ count which an induced counting lemma compares with `H.inducedCopyCount F`.
   falling factorials of the cell sizes.
 * `TauCeti.placementInjectionCount_eq_prod_of_transversal`: at a transversal placement it is the
   product of the cell sizes.
+* `TauCeti.PatternPlacement3.sum_prod_card_vertexCell`: the cell-size products of all placements
+  add up to `|V| ^ F.k`.
+* `TauCeti.PairColorPlacement3.card_le_pairColorCount_pow`: a placement has at most
+  `m ^ (F.k.choose 2)` routes, where `m` is the number of pair colors.
 * `TauCeti.Colored3Graph.inducedCopyCount_eq_sum_placedInducedCopyCount`: over a polyad
   decomposition, the induced count is the sum of the placed counts.
 * `TauCeti.Colored3Graph.expectedInducedCountAt_nonneg`,
@@ -113,6 +117,35 @@ def Transversal (φ : PatternPlacement3 C F) : Prop :=
 /-- Unfolded form of `PatternPlacement3.Transversal`. -/
 theorem transversal_iff (φ : PatternPlacement3 C F) : φ.Transversal ↔ Injective φ.vertexCell :=
   Iff.rfl
+
+/-- The placement whose cells are the vertex cells containing the values of a map. -/
+private noncomputable def ofMap (g : Fin F.k → V) : PatternPlacement3 C F where
+  vertexCell i := C.skeleton.vertexPart.part (g i)
+  vertexCell_mem _ := C.skeleton.vertexPart.part_mem.2 (mem_univ _)
+
+/-- A map sending every pattern vertex into its assigned cell determines the placement, since
+the vertex cells are disjoint. -/
+theorem eq_of_forall_mem {φ φ' : PatternPlacement3 C F} {g : Fin F.k → V}
+    (h : ∀ i, g i ∈ φ.vertexCell i) (h' : ∀ i, g i ∈ φ'.vertexCell i) : φ = φ' :=
+  PatternPlacement3.ext <| funext fun i ↦
+    C.skeleton.vertexPart.eq_of_mem_parts (φ.vertexCell_mem i) (φ'.vertexCell_mem i) (h i) (h' i)
+
+/-- The boxes of cells of the placements partition the maps `Fin F.k → V`, so their sizes add up
+to `|V| ^ F.k`. -/
+theorem sum_prod_card_vertexCell :
+    ∑ φ : PatternPlacement3 C F, ∏ i, #(φ.vertexCell i) = Fintype.card V ^ F.k := by
+  classical
+  have hdisj : (Set.univ : Set (PatternPlacement3 C F)).PairwiseDisjoint
+      fun φ ↦ Fintype.piFinset φ.vertexCell := fun φ _ φ' _ hne ↦
+    disjoint_left.2 fun g hg hg' ↦
+      hne (eq_of_forall_mem (Fintype.mem_piFinset.1 hg) (Fintype.mem_piFinset.1 hg'))
+  -- Every map lies in the box of the cells containing its values.
+  have hcover : univ.biUnion (fun φ : PatternPlacement3 C F ↦ Fintype.piFinset φ.vertexCell) =
+      univ := eq_univ_of_forall fun g ↦ mem_biUnion.2 ⟨ofMap g, mem_univ _,
+    Fintype.mem_piFinset.2 fun _ ↦ C.skeleton.vertexPart.mem_part (mem_univ _)⟩
+  simp_rw [← Fintype.card_piFinset]
+  rw [← card_biUnion (by simpa using hdisj), hcover, card_univ, Fintype.card_fun,
+    Fintype.card_fin]
 
 end PatternPlacement3
 
@@ -175,6 +208,28 @@ variable {φ : PatternPlacement3 C F}
 /-- There are finitely many routes over a placement. -/
 noncomputable instance : Fintype (PairColorPlacement3 φ) :=
   Fintype.ofInjective _ fun _ _ ↦ PairColorPlacement3.ext
+
+/-- A placement of a pattern on `k` vertices has at most `m ^ (k.choose 2)` routes, where `m` is
+the number of pair colors, since a route is determined by its pair colors. -/
+theorem card_le_pairColorCount_pow :
+    Fintype.card (PairColorPlacement3 φ) ≤ C.pairColorCount ^ F.k.choose 2 := by
+  classical
+  calc Fintype.card (PairColorPlacement3 φ)
+      ≤ Fintype.card ({p : Fin F.k × Fin F.k // p.1 < p.2} → Fin C.pairColorCount) :=
+        Fintype.card_le_of_injective _ fun _ _ ↦ PairColorPlacement3.ext
+    _ = C.pairColorCount ^ F.k.choose 2 := by
+        rw [Fintype.card_fun, Fintype.card_fin, Fintype.card_subtype,
+          Fintype.card_product_filter_lt, Fintype.card_fin]
+
+/-- A map realizing the pair colors of two routes over the same placement determines the
+route. -/
+theorem eq_of_forall_colorOfPair_eq_some {ψ ψ' : PairColorPlacement3 φ} {g : Fin F.k → V}
+    (h : ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
+      C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p))
+    (h' : ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
+      C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ'.pairColor p)) :
+    ψ = ψ' :=
+  PairColorPlacement3.ext <| funext fun p ↦ Option.some_injective _ ((h p).symm.trans (h' p))
 
 /-- The polyad that a route induces on the canonically ordered pattern triple `i < j < l`. -/
 def polyad (ψ : PairColorPlacement3 φ) (i j l : Fin F.k) (hij : i < j) (hjl : j < l) :
@@ -263,15 +318,10 @@ theorem placedInducedCopyCount_le_placementInjectionCount (φ : PatternPlacement
     Fintype.card_subtype]
   exact card_le_card fun f hf ↦ mem_filter.2 ⟨mem_univ _, (mem_placedInducedCopies.1 hf).2.1⟩
 
-/-- The placement whose cells are the vertex cells containing the images of an embedding. -/
-private noncomputable def placementOf (f : Fin F.k ↪ V) : PatternPlacement3 C F where
-  vertexCell i := C.skeleton.vertexPart.part (f i)
-  vertexCell_mem _ := C.skeleton.vertexPart.part_mem.2 (mem_univ _)
-
 /-- Over a polyad decomposition, the route recording the pair colors of an embedding. Its polyads
 are the polyads of the images of the pattern triples. -/
 private noncomputable def routeOf (hC : C.IsPolyadDecomposition) (f : Fin F.k ↪ V) :
-    PairColorPlacement3 (placementOf (C := C) f) where
+    PairColorPlacement3 (PatternPlacement3.ofMap (C := C) f) where
   pairColor p := C.skeleton.pairColors.color ⟨(f p.1.1, f p.1.2), f.injective.ne p.2.ne⟩
   ofData_mem i j l hij hjl := by
     have hinj : Injective ![i, j, l] := by
@@ -287,7 +337,7 @@ private noncomputable def routeOf (hC : C.IsPolyadDecomposition) (f : Fin F.k �
       | simp only [Polyad3.ofData_color₀₁, Polyad3.ofTriple_color₀₁, Polyad3.ofData_color₀₂,
           Polyad3.ofTriple_color₀₂, Polyad3.ofData_color₁₂, Polyad3.ofTriple_color₁₂]
         exact congrArg _ (Subtype.ext (by simp))
-      | simp [placementOf]
+      | simp [PatternPlacement3.ofMap]
 
 /-- **Placed counts decompose the induced count.** When the selected polyads of `C` decompose the
 injective triples, every induced copy of `F` in `H` realizes exactly one placement and route, so
@@ -300,7 +350,7 @@ theorem inducedCopyCount_eq_sum_placedInducedCopyCount (hC : C.IsPolyadDecomposi
       PairColorPlacement3 φ)).biUnion fun σ ↦ H.placedInducedCopies σ.1 σ.2 := by
     ext f
     simp only [mem_biUnion, mem_univ, true_and, mem_placedInducedCopies, mem_inducedCopies]
-    refine ⟨fun hf ↦ ⟨⟨placementOf f, routeOf hC f⟩, hf, fun i ↦ ?_, fun p ↦ ?_⟩,
+    refine ⟨fun hf ↦ ⟨⟨PatternPlacement3.ofMap f, routeOf hC f⟩, hf, fun i ↦ ?_, fun p ↦ ?_⟩,
       fun ⟨_, hf, _⟩ ↦ hf⟩
     · exact C.skeleton.vertexPart.mem_part (mem_univ _)
     · exact C.skeleton.pairColors.colorOfPair_of_ne _
@@ -310,12 +360,8 @@ theorem inducedCopyCount_eq_sum_placedInducedCopyCount (hC : C.IsPolyadDecomposi
     refine disjoint_left.2 fun f hf hf' ↦ hne ?_
     obtain ⟨-, hφ, hψ⟩ := mem_placedInducedCopies.1 hf
     obtain ⟨-, hφ', hψ'⟩ := mem_placedInducedCopies.1 hf'
-    -- The cells are the parts containing the images, and the colors are those of the image pairs.
-    obtain rfl : φ = φ' := PatternPlacement3.ext <| funext fun i ↦
-      C.skeleton.vertexPart.eq_of_mem_parts (φ.vertexCell_mem i) (φ'.vertexCell_mem i) (hφ i)
-        (hφ' i)
-    obtain rfl : ψ = ψ' := PairColorPlacement3.ext <| funext fun p ↦
-      Option.some_injective _ ((hψ p).symm.trans (hψ' p))
+    obtain rfl := PatternPlacement3.eq_of_forall_mem hφ hφ'
+    obtain rfl := PairColorPlacement3.eq_of_forall_colorOfPair_eq_some hψ hψ'
     rfl
   simp only [inducedCopyCount_def, placedInducedCopyCount_def]
   rw [hcover, card_biUnion (by simpa using hdisj), Fintype.sum_sigma]
