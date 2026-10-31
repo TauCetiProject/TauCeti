@@ -119,6 +119,7 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
 
 /-- A map between complex manifolds is pseudoholomorphic within a set at a point, for their
 almost complex structures, exactly when it is holomorphic within that set at that point. -/
+@[simp]
 theorem isPseudoholomorphicWithinAt_ofComplexManifold_iff :
     IsPseudoholomorphicWithinAt (ofComplexManifold E M) (ofComplexManifold E' N) f s x ↔
       MDifferentiableWithinAt 𝓘(ℂ, E) 𝓘(ℂ, E') f s x := by
@@ -153,6 +154,7 @@ theorem isPseudoholomorphicWithinAt_ofComplexManifold_iff :
 
 /-- A map between complex manifolds is pseudoholomorphic at a point, for their almost complex
 structures, exactly when it is holomorphic at that point. -/
+@[simp]
 theorem isPseudoholomorphicAt_ofComplexManifold_iff :
     IsPseudoholomorphicAt (ofComplexManifold E M) (ofComplexManifold E' N) f x ↔
       MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, E') f x := by
@@ -161,6 +163,7 @@ theorem isPseudoholomorphicAt_ofComplexManifold_iff :
 
 /-- A map between complex manifolds is pseudoholomorphic on a set, for their almost complex
 structures, exactly when it is holomorphic on that set. -/
+@[simp]
 theorem isPseudoholomorphicOn_ofComplexManifold_iff :
     IsPseudoholomorphicOn (ofComplexManifold E M) (ofComplexManifold E' N) f s ↔
       MDifferentiableOn 𝓘(ℂ, E) 𝓘(ℂ, E') f s :=
@@ -169,6 +172,7 @@ theorem isPseudoholomorphicOn_ofComplexManifold_iff :
 
 /-- A map between complex manifolds is pseudoholomorphic, for their almost complex structures,
 exactly when it is holomorphic. -/
+@[simp]
 theorem isPseudoholomorphic_ofComplexManifold_iff :
     IsPseudoholomorphic (ofComplexManifold E M) (ofComplexManifold E' N) f ↔
       MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, E') f :=
