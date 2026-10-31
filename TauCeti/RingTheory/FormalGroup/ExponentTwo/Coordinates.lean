@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Basic
 import TauCeti.RingTheory.FormalGroup.AdditiveSeries
 import TauCeti.RingTheory.FormalGroup.ExponentTwo.Iso
 import TauCeti.RingTheory.FormalGroup.Hom
-import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 
 /-!
@@ -30,10 +29,9 @@ compositional inverse because its linear coefficient is one.
 
 In particular, a formal group law of exponent two is the transport `g⁻¹ • 𝔾ₐ` of the additive
 formal group law along the inverse of its normalized logarithm `g`
-(`FormalGroup.inv_smul_𝔾ₐ_eq`). Conversely, if `2 = 0`, transporting the additive law along any
-coordinate gives a law of exponent two (`FormalGroup.nsmulSeries_smul_𝔾ₐ_eq_zero`), and the
-normalized logarithm of `g⁻¹ • 𝔾ₐ` is `g` when `g` is strict without terms of degree `2ᵏ`,
-`k ≥ 1` (`FormalGroup.exponentTwoLog_inv_smul_𝔾ₐ`).
+(`FormalGroup.inv_smul_𝔾ₐ_eq`). Conversely, if `2 = 0`, the normalized logarithm of `g⁻¹ • 𝔾ₐ`
+is `g` when `g` is strict without terms of degree `2ᵏ`, `k ≥ 1`
+(`FormalGroup.exponentTwoLog_inv_smul_𝔾ₐ`).
 
 ## References
 
@@ -136,18 +134,6 @@ theorem inv_smul_𝔾ₐ_eq (hF : F.nsmulSeries 2 = 0) {φ : FormalCoordinate R}
     inv_smul_smul]
 
 variable (φ : FormalCoordinate R)
-
-/-- **Transporting the additive formal group law kills `n` when `n = 0`**: if `n = 0` in `R`, then
-`[n](X) = 0` for the formal group law `φ • 𝔾ₐ = φ(φ⁻¹(X) + φ⁻¹(Y))`. This is a converse of
-`FormalGroup.natCast_eq_zero_of_nsmulSeries_eq_zero`. -/
-theorem nsmulSeries_smul_𝔾ₐ_eq_zero {n : ℕ} (hn : (n : R) = 0) :
-    (φ • (𝔾ₐ : FormalGroup R)).nsmulSeries n = 0 := by
-  -- Transport `[n]_{𝔾ₐ}(X) = n X = 0` along the isomorphism `φ : 𝔾ₐ → φ • 𝔾ₐ`.
-  have h := (smulIso φ (𝔾ₐ (R := R))).zsmulSeries_eq_subst n
-  have hn' : (n : PowerSeries R) = 0 := by rw [← map_natCast PowerSeries.C, hn, map_zero]
-  rw [zsmulSeries_natCast, zsmulSeries_natCast, nsmulSeries_𝔾ₐ, hn', zero_mul] at h
-  rw [h, PowerSeries.subst_zero_of_constantCoeff_zero (smulIso φ 𝔾ₐ).toHom.zero_constantCoeff,
-    PowerSeries.subst_zero]
 
 /-- **The normalized logarithm of a transported additive formal group law**: if `2 = 0` in `R` and
 `φ = X + ⋯` has no term of degree `2ᵏ` for `k ≥ 1`, then `φ` is the normalized logarithm of
