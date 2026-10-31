@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Infinite
+public import TauCeti.NumberTheory.LocalField.MassFormula.Main
 public import TauCeti.RingTheory.LaurentSeries.LocalField
 
 /-!
@@ -17,12 +18,18 @@ residue field `F`. It is the equal-characteristic case of Serre's finiteness dic
 `0 < n` and `p ∣ n`, the family `σ_{F⸨X⸩}(n)` of totally ramified subextensions of degree `n` of
 a separable closure is infinite. Serre's mass formula nevertheless gives the weighted series
 `∑_{L ∈ σ_{F⸨X⸩}(n)} q ^ (-c(L))` the finite value `n`, where `q` is the cardinality of `F`
-(`TauCeti.LaurentSeries.natCard_residueField`).
+(`TauCeti.LaurentSeries.natCard_residueField`). For `n` the characteristic of `F` these are the
+two halves of Serre's Remarque 1° on a single example: infinitely many extensions, yet a
+convergent real series.
 
 ## Main results
 
 * `TauCeti.infinite_totallyRamifiedOfDegree_laurentSeries`: if `0 < n` and the characteristic of
   `F` divides `n`, then `σ_{F⸨X⸩}(n)` is infinite.
+* `TauCeti.tsum_one_div_natCard_pow_wildExponent_laurentSeries`: the mass formula
+  `∑_{L ∈ σ_{F⸨X⸩}(n)} q ^ (-c(L)) = n` in `ℝ≥0∞`, with `q` the cardinality of `F`.
+* `TauCeti.hasSum_one_div_natCard_pow_wildExponent_laurentSeries`: the real series
+  `∑_{L ∈ σ_{F⸨X⸩}(n)} q ^ (-c(L))` converges to `n`, also when `σ_{F⸨X⸩}(n)` is infinite.
 
 ## References
 
@@ -32,7 +39,7 @@ a separable closure is infinite. Serre's mass formula nevertheless gives the wei
 
 public section
 
-open scoped LaurentSeries
+open scoped ENNReal LaurentSeries
 
 namespace TauCeti
 
@@ -53,5 +60,21 @@ theorem infinite_totallyRamifiedOfDegree_ringChar_laurentSeries :
     (totallyRamifiedOfDegree F⸨X⸩ (ringChar F)).Infinite :=
   infinite_totallyRamifiedOfDegree_laurentSeries F
     (Nat.pos_of_ne_zero (CharP.ringChar_ne_zero_of_finite F)) dvd_rfl
+
+/-- **Serre's mass formula over `𝔽_q((X))`**: the totally ramified degree-`n` subextensions `L`
+of a separable closure of `F⸨X⸩` satisfy `∑_L q ^ (-c(L)) = n`, where `q` is the cardinality of
+the finite field `F` and `c(L)` is the wild exponent. -/
+theorem tsum_one_div_natCard_pow_wildExponent_laurentSeries (n : ℕ) :
+    ∑' L : totallyRamifiedOfDegree F⸨X⸩ n, 1 / (Nat.card F : ℝ≥0∞) ^ L.1.wildExponent = n := by
+  simpa using tsum_one_div_natCard_residueField_pow_wildExponent (K := F⸨X⸩) (n := n)
+
+/-- **Convergence of the weighted count over `𝔽_q((X))`**: the real series
+`∑_{L ∈ σ_{F⸨X⸩}(n)} q ^ (-c(L))`, where `q` is the cardinality of the finite field `F`, converges
+to `n`. When `0 < n` and the characteristic of `F` divides `n`, it runs over the infinite family
+of `TauCeti.infinite_totallyRamifiedOfDegree_laurentSeries`. -/
+theorem hasSum_one_div_natCard_pow_wildExponent_laurentSeries (n : ℕ) :
+    HasSum (fun L : totallyRamifiedOfDegree F⸨X⸩ n ↦
+      1 / (Nat.card F : ℝ) ^ L.1.wildExponent) n := by
+  simpa using hasSum_one_div_natCard_residueField_pow_wildExponent (K := F⸨X⸩) (n := n)
 
 end TauCeti
