@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.Equiv.Prod
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Algebra.Lie.Cohomology.Continuous
 public import TauCeti.Algebra.Lie.Extension.Basic

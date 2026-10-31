@@ -20,9 +20,9 @@ cocycle `TauCeti.CurrentAlgebra.twoCocycleOfBilinear`. It carries the topology o
 and the discrete topology of the central line `R K`. No topology on `R` is used.
 
 From the general theory of that file, the projection `ĝ → L((t))` is a continuous open quotient
-map, the section `u ↦ (u, 0)` is a continuous linear open embedding whose image meets the centre
-`R K` only in zero, the centre is discrete, and `ĝ` is Hausdorff when `L` is a free module. This
-file adds the properties specific to residue extensions:
+map, the section `u ↦ (u, 0)` is a continuous linear open embedding whose image meets the central
+kernel `R K` of the projection only in zero, this kernel is discrete, and `ĝ` is Hausdorff when
+`L` is a free module. This file adds the properties specific to residue extensions:
 
 * the bracket of `ĝ` is jointly continuous, because the bracket of formal currents and the residue
   cocycle are continuous (`TauCeti.CurrentAlgebra.continuous_lie_residueExtension`);
