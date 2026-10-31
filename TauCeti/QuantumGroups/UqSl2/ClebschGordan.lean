@@ -67,9 +67,12 @@ open BialgebraModule LadderModule Module
 variable {q : ℂ}
 
 variable (q) in
-/-- The coefficients `α_i` of the Clebsch–Gordan highest vector `∑_i α_i v_i ⊗ v_(j - i)` of
-weight `εδ q^(m + n - 2j)` in `L_m^ε ⊗ L_n^δ`: `α₀ = 1` and
-`α_(i+1) = -δ q^(m - 2i) [n - j + i + 1]_q / [m - i]_q α_i`. They do not depend on `ε`. -/
+/-- The coefficients `α_i` of the Clebsch–Gordan vector `∑_i α_i v_i ⊗ v_(j - i)` in
+`L_m^ε ⊗ L_n^δ`, defined for all `q`, `m`, `n`, `j` and `i` by `α₀ = 1` and
+`α_(i+1) = -δ q^(m - 2i) [n - j + i + 1]_q / [m - i]_q α_i` (with Lean's convention `x / 0 = 0`).
+They do not depend on `ε`. At a generic parameter and for `j ≤ m`, the denominators `[m - i]_q`
+with `i < j` are nonzero and the resulting vector is a highest vector (see
+`TauCeti.UqSl2.e_smul_clebschGordanVector`). -/
 def clebschGordanCoeff (m n : ℕ) (δ : ℤˣ) (j : ℕ) : ℕ → ℂ
   | 0 => 1
   | i + 1 => -(δ : ℂ) * q ^ ((m : ℤ) - 2 * i) * quantumInteger q ((n : ℤ) - j + i + 1) /
@@ -102,9 +105,10 @@ theorem quantumInteger_mul_clebschGordanCoeff_succ (hq : IsGenericQuantumParamet
 variable [Fact (q ≠ 0)]
 
 variable (q) in
-/-- The Clebsch–Gordan highest vector `w_j = ∑_(i = 0)^j α_i v_i ⊗ v_(j - i)` in
-`L_m^ε ⊗ L_n^δ`, with the coefficients `α_i = clebschGordanCoeff q m n δ j i`. For
-`j ≤ min m n` it is a nonzero vector of weight `εδ q^(m + n - 2j)` killed by `E`. -/
+/-- The Clebsch–Gordan vector `w_j = ∑_(i = 0)^j α_i v_i ⊗ v_(j - i)` in `L_m^ε ⊗ L_n^δ`, with
+the coefficients `α_i = clebschGordanCoeff q m n δ j i`, defined for every `j`. It always has
+weight `εδ q^(m + n - 2j)`, and it is nonzero for `j ≤ n`. At a generic parameter and for
+`j ≤ m` it is moreover killed by `E`, so for `j ≤ min m n` it is a nonzero highest vector. -/
 def clebschGordanVector (m : ℕ) (ε : ℤˣ) (n : ℕ) (δ : ℤˣ) (j : ℕ) :
     Tensor ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ) :=
   ∑ i ∈ Finset.range (j + 1), clebschGordanCoeff q m n δ j i •
@@ -112,12 +116,19 @@ def clebschGordanVector (m : ℕ) (ε : ℤˣ) (n : ℕ) (δ : ℤˣ) (j : ℕ) 
 
 variable {m n : ℕ} {ε δ : ℤˣ}
 
+/-- The defining formula `w_j = ∑_(i = 0)^j α_i v_i ⊗ v_(j - i)` of the Clebsch–Gordan vector. -/
+theorem clebschGordanVector_def (j : ℕ) :
+    clebschGordanVector q m ε n δ j = ∑ i ∈ Finset.range (j + 1), clebschGordanCoeff q m n δ j i •
+      tmul ℂ (UqSl2 q) (vec q m ε i) (vec q n δ ((j : ℤ) - i)) := by
+  rw [clebschGordanVector]
+
 /-- The Clebsch–Gordan vector `w_j` has weight `εδ q^(m + n - 2j)`. -/
 theorem clebschGordanVector_mem_weightSpace (j : ℕ) :
     clebschGordanVector q m ε n δ j ∈
       weightSpace q (Tensor ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ))
         ((ε * δ : ℤˣ) * q ^ ((m : ℤ) + n - 2 * j)) := by
   have hq0 : q ≠ 0 := Fact.out
+  rw [clebschGordanVector_def]
   refine Submodule.sum_mem _ fun i _ => Submodule.smul_of_tower_mem _ _ ?_
   rw [mem_weightSpace_iff, k_smul_tmul, k_smul_vec, k_smul_vec, ← smul_tmul', tmul_smul,
     smul_smul]
@@ -142,7 +153,7 @@ theorem e_smul_clebschGordanVector (hq : IsGenericQuantumParameter q) {j : ℕ} 
     dsimp only
     rw [show (j : ℤ) - (i - 1 : ℤ) - 1 = j - i by ring,
       show (n : ℤ) - (j - i) + 1 = n - j + i + 1 by ring]
-  simp only [clebschGordanVector, Finset.smul_sum, smul_comm (e q) (_ : ℂ), hterm, smul_add,
+  simp only [clebschGordanVector_def, Finset.smul_sum, smul_comm (e q) (_ : ℂ), hterm, smul_add,
     Finset.sum_add_distrib, smul_smul]
   -- The boundary terms `g (-1)` and `g j` vanish; the coefficient of each remaining `g i` is
   -- zero by the recurrence for `α_(i+1)`.
@@ -166,7 +177,7 @@ theorem clebschGordanVector_ne_zero {j : ℕ} (hj : j ≤ n) :
   intro h
   have := congrArg (fun x => ((basis q m ε).tensorProduct (basis q n δ)).repr
     (tensorEquiv ℂ (UqSl2 q) _ _ x) (0, ⟨j, by omega⟩)) h
-  simp only [clebschGordanVector, map_sum, map_smul, tensorEquiv_tmul, Finsupp.finsetSum_apply,
+  simp only [clebschGordanVector_def, map_sum, map_smul, tensorEquiv_tmul, Finsupp.finsetSum_apply,
     Finsupp.smul_apply, Basis.tensorProduct_repr_tmul_apply, basis_repr_vec, smul_eq_mul,
     map_zero, Finsupp.coe_zero, Pi.zero_apply] at this
   rw [Finset.sum_eq_single 0 (fun i _ hi => by simp [show (0 : ℤ) ≠ i by omega]) (by simp)]
@@ -266,7 +277,7 @@ theorem iSupIndep_range_clebschGordanInclusion (hq : IsGenericQuantumParameter q
 private def clebschGordanSum (hq : IsGenericQuantumParameter q) :
     (Π j : Fin (min m n + 1), LadderModule q (m + n - 2 * j) (ε * δ)) →ₗ[UqSl2 q]
       Tensor ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ) :=
-  ∑ j, (clebschGordanInclusion hq j).comp (LinearMap.proj j)
+  LinearMap.lsum (UqSl2 q) _ ℂ fun j => clebschGordanInclusion hq j
 
 private theorem clebschGordanSum_apply (hq : IsGenericQuantumParameter q)
     (x : Π j : Fin (min m n + 1), LadderModule q (m + n - 2 * j) (ε * δ)) :
@@ -317,7 +328,7 @@ theorem clebschGordanEquiv_apply (hq : IsGenericQuantumParameter q)
 theorem clebschGordanEquiv_single (hq : IsGenericQuantumParameter q) (j : Fin (min m n + 1))
     (x : LadderModule q (m + n - 2 * j) (ε * δ)) :
     clebschGordanEquiv hq (Pi.single j x) = clebschGordanInclusion hq j x := by
-  rw [clebschGordanEquiv_apply, Finset.sum_eq_single j (fun k _ hk => by
-    rw [Pi.single_eq_of_ne hk, map_zero]) (by simp), Pi.single_eq_same]
+  rw [clebschGordanEquiv, LinearEquiv.ofBijective_apply, clebschGordanSum,
+    LinearMap.lsum_piSingle]
 
 end TauCeti.UqSl2
