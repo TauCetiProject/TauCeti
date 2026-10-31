@@ -64,6 +64,7 @@ def totalSpaceResidueFieldHomEquiv :
 /-- The point of `𝕍(E)` over `x` given by the vector `c ⊗ s_x`, for a section `s` of `E` over an
 open `V ∋ x`, is the point whose section of `ι^* E` is `c` times the pullback of `s` along
 `ι : Spec κ(x) ⟶ X`. -/
+@[simp]
 theorem totalSpaceResidueFieldHomEquiv_symm_tmul_germ {V : X.Opens} (hx : x ∈ V)
     (c : X.residueField x) (s : Γ(E.obj, V)) :
     (totalSpaceResidueFieldHomEquiv E x).symm (c ⊗ₜ E.obj.presheaf.germ V x hx s) =

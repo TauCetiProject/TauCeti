@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
-public import Mathlib.AlgebraicGeometry.ResidueField
+public import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # The skyscraper sheaf of a residue field
@@ -67,11 +67,7 @@ def _root_.AlgebraicGeometry.Scheme.skyscraperResidueField (x : X) : X.Modules :
 private def residueFieldSectionsIso (x : X) {U : X.Opens} (hx : x ∈ U) :
     Γ(Spec (X.residueField x), X.fromSpecResidueField x ⁻¹ᵁ U) ≅ X.residueField x :=
   ((Spec (X.residueField x)).presheaf.mapIso
-    (eqToIso (Scheme.preimage_eq_top_of_closedPoint_mem (X.fromSpecResidueField x)
-      (by
-        convert hx using 1
-        exact Scheme.fromSpecResidueField_apply x
-          (IsLocalRing.closedPoint (X.residueField x))))).op).symm ≪≫
+    (eqToIso (Scheme.fromSpecResidueField_preimage_eq_top x hx)).op).symm ≪≫
     Scheme.ΓSpecIso (X.residueField x)
 
 /-- On an open subset containing `x`, the morphism `Spec κ(x) ⟶ X` acts on sections by
@@ -79,11 +75,15 @@ evaluation at `x`. -/
 private lemma app_comp_residueFieldSectionsIso (x : X) {U : X.Opens} (hx : x ∈ U) :
     (X.fromSpecResidueField x).app U ≫ (residueFieldSectionsIso x hx).hom =
       X.evaluation U x hx := by
-  have h := hx
-  rw [← Scheme.fromSpecResidueField_apply x (IsLocalRing.closedPoint (X.residueField x))] at h
-  have : IsLocalHom (X.residue x).hom := inferInstanceAs (IsLocalHom (IsLocalRing.residue _))
-  rw [← X.germ_residue x hx, ← Scheme.germ_stalkClosedPointTo_Spec_fromSpecStalk (X.residue x) U h]
-  exact (Scheme.germ_stalkClosedPointTo (X.fromSpecResidueField x) U h).symm
+  -- Restriction along `ι⁻¹ U = ⊤` is restriction along `⊤ ≤ ι⁻¹ U`, which makes the left side
+  -- the map `appLE` computed by `Scheme.fromSpecResidueField_appLE`.
+  have h := (Scheme.fromSpecResidueField_preimage_eq_top x hx).ge
+  have e : ((Spec (X.residueField x)).presheaf.mapIso
+      (eqToIso (Scheme.fromSpecResidueField_preimage_eq_top x hx)).op).symm.hom =
+        (Spec (X.residueField x)).presheaf.map (homOfLE h).op :=
+    congrArg (Spec (X.residueField x)).presheaf.map (Subsingleton.elim _ _)
+  rw [residueFieldSectionsIso, Iso.trans_hom, ← Category.assoc, e, ← Scheme.Hom.appLE,
+    Scheme.fromSpecResidueField_appLE x hx, Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 /-- The sections of the skyscraper sheaf `κ(x)ₓ` over an open subset containing `x` are the
 residue field `κ(x)`. -/

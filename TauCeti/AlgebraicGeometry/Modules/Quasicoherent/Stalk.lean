@@ -23,11 +23,9 @@ This is the affine computation of the stalks of a quasi-coherent module, and so 
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.moduleSectionStalk`: for `x : U`, the stalk `M_x` is a
-  `Γ(X, U)`-module through the germ map `Γ(X, U) ⟶ 𝒪_{X,x}`;
-* `AlgebraicGeometry.Scheme.Modules.germₗ`: the germ map `Γ(M, U) → M_x` as a `Γ(X, U)`-linear map;
 * `AlgebraicGeometry.Scheme.Modules.isLocalizedModule_germₗ`: for quasi-coherent `M` and affine
-  `U`, it is the localization at the prime ideal of `x`;
+  `U`, the germ map `Γ(M, U) → M_x` (`AlgebraicGeometry.Scheme.Modules.germₗ`) is the
+  localization at the prime ideal of `x`;
 * `AlgebraicGeometry.Scheme.Modules.isBaseChange_germₗ`: equivalently, it is the base change along
   `Γ(X, U) ⟶ 𝒪_{X,x}`.
 
@@ -47,34 +45,6 @@ noncomputable section
 namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}} (M : X.Modules) {U : X.Opens} (x : U)
-
-/-- For a point `x` of an open `U`, the stalk `M_x` is a `Γ(X, U)`-module through the germ map
-`Γ(X, U) ⟶ 𝒪_{X,x}`, which is Mathlib's algebra structure
-`TopCat.Presheaf.algebra_section_stalk`. -/
-instance moduleSectionStalk : Module Γ(X, U) (M.presheaf.stalk x) :=
-  Module.compHom _ (algebraMap Γ(X, U) (X.presheaf.stalk x))
-
-/-- The `Γ(X, U)`-module structure on `M_x` factors through the local ring `𝒪_{X,x}`. -/
-instance isScalarTower_sectionStalk :
-    IsScalarTower Γ(X, U) (X.presheaf.stalk x) (M.presheaf.stalk x) :=
-  IsScalarTower.of_compHom _ _ _
-
-/-- A function `r` on `U` acts on the stalk `M_x` through its germ at `x`. -/
-lemma section_smul_stalk_def (r : Γ(X, U)) (m : M.presheaf.stalk x) :
-    r • m = X.presheaf.germ U x x.2 r • m :=
-  (rfl)
-
-/-- The germ map `Γ(M, U) → M_x` at a point `x` of `U`, as a `Γ(X, U)`-linear map. This is the
-linear form of `PresheafOfModules.germSemilinear`, which is semilinear along
-`Γ(X, U) ⟶ 𝒪_{X,x}`; localization of modules is phrased for linear maps. -/
-def germₗ : Γ(M, U) →ₗ[Γ(X, U)] M.presheaf.stalk x where
-  toFun := M.presheaf.germ U x x.2
-  map_add' := map_add _
-  map_smul' r m := M.germ_smul x U x.2 r m
-
-@[simp]
-lemma germₗ_apply (m : Γ(M, U)) : M.germₗ x m = M.presheaf.germ U x x.2 m :=
-  (rfl)
 
 variable {M x}
 
@@ -122,8 +92,10 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
     rw [basicOpenRestrict_apply, M.presheaf.germ_res_apply, Submonoid.smul_def,
       basicOpen_smul_def, M.germ_smul, M.presheaf.germ_res_apply,
       X.presheaf.germ_res_apply] at h
+    rw [germₗ_apply, Submonoid.smul_def, section_smul_stalk_def]
     exact h
   exists_of_eq {a b} h := by
+    rw [germₗ_apply, germₗ_apply] at h
     obtain ⟨W, hxW, iU, iU', hab⟩ := M.presheaf.germ_eq x x.2 x.2 a b h
     obtain ⟨f, hfW, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxW⟩ x.2
     have := M.isLocalizedModule_basicOpenRestrict hU f

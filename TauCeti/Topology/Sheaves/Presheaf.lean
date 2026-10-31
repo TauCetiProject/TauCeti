@@ -12,7 +12,8 @@ public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 # Restriction maps of presheaves
 
 Composing restriction maps along inclusions of opens in both directions gives the identity after
-any morphism into the starting section object, since the inclusions force the opens to be equal.
+any morphism into the starting section object, since the inclusions force the opens to be equal;
+in particular restriction from an open to itself is the identity on sections.
 A family of sections over opens is compatible as soon as any two of its sections are restrictions
 of a common section in the family, and two sections of a sheaf of types that agree on the
 intersection of their domains glue to a section over the union.
@@ -21,6 +22,8 @@ intersection of their domains glue to a section over the union.
 
 * `TopCat.Presheaf.comp_map_comp_map_eq_self`: composing restriction maps along inclusions in both
   directions gives the identity after any morphism into the starting section object.
+* `TopCat.Presheaf.map_apply_eq_self`: restriction from an open to itself is the identity on
+  sections.
 * `TopCat.Presheaf.isCompatible_of_directed`: a family of sections, any two of which are
   restrictions of a common member, is compatible.
 * `TopCat.Presheaf.IsSheaf.exists_gluing_sup`: two sections of a sheaf of types that agree on the
@@ -45,6 +48,13 @@ theorem comp_map_comp_map_eq_self {F : T.Presheaf C} {A : C} {V V' : Opens T}
     (a : A ⟶ F.obj (op V)) (i : op V ⟶ op V') (j : op V' ⟶ op V) :
     (a ≫ F.map i) ≫ F.map j = a := by
   rw [Category.assoc, ← F.map_comp, Subsingleton.elim (i ≫ j) (𝟙 _), F.map_id, Category.comp_id]
+
+/-- Restriction from an open to itself is the identity on sections: there is only one morphism
+from an open to itself, the identity. -/
+theorem map_apply_eq_self {FC : C → C → Type*} {CC : C → Type*}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] (F : Presheaf C T)
+    {V : Opens T} (i : op V ⟶ op V) (s : ToType (F.obj (op V))) : F.map i s = s := by
+  rw [Subsingleton.elim i (𝟙 _), F.map_id, ConcreteCategory.id_apply]
 
 /-- A family of sections over a directed family of opens is compatible as soon as any two of its
 sections are restrictions of a common section in the family. -/

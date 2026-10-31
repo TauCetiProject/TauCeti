@@ -109,10 +109,12 @@ theorem eq_one_of_discreteTopology [DiscreteTopology X] (a : LineBundleClass X) 
     rw [Scheme.Modules.nonvanishingLocus_map, Scheme.Modules.nonvanishingLocus_map,
       Scheme.Modules.nonvanishingLocus_trivializationGenerator] at hx
     exact (hx ▸ ⟨rfl, hxV x⟩ : x ∈ U x ⊓ L.obj.nonvanishingLocus s).2
-  have := TauCeti.SheafOfModules.isIso_unitHomEquiv_symm (L.compatibleSection s) fun W ↦ by
-    rw [PresheafOfModules.sections.eval, InvertibleSheaf.compatibleSection_val]
-    exact (Scheme.Modules.le_nonvanishingLocus_iff s (𝟙 ⊤)).mp h W.unop W.unop.leTop
-  exact mk_eq_one_iff.mpr ⟨(asIso (L.obj.unitHomEquiv.symm (L.compatibleSection s))).symm⟩
+  have := TauCeti.SheafOfModules.isIso_unitHomEquiv_symm (L.obj.sectionsEquivTop.symm s)
+    fun W ↦ by
+      rw [PresheafOfModules.sections.eval, Scheme.Modules.sectionsEquivTop_symm_val]
+      exact (Scheme.Modules.le_nonvanishingLocus_iff s (𝟙 ⊤)).mp h W.unop W.unop.leTop
+  exact mk_eq_one_iff.mpr
+    ⟨(asIso (L.obj.unitHomEquiv.symm (L.obj.sectionsEquivTop.symm s))).symm⟩
 
 /-- **The Picard group of a discrete scheme is trivial.** -/
 instance subsingleton_of_discreteTopology [DiscreteTopology X] :
