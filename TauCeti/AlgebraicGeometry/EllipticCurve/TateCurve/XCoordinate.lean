@@ -118,13 +118,10 @@ section Theta
 private noncomputable def thetaCoeff (q : Kˣ) (n : ℤ) : K :=
   (-1) ^ n * (q : K) ^ (n * (n - 1) / 2)
 
-private theorem hasSum_thetaCoeff [CompleteSpace K] (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    HasSum (fun n ↦ thetaCoeff q n * (u : K) ^ n) (tateTheta q u) :=
-  hasSum_tateTheta q u hq
-
 private theorem hasSum_thetaCoeff_one [CompleteSpace K] (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     HasSum (thetaCoeff q) 0 := by
-  simpa using hasSum_thetaCoeff q 1 hq
+  unfold thetaCoeff
+  simpa using hasSum_tateTheta q 1 hq
 
 private theorem thetaCoeff_add_one (q : Kˣ) (n : ℤ) :
     thetaCoeff q (n + 1) = -(q : K) ^ n * thetaCoeff q n := by
@@ -186,12 +183,12 @@ private theorem hasSum_thetaProdCoeff (q a u : Kˣ) (hq : ‖(q : K)‖ < 1) :
       (tateTheta q (a * u) * tateTheta q (a⁻¹ * u)) := by
   have hf : HasSum (fun n ↦ thetaCoeff q n * (a : K) ^ n * (u : K) ^ n)
       (tateTheta q (a * u)) := by
-    convert hasSum_thetaCoeff q (a * u) hq using 2 with n
-    rw [Units.val_mul, mul_zpow, mul_assoc]
+    convert hasSum_tateTheta q (a * u) hq using 2 with n
+    rw [Units.val_mul, mul_zpow, mul_assoc, thetaCoeff]
   have hg : HasSum (fun n ↦ thetaCoeff q n * ((a⁻¹ : Kˣ) : K) ^ n * (u : K) ^ n)
       (tateTheta q (a⁻¹ * u)) := by
-    convert hasSum_thetaCoeff q (a⁻¹ * u) hq using 2 with n
-    rw [Units.val_mul, mul_zpow, mul_assoc]
+    convert hasSum_tateTheta q (a⁻¹ * u) hq using 2 with n
+    rw [Units.val_mul, mul_zpow, mul_assoc, thetaCoeff]
   unfold thetaProdCoeff
   exact hasSum_laurent_mul (f := fun n ↦ thetaCoeff q n * (a : K) ^ n)
     (g := fun n ↦ thetaCoeff q n * ((a⁻¹ : Kˣ) : K) ^ n) u.ne_zero hf hg
