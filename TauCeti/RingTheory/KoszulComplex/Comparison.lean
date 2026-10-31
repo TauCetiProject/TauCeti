@@ -5,46 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.Ideal.Cotangent
-public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
-public import TauCeti.RingTheory.KoszulComplex.Basic
-import Mathlib.LinearAlgebra.Dual.Basis
-import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
+public import TauCeti.RingTheory.KoszulComplex.Basis
 import TauCeti.RingTheory.Ideal.Cotangent.LinearIndependent
-import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Maps out of a Koszul complex that are injective modulo an ideal
 
 Let `M` be a free module with basis `(bᵢ)` and let `φ : M → R` be a linear functional, with
-values `xᵢ = φ(bᵢ)`. In the exterior-power basis, the contraction by the coordinate `bᵢ*` deletes
-the index `i`, so the Koszul differential of `φ` is `d(z) = ∑ᵢ xᵢ ιᵢ(z)` with `ιᵢ` the
-contraction by `bᵢ*`. The family of all contractions `z ↦ (ιᵢ(z))ᵢ` is the linearized Koszul
-differential `⋀ⁿ⁺¹ M → ⋀ⁿ M ⊗ M`, and it is split injective coordinatewise: the coordinate of
-`z` at an index set `s ∋ i` is, up to sign, the coordinate of `ιᵢ(z)` at `s \ {i}`. Hence for
-every ideal `I`, an element `z` of positive degree lies in `I • ⋀ M` exactly when all its
-contractions `ιᵢ(z)` do.
-
-This gives the inductive step of the proof of Stacks, Lemma 10.110.3 (00OA). Suppose the `xᵢ`
-lie in `I` and are linearly independent in `I/I²`, and compare the Koszul complex with a complex
-whose differential `d'` lands in `I` times its target, as for a minimal free resolution over a
-local ring with `I` the maximal ideal. If a chain map `α` is injective modulo `I` in degree `n`,
-with free target, then it is injective modulo `I` in degree `n + 1`: if `α(z) ∈ I F'` then
-`α(d z) = d'(α z) ∈ I² F`, so `∑ xᵢ α(ιᵢ z) ∈ I² F`, whence every `α(ιᵢ z) ∈ I F`, every
-`ιᵢ z ∈ I ⋀ⁿ M`, and finally `z ∈ I ⋀ⁿ⁺¹ M`.
+values `xᵢ = φ(bᵢ)`. This file proves the inductive step of the proof of Stacks, Lemma 10.110.3
+(00OA). Suppose the `xᵢ` lie in an ideal `I` and are linearly independent in `I/I²`, and compare
+the Koszul complex with a complex whose differential `d'` lands in `I` times its target, as for a
+minimal free resolution over a local ring with `I` the maximal ideal. If a chain map `α` is
+injective modulo `I` in degree `n`, with free target, then it is injective modulo `I` in degree
+`n + 1`: if `α(z) ∈ I F'` then `α(d z) = d'(α z) ∈ I² F`, so `∑ xᵢ α(ιᵢ z) ∈ I² F`, where `ιᵢ` is
+the contraction by the coordinate `bᵢ*`, whence every `α(ιᵢ z) ∈ I F`, every `ιᵢ z ∈ I ⋀ⁿ M`,
+and finally `z ∈ I ⋀ⁿ⁺¹ M` by `Module.Basis.mem_smul_top_iff_forall_koszulDifferential_coord_mem`.
 
 ## Main results
 
-* `TauCeti.koszulDifferential_eq_sum`: the Koszul differential of `φ` is `∑ᵢ φ(bᵢ) ιᵢ`.
-* `TauCeti.koszulDifferential_coord_exteriorPower_basis_of_mem` and
-  `TauCeti.koszulDifferential_coord_exteriorPower_basis_of_notMem`: contraction by a coordinate
-  on the exterior-power basis.
-* `TauCeti.exteriorPower_basis_repr_koszulDifferential_coord`: the coordinates of a contraction.
-* `TauCeti.mem_smul_top_iff_forall_koszulDifferential_coord_mem`: an element of positive degree
-  lies in `I • ⋀ M` exactly when all its coordinate contractions do.
-* `TauCeti.comap_smul_top_le_of_comp_koszulDifferential`: a map compatible with the Koszul
+* `Module.Basis.comap_smul_top_le_of_comp_koszulDifferential`: a map compatible with the Koszul
   differential and a differential landing in `I` times its target is injective modulo `I` in
   degree `n + 1` if it is so in degree `n`.
 
@@ -59,108 +40,12 @@ noncomputable section
 
 universe u v
 
-open CliffordAlgebra
+open TauCeti
 
-namespace TauCeti
+namespace Module.Basis
 
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] {ι : Type*}
 
-/-- The Koszul differential of `φ` is the combination of the contractions by the coordinates of a
-finite basis, with coefficients `φ(bᵢ)`: `d(z) = ∑ᵢ φ(bᵢ) ιᵢ(z)`. -/
-theorem koszulDifferential_eq_sum [Fintype ι] (b : Module.Basis ι R M) (φ : Module.Dual R M)
-    (n : ℕ) (z : ⋀[R]^(n + 1) M) :
-    koszulDifferential φ n z = ∑ i, φ (b i) • koszulDifferential (b.coord i) n z := by
-  apply Subtype.ext
-  rw [coe_koszulDifferential_apply, Submodule.coe_sum]
-  conv_lhs => rw [← b.sum_dual_apply_smul_coord φ]
-  rw [map_sum, LinearMap.sum_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [map_smul, LinearMap.smul_apply, Submodule.coe_smul, coe_koszulDifferential_apply]
-
-section Basis
-
-variable [LinearOrder ι] (b : Module.Basis ι R M) {n : ℕ}
-
-/-- Contraction by the coordinate `bᵢ*` erases `i` from an exterior-basis vector whose index set
-contains it, with the shuffle sign that moves `i` to the front. -/
-theorem koszulDifferential_coord_exteriorPower_basis_of_mem {i : ι}
-    {s : Set.powersetCard ι (n + 1)} (h : i ∈ s.val) :
-    koszulDifferential (b.coord i) n (b.exteriorPower (n + 1) s) =
-      ExteriorAlgebra.basisEraseSign i s.val •
-        b.exteriorPower n (Set.powersetCard.ofCard (s := s.val.erase i)
-          (by simp [Finset.card_erase_of_mem h, Set.powersetCard.card_eq])) := by
-  apply Subtype.ext
-  rw [coe_koszulDifferential_apply, ← _root_.ExteriorAlgebra.basis_eq_coe_basis,
-    ExteriorAlgebra.contractLeft_coord_basis]
-  simp only [h, ↓reduceIte, Submodule.coe_smul_of_tower]
-  rw [← _root_.ExteriorAlgebra.basis_eq_coe_basis, Set.powersetCard.val_ofCard]
-
-/-- Contraction by the coordinate `bᵢ*` kills an exterior-basis vector whose index set does not
-contain `i`. -/
-theorem koszulDifferential_coord_exteriorPower_basis_of_notMem {i : ι}
-    {s : Set.powersetCard ι (n + 1)} (h : i ∉ s.val) :
-    koszulDifferential (b.coord i) n (b.exteriorPower (n + 1) s) = 0 := by
-  apply Subtype.ext
-  rw [coe_koszulDifferential_apply, ← _root_.ExteriorAlgebra.basis_eq_coe_basis,
-    ExteriorAlgebra.contractLeft_coord_basis]
-  simp [h]
-
-/-- The coordinates of a contraction: for `i ∈ s`, the coordinate of `ιᵢ(z)` at `s \ {i}` is the
-coordinate of `z` at `s`, up to the shuffle sign moving `i` to the front of `s`. -/
-theorem exteriorPower_basis_repr_koszulDifferential_coord (z : ⋀[R]^(n + 1) M)
-    {i : ι} {s : Set.powersetCard ι (n + 1)} (h : i ∈ s.val) :
-    (b.exteriorPower n).repr (koszulDifferential (b.coord i) n z)
-        (Set.powersetCard.ofCard (s := s.val.erase i)
-          (by simp [Finset.card_erase_of_mem h, Set.powersetCard.card_eq])) =
-      ExteriorAlgebra.basisEraseSign i s.val • (b.exteriorPower (n + 1)).repr z s := by
-  -- Both sides are linear in `z`; compare them on the exterior basis.
-  let t' : Set.powersetCard ι n := Set.powersetCard.ofCard (s := s.val.erase i)
-    (by simp [Finset.card_erase_of_mem h, Set.powersetCard.card_eq])
-  suffices hcoord : (b.exteriorPower n).coord t' ∘ₗ koszulDifferential (b.coord i) n =
-      ExteriorAlgebra.basisEraseSign i s.val • (b.exteriorPower (n + 1)).coord s by
-    simpa only [LinearMap.comp_apply, LinearMap.smul_apply, Module.Basis.coord_apply] using
-      LinearMap.congr_fun hcoord z
-  refine (b.exteriorPower (n + 1)).ext fun t ↦ ?_
-  simp only [LinearMap.comp_apply, LinearMap.smul_apply, Module.Basis.coord_apply,
-    Module.Basis.repr_self, Finsupp.single_apply]
-  by_cases hit : i ∈ t.val
-  · rw [koszulDifferential_coord_exteriorPower_basis_of_mem b hit, map_zsmul_unit,
-      Module.Basis.repr_self, Finsupp.smul_apply, Finsupp.single_apply]
-    -- Erasing `i` is injective on the index sets containing `i`.
-    have heq : (Set.powersetCard.ofCard (s := t.val.erase i)
-        (by simp [Finset.card_erase_of_mem hit, Set.powersetCard.card_eq]) = t') ↔ t = s := by
-      simp only [Subtype.ext_iff, t', Set.powersetCard.val_ofCard]
-      exact ⟨fun he ↦ Finset.erase_injOn' i hit h he, fun he ↦ by rw [he]⟩
-    by_cases hts : t = s
-    · subst hts
-      simp [t']
-    · simp [heq.not.mpr hts, hts]
-  · have hts : t ≠ s := fun hts ↦ hit (hts ▸ h)
-    rw [koszulDifferential_coord_exteriorPower_basis_of_notMem b hit]
-    simp [hts]
-
-end Basis
-
-/-- **The linearized Koszul differential is injective modulo every ideal.** For a module with a
-basis `(bᵢ)`, an element `z` of positive exterior degree lies in `I • ⋀ M` exactly when its
-contractions by all coordinates `bᵢ*` do. -/
-theorem mem_smul_top_iff_forall_koszulDifferential_coord_mem (b : Module.Basis ι R M)
-    (I : Ideal R) {n : ℕ} (z : ⋀[R]^(n + 1) M) :
-    z ∈ I • (⊤ : Submodule R (⋀[R]^(n + 1) M)) ↔
-      ∀ i, koszulDifferential (b.coord i) n z ∈ I • (⊤ : Submodule R (⋀[R]^n M)) := by
-  refine ⟨fun hz i ↦ Submodule.smul_top_le_comap_smul_top I _ hz, fun h ↦ ?_⟩
-  -- The exterior-power basis needs an order on the indices; any one will do.
-  let : LinearOrder ι := IsWellOrder.linearOrder WellOrderingRel
-  rw [(b.exteriorPower (n + 1)).mem_smul_top_iff]
-  intro s
-  obtain ⟨i, hi⟩ : s.val.Nonempty := Finset.card_pos.mp (by simp [Set.powersetCard.card_eq])
-  have hmem := (b.exteriorPower n).mem_smul_top_iff.mp (h i)
-    (Set.powersetCard.ofCard (s := s.val.erase i) (by simp [Finset.card_erase_of_mem hi,
-      Set.powersetCard.card_eq]))
-  rw [exteriorPower_basis_repr_koszulDifferential_coord b z hi] at hmem
-  -- The sign is a unit of `ℤ`, so it can be cancelled.
-  have hsign := I.toAddSubgroup.zsmul_mem hmem (ExteriorAlgebra.basisEraseSign i s.val : ℤ)
-  rwa [← Units.smul_def, smul_smul, Int.units_mul_self, one_smul] at hsign
 
 /-- **The inductive step of Stacks 00OA.** Let `φ(bᵢ) ∈ I` be linearly independent in `I/I²`,
 let `d : F' → F` be a map into a free module with image in `I F`, and let `α`, `α'` be maps out of
@@ -184,10 +69,10 @@ theorem comap_smul_top_le_of_comp_koszulDifferential [Finite ι] (b : Module.Bas
     rw [Submodule.map_smul'', Submodule.map_top] at this
     rw [pow_two, Submodule.mul_smul]
     exact smul_mono_right I hd this
-  rw [← LinearMap.comp_apply, hcomm, LinearMap.comp_apply, koszulDifferential_eq_sum b,
+  rw [← LinearMap.comp_apply, hcomm, LinearMap.comp_apply, b.koszulDifferential_eq_sum,
     map_sum] at hd'
   simp only [map_smul] at hd'
-  refine (mem_smul_top_iff_forall_koszulDifferential_coord_mem b I z).mpr fun i ↦ hα ?_
+  refine (b.mem_smul_top_iff_forall_koszulDifferential_coord_mem I z).mpr fun i ↦ hα ?_
   exact I.mem_smul_top_of_sum_smul_mem_sq_smul_top hli hd' i
 
-end TauCeti
+end Module.Basis
