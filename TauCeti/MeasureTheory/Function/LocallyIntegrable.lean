@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.Tactic.Linarith
 import Mathlib.Topology.Separation.Regular
@@ -20,7 +21,9 @@ localized to relatively compact subdomains.
 
 For a right-translation-invariant measure on an additive group with continuous addition,
 local integrability is preserved by translating a function onto any set whose translate stays
-inside the original domain.
+inside the original domain. Likewise, for an additive Haar measure on a finite-dimensional real
+vector space, it is preserved by a nonzero dilation onto any set whose dilate stays inside the
+original domain.
 
 On a space with continuous addition and zero, a locally integrable function on an open set agrees
 with a globally integrable one on any compact subset and on all sufficiently small translates of it.
@@ -57,6 +60,8 @@ everywhere there with a function that is locally integrable on the whole space a
 
 * `MeasureTheory.LocallyIntegrableOn.comp_add_right_of_mapsTo`: translation onto a smaller set
   preserves local integrability.
+* `MeasureTheory.LocallyIntegrableOn.comp_smul_of_mapsTo`: a nonzero dilation onto a smaller set
+  preserves local integrability for an additive Haar measure.
 * `MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`: localization to
   a compact set and its small translates by a globally integrable function.
 * `TauCeti.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by relatively
@@ -67,6 +72,8 @@ everywhere there with a function that is locally integrable on the whole space a
   extension by zero of a locally integrable function supported in a null-measurable compact subset.
 * `MeasureTheory.LocallyIntegrable.inner_const`: pairing with a fixed vector preserves local
   integrability.
+* `MeasureTheory.LocallyIntegrable.indicator₀`: restriction to a null-measurable set preserves
+  local integrability.
 * `MeasureTheory.Lp.locallyIntegrableOn`: an `Lᵖ` function on a set, with `1 ≤ p`, is locally
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
@@ -82,6 +89,7 @@ Mathlib's `LocallyIntegrableOn.integrableOn_compact_subset`, which gives integra
 compact support.
 Compact localization adapts Mathlib's `LocallyIntegrable.integrableOn_nhds_isCompact` to
 an open domain and uses `compact_open_separated_add_right` for the translation neighborhood.
+Dilation rests on Mathlib's `map_addHaar_smul`, which computes the image of a Haar measure.
 -/
 
 public section
@@ -133,6 +141,28 @@ theorem LocallyIntegrableOn.comp_add_right_of_mapsTo
   · simpa only [Function.comp_def] using
       ((measurePreserving_add_right mu h).integrableOn_comp_preimage
         (Homeomorph.addRight h).measurableEmbedding).2 hus
+
+end MeasureTheory
+
+namespace MeasureTheory
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [TopologicalSpace F] [ESeminormedAddMonoid F]
+  {μ : Measure E} [μ.IsAddHaarMeasure] {Ω V : Set E} {u : E → F} {R : ℝ}
+
+/-- Local integrability for an additive Haar measure is preserved by a nonzero dilation whose
+image stays in the original domain. -/
+theorem LocallyIntegrableOn.comp_smul_of_mapsTo (hu : LocallyIntegrableOn u Ω μ) (hR : R ≠ 0)
+    (hVΩ : MapsTo (R • ·) V Ω) :
+    LocallyIntegrableOn (fun x => u (R • x)) V μ := by
+  intro x hx
+  obtain ⟨s, hs, hus⟩ := hu (R • x) (hVΩ hx)
+  refine ⟨(R • ·) ⁻¹' s, (continuous_const_smul R).continuousWithinAt.tendsto_nhdsWithin hVΩ hs,
+    ?_⟩
+  have hmap : IntegrableOn u s (μ.map (R • ·)) := by
+    rw [Measure.map_addHaar_smul μ hR, IntegrableOn, Measure.restrict_smul]
+    exact hus.integrable.smul_measure ENNReal.ofReal_ne_top
+  exact (Homeomorph.smulOfNeZero R hR).measurableEmbedding.integrableOn_map_iff.1 hmap
 
 end MeasureTheory
 
@@ -300,6 +330,14 @@ theorem inner_const (hf : LocallyIntegrable f μ) (c : E) :
   simpa only [Function.comp_def, innerSLFlip_apply_apply] using
     locallyIntegrableOn_univ.1
       ((innerSLFlip 𝕜 c).locallyIntegrableOn_comp (hf.locallyIntegrableOn univ))
+
+/-- Restricting a locally integrable function to a null-measurable set preserves local
+integrability, the analogue of Mathlib's `MeasureTheory.Integrable.indicator₀`. -/
+theorem indicator₀ {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] {g : X → F}
+    (hg : LocallyIntegrable g μ) {s : Set X} (hs : NullMeasurableSet s μ) :
+    LocallyIntegrable (s.indicator g) μ :=
+  (hg.indicator (measurableSet_toMeasurable μ s)).congr
+    (indicator_ae_eq_of_ae_eq_set hs.toMeasurable_ae_eq)
 
 end MeasureTheory.LocallyIntegrable
 
