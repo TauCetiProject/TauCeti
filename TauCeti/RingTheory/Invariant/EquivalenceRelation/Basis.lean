@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Basic
+public import TauCeti.RingTheory.TensorProduct.Free
 
 /-!
 # Equivalence relations with a basis coming from the base
@@ -165,15 +166,8 @@ noncomputable def tensorProductEquiv : A ⊗[(algebraMap A B).eqLocus t] A ≃�
     (AlgHom.mk t fun c ↦ by
       simpa [IsScalarTower.algebraMap_apply _ A B, Algebra.algebraMap_ofSubsemiring_apply] using
         (mem_eqLocus.mp c.2).symm) fun _ _ ↦ .all _ _
-  .ofBijective f <| by
-    -- `f` carries the basis `1 ⊗ aᵢ` of `A ⊗[C] A` over `A` to the basis `t aᵢ` of `B`
-    let bA := Algebra.TensorProduct.basis A (h.basis b hb)
-    have hf : f.toLinearMap = (bA.equiv b (Equiv.refl ι)).toLinearMap :=
-      bA.ext fun i ↦ by
-        rw [LinearEquiv.coe_coe, Module.Basis.equiv_apply]
-        simp [bA, f, hb]
-    rw [← AlgHom.coe_toLinearMap, hf]
-    exact (bA.equiv b (Equiv.refl ι)).bijective
+  -- `f` carries the basis `1 ⊗ aᵢ` of `A ⊗[C] A` over `A` to the basis `t aᵢ` of `B`
+  .ofBijective f <| lift_bijective_of_basis _ (h.basis b hb) b (by simp [hb])
 
 /-- The isomorphism `A ⊗[C] A ≃ₐ[A] B` sends `x ⊗ y` to `s x * t y`. -/
 @[simp]

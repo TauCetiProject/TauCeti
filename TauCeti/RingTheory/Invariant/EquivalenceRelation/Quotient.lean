@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.RingTheory.Flat.Localization
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Local
-public import TauCeti.RingTheory.TensorProduct.Free
 
 /-!
 # The quotient of an affine scheme by a finite free equivalence relation
