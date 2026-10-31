@@ -109,6 +109,12 @@ theorem continuous_modularCharacter : Continuous (Measure.modularCharacter : G �
   exact continuous_induced_rng.mpr <| (hc.div_const _).congr fun g =>
     (modularCharacter_eq_integral_div f.continuous hfc hfi g).symm
 
+/-- The real powers `c(x)^r` and `c(x⁻¹)^r` of the modular character multiply to one. -/
+theorem modularCharacter_rpow_mul_inv (r : ℝ) (x : G) :
+    (Measure.modularCharacter x : ℝ) ^ r * (Measure.modularCharacter x⁻¹ : ℝ) ^ r = 1 := by
+  rw [← Real.mul_rpow (by positivity) (by positivity), ← NNReal.coe_mul, ← map_mul,
+    mul_inv_cancel, map_one, NNReal.coe_one, Real.one_rpow]
+
 
 section Integral
 

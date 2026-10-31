@@ -78,13 +78,6 @@ variable {G E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
   [μ.IsHaarMeasure] [μ.Regular] [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞}
 
-omit [MeasurableSpace G] [BorelSpace G] in
-/-- The weights `c(x)^(1/p)` and `c(x⁻¹)^(1/p)` of the modular inversion multiply to one. -/
-private theorem modularCharacter_rpow_mul_inv (r : ℝ) (x : G) :
-    (modularCharacter x : ℝ) ^ r * (modularCharacter x⁻¹ : ℝ) ^ r = 1 := by
-  rw [← Real.mul_rpow (by positivity) (by positivity), ← NNReal.coe_mul, ← map_mul,
-    mul_inv_cancel, map_one, NNReal.coe_one, Real.one_rpow]
-
 /-- The weighted inversion `x ↦ c(x)^r • f x⁻¹` of an almost everywhere strongly measurable
 function is almost everywhere strongly measurable. -/
 theorem AEStronglyMeasurable.modularCharacter_rpow_smul_comp_inv {f : G → E}
@@ -211,28 +204,23 @@ theorem modularInversion_mul_self :
     modularInversion μ p 𝕜 * modularInversion μ p 𝕜 = (1 : Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ) :=
   LinearIsometryEquiv.ext modularInversion_modularInversion
 
-private theorem modularInversion_mul_modularInversion_mul (e : Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ) :
-    modularInversion μ p 𝕜 * (modularInversion μ p 𝕜 * e) = e := by
-  rw [← mul_assoc, modularInversion_mul_self, one_mul]
-
 variable (μ p 𝕜)
 
 /-- Right translation `g ↦ R_g` on `Lp E p μ` for a regular Haar measure `μ`, where
 `(R_g f)(x) = c(g⁻¹)^(1/p) • f (x * g)`, `c` is the modular character and `1/∞ = 0`, as a group
 homomorphism to linear isometry equivalences. It is the conjugate `J L_g J` of left translation
 by the modular inversion `J`. -/
-def rightTranslation : G →* (Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ) where
-  toFun g := modularInversion μ p 𝕜 * leftTranslation μ p 𝕜 g * modularInversion μ p 𝕜
-  map_one' := by simp
-  map_mul' g h := by simp only [map_mul, mul_assoc, modularInversion_mul_modularInversion_mul]
+def rightTranslation : G →* (Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ) :=
+  (MulAut.conj (modularInversion μ p 𝕜)).toMonoidHom.comp (leftTranslation μ p 𝕜)
 
 variable {μ p 𝕜}
 
 /-- Right translation is left translation conjugated by the modular inversion. -/
 theorem rightTranslation_apply (g : G) (f : Lp E p μ) :
     rightTranslation μ p 𝕜 g f =
-      modularInversion μ p 𝕜 (leftTranslation μ p 𝕜 g (modularInversion μ p 𝕜 f)) :=
-  (rfl)
+      modularInversion μ p 𝕜 (leftTranslation μ p 𝕜 g (modularInversion μ p 𝕜 f)) := by
+  change modularInversion μ p 𝕜 (leftTranslation μ p 𝕜 g ((modularInversion μ p 𝕜).symm f)) = _
+  rw [modularInversion_symm]
 
 /-- The right translate `R_g f` is almost everywhere the function
 `x ↦ c(g⁻¹)^(1/p) • f (x * g)`. -/
