@@ -134,6 +134,22 @@ lemma map_ne_zero_iff (J : AlmostComplexStructure V) {v : V} :
     J v ≠ 0 ↔ v ≠ 0 :=
   not_congr J.map_eq_zero_iff
 
+/-- A nonzero vector `v` and its image `J v` are linearly independent, since `J` has no real
+eigenvalue. -/
+lemma linearIndependent_pair (J : AlmostComplexStructure V) {v : V} (hv : v ≠ 0) :
+    LinearIndependent ℝ ![v, J v] := by
+  refine LinearIndependent.pair_iff.2 fun s t hst ↦ ?_
+  -- Applying `J` to `s v + t J v = 0` gives `s J v - t v = 0`.
+  have hJ : s • J v - t • v = 0 := by
+    have h := congrArg J.toLinearMap hst
+    rw [map_add, map_smul, map_smul] at h
+    simpa [sub_eq_add_neg, add_comm] using h
+  have h : (s ^ 2 + t ^ 2) • v = 0 :=
+    calc (s ^ 2 + t ^ 2) • v = s • (s • v + t • J v) - t • (s • J v - t • v) := by module
+      _ = 0 := by rw [hst, hJ, smul_zero, smul_zero, sub_zero]
+  have hst' : s ^ 2 + t ^ 2 = 0 := (smul_eq_zero.1 h).resolve_right hv
+  constructor <;> nlinarith [sq_nonneg s, sq_nonneg t]
+
 /-- Two almost complex structures agreeing pointwise are equal. -/
 @[ext]
 lemma ext {J K : AlmostComplexStructure V} (h : ∀ v, J v = K v) : J = K := by
