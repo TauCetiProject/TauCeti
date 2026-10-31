@@ -11,6 +11,7 @@ import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
 import TauCeti.Data.Fintype.BigOperators
 import TauCeti.Order.Hom.PowersetCard
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
@@ -190,17 +191,6 @@ private theorem triple_avoids
   omega
 
 omit [DecidableEq κ] in
-/-- Realizing the pair colors of a route forces distinct values at distinct pattern vertices. -/
-private theorem injective_of_routeHolds
-    {s : Finset {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}}
-    {g : Fin F.k → V} (hg : H.RouteHolds ψ s g) : Injective g := by
-  intro i j hij
-  by_contra hne
-  rcases lt_or_gt_of_ne hne with h | h
-  · simpa [hij] using hg.1 ⟨(i, j), h⟩
-  · simpa [hij] using hg.1 ⟨(j, i), h⟩
-
-omit [DecidableEq κ] in
 /-- Away from the triples of `s`, the conditions of `RouteHolds` split into those avoiding each
 vertex of `t`. -/
 private theorem routeHolds_iff_routeHoldsAway
@@ -286,15 +276,13 @@ private theorem card_filter_product_eq_card_filter_slice
           ∃ hq : Injective ![q.1, q.2.1, q.2.2], Y ⟨_, hq⟩} =
       #{w ∈ (H.slice ψ s t h).support | Y w} := by
   symm
-  refine card_nbij (fun w ↦ (w.1 0, w.1 1, w.1 2)) (fun w hw ↦ ?_) (fun w _ w' _ hww' ↦ ?_)
-    (fun q hq ↦ ?_)
+  refine card_nbij (fun w ↦ (w.1 0, w.1 1, w.1 2)) (fun w hw ↦ ?_)
+    fin_three_coords_injective.injOn (fun q hq ↦ ?_)
   · obtain ⟨hw, hY⟩ := mem_filter.1 hw
     obtain ⟨⟨h₀, h₁, h₂⟩, hR⟩ := (mem_slice_support ht h w).1 hw
-    have e : ![w.1 0, w.1 1, w.1 2] = w.1 := funext fun m ↦ by fin_cases m <;> rfl
-    refine mem_filter.2 ⟨mem_product.2 ⟨h₀, mem_product.2 ⟨h₁, h₂⟩⟩, hR, e ▸ w.2, ?_⟩
-    convert hY
-  · simp only [Prod.mk.injEq] at hww'
-    exact Subtype.ext <| funext fun m ↦ by fin_cases m <;> simp [hww'.1, hww'.2.1, hww'.2.2]
+    have e : ![w.1 0, w.1 1, w.1 2] = w.1 := FinVec.etaExpand_eq w.1
+    refine mem_filter.2 ⟨mem_product.2 ⟨h₀, mem_product.2 ⟨h₁, h₂⟩⟩, hR, by rw [e]; exact w.2, ?_⟩
+    exact (congrArg Y (Subtype.ext e)).mpr hY
   · obtain ⟨hq, hR, hinj, hY⟩ := mem_filter.1 (mem_coe.1 hq)
     obtain ⟨h₀, h₁, h₂⟩ : q.1 ∈ _ ∧ q.2.1 ∈ _ ∧ q.2.2 ∈ _ := by simpa using hq
     exact ⟨⟨_, hinj⟩, mem_filter.2 ⟨(mem_slice_support ht h _).2 ⟨⟨h₀, h₁, h₂⟩, hR⟩, hY⟩, rfl⟩
@@ -337,7 +325,7 @@ private theorem sum_sum_sum_update_eq
           ∃ _ : Injective ![q.1, q.2.1, q.2.2], True} := by
     refine filter_congr fun q _ ↦ ⟨fun hq ↦ ⟨hq, ?_, trivial⟩, And.left⟩
     rw [← htri]
-    exact injective_tripleAt (injective_of_routeHolds hq) t
+    exact injective_tripleAt (injective_of_forall_colorOfPair_eq_some hq.1) t
   have hRT : {q ∈ A t.1.1 ×ˢ A t.1.2.1 ×ˢ A t.1.2.2 |
       H.RouteHolds ψ s (update (update (update h t.1.1 q.1) t.1.2.1 q.2.1) t.1.2.2 q.2.2) ∧
         H.TopHolds F (update (update (update h t.1.1 q.1) t.1.2.1 q.2.1) t.1.2.2 q.2.2) t} =
@@ -437,7 +425,7 @@ private theorem placedInducedCopyCount_eq_card_filter :
     exact (topHolds_iff_of_injective f.injective t).2
       ((isInducedCopy_iff_forall_lt H F f).1 hcopy _ _ _ t.2.1 t.2.2)
   · obtain ⟨hcell, hR⟩ := mem_filter.1 hg
-    let f : Fin F.k ↪ V := ⟨g, injective_of_routeHolds hR⟩
+    let f : Fin F.k ↪ V := ⟨g, injective_of_forall_colorOfPair_eq_some hR.1⟩
     refine ⟨f, mem_placedInducedCopies.2 ⟨(isInducedCopy_iff_forall_lt H F f).2
       fun i j l hij hjl ↦ ?_, Fintype.mem_piFinset.1 hcell, hR.1⟩, rfl⟩
     exact (topHolds_iff_of_injective f.injective ⟨(i, j, l), hij, hjl⟩).1 (hR.2 _ (mem_univ _))
@@ -451,6 +439,15 @@ private theorem lowerRouteCountAt_eq_card_filter :
   rw [lowerRouteCountAt_def, lowerRouteMaps_eq_filter_piFinset]
   congr 1
   exact filter_congr fun g _ ↦ by simp [RouteHolds]
+
+/-- Replacing `b` by `c` inside `|a - d * b|` costs at most `|b - c|` when `0 ≤ d ≤ 1`. -/
+private theorem abs_sub_mul_le_of_le_one {a b c d : ℝ} (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1) :
+    |a - d * c| ≤ |a - d * b| + |b - c| :=
+  calc |a - d * c| = |(a - d * b) + d * (b - c)| := by congr 1; ring
+    _ ≤ |a - d * b| + |d * (b - c)| := abs_add_le _ _
+    _ ≤ |a - d * b| + |b - c| := by
+      rw [abs_mul, abs_of_nonneg hd₀]
+      exact add_le_add_right (mul_le_of_le_one_left (abs_nonneg _) hd₁) _
 
 open Classical in
 /-- **Telescoping.** Replacing the top-color indicators of the triples of `s` by their relative
@@ -485,11 +482,11 @@ private theorem abs_card_filter_routeHolds_sub_le
     set q := ∏ t ∈ s, (H.relativeDensity (F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2)
       (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) : ℝ)
     -- Replace the indicator of `t` by `d`, then the remaining indicators by induction.
-    calc |a - d * q * n₀| = |(a - d * b) + d * (b - q * n₀)| := by ring_nf
-      _ ≤ |a - d * b| + |d * (b - q * n₀)| := abs_add_le _ _
-      _ ≤ η * ∏ m, (#(φ.vertexCell m) : ℝ) + 1 * (#s * η * ∏ m, (#(φ.vertexCell m) : ℝ)) := by
-        rw [abs_mul, abs_of_nonneg hd₀]
-        gcongr
+    calc |a - d * q * n₀| ≤ |a - d * b| + |b - q * n₀| := by
+          rw [mul_assoc]
+          exact abs_sub_mul_le_of_le_one hd₀ hd₁
+      _ ≤ η * ∏ m, (#(φ.vertexCell m) : ℝ) + #s * η * ∏ m, (#(φ.vertexCell m) : ℝ) :=
+        add_le_add hstep hih
       _ = _ := by push_cast; ring
 
 /-- **Local induced counting.** Let `φ` be a transversal placement of a pattern `F` on `k`
@@ -525,12 +522,9 @@ theorem abs_placedInducedCopyCount_sub_expectedInducedCountAt_le (hφ : φ.Trans
   set L : ℝ := ((lowerRouteCountAt φ ψ : ℕ) : ℝ)
   set E := expectedLowerRouteCountAt φ ψ
   -- Compare with the lower-route count, first replacing the top colors, then the pair colors.
-  calc |N - D * E| = |(N - D * L) + D * (L - E)| := by ring_nf
-    _ ≤ |N - D * L| + |D * (L - E)| := abs_add_le _ _
+  calc |N - D * E| ≤ |N - D * L| + |L - E| := abs_sub_mul_le_of_le_one hD₀ hD₁
     _ ≤ F.k.choose 3 * η * ∏ i, (#(φ.vertexCell i) : ℝ) +
-        1 * (F.k.choose 2 * ε * ∏ i, (#(φ.vertexCell i) : ℝ)) := by
-      rw [abs_mul, abs_of_nonneg hD₀]
-      gcongr
+        F.k.choose 2 * ε * ∏ i, (#(φ.vertexCell i) : ℝ) := add_le_add htop hpair
     _ = _ := by ring
 
 end Colored3Graph

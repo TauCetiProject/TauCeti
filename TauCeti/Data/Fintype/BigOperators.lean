@@ -117,33 +117,24 @@ theorem sum_piFinset_eq_sum_filter_sum_sum_sum_update {ι κ M : Type*} [Fintype
     ∑ g ∈ piFinset s, F g =
       ∑ h ∈ piFinset s with h i = a ∧ h j = b ∧ h l = c, ∑ x ∈ s i, ∑ y ∈ s j, ∑ z ∈ s l,
         F (Function.update (Function.update (Function.update h i x) j y) l z) := by
-  simp_rw [← sum_product']
-  refine sum_nbij'
-    (fun g ↦ (Function.update (Function.update (Function.update g i a) j b) l c, g i, g j, g l))
-    (fun q ↦ Function.update (Function.update (Function.update q.1 i q.2.1) j q.2.2.1) l q.2.2.2)
-    ?_ ?_ ?_ ?_ ?_
-  · intro g hg
-    simp only [mem_piFinset, mem_product, mem_filter] at hg ⊢
-    refine ⟨⟨fun m ↦ ?_, by simp [hij, hil, hjl]⟩, hg i, hg j, hg l⟩
-    simp only [Function.update_apply]
-    split_ifs <;> simp_all
-  · rintro ⟨h, x, y, z⟩ hq
-    simp only [mem_piFinset, mem_product, mem_filter] at hq ⊢
-    intro m
-    simp only [Function.update_apply]
-    split_ifs <;> simp_all
-  · intro g _
-    ext m
-    simp only [Function.update_apply]
-    split_ifs <;> simp_all
-  · rintro ⟨h, x, y, z⟩ hq
-    simp only [mem_piFinset, mem_product, mem_filter] at hq
-    obtain ⟨⟨-, rfl, rfl, rfl⟩, -, -, -⟩ := hq
-    ext m <;> simp only [Function.update_apply] <;> split_ifs <;> simp_all
-  · intro g _
-    congr 1
-    ext m
-    simp only [Function.update_apply]
-    split_ifs <;> simp_all
+  -- Split at `i` and `j`, then split the fibre, a box with singleton cells at `i` and `j`, at
+  -- `i` and `l`.
+  have hfib : {h ∈ piFinset s | h i = a ∧ h j = b} =
+      piFinset (Function.update (Function.update s i {a}) j {b}) := by
+    rw [piFinset_update_singleton_eq_filter_piFinset_eq _ _ (by simpa [hij.symm] using hb),
+      piFinset_update_singleton_eq_filter_piFinset_eq _ _ ha, filter_filter]
+  rw [sum_piFinset_eq_sum_filter_sum_sum_update hij s ha hb, hfib,
+    sum_piFinset_eq_sum_filter_sum_sum_update hil _ (a := a) (b := c) (by simp [hij])
+      (by simpa [hil.symm, hjl.symm]),
+    ← hfib, filter_filter]
+  refine Finset.sum_congr (filter_congr fun h _ ↦ by tauto) fun h hh ↦ ?_
+  obtain ⟨-, ⟨rfl, -⟩, -⟩ := mem_filter.1 hh
+  simp only [Function.update_self, Function.update_of_ne hij, Function.update_of_ne hil.symm,
+    Function.update_of_ne hjl.symm, sum_singleton, Function.update_eq_self]
+  rw [sum_comm]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [sum_comm]
+  refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
+  rw [Function.update_comm hil.symm, Function.update_comm hjl.symm]
 
 end Fintype

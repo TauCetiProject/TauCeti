@@ -103,6 +103,19 @@ theorem expectedLowerRouteCountAt_nonneg (φ : PatternPlacement3 C F)
   exact mul_nonneg (prod_nonneg fun _ _ ↦ Nat.cast_nonneg _)
     (prod_nonneg fun _ _ ↦ by exact_mod_cast pairColorDensity_nonneg _ _ _ _)
 
+/-- A map realizing the pair colors of a route is injective: realizing a pair color forces
+distinct values. -/
+theorem injective_of_forall_colorOfPair_eq_some {φ : PatternPlacement3 C F}
+    {ψ : PairColorPlacement3 φ} {g : Fin F.k → V}
+    (h : ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
+      C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p)) :
+    Injective g := by
+  intro i j hij
+  by_contra hne
+  rcases lt_or_gt_of_ne hne with hlt | hlt
+  · simpa [hij] using h ⟨(i, j), hlt⟩
+  · simpa [hij] using h ⟨(j, i), hlt⟩
+
 /-- The maps realizing a lower route are the maps into the box of assigned cells realizing its
 pair colors: realizing a pair color forces distinct values, so these maps are injective. -/
 theorem lowerRouteMaps_eq_filter_piFinset (φ : PatternPlacement3 C F)
@@ -112,12 +125,8 @@ theorem lowerRouteMaps_eq_filter_piFinset (φ : PatternPlacement3 C F)
         C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p)} := by
   ext g
   simp only [mem_lowerRouteMaps, mem_filter, Fintype.mem_piFinset]
-  refine ⟨fun ⟨_, hcell, hcolor⟩ ↦ ⟨hcell, hcolor⟩, fun ⟨hcell, hcolor⟩ ↦ ⟨?_, hcell, hcolor⟩⟩
-  intro i j hij
-  by_contra hne
-  rcases lt_or_gt_of_ne hne with h | h
-  · simpa [hij] using hcolor ⟨(i, j), h⟩
-  · simpa [hij] using hcolor ⟨(j, i), h⟩
+  exact ⟨fun ⟨_, hcell, hcolor⟩ ↦ ⟨hcell, hcolor⟩, fun ⟨hcell, hcolor⟩ ↦
+    ⟨injective_of_forall_colorOfPair_eq_some hcolor, hcell, hcolor⟩⟩
 
 /-- **Lower-route counting.** At a transversal placement of a pattern on `k` vertices into an
 `ε`-regular lower skeleton, the number of injective maps realizing a route differs from its
