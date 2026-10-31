@@ -26,6 +26,7 @@ and `Γ(1/2) = √π` then give the classical closed form `ϖ = Γ(1/4)² / (2 �
 
 ## Main results
 
+* `TauCeti.Real.lemniscateConstant_def` — the defining equation of `ϖ` as an integral;
 * `TauCeti.Real.intervalIntegrable_one_sub_pow_four_rpow` — the defining integrand is interval
   integrable on `[0, 1]`, so the integral is a genuine (improper) integral and not a junk value;
 * `TauCeti.Real.lemniscateConstant_eq_beta` — `ϖ = Β(1/4, 1/2) / 2`;
@@ -48,6 +49,10 @@ namespace TauCeti.Real
 noncomputable def lemniscateConstant : ℝ :=
   2 * ∫ t in (0 : ℝ)..1, (1 - t ^ 4) ^ (-1 / 2 : ℝ)
 
+/-- The defining equation `ϖ = 2 ∫₀¹ (1 - t⁴)^(-1/2) dt` of the lemniscate constant. -/
+theorem lemniscateConstant_def :
+    lemniscateConstant = 2 * ∫ t in (0 : ℝ)..1, (1 - t ^ 4) ^ (-1 / 2 : ℝ) := (rfl)
+
 /-- The integrand `(1 - t⁴)^(-1/2)` is the case `p = 4`, `b = 1/2` of the integrand
 `(1 - t ^ p) ^ (b - 1)` of the power-substituted beta integral. -/
 private lemma one_sub_pow_four_rpow_eq (t : ℝ) :
@@ -63,7 +68,7 @@ theorem intervalIntegrable_one_sub_pow_four_rpow :
 
 /-- The lemniscate constant is half the beta value `Β(1/4, 1/2)`. -/
 theorem lemniscateConstant_eq_beta : lemniscateConstant = beta (1 / 4) (1 / 2) / 2 := by
-  rw [lemniscateConstant]
+  rw [lemniscateConstant_def]
   simp_rw [one_sub_pow_four_rpow_eq]
   rw [integral_one_sub_rpow_rpow (by norm_num) (by norm_num)]
   norm_num
