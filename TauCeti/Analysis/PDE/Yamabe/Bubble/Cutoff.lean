@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.SobolevQuotient
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Decay
 
@@ -253,15 +254,6 @@ theorem tendsto_conformalCoefficient_mul_integral_norm_fderiv_cutoff_bubble_sq
 
 /-! ### The Sobolev quotient -/
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The Yamabe constant of the round sphere as the quotient of the conformal energy
-`n (n - 1) |Sⁿ|` of a bubble by the power `2 / pₙ` of its critical mass `|Sⁿ|`. -/
-private lemma sphereYamabeConstant_eq_div {n : ℕ} (hn : n ≠ 0) :
-    sphereYamabeConstant n =
-      (n : ℝ) * (n - 1) * roundSphereVolume n / roundSphereVolume n ^ (2 / criticalExponent n) := by
-  rw [eq_div_iff (Real.rpow_pos_of_pos (roundSphereVolume_pos n) _).ne', two_div_criticalExponent]
-  exact sphereYamabeConstant_mul_roundSphereVolume_rpow hn
-
 /-- The actual Euclidean Sobolev quotient of a fixed compact cutoff of the concentrating bubble
 converges to the Yamabe constant of the round sphere. The cutoff only needs to be `C¹`. -/
 theorem tendsto_cutoff_bubble_sobolev_quotient (hn : 2 < finrank ℝ E)
@@ -283,31 +275,6 @@ theorem tendsto_cutoff_bubble_sobolev_quotient (hn : 2 < finrank ℝ E)
   have hlim := henergy.div hden (Real.rpow_pos_of_pos (roundSphereVolume_pos _) _).ne'
   simpa only [Pi.div_def, ← sphereYamabeConstant_eq_div (show finrank ℝ E ≠ 0 by omega)]
     using hlim
-
-/-- A perturbation estimate for quotients: if `(1 - δ) b ≤ a ≤ b` with `δ ≤ 1 / 2` and
-`|x - y| ≤ e`, then `|x / a - y / b| ≤ 2 (e + y δ) / b`. -/
-private lemma abs_div_sub_div_le {x y a b e δ : ℝ} (hb : 0 < b) (hy : 0 ≤ y) (hδ : δ ≤ 1 / 2)
-    (hab : (1 - δ) * b ≤ a) (hab' : a ≤ b) (hxy : |x - y| ≤ e) :
-    |x / a - y / b| ≤ 2 * (e + y * δ) / b := by
-  have hδ0 : 0 ≤ δ := by nlinarith
-  have ha : b ≤ 2 * a := by nlinarith
-  have he : 0 ≤ e + y * δ := add_nonneg ((abs_nonneg _).trans hxy) (mul_nonneg hy hδ0)
-  have h1 : |x * b - a * y| ≤ (e + y * δ) * b := by
-    calc
-      |x * b - a * y| = |(x - y) * b + y * (b - a)| := by ring_nf
-      _ ≤ |(x - y) * b| + |y * (b - a)| := abs_add_le _ _
-      _ = |x - y| * b + y * (b - a) := by
-        rw [abs_mul, abs_of_pos hb, abs_of_nonneg (mul_nonneg hy (by linarith))]
-      _ ≤ e * b + y * (δ * b) :=
-        add_le_add (mul_le_mul_of_nonneg_right hxy hb.le)
-          (mul_le_mul_of_nonneg_left (by linarith) hy)
-      _ = (e + y * δ) * b := by ring
-  rw [div_sub_div _ _ (by linarith : a ≠ 0) hb.ne', abs_div, abs_of_pos (by nlinarith : 0 < a * b),
-    div_le_div_iff₀ (by nlinarith) hb]
-  calc
-    |x * b - a * y| * b ≤ (e + y * δ) * b * b := mul_le_mul_of_nonneg_right h1 hb.le
-    _ ≤ (e + y * δ) * b * (2 * a) := mul_le_mul_of_nonneg_left ha (mul_nonneg he hb.le)
-    _ = 2 * (e + y * δ) * (a * b) := by ring
 
 /-- Two-sided bounds for the power `2 / pₙ` of the critical mass of a cutoff bubble:
 `(1 - (2 t / r) ^ n) |Sⁿ| ^ (2 / pₙ) ≤ (∫ |χ U_t| ^ pₙ) ^ (2 / pₙ) ≤ |Sⁿ| ^ (2 / pₙ)`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # Pointwise decay of Yamabe bubbles
@@ -161,14 +162,6 @@ theorem norm_fderiv_mul_bubble_le (hn : 2 ≤ finrank ℝ E) {t R : ℝ} (ht : 0
     _ = _ := by rw [hrpow]; ring
 
 /-! ### Comparison with a bubble of fixed scale -/
-
-/-- Outside the ball of radius `r`, the bubble profile of scale `t` is dominated by `2 t / r`
-times the profile of scale `r`. -/
-private lemma two_mul_div_add_sq_le_mul {t r ρ : ℝ} (ht : 0 < t) (hr : 0 < r) (hρ : r ≤ ρ) :
-    2 * t / (t ^ 2 + ρ ^ 2) ≤ 2 * t / r * (2 * r / (r ^ 2 + ρ ^ 2)) := by
-  rw [div_mul_div_comm, mul_comm r, ← mul_assoc, mul_div_mul_right _ _ hr.ne',
-    div_le_div_iff₀ (by positivity) (by positivity)]
-  nlinarith [mul_le_mul hρ hρ hr.le (hr.le.trans hρ)]
 
 /-- Outside the ball of radius `r` about the centre, the critical power of the bubble of scale
 `t` is at most `(2 t / r) ^ n` times that of the bubble of scale `r`. This holds for every
