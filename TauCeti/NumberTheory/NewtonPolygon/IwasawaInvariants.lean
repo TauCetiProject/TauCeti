@@ -30,11 +30,12 @@ Newton polygon of `f.map φ` is read off from these invariants:
 * `μ(f)` is the minimum height of the Newton polygon;
 * `λ(f)` is the first absolute index at which the Newton polygon attains that minimum.
 
-So the horizontal supporting line at height `μ(f)` meets the polygon in a face starting at
-`λ(f)`. This face may be an infinite ray, as for `∑ Xⁿ`, so its right endpoint carries no
-information about `f`. The left endpoint is absolute: it includes any order of vanishing of `f`
-at zero. The zero series has `μ = ⊤`, `λ = 0` and the all-infinite polygon, and all statements
-hold for it as well.
+So for `f ≠ 0` the horizontal supporting line at height `μ(f)` meets the polygon in a face
+starting at `λ(f)`. This face may be an infinite ray, as for `∑ Xⁿ`; its right endpoint is not
+needed to recover `μ(f)` and `λ(f)`, and is not used here. The left endpoint is absolute: it
+includes any order of vanishing of `f` at zero. The zero series has `μ = ⊤`, `λ = 0` and the
+all-infinite polygon; there is no finite supporting line, but the two statements above hold for
+it as well.
 
 ## Main results
 
