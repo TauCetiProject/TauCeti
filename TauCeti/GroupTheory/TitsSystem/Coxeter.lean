@@ -31,6 +31,8 @@ For nonempty `S` this says exactly that the Coxeter graph of `(W, S)` is connect
 * `TauCeti.TitsSystem.coxeterSystem`: the Coxeter system on the Weyl group.
 * `TauCeti.TitsSystem.IsIrreducible`: every set of simple reflections commuting elementwise with
   its complement is empty or everything.
+* `TauCeti.TitsSystem.isIrreducible_of_subsingleton_simple`: a Tits system with at most one simple
+  reflection is irreducible.
 
 ## References
 
@@ -85,6 +87,13 @@ theorem isIrreducible_iff : T.IsIrreducible ↔
     ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) →
       J = ∅ ∨ J = Set.univ :=
   Iff.rfl
+
+/-- A Tits system with at most one simple reflection is irreducible. -/
+theorem isIrreducible_of_subsingleton_simple (h : T.simple.Subsingleton) : T.IsIrreducible :=
+  fun J _ ↦ by
+    have : Subsingleton T.simple := h.coe_sort
+    exact J.eq_empty_or_nonempty.imp_right fun ⟨s, hs⟩ ↦
+      Set.eq_univ_of_forall fun t ↦ Subsingleton.elim s t ▸ hs
 
 /-- Irreducibility transfers along an isomorphism of Weyl groups identifying the simple
 reflections. -/
