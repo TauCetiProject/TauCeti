@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Nonarchimedean.Bases
-public import TauCeti.RingTheory.Huber.TateGauge.SpectralSeminorm
+public import TauCeti.RingTheory.Huber.TateGauge.Spectral.Seminorm
 public import TauCeti.RingTheory.Huber.Uniform
 
 /-!
@@ -211,23 +211,29 @@ private theorem hasBasis_nhds_zero_basisSubgroup :
 noncomputable instance : UniformSpace (SpectralTop A) := IsTopologicalAddGroup.rightUniformSpace _
 
 /-- The spectral uniformity is compatible with addition. -/
-instance : IsUniformAddGroup (SpectralTop A) := isUniformAddGroup_of_addCommGroup
+instance isUniformAddGroup : IsUniformAddGroup (SpectralTop A) := isUniformAddGroup_of_addCommGroup
+
+omit [IsTopologicalRing A] [IsTateRing A] in
+/-- `y ∈ uⁿ • A°°` if and only if `u⁻ⁿ y` is topologically nilpotent. -/
+private theorem mem_pow_smul_iff (u : Aˣ) (n : ℕ) {y : A} :
+    y ∈ (u : A) ^ n • {a : A | IsTopologicallyNilpotent a} ↔
+      IsTopologicallyNilpotent ((((u ^ n)⁻¹ : Aˣ) : A) * y) := by
+  rw [Set.mem_smul_set, ← Units.val_pow_eq_pow_val]
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    rwa [smul_eq_mul, Units.inv_mul_cancel_left]
+  · exact fun hy ↦ ⟨_, hy, by rw [smul_eq_mul, Units.mul_inv_cancel_left]⟩
 
 /-- The image of `uⁿ • A°°` in `SpectralTop A` is the basis subgroup of `uⁿ`. -/
 private theorem image_pow_smul (u : Aˣ) (n : ℕ) :
     toSpectralTop A '' ((u : A) ^ n • {a : A | IsTopologicallyNilpotent a}) =
       basisSubgroup (u ^ n) := by
   ext x
+  rw [SetLike.mem_coe, mem_basisSubgroup, ← mem_pow_smul_iff]
   constructor
-  · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
-    beta_reduce
-    rwa [SetLike.mem_coe, mem_basisSubgroup, RingEquiv.symm_apply_apply, smul_eq_mul,
-      ← Units.val_pow_eq_pow_val, Units.inv_mul_cancel_left]
-  · intro hx
-    refine ⟨_, ⟨_, mem_basisSubgroup.mp hx, rfl⟩, ?_⟩
-    beta_reduce
-    rw [smul_eq_mul, ← Units.val_pow_eq_pow_val, Units.mul_inv_cancel_left,
-      RingEquiv.apply_symm_apply]
+  · rintro ⟨y, hy, rfl⟩
+    rwa [RingEquiv.symm_apply_apply]
+  · exact fun hx ↦ ⟨_, hx, RingEquiv.apply_symm_apply _ _⟩
 
 /-- **The basis of the spectral topology.** For a pseudouniformiser `ϖ` of `A`, the sets
 `ϖ ^ n • A°°`, `n ≥ 0`, form a basis of neighbourhoods of zero in `SpectralTop A`. -/
@@ -255,13 +261,7 @@ theorem hasBasis_nhds_zero_spectralSeminorm (d : TateNormDatum A) :
   have hball (n : ℕ) : {x | spectralSeminorm d x < d.radius ^ n} =
       (d.pseudoUniformizer : A) ^ n • {a : A | IsTopologicallyNilpotent a} := by
     ext x
-    rw [Set.mem_ofPred_eq, spectralSeminorm_lt_pow_iff, Set.mem_smul_set, zpow_neg,
-      zpow_natCast]
-    constructor
-    · refine fun hx ↦ ⟨_, hx, ?_⟩
-      rw [smul_eq_mul, ← Units.val_pow_eq_pow_val, Units.mul_inv_cancel_left]
-    · rintro ⟨y, hy, rfl⟩
-      rwa [smul_eq_mul, ← Units.val_pow_eq_pow_val, Units.inv_mul_cancel_left]
+    rw [Set.mem_ofPred_eq, spectralSeminorm_lt_pow_iff, mem_pow_smul_iff, zpow_neg, zpow_natCast]
   refine (hasBasis_nhds_zero d.isPseudoUniformizer).to_hasBasis (fun n _ ↦ ?_) fun ε hε ↦ ?_
   · exact ⟨d.radius ^ n, pow_pos d.radius_pos n, by rw [hball]⟩
   · obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hε d.radius_lt_one
