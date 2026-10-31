@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.Lie.AdjointAction.Basic
 public import Mathlib.Algebra.Lie.AdjointAction.Derivation
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Derivation.Exp
 import Mathlib.Algebra.Ring.Action.ConjAct
 import TauCeti.RingTheory.Nilpotent.Exp
@@ -150,7 +151,7 @@ lemma expAd_apply_self (x : L) (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) : exp
 @[simp]
 theorem expAd_symm (x : L) (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) :
     (expAd x hx).symm =
-      expAd (-x) (by simpa only [map_neg, Module.End.neg_pow_apply_eq_zero_iff] using hx) := by
+      expAd (-x) fun y ↦ (hx y).imp fun _ ↦ ad_neg_pow_apply_eq_zero := by
   ext y
   simp only [expAd, LieDerivation.locallyNilpotentExp_symm, map_neg]
 

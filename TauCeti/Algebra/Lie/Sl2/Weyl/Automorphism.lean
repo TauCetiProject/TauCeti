@@ -114,7 +114,8 @@ the interface asks for the input the name and the results below are about; the r
 only in the presence of the triple relations, which every result below assumes through `t`. -/
 noncomputable def weylAut (_t : IsSl2Triple h e f) (he : ∀ y, ∃ k, ((ad K L e) ^ k) y = 0)
     (hf : ∀ y, ∃ k, ((ad K L f) ^ k) y = 0) : L ≃ₗ⁅K⁆ L :=
-  (expAd e he).trans ((expAd (-f) fun y ↦ by simpa using hf y).trans (expAd e he))
+  (expAd e he).trans
+    ((expAd (-f) fun y ↦ (hf y).imp fun _ ↦ ad_neg_pow_apply_eq_zero).trans (expAd e he))
 
 variable (he : ∀ y, ∃ k, ((ad K L e) ^ k) y = 0) (hf : ∀ y, ∃ k, ((ad K L f) ^ k) y = 0)
   (hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0)
@@ -123,7 +124,8 @@ variable (he : ∀ y, ∃ k, ((ad K L e) ^ k) y = 0) (hf : ∀ y, ∃ k, ((ad K 
 `ad (-f)` is not asked of the caller: it is that of `ad f`, and any two proofs of it agree. -/
 lemma weylAut_apply (t : IsSl2Triple h e f) (y : L) :
     weylAut t he hf y =
-      expAd e he (expAd (K := K) (-f) (fun z ↦ by simpa using hf z) (expAd e he y)) := by
+      expAd e he (expAd (K := K) (-f) (fun z ↦ (hf z).imp fun _ ↦ ad_neg_pow_apply_eq_zero)
+        (expAd e he y)) := by
   rw [weylAut]
   rfl
 
@@ -172,7 +174,8 @@ lemma expAd_neg_f_apply_e (t : IsSl2Triple h e f) : expAd (-f) hf' e = e + h - f
 /-- The Weyl automorphism negates `h`. -/
 @[simp]
 lemma weylAut_apply_h (t : IsSl2Triple h e f) : weylAut t he hf h = -h := by
-  have hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0 := fun y ↦ by simpa using hf y
+  have hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0 := fun y ↦
+    (hf y).imp fun _ ↦ ad_neg_pow_apply_eq_zero
   have s₁ : expAd (-f) hf' (h - 2 • e) = -h - 2 • e := by
     simp only [map_sub, map_nsmul, expAd_neg_f_apply_h hf' t, expAd_neg_f_apply_e hf' t]
     abel
@@ -184,7 +187,8 @@ lemma weylAut_apply_h (t : IsSl2Triple h e f) : weylAut t he hf h = -h := by
 /-- The Weyl automorphism sends the raising element to minus the lowering element. -/
 @[simp]
 lemma weylAut_apply_e (t : IsSl2Triple h e f) : weylAut t he hf e = -f := by
-  have hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0 := fun y ↦ by simpa using hf y
+  have hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0 := fun y ↦
+    (hf y).imp fun _ ↦ ad_neg_pow_apply_eq_zero
   have s₁ : expAd e he (e + h - f) = -f := by
     simp only [map_sub, map_add, expAd_apply_self e he, expAd_e_apply_h he t,
       expAd_e_apply_f he t]
@@ -194,7 +198,8 @@ lemma weylAut_apply_e (t : IsSl2Triple h e f) : weylAut t he hf e = -f := by
 /-- The Weyl automorphism sends the lowering element to minus the raising element. -/
 @[simp]
 lemma weylAut_apply_f (t : IsSl2Triple h e f) : weylAut t he hf f = -e := by
-  have hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0 := fun y ↦ by simpa using hf y
+  have hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0 := fun y ↦
+    (hf y).imp fun _ ↦ ad_neg_pow_apply_eq_zero
   have hff : expAd (-f) hf' f = f := expAd_apply_of_lie_eq_zero hf' (by simp)
   have s₁ : expAd (-f) hf' (f + h - e) = -e := by
     simp only [map_sub, map_add, hff, expAd_neg_f_apply_h hf' t, expAd_neg_f_apply_e hf' t]
@@ -205,7 +210,8 @@ lemma weylAut_apply_f (t : IsSl2Triple h e f) : weylAut t he hf f = -e := by
 lemma weylAut_apply_of_lie_eq_zero (t : IsSl2Triple h e f) {y : L} (hye : ⁅y, e⁆ = 0)
     (hyf : ⁅y, f⁆ = 0) :
     weylAut t he hf y = y := by
-  have hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0 := fun y ↦ by simpa using hf y
+  have hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0 := fun y ↦
+    (hf y).imp fun _ ↦ ad_neg_pow_apply_eq_zero
   have hey : ⁅e, y⁆ = 0 := by rw [← lie_skew e y, hye, neg_zero]
   rw [weylAut_apply he hf t, expAd_apply_of_lie_eq_zero he hey,
     expAd_apply_of_lie_eq_zero hf' (by rw [neg_lie, ← lie_skew f y, hyf]; simp),
@@ -219,7 +225,8 @@ by the Weyl automorphism to `y - c • h`. This is the coreflection `y ↦ y - �
 lemma weylAut_apply_of_lie_eq_smul (t : IsSl2Triple h e f) {y : L} {c : K}
     (hye : ⁅y, e⁆ = c • e) (hyf : ⁅y, f⁆ = -(c • f)) :
     weylAut t he hf y = y - c • h := by
-  have hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0 := fun y ↦ by simpa using hf y
+  have hf' : ∀ y, ∃ k, ((ad K L (-f)) ^ k) y = 0 := fun y ↦
+    (hf y).imp fun _ ↦ ad_neg_pow_apply_eq_zero
   have hey : ⁅e, y⁆ = -(c • e) := by rw [← lie_skew e y, hye]
   have hfy : ⁅-f, y⁆ = -(c • f) := by rw [neg_lie, ← lie_skew f y, hyf]; simp
   have h₁ : expAd e he y = y - c • e := by

@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.Rat
+public import Mathlib.Algebra.Module.Submodule.LinearMap
 public import Mathlib.RingTheory.Nilpotent.Exp
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 import Mathlib.Algebra.Module.BigOperators
-import Mathlib.Algebra.Module.LinearMap.Rat
-import Mathlib.Algebra.Module.Submodule.LinearMap
 
 /-!
 # The exponential of a locally nilpotent endomorphism
@@ -39,6 +39,8 @@ known to be finite-dimensional in advance.
 
 * `Module.End.locallyNilpotentExp_apply_eq_sum`: at a vector killed by `f ^ k`, the exponential is
   the exponential series truncated at length `k`.
+* `Module.End.locallyNilpotentExp_apply_eq_exp_restrict`: on an `f`-stable subspace where `f` is
+  nilpotent, the exponential is Mathlib's `IsNilpotent.exp` of the restriction.
 * `Module.End.locallyNilpotentExp_symm_apply_eq_sum`: the inverse is the exponential series of
   `-f`.
 * `Module.End.locallyNilpotentExp_symm`: the inverse is the exponential of `-f`.
@@ -86,6 +88,16 @@ private noncomputable def expLinearMap : M →ₗ[R] M where
     rw [expFun_eq_sum f hf hx, expFun_eq_sum f hf hcx, RingHom.id_apply, smul_sum]
     exact sum_congr rfl fun i _ ↦ by rw [map_smul, smul_comm]
 
+/-- Viewing `f` as a `ℚ`-linear map does not change its values. -/
+private theorem toRatLinearMap_apply (v : M) : f.toAddMonoidHom.toRatLinearMap v = f v := by
+  rw [AddMonoidHom.coe_toRatLinearMap, LinearMap.toAddMonoidHom_coe]
+
+/-- Viewing `f` as a `ℚ`-linear map does not change its powers. -/
+private theorem toRatLinearMap_pow_apply (n : ℕ) (v : M) :
+    (f.toAddMonoidHom.toRatLinearMap ^ n) v = (f ^ n) v := by
+  rw [Module.End.pow_apply, Module.End.pow_apply, AddMonoidHom.coe_toRatLinearMap,
+    LinearMap.toAddMonoidHom_coe]
+
 /-- On an `f`-stable `ℚ`-subspace `V` on which `f` is nilpotent, the exponential series of `f` at
 a vector of `V` is Mathlib's `IsNilpotent.exp` of the restriction of `f` to `V`. -/
 private theorem coe_exp_restrict_apply {V : Submodule ℚ M}
@@ -94,8 +106,7 @@ private theorem coe_exp_restrict_apply {V : Submodule ℚ M}
     (IsNilpotent.exp (f.toAddMonoidHom.toRatLinearMap.restrict hV) v : M) = expFun f hf v := by
   have hpow (i : ℕ) :
       ((f.toAddMonoidHom.toRatLinearMap.restrict hV ^ i) v : M) = (f ^ i) v := by
-    rw [Module.End.pow_restrict, LinearMap.coe_restrict_apply, Module.End.pow_apply,
-      Module.End.pow_apply, AddMonoidHom.coe_toRatLinearMap, LinearMap.toAddMonoidHom_coe]
+    rw [Module.End.pow_restrict, LinearMap.coe_restrict_apply, toRatLinearMap_pow_apply]
   have hv : (f ^ n) v = 0 := by rw [← hpow, hn, LinearMap.zero_apply, Submodule.coe_zero]
   rw [IsNilpotent.exp_eq_sum hn, expFun_eq_sum f hf hv, LinearMap.sum_apply, Submodule.coe_sum]
   exact sum_congr rfl fun i _ ↦ by rw [LinearMap.smul_apply, Submodule.coe_smul, hpow]
@@ -109,18 +120,15 @@ private theorem expFun_expFun_of_eq_neg {g : Module.End R M} (hfg : g = -f)
   subst hfg
   obtain ⟨n, hn⟩ := hf x
   set V := LinearMap.ker (f.toAddMonoidHom.toRatLinearMap ^ n)
-  have hmem (v : M) : v ∈ V ↔ (f ^ n) v = 0 := by
-    rw [LinearMap.mem_ker, Module.End.pow_apply, Module.End.pow_apply,
-      AddMonoidHom.coe_toRatLinearMap, LinearMap.toAddMonoidHom_coe]
   have hV : ∀ v ∈ V, f.toAddMonoidHom.toRatLinearMap v ∈ V := fun v hv ↦ by
-    rw [AddMonoidHom.coe_toRatLinearMap, LinearMap.toAddMonoidHom_coe, hmem,
-      ← Module.End.mul_apply, ← pow_succ, pow_succ', Module.End.mul_apply, (hmem v).1 hv, map_zero]
+    rw [LinearMap.mem_ker, ← Module.End.mul_apply, ← pow_succ, pow_succ', Module.End.mul_apply,
+      LinearMap.mem_ker.1 hv, map_zero]
   have hV' : ∀ v ∈ V, (-f).toAddMonoidHom.toRatLinearMap v ∈ V := fun v hv ↦ V.neg_mem (hV v hv)
   have hneg : (-f).toAddMonoidHom.toRatLinearMap.restrict hV' =
       -f.toAddMonoidHom.toRatLinearMap.restrict hV := by
     ext v
     simp only [LinearMap.coe_restrict_apply, LinearMap.neg_apply, Submodule.coe_neg,
-      AddMonoidHom.coe_toRatLinearMap, LinearMap.toAddMonoidHom_coe]
+      toRatLinearMap_apply]
   have hnil : f.toAddMonoidHom.toRatLinearMap.restrict hV ^ n = 0 := by
     ext v
     rw [Module.End.pow_restrict, LinearMap.coe_restrict_apply, LinearMap.zero_apply,
@@ -128,7 +136,7 @@ private theorem expFun_expFun_of_eq_neg {g : Module.End R M} (hfg : g = -f)
     exact v.2
   have hnil' : (-f).toAddMonoidHom.toRatLinearMap.restrict hV' ^ n = 0 := by
     rw [hneg, neg_pow (R := Module.End ℚ V), hnil, mul_zero]
-  have hx : x ∈ V := (hmem x).2 hn
+  have hx : x ∈ V := by rwa [LinearMap.mem_ker, toRatLinearMap_pow_apply]
   rw [← coe_exp_restrict_apply f hf hV hnil ⟨x, hx⟩, ← coe_exp_restrict_apply (-f) hg hV' hnil',
     hneg, ← Module.End.mul_apply, IsNilpotent.exp_neg_mul_exp_self ⟨n, hnil⟩,
     Module.End.one_apply]
@@ -150,6 +158,16 @@ noncomputable def locallyNilpotentExp : M ≃ₗ[R] M :=
 theorem locallyNilpotentExp_apply_eq_sum {x : M} {k : ℕ} (hk : (f ^ k) x = 0) :
     locallyNilpotentExp f hf x = ∑ i ∈ range k, (i.factorial : ℚ)⁻¹ • (f ^ i) x :=
   expFun_eq_sum f hf hk
+
+/-- **The exponential on a nilpotent piece.** On an `f`-stable `ℚ`-subspace `V` on which `f` is
+nilpotent, the exponential of `f` at a vector of `V` is Mathlib's `IsNilpotent.exp` of the
+restriction of `f` to `V`. -/
+theorem locallyNilpotentExp_apply_eq_exp_restrict {V : Submodule ℚ M}
+    (hV : ∀ v ∈ V, f.toAddMonoidHom.toRatLinearMap v ∈ V) {n : ℕ}
+    (hn : f.toAddMonoidHom.toRatLinearMap.restrict hV ^ n = 0) (v : V) :
+    locallyNilpotentExp f hf v =
+      (IsNilpotent.exp (f.toAddMonoidHom.toRatLinearMap.restrict hV) v : M) :=
+  (coe_exp_restrict_apply f hf hV hn v).symm
 
 /-- **The inverse of the exponential.** At a vector killed by `f ^ k`, the inverse of the
 exponential of `f` is the exponential series of `-f` truncated at length `k`. -/
@@ -187,7 +205,8 @@ theorem locallyNilpotentExp_eq_exp (hnil : IsNilpotent f) :
     (locallyNilpotentExp f hf : Module.End R M) = IsNilpotent.exp f := by
   obtain ⟨k, hk⟩ := hnil
   ext x
-  rw [LinearEquiv.coe_coe, locallyNilpotentExp_apply_eq_sum f hf (by rw [hk]; rfl),
+  rw [LinearEquiv.coe_coe,
+    locallyNilpotentExp_apply_eq_sum f hf (by rw [hk, LinearMap.zero_apply]),
     IsNilpotent.exp_eq_sum hk, LinearMap.sum_apply]
   simp only [LinearMap.smul_apply]
 

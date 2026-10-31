@@ -37,7 +37,6 @@ locally nilpotent, but no single power of it is known to vanish.
 
 ## Main results
 
-* `LieDerivation.pow_toLinearMap_apply_lie`: the Leibniz rule for the powers of `D`.
 * `LieDerivation.locallyNilpotentExp_apply_eq_sum`: the exponential at an element killed by
   `D ^ k` is the exponential series truncated at length `k`.
 * `LieDerivation.locallyNilpotentExp_symm`: the inverse is the exponential of `-D`.
@@ -59,10 +58,9 @@ namespace LieDerivation
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] (D : LieDerivation R L L)
 
-/-- **The Leibniz rule for the powers of a Lie derivation**, stated for the powers of its
-underlying endomorphism: `Dⁿ ⁅x, y⁆` is the sum of `(n choose i) • ⁅Dⁱ x, Dʲ y⁆` over `i + j = n`.
-This is Mathlib's `LieDerivation.iterate_apply_lie`, which is stated for iterates of `D`. -/
-theorem pow_toLinearMap_apply_lie (n : ℕ) (x y : L) :
+/-- Mathlib's Leibniz rule `LieDerivation.iterate_apply_lie`, restated for the powers of the
+underlying endomorphism of `D` in which the exponential series is written. -/
+private theorem pow_toLinearMap_apply_lie (n : ℕ) (x y : L) :
     (D.toLinearMap ^ n) ⁅x, y⁆ =
       ∑ ij ∈ antidiagonal n,
         n.choose ij.1 • ⁅(D.toLinearMap ^ ij.1) x, (D.toLinearMap ^ ij.2) y⁆ := by
