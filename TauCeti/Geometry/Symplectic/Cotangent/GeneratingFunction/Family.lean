@@ -148,17 +148,6 @@ theorem hasStrictFDerivAt_cotangentFamilyFiberDeriv (hS : ContDiffAt ℝ 2 S x) 
 
 /-! ### The linear algebra at one point -/
 
-/-- At a point where the fibre derivative vanishes, `∂_q S(δq) = dS(δq, δa)`. -/
-private theorem cotangentGeneratingSource_snd_fderiv_fst
-    (hS : DifferentiableAt ℝ (fderiv ℝ S) x) (hx : cotangentFamilyFiberDeriv S x = 0)
-    (u : V × A) :
-    (cotangentGeneratingSource S x).2 (fderiv ℝ (cotangentGeneratingSource S) x u).1 =
-      fderiv ℝ S x u := by
-  have h : fderiv ℝ S x (0, u.2) = 0 := by
-    simpa using DFunLike.congr_fun hx u.2
-  rw [fderiv_cotangentGeneratingSource_apply hS, cotangentGeneratingSource_snd_apply,
-    ← add_zero (fderiv ℝ S x _), ← h, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
-
 /-- **Exactness on the fibre-critical set.** At a point where the fibre derivative vanishes, the
 Liouville form pulls back along the source projection `ι_S (q, a) = (q, ∂_q S(q, a))` to `dS`:
 `∂_q S(δq) = dS(δq, δa)`. -/
@@ -167,11 +156,13 @@ theorem cotangentLiouvilleForm_compContinuousLinearMap_fderiv_cotangentGeneratin
     (cotangentLiouvilleForm (cotangentGeneratingSource S x)).compContinuousLinearMap
         (fderiv ℝ (cotangentGeneratingSource S) x) =
       differentialOneForm S x := by
+  -- The target covector `-∂_a S` vanishes, so the target term of the exactness of the generated
+  -- relation drops out.
+  have hP : (cotangentGeneratingTarget S x).2 = 0 := by
+    rw [← neg_eq_zero, ← cotangentFamilyFiberDeriv_eq_neg_cotangentGeneratingTarget_snd, hx]
+  rw [← cotangentLiouvilleForm_cotangentGeneratingSource_sub hS, eq_comm, sub_eq_self]
   ext v
-  rw [eq_const_of_subsingleton v 0, ← Function.const_def]
-  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, cotangentLiouvilleForm_apply,
-    Function.comp_apply, differentialOneForm_apply]
-  exact cotangentGeneratingSource_snd_fderiv_fst hS hx _
+  simp [hP]
 
 /-- **Isotropy.** Where the second derivative of `S` is symmetric, the derivative of the source
 projection `ι_S` sends two vectors of the kernel of the derivative of `∂_a S` to `ω`-orthogonal
@@ -415,8 +406,10 @@ theorem cotangentLiouvilleForm_mfderiv_cotangentGeneratingSource_comp_coe
         one_ne_zero),
     mfderiv_comp_coe_cotangentFamilyCriticalSet_apply hS hsurj z
       ((hS z z.2).differentiableAt (by simp))]
-  rw [cotangentLiouvilleForm_apply]
-  exact cotangentGeneratingSource_snd_fderiv_fst hD z.2 _
+  exact
+    (DFunLike.congr_fun
+      (cotangentLiouvilleForm_compContinuousLinearMap_fderiv_cotangentGeneratingSource hD z.2)
+      _).trans (differentialOneForm_apply _ _ _)
 
 end CriticalSet
 
