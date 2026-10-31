@@ -172,7 +172,7 @@ theorem globalDimension_le_of_faithfullyFlat {S : Type u} [CommRing S] [Algebra 
     | coe n =>
       refine ((globalDimension_le_tfae.{u} R n).out 2 1).mp ?_
       intro M _
-      exact ModuleCat.hasProjectiveDimensionLE_baseChange_iff.mp
+      exact (ModuleCat.hasProjectiveDimensionLE_baseChange_iff .of_isNoetherianRing).mp
         ((globalDimension_le_iff_hasProjectiveDimensionLE S n).mp h.le _)
 
 end CommRing
