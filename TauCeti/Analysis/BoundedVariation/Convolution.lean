@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Convolution
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
-import TauCeti.Analysis.Convolution
+import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.BoundedVariation.Translation
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 

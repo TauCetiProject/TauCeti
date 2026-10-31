@@ -15,16 +15,11 @@ public import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
 
 This file packages the standard Moebius factor
 `z ↦ (z - a) / (1 - conj a * z)` as a bundled self-map of the complex unit disc.  It is
-the elementary automorphism API used by the Schwarz--Pick and disc-automorphism layer of
-the conformal-mapping roadmap: the map sends `a` to `0`, its norm is the
+the elementary automorphism API used by the Schwarz--Pick lemma and the classification of the
+disc automorphisms: the map sends `a` to `0`, its norm is the
 pseudo-hyperbolic expression from `z` to `a`, and the inverse is the factor with center
 `-a`.  The same map is also bundled as an equivalence and as a homeomorphism of the
 unit disc.
-
-This L2 material is coordinated with the upstream Mathlib RMT effort in
-leanprover-community/mathlib4#33505.  Mathlib already contains the preceding human-curated
-work in `Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`;
-this file only adds the small discoverable API around `Complex.UnitDisc`.
 -/
 
 public section

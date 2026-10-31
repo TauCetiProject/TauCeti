@@ -52,15 +52,6 @@ private theorem snd_lt_of_mem_erase_of_fst_eq (h : IsCorner μ c) (hd : d ∈ er
   rw [hrow, h.rowLen_eq_snd_add_one] at hdmem
   omega
 
-/-- A surviving cell in the corner's column lies strictly above it. -/
-private theorem fst_lt_of_mem_erase_of_snd_eq (h : IsCorner μ c) (hd : d ∈ erase μ c)
-    (hcol : d.2 = c.2) : d.1 < c.1 := by
-  have hdmem := _root_.YoungDiagram.mem_iff_lt_colLen.mp (mem_of_mem_erase hd)
-  have hdne := (h.mem_erase_iff.mp hd).2
-  have hfst : d.1 ≠ c.1 := fun hfst => hdne (Prod.ext hfst hcol)
-  rw [hcol, h.colLen_eq_fst_add_one] at hdmem
-  omega
-
 /-- Erasing a corner decreases by one the hook length of every surviving cell in its row. -/
 theorem hookLength_erase_of_same_row (h : IsCorner μ c) (hd : d ∈ erase μ c)
     (hrow : d.1 = c.1) : hookLength (erase μ c) d + 1 = hookLength μ d := by
@@ -77,15 +68,10 @@ theorem hookLength_erase_of_same_row (h : IsCorner μ c) (hd : d ∈ erase μ c)
 /-- Erasing a corner decreases by one the hook length of every surviving cell in its column. -/
 theorem hookLength_erase_of_same_col (h : IsCorner μ c) (hd : d ∈ erase μ c)
     (hcol : d.2 = c.2) : hookLength (erase μ c) d + 1 = hookLength μ d := by
-  have hdrow : d.1 ≠ c.1 := by
-    intro heq
-    exact (h.mem_erase_iff.mp hd).2 (Prod.ext heq hcol)
-  have hdlt := h.fst_lt_of_mem_erase_of_snd_eq hd hcol
-  simp only [hookLength_def, armLength_def, legLength_def, h.rowLen_erase, h.colLen_erase,
-    ite_eq_right hdrow.symm, ite_eq_left hcol.symm]
-  have hcollen := h.colLen_eq_fst_add_one
-  rw [← hcol] at hcollen
-  omega
+  have ht : IsCorner μ.transpose c.swap := by simpa using h
+  have hd' : d.swap ∈ erase μ.transpose c.swap := by
+    simpa using hd
+  simpa using ht.hookLength_erase_of_same_row hd' hcol
 
 /-- Erasing a corner leaves unchanged the hook length of a cell outside its row and column. -/
 theorem hookLength_erase_of_ne_row_of_ne_col (h : IsCorner μ c)

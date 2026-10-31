@@ -79,6 +79,13 @@ def triangularPDFReal (a b c x : ℝ) : ℝ :=
     if x < c then 2 * (x - a) / ((b - a) * (c - a)) else 2 * (b - x) / ((b - a) * (b - c))
   else 0
 
+/-- The defining piecewise formula of the real triangular density, including its zero value
+outside the support or at invalid parameters. -/
+theorem triangularPDFReal_def (a b c x : ℝ) :
+    triangularPDFReal a b c x = if a ≤ c ∧ c ≤ b ∧ x ∈ Ioo a b then
+      if x < c then 2 * (x - a) / ((b - a) * (c - a)) else 2 * (b - x) / ((b - a) * (b - c))
+    else 0 := (rfl)
+
 /-- The extended-nonnegative-valued triangular density. -/
 def triangularPDF (a b c x : ℝ) : ℝ≥0∞ := ENNReal.ofReal (triangularPDFReal a b c x)
 

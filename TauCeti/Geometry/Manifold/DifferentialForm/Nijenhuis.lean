@@ -151,11 +151,11 @@ exactly when `α ∘ N_J = 0`. -/
 theorem IsOfType.typeProjection_zero_two_mextDerivₗ_eq_zero_iff (hα : α.IsOfType J 1 0) :
     J.typeProjection 0 2 (mextDerivₗ I 1 α) = 0 ↔
       ∀ x (v w : TangentSpace I x), α.1 x ![J.nijenhuis x v w] = 0 := by
-  refine ⟨fun h x v w ↦ ?_, fun h ↦ SmoothForm.ext fun x v w ↦ ?_⟩
+  refine ⟨fun h x v w ↦ ?_, fun h ↦ SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_⟩
   · have hx := hα.typeProjection_zero_two_mextDerivₗ_apply x v w
     rw [h] at hx
     simpa using hx.symm
-  · rw [eval₂_apply, hα.typeProjection_zero_two_mextDerivₗ_apply, h, smul_zero]
+  · rw [SmoothBundleForm.eval₂_apply, hα.typeProjection_zero_two_mextDerivₗ_apply, h, smul_zero]
     simp
 
 /-- The exterior derivative of a smooth one-form `α` of type `(0,1)` has no `(2,0)` component
@@ -163,11 +163,11 @@ exactly when `α ∘ N_J = 0`. -/
 theorem IsOfType.typeProjection_two_zero_mextDerivₗ_eq_zero_iff (hα : α.IsOfType J 0 1) :
     J.typeProjection 2 0 (mextDerivₗ I 1 α) = 0 ↔
       ∀ x (v w : TangentSpace I x), α.1 x ![J.nijenhuis x v w] = 0 := by
-  refine ⟨fun h x v w ↦ ?_, fun h ↦ SmoothForm.ext fun x v w ↦ ?_⟩
+  refine ⟨fun h x v w ↦ ?_, fun h ↦ SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_⟩
   · have hx := hα.typeProjection_two_zero_mextDerivₗ_apply x v w
     rw [h] at hx
     simpa using hx.symm
-  · rw [eval₂_apply, hα.typeProjection_two_zero_mextDerivₗ_apply, h, smul_zero]
+  · rw [SmoothBundleForm.eval₂_apply, hα.typeProjection_two_zero_mextDerivₗ_apply, h, smul_zero]
     simp
 
 /-- If the Nijenhuis tensor vanishes, the exterior derivative of a smooth one-form of type
