@@ -72,18 +72,12 @@ section Presentation
 
 variable {P Q : Type*} [AddCommGroup P] [Module A P] [AddCommGroup Q] [Module A Q]
 
-/-- The matrix of the idempotent `i ∘ s` attached to a direct summand `s ∘ i = id` of `A^ι`. -/
-private theorem isIdempotentElem_toMatrixRight'_comp {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {s : (ι → A) →ₗ[A] P} {i : P →ₗ[A] ι → A} (h : s ∘ₗ i = LinearMap.id) :
-    IsIdempotentElem (i ∘ₗ s).toMatrixRight' :=
-  (LinearMap.isIdempotentElem_toMatrixRight'_iff _).2 <|
-    LinearMap.ext fun x ↦ congrArg i (LinearMap.congr_fun h (s x))
-
 /-- The pairing of the idempotent attached to a direct summand `s ∘ i = id` of `A^ι`. -/
 private def summandPairing {ι : Type*} [Fintype ι] [DecidableEq ι] {s : (ι → A) →ₗ[A] P}
     {i : P →ₗ[A] ι → A} (h : s ∘ₗ i = LinearMap.id) (m : ℕ) :
     cyclicCohomology R A M (2 * m) →ₗ[R] M :=
-  (evenPairing _ (isIdempotentElem_toMatrixRight'_comp h) m).comp (matrixExtension M ι (2 * m))
+  (evenPairing _ (LinearMap.isIdempotentElem_toMatrixRight'_comp h) m).comp
+    (matrixExtension M ι (2 * m))
 
 /-- Isomorphic direct summands of free modules have Murray–von Neumann equivalent idempotents,
 hence the same pairing. -/
@@ -99,43 +93,6 @@ private theorem summandPairing_eq_of_linearEquiv {ι κ : Type*} [Fintype ι] [D
     (b := (i ∘ₗ θ.symm.toLinearMap ∘ₗ s').toMatrixRight') ?_ ?_ m c <;>
   · rw [← LinearMap.toMatrixRight'_comp]
     exact congrArg _ (LinearMap.ext fun x ↦ by simp [hsi, hsi'])
-
-/-- A split short exact sequence presents its middle term by the block sum of the idempotents
-presenting its outer terms. -/
-private theorem exists_summand_fromBlocks {X₁ X₂ X₃ : Type*} [AddCommGroup X₁] [Module A X₁]
-    [AddCommGroup X₂] [Module A X₂] [AddCommGroup X₃] [Module A X₃]
-    {f : X₁ →ₗ[A] X₂} {g : X₂ →ₗ[A] X₃} {r : X₂ →ₗ[A] X₁} {σ : X₃ →ₗ[A] X₂}
-    (hfr : r ∘ₗ f = LinearMap.id) (hσg : g ∘ₗ σ = LinearMap.id)
-    (hid : f ∘ₗ r + σ ∘ₗ g = LinearMap.id) (hfg : g ∘ₗ f = 0) (hσr : r ∘ₗ σ = 0)
-    {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
-    {s₁ : (ι → A) →ₗ[A] X₁} {i₁ : X₁ →ₗ[A] ι → A} (h₁ : s₁ ∘ₗ i₁ = LinearMap.id)
-    {s₃ : (κ → A) →ₗ[A] X₃} {i₃ : X₃ →ₗ[A] κ → A} (h₃ : s₃ ∘ₗ i₃ = LinearMap.id) :
-    ∃ (s₂ : (ι ⊕ κ → A) →ₗ[A] X₂) (i₂ : X₂ →ₗ[A] ι ⊕ κ → A), s₂ ∘ₗ i₂ = LinearMap.id ∧
-      (i₂ ∘ₗ s₂).toMatrixRight' =
-        Matrix.fromBlocks (i₁ ∘ₗ s₁).toMatrixRight' 0 0 (i₃ ∘ₗ s₃).toMatrixRight' := by
-  have hrf (x : X₁) : r (f x) = x := LinearMap.congr_fun hfr x
-  have hgσ (x : X₃) : g (σ x) = x := LinearMap.congr_fun hσg x
-  have hgf (x : X₁) : g (f x) = 0 := LinearMap.congr_fun hfg x
-  have hrσ (x : X₃) : r (σ x) = 0 := LinearMap.congr_fun hσr x
-  have hs₁ (x : X₁) : s₁ (i₁ x) = x := LinearMap.congr_fun h₁ x
-  have hs₃ (x : X₃) : s₃ (i₃ x) = x := LinearMap.congr_fun h₃ x
-  let e := LinearEquiv.sumArrowLequivProdArrow ι κ A A
-  have hl (u : ι → A) (v : κ → A) : LinearMap.funLeft A A Sum.inl (e.symm (u, v)) = u :=
-    funext fun _ ↦ by simp [e, LinearMap.funLeft_apply]
-  have hr (u : ι → A) (v : κ → A) : LinearMap.funLeft A A Sum.inr (e.symm (u, v)) = v :=
-    funext fun _ ↦ by simp [e, LinearMap.funLeft_apply]
-  have hl' (x : ι ⊕ κ → A) : LinearMap.funLeft A A Sum.inl x = x ∘ Sum.inl := rfl
-  have hr' (x : ι ⊕ κ → A) : LinearMap.funLeft A A Sum.inr x = x ∘ Sum.inr := rfl
-  refine ⟨f ∘ₗ s₁ ∘ₗ LinearMap.funLeft A A Sum.inl + σ ∘ₗ s₃ ∘ₗ LinearMap.funLeft A A Sum.inr,
-    e.symm.toLinearMap ∘ₗ (i₁ ∘ₗ r).prod (i₃ ∘ₗ g), ?_, ?_⟩
-  · refine LinearMap.ext fun x ↦ ?_
-    have hx := LinearMap.congr_fun hid x
-    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply] at hx
-    simpa [hl, hr, hs₁, hs₃] using hx
-  · apply Matrix.toLinearMapRight'.injective
-    refine LinearMap.ext fun x ↦ funext fun q ↦ ?_
-    rcases q with b | d <;>
-      simp [e, Matrix.vecMul_fromBlocks, hl', hr', hrf, hgσ, hgf, hrσ]
 
 end Presentation
 
@@ -165,7 +122,7 @@ private theorem objPairing_conflation (m : ℕ)
   let σ' : T.Splitting := σ.map (finiteProjectiveModules A).ι
   obtain ⟨n₁, s₁, i₁, -, -, h₁⟩ := Module.Finite.exists_comp_eq_id_of_projective A S.X₁.obj
   obtain ⟨n₃, s₃, i₃, -, -, h₃⟩ := Module.Finite.exists_comp_eq_id_of_projective A S.X₃.obj
-  obtain ⟨s₂, i₂, h₂, hblock⟩ := exists_summand_fromBlocks
+  obtain ⟨s₂, i₂, h₂, hblock⟩ := LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks
     (congrArg ModuleCat.Hom.hom σ'.f_r) (congrArg ModuleCat.Hom.hom σ'.s_g)
     (congrArg ModuleCat.Hom.hom σ'.id) (congrArg ModuleCat.Hom.hom T.zero)
     (congrArg ModuleCat.Hom.hom σ'.s_r) h₁ h₃
