@@ -14,8 +14,8 @@ public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 This file collects facts about leading monomials of multivariate polynomials for a monomial order
 `m` on `σ →₀ ℕ`: comparisons of degrees with their `WithBot` forms, the degree of a monomial
 multiple, the cancellation of leading terms by an S-polynomial, the behaviour of leading data
-under a change of coefficients, leading data of renamed polynomials, elimination orders among
-lexicographic orders, and algebraic independence from leading monomials.
+under a change of coefficients, leading data of renamed polynomials, elimination orders and the
+lexicographic ones among them, and algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -49,6 +49,8 @@ the images of the generators of the Lazard ring in a polynomial ring.
   `MonomialOrder.leadingTerm_rename`: renaming the variables along a relabeling which carries one
   monomial order to another commutes with leading monomials, coefficients and terms; such a
   relabeling is injective by `MonomialOrder.injective_of_forall_toSyn_le_iff`.
+* `MonomialOrder.exists_rename_eq_of_coe_support_degree_subset`: for an elimination order, a
+  polynomial whose leading monomial only involves the variables `e τ` is a renamed polynomial.
 * `MonomialOrder.coe_support_subset_of_lex_le`: monomials supported in an upper set of variables
   form a lower set for the lexicographic order.
 * `MonomialOrder.algebraicIndependent_of_degree_eq_single`: polynomials `yᵢ` whose leading
@@ -219,6 +221,19 @@ renames the leading term. -/
 theorem leadingTerm_rename (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e)
     (p : MvPolynomial τ R) : m.leadingTerm (rename e p) = rename e (m'.leadingTerm p) := by
   rw [leadingTerm, leadingTerm, degree_rename hm, leadingCoeff_rename hm, rename_monomial]
+
+/-- For an elimination order `m` for the variables `e τ`, that is, one in which every monomial
+below a monomial in these variables is again a monomial in these variables, a polynomial whose
+leading monomial only involves the variables `e τ` is the renaming of a polynomial in the
+variables `τ`. -/
+theorem exists_rename_eq_of_coe_support_degree_subset
+    (helim : ∀ a b : σ →₀ ℕ, a ≼[m] b → ↑b.support ⊆ Set.range e → ↑a.support ⊆ Set.range e)
+    (he : Function.Injective e) {g : MvPolynomial σ R}
+    (hg : ↑(m.degree g).support ⊆ Set.range e) : ∃ g' : MvPolynomial τ R, rename e g' = g := by
+  classical
+  refine exists_rename_eq_of_vars_subset_range g e he fun i hi ↦ ?_
+  obtain ⟨d, hd, hid⟩ := (mem_vars_iff_mem_support i).1 hi
+  exact helim d _ (m.le_degree hd) hg hid
 
 end Rename
 

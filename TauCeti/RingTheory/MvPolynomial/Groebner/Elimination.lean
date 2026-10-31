@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Basic
-public import TauCeti.RingTheory.MvPolynomial.MonomialOrder
 public import TauCeti.Data.Finsupp.MapDomain
 
 /-!
@@ -27,8 +26,9 @@ elimination ideal.
 
 The lexicographic order is an elimination order for every upper set of variables: with the
 antitone variable convention, the variables of an upper set are the smallest ones. The transport
-of leading data along a relabeling and this property of the lexicographic order are in
-`TauCeti.RingTheory.MvPolynomial.MonomialOrder`.
+of leading data along a relabeling, the description of polynomials whose leading monomial only
+involves the variables `e τ` for an elimination order, and this property of the lexicographic
+order are in `TauCeti.RingTheory.MvPolynomial.MonomialOrder`.
 
 ## Main results
 
@@ -58,17 +58,6 @@ variable {σ τ R : Type*} [CommSemiring R] {m : MonomialOrder σ} {m' : Monomia
 section Elimination
 
 variable {G : Set (MvPolynomial σ R)} {I : Ideal (MvPolynomial σ R)}
-
-/-- For an elimination order, a polynomial whose leading monomial only involves the variables
-`e τ` is the renaming of a polynomial in the variables `τ`. -/
-private theorem exists_rename_eq_of_coe_support_degree_subset
-    (helim : ∀ a b : σ →₀ ℕ, a ≼[m] b → ↑b.support ⊆ Set.range e → ↑a.support ⊆ Set.range e)
-    (he : Function.Injective e) {g : MvPolynomial σ R}
-    (hg : ↑(m.degree g).support ⊆ Set.range e) : ∃ g' : MvPolynomial τ R, rename e g' = g := by
-  classical
-  refine exists_rename_eq_of_vars_subset_range g e he fun i hi ↦ ?_
-  obtain ⟨d, hd, hid⟩ := (mem_vars_iff_mem_support i).1 hi
-  exact helim d _ (m.le_degree hd) hg hid
 
 /-- **The elimination theorem.** Let `m` be an elimination order for the variables `e τ`: every
 monomial below a monomial in these variables is again a monomial in these variables. If `G` is a
