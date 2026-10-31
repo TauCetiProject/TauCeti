@@ -24,8 +24,9 @@ not, has a K-injective resolution (`TauCeti.HasKInjectiveResolutions C`), it is 
 surjective, hence an equivalence.
 
 Combined with the identification of the homotopy category of a differential graded nerve with
-`H⁰` (`TauCeti.dgNerve.homotopyCategoryEquiv`), this shows that the differential graded nerve of
-the K-injective complexes, which is a quasicategory, has homotopy category `D(C)`
+`H⁰` (`TauCeti.dgNerve.homotopyCategoryEquiv`), under `TauCeti.HasKInjectiveResolutions C` this
+shows that the differential graded nerve of the K-injective complexes, which is a quasicategory,
+has homotopy category `D(C)`
 (`TauCeti.KInjectiveDGCategory.dgNerveHomotopyCategoryEquiv`). This is the classical
 enhancement of an unbounded derived category: its higher simplices record homotopies between
 chain maps and the coherences among them, which the derived category forgets.
@@ -176,11 +177,8 @@ def fullyFaithfulToDerivedCategory : (toDerivedCategory R C).FullyFaithful :=
 /-- When every complex has a K-injective resolution, every object of the derived category is
 isomorphic to the image of a K-injective complex. -/
 instance [HasKInjectiveResolutions C] : (toDerivedCategory R C).EssSurj where
-  mem_essImage D := by
-    obtain ⟨I, i, hi, hI⟩ :=
-      HasKInjectiveResolutions.exists_quasiIso_isKInjective (Q.objPreimage D)
-    exact ⟨DGHomotopyCategory.of R ⟨I, hI⟩,
-      ⟨(quotientCompQhIso C).app I ≪≫ (asIso (Q.map i)).symm ≪≫ Q.objObjPreimageIso D⟩⟩
+  mem_essImage D := ⟨DGHomotopyCategory.of R ⟨((kInjectiveReplacement C).obj D).as, inferInstance⟩,
+    ⟨(asIso (kInjectiveReplacementAdjunction C).counit).app D⟩⟩
 
 /-- When every complex has a K-injective resolution, the comparison functor is an equivalence
 between the homotopy category of the K-injective complexes and the derived category. -/
