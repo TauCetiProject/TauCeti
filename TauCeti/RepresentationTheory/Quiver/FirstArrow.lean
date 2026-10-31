@@ -186,13 +186,15 @@ theorem pathFirstArrowEquiv_symm_inr {a j : V} (b : V) (e : a ⟶ b) (q : Quiver
   (rfl)
 
 /-- **The first-arrow recursion for path counts.** The paths `a → j` are the trivial one, present
-exactly when `a = j`, together with an arrow `a ⟶ b` and a path `b → j`. The cardinalities are
-honest counts once the paths into `j` are finite, which is what the hypothesis
-`[∀ b, Finite (Quiver.Path b j)]` provides; no separate finiteness of the arrows is needed.
+exactly when `a = j`, together with an arrow `a ⟶ b` and a path `b → j`. Only the paths `a → j`
+need to be finite. A single factor `#(a ⟶ b)` or `#(b → j)` may then be the junk value `0` of an
+infinite type, but each summand `#(a ⟶ b) * #(b → j)` is still an honest count: if either type is
+nonempty, the other one injects into the paths `a → j`, so an infinite factor only occurs alongside
+an empty one.
 
 This is the mirror image of `TauCeti.card_path_eq_ite_add_sum_lastArrow`. -/
 theorem card_path_eq_ite_add_sum_firstArrow [DecidableEq V] [Fintype V] (a j : V)
-    [∀ b : V, Finite (Quiver.Path b j)] :
+    [Finite (Quiver.Path a j)] :
     Nat.card (Quiver.Path a j)
       = (if a = j then 1 else 0)
         + ∑ b : V, Nat.card (a ⟶ b) * Nat.card (Quiver.Path b j) := by
