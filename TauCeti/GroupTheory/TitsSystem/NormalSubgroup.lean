@@ -30,14 +30,15 @@ criterion behind the simplicity of the finite groups of Lie type.
 Irreducibility is `TauCeti.TitsSystem.IsIrreducible`, defined with the Coxeter system of a Tits
 system.
 
-In the finite groups of Lie type the whole group is usually not perfect, and the simple group is
-cut out inside it. For a *split* BN-pair, with a solvable subgroup `U` normalized by `B` and
-`B ≤ U ⊔ (B ∩ N)`, let `H⁺` be the normal closure of `U`. Unless `H⁺ ≤ Z`, Tits's theorem gives
-`H⁺ B = G`, hence `G = H⁺ (B ∩ N)`, so the Tits system pulls back to `H⁺`
-(`TauCeti.TitsSystem.comap`) and the theorems above apply to it. If `H⁺` is perfect, every normal
-subgroup of `H⁺` lies in `Z` or is `H⁺`. If moreover `Z ∩ U = 1`, then `Z` centralizes `H⁺`, so
-`Z ∩ H⁺` is the centre of `H⁺`, and `H⁺` modulo its centre is simple once `U ≠ 1`. When `H⁺` is
-the derived subgroup, this is the simplicity of `TauCeti.DerivedCentralQuotient G`.
+An ambient group carrying a BN-pair need not be perfect (for instance `GL_n` over a field with
+more than two elements), so the criterion must also apply to a normal subgroup cut out inside it.
+For a *split* BN-pair, with a solvable subgroup `U` normalized by `B` and `B ≤ U ⊔ (B ∩ N)`, let
+`H⁺` be the normal closure of `U`. Unless `H⁺ ≤ Z`, Tits's theorem gives `H⁺ B = G`, hence
+`G = H⁺ (B ∩ N)`, so the Tits system pulls back to `H⁺` (`TauCeti.TitsSystem.comap`) and the
+theorems above apply to it. If `H⁺` is perfect, every normal subgroup of `H⁺` lies in `Z` or is
+`H⁺`. If moreover `Z ∩ U = 1`, then `Z` centralizes `H⁺`, so `Z ∩ H⁺` is the centre of `H⁺`, and
+`H⁺` modulo its centre is simple once `U ≠ 1`. When `H⁺` is the derived subgroup, this is the
+simplicity of `TauCeti.DerivedCentralQuotient G`.
 
 ## Main results
 

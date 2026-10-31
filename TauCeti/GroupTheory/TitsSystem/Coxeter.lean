@@ -35,6 +35,8 @@ For nonempty `S` this says exactly that the Coxeter graph of `(W, S)` is connect
 
 ## Main results
 
+* `TauCeti.TitsSystem.IsIrreducible.of_mulEquiv`: irreducibility transfers along an isomorphism
+  of Weyl groups matching the simple reflections.
 * `TauCeti.TitsSystem.isIrreducible_comap_iff`: irreducibility is unchanged by pulling a Tits
   system back along a homomorphism.
 
@@ -94,7 +96,7 @@ theorem isIrreducible_iff : T.IsIrreducible ↔
 
 /-- Irreducibility transfers along an isomorphism of Weyl groups matching the simple
 reflections. -/
-private theorem IsIrreducible.of_mulEquiv {G' : Type*} [Group G'] {T' : TitsSystem G'}
+theorem IsIrreducible.of_mulEquiv {G' : Type*} [Group G'] {T' : TitsSystem G'}
     (φ : T.WeylGroup ≃* T'.WeylGroup) (hφ : ∀ w, φ w ∈ T'.simple ↔ w ∈ T.simple)
     (h : T.IsIrreducible) : T'.IsIrreducible := by
   intro J hJ
