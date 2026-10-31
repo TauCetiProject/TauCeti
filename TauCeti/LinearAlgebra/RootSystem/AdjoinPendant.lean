@@ -68,7 +68,7 @@ def adjoinPendant (M : Matrix α α R) (i : α) : Matrix (Option α) (Option α)
 /-- The pendant edge is a single edge, so transposition leaves it alone and reverses only the
 edges of `M`. -/
 @[simp] lemma adjoinPendant_transpose : (adjoinPendant M i)ᵀ = adjoinPendant Mᵀ i := by
-  ext (_ | v) (_ | w) <;> rfl
+  ext (_ | v) (_ | w) <;> simp
 
 /-- Adjoining a pendant vertex keeps the diagonal entries equal to `2`, as a generalized Cartan
 matrix needs them. -/
@@ -79,6 +79,17 @@ lemma adjoinPendant_diag (hM : ∀ j, M j j = 2) (v : Option α) : adjoinPendant
 lemma adjoinPendant_apply_le_zero_of_ne [Preorder R] [AddLeftMono R] [ZeroLEOneClass R]
     (hM : ∀ j k, j ≠ k → M j k ≤ 0) {v w : Option α} (hvw : v ≠ w) :
     adjoinPendant M i v w ≤ 0 := by
-  rcases v with _ | v <;> rcases w with _ | w <;> simp_all <;> split_ifs <;> simp
+  rcases v with _ | v <;> rcases w with _ | w
+  · exact absurd rfl hvw
+  · rw [adjoinPendant_none_some]
+    split_ifs
+    · exact neg_nonpos.mpr zero_le_one
+    · exact le_rfl
+  · rw [adjoinPendant_some_none]
+    split_ifs
+    · exact neg_nonpos.mpr zero_le_one
+    · exact le_rfl
+  · rw [adjoinPendant_some_some]
+    exact hM v w fun h ↦ hvw (congrArg some h)
 
 end TauCeti
