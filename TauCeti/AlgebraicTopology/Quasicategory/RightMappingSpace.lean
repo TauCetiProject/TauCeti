@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
 public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
 
 /-!
@@ -281,52 +282,6 @@ instance quasicategory [X.Quasicategory] :
 /-! ### Strict Segal simplicial sets -/
 
 section IsStrictSegal
-
-/-- Collapsing `⦋n⦌` to its last vertex fixes the edge of `⦋n⦌ ⋆ ⦋0⦌` from that vertex to the
-final vertex. -/
-private theorem mkOfSucc_last_comp_joinVertex_map {n : ℕ} :
-    mkOfSucc (Fin.last n) ≫
-        joinVertex.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0 ≫
-          SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) =
-      mkOfSucc (Fin.last n) := by
-  ext k : 3
-  fin_cases k
-  · exact (joinVertex_map_castSucc (m := ⦋n⦌) (n := ⦋n⦌) _ (Fin.last n) :)
-  · exact (joinVertex_map_last (m := ⦋n⦌) (n := ⦋n⦌) _ :)
-
-/-- Collapsing `⦋n⦌` to its last vertex sends an edge between two of the first `n + 1` vertices
-of `⦋n⦌ ⋆ ⦋0⦌` to the last of these vertices. -/
-private theorem mkOfSucc_castSucc_comp_joinVertex_map {n : ℕ} (j : Fin n) :
-    mkOfSucc j.castSucc ≫
-        joinVertex.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0 ≫
-          SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) =
-      SimplexCategory.const ⦋1⦌ ⦋n⦌ (Fin.last n) ≫ δ (Fin.last (n + 1)) := by
-  ext k : 3
-  fin_cases k
-  · exact (joinVertex_map_castSucc (m := ⦋n⦌) (n := ⦋n⦌) _ j.castSucc :).trans (by simp [δ]; rfl)
-  · exact (joinVertex_map_castSucc (m := ⦋n⦌) (n := ⦋n⦌) _ j.succ :).trans (by simp [δ]; rfl)
-
-/-- In a strict Segal simplicial set, an `(n + 1)`-simplex whose face opposite to the last vertex
-is constant at `x` is fixed by any operator `r` that fixes the last edge and sends every other
-edge of the spine to the vertex `n`. -/
-private theorem map_eq_of_isStrictSegal [X.IsStrictSegal] {n : ℕ} (r : ⦋n + 1⦌ ⟶ ⦋n + 1⦌)
-    (hlast : mkOfSucc (Fin.last n) ≫ r = mkOfSucc (Fin.last n))
-    (hcast : ∀ j : Fin n, mkOfSucc j.castSucc ≫ r =
-      SimplexCategory.const ⦋1⦌ ⦋n⦌ (Fin.last n) ≫ δ (Fin.last (n + 1)))
-    (σ : X _⦋n + 1⦌)
-    (hσ : X.δ (Fin.last (n + 1)) σ = X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x) :
-    X.map r.op σ = σ := by
-  refine (IsStrictSegal.segal (X := X) (n + 1)).injective (Path.ext' fun i ↦ ?_)
-  rw [spine_arrow, spine_arrow, ← Functor.map_comp_apply, ← op_comp]
-  cases i using Fin.lastCases with
-  | last => rw [hlast]
-  | cast j =>
-    -- Both edges lie in the face opposite to the last vertex, which is constant at `x`.
-    rw [hcast, ← mkOfSucc_δ_lt (Fin.castSucc_lt_last _), op_comp, op_comp, Functor.map_comp_apply,
-      Functor.map_comp_apply]
-    -- `X.δ i` is by definition `X.map (δ i).op`; `change` exposes the face to rewrite with `hσ`.
-    change X.map _ (X.δ _ σ) = X.map _ (X.δ _ σ)
-    rw [hσ, map_map_const_zero, map_map_const_zero]
 
 /-- In the right mapping space of a strict Segal simplicial set, every simplex is the totally
 degenerate simplex at its last vertex. -/
