@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -28,14 +29,17 @@ because `dα` is nondegenerate on `ker α`. Inverting it solves the pointwise li
 define vector fields from a contact form, such as the Reeb vector field `R_α` and contact
 Hamiltonian vector fields. The Reeb vector field is the preimage of `α` itself: the solutions
 of `ι_v dα + α(v) α = α` are exactly the vectors with `α(v) = 1` and `ι_v dα = 0`
-(`TauCeti.SmoothForm.IsContactForm.contactFlat_apply_eq_iff`).
+(`TauCeti.SmoothForm.IsContactForm.contactFlat_apply_eq_iff`), so the Reeb vector field
+`TauCeti.SmoothForm.reebVectorField` is the inverse contact flat map applied to `α`
+(`TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inverse_contactFlat`).
 
 On smooth sections, `X ↦ ι_X dα + α(X) α` is a linear map from smooth vector fields to smooth
 one-forms (`TauCeti.SmoothForm.contactFlatₗ`). For a contact form in finite dimensions it is a
 linear equivalence (`TauCeti.SmoothForm.IsContactForm.contactFlatEquiv`), so the preimage of a
-smooth one-form is a smooth vector field. This smooth-section construction and its evaluation and
-cancellation lemmas are adapted from the symplectic flat equivalence
-`TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accompanying API in
+smooth one-form is a smooth vector field. In particular the Reeb vector field of a contact form is
+smooth (`TauCeti.SmoothForm.IsContactForm.contMDiff_reebVectorField`). This smooth-section
+construction and its evaluation and cancellation lemmas are adapted from the symplectic flat
+equivalence `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accompanying API in
 `TauCeti.Geometry.Symplectic.Manifold.Flat`.
 
 ## Main declarations
@@ -48,6 +52,9 @@ cancellation lemmas are adapted from the symplectic flat equivalence
   characterized by the Reeb equations.
 * `TauCeti.SmoothForm.contactFlatₗ`, `TauCeti.SmoothForm.IsContactForm.contactFlatEquiv`: the
   contact flat map on smooth sections, and its inverse for a contact form.
+* `TauCeti.SmoothForm.IsContactForm.contactFlatEquiv_symm_self`,
+  `TauCeti.SmoothForm.IsContactForm.contMDiff_reebVectorField`: the Reeb vector field corresponds
+  to `α` under the contact flat equivalence, and is smooth.
 
 ## References
 
@@ -139,6 +146,13 @@ theorem isInvertible_contactFlat [FiniteDimensional ℝ E] (x : M) :
         degreeOneEquiv_coe_apply, degreeOneEquiv_coe_apply, smul_eq_mul]
       exact (contactFlat_apply α x v w).symm.trans (hv w)
 
+/-- The Reeb vector field of a contact form is the image of `α` under the inverse contact flat
+map. -/
+theorem reebVectorField_eq_inverse_contactFlat [FiniteDimensional ℝ E] (x : M) :
+    α.reebVectorField x = (α.contactFlat x).inverse (degreeOneEquiv α x) := by
+  rw [← hα.contactFlat_apply_eq_iff.2 ⟨hα.apply_reebVectorField x,
+    hα.mextDeriv_reebVectorField_left x⟩, (hα.isInvertible_contactFlat x).inverse_apply_self]
+
 end IsContactForm
 
 /-! ### Smooth sections -/
@@ -215,6 +229,20 @@ theorem IsContactForm.contactFlatₗ_contactFlatEquiv_symm [FiniteDimensional �
     (hα : α.IsContactForm) (θ : SmoothForm I M ℝ 1) :
     α.contactFlatₗ (hα.contactFlatEquiv.symm θ) = θ :=
   hα.contactFlatEquiv.apply_symm_apply θ
+
+/-- The Reeb vector field of a contact form is the vector field corresponding to `α` under the
+contact flat equivalence. -/
+@[simp]
+theorem IsContactForm.contactFlatEquiv_symm_self [FiniteDimensional ℝ E] (hα : α.IsContactForm) :
+    ⇑(hα.contactFlatEquiv.symm α) = α.reebVectorField :=
+  funext fun x ↦ by
+    rw [hα.contactFlatEquiv_symm_apply, hα.reebVectorField_eq_inverse_contactFlat]
+
+/-- **The Reeb vector field of a contact form is smooth.** -/
+theorem IsContactForm.contMDiff_reebVectorField [FiniteDimensional ℝ E] (hα : α.IsContactForm) :
+    ContMDiff I I.tangent ∞ (T% α.reebVectorField) := by
+  rw [← hα.contactFlatEquiv_symm_self]
+  exact (hα.contactFlatEquiv.symm α).contMDiff
 
 end SmoothForm
 
