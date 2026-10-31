@@ -40,6 +40,7 @@ IV.6.1).
 ## Main definitions
 
 * `FormalGroup.nsmulSeries`: the multiplication-by-`n` series `[n]_F(T)`.
+* `FormalGroup.nsmulHom`: multiplication by `n` as an endomorphism of a commutative formal group.
 
 ## Main results
 
@@ -177,6 +178,16 @@ theorem subst_toPowerSeries_nsmulSeries [F.IsComm] (n : ℕ) :
   funext s
   rw [PowerSeries.toMvPowerSeries_eq_subst, F.subst_nsmulSeries ⟨X s, PowerSeries.HasSubst.X s⟩]
   fin_cases s <;> rfl
+
+/-- Multiplication by `n` as an endomorphism of a commutative formal group law. -/
+noncomputable def nsmulHom [F.IsComm] (n : ℕ) : TauCeti.FormalGroupHom F F where
+  toPowerSeries := F.nsmulSeries n
+  zero_constantCoeff := F.constantCoeff_nsmulSeries n
+  hom := F.subst_toPowerSeries_nsmulSeries n
+
+@[simp]
+theorem nsmulHom_toPowerSeries [F.IsComm] (n : ℕ) :
+    (F.nsmulHom n).toPowerSeries = F.nsmulSeries n := (rfl)
 
 /-- Multiplication by `n` on the additive formal group law `X + Y` is `[n](T) = n T`. -/
 @[simp]

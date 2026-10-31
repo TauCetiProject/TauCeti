@@ -126,6 +126,15 @@ theorem mem_crossingCoveredSquares (P : GridHexagonBetween a s s' x y) (p : Fin 
   simp only [crossingCoveredSquares, Finset.mem_union, Finset.mem_filter, Finset.mem_product,
     Finset.mem_singleton]
 
+/-- The squares covered by a crossing-change hexagon turning on its terminal side depend only on
+its underlying toroidal rectangle. -/
+theorem crossingCoveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridHexagonBetween a s s' x y) (Q : GridHexagonBetween a s s' u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) :
+    P.crossingCoveredSquares = Q.crossingCoveredSquares := by
+  ext p
+  simp only [mem_crossingCoveredSquares, h]
+
 end GridHexagonBetween
 
 namespace GridInitialHexagonBetween
@@ -155,6 +164,15 @@ theorem mem_crossingCoveredSquares (P : GridInitialHexagonBetween a s s' x y)
         p.1 = a ∧ p.2 ∈ Grid.cIoo s s' := by
   simp only [crossingCoveredSquares, Finset.mem_union, Finset.mem_filter, Finset.mem_product,
     Finset.mem_singleton]
+
+/-- The squares covered by a crossing-change hexagon turning on its initial side depend only on
+its underlying toroidal rectangle. -/
+theorem crossingCoveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridInitialHexagonBetween a s s' x y) (Q : GridInitialHexagonBetween a s s' u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) :
+    P.crossingCoveredSquares = Q.crossingCoveredSquares := by
+  ext p
+  simp only [mem_crossingCoveredSquares, h]
 
 end GridInitialHexagonBetween
 

@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Contour.Argument.Divisor
 import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
 # Rouché's theorem
@@ -100,17 +101,6 @@ other. That transfer, not the numerical equality, is how Rouché is normally use
   `TauCeti.rouche_add_windingNumber_comp` — the "dog on a leash" form, in the same three phrasings:
   under the symmetric, the classical, respectively the additive hypothesis along the curve, the
   image curves wind equally often about the origin.
-
-## Coordination with upstream Mathlib
-
-Mathlib has no Rouché theorem. However, per the *Coordination with upstream Mathlib* section of
-`ConformalMapping/README.md`, this layer overlaps
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which proves L0-level material (an argument
-principle, Hurwitz) internally as private lemmas. **This file is therefore a temporary shim**: once
-the corresponding Mathlib lemmas land, this statement should be backed by them — or deleted and its
-consumers refactored — rather than maintained as an independent re-proof. What Tau Ceti adds at L0
-is named, discoverable API, not first proof.
 
 ## References
 
@@ -240,7 +230,7 @@ private lemma finsum_divisor_cast {h : ℂ → ℂ} (hh : AnalyticOnNhd ℂ h (c
     obtain ⟨hzb, hzs⟩ := hz
     simp only [Function.mem_support, ne_eq] at hzs
     have hd : MeromorphicOn.divisor h (ball c R) z ≠ 0 := by
-      rw [Contour.divisor_eq_analyticOrderNatAt (hh.mono ball_subset_closedBall).meromorphicOn
+      rw [(hh.mono ball_subset_closedBall).meromorphicOn.divisor_eq_analyticOrderNatAt
         (hh _ (ball_subset_closedBall hzb)) hzb]
       exact_mod_cast hzs
     simpa [hS, Set.Finite.mem_toFinset] using hd
@@ -248,7 +238,7 @@ private lemma finsum_divisor_cast {h : ℂ → ℂ} (hh : AnalyticOnNhd ℂ h (c
   push_cast
   refine Finset.sum_congr rfl (fun z hz => ?_)
   have hzb' := hsub (by simpa [hS] using hz)
-  rw [Contour.divisor_eq_analyticOrderNatAt (hh.mono ball_subset_closedBall).meromorphicOn
+  rw [(hh.mono ball_subset_closedBall).meromorphicOn.divisor_eq_analyticOrderNatAt
     (hh _ (ball_subset_closedBall hzb')) hzb']
   push_cast
   ring

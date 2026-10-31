@@ -8,8 +8,10 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Linear
 public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.HighestWeight.OrbitSum
+public import TauCeti.Algebra.Lie.TracePowerPolynomial
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 import TauCeti.Algebra.Lie.HighestWeight.Weight.Density
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Reynolds
 
 /-!
@@ -69,6 +71,9 @@ The proof combines three earlier results.
 * `TauCeti.lift_cartanEquivDual_tracePowerRestriction`: the value of
   `tracePowerRestriction K H M m` at the weight `κ(h, ·)` is `tr (ρ_M(h) ^ m)`, so it is the
   Killing transport of the restriction of `x ↦ tr (ρ_M(x) ^ m)` to `H`.
+* `TauCeti.map_dualMap_tracePowerPolynomial`: the restriction to `H` of the invariant polynomial
+  function `TauCeti.tracePowerPolynomial K L M m` on `L` is `tracePowerRestriction K H M m`, read
+  through the Killing duality.
 * `TauCeti.span_highestWeightTracePowerRestriction_eq_linearInvariants_inf_homogeneousSubmodule`:
   **the trace-power polynomials of the modules `L(λ)` span the degree-`m` Weyl invariants.**
 
@@ -183,6 +188,29 @@ theorem lift_cartanEquivDual_tracePowerRestriction (h : H) (m : ℕ) :
     invForm_cartanEquivDual_left]
   simp
 
+/-- **The trace-power polynomial restricts to the power sum of the weights.** Restricting the
+invariant polynomial function `x ↦ tr (ρ_M(x) ^ m)` on `L` (`TauCeti.tracePowerPolynomial`) to the
+Cartan subalgebra `H` gives the power sum `tracePowerRestriction K H M m = ∑_μ dim M_μ · t_μ ^ m`,
+read as a polynomial function on `H` through the Killing duality `H ≃ H*`. -/
+theorem map_dualMap_tracePowerPolynomial (m : ℕ) :
+    _root_.SymmetricAlgebra.map K H.incl.toLinearMap.dualMap (tracePowerPolynomial K L M m) =
+      _root_.SymmetricAlgebra.map K (IsKilling.cartanEquivDual H).toLinearMap
+        (tracePowerRestriction K H M m) := by
+  refine SymmetricAlgebra.eq_of_forall_lift_apply_eq fun f ↦ ?_
+  obtain ⟨h, rfl⟩ := (Module.evalEquiv K H).surjective f
+  -- evaluating at `h` after either induced map is evaluating at a linear form on the source
+  have hL : (SymmetricAlgebra.lift (Module.evalEquiv K H h)).comp
+      (_root_.SymmetricAlgebra.map K H.incl.toLinearMap.dualMap) =
+        SymmetricAlgebra.lift (Dual.eval K L (h : L)) :=
+    SymmetricAlgebra.algHom_ext (LinearMap.ext fun φ ↦ by simp)
+  have hH : (SymmetricAlgebra.lift (Module.evalEquiv K H h)).comp
+      (_root_.SymmetricAlgebra.map K (IsKilling.cartanEquivDual H).toLinearMap) =
+        SymmetricAlgebra.lift (IsKilling.cartanEquivDual H h) :=
+    SymmetricAlgebra.algHom_ext <| LinearMap.ext fun h' ↦ by
+      simpa using LinearMap.trace_mul_comm K (toEnd K H L h') (toEnd K H L h)
+  rw [← AlgHom.comp_apply, hL, ← AlgHom.comp_apply, hH, lift_eval_tracePowerPolynomial,
+    lift_cartanEquivDual_tracePowerRestriction, LieSubalgebra.toEnd_eq]
+
 end TracePower
 
 /-! ### Weyl invariance -/
@@ -221,8 +249,6 @@ section Span
 
 variable [CharZero K] [IsTriangularizable K H L] {b : (IsKilling.rootSystem H).Base}
 
-variable [IsAlgClosed K]
-
 /-- **The trace-power polynomial of `L(λ)`** for a dominant integral weight `λ`, the module
 `L(λ)` being finite-dimensional exactly then
 (`TauCeti.finiteDimensional_irreducibleQuotient_of_isDominantIntegral`). -/
@@ -237,6 +263,8 @@ theorem highestWeightTracePowerRestriction_def {lam : Dual K H} (hlam : IsDomina
     highestWeightTracePowerRestriction hlam m =
       tracePowerRestriction K H (irreducibleQuotient b lam) m :=
   (rfl)
+
+variable [IsAlgClosed K]
 
 /-- **The orbit power sums lie in the span of the trace-power polynomials.** For a dominant
 integral weight `λ`, the power sum of the Weyl orbit sum `m_λ` is a combination of the

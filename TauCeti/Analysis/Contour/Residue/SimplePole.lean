@@ -46,6 +46,8 @@ direction one uses in practice to read off a residue.
 * `TauCeti.Contour.residue_sub_inv` — `residue (fun z => (z − z₀)⁻¹) z₀ = 1`, and
   `TauCeti.Contour.residue_const_mul_sub_inv` — `residue (fun z => c · (z − z₀)⁻¹) z₀ = c`: the
   elementary simple-pole residues, read off from the converse rule.
+* `TauCeti.Contour.analyticAt_const_mul_sub_inv` — the principal part `A · (z − s)⁻¹` is analytic
+  at every point where it is not a genuine pole: whenever `A = 0` or `z ≠ s`.
 
 ## Provenance
 
@@ -195,6 +197,13 @@ residue. -/
 theorem residue_const_mul_sub_inv (c z₀ : ℂ) :
     residue (fun z => c * (z - z₀)⁻¹) z₀ = c := by
   rw [residue_const_mul c, residue_sub_inv, mul_one]
+
+/-- A single principal part `A · (w − s)⁻¹` is analytic at `z` if it vanishes or `z ≠ s`. -/
+theorem analyticAt_const_mul_sub_inv {A s z : ℂ} (h : A = 0 ∨ z ≠ s) :
+    AnalyticAt ℂ (fun w => A * (w - s)⁻¹) z := by
+  rcases h with rfl | h
+  · simpa using analyticAt_const
+  · fun_prop (disch := exact sub_ne_zero.2 h)
 
 end TauCeti.Contour
 
