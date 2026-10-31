@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Flow.Complete
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import TauCeti.Geometry.Diffeomorphism.Group
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -30,6 +31,8 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
   time and space.
 * `TauCeti.globalFlowDiffeomorph`: for a complete `C^n` field, the time-`t` map is a `C^n`
   diffeomorphism; `TauCeti.globalFlowDiffeomorph_symm_apply`: its inverse is the time-`(-t)` map.
+* `TauCeti.globalFlowDiffeomorphHom`: the flow as a homomorphism from the additive group `ℝ` to
+  the group of `C^n` self-diffeomorphisms.
 
 ## References
 
@@ -180,5 +183,30 @@ theorem globalFlowDiffeomorph_symm_apply {n : ℕ∞} (hn : 1 ≤ n) [IsManifold
       globalFlow v (hvn.of_le (by exact_mod_cast hn)) hcomplete (-t) x := by
   rw [← Diffeomorph.coe_toEquiv, Diffeomorph.symm_toEquiv, globalFlowDiffeomorph,
     Homeomorph.coe_symm_toEquiv, Flow.toHomeomorph_symm_apply]
+
+omit hv in
+/-- The flow of a complete `C^n` vector field, `1 ≤ n`, as a homomorphism from the additive group
+of times to the group of `C^n` self-diffeomorphisms, written additively as for
+`AddAction.toPermHom`: time `s + t` acts as time `s` after time `t`. -/
+noncomputable def globalFlowDiffeomorphHom {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hvn : ContMDiff I I.tangent n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
+    ℝ →+ Additive (M ≃ₘ^n⟮I, I⟯ M) where
+  toFun t := Additive.ofMul (globalFlowDiffeomorph hcomplete hn hvn t)
+  map_zero' := Additive.toMul.injective <| Diffeomorph.ext fun x ↦ by
+    rw [toMul_ofMul, globalFlowDiffeomorph_apply, Flow.map_zero_apply, toMul_zero,
+      Diffeomorph.one_apply]
+  map_add' s t := Additive.toMul.injective <| Diffeomorph.ext fun x ↦ by
+    rw [toMul_add, toMul_ofMul, toMul_ofMul, toMul_ofMul, Diffeomorph.mul_apply,
+      globalFlowDiffeomorph_apply, globalFlowDiffeomorph_apply, globalFlowDiffeomorph_apply,
+      Flow.map_add]
+
+omit hv in
+/-- The image of a time under `globalFlowDiffeomorphHom` is the time-`t` diffeomorphism. -/
+@[simp]
+theorem toMul_globalFlowDiffeomorphHom {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hvn : ContMDiff I I.tangent n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (t : ℝ) :
+    (globalFlowDiffeomorphHom hcomplete hn hvn t).toMul =
+      globalFlowDiffeomorph hcomplete hn hvn t :=
+  (rfl)
 
 end TauCeti
