@@ -293,8 +293,7 @@ private noncomputable def resGradedCochainComplexHom (φ : H →* G) :
         (by rw [← Functor.map_comp, hdd, Functor.map_zero]) where
   f n := (TopRep.res φ M).gradedCochainComplexLift _ _ _ _ _ n
     ((resFunctor φ).map (M.gradedCochainComplexι ℳ hρ d hd hdd n)) fun v ↦ by
-      change (M.gradedCochainComplexι ℳ hρ d hd hdd n).hom v ∈ ℳ n
-      rw [gradedCochainComplexι_apply]
+      rw [resFunctor_map_hom, ContIntertwiningMap.restrict_apply, gradedCochainComplexι_apply]
       exact v.2
   comm' i j hij := by
     obtain rfl : i + 1 = j := hij
