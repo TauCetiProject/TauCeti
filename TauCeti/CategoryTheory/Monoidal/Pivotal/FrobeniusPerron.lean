@@ -27,9 +27,8 @@ categorical dimensions is required.
 
 * `TauCeti.norm_leftDim_le_frobeniusPerronDim`: the left categorical dimension bound.
 * `TauCeti.norm_rightDim_le_frobeniusPerronDim`: the right categorical dimension bound.
-* `TauCeti.SplitK0.rightDimChar_apply_eq_conj` and `TauCeti.norm_rightDim_eq_norm_leftDim`: the
-  right dimension character is the complex conjugate of the left one, so the two categorical
-  dimensions of an object have the same absolute value.
+* `TauCeti.norm_globalDim_le_frobeniusPerronGlobalDim`: the absolute value of the global
+  dimension is at most the Frobenius–Perron dimension of the category.
 
 ## References
 
@@ -39,7 +38,7 @@ categorical dimensions is required.
 
 public section
 
-open CategoryTheory CategoryTheory.Limits MonoidalCategory ComplexConjugate
+open CategoryTheory CategoryTheory.Limits MonoidalCategory
 
 namespace TauCeti
 
@@ -49,7 +48,11 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
   [MonoidalPreadditive C] [RigidCategory C] [PivotalCategory C] [Linear ℂ C]
   [MonoidalLinear ℂ C] [IsFiniteSemisimpleCategory C]
   [∀ X Y : C, FiniteDimensional ℂ (X ⟶ Y)] [Simple (𝟙_ C)]
-  [EssentiallySmall.{w} C] [Finite (SimpleClasses C)]
+  [EssentiallySmall.{w} C]
+
+section Finite
+
+variable [Finite (SimpleClasses C)]
 
 /-- In a complex pivotal fusion category, the absolute value of the left categorical dimension
 of any object is at most its Frobenius–Perron dimension. -/
@@ -65,18 +68,21 @@ theorem norm_rightDim_le_frobeniusPerronDim (X : C) :
   simpa only [SplitK0.rightDimChar_of] using
     SplitK0.norm_ringHom_of_le_frobeniusPerronDim ℂ (SplitK0.rightDimChar ℂ C) X
 
-/-- In a complex pivotal fusion category, the right dimension character is the complex conjugate
-of the left dimension character, since characters of the Grothendieck ring are ⋆-characters. -/
-theorem SplitK0.rightDimChar_apply_eq_conj (x : SplitK0 C) :
-    SplitK0.rightDimChar ℂ C x = conj (SplitK0.leftDimChar ℂ C x) := by
-  rw [← SplitK0.leftDimChar_dual, SplitK0.ringHom_apply_dual ℂ]
+end Finite
 
-/-- In a complex pivotal fusion category, the left and right categorical dimensions of an object
-have the same absolute value. -/
-theorem norm_rightDim_eq_norm_leftDim (X : C) :
-    ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (rightDim X))‖ =
-      ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (leftDim X))‖ := by
-  rw [← SplitK0.rightDimChar_of, ← SplitK0.leftDimChar_of, SplitK0.rightDimChar_apply_eq_conj,
-    RCLike.norm_conj]
+section GlobalDim
+
+variable (C) [Fintype (SimpleClasses C)]
+
+/-- In a complex pivotal fusion category, the absolute value of the global dimension is at most
+the Frobenius–Perron dimension of the category. -/
+theorem norm_globalDim_le_frobeniusPerronGlobalDim :
+    ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (globalDim C))‖ ≤ frobeniusPerronGlobalDim.{w} ℂ C := by
+  rw [endAlgEquivOfSimple_globalDim, Complex.norm_real, Real.norm_of_nonneg
+    (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _), frobeniusPerronGlobalDim_def]
+  exact Finset.sum_le_sum fun S _ ↦
+    pow_le_pow_left₀ (norm_nonneg _) (norm_leftDim_le_frobeniusPerronDim S.repr) 2
+
+end GlobalDim
 
 end TauCeti

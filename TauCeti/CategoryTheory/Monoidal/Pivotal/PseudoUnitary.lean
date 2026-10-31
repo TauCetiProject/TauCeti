@@ -16,7 +16,8 @@ numbers through `TauCeti.endAlgEquivOfSimple ℂ (𝟙_ C)`, its global dimensio
 `globalDim C = ∑ S, leftDim S ≫ leftDim Sᘁ` is `∑ S, |dim_L S|²`, because the left dimension of
 `Sᘁ` is the complex conjugate of that of `S`. Since `|dim_L S| ≤ FPdim S` for every simple `S`, the
 global dimension is a nonnegative real number bounded by the Frobenius–Perron dimension
-`TauCeti.frobeniusPerronGlobalDim ℂ C = ∑ S, (FPdim S)²` of the category.
+`TauCeti.frobeniusPerronGlobalDim ℂ C = ∑ S, (FPdim S)²` of the category
+(`TauCeti.endAlgEquivOfSimple_globalDim` and `TauCeti.norm_globalDim_le_frobeniusPerronGlobalDim`).
 
 The category is **pseudo-unitary** when the two agree. This is a property of `C`: the global
 dimension does not depend on the pivotal structure. Comparing the two sums term by term, `C` is
@@ -32,9 +33,6 @@ are then real and equal to the left ones.
 
 * `TauCeti.IsPseudoUnitary`: a complex pivotal fusion category is pseudo-unitary when its global
   dimension is its Frobenius–Perron dimension.
-* `TauCeti.endAlgEquivOfSimple_globalDim`: the global dimension is `∑ S, |dim_L S|²`, and
-  `TauCeti.norm_globalDim_le_frobeniusPerronGlobalDim` bounds it by the Frobenius–Perron
-  dimension.
 * `TauCeti.isPseudoUnitary_iff_norm_leftDim_eq` and
   `TauCeti.isPseudoUnitary_iff_norm_rightDim_eq`: pseudo-unitarity means that the categorical
   dimensions of every simple object have absolute value its Frobenius–Perron dimension.
@@ -55,7 +53,7 @@ are then real and equal to the left ones.
 
 public section
 
-open CategoryTheory CategoryTheory.Limits MonoidalCategory ComplexConjugate
+open CategoryTheory CategoryTheory.Limits MonoidalCategory
 
 namespace TauCeti
 
@@ -84,28 +82,6 @@ variable [PivotalCategory C]
 theorem isPseudoUnitary_iff_globalDim_eq :
     IsPseudoUnitary.{w} C ↔ globalDim C = (frobeniusPerronGlobalDim.{w} ℂ C : ℂ) • 𝟙 (𝟙_ C) :=
   ⟨fun h ↦ h.globalDim_eq, fun h ↦ ⟨h⟩⟩
-
-/-- In a complex pivotal fusion category, the global dimension, read as a complex number, is the
-sum of the squared absolute values of the left dimensions of the simple classes. -/
-theorem endAlgEquivOfSimple_globalDim :
-    endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (globalDim C)) =
-      ((∑ S : SimpleClasses C, ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (leftDim S.repr))‖ ^ 2 : ℝ) :
-        ℂ) := by
-  rw [globalDim_eq_sum_leftDimChar_smul ℂ, End.of_smul, End.of_id, map_smul, map_one,
-    smul_eq_mul, mul_one, Complex.ofReal_sum]
-  refine Finset.sum_congr rfl fun S _ ↦ ?_
-  rw [← SplitK0.dual_of, SplitK0.leftDimChar_dual, SplitK0.rightDimChar_apply_eq_conj,
-    RCLike.mul_conj, SplitK0.leftDimChar_of]
-  norm_cast
-
-/-- In a complex pivotal fusion category, the absolute value of the global dimension is at most
-the Frobenius–Perron dimension of the category. -/
-theorem norm_globalDim_le_frobeniusPerronGlobalDim :
-    ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (globalDim C))‖ ≤ frobeniusPerronGlobalDim.{w} ℂ C := by
-  rw [endAlgEquivOfSimple_globalDim, Complex.norm_real, Real.norm_of_nonneg
-    (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _), frobeniusPerronGlobalDim_def]
-  exact Finset.sum_le_sum fun S _ ↦
-    pow_le_pow_left₀ (norm_nonneg _) (norm_leftDim_le_frobeniusPerronDim S.repr) 2
 
 variable {C}
 
