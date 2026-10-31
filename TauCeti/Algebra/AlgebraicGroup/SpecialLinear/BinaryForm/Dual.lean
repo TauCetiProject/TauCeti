@@ -215,10 +215,8 @@ private theorem upperAntipode_matrixCoefficient {i j a b : ℕ} (h : i + j = a +
           (Algebra.TensorProduct.map (AlgHom.id k _) (upperAntipode (k := k)) y)) := by
     have h := LinearMap.congr_fun
       (CoassocSimps.lid_comp_map ψ (upperAntipode (k := k)).toLinearMap) y
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply] at h
-    rw [← h, ← AlgHom.toLinearMap_apply, Algebra.TensorProduct.toLinearMap_map,
-      TensorProduct.AlgebraTensorModule.map_eq, ← LinearMap.comp_apply, ← TensorProduct.map_comp,
-      AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp]
+    rw [← AlgHom.toLinearMap_apply (Algebra.TensorProduct.map _ _)]
+    simpa [TensorProduct.AlgebraTensorModule.map_eq, TensorProduct.map_map] using h.symm
   rw [Comodule.matrixCoefficient_def, hnat, polynomialComodule_coact, AlgHom.toLinearMap_apply]
   simp only [map_mul, map_pow]
   rw [map_upperAntipode_coact_X, map_upperAntipode_coact_X, upperEntry_one_zero,
@@ -255,6 +253,17 @@ private theorem upperAntipode_matrixCoefficient {i j a b : ℕ} (h : i + j = a +
   · rfl
   · rw [Nat.choose_eq_zero_of_lt (by simpa using hi), Nat.cast_zero, zero_smul]
 
+/-- A functional on `k[x, y]` restricted to `R_d` has the same matrix coefficients on `R_d` as
+the functional itself. -/
+private theorem matrixCoefficient_comp_subtype (φ : Module.Dual k (MvPolynomial (Fin 2) k))
+    (f : binaryForms k d) :
+    Comodule.matrixCoefficient (C := coordinateHopfAlgebra k 2)
+        (φ.comp (SMulMemClass.subtype (binaryForms k d))) f =
+      Comodule.matrixCoefficient (C := coordinateHopfAlgebra k 2) φ
+        (f : MvPolynomial (Fin 2) k) := by
+  rw [← Subcomodule.subtype_toLinearMap, ← Comodule.matrixCoefficient_map,
+    Subcomodule.subtype_apply]
+
 /-- The restricted coaction of a coordinate functional `δ` on `R_d` is `δ ⊗ h` exactly when
 the restricted antipode of each matrix coefficient `c(δ, f)` is `δ(f) h`. -/
 private theorem lTensor_coact_lcoeff_comp_subtype_eq_tmul_iff {s : Fin 2 →₀ ℕ}
@@ -278,9 +287,8 @@ private theorem lTensor_coact_lcoeff_comp_subtype_eq_tmul_iff {s : Fin 2 →₀ 
           dualTensorHom k (binaryForms k d) (coordinateHopfAlgebra k 2) x :=
     LinearMap.congr_fun (dualTensorHom_comp_lTensor _) x
   rw [hl, LinearMap.comp_apply, Comodule.dualTensorHom_dualCoact_apply, dualTensorHom_apply,
-    ← Subcomodule.subtype_toLinearMap, ← Comodule.matrixCoefficient_map]
-  simp only [LinearMap.comp_apply, Subcomodule.subtype_apply, Subcomodule.subtype_toLinearMap,
-    SMulMemClass.coe_subtype, MvPolynomial.lcoeff_apply]
+    matrixCoefficient_comp_subtype]
+  simp only [LinearMap.comp_apply, SMulMemClass.coe_subtype, MvPolynomial.lcoeff_apply]
   -- `upperAntipode` is by definition the antipode followed by the restriction map.
   rfl
 
