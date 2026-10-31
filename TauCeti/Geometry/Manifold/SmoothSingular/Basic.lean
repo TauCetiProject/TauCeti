@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Subcomplex
-public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.Geometry.Convex.FullSimplex
 public import TauCeti.Geometry.Manifold.ContMDiff.OnSubset
 
@@ -108,8 +108,11 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topologic
 /-- A smooth map carries smooth singular simplices to smooth singular simplices. -/
 theorem smoothSingularSubcomplex_le_preimage (hφ : ContMDiff I J ∞ φ) :
     smoothSingularSubcomplex I M ≤ (smoothSingularSubcomplex J N).preimage
-      (TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)) :=
-  fun _ _ hσ ↦ hφ.comp_contMDiffOnSubset hσ
+      (TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)) := fun k σ hσ ↦ by
+  rw [SSet.Subcomplex.preimage_obj, Set.mem_preimage, mem_smoothSingularSubcomplex_iff,
+    TopCat.toSSetObjEquiv_toSSet_map_app, ConcreteCategory.hom_ofHom, ContinuousMap.coe_comp,
+    ContinuousMap.coe_mk, Function.comp_assoc]
+  exact hφ.comp_contMDiffOnSubset hσ
 
 variable (φ) in
 /-- The map of smooth singular subcomplexes induced by a smooth map. -/
