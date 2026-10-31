@@ -22,7 +22,8 @@ act skew-adjointly on two-forms.
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`.
 * `exteriorPower.ext_inner_ιMulti`: elements of `⋀ⁿ E` with the same inner products against all
-  wedges of vectors are equal.
+  wedges of vectors are equal, and `exteriorPower.linearMap_ext_inner_ιMulti` is the
+  corresponding extensionality principle for linear maps between exterior powers.
 * `exteriorPower.inner_exteriorSquareDerivation_left`: the derivation action `D_A` of a
   skew-adjoint `A` on two-forms is skew-adjoint, `⟪D_A x, y⟫ = -⟪x, D_A y⟫`.
 -/
@@ -74,6 +75,14 @@ theorem ext_inner_ιMulti {x y : ⋀[ℝ]^n E} (h : ∀ v, ⟪x, ιMulti ℝ n v
     rintro _ ⟨v, rfl⟩
     simp [h]
   simpa only [innerₗ_apply_apply, LinearMap.zero_apply] using LinearMap.congr_fun this (x - y)
+
+omit [FiniteDimensional ℝ E] in
+/-- Linear maps `⋀ⁿ E → ⋀ᵐ F` agree when their values on wedges of vectors have the same inner
+products with all wedges of vectors. -/
+theorem linearMap_ext_inner_ιMulti {m : ℕ} {f g : ⋀[ℝ]^n E →ₗ[ℝ] ⋀[ℝ]^m F}
+    (h : ∀ v w, ⟪f (ιMulti ℝ n v), ιMulti ℝ m w⟫ = ⟪g (ιMulti ℝ n v), ιMulti ℝ m w⟫) :
+    f = g :=
+  linearMap_ext (AlternatingMap.ext fun v ↦ ext_inner_ιMulti (h v))
 
 /-- **Skew-adjoint endomorphisms act skew-adjointly on two-forms**: if `⟪A u, w⟫ = -⟪u, A w⟫`
 for all `u, w`, then the derivation action `D_A (u ∧ w) = A u ∧ w + u ∧ A w` satisfies

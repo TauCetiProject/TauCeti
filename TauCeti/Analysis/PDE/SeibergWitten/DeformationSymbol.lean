@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 
 /-!
 # The principal symbol of the anti-self-dual deformation operator
@@ -77,30 +78,16 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 local instance finiteDimensional_of_finrank_eq_four : FiniteDimensional ℝ V :=
   .of_fact_finrank_eq_succ 3
 
-omit [Fact (finrank ℝ V = 4)] in
-/-- The wedge `ξ ∧ a` is additive in `a`. -/
-private theorem ιMulti_add_right (ξ a b : V) :
-    ιMulti ℝ 2 ![ξ, a + b] = ιMulti ℝ 2 ![ξ, a] + ιMulti ℝ 2 ![ξ, b] := by
-  apply Subtype.ext
-  simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail, mul_add]
-
-omit [Fact (finrank ℝ V = 4)] in
-/-- The wedge `ξ ∧ a` is homogeneous in `a`. -/
-private theorem ιMulti_smul_right (ξ a : V) (c : ℝ) :
-    ιMulti ℝ 2 ![ξ, c • a] = c • ιMulti ℝ 2 ![ξ, a] := by
-  apply Subtype.ext
-  simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail]
-
 /-- **The principal symbol of `δ₀ = (-d*, √2 d⁺)`** at `ξ`:
 `σ_ξ(a) = (⟪ξ, a⟫, √2 (ξ ∧ a)⁺)`, where `(ξ ∧ a)⁺ = (ξ ∧ a + ⋆(ξ ∧ a)) / 2` is the self-dual part,
 so that the second component is `(√2 / 2) (ξ ∧ a + ⋆(ξ ∧ a))`. -/
 def deformationSymbol (ξ : V) : V →ₗ[ℝ] ℝ × ⋀[ℝ]^2 V where
   toFun a := (⟪ξ, a⟫, (√2 / 2) • (ιMulti ℝ 2 ![ξ, a] + o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a])))
   map_add' a b := by
-    simp only [inner_add_right, ιMulti_add_right, map_add, Prod.mk_add_mk, smul_add]
+    simp only [inner_add_right, ιMulti_two_add_right, map_add, Prod.mk_add_mk, smul_add]
     abel_nf
   map_smul' c a := by
-    simp only [real_inner_smul_right, ιMulti_smul_right, map_smul, ← smul_add, smul_comm c,
+    simp only [real_inner_smul_right, ιMulti_two_smul_right, map_smul, ← smul_add, smul_comm c,
       RingHom.id_apply, Prod.smul_mk, smul_eq_mul]
 
 @[simp]
@@ -156,12 +143,16 @@ theorem deformationSymbol_self (ξ : V) : deformationSymbol o hkl ξ ξ = (‖ξ
   · simp
   · simp [h]
 
-/-- The complex structure `J′` of `ℝ ⊕ Λ⁺` determined by an almost complex structure `J`:
-`J′(f, η) = (-⟪ω_u, η⟫, f ω_u + D_J η / 2)`, where `ω_u = ω / √2 = (√2 / 2) ω` is the unit Kähler
-form and `D_J` the derivation action of `J` on two-forms. Writing `η = g ω_u + ρ` with `ρ ⊥ ω_u`
-self-dual, this is `J′(f, g ω_u + ρ) = (-g, f ω_u + ω_u × ρ)`, since `D_J ω = 0`. It is a complex
-structure on `ℝ ⊕ Λ⁺` (`deformationComplexStructure_deformationComplexStructure`); only this
-restriction is meaningful, the formula being extended to `ℝ × ⋀²` for convenience. -/
+/-- The linear map `J′(f, η) = (-⟪ω_u, η⟫, f ω_u + D_J η / 2)` on `ℝ × ⋀² V` determined by an
+almost complex structure `J`, where `ω` is the Kähler two-vector of `J`, `ω_u = ω / √2 = (√2 / 2) ω`
+and `D_J` is the derivation action of `J` on two-forms. The formula makes sense for every `J`.
+
+When `J` is orthogonal and induces the orientation, witnessed by a positively oriented orthonormal
+basis `e` with `J e₀ = e₁` and `J e₂ = e₃`, the form `ω_u` is a self-dual unit vector and
+`D_J ω = 0`, so writing `η = g ω_u + ρ` with `ρ ⊥ ω_u` self-dual gives
+`J′(f, g ω_u + ρ) = (-g, f ω_u + ω_u × ρ)`. Under these hypotheses `J′` preserves `ℝ ⊕ Λ⁺`
+(`hodgeStar_deformationComplexStructure_snd`) and is a complex structure there
+(`deformationComplexStructure_deformationComplexStructure`). -/
 def deformationComplexStructure (J : AlmostComplexStructure V) :
     ℝ × ⋀[ℝ]^2 V →ₗ[ℝ] ℝ × ⋀[ℝ]^2 V where
   toFun p := (-(√2 / 2 * ⟪J.kahlerForm, p.2⟫),
