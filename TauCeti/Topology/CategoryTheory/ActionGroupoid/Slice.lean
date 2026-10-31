@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
-public import TauCeti.Topology.CategoryTheory.ActionGroupoid
+public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
 
 /-!
 # Slice charts of topological action groupoids

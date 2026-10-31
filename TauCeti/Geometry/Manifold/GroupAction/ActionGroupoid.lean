@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Instances.Comap
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
-public import TauCeti.Topology.CategoryTheory.ActionGroupoid
+public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
 
 /-!
 # The smooth structure of an action groupoid
