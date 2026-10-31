@@ -51,6 +51,12 @@ theorem coeff_cartier (q r n : ℕ) (F : PowerSeries R) :
     (cartier R q r F).coeff n = F.coeff (q * n + r) := by
   simp [cartier]
 
+/-- The constant coefficient of a Cartier component is the coefficient at its index. -/
+@[simp]
+theorem constantCoeff_cartier (q r : ℕ) (F : PowerSeries R) :
+    constantCoeff (cartier R q r F) = F.coeff r := by
+  simp [← coeff_zero_eq_constantCoeff_apply]
+
 /-- The residue-zero Cartier operator of modulus one is the identity. -/
 @[simp]
 theorem cartier_one_zero : cartier R 1 0 = LinearMap.id := by

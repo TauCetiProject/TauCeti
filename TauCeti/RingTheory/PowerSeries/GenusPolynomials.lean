@@ -72,29 +72,29 @@ theorem multiplicativeSequence_bernoulli'PowerSeries_one :
 theorem multiplicativeSequence_bernoulli'PowerSeries_two :
     (bernoulli'PowerSeries A).multiplicativeSequence (n + 2) 2 =
       MvPolynomial.C (algebraMap ℚ A (1 / 12)) * (MvPolynomial.X 0 ^ 2 + MvPolynomial.X 1) := by
-  have h : algebraMap ℚ A (1 / 2) ^ 2 - 2 * algebraMap ℚ A (1 / 12) =
-      algebraMap ℚ A (1 / 12) := by
-    rw [← map_pow, ← map_ofNat (algebraMap ℚ A) 2, ← map_mul, ← map_sub]
+  have h : algebraMap ℚ A (1 / 2) ^ 2 = 3 * algebraMap ℚ A (1 / 12) := by
+    simp only [← map_ofNat (algebraMap ℚ A), ← map_pow, ← map_mul]
     norm_num
   rw [multiplicativeSequence_two_right n (constantCoeff_bernoulli'PowerSeries A),
-    coeff_one_bernoulli'PowerSeries, coeff_two_bernoulli'PowerSeries, h, mul_add]
+    coeff_one_bernoulli'PowerSeries, coeff_two_bernoulli'PowerSeries, h]
+  simp only [map_sub, map_mul, map_ofNat]
+  ring
 
 /-- The third Todd polynomial, in rank at least three: `Td₃ = c₁c₂/24`. -/
 theorem multiplicativeSequence_bernoulli'PowerSeries_three :
     (bernoulli'PowerSeries A).multiplicativeSequence (n + 3) 3 =
       MvPolynomial.C (algebraMap ℚ A (1 / 24)) * MvPolynomial.X 0 * MvPolynomial.X 1 := by
-  have h₁ : algebraMap ℚ A (1 / 2) * algebraMap ℚ A (1 / 12) - 3 * 0 =
-      algebraMap ℚ A (1 / 24) := by
-    rw [← map_mul, mul_zero, sub_zero]
+  have h₁ : algebraMap ℚ A (1 / 2) * algebraMap ℚ A (1 / 12) = algebraMap ℚ A (1 / 24) := by
+    simp only [← map_mul]
     norm_num
-  have h₂ : algebraMap ℚ A (1 / 2) ^ 3 -
-      3 * algebraMap ℚ A (1 / 2) * algebraMap ℚ A (1 / 12) + 3 * 0 = 0 := by
-    rw [← map_pow, ← map_ofNat (algebraMap ℚ A) 3, ← map_mul, ← map_mul, ← map_sub, mul_zero,
-      add_zero]
+  have h₂ : algebraMap ℚ A (1 / 2) ^ 3 - 3 * algebraMap ℚ A (1 / 2) * algebraMap ℚ A (1 / 12) =
+      0 := by
+    simp only [← map_ofNat (algebraMap ℚ A), ← map_pow, ← map_mul, ← map_sub]
     norm_num
   rw [multiplicativeSequence_three_right n (constantCoeff_bernoulli'PowerSeries A),
     coeff_one_bernoulli'PowerSeries, coeff_two_bernoulli'PowerSeries,
-    coeff_three_bernoulli'PowerSeries, h₁, h₂, map_zero, zero_mul, zero_mul, zero_add, add_zero]
+    coeff_three_bernoulli'PowerSeries]
+  simp only [mul_zero, sub_zero, add_zero, map_zero, zero_mul, zero_add, h₁, h₂]
 
 /-! ### The L polynomials -/
 
@@ -106,10 +106,8 @@ theorem expand_cartier_hirzebruchLSeries :
     coeff_hirzebruchLSeries_of_odd A (Nat.odd_iff.2 (Nat.two_dvd_ne_zero.1 hn))
 
 /-- The series of even coefficients of the L series has constant coefficient `1`. -/
-@[simp]
 theorem constantCoeff_cartier_hirzebruchLSeries :
     constantCoeff (cartier A 2 0 (hirzebruchLSeries A)) = 1 := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_cartier]
   simp
 
 /-- The first L polynomial, for at least one root: `L₁ = p₁/3`. -/
@@ -124,16 +122,15 @@ theorem multiplicativeSequence_cartier_hirzebruchLSeries_two :
     (cartier A 2 0 (hirzebruchLSeries A)).multiplicativeSequence (n + 2) 2 =
       MvPolynomial.C (algebraMap ℚ A (1 / 45)) * (7 * MvPolynomial.X 1 - MvPolynomial.X 0 ^ 2) := by
   have h₁ : algebraMap ℚ A (-1 / 45) = -algebraMap ℚ A (1 / 45) := by
-    rw [← map_neg]
+    simp only [← map_neg]
     norm_num
-  have h₂ : algebraMap ℚ A (1 / 3) ^ 2 - 2 * -algebraMap ℚ A (1 / 45) =
-      7 * algebraMap ℚ A (1 / 45) := by
-    rw [← map_pow, ← map_ofNat (algebraMap ℚ A) 2, ← map_ofNat (algebraMap ℚ A) 7, ← map_neg,
-      ← map_mul, ← map_mul, ← map_sub]
+  have h₂ : algebraMap ℚ A (1 / 3) ^ 2 = 5 * algebraMap ℚ A (1 / 45) := by
+    simp only [← map_ofNat (algebraMap ℚ A), ← map_pow, ← map_mul]
     norm_num
   rw [multiplicativeSequence_two_right n (constantCoeff_cartier_hirzebruchLSeries A),
     coeff_cartier, coeff_cartier, coeff_two_hirzebruchLSeries, coeff_four_hirzebruchLSeries, h₁,
-    h₂, map_neg, map_mul, map_ofNat]
+    h₂]
+  simp only [map_neg, map_sub, map_mul, map_ofNat]
   ring
 
 /-! ### The Â polynomials -/
@@ -146,10 +143,8 @@ theorem expand_cartier_aHatSeries :
     coeff_aHatSeries_of_odd A (Nat.odd_iff.2 (Nat.two_dvd_ne_zero.1 hn))
 
 /-- The series of even coefficients of the Â series has constant coefficient `1`. -/
-@[simp]
 theorem constantCoeff_cartier_aHatSeries :
     constantCoeff (cartier A 2 0 (aHatSeries A)) = 1 := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_cartier]
   simp
 
 /-- The first Â polynomial, for at least one root: `Â₁ = -p₁/24`. -/
@@ -165,16 +160,14 @@ theorem multiplicativeSequence_cartier_aHatSeries_two :
       MvPolynomial.C (algebraMap ℚ A (1 / 5760)) *
         (7 * MvPolynomial.X 0 ^ 2 - 4 * MvPolynomial.X 1) := by
   have h₁ : algebraMap ℚ A (7 / 5760) = 7 * algebraMap ℚ A (1 / 5760) := by
-    rw [← map_ofNat (algebraMap ℚ A) 7, ← map_mul]
+    simp only [← map_ofNat (algebraMap ℚ A), ← map_mul]
     norm_num
-  have h₂ : algebraMap ℚ A (-1 / 24) ^ 2 - 2 * (7 * algebraMap ℚ A (1 / 5760)) =
-      -(4 * algebraMap ℚ A (1 / 5760)) := by
-    rw [← map_pow, ← map_ofNat (algebraMap ℚ A) 2, ← map_ofNat (algebraMap ℚ A) 7,
-      ← map_ofNat (algebraMap ℚ A) 4, ← map_mul, ← map_mul, ← map_mul, ← map_sub, ← map_neg]
+  have h₂ : algebraMap ℚ A (-1 / 24) ^ 2 = 10 * algebraMap ℚ A (1 / 5760) := by
+    simp only [← map_ofNat (algebraMap ℚ A), ← map_pow, ← map_mul]
     norm_num
   rw [multiplicativeSequence_two_right n (constantCoeff_cartier_aHatSeries A),
-    coeff_cartier, coeff_cartier, coeff_two_aHatSeries, coeff_four_aHatSeries, h₁, h₂, map_neg,
-    map_mul, map_mul, map_ofNat, map_ofNat]
+    coeff_cartier, coeff_cartier, coeff_two_aHatSeries, coeff_four_aHatSeries, h₁, h₂]
+  simp only [map_sub, map_mul, map_ofNat]
   ring
 
 end TauCeti
