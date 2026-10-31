@@ -34,6 +34,11 @@ open CommAlgCat
 
 variable {R : Type u} [CommRing R] (M : Submonoid R)
 
+/-- Morphisms from a localization are unique as morphisms of algebras over the base ring. -/
+theorem isLocalization_hom_ext {A B : CommAlgCat.{u} R} [IsLocalization M A]
+    (f g : A ⟶ B) : f = g :=
+  hom_ext ((IsLocalization.algHom_subsingleton (S := A) (P := B) M).elim _ _)
+
 /-- The diagram which inverts the product of a finite set of denominators. -/
 noncomputable def localizationAwayDiagram : Finset M ⥤ CommAlgCat.{u} R where
   obj s := .of R (Localization.Away (∏ x ∈ s, (x : R)))
@@ -41,12 +46,8 @@ noncomputable def localizationAwayDiagram : Finset M ⥤ CommAlgCat.{u} R where
     (f := Algebra.ofId R (Localization.Away (∏ x ∈ t, (x : R))))
     (IsLocalization.Away.isUnit_of_dvd _
       (Finset.prod_dvd_prod_of_subset s t (fun x : M ↦ (x : R)) (leOfHom h)))
-  map_id s := by
-    apply hom_ext
-    exact (IsLocalization.algHom_subsingleton (Submonoid.powers (∏ x ∈ s, (x : R)))).elim _ _
-  map_comp {s t v} f g := by
-    apply hom_ext
-    exact (IsLocalization.algHom_subsingleton (Submonoid.powers (∏ x ∈ s, (x : R)))).elim _ _
+  map_id s := (Submonoid.powers (∏ x ∈ s, (x : R))).isLocalization_hom_ext _ _
+  map_comp {s _ _} _ _ := (Submonoid.powers (∏ x ∈ s, (x : R))).isLocalization_hom_ext _ _
 
 /-- Each stage of the principal-localization diagram is the expected localization algebra. -/
 @[simp]
@@ -64,11 +65,9 @@ noncomputable def localizationAwayCocone : Cocone (localizationAwayDiagram M) wh
         (by
           rw [Algebra.ofId_apply, map_prod]
           exact IsUnit.prod_iff.mpr fun x _ ↦ IsLocalization.map_units S x)
-      naturality := fun s t h ↦ by
-        dsimp [localizationAwayDiagram]
-        apply hom_ext
-        exact (IsLocalization.algHom_subsingleton
-          (Submonoid.powers (∏ x ∈ s, (x : R)))).elim _ _ }
+      naturality := fun s t h ↦
+        (Submonoid.powers (∏ x ∈ s, (x : R))).isLocalization_hom_ext
+          (A := .of R (Localization.Away (∏ x ∈ s, (x : R)))) _ _ }
 
 /-- The localization cocone has the specified localization algebra as its apex. -/
 @[simp]
@@ -90,11 +89,8 @@ noncomputable def localizationAwayCoconeIsColimit : IsColimit (localizationAwayC
     let f : Localization.Away (∏ y ∈ ({x} : Finset M), (y : R)) →ₐ[R] c.pt :=
       (c.ι.app {x}).hom
     simpa only [Algebra.ofId_apply, AlgHom.commutes] using hx.map f
-  · dsimp [localizationAwayCocone, localizationAwayDiagram]
-    apply hom_ext
-    exact (IsLocalization.algHom_subsingleton (Submonoid.powers (∏ x ∈ s, (x : R)))).elim _ _
-  · dsimp [localizationAwayCocone]
-    apply hom_ext
-    exact (IsLocalization.algHom_subsingleton (S := S) (P := c.pt) M).elim _ _
+  · exact (Submonoid.powers (∏ x ∈ s, (x : R))).isLocalization_hom_ext
+      (A := .of R (Localization.Away (∏ x ∈ s, (x : R)))) _ _
+  · exact M.isLocalization_hom_ext (A := .of R S) _ _
 
 end Submonoid

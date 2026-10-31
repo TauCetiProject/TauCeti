@@ -109,18 +109,22 @@ theorem of_isLocalization (M : Submonoid R) [IsLocalization M S] : IndEtale R S 
   exact Algebra.Etale.of_isLocalizationAway (R := R)
     (A := Localization.Away (∏ x ∈ s, (x : R))) (∏ x ∈ s, (x : R))
 
+/-- The canonical localization algebra is ind-étale over its base ring. -/
+instance localization (M : Submonoid R) : IndEtale R (Localization M) :=
+  of_isLocalization M
+
 end IndEtale
 
 -- Localization at a prime is ind-étale, without any finite-presentation hypothesis.
 example (p : Ideal ℤ) [p.IsPrime] : IndEtale ℤ (Localization.AtPrime p) :=
-  IndEtale.of_isLocalization p.primeCompl
+  inferInstance
 
 -- The fraction field is an ind-étale algebra as well.
 example : IndEtale ℤ ℚ := IndEtale.of_isLocalization (nonZeroDivisors ℤ)
 
 -- Inverting all elements, including zero, is allowed.
 example (R : Type u) [CommRing R] : IndEtale R (Localization (⊤ : Submonoid R)) :=
-  IndEtale.of_isLocalization ⊤
+  inferInstance
 
 -- `ℤ ⧸ 2` is not ind-étale over `ℤ`: it is not flat, since multiplication by `2` kills `1`.
 example : ¬ IndEtale ℤ (ZMod 2) := by
