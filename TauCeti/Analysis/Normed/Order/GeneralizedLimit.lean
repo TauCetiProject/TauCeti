@@ -178,6 +178,13 @@ def IsDilationInvariant : Prop :=
   ∀ (f : ℕ →ᵇ ℝ) (k : ℕ), 0 < k → ω (f.dilate k) = ω f
 
 variable {ω} in
+/-- Unfolding lemma for `IsDilationInvariant`, used to prove that a generalized limit is dilation
+invariant. -/
+theorem isDilationInvariant_iff :
+    ω.IsDilationInvariant ↔ ∀ (f : ℕ →ᵇ ℝ) (k : ℕ), 0 < k → ω (f.dilate k) = ω f :=
+  Iff.rfl
+
+variable {ω} in
 /-- A dilation-invariant generalized limit is unchanged by the dilation by any `k ≥ 1`. -/
 theorem IsDilationInvariant.map_dilate (hω : ω.IsDilationInvariant) (f : ℕ →ᵇ ℝ) {k : ℕ}
     (hk : 0 < k) : ω (f.dilate k) = ω f :=
@@ -313,7 +320,8 @@ theorem exists_isDilationInvariant : ∃ ω : GeneralizedLimit, ω.IsDilationInv
     have := hle (f := -f) (c := -c) (h.mono fun n hn ↦ by simpa using hn)
     rw [map_neg] at this
     linarith
-  refine ⟨mk₀ φ (fun f hf ↦ hge (Eventually.of_forall hf)) fun f c hf ↦ ?_, fun f k hk ↦ ?_⟩
+  refine ⟨mk₀ φ (fun f hf ↦ hge (Eventually.of_forall hf)) fun f c hf ↦ ?_,
+    isDilationInvariant_iff.2 fun f k hk ↦ ?_⟩
   · refine le_antisymm (le_of_forall_pos_le_add fun ε hε ↦ hle ?_)
       (le_of_forall_pos_le_add fun ε hε ↦ ?_)
     · exact hf.eventually (Iic_mem_nhds (lt_add_of_pos_right c hε))
