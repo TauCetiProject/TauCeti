@@ -14,7 +14,7 @@ public import TauCeti.Topology.Sheaves.CoverSystems
 
 For a presheaf `P` on an arbitrary topological space `X : Type u`, with values in a
 preadditive category with homology and `u`-small products, the degree `n` Čech cohomology
-`Ȟⁿ(X, P)` is the colimit, over open covers ordered by refinement, of the degree `n` cohomology
+`Hⁿ_Č(X, P)` is the colimit, over open covers ordered by refinement, of the degree `n` cohomology
 of the Čech complexes `Č(U, P)`. The transition maps are induced by refinement maps; different
 refinement maps between the same two covers induce homotopic maps of Čech complexes, so the
 maps on cohomology are well defined.
@@ -26,7 +26,7 @@ nonemptiness assumption on `X` is made, and the Čech complexes use all tuples o
 including repeated indices and empty intersections.
 
 Every `u`-small open cover `U`, not only a point-neighborhood cover, has a map
-`Hⁿ(Č(U, P)) ⟶ Ȟⁿ(X, P)` (`TauCeti.Topology.toCechCohomology`). It is defined through a chosen
+`Hⁿ(Č(U, P)) ⟶ Hⁿ_Č(X, P)` (`TauCeti.Topology.toCechCohomology`). It is defined through a chosen
 point-neighborhood refinement, but it agrees with the composite through every such refinement
 (`TauCeti.Topology.toCechCohomology_eq`), and these maps are compatible with all refinement
 maps between covers and natural in `P`.
@@ -72,7 +72,7 @@ variable (X : Type u) [TopologicalSpace X] {A : Type u'} [Category.{v'} A] [Prea
   [HasProducts.{u} A] [CategoryWithHomology A] [HasColimitsOfShape (PointOpenCover X) A]
   (n : ℕ)
 
-/-- The degree `n` Čech cohomology `Ȟⁿ(X, P)` of presheaves `P` on `X`: the colimit, over the
+/-- The degree `n` Čech cohomology `Hⁿ_Č(X, P)` of presheaves `P` on `X`: the colimit, over the
 point-neighborhood covers of `X` ordered by refinement, of the degree `n` cohomology of their
 Čech complexes. It is reducible to the specialization of `TauCeti.CategoryTheory.cechCohomology`,
 so that the structure maps and the lemmas of that colimit apply to it directly. -/
