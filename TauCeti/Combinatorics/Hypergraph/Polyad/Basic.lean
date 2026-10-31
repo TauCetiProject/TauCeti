@@ -100,6 +100,16 @@ theorem mem_support (P : Polyad3 S) (x : {x : Fin 3 → V // Function.Injective 
         S.pairColors.colorOfPair (x.1 1) (x.1 2) = some P.color₁₂ :=
   mem_polyadSupport
 
+/-- The support of a polyad has at most as many triples as the product of its three cells. -/
+theorem card_support_le (P : Polyad3 S) : #P.support ≤ #P.c₀ * #P.c₁ * #P.c₂ := by
+  rw [mul_assoc, ← card_product, ← card_product]
+  refine card_le_card_of_injOn (fun x ↦ (x.1 0, x.1 1, x.1 2)) (fun x hx ↦ ?_) ?_
+  · obtain ⟨h₀, h₁, h₂, -⟩ := (P.mem_support x).1 hx
+    simp [h₀, h₁, h₂]
+  · intro x _ y _ h
+    simp only [Prod.mk.injEq] at h
+    exact Subtype.ext <| funext fun m ↦ by fin_cases m <;> simp [h.1, h.2.1, h.2.2]
+
 /-- Two polyads are equal when their three cells and three pair colors agree. -/
 @[ext]
 theorem ext_data {P Q : Polyad3 S} (h₀ : P.c₀ = Q.c₀) (h₁ : P.c₁ = Q.c₁)

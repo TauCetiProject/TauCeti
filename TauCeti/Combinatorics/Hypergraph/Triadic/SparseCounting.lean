@@ -105,7 +105,7 @@ theorem expectedLowerRouteCountAt_nonneg (φ : PatternPlacement3 C F)
 
 /-- The maps realizing a lower route are the maps into the box of assigned cells realizing its
 pair colors: realizing a pair color forces distinct values, so these maps are injective. -/
-private theorem lowerRouteMaps_eq_filter_piFinset (φ : PatternPlacement3 C F)
+theorem lowerRouteMaps_eq_filter_piFinset (φ : PatternPlacement3 C F)
     (ψ : PairColorPlacement3 φ) :
     lowerRouteMaps φ ψ = {g ∈ Fintype.piFinset φ.vertexCell |
       ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
