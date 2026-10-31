@@ -198,13 +198,7 @@ theorem finrank_deRhamCohomology_zero_sphere_of_finrank_eq_one [Fact (finrank �
   have hS := sphere_eq_pair_of_finrank_eq_one Fact.out e.2
   have := finite_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
   have := discreteTopology_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
-  have : Fintype (sphere (0 : E) 1) := Fintype.ofFinite _
-  -- Every real function on the discrete sphere is locally constant.
-  have hcoe : Function.Bijective
-      (LocallyConstant.coeFnₗ ℝ : LocallyConstant (sphere (0 : E) 1) ℝ →ₗ[ℝ] _ → ℝ) :=
-    ⟨DFunLike.coe_injective, fun f ↦ ⟨⟨f, .of_discrete f⟩, rfl⟩⟩
-  rw [(deRhamCohomologyZeroEquiv (𝓡 0) _ ≪≫ₗ LinearEquiv.ofBijective _ hcoe).finrank_eq,
-    Module.finrank_fintype_fun_eq_card, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq, hS,
+  rw [finrank_deRhamCohomology_zero_of_discreteTopology, Nat.card_coe_set_eq, hS,
     Set.ncard_pair (fun h ↦ ne_neg_of_mem_unit_sphere ℝ e (Subtype.ext h) : (e : E) ≠ -e)]
 
 attribute [local instance] finrank_euclideanSpace_fin_succ_fact
@@ -237,16 +231,12 @@ private theorem finrank_deRhamCohomology_sphere_one_one [Fact (finrank ℝ E = 1
     Module.finite_of_finrank_eq_succ h₂
   -- The connecting map `H⁰(U ⊓ V) → H¹(S¹)` is surjective, and its kernel is the line of
   -- constant classes.
-  have hconst : Function.Injective (deRhamCohomology.const (𝓡 1) (U ⊓ V : Opens _)) :=
-    fun a b hab ↦ by
-      simpa using DFunLike.congr_fun
-        (congrArg (deRhamCohomologyZeroEquiv (𝓡 1) (U ⊓ V : Opens _)) hab) (Classical.arbitrary _)
   have h := LinearMap.finrank_range_add_finrank_ker (deRhamCohomology.mayerVietorisδ (𝓡 1) U V 0)
   rw [LinearMap.range_eq_top.mpr (deRhamCohomology.mayerVietorisδ_surjective
       (subsingleton_deRhamCohomology_sphere_compl_singleton v 0)
       (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) 0)), finrank_top,
-    deRhamCohomology.ker_mayerVietorisδ_zero, LinearMap.finrank_range_of_inj hconst,
-    Module.finrank_self, h₂] at h
+    deRhamCohomology.ker_mayerVietorisδ_zero,
+    LinearMap.finrank_range_of_inj deRhamCohomology.const_injective, Module.finrank_self, h₂] at h
   rw [(deRhamCohomology.equivOfDiffeomorph
     (Diffeomorph.ofTop _ (compl_singleton_sup_compl_singleton_neg_eq_top v)) 1).finrank_eq]
   -- `h` reads `dim H¹(U ⊔ V) + 1 = 2`.
