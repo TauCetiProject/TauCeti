@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.CohenMacaulay.Basic
-public import TauCeti.RingTheory.UniversallyCatenary
+public import TauCeti.RingTheory.Catenary
 import TauCeti.RingTheory.CohenMacaulay.Height
 
 /-!
