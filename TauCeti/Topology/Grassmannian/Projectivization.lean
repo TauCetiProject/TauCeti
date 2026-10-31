@@ -32,10 +32,12 @@ namespace TauCeti.finiteGrassmannian
 
 variable {𝕜 : Type*} [Field 𝕜] {N M : ℕ}
 
-private theorem span_frame_eq_span_singleton (v : finiteFullRankFrame 𝕜 1 N) :
-    Submodule.span 𝕜 (range v.1) = 𝕜 ∙ v.1 0 := by
-  rw [Set.range_unique]
-  rfl
+private theorem equivSubmodule_mk_frame (v : finiteFullRankFrame 𝕜 1 N) :
+    Projectivization.equivSubmodule 𝕜 (Fin N → 𝕜)
+      (Projectivization.mk 𝕜 (v.1 0) (v.2.ne_zero 0)) = frameSpan v := by
+  apply Subtype.ext
+  simp only [Projectivization.coe_equivSubmodule, Projectivization.submodule_mk,
+    coe_frameSpan, Set.range_unique, Fin.default_eq_zero]
 
 variable [TopologicalSpace 𝕜]
 
@@ -50,28 +52,24 @@ noncomputable def projectivizationHomeomorph (𝕜 : Type*) [Field 𝕜] [Topolo
         (⟨fun _ : Fin 1 ↦ v.1, linearIndependent_unique_iff.2 v.2⟩ :
           finiteFullRankFrame 𝕜 1 N)) :=
       (continuous_pi fun _ ↦ continuous_subtype_val).subtype_mk _
-    refine (continuous_frameSpan.comp hc).congr fun v ↦ Subtype.ext ?_
-    rw [Function.comp_apply, coe_frameSpan]
-    exact span_frame_eq_span_singleton _
+    exact (continuous_frameSpan.comp hc).congr fun v ↦
+      (equivSubmodule_mk_frame
+        ⟨fun _ : Fin 1 ↦ v.1, linearIndependent_unique_iff.2 v.2⟩).symm
   continuous_invFun := by
     apply isQuotientMap_frameSpan.continuous_iff.2
     have hc := Projectivization.continuous_mk (K := 𝕜)
       ((continuous_apply 0).comp (continuous_subtype_val (p :=
         fun v : Fin 1 → Fin N → 𝕜 ↦ LinearIndependent 𝕜 v)))
       (fun v ↦ v.2.ne_zero 0)
-    refine hc.congr fun v ↦ ?_
-    apply (Projectivization.equivSubmodule 𝕜 (Fin N → 𝕜)).injective
-    apply Subtype.ext
-    have hequiv (p : ℙ 𝕜 (Fin N → 𝕜)) :
-        (Projectivization.equivSubmodule 𝕜 (Fin N → 𝕜) p).1 = p.submodule := (rfl)
-    simpa only [Function.comp_apply, Equiv.invFun_as_coe, Equiv.apply_symm_apply,
-      coe_frameSpan, hequiv, Projectivization.submodule_mk] using
-      (span_frame_eq_span_singleton v).symm
+    exact hc.congr fun v ↦
+      ((Projectivization.equivSubmodule 𝕜 (Fin N → 𝕜)).symm_apply_eq.2
+        (equivSubmodule_mk_frame v).symm).symm
 
 /-- The comparison retains the actual line as a submodule of the coordinate space. -/
 @[simp]
 theorem coe_projectivizationHomeomorph (p : ℙ 𝕜 (Fin N → 𝕜)) :
-    (projectivizationHomeomorph 𝕜 N p).1 = p.submodule := (rfl)
+    (projectivizationHomeomorph 𝕜 N p).1 = p.submodule :=
+  Projectivization.coe_equivSubmodule 𝕜 p
 
 /-- The inverse comparison also retains the underlying line. -/
 @[simp]
@@ -83,10 +81,8 @@ theorem submodule_projectivizationHomeomorph_symm (V : finiteGrassmannian 𝕜 1
 @[simp]
 theorem projectivizationHomeomorph_mk_frame (v : finiteFullRankFrame 𝕜 1 N) :
     projectivizationHomeomorph 𝕜 N (Projectivization.mk 𝕜 (v.1 0) (v.2.ne_zero 0)) =
-      frameSpan v := by
-  apply Subtype.ext
-  rw [coe_projectivizationHomeomorph, Projectivization.submodule_mk, coe_frameSpan]
-  exact (span_frame_eq_span_singleton v).symm
+      frameSpan v :=
+  equivSubmodule_mk_frame v
 
 /-- The comparison is natural for injective linear maps, including the finite-stage
 coordinate inclusions used for projective spaces. -/

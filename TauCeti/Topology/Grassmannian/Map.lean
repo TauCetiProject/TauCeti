@@ -82,7 +82,8 @@ theorem map_injective (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf :
     Function.Injective (map (r := r) f hf) := fun _ _ h ↦
   Subtype.ext (Submodule.map_injective_of_injective hf (congrArg Subtype.val h))
 
-/-- Continuity descends from the map on frames; no choice of a basis of each plane is needed. -/
+/-- A continuous injective linear map induces a continuous map of finite Grassmannians
+for their frame-quotient topologies. -/
 @[fun_prop]
 theorem continuous_map [TopologicalSpace 𝕜]
     (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf : Function.Injective f)
