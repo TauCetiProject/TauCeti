@@ -92,42 +92,13 @@ theorem posSemidef_complexGaussianRealCovariance_iff [Finite ι] (C : Matrix ι 
 @[simp]
 theorem posDef_complexGaussianRealCovariance_iff [Finite ι] (C : Matrix ι ι ℂ) :
     (complexGaussianRealCovariance C).PosDef ↔ C.PosDef := by
-  classical
-  let _ := Fintype.ofFinite ι
   constructor
-  · intro hR
-    have hC : C.PosSemidef := (posSemidef_complexGaussianRealCovariance_iff C).mp hR.posSemidef
-    refine Matrix.PosDef.of_dotProduct_mulVec_pos hC.isHermitian fun z hz ↦ ?_
-    rw [RCLike.pos_iff]
-    refine ⟨?_, RCLike.conj_eq_iff_im.mp (hC.isHermitian.star_dotProduct_mulVec_comm z z)⟩
-    let y : ι ⊕ ι → ℝ :=
-      Sum.elim (fun i ↦ (z i).re) (fun i ↦ (z i).im)
-    have hy : y ≠ 0 := by
-      intro hy
-      apply hz
-      funext i
-      apply Complex.ext
-      · simpa [y] using congr_fun hy (Sum.inl i)
-      · simpa [y] using congr_fun hy (Sum.inr i)
-    have hpos := hR.dotProduct_mulVec_pos hy
-    have hreal : dotProduct y (Matrix.mulVec C.realify y) =
-        (dotProduct (star z) (Matrix.mulVec C z)).re := by
-      simpa [y] using Matrix.dotProduct_realify_mulVec C z
-    have hpos' :
-        0 < (2⁻¹ : ℝ) * dotProduct y (Matrix.mulVec C.realify y) := by
-      simpa [complexGaussianRealCovariance, Matrix.smul_mulVec, dotProduct_smul]
-        using hpos
-    have : 0 < dotProduct y (Matrix.mulVec C.realify y) :=
-      pos_of_mul_pos_right hpos' (by positivity)
-    rw [hreal] at this
-    exact this
-  · intro hC
-    have hRealify : C.realify.PosDef := by
-      have hR : C.realify.PosSemidef := Matrix.posSemidef_realify_iff.mpr hC.posSemidef
-      exact hR.posDef_iff_isUnit.mpr
-        ((Matrix.isUnit_iff_isUnit_det C.realify).mpr
-          (Matrix.isUnit_det_realify ((Matrix.isUnit_iff_isUnit_det C).mp hC.isUnit)))
-    exact hRealify.smul (by norm_num : (0 : ℝ) < 2⁻¹)
+  · intro h
+    apply Matrix.posDef_realify_iff.mp
+    simpa [complexGaussianRealCovariance, smul_smul] using
+      h.smul (by norm_num : (0 : ℝ) < 2)
+  · intro h
+    exact (Matrix.posDef_realify_iff.mpr h).smul (by norm_num : (0 : ℝ) < 2⁻¹)
 
 /-- The real covariance depends continuously on the complex matrix entries. -/
 @[fun_prop]

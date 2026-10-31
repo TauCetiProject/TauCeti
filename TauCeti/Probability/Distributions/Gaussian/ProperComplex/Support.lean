@@ -53,25 +53,24 @@ theorem support_properComplexGaussianMeasure {C : Matrix iota iota ℂ} (hC : C.
   rw [properComplexGaussianMeasure_def, ← (complexToRealEuclidean iota).symm.coe_toHomeomorph,
     Measure.support_map_homeomorph,
     support_multivariateGaussian ((posSemidef_complexGaussianRealCovariance_iff C).mpr hC)]
-  ext z
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    simpa using hx
-  · intro hz
-    exact ⟨complexToRealEuclidean iota z, hz,
-      (complexToRealEuclidean iota).symm_apply_apply z⟩
+  rw [(complexToRealEuclidean iota).symm.toHomeomorph.image_eq_preimage_symm]
+  rfl
 
-/-- A proper complex Gaussian with positive-semidefinite covariance lies almost surely in its
-realified affine range. -/
-theorem ae_mem_affineRange_properComplexGaussianMeasure {C : Matrix iota iota ℂ}
-    (hC : C.PosSemidef) (m : iota → ℂ) :
+/-- A proper complex Gaussian lies almost surely in its realified affine range. -/
+theorem ae_mem_affineRange_properComplexGaussianMeasure (C : Matrix iota iota ℂ)
+    (m : iota → ℂ) :
     ∀ᵐ z ∂properComplexGaussianMeasure m C,
       complexToRealEuclidean iota z ∈
         AffineSubspace.mk' (complexToRealEuclidean iota m)
           (LinearMap.range (Matrix.toEuclideanLin (complexGaussianRealCovariance C))) := by
-  filter_upwards [(properComplexGaussianMeasure m C).support_mem_ae] with z hz
-  rw [support_properComplexGaussianMeasure hC m] at hz
-  exact hz
+  by_cases hC : C.PosSemidef
+  · filter_upwards [(properComplexGaussianMeasure m C).support_mem_ae] with z hz
+    rw [support_properComplexGaussianMeasure hC m] at hz
+    exact hz
+  · rw [properComplexGaussianMeasure_of_not_posSemidef m hC]
+    simp only [AffineSubspace.mem_mk', vsub_eq_sub, LinearMap.mem_range, ae_dirac_eq,
+      Filter.eventually_pure, sub_self]
+    exact ⟨0, by simp⟩
 
 /-- An invalid covariance parameter gives singleton support at the mean. -/
 @[simp]
@@ -103,11 +102,9 @@ theorem mutuallySingular_properComplexGaussianMeasure_volume {C : Matrix iota io
         c • (volume : Measure (iota → ℂ)) := by
     simpa using hmap
   rw [properComplexGaussianMeasure_def]
-  rcases hsing with ⟨s, hs, hμs, hνs⟩
-  refine ⟨s, hs, hμs, ?_⟩
-  rw [hmap'] at hνs
-  simp only [Measure.smul_apply, smul_eq_mul] at hνs
-  exact (mul_eq_zero.mp hνs).resolve_left hc.ne'
+  rw [hmap'] at hsing
+  exact hsing.mono_ac Measure.AbsolutelyContinuous.rfl
+    (Measure.absolutelyContinuous_smul hc.ne')
 
 /-- The Radon–Nikodym derivative of a degenerate proper complex Gaussian with respect to volume
 vanishes almost everywhere. -/
@@ -126,15 +123,15 @@ open TauCeti TauCeti.Probability
 variable {iota Ω : Type*} [Fintype iota] [DecidableEq iota] [MeasurableSpace Ω]
   {P : Measure Ω} {X : Ω → iota → ℂ} {m : iota → ℂ} {C : Matrix iota iota ℂ}
 
-/-- A random vector with a proper complex Gaussian law and positive-semidefinite covariance lies
-almost surely in the realified affine range of that covariance. -/
+/-- A random vector with a proper complex Gaussian law lies almost surely in the realified affine
+range of its covariance. -/
 theorem HasLaw.ae_mem_affineRange_properComplexGaussianMeasure
-    (hX : HasLaw X (properComplexGaussianMeasure m C) P) (hC : C.PosSemidef) :
+    (hX : HasLaw X (properComplexGaussianMeasure m C) P) :
     ∀ᵐ ω ∂P, complexToRealEuclidean iota (X ω) ∈
       AffineSubspace.mk' (complexToRealEuclidean iota m)
         (LinearMap.range (Matrix.toEuclideanLin (complexGaussianRealCovariance C))) := by
   exact (hX.ae_iff (measurableSet_setOfPred.mp
     ((AffineSubspace.closed_of_finiteDimensional _).measurableSet.preimage (by fun_prop)))).2
-      (TauCeti.Probability.ae_mem_affineRange_properComplexGaussianMeasure hC m)
+      (TauCeti.Probability.ae_mem_affineRange_properComplexGaussianMeasure C m)
 
 end ProbabilityTheory
