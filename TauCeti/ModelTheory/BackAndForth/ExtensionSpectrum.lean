@@ -14,9 +14,9 @@ import Mathlib.SetTheory.Cardinal.Arithmetic
 # Extension spectra and level-by-level counting of back-and-forth classes
 
 Fix a family of structures `M i`, `i : ι`, of a relational language `L`. At an ordinal depth `α`
-and an arity `n`, back-and-forth equivalence is an equivalence relation `bfTupleSetoid L M α n` on
+and an arity `n`, back-and-forth equivalence is the equivalence relation `bfTupleSetoid L M α n` on
 the pointed tuples `⟨i, a⟩` with `a : Fin n → M i`, comparing tuples across all members of the
-family.
+family (see `TauCeti.ModelTheory.BackAndForth.Equivalence`).
 
 The **depth-`α` extension spectrum** of a pointed tuple `⟨i, a⟩` is the set of depth-`α` classes
 of its one-point extensions `⟨i, snoc a m⟩`, `m : M i`. Two pointed tuples are equivalent at depth
@@ -40,8 +40,6 @@ closes this gap.
 
 ## Main definitions
 
-* `TauCeti.bfTupleSetoid L M α n`: back-and-forth equivalence at depth `α` of pointed `n`-tuples
-  of the family `M`.
 * `TauCeti.bfExtensionSpectrum L M α n x`: the depth-`α` classes of the one-point extensions of
   `x`; `TauCeti.bfExtensionSpectra L M α n`: the realized spectra.
 * `TauCeti.BFSmall L M`: the three local smallness conditions.
@@ -80,25 +78,7 @@ open FirstOrder Fin Cardinal Ordinal
 variable {L : Language.{u, v}} [L.IsRelational] {ι : Type x} {M : ι → Type w}
 variable [∀ i, L.Structure (M i)]
 
-variable (L M) in
-/-- Back-and-forth equivalence at depth `α` of pointed `n`-tuples of the family `M`: the pointed
-tuples `⟨i, a⟩` and `⟨j, b⟩` are related when `a` in `M i` and `b` in `M j` are back-and-forth
-equivalent at depth `α`. -/
-def bfTupleSetoid (α : Ordinal.{o}) (n : ℕ) : Setoid (Σ i, Fin n → M i) where
-  r x y := BFEquiv (L := L) α n x.2 y.2
-  iseqv := ⟨fun x => BFEquiv.refl α x.2, BFEquiv.symm, BFEquiv.trans⟩
-
 variable {α : Ordinal.{o}} {n : ℕ}
-
-/-- Two pointed tuples are related at depth `α` exactly when their tuples are back-and-forth
-equivalent at depth `α`. -/
-theorem bfTupleSetoid_apply {x y : Σ i, Fin n → M i} :
-    bfTupleSetoid L M α n x y ↔ BFEquiv (L := L) α n x.2 y.2 :=
-  Iff.rfl
-
-/-- The levels decrease as the depth grows. -/
-theorem bfTupleSetoid_anti (n : ℕ) : Antitone (bfTupleSetoid L M · n : Ordinal.{o} → _) :=
-  fun _ _ hαβ _ _ h => BFEquiv.mono h hαβ
 
 variable (L M) in
 /-- The **depth-`α` extension spectrum** of a pointed tuple `x = ⟨i, a⟩`: the depth-`α` classes of
@@ -151,7 +131,7 @@ theorem bfTupleSetoid_add_one_iff {x y : Σ i, Fin n → M i} :
         bfExtensionSpectrum L M α n x = bfExtensionSpectrum L M α n y := by
   rw [bfTupleSetoid_apply, BFEquiv.add_one, Set.Subset.antisymm_iff,
     bfExtensionSpectrum_subset_iff, bfExtensionSpectrum_subset_iff]
-  exact and_congr Iff.rfl (and_congr Iff.rfl
+  exact and_congr bfTupleSetoid_apply.symm (and_congr Iff.rfl
     (forall_congr' fun _ => exists_congr fun _ => BFEquiv.symm_iff _ _ _))
 
 variable (L M) in
