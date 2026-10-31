@@ -43,6 +43,7 @@ variable (R L L' : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
 
 /-- The Killing form of a product of Lie algebras is the sum of the Killing forms of the
 factors. -/
+@[simp]
 theorem killingForm_prod_apply (x y : L × L') :
     killingForm R (L × L') x y = killingForm R L x.1 y.1 + killingForm R L' x.2 y.2 := by
   have had (z : L × L') : ad R (L × L') z = (ad R L z.1).prodMap (ad R L' z.2) := by
@@ -58,10 +59,10 @@ instance IsKilling.instProd [IsKilling R L] [IsKilling R L'] : IsKilling R (L ×
     simpa using LinearMap.congr_fun (mem_ker.1 hx) y
   have h₁ : x.1 ∈ ker (killingForm R L) :=
     mem_ker.2 <| LinearMap.ext fun y ↦ by
-      simpa [killingForm_prod_apply] using hx' (y, 0)
+      simpa using hx' (y, 0)
   have h₂ : x.2 ∈ ker (killingForm R L') :=
     mem_ker.2 <| LinearMap.ext fun y ↦ by
-      simpa [killingForm_prod_apply] using hx' (0, y)
+      simpa using hx' (0, y)
   rw [IsKilling.ker_killingForm_eq_bot, Submodule.mem_bot] at h₁ h₂
   exact Prod.ext h₁ h₂
 
