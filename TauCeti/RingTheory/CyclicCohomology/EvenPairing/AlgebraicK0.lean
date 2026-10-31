@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
-public import TauCeti.LinearAlgebra.Matrix.ToLin
+public import TauCeti.LinearAlgebra.Matrix.Idempotent
 public import TauCeti.RingTheory.CyclicCohomology.EvenPairing.Invariance
 
 /-!
@@ -153,16 +153,17 @@ acting on row vectors, then `[P]` pairs with a cyclic cohomology class `c` of de
 `⟨[e], c⟩ = (m!)⁻¹ (φ#Tr)(e, …, e)` for any cocycle `φ` representing `c`. -/
 theorem evenPairingK0_of_linearEquiv_range {ι : Type*} [Fintype ι] [DecidableEq ι]
     {e : Matrix ι ι A} (he : IsIdempotentElem e) (P : (finiteProjectiveModules A).FullSubcategory)
-    (θ : P.obj ≃ₗ[A] LinearMap.range e.toLinearMapRight') (m : ℕ) :
+    (θ : P.obj ≃ₗ[A] LinearMap.range e.vecMulLinear) (m : ℕ) :
     evenPairingK0 R M m (ExactK0.of P) =
       (evenPairing e he m).comp (matrixExtension M ι (2 * m)) := by
   -- The image of `e` is a direct summand of `A^ι`, with idempotent `e` itself.
-  have hsub : e.toLinearMapRight'.rangeRestrict ∘ₗ (LinearMap.range e.toLinearMapRight').subtype =
-      LinearMap.id := by
-    refine LinearMap.ext fun ⟨_, v, rfl⟩ ↦ Subtype.ext ?_
-    simp [Matrix.vecMul_vecMul, he.eq]
+  have hsub : e.vecMulLinear.rangeRestrict ∘ₗ (LinearMap.range e.vecMulLinear).subtype =
+      LinearMap.id :=
+    LinearMap.ext fun v ↦ Subtype.ext (he.mem_range_vecMulLinear_iff.1 v.2)
+  have hmat : e.vecMulLinear.toMatrixRight' = e :=
+    Matrix.toLinearMapRight'.injective (LinearMap.ext fun v ↦ by simp)
   rw [evenPairingK0_of, objPairing_eq θ hsub]
-  simp only [summandPairing, LinearMap.subtype_comp_rangeRestrict, LinearEquiv.apply_symm_apply]
+  simp only [summandPairing, LinearMap.subtype_comp_rangeRestrict, hmat]
 
 end cyclicCohomology
 
