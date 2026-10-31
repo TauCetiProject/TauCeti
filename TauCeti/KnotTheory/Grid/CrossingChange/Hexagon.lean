@@ -79,6 +79,10 @@ and its counterpart for the other order). That homotopy equation itself is not p
 
 * `TauCeti.GridDiagram.crossingChangeHomotopy_single_apply` and
   `TauCeti.GridDiagram.crossingChangeHomotopy_apply_apply`: the matrix coefficients of `H`.
+* `TauCeti.GridDiagram.XSet_inter_eq_of_hexagon` and
+  `TauCeti.GridDiagram.XSet_inter_eq_of_initialHexagon`: the rectangle under a hexagon carrying
+  no `X`-marking carries exactly the `X`-marking of the column it cuts away, when that marking
+  lies in the cut rows.
 * `crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_mem_columnArc` and
   `crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_notMem_columnArc`, in the namespace
   `TauCeti.OddComponentGridDiagram`: for interleaving columns, with the corners of the hexagons at
@@ -351,7 +355,7 @@ private theorem card_OColumns_eq_of_hexagon (P : GridHexagonBetween a s s' x y)
 /-- The rectangle under a crossing-change hexagon turning on its terminal side and carrying no
 `X`-marking carries exactly one `X`-marking, that of column `a`, provided that it lies in the cut
 rows. -/
-private theorem XSet_inter_eq_of_hexagon {P : GridHexagonBetween a s s' x y}
+theorem XSet_inter_eq_of_hexagon {P : GridHexagonBetween a s s' x y}
     (hX : G.X a ∈ insert s' (Grid.cIco s s')) (hP : Disjoint P.crossingCoveredSquares G.XSet) :
     G.XSet ∩ P.toGridRectangle.coveredSquares = {(a, G.X a)} := by
   ext ⟨c, r⟩
@@ -415,7 +419,7 @@ private theorem card_OColumns_eq_of_initialHexagon (P : GridInitialHexagonBetwee
 /-- The rectangle under a crossing-change hexagon turning on its initial side and carrying no
 `X`-marking carries exactly one `X`-marking, that of column `b`, provided that it lies in the cut
 rows. -/
-private theorem XSet_inter_eq_of_initialHexagon {P : GridInitialHexagonBetween a s s' x y}
+theorem XSet_inter_eq_of_initialHexagon {P : GridInitialHexagonBetween a s s' x y}
     (hX : G.X (finRotate n a) ∈ insert s' (Grid.cIco s s'))
     (hP : Disjoint P.crossingCoveredSquares G.XSet) :
     G.XSet ∩ P.toGridRectangle.coveredSquares = {(finRotate n a, G.X (finRotate n a))} := by

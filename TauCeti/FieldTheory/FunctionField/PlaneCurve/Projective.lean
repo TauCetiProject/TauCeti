@@ -14,7 +14,7 @@ import TauCeti.Algebra.Polynomial.Bivariate
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import TauCeti.Algebra.MvPolynomial.Units
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 import TauCeti.FieldTheory.FunctionField.PlaneCurve.Basic
 import TauCeti.FieldTheory.FunctionField.PlaneCurve.ConstantField

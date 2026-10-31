@@ -348,6 +348,15 @@ theorem entireExtension_generator (h : α.IsEntireAnalytic a) :
   entireExtension_eq_of_differentiable h.differentiable_entireExtension.deriv fun t =>
     (h.hasDerivAt_orbit t).unique (α.hasDerivAt ⟨a, h.mem_generator_domain⟩ t)
 
+/-- The generator at a complex-time translate is the complex derivative of the extension there:
+`δ(α_z(a)) = (d/dz) α_z(a)`. -/
+theorem generator_entireExtension (h : α.IsEntireAnalytic a) (z : ℂ) :
+    α.generator ⟨α.entireExtension a z,
+      (h.isEntireAnalytic_entireExtension z).mem_generator_domain⟩ =
+      deriv (α.entireExtension a) z := by
+  rw [(h.isEntireAnalytic_entireExtension z).generator_eq_deriv,
+    funext (h.entireExtension_entireExtension z), deriv_comp_const_add, add_zero]
+
 /-- The generator maps entire analytic elements to entire analytic elements. -/
 theorem generator (h : α.IsEntireAnalytic a) :
     α.IsEntireAnalytic (α.generator ⟨a, h.mem_generator_domain⟩) :=

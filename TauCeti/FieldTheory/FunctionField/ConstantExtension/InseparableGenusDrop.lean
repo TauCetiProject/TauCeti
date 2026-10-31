@@ -12,6 +12,8 @@ public import TauCeti.FieldTheory.RatFunc.PowerTower
 public import TauCeti.FieldTheory.RatFunc.Transcendental
 -- Proof-only: irreducibility of `X ^ p - C a` for prime `p` when `a` is not a `p`-th power.
 import Mathlib.FieldTheory.KummerPolynomial
+-- Proof-only: a compositum inside `k'(X)` containing `X` is everything.
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 
 /-!
 # The genus can drop under an inseparable constant field extension
@@ -107,6 +109,8 @@ theorem not_isSeparable_constants : ¬ Algebra.IsSeparable (constants p) (RatFun
 /-- `s`, viewed in `F' = k'(w)`. -/
 noncomputable def sElement : RatFunc (RatFunc (ZMod p)) :=
   algebraMap (RatFunc (ZMod p)) _ RatFunc.X
+
+theorem sElement_def : sElement p = algebraMap (RatFunc (ZMod p)) _ RatFunc.X := (rfl)
 
 /-- `x = w ^ 2 + s`. -/
 noncomputable def genX : RatFunc (RatFunc (ZMod p)) :=
@@ -220,14 +224,7 @@ theorem constantCompositum_eq_top (h2 : p ≠ 2) :
   have hX : (RatFunc.X : RatFunc (RatFunc (ZMod p))) ∈ C := by
     rw [X_eq_genY_div p h2]
     exact div_mem hy (pow_mem (sub_mem hx hs) _)
-  refine eq_top_iff.mpr fun z _ ↦ ?_
-  have hle : (RatFunc (ZMod p))⟮(RatFunc.X : RatFunc (RatFunc (ZMod p)))⟯.toSubfield ≤
-      C.toSubfield := by
-    rw [IntermediateField.adjoin_toSubfield]
-    refine Subfield.closure_le.mpr (Set.union_subset ?_ (by simpa using hX))
-    rintro _ ⟨c, rfl⟩
-    exact algebraMap_mem_constantCompositum _ _ _ c
-  exact hle (by rw [RatFunc.adjoin_X, IntermediateField.top_toSubfield]; exact Subfield.mem_top z)
+  exact constantCompositum_eq_top_of_X_mem hX
 
 /-- **The genus drops**: `F' / k'` is rational, of genus `0`, while `F / k` has genus
 `(p - 1) / 2 ≥ 1`. -/

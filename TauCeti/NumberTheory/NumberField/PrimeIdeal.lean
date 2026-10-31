@@ -38,6 +38,8 @@ prime into them.
   prime lies above `p`, it is the only height-one prime containing `p`.
 * `TauCeti.NumberField.absNorm_eq_pow_finrank_of_primesOver_eq_singleton`: an unramified prime
   that is the only prime above `p` has norm `p ^ [K : ℚ]`, so `p` is inert.
+* `TauCeti.NumberField.coprime_absNorm_of_absNorm_ne`: in a quadratic field, maximal ideals with
+  different norms have coprime norms.
 * `TauCeti.NumberField.card_primesOverFinset_le_finrank`: at most `[K : ℚ]` primes of `𝓞 K`
   lie over a nonzero prime of `ℤ`.
 * `TauCeti.NumberField.span_natCast_eq_prod_primesOverFinset`: a rational prime unramified in
@@ -150,6 +152,31 @@ theorem absNorm_eq_pow_finrank_of_primesOver_eq_singleton {p : ℕ} (𝔭 : Idea
   rw [← pow_inertiaDeg p 𝔭, ← _root_.NumberField.RingOfIntegers.rank K,
     RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one (span {(p : ℤ)}) 𝔭
       (by simp [hT]) he]
+
+/-- **Primes of a quadratic field with different norms have coprime norms.** If `[K : ℚ] = 2`,
+two maximal ideals of `𝓞 K` above the same rational prime `p` are equal or both have norm `p`:
+otherwise their product divides `p 𝓞 K`, of norm `p ^ 2`. -/
+theorem coprime_absNorm_of_absNorm_ne (hK : Module.finrank ℚ K = 2) {P₁ P₂ : Ideal (𝓞 K)}
+    [P₁.IsMaximal] [P₂.IsMaximal] (h : absNorm P₁ ≠ absNorm P₂) :
+    (absNorm P₁).Coprime (absNorm P₂) := by
+  have hne : P₁ ≠ P₂ := by
+    rintro rfl
+    exact h rfl
+  obtain ⟨p₁, n₁, hn₁, hp₁P, hp₁, hN₁⟩ := exists_prime_and_absNorm_eq_pow P₁
+  obtain ⟨p₂, n₂, hn₂, hp₂P, hp₂, hN₂⟩ := exists_prime_and_absNorm_eq_pow P₂
+  rw [hN₁, hN₂] at h ⊢
+  obtain rfl | hp := eq_or_ne p₁ p₂
+  · -- Both primes lie over `p₁`, so `p₁ 𝓞 K ≤ P₁ ⊓ P₂ = P₁ P₂` and `p₁ ^ (n₁ + n₂) ∣ p₁ ^ 2`.
+    have hle : span {(p₁ : 𝓞 K)} ≤ P₁ * P₂ := by
+      rw [mul_eq_inf_of_coprime (IsMaximal.coprime_of_ne ‹_› ‹_› hne)]
+      exact le_inf ((span_singleton_le_iff_mem _).mpr hp₁P)
+        ((span_singleton_le_iff_mem _).mpr hp₂P)
+    have hdvd := absNorm_dvd_absNorm_of_le hle
+    rw [map_mul, hN₁, hN₂, ← pow_add, absNorm_span_natCast,
+      _root_.NumberField.RingOfIntegers.rank, hK,
+      Nat.pow_dvd_pow_iff_le_right hp₁.one_lt] at hdvd
+    exact absurd (by congr 1; omega) h
+  · exact Nat.Coprime.pow _ _ ((Nat.coprime_primes hp₁ hp₂).mpr hp)
 
 /-- At most `[K : ℚ]` primes of `𝓞 K` lie over a given nonzero prime of `ℤ`, since each
 contributes a positive `ramificationIdx * inertiaDeg` to the fundamental identity. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.MayerVietoris
 public import TauCeti.Geometry.Manifold.DeRham.Punctured
+import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.Analysis.Normed.Module.Connected
@@ -33,6 +34,15 @@ connecting map vanishes on it: `H¹(Sⁿ) = 0`
 (`TauCeti.subsingleton_deRhamCohomology_sphere_one`). Induction on the degree then gives
 `H^k(Sⁿ) = 0` for `0 < k < n` (`TauCeti.subsingleton_deRhamCohomology_sphere`).
 
+For `n = 1` the intersection `U ⊓ V` is diffeomorphic to `ℝ \ {0}`, whose cohomology is that of
+the two-point sphere `S⁰`, so `H⁰(U ⊓ V)` is two-dimensional. Since `U` and `V` are connected, the
+kernel of the degree-zero connecting map is the line of constant classes
+(`TauCeti.deRhamCohomology.ker_mayerVietorisδ_zero`), and the map is surjective, so `H¹(S¹)` is
+one-dimensional. The suspension isomorphism carries this to `Hⁿ(Sⁿ)` for every `n ≥ 1`
+(`TauCeti.finrank_deRhamCohomology_sphere_self`). Together with the connectedness of `Sⁿ` and the
+vanishing of de Rham cohomology above the dimension, this computes `H^k(Sⁿ)` in every degree
+(`TauCeti.finrank_deRhamCohomology_sphere`).
+
 ## Main results
 
 * `TauCeti.subsingleton_deRhamCohomology_sphere_compl_singleton`: the sphere minus a point has no
@@ -40,6 +50,10 @@ connecting map vanishes on it: `H¹(Sⁿ) = 0`
 * `TauCeti.nonempty_linearEquiv_deRhamCohomology_sphere_succ`: `H^{k+1}(Sⁿ) ≃ H^{k+2}(Sⁿ⁺¹)`.
 * `TauCeti.subsingleton_deRhamCohomology_sphere_one`: `H¹(Sⁿ) = 0` for `n ≥ 2`.
 * `TauCeti.subsingleton_deRhamCohomology_sphere`: `H^k(Sⁿ) = 0` for `0 < k < n`.
+* `TauCeti.finrank_deRhamCohomology_zero_sphere_of_finrank_eq_one`: `H⁰(S⁰)` is two-dimensional.
+* `TauCeti.finrank_deRhamCohomology_sphere_self`: `Hⁿ(Sⁿ)` is one-dimensional for `n ≥ 1`.
+* `TauCeti.finrank_deRhamCohomology_sphere`: for `n ≥ 1`, `H^k(Sⁿ)` is one-dimensional when
+  `k = 0` or `k = n`, and zero otherwise.
 
 ## References
 
@@ -171,5 +185,106 @@ theorem subsingleton_deRhamCohomology_sphere [Fact (finrank ℝ E = n + 1)] {k :
       (subsingleton_deRhamCohomology_sphere_euclideanSpace k.succ_pos (by omega))
 
 end Suspension
+
+section TopDegree
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+
+/-- **The de Rham cohomology of `S⁰` in degree zero.** The unit sphere `S⁰` of a one-dimensional
+real inner product space consists of two points, so `H⁰(S⁰)` is two-dimensional. -/
+theorem finrank_deRhamCohomology_zero_sphere_of_finrank_eq_one [Fact (finrank ℝ E = 1)] :
+    finrank ℝ (deRhamCohomology (𝓡 0) (sphere (0 : E) 1) 0) = 2 := by
+  obtain ⟨e⟩ := nonempty_sphere (E := E) (m := 0) Fact.out
+  have hS := sphere_eq_pair_of_finrank_eq_one Fact.out e.2
+  have := finite_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
+  have := discreteTopology_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
+  rw [finrank_deRhamCohomology_zero_of_discreteTopology, Nat.card_coe_set_eq, hS,
+    Set.ncard_pair (fun h ↦ ne_neg_of_mem_unit_sphere ℝ e (Subtype.ext h) : (e : E) ≠ -e)]
+
+attribute [local instance] finrank_euclideanSpace_fin_succ_fact
+
+/-- `H¹(S¹)` is one-dimensional, for the unit circle `S¹` of a two-dimensional real inner product
+space. -/
+private theorem finrank_deRhamCohomology_sphere_one_one [Fact (finrank ℝ E = 1 + 1)] :
+    finrank ℝ (deRhamCohomology (𝓡 1) (sphere (0 : E) 1) 1) = 1 := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 1
+  obtain ⟨v⟩ := nonempty_sphere (E := E) (m := 1) Fact.out
+  set U : Opens (sphere (0 : E) 1) := ⟨{v}ᶜ, isOpen_compl_singleton⟩
+  set V : Opens (sphere (0 : E) 1) := ⟨{-v}ᶜ, isOpen_compl_singleton⟩
+  -- `U` and `V` are diffeomorphic to `ℝ`, hence connected.
+  have hℝ : ConnectedSpace (EuclideanSpace ℝ (Fin 1)) := inferInstance
+  have : PreconnectedSpace U :=
+    ((stereographicDiffeomorph v).toHomeomorph.connectedSpace_iff.mpr hℝ).toPreconnectedSpace
+  have : PreconnectedSpace V :=
+    ((stereographicDiffeomorph (-v)).toHomeomorph.connectedSpace_iff.mpr hℝ).toPreconnectedSpace
+  -- `U ⊓ V` is diffeomorphic to `ℝ \ {0}`, whose cohomology is that of `S⁰`.
+  have h₂ : finrank ℝ (deRhamCohomology (𝓡 1) (U ⊓ V : Opens (sphere (0 : E) 1)) 0) = 2 := by
+    simp only [U, V, Opens.mk_inf_mk, Set.inf_eq_inter]
+    rw [← (deRhamCohomology.equivOfDiffeomorph (stereographicPuncturedDiffeomorph v) 0).finrank_eq,
+      (deRhamCohomology.puncturedSpaceEquivSphere (EuclideanSpace ℝ (Fin 1)) 0 0).finrank_eq]
+    exact finrank_deRhamCohomology_zero_sphere_of_finrank_eq_one
+  have : Nonempty (U ⊓ V : Opens (sphere (0 : E) 1)) := by
+    simp only [U, V, Opens.mk_inf_mk, Set.inf_eq_inter]
+    exact ⟨(stereographicPuncturedDiffeomorph v).symm
+      ⟨EuclideanSpace.single (0 : Fin 1) 1, by simp⟩⟩
+  have : FiniteDimensional ℝ (deRhamCohomology (𝓡 1) (U ⊓ V : Opens (sphere (0 : E) 1)) 0) :=
+    Module.finite_of_finrank_eq_succ h₂
+  -- The connecting map `H⁰(U ⊓ V) → H¹(S¹)` is surjective, and its kernel is the line of
+  -- constant classes.
+  have h := LinearMap.finrank_range_add_finrank_ker (deRhamCohomology.mayerVietorisδ (𝓡 1) U V 0)
+  rw [LinearMap.range_eq_top.mpr (deRhamCohomology.mayerVietorisδ_surjective
+      (subsingleton_deRhamCohomology_sphere_compl_singleton v 0)
+      (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) 0)), finrank_top,
+    deRhamCohomology.ker_mayerVietorisδ_zero,
+    LinearMap.finrank_range_of_inj deRhamCohomology.const_injective, Module.finrank_self, h₂] at h
+  rw [(deRhamCohomology.equivOfDiffeomorph
+    (Diffeomorph.ofTop _ (compl_singleton_sup_compl_singleton_neg_eq_top v)) 1).finrank_eq]
+  -- `h` reads `dim H¹(U ⊔ V) + 1 = 2`.
+  exact Nat.add_right_cancel h
+
+/-- `Hⁿ⁺¹(Sⁿ⁺¹)` is one-dimensional, for the unit sphere `Sⁿ⁺¹` of `ℝⁿ⁺²`. -/
+private theorem finrank_deRhamCohomology_sphere_euclideanSpace_self (m : ℕ) :
+    finrank ℝ (deRhamCohomology (𝓡 (m + 1))
+      (sphere (0 : EuclideanSpace ℝ (Fin (m + 1 + 1))) 1) (m + 1)) = 1 := by
+  induction m with
+  | zero => exact finrank_deRhamCohomology_sphere_one_one
+  | succ m ih =>
+    exact (nonempty_linearEquiv_deRhamCohomology_sphere_succ
+      (E := EuclideanSpace ℝ (Fin (m + 1 + 1 + 1))) m).some.finrank_eq.symm.trans ih
+
+/-- **The top de Rham cohomology of a sphere.** For `n ≥ 1`, `Hⁿ(Sⁿ)` is one-dimensional, for the
+unit sphere `Sⁿ` of an `(n + 1)`-dimensional real inner product space. -/
+theorem finrank_deRhamCohomology_sphere_self [Fact (finrank ℝ E = n + 1)] (hn : 0 < n) :
+    finrank ℝ (deRhamCohomology (𝓡 n) (sphere (0 : E) 1) n) = 1 := by
+  rcases n with _ | _ | m
+  · exact absurd hn (lt_irrefl 0)
+  · exact finrank_deRhamCohomology_sphere_one_one
+  · exact (nonempty_linearEquiv_deRhamCohomology_sphere_succ (E := E) m).some.finrank_eq.symm.trans
+      (finrank_deRhamCohomology_sphere_euclideanSpace_self m)
+
+/-- **The de Rham cohomology of spheres.** For `n ≥ 1`, the de Rham cohomology `H^k(Sⁿ)` of the
+unit sphere `Sⁿ` of an `(n + 1)`-dimensional real inner product space is one-dimensional in degrees
+`0` and `n`, and zero in every other degree. -/
+theorem finrank_deRhamCohomology_sphere [Fact (finrank ℝ E = n + 1)] (hn : 0 < n) (k : ℕ) :
+    finrank ℝ (deRhamCohomology (𝓡 n) (sphere (0 : E) 1) k) = if k = 0 ∨ k = n then 1 else 0 := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  split_ifs with h
+  · rcases h with rfl | rfl
+    · -- The sphere of a space of dimension at least two is connected.
+      have : ConnectedSpace (sphere (0 : E) 1) :=
+        isConnected_iff_connectedSpace.mp <| isConnected_sphere
+          (by rw [← finrank_eq_rank, (Fact.out : finrank ℝ E = n + 1)]; exact_mod_cast by omega)
+          0 zero_le_one
+      exact finrank_deRhamCohomology_zero _ _
+    · exact finrank_deRhamCohomology_sphere_self hn
+  · rw [not_or] at h
+    have : Subsingleton (deRhamCohomology (𝓡 n) (sphere (0 : E) 1) k) := by
+      rcases lt_or_gt_of_ne h.2 with hk | hk
+      · exact subsingleton_deRhamCohomology_sphere (Nat.pos_of_ne_zero h.1) hk
+      · exact subsingleton_deRhamCohomology_of_finrank_lt (𝓡 n) (sphere (0 : E) 1)
+          (by rwa [finrank_euclideanSpace_fin])
+    exact finrank_zero_of_subsingleton
+
+end TopDegree
 
 end TauCeti

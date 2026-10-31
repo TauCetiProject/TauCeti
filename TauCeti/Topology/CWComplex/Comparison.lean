@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.CWComplex.Abstract.Classical
 public import TauCeti.Topology.CWComplex.Abstract.ClosedEmbedding
+public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 public import TauCeti.Topology.CWComplex.Classical.RelativeCWComplex
 
 /-!
@@ -22,6 +23,13 @@ the closed unit ball after inclusion into the original ambient space.
 These comparisons use the specified CW structures throughout: no replacement CW model or
 choice of characteristic maps is made. The target of the categorical round trip is the
 subspace `Set.univ` of the original target, identified with it by `Homeomorph.Set.univ`.
+
+Starting with a classical CW complex `C` in a Hausdorff space, the round trip is a classical CW
+structure on the whole subspace `C` (`TauCeti.cwComplexUniv`), finite when `C` is
+(`TauCeti.finite_cwComplexUniv`).
+Consequently the finite CW model of a space of finite CW type can be taken to be a whole space
+(`TauCeti.FiniteCWType.exists_homotopyEquiv_univ`), which is the form needed to lift the model
+along a covering map of it.
 
 ## References
 
@@ -176,5 +184,48 @@ lemma image_categoricalRoundTrip_skeletonLT (n : ℕ) :
   rw [← (toRelativeCWComplex C).range_incl_app_eq_toRelCWComplex_skeletonLT]
   rw [← Set.range_comp]
   exact range_toRelativeCWComplex_incl_app n
+
+section Univ
+
+variable {X : Type u} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
+
+/-- **A CW complex is a CW structure on its own underlying space.** The classical CW structure
+on the whole subspace `C` of a Hausdorff space given by the categorical round trip
+`(toRelativeCWComplex C).toRelCWComplex`: it has the cells of `C`, and its base, the range of the
+map out of the empty subspace, is empty. -/
+@[instance_reducible] def cwComplexUniv : CWComplex (univ : Set C) :=
+  letI := (toRelativeCWComplex C).toRelCWComplex
+  have hD : range (ContinuousMap.inclusion (base_subset_complex (C := C))) = ∅ :=
+    range_eq_empty _
+  { cell := RelCWComplex.cell (univ : Set C)
+    map := RelCWComplex.map
+    source_eq := RelCWComplex.source_eq
+    continuousOn := RelCWComplex.continuousOn
+    continuousOn_symm := RelCWComplex.continuousOn_symm
+    pairwiseDisjoint' := RelCWComplex.pairwiseDisjoint'
+    mapsTo' n i := by simpa [hD] using RelCWComplex.mapsTo (C := (univ : Set C)) n i
+    closed' A hA h := RelCWComplex.closed' A hA ⟨h, by simp [hD]⟩
+    union' := by simpa [hD] using RelCWComplex.union' (C := (univ : Set C)) }
+
+/-- The CW structure `cwComplexUniv C` on the whole subspace `C` is finite when `C` is. -/
+theorem finite_cwComplexUniv [RelCWComplex.Finite C] :
+    letI := cwComplexUniv C
+    RelCWComplex.Finite (univ : Set C) :=
+  letI := cwComplexUniv C
+  -- the round trip has the cells of `C`, so it is finite
+  have := RelCWComplex.finite_cells_of_finite (C := C)
+  RelCWComplex.finite_of_finite_cells (.of_equiv (Σ n, cell C n) (Equiv.sigmaCongrRight fun n ↦
+    ((toRelativeCWComplex C).toRelCWComplexCellEquiv n).symm))
+
+end Univ
+
+/-- A space of finite CW type is homotopy equivalent to a Hausdorff space carrying a finite CW
+structure on the whole space. -/
+theorem FiniteCWType.exists_homotopyEquiv_univ (Y : Type u) [TopologicalSpace Y]
+    [h : FiniteCWType Y] :
+    ∃ (Z : Type u) (_ : TopologicalSpace Z) (_ : T2Space Z) (_ : CWComplex (univ : Set Z)),
+      RelCWComplex.Finite (univ : Set Z) ∧ Nonempty (ContinuousMap.HomotopyEquiv Y Z) := by
+  obtain ⟨X, _, _, C, _, _, e⟩ := h.exists_homotopyEquiv
+  exact ⟨C, _, inferInstance, cwComplexUniv C, finite_cwComplexUniv C, e⟩
 
 end TauCeti
