@@ -40,8 +40,12 @@ spaces and lens spaces, product metrics on Dold manifolds `(Sᵃ × ℂPᵇ) / C
   isometry from `g` to the descended metric.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_descend`: the descended metric has the scalar
   curvature of `g`.
+* `Bundle.ContMDiffRiemannianMetric.inner_eq_of_quotientMk_eq`: a metric invariant under a free,
+  properly discontinuous group action is compatible with the orbit projection.
 * `Bundle.ContMDiffRiemannianMetric.quotient`: a metric invariant under a free, properly
   discontinuous smooth group action descends to the orbit space.
+* `Bundle.ContMDiffRiemannianMetric.pullback_eq_iff_eq_quotient`: the metric on the orbit space is
+  the unique metric whose pullback along the orbit projection is the invariant metric.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_quotient`: the metric on the orbit space has the
   scalar curvature of the invariant metric.
 
@@ -211,18 +215,19 @@ end Smooth
 section Quotient
 
 variable {G : Type*} [Group G] [MulAction G M]
-  [ContMDiffConstSMul I ∞ G M] [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M]
-  [IsCancelSMul G M] [T2Space M] [LocallyCompactSpace M] [IsManifold I ∞ M]
-  (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-  (hg : ∀ (a : G) (x : M) (v w : TangentSpace I x),
-    g.inner (a • x) (mfderiv I I (a • ·) x v) (mfderiv I I (a • ·) x w) = g.inner x v w)
+  [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M]
+  [IsCancelSMul G M] [T2Space M] [LocallyCompactSpace M]
 
-include hg in
-/-- A metric preserved by every element of `G` is compatible with the orbit projection: tangent
-vectors at points of one orbit with the same images in the orbit space have the same inner
-products. -/
-private theorem inner_eq_of_quotientMk_eq (x x' : M) (v w : TangentSpace I x)
-    (v' w' : TangentSpace I x')
+/-- A metric preserved by every element of `G` is compatible with the orbit projection of a free,
+properly discontinuous `C^1` action: tangent vectors at points of one orbit with the same
+images in the orbit space have the same inner products. This is the compatibility hypothesis of
+`Bundle.ContMDiffRiemannianMetric.descend` for the orbit projection, for a metric of any
+regularity. -/
+theorem inner_eq_of_quotientMk_eq [ContMDiffConstSMul I 1 G M] [IsManifold I 1 M]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    (hg : ∀ (a : G) (x : M) (v w : TangentSpace I x),
+      g.inner (a • x) (mfderiv I I (a • ·) x v) (mfderiv I I (a • ·) x w) = g.inner x v w)
+    (x x' : M) (v w : TangentSpace I x) (v' w' : TangentSpace I x')
     (hx : Quotient.mk (MulAction.orbitRel G M) x = Quotient.mk (MulAction.orbitRel G M) x')
     (hv : mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x v =
       mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x' v')
@@ -232,8 +237,8 @@ private theorem inner_eq_of_quotientMk_eq (x x' : M) (v w : TangentSpace I x)
   obtain ⟨a, ha⟩ := Quotient.exact hx.symm
   dsimp only at ha
   subst ha
-  have hq := TauCeti.isLocalDiffeomorph_quotientMk (I := I) (n := ∞) (G := G) (M := M)
-  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+  have hq := TauCeti.isLocalDiffeomorph_quotientMk (I := I) (n := 1) (G := G) (M := M)
+  have hn : (1 : ℕ∞ω) ≠ 0 := by simp
   -- The differential of `a • ·` at `x` carries `v` to the unique preimage of its image at `a • x`.
   have hmap (u : TangentSpace I x) (u' : TangentSpace I (a • x))
       (hu : mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x u =
@@ -243,12 +248,17 @@ private theorem inner_eq_of_quotientMk_eq (x x' : M) (v w : TangentSpace I x)
     rw [TauCeti.mfderiv_quotientMk_smul_apply hn ((hq (a • x)).mdifferentiableAt hn), hu]
   rw [← hmap v v' hv, ← hmap w w' hw, hg]
 
+variable [ContMDiffConstSMul I ∞ G M] [IsManifold I ∞ M]
+  (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+  (hg : ∀ (a : G) (x : M) (v w : TangentSpace I x),
+    g.inner (a • x) (mfderiv I I (a • ·) x v) (mfderiv I I (a • ·) x w) = g.inner x v w)
+
 /-- The metric on the orbit space of a free, properly discontinuous smooth action of `G` by
 isometries of `g`, descended from `g` along the orbit projection. -/
 def quotient :
     ContMDiffRiemannianMetric I ∞ E (fun x : MulAction.orbitRel.Quotient G M ↦ TangentSpace I x) :=
   g.descend (TauCeti.isLocalDiffeomorph_quotientMk (n := ∞)) Quotient.mk_surjective
-    (inner_eq_of_quotientMk_eq g hg)
+    (g.inner_eq_of_quotientMk_eq hg)
 
 /-- The metric on the orbit space at the orbit of `x`, applied to the images of two tangent
 vectors at `x`, is their inner product for `g`. -/
@@ -260,10 +270,29 @@ theorem quotient_inner_mfderiv (x : M) (v w : TangentSpace I x) :
       g.inner x v w :=
   g.descend_inner_mfderiv _ _ _ x v w
 
+variable [FiniteDimensional ℝ E]
+
+/-- Pulling the metric on the orbit space back along the orbit projection recovers `g`. -/
+@[simp]
+theorem pullback_quotient (hq : ContMDiff I I (∞ + 1) (Quotient.mk (MulAction.orbitRel G M)))
+    (hinj : ∀ x, Injective (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x)) :
+    (g.quotient hg).pullback (Quotient.mk _) hq hinj = g :=
+  g.pullback_descend _ _ _ hq hinj
+
+/-- The metric on the orbit space is the unique metric on the orbit space whose pullback along
+the orbit projection is `g`. -/
+theorem pullback_eq_iff_eq_quotient
+    (h : ContMDiffRiemannianMetric I ∞ E
+      (fun x : MulAction.orbitRel.Quotient G M ↦ TangentSpace I x))
+    (hq : ContMDiff I I (∞ + 1) (Quotient.mk (MulAction.orbitRel G M)))
+    (hinj : ∀ x, Injective (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x)) :
+    h.pullback (Quotient.mk _) hq hinj = g ↔ h = g.quotient hg :=
+  g.pullback_eq_iff_eq_descend _ _ _ h hq hinj
+
 /-- The metric on the orbit space has the scalar curvature of `g`: at the orbit of `x` it is the
 scalar curvature of `g` at `x`. -/
 @[simp]
-theorem scalarCurvature_quotient [FiniteDimensional ℝ E] (x : M) :
+theorem scalarCurvature_quotient (x : M) :
     (g.quotient hg).scalarCurvature (Quotient.mk _ x) = g.scalarCurvature x :=
   g.scalarCurvature_descend _ _ _ x
 
