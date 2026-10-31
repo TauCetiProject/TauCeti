@@ -20,9 +20,7 @@ Every orbit closure consequently contains a proper orbit scheme.
 
 The group need not be reduced, smooth or connected. When it is reduced, the
 smoothness instance in `TauCeti.AlgebraicGeometry.GroupAction.Orbit.Smooth` makes
-these proper orbit schemes smooth as well. Properness here is algebraic; no
-compactness assertion about the Zariski topology substitutes for properness or
-for a comparison with complex points.
+these proper orbit schemes smooth as well.
 
 The construction uses `TauCeti.SchemeAction.orbitScheme` and the closed-orbit
 existence theorem, together with Mathlib's closed-immersion criterion and
@@ -87,7 +85,7 @@ theorem isProper_orbitToBase_of_isClosed
   infer_instance
 
 /-- In a proper ambient scheme, an orbit scheme is proper exactly when the geometric
-orbit is closed. This does not assert properness of arbitrary locally closed orbits. -/
+orbit is closed. -/
 @[simp]
 theorem isProper_orbitToBase_iff :
     IsProper (orbitToBase G x) ↔ IsClosed (orbit G x) :=
@@ -98,10 +96,10 @@ an actual closed subscheme of the ambient scheme. The chosen orbit need not be u
 theorem exists_isProper_orbit_subset_orbitClosure :
     ∃ y : 𝟙_ (Over (Spec (.of k))) ⟶ X,
       IsProper (orbitToBase G y) ∧ IsClosedImmersion (orbitι G y) ∧
-        Set.range (orbitι G y) ⊆ orbitClosure G x := by
+        orbit G y ⊆ orbitClosure G x := by
   obtain ⟨y, hy, hsub⟩ := exists_isClosed_orbit_subset_orbitClosure G x
   exact ⟨y, isProper_orbitToBase_of_isClosed G y hy,
-    (isClosedImmersion_orbitι_iff G y).mpr hy, (range_orbitι G y).symm ▸ hsub⟩
+    (isClosedImmersion_orbitι_iff G y).mpr hy, hsub⟩
 
 end Proper
 
