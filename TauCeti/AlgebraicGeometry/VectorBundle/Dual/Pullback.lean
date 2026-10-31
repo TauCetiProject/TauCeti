@@ -170,7 +170,7 @@ theorem pullbackDualIso_hom_comp (g : Y ⟶ Z) (E : FiniteLocallyFreeSheaf Z) :
     rw [hM _ (pullback_obj_obj g E)]
     -- On module pullbacks, this is the composition coherence of the base-change map of linear
     -- functionals.
-    rw [← Functor.map_comp_assoc, pullbackIhomComparison_app_unit_comp_assoc]
+    rw [← Functor.map_comp_assoc, Scheme.Hom.pullbackIhomComparison_app_unit_comp_assoc]
   exact h
 
 end

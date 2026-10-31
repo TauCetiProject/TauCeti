@@ -20,13 +20,6 @@ isomorphism (`totalSpaceHomIso`) between the functor of points of `𝕍(E)` on s
 the presheaf `T ↦ Γ(T, q^* E)` of sections of pulled-back bundles (`pullbackSectionsPresheaf`),
 naturally in `E`.
 
-The proof compares linear functionals on `q'^* (E^∨)`, where `q' = g ≫ q`. The universal property
-of `Spec_X (Sym E^∨)` turns precomposition with `g` into pullback of linear functionals along `g`
-(`relativeSpecSymmetricAlgebraPullbackHomEquiv_comp`). The base-change map
-`q^* 𝓗om(E, 𝒪_X) ⟶ 𝓗om(q^* E, 𝒪_T)` is compatible with composites
-(`pullbackIhomComparison_app_unit_comp`), and it carries pulled-back evaluation at a section to
-evaluation at the pulled-back section (`pullback_map_evaluation_comp_pullbackObjUnitIso_hom`).
-
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.totalSpaceHomEquiv_comp`: naturality of the section correspondence
@@ -72,6 +65,10 @@ theorem totalSpaceHomEquiv_comp (E : FiniteLocallyFreeSheaf X) {T' T : Over X} (
         (Scheme.Modules.pullback g.left).map (totalSpaceHomEquiv E T t) ≫
           (Scheme.Modules.pullbackComp g.left T.hom).hom.app E.obj ≫
             (Scheme.Modules.pullbackCongr (Over.w g)).hom.app E.obj := by
+  -- Compare linear functionals on `q'^* (E^∨)`, where `q' = g ≫ q`: the universal property of
+  -- `Spec_X (Sym E^∨)` turns precomposition with `g` into pullback of linear functionals along `g`,
+  -- the base-change map of linear functionals is compatible with composites, and it carries
+  -- pulled-back evaluation at a section to evaluation at the pulled-back section.
   obtain ⟨s, rfl⟩ := (totalSpaceHomEquiv E T).symm.surjective t
   rw [Equiv.apply_symm_apply, ← Equiv.eq_symm_apply, totalSpaceHomEquiv_symm_apply,
     totalSpaceHomEquiv_symm_apply]
@@ -93,8 +90,9 @@ theorem totalSpaceHomEquiv_comp (E : FiniteLocallyFreeSheaf X) {T' T : Over X} (
   simp only [Category.assoc]
   -- The base-change maps of linear functionals are compatible with `Over.w g` and with the
   -- composite `g ≫ q`, and they carry pulled-back evaluation to evaluation.
-  rw [pullbackIhomComparison_app_unit_congr_assoc, ← pullbackIhomComparison_app_unit_comp_assoc,
-    ← pullback_map_evaluation_comp_pullbackObjUnitIso_hom]
+  rw [pullbackIhomComparison_app_unit_congr_assoc,
+    ← Scheme.Hom.pullbackIhomComparison_app_unit_comp_assoc,
+    ← Scheme.Hom.pullback_map_evaluation_comp_pullbackObjUnitIso_hom]
   simp only [Functor.map_comp, Category.assoc, toQuasicoherent_obj_obj]
 
 /-- The point of the pulled-back section: precomposing the point of a section `s` of `q^* E` with

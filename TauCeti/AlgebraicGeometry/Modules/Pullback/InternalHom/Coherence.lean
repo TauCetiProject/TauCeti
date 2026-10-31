@@ -139,8 +139,8 @@ internal-Hom comparison at the structure sheaf followed by `f^* 𝒪_Y ≅ 𝒪_
 composites: along `f ≫ g` it is the pullback along `f` of the map along `g` followed by the map
 along `f`, through the composition isomorphism of pullback. -/
 @[reassoc]
-theorem pullbackIhomComparison_app_unit_comp (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules)
-    [M.IsQuasicoherent] :
+theorem _root_.AlgebraicGeometry.Scheme.Hom.pullbackIhomComparison_app_unit_comp
+    (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) [M.IsQuasicoherent] :
     (Scheme.Modules.pullbackComp f g).inv.app ((ihom M).obj (𝟙_ Z.Modules)) ≫
         (Scheme.Modules.pullback f).map ((pullbackIhomComparison M g).app (𝟙_ Z.Modules) ≫
           (ihom ((Scheme.Modules.pullback g).obj M)).map
@@ -162,8 +162,10 @@ theorem pullbackIhomComparison_app_unit_comp (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.
     rw [← Scheme.Modules.pullbackObjUnitIso_comp, Iso.hom_inv_id_app_assoc]
   -- Move the structure-sheaf comparison along `g` past the comparison along `f`, combine the two
   -- structure-sheaf comparisons, and apply the coherence `pullbackIhomComparison_comp`.
-  rw [Functor.map_comp, Category.assoc, reassoc_of% hn, ← Functor.map_comp, hu,
-    Functor.map_comp, pullbackIhomComparison_comp_assoc, Iso.inv_hom_id_app_assoc]
+  rw [Functor.map_comp, Category.assoc, reassoc_of% hn]
+  simp only [← Functor.map_comp, hu]
+  simp only [Functor.map_comp]
+  rw [pullbackIhomComparison_comp_assoc, Iso.inv_hom_id_app_assoc]
   exact congrArg (_ ≫ ·) ((pre _).naturality _).symm
 
 /-- The base-change map of linear functionals is unchanged, up to the canonical identifications,
@@ -187,8 +189,8 @@ pullback along `f` of evaluation `𝓗om(M, 𝒪_Y) ⟶ 𝒪_Y` at `s`, followed
 base-change map `f^* 𝓗om(M, 𝒪_Y) ⟶ 𝓗om(f^* M, 𝒪_X)` followed by evaluation at the pulled-back
 section `𝒪_X ≅ f^* 𝒪_Y ⟶ f^* M`. -/
 @[reassoc]
-theorem pullback_map_evaluation_comp_pullbackObjUnitIso_hom (f : X ⟶ Y) (M : Y.Modules)
-    [M.IsQuasicoherent] (s : 𝟙_ Y.Modules ⟶ M) :
+theorem _root_.AlgebraicGeometry.Scheme.Hom.pullback_map_evaluation_comp_pullbackObjUnitIso_hom
+    (f : X ⟶ Y) (M : Y.Modules) [M.IsQuasicoherent] (s : 𝟙_ Y.Modules ⟶ M) :
     (Scheme.Modules.pullback f).map ((λ_ _).inv ≫ s ▷ (ihom M).obj (𝟙_ Y.Modules) ≫
         (ihom.ev M).app (𝟙_ Y.Modules)) ≫ (Scheme.Modules.pullbackObjUnitIso f).hom =
       (pullbackIhomComparison M f).app (𝟙_ Y.Modules) ≫
@@ -205,12 +207,9 @@ theorem pullback_map_evaluation_comp_pullbackObjUnitIso_hom (f : X ⟶ Y) (M : Y
   dsimp only [Functor.comp_obj]
   -- Oplax left unitality of pullback, whose unit comparison is `f^* 𝒪_Y ≅ 𝒪_X`, and naturality
   -- of the tensor comparison in the section reduce both sides to the same pulled-back composite.
-  rw [left_unitality (Scheme.Modules.pullback f), Scheme.Modules.pullback_η,
-    MonoidalCategory.comp_whiskerRight]
-  simp only [Category.assoc]
-  rw [← MonoidalCategory.comp_whiskerRight_assoc, Iso.hom_inv_id, id_whiskerRight,
-    Category.id_comp, δ_natural_left_assoc, IsIso.hom_inv_id_assoc, Functor.map_comp,
-    Functor.map_comp, Category.assoc, Category.assoc]
+  rw [left_unitality (Scheme.Modules.pullback f), Scheme.Modules.pullback_η]
+  simp only [comp_whiskerRight, Category.assoc, hom_inv_whiskerRight_assoc, δ_natural_left_assoc,
+    IsIso.hom_inv_id_assoc, Functor.map_comp]
 
 end Unit
 
