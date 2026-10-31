@@ -21,8 +21,9 @@ corepresented by `ℤ[u,r,s,t][u⁻¹]`. The equivalence here uses the native ch
 including over rings with nilpotents and the zero ring; it is not a classification on field
 points. This supplies the coordinate algebra for the group acting on Weierstrass equations.
 
-`Universal.specialize` classifies a change of variables and `Universal.change` is the universal
-one. Their two inverse laws, together with naturality, give `pointsCorepresentableBy`.
+`WeierstrassCurve.VariableChange.specialize` classifies a change of variables and
+`Universal.change` is the universal one. Their two inverse laws, together with naturality,
+give `pointsCorepresentableBy`.
 The functor takes values in groups using Mathlib's `VariableChange.mapHom`, so its product
 is the native, noncommutative product, not addition on three translation coordinates.
 
@@ -84,6 +85,16 @@ theorem ringHom_ext {f g : CoordinateRing →+* R}
   apply IsLocalization.ringHom_ext (.powers (X (0 : Fin 4) : MvPolynomial (Fin 4) ℤ))
   exact MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) h
 
+end Universal
+
+end TauCeti.WeierstrassChange
+
+namespace WeierstrassCurve.VariableChange
+
+open MvPolynomial TauCeti.WeierstrassChange.Universal
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+
 /-- The classifying homomorphism of a change of variables: send `u,r,s,t` to its coefficients. -/
 def specialize (C : VariableChange R) : CoordinateRing →+* R :=
   IsLocalization.Away.lift (X (0 : Fin 4) : MvPolynomial (Fin 4) ℤ)
@@ -104,9 +115,17 @@ theorem map_specialize (C : VariableChange R) : change.map (specialize C) = C :=
 @[simp]
 theorem specialize_map (C : VariableChange R) (f : R →+* S) :
     specialize (C.map f) = f.comp (specialize C) := by
-  apply ringHom_ext
+  apply TauCeti.WeierstrassChange.Universal.ringHom_ext
   intro i
   fin_cases i <;> simp
+
+end WeierstrassCurve.VariableChange
+
+namespace TauCeti.WeierstrassChange
+
+namespace Universal
+
+variable {R S : Type*} [CommRing R] [CommRing S]
 
 /-- The universal change is classified by the identity on its coordinate algebra. -/
 @[simp]
@@ -182,7 +201,7 @@ theorem pointsCorepresentableBy_homEquiv {R : CommRingCat.{u}}
 theorem pointsCorepresentableBy_homEquiv_symm {R : CommRingCat.{u}}
     (C : VariableChange R) :
     pointsCorepresentableBy.homEquiv.symm C =
-      CommRingCat.ofHom ((Universal.specialize C).comp ULift.ringEquiv.toRingHom) := (rfl)
+      CommRingCat.ofHom (C.specialize.comp ULift.ringEquiv.toRingHom) := (rfl)
 
 /-- The underlying functor of changes of variables is corepresentable by its coordinate
 algebra; the representing equivalence is `pointsCorepresentableBy`. -/
