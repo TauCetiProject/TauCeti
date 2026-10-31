@@ -73,7 +73,7 @@ noncomputable def descContMDiffMap
     Multicoequalizer.desc D.toGlueData.diagram (TopCat.of N)
       (fun (i : D.J) ↦ TopCat.ofHom (X := D.U i) ⟨f i, (f i).contMDiff.continuous⟩)
       (by rintro ⟨i, j⟩; ext x; exact hf i j x)
-  refine ⟨F, h.contMDiff_iff.mpr fun i ↦ ?_⟩
+  refine ⟨F, (h.contMDiff_iff le_rfl).mpr fun i ↦ ?_⟩
   have hi := Multicoequalizer.π_desc D.toGlueData.diagram (TopCat.of N)
     (fun (i : D.J) ↦ TopCat.ofHom (X := D.U i) ⟨f i, (f i).contMDiff.continuous⟩)
     (by rintro ⟨i, j⟩; ext x; exact hf i j x) i
