@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Cyclotomic.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.NormLimitation
 public import TauCeti.NumberTheory.NumberField.Global.Cyclotomic.RayClass
