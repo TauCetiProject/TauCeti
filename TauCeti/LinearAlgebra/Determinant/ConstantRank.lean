@@ -43,55 +43,26 @@ namespace LinearMap
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Finite R M]
   [Module.Projective R M]
 
-/-- Two elements of `R` agree when their images agree in the localization at every maximal ideal.
-This is the form in which identities between determinants are checked locally below. -/
-private theorem eq_of_algebraMap_localization_eq {a b : R}
-    (h : ∀ (P : Ideal R) [P.IsMaximal],
-      algebraMap R (Localization.AtPrime P) a = algebraMap R (Localization.AtPrime P) b) :
-    a = b :=
-  Module.eq_of_localization_maximal (fun P _ ↦ Localization.AtPrime P)
-    (fun P _ ↦ Algebra.linearMap R (Localization.AtPrime P)) a b h
-
-/-- After localizing at a prime `P`, a finite projective module of constant rank `d` is free of
-rank `d`. -/
-private theorem free_finrank_localization {d : ℕ} (hd : ∀ p, rankAtStalk (R := R) M p = d)
-    (P : Ideal R) [P.IsPrime] :
-    Module.Free (Localization.AtPrime P) (Localization.AtPrime P ⊗[R] M) ∧
-      finrank (Localization.AtPrime P) (Localization.AtPrime P ⊗[R] M) = d :=
-  ⟨Module.free_of_flat_of_isLocalRing, by
-    rw [← rankAtStalk_eq_finrank_tensorProduct (M := M) ⟨P, inferInstance⟩, hd]⟩
-
 /-- On a finite projective module of constant rank `d`, scaling an endomorphism by `c` multiplies
 its determinant by `c ^ d`. This is `LinearMap.det_smul` for modules which need not be free. -/
 theorem projectiveDet_smul {d : ℕ} (hd : ∀ p, rankAtStalk (R := R) M p = d) (c : R)
     (f : Module.End R M) :
     projectiveDet (c • f) = c ^ d * projectiveDet f := by
-  refine eq_of_algebraMap_localization_eq fun P _ ↦ ?_
-  have := (free_finrank_localization hd P).1
-  have hfin := (free_finrank_localization hd P).2
-  rw [map_mul, map_pow, ← projectiveDet_baseChange, ← projectiveDet_baseChange, baseChange_smul,
-    ← algebraMap_smul (Localization.AtPrime P), projectiveDet_eq_det, projectiveDet_eq_det,
-    det_smul, hfin]
+  refine Module.eq_of_localization_maximal (fun P _ ↦ Localization.AtPrime P)
+    (fun P _ ↦ Algebra.linearMap R (Localization.AtPrime P)) _ _ fun P _ ↦ ?_
+  let A := Localization.AtPrime P
+  have : Module.Free A (A ⊗[R] M) := Module.free_of_flat_of_isLocalRing
+  have hfin : finrank A (A ⊗[R] M) = d := by
+    rw [← rankAtStalk_eq_finrank_tensorProduct (M := M) ⟨P, inferInstance⟩, hd]
+  simp only [Algebra.linearMap_apply, map_mul, map_pow, ← projectiveDet_baseChange]
+  rw [baseChange_smul, ← algebraMap_smul A, projectiveDet_eq_det, projectiveDet_eq_det, det_smul,
+    hfin]
 
 /-- On a finite projective module of constant rank `d`, multiplication by `c` has determinant
 `c ^ d`. -/
 theorem projectiveDet_smul_id {d : ℕ} (hd : ∀ p, rankAtStalk (R := R) M p = d) (c : R) :
     projectiveDet (c • id : Module.End R M) = c ^ d := by
   rw [projectiveDet_smul hd, projectiveDet_id, mul_one]
-
-/-- On a finite free module of rank one, every endomorphism is multiplication by its
-determinant. -/
-private theorem eq_det_smul_id_of_finrank_eq_one {A N : Type*} [CommRing A] [AddCommGroup N]
-    [Module A N] [Module.Free A N] [Module.Finite A N] (h : finrank A N = 1) (f : Module.End A N) :
-    f = LinearMap.det f • id := by
-  rcases subsingleton_or_nontrivial A with _ | _
-  · have : Subsingleton N := Module.subsingleton A N
-    exact Subsingleton.elim _ _
-  let b : Basis (Fin 1) A N := Module.finBasisOfFinrankEq A N h
-  refine b.ext fun i ↦ ?_
-  rw [Subsingleton.elim i 0, smul_apply, id_apply, ← det_toMatrix b, Matrix.det_unique,
-    ← b.sum_repr (f (b 0))]
-  simp [toMatrix_apply]
 
 /-- On a finite projective module of constant rank one, for instance an invertible module, every
 endomorphism is multiplication by its determinant. In particular `c ↦ c • id` and
@@ -101,11 +72,16 @@ theorem eq_projectiveDet_smul_id (hM : ∀ p, rankAtStalk (R := R) M p = 1) (f :
   ext x
   refine Module.eq_of_localization_maximal (fun P _ ↦ Localization.AtPrime P ⊗[R] M)
     (fun P _ ↦ TensorProduct.mk R (Localization.AtPrime P) M 1) _ _ fun P _ ↦ ?_
-  have := (free_finrank_localization hM P).1
-  have hfin := (free_finrank_localization hM P).2
-  have h := congr($(eq_det_smul_id_of_finrank_eq_one hfin (f.baseChange (Localization.AtPrime P)))
-    (1 ⊗ₜ[R] x))
-  rw [← projectiveDet_eq_det, projectiveDet_baseChange] at h
-  simpa [TensorProduct.smul_tmul', Algebra.smul_def] using h
+  let A := Localization.AtPrime P
+  have : Module.Free A (A ⊗[R] M) := Module.free_of_flat_of_isLocalRing
+  have hfin : finrank A (A ⊗[R] M) = 1 := by
+    rw [← rankAtStalk_eq_finrank_tensorProduct (M := M) ⟨P, inferInstance⟩, hM]
+  -- Over the local ring `A`, the base change of `f` is multiplication by a scalar `c`, which is
+  -- its determinant.
+  obtain ⟨c, hc, -⟩ := (f.baseChange A).existsUnique_eq_smul_id_of_finrank_eq_one hfin
+  have hdet : algebraMap R A (projectiveDet f) = c := by
+    rw [← projectiveDet_baseChange, projectiveDet_eq_det, hc]
+    simp [hfin]
+  simpa [← hdet, TensorProduct.smul_tmul', Algebra.smul_def] using congr($hc (1 ⊗ₜ[R] x))
 
 end LinearMap

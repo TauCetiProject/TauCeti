@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Projective.Trans
 public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.RingTheory.Norm.Projective
 
@@ -113,8 +112,8 @@ theorem normMap_smul (hd : ∀ p, rankAtStalk (R := A) B p = d) (b : B) (s : L) 
     ext c
     simp [mul_smul, smul_comm c b s]
   rw [toHom_normMap, map_smul, toHom_normMap, hcomp, exteriorPower.map_comp,
-    exteriorPower.map_eq_projectiveDet_smul_id hd, LinearMap.comp_smul, LinearMap.comp_id,
-    Algebra.projectiveNorm_apply]
+    exteriorPower.map_eq_projectiveDet_smul_id hd]
+  simp [LinearMap.comp_smul, Algebra.projectiveNorm_apply]
 
 /-- For `L = B`, the norm of `b` is multiplication by the norm `projectiveNorm A b` of the
 algebra. -/
@@ -129,20 +128,12 @@ theorem toHom_normMap_self (hd : ∀ p, rankAtStalk (R := A) B p = d) (b : B) :
 
 variable [Module.Invertible B L]
 
-/-- The top exterior power `⋀[A]^d L` of an invertible `B`-module is an invertible `A`-module. -/
-private theorem invertible_exteriorPower (hd : ∀ p, rankAtStalk (R := A) B p = d) :
-    Module.Invertible A (⋀[A]^d L) := by
-  have : Module.Finite A L := .trans B L
-  have : Module.Projective A L := .trans (S := B)
-  exact exteriorPower.invertible_of_rankAtStalk_eq fun p ↦ by
-    rw [Module.Invertible.rankAtStalk_eq_rankAtStalk_algebra (S := B), hd]
-
 /-- The norm of an invertible `B`-module along a finite projective algebra `B` of constant rank `d`
 is an invertible `A`-module. -/
 theorem invertible (hd : ∀ p, rankAtStalk (R := A) B p = d) :
     Module.Invertible A (ModuleNorm A B d L) := by
   have := exteriorPower.invertible_of_rankAtStalk_eq hd
-  have := invertible_exteriorPower (L := L) hd
+  have := exteriorPower.invertible_of_invertible_of_rankAtStalk_eq (M := L) hd
   exact .congr ((dualTensorHomEquiv A (⋀[A]^d B) (⋀[A]^d L)).trans (toHom A B d L).symm)
 
 /-- The norm of a generator `s` of an invertible `B`-module generates the norm module. -/
@@ -160,15 +151,15 @@ theorem span_normMap_eq_top_of_span_eq_top (hd : ∀ p, rankAtStalk (R := A) B p
     congr 1
     ext c
     exact e.symm_apply_apply c
-  have := invertible_exteriorPower (L := L) hd
+  have := exteriorPower.invertible_of_invertible_of_rankAtStalk_eq (M := L) hd
   refine eq_top_iff.mpr fun ψ _ ↦ Submodule.mem_span_singleton.mpr ?_
   -- An endomorphism of the invertible module `⋀^d L` is multiplication by its determinant.
   obtain ⟨c, hc⟩ : ∃ c : A, toHom A B d L ψ ∘ₗ exteriorPower.map d (e.symm : L →ₗ[A] B) =
       c • LinearMap.id :=
     ⟨_, LinearMap.eq_projectiveDet_smul_id Module.Invertible.rankAtStalk_eq_one _⟩
   refine ⟨c, (toHom A B d L).injective ?_⟩
-  rw [map_smul, ← LinearMap.comp_id (toHom A B d L ψ), ← he, ← LinearMap.comp_assoc, hc,
-    LinearMap.smul_comp, LinearMap.id_comp]
+  rw [← LinearMap.comp_id (toHom A B d L ψ), ← he, ← LinearMap.comp_assoc, hc]
+  simp [LinearMap.smul_comp]
 
 end Rank
 

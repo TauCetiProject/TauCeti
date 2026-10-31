@@ -5,18 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+public import TauCeti.Algebra.Module.Projective.Trans
 public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.RingTheory.PicardGroup.RankOne
 
 /-!
 # The top exterior power of a finite projective module is invertible
 
-Let `M` be a projective module over a commutative ring `R`. Every exterior power `⋀[R]^n M` is a
-direct summand of an exterior power of a free module, hence projective. Exterior powers commute
-with base change (`TauCeti.exteriorPower.equivBaseChange`), so at a prime `𝔭` the rank of
-`⋀[R]^n M` is the binomial coefficient `(rank_𝔭 M).choose n`.
+Let `M` be a finite flat module over a commutative ring `R`. Exterior powers commute with base
+change (`TauCeti.exteriorPower.equivBaseChange`), so at a prime `𝔭` the rank of `⋀[R]^n M` is the
+binomial coefficient `(rank_𝔭 M).choose n`. If `M` is moreover projective, so is every
+`⋀[R]^n M` (`exteriorPower.instProjective`).
 
 If `M` is finite projective of constant rank `d`, its top exterior power `⋀[R]^d M`, the
 determinant of `M`, is therefore an invertible module, and an endomorphism `f` of `M` acts on it
@@ -25,10 +26,11 @@ invertible modules along finite projective algebras.
 
 ## Main results
 
-* `exteriorPower.instProjective`: exterior powers of projective modules are projective.
 * `exteriorPower.rankAtStalk_eq_choose`: the rank of `⋀[R]^n M` at a prime.
 * `exteriorPower.invertible_of_rankAtStalk_eq`: the top exterior power of a finite projective
   module of constant rank is invertible.
+* `exteriorPower.invertible_of_invertible_of_rankAtStalk_eq`: the same holds for an invertible
+  module over a finite projective algebra of constant rank.
 * `exteriorPower.map_eq_projectiveDet_smul_id`: an endomorphism acts on the top exterior power by
   multiplication by its determinant.
 
@@ -45,16 +47,9 @@ namespace exteriorPower
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
-/-- Exterior powers of a projective module are projective: `⋀[R]^n M` is a direct summand of the
-exterior power of the free module `M →₀ R`. -/
-instance instProjective [Module.Projective R M] (n : ℕ) : Module.Projective R (⋀[R]^n M) := by
-  obtain ⟨s, hs⟩ := Module.projective_def'.mp ‹Module.Projective R M›
-  refine .of_split (map n s) (map n (Finsupp.linearCombination R id)) ?_
-  rw [← map_comp, hs, map_id]
-
-/-- The rank of the `n`th exterior power of a finite projective module at a prime `𝔭` is the
-binomial coefficient `(rank_𝔭 M).choose n`. -/
-theorem rankAtStalk_eq_choose [Module.Finite R M] [Module.Projective R M] (n : ℕ)
+/-- The rank of the `n`th exterior power of a finite flat module at a prime `𝔭` is the binomial
+coefficient `(rank_𝔭 M).choose n`. -/
+theorem rankAtStalk_eq_choose [Module.Finite R M] [Module.Flat R M] (n : ℕ)
     (p : PrimeSpectrum R) :
     rankAtStalk (⋀[R]^n M) p = (rankAtStalk M p).choose n := by
   let A := Localization.AtPrime p.asIdeal
@@ -67,6 +62,17 @@ invertible module. -/
 theorem invertible_of_rankAtStalk_eq [Module.Finite R M] [Module.Projective R M] {d : ℕ}
     (hd : ∀ p, rankAtStalk (R := R) M p = d) : Module.Invertible R (⋀[R]^d M) :=
   .of_rankAtStalk_eq_one fun p ↦ by rw [rankAtStalk_eq_choose, hd, Nat.choose_self]
+
+/-- Let `S` be a finite projective `R`-algebra of constant rank `d`. The top exterior power
+`⋀[R]^d M` of an invertible `S`-module `M`, viewed as an `R`-module, is an invertible `R`-module. -/
+theorem invertible_of_invertible_of_rankAtStalk_eq {S : Type*} [CommRing S] [Algebra R S]
+    [Module.Finite R S] [Module.Projective R S] [Module S M] [IsScalarTower R S M]
+    [Module.Invertible S M] {d : ℕ} (hd : ∀ p, rankAtStalk (R := R) S p = d) :
+    Module.Invertible R (⋀[R]^d M) :=
+  have : Module.Finite R M := .trans S M
+  have : Module.Projective R M := .trans (S := S)
+  invertible_of_rankAtStalk_eq fun p ↦ by
+    rw [Module.Invertible.rankAtStalk_eq_rankAtStalk_algebra (S := S), hd]
 
 /-- An endomorphism `f` of a finite projective module of constant rank `d` acts on the top exterior
 power `⋀[R]^d M` by multiplication by its determinant `LinearMap.projectiveDet f`. -/
