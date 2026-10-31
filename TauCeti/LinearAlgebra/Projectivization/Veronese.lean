@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fin.Tuple.NatAntidiagonal
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.Order.PiLex
+public import TauCeti.Algebra.BigOperators.Pi
 public import TauCeti.LinearAlgebra.Projectivization.ZeroLocus
 
 /-!
@@ -46,6 +47,9 @@ of a family of degree-`d` equations is the preimage of a linear section of the i
 * `TauCeti.veroneseExponent_strictMono`: the exponent vectors are enumerated in lexicographic
   order.
 * `Projectivization.veronese_mk`: the Veronese map in homogeneous coordinates.
+* `TauCeti.eval_veroneseRelation`, `TauCeti.eval_veroneseLinearForm`,
+  `TauCeti.coeff_single_veroneseLinearForm`: evaluating the quadratic binomials and the linear
+  forms, and the coefficients of the linear forms.
 * `Projectivization.veronese_injective`: the Veronese map of positive degree is injective.
 * `Projectivization.range_veronese`: over `ℂ`, the image of the Veronese map of positive degree is
   the zero locus of the quadratic binomials.
@@ -145,61 +149,6 @@ theorem veroneseMonomials_smul (d : ℕ) (c : K) (v : Fin N → K) :
 
 end Monomials
 
-/-- The monomial with exponent vector `Pi.single i a` is the power `v i ^ a`. -/
-private theorem prod_pow_single {K : Type*} [CommMonoid K] (v : Fin N → K) (i : Fin N)
-    (a : ℕ) : ∏ j, v j ^ Pi.single (M := fun _ ↦ ℕ) i a j = v i ^ a := by
-  rw [prod_eq_single i (fun j _ hj ↦ by simp [hj]) (by simp)]
-  simp
-
-/-- An exponent vector with a positive `i`-th entry is of the form `γ + e_i`. -/
-private theorem exists_eq_add_single {β : Fin N → ℕ} {i : Fin N} (h : 0 < β i) :
-    ∃ γ : Fin N → ℕ, β = γ + Pi.single i 1 := by
-  refine ⟨Function.update β i (β i - 1), funext fun k ↦ ?_⟩
-  by_cases hk : k = i
-  · subst hk; simp; omega
-  · simp [hk]
-
-/-- An exponent vector of degree `d` whose `i`-th entry is `d` is the pure power `d e_i`. -/
-private theorem eq_single_of_apply_eq {α : Fin N → ℕ} {d : ℕ} (hα : ∑ j, α j = d) {i : Fin N}
-    (hi : α i = d) : α = Pi.single i d := by
-  have h0 : ∀ j ∈ univ.erase i, α j = 0 := by
-    rw [← sum_eq_zero_iff, ← add_right_cancel_iff (a := α i), sum_erase_add _ _ (mem_univ i)]
-    omega
-  ext j
-  by_cases hj : j = i
-  · subst hj; simp [hi]
-  · simp [hj, h0 j (mem_erase.mpr ⟨hj, mem_univ j⟩)]
-
-/-- An exponent vector of degree `d` whose `i`-th entry is less than `d` has another nonzero
-entry. -/
-private theorem exists_ne_pos_of_apply_lt {α : Fin N → ℕ} {d : ℕ} (hα : ∑ j, α j = d) {i : Fin N}
-    (hi : α i < d) : ∃ j, j ≠ i ∧ 0 < α j := by
-  by_contra! h
-  have : ∑ j, α j = α i := by
-    rw [← sum_erase_add _ _ (mem_univ i), sum_eq_zero fun j hj ↦
-      Nat.le_zero.mp (h j (ne_of_mem_erase hj)), zero_add]
-  omega
-
-/-- Induction over the exponent vectors of degree `d`, moving one unit at a time to the
-coordinate `i`: a property of the pure power `d e_i` which transfers from `β + e_i` to `β + e_j`
-holds for every exponent vector of degree `d`. -/
-private theorem induction_on_single {d : ℕ} (i : Fin N) {P : (Fin N → ℕ) → Prop}
-    (hsingle : P (Pi.single i d))
-    (step : ∀ (β : Fin N → ℕ) (j : Fin N), j ≠ i → ∑ k, β k + 1 = d →
-      P (β + Pi.single i 1) → P (β + Pi.single j 1))
-    {α : Fin N → ℕ} (hα : ∑ j, α j = d) : P α := by
-  induction hm : d - α i generalizing α with
-  | zero =>
-    have hi : α i ≤ d := hα ▸ single_le_sum (fun _ _ ↦ Nat.zero_le _) (mem_univ i)
-    rwa [eq_single_of_apply_eq (i := i) hα (by omega)]
-  | succ m ih =>
-    obtain ⟨j, hji, hj⟩ := exists_ne_pos_of_apply_lt (i := i) hα (by omega)
-    obtain ⟨β, rfl⟩ := exists_eq_add_single hj
-    simp only [Pi.add_apply, sum_add_distrib, Fintype.sum_pi_single'] at hα
-    refine step β j hji hα (ih (by simp [sum_add_distrib, hα]) ?_)
-    simp [hji.symm] at hm ⊢
-    omega
-
 /-- The vector of monomials of degree `d` of a nonzero vector is nonzero: it contains the pure
 powers `v i ^ d`. -/
 theorem veroneseMonomials_ne_zero {K : Type*} [CommSemiring K] [NoZeroDivisors K] (d : ℕ)
@@ -207,7 +156,7 @@ theorem veroneseMonomials_ne_zero {K : Type*} [CommSemiring K] [NoZeroDivisors K
   obtain ⟨i, hi⟩ := Function.ne_iff.mp hv
   refine Function.ne_iff.mpr
     ⟨(veroneseExponentEquiv N d).symm ⟨Pi.single i d, Fintype.sum_pi_single' i d⟩, ?_⟩
-  simpa [prod_pow_single] using pow_ne_zero d hi
+  simpa [Fintype.prod_pow_pi_single] using pow_ne_zero d hi
 
 /-! ### Relations among monomials -/
 
@@ -232,12 +181,19 @@ theorem isHomogeneous_veroneseRelation (R : Type*) [CommRing R] (N d : ℕ)
   ((isHomogeneous_X R _).mul (isHomogeneous_X R _)).sub
     ((isHomogeneous_X R _).mul (isHomogeneous_X R _))
 
-/-- The relations among the monomials vanish on the vector of monomials of degree `d`. -/
+/-- The value of the binomial `y_a y_b - y_c y_e` at a point `y`. -/
 @[simp]
+theorem eval_veroneseRelation {R : Type*} [CommRing R] {d : ℕ} (q : VeroneseRelationIndex N d)
+    (y : Fin (veroneseDim N d) → R) :
+    eval y (veroneseRelation R N d q) = y q.1.1.1 * y q.1.1.2 - y q.1.2.1 * y q.1.2.2 := by
+  simp [veroneseRelation]
+
+/-- The relations among the monomials vanish on the vector of monomials of degree `d`. -/
+@[simp high]
 theorem eval_veroneseMonomials_veroneseRelation {R : Type*} [CommRing R] {d : ℕ}
     (q : VeroneseRelationIndex N d) (v : Fin N → R) :
     eval (veroneseMonomials d v) (veroneseRelation R N d q) = 0 := by
-  simp only [veroneseRelation, map_sub, map_mul, eval_X, veroneseMonomials_apply,
+  simp only [eval_veroneseRelation, veroneseMonomials_apply,
     ← prod_mul_distrib, ← pow_add, ← Pi.add_apply, q.2, sub_self]
 
 /-- From a nonzero coordinate `Y α` with `0 < α i`, the binomial relations reach a nonzero
@@ -248,18 +204,17 @@ private theorem apply_single_ne_zero {K : Type*} [Field K] {d : ℕ} {Y : (Fin N
     {α : Fin N → ℕ} (hα : ∑ j, α j = d) (hYα : Y α ≠ 0) {i : Fin N} (hi : 0 < α i) :
     Y (Pi.single i d) ≠ 0 := by
   revert hYα hi
-  refine induction_on_single (P := fun α ↦ Y α ≠ 0 → 0 < α i → Y (Pi.single i d) ≠ 0) i
+  refine Pi.induction_on_single_of_sum_eq
+    (P := fun α ↦ Y α ≠ 0 → 0 < α i → Y (Pi.single i d) ≠ 0) i
     (fun h _ ↦ h) (fun β j hji hβ ih hYβ hi ↦ ?_) hα
-  obtain ⟨γ, rfl⟩ := exists_eq_add_single (show 0 < β i by simpa [hji.symm] using hi)
+  have hβi : 0 < β i := by simpa [hji.symm] using hi
+  obtain ⟨γ, rfl⟩ := Pi.exists_eq_add_single_one hβi
   simp only [Pi.add_apply, sum_add_distrib, Fintype.sum_pi_single'] at hβ
   -- `2 (γ + e_i + e_j) = (γ + 2 e_i) + (γ + 2 e_j)`
   have hrel := hY (γ + Pi.single i 1 + Pi.single j 1) (γ + Pi.single i 1 + Pi.single j 1)
-    (γ + Pi.single i 1 + Pi.single i 1) (γ + Pi.single j 2)
+    (γ + Pi.single i 1 + Pi.single i 1) (γ + Pi.single j 1 + Pi.single j 1)
     (by simp [sum_add_distrib]; omega) (by simp [sum_add_distrib]; omega)
-    (by simp [sum_add_distrib]; omega) (by simp [sum_add_distrib]; omega) (by
-      rw [show (Pi.single j 2 : Fin N → ℕ) = Pi.single j 1 + Pi.single j 1 by
-        rw [← Pi.single_add]]
-      abel)
+    (by simp [sum_add_distrib]; omega) (by simp [sum_add_distrib]; omega) (by abel)
   refine ih (fun h ↦ hYβ ?_) (by simp)
   rw [← mul_self_eq_zero, hrel, h, zero_mul]
 
@@ -274,9 +229,10 @@ private theorem pow_mul_apply_eq_prod {K : Type*} [Field K] {d : ℕ} (hd : d �
       ∏ j, Y (Pi.single i (d - 1) + Pi.single j 1) ^ α j := by
   have hsingle : Pi.single i (d - 1) + Pi.single i 1 = Pi.single (M := fun _ ↦ ℕ) i d := by
     rw [← Pi.single_add, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hd)]
-  refine induction_on_single (P := fun α ↦ Y (Pi.single i d) ^ (d - 1) * Y α =
+  refine Pi.induction_on_single_of_sum_eq (P := fun α ↦ Y (Pi.single i d) ^ (d - 1) * Y α =
     ∏ j, Y (Pi.single i (d - 1) + Pi.single j 1) ^ α j) i ?_ (fun β j hji hβ ih ↦ ?_) hα
-  · rw [prod_pow_single, hsingle, ← pow_succ, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hd)]
+  · rw [Fintype.prod_pow_pi_single, hsingle, ← pow_succ,
+      Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hd)]
   have hrel := hY (β + Pi.single j 1) (Pi.single i d) (β + Pi.single i 1)
     (Pi.single i (d - 1) + Pi.single j 1) (by simp [sum_add_distrib, hβ])
     (Fintype.sum_pi_single' i d) (by simp [sum_add_distrib, hβ])
@@ -289,14 +245,14 @@ private theorem pow_mul_apply_eq_prod {K : Type*} [Field K] {d : ℕ} (hd : d �
           Y (Pi.single i (d - 1) + Pi.single j 1) := by rw [mul_assoc, hrel, mul_assoc]
     _ = _ := by
       simp only [Pi.add_apply, pow_add, prod_mul_distrib] at ih ⊢
-      rw [ih, prod_pow_single, prod_pow_single, hsingle]
+      rw [ih, Fintype.prod_pow_pi_single, Fintype.prod_pow_pi_single, hsingle]
       ring
 
 /-! ### Linear forms in the monomials -/
 
 section LinearForm
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*} [CommSemiring R]
 
 /-- A polynomial `p` in `N` variables as a linear form in the monomials of degree `d`: the
 coefficient of the `k`-th monomial is the coefficient of `p` at the `k`-th exponent vector.
@@ -305,6 +261,23 @@ noncomputable def veroneseLinearForm (d : ℕ) (p : MvPolynomial (Fin N) R) :
     MvPolynomial (Fin (veroneseDim N d)) R :=
   ∑ k, C (p.coeff (Finsupp.equivFunOnFinite.symm (veroneseExponent N d k))) * X k
 
+/-- The coefficient of the `k`-th monomial in the linear form of `p` is the coefficient of `p` at
+the `k`-th exponent vector. -/
+@[simp]
+theorem coeff_single_veroneseLinearForm (d : ℕ) (p : MvPolynomial (Fin N) R)
+    (k : Fin (veroneseDim N d)) :
+    (veroneseLinearForm d p).coeff (Finsupp.single k 1) =
+      p.coeff (Finsupp.equivFunOnFinite.symm (veroneseExponent N d k)) := by
+  simp [veroneseLinearForm, coeff_X, Finsupp.single_left_inj]
+
+/-- The value of the linear form of `p` at a point `y`. -/
+@[simp]
+theorem eval_veroneseLinearForm (d : ℕ) (p : MvPolynomial (Fin N) R)
+    (y : Fin (veroneseDim N d) → R) :
+    eval y (veroneseLinearForm d p) =
+      ∑ k, p.coeff (Finsupp.equivFunOnFinite.symm (veroneseExponent N d k)) * y k := by
+  simp [veroneseLinearForm]
+
 /-- A linear form in the monomials is a homogeneous polynomial of degree one. -/
 theorem isHomogeneous_veroneseLinearForm (d : ℕ) (p : MvPolynomial (Fin N) R) :
     (veroneseLinearForm d p).IsHomogeneous 1 :=
@@ -312,6 +285,7 @@ theorem isHomogeneous_veroneseLinearForm (d : ℕ) (p : MvPolynomial (Fin N) R) 
 
 /-- A homogeneous polynomial of degree `d` evaluated at `v` is its linear form in the monomials
 evaluated at the vector of monomials of `v`. -/
+@[simp high]
 theorem eval_veroneseMonomials_veroneseLinearForm {d : ℕ} {p : MvPolynomial (Fin N) R}
     (hp : p.IsHomogeneous d) (v : Fin N → R) :
     eval (veroneseMonomials d v) (veroneseLinearForm d p) = eval v p := by
@@ -325,7 +299,7 @@ theorem eval_veroneseMonomials_veroneseLinearForm {d : ℕ} {p : MvPolynomial (F
       exact hp (mem_support_iff.mp hβ)
     simpa [Nat.mem_antidiagonalTuple, Finsupp.degree_eq_sum] using h
   calc eval (veroneseMonomials d v) (veroneseLinearForm d p)
-      = ∑ k, g (veroneseExponent N d k) := by simp [veroneseLinearForm, g]
+      = ∑ k, g (veroneseExponent N d k) := by simp [g]
     _ = ∑ α ∈ Nat.antidiagonalTuple N d, g α :=
       sum_bij (fun k _ ↦ veroneseExponent N d k)
         (fun k _ ↦ Nat.mem_antidiagonalTuple.mpr (sum_veroneseExponent d k))
@@ -385,7 +359,7 @@ theorem veronese_injective {d : ℕ} (hd : d ≠ 0) :
       simp [sum_add_distrib]; omega
     simpa only [Pi.smul_apply, smul_eq_mul, veroneseMonomials_apply,
       veroneseExponent_veroneseExponentEquiv_symm, Pi.add_apply, pow_add, prod_mul_distrib,
-      prod_pow_single, pow_one] using
+      Fintype.prod_pow_pi_single, pow_one] using
       congrFun ha ((veroneseExponentEquiv N d).symm ⟨_, hsum⟩)
   have hd' : d - 1 + 1 = d := Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hd)
   have hii := hcoord i
@@ -427,7 +401,7 @@ theorem range_veronese {d : ℕ} (hd : d ≠ 0) :
     have := hy ⟨(((veroneseExponentEquiv N d).symm ⟨α, hα⟩,
       (veroneseExponentEquiv N d).symm ⟨β, hβ⟩), ((veroneseExponentEquiv N d).symm ⟨γ, hγ⟩,
       (veroneseExponentEquiv N d).symm ⟨δ, hδ⟩)), by simpa using h⟩
-    simpa [veroneseRelation, hYdef, hα, hβ, hγ, hδ, sub_eq_zero] using this
+    simpa [hYdef, hα, hβ, hγ, hδ, sub_eq_zero] using this
   obtain ⟨k, hk⟩ := Function.ne_iff.mp hy0
   obtain ⟨i, hi⟩ : ∃ i, 0 < veroneseExponent N d k i := by
     by_contra! h
