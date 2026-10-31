@@ -36,6 +36,8 @@ in its function field is computed on affine opens.
   which is maximal for the specialization order is the generic point;
 * `TauCeti.AlgebraicGeometry.Scheme.isMax_iff_eq_genericPoint`: the maximal points for the
   specialization order on an irreducible scheme are exactly the generic point;
+* `TauCeti.AlgebraicGeometry.Scheme.eq_of_specializes_of_notMem`: on an irreducible scheme, a
+  generization of a codimension-one point outside a nonempty open is the point itself;
 * `TauCeti.AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint`: on an irreducible
   scheme of dimension at most one, the points of codimension one are exactly the points other
   than the generic point.
@@ -80,6 +82,20 @@ theorem eq_genericPoint_of_isMax {y : X} (hy : IsMax y) : y = genericPoint X :=
 exactly the generic point. -/
 theorem isMax_iff_eq_genericPoint {y : X} : IsMax y ↔ y = genericPoint X :=
   ⟨eq_genericPoint_of_isMax, fun h ↦ h ▸ isMax_genericPoint⟩
+
+/-- On an irreducible scheme, a generization `y` of a codimension-one point `x` which lies outside a
+nonempty open `U` is `x` itself: a strict generization of `x` is maximal, hence the generic point,
+and the generic point lies in every nonempty open. -/
+theorem eq_of_specializes_of_notMem {U : X.Opens} (hU : (U : Set X).Nonempty) {x y : X}
+    (hx : Order.coheight x = 1) (hyx : y ⤳ x) (hy : y ∉ U) : y = x := by
+  by_contra hne
+  have hlt : x < y := ⟨hyx, fun hxy ↦ hne (Specializes.antisymm hyx hxy).eq⟩
+  have hfin : Order.coheight y < ⊤ :=
+    (Order.coheight_anti hlt.le).trans_lt (hx ▸ ENat.one_lt_top)
+  have hmax : IsMax y := Order.coheight_eq_zero.mp <| Order.lt_one_iff.mp <|
+    hx ▸ Order.coheight_strictAnti hlt hfin
+  obtain ⟨u, hu⟩ := hU
+  exact hy (eq_genericPoint_of_isMax hmax ▸ (genericPoint_specializes u).mem_open U.isOpen hu)
 
 /-- On an irreducible scheme of dimension at most one, the points of codimension one are exactly
 the points other than the generic point. -/

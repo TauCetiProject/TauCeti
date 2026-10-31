@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Three.Basic
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # Primary elements of the Eisenstein integers
@@ -83,10 +84,7 @@ congruent to `2` modulo `3`. -/
 theorem isPrimaryEisenstein_intCast_iff {K : Type*} [Field K] [NumberField K] {a : ℤ} :
     IsPrimaryEisenstein (a : 𝓞 K) ↔ a ≡ 2 [ZMOD 3] := by
   rw [isPrimaryEisenstein_iff, Int.modEq_comm, Int.modEq_iff_dvd]
-  refine ⟨fun h ↦ ?_, fun h ↦ by exact_mod_cast Int.cast_dvd_cast _ _ h⟩
-  have h' : algebraMap ℤ (𝓞 K) 3 ∣ algebraMap ℤ (𝓞 K) (a - 2) := by simpa using h
-  have hd : Module.finrank ℤ (𝓞 K) ≠ 0 := Module.finrank_pos.ne'
-  simpa only [Algebra.norm_algebraMap, Int.pow_dvd_pow_iff hd] using map_dvd (Algebra.norm ℤ) h'
+  exact_mod_cast NumberField.RingOfIntegers.intCast_dvd_intCast (K := K) (m := 3) (n := a - 2)
 
 /-- In the ring of integers of a number field, a natural number is primary exactly when it is
 congruent to `2` modulo `3`. -/

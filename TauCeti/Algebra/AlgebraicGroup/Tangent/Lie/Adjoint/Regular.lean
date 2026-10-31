@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Basic
 public import TauCeti.Algebra.Lie.AdjointAction.Regular
 
 /-!

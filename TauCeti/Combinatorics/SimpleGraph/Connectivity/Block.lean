@@ -9,6 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
 
 import Mathlib.Order.Preorder.Finite
+import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 
 /-!
 # Blocks of simple graphs
@@ -18,10 +19,9 @@ Singleton isolated vertices and the endpoints of bridge edges are therefore reta
 this convention makes blocks cover every vertex and every edge, and is the one used by the
 block--cut incidence graph.
 
-This file introduces the block predicate and its basic maximality API.  It also proves that every
-vertex, and both ends of every edge, lie in some block when the vertex type is finite.  These
-existence results are the starting point for the later uniqueness and intersection theory of
-blocks.
+This file introduces the block predicate and its basic maximality API. It proves that every
+vertex, and both ends of every edge, lie in some block when the vertex type is finite. Distinct
+blocks meet in at most one vertex, so the block containing the endpoints of an edge is unique.
 
 The definition follows R. Diestel, *Graph Theory*, 5th ed., Graduate Texts in Mathematics 173,
 Springer, 2017, Section 3.1, with isolated vertices included as singleton blocks.
@@ -138,5 +138,119 @@ theorem isBlock_singleton_iff_isIsolated (G : SimpleGraph V) (v : V) :
 theorem Adj.exists_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
     ∃ B, G.IsBlock B ∧ {u, v} ⊆ B :=
   exists_isBlock_superset (G.induce_pair_connected_of_adj h) (G.not_isCutVertex_induce_pair u v)
+
+/-! ### Intersections and edge uniqueness -/
+
+private theorem IsBlock.exists_walk_avoiding (hB : G.IsBlock B)
+    {a z x : V} (ha : a ∈ B) (hz : z ∈ B) (hax : a ≠ x) (hzx : z ≠ x) :
+    ∃ p : (G.induce B).Walk ⟨a, ha⟩ ⟨z, hz⟩,
+      ∀ y ∈ p.support, (y : V) ≠ x := by
+  by_cases hx : x ∈ B
+  · let aB : B := ⟨a, ha⟩
+    let zB : B := ⟨z, hz⟩
+    let xB : B := ⟨x, hx⟩
+    have hreach : (Graph.ofSimpleGraph (G.induce B)).Reachable aB zB :=
+      (reachable_ofSimpleGraph_iff _ _ _).2 (hB.connected.preconnected aB zB)
+    have hdel : ((Graph.ofSimpleGraph (G.induce B)).deleteVerts {xB}).Reachable aB zB := by
+      by_contra hn
+      apply hB.not_isCutVertex xB
+      rw [SimpleGraph.isCutVertex_def, Graph.isCutVertex_def]
+      exact ⟨aB, zB, by simpa [aB, xB], by simpa [zB, xB], hreach, hn⟩
+    obtain ⟨p, -, hp⟩ := Graph.reachable_deleteVerts_iff_exists_walk.mp hdel
+    refine ⟨p.toSimpleGraph, ?_⟩
+    intro y hy hyx
+    have hyp : y ∉ ({xB} : Set B) := hp y (by simpa using hy)
+    apply hyp
+    simp only [Set.mem_singleton_iff]
+    exact Subtype.ext hyx
+  · exact (hB.connected.preconnected ⟨a, ha⟩ ⟨z, hz⟩).elim fun p ↦
+      ⟨p, fun y _ hyx ↦ hx (hyx ▸ y.property)⟩
+
+private theorem IsBlock.not_isCutVertex_induce_union (hB : G.IsBlock B)
+    (hC : G.IsBlock C) {u v : V} (huB : u ∈ B) (huC : u ∈ C)
+    (hvB : v ∈ B) (hvC : v ∈ C) (huv : u ≠ v)
+    (x : ↑(B ∪ C)) : ¬(G.induce (B ∪ C)).IsCutVertex x := by
+  classical
+  -- One of the two common vertices survives deletion of `x` and serves as a hub.
+  obtain ⟨z, hzB, hzC, hzx⟩ : ∃ z, z ∈ B ∧ z ∈ C ∧ z ≠ x.1 := by
+    by_cases hxu : x.1 = u
+    · exact ⟨v, hvB, hvC, fun hvx ↦ huv (hxu.symm.trans hvx.symm)⟩
+    · exact ⟨u, huB, huC, Ne.symm hxu⟩
+  let zU : ↑(B ∪ C) := ⟨z, Or.inl hzB⟩
+  -- Connect a vertex to the hub inside either block, retaining avoidance under inclusion.
+  have connect (a : ↑(B ∪ C)) (hax : a ≠ x) :
+      ∃ p : (G.induce (B ∪ C)).Walk a zU,
+        ∀ y ∈ p.support, y ≠ x := by
+    have hax' : a.1 ≠ x.1 := fun h ↦ hax (Subtype.ext h)
+    have map_avoiding {D : Set V} (hDU : D ⊆ B ∪ C) {haD : a.1 ∈ D}
+        {hzD : z ∈ D} (p : (G.induce D).Walk ⟨a.1, haD⟩ ⟨z, hzD⟩)
+        (hp : ∀ y ∈ p.support, (y : V) ≠ x.1) :
+        ∃ q : (G.induce (B ∪ C)).Walk a zU,
+          ∀ y ∈ q.support, y ≠ x := by
+      let q := p.map (G.induceHomOfLE hDU).toHom
+      have hq : ∀ y ∈ q.support, y ≠ x := by
+        intro y hy hyx
+        simp only [q, Walk.support_map] at hy
+        obtain ⟨w, hw, hwy⟩ := List.mem_map.mp hy
+        apply hp w hw
+        exact congrArg Subtype.val (hwy.trans hyx)
+      have hstart : (G.induceHomOfLE hDU).toHom ⟨a.1, haD⟩ = a := Subtype.ext rfl
+      have hend : (G.induceHomOfLE hDU).toHom ⟨z, hzD⟩ = zU := Subtype.ext rfl
+      cases hstart
+      cases hend
+      exact ⟨q, hq⟩
+    have haU : a.1 ∈ B ∨ a.1 ∈ C := a.property
+    rcases haU with haB | haC
+    · obtain ⟨p, hp⟩ := hB.exists_walk_avoiding haB hzB hax' hzx
+      exact map_avoiding Set.subset_union_left p hp
+    · obtain ⟨p, hp⟩ := hC.exists_walk_avoiding haC hzC hax' hzx
+      exact map_avoiding Set.subset_union_right p hp
+  rw [SimpleGraph.isCutVertex_def, Graph.isCutVertex_def]
+  rintro ⟨a, b, hax, hbx, -, hn⟩
+  obtain ⟨p, hp⟩ := connect a hax
+  obtain ⟨q, hq⟩ := connect b hbx
+  -- The two hub paths concatenate to a walk in the union avoiding the deleted vertex.
+  apply hn
+  apply Graph.reachable_deleteVerts_iff_exists_walk.mpr
+  refine ⟨(p.append q.reverse).toGraph, by simp, ?_⟩
+  intro y hy
+  rw [Walk.support_toGraph, Walk.support_append] at hy
+  simp only [List.mem_append] at hy
+  simp only [Set.mem_singleton_iff]
+  rcases hy with hy | hy
+  · exact hp y hy
+  · apply hq y
+    have hy' : y ∈ q.reverse.support := List.mem_of_mem_tail hy
+    rw [Walk.support_reverse] at hy'
+    simpa using hy'
+
+/-- Two distinct blocks meet in at most one vertex. -/
+theorem IsBlock.inter_subsingleton (hB : G.IsBlock B) (hC : G.IsBlock C) (hBC : B ≠ C) :
+    (B ∩ C).Subsingleton := by
+  intro u hu v hv
+  by_contra huv
+  have hconn : (G.induce (B ∪ C)).Connected :=
+    G.induce_union_connected hB.connected.preconnected hC.connected.preconnected
+      ⟨u, hu.1, hu.2⟩
+  have hcut : ∀ x, ¬(G.induce (B ∪ C)).IsCutVertex x := fun x ↦
+    hB.not_isCutVertex_induce_union hC hu.1 hu.2 hv.1 hv.2 huv x
+  have hBU : B = B ∪ C := hB.eq_of_subset hconn hcut Set.subset_union_left
+  have hCU : C = B ∪ C := hC.eq_of_subset hconn hcut Set.subset_union_right
+  exact hBC (hBU.trans hCU.symm)
+
+/-- Two blocks containing the endpoints of the same edge are equal. -/
+theorem IsBlock.eq_of_adj_mem (hB : G.IsBlock B) (hC : G.IsBlock C) (h : G.Adj u v)
+    (huB : u ∈ B) (hvB : v ∈ B) (huC : u ∈ C) (hvC : v ∈ C) : B = C := by
+  by_contra hBC
+  exact h.ne (hB.inter_subsingleton hC hBC ⟨huB, huC⟩ ⟨hvB, hvC⟩)
+
+/-- Every edge of a finite simple graph has both endpoints in a unique block. -/
+theorem Adj.existsUnique_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
+    ∃! B, G.IsBlock B ∧ {u, v} ⊆ B := by
+  obtain ⟨B, hB, huvB⟩ := h.exists_isBlock_superset_pair
+  refine ⟨B, ⟨hB, huvB⟩, ?_⟩
+  rintro C ⟨hC, huvC⟩
+  exact hC.eq_of_adj_mem hB h (huvC (by simp)) (huvC (by simp))
+    (huvB (by simp)) (huvB (by simp))
 
 end SimpleGraph

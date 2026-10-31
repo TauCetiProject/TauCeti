@@ -49,6 +49,8 @@ import TauCeti.Data.Set.PowersetCard
   halves of a finset inside an open interval between the split point and an endpoint;
   `Finset.add_one_add_card_erase_eq_zero` and `Finset.neg_card_filter_lt_add_neg_card_filter_gt`
   are the corresponding identities for an integer cancelling the cardinality of the finset.
+* `Finset.card_filter_eq_of_ite_eq` counts the elements of a finset satisfying a predicate against
+  a pointwise decomposition of its indicator.
 * `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
   identified by a monotone map that is not injective on a finset `T` inside `Ioo a b`, or does not
   map it strictly between the images of `a` and `b`, and
@@ -511,6 +513,21 @@ theorem neg_card_filter_lt_add_neg_card_filter_gt {α : Type*} [LinearOrder α] 
     -(#{x ∈ s | x < t} : ℤ) + -(#{x ∈ s | t < x} : ℤ) = d + 1 := by
   have := card_filter_lt_add_card_filter_gt_add_one ht
   omega
+
+/-- Counting the elements of a finset `s` satisfying `p` against a pointwise decomposition, on `s`,
+of the indicator of `p` into the indicators of `q₁` and `q₂` and multiples `k₁` and `k₂` of the
+indicators of two elements `a` and `b` of `s`. -/
+theorem card_filter_eq_of_ite_eq {α : Type*} [DecidableEq α] {s : Finset α} {a b : α} (ha : a ∈ s)
+    (hb : b ∈ s) (p q₁ q₂ : α → Prop) [DecidablePred p] [DecidablePred q₁] [DecidablePred q₂]
+    (k₁ k₂ : ℕ)
+    (h : ∀ x ∈ s, (if p x then 1 else 0) = (if q₁ x then 1 else 0) + (if q₂ x then 1 else 0) +
+      k₁ * (if x = a then 1 else 0) + k₂ * (if x = b then 1 else 0)) :
+    #{x ∈ s | p x} = #{x ∈ s | q₁ x} + #{x ∈ s | q₂ x} + k₁ + k₂ := by
+  have h₁ : k₁ = ∑ x ∈ s, k₁ * (if x = a then 1 else 0) := by simp [ha]
+  have h₂ : k₂ = ∑ x ∈ s, k₂ * (if x = b then 1 else 0) := by simp [hb]
+  rw [card_filter, card_filter, card_filter, h₁, h₂, ← sum_add_distrib, ← sum_add_distrib,
+    ← sum_add_distrib]
+  exact sum_congr rfl h
 
 /-- The elements of a finset inside `Ioo a b` that lie below `t` lie in `Ioo a t`. -/
 theorem filter_lt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] {a b t : α}

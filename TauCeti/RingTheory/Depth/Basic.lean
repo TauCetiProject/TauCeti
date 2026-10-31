@@ -50,8 +50,13 @@ The regular-sequence transfer lemmas for linear maps live in
   the target of a surjection with kernel `x M`.
 * `IsLocalRing.depth_add_length_eq_depth_of_isRegular`: dividing a finite module by an `M`-regular
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
+* `RingEquiv.depth_self_eq`: isomorphic Noetherian local rings have the same depth over
+  themselves.
 * `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target
   module to the module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
+* `IsLocalRing.mem_span_singleton_of_forall_mul_mem_of_two_le_depth`: in a Noetherian local ring
+  of depth at least two, `𝔪 c ⊆ (b)` for a nonzerodivisor `b` forces `c ∈ (b)`, so the maximal
+  ideal is not an associated prime of `R ⧸ (b)`.
 * `IsLocalRing.depth_le_ringKrullDim_quotient_of_isAssociatedPrime`: the depth of a finite module
   is at most `dim (R ⧸ p)` for every associated prime `p` of the module (Matsumura, Theorem 17.2).
 * `IsLocalRing.depth_eq_zero_iff_nontrivial_linearMap` and
@@ -408,7 +413,64 @@ theorem depth_hom_ge {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing
     exact le_sSup ⟨scalars.take (predecessor + 1), homRegular, prefixMembership,
       by simp [List.length_take, Nat.min_eq_left length]⟩
 
+/-- In a Noetherian local ring `R` of depth at least two, the maximal ideal is not an associated
+prime of `R ⧸ (b)` for a nonzerodivisor `b`: if `𝔪 c ⊆ (b)`, then `c ∈ (b)`. -/
+theorem mem_span_singleton_of_forall_mul_mem_of_two_le_depth {R : Type u} [CommRing R]
+    [IsLocalRing R] [IsNoetherianRing R] (hdepth : 2 ≤ depth (ModuleCat.of R R)) {b c : R}
+    (hb : IsSMulRegular R b) (hc : ∀ z ∈ maximalIdeal R, z * c ∈ Ideal.span {b}) :
+    c ∈ Ideal.span {b} := by
+  by_cases hbm : b ∈ maximalIdeal R
+  swap
+  · rw [Ideal.span_singleton_eq_top.2 (notMem_maximalIdeal.1 hbm)]
+    exact Submodule.mem_top
+  have hspan (x : R) : x ∈ b • (⊤ : Submodule R R) ↔ x ∈ Ideal.span {b} := by
+    rw [← Submodule.ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top]
+  -- `depth (R ⧸ (b)) + 1 = depth R ≥ 2`, so no nonzero map `R ⧸ 𝔪 → R ⧸ (b)` exists
+  have hdepth' : depth (ModuleCat.of R (QuotSMulTop b R)) ≠ 0 := fun h ↦ by
+    have h1 := depth_quotSMulTop_succ_eq_depth hb hbm
+    rw [h, zero_add] at h1
+    exact absurd (h1 ▸ hdepth) (by decide)
+  have : Subsingleton (R ⧸ maximalIdeal R →ₗ[R] QuotSMulTop b R) :=
+    not_nontrivial_iff_subsingleton.1 (mt depth_eq_zero_iff_nontrivial_linearMap.2 hdepth')
+  -- the map `r ↦ r c` is such a map, and it sends `1` to the class of `c`
+  let g : R ⧸ maximalIdeal R →ₗ[R] QuotSMulTop b R :=
+    (maximalIdeal R).liftQ (LinearMap.toSpanSingleton R _ (Submodule.Quotient.mk c))
+      fun z hz ↦ by
+        rw [LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, ← Submodule.Quotient.mk_smul,
+          Submodule.Quotient.mk_eq_zero, hspan]
+        exact hc z hz
+  have hg : g (Submodule.Quotient.mk 1) = 0 := by
+    rw [Subsingleton.elim g 0, LinearMap.zero_apply]
+  rwa [Submodule.liftQ_apply, LinearMap.toSpanSingleton_apply, one_smul,
+    Submodule.Quotient.mk_eq_zero, hspan] at hg
+
 end IsLocalRing
+
+namespace RingEquiv
+
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [IsLocalRing R] [IsLocalRing S]
+
+/-- A ring isomorphism carries regular sequences in the maximal ideal to regular sequences in the
+maximal ideal, so it can only increase the depth of a Noetherian local ring over itself. -/
+private theorem depth_self_le [IsNoetherianRing R] [IsNoetherianRing S] (e : R ≃+* S) :
+    depth (ModuleCat.of R R) ≤ depth (ModuleCat.of S S) := by
+  rw [depth_eq_sSup_length_isRegular, depth_eq_sSup_length_isRegular]
+  refine sSup_le_sSup ?_
+  rintro _ ⟨rs, reg, mem, rfl⟩
+  have := RingHomInvPair.of_ringEquiv e
+  have := RingHomInvPair.of_ringEquiv_symm e
+  refine ⟨rs.map e, (e.toSemilinearEquiv.isRegular_congr' rs).1 reg, ?_, by simp⟩
+  simp only [List.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  intro r hr
+  simpa [mem_maximalIdeal, mem_nonunits_iff] using mem r hr
+
+/-- Isomorphic Noetherian local rings have the same depth over themselves. -/
+theorem depth_self_eq [IsNoetherianRing R] (e : R ≃+* S) :
+    depth (ModuleCat.of R R) = depth (ModuleCat.of S S) :=
+  have : IsNoetherianRing S := isNoetherianRing_of_ringEquiv R e
+  le_antisymm (depth_self_le e) (depth_self_le e.symm)
+
+end RingEquiv
 
 namespace TauCeti
 

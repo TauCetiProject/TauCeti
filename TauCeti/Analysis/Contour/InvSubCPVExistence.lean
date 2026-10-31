@@ -71,13 +71,9 @@ private theorem exists_one_sided_tangents {γ : ℝ → ℂ} {a b t₀ : ℝ}
     (by rw [hmin, hmax]; exact ⟨ht₀.1, ht₀.2.le⟩)
   have h_cont : ContinuousAt γ t₀ := h_imm.continuousOn.continuousAt
     (by rw [uIcc_of_le hab]; exact Icc_mem_nhds ht₀.1 ht₀.2)
-  have h_diff_R := h_imm.isPiecewiseC1On.eventually_differentiableAt_right
-    (by rw [hmin, hmax]; exact ht₀)
-  have h_diff_L := h_imm.isPiecewiseC1On.eventually_differentiableAt_left
-    (by rw [hmin, hmax]; exact ht₀)
   exact ⟨L_R, L_L, hL_R, hL_L, h_tend_R, h_tend_L,
-    hasDerivWithinAt_Ioi_of_tendsto_deriv h_cont h_diff_R h_tend_R,
-    hasDerivWithinAt_Iio_of_tendsto_deriv h_cont h_diff_L h_tend_L⟩
+    hasDerivWithinAt_Ioi_of_tendsto_deriv_of_ne_zero h_cont.continuousWithinAt hL_R h_tend_R,
+    hasDerivWithinAt_Iio_of_tendsto_deriv_of_ne_zero h_cont.continuousWithinAt hL_L h_tend_L⟩
 
 /-- **Value-exposing form of the per-crossing window radius.** Around each interior crossing
 there is a radius `R > 0` and the crossing's nonzero one-sided tangent limits `L_R`, `L_L` of
@@ -108,8 +104,6 @@ theorem exists_radius_perWindow_tendsto_log_norm_add_arg
   obtain ⟨R, hR_pos, hc_R, hc_L, hc_plus, hc_minus⟩ :=
     exists_crossing_slitPlane_radius h_dR h_dL h_at hL_R hL_L
   obtain ⟨p, hp⟩ := h_imm.isPiecewiseC1On.exists_finset_differentiableAt
-  have ht₀' : t₀ ∈ Ioo (min a b) (max a b) := by
-    rwa [min_eq_left hab.le, max_eq_right hab.le]
   refine ⟨R, hR_pos, L_R, L_L, hL_R, hL_L, h_tend_R, h_tend_L,
     fun l u hRl hlt htu huR h_lo h_hi h_unique => ?_⟩
   have h_endpoint_R : t₀ + (u - t₀) = u := by ring
@@ -118,10 +112,7 @@ theorem exists_radius_perWindow_tendsto_log_norm_add_arg
       (h_imm.continuousOn.mono (by
         rw [uIcc_of_le hab.le]
         exact Icc_subset_Icc (by linarith) h_hi))
-      h_tend_R h_tend_L
-      (h_imm.isPiecewiseC1On.eventually_differentiableAt_right ht₀')
-      (h_imm.isPiecewiseC1On.eventually_differentiableAt_left ht₀')
-      p.countable_toSet
+      h_tend_R h_tend_L p.countable_toSet
       (fun t ht => hp t ⟨by
         rw [min_eq_left hab.le, max_eq_right hab.le]
         exact ⟨by linarith [ht.1.1], by linarith [ht.1.2]⟩, ht.2⟩)
@@ -146,7 +137,7 @@ theorem IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub {γ : ℝ → ℂ} {a b : ℝ
     CauchyPVExistsAt γ a b (fun z => (z - s)⁻¹) s := by
   classical
   rcases hab.eq_or_lt with rfl | hab
-  · exact CauchyPVExistsAt.of_eq γ rfl _ s
+  · exact CauchyPVExistsAt.refl γ a _ s
   set T : Finset ℝ := (h_imm.finite_crossings (z₀ := s)).toFinset with hT_def
   have hT_mem : ∀ {t : ℝ}, t ∈ T ↔ t ∈ Icc a b ∧ γ t = s := fun {_} => by
     rw [hT_def, h_imm.mem_toFinset_finite_crossings_of_le hab.le]
