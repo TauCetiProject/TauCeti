@@ -23,25 +23,23 @@ lies in the horizontal plane `span(∂_s, T)`
 (`TauCeti.SmoothMappingTorus.eval₂_mpullback_mpullback_snd_fiberForm_apply_eq_zero_iff`). On a
 positively oriented frame `(a, b)` of a tangent plane of `C`, the top form `u^* ω_v` is
 `(u^* ω_v)(a, j a)` times the positive determinant of `(a, b)` in the frame `(a, j a)`. So
-`u^* ω_v` is a nonnegative top form, and the *vertical area* `∫_C u^* ω_v` is nonnegative. When `C`
-is compact, the integral of a continuous nonnegative top form is positive as soon as the form is
-positive somewhere, so
+`u^* ω_v` is a nonnegative top form
+(`TauCeti.SmoothMappingTorus.mpullback_mpullback_snd_fiberForm_apply_basis_nonneg`), and the
+*vertical area* `∫_C u^* ω_v` is nonnegative. When `C` is compact, the integral of a continuous
+nonnegative top form is positive as soon as the form is positive somewhere, so
 
 `∫_C u^* ω_v = 0 ↔ du (T_c C) ⊆ span(∂_s, T)` for every `c ∈ C`.
 
 Thus a compact pseudoholomorphic curve of zero vertical area is tangent to the horizontal plane
 everywhere, and its tangent plane at each immersed point is exactly `span(∂_s, T)`. Conversely,
-`ω_v` pulls back to zero along every map with horizontal tangent images.
+`ω_v` pulls back to zero along every map with horizontal tangent images
+(`TauCeti.SmoothMappingTorus.mpullback_mpullback_snd_fiberForm_eq_zero`).
 This is the integration step in the classification of compact pseudoholomorphic curves in `X_φ`
 with zero `ω_v`-area as the tori `(ℝ / ℤ) × γ` over closed orbits `γ` of the suspension flow.
 Neither compactness of `M` nor nondegeneracy or closedness of `σ` is used.
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.mpullback_mpullback_snd_fiberForm_eq_zero`: the fiber form pulls back
-  to zero along a map whose tangent images are horizontal.
-* `TauCeti.SmoothMappingTorus.mpullback_mpullback_snd_fiberForm_apply_basis_nonneg`: along a
-  pseudoholomorphic map, the pullback of `ω_v` is nonnegative on positively oriented frames.
 * `TauCeti.SmoothMappingTorus.integralTopForm_mpullback_mpullback_snd_fiberForm_nonneg`: the
   vertical area is nonnegative.
 * `TauCeti.SmoothMappingTorus.integralTopForm_mpullback_mpullback_snd_fiberForm_eq_zero_iff`: for a
@@ -79,61 +77,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} {C : Type*} [TopologicalSpace C]
   [ChartedSpace H' C] [IsManifold I' ∞ C] {u : C → UnitAddCircle × SmoothMappingTorus φ}
 
-/-- The fiber form `σ_v`, pulled back to `X_φ`, pulls back to zero along a smooth map whose tangent
-images all lie in the horizontal plane `span(∂_s, T)`. -/
-theorem mpullback_mpullback_snd_fiberForm_eq_zero {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {σ : SmoothForm I M F 2} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
-    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
-    (hH : ∀ c (e : TangentSpace I' c),
-      mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c)) :
-    SmoothForm.mpullback u hu (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)) =
-      0 := by
-  refine SmoothBundleForm.ext_eval₂ fun c e e' ↦ ?_
-  rw [SmoothForm.eval₂_mpullback,
-    eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_left (hH c e)]
-  simp
-
 variable [FiniteDimensional ℝ E'] {σ : SmoothTwoForm I M}
   {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
   {J : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
     (UnitAddCircle × SmoothMappingTorus φ)}
   {j : SmoothAlmostComplexStructure I' C} {o : Manifold.Orientation I' C (Fin 2)}
-
-/-- Let `u` be a smooth map from a surface `C`, oriented so that the frames `(e, j e)` are positive,
-that is pseudoholomorphic at `c`, into `X_φ` with an almost complex structure of block form at `u c`
-whose vertical restriction is tamed by `ω_v`. Then the top form `u^* ω_v` is nonnegative on every
-positively oriented frame of the tangent plane at `c`. -/
-theorem mpullback_mpullback_snd_fiberForm_apply_basis_nonneg
-    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
-    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
-      b.orientation = o.orientationAt c)
-    {c : C} (hhol : IsPseudoholomorphicAt j J u c)
-    (hS : J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
-      (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
-    (hV : ∀ v ∈ suspensionVerticalSubspace φ (u c), J (u c) v ∈ suspensionVerticalSubspace φ (u c))
-    (htame : ∀ v ∈ suspensionVerticalSubspace φ (u c), v ≠ 0 →
-      0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
-        (fiberForm φ σ hσ)) (u c) v (J (u c) v))
-    (b : Basis (Fin 2) ℝ (TangentSpace I' c)) (hb : b.orientation = o.orientationAt c) :
-    0 ≤ (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 c b := by
-  set α := (SmoothForm.mpullback u hu
-    (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 c
-  -- The frame `b₀ = (b 0, j (b 0))`.
-  set b₀ := basisOfLinearIndependentOfCardEqFinrank
-    ((j.almostComplexStructureAt c).linearIndependent_pair (b.ne_zero 0))
-    (by simpa using (o.finrank_tangentSpace_eq c).symm)
-  have hb₀ : ⇑b₀ = ![b 0, j c (b 0)] := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-  -- A top form on the plane is its value on the frame `b₀` times `det_{b₀}`.
-  have hα : α b = α b₀ * b₀.det b := by
-    simpa using congrArg (fun f ↦ f b) (α.toAlternatingMap.eq_smul_basis_det b₀)
-  rw [hα]
-  refine mul_nonneg ?_ ((b₀.orientation_eq_iff_det_pos b).1 ?_).le
-  · rw [hb₀, ← SmoothBundleForm.eval₂_apply]
-    exact eval₂_mpullback_mpullback_snd_fiberForm_apply_nonneg hhol hu hS hV htame _
-  · rw [hb, ho c b₀ (by rw [hb₀]; simp)]
 
 /-- **Nonnegativity of the vertical area.** Let `u` be a smooth pseudoholomorphic map from a
 surface `C`, oriented so that the frames `(e, j e)` are positive, into `X_φ` with an almost complex
