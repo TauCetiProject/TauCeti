@@ -18,6 +18,8 @@ and one in dimension `n`.  In particular `χ(S⁰) = 2`, and the Euler character
 
 * `TauCeti.cwEulerChar_sphereCWComplex`: the alternating cell count of the CW structure on `Sⁿ`.
 * `TauCeti.eulerChar_sphere`: `χ(Sⁿ) = 1 + (-1)ⁿ`.
+* `TauCeti.eulerChar_sphere_eq_one_sub`: the unit sphere of a `d`-dimensional space has
+  `χ = 1 - (-1)ᵈ`, including the empty sphere in dimension zero.
 
 ## References
 
@@ -64,5 +66,18 @@ theorem eulerChar_sphere {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   rw [eulerChar_eq_cwEulerChar (sphereHomeomorphOfFinrankEq
       (F := EuclideanSpace ℝ (ULift.{u} (Fin (n + 1)))) (by simp [hn])).toHomotopyEquiv,
     cwEulerChar_sphereCWComplex h]
+
+/-- **The Euler characteristic of a sphere, in every dimension.** The unit sphere of a
+finite-dimensional real normed space `E` has Euler characteristic `1 - (-1) ^ dim E`. In dimension
+zero the sphere is empty, of Euler characteristic zero. -/
+theorem eulerChar_sphere_eq_one_sub {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] : eulerChar (sphere (0 : E) 1) = 1 - (-1) ^ finrank ℝ E := by
+  rcases (finrank ℝ E).eq_zero_or_pos with hE | hE
+  · have : IsEmpty (sphere (0 : E) 1) := ⟨fun x ↦ by
+      simpa [finrank_zero_iff_forall_zero.1 hE x] using x.2⟩
+    simp [eulerChar_of_discreteTopology, hE]
+  · obtain ⟨n, hn⟩ := Nat.exists_eq_add_one_of_ne_zero hE.ne'
+    rw [eulerChar_sphere hn, hn, pow_succ]
+    ring
 
 end TauCeti
