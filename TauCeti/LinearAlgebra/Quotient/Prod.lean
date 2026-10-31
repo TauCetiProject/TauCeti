@@ -26,8 +26,9 @@ equivalence, which is the form module-theoretic consumers need. There is no subm
 
 ## Implementation notes
 
-`quotientProdEquiv` is assembled from `Submodule.liftQ` and `LinearMap.coprod`, so its computation
-rules are stated in the `Submodule.Quotient.mk` API rather than through `AddEquiv` wrappers.
+`quotientProdEquiv` is assembled from `Submodule.liftQ`, `Submodule.mapQ` and `LinearMap.coprod`,
+so its computation rules are stated in the `Submodule.Quotient.mk` API rather than through
+`AddEquiv` wrappers.
 -/
 
 public section
@@ -39,50 +40,6 @@ section Quotient
 variable {R M N : Type*} [Ring R] [AddCommGroup M] [AddCommGroup N]
 variable [Module R M] [Module R N]
 
-private theorem ker_prodMap_mkQ (p : Submodule R M) (q : Submodule R N) :
-    LinearMap.ker (p.mkQ.prodMap q.mkQ) = p.prod q := by
-  simp
-
-private def quotientProdMap (p : Submodule R M) (q : Submodule R N) :
-    ((M × N) ⧸ p.prod q) →ₗ[R] (M ⧸ p) × (N ⧸ q) :=
-  (p.prod q).liftQ (p.mkQ.prodMap q.mkQ) (ker_prodMap_mkQ p q).ge
-
-@[simp]
-private theorem quotientProdMap_apply_mk
-    (p : Submodule R M) (q : Submodule R N) (x : M × N) :
-    quotientProdMap p q (Submodule.Quotient.mk x) =
-      (Submodule.Quotient.mk x.1, Submodule.Quotient.mk x.2) := by
-  simp [quotientProdMap]
-
-private def quotientProdInvMap (p : Submodule R M) (q : Submodule R N) :
-    (M ⧸ p) × (N ⧸ q) →ₗ[R] ((M × N) ⧸ p.prod q) :=
-  LinearMap.coprod
-    (p.liftQ ((p.prod q).mkQ.comp (LinearMap.inl R M N)) (by
-      intro x hx
-      simp [LinearMap.mem_ker, hx]))
-    (q.liftQ ((p.prod q).mkQ.comp (LinearMap.inr R M N)) (by
-      intro y hy
-      simp [LinearMap.mem_ker, hy]))
-
-private theorem quotientProdInvMap_apply_mk
-    (p : Submodule R M) (q : Submodule R N) (x : M) (y : N) :
-    quotientProdInvMap p q (Submodule.Quotient.mk x, Submodule.Quotient.mk y) =
-      Submodule.Quotient.mk (x, y) := by
-  simp only [quotientProdInvMap, LinearMap.coprod_apply, liftQ_apply, LinearMap.coe_comp,
-    LinearMap.coe_inl, Function.comp_apply, mkQ_apply, LinearMap.coe_inr]
-  rw [← Submodule.Quotient.mk_add]
-  simp
-
-private theorem quotientProdInvMap_comp_quotientProdMap
-    (p : Submodule R M) (q : Submodule R N) :
-    (quotientProdInvMap p q).comp (quotientProdMap p q) = LinearMap.id := by
-  ext x <;> simp [LinearMap.comp_apply, quotientProdInvMap]
-
-private theorem quotientProdMap_comp_quotientProdInvMap
-    (p : Submodule R M) (q : Submodule R N) :
-    (quotientProdMap p q).comp (quotientProdInvMap p q) = LinearMap.id := by
-  ext x <;> simp [LinearMap.comp_apply, quotientProdInvMap]
-
 /-- The quotient by a product of submodules is the product of the quotients.
 
 This is the module analogue of `QuotientAddGroup.prodAddEquiv`. Its action and inverse action on
@@ -90,25 +47,21 @@ quotient representatives are recorded by `quotientProdEquiv_apply_mk` and
 `quotientProdEquiv_symm_apply_mk`. -/
 def quotientProdEquiv (p : Submodule R M) (q : Submodule R N) :
     ((M × N) ⧸ p.prod q) ≃ₗ[R] (M ⧸ p) × (N ⧸ q) :=
-  LinearEquiv.ofLinearMap
-    (quotientProdMap p q)
-    (quotientProdInvMap p q)
-    (quotientProdMap_comp_quotientProdInvMap p q)
-    (quotientProdInvMap_comp_quotientProdMap p q)
+  .ofLinearMap ((p.prod q).liftQ (p.mkQ.prodMap q.mkQ) (by simp))
+    ((p.mapQ _ (.inl R M N) (prod_comap_inl p q).ge).coprod
+      (q.mapQ _ (.inr R M N) (prod_comap_inr p q).ge))
+    (by ext <;> simp) (by ext <;> simp)
 
 @[simp]
 theorem quotientProdEquiv_apply_mk (p : Submodule R M) (q : Submodule R N) (x : M × N) :
-    quotientProdEquiv p q (Submodule.Quotient.mk x) =
-      (Submodule.Quotient.mk x.1, Submodule.Quotient.mk x.2) := by
-  rw [quotientProdEquiv, LinearEquiv.coe_ofLinearMap, quotientProdMap_apply_mk]
+    quotientProdEquiv p q (Quotient.mk x) = (Quotient.mk x.1, Quotient.mk x.2) := by
+  simp [quotientProdEquiv]
 
 @[simp]
 theorem quotientProdEquiv_symm_apply_mk
     (p : Submodule R M) (q : Submodule R N) (x : M) (y : N) :
-    (quotientProdEquiv p q).symm (Submodule.Quotient.mk x, Submodule.Quotient.mk y) =
-      Submodule.Quotient.mk (x, y) := by
-  rw [quotientProdEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
-    quotientProdInvMap_apply_mk]
+    (quotientProdEquiv p q).symm (Quotient.mk x, Quotient.mk y) = Quotient.mk (x, y) := by
+  simp [quotientProdEquiv, ← Quotient.mk_add]
 
 /-- The quotient by a product of submodules has rank the sum of the two quotients' ranks. -/
 @[simp]

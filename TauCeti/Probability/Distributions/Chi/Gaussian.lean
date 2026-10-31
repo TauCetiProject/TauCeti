@@ -17,6 +17,8 @@ the chi law with degrees of freedom equal to the dimension. Multiplying that nor
 scale gives the corresponding scaled chi law. Dimension zero is included and gives a point mass
 at zero.
 
+The squared radius has the corresponding chi-squared law, also in dimension zero.
+
 For independent centered real Gaussians with common positive variance, the Euclidean norm has
 scale equal to the square root of that variance. Dimensions one, two, and three give the
 half-normal, Rayleigh, and Maxwell–Boltzmann constructions, respectively. The scalar
@@ -74,6 +76,16 @@ theorem stdGaussian_map_const_mul_norm {s : ℝ} (hs : 0 < s) :
 
 end InnerProductSpace
 
+/-- The squared norm of a standard Gaussian has chi-squared law with one degree of freedom
+per dimension, including dimension zero. -/
+@[simp]
+theorem stdGaussian_map_norm_sq (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] :
+    (stdGaussian E).map (fun x ↦ ‖x‖ ^ 2) = chiSquaredMeasure (Module.finrank ℝ E) := by
+  have h := congrArg (fun μ : Measure ℝ ↦ μ.map (fun x ↦ x ^ 2)) (stdGaussian_map_norm E)
+  rw [Measure.map_map (by fun_prop) (by fun_prop), chiMeasure_map_sq zero_lt_one] at h
+  simpa only [one_pow, one_mul, Measure.map_id', Function.comp_def] using h
+
 variable {ι : Type*} [Fintype ι] {v : ℝ≥0}
 
 /-- The Euclidean norm of independent centered Gaussians with common positive variance has
@@ -125,6 +137,11 @@ variable {Ω E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 theorem HasLaw.norm_stdGaussian (hX : HasLaw X (stdGaussian E) P) :
     HasLaw (fun ω ↦ ‖X ω‖) (chiMeasure (Module.finrank ℝ E) 1) P :=
   (HasLaw.mk (by fun_prop) (stdGaussian_map_norm E)).fun_comp hX
+
+/-- The squared norm of a standard Gaussian random vector has chi-squared law. -/
+theorem HasLaw.norm_sq_stdGaussian (hX : HasLaw X (stdGaussian E) P) :
+    HasLaw (fun ω ↦ ‖X ω‖ ^ 2) (chiSquaredMeasure (Module.finrank ℝ E)) P :=
+  (HasLaw.mk (by fun_prop) (stdGaussian_map_norm_sq E)).fun_comp hX
 
 /-- A positive multiple of the norm of a standard Gaussian random vector has a scaled chi law. -/
 theorem HasLaw.const_mul_norm_stdGaussian (hX : HasLaw X (stdGaussian E) P)

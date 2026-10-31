@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.List.Rotate
 public import Mathlib.GroupTheory.Perm.List
+public import Mathlib.Logic.Equiv.Fin.Rotate
 
 import TauCeti.Data.Fin.Basic
 
@@ -33,6 +34,7 @@ rotated braid words.
 * `List.formPerm_append_apply_of_mem_right` and `List.formPerm_append_apply_getLast_left`: the
   permutation formed by `T ++ V` on the entries of `V`, and on the last entry of `T`.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
+* `List.ofFn_comp_finRotate_pow`: precomposing with a power of `finRotate` rotates `List.ofFn`.
 -/
 
 public section
@@ -153,5 +155,17 @@ theorem IsRotated.filter {α : Type*} {l l' : List α} (h : l ~r l') (p : α →
     (l := (l.take (k % l.length)).filter p)
     (l' := (l.drop (k % l.length)).filter p)
   simpa only [← List.filter_append, List.take_append_drop] using hrot
+
+/-- Precomposing a tuple with a power of the cyclic permutation `finRotate n` rotates the list of
+its entries by the same amount. -/
+theorem ofFn_comp_finRotate_pow {α : Type*} {n : ℕ} (f : Fin n → α) (k : ℕ) :
+    ofFn (f ∘ ⇑(finRotate n ^ k)) = (ofFn f).rotate k := by
+  apply ext_getElem
+  · simp
+  · intro i hi _
+    simp only [length_ofFn] at hi
+    simp only [List.getElem_ofFn, Function.comp_apply, getElem_rotate, length_ofFn]
+    congr 1
+    exact Fin.ext (Fin.coe_finRotate_pow k ⟨i, hi⟩)
 
 end List

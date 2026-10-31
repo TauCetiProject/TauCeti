@@ -17,11 +17,12 @@ A fold of two distinct equally labelled darts strictly decreases the number of d
 Consequently a finite labelled graph admits a finite sequence of folds ending in a folded
 graph. Every step preserves the subgroup read at the base vertex. This is the termination
 step in the construction of a finite folded graph from a flower of generating words.
+The fold sequence yields a surjective quotient morphism to the folded graph.
 
 ## References
 
 * I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*,
-  Section 3, Proposition 3.8.
+  Section 2, Lemma 2.5 and Section 3, Proposition 3.8.
 -/
 
 public section
@@ -86,6 +87,27 @@ theorem FoldSequence.connected {S T : StallingsGraph.{u, v, w} α}
     obtain ⟨e, f, hsrc, hlabel, _, rfl⟩ := hstep
     exact connected_foldAt _ e f hsrc hlabel ih
 
+/-- A sequence of folds has a quotient morphism surjective on vertices and darts. -/
+theorem FoldSequence.exists_surjective_hom {S T : StallingsGraph.{u, v, w} α}
+    (h : FoldSequence S T) :
+    ∃ f : S.Hom T, Function.Surjective f.graphHom.mapV ∧
+      Function.Surjective f.graphHom.mapE := by
+  induction h with
+  | refl =>
+    refine ⟨Hom.id _, ?_, ?_⟩
+    · simpa only [Hom.id_graphHom, SerreGraph.Hom.id_mapV] using
+        (Function.surjective_id : Function.Surjective (id : S.graph.V → S.graph.V))
+    · simpa only [Hom.id_graphHom, SerreGraph.Hom.id_mapE] using
+        (Function.surjective_id : Function.Surjective (id : S.graph.E → S.graph.E))
+  | tail h hstep ih =>
+    obtain ⟨e, f, hsrc, hlabel, _, rfl⟩ := hstep
+    obtain ⟨g, hgv, hge⟩ := ih
+    refine ⟨Hom.comp (foldHom _ e f hsrc hlabel) g, ?_, ?_⟩
+    · simpa only [Hom.comp_graphHom, SerreGraph.Hom.comp_mapV] using
+        (foldHom_mapV_surjective _ e f hsrc hlabel).comp hgv
+    · simpa only [Hom.comp_graphHom, SerreGraph.Hom.comp_mapE] using
+        (foldHom_mapE_surjective _ e f hsrc hlabel).comp hge
+
 /-- Folding distinct darts strictly decreases the number of darts. -/
 theorem card_foldAt_lt (S : StallingsGraph.{u, v, w} α) [Finite S.graph.E]
     (e f : S.graph.E) (hne : e ≠ f)
@@ -128,5 +150,21 @@ theorem exists_foldSequence_isFolded (S : StallingsGraph.{u, v, w} α)
           Relation.ReflTransGen.single ⟨e, f, hsrc, hlabel, hne, rfl⟩
         exact ⟨T, hstep.trans hchain, hfolded⟩
   exact aux (Nat.card S.graph.E) S rfl
+
+/-- Every finite labelled graph has a finite folded quotient with the same accepted subgroup.
+The quotient map is surjective on vertices and darts, so connected input remains connected. -/
+theorem exists_folded_quotient (S : StallingsGraph.{u, v, w} α)
+    [Finite S.graph.V] [Finite S.graph.E] :
+    ∃ (T : StallingsGraph.{u, v, w} α),
+      Finite T.graph.V ∧ Finite T.graph.E ∧
+        ∃ f : S.Hom T, T.IsFolded ∧
+          Function.Surjective f.graphHom.mapV ∧
+          Function.Surjective f.graphHom.mapE ∧
+          T.subgroup T.base = S.subgroup S.base ∧
+          (S.graph.Connected → T.graph.Connected) := by
+  obtain ⟨T, hseq, hfold⟩ := S.exists_foldSequence_isFolded
+  obtain ⟨f, hfv, hfe⟩ := hseq.exists_surjective_hom
+  exact ⟨T, hseq.finite_V, hseq.finite_E, f, hfold, hfv, hfe,
+    hseq.subgroup_base, hseq.connected⟩
 
 end TauCeti.StallingsGraph

@@ -56,7 +56,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable [LieGroup I ∞ G] [LieGroup I' ∞ G']
@@ -111,7 +111,7 @@ private theorem lieMapTangent_map_lie
     (φ : ContMDiffMonoidMorphism I I' ∞ G G')
     (X Y : GroupLieAlgebra I G) :
     lieMapTangent φ ⁅X, Y⁆ = ⁅lieMapTangent φ X, lieMapTangent φ Y⁆ := by
-  let _ : T2Space G' := t2Space_of_lieGroup (I := I') (n := ∞)
+  let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
   apply tangentToPointDerivation_injective (I := I') (1 : G')
   ext f
   let F : C^∞⟮I', G'; ℝ⟯ := f
@@ -279,13 +279,13 @@ theorem lieMap_comp
 private theorem monoidHom_mulInvariantExp
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (X : GroupLieAlgebra I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
-    let _ : T2Space G' := t2Space_of_lieGroup (I := I') (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
+    let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
     φ (mulInvariantExp (I := I) (G := G) X) =
       mulInvariantExp (I := I') (G := G')
         (lieMapTangent φ X) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
-  let _ : T2Space G' := t2Space_of_lieGroup (I := I') (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
   dsimp only
   let Y := lieMapTangent φ X
   let γ := mulInvariantIntegralCurve (I := I) (G := G) X 1
@@ -315,11 +315,11 @@ private theorem monoidHom_mulInvariantExp
 theorem map_lieExp [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G')
     (X : LeftInvariantDerivation I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
-    let _ : T2Space G' := t2Space_of_lieGroup (I := I') (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
+    let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
     φ (lieExp X) = lieExp (lieMap φ X) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
-  let _ : T2Space G' := t2Space_of_lieGroup (I := I') (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
   dsimp only
   rw [lieExp_eq_mulInvariantExp, lieExp_eq_mulInvariantExp]
   rw [monoidHom_mulInvariantExp (I := I) (I' := I') φ]

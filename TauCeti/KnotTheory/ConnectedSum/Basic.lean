@@ -46,28 +46,38 @@ splits it into the two knotted arcs: the sign of `⟪(K₁ # K₂) z, ι i⟫` i
 (`TauCeti.SmoothCircleEmbedding.sign_inner_connectedSum`).
 
 The great circle is a right unit on the nose
-(`TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`), and a left unit up to moving the knot
-by the half-turn and rotating its parametrization by `-1`
-(`TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`). An isometry fixing the plane `ι ℂ`
-pointwise preserves connected-sum position and commutes with the connected sum; in particular the
-mirror image of a connected sum of knots in `S³ ⊆ ℝ⁴`, in position for the unknot, is the connected
-sum of the mirror images (`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
+(`TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`), and a left unit up to replacing the
+knot by `TauCeti.SmoothCircleEmbedding.turnOver`, which moves it by the half-turn and rotates its
+parametrization by `-1` (`TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`). An isometry
+fixing the plane `ι ℂ` pointwise preserves connected-sum position and commutes with the connected
+sum; in particular the mirror image of a connected sum of knots in `S³ ⊆ ℝ⁴`, in position for the
+unknot, is the connected sum of the mirror images
+(`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
 
 Concordances in connected-sum position can themselves be summed, giving a concordance between
-the connected sums (`TauCeti.KnotTheory.ConnectedSum.Concordance`). Not formalized here: that
-every knot is ambient isotopic to one in connected-sum position, and that the resulting operation
-on isotopy or concordance classes does not depend on the choices. Those are the steps from this
+the connected sums (`TauCeti.KnotTheory.ConnectedSum.Concordance`), and in a sphere of dimension
+at least two every knot is concordant to one in connected-sum position
+(`TauCeti.KnotTheory.ConnectedSum.Position`). Not formalized here: that every knot is ambient
+isotopic to one in connected-sum position, and that the resulting operation on isotopy or
+concordance classes does not depend on the choices. The latter is the remaining step from this
 construction to the knot concordance group.
 
 ## Main definitions
 
 * `TauCeti.SmoothCircleEmbedding.IsConnectedSumPosition ι K`: the knot `K` is standard on the lower
   half of the circle and knotted only in the upper hemisphere determined by `ι`.
+* `TauCeti.SmoothCircleEmbedding.turnOver ι K`: the knot `K` moved by the half-turn `ρ` and
+  reparametrized by `z ↦ -z`, the second summand of a connected sum.
 * `TauCeti.SmoothCircleEmbedding.connectedSum`: the connected sum of two knots in connected-sum
   position.
+* `TauCeti.SmoothCircleEmbedding.reverseMirror`: the reverse mirror image of a knot, in
+  connected-sum position whenever the knot is.
 
 ## Main results
 
+* `TauCeti.SmoothCircleEmbedding.smoothIsotopic_turnOver`,
+  `TauCeti.SmoothCircleEmbedding.concordant_turnOver`: turning a knot over preserves its smooth
+  isotopy and concordance classes.
 * `TauCeti.SmoothCircleEmbedding.connectedSum_apply_of_im_nonneg`,
   `TauCeti.SmoothCircleEmbedding.coe_connectedSum_apply_of_im_neg`: the two halves of the connected
   sum.
@@ -164,23 +174,80 @@ theorem IsConnectedSumPosition.transDiffeomorph (h : IsConnectedSumPosition ι K
 /-- The second summand of a connected sum: the knot moved into the lower hemisphere by the
 half-turn in the plane `ι ℂ`, and reparametrized by the rotation `z ↦ -z` of the circle, so that
 its knotted arc lies over the lower half of the circle. -/
-private def turnOver (ι : ℂ →ₗᵢ[ℝ] E) (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+def turnOver (ι : ℂ →ₗᵢ[ℝ] E) (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
     SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) :=
   rotate (K.transDiffeomorph
     ((LinearMap.range ι.toLinearMap)ᗮ.reflection.unitSphereDiffeomorph (n := n) (k := n) ∞)) (-1)
 
-private theorem coe_turnOver_apply (ι : ℂ →ₗᵢ[ℝ] E)
+/-- The turned-over embedding reflects the knot at the antipodal circle parameter. -/
+@[simp]
+theorem coe_turnOver_apply (ι : ℂ →ₗᵢ[ℝ] E)
     (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) (z : Circle) :
     (turnOver ι K z : E) = (LinearMap.range ι.toLinearMap)ᗮ.reflection (K (-z)) := by
   simp [turnOver]
 
+variable (ι) in
+/-- **A knot is smoothly isotopic to its turned-over copy**: `K` and `turnOver ι K`, the knot moved
+by the half-turn in the plane `ι ℂ` and reparametrized by `z ↦ -z`, are joined by a jointly smooth
+isotopy through parametrized embeddings. -/
+theorem smoothIsotopic_turnOver (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    SmoothIsotopic K.toContMDiffMap (turnOver ι K).toContMDiffMap := by
+  apply smoothIsotopic_def.mpr
+  obtain ⟨R, hR, hR0, hR1⟩ := ι.exists_contDiff_path_reflection_orthogonal_range
+  let a : unitInterval → Circle := fun t => Circle.exp (Real.pi * t)
+  have ha : ContMDiff (𝓡∂ 1) (𝓡 1) ∞ a :=
+    contMDiff_circleExp.comp
+      (contMDiff_const.mul (contMDiff_subtypeVal_Icc (x := 0) (y := 1)))
+  have ha0 : a 0 = 1 := by simp [a]
+  have ha1 : a 1 = -1 := by
+    apply Subtype.ext
+    simp [a, Circle.coe_exp, Complex.exp_pi_mul_I]
+  let F : unitInterval × Circle → sphere (0 : E) 1 := fun p =>
+    (R p.1).unitSphereDiffeomorph (n := n) (k := n) ∞ (K (a p.1 * p.2))
+  have hs : ContMDiff ((𝓡∂ 1).prod (𝓡 1)) (𝓡 n) ∞ F := by
+    have hK : ContMDiff ((𝓡∂ 1).prod (𝓡 1)) 𝓘(ℝ, E) ∞
+        (fun p : unitInterval × Circle => (K (a p.1 * p.2) : E)) :=
+      contMDiff_coe_sphere.comp
+        (K.contMDiff.comp ((ha.comp contMDiff_fst).mul contMDiff_snd))
+    have ht : ContMDiff ((𝓡∂ 1).prod (𝓡 1)) 𝓘(ℝ) ∞
+        (fun p : unitInterval × Circle => (p.1 : ℝ)) :=
+      (contMDiff_subtypeVal_Icc (x := 0) (y := 1)).comp contMDiff_fst
+    have hambient := hR.comp_contMDiff (ht.prodMk_space hK)
+    have hcoe : (fun p => (F p : E)) =
+        (fun p => R (p.1 : ℝ) (K (a p.1 * p.2))) := by
+      funext p
+      exact LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply _ _
+    have hmem (p : unitInterval × Circle) : (F p : E) ∈ sphere (0 : E) 1 := (F p).property
+    simp only [Function.comp_def] at hambient
+    rw [← hcoe] at hambient
+    exact hambient.codRestrict_sphere hmem
+  refine ⟨{ toContMDiffMap := ⟨F, hs⟩
+            map_zero_left := ?_
+            map_one_left := ?_
+            isSmoothEmbedding := ?_ }⟩
+  · intro z
+    apply Subtype.ext
+    simp [F, ha0, hR0]
+  · intro z
+    apply Subtype.ext
+    simp [F, ha1, hR1]
+  · intro t
+    have hslice := (K.rotate (a t)).transDiffeomorph
+      ((R t).unitSphereDiffeomorph (n := n) (k := n) ∞) |>.isSmoothEmbedding
+    simpa only [SmoothEmbedding.coe_transDiffeomorph, Function.comp_def,
+      rotate_apply, F, ContMDiffMap.coeFn_mk] using hslice
+
+variable (ι) in
+/-- **Turning a knot over does not change its concordance class.** -/
+theorem concordant_turnOver (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    SmoothEmbedding.Concordant K (turnOver ι K) :=
+  SmoothEmbedding.Concordant.of_smoothIsotopic (smoothIsotopic_turnOver ι K) (by simp) le_rfl
+
 /-- The half-turn and the antipodal parametrization together fix the great circle. -/
-private theorem reflection_greatCircle_neg (z : Circle) :
+theorem reflection_greatCircle_neg (z : Circle) :
     (LinearMap.range ι.toLinearMap)ᗮ.reflection (greatCircle (n := n) ι (-z)) = ι z := by
   rw [coe_greatCircle_apply, Circle.coe_neg, map_neg, map_neg,
-    Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
-      (K := LinearMap.range ι.toLinearMap) (v := ι (z : ℂ))
-      (LinearMap.mem_range_self _ (z : ℂ)), neg_neg]
+    ι.reflection_orthogonal_range_apply, neg_neg]
 
 /-- Near the closed upper half of the circle, the turned-over knot is the great circle. -/
 private theorem IsConnectedSumPosition.eventuallyEq_turnOver (h : IsConnectedSumPosition ι K)
@@ -335,6 +402,56 @@ theorem transDiffeomorph_connectedSum {e : E ≃ₗᵢ[ℝ] E} (he : ∀ w, e (�
       Submodule.reflection_orthogonal_apply_of_eqOn _ (by
         rintro _ ⟨w, rfl⟩
         exact he w)]
+
+/-! ### The reverse mirror image -/
+
+variable (ι) in
+/-- The **reverse mirror image** `-K` of a knot `K`, placed in connected-sum position whenever `K`
+is (`TauCeti.SmoothCircleEmbedding.IsConnectedSumPosition.reverseMirror`): `z ↦ ρ (σ (K (-z)⁻¹))`,
+where `σ` is the reflection of `E` in the great sphere `⟪x, ι i⟫ = 0`
+and `ρ` is the half-turn in the plane `ι ℂ`. The isometry `ρ ∘ σ` negates `ι 1` and fixes `ι i`
+and the orthogonal complement of `ι ℂ`, so it is the reflection in the great sphere
+`⟪x, ι 1⟫ = 0` and reverses the orientation of `E`; the reparametrization `z ↦ (-z)⁻¹` reverses the
+orientation of the circle. This is the knot whose connected sum with `K` is topologically slice
+(`TauCeti.SmoothCircleEmbedding.isTopologicallySlice_connectedSum_reverseMirror`). -/
+def reverseMirror (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) :=
+  (K.reverse.rotate (-1)).transDiffeomorph
+    (((ℝ ∙ ι Complex.I)ᗮ.reflection.trans
+      (LinearMap.range ι.toLinearMap)ᗮ.reflection).unitSphereDiffeomorph (n := n) (k := n) ∞)
+
+/-- The reverse mirror image sends `z` to `ρ (σ (K (-z)⁻¹))`, for `σ` the reflection in the great
+sphere `⟪x, ι i⟫ = 0` and `ρ` the half-turn in the plane `ι ℂ`. -/
+@[simp]
+theorem coe_reverseMirror_apply (z : Circle) :
+    (reverseMirror ι K z : E) =
+      (LinearMap.range ι.toLinearMap)ᗮ.reflection ((ℝ ∙ ι Complex.I)ᗮ.reflection (K (-z)⁻¹)) := by
+  simp [reverseMirror]
+
+/-- The reverse mirror image of a knot in connected-sum position is in connected-sum position. -/
+theorem IsConnectedSumPosition.reverseMirror (h : IsConnectedSumPosition ι K) :
+    IsConnectedSumPosition ι (reverseMirror ι K) where
+  eventuallyEq_greatCircle {z} hz := by
+    have hneg : (((-z)⁻¹ : Circle) : ℂ).im ≤ 0 := by
+      simpa [Circle.coe_inv_eq_conj] using hz
+    filter_upwards [((continuous_inv.comp continuous_neg).tendsto z).eventually
+      (h.eventuallyEq_greatCircle hneg)] with w hw
+    -- `filter_upwards` states `hw` through a composite of functions.
+    have hw : K (-w)⁻¹ = greatCircle ι (-w)⁻¹ := hw
+    ext
+    rw [coe_reverseMirror_apply, hw, coe_greatCircle_apply, ι.reflection_orthogonal_singleton_map_I,
+      Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
+        (K := LinearMap.range ι.toLinearMap) (v := ι _) (LinearMap.mem_range_self _ _),
+      coe_greatCircle_apply, ← map_neg]
+    congr 1
+    simp only [Circle.coe_inv, Circle.coe_neg, map_inv₀, map_neg, inv_neg, neg_neg]
+    rw [← Circle.coe_inv_eq_conj, Circle.coe_inv, inv_inv]
+  inner_pos {z} hz := by
+    rw [coe_reverseMirror_apply,
+      Submodule.inner_reflection_orthogonal_of_mem (LinearMap.range ι.toLinearMap) _
+        (v := ι Complex.I) (LinearMap.mem_range_self _ Complex.I), real_inner_comm,
+      inner_reflection_orthogonal_singleton, neg_neg, real_inner_comm]
+    exact h.inner_pos (by simpa using hz)
 
 end General
 

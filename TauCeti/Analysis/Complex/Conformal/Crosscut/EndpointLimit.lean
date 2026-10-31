@@ -117,16 +117,6 @@ the radius either, a negative `ρ` tracing the same circle in the other sense an
 the arc to the point `ζ`, where the estimates are trivial. The crosscut statements do ask
 `0 < ρ < 2 * r`, which is what makes `ball c r ∩ sphere ζ ρ` a genuine crosscut.
 
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and the
-pinned Mathlib has no boundary correspondence for conformal maps. So this file is new Lean
-formalization rather than a temporary shim, and it consumes no L0–L3 shim: its analytic input is the
-chord bound of `Conformal/LengthArea.lean`, which rests on the fundamental theorem of calculus along
-an arc.
-
 ## References
 
 * Ch. Pommerenke, *Boundary Behaviour of Conformal Maps*, §2.2 (crosscuts and the length–area

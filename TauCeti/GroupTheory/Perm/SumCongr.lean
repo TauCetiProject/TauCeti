@@ -33,6 +33,7 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   `finSumFinEquiv`, with `Equiv.Perm.finSumPermHom` packaging it as a monoid homomorphism from
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
 * `Equiv.Perm.sign_finSumPerm`: its sign is the product of the signs of the two blocks.
+* `Fin.append_comp_finSumPerm`: it permutes the two halves of an appended tuple separately.
 -/
 
 public section
@@ -306,6 +307,12 @@ theorem finSumPerm_mul (σ σ' : Perm (Fin m)) (τ τ' : Perm (Fin n)) :
     finSumPerm σ τ * finSumPerm σ' τ' = finSumPerm (σ * σ') (τ * τ') :=
   (map_mul (finSumPermHom m n) (σ, τ) (σ', τ')).symm
 
+/-- Powers of `Equiv.Perm.finSumPerm σ τ` are taken blockwise. -/
+@[simp]
+theorem finSumPerm_pow (σ : Perm (Fin m)) (τ : Perm (Fin n)) (k : ℕ) :
+    finSumPerm σ τ ^ k = finSumPerm (σ ^ k) (τ ^ k) :=
+  (map_pow (finSumPermHom m n) (σ, τ) k).symm
+
 /-- The full cycle partition of `Equiv.Perm.finSumPerm σ τ` is the concatenation of those of `σ`
 and of `τ`. -/
 @[simp]
@@ -327,3 +334,17 @@ theorem sign_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
   rw [finSumPerm, sign_permCongr, sign_sumCongr]
 
 end Equiv.Perm
+
+namespace Fin
+
+variable {α : Type*} {m n : ℕ}
+
+/-- Appending two tuples and then permuting the two blocks separately is appending the two
+permuted tuples. -/
+theorem append_comp_finSumPerm (u : Fin m → α) (v : Fin n → α) (σ : Equiv.Perm (Fin m))
+    (τ : Equiv.Perm (Fin n)) :
+    Fin.append u v ∘ Equiv.Perm.finSumPerm σ τ = Fin.append (u ∘ σ) (v ∘ τ) := by
+  funext i
+  induction i using Fin.addCases <;> simp
+
+end Fin

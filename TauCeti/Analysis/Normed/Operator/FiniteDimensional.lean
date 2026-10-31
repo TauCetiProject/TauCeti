@@ -20,7 +20,8 @@ instance over `ℝ` for an operator on a complex space.
 Bounded operators out of a finite-dimensional space are determined by the images of a basis,
 with operator norm controlled by the norms of those images. Hence such operators into `E` are
 approximated in operator norm by operators factoring through any operator `g : F →L[𝕜] E` of
-dense range.
+dense range. On a finite-dimensional real domain, strict pointwise norm bounds are equivalent
+to strict operator-norm bounds.
 
 ## Main results
 
@@ -28,6 +29,8 @@ dense range.
   has finite spectrum, also over subfields of the scalars such as `ℝ ⊆ ℂ`.
 * `ContinuousLinearMap.denseRange_comp`: on operators out of a finite-dimensional space,
   postcomposition with an operator of dense range has dense range.
+* `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
+  every nonzero vector of a finite-dimensional real domain.
 -/
 
 public section
@@ -65,5 +68,31 @@ theorem denseRange_comp {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E
           simpa [Module.Basis.constrL_basis, ← dist_eq_norm] using (hy i).le
     _ = r / 2 := by field_simp
     _ < r := half_lt_self hr
+
+section StrictNorm
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- On a finite-dimensional real domain, a strict pointwise operator bound gives a strict
+operator-norm bound. The positivity assumption includes the zero-dimensional domain. -/
+theorem opNorm_lt_iff (A : E →L[ℝ] F) {c : ℝ} (hc : 0 < c) :
+    ‖A‖ < c ↔ ∀ x ≠ 0, ‖A x‖ < c * ‖x‖ := by
+  refine ⟨fun h x hx ↦ (A.le_opNorm x).trans_lt ?_, fun h ↦ ?_⟩
+  · exact mul_lt_mul_of_pos_right h (norm_pos_iff.mpr hx)
+  · cases subsingleton_or_nontrivial E
+    · simpa only [Subsingleton.elim A 0, norm_zero] using hc
+    · obtain ⟨x, hx, hmax⟩ := (isCompact_sphere (0 : E) 1).exists_isMaxOn
+        (NormedSpace.sphere_nonempty.mpr zero_le_one) A.continuous.norm.continuousOn
+      have hxnorm : ‖x‖ = 1 := mem_sphere_zero_iff_norm.mp hx
+      have hxne : x ≠ 0 := by
+        intro hx0
+        simp [hx0] at hxnorm
+      calc
+        ‖A‖ ≤ ‖A x‖ := A.opNorm_le_of_unit_norm (norm_nonneg _) fun y hy ↦
+          hmax (mem_sphere_zero_iff_norm.mpr hy)
+        _ < c := by simpa only [hxnorm, mul_one] using h x hxne
+
+end StrictNorm
 
 end ContinuousLinearMap
