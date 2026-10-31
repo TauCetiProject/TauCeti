@@ -183,11 +183,6 @@ theorem finiteEulerCorrection_eq (𝔪 : Modulus K) (s : ℂ) :
 theorem finiteEulerCorrection_one (s : ℂ) : finiteEulerCorrection (Modulus.one K) s = 1 := by
   rw [finiteEulerCorrection_eq, Modulus.support_one, Finset.prod_empty]
 
-/-- The finite Euler correction has no zero on the half-plane `Re s > 0`. -/
-theorem finiteEulerCorrection_ne_zero (𝔪 : Modulus K) {s : ℂ} (hs : 0 < s.re) :
-    finiteEulerCorrection 𝔪 s ≠ 0 :=
-  prod_one_sub_absNorm_cpow_neg_ne_zero 𝔪.support hs
-
 /-- **The finite Euler correction detects the finite part.** At a real `s > 0` each deleted factor
 lies strictly between `0` and `1`, so the correction is `1` exactly when nothing is deleted, that
 is, when the support of `𝔪` is empty. -/
