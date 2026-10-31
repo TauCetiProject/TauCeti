@@ -14,6 +14,10 @@ The map `x ↦ a - x` of a normed space `E` is a diffeomorphism of `E`, of any s
 its own inverse (`Diffeomorph.subLeft`, the smooth counterpart of `Equiv.subLeft`). On the real
 line, `Diffeomorph.subLeft 1` is the reflection `t ↦ 1 - t` exchanging `0` and `1`.
 
+A continuous linear equivalence of normed spaces is a diffeomorphism of every smoothness
+(`Diffeomorph.ofContinuousLinearEquiv`). Mathlib's `ContinuousLinearEquiv.toDiffeomorph` provides
+only the `C^∞` one.
+
 For a nonzero scalar `a`, the affine map `x ↦ a • x + b` is a diffeomorphism of `E`, of any
 smoothness, with inverse `y ↦ a⁻¹ • (y - b)` (`Diffeomorph.smulAdd`). On the real line these are
 the affine changes of time `t ↦ a * t + b`.
@@ -26,7 +30,8 @@ open scoped Manifold ContDiff
 namespace Diffeomorph
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {n : ℕ∞ω}
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω}
 
 variable (𝕜 n) in
 /-- The map `x ↦ a - x` of a normed space, as a diffeomorphism. It is its own inverse
@@ -47,6 +52,24 @@ theorem subLeft_apply (a x : E) : subLeft 𝕜 n a x = a - x :=
 /-- `Diffeomorph.subLeft 𝕜 n a` is its own inverse. -/
 @[simp]
 theorem symm_subLeft (a : E) : (subLeft 𝕜 n a).symm = subLeft 𝕜 n a :=
+  (rfl)
+
+variable (n) in
+/-- A continuous linear equivalence of normed spaces, as a `C^n` diffeomorphism. -/
+def ofContinuousLinearEquiv (L : E ≃L[𝕜] F) : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F where
+  toEquiv := L.toEquiv
+  contMDiff_toFun := L.contDiff.contMDiff
+  contMDiff_invFun := L.symm.contDiff.contMDiff
+
+/-- `Diffeomorph.ofContinuousLinearEquiv n L` is `L`. -/
+@[simp]
+theorem coe_ofContinuousLinearEquiv (L : E ≃L[𝕜] F) : ⇑(ofContinuousLinearEquiv n L) = L :=
+  (rfl)
+
+/-- The inverse of `Diffeomorph.ofContinuousLinearEquiv n L` is the diffeomorphism of `L.symm`. -/
+@[simp]
+theorem symm_ofContinuousLinearEquiv (L : E ≃L[𝕜] F) :
+    (ofContinuousLinearEquiv n L).symm = ofContinuousLinearEquiv n L.symm :=
   (rfl)
 
 variable (n) in

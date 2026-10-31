@@ -25,6 +25,14 @@ For one-dimensional manifolds modelled on `ℝ` whose orientations are the stand
 `ℝ` at the relevant points, `isOrientationPreservingAt_of_orientationAt_eq` and
 `isOrientationReversingAt_of_orientationAt_eq` reduce preservation and reversal to the sign of the
 real number by which the derivative multiplies.
+
+On the model space `E` itself, every orientation is constant once the tangent spaces are identified
+with `E`, so a continuous linear automorphism of `E` preserves or reverses every orientation of `E`
+according to the sign of its determinant (`isOrientationPreservingAt_of_det_pos`,
+`isOrientationReversingAt_of_det_neg`). In particular a linear isometry of `E` of determinant `-1`
+reverses every orientation of `E` (`isOrientationReversingAt_of_det_eq_neg_one`), and precomposing
+with it exchanges preservation and reversal (`isOrientationPreservingAt_comp_of_det_eq_neg_one`,
+`isOrientationReversingAt_comp_of_det_eq_neg_one`).
 -/
 
 public section
@@ -364,6 +372,116 @@ theorem isOrientationReversingAt_of_orientationAt_eq
   exact ((LinearMap.det_ring (R := ℝ) _).trans (mul_one c)).trans_lt hc
 
 end RealLine
+
+section ModelSpace
+
+/-- The tangent orientation at `x` of an orientation of the model space `E`, read in `E` through
+the identification `NormedSpace.fromTangentSpace` of the tangent space at `x` with `E`. -/
+private def modelOrientationAt (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (x : E) :
+    _root_.Orientation ℝ E ι :=
+  _root_.Orientation.map ι (NormedSpace.fromTangentSpace x).toLinearEquiv (o.orientationAt x)
+
+private theorem modelOrientationAt_neg (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (x : E) :
+    modelOrientationAt (-o) x = -modelOrientationAt o x := by
+  rw [modelOrientationAt, modelOrientationAt, orientationAt_neg, _root_.Orientation.map_neg]
+
+/-- Read in `E`, the constant model orientation is the orientation it is built from. -/
+private theorem modelOrientationAt_model (o : _root_.Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) (x : E) :
+    modelOrientationAt (model (I := 𝓘(ℝ, E)) o hι) x = o := by
+  rw [modelOrientationAt, orientationAt_model]
+  -- `NormedSpace.fromTangentSpace x` is the identity of `E`, as the tangent space is `E`.
+  exact congrArg (· o) (_root_.Orientation.map_refl (R := ℝ) (M := E) ι)
+
+/-- An orientation of the connected model space `E`, read in `E`, has the same tangent
+orientation at any two points. -/
+private theorem modelOrientationAt_eq (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (x y : E) :
+    modelOrientationAt o x = modelOrientationAt o y := by
+  obtain h | h := o.eq_or_eq_neg (model (I := 𝓘(ℝ, E)) (modelOrientationAt o x) o.card_eq)
+  · rw [h, modelOrientationAt_model, modelOrientationAt_model]
+  · rw [h, modelOrientationAt_neg, modelOrientationAt_neg, modelOrientationAt_model,
+      modelOrientationAt_model]
+
+/-- The derivative of a continuous linear automorphism `L` of `E` at `x`, as an equivalence of
+tangent spaces: `L` itself, read through the identifications of the tangent spaces with `E`. -/
+private def tangentEquiv (L : E ≃L[ℝ] E) (x : E) :
+    TangentSpace 𝓘(ℝ, E) x ≃L[ℝ] TangentSpace 𝓘(ℝ, E) (L x) :=
+  ((NormedSpace.fromTangentSpace x).trans L).trans (NormedSpace.fromTangentSpace (L x)).symm
+
+omit [FiniteDimensional ℝ E] in
+private theorem coe_tangentEquiv (L : E ≃L[ℝ] E) (x : E) :
+    (tangentEquiv L x : TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) (L x)) =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) L x := by
+  rw [mfderiv_eq_fderiv, L.fderiv]
+  ext v
+  simp [tangentEquiv]
+
+/-- Read in `E`, the orientation carried along the derivative of `L` is the orientation carried
+along `L`. -/
+private theorem map_tangentEquiv (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (L : E ≃L[ℝ] E)
+    (x : E) :
+    _root_.Orientation.map ι (NormedSpace.fromTangentSpace (L x)).toLinearEquiv
+        (_root_.Orientation.map ι (tangentEquiv L x).toLinearEquiv (o.orientationAt x)) =
+      _root_.Orientation.map ι L.toLinearEquiv (modelOrientationAt o x) := by
+  have he : (tangentEquiv L x).toLinearEquiv.trans
+      (NormedSpace.fromTangentSpace (L x)).toLinearEquiv =
+        (NormedSpace.fromTangentSpace x).toLinearEquiv.trans L.toLinearEquiv := by
+    ext v
+    simp [tangentEquiv]
+  rw [← _root_.Orientation.map_trans, he, _root_.Orientation.map_trans, modelOrientationAt]
+
+/-- A continuous linear automorphism of `E` with positive determinant preserves every orientation
+of `E`, at every point. -/
+theorem isOrientationPreservingAt_of_det_pos (o : Manifold.Orientation 𝓘(ℝ, E) E ι)
+    (L : E ≃L[ℝ] E) (hL : 0 < LinearMap.det (L : E →ₗ[ℝ] E)) (x : E) :
+    IsOrientationPreservingAt o o L x := by
+  refine (isOrientationPreservingAt_iff_of_coe_eq o o L x _ (coe_tangentEquiv L x)).2 ?_
+  rw [← _root_.Orientation.map_eq_iff_det_pos (modelOrientationAt o x) L.toLinearEquiv
+    o.card_eq] at hL
+  -- Read both sides in `E` through the identification of the tangent space at `L x`.
+  apply (_root_.Orientation.map ι (NormedSpace.fromTangentSpace (L x)).toLinearEquiv).injective
+  rw [map_tangentEquiv, ← modelOrientationAt, hL, modelOrientationAt_eq o x (L x)]
+
+/-- A continuous linear automorphism of `E` with negative determinant reverses every orientation
+of `E`, at every point. -/
+theorem isOrientationReversingAt_of_det_neg (o : Manifold.Orientation 𝓘(ℝ, E) E ι)
+    (L : E ≃L[ℝ] E) (hL : LinearMap.det (L : E →ₗ[ℝ] E) < 0) (x : E) :
+    IsOrientationReversingAt o o L x := by
+  refine (isOrientationReversingAt_iff_of_coe_eq o o L x _ (coe_tangentEquiv L x)).2 ?_
+  rw [← _root_.Orientation.map_eq_neg_iff_det_neg (modelOrientationAt o x) L.toLinearEquiv
+    o.card_eq] at hL
+  -- Read both sides in `E` through the identification of the tangent space at `L x`.
+  apply (_root_.Orientation.map ι (NormedSpace.fromTangentSpace (L x)).toLinearEquiv).injective
+  rw [map_tangentEquiv, _root_.Orientation.map_neg, ← modelOrientationAt, hL,
+    modelOrientationAt_eq o x (L x)]
+
+/-- A linear isometry of `E` of determinant `-1` reverses every orientation of `E`, at every
+point. -/
+theorem isOrientationReversingAt_of_det_eq_neg_one (o : Manifold.Orientation 𝓘(ℝ, E) E ι)
+    {R : E ≃ₗᵢ[ℝ] E} (hR : (LinearEquiv.det R.toLinearEquiv : ℝ) = -1) (x : E) :
+    IsOrientationReversingAt o o R x :=
+  isOrientationReversingAt_of_det_neg o R.toContinuousLinearEquiv
+    (by rw [← LinearEquiv.coe_det]; exact hR.trans_lt (by norm_num)) x
+
+/-- Precomposing a map which reverses orientations at `R x` with a linear isometry `R` of `E` of
+determinant `-1` gives a map which preserves them at `x`. -/
+theorem isOrientationPreservingAt_comp_of_det_eq_neg_one [IsManifold I 1 M]
+    {oE : Manifold.Orientation 𝓘(ℝ, E) E ι} {oM : Manifold.Orientation I M ι} {e : E → M}
+    {R : E ≃ₗᵢ[ℝ] E} {x : E} (he : IsOrientationReversingAt oE oM e (R x))
+    (hR : (LinearEquiv.det R.toLinearEquiv : ℝ) = -1) :
+    IsOrientationPreservingAt oE oM (e ∘ R) x :=
+  he.comp (isOrientationReversingAt_of_det_eq_neg_one oE hR x)
+
+/-- Precomposing a map which preserves orientations at `R x` with a linear isometry `R` of `E` of
+determinant `-1` gives a map which reverses them at `x`. -/
+theorem isOrientationReversingAt_comp_of_det_eq_neg_one [IsManifold I 1 M]
+    {oE : Manifold.Orientation 𝓘(ℝ, E) E ι} {oM : Manifold.Orientation I M ι} {e : E → M}
+    {R : E ≃ₗᵢ[ℝ] E} {x : E} (he : IsOrientationPreservingAt oE oM e (R x))
+    (hR : (LinearEquiv.det R.toLinearEquiv : ℝ) = -1) :
+    IsOrientationReversingAt oE oM (e ∘ R) x :=
+  he.comp_reversing (isOrientationReversingAt_of_det_eq_neg_one oE hR x)
+
+end ModelSpace
 
 end TauCeti.Manifold.Orientation
 
