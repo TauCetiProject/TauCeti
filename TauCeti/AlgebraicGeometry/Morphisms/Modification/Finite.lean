@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Basic
 public import TauCeti.AlgebraicGeometry.Restrict
 
 /-!
-# Finite modifications of normal schemes are isomorphisms
+# Finite modifications with reduced source of normal integral schemes are isomorphisms
 
 A normal integral scheme admits no nontrivial finite modification with reduced source (Stacks,
 Lemma 29.54.8 (0AB1)). The source `X` of a modification `f : X ⟶ Y` of an integral scheme is
@@ -46,9 +46,9 @@ universe u
 
 variable {X Y : Scheme.{u}}
 
-/-- **A finite modification of a normal scheme is an isomorphism.** If `Y` is a normal integral
-scheme, `X` is reduced and `f : X ⟶ Y` is a finite modification, then `f` is an isomorphism.
-Stacks, Lemma 29.54.8 (0AB1), where `X` is assumed integral. -/
+/-- **A finite modification with reduced source of a normal integral scheme is an isomorphism.**
+If `Y` is a normal integral scheme, `X` is reduced and `f : X ⟶ Y` is a finite modification, then
+`f` is an isomorphism. Stacks, Lemma 29.54.8 (0AB1), where `X` is assumed integral. -/
 @[stacks 0AB1]
 theorem isIso_of_isFinite [IsReduced X] [IsIntegral Y] [IsNormalScheme Y] (f : X ⟶ Y)
     [IsModification f] [IsFinite f] : IsIso f := by
