@@ -5,6 +5,7 @@ Authors: David Roe, Claude
 -/
 module
 
+public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.FieldTheory.Minpoly.Basic
 public import TauCeti.NumberTheory.DiophantineApproximation.Exponent
 -- Proof-only: Dirichlet's theorem, and linear independence of powers.
@@ -36,6 +37,9 @@ how small nonzero values of integer polynomials of degree at most `n` can be at 
 * `card_le_linearFormExponent`: Dirichlet's lower bound `w(θ) ≥ n` when `1, θ₁, …, θₙ` satisfy no
   nontrivial integer relation; consequently `w_n(ξ) ≥ n` when `ξ` is not algebraic of degree at
   most `n` (`natCast_le_mahlerExponent`).
+* `coeffVec` and `linearFormPoly`: the correspondence between integer polynomials of degree at
+  most `n` and integer vectors `x = (x₀, (xⱼ)ⱼ)`, under which `P(ξ)` is the linear form of `x` at
+  `ξ, ξ ^ 2, …, ξ ^ n`.
 
 ## References
 
@@ -458,6 +462,108 @@ noncomputable def mahlerExponent (n : ℕ) (ξ : ℝ) : ℝ≥0∞ :=
 theorem mahlerExponent_def (n : ℕ) (ξ : ℝ) :
     mahlerExponent n ξ = linearFormExponent fun j : Fin n ↦ ξ ^ (j.val + 1) :=
   (rfl)
+
+section CoeffVec
+
+open Polynomial
+
+/-- The coefficients of `P` in degrees `0, 1, …, n`, split into the constant term and the
+coefficients of `X, X ^ 2, …, X ^ n`. For `P` of degree at most `n`, the linear form of this vector
+at `ξ, ξ ^ 2, …, ξ ^ n` is `P(ξ)`. -/
+def coeffVec (n : ℕ) (P : ℤ[X]) : ℤ × (Fin n → ℤ) :=
+  (P.coeff 0, fun j ↦ P.coeff (j.val + 1))
+
+/-- The integer polynomial `x₀ + ∑ j, xⱼ X ^ (j + 1)` of degree at most `n`, a right inverse of
+`coeffVec n`. Its value at `ξ` is the linear form of `x` at `ξ, ξ ^ 2, …, ξ ^ n`. -/
+noncomputable def linearFormPoly {n : ℕ} (x : ℤ × (Fin n → ℤ)) : ℤ[X] :=
+  C x.1 + ∑ j, C (x.2 j) * X ^ (j.val + 1)
+
+/-- The first component of `coeffVec n P` is the constant coefficient of `P`. -/
+@[simp]
+theorem coeffVec_fst (n : ℕ) (P : ℤ[X]) : (coeffVec n P).1 = P.coeff 0 := by
+  simp only [coeffVec]
+
+/-- The `j`-th entry of the second component of `coeffVec n P` is the coefficient of
+`X ^ (j + 1)` in `P`. -/
+@[simp]
+theorem coeffVec_snd (n : ℕ) (P : ℤ[X]) (j : Fin n) : (coeffVec n P).2 j = P.coeff (j.val + 1) := by
+  simp only [coeffVec]
+
+/-- For `P` of degree at most `n`, the linear form of `coeffVec n P` at the powers of `z` is
+`P(z)`. -/
+theorem coeffVec_linearForm {A : Type*} [CommRing A] {n : ℕ} {P : ℤ[X]}
+    (hP : P.natDegree ≤ n) (z : A) :
+    ((coeffVec n P).1 : A) + ∑ j, ((coeffVec n P).2 j : A) * z ^ (j.val + 1) = aeval z P := by
+  simp only [coeffVec_fst, coeffVec_snd]
+  rw [aeval_eq_sum_range' (Nat.lt_succ_of_le hP), Finset.sum_range_succ',
+    Fin.sum_univ_eq_sum_range (fun j ↦ (P.coeff (j + 1) : A) * z ^ (j + 1)) n]
+  simp [zsmul_eq_mul, add_comm]
+
+/-- The sup norm of `coeffVec n P` is at most the coefficient sup norm of `P`. -/
+theorem norm_coeffVec_le (n : ℕ) (P : ℤ[X]) : ‖coeffVec n P‖ ≤ P.supNorm :=
+  max_le (P.le_supNorm 0) ((pi_norm_le_iff_of_nonneg P.supNorm_nonneg).2 fun _ ↦ P.le_supNorm _)
+
+/-- Polynomials of degree at most `n` are determined by `coeffVec n`. -/
+theorem coeffVec_injOn (n : ℕ) : Set.InjOn (coeffVec n) {P | P.natDegree ≤ n} := by
+  intro P hP Q hQ h
+  refine (ext_iff_natDegree_le hP hQ).2 fun i hi ↦ ?_
+  rcases i with _ | i
+  · exact congrArg Prod.fst h
+  · exact congrFun (congrArg Prod.snd h) ⟨i, by omega⟩
+
+/-- The polynomial `linearFormPoly x` has degree at most `n`. -/
+theorem natDegree_linearFormPoly_le {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
+    (linearFormPoly x).natDegree ≤ n :=
+  (natDegree_add_le _ _).trans <| max_le (by simp) <| natDegree_sum_le_of_forall_le _ _
+    fun j _ ↦ (natDegree_C_mul_X_pow_le _ _).trans j.isLt
+
+/-- `coeffVec n` recovers `x` from `linearFormPoly x`. -/
+@[simp]
+theorem coeffVec_linearFormPoly {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
+    coeffVec n (linearFormPoly x) = x := by
+  refine Prod.ext (by simp [linearFormPoly]) (funext fun k ↦ ?_)
+  simp only [coeffVec_snd, linearFormPoly, coeff_add, coeff_C, finsetSum_coeff, coeff_C_mul_X_pow]
+  simp [Fin.val_inj]
+
+/-- On polynomials of degree at most `n`, `linearFormPoly` inverts `coeffVec n`. -/
+theorem linearFormPoly_coeffVec {n : ℕ} {P : ℤ[X]} (hP : P.natDegree ≤ n) :
+    linearFormPoly (coeffVec n P) = P :=
+  coeffVec_injOn n (natDegree_linearFormPoly_le _) hP (coeffVec_linearFormPoly _)
+
+/-- The constant coefficient of `linearFormPoly x` is `x₀`. -/
+@[simp]
+theorem coeff_linearFormPoly_zero {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
+    (linearFormPoly x).coeff 0 = x.1 := by
+  rw [← coeffVec_fst n, coeffVec_linearFormPoly]
+
+/-- The coefficient of `X ^ (j + 1)` in `linearFormPoly x` is `xⱼ`. -/
+@[simp]
+theorem coeff_linearFormPoly_succ {n : ℕ} (x : ℤ × (Fin n → ℤ)) (j : Fin n) :
+    (linearFormPoly x).coeff (j.val + 1) = x.2 j := by
+  rw [← coeffVec_snd n, coeffVec_linearFormPoly]
+
+/-- The value of `linearFormPoly x` at `z` is the linear form of `x` at the powers of `z`. -/
+theorem aeval_linearFormPoly {A : Type*} [CommRing A] {n : ℕ} (x : ℤ × (Fin n → ℤ)) (z : A) :
+    aeval z (linearFormPoly x) = (x.1 : A) + ∑ j, (x.2 j : A) * z ^ (j.val + 1) := by
+  rw [← coeffVec_linearForm (natDegree_linearFormPoly_le x), coeffVec_linearFormPoly]
+
+/-- The coefficient sup norm of `linearFormPoly x` is at most the sup norm of `x`. -/
+theorem supNorm_linearFormPoly_le {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
+    (linearFormPoly x).supNorm ≤ ‖x‖ := by
+  rw [supNorm_eq_iSup]
+  refine ciSup_le fun i ↦ ?_
+  simp only [linearFormPoly, coeff_add, coeff_C, finsetSum_coeff, coeff_C_mul_X_pow]
+  rcases i with _ | k
+  · simpa using norm_fst_le x
+  · by_cases hk : k < n
+    · have h (j : Fin n) : k = j.val ↔ ⟨k, hk⟩ = j := (Fin.ext_iff (a := ⟨k, hk⟩)).symm
+      simpa [h] using (norm_le_pi_norm x.2 ⟨k, hk⟩).trans (norm_snd_le x)
+    · have h (j : Fin n) : k ≠ j.val := by
+        have := j.isLt
+        omega
+      simp [h]
+
+end CoeffVec
 
 /-- Mahler's exponent is monotone in the degree. -/
 theorem mahlerExponent_mono (ξ : ℝ) : Monotone (mahlerExponent · ξ) := fun m n hmn ↦ by

@@ -8,6 +8,7 @@ module
 public import Mathlib.Order.Filter.AtTopBot.Archimedean
 public import Mathlib.Topology.MetricSpace.Bounded
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
+public import Mathlib.Topology.Sets.Opens
 
 /-!
 # Proper spaces and compact exhaustions with diverging distance
@@ -35,6 +36,8 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
   equivalence.
 * `IsOpen.exists_iUnion_isOpen_isCompact_closure`: in a proper space, every open set is the union
   of an increasing sequence of open sets with compact closures inside it.
+* `TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq`: the same exhaustion of an
+  open set `Ω`, as a sequence of `Opens` whose traces on the subspace `Ω` cover it.
 
 ## References
 
@@ -135,5 +138,18 @@ theorem _root_.IsOpen.exists_iUnion_isOpen_isCompact_closure [ProperSpace α] {U
     refine mem_iUnion.2 ⟨max k m, mem_ball.2 (hm.trans_le (by exact_mod_cast le_max_right k m)),
       lt_of_le_of_lt (ENNReal.inv_le_inv.2 ?_) hk⟩
     exact (Nat.cast_le.2 (le_max_left k m)).trans le_self_add
+
+/-- **Exhaustion of an open set by opens.** In a proper pseudometric space, an open set `Ω` is the
+union of an increasing sequence of open sets `V n` whose closures are compact subsets of `Ω`; the
+traces of the `V n` on the subspace `Ω` cover it. -/
+theorem _root_.TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq [ProperSpace α]
+    (Ω : TopologicalSpace.Opens α) :
+    ∃ V : ℕ → TopologicalSpace.Opens α, (∀ n, IsCompact (closure (V n : Set α))) ∧
+      (∀ n, closure (V n : Set α) ⊆ Ω) ∧ Monotone V ∧ ⋃ n, (V n : Set α) = Ω ∧
+      ⋃ n, ((↑) : Ω → α) ⁻¹' (V n : Set α) = univ := by
+  obtain ⟨V, hVo, hVc, hVΩ, hVmono, hVU⟩ := Ω.isOpen.exists_iUnion_isOpen_isCompact_closure
+  refine ⟨fun n ↦ ⟨V n, hVo n⟩, hVc, hVΩ, fun _ _ h ↦ hVmono h, hVU, ?_⟩
+  simp only [← preimage_iUnion, TopologicalSpace.Opens.coe_mk, hVU]
+  exact Subtype.coe_preimage_self _
 
 end TauCeti

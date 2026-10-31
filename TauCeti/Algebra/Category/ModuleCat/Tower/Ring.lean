@@ -34,6 +34,7 @@ kernels of the projections `Â → A ⧸ Jₙ` are left ideals of `Â` and satis
 again, so multiplication is jointly continuous for the inverse limit topology
 (`TauCeti.ModuleTower.continuous_limMul`). The ring structure is
 `TauCeti.ModuleTower.limRing`; it is not an instance, since it depends on the right-shift estimate.
+With it, every smooth `A`-module is a module over `Â` (`TauCeti.ModuleTower.limModule`).
 
 Mathlib's `UniformSpace.Completion.ring` completes a topological ring abstractly. Here the
 completion is the explicit inverse limit of modules `lim A ⧸ Jₙ`, and the action on smooth modules
@@ -46,6 +47,7 @@ the currents of high order are not two-sided.
 * `TauCeti.ModuleTower.limSmul`: the action of `lim A ⧸ Jₙ` on a smooth `A`-module.
 * `TauCeti.ModuleTower.limMul`: the multiplication of `lim A ⧸ Jₙ`.
 * `TauCeti.ModuleTower.limRing`: the ring structure of `lim A ⧸ Jₙ`.
+* `TauCeti.ModuleTower.limModule`: the module structure over `lim A ⧸ Jₙ` of a smooth `A`-module.
 
 ## Main results
 
@@ -341,6 +343,29 @@ def limRing : Ring (quotients J hJ).lim where
   mul_assoc := limMul_assoc hJr
   one_mul := one_limMul hJr
   mul_one := limMul_one hJr
+
+/-- **A smooth module is a module over the completion** `lim A ⧸ Jₙ`, for the ring structure
+`TauCeti.ModuleTower.limRing`, through the action `TauCeti.ModuleTower.limSmul`: a point acts on a
+vector killed by `Jₙ` as any representative of its `n`-th coordinate. -/
+abbrev limModule {M : ModuleCat.{w} A} (hM : smoothModules J M) :
+    letI := limRing (hJ := hJ) hJr
+    Module (quotients J hJ).lim M :=
+  letI := limRing (hJ := hJ) hJr
+  { smul := limSmul hM
+    one_smul m := (limSmul_toLimQuotients hM 1 m).trans (one_smul A m)
+    mul_smul := limSmul_limMul hJr hM
+    smul_zero := limSmul_zero hM
+    smul_add := limSmul_add hM
+    add_smul := add_limSmul hM
+    zero_smul := zero_limSmul hM }
+
+/-- The action of the completion on a smooth module is `TauCeti.ModuleTower.limSmul`. -/
+theorem limModule_smul {M : ModuleCat.{w} A} (hM : smoothModules J M) (x : (quotients J hJ).lim)
+    (m : M) :
+    letI := limRing (hJ := hJ) hJr
+    letI := limModule hJr hM
+    x • m = limSmul hM x m :=
+  rfl
 
 /-- **Multiplication on the completion is continuous** for the inverse limit topology: the
 `n`-th coordinate of `x y` only depends on the `n`-th coordinate of `y` and, through the

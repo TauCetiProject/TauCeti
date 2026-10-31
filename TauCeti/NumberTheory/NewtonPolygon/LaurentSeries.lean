@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
 public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import TauCeti.RingTheory.LaurentSeries.Valuation.Basic
+import TauCeti.Analysis.Convex.Sequence.Vertex
 
 /-!
 # Newton polygons and initial polynomials over Laurent series
@@ -37,6 +38,12 @@ characteristic hypothesis is used. The proof reads coefficients at the real expo
 supporting lines cross, through the embedding `HahnSeries.embDomainRingHom` of `R⸨X⸩` into the
 Hahn series with real exponents.
 
+The initial polynomial at `σ` also records the face of slope `σ` of the Newton polygon. If that
+face runs from `l` to `u`, the initial polynomial has order of vanishing `l` at `Y = 0` and
+degree `u`, with extreme coefficients `lc(a_l)` and `lc(a_u)`. So the multiplicity of `σ` as a
+slope, which for a split polynomial counts its roots of order `-σ`, is the degree minus the
+order of vanishing of the initial polynomial at `σ`.
+
 ## Main definitions
 
 * `Polynomial.initialPolynomial P σ`: the initial polynomial of `P` at slope `σ`.
@@ -50,6 +57,18 @@ Hahn series with real exponents.
   zero, at any slope.
 * `Polynomial.initialPolynomial_monomial`: the initial polynomial of `a Yⁿ` is `lc(a) Yⁿ`.
 * `Polynomial.initialPolynomial_mul`: initial polynomials are multiplicative.
+* `Polynomial.natTrailingDegree_initialPolynomial_of_isFiniteFace` and
+  `Polynomial.natDegree_initialPolynomial_of_isFiniteFace`: the order of vanishing at `Y = 0` and
+  the degree of the initial polynomial at `σ` are the endpoints of the face of slope `σ`.
+* `Polynomial.trailingCoeff_initialPolynomial_of_isFiniteFace` and
+  `Polynomial.leadingCoeff_initialPolynomial_of_isFiniteFace`: its extreme coefficients are the
+  leading coefficients of the coefficients of `P` at these endpoints.
+* `Polynomial.natTrailingDegree_initialPolynomial` and `Polynomial.natDegree_initialPolynomial`:
+  the same endpoints counted by slopes, as the order of vanishing of `P` at `Y = 0` plus the
+  number of slopes below `σ`, respectively at most `σ`.
+* `Polynomial.count_newtonSlopes_eq_natDegree_sub_natTrailingDegree_initialPolynomial`: the
+  multiplicity of a slope `σ` is the degree minus the order of vanishing at `Y = 0` of the
+  initial polynomial at `σ`.
 
 ## References
 
@@ -290,5 +309,155 @@ theorem initialPolynomialHom_apply (P : R⸨X⸩[X]) (σ : ℝ) :
 theorem initialPolynomial_pow (P : R⸨X⸩[X]) (k : ℕ) (σ : ℝ) :
     (P ^ k).initialPolynomial σ = P.initialPolynomial σ ^ k :=
   map_pow (initialPolynomialHom R σ) P k
+
+/-! ### Initial polynomials and faces of the Newton polygon -/
+
+section Face
+
+variable {l u : ℕ}
+
+/-- For `P ≠ 0`, the `n`-th coefficient of the initial polynomial at `σ` is nonzero exactly when
+the height of `aₙ` lies on the supporting line of slope `σ`. -/
+private theorem coeff_initialPolynomial_ne_zero_iff (hP : P ≠ 0) (n : ℕ) :
+    (P.initialPolynomial σ).coeff n ≠ 0 ↔
+      n ∈ supportingFace (fun m => realAddVal R (P.coeff m)) σ (intercept P σ) := by
+  rw [mem_supportingFace, ← sub_eq_supportingValue_iff hP, coeff_initialPolynomial]
+  split_ifs with h
+  · refine iff_of_true (fun h0 => ?_) h
+    rw [sub_eq_supportingValue_iff hP, HahnSeries.leadingCoeff_eq_zero.mp h0,
+      AddValuation.map_zero] at h
+    exact WithTop.top_ne_coe h
+  · exact iff_of_false (fun h0 => h0 rfl) h
+
+/-- A polynomial whose Newton polygon has a finite face is nonzero. -/
+private theorem ne_zero_of_isFiniteFace
+    (hface : IsFiniteFace (P.newtonPolygon (realAddVal R)) σ l u) : P ≠ 0 := by
+  rintro rfl
+  exact hface.left_ne_top (by simp)
+
+/-- If the Newton polygon of `P` has the finite face `[l, u]` of slope `σ`, the coefficient
+heights of `P` touch their supporting line of slope `σ` only inside `[l, u]`, and at both
+endpoints. -/
+private theorem supportingFace_intercept_of_isFiniteFace
+    (hface : IsFiniteFace (P.newtonPolygon (realAddVal R)) σ l u) :
+    supportingFace (fun n => realAddVal R (P.coeff n)) σ (intercept P σ) ⊆ Set.Icc l u ∧
+      l ∈ supportingFace (fun n => realAddVal R (P.coeff n)) σ (intercept P σ) ∧
+      u ∈ supportingFace (fun n => realAddVal R (P.coeff n)) σ (intercept P σ) := by
+  have hP := ne_zero_of_isFiniteFace hface
+  have hh := isLowerConvexEnvelope_newtonPolygon P (realAddVal R)
+  obtain ⟨c, hc, hfc⟩ := hface.exists_intercept
+  have hl : l ∈ Set.Icc l u := ⟨le_rfl, hface.left_le_right⟩
+  have hu : u ∈ Set.Icc l u := ⟨hface.left_le_right, le_rfl⟩
+  -- The supporting line of the coefficient heights is the line of the face.
+  obtain rfl : intercept P σ = c := EReal.coe_injective <| by
+    rw [coe_intercept hP, ← supportingValue_newtonPolygon P (realAddVal R),
+      supportingValue_eq_coe_of_mem_supportingFace hc (hfc.symm.subset hl)]
+  refine ⟨(hh.supportingFace_subset (isSupportingLine_intercept hP)).trans hfc.subset, ?_, ?_⟩
+  · rw [mem_supportingFace, ← hh.eq_left_of_isFiniteFace hface]
+    exact mem_supportingFace.mp (hfc.symm.subset hl)
+  · rw [mem_supportingFace, ← hh.eq_right_of_isFiniteFace hface]
+    exact mem_supportingFace.mp (hfc.symm.subset hu)
+
+/-- If the Newton polygon of `P` has the finite face `[l, u]` of slope `σ`, the initial
+polynomial of `P` at `σ` is supported in `[l, u]`. -/
+theorem support_initialPolynomial_subset_Icc
+    (hface : IsFiniteFace (P.newtonPolygon (realAddVal R)) σ l u) :
+    (P.initialPolynomial σ).support ⊆ Finset.Icc l u := fun n hn =>
+  Finset.mem_Icc.mpr <| (supportingFace_intercept_of_isFiniteFace hface).1 <|
+    (coeff_initialPolynomial_ne_zero_iff (ne_zero_of_isFiniteFace hface) n).mp
+      (mem_support_iff.mp hn)
+
+/-- If the Newton polygon of `P` has the finite face `[l, u]` of slope `σ`, the initial
+polynomial of `P` at `σ` vanishes at `Y = 0` to order exactly `l`. -/
+theorem natTrailingDegree_initialPolynomial_of_isFiniteFace
+    (hface : IsFiniteFace (P.newtonPolygon (realAddVal R)) σ l u) :
+    (P.initialPolynomial σ).natTrailingDegree = l := by
+  have hP := ne_zero_of_isFiniteFace hface
+  refine le_antisymm (natTrailingDegree_le_of_ne_zero <|
+    (coeff_initialPolynomial_ne_zero_iff hP l).mpr
+      (supportingFace_intercept_of_isFiniteFace hface).2.1) ?_
+  exact (Finset.mem_Icc.mp <| support_initialPolynomial_subset_Icc hface <|
+    natTrailingDegree_mem_support_of_nonzero (initialPolynomial_ne_zero σ hP)).1
+
+/-- If the Newton polygon of `P` has the finite face `[l, u]` of slope `σ`, the initial
+polynomial of `P` at `σ` has degree exactly `u`. -/
+theorem natDegree_initialPolynomial_of_isFiniteFace
+    (hface : IsFiniteFace (P.newtonPolygon (realAddVal R)) σ l u) :
+    (P.initialPolynomial σ).natDegree = u := by
+  have hP := ne_zero_of_isFiniteFace hface
+  refine le_antisymm ?_ (le_natDegree_of_ne_zero <|
+    (coeff_initialPolynomial_ne_zero_iff hP u).mpr
+      (supportingFace_intercept_of_isFiniteFace hface).2.2)
+  exact (Finset.mem_Icc.mp <| support_initialPolynomial_subset_Icc hface <|
+    natDegree_mem_support_of_nonzero (initialPolynomial_ne_zero σ hP)).2
+
+/-- If the Newton polygon of `P` has the finite face `[l, u]` of slope `σ`, the trailing
+coefficient of the initial polynomial of `P` at `σ` is the leading coefficient of `a_l`. -/
+theorem trailingCoeff_initialPolynomial_of_isFiniteFace
+    (hface : IsFiniteFace (P.newtonPolygon (realAddVal R)) σ l u) :
+    (P.initialPolynomial σ).trailingCoeff = (P.coeff l).leadingCoeff := by
+  rw [trailingCoeff, natTrailingDegree_initialPolynomial_of_isFiniteFace hface,
+    coeff_initialPolynomial, ite_eq_left <| (sub_eq_supportingValue_iff
+      (ne_zero_of_isFiniteFace hface) l).mpr <|
+        mem_supportingFace.mp (supportingFace_intercept_of_isFiniteFace hface).2.1]
+
+/-- If the Newton polygon of `P` has the finite face `[l, u]` of slope `σ`, the leading
+coefficient of the initial polynomial of `P` at `σ` is the leading coefficient of `a_u`. -/
+theorem leadingCoeff_initialPolynomial_of_isFiniteFace
+    (hface : IsFiniteFace (P.newtonPolygon (realAddVal R)) σ l u) :
+    (P.initialPolynomial σ).leadingCoeff = (P.coeff u).leadingCoeff := by
+  rw [Polynomial.leadingCoeff, natDegree_initialPolynomial_of_isFiniteFace hface,
+    coeff_initialPolynomial, ite_eq_left <| (sub_eq_supportingValue_iff
+      (ne_zero_of_isFiniteFace hface) u).mpr <|
+        mem_supportingFace.mp (supportingFace_intercept_of_isFiniteFace hface).2.2]
+
+variable (σ) in
+/-- The Newton polygon of a nonzero polynomial over `R⸨X⸩` has a finite face of every slope. -/
+private theorem exists_isFiniteFace_newtonPolygon_realAddVal (hP : P ≠ 0) :
+    ∃ l u : ℕ, IsFiniteFace (P.newtonPolygon (realAddVal R)) σ l u :=
+  exists_isFiniteFace_newtonPolygon
+    (newtonPolygon_ne_top_of_ne_zero (fun _ => realAddVal_eq_top_iff.mp) hP) σ
+
+variable (P σ)
+
+/-- The order of vanishing at `Y = 0` of the initial polynomial of `P` at slope `σ` is that of
+`P` plus the number of slopes of the Newton polygon of `P` below `σ`. -/
+theorem natTrailingDegree_initialPolynomial :
+    (P.initialPolynomial σ).natTrailingDegree =
+      P.natTrailingDegree + ((P.newtonSlopes (realAddVal R)).filter (· < σ)).card := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · simp
+  obtain ⟨l, u, hface⟩ := exists_isFiniteFace_newtonPolygon_realAddVal σ hP
+  rw [natTrailingDegree_initialPolynomial_of_isFiniteFace hface]
+  exact left_eq_natTrailingDegree_add_card_filter_newtonSlopes_lt
+    (fun _ => realAddVal_eq_top_iff.mp) hface
+
+/-- The degree of the initial polynomial of `P` at slope `σ` is the order of vanishing of `P`
+at `Y = 0` plus the number of slopes of the Newton polygon of `P` at most `σ`. -/
+theorem natDegree_initialPolynomial :
+    (P.initialPolynomial σ).natDegree =
+      P.natTrailingDegree + ((P.newtonSlopes (realAddVal R)).filter (· ≤ σ)).card := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · simp
+  obtain ⟨l, u, hface⟩ := exists_isFiniteFace_newtonPolygon_realAddVal σ hP
+  rw [natDegree_initialPolynomial_of_isFiniteFace hface]
+  exact right_eq_natTrailingDegree_add_card_filter_newtonSlopes_le
+    (fun _ => realAddVal_eq_top_iff.mp) hface
+
+/-- The multiplicity of `σ` as a slope of the Newton polygon of `P` is the difference between
+the degree of the initial polynomial of `P` at `σ` and its order of vanishing at `Y = 0`. When
+`P` splits, this is the number of roots of `P` of order `-σ`, counted with multiplicity, by
+`Polynomial.newtonSlopes_eq_map_roots`. -/
+theorem count_newtonSlopes_eq_natDegree_sub_natTrailingDegree_initialPolynomial :
+    (P.newtonSlopes (realAddVal R)).count σ =
+      (P.initialPolynomial σ).natDegree - (P.initialPolynomial σ).natTrailingDegree := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · simp
+  obtain ⟨l, u, hface⟩ := exists_isFiniteFace_newtonPolygon_realAddVal σ hP
+  rw [count_newtonSlopes_of_isFiniteFace hface,
+    natDegree_initialPolynomial_of_isFiniteFace hface,
+    natTrailingDegree_initialPolynomial_of_isFiniteFace hface]
+
+end Face
 
 end Polynomial

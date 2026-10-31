@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.DirectSum
 public import Mathlib.LinearAlgebra.DirectSum.Finite
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Fundamental
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Fundamental.Basic
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
 import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.Weights.Faithful
