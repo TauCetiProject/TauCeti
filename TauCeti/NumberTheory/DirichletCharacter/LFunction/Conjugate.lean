@@ -18,9 +18,10 @@ inverse. We extend the Dirichlet-series identity to the punctured plane by analy
 and across `1` for nonprincipal characters. Thus the result applies to the continued function,
 not the totalized Dirichlet series outside its convergence half-plane.
 
-For quadratic characters this gives reflection of zeros across the real axis and reality on
-the entire real axis, including the interval to the left of `1` used in real-zero estimates.
-We also give the reflection identity for derivatives and their real-axis specialization.
+For quadratic characters this gives reflection of zeros across the real axis and reality at
+real arguments away from the possible principal-character pole at `1`, including the interval
+to its left used in real-zero estimates. We also give the reflection identity for derivatives
+and their real-axis specialization.
 
 The continuation is Mathlib's `DirichletCharacter.LFunction`; coefficientwise reflection uses
 `TauCeti.LSeries.LSeries_star`.
@@ -94,29 +95,44 @@ theorem deriv_LFunction_inv_conj {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
 
 variable {χ}
 
-/-- The continued L-function of a nonprincipal quadratic character is real at every real
-argument, not only in the half-plane of convergence. -/
+/-- A quadratic character's continued L-function commutes with conjugation away from its
+possible pole at `1`. -/
 @[simp]
-theorem LFunction_im_eq_zero_of_isQuadratic (hχ : χ.IsQuadratic) (hχ₁ : χ ≠ 1) (x : ℝ) :
-    (χ.LFunction x).im = 0 := by
-  have h := LFunction_inv_conj χ (s := x) (.inr hχ₁)
-  rw [hχ.inv, conj_ofReal] at h
+theorem LFunction_conj_of_isQuadratic (hχ : χ.IsQuadratic) {s : ℂ}
+    (hs : s ≠ 1 ∨ χ ≠ 1) : χ.LFunction (conj s) = conj (χ.LFunction s) := by
+  simpa only [hχ.inv] using LFunction_inv_conj χ hs
+
+/-- The derivative of a quadratic character's continued L-function commutes with conjugation
+wherever the L-function is holomorphic. -/
+@[simp]
+theorem deriv_LFunction_conj_of_isQuadratic (hχ : χ.IsQuadratic) {s : ℂ}
+    (hs : s ≠ 1 ∨ χ ≠ 1) : deriv χ.LFunction (conj s) = conj (deriv χ.LFunction s) := by
+  simpa only [hχ.inv] using deriv_LFunction_inv_conj χ hs
+
+/-- The continued L-function of a quadratic character is real at real arguments away from its
+possible pole at `1`, not only in the half-plane of convergence. -/
+@[simp]
+theorem LFunction_im_eq_zero_of_isQuadratic (hχ : χ.IsQuadratic) (x : ℝ)
+    (hx : x ≠ 1 ∨ χ ≠ 1) : (χ.LFunction x).im = 0 := by
+  have h := LFunction_conj_of_isQuadratic hχ (s := x) (by simpa using hx)
+  rw [conj_ofReal] at h
   exact conj_eq_iff_im.mp h.symm
 
-/-- The derivative of the continued L-function of a nonprincipal quadratic character is real
-at every real argument. -/
+/-- The derivative of a quadratic character's continued L-function is real at real arguments
+wherever the L-function is holomorphic. -/
 @[simp]
-theorem deriv_LFunction_im_eq_zero_of_isQuadratic (hχ : χ.IsQuadratic) (hχ₁ : χ ≠ 1) (x : ℝ) :
-    (deriv χ.LFunction x).im = 0 := by
-  have h := deriv_LFunction_inv_conj χ (s := x) (.inr hχ₁)
-  rw [hχ.inv, conj_ofReal] at h
+theorem deriv_LFunction_im_eq_zero_of_isQuadratic (hχ : χ.IsQuadratic) (x : ℝ)
+    (hx : x ≠ 1 ∨ χ ≠ 1) : (deriv χ.LFunction x).im = 0 := by
+  have h := deriv_LFunction_conj_of_isQuadratic hχ (s := x) (by simpa using hx)
+  rw [conj_ofReal] at h
   exact conj_eq_iff_im.mp h.symm
 
-/-- The zeros of a nonprincipal quadratic L-function are invariant under reflection across
-the real axis. -/
+/-- The zeros of a quadratic L-function are invariant under reflection across the real axis. -/
 @[simp]
-theorem LFunction_conj_eq_zero_iff (hχ : χ.IsQuadratic) (hχ₁ : χ ≠ 1) (s : ℂ) :
+theorem LFunction_conj_eq_zero_iff_of_isQuadratic (hχ : χ.IsQuadratic) (s : ℂ) :
     χ.LFunction (conj s) = 0 ↔ χ.LFunction s = 0 := by
-  rw [← hχ.inv, LFunction_inv_conj χ (.inr hχ₁), map_eq_zero, hχ.inv]
+  by_cases hs : s = 1
+  · simp [hs]
+  · rw [LFunction_conj_of_isQuadratic hχ (.inl hs), map_eq_zero]
 
 end DirichletCharacter
