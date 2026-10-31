@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import TauCeti.Topology.Order.ProjIcc
 
 /-!
 # The deterministic money-market account
@@ -97,6 +98,11 @@ theorem bondPrice_pos (hβ₀ : 0 < β₀) (r : ℝ → ℝ) (t : ℝ) : 0 < bon
 theorem bondPrice_eq_zero_iff : bondPrice r β₀ t = 0 ↔ β₀ = 0 := by
   simp [bondPrice_def]
 
+/-- The account at time `t` depends only on the short rate between `0` and `t`. -/
+theorem bondPrice_congr {ρ : ℝ → ℝ} (h : EqOn ρ r (uIcc 0 t)) (β₀ : ℝ) :
+    bondPrice ρ β₀ t = bondPrice r β₀ t := by
+  rw [bondPrice_def, bondPrice_def, intervalIntegral.integral_congr h]
+
 /-! ### Growth and discounting between two dates -/
 
 /-- Between two dates `a` and `b`, in either order, the account grows by the exponential of
@@ -144,18 +150,13 @@ theorem continuous_bondPrice (hr : Continuous r) (β₀ : ℝ) : Continuous (bon
 
 /-! ### The account on a finite horizon
 
-The horizon statements extend the rate continuously from `[0, T]` by `Set.IccExtend`. The
-extension gives the same account on `[0, T]`, so the statements for a continuous rate apply. -/
-
-private theorem exists_continuous_eqOn (hr : ContinuousOn r (Icc 0 T)) (hT : 0 ≤ T) :
-    ∃ ρ : ℝ → ℝ, Continuous ρ ∧ EqOn ρ r (Icc 0 T) :=
-  ⟨IccExtend hT ((Icc 0 T).domRestrict r), (continuous_IccExtend_iff (h := hT)).2 hr.domRestrict,
-    fun t ht ↦ by rw [IccExtend_of_mem _ _ ht, domRestrict_apply]⟩
+The horizon statements extend the rate continuously from `[0, T]`
+(`ContinuousOn.exists_continuous_eqOn_Icc`). By `bondPrice_congr` the extension gives the same
+account on `[0, T]`, so the statements for a continuous rate apply. -/
 
 private theorem bondPrice_eq_of_eqOn {ρ : ℝ → ℝ} (hρ : EqOn ρ r (Icc 0 T)) (ht : t ∈ Icc 0 T)
-    (β₀ : ℝ) : bondPrice ρ β₀ t = bondPrice r β₀ t := by
-  rw [bondPrice_def, bondPrice_def, intervalIntegral.integral_congr fun u hu ↦
-    hρ (uIcc_subset_Icc (left_mem_Icc.2 (ht.1.trans ht.2)) ht hu)]
+    (β₀ : ℝ) : bondPrice ρ β₀ t = bondPrice r β₀ t :=
+  bondPrice_congr (hρ.mono (uIcc_subset_Icc (left_mem_Icc.2 (ht.1.trans ht.2)) ht)) β₀
 
 /-- On a horizon `[0, T]` on which the short rate is continuous, the account accrues interest
 at that rate: `β'(t) = r(t) β(t)` for every `t ∈ [0, T]`, as a derivative within `[0, T]`.
@@ -163,7 +164,7 @@ The rate outside the horizon is irrelevant. -/
 theorem hasDerivWithinAt_bondPrice (hr : ContinuousOn r (Icc 0 T)) (β₀ : ℝ)
     (ht : t ∈ Icc 0 T) :
     HasDerivWithinAt (bondPrice r β₀) (r t * bondPrice r β₀ t) (Icc 0 T) t := by
-  obtain ⟨ρ, hρc, hρ⟩ := exists_continuous_eqOn hr (ht.1.trans ht.2)
+  obtain ⟨ρ, hρc, hρ⟩ := hr.exists_continuous_eqOn_Icc (ht.1.trans ht.2)
   have h := (hasDerivAt_bondPrice hρc β₀ t).hasDerivWithinAt (s := Icc 0 T)
   rw [hρ ht, bondPrice_eq_of_eqOn hρ ht] at h
   exact h.congr_of_mem (fun u hu ↦ (bondPrice_eq_of_eqOn hρ hu β₀).symm) ht
@@ -178,7 +179,7 @@ continuous, the interest accrued between two dates of the horizon is the change 
 theorem integral_mul_bondPrice (hr : ContinuousOn r (Icc 0 T)) (β₀ : ℝ) (ha : a ∈ Icc 0 T)
     (hb : b ∈ Icc 0 T) :
     ∫ u in a..b, r u * bondPrice r β₀ u = bondPrice r β₀ b - bondPrice r β₀ a := by
-  obtain ⟨ρ, hρc, hρ⟩ := exists_continuous_eqOn hr (ha.1.trans ha.2)
+  obtain ⟨ρ, hρc, hρ⟩ := hr.exists_continuous_eqOn_Icc (ha.1.trans ha.2)
   have hab := uIcc_subset_Icc ha hb
   rw [← bondPrice_eq_of_eqOn hρ ha, ← bondPrice_eq_of_eqOn hρ hb,
     intervalIntegral.integral_congr fun u hu ↦ show r u * bondPrice r β₀ u =
@@ -194,7 +195,7 @@ theorem eqOn_bondPrice_of_hasDerivWithinAt {B : ℝ → ℝ} (hr : ContinuousOn 
     (hd : ∀ t ∈ Ico 0 T, HasDerivWithinAt B (r t * B t) (Ici t) t) :
     EqOn B (bondPrice r β₀) (Icc 0 T) := by
   intro t ht
-  obtain ⟨ρ, hρc, hρ⟩ := exists_continuous_eqOn hr (ht.1.trans ht.2)
+  obtain ⟨ρ, hρc, hρ⟩ := hr.exists_continuous_eqOn_Icc (ht.1.trans ht.2)
   -- Discounted by the unit account, `B` has zero right derivative, so it is constant.
   have hne (u : ℝ) : bondPrice ρ 1 u ≠ 0 := by simp
   have hc : ContinuousOn (fun u ↦ B u / bondPrice ρ 1 u) (Icc 0 T) :=
