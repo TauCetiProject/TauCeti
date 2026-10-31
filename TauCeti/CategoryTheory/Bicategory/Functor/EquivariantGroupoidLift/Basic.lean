@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
 public import Mathlib.CategoryTheory.Products.Basic
 public import Mathlib.CategoryTheory.SingleObj
+public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
 /-!
 # Equivariant groupoid lifts of categorical group actions
@@ -954,80 +955,24 @@ lemma transportCommIso_actId {p q : Γ} (g : p ⟶ q) (X : fiber actions p) :
 
 /-! ### The transport pseudofunctor and the action of the endomorphism monoid of an object -/
 
--- The three lemmas below are the coherence conditions of `transportPseudofunctor`. In them the
--- composite arrows of `Γ` appear in two forms that agree only propositionally (for instance
--- `(f ≫ g) ≫ h` and `f ≫ g ≫ h`), so they are stated for arbitrary composites, related by
--- `eqToHom`.
-
-private lemma transportComp_inv_associativity_eqToHom {p q r s : Γ} (f : p ⟶ q) (g : q ⟶ r)
-    (h : r ⟶ s) (fg : p ⟶ r) (gh : q ⟶ s) (fgh fgh' : p ⟶ s) (hfg : f ≫ g = fg)
-    (hgh : g ≫ h = gh) (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh') (X : fiber actions p)
-    (hX : (L.transport fgh).obj X = (L.transport fgh').obj X) :
-    (L.transportComp fg h fgh hfgh).inv.app X ≫
-        (L.transport h).map ((L.transportComp f g fg hfg).inv.app X) ≫
-          (L.transportComp g h gh hgh).hom.app ((L.transport f).obj X) ≫
-            (L.transportComp f gh fgh' hfgh').hom.app X = eqToHom hX := by
-  obtain rfl : fgh' = fgh := by rw [← hfgh', ← hfgh, ← hfg, ← hgh, Category.assoc]
-  rw [← L.transportComp_associativity f g h fg gh _ hfg hgh hfgh X]
-  simp only [← Functor.map_comp_assoc, Iso.inv_hom_id_app, CategoryTheory.Functor.map_id,
-    Category.id_comp, eqToHom_refl]
-
-private lemma transportComp_inv_left_unitality_eqToHom {p q : Γ} (g k : p ⟶ q)
-    (hk : 𝟙 p ≫ g = k) (X : fiber actions p)
-    (hX : (L.transport k).obj X = (L.transport g).obj X) :
-    (L.transportComp (𝟙 p) g k hk).inv.app X ≫ (L.transport g).map ((L.transportId p).hom.app X) =
-      eqToHom hX := by
-  obtain rfl : k = g := hk.symm.trans (Category.id_comp g)
-  rw [← L.transportComp_left_unitality _ hk X, Iso.inv_hom_id_app, eqToHom_refl]
-
-private lemma transportComp_inv_right_unitality_eqToHom {p q : Γ} (g k : p ⟶ q)
-    (hk : g ≫ 𝟙 q = k) (X : fiber actions p)
-    (hX : (L.transport k).obj X = (L.transport g).obj X) :
-    (L.transportComp g (𝟙 q) k hk).inv.app X ≫ (L.transportId q).hom.app ((L.transport g).obj X) =
-      eqToHom hX := by
-  obtain rfl : k = g := hk.symm.trans (Category.comp_id g)
-  rw [← L.transportComp_right_unitality _ hk X, Iso.inv_hom_id_app, eqToHom_refl]
-
 /-- The transport functors as a pseudofunctor `LocallyDiscrete Γ ⥤ᵖ Cat` with value `C p` at
 `p`. It sends `g` to `E_g`; its unit comparison is `transportId` and its composition comparison
 at `g ≫ h` is the inverse of `transportComp`, so that `E_(g ≫ h) ≅ E_g ⋙ E_h`. -/
 -- The body is exposed so that the value `L.transportPseudofunctor.obj b` is definitionally the
 -- fiber `C b.as`, as needed to state the component formulas below in terms of its objects.
 @[expose] noncomputable def transportPseudofunctor : LocallyDiscrete Γ ⥤ᵖ Cat.{v, w} :=
-  LocallyDiscrete.mkPseudofunctor (fun p ↦ fiber actions p)
-    (fun g ↦ (L.transport g).toCatHom)
-    (fun p ↦ Cat.Hom.isoMk (L.transportId p))
-    (fun g h ↦ Cat.Hom.isoMk (L.transportComp g h (g ≫ h) rfl).symm)
-    (fun f g h ↦ by
-      ext X
-      simp only [Cat.Hom.isoMk_hom, Cat.Hom.isoMk_inv, Iso.symm_hom, Iso.symm_inv,
-        Cat.Hom.toNatTrans_comp, Cat.whiskerRight_toNatTrans, Cat.associator_hom_toNatTrans,
-        Cat.whiskerLeft_toNatTrans, NatTrans.comp_app, Functor.whiskerRight_app,
-        Functor.whiskerLeft_app, Functor.associator_hom_app, Category.id_comp,
-        Cat.Hom₂.eqToHom_toNatTrans, eqToHom_app, NatTrans.toCatHom₂_toNatTrans,
-        Functor.toCatHom_toFunctor, Cat.Hom.comp_toFunctor, Functor.comp_obj]
-      exact L.transportComp_inv_associativity_eqToHom _ _ _ _ _ _ _ _ _ _ _ _ _)
-    (fun f ↦ by
-      ext X
-      simp only [Cat.Hom.isoMk_hom, Iso.symm_hom, Cat.Hom.toNatTrans_comp,
-        Cat.whiskerRight_toNatTrans, Cat.leftUnitor_hom_toNatTrans, NatTrans.comp_app,
-        Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Cat.Hom₂.eqToHom_toNatTrans,
-        eqToHom_app, NatTrans.toCatHom₂_toNatTrans, Functor.toCatHom_toFunctor,
-        Cat.Hom.comp_toFunctor, Functor.comp_obj, Cat.Hom.id_toFunctor]
-      -- The left unitor of `Cat` contributes an identity whose object is only definitionally
-      -- that of the goal, so it is removed through `congrArg` rather than by `rw`.
-      exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans
-        (L.transportComp_inv_left_unitality_eqToHom _ _ _ _ _))
-    (fun f ↦ by
-      ext X
-      simp only [Cat.Hom.isoMk_hom, Iso.symm_hom, Cat.Hom.toNatTrans_comp,
-        Cat.whiskerLeft_toNatTrans, Cat.rightUnitor_hom_toNatTrans, NatTrans.comp_app,
-        Functor.whiskerLeft_app, Functor.rightUnitor_hom_app, Cat.Hom₂.eqToHom_toNatTrans,
-        eqToHom_app, NatTrans.toCatHom₂_toNatTrans, Functor.toCatHom_toFunctor,
-        Cat.Hom.comp_toFunctor, Functor.comp_obj, Cat.Hom.id_toFunctor]
-      -- As for the left unitor.
-      exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans
-        (L.transportComp_inv_right_unitality_eqToHom _ _ _ _ _))
+  LocallyDiscrete.mkCatPseudofunctor (obj := fun p ↦ fiber actions p) L.transport L.transportId
+    (fun g h gh hgh ↦ (L.transportComp g h gh hgh).symm)
+    (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦
+      LocallyDiscrete.inv_associativity_of_hom_associativity
+        (fun g h gh hgh ↦ L.transportComp g h gh hgh)
+        (fun f g h fg gh fgh hfg hgh hfgh _ X ↦
+          L.transportComp_associativity f g h fg gh fgh hfg hgh hfgh X)
+        f g h fg gh fgh hfg hgh hfgh hfgh' X)
+    (fun g hg X ↦ by
+      rw [Iso.symm_hom, ← L.transportComp_left_unitality g hg X, Iso.inv_hom_id_app])
+    (fun g hg X ↦ by
+      rw [Iso.symm_hom, ← L.transportComp_right_unitality g hg X, Iso.inv_hom_id_app])
 
 @[simp]
 lemma transportPseudofunctor_obj (b : LocallyDiscrete Γ) :
