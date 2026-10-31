@@ -13,8 +13,8 @@ public import TauCeti.AlgebraicGeometry.Scheme.Normal
 # Finite morphisms into normal integral schemes
 
 Let `f : X ⟶ Y` be a finite morphism of integral schemes with `Y` normal, and let `V` be an
-affine open of `Y`. If `f` is an isomorphism on sections over some nonempty open `W ⊆ V` with
-nonempty preimage, then `f` is bijective on sections over `V`
+affine open of `Y`. If `f` is an isomorphism on sections over some nonempty open `W ⊆ V`, then
+`f` is bijective on sections over `V`
 (`AlgebraicGeometry.Scheme.Hom.bijective_app_of_isFinite_of_isIso_app`). Indeed, restricting to
 `f ⁻¹ W ≅ W` and taking germs at the generic point embeds `Γ(X, f ⁻¹ V)` into the function field
 of `Y`, the fraction field of `Γ(Y, V)`, as an integral extension of the integrally closed domain
@@ -40,9 +40,7 @@ variable {X Y : Scheme.{u}}
 
 /-- If `f` is finite between integral schemes with `Y` normal, and `f` is an isomorphism on
 sections over a nonempty open `W` of an affine open `V`, then `f` is bijective on sections over
-`V`. Restricting to `f ⁻¹ W ≅ W` and taking germs at the generic point embeds `Γ(X, f ⁻¹ V)` into
-`k(Y)`, the fraction field of `Γ(Y, V)`, as an integral extension of the integrally closed domain
-`Γ(Y, V)`. -/
+`V`. -/
 theorem Scheme.Hom.bijective_app_of_isFinite_of_isIso_app [IsIntegral X] [IsIntegral Y]
     [IsNormalScheme Y] (f : X ⟶ Y) [IsFinite f] {V W : Y.Opens} (hV : IsAffineOpen V)
     (hWV : W ≤ V) [Nonempty W] [IsIso (f.app W)] :
