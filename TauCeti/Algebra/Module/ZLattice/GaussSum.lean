@@ -73,6 +73,8 @@ lattice `c L^∨`, and the scaling `y ↦ √N • y` turns the sum into `|L^∨
   for `m ∈ L^∨ \ L`.
 * `ZLattice.gaussSumTwisted_eq_of_mem`: for `m ∈ L` and `a d ≡ 1 (mod c)`,
   `G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
+* `ZLattice.conj_dualGaussSum`: complex conjugation negates the coefficient of the Gauss sum over
+  `L^∨ / cL`.
 * `ZLattice.dualGaussSum_level_mul`: for an even full lattice of level `N`,
   `∑_{y ∈ L^∨ / cL} e(N b ‖y‖² / (2c)) = |L^∨ / L| · G_{√N • L^∨}(b, c)`.
 
@@ -434,6 +436,20 @@ noncomputable def dualGaussSum (hL : IsEven L) (a : ℤ) (c : ℕ)
 theorem dualGaussSum_def (a : ℤ) (c : ℕ) [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] :
     dualGaussSum L hL a c = ∑ y, dualGaussTerm L hL a c y :=
   (rfl)
+
+/-- Complex conjugation negates the coefficient of the Gauss sum over `L^∨ / cL`:
+`conj (∑_y e(a ‖y‖² / (2c))) = ∑_y e(-a ‖y‖² / (2c))`. -/
+theorem conj_dualGaussSum (a : ℤ) (c : ℕ)
+    [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] :
+    starRingEnd ℂ (dualGaussSum L hL a c) = dualGaussSum L hL (-a) c := by
+  rw [dualGaussSum_def, dualGaussSum_def, map_sum]
+  refine Finset.sum_congr rfl fun y _ ↦ ?_
+  induction y using Submodule.Quotient.induction_on with | H v
+  rw [dualGaussTerm_mk, dualGaussTerm_mk, ← exp_conj]
+  simp only [map_mul, map_ofNat, conj_ofReal, conj_I]
+  congr 1
+  push_cast
+  ring
 
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 

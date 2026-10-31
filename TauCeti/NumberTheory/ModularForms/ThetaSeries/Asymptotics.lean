@@ -41,9 +41,19 @@ Gauss sum `ZLattice.gaussSum`. Along the imaginary axis `ε = i t` this reads
 
 `t^k Θ_L(a/c + i t) → G_L(a, c) / (c^{2k} covol L)` as `t → 0⁺`.
 
-Comparing this limit with the one obtained from the inversion law at `a/c + i t` is the analytic
-proof of the reciprocity law for the Gauss sums of an even lattice. The statement is additive,
-not multiplicative: `G_L(a, c)` may vanish while `Θ_L(a/c + i t)` does not.
+The same splitting applies to the dual lattice at a cusp `b / a`, now over the classes of `L^∨`
+modulo `aL`: since `L` is even and `⟪y, ℓ⟫ ∈ ℤ` for `y ∈ L^∨` and `ℓ ∈ L`, the factor
+`exp (π i ‖x‖² b / a)` is constant on `y + aL`, equal to `e(b ‖y‖² / (2a))`, so
+
+`Θ_{L^∨}(b/a + τ) = ∑_{y ∈ L^∨/aL} e(b ‖y‖² / (2a)) θ_{y+aL}(τ)`,
+
+and `ε^k Θ_{L^∨}(b/a + ε) → i^k (∑_{y ∈ L^∨/aL} e(b ‖y‖² / (2a))) / (a^{2k} covol L)`.
+
+Comparing the limit at `a/c` with the one obtained from the inversion law at `a/c + i t`, which
+moves the point near the cusp `-c/a` of the dual theta series, is the analytic proof of the
+reciprocity law for the Gauss sums of an even lattice
+(`ZLattice.IsEven.gaussSum_eq_mul_dualGaussSum`). The statement is additive, not multiplicative:
+`G_L(a, c)` may vanish while `Θ_L(a/c + i t)` does not.
 
 ## Main statements
 
@@ -54,6 +64,10 @@ not multiplicative: `G_L(a, c)` may vanish while `Θ_L(a/c + i t)` does not.
 * `ZLattice.IsEven.tendsto_pow_mul_thetaSeries_vadd_comap_S`,
   `ZLattice.IsEven.tendsto_pow_mul_thetaSeries_nhdsGT`: the asymptotic of `Θ_L` at the cusp
   `a / c`.
+* `ZLattice.IsEven.thetaSeries_dual_vadd_eq_sum`,
+  `ZLattice.IsEven.tendsto_pow_mul_thetaSeries_dual_vadd_comap_S`: the splitting of
+  `Θ_{L^∨}(b/a + τ)` into theta series of translates of `aL`, and the asymptotic of `Θ_{L^∨}` at
+  the cusp `b / a`.
 
 ## References
 
@@ -111,6 +125,12 @@ theorem tendsto_pow_mul_thetaSeries_comap_S (hk : finrank ℝ E = 2 * k) :
       (comap (ModularGroup.S • ·) atImInfty) (𝓝 (I ^ k * (covolume L : ℂ)⁻¹)) := by
   simpa using tendsto_pow_mul_thetaCoset_comap_S L hk 0
 
+/-- The covolume of `cL` is `c^{2k} covol L` in dimension `2k`. -/
+private theorem covolume_natCast_smul (hk : finrank ℝ E = 2 * k) (c : ℕ) [NeZero c] :
+    covolume ((c : ℝ) • L) = (c : ℝ) ^ (2 * k) * covolume L := by
+  have h := covolume_smul L (NeZero.ne (c : ℝ))
+  rwa [Nat.abs_cast, hk] at h
+
 namespace IsEven
 
 variable {L}
@@ -142,6 +162,38 @@ theorem thetaSeries_vadd_eq_sum (hL : IsEven L) (a : ℤ) (c : ℕ) [NeZero c] (
     field_simp
     ring
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- **Splitting the theta series of the dual lattice at the cusp `b / a`.** For an even lattice
+`L`, `b ∈ ℤ` and a positive integer `a`,
+`Θ_{L^∨}(b/a + τ) = ∑_{y ∈ L^∨/aL} e(b ‖y‖² / (2a)) θ_{y+aL}(τ)`: on each class `y + aL` the factor
+`exp (π i ‖x‖² b / a)` is the dual Gauss summand of `y`. -/
+theorem thetaSeries_dual_vadd_eq_sum (hL : IsEven L) (b : ℤ) (a : ℕ) [NeZero a]
+    [Fintype (dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L))] (τ : ℍ) :
+    thetaSeries (dual L) (((b : ℝ) / a) +ᵥ τ) =
+      ∑ y : dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L),
+        dualGaussTerm L hL b a y * thetaCoset ((a : ℝ) • L) ((Quotient.out y : dual L) : E) τ := by
+  have hle : (a : ℝ) • L ≤ dual L :=
+    (natCast_smul_le L a).trans (isIntegral_iff_le_dual.mp hL.isIntegral)
+  rw [← (hasSum_thetaCoset_out (dual L) hle _).tsum_eq, tsum_fintype]
+  refine Finset.sum_congr rfl fun y _ ↦ ?_
+  have ha : (a : ℝ) ≠ 0 := NeZero.ne _
+  rw [thetaCoset_vadd_eq_mul _ _ (fun w hw ↦ ?_)]
+  · congr 1
+    conv_rhs => rw [← Submodule.Quotient.mk_out y]
+    rw [dualGaussTerm_mk]
+    congr 1
+    push_cast
+    field_simp
+  · -- For `w = a u`, `(‖γ + w‖² - ‖γ‖²) b / a = 2 b ⟪γ, u⟫ + a b ‖u‖²`, an even integer.
+    obtain ⟨u, hu, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hw
+    obtain ⟨i, hi⟩ := mem_dual.mp (Quotient.out y).2 _ hu
+    obtain ⟨j, hj⟩ := isEven_iff.mp hL _ hu
+    refine ⟨b * i + b * a * j, ?_⟩
+    rw [norm_add_sq_real, norm_smul, inner_smul_right, hi, mul_pow, hj, Real.norm_natCast]
+    push_cast
+    field_simp
+    ring
+
 variable (hL : IsEven L)
 include hL
 
@@ -153,17 +205,33 @@ theorem tendsto_pow_mul_thetaSeries_vadd_comap_S (hk : finrank ℝ E = 2 * k) (a
     Tendsto (fun ε : ℍ ↦ (ε : ℂ) ^ k * thetaSeries L (((a : ℝ) / c) +ᵥ ε))
       (comap (ModularGroup.S • ·) atImInfty)
       (𝓝 (I ^ k * gaussSum L hL a c / ((c : ℂ) ^ (2 * k) * covolume L))) := by
-  have hcov : covolume ((c : ℝ) • L) = (c : ℝ) ^ (2 * k) * covolume L := by
-    have h := covolume_smul L (NeZero.ne (c : ℝ))
-    rw [Nat.abs_cast, hk] at h
-    exact h
   have h := tendsto_finsetSum (Finset.univ (α := L ⧸ ((c : ℝ) • L).submoduleOf L)) fun y _ ↦
     (tendsto_pow_mul_thetaCoset_comap_S ((c : ℝ) • L) hk ((Quotient.out y : L) : E)).const_mul
       (gaussTerm L hL a c 0 y)
   simp_rw [thetaSeries_vadd_eq_sum hL a c, Finset.mul_sum]
   convert h using 2 with ε
   · exact Finset.sum_congr rfl fun y _ ↦ by ring
-  · rw [gaussSum_def, ← Finset.sum_mul, hcov]
+  · rw [gaussSum_def, ← Finset.sum_mul, covolume_natCast_smul L hk c]
+    push_cast
+    field_simp
+
+/-- **The dual theta series of an even lattice near the cusp `b / a`**: if `dim E = 2k`, then for
+`b ∈ ℤ` and a positive integer `a`,
+`ε^k Θ_{L^∨}(b/a + ε) → i^k (∑_{y ∈ L^∨/aL} e(b ‖y‖² / (2a))) / (a^{2k} covol L)` as `ε → 0` with
+`im (-1/ε) → ∞`. -/
+theorem tendsto_pow_mul_thetaSeries_dual_vadd_comap_S (hk : finrank ℝ E = 2 * k) (b : ℤ) (a : ℕ)
+    [NeZero a] [Fintype (dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L))] :
+    Tendsto (fun ε : ℍ ↦ (ε : ℂ) ^ k * thetaSeries (dual L) (((b : ℝ) / a) +ᵥ ε))
+      (comap (ModularGroup.S • ·) atImInfty)
+      (𝓝 (I ^ k * dualGaussSum L hL b a / ((a : ℂ) ^ (2 * k) * covolume L))) := by
+  have h := tendsto_finsetSum
+    (Finset.univ (α := dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L))) fun y _ ↦
+      (tendsto_pow_mul_thetaCoset_comap_S ((a : ℝ) • L) hk
+        ((Quotient.out y : dual L) : E)).const_mul (dualGaussTerm L hL b a y)
+  simp_rw [thetaSeries_dual_vadd_eq_sum hL b a, Finset.mul_sum]
+  convert h using 2 with ε
+  · exact Finset.sum_congr rfl fun y _ ↦ by ring
+  · rw [dualGaussSum_def, ← Finset.sum_mul, covolume_natCast_smul L hk a]
     push_cast
     field_simp
 
