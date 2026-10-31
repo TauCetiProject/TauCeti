@@ -178,7 +178,7 @@ end Cons
 
 variable [TopologicalSpace β] in
 /-- Prepending entries commutes with addition. -/
-theorem cons_add [AddMonoid β] [ContinuousAdd β] (b c : β) (f g : C₀(ℕ, β)) :
+theorem cons_add [AddZeroClass β] [ContinuousAdd β] (b c : β) (f g : C₀(ℕ, β)) :
     cons (b + c) (f + g) = cons b f + cons c g := by
   ext n
   cases n <;> simp

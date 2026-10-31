@@ -148,7 +148,7 @@ theorem translationDifference_mahlerPrimitive (f : C(ℤ_[p], E)) :
     ZeroAtInftyContinuousMap.cons_apply_succ]
 
 /-- Every continuous function has a continuous discrete primitive, for every prime. -/
-theorem surjective_translationDifference :
+theorem translationDifference_surjective :
     Function.Surjective (translationDifference (p := p) E) :=
   fun f ↦ ⟨mahlerPrimitive E f, translationDifference_mahlerPrimitive E f⟩
 
