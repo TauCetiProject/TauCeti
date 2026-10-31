@@ -11,10 +11,14 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.ModuleCat.Basic
+import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
 # Dimensions of boundaries of complexes of vector spaces
+
+In a homological complex of vector spaces, a homology group has dimension at most that of the
+finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`).
 
 Let `C` be a homological complex of vector spaces over a field `F`. If `C.X j` is
 finite-dimensional, `C` is exact in degree `j` exactly when the dimensions of the images of the
@@ -34,6 +38,16 @@ public section
 open CategoryTheory Module
 
 namespace HomologicalComplex
+
+/-- **The weak Morse inequality.**  In a homological complex of vector spaces, a homology group
+has dimension at most that of the finite-dimensional term it is computed from. -/
+theorem finrank_homology_le_finrank_X {k : Type*} [DivisionRing k] {ι : Type*}
+    {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat k) c) (i : ι)
+    [Module.Finite k (K.X i)] :
+    finrank k (K.homology i) ≤ finrank k (K.X i) :=
+  -- The middle term of `K.sc i` is `K.X i` by construction.
+  have : Module.Finite k (K.sc i).X₂ := ‹Module.Finite k (K.X i)›
+  (K.sc i).finrank_homology_le_finrank_X₂
 
 variable {F : Type*} [Field F] {ι : Type*} {s : ComplexShape ι}
 

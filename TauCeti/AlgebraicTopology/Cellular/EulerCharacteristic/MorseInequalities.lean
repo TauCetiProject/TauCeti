@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
+public import TauCeti.Algebra.Homology.ModuleCat.Finrank
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
 
 /-!
@@ -25,7 +26,7 @@ chain complex, and the cellular--singular comparison, gives:
 * **the Morse polynomial identity**
   `∑ᵢ₌₀ⁿ cᵢ dim M · tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` in `ℕ[t]` when there are no
   `(n + 1)`-cells, where the coefficient of `tⁱ` in `Q` is the rank of the cellular differential
-  in degree `i + 1`
+  in degree `i + 1` for `i < n`, and zero otherwise
   (`TauCeti.sum_range_monomial_natCard_cell_mul_finrank_eq`).
 
 The same statements for the ordinary singular homology of an absolute CW complex are obtained
@@ -57,18 +58,12 @@ section Relative
 
 variable {D : Set X} (C : Set X) [RelCWComplex C D] (M : ModuleCat.{w} k) [Module.Finite k M]
 
-/-- The cellular chain group in a degree with finitely many cells is finite-dimensional. -/
-private theorem finite_cellularChainComplex_X_of_finite_cell (i : ℕ) [Finite (cell C i)] :
-    Module.Finite k ((cellularChainComplex C M).X i) := by
-  rw [cellularChainComplex_X]
-  infer_instance
-
 /-- **The weak Morse inequality for a CW pair.**  In a degree with finitely many relative cells,
 the relative singular homology has dimension at most the number of cells times `dim M`. -/
 theorem finrank_singularHomology_complexBasePair_le (n : ℕ) [Finite (cell C n)] :
     finrank k ((complexBasePair C).singularHomology M n : ModuleCat k) ≤
       Nat.card (cell C n) * finrank k M := by
-  have := finite_cellularChainComplex_X_of_finite_cell C M n
+  have := finite_cellularChainComplex_X C M n
   rw [← (cellularSingularHomologyIso C M n).toLinearEquiv.finrank_eq,
     ← finrank_cellularChainComplex_X]
   exact (cellularChainComplex C M).finrank_homology_le_finrank_X n
@@ -84,7 +79,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_complexBasePair_le {n
   simp_rw [← (cellularSingularHomologyIso C M _).toLinearEquiv.finrank_eq]
   refine ((cellularChainComplex C M).sum_range_neg_one_pow_mul_finrank_homology_le n fun i hi ↦
     have := hfinite i hi
-    finite_cellularChainComplex_X_of_finite_cell C M i).trans_eq ?_
+    finite_cellularChainComplex_X C M i).trans_eq ?_
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   let _ := hfinite i (Finset.mem_range_succ_iff.1 hi)
@@ -96,7 +91,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_complexBasePair_le {n
 through degree `n` and none in degree `n + 1`, then in `ℕ[X]`
 `∑ᵢ₌₀ⁿ cᵢ dim M · Xⁱ = ∑ᵢ₌₀ⁿ bᵢ Xⁱ + (1 + X) Q`, where `cᵢ` is the number of relative `i`-cells,
 `bᵢ` the dimension of the relative singular homology, and the coefficient of `Xⁱ` in `Q` is the
-rank of the cellular differential in degree `i + 1`. -/
+rank of the cellular differential in degree `i + 1` for `i < n`, and zero otherwise. -/
 theorem sum_range_monomial_natCard_cell_mul_finrank_eq {n : ℕ}
     (hfinite : ∀ i ≤ n, Finite (cell C i)) (hn : IsEmpty (cell C (n + 1))) :
     ∑ i ∈ Finset.range (n + 1), monomial i (Nat.card (cell C i) * finrank k M) =
@@ -112,7 +107,7 @@ theorem sum_range_monomial_natCard_cell_mul_finrank_eq {n : ℕ}
   rw [← (cellularChainComplex C M).sum_range_monomial_finrank_X_eq
     (fun i hi ↦
       have := hfinite i hi
-      finite_cellularChainComplex_X_of_finite_cell C M i)
+      finite_cellularChainComplex_X C M i)
     (hX.eq_of_src _ 0)]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   let _ := hfinite i (Finset.mem_range_succ_iff.1 hi)
@@ -160,7 +155,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_le_of_cwComplex {n : 
 degree `n` and none in degree `n + 1`, then in `ℕ[X]`
 `∑ᵢ₌₀ⁿ cᵢ dim M · Xⁱ = ∑ᵢ₌₀ⁿ bᵢ Xⁱ + (1 + X) Q`, where `cᵢ` is the number of `i`-cells, `bᵢ` the
 dimension of the singular homology, and the coefficient of `Xⁱ` in `Q` is the rank of the cellular
-differential in degree `i + 1`. -/
+differential in degree `i + 1` for `i < n`, and zero otherwise. -/
 theorem sum_range_monomial_natCard_cell_mul_finrank_eq_of_cwComplex {n : ℕ}
     (hfinite : ∀ i ≤ n, Finite (cell C i)) (hn : IsEmpty (cell C (n + 1))) :
     ∑ i ∈ Finset.range (n + 1), monomial i (Nat.card (cell C i) * finrank k M) =

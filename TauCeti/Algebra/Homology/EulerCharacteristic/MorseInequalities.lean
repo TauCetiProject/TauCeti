@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The Morse inequalities for chain complexes of vector spaces
@@ -17,7 +18,8 @@ write `cᵢ = dim Kᵢ`, `bᵢ = dim Hᵢ(K)` and `qᵢ = dim im (Kᵢ₊₁ ⟶
 the Morse inequalities when `K` is the cellular chain complex of a CW model of a manifold whose
 cells correspond to the critical points of a Morse function.
 
-* **Weak inequalities.**  `bᵢ ≤ cᵢ`, for any homological complex
+* **Weak inequalities.**  `bᵢ ≤ cᵢ`, which holds for any homological complex and is proved with
+  the other dimension bounds for complexes of vector spaces
   (`HomologicalComplex.finrank_homology_le_finrank_X`).
 * **Strong inequalities.**  For every `n`,
   `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`
@@ -48,19 +50,6 @@ section
 
 variable {k : Type u} [DivisionRing k]
 
-namespace HomologicalComplex
-
-/-- **The weak Morse inequality.**  In a homological complex of vector spaces, a homology group
-has dimension at most that of the finite-dimensional term it is computed from. -/
-theorem finrank_homology_le_finrank_X {ι : Type*} {c : ComplexShape ι}
-    (K : HomologicalComplex (ModuleCat.{v} k) c) (i : ι) [Module.Finite k (K.X i)] :
-    finrank k (K.homology i) ≤ finrank k (K.X i) :=
-  -- The middle term of `K.sc i` is `K.X i` by construction.
-  have : Module.Finite k (K.sc i).X₂ := ‹Module.Finite k (K.X i)›
-  (K.sc i).finrank_homology_le_finrank_X₂
-
-end HomologicalComplex
-
 namespace ChainComplex
 
 variable (K : ChainComplex (ModuleCat.{v} k) ℕ)
@@ -72,18 +61,19 @@ theorem sum_range_neg_one_pow_mul_finrank_homology_le (n : ℕ)
     (hfinite : ∀ i ≤ n, Module.Finite k (K.X i)) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * finrank k (K.homology i) ≤
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * finrank k (K.X i) := by
-  have hsign : ∀ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) = (-1) ^ n * (-1) ^ i := by
-    intro i hi
-    rw [← Nat.sub_add_cancel (Finset.mem_range_succ_iff.1 hi), Nat.add_sub_cancel, pow_add,
-      mul_assoc, ← pow_add, Even.neg_one_pow ⟨i, rfl⟩, mul_one]
+  -- Pull the sign `(-1) ^ n` out of both sums, using that `(-1) ^ m` squares to `1`.
+  have hsq (m : ℕ) : ((-1 : ℤ) ^ m) ^ 2 = 1 := by rw [pow_right_comm, neg_one_sq, one_pow]
   have hrw (x : ℕ → ℤ) : ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * x i =
       (-1) ^ n * ∑ i ∈ Finset.range (n + 1), (-1) ^ i * x i := by
     rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i hi ↦ by rw [hsign i hi, mul_assoc]
-  simp only [hrw]
-  rw [K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite, mul_add, ← mul_assoc,
-    ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_mul]
-  exact le_add_of_nonneg_right (Nat.cast_nonneg _)
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    have h : (-1 : ℤ) ^ n = (-1) ^ (n - i) * (-1) ^ i := by
+      rw [← pow_add, Nat.sub_add_cancel (Finset.mem_range_succ_iff.1 hi)]
+    linear_combination (-(-1 : ℤ) ^ i * x i) * h - (-1 : ℤ) ^ (n - i) * x i * hsq i
+  rw [hrw, hrw, K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite]
+  -- The two sides now differ by `((-1) ^ n) ^ 2 * dim im (Kₙ₊₁ ⟶ Kₙ) ≥ 0`.
+  have hq : (0 : ℤ) ≤ finrank k (LinearMap.range (K.d (n + 1) n).hom) := Nat.cast_nonneg _
+  linear_combination -(finrank k (LinearMap.range (K.d (n + 1) n).hom) : ℤ) * hsq n + hq
 
 /-- **The truncated Morse polynomial identity.**  If the terms of `K` through degree `n` are
 finite-dimensional, then in `ℕ[X]`
@@ -120,7 +110,8 @@ theorem sum_range_monomial_finrank_X_add_monomial_eq (n : ℕ)
 /-- **The Morse polynomial identity.**  If the terms of `K` through degree `n` are
 finite-dimensional and the differential `Kₙ₊₁ ⟶ Kₙ` vanishes, then in `ℕ[X]`
 `∑ᵢ₌₀ⁿ cᵢ Xⁱ = ∑ᵢ₌₀ⁿ bᵢ Xⁱ + (1 + X) Q`, where `cᵢ` is the dimension of `Kᵢ`, `bᵢ` that of
-`Hᵢ(K)`, and the coefficient of `Xⁱ` in `Q` is the rank of `Kᵢ₊₁ ⟶ Kᵢ`. -/
+`Hᵢ(K)`, and `Q = ∑ᵢ₌₀ⁿ⁻¹ qᵢ Xⁱ` with `qᵢ` the rank of `Kᵢ₊₁ ⟶ Kᵢ`: the coefficient of `Xⁱ` in
+`Q` is that rank for `i < n` and zero otherwise. -/
 theorem sum_range_monomial_finrank_X_eq {n : ℕ}
     (hfinite : ∀ i ≤ n, Module.Finite k (K.X i)) (hn : K.d (n + 1) n = 0) :
     ∑ i ∈ Finset.range (n + 1), monomial i (finrank k (K.X i)) =
