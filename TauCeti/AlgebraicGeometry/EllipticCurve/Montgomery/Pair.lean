@@ -226,8 +226,8 @@ section Field
 
 variable {K : Type*} [Field K]
 
-/-- Over a field, two nonzero pairs have vanishing cross difference exactly when one is a scalar
-multiple of the other. The scalar is then automatically nonzero. -/
+/-- Over a field, a pair `p` has vanishing cross difference with a nonzero pair `q` exactly when
+`p` is a scalar multiple of `q`. The scalar is then nonzero exactly when `p ≠ 0`. -/
 theorem cross_eq_zero_iff_exists_smul {p q : Pair K} (hq : q ≠ 0) :
     p.cross q = 0 ↔ ∃ c : K, c • q = p := by
   refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ by simp [← hc]⟩

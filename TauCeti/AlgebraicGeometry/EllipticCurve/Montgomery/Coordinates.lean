@@ -27,8 +27,9 @@ equivalently coordinate pairs with vanishing cross difference, exactly when they
 negatives of each other. This is what makes `x`-only arithmetic well defined on the native
 point group up to sign.
 
-Not every point of the projective line is a projective `x`-coordinate: `(r : 1)` comes from a
-`K`-rational point exactly when `(r³ + A r² + r) / B` is a square in `K`.
+The projective `x`-coordinate need not be surjective: when `model A B` is elliptic (`2 ≠ 0`,
+`B ≠ 0` and `A² ≠ 4`, so every solution is nonsingular), `(r : 1)` comes from a `K`-rational
+point exactly when `(r³ + A r² + r) / B` is a square in `K`.
 
 ## Main definitions
 
@@ -44,7 +45,7 @@ Not every point of the projective line is a projective `x`-coordinate: `(r : 1)`
   `TauCeti.Montgomery.coordinates_x_eq_zero_iff`: its fields vanish exactly at infinity and at
   the distinguished point of order two, respectively.
 * `TauCeti.Montgomery.coordinates_neg`: the coordinate pair of `-P` is that of `P`.
-* `TauCeti.Montgomery.cross_coordinates_eq_zero_iff`: over a field, the coordinate pairs of `P`
+* `TauCeti.Montgomery.cross_coordinates_eq_zero_iff`: over a domain, the coordinate pairs of `P`
   and `Q` have vanishing cross difference exactly when `P = Q` or `P = -Q`.
 * `TauCeti.Montgomery.projectiveX_eq_projectiveX_iff`: the fibres of the projective
   `x`-coordinate are the sets `{P, -P}`.
@@ -94,6 +95,7 @@ theorem coordinates_neg (P : (model A B).toAffine.Point) :
 variable {A B}
 
 /-- For `B ≠ 0`, the coordinate pair of a native point is nonzero. -/
+@[simp]
 theorem coordinates_ne_zero (hB : B ≠ 0) (P : (model A B).toAffine.Point) :
     coordinates A B P ≠ 0 := by
   have : Nontrivial R := nontrivial_of_ne B 0 hB
@@ -102,6 +104,7 @@ theorem coordinates_ne_zero (hB : B ≠ 0) (P : (model A B).toAffine.Point) :
   · simp [Pair.eq_zero_iff, hB]
 
 /-- For `B ≠ 0`, the second field of the coordinate pair vanishes exactly at infinity. -/
+@[simp]
 theorem coordinates_z_eq_zero_iff (hB : B ≠ 0) {P : (model A B).toAffine.Point} :
     (coordinates A B P).z = 0 ↔ P = 0 := by
   rcases P with _ | ⟨x, y, h⟩
@@ -116,6 +119,7 @@ variable {R : Type*} [CommRing R] [NoZeroDivisors R] {A B : R}
 
 /-- For `B ≠ 0`, the first field of the coordinate pair vanishes exactly at the distinguished
 point of order two `(0, 0)`. -/
+@[simp]
 theorem coordinates_x_eq_zero_iff (hB : B ≠ 0) {P : (model A B).toAffine.Point} :
     (coordinates A B P).x = 0 ↔ P = twoTorsionPoint A hB := by
   have : Nontrivial R := nontrivial_of_ne B 0 hB
@@ -124,14 +128,8 @@ theorem coordinates_x_eq_zero_iff (hB : B ≠ 0) {P : (model A B).toAffine.Point
     exact (twoTorsionPoint_ne_zero A hB).symm
   · rw [coordinates_some, some_eq_twoTorsionPoint_iff hB]
 
-end Domain
-
-section Field
-
-variable {K : Type*} [Field K] {A B : K}
-
 /-- **The coordinate pairs of two native points have vanishing cross difference exactly when the
-points are equal or negatives of each other**, for `B ≠ 0` over a field. This includes the case
+points are equal or negatives of each other**, for `B ≠ 0` over a domain. This includes the case
 where one of them is the point at infinity. -/
 theorem cross_coordinates_eq_zero_iff (hB : B ≠ 0) {P Q : (model A B).toAffine.Point} :
     (coordinates A B P).cross (coordinates A B Q) = 0 ↔ P = Q ∨ P = -Q := by
@@ -140,7 +138,20 @@ theorem cross_coordinates_eq_zero_iff (hB : B ≠ 0) {P Q : (model A B).toAffine
   · simp [← Affine.Point.zero_def, Pair.cross_def, hB, (Affine.Point.some_ne_zero _).symm]
   · simp [← Affine.Point.zero_def, Pair.cross_def, hB, Affine.Point.some_ne_zero]
   · rw [coordinates_some, coordinates_some, Pair.cross_def, ← sub_mul, mul_eq_zero, sub_eq_zero,
-      or_iff_left hB, Affine.Point.X_eq_iff]
+      or_iff_left hB]
+    refine ⟨fun hx ↦ ?_, by rintro (h | h) <;> simp_all [Affine.Point.neg_some]⟩
+    subst hx
+    have e₁ := (Affine.equation_iff ..).mp h₁.1
+    have e₂ := (Affine.equation_iff ..).mp h₂.1
+    simp_rw [Affine.Point.neg_some, Affine.Point.some.injEq, true_and, ← sub_eq_zero (a := y₁),
+      ← mul_eq_zero, Affine.negY]
+    linear_combination e₁ - e₂
+
+end Domain
+
+section Field
+
+variable {K : Type*} [Field K] {A B : K}
 
 /-- The **projective `x`-coordinate** of a native point of `model A B` over a field, for
 `B ≠ 0`: the point of the projective line `ℙ K (Fin 2 → K)` defined by its coordinate pair. It is
