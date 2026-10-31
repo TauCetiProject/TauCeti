@@ -16,7 +16,8 @@ This file collects facts about leading monomials of multivariate polynomials for
 multiple, the cancellation of leading terms by an S-polynomial, the behaviour of leading data
 under a change of coefficients, leading data of the weighted homogeneous component containing
 the leading monomial, leading data of renamed polynomials, elimination orders and the
-lexicographic ones among them, and algebraic independence from leading monomials.
+lexicographic ones among them, agreement of leading exponents under two monomial orders, and
+algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -33,6 +34,12 @@ the images of the generators of the Lazard ring in a polynomial ring.
 
 ## Main results
 
+* `MonomialOrder.degree_eq_of_forall_lt`, `MonomialOrder.degree_eq_of_forall_mem_lt`: strict
+  comparisons preserving the leading exponent, including comparisons on a set containing the
+  support and original leading exponent.
+* `MonomialOrder.leadingCoeff_eq_of_degree_eq`, `MonomialOrder.leadingTerm_eq_of_degree_eq`,
+  `MonomialOrder.sPolynomial_eq_of_degree_eq`: orders agreeing on leading exponents also agree
+  on the corresponding leading coefficients, leading terms and S-polynomials.
 * `MonomialOrder.toWithBotSyn_withBotDegree_le_toSyn_degree`: the `WithBot` degree of a polynomial
   is at most its degree.
 * `MonomialOrder.withBotDegree_sub_lt`: if `q` has degree at most that of `f ≠ 0` and the same
@@ -67,6 +74,50 @@ open MvPolynomial
 namespace MonomialOrder
 
 variable {σ R : Type*} (m : MonomialOrder σ)
+
+/-- Two monomial orders give the same leading exponent of `f` if every other exponent in its
+support remains strictly below its original leading exponent. -/
+theorem degree_eq_of_forall_lt [CommSemiring R] (n : MonomialOrder σ)
+    (f : MvPolynomial σ R)
+    (h : ∀ a ∈ f.support, a ≠ m.degree f → a ≺[n] m.degree f) :
+    n.degree f = m.degree f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  apply n.toSyn.injective
+  refine le_antisymm (n.degree_le_iff.2 fun a ha ↦ ?_)
+    (n.le_degree (m.degree_mem_support hf))
+  rcases eq_or_ne a (m.degree f) with rfl | hne
+  · exact le_rfl
+  · exact (h a ha hne).le
+
+/-- Orders preserving strict comparisons on a set containing the support and original leading
+exponent of a polynomial give it the same leading exponent. -/
+theorem degree_eq_of_forall_mem_lt [CommSemiring R] (n : MonomialOrder σ)
+    (f : MvPolynomial σ R) {s : Set (σ →₀ ℕ)}
+    (h : ∀ a ∈ s, ∀ b ∈ s, a ≺[m] b → a ≺[n] b)
+    (hf : ↑f.support ⊆ s) (hd : m.degree f ∈ s) : n.degree f = m.degree f := by
+  apply m.degree_eq_of_forall_lt n f
+  intro a ha hne
+  exact h a (hf ha) _ hd (lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne))
+
+/-- Orders agreeing on the leading exponent of a polynomial agree on its leading coefficient. -/
+theorem leadingCoeff_eq_of_degree_eq [CommSemiring R] (n : MonomialOrder σ)
+    {f : MvPolynomial σ R} (h : n.degree f = m.degree f) :
+    n.leadingCoeff f = m.leadingCoeff f := by
+  simp only [leadingCoeff, h]
+
+/-- Orders agreeing on the leading exponent of a polynomial agree on its leading term. -/
+theorem leadingTerm_eq_of_degree_eq [CommSemiring R] (n : MonomialOrder σ)
+    {f : MvPolynomial σ R} (h : n.degree f = m.degree f) :
+    n.leadingTerm f = m.leadingTerm f := by
+  rw [leadingTerm, leadingTerm, h, m.leadingCoeff_eq_of_degree_eq n h]
+
+/-- Orders agreeing on the leading exponents of two polynomials give the same S-polynomial. -/
+theorem sPolynomial_eq_of_degree_eq [CommRing R] (n : MonomialOrder σ)
+    {f g : MvPolynomial σ R} (hf : n.degree f = m.degree f) (hg : n.degree g = m.degree g) :
+    n.sPolynomial f g = m.sPolynomial f g := by
+  simp only [sPolynomial, hf, hg, m.leadingCoeff_eq_of_degree_eq n hf,
+    m.leadingCoeff_eq_of_degree_eq n hg]
 
 /-- The `WithBot` degree of a polynomial is at most its degree. -/
 theorem toWithBotSyn_withBotDegree_le_toSyn_degree [CommSemiring R] (p : MvPolynomial σ R) :
