@@ -44,6 +44,8 @@ root system is reduced and irreducible, and in particular show it does not depen
 * `RootPairing.Base.forall_root_sub_mem_posRootCone_iff`: the highest root is the only root
   lying above every root.
 * `RootPairing.Base.height_lt_height_highestRoot`: every other root has strictly smaller height.
+* `RootPairing.Base.neg_height_highestRoot_lt_height`: every root other than `-θ` has height
+  strictly greater than `-ht(θ)`.
 * `RootPairing.Base.exists_root_highestRoot_eq_sum_nat`: the coefficients of the highest root in
   the simple roots are all positive.
 * `RootPairing.Base.pairingIn_highestRoot_nonneg`: the highest root is dominant.
@@ -102,6 +104,13 @@ theorem isPos_highestRoot : b.IsPos b.highestRoot := by
   have h := b.height_le_height_highestRoot (-b.highestRoot)
   rw [height_reflectionPerm_self] at h
   exact b.isPos_iff'.mpr (by omega)
+
+/-- No root is lower than the negative of `RootPairing.Base.highestRoot`. -/
+theorem neg_height_highestRoot_le_height (j : ι) : -b.height b.highestRoot ≤ b.height j := by
+  let := P.indexNeg
+  have h := b.height_le_height_highestRoot (-j)
+  rw [height_reflectionPerm_self] at h
+  omega
 
 /-- A positive root is not the negative of the highest root. -/
 private theorem root_ne_neg_root_highestRoot {j : ι} (hj : b.IsPos j) :
@@ -288,6 +297,16 @@ theorem height_lt_height_highestRoot {j : ι} (hj : j ≠ b.highestRoot) :
   refine (sub_eq_zero.mp (TauCeti.eq_zero_of_mem_posRootCone_of_heightLinearMap_eq_zero P b
     (b.root_highestRoot_sub_mem_posRootCone j) ?_)).symm
   simp [h]
+
+/-- **Every root other than the negative of the highest root has height strictly greater than
+`-ht(θ)`.** -/
+theorem neg_height_highestRoot_lt_height {j : ι}
+    (hj : j ≠ P.reflectionPerm b.highestRoot b.highestRoot) :
+    -b.height b.highestRoot < b.height j := by
+  let := P.indexNeg
+  have h := b.height_lt_height_highestRoot (j := -j) fun h ↦ hj (neg_eq_iff_eq_neg.mp h)
+  rw [height_reflectionPerm_self] at h
+  omega
 
 variable {b} in
 /-- **The highest root takes the largest value of all roots** at a point where every simple root

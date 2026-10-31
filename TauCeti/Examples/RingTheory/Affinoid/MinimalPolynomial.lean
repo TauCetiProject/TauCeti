@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import Mathlib.RingTheory.Polynomial.RationalRoot
-import TauCeti.RingTheory.Affinoid.Integral
+import TauCeti.RingTheory.Affinoid.Integral.Basic
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 
 /-!

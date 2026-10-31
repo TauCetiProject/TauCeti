@@ -67,6 +67,10 @@ def zigzagA2Graph : SimpleGraph (Fin 2) :=
 def zigzagD4Graph : SimpleGraph (Fin 4) :=
   diagramGraph (DynkinType.D 4).cartanMatrix
 
+/-- The named `D₄` graph is the diagram of the standard Bourbaki-labelled Cartan matrix. -/
+theorem zigzagD4Graph_eq_diagramGraph :
+    zigzagD4Graph = diagramGraph (DynkinType.D 4).cartanMatrix := (rfl)
+
 /-- The `E₈` graph, read from its Bourbaki-numbered standard Cartan matrix. -/
 def zigzagE8Graph : SimpleGraph (Fin 8) :=
   diagramGraph DynkinType.E8.cartanMatrix

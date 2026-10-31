@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Restricting the scalars of manifold derivatives
@@ -25,6 +26,8 @@ in charts.
 
 The main example is a holomorphic map between complex manifolds modelled on `𝓘(ℂ, E)` and
 `𝓘(ℂ, E')`: its real derivative is its complex derivative regarded as an `ℝ`-linear map.
+Likewise, the tangent coordinate changes of a complex manifold, regarded as a real manifold, are
+its complex tangent coordinate changes regarded as `ℝ`-linear maps.
 
 ## Main results
 
@@ -33,9 +36,14 @@ The main example is a holomorphic map between complex manifolds modelled on `�
   `𝕜'` implies differentiability over `𝕜`.
 * `HasMFDerivWithinAt.restrictScalars`, `HasMFDerivAt.restrictScalars`: a derivative over `𝕜'`,
   with scalars restricted to `𝕜`, is a derivative over `𝕜`.
+* `HasMFDerivWithinAt.of_restrictScalars`: conversely, a `𝕜'`-linear map whose scalar restriction
+  is a derivative over `𝕜` is a derivative over `𝕜'`.
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
+* `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
+  over `𝕜'` with scalars restricted to `𝕜`; in particular they are `𝕜'`-linear
+  (`TauCeti.tangentCoordChange_smul`).
 -/
 
 public section
@@ -110,6 +118,39 @@ theorem HasMFDerivAt.restrictScalars
     HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E') f x g' :=
   hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.restrictScalars 𝕜 hg)
 
+/-- If `g'` is a derivative of `f` within a set at a point for the models over `𝕜`, and `f'` is a
+`𝕜'`-linear map between the tangent spaces over `𝕜'` which agrees with `g'` once both are read in
+the model spaces, then `f'` is a derivative of `f` within that set at that point for the models
+over `𝕜'`. This is the converse of `HasMFDerivWithinAt.restrictScalars`. -/
+theorem HasMFDerivWithinAt.of_restrictScalars
+    {f' : TangentSpace 𝓘(𝕜', E) x →L[𝕜'] TangentSpace 𝓘(𝕜', E') (f x)}
+    {g' : TangentSpace 𝓘(𝕜, E) x →L[𝕜] TangentSpace 𝓘(𝕜, E') (f x)}
+    (h : HasMFDerivWithinAt 𝓘(𝕜, E) 𝓘(𝕜, E') f s x g')
+    (hg : ((tangentSpaceCastModel 𝓘(𝕜', E') (f x) : _ →L[𝕜'] E') ∘L f' ∘L
+        ((tangentSpaceCastModel 𝓘(𝕜', E) x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 =
+      (tangentSpaceCastModel 𝓘(𝕜, E') (f x) : _ →L[𝕜] E') ∘L g' ∘L
+        ((tangentSpaceCastModel 𝓘(𝕜, E) x).symm : E →L[𝕜] _)) :
+    HasMFDerivWithinAt 𝓘(𝕜', E) 𝓘(𝕜', E') f s x f' := by
+  have hf := h.2
+  simp only [mfld_simps] at hf hg
+  simp only [HasMFDerivWithinAt, mfld_simps]
+  exact ⟨h.1, hf.of_restrictScalars 𝕜 hg⟩
+
+/-- If `g'` is a derivative of `f` at a point for the models over `𝕜`, and `f'` is a `𝕜'`-linear map
+between the tangent spaces over `𝕜'` which agrees with `g'` once both are read in the model spaces,
+then `f'` is a derivative of `f` at that point for the models over `𝕜'`. This is the converse of
+`HasMFDerivAt.restrictScalars`. -/
+theorem HasMFDerivAt.of_restrictScalars
+    {f' : TangentSpace 𝓘(𝕜', E) x →L[𝕜'] TangentSpace 𝓘(𝕜', E') (f x)}
+    {g' : TangentSpace 𝓘(𝕜, E) x →L[𝕜] TangentSpace 𝓘(𝕜, E') (f x)}
+    (h : HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E') f x g')
+    (hg : ((tangentSpaceCastModel 𝓘(𝕜', E') (f x) : _ →L[𝕜'] E') ∘L f' ∘L
+        ((tangentSpaceCastModel 𝓘(𝕜', E) x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 =
+      (tangentSpaceCastModel 𝓘(𝕜, E') (f x) : _ →L[𝕜] E') ∘L g' ∘L
+        ((tangentSpaceCastModel 𝓘(𝕜, E) x).symm : E →L[𝕜] _)) :
+    HasMFDerivAt 𝓘(𝕜', E) 𝓘(𝕜', E') f x f' :=
+  hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.of_restrictScalars 𝕜 hg)
+
 /-- At a point where `f` is differentiable within a set for the models over `𝕜'`, and where the set
 has unique derivatives over the smaller field `𝕜`, the derivative of `f` within the set over `𝕜` is
 its derivative over `𝕜'` with scalars restricted to `𝕜`, both read in the model spaces. -/
@@ -140,3 +181,30 @@ theorem MDifferentiableAt.mfderiv_restrictScalars
         ((tangentSpaceCastModel 𝓘(𝕜', E) x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 := by
   simpa only [mfderivWithin_univ] using
     (h.mdifferentiableWithinAt.restrictScalars_mfderivWithin 𝕜 (uniqueMDiffWithinAt_univ _)).symm
+
+namespace TauCeti
+
+/-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the model over
+`𝕜` is the tangent coordinate change for the model over `𝕜'`, with scalars restricted to `𝕜`: both
+are the derivative of the same chart transition. For instance, the tangent coordinate changes of
+a complex manifold, regarded as a real manifold, are complex linear. -/
+theorem tangentCoordChange_restrictScalars [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘(𝕜, E) 1 M]
+    {y z : M} (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) :
+    tangentCoordChange 𝓘(𝕜, E) x y z = (tangentCoordChange 𝓘(𝕜', E) x y z).restrictScalars 𝕜 := by
+  have h' : z ∈ (extChartAt 𝓘(𝕜', E) x).source ∩ (extChartAt 𝓘(𝕜', E) y).source := by
+    simpa only [extChartAt_source] using h
+  have h₁ := (hasFDerivWithinAt_tangentCoordChange h').restrictScalars 𝕜
+  have h₂ := hasFDerivWithinAt_tangentCoordChange (I := 𝓘(𝕜, E)) h'
+  simp only [modelWithCornersSelf_coe, range_id] at h₁ h₂
+  exact (h₂.hasFDerivAt Filter.univ_mem).unique (h₁.hasFDerivAt Filter.univ_mem)
+
+/-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the model over
+`𝕜` is `𝕜'`-linear. For instance, the real tangent coordinate changes of a complex manifold are
+complex linear. -/
+theorem tangentCoordChange_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘(𝕜, E) 1 M] {y z : M}
+    (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) (c : 𝕜') (w : E) :
+    tangentCoordChange 𝓘(𝕜, E) x y z (c • w) = c • tangentCoordChange 𝓘(𝕜, E) x y z w := by
+  rw [tangentCoordChange_restrictScalars 𝕜 (𝕜' := 𝕜') h, ContinuousLinearMap.coe_restrictScalars',
+    map_smul]
+
+end TauCeti
