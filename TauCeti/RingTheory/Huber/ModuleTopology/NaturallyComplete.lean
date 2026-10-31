@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.ClosedSubmodule
 public import TauCeti.Topology.Algebra.Module.Finite
+import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
 # Naturally complete modules
@@ -178,9 +179,13 @@ theorem IsNaturallyComplete.isClosed_of_module_finite_topologicalClosure
 Corollary 1.2.11), over a complete Hausdorff Tate ring. -/
 theorem IsNaturallyComplete.eq_top_of_dense (h : IsNaturallyComplete A M) {N : Submodule A M}
     (hN : Dense (N : Set M)) : N = ⊤ := by
-  have htop : N.topologicalClosure = ⊤ := Submodule.dense_iff_topologicalClosure_eq_top.1 hN
-  have : Module.Finite A N.topologicalClosure := htop ▸ inferInstance
-  rw [← htop, (h.isClosed_of_module_finite_topologicalClosure this).submodule_topologicalClosure_eq]
+  obtain ⟨_, _⟩ := isNaturallyComplete_iff.1 h
+  have : (𝓤 A).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
+  have : FirstCountableTopology M := by
+    rw [eq_moduleTopology A M]
+    exact firstCountableTopology_moduleTopology
+  have : (𝓤 M).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
+  exact Huber.eq_top_of_dense_of_module_finite N hN
 
 /-- **A submodule with finitely generated closure in a naturally complete finite module is
 naturally complete** (Kedlaya–Liu II, Corollary 1.2.11), over a complete Hausdorff Tate ring: it

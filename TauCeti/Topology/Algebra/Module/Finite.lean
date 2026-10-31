@@ -25,11 +25,12 @@ uniformity, by `IsOpenQuotientMap.completeSpace` — completeness.
 
 Each theorem asks of `A` exactly what its proof consumes, and none of them needs `A` to be a
 Huber or a Tate ring. Separatedness is different: it is equivalent to closedness of the kernel of
-the presentation (`TauCeti.t2Space_moduleTopology_iff_isClosed_ker`), which is a genuinely
-arithmetic condition, and it is proved for a complete
-noetherian Tate ring in `TauCeti.RingTheory.Huber.FiniteModuleTopology`. For a finite
-*projective* module no arithmetic is needed: `M` is a direct summand of some `Aⁿ`, the section
-`M → Aⁿ` is a continuous injection, and so `M` is Hausdorff as soon as `A` is (compare
+the presentation (`TauCeti.t2Space_moduleTopology_iff_isClosed_ker` in
+`TauCeti.Topology.Algebra.Module.ModuleTopology`), which is a genuinely arithmetic condition,
+and it is proved for a complete noetherian Tate ring in
+`TauCeti.RingTheory.Huber.FiniteModuleTopology`. For a finite *projective* module no arithmetic
+is needed: `M` is a direct summand of some `Aⁿ`, the section `M → Aⁿ` is a continuous injection,
+and so `M` is Hausdorff as soon as `A` is (compare
 Kedlaya–Liu, Lemma 2.2.12(a), where the module topology of a finite projective module is
 identified with the subspace topology from such a summand embedding).
 
@@ -45,9 +46,6 @@ topology on `M` from typeclass search.
   the additive group of the module nonarchimedean.
 * `TauCeti.completeSpace_moduleTopology`: over a complete first-countable ring its canonical right
   uniformity is complete.
-* `TauCeti.t2Space_moduleTopology_iff_isClosed_ker`: the module topology on `M` is Hausdorff
-  exactly when the kernel of a linear surjection onto `M` from a module with its module topology is
-  closed.
 * `TauCeti.t2Space_moduleTopology_of_projective`: over a Hausdorff topological ring the module
   topology on a finite projective module is Hausdorff.
 
@@ -108,22 +106,6 @@ theorem completeSpace_moduleTopology [UniformSpace A] [IsTopologicalRing A]
   have _ : IsUniformAddGroup M := isUniformAddGroup_of_addCommGroup
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' A M
   exact (IsModuleTopology.isOpenQuotientMap_of_surjective hf).completeSpace
-
-omit [Module.Finite A M] in
-/-- **The module topology is Hausdorff exactly when the kernel of a presentation is closed.** For
-a linear surjection `q : F → M` from a module with its module topology, `moduleTopology A M` is
-Hausdorff if and only if `ker q` is closed in `F`. No finiteness is needed: the module topology on
-`M` is the quotient topology along `q`. -/
-theorem t2Space_moduleTopology_iff_isClosed_ker [TopologicalSpace A] {F : Type*}
-    [AddCommGroup F] [Module A F] [TopologicalSpace F] [IsModuleTopology A F] {q : F →ₗ[A] M}
-    (hq : Function.Surjective q) :
-    @T2Space M (moduleTopology A M) ↔ IsClosed (LinearMap.ker q : Set F) := by
-  let _ : TopologicalSpace M := moduleTopology A M
-  have _ : IsModuleTopology A M := ⟨rfl⟩
-  have _ : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
-  rw [IsTopologicalAddGroup.t2Space_iff_zero_closed,
-    ← (IsModuleTopology.isQuotientMap_of_surjective hq).isClosed_preimage]
-  rfl
 
 /-- **The module topology on a finite projective module over a Hausdorff topological ring is
 Hausdorff.** -/
