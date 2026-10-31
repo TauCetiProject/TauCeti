@@ -93,12 +93,14 @@ private theorem volumeElement_mul_basis (b : OrthonormalBasis (Fin n) ℝ V)
         powersetCard.mem_iff.1 t.2]
       exact hcard
   -- `e_t e_s = ε(t) vol`, and `ε(t) ^ 2 = 1`.
+  have hsq : ((powersetCard.sign t : ℤ) : ℝ) * ((powersetCard.sign t : ℤ) : ℝ) = 1 := by
+    rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
   have hvol : volumeElement Q o = ((powersetCard.sign t : ℤ) : ℝ) •
       (basis Q b.toBasis t * basis Q b.toBasis s) := by
     rw [basis_mul_basis_of_disjoint (b.isOrthoᵢ_associated hQ) hts,
       ← powersetCard.sign_eq_permOfDisjoint_sign (by omega) t s hts, hunion,
-      ← volumeElement_eq_basis o b hb, Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, smul_smul,
-      ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one, one_smul]
+      ← volumeElement_eq_basis o b hb]
+    simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, smul_smul, hsq, one_smul]
   have hss : basis Q b.toBasis s * basis Q b.toBasis s =
       algebraMap ℝ (CliffordAlgebra Q) ((-1) ^ (k + 1).choose 2) := by
     rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 s.2]
@@ -126,8 +128,9 @@ private theorem exteriorAction_volumeElement_of_orientation (b : OrthonormalBasi
     Submodule.subtype_apply]
   rw [o.hodgeStar_basis b hb hkl s, ← ExteriorAlgebra.basis_eq_coe_basis,
     ← equivExterior_basis Q, exteriorAction_equivExterior, volumeElement_mul_basis o hQ b hb hcard,
-    map_smul, equivExterior_basis, ExteriorAlgebra.basis_eq_coe_basis, Units.smul_def,
-    ← Int.cast_smul_eq_zsmul ℝ, Submodule.coe_smul, smul_smul]
+    map_smul, equivExterior_basis, ExteriorAlgebra.basis_eq_coe_basis]
+  -- Both sides are real multiples of `e_{sᶜ}`; compare the coefficients.
+  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, Submodule.coe_smul, smul_smul]
   congr 1
   set ε := ((powersetCard.sign s : ℤ) : ℝ)
   set ε' := ((powersetCard.sign (powersetCard.compl hcard s) : ℤ) : ℝ)
@@ -197,7 +200,8 @@ theorem baseChangeExteriorAction_complexVolume_of_eq_two_mul {ℓ : ℕ} (hn : n
     · exact hk.mul_right _
     · refine Even.mul_left (Nat.even_add_one.2 fun hl ↦ ?_) _
       exact Nat.not_even_iff_odd.2 hk ((Nat.even_add.1 (hkl' ▸ even_two_mul ℓ)).2 hl)
-  rw [show (n + 1) / 2 = ℓ by omega, pow_add Complex.I, hI]
+  have hhalf : (n + 1) / 2 = ℓ := by omega
+  rw [hhalf, pow_add Complex.I, hI]
   congr 1
   refine neg_one_pow_congr ?_
   rw [hsucc, add_assoc, Nat.even_add]

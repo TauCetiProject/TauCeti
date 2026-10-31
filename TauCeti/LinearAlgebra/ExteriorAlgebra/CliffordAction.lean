@@ -12,7 +12,6 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
 -- comparison of the two base-change maps, are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
-import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 
 /-!
 # The Clifford action on the exterior algebra
@@ -52,7 +51,6 @@ is the Clifford action on complex-valued forms.
 * `CliffordAlgebra.exteriorAction_ι`: a vector acts by exterior multiplication minus contraction.
 * `CliffordAlgebra.exteriorAction_apply_one`: acting on `1` is `CliffordAlgebra.equivExterior`.
 * `CliffordAlgebra.exteriorAction_involute`: the action commutes with the grade involutions.
-* `CliffordAlgebra.equivExterior_mem_evenOdd_iff`: `equivExterior` preserves the `ℤ/2`-grading.
 * `CliffordAlgebra.exteriorAction_mem_evenOdd`: the action is `ℤ/2`-graded.
 * `CliffordAlgebra.baseChangeExteriorAction_ofBaseChangeAux_tmul` and
   `CliffordAlgebra.baseChangeExteriorAction_ι_tmul`: the extended action on pure tensors.
@@ -120,16 +118,6 @@ theorem exteriorAction_involute (a : CliffordAlgebra Q) (x : ExteriorAlgebra R M
   rw [← equivExterior_involute, exteriorAction_equivExterior, exteriorAction_equivExterior,
     ← map_mul, equivExterior_involute]
 
-/-- **`CliffordAlgebra.equivExterior` preserves the `ℤ/2`-grading**: a Clifford element has
-parity `i` exactly when its image in the exterior algebra has parity `i`. -/
-theorem equivExterior_mem_evenOdd_iff {i : ZMod 2} {x : CliffordAlgebra Q} :
-    equivExterior Q x ∈ evenOdd (0 : QuadraticForm R M) i ↔ x ∈ evenOdd Q i := by
-  obtain rfl | rfl : i = 0 ∨ i = 1 := by revert i; decide
-  · rw [← involute_eq_self_iff, ← involute_eq_self_iff, ← equivExterior_involute,
-      (equivExterior Q).injective.eq_iff]
-  · rw [← involute_eq_neg_iff, ← involute_eq_neg_iff, ← equivExterior_involute, ← map_neg,
-      (equivExterior Q).injective.eq_iff]
-
 /-- **The action is `ℤ/2`-graded**: an element of parity `i` sends forms of parity `j` to forms of
 parity `i + j`. -/
 theorem exteriorAction_mem_evenOdd {i j : ZMod 2} {a : CliffordAlgebra Q}
@@ -159,6 +147,16 @@ def baseChangeExteriorAction :
     fun _ _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left _ _).comp
     (toBaseChange A Q)
 
+/-- An element whose image under `CliffordAlgebra.toBaseChange` is a pure tensor `w ⊗ c` acts on
+pure tensors factorwise: `(w * z) ⊗ c(c) ω`. -/
+private theorem baseChangeExteriorAction_tmul {a : CliffordAlgebra (Q.baseChange A)} {w : A}
+    {c : CliffordAlgebra Q} (ha : toBaseChange A Q a = w ⊗ₜ c) (z : A) (x : ExteriorAlgebra R M) :
+    baseChangeExteriorAction A Q a (z ⊗ₜ x) = (w * z) ⊗ₜ exteriorAction Q c x := by
+  rw [baseChangeExteriorAction, AlgHom.comp_apply, ha, Algebra.TensorProduct.lift_tmul,
+    AlgHom.comp_apply, Module.End.mul_apply, Module.End.baseChangeHom_apply_apply,
+    TensorProduct.liftAux_tmul, Algebra.ofId_apply, Module.algebraMap_end_apply]
+  simp [TensorProduct.smul_tmul']
+
 /-- The image of a real Clifford element acts on the second factor:
 `c(a) (z ⊗ ω) = z ⊗ c(a) ω`. -/
 @[simp]
@@ -166,21 +164,14 @@ theorem baseChangeExteriorAction_ofBaseChangeAux_tmul (a : CliffordAlgebra Q) (z
     (x : ExteriorAlgebra R M) :
     baseChangeExteriorAction A Q (ofBaseChangeAux A Q a) (z ⊗ₜ x) =
       z ⊗ₜ exteriorAction Q a x := by
-  rw [baseChangeExteriorAction, AlgHom.comp_apply, toBaseChange_ofBaseChangeAux,
-    Algebra.TensorProduct.lift_tmul, map_one, one_mul, AlgHom.comp_apply,
-    Module.End.baseChangeHom_apply_apply, TensorProduct.liftAux_tmul]
-  simp
+  rw [baseChangeExteriorAction_tmul A Q (toBaseChange_ofBaseChangeAux Q a), one_mul]
 
 /-- A vector `w ⊗ m` acts on pure tensors by `c(w ⊗ m) (z ⊗ ω) = (w z) ⊗ c(m) ω`. -/
 @[simp]
 theorem baseChangeExteriorAction_ι_tmul (w : A) (m : M) (z : A) (x : ExteriorAlgebra R M) :
     baseChangeExteriorAction A Q (ι (Q.baseChange A) (w ⊗ₜ m)) (z ⊗ₜ x) =
-      (w * z) ⊗ₜ exteriorAction Q (ι Q m) x := by
-  rw [baseChangeExteriorAction, AlgHom.comp_apply, toBaseChange_ι,
-    Algebra.TensorProduct.lift_tmul, AlgHom.comp_apply, Module.End.mul_apply,
-    Module.End.baseChangeHom_apply_apply, TensorProduct.liftAux_tmul, Algebra.ofId_apply,
-    Module.algebraMap_end_apply]
-  simp [TensorProduct.smul_tmul']
+      (w * z) ⊗ₜ exteriorAction Q (ι Q m) x :=
+  baseChangeExteriorAction_tmul A Q (toBaseChange_ι A Q w m) z x
 
 end BaseChange
 
