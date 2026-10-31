@@ -12,7 +12,6 @@ import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Analysis.Calculus.Deriv.Slope
-import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -56,6 +55,8 @@ variation passes to the limit `h → 0⁺`.
 
 * `TauCeti.perimeter_inter_ball_le_add_liminf`: the estimate at every radius, with the lower
   difference quotient of `m`.
+* `TauCeti.tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt`: the lower difference
+  quotient of `m` is its right derivative, where that exists.
 * `TauCeti.perimeter_inter_ball_le_add_of_hasDerivWithinAt`: the estimate at a radius where `m`
   has a right derivative.
 * `TauCeti.ae_perimeter_inter_ball_le`: `P(s ∩ ball x₀ r) ≤ P(s; ball x₀ r) + m'(r)` for almost
@@ -101,8 +102,7 @@ private theorem totalVariationOn_top_mul_indicator_le (hψ : ContDiff ℝ ∞ ψ
     hsupp ((h1.indicator₀ hs).locallyIntegrableOn _)).trans ?_
   rw [ENNReal.ofReal_one, one_mul, ← perimeter_def]
   gcongr
-  -- The derivative of `ψ` vanishes where `ψ` attains its maximum `1` or its minimum `0`, and is
-  -- at most `K` in the shell between.
+  -- The derivative of `ψ` vanishes off the shell, and is at most `K` in the shell.
   have hpt (x : E) : ‖fderiv ℝ ψ x‖ₑ * ‖s.indicator (1 : E → ℝ) x‖ₑ ≤
       (s ∩ (ball x₀ R \ ball x₀ r)).indicator (fun _ => (K : ℝ≥0∞)) x := by
     by_cases hxs : x ∈ s
@@ -113,15 +113,8 @@ private theorem totalVariationOn_top_mul_indicator_le (hψ : ContDiff ℝ ∞ ψ
         mul_one, ← ofReal_norm]
       exact (ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ hψK)).trans_eq
         ENNReal.ofReal_coe_nnreal
-    suffices fderiv ℝ ψ x = 0 by simp [this, enorm_eq_nnnorm]
-    rw [Set.mem_sdiff, not_and_or, not_not] at hxA
-    rcases hxA with hxA | hxA
-    · refine IsLocalMin.fderiv_eq_zero (Eventually.of_forall fun y => ?_)
-      rw [notMem_support.1 fun h => hxA (hψR h)]
-      exact hψ0 y
-    · refine IsLocalMax.fderiv_eq_zero (Eventually.of_forall fun y => ?_)
-      rw [hψ1 (ball_subset_closedBall hxA), Pi.one_apply]
-      exact hψle y
+    simp [notMem_support.1 fun h => hxA (support_fderiv_subset_ball_sdiff_ball hψ01 hψ1 hψR h),
+      enorm_eq_nnnorm]
   calc ∫⁻ x in (⊤ : Opens E), ‖fderiv ℝ ψ x‖ₑ * ‖s.indicator (1 : E → ℝ) x‖ₑ ∂μ
       ≤ ∫⁻ x, (s ∩ (ball x₀ R \ ball x₀ r)).indicator (fun _ => (K : ℝ≥0∞)) x ∂μ := by
         rw [Opens.coe_top, Measure.restrict_univ]
@@ -243,16 +236,13 @@ theorem perimeter_inter_ball_le_add_liminf (hs : NullMeasurableSet s μ) {U : Op
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun t ht =>
     perimeter_inter_closedBall_le_add_mul_liminf hs hr hU ht)
 
-/-- **Cutting by a ball at a differentiability radius.** For a null-measurable `s` and an open `U`
-containing `closedBall x₀ r`, if `m(ρ) = μ(s ∩ ball x₀ ρ)` has right derivative `D` at `r`, then
-`P(s ∩ ball x₀ r) ≤ P(s; U) + D`. -/
-theorem perimeter_inter_ball_le_add_of_hasDerivWithinAt (hs : NullMeasurableSet s μ)
-    {U : Opens E} (hU : closedBall x₀ r ⊆ U) {D : ℝ}
-    (hD : HasDerivWithinAt (fun ρ => μ.real (s ∩ ball x₀ ρ)) D (Ioi r) r) :
-    perimeter μ ⊤ (s ∩ ball x₀ r) ≤ perimeter μ U s + ENNReal.ofReal D := by
-  refine (perimeter_inter_ball_le_add_liminf hs hU).trans_eq ?_
-  congr 1
-  refine Tendsto.liminf_eq ?_
+/-- The difference quotients `μ(s ∩ (ball x₀ (r + h) \ ball x₀ r)) / h` of
+`m(ρ) = μ(s ∩ ball x₀ ρ)` tend, as `h → 0⁺`, to the right derivative of `m` at `r`, when it
+exists. -/
+theorem tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt (hs : NullMeasurableSet s μ)
+    {D : ℝ} (hD : HasDerivWithinAt (fun ρ => μ.real (s ∩ ball x₀ ρ)) D (Ioi r) r) :
+    Tendsto (fun h => μ (s ∩ (ball x₀ (r + h) \ ball x₀ r)) / ENNReal.ofReal h) (𝓝[>] 0)
+      (𝓝 (ENNReal.ofReal D)) := by
   -- The quotient is the slope of `m`, written in `ℝ≥0∞`.
   have hshift : Tendsto (fun h => r + h) (𝓝[>] 0) (𝓝[>] r) := by
     refine tendsto_nhdsWithin_iff.2 ⟨?_, eventually_nhdsWithin_of_forall fun h (hh : 0 < h) =>
@@ -271,6 +261,16 @@ theorem perimeter_inter_ball_le_add_of_hasDerivWithinAt (hs : NullMeasurableSet 
     ofReal_measureReal (measure_ne_top_of_subset hsub hfin), inter_sdiff_distrib_left,
     measure_sdiff hsub (hs.inter measurableSet_ball.nullMeasurableSet)
       (measure_ne_top_of_subset hsub hfin)]
+
+/-- **Cutting by a ball at a differentiability radius.** For a null-measurable `s` and an open `U`
+containing `closedBall x₀ r`, if `m(ρ) = μ(s ∩ ball x₀ ρ)` has right derivative `D` at `r`, then
+`P(s ∩ ball x₀ r) ≤ P(s; U) + D`. -/
+theorem perimeter_inter_ball_le_add_of_hasDerivWithinAt (hs : NullMeasurableSet s μ)
+    {U : Opens E} (hU : closedBall x₀ r ⊆ U) {D : ℝ}
+    (hD : HasDerivWithinAt (fun ρ => μ.real (s ∩ ball x₀ ρ)) D (Ioi r) r) :
+    perimeter μ ⊤ (s ∩ ball x₀ r) ≤ perimeter μ U s + ENNReal.ofReal D := by
+  rw [← (tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt hs hD).liminf_eq]
+  exact perimeter_inter_ball_le_add_liminf hs hU
 
 /-- **Cutting by a ball at almost every radius.** For a null-measurable `s` and almost every `r`,
 
