@@ -160,6 +160,29 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_algebraMap
     Scheme.Hom.pushforwardStructureAlgebra_one, Scheme.Modules.sectionsFunctor_ε]
   rfl
 
+-- Not simp lemmas: simp unfolds the inverse identification by
+-- `pushforwardStructureAlgebraΓRingEquiv_symm_apply`.
+/-- Under the identification of global sections of the function algebra with global functions,
+the structure map is pullback of global functions along the scheme morphism. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_algebraMap
+    (r : Γ(Y, ⊤)) :
+    f.pushforwardStructureAlgebraΓRingEquiv.symm
+        (algebraMap Γ(Y, ⊤) Γ(f.pushforwardStructureAlgebra.X, ⊤) r) = f.appTop r := by
+  rw [Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply,
+    Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_apply,
+    Scheme.Hom.pushforwardStructureAlgebra_algebraMap]
+  -- `f ⁻¹ᵁ ⊤` is `⊤` by definition, so the restriction is along an identity morphism.
+  exact ConcreteCategory.congr_hom (X.presheaf.map_id (op ⊤)) _
+
+/-- Under the identification of global sections of the function algebra with global functions,
+a global function `r` on the base acts by multiplication with its pullback along the scheme
+morphism. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_smul
+    (r : Γ(Y, ⊤)) (x : Γ(f.pushforwardStructureAlgebra.X, ⊤)) :
+    f.pushforwardStructureAlgebraΓRingEquiv.symm (r • x) =
+      f.appTop r * f.pushforwardStructureAlgebraΓRingEquiv.symm x := by
+  rw [Algebra.smul_def, map_mul, f.pushforwardStructureAlgebraΓRingEquiv_symm_algebraMap]
+
 /-- The presheaf of rings underlying the function algebra is naturally the direct image of
 the structure presheaf. -/
 def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso :
