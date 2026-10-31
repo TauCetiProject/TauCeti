@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Sym.Card
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.GlobalSections
 
 /-!
