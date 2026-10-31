@@ -488,27 +488,26 @@ noncomputable def logHom : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)) where
 @[simp]
 theorem logHom_toPowerSeries : F.logHom.toPowerSeries = F.log := (rfl)
 
-/-- The exponential, bundled as a homomorphism from the additive formal group. -/
-noncomputable def expHom : TauCeti.FormalGroupHom (𝔾ₐ (R := R)) F :=
-  F.logHom.ofInverse F.exp F.constantCoeff_exp F.subst_exp_log F.subst_log_exp
-
-@[simp]
-theorem expHom_toPowerSeries : F.expHom.toPowerSeries = F.exp := by
-  exact TauCeti.FormalGroupHom.ofInverse_toPowerSeries F.logHom F.exp
-    F.constantCoeff_exp F.subst_exp_log F.subst_log_exp
-
 /-- The normalized logarithm is a strict isomorphism from `F` to the additive formal group,
 with the formal exponential as its inverse. -/
 noncomputable def logIso : TauCeti.FormalGroupIso F (𝔾ₐ (R := R)) :=
-  .ofSubstEqX F.logHom F.expHom (by simp) (by simp)
+  F.logHom.toIso (by simp)
+
+/-- The exponential, bundled as a homomorphism from the additive formal group. -/
+noncomputable def expHom : TauCeti.FormalGroupHom (𝔾ₐ (R := R)) F :=
+  F.logIso.invHom
+
+@[simp]
+theorem expHom_toPowerSeries : F.expHom.toPowerSeries = F.exp := by
+  simp only [expHom, logIso, TauCeti.FormalGroupHom.toIso_invHom_toPowerSeries,
+    logHom, exp]
 
 @[simp]
 theorem logIso_toHom : F.logIso.toHom = F.logHom := by
-  simp only [logIso, TauCeti.FormalGroupIso.ofSubstEqX_toHom]
+  simp only [logIso, TauCeti.FormalGroupHom.toIso_toHom]
 
 @[simp]
-theorem logIso_invHom : F.logIso.invHom = F.expHom := by
-  simp only [logIso, TauCeti.FormalGroupIso.ofSubstEqX_invHom]
+theorem logIso_invHom : F.logIso.invHom = F.expHom := (rfl)
 
 instance : F.logIso.IsStrict where
   coeff_one := by simpa only [logIso_toHom, logHom_toPowerSeries] using F.coeff_one_log

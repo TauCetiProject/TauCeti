@@ -25,9 +25,10 @@ lifts, this is the orientation of `ℝ` in which `1` is positive, so it is the o
 oriented atlas (`AddCircle.orientation_eq_isOrientedAtlas_orientation`).
 
 The maps of the circle that the rest of the circle API constructs behave as expected for this
-orientation. The quotient map `ℝ → AddCircle p`, the charts, the translations and the rescalings
-`AddCircle p ≃ AddCircle q` preserve orientation; multiplication by an integer `k` preserves it
-when `k > 0` and reverses it when `k < 0`, and negation reverses it. All of these follow from
+orientation. The quotient map `ℝ → AddCircle p`, the charts, the translations, the rescalings
+`AddCircle p ≃ AddCircle q` and the covering maps `AddCircle p → AddCircle q` preserve orientation;
+multiplication by an integer `k` preserves it when `k > 0` and reverses it when `k < 0`, and
+negation reverses it. All of these follow from
 `AddCircle.isOrientationPreservingAt_of_mfderiv_eq_smul` and its reversing counterpart: a map of
 circles whose derivative is multiplication by a positive (negative) real number preserves
 (reverses) orientation.
@@ -44,8 +45,9 @@ circles whose derivative is multiplication by a positive (negative) real number 
   the quotient map and the charts are orientation preserving for the standard orientation of `ℝ`.
 * `AddCircle.isOrientationPreservingAt_add_right`, `AddCircle.isOrientationPreservingAt_zsmul`,
   `AddCircle.isOrientationReversingAt_zsmul`, `AddCircle.isOrientationReversingAt_neg`,
-  `AddCircle.isOrientationPreservingAt_diffeomorphAddCircle`: translations, integer
-  multiplications, negation and rescalings.
+  `AddCircle.isOrientationPreservingAt_diffeomorphAddCircle`,
+  `AddCircle.isOrientationPreservingAt_coverMap`: translations, integer multiplications, negation,
+  rescalings and covering maps.
 
 ## References
 
@@ -238,5 +240,13 @@ theorem isOrientationPreservingAt_diffeomorphAddCircle (n : ℕ∞ω) (x : AddCi
   isOrientationPreservingAt_of_mfderiv_eq_smul
     (mul_pos (inv_pos.mpr (Fact.out : 0 < p)) (Fact.out : 0 < q))
     (mfderiv_diffeomorphAddCircle p q n x)
+
+variable {p} in
+/-- For a period `p` that is an integer multiple of `q`, the covering map
+`AddCircle p → AddCircle q` preserves the positive orientations. -/
+theorem isOrientationPreservingAt_coverMap (h : p ∈ AddSubgroup.zmultiples q) (x : AddCircle p) :
+    IsOrientationPreservingAt (AddCircle.orientation p) (AddCircle.orientation q) (coverMap h) x :=
+  isOrientationPreservingAt_of_mfderiv_eq_smul one_pos
+    ((mfderiv_coverMap h x).trans (one_smul ℝ _).symm)
 
 end AddCircle

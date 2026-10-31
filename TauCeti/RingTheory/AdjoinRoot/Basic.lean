@@ -57,6 +57,11 @@ polynomial ring `R[X]/(X ^ n)`.
   right modules `M_j`, the quotients of the opposite ring by `op (x ^ j)`, and the quotient of
   `M_j` by the image of `x ^ m`, which has rank `min j m`.
 
+* `Polynomial.quotientSpanEquivAdjoinRoot`: the cyclic polynomial quotient as an `R`-module
+  is `AdjoinRoot f`; polynomial scalar multiplication becomes multiplication by its image.
+  This connects cyclic module structure theorems with `AdjoinRoot.mkₐ` through
+  `LinearMap.quotKerEquivOfSurjective`.
+
 Stated over arbitrary commutative rings.
 
 This is consumed by `TauCeti/AlgebraicGeometry/EllipticCurve/Affine/CoordinateRingMap.lean`, which
@@ -270,6 +275,45 @@ theorem algebraTensorAlgEquiv_symm_root :
 end TensorProduct
 
 end AdjoinRoot
+
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- The cyclic polynomial quotient, as an `R`-module, is `AdjoinRoot f`. -/
+-- Use the kernel of mkₐ to identify the quotients explicitly, including their module structures.
+noncomputable def quotientSpanEquivAdjoinRoot (f : R[X]) :
+    (R[X] ⧸ R[X] ∙ f) ≃ₗ[R] AdjoinRoot f :=
+  (Submodule.Quotient.restrictScalarsEquiv R (R[X] ∙ f)).symm.trans
+    ((Submodule.quotEquivOfEq _ _ (by
+        ext g
+        simp only [Submodule.restrictScalars_mem, Submodule.mem_span_singleton, smul_eq_mul,
+          LinearMap.mem_ker, AlgHom.toLinearMap_apply, AdjoinRoot.coe_mkₐ,
+          AdjoinRoot.mk_eq_zero, dvd_iff_exists_eq_mul_left]
+        exact exists_congr fun _ => eq_comm)).trans
+      ((AdjoinRoot.mkₐ f).toLinearMap.quotKerEquivOfSurjective (by
+        rw [AlgHom.coe_toLinearMap, AdjoinRoot.coe_mkₐ]
+        exact AdjoinRoot.mk_surjective)))
+
+/-- The equivalence sends the class of a polynomial to its image in `AdjoinRoot`. -/
+@[simp]
+theorem quotientSpanEquivAdjoinRoot_mk (f g : R[X]) :
+    quotientSpanEquivAdjoinRoot f (Ideal.Quotient.mk (R[X] ∙ f) g) = AdjoinRoot.mk f g := (rfl)
+
+/-- Polynomial scalar multiplication on the cyclic quotient becomes multiplication
+by the image of that polynomial in `AdjoinRoot`. -/
+@[simp]
+theorem quotientSpanEquivAdjoinRoot_smul (f g : R[X]) (y : R[X] ⧸ R[X] ∙ f) :
+    quotientSpanEquivAdjoinRoot f (g • y) =
+      AdjoinRoot.mk f g * quotientSpanEquivAdjoinRoot f y := by
+  induction y using Submodule.Quotient.induction_on with
+  | H h =>
+    rw [← Submodule.Quotient.mk_smul]
+    simp only [smul_eq_mul, Ideal.Quotient.mk_eq_mk, quotientSpanEquivAdjoinRoot_mk]
+    exact map_mul _ _ _
+
+end Polynomial
 
 
 end

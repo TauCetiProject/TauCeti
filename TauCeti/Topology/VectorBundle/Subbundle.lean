@@ -228,12 +228,12 @@ variable [Fintype ι]
 variable (𝕜 F X) in
 /-- The frame `X` near `y`, read in the trivialization of `E` at `y₀`, as an operator from
 coordinates to the model fibre. -/
-private def trivOperator (y₀ y : B) : (ι → 𝕜) →L[𝕜] F :=
+def trivOperator (y₀ y : B) : (ι → 𝕜) →L[𝕜] F :=
   ∑ i, (ContinuousLinearMap.proj i).smulRight (trivializationAt F E y₀ ⟨y, X i y⟩).2
 
 /-- Over the base set of the trivialization at `y₀`, the operator `trivOperator 𝕜 F X y₀ y` sends
 coordinates to the corresponding combination of the frame, read in that trivialization. -/
-private theorem trivOperator_apply {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).baseSet)
+theorem trivOperator_apply {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).baseSet)
     (c : ι → 𝕜) :
     trivOperator 𝕜 F X y₀ y c = (trivializationAt F E y₀ ⟨y, ∑ i, c i • X i y⟩).2 := by
   have h := (trivializationAt F E y₀).continuousLinearMapAt_apply_of_mem (R := 𝕜) hy
@@ -249,7 +249,9 @@ private theorem continuousAt_trivOperator (hX : IsSubbundleFrameOn F V X U) (hU 
   exact ((ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) F
     (ContinuousLinearMap.proj i)).continuous.continuousAt).comp h
 
-private theorem injective_trivOperator (hX : IsSubbundleFrameOn F V X U) {y₀ : B}
+/-- At a point `y₀` of `U`, the frame read in the trivialization of `E` at `y₀` is injective on
+coordinates. -/
+theorem injective_trivOperator (hX : IsSubbundleFrameOn F V X U) {y₀ : B}
     (hy₀ : y₀ ∈ U) : Injective (trivOperator 𝕜 F X y₀ y₀) := by
   intro c c' h
   have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) y₀

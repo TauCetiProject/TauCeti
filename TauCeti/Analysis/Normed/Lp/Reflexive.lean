@@ -9,9 +9,13 @@ public import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Reflexive
 
 /-!
-# `ℓ¹` is not reflexive
+# Reflexivity of `ℓᵖ`
 
-Over real or complex scalars, on an infinite index type, `ℓ¹` is not reflexive
+Over real or complex scalars, `ℓᵖ` is reflexive for `1 < p < ∞`
+(`lp.surjective_inclusionInDoubleDual`): its dual is `ℓ^q` for the conjugate exponent `q`, whose
+dual is in turn `ℓᵖ`, and the two scalar series pairings agree.
+
+On an infinite index type, `ℓ¹` is not reflexive
 (`lp.not_surjective_inclusionInDoubleDual_one`). Indeed `ℓ¹` is isometric to the dual of `c₀`,
 a Banach space is reflexive exactly when its dual is, and `c₀` is not reflexive. By James's
 basis criterion the coordinate basis of `ℓ¹` is therefore not shrinking. Together with the
@@ -57,5 +61,22 @@ theorem not_isShrinking_toSchauderBasis_unconditionalBasis_one :
     (unconditionalBasis (ι := ℕ) (𝕜 := 𝕜) ENNReal.one_ne_top).toSchauderBasis
       |>.surjective_inclusionInDoubleDual_of_isShrinking_of_isBoundedlyComplete h
         (isBoundedlyComplete_toSchauderBasis_unconditionalBasis _)
+
+/-- For `1 < p < ∞`, `ℓᵖ` is reflexive. -/
+theorem surjective_inclusionInDoubleDual {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp₁ : 1 < p) (hp : p ≠ ∞) :
+    Surjective (inclusionInDoubleDual 𝕜 (lp (fun _ : ι ↦ 𝕜) p)) := by
+  have : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
+  have hq : p.conjExponent ≠ ∞ := ((ENNReal.HolderConjugate.lt_top_iff_one_lt _ p).2 hp₁).ne
+  let D := dualEquiv 𝕜 ι p.conjExponent p hp
+  let D' := dualEquiv 𝕜 ι p p.conjExponent hq
+  intro Φ
+  -- The preimage of `Φ` is the element of `ℓᵖ` representing `Φ ∘ D` on `ℓ^q`.
+  set φ := Φ.comp D.toContinuousLinearEquiv.toContinuousLinearMap
+  refine ⟨D'.symm φ, ContinuousLinearMap.ext fun f ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := D.surjective f
+  have h : Φ (D a) = D' (D'.symm φ) a := by
+    simp [φ]
+  rw [dual_def, h]
+  simp only [D, D', dualEquiv_apply, mul_comm]
 
 end lp
