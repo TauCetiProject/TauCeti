@@ -64,6 +64,8 @@ for concordances which are already the standard strip near the arc `{-i} × ℝ`
   `TauCeti.SmoothEmbedding.Concordance.IsConnectedSumPosition.symm`,
   `TauCeti.SmoothEmbedding.Concordance.IsConnectedSumPosition.trans`: the constant, the reversed
   and the stacked concordances are in connected-sum position.
+* `TauCeti.SmoothEmbedding.Concordance.isConnectedSumPosition_of_mem_imp_eq`: a criterion for
+  connected-sum position, through the parameters at which a concordance is the standard strip.
 * `TauCeti.SmoothEmbedding.Concordance.connectedSum_refl`,
   `TauCeti.SmoothEmbedding.Concordance.symm_connectedSum`: the connected sum of constant
   concordances is constant, and reversal distributes over the connected sum.
@@ -204,6 +206,24 @@ theorem IsConnectedSumPosition.trans {K'' : SmoothCircleEmbedding (𝓡 n) (sphe
     rcases le_or_gt t (1 / 2) with ht | ht
     · simpa [trans_apply_of_le _ _ _ ht] using hF.inner_pos (p := (z, 3 * t)) hp
     · simpa [trans_apply_of_lt _ _ _ ht] using hG.inner_pos (p := (z, 3 * t - 2)) hp
+
+/-- A criterion for connected-sum position, through a continuous map `g` to the parameter circle
+and an open set `U` of parameters: the concordance `G` is the standard strip at every `q` with
+`g q ∈ U`, `g` maps the closed lower half of the circle into `U`, and elsewhere over the open upper
+half `G` lies over the open upper hemisphere. -/
+theorem isConnectedSumPosition_of_mem_imp_eq {G : Concordance K K'}
+    {g : Circle × ℝ → Circle} (hg : Continuous g) {U : Set Circle} (hU : IsOpen U)
+    (hstrip : ∀ q, g q ∈ U → G q = (greatCircle (n := n) ι q.1, q.2))
+    (hlow : ∀ q : Circle × ℝ, (q.1 : ℂ).im ≤ 0 → g q ∈ U)
+    (hpos : ∀ p : Circle × ℝ, 0 < (p.1 : ℂ).im → g p ∉ U → 0 < ⟪((G p).1 : E), ι Complex.I⟫) :
+    G.IsConnectedSumPosition ι := by
+  refine ⟨fun {p} hp => ?_, fun {p} hp => ?_⟩
+  · filter_upwards [(hU.preimage hg).mem_nhds (hlow p hp)] with q hq
+    exact hstrip q hq
+  · by_cases hgp : g p ∈ U
+    · rw [hstrip p hgp]
+      simpa [ι.inner_map_map, Complex.inner] using hp
+    · exact hpos p hp hgp
 
 /-! ### The turned-over second concordance -/
 
