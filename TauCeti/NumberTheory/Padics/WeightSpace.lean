@@ -24,10 +24,10 @@ Put `q = p` for odd `p` and `q = 4` for `p = 2`, `Δ = (ℤ/qℤ)ˣ` and `γ = e
 The restriction `s ↦ κ(exp(q s))` is a continuous additive character of `ℤ_p`
 (`TauCeti.WeightSpace.principalChar`). By Mahler's theorem in the form of Mathlib's
 `PadicInt.continuousAddCharEquiv`, when `R` is a normed `ℤ_p`-algebra with contractive action and
-ultrametric norm, the coordinate is topologically nilpotent and the character is the binomial
-series `s ↦ (1 + T_κ) ^ s = ∑ₙ (s choose n) T_κⁿ`. Conversely, if `R` is moreover commutative and
-complete, every pair of a homomorphism `η : Δ → Rˣ` and a topologically nilpotent `t ∈ R` comes
-from a unique weight,
+ultrametric norm, the coordinate is topologically nilpotent. If `R` is moreover complete, the
+character is the binomial series `s ↦ (1 + T_κ) ^ s = ∑ₙ (s choose n) T_κⁿ`. Conversely, if `R`
+is complete and commutative, every pair of a homomorphism `η : Δ → Rˣ` and a topologically
+nilpotent `t ∈ R` comes from a unique weight,
 
 `κ(x) = η(x mod q) · (1 + t) ^ (log (x / ω(x mod q)) / q)`   (`TauCeti.WeightSpace.ofCoord`).
 
@@ -47,8 +47,8 @@ nilpotence is the condition `‖T_κ‖ < 1` (`TauCeti.WeightSpace.norm_coord_lt
 ## Main results
 
 * `TauCeti.WeightSpace.tendsto_coord_pow`: the coordinate of a weight is topologically nilpotent.
-* `TauCeti.WeightSpace.principalChar_eq_addChar_of_value_at_one`: the principal part of a weight is
-  the binomial character `s ↦ (1 + T_κ) ^ s`.
+* `TauCeti.WeightSpace.principalChar_eq_addChar_of_value_at_one`: over a complete `R`, the principal
+  part of a weight is the binomial character `s ↦ (1 + T_κ) ^ s`.
 * `TauCeti.WeightSpace.ofCoord_finiteChar_coord`, `TauCeti.WeightSpace.finiteChar_ofCoord`,
   `TauCeti.WeightSpace.coord_ofCoord`: the two constructions are mutually inverse.
 
@@ -152,8 +152,8 @@ than one. -/
 theorem norm_coord_lt_one [NormMulClass R] (κ : WeightSpace p R) : ‖κ.coord‖ < 1 :=
   tendsto_pow_atTop_nhds_zero_iff_norm_lt_one.mp κ.tendsto_coord_pow
 
-/-- The principal part of a weight `κ` is the binomial character `s ↦ (1 + T_κ) ^ s`, the Mahler
-series `∑ₙ (s choose n) T_κⁿ`. -/
+/-- Over a complete `R`, the principal part of a weight `κ` is the binomial character
+`s ↦ (1 + T_κ) ^ s`, the Mahler series `∑ₙ (s choose n) T_κⁿ`. -/
 theorem principalChar_eq_addChar_of_value_at_one [CompleteSpace R] (κ : WeightSpace p R) :
     κ.principalChar = PadicInt.addChar_of_value_at_one κ.coord κ.tendsto_coord_pow :=
   PadicInt.eq_addChar_of_value_at_one _ κ.continuous_principalChar
