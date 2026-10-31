@@ -118,23 +118,23 @@ def endCoord (q : Puncture) (w : ℂ) : ℂ :=
 /-- The longitudinal coordinate of a point of an end. -/
 theorem re_endCoord (q : Puncture) (w : ℂ) :
     (q.endCoord w).re = -Real.log ‖(w - q.endCenter) / q.endScale‖ / (2 * π) := by
-  rw [endCoord, show (2 * (π : ℂ)) = ((2 * π : ℝ) : ℂ) by push_cast; ring,
-    Complex.div_ofReal_re, Complex.neg_re, Complex.log_re]
+  rw [endCoord, ← Complex.ofReal_ofNat, ← Complex.ofReal_mul, Complex.div_ofReal_re,
+    Complex.neg_re, Complex.log_re]
 
 /-- The angular coordinate of a point of an end. -/
 theorem im_endCoord (q : Puncture) (w : ℂ) :
     (q.endCoord w).im = -Complex.arg ((w - q.endCenter) / q.endScale) / (2 * π) := by
-  rw [endCoord, show (2 * (π : ℂ)) = ((2 * π : ℝ) : ℂ) by push_cast; ring,
-    Complex.div_ofReal_im, Complex.neg_im, Complex.log_im]
+  rw [endCoord, ← Complex.ofReal_ofNat, ← Complex.ofReal_mul, Complex.div_ofReal_im,
+    Complex.neg_im, Complex.log_im]
 
 /-- The end coordinate is a right inverse of the end lift away from the center of the end. -/
 theorem cylindricalEndLift_endCoord (q : Puncture) {w : ℂ} (hw : w ≠ q.endCenter) :
     q.cylindricalEndLift (q.endCoord w) = w := by
   have h : (w - q.endCenter) / q.endScale ≠ 0 :=
     div_ne_zero (sub_ne_zero.2 hw) q.endScale_ne_zero
-  rw [cylindricalEndLift_eq, endCoord,
-    show -(2 * (π : ℂ)) * (-Complex.log ((w - q.endCenter) / q.endScale) / (2 * π)) =
-      Complex.log ((w - q.endCenter) / q.endScale) by field_simp, Complex.exp_log h]
+  have hπ : 2 * (π : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
+  rw [cylindricalEndLift_eq, endCoord, neg_div, neg_mul_neg, mul_div_cancel₀ _ hπ,
+    Complex.exp_log h]
   field_simp [q.endScale_ne_zero]
   ring
 

@@ -60,6 +60,14 @@ def pairOfPantsPerturbation (H : Puncture → ℝ → M → ℝ) (w : ℂ) (x : 
   ∑ q, (smoothTransition (q.endSign * (q.endCoord w).re - 1) * H q (q.endCoord w).im x) •
     q.endAngularForm w
 
+/-- The defining equation of the perturbation: the cutoff-weighted sum over the three ends of
+`H_q(t_q(w), x) dt_q`. -/
+theorem pairOfPantsPerturbation_def (H : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
+    pairOfPantsPerturbation H w x =
+      ∑ q, (smoothTransition (q.endSign * (q.endCoord w).re - 1) * H q (q.endCoord w).im x) •
+        q.endAngularForm w := by
+  rw [pairOfPantsPerturbation]
+
 variable {H : Puncture → ℝ → M → ℝ}
 
 /-- Where the cutoff of the end `q` is nonzero, the point lies on the part `±s > 1` of that end,
