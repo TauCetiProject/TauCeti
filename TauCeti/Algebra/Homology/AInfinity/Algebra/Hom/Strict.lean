@@ -269,7 +269,9 @@ theorem isHomogeneous_barMap (f : AInfinityStrictHom AA BB) :
   rw [barMap_def]
   exact ReducedTensorWords.isHomogeneous_map _ _ (f.isHomogeneous_shift 1)
 
-private theorem taylor_comp_barMap (f : AInfinityStrictHom AA BB) :
+/-- The Taylor map of the target after the reduced-bar map is the strict morphism after the Taylor
+map of the source: a strict morphism commutes with every suspended operation. -/
+theorem taylor_comp_barMap (f : AInfinityStrictHom AA BB) :
     BB.taylor ∘ₗ f.barMap = f.toLinearMap ∘ₗ AA.taylor := by
   apply ReducedTensorWords.linearMap_ext
   intro n x
@@ -368,6 +370,13 @@ theorem taylor_toAInfinityHom (f : AInfinityStrictHom AA BB) :
     f.toAInfinityHom.taylor = f.toLinearMap ∘ₗ ReducedTensorWords.letter R A := by
   rw [AInfinityHom.taylor_def, barMap_toAInfinityHom, barMap_def,
     ReducedTensorWords.letter_comp_map]
+
+/-- Composing an `A∞` morphism with a strict morphism applies the strict morphism to its Taylor
+components. -/
+theorem taylor_toAInfinityHom_comp (g : AInfinityStrictHom BB CC) (f : AInfinityHom AA BB) :
+    (g.toAInfinityHom.comp f).taylor = g.toLinearMap ∘ₗ f.taylor := by
+  rw [AInfinityHom.taylor_comp, taylor_toAInfinityHom, LinearMap.comp_assoc,
+    ← AInfinityHom.taylor_def]
 
 /-- The linear part of a strict morphism is its underlying linear map. -/
 @[simp]

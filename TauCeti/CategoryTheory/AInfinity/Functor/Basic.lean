@@ -504,16 +504,15 @@ private theorem liftTaylor_comp_barDifferential :
       liftTaylor f hF hf ∘ₗ ℬ.barDifferential := by
   have hs : totalHomMap R F ∘ₗ (𝒞.induced F).taylor =
       𝒞.taylor ∘ₗ ReducedTensorWords.map (R := R) (totalHomMap R F) := by
-    have h := (𝒞.inducedInclusion hF).toAInfinityHom.taylor_comp_barMap
-    rw [AInfinityStrictHom.taylor_toAInfinityHom, AInfinityStrictHom.barMap_toAInfinityHom,
-      AInfinityStrictHom.barMap_def, AInfinityCategory.inducedInclusion_toLinearMap,
-      LinearMap.comp_assoc, AInfinityAlgebra.letter_comp_barDifferential] at h
-    exact h.symm
-  refine LinearMap.ext fun w ↦ totalHomMap_injective hF ?_
-  rw [← LinearMap.comp_apply (totalHomMap R F), ← LinearMap.comp_assoc, hs, LinearMap.comp_assoc,
-    ReducedTensorWords.map_comp_coalgHom, totalHomMap_comp_liftTaylor, ← f.barMap_eq_coalgHom,
-    f.taylor_comp_barMap, ← totalHomMap_comp_liftTaylor f hF hf, LinearMap.comp_assoc,
-    LinearMap.comp_apply]
+    simpa only [AInfinityStrictHom.barMap_def, AInfinityCategory.inducedInclusion_toLinearMap]
+      using ((𝒞.inducedInclusion hF).taylor_comp_barMap).symm
+  have h : totalHomMap R F ∘ₗ (𝒞.induced F).taylor ∘ₗ
+      ReducedTensorWords.coalgHom R (liftTaylor f hF hf) =
+        totalHomMap R F ∘ₗ liftTaylor f hF hf ∘ₗ ℬ.barDifferential := by
+    simp only [← LinearMap.comp_assoc, hs, totalHomMap_comp_liftTaylor]
+    simp only [LinearMap.comp_assoc, ReducedTensorWords.map_comp_coalgHom,
+      totalHomMap_comp_liftTaylor, ← f.barMap_eq_coalgHom, f.taylor_comp_barMap]
+  exact LinearMap.ext fun w ↦ totalHomMap_injective hF (LinearMap.congr_fun h w)
 
 /-- **An `A∞` morphism of total algebras which is path-compatible along an injective map of objects
 is an `A∞` functor.**  If `F : C → D` is injective and the Taylor map of
@@ -554,9 +553,8 @@ private theorem inducedInclusion_comp_of_taylor_eq
     (hψ : ψ.taylor = liftTaylor f hF hf) :
     (𝒞.inducedInclusion hF).toAInfinityHom.comp ψ = f := by
   refine AInfinityHom.ext ?_
-  rw [AInfinityHom.taylor_comp, AInfinityStrictHom.taylor_toAInfinityHom, LinearMap.comp_assoc,
-    ← AInfinityHom.taylor_def, hψ, AInfinityCategory.inducedInclusion_toLinearMap,
-    totalHomMap_comp_liftTaylor]
+  rw [AInfinityStrictHom.taylor_toAInfinityHom_comp, hψ,
+    AInfinityCategory.inducedInclusion_toLinearMap, totalHomMap_comp_liftTaylor]
 
 /-- The linear part of an `A∞` morphism into the total algebra of the induced category with the
 lifted Taylor map is the linear part of `f` after the map of total modules. -/
@@ -580,9 +578,8 @@ private theorem taylor_eq_liftTaylor_of_comp_eq
     (hψ : (𝒞.inducedInclusion hF).toAInfinityHom.comp ψ = f) :
     ψ.taylor = liftTaylor f hF hf := by
   have h := congrArg AInfinityHom.taylor hψ
-  rw [AInfinityHom.taylor_comp, AInfinityStrictHom.taylor_toAInfinityHom, LinearMap.comp_assoc,
-    ← AInfinityHom.taylor_def, AInfinityCategory.inducedInclusion_toLinearMap,
-    ← totalHomMap_comp_liftTaylor f hF hf] at h
+  rw [AInfinityStrictHom.taylor_toAInfinityHom_comp,
+    AInfinityCategory.inducedInclusion_toLinearMap, ← totalHomMap_comp_liftTaylor f hF hf] at h
   exact LinearMap.ext fun w ↦ totalHomMap_injective hF (LinearMap.congr_fun h w)
 
 /-- **Uniqueness of the factorization**: the `A∞` morphism of the functor of a path-compatible

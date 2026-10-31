@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.AInfinity.Functor.QuasiEquivalence
-public import TauCeti.CategoryTheory.AInfinity.Transfer
+public import TauCeti.CategoryTheory.AInfinity.Transfer.Basic
 
 /-!
 # The A-infinity functors of homological transfer
