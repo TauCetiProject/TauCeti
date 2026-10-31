@@ -22,7 +22,8 @@ points, including points with nilpotent, not necessarily zero, constant coeffici
 Base change along a ring homomorphism `φ : R →+* S` applies `φ` to the coefficients of the
 series: `TauCeti.FormalGroupHom.map` and `TauCeti.FormalGroupIso.map` carry homomorphisms and
 isomorphisms between `F` and `G` to ones between `F.map φ` and `G.map φ`, compatibly with
-identities, composition, inverses and strictness.
+identities, composition, inverses and strictness. Base change along the identity ring
+homomorphism does nothing, and successive base changes agree with base change along the composite.
 
 The bundles `TauCeti.FormalGroupHom`, `TauCeti.FormalGroupIso`, and
 `TauCeti.FormalGroupIso.IsStrict` are adapted from Wenrong Zou's Mathlib PR #38213
@@ -532,6 +533,20 @@ theorem map_comp (g : FormalGroupHom G H) (f : FormalGroupHom F G) (φ : R →+*
   -- `PowerSeries.map` is `MvPowerSeries.map` on the unit index type.
   exact PowerSeries.map_subst f.hasSubst g.toPowerSeries
 
+/-- Base change along the identity ring homomorphism does nothing. The formal groups
+`F.map (RingHom.id R)` and `F` are definitionally equal, so no transport is needed. -/
+@[simp]
+theorem map_ringHomId (f : FormalGroupHom F G) :
+    (f.map (RingHom.id R) : FormalGroupHom F G) = f := (rfl)
+
+/-- Successive base changes agree with base change along the composite. The formal groups
+`(F.map φ).map ψ` and `F.map (ψ.comp φ)` are definitionally equal, so no transport is
+needed. -/
+@[simp]
+theorem map_map {T : Type*} [CommRing T] (f : FormalGroupHom F G) (φ : R →+* S) (ψ : S →+* T) :
+    ((f.map φ).map ψ : FormalGroupHom (F.map (ψ.comp φ)) (G.map (ψ.comp φ))) =
+      f.map (ψ.comp φ) := (rfl)
+
 end FormalGroupHom
 
 namespace FormalGroupIso
@@ -573,6 +588,20 @@ theorem map_trans (e : FormalGroupIso F G) (e' : FormalGroupIso G H) (φ : R →
     (e.trans e').map φ = (e.map φ).trans (e'.map φ) := by
   ext : 1
   simp
+
+/-- Base change along the identity ring homomorphism does nothing. The formal groups
+`F.map (RingHom.id R)` and `F` are definitionally equal, so no transport is needed. -/
+@[simp]
+theorem map_ringHomId (e : FormalGroupIso F G) :
+    (e.map (RingHom.id R) : FormalGroupIso F G) = e := (rfl)
+
+/-- Successive base changes agree with base change along the composite. The formal groups
+`(F.map φ).map ψ` and `F.map (ψ.comp φ)` are definitionally equal, so no transport is
+needed. -/
+@[simp]
+theorem map_map {T : Type*} [CommRing T] (e : FormalGroupIso F G) (φ : R →+* S) (ψ : S →+* T) :
+    ((e.map φ).map ψ : FormalGroupIso (F.map (ψ.comp φ)) (G.map (ψ.comp φ))) =
+      e.map (ψ.comp φ) := (rfl)
 
 /-- The base change of a strict isomorphism is strict. -/
 instance (e : FormalGroupIso F G) [e.IsStrict] (φ : R →+* S) : (e.map φ).IsStrict where
