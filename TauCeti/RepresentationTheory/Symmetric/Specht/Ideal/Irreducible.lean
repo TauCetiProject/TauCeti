@@ -25,7 +25,8 @@ multiple of `c_t`, and Maschke's theorem says that `ℚ[Sₙ]` is semisimple.  T
 
 * If `c_t w = 0` for every `w ∈ W`, then `W` is square-zero: an element of `W` is `a c_t` by
   hypothesis, so a product of two elements of `W` is `a (c_t w) = 0`.  A square-zero left ideal
-  of a semisimple ring vanishes (`TauCeti.Submodule.eq_bot_of_forall_mul_eq_zero`), so `W = ⊥`.
+  is nil, and a nil left ideal of a semisimple ring vanishes
+  (`Submodule.eq_bot_of_forall_isNilpotent`), so `W = ⊥`.
 * Otherwise `c_t w ≠ 0` for some `w = a c_t ∈ W`, and `c_t w = c_t a c_t` is `κ • c_t` with
   `κ ≠ 0`.  It lies in `W`, hence so does `c_t`, hence so does the whole ideal it generates, and
   `W` is everything.
@@ -84,9 +85,9 @@ private theorem eq_bot_of_forall_youngSymmetrizer_mul_eq_zero (t : YoungTableau 
     {W : Submodule (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))
       (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))}
     (hle : W ≤ spechtIdeal t) (h : ∀ w ∈ W, youngSymmetrizer t * w = 0) : W = ⊥ :=
-  Submodule.eq_bot_of_forall_mul_eq_zero fun x hx y hy => by
+  Submodule.eq_bot_of_forall_isNilpotent fun x hx => ⟨2, by
     obtain ⟨a, rfl⟩ := (mem_spechtIdeal_iff t x).mp (hle hx)
-    rw [mul_assoc, h y hy, mul_zero]
+    rw [sq, mul_assoc, h _ hx, mul_zero]⟩
 
 /-- **The Young symmetrizer does not sandwich to zero**: some `c_t a c_t` is nonzero.  If they all
 vanished, the Specht ideal would be square-zero, hence zero, and it is not.  This is the raw form

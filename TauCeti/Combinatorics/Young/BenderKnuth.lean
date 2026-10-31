@@ -138,6 +138,11 @@ involution at `v` may move. -/
 def InBlock (T : SemistandardYoungTableau μ) (v i j : ℕ) : Prop :=
   (i, j) ∈ μ ∧ v ≤ T i j ∧ T i j ≤ v + 1
 
+/-- A cell is in the block of `v` when it carries `v` or `v + 1`. -/
+theorem inBlock_def (T : SemistandardYoungTableau μ) (v i j : ℕ) :
+    T.InBlock v i j ↔ (i, j) ∈ μ ∧ v ≤ T i j ∧ T i j ≤ v + 1 :=
+  Iff.rfl
+
 instance (T : SemistandardYoungTableau μ) (v i j : ℕ) : Decidable (T.InBlock v i j) :=
   inferInstanceAs (Decidable ((i, j) ∈ μ ∧ v ≤ T i j ∧ T i j ≤ v + 1))
 

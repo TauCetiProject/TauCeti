@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Pencil
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.FrobeniusFixed
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Frobenius.Fixed
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Fiber
 

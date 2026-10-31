@@ -12,7 +12,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.SpecificLimits.Basic
-import TauCeti.Analysis.Convolution
+import TauCeti.Analysis.Convolution.Basic
 
 /-!
 # The local `L¹` norm by duality with test vector fields

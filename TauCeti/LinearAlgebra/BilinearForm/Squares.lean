@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import Mathlib.LinearAlgebra.TensorPower.Symmetric
-public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 
 /-!
 # Bilinear forms from functionals on the second symmetric and exterior powers
@@ -43,7 +43,7 @@ semiring, the exterior side over a commutative ring, which is where Mathlib's ex
 The two maps are built as plain linear maps rather than as equivalences onto the symmetric and the
 alternating forms.  On the exterior side that equivalence is available: `ofExteriorSquareDual` is
 `exteriorPower.alternatingMapLinearEquiv`, the universal property of the exterior power, followed
-by `TauCeti.MultilinearMap.toBilinForm`, and its injectivity is the injectivity of that
+by `MultilinearMap.toBilinMap`, and its injectivity is the injectivity of that
 equivalence.  On the symmetric side Mathlib has no universal property of the symmetric power -- it
 is an explicit TODO of `Mathlib/LinearAlgebra/TensorPower/Symmetric.lean` -- so surjectivity onto
 the symmetric forms is not proved here; injectivity is read off the pure tensors spanning instead,
@@ -72,7 +72,7 @@ variable {k : Type} [CommSemiring k] [AddCommMonoid V] [Module k V]
 noncomputable def ofSymmetricSquareDual :
     Module.Dual k (Sym[k]^2V) →ₗ[k] BilinForm k V where
   toFun ψ :=
-    MultilinearMap.toBilinForm
+    MultilinearMap.toBilinMap
       (ψ.compMultilinearMap (SymmetricPower.tprod k (ι := Fin 2) (M := V)))
   map_add' ψ φ := by ext x y; simp
   map_smul' c ψ := by ext x y; simp
@@ -86,7 +86,7 @@ theorem ofSymmetricSquareDual_apply (ψ : Module.Dual k (Sym[k]^2V)) (x y : V) :
 see the order of the two arguments. -/
 theorem isSymm_ofSymmetricSquareDual (ψ : Module.Dual k (Sym[k]^2V)) :
     (ofSymmetricSquareDual ψ).IsSymm :=
-  MultilinearMap.isSymm_toBilinForm fun x y => by
+  MultilinearMap.isSymm_toBilinMap fun x y => by
     have hswap : ![x, y] ∘ Equiv.swap (0 : Fin 2) 1 = ![y, x] := by simp
     simp only [LinearMap.compMultilinearMap_apply, ← hswap]
     exact congrArg ψ (SymmetricPower.tprod_equiv (Equiv.swap (0 : Fin 2) 1) ![x, y])
@@ -99,7 +99,7 @@ theorem ofSymmetricSquareDual_injective :
   intro ψ φ hψφ
   have h : ψ.compMultilinearMap (SymmetricPower.tprod k (ι := Fin 2) (M := V)) =
       φ.compMultilinearMap (SymmetricPower.tprod k (ι := Fin 2) (M := V)) :=
-    MultilinearMap.toBilinForm_injective hψφ
+    MultilinearMap.toBilinMap_injective hψφ
   refine LinearMap.ext_on (SymmetricPower.span_tprod_eq_top k (Fin 2) V) ?_
   rintro _ ⟨f, rfl⟩
   simpa using DFunLike.congr_fun h f
@@ -115,7 +115,7 @@ alternating map the universal property of `⋀[k]^2 V` attaches to the functiona
 noncomputable def ofExteriorSquareDual :
     Module.Dual k (⋀[k]^2 V) →ₗ[k] BilinForm k V where
   toFun ψ :=
-    MultilinearMap.toBilinForm
+    MultilinearMap.toBilinMap
       (exteriorPower.alternatingMapLinearEquiv.symm ψ).toMultilinearMap
   map_add' ψ φ := by ext x y; simp
   map_smul' c ψ := by ext x y; simp
@@ -129,16 +129,14 @@ theorem ofExteriorSquareDual_apply (ψ : Module.Dual k (⋀[k]^2 V)) (x y : V) :
 to zero. -/
 theorem isAlt_ofExteriorSquareDual (ψ : Module.Dual k (⋀[k]^2 V)) :
     (ofExteriorSquareDual ψ).IsAlt :=
-  MultilinearMap.isAlt_toBilinForm fun x =>
-    (exteriorPower.alternatingMapLinearEquiv.symm ψ).map_eq_zero_of_eq ![x, x]
-      (i := 0) (j := 1) (by simp) (by decide)
+  (exteriorPower.alternatingMapLinearEquiv.symm ψ).isAlt_toBilinMap
 
 /-- **A functional on the exterior square is determined by the form it gives.** A functional is
 the alternating map the universal property attaches to it, and that map is the form. -/
 theorem ofExteriorSquareDual_injective :
     Function.Injective (ofExteriorSquareDual (k := k) (V := V)) := fun _ _ hψφ =>
   exteriorPower.alternatingMapLinearEquiv.symm.injective
-    (AlternatingMap.coe_multilinearMap_injective (MultilinearMap.toBilinForm_injective hψφ))
+    (AlternatingMap.coe_multilinearMap_injective (MultilinearMap.toBilinMap_injective hψφ))
 
 end CommRing
 
