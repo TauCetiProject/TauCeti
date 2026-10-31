@@ -13,9 +13,8 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
 -- Private: the ordered exterior-basis formula proves the empty and singleton basis identities.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
--- Private: `Module.finrank_linearMap` counts the endomorphisms of a spinor module, and
--- `forall_dual_apply_eq_zero_iff` shows that a spinor module is finite-dimensional.
-import Mathlib.LinearAlgebra.Dual.Lemmas
+-- Private: `Module.Finite.of_finite_end` shows that a spinor module is finite-dimensional.
+import TauCeti.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
@@ -95,9 +94,8 @@ isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filt
 * `CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`: a finite-dimensional module on which
   the Clifford algebra of a `2l`-dimensional space acts as its whole endomorphism algebra has
   dimension `2 ^ l`.
-* `CliffordAlgebra.finite_of_algEquiv_end` and `CliffordAlgebra.even_finrank_of_algEquiv_end`: a
-  module whose endomorphism algebra is isomorphic to the Clifford algebra is finite-dimensional,
-  and the underlying space then has even dimension.
+* `CliffordAlgebra.even_finrank_of_algEquiv_end`: if a module's endomorphism algebra is
+  isomorphic to the Clifford algebra, the underlying space has even dimension.
 
 ## References
 
@@ -298,28 +296,14 @@ theorem finrank_eq_two_pow_of_bijective_lsmul [Invertible (2 : K)] [Module.Finit
     sq] at hdim
   exact Nat.mul_self_inj.1 hdim.symm
 
-/-- **A spinor module of a Clifford algebra is finite-dimensional.** If the finite-dimensional
-algebra `CliffordAlgebra Q` is isomorphic to the endomorphism algebra of `S`, then `S` is
-finite-dimensional: for `x ≠ 0`, evaluation at `x` maps `End_K S` onto `S`. -/
-theorem finite_of_algEquiv_end [Module.Finite K (CliffordAlgebra Q)] {S : Type*} [AddCommGroup S]
-    [Module K S] (ρ : CliffordAlgebra Q ≃ₐ[K] Module.End K S) : Module.Finite K S := by
-  have : Module.Finite K (Module.End K S) := Module.Finite.equiv ρ.toLinearEquiv
-  rcases subsingleton_or_nontrivial S with _ | _
-  · infer_instance
-  obtain ⟨x, hx⟩ := exists_ne (0 : S)
-  obtain ⟨φ, hφ⟩ : ∃ φ : Dual K S, φ x ≠ 0 := by
-    by_contra! h
-    exact hx ((forall_dual_apply_eq_zero_iff K x).1 h)
-  exact Module.Finite.of_surjective (LinearMap.applyₗ x)
-    fun y ↦ ⟨(φ x)⁻¹ • φ.smulRight y, by simp [hφ]⟩
-
 /-- **Only even-dimensional spaces have spinor modules.** If `CliffordAlgebra Q` is isomorphic to
 the endomorphism algebra of `S`, then `finrank K V` is even: comparing dimensions gives
 `2 ^ finrank K V = (finrank K S) ^ 2`. -/
 theorem even_finrank_of_algEquiv_end [Invertible (2 : K)] [Module.Finite K V] {S : Type*}
     [AddCommGroup S] [Module K S] (ρ : CliffordAlgebra Q ≃ₐ[K] Module.End K S) :
     Even (finrank K V) := by
-  have := finite_of_algEquiv_end Q ρ
+  have : Module.Finite K (Module.End K S) := Module.Finite.equiv ρ.toLinearEquiv
+  have := Module.Finite.of_finite_end K S
   have hdim := ρ.toLinearEquiv.finrank_eq
   rw [finrank_eq_two_pow, Module.finrank_linearMap] at hdim
   obtain ⟨k, -, hk⟩ := (Nat.dvd_prime_pow Nat.prime_two).1 (Dvd.intro _ hdim.symm)
