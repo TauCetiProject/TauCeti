@@ -88,7 +88,9 @@ the constructed one, so it is available before, and independently of, uniqueness
   `∂Ω`.
 * `TauCeti.PDE.forall_energyFormH1_eq_setIntegral_iff_forall_testFunction` and
   `TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`: for bounded coefficients it is
-  enough to test the weak formulation against `C_c^∞(Ω)`.
+  enough to test the weak formulation against `C_c^∞(Ω)`; conversely
+  `TauCeti.PDE.IsWeakSolutionDirichlet.energyFormH1_ofTestFunctionₗ` tests a weak solution against
+  `C_c^∞(Ω)` with no hypothesis on the coefficients.
 * `TauCeti.PDE.isCoercive_energyFormH1L0`: a diagonal lower bound packaged as `IsCoercive`, and
   `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormH1L0_of_mass_lower_bound`: coercivity
   when the potential absorbs the drift.
@@ -218,10 +220,9 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
     (dirichletForcing_apply f v).symm.trans (dirichletForcing_apply_eq_setIntegral f v)
   have htest : ∀ φ : 𝓓(Omega, ℝ),
       ∫ x in Omega, f x * W1p.value (W1p.ofTestFunctionₗ mu Omega 2 φ) x ∂mu
-        = ∫ x in Omega, f x * φ x ∂mu := fun φ => by
-    refine integral_congr_ae ?_
-    filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-    rw [W1p.value_ofTestFunctionₗ, hx]
+        = ∫ x in Omega, f x * φ x ∂mu := fun φ =>
+    integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx =>
+      congrArg (f x * ·) hx)
   refine ⟨fun h φ => (h ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans (htest φ),
     fun h v => ?_⟩
   have hclosed : IsClosed {v : W1p mu Omega 2 |
@@ -235,6 +236,18 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
       (hforce ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).symm) v.2
   rw [← energyFormH1L_apply hcoeff, ← hforce v]
   exact hmem
+
+/-- A weak solution satisfies the weak equation `a(u, φ) = ∫_Ω f φ` against every test function
+`φ ∈ C_c^∞(Ω)`. Unlike the converse in
+`TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`, this needs no bound on the
+coefficients. -/
+theorem IsWeakSolutionDirichlet.energyFormH1_ofTestFunctionₗ {f : Lp ℝ 2 (mu.restrict Omega)}
+    {u : W1p0 mu Omega 2} (hu : IsWeakSolutionDirichlet a b c f u) (φ : 𝓓(Omega, ℝ)) :
+    energyFormH1 a b c (u : W1p mu Omega 2) (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, f x * φ x ∂mu :=
+  ((isWeakSolutionDirichlet_iff f u).1 hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans
+    (integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx =>
+      congrArg (f x * ·) hx))
 
 /-- **Testing against test functions suffices.** When the energy density is essentially bounded,
 so that the energy form is continuous on `H¹(Ω)`, `u` is a weak solution as soon as the weak

@@ -37,7 +37,8 @@ compactness nor closedness of `K` carries any measurability with it. (Absent a s
 `K` need not even be closed, but that is the lesser obstacle.)
 
 Pointwise suprema and infima of locally integrable functions are locally integrable in a
-normed lattice with solid norm.
+normed lattice with solid norm, and finite sums of functions locally integrable on a set are
+locally integrable on it.
 
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
@@ -75,6 +76,8 @@ everywhere there with a function that is locally integrable on the whole space a
   zero extension when the support avoids the added boundary.
 * `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_isCompact`: integrability of the
   extension by zero of a locally integrable function supported in a null-measurable compact subset.
+* `MeasureTheory.locallyIntegrableOn_finsetSum`: finite sums preserve local integrability on a
+  set.
 * `MeasureTheory.LocallyIntegrable.inner_const`: pairing with a fixed vector preserves local
   integrability.
 * `MeasureTheory.LocallyIntegrable.indicator₀`: restriction to a null-measurable set preserves
@@ -126,6 +129,20 @@ theorem inf (hf : LocallyIntegrableOn f s μ) (hg : LocallyIntegrableOn g s μ) 
     (hfU.mono_set inter_subset_left).inf (hgV.mono_set inter_subset_right)⟩
 
 end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory
+
+/-- A finite sum of functions locally integrable on a set is locally integrable on it. This is the
+local form of `MeasureTheory.locallyIntegrable_finsetSum`. -/
+theorem locallyIntegrableOn_finsetSum {X F ι : Type*} [MeasurableSpace X] [TopologicalSpace X]
+    [NormedAddCommGroup F] {μ : Measure X} {s : Set X} (t : Finset ι) {f : ι → X → F}
+    (hf : ∀ i ∈ t, LocallyIntegrableOn (f i) s μ) :
+    LocallyIntegrableOn (fun x => ∑ i ∈ t, f i x) s μ := by
+  simpa only [← Finset.sum_apply] using Finset.sum_induction f
+    (fun g => LocallyIntegrableOn g s μ) (fun _ _ => LocallyIntegrableOn.add)
+    (fun _ _ => ⟨univ, Filter.univ_mem, integrableOn_zero⟩) hf
+
+end MeasureTheory
 
 namespace MeasureTheory
 
