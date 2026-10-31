@@ -246,6 +246,13 @@ def HasDunfordPettisProperty : Prop :=
 
 variable {𝕜 E}
 
+/-- Unfolding lemma for `TauCeti.HasDunfordPettisProperty`. -/
+theorem hasDunfordPettisProperty_def :
+    HasDunfordPettisProperty 𝕜 E ↔
+      ∀ (F : Type u) [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+        (T : E →L[𝕜] F), T.IsWeaklyCompact → T.IsDunfordPettis :=
+  Iff.rfl
+
 open ZeroAtInftyContinuousMap UniformSpace in
 /-- **The Dunford–Pettis property, sequence criterion**, forward direction: if `E` has the
 Dunford–Pettis property, `x` is weakly null in `E` and `f` is weakly null in the dual, then
