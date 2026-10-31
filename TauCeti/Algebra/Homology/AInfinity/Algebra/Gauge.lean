@@ -64,7 +64,9 @@ with the exponential `exp D = ∑ Dʳ / r!`, which is a coalgebra automorphism f
 * `TauCeti.AInfinityAlgebra.isIso_comapBarEquivHom` and `TauCeti.AInfinityAlgebra.isIso_gaugeHom`:
   both morphisms are `A∞` isomorphisms.
 * `TauCeti.AInfinityHom.taylor_eq_taylor_comp_coalgHom_sub_brace`: the morphism equation of an
-  `A∞` morphism with Taylor map `letter + ψ`, in the form `m_𝒜 = m_ℋ ∘ F - ψ{m_𝒜}`.
+  `A∞` morphism with Taylor map `letter + ψ`, in the form `m_𝒜 = m_ℋ ∘ F - ψ{m_𝒜}`, and
+  `TauCeti.AInfinityHom.taylor_sub_taylor_apply_eq_hochschildDifferential`: to first order,
+  `m_𝒜 - m_ℋ = δψ` on short words.
 * `TauCeti.AInfinityAlgebra.taylor_gauge`: the recursive formula `m' = m ∘ F - φ{m'}`.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_apply_eq_zero_of_mem_filtration`: the
   Hochschild differential of a cochain vanishing on the words of length at most `e` vanishes on
@@ -97,6 +99,27 @@ universe uR uA uB
 
 namespace TauCeti
 
+namespace AInfinityAlgebra
+
+open ReducedTensorWords
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
+  {𝒜 ℋ : AInfinityAlgebra R A}
+
+/-- If `ψ` vanishes on the words of length at most `e` and `𝒜` agrees with `ℋ` on the words of
+length at most `k`, then `ψ{m_𝒜}` agrees with `ψ{m_ℋ}` on the words of length at most `e + k`. -/
+theorem brace_taylor_apply_eq_of_mem_filtration {ψ : ReducedTensorWords R A →ₗ[R] A}
+    {e k : ℕ} (hψ : ∀ z ∈ filtration R A e, ψ z = 0)
+    (h : ∀ z ∈ filtration R A k, 𝒜.taylor z = ℋ.taylor z) {z : ReducedTensorWords R A}
+    (hz : z ∈ filtration R A (e + k)) :
+    brace (ℋ.grading.shift 1) ψ 𝒜.taylor 1 z = brace (ℋ.grading.shift 1) ψ ℋ.taylor 1 z := by
+  have hsplit : 𝒜.taylor = ℋ.taylor + (𝒜.taylor - ℋ.taylor) := (add_sub_cancel _ _).symm
+  rw [hsplit, brace_add_right, LinearMap.add_apply,
+    brace_apply_eq_zero_of_mem_filtration _ 1 (k := e) (j := k) (g := 𝒜.taylor - ℋ.taylor) hψ
+      (fun w hw ↦ by rw [LinearMap.sub_apply, h w hw, sub_self]) hz, add_zero]
+
+end AInfinityAlgebra
+
 namespace AInfinityHom
 
 open ReducedTensorWords
@@ -117,6 +140,39 @@ theorem taylor_eq_taylor_comp_coalgHom_sub_brace (f : AInfinityHom 𝒜 ℋ)
   rw [f.barMap_eq_coalgHom, hf, LinearMap.add_comp, AInfinityAlgebra.letter_comp_barDifferential,
     AInfinityAlgebra.barDifferential_def, hG] at h
   rw [h, brace_def, add_sub_cancel_right]
+
+/-- **The morphism equation to first order.**  Let `f : 𝒜 ⟶ ℋ` be an `A∞` morphism between
+structures with the same grading whose Taylor map is `letter` on the words of length at most `e`,
+and let `𝒜` agree with `ℋ` on the words of length at most `j`.  Then on the words of length at most
+`k`, for `k ≤ 2 e + 1` and `k ≤ e + j`, the difference `m_𝒜 - m_ℋ` is the Hochschild differential
+of `ψ = f.taylor - letter`: there the morphism equation `m_𝒜 = m_ℋ ∘ F - ψ{m_𝒜}` involves `ψ`
+only once. -/
+theorem taylor_sub_taylor_apply_eq_hochschildDifferential (f : AInfinityHom 𝒜 ℋ)
+    (hG : 𝒜.grading = ℋ.grading) {e j k : ℕ} (hk : k ≤ 2 * e + 1) (hkj : k ≤ e + j)
+    (hf : ∀ z ∈ filtration R A e, f.taylor z = letter R A z)
+    (h : ∀ z ∈ filtration R A j, 𝒜.taylor z = ℋ.taylor z) {z : ReducedTensorWords R A}
+    (hz : z ∈ filtration R A k) :
+    𝒜.taylor z - ℋ.taylor z = ℋ.hochschildDifferential 0 (f.taylor - letter R A) z := by
+  have hψ : ∀ w ∈ filtration R A e, (f.taylor - letter R A) w = 0 := fun w hw ↦ by
+    rw [LinearMap.sub_apply, hf w hw, sub_self]
+  have key := LinearMap.congr_fun
+    (f.taylor_eq_taylor_comp_coalgHom_sub_brace hG (add_sub_cancel (letter R A) f.taylor).symm) z
+  rw [LinearMap.sub_apply, LinearMap.comp_apply,
+    coalgHom_letter_add_apply_of_mem_filtration hψ (filtration_monotone R A hk hz), map_add,
+    AInfinityAlgebra.brace_taylor_apply_eq_of_mem_filtration hψ h
+      (filtration_monotone R A hkj hz)] at key
+  rw [AInfinityAlgebra.hochschildDifferential_zero_apply, key]
+  abel
+
+/-- The Taylor map of an `A∞` morphism between structures with the same grading differs from
+`letter` by a cochain of degree zero. -/
+theorem isHomogeneous_taylor_sub_letter (f : AInfinityHom 𝒜 ℋ)
+    (hG : 𝒜.grading = ℋ.grading) :
+    LinearMap.IsHomogeneous (f.taylor - letter R A) (gradedPiece (ℋ.grading.shift 1))
+      (ℋ.grading.shift 1).piece 0 := by
+  have hf₀ := f.isHomogeneous_taylor
+  rw [hG] at hf₀
+  exact hf₀.sub (isHomogeneous_letter _)
 
 end AInfinityHom
 
