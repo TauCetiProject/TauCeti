@@ -234,6 +234,16 @@ def singularCohomologyIsoGroupCohomology [ContractibleSpace E] (n : ℕ) :
       (hG.singularCochainComplexIsoLinearYonedaObj k M) ≪≫
     (groupCohomologyIso _ n (singularChainsResolution k E G)).symm
 
+/-- The comparison `Hⁿ(B; M) ≅ Hⁿ(G, M)` is the cohomology of the comparison of cochains followed
+by the inverse of `groupCohomologyIso` for the resolution by singular chains of `E`. -/
+lemma singularCohomologyIsoGroupCohomology_hom_eq [ContractibleSpace E] (n : ℕ) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hG.isCancelSMul
+    (hG.singularCohomologyIsoGroupCohomology k M n).hom =
+      HomologicalComplex.homologyMap (hG.singularCochainComplexIsoLinearYonedaObj k M).hom n ≫
+        (groupCohomologyIso _ n (singularChainsResolution k E G)).inv :=
+  Iso.trans_hom _ _
+
 /-- **The comparison of singular cohomology with group cohomology is natural in the
 coefficients**: for the quotient covering map `p : E ⟶ B` of an action of `G` with contractible
 total space and a `k`-linear map `f : M →ₗ[k] N`, the isomorphisms `Hⁿ(B; M) ≅ Hⁿ(G, M)` and
@@ -253,16 +263,11 @@ theorem singularCohomologyIsoGroupCohomology_hom_naturality [ContractibleSpace E
   have := hG.isCancelSMul
   -- The comparison is the cohomology of the comparison of cochains followed by the inverse of
   -- `groupCohomologyIso` for the resolution by singular chains of `E`, and both are natural.
-  have e (L : Type u) [AddCommGroup L] [Module k L] :
-      (hG.singularCohomologyIsoGroupCohomology k L n).hom =
-        HomologicalComplex.homologyMap (hG.singularCochainComplexIsoLinearYonedaObj k L).hom n ≫
-          (groupCohomologyIso _ n (singularChainsResolution k E G)).inv :=
-    Iso.trans_hom _ _
   have hcochains := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
     (congrArg (HomologicalComplex.homologyMap · n)
       (hG.singularCochainComplexIsoLinearYonedaObj_hom_naturality k M f)).trans
         (HomologicalComplex.homologyMap_comp _ _ n)
-  rw [e, e]
+  rw [singularCohomologyIsoGroupCohomology_hom_eq, singularCohomologyIsoGroupCohomology_hom_eq]
   -- The two naturality squares are pasted in term mode: the complex of
   -- `singularChainsResolution k E G` is `singularChainsRep k E G` only by unfolding, so the
   -- composites do not typecheck at the transparency `rw` uses.
@@ -342,19 +347,12 @@ theorem singularCohomologyMap_comp_singularCohomologyIsoGroupCohomology_hom [Con
   have := hH.isCancelSMul
   -- The comparison is the cohomology of the comparison of cochains followed by the inverse of
   -- `groupCohomologyIso` for the resolution by singular chains, and both are natural.
-  have eG : (hG.singularCohomologyIsoGroupCohomology k M n).hom =
-      HomologicalComplex.homologyMap (hG.singularCochainComplexIsoLinearYonedaObj k M).hom n ≫
-        (groupCohomologyIso _ n (singularChainsResolution k E G)).inv :=
-    Iso.trans_hom _ _
-  have eH : (hH.singularCohomologyIsoGroupCohomology k M n).hom =
-      HomologicalComplex.homologyMap (hH.singularCochainComplexIsoLinearYonedaObj k M).hom n ≫
-        (groupCohomologyIso _ n (singularChainsResolution k F H)).inv :=
-    Iso.trans_hom _ _
   have hcochains := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
     (congrArg (HomologicalComplex.homologyMap · n)
       (hG.singularCochainComplexMap_comp_singularCochainComplexIsoLinearYonedaObj_hom k M hH f hf b
         hb)).trans (HomologicalComplex.homologyMap_comp _ _ n)
-  rw [eG, eH]
+  rw [hG.singularCohomologyIsoGroupCohomology_hom_eq,
+    hH.singularCohomologyIsoGroupCohomology_hom_eq]
   -- The two naturality squares are pasted in term mode: the complex of
   -- `singularChainsResolution k E G` is `singularChainsRep k E G` only by unfolding, so the
   -- composites do not typecheck at the transparency `rw` uses.
