@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Mod
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Equalizers
+public import TauCeti.CategoryTheory.Monoidal.Mod.Bimodule
 
 /-!
 # Internal homs of modules over an internal monoid
@@ -20,7 +21,8 @@ postcomposition with the action on `N`. Tensoring a module on the right with an 
 are the maps `K ⟶ Hom_A(M, N)`. No braiding is needed for this.
 
 When `C` is braided and `A` is commutative, `Hom_A(M, N)` is itself a left `A`-module, with
-`(a • f) m = f (a • m)`, and module maps act on it by postcomposition. This is the internal hom
+`(a • f) m = f (a • m)`, and module maps act on it by postcomposition. The action is built from the
+right action `m ⊗ a ↦ a • m` of the canonical bimodule `Mod.toBimod.obj M`. This is the internal hom
 `Mod.internalHom M` of left `A`-modules. For symmetric spectra, the modules over the commutative
 sphere monoid of symmetric sequences, it is the function spectrum.
 
@@ -244,63 +246,17 @@ end ihom
 
 section commutative
 
-variable [BraidedCategory C] [IsCommMonObj A]
-
-/-- Over a commutative monoid, a left module is also acted on from the right, through the inverse
-braiding: `m ⊗ a ↦ a • m`. -/
-private noncomputable def rightSmul (M : Mod C A) : M.X ⊗ A ⟶ M.X :=
-  (β_ A M.X).inv ≫ γ[A, M.X]
-
-/-- Over a commutative monoid the right action is `A`-linear in the module variable. -/
-private lemma smul_comp_rightSmul (M : Mod C A) :
-    (α_ A M.X A).inv ≫ γ[A, M.X] ▷ A ≫ rightSmul M = A ◁ rightSmul M ≫ γ[A, M.X] := by
-  simp only [rightSmul, whiskerLeft_comp, Category.assoc]
-  have h := ModObj.assoc_flip (M := A) M.X
-  simp only [selfLeftAction_actionHomRight, selfLeftAction_actionHomLeft,
-    selfLeftAction_actionAssocIso] at h
-  rw [reassoc_of% braiding_inv_naturality_left γ[A, M.X] A, h]
-  simp only [selfLeftAction_actionObj]
-  rw [reassoc_of% hexagon_forward_inv, ← comp_whiskerRight_assoc, IsCommMonObj.mul_comm']
-
-omit [IsCommMonObj A] in
-/-- The unit acts trivially from the right. -/
-private lemma whiskerLeft_one_comp_rightSmul (M : Mod C A) :
-    M.X ◁ η[A] ≫ rightSmul M = (ρ_ M.X).hom := by
-  rw [rightSmul, reassoc_of% braiding_inv_naturality_right M.X η[A]]
-  have h := ModObj.one_smul (M := A) M.X
-  simp only [selfLeftAction_actionHomLeft, selfLeftAction_actionUnitIso] at h
-  rw [h, Iso.inv_comp_eq, braiding_rightUnitor]
-
-/-- Over a commutative monoid the right action is associative. -/
-private lemma rightSmul_whiskerRight_comp_rightSmul (M : Mod C A) :
-    rightSmul M ▷ A ≫ rightSmul M = (α_ M.X A A).hom ≫ M.X ◁ μ[A] ≫ rightSmul M := by
-  have h := ModObj.assoc_flip (M := A) M.X
-  simp only [selfLeftAction_actionHomRight, selfLeftAction_actionHomLeft,
-    selfLeftAction_actionAssocIso] at h
-  have hL : (β_ A (A ⊗ M.X)).inv ≫ (α_ A A M.X).inv =
-      (α_ A M.X A).hom ≫ A ◁ (β_ A M.X).inv ≫ (α_ A A M.X).inv ≫ (β_ A A).inv ▷ M.X := by
-    rw [← hexagon_forward_inv]
-    simp
-  have hR : (α_ M.X A A).hom ≫ (β_ (A ⊗ A) M.X).inv =
-      (β_ A M.X).inv ▷ A ≫ (α_ A M.X A).hom ≫ A ◁ (β_ A M.X).inv ≫ (α_ A A M.X).inv := by
-    rw [← reassoc_of% hexagon_reverse_inv]
-    simp
-  simp only [rightSmul, comp_whiskerRight, Category.assoc]
-  rw [reassoc_of% braiding_inv_naturality_left γ[A, M.X] A, h,
-    reassoc_of% braiding_inv_naturality_right M.X μ[A]]
-  simp only [selfLeftAction_actionObj]
-  rw [reassoc_of% hL, reassoc_of% hR, ← comp_whiskerRight_assoc, IsCommMonObj.mul_comm']
-
-variable [MonoidalClosed C] [HasEqualizers C]
+variable [BraidedCategory C] [IsCommMonObj A] [MonoidalClosed C] [HasEqualizers C]
 
 /-- Evaluation after acting on the argument, `m ⊗ (a ⊗ f) ↦ f (a • m)`, as an `A`-linear map
 `M ⊗ (A ⊗ Hom_A(M, N)) ⟶ N`. -/
 private noncomputable def ihomSmulAux (M N : Mod C A) :
     (tensorLeft M).obj (A ⊗ (ihom M).obj N) ⟶ N :=
-  Hom.mk' ((α_ M.X A _).inv ≫ rightSmul M ▷ _ ≫ uncurry (ihomι M N)) (by
+  Hom.mk' ((α_ M.X A _).inv ≫ (toBimod.obj M).actRight ▷ _ ≫ uncurry (ihomι M N)) (by
     simp only [tensorLeft_smul, selfLeftAction_actionHomRight, whiskerLeft_comp, Category.assoc]
     rw [← smul_comp_uncurry_ihomι, associator_inv_naturality_middle_assoc,
-      ← comp_whiskerRight_assoc, ← smul_comp_rightSmul, associator_inv_naturality_left_assoc]
+      ← comp_whiskerRight_assoc, ← (Iso.inv_comp_eq _).2 (toBimod.obj M).middle_assoc,
+      associator_inv_naturality_left_assoc]
     simp only [comp_whiskerRight, Category.assoc]
     have h : (α_ A M.X (A ⊗ (ihom M).obj N)).inv ≫ (α_ (A ⊗ M.X) A ((ihom M).obj N)).inv =
         A ◁ (α_ M.X A ((ihom M).obj N)).inv ≫ (α_ A (M.X ⊗ A) ((ihom M).obj N)).inv ≫
@@ -313,7 +269,7 @@ private noncomputable def ihomSmulAux (M N : Mod C A) :
 @[reassoc]
 private lemma whiskerLeft_ihomSmul_comp_uncurry_ihomι (M N : Mod C A) :
     M.X ◁ ihomHomEquiv M _ N (ihomSmulAux M N) ≫ uncurry (ihomι M N) =
-      (α_ M.X A _).inv ≫ rightSmul M ▷ _ ≫ uncurry (ihomι M N) := by
+      (α_ M.X A _).inv ≫ (toBimod.obj M).actRight ▷ _ ≫ uncurry (ihomι M N) := by
   rw [← uncurry_natural_left, ihomHomEquiv_apply_comp_ihomι, uncurry_curry]
   rfl
 
@@ -327,7 +283,7 @@ noncomputable def ihomModObj (M N : Mod C A) : ModObj A ((ihom M).obj N) where
     simp only [selfLeftAction_actionObj, selfLeftAction_actionHomLeft,
       selfLeftAction_actionUnitIso, whiskerLeft_comp, Category.assoc]
     rw [whiskerLeft_ihomSmul_comp_uncurry_ihomι, associator_inv_naturality_middle_assoc,
-      ← comp_whiskerRight_assoc, whiskerLeft_one_comp_rightSmul]
+      ← comp_whiskerRight_assoc, (toBimod.obj M).actRight_one]
     simp
   mul_smul := by
     apply ihom_hom_ext_uncurry
@@ -339,7 +295,7 @@ noncomputable def ihomModObj (M N : Mod C A) : ModObj A ((ihom M).obj N) where
     rw [whiskerLeft_ihomSmul_comp_uncurry_ihomι, associator_inv_naturality_middle_assoc,
       ← comp_whiskerRight_assoc, associator_inv_naturality_right_assoc, whisker_exchange_assoc,
       whiskerLeft_ihomSmul_comp_uncurry_ihomι, associator_inv_naturality_left_assoc,
-      ← comp_whiskerRight_assoc, rightSmul_whiskerRight_comp_rightSmul]
+      ← comp_whiskerRight_assoc, (Iso.inv_comp_eq _).1 (toBimod.obj M).right_assoc.symm]
     simp only [comp_whiskerRight, Category.assoc]
     have h : M.X ◁ (α_ A A ((ihom M).obj N)).hom ≫ (α_ M.X A (A ⊗ (ihom M).obj N)).inv ≫
         (α_ (M.X ⊗ A) A ((ihom M).obj N)).inv ≫ (α_ M.X A A).hom ▷ (ihom M).obj N =
