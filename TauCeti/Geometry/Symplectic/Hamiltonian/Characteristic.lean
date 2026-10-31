@@ -135,13 +135,14 @@ theorem exists_hamiltonianVectorField_eq_smul [I.Boundaryless]
 /-! ### Closed characteristics -/
 
 /-- **Closed characteristics do not depend on the defining Hamiltonian.** Let the regular level
-`S = f⁻¹(c)` of a `C¹` function lie in the regular level `g⁻¹(c')` of a second `C¹` function, for
-instance as the same hypersurface. A periodic orbit `γ`, of nonzero period, of the Hamiltonian
-vector field of `f` starting on `S` is, after a change of time by a homeomorphism `ψ` of `ℝ` fixing
-`0`, a periodic orbit of nonzero period of the Hamiltonian vector field of `g`. -/
+`S = f⁻¹(c)` of a `C¹` function lie in the level `g⁻¹(c')` of a second `C¹` function which is
+regular along `S`, for instance as the same regular hypersurface. A periodic orbit `γ`, of nonzero
+period, of the Hamiltonian vector field of `f` starting on `S` is, after a change of time by a
+homeomorphism `ψ` of `ℝ` fixing `0`, a periodic orbit of nonzero period of the Hamiltonian vector
+field of `g`. -/
 theorem exists_homeomorph_isMIntegralCurve_comp [I.Boundaryless]
     (hf : ContMDiff I 𝓘(ℝ) 1 f) (hg : ContMDiff I 𝓘(ℝ) 1 g) (hfc : IsRegularValue I 𝓘(ℝ) f c)
-    (hgc : IsRegularValue I 𝓘(ℝ) g c') (hfg : ∀ x, f x = c → g x = c') {γ : ℝ → M}
+    (hfg : ∀ x, f x = c → g x = c') (hgS : ∀ x, f x = c → IsRegularPoint I 𝓘(ℝ) g x) {γ : ℝ → M}
     (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField f)) (hγ₀ : f (γ 0) = c) {T : ℝ}
     (hT : T ≠ 0) (hper : Periodic γ T) :
     ∃ ψ : ℝ ≃ₜ ℝ, ψ 0 = 0 ∧ ∃ T', T' ≠ 0 ∧ Periodic (γ ∘ ψ) T' ∧
@@ -157,7 +158,7 @@ theorem exists_homeomorph_isMIntegralCurve_comp [I.Boundaryless]
     (fun t ↦ (hcont f hf).continuousAt) (fun t ↦ (hcont g hg).continuousAt)
     (fun t ↦ hσ.hamiltonianVectorField_ne_zero (hfc.isRegularPoint (hγS t)))
     fun t ↦ hσ.exists_hamiltonianVectorField_eq_smul (fun x _ ↦ hf.contMDiffAt) hfc hfg
-      (hγS t) (hgc.isRegularPoint (hfg _ (hγS t)))
+      (hγS t) (hgS _ (hγS t))
 
 end IsNondegenerate
 
