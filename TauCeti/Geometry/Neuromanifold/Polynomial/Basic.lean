@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MvPolynomial.Sum
-public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
+public import TauCeti.RingTheory.MvPolynomial.DegreePadding
 
 /-!
 # Polynomial realization maps and input coefficients
@@ -31,6 +31,8 @@ over an infinite integral domain, and
 `boundedEvaluation_comp_polynomialCoefficientMap` recovers the realization map from the
 coefficient presentation. Composing with the coordinates gives
 `polynomialCoefficientCoordinates P`, whose coordinates are polynomial in the parameters.
+`boundedEvaluation_padding_polynomialCoefficientCoordinates` allows any larger input-degree
+bound: zero-padding the coefficient coordinates still recovers exactly the same realization.
 
 The jointly polynomial setting and the coefficient/function viewpoint follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
@@ -199,6 +201,17 @@ polynomial in the parameters. -/
     (w : W → K) (i : J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P}) :
     polynomialCoefficientCoordinates P w i = eval w ((inputPolynomial P i.1).coeff i.2) := by
   simp [polynomialCoefficientCoordinates, coeff_map]
+
+/-- Enlarging the uniform input-degree bound by zero-padding the coefficient coordinates
+preserves the realization at every parameter and every input. -/
+theorem boundedEvaluation_padding_polynomialCoefficientCoordinates
+    (P : J → MvPolynomial (W ⊕ X) K) {d : ℕ} (h : polynomialInputDegree P ≤ d) (w : W → K) :
+    boundedEvaluation X K J d
+        ((boundedCoefficientEquiv X K J d).symm
+          (boundedCoefficientPadding h (polynomialCoefficientCoordinates P w))) =
+      polynomialRealization P w := by
+  rw [boundedEvaluation_padding, polynomialCoefficientCoordinates, LinearEquiv.symm_apply_apply]
+  exact congrFun (boundedEvaluation_comp_polynomialCoefficientMap P) w
 
 end Coordinates
 
