@@ -449,6 +449,11 @@ theorem classical_tildeToIdeal_bijective : Function.Bijective (classical V).tild
   ⟨fun _ _ hst ↦ Submodule.mulMap_top_top_bijective.1 (congrArg Subtype.val hst),
     (classical V).tildeToIdeal_surjective⟩
 
+/-- For the classical setup, the multiplication map `m~ → V` is bijective. -/
+theorem classical_tildeMul_bijective : Function.Bijective (classical V).tildeMul :=
+  -- `(classical V).tildeMul` is `Submodule.mulMap ⊤ ⊤`.
+  Submodule.mulMap_top_top_bijective
+
 /-- The ideal of the zero setup is zero; hence `(zero V).tilde` is zero as well. -/
 instance : Subsingleton (zero V).ideal :=
   Submodule.subsingleton_iff_eq_bot.mpr zero_ideal

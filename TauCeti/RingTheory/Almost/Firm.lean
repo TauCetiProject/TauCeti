@@ -162,14 +162,9 @@ theorem IsFirm.subsingleton_of_isAlmostZero (hM : S.IsFirm M) (h : S.IsAlmostZer
 
 /-- For the classical setup `(V, V)` every module is firm. -/
 theorem isFirm_classical : (classical V).IsFirm M := by
-  have h : Function.Bijective (classical V).tildeMul := by
-    refine ⟨fun s t hst ↦ classical_tildeToIdeal_bijective.1 (Subtype.ext ?_), fun x ↦ ?_⟩
-    · simpa only [coe_tildeToIdeal] using hst
-    · obtain ⟨t, ht⟩ := classical_tildeToIdeal_bijective.2 ⟨x, by simp⟩
-      exact ⟨t, by rw [← coe_tildeToIdeal, ht]⟩
   rw [isFirm_iff_bijective, tildeAct, LinearMap.coe_comp, LinearEquiv.coe_coe]
   exact (TensorProduct.lid V M).bijective.comp
-    ((LinearEquiv.ofBijective _ h).rTensor M).bijective
+    ((LinearEquiv.ofBijective _ classical_tildeMul_bijective).rTensor M).bijective
 
 /-- For the zero setup `(V, 0)` only the zero module is firm. -/
 @[simp]
