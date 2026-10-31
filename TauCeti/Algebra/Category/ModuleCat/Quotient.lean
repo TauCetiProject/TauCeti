@@ -86,43 +86,60 @@ abbrev quotientInfSupShortComplex (S T : Submodule A M) : ShortComplex (ModuleCa
       ext x
       simp)
 
+/-- The first map of the Mayer–Vietoris short complex is the pair of quotient factorizations. -/
+theorem quotientInfSupShortComplex_f_hom (S T : Submodule A M) :
+    (quotientInfSupShortComplex S T).f.hom =
+      (factor (inf_le_left : S ⊓ T ≤ S)).prod (factor (inf_le_right : S ⊓ T ≤ T)) :=
+  rfl
+
+/-- The second map of the Mayer–Vietoris short complex is the difference of the quotient
+factorizations. -/
+theorem quotientInfSupShortComplex_g_hom (S T : Submodule A M) :
+    (quotientInfSupShortComplex S T).g.hom =
+      (factor (le_sup_left : S ≤ S ⊔ T)).coprod (-factor (le_sup_right : T ≤ S ⊔ T)) :=
+  rfl
+
+/-- The first map of the Mayer–Vietoris short complex sends the class of `x` to the diagonal
+pair of its classes. -/
+theorem quotientInfSupShortComplex_f_mk (S T : Submodule A M) (x : M) :
+    (quotientInfSupShortComplex S T).f (Quotient.mk x) = (Quotient.mk x, Quotient.mk x) :=
+  rfl
+
+/-- The second map of the Mayer–Vietoris short complex sends a pair of classes to the class of
+the difference of the representatives. -/
+theorem quotientInfSupShortComplex_g_mk (S T : Submodule A M) (y z : M) :
+    (quotientInfSupShortComplex S T).g (Quotient.mk y, Quotient.mk z) =
+      Quotient.mk (y - z) := by
+  simp [sub_eq_add_neg]
+
 /-- The Mayer–Vietoris short complex of two submodules is short exact. -/
 theorem shortExact_quotientInfSupShortComplex (S T : Submodule A M) :
     (quotientInfSupShortComplex S T).ShortExact := by
-  set f := (factor (inf_le_left : S ⊓ T ≤ S)).prod (factor (inf_le_right : S ⊓ T ≤ T))
-  set g := (factor (le_sup_left : S ≤ S ⊔ T)).coprod (-factor (le_sup_right : T ≤ S ⊔ T))
-  have hf (x : M) : f (mkQ _ x) = (mkQ S x, mkQ T x) := rfl
-  have hg (y z : M) : g (mkQ S y, mkQ T z) = mkQ _ (y - z) := by simp [g, sub_eq_add_neg]
-  have exact : Function.Exact f g := by
-    rintro ⟨y, z⟩
-    obtain ⟨y, rfl⟩ := mkQ_surjective _ y
-    obtain ⟨z, rfl⟩ := mkQ_surjective _ z
-    rw [hg, mkQ_apply, Quotient.mk_eq_zero]
+  refine ModuleCat.shortComplex_shortExact (quotientInfSupShortComplex S T) ?_ ?_ ?_
+  · rintro ⟨y, z⟩
+    induction y using Quotient.induction_on with | _ y
+    induction z using Quotient.induction_on with | _ z
+    rw [quotientInfSupShortComplex_g_mk, Quotient.mk_eq_zero]
     refine ⟨fun h ↦ ?_, ?_⟩
     · -- If `y - z = s + t` with `s ∈ S` and `t ∈ T`, then `y - s = z + t` maps to `(y, z)`.
       obtain ⟨s, hs, t, ht, hst⟩ := mem_sup.1 h
-      refine ⟨mkQ _ (y - s), ?_⟩
-      rw [hf, Prod.mk.injEq, mkQ_apply, mkQ_apply, mkQ_apply, mkQ_apply, Quotient.eq,
-        Quotient.eq, show y - s - z = t by rw [sub_right_comm, ← hst]; abel]
-      exact ⟨by simpa using hs, ht⟩
+      refine ⟨Quotient.mk (y - s), ?_⟩
+      rw [quotientInfSupShortComplex_f_mk]
+      simp only [Prod.mk.injEq, Quotient.eq]
+      exact ⟨by simpa using hs, by rwa [sub_right_comm, ← hst, add_sub_cancel_left]⟩
     · rintro ⟨x, hx⟩
-      obtain ⟨x, rfl⟩ := mkQ_surjective _ x
-      rw [hf, Prod.mk.injEq, mkQ_apply, mkQ_apply, mkQ_apply, mkQ_apply, Quotient.eq,
-        Quotient.eq] at hx
+      induction x using Quotient.induction_on with | _ x
+      rw [quotientInfSupShortComplex_f_mk] at hx
+      simp only [Prod.mk.injEq, Quotient.eq] at hx
       rw [show y - z = -(x - y) + (x - z) by abel]
       exact add_mem (neg_mem (mem_sup_left hx.1)) (mem_sup_right hx.2)
-  have inj : Function.Injective f := by
-    intro x y h
-    obtain ⟨x, rfl⟩ := mkQ_surjective _ x
-    obtain ⟨y, rfl⟩ := mkQ_surjective _ y
-    rw [hf, hf, Prod.mk.injEq, mkQ_apply, mkQ_apply, mkQ_apply, mkQ_apply, Quotient.eq,
-      Quotient.eq] at h
-    rw [mkQ_apply, mkQ_apply, Quotient.eq]
-    exact ⟨h.1, h.2⟩
-  have surj : Function.Surjective g := by
-    intro z
-    obtain ⟨z, rfl⟩ := mkQ_surjective _ z
-    exact ⟨(mkQ _ z, 0), by simpa using hg z 0⟩
-  exact ModuleCat.shortComplex_shortExact _ exact inj surj
+  · intro x y h
+    induction x using Quotient.induction_on with | _ x
+    induction y using Quotient.induction_on with | _ y
+    rw [quotientInfSupShortComplex_f_mk, quotientInfSupShortComplex_f_mk] at h
+    simpa only [Prod.mk.injEq, Quotient.eq, mem_inf] using h
+  · intro z
+    induction z using Quotient.induction_on with | _ z
+    exact ⟨(Quotient.mk z, 0), by simp⟩
 
 end Submodule
