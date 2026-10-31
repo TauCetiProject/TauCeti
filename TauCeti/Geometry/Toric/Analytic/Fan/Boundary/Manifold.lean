@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.NormalForm
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 
+import TauCeti.Data.Fin.Sum
 import TauCeti.Geometry.Manifold.LinearSlice
 import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Intersection
 
@@ -93,19 +94,16 @@ private theorem exists_sliceChart_closure_analyticConeOrbit (σ : Φ.cones) {k :
   -- the transverse coordinates, and the remaining `n - k` coordinates.
   obtain ⟨L, hL⟩ : ∃ L : (Fin n → ℂ) ≃L[ℂ] (Fin (n - k) → ℂ) × (Fin k → ℂ),
       ∀ v a, (L v).2 a = v (j' a) := by
-    have hc : Fintype.card {b : Fin n // b ∉ Set.range j'} = n - k := by
-      rw [Fintype.card_subtype_compl, Set.card_range_of_injective j'.injective,
-        Fintype.card_fin, Fintype.card_fin]
-    let c : Fin (n - k) ⊕ Fin k ≃ Fin n :=
-      (Equiv.sumCongr (Fintype.equivFinOfCardEq hc).symm
-        (Equiv.ofInjective j' j'.injective)).trans
-          ((Equiv.sumComm _ _).trans (Equiv.sumCompl (· ∈ Set.range j')))
-    refine ⟨((LinearEquiv.funCongrLeft ℂ ℂ c).trans
+    obtain ⟨l, c, hc⟩ := j'.exists_equiv_sum_fin
+    obtain rfl : l = n - k := by
+      have := Fintype.card_congr c
+      simp only [Fintype.card_sum, Fintype.card_fin] at this
+      omega
+    refine ⟨((LinearEquiv.funCongrLeft ℂ ℂ ((Equiv.sumComm _ _).trans c)).trans
       (LinearEquiv.sumArrowLequivProdArrow _ _ ℂ ℂ)).toContinuousLinearEquiv, fun v a ↦ ?_⟩
-    simp only [c, LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.trans_apply,
+    simp only [LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.trans_apply,
       LinearEquiv.sumArrowLequivProdArrow_apply_snd, LinearEquiv.funCongrLeft_apply,
-      LinearMap.funLeft_apply, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inr,
-      Equiv.sumComm_apply, Sum.swap_inr, Equiv.sumCompl_apply_inl, Equiv.ofInjective_apply]
+      LinearMap.funLeft_apply, Equiv.trans_apply, Equiv.sumComm_apply, Sum.swap_inr, hc]
   let D : PartialDiffeomorph 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, (Fin (n - k) → ℂ) × (Fin k → ℂ))
       (Fin n → ℂ) ((Fin (n - k) → ℂ) × (Fin k → ℂ)) ω :=
     PartialDiffeomorph.ofOpenPartialHomeomorph L.toHomeomorph.toOpenPartialHomeomorph
