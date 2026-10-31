@@ -56,6 +56,8 @@ the discreteness of its image is used, and the exponent group may have torsion.
 
 ## Main results
 
+* `TauCeti.NovikovSeries.orbitZeta_def`: the orbit zeta function is the exponential of the orbit
+  logarithm.
 * `TauCeti.NovikovSeries.hasSum_orbitLog`, `TauCeti.NovikovSeries.orbitLog_mem_periodFiltration`:
   convergence and support of the orbit logarithm.
 * `TauCeti.NovikovSeries.orbitLog_mem_nonnegSubring`, `TauCeti.NovikovSeries.orbitLog_mem_posIdeal`:
@@ -102,6 +104,11 @@ exponential of the orbit logarithm `TauCeti.NovikovSeries.orbitLog`. -/
 def orbitZeta (K : Type*) [CommRing K] [Algebra ℚ K] (N : H →+ ℝ) (γ : ι → H)
     (ε : ι → ℕ → ℤ) : NovikovSeries K H N :=
   NormedSpace.exp (orbitLog K N γ ε)
+
+/-- The orbit zeta function is the exponential of the orbit logarithm. -/
+theorem orbitZeta_def (ε : ι → ℕ → ℤ) :
+    orbitZeta K N γ ε = NormedSpace.exp (orbitLog K N γ ε) :=
+  (rfl)
 
 /-- The `(k + 1)`-fold iterate of an orbit of class `g` has period `(k + 1) * N g`. -/
 private theorem period_succ_nsmul (g : H) (k : ℕ) : N ((k + 1) • g) = ((k : ℝ) + 1) * N g := by
@@ -169,7 +176,7 @@ theorem orbitZeta_sub_one_mem_periodFiltration {c : ℝ} (hc₀ : 0 < c) (hc : �
   have hLpos := orbitLog_mem_posIdeal (K := K) hc₀ hc ε
   have h := (isTopologicallyNilpotent_of_mem_posIdeal' hLpos).exp_sub_one_mem
     (I := periodIdeal K N c) (mem_periodIdeal.2 (orbitLog_mem_periodFiltration hc₀.le hc ε))
-  rw [orbitZeta, ← coe_exp_of_mem_posIdeal hLpos]
+  rw [orbitZeta_def, ← coe_exp_of_mem_posIdeal hLpos]
   simpa using h
 
 /-- The orbit zeta function is a unit. -/
@@ -178,7 +185,7 @@ theorem isUnit_orbitZeta (hpos : ∀ i, 0 < N (γ i))
     IsUnit (orbitZeta K N γ ε) := by
   obtain ⟨c, hc₀, hc⟩ := hfin.exists_gt_forall_le hpos
   have hLpos := orbitLog_mem_posIdeal (K := K) hc₀ hc ε
-  rw [orbitZeta, ← coe_exp_of_mem_posIdeal hLpos,
+  rw [orbitZeta_def, ← coe_exp_of_mem_posIdeal hLpos,
     ← coe_expMulEquiv_apply (K := K) (N := N) ⟨_, hLpos⟩]
   exact (Units.isUnit _).map (nonnegSubring K N).subtype
 
@@ -248,7 +255,7 @@ theorem orbitZeta_eq_eulerProduct (hpos : ∀ i, 0 < N (γ i))
     rw [← coe_expMulEquiv_apply (K := K) (N := N) (ℓ i), h1, SubgroupClass.coe_zpow]
   have h := hprod.map (nonnegSubring K N).subtype continuous_subtype_val
   rw [Subring.coe_subtype] at h
-  rw [orbitZeta, ← coe_exp_of_mem_posIdeal hLpos]
+  rw [orbitZeta_def, ← coe_exp_of_mem_posIdeal hLpos]
   exact h.unique ((hasProd_eulerProduct hfin _ _).congr_fun fun i => by simp [hexp, u])
 
 /-- **Integrality of the orbit zeta function.** Under the hypotheses of the product formula, the

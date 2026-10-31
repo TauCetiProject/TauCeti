@@ -255,8 +255,7 @@ theorem mapRingHom_eulerProduct {H' : Type*} [AddCommMonoid H'] {N' : H' →+ �
   rw [eulerProduct, (hasProd_eulerProduct hfin r m).multipliable.map_tprod _
     (continuous_mapRingHom ρ φ hφ), eulerProduct]
   refine tprod_congr fun i => ?_
-  rw [← map_unitsOneSubSingle ρ φ hφ (hγ i) (hγ' i), ← map_zpow, Units.coe_map,
-    MonoidHom.coe_ofClass, coe_mapNonnegSubring, mapRingHom_apply]
+  simp [← map_unitsOneSubSingle ρ φ hφ (hγ i) (hγ' i), ← map_zpow]
 
 end EulerProduct
 

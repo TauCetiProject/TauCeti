@@ -217,11 +217,11 @@ theorem hasSum_log_one_sub (ha : IsTopologicallyNilpotent a) :
   · funext n
     have hneg : (-a) ^ (n + 1) = ((-1 : ℚ) ^ (n + 1)) • a ^ (n + 1) := by
       simp [neg_pow a, Algebra.smul_def]
-    have hsign : (-1 : ℚ) ^ (n + 1 + 1) * (-1) ^ (n + 1) = -1 := by
-      rw [← pow_add]
-      exact Odd.neg_one_pow ⟨n + 1, by ring⟩
-    rw [sub_sub_cancel_left, hneg, smul_smul, div_mul_eq_mul_div, hsign]
-    simp [div_eq_mul_inv]
+    -- The sign of the `(n + 1)`-th term of the logarithm series cancels that of `(-a) ^ (n + 1)`.
+    have hsign : (-1 : ℚ) ^ (n + 1 + 1) / (n + 1 : ℕ) * (-1) ^ (n + 1) = -((n + 1 : ℕ) : ℚ)⁻¹ := by
+      rw [div_mul_eq_mul_div, ← pow_add, Odd.neg_one_pow ⟨n + 1, by ring⟩, neg_div, one_div]
+    rw [sub_sub_cancel_left, hneg]
+    simp only [smul_smul, hsign, neg_smul]
   · simp
 
 /-- A continuous derivation `D` differentiates the logarithm as `D (log u) = u⁻¹ * D u`, in the

@@ -53,7 +53,7 @@ covering and of its base.
 ## Main results
 
 * `TauCeti.NovikovSeries.map_mul`: the pushforward along a multiplicative coefficient map is
-  multiplicative.
+  multiplicative, and `TauCeti.NovikovSeries.map_one`: along a ring homomorphism it preserves `1`.
 * `TauCeti.NovikovSeries.mapRingHom_id` and `TauCeti.NovikovSeries.mapRingHom_comp`: the
   identity and composition laws.
 * `TauCeti.NovikovSeries.map_mem_periodFiltration`: the pushforward sends `U_C` into `U'_(c * C)`.
@@ -196,6 +196,12 @@ theorem mapRingHom_apply (a : NovikovSeries R H N) :
     mapRingHom ρ φ hφ a = map (ρ : R →+ S) φ hφ a :=
   (rfl)
 
+/-- The pushforward along a ring homomorphism of coefficients preserves `1`. -/
+@[simp]
+theorem map_one : map (ρ : R →+ S) φ hφ (1 : NovikovSeries R H N) = 1 := by
+  rw [one_def, map_single]
+  simp
+
 /-- The pushforward ring homomorphism along the identity coefficient and exponent maps is the
 identity. -/
 @[simp]
@@ -321,9 +327,7 @@ theorem mapNonnegSubring_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posIde
 theorem map_unitsOneSubSingle {g : H} (hg : 0 < N g) (hg' : 0 < N' (φ g)) (r : R) :
     Units.map (mapNonnegSubring ρ φ hφ : nonnegSubring R N →* nonnegSubring S N')
       (unitsOneSubSingle hg r) = unitsOneSubSingle hg' (ρ r) :=
-  Units.ext <| Subtype.ext <| by
-    have h1 : map (ρ : R →+ S) φ hφ 1 = 1 := by simpa using map_one (mapRingHom ρ φ hφ)
-    simp [h1]
+  Units.ext <| Subtype.ext <| by simp
 
 end TopologyRing
 
