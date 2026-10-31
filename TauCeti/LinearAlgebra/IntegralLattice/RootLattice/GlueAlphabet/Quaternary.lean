@@ -65,6 +65,7 @@ theorem typeD4GlueAlphabetQuaternaryIsometry_apply
     (congrArg _ (AddEquiv.symm_apply_apply _ _).symm)
 
 /-- **The Conway--Sloane labels `0, 1, 2, 3` of `D₄` correspond to `0, ω, 1, ω²`.** -/
+@[simp]
 theorem typeD4GlueAlphabetQuaternaryIsometry_glueLabelEquiv (i : Fin 4) :
     typeD4GlueAlphabetQuaternaryIsometry hF hω ((D 4).glueLabelEquiv (isSimplyLaced_D 4) i) =
       ![0, ω, 1, ω ^ 2] i := by

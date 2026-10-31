@@ -94,6 +94,7 @@ noncomputable def d4SixQuaternaryIsometry :
   (typeD4GlueAlphabetQuaternaryIsometry hF hω).coordinatePower (Fin 6)
 
 /-- The label coordinates of a glue word are the labels of its letters. -/
+@[simp]
 theorem d4SixQuaternaryIsometry_apply (w : d4SixGlueModule) (j : Fin 6) :
     d4SixQuaternaryIsometry hF hω w j = typeD4GlueAlphabetQuaternaryIsometry hF hω (w j) :=
   FiniteQuadraticModule.Isometry.coordinatePower_apply _ _ w j
@@ -116,6 +117,7 @@ noncomputable def d4SixHexacodeIsometry :
 
 /-- The hexacode coordinates of a glue word are its label coordinates, scaled by
 `[ω, ω, 1, ω², ω², 1]`. -/
+@[simp]
 theorem d4SixHexacodeIsometry_apply (w : d4SixGlueModule) (j : Fin 6) :
     d4SixHexacodeIsometry hF hω w j =
       ![ω, ω, 1, ω ^ 2, ω ^ 2, 1] j * d4SixQuaternaryIsometry hF hω w j :=
@@ -123,6 +125,7 @@ theorem d4SixHexacodeIsometry_apply (w : d4SixGlueModule) (j : Fin 6) :
 
 /-- A glue word given by its digits has the scaled labels `0, ω, 1, ω²` in hexacode
 coordinates. -/
+@[simp]
 theorem d4SixHexacodeIsometry_glueLabelEquiv (d : Fin 6 → Fin 4) :
     d4SixHexacodeIsometry hF hω (fun j ↦ (D 4).glueLabelEquiv (isSimplyLaced_D 4) (d j)) =
       fun j ↦ ![ω, ω, 1, ω ^ 2, ω ^ 2, 1] j * ![0, ω, 1, ω ^ 2] (d j) :=
