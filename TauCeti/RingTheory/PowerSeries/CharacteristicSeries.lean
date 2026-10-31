@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Bernoulli
+public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.RingTheory.PowerSeries.Exp
 
 /-!
@@ -79,14 +80,6 @@ open Nat PowerSeries
 namespace TauCeti
 
 variable (A : Type*) [CommRing A] [Algebra ℚ A]
-
-/-- `2 · (1 / 2) = 1` in a `ℚ`-algebra. -/
-private theorem two_mul_algebraMap_half : 2 * algebraMap ℚ A 2⁻¹ = 1 := by
-  rw [← map_ofNat (algebraMap ℚ A) 2, ← map_mul, mul_inv_cancel₀ two_ne_zero, map_one]
-
-private theorem two_mul_C_half : (2 : A⟦X⟧) * C (algebraMap ℚ A 2⁻¹) = 1 := by
-  rw [← map_ofNat C 2, ← map_ofNat (algebraMap ℚ A) 2, ← map_mul, ← map_mul]
-  norm_num
 
 /-! ### The Todd series -/
 
@@ -180,19 +173,21 @@ theorem aHatSeries_mul_sub :
   set k := rescale (-c) (exp A)
   set B := bernoulliPowerSeries A
   set B₂ := rescale c B
+  -- `2 · (1 / 2) = 1`, in `A` and through the constant embedding in `A⟦X⟧`.
+  have h2 : 2 * c = 1 := mod_cast natCast_mul_algebraMap_inv (K := A) two_ne_zero
+  have h2C : (2 : A⟦X⟧) * C c = 1 := by rw [← map_ofNat C 2, ← map_mul, h2, map_one]
   have hk : h * k = 1 := rescale_exp_mul_rescale_neg_exp c
   have hh : h * h = exp A := by
-    rw [rescale_exp_mul_self, two_mul_algebraMap_half, rescale_one, RingHom.id_apply]
+    rw [rescale_exp_mul_self, h2, rescale_one, RingHom.id_apply]
   have hB : B * (exp A - 1) = X := bernoulliPowerSeries_mul_exp_sub_one A
   -- `B(X/2) (e^{X/2} - 1) = X / 2`.
   have hB₂ : B₂ * (h - 1) = C c * X := by
     simpa [B₂, h, rescale_X] using congrArg (rescale c) hB
-  have h2 := two_mul_C_half A
   -- Multiply by the unit `e^{X/2}`: the factor becomes `e^X - 1 = (e^{X/2} - 1)(e^{X/2} + 1)`.
   refine (IsUnit.of_mul_eq_one k hk).mul_left_cancel ?_
   rw [aHatSeries]
   linear_combination (2 * B₂ - B - 2 * B₂) * hh - (2 * B₂ - B) * hk - hB +
-    2 * (h + 1) * hB₂ + (h + 1) * X * h2
+    2 * (h + 1) * hB₂ + (h + 1) * X * h2C
 
 /-- The identity `Â(X) · (e^{X/2} - e^{-X/2}) = X` characterizes the Â series. -/
 theorem eq_aHatSeries_iff {f : A⟦X⟧} :
@@ -234,9 +229,10 @@ theorem bernoulli'PowerSeries_eq_rescale_exp_mul_aHatSeries :
     bernoulli'PowerSeries A = rescale (algebraMap ℚ A 2⁻¹) (exp A) * aHatSeries A := by
   set c := algebraMap ℚ A 2⁻¹
   rw [eq_comm, eq_bernoulli'PowerSeries_iff]
+  have h2 : 2 * c = 1 := mod_cast natCast_mul_algebraMap_inv (K := A) two_ne_zero
   have hk := rescale_exp_mul_rescale_neg_exp c
   have hkk : rescale (-c) (exp A) * rescale (-c) (exp A) = rescale (-1) (exp A) := by
-    rw [rescale_exp_mul_self, mul_neg, two_mul_algebraMap_half]
+    rw [rescale_exp_mul_self, mul_neg, h2]
   linear_combination aHatSeries_mul_sub A - aHatSeries A * rescale (-c) (exp A) * hk +
     rescale c (exp A) * aHatSeries A * hkk
 
