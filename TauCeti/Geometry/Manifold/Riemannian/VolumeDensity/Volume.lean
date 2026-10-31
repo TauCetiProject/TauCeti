@@ -38,7 +38,10 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
 * `TauCeti.riemannianVolume_apply_of_subset`: the volume of a subset of a chart source is its
   chart volume.
 * `TauCeti.setLIntegral_riemannianVolume_of_subset`: integration over a subset of a chart source
-  in coordinates.
+  in coordinates, and `TauCeti.setLIntegral_riemannianVolume_inter_preimage`, its form over the
+  chart preimage of an open coordinate set.
+* `TauCeti.setLIntegral_comp_extChartAt_symm_le_mul_lintegral`: where the chart density is at
+  least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals.
 * `TauCeti.isLocallyFiniteMeasure_riemannianVolume`: the Riemannian volume is locally finite.
 -/
 
@@ -113,6 +116,47 @@ theorem setLIntegral_riemannianVolume_of_subset {α : M} {s : Set M}
           φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
   rw [← Measure.restrict_restrict_of_subset hs, riemannianVolume_restrict_source,
     setLIntegral_chartRiemannianVolume α hs', inter_eq_left.2 (by rwa [extChartAt_source])]
+
+/-- **Integration in coordinates over an open coordinate set**: for an open set `Ω` of the chart
+target, the integral of `φ` over the chart preimage of `Ω` is the integral over `Ω` of `φ` read in
+the chart times the chart density. -/
+theorem setLIntegral_riemannianVolume_inter_preimage (α : M) {Ω : Set E} (hΩ : IsOpen Ω)
+    (hΩt : Ω ⊆ (extChartAt I α).target) (φ : M → ℝ≥0∞) :
+    ∫⁻ x in (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω, φ x ∂riemannianVolume I M =
+      ∫⁻ y in Ω, ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y)) *
+        φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
+  have himage : extChartAt I α '' ((extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω) = Ω := by
+    rw [PartialEquiv.image_source_inter_eq',
+      PartialEquiv.target_inter_inv_preimage_preimage, inter_eq_right.2 hΩt]
+  have hsub : (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω ⊆ (chartAt H α).source := by
+    rw [← extChartAt_source (I := I)]
+    exact inter_subset_left
+  rw [setLIntegral_riemannianVolume_of_subset hsub
+    (isOpen_extChartAt_preimage' α hΩ).measurableSet, himage]
+
+/-- **Coordinate integrals are controlled by Riemannian integrals** where the chart density is
+bounded below: if the density is at least `m > 0` on an open set `Ω` of the chart target, then the
+integral over `Ω` of `φ` read in the chart is at most `m⁻¹` times the integral of `φ` over `M`. -/
+theorem setLIntegral_comp_extChartAt_symm_le_mul_lintegral (α : M) {Ω : Set E} (hΩ : IsOpen Ω)
+    (hΩt : Ω ⊆ (extChartAt I α).target) {m : ℝ} (hm : 0 < m)
+    (hρ : ∀ y ∈ Ω, m ≤ chartVolumeDensity (I := I) α ((extChartAt I α).symm y)) (φ : M → ℝ≥0∞) :
+    ∫⁻ y in Ω, φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar ≤
+      ENNReal.ofReal m⁻¹ * ∫⁻ x, φ x ∂riemannianVolume I M := by
+  calc ∫⁻ y in Ω, φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar
+      ≤ ∫⁻ y in Ω, ENNReal.ofReal m⁻¹ *
+          (ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y)) *
+            φ ((extChartAt I α).symm y)) ∂(Module.finBasis ℝ E).addHaar := by
+        refine setLIntegral_mono' hΩ.measurableSet fun y hy ↦ ?_
+        rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
+        refine le_mul_of_one_le_left bot_le (ENNReal.one_le_ofReal.2 ?_)
+        rw [inv_mul_eq_div, one_le_div hm]
+        exact hρ y hy
+    _ = ENNReal.ofReal m⁻¹ *
+          ∫⁻ x in (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω, φ x ∂riemannianVolume I M := by
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+          setLIntegral_riemannianVolume_inter_preimage α hΩ hΩt]
+    _ ≤ ENNReal.ofReal m⁻¹ * ∫⁻ x, φ x ∂riemannianVolume I M :=
+        mul_le_mul_of_nonneg_left (setLIntegral_le_lintegral _ _) bot_le
 
 end Coordinates
 

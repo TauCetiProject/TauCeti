@@ -182,7 +182,7 @@ theorem unitsLieAlgebraEquiv_Ad (g : Rˣ)
   have ht := tangentAd_units (R := R) g
     (show R from leftInvariantDerivationLieEquivGroupLieAlgebra
       (I := 𝓘(ℝ, R)) (G := Rˣ)
-      (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, R)) (n := ∞) (by simp) (1 : Rˣ)) X)
+      BoundarylessManifold.isInteriorPoint X)
   rw [ht] at hR
   simpa only [unitsLieAlgebraEquiv_apply,
     leftInvariantDerivationLieEquivGroupLieAlgebra_apply] using hR

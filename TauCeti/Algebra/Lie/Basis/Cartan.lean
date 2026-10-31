@@ -15,10 +15,15 @@ A `LieAlgebra.Basis ι H` carries a family `h : ι → H` of Cartan generators w
 independent and spans `H`. This file packages that data as a `Module.Basis` of `H` and reads off
 the dimension of `H`. It also records a height vector for the Cartan matrix.
 
-## Main definitions and results
+## Main definitions
 
 * `LieAlgebra.Basis.cartanBasis`: the Cartan generators as a module basis of the Cartan
   subalgebra.
+
+## Main statements
+
+* `LieAlgebra.Basis.finrank_cartan`: the Cartan subalgebra has dimension the cardinality of the
+  index type.
 * `LieAlgebra.Basis.exists_sum_A_mul_eq_one`: over a field of characteristic zero, some vector
   pairs to `1` with every row of the Cartan matrix.
 -/
@@ -37,9 +42,13 @@ noncomputable def cartanBasis (b : Basis ι H) : Module.Basis ι R H :=
 /-- The vectors of `LieAlgebra.Basis.cartanBasis` are the Cartan generators. -/
 @[simp] theorem coe_cartanBasis (b : Basis ι H) (i : ι) :
     (b.cartanBasis i : L) = b.h i := by
-  simp only [cartanBasis, Module.Basis.map_apply, Module.Basis.span_apply,
-    LinearEquiv.ofEq_symm]
-  exact LinearEquiv.coe_ofEq_apply _ _
+  rw [cartanBasis, Module.Basis.map_apply, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
+    Module.Basis.coe_span_apply]
+
+/-- The vectors of `LieAlgebra.Basis.cartanBasis` are the Cartan generators `h'`, read as elements
+of the Cartan subalgebra. -/
+theorem cartanBasis_apply (b : Basis ι H) (i : ι) : b.cartanBasis i = b.h' i :=
+  Subtype.ext (b.coe_cartanBasis i)
 
 /-- The Cartan subalgebra has dimension the cardinality of the basis's index type. -/
 theorem finrank_cartan [StrongRankCondition R] (b : Basis ι H) :

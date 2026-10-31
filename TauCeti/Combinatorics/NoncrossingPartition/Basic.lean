@@ -54,13 +54,21 @@ only a meet, not a join, so the join in `NC(s)` is characterised by its universa
   or a part containing two positions that are adjacent in `s`.
 * `Finpartition.IsNoncrossing.exists_part_eq_union` — merging the parts through two adjacent
   positions of a noncrossing partition gives a noncrossing partition.
+* `Finpartition.isNoncrossing_pairPartition`, `Finpartition.isNoncrossing_splitPartition` — the
+  partition with one pair part and singletons elsewhere is noncrossing, and so is splitting off a
+  part containing every position between two of its elements.
 * `TauCeti.NoncrossingPartition.instLattice` — the noncrossing partitions of `s` form a lattice,
   with meets computed in `Finpartition s`; it is bounded, and locally finite so that its
   incidence algebra is available.
 * `TauCeti.NoncrossingPartition.univ_eq_bot_top_of_pair` — a set with at most two elements has
   only the partitions into singletons and into one part, which differ by
   `TauCeti.NoncrossingPartition.bot_ne_top_of_one_lt_card` once it has two elements; a
-  one-element set has a unique noncrossing partition.
+  one-element set has a unique noncrossing partition, and
+  `TauCeti.NoncrossingPartition.bot_eq_top_iff_card_le_one` says that these two partitions
+  coincide exactly for sets with at most one element.
+* `TauCeti.NoncrossingPartition.sup_pairPartition_eq_top_iff` — for positions `i ≤ j` adjacent
+  in `s`, a noncrossing partition joins with the pair part `{i, j}` to the partition into one part
+  exactly when its parts through `i` and `j` cover `s`.
 
 ## References
 
@@ -349,6 +357,28 @@ theorem IsNoncrossing.exists_part_eq_union (hP : P.IsNoncrossing) {i j : α} (hi
         rcases mem_union.1 h with h | h <;> exact P.part_subset _ h
       exact ⟨hi, hxs, (hkey hi hxs).2 (Or.inr ⟨mem_union_left _ (P.mem_part_self.2 hi), h⟩)⟩
 
+/-- The partition with one pair part `{i, j}` and singletons elsewhere is noncrossing. -/
+theorem isNoncrossing_pairPartition {i j : α} (hij : {i, j} ⊆ s) :
+    (pairPartition s i j hij).IsNoncrossing :=
+  isNoncrossing_iff.2 fun _ hB _ hC _ ha _ hb _ hc _ hd hab hbc hcd =>
+    (eq_pair_of_mem_parts_pairPartition hB ha hc (hab.trans hbc).ne).trans
+      (eq_pair_of_mem_parts_pairPartition hC hb hd (hbc.trans hcd).ne).symm
+
+/-- Splitting off a part `C` that contains every position of `s` between two of its elements
+gives a noncrossing partition. -/
+theorem isNoncrossing_splitPartition {C : Finset α} {hC : C.Nonempty} {hCs : C ⊆ s}
+    (hconv : ∀ a ∈ C, ∀ c ∈ C, ∀ b ∈ s, a < b → b < c → b ∈ C) :
+    (splitPartition s C hC hCs).IsNoncrossing := by
+  refine isNoncrossing_iff_part.2 fun a ha b hb c hc d hd hab hbc hcd => ?_
+  by_cases haC : a ∈ C <;> by_cases hbC : b ∈ C
+  · rw [part_splitPartition_of_mem haC, part_splitPartition_of_mem hbC]
+  · rw [part_splitPartition_of_mem haC] at hc
+    exact absurd (hconv a haC c hc b hb hab hbc) hbC
+  · rw [part_splitPartition_of_mem hbC] at hd
+    rw [part_splitPartition_of_notMem ha haC] at hc
+    exact absurd (hconv b hbC d hd c (mem_sdiff.1 hc).1 hbc hcd) (mem_sdiff.1 hc).2
+  · rw [part_splitPartition_of_notMem ha haC, part_splitPartition_of_notMem hb hbC]
+
 end Finpartition
 
 namespace TauCeti
@@ -442,6 +472,16 @@ theorem bot_ne_top_of_one_lt_card (hs : 1 < #s) : (⊥ : NoncrossingPartition s)
     Finpartition.parts_top (card_pos.1 (zero_lt_one.trans hs)).ne_empty, card_singleton] at this
   omega
 
+/-- The partition into singletons and the partition into one part are the same noncrossing
+partition of `s` exactly when `s` has at most one element. -/
+theorem bot_eq_top_iff_card_le_one : (⊥ : NoncrossingPartition s) = ⊤ ↔ #s ≤ 1 := by
+  refine ⟨fun h => not_lt.1 fun hs => bot_ne_top_of_one_lt_card hs h, fun h => ?_⟩
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.1 h with h | h
+  · obtain rfl := card_eq_zero.1 h
+    exact Subsingleton.elim _ _
+  · obtain ⟨i, rfl⟩ := card_eq_one.1 h
+    exact Subsingleton.elim _ _
+
 /-- A noncrossing partition of a set with at most two elements is either the partition into
 singletons or the partition into one part. -/
 theorem eq_bot_or_eq_top_of_pair {i j : α} (P : NoncrossingPartition ({i, j} : Finset α)) :
@@ -454,6 +494,38 @@ theorem univ_eq_bot_top_of_pair {i j : α} :
     (univ : Finset (NoncrossingPartition ({i, j} : Finset α))) = {⊥, ⊤} := by
   ext P
   simpa using eq_bot_or_eq_top_of_pair P
+
+open Finpartition in
+/-- Let `i ≤ j` be positions of `s` with no position of `s` strictly between them. A noncrossing
+partition `x` joins with `pairPartition s i j` to the partition into one part exactly when the
+parts of `x` through `i` and `j` cover `s`. -/
+theorem sup_pairPartition_eq_top_iff {i j : α} (hij : {i, j} ⊆ s) (hle : i ≤ j)
+    (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) (x : NoncrossingPartition s) :
+    x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩ = ⊤ ↔
+      x.1.part i ∪ x.1.part j = s := by
+  have hi : i ∈ s := hij (mem_insert_self i _)
+  have hj : j ∈ s := hij (mem_insert_of_mem (mem_singleton_self j))
+  refine ⟨fun hx => ?_, fun hx => ?_⟩
+  · -- Merging the parts of `x` through `i` and `j` gives an upper bound of `x` and the atom.
+    obtain ⟨Q, hQ, hxQ, hQi⟩ := x.2.exists_part_eq_union hi hj hle hadj
+    have hsup : x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩ ≤ ⟨Q, hQ⟩ :=
+      sup_le (Subtype.coe_le_coe.1 hxQ)
+        (pairPartition_le (hij := hij) (hQi ▸ mem_union_right _ (x.1.mem_part_self.2 hj)))
+    rw [hx, top_le_iff] at hsup
+    exact hQi.symm.trans ((congrArg (fun P : NoncrossingPartition s => P.1.part i) hsup).trans
+      (Finpartition.part_top hi))
+  · set R := x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩
+    have hjR : j ∈ R.1.part i := Finpartition.part_mono (le_sup_right : _ ≤ R) i
+      (by rw [part_pairPartition]; exact mem_insert_of_mem (mem_singleton_self j))
+    have hsR : s ⊆ R.1.part i := calc
+      s = x.1.part i ∪ x.1.part j := hx.symm
+      _ ⊆ R.1.part i ∪ R.1.part j := union_subset_union
+        (Finpartition.part_mono (le_sup_left : x ≤ R) i)
+        (Finpartition.part_mono (le_sup_left : x ≤ R) j)
+      _ = R.1.part i := by rw [(R.1.mem_part_iff_part_eq_part hj hi).1 hjR, union_self]
+    have hR := R.1.part_mem.2 hi
+    rw [(R.1.part_subset i).antisymm hsR] at hR
+    exact Subtype.ext (Finpartition.eq_top_of_mem_parts hR)
 
 /-- The noncrossing partitions of `s` in which `i` forms a part on its own correspond to the
 noncrossing partitions of `s.erase i`: delete the part `{i}`, or insert it back. -/

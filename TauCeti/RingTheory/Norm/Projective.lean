@@ -105,8 +105,10 @@ theorem isUnit_projectiveNorm_iff {x : S} : IsUnit (projectiveNorm R x) ↔ IsUn
 
 end Projective
 
-/-- For an algebra which is free of finite rank, `projectiveNorm` is the norm `Algebra.norm`. -/
-@[simp]
+/-- For an algebra which is free of finite rank, `projectiveNorm` is the norm `Algebra.norm`.
+
+Use this comparison explicitly: automatic rewriting to `norm` would hide the unit-detection
+and base-change simplification rules for `projectiveNorm`. -/
 theorem projectiveNorm_eq_norm [Module.Free R S] (x : S) : projectiveNorm R x = norm R x := by
   rw [projectiveNorm_apply, LinearMap.projectiveDet_eq_det, norm_apply]
 
