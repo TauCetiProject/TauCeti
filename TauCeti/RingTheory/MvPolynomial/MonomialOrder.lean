@@ -92,6 +92,19 @@ theorem toSyn_degree_monomial_mul_le [CommSemiring R] (a : σ →₀ ℕ) (c : R
   rw [map_add]
   exact m.toSyn_degree_mul_le.trans (by gcongr; exact m.degree_monomial_le c)
 
+/-- The leading term of `f` is its leading coefficient times the monomial `X^(deg f)`. -/
+theorem leadingTerm_eq_leadingCoeff_smul_monomial_one [CommSemiring R] (f : MvPolynomial σ R) :
+    m.leadingTerm f = m.leadingCoeff f • monomial (m.degree f) (1 : R) := by
+  simp [leadingTerm, smul_monomial]
+
+/-- Over a field, a subalgebra contains the leading term of a nonzero polynomial if and only if it
+contains its leading monomial. -/
+theorem leadingTerm_mem_iff {k : Type*} [Field k] {f : MvPolynomial σ k}
+    (C : Subalgebra k (MvPolynomial σ k)) (hf : f ≠ 0) :
+    m.leadingTerm f ∈ C ↔ monomial (m.degree f) 1 ∈ C := by
+  rw [leadingTerm_eq_leadingCoeff_smul_monomial_one, ← Subalgebra.mem_toSubmodule,
+    Submodule.smul_mem_iff _ (m.leadingCoeff_ne_zero_iff.2 hf), Subalgebra.mem_toSubmodule]
+
 /-- **Cancellation of leading terms by an S-polynomial.** If `b₀` has unit leading coefficient
 `u₀` and `deg b₀ ≤ a + deg b`, the difference between `X^a * b` and `lc b` times the normalized
 product `X^(a + deg b - deg b₀) * b₀ / lc b₀` is `X^(a + deg b - L) / lc b₀ * S(b, b₀)`, where

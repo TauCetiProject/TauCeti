@@ -40,6 +40,12 @@ and the SAGBI criterion for presentations.
   (`MonomialOrder.isSAGBIBasis_iff_forall_mem_span`).
 * `MonomialOrder.IsSAGBIBasis.adjoin_eq`: a SAGBI basis of `A` generates `A` as an algebra.
 
+## Implementation notes
+
+The monoid-algebra results use that `MvPolynomial σ k` is by definition
+`AddMonoidAlgebra k (σ →₀ ℕ)`, with `AddMonoidAlgebra.single a c` corresponding to `monomial a c`
+(`MvPolynomial.single_eq_monomial`).
+
 ## References
 
 * L. Robbiano, M. Sweedler, *Subalgebra bases*, in *Commutative Algebra (Salvador, 1988)*,
@@ -221,15 +227,6 @@ section Field
 variable {k : Type*} [Field k] {m} {f p : MvPolynomial σ k} {B : Set (MvPolynomial σ k)}
   {A : Subalgebra k (MvPolynomial σ k)} {a : σ →₀ ℕ}
 
-/-- Over a field, a subalgebra contains the leading term of a nonzero polynomial if and only if it
-contains its leading monomial. -/
-private theorem leadingTerm_mem_iff (C : Subalgebra k (MvPolynomial σ k)) (hf : f ≠ 0) :
-    m.leadingTerm f ∈ C ↔ monomial (m.degree f) 1 ∈ C := by
-  have h : m.leadingTerm f = m.leadingCoeff f • monomial (m.degree f) (1 : k) := by
-    simp [leadingTerm, smul_monomial]
-  rw [h]
-  exact Submodule.smul_mem_iff (p := Subalgebra.toSubmodule C) (m.leadingCoeff_ne_zero_iff.2 hf)
-
 /-- Over a field, the leading terms of `B` generate the monomial `X^a` if and only if `a` is a sum
 of leading exponents of nonzero elements of `B`. -/
 theorem monomial_one_mem_adjoin_leadingTerm_iff :
@@ -241,14 +238,17 @@ theorem monomial_one_mem_adjoin_leadingTerm_iff :
     · rintro _ ⟨f, hf, rfl⟩
       rcases eq_or_ne f 0 with rfl | hf0
       · simp
-      · exact (leadingTerm_mem_iff _ hf0).2 (Algebra.subset_adjoin ⟨_, ⟨f, ⟨hf, hf0⟩, rfl⟩, rfl⟩)
+      · exact (m.leadingTerm_mem_iff _ hf0).2 (Algebra.subset_adjoin ⟨_, ⟨f, ⟨hf, hf0⟩, rfl⟩, rfl⟩)
     · rintro _ ⟨_, ⟨f, ⟨hf, hf0⟩, rfl⟩, rfl⟩
-      exact (leadingTerm_mem_iff _ hf0).1 (Algebra.subset_adjoin ⟨f, hf, rfl⟩)
+      exact (m.leadingTerm_mem_iff _ hf0).1 (Algebra.subset_adjoin ⟨f, hf, rfl⟩)
+  -- `AddMonoidAlgebra.mem_closure_of_mem_span_closure` is stated for `AddMonoidAlgebra`. We apply
+  -- it to `MvPolynomial σ k`, which is by definition `AddMonoidAlgebra k (σ →₀ ℕ)`; `hof` matches
+  -- `AddMonoidAlgebra.of'` with `monomial · 1` via `single_eq_monomial`.
   have hof : (monomial · (1 : k)) = AddMonoidAlgebra.of' k (σ →₀ ℕ) :=
     funext fun b ↦ by rw [AddMonoidAlgebra.of'_apply, single_eq_monomial]
   rw [hadj]
   refine ⟨fun h ↦ AddMonoidAlgebra.mem_closure_of_mem_span_closure (R := k) ?_, fun h ↦ ?_⟩
-  · rw [← Algebra.adjoin_eq_span, ← hof]
+  · rw [← Algebra.adjoin_eq_span, ← hof, Subalgebra.mem_toSubmodule]
     exact h
   · induction h using AddSubmonoid.closure_induction with
     | mem b hb => exact Algebra.subset_adjoin ⟨b, hb, rfl⟩
@@ -260,7 +260,7 @@ if and only if its leading exponent is a sum of leading exponents of nonzero ele
 theorem leadingTerm_mem_adjoin_leadingTerm_iff (hf : f ≠ 0) :
     m.leadingTerm f ∈ Algebra.adjoin k (m.leadingTerm '' B) ↔
       m.degree f ∈ AddSubmonoid.closure (m.degree '' (B \ {0})) := by
-  rw [leadingTerm_mem_iff _ hf, monomial_one_mem_adjoin_leadingTerm_iff]
+  rw [m.leadingTerm_mem_iff _ hf, monomial_one_mem_adjoin_leadingTerm_iff]
 
 /-- Over a field, a monomial lies in the initial algebra of `A` if and only if its exponent is a
 leading exponent of `A` or its coefficient vanishes. -/
@@ -307,7 +307,8 @@ theorem toSubmodule_initialAlgebra :
   Submodule.ext fun _ ↦ mem_initialAlgebra_iff
 
 /-- The image of the monoid algebra of the leading exponents of `A` in the polynomial ring is the
-initial algebra of `A`. -/
+initial algebra of `A`. Here `MvPolynomial σ k` is identified with `AddMonoidAlgebra k (σ →₀ ℕ)`,
+as it is by definition (compare `MvPolynomial.single_eq_monomial`). -/
 theorem range_mapDomainAlgHom_leadingExponents :
     (AddMonoidAlgebra.mapDomainAlgHom k k (m.leadingExponents A).subtype).range =
       m.initialAlgebra A := by
@@ -344,8 +345,10 @@ noncomputable def initialAlgebraEquiv :
 /-- The isomorphism `initialAlgebraEquiv` is induced by the inclusion of the leading exponents
 into `σ →₀ ℕ`. -/
 theorem coe_initialAlgebraEquiv (x : AddMonoidAlgebra k (m.leadingExponents A)) :
-    (m.initialAlgebraEquiv A x : MvPolynomial σ k) = AddMonoidAlgebra.mapDomain Subtype.val x :=
-  (rfl)
+    (m.initialAlgebraEquiv A x : MvPolynomial σ k) = AddMonoidAlgebra.mapDomain Subtype.val x := by
+  rw [initialAlgebraEquiv, AlgEquiv.trans_apply, Subalgebra.equivOfEq_apply]
+  -- The underlying element of `AlgEquiv.ofInjective f _ x` is `f x` by definition.
+  exact AddMonoidAlgebra.mapDomainAlgHom_apply k k _ x
 
 @[simp]
 theorem coe_initialAlgebraEquiv_single (a : m.leadingExponents A) (c : k) :
