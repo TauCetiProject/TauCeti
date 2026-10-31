@@ -13,7 +13,7 @@ public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Tail
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Reindex
 public import TauCeti.Algebra.Homology.ShortComplex.Limit
 
 /-!
