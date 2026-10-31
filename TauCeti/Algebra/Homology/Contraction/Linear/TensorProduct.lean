@@ -19,11 +19,11 @@ The tensor product of `(M, d_M)` with `(C, b)` carries the endomorphism
 `d_M ⊗ 1 + (1 ⊗ b) ∘ (τ ⊗ 1)`,
 
 where `τ` is the Koszul twist of `M` (the sign `(-1)^{|x|}` on homogeneous `x`); when `d_M` has
-degree one and `b` squares to zero this is the differential of the tensor product complex.  Then
-`(i ⊗ 1, p ⊗ 1, h ⊗ 1)` is a special contraction of `M ⊗ C` onto `N ⊗ C` for these endomorphisms
-(`TauCeti.LinearSpecialContraction.rTensor`).  The only sign to check is that `h`, having odd
-degree, anticommutes with `τ`, so the two cross terms `(τ h + h τ) ⊗ b` cancel.  No condition
-on `b` is needed.
+degree one and squares to zero and `b` squares to zero, this is the differential of the tensor
+product complex.  Then `(i ⊗ 1, p ⊗ 1, h ⊗ 1)` is a special contraction of `M ⊗ C` onto
+`N ⊗ C` for these endomorphisms (`TauCeti.LinearSpecialContraction.rTensor`).  The only sign to
+check is that `h`, having odd degree, anticommutes with `τ`, so the two cross terms
+`(τ h + h τ) ⊗ b` cancel.  No condition on `b` is needed.
 
 This is the input of homological transfer for right `A∞` modules, where `C` is the coaugmented
 bar construction of the algebra and `b` its bar differential: the higher module operations are
