@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.Distribution.Mass
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
+import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
+import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 
 /-!
 # Pullback of test forms and pushforward of currents
@@ -96,19 +97,6 @@ private theorem support_pullbackFun_subset (ω : E' → E' [⋀^Fin k]→L[ℝ] 
     simp [pullbackFun, hxΩ, h, -compContinuousLinearMapCLM_apply]
   · exact absurd (indicator_of_notMem hxΩ _) hx
 
-/-- Pulling back along the derivative of `Φ` depends smoothly on the point of `Ω`. -/
-private theorem contDiffOn_compContinuousLinearMapCLM_fderiv (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (fun y ↦ (compContinuousLinearMapCLM (fderiv ℝ Φ y) :
-      (E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F)) Ω :=
-  (contDiffOn_univ.1 (cpolynomialOn_compContinuousLinearMapCLM univ).contDiffOn).comp_contDiffOn
-    (hΦ.fderiv_of_isOpen Ω.isOpen (by simp))
-
-/-- The pointwise pullback is smooth on `Ω`. -/
-private theorem contDiffOn_pullback (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω)
-    {ω : E' → E' [⋀^Fin k]→L[ℝ] F} (hω : ContDiff ℝ (⊤ : ℕ∞) ω) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (fun y ↦ compContinuousLinearMapCLM (fderiv ℝ Φ y) (ω (Φ y))) Ω :=
-  (contDiffOn_compContinuousLinearMapCLM_fderiv hΦ).clm_apply (hω.comp_contDiffOn hΦ)
-
 /-- The pointwise pullback of a smooth form is smooth, provided that its support near `Ω` lies in
 a compact subset of `Ω`. -/
 private theorem contDiff_pullbackFun (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω)
@@ -117,8 +105,8 @@ private theorem contDiff_pullbackFun (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω)
     ContDiff ℝ (⊤ : ℕ∞) (pullbackFun Ω Φ ω) := by
   refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
   by_cases hx : x ∈ Ω
-  · exact ((contDiffOn_pullback hΦ hω).contDiffAt (Ω.isOpen.mem_nhds hx)).congr_of_eventuallyEq
-      (pullbackFun_eventuallyEq hx)
+  · exact ((hΦ.contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (by simp)).differentialForm_pullback
+      hω.contDiffAt |>.congr_of_eventuallyEq (pullbackFun_eventuallyEq hx)
   · -- Off `Ω`, the point lies outside the closed set `C`, near which the pullback vanishes.
     refine (contDiffAt_const (c := 0)).congr_of_eventuallyEq ?_
     filter_upwards [hC.isClosed.isOpen_compl.mem_nhds fun h ↦ hx (hCΩ h)] with y hy
@@ -131,7 +119,10 @@ private theorem exists_norm_iteratedFDeriv_pullbackFun_le (hΦ : ContDiffOn ℝ 
     ∃ A : ℝ, 0 ≤ A ∧ ∀ (ω : E' → E' [⋀^Fin k]→L[ℝ] F), ContDiff ℝ (⊤ : ℕ∞) ω → ∀ B : ℝ,
       (∀ j ≤ i, ∀ y, ‖iteratedFDeriv ℝ j ω y‖ ≤ B) →
       ∀ x ∈ C, ‖iteratedFDeriv ℝ i (pullbackFun Ω Φ ω) x‖ ≤ A * B := by
-  have hM := contDiffOn_compContinuousLinearMapCLM_fderiv (k := k) (F := F) hΦ
+  have hM : ContDiffOn ℝ (⊤ : ℕ∞) (fun y ↦ (compContinuousLinearMapCLM (fderiv ℝ Φ y) :
+      (E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F)) Ω :=
+    (contDiff_compContinuousLinearMapCLM _).comp_contDiffOn
+      (hΦ.fderiv_of_isOpen Ω.isOpen (by simp))
   -- Bounds on `C` for the derivatives of `y ↦ (DΦ y)^*` and of `Φ`; the latter are made uniform
   -- in the order `l ≤ i`, as the Faà di Bruno bound requires.
   choose R₁ hR₁ using fun j ↦ hC.exists_bound_of_continuousOn
