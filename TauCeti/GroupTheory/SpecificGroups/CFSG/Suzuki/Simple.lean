@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Suzuki.Candidate
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Suzuki.Center
 public import TauCeti.GroupTheory.TitsSystem.NormalSubgroup
 public import TauCeti.GroupTheory.TitsSystem.RankOne
 public import Mathlib.GroupTheory.Nilpotent
@@ -148,9 +147,9 @@ theorem normalCore_titsSystem_subgroupB (hm : m ≠ 0) :
     (titsSystem m hm).subgroupB.normalCore = ⊥ := by
   rw [titsSystem_subgroupB]
   set Z := (borelSubgroupOf m).normalCore
-  -- The Weyl element conjugates an element of `Z ∩ U` into `B`, so that element is trivial.
-  have hZU : ∀ y ∈ Z, y ∈ unipotentSubgroupOf m → y = 1 := by
-    intro y hyZ hyU
+  -- The Weyl element conjugates an element of `U ∩ Z` into `B`, so that element is trivial.
+  have hZU : unipotentSubgroupOf m ⊓ Z = ⊥ := by
+    refine eq_bot_iff.mpr fun y ⟨hyU, hyZ⟩ ↦ Subgroup.mem_bot.mpr ?_
     obtain ⟨a, b, hy⟩ := mem_unipotentSubgroup.mp (Subgroup.mem_subgroupOf.mp hyU)
     have h := Subgroup.normalCore_le _
       ((Subgroup.normalCore_normal _).conj_mem y hyZ (weylOf m))
@@ -158,18 +157,14 @@ theorem normalCore_titsSystem_subgroupB (hm : m ≠ 0) :
     simp only [Subgroup.coe_mul, InvMemClass.coe_inv, weyl_inv, ← hy] at h
     obtain ⟨rfl, rfl⟩ := (weyl_mul_unipotent_mul_weyl_mem_borelSubgroup_iff m).mp h
     exact Subtype.ext (by simp [← hy])
-  -- Hence `Z`, which normalizes `U`, commutes with `U`.
+  -- Hence `⁅U, Z⁆ ≤ U ⊓ Z` is trivial, as `Z` is normal and normalizes `U`: `Z` commutes with `U`.
   have hcomm : unipotentSubgroupOf m ≤ Subgroup.centralizer (Z : Set (suzukiGroup m)) := by
-    intro u hu
-    refine Subgroup.mem_centralizer_iff.mpr fun x hx ↦ ?_
-    have hZ : x * u * x⁻¹ * u⁻¹ ∈ Z := by
-      rw [mul_assoc, mul_assoc]
-      exact mul_mem hx (by
-        simpa [mul_assoc] using (Subgroup.normalCore_normal _).conj_mem _ (inv_mem hx) u)
-    have hU : x * u * x⁻¹ * u⁻¹ ∈ unipotentSubgroupOf m :=
-      mul_mem ((Subgroup.mem_normalizer_iff.mp
-        (borelSubgroupOf_le_normalizer m (Subgroup.normalCore_le _ hx)) u).mp hu) (inv_mem hu)
-    exact mul_inv_eq_iff_eq_mul.mp (mul_inv_eq_one.mp (hZU _ hZ hU))
+    have : Z.Normal := Subgroup.normalCore_normal _
+    refine Subgroup.commutator_eq_bot_iff_le_centralizer.mp (eq_bot_iff.mpr ?_)
+    rw [← hZU]
+    exact le_inf (Subgroup.le_normalizer_iff_commutator_le_left.mp
+      ((Subgroup.normalCore_le _).trans (borelSubgroupOf_le_normalizer m)))
+      (Subgroup.commutator_le_right _ _)
   -- The centralizer of the normal subgroup `Z` is normal and contains `U`, so it is everything.
   have htop : Subgroup.centralizer (Z : Set (suzukiGroup m)) = ⊤ :=
     eq_top_iff.mpr ((normalClosure_unipotentSubgroupOf m).symm.le.trans
