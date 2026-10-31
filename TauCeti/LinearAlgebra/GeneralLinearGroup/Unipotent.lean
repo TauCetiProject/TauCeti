@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.RingTheory.Nilpotent.Basic
 import TauCeti.LinearAlgebra.Charpoly.Nilpotent
+import TauCeti.LinearAlgebra.GeneralLinearGroup.Basic
 
 /-!
 # Unipotent linear automorphisms
@@ -37,8 +38,6 @@ the first summand is nilpotent and commutes with the second.
 * `LinearMap.GeneralLinearGroup.isUnipotent_one`: the identity automorphism is unipotent.
 * `LinearMap.GeneralLinearGroup.IsUnipotent.inv`: the inverse of a unipotent automorphism is
   unipotent.
-* `LinearMap.GeneralLinearGroup.val_ofLinearEquiv`: the endomorphism underlying
-  `ofLinearEquiv f` is `f`.
 * `LinearMap.GeneralLinearGroup.isUnipotent_ofLinearEquiv_iff`: unipotence after converting a
   linear equivalence to a general-linear-group element.
 * `LinearMap.GeneralLinearGroup.isUnipotent_congrLinearEquiv_iff`: unipotence is invariant under
@@ -105,13 +104,6 @@ theorem isUnipotent_iff_charpoly
 @[simp]
 theorem isUnipotent_one : IsUnipotent (1 : GeneralLinearGroup K V) := by
   simp [isUnipotent_def]
-
-/-- The endomorphism underlying the general-linear-group element of a linear equivalence is that
-equivalence. Mathlib's `coe_ofLinearEquiv` records this only for the underlying function. -/
-@[simp]
-theorem val_ofLinearEquiv (f : V ≃ₗ[K] V) :
-    ((ofLinearEquiv f : GeneralLinearGroup K V) : End K V) = f.toLinearMap :=
-  LinearMap.ext fun x ↦ congrFun (coe_ofLinearEquiv f) x
 
 /-- A linear equivalence is unipotent after conversion to the general linear group exactly when
 its underlying endomorphism minus the identity is nilpotent. -/

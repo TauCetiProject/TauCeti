@@ -35,12 +35,11 @@ variable {R M : Type*} [CommRing R] [IsReduced R] [AddCommGroup M] [Module R M]
   [Module.Free R M] [Module.Finite R M]
 
 /-- Over a reduced commutative ring, a nilpotent endomorphism of a finite free module has
-characteristic polynomial `X ^ finrank R M`.
-
-The proof follows Mathlib's `IsNilpotent.charpoly_eq_X_pow_finrank`, replacing its final
-domain step by the coefficientwise criterion `Polynomial.isNilpotent_iff`. -/
+characteristic polynomial `X ^ finrank R M`. -/
 theorem charpoly_eq_X_pow_finrank_of_isNilpotent {f : Module.End R M} (hf : IsNilpotent f) :
     f.charpoly = X ^ finrank R M := by
+  -- This follows Mathlib's `IsNilpotent.charpoly_eq_X_pow_finrank`, replacing its final domain
+  -- step by the coefficientwise criterion `Polynomial.isNilpotent_iff`.
   nontriviality R
   let b := Free.chooseBasis R M
   have hmat : toMatrixAlgEquiv b f = toMatrix b b f := by
