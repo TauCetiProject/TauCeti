@@ -58,16 +58,6 @@ variable {G A H K : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
   {α : CStarAction G A} (P : CovariantRepresentation α H) (μ : Measure G)
   [IsFiniteMeasureOnCompacts μ]
 
-/-- The integrated form turns left multiplication by a coefficient into the coefficient
-representation: `(π ⋊ U)(a • f) = π(a) (π ⋊ U)(f)`. -/
-@[simp]
-theorem integratedOperator_smul (a : A) (f : C_c(G, A)) :
-    P.integratedOperator μ (a • f) = P.coefficient a * P.integratedOperator μ f := by
-  ext v
-  simp only [integratedOperator_apply, CompactlySupportedContinuousMap.smul_apply, smul_eq_mul,
-    map_mul, mul_apply_eq_comp]
-  exact (P.coefficient a).integral_comp_comm (P.integrable_integrand μ f v)
-
 /-- The integrated form turns the twisted left translation into the group representation:
 `(π ⋊ U)(r • f) = U_r (π ⋊ U)(f)`. -/
 @[simp]

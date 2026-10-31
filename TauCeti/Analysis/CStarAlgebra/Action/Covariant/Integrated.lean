@@ -21,9 +21,10 @@ needed. For the definition, the norm bound and the covariance identity the measu
 finite on compact sets; left invariance enters only for multiplicativity under twisted convolution.
 
 Covariance moves a coefficient on the right of an integrated operator inside its integral with
-the action twist. For scalar multiples of a fixed coefficient, the construction agrees with
-`ContRepresentation.integratedOperatorL1`, after pulling the group representation back along
-`MulEquiv.multiplicativeAdditive`.
+the action twist, while a coefficient on the left comes from the pointwise left multiplier,
+`(π ⋊ U)(a • f) = π(a) (π ⋊ U)(f)`. For scalar multiples of a fixed coefficient, the
+construction agrees with `ContRepresentation.integratedOperatorL1`, after pulling the group
+representation back along `MulEquiv.multiplicativeAdditive`.
 
 For a left-invariant measure the integrated form is multiplicative for twisted convolution,
 `(π ⋊ U) (f ⋆ g) = (π ⋊ U) f * (π ⋊ U) g`. The order of integration is exchanged by Fubini's
@@ -127,6 +128,16 @@ theorem integratedOperator_coefficient_apply (f : C_c(G, A)) (a : A) (v : H) :
       ∫ g, P.coefficient (f g * α g a) (P.group g v) ∂μ := by
   rw [integratedOperator_apply]
   simp_rw [P.covariance, map_mul, mul_apply_eq_comp]
+
+/-- The integrated form turns left multiplication by a coefficient into the coefficient
+representation: `(π ⋊ U)(a • f) = π(a) (π ⋊ U)(f)`. -/
+@[simp]
+theorem integratedOperator_smul (a : A) (f : C_c(G, A)) :
+    P.integratedOperator μ (a • f) = P.coefficient a * P.integratedOperator μ f := by
+  ext v
+  simp only [integratedOperator_apply, CompactlySupportedContinuousMap.smul_apply, smul_eq_mul,
+    map_mul, mul_apply_eq_comp]
+  exact (P.coefficient a).integral_comp_comm (P.integrable_integrand μ f v)
 
 omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- Vector evaluation of the coefficient representation commutes with Bochner integration. -/

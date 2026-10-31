@@ -20,7 +20,8 @@ the second being `CStarAction.translate`. These are the formulas of Williams's c
 subalgebra `C_c(G, A)`. Both commute with twisted convolution in the first variable,
 `(a • f) ⋆ g = a • (f ⋆ g)` and `(r • f) ⋆ g = r • (f ⋆ g)`; the second identity needs a
 left-invariant measure. The coefficient action is Mathlib's pointwise scalar action of `A` on
-`C_c(G, A)`, so only the group action is defined here.
+`C_c(G, A)`, and its identity `TauCeti.CStarAction.smul_convolution` lives beside the convolution
+itself, so only the group action and its identity are developed here.
 
 An integrated covariant representation turns these multipliers into its coefficient and group
 operators; this is how a covariant pair is recovered from its integrated form.
@@ -35,7 +36,6 @@ are the maps `i_A` and `i_G`.
 
 ## Main statements
 
-* `TauCeti.CStarAction.smul_convolution`: `(a • f) ⋆ g = a • (f ⋆ g)`.
 * `TauCeti.CStarAction.translate_convolution`: `(r • f) ⋆ g = r • (f ⋆ g)`.
 -/
 
@@ -89,14 +89,6 @@ end ContinuousMul
 
 variable [IsTopologicalGroup G] [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G)
   [IsFiniteMeasureOnCompacts μ]
-
-/-- Left multiplication by a coefficient commutes with twisted convolution. -/
-theorem smul_convolution (a : A) (f g : C_c(G, A)) :
-    α.convolution μ (a • f) g = a • α.convolution μ f g := by
-  ext s
-  simp only [convolution_apply, CompactlySupportedContinuousMap.smul_apply, smul_eq_mul,
-    mul_assoc]
-  exact integral_const_mul_of_integrable (α.integrable_integrand f g μ s)
 
 /-- The twisted left translation commutes with twisted convolution with respect to a
 left-invariant measure. -/
