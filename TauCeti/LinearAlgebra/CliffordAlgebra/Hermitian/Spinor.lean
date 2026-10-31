@@ -10,10 +10,9 @@ public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
--- Private: the Fock model, its metric, the complex structure on `V`, anisotropy, the dimensions
--- of Clifford and endomorphism algebras and the inner automorphisms of endomorphism algebras are
--- used only inside the proof.
-import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+-- Private: the Fock model, its metric, the complex structure on `V`, anisotropy, the parity of the
+-- dimension of `V` and the inner automorphisms of endomorphism algebras are used only inside the
+-- proof.
 import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
@@ -74,31 +73,14 @@ endomorphisms of `S`, there is a positive definite Hermitian form `H` on `S` wit
 
 The form is unique up to a positive real scalar
 (`CliffordAlgebra.existsUnique_pos_mul_of_surjective`). No parity hypothesis is needed: `ρ` forces
-`V` to have even dimension. Dimension zero, where `S` is a line, is included. -/
+`V` to have even dimension (`CliffordAlgebra.even_finrank_of_algEquiv_end`). Dimension zero, where
+`S` is a line, is included. -/
 theorem exists_sesqForm_map_eq_map_conjStar (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S) :
     ∃ H : S →ₗ⋆[ℂ] S →ₗ[ℂ] ℂ, H.IsPosSemidef ∧ (∀ x, x ≠ 0 → H x x ≠ 0) ∧
       ∀ a x y, H (ρ a x) y = H x (ρ (conjStar Q a) y) := by
-  -- `V` has even dimension: `ρ` gives `2 ^ finrank ℝ V = (finrank ℂ S) ^ 2`.
   obtain ⟨ℓ, hℓ⟩ : Even (finrank ℝ V) := by
-    have hdim := ρ.toLinearEquiv.finrank_eq
-    rw [finrank_eq_two_pow, finrank_baseChange] at hdim
-    have : Module.Finite ℂ (Module.End ℂ S) := Module.finite_of_finrank_pos (hdim ▸ by positivity)
-    have : Nontrivial S := by
-      by_contra h
-      rw [not_nontrivial_iff_subsingleton] at h
-      simp [finrank_zero_of_subsingleton (R := ℂ) (M := Module.End ℂ S)] at hdim
-    -- `S` is finite-dimensional, being the image of `End S` under evaluation at `x ≠ 0`.
-    obtain ⟨x, hx⟩ := exists_ne (0 : S)
-    obtain ⟨φ, hφ⟩ : ∃ φ : Dual ℂ S, φ x ≠ 0 := by
-      by_contra! h
-      exact hx ((forall_dual_apply_eq_zero_iff ℂ x).1 h)
-    have : Module.Finite ℂ S := Module.Finite.of_surjective (LinearMap.applyₗ x)
-      fun y ↦ ⟨(φ x)⁻¹ • φ.smulRight y, by simp [hφ]⟩
-    rw [finrank_linearMap] at hdim
-    obtain ⟨k, -, hk⟩ := (Nat.dvd_prime_pow Nat.prime_two).1 (Dvd.intro _ hdim.symm)
-    rw [hk, ← pow_add] at hdim
-    exact ⟨k, Nat.pow_right_injective le_rfl hdim⟩
+    simpa [finrank_baseChange] using even_finrank_of_algEquiv_end (Q.baseChange ℂ) ρ
   -- The Fock model of an orthogonal complex structure, with an orthonormal basis of `W`.
   obtain ⟨J, hJ⟩ := TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq (V := V) ⟨ℓ, hℓ⟩
   have hQJ (v : V) : Q (J v) = Q v := by rw [hQ, hQ, hJ]
