@@ -72,8 +72,8 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
     have key (m : M.presheaf.stalk x) :
         algebraMap Γ(X, U) (Module.End Γ(X, U) (M.presheaf.stalk x)) s m =
           (u : X.presheaf.stalk x) • m := by
-      rw [hu]
-      rfl
+      rw [Module.algebraMap_end_apply, section_smul_stalk_def, hu,
+        TopCat.Presheaf.stalk_open_algebraMap]
     rw [Module.End.isUnit_iff]
     refine ⟨fun a b h ↦ ?_, fun b ↦ ⟨(↑u⁻¹ : X.presheaf.stalk x) • b, ?_⟩⟩
     · rw [key, key] at h

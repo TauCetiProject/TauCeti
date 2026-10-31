@@ -75,17 +75,6 @@ private lemma residueField_smul_fibre (c : X.residueField x)
     c • t = (Scheme.ΓSpecIso (X.residueField x)).inv c • t := by
   rw [smul_Spec_def, TopCat.Presheaf.map_apply_eq_self]
 
-/-- Pulling back to `Spec κ(x)` commutes with restriction between opens containing `x`. -/
-private lemma pullbackSectionsLE_res {V W : X.Opens} (i : V ⟶ W) (hx : x ∈ V) (m : Γ(M, W)) :
-    Scheme.Hom.pullbackSectionsLE (X.fromSpecResidueField x) M V ⊤ (top_le_preimage x hx)
-        (M.presheaf.map i.op m) =
-      Scheme.Hom.pullbackSectionsLE (X.fromSpecResidueField x) M W ⊤
-        (top_le_preimage x (i.le hx)) m := by
-  rw [Scheme.Hom.pullbackSectionsLE_apply, Scheme.Hom.pullbackSectionsLE_apply,
-    ← Scheme.Hom.pullbackSections_restrict, ← ConcreteCategory.comp_apply, ← Functor.map_comp]
-  -- Both sides restrict along a morphism `⊤ ⟶ ι⁻¹ W`, and `congr` uses that there is only one.
-  congr 2
-
 /-- A function near `x` acts on pulled-back sections through its germ at `x`. -/
 private lemma pullbackSectionsLE_smul {V : X.Opens} (hx : x ∈ V) (r : Γ(X, V)) (m : Γ(M, V)) :
     Scheme.Hom.pullbackSectionsLE (X.fromSpecResidueField x) M V ⊤ (top_le_preimage x hx)
@@ -105,13 +94,14 @@ private def fibreStalkMap :
   M.val.stalkLiftCommRing (S := X.presheaf) x
     (fun V hx ↦ (Scheme.Hom.pullbackSectionsLE (X.fromSpecResidueField x) M V ⊤
       (top_le_preimage x hx)).toAddMonoidHom)
-    (fun i hx m ↦ pullbackSectionsLE_res x M i hx m)
+    (fun i hx m ↦ Scheme.Hom.pullbackSectionsLE_map _ M _ ⊤ _ i (top_le_preimage x hx) m)
     (fun _ hx r m ↦ pullbackSectionsLE_smul x M hx r m)
 
 private lemma fibreStalkMap_germ {V : X.Opens} (hx : x ∈ V) (m : Γ(M, V)) :
     fibreStalkMap x M (M.presheaf.germ V x hx m) =
       Scheme.Hom.pullbackSectionsLE (X.fromSpecResidueField x) M V ⊤ (top_le_preimage x hx) m :=
-  M.val.stalkLiftCommRing_germ (S := X.presheaf) x _ _ _ V hx m
+  M.val.stalkLiftCommRing_germ (S := X.presheaf) x _
+    (fun i hx m ↦ Scheme.Hom.pullbackSectionsLE_map _ M _ ⊤ _ i (top_le_preimage x hx) m) _ V hx m
 
 /-- The fibre map `κ(x) ⊗_{𝒪_{X,x}} M_x → Γ(Spec κ(x), ι^* M)`, `c ⊗ m_x ↦ c • ι^* m`. -/
 private def fibreMap :
@@ -146,6 +136,14 @@ private lemma isAffineOpen_preimage : IsAffineOpen (X.fromSpecResidueField y ⁻
   rw [fromSpecResidueField_preimage_eq_top (y : X) y.2]
   exact isAffineOpen_top _
 
+/-- On `U ∋ y`, the morphism `ι : Spec κ(y) ⟶ X` sends a function to its value at `y`, restricted
+from `⊤` to `ι⁻¹ U`. -/
+private lemma app_fromSpecResidueField_apply (r : Γ(X, U)) :
+    (X.fromSpecResidueField y).app U r = (Spec (X.residueField y)).presheaf.map (homOfLE le_top).op
+      ((Scheme.ΓSpecIso (X.residueField y)).inv (X.evaluation U y y.2 r)) := by
+  rw [Scheme.Hom.app_eq_appLE, ← Scheme.Hom.appLE_map _ (top_le_preimage (y : X) y.2),
+    fromSpecResidueField_appLE (y : X) y.2, CommRingCat.comp_apply, CommRingCat.comp_apply]
+
 /-- `κ(y) ≅ Γ(Spec κ(y), ι⁻¹ U)` as `Γ(X, U)`-modules, by restriction from `⊤` to `ι⁻¹ U = ⊤`. -/
 private def residueFieldEquivPreimage :
     X.residueField y ≃ₗ[Γ(X, U)] Γ(Spec (X.residueField y), X.fromSpecResidueField y ⁻¹ᵁ U) :=
@@ -156,16 +154,9 @@ private def residueFieldEquivPreimage :
         ((Scheme.ΓSpecIso (X.residueField y)).inv c)
       map_add' := by simp
       map_smul' r c := by
-        -- `ι` acts on `r` as the global function given by its value at `y`.
-        have hr : (Spec (X.residueField y)).presheaf.map (homOfLE le_top).op
-            ((Scheme.ΓSpecIso (X.residueField y)).inv (X.evaluation U y y.2 r)) =
-              (X.fromSpecResidueField y).app U r := by
-          rw [← CommRingCat.comp_apply (X.evaluation U y y.2),
-            ← fromSpecResidueField_appLE (y : X) y.2 (top_le_preimage (y : X) y.2),
-            Scheme.Hom.appLE, CommRingCat.comp_apply,
-            ← ConcreteCategory.comp_apply, ← Functor.map_comp, TopCat.Presheaf.map_apply_eq_self]
         rw [Algebra.smul_def, Algebra.smul_def, RingHom.id_apply, map_mul, map_mul]
-        exact congrArg (· * _) hr }
+        -- `ι` acts on `r` as the global function given by its value at `y`.
+        exact congrArg (· * _) (app_fromSpecResidueField_apply y r).symm }
     (ConcreteCategory.bijective_of_isIso
       ((Scheme.ΓSpecIso (X.residueField y)).inv ≫
         (Spec (X.residueField y)).presheaf.map (homOfLE le_top).op))
@@ -204,9 +195,11 @@ private lemma map_liftBaseChange_eq [M.IsQuasicoherent] (hU : IsAffineOpen U)
     have h2 : preimageSectionsEquiv M y hU (1 ⊗ₜ m) =
         (X.fromSpecResidueField y).pullbackSections M U m :=
       (X.fromSpecResidueField y).pullbackSectionsEquiv_one_tmul M hU (isAffineOpen_preimage y) m
-    rw [LinearMap.liftBaseChange_tmul, residueField_smul_fibre, Scheme.Modules.map_smul, h1,
-      LinearEquiv.rTensor_tmul, ← mul_one (residueFieldEquivPreimage y c), ← smul_eq_mul,
-      ← TensorProduct.smul_tmul', LinearEquiv.map_smul, h2, residueFieldEquivPreimage_apply]
+    -- Both sides are `c • ι^* m`, after writing `c ⊗ m = c • (1 ⊗ m)` on the right.
+    rw [LinearEquiv.rTensor_tmul,
+      TensorProduct.tmul_eq_smul_one_tmul (residueFieldEquivPreimage y c), LinearEquiv.map_smul,
+      h2, LinearMap.liftBaseChange_tmul, residueField_smul_fibre, Scheme.Modules.map_smul, h1,
+      residueFieldEquivPreimage_apply]
 
 /-- On an affine open `U ∋ y`, the base change `κ(y) ⊗_{Γ(X, U)} Γ(M, U)` maps bijectively onto
 the sections of `ι^* M` by `c ⊗ m ↦ c • ι^* m`; this is `Scheme.Hom.pullbackSectionsEquiv`,
@@ -231,8 +224,9 @@ private lemma bijective_liftBaseChange_pullbackSectionsLE [M.IsQuasicoherent]
 /-- The fibre map is bijective, by the base change computations on an affine open `U ∋ y`. -/
 private lemma bijective_fibreMap_of_isAffineOpen [M.IsQuasicoherent] (hU : IsAffineOpen U) :
     Function.Bijective (fibreMap (y : X) M) := by
+  -- Evaluation `Γ(X, U) → κ(y)` is the germ `Γ(X, U) → 𝒪_{X,y}` followed by the residue map.
   have : IsScalarTower Γ(X, U) (X.presheaf.stalk y) (X.residueField y) :=
-    .of_algebraMap_eq' rfl
+    .of_algebraMap_eq' (congrArg CommRingCat.Hom.hom (X.germ_residue (U := U) y y.2)).symm
   have : IsScalarTower Γ(X, U) (X.presheaf.stalk y)
       Γ((pullback (X.fromSpecResidueField y)).obj M, ⊤) :=
     IsScalarTower.to₁₂₄ _ _ (X.residueField y) _
