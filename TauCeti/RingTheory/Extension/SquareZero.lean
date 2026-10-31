@@ -157,6 +157,16 @@ noncomputable def toAlgEquiv (f : Hom E F) : E.Ring ≃ₐ[A] F.Ring :=
 theorem toAlgEquiv_apply (f : Hom E F) (x : E.Ring) : f.toAlgEquiv x = f.toAlgHom x :=
   (rfl)
 
+@[simp]
+theorem toAlgHom_toAlgEquiv_symm_apply (f : Hom E F) (y : F.Ring) :
+    f.toAlgHom (f.toAlgEquiv.symm y) = y :=
+  f.toAlgEquiv.apply_symm_apply y
+
+@[simp]
+theorem toAlgEquiv_symm_toAlgHom_apply (f : Hom E F) (x : E.Ring) :
+    f.toAlgEquiv.symm (f.toAlgHom x) = x :=
+  f.toAlgEquiv.symm_apply_apply x
+
 end Hom
 
 /-- The groupoid of square-zero extensions of `B` by `M`: every morphism of extensions is an
@@ -167,13 +177,10 @@ noncomputable instance extensionCategory : Groupoid (SquareZeroExtension.{w} A B
   comp f g := ⟨g.toAlgHom.comp f.toAlgHom, by simp, by simp⟩
   inv f :=
     { toAlgHom := f.toAlgEquiv.symm
-      π_toAlgHom y := by
-        simpa [← Hom.toAlgEquiv_apply] using (f.π_toAlgHom (f.toAlgEquiv.symm y)).symm
+      π_toAlgHom y := by simpa using (f.π_toAlgHom (f.toAlgEquiv.symm y)).symm
       toAlgHom_ι m := by simp [AlgEquiv.symm_apply_eq] }
-  inv_comp f := Hom.toAlgHom_injective <| AlgHom.ext fun y ↦ by
-    simp [← Hom.toAlgEquiv_apply]
-  comp_inv f := Hom.toAlgHom_injective <| AlgHom.ext fun x ↦ by
-    simp [← Hom.toAlgEquiv_apply]
+  inv_comp f := Hom.toAlgHom_injective <| AlgHom.ext fun y ↦ by simp
+  comp_inv f := Hom.toAlgHom_injective <| AlgHom.ext fun x ↦ by simp
 
 variable {E} {F G : SquareZeroExtension.{w} A B M}
 
@@ -191,15 +198,16 @@ theorem comp_toAlgHom (f : E ⟶ F) (g : F ⟶ G) :
   (rfl)
 
 @[simp]
-theorem inv_toAlgHom_apply (f : E ⟶ F) (x : E.Ring) : (inv f).toAlgHom (f.toAlgHom x) = x := by
-  rw [← AlgHom.comp_apply, ← comp_toAlgHom, IsIso.hom_inv_id, id_toAlgHom, AlgHom.id_apply]
+theorem inv_toAlgHom_apply (f : E ⟶ F) (x : E.Ring) : (inv f).toAlgHom (f.toAlgHom x) = x :=
+  congr($(IsIso.hom_inv_id f).toAlgHom x)
 
 @[simp]
-theorem toAlgHom_inv_apply (f : E ⟶ F) (y : F.Ring) : f.toAlgHom ((inv f).toAlgHom y) = y := by
-  rw [← AlgHom.comp_apply, ← comp_toAlgHom, IsIso.inv_hom_id, id_toAlgHom, AlgHom.id_apply]
+theorem toAlgHom_inv_apply (f : E ⟶ F) (y : F.Ring) : f.toAlgHom ((inv f).toAlgHom y) = y :=
+  congr($(IsIso.inv_hom_id f).toAlgHom y)
 
 variable (E) in
 /-- A splitting of a square-zero extension: an `A`-algebra section of its projection. -/
+@[ext]
 structure Splitting where
   /-- The section `B → E`. -/
   toAlgHom : B →ₐ[A] E.Ring
@@ -269,25 +277,21 @@ private noncomputable def Splitting.liftAlgHom (s : E.Splitting) :
       map_smul' a m := by rw [RingHom.id_apply, ← algebraMap_smul B a m, E.ι_algebraMap_smul] }
     (fun m n ↦ E.ι_mul_ι m n) (fun b m ↦ by simp) (fun b m ↦ by simp [mul_comm])
 
-private theorem Splitting.liftAlgHom_apply (s : E.Splitting) (x : TrivSqZeroExt B M) :
-    s.liftAlgHom x = s.toAlgHom x.fst + E.ι x.snd := by
-  rw [Splitting.liftAlgHom]
-  exact TrivSqZeroExt.lift_def _ _ _ _ _ x
-
 /-- The morphism `(b, m) ↦ s b + ι m` from the trivial extension determined by a splitting `s`. -/
 noncomputable def Splitting.toHom (s : E.Splitting) : squareZero A B M ⟶ E where
   toAlgHom := s.liftAlgHom
   -- The ring of `squareZero A B M` is `TrivSqZeroExt B M` by its exposed definition; the two
   -- compatibilities are proved at that type and then applied.
-  π_toAlgHom x := (by simp [s.liftAlgHom_apply] : ∀ x : TrivSqZeroExt B M,
+  π_toAlgHom x := (by simp [Splitting.liftAlgHom, lift_def] : ∀ x : TrivSqZeroExt B M,
     E.π (s.liftAlgHom x) = x.fst) x
-  toAlgHom_ι m := (by simp [s.liftAlgHom_apply] : ∀ m : M, s.liftAlgHom (inr m) = E.ι m) m
+  toAlgHom_ι m := (by simp [Splitting.liftAlgHom, lift_def] : ∀ m : M,
+    s.liftAlgHom (inr m) = E.ι m) m
 
 @[simp]
 theorem Splitting.toHom_toAlgHom_apply (s : E.Splitting) (x : TrivSqZeroExt B M) :
     s.toHom.toAlgHom x = s.toAlgHom x.fst + E.ι x.snd := by
-  rw [Splitting.toHom]
-  exact s.liftAlgHom_apply x
+  simp only [Splitting.toHom, Splitting.liftAlgHom]
+  exact lift_def _ _ _ _ _ x
 
 /-- A square-zero extension is isomorphic to the trivial one if and only if it splits. -/
 theorem isIsomorphic_squareZero_iff :
@@ -324,6 +328,30 @@ end SquareZeroExtension
 
 namespace Exal
 
+variable {A B M}
+
+/-- Induction on `Exal_A(B, M)`: it suffices to prove a property for the class of every
+square-zero extension. -/
+@[elab_as_elim]
+theorem ind {motive : Exal A B M → Prop}
+    (h : ∀ E : SquareZeroExtension.{max v t} A B M, motive E.extensionClass) (x : Exal A B M) :
+    motive x :=
+  Quotient.ind h x
+
+/-- A function on `Exal_A(B, M)` induced by a function on square-zero extensions that agrees on
+extensions related by a morphism. -/
+noncomputable def lift {α : Sort*} (f : SquareZeroExtension.{max v t} A B M → α)
+    (hf : ∀ E F, Nonempty (E ⟶ F) → f E = f F) : Exal A B M → α :=
+  Quotient.lift f fun E F h ↦ hf E F (Groupoid.isIsomorphic_iff_nonempty_hom.1 h)
+
+@[simp]
+theorem lift_extensionClass {α : Sort*} (f : SquareZeroExtension.{max v t} A B M → α)
+    (hf : ∀ E F, Nonempty (E ⟶ F) → f E = f F) (E : SquareZeroExtension.{max v t} A B M) :
+    lift f hf E.extensionClass = f E :=
+  (rfl)
+
+section Zero
+
 variable [Module Bᵐᵒᵖ M] [IsCentralScalar B M] [Module A M] [IsScalarTower A B M]
   [IsScalarTower A Bᵐᵒᵖ M]
 
@@ -331,8 +359,7 @@ variable [Module Bᵐᵒᵖ M] [IsCentralScalar B M] [Module A M] [IsScalarTower
 noncomputable instance : Zero (Exal A B M) :=
   ⟨(SquareZeroExtension.squareZero A B M).extensionClass⟩
 
-theorem zero_def : (0 : Exal A B M) = (SquareZeroExtension.squareZero A B M).extensionClass :=
-  (rfl)
+end Zero
 
 end Exal
 
@@ -341,21 +368,31 @@ namespace SquareZeroExtension
 variable {A B M} [Module Bᵐᵒᵖ M] [IsCentralScalar B M] [Module A M] [IsScalarTower A B M]
   [IsScalarTower A Bᵐᵒᵖ M]
 
+variable (A B M) in
+/-- The class of the trivial extension is the zero of `Exal_A(B, M)`. -/
+@[simp]
+theorem extensionClass_squareZero : (squareZero A B M).extensionClass = 0 :=
+  (rfl)
+
 /-- A square-zero extension has the zero class if and only if it splits. -/
 theorem extensionClass_eq_zero_iff (E : SquareZeroExtension.{max v t} A B M) :
     E.extensionClass = 0 ↔ Nonempty E.Splitting := by
-  rw [Exal.zero_def, eq_comm, ← isIsomorphic_squareZero_iff]
+  rw [← extensionClass_squareZero, eq_comm, ← isIsomorphic_squareZero_iff]
   exact Quotient.eq
 
 end SquareZeroExtension
 
 section Self
 
-variable {A} {N : Type t} [AddCommGroup N] [Module A N] [Module Aᵐᵒᵖ N] [IsCentralScalar A N]
-  [IsScalarTower A Aᵐᵒᵖ N]
+variable {A} {N : Type t} [AddCommGroup N] [Module A N]
 
 /-- `Exal_A(A, N)` is zero: every square-zero extension of `A` itself splits. -/
 instance Exal.subsingleton_self : Subsingleton (Exal A A N) := by
+  -- The trivial extension, which represents the zero class, needs `N` as a bimodule; since `A`
+  -- is commutative, let `A` act on the right through its left action.
+  let : Module Aᵐᵒᵖ N := Module.compHom N ((RingHom.id A).fromOpposite fun x y ↦ .all x y)
+  have : IsCentralScalar A N := ⟨fun _ _ ↦ rfl⟩
+  have : IsScalarTower A Aᵐᵒᵖ N := ⟨fun a b n ↦ mul_smul a b.unop n⟩
   refine ⟨fun x y ↦ ?_⟩
   obtain ⟨E, rfl⟩ := SquareZeroExtension.extensionClass_surjective x
   obtain ⟨F, rfl⟩ := SquareZeroExtension.extensionClass_surjective y
