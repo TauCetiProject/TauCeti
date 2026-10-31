@@ -61,6 +61,8 @@ by the class-group interface and the multiplicative value can be read off from o
 * `IsDedekindDomain.HeightOneSpectrum.intValuation_eq_exp_neg_of_span_singleton_eq_pow` and
   `IsDedekindDomain.HeightOneSpectrum.intValuation_eq_one_of_span_singleton_eq_pow`: a generator
   of `w ^ n` vanishes to order `n` at `w` and to order `0` at every other height one prime.
+* `IsDedekindDomain.HeightOneSpectrum.intValuation_prod_pow_of_span_singleton_eq_pow`: the
+  valuation of a product `∏ w ∈ P, π w ^ k w` of powers of generators of `w ^ h`.
 * `IsDedekindDomain.dvd_iff_forall_intValuation_le`: a nonzero `a` divides `b` exactly when
   `b` vanishes to at least the order of `a` at every height one prime.
 
@@ -342,6 +344,29 @@ theorem intValuation_eq_one_of_span_singleton_eq_pow {w : HeightOneSpectrum R} (
   have hle : w.asIdeal ^ n ≤ v.asIdeal := h ▸ (Ideal.span_singleton_le_iff_mem _).mpr hr
   exact hvw (HeightOneSpectrum.ext
     (w.isMaximal.eq_of_le v.isPrime.ne_top (v.isPrime.le_of_pow_le hle)).symm)
+
+open Classical in
+/-- **The valuation of a product of generators of prime powers.** If `π w` generates `w ^ h` for
+each `w` in a finite set `P` of height one primes, then `∏ w ∈ P, π w ^ k w` vanishes to order
+`h * k v` at `v ∈ P` and to order `0` at every `v ∉ P`. -/
+theorem intValuation_prod_pow_of_span_singleton_eq_pow {P : Finset (HeightOneSpectrum R)} {h : ℕ}
+    {π : HeightOneSpectrum R → R} (hπ : ∀ w ∈ P, Ideal.span {π w} = w.asIdeal ^ h)
+    (k : HeightOneSpectrum R → ℕ) :
+    v.intValuation (∏ w ∈ P, π w ^ k w) =
+      if v ∈ P then WithZero.exp (-(h * k v : ℤ)) else 1 := by
+  rw [map_prod]
+  split_ifs with hv
+  · rw [Finset.prod_eq_single_of_mem v hv fun w hw hwv ↦ by
+      rw [map_pow, v.intValuation_eq_one_of_span_singleton_eq_pow (Ne.symm hwv) (hπ w hw),
+        one_pow]]
+    rw [map_pow, v.intValuation_eq_exp_neg_of_span_singleton_eq_pow (hπ v hv),
+      ← WithZero.exp_nsmul]
+    congr 1
+    simp only [smul_neg, nsmul_eq_mul]
+    ring
+  · refine Finset.prod_eq_one fun w hw ↦ ?_
+    rw [map_pow, v.intValuation_eq_one_of_span_singleton_eq_pow (by rintro rfl; exact hv hw)
+      (hπ w hw), one_pow]
 
 end IsDedekindDomain.HeightOneSpectrum
 

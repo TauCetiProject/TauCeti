@@ -61,24 +61,6 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 variable {P : Finset (HeightOneSpectrum R)} {h : ℕ} {π : HeightOneSpectrum R → R}
 
-open Classical in
-/-- The `v`-adic valuation of `∏ w ∈ P, π w ^ k w`, when each `π w` generates `w ^ h`. -/
-private theorem intValuation_prod_pow (hπ : ∀ v ∈ P, Ideal.span {π v} = v.asIdeal ^ h)
-    (k : HeightOneSpectrum R → ℕ) (v : HeightOneSpectrum R) :
-    v.intValuation (∏ w ∈ P, π w ^ k w) = if v ∈ P then exp (-(h * k v : ℤ)) else 1 := by
-  rw [map_prod]
-  split_ifs with hv
-  · rw [Finset.prod_eq_single_of_mem v hv fun w hw hwv ↦ by
-      rw [map_pow, intValuation_eq_one_of_span_singleton_eq_pow v (Ne.symm hwv) (hπ w hw),
-        one_pow]]
-    rw [map_pow, intValuation_eq_exp_neg_of_span_singleton_eq_pow v (hπ v hv), ← exp_nsmul]
-    congr 1
-    simp only [smul_neg, nsmul_eq_mul]
-    ring
-  · refine Finset.prod_eq_one fun w hw ↦ ?_
-    rw [map_pow, intValuation_eq_one_of_span_singleton_eq_pow v (by rintro rfl; exact hv hw)
-      (hπ w hw), one_pow]
-
 /-- Let `π v` generate `v ^ h` for each `v` in a finite set `P` of height one primes, with
 `h > 0`. A nonzero `β` which divides `m` away from `P`, in the sense that `β` vanishes to order at
 most `ord_v(m)` at every `v ∉ P`, is `μ * ∏ v ∈ P, π v ^ k v` for some `μ` dividing
@@ -101,7 +83,7 @@ theorem exists_dvd_mul_prod_and_eq_mul_prod_pow (hh : 0 < h)
   -- `∏ v ∈ P, π v ^ k v` divides `β`, since `h * k v ≤ e v`.
   obtain ⟨μ, hμ⟩ : ∏ v ∈ P, π v ^ k v ∣ β := by
     refine (dvd_iff_forall_intValuation_le hprod0).mpr fun v ↦ ?_
-    rw [intValuation_prod_pow hπ]
+    rw [v.intValuation_prod_pow_of_span_singleton_eq_pow hπ]
     split_ifs
     · rw [he, exp_le_exp, neg_le_neg_iff]
       exact_mod_cast Nat.mul_div_le (e v) h
@@ -113,9 +95,9 @@ theorem exists_dvd_mul_prod_and_eq_mul_prod_pow (hh : 0 < h)
   -- The quotient `μ` vanishes to order `e v % h < h` at `v ∈ P`, and to order `e v` elsewhere.
   refine (dvd_iff_forall_intValuation_le hμ0).mpr fun v ↦ ?_
   have hβv := he v
-  have hP := intValuation_prod_pow hπ (fun _ ↦ 1) v
+  have hP := v.intValuation_prod_pow_of_span_singleton_eq_pow hπ fun _ ↦ 1
   simp only [pow_one, Nat.cast_one, mul_one] at hP
-  rw [hμ, map_mul, intValuation_prod_pow hπ] at hβv
+  rw [hμ, map_mul, v.intValuation_prod_pow_of_span_singleton_eq_pow hπ] at hβv
   rw [map_mul, hP]
   by_cases hv : v ∈ P
   · simp only [hv, ↓reduceIte] at hβv ⊢
