@@ -43,6 +43,9 @@ intrinsic value from the side `τ ≤ 0`. At zero spot it is the squeeze `0 ≤ 
   `TauCeti.BlackScholes.putValue_maturity_zero`: the payoffs at maturity.
 * `TauCeti.BlackScholes.callValue_spot_zero`, `TauCeti.BlackScholes.putValue_spot_zero`: the
   values at zero spot.
+* `TauCeti.BlackScholes.riskNeutralPrice_call_eq_callValue`,
+  `TauCeti.BlackScholes.riskNeutralPrice_put_eq_putValue`: the extended prices are the
+  risk-neutral prices of the payoffs at every remaining maturity `τ ≥ 0`.
 * `TauCeti.BlackScholes.callValue_sub_putValue`: put–call parity.
 * `TauCeti.BlackScholes.callValue_nonneg`, `TauCeti.BlackScholes.callValue_le`,
   `TauCeti.BlackScholes.putValue_nonneg`, `TauCeti.BlackScholes.putValue_le`: the no-arbitrage
@@ -125,6 +128,22 @@ theorem callValue_maturity_zero (s r σ K : ℝ) : callValue s r σ K 0 = (s - K
 @[simp]
 theorem putValue_maturity_zero (s r σ K : ℝ) : putValue s r σ K 0 = (K - s)⁺ := by
   simp [putValue_of_nonpos (Or.inr le_rfl)]
+
+/-- At every remaining maturity `τ ≥ 0`, including maturity itself, the risk-neutral price of the
+call payoff `(x - K)⁺` is the extended call price. -/
+theorem riskNeutralPrice_call_eq_callValue (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 ≤ τ) :
+    riskNeutralPrice (fun x ↦ (x - K)⁺) s r σ τ = callValue s r σ K τ := by
+  rcases hτ.eq_or_lt with rfl | hτ
+  · rw [riskNeutralPrice_zero, callValue_maturity_zero]
+  · rw [riskNeutralPrice_call hs hσ hK hτ, callValue_of_pos hs hτ]
+
+/-- At every remaining maturity `τ ≥ 0`, including maturity itself, the risk-neutral price of the
+put payoff `(K - x)⁺` is the extended put price. -/
+theorem riskNeutralPrice_put_eq_putValue (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 ≤ τ) :
+    riskNeutralPrice (fun x ↦ (K - x)⁺) s r σ τ = putValue s r σ K τ := by
+  rcases hτ.eq_or_lt with rfl | hτ
+  · rw [riskNeutralPrice_zero, putValue_maturity_zero]
+  · rw [riskNeutralPrice_put hs hσ hK hτ, putValue_of_pos hs hτ]
 
 /-- **Call boundary at zero spot.** For a nonnegative strike the extended call vanishes at zero
 spot. -/

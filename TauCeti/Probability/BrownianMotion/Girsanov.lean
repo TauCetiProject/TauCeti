@@ -62,10 +62,7 @@ theorem tilted_mul_eval_inter_preimage_of_horizon_le (hW : IsFilteredPreBrownian
       P.tilted (fun ω ↦ θ * W T ω) A * gaussianReal 0 (t - s) B := by
   have hD : Measurable (W t - W s) := hW.adapted.measurable.sub hW.adapted.measurable
   have hA' : MeasurableSet A := ℱ.le s A hA
-  have hlaw : HasLaw (W t - W s) (gaussianReal 0 (t - s)) P := by
-    convert (hW.shift s).hasLaw_eval (t - s) using 1
-    ext ω
-    simp [add_tsub_cancel_of_le hst]
+  have hlaw : HasLaw (W t - W s) (gaussianReal 0 (t - s)) P := hW.hasLaw_sub_of_le hst
   let f : Ω → ℝ≥0∞ := A.indicator fun ω ↦ ENNReal.ofReal (exponentialMartingale θ W T ω)
   let g : Ω → ℝ≥0∞ := ((W t - W s) ⁻¹' B).indicator 1
   have hf : Measurable[ℱ s] f :=
