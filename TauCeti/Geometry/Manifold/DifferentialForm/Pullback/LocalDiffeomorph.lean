@@ -26,12 +26,19 @@ exterior derivative, a smooth form is closed exactly when its pullback is
 (`IsLocalDiffeomorph.isClosed_mpullback_iff`).
 
 These facts are what let forms on a covering space that are invariant under the deck group
-descend to the base. Given a family of self-maps of the source lying over `f` and transitive on
-its fibres, a form is a pullback along `f` exactly when it is invariant under the family: at a
-point of the image, read the form at any preimage through the inverse of the derivative of `f`
-there, and invariance makes the choice of preimage irrelevant
-(`IsLocalDiffeomorph.exists_mpullback_eq_iff`). For a surjective smooth local diffeomorphism the
-descended form of a smooth form is smooth (`IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff`).
+descend to the base. The descent `TauCeti.RoughForm.descendAlong` reads a form at a chosen
+preimage through the inverse of the derivative of `f` there. Given a family of self-maps of the
+source lying over `f` and transitive on its fibres, invariance under the family makes the choice
+of preimage irrelevant, so the descent pulls back to the form
+(`IsLocalDiffeomorph.mpullback_descendAlong`). Hence a form is a pullback along `f` exactly
+when it is invariant under the family (`IsLocalDiffeomorph.exists_mpullback_eq_iff`). For a
+surjective smooth local diffeomorphism the descended form of a smooth form is smooth
+(`IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff`).
+
+## Main definitions
+
+* `TauCeti.RoughForm.descendAlong`: the descent of a form along a map, through a choice of points
+  of the source.
 
 ## Main results
 
@@ -42,6 +49,8 @@ descended form of a smooth form is smooth (`IsLocalDiffeomorph.exists_smoothForm
   along a (surjective) `C^n` local diffeomorphism is, for `m + 1 ≤ n`.
 * `IsLocalDiffeomorph.isClosed_mpullback_iff`: a smooth form is closed exactly when its pullback
   along a surjective smooth local diffeomorphism is.
+* `IsLocalDiffeomorph.mpullback_descendAlong`: a form invariant under a family of maps over a
+  local diffeomorphism that is transitive on its fibres is the pullback of its descent.
 * `IsLocalDiffeomorph.exists_mpullback_eq_iff`,
   `IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff`: a (smooth) form is the pullback of a
   (smooth) form along a local diffeomorphism exactly when it is invariant under a family of maps
@@ -81,54 +90,83 @@ theorem IsLocalDiffeomorph.mpullback_injective (hf : IsLocalDiffeomorph I I' n f
   exact (mpullback_apply_eq_mpullback_apply_iff
     ((hf.isInvertible_mfderiv hn x).surjective)).mp (congrFun h x)
 
-omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+section descendAlong
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+
+variable (I I') in
+/-- The descent of a form `α` on `M` along a map `f : M → M'`, through a choice `s : M' → M` of
+points: at `y` it is `α` at `s y`, read through the inverse of the derivative of `f` at `s y`.
+`tangentSpaceCast` only identifies the tangent spaces at `y` and at `f (s y)`, which are both the
+model space. When `f` is a local diffeomorphism, `s` picks preimages on the image of `f`, and `α`
+is invariant under a family of maps over `f` that is transitive on its fibres, the descent pulls
+back to `α` (`IsLocalDiffeomorph.mpullback_descendAlong`). -/
+def TauCeti.RoughForm.descendAlong (f : M → M') (s : M' → M) (α : RoughForm I M V k) :
+    RoughForm I' M' V k :=
+  fun y ↦ (α (s y)).compContinuousLinearMap ((mfderiv I I' f (s y)).inverse ∘L
+    (tangentSpaceCast I' y (f (s y)) : TangentSpace I' y →L[ℝ] TangentSpace I' (f (s y))))
+
+/-- Evaluation of the descent of a form along `f`: tangent vectors at `y` are sent through the
+inverse of the derivative of `f` at the chosen point `s y`. -/
+theorem TauCeti.RoughForm.descendAlong_apply (s : M' → M) (α : RoughForm I M V k) (y : M')
+    (v : Fin k → TangentSpace I' y) :
+    descendAlong I I' f s α y v =
+      α (s y) fun i ↦ (mfderiv I I' f (s y)).inverse (tangentSpaceCast I' y (f (s y)) (v i)) :=
+  (rfl)
+
+/-- Let `f` be a `C^n` local diffeomorphism, `n ≠ 0`, let `σ` be a family of differentiable
+self-maps of `M` over `f` that is transitive on the fibres of `f`, and let `s` choose a preimage
+of every point of the image of `f`. Then a form `α` invariant under every `σ i` is the pullback of
+its descent along `f` through `s`. -/
+theorem IsLocalDiffeomorph.mpullback_descendAlong {ι : Type*} (hf : IsLocalDiffeomorph I I' n f)
+    (hn : n ≠ 0) {σ : ι → M → M} (hσ : ∀ i, MDifferentiable I I (σ i))
+    (hfσ : ∀ i, f ∘ σ i = f) (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y)
+    {s : M' → M} (hs : ∀ x, f (s (f x)) = f x) {α : RoughForm I M V k}
+    (hα : ∀ i, mpullback I I (σ i) α = α) :
+    mpullback I I' f (RoughForm.descendAlong I I' f s α) = α := by
+  refine funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
+  -- The chosen preimage `s (f x)` is `g x` for `g` the identity or some `σ i`; `g` lies over `f`
+  -- and fixes `α`.
+  obtain ⟨g, hgx, hgd, hfg, hgα⟩ : ∃ g : M → M, g x = s (f x) ∧ MDifferentiableAt I I g x ∧
+      f ∘ g = f ∧ mpullback I I g α x = α x := by
+    rcases hσf x (s (f x)) (hs x).symm with h | ⟨i, h⟩
+    · exact ⟨id, h, mdifferentiableAt_id, rfl, by rw [mpullback_id]⟩
+    · exact ⟨σ i, h, hσ i x, hfσ i, by rw [hα i]⟩
+  -- By the chain rule, the derivative of `f` at `x` factors through the derivative of `g`.
+  have hderiv (w : TangentSpace I x) :
+      (mfderiv I I' f (g x)).inverse (mfderiv I I' f x w) = mfderiv I I g x w := by
+    have hcomp := mfderiv_comp x (hf.mdifferentiable hn (g x)) hgd
+    rw [hfg] at hcomp
+    rw [hcomp]
+    exact (hf.isInvertible_mfderiv hn (g x)).inverse_apply_self _
+  -- `tangentSpaceCast` is the identity of the model space.
+  have hcast (w : TangentSpace I x) :
+      (mfderiv I I' f (g x)).inverse (tangentSpaceCast I' (f x) (f (g x)) (mfderiv I I' f x w)) =
+        mfderiv I I g x w :=
+    hderiv w
+  rw [mpullback_apply, RoughForm.descendAlong_apply, ← hgx]
+  simp only [hcast]
+  rw [← mpullback_apply, hgα]
+
 /-- **Descent of forms along a local diffeomorphism.** Let `f` be a `C^n` local diffeomorphism,
 `n ≠ 0`, and let `σ` be a family of differentiable self-maps of `M` over `f` (`f ∘ σ i = f`) that
 is transitive on the fibres of `f`: two points with the same image are equal or are related by
 some `σ i`. Then a form on `M` is the pullback of a form on `M'` exactly when it is invariant
 under every `σ i`. For a covering map, the `σ i` are deck transformations. -/
-theorem IsLocalDiffeomorph.exists_mpullback_eq_iff [AddCommGroup F] [Module ℝ F]
-    [TopologicalSpace F] {ι : Type*} (hf : IsLocalDiffeomorph I I' n f) (hn : n ≠ 0)
-    {σ : ι → M → M} (hσ : ∀ i, MDifferentiable I I (σ i))
+theorem IsLocalDiffeomorph.exists_mpullback_eq_iff {ι : Type*} (hf : IsLocalDiffeomorph I I' n f)
+    (hn : n ≠ 0) {σ : ι → M → M} (hσ : ∀ i, MDifferentiable I I (σ i))
     (hfσ : ∀ i, f ∘ σ i = f) (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y)
-    {α : RoughForm I M F k} :
-    (∃ ω : RoughForm I' M' F k, mpullback I I' f ω = α) ↔ ∀ i, mpullback I I (σ i) α = α := by
-  classical
-  have hfd := hf.mdifferentiable hn
+    {α : RoughForm I M V k} :
+    (∃ ω : RoughForm I' M' V k, mpullback I I' f ω = α) ↔ ∀ i, mpullback I I (σ i) α = α := by
   refine ⟨?_, fun hα ↦ ?_⟩
   · rintro ⟨ω, rfl⟩ i
-    rw [← mpullback_comp (hσ i) hfd, hfσ i]
-  -- At a point `y` of the image of `f`, read `α` at a chosen preimage `x₀` through the inverse of
-  -- the derivative of `f` at `x₀`; elsewhere take zero. `tangentSpaceCast` only identifies the
-  -- tangent spaces at `y` and at `f x₀`, which are both the model space.
-  let ω : RoughForm I' M' F k := fun y ↦
-    if h : ∃ x, f x = y then
-      (α h.choose).compContinuousLinearMap ((mfderiv I I' f h.choose).inverse ∘L
-        (tangentSpaceCast I' y (f h.choose) :
-          TangentSpace I' y →L[ℝ] TangentSpace I' (f h.choose)))
-    else 0
-  refine ⟨ω, funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_⟩
-  have h : ∃ x', f x' = f x := ⟨x, rfl⟩
-  rw [mpullback_apply]
-  simp only [ω, h, ↓reduceDIte]
-  have hx₀ := h.choose_spec
-  generalize h.choose = x₀ at hx₀ ⊢
-  -- The preimage `x₀` is `g x` for `g` the identity or some `σ i`; `g` lies over `f` and fixes `α`.
-  obtain ⟨g, rfl, hgd, hfg, hgα⟩ : ∃ g : M → M, g x = x₀ ∧ MDifferentiableAt I I g x ∧
-      f ∘ g = f ∧ mpullback I I g α x = α x := by
-    rcases hσf x x₀ hx₀.symm with rfl | ⟨i, rfl⟩
-    · exact ⟨id, rfl, mdifferentiableAt_id, rfl, by rw [mpullback_id]⟩
-    · exact ⟨σ i, rfl, hσ i x, hfσ i, by rw [hα i]⟩
-  -- By the chain rule, the derivative of `f` at `x` factors through the derivative of `g`.
-  have hderiv (w : TangentSpace I x) :
-      (mfderiv I I' f (g x)).inverse (mfderiv I I' f x w) = mfderiv I I g x w := by
-    have hcomp := mfderiv_comp x (hfd (g x)) hgd
-    rw [hfg] at hcomp
-    rw [hcomp]
-    exact (hf.isInvertible_mfderiv hn (g x)).inverse_apply_self _
-  rw [← hgα, mpullback_apply]
-  -- `tangentSpaceCast` is the identity of the model space, so `hderiv` rewrites each argument.
-  exact congrArg (α (g x)) (funext fun j ↦ hderiv (v j))
+    rw [← mpullback_comp (hσ i) (hf.mdifferentiable hn), hfσ i]
+  -- Descend along a choice of preimages; on an empty source every form is a pullback.
+  cases isEmpty_or_nonempty M
+  · exact ⟨0, funext fun x ↦ isEmptyElim x⟩
+  · exact ⟨_, hf.mpullback_descendAlong hn hσ hfσ hσf (fun x ↦ Function.invFun_eq ⟨x, rfl⟩) hα⟩
+
+end descendAlong
 
 /-- For a `C^n` local diffeomorphism `f` at `x` and `m + 1 ≤ n`, a form is a `C^m` section near
 `f x` exactly when its pullback along `f` is a `C^m` section near `x`. -/
