@@ -103,6 +103,7 @@ theorem slobodeckijEnergy_zero (s : ℝ) : slobodeckijEnergy T s (0 : CircleSobo
   simp [slobodeckijEnergy_def]
 
 /-- The energy is homogeneous of degree two. -/
+@[simp]
 theorem slobodeckijEnergy_smul (s : ℝ) (z : ℂ) (a : CircleSobolev 0 E) :
     slobodeckijEnergy T s (z • a) = ENNReal.ofReal (‖z‖ ^ 2) * slobodeckijEnergy T s a := by
   simp_rw [slobodeckijEnergy_def, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, map_smul,
