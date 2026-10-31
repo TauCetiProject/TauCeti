@@ -33,9 +33,9 @@ fibres of `I` and `I S` at a field-valued point of `S` have the same dimension
 (`Ideal.finrank_tensor_map_of_flat`). Without flatness, over a commutative `S`, the map
 `S ⊗[R] I → I S` is still surjective (`Ideal.liftBaseChange_idealMap_surjective`) and its kernel
 is killed by `I S` (`Ideal.isTorsionBySet_ker_liftBaseChange_idealMap`). For an idempotent ideal
-`I`, it follows that `S ⊗[R] (I ⊗[R] I) ≅ I S ⊗[S] I S` (`Ideal.baseChangeTensorSelfEquiv`), which
-is how basic setups of almost mathematics base change (Gabber–Ramero, *Almost ring theory*,
-Remark 2.1.4(ii)).
+`I`, `I S • (S ⊗[R] I) = S ⊗[R] I` (`Ideal.smul_top_baseChange_eq_top`), and it follows that
+`S ⊗[R] (I ⊗[R] I) ≅ I S ⊗[S] I S` (`Ideal.baseChangeTensorSelfEquiv`), which is how basic
+setups of almost mathematics base change (Gabber–Ramero, *Almost ring theory*, Remark 2.1.4(ii)).
 -/
 
 public section
@@ -197,7 +197,7 @@ theorem isTorsionBySet_ker_liftBaseChange_idealMap :
 variable {I}
 
 /-- For an idempotent ideal `I`, `I S • (S ⊗[R] I) = S ⊗[R] I`. -/
-private theorem smul_top_baseChange_eq_top (hI : IsIdempotentElem I) :
+theorem smul_top_baseChange_eq_top (hI : IsIdempotentElem I) :
     I.map (algebraMap R S) • (⊤ : Submodule S (S ⊗[R] I)) = ⊤ := by
   refine Submodule.eq_top_iff'.mpr fun x ↦ ?_
   induction x using TensorProduct.inductionOn with
