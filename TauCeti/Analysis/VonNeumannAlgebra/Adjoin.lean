@@ -61,6 +61,7 @@ theorem subset_adjoin (s : Set (H →L[ℂ] H)) : s ⊆ adjoin s := by
   exact Set.subset_union_left.trans Set.subset_centralizer_centralizer
 
 /-- The generated von Neumann algebra is the smallest von Neumann algebra containing `s`. -/
+@[simp]
 theorem adjoin_le_iff {M : VonNeumannAlgebra H} : adjoin s ≤ M ↔ s ⊆ M := by
   refine ⟨fun h => (subset_adjoin s).trans h, fun h x hx => ?_⟩
   have hs : s ∪ star s ⊆ M := Set.union_subset h fun y hy => by
@@ -78,8 +79,7 @@ theorem adjoin_mono (h : s ⊆ t) : adjoin s ≤ adjoin t :=
 theorem conj_mem_adjoin {u : H →L[ℂ] H} (hu : u ∈ unitary (H →L[ℂ] H))
     (hs : ∀ x ∈ s, u * x * star u ∈ s) {x : H →L[ℂ] H} (hx : x ∈ adjoin s) :
     u * x * star u ∈ adjoin s := by
-  let v : (H →L[ℂ] H)ˣ :=
-    ⟨u, star u, Unitary.mul_star_self_of_mem hu, Unitary.star_mul_self_of_mem hu⟩
+  let v : (H →L[ℂ] H)ˣ := Unitary.toUnits ⟨u, hu⟩
   -- Conjugation by `u` maps `s ∪ star s` into itself, hence conjugation by `star u` maps its
   -- commutant into itself, hence conjugation by `u` maps its double commutant into itself.
   have hT : ∀ y ∈ s ∪ star s, ↑v⁻¹⁻¹ * y * ↑v⁻¹ ∈ s ∪ star s := by
@@ -87,7 +87,7 @@ theorem conj_mem_adjoin {u : H →L[ℂ] H} (hu : u ∈ unitary (H →L[ℂ] H))
     · exact Or.inl (hs y hy)
     · refine Or.inr ?_
       rw [Set.mem_star] at hy ⊢
-      simpa [v, mul_assoc] using hs _ hy
+      simpa [v, mul_assoc, ← Unitary.star_eq_inv, Unitary.coe_star] using hs _ hy
   rw [← SetLike.mem_coe, coe_adjoin] at hx ⊢
   exact Set.conj_mem_centralizer v
     (fun y hy => by simpa using Set.conj_mem_centralizer v⁻¹ hT hy) hx

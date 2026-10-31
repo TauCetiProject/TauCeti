@@ -65,6 +65,7 @@ theorem coefficient_mem_vonNeumannAlgebra (a : A) : P.coefficient a ∈ P.vonNeu
 
 /-- The von Neumann algebra of a covariant pair is the smallest von Neumann algebra containing
 every coefficient operator. -/
+@[simp]
 theorem vonNeumannAlgebra_le_iff {M : VonNeumannAlgebra H} :
     P.vonNeumannAlgebra ≤ M ↔ ∀ a, P.coefficient a ∈ M :=
   VonNeumannAlgebra.adjoin_le_iff.trans Set.range_subset_iff
@@ -72,14 +73,6 @@ theorem vonNeumannAlgebra_le_iff {M : VonNeumannAlgebra H} :
 /-- The adjoint of a group operator is the operator of the inverse group element. -/
 private theorem star_group (g : G) : star (P.group g) = P.group g⁻¹ := by
   rw [ContinuousLinearMap.star_eq_adjoint, P.isUnitary.adjoint_eq_inv]
-
-private theorem group_inv_mul_cancel_left (g : G) (x : H →L[ℂ] H) :
-    P.group g⁻¹ * (P.group g * x) = x := by
-  rw [← mul_assoc, ← map_mul, inv_mul_cancel, map_one, one_mul]
-
-private theorem group_mul_inv_cancel_left (g : G) (x : H →L[ℂ] H) :
-    P.group g * (P.group g⁻¹ * x) = x := by
-  rw [← mul_assoc, ← map_mul, mul_inv_cancel, map_one, one_mul]
 
 /-- Conjugation by a group operator preserves the von Neumann algebra of a covariant pair. -/
 theorem group_mul_mul_group_inv_mem_vonNeumannAlgebra (g : G) {x : H →L[ℂ] H}
@@ -96,22 +89,18 @@ representation, `CovariantRepresentation.vonNeumannAction_coefficient`. -/
 noncomputable def vonNeumannAction :
     G →* (P.vonNeumannAlgebra.toStarSubalgebra ≃⋆ₐ[ℂ] P.vonNeumannAlgebra.toStarSubalgebra) where
   toFun g :=
-    { toFun x := ⟨P.group g * x * P.group g⁻¹,
-        P.group_mul_mul_group_inv_mem_vonNeumannAlgebra g x.2⟩
-      invFun x := ⟨P.group g⁻¹ * x * P.group g, by
-        simpa using P.group_mul_mul_group_inv_mem_vonNeumannAlgebra g⁻¹ x.2⟩
-      left_inv x := Subtype.ext <| by
-        simp [mul_assoc, P.group_inv_mul_cancel_left, ← map_mul]
-      right_inv x := Subtype.ext <| by
-        simp [mul_assoc, P.group_mul_inv_cancel_left, ← map_mul]
-      map_mul' x y := Subtype.ext <| by
-        simp [mul_assoc, P.group_inv_mul_cancel_left]
-      map_add' x y := Subtype.ext <| by
-        simp [mul_add, add_mul]
-      map_star' x := Subtype.ext <| by
-        simp [star_mul, mul_assoc, P.star_group]
-      map_smul' c x := Subtype.ext <| by
-        simp }
+    let e := Unitary.conjStarAlgAut ℂ (H →L[ℂ] H) ⟨P.group g, P.isUnitary.mem_unitary g⟩
+    { toFun x := ⟨e x, by
+        simpa [e, P.star_group] using P.group_mul_mul_group_inv_mem_vonNeumannAlgebra g x.2⟩
+      invFun x := ⟨e.symm x, by
+        simpa [e, Unitary.conjStarAlgAut_symm_apply, P.star_group] using
+          P.group_mul_mul_group_inv_mem_vonNeumannAlgebra g⁻¹ x.2⟩
+      left_inv x := Subtype.ext (e.symm_apply_apply (x : H →L[ℂ] H))
+      right_inv x := Subtype.ext (e.apply_symm_apply (x : H →L[ℂ] H))
+      map_mul' x y := Subtype.ext (map_mul e (x : H →L[ℂ] H) y)
+      map_add' x y := Subtype.ext (map_add e (x : H →L[ℂ] H) y)
+      map_star' x := Subtype.ext (map_star e (x : H →L[ℂ] H))
+      map_smul' c x := Subtype.ext (map_smul e c (x : H →L[ℂ] H)) }
   map_one' := by
     ext x
     simp
@@ -122,14 +111,15 @@ noncomputable def vonNeumannAction :
 /-- The implemented action conjugates by the group operators. -/
 @[simp]
 theorem coe_vonNeumannAction_apply (g : G) (x : P.vonNeumannAlgebra.toStarSubalgebra) :
-    (P.vonNeumannAction g x : H →L[ℂ] H) = P.group g * x * P.group g⁻¹ :=
-  (rfl)
+    (P.vonNeumannAction g x : H →L[ℂ] H) = P.group g * x * P.group g⁻¹ := by
+  simp [vonNeumannAction, P.star_group]
 
 /-- The implemented action extends the C⋆-action: `τ_g(π(a)) = π(α_g a)`. -/
+@[simp]
 theorem vonNeumannAction_coefficient (g : G) (a : A) :
     P.vonNeumannAction g ⟨P.coefficient a, P.coefficient_mem_vonNeumannAlgebra a⟩ =
       ⟨P.coefficient (α g a), P.coefficient_mem_vonNeumannAlgebra (α g a)⟩ :=
-  Subtype.ext (P.coefficient_action g a).symm
+  Subtype.ext ((P.coe_vonNeumannAction_apply g _).trans (P.coefficient_action g a).symm)
 
 /-- The implemented action is continuous for the strong operator topology: for every `x` in
 `π(A)''` and every vector `v`, the orbit `g ↦ τ_g(x) v` is norm continuous. Continuity of inversion
