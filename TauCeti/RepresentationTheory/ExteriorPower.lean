@@ -149,12 +149,13 @@ variable [CommRing R] [Monoid G]
 variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 variable {ρ : Representation R G M} {σ : Representation R G N}
 
-/-- An equivalence of representations induces an equivalence of every exterior power.
-
-The inverse is the map induced by `e.symm`, rather than one obtained from bijectivity, so that
-`exteriorPower_symm` holds by definition, as for `TensorProduct.congr`. -/
+/-- An equivalence of representations induces an equivalence of every exterior power. Its
+underlying linear map is the map induced by `e` on `d`th exterior powers, and its inverse is the
+map induced by `e.symm`. -/
 noncomputable def exteriorPower (e : ρ.Equiv σ) (d : ℕ) :
     (ρ.exteriorPower d).Equiv (σ.exteriorPower d) :=
+  -- The inverse is given explicitly, rather than obtained from bijectivity, so that
+  -- `exteriorPower_symm` holds by definition, as for `TensorProduct.congr`.
   .mk (.ofLinearMap (_root_.exteriorPower.map d e.toLinearMap)
     (_root_.exteriorPower.map d e.symm.toLinearMap) (by ext; simp [Function.comp_def])
     (by ext; simp [Function.comp_def])) (e.toIntertwiningMap.exteriorPower d).isIntertwining'
