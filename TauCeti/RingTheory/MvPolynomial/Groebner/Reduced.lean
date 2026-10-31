@@ -174,29 +174,6 @@ theorem IsReducedGroebnerBasis.eq_iff_ideal_eq (hG : m.IsReducedGroebnerBasis G 
   refine ⟨fun h ↦ ?_, fun h ↦ hG.eq (h ▸ hH)⟩
   rw [hG.isGroebnerBasis.ideal_eq_span, hH.isGroebnerBasis.ideal_eq_span, h]
 
-/-- If `r` is a remainder of `X^a` on division by a Gröbner basis of `I`, and `a` is the leading
-exponent of a nonzero element of `I`, then `X^a - r` is a nonzero monic element of `I` with
-leading exponent `a`. -/
-private theorem IsGroebnerBasis.monic_monomial_sub_of_isRemainder (h : m.IsGroebnerBasis G I)
-    {a : σ →₀ ℕ} {r : MvPolynomial σ R} (hr : m.IsRemainder (monomial a 1) G r)
-    {p : MvPolynomial σ R} (hp : p ∈ I) (hp0 : p ≠ 0) (hpa : m.degree p = a) :
-    monomial a 1 - r ∈ I ∧ monomial a 1 - r ≠ 0 ∧ m.degree (monomial a 1 - r) = a ∧
-      m.Monic (monomial a 1 - r) := by
-  classical
-  have hmem : monomial a 1 - r ∈ I := Ideal.span_le.2 h.subset hr.sub_mem_span
-  have hcoeff : (monomial a 1 - r).coeff a = 1 := by
-    have : a ∉ r.support := fun hc ↦ h.not_degree_le_of_isRemainder hr hc hp hp0 hpa.le
-    simp [notMem_support_iff.1 this]
-  have hne : monomial a 1 - r ≠ 0 := by
-    have : Nontrivial R := nontrivial_of_ne _ _ (m.leadingCoeff_ne_zero_iff.2 hp0)
-    exact fun h0 ↦ by simp [h0] at hcoeff
-  -- The leading monomial is not a monomial of `r`, so it is `a`.
-  have hdeg : m.degree (monomial a 1 - r) = a := by
-    rcases Finset.mem_union.1 (support_sub σ _ _ (m.degree_mem_support hne)) with hc | hc
-    · exact Finset.mem_singleton.1 (support_monomial_subset hc)
-    · exact absurd le_rfl (h.not_degree_le_of_isRemainder hr hc hmem hne)
-  exact ⟨hmem, hne, hdeg, by rw [Monic, leadingCoeff, hdeg, hcoeff]⟩
-
 /-- **Existence of the reduced monic Gröbner basis.** An ideal with a Gröbner basis whose
 nonzero members have unit leading coefficients has a reduced monic Gröbner basis.
 
