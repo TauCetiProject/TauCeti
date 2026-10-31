@@ -103,16 +103,9 @@ theorem hasBasis_nhds_one_congruenceSubgroup [IsTopologicalAddGroup R] [Algebra.
     obtain ⟨i, hi, hiJ⟩ := hJ.mem_iff.mp ((Filter.biInter_mem hs).2 fun h _ ↦ hshift h)
     refine ⟨i, hi, fun x hx ↦ hWU (hst fun h hh ↦ ?_)⟩
     simpa using Set.mem_iInter₂.mp (hiJ (mem_congruenceSubgroup_iff.1 hx h)) h hh
-  · -- Membership is a congruence on finitely many generators `h ∈ s`, each an open condition
-    -- around the identity.
-    obtain ⟨s, hs⟩ := Algebra.FiniteType.out (R := k) (A := H)
-    have hmem : ∀ h, (fun x : WithConv (H →ₐ[k] R) ↦ x.ofConv h - algebraMap k R (counit h)) ⁻¹'
-        (J i : Set R) ∈ 𝓝 1 := fun h ↦
-      (((PointTopology.continuous_withConv_iff.1 continuous_id) h).sub
-        continuous_const).continuousAt.preimage_mem_nhds (by simpa using hJ.mem_of_mem ‹_›)
-    refine Filter.mem_of_superset ((Filter.biInter_finset_mem s).2 fun h _ ↦ hmem h) ?_
-    intro x hx
-    exact (mem_congruenceSubgroup_iff_of_adjoin_eq_top hs).2 fun h hh ↦ Set.mem_iInter₂.mp hx h hh
+  · -- Each level `J i` is an open ideal, so its congruence subgroup is open.
+    exact (isOpen_congruenceSubgroup
+      ((J i).toAddSubgroup.isOpen_of_mem_nhds (hJ.mem_of_mem ‹_›))).mem_nhds (one_mem _)
 
 /-- For an `I`-adic topology on `R` and `H` of finite type over `k`, the congruence subgroups of
 the levels `I ^ n` form a basis of neighbourhoods of the identity point. -/
