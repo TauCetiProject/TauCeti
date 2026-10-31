@@ -13,6 +13,7 @@ public import TauCeti.Probability.Distributions.Uniform.Finite
 public import TauCeti.Probability.GeneratingFunction
 public import TauCeti.Probability.Quantile.Discrete
 import Mathlib.Algebra.Field.GeomSum
+import Mathlib.NumberTheory.Bernoulli
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
@@ -120,7 +121,7 @@ theorem map_toNat_sub_uniformOn_Icc_int :
 
 /-- Every function is integrable against the uniform law on an integer interval. -/
 @[simp]
-theorem integrable_uniformOn_Icc_int {E : Type*} [NormedAddCommGroup E] (f : ℤ → E) :
+theorem integrable_uniformOn_Icc_int {E : Type*} [SeminormedAddGroup E] (f : ℤ → E) :
     Integrable f (uniformOn (Icc a b : Set ℤ)) := by
   rw [← Finset.coe_Icc]
   exact Finset.integrable_uniformOn_finset _ f
@@ -139,41 +140,18 @@ private theorem integral_uniformOn_Icc_int_eq_sum_range {E : Type*} [NormedAddCo
       (((b + 1 - a).toNat : ℝ))⁻¹ • ∑ j ∈ Finset.range (b + 1 - a).toNat, f (a + j) := by
   simp [integral_uniformOn_Icc_int, Int.Icc_eq_finset_map]
 
-/-- The number of integers in `Icc a b`, cast to `ℝ`. -/
-private theorem natCast_toNat_sub_add_one {a b : ℤ} (h : a ≤ b) :
-    (((b + 1 - a).toNat : ℕ) : ℝ) = b - a + 1 := by
-  have hN : (((b + 1 - a).toNat : ℕ) : ℤ) = b + 1 - a := Int.toNat_of_nonneg (by omega)
-  have := congrArg (Int.cast : ℤ → ℝ) hN
-  push_cast at this
-  linarith
-
-/-- The real sum of the first `N` natural numbers. -/
-private theorem sum_range_natCast (N : ℕ) :
-    ∑ j ∈ Finset.range N, (j : ℝ) = N * (N - 1) / 2 := by
-  induction N with
-  | zero => simp
-  | succ n ih =>
-    rw [Finset.sum_range_succ, ih]
-    push_cast
-    ring
-
-/-- The real sum of the squares of the first `N` natural numbers. -/
-private theorem sum_range_natCast_sq (N : ℕ) :
-    ∑ j ∈ Finset.range N, (j : ℝ) ^ 2 = N * (N - 1) * (2 * N - 1) / 6 := by
-  induction N with
-  | zero => simp
-  | succ n ih =>
-    rw [Finset.sum_range_succ, ih]
-    push_cast
-    ring
-
 /-- The mean of the uniform law on `Icc a b` is the midpoint `(a + b) / 2`. -/
 theorem integral_intCast_uniformOn_Icc {a b : ℤ} (h : a ≤ b) :
     ∫ k : ℤ, (k : ℝ) ∂uniformOn (Icc a b : Set ℤ) = (a + b) / 2 := by
+  have hN : (((b + 1 - a).toNat : ℕ) : ℝ) = b - a + 1 := by norm_cast; omega
+  have hsum_id (N : ℕ) : ∑ j ∈ Finset.range N, (j : ℝ) = N * (N - 1) / 2 := by
+    have := congrArg (Rat.cast : ℚ → ℝ) (sum_range_pow N 1)
+    norm_num [Finset.sum_range_succ] at this
+    rw [this]
+    ring
   rw [integral_uniformOn_Icc_int_eq_sum_range]
   simp only [Int.cast_add, Int.cast_natCast, Finset.sum_add_distrib, Finset.sum_const,
-    Finset.card_range, nsmul_eq_mul, sum_range_natCast, smul_eq_mul,
-    natCast_toNat_sub_add_one h]
+    Finset.card_range, nsmul_eq_mul, hsum_id, smul_eq_mul, hN]
   have hpos : (b - a + 1 : ℝ) ≠ 0 := by
     have : (a : ℝ) ≤ b := by exact_mod_cast h
     positivity
@@ -188,7 +166,18 @@ theorem variance_intCast_uniformOn_Icc {a b : ℤ} (h : a ≤ b) :
   have := isProbabilityMeasure_uniformOn_Icc_int h
   rw [variance_eq_integral (by fun_prop), integral_intCast_uniformOn_Icc h,
     integral_uniformOn_Icc_int_eq_sum_range]
-  have hN := natCast_toNat_sub_add_one h
+  have hN : (((b + 1 - a).toNat : ℕ) : ℝ) = b - a + 1 := by norm_cast; omega
+  have hsum_id (N : ℕ) : ∑ j ∈ Finset.range N, (j : ℝ) = N * (N - 1) / 2 := by
+    have := congrArg (Rat.cast : ℚ → ℝ) (sum_range_pow N 1)
+    norm_num [Finset.sum_range_succ] at this
+    rw [this]
+    ring
+  have hsum_sq (N : ℕ) :
+      ∑ j ∈ Finset.range N, (j : ℝ) ^ 2 = N * (N - 1) * (2 * N - 1) / 6 := by
+    have := congrArg (Rat.cast : ℚ → ℝ) (sum_range_pow N 2)
+    norm_num [Finset.sum_range_succ] at this
+    rw [this]
+    ring
   set N := (b + 1 - a).toNat
   have hsum : ∑ j ∈ Finset.range N, (((a + j : ℤ) : ℝ) - (a + b) / 2) ^ 2 =
       ∑ j ∈ Finset.range N, ((j : ℝ) ^ 2 - (b - a) * j + (b - a) ^ 2 / 4) := by
@@ -196,7 +185,7 @@ theorem variance_intCast_uniformOn_Icc {a b : ℤ} (h : a ≤ b) :
     push_cast
     ring
   rw [hsum, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
-    sum_range_natCast_sq, sum_range_natCast, Finset.sum_const, Finset.card_range, nsmul_eq_mul,
+    hsum_sq, hsum_id, Finset.sum_const, Finset.card_range, nsmul_eq_mul,
     hN, smul_eq_mul]
   have hpos : (b - a + 1 : ℝ) ≠ 0 := by
     have : (a : ℝ) ≤ b := by exact_mod_cast h
@@ -239,7 +228,8 @@ theorem mgf_intCast_uniformOn_Icc {a b : ℤ} (h : a ≤ b) {t : ℝ} (ht : t �
     push_cast
     ring_nf
   simp only [hterm, ← Finset.mul_sum, smul_eq_mul]
-  rw [geom_sum_eq hexp, ← Real.exp_nat_mul, natCast_toNat_sub_add_one h,
+  have hN : (((b + 1 - a).toNat : ℕ) : ℝ) = b - a + 1 := by norm_cast; omega
+  rw [geom_sum_eq hexp, ← Real.exp_nat_mul, hN,
     mul_comm (b - a + 1 : ℝ) t]
   have hpos : (b - a + 1 : ℝ) ≠ 0 := by
     have : (a : ℝ) ≤ b := by exact_mod_cast h
@@ -295,10 +285,7 @@ theorem charFun_map_intCast_uniformOn_Icc_of_exp_ne_one {a b : ℤ} (h : a ≤ b
     rw [← Complex.exp_nat_mul, ← Complex.exp_add]
     push_cast
     ring_nf
-  have hN : ((((b + 1 - a).toNat : ℕ) : ℝ) : ℂ) = (b : ℂ) - a + 1 := by
-    rw [natCast_toNat_sub_add_one h]
-    push_cast
-    ring
+  have hN : ((((b + 1 - a).toNat : ℕ) : ℝ) : ℂ) = (b : ℂ) - a + 1 := by norm_cast; omega
   have hpow : Complex.exp ((t : ℂ) * Complex.I) ^ (b + 1 - a).toNat =
       Complex.exp ((t : ℂ) * (b - a + 1) * Complex.I) := by
     rw [← Complex.exp_nat_mul]
@@ -329,10 +316,12 @@ theorem uniformOn_Icc_int_real_Iic {a b : ℤ} (h : a ≤ b) (k : ℤ) :
       simp only [mem_inter_iff, mem_Icc, mem_Iic]
       omega
     have hsub : Finset.Icc a k ⊆ Finset.Icc a b := Finset.Icc_subset_Icc_right hkb
+    have hNk : (((k + 1 - a).toNat : ℕ) : ℝ) = k - a + 1 := by norm_cast; omega
+    have hN : (((b + 1 - a).toNat : ℕ) : ℝ) = b - a + 1 := by norm_cast; omega
     rw [hinter, ← Finset.coe_Icc, ← Finset.coe_Icc, uniformOn_apply_finset,
       Finset.inter_eq_right.mpr hsub, Int.card_Icc, Int.card_Icc, ENNReal.toReal_div,
       ENNReal.toReal_natCast, ENNReal.toReal_natCast,
-      natCast_toNat_sub_add_one (not_lt.mp hka), natCast_toNat_sub_add_one h]
+      hNk, hN]
   · rw [inter_eq_left.mpr (fun j hj ↦ by simp only [mem_Icc] at hj; simp only [mem_Iic]; omega),
       uniformOn_self (finite_Icc a b) (nonempty_Icc.mpr h)]
     simp
