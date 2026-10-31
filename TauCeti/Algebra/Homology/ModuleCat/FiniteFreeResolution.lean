@@ -66,41 +66,6 @@ namespace FiniteFreeResolution
 
 variable (K : ChainComplex (ModuleCat.{u} R) ℕ)
 
-/-- In a chain complex indexed by `ℕ`, an element of degree `k + 1` is a cycle as soon as the
-differential to degree `k` kills it. -/
-private lemma d_apply_eq_zero {k : ℕ} {x : K.X (k + 1)} (hx : K.d (k + 1) k x = 0) (l : ℕ) :
-    K.d (k + 1) l x = 0 := by
-  by_cases hl : l = k
-  · subst hl
-    exact hx
-  · simp [K.shape (k + 1) l (by simp; omega)]
-
-/-- If the homology of `K` in degree `j` is finitely generated, there are finitely many cycles
-`c i` of degree `j` such that every cycle of degree `j` is a linear combination of them up to a
-boundary. -/
-private lemma exists_cycles_generating (j : ℕ) (hK : Module.Finite R (K.homology j)) :
-    ∃ (m : ℕ) (c : Fin m → K.X j), (∀ i l, K.d j l (c i) = 0) ∧
-      ∀ x : K.X j, (∀ l, K.d j l x = 0) →
-        ∃ (r : Fin m → R) (y : K.X (j + 1)),
-          Fintype.linearCombination R c r + K.d (j + 1) j y = x := by
-  obtain ⟨m, s, hs⟩ := Module.Finite.exists_fin (R := R) (M := K.homology j)
-  choose w hw using fun i ↦ K.moduleCat_homologyπ_surjective j (s i)
-  refine ⟨m, fun i ↦ K.iCycles j (w i), fun i l ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [← ModuleCat.comp_apply, K.iCycles_d]
-    rfl
-  · set x' := K.moduleCatCyclesMk x _ rfl (hx _)
-    have hmem : K.homologyπ j x' ∈ Submodule.span R (Set.range s) := hs ▸ Submodule.mem_top
-    obtain ⟨r, hr⟩ := Submodule.mem_span_range_iff_exists_fun R |>.1 hmem
-    have h0 : K.homologyπ j (x' - ∑ i, r i • w i) = 0 := by
-      simp [map_sub, map_sum, map_smul, hw, hr]
-    obtain ⟨y, hy⟩ := (K.moduleCat_homologyπ_eq_zero_iff (ChainComplex.prev ℕ j) _).1 h0
-    refine ⟨r, y, ?_⟩
-    have hy' := congrArg (K.iCycles j) hy
-    rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i] at hy'
-    rw [hy', map_sub, map_sum, HomologicalComplex.iCycles_moduleCatCyclesMk,
-      Fintype.linearCombination_apply]
-    simp
-
 /-- A finite free resolution of `K` constructed up to degree `k`: the free module `L_k` on the
 finite type `ι`, the degree-`k` component `g` of the chain map, and the submodule `Z` of cycles of
 `L_k`, such that every cycle of `K_k` is the image of a cycle in `Z` up to a boundary. -/
@@ -157,7 +122,8 @@ private lemma Stage.nonempty_extension [IsNoetherianRing R] {k : ℕ} (S : Stage
   obtain ⟨m₁, v, hv⟩ := Submodule.fg_iff_exists_fin_generating_family.1 (IsNoetherian.noetherian N)
   have hvN (i : Fin m₁) : v i ∈ N := hv ▸ Submodule.subset_span ⟨i, rfl⟩
   choose y hy using fun i ↦ (hvN i).2
-  obtain ⟨m₂, c, hc, hcgen⟩ := exists_cycles_generating K (k + 1) hK
+  obtain ⟨m₂, c, hc, hcgen⟩ :=
+    K.exists_fin_moduleCat_cycles_generating hK (ChainComplex.prev ℕ (k + 1))
   refine ⟨{ ι := Fin m₁ ⊕ Fin m₂
             δ := Fintype.linearCombination R (Sum.elim v 0)
             g := Fintype.linearCombination R (Sum.elim y c)
@@ -174,7 +140,7 @@ private lemma Stage.nonempty_extension [IsNoetherianRing R] {k : ℕ} (S : Stage
   · have hz' : z ∈ Submodule.span R (Set.range v) := hv ▸ ⟨hz, y', hy'⟩
     rw [Fintype.range_linearCombination]
     exact Submodule.span_mono (by rintro _ ⟨i, rfl⟩; exact ⟨Sum.inl i, rfl⟩) hz'
-  · obtain ⟨r, y', hy'⟩ := hcgen x (d_apply_eq_zero K hx)
+  · obtain ⟨r, y', hy'⟩ := hcgen x (K.d_apply_eq_zero_of_d_next_apply_eq_zero (by simp) hx)
     refine ⟨Sum.elim 0 r, ?_, y', ?_⟩
     · simp [Fintype.linearCombination_apply, Fintype.sum_sum_type]
     · simpa [Fintype.linearCombination_apply, Fintype.sum_sum_type] using hy'
@@ -189,12 +155,14 @@ variable (K)
 /-- The stage in degree zero: the free module on finitely many cycles representing generators of
 `H₀(K)`, all of whose elements are cycles. -/
 private noncomputable def stageZero (hK : Module.Finite R (K.homology 0)) : Stage K 0 where
-  ι := Fin (exists_cycles_generating K 0 hK).choose
-  g := Fintype.linearCombination R (exists_cycles_generating K 0 hK).choose_spec.choose
+  ι := Fin (K.exists_fin_moduleCat_cycles_generating hK (ChainComplex.prev ℕ 0)).choose
+  g := Fintype.linearCombination R
+    (K.exists_fin_moduleCat_cycles_generating hK (ChainComplex.prev ℕ 0)).choose_spec.choose
   Z := ⊤
   surj x hx := by
-    obtain ⟨r, y, hy⟩ := (exists_cycles_generating K 0 hK).choose_spec.choose_spec.2 x hx
-    exact ⟨r, Submodule.mem_top, y, hy⟩
+    obtain ⟨r, y, hy⟩ := (K.exists_fin_moduleCat_cycles_generating hK
+      (ChainComplex.prev ℕ 0)).choose_spec.choose_spec.2 x hx
+    exact ⟨r, Submodule.mem_top, y, by rwa [Fintype.linearCombination_apply]⟩
 
 variable [IsNoetherianRing R] (hK : ∀ k, Module.Finite R (K.homology k))
 
@@ -202,6 +170,19 @@ variable [IsNoetherianRing R] (hK : ∀ k, Module.Finite R (K.homology k))
 private noncomputable def stage : (k : ℕ) → Stage K k
   | 0 => stageZero K (hK 0)
   | k + 1 => ((stage k).extension (hK (k + 1))).toStage
+
+/-- Every element of the free module in degree zero is a cycle. -/
+private lemma stage_zero_Z : (stage K hK 0).Z = ⊤ := rfl
+
+/-- The stage in degree `k + 1` is, by definition, the stage of the chosen extension of the stage
+in degree `k`: its basis is the extension's basis, so `L_{k+1}` is the free module on it, and its
+chain map component is that of the extension. -/
+private lemma stage_succ_g (k : ℕ) :
+    (stage K hK (k + 1)).g = ((stage K hK k).extension (hK (k + 1))).g := rfl
+
+/-- The cycles of `L_{k+1}` are the kernel of the extension's differential to `L_k`. -/
+private lemma stage_succ_Z (k : ℕ) :
+    (stage K hK (k + 1)).Z = LinearMap.ker ((stage K hK k).extension (hK (k + 1))).δ := rfl
 
 /-- The finite free resolution of `K`. It is reducible so that its terms are seen to be the free
 modules `ι → R` of the stages. -/
@@ -214,7 +195,7 @@ private noncomputable abbrev resolution : ChainComplex (ModuleCat.{u} R) ℕ :=
 private lemma resolution_d_apply (k : ℕ) (z : (resolution K hK).X (k + 1)) :
     (resolution K hK).d (k + 1) k z = ((stage K hK k).extension (hK (k + 1))).δ z := by
   simp only [resolution, ChainComplex.of_d]
-  rfl
+  exact ModuleCat.ofHom_apply _ z
 
 /-- The quasi-isomorphism from the finite free resolution to `K`. -/
 private noncomputable def toComplex : resolution K hK ⟶ K where
@@ -222,21 +203,22 @@ private noncomputable def toComplex : resolution K hK ⟶ K where
   comm' := by
     rintro _ k rfl
     ext z
-    exact (((stage K hK k).extension (hK (k + 1))).comm z).trans
-      (congrArg (stage K hK k).g (resolution_d_apply K hK k z)).symm
+    change K.d (k + 1) k ((stage K hK (k + 1)).g z) =
+      (stage K hK k).g ((resolution K hK).d (k + 1) k z)
+    rw [stage_succ_g, resolution_d_apply]
+    exact ((stage K hK k).extension (hK (k + 1))).comm z
 
 /-- The submodule `Z` of a stage consists of the cycles of the resolution. -/
 private lemma mem_Z_iff (k : ℕ) (z : (stage K hK k).ι → R) :
     z ∈ (stage K hK k).Z ↔ (resolution K hK).d k ((ComplexShape.down ℕ).next k) z = 0 := by
   cases k with
   | zero =>
-    refine iff_of_true trivial ?_
-    rw [(resolution K hK).shape 0 _ (by simp)]
-    rfl
+    rw [stage_zero_Z, (resolution K hK).shape 0 _ (by simp)]
+    simp
   | succ k =>
     have h : (ComplexShape.down ℕ).next (k + 1) = k := by simp
-    rw [h, resolution_d_apply]
-    rfl
+    rw [stage_succ_Z, h, resolution_d_apply]
+    exact LinearMap.mem_ker (f := ((stage K hK k).extension (hK (k + 1))).δ)
 
 private lemma quasiIsoAt_toComplex (k : ℕ) : QuasiIsoAt (toComplex K hK) k := by
   set L := resolution K hK
@@ -265,17 +247,13 @@ private lemma quasiIsoAt_toComplex (k : ℕ) : QuasiIsoAt (toComplex K hK) k := 
     obtain ⟨z, rfl⟩ := hLsurj h
     obtain ⟨y, hy⟩ := (K.moduleCatHomologyClass_eq_zero_iff hm _ _ hp _).1 ((hnat z).symm.trans hh)
     obtain ⟨w, hw⟩ := E.mem_range z.1 ((mem_Z_iff K hK k z.1).2 z.2) y hy
+    -- `w` lies in `L.X (k + 1)`, the free module on the basis `E.ι` of `stage K hK (k + 1)`
     exact (L.moduleCatHomologyClass_eq_zero_iff hm _ _ hp _).2
       ⟨w, (resolution_d_apply K hK k w).trans hw⟩
   · -- a cycle `x` of `K` is the image of a cycle `z` of `L` up to a boundary
     obtain ⟨⟨x, hx⟩, rfl⟩ := hKsurj h
-    have hx' : ∀ l, K.d k l x = 0 := by
-      cases k with
-      | zero => exact fun l ↦ by simp
-      | succ k =>
-        have h : (ComplexShape.down ℕ).next (k + 1) = k := by simp
-        rw [LinearMap.mem_ker, ← hm, h] at hx
-        exact d_apply_eq_zero K hx
+    have hx' : ∀ l, K.d k l x = 0 :=
+      K.d_apply_eq_zero_of_d_next_apply_eq_zero hm (LinearMap.mem_ker.1 hx)
     obtain ⟨z, hz, y, hy⟩ := (stage K hK k).surj x hx'
     refine ⟨cL ⟨z, (mem_Z_iff K hK k z).1 hz⟩, ?_⟩
     rw [hnat, eq_comm, ← sub_eq_zero, ← map_sub]
