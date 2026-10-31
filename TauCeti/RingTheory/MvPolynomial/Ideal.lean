@@ -129,15 +129,16 @@ theorem mem_comap_rename_some_map_rename_some_sup_span_iff {I : Ideal (MvPolynom
       (rename (R := R) some) ↔ ∃ n : ℕ, f ^ n * g ∈ I := by
   -- Transport to polynomials in `X none` over `MvPolynomial σ R`, where `rename some` is `C`.
   let e := (optionEquivLeft R σ).toAlgHom
-  have hcomp : (e.comp (rename (R := R) some) : MvPolynomial σ R →+* _) = Polynomial.C := by
-    ext <;> simp [e]
+  have hcomp : e.comp (rename (R := R) some) = Polynomial.CAlgHom := by
+    ext; simp [e]
+  have hf : e (rename some f) = Polynomial.C f := AlgHom.congr_fun hcomp f
   have hX : e (X none) = Polynomial.X := optionEquivLeft_X_none R σ
   have hmap : (I.map (rename some) ⊔ span {rename some f * X none - 1}).map e =
-      I.map Polynomial.C ⊔ span {Polynomial.C f * Polynomial.X - 1} := by
-    rw [map_sup, map_mapₐ, ← map_coe, hcomp, map_span, Set.image_singleton, map_sub, map_mul,
-      map_one, hX, ← AlgHom.comp_apply, ← AlgHom.coe_toRingHom, hcomp]
+      I.map (Polynomial.CAlgHom (R := R)) ⊔ span {Polynomial.C f * Polynomial.X - 1} := by
+    simp [map_sup, map_mapₐ, map_span, hcomp, hf, hX]
   rw [← comap_map_of_bijective e (optionEquivLeft R σ).bijective (I := I.map (rename some) ⊔ _),
-    hmap, comap_comapₐ, ← comap_coe, hcomp, mem_comap_C_map_C_sup_span_C_mul_X_sub_one_iff]
+    hmap, comap_comapₐ, hcomp]
+  exact mem_comap_C_map_C_sup_span_C_mul_X_sub_one_iff
 
 /-- The contraction along `rename some` of `I + (f X_none - 1)` is the contraction of `I` from
 the localization `S` of `MvPolynomial σ R` away from `f`. -/
