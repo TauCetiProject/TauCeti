@@ -70,7 +70,7 @@ theorem eqOn_connectedComponent_of_tangentMap_basis_eq {ι : Type*}
 /-- Frame evaluation is injective if the sampled points meet every connected component.
 The bases need not be orthonormal, and neither compactness nor finiteness of the sample
 family is required. -/
-theorem injective_frameEvaluation {κ ι : Type*} (p : κ → M)
+theorem injective_tangentMap_basis_of_forall_mem_connectedComponent {κ ι : Type*} (p : κ → M)
     (hp : ∀ x : M, ∃ c, x ∈ connectedComponent (p c))
     (b : ∀ c, Module.Basis ι ℝ (TangentSpace I (p c))) :
     Function.Injective (fun Φ : RiemannianIsometry I J M N =>
@@ -87,7 +87,7 @@ theorem injective_frameEvaluation {κ ι : Type*} (p : κ → M)
 determines a smooth Riemannian isometry. The component map of the sampled points is bijective,
 so the data include exactly one point per component. Image points are recorded even in
 dimension zero. -/
-theorem exists_injective_frameEvaluation [CompactSpace M] :
+theorem exists_orthonormalBasis_injective_tangentMap [CompactSpace M] :
     ∃ (k : ℕ) (p : Fin k → M)
       (b : ∀ c, OrthonormalBasis (Fin (Module.finrank ℝ E)) ℝ (TangentSpace I (p c))),
       Function.Bijective (fun c => ConnectedComponents.mk (p c)) ∧
@@ -103,7 +103,8 @@ theorem exists_injective_frameEvaluation [CompactSpace M] :
   have hp (c) : ConnectedComponents.mk (p c) = e c := hr (e c)
   let b (c) := (stdOrthonormalBasis ℝ (TangentSpace I (p c))).reindex
     (finCongr (TauCeti.finrank_tangentSpace (I := I) (p c)))
-  refine ⟨_, p, b, ?_, injective_frameEvaluation p ?_ (fun c => (b c).toBasis)⟩
+  refine ⟨_, p, b, ?_,
+    injective_tangentMap_basis_of_forall_mem_connectedComponent p ?_ (fun c => (b c).toBasis)⟩
   · have heq : (fun c => ConnectedComponents.mk (p c)) = e := funext hp
     rw [heq]
     exact e.bijective
