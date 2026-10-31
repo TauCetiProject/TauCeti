@@ -23,22 +23,28 @@ value `w v` of `F` and a family of linear forms `L v i` on `F^ι`. The quantity 
 `∏ i, w v (L v i x) / ⨆ j, v (x j)`,
 
 raised to the power `mult v` at an infinite place. This is `NumberField.approxProd`. Points lie in
-`K` and the forms have coefficients in `F`; with `F = K` this is the number-field form of the
-Subspace Theorem of Schlickewei and Evertse, with `K = ℚ` Schmidt's form with algebraic
-coefficients. The forms and the absolute values are indexed by the underlying absolute value of a
-place, so that one family serves both sets of places.
+`K` and the forms have coefficients in `F`. The forms and the absolute values are indexed by the
+underlying absolute value of a place, so that one family serves both sets of places. The
+definition makes sense for any field `F` and any absolute values `w v`; the Diophantine
+interpretation below needs more.
 
 The normalization is Mathlib's relative one, as in `Height.mulHeight`: the local factor at an
-infinite place carries the exponent `mult v`. When the forms at each place are linearly
-independent and `ε > 0`, the Subspace Theorem says that the nonzero `x` with
+infinite place carries the exponent `mult v`. Suppose that `F` is algebraic over `K` (for instance
+an algebraic closure of `K`), that each `w v` lies over `v`, and that the forms at each place are
+linearly independent, and let `ε > 0`. Then the Subspace Theorem says that the nonzero `x` with
 `approxProd Sinf Sfin w L x ≤ mulHeight x ^ (-card ι - ε)` lie in finitely many proper subspaces
-of `K^ι`; this file develops the quantity itself, not the theorem.
+of `K^ι`: this is the number-field form of Schlickewei and Evertse, and with `K = ℚ` Schmidt's
+form with algebraic coefficients. This file develops the quantity itself, not the theorem, and
+assumes `w v` lies over `v` only where a result needs it.
 
 ## Main results
 
 * `NumberField.approxProd_smul`: the approximation product is a function on projective space,
   `approxProd … (c • x) = approxProd … x` for `c ≠ 0`, because each `w v` lies over `v`. The
   example at the end of the file shows that the hypothesis cannot be dropped.
+* `NumberField.apply_div_iSup_smul` and `NumberField.prod_div_iSup_nonneg`: one factor of a local
+  factor is invariant under nonzero scaling when `w` lies over `v`, and a local factor is
+  nonnegative.
 * `NumberField.approxProd_union`: it is multiplicative in disjoint sets of places, and
   `NumberField.approxProd_empty`: it is `1` over no places.
 * `NumberField.prod_proj_div_iSup_le_one`: the local factor of the coordinate forms is at most
@@ -63,7 +69,7 @@ variable {K F ι : Type*} [Field K] [Field F] [Algebra K F]
 
 /-- One factor of a local factor of `approxProd` is unchanged under scaling the point by a nonzero
 scalar, when `w` lies over `v`. -/
-private theorem apply_div_iSup_smul {v : AbsoluteValue K ℝ} {w : AbsoluteValue F ℝ}
+theorem apply_div_iSup_smul {v : AbsoluteValue K ℝ} {w : AbsoluteValue F ℝ}
     [w.LiesOver v] (l : Dual F (ι → F)) {c : K} (hc : c ≠ 0) (x : ι → K) :
     w (l fun j ↦ algebraMap K F ((c • x) j)) / ⨆ j, v ((c • x) j) =
       w (l fun j ↦ algebraMap K F (x j)) / ⨆ j, v (x j) := by
@@ -78,7 +84,7 @@ private theorem apply_div_iSup_smul {v : AbsoluteValue K ℝ} {w : AbsoluteValue
 variable [Fintype ι]
 
 /-- A local factor of `approxProd` is nonnegative. -/
-private theorem prod_div_iSup_nonneg (v : AbsoluteValue K ℝ) (w : AbsoluteValue F ℝ)
+theorem prod_div_iSup_nonneg (v : AbsoluteValue K ℝ) (w : AbsoluteValue F ℝ)
     (l : ι → Dual F (ι → F)) (x : ι → K) :
     0 ≤ ∏ i, w (l i fun j ↦ algebraMap K F (x j)) / ⨆ j, v (x j) :=
   Finset.prod_nonneg fun _ _ ↦
