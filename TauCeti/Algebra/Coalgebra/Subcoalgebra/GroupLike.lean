@@ -143,11 +143,10 @@ theorem groupLikeSetSpan_eq_top_iff_of_coalgEquiv {D : Type w} [AddCommMonoid D]
     ext d
     constructor
     · rintro ⟨_, ⟨g, rfl⟩, rfl⟩
-      exact ⟨TauCeti.GroupLike.equivOfCoalgEquiv e g,
-        TauCeti.GroupLike.val_equivOfCoalgEquiv e g⟩
+      exact ⟨e.mapGroupLike g, e.val_mapGroupLike g⟩
     · rintro ⟨g, rfl⟩
-      obtain ⟨x, rfl⟩ := (TauCeti.GroupLike.equivOfCoalgEquiv e).surjective g
-      exact ⟨x.val, ⟨x, rfl⟩, (TauCeti.GroupLike.val_equivOfCoalgEquiv e x).symm⟩
+      obtain ⟨x, rfl⟩ := e.mapGroupLike.surjective g
+      exact ⟨x.val, ⟨x, rfl⟩, (e.val_mapGroupLike x).symm⟩
   rw [← hgroupLike, Submodule.span_image_linearEquiv, Submodule.map_eq_top_iff]
 
 /-- The subcoalgebra spanned by a group-like element. -/

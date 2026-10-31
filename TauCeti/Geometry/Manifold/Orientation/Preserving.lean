@@ -17,8 +17,14 @@ This file records the pointwise interface for a map to preserve or reverse manif
 The differential is required to be represented by a continuous linear equivalence, and its induced
 orientation must agree with the target orientation (or its opposite). These predicates are the local
 input for pullback orientations and orientation-sensitive integration.
+
 For orientation lifts with a common model orientation, the chart signs of the lifts compensate the
 sign of the coordinate Jacobian of an orientation-preserving map.
+
+For one-dimensional manifolds modelled on `ℝ` whose orientations are the standard orientation of
+`ℝ` at the relevant points, `isOrientationPreservingAt_of_orientationAt_eq` and
+`isOrientationReversingAt_of_orientationAt_eq` reduce preservation and reversal to the sign of the
+real number by which the derivative multiplies.
 -/
 
 public section
@@ -281,6 +287,49 @@ theorem IsOrientationReversingAt.comp_preserving [IsManifold I 1 M] [IsManifold 
     simpa only [isOrientationPreservingAt_neg_left, isOrientationReversingAt_neg_right] using hgf
   have h := IsOrientationPreservingAt.comp hgg' hgf'
   exact (isOrientationPreservingAt_neg_left o o'' (g ∘ f) x).1 h
+
+section RealLine
+
+variable {N N' : Type*} [TopologicalSpace N] [ChartedSpace ℝ N] [IsManifold 𝓘(ℝ) 1 N]
+  [TopologicalSpace N'] [ChartedSpace ℝ N'] [IsManifold 𝓘(ℝ) 1 N']
+
+/-- For orientations of one-dimensional manifolds modelled on `ℝ` which are the standard
+orientation of `ℝ` at `x` and at `f x`, a map whose derivative at `x` is multiplication by a
+positive real number preserves orientation at `x`. -/
+theorem isOrientationPreservingAt_of_orientationAt_eq
+    {o : Manifold.Orientation 𝓘(ℝ) N (Fin 1)} {o' : Manifold.Orientation 𝓘(ℝ) N' (Fin 1)}
+    {f : N → N'} {x : N} (ho : o.orientationAt x = (Module.Basis.singleton (Fin 1) ℝ).orientation)
+    (ho' : o'.orientationAt (f x) = (Module.Basis.singleton (Fin 1) ℝ).orientation) {c : ℝ}
+    (hc : 0 < c) (hf : mfderiv 𝓘(ℝ) 𝓘(ℝ) f x = c • ContinuousLinearMap.id ℝ ℝ) :
+    IsOrientationPreservingAt o o' f x := by
+  -- Tangent spaces of manifolds modelled on `ℝ` are `ℝ`, and the derivative is `c • id`.
+  refine (isOrientationPreservingAt_iff_of_coe_eq o o' f x
+    (LinearEquiv.smulOfNeZero ℝ ℝ c hc.ne').toContinuousLinearEquiv
+    (hf.symm ▸ ContinuousLinearMap.ext fun _ ↦ rfl)).mpr ?_
+  rw [ho, ho']
+  refine (_root_.Orientation.map_eq_iff_det_pos _ _ (by simp)).mpr ?_
+  -- On `ℝ`, the determinant of multiplication by `c` is `c`.
+  exact hc.trans_eq ((LinearMap.det_ring (R := ℝ) _).trans (mul_one c)).symm
+
+/-- For orientations of one-dimensional manifolds modelled on `ℝ` which are the standard
+orientation of `ℝ` at `x` and at `f x`, a map whose derivative at `x` is multiplication by a
+negative real number reverses orientation at `x`. -/
+theorem isOrientationReversingAt_of_orientationAt_eq
+    {o : Manifold.Orientation 𝓘(ℝ) N (Fin 1)} {o' : Manifold.Orientation 𝓘(ℝ) N' (Fin 1)}
+    {f : N → N'} {x : N} (ho : o.orientationAt x = (Module.Basis.singleton (Fin 1) ℝ).orientation)
+    (ho' : o'.orientationAt (f x) = (Module.Basis.singleton (Fin 1) ℝ).orientation) {c : ℝ}
+    (hc : c < 0) (hf : mfderiv 𝓘(ℝ) 𝓘(ℝ) f x = c • ContinuousLinearMap.id ℝ ℝ) :
+    IsOrientationReversingAt o o' f x := by
+  -- Tangent spaces of manifolds modelled on `ℝ` are `ℝ`, and the derivative is `c • id`.
+  refine (isOrientationReversingAt_iff_of_coe_eq o o' f x
+    (LinearEquiv.smulOfNeZero ℝ ℝ c hc.ne).toContinuousLinearEquiv
+    (hf.symm ▸ ContinuousLinearMap.ext fun _ ↦ rfl)).mpr ?_
+  rw [ho, ho']
+  refine (_root_.Orientation.map_eq_neg_iff_det_neg _ _ (by simp)).mpr ?_
+  -- On `ℝ`, the determinant of multiplication by `c` is `c`.
+  exact ((LinearMap.det_ring (R := ℝ) _).trans (mul_one c)).trans_lt hc
+
+end RealLine
 
 end TauCeti.Manifold.Orientation
 

@@ -55,6 +55,8 @@ completion and need no argument here.
 
 ## Main results
 
+* `TauCeti.Huber.PairOfDefinition.weighted_ringOfDefinition_one_weight_eq_top`: with trivial
+  weights, a pair whose ring of definition is the whole ring retains this property.
 * `TauCeti.Huber.PairOfDefinition.exists_sum_weightedRingOfDefinitionC_mul`: the decomposition of
   a series over generators of `I`, with restricted cofactors.
 * `TauCeti.Huber.PairOfDefinition.weightedIdeal_one_pow`: `(I⟨X⟩_T) ^ n = Iⁿ⟨X⟩_T`, from which
@@ -455,6 +457,14 @@ def weighted (P : PairOfDefinition A) (hT : IsWeightFamily T) :
 @[simp]
 theorem weighted_ringOfDefinition (P : PairOfDefinition A) (hT : IsWeightFamily T) :
     (P.weighted hT).ringOfDefinition = P.weightedRingOfDefinition hT := (rfl)
+
+/-- With trivial weights, a ring of definition equal to the whole coefficient ring gives
+all restricted series as the ring of definition of the weighted pair. -/
+theorem weighted_ringOfDefinition_one_weight_eq_top (P : PairOfDefinition A)
+    (hP : P.ringOfDefinition = ⊤) :
+    (P.weighted (k := k) isWeightFamily_one_weight).ringOfDefinition = ⊤ := by
+  ext f
+  simp [weighted_ringOfDefinition, mem_weightedNhd, weightMul_one_weight, hP]
 
 /-- Membership in the ideal of definition of the pair `(A₀⟨X⟩_T, I⟨X⟩_T)` is membership in
 `I⟨X⟩_T`.

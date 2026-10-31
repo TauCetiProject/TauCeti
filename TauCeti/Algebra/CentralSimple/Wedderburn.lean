@@ -23,7 +23,7 @@ because that is the hypothesis every later structure theorem (the degree, Skolem
 group) carries.
 
 This file supplies the missing step. Feeding Mathlib's Wedderburn-Artin theorem the centrality
-descent `TauCeti.isCentral_of_isCentral_matrix` gives `A ≃ₐ[K] Matrix (Fin n) (Fin n) D` with `D` a
+descent `TauCeti.Algebra.IsCentral.of_matrix` gives `A ≃ₐ[K] Matrix (Fin n) (Fin n) D` with `D` a
 central division algebra, together with the dimension count `finrank K A = n ^ 2 * finrank K D`.
 
 The same file settles the finite base field. A finite division ring is a field (little Wedderburn),
@@ -89,7 +89,7 @@ variable (K : Type*) [Field K] (A : Type u) [Ring A] [Algebra K A]
 `K`-algebra `D`, and then `finrank K A = n ^ 2 * finrank K D`.
 
 Mathlib's `IsSimpleRing.exists_algEquiv_matrix_divisionRing_finite` supplies everything except the
-centrality of `D`, which comes from `TauCeti.isCentral_of_isCentral_matrix`. -/
+centrality of `D`, which comes from `TauCeti.Algebra.IsCentral.of_matrix`. -/
 theorem exists_algEquiv_matrix_centralDivisionRing [Algebra.IsCentral K A] [IsSimpleRing A]
     [FiniteDimensional K A] :
     ∃ (n : ℕ) (_ : NeZero n) (D : Type u) (_ : DivisionRing D) (_ : Algebra K D)
@@ -102,7 +102,7 @@ theorem exists_algEquiv_matrix_centralDivisionRing [Algebra.IsCentral K A] [IsSi
   have : Nonempty (Fin n) := ⟨0⟩
   have : Algebra.IsCentral K (Matrix (Fin n) (Fin n) D) :=
     Algebra.IsCentral.of_algEquiv K A _ e
-  refine ⟨n, hn, D, hD, hDalg, isCentral_of_isCentral_matrix K D (Fin n), hDfin, ?_, ⟨e⟩⟩
+  refine ⟨n, hn, D, hD, hDalg, Algebra.IsCentral.of_matrix K D (Fin n), hDfin, ?_, ⟨e⟩⟩
   rw [e.toLinearEquiv.finrank_eq, Module.finrank_matrix, Fintype.card_fin]
   ring
 

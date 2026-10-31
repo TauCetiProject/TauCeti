@@ -284,6 +284,26 @@ theorem strandIncl_T (i : Fin (n - 1)) :
     strandIncl R q n (T q i) = T q (Fin.castLE (by omega) i) := by
   rw [strandIncl, lift_T]
 
+/-- On a positive number of strands, the generator index under the tower map is `castSucc`. -/
+theorem strandIncl_T_castSucc (i : Fin n) :
+    strandIncl R q (n + 1) (T q i) = T q i.castSucc := by
+  rw [strandIncl_T]
+  exact congrArg (T q) (Fin.ext rfl)
+
+/-- The last generator commutes with every element coming from two stages earlier in the
+finite Hecke tower. -/
+theorem commute_T_last_strandIncl_strandIncl (n : ℕ)
+    (x : TypeAHeckeAlgebra R q (n + 1)) :
+    Commute (T q (Fin.last (n + 1)))
+      (strandIncl R q (n + 2) (strandIncl R q (n + 1) x)) := by
+  have hx : strandIncl R q (n + 2) (strandIncl R q (n + 1) x) ∈
+      ((strandIncl R q (n + 2)).comp (strandIncl R q (n + 1))).range := ⟨x, rfl⟩
+  rw [← Algebra.map_top, ← adjoin_range_T, AlgHom.map_adjoin, ← Set.range_comp] at hx
+  apply Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx
+  rintro _ ⟨i, rfl⟩
+  simp only [Function.comp_apply, AlgHom.comp_apply, strandIncl_T]
+  exact commute_T (Or.inr (by have := i.isLt; dsimp; omega))
+
 /-- Adding an uncrossed last strand to a braid adds an uncrossed last strand to its image: the
 braid homomorphisms are compatible with the strand inclusions of the braid groups and the tower
 maps. -/

@@ -46,10 +46,15 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
   differentiable) at the chart image of the point.
+* `MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply`: on a boundaryless source, the coordinate
+  derivative is the manifold derivative transported by the canonical tangent-to-model casts.
 * `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: conversely, a map into a
   normed space is differentiable whenever its preferred coordinate expression is.
 * `MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+* `MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj`: on a boundaryless manifold, the manifold
+  derivative of a map between manifolds is the Fréchet derivative of its expression in the extended
+  charts at the point and at its image.
 * `ContMDiffAt.hasStrictFDerivAt_extChartAt_conj`: over `ℝ` or `ℂ`, a map out of a boundaryless
   manifold that is `C¹` at a point, read in the extended charts at that point and at its image, is
   strictly differentiable at the chart image of the point.
@@ -74,6 +79,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `MDifferentiableAt.differentiableAt_chartAt_comp`: a differentiable map from a normed space
   into a manifold modelled on a normed space is differentiable in the preferred chart at its
   image.
+* `MDifferentiableAt.fderiv_chartAt_comp`: the derivative in that chart is the manifold
+  derivative with the canonical source tangent identification.
 * `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the chart target with
   unique derivatives, the derivative of the inverse chart is its derivative within the model range.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
@@ -296,6 +303,32 @@ theorem _root_.MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm
   rw [hf.mvfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ,
     writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
 
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- On a boundaryless manifold, the manifold derivative of `g : M → M'` at `x` is the Fréchet
+derivative of `g` read in the extended charts at `x` and at `y = g x`, with the tangent spaces at
+`x` and `g x` identified with the model spaces. Naming the image point `y` allows a self-map
+fixing `x` to be read in the single chart at `x`. -/
+theorem _root_.MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj {g : M → M'} {y : M'}
+    (hg : MDifferentiableAt I I' g x) (hy : g x = y) :
+    mfderiv I I' g x =
+      fderiv 𝕜 (extChartAt I' y ∘ g ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  subst hy
+  rw [hg.mfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ]
+  -- The tangent-space casts `tangentSpaceCastModel` are the identity maps of the model spaces.
+  rfl
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- On a boundaryless source, the manifold derivative, transported to the model spaces by the
+canonical tangent casts, is the Fréchet derivative of the preferred coordinate expression. -/
+theorem _root_.MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply {g : M → M'}
+    (hg : MDifferentiableAt I I' g x) (v : TangentSpace I x) :
+    tangentSpaceCastModel I' (g x) (mfderiv I I' g x v) =
+      fderiv 𝕜 (writtenInExtChartAt I I' x g) (extChartAt I x x)
+        (tangentSpaceCastModel I x v) := by
+  rw [hg.mfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply]
+
 section SelfModel
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] {g : N → F} {z : N}
@@ -349,10 +382,8 @@ theorem TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm :
   rw [mdifferentiableAt_iff]
   refine ⟨?_, ?_⟩
   · -- Near `x`, the map is its coordinate expression composed with the chart.
-    have hfeq : (f ∘ (extChartAt I x).symm) ∘ extChartAt I x =ᶠ[𝓝 x] f := by
-      filter_upwards [extChartAt_source_mem_nhds (I := I) x] with z hz
-      rw [Function.comp_apply, Function.comp_apply, (extChartAt I x).left_inv hz]
-    exact (h.continuousAt.comp (continuousAt_extChartAt x)).congr hfeq
+    exact (h.continuousAt.comp (continuousAt_extChartAt x)).congr
+      (comp_extChartAt_symm_comp_extChartAt_eventuallyEq f x)
   · rwa [ModelWithCorners.Boundaryless.range_eq_univ, differentiableWithinAt_univ,
       writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
       Function.id_comp]
@@ -555,6 +586,19 @@ theorem _root_.MDifferentiableAt.differentiableAt_chartAt_comp {g : F → N} {x 
     DifferentiableAt 𝕜 (chartAt E (g x) ∘ g) x := by
   have h := hg.hasMFDerivAt.2.differentiableWithinAt
   simpa [writtenInExtChartAt, differentiableWithinAt_univ] using h
+
+/-- For a normed source and a manifold modelled on a normed space, the derivative in the
+preferred chart at the image is the manifold derivative, using the canonical tangent-space
+identifications. -/
+theorem _root_.MDifferentiableAt.fderiv_chartAt_comp {g : F → N} {x : F}
+    (hg : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, E) g x) :
+    fderiv 𝕜 (chartAt E (g x) ∘ g) x =
+      (mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) g x).comp
+        (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x).symm.toContinuousLinearMap := by
+  -- For the self model, the extended chart is the chart itself, and tangent spaces of normed
+  -- spaces have the canonical identity equivalence with their underlying spaces.
+  ext v
+  simpa [writtenInExtChartAt] using! congrArg (fun L => L v) hg.mfderiv.symm
 
 end ModelSpaceSource
 

@@ -15,7 +15,8 @@ import TauCeti.Algebra.Module.Equiv.Basic
 
 Dimension-counting criteria for nontrivial submodule intersection: two subspaces of a
 finite-dimensional space whose dimensions sum to more than the ambient dimension meet
-nontrivially, and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
+nontrivially, as do three subspaces whose dimensions sum to more than twice the ambient dimension,
+and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
 nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
 `m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors.
@@ -46,6 +47,14 @@ theorem inf_ne_bot_of_finrank_lt [FiniteDimensional 𝕜 E] {V W : Submodule �
     (h : finrank 𝕜 E < finrank 𝕜 V + finrank 𝕜 W) : V ⊓ W ≠ ⊥ := fun hbot =>
   absurd (Submodule.finrank_add_finrank_le_of_disjoint (disjoint_iff.mpr hbot))
     (by omega)
+
+/-- Three subspaces whose dimensions sum to more than twice the dimension of the ambient
+space have nontrivial common intersection. -/
+theorem inf_inf_ne_bot_of_finrank_lt [FiniteDimensional 𝕜 E] {U V W : Submodule 𝕜 E}
+    (h : 2 * finrank 𝕜 E < finrank 𝕜 U + finrank 𝕜 V + finrank 𝕜 W) : U ⊓ V ⊓ W ≠ ⊥ := by
+  have hUV := Submodule.finrank_sup_add_finrank_inf_eq U V
+  have hle := (U ⊔ V).finrank_le
+  exact inf_ne_bot_of_finrank_lt (by omega)
 
 /-- The preimage of a subspace `W` under a linear map `f : M → N` of finite-dimensional spaces
 has codimension at most the codimension of `W`: `dim M + dim W ≤ dim (f⁻¹ W) + dim N`. -/

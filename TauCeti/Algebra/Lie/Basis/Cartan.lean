@@ -38,6 +38,11 @@ noncomputable def cartanBasis (b : Basis ι H) : Module.Basis ι R H :=
     LinearEquiv.ofEq_symm]
   exact LinearEquiv.coe_ofEq_apply _ _
 
+/-- The vectors of `LieAlgebra.Basis.cartanBasis` are the Cartan generators `h'`, read as elements
+of the Cartan subalgebra. -/
+theorem cartanBasis_apply (b : Basis ι H) (i : ι) : b.cartanBasis i = b.h' i :=
+  Subtype.ext (b.coe_cartanBasis i)
+
 /-- The Cartan subalgebra has dimension the cardinality of the basis's index type. -/
 theorem finrank_cartan [StrongRankCondition R] (b : Basis ι H) :
     Module.finrank R H = Nat.card ι :=

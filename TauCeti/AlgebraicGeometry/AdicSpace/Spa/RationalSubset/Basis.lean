@@ -407,8 +407,7 @@ theorem mem_spaRationalOpens_iff_exists_spaBasicOpen {Aplus : Subring A} {U : Op
 criterion on a basis consumes. -/
 theorem isBasis_spaRationalOpens [IsHuberRing A] (Aplus : Subring A) :
     Opens.IsBasis (spaRationalOpens Aplus) :=
-  TauCeti.TopologicalSpace.Opens.isBasis_of_isTopologicalBasis
-    (isTopologicalBasis_spaRationalFamily Aplus)
+  (isTopologicalBasis_spaRationalFamily Aplus).isBasis_opens
 
 omit [IsTopologicalRing A] in
 /-- The whole space is a rational open, presented as `R({1}/1)`. -/
