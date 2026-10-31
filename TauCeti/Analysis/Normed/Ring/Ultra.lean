@@ -115,16 +115,18 @@ theorem norm_div_one_sub_pow {K : Type*} [NormedDivisionRing K] [IsUltrametricDi
 
 /-- A one-sided series `∑_{n ≥ 1} f(qⁿ w)` with values in an ultrametric group, whose terms are
 bounded by their arguments, has norm at most `‖q w‖` when `‖q‖ ≤ 1` and `‖q w‖ < 1`. -/
-theorem norm_tsum_le_norm_mul {R E : Type*} [SeminormedRing R] [NormOneClass R]
+theorem norm_tsum_le_norm_mul {R E : Type*} [SeminormedRing R]
     [SeminormedAddCommGroup E] [IsUltrametricDist E] (f : R → E)
     (hf : ∀ w : R, ‖w‖ < 1 → ‖f w‖ ≤ ‖w‖) {q w : R} (hq : ‖q‖ ≤ 1) (hw : ‖q * w‖ < 1) :
     ‖∑' n : ℕ, f (q ^ (n + 1) * w)‖ ≤ ‖q * w‖ := by
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg _) fun n ↦ ?_
-  have h : ‖q ^ (n + 1) * w‖ ≤ ‖q * w‖ :=
-    calc ‖q ^ (n + 1) * w‖ = ‖q ^ n * (q * w)‖ := by rw [pow_succ, mul_assoc]
-      _ ≤ ‖q ^ n‖ * ‖q * w‖ := norm_mul_le _ _
-      _ ≤ ‖q * w‖ := mul_le_of_le_one_left (norm_nonneg _)
-        ((norm_pow_le q n).trans (pow_le_one₀ (norm_nonneg q) hq))
+  have h : ‖q ^ (n + 1) * w‖ ≤ ‖q * w‖ := by
+    induction n with
+    | zero => rw [zero_add, pow_one]
+    | succ n ih =>
+      calc ‖q ^ (n + 1 + 1) * w‖ = ‖q * (q ^ (n + 1) * w)‖ := by rw [pow_succ', mul_assoc]
+        _ ≤ ‖q‖ * ‖q ^ (n + 1) * w‖ := norm_mul_le _ _
+        _ ≤ ‖q * w‖ := mul_le_of_le_one_left (norm_nonneg _) hq |>.trans ih
   exact (hf _ (h.trans_lt hw)).trans h
 
 /-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is

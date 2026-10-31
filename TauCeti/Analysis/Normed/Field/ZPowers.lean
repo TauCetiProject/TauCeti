@@ -14,9 +14,10 @@ import Mathlib.Algebra.Order.Archimedean.Basic
 
 If `q` is a unit of a normed field with `‖q‖ < 1`, every multiplicative coset modulo
 `Subgroup.zpowers q` has exactly one representative in `‖q‖ < ‖u‖ ≤ 1`.
-`unitsQuotientZPowersEquivAnnulus` gives this set-level equivalence. The half-open annulus is
-essential: replacing the upper weak inequality by a strict inequality loses every coset
-whose representatives have norms in `‖q‖^ℤ`.
+`exists_mk_eq_and_norm_mem_Ioc` states the existence of such a representative, and
+`unitsQuotientZPowersEquivAnnulus` gives the resulting set-level equivalence. The half-open
+annulus is essential: replacing the upper weak inequality by a strict inequality loses every
+coset whose representatives have norms in `‖q‖^ℤ`.
 
 The proof uses Mathlib's Archimedean fundamental-interval theorem
 `existsUnique_sub_zpow_mem_Ioc` on positive norms. Neither completeness, nontriviality of the
@@ -94,6 +95,12 @@ theorem mk_unitsQuotientZPowersEquivAnnulus (q : Kˣ) (hq : ‖(q : K)‖ < 1)
     (x : Kˣ ⧸ Subgroup.zpowers q) :
     ((unitsQuotientZPowersEquivAnnulus q hq x).val : Kˣ ⧸ Subgroup.zpowers q) = x :=
   (unitsQuotientZPowersEquivAnnulus q hq).symm_apply_apply x
+
+/-- Every class in `Kˣ ⧸ q^ℤ` has a representative in the fundamental annulus. -/
+theorem exists_mk_eq_and_norm_mem_Ioc (q : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (x : Kˣ ⧸ Subgroup.zpowers q) :
+    ∃ r : Kˣ, (r : Kˣ ⧸ Subgroup.zpowers q) = x ∧ ‖(q : K)‖ < ‖(r : K)‖ ∧ ‖(r : K)‖ ≤ 1 :=
+  ⟨_, mk_unitsQuotientZPowersEquivAnnulus q hq x, (unitsQuotientZPowersEquivAnnulus q hq x).prop⟩
 
 /-- A representative already in the fundamental annulus is unchanged by normalisation. -/
 @[simp]

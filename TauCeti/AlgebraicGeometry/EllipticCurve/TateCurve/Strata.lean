@@ -79,17 +79,6 @@ private theorem annulus_bounds {q u : Kˣ} (hqu : ‖(q : K)‖ < ‖(u : K)‖)
   · have h := le_mul_of_one_le_right hq0.le hu
     exact ⟨h.trans_lt h₁, le_max_of_le_left h⟩
 
-/-- Every class in `Kˣ ⧸ q^ℤ` has a representative in the fundamental annulus. -/
-private theorem exists_mk_eq_of_mem_annulus (q : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (x : Kˣ ⧸ Subgroup.zpowers q) :
-    ∃ r : Kˣ, (r : Kˣ ⧸ Subgroup.zpowers q) = x ∧ ‖(q : K)‖ < ‖(r : K)‖ ∧ ‖(r : K)‖ ≤ 1 :=
-  ⟨_, mk_unitsQuotientZPowersEquivAnnulus q hq x, (unitsQuotientZPowersEquivAnnulus q hq x).prop⟩
-
-/-- A unit whose class is not the identity is not `1`. -/
-private theorem val_ne_one_of_mk_ne_one {q u : Kˣ}
-    (hx : (u : Kˣ ⧸ Subgroup.zpowers q) ≠ 1) : (u : K) ≠ 1 := fun h ↦
-  hx (by rw [Units.val_eq_one.mp h, QuotientGroup.mk_one])
-
 variable [CompleteSpace K] [IsUltrametricDist K]
 
 /-- **The first Tate coordinate is the nodal parametrisation up to a small error.** On the
@@ -245,7 +234,7 @@ theorem one_lt_norm_tateQuotientCoordinates_fst_iff (q : Kˣ) (hq : ‖(q : K)�
       ∃ u : Kˣ, (u : Kˣ ⧸ Subgroup.zpowers q) = x ∧ ‖1 - (u : K)‖ < 1 := by
   constructor
   · intro h
-    obtain ⟨r, rfl, hr₁, hr₂⟩ := exists_mk_eq_of_mem_annulus q hq x
+    obtain ⟨r, rfl, hr₁, hr₂⟩ := exists_mk_eq_and_norm_mem_Ioc q hq x
     rw [tateQuotientCoordinates_mk] at h
     refine ⟨r, rfl, lt_of_not_ge fun hge ↦ h.not_ge ?_⟩
     rcases hr₂.lt_or_eq with hlt | heq
@@ -255,10 +244,10 @@ theorem one_lt_norm_tateQuotientCoordinates_fst_iff (q : Kˣ) (hq : ‖(q : K)�
         le_antisymm (by simpa [heq] using IsUltrametricDist.norm_sub_le_max (1 : K) r) hge
       exact norm_tateUniformizationX_le_one q r hq heq h1
   · rintro ⟨u, rfl, hu⟩
+    have hu1 : (u : K) ≠ 1 := fun h ↦ hx (by rw [Units.val_eq_one.mp h, QuotientGroup.mk_one])
     rw [tateQuotientCoordinates_mk,
-      norm_tateUniformizationX_of_norm_one_sub_lt_one q u hq (val_ne_one_of_mk_ne_one hx) hu]
-    have hd : 0 < ‖1 - (u : K)‖ :=
-      norm_pos_iff.mpr (sub_ne_zero.mpr (val_ne_one_of_mk_ne_one hx).symm)
+      norm_tateUniformizationX_of_norm_one_sub_lt_one q u hq hu1 hu]
+    have hd : 0 < ‖1 - (u : K)‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hu1.symm)
     exact (one_lt_inv₀ (by positivity)).mpr (pow_lt_one₀ hd.le hu two_ne_zero)
 
 /-- **The node stratum.** Both Tate coordinates of a nonidentity class in `Kˣ ⧸ q^ℤ` lie in the
@@ -270,7 +259,7 @@ theorem norm_tateQuotientCoordinates_fst_lt_one_and_snd_lt_one_iff (q : Kˣ)
       ∃ u : Kˣ, (u : Kˣ ⧸ Subgroup.zpowers q) = x ∧ ‖(q : K)‖ < ‖(u : K)‖ ∧ ‖(u : K)‖ < 1 := by
   constructor
   · rintro ⟨hX, hY⟩
-    obtain ⟨r, rfl, hr₁, hr₂⟩ := exists_mk_eq_of_mem_annulus q hq x
+    obtain ⟨r, rfl, hr₁, hr₂⟩ := exists_mk_eq_and_norm_mem_Ioc q hq x
     refine ⟨r, rfl, hr₁, hr₂.lt_of_ne fun heq ↦ ?_⟩
     have hbound : ‖1 - (r : K)‖ ≤ 1 := by
       simpa [heq] using IsUltrametricDist.norm_sub_le_max (1 : K) r
