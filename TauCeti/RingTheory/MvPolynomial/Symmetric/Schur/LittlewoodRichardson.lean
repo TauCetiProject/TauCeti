@@ -322,13 +322,11 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau {R : Type
     congr 1
     rw [natCard_lrTableau_eq_natCard_isYamanouchi, ← Fintype.card_subtype,
       ← Nat.card_eq_fintype_card]
-    exact Nat.card_congr
-      { toFun T := ⟨T.1.1, T.2⟩
-        invFun T := ⟨⟨T.1, fun i c hc =>
-          (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq T.2.2 hc).trans_le
-            hν⟩, T.2⟩
-        left_inv _ := rfl
-        right_inv _ := rfl }
+    exact Nat.card_congr <| Equiv.subtypeSubtypeEquivSubtype
+      (q := fun T : SemistandardYoungTableau μ =>
+        T.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.content i = (ofPartition ν).rowLen i)
+      fun hT i c hc =>
+        (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq hT.2 hc).trans_le hν
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hν), smul_zero, smul_zero]
 
 end TauCeti
