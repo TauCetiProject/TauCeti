@@ -61,6 +61,8 @@ to be invertible as well.
   homogeneous of degree three and the spur homogeneous of degree two.
 * `TauCeti.AlbertAlgebra.two_mul_spur` and `TauCeti.AlbertAlgebra.spur_eq_invOf_two_mul`: the
   spur is `(T(A)² - T(A ∘ A)) / 2`.
+* `TauCeti.AlbertAlgebra.spur_add` and `TauCeti.AlbertAlgebra.spur_sub`: the polarization of the
+  spur, `S(A + B) = S(A) + S(B) + T(A) T(B) - T(A ∘ B)`.
 * `TauCeti.AlbertAlgebra.mul_mul_self`: **the cubic equation** satisfied by every element.
 * `TauCeti.AlbertAlgebra.six_mul_det` and
   `TauCeti.AlbertAlgebra.det_eq_invOf_two_mul_invOf_three_mul`: **Newton's formula** for the
@@ -197,6 +199,21 @@ polynomial in terms of traces of powers. -/
 theorem spur_eq_invOf_two_mul (A : AlbertAlgebra R) :
     spur A = ⅟2 * (trace A ^ 2 - trace (A * A)) := by
   rw [← two_mul_spur, invOf_mul_cancel_left]
+
+/-- **The polarization of the spur**: `S(A + B) = S(A) + S(B) + T(A) T(B) - T(A ∘ B)`. -/
+theorem spur_add (A B : AlbertAlgebra R) :
+    spur (A + B) = spur A + spur B + (trace A * trace B - trace (A * B)) := by
+  apply (isUnit_of_invertible (2 : R)).mul_left_cancel
+  have h := two_mul_spur (A + B)
+  simp only [add_mul, mul_add, map_add, mul_comm B A] at h
+  linear_combination h - two_mul_spur A - two_mul_spur B
+
+/-- The polarization of the spur at a difference:
+`S(A - B) = S(A) + S(B) - (T(A) T(B) - T(A ∘ B))`. -/
+theorem spur_sub (A B : AlbertAlgebra R) :
+    spur (A - B) = spur A + spur B - (trace A * trace B - trace (A * B)) := by
+  rw [sub_eq_add_neg, spur_add, spur_neg, map_neg, mul_neg, mul_neg, map_neg]
+  ring
 
 /-- **The cubic equation of the split Albert algebra.** Every Hermitian octonion matrix is a root
 of its generic minimal polynomial `t³ - T(A) t² + S(A) t - det A`, with powers taken in the Jordan
