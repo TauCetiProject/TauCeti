@@ -81,12 +81,27 @@ def rationalRootSystemEquiv :
   (t.rationalBase ht).equivOfCartanMatrixEq (t.lieBasis ht).base
     (t.rationalLieBaseSupportEquiv ht) (t.cartanMatrix_rationalLieBaseSupportEquiv ht)
 
-/-- The pinned root-system equivalence sends a Bourbaki-numbered simple root to the simple root
-of the distinguished Lie-algebra basis with the same number. -/
-@[simp] theorem rationalRootSystemEquiv_indexEquiv_simpleIndex (i : Fin t.rank) :
-    (t.rationalRootSystemEquiv ht).indexEquiv (t.simpleIndex ht i) =
-      (t.lieBasis ht).baseSupportEquiv i := by
-  simpa only [rationalRootSystemEquiv, rationalLieBaseSupportEquiv, Equiv.trans_apply,
+/-! ## The pinned enumeration of the roots -/
+
+/-- **The pinned enumeration of the roots of the rational Lie algebra.** The roots of
+`TauCeti.DynkinType.lieAlgebra` are its nonzero weights for the distinguished Cartan subalgebra,
+collected in `LieSubalgebra.root`. This is their bijection with the root indices `Fin t.numRoots`
+of `TauCeti.DynkinType.simplyConnectedRootDatum`, carried by
+`TauCeti.DynkinType.rationalRootSystemEquiv`; no second enumeration of the roots is introduced. -/
+def rootEquiv : Fin t.numRoots ≃ (t.cartanSubalgebra ht).root :=
+  (t.rationalRootSystemEquiv ht).indexEquiv
+
+/-- The root enumeration is the index bijection of the pinned root-system equivalence. Rewriting
+with this equation makes the general `RootPairing.Hom` API available for the enumeration. -/
+theorem rootEquiv_eq_indexEquiv :
+    t.rootEquiv ht = (t.rationalRootSystemEquiv ht).indexEquiv := (rfl)
+
+/-- The enumeration, the index bijection of the pinned root-system equivalence, sends a
+Bourbaki-numbered simple root to the simple root of the correspondingly numbered Chevalley
+generator. -/
+@[simp] theorem rootEquiv_simpleIndex (i : Fin t.rank) :
+    t.rootEquiv ht (t.simpleIndex ht i) = (t.lieBasis ht).baseSupportEquiv i := by
+  simpa only [rootEquiv, rationalRootSystemEquiv, rationalLieBaseSupportEquiv, Equiv.trans_apply,
     Equiv.symm_apply_apply, coe_simpleSupportEquiv] using
     equivOfCartanMatrixEq_indexEquiv_apply (t.rationalBase ht) (t.lieBasis ht).base
       (t.rationalLieBaseSupportEquiv ht) (t.cartanMatrix_rationalLieBaseSupportEquiv ht)
@@ -104,7 +119,7 @@ of the correspondingly numbered Lie-algebra generator. -/
         ((t.rationalRootSystemEquiv ht).indexEquiv (t.simpleIndex ht i)) := by
       exact RootPairing.Hom.root_weightMap_apply _ _ (t.simpleIndex ht i)
         (t.rationalRootSystemEquiv ht).toHom
-    _ = _ := congrArg _ (t.rationalRootSystemEquiv_indexEquiv_simpleIndex ht i)
+    _ = _ := congrArg _ (t.rootEquiv_simpleIndex ht i)
 
 /-- On a Bourbaki-numbered simple coroot, the covariant inverse coweight equivalence lands at the
 simple Killing coroot of the correspondingly numbered Lie-algebra generator. -/
@@ -118,27 +133,6 @@ simple Killing coroot of the correspondingly numbered Lie-algebra generator. -/
     equivOfCartanMatrixEq_coweightEquiv_symm_apply_coroot (t.rationalBase ht) (t.lieBasis ht).base
       (t.rationalLieBaseSupportEquiv ht) (t.cartanMatrix_rationalLieBaseSupportEquiv ht)
       (t.simpleSupportEquiv ht i)
-
-/-! ## The pinned enumeration of the roots -/
-
-/-- **The pinned enumeration of the roots of the rational Lie algebra.** The roots of
-`TauCeti.DynkinType.lieAlgebra` are its nonzero weights for the distinguished Cartan subalgebra,
-collected in `LieSubalgebra.root`. This is their bijection with the root indices `Fin t.numRoots`
-of `TauCeti.DynkinType.simplyConnectedRootDatum`, carried by
-`TauCeti.DynkinType.rationalRootSystemEquiv`; no second enumeration of the roots is introduced. -/
-def rootEquiv : Fin t.numRoots ≃ (t.cartanSubalgebra ht).root :=
-  (t.rationalRootSystemEquiv ht).indexEquiv
-
-/-- The root enumeration is the index bijection of the pinned root-system equivalence. Rewriting
-with this equation makes the general `RootPairing.Hom` API available for the enumeration. -/
-theorem rootEquiv_eq_indexEquiv :
-    t.rootEquiv ht = (t.rationalRootSystemEquiv ht).indexEquiv := (rfl)
-
-/-- The enumeration sends a Bourbaki-numbered simple root to the simple root of the correspondingly
-numbered Chevalley generator. -/
-@[simp] theorem rootEquiv_simpleIndex (i : Fin t.rank) :
-    t.rootEquiv ht (t.simpleIndex ht i) = (t.lieBasis ht).baseSupportEquiv i :=
-  t.rationalRootSystemEquiv_indexEquiv_simpleIndex ht i
 
 /-- The `i`-th vector of the Cartan basis is the `i`-th coroot generator of the numbered basis. -/
 private theorem cartanBasis_eq_h' (i : Fin t.rank) : t.cartanBasis ht i = (t.lieBasis ht).h' i :=

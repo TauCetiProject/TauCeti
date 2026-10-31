@@ -233,7 +233,7 @@ theorem f4RootCartanWeight_simple (α : Fin 48) (i : Fin F4.rank) :
   rw [intCast_rootCartanWeight_apply]
   rw [← rootSystem_pairing_apply (F4.cartanSubalgebra valid_F4)
     ((F4.lieBasis valid_F4).baseSupportEquiv i) (f4KillingRootLabel α)]
-  rw [← F4.rationalRootSystemEquiv_indexEquiv_simpleIndex valid_F4 i,
+  rw [← F4.rootEquiv_simpleIndex valid_F4 i, F4.rootEquiv_eq_indexEquiv valid_F4,
     (F4.rationalRootSystemEquiv valid_F4).toHom.pairing,
     F4.pairing_rationalRootSystem, simplyConnectedRootDatum_F4]
   norm_cast
