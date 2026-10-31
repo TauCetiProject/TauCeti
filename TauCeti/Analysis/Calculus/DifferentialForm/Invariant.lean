@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
@@ -41,8 +40,6 @@ taken into account in the average.
 
 * `StarConvex.compContinuousLinearMap_poincareHomotopy_eq`: the Poincaré homotopy operator centred
   at a fixed point of a linear map preserves invariance of forms under that map.
-* `Convex.averageMap_mem`: an invariant convex set contains the average of the orbit of each of
-  its points, which is a fixed point.
 * `StarConvex.exists_invariant_contDiffOn_forall_extDeriv_eq`: the Poincaré lemma for invariant
   forms on an invariant open set star-convex with respect to a fixed point.
 * `Convex.exists_invariant_contDiffOn_forall_extDerivWithin_eq`: the Poincaré lemma for forms
@@ -107,19 +104,6 @@ theorem exists_invariant_contDiffOn_forall_extDeriv_eq (hs : StarConvex ℝ x₀
 end StarConvex
 
 namespace Convex
-
-/-- **The orbit average lies in an invariant convex set.** If a finite group `G`, whose order is
-invertible in the linearly ordered field `𝕜`, acts linearly on `V` preserving a convex set `s`,
-then `s` contains the average `|G|⁻¹ ∑ g, ρ g v` of the orbit of each of its points `v`. This
-average is fixed by `G` (`Representation.averageMap_invariant`), so a nonempty invariant convex set
-contains a fixed point. -/
-theorem averageMap_mem {𝕜 G V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [Group G]
-    [Fintype G] [Invertible (Fintype.card G : 𝕜)] [AddCommGroup V] [Module 𝕜 V]
-    {ρ : Representation 𝕜 G V} {s : Set V} (hs : Convex 𝕜 s) (hρs : ∀ g, MapsTo (ρ g) s s)
-    {v : V} (hv : v ∈ s) : ρ.averageMap v ∈ s := by
-  rw [Representation.averageMap_apply, Finset.smul_sum]
-  refine hs.sum_mem (fun _ _ ↦ invOf_nonneg.2 (Nat.cast_nonneg _)) ?_ fun g _ ↦ hρs g hv
-  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_invOf_self]
 
 variable {G : Type*} [Group G] [Finite G] {ρ : ContRepresentation ℝ G E}
   {s : Set E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
