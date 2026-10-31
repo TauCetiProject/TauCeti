@@ -30,8 +30,8 @@ This file develops the elementary theory of integral models.
   its module topology (`Submodule.IsLattice.isModuleTopology`), and the valuation ring of a
   nonarchimedean local field is a discrete valuation ring, so every lattice there is free.
 * The units of `E` act on integral models by homothety, and integral models are ordered by
-  inclusion, with sums and, over a principal ideal domain with fraction field `E` and
-  finite-dimensional `V`, intersections.
+  inclusion, with sums and, over a principal ideal domain with fraction field `E`,
+  intersections.
 * A representation of a compact group on a finite-dimensional vector space over a field with a
   valuative topology, such as a nonarchimedean local field, has an integral model over the
   valuation ring (`TauCeti.GaloisLattice.IntegralModel.nonempty`), by the stable-lattice theorem.
@@ -168,7 +168,7 @@ section Inf
 variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O] [IsDomain O]
   [IsPrincipalIdealRing O] {E : Type*} [Field E] [Algebra O E] [IsFractionRing O E]
   {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V] [TopologicalSpace V]
-  [FiniteDimensional E V] {ρ : ContinuousRep Γ E V}
+  {ρ : ContinuousRep Γ E V}
 
 namespace IntegralModel
 
@@ -177,7 +177,9 @@ field `E`. -/
 instance : Min (IntegralModel O ρ) where
   min Λ Λ' :=
     { lattice := Λ.lattice ⊓ Λ'.lattice
-      isLattice := inferInstance
+      isLattice :=
+        have := Module.Finite.of_isLattice (A := E) Λ.lattice
+        inferInstance
       stable g x hx := ⟨Λ.stable g x hx.1, Λ'.stable g x hx.2⟩ }
 
 @[simp]
