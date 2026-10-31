@@ -142,14 +142,9 @@ instance isLocalHom_algebraMap_quotient_map_quotient (J : Ideal R) :
   -- A proper `J` consists of nonunits, so `J S` lies in the maximal ideal of `S`.
   have hJS : J.map (algebraMap R S) ≤ maximalIdeal S := map_le_iff_le_comap.mpr fun j hj ↦
     (mem_maximalIdeal _).mpr fun h ↦ hJ (J.eq_top_of_isUnit_mem hj (isUnit_of_map_unit _ j h))
-  have : IsUnit (algebraMap R S r) := by
-    by_contra h
-    obtain ⟨b, hb⟩ := ha.exists_right_inv
-    obtain ⟨b, rfl⟩ := mk_surjective b
-    rw [← map_mul, ← map_one (mk _), Ideal.Quotient.eq] at hb
-    exact (maximalIdeal S).ne_top_iff_one.mp IsPrime.ne_top' <| by
-      simpa using (maximalIdeal S).sub_mem
-        ((maximalIdeal S).mul_mem_right b ((mem_maximalIdeal _).mpr h)) (hJS hb)
-  exact (isUnit_of_map_unit (algebraMap R S) r this).map _
+  have : Nontrivial (S ⧸ J.map (algebraMap R S)) :=
+    Ideal.Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top IsPrime.ne_top' hJS)
+  have := IsLocalHom.of_surjective (mk (J.map (algebraMap R S))) mk_surjective
+  exact (isUnit_of_map_unit (algebraMap R S) r (isUnit_of_map_unit (mk _) _ ha)).map _
 
 end Ideal.Quotient
