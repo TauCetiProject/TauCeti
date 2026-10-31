@@ -15,6 +15,9 @@ A bounded unital ring homomorphism `f : R →+* S` extends the matrix of an oper
 uniform entry bound ensure that the extended matrix defines a continuous linear map.
 The construction respects identities, addition, scalar multiplication and composition,
 including composition of coefficient homomorphisms. Its matrix characterizes it uniquely.
+Over Tate target scalars it is Lipschitz in operator norm, so it preserves operator-norm sums
+and sends the closure of the polynomials in an endomorphism `u` into the closure of the
+polynomials in its extension.
 
 The coefficient rings need not have a common ground field. Tate data on the source supplies
 the entry bound; the target need only be complete and ultrametric.
@@ -152,6 +155,71 @@ theorem mapCoeffs_comp (u : C₀(J, R) →L[R] C₀(I, R))
   simp only [matrixCoeff_mapCoeffs, Matrix.map_apply] at hsum'
   rw [matrixCoeff_mapCoeffs, Matrix.map_apply]
   exact hsum.unique (by simpa only [Function.comp_def, map_mul] using hsum')
+
+/-- Coefficient extension is multiplicative on endomorphisms. -/
+@[simp]
+theorem mapCoeffs_mul (u v : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (u * v).mapCoeffs f hf = u.mapCoeffs f hf * v.mapCoeffs f hf :=
+  mapCoeffs_comp u v f hf
+
+@[simp]
+theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (n : ℕ) :
+    (u ^ n).mapCoeffs f hf = u.mapCoeffs f hf ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, mapCoeffs_mul, ih, pow_succ]
+
+section Topology
+
+variable [TauCeti.NormedRing.IsTate S]
+
+/-- Coefficient extension along a homomorphism with bound `C` is `C`-Lipschitz in operator
+norm. -/
+theorem lipschitzWith_mapCoeffs (f : R →+* S) (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    LipschitzWith C fun u : C₀(J, R) →L[R] C₀(I, R) ↦ u.mapCoeffs f ⟨C, hf⟩ :=
+  LipschitzWith.of_dist_le_mul fun u v ↦ by
+    simpa only [dist_eq_norm, ← mapCoeffs_sub] using ringOpNorm_mapCoeffs_le (u - v) f C hf
+
+/-- Coefficient extension is continuous in operator norm. -/
+theorem continuous_mapCoeffs (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    Continuous fun u : C₀(J, R) →L[R] C₀(I, R) ↦ u.mapCoeffs f hf := by
+  obtain ⟨C, hC⟩ := hf
+  exact (lipschitzWith_mapCoeffs f C hC).continuous
+
+/-- Coefficient extension preserves operator-norm sums. -/
+theorem _root_.HasSum.mapCoeffs {ι : Type*} {u : ι → C₀(J, R) →L[R] C₀(I, R)}
+    {v : C₀(J, R) →L[R] C₀(I, R)} (h : HasSum u v) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    HasSum (fun k ↦ (u k).mapCoeffs f hf) (v.mapCoeffs f hf) := by
+  simpa only [HasSum, Function.comp_def, mapCoeffs_sum] using
+    ((continuous_mapCoeffs f hf).tendsto v).comp h
+
+/-- Coefficient extension sends the operator-norm closure of the polynomials in `u` into the
+closure of the polynomials in the extension of `u`. -/
+theorem mapCoeffs_mem_closure_adjoin {u v : C₀(J, R) →L[R] C₀(J, R)} (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
+    (hv : v ∈ closure (Algebra.adjoin R {u} : Set (C₀(J, R) →L[R] C₀(J, R)))) :
+    v.mapCoeffs f hf ∈
+      closure (Algebra.adjoin S {u.mapCoeffs f hf} : Set (C₀(J, S) →L[S] C₀(J, S))) := by
+  refine map_mem_closure (continuous_mapCoeffs f hf) hv fun w hw ↦ ?_
+  simp only [SetLike.mem_coe]
+  induction hw using Algebra.adjoin_induction with
+  | mem x hx =>
+    rw [Set.mem_singleton_iff.1 hx]
+    exact Algebra.self_mem_adjoin_singleton S _
+  | algebraMap r =>
+    rw [Algebra.algebraMap_eq_smul_one, mapCoeffs_smul, mapCoeffs_one]
+    exact Subalgebra.smul_mem _ (Subalgebra.one_mem _) _
+  | add x y _ _ hx hy =>
+    rw [mapCoeffs_add]
+    exact Subalgebra.add_mem _ hx hy
+  | mul x y _ _ hx hy =>
+    rw [mapCoeffs_mul]
+    exact Subalgebra.mul_mem _ hx hy
+
+end Topology
 
 section Identity
 

@@ -33,8 +33,13 @@ so the vanishing conditions are `L²` linear equations over `K` in the `D₁ D�
 it, each equation is multiplied by `m ^ (D₁ + 2 L D₂)` for a nonzero integer `m` such that
 `m α`, `m β` and `m γ` are algebraic integers.
 
-Schneider's proof continues by applying a zero estimate for exponential polynomials and Schwarz's
-lemma with prescribed zeros to `F`; those steps are not part of this file.
+Schneider's proof then evaluates `F` on the larger grid `u, v ≤ c L`. The values `y_{uv}` there
+have house `exp (O (D₁ log L + D₂ L))`, which is `exp (O (L ^ (3 / 2) log L))` for Schneider's
+parameters `L = 2 d M²`, `D₁ = (2 d)² M³`, `D₂ = 2 d M`, and `m ^ (D₁ + 2 c L D₂) y_{uv}` is an
+algebraic integer, where `m ^ (D₁ + 2 c L D₂) ≤ exp (O (L ^ (3 / 2)))`. These are the arithmetic
+inputs to Liouville's lower bound for a nonzero `σ y_{uv}`. The analytic upper bound for
+`|F(u + v σ β)|`, from the zero estimate for exponential polynomials and Schwarz's lemma with
+prescribed zeros, is not part of this file.
 
 ## Main results
 
@@ -43,10 +48,20 @@ lemma with prescribed zeros to `F`; those steps are not part of this file.
 * `RingHom.map_pow_mul_pow_eq_exp`: `σ (α ^ (u j) γ ^ (v j)) = exp (j λ (u + v σ β))`.
 * `RingHom.exists_schneider_auxiliary`: the auxiliary function `F` vanishes at the grid points
   `u + v σ β`, `1 ≤ u, v ≤ L`.
+* `TauCeti.house_schneider_value_le`: an explicit bound for the house of `y_{uv}`, `u, v ≤ B`.
+* `TauCeti.isIntegral_intCast_pow_mul_schneider_value`: `m ^ (D₁ + 2 B D₂) y_{uv}` is an algebraic
+  integer for `u, v ≤ B` when `m α`, `m β` and `m γ` are.
+* `TauCeti.exists_house_schneider_value_le_exp`: on the grid `u, v ≤ c L`, the house of `y_{uv}`
+  is at most `exp (C (D₁ log L + D₂ L))`.
+* `TauCeti.exists_house_schneider_value_le_exp_rpow`,
+  `TauCeti.exists_abs_pow_schneider_exponent_le_exp_rpow`: for Schneider's parameters, the house of
+  `y_{uv}` is at most `exp (c₅ L ^ (3 / 2) log L)` and the denominator `m ^ (D₁ + 2 c L D₂)` is at
+  most `exp (c₆ L ^ (3 / 2))`.
 
 ## References
 
-* J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 4, §4.4, Lemma 4.22.
+* J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 4, §4.4, Lemmas 4.22
+  and 4.27.
 -/
 
 public section
@@ -97,6 +112,61 @@ private theorem rpow_div_sub_le_self {B n N : ℝ} (hB : 1 ≤ B) (hn : 0 ≤ n)
     B ^ (n / (N - n)) ≤ B :=
   (Real.rpow_le_rpow_of_exponent_le hB (div_le_one_of_le₀ (by linarith) (by linarith))).trans_eq
     (Real.rpow_one B)
+
+/-- For `i < D₁`, `j < D₂` and `u, v ≤ B`, the total degree `i + u j + v j` of a term of
+Schneider's value `y_{uv}` in `u + v β`, `α` and `γ` is at most `D₁ + 2 B D₂`. -/
+private theorem schneider_exponent_le {D₁ D₂ B : ℕ} (i : Fin D₁) (j : Fin D₂) {u v : ℕ}
+    (hu : u ≤ B) (hv : v ≤ B) : (i : ℕ) + u * j + v * j ≤ D₁ + 2 * B * D₂ := by
+  have h₁ : u * (j : ℕ) ≤ B * D₂ := Nat.mul_le_mul hu j.is_lt.le
+  have h₂ : v * (j : ℕ) ≤ B * D₂ := Nat.mul_le_mul hv j.is_lt.le
+  have := i.is_lt
+  linarith
+
+section CommRing
+
+variable {K : Type*} [CommRing K]
+
+/-- One term of Schneider's value `y_{uv}`, multiplied by `m ^ N` with `i + u j + v j ≤ N`, is an
+algebraic integer when `m α`, `m β` and `m γ` are. -/
+private theorem isIntegral_intCast_pow_mul_schneider_term {m : ℤ} {α β γ : K}
+    (hα : IsIntegral ℤ ((m : K) * α)) (hβ : IsIntegral ℤ ((m : K) * β))
+    (hγ : IsIntegral ℤ ((m : K) * γ)) {i j u v N : ℕ} (h : i + u * j + v * j ≤ N) :
+    IsIntegral ℤ ((m : K) ^ N * (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j)))) := by
+  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le h
+  have hw : IsIntegral ℤ ((m : K) * ((u : K) + v * β)) := by
+    rw [mul_add, mul_left_comm]
+    exact ((isIntegral_intCast m).mul (isIntegral_natCast u)).add
+      ((isIntegral_natCast v).mul hβ)
+  have key : (m : K) ^ (i + u * j + v * j + r) *
+      (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j))) =
+      (m : K) ^ r * ((m : K) * ((u : K) + v * β)) ^ i *
+        (((m : K) * α) ^ (u * j) * ((m : K) * γ) ^ (v * j)) := by
+    rw [mul_pow, mul_pow, mul_pow]
+    ring
+  rw [key]
+  exact (((isIntegral_intCast m).pow r).mul (hw.pow i)).mul ((hα.pow _).mul (hγ.pow _))
+
+/-- **Denominators of Schneider's values.** If `m α`, `m β` and `m γ` are algebraic integers,
+then for `u, v ≤ B` the multiple
+`m ^ (D₁ + 2 B D₂) ∑_{i, j} a_{ij} (u + v β) ^ i α ^ (u j) γ ^ (v j)` is an algebraic integer for
+all integers `a_{ij}`, `i < D₁`, `j < D₂`. -/
+theorem isIntegral_intCast_pow_mul_schneider_value {m : ℤ} {α β γ : K}
+    (hα : IsIntegral ℤ ((m : K) * α)) (hβ : IsIntegral ℤ ((m : K) * β))
+    (hγ : IsIntegral ℤ ((m : K) * γ)) {D₁ D₂ B : ℕ} (a : Fin D₁ → Fin D₂ → ℤ) {u v : ℕ}
+    (hu : u ≤ B) (hv : v ≤ B) :
+    IsIntegral ℤ ((m : K) ^ (D₁ + 2 * B * D₂) *
+      ∑ i, ∑ j, (a i j : K) * ((u : K) + v * β) ^ (i : ℕ) * (α ^ (u * j) * γ ^ (v * j))) := by
+  rw [mul_sum]
+  refine IsIntegral.sum _ fun i _ ↦ ?_
+  rw [mul_sum]
+  refine IsIntegral.sum _ fun j _ ↦ ?_
+  have hk := schneider_exponent_le i j hu hv
+  rw [show (m : K) ^ (D₁ + 2 * B * D₂) * ((a i j : K) * ((u : K) + v * β) ^ (i : ℕ) *
+      (α ^ (u * j) * γ ^ (v * j))) = (a i j : K) * ((m : K) ^ (D₁ + 2 * B * D₂) *
+      (((u : K) + v * β) ^ (i : ℕ) * (α ^ (u * j) * γ ^ (v * j)))) by ring]
+  exact (isIntegral_intCast _).mul (isIntegral_intCast_pow_mul_schneider_term hα hβ hγ hk)
+
+end CommRing
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -169,12 +239,8 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
   set N := D₁ + 2 * L * D₂
   let k : Fin L × Fin L → Fin D₁ × Fin D₂ → ℕ := fun p q ↦
     q.1 + (p.1 + 1) * q.2 + (p.2 + 1) * q.2
-  have hk (p : Fin L × Fin L) (q : Fin D₁ × Fin D₂) : k p q ≤ N := by
-    have h₁ := q.1.is_lt
-    have h₂ : ((p.1 : ℕ) + 1) * q.2 ≤ L * D₂ := Nat.mul_le_mul p.1.is_lt q.2.is_lt.le
-    have h₃ : ((p.2 : ℕ) + 1) * q.2 ≤ L * D₂ := Nat.mul_le_mul p.2.is_lt q.2.is_lt.le
-    simp only [k, N]
-    linarith
+  have hk (p : Fin L × Fin L) (q : Fin D₁ × Fin D₂) : k p q ≤ N :=
+    schneider_exponent_le q.1 q.2 p.1.is_lt p.2.is_lt
   -- Name the exponent `r = N - k p q` of the power of `m`, so that `N = k p q + r` can be
   -- substituted and `ring` can combine the powers of `m`.
   have hNk (p q) : ∃ r, N - k p q = r ∧ N = k p q + r := ⟨N - k p q, rfl, by have := hk p q; omega⟩
@@ -188,11 +254,16 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
     simp only [w]
     push_cast
     ring
+  have hep (p q) : e p q = (m : K) ^ N * (w p ^ (q.1 : ℕ) *
+      (α ^ (((p.1 : ℕ) + 1) * q.2) * γ ^ (((p.2 : ℕ) + 1) * q.2))) := by
+    obtain ⟨r, hNr, hr⟩ := hNk p q
+    simp only [e]
+    rw [hNr, hr]
+    simp only [k, mul_pow]
+    ring
   have he (p q) : IsIntegral ℤ (e p q) := by
-    have hmw : IsIntegral ℤ ((m : K) * w p) := by
-      rw [hmw_eq]
-      exact (isIntegral_intCast _).add ((isIntegral_natCast _).mul hmβ)
-    exact (((isIntegral_intCast _).pow _).mul (hmw.pow _)).mul ((hmα.pow _).mul (hmγ.pow _))
+    rw [hep]
+    exact isIntegral_intCast_pow_mul_schneider_term hmα hmβ hmγ (hk p q)
   have hwH (p : Fin L × Fin L) : house ((m : K) * w p) ≤ L * H := by
     have hu : ((p.1 : ℕ) + 1 : ℝ) ≤ L := by exact_mod_cast p.1.is_lt
     have hv : ((p.2 : ℕ) + 1 : ℝ) ≤ L := by exact_mod_cast p.2.is_lt
@@ -236,16 +307,10 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
     obtain ⟨v, rfl⟩ := Nat.exists_eq_add_of_le' hv₁
     set p : Fin L × Fin L := (⟨u, by omega⟩, ⟨v, by omega⟩)
     have hrow := sum_mul_intCast_eq_zero_of_mulVec_eq_zero hax p
-    have hep (q) : (a' p q : K) = (m : K) ^ N * (w p ^ (q.1 : ℕ) *
-        (α ^ ((u + 1) * q.2) * γ ^ ((v + 1) * q.2))) := by
-      -- The coercion of the algebraic integer `a' p q = ⟨e p q, _⟩` to `K` is `e p q`.
-      change e p q = _
-      obtain ⟨r, hNr, hr⟩ := hNk p q
-      simp only [e]
-      rw [hNr, hr]
-      simp only [k, p, mul_pow]
-      ring
-    simp only [hep, Fintype.sum_prod_type] at hrow
+    -- The coercion of the algebraic integer `a' p q = ⟨e p q, _⟩` to `K` is `e p q`.
+    have ha'p (q) : (a' p q : K) = (m : K) ^ N * (w p ^ (q.1 : ℕ) *
+        (α ^ ((u + 1) * q.2) * γ ^ ((v + 1) * q.2))) := hep p q
+    simp only [ha'p, Fintype.sum_prod_type] at hrow
     have hm0 : (m : K) ^ N ≠ 0 := pow_ne_zero _ (Int.cast_ne_zero.2 hm)
     refine (mul_eq_zero.mp ?_).resolve_left hm0
     rw [← hrow, mul_sum]
@@ -255,6 +320,219 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
     simp only [w, p]
     push_cast
     ring
+
+/-! ### Size and denominators of the values `y_{uv}`
+
+Schneider's proof evaluates `F` at the points `u + v σ β` of a grid larger than the one on which
+it was made to vanish. The value there is the image under `σ` of
+`y_{uv} = ∑_{i, j} a_{ij} (u + v β) ^ i α ^ (u j) γ ^ (v j) ∈ K`, and the final contradiction
+plays an upper bound for `|σ y_{uv}|` against Liouville's lower bound, which needs the house and
+a denominator of `y_{uv}`. -/
+
+/-- **The house of Schneider's values.** If `α`, `β`, `γ` have house at most `H ≥ 1` and the
+integers `a_{ij}`, `i < D₁`, `j < D₂`, have absolute value at most `A`, then for `u, v ≤ B` with
+`B ≥ 1` the house of `∑_{i, j} a_{ij} (u + v β) ^ i α ^ (u j) γ ^ (v j)` is at most
+`D₁ D₂ A (2 B) ^ D₁ H ^ (D₁ + 2 B D₂)`. -/
+theorem house_schneider_value_le {α β γ : K} {H A : ℝ} (hH : 1 ≤ H) (hα : house α ≤ H)
+    (hβ : house β ≤ H) (hγ : house γ ≤ H) {D₁ D₂ B : ℕ} (hB : 1 ≤ B)
+    {a : Fin D₁ → Fin D₂ → ℤ} (ha : ∀ i j, |(a i j : ℝ)| ≤ A) {u v : ℕ} (hu : u ≤ B)
+    (hv : v ≤ B) :
+    house (∑ i, ∑ j, (a i j : K) * ((u : K) + v * β) ^ (i : ℕ) * (α ^ (u * j) * γ ^ (v * j))) ≤
+      D₁ * D₂ * A * (2 * B) ^ D₁ * H ^ (D₁ + 2 * B * D₂) := by
+  have hu' : (u : ℝ) ≤ B := by exact_mod_cast hu
+  have hv' : (v : ℝ) ≤ B := by exact_mod_cast hv
+  have hB' : (1 : ℝ) ≤ B := by exact_mod_cast hB
+  have hw : house ((u : K) + v * β) ≤ (2 * B : ℕ) * H := by
+    refine (house_add_le _ _).trans ?_
+    rw [← mul_one (u : K), house_nat_mul, house_nat_mul, ← Int.cast_one, house_intCast]
+    push_cast
+    rw [abs_one, mul_one]
+    nlinarith [house_nonneg β]
+  -- Each term is `a_{ij}` times an entry of house at most `(2 B) ^ D₁ H ^ (D₁ + 2 B D₂)`.
+  have hterm (i : Fin D₁) (j : Fin D₂) :
+      house ((a i j : K) * ((u : K) + v * β) ^ (i : ℕ) * (α ^ (u * j) * γ ^ (v * j))) ≤
+        A * ((2 * B : ℕ) ^ D₁ * H ^ (D₁ + 2 * B * D₂)) := by
+    have hk := schneider_exponent_le i j hu hv
+    have h1 : house (1 : K) ≤ H := by
+      rw [← Int.cast_one, house_intCast]
+      simpa using hH
+    have he := house_schneider_entry_le h1 hw hα hγ
+      (by exact_mod_cast (by omega : 1 ≤ 2 * B)) (by linarith) i.is_lt.le hk
+    rw [one_pow, one_mul] at he
+    rw [mul_assoc]
+    exact house_mul_le_of_le (by rw [house_intCast, Int.cast_abs]; exact ha i j) he
+  refine (house_sum_le_sum_house _ _).trans ?_
+  refine (sum_le_sum fun i _ ↦ house_sum_le_sum_house _ _).trans ?_
+  refine (sum_le_sum fun i _ ↦ sum_le_sum fun j _ ↦ hterm i j).trans (le_of_eq ?_)
+  simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
+  push_cast
+  ring
+
+/-- The explicit bound of `house_schneider_value_le` with `A = exp (c₁ E)` and `B = c L + 1`,
+where `E = D₁ log L + D₂ L`, is at most `exp (C E)` for a constant `C` depending only on `c₁`, `c`
+and `H`, as soon as `L ≥ 2`. -/
+private theorem schneider_value_bound_le_exp {c₁ H : ℝ} {c L D₁ D₂ : ℕ} (hH : 1 ≤ H)
+    (hL : 2 ≤ L) :
+    (D₁ : ℝ) * D₂ * Real.exp (c₁ * (D₁ * Real.log L + D₂ * L)) * (2 * ((c : ℝ) * L + 1)) ^ D₁ *
+        H ^ (D₁ + 2 * (c * L + 1) * D₂) ≤
+      Real.exp ((3 + |c₁| + 2 * Real.log (2 * c + 2) + (2 * c + 2) * Real.log H) *
+        (D₁ * Real.log L + D₂ * L)) := by
+  set E : ℝ := D₁ * Real.log L + D₂ * L
+  have hL' : (2 : ℝ) ≤ L := by exact_mod_cast hL
+  have hlogL : 1 / 2 ≤ Real.log L := by
+    linarith [Real.log_two_gt_d9, Real.log_le_log (by norm_num) hL']
+  have hD₁ : (0 : ℝ) ≤ D₁ := D₁.cast_nonneg
+  have hD₂ : (0 : ℝ) ≤ D₂ := D₂.cast_nonneg
+  have hlogH := Real.log_nonneg hH
+  have hlogc : 0 ≤ Real.log (2 * c + 2) := Real.log_nonneg (by linarith [c.cast_nonneg' (α := ℝ)])
+  have hE : 0 ≤ E := by positivity
+  -- Each factor of the explicit bound is the exponential of a multiple of at most `E`.
+  have h2B : 0 < 2 * ((c : ℝ) * L + 1) := by positivity
+  have hlog2B : Real.log (2 * ((c : ℝ) * L + 1)) ≤ Real.log (2 * c + 2) + Real.log L := by
+    rw [← Real.log_mul (by positivity) (by positivity)]
+    exact Real.log_le_log h2B (by nlinarith)
+  have hfac₁ : (D₁ : ℝ) * D₂ ≤ Real.exp (D₁ + D₂) := by
+    rw [Real.exp_add]
+    exact mul_le_mul (by linarith [Real.add_one_le_exp (D₁ : ℝ)])
+      (by linarith [Real.add_one_le_exp (D₂ : ℝ)]) hD₂ (Real.exp_pos _).le
+  have hfac₂ : (2 * ((c : ℝ) * L + 1)) ^ D₁ = Real.exp (D₁ * Real.log (2 * ((c : ℝ) * L + 1))) := by
+    rw [← Real.log_pow, Real.exp_log (by positivity)]
+  have hfac₃ : H ^ (D₁ + 2 * (c * L + 1) * D₂) =
+      Real.exp (((D₁ + 2 * (c * L + 1) * D₂ : ℕ) : ℝ) * Real.log H) := by
+    rw [← Real.log_pow, Real.exp_log (by positivity)]
+  push_cast at hfac₃
+  rw [hfac₂, hfac₃]
+  calc (D₁ : ℝ) * D₂ * Real.exp (c₁ * E) * Real.exp (D₁ * Real.log (2 * ((c : ℝ) * L + 1))) *
+        Real.exp ((D₁ + 2 * ((c : ℝ) * L + 1) * D₂) * Real.log H)
+      ≤ Real.exp (D₁ + D₂) * Real.exp (c₁ * E) *
+          Real.exp (D₁ * Real.log (2 * ((c : ℝ) * L + 1))) *
+          Real.exp ((D₁ + 2 * ((c : ℝ) * L + 1) * D₂) * Real.log H) := by
+        gcongr
+    _ = Real.exp (D₁ + D₂ + c₁ * E + D₁ * Real.log (2 * ((c : ℝ) * L + 1)) +
+          (D₁ + 2 * ((c : ℝ) * L + 1) * D₂) * Real.log H) := by
+        simp only [Real.exp_add]
+    _ ≤ Real.exp ((3 + |c₁| + 2 * Real.log (2 * c + 2) + (2 * c + 2) * Real.log H) * E) := by
+        rw [Real.exp_le_exp]
+        -- `D₁ ≤ 2 D₁ log L`, `D₂ ≤ D₂ L` and `D₁ + 2 (c L + 1) D₂ ≤ (2 c + 2) E`.
+        have h₁ : (D₁ : ℝ) ≤ 2 * (D₁ * Real.log L) := by nlinarith
+        have h₂ : (D₂ : ℝ) ≤ D₂ * L := by nlinarith
+        have h₃ : c₁ * E ≤ |c₁| * E := mul_le_mul_of_nonneg_right (le_abs_self c₁) hE
+        have h₄ : D₁ * Real.log (2 * ((c : ℝ) * L + 1)) ≤
+            (1 + 2 * Real.log (2 * c + 2)) * E := by
+          have : (D₁ : ℝ) * Real.log (2 * c + 2) ≤
+              2 * Real.log (2 * c + 2) * (D₁ * Real.log L) := by
+            nlinarith
+          have : (D₁ : ℝ) * Real.log L ≤ E := by simp only [E]; nlinarith
+          nlinarith [mul_le_mul_of_nonneg_left hlog2B hD₁]
+        have h₅ : (D₁ + 2 * ((c : ℝ) * L + 1) * D₂) * Real.log H ≤
+            (2 * c + 2) * Real.log H * E := by
+          have : (D₁ + 2 * ((c : ℝ) * L + 1) * D₂) ≤ (2 * c + 2) * E := by
+            simp only [E]
+            have hc : (0 : ℝ) ≤ c := c.cast_nonneg
+            nlinarith
+          nlinarith
+        nlinarith
+
+/-- **Schneider's values on an extended grid.** Let `α, β, γ ∈ K`, `c₁ ∈ ℝ` and `c ∈ ℕ`. There
+is `C ≥ 0` such that for all integers `L ≥ 2`, `D₁` and `D₂`, all integers `a_{ij}`, `i < D₁`,
+`j < D₂`, with `|a_{ij}| ≤ exp (c₁ (D₁ log L + D₂ L))`, and all `u, v ≤ c L`, the house of
+`∑_{i, j} a_{ij} (u + v β) ^ i α ^ (u j) γ ^ (v j)` is at most `exp (C (D₁ log L + D₂ L))`. -/
+theorem exists_house_schneider_value_le_exp (α β γ : K) (c₁ : ℝ) (c : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ L D₁ D₂ : ℕ, 2 ≤ L → ∀ a : Fin D₁ → Fin D₂ → ℤ,
+      (∀ i j, |(a i j : ℝ)| ≤ Real.exp (c₁ * (D₁ * Real.log L + D₂ * L))) →
+      ∀ u v : ℕ, u ≤ c * L → v ≤ c * L →
+        house (∑ i, ∑ j, (a i j : K) * ((u : K) + v * β) ^ (i : ℕ) *
+          (α ^ (u * j) * γ ^ (v * j))) ≤ Real.exp (C * (D₁ * Real.log L + D₂ * L)) := by
+  set H : ℝ := 1 + house α + house β + house γ
+  have hα := house_nonneg α
+  have hβ := house_nonneg β
+  have hγ := house_nonneg γ
+  have hH : 1 ≤ H := by linarith
+  have hlogc : 0 ≤ Real.log (2 * c + 2) := Real.log_nonneg (by linarith [c.cast_nonneg' (α := ℝ)])
+  refine ⟨3 + |c₁| + 2 * Real.log (2 * c + 2) + (2 * c + 2) * Real.log H,
+    by have := Real.log_nonneg hH; positivity,
+    fun L D₁ D₂ hL a ha u v hu hv ↦ ?_⟩
+  -- The explicit bound with `B = c L + 1`.
+  refine (house_schneider_value_le (B := c * L + 1) hH (by linarith : house α ≤ H)
+    (by linarith : house β ≤ H) (by linarith : house γ ≤ H) (by omega) ha
+    (by omega : u ≤ c * L + 1) (by omega : v ≤ c * L + 1)).trans ?_
+  push_cast
+  exact schneider_value_bound_le_exp hH hL
+
+/-- The parameters `L = 2 d M ²`, `D₁ = (2 d) ² M ³` and `D₂ = 2 d M` of Schneider's proof satisfy
+`D₁ = √(2 d) L ^ (3 / 2)` and `D₂ L = √(2 d) L ^ (3 / 2)`. -/
+private theorem schneider_params {d M L D₁ D₂ : ℕ} (hL : L = 2 * d * M ^ 2)
+    (hD₁ : D₁ = (2 * d) ^ 2 * M ^ 3) (hD₂ : D₂ = 2 * d * M) :
+    (D₁ : ℝ) = √(2 * d) * (L : ℝ) ^ (3 / 2 : ℝ) ∧
+      (D₂ : ℝ) * L = √(2 * d) * (L : ℝ) ^ (3 / 2 : ℝ) := by
+  have hpow : (L : ℝ) ^ (3 / 2 : ℝ) = L * √L := by
+    rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, Real.rpow_add' L.cast_nonneg (by norm_num),
+      Real.rpow_one, Real.sqrt_eq_rpow]
+  have hsqrt : √(L : ℝ) = √(2 * d) * M := by
+    rw [hL]
+    push_cast
+    rw [Real.sqrt_mul (by positivity), Real.sqrt_sq M.cast_nonneg]
+  have hs : √(2 * d : ℝ) * √(2 * d) = 2 * d := Real.mul_self_sqrt (by positivity)
+  rw [hpow, hsqrt]
+  subst hL hD₁ hD₂
+  push_cast
+  constructor <;> linear_combination (-(2 * (d : ℝ) * M ^ 3)) * hs
+
+/-- **The house of Schneider's values** (Evertse, Lemma 4.27(ii)). Let `K` be a number field of
+degree `d`, let `α, β, γ ∈ K`, `c₁ ∈ ℝ` and `c ∈ ℕ`. There is `c₅` such that, for every integer
+`M ≥ 1` with `L = 2 d M²`, `D₁ = (2 d)² M³` and `D₂ = 2 d M`, all integers `a_{ij}`, `i < D₁`,
+`j < D₂`, with `|a_{ij}| ≤ exp (c₁ (D₁ log L + D₂ L))` (the bound of
+`exists_schneider_auxiliary_algebraic`) and all `u, v ≤ c L`, the value
+`y_{uv} = ∑_{i, j} a_{ij} (u + v β) ^ i α ^ (u j) γ ^ (v j)` has house at most
+`exp (c₅ L ^ (3 / 2) log L)`. In particular `‖σ y_{uv}‖` satisfies the same bound for every
+embedding `σ : K →+* ℂ` (`NumberField.norm_embedding_le_house`). Evertse takes
+`c = 1 + ⌊√(2 d)⌋`. -/
+theorem exists_house_schneider_value_le_exp_rpow (α β γ : K) (c₁ : ℝ) (c : ℕ) :
+    ∃ c₅ : ℝ, ∀ M L D₁ D₂ : ℕ, 1 ≤ M → L = 2 * finrank ℚ K * M ^ 2 →
+      D₁ = (2 * finrank ℚ K) ^ 2 * M ^ 3 → D₂ = 2 * finrank ℚ K * M →
+      ∀ a : Fin D₁ → Fin D₂ → ℤ,
+      (∀ i j, |(a i j : ℝ)| ≤ Real.exp (c₁ * (D₁ * Real.log L + D₂ * L))) →
+      ∀ u v : ℕ, u ≤ c * L → v ≤ c * L →
+        house (∑ i, ∑ j, (a i j : K) * ((u : K) + v * β) ^ (i : ℕ) *
+          (α ^ (u * j) * γ ^ (v * j))) ≤
+          Real.exp (c₅ * (L : ℝ) ^ (3 / 2 : ℝ) * Real.log L) := by
+  obtain ⟨C, hC, h⟩ := exists_house_schneider_value_le_exp α β γ c₁ c
+  refine ⟨3 * √(2 * finrank ℚ K) * C, fun M L D₁ D₂ hM hL hD₁ hD₂ a ha u v hu hv ↦ ?_⟩
+  have hd : 1 ≤ finrank ℚ K := finrank_pos
+  have hL₂ : 2 ≤ L := by
+    rw [hL]
+    nlinarith [Nat.one_le_pow 2 M hM]
+  refine (h L D₁ D₂ hL₂ a ha u v hu hv).trans (Real.exp_le_exp.2 ?_)
+  obtain ⟨h₁, h₂⟩ := schneider_params hL hD₁ hD₂
+  have hlogL : 1 / 2 ≤ Real.log L := by
+    linarith [Real.log_two_gt_d9,
+      Real.log_le_log (by norm_num) (by exact_mod_cast hL₂ : (2 : ℝ) ≤ L)]
+  have hQ : 0 ≤ √(2 * finrank ℚ K : ℝ) * (L : ℝ) ^ (3 / 2 : ℝ) := by positivity
+  rw [h₁, h₂]
+  -- `D₁ log L + D₂ L = √(2 d) L ^ (3 / 2) (log L + 1) ≤ 3 √(2 d) L ^ (3 / 2) log L`.
+  nlinarith [mul_le_mul_of_nonneg_left hlogL (mul_nonneg hC hQ)]
+
+/-- **The size of the denominator of Schneider's values** (Evertse, Lemma 4.27). For
+`d, c ∈ ℕ` and `m ∈ ℝ` there is `c₆` such that, for `L = 2 d M²`, `D₁ = (2 d)² M³` and
+`D₂ = 2 d M`, the denominator `m ^ (D₁ + 2 c L D₂)` of the values `y_{uv}`, `u, v ≤ c L`
+(`isIntegral_intCast_pow_mul_schneider_value`), satisfies
+`|m| ^ (D₁ + 2 c L D₂) ≤ exp (c₆ L ^ (3 / 2))`. -/
+theorem exists_abs_pow_schneider_exponent_le_exp_rpow (d c : ℕ) (m : ℝ) :
+    ∃ c₆ : ℝ, ∀ M L D₁ D₂ : ℕ, L = 2 * d * M ^ 2 → D₁ = (2 * d) ^ 2 * M ^ 3 →
+      D₂ = 2 * d * M → |m| ^ (D₁ + 2 * (c * L) * D₂) ≤ Real.exp (c₆ * (L : ℝ) ^ (3 / 2 : ℝ)) := by
+  refine ⟨(1 + 2 * c) * √(2 * d) * Real.log (max 1 |m|), fun M L D₁ D₂ hL hD₁ hD₂ ↦ ?_⟩
+  obtain ⟨h₁, h₂⟩ := schneider_params hL hD₁ hD₂
+  have hN : ((D₁ + 2 * (c * L) * D₂ : ℕ) : ℝ) =
+      (1 + 2 * c) * (√(2 * d) * (L : ℝ) ^ (3 / 2 : ℝ)) := by
+    push_cast
+    linear_combination h₁ + 2 * (c : ℝ) * h₂
+  calc |m| ^ (D₁ + 2 * (c * L) * D₂) ≤ max 1 |m| ^ (D₁ + 2 * (c * L) * D₂) :=
+        pow_le_pow_left₀ (abs_nonneg m) (le_max_right 1 |m|) _
+    _ = Real.exp ((D₁ + 2 * (c * L) * D₂ : ℕ) * Real.log (max 1 |m|)) := by
+        rw [← Real.log_pow, Real.exp_log (by positivity)]
+    _ = _ := by
+        rw [hN]
+        ring_nf
 
 end TauCeti
 

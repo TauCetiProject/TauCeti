@@ -20,6 +20,9 @@ space `H²`, where `P` is the orthogonal projection onto `H²`. This file bundle
 * `TauCeti.adjoint_toeplitz`: the adjoint of `T_a` is the Toeplitz operator of the complex
   conjugate symbol;
 * `TauCeti.toeplitz_const`: a constant symbol acts by scalar multiplication;
+* `TauCeti.toeplitz_fourierLp_natCast_hardyBasis`, `TauCeti.toeplitz_fourierLp_one_hardyBasis`:
+  the Toeplitz operator of `e_m`, `m ≥ 0`, raises the Hardy basis by `m`; in particular the
+  forward shift `S = T_z` sends `eₙ` to `eₙ₊₁`;
 * `TauCeti.norm_toeplitz`: the operator norm of `T_a` is exactly `‖a‖∞`, so the symbol map is an
   isometry (`TauCeti.isometry_toeplitz`) and in particular injective
   (`TauCeti.toeplitz_injective`).
@@ -134,6 +137,23 @@ theorem toeplitz_const (c : ℂ) :
   ext f : 2
   rw [coe_toeplitz_apply, ← Lp.multiplicationOperator_apply, Lp.multiplicationOperator_const]
   simp [Submodule.starProjection_eq_self_iff.mpr (hardySubmodule.smul_mem c f.property)]
+
+/-- The Toeplitz operator of the Fourier monomial `e_m`, `m ≥ 0`, raises the Hardy basis by
+`m`. -/
+@[simp]
+theorem toeplitz_fourierLp_natCast_hardyBasis (m n : ℕ) :
+    toeplitz (fourierLp (T := 1) ∞ (m : ℤ)) (hardyBasis n) = hardyBasis (m + n) := by
+  apply Subtype.ext
+  rw [coe_toeplitz_apply, coe_hardyBasis, fourierLp_smul_fourierBasis, coe_hardyBasis,
+    Nat.cast_add]
+  exact Submodule.starProjection_eq_self_iff.mpr
+    (by exact_mod_cast fourierBasis_mem_hardySubmodule (m + n))
+
+/-- The forward shift `S = T_z` on Hardy space sends `eₙ` to `eₙ₊₁`. -/
+@[simp]
+theorem toeplitz_fourierLp_one_hardyBasis (n : ℕ) :
+    toeplitz (fourierLp (T := 1) ∞ 1) (hardyBasis n) = hardyBasis (n + 1) := by
+  simpa [add_comm] using toeplitz_fourierLp_natCast_hardyBasis 1 n
 
 /-- The operator norm of the Toeplitz operator `T_a` is at most the `L∞` norm of its symbol. -/
 theorem norm_toeplitz_le (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
