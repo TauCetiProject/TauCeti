@@ -32,6 +32,12 @@ reflections in the hyperplanes orthogonal to `v` and to a nonzero vector orthogo
 `LinearIsometry.exists_contDiff_path_reflection_orthogonal_range` gives a smooth path from the
 identity to a half-turn in any distinguished complex plane, by composing two hyperplane
 reflections. It supplies the sphere motion which interchanges the two halves of a connected sum.
+
+In the same way, two unit vectors `a` and `b` with `a ≠ -b` are joined by a rotation in the plane
+they span: reflecting in the hyperplane orthogonal to `a` and then in the one orthogonal to `a + b`
+sends `a` to `b` and fixes every vector orthogonal to both. Moving the second normal from `a` to
+`a + b` connects this rotation to the identity by an analytic path of linear isometries
+(`TauCeti.exists_contDiff_path_apply_eq`).
 -/
 
 public section
@@ -101,6 +107,13 @@ theorem reflection_orthogonal_singleton_apply {v : F} (hv : ‖v‖ = 1) (x : F)
     Submodule.reflection_singleton_apply]
   simp only [RCLike.ofReal_real_eq_id, id_eq, neg_sub,
     hv, one_pow, div_one, two_smul, two_mul, add_smul]
+
+/-- Reflection through the hyperplane perpendicular to an arbitrary normal `u` has this explicit
+formula; for `u = 0` both sides are `x`. -/
+theorem reflection_orthogonal_singleton_apply_div_norm_sq (u x : F) :
+    (ℝ ∙ u)ᗮ.reflection x = x - (2 * (⟪u, x⟫_ℝ / ‖u‖ ^ 2)) • u := by
+  rw [Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply]
+  simp only [RCLike.ofReal_real_eq_id, id_eq, two_smul, neg_sub, two_mul, add_smul]
 
 /-- Reflection negates the component in the normal direction. -/
 @[simp] theorem inner_reflection_orthogonal_singleton {v : F} (x : F) :
@@ -304,3 +317,65 @@ theorem exists_contDiff_path_reflection_orthogonal_range :
     turningIsometry_one ι⟩
 
 end LinearIsometry
+
+namespace TauCeti
+
+open scoped RealInnerProductSpace ContDiff
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- The rotation from `a` toward `b` at time `t`: the reflection in the hyperplane orthogonal to
+`a`, followed by the reflection in the hyperplane orthogonal to `a + t² b`. -/
+private def pairRotation (a b : F) (t : ℝ) : F ≃ₗᵢ[ℝ] F :=
+  (ℝ ∙ a)ᗮ.reflection.trans (ℝ ∙ (a + t ^ 2 • b))ᗮ.reflection
+
+/-- **Rotating one unit vector to another.** Two unit vectors `a` and `b` with `a ≠ -b` are
+joined by an analytic path of linear isometries, starting at the identity, whose time-one map
+sends `a` to `b` and fixes every vector orthogonal to both `a` and `b`. -/
+theorem exists_contDiff_path_apply_eq {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1) (hab : a ≠ -b) :
+    ∃ R : ℝ → F ≃ₗᵢ[ℝ] F, ContDiff ℝ ω (fun p : ℝ × F => R p.1 p.2) ∧ (∀ x, R 0 x = x) ∧
+      R 1 a = b ∧ ∀ x, ⟪a, x⟫ = 0 → ⟪b, x⟫ = 0 → R 1 x = x := by
+  -- The moving normal `a + t² b` never vanishes, since `‖a‖ = ‖b‖` and `a ≠ -b`.
+  have hu (t : ℝ) : ‖a + t ^ 2 • b‖ ^ 2 ≠ 0 := by
+    refine pow_ne_zero 2 (norm_ne_zero_iff.2 fun h => hab ?_)
+    have h₁ : a = -(t ^ 2 • b) := eq_neg_of_add_eq_zero_left h
+    have hs : t ^ 2 = 1 := by
+      have := congrArg norm h₁
+      rwa [norm_neg, norm_smul, ha, hb, mul_one, Real.norm_of_nonneg (sq_nonneg t), eq_comm]
+        at this
+    rw [h₁, hs, one_smul]
+  refine ⟨pairRotation a b, ?_, fun x => ?_, ?_, fun x hax hbx => ?_⟩
+  · have hy : ContDiff ℝ ω fun p : ℝ × F => (ℝ ∙ a)ᗮ.reflection p.2 :=
+      (ℝ ∙ a)ᗮ.reflection.toContinuousLinearEquiv.contDiff.comp contDiff_snd
+    have hn : ContDiff ℝ ω fun p : ℝ × F => a + p.1 ^ 2 • b :=
+      contDiff_const.add ((contDiff_fst.pow 2).smul contDiff_const)
+    have hR : (fun p : ℝ × F => pairRotation a b p.1 p.2) = fun p =>
+        (ℝ ∙ a)ᗮ.reflection p.2 - (2 * (⟪a + p.1 ^ 2 • b, (ℝ ∙ a)ᗮ.reflection p.2⟫ /
+          ‖a + p.1 ^ 2 • b‖ ^ 2)) • (a + p.1 ^ 2 • b) :=
+      funext fun p => reflection_orthogonal_singleton_apply_div_norm_sq _ _
+    rw [hR]
+    exact hy.sub ((contDiff_const.mul ((hn.inner ℝ hy).div (contDiff_norm_sq ℝ |>.comp hn)
+      fun p => hu p.1)).smul hn)
+  · simp [pairRotation]
+  · have hc : 1 + ⟪a, b⟫ ≠ 0 := fun h =>
+      hab ((inner_eq_neg_one_iff_of_norm_eq_one ha hb).1 (eq_neg_of_add_eq_zero_right h))
+    have hn : ‖a + b‖ ^ 2 = 2 * (1 + ⟪a, b⟫) := by
+      rw [@norm_add_sq_real, ha, hb]
+      ring
+    have hi : ⟪a + b, a⟫ = 1 + ⟪a, b⟫ := by
+      rw [inner_add_left, real_inner_self_eq_norm_sq, ha, real_inner_comm]
+      ring
+    rw [pairRotation, LinearIsometryEquiv.trans_apply,
+      Submodule.reflection_orthogonalComplement_singleton_eq_neg, map_neg,
+      reflection_orthogonal_singleton_apply_div_norm_sq]
+    simp only [one_pow, one_smul]
+    rw [hn, hi,
+      show 2 * ((1 + ⟪a, b⟫) / (2 * (1 + ⟪a, b⟫))) = 1 by field_simp]
+    module
+  · rw [pairRotation, LinearIsometryEquiv.trans_apply,
+      reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hax,
+      reflection_orthogonal_singleton_eq_self_of_inner_eq_zero]
+    rw [inner_add_left, inner_smul_left, hax, hbx]
+    simp
+
+end TauCeti

@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.SphereBoost
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
+public import TauCeti.Geometry.Manifold.SmoothIsotopy.Straightening
 public import TauCeti.KnotTheory.ConnectedSum.Basic
+import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Sphere
 
 /-!
 # Boosting a knot into connected-sum position
@@ -36,8 +38,22 @@ avoids `-v`, so it has height at least `-1 + ε` for some `ε > 0`; boosting by 
 `tanh a > 1 - ε` puts the boosted knot in connected-sum position
 (`TauCeti.SmoothCircleEmbedding.exists_isConnectedSumPosition_boost`).
 
-Not formalized here: that every knot is concordant, or ambient isotopic, to one that agrees with
-the great circle near a point.
+A knot which merely passes through the bottom point `ι (-i)` of the great circle at the parameter
+`-i`, with the same derivative there as the great circle, is first straightened near `-i`
+(`TauCeti.SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq`), so it too is
+concordant to a knot in connected-sum position
+(`TauCeti.SmoothCircleEmbedding.exists_concordant_isConnectedSumPosition_of_mfderiv_eq`).
+
+In a sphere of dimension at least two every knot can be brought into that first-order position by
+an ambient isotopy, a rotation followed by a boost
+(`TauCeti.SmoothEmbedding.exists_smoothAmbientIsotopic_mfderiv_eq`). So **every knot is concordant
+to a knot in connected-sum position**
+(`TauCeti.SmoothCircleEmbedding.exists_concordant_isConnectedSumPosition_of_two_le`), and every
+concordance class of knots has a representative to which the connected sum applies. On the circle,
+`n = 1`, a rotation cannot reverse the direction of a tangent vector, and the argument fails.
+
+Not formalized here: that the resulting operation on concordance classes does not depend on the
+chosen representatives.
 
 ## Main definitions
 
@@ -51,6 +67,10 @@ the great circle near a point.
 * `TauCeti.SmoothCircleEmbedding.exists_isConnectedSumPosition_boost`,
   `TauCeti.SmoothCircleEmbedding.exists_concordant_isConnectedSumPosition`: a knot standard near
   the bottom point of the circle is concordant to a knot in connected-sum position.
+* `TauCeti.SmoothCircleEmbedding.exists_concordant_isConnectedSumPosition_of_mfderiv_eq`: so is a
+  knot tangent to the great circle at the bottom point.
+* `TauCeti.SmoothCircleEmbedding.exists_concordant_isConnectedSumPosition_of_two_le`: in a sphere of
+  dimension at least two, every knot is concordant to a knot in connected-sum position.
 
 ## References
 
@@ -177,6 +197,37 @@ theorem exists_concordant_isConnectedSumPosition
     (hz₀ : (z₀ : ℂ) = -Complex.I) (hK : ⇑K =ᶠ[𝓝 z₀] ⇑(greatCircle (n := n) ι)) :
     ∃ K', SmoothEmbedding.Concordant K K' ∧ IsConnectedSumPosition ι K' :=
   (exists_isConnectedSumPosition_boost hz₀ hK).elim fun a ha => ⟨_, concordant_boost ι a K, ha⟩
+
+/-- **A knot tangent to the great circle at the bottom point is concordant to a knot in
+connected-sum position.** A knot which agrees with the great circle `ι` to first order at the
+bottom point `-i` of the circle, having the same value and the same derivative there, is
+concordant to a knot in connected-sum position for `ι`. -/
+theorem exists_concordant_isConnectedSumPosition_of_mfderiv_eq
+    {K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)} {z₀ : Circle}
+    (hz₀ : (z₀ : ℂ) = -Complex.I) (h₀ : K z₀ = greatCircle (n := n) ι z₀)
+    (h₁ : mfderiv (𝓡 1) (𝓡 n) K z₀ = mfderiv (𝓡 1) (𝓡 n) (greatCircle (n := n) ι) z₀) :
+    ∃ K', SmoothEmbedding.Concordant K K' ∧ IsConnectedSumPosition ι K' := by
+  obtain ⟨K₁, F, hK₁, -⟩ :=
+    SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq K
+      (greatCircle (n := n) ι).contMDiff h₀ h₁ univ_mem
+  obtain ⟨K', hK', hpos⟩ := exists_concordant_isConnectedSumPosition hz₀ hK₁
+  exact ⟨K', (SmoothEmbedding.Concordant.of_smoothIsotopic (smoothIsotopic_def.2 ⟨F⟩) (by simp)
+    le_rfl).trans hK', hpos⟩
+
+/-- **Every knot is concordant to a knot in connected-sum position.** In a sphere of dimension at
+least two, a knot is first moved by an ambient isotopy to agree with the great circle `ι` to first
+order at the bottom point `-i` (`TauCeti.SmoothEmbedding.exists_smoothAmbientIsotopic_mfderiv_eq`),
+and then straightened and boosted into connected-sum position. -/
+theorem exists_concordant_isConnectedSumPosition_of_two_le (hn : 2 ≤ n) (ι : ℂ →ₗᵢ[ℝ] E)
+    (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    ∃ K', SmoothEmbedding.Concordant K K' ∧ IsConnectedSumPosition ι K' := by
+  obtain ⟨z₀, hz₀⟩ : ∃ z₀ : Circle, (z₀ : ℂ) = -Complex.I :=
+    ⟨Circle.exp (-π / 2), by push_cast [Circle.coe_exp]; exact Complex.exp_neg_pi_div_two_mul_I⟩
+  obtain ⟨K₁, hK₁, h₀, h₁⟩ := SmoothEmbedding.exists_smoothAmbientIsotopic_mfderiv_eq hn
+    (by simp) K ((greatCircle (n := n) ι).contMDiff.mdifferentiableAt (by simp))
+    ((greatCircle (n := n) ι).isImmersion.mfderiv_injective (by simp) z₀)
+  obtain ⟨K', hK', hpos⟩ := exists_concordant_isConnectedSumPosition_of_mfderiv_eq hz₀ h₀ h₁
+  exact ⟨K', (hK₁.concordant le_rfl).trans hK', hpos⟩
 
 end SmoothCircleEmbedding
 

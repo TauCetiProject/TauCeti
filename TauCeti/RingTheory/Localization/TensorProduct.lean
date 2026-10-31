@@ -20,10 +20,16 @@ automatically `K`-linear. This file records the analogue for the ring `K ⊗[R] 
 The ordinary-localization base-change isomorphism also agrees with the localized
 coefficient inclusion on every localized element.
 
+Finally, `ℚ ⊗[ℤ] M` is the localization of an additive group `M` at the positive integers, so
+each of its elements is a single fraction: a common denominator clears every rational coefficient
+of a finite sum of elementary tensors.
+
 ## Main results
 
 * `TauCeti.IsLocalization.linearMap_compatibleSMul_tensorProduct`: `A`-linear maps between such
   modules commute with the action of `K ⊗[R] A`.
+* `TensorProduct.exists_eq_inv_natCast_tmul`: every element of `ℚ ⊗[ℤ] M` is an elementary
+  tensor `(n : ℚ)⁻¹ ⊗ₜ m` with `n ≠ 0`.
 -/
 
 public section
@@ -98,3 +104,28 @@ theorem tensorProductEquivTMulRight_one_tmul (z : B) :
   exact RingHom.congr_fun h z
 
 end IsLocalization.Away
+
+namespace TensorProduct
+
+/-! ## A common denominator in `ℚ ⊗[ℤ] M` -/
+
+open scoped TensorProduct
+
+variable {M : Type*} [AddCommGroup M]
+
+/-- Every element of `ℚ ⊗[ℤ] M` is a single elementary tensor with a natural-number denominator:
+the rational coefficients of a finite sum can be put over a common denominator, and the numerators
+absorbed into the right-hand factor. -/
+theorem exists_eq_inv_natCast_tmul (z : ℚ ⊗[ℤ] M) :
+    ∃ n : ℕ, ∃ m : M, n ≠ 0 ∧ z = (n : ℚ)⁻¹ ⊗ₜ[ℤ] m := by
+  -- `ℚ ⊗[ℤ] M` is the localization of `M` at the positive integers, so `z` is a fraction `m / s`
+  -- with `0 < s`; such an `s` is a natural number.
+  have := IsLocalization.tensorProduct_isLocalizedModule (M := M) (Submonoid.pos ℤ) ℚ
+  obtain ⟨⟨m, s, hs : 0 < s⟩, rfl⟩ :=
+    IsLocalizedModule.mk'_surjective (Submonoid.pos ℤ) (mk ℤ ℚ M 1) z
+  lift s to ℕ using hs.le
+  have hs' : (s : ℚ) ≠ 0 := by norm_cast; omega
+  refine ⟨s, m, by omega, IsLocalizedModule.mk'_eq_iff.mpr ?_⟩
+  simp [Submonoid.smul_def, smul_tmul', hs']
+
+end TensorProduct
