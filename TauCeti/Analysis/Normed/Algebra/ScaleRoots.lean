@@ -28,7 +28,6 @@ public section
 namespace Polynomial
 
 variable {K R : Type*} [NontriviallyNormedField K] [SeminormedRing R] [NormedAlgebra K R]
-  [NormOneClass R]
 
 /-- Rescaling the roots of a polynomial by a small nonzero scalar makes all of its coefficients
 below the degree have norm at most one. -/
@@ -45,15 +44,12 @@ theorem exists_norm_coeff_scaleRoots_le_one (P : R[X]) :
     linarith
   have hc1 : ‖c‖ ≤ 1 := hc.le.trans (inv_le_one_of_one_le₀ (by
     simp only [M, le_add_iff_nonneg_right]; positivity))
-  rw [coeff_scaleRoots]
-  calc ‖P.coeff k * algebraMap K R c ^ (P.natDegree - k)‖
-      ≤ ‖P.coeff k‖ * ‖c‖ ^ (P.natDegree - k) := by
-        refine (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-        simpa only [norm_algebraMap'] using norm_pow_le (algebraMap K R c) _
-    _ ≤ M * ‖c‖ :=
-        mul_le_mul hk' (pow_le_of_le_one (norm_nonneg c) hc1 (by omega)) (by positivity)
-          hM.le
-    _ ≤ M * M⁻¹ := by gcongr
-    _ = 1 := mul_inv_cancel₀ hM.ne'
+  rw [coeff_scaleRoots, ← map_pow, ← Algebra.commutes, ← Algebra.smul_def, norm_smul, norm_pow]
+  calc ‖c‖ ^ (P.natDegree - k) * ‖P.coeff k‖
+      ≤ ‖c‖ * M :=
+        mul_le_mul (pow_le_of_le_one (norm_nonneg c) hc1 (by omega)) hk' (norm_nonneg _)
+          (norm_nonneg c)
+    _ ≤ M⁻¹ * M := by gcongr
+    _ = 1 := inv_mul_cancel₀ hM.ne'
 
 end Polynomial
