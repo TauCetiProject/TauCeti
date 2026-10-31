@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.CohenMacaulay.Basic
 import Mathlib.RingTheory.Flat.Localization
 import TauCeti.RingTheory.Depth.WeaklyRegular
 import TauCeti.RingTheory.KrullDimension.Module
+import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
