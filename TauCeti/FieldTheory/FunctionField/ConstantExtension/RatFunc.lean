@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.LinearFactor
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
+public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import Mathlib.FieldTheory.RatFunc.IntermediateField
@@ -24,7 +26,9 @@ The finite places are described by factorization. If `q ∈ k[X]` is irreducible
 in `k'[X]`, and the ramification index of the place of `q'` is the multiplicity of `q'` in `q`.
 Neither separability of `k' / k` nor of `q` is assumed. When `q` is inseparable this
 multiplicity can exceed one: over a field of characteristic `p`, `X ^ p - a` becomes
-`(X - a ^ (1 / p)) ^ p` once a `p`-th root of `a` is adjoined.
+`(X - a ^ (1 / p)) ^ p` once a `p`-th root of `a` is adjoined. At a rational finite place, the
+place of `X - c` for `c ∈ k`, it cannot: the place of `X - c` in `k'(X)` is the only place above,
+with ramification index one, and the conorm of the place is that single place.
 
 ## Main results
 
@@ -39,6 +43,10 @@ multiplicity can exceed one: over a field of characteristic `p`, `X ^ p - a` bec
   the finite places of the irreducible factors of `q` in `k'[X]`.
 * `TauCeti.Place.ramificationIdx_adicOfIrreducible_eq_multiplicity`: the ramification index of
   the place of such a factor is its multiplicity in `q`.
+* `TauCeti.Place.restrict_eq_adicOfIrreducible_X_sub_C_iff`,
+  `TauCeti.Place.ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap` and
+  `TauCeti.Place.conorm_ofPoint_adicOfIrreducible_X_sub_C`: for `c ∈ k`, the place of `X - c` in
+  `k'(X)` is the only place over the place of `X - c` in `k(X)`, with `e = 1` and `Con P = Q`.
 
 ## References
 
@@ -65,15 +73,8 @@ theorem algebraMap_ratFunc_algebraMap_polynomial
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (f : k[X]) :
     algebraMap (RatFunc k) (RatFunc k') (algebraMap k[X] (RatFunc k) f) =
       algebraMap k'[X] (RatFunc k') (f.map (algebraMap k k')) := by
-  induction f using Polynomial.induction_on' with
-  | add f g hf hg => simp only [map_add, Polynomial.map_add, hf, hg]
-  | monomial n c =>
-    rw [← C_mul_X_pow_eq_monomial]
-    simp only [map_mul, map_pow, Polynomial.map_mul, Polynomial.map_pow, map_X, map_C,
-      RatFunc.algebraMap_X, hX, RatFunc.algebraMap_C]
-    congr 1
-    rw [← RatFunc.algebraMap_eq_C, ← RatFunc.algebraMap_eq_C, ← IsScalarTower.algebraMap_apply,
-      IsScalarTower.algebraMap_apply k k' (RatFunc k')]
+  rw [← RatFunc.aeval_X_left_eq_algebraMap, ← Polynomial.aeval_algebraMap_apply, hX,
+    ← RatFunc.aeval_X_left_eq_algebraMap, Polynomial.aeval_map_algebraMap]
 
 end Polynomial
 
@@ -202,6 +203,62 @@ theorem ramificationIdx_adicOfIrreducible_eq_multiplicity
   rw [(restrict_adicOfIrreducible_eq_iff hX hq' hq).mpr hdvd,
     ord_adicOfIrreducible_algebraMap_irreducible hq hq, ite_eq_left (Associated.refl _)] at h
   omega
+
+/-! ### Rational finite places -/
+
+/-- The place of `X - c` in `k'(X)`, for `c ∈ k`, lies over the place of `X - c` in `k(X)`. -/
+theorem restrict_adicOfIrreducible_X_sub_C_algebraMap
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (c : k) :
+    (adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c))).restrict k (RatFunc k) =
+      adicOfIrreducible (irreducible_X_sub_C c) :=
+  (restrict_adicOfIrreducible_eq_iff hX _ _).mpr (map_X_sub_C _ c).symm.dvd
+
+/-- **Over a rational finite place there is only one place**: for `c ∈ k`, the place of `X - c`
+in `k'(X)` is the only place over the place of `X - c` in `k(X)`. -/
+theorem restrict_eq_adicOfIrreducible_X_sub_C_iff
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (c : k)
+    (Q : Place k' (RatFunc k')) :
+    Q.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C c) ↔
+      Q = adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c)) := by
+  rw [restrict_eq_adicOfIrreducible_iff hX]
+  constructor
+  · rintro ⟨q', hq', hdvd, rfl⟩
+    rw [map_X_sub_C] at hdvd
+    exact (adicOfIrreducible_eq_adicOfIrreducible_iff hq' (irreducible_X_sub_C _)).mpr
+      (hq'.associated_of_dvd (irreducible_X_sub_C _) hdvd)
+  · rintro rfl
+    exact ⟨_, irreducible_X_sub_C _, (map_X_sub_C _ c).symm.dvd, rfl⟩
+
+/-- **A rational finite place has ramification index one in `k'(X) / k(X)`**: for `c ∈ k`,
+`e = 1` at the place of `X - c` in `k'(X)`. -/
+theorem ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (c : k) :
+    ramificationIdx (RatFunc k) (adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c))) =
+      1 := by
+  rw [ramificationIdx_adicOfIrreducible_eq_multiplicity hX (irreducible_X_sub_C _)
+    (irreducible_X_sub_C c) (map_X_sub_C _ c).symm.dvd, map_X_sub_C,
+    multiplicity_self (.of_not_isUnit (not_isUnit_X_sub_C _) (X_sub_C_ne_zero _))]
+
+/-- **The conorm of a rational finite place is a single place**: for `c ∈ k`, the conorm of the
+place of `X - c` in `k(X)` is the place of `X - c` in `k'(X)`. -/
+theorem conorm_ofPoint_adicOfIrreducible_X_sub_C
+    [∀ P : Place k (RatFunc k),
+      Finite {Q : Place k' (RatFunc k') // Q.restrict k (RatFunc k) = P}]
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (c : k) :
+    Divisor.conorm k' (RatFunc k') (AlgebraicGeometry.WeilDivisor.ofPoint
+        (adicOfIrreducible (irreducible_X_sub_C c))) =
+      AlgebraicGeometry.WeilDivisor.ofPoint
+        (adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c))) := by
+  refine AlgebraicGeometry.WeilDivisor.ext fun Q ↦ ?_
+  rw [Divisor.coeff_conorm]
+  by_cases hQ : Q = adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c))
+  · rw [hQ, restrict_adicOfIrreducible_X_sub_C_algebraMap hX,
+      ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap hX,
+      AlgebraicGeometry.WeilDivisor.coeff_ofPoint_self,
+      AlgebraicGeometry.WeilDivisor.coeff_ofPoint_self, Nat.cast_one, one_mul]
+  · rw [AlgebraicGeometry.WeilDivisor.coeff_ofPoint_of_ne
+      (mt (restrict_eq_adicOfIrreducible_X_sub_C_iff hX c Q).mp hQ),
+      AlgebraicGeometry.WeilDivisor.coeff_ofPoint_of_ne hQ, mul_zero]
 
 end Place
 

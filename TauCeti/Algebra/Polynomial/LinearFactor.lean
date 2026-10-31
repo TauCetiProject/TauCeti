@@ -33,6 +33,7 @@ that does not vanish at the root.
 
 * `Polynomial.modByMonic_X_sub_C_eq_zero`: division by a central linear factor has zero
   remainder at a root.
+* `Polynomial.map_X_sub_C`: a ring homomorphism maps the linear factor `X - C x` to `X - C (f x)`.
 * `Polynomial.natDegree_C_sub_X`: the reversed linear factor `C x - X` has degree `1`.
 * `Polynomial.exists_eq_C_mul_X_sub_C_of_natDegree_le_one`: a polynomial of `natDegree ≤ 1` with
   root `x` is `C γ * (X - C x)` for some `γ`.
@@ -75,6 +76,11 @@ theorem modByMonic_X_sub_C_eq_zero {B : Type*} [Ring B] {p : B[X]} {c : B}
   simp only [eval_add, eval_C, sub_mul, Polynomial.X_mul, eval_sub, eval_mul_X,
     eval_C_mul, (hc _).eq, sub_self, add_zero, hp] at he
   rw [hr, he, C_0]
+
+/-- A ring homomorphism maps the linear factor `X - C x` to the linear factor `X - C (f x)`. -/
+theorem map_X_sub_C {R S : Type*} [Ring R] [Ring S] (f : R →+* S) (x : R) :
+    (X - C x).map f = X - C (f x) := by
+  rw [Polynomial.map_sub, map_X, map_C]
 
 /-- The reversed linear polynomial `C x - X` has degree `1`, like `X - C x`. -/
 @[simp]

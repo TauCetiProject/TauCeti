@@ -44,6 +44,9 @@ follows the proof of `TauCeti.Place.isSplitCompletely_sup_iff` in
 
 ## Main results
 
+* `TauCeti.Place.not_isUnramified_of_degree_eq_one`: a place of degree one is not unramified once
+  the constants contain a purely inseparable element outside `k`, whatever the ramification
+  indices are.
 * `TauCeti.Place.isUnramified_iff_of_algEquiv`: unramifiedness is invariant under an isomorphism
   of the upstairs field over the base field.
 * `TauCeti.Place.isUnramified_iff_forall_le_inertiaField`: a place is unramified in `E` exactly
@@ -116,6 +119,18 @@ theorem IsUnramified.isSeparable {P : Place k F}
     (hP' : P'.restrict k F = P) :
     Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField :=
   (hP.2 P' hP').2
+
+/-- **A rational place is not unramified in a purely inseparable extension of constants**: if `P`
+has degree one and `k'` contains `α ∉ k` with `α ^ (q ^ n) ∈ k`, then `P` is not unramified in
+`F' / k'`, whatever the ramification indices are. -/
+theorem not_isUnramified_of_degree_eq_one {P : Place k F} (hP : P.degree = 1) (q : ℕ)
+    [ExpChar k q] {α : k'} (hα : α ∉ (algebraMap k k').range) {n : ℕ}
+    (hn : α ^ q ^ n ∈ (algebraMap k k').range) :
+    ¬ P.IsUnramified (k' := k') (F' := F') := by
+  intro hU
+  obtain ⟨P', hP'⟩ := hU.exists_restrict_eq
+  exact not_isSeparable_residueField_of_degree_eq_one P' (hP' ▸ hP) q hα hn
+    (hU.isSeparable hP')
 
 end Definition
 

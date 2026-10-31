@@ -216,15 +216,6 @@ theorem degree_eq_one_of_constantCompositum_eq_top [Normal k k'] (hF : IsFunctio
   let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
   set P := P'.restrict k F
   let ι := algebraMap k' P'.ResidueField
-  -- The two routes from `k` into `F'_{P'}`, through `F_P` and through `k'`, agree.
-  have hcomp (c : k) : algebraMap P.ResidueField P'.ResidueField (algebraMap k P.ResidueField c) =
-      ι (algebraMap k k' c) := by
-    rw [algebraMap_residueField (R := k), IsLocalRing.ResidueField.algebraMap_residue,
-      algebraMap_residueField (R := k')]
-    congr 1
-    apply Subtype.ext
-    rw [coe_algebraMap_integers, coe_algebraMap_constants, coe_algebraMap_constants,
-      ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
   -- Each element of `F_P` reduces to a constant, as a root of a polynomial splitting in `k'`.
   have hmem (α : P.ResidueField) : algebraMap P.ResidueField P'.ResidueField α ∈ ι.range := by
     have := P.finiteDimensional_residueField hF
@@ -236,7 +227,7 @@ theorem degree_eq_one_of_constantCompositum_eq_top [Normal k k'] (hF : IsFunctio
       rw [Polynomial.IsRoot, Polynomial.eval_map_algebraMap, minpoly.aeval]
     rw [Polynomial.map_map, show ι.comp (algebraMap k k') =
         (algebraMap P.ResidueField P'.ResidueField).comp (algebraMap k P.ResidueField) from
-        RingHom.ext fun c ↦ (hcomp c).symm, ← Polynomial.map_map]
+        RingHom.ext fun c ↦ (algebraMap_residueField_algebraMap P' c).symm, ← Polynomial.map_map]
     exact hroot.map (algebraMap P.ResidueField P'.ResidueField)
   rw [degree_eq_one_iff_algebraMap_surjective]
   intro y
