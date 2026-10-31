@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.DehnSurgery.LinkFilling
+public import TauCeti.LowDimTopology.DehnSurgery.Link.Filling
 public import TauCeti.LowDimTopology.DehnSurgery.SeifertFraming
 
 /-!
