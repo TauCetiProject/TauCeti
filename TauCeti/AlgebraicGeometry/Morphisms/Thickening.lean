@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
-public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 
 /-!
