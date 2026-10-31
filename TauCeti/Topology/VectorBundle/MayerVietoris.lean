@@ -74,11 +74,12 @@ namespace Bundle.Trivialization
 
 open TauCeti
 
-variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
-  [∀ b, Module ℝ (E b)] (e : Trivialization F (π F E)) [e.IsLinear ℝ]
+section Linear
 
-variable {W : Set B} (hW : W ⊆ e.baseSet)
+variable (R : Type*) [Semiring R] {B : Type w} [TopologicalSpace B] {F : Type w}
+  [TopologicalSpace F] [AddCommMonoid F] [Module R F] {E : B → Type w}
+  [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)] [∀ b, Module R (E b)]
+  (e : Trivialization F (π F E)) [e.IsLinear R] {W : Set B} (hW : W ⊆ e.baseSet)
 
 /-- The map of pairs `(E|_W, E₀|_W) ⟶ (W × F, W × (F ∖ {0}))` given by a linear trivialization
 whose base set contains `W`. -/
@@ -86,46 +87,51 @@ private def thomPairOverHom : thomPairOver F E W ⟶ prodThomPair W F :=
   TopPair.ofHom (TopCat.isoOfHomeo (e.preimageHomeomorph hW)).hom
     (TopCat.ofHom ⟨fun v ↦ ⟨e.preimageHomeomorph hW ⟨v.1, v.2.1⟩, by
       simpa [preimageHomeomorph_apply] using
-        (e.snd_apply_ne_zero_iff ℝ (hW v.2.1)).2 (mem_zeroSectionCompl.1 v.2.2)⟩,
+        (e.snd_apply_ne_zero_iff R (hW v.2.1)).2 (mem_zeroSectionCompl.1 v.2.2)⟩,
       by fun_prop⟩) (by ext; rfl)
 
 /-- Over a subset `W` of the base set of a linear trivialization `e`, the trivialization identifies
 the Thom pair `(E|_W, E₀|_W)` of the restriction with the Thom pair `(W × F, W × (F ∖ {0}))` of the
 product bundle. -/
 def thomPairOverIso : thomPairOver F E W ≅ prodThomPair W F :=
-  have : IsIso (TopPair.Hom.fst (e.thomPairOverHom hW)) := (TopCat.isoOfHomeo _).isIso_hom
-  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (e.thomPairOverHom hW) fun p ↦ by
+  have : IsIso (TopPair.Hom.fst (e.thomPairOverHom R hW)) := (TopCat.isoOfHomeo _).isIso_hom
+  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (e.thomPairOverHom R hW) fun p ↦ by
     let v := (e.preimageHomeomorph hW).symm p.1
     have hv : e.preimageHomeomorph hW v = p.1 := Homeomorph.apply_symm_apply _ _
-    refine ⟨⟨v.1, v.2, mem_zeroSectionCompl.2 ((e.snd_apply_ne_zero_iff ℝ (hW v.2)).1 ?_)⟩,
+    refine ⟨⟨v.1, v.2, mem_zeroSectionCompl.2 ((e.snd_apply_ne_zero_iff R (hW v.2)).1 ?_)⟩,
       Subtype.ext hv⟩
     simpa [preimageHomeomorph_apply, ← hv] using p.2
-  asIso (e.thomPairOverHom hW)
+  asIso (e.thomPairOverHom R hW)
 
 @[simp]
 theorem thomPairOverIso_hom_fst_apply (v : π F E ⁻¹' W) :
-    TopPair.Hom.fst (e.thomPairOverIso hW).hom v = (⟨v.1.proj, v.2⟩, (e v).2) :=
+    TopPair.Hom.fst (e.thomPairOverIso R hW).hom v = (⟨v.1.proj, v.2⟩, (e v).2) :=
   e.preimageHomeomorph_apply hW v
 
 @[simp]
 theorem thomPairOverIso_hom_snd_apply (v : (thomPairOver F E W).snd) :
-    (TopPair.Hom.snd (e.thomPairOverIso hW).hom v).1 = (⟨v.1.proj, v.2.1⟩, (e v.1).2) :=
+    (TopPair.Hom.snd (e.thomPairOverIso R hW).hom v).1 = (⟨v.1.proj, v.2.1⟩, (e v.1).2) :=
   e.preimageHomeomorph_apply hW ⟨v.1, v.2.1⟩
 
 @[simp]
 theorem thomPairOverIso_inv_fst_apply (p : W × F) :
-    TopPair.Hom.fst (e.thomPairOverIso hW).inv p = (e.preimageHomeomorph hW).symm p :=
+    TopPair.Hom.fst (e.thomPairOverIso R hW).inv p = (e.preimageHomeomorph hW).symm p :=
   (e.preimageHomeomorph hW).eq_symm_apply.2
-    ((TopPair.proj₁.mapIso (e.thomPairOverIso hW)).inv_hom_id_apply p)
+    ((TopPair.proj₁.mapIso (e.thomPairOverIso R hW)).inv_hom_id_apply p)
 
 @[simp]
 theorem thomPairOverIso_inv_snd_apply (p : (prodThomPair W F).snd) :
-    (TopPair.Hom.snd (e.thomPairOverIso hW).inv p).1 = (e.preimageHomeomorph hW).symm p.1 :=
-  (congrArg Subtype.val ((TopPair.Hom.w_apply (e.thomPairOverIso hW).inv p).trans
-    (e.thomPairOverIso_inv_fst_apply hW p.1)) :)
+    (TopPair.Hom.snd (e.thomPairOverIso R hW).inv p).1 = (e.preimageHomeomorph hW).symm p.1 :=
+  (congrArg Subtype.val ((TopPair.Hom.w_apply (e.thomPairOverIso R hW).inv p).trans
+    (e.thomPairOverIso_inv_fst_apply R hW p.1)) :)
 
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-  [FiniteDimensional ℝ F]
+end Linear
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] (e : Trivialization F (π F E)) [e.IsLinear ℝ]
+  {W : Set B} (hW : W ⊆ e.baseSet)
+  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 
 include hW in
 /-- **The relative homology of the Thom pair over a trivializing set vanishes below the rank**:
@@ -134,7 +140,7 @@ for `W` contained in the base set of a linear trivialization, `Hₙ(E|_W, E₀|_
 theorem isZero_singularHomology_thomPairOver {n : ℕ} (hn : n < finrank ℝ F) :
     IsZero ((thomPairOver F E W).singularHomology R n) :=
   (isZero_singularHomology_prodThomPair R W F hn).of_iso
-    (asIso (TopPair.singularHomologyMap (e.thomPairOverIso hW).hom R n))
+    (asIso (TopPair.singularHomologyMap (e.thomPairOverIso ℝ hW).hom R n))
 
 end Bundle.Trivialization
 
