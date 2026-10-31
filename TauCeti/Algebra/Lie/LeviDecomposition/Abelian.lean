@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
 public import TauCeti.Algebra.Lie.Killing.Quotient
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # Levi complements of abelian ideals
@@ -149,18 +150,13 @@ private def adOfIdeal : LieSubmodule K L (L →ₗ[K] L) where
 
 variable {I}
 
-/-- Two elements of an abelian ideal commute. -/
-private theorem lie_eq_zero_of_mem [IsLieAbelian I] {a r : L} (ha : a ∈ I) (hr : r ∈ I) :
-    ⁅a, r⁆ = 0 :=
-  congr_arg Subtype.val (trivial_lie_zero I I ⟨a, ha⟩ ⟨r, hr⟩)
-
 /-- An element `r` of an abelian ideal `I` acts on an endomorphism with range in `I`, acting on
 `I` as the scalar `c`, as the inner derivation `-ad (c • r)`. -/
 private theorem lie_eq_ad_of_mem [IsLieAbelian I] {φ : L →ₗ[K] L} (hφ : ∀ y, φ y ∈ I) {c : K}
     (hc : ∀ r ∈ I, φ r = c • r) {r : L} (hr : r ∈ I) : ⁅r, φ⁆ = ad K L (-(c • r)) := by
   ext y
   rw [LieHom.lie_apply, hc _ (lie_mem_left K L I r y hr), ad_apply, neg_lie, smul_lie,
-    lie_eq_zero_of_mem hr (hφ y), zero_sub]
+    LieIdeal.lie_eq_zero_of_mem hr (hφ y), zero_sub]
 
 /-- For an abelian ideal `I` with Killing quotient, there is a projection `ψ` of `L` onto `I`
 whose bracket with every element of `L` is an inner derivation by an element of `I`. -/
@@ -205,8 +201,8 @@ private theorem exists_projection [CharZero K] [FiniteDimensional K L] [IsLieAbe
     obtain ⟨a, ha, hadβ⟩ := hβφ₀
     have hβr₀ : (β : L →ₗ[K] L) r₀ = 0 := hβ r₀ hr₀
     have h := LinearMap.congr_fun hadβ r₀
-    rw [ad_apply, lie_eq_zero_of_mem ha hr₀, LieSubmodule.coe_sub, LinearMap.sub_apply, hβr₀,
-      hφ₀ r₀ hr₀, zero_sub, zero_eq_neg] at h
+    rw [ad_apply, LieIdeal.lie_eq_zero_of_mem ha hr₀, LieSubmodule.coe_sub, LinearMap.sub_apply,
+      hβr₀, hφ₀ r₀ hr₀, zero_sub, zero_eq_neg] at h
     exact hr₀0 h
   -- A nonzero vector of the complement `D` is invariant and lies outside `B`.
   obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot

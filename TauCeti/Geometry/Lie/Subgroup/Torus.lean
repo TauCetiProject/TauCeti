@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Classification
+import TauCeti.Algebra.Lie.Basic
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Subgroup.Differential
 import Mathlib.GroupTheory.NoncommCoprod
@@ -299,9 +300,8 @@ theorem IsMaximalTorus.eq_lieSubalgebraOfSubgroup_of_isLieAbelian {T : Subgroup 
     (hT : IsMaximalTorus T) {𝔞 : LieSubalgebra ℝ (LeftInvariantDerivation I G)} [IsLieAbelian 𝔞]
     (h𝔞 : lieSubalgebraOfSubgroup (I := I) T ≤ 𝔞) : 𝔞 = lieSubalgebraOfSubgroup (I := I) T :=
   le_antisymm
-    (fun X hX => hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun Y hY => by
-      have htriv := trivial_lie_zero 𝔞 𝔞 (⟨X, hX⟩ : 𝔞) ⟨Y, h𝔞 hY⟩
-      simpa only [Subtype.ext_iff, LieSubalgebra.coe_bracket, ZeroMemClass.coe_zero] using htriv)
+    (fun _ hX => hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun _ hY =>
+      LieSubalgebra.lie_eq_zero_of_mem hX (h𝔞 hY))
     h𝔞
 
 end TauCeti.Lie
