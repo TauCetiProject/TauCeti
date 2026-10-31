@@ -31,9 +31,9 @@ difference has `p`-power denominator and is a `p`-adic integer.
   every prime.
 * `Padic.forall_norm_rat_le_one_iff_den_eq_one`: a rational number is an integer exactly when it
   is a `p`-adic integer at every prime.
-* `Padic.den_eq_one_of_norm_rat_le_one_of_pow_mul_eq`: a `p`-adic integer whose product with a
+* `Padic.den_eq_one_of_pow_mul_eq_of_norm_rat_le_one`: a `p`-adic integer whose product with a
   power of `p` is an integer is an integer.
-* `Padic.coe_eq_coe_of_eq_add_algebraMap`: two rational numbers agree in `ℚ/ℤ` when their
+* `Padic.addCircle_coe_eq_coe_of_eq_add_algebraMap`: two rational numbers agree in `ℚ/ℤ` when their
   difference has `p`-power denominator and lies in `ℤ_p`.
 -/
 
@@ -80,7 +80,7 @@ theorem forall_norm_rat_le_one_iff_den_eq_one {q : ℚ} :
 
 /-- A rational number `q` such that `p ^ k * q` is an integer is itself an integer as soon as it is
 a `p`-adic integer. -/
-theorem den_eq_one_of_norm_rat_le_one_of_pow_mul_eq {p : ℕ} [Fact p.Prime] {q : ℚ} {k : ℕ}
+theorem den_eq_one_of_pow_mul_eq_of_norm_rat_le_one {p : ℕ} [Fact p.Prime] {q : ℚ} {k : ℕ}
     {n : ℤ} (hn : (p : ℚ) ^ k * q = n) (hq : ‖(q : ℚ_[p])‖ ≤ 1) : q.den = 1 := by
   have hnorm : ‖(n : ℚ_[p])‖ ≤ (p : ℝ) ^ (-k : ℤ) := by
     rw [← Rat.cast_intCast, ← hn, Rat.cast_mul, Rat.cast_pow, Rat.cast_natCast, norm_mul,
@@ -93,12 +93,12 @@ theorem den_eq_one_of_norm_rat_le_one_of_pow_mul_eq {p : ℕ} [Fact p.Prime] {q 
 
 /-- Two rational numbers agree modulo `ℤ` when their difference has `p`-power denominator and
 lies in `ℤ_p`. -/
-theorem coe_eq_coe_of_eq_add_algebraMap {p : ℕ} [Fact p.Prime] {r s : ℚ} {k : ℕ} {n : ℤ}
+theorem addCircle_coe_eq_coe_of_eq_add_algebraMap {p : ℕ} [Fact p.Prime] {r s : ℚ} {k : ℕ} {n : ℤ}
     (hn : (p : ℚ) ^ k * (r - s) = n) {z : ℤ_[p]}
     (hz : (r : ℚ_[p]) = s + algebraMap ℤ_[p] ℚ_[p] z) :
     (r : AddCircle (1 : ℚ)) = s := by
   rw [← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff_mem_one]
-  have hden := den_eq_one_of_norm_rat_le_one_of_pow_mul_eq hn (by
+  have hden := den_eq_one_of_pow_mul_eq_of_norm_rat_le_one hn (by
     rw [Rat.cast_sub, hz, add_sub_cancel_left, PadicInt.algebraMap_apply]
     exact PadicInt.norm_le_one z)
   exact Submodule.mem_one.mpr ⟨_, (eq_intCast _ _).trans ((Rat.den_eq_one_iff _).mp hden)⟩

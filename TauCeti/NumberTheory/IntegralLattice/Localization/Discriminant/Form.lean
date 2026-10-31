@@ -30,7 +30,7 @@ dual of `M_p`, hence induces an equivalence of the local discriminant groups. On
 the values `B(x', y')` and `B(x, y)` differ by an element of `ℤ_p`, since `x'` and `φ x` differ by a
 vector of `M_p`. Both values have `p`-power denominators, because their classes are killed by a
 power of `p`, and a rational number with `p`-power denominator that lies in `ℤ_p` is an integer
-(`Padic.den_eq_one_of_norm_rat_le_one_of_pow_mul_eq`). So `b_M(x', y') = b_L(x, y)`; the same
+(`Padic.den_eq_one_of_pow_mul_eq_of_norm_rat_le_one`). So `b_M(x', y') = b_L(x, y)`; the same
 argument applies to the half-norms when the lattices are even.
 
 Lattices in one genus have isometric localizations at every prime and the same order of
@@ -286,7 +286,8 @@ private theorem discriminantPairing_primaryComponentEquiv
     exists_pow_mul_form_eq_intCast (hx' ▸ (primaryComponentEquiv φ a).2) y'
   obtain ⟨z, hz⟩ := exists_form_eq_add_algebraMap φ hm hn
   rw [← hx, ← hy, ← hx', ← hy', discriminantPairing_mk, discriminantPairing_mk]
-  refine Padic.coe_eq_coe_of_eq_add_algebraMap (k := k + k') (n := p ^ k * c' - p ^ k' * c) ?_ hz
+  refine Padic.addCircle_coe_eq_coe_of_eq_add_algebraMap (k := k + k')
+    (n := p ^ k * c' - p ^ k' * c) ?_ hz
   push_cast
   linear_combination (p : ℚ) ^ k * hc' - (p : ℚ) ^ k' * hc
 
@@ -306,7 +307,8 @@ private theorem discriminantQuadraticMap_primaryComponentEquiv (hL : L.IsEven) (
     exists_pow_mul_form_self_div_two_eq_intCast hM (hx' ▸ (primaryComponentEquiv φ a).2)
   obtain ⟨z, hz⟩ := exists_form_self_div_two_eq_add_algebraMap hM φ hm
   rw [← hx, ← hx', discriminantQuadraticMap_mk, discriminantQuadraticMap_mk]
-  refine Padic.coe_eq_coe_of_eq_add_algebraMap (k := k + k') (n := p ^ k * c' - p ^ k' * c) ?_ hz
+  refine Padic.addCircle_coe_eq_coe_of_eq_add_algebraMap (k := k + k')
+    (n := p ^ k * c' - p ^ k' * c) ?_ hz
   push_cast
   linear_combination (p : ℚ) ^ k * hc' - (p : ℚ) ^ k' * hc
 

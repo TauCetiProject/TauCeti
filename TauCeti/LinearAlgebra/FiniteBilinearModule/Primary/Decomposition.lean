@@ -122,18 +122,19 @@ private def primeFactorsEquiv {A B : FiniteBilinearModule} (hcard : Nat.card A =
   Equiv.subtypeEquivRight fun p ↦ by rw [hcard]
 
 /-- Additive equivalences of the primary components of two finite abelian groups of the same order
-assemble to an additive equivalence of the products of their primary components. -/
-private def primaryComponentsAddEquiv {A : FiniteBilinearModule} {B : FiniteBilinearModule}
+assemble to an additive equivalence of the products of their primary components: reindex along
+`primeFactorsEquiv`, then apply the given equivalence componentwise. -/
+private noncomputable def primaryComponentsAddEquiv {A B : FiniteBilinearModule}
     (hcard : Nat.card A = Nat.card B)
     (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p) :
-    A.primaryComponents ≃+ B.primaryComponents where
-  toFun x q := f q.1 (Nat.prime_of_mem_primeFactors q.2) (x ((primeFactorsEquiv hcard).symm q))
-  invFun y p := (f p.1 (Nat.prime_of_mem_primeFactors p.2)).symm (y (primeFactorsEquiv hcard p))
-  left_inv x := funext fun p ↦ (f p.1 _).symm_apply_apply (x p)
-  right_inv y := funext fun q ↦ (f q.1 _).apply_symm_apply (y q)
-  map_add' x y := funext fun q ↦ map_add (f q.1 _) (x ((primeFactorsEquiv hcard).symm q))
-    (y ((primeFactorsEquiv hcard).symm q))
+    A.primaryComponents ≃+ B.primaryComponents :=
+  (LinearEquiv.piCongrLeft' ℤ (fun p : (Nat.card A).primeFactors ↦ primaryComponent A p.1)
+    (primeFactorsEquiv hcard)).toAddEquiv.trans
+    (AddEquiv.piCongrRight fun q ↦ f q.1 (Nat.prime_of_mem_primeFactors q.2))
 
+/-- `primaryComponentsAddEquiv` applies the given equivalence to the reindexed component. This is
+`LinearEquiv.piCongrLeft'_apply` followed by `AddEquiv.piCongrRight_apply`, stated for the bundled
+carrier `primaryComponents` so that it rewrites in the isometry proofs below. -/
 private theorem primaryComponentsAddEquiv_apply {A B : FiniteBilinearModule}
     (hcard : Nat.card A = Nat.card B)
     (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p)
