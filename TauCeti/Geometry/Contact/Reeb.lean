@@ -89,17 +89,21 @@ theorem IsContactForm.eq_reebVectorField_iff_kerDistribution (hα : α.IsContact
     mextDerivₗ_apply]
 
 /-- A contact form takes the value `1` on its Reeb vector field. -/
+@[simp]
 theorem IsContactForm.apply_reebVectorField (hα : α.IsContactForm) (x : M) :
     α.1 x ![α.reebVectorField x] = 1 :=
   (hα.eq_reebVectorField_iff_kerDistribution.1 rfl).1
 
-/-- The Reeb vector field spans the kernel of `dα`: `ι_(R_α) dα = 0`. -/
+/-- The Reeb vector field lies in the kernel of `dα`: `ι_(R_α) dα = 0`. -/
+@[simp]
 theorem IsContactForm.mextDeriv_reebVectorField_left (hα : α.IsContactForm) (x : M)
     (w : TangentSpace I x) : mextDeriv α.1 x ![α.reebVectorField x, w] = 0 := by
   have := (isContactForm_def.1 hα x).apply_reebVector_left (isAlt_bilinFormAt _ x) w
   rwa [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] at this
 
-/-- The Reeb vector field spans the kernel of `dα`, with the Reeb field as second argument. -/
+/-- The Reeb vector field lies in the kernel of `dα`: `dα` vanishes when its second argument is
+the Reeb vector field. -/
+@[simp]
 theorem IsContactForm.mextDeriv_reebVectorField_right (hα : α.IsContactForm) (x : M)
     (w : TangentSpace I x) : mextDeriv α.1 x ![w, α.reebVectorField x] = 0 := by
   have := (isContactForm_def.1 hα x).apply_reebVector_right (isAlt_bilinFormAt _ x) w

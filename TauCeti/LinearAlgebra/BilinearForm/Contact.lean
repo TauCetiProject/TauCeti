@@ -254,6 +254,7 @@ theorem IsContact.eq_reebVector_iff (h : a.IsContact B) {r : V} :
   exact h.eq_of_apply_eq_one hr.1 hr.2 hspec.1 hspec.2
 
 /-- A contact covector takes the value `1` on its Reeb vector. -/
+@[simp]
 theorem IsContact.apply_reebVector (h : a.IsContact B) : a (a.reebVector B) = 1 :=
   (h.eq_reebVector_iff.1 rfl).1
 
@@ -328,6 +329,7 @@ include hB
 
 /-- For an alternating `B`, the Reeb vector of a contact covector lies in the kernel of `B`:
 `B r w = 0` for every `w`, not only for `w ∈ ker a`. -/
+@[simp]
 theorem IsContact.apply_reebVector_left (h : a.IsContact B) (w : V) :
     B (a.reebVector B) w = 0 := by
   have hw : a (w - a w • a.reebVector B) = 0 := by
@@ -336,6 +338,7 @@ theorem IsContact.apply_reebVector_left (h : a.IsContact B) (w : V) :
   rwa [map_sub, map_smul, hB, smul_zero, sub_zero] at this
 
 /-- For an alternating `B`, every vector is `B`-orthogonal to the Reeb vector from the left. -/
+@[simp]
 theorem IsContact.apply_reebVector_right (h : a.IsContact B) (w : V) :
     B w (a.reebVector B) = 0 := by
   rw [← LinearMap.BilinForm.IsAlt.neg_eq hB, h.apply_reebVector_left hB, neg_zero]

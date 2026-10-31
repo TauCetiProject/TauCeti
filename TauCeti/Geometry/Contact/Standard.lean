@@ -204,13 +204,6 @@ theorem reebVectorField_standardContactForm (p : ℝ × ℝ × ℝ) :
     ⟨standardContactForm_apply_standardReebField p,
       mextDeriv_standardContactForm_standardReebField p⟩).symm
 
-private theorem mvfderiv_exp_fst (p : ℝ × ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
-    mvfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1) p v = Real.exp p.1 * v.1 := by
-  have h : HasFDerivAt (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1)
-      (Real.exp p.1 • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) p :=
-    (Real.hasDerivAt_exp p.1).comp_hasFDerivAt p hasFDerivAt_fst
-  simp [mvfderiv_eq_fderiv, h.fderiv, NormedSpace.fromTangentSpace_apply]
-
 /-- The Reeb vector field of the contact form `eˣ (dz - x dy)` is `e^(-x) (∂_y + (x + 1) ∂_z)`.
 This form has the same kernel as `dz - x dy`, but a different Reeb field. Here `β` is the one-form
 `eˣ (dz - x dy)`, given through its values. -/
@@ -235,8 +228,11 @@ theorem reebVectorField_of_eq_exp_smul_standardContactForm
   · rw [standardContactForm_apply, hy]
     simp only [Prod.smul_snd, Prod.smul_fst, smul_eq_mul, mul_one]
     ring
-  · rw [mextDeriv_standardContactForm_apply, mvfderiv_exp_fst, hy, Real.exp_neg]
-    simp
+  · have hd : HasFDerivAt (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1)
+        (Real.exp p.1 • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) p :=
+      (Real.hasDerivAt_exp p.1).comp_hasFDerivAt p hasFDerivAt_fst
+    rw [mextDeriv_standardContactForm_apply, mvfderiv_eq_fderiv, hd.fderiv, hy, Real.exp_neg]
+    simp [NormedSpace.fromTangentSpace_apply]
     field_simp
 
 end TauCeti
