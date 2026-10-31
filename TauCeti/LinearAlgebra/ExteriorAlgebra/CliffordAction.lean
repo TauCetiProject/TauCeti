@@ -147,15 +147,23 @@ def baseChangeExteriorAction :
     fun _ _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left _ _).comp
     (toBaseChange A Q)
 
+omit [Invertible (2 : R)] in
+/-- `Module.End.baseChangeHom` applied to `f` is `f.baseChange A`, which exposes the public
+computation lemma `LinearMap.baseChange_tmul` (Mathlib's generated `baseChangeHom_apply_apply`
+instead unfolds to `TensorProduct.liftAux`). -/
+private theorem baseChangeHom_eq_baseChange {N : Type*} [AddCommGroup N] [Module R N]
+    (f : Module.End R N) : Module.End.baseChangeHom R A N f = f.baseChange A :=
+  rfl
+
 /-- An element whose image under `CliffordAlgebra.toBaseChange` is a pure tensor `w ⊗ c` acts on
 pure tensors factorwise: `(w * z) ⊗ c(c) ω`. -/
 private theorem baseChangeExteriorAction_tmul {a : CliffordAlgebra (Q.baseChange A)} {w : A}
     {c : CliffordAlgebra Q} (ha : toBaseChange A Q a = w ⊗ₜ c) (z : A) (x : ExteriorAlgebra R M) :
     baseChangeExteriorAction A Q a (z ⊗ₜ x) = (w * z) ⊗ₜ exteriorAction Q c x := by
   rw [baseChangeExteriorAction, AlgHom.comp_apply, ha, Algebra.TensorProduct.lift_tmul,
-    AlgHom.comp_apply, Module.End.mul_apply, Module.End.baseChangeHom_apply_apply,
-    TensorProduct.liftAux_tmul, Algebra.ofId_apply, Module.algebraMap_end_apply]
-  simp [TensorProduct.smul_tmul']
+    AlgHom.comp_apply, Module.End.mul_apply, baseChangeHom_eq_baseChange A,
+    LinearMap.baseChange_tmul, Algebra.ofId_apply, Module.algebraMap_end_apply,
+    TensorProduct.smul_tmul', smul_eq_mul]
 
 /-- The image of a real Clifford element acts on the second factor:
 `c(a) (z ⊗ ω) = z ⊗ c(a) ω`. -/
