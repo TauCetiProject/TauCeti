@@ -323,9 +323,7 @@ private theorem extend_extend_lastT_mul_comm (hφ : ∀ x y, φ (x * y) = φ (y 
     rw [e₁, e₂, extend_incl_mul_lastT_mul_incl z hφ', extend_incl_mul_lastT_mul_incl z hφ',
       mul_one, one_mul]
   · simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
-    rw [show lastT q (m + 1) * (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b) =
-        lastT q (m + 1) * incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b by
-      simp only [mul_assoc], ← extend_incl_mul_comm z hφ']
+    rw [← mul_assoc, ← mul_assoc, ← extend_incl_mul_comm z hφ']
     simp only [← mul_assoc]
     exact extend_extend_mul_lastT_mul_mul_lastT_comm z hφ hφ' b a
 
@@ -343,9 +341,7 @@ private theorem extend_extend_mul_comm (hφ : ∀ x y, φ (x * y) = φ (y * x))
   · simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
     calc extend z (extend z φ) (x * (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b))
         = extend z (extend z φ) (incl q (m + 2) b * x * incl q (m + 2) a * lastT q (m + 1)) := by
-          rw [show x * (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b) =
-              x * incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b by
-            simp only [mul_assoc], ← extend_incl_mul_comm z hφ']
+          rw [← mul_assoc, ← mul_assoc, ← extend_incl_mul_comm z hφ']
           simp only [mul_assoc]
       _ = extend z (extend z φ) (lastT q (m + 1) * (incl q (m + 2) b * x * incl q (m + 2) a)) :=
           (extend_extend_lastT_mul_comm z hφ hφ' _).symm
