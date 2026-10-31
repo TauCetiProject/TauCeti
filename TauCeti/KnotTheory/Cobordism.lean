@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
+public import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.KnotTheory.SmoothCircle
 
@@ -55,15 +56,26 @@ boundary circles, so `H₁(S; ℚ) ≅ ℚ²ᵍ⁺¹` and the genus is `⌊dim H
 (`TauCeti.cobordismDistance K₀ K₁`) is the infimum of the genera of the knot cobordisms from `K₀`
 to `K₁`, valued in `ℕ∞` so that it is `⊤` when there is none; it vanishes on concordant knots
 (`TauCeti.SmoothEmbedding.Concordant.cobordismDistance_eq_zero`). The converse, that a cobordism of
-genus `0` is an annulus, needs the classification of compact surfaces and is not proved here; nor
-are the symmetry and the triangle inequality of the cobordism distance, which reverse and stack
-cobordisms.
+genus `0` is an annulus, needs the classification of compact surfaces and is not proved here.
+
+Two operations keep the surface and move only its embedding, so they keep the genus. Reflecting
+the heights by `t ↦ 1 - t` reverses a cobordism from `K₀` to `K₁` into one from `K₁` to `K₀`
+(`TauCeti.KnotCobordism.symm`), so the cobordism distance is symmetric
+(`TauCeti.cobordismDistance_comm`). A diffeomorphism `Ψ` of the ambient spheres, times the identity
+of the height, transports a cobordism to one between the transported knots
+(`TauCeti.KnotCobordism.transDiffeomorph`), so the cobordism distance is invariant under ambient
+diffeomorphisms (`TauCeti.cobordismDistance_transDiffeomorph`); for the mirror image this is
+`TauCeti.cobordismDistance_mirror` in `TauCeti.KnotTheory.Mirror`. The triangle inequality, which
+stacks two cobordisms and so glues their surfaces along the common collar, is not proved here.
 
 ## Main definitions
 
 * `TauCeti.KnotCobordism K₀ K₁`: a smooth knot cobordism from `K₀` to `K₁`, in collared form.
 * `TauCeti.KnotCobordism.genus`: the genus `⌊dim H₁(S; ℚ) / 2⌋` of a knot cobordism.
 * `TauCeti.KnotCobordism.ofConcordance`: the cobordism traced by a concordance.
+* `TauCeti.KnotCobordism.symm`: the reverse of a knot cobordism, with heights reflected.
+* `TauCeti.KnotCobordism.transDiffeomorph`: the transport of a knot cobordism along an ambient
+  diffeomorphism.
 * `TauCeti.cobordismDistance K₀ K₁`: the least genus of a knot cobordism from `K₀` to `K₁`, in
   `ℕ∞`.
 
@@ -77,6 +89,12 @@ cobordisms.
   knots.
 * `TauCeti.SmoothEmbedding.Concordant.cobordismDistance_eq_zero`, `TauCeti.cobordismDistance_self`:
   concordant knots, and in particular a knot and itself, are at cobordism distance `0`.
+* `TauCeti.cobordismDistance_comm`: the cobordism distance is symmetric.
+* `TauCeti.cobordismDistance_reverse_left`, `TauCeti.cobordismDistance_rotate_left` and their
+  `_right` forms: the cobordism distance does not depend on the orientations or the base points of
+  the parametrizations of the knots.
+* `TauCeti.cobordismDistance_transDiffeomorph`: the cobordism distance is invariant under
+  diffeomorphisms of the ambient spheres.
 
 ## References
 
@@ -222,6 +240,116 @@ theorem genus_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
   rw [genus_def]
   exact (congrArg (· / 2) h).trans (by norm_num)
 
+/-! ### Reversal and ambient transport -/
+
+/-- The **reverse** of a knot cobordism from `K₀` to `K₁`: the same surface, with its heights
+reflected by `t ↦ 1 - t`, is a knot cobordism from `K₁` to `K₀`. -/
+def symm (S : KnotCobordism K₀ K₁) : KnotCobordism K₁ K₀ where
+  carrier := S.carrier
+  toFun x := ((S.toFun x).1, 1 - (S.toFun x).2)
+  isSmoothEmbedding := by
+    convert isSmoothEmbedding_diffeomorph_comp S.isSmoothEmbedding
+      ((Diffeomorph.refl (𝓡 n) (sphere (0 : E) 1) ∞).prodCongr (Diffeomorph.subLeft ℝ ∞ 1))
+      using 1
+    ext x <;> simp [Diffeomorph.coe_prodCongr]
+  isCompact_preimage_Icc := by
+    have h : {x | ((S.toFun x).1, 1 - (S.toFun x).2).2 ∈ Icc (0 : ℝ) 1} =
+        {x | (S.toFun x).2 ∈ Icc (0 : ℝ) 1} := by
+      ext x
+      simp only [mem_ofPred_eq, mem_Icc, sub_nonneg, sub_le_self_iff]
+      exact and_comm
+    rw [h]
+    exact S.isCompact_preimage_Icc
+  exists_pos_range_inter_snd_le := by
+    obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_le_snd
+    refine ⟨ε, hε, Set.ext fun p ↦ ?_⟩
+    have hp := Set.ext_iff.1 h (p.1, 1 - p.2)
+    have e (x : S.carrier) : 1 - (S.toFun x).2 = p.2 ↔ (S.toFun x).2 = 1 - p.2 := by
+      constructor <;> intro <;> linarith
+    simp only [mem_inter_iff, mem_range, mem_ofPred_eq, mem_prod, mem_Ici, mem_Iic,
+      sub_le_sub_iff_left, Prod.ext_iff, e] at hp ⊢
+    exact hp
+  exists_pos_range_inter_le_snd := by
+    obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_snd_le
+    refine ⟨ε, hε, Set.ext fun p ↦ ?_⟩
+    have hp := Set.ext_iff.1 h (p.1, 1 - p.2)
+    have e (x : S.carrier) : 1 - (S.toFun x).2 = p.2 ↔ (S.toFun x).2 = 1 - p.2 := by
+      constructor <;> intro <;> linarith
+    have e' : 1 - ε ≤ p.2 ↔ 1 - p.2 ≤ ε := sub_le_comm
+    simp only [mem_inter_iff, mem_range, mem_ofPred_eq, mem_prod, mem_Ici, mem_Iic, Prod.ext_iff,
+      e, e'] at hp ⊢
+    exact hp
+
+/-- The reverse of a knot cobordism has the same surface. -/
+theorem carrier_symm (S : KnotCobordism K₀ K₁) : S.symm.carrier = S.carrier :=
+  (rfl)
+
+/-- The embedded surface of the reverse of a knot cobordism is its reflection in the level
+`1 / 2`. -/
+@[simp]
+theorem range_toFun_symm (S : KnotCobordism K₀ K₁) :
+    range S.symm.toFun = (fun p : sphere (0 : E) 1 × ℝ ↦ (p.1, 1 - p.2)) '' range S.toFun := by
+  rw [← range_comp]
+  rfl
+
+/-- Reversing a knot cobordism keeps its genus. -/
+@[simp]
+theorem genus_symm (S : KnotCobordism K₀ K₁) : S.symm.genus = S.genus :=
+  (rfl)
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [Fact (finrank ℝ F = n + 1)]
+
+/-- Transport of a knot cobordism along a diffeomorphism `Ψ : Sⁿ ≃ₘ Sⁿ` of the ambient spheres: the
+same surface, embedded by `Ψ × id`, is a knot cobordism between the transported knots. -/
+def transDiffeomorph (S : KnotCobordism K₀ K₁)
+    (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
+    KnotCobordism (K₀.transDiffeomorph Ψ) (K₁.transDiffeomorph Ψ) where
+  carrier := S.carrier
+  toFun x := (Ψ (S.toFun x).1, (S.toFun x).2)
+  isSmoothEmbedding := isSmoothEmbedding_diffeomorph_comp S.isSmoothEmbedding
+    (Ψ.prodCongr (Diffeomorph.refl 𝓘(ℝ) ℝ ∞))
+  isCompact_preimage_Icc := S.isCompact_preimage_Icc
+  exists_pos_range_inter_snd_le := by
+    obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_snd_le
+    refine ⟨ε, hε, Set.ext fun p ↦ ?_⟩
+    have hp := Set.ext_iff.1 h (Ψ.symm p.1, p.2)
+    have e (y) : Ψ y = p.1 ↔ y = Ψ.symm p.1 :=
+      ⟨fun h ↦ h ▸ (Ψ.symm_apply_apply y).symm, fun h ↦ h ▸ Ψ.apply_symm_apply p.1⟩
+    simp only [mem_inter_iff, mem_range, mem_ofPred_eq, mem_prod, mem_Iic, Prod.ext_iff,
+      SmoothEmbedding.coe_transDiffeomorph, Function.comp_apply, e] at hp ⊢
+    exact hp
+  exists_pos_range_inter_le_snd := by
+    obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_le_snd
+    refine ⟨ε, hε, Set.ext fun p ↦ ?_⟩
+    have hp := Set.ext_iff.1 h (Ψ.symm p.1, p.2)
+    have e (y) : Ψ y = p.1 ↔ y = Ψ.symm p.1 :=
+      ⟨fun h ↦ h ▸ (Ψ.symm_apply_apply y).symm, fun h ↦ h ▸ Ψ.apply_symm_apply p.1⟩
+    simp only [mem_inter_iff, mem_range, mem_ofPred_eq, mem_prod, mem_Ici, Prod.ext_iff,
+      SmoothEmbedding.coe_transDiffeomorph, Function.comp_apply, e] at hp ⊢
+    exact hp
+
+/-- Transporting a knot cobordism along an ambient diffeomorphism keeps its surface. -/
+theorem carrier_transDiffeomorph (S : KnotCobordism K₀ K₁)
+    (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
+    (S.transDiffeomorph Ψ).carrier = S.carrier :=
+  (rfl)
+
+/-- Transporting a knot cobordism along an ambient diffeomorphism `Ψ` moves its embedded surface by
+`Ψ × id`. -/
+@[simp]
+theorem range_toFun_transDiffeomorph (S : KnotCobordism K₀ K₁)
+    (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
+    range (S.transDiffeomorph Ψ).toFun = Prod.map Ψ id '' range S.toFun := by
+  rw [← range_comp]
+  rfl
+
+/-- Transporting a knot cobordism along an ambient diffeomorphism keeps its genus. -/
+@[simp]
+theorem genus_transDiffeomorph (S : KnotCobordism K₀ K₁)
+    (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
+    (S.transDiffeomorph Ψ).genus = S.genus :=
+  (rfl)
+
 end KnotCobordism
 
 open KnotCobordism
@@ -280,5 +408,54 @@ theorem cobordismDistance_self (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : 
     cobordismDistance K K = 0 :=
   SmoothEmbedding.Concordant.cobordismDistance_eq_zero
     (.of_concordance (SmoothEmbedding.Concordance.refl K))
+
+/-- **The cobordism distance is symmetric**: reversing the heights turns a knot cobordism from `K₀`
+to `K₁` into one from `K₁` to `K₀` of the same genus. -/
+theorem cobordismDistance_comm (K₀ K₁ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    cobordismDistance K₀ K₁ = cobordismDistance K₁ K₀ :=
+  le_antisymm (le_iInf fun S ↦ by simpa using cobordismDistance_le_genus S.symm)
+    (le_iInf fun S ↦ by simpa using cobordismDistance_le_genus S.symm)
+
+/-- The cobordism distance does not depend on the rotation of the parametrization of the first
+knot. -/
+@[simp]
+theorem cobordismDistance_rotate_left (a : Circle) :
+    cobordismDistance (K₀.rotate a) K₁ = cobordismDistance K₀ K₁ :=
+  cobordismDistance_congr_range (K₀.range_rotate a) rfl
+
+/-- The cobordism distance does not depend on the rotation of the parametrization of the second
+knot. -/
+@[simp]
+theorem cobordismDistance_rotate_right (a : Circle) :
+    cobordismDistance K₀ (K₁.rotate a) = cobordismDistance K₀ K₁ :=
+  cobordismDistance_congr_range rfl (K₁.range_rotate a)
+
+/-- The cobordism distance does not depend on the orientation of the first knot. -/
+@[simp]
+theorem cobordismDistance_reverse_left :
+    cobordismDistance K₀.reverse K₁ = cobordismDistance K₀ K₁ :=
+  cobordismDistance_congr_range K₀.range_reverse rfl
+
+/-- The cobordism distance does not depend on the orientation of the second knot. -/
+@[simp]
+theorem cobordismDistance_reverse_right :
+    cobordismDistance K₀ K₁.reverse = cobordismDistance K₀ K₁ :=
+  cobordismDistance_congr_range rfl K₁.range_reverse
+
+/-- The cobordism distance is invariant under diffeomorphisms of the ambient spheres: transporting
+both knots along `Ψ : Sⁿ ≃ₘ Sⁿ` does not change their cobordism distance. -/
+@[simp]
+theorem cobordismDistance_transDiffeomorph {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [Fact (finrank ℝ F = n + 1)]
+    (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
+    cobordismDistance (K₀.transDiffeomorph Ψ) (K₁.transDiffeomorph Ψ) =
+      cobordismDistance K₀ K₁ := by
+  have hK (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+      range ((K.transDiffeomorph Ψ).transDiffeomorph Ψ.symm) = range K := by
+    rw [SmoothEmbedding.transDiffeomorph_transDiffeomorph, Diffeomorph.self_trans_symm,
+      SmoothEmbedding.transDiffeomorph_refl]
+  refine le_antisymm (le_iInf fun S ↦ ?_) (le_iInf fun S ↦ ?_)
+  · simpa using cobordismDistance_le_genus (S.transDiffeomorph Ψ)
+  · simpa using cobordismDistance_le_genus ((S.transDiffeomorph Ψ.symm).congrRange (hK K₀) (hK K₁))
 
 end TauCeti

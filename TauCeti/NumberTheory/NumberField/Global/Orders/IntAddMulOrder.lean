@@ -40,6 +40,8 @@ size `f ^ n`. Hence `[𝓞 K : ℤ + f 𝓞 K] = f ^ (n - 1)`, the discriminant 
   `n ≥ 2`, `ℤ + f 𝓞 K ⊆ ℤ + g 𝓞 K` exactly when `g ∣ f`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.intAddMulOrder_inj`: for `n ≥ 2`, the orders
   `ℤ + f 𝓞 K` are pairwise distinct.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.index_range_unitsMap_intAddMulOrder_one`: the
+  units of `ℤ + 1 𝓞 K` have index `1` in the units of `𝓞 K`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.card_units_quotientIntAddMulOrder`: the residue
   ring of `ℤ + f 𝓞 K` modulo `f 𝓞 K` has `φ(f)` units.
 
@@ -175,6 +177,19 @@ theorem discr_intAddMulOrder :
 @[simp]
 theorem intAddMulOrder_one : intAddMulOrder K 1 = maximalNumberFieldOrder K :=
   (index_eq_one_iff _).mp (by simp [index_intAddMulOrder])
+
+/-- **The unit index of the maximal order.** Every unit of `𝓞 K` is a unit of `ℤ + 1 𝓞 K`, so
+`[(𝓞 K)ˣ : O_1ˣ] = 1`. -/
+@[simp]
+theorem index_range_unitsMap_intAddMulOrder_one :
+    (Units.map ((intAddMulOrder K 1).toRingOfIntegers.val :
+      (intAddMulOrder K 1).toRingOfIntegers →* 𝓞 K)).range.index = 1 := by
+  rw [Subgroup.index_eq_one, MonoidHom.range_eq_top]
+  intro ε
+  have hmem (x : 𝓞 K) : x ∈ (intAddMulOrder K 1).toRingOfIntegers :=
+    mem_toRingOfIntegers_intAddMulOrder.mpr ⟨0, x, by simp⟩
+  exact ⟨⟨⟨ε, hmem _⟩, ⟨_, hmem _⟩, Subtype.ext ε.mul_inv, Subtype.ext ε.inv_mul⟩,
+    Units.ext rfl⟩
 
 variable {K}
 

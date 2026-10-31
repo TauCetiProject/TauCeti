@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Order.LiminfLimsup
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.Analysis.SpecialFunctions.PolarCoord
+import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.Fourier.Wirtinger
@@ -236,11 +236,6 @@ theorem circleLIntegral_eq_lintegral_Ioc (g : ℂ → ℝ≥0∞) (ζ : ℂ) (ρ
   exact congrArg _ (setLIntegral_congr Ioo_ae_eq_Ioc)
 
 /-! ### Polar Fubini -/
-
-/-- The polar-coordinate parametrisation of `ℂ` centred at `ζ` is `circleMap ζ`. -/
-private theorem add_polarCoord_symm_eq_circleMap (ζ : ℂ) (p : ℝ × ℝ) :
-    ζ + Complex.polarCoord.symm p = circleMap ζ p.1 p.2 := by
-  simp [circleMap, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
 
 private theorem continuous_circleMap_uncurry (ζ : ℂ) :
     Continuous fun p : ℝ × ℝ => circleMap ζ p.1 p.2 := by

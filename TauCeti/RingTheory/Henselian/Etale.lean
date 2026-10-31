@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Henselian
 public import Mathlib.RingTheory.Unramified.LocalStructure
-public import TauCeti.RingTheory.Etale.FiniteEtaleSplit
+public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 
 import TauCeti.RingTheory.Unramified.Diagonal
 

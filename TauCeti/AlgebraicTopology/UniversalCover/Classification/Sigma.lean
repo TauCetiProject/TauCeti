@@ -60,8 +60,8 @@ def sigmaMonodromyNatIso (f : ∀ i, E i → X i)
       (e z.as.1).app (FundamentalGroupoid.mk z.as.2))
     (by
       rintro ⟨⟨i', x⟩⟩ ⟨⟨i, y⟩⟩ m
-      obtain rfl : i = i' := sigmaFst_eq_of_quotient m
-      obtain ⟨γ, rfl⟩ := exists_quotient_map_sigmaMk_eq m
+      obtain rfl : i = i' := (Path.Homotopic.Quotient.sigma_fst_eq m).symm
+      obtain ⟨γ, rfl⟩ := Path.Homotopic.Quotient.exists_map_sigmaMk_eq m
       refine ConcreteCategory.hom_ext _ _ fun p => ?_
       have h : (sigmaMapFiberEquiv f i y).symm
           ((isCoveringMap_sigmaMap f hf).monodromy
