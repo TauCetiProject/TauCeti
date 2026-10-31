@@ -29,10 +29,9 @@ period frame and its inverse depend `C^n` on `y`
 `Y × E → (Y × E)/Λ` and `Y × ℝ^ι → Y × T` are surjective `C^n` local diffeomorphisms, so
 smoothness descends to the quotients.
 
-The diffeomorphism is real-linear on fibres and depends on the basis `b`. It is not holomorphic
-for a complex family: the complex structure of the fibre `E ⧸ LinearMap.range (P y)` varies with
-`y`, while `T` carries no complex structure at all. In particular, it does not make a family
-whose period ratio varies holomorphically trivial.
+The diffeomorphism is real-linear on fibres and depends on the basis `b`. Only a real `C^n`
+trivialization is constructed: no complex structure is supplied on `T`, and no holomorphic
+triviality of a complex family is claimed.
 
 ## Main definitions
 
