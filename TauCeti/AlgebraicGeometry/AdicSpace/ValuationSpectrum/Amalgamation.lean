@@ -20,19 +20,15 @@ two copies of `L`, and both factors carry an amalgam of the `p`-adic valuation w
 the statement behind the description of the points of a fibre product of adic spaces.
 
 The proof passes to residue fields. Points of `Spv` of a field are its valuation subrings
-(`ofValuation_valuationSubring_valuation`, `comap_ofValuation_valuation`). The points `y` and `x`
+(`ofValuation_valuationSubring_valuation`, `ofValuation_comap_valuation`). The points `y` and `x`
 are the residue-field valuations on `κ(y)` and `κ(x)` pulled back to `B` and `C`, and these
 restrict to the residue-field valuation of their common pullback `z` on `κ(z)`, because pulling
-back along `A → κ(z)` is injective. The amalgamation of valuation subrings
-(`ValuationSubring.exists_comap_eq_of_comap_eq`) on `κ(y) ⊗[κ(z)] κ(x)` then gives the amalgam,
-pulled back along `B ⊗[A] C → κ(y) ⊗[κ(z)] κ(x)`.
+back along `A → κ(z)` is injective (`comap_algebraMap_residueField_injective`). The amalgamation of
+valuation subrings (`ValuationSubring.exists_comap_eq_of_comap_eq`) on `κ(y) ⊗[κ(z)] κ(x)` then
+gives the amalgam, pulled back along `B ⊗[A] C → κ(y) ⊗[κ(z)] κ(x)`.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.comap_algebraMap_ofValuation_residueFieldValuation`: a point is the
-  pullback of its residue-field valuation.
-* `TauCeti.ValuationSpectrum.comap_algebraMap_residueField_injective`: pulling back along
-  `A → κ(𝔭)` is injective on valuation spectra.
 * `TauCeti.ValuationSpectrum.exists_amalgamation`: points agreeing on `A` amalgamate on
   `B ⊗[A] C`.
 
@@ -50,62 +46,6 @@ open scoped TensorProduct
 namespace TauCeti
 
 namespace ValuationSpectrum
-
-section Field
-
-variable {K L : Type*} [Field K] [Field L]
-
-/-- A point of the valuation spectrum of a field is the point of its valuation subring. -/
-@[simp]
-theorem ofValuation_valuationSubring_valuation (w : Spv K) :
-    ofValuation w.valuation.valuationSubring.valuation = w :=
-  (ofValuation_eq_of_isEquiv
-    (Valuation.isEquiv_valuation_valuationSubring w.valuation).symm).trans (ofValuation_valuation w)
-
-/-- Pulling back the point of a valuation subring along a field homomorphism gives the point of
-the pulled-back valuation subring. -/
-theorem comap_ofValuation_valuation (g : K →+* L) (W : ValuationSubring L) :
-    comap g (ofValuation W.valuation) = ofValuation (W.comap g).valuation := by
-  rw [comap_ofValuation]
-  refine ofValuation_eq_of_isEquiv ?_
-  rw [Valuation.isEquiv_iff_valuationSubring, ValuationSubring.valuationSubring_valuation]
-  ext x
-  simp [Valuation.mem_valuationSubring_iff, ValuationSubring.valuation_le_one_iff]
-
-/-- The valuation subring of a pulled-back point of the valuation spectrum of a field is the
-pullback of its valuation subring. -/
-theorem valuationSubring_valuation_comap (g : K →+* L) (w : Spv L) :
-    (comap g w).valuation.valuationSubring = w.valuation.valuationSubring.comap g := by
-  ext x
-  have := valuation_le_iff (comap g w) x 1
-  rw [map_one, comap_vle, ← valuation_le_iff, map_one] at this
-  simpa [Valuation.mem_valuationSubring_iff] using this
-
-end Field
-
-section ResidueField
-
-variable {A : Type*} [CommRing A]
-
-/-- A point of `Spv A` is the pullback of its residue-field valuation along `A → κ(v)`. -/
-theorem comap_algebraMap_ofValuation_residueFieldValuation (v : Spv A) :
-    comap (algebraMap A v.supp.ResidueField) (ofValuation (residueFieldValuation v)) = v := by
-  rw [comap_ofValuation, IsScalarTower.algebraMap_eq A (residueRing v), Valuation.comap_comp]
-  convert ofValuation_valuation v using 2
-  rw [← quotientValuation_comap_quotientMk]
-  congr 1
-  ext x
-  simp
-
-/-- Pulling back along `A → κ(𝔭)` is injective on valuation spectra, since `A → κ(𝔭)` is a
-surjection followed by a localization. -/
-theorem comap_algebraMap_residueField_injective (p : Ideal A) [p.IsPrime] :
-    Function.Injective (comap (algebraMap A p.ResidueField)) := by
-  rw [IsScalarTower.algebraMap_eq A (A ⧸ p), comap_comp]
-  exact (comap_injective Ideal.Quotient.mk_surjective).comp
-    (localization_comap_injective (nonZeroDivisors (A ⧸ p)) p.ResidueField)
-
-end ResidueField
 
 section TensorProduct
 
@@ -139,12 +79,12 @@ theorem exists_amalgamation (y : Spv B) (x : Spv C)
   set x' := ofValuation (residueFieldValuation x)
   have hy' : comap (algebraMap A z.supp.ResidueField)
       (comap (algebraMap z.supp.ResidueField _) y') = z := by
-    rw [← Function.comp_apply (f := comap _), ← comap_comp, ← hB, comap_comp, Function.comp_apply,
-      comap_algebraMap_ofValuation_residueFieldValuation]
+    rw [comap_comap, ← hB, ← comap_comap]
+    simp [y', z]
   have hx' : comap (algebraMap A z.supp.ResidueField)
       (comap (algebraMap z.supp.ResidueField _) x') = z := by
-    rw [← Function.comp_apply (f := comap _), ← comap_comp, ← hC, comap_comp, Function.comp_apply,
-      comap_algebraMap_ofValuation_residueFieldValuation, h]
+    rw [comap_comap, ← hC, ← comap_comap]
+    simp [x', h]
   have hV := congrArg (fun w ↦ w.valuation.valuationSubring)
     (comap_algebraMap_residueField_injective z.supp (hy'.trans hx'.symm))
   simp only [valuationSubring_valuation_comap] at hV
@@ -153,15 +93,15 @@ theorem exists_amalgamation (y : Spv B) (x : Spv C)
   refine ⟨comap (mapRingHom (algebraMap A z.supp.ResidueField) (algebraMap B y.supp.ResidueField)
     (algebraMap C x.supp.ResidueField) hB hC)
       (comap (algebraMap _ P.ResidueField) (ofValuation W.valuation)), ?_, ?_⟩
-  · rw [← Function.comp_apply (f := comap _), ← comap_comp, ← Function.comp_apply (f := comap _),
-      ← comap_comp, mapRingHom_comp_includeLeftRingHom, ← RingHom.comp_assoc,
-      comap_comp, Function.comp_apply, comap_ofValuation_valuation, hW₁,
-      ofValuation_valuationSubring_valuation, comap_algebraMap_ofValuation_residueFieldValuation]
-  · rw [AlgHom.toRingHom_eq_coe] at hW₂ ⊢
-    rw [← Function.comp_apply (f := comap _), ← comap_comp, ← Function.comp_apply (f := comap _),
-      ← comap_comp, mapRingHom_comp_includeRight, ← RingHom.comp_assoc,
-      comap_comp, Function.comp_apply, comap_ofValuation_valuation, hW₂,
-      ofValuation_valuationSubring_valuation, comap_algebraMap_ofValuation_residueFieldValuation]
+  · rw [comap_comap, comap_comap, mapRingHom_comp_includeLeftRingHom,
+      ← RingHom.comp_assoc, ← comap_comap, comap_ofValuation, ofValuation_comap_valuation, hW₁,
+      ofValuation_valuationSubring_valuation]
+    simp [y']
+  · rw [comap_comap, comap_comap, AlgHom.toRingHom_eq_coe,
+      mapRingHom_comp_includeRight, ← RingHom.comp_assoc, ← comap_comap, comap_ofValuation,
+      ofValuation_comap_valuation, ← AlgHom.toRingHom_eq_coe, hW₂,
+      ofValuation_valuationSubring_valuation]
+    simp [x']
 
 end TensorProduct
 

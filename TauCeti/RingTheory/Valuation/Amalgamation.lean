@@ -14,6 +14,7 @@ import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 import Mathlib.RingTheory.Valuation.LocalSubring
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.TensorProduct.LocalRing
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Amalgamating valuation rings over a common subfield
@@ -34,9 +35,6 @@ the image of `Q` dominates the images of `V₁` and `V₂`, so it restricts to t
 
 ## Main results
 
-* `ValuationSubring.mem_nonunits_comap`: nonunits of a pulled-back valuation subring.
-* `ValuationSubring.eq_of_le_of_nonunits_le`: a valuation subring equals any valuation subring
-  dominating it.
 * `ValuationSubring.exists_comap_eq_of_comap_eq`: the amalgamation of valuation subrings.
 
 ## References
@@ -57,30 +55,6 @@ open scoped TensorProduct nonZeroDivisors
 open Algebra.TensorProduct IsLocalRing
 
 namespace ValuationSubring
-
-variable {K L : Type*} [Field K] [Field L]
-
-/-- An element lies in the nonunits of a pulled-back valuation subring exactly when its image
-lies in the nonunits of the original one. -/
-@[simp]
-theorem mem_nonunits_comap {A : ValuationSubring L} {f : K →+* L} {x : K} :
-    x ∈ (A.comap f).nonunits ↔ f x ∈ A.nonunits := by
-  simp [mem_nonunits_iff_or, map_inv₀]
-
-/-- A valuation subring is determined by any valuation subring dominating it: if `A ≤ B` and
-every nonunit of `A` is a nonunit of `B`, then `A = B`. -/
-theorem eq_of_le_of_nonunits_le {A B : ValuationSubring K} (h : A ≤ B)
-    (h' : A.nonunits ≤ B.nonunits) : A = B :=
-  nonunits_injective (le_antisymm h' (nonunits_le_nonunits.mpr h))
-
-/-- The inclusion of a pulled-back valuation subring `A.comap f` into `A` is a local
-homomorphism: a valuation subring dominates its pullback. -/
-theorem isLocalHom_restrict (A : ValuationSubring L) (f : K →+* L) {B : ValuationSubring K}
-    (hB : B = A.comap f) (hBA : ∀ x ∈ B, f x ∈ A) : IsLocalHom (f.restrict B A hBA) := by
-  refine ⟨fun ⟨x, hx⟩ ha ↦ ?_⟩
-  subst hB
-  rw [← notMem_maximalIdeal, ← coe_mem_nonunits_iff] at ha ⊢
-  exact mem_nonunits_comap.not.mpr ha
 
 section Amalgamation
 
@@ -114,6 +88,14 @@ private theorem exists_residueField_of_ringHom {L : Type*} [Field L] (g₁ : K�
     rw [RingHom.comp_apply, RingHom.comp_apply, hΦ]
     simp [Φ, G₁, G₂]
 
+/-- A domain is flat over a Bézout domain mapping injectively into it: over a Bézout domain,
+torsion-free modules are flat. -/
+private theorem flat_of_algebraMap_injective {R S : Type*} [CommRing R] [IsDomain R] [IsBezout R]
+    [CommRing S] [IsDomain S] [Algebra R S] (h : Function.Injective (algebraMap R S)) :
+    Module.Flat R S := by
+  rwa [Module.Flat.flat_iff_torsion_eq_bot_of_isBezout,
+    ← Submodule.isTorsionFree_iff_torsion_eq_bot, Module.isTorsionFree_iff_algebraMap_injective]
+
 /-- Let `ψ : S →+* L` map into a valuation subring `W` of the field `L`, sending an ideal `Q` into
 the nonunits of `W`. If a valuation subring `V` of `K` maps to `S` with its maximal ideal in `Q`,
 compatibly with `g : K →+* L`, then `W` dominates the image of `V`, so `W` pulls back to `V`. -/
@@ -142,16 +124,12 @@ theorem exists_comap_eq_of_comap_eq (V₁ : ValuationSubring K₁) (V₂ : Valua
   have h₂ (x) (hx : x ∈ V₀) : algebraMap K₀ K₂ x ∈ V₂ := by rw [h] at hx; exact hx
   let : Algebra V₀ V₁ := ((algebraMap K₀ K₁).restrict V₀ V₁ fun _ hx ↦ hx).toAlgebra
   let : Algebra V₀ V₂ := ((algebraMap K₀ K₂).restrict V₀ V₂ h₂).toAlgebra
-  have : IsLocalHom (algebraMap V₀ V₁) := isLocalHom_restrict V₁ _ rfl _
-  have : IsLocalHom (algebraMap V₀ V₂) := isLocalHom_restrict V₂ _ h _
-  have : Module.Flat V₀ V₁ := by
-    rw [Module.Flat.flat_iff_torsion_eq_bot_of_isBezout,
-      ← Submodule.isTorsionFree_iff_torsion_eq_bot, Module.isTorsionFree_iff_algebraMap_injective]
-    exact fun _ _ hab ↦ Subtype.ext ((algebraMap K₀ K₁).injective (congrArg Subtype.val hab))
-  have : Module.Flat V₀ V₂ := by
-    rw [Module.Flat.flat_iff_torsion_eq_bot_of_isBezout,
-      ← Submodule.isTorsionFree_iff_torsion_eq_bot, Module.isTorsionFree_iff_algebraMap_injective]
-    exact fun _ _ hab ↦ Subtype.ext ((algebraMap K₀ K₂).injective (congrArg Subtype.val hab))
+  have : IsLocalHom (algebraMap V₀ V₁) := isLocalHom_restrict V₁ _ rfl
+  have : IsLocalHom (algebraMap V₀ V₂) := isLocalHom_restrict V₂ _ h
+  have : Module.Flat V₀ V₁ := flat_of_algebraMap_injective fun _ _ hab ↦
+    Subtype.ext ((algebraMap K₀ K₁).injective (congrArg Subtype.val hab))
+  have : Module.Flat V₀ V₂ := flat_of_algebraMap_injective fun _ _ hab ↦
+    Subtype.ext ((algebraMap K₀ K₂).injective (congrArg Subtype.val hab))
   -- a minimal prime `P₀` of `V₁ ⊗[V₀] V₂` below a prime `Q` over both maximal ideals
   obtain ⟨Q, hQ, hJQ⟩ := Ideal.exists_le_maximal _
     (map_maximalIdeal_sup_map_maximalIdeal_ne_top (R := V₀) (A := V₁) (B := V₂))
@@ -178,6 +156,9 @@ theorem exists_comap_eq_of_comap_eq (V₁ : ValuationSubring K₁) (V₂ : Valua
   let g₂ : K₂ →+* FractionRing (V₁ ⊗[V₀] V₂ ⧸ P₀) := IsFractionRing.lift inj₂
   have hg : g₁.comp (algebraMap K₀ K₁) = g₂.comp (algebraMap K₀ K₂) := by
     refine IsLocalization.ringHom_ext V₀⁰ (RingHom.ext fun a ↦ ?_)
+    -- `algebraMap V₀ V₁` and `algebraMap V₀ V₂` are `RingHom.restrict`s of the field maps and
+    -- `algebraMap V₁ K₁`, `algebraMap V₂ K₂` are subtype inclusions, so each side unfolds to
+    -- the field map applied to `a`; restate it through `V₁` and `V₂`, where `g₁`, `g₂` compute
     change g₁ (algebraMap V₁ K₁ (algebraMap V₀ V₁ a)) = g₂ (algebraMap V₂ K₂ (algebraMap V₀ V₂ a))
     simp only [g₁, g₂, IsFractionRing.lift_algebraMap, RingHom.comp_apply,
       includeLeftRingHom_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, includeRight_apply]

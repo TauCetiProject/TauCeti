@@ -29,6 +29,10 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
 * `TauCeti.ValuationSpectrum.comap φ` : The continuous map `Spv B → Spv A` induced by
   `φ : A →+* B`.
 * `TauCeti.ValuationSpectrum.supp v` : The support ideal `{a ∈ A | v(a) = 0}`.
+* `TauCeti.ValuationSpectrum.ofValuation_valuationSubring_valuation`,
+  `TauCeti.ValuationSpectrum.ofValuation_comap_valuation` and
+  `TauCeti.ValuationSpectrum.valuationSubring_valuation_comap` : over a field, a point is the
+  point of its valuation subring, compatibly with pullback.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_inter` : **Wedhorn's step (i)** in the proof of
   Lemma 7.5, that the rational opens are stable under finite intersection.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_image_mul_right` : scaling every numerator and the
@@ -291,6 +295,12 @@ lemma comap_comp (φ : A →+* B) (ψ : B →+* C) :
   funext v
   exact ValuationSpectrum.ext (ValuativeRel.comap_comp φ ψ v.toValuativeRel)
 
+/-- Pulling back along `ψ` and then along `φ` is pulling back along `ψ.comp φ`: the pointwise
+form of `comap_comp`. Not `@[simp]`, since `comap_comp` rewrites the right side back. -/
+lemma comap_comap (φ : A →+* B) (ψ : B →+* C) (v : Spv C) :
+    comap φ (comap ψ v) = comap (ψ.comp φ) v := by
+  rw [comap_comp, Function.comp_apply]
+
 /-- `comap φ` is injective when `φ` is surjective. -/
 lemma comap_injective {φ : A →+* B} (hφ : Function.Surjective φ) :
     Function.Injective (comap φ) := by
@@ -412,6 +422,39 @@ lemma isEquiv_valuation_ofValuation {Γ₀ : Type*} [LinearOrderedCommGroupWithZ
     (w : Valuation A Γ₀) : Valuation.IsEquiv (ofValuation w).valuation w := by
   intro x y
   rw [valuation_le_iff, vle_ofValuation]
+
+section Field
+
+variable {K L : Type*} [Field K] [Field L]
+
+/-- A point of the valuation spectrum of a field is the point of its valuation subring. -/
+@[simp]
+theorem ofValuation_valuationSubring_valuation (w : Spv K) :
+    ofValuation w.valuation.valuationSubring.valuation = w :=
+  (ofValuation_eq_of_isEquiv
+    (Valuation.isEquiv_valuation_valuationSubring w.valuation).symm).trans (ofValuation_valuation w)
+
+/-- Pulling back the valuation of a valuation subring along a field homomorphism gives the point
+of the pulled-back valuation subring. -/
+@[simp]
+theorem ofValuation_comap_valuation (g : K →+* L) (W : ValuationSubring L) :
+    ofValuation (W.valuation.comap g) = ofValuation (W.comap g).valuation := by
+  refine ofValuation_eq_of_isEquiv ?_
+  rw [Valuation.isEquiv_iff_valuationSubring, ValuationSubring.valuationSubring_valuation]
+  ext x
+  simp [Valuation.mem_valuationSubring_iff, ValuationSubring.valuation_le_one_iff]
+
+/-- The valuation subring of a pulled-back point of the valuation spectrum of a field is the
+pullback of its valuation subring. -/
+@[simp]
+theorem valuationSubring_valuation_comap (g : K →+* L) (w : Spv L) :
+    (comap g w).valuation.valuationSubring = w.valuation.valuationSubring.comap g := by
+  ext x
+  have := valuation_le_iff (comap g w) x 1
+  rw [map_one, comap_vle, ← valuation_le_iff, map_one] at this
+  simpa [Valuation.mem_valuationSubring_iff] using this
+
+end Field
 
 section Quotient
 
