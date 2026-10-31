@@ -29,8 +29,10 @@ remaining step is that polynomial rings over Cohen–Macaulay rings are Cohen–
 
 In a catenary ring every saturated chain of primes from `p` to `q` has length `ht (q / p)`, so in a
 Cohen–Macaulay ring every saturated chain of primes from a minimal prime to `q` has length `ht q`.
-For a Noetherian local Cohen–Macaulay ring and `q` the maximal ideal, this says that every maximal
-chain of primes has length `dim R` (Stacks, Lemma 10.103.9 (0AAE)).
+For a Noetherian local ring all of whose localizations at primes are Cohen–Macaulay, taking `q` to
+be the maximal ideal, this says that every maximal chain of primes has length `dim R`. Stacks,
+Lemma 10.103.9 (0AAE) proves this assuming only that `R` itself is Cohen–Macaulay; deducing that
+form from this one needs localization of Cohen–Macaulay modules (Stacks, Tag 0AAG).
 
 Regular rings are Cohen–Macaulay, so they are catenary. Since a polynomial ring in finitely many
 variables over a regular ring is again regular, regular rings are moreover universally catenary;
@@ -118,8 +120,9 @@ theorem isCatenary_of_forall_isCohenMacaulay
 /-- **Saturated chains of primes in a Cohen–Macaulay ring.** In a Noetherian ring whose
 localizations at all primes are Cohen–Macaulay, every saturated chain of primes
 `p₀ ⋖ p₁ ⋖ ⋯ ⋖ pₙ` starting at a minimal prime has length `n = ht pₙ`. For a local ring and
-`pₙ` the maximal ideal, `ht pₙ = dim R`: every maximal chain of primes has length `dim R`
-(Stacks, Lemma 10.103.9 (0AAE)). -/
+`pₙ` the maximal ideal, `ht pₙ = dim R`: every maximal chain of primes has length `dim R`. This is
+Stacks, Lemma 10.103.9 (0AAE) under the stronger hypothesis that every localization of `R` is
+Cohen–Macaulay, not only `R` itself. -/
 theorem length_eq_height_of_forall_isCohenMacaulay
     (h : ∀ (q : Ideal R) [q.IsPrime],
       Module.IsCohenMacaulay (Localization.AtPrime q) (Localization.AtPrime q))
