@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fintype.Shrink
 public import TauCeti.LowDimTopology.DehnSurgery.Link.Filling
 public import TauCeti.LowDimTopology.DehnSurgery.Uniqueness
 public import TauCeti.Topology.CWComplex.Abstract.Hausdorff
@@ -281,29 +282,44 @@ end IsSolidTorusNeighborhood
 
 namespace IsSolidTorusLinkNeighborhood
 
-variable {ι : Type} {X : Type} [TopologicalSpace X] [T2Space X] {f : ι → Circle → X}
+variable {ι : Type*} {X : Type} [TopologicalSpace X] [T2Space X] {f : ι → Circle → X}
   {Φ : ι → SolidTorus → X}
 
-/-- The attaching maps of the filling solid tori of a link exterior along gluings `g i`: the point
-`q` of the boundary torus of the `i`-th solid torus goes to the point `Φ i (g i q)` of the `i`-th
-boundary torus of the exterior. -/
+section Small
+
+variable [Small.{0} ι]
+
+/-- The attaching maps of the filling solid tori of a link exterior along gluings `g i`, indexed by
+a copy `Shrink.{0} ι` of the components in `Type`: the point `q` of the boundary torus of the
+`i`-th solid torus goes to the point `Φ i (g i q)` of the `i`-th boundary torus of the exterior. -/
 private def fillingAttach (h : IsSolidTorusLinkNeighborhood f Φ)
-    (g : ι → Circle × Circle ≃ₜ Circle × Circle) : ι → C(Circle × Circle, linkExterior Φ) :=
-  fun i ↦ ⟨h.exteriorBoundaryInclusion i ∘ g i,
-    (h.isEmbedding_exteriorBoundaryInclusion i).continuous.comp (g i).continuous⟩
+    (g : ι → Circle × Circle ≃ₜ Circle × Circle) :
+    Shrink.{0} ι → C(Circle × Circle, linkExterior Φ) :=
+  fun i ↦ ⟨h.exteriorBoundaryInclusion ((equivShrink.{0} ι).symm i) ∘
+      g ((equivShrink.{0} ι).symm i),
+    (h.isEmbedding_exteriorBoundaryInclusion _).continuous.comp (g _).continuous⟩
+
+omit [T2Space X] in
+private theorem fillingAttach_equivShrink (h : IsSolidTorusLinkNeighborhood f Φ)
+    (g : ι → Circle × Circle ≃ₜ Circle × Circle) (i : ι) (q : Circle × Circle) :
+    h.fillingAttach g (equivShrink.{0} ι i) q = h.exteriorBoundaryInclusion i (g i q) := by
+  simp [fillingAttach]
 
 omit [T2Space X] in
 /-- The boundary tori of distinct components are disjoint, so the attaching maps are jointly
 injective. -/
 private theorem injective_fillingAttach (h : IsSolidTorusLinkNeighborhood f Φ)
     (g : ι → Circle × Circle ≃ₜ Circle × Circle) :
-    Injective fun p : Σ _ : ι, Circle × Circle ↦ h.fillingAttach g p.1 p.2 := by
+    Injective fun p : Σ _ : Shrink.{0} ι, Circle × Circle ↦ h.fillingAttach g p.1 p.2 := by
   rintro ⟨i, q⟩ ⟨j, q'⟩ hq
+  obtain ⟨i, rfl⟩ := (equivShrink.{0} ι).surjective i
+  obtain ⟨j, rfl⟩ := (equivShrink.{0} ι).surjective j
+  simp only [fillingAttach_equivShrink] at hq
   obtain rfl : i = j := by
     by_contra hij
     have hx : Φ i (SolidTorus.boundaryInclusion (g i q)) =
         Φ j (SolidTorus.boundaryInclusion (g j q')) := by
-      simpa [fillingAttach] using congrArg Subtype.val hq
+      simpa using congrArg Subtype.val hq
     exact (h.pairwiseDisjoint_range hij).ne_of_mem (mem_range_self _) (mem_range_self _) hx
   obtain rfl := (g i).injective (h.exteriorBoundaryInclusion_injective i hq)
   rfl
@@ -322,6 +338,8 @@ instance (h : IsSolidTorusLinkNeighborhood f Φ) (g : ι → Circle × Circle �
     T2Space (h.linkDehnFillingSpace g) :=
   t2Space_attach (h.fillingAttach g)
 
+end Small
+
 variable [Finite ι]
 
 /-- A Dehn filling space of the exterior of a link with finitely many components in a compact
@@ -339,31 +357,36 @@ def linkDehnFillingOfGluing (h : IsSolidTorusLinkNeighborhood f Φ)
     (g : ι → Circle × Circle ≃ₜ Circle × Circle) :
     LinkDehnFilling h (fun i ↦ (h.neighborhood i).fillingSlope (g i))
       (h.linkDehnFillingSpace g) where
-  exteriorEmbedding := pushout.inl (sigmaAttach (h.fillingAttach g)) (sigmaBoundaryInclusion ι)
+  exteriorEmbedding :=
+    pushout.inl (sigmaAttach (h.fillingAttach g)) (sigmaBoundaryInclusion (Shrink.{0} ι))
   isClosedEmbedding_exteriorEmbedding := isClosedEmbedding_inl _
   solidTorusEmbedding i p :=
-    pushout.inr (sigmaAttach (h.fillingAttach g)) (sigmaBoundaryInclusion ι) ⟨i, p⟩
+    pushout.inr (sigmaAttach (h.fillingAttach g)) (sigmaBoundaryInclusion (Shrink.{0} ι))
+      ⟨equivShrink.{0} ι i, p⟩
   isClosedEmbedding_solidTorusEmbedding _ :=
     (isClosedEmbedding_inr (h.injective_fillingAttach g)).comp IsClosedEmbedding.sigmaMk
   gluing := g
-  exteriorEmbedding_exteriorBoundaryInclusion i q := inl_apply_eq_inr (h.fillingAttach g) i q
+  exteriorEmbedding_exteriorBoundaryInclusion i q := by
+    rw [← fillingAttach_equivShrink h g i q]
+    exact inl_apply_eq_inr (h.fillingAttach g) (equivShrink.{0} ι i) q
   range_union_iUnion_range := by
     refine eq_univ_of_forall fun y ↦ ?_
     obtain ⟨x, hx⟩ | ⟨⟨i, p⟩, hp⟩ :=
       eq_univ_iff_forall.1 (range_inl_union_range_inr (h.fillingAttach g)) y
     · exact Or.inl ⟨x, hx⟩
-    · exact Or.inr (mem_iUnion.2 ⟨i, p, hp⟩)
+    · obtain ⟨i, rfl⟩ := (equivShrink.{0} ι).surjective i
+      exact Or.inr (mem_iUnion.2 ⟨i, p, hp⟩)
   range_inter_range_subset i := by
     rintro _ ⟨⟨x, rfl⟩, p, hp⟩
     obtain ⟨⟨j, q⟩, -, hq⟩ :=
-      (inl_eq_inr_iff (h.injective_fillingAttach g) x ⟨i, p⟩).1 hp.symm
+      (inl_eq_inr_iff (h.injective_fillingAttach g) x ⟨equivShrink.{0} ι i, p⟩).1 hp.symm
     cases hq
     exact ⟨q, hp⟩
   pairwiseDisjoint_range i j hij := by
     refine disjoint_left.2 ?_
     rintro _ ⟨p, rfl⟩ ⟨p', hp'⟩
-    exact hij (congrArg Sigma.fst ((isClosedEmbedding_inr (h.injective_fillingAttach g)).injective
-      hp')).symm
+    exact hij ((equivShrink.{0} ι).injective (congrArg Sigma.fst
+      ((isClosedEmbedding_inr (h.injective_fillingAttach g)).injective hp')).symm)
   fillingSlope_gluing _ := rfl
 
 /-- The Dehn filling of a link exterior along gluings glues the boundary tori by those

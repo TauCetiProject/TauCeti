@@ -122,8 +122,8 @@ theorem SolidTorus.extendsDisjointOpens_boundaryInclusion :
       hw.continuousOn).prodMk continuous_snd.continuousOn) (fun q ↦ ?_) (fun p hp ↦ ?_)
     (fun q ↦ ?_)
   · simp [show (2⁻¹ : ℝ) < 1 by norm_num]
-  · have h₁ : ‖‖(p.1 : ℂ)‖⁻¹ • (p.1 : ℂ)‖ = 1 := by
-      rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (lt_trans (by norm_num) hp).ne']
+  · have h₁ : ‖‖(p.1 : ℂ)‖⁻¹ • (p.1 : ℂ)‖ = 1 :=
+      norm_smul_inv_norm (𝕜 := ℝ) (norm_pos_iff.1 (lt_trans (by norm_num) hp))
     exact ⟨(⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, p.2), rfl⟩
   · simp
 

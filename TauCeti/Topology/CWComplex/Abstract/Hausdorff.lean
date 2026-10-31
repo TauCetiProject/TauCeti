@@ -86,8 +86,8 @@ theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
     ((ContinuousOn.inv₀ hν.norm.continuousOn fun z hz ↦ (lt_trans (by norm_num) hz).ne').smul
       hν.continuousOn) (fun s ↦ ?_) (fun z hz ↦ ?_) (fun s ↦ ?_)
   · simp [hνμ, hμ₁, show (2 : ℝ)⁻¹ < 1 by norm_num]
-  · have h₁ : ‖‖ν z‖⁻¹ • ν z‖ = 1 := by
-      rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (lt_trans (by norm_num) hz).ne']
+  · have h₁ : ‖‖ν z‖⁻¹ • ν z‖ = 1 :=
+      norm_smul_inv_norm (𝕜 := ℝ) (norm_pos_iff.1 (lt_trans (by norm_num) hz))
     exact ⟨ULift.up ⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, rfl⟩
   · simp [hνμ, hμ₁]
 
