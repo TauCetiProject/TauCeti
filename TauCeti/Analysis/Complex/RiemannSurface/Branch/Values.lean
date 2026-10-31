@@ -34,12 +34,12 @@ Riemann--Hurwitz application, rather than for these covering results.
   multiplicity one at every point of the specified source set.
 * `FiniteHolomorphicMap.isCoveringMapOn_iff`: a map with compact source is a covering on
   precisely the subsets disjoint from its branch values.
-* `FiniteHolomorphicMap.isCoveringMap_restrictPreimage_branchValues_compl`: the covering
-  obtained by deleting the branch values and their preimages.
+* `FiniteHolomorphicMap.isCoveringMap_restrictPreimage_compl`: the covering obtained by
+  deleting a set containing the branch values, and its preimage.
 * `FiniteHolomorphicMap.card_fiber_eq_degree_iff`: a fibre has as many points as the degree
   exactly when its value is not a branch value.
-* `FiniteHolomorphicMap.ncard_fiber_restrictPreimage_branchValues_compl`: every fibre of
-  the restricted covering has cardinality equal to the analytic degree.
+* `FiniteHolomorphicMap.ncard_fiber_restrictPreimage_compl`: every fibre of this restricted
+  covering has cardinality equal to the analytic degree.
 
 ## References
 
@@ -139,10 +139,16 @@ theorem isCoveringMapOn_iff (f : FiniteHolomorphicMap X Y) (s : Set Y) :
     intro x hx
     exact (f.notMem_branchValues_iff (f x)).1 (h hx) x rfl
 
+/-- Deleting a set containing every branch value, and its preimage, gives an ordinary covering
+map. -/
+theorem isCoveringMap_restrictPreimage_compl (f : FiniteHolomorphicMap X Y) {S : Set Y}
+    (hS : f.branchValues ⊆ S) : IsCoveringMap (Sᶜ.restrictPreimage f) :=
+  ((f.isCoveringMapOn_iff _).2 (compl_subset_compl.2 hS)).isCoveringMap_restrictPreimage
+
 /-- Deleting the branch values and their preimages gives an ordinary covering map. -/
 theorem isCoveringMap_restrictPreimage_branchValues_compl (f : FiniteHolomorphicMap X Y) :
     IsCoveringMap (f.branchValuesᶜ.restrictPreimage f) :=
-  ((f.isCoveringMapOn_iff _).2 subset_rfl).isCoveringMap_restrictPreimage
+  f.isCoveringMap_restrictPreimage_compl subset_rfl
 
 variable [PreconnectedSpace Y]
 
@@ -165,15 +171,22 @@ theorem card_fiber_eq_degree_iff (f : FiniteHolomorphicMap X Y) (y : Y) :
       rw [h x ((f.finite_fiber y).mem_toFinset.1 hx), Nat.sub_self]
     omega
 
+/-- Every fibre of the covering obtained by deleting a set containing every branch value has
+cardinality equal to the analytic degree of the original map. -/
+theorem ncard_fiber_restrictPreimage_compl (f : FiniteHolomorphicMap X Y) {S : Set Y}
+    (hS : f.branchValues ⊆ S) (y : ↥Sᶜ) :
+    ((Sᶜ.restrictPreimage f) ⁻¹' {y}).ncard = degree f := by
+  rw [← Set.ncard_image_of_injective _ Subtype.val_injective,
+    Set.image_val_preimage_restrictPreimage, Set.image_singleton,
+    Set.ncard_eq_toFinset_card _ (f.finite_fiber y)]
+  exact (f.card_fiber_eq_degree_iff y).2 fun hy ↦ y.property (hS hy)
+
 /-- Every fibre of the covering obtained by deleting branch values has cardinality equal to
 the analytic degree of the original map. -/
 theorem ncard_fiber_restrictPreimage_branchValues_compl (f : FiniteHolomorphicMap X Y)
     (y : ↥(f.branchValuesᶜ)) :
-    ((f.branchValuesᶜ.restrictPreimage f) ⁻¹' {y}).ncard = degree f := by
-  rw [← Set.ncard_image_of_injective _ Subtype.val_injective,
-    Set.image_val_preimage_restrictPreimage, Set.image_singleton,
-    Set.ncard_eq_toFinset_card _ (f.finite_fiber y)]
-  exact (f.card_fiber_eq_degree_iff y).2 y.property
+    ((f.branchValuesᶜ.restrictPreimage f) ⁻¹' {y}).ncard = degree f :=
+  f.ncard_fiber_restrictPreimage_compl subset_rfl y
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
 
