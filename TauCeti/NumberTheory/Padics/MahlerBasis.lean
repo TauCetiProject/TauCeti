@@ -66,9 +66,9 @@ theorem id_mul_mahler (n : ℕ) :
 theorem factorial_smul_mahler (n : ℕ) :
     n.factorial • mahler n = (descPochhammer ℤ_[p] n).toContinuousMap := by
   refine ContinuousMap.ext fun x => ?_
-  rw [ContinuousMap.smul_apply, mahler_apply, Polynomial.toContinuousMap_apply,
-    ← Ring.descPochhammer_eq_factorial_smul_choose, ← Polynomial.aeval_eq_smeval,
-    Polynomial.aeval_def, ← Polynomial.eval_map, algebraMap_int_eq, descPochhammer_map]
+  rw [ContinuousMap.smul_apply, mahler_apply, ← Ring.descPochhammer_eq_factorial_smul_choose]
+  simp [← Polynomial.aeval_eq_smeval, Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map,
+    descPochhammer_map]
 
 end TauCeti
 

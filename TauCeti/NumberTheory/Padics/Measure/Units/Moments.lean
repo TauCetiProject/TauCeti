@@ -8,17 +8,16 @@ module
 public import TauCeti.NumberTheory.Padics.Measure.CharacterIntegral
 public import TauCeti.NumberTheory.Padics.Measure.Moments
 public import TauCeti.NumberTheory.Padics.Measure.Units.Basic
-import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Positive moments and regular elements of the measure algebra of `ℤ_pˣ`
 
 Let `M = D(ℤ_pˣ, ℤ_p)` be the convolution algebra of `ℤ_p`-valued measures on the unit group.
-The power characters `t_k : u ↦ u ^ k` are continuous characters, so `μ ↦ μ (t_k)` is a ring
-homomorphism `M → ℤ_p`. This file proves that the positive moments `μ (t_k)`, `k > 0`, determine a
-measure on the units: pushed forward to `ℤ_p`, a measure with vanishing positive moments has
-constant Amice transform, hence is a multiple of the Dirac measure at `0`, and a measure supported
-on the units can only be such a multiple if it vanishes.
+The power characters `t_k : u ↦ u ^ k` (`PadicInt.unitsPowCharacter p k`) are continuous
+characters, so `μ ↦ μ (t_k)` is a ring homomorphism `M → ℤ_p`. This file proves that the positive
+moments `μ (t_k)`, `k > 0`, determine a measure on the units: pushed forward to `ℤ_p`, a measure
+with vanishing positive moments has constant Amice transform, hence is a multiple of the Dirac
+measure at `0`, and a measure supported on the units can only be such a multiple if it vanishes.
 
 Since `ℤ_p` is a domain, it follows that a measure all of whose positive moments are nonzero is a
 non-zero-divisor of `M`. In particular `δ_a - 1` is a non-zero-divisor exactly when the unit `a`
@@ -26,10 +25,6 @@ has infinite order, for instance when `a = 1 + p`. These are the clearing factor
 pseudo-measures on `ℤ_pˣ`: they become units in the total quotient ring of `M`. As a first
 consequence, the total mass `μ ↦ μ 1` does not extend to a ring homomorphism from the total
 quotient ring of `M` to `ℤ_p`, since it kills the regular element `δ_{1+p} - 1`.
-
-## Main definitions
-
-* `PadicInt.unitsPowCharacter p k`: the continuous character `u ↦ u ^ k` of `ℤ_pˣ`.
 
 ## Main results
 
@@ -55,22 +50,6 @@ public noncomputable section
 open scoped AbstractMeasure nonZeroDivisors
 
 variable {p : ℕ} [Fact p.Prime]
-
-namespace PadicInt
-
-variable (p) in
-/-- The power character `u ↦ u ^ k` of the unit group `ℤ_pˣ`, as a continuous homomorphism to
-`ℤ_p`. -/
-def unitsPowCharacter (k : ℕ) : ℤ_[p]ˣ →ₜ* ℤ_[p] where
-  toMonoidHom := (powMonoidHom k).comp (Units.coeHom ℤ_[p])
-  continuous_toFun := Units.continuous_val.pow k
-
-@[simp]
-theorem unitsPowCharacter_apply (k : ℕ) (u : ℤ_[p]ˣ) :
-    unitsPowCharacter p k u = (u : ℤ_[p]) ^ k :=
-  (rfl)
-
-end PadicInt
 
 namespace AbstractMeasure
 
