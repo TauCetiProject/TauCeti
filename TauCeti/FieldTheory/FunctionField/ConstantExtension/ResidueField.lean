@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FiniteDescent
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis
 public import TauCeti.FieldTheory.FunctionField.Place.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
+public import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
 
 /-!
 # Residue fields in a constant field extension
@@ -47,6 +48,8 @@ place when `k` is perfect.
   `k' / k` is normal and `F_P` embeds into `k'` over `k`.
 * `TauCeti.Place.exists_constantCompositum_eq_top_and_forall_degree_eq_one`: a place with
   separable residue field becomes rational after a finite separable extension of constants.
+* `TauCeti.Place.exists_constantCompositum_eq_top_nonempty_algHom`: finitely many residue fields
+  separable over `k` embed into one finite Galois extension of constants.
 
 ## Reference
 
@@ -57,6 +60,8 @@ place when `k` is perfect.
 public section
 
 open Module
+
+open scoped IntermediateField Polynomial
 
 namespace TauCeti
 
@@ -277,6 +282,65 @@ theorem exists_constantCompositum_eq_top_and_forall_degree_eq_one (hF : IsFuncti
   refine ⟨F', k', inferInstance, inferInstance, htop, fun P' hP' ↦ ?_⟩
   exact degree_eq_one_of_constantCompositum_eq_top hF hex htop P' (hP' ▸ φ)
 
+omit [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+  [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsSeparable k k'] in
+/-- **Separable residue fields embed into one finite Galois extension of constants**: the residue
+fields of finitely many places of function fields `F / k` and `E / k`, all separable over `k`,
+embed over `k` into one finite Galois extension `k'` of `k`, realised as a constant field
+extension `F · k'` inside an algebraic closure of `F`. -/
+theorem exists_constantCompositum_eq_top_nonempty_algHom {E : Type*} [Field E] [Algebra k E]
+    (hF : IsFunctionField k F) (hE : IsFunctionField k E) (s : Finset (Place k F))
+    (t : Finset (Place k E))
+    (hs : ∀ R ∈ s, Algebra.IsSeparable k R.ResidueField)
+    (ht : ∀ Q ∈ t, Algebra.IsSeparable k Q.ResidueField) :
+    ∃ (F' : IntermediateField F (AlgebraicClosure F)) (k' : IntermediateField k F'),
+      FiniteDimensional k k' ∧ Normal k k' ∧ Algebra.IsSeparable k k' ∧
+        constantCompositum F k' F' = ⊤ ∧ (∀ R ∈ s, Nonempty (R.ResidueField →ₐ[k] k')) ∧
+          ∀ Q ∈ t, Nonempty (Q.ResidueField →ₐ[k] k') := by
+  classical
+  /- Each residue field is generated over `k` by one separable element, and `f` is the product of
+  the distinct minimal polynomials of these generators, a separable polynomial. -/
+  choose α hα using fun R : s ↦
+    letI := (R : Place k F).finiteDimensional_residueField hF
+    letI := hs R R.2
+    Field.exists_primitive_element k (R : Place k F).ResidueField
+  choose β hβ using fun Q : t ↦
+    letI := (Q : Place k E).finiteDimensional_residueField hE
+    letI := ht Q Q.2
+    Field.exists_primitive_element k (Q : Place k E).ResidueField
+  have hαsep (R : s) : IsSeparable k (α R) := by
+    have := hs R R.2
+    exact Algebra.IsSeparable.isSeparable k (α R)
+  have hβsep (Q : t) : IsSeparable k (β Q) := by
+    have := ht Q Q.2
+    exact Algebra.IsSeparable.isSeparable k (β Q)
+  set T : Finset k[X] := Finset.univ.image (fun R ↦ minpoly k (α R)) ∪
+    Finset.univ.image (fun Q ↦ minpoly k (β Q))
+  have hT (g : k[X]) (hg : g ∈ T) : g.Monic ∧ Irreducible g ∧ g.Separable := by
+    simp only [T, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and] at hg
+    rcases hg with ⟨R, rfl⟩ | ⟨Q, rfl⟩
+    · exact ⟨minpoly.monic (hαsep R).isIntegral, minpoly.irreducible (hαsep R).isIntegral,
+        hαsep R⟩
+    · exact ⟨minpoly.monic (hβsep Q).isIntegral, minpoly.irreducible (hβsep Q).isIntegral,
+        hβsep Q⟩
+  set f : k[X] := ∏ g ∈ T, g
+  have hfsep : f.Separable := by
+    refine Polynomial.separable_prod' (fun g hg h hh hne ↦ ?_) fun g hg ↦ (hT g hg).2.2
+    -- Distinct monic irreducible polynomials are coprime.
+    refine ((hT g hg).2.1.coprime_iff_not_dvd).mpr fun hdvd ↦ hne ?_
+    exact Polynomial.eq_of_monic_of_associated (hT g hg).1 (hT h hh).1
+      ((hT g hg).2.1.associated_of_dvd (hT h hh).2.1 hdvd)
+  obtain ⟨F', k', _, _, hsplit, _, h⟩ :=
+    exists_finiteDimensional_normal_splits_constantCompositum_eq_top F f
+  -- The residue fields embed into `k'`, since `f` splits in `k'`.
+  refine ⟨F', k', inferInstance, inferInstance,
+    Algebra.isSeparable_of_separable_splitting_field k k' hfsep, h, fun R hR ↦ ?_, fun Q hQ ↦ ?_⟩
+  · exact nonempty_algHom_of_minpoly_dvd (hα ⟨R, hR⟩) (hαsep ⟨R, hR⟩).isIntegral hfsep.ne_zero
+      (Finset.dvd_prod_of_mem _ (Finset.mem_union_left _
+        (Finset.mem_image_of_mem _ (Finset.mem_univ _)))) hsplit
+  · exact nonempty_algHom_of_minpoly_dvd (hβ ⟨Q, hQ⟩) (hβsep ⟨Q, hQ⟩).isIntegral hfsep.ne_zero
+      (Finset.dvd_prod_of_mem _ (Finset.mem_union_right _
+        (Finset.mem_image_of_mem _ (Finset.mem_univ _)))) hsplit
 
 end Place
 

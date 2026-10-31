@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.MultiquadraticSplitting
--- `LegendreEvenPrimeDiscriminant` supplies the supplementary law for the radicand `2`, used
+-- `Legendre.PrimeDiscriminant.Even` supplies the supplementary law for the radicand `2`, used
 -- only inside a proof below, so it is not re-exported.
-import TauCeti.NumberTheory.Multiquadratic.Legendre.EvenPrimeDiscriminant
+import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Even
 import TauCeti.NumberTheory.Multiquadratic.Dyadic.Decomposition
 import TauCeti.NumberTheory.Multiquadratic.Prime.Radicands
-import TauCeti.NumberTheory.NumberField.Internal.PrimeDivisibility
 
 /-!
 # Prime-radicand splitting in multiquadratic fields
@@ -48,13 +47,6 @@ namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- A rational prime `q` different from every prime in a family `p` divides none of the
-corresponding integer radicands. -/
-private theorem forall_not_intCast_prime_dvd_natPrimes {ι : Type*} (p : ι → ℕ)
-    (hp : ∀ i, (p i).Prime) {q : ℕ} [Fact q.Prime] (hne : ∀ i, q ≠ p i) :
-    ∀ i, ¬ (q : ℤ) ∣ (p i : ℤ) :=
-  fun i => Internal.not_intCast_prime_dvd_natPrime (hp i) (hne i)
-
 /-- **Prime-radicand multiquadratic splitting law.** Let `K` be generated over `ℚ` by square
 roots of a finite family of rational primes `p i`. If `q` is an odd rational prime distinct from
 every `p i`, then `q` splits completely in `K` exactly when every `p i` is a quadratic residue
@@ -66,7 +58,8 @@ theorem ncard_primesOver_sqrt_primes_iff {ι : Type*} [Finite ι] (p : ι → �
     (primesOver (span {(q : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔
       ∀ i, legendreSym q (p i : ℤ) = 1 :=
   ncard_primesOver_multiquadratic_iff (d := fun i => (p i : ℤ)) (r := r) hr htop hodd
-    (forall_not_intCast_prime_dvd_natPrimes p hp hne)
+    fun i => Int.natCast_dvd_natCast.not.mpr <|
+      (Nat.prime_dvd_prime_iff_eq Fact.out (hp i)).not.mpr (hne i)
 
 /-- The character condition for the radicands `2` and `3`, with the `√2` condition expanded
 using the supplementary law for `2`. -/

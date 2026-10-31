@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.LocalProperties.ProjectiveDimension
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+import TauCeti.Algebra.Module.PseudoCoherent.FaithfullyFlat
 
 /-!
 # The global dimension of a ring
@@ -32,6 +35,8 @@ dimension is finite, and then it equals the Krull dimension.
   modules, or only of the cyclic modules `R ⧸ I` (Stacks, Lemma 10.109.12 (065T)).
 * `Submonoid.globalDimension_localization_le`: localization does not increase the global dimension
   (Stacks, Lemma 10.109.13 (00O8)).
+* `TauCeti.globalDimension_le_of_faithfullyFlat`: a noetherian ring has global dimension at most
+  that of any faithfully flat algebra over it.
 * `TauCeti.globalDimension_eq_zero_of_isSemisimpleRing`: a nonzero semisimple ring, for instance
   a field, has global dimension zero.
 
@@ -146,6 +151,29 @@ theorem _root_.Submonoid.globalDimension_localization_le [Small.{v} R] (S : Subm
   rw [← projectiveDimension_eq_of_iso e]
   exact (ModuleCat.projectiveDimension_le_projectiveDimension_of_isLocalizedModule S M).trans
     (ModuleCat.projectiveDimension_le_globalDimension M)
+
+/-- **Global dimension descends along faithfully flat algebras.** A noetherian ring `R` has global
+dimension at most that of any faithfully flat `R`-algebra `S`: the projective dimension of a
+finite `R`-module equals that of its base change to `S`
+(`ModuleCat.hasProjectiveDimensionLE_baseChange_iff`), and finite modules detect the global
+dimension. -/
+theorem globalDimension_le_of_faithfullyFlat {S : Type u} [CommRing S] [Algebra R S]
+    [IsNoetherianRing R] [Module.FaithfullyFlat R S] :
+    globalDimension.{u} R ≤ globalDimension.{u} S := by
+  induction h : globalDimension.{u} S using WithBot.recBotCoe with
+  | bot =>
+    -- `S` is zero, and `R` embeds into `S`.
+    have : Subsingleton S := (globalDimension_eq_bot_iff S).mp h
+    have : Subsingleton R := (FaithfulSMul.algebraMap_injective R S).subsingleton
+    exact ((globalDimension_eq_bot_iff R).mpr this).le
+  | coe d =>
+    induction d with
+    | top => exact le_top
+    | coe n =>
+      refine ((globalDimension_le_tfae.{u} R n).out 2 1).mp ?_
+      intro M _
+      exact (ModuleCat.hasProjectiveDimensionLE_baseChange_iff .of_isNoetherianRing).mp
+        ((globalDimension_le_iff_hasProjectiveDimensionLE S n).mp h.le _)
 
 end CommRing
 
