@@ -26,7 +26,8 @@ The inverse rotation of the cone triangle of a closed degree-zero morphism `u : 
 `cone u ≅ (cone u)⟦-1⟧⟦1⟧` of the shift of `H⁰` are the classes of closed degree-zero morphisms
 built from the comparison morphisms `TauCeti.DGTwistedObject.fromShift` and
 `TauCeti.DGTwistedObject.toShift` (`TauCeti.DGTwistedObject.shiftShiftNeg_hom_of` and
-`TauCeti.DGTwistedObject.shiftNegShift_inv_of`).
+`TauCeti.DGTwistedObject.shiftNegShift_inv_of` in
+`TauCeti/CategoryTheory/DG/Twisted/HomotopyShift.lean`).
 
 Write `α : (cone u)⟦-1⟧ ⟶ P` for a closed representative of the first morphism
 (`TauCeti.DGTwistedObject.coneInvRotateMorphism`).  As a graded object,
@@ -48,9 +49,6 @@ the projection onto `P` shows that `u` followed by `Q ⟶ cone α` is homotopic 
 
 ## Main definitions
 
-* `TauCeti.DGTwistedObject.shiftShiftNegHom`, `TauCeti.DGTwistedObject.shiftNegShiftInv` and
-  `TauCeti.DGTwistedObject.shiftNegShiftHom`: the closed degree-zero morphisms `P⟦1⟧⟦-1⟧ ⟶ P`,
-  `P ⟶ P⟦-1⟧⟦1⟧` and `P⟦-1⟧⟦1⟧ ⟶ P` representing the isomorphisms of the shift of `H⁰`.
 * `TauCeti.DGTwistedObject.coneInvRotateMorphism`: the closed morphism `(cone u)⟦-1⟧ ⟶ P`
   representing the first morphism of the inverse rotation of the cone triangle of `u`.
 * `TauCeti.DGTwistedObject.coneInvRotateIso` and `TauCeti.DGTwistedObject.coneTriangleInvRotateIso`:
@@ -86,162 +84,6 @@ namespace DGTwistedObject
 open DGHomotopyCategory
 
 variable {R : Type v} [CommRing R] {C : Type u} [DGCategory R C]
-
-section unit
-
-variable (P : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C)))
-
-/-! ### The isomorphisms `P⟦1⟧⟦-1⟧ ≅ P` and `P⟦-1⟧⟦1⟧ ≅ P` -/
-
-variable (R) in
-/-- The closed degree-zero morphism `P⟦1⟧⟦-1⟧ ⟶ P`: the shift by `-1` of the comparison morphism
-`P⟦1⟧ ⟶ P`, followed by the comparison morphism `P⟦-1⟧ ⟶ P`.  It represents the isomorphism
-`P⟦1⟧⟦-1⟧ ≅ P` of the shift of the homotopy category
-(`TauCeti.DGTwistedObject.shiftShiftNeg_hom_of`). -/
-noncomputable def shiftShiftNegHom :
-    DGHom R 0 ((shiftFunctor R (-1)).obj ((shiftFunctor R 1).obj P)) P :=
-  dgComp R ((shiftFunctor R (-1)).dgMap 1 (fromShift P 1)) (fromShift P (-1)) (add_neg_cancel 1)
-
-theorem shiftShiftNegHom_def :
-    shiftShiftNegHom R P =
-      dgComp R ((shiftFunctor R (-1)).dgMap 1 (fromShift P 1)) (fromShift P (-1))
-        (add_neg_cancel 1) :=
-  (rfl)
-
-/-- The morphism `P⟦1⟧⟦-1⟧ ⟶ P` is closed. -/
-@[simp↓]
-theorem dgDifferential_shiftShiftNegHom : dgDifferential R 0 (shiftShiftNegHom R P) = 0 := by
-  rw [shiftShiftNegHom_def, dgDifferential_dgComp, ← EnrichedFunctor.dgMap_dgDifferential,
-    dgDifferential_fromShift, dgDifferential_fromShift, map_zero, zero_dgComp, dgComp_zero,
-    smul_zero, add_zero]
-
-/-- The isomorphism `P⟦1⟧⟦-1⟧ ≅ P` of the shift of the homotopy category is the class of
-`TauCeti.DGTwistedObject.shiftShiftNegHom`. -/
-theorem shiftShiftNeg_hom_of :
-    (shiftShiftNeg (DGHomotopyCategory.of R P) (1 : ℤ)).hom =
-      homOf R (shiftShiftNegHom R P)
-        ((mem_dgCycles R).mpr (dgDifferential_shiftShiftNegHom P)) := by
-  dsimp only [shiftShiftNeg, shiftEquiv, shiftEquiv', Iso.symm_symm_eq, shiftFunctorCompIsoId,
-    Iso.app_hom, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app]
-  -- `shiftFunctorAdd'` at `1 + -1 = 0` is `shiftFunctorAdd`, as `1 + -1` reduces to `0`.
-  rw [show shiftFunctorAdd' _ (1 : ℤ) (-1) 0 (add_neg_cancel 1) =
-    shiftFunctorAdd _ (1 : ℤ) (-1) from shiftFunctorAdd'_eq_shiftFunctorAdd _ _ _,
-    shiftFunctorAdd_inv_app_of, shiftFunctorZero_hom_app_of]
-  refine homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ ?_
-  rw [shiftAddInv_def, dgComp_assoc, dgComp_assoc]
-  -- `P⟦1 + -1⟧ ⟶ P` is `P⟦0⟧ ⟶ P` up to the definitional equality of `1 + -1` and `0`.
-  · erw [dgComp_toShift_fromShift (n := 0), dgComp_dgId]
-    rfl
-  all_goals omega
-
-variable (R) in
-/-- The closed degree-zero morphism `P ⟶ P⟦-1⟧⟦1⟧`: minus the comparison morphisms
-`P ⟶ P⟦-1⟧ ⟶ P⟦-1⟧⟦1⟧`.  It represents the inverse of the isomorphism `P⟦-1⟧⟦1⟧ ≅ P` of the
-shift of the homotopy category (`TauCeti.DGTwistedObject.shiftNegShift_inv_of`); the sign is the
-Koszul sign `(-1)^((-1) * 1)` of `TauCeti.DGTwistedObject.shiftAddHom_eq_negOnePow_smul_dgComp`. -/
-noncomputable def shiftNegShiftInv :
-    DGHom R 0 P ((shiftFunctor R 1).obj ((shiftFunctor R (-1)).obj P)) :=
-  -dgComp R (toShift P (-1)) (toShift ((shiftFunctor R (-1)).obj P) 1) (by omega)
-
-variable (R) in
-/-- The closed degree-zero morphism `P⟦-1⟧⟦1⟧ ⟶ P`: minus the comparison morphisms
-`P⟦-1⟧⟦1⟧ ⟶ P⟦-1⟧ ⟶ P`, inverse to `TauCeti.DGTwistedObject.shiftNegShiftInv`.  It represents the
-isomorphism `P⟦-1⟧⟦1⟧ ≅ P` of the shift of the homotopy category
-(`TauCeti.DGTwistedObject.shiftNegShift_hom_of`). -/
-noncomputable def shiftNegShiftHom :
-    DGHom R 0 ((shiftFunctor R 1).obj ((shiftFunctor R (-1)).obj P)) P :=
-  -dgComp R (fromShift ((shiftFunctor R (-1)).obj P) 1) (fromShift P (-1)) (add_neg_cancel 1)
-
-theorem shiftNegShiftInv_def :
-    shiftNegShiftInv R P =
-      -dgComp R (toShift P (-1)) (toShift ((shiftFunctor R (-1)).obj P) 1) (by omega) :=
-  (rfl)
-
-theorem shiftNegShiftHom_def :
-    shiftNegShiftHom R P =
-      -dgComp R (fromShift ((shiftFunctor R (-1)).obj P) 1) (fromShift P (-1))
-        (add_neg_cancel 1) :=
-  (rfl)
-
-/-- The morphism `P ⟶ P⟦-1⟧⟦1⟧` is closed. -/
-@[simp↓]
-theorem dgDifferential_shiftNegShiftInv : dgDifferential R 0 (shiftNegShiftInv R P) = 0 := by
-  simp -proj only [shiftNegShiftInv_def, map_neg, dgDifferential_dgComp, dgDifferential_toShift,
-    zero_dgComp, dgComp_zero, smul_zero, add_zero, neg_zero]
-
-/-- The morphism `P⟦-1⟧⟦1⟧ ⟶ P` is closed. -/
-@[simp↓]
-theorem dgDifferential_shiftNegShiftHom : dgDifferential R 0 (shiftNegShiftHom R P) = 0 := by
-  simp -proj only [shiftNegShiftHom_def, map_neg, dgDifferential_dgComp, dgDifferential_fromShift,
-    zero_dgComp, dgComp_zero, smul_zero, add_zero, neg_zero]
-
-/-- The morphisms `P ⟶ P⟦-1⟧⟦1⟧ ⟶ P` compose to the identity. -/
-@[simp↓]
-theorem dgComp_shiftNegShiftInv_shiftNegShiftHom :
-    dgComp R (shiftNegShiftInv R P) (shiftNegShiftHom R P) (add_zero 0) = dgId R P := by
-  rw [shiftNegShiftInv_def, shiftNegShiftHom_def, neg_dgComp, dgComp_neg, neg_neg, dgComp_assoc,
-    dgComp_toShift_fromShift_assoc, dgComp_toShift_fromShift]
-  all_goals omega
-
-/-- The morphisms `P⟦-1⟧⟦1⟧ ⟶ P ⟶ P⟦-1⟧⟦1⟧` compose to the identity. -/
-@[simp↓]
-theorem dgComp_shiftNegShiftHom_shiftNegShiftInv :
-    dgComp R (shiftNegShiftHom R P) (shiftNegShiftInv R P) (add_zero 0) = dgId R _ := by
-  rw [shiftNegShiftInv_def, shiftNegShiftHom_def, neg_dgComp, dgComp_neg, neg_neg, dgComp_assoc,
-    dgComp_fromShift_toShift_assoc, dgComp_fromShift_toShift]
-  all_goals omega
-
-/-- The morphisms `P ⟶ P⟦-1⟧⟦1⟧ ⟶ P` followed by `x` compose to `x`. -/
-@[simp↓]
-theorem dgComp_shiftNegShiftInv_shiftNegShiftHom_assoc
-    {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {n : ℤ} (x : DGHom R n P Z) :
-    dgComp R (shiftNegShiftInv R P) (dgComp R (shiftNegShiftHom R P) x (zero_add n)) (zero_add n) =
-      x := by
-  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
-    dgComp_shiftNegShiftInv_shiftNegShiftHom, dgId_dgComp]
-
-/-- The morphisms `P⟦-1⟧⟦1⟧ ⟶ P ⟶ P⟦-1⟧⟦1⟧` followed by `x` compose to `x`. -/
-@[simp↓]
-theorem dgComp_shiftNegShiftHom_shiftNegShiftInv_assoc
-    {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {n : ℤ}
-    (x : DGHom R n ((shiftFunctor R 1).obj ((shiftFunctor R (-1)).obj P)) Z) :
-    dgComp R (shiftNegShiftHom R P) (dgComp R (shiftNegShiftInv R P) x (zero_add n)) (zero_add n) =
-      x := by
-  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
-    dgComp_shiftNegShiftHom_shiftNegShiftInv, dgId_dgComp]
-
-/-- The inverse of the isomorphism `P⟦-1⟧⟦1⟧ ≅ P` of the shift of the homotopy category is the
-class of `TauCeti.DGTwistedObject.shiftNegShiftInv`. -/
-theorem shiftNegShift_inv_of :
-    (shiftNegShift (DGHomotopyCategory.of R P) (1 : ℤ)).inv =
-      homOf R (shiftNegShiftInv R P)
-        ((mem_dgCycles R).mpr (dgDifferential_shiftNegShiftInv P)) := by
-  dsimp only [shiftNegShift, shiftEquiv, shiftEquiv', shiftFunctorCompIsoId,
-    Iso.app_inv, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app]
-  -- `shiftFunctorAdd'` at `-1 + 1 = 0` is `shiftFunctorAdd`, as `-1 + 1` reduces to `0`.
-  rw [show shiftFunctorAdd' _ (-1 : ℤ) 1 0 (neg_add_cancel 1) =
-    shiftFunctorAdd _ (-1 : ℤ) 1 from shiftFunctorAdd'_eq_shiftFunctorAdd _ _ _,
-    shiftFunctorAdd_hom_app_of, shiftFunctorZero_inv_app_of]
-  refine homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ ?_
-  rw [shiftAddHom_eq_negOnePow_smul_dgComp, dgComp_units_smul]
-  -- `P ⟶ P⟦0⟧ ⟶ P` is the identity, with `P⟦-1 + 1⟧` definitionally `P⟦0⟧`.
-  erw [dgComp_toShift_fromShift_assoc (n := 0)]
-  rw [shiftNegShiftInv_def, mul_one, Int.negOnePow_neg, Int.negOnePow_one, Units.neg_smul, one_smul]
-
-/-- The isomorphism `P⟦-1⟧⟦1⟧ ≅ P` of the shift of the homotopy category is the class of
-`TauCeti.DGTwistedObject.shiftNegShiftHom`. -/
-theorem shiftNegShift_hom_of :
-    (shiftNegShift (DGHomotopyCategory.of R P) (1 : ℤ)).hom =
-      homOf R (shiftNegShiftHom R P)
-        ((mem_dgCycles R).mpr (dgDifferential_shiftNegShiftHom P)) := by
-  have h : (shiftNegShift (DGHomotopyCategory.of R P) (1 : ℤ)).inv ≫
-      homOf R (shiftNegShiftHom R P) ((mem_dgCycles R).mpr (dgDifferential_shiftNegShiftHom P)) =
-        𝟙 _ := by
-    rw [shiftNegShift_inv_of]
-    exact homOf_comp_eq_id_of_dgComp_eq_dgId R _ _ (dgComp_shiftNegShiftInv_shiftNegShiftHom P)
-  exact ((shiftNegShift (DGHomotopyCategory.of R P) (1 : ℤ)).inv_comp_eq_id.mp h).symm
-
-end unit
 
 /-! ### The inverse rotation of a cone triangle -/
 
@@ -535,6 +377,32 @@ noncomputable def coneTriangleInvRotateIso :
           dgComp_extensionInr_extensionSnd, dgComp_dgId]
       refine (congrArg (fun f ↦ _ ≫ f) ((CategoryTheory.shiftFunctor _ (1 : ℤ)).map_id _)).trans
         ((Category.comp_id _).trans h))
+
+@[simp]
+theorem coneTriangleInvRotateIso_hom_hom₁ : (coneTriangleInvRotateIso hu).hom.hom₁ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+theorem coneTriangleInvRotateIso_hom_hom₂ : (coneTriangleInvRotateIso hu).hom.hom₂ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+theorem coneTriangleInvRotateIso_hom_hom₃ :
+    (coneTriangleInvRotateIso hu).hom.hom₃ = (coneInvRotateIso hu).hom :=
+  (rfl)
+
+@[simp]
+theorem coneTriangleInvRotateIso_inv_hom₁ : (coneTriangleInvRotateIso hu).inv.hom₁ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+theorem coneTriangleInvRotateIso_inv_hom₂ : (coneTriangleInvRotateIso hu).inv.hom₂ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+theorem coneTriangleInvRotateIso_inv_hom₃ :
+    (coneTriangleInvRotateIso hu).inv.hom₃ = (coneInvRotateIso hu).inv :=
+  (rfl)
 
 end invRotate
 

@@ -37,6 +37,10 @@ at the level of DG morphisms.
   `TauCeti.DGTwistedObject.shiftFunctorZero_hom_app_of` and
   `TauCeti.DGTwistedObject.shiftFunctorAdd_hom_app_of`: the shift of `H⁰` and its isomorphisms
   are induced by the DG shift and the comparison morphisms.
+* `TauCeti.DGTwistedObject.shiftShiftNeg_hom_of`, `TauCeti.DGTwistedObject.shiftNegShift_hom_of`
+  and `TauCeti.DGTwistedObject.shiftNegShift_inv_of`: the isomorphisms `P⟦1⟧⟦-1⟧ ≅ P` and
+  `P⟦-1⟧⟦1⟧ ≅ P` of the shift of `H⁰` are the classes of the closed degree-zero morphisms
+  `TauCeti.DGTwistedObject.shiftShiftNegHom` and `TauCeti.DGTwistedObject.shiftNegShiftHom`.
 
 ## References
 
@@ -289,6 +293,56 @@ theorem shiftFunctorAdd_inv_app_of (a b : ℤ) :
       homOf R (shiftAddInv P a b) ((mem_dgCycles R).mpr (dgDifferential_shiftAddInv P a b)) := by
   rw [ShiftMkCore.shiftFunctorAdd_eq]
   rfl
+
+/-- The isomorphism `P⟦1⟧⟦-1⟧ ≅ P` of the shift of the homotopy category is the class of
+`TauCeti.DGTwistedObject.shiftShiftNegHom`. -/
+theorem shiftShiftNeg_hom_of :
+    (shiftShiftNeg (DGHomotopyCategory.of R P) (1 : ℤ)).hom =
+      homOf R (shiftShiftNegHom R P)
+        ((mem_dgCycles R).mpr (dgDifferential_shiftShiftNegHom P)) := by
+  dsimp only [shiftShiftNeg, shiftEquiv, shiftEquiv', Iso.symm_symm_eq, shiftFunctorCompIsoId,
+    Iso.app_hom, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app]
+  -- `shiftFunctorAdd'` at `1 + -1 = 0` is `shiftFunctorAdd`, as `1 + -1` reduces to `0`.
+  rw [show shiftFunctorAdd' _ (1 : ℤ) (-1) 0 (add_neg_cancel 1) =
+    shiftFunctorAdd _ (1 : ℤ) (-1) from shiftFunctorAdd'_eq_shiftFunctorAdd _ _ _,
+    shiftFunctorAdd_inv_app_of, shiftFunctorZero_hom_app_of]
+  refine homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ ?_
+  rw [shiftAddInv_def, dgComp_assoc, dgComp_assoc]
+  -- `P⟦1 + -1⟧ ⟶ P` is `P⟦0⟧ ⟶ P` up to the definitional equality of `1 + -1` and `0`.
+  · erw [dgComp_toShift_fromShift (n := 0), dgComp_dgId]
+    exact (shiftShiftNegHom_def P).symm
+  all_goals omega
+
+/-- The inverse of the isomorphism `P⟦-1⟧⟦1⟧ ≅ P` of the shift of the homotopy category is the
+class of `TauCeti.DGTwistedObject.shiftNegShiftInv`. -/
+theorem shiftNegShift_inv_of :
+    (shiftNegShift (DGHomotopyCategory.of R P) (1 : ℤ)).inv =
+      homOf R (shiftNegShiftInv R P)
+        ((mem_dgCycles R).mpr (dgDifferential_shiftNegShiftInv P)) := by
+  dsimp only [shiftNegShift, shiftEquiv, shiftEquiv', shiftFunctorCompIsoId,
+    Iso.app_inv, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app]
+  -- `shiftFunctorAdd'` at `-1 + 1 = 0` is `shiftFunctorAdd`, as `-1 + 1` reduces to `0`.
+  rw [show shiftFunctorAdd' _ (-1 : ℤ) 1 0 (neg_add_cancel 1) =
+    shiftFunctorAdd _ (-1 : ℤ) 1 from shiftFunctorAdd'_eq_shiftFunctorAdd _ _ _,
+    shiftFunctorAdd_hom_app_of, shiftFunctorZero_inv_app_of]
+  refine homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ ?_
+  rw [shiftAddHom_eq_negOnePow_smul_dgComp, dgComp_units_smul]
+  -- `P ⟶ P⟦0⟧ ⟶ P` is the identity, with `P⟦-1 + 1⟧` definitionally `P⟦0⟧`.
+  erw [dgComp_toShift_fromShift_assoc (n := 0)]
+  rw [shiftNegShiftInv_def, mul_one, Int.negOnePow_neg, Int.negOnePow_one, Units.neg_smul, one_smul]
+
+/-- The isomorphism `P⟦-1⟧⟦1⟧ ≅ P` of the shift of the homotopy category is the class of
+`TauCeti.DGTwistedObject.shiftNegShiftHom`. -/
+theorem shiftNegShift_hom_of :
+    (shiftNegShift (DGHomotopyCategory.of R P) (1 : ℤ)).hom =
+      homOf R (shiftNegShiftHom R P)
+        ((mem_dgCycles R).mpr (dgDifferential_shiftNegShiftHom P)) := by
+  have h : (shiftNegShift (DGHomotopyCategory.of R P) (1 : ℤ)).inv ≫
+      homOf R (shiftNegShiftHom R P) ((mem_dgCycles R).mpr (dgDifferential_shiftNegShiftHom P)) =
+        𝟙 _ := by
+    rw [shiftNegShift_inv_of]
+    exact homOf_comp_eq_id_of_dgComp_eq_dgId R _ _ (dgComp_shiftNegShiftInv_shiftNegShiftHom P)
+  exact ((shiftNegShift (DGHomotopyCategory.of R P) (1 : ℤ)).inv_comp_eq_id.mp h).symm
 
 end homotopy
 
