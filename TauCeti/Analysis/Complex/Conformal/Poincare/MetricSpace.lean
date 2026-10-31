@@ -14,7 +14,7 @@ public import Mathlib.Topology.MetricSpace.Isometry
 
 The symmetry, nonnegativity, vanishing-on-the-diagonal and triangle-inequality lemmas already
 proved for the hyperbolic (Poincaré) distance `hyperbolicDist` on the open unit disc
-(`HyperbolicDistance.lean`, `HyperbolicTriangle.lean`) are exactly the metric-space axioms.
+(`Hyperbolic/Distance.lean`, `Hyperbolic/Triangle.lean`) are exactly the metric-space axioms.
 This file records them as an actual `MetricSpace` instance.
 
 The instance cannot be attached to `Complex.UnitDisc`, which already carries the Euclidean
@@ -36,14 +36,9 @@ validating that the Poincaré distance is the automorphism-invariant metric:
   `PoincareDisc.isometry_unitDiscStandardAutomorphismEquiv` — the disc Moebius factors and the
   standard automorphisms as Poincaré isometries.
 
-This completes the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
-`𝔻`" (see `ConformalMapping/README.md`), discharging the `MetricSpace`-instance step that the
-docstrings of `HyperbolicDistance.lean` and `HyperbolicTriangle.lean` deferred as future work.
-It reuses Tau Ceti's hyperbolic-distance and disc-automorphism API. As with the rest of the
-L0--L3 conformal-mapping material, it is coordinated with the upstream Mathlib RMT effort
-leanprover-community/mathlib4#33505 and should be refactored to upstream API if that work lands
-a human-curated Poincaré metric. Mathlib has the hyperbolic metric on the upper half-plane
-(`Analysis/Complex/UpperHalfPlane`), but no Poincaré metric on the disc.
+This file reuses Tau Ceti's hyperbolic-distance and disc-automorphism API. Mathlib has the
+hyperbolic metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane`), but no Poincaré
+metric on the disc.
 -/
 
 public section

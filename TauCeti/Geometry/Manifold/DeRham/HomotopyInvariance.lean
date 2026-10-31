@@ -32,6 +32,8 @@ constant along each segment `{x} × [0, 1]`.
   `x ↦ (x, 0)` and `x ↦ (x, 1)` of `M` into `M × [0, 1]` induce the same map on cohomology.
 * `TauCeti.deRhamCohomology.map_eq_of_homotopy`: smoothly homotopic maps induce the same map on
   de Rham cohomology.
+* `TauCeti.deRhamCohomology.equivOfHomotopy`: a smooth homotopy equivalence induces a linear
+  equivalence on de Rham cohomology.
 
 ## References
 
@@ -57,7 +59,11 @@ variable {E H E' H' : Type*}
   {I : ModelWithCorners ℝ E H} {I' : ModelWithCorners ℝ E' H'}
   {M M' : Type*}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 2 M']
+  [TopologicalSpace M'] [ChartedSpace H' M']
+
+section Homotopy
+
+variable [IsManifold I' 2 M']
 
 /-- The slice inclusions `x ↦ (x, 0)` and `x ↦ (x, 1)` of a smooth manifold `M`, possibly with
 boundary or corners, into the cylinder `M × [0, 1]` induce the same map on de Rham cohomology. -/
@@ -105,6 +111,39 @@ theorem map_eq_of_homotopy {f g : M → M'} (hf : ContMDiff I I' ∞ f) (hg : Co
   rw [map_comp (fun x ↦ (x, 0)) F (contMDiff_id.prodMk contMDiff_const) hF,
     map_comp (fun x ↦ (x, 1)) F (contMDiff_id.prodMk contMDiff_const) hF,
     map_prodMk_left_zero_eq_map_prodMk_left_one]
+
+end Homotopy
+
+section HomotopyEquivalence
+
+variable [IsManifold I' ∞ M'] {f : M → M'} {g : M' → M} (hf : ContMDiff I I' ∞ f)
+  (hg : ContMDiff I' I ∞ g) {F : M × Icc (0 : ℝ) 1 → M} (hF : ContMDiff (I.prod (𝓡∂ 1)) I ∞ F)
+  (hF₀ : ∀ x, F (x, 0) = g (f x)) (hF₁ : ∀ x, F (x, 1) = x)
+  {G : M' × Icc (0 : ℝ) 1 → M'} (hG : ContMDiff (I'.prod (𝓡∂ 1)) I' ∞ G)
+  (hG₀ : ∀ y, G (y, 0) = f (g y)) (hG₁ : ∀ y, G (y, 1) = y)
+
+include hF hF₀ hF₁ hG hG₀ hG₁ in
+/-- **Smooth homotopy equivalences induce isomorphisms on de Rham cohomology.** Let
+`f : M → M'` and `g : M' → M` be smooth maps such that `F` is a smooth homotopy from `g ∘ f` to
+the identity of `M` and `G` is a smooth homotopy from `f ∘ g` to the identity of `M'`. Then
+pullback along `f` is a linear equivalence `H^k(M') ≃ H^k(M)`, with inverse pullback along `g`.
+Either manifold may have boundary or corners. -/
+def equivOfHomotopy (k : ℕ) : deRhamCohomology I' M' k ≃ₗ[ℝ] deRhamCohomology I M k :=
+  LinearEquiv.ofLinearMap (map f hf k) (map g hg k)
+    (by rw [← map_comp, map_eq_of_homotopy (hg.comp hf) contMDiff_id hF hF₀ hF₁, map_id])
+    (by rw [← map_comp, map_eq_of_homotopy (hf.comp hg) contMDiff_id hG hG₀ hG₁, map_id])
+
+@[simp]
+theorem equivOfHomotopy_apply (k : ℕ) (c : deRhamCohomology I' M' k) :
+    equivOfHomotopy hf hg hF hF₀ hF₁ hG hG₀ hG₁ k c = map f hf k c :=
+  (rfl)
+
+@[simp]
+theorem equivOfHomotopy_symm_apply (k : ℕ) (c : deRhamCohomology I M k) :
+    (equivOfHomotopy hf hg hF hF₀ hF₁ hG hG₀ hG₁ k).symm c = map g hg k c :=
+  (rfl)
+
+end HomotopyEquivalence
 
 end deRhamCohomology
 

@@ -18,6 +18,11 @@ in `s i` of a quantity depending only on two distinct coordinates is a sum over 
 values, with each pair counted once for every choice of the remaining coordinates.
 Counting arguments use
 this to reduce a sum over labelled copies of a pattern to a sum over one pair of its vertices.
+
+More generally, any sum over such a box splits at two distinct coordinates `i` and `j`: sum over
+the maps with prescribed values at `i` and `j`, and then over all values of the two coordinates,
+substituted with `Function.update`. Telescoping arguments use this to test one pair of
+coordinates while the others stay fixed.
 -/
 
 public section
@@ -64,5 +69,41 @@ theorem sum_piFinset_apply_apply {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
         exact Finset.sum_congr rfl fun g hg ↦ by rw [← (mem_filter.1 hg).2]
     _ = (∏ k ∈ univ \ {i, j}, #(s k)) • ∑ x ∈ s i, ∑ y ∈ s j, F x y := by
         rw [sum_nsmul, sum_product]
+
+/-- A sum over a finite box splits at two distinct coordinates `i` and `j`: for values
+`a ∈ s i` and `b ∈ s j`, each map in the box arises exactly once by overwriting the `i`th and `j`th
+values of a map in the box taking the values `a` at `i` and `b` at `j`. -/
+theorem sum_piFinset_eq_sum_filter_sum_sum_update {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
+    [DecidableEq κ] [AddCommMonoid M] {i j : ι} (hij : i ≠ j) (s : ι → Finset κ) {a b : κ}
+    (ha : a ∈ s i) (hb : b ∈ s j) (F : (ι → κ) → M) :
+    ∑ g ∈ piFinset s, F g =
+      ∑ h ∈ piFinset s with h i = a ∧ h j = b, ∑ x ∈ s i, ∑ y ∈ s j,
+        F (Function.update (Function.update h i x) j y) := by
+  simp_rw [← sum_product']
+  refine sum_nbij' (fun g ↦ (Function.update (Function.update g i a) j b, g i, g j))
+    (fun q ↦ Function.update (Function.update q.1 i q.2.1) j q.2.2) ?_ ?_ ?_ ?_ ?_
+  · intro g hg
+    simp only [mem_piFinset, mem_product, mem_filter] at hg ⊢
+    refine ⟨⟨fun l ↦ ?_, by simp [hij]⟩, hg i, hg j⟩
+    simp only [Function.update_apply]
+    split_ifs <;> simp_all
+  · rintro ⟨h, x, y⟩ hq
+    simp only [mem_piFinset, mem_product, mem_filter] at hq ⊢
+    intro l
+    simp only [Function.update_apply]
+    split_ifs <;> simp_all
+  · intro g _
+    ext l
+    simp only [Function.update_apply]
+    split_ifs <;> simp_all
+  · rintro ⟨h, x, y⟩ hq
+    simp only [mem_piFinset, mem_product, mem_filter] at hq
+    obtain ⟨⟨-, rfl, rfl⟩, -, -⟩ := hq
+    ext l <;> simp only [Function.update_apply] <;> split_ifs <;> simp_all
+  · intro g _
+    congr 1
+    ext l
+    simp only [Function.update_apply]
+    split_ifs <;> simp_all
 
 end Fintype
