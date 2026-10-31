@@ -27,10 +27,10 @@ When `dsupport T` is a compact subset of `Ω`, a test `χ` equal to one near `ds
 total coefficient of a finite sum of point masses. No constant test function is inserted into the
 domain of `T`: when the support of `T` is not a compact subset of `Ω`, no such cutoff exists and
 `augmentation T c` is the junk value zero. The augmentation of an additive map is additive in `c`,
-and that of a linear map is homogeneous in `c`. On maps whose supports are compact subsets of `Ω`,
-the augmentation is also additive and homogeneous in the map. It sends the point evaluation
-`φ ↦ ℓ (φ x)` to `ℓ c`, and it vanishes on the boundary `T ∘ d` of a current, because the exterior
-derivative of a cutoff equal to one vanishes near the support.
+and that of a linear map is homogeneous in `c`. The augmentation is homogeneous in the map, and on
+maps whose supports are compact subsets of `Ω` it is also additive in the map. It sends the point
+evaluation `φ ↦ ℓ (φ x)` to `ℓ c`, and it vanishes on the boundary `T ∘ d` of a current, because
+the exterior derivative of a cutoff equal to one vanishes near the support.
 
 ## Main declarations
 
@@ -294,18 +294,26 @@ variable [FiniteDimensional ℝ E] [AddCommGroup V] [Module ℝ V] [FunLike 𝓕
   [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
 
 /-- The augmentation is homogeneous. -/
-theorem augmentation_smul (a : ℝ)
-    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) (c : F) :
+theorem augmentation_smul (a : ℝ) (c : F) :
     augmentation (a • ⇑T) c = a • augmentation T c := by
-  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) hT hTΩ
   let A : 𝓓^{n}(Ω, F) →+ V := a • (T : 𝓓^{n}(Ω, F) →+ V)
   have hA : ⇑A = a • ⇑T := by
     ext φ
     simp [A]
   have hsub : dsupport A ⊆ dsupport T :=
     dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [A, h φ hφ]
-  rw [← hA, augmentation_eq A (hχ.filter_mono (nhdsSet_mono hsub)), augmentation_eq T hχ]
-  simp [A]
+  by_cases h : ∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1
+  · obtain ⟨χ, hχ⟩ := h
+    rw [← hA, augmentation_eq A (hχ.filter_mono (nhdsSet_mono hsub)), augmentation_eq T hχ]
+    simp [A]
+  rw [augmentation_of_not_exists h, smul_zero]
+  rcases eq_or_ne a 0 with rfl | ha
+  · unfold augmentation
+    split_ifs <;> simp
+  -- For `a ≠ 0` the supports agree, so no cutoff exists for `a • T` either.
+  have hsup : dsupport T ⊆ dsupport A :=
+    dsupport_subset_dsupport fun _ _ h' φ hφ ↦ by simpa [A, ha] using h' φ hφ
+  rw [← hA, augmentation_of_not_exists (hsub.antisymm hsup ▸ h)]
 
 end Module
 

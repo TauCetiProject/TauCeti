@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Finite localization of test functions
@@ -17,10 +18,9 @@ continuity of the additive map is not required. Every compact subset of the doma
 cutoff test function equal to one on a neighbourhood of it.
 
 The decomposition uses Mathlib's `SmoothPartitionOfUnity.exists_isSubordinate`, applied to the
-compact support, and the cutoff uses Mathlib's
-`exists_contMDiffMap_one_nhds_of_subset_interior`. This is the partition-of-unity localization
-of distributions described in Hörmander, *The Analysis of Linear Partial Differential Operators
-I*, §2.2 (Localization).
+compact support, and the cutoff packages `IsCompact.exists_contDiff_cutoff` as a test function.
+This is the partition-of-unity localization of distributions described in Hörmander, *The Analysis
+of Linear Partial Differential Operators I*, §2.2 (Localization).
 -/
 
 public section
@@ -70,13 +70,9 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
 to one on a neighbourhood of it. -/
 theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ ∀ x, χ x ∈ Icc 0 1 := by
-  obtain ⟨L, hL, hKL, hLΩ⟩ := exists_compact_between hK Ω.isOpen hKΩ
-  obtain ⟨f, hf1, hf0, hf01⟩ :=
-    exists_contMDiffMap_one_nhds_of_subset_interior 𝓘(ℝ, E) (n := n) hK.isClosed hKL
-  have hfL : tsupport f ⊆ L :=
-    closure_minimal (fun x hx ↦ by_contra fun h ↦ hx (hf0 x h)) hL.isClosed
-  exact ⟨⟨f, contMDiff_iff_contDiff.1 f.contMDiff, HasCompactSupport.intro hL hf0,
-    hfL.trans hLΩ⟩, hf1, hf01⟩
+  obtain ⟨χ, hχ, hχ01, hχ1, hχc, hχΩ⟩ := hK.exists_contDiff_cutoff Ω.isOpen hKΩ
+  exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχΩ⟩,
+    subset_interior_iff_mem_nhdsSet.1 hχ1, fun x ↦ hχ01 ⟨x, rfl⟩⟩
 
 end TestFunction
 
