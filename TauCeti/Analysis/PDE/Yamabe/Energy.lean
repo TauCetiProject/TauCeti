@@ -96,6 +96,33 @@ theorem conformalEnergyDensity_def (u : M → ℝ) (x : M) :
         (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * u x ^ 2 :=
   (rfl)
 
+/-- The energy density of a constant function `c` is `Scal_g c²`. -/
+@[simp]
+theorem conformalEnergyDensity_const (c : ℝ) (x : M) :
+    conformalEnergyDensity I (fun _ : M ↦ c) x =
+      (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * c ^ 2 := by
+  simp [conformalEnergyDensity_def]
+
+/-- The energy density of the zero function vanishes. -/
+@[simp]
+theorem conformalEnergyDensity_zero (x : M) : conformalEnergyDensity I (0 : M → ℝ) x = 0 :=
+  (conformalEnergyDensity_const I 0 x).trans (by simp)
+
+/-- The energy density is even: `-u` and `u` have the same energy density. -/
+@[simp]
+theorem conformalEnergyDensity_neg (u : M → ℝ) (x : M) :
+    conformalEnergyDensity I (-u) x = conformalEnergyDensity I u x := by
+  simp [conformalEnergyDensity_def]
+
+/-- The energy density is quadratic: scaling a differentiable function by `c` scales its energy
+density by `c ^ 2`. -/
+theorem conformalEnergyDensity_smul (c : ℝ) {u : M → ℝ} (hu : MDifferentiable I 𝓘(ℝ) u)
+    (x : M) : conformalEnergyDensity I (c • u) x = c ^ 2 * conformalEnergyDensity I u x := by
+  simp only [conformalEnergyDensity_def, mgradient_smul c hu, Pi.smul_apply, norm_smul,
+    smul_eq_mul, Real.norm_eq_abs]
+  rw [mul_pow, mul_pow, sq_abs]
+  ring
+
 end Density
 
 section Energy
