@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
-public import TauCeti.RingTheory.SerreCondition
+public import TauCeti.RingTheory.SerreCondition.Basic
 
 /-!
 # Cohen–Macaulay schemes and modules

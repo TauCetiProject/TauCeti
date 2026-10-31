@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Gluing
+public import TauCeti.Geometry.Manifold.Gluing.GlueData
 public import TauCeti.Geometry.Toric.Analytic.Fan.GlueData
 
 /-!
@@ -26,7 +26,7 @@ extending basis.
 
 Two affine charts are glued along the chart of the intersection cone, through the open face
 localizations into both. A face localization is a biholomorphism onto its open image, so the
-charts are glued along holomorphic maps, and `TauCeti.chartedSpaceOfIsOpenEmbedding` gives the
+charts are glued along holomorphic maps, and `TopCat.GlueData.chartedSpace` gives the
 realization a complex atlas making it a complex manifold. For this atlas, the inclusion of every
 affine chart, with the complex structure of any extending basis, is a biholomorphism onto its
 open image.
@@ -318,18 +318,14 @@ inclusions. -/
 @[instance_reducible]
 noncomputable def analyticChartedSpace :
     ChartedSpace (Fin (Module.finrank ℤ N) → ℂ) (Φ.analyticRealization hΦ) :=
-  chartedSpaceOfIsOpenEmbedding (J := (Φ.analyticGlueData hΦ).J)
-    (U := fun σ ↦ (Φ.analyticGlueData hΦ).U σ) (M := Φ.analyticRealization hΦ)
-    (φ := fun σ ↦ ⇑((Φ.analyticGlueData hΦ).ι σ)) (Φ.analyticGlueData hΦ).ι_isOpenEmbedding
-    (Φ.analyticGlueData hΦ).ι_jointly_surjective
+  (Φ.analyticGlueData hΦ).chartedSpace _
 
 /-- The analytic realization of a regular fan is a complex manifold. -/
 theorem isManifold_analyticRealization (n : ℕ∞ω) :
     letI := Φ.analyticChartedSpace hΦ
     IsManifold 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (Φ.analyticRealization hΦ) :=
-  isManifold_chartedSpaceOfIsOpenEmbedding (J := (Φ.analyticGlueData hΦ).J)
-    (U := fun σ ↦ (Φ.analyticGlueData hΦ).U σ) (M := Φ.analyticRealization hΦ)
-    (φ := fun σ ↦ ⇑((Φ.analyticGlueData hΦ).ι σ)) _ _
+  isManifold_chartedSpaceOfIsOpenEmbedding (Φ.analyticGlueData hΦ).ι_isOpenEmbedding
+    (Φ.analyticGlueData hΦ).ι_jointly_surjective
     fun σ τ x y h ↦ Φ.exists_contMDiffAt_transition hΦ σ τ x y h n
 
 /-- The inclusion of the affine analytic chart of a cone, with its chosen structure, as a
@@ -338,9 +334,8 @@ private noncomputable def piecePartialDiffeomorph (σ : Φ.cones) (n : ℕ∞ω)
     letI := Φ.analyticChartedSpace hΦ
     PartialDiffeomorph 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ)
       ((Φ.analyticGlueData hΦ).U σ) (Φ.analyticRealization hΦ) n :=
-  partialDiffeomorphOfIsOpenEmbedding (J := (Φ.analyticGlueData hΦ).J)
-    (U := fun σ ↦ (Φ.analyticGlueData hΦ).U σ) (M := Φ.analyticRealization hΦ)
-    (φ := fun σ ↦ ⇑((Φ.analyticGlueData hΦ).ι σ)) _ _
+  partialDiffeomorphOfIsOpenEmbedding (Φ.analyticGlueData hΦ).ι_isOpenEmbedding
+    (Φ.analyticGlueData hΦ).ι_jointly_surjective
     (fun σ τ x y h ↦ Φ.exists_contMDiffAt_transition hΦ σ τ x y h n) σ
 
 private theorem piecePartialDiffeomorph_source (σ : Φ.cones) (n : ℕ∞ω) :
@@ -356,9 +351,8 @@ private theorem piecePartialDiffeomorph_apply (σ : Φ.cones) (n : ℕ∞ω)
     (x : (Φ.analyticGlueData hΦ).U σ) :
     Φ.piecePartialDiffeomorph hΦ σ n x = Φ.analyticAffineChartι hΦ σ x := by
   rw [analyticAffineChartι_def]
-  exact congrFun (coe_partialDiffeomorphOfIsOpenEmbedding (J := (Φ.analyticGlueData hΦ).J)
-    (U := fun σ ↦ (Φ.analyticGlueData hΦ).U σ) (M := Φ.analyticRealization hΦ)
-    (φ := fun σ ↦ ⇑((Φ.analyticGlueData hΦ).ι σ)) _ _
+  exact congrFun (coe_partialDiffeomorphOfIsOpenEmbedding
+    (Φ.analyticGlueData hΦ).ι_isOpenEmbedding (Φ.analyticGlueData hΦ).ι_jointly_surjective
     (fun σ τ x y h ↦ Φ.exists_contMDiffAt_transition hΦ σ τ x y h n) σ) x
 
 section ChartInclusion
