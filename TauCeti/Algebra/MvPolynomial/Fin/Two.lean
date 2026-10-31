@@ -14,6 +14,7 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.FieldTheory.Minpoly.Field
 public import Mathlib.SetTheory.Cardinal.ENat
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
+import TauCeti.Algebra.MvPolynomial.Monomial
 
 /-!
 # Polynomials in two variables
@@ -108,10 +109,9 @@ theorem coeff_X_zero_pow_mul_X_one_pow (i j r m : ℕ) :
     (X 0 ^ r * X 1 ^ m : MvPolynomial (Fin 2) R).coeff
         (Finsupp.single 0 i + Finsupp.single 1 j) =
       if r = i ∧ m = j then 1 else 0 := by
-  rw [X_pow_eq_monomial, X_pow_eq_monomial, monomial_mul_monomial, one_mul, coeff_monomial]
-  congr 1
-  simp only [Finsupp.ext_iff, Fin.forall_fin_two, Finsupp.add_apply, Finsupp.single_apply]
-  simp [eq_comm]
+  have h := coeff_prod_univ_X_pow (A := R) ![r, m] (Finsupp.single 0 i + Finsupp.single 1 j)
+  simp only [Finsupp.add_apply, Finsupp.single_apply] at h
+  simpa [Fin.prod_univ_two, Fin.forall_fin_two] using h
 
 /-- Every monomial of a homogeneous polynomial of degree `n` in two variables has degree `n`. -/
 theorem IsHomogeneous.add_eq_of_mem_support {φ : MvPolynomial (Fin 2) R} {n : ℕ}
