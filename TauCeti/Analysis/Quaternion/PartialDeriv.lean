@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Analysis.Quaternion
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Algebra.Quaternion.MulMatrix
+import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 
 /-!
 # Partial derivatives of quaternion-valued functions
@@ -49,6 +51,8 @@ since `K_t = 1` and `L_x = -1`.
   multiplication exactly when its partials satisfy the first system above.
 * `Quaternion.exists_eq_mul_flip_iff_components`: it is a right multiplication exactly when its
   partials satisfy the second system.
+* `Quaternion.exists_hasFDerivAt_coeComplex_comp`: a function `g (t + i x)` with `g : ℂ → ℂ`
+  complex differentiable has partials `g'`, `i * g'`, `0`, `0`.
 
 ## References
 
@@ -142,5 +146,20 @@ theorem exists_eq_mul_flip_iff_components {D : ℍ →L[ℝ] ℍ} :
       ∃ b, (D : ℍ →ₗ[ℝ] ℍ) = LinearMap.mulRight ℝ b := by
     simp [ContinuousLinearMap.ext_iff, LinearMap.ext_iff]
   exact h.trans exists_eq_mulRight_iff_components
+
+/-- If `g : ℂ → ℂ` has complex derivative `c` at `t + i x`, then `x ↦ g (t + i x)`, viewed in
+`ℍ`, has a real derivative at `q` taking the values `c, i * c, 0, 0` on `1, i, j, k`. -/
+theorem exists_hasFDerivAt_coeComplex_comp {g : ℂ → ℂ} {c : ℂ} {q : ℍ}
+    (hg : HasDerivAt g c ⟨q.re, q.imI⟩) :
+    ∃ D : ℍ →L[ℝ] ℍ, HasFDerivAt (fun x : ℍ ↦ (g ⟨x.re, x.imI⟩ : ℍ)) D q ∧ D 1 = c ∧
+      D ⟨0, 1, 0, 0⟩ = ⟨0, 1, 0, 0⟩ * c ∧ D ⟨0, 0, 1, 0⟩ = 0 ∧ D ⟨0, 0, 0, 1⟩ = 0 := by
+  -- The real-linear projection `x ↦ x.re + x.imI * I` and the coercion `ℂ → ℍ`.
+  let p : ℍ →L[ℝ] ℂ := LinearMap.toContinuousLinearMap
+    { toFun x := ⟨x.re, x.imI⟩
+      map_add' _ _ := by apply Complex.ext <;> simp
+      map_smul' _ _ := by apply Complex.ext <;> simp }
+  let ι : ℂ →L[ℝ] ℍ := LinearMap.toContinuousLinearMap Quaternion.ofComplex.toLinearMap
+  refine ⟨_, ι.hasFDerivAt.comp q ((hg.hasFDerivAt.restrictScalars ℝ).comp q p.hasFDerivAt),
+    ?_, ?_, ?_, ?_⟩ <;> ext <;> simp [p, ι]
 
 end Quaternion

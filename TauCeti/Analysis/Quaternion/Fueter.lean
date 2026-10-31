@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Analysis.Quaternion
 import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Add
-import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Quaternion.PartialDeriv
 
 /-!
 # The left and right Fueter operators
@@ -210,6 +210,14 @@ theorem _root_.HasFDerivAt.rightFueterAt_iff (hf : HasFDerivAt f D q) :
     RightFueterAt f q ↔ fueterRight D = 0 :=
   ⟨fun ⟨_, hE, h⟩ ↦ hf.unique hE ▸ h, fun h ↦ ⟨D, hf, h⟩⟩
 
+/-- `f` is left regular on `s` exactly when it is left regular at every point of `s`. -/
+theorem leftFueterOn_iff : LeftFueterOn f s ↔ ∀ q ∈ s, LeftFueterAt f q :=
+  Iff.rfl
+
+/-- `f` is right regular on `s` exactly when it is right regular at every point of `s`. -/
+theorem rightFueterOn_iff : RightFueterOn f s ↔ ∀ q ∈ s, RightFueterAt f q :=
+  Iff.rfl
+
 /-- Left regularity at `q` is differentiability at `q` together with the left Fueter equation for
 `fderiv ℝ f q`. -/
 theorem leftFueterAt_iff :
@@ -347,21 +355,6 @@ theorem _root_.HasFDerivAt.rightFueterAt_iff_eq_zero {a : ℍ}
     or_iff_right h2]
 
 /-! ### Holomorphic functions of `t + i x` -/
-
-/-- If `g : ℂ → ℂ` has complex derivative `c` at `t + i x`, then `x ↦ g (t + i x)`, viewed in
-`ℍ`, has a real derivative at `q` taking the values `c, i * c, 0, 0` on `1, i, j, k`. -/
-private theorem exists_hasFDerivAt_coeComplex_comp {g : ℂ → ℂ} {c : ℂ}
-    (hg : HasDerivAt g c ⟨q.re, q.imI⟩) :
-    ∃ D : ℍ →L[ℝ] ℍ, HasFDerivAt (fun x : ℍ ↦ (g ⟨x.re, x.imI⟩ : ℍ)) D q ∧ D 1 = c ∧
-      D ⟨0, 1, 0, 0⟩ = ⟨0, 1, 0, 0⟩ * c ∧ D ⟨0, 0, 1, 0⟩ = 0 ∧ D ⟨0, 0, 0, 1⟩ = 0 := by
-  -- The real-linear projection `x ↦ x.re + x.imI * I` and the coercion `ℂ → ℍ`.
-  let p : ℍ →L[ℝ] ℂ := LinearMap.toContinuousLinearMap
-    { toFun x := ⟨x.re, x.imI⟩
-      map_add' _ _ := by apply Complex.ext <;> simp
-      map_smul' _ _ := by apply Complex.ext <;> simp }
-  let ι : ℂ →L[ℝ] ℍ := LinearMap.toContinuousLinearMap Quaternion.ofComplex.toLinearMap
-  refine ⟨_, ι.hasFDerivAt.comp q ((hg.hasFDerivAt.restrictScalars ℝ).comp q p.hasFDerivAt),
-    ?_, ?_, ?_, ?_⟩ <;> ext <;> simp [p, ι]
 
 /-- A complex differentiable function of `t + i x` is left Fueter regular: if `g : ℂ → ℂ` is
 differentiable at `q.re + q.imI * I`, then `x ↦ g (x.re + x.imI * I)`, viewed in `ℍ`, is left
