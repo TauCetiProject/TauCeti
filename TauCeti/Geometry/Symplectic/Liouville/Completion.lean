@@ -29,8 +29,9 @@ completion of its unit codisc bundle
 The Liouville field is unique, because the form is nondegenerate, and it points strictly out of
 `W` along the boundary. So a trajectory of `Z` crosses `∂W` only outwards: a point that is not in
 the interior of `W` never returns to `W` under the forward flow
-(`TauCeti.IsLiouvilleDomain.flowOf_notMem`), and when `Z` is complete the outgoing trajectories
-from the boundary are disjoint (`TauCeti.IsLiouvilleDomain.injOn_flowOf`). For a completion this
+(`TauCeti.IsLiouvilleDomain.flowOf_notMem`), and when `Z` is complete the trajectories through
+distinct boundary points are disjoint, each meeting the boundary only once
+(`TauCeti.IsLiouvilleDomain.injOn_flowOf`). For a completion this
 gives the cylindrical end in coordinates: every point `x` outside `W` is `ψ_t(y)` for exactly one
 point `y` of the boundary `∂W` and one time `t > 0`, where `ψ` is the Liouville flow
 (`TauCeti.IsLiouvilleCompletion.existsUnique_flowOf_eq`). So `M` is the disjoint union of `W` and
@@ -44,12 +45,10 @@ identification of the primitive on it with `r α|∂W` is not treated here.
 
 ## Main results
 
-* `TauCeti.IsLiouvilleDomain.exists_sublevel_of_interior_eq`: every vector field `Z` with
-  `ι_Z ω = α` points strictly out of a Liouville domain along its boundary.
 * `TauCeti.IsLiouvilleDomain.flowOf_notMem`: the forward Liouville flow of a point outside the
   interior of a Liouville domain stays outside the domain.
-* `TauCeti.IsLiouvilleDomain.injOn_flowOf`: for a complete Liouville field, the outgoing
-  trajectories from the boundary are disjoint.
+* `TauCeti.IsLiouvilleDomain.injOn_flowOf`: for a complete Liouville field, the trajectories
+  through the boundary are disjoint.
 * `TauCeti.IsLiouvilleCompletion.existsUnique_flowOf_eq`: the cylindrical end of a completion,
   each point outside `W` lies on exactly one outgoing Liouville trajectory from `∂W`.
 
@@ -74,23 +73,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {Z : (x : M) → TangentSpace I x}
 
 namespace IsLiouvilleDomain
-
-/-- **The Liouville field of a Liouville domain is smooth**: the vector field `Z` with
-`ι_Z ω = α`, unique since `ω` is nondegenerate, is a smooth section of the tangent bundle. -/
-theorem contMDiff_of_interior_eq (h : IsLiouvilleDomain ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) :
-    ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z) := by
-  obtain ⟨Z', hZ's, hZ', -⟩ := h.exists_liouville_outward
-  rwa [h.isNondegenerate.interior_injective (hZ.trans hZ'.symm)]
-
-/-- **The Liouville field points out of a Liouville domain.** If `ι_Z ω = α`, then `W = {f ≤ c}`
-for a continuous function `f`, smooth along the level `f⁻¹(c)`, with `df(Z) > 0` there. -/
-theorem exists_sublevel_of_interior_eq (h : IsLiouvilleDomain ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) :
-    ∃ (f : M → ℝ) (c : ℝ), Continuous f ∧ W = {x | f x ≤ c} ∧
-      ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) f x ∧ 0 < mvfderiv I f x (Z x) := by
-  obtain ⟨Z', -, hZ', hout⟩ := h.exists_liouville_outward
-  rwa [h.isNondegenerate.interior_injective (hZ.trans hZ'.symm)]
 
 variable [CompleteSpace E] [T2Space M] [BoundarylessManifold I M]
 
@@ -118,12 +100,12 @@ theorem flowOf_notMem (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z
     (by rwa [flowOf_zero hZs]) ⟨ht, le_rfl⟩
   exact not_le.2 hlt
 
-/-- **The outgoing Liouville trajectories from the boundary are disjoint.** If the Liouville field
-`Z` of a Liouville domain `W` is complete, then `(y, t) ↦ ψ_t(y)` is injective on
-`∂W × [0, ∞)`, where `ψ` is the flow of `Z`. -/
+/-- **The Liouville trajectories through the boundary are disjoint.** If the Liouville field `Z`
+of a Liouville domain `W` is complete, then `(y, t) ↦ ψ_t(y)` is injective on `∂W × ℝ`, where `ψ`
+is the flow of `Z`. -/
 theorem injOn_flowOf [FiniteDimensional ℝ E] (h : IsLiouvilleDomain ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hc : IsCompleteVectorField Z) :
-    InjOn (fun p : M × ℝ ↦ flowOf Z p.2 p.1) (frontier W ×ˢ Ici 0) := by
+    InjOn (fun p : M × ℝ ↦ flowOf Z p.2 p.1) (frontier W ×ˢ univ) := by
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
   -- On a complete field, `flowOf` is the global flow `ψ`, which satisfies the group law.
   set ψ := globalFlow Z hZs hc
@@ -221,7 +203,8 @@ theorem existsUnique_flowOf_eq (h : IsLiouvilleCompletion ω α W)
     {x : M} (hx : x ∉ W) : ∃! p : M × ℝ, p.1 ∈ frontier W ∧ 0 < p.2 ∧ flowOf Z p.2 p.1 = x := by
   obtain ⟨y, hy, t, ht, hyx⟩ := h.exists_flowOf_eq hZ hx
   exact ⟨(y, t), ⟨hy, ht, hyx⟩, fun q ⟨hq, hqt, hqx⟩ ↦
-    h.injOn_flowOf hZ (h.isCompleteVectorField hZ) ⟨hq, hqt.le⟩ ⟨hy, ht.le⟩ (hqx.trans hyx.symm)⟩
+    h.injOn_flowOf hZ (h.isCompleteVectorField hZ) ⟨hq, mem_univ _⟩ ⟨hy, mem_univ _⟩
+      (hqx.trans hyx.symm)⟩
 
 end IsLiouvilleCompletion
 

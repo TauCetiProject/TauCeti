@@ -108,7 +108,7 @@ theorem lt_apply_of_le_apply (hγ : IsMIntegralCurveOn γ v s) (hs : IsOpen s) (
     (hf : Continuous f)
     (hvf : ∀ x, f x = c → MDifferentiableAt I 𝓘(ℝ) f x ∧ 0 < mvfderiv I f x (v x))
     (ha : c ≤ f (γ a)) : ∀ ⦃t⦄, t ∈ Ioc a b → c < f (γ t) :=
-  lt_image_of_deriv_pos_boundary (g := f ∘ γ) (g' := fun t ↦ mvfderiv I f (γ t) (v (γ t)))
+  TauCeti.lt_image_of_deriv_pos_boundary (g := f ∘ γ) (g' := fun t ↦ mvfderiv I f (γ t) (v (γ t)))
     (hf.comp_continuousOn (hγ.continuousOn.mono hab)) (fun _ ht hft ↦
       ⟨TauCeti.Manifold.hasDerivAt_comp_curve (hvf _ hft).1
         ((hγ.isMIntegralCurveAt (hs.mem_nhds (hab ht))).hasMFDerivAt), (hvf _ hft).2⟩) ha

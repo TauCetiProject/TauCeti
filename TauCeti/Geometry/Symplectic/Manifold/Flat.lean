@@ -101,12 +101,9 @@ theorem IsNondegenerate.interior_injective (h : σ.IsNondegenerate) :
   funext x
   rw [← sub_eq_zero]
   refine isNondegenerate_iff_separatingLeft.1 h x _ fun w ↦ ?_
-  have hw : RoughForm.interior X σ.1 x ![w] = RoughForm.interior Y σ.1 x ![w] := by
-    simp only at hXY; rw [hXY]
-  rw [← SmoothForm.bilinFormAt_apply, map_sub, LinearMap.sub_apply, SmoothForm.bilinFormAt_apply,
-    SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply,
-    sub_eq_zero]
-  simpa only [RoughForm.interior_apply] using hw
+  -- By bilinearity, `σ(X - Y, w)` is `ι_X σ (w) - ι_Y σ (w)`, which vanishes.
+  rw [← flat_apply, map_sub, sub_apply, sub_eq_zero]
+  simpa [interior_apply_eq_ofSubsingleton_flat] using congr($hXY x ![w])
 
 /-- **The flat maps of a two-form form a smooth section** of the bundle `Hom(TM, Hom(TM, ℝ))`. -/
 theorem contMDiff_flat (σ : SmoothTwoForm I M) :

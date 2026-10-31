@@ -15,8 +15,8 @@ public import Mathlib.Topology.Order.IntermediateValue
 Let `g : ℝ → ℝ` be continuous on `[a, b]`, and suppose that at every point of `[a, b]` where `g`
 takes the value `c` it is differentiable with positive derivative. Then `g` can cross the level
 `c` only upwards: once `g ≥ c`, it stays strictly above `c` at every later time of `[a, b]`
-(`lt_image_of_deriv_pos_boundary`), and once `g ≤ c`, it was strictly below `c` at every earlier
-time (`image_lt_of_deriv_pos_boundary`).
+(`TauCeti.lt_image_of_deriv_pos_boundary`), and once `g ≤ c`, it was strictly below `c` at every
+earlier time (`TauCeti.image_lt_of_deriv_pos_boundary`).
 
 No differentiability is assumed away from the level. The statements are the strict, one-level
 counterpart of Mathlib's fencing inequalities such as `image_le_of_deriv_right_lt_deriv_boundary`,
@@ -28,8 +28,8 @@ direction cross it only in that direction.
 
 * `HasDerivAt.eventually_nhdsGT_lt_of_pos`, `HasDerivAt.eventually_nhdsLT_lt_of_pos`: near a point
   where its derivative is positive, a function is larger to the right and smaller to the left.
-* `lt_image_of_deriv_pos_boundary`: if `c ≤ g a`, then `c < g t` for every `t ∈ (a, b]`.
-* `image_lt_of_deriv_pos_boundary`: if `g b ≤ c`, then `g t < c` for every `t ∈ [a, b)`.
+* `TauCeti.lt_image_of_deriv_pos_boundary`: if `c ≤ g a`, then `c < g t` for every `t ∈ (a, b]`.
+* `TauCeti.image_lt_of_deriv_pos_boundary`: if `g b ≤ c`, then `g t < c` for every `t ∈ [a, b)`.
 -/
 
 public section
@@ -51,6 +51,8 @@ theorem HasDerivAt.eventually_nhdsLT_lt_of_pos {t d : ℝ} (hg : HasDerivAt g d 
   have h := (hasDerivAt_iff_tendsto_slope.1 hg).mono_left (nhdsLT_le_nhdsNE t)
   filter_upwards [h.eventually (lt_mem_nhds hd), self_mem_nhdsWithin] with s hs hst
   exact (slope_pos_iff_gt hst).1 hs
+
+namespace TauCeti
 
 /-- **A level crossed with positive derivative is crossed only upwards.** Let `g` be continuous
 on `[a, b]`, with a positive derivative at every point of `[a, b]` where it takes the value `c`.
@@ -89,3 +91,5 @@ theorem image_lt_of_deriv_pos_boundary (hg : ContinuousOn g (Icc a b))
     ∀ ⦃t⦄, t ∈ Ico a b → g t < c := fun _ ht ↦ not_le.1 fun hct ↦
   (lt_image_of_deriv_pos_boundary (hg.mono (Icc_subset_Icc_left ht.1))
     (fun s hs ↦ hg' s (Icc_subset_Icc_left ht.1 hs)) hct ⟨ht.2, le_rfl⟩).not_ge hb
+
+end TauCeti
