@@ -40,13 +40,15 @@ theorem one_le_radius_ordinaryHypergeometricSeries (a b c : 𝕂) :
   · push Not at h
     obtain ⟨k, hk⟩ := h
     by_cases ha : (k : 𝕂) = -a
-    · rw [show a = -(k : 𝕂) by rw [ha, neg_neg], ordinaryHypergeometric_radius_top_of_neg_nat₁]
+    · have ha' : a = -(k : 𝕂) := by rw [ha, neg_neg]
+      rw [ha', ordinaryHypergeometric_radius_top_of_neg_nat₁]
       exact le_top
     by_cases hb : (k : 𝕂) = -b
-    · rw [show b = -(k : 𝕂) by rw [hb, neg_neg], ordinaryHypergeometric_radius_top_of_neg_nat₂]
+    · have hb' : b = -(k : 𝕂) := by rw [hb, neg_neg]
+      rw [hb', ordinaryHypergeometric_radius_top_of_neg_nat₂]
       exact le_top
-    · rw [show c = -(k : 𝕂) by rw [hk ha hb, neg_neg],
-        ordinaryHypergeometric_radius_top_of_neg_nat₃]
+    · have hc : c = -(k : 𝕂) := by rw [hk ha hb, neg_neg]
+      rw [hc, ordinaryHypergeometric_radius_top_of_neg_nat₃]
       exact le_top
 
 /-- The ordinary hypergeometric function `₂F₁(a, b; c; ·)` is analytic on the open unit ball, for

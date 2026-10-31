@@ -42,8 +42,8 @@ to manifolds, including manifolds with boundary or corners.
   regularity is injectivity of the manifold derivative.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
-* `TauCeti.range_mfderiv_le_ker_mfderiv_of_forall_eq`: a map into a level set `f ⁻¹' {y}` has
-  tangent images in the kernel of the derivative of `f`.
+* `TauCeti.range_mfderiv_le_ker_mfderiv_of_eventually_eq`: a map into a level set `f ⁻¹' {y}`
+  near a point has tangent images there in the kernel of the derivative of `f`.
 * `TauCeti.IsRegularPoint.finrank_ker_mfderiv_add_finrank` and
   `TauCeti.IsRegularPoint.range_mfderiv_eq_ker_mfderiv`: at a regular point the kernel of the
   derivative has codimension the dimension of the target, and it is the tangent image of every
@@ -62,7 +62,7 @@ to manifolds, including manifolds with boundary or corners.
 public section
 
 open Function Set
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -187,17 +187,17 @@ variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] {g : P → M}
 
-/-- The tangent images of a map into a level set `f ⁻¹' {y}` lie in the kernel of the derivative
-of `f`. No differentiability is needed: where `g` or `f` is not differentiable, the tangent image
-is `0` or the kernel is everything. -/
-theorem range_mfderiv_le_ker_mfderiv_of_forall_eq (hg : ∀ p, f (g p) = y) (p : P) :
+/-- The tangent images at `p` of a map into a level set `f ⁻¹' {y}` near `p` lie in the kernel of
+the derivative of `f`. No differentiability is needed: where `g` or `f` is not differentiable, the
+tangent image is `0` or the kernel is everything. -/
+theorem range_mfderiv_le_ker_mfderiv_of_eventually_eq {p : P} (hg : ∀ᶠ q in 𝓝 p, f (g q) = y) :
     (mfderiv K I g p).range ≤ (mfderiv I J f (g p)).ker := by
   by_cases hgp : MDifferentiableAt K I g p
   · by_cases hfp : MDifferentiableAt I J f (g p)
     · rintro _ ⟨v, rfl⟩
-      have hfg : f ∘ g = fun _ ↦ y := funext hg
+      have hfg : f ∘ g =ᶠ[𝓝 p] fun _ ↦ y := hg
       have := mfderiv_comp_apply p hfp hgp v
-      rw [hfg, mfderiv_const] at this
+      rw [hfg.mfderiv_eq, mfderiv_const] at this
       exact this.symm
     · simp [mfderiv_zero_of_not_mdifferentiableAt hfp]
   · simp [mfderiv_zero_of_not_mdifferentiableAt hgp]
@@ -213,14 +213,14 @@ theorem IsRegularPoint.finrank_ker_mfderiv_add_finrank (h : IsRegularPoint I J f
   rw [LinearMap.range_eq_top.2 h, finrank_top, finrank_tangentSpace, finrank_tangentSpace] at this
   rw [← this, add_comm]
 
-/-- **The tangent space of a regular level.** Let `g : P → M` map into the level `f ⁻¹' {y}`, with
-injective derivative at `p`, from a manifold of the dimension of the level. If `g p` is a regular
-point of `f`, the tangent image of `g` at `p` is the kernel of the derivative of `f`. -/
-theorem IsRegularPoint.range_mfderiv_eq_ker_mfderiv (hg : ∀ p, f (g p) = y) {p : P}
+/-- **The tangent space of a regular level.** Let `g : P → M` map into the level `f ⁻¹' {y}` near
+`p`, with injective derivative at `p`, from a manifold of the dimension of the level. If `g p` is a
+regular point of `f`, the tangent image of `g` at `p` is the kernel of the derivative of `f`. -/
+theorem IsRegularPoint.range_mfderiv_eq_ker_mfderiv {p : P} (hg : ∀ᶠ q in 𝓝 p, f (g q) = y)
     (h : IsRegularPoint I J f (g p)) (hinj : Injective (mfderiv K I g p))
     (hdim : Module.finrank 𝕜 E'' + Module.finrank 𝕜 E' = Module.finrank 𝕜 E) :
     (mfderiv K I g p).range = (mfderiv I J f (g p)).ker := by
-  refine Submodule.eq_of_le_of_finrank_eq (range_mfderiv_le_ker_mfderiv_of_forall_eq hg p) ?_
+  refine Submodule.eq_of_le_of_finrank_eq (range_mfderiv_le_ker_mfderiv_of_eventually_eq hg) ?_
   rw [LinearMap.finrank_range_of_inj hinj, finrank_tangentSpace]
   have := h.finrank_ker_mfderiv_add_finrank
   omega

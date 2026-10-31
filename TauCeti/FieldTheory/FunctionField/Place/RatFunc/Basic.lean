@@ -379,6 +379,12 @@ theorem one_lt_valuation_X_iff_eq_infty {P : Place k (RatFunc k)} :
     1 < P.valuation (RatFunc.X : RatFunc k) ↔ P = infty k := by
   simpa only [mem_integers_iff, not_le] using X_notMem_integers_iff_eq_infty (k := k) (P := P)
 
+/-- The function `x` has no pole at the finite place of an irreducible polynomial. -/
+theorem X_mem_integers_adicOfIrreducible {q : k[X]} (hq : Irreducible q) :
+    (RatFunc.X : RatFunc k) ∈ (adicOfIrreducible hq).integers := by
+  by_contra h
+  exact adicOfIrreducible_ne_infty hq (X_notMem_integers_iff_eq_infty.mp h)
+
 /-- A place of `k(x)` has valuation greater than one on a polynomial exactly when it is the
 place at infinity. This is the simp-normal form of
 `exists_algebraMap_notMem_integers_iff_eq_infty`. -/

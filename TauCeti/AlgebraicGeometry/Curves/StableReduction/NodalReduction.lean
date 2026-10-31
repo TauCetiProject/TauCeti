@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.Prestable
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Prestable
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.BaseChange
 
 /-!
@@ -21,11 +21,18 @@ It is invariant under isomorphism of that generic fibre. A prestable or smooth p
 witness, and a witness remains one after passage to the chosen place of a finite separable field
 extension.
 
+Nodal reduction is a condition on the special fibre of a proper model alone: a nodal curve has
+nodal reduction as soon as it has a proper model whose special fibre is at worst nodal. This is how
+a regular model whose special fibre has been shown to be reduced with at worst nodal singularities
+yields nodal reduction.
+
 ## Main declarations
 
 * `TauCeti.HasNodalReduction`: existence of a proper at-worst-nodal model.
 * `TauCeti.HasNodalReduction.of_iso`: invariance under isomorphism of the generic curve.
 * `TauCeti.HasNodalReduction.baseChange`: preservation under a chosen finite DVR extension.
+* `TauCeti.hasNodalReduction_iff_exists_specialFiber`: a curve has nodal reduction exactly when it
+  is at worst nodal and has a proper model whose special fibre is at worst nodal.
 
 ## References
 
@@ -120,6 +127,43 @@ theorem baseChange (h : HasNodalReduction R K C toK) (E : FiniteDVRExtension R K
     (.of_hasPullback M.toBase
       (Spec.map (CommRingCat.ofHom (algebraMap R E.localRing)))) hnodal
 
+/-- A nodal curve over `K` has nodal reduction if it has a proper model whose special fibre is at
+worst nodal. -/
+theorem of_specialFiber (M : Model R K C toK) (hproper : M.IsProper)
+    (hC : AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne toK)
+    (hs : AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne (specialFiber R M.toBase).hom) :
+    HasNodalReduction R K C toK :=
+  of_model M hproper (M.atWorstNodalOfRelativeDimensionOne_toBase_iff.mpr ⟨hC, hs⟩)
+
+/-- A smooth curve over `K` has nodal reduction if it has a proper model whose special fibre is at
+worst nodal. -/
+theorem of_smooth_of_specialFiber [SmoothOfRelativeDimension 1 toK] (M : Model R K C toK)
+    (hproper : M.IsProper)
+    (hs : AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne (specialFiber R M.toBase).hom) :
+    HasNodalReduction R K C toK :=
+  of_specialFiber M hproper (AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne.of_smooth toK) hs
+
+/-- A curve with nodal reduction is itself at worst nodal. -/
+theorem atWorstNodalOfRelativeDimensionOne (h : HasNodalReduction R K C toK) :
+    AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne toK := by
+  obtain ⟨M, -, hM⟩ := (hasNodalReduction_iff R K C toK).mp h
+  exact (M.atWorstNodalOfRelativeDimensionOne_toBase_iff.mp hM).1
+
 end HasNodalReduction
+
+/-- **Nodal reduction is a condition on the special fibre.** A curve over the fraction field of a
+discrete valuation ring has nodal reduction exactly when it is at worst nodal and has a proper
+model whose special fibre is at worst nodal. -/
+theorem hasNodalReduction_iff_exists_specialFiber (R K : Type u) [CommRing R] [IsDomain R]
+    [IsDiscreteValuationRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+    (C : Scheme.{u}) (toK : C ⟶ Spec (.of K)) :
+    HasNodalReduction R K C toK ↔
+      AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne toK ∧
+        ∃ M : Model R K C toK, M.IsProper ∧
+          AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne (specialFiber R M.toBase).hom := by
+  refine ⟨fun h ↦ ⟨h.atWorstNodalOfRelativeDimensionOne, ?_⟩,
+    fun ⟨hC, M, hproper, hs⟩ ↦ .of_specialFiber M hproper hC hs⟩
+  obtain ⟨M, hproper, hM⟩ := (hasNodalReduction_iff R K C toK).mp h
+  exact ⟨M, hproper, (M.atWorstNodalOfRelativeDimensionOne_toBase_iff.mp hM).2⟩
 
 end TauCeti

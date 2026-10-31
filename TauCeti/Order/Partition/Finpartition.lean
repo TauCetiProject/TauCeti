@@ -31,8 +31,10 @@ the fact that restriction undoes `Finpartition.extend` and deletes a singleton p
 the behavior of intersections of parts under refinement, the symmetry of lying in a common part,
 the complementarity of two different parts through points that cover the whole set,
 the determination of a partition by its parts through each point, the parts of a restriction, the
-monotonicity of `Finpartition.part` under refinement, the parts of the coarsest partition through
-each point, the coarse parent
+monotonicity of `Finpartition.part` under refinement and the characterization of refinement by
+the parts through each point, the parts through a point of the finest and the coarsest partitions,
+the count of the parts by points singled out in each part (in a linear order, the first or the last
+point of each part), the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
 summation formulas for the fine parts below a coarse part and for sums over points of functions of
 the fine and coarse parts through them, the fact that a set with at most two elements has no finite
@@ -370,6 +372,32 @@ theorem ext_of_part (h : ∀ a ∈ s, P.part a = Q.part a) : P = Q :=
     · exact h a ha
     · rw [P.part_eq_empty.2 ha, Q.part_eq_empty.2 ha]
 
+/-- A finite partition refines another exactly when the part through each point lies in the part
+of the other through that point. -/
+theorem le_iff_forall_part_subset : P ≤ Q ↔ ∀ a, P.part a ⊆ Q.part a := by
+  refine ⟨part_mono, fun h B hB => ?_⟩
+  obtain ⟨a, ha⟩ := P.nonempty_of_mem_parts hB
+  exact ⟨Q.part a, Q.part_mem.2 (P.le hB ha), P.part_eq_of_mem hB ha ▸ h a⟩
+
+/-- In the partition into singletons, the part through a point is that point alone. -/
+@[simp]
+theorem part_bot {a : α} (ha : a ∈ s) : (⊥ : Finpartition s).part a = {a} :=
+  part_eq_of_mem _ (mem_bot_iff.2 ⟨a, ha, rfl⟩) (mem_singleton_self a)
+
+/-- If each part of a finite partition of `s` contains exactly one point satisfying `p`, then
+there are as many parts as points of `s` satisfying `p`. -/
+theorem card_filter_eq_card_parts {p : α → Prop} [DecidablePred p]
+    (h : ∀ B ∈ P.parts, ∃! x, x ∈ B ∧ p x) : #{x ∈ s | p x} = #P.parts := by
+  refine card_bij (fun x _ => P.part x) (fun x hx => P.part_mem.2 (mem_filter.1 hx).1) ?_ ?_
+  · intro x hx y hy hxy
+    obtain ⟨hxs, hpx⟩ := mem_filter.1 hx
+    obtain ⟨hys, hpy⟩ := mem_filter.1 hy
+    exact (h _ (P.part_mem.2 hxs)).unique ⟨P.mem_part_self.2 hxs, hpx⟩
+      ⟨hxy ▸ P.mem_part_self.2 hys, hpy⟩
+  · intro B hB
+    obtain ⟨x, ⟨hxB, hpx⟩, -⟩ := h B hB
+    exact ⟨x, mem_filter.2 ⟨P.le hB hxB, hpx⟩, P.part_eq_of_mem hB hxB⟩
+
 /-- Restricting a partition to a subset `t` cuts the part through each point of `t` down to `t`. -/
 @[simp]
 theorem part_restrict {t : Finset α} (P : Finpartition s) (hts : t ≤ s) {a : α} (ha : a ∈ t) :
@@ -494,6 +522,32 @@ theorem parts_restrict_erase_of_singleton_mem {i : α} (hi : {i} ∈ P.parts) :
     exact ⟨P.ne_bot hB, B, hB, hBi hB hBi'⟩
 
 end FinsetRefinement
+
+section LinearOrder
+
+open scoped Finset
+
+variable {α : Type*} [LinearOrder α] {s : Finset α} (P : Finpartition s)
+
+/-- A finite partition of a finite set in a linear order has as many parts as there are points
+that are the greatest point of their part. -/
+theorem card_filter_forall_mem_part_le : #{x ∈ s | ∀ y ∈ P.part x, y ≤ x} = #P.parts := by
+  refine P.card_filter_eq_card_parts fun B hB => ?_
+  have hne := P.nonempty_of_mem_parts hB
+  refine ⟨B.max' hne, ⟨B.max'_mem hne, fun y hy => ?_⟩, fun x ⟨hxB, hx⟩ => ?_⟩
+  · exact B.le_max' y (P.part_eq_of_mem hB (B.max'_mem hne) ▸ hy)
+  · exact le_antisymm (B.le_max' x hxB) (hx _ (P.part_eq_of_mem hB hxB ▸ B.max'_mem hne))
+
+/-- A finite partition of a finite set in a linear order has as many parts as there are points
+that are the least point of their part. -/
+theorem card_filter_forall_mem_part_ge : #{x ∈ s | ∀ y ∈ P.part x, x ≤ y} = #P.parts := by
+  refine P.card_filter_eq_card_parts fun B hB => ?_
+  have hne := P.nonempty_of_mem_parts hB
+  refine ⟨B.min' hne, ⟨B.min'_mem hne, fun y hy => ?_⟩, fun x ⟨hxB, hx⟩ => ?_⟩
+  · exact B.min'_le y (P.part_eq_of_mem hB (B.min'_mem hne) ▸ hy)
+  · exact le_antisymm (hx _ (P.part_eq_of_mem hB hxB ▸ B.min'_mem hne)) (B.min'_le x hxB)
+
+end LinearOrder
 
 section PairSplit
 
