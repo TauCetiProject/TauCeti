@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.GrothendieckAbelian
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Kernels
 public import Mathlib.CategoryTheory.MorphismProperty.TransfiniteComposition
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
+public import TauCeti.CategoryTheory.MorphismProperty.Colimits
 
 /-!
 # Stability of monomorphic quasi-isomorphisms
@@ -50,7 +52,7 @@ variable {C I : Type*} [Category* C] [Abelian C] {c : ComplexShape I}
 /-- Pushing out a monomorphic quasi-isomorphism gives a quasi-isomorphism.
 The resulting map is also monomorphic, by stability of monomorphisms under pushout
 in an abelian category. -/
-lemma quasiIso_inr_of_mono (sq : IsPushout f g i j) [Mono f] [QuasiIso f] :
+lemma quasiIso_inr_of_mono_of_quasiIso (sq : IsPushout f g i j) [Mono f] [QuasiIso f] :
     QuasiIso j := by
   have : Mono j := Abelian.mono_inr_of_isColimit _ _ sq.isColimit
   have hIso : IsIso (cokernel.map f j g i sq.w) := isIso_cokernel_map_of_isPushout sq
@@ -73,7 +75,8 @@ instance : (MorphismProperty.monomorphisms (HomologicalComplex C c) ⊓
   of_isPushout sq hf := by
     have : Mono _ := hf.1
     have : QuasiIso _ := hf.2
-    exact ⟨Abelian.mono_inr_of_isColimit _ _ sq.flip.isColimit, sq.flip.quasiIso_inr_of_mono⟩
+    exact ⟨Abelian.mono_inr_of_isColimit _ _ sq.flip.isColimit,
+      sq.flip.quasiIso_inr_of_mono_of_quasiIso⟩
 
 /-- Quasi-isomorphisms are stable under colimits of any shape for which colimits
 in the coefficient category exist and are exact. -/
@@ -86,41 +89,17 @@ instance {J : Type w} [Category.{w'} J] [HasColimitsOfShape J C]
     rw [quasiIsoAt_iff_isIso_homologyMap]
     let H := homologyFunctor C c n
     exact MorphismProperty.IsStableUnderColimitsOfShape.condition
-      (W := MorphismProperty.isomorphisms C)
-      (F ⋙ H) (G ⋙ H) (H.mapCocone s) (H.mapCocone t)
-      (isColimitOfPreserves H hs) (isColimitOfPreserves H ht)
-      (Functor.whiskerRight f H)
+      (W := (MorphismProperty.isomorphisms C).inverseImage H)
+      F G s t hs ht f
       (fun j ↦ by
         have : QuasiIso (f.app j) := hf j
         exact (inferInstance : IsIso (homologyMap (f.app j) n)))
-      (H.map φ) (fun j ↦ by simpa using congrArg H.map (hφ j))
+      φ hφ
 
 /-- Under AB5, quasi-isomorphisms are stable under filtered colimits. -/
 instance [HasFilteredColimitsOfSize.{w', w} C] [AB5OfSize.{w', w} C] :
     MorphismProperty.IsStableUnderFilteredColimits.{w', w} (quasiIso C c) where
   isStableUnderColimitsOfShape J _ _ := by infer_instance
-
-/-- Monomorphic quasi-isomorphisms are stable under any existing exact colimits
-in the coefficient category. -/
-instance {J : Type w} [Category.{w'} J] [HasColimitsOfShape J C]
-    [HasExactColimitsOfShape J C] :
-    (MorphismProperty.monomorphisms (HomologicalComplex C c) ⊓
-      quasiIso C c).IsStableUnderColimitsOfShape J where
-  condition F G s t hs ht f hf φ hφ := by
-    refine ⟨?_, MorphismProperty.IsStableUnderColimitsOfShape.condition
-      (W := quasiIso C c) F G s t hs ht f (fun j ↦ (hf j).2) φ hφ⟩
-    apply mono_of_mono_f
-    intro n
-    let H := eval C c n
-    exact MorphismProperty.IsStableUnderColimitsOfShape.condition
-      (W := MorphismProperty.monomorphisms C)
-      (F ⋙ H) (G ⋙ H) (H.mapCocone s) (H.mapCocone t)
-      (isColimitOfPreserves H hs) (isColimitOfPreserves H ht)
-      (Functor.whiskerRight f H)
-      (fun j ↦ by
-        have : Mono (f.app j) := (hf j).1
-        exact (inferInstance : Mono ((f.app j).f n)))
-      (H.map φ) (fun j ↦ by simpa using congrArg H.map (hφ j))
 
 /-- Under AB5, monomorphic quasi-isomorphisms are stable under filtered colimits. -/
 instance [HasFilteredColimitsOfSize.{w', w} C] [AB5OfSize.{w', w} C] :
