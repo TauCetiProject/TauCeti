@@ -46,6 +46,7 @@ prescribed zeros, is not part of this file.
 * `TauCeti.exists_schneider_auxiliary_algebraic`: a nonzero integer coefficient matrix with the
   bound above for which every `y_{uv}`, `1 ≤ u, v ≤ L`, vanishes in `K`.
 * `RingHom.map_pow_mul_pow_eq_exp`: `σ (α ^ (u j) γ ^ (v j)) = exp (j λ (u + v σ β))`.
+* `RingHom.map_schneider_value`: `σ y_{uv} = F(u + v σ β)`.
 * `RingHom.exists_schneider_auxiliary`: the auxiliary function `F` vanishes at the grid points
   `u + v σ β`, `1 ≤ u, v ≤ L`.
 * `TauCeti.house_schneider_value_le`: an explicit bound for the house of `y_{uv}`, `u, v ≤ B`.
@@ -550,6 +551,19 @@ theorem map_pow_mul_pow_eq_exp {R : Type*} [Semiring R] (σ : R →+* ℂ) {l : 
   push_cast
   ring
 
+/-- If `σ α = exp λ` and `σ γ = exp (σ β λ)`, then `σ` maps Schneider's value
+`y_{uv} = ∑_{i, j} a_{ij} (u + v β) ^ i α ^ (u j) γ ^ (v j)` to the value
+`F(u + v σ β) = ∑_{i, j} a_{ij} (u + v σ β) ^ i exp (j λ (u + v σ β))` of the auxiliary
+function. -/
+theorem map_schneider_value {R : Type*} [Ring R] (σ : R →+* ℂ) {l : ℂ} {α β γ : R}
+    (hα : σ α = Complex.exp l) (hγ : σ γ = Complex.exp (σ β * l)) {D₁ D₂ : ℕ}
+    (a : Fin D₁ → Fin D₂ → ℤ) (u v : ℕ) :
+    σ (∑ i, ∑ j, (a i j : R) * ((u : R) + v * β) ^ (i : ℕ) * (α ^ (u * j) * γ ^ (v * j))) =
+      ∑ i, ∑ j, (a i j : ℂ) * ((u : ℂ) + v * σ β) ^ (i : ℕ) *
+        Complex.exp (j * l * (u + v * σ β)) := by
+  simp only [map_sum, map_mul, map_pow, map_add, map_intCast, map_natCast,
+    ← map_pow_mul_pow_eq_exp σ hα hγ]
+
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- **Schneider's auxiliary function** (Evertse, Lemma 4.22). Let `K` be a number field of degree
@@ -570,8 +584,6 @@ theorem exists_schneider_auxiliary (σ : K →+* ℂ) {l : ℂ} {α β γ : K} (
   refine ⟨c, hc, fun L D₁ D₂ hL hD ↦ ?_⟩
   obtain ⟨a, ha, hbound, hzero⟩ := h L D₁ D₂ hL hD
   refine ⟨a, ha, hbound, fun u v hu₁ hu hv₁ hv ↦ ?_⟩
-  have := congr_arg σ (hzero u v hu₁ hu hv₁ hv)
-  simpa only [map_sum, map_mul, map_pow, map_add, map_intCast, map_natCast, map_zero,
-    map_pow_mul_pow_eq_exp σ hα hγ] using this
+  rw [← map_schneider_value σ hα hγ, hzero u v hu₁ hu hv₁ hv, map_zero]
 
 end RingHom
