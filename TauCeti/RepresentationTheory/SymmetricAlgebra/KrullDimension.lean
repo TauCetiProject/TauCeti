@@ -117,7 +117,7 @@ variable (ρ : Representation k G M)
 of `Sym M` to the invariant subalgebra preserves its height. -/
 theorem height_under_symmetricAlgebraInvariants (P : Ideal (SymmetricAlgebra k M)) [P.IsPrime] :
     (P.under ρ.symmetricAlgebraInvariants).height = P.height :=
-  (Ideal.height_eq_height_under_of_finite_of_finiteType k P).symm
+  (Ideal.height_eq_height_under_of_isIntegral_of_finiteType k P).symm
 
 /-- **The dimension of the invariant ring at its vertex.** Over a field, for a finite group acting
 on a finite-dimensional space `M`, the ideal `A₊` of invariants with zero constant term has height

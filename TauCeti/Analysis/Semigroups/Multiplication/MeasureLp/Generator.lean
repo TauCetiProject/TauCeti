@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Semigroups.Multiplication.MeasureLp.Basic
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
-import TauCeti.Analysis.Calculus.ExponentialSlope
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 
 /-!
 # Generators of measure-space Lᵖ multiplication semigroups
@@ -91,7 +91,8 @@ theorem ContractionSemigroup.ofMeasureLpMultiplication_generator_apply_ae
       exact hq.mono fun a ha _ => ha
     · exact .of_forall fun _ h => (hn h).elim
   filter_upwards [hae, hquot] with a ha hqa
-  have hpoint := ((TauCeti.tendsto_exp_mul_sub_one_div (-(m a : ℝ))).smul
+  have hpoint := (((Real.tendsto_exp_mul_sub_one_div (-(m a : ℝ))).mono_left
+    (nhdsGT_le_nhdsNE 0)).smul
     (tendsto_const_nhds (x := (f : Lp E p μ) a))).comp hts
   have heq : (fun n => ((1 / ts n) •
       (S.realOperator (ts n) f - (f : Lp E p μ))) a) =ᶠ[atTop]
@@ -140,7 +141,7 @@ private theorem tendsto_multiplication_quotient (hm : AEMeasurable m μ) (hp : p
         (ENNReal.ofReal_le_ofReal hn)
     · exact .of_forall fun a => by
         simpa only [neg_mul] using
-          (TauCeti.tendsto_exp_mul_sub_one_div (-(m a : ℝ))).smul
+          ((Real.tendsto_exp_mul_sub_one_div (-(m a : ℝ))).mono_left (nhdsGT_le_nhdsNE 0)).smul
             (tendsto_const_nhds (x := f a))
   refine hlim.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)

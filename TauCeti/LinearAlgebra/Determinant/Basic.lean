@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.LinearAlgebra.Multilinear.Span
-import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement

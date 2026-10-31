@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Basic
-public import TauCeti.Combinatorics.Graph.Serre.Path
+public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 
 /-!

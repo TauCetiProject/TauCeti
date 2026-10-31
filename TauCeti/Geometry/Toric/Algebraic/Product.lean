@@ -70,19 +70,10 @@ theorem affineCoordinateRingProdEquiv_single_tmul_single
         (MonoidAlgebra.single (ofAdd m) z ⊗ₜ[ℂ] MonoidAlgebra.single (ofAdd m') z') =
       MonoidAlgebra.single
         (ofAdd ((dualSemigroupProdEquiv hi hi' σ τ).symm (m, m'))) (z * z') := by
-  calc
-    _ = affineCoordinateRingProdEquiv hi hi' σ τ
-        ((z * z') • (MonoidAlgebra.single (ofAdd m) 1 ⊗ₜ[ℂ]
-          MonoidAlgebra.single (ofAdd m') 1)) := by
-      rw [← TensorProduct.smul_tmul_smul]
-      simp only [MonoidAlgebra.smul_single', mul_one]
-    _ = _ := by
-      simp only [map_smul, affineCoordinateRingProdEquiv, AlgEquiv.trans_apply,
-        BialgEquiv.coe_toAlgEquiv,
-        TauCeti.MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single,
-        MonoidAlgebra.domCongr_single, MulEquiv.trans_apply,
-        MulEquiv.prodMultiplicative_symm_apply, AddEquiv.toMultiplicative_apply_apply,
-        toAdd_ofAdd, MonoidAlgebra.smul_single', mul_one]
+  simp only [affineCoordinateRingProdEquiv, AlgEquiv.trans_apply, BialgEquiv.coe_toAlgEquiv,
+    TauCeti.MonoidAlgebra.prodTensorBialgEquiv_symm_single_tmul_single,
+    MonoidAlgebra.domCongr_single, MulEquiv.trans_apply, MulEquiv.prodMultiplicative_symm_apply,
+    AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd]
 
 /-- The inverse product comparison splits a monomial into monomials on the two factors. -/
 @[simp]

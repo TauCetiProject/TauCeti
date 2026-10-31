@@ -14,6 +14,9 @@ The spectral radius of an element vanishes exactly when its quasispectrum, or in
 algebra its spectrum, is contained in `{0}`. In a complex Banach algebra these are the
 quasinilpotent elements, by Gelfand's formula. Both statements are algebraic: they need a
 norm only on the scalars, and no completeness.
+
+For the same reason a nonunital algebra homomorphism, with no continuity assumption, does not
+increase spectral radii: it can only shrink quasispectra.
 -/
 
 public section
@@ -37,3 +40,11 @@ theorem spectralRadius_eq_zero_iff_spectrum_subset_singleton_zero [Ring A] [Alge
     and_iff_left subset_rfl]
 
 end TauCeti
+
+/-- A nonunital algebra homomorphism, not assumed continuous, does not increase spectral radii,
+since it can only shrink quasispectra. -/
+theorem NonUnitalAlgHom.spectralRadius_apply_le {F 𝕜 A B : Type*} [NormedField 𝕜]
+    [NonUnitalRing A] [NonUnitalRing B] [Module 𝕜 A] [Module 𝕜 B] [FunLike F A B]
+    [NonUnitalAlgHomClass F 𝕜 A B] (φ : F) (a : A) :
+    spectralRadius 𝕜 (φ a) ≤ spectralRadius 𝕜 a :=
+  biSup_mono fun _ hk ↦ NonUnitalAlgHom.quasispectrum_apply_subset φ a hk

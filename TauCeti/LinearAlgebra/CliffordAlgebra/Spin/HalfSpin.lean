@@ -32,6 +32,12 @@ determinant one, and `[s, z]` acts with determinant `z²`: the determinant line 
 square of the twisting circle. If `W` is moreover a Hermitian Clifford module, the generators
 acting skew-adjointly, both representations are unitary.
 
+Clifford multiplication `c(v) : W^ε → W^{-ε}` (`CliffordAlgebra.halfSpinCliffordMul`) is
+equivariant: `ρ^{-ε}(s) c(v) = c(s v) ρ^ε(s)`, where `s v` is the rotation action of `s` on `V`
+(`CliffordAlgebra.spinVectorAction`). The circle factor of `[s, z]` scales both sides alike and
+does not act on vectors. This is the equivariance that lets Clifford multiplication by cotangent
+vectors be defined on the associated spinor bundles `W^±` of a `Spinᶜ` structure.
+
 ## Main definitions
 
 * `CliffordAlgebra.halfSpinRep o ρ ε`: the representation of `spinGroup Q` on the
@@ -47,6 +53,10 @@ acting skew-adjointly, both representations are unitary.
   Spin action is unitary.
 * `CliffordAlgebra.spinCHalfSpinRep_negOne_neg_one`: `(-1, -1)` acts trivially, so the twisted
   action descends to `Spinᶜ(4)`.
+* `CliffordAlgebra.halfSpinRep_comp_halfSpinCliffordMul`,
+  `CliffordAlgebra.spinCHalfSpinRep_comp_halfSpinCliffordMul`: Clifford multiplication
+  `W^ε → W^{-ε}` intertwines the half-spin representations of `Spin(4)` and of `Spinᶜ(4)`, with
+  `Spin(4)` acting on vectors by rotation.
 * `CliffordAlgebra.det_spinCHalfSpinRep`: `(s, z)` acts with determinant `z²`, and
   `CliffordAlgebra.inner_spinCHalfSpinRep_apply_spinCHalfSpinRep_apply`: the twisted action is
   unitary.
@@ -114,6 +124,26 @@ theorem spinCHalfSpinRep_negOne_neg_one (hQ₀ : Q ≠ 0) :
     spinCHalfSpinRep o ρ ε (spinGroup.negOne Q hQ₀, -1) = 1 := by
   ext ψ
   simp
+
+/-- **Clifford equivariance of the half-spin representations**: Clifford multiplication
+`W^ε → W^{-ε}` intertwines the half-spin representations when `Spin(4)` acts on vectors by its
+rotation action, `ρ^{-ε}(s) c(v) = c(s v) ρ^ε(s)`. -/
+theorem halfSpinRep_comp_halfSpinCliffordMul (s : spinGroup Q) (v : V) :
+    halfSpinRep o ρ (-ε) s ∘ₗ halfSpinCliffordMul o ρ ε v =
+      halfSpinCliffordMul o ρ ε (spinVectorAction Q s v) ∘ₗ halfSpinRep o ρ ε s := by
+  ext ψ
+  simp only [LinearMap.comp_apply, coe_halfSpinRep_apply, coe_halfSpinCliffordMul_apply_apply,
+    ← Module.End.mul_apply, ← map_mul, ι_spinVectorAction_apply_mul]
+
+/-- **Clifford equivariance of the `Spinᶜ(4)` half-spin representations**: `(s, z)` acts on
+vectors through the rotation action of `s` alone, and Clifford multiplication `W^ε → W^{-ε}`
+intertwines the twisted half-spin representations, `ρ^{-ε}(s, z) c(v) = c(s v) ρ^ε(s, z)`. -/
+theorem spinCHalfSpinRep_comp_halfSpinCliffordMul (p : spinGroup Q × Circle) (v : V) :
+    spinCHalfSpinRep o ρ (-ε) p ∘ₗ halfSpinCliffordMul o ρ ε v =
+      halfSpinCliffordMul o ρ ε (spinVectorAction Q p.1 v) ∘ₗ spinCHalfSpinRep o ρ ε p := by
+  obtain ⟨s, z⟩ := p
+  rw [spinCHalfSpinRep_apply, spinCHalfSpinRep_apply, LinearMap.smul_comp, LinearMap.comp_smul,
+    halfSpinRep_comp_halfSpinCliffordMul]
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
