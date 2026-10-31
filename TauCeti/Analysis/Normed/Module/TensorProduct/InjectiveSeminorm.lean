@@ -111,6 +111,16 @@ theorem norm_contractStrongDual_apply_le (u : E ⊗[𝕜] F) (f : StrongDual �
     ‖contractStrongDual 𝕜 E F u f‖ ≤ injectiveSeminorm 𝕜 E F u * ‖f‖ :=
   (contractStrongDual 𝕜 E F u).le_opNorm f
 
+/-- The linear map induced on algebraic tensors by the bilinear map `(x, y) ↦ f x • g y` sends a
+tensor `u` to `g` applied to the operator induced by `u` on the dual of `E`, evaluated at `f`. -/
+theorem lift_smulRight {G : Type*} [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (f : StrongDual 𝕜 E) (g : F →L[𝕜] G) (u : E ⊗[𝕜] F) :
+    _root_.TensorProduct.lift (f.smulRight g).toLinearMap₁₂ u =
+      g (contractStrongDual 𝕜 E F u f) := by
+  induction u with
+  | tmul x y => simp
+  | add u v hu hv => simp [hu, hv]
+
 /-- On a pure tensor `x ⊗ₜ y`, the injective seminorm is the norm of `x` in the double dual
 times the norm of `y`. -/
 private theorem injectiveSeminorm_tmul_eq (x : E) (y : F) :

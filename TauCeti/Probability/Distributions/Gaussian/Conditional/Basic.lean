@@ -6,30 +6,39 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Gaussian.Affine
+public import TauCeti.Analysis.Matrix.SchurComplement
 public import Mathlib.Probability.Kernel.CondDistrib
 
-import Mathlib.LinearAlgebra.Matrix.SchurComplement
-import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 
 /-!
 # Conditional multivariate Gaussian distributions
 
 This file constructs the Gaussian kernel obtained by conditioning one block of a jointly
-Gaussian vector on the other.  For a positive-semidefinite covariance matrix with a
-positive-definite observed block, the conditional mean is affine in the observed block and the
-conditional covariance is its Schur complement.  The kernel is identified almost everywhere
-with Mathlib's regular conditional distribution.
+Gaussian vector on the other. For every positive-semidefinite joint covariance, the conditional
+mean uses the observed covariance's Moore–Penrose inverse, and the conditional covariance is the
+generalized Schur complement. The formula defines the kernel at every observed value, including
+outside the affine support; it agrees almost everywhere with the regular conditional distribution.
+A positive-definite observed block recovers the ordinary inverse formula.
 
 ## Main definitions
 
 * `EuclideanSpace.gaussianCondMean` — the affine conditional mean;
-* `Matrix.gaussianCondCov` — the conditional covariance, as a Schur complement;
+* `Matrix.gaussianCondCov` — the conditional covariance, as a generalized (pseudoinverse)
+  Schur complement;
 * `EuclideanSpace.gaussianCondKernel` — the corresponding Markov kernel.
 
 ## Main results
 
 * `TauCeti.Probability.condDistrib_multivariateGaussian` — the conditional-distribution formula.
+* `EuclideanSpace.map_snd_fst_multivariateGaussian` — the joint-law factorization into the
+  observed marginal and conditional kernel.
+* `ProbabilityTheory.HasLaw.indepFun_gaussianResidual` — independence of the centered
+  regression residual and the observed block.
+* `EuclideanSpace.gaussianCondKernel_of_submatrix_eq_zero` — the unconditional first-block
+  Gaussian law when the observed covariance block is zero.
+* `EuclideanSpace.gaussianCondMean_of_posDef` and `Matrix.gaussianCondCov_of_posDef` —
+  the ordinary-inverse formulas for a positive-definite observed covariance block.
 
 ## References
 
@@ -41,18 +50,15 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped MatrixOrder RealInnerProductSpace
+open scoped MatrixOrder RealInnerProductSpace Matrix
 
 namespace EuclideanSpace
 
 variable {ι κ : Type*}
 
--- Source blueprint for `gaussianCondMean`, `gaussianCondCov`, `gaussianCondKernel`, and
--- `condDistrib_multivariateGaussian`: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5,
--- item 4, and its `Suggested.lean` conditional multivariate Gaussian prototypes.
 /-- The affine conditional-mean formula for the `ι`-block given the `κ`-block.
 Its interpretation as a conditional-law parameter requires a positive-semidefinite joint
-covariance and a positive-definite observed covariance block, as in
+covariance, including a singular observed covariance block, as in
 `TauCeti.Probability.condDistrib_multivariateGaussian`. -/
 noncomputable def gaussianCondMean [Fintype ι] [Fintype κ] [DecidableEq κ]
     (m : EuclideanSpace ℝ (ι ⊕ κ))
@@ -62,7 +68,7 @@ noncomputable def gaussianCondMean [Fintype ι] [Fintype κ] [DecidableEq κ]
   let m₂ := (EuclideanSpace.sumEquivProd m).2
   let S₁₂ := S.submatrix Sum.inl Sum.inr
   let S₂₂ := S.submatrix Sum.inr Sum.inr
-  m₁ + (S₁₂ * S₂₂⁻¹).toEuclideanLin (x₂ - m₂)
+  m₁ + (S₁₂ * S₂₂.covariancePseudoInverse).toEuclideanLin (x₂ - m₂)
 
 /-- The defining formula for the conditional Gaussian mean. -/
 theorem gaussianCondMean_def [Fintype ι] [Fintype κ] [DecidableEq κ]
@@ -70,9 +76,19 @@ theorem gaussianCondMean_def [Fintype ι] [Fintype κ] [DecidableEq κ]
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) (x₂ : EuclideanSpace ℝ κ) :
     gaussianCondMean m S x₂ =
       (EuclideanSpace.sumEquivProd m).1 +
-        (S.submatrix Sum.inl Sum.inr * (S.submatrix Sum.inr Sum.inr)⁻¹).toEuclideanLin
+        (S.submatrix Sum.inl Sum.inr *
+          (S.submatrix Sum.inr Sum.inr).covariancePseudoInverse).toEuclideanLin
           (x₂ - (EuclideanSpace.sumEquivProd m).2) :=
   (rfl)
+
+/-- An invertible observed covariance recovers the ordinary regression formula. -/
+theorem gaussianCondMean_of_posDef [Fintype ι] [Fintype κ] [DecidableEq κ]
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
+    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) (x₂ : EuclideanSpace ℝ κ) :
+    m.gaussianCondMean S x₂ = (EuclideanSpace.sumEquivProd m).1 +
+      (S.submatrix Sum.inl Sum.inr * (S.submatrix Sum.inr Sum.inr)⁻¹).toEuclideanLin
+        (x₂ - (EuclideanSpace.sumEquivProd m).2) := by
+  rw [gaussianCondMean_def, Matrix.covariancePseudoInverse_of_posDef hS₂₂]
 
 end EuclideanSpace
 
@@ -80,14 +96,14 @@ namespace Matrix
 
 variable {ι κ : Type*}
 
-/-- The Schur-complement formula for the conditional covariance of the `ι`-block.
+/-- The generalized Schur-complement formula for the conditional covariance of the `ι`-block.
 Its interpretation as a conditional-law parameter requires a positive-semidefinite joint
-covariance and a positive-definite observed covariance block, as in
+covariance, including a singular observed covariance block, as in
 `TauCeti.Probability.condDistrib_multivariateGaussian`. -/
 noncomputable def gaussianCondCov [Fintype κ] [DecidableEq κ]
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) : Matrix ι ι ℝ :=
   S.submatrix Sum.inl Sum.inl -
-    S.submatrix Sum.inl Sum.inr * (S.submatrix Sum.inr Sum.inr)⁻¹ *
+    S.submatrix Sum.inl Sum.inr * (S.submatrix Sum.inr Sum.inr).covariancePseudoInverse *
       S.submatrix Sum.inr Sum.inl
 
 /-- The defining formula for the conditional Gaussian covariance. -/
@@ -95,37 +111,38 @@ theorem gaussianCondCov_def [Fintype κ] [DecidableEq κ]
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) :
     gaussianCondCov S =
       S.submatrix Sum.inl Sum.inl -
-        S.submatrix Sum.inl Sum.inr * (S.submatrix Sum.inr Sum.inr)⁻¹ *
+        S.submatrix Sum.inl Sum.inr * (S.submatrix Sum.inr Sum.inr).covariancePseudoInverse *
           S.submatrix Sum.inr Sum.inl :=
   (rfl)
+
+/-- An invertible observed covariance recovers the ordinary Schur complement. -/
+theorem gaussianCondCov_of_posDef [Fintype κ] [DecidableEq κ]
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
+    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) :
+    S.gaussianCondCov = S.submatrix Sum.inl Sum.inl -
+      S.submatrix Sum.inl Sum.inr * (S.submatrix Sum.inr Sum.inr)⁻¹ *
+        S.submatrix Sum.inr Sum.inl := by
+  rw [gaussianCondCov_def, covariancePseudoInverse_of_posDef hS₂₂]
 
 end Matrix
 
 variable {ι κ : Type*} [Fintype κ] [DecidableEq κ]
 
-/-- The conditional covariance of a positive-semidefinite block matrix is positive semidefinite
-when the conditioned block is positive definite. -/
+/-- The conditional covariance of a positive-semidefinite block matrix is positive semidefinite,
+including when the observed block is singular. -/
 theorem Matrix.PosSemidef.gaussianCondCov [Finite ι] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
-    (hS : S.PosSemidef) (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) :
-    (S.gaussianCondCov).PosSemidef := by
-  classical
-  let _ := Fintype.ofFinite ι
-  let S₁₁ := S.submatrix Sum.inl Sum.inl
-  let S₁₂ := S.submatrix Sum.inl Sum.inr
-  let S₂₁ := S.submatrix Sum.inr Sum.inl
-  let S₂₂ := S.submatrix Sum.inr Sum.inr
-  let _ := hS₂₂.isUnit.invertible
-  have hS₂₁ : S₂₁ = Matrix.conjTranspose S₁₂ := by
+    (hS : S.PosSemidef) : (S.gaussianCondCov).PosSemidef := by
+  have hS₂₁ : S.submatrix Sum.inr Sum.inl = (S.submatrix Sum.inl Sum.inr)ᴴ := by
     ext i j
-    simpa [S₂₁, S₁₂, Matrix.conjTranspose_apply] using
-      (hS.isHermitian.apply (Sum.inr i) (Sum.inl j)).symm
-  have hblocks : Matrix.fromBlocks S₁₁ S₁₂ (Matrix.conjTranspose S₁₂) S₂₂ = S := by
+    exact (hS.isHermitian.apply _ _).symm
+  have hblocks : Matrix.fromBlocks (S.submatrix Sum.inl Sum.inl) (S.submatrix Sum.inl Sum.inr)
+      (S.submatrix Sum.inl Sum.inr)ᴴ (S.submatrix Sum.inr Sum.inr) = S := by
     rw [← hS₂₁]
-    ext (i | i) (j | j) <;> rfl
-  have hcond : (S₁₁ - S₁₂ * S₂₂⁻¹ * Matrix.conjTranspose S₁₂).PosSemidef :=
-    (Matrix.PosDef.fromBlocks₂₂ S₁₁ S₁₂ hS₂₂).mp (hblocks ▸ hS)
-  rw [← hS₂₁] at hcond
-  simpa only [Matrix.gaussianCondCov_def, S₁₁, S₁₂, S₂₁, S₂₂] using hcond
+    simpa only [Matrix.toBlocks₁₁_eq_submatrix, Matrix.toBlocks₁₂_eq_submatrix,
+      Matrix.toBlocks₂₁_eq_submatrix, Matrix.toBlocks₂₂_eq_submatrix] using
+      Matrix.fromBlocks_toBlocks S
+  rw [Matrix.gaussianCondCov_def, hS₂₁]
+  exact (hblocks ▸ hS).schur_complement₂₂_covariancePseudoInverse
 
 /-- The conditional covariance of a positive-definite block matrix is positive definite. -/
 theorem Matrix.PosDef.gaussianCondCov [Finite ι] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
@@ -158,7 +175,7 @@ theorem Matrix.PosDef.gaussianCondCov [Finite ι] {S : Matrix (ι ⊕ κ) (ι �
   have hunit : IsUnit (S₁₁ - S₁₂ * S₂₂⁻¹ * Matrix.conjTranspose S₁₂) := by
     simpa only [Matrix.invOf_eq_nonsing_inv] using
       (isUnit_of_invertible (S₁₁ - S₁₂ * ⅟S₂₂ * Matrix.conjTranspose S₁₂))
-  rw [Matrix.gaussianCondCov_def]
+  rw [Matrix.gaussianCondCov_def, Matrix.covariancePseudoInverse_of_posDef hS₂₂]
   -- Expose the named block matrices so the Schur-complement theorem applies directly.
   change (S₁₁ - S₁₂ * S₂₂⁻¹ * S₂₁).PosDef
   rw [hS₂₁]
@@ -170,9 +187,8 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq
 
 /-- The Gaussian Markov kernel given by the conditional-law formula.
 `TauCeti.Probability.condDistrib_multivariateGaussian` identifies it with the conditional
-distribution when
-the joint covariance is positive semidefinite and the observed covariance block is positive
-definite. -/
+distribution when the joint covariance is positive semidefinite. The formula specifies the kernel
+on the entire observed space, even outside the affine support. -/
 noncomputable def gaussianCondKernel (m : EuclideanSpace ℝ (ι ⊕ κ))
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) :
     Kernel (EuclideanSpace ℝ κ) (EuclideanSpace ℝ ι) where
@@ -198,6 +214,16 @@ theorem gaussianCondKernel_apply (m : EuclideanSpace ℝ (ι ⊕ κ))
       multivariateGaussian (m.gaussianCondMean S x₂) S.gaussianCondCov :=
   (rfl)
 
+/-- At a zero observed block the kernel returns the Gaussian law of the first block at every
+observed value. For a valid joint covariance this is the unconditional first marginal. -/
+@[simp 1100]
+theorem gaussianCondKernel_of_submatrix_eq_zero (m : EuclideanSpace ℝ (ι ⊕ κ))
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS₂₂ : S.submatrix Sum.inr Sum.inr = 0)
+    (x₂ : EuclideanSpace ℝ κ) :
+    m.gaussianCondKernel S x₂ =
+      multivariateGaussian (EuclideanSpace.sumEquivProd m).1 (S.submatrix Sum.inl Sum.inl) := by
+  simp [gaussianCondKernel_apply, gaussianCondMean_def, Matrix.gaussianCondCov_def, hS₂₂]
+
 instance isMarkovKernel_gaussianCondKernel (m : EuclideanSpace ℝ (ι ⊕ κ))
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) : IsMarkovKernel (gaussianCondKernel m S) where
   isProbabilityMeasure x := by
@@ -212,7 +238,7 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq
 
 private noncomputable def gaussianRegressionMatrix
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) : Matrix ι κ ℝ :=
-  S.submatrix Sum.inl Sum.inr * (S.submatrix Sum.inr Sum.inr)⁻¹
+  S.submatrix Sum.inl Sum.inr * (S.submatrix Sum.inr Sum.inr).covariancePseudoInverse
 
 private noncomputable def gaussianResidualMatrix
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) : Matrix ι (ι ⊕ κ) ℝ :=
@@ -220,6 +246,13 @@ private noncomputable def gaussianResidualMatrix
 
 private noncomputable def gaussianSndMatrix : Matrix κ (ι ⊕ κ) ℝ :=
   Matrix.fromCols 0 1
+
+omit [Fintype ι] [DecidableEq ι] in
+private theorem gaussianRegressionMatrix_mul_block22 [Finite ι]
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef) :
+    gaussianRegressionMatrix S * S.submatrix Sum.inr Sum.inr = S.submatrix Sum.inl Sum.inr := by
+  simpa only [gaussianRegressionMatrix, Matrix.toBlocks₁₂_eq_submatrix,
+    Matrix.toBlocks₂₂_eq_submatrix] using hS.toBlocks₁₂_mul_covariancePseudoInverse_mul
 
 private theorem gaussianSndMatrix_mulVec (x : EuclideanSpace ℝ (ι ⊕ κ)) :
     (gaussianSndMatrix (ι := ι) (κ := κ)).toEuclideanLin x =
@@ -257,17 +290,8 @@ private theorem gaussianResidualMatrix_mulVec (S : Matrix (ι ⊕ κ) (ι ⊕ κ
   simp only [Matrix.one_mulVec, Matrix.neg_mulVec, Pi.sub_apply]
   rfl
 
-omit [Fintype ι] [DecidableEq ι] in
-private theorem gaussianRegressionMatrix_mul_block22 {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
-    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) :
-    gaussianRegressionMatrix S * S.submatrix Sum.inr Sum.inr =
-      S.submatrix Sum.inl Sum.inr := by
-  let _ := hS₂₂.isUnit.invertible
-  simp [gaussianRegressionMatrix, Matrix.mul_assoc]
-
 private theorem gaussianResidualMatrix_mul_cov_mul_transpose
-    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
-    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) :
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef) :
     gaussianResidualMatrix S * S * (gaussianResidualMatrix S).transpose = S.gaussianCondCov := by
   let S₁₁ := S.submatrix Sum.inl Sum.inl
   let S₁₂ := S.submatrix Sum.inl Sum.inr
@@ -276,7 +300,7 @@ private theorem gaussianResidualMatrix_mul_cov_mul_transpose
   let A := gaussianRegressionMatrix S
   have hblocks : Matrix.fromBlocks S₁₁ S₁₂ S₂₁ S₂₂ = S := by
     ext (i | i) (j | j) <;> rfl
-  have hAS₂₂ : A * S₂₂ = S₁₂ := gaussianRegressionMatrix_mul_block22 hS₂₂
+  have hAS₂₂ : A * S₂₂ = S₁₂ := gaussianRegressionMatrix_mul_block22 hS
   -- Unfold the residual map to expose multiplication of partitioned matrices.
   change Matrix.fromCols 1 (-A) * S * (Matrix.fromCols 1 (-A)).transpose = S.gaussianCondCov
   calc
@@ -293,8 +317,7 @@ private theorem gaussianResidualMatrix_mul_cov_mul_transpose
         Matrix.mul_assoc]
 
 private theorem gaussianResidualMatrix_mul_cov_mul_snd_transpose
-    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
-    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) :
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef) :
     gaussianResidualMatrix S * S *
       (gaussianSndMatrix (ι := ι) (κ := κ)).transpose = (0 : Matrix ι κ ℝ) := by
   let S₁₁ := S.submatrix Sum.inl Sum.inl
@@ -304,7 +327,7 @@ private theorem gaussianResidualMatrix_mul_cov_mul_snd_transpose
   let A := gaussianRegressionMatrix S
   have hblocks : Matrix.fromBlocks S₁₁ S₁₂ S₂₁ S₂₂ = S := by
     ext (i | i) (j | j) <;> rfl
-  have hAS₂₂ : A * S₂₂ = S₁₂ := gaussianRegressionMatrix_mul_block22 hS₂₂
+  have hAS₂₂ : A * S₂₂ = S₁₂ := gaussianRegressionMatrix_mul_block22 hS
   -- Unfold the two linear maps to expose multiplication of partitioned matrices.
   change Matrix.fromCols 1 (-A) * S *
     (Matrix.fromCols (0 : Matrix κ ι ℝ) (1 : Matrix κ κ ℝ)).transpose =
@@ -320,8 +343,7 @@ private theorem gaussianResidualMatrix_mul_cov_mul_snd_transpose
     _ = (0 : Matrix ι κ ℝ) := by rw [hAS₂₂, sub_self]; simp
 
 private theorem gaussianResidual_hasLaw {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
-    (m : EuclideanSpace ℝ (ι ⊕ κ)) (hS : S.PosSemidef)
-    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) :
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) (hS : S.PosSemidef) :
     HasLaw (fun x => (gaussianResidualMatrix S).toEuclideanLin x)
       (multivariateGaussian ((gaussianResidualMatrix S).toEuclideanLin m) S.gaussianCondCov)
       (multivariateGaussian m S) := by
@@ -329,7 +351,7 @@ private theorem gaussianResidual_hasLaw {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
     (Y := fun x => (gaussianResidualMatrix S).toEuclideanLin x + 0)
     ⟨by fun_prop, map_affine_multivariateGaussian m hS (gaussianResidualMatrix S) 0⟩
     HasLaw.id
-  rw [gaussianResidualMatrix_mul_cov_mul_transpose hS₂₂] at h
+  rw [gaussianResidualMatrix_mul_cov_mul_transpose hS] at h
   simpa only [Function.comp_id, add_zero] using h
 
 private theorem gaussianSnd_hasLaw {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
@@ -365,8 +387,7 @@ private theorem gaussianSnd_hasLaw {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
   simpa only [hL, add_zero, Function.comp_id] using h
 
 private theorem indepFun_gaussianSnd_gaussianResidual {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
-    (m : EuclideanSpace ℝ (ι ⊕ κ)) (hS : S.PosSemidef)
-    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) :
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) (hS : S.PosSemidef) :
     IndepFun (fun x => (EuclideanSpace.sumEquivProd x).2)
       (fun x => (gaussianResidualMatrix S).toEuclideanLin x) (multivariateGaussian m S) := by
   let X₂ := fun x : EuclideanSpace ℝ (ι ⊕ κ) => (EuclideanSpace.sumEquivProd x).2
@@ -394,12 +415,12 @@ private theorem indepFun_gaussianSnd_gaussianResidual {S : Matrix (ι ⊕ κ) (�
     rw [gaussianSndMatrix_mulVec]
   rw [hsnd]
   rw [covariance_inner_matrix_multivariateGaussian m hS,
-    gaussianResidualMatrix_mul_cov_mul_snd_transpose hS₂₂]
+    gaussianResidualMatrix_mul_cov_mul_snd_transpose hS]
   simp
 
 private theorem gaussianCondKernel_eq_map_residual {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
     (m : EuclideanSpace ℝ (ι ⊕ κ)) (hS : S.PosSemidef)
-    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) (x₂ : EuclideanSpace ℝ κ) :
+    (x₂ : EuclideanSpace ℝ κ) :
     m.gaussianCondKernel S x₂ =
       (multivariateGaussian ((gaussianResidualMatrix S).toEuclideanLin m) S.gaussianCondCov).map
         (fun r => r + (gaussianRegressionMatrix S).toEuclideanLin x₂) := by
@@ -412,7 +433,7 @@ private theorem gaussianCondKernel_eq_map_residual {S : Matrix (ι ⊕ κ) (ι �
     funext r
     simp
   rw [hfun]
-  rw [map_affine_multivariateGaussian _ (Matrix.PosSemidef.gaussianCondCov hS hS₂₂) 1]
+  rw [map_affine_multivariateGaussian _ (Matrix.PosSemidef.gaussianCondCov hS) 1]
   congr 1
   · rw [EuclideanSpace.gaussianCondMean_def, gaussianResidualMatrix_mulVec]
     simp only [Matrix.toLpLin_one, LinearMap.id_coe, id_eq]
@@ -422,8 +443,7 @@ private theorem gaussianCondKernel_eq_map_residual {S : Matrix (ι ⊕ κ) (ι �
   · simp
 
 private theorem compProd_gaussianCondKernel_eq_map_prod {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
-    (m : EuclideanSpace ℝ (ι ⊕ κ)) (hS : S.PosSemidef)
-    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) :
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) (hS : S.PosSemidef) :
     multivariateGaussian (EuclideanSpace.sumEquivProd m).2 (S.submatrix Sum.inr Sum.inr) ⊗ₘ
         m.gaussianCondKernel S =
       ((multivariateGaussian (EuclideanSpace.sumEquivProd m).2 (S.submatrix Sum.inr Sum.inr)).prod
@@ -434,28 +454,69 @@ private theorem compProd_gaussianCondKernel_eq_map_prod {S : Matrix (ι ⊕ κ) 
   rw [Measure.compProd_apply hs, Measure.map_apply (by fun_prop) hs,
     Measure.prod_apply (hs.preimage (by fun_prop))]
   congr with x₂
-  rw [gaussianCondKernel_eq_map_residual m hS hS₂₂ x₂,
+  rw [gaussianCondKernel_eq_map_residual m hS x₂,
     Measure.map_apply (by fun_prop) (measurable_prodMk_left hs)]
   rfl
 
-/-- For a jointly Gaussian vector with positive-semidefinite covariance and a positive-definite
-observed covariance block, the regular conditional law of the first coordinate block given the
-second is Gaussian with the Schur-complement covariance and the usual affine conditional mean. -/
+/-- The joint Gaussian law factors into its observed marginal and the pseudoinverse
+conditional kernel. The joint coordinates are ordered as observed, then retained. -/
+theorem _root_.EuclideanSpace.map_snd_fst_multivariateGaussian
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
+    (hS : S.PosSemidef) :
+    (multivariateGaussian m S).map
+        (fun x => ((EuclideanSpace.sumEquivProd x).2, (EuclideanSpace.sumEquivProd x).1)) =
+      multivariateGaussian (EuclideanSpace.sumEquivProd m).2 (S.submatrix Sum.inr Sum.inr) ⊗ₘ
+        m.gaussianCondKernel S := by
+  have hprod := (indepFun_gaussianSnd_gaussianResidual m hS).hasLaw_prod
+    (gaussianSnd_hasLaw m hS) (gaussianResidual_hasLaw m hS)
+  rw [compProd_gaussianCondKernel_eq_map_prod m hS, ← hprod.map_eq,
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  congr 1
+  funext x
+  simp only [Function.comp_apply, gaussianResidualMatrix_mulVec]
+  ext <;> simp
+
+/-- The centered regression residual of a jointly Gaussian vector is independent of its
+observed block, even when that block has singular covariance. -/
+theorem _root_.ProbabilityTheory.HasLaw.indepFun_gaussianResidual {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → EuclideanSpace ℝ (ι ⊕ κ)}
+    {m : EuclideanSpace ℝ (ι ⊕ κ)} {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
+    (hX : HasLaw X (multivariateGaussian m S) P) (hS : S.PosSemidef) :
+    IndepFun
+      (fun ω => (EuclideanSpace.sumEquivProd (X ω)).1 - (EuclideanSpace.sumEquivProd m).1 -
+        (S.submatrix Sum.inl Sum.inr *
+          (S.submatrix Sum.inr Sum.inr).covariancePseudoInverse).toEuclideanLin
+            ((EuclideanSpace.sumEquivProd (X ω)).2 - (EuclideanSpace.sumEquivProd m).2))
+      (fun ω => (EuclideanSpace.sumEquivProd (X ω)).2) P := by
+  let : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  have hprod := ((indepFun_gaussianSnd_gaussianResidual m hS).hasLaw_prod
+    (gaussianSnd_hasLaw m hS) (gaussianResidual_hasLaw m hS)).comp hX
+  have hindep := (indepFun_iff_hasLaw_prodMk_prod
+    ((gaussianSnd_hasLaw m hS).comp hX) ((gaussianResidual_hasLaw m hS).comp hX)).mpr hprod
+  have hcenter := hindep.symm.comp
+    (φ := fun r => r - (gaussianResidualMatrix S).toEuclideanLin m) (ψ := id)
+    (by fun_prop) measurable_id
+  convert hcenter using 1
+  · funext ω
+    simp only [Function.comp_apply, gaussianResidualMatrix_mulVec, gaussianRegressionMatrix,
+      map_sub]
+    abel
+  · rfl
+
+/-- For a jointly Gaussian vector with positive-semidefinite covariance, the regular conditional
+law of the first block given the second is Gaussian with the generalized Schur complement and
+pseudoinverse regression mean. Singular observed blocks and Dirac conditional laws are included. -/
 theorem condDistrib_multivariateGaussian {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     [IsFiniteMeasure P] (X : Ω → EuclideanSpace ℝ (ι ⊕ κ))
     (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
-    (hX : HasLaw X (multivariateGaussian m S) P) (hS : S.PosSemidef)
-    (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) :
+    (hX : HasLaw X (multivariateGaussian m S) P) (hS : S.PosSemidef) :
     condDistrib (fun ω => (EuclideanSpace.sumEquivProd (X ω)).1)
         (fun ω => (EuclideanSpace.sumEquivProd (X ω)).2) P =ᵐ[
       P.map (fun ω => (EuclideanSpace.sumEquivProd (X ω)).2)] m.gaussianCondKernel S := by
   let : IsProbabilityMeasure P := hX.isProbabilityMeasure
   let X₁ := fun ω => (EuclideanSpace.sumEquivProd (X ω)).1
   let X₂ := fun ω => (EuclideanSpace.sumEquivProd (X ω)).2
-  let R := fun x : EuclideanSpace ℝ (ι ⊕ κ) => (gaussianResidualMatrix S).toEuclideanLin x
   have hX₂ := (gaussianSnd_hasLaw m hS).comp hX
-  have hprod := ((indepFun_gaussianSnd_gaussianResidual m hS hS₂₂).hasLaw_prod
-    (gaussianSnd_hasLaw m hS) (gaussianResidual_hasLaw m hS hS₂₂)).comp hX
   refine condDistrib_ae_eq_of_measure_eq_compProd (by fun_prop) (by fun_prop) ?_
   have hX₂map : P.map X₂ =
       multivariateGaussian (EuclideanSpace.sumEquivProd m).2
@@ -463,12 +524,8 @@ theorem condDistrib_multivariateGaussian {Ω : Type*} [MeasurableSpace Ω] {P : 
     -- Match the compositional form used by `HasLaw.map_eq`.
     change P.map ((fun x => (EuclideanSpace.sumEquivProd x).2) ∘ X) = _
     exact hX₂.map_eq
-  rw [hX₂map, compProd_gaussianCondKernel_eq_map_prod m hS hS₂₂, ← hprod.map_eq,
-    AEMeasurable.map_map_of_aemeasurable (by fun_prop) (by fun_prop)]
-  apply Measure.map_congr
-  filter_upwards with ω
-  dsimp only [X₁, X₂, R, Function.comp_apply]
-  rw [gaussianResidualMatrix_mulVec]
-  ext <;> simp
+  rw [hX₂map, ← m.map_snd_fst_multivariateGaussian hS, ← hX.map_eq,
+    AEMeasurable.map_map_of_aemeasurable (by fun_prop) hX.aemeasurable]
+  rfl
 
 end TauCeti.Probability
