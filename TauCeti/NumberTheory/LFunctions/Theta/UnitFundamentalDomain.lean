@@ -238,20 +238,14 @@ theorem mem_unitFundamentalDomain {y : realSpace K} :
   Iff.rfl
 
 omit [NumberField K] in
-/-- The coordinatewise square root of a parameter, read in the mixed space, has absolute value
-`√(y w)` at the place `w`. -/
-private theorem normAtPlace_sqrt (y : realSpace K) (w : InfinitePlace K) :
-    normAtPlace w (mixedSpaceOfRealSpace (fun v ↦ √(y v))) = √(y w) :=
-  normAtPlace_mixedSpaceOfRealSpace (Real.sqrt_nonneg _)
-
-omit [NumberField K] in
 /-- The square root of `unitScale u y` is the square root of `y` moved by `u` in the mixed
 space, up to the coordinatewise absolute values that the fundamental cone ignores. -/
 private theorem normAtPlace_sqrt_unitScale (u : (𝓞 K)ˣ) (y : realSpace K) (w : InfinitePlace K) :
     normAtPlace w (mixedSpaceOfRealSpace (fun v ↦ √(unitScale u y v))) =
       normAtPlace w (u • mixedSpaceOfRealSpace (fun v ↦ √(y v))) := by
-  rw [normAtPlace_sqrt, unitScale_apply, unitSMul_smul, map_mul, normAtPlace_apply,
-    normAtPlace_sqrt, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (apply_nonneg _ _)]
+  rw [normAtPlace_mixedSpaceOfRealSpace (Real.sqrt_nonneg _), unitScale_apply, unitSMul_smul,
+    map_mul, normAtPlace_apply, normAtPlace_mixedSpaceOfRealSpace (Real.sqrt_nonneg _),
+    Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (apply_nonneg _ _)]
 
 private theorem unitScale_mem_fundamentalCone_iff (u : (𝓞 K)ˣ) (y : realSpace K) :
     mixedSpaceOfRealSpace (fun v ↦ √(unitScale u y v)) ∈ fundamentalCone K ↔
@@ -288,7 +282,7 @@ private theorem isBounded_unitFundamentalDomain : IsBounded (unitFundamentalDoma
     refine le_trans ?_ hx
     rw [norm_eq_sup'_normAtPlace]
     exact le_sup' (fun v ↦ normAtPlace v _) (mem_univ w)
-  rw [normAtPlace_sqrt] at hw
+  rw [normAtPlace_mixedSpaceOfRealSpace (Real.sqrt_nonneg _)] at hw
   rw [Real.norm_of_nonneg (hy.1.1 w).le, ← Real.sq_sqrt (hy.1.1 w).le]
   exact pow_le_pow_left₀ (Real.sqrt_nonneg _) hw 2
 
