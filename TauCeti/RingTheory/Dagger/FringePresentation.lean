@@ -174,6 +174,8 @@ theorem stageMap_stageMap {ρ ρ' ρ'' : Set.Ioc (1 : ℝ) P.radius} (h : ρ ≤
   simp only [stageMap_mk]
   exact congrArg _ (Subtype.ext (by simp))
 
+/-- Transition maps compose, as an equality of bundled maps. -/
+@[simp]
 theorem stageMap_comp {ρ ρ' ρ'' : Set.Ioc (1 : ℝ) P.radius} (h : ρ ≤ ρ') (h' : ρ' ≤ ρ'') :
     (P.stageMap h).comp (P.stageMap h') = P.stageMap (h.trans h') :=
   AlgHom.ext (P.stageMap_stageMap h h')
@@ -220,6 +222,9 @@ theorem ofStage_stageMap {ρ ρ' : Set.Ioc (1 : ℝ) P.radius} (h : ρ ≤ ρ') 
   simp only [stageMap_mk, ofStage_mk]
   exact congrArg _ (Subtype.ext (by simp))
 
+/-- The maps from the stages to `A` are compatible with the transition maps, as an equality of
+bundled maps. -/
+@[simp]
 theorem ofStage_comp_stageMap {ρ ρ' : Set.Ioc (1 : ℝ) P.radius} (h : ρ ≤ ρ') :
     (P.ofStage ρ).comp (P.stageMap h) = P.ofStage ρ' :=
   AlgHom.ext (P.ofStage_stageMap h)
@@ -382,6 +387,8 @@ noncomputable def lift : A →ₐ[K] B :=
   (Ideal.Quotient.liftₐ P.ideal (P.liftWashnitzer φ hφ) (P.liftWashnitzer_eq_zero φ hφ)).comp
     P.equiv.symm.toAlgHom
 
+/-- The map induced by a compatible family `φ` recovers `φ ρ` on the image of each stage `A_ρ`:
+`lift φ (ofStage ρ x) = φ ρ x`. -/
 @[simp]
 theorem lift_ofStage (ρ : Set.Ioc (1 : ℝ) P.radius) (x : P.stage ρ) :
     P.lift φ hφ (P.ofStage ρ x) = φ ρ x := by
@@ -396,6 +403,9 @@ theorem lift_ofStage (ρ : Set.Ioc (1 : ℝ) P.radius) (x : P.stage ρ) :
     liftWashnitzer_apply, P.liftFun_eq φ hφ _ hf]
   exact congrArg (fun x ↦ φ ρ (Ideal.Quotient.mk _ x)) (Subtype.ext (by simp))
 
+/-- The map induced by a compatible family `φ`, composed with the map `A_ρ → A` from a stage,
+recovers `φ ρ`. -/
+@[simp]
 theorem lift_comp_ofStage (ρ : Set.Ioc (1 : ℝ) P.radius) :
     (P.lift φ hφ).comp (P.ofStage ρ) = φ ρ :=
   AlgHom.ext (P.lift_ofStage φ hφ ρ)
