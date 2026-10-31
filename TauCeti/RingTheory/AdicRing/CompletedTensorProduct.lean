@@ -147,15 +147,10 @@ theorem algebraMap_mem_pow_iff (n : ℕ) {x : B ⊗[A] C} :
 
 /-- The image of `B ⊗[A] C` in the completed tensor product is dense. -/
 theorem denseRange_algebraMap :
-    DenseRange (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C)) := by
-  refine fun x ↦ mem_closure_iff_nhds.mpr fun U hU ↦ ?_
-  obtain ⟨n, -, hn⟩ := ((isAdic A B C).hasBasis_nhds x).mem_iff.mp hU
-  obtain ⟨y, hy⟩ : ∃ y, x - algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C) y ∈
-      (tensorIdeal A B C).map (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C)) ^ n := by
-    rw [← Ideal.map_pow]
-    exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (tensorIdeal_fg A B C) n x
-  refine ⟨_, hn ⟨_, neg_mem hy, ?_⟩, y, rfl⟩
-  simp only [neg_sub, add_sub_cancel]
+    DenseRange (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C)) :=
+  letI : TopologicalSpace (AdicCompletion (tensorIdeal A B C) (B ⊗[A] C)) :=
+    inferInstanceAs (TopologicalSpace (CompletedTensorProduct A B C))
+  AdicCompletion.denseRange_algebraMap (tensorIdeal_fg A B C) (isAdic A B C)
 
 /-- The left inclusion `b ↦ b ⊗ 1` into the completed tensor product. -/
 noncomputable def inl : B →ₐ[A] CompletedTensorProduct A B C :=
