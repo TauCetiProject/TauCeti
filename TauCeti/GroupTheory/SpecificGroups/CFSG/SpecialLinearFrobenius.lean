@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.FieldCoordinates
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
 public import TauCeti.GroupTheory.FixedSubgroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
