@@ -129,12 +129,12 @@ theorem splitExitTime_nonneg [NormedAddCommGroup Eᵤ] (hz : z.snd ≠ 0) (hzε 
     0 ≤ splitExitTime ε z :=
   Real.log_nonneg ((one_le_div (norm_pos_iff.2 hz)).2 hzε)
 
-/-- The entry time is nonpositive for a point whose first coordinate is nonzero and lies in the
-closed ball of radius `ε`. -/
-theorem splitEntryTime_nonpos [NormedAddCommGroup Eₛ] (hz : z.fst ≠ 0) (hzε : ‖z.fst‖ ≤ ε) :
+/-- The entry time is nonpositive for a point whose first coordinate lies in the closed ball of
+radius `ε`. -/
+theorem splitEntryTime_nonpos [SeminormedAddCommGroup Eₛ] (hzε : ‖z.fst‖ ≤ ε) :
     splitEntryTime ε z ≤ 0 :=
-  Real.log_nonpos (div_nonneg (norm_nonneg _) ((norm_nonneg _).trans hzε))
-    ((div_le_one ((norm_pos_iff.2 hz).trans_le hzε)).2 hzε)
+  have hε : 0 ≤ ε := (norm_nonneg _).trans hzε
+  Real.log_nonpos (div_nonneg (norm_nonneg _) hε) (div_le_one_of_le₀ hzε hε)
 
 /-- **Long passages near the stable set.** If points approach the stable set `y = 0` from outside
 it, their exit times tend to `+∞`. -/

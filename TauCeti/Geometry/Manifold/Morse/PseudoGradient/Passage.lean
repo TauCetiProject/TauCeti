@@ -182,8 +182,8 @@ theorem flow_splitEntryTime (hX : IsAdaptedPseudoGradient f X) (φ : MorseChart 
       φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm ((splitPassage ε).symm w))) := by
   rw [splitPassage_symm_apply]
   refine hX.flow_toChart_symm_splitCoord_symm φ hφ hε fun s hs ↦ ?_
-  obtain ⟨-, hx, hxε⟩ := mem_splitPassage_target.1 hw
-  rw [uIcc_of_ge (splitEntryTime_nonpos hx hxε)] at hs
+  obtain ⟨-, -, hxε⟩ := mem_splitPassage_target.1 hw
+  rw [uIcc_of_ge (splitEntryTime_nonpos hxε)] at hs
   exact (norm_fst_le_and_norm_snd_le_iff_of_mem_splitPassage_target hw).2 hs
 
 end IsAdaptedPseudoGradient
