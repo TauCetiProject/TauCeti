@@ -97,18 +97,22 @@ private lemma smul_typeProjection_alternatizeUncurryFin {J : E →L[ℝ] E} (hJ 
     map_add]
 
 /-- The shift `t = ((P - Q) - (p - q)) * I` between the eigenvalues of types `(P,Q)` and `(p,q)`,
-for `P + Q = p + q + 1`, is `(2 (P - p) - 1) * I`. It is a root of `(t² + 1)(t² + 9)` only when
-`P - p ∈ {-1, 0, 1, 2}`. -/
+for `P + Q = p + q + 1`, is `(2 (P - p) - 1) * I`. -/
+private lemma typeShift_eq {p q P Q : ℕ} (hPQ : P + Q = p + q + 1) :
+    ((P : ℂ) - Q) * I - ((p : ℂ) - q) * I = ((2 * P - 2 * p - 1 : ℤ) : ℂ) * I := by
+  have hk : (P : ℂ) + Q = p + q + 1 := by exact_mod_cast hPQ
+  push_cast
+  linear_combination (-I) * hk
+
+/-- The shift `t = ((P - Q) - (p - q)) * I` between the eigenvalues of types `(P,Q)` and `(p,q)`,
+for `P + Q = p + q + 1`, is a root of `(t² + 1)(t² + 9)` only when `P - p ∈ {-1, 0, 1, 2}`. -/
 private lemma typeShift_poly_ne_zero {p q P Q : ℕ} (hPQ : P + Q = p + q + 1)
     (hP : P + 1 < p ∨ p + 2 < P) :
     (((P : ℂ) - Q) * I - ((p : ℂ) - q) * I) ^ 4 +
       10 * (((P : ℂ) - Q) * I - ((p : ℂ) - q) * I) ^ 2 + 9 ≠ 0 := by
   set n : ℤ := 2 * P - 2 * p - 1 with hn
-  have hk : (P : ℂ) + Q = p + q + 1 := by exact_mod_cast hPQ
-  have htn : ((P : ℂ) - Q) * I - ((p : ℂ) - q) * I = (n : ℂ) * I := by
-    rw [hn]
-    push_cast
-    linear_combination (-I) * hk
+  have htn := typeShift_eq hPQ
+  rw [← hn] at htn
   have hn5 : 25 ≤ n ^ 2 := by
     rcases hP with h | h <;> nlinarith
   rw [htn]
@@ -136,17 +140,13 @@ private lemma eq_zero_of_typeShift {V : Type*} [AddCommGroup V] [Module ℂ V] {
   exact (smul_eq_zero.1 hpoly).resolve_left ht
 
 /-- The shift `t = ((P - Q) - (p - q)) * I` between the eigenvalues of types `(P,Q)` and `(p,q)`,
-for `P + Q = p + q + 1`, is `(2 (P - p) - 1) * I`. It is a root of `t² + 1` only when
-`P - p ∈ {0, 1}`. -/
+for `P + Q = p + q + 1`, is a root of `t² + 1` only when `P - p ∈ {0, 1}`. -/
 private lemma typeShift_sq_add_one_ne_zero {p q P Q : ℕ} (hPQ : P + Q = p + q + 1) (hP : P ≠ p)
     (hP' : P ≠ p + 1) :
     (((P : ℂ) - Q) * I - ((p : ℂ) - q) * I) ^ 2 + 1 ≠ 0 := by
   set n : ℤ := 2 * P - 2 * p - 1 with hn
-  have hk : (P : ℂ) + Q = p + q + 1 := by exact_mod_cast hPQ
-  have htn : ((P : ℂ) - Q) * I - ((p : ℂ) - q) * I = (n : ℂ) * I := by
-    rw [hn]
-    push_cast
-    linear_combination (-I) * hk
+  have htn := typeShift_eq hPQ
+  rw [← hn] at htn
   have hn9 : 9 ≤ n ^ 2 := by
     rcases lt_or_gt_of_ne hP with h | h
     · nlinarith

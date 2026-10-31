@@ -28,7 +28,9 @@ evaluations of the components `∂bar ∂bar f` and `∂∂f` of `d²f = 0`, by 
 `TauCeti.Geometry.Manifold.DifferentialForm.Nijenhuis` for the components of bidegree `(-1,2)`
 and `(2,-1)` of `d` on one-forms. The component of type `(1,1)` of `d²f = 0` gives
 `∂ ∂bar f + ∂bar ∂f = 0` on every almost complex manifold. When `N_J = 0`, `∂² = 0` and
-`∂bar² = 0` on functions and `d = ∂ + ∂bar` on one-forms.
+`∂bar² = 0` on functions and `d = ∂ + ∂bar` on one-forms. Wherever `d = ∂ + ∂bar` on the forms of
+two consecutive degrees, the components of `d² = 0` give `∂² = 0`, `∂bar² = 0` and
+`∂ ∂bar + ∂bar ∂ = 0`.
 
 ## Main declarations
 
@@ -37,6 +39,10 @@ and `(2,-1)` of `d` on one-forms. The component of type `(1,1)` of `d²f = 0` gi
 * `TauCeti.SmoothForm.IsOfType.del_eq`, `TauCeti.SmoothForm.IsOfType.delBar_eq`: on a form of type
   `(p,q)`, they are the type-`(p+1,q)` and type-`(p,q+1)` components of `d`.
 * `TauCeti.SmoothForm.IsOfType.mextDerivₗ_eq_add_del_add_delBar_add`: the four bidegrees of `d`.
+* `TauCeti.SmoothAlmostComplexStructure.del_del_eq_zero_of_mextDerivₗ_eq_del_add_delBar`,
+  `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar`,
+  `TauCeti.SmoothAlmostComplexStructure.del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar`:
+  wherever `d = ∂ + ∂bar`, `∂² = 0`, `∂bar² = 0` and `∂ ∂bar + ∂bar ∂ = 0`.
 * `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_apply`,
   `TauCeti.SmoothAlmostComplexStructure.del_del_apply`: the squares of `∂bar` and `∂` on functions
   through the Nijenhuis tensor.
@@ -259,6 +265,63 @@ theorem mpullback_delBar (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J
     ← SmoothForm.mextDerivₗ_mpullback]
 
 end Pullback
+
+/-! ### Squares when `d = ∂ + ∂bar` -/
+
+section DelAddDelBar
+
+variable {J}
+  (hd : ∀ φ : SmoothForm I M F k, mextDerivₗ I k φ = J.del φ + J.delBar φ)
+  (hd' : ∀ φ : SmoothForm I M F (k + 1), mextDerivₗ I (k + 1) φ = J.del φ + J.delBar φ)
+include hd hd'
+
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then on a `k`-form `φ` of type `(p,q)`
+the components of `d²φ = 0` of the types `(p+2,q)`, `(p+1,q+1)` and `(p,q+2)` are `∂∂φ`,
+`∂ ∂bar φ + ∂bar ∂φ` and `∂bar ∂bar φ`, so these vanish. -/
+private theorem del_del_and_delBar_delBar_of_isOfType {φ : SmoothForm I M F k} {p q : ℕ}
+    (hφ : φ.IsOfType J p q) :
+    J.del (J.del φ) = 0 ∧ J.del (J.delBar φ) + J.delBar (J.del φ) = 0 ∧
+      J.delBar (J.delBar φ) = 0 := by
+  have h : J.del (J.del φ) + J.delBar (J.del φ) + (J.del (J.delBar φ) + J.delBar (J.delBar φ)) =
+      0 := by
+    rw [← hd', ← hd', ← map_add, ← hd, ← LinearMap.comp_apply, mextDerivₗ_comp_mextDerivₗ,
+      LinearMap.zero_apply]
+  have h₂₀ := congrArg (J.typeProjection (p + 1 + 1) q) h
+  have h₀₂ := congrArg (J.typeProjection p (q + 1 + 1)) h
+  simp only [map_add, map_zero, hφ.del.del.typeProjection_self,
+    hφ.delBar.delBar.typeProjection_self,
+    hφ.del.delBar.typeProjection_of_ne (p' := p + 1 + 1) (q' := q) (by grind),
+    hφ.delBar.del.typeProjection_of_ne (p' := p + 1 + 1) (q' := q) (by grind),
+    hφ.delBar.delBar.typeProjection_of_ne (p' := p + 1 + 1) (q' := q) (by grind),
+    hφ.del.del.typeProjection_of_ne (p' := p) (q' := q + 1 + 1) (by grind),
+    hφ.del.delBar.typeProjection_of_ne (p' := p) (q' := q + 1 + 1) (by grind),
+    hφ.delBar.del.typeProjection_of_ne (p' := p) (q' := q + 1 + 1) (by grind),
+    add_zero, zero_add] at h₂₀ h₀₂
+  refine ⟨h₂₀, ?_, h₀₂⟩
+  rw [h₂₀, h₀₂, zero_add, add_zero] at h
+  exact (add_comm _ _).trans h
+
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then `∂∂φ = 0` for every `k`-form `φ`. -/
+theorem del_del_eq_zero_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.del (J.del φ) = 0 :=
+  J.map_eq_zero_of_forall_isOfType (f := J.del ∘ₗ J.del)
+    (fun _ _ _ _ hψ ↦ (del_del_and_delBar_delBar_of_isOfType hd hd' hψ).1) φ
+
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then `∂bar ∂bar φ = 0` for every
+`k`-form `φ`. -/
+theorem delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.delBar (J.delBar φ) = 0 :=
+  J.map_eq_zero_of_forall_isOfType (f := J.delBar ∘ₗ J.delBar)
+    (fun _ _ _ _ hψ ↦ (del_del_and_delBar_delBar_of_isOfType hd hd' hψ).2.2) φ
+
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then `∂ ∂bar φ + ∂bar ∂φ = 0` for every
+`k`-form `φ`. -/
+theorem del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.del (J.delBar φ) + J.delBar (J.del φ) = 0 :=
+  J.map_eq_zero_of_forall_isOfType (f := J.del ∘ₗ J.delBar + J.delBar ∘ₗ J.del)
+    (fun _ _ _ _ hψ ↦ (del_del_and_delBar_delBar_of_isOfType hd hd' hψ).2.1) φ
+
+end DelAddDelBar
 
 /-! ### Functions -/
 

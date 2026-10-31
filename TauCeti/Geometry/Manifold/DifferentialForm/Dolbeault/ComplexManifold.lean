@@ -18,7 +18,9 @@ structure, multiplication by `i` on every tangent space. On an arbitrary almost 
 the exterior derivative of a form of type `(p,q)` has components of the four types `(p+2,q-1)`,
 `(p+1,q)`, `(p,q+1)` and `(p-1,q+2)`. On a complex manifold the outer two vanish, so that
 `d = ∂ + ∂bar` on complex-valued smooth forms of every degree. Taking the components of
-`d² = 0` of the three possible types then gives
+`d² = 0` of the three possible types, as in
+`TauCeti.SmoothAlmostComplexStructure.del_del_eq_zero_of_mextDerivₗ_eq_del_add_delBar` and its
+companions, then gives
 
 * `∂² = 0`,
 * `∂bar² = 0`,
@@ -67,28 +69,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 open SmoothAlmostComplexStructure
 
-/-- The almost complex structure of a complex manifold is multiplication by `i` on every tangent
-space, as an endomorphism. -/
-private theorem toEndomorphism_ofComplexManifold (x : M) :
-    (ofComplexManifold E M).toEndomorphism x =
-      (Complex.I • ContinuousLinearMap.id ℝ E :
-        TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) x) :=
-  ContinuousLinearMap.ext fun v ↦ ofComplexManifold_apply (E := E) x v
-
-/-- The derivative of the inverse of the chart at `x` commutes with multiplication by `i`: it is
-the tangent coordinate change between two holomorphic charts, which is complex linear. -/
-private theorem mfderivWithin_extChartAt_symm_I_smul (x : M) {z : E}
-    (hz : z ∈ (extChartAt 𝓘(ℝ, E) x).target) (w : E) :
-    mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x).symm (range 𝓘(ℝ, E)) z
-        ((Complex.I • ContinuousLinearMap.id ℝ E) w) =
-      (Complex.I • ContinuousLinearMap.id ℝ E)
-        (mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x).symm (range 𝓘(ℝ, E)) z w) := by
-  have hy : (extChartAt 𝓘(ℝ, E) x).symm z ∈ (chartAt E x).source := by
-    simpa only [extChartAt_source] using (extChartAt 𝓘(ℝ, E) x).map_target hz
-  rw [← (extChartAt 𝓘(ℝ, E) x).right_inv hz, ← TangentBundle.symmL_trivializationAt hy,
-    TangentBundle.symmL_trivializationAt_eq_core hy]
-  exact tangentCoordChange_smul ℝ (𝕜' := ℂ) ⟨hy, mem_chart_source E _⟩ Complex.I w
-
 namespace SmoothForm
 
 variable {φ : SmoothForm 𝓘(ℝ, E) M F k} {p q P Q : ℕ}
@@ -107,7 +87,8 @@ private theorem IsOfType.inChartAt_isOfType (hφ : φ.IsOfType (ofComplexManifol
     rw [RoughForm.inChartAt_apply]
     exact (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).symm
   rw [heq]
-  exact h.compContinuousLinearMap fun w ↦ (mfderivWithin_extChartAt_symm_I_smul x hz w).symm
+  exact h.compContinuousLinearMap fun w ↦
+    (mfderivWithin_extChartAt_symm_smul ℝ (𝕜' := ℂ) hz Complex.I w).symm
 
 /-- **`d` has two bidegrees on a complex manifold.** The exterior derivative of a smooth form of
 type `(p,q)` on a complex manifold has no component of type `(P,Q)` other than `(p+1,q)` and
@@ -167,82 +148,32 @@ namespace SmoothAlmostComplexStructure
 /-- **`d = ∂ + ∂bar` on a complex manifold.** On the complex-valued smooth forms of every degree
 on a complex manifold, the exterior derivative is the sum of `∂` and `∂bar`. -/
 theorem mextDerivₗ_eq_del_add_delBar_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E) M F k) :
-    mextDerivₗ 𝓘(ℝ, E) k φ = (ofComplexManifold E M).del φ + (ofComplexManifold E M).delBar φ := by
-  rw [← (ofComplexManifold E M).sum_typeProjection φ, map_sum, map_sum, map_sum,
-    ← Finset.sum_add_distrib]
-  exact Finset.sum_congr rfl fun pq h ↦
-    ((ofComplexManifold E M).isOfType_typeProjection (Finset.mem_antidiagonal.1 h)
-      φ).mextDerivₗ_eq_del_add_delBar_ofComplexManifold
-
-end SmoothAlmostComplexStructure
-
-namespace SmoothForm
-
-variable {φ : SmoothForm 𝓘(ℝ, E) M F k} {p q : ℕ}
-
-/-- On a smooth form `φ` of type `(p,q)` on a complex manifold, the components of `d²φ = 0` of
-the types `(p+2,q)`, `(p+1,q+1)` and `(p,q+2)` are `∂∂φ`, `∂ ∂bar φ + ∂bar ∂φ` and
-`∂bar ∂bar φ`, so these vanish. -/
-private theorem IsOfType.del_del_and_delBar_delBar_ofComplexManifold
-    (hφ : φ.IsOfType (ofComplexManifold E M) p q) :
-    (ofComplexManifold E M).del ((ofComplexManifold E M).del φ) = 0 ∧
-      (ofComplexManifold E M).del ((ofComplexManifold E M).delBar φ) +
-        (ofComplexManifold E M).delBar ((ofComplexManifold E M).del φ) = 0 ∧
-      (ofComplexManifold E M).delBar ((ofComplexManifold E M).delBar φ) = 0 := by
-  set J := ofComplexManifold E M
-  have h : J.del (J.del φ) + J.delBar (J.del φ) + (J.del (J.delBar φ) + J.delBar (J.delBar φ)) =
-      0 := by
-    rw [← SmoothAlmostComplexStructure.mextDerivₗ_eq_del_add_delBar_ofComplexManifold,
-      ← SmoothAlmostComplexStructure.mextDerivₗ_eq_del_add_delBar_ofComplexManifold, ← map_add,
-      ← SmoothAlmostComplexStructure.mextDerivₗ_eq_del_add_delBar_ofComplexManifold,
-      ← LinearMap.comp_apply, mextDerivₗ_comp_mextDerivₗ, LinearMap.zero_apply]
-  have h₂₀ := congrArg (J.typeProjection (p + 1 + 1) q) h
-  have h₀₂ := congrArg (J.typeProjection p (q + 1 + 1)) h
-  simp only [map_add, map_zero, hφ.del.del.typeProjection_self,
-    hφ.delBar.delBar.typeProjection_self,
-    hφ.del.delBar.typeProjection_of_ne (p' := p + 1 + 1) (q' := q) (by grind),
-    hφ.delBar.del.typeProjection_of_ne (p' := p + 1 + 1) (q' := q) (by grind),
-    hφ.delBar.delBar.typeProjection_of_ne (p' := p + 1 + 1) (q' := q) (by grind),
-    hφ.del.del.typeProjection_of_ne (p' := p) (q' := q + 1 + 1) (by grind),
-    hφ.del.delBar.typeProjection_of_ne (p' := p) (q' := q + 1 + 1) (by grind),
-    hφ.delBar.del.typeProjection_of_ne (p' := p) (q' := q + 1 + 1) (by grind),
-    add_zero, zero_add] at h₂₀ h₀₂
-  refine ⟨h₂₀, ?_, h₀₂⟩
-  rw [h₂₀, h₀₂, zero_add, add_zero] at h
-  exact (add_comm _ _).trans h
-
-end SmoothForm
-
-namespace SmoothAlmostComplexStructure
+    mextDerivₗ 𝓘(ℝ, E) k φ = (ofComplexManifold E M).del φ + (ofComplexManifold E M).delBar φ :=
+  (ofComplexManifold E M).map_eq_of_forall_isOfType
+    (g := (ofComplexManifold E M).del + (ofComplexManifold E M).delBar)
+    (fun _ _ _ _ hψ ↦ hψ.mextDerivₗ_eq_del_add_delBar_ofComplexManifold) φ
 
 /-- **`∂² = 0` on a complex manifold.** -/
 @[simp]
 theorem del_del_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E) M F k) :
-    (ofComplexManifold E M).del ((ofComplexManifold E M).del φ) = 0 := by
-  rw [← (ofComplexManifold E M).sum_typeProjection φ, map_sum, map_sum]
-  exact Finset.sum_eq_zero fun pq h ↦
-    ((ofComplexManifold E M).isOfType_typeProjection (Finset.mem_antidiagonal.1 h)
-      φ).del_del_and_delBar_delBar_ofComplexManifold.1
+    (ofComplexManifold E M).del ((ofComplexManifold E M).del φ) = 0 :=
+  del_del_eq_zero_of_mextDerivₗ_eq_del_add_delBar mextDerivₗ_eq_del_add_delBar_ofComplexManifold
+    mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
 
 /-- **`∂bar² = 0` on a complex manifold.** This is the identity making the forms of types `(p,•)`
 with the operator `∂bar` the Dolbeault complex. -/
 @[simp]
 theorem delBar_delBar_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E) M F k) :
-    (ofComplexManifold E M).delBar ((ofComplexManifold E M).delBar φ) = 0 := by
-  rw [← (ofComplexManifold E M).sum_typeProjection φ, map_sum, map_sum]
-  exact Finset.sum_eq_zero fun pq h ↦
-    ((ofComplexManifold E M).isOfType_typeProjection (Finset.mem_antidiagonal.1 h)
-      φ).del_del_and_delBar_delBar_ofComplexManifold.2.2
+    (ofComplexManifold E M).delBar ((ofComplexManifold E M).delBar φ) = 0 :=
+  delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar
+    mextDerivₗ_eq_del_add_delBar_ofComplexManifold mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
 
 /-- **`∂` and `∂bar` anticommute on a complex manifold**: `∂ ∂bar φ + ∂bar ∂φ = 0`. -/
 theorem del_delBar_add_delBar_del_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E) M F k) :
     (ofComplexManifold E M).del ((ofComplexManifold E M).delBar φ) +
-      (ofComplexManifold E M).delBar ((ofComplexManifold E M).del φ) = 0 := by
-  rw [← (ofComplexManifold E M).sum_typeProjection φ, map_sum, map_sum, map_sum, map_sum,
-    ← Finset.sum_add_distrib]
-  exact Finset.sum_eq_zero fun pq h ↦
-    ((ofComplexManifold E M).isOfType_typeProjection (Finset.mem_antidiagonal.1 h)
-      φ).del_del_and_delBar_delBar_ofComplexManifold.2.1
+      (ofComplexManifold E M).delBar ((ofComplexManifold E M).del φ) = 0 :=
+  del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar
+    mextDerivₗ_eq_del_add_delBar_ofComplexManifold mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
 
 end SmoothAlmostComplexStructure
 
