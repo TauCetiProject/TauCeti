@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
+import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -129,6 +130,16 @@ variable (k) in
 theorem range_markedPlace : Set.range (markedPlace k) = zeroOneInfty k := by
   ext P
   simp [mem_zeroOneInfty_iff, Fin.exists_fin_succ, eq_comm]
+
+/-- Away from `0`, `1` and `∞`, the function `t (t - 1)` is a unit. -/
+theorem valuation_X_mul_X_sub_one_of_notMem_zeroOneInfty {P : Place k (RatFunc k)}
+    (hP : P ∉ zeroOneInfty k) : P.valuation (RatFunc.X * (RatFunc.X - 1)) = 1 := by
+  simp only [mem_zeroOneInfty_iff, not_or] at hP
+  have h1 := ord_X_sub_C_eq_zero_of_ne (1 : k) hP.2.1 hP.2.2
+  rw [map_one RatFunc.C] at h1
+  have hX1 : (RatFunc.X - 1 : RatFunc k) ≠ 0 := by simpa using RatFunc.X_sub_C_ne_zero (1 : k)
+  rw [map_mul, valuation_eq_exp_neg_ord _ RatFunc.X_ne_zero, valuation_eq_exp_neg_ord _ hX1,
+    ord_X_eq_zero_of_ne hP.1 hP.2.2, h1, neg_zero, WithZero.exp_zero, one_mul]
 
 end Place
 
