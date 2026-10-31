@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RootsOfUnity.Complex
+public import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
 /-!
@@ -15,8 +15,9 @@ Over `ℂ` there is a canonical compatible system of primitive roots of unity, n
 `ζ_m = exp(2πi / m)`: for `n ∣ m` one has `exp(2πi / m) ^ (m / n) = exp(2πi / n)`. This file
 packages it as a point `TauCeti.PrimeToPTateModule.complexExp p` of the prime-to-`p` Tate module
 `lim_m μ_m(ℂ)`, whose components are all primitive (Mathlib's `Complex.isPrimitiveRoot_exp`).
-Over a general domain such a point exists but is only chosen
-(`TauCeti.PrimeToPTateModule.exists_forall_isPrimitiveRoot`); this one is explicit.
+Over a domain with a primitive `m`-th root of unity for every nonzero `m` prime to `p`, such a
+point exists but is only chosen (`TauCeti.PrimeToPTateModule.exists_forall_isPrimitiveRoot`);
+this one is explicit. The compatibility of the components is `TauCeti.exp_two_pi_I_div_pow_div`.
 
 ## Main definitions
 
@@ -38,18 +39,6 @@ noncomputable section
 open Complex Real
 
 namespace TauCeti.PrimeToPTateModule
-
-/-- The complex numbers `exp(2πi / m)` are compatible along the power maps: for `n ∣ m` with
-`m ≠ 0`, `exp(2πi / m) ^ (m / n) = exp(2πi / n)`. -/
-private theorem exp_two_pi_I_div_pow_div {m n : ℕ} (hm : m ≠ 0) (h : n ∣ m) :
-    exp (2 * π * I / m) ^ (m / n) = exp (2 * π * I / n) := by
-  obtain ⟨k, rfl⟩ := h
-  have hn : n ≠ 0 := left_ne_zero_of_mul hm
-  have hk : k ≠ 0 := right_ne_zero_of_mul hm
-  rw [Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hn), ← Complex.exp_nat_mul]
-  congr 1
-  push_cast
-  field_simp
 
 variable (p : ℕ)
 
