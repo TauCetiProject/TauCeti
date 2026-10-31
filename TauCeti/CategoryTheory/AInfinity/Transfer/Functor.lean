@@ -88,6 +88,15 @@ noncomputable def transferInclusion :
   AInfinityFunctor.ofAInfinityHom (𝒞.toAInfinityAlgebra.transferInclusion c hh hincl hproj)
     e.injective (𝒞.isWordPathCompatible_taylor_transferInclusion e c hh hincl hproj hc)
 
+/-- The extending functor is the `A∞` functor of the extending `A∞` morphism
+`TauCeti.AInfinityAlgebra.transferInclusion`, so the factorization lemmas of
+`TauCeti.AInfinityFunctor.ofAInfinityHom` apply to it. -/
+theorem transferInclusion_def :
+    𝒞.transferInclusion e c hh hincl hproj hc =
+      AInfinityFunctor.ofAInfinityHom (𝒞.toAInfinityAlgebra.transferInclusion c hh hincl hproj)
+        e.injective (𝒞.isWordPathCompatible_taylor_transferInclusion e c hh hincl hproj hc) :=
+  (rfl)
+
 /-- The object map of the extending functor is `e`. -/
 @[simp]
 theorem transferInclusion_obj (X : D) : (𝒞.transferInclusion e c hh hincl hproj hc).obj X = e X :=
@@ -131,6 +140,16 @@ noncomputable def transferProjection :
     AInfinityFunctor 𝒞 (𝒞.transfer e c hh hincl hproj hc) :=
   AInfinityFunctor.ofAInfinityHom (𝒞.toAInfinityAlgebra.transferProjection c hh hincl hproj)
     e.symm.injective (𝒞.isWordPathCompatible_taylor_transferProjection e c hh hincl hproj hc)
+
+/-- The projection functor is the `A∞` functor of the projection `A∞` morphism
+`TauCeti.AInfinityAlgebra.transferProjection`, so the factorization lemmas of
+`TauCeti.AInfinityFunctor.ofAInfinityHom` apply to it. -/
+theorem transferProjection_def :
+    𝒞.transferProjection e c hh hincl hproj hc =
+      AInfinityFunctor.ofAInfinityHom (𝒞.toAInfinityAlgebra.transferProjection c hh hincl hproj)
+        e.symm.injective
+        (𝒞.isWordPathCompatible_taylor_transferProjection e c hh hincl hproj hc) :=
+  (rfl)
 
 /-- The object map of the projection functor is `e⁻¹`. -/
 @[simp]
