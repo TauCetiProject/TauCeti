@@ -356,13 +356,14 @@ Weyl module of the polynomial part of `λ`. -/
 theorem exists_nonempty_equiv_weylSLRepOfShape (hρ : IsRationalSLRep ρ) [ρ.IsIrreducible] :
     ∃ μ : YoungDiagram, μ.colLen 0 ≤ n - 1 ∧ Nonempty (ρ.Equiv (weylSLRepOfShape ℂ n μ)) := by
   have := hρ.finite
-  obtain ⟨a, ha⟩ : ∃ a : ℕ, ∀ (s : Matrix.SpecialLinearGroup (Fin n) ℂ) (ζ : ℂ),
+  obtain ⟨a, ha⟩ : ∃ a : ℤ, ∀ (s : Matrix.SpecialLinearGroup (Fin n) ℂ) (ζ : ℂ),
       (s : Matrix (Fin n) (Fin n) ℂ) = Matrix.scalar (Fin n) ζ → ρ s = ζ ^ a • 1 := by
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · -- `SL (Fin 0) ℂ` is trivial.
-      exact ⟨0, fun s ζ _ => by rw [Subsingleton.elim s 1, map_one, pow_zero, one_smul]⟩
+      exact ⟨0, fun s ζ _ => by rw [Subsingleton.elim s 1, map_one, zpow_zero, one_smul]⟩
     · have : NeZero (Fintype.card (Fin n) : ℂ) := ⟨by simp [hn.ne']⟩
-      exact Representation.IsIrreducible.exists_forall_apply_eq_pow_smul_one
+      obtain ⟨a, ha⟩ := Representation.IsIrreducible.exists_forall_apply_eq_pow_smul_one (ρ := ρ)
+      exact ⟨a, fun s ζ hs => by rw [zpow_natCast]; exact ha s ζ hs⟩
   obtain ⟨ρ', ⟨hcomp, hscalar⟩, -⟩ :=
     Representation.existsUnique_comp_toGL_eq_and_apply_scalar ha
   have hρ' : IsRationalRep ρ' := IsRationalRep.of_comp_toGL (hcomp ▸ hρ) hscalar

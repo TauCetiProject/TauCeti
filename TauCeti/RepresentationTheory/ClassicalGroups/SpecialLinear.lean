@@ -247,7 +247,7 @@ section Extension
 open Matrix
 
 variable {ι K V : Type*} [Fintype ι] [DecidableEq ι] [Field K]
-  [AddCommGroup V] [Module K V] {ρ : Representation K (SpecialLinearGroup ι K) V} {a : ℕ}
+  [AddCommGroup V] [Module K V] {ρ : Representation K (SpecialLinearGroup ι K) V} {a : ℤ}
 
 /-- Two splittings of an invertible matrix as a determinant-one matrix times a scalar matrix give
 the same operator `z ^ a • ρ s`, when determinant-one scalar matrices `ζ` act by `ζ ^ a`. -/
@@ -271,7 +271,7 @@ private theorem pow_smul_apply_eq_of_toGL_mul_scalar_eq
     calc ρ s = ρ (s' * (s'⁻¹ * s)) := by rw [mul_inv_cancel_left]
       _ = ρ s' * ρ (s'⁻¹ * s) := map_mul ..
       _ = _ := by rw [H _ _ ht, mul_smul_comm, mul_one]
-  rw [hs, smul_smul, ← mul_pow]
+  rw [hs, smul_smul, ← mul_zpow]
   congr 2
   simp [mul_left_comm (z : K)]
 
@@ -341,7 +341,7 @@ theorem existsUnique_comp_toGL_eq_and_apply_scalar
     (H : ∀ (s : SpecialLinearGroup ι K) (ζ : K), (s : Matrix ι ι K) = scalar ι ζ →
       ρ s = ζ ^ a • 1) :
     ∃! ρ' : Representation K (GL ι K) V, ρ'.comp SpecialLinearGroup.toGL = ρ ∧
-      ∀ z : Kˣ, ρ' (GeneralLinearGroup.scalar ι z) = ((z : K) ^ a) • 1 := by
+      ∀ z : Kˣ, ρ' (GeneralLinearGroup.scalar ι z) = ((z ^ a : Kˣ) : K) • 1 := by
   let ρ' : Representation K (GL ι K) V :=
     { toFun := extendAux ρ a
       map_one' := by rw [extendAux_eq H (s := 1) (z := 1) (by simp), map_one]; simp
@@ -356,13 +356,14 @@ theorem existsUnique_comp_toGL_eq_and_apply_scalar
           rw [← mul_assoc (GeneralLinearGroup.scalar ι z),
             GeneralLinearGroup.scalar_commute z (SpecialLinearGroup.toGL t), mul_assoc]
         rw [extendAux_eq H hst, extendAux_eq H rfl, extendAux_eq H rfl, map_mul, Units.val_mul,
-          mul_pow, smul_mul_smul_comm] }
+          mul_zpow, smul_mul_smul_comm] }
   refine ⟨ρ', ⟨MonoidHom.ext fun s => ?_, fun z => ?_⟩, fun σ ⟨hσ, hσz⟩ => MonoidHom.ext
     fun g => ?_⟩
   · exact (extendAux_eq (ρ := ρ) (a := a) H (s := s) (z := 1) (mul_one _)).trans (by simp)
   · exact (extendAux_eq (ρ := ρ) (a := a) H (s := 1) (z := z) (by simp)).trans (by simp)
   · obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
-    rw [map_mul, hσz, ← MonoidHom.comp_apply, hσ, mul_smul_comm, mul_one]
+    rw [map_mul, hσz, ← MonoidHom.comp_apply, hσ, mul_smul_comm, mul_one,
+      Units.val_zpow_eq_zpow_val]
     exact (extendAux_eq H rfl).symm
 
 end Extension
@@ -492,13 +493,13 @@ variable [AddCommGroup W] [Module ℂ W]
 
 /-- On `SL n ℂ`, a matrix coefficient of a representation of `GL n ℂ` on which the scalar
 matrices act through `z ↦ z ^ a`, given by a polynomial `P` in the matrix entries, only involves
-the homogeneous components of `P` of degree `k` with `n ∣ k + (n - 1) * a`, that is `k ≡ a`
-modulo `n`. Scaling by a primitive `n`-th root of unity `ζ` multiplies the coefficient by `ζ ^ a`
-and the degree `k` component by `ζ ^ k`; averaging over the powers of `ζ` keeps only the
-components with `ζ ^ k = ζ ^ a`. -/
+the homogeneous components of `P` of degree `k` with `n ∣ a - k`, that is `k ≡ a` modulo `n`.
+Scaling by a primitive `n`-th root of unity `ζ` multiplies the coefficient by `ζ ^ a` and the
+degree `k` component by `ζ ^ k`; averaging over the powers of `ζ` keeps only the components with
+`ζ ^ k = ζ ^ a`. -/
 private theorem eval_eq_sum_homogeneousComponent_of_apply_scalar [NeZero n]
-    {ρ : Representation ℂ (GL (Fin n) ℂ) W} {a : ℕ}
-    (ha : ∀ z : ℂˣ, ρ (GeneralLinearGroup.scalar (Fin n) z) = ((z : ℂ) ^ a) • 1)
+    {ρ : Representation ℂ (GL (Fin n) ℂ) W} {a : ℤ}
+    (ha : ∀ z : ℂˣ, ρ (GeneralLinearGroup.scalar (Fin n) z) = ((z ^ a : ℂˣ) : ℂ) • 1)
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℂ W) {i j : ι}
     {P : MvPolynomial (Fin n × Fin n) ℂ}
     (hP : ∀ s : SpecialLinearGroup (Fin n) ℂ,
@@ -506,7 +507,7 @@ private theorem eval_eq_sum_homogeneousComponent_of_apply_scalar [NeZero n]
         eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P)
     (s : SpecialLinearGroup (Fin n) ℂ) :
     eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P =
-      ∑ k ∈ (Finset.range (P.totalDegree + 1)).filter (fun k => n ∣ k + (n - 1) * a),
+      ∑ k ∈ (Finset.range (P.totalDegree + 1)).filter (fun k : ℕ => (n : ℤ) ∣ a - k),
         eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (homogeneousComponent k P) := by
   set ζ := Complex.exp (2 * Real.pi * Complex.I / n)
   have hζ : IsPrimitiveRoot ζ n := Complex.isPrimitiveRoot_exp n (NeZero.ne n)
@@ -534,17 +535,23 @@ private theorem eval_eq_sum_homogeneousComponent_of_apply_scalar [NeZero n]
       ∑ k ∈ Finset.range (P.totalDegree + 1), eval y (homogeneousComponent k P) := by
     conv_lhs => rw [← sum_homogeneousComponent P]
     rw [map_sum]
-  -- Average the transformation law over the powers of `ζ`, using `ζ ^ ((n - 1) * a) = ζ⁻¹ ^ a`.
-  have hexp : (n - 1) * a + a = n * a := by rw [← add_one_mul, Nat.sub_add_cancel NeZero.one_le]
-  have hterm (m : ℕ) : (ζ ^ m) ^ ((n - 1) * a) * eval ((ζ ^ m) • x) P = eval x P := by
-    rw [hscal, ← mul_assoc, ← pow_add, hexp, pow_mul, hpow]
-    simp
-  have hmean : ∑ m : Fin n, (ζ ^ (m : ℕ)) ^ ((n - 1) * a) * eval ((ζ ^ (m : ℕ)) • x) P =
+  -- Average the transformation law over the powers of `ζ`, using `ζ ^ r = ζ⁻¹ ^ a` for a natural
+  -- number `r ≡ -a` modulo `n`.
+  obtain ⟨r, hr⟩ : ∃ r : ℕ, (n : ℤ) ∣ a + r :=
+    ⟨((-a) % n).toNat, -((-a) / n), by
+      rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (Int.natCast_ne_zero.mpr (NeZero.ne n))),
+        Int.emod_def]
+      ring⟩
+  have hterm (m : ℕ) : (ζ ^ m) ^ r * eval ((ζ ^ m) • x) P = eval x P := by
+    obtain ⟨q, hq⟩ := hr
+    rw [hscal, ← mul_assoc, ← zpow_natCast, ← zpow_add₀ (pow_ne_zero _ hζ0), add_comm, hq,
+      zpow_mul, zpow_natCast, hpow, one_zpow, one_mul]
+  have hmean : ∑ m : Fin n, (ζ ^ (m : ℕ)) ^ r * eval ((ζ ^ (m : ℕ)) • x) P =
       n * eval x P := by
     simp [hterm]
-  have hexpand (m : ℕ) : (ζ ^ m) ^ ((n - 1) * a) * eval ((ζ ^ m) • x) P =
+  have hexpand (m : ℕ) : (ζ ^ m) ^ r * eval ((ζ ^ m) • x) P =
       ∑ k ∈ Finset.range (P.totalDegree + 1),
-        (ζ ^ (k + (n - 1) * a)) ^ m * eval x (homogeneousComponent k P) := by
+        (ζ ^ (k + r)) ^ m * eval x (homogeneousComponent k P) := by
     rw [hsum, Finset.mul_sum]
     refine Finset.sum_congr rfl fun k _ => ?_
     rw [(homogeneousComponent_isHomogeneous k P).eval_smul, smul_eq_mul]
@@ -553,6 +560,10 @@ private theorem eval_eq_sum_homogeneousComponent_of_apply_scalar [NeZero n]
   rw [← hmean, Finset.sum_congr rfl fun (m : Fin n) _ => hexpand m, Finset.sum_comm]
   simp_rw [← Finset.sum_mul, hζ.sum_pow_pow_eq, Finset.sum_filter, Finset.mul_sum, ite_mul,
     zero_mul, mul_ite, mul_zero]
+  -- `n ∣ k + r` exactly when `n ∣ a - k`, since `n ∣ a + r`.
+  refine Finset.sum_congr rfl fun k _ => if_congr ?_ rfl rfl
+  rw [← Int.natCast_dvd_natCast, Nat.cast_add, show a - k = a + r - (k + r) by ring]
+  exact (dvd_sub_right hr).symm
 
 /-- On `GL n ℂ`, a matrix coefficient of a representation on which the scalar matrices act through
 `z ↦ z ^ a`, and whose restriction to `SL n ℂ` is given by a polynomial `P` in the matrix entries,
@@ -560,8 +571,8 @@ is a sum of integer powers of `det g` times homogeneous components of `P`. Write
 `c ^ n = det g` and `s` of determinant one; then `ρ g = c ^ a • ρ s`, only the components of degree
 `k ≡ a` modulo `n` contribute, and for those `c ^ a * c⁻¹ ^ k = det g ^ ((a - k) / n)`. -/
 private theorem toMatrix_apply_eq_sum_det_zpow_mul_eval [NeZero n]
-    {ρ : Representation ℂ (GL (Fin n) ℂ) W} {a : ℕ}
-    (ha : ∀ z : ℂˣ, ρ (GeneralLinearGroup.scalar (Fin n) z) = ((z : ℂ) ^ a) • 1)
+    {ρ : Representation ℂ (GL (Fin n) ℂ) W} {a : ℤ}
+    (ha : ∀ z : ℂˣ, ρ (GeneralLinearGroup.scalar (Fin n) z) = ((z ^ a : ℂˣ) : ℂ) • 1)
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℂ W) {i j : ι}
     {P : MvPolynomial (Fin n × Fin n) ℂ}
     (hP : ∀ s : SpecialLinearGroup (Fin n) ℂ,
@@ -569,8 +580,8 @@ private theorem toMatrix_apply_eq_sum_det_zpow_mul_eval [NeZero n]
         eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P)
     (g : GL (Fin n) ℂ) :
     LinearMap.toMatrix b b (ρ g) i j =
-      ∑ k ∈ (Finset.range (P.totalDegree + 1)).filter (fun k => n ∣ k + (n - 1) * a),
-        ((Matrix.GeneralLinearGroup.det g ^ (((a : ℤ) - k) / n) : ℂˣ) : ℂ) *
+      ∑ k ∈ (Finset.range (P.totalDegree + 1)).filter (fun k : ℕ => (n : ℤ) ∣ a - k),
+        ((Matrix.GeneralLinearGroup.det g ^ ((a - k) / n) : ℂˣ) : ℂ) *
           eval (fun p => (g : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (homogeneousComponent k P) := by
   have hn : n ≠ 0 := NeZero.ne n
   obtain ⟨c, hc⟩ := IsAlgClosed.exists_pow_nat_eq ((g : Matrix (Fin n) (Fin n) ℂ).det)
@@ -586,22 +597,17 @@ private theorem toMatrix_apply_eq_sum_det_zpow_mul_eval [NeZero n]
       ext
       simp [s, scalar_apply, mul_right_comm _ _ c, hc0]
   have hρg : ρ g = (c ^ a) • ρ (SpecialLinearGroup.toGL s) := by
-    rw [← hg, map_mul, ha, mul_smul_comm, mul_one, Units.val_mk0]
+    rw [← hg, map_mul, ha, mul_smul_comm, mul_one, Units.val_zpow_eq_zpow_val, Units.val_mk0]
   rw [hρg, map_smul, Matrix.smul_apply, smul_eq_mul, hP,
     eval_eq_sum_homogeneousComponent_of_apply_scalar ha b hP s, Finset.mul_sum]
   refine Finset.sum_congr rfl fun k hk => ?_
-  have hdvd : (n : ℤ) ∣ (a : ℤ) - k := by
-    have hsub : (a : ℤ) - k = n * a - ((k + (n - 1) * a : ℕ) : ℤ) := by
-      push_cast [Nat.cast_sub NeZero.one_le]
-      ring
-    rw [hsub]
-    exact dvd_sub (dvd_mul_right _ _) (Int.natCast_dvd_natCast.mpr (Finset.mem_filter.mp hk).2)
+  have hdvd : (n : ℤ) ∣ a - k := (Finset.mem_filter.mp hk).2
   have hentries : (fun p : Fin n × Fin n => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) =
       c⁻¹ • fun p => (g : Matrix (Fin n) (Fin n) ℂ) p.1 p.2 := by
     funext p
     rw [Pi.smul_apply, SpecialLinearGroup.coe_mk, Matrix.smul_apply]
   have hpow :
-      c ^ a * c⁻¹ ^ k = ((Matrix.GeneralLinearGroup.det g ^ (((a : ℤ) - k) / n) : ℂˣ) : ℂ) := by
+      c ^ a * c⁻¹ ^ k = ((Matrix.GeneralLinearGroup.det g ^ ((a - k) / n) : ℂˣ) : ℂ) := by
     rw [Units.val_zpow_eq_zpow_val, Matrix.GeneralLinearGroup.val_det_apply, ← hc,
       ← zpow_natCast c n, ← zpow_mul, Int.mul_ediv_cancel' hdvd, zpow_sub₀ hc0]
     simp [div_eq_mul_inv]
@@ -614,8 +620,8 @@ polynomials in the entries of `c⁻¹ • g`, times `c ^ a`. Only the homogeneou
 degree `k ≡ a` modulo `n` contribute, because the determinant-one scalar matrices act by `ζ ^ a`,
 and for those `c ^ a * c⁻¹ ^ k` is an integer power of `c ^ n = det g`. -/
 theorem IsRationalRep.of_comp_toGL {ρ : Representation ℂ (GL (Fin n) ℂ) W}
-    (h : IsRationalSLRep (ρ.comp SpecialLinearGroup.toGL)) {a : ℕ}
-    (ha : ∀ z : ℂˣ, ρ (GeneralLinearGroup.scalar (Fin n) z) = ((z : ℂ) ^ a) • 1) :
+    (h : IsRationalSLRep (ρ.comp SpecialLinearGroup.toGL)) {a : ℤ}
+    (ha : ∀ z : ℂˣ, ρ (GeneralLinearGroup.scalar (Fin n) z) = ((z ^ a : ℂˣ) : ℂ) • 1) :
     IsRationalRep ρ := by
   obtain ⟨b, P, hP⟩ := h
   refine (isRationalRep_iff_forall_mem_rationalFunctions b).mpr fun i j => ?_
@@ -631,9 +637,9 @@ theorem IsRationalRep.of_comp_toGL {ρ : Representation ℂ (GL (Fin n) ℂ) W}
     exact Subalgebra.algebraMap_mem _ _
   have : NeZero n := ⟨hn.ne'⟩
   have hfun : (fun g : GL (Fin n) ℂ => LinearMap.toMatrix b b (ρ g) i j) =
-      ∑ k ∈ (Finset.range ((P i j).totalDegree + 1)).filter (fun k => n ∣ k + (n - 1) * a),
+      ∑ k ∈ (Finset.range ((P i j).totalDegree + 1)).filter (fun k : ℕ => (n : ℤ) ∣ a - k),
         (fun g : GL (Fin n) ℂ =>
-          ((Matrix.GeneralLinearGroup.det g ^ (((a : ℤ) - k) / n) : ℂˣ) : ℂ)) *
+          ((Matrix.GeneralLinearGroup.det g ^ ((a - k) / n) : ℂˣ) : ℂ)) *
           fun g : GL (Fin n) ℂ => eval (fun p => (g : Matrix (Fin n) (Fin n) ℂ) p.1 p.2)
             (homogeneousComponent k (P i j)) := by
     funext g
