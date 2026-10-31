@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Multiset.Fintype
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
@@ -47,7 +46,9 @@ namespace Matrix
 section RectangularProducts
 
 variable {m n K : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
-  [Field K] [DecidableEq K]
+  [CommRing K] [IsDomain K]
+
+noncomputable local instance : DecidableEq K := Classical.decEq K
 
 /-- Rectangular products `A * B` and `B * A` have the same nonzero characteristic roots,
 counted with algebraic multiplicity. -/
