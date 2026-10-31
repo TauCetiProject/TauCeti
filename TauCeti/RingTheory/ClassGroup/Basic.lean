@@ -34,6 +34,8 @@ trivial class, and the class `[v]` of a height one prime.
   `ClassGroup.mk0` of `v.asIdeal`. This needs no fraction field.
 * `IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk`: `[v]` is the class of `v.asIdeal` seen
   as an invertible fractional ideal of any fraction field `K`.
+* `Ideal.isPrincipal_pow_natCard_classGroup`: if the class group is finite, `I ^ h` is principal
+  for every ideal `I`, where `h` is the order of the class group.
 
 The two class-triviality results use `[IsDomain R]`, since neither is Dedekind-specific. None
 of them needs the factorization of a fractional ideal into primes, so this file does not import
@@ -116,5 +118,17 @@ lemma IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk (K : Type*) [Field K
       (FractionalIdeal.coeIdeal_ne_zero.mpr v.ne_bot)) := by
   rw [classGroupMk_eq_mk0, ← ClassGroup.mk_mk0 K]
   exact congrArg _ (Units.ext (FractionalIdeal.coe_mk0 K _))
+
+/-- If the class group of `R` is finite, the power of any ideal by the order of the class group
+is principal. -/
+lemma Ideal.isPrincipal_pow_natCard_classGroup [Finite (ClassGroup R)] (I : Ideal R) :
+    (I ^ Nat.card (ClassGroup R)).IsPrincipal := by
+  rcases eq_or_ne I ⊥ with rfl | hI
+  · rw [← Ideal.zero_eq_bot, zero_pow Nat.card_pos.ne']
+    exact bot_isPrincipal
+  have hI' : I ∈ (Ideal R)⁰ := mem_nonZeroDivisors_of_ne_zero hI
+  rw [← ClassGroup.mk0_eq_one_iff (pow_mem hI' _)]
+  have h1 : ClassGroup.mk0 ⟨I, hI'⟩ ^ Nat.card (ClassGroup R) = 1 := pow_card_eq_one'
+  rwa [← map_pow, SubmonoidClass.mk_pow] at h1
 
 end
