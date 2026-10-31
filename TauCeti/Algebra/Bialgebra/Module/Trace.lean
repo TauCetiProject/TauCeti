@@ -24,8 +24,6 @@ modules, and the formula above is their multiplicativity.
 
 ## Main results
 
-* `TauCeti.BialgebraModule.tensorEquiv_smul_of_comul_eq_tmul`: such an element acts on the
-  coproduct tensor product as the tensor product of its two actions.
 * `TauCeti.BialgebraModule.trace_lsmul_comp_tensorMap`: the twisted trace of a tensor product of
   intertwiners is the product of the twisted traces.
 
@@ -45,18 +43,6 @@ variable {R H M N : Type*} [CommRing R] [Semiring H] [Bialgebra R H]
   [AddCommGroup M] [Module R M] [Module H M] [IsScalarTower R H M]
   [AddCommGroup N] [Module R N] [Module H N] [IsScalarTower R H N]
 
-/-- An element with coproduct `a ⊗ a` acts on the coproduct tensor product as the tensor product
-of its actions on the two factors. -/
-theorem tensorEquiv_smul_of_comul_eq_tmul {a : H} (ha : Coalgebra.comul (R := R) a = a ⊗ₜ[R] a)
-    (x : Tensor R H M N) :
-    tensorEquiv R H M N (a • x) =
-      TensorProduct.map (Algebra.lsmul R R M a) (Algebra.lsmul R R N a)
-        (tensorEquiv R H M N x) := by
-  rw [tensorEquiv_smul, tensorAction_apply, ha]
-  induction tensorEquiv R H M N x using TensorProduct.inductionOn with
-  | tmul m n => simp
-  | add y z hy hz => simp only [map_add, hy, hz]
-
 /-- **Twisted traces are multiplicative.** For an element `a` with coproduct `a ⊗ a`, the trace of
 `a ∘ (f ⊗ g)` on the coproduct tensor product of two finite free modules is the product of the
 traces of `a ∘ f` and of `a ∘ g`. -/
@@ -73,10 +59,8 @@ theorem trace_lsmul_comp_tensorMap [Module.Free R M] [Module.Finite R M] [Module
         (Algebra.lsmul R R N a ∘ₗ g.restrictScalars R)) =
       Algebra.lsmul R R (Tensor R H M N) a ∘ₗ (tensorMap R H f g).restrictScalars R := by
     refine LinearMap.ext fun x => (tensorEquiv R H M N).injective ?_
-    rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_symm, LinearEquiv.apply_symm_apply,
-      LinearMap.comp_apply, Algebra.lsmul_coe, tensorEquiv_smul_of_comul_eq_tmul ha,
-      LinearMap.restrictScalars_apply, tensorEquiv_tensorMap, ← LinearMap.comp_apply,
-      ← TensorProduct.map_comp]
+    simp [-tensorEquiv_smul, LinearEquiv.conj_apply_apply, tensorEquiv_smul_of_comul_eq_tmul ha,
+      TensorProduct.map_comp]
   rw [← h, LinearMap.trace_conj', LinearMap.trace_tensorProduct']
 
 end TauCeti.BialgebraModule
