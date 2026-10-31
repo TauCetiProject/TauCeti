@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Contractible
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.GroupCohomology
-public import TauCeti.AlgebraicTopology.Singular.Twisted.GroupHomology
+public import TauCeti.AlgebraicTopology.Singular.Twisted.EquivariantMap
 
 /-!
 # The (co)homology of a classifying space with local coefficients is group (co)homology
@@ -30,6 +31,13 @@ The identification is natural in the coefficients: a morphism of representations
 induces a morphism of local systems `TauCeti.classifyingSpaceLocalSystemMap k f`, and the induced
 map `Hₙ(BG; A) ⟶ Hₙ(BG; A')` corresponds to Mathlib's map `groupHomology.map (MonoidHom.id G) f`
 (`TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`).
+
+It is also natural in the group: a homomorphism `φ : G →* H` and a compatible coefficient map
+`ξ : A ⟶ Rep.res φ D` give a geometric map on twisted homology, by coefficient change followed
+by pushforward along `φ.classifyingSpaceMap`. The comparison carries this map to
+`groupHomology.map φ ξ`
+(`MonoidHom.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`). These geometric
+maps respect identities and composition.
 
 Dually, for a `k`-module `N`, the cohomology of `classifyingSpace G` with coefficients in the same
 local system and values in `N` is the group cohomology of `G` with coefficients in the internal
@@ -154,3 +162,93 @@ theorem classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality (f : A �
     (isQuotientCoveringMap_classifyingSpaceProj G) k f n
 
 end TauCeti
+
+namespace MonoidHom
+
+open TauCeti
+
+universe u
+
+variable {G H K : Type u} [Group G] [Group H] [Group K]
+  (φ : G →* H) (k : Type u) [CommRing k]
+  {A : Rep.{u} k G} {D : Rep.{u} k H}
+
+/-- A group homomorphism and a compatible coefficient map induce a map from the associated
+local system on `BG` to the pullback of the associated local system on `BH`. -/
+abbrev classifyingSpaceLocalSystemMapOver (ξ : A ⟶ Rep.res φ D) :
+    classifyingSpaceLocalSystem k A ⟶
+      (LocalCoefficientSystem.pullback φ.classifyingSpaceMap).obj
+        (classifyingSpaceLocalSystem k D) :=
+  (isQuotientCoveringMap_classifyingSpaceProj G).associatedLocalSystemMapOver k
+    (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
+    (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
+    (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) ξ
+
+/-- The geometric change-of-group map `Hₙ(BG; A) ⟶ Hₙ(BH; D)`: change coefficients by `ξ`
+and then push forward along the strictly functorial map of classifying spaces. -/
+abbrev classifyingSpaceTwistedHomologyMap (ξ : A ⟶ Rep.res φ D) (n : ℕ) :
+    twistedHomology.{u, u, u} (classifyingSpaceLocalSystem k A) n ⟶
+      twistedHomology.{u, u, u} (classifyingSpaceLocalSystem k D) n :=
+  twistedHomologyCoefficientMap (φ.classifyingSpaceLocalSystemMapOver k ξ) n ≫
+    twistedHomologyMap (TopCat.ofHom φ.classifyingSpaceMap) (classifyingSpaceLocalSystem k D) n
+
+/-- **The local-coefficient homology comparison is natural in the group.** The geometric map
+induced by `φ` and `ξ` corresponds to Mathlib's change-of-group map `groupHomology.map φ ξ`.
+In particular this applies to restriction of any `H`-module along any homomorphism `G →* H`. -/
+@[reassoc]
+theorem classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality
+    (ξ : A ⟶ Rep.res φ D) (n : ℕ) :
+    φ.classifyingSpaceTwistedHomologyMap k ξ n ≫
+        (classifyingSpaceTwistedHomologyIsoGroupHomology k D n).hom =
+      (classifyingSpaceTwistedHomologyIsoGroupHomology k A n).hom ≫ groupHomology.map φ ξ n := by
+  have h := IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality_over
+      (E := TopCat.of (universalGSpace G))
+      (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+      (F := TopCat.of (universalGSpace H))
+      (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
+      (isQuotientCoveringMap_classifyingSpaceProj G)
+      (isQuotientCoveringMap_classifyingSpaceProj H) k (TopCat.ofHom φ.universalGSpaceMap)
+      (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
+      (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) ξ n
+  rw [IsQuotientCoveringMap.associatedTwistedChainMap_def,
+    HomologicalComplex.homologyMap_comp] at h
+  exact h
+
+/-- The inverse local-coefficient homology comparison is also natural in the group. -/
+@[reassoc]
+theorem classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality
+    (ξ : A ⟶ Rep.res φ D) (n : ℕ) :
+    groupHomology.map φ ξ n ≫ (classifyingSpaceTwistedHomologyIsoGroupHomology k D n).inv =
+      (classifyingSpaceTwistedHomologyIsoGroupHomology k A n).inv ≫
+        φ.classifyingSpaceTwistedHomologyMap k ξ n := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    φ.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality k ξ n,
+    Iso.inv_hom_id_assoc]
+
+variable {k}
+
+/-- The identity homomorphism with identity coefficients induces the identity in twisted
+homology of the classifying space. -/
+@[simp]
+theorem classifyingSpaceTwistedHomologyMap_id (A : Rep.{u} k G) (n : ℕ) :
+    (MonoidHom.id G).classifyingSpaceTwistedHomologyMap k (𝟙 A) n = 𝟙 _ := by
+  apply (cancel_mono (classifyingSpaceTwistedHomologyIsoGroupHomology k A n).hom).1
+  rw [classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality,
+    groupHomology.map_id, Category.comp_id, Category.id_comp]
+
+/-- Geometric change of groups on twisted homology respects composition, including the induced
+restriction of the second coefficient map. -/
+-- Match before simplification rewrites restriction of the coefficient morphism.
+@[simp↓, reassoc]
+theorem classifyingSpaceTwistedHomologyMap_comp (ψ : H →* K) {V : Rep.{u} k K}
+    (ξ : A ⟶ Rep.res φ D) (ζ : D ⟶ Rep.res ψ V) (n : ℕ) :
+    (ψ.comp φ).classifyingSpaceTwistedHomologyMap k (ξ ≫ (Rep.resFunctor φ).map ζ) n =
+      φ.classifyingSpaceTwistedHomologyMap k ξ n ≫ ψ.classifyingSpaceTwistedHomologyMap k ζ n := by
+  apply (cancel_mono (classifyingSpaceTwistedHomologyIsoGroupHomology k V n).hom).1
+  have hs := (CommSq.mk
+    (φ.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality k ξ n)).horiz_comp
+      (CommSq.mk (ψ.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality k ζ n))
+  rw [classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality, groupHomology.map_comp]
+  exact hs.w.symm
+
+end MonoidHom

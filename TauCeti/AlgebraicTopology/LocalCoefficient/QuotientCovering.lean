@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Covering
-public import Mathlib.RepresentationTheory.Coinvariants
+public import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 public import Mathlib.Topology.Covering.Quotient
 
 /-!
@@ -24,6 +24,11 @@ For a representation `A` of `G`, composing with `(A ⊗ -)_G` gives the local co
 `B` associated to `A` (`IsQuotientCoveringMap.associatedLocalSystem`). Its fibre over `x` is
 `(A ⊗ k[p⁻¹ x])_G`; since `G` acts simply transitively on `p⁻¹ x`, a choice of point in the fibre
 identifies it with `A`. This is the system of local coefficients of the bundle `E ×_G A` over `B`.
+
+An equivariant map of quotient covers over a map of bases, together with a coefficient map
+compatible with the group homomorphism, induces a map to the pullback of the target associated
+local system (`IsQuotientCoveringMap.associatedLocalSystemMapOver`). It applies the coefficient
+map to the tensor factor and the covering map to the sheet.
 
 ## Main definitions
 
@@ -120,6 +125,67 @@ theorem permutationRepFunctor_map_hom_apply {x y : FundamentalGroupoid B} (γ : 
       Finsupp.lmapDomain k k (hG.isCoveringMap.monodromy γ) v :=
   (rfl)
 
+section ChangeOfGroups
+
+variable {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+  (hH : IsQuotientCoveringMap q H) {φ : G →* H}
+  (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+  (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
+
+/-- An equivariant map of quotient covers induces a morphism between their permutation
+representation functors, restricting the target action along the group homomorphism. -/
+def permutationRepMap :
+    hG.permutationRepFunctor k ⟶
+      FundamentalGroupoid.map b.hom ⋙ hH.permutationRepFunctor k ⋙ Rep.resFunctor φ where
+  app x := Rep.ofHom
+    { toLinearMap := Finsupp.lmapDomain k k fun e : p ⁻¹' {x.as} ↦
+        (⟨f e, by simpa only [TopCat.comp_app, Set.mem_singleton_iff.mp e.2,
+          Set.mem_preimage, Set.mem_singleton_iff] using
+          (congrArg (fun t : E ⟶ C ↦ t e) hb).symm⟩ : q ⁻¹' {b x.as})
+      isIntertwining' g := Finsupp.lhom_ext fun e r ↦ by
+        let := hG.mulActionFiber x.as
+        let := hH.mulActionFiber (b x.as)
+        -- The restricted action is presented through `Rep.res`, so expose the two actions.
+        change Finsupp.lmapDomain k k _
+            (hG.fiberRepresentation k x.as g (Finsupp.single e r)) =
+          hH.fiberRepresentation k (b x.as) (φ g)
+            (Finsupp.lmapDomain k k _ (Finsupp.single e r))
+        rw [fiberRepresentation_single]
+        simp only [Finsupp.lmapDomain_apply, Finsupp.mapDomain_single]
+        rw [fiberRepresentation_single]
+        congr 1
+        exact Subtype.ext (hf g e) }
+  naturality x y γ := by
+    let j (z : B) (e : p ⁻¹' {z}) : q ⁻¹' {b z} :=
+      ⟨f e, by simpa only [TopCat.comp_app, Set.mem_singleton_iff.mp e.2,
+        Set.mem_preimage, Set.mem_singleton_iff] using
+        (congrArg (fun t : E ⟶ C ↦ t e) hb).symm⟩
+    have hm : j y.as ∘ hG.isCoveringMap.monodromy γ =
+        hH.isCoveringMap.monodromy (γ.map b.hom) ∘ j x.as := by
+      funext e
+      exact Subtype.ext (hG.isCoveringMap.coe_monodromy_map hH.isCoveringMap
+        (g := f.hom) (f := b.hom)
+        (funext fun z ↦ (congrArg (fun t : E ⟶ C ↦ t z) hb).symm) γ e _ rfl).symm
+    -- Term mode identifies the restricted representation carriers without rewriting their indices.
+    exact Rep.hom_ext (Representation.IntertwiningMap.ext
+      ((Finsupp.lmapDomain_comp k k _ (j y.as)).symm.trans
+        ((congrArg (Finsupp.lmapDomain k k) hm).trans
+          (Finsupp.lmapDomain_comp k k (j x.as) _))))
+
+/-- The map of permutation representations sends the sheet `e` to the sheet `f e`. -/
+-- Match before simplification changes the presentation of the restricted representation.
+@[simp↓]
+theorem permutationRepMap_app_hom_single (x : FundamentalGroupoid B)
+    (e : p ⁻¹' {x.as}) (r : k) :
+    ((hG.permutationRepMap k hH f hf b hb).app x).hom (Finsupp.single e r) =
+      Finsupp.single
+        ⟨f e, by simpa only [TopCat.comp_app, Set.mem_singleton_iff.mp e.2,
+          Set.mem_preimage, Set.mem_singleton_iff, FundamentalGroupoid.map_obj_as] using
+          (congrArg (fun t : E ⟶ C ↦ t e) hb).symm⟩ r :=
+  Finsupp.mapDomain_single
+
+end ChangeOfGroups
+
 end Permutation
 
 variable (k : Type u) [CommRing k] (A : Rep.{u} k G)
@@ -181,5 +247,49 @@ theorem associatedLocalSystemMap_comp (f : A ⟶ A') (f' : A' ⟶ A'') :
     hG.associatedLocalSystemMap k (f ≫ f') =
       hG.associatedLocalSystemMap k f ≫ hG.associatedLocalSystemMap k f' :=
   NatTrans.ext <| funext fun _ ↦ NatTrans.congr_app ((Rep.coinvariantsTensor k G).map_comp f f') _
+
+section ChangeOfGroups
+
+variable {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+  (hH : IsQuotientCoveringMap q H) {φ : G →* H}
+  (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+  (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
+
+variable {D : Rep.{u} k H} (ξ : A ⟶ Rep.res φ D)
+
+/-- A map of quotient covers equivariant along `φ`, together with a compatible coefficient map
+`ξ`, induces a map from the associated local system to the pullback of the target system.
+On fibres it sends `⟦a ⊗ e⟧` to `⟦ξ a ⊗ f e⟧`. -/
+def associatedLocalSystemMapOver :
+    hG.associatedLocalSystem k A ⟶
+      (LocalCoefficientSystem.pullback b.hom).obj (hH.associatedLocalSystem k D) where
+  app x := φ.coinvariantsTensorMap ξ ((hG.permutationRepMap k hH f hf b hb).app x)
+  naturality _ _ γ :=
+    φ.coinvariantsTensorMap_naturality ξ _ _
+      ((hG.permutationRepFunctor k).map γ)
+      ((hH.permutationRepFunctor k).map ((FundamentalGroupoid.map b.hom).map γ))
+      ((hG.permutationRepMap k hH f hf b hb).naturality γ).symm
+
+/-- On a tensor class at a sheet, the map of associated local systems applies `ξ` to the
+coefficient and `f` to the sheet. -/
+@[simp↓]
+theorem associatedLocalSystemMapOver_app_mk_single (x : FundamentalGroupoid B) (a : A)
+    (e : p ⁻¹' {x.as}) (r : k) :
+    ((hG.associatedLocalSystemMapOver k hH f hf b hb ξ).app x).hom
+        (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj x) a
+          (Finsupp.single e r)) =
+      Rep.coinvariantsTensorMk D ((hH.permutationRepFunctor k).obj
+        ((FundamentalGroupoid.map b.hom).obj x)) (ξ.hom a)
+        (Finsupp.single
+          ⟨f e, by simpa only [TopCat.comp_app, Set.mem_singleton_iff.mp e.2,
+            Set.mem_preimage, Set.mem_singleton_iff, FundamentalGroupoid.map_obj_as] using
+            (congrArg (fun t : E ⟶ C ↦ t e) hb).symm⟩ r) := by
+  exact (φ.coinvariantsTensorMap_mk ξ
+    ((hG.permutationRepMap k hH f hf b hb).app x) a (Finsupp.single e r)).trans
+    (congrArg (Rep.coinvariantsTensorMk D
+      ((hH.permutationRepFunctor k).obj ((FundamentalGroupoid.map b.hom).obj x)) (ξ.hom a))
+      (hG.permutationRepMap_app_hom_single k hH f hf b hb x e r))
+
+end ChangeOfGroups
 
 end IsQuotientCoveringMap

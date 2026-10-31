@@ -365,6 +365,17 @@ def twistedHomologyIsoGroupHomology [ContractibleSpace E] (n : ℕ) :
       (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A)).symm ≪≫
     (groupHomologyIso A n (singularChainsResolution k E G)).symm
 
+/-- The homology comparison is the inverse chain identification followed by the inverse
+comparison from a projective resolution to group homology. -/
+theorem twistedHomologyIsoGroupHomology_hom_eq [ContractibleSpace E] (n : ℕ) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hG.isCancelSMul
+    letI := Classical.decEq G
+    (hG.twistedHomologyIsoGroupHomology k A n).hom =
+      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).inv n ≫
+        (groupHomologyIso A n (singularChainsResolution k E G)).inv :=
+  (rfl)
+
 variable {A' : Rep.{u} k G}
 
 /-- **The comparison of twisted chains with coinvariant chains is natural in the coefficients**:
@@ -420,11 +431,7 @@ theorem twistedHomologyIsoGroupHomology_hom_naturality [ContractibleSpace E] (f 
           (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A').inv := by
     rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
       hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality k f]
-  have e (C : Rep.{u} k G) : (hG.twistedHomologyIsoGroupHomology k C n).hom =
-      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k C).inv n ≫
-        (groupHomologyIso C n (singularChainsResolution k E G)).inv :=
-    (rfl)
-  rw [e, e]
+  rw [twistedHomologyIsoGroupHomology_hom_eq, twistedHomologyIsoGroupHomology_hom_eq]
   -- `singularChainsResolution` and `singularChainsRep` agree only up to unfolding, so the
   -- remaining steps are explicit transitivity rather than rewriting.
   exact ((HomologicalComplex.homologyMap_comp_assoc _ _ _ _).symm.trans
