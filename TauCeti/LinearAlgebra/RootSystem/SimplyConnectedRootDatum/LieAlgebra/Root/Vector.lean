@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.RootSystem
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.System
 
 /-!
 # The Chevalley system of the pinned rational Lie algebra
@@ -88,13 +88,9 @@ private theorem simpleIndex_mem_support (i : Fin t.rank) :
 /-- A positive root that is not simple is a simple root plus a root. -/
 private theorem exists_isSimpleSummand {γ : Fin t.numRoots} (hγ : (t.rationalBase ht).IsPos γ)
     (hs : γ ∉ (t.rationalBase ht).support) : ∃ i, t.IsSimpleSummand ht γ i := by
-  obtain ⟨j, hj, hpos⟩ := hγ.exists_mem_support_pos_pairingIn
-  rw [RootPairing.zero_lt_pairingIn_iff'] at hpos
-  obtain ⟨β, hβ⟩ := (t.rationalRootSystem ht).root_sub_root_mem_of_pairingIn_pos hpos
-    fun h => hs (h ▸ hj)
+  obtain ⟨j, hj, β, -, hβ⟩ := exists_isPos_root_eq_add_of_notMem_support hγ hs
   refine ⟨(t.simpleSupportEquiv ht).symm ⟨j, hj⟩, β, ?_⟩
-  rw [← coe_simpleSupportEquiv, Equiv.apply_symm_apply, hβ]
-  abel
+  rw [← coe_simpleSupportEquiv, Equiv.apply_symm_apply, hβ, add_comm]
 
 /-- The least Bourbaki node `i` for which `γ - αᵢ` is a root. -/
 private def peelNode {γ : Fin t.numRoots} (h : ∃ i, t.IsSimpleSummand ht γ i) : Fin t.rank :=
@@ -200,12 +196,15 @@ private theorem coe_rootEquiv_reflectionPerm_self (γ : Fin t.numRoots) :
   rw [rootEquiv_reflectionPerm_self, LieAlgebra.IsKilling.val_neg_root]
 
 /-- **The recursion at a positive root that is not simple.** Such a root `γ` is `αᵢ + β` for a
-Bourbaki node `i` and a root `β`, and its root vector is `(r + 1)⁻¹ • ⁅eᵢ, e_β⁆`, where `r` is the
-largest integer with `β - r αᵢ` a root. -/
+root `β`, where `i` is the least Bourbaki node for which `γ - αᵢ` is a root, and its root vector is
+`(r + 1)⁻¹ • ⁅eᵢ, e_β⁆`, where `r` is the largest integer with `β - r αᵢ` a root. Since `γ` and `i`
+determine `β`, this characterizes the root vector of `γ` from those of lower height. -/
 theorem exists_chevalleySystem_eq_inv_smul_lie {γ : Fin t.numRoots}
     (hγ : (t.rationalBase ht).IsPos γ) (hs : γ ∉ (t.rationalBase ht).support) :
     ∃ i β, (t.rationalRootSystem ht).root γ =
         (t.rationalRootSystem ht).root (t.simpleIndex ht i) + (t.rationalRootSystem ht).root β ∧
+      (∀ j < i, ∀ β', (t.rationalRootSystem ht).root γ ≠
+        (t.rationalRootSystem ht).root (t.simpleIndex ht j) + (t.rationalRootSystem ht).root β') ∧
       t.chevalleySystem ht γ =
         ((chainBotCoeff (t.rootEquiv ht (t.simpleIndex ht i) :
             Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht))
@@ -214,7 +213,8 @@ theorem exists_chevalleySystem_eq_inv_smul_lie {γ : Fin t.numRoots}
           ⁅(t.lieBasis ht).e i, t.chevalleySystem ht β⁆ := by
   have hγ' : 0 < (t.rationalBase ht).height γ := (RootPairing.Base.isPos_iff _).1 hγ
   refine ⟨peelNode (exists_isSimpleSummand hγ hs), peelRoot (exists_isSimpleSummand hγ hs),
-    root_eq_add_peelRoot _, ?_⟩
+    root_eq_add_peelRoot _,
+    fun j hj β' hβ' => Fin.find_min (exists_isSimpleSummand hγ hs) hj ⟨β', hβ'⟩, ?_⟩
   rw [chevalleySystem]
   simp only [hs, hγ', ↓reduceDIte]
 
@@ -230,7 +230,7 @@ variable (t ht)
 
 /-- **The Chevalley involution exchanges opposite root vectors**: it sends the root vector of `γ`
 to minus that of `-γ`. -/
-theorem chevalleyInvolution_chevalleySystem (γ : Fin t.numRoots) :
+@[simp] theorem chevalleyInvolution_chevalleySystem (γ : Fin t.numRoots) :
     t.chevalleyInvolution ht (t.chevalleySystem ht γ) =
       -t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) := by
   by_cases hγ : 0 < (t.rationalBase ht).height γ
@@ -425,7 +425,8 @@ involution of the pinned rational Lie algebra. -/
 theorem isChevalleySystem_chevalleySystem :
     IsChevalleySystem (t.chevalleyInvolution ht) (extendRootFamily (t.chevalleySystem ht)) :=
   isChevalleySystem_extendRootFamily_of_recursion (t.chevalleySystem_simpleIndex ht)
-    (fun _ hγ hs => exists_chevalleySystem_eq_inv_smul_lie hγ hs)
+    (fun _ hγ hs => (exists_chevalleySystem_eq_inv_smul_lie hγ hs).imp fun _ =>
+      Exists.imp fun _ h => ⟨h.1, h.2.2⟩)
     (t.chevalleyInvolution_chevalleySystem ht)
 
 /-- Each named root vector lies in the root space of its root. -/

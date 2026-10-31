@@ -184,14 +184,9 @@ theorem coe_rootEquiv_eq_add {α β γ : Fin t.numRoots}
         t.cartanSubalgebra ht → ℚ) =
       (t.rootEquiv ht α : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) +
         (t.rootEquiv ht β : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) := by
-  have hlin : ((t.rootEquiv ht γ : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) :
-      t.cartanSubalgebra ht →ₗ[ℚ] ℚ) =
-      (t.rootEquiv ht α : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) +
-        ((t.rootEquiv ht β : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) :
-          t.cartanSubalgebra ht →ₗ[ℚ] ℚ) :=
-    (t.cartanBasis ht).ext fun i => by
-      simpa only [LinearMap.add_apply, Weight.toLinear_apply, rootEquiv_apply_cartanBasis,
-        Pi.add_apply, root_rationalRootSystem] using congrFun h i
+  have hlin := congrArg (t.rationalRootSystemEquiv ht).weightMap h
+  simp only [map_add, RootPairing.Hom.root_weightMap_apply, ← rootEquiv_eq_indexEquiv,
+    rootSystem_root_apply] at hlin
   funext z
   exact LinearMap.congr_fun hlin z
 
