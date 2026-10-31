@@ -15,6 +15,7 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 The coordinate expression of a differential form is the fiber coordinate of its section in the
 existing alternating tangent-bundle trivialization. Consequently even `C⁰` section regularity
 implies coordinate continuity on the extended chart target, including boundary and corner points.
+The zero set of a regular form is closed, as can be checked in local bundle trivializations.
 -/
 
 public section
@@ -71,5 +72,27 @@ theorem IsSmoothForm.continuousOn_inChartAt {n : WithTop ℕ∞} {φ : RoughForm
   apply (hc.comp (continuousOn_extChartAt_symm α) (extChartAt I α).mapsTo_symm).congr
   intro z hz
   exact φ.inChartAt_eq_trivializationAt α hz
+
+/-- The zero set of a regular differential form is closed, including for a continuous form.
+Neither closedness of the form nor a Hausdorff base is needed. -/
+theorem IsSmoothForm.isClosed_zeroSet {n : WithTop ℕ∞} {φ : RoughForm I M F k}
+    (hφ : IsSmoothForm I n φ) : IsClosed {x | φ x = 0} := by
+  rw [← isOpen_compl_iff, isOpen_iff_mem_nhds]
+  intro x hx
+  let e := trivializationAt (E [⋀^Fin k]→L[ℝ] F)
+    (fun y ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] F) x
+  have hmap : MapsTo (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y))
+      e.baseSet e.source := fun y hy ↦ e.mem_source.2 hy
+  have hc : ContinuousOn (fun y ↦ (e ⟨y, φ y⟩).2) e.baseSet :=
+    (e.continuousOn.comp hφ.contMDiff.continuous.continuousOn hmap).snd
+  have heq (y : M) (hy : y ∈ e.baseSet) : (e ⟨y, φ y⟩).2 = 0 ↔ φ y = 0 := by
+    rw [e.apply_eq_prod_continuousLinearEquivAt ℝ y hy]
+    exact (e.continuousLinearEquivAt ℝ y hy).map_eq_zero_iff
+  have hxbase : x ∈ e.baseSet := mem_baseSet_trivializationAt _ _ x
+  have hxne : (e ⟨x, φ x⟩).2 ≠ 0 := mt (heq x hxbase).1 hx
+  have hnear := (hc.continuousAt (e.open_baseSet.mem_nhds hxbase)).preimage_mem_nhds
+    (isOpen_compl_singleton.mem_nhds hxne)
+  filter_upwards [hnear, e.open_baseSet.mem_nhds hxbase] with y hy hybase
+  exact mt (heq y hybase).2 hy
 
 end TauCeti
