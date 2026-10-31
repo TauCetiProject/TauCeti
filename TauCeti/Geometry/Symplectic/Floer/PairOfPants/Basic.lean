@@ -26,6 +26,8 @@ ends. Its value at `w` is a real covector on `ℂ`, so the `ds` and `dt` compone
 along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results are:
 
 * `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`.
+* `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the whole end `q`, where
+  `±s > 0`, its pullback is `β(±s) H_q(t) dt`, that is `K_s = 0` and `K_t = β(±s) H_q(t)`.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift`: on the part `±s ≥ 2` of the end `q`
   its pullback is `H_q(t) dt`, that is `K_s = 0` and `K_t = H_q(t)`.
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero`: it is supported
@@ -92,6 +94,31 @@ theorem exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero {w : ℂ} {
   obtain ⟨h₁, hw⟩ := one_lt_endSign_mul_re_endCoord hc
   exact ⟨q, q.endCoord w, h₁, q.cylindricalEndLift_endCoord hw⟩
 
+/-- **The perturbation in the coordinates of an end.** On the part `±s > 0` of the end `q`, the
+pullback of the perturbation along the end lift `φ` sends a tangent vector `v` of the cylinder to
+`Im v · β(±s) H_q(t)`, where `β(±s) = smoothTransition (±s - 1)` is the cutoff of the end: its
+`ds` component (`v = 1`) vanishes and its `dt` component (`v = i`) is `β(±s) H_q(t)`. -/
+theorem pairOfPantsPerturbation_cylindricalEndLift_of_pos {q : Puncture}
+    (hH : Function.Periodic (H q) 1) {z : ℂ} (hz : 0 < q.endSign * z.re) (x : M) (v : ℂ) :
+    pairOfPantsPerturbation H (q.cylindricalEndLift z) x (deriv q.cylindricalEndLift z * v) =
+      v.im * (smoothTransition (q.endSign * z.re - 1) * H q z.im x) := by
+  rw [pairOfPantsPerturbation, Finset.sum_eq_single q]
+  · obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
+    have hre : (q.endCoord (q.cylindricalEndLift z)).re = z.re := by simp [hk]
+    have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
+    have hp : H q (z.im + k) x = H q z.im x := by
+      simpa using congrFun (hH.int_mul k z.im) x
+    rw [smul_apply, endAngularForm_cylindricalEndLift, hre, him, hp, smul_eq_mul, mul_comm]
+  · -- The cutoffs of the other ends vanish, since distinct ends are disjoint.
+    intro r _ hr
+    have hc : smoothTransition (r.endSign * (r.endCoord (q.cylindricalEndLift z)).re - 1) = 0 := by
+      by_contra hc
+      obtain ⟨h₁, hw⟩ := one_lt_endSign_mul_re_endCoord hc
+      exact cylindricalEndLift_ne_cylindricalEndLift (z := z) (z' := r.endCoord _) hr.symm
+        hz (by linarith) (r.cylindricalEndLift_endCoord hw).symm
+    simp [hc]
+  · simp
+
 /-- **The perturbation is `H_q(t) dt` far out on each end.** On the part `±s ≥ 2` of the end `q`,
 the pullback of the perturbation along the end lift `φ` sends a tangent vector `v` of the
 cylinder to `Im v · H_q(t)`: its `ds` component (`v = 1`) vanishes and its `dt` component
@@ -100,23 +127,8 @@ theorem pairOfPantsPerturbation_cylindricalEndLift {q : Puncture}
     (hH : Function.Periodic (H q) 1) {z : ℂ} (hz : 2 ≤ q.endSign * z.re) (x : M) (v : ℂ) :
     pairOfPantsPerturbation H (q.cylindricalEndLift z) x (deriv q.cylindricalEndLift z * v) =
       v.im * H q z.im x := by
-  rw [pairOfPantsPerturbation, Finset.sum_eq_single q]
-  · obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
-    have hre : (q.endCoord (q.cylindricalEndLift z)).re = z.re := by simp [hk]
-    have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
-    have hp : H q (z.im + k) x = H q z.im x := by
-      simpa using congrFun (hH.int_mul k z.im) x
-    rw [smul_apply, endAngularForm_cylindricalEndLift, hre, him,
-      hp, smoothTransition.one_of_one_le (by linarith), one_mul, smul_eq_mul, mul_comm]
-  · -- The cutoffs of the other ends vanish, since distinct ends are disjoint.
-    intro r _ hr
-    have hc : smoothTransition (r.endSign * (r.endCoord (q.cylindricalEndLift z)).re - 1) = 0 := by
-      by_contra hc
-      obtain ⟨h₁, hw⟩ := one_lt_endSign_mul_re_endCoord hc
-      exact cylindricalEndLift_ne_cylindricalEndLift (z := z) (z' := r.endCoord _) hr.symm
-        (by linarith) (by linarith) (r.cylindricalEndLift_endCoord hw).symm
-    simp [hc]
-  · simp
+  rw [pairOfPantsPerturbation_cylindricalEndLift_of_pos hH (by linarith),
+    smoothTransition.one_of_one_le (by linarith), one_mul]
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
@@ -130,9 +142,7 @@ theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.P
       (fun p : ℂ × M => pairOfPantsPerturbation H p.1 p.2) ((w : ℂ), x) := by
   simp only [pairOfPantsPerturbation]
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := by
-    rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
-    exacts [w.2.1, w.2.2]
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
   have hc : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
       (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - 1)) ((w : ℂ), x) :=
     (smoothTransition.contDiff.contDiffAt.comp (w : ℂ)
