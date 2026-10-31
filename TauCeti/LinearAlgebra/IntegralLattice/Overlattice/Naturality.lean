@@ -454,19 +454,14 @@ noncomputable def ofIsotropicSubgroups (e : Isometry L M) (hL : L.IsEven) (hM : 
     {H' : AddSubgroup M.DiscriminantGroup}
     (hH' : (M.discriminantQuadraticModule hM).IsIsotropic H')
     (h : H.map e.discriminantGroupEquiv.toAddEquiv = H') :
-    Isometry (L.ofIsotropicSubgroup hL H hH) (M.ofIsotropicSubgroup hM H' hH') where
-  toIsometryEquiv :=
-    { toLinearEquiv := (e : V ≃ₗ[ℚ] W)
-      map_app' x y := by
-        simp only [ofIsotropicSubgroup_form]
-        exact e.map_app x y }
-  map_carrier := by
-    subst h
-    rw [ofIsotropicSubgroup_carrier, ofIsotropicSubgroup_carrier,
-      ← intermediateCarrierEquiv_intermediateCarrierOfDiscriminantSubgroup,
-      intermediateCarrierEquiv_apply_coe]
-    refine congrArg (fun f ↦ Submodule.map f _) (LinearMap.ext fun x ↦ ?_)
-    simp
+    Isometry (L.ofIsotropicSubgroup hL H hH) (M.ofIsotropicSubgroup hM H' hH') :=
+  have hP := ((L.isEven_intermediateCarrierOfDiscriminantSubgroup_iff hL H).mpr hH).isIntegral
+  (ofEq (IntegralLattice.ext (by simp) (by simp))).trans
+    ((e.toIntegralLatticeIsometry hP).trans (ofEq (IntegralLattice.ext
+      (by rw [IntermediateCarrier.IsIntegral.toIntegralLattice_carrier,
+        ofIsotropicSubgroup_carrier,
+        intermediateCarrierEquiv_intermediateCarrierOfDiscriminantSubgroup, h])
+      (by simp))))
 
 /-- The isometry of glued lattices induced by `e` acts by `e`. -/
 @[simp]
@@ -475,8 +470,8 @@ theorem ofIsotropicSubgroups_apply (e : Isometry L M) (hL : L.IsEven) (hM : M.Is
     {H' : AddSubgroup M.DiscriminantGroup}
     (hH' : (M.discriminantQuadraticModule hM).IsIsotropic H')
     (h : H.map e.discriminantGroupEquiv.toAddEquiv = H') (x : V) :
-    e.ofIsotropicSubgroups hL hM hH hH' h x = e x :=
-  (rfl)
+    e.ofIsotropicSubgroups hL hM hH hH' h x = e x := by
+  simp [ofIsotropicSubgroups]
 
 /-- The inverse of the isometry of glued lattices induced by `e` acts by the inverse of `e`. -/
 @[simp]
