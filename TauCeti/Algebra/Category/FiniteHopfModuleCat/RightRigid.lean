@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 public import TauCeti.Algebra.Category.FiniteHopfModuleCat.Monoidal
 public import TauCeti.Algebra.HopfAlgebra.Module.Dual
 

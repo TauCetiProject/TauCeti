@@ -136,20 +136,6 @@ variable {M N} in
   simp
 
 variable {M N} in
-/-- Pure tensors distribute over finite sums in the first factor. -/
-theorem sum_tmul {ι : Type*} (s : Finset ι) (m : ι → M) (n : N) :
-    tmul R H (∑ i ∈ s, m i) n = ∑ i ∈ s, tmul R H (m i) n := by
-  apply (tensorEquiv R H M N).injective
-  simp [TensorProduct.sum_tmul]
-
-variable {M N} in
-/-- Pure tensors distribute over finite sums in the second factor. -/
-theorem tmul_sum {ι : Type*} (m : M) (s : Finset ι) (n : ι → N) :
-    tmul R H m (∑ i ∈ s, n i) = ∑ i ∈ s, tmul R H m (n i) := by
-  apply (tensorEquiv R H M N).injective
-  simp [TensorProduct.tmul_sum]
-
-variable {M N} in
 /-- Base scalars may be applied to the first factor. -/
 theorem smul_tmul' (r : R) (m : M) (n : N) :
     r • tmul R H m n = tmul R H (r • m) n := by

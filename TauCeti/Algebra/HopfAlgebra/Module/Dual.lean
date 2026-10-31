@@ -333,12 +333,18 @@ theorem lid_comp_dualEval_assoc_dualCoeval :
       (rid k H (Dual k H V)).toLinearMap := by
   ext φ r
   apply (dualEquiv k H V).injective
-  ext v
-  simp only [LinearMap.comp_apply, tensorMap_tmul, LinearMap.id_apply, dualCoeval_apply_eq_sum,
-    tmul_sum, map_sum, LinearEquiv.coe_coe, assoc_symm_tmul, dualEval_tmul, lid_tmul,
-    LinearEquiv.apply_symm_apply, rid_tmul, map_smul, LinearMap.smul_apply, smul_eq_mul]
-  simp_rw [mul_smul, ← Finset.smul_sum, Module.Basis.sum_dual_apply_smul_coord,
-    LinearMap.smul_apply, smul_eq_mul]
+  -- Transport Mathlib's triangle identity `contractLeft_assoc_coevaluation`.
+  have h := congr_arg (TensorProduct.lid k _) <| LinearMap.congr_fun
+    (contractLeft_assoc_coevaluation k V) (dualEquiv k H V φ ⊗ₜ trivialEquiv k H r)
+  simp only [LinearMap.comp_apply, LinearMap.lTensor_tmul, LinearEquiv.coe_coe,
+    TensorProduct.rid_tmul, TensorProduct.lid_symm_apply, TensorProduct.lid_tmul, one_smul] at h
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, tensorMap_tmul, LinearMap.id_apply,
+    rid_tmul, map_smul]
+  rw [← h, dualCoeval_apply]
+  generalize coevaluation k V (trivialEquiv k H r) = y
+  induction y using TensorProduct.inductionOn with
+  | add y z hy hz => simp only [map_add, tmul_add, TensorProduct.tmul_add, hy, hz]
+  | tmul v ψ => simp
 
 /-- **Second zigzag identity.** Coevaluation on the left of a vector, followed by
 reassociation and evaluation, returns the vector. -/
@@ -348,12 +354,18 @@ theorem rid_comp_dualEval_assoc_dualCoeval :
           tensorMap k H (dualCoeval k H V) LinearMap.id =
       (lid k H V).toLinearMap := by
   ext r v
-  simp only [LinearMap.comp_apply, tensorMap_tmul, LinearMap.id_apply, dualCoeval_apply_eq_sum,
-    sum_tmul, map_sum, LinearEquiv.coe_coe, assoc_tmul, dualEval_tmul, rid_tmul,
-    LinearEquiv.apply_symm_apply, lid_tmul]
-  simp_rw [smul_comm _ (trivialEquiv k H r), ← Finset.smul_sum]
-  congr 1
-  simpa [Module.Basis.coord_apply] using (Module.Basis.ofVectorSpace k V).sum_repr v
+  -- Transport Mathlib's triangle identity `contractLeft_assoc_coevaluation'`.
+  have h := congr_arg (TensorProduct.rid k _) <| LinearMap.congr_fun
+    (contractLeft_assoc_coevaluation' k V) (trivialEquiv k H r ⊗ₜ v)
+  simp only [LinearMap.comp_apply, LinearMap.rTensor_tmul, LinearEquiv.coe_coe,
+    TensorProduct.lid_tmul, TensorProduct.rid_symm_apply, TensorProduct.rid_tmul, one_smul] at h
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, tensorMap_tmul, LinearMap.id_apply,
+    lid_tmul]
+  rw [← h, dualCoeval_apply]
+  generalize coevaluation k V (trivialEquiv k H r) = y
+  induction y using TensorProduct.inductionOn with
+  | add y z hy hz => simp only [map_add, TensorProduct.add_tmul, add_tmul, hy, hz]
+  | tmul w ψ => simp
 
 end Coevaluation
 
