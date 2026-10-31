@@ -103,11 +103,9 @@ theorem eval_eq_zpow_mul_conj_eval (hp : p ∈ conjReciprocalPolynomials k) {w :
     ← Finset.sum_range_reflect _ (m + 1)]
   refine Finset.sum_congr rfl fun i hi => ?_
   have hi : i ≤ m := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
-  rw [map_mul, map_pow, hconj, add_tsub_cancel_right,
-    hp' (m - i) (m - (m - i)) (by push_cast [Nat.sub_sub_self hi, Nat.cast_sub hi]; ring),
-    Nat.sub_sub_self hi]
-  conv_rhs => rw [← Nat.sub_add_cancel hi, pow_add]
-  rw [inv_pow]
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hi
+  rw [add_tsub_cancel_right, Nat.add_sub_cancel_left, hp' j i (by push_cast; ring)]
+  simp [hconj, pow_add]
   field_simp
 
 /-! ### Solutions on the closed disc -/
@@ -127,7 +125,7 @@ private theorem integral_zpow_mul_eq_conj
   have hconj : conj (circleMap 0 1 θ) = (circleMap 0 1 θ)⁻¹ :=
     (inv_eq_conj (by simp)).symm
   conv_lhs => rw [hb _ hz]
-  rw [map_mul, map_zpow₀, hconj, inv_zpow', neg_neg, zpow_add₀ hz0]
+  simp [hconj, zpow_add₀ hz0, zpow_neg]
   ring
 
 /-- A function holomorphic on the open unit disc, continuous on its closure, and satisfying
@@ -151,10 +149,8 @@ theorem exists_mem_conjReciprocalPolynomials_eqOn (hu : DiffContOnCl ℂ u (ball
       (cauchyPowerSeries u 0 1).coeff i = conj ((cauchyPowerSeries u 0 1).coeff j) :=
     fun i j hij => by
       have hexp : (i : ℤ) - k = -(j : ℤ) := by omega
-      rw [ha, coeff_cauchyPowerSeries u 0 one_ne_zero, smul_eq_mul, map_mul, map_inv₀, map_mul,
-        conj_ofReal, map_ofNat, hexp]
-      -- The integrand is a scalar multiple in `ℂ`, that is, a product.
-      simp only [smul_eq_mul]
+      rw [ha, coeff_cauchyPowerSeries u 0 one_ne_zero, hexp]
+      simp only [smul_eq_mul, map_mul, map_inv₀, conj_ofReal, map_ofNat]
   -- The Taylor polynomial of degree `k` has all the Taylor coefficients, as `aₙ = 0` for `n > k`.
   set p : ℂ[X] := ofFn (k + 1).toNat fun j => (cauchyPowerSeries u 0 1).coeff j
   have hpa : ∀ n, p.coeff n = (cauchyPowerSeries u 0 1).coeff n := fun n => by
