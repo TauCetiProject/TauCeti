@@ -107,17 +107,11 @@ theorem hessian_norm_sq {X : Π x : M, TangentSpace I x} (hX : CMDiff ∞ (T% X)
   have hdV : (fun y ↦ mvfderiv I (fun y ↦ ‖X y‖ ^ 2) y (V y)) =
       (fun y ↦ ⟪cov X y (V y), X y⟫_ℝ) + fun y ↦ ⟪X y, cov X y (V y)⟫_ℝ :=
     funext fun y ↦ hd y (V y)
-  -- The bundle argument of `MDifferentiableAt.inner_bundle` is not inferred through
-  -- `TangentSpace`.
-  have hinner {A B : Π y : M, TangentSpace I y} (hA : MDiffAt (T% A) x)
-      (hB : MDiffAt (T% B) x) : MDiffAt (fun y ↦ ⟪A y, B y⟫_ℝ) x :=
-    MDifferentiableAt.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)
-      (b := id) hA hB
   have h₁ := hcov.mvfderiv_inner_eq U hVX (hXd x)
   have h₂ := hcov.mvfderiv_inner_eq U (hXd x) hVX
   rw [hessian_apply_eq_mvfderiv_sub x hsq U V (hV.mdifferentiableAt (by simp)), hdV,
-    mvfderiv_add (hinner hVX (hXd x)) (hinner (hXd x) hVX), hd,
-    cov.secondCovariantDerivative_apply cov hX x hV]
+    mvfderiv_add (mdifferentiableAt_inner hVX (hXd x)) (mdifferentiableAt_inner (hXd x) hVX),
+    hd, cov.secondCovariantDerivative_apply cov hX x hV]
   simp only [add_apply] at h₁ h₂ ⊢
   rw [h₁, h₂]
   simp only [cov, inner_sub_right, real_inner_comm (X x),
@@ -155,10 +149,7 @@ private theorem mdifferentiableAt_hessianForm_apply (hf : ContMDiff I 𝓘(ℝ) 
   have hGσ : MDiffAt (T% (fun y ↦ cov (mgradient I f) y (σ y))) x :=
     ((hhom.contMDiffAt Filter.univ_mem).mdifferentiableAt (by simp)).clm_bundle_apply hσ
   simp only [hessianForm, ContinuousLinearMap.coe_comp, Function.comp_apply, innerSL_apply_apply]
-  -- The bundle argument of `MDifferentiableAt.inner_bundle` is not inferred through
-  -- `TangentSpace`.
-  exact MDifferentiableAt.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)
-    (b := id) hGσ hτ
+  exact mdifferentiableAt_inner hGσ hτ
 
 /-- Pairing the second covariant derivative of `grad f` with a vector is the covariant derivative
 of the Hessian: `⟪∇²(grad f)(u, v), w⟫ = (∇_u Hess f)(v, w)`. -/
