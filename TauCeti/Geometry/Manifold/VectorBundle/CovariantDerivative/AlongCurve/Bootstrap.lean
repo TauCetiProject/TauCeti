@@ -103,24 +103,20 @@ theorem contMDiffOn_succ_of_alongCurveWithin
   rw [Nat.cast_add, Nat.cast_one, contDiffWithinAt_succ_iff_hasFDerivWithinAt' (by simp)]
   have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
     (hγ t ht).continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx)
-  refine ⟨s ∩ γ ⁻¹' e.baseSet, ?_, ?_, by simp, fun r ↦
+  have hdeq := eventuallyEq_sectionCoord_alongCurveWithin cov γ V hs ht hx
+    ((hV t ht).of_le (by exact_mod_cast hn))
+  refine ⟨{r | r ∈ s ∧ γ r ∈ e.baseSet ∧
+    d r = alongCurveInChartWithin cov γ V s (γ t) r}, ?_, ?_, by simp, fun r ↦
     ContinuousLinearMap.toSpanSingleton 𝕜 (d r - Γ (γ r) (v r) (derivWithin u s r)), ?_, ?_⟩
   · rw [insert_eq_of_mem ht]
-    exact inter_mem self_mem_nhdsWithin hbase
-  · exact inter_subset_left.trans (subset_insert t s)
+    exact inter_mem self_mem_nhdsWithin (inter_mem hbase hdeq)
+  · exact fun r hr ↦ subset_insert t s hr.1
   · intro r hr
     -- Chart independence identifies that candidate with the actual within derivative.
     have hVr : DifferentiableWithinAt 𝕜 v s r := differentiableWithinAt_sectionCoord γ V
-      ((hV r hr.1).mdifferentiableWithinAt hn0) hr.2
-    have hread := symmL_alongCurveInChartWithin cov γ V hr.2 (hs r hr.1)
-      ((hγ r hr.1).mdifferentiableWithinAt (by simp))
-      (differentiableWithinAt_sectionCoord γ V
-        ((hV r hr.1).mdifferentiableWithinAt hn0)
-        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ r)))
-    have heq : d r = derivWithin v s r + Γ (γ r) (v r) (derivWithin u s r) := by
-      dsimp only [d]
-      rw [sectionCoord_apply, ← hread, e.continuousLinearMapAt_symmL hr.2]
-      exact alongCurveInChartWithin_apply cov γ V s (γ t) r
+      ((hV r hr.1).mdifferentiableWithinAt hn0) hr.2.1
+    have heq : d r = derivWithin v s r + Γ (γ r) (v r) (derivWithin u s r) :=
+      hr.2.2.trans (alongCurveInChartWithin_apply cov γ V s (γ t) r)
     simpa only [heq, add_sub_cancel_right] using hVr.hasDerivWithinAt.hasFDerivWithinAt
   · exact ContinuousLinearMap.toSpanSingletonCLE.contDiff.comp_contDiffWithinAt hderiv
 
