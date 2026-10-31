@@ -77,13 +77,15 @@ at all.
 
 ## Janiszewski's theorem and enclosure
 
-The classical route to the separation theorems of the plane runs through Janiszewski's theorem —
-two closed sets with connected intersection, neither of which separates a pair of points, have a
-union that does not separate it either — and Janiszewski is proved by translating "does not
-separate" into "the Borsuk map has a continuous logarithm" and gluing the two logarithms over the
-connected intersection. This file supplies that translation in the direction that holds without
-duality, together with the gluing; `TauCeti/Analysis/Complex/PlaneSeparation/Basic.lean` adds the
-converse direction and assembles the three into `TauCeti.janiszewski`.
+The classical route to the separation theorems of the plane runs through Janiszewski's theorem,
+proved as `TauCeti.janiszewski` in `TauCeti/Analysis/Complex/PlaneSeparation/Basic.lean`: if two
+*bounded* closed sets `S`, `T ⊆ ℂ` have preconnected intersection and neither separates `a` from
+`b`, then `S ∪ T` does not separate them either. Boundedness cannot be dropped: two opposite closed
+rays from the origin meet in a point and neither separates the plane, yet their union is a line.
+The proof translates "does not separate" into "the Borsuk map has a continuous logarithm" and
+glues the two logarithms over the intersection. This file supplies that translation in the
+direction that needs no boundedness, together with the gluing; the converse direction, which uses
+boundedness of `S ∪ T`, is added in `TauCeti/Analysis/Complex/PlaneSeparation/Basic.lean`.
 
 The criterion is also stated in terms of filled hulls, as
 `TauCeti.mem_filledHull_or_mem_filledHull_of_not_hasContinuousLogOn`: a bounded closed set on
