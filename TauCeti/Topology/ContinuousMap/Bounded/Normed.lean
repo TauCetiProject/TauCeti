@@ -251,27 +251,24 @@ theorem smul_dilate {𝕜 : Type*} [PseudoMetricSpace 𝕜] [Zero 𝕜] [Zero β
   ext n
   simp
 
+@[simp]
+theorem add_dilate [Add β] [BoundedAdd β] [ContinuousAdd β] (f g : ℕ →ᵇ β) (k : ℕ) :
+    (f + g).dilate k = f.dilate k + g.dilate k :=
+  (rfl)
+
+@[simp]
+theorem sub_dilate [Sub β] [BoundedSub β] [ContinuousSub β] (f g : ℕ →ᵇ β) (k : ℕ) :
+    (f - g).dilate k = f.dilate k - g.dilate k :=
+  (rfl)
+
 end Dilate
 
-section DilateAddGroup
-
-variable {β : Type*} [SeminormedAddCommGroup β]
-
+/-- Dilations commute with negation. This is stated for a `SeminormedAddCommGroup` codomain, the
+setting of Mathlib's `Neg` instance on bounded continuous functions. -/
 @[simp]
-theorem add_dilate (f g : ℕ →ᵇ β) (k : ℕ) : (f + g).dilate k = f.dilate k + g.dilate k := by
+theorem neg_dilate {β : Type*} [SeminormedAddCommGroup β] (f : ℕ →ᵇ β) (k : ℕ) :
+    (-f).dilate k = -f.dilate k := by
   ext n
   simp
-
-@[simp]
-theorem neg_dilate (f : ℕ →ᵇ β) (k : ℕ) : (-f).dilate k = -f.dilate k := by
-  ext n
-  simp
-
-@[simp]
-theorem sub_dilate (f g : ℕ →ᵇ β) (k : ℕ) : (f - g).dilate k = f.dilate k - g.dilate k := by
-  ext n
-  simp
-
-end DilateAddGroup
 
 end BoundedContinuousFunction
