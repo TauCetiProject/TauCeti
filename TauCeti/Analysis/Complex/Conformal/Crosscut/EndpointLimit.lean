@@ -289,17 +289,21 @@ arc to a compact set, which is the hypothesis of
 The two endpoints `θ₀ = a` and `θ₀ = b` are the case with content: there the arc is a curve with an
 honest end. -/
 theorem exists_tendsto_nhdsWithin_circleMap_image_Ioo (hUo : IsOpen U)
-    (hf : DifferentiableOn ℂ f U) (ζ : ℂ) {ρ : ℝ} {a b θ₀ : ℝ} (hab : a < b)
+    (hf : DifferentiableOn ℂ f U) (ζ : ℂ) {ρ : ℝ} {a b θ₀ : ℝ}
     (hab2π : b - a < 2 * π) (hθ₀ : θ₀ ∈ Icc a b)
     (hmemU : ∀ θ ∈ Ioo a b, circleMap ζ ρ θ ∈ U)
     (hfin : ∫⁻ θ in Ioo a b, ‖deriv f (circleMap ζ ρ θ)‖ₑ ≠ ⊤) :
-    ∃ v, Tendsto f (𝓝[circleMap ζ ρ '' Ioo a b] (circleMap ζ ρ θ₀)) (𝓝 v) :=
-  exists_tendsto_of_clusterSetOn_subsingleton
-    (isBounded_image_circleMap_image_Ioo_of_lintegral_ne_top hUo hf ζ hmemU
-      hfin).isCompact_closure
-    (fun _ hw => subset_closure (mem_image_of_mem f hw))
-    (circleMap_mem_closure_image_Ioo ζ ρ hab hθ₀)
-    (subsingleton_clusterSetOn_circleMap_image_Ioo hUo hf ζ hab hab2π hθ₀ hmemU hfin)
+    ∃ v, Tendsto f (𝓝[circleMap ζ ρ '' Ioo a b] (circleMap ζ ρ θ₀)) (𝓝 v) := by
+  by_cases hab : a < b
+  · exact
+      exists_tendsto_of_clusterSetOn_subsingleton
+        (isBounded_image_circleMap_image_Ioo_of_lintegral_ne_top hUo hf ζ hmemU
+          hfin).isCompact_closure
+        (fun _ hw => subset_closure (mem_image_of_mem f hw))
+        (circleMap_mem_closure_image_Ioo ζ ρ hab hθ₀)
+        (subsingleton_clusterSetOn_circleMap_image_Ioo hUo hf ζ hab hab2π hθ₀ hmemU hfin)
+  · simp [Ioo_eq_empty_of_le (le_of_not_gt hab)]
+
 
 /-- **The cluster set of an arc of finite image length is a single point.** The limit of
 `TauCeti.exists_tendsto_nhdsWithin_circleMap_image_Ioo` written as a cluster set, which is the form
@@ -311,7 +315,7 @@ theorem exists_clusterSetOn_circleMap_image_Ioo_eq_singleton (hUo : IsOpen U)
     (hfin : ∫⁻ θ in Ioo a b, ‖deriv f (circleMap ζ ρ θ)‖ₑ ≠ ⊤) :
     ∃ v, clusterSetOn f (circleMap ζ ρ '' Ioo a b) (circleMap ζ ρ θ₀) = {v} := by
   obtain ⟨v, hv⟩ :=
-    exists_tendsto_nhdsWithin_circleMap_image_Ioo hUo hf ζ hab hab2π hθ₀ hmemU hfin
+    exists_tendsto_nhdsWithin_circleMap_image_Ioo hUo hf ζ hab2π hθ₀ hmemU hfin
   exact ⟨v, clusterSetOn_eq_singleton_of_tendsto (circleMap_mem_closure_image_Ioo ζ ρ hab hθ₀) hv⟩
 
 /-! ## The two ends of a circular crosscut -/
@@ -402,7 +406,7 @@ theorem exists_tendsto_nhdsWithin_ball_inter_sphere (hζ : dist ζ c = r) (hρ :
   have hφπ2 := arccos_div_two_mul_lt_pi_div_two hρ hr
   obtain ⟨θ₀, hθ₀, rfl⟩ := (closedBall_inter_sphere_eq_circleMap_image_Icc hζ hρ hρr).le he
   rw [ball_inter_sphere_eq_circleMap_image_Ioo hζ hρ hρr]
-  exact exists_tendsto_nhdsWithin_circleMap_image_Ioo isOpen_ball hf ζ (by linarith)
+  exact exists_tendsto_nhdsWithin_circleMap_image_Ioo isOpen_ball hf ζ
     (by linarith [Real.pi_pos]) hθ₀ (fun _ hθ => circleMap_mem_ball_of_mem_Ioo hζ hρ hρr hθ)
     (lintegral_enorm_deriv_circleMap_ne_top hζ hρ hρr hfin)
 
