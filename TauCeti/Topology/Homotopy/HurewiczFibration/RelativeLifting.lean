@@ -14,10 +14,10 @@ public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
 
 Let `A ⊆ Y` be the zero set of a continuous `u : Y → I`, and suppose that `A` is a strong
 deformation retract of `Y`: there is a retraction `r : Y → A` and a homotopy from the identity of
-`Y` to `r`, relative to `A`. Then a Hurewicz fibration `p : E → B` has the right lifting property
-with respect to the inclusion `A → Y`: every commutative square from `A → Y` to `p` has a
-diagonal filler, which restricts to the given map on `A` exactly
-(`TauCeti.IsHurewiczFibration.zeroSetSDR_liftingInclusion`). No regular lifting function is
+`Y` to `r`, relative to `A`. Then a map `p : E → B` with homotopy lifting for `Y` has the right
+lifting property with respect to the inclusion `A → Y`: every commutative square from `A → Y` to
+`p` has a diagonal filler, which restricts to the given map on `A` exactly
+(`TauCeti.HasHomotopyLiftingProperty.zeroSetSDR_liftingInclusion`). No regular lifting function is
 assumed, and no separation, CW or compact-generation hypothesis is imposed on `Y`.
 
 The filler is obtained by a single homotopy lift. Writing `h` for the deformation, the homotopy
@@ -35,9 +35,9 @@ arbitrary prescribed track of the basepoint.
 
 ## Main results
 
-* `TauCeti.IsHurewiczFibration.zeroSetSDR_liftingInclusion`: a Hurewicz fibration has the right
-  lifting property with respect to the inclusion of the zero set of a control function which is a
-  strong deformation retract.
+* `TauCeti.HasHomotopyLiftingProperty.zeroSetSDR_liftingInclusion`: a map with homotopy lifting
+  for the ambient space has the right lifting property with respect to the inclusion of the zero set
+  of a control function which is a strong deformation retract.
 * `TauCeti.IsHurewiczFibration.exists_lift_of_ndrPair`: the relative homotopy lifting property
   with respect to an NDR pair.
 
@@ -57,14 +57,14 @@ namespace TauCeti
 
 variable {E : Type u} {B : Type v} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
 
-namespace IsHurewiczFibration
-
 /-- **Fixed-data relative lifting.** Let `A ⊆ Y` be the zero set of a continuous `u : Y → I` and
-a strong deformation retract of `Y`, with retraction `r`. Then a Hurewicz fibration `p` lifts every
-commutative square from the inclusion `A → Y` to `p`: given `f : A → E` and `g : Y → B` with
+a strong deformation retract of `Y`, with retraction `r`. Then a map `p` with homotopy lifting
+for `Y` lifts every commutative square from the inclusion `A → Y` to `p`: given `f : A → E` and
+`g : Y → B` with
 `p ∘ f = g` on `A`, there is a lift `ℓ : Y → E` of `g` restricting to `f` on `A`. -/
-theorem zeroSetSDR_liftingInclusion (hp : IsHurewiczFibration.{w} p) {Y : Type w}
-    [TopologicalSpace Y] {A : Set Y} (u : C(Y, I)) (hu : ∀ y, u y = 0 ↔ y ∈ A) (r : C(Y, A))
+theorem HasHomotopyLiftingProperty.zeroSetSDR_liftingInclusion {Y : Type w}
+    [TopologicalSpace Y] (hp : HasHomotopyLiftingProperty p Y) {A : Set Y}
+    (u : C(Y, I)) (hu : ∀ y, u y = 0 ↔ y ∈ A) (r : C(Y, A))
     (hr : (ContinuousMap.id Y).HomotopicRel ((ContinuousMap.subtypeVal A).comp r) A)
     (f : C(A, E)) (g : C(Y, B)) (hfg : ∀ a, p (f a) = g a) :
     ∃ ℓ : C(Y, E), p ∘ ℓ = g ∧ ∀ a : A, ℓ a = f a := by
@@ -87,7 +87,7 @@ theorem zeroSetSDR_liftingInclusion (hp : IsHurewiczFibration.{w} p) {Y : Type w
     · exact F.eq_fst _ hy
     · simp only [Φ, φ, ContinuousMap.coe_mk]
       simp [div_self ((coe_ne_zero_iff_notMem hu y).2 hy)]
-  obtain ⟨L, hL, hL₀⟩ := hp.hasHomotopyLiftingProperty Y (f.comp r) (g.comp Φ) fun y ↦ by
+  obtain ⟨L, hL, hL₀⟩ := hp (f.comp r) (g.comp Φ) fun y ↦ by
     simp [hΦ₀, hfg]
   refine ⟨⟨fun y ↦ L (u y, y), by fun_prop⟩, funext fun y ↦ ?_, fun a ↦ ?_⟩
   · simpa [hΦu] using congrFun hL (u y, y)
@@ -97,7 +97,7 @@ theorem zeroSetSDR_liftingInclusion (hp : IsHurewiczFibration.{w} p) {Y : Type w
 /-- **Relative homotopy lifting for NDR pairs.** Let `(X, A)` be an NDR pair and `p` a Hurewicz
 fibration. A homotopy `H : I × X → B` lifts to a homotopy `G : I × X → E` with prescribed initial
 lift `f` and prescribed lift `g` over `I × A`, provided `f` and `g` agree at time `0`. -/
-theorem exists_lift_of_ndrPair (hp : IsHurewiczFibration.{w} p) {X : Type w}
+theorem IsHurewiczFibration.exists_lift_of_ndrPair (hp : IsHurewiczFibration.{w} p) {X : Type w}
     [TopologicalSpace X] {A : Set X} (N : NDRPair A) (f : C(X, E)) (H : C(I × X, B))
     (hH : ∀ x, H (0, x) = p (f x)) (g : C(I × A, E)) (hg : ∀ t (a : A), p (g (t, a)) = H (t, a))
     (hgf : ∀ a : A, g (0, a) = f a) :
@@ -105,8 +105,8 @@ theorem exists_lift_of_ndrPair (hp : IsHurewiczFibration.{w} p) {X : Type w}
   -- glue `f` and `g` to a map on `{0} × X ∪ I × A`, extended over the cylinder by the retraction
   obtain ⟨k, hk₀, hkA⟩ :=
     N.hasHomotopyExtensionProperty.exists_extension_of_isClosed N.isClosed f g hgf
-  obtain ⟨G, hG, hGJ⟩ := hp.zeroSetSDR_liftingInclusion N.cylinderControl
-    N.cylinderControl_eq_zero_iff N.cylinderRetraction ⟨N.cylinderHomotopyRel⟩
+  obtain ⟨G, hG, hGJ⟩ := (hp.hasHomotopyLiftingProperty _).zeroSetSDR_liftingInclusion
+    N.cylinderControl N.cylinderControl_eq_zero_iff N.cylinderRetraction ⟨N.cylinderHomotopyRel⟩
     (k.restrict (cylinderExtensionDomain A)) H fun ⟨⟨t, x⟩, hz⟩ ↦ by
       rcases mem_cylinderExtensionDomain_iff.1 hz with ht | hx
       · obtain rfl : t = 0 := ht
@@ -115,7 +115,5 @@ theorem exists_lift_of_ndrPair (hp : IsHurewiczFibration.{w} p) {X : Type w}
   refine ⟨G, hG, fun x ↦ ?_, fun t a ↦ ?_⟩
   · simpa [hk₀] using hGJ ⟨(0, x), zero_mem_cylinderExtensionDomain x⟩
   · simpa [hkA] using hGJ ⟨(t, a), mem_cylinderExtensionDomain_of_mem a.2⟩
-
-end IsHurewiczFibration
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.Cube.Radius
+public import TauCeti.Topology.Homotopy.Cube.OpenBox
 
 /-!
 # Transporting a generalized loop along a path
@@ -32,7 +32,7 @@ ends at the transported loop, which is *defined* as its value at time `1`.
 `TauCeti.GenLoop.HomotopyAlong γ f g` packages the data of a homotopy from `f` to `g` whose
 restriction to the cube boundary is `γ`. Canonicity, `HomotopyAlong.homotopic_transport`, is the
 homotopy extension property of the pair `(I^N, Cube.boundary N)` in the only form needed here.
-It is proved by a file-local map `cubeTopFaceRetract : C(I^N, I × (I^N))`: the restriction to
+It is proved using `cubeLiftDeform 0 (1, z)`: the restriction to
 the top face `{1} × I^N` of the radial projection of the cylinder `I × I^N` away from the point
 at height `2` above the centre of the cube. That projection lands in the union of the bottom
 face `{0} × I^N` and the sides `I × Cube.boundary N`, and is the identity there, so its
@@ -195,53 +195,6 @@ theorem transport_apply_eq (γ : Path x y) (f : Ω^ N X x) (z : I^N) :
   rw [transport_apply, collarHomotopy_apply, h_one]
   norm_num
 
-end GenLoop
-
-/-! ### The radial retraction of the cylinder -/
-
-/-- The restriction to the top face `{1} × I^N` of the radial projection of the cylinder
-`I × I^N` away from the point sitting at height `2` above the centre of the cube. The projection
-lands in the union of the bottom face `{0} × I^N` and the sides `I × Cube.boundary N`, on which
-it is the identity; in particular this restriction sends a point `z` of the cube boundary to
-`(1, z)`, see `cubeTopFaceRetract_of_mem_boundary`. -/
-private def cubeTopFaceRetract : C(I^N, I × (I^N)) where
-  toFun z :=
-    if cubeRadius z ≤ 1 / 2 then (0, cubeScale 2 z)
-    else (Set.projIcc (0 : ℝ) 1 zero_le_one (2 - 1 / max (cubeRadius z) (1 / 2)),
-      cubeScale (1 / max (cubeRadius z) (1 / 2)) z)
-  continuous_toFun := by
-    have hmax : ∀ z : I^N, (0 : ℝ) < max (cubeRadius z) (1 / 2) := fun _ =>
-      lt_of_lt_of_le (by norm_num) (le_max_right _ _)
-    have hc : Continuous fun z : I^N => max (cubeRadius z) (1 / 2 : ℝ) :=
-      continuous_cubeRadius.max continuous_const
-    refine Continuous.if_le ?_ ?_ continuous_cubeRadius continuous_const ?_
-    · exact continuous_const.prodMk (continuous_cubeScale.comp'
-        (continuous_const.prodMk continuous_id))
-    · refine Continuous.prodMk (continuous_projIcc.comp' ?_) ?_
-      · exact continuous_const.sub (continuous_const.div hc fun z => (hmax z).ne')
-      · exact continuous_cubeScale.comp'
-          ((continuous_const.div hc fun z => (hmax z).ne').prodMk continuous_id)
-    · intro z hz
-      rw [hz, max_eq_left (by norm_num)]
-      norm_num [Set.projIcc_left]
-
-private theorem cubeTopFaceRetract_apply (z : I^N) :
-    cubeTopFaceRetract z =
-      if cubeRadius z ≤ 1 / 2 then ((0 : I), cubeScale 2 z)
-      else (Set.projIcc (0 : ℝ) 1 zero_le_one (2 - 1 / max (cubeRadius z) (1 / 2)),
-        cubeScale (1 / max (cubeRadius z) (1 / 2)) z) := by
-  unfold cubeTopFaceRetract
-  rfl
-
-private theorem cubeTopFaceRetract_of_mem_boundary {z : I^N} (hz : z ∈ Cube.boundary N) :
-    cubeTopFaceRetract z = (1, z) := by
-  have hu : cubeRadius z = 1 := (cubeRadius_eq_one_iff z).2 hz
-  rw [cubeTopFaceRetract_apply, hu, ite_eq_right_of_eq_false _ _ (eq_false (by norm_num)),
-    max_eq_left (by norm_num)]
-  norm_num [Set.projIcc_right]
-
-namespace GenLoop
-
 /-! ### Homotopies along a path, and canonicity of the transported loop -/
 
 /-- A homotopy from a generalized loop `f` based at `x` to a generalized loop `g` based at `y`
@@ -290,38 +243,66 @@ def collarHomotopyAlong (γ : Path x y) (f : Ω^ N X x) :
 
 /-- Composing a homotopy along `γ` with the radial retraction of the cylinder reproduces the
 transported loop exactly. -/
-private theorem HomotopyAlong.map_cubeTopFaceRetract {γ : Path x y} {f : Ω^ N X x} {g : Ω^ N X y}
+private theorem HomotopyAlong.map_cubeLiftDeform {γ : Path x y} {f : Ω^ N X x} {g : Ω^ N X y}
     (h : HomotopyAlong γ f g) (z : I^N) :
-    h.toHomotopy (cubeTopFaceRetract z) = transport γ f z := by
-  rw [cubeTopFaceRetract_apply, transport_apply_eq]
+    h.toHomotopy (cubeLiftDeform 0 (1, z)) = transport γ f z := by
+  have ht := (cubeLiftTime_mem ((1 : I), z)).1
+  rw [transport_apply_eq]
   by_cases hz : cubeRadius z ≤ 1 / 2
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true hz), ite_eq_left_of_eq_true _ _ (eq_true hz)]
-    exact h.map_zero_left _
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false hz), ite_eq_right_of_eq_false _ _ (eq_false hz)]
-    have hmax : max (cubeRadius z) (1 / 2 : ℝ) = cubeRadius z := max_eq_left (le_of_not_ge hz)
-    have hpos : (0 : ℝ) < cubeRadius z := lt_of_lt_of_le (by norm_num) (le_of_not_ge hz)
-    refine h.map_boundary _ _ ?_
-    rw [← cubeRadius_eq_one_iff, hmax,
-      cubeRadius_cubeScale (by positivity) (by rw [one_div, inv_mul_cancel₀ hpos.ne']),
-      one_div, inv_mul_cancel₀ hpos.ne']
+  · have hd : cubeLiftDen ((1 : I), z) = 1 := by
+      rw [cubeLiftDen_def]
+      norm_num only [Set.Icc.coe_one, sub_self, Nat.cast_ofNat, sub_zero]
+      exact max_eq_left (by linarith)
+    rw [ite_eq_left hz]
+    norm_num [cubeLiftDeform_def, cubeLiftTime_def, hd]
+  · have hd : cubeLiftDen ((1 : I), z) = 2 * cubeRadius z := by
+      rw [cubeLiftDen_def]
+      norm_num only [Set.Icc.coe_one]
+      exact max_eq_right (by linarith)
+    have he : 2 / (2 * cubeRadius z) = 1 / cubeRadius z := by ring
+    have hp : cubeLiftDeform 0 ((1 : I), z) =
+        (Set.projIcc (0 : ℝ) 1 zero_le_one (2 - 1 / cubeRadius z),
+          cubeScale (1 / cubeRadius z) z) := by
+      simp only [cubeLiftDeform_def, Set.Icc.coe_zero, min_eq_right ht, sub_zero]
+      rw [cubeLiftTime_def, hd, he]
+      simp only [Set.Icc.coe_one]
+      have ha : (1 : ℝ) + (1 / cubeRadius z - 1) * (1 - 2) =
+          2 - 1 / cubeRadius z := by ring
+      rw [ha]
+      simp
+    have hland := cubeLiftDeform_zero_mem ((1 : I), z)
+    rw [hp, mem_cylinderExtensionDomain_iff] at hland
+    have hb : cubeScale (1 / cubeRadius z) z ∈ Cube.boundary N := by
+      rcases hland with ht | hb
+      · have hpos : 0 < cubeRadius z := by linarith
+        have htime : 0 < 2 - 1 / cubeRadius z := by
+          rw [sub_pos, div_lt_iff₀ hpos]
+          linarith
+        exact (htime.not_ge ((Set.projIcc_eq_left (by norm_num : (0 : ℝ) < 1)).1 ht)).elim
+      · exact hb
+    rw [ite_eq_right hz, max_eq_left (le_of_not_ge hz), hp]
+    exact h.map_boundary _ _ hb
 
 /-- **Canonicity of the transported loop.** A homotopy along `γ` starting at `f` ends at a
 generalized loop homotopic, relative to the cube boundary, to `transport γ f`. -/
 theorem HomotopyAlong.homotopic_transport {γ : Path x y} {f : Ω^ N X x} {g : Ω^ N X y}
     (h : HomotopyAlong γ f g) : GenLoop.Homotopic g (transport γ f) := by
+  have hr : Continuous fun sz : I × (I^N) => cubeLiftDeform 0 ((1 : I), sz.2) :=
+    continuous_cubeLiftDeform.comp (continuous_const.prodMk
+      (continuous_const.prodMk continuous_snd))
   have hcont : Continuous fun sz : I × (I^N) =>
-      ((Set.Icc.convexComb 1 (cubeTopFaceRetract sz.2).1 sz.1 : I),
-        (fun i => Set.Icc.convexComb (sz.2 i) ((cubeTopFaceRetract sz.2).2 i) sz.1 : I^N)) := by
+      ((Set.Icc.convexComb 1 (cubeLiftDeform 0 (1, sz.2)).1 sz.1 : I),
+        (fun i => Set.Icc.convexComb (sz.2 i) ((cubeLiftDeform 0 (1, sz.2)).2 i) sz.1 : I^N)) := by
     refine Continuous.prodMk ?_ (continuous_pi fun i => ?_)
     · fun_prop
     · fun_prop
   let K : C(I × (I^N), X) :=
-    ⟨fun sz => h.toHomotopy (Set.Icc.convexComb 1 (cubeTopFaceRetract sz.2).1 sz.1,
-      fun i => Set.Icc.convexComb (sz.2 i) ((cubeTopFaceRetract sz.2).2 i) sz.1),
+    ⟨fun sz => h.toHomotopy (Set.Icc.convexComb 1 (cubeLiftDeform 0 (1, sz.2)).1 sz.1,
+      fun i => Set.Icc.convexComb (sz.2 i) ((cubeLiftDeform 0 (1, sz.2)).2 i) sz.1),
       h.toHomotopy.continuous.comp hcont⟩
   have K_apply (t : I) (z : I^N) :
-      K (t, z) = h.toHomotopy (Set.Icc.convexComb 1 (cubeTopFaceRetract z).1 t,
-        fun i => Set.Icc.convexComb (z i) ((cubeTopFaceRetract z).2 i) t) := rfl
+      K (t, z) = h.toHomotopy (Set.Icc.convexComb 1 (cubeLiftDeform 0 (1, z)).1 t,
+        fun i => Set.Icc.convexComb (z i) ((cubeLiftDeform 0 (1, z)).2 i) t) := rfl
   refine ⟨⟨⟨K, ?_, ?_⟩, ?_⟩⟩
   · intro z
     exact (K_apply 0 z).trans (by
@@ -330,10 +311,11 @@ theorem HomotopyAlong.homotopic_transport {γ : Path x y} {f : Ω^ N X x} {g : �
   · intro z
     exact (K_apply 1 z).trans (by
       simp only [Set.Icc.convexComb_one]
-      exact h.map_cubeTopFaceRetract z)
+      exact h.map_cubeLiftDeform z)
   · intro t z hz
     exact (K_apply t z).trans (by
-      simp only [cubeTopFaceRetract_of_mem_boundary hz, Set.Icc.convexComb_eq]
+      simp only [cubeLiftDeform_of_mem _ (mem_cylinderExtensionDomain_of_mem hz),
+        Set.Icc.convexComb_eq]
       exact h.map_one_left z)
 
 end GenLoop
