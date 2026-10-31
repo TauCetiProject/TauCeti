@@ -286,6 +286,22 @@ theorem fderiv_fderiv_apply_eq_smul_iteratedDeriv (φ : 𝕜 → F) (t a b : �
   rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
   simpa [Fin.prod_univ_two] using h.symm
 
+/-- Scalar post-composition with nonzero derivative preserves criticality. -/
+@[simp]
+theorem fderiv_scalar_comp_eq_zero_iff {f : E → 𝕜} {φ : 𝕜 → 𝕜} {x : E}
+    (hφ : DifferentiableAt 𝕜 φ (f x)) (hf : DifferentiableAt 𝕜 f x)
+    (hφ' : deriv φ (f x) ≠ 0) :
+    fderiv 𝕜 (φ ∘ f) x = 0 ↔ fderiv 𝕜 f x = 0 := by
+  rw [(hφ.hasDerivAt.comp_hasFDerivAt x hf.hasFDerivAt).fderiv]
+  constructor
+  · intro h
+    ext v
+    have hv := congrArg (fun L : E →L[𝕜] 𝕜 ↦ L v) h
+    simpa [hφ'] using hv
+  · intro h
+    ext v
+    simp [h]
+
 /-- **The second-order chain rule through a scalar.** If `f : E → 𝕜` is `C²` at `x` and
 `φ : 𝕜 → F` is `C²` at `f x`, then
 `D²(φ ∘ f)(v, w) = (Df(v) Df(w)) • φ''(f x) + D²f(v, w) • φ'(f x)`. -/
@@ -296,6 +312,15 @@ theorem fderiv_fderiv_scalar_comp_apply {f : E → 𝕜} {φ : 𝕜 → F} {x : 
         fderiv 𝕜 (fderiv 𝕜 f) x v w • deriv φ (f x) := by
   rw [fderiv_fderiv_comp_apply hφ hf, fderiv_fderiv_apply_eq_smul_iteratedDeriv,
     fderiv_eq_smul_deriv]
+
+/-- At a critical point, scalar post-composition scales the second derivative by the
+first derivative of the outer function. -/
+theorem fderiv_fderiv_scalar_comp_of_fderiv_eq_zero {f : E → 𝕜} {φ : 𝕜 → 𝕜} {x : E}
+    (hφ : ContDiffAt 𝕜 2 φ (f x)) (hf : ContDiffAt 𝕜 2 f x)
+    (hc : fderiv 𝕜 f x = 0) :
+    fderiv 𝕜 (fderiv 𝕜 (φ ∘ f)) x = deriv φ (f x) • fderiv 𝕜 (fderiv 𝕜 f) x := by
+  ext v w
+  simp [fderiv_fderiv_scalar_comp_apply hφ hf, hc, mul_comm]
 
 section RestrictScalars
 
