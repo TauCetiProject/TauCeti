@@ -15,7 +15,8 @@ import Mathlib.Tactic.DeriveFintype
 This file records the ordered ADE component lists, displayed Coxeter numbers and root counts
 of Conway--Sloane's rootful rank-24 table. The order fixes the coordinate positions for glue
 words. Each list uses `DynkinType.Component`, so it can be passed directly to
-`DynkinType.componentAlphabet` and `DynkinType.componentSumLattice`.
+`DynkinType.componentAlphabet` and `DynkinType.componentSumLattice`. The same components, indexed
+by their positions, form the family `RootfulNiemeierType.componentType` of Dynkin types.
 
 The uniform checks establish total rank 24, the displayed root counts from the existing
 `DynkinType.numRoots`, and the numerical identity `numRoots = rank * h` for every component.
@@ -222,6 +223,21 @@ theorem components_multiset_injective :
   exact hinj (by
     simpa only [Multiset.map_coe] using
       congrArg (Multiset.map fun c : DynkinType.Component ↦ (c.rank, c.1.numRoots)) h)
+
+/-- The ADE components of a row as a family indexed by their positions. -/
+@[expose] def componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
+    DynkinType :=
+  r.components[i].1
+
+/-- The components of a row are simply laced. -/
+theorem isSimplyLaced_componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
+    (r.componentType i).IsSimplyLaced :=
+  r.components[i].2.2
+
+/-- The components of a row are valid Dynkin types. -/
+theorem valid_componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
+    (r.componentType i).Valid :=
+  r.components[i].2.1
 
 end RootfulNiemeierType
 

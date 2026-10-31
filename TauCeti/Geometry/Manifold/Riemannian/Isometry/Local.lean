@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Local Riemannian isometries
@@ -31,6 +32,8 @@ along such maps.
   vector field to the original field.
 * `TauCeti.IsLocalRiemannianIsometry.inner_mpullback`: pulling back vector fields preserves their
   pointwise inner products.
+* `TauCeti.IsLocalRiemannianIsometry.exists_contMDiff_mpullback_apply_eq`: every tangent vector is
+  the value of the pullback of a smooth vector field.
 * `TauCeti.IsLocalRiemannianIsometry.id` and `TauCeti.IsLocalRiemannianIsometry.comp`: the identity
   and composites.
 * `TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`: a Riemannian isometry is a local
@@ -144,6 +147,21 @@ theorem contMDiff_mpullback (hf : IsLocalRiemannianIsometry I J f)
   hV.mpullback_vectorField hf.contMDiff hf.isInvertible_mfderiv (by simp)
 
 end Regularity
+
+section Extension
+
+variable [FiniteDimensional ℝ F] [IsManifold J ∞ N] [T2Space N]
+
+/-- Every tangent vector `u` at `x` is the value at `x` of the pullback of a smooth vector field
+on `N`, namely of any smooth field taking the value `df_x u` at `f x`. -/
+theorem exists_contMDiff_mpullback_apply_eq (hf : IsLocalRiemannianIsometry I J f) {x : M}
+    (u : TangentSpace I x) :
+    ∃ X : Π y : N, TangentSpace J y,
+      CMDiff ∞ (T% X) ∧ mpullback I J f X x = u ∧ X (f x) = mfderiv I J f x u := by
+  obtain ⟨X, hX, hXu⟩ := FiberBundle.exists_contMDiff_section_eq J F (mfderiv I J f x u)
+  exact ⟨X, hX, (hf.mpullback_apply_eq_iff X u).2 hXu, hXu⟩
+
+end Extension
 
 variable (I M) in
 /-- The identity map is a local Riemannian isometry. -/

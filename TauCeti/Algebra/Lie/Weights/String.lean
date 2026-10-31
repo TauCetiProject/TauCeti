@@ -211,7 +211,7 @@ theorem sum_finrank_genWeightSpace_weightString_le {alpha : Dual K H} (halpha : 
         ≤ finrank K M := by
     rw [← finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
     exact Submodule.finrank_le _
-  simp only [finrank_toSubmodule] at hle
+  simp only [LieSubmodule.finrank_toSubmodule] at hle
   rw [← Finset.sum_coe_sort (weightString M halpha mu)]
   exact_mod_cast hle
 

@@ -11,7 +11,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acc
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 

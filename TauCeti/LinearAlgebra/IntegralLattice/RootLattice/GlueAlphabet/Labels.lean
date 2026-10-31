@@ -115,6 +115,11 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
 @[simp] theorem glueLabelEquiv_E8 (ht : E8.IsSimplyLaced) (i : Fin 1) :
     E8.glueLabelEquiv ht i = 0 := Subsingleton.elim _ _
 
+/-- The glue alphabet has exactly one element for each of its labels. -/
+theorem natCard_glueAlphabet_eq_glueLabelCount (t : DynkinType) (ht : t.IsSimplyLaced) :
+    Nat.card (t.glueAlphabet ht) = t.glueLabelCount :=
+  (Nat.card_congr (t.glueLabelEquiv ht).symm).trans (Nat.card_fin _)
+
 /-- Every simply-laced component has at least the zero label. -/
 theorem glueLabelCount_pos (t : DynkinType) (ht : t.IsSimplyLaced) :
     0 < t.glueLabelCount := by
