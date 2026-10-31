@@ -219,9 +219,8 @@ theorem baseChangeCongr_mem_spinGroup {x : CliffordAlgebra (Q.baseChange A)}
       (baseChangeCongr σ Q :
         CliffordAlgebra (Q.baseChange A) →+* CliffordAlgebra (Q.baseChange B))
       (LinearMap.rTensor M σ.toLinearMap) (fun w ↦ by simp) hu)
-  · rw [Unitary.mem_iff, ← baseChangeCongr_star, ← map_mul, ← map_mul,
-      spinGroup.star_mul_self_of_mem hx, spinGroup.mul_star_self_of_mem hx, map_one]
-    exact ⟨rfl, rfl⟩
+  · rw [Unitary.mem_iff, ← baseChangeCongr_star, ← map_mul, ← map_mul]
+    simp [spinGroup.star_mul_self_of_mem hx, spinGroup.mul_star_self_of_mem hx]
   · -- With `2` invertible, the even part is the fixed space of the grade involution, which
     -- `baseChangeCongr σ Q` preserves.
     rw [← Subalgebra.mem_toSubmodule, even_toSubmodule, ← involute_eq_self_iff,

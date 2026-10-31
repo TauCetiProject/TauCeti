@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Positivity
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.BaseChange
 
 /-!
 # The positive-form adjoint as a matrix adjoint
@@ -29,10 +28,10 @@ transpose of the matrix of `y ↦ a * y`. Thus `†` is the adjoint of the faith
 representation of the Clifford algebra on itself, with its orthonormal monomial basis.
 
 On the Spin group of `Q_ℂ` the adjoint is the inverse of the complex conjugate,
-`g† = (conj g)⁻¹`: a Spin element is even and `star g * g = 1`, and complex conjugation of the
-coefficients preserves the Spin group (`CliffordAlgebra.spinGroupBaseChangeCongr`). In
-particular `g†` and `g† * g` lie in the Spin group. This is the algebraic input for the polar
-decomposition `g = (g (g† g)^(-1/2)) (g† g)^(1/2)` of complex Spin elements.
+`g† = (conj g)⁻¹` (`CliffordAlgebra.complexConj_reverse_eq_coe_inv`, in
+`TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Complexification`). Together with the positivity of
+`g† * g` proved here, this is the algebraic input for the polar decomposition
+`g = (g (g† g)^(-1/2)) (g† g)^(1/2)` of complex Spin elements.
 
 ## Main results
 
@@ -43,8 +42,6 @@ decomposition `g = (g (g† g)^(-1/2)) (g† g)^(1/2)` of complex Spin elements.
   `complexConj (reverse a)` is the conjugate transpose of the matrix of left multiplication by `a`.
 * `CliffordAlgebra.posDef_toMatrix_mulLeft_complexConj_reverse_mul_self`: for a unit `g`, the
   matrix of left multiplication by `complexConj (reverse g) * g` is positive definite.
-* `CliffordAlgebra.complexConj_reverse_eq_coe_inv`: for `g` in the Spin group,
-  `complexConj (reverse g)` is the inverse of the complex conjugate of `g` in the Spin group.
 
 ## References
 
@@ -101,11 +98,11 @@ theorem toMatrix_mulLeft_complexConj_reverse [Fintype I]
       (LinearMap.toMatrix (basis (Q.baseChange ℂ) (b.baseChange ℂ))
         (basis (Q.baseChange ℂ) (b.baseChange ℂ)) (LinearMap.mulLeft ℂ a))ᴴ := by
   ext s t
-  rw [LinearMap.toMatrix_apply, Matrix.conjTranspose_apply, LinearMap.toMatrix_apply,
-    LinearMap.mulLeft_apply, LinearMap.mulLeft_apply,
-    basis_repr_eq_scalarTrace_complexConj_reverse_mul hb hQ, Complex.star_def,
-    ← scalarTrace_complexConj_reverse_mul_basis hb hQ, reverse.map_mul, map_mul (complexConj Q),
-    mul_assoc]
+  simp only [LinearMap.toMatrix_apply, Matrix.conjTranspose_apply, LinearMap.mulLeft_apply,
+    Complex.star_def]
+  rw [basis_repr_eq_scalarTrace_complexConj_reverse_mul hb hQ,
+    ← scalarTrace_complexConj_reverse_mul_basis hb hQ]
+  simp [mul_assoc]
 
 /-- **The positive-form norm of a unit is positive definite.** In the ordered-product Clifford basis
 of a real orthonormal basis, left multiplication by `complexConj (reverse g) * g` has the positive
@@ -119,32 +116,9 @@ theorem posDef_toMatrix_mulLeft_complexConj_reverse_mul_self [Fintype I]
       (LinearMap.mulLeft ℂ (complexConj Q (reverse g) * g))) := by
   rw [LinearMap.mulLeft_mul, LinearMap.toMatrix_comp _ (basis (Q.baseChange ℂ) (b.baseChange ℂ)),
     toMatrix_mulLeft_complexConj_reverse hb hQ]
-  refine Matrix.PosDef.conjTranspose_mul_self _ (Matrix.mulVec_injective_of_isUnit ?_)
-  obtain ⟨u, rfl⟩ := hg
-  refine IsUnit.of_mul_eq_one (LinearMap.toMatrix (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-    (basis (Q.baseChange ℂ) (b.baseChange ℂ)) (LinearMap.mulLeft ℂ ↑u⁻¹)) ?_
-  rw [← LinearMap.toMatrix_comp, ← LinearMap.mulLeft_mul, Units.mul_inv, LinearMap.mulLeft_one,
-    LinearMap.toMatrix_id]
+  exact Matrix.PosDef.conjTranspose_mul_self _ (Matrix.mulVec_injective_of_isUnit
+    ((LinearMap.isUnit_toMatrix_iff _).2 (Algebra.lmul_isUnit_iff.2 hg)))
 
 end Basis
-
-/-! ### The adjoint of a Spin element -/
-
-/-- **The adjoint of a Spin element is the inverse of its complex conjugate.** For `g` in the Spin
-group of a complexified real quadratic form, `complexConj (reverse g)` is the inverse, in the Spin
-group, of the coefficientwise complex conjugate of `g`; in particular it is again a Spin
-element. -/
-theorem complexConj_reverse_eq_coe_inv (g : spinGroup (Q.baseChange ℂ)) :
-    complexConj Q (reverse (g : CliffordAlgebra (Q.baseChange ℂ))) =
-      ((spinGroupBaseChangeCongr Complex.conjAe Q g)⁻¹ : spinGroup (Q.baseChange ℂ)) := by
-  rw [← spinGroup.star_eq_inv, spinGroup.coe_star, coe_spinGroupBaseChangeCongr_apply,
-    ← complexConj_apply, ← complexConj_star, star_def, spinGroup.involute_eq g.2]
-
-/-- The positive-form adjoint preserves the Spin group of a complexified real quadratic form. -/
-theorem complexConj_reverse_mem_spinGroup {g : CliffordAlgebra (Q.baseChange ℂ)}
-    (hg : g ∈ spinGroup (Q.baseChange ℂ)) :
-    complexConj Q (reverse g) ∈ spinGroup (Q.baseChange ℂ) := by
-  rw [complexConj_reverse_eq_coe_inv ⟨g, hg⟩]
-  exact SetLike.coe_mem _
 
 end CliffordAlgebra
