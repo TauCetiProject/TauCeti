@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Hermitian
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Action
 public import TauCeti.RingTheory.Jacobson.FiniteOverArtinian
 
@@ -29,13 +30,13 @@ of the diagrams have entries `0` and `1`, and the transpose of `M(D)` is the mat
 reflected diagram `D.flip`, so the image of the action is closed under conjugate transposition.
 If `x` lies in the Jacobson radical, which is a nilpotent ideal, then so does `y * x` for the
 element `y = ∑ D, star c_D • D.flip` acting by the conjugate transpose of the matrix `A` of `x`;
-hence `Aᴴ * A` is a nilpotent Hermitian matrix, so it vanishes, so `A = 0`, and `x = 0` by
+hence `Aᴴ * A` is a nilpotent self-adjoint matrix, so it vanishes, so `A = 0`, and `x = 0` by
 faithfulness. The radical is zero, and a finite-dimensional algebra with zero radical is
 semisimple.
 
 The loop value here is the dimension `n` itself, at least the number `k` of strands. The Brauer
-algebra is also semisimple at generic loop values, and at the symplectic value `-2l`, which this
-argument does not reach.
+algebra is also semisimple at generic loop values, and at the symplectic value `-2l` when `k` is
+small relative to `l`, which this argument does not reach.
 
 ## Main results
 
@@ -103,7 +104,6 @@ variable {n k}
 strands. -/
 theorem BrauerAlgebra.isSemisimpleRing_of_le {K : Type*} [Field K] [PartialOrder K] [StarRing K]
     [StarOrderedRing K] (hk : k ≤ n) : IsSemisimpleRing (BrauerAlgebra K (n : K) k) := by
-  have : IsProperStar K := ⟨fun h => (mul_eq_zero.mp h).elim star_eq_zero.mp id⟩
   -- the matrix of the action, an injective algebra map
   let Φ : BrauerAlgebra K (n : K) k →ₐ[K] Matrix (Fin k → Fin n) (Fin k → Fin n) K :=
     (LinearMap.toMatrixAlgEquiv (tensorPowerBasis K n k)).toAlgHom.comp (brauerActionOrth K n k)
@@ -125,14 +125,14 @@ theorem BrauerAlgebra.isSemisimpleRing_of_le {K : Type*} [Field K] [PartialOrder
   have hy : Φ y = (Φ x)ᴴ := by
     rw [hΦ x]
     simp [y, hof, Finsupp.linearCombination_apply, Finsupp.sum, Matrix.conjTranspose_sum]
-  -- `y * x` lies in the nilpotent radical, so `(Φ x)ᴴ * Φ x` is a nilpotent Hermitian matrix
+  -- `y * x` lies in the nilpotent radical, so `(Φ x)ᴴ * Φ x` is a nilpotent self-adjoint matrix
   have hnil : IsNilpotent ((Φ x)ᴴ * Φ x) := by
     refine ⟨m, ?_⟩
     have hpow := Ideal.pow_mem_pow ((Ring.jacobson _).smul_mem y hx) m
     rw [hm, Ideal.zero_eq_bot, Ideal.mem_bot, smul_eq_mul] at hpow
     rw [← hy, ← map_mul, ← map_pow, hpow, map_zero]
-  have h0 := (Matrix.isHermitian_conjTranspose_mul_self (Φ x)).eq_zero_of_isNilpotent hnil
-  rw [Matrix.conjTranspose_mul_self_eq_zero, ← map_zero Φ] at h0
+  have h0 := (IsSelfAdjoint.star_mul_self (Φ x)).eq_zero_of_isNilpotent hnil
+  rw [star_mul_self_eq_zero, ← map_zero Φ] at h0
   exact (Submodule.mem_bot _).mpr (hinj h0)
 
 end TauCeti
