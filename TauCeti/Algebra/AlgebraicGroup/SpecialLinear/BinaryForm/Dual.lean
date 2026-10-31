@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BinaryForm.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Dual
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+import Mathlib.Algebra.MvPolynomial.Coeff
 import TauCeti.Algebra.MvPolynomial.Fin.Two
 
 /-!
@@ -46,7 +47,10 @@ stronger than invariance under the rational points of `B⁺`.
 The proofs about the head transport the socle of `R_d` through the order-reversing correspondence
 between subcomodules of a finite-dimensional comodule and of its dual
 (`TauCeti.Subcomodule.dualAnnihilatorOrderIso`). The proofs about stable lines compute the matrix
-coefficients `c(δ_{xⁱ yʲ}, xᵃ yᵇ)` on `B⁺`: the generic upper-triangular matrix sends `xᵃ yᵇ` to
+coefficients `c(δ_{xⁱ yʲ}, xᵃ yᵇ)` after applying the antipode and restricting to `B⁺`. The
+representation `R_d` acts by `(g f)(v) = f(g⁻¹ v)`, so its matrix coefficients involve the entries
+of `g⁻¹`; the antipode turns them back into entries `gᵢⱼ` of the generic upper-triangular matrix
+`g`, and the antipode-transformed coaction sends `f` to `f(g v)`. It sends `xᵃ yᵇ` to
 `(g₀₀ x + g₀₁ y)ᵃ (g₁₁ y)ᵇ`, whose coefficient of `xⁱ yʲ` is `(a choose i) g₀₀ⁱ g₀₁ᵃ⁻ⁱ g₁₁ᵇ`.
 
 ## Main declarations
@@ -195,17 +199,6 @@ private theorem upperEntry_one_zero : upperEntry (k := k) 1 0 = 0 := by
     UpperTriangular.coordinateMap_coordinateMap_genericMatrix_eq_zero_of_lt
       (by decide : (0 : Fin 2) < 1)]
 
-/-- The coefficient of `xⁱ yʲ` in a monomial `xʳ yᵐ`. -/
-private theorem coeff_X_zero_pow_mul_X_one_pow (i j r m : ℕ) :
-    (MvPolynomial.X 0 ^ r * MvPolynomial.X 1 ^ m : MvPolynomial (Fin 2) k).coeff
-        (Finsupp.single 0 i + Finsupp.single 1 j) =
-      if r = i ∧ m = j then 1 else 0 := by
-  rw [MvPolynomial.X_pow_eq_monomial, MvPolynomial.X_pow_eq_monomial,
-    MvPolynomial.monomial_mul_monomial, one_mul, MvPolynomial.coeff_monomial]
-  congr 1
-  simp only [Finsupp.ext_iff, Fin.forall_fin_two, Finsupp.add_apply, Finsupp.single_apply]
-  simp [eq_comm]
-
 /-- **The `B⁺`-coefficients of a monomial against `δ_{xⁱ yʲ}`.** Restricted to the
 upper-triangular subgroup, the antipode of the matrix coefficient of `δ_{xⁱ yʲ}` and `xᵃ yᵇ` is
 `(a choose i) g₀₀ⁱ g₀₁ᵃ⁻ⁱ g₁₁ᵇ`, in the entries `gᵢⱼ` of the generic upper-triangular matrix. -/
@@ -220,14 +213,16 @@ private theorem upperAntipode_matrixCoefficient {i j a b : ℕ} (h : i + j = a +
       upperAntipode (k := k) (TensorProduct.lid k _ (TensorProduct.map ψ LinearMap.id y)) =
         TensorProduct.lid k _ (TensorProduct.map ψ LinearMap.id
           (Algebra.TensorProduct.map (AlgHom.id k _) (upperAntipode (k := k)) y)) := by
-    induction y using TensorProduct.inductionOn with
-    | tmul p c => simp [Algebra.TensorProduct.map_tmul]
-    | add y z hy hz => simp only [map_add, hy, hz]
-  rw [Comodule.matrixCoefficient_def, hnat, polynomialComodule_coact, AlgHom.toLinearMap_apply,
-    map_mul, map_pow, map_pow, map_mul, map_pow, map_pow,
-    map_upperAntipode_coact_X, map_upperAntipode_coact_X,
-    upperEntry_one_zero, TensorProduct.tmul_zero, zero_add, add_pow, Finset.sum_mul, map_sum,
-    map_sum]
+    have h := LinearMap.congr_fun
+      (CoassocSimps.lid_comp_map ψ (upperAntipode (k := k)).toLinearMap) y
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply] at h
+    rw [← h, ← AlgHom.toLinearMap_apply, Algebra.TensorProduct.toLinearMap_map,
+      TensorProduct.AlgebraTensorModule.map_eq, ← LinearMap.comp_apply, ← TensorProduct.map_comp,
+      AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp]
+  rw [Comodule.matrixCoefficient_def, hnat, polynomialComodule_coact, AlgHom.toLinearMap_apply]
+  simp only [map_mul, map_pow]
+  rw [map_upperAntipode_coact_X, map_upperAntipode_coact_X, upperEntry_one_zero,
+    TensorProduct.tmul_zero, zero_add, add_pow, Finset.sum_mul, map_sum, map_sum]
   -- Only the term with `r = i` contributes to the coefficient of `xⁱ yʲ`.
   have hterm (r : ℕ) (hr : r ∈ Finset.range (a + 1)) :
       TensorProduct.lid k _ (TensorProduct.map ψ LinearMap.id
@@ -249,8 +244,8 @@ private theorem upperAntipode_matrixCoefficient {i j a b : ℕ} (h : i + j = a +
       simp only [Algebra.TensorProduct.tmul_pow, Algebra.TensorProduct.tmul_mul_tmul,
         ← nsmul_eq_mul', smul_mul_assoc, Nat.cast_smul_eq_nsmul, pow_add]
       ring_nf
-    rw [hmul, map_smul, map_smul, TensorProduct.map_tmul, TensorProduct.lid_tmul,
-      LinearMap.id_apply, MvPolynomial.lcoeff_apply, coeff_X_zero_pow_mul_X_one_pow]
+    simp only [hmul, map_smul, TensorProduct.map_tmul, TensorProduct.lid_tmul, LinearMap.id_apply,
+      ψ, MvPolynomial.lcoeff_apply, MvPolynomial.coeff_X_zero_pow_mul_X_one_pow]
     by_cases hri : r = i
     · subst hri
       simp [show a - r + b = j by omega]
@@ -283,9 +278,9 @@ private theorem lTensor_coact_lcoeff_comp_subtype_eq_tmul_iff {s : Fin 2 →₀ 
           dualTensorHom k (binaryForms k d) (coordinateHopfAlgebra k 2) x :=
     LinearMap.congr_fun (dualTensorHom_comp_lTensor _) x
   rw [hl, LinearMap.comp_apply, Comodule.dualTensorHom_dualCoact_apply, dualTensorHom_apply,
-    ← Subcomodule.subtype_toLinearMap, ← Comodule.matrixCoefficient_map, LinearMap.comp_apply,
-    Subcomodule.subtype_apply, Subcomodule.subtype_toLinearMap, SMulMemClass.coe_subtype,
-    MvPolynomial.lcoeff_apply]
+    ← Subcomodule.subtype_toLinearMap, ← Comodule.matrixCoefficient_map]
+  simp only [LinearMap.comp_apply, Subcomodule.subtype_apply, Subcomodule.subtype_toLinearMap,
+    SMulMemClass.coe_subtype, MvPolynomial.lcoeff_apply]
   -- `upperAntipode` is by definition the antipode followed by the restriction map.
   rfl
 
@@ -335,14 +330,9 @@ private theorem upperAntipode_matrixCoefficient_lcoeff_of_choose_eq_zero {i j : 
   have ht' : t 0 + t 1 = d := (mem_binaryForms.mp hf).add_eq_of_mem_support ht
   have hmono : MvPolynomial.monomial t (f.coeff t) =
       f.coeff t • (MvPolynomial.X 0 ^ t 0 * MvPolynomial.X 1 ^ t 1 : MvPolynomial (Fin 2) k) := by
-    have ht_eq : Finsupp.single 0 (t 0) + Finsupp.single 1 (t 1) = t := by
-      ext a
-      fin_cases a <;> simp
-    rw [MvPolynomial.X_pow_eq_monomial, MvPolynomial.X_pow_eq_monomial,
-      MvPolynomial.monomial_mul_monomial, one_mul, ht_eq, MvPolynomial.smul_monomial,
-      smul_eq_mul, mul_one]
+    rw [MvPolynomial.monomial_fin_two, mul_assoc, ← MvPolynomial.smul_eq_C_mul]
   rw [hmono, map_smul, map_smul, ← hL₁, ← hL₂, upperAntipode_matrixCoefficient (by omega),
-    coeff_X_zero_pow_mul_X_one_pow]
+    MvPolynomial.coeff_X_zero_pow_mul_X_one_pow]
   congr 1
   rcases lt_trichotomy (t 0) i with hlt | heq | hgt
   · simp [Nat.choose_eq_zero_of_lt hlt, hlt.ne]
@@ -396,7 +386,8 @@ theorem exists_lTensor_coact_lcoeff_comp_subtype_eq_tmul_iff {i j : ℕ} (hij : 
       (MvPolynomial.isHomogeneous_X_pow (1 : Fin 2) (d - l))
     rwa [Nat.add_sub_cancel' hld, ← mem_binaryForms] at this
   have hzero := hh _ hmem
-  rw [upperAntipode_matrixCoefficient (by omega), coeff_X_zero_pow_mul_X_one_pow] at hzero
+  rw [upperAntipode_matrixCoefficient (by omega),
+    MvPolynomial.coeff_X_zero_pow_mul_X_one_pow] at hzero
   simp only [show ¬(l = i ∧ d - l = j) by omega, ↓reduceIte, zero_smul] at hzero
   obtain ⟨u, h₀, h₁, h₂⟩ := exists_algHom_upperEntry_eq_one (k := k)
   simpa [h₀, h₁, h₂] using congrArg u hzero
@@ -448,10 +439,7 @@ theorem lcoeff_comp_subtype_notMem_span_singleton {s t : Fin 2 →₀ ℕ} (hs :
     mem_binaryForms.mpr (MvPolynomial.isHomogeneous_monomial _ (by
       rw [Finsupp.degree_eq_sum, Fin.sum_univ_two, hs]))
   have := LinearMap.congr_fun hc ⟨_, hx⟩
-  rw [LinearMap.smul_apply, LinearMap.comp_apply, LinearMap.comp_apply, SMulMemClass.coe_subtype,
-    MvPolynomial.lcoeff_apply, MvPolynomial.lcoeff_apply, MvPolynomial.coeff_monomial,
-    MvPolynomial.coeff_monomial] at this
-  simp [hst] at this
+  simp [MvPolynomial.coeff_monomial, hst] at this
 
 variable (p : ℕ) [CharP k p]
 
