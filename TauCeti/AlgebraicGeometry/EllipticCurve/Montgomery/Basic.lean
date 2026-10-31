@@ -19,16 +19,17 @@ equation
   `y'² = x'³ + A B x'² + B² x'`,
 
 with coefficients `(a₁, a₂, a₃, a₄, a₆) = (0, A B, 0, B², 0)`. This is
-`TauCeti.Montgomery.model A B`. The native points of a Montgomery curve are the points of
-Mathlib's group `(Montgomery.model A B).toAffine.Point`; no second group law is introduced, and
-the `x`-only arithmetic of Montgomery's elliptic-curve method (doubling and differential addition
-on projective `x`-coordinates) computes `x`-coordinates of points of this group.
+`TauCeti.Montgomery.model A B`. Over a field, the native points of a Montgomery curve are the
+points of Mathlib's group `(Montgomery.model A B).toAffine.Point`; no second group law is
+introduced, and the `x`-only arithmetic of Montgomery's elliptic-curve method (doubling and
+differential addition on projective `x`-coordinates) computes `x`-coordinates of points of this
+group.
 
 The discriminant of the model is `16 B⁶ (A² - 4)` over every commutative ring, so over a field the
 model is elliptic exactly when `2`, `B` and `A² - 4` are nonzero. When `B ≠ 0`, the affine point
 `(0, 0)` lies on the model and is nonsingular, since the cubic `x'³ + A B x'² + B² x'` has
-derivative `B²` at `x' = 0`. It has order `2`: this is the distinguished `2`-torsion point `T₀`
-of the Montgomery curve.
+derivative `B²` at `x' = 0`. Over a field it has order `2`: this is the distinguished `2`-torsion
+point `T₀` of the Montgomery curve.
 No square root of `B` is needed to compare the two equations: when `B ≠ 0` (over a ring without
 zero divisors), `(x, y)` lies on `B y² = x³ + A x² + x` exactly when `(B x, B² y)` lies on the
 model, and the substitution preserves and reflects nonsingularity.
@@ -49,7 +50,8 @@ model, and the substitution preserves and reflects nonsingularity.
   `TauCeti.Montgomery.model_eq_model_iff_of_ne_zero`: two models are equal exactly when their
   coefficients `A B` and `B²` agree; over a domain with `B ≠ 0`, exactly when
   `(A', B') = ±(A, B)`.
-* `TauCeti.Montgomery.addOrderOf_twoTorsionPoint`: `T₀` has order `2` in the native group.
+* `TauCeti.Montgomery.addOrderOf_twoTorsionPoint`: over a field, `T₀` has order `2` in the native
+  group.
 * `TauCeti.Montgomery.equation_model_iff` and `TauCeti.Montgomery.nonsingular_model_iff`: the
   substitution `(x, y) ↦ (B x, B² y)` carries the Montgomery equation and its nonsingular points
   to those of the model, and back.
@@ -167,14 +169,15 @@ theorem nonsingular_model_zero_zero (hB : B ≠ 0) : (model A B).toAffine.Nonsin
 
 variable (A) in
 /-- The **distinguished `2`-torsion point** `T₀ = (0, 0)` of the monic model of a Montgomery
-curve with `B ≠ 0`. It corresponds to the point `(0, 0)` of `B y² = x³ + A x² + x`, and has
-order `2` in the native group (`addOrderOf_twoTorsionPoint`). -/
+curve with `B ≠ 0`. It corresponds to the point `(0, 0)` of `B y² = x³ + A x² + x`, and over a
+field it has order `2` in the native group (`addOrderOf_twoTorsionPoint`). -/
 def twoTorsionPoint (hB : B ≠ 0) : (model A B).toAffine.Point :=
   .some 0 0 (nonsingular_model_zero_zero hB)
 
 theorem twoTorsionPoint_def (hB : B ≠ 0) :
     twoTorsionPoint A hB = .some 0 0 (nonsingular_model_zero_zero hB) := (rfl)
 
+@[simp]
 theorem twoTorsionPoint_ne_zero (hB : B ≠ 0) : twoTorsionPoint A hB ≠ 0 :=
   Affine.Point.some_ne_zero _
 
