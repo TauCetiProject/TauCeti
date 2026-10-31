@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 public import TauCeti.CategoryTheory.Monoidal.Center.Basic
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
+public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
 
 /-!
 # The Drinfeld centre of a rigid category is rigid
@@ -32,6 +32,11 @@ right duals into left duals using the braiding of the centre. This is the rigid 
 speak of pivotal structures on the centre, and of the centre of a fusion category as a fusion
 category.
 
+At a right dual `Wᘁ`, the half-braiding induced on `Xᘁ` is the mate of `β W` read through the
+comparisons `(W ⊗ X)ᘁ ≅ Xᘁ ⊗ Wᘁ` and `(X ⊗ W)ᘁ ≅ Wᘁ ⊗ Xᘁ`; applied twice, this describes the
+half-braiding induced on `Xᘁᘁ` at `Uᘁᘁ` through the double mate of `β U`. These comparisons, like
+the duals themselves, are computed in `C`.
+
 ## Main declarations
 
 * `CategoryTheory.HalfBraiding.rightDualβHom`: the components of the half-braiding induced on a
@@ -42,12 +47,16 @@ category.
   half-braiding at a left dual;
 * `CategoryTheory.HalfBraiding.rightDual`: the half-braiding induced on a right dual, in a left
   rigid category;
+* `CategoryTheory.HalfBraiding.rightDualβHom_rightDual` and
+  `CategoryTheory.HalfBraiding.rightDualβHom_rightDual_rightDual`: the induced half-braidings on
+  `Xᘁ` at `Wᘁ` and on `Xᘁᘁ` at `Uᘁᘁ`, as mates and double mates of the half-braiding of `X`;
 * `CategoryTheory.Center.rightDualObj` and `CategoryTheory.Center.exactPairingRightDualObj`: a
   right dual of the underlying object of `X : Center C` lifts to a right dual of `X`;
 * `CategoryTheory.Center.rigidCategory`: the centre of a rigid category is rigid, with right
   duals and their evaluation, coevaluation and mates computed in `C`
   (`CategoryTheory.Center.rightDual_fst`, `CategoryTheory.Center.coevaluation_f`,
-  `CategoryTheory.Center.evaluation_f`, `CategoryTheory.Center.rightAdjointMate_f`).
+  `CategoryTheory.Center.evaluation_f`, `CategoryTheory.Center.rightAdjointMate_f`), as are the
+  comparisons `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` (`CategoryTheory.Center.rightDualTensorIso_hom_f`).
 
 ## References
 
@@ -239,6 +248,39 @@ theorem rightDual_β (U : C) : (b.rightDual X').β U = b.rightDualβ X' U :=
 
 end HalfBraiding
 
+namespace HalfBraiding
+
+variable {X : C} (b : HalfBraiding X)
+
+/-- At a right dual `Wᘁ`, the half-braiding induced on the right dual `Xᘁ` is the mate of the
+half-braiding at `W`, read through the comparisons `(W ⊗ X)ᘁ ≅ Xᘁ ⊗ Wᘁ` and
+`(X ⊗ W)ᘁ ≅ Wᘁ ⊗ Xᘁ`. -/
+theorem rightDualβHom_rightDual [HasRightDual X] (W : C) [HasRightDual W]
+    [HasRightDual (X ⊗ W)] [HasRightDual (W ⊗ X)] :
+    b.rightDualβHom Xᘁ Wᘁ =
+      (rightDualTensorIso W X).inv ≫ ((b.β W).hom)ᘁ ≫ (rightDualTensorIso X W).hom := by
+  rw [b.rightDualβHom_eq_rightMate Xᘁ (U := Wᘁ) (V := W), rightDualTensorIso,
+    rightDualTensorIso, ExactPairing.rightDualIso_inv, ExactPairing.rightDualIso_hom,
+    TauCeti.rightAdjointMate_eq_rightMate, ← ExactPairing.comp_rightMate,
+    ← ExactPairing.comp_rightMate, Category.id_comp, Category.comp_id]
+
+variable [RigidCategory C]
+
+/-- At a double right dual `Uᘁᘁ`, the half-braiding induced on the double right dual `Xᘁᘁ` is the
+double mate of the half-braiding at `U`, read through the comparisons
+`Xᘁᘁ ⊗ Uᘁᘁ ≅ (X ⊗ U)ᘁᘁ` and `(U ⊗ X)ᘁᘁ ≅ Uᘁᘁ ⊗ Xᘁᘁ`. These are the tensor comparisons of the double
+right dual functor, by `TauCeti.doubleRightDualFunctor_μ` and `TauCeti.doubleRightDualFunctor_δ`.
+-/
+theorem rightDualβHom_rightDual_rightDual (U : C) :
+    (b.rightDual Xᘁ).rightDualβHom Xᘁᘁ Uᘁᘁ =
+      (rightDualTensorIso Uᘁ Xᘁ).inv ≫ ((rightDualTensorIso X U).hom)ᘁ ≫ ((b.β U).hom)ᘁᘁ ≫
+        ((rightDualTensorIso U X).inv)ᘁ ≫ (rightDualTensorIso Xᘁ Uᘁ).hom := by
+  rw [rightDualβHom_rightDual, rightDual_β, rightDualβ_hom, rightDualβHom_rightDual,
+    comp_rightAdjointMate, comp_rightAdjointMate]
+  simp only [Category.assoc]
+
+end HalfBraiding
+
 namespace Center
 
 variable [LeftRigidCategory C]
@@ -360,5 +402,42 @@ the induced half-braiding `HalfBraiding.rightDual`; left duals are obtained from
 the braiding of the centre. -/
 noncomputable instance Center.rigidCategory [RigidCategory C] : RigidCategory (Center C) where
   leftDual X := BraidedCategory.hasLeftDualOfHasRightDual (X := X)
+
+namespace Center
+
+variable [RigidCategory C]
+
+/-- The evaluation of the tensor product of the pairings of `X` and `Y : Center C` with their
+right duals is computed in `C`. -/
+theorem tensor_evaluation_f (X Y : Center C) :
+    (ε_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ)).f = ε_ (X.1 ⊗ Y.1) (Y.1ᘁ ⊗ X.1ᘁ) := by
+  rw [ExactPairing.tensor_evaluation, ExactPairing.tensor_evaluation]
+  simp only [tensor_fst, rightDual_fst, monoidalComp, MonoidalCoherence.assoc_iso,
+    MonoidalCoherence.whiskerLeft_iso, MonoidalCoherence.assoc'_iso,
+    MonoidalCoherence.whiskerRight_iso, MonoidalCoherence.refl_iso, whiskerRightIso_refl,
+    Iso.refl_trans, Iso.trans_hom, whiskerLeftIso_hom, Iso.symm_hom, MonoidalCoherence.left_iso,
+    Iso.trans_refl, Category.assoc, Category.id_comp, comp_f, associator_hom_f, whiskerLeft_f,
+    associator_inv_f, whiskerRight_f, evaluation_f, leftUnitor_hom_f]
+  -- The remaining difference is only in how the objects `(Xᘁ).1` and `X.1ᘁ` are written.
+  rfl
+
+/-- The comparison `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` of the centre is computed in `C`. -/
+@[simp]
+theorem rightDualTensorIso_hom_f (X Y : Center C) :
+    (rightDualTensorIso X Y).hom.f = (rightDualTensorIso X.1 Y.1).hom := by
+  have h := congrArg Hom.f (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation X Y)
+  simp only [comp_f, whiskerRight_f, evaluation_f, tensor_fst, tensor_evaluation_f] at h
+  exact ExactPairing.rightHom_ext (Y := Y.1ᘁ ⊗ X.1ᘁ)
+    (h.trans (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation X.1 Y.1).symm)
+
+/-- The inverse of the comparison `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` of the centre is computed in `C`. -/
+@[simp]
+theorem rightDualTensorIso_inv_f (X Y : Center C) :
+    (rightDualTensorIso X Y).inv.f = (rightDualTensorIso X.1 Y.1).inv := by
+  have h := congrArg Hom.f (rightDualTensorIso X Y).hom_inv_id
+  rw [comp_f, rightDualTensorIso_hom_f, id_f] at h
+  exact (Iso.hom_comp_eq_id _).1 h
+
+end Center
 
 end CategoryTheory
