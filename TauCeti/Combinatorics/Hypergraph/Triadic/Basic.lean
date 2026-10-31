@@ -436,7 +436,7 @@ theorem exceptional_route_mass_le (k : ℕ) (η : ℝ) (r : ℕ) :
     refine mem_biUnion.2 ⟨P, mem_filter.2 ⟨hP, hirr⟩, mem_map.2 ⟨x, hx, ?_⟩⟩
     ext m
     fin_cases m <;> simp [hxf]
-  have hcount := Nat.card_embedding_exists_comp_mem_le (β := Fin k) T
+  have hcount := T.natCard_embedding_exists_comp_mem_le (β := Fin k)
   rw [Fintype.card_fin] at hcount
   have hmass := exceptionalPolyadMass_nonneg (H := H) (C := C) (η := η) (r := r)
   calc _ ≤ (k.choose 3 * #T * n ^ (k - 3) : ℝ) := by exact_mod_cast hsub.trans hcount

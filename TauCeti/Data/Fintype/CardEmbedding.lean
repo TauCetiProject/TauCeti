@@ -44,10 +44,11 @@ embeddings sending some increasing `m`-tuple into a prescribed set `T` of `m`-tu
 * `Nat.card_embedding_mem_eq_prod_of_injective`: for distinct disjoint cells, the count is the
   product of the cell sizes.
 * `Nat.card_embedding_mem_le_prod`: the count never exceeds the product of the cell sizes.
-* `Nat.card_embedding_comp_eq_le`: at most `card V ^ (card β - card α)` embeddings `f : β ↪ V`
-  satisfy `f ∘ e = x`.
-* `Nat.card_embedding_exists_comp_mem_le`: at most `(card β).choose m * #T * card V ^ (card β - m)`
-  embeddings send some increasing `m`-tuple into `T`.
+* `Function.Embedding.natCard_embedding_comp_eq_le`: at most `card V ^ (card β - card α)`
+  embeddings `f : β ↪ V` satisfy `f ∘ e = x`.
+* `Finset.natCard_embedding_exists_comp_mem_le`: at most
+  `(card β).choose m * #T * card V ^ (card β - m)` embeddings send some increasing `m`-tuple
+  into `T`.
 -/
 
 public section
@@ -162,11 +163,17 @@ theorem card_embedding_mem_le_prod [Fintype ι] (c : ι → Finset V) :
   exact Nat.card_le_card_of_injective (fun f ↦ ⟨f.1, Fintype.mem_piFinset.2 f.2⟩) fun f g h ↦
     Subtype.ext (Embedding.ext (congrFun (congrArg Subtype.val h)))
 
+end Nat
+
+namespace Function.Embedding
+
+variable {V : Type*}
+
 /-- An embedding `f : β ↪ V` with prescribed values `f ∘ e = x` along an embedding `e : α ↪ β` is
 determined by its values off the range of `e`, so there are at most
 `card V ^ (card β - card α)` of them. -/
-theorem card_embedding_comp_eq_le {α β : Type*} [Fintype α] [Fintype β] [Fintype V] (e : α ↪ β)
-    (x : α → V) :
+theorem natCard_embedding_comp_eq_le {α β : Type*} [Fintype α] [Fintype β] [Fintype V]
+    (e : α ↪ β) (x : α → V) :
     Nat.card {f : β ↪ V // ⇑f ∘ e = x} ≤ Fintype.card V ^ (Fintype.card β - Fintype.card α) := by
   classical
   let s : Finset β := univ.map e
@@ -181,12 +188,18 @@ theorem card_embedding_comp_eq_le {α β : Type*} [Fintype α] [Fintype β] [Fin
   rw [Nat.card_eq_fintype_card, Fintype.card_fun, Fintype.card_coe, card_compl, card_map,
     Finset.card_univ]
 
+end Function.Embedding
+
+namespace Finset
+
+variable {V : Type*}
+
 /-- At most `(card β).choose m * #T * card V ^ (card β - m)` embeddings `f : β ↪ V` of a finite
 linear order send some increasing `m`-tuple of `β` into a prescribed set `T` of `m`-tuples: there
 are `(card β).choose m` increasing tuples `g`, and for each of them and each `x ∈ T` at most
 `card V ^ (card β - m)` embeddings satisfy `f ∘ g = x`. -/
-theorem card_embedding_exists_comp_mem_le {β : Type*} [Fintype β] [LinearOrder β] [Fintype V]
-    {m : ℕ} (T : Finset (Fin m → V)) :
+theorem natCard_embedding_exists_comp_mem_le {β : Type*} [Fintype β] [LinearOrder β]
+    [Fintype V] {m : ℕ} (T : Finset (Fin m → V)) :
     Nat.card {f : β ↪ V // ∃ g : Fin m ↪o β, ⇑f ∘ g ∈ T} ≤
       (Fintype.card β).choose m * #T * Fintype.card V ^ (Fintype.card β - m) := by
   classical
@@ -208,8 +221,8 @@ theorem card_embedding_exists_comp_mem_le {β : Type*} [Fintype β] [LinearOrder
         sum_le_sum fun x _ ↦ ?_
       rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
       simpa using
-        card_embedding_comp_eq_le (s.1.orderEmbOfFin (mem_powersetCard.1 s.2).2).toEmbedding x
+        (s.1.orderEmbOfFin (mem_powersetCard.1 s.2).2).toEmbedding.natCard_embedding_comp_eq_le x
     _ = (Fintype.card β).choose m * #T * Fintype.card V ^ (Fintype.card β - m) := by
       simp [card_powersetCard, mul_assoc]
 
-end Nat
+end Finset
