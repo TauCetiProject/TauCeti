@@ -160,9 +160,6 @@ theorem zero_apply (x : X) : (0 : HolderSpace α X Y) x = 0 := (rfl)
 theorem add_apply (f g : HolderSpace α X Y) (x : X) : (f + g) x = f x + g x := (rfl)
 
 @[simp]
-theorem neg_apply (f : HolderSpace α X Y) (x : X) : (-f) x = -f x := (rfl)
-
-@[simp]
 theorem sub_apply (f g : HolderSpace α X Y) (x : X) : (f - g) x = f x - g x := (rfl)
 
 @[simp]
