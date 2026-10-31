@@ -109,3 +109,18 @@ theorem finrank_homTo_biproduct [Fintype J] [StrongRankCondition k]
   rw [(homToBiproductLinearEquiv k X Y).finrank_eq, Module.finrank_pi_fintype]
 
 end TauCeti
+
+namespace CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasFiniteBiproducts C]
+  {R : Type*} [Semiring R] [Linear R C] {J : Type*} [Finite J] {K : Type} [Finite K]
+  {f : J → C} {g : K → C}
+
+/-- Scalars pull out of the morphism of biproducts assembled from a matrix of morphisms. -/
+@[simp]
+theorem biproduct.matrix_smul (r : R) (m : ∀ j k, f j ⟶ g k) :
+    biproduct.matrix (fun j k ↦ r • m j k) = r • biproduct.matrix m := by
+  ext
+  simp
+
+end CategoryTheory.Limits
