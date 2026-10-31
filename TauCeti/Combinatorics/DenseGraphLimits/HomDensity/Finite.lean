@@ -67,6 +67,8 @@ lemmas downstream modules should use.
 * `homDensityFin_bot_left`, `injHomDensity_top_right` — the two normalizations are exact: the
   edgeless pattern has homomorphism density `1` in every nonempty host, and every pattern has
   injective density `1` in a complete host with enough vertices.
+* `injHomDensity_top_left_eq_card_hom_div` — the injective density of a complete pattern in terms
+  of all its homomorphisms, since every homomorphism out of a complete graph is injective;
 * `homDensityFin_top_left`, `injHomDensity_top_left` — the densities of a complete pattern on `k`
   vertices count the `k`-cliques of the host: `t(Kₖ, G) = k! · #cliques / n ^ k` and
   `t₀(Kₖ, G) = #cliques / (n choose k)`.
@@ -179,6 +181,16 @@ theorem injHomDensity_top_right (h : Fintype.card V ≤ Fintype.card W) :
 
 /-! ### Complete patterns: cliques, edges and triangles -/
 
+/-- The injective homomorphism density of the complete graph on `V` in terms of all homomorphisms:
+every homomorphism out of a complete graph is injective, and the falling factorial
+`(|V(G)|)_{|V|}` splits as `|V|!` times the binomial coefficient. -/
+theorem injHomDensity_top_left_eq_card_hom_div :
+    injHomDensity (⊤ : SimpleGraph V) G =
+      (Nat.card ((⊤ : SimpleGraph V) →g G) : ℝ) /
+        ((Fintype.card V).factorial * (Fintype.card W).choose (Fintype.card V) : ℝ) := by
+  rw [injHomDensity_def, G.card_injective_top_hom, Nat.descFactorial_eq_factorial_mul_choose,
+    Nat.cast_mul]
+
 section Clique
 
 variable [DecidableEq W] [DecidableRel G.Adj]
@@ -197,8 +209,7 @@ the binomial coefficient, and each clique has `|V|!` orderings. -/
 theorem injHomDensity_top_left :
     injHomDensity (⊤ : SimpleGraph V) G =
       #(G.cliqueFinset (Fintype.card V)) / ((Fintype.card W).choose (Fintype.card V) : ℝ) := by
-  rw [injHomDensity_eq_labelledCopyCount_div, G.labelledCopyCount_top,
-    Nat.descFactorial_eq_factorial_mul_choose, Nat.cast_mul, Nat.cast_mul]
+  rw [injHomDensity_top_left_eq_card_hom_div, G.card_top_hom, Nat.cast_mul]
   exact mul_div_mul_left _ _ (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _))
 
 /-- The triangle density `t(K₃, G)`: six times the number of triangles of `G`, over `|V(G)| ^ 3`. -/
@@ -231,9 +242,8 @@ that are edges. -/
 theorem injHomDensity_top_fin_two :
     injHomDensity (⊤ : SimpleGraph (Fin 2)) G =
       #G.edgeFinset / ((Fintype.card W).choose 2 : ℝ) := by
-  rw [injHomDensity_def, ← Nat.card_congr (Equiv.subtypeUnivEquiv Hom.injective_of_top_hom).symm,
-    G.card_top_fin_two_hom, Fintype.card_fin, Nat.descFactorial_eq_factorial_mul_choose,
-    Nat.factorial_two, Nat.cast_mul, Nat.cast_mul]
+  rw [injHomDensity_top_left_eq_card_hom_div, G.card_top_fin_two_hom, Fintype.card_fin,
+    Nat.factorial_two, Nat.cast_mul, Nat.cast_ofNat]
   exact mul_div_mul_left _ _ two_ne_zero
 
 end Edge

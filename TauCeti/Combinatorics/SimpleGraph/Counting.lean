@@ -42,6 +42,8 @@ complete graph on `V` is injective, and its image is a `card V`-clique; each cli
 
 * `SimpleGraph.card_bot_hom` counts the homomorphisms out of the edgeless graph.
 * `SimpleGraph.card_injective_hom_top` counts the injective homomorphisms into the complete graph.
+* `SimpleGraph.card_injective_top_hom` identifies the injective homomorphisms out of the complete
+  graph with all of them.
 * `SimpleGraph.labelledCopyCount_top` and `SimpleGraph.card_top_hom` count the copies of, and the
   homomorphisms from, a complete graph by the cliques of the host.
 * `SimpleGraph.card_top_fin_two_hom` counts the homomorphisms from `K₂` by the edges of the host.
@@ -63,6 +65,13 @@ theorem card_hom_eq_card_adjPreservingMaps (F : SimpleGraph V) (G : SimpleGraph 
       invFun := fun ψ => ⟨ψ.1, fun {_ _} h => ψ.2 _ _ h⟩
       left_inv := fun _ => rfl
       right_inv := fun _ => rfl }
+
+/-- Every homomorphism out of a complete graph is injective, so the injective homomorphisms from
+the complete graph on `V` are all of them. -/
+theorem card_injective_top_hom (G : SimpleGraph W) :
+    Nat.card {φ : (⊤ : SimpleGraph V) →g G // Function.Injective φ} =
+      Nat.card ((⊤ : SimpleGraph V) →g G) :=
+  Nat.card_congr (Equiv.subtypeUnivEquiv Hom.injective_of_top_hom)
 
 section CardinalityBounds
 
@@ -208,8 +217,7 @@ graph on `V` to `G` are again counted by `(card V)!` orderings of each `card V`-
 theorem card_top_hom :
     Nat.card ((⊤ : SimpleGraph V) →g G) =
       (Fintype.card V).factorial * #(G.cliqueFinset (Fintype.card V)) := by
-  rw [← labelledCopyCount_top, ← card_injective_hom_eq_labelledCopyCount]
-  exact Nat.card_congr (Equiv.subtypeUnivEquiv Hom.injective_of_top_hom).symm
+  rw [← card_injective_top_hom, card_injective_hom_eq_labelledCopyCount, labelledCopyCount_top]
 
 end Clique
 
