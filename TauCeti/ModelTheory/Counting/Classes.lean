@@ -202,16 +202,17 @@ noncomputable def classOf [Countable M] (hM : φ.Realize M) : CountableModelClas
   classical
   exact if h : Finite M then
     .inr ⟨Nat.card M,
-      ⟦⟨(Finite.equivFin M).encodeVia, (Finite.equivFin M).encodeVia_mem_modelsOf_iff.2 hM⟩⟧⟩
+      ⟦⟨(Finite.equivFin M).encodeVia,
+        mem_modelsOf.2 <| ((Finite.equivFin M).realize_encodeVia φ).2 hM⟩⟧⟩
   else
     have : Infinite M := not_finite_iff_infinite.1 h
     .inl ⟦⟨(nonempty_equiv_of_countable.some : M ≃ ℕ).encodeVia,
-      Equiv.encodeVia_mem_modelsOf_iff _ |>.2 hM⟩⟧
+      mem_modelsOf.2 <| (Equiv.realize_encodeVia _ φ).2 hM⟩⟧
 
 /-- The class of an infinite countable model is that of its transport to `ℕ` along any
 bijection. -/
 theorem classOf_eq_inl [Countable M] [Infinite M] (hM : φ.Realize M) (e : M ≃ ℕ) :
-    classOf φ hM = .inl ⟦⟨e.encodeVia, e.encodeVia_mem_modelsOf_iff.2 hM⟩⟧ := by
+    classOf φ hM = .inl ⟦⟨e.encodeVia, mem_modelsOf.2 <| (e.realize_encodeVia φ).2 hM⟩⟧ := by
   unfold classOf
   split_ifs with h
   · exact (not_finite M).elim
@@ -221,7 +222,7 @@ theorem classOf_eq_inl [Countable M] [Infinite M] (hM : φ.Realize M) (e : M ≃
 /-- The class of a model with `n` elements is that of its transport to `Fin n` along any
 bijection. -/
 theorem classOf_eq_inr [Countable M] {n : ℕ} (hM : φ.Realize M) (e : M ≃ Fin n) :
-    classOf φ hM = .inr ⟨n, ⟦⟨e.encodeVia, e.encodeVia_mem_modelsOf_iff.2 hM⟩⟧⟩ := by
+    classOf φ hM = .inr ⟨n, ⟦⟨e.encodeVia, mem_modelsOf.2 <| (e.realize_encodeVia φ).2 hM⟩⟧⟩ := by
   have : Finite M := .of_equiv _ e.symm
   obtain rfl : Nat.card M = n := (Nat.card_congr e).trans (Nat.card_fin n)
   unfold classOf

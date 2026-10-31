@@ -49,8 +49,6 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
   standard Borel.
 * `FirstOrder.Language.Equiv.mem_modelsOf_iff`: model classes are invariant under isomorphism of
   the decoded structures.
-* `Equiv.encodeVia_mem_modelsOf_iff`: a structure transported to another carrier lies in the model
-  class of exactly the sentences it satisfies.
 -/
 
 public section
@@ -191,18 +189,3 @@ theorem mem_modelsOf_iff {c : RelationalConfiguration L V} {d : RelationalConfig
   @StrongHomClass.realize_sentenceInf L ι V W c.toStructure d.toStructure _ _ _ e φ
 
 end FirstOrder.Language.Equiv
-
-namespace Equiv
-
-open TauCeti RelationalConfiguration
-
-variable {L : Language.{u, v}} [L.IsRelational] {M : Type w} {V : Type w'} {ι : Type uι}
-variable [L.Structure M]
-
-/-- The transport of a structure to another carrier lies in the model class of exactly the
-sentences the structure satisfies. -/
-theorem encodeVia_mem_modelsOf_iff (e : M ≃ V) {φ : L.SentenceInf ι} :
-    e.encodeVia (L := L) ∈ modelsOf φ ↔ φ.Realize M :=
-  e.realize_encodeVia φ
-
-end Equiv
