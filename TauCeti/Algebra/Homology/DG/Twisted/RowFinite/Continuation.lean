@@ -200,6 +200,8 @@ theorem comp_assoc (μ : RowFiniteContinuationCocycle mQ mS)
     (ν.comp μ hA).comp κ hA = ν.comp (μ.comp κ hA) hA := by
   ext x y
   simp only [comp_ν, Finsupp.linearCombination_linearCombination]
+  -- The composed rows occur as an unapplied function argument to linearCombination,
+  -- so the pointwise comp_ν rewrite needs function extensionality here.
   rw [show (μ.comp κ hA).ν = fun z ↦ Finsupp.linearCombination A κ.ν (μ.ν z) from
     funext fun z ↦ comp_ν μ κ hA z]
 
