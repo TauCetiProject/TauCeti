@@ -122,6 +122,17 @@ def of : G →* CentralizerExt u n :=
 def t (i : Fin n) : CentralizerExt u n :=
   Monoid.PushoutI.of (φ := centralizerExtMap u n) true (1, Pi.mulSingle i (.ofAdd 1))
 
+/-- The inclusion of `G` is the inclusion of the first factor of the amalgam. -/
+theorem of_def :
+    (of : G →* CentralizerExt u n) = Monoid.PushoutI.of (φ := centralizerExtMap u n) false :=
+  (rfl)
+
+/-- The new letter `tᵢ` is the image of the `i`-th standard generator of the second factor. -/
+theorem t_def (i : Fin n) :
+    (t i : CentralizerExt u n) =
+      Monoid.PushoutI.of (φ := centralizerExtMap u n) true (1, Pi.mulSingle i (.ofAdd 1)) :=
+  (rfl)
+
 /-- `G` embeds in `G(u, ℤⁿ)`. -/
 theorem of_injective : Function.Injective (of : G →* CentralizerExt u n) :=
   Monoid.PushoutI.of_injective (centralizerExtMap_injective u n) false
