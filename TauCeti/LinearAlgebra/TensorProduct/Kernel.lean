@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Flat.Basic
+import Mathlib.RingTheory.Flat.Equalizer
 
 /-!
 # Kernels after extension of scalars
@@ -15,12 +16,15 @@ public import Mathlib.RingTheory.Flat.Basic
 Mathlib's `Submodule.baseChange` extends a submodule of `M` to an `A`-submodule of `A ⊗[R] M`,
 and `LinearMap.baseChange` extends a linear map.  For a general map the two constructions satisfy
 only the containment `(ker f).baseChange A ≤ ker (f.baseChange A)`; it is an equality when `A` is
-flat over `R`. This file records that case and the other case in which it is an equality: the
-kernel of a *surjective* map is computed correctly after extending scalars along an arbitrary
-coefficient algebra, flat or not.
+flat over `R`. This file records that case and two cases in which it is an equality for an
+arbitrary coefficient algebra, flat or not: the kernel of a *surjective* map, and more generally
+the kernel of a map whose cokernel `N ⧸ range f` is flat.
 
-That is the form wanted when the map is a quotient map, where the kernel of the extension is to be
-identified with the extension of the submodule quotiented by.
+The first is the form wanted when the map is a quotient map, where the kernel of the extension is
+to be identified with the extension of the submodule quotiented by. The second is the form wanted
+for a kernel that should commute with every base change, such as the ring of invariants
+`B^G = ker (b ↦ (g • b - b)_g)` of a finite group acting on an algebra `B` over a Dedekind domain,
+where flatness of the cokernel is its torsion-freeness.
 
 ## Main results
 
@@ -28,6 +32,7 @@ identified with the extension of the submodule quotiented by.
   linear map is the extension of its kernel.
 * `LinearMap.ker_baseChange_of_surjective`: **for a surjective map the kernel of an extended
   linear map is the extension of its kernel**, with no hypothesis on the coefficient algebra.
+* `LinearMap.ker_baseChange_of_flat_quotient_range`: the same for a map with flat cokernel.
 
 ## References
 
@@ -63,5 +68,22 @@ theorem ker_baseChange_of_surjective (f : M →ₗ[R] N) (hf : Function.Surjecti
   have h : Function.Exact ((ker f).subtype.baseChange A) (f.baseChange A) :=
     lTensor_exact A f.exact_subtype_ker_map hf
   h.linearMap_ker_eq
+
+/-- **Extension of scalars commutes with the kernel of a map with flat cokernel**, with no
+hypothesis on the coefficient algebra. This generalizes `LinearMap.ker_baseChange_of_surjective`,
+the case of zero cokernel. Over a Dedekind domain, for instance a principal ideal domain, a module
+is flat if and only if it is torsion-free, so the hypothesis is then that `N ⧸ range f` is
+torsion-free. -/
+theorem ker_baseChange_of_flat_quotient_range (f : M →ₗ[R] N) [Module.Flat R (N ⧸ range f)] :
+    ker (f.baseChange A) = (ker f).baseChange A := by
+  -- `f` factors as the surjection `M → range f` followed by the inclusion `range f → N`, which
+  -- stays injective after extending scalars because its cokernel is flat.
+  have hinj : Function.Injective ((range f).subtype.baseChange A) := by
+    rw [baseChange_eq_lTensor]
+    exact lTensor_injective_of_exact_of_flat _ (range f).mkQ_surjective _
+      (range f).injective_subtype (exact_subtype_mkQ _) A
+  rw [← f.subtype_comp_rangeRestrict, baseChange_comp, ker_comp_of_ker_eq_bot _ (ker_eq_bot.2 hinj),
+    ker_baseChange_of_surjective A _ f.surjective_rangeRestrict, ker_comp_of_ker_eq_bot _
+      (range f).ker_subtype]
 
 end LinearMap

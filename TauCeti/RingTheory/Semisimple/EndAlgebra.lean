@@ -30,7 +30,7 @@ import TauCeti.RingTheory.Semisimple.SimpleArtinian
 Let `K` be a field, let `R` be a finite-dimensional **simple** `K`-algebra and let `M` be an
 `R`-module which is finite-dimensional over `K`. All simple `R`-modules are isomorphic, to a fixed
 minimal left ideal `S`, and `M` is a direct sum of `k` copies of `S`
-(`TauCeti.IsIsotypicOfType.of_isSimpleRing`), so
+(`IsIsotypicOfType.of_isSimpleRing`), so
 
   `End_R M ≃ₐ[K] Mat_k(End_R S)`,
 
@@ -125,7 +125,7 @@ private theorem exists_algEquiv_matrix_end :
       Nonempty (Module.End R M ≃ₐ[K] Matrix (Fin k) (Fin k) (Module.End R S)) := by
   have : IsArtinianRing R := IsArtinianRing.of_finite K R
   have : Module.Finite R M := Module.Finite.of_restrictScalars_finite K R M
-  obtain ⟨k, ⟨e⟩⟩ := (TauCeti.IsIsotypicOfType.of_isSimpleRing R (↥S) M).linearEquiv_fun
+  obtain ⟨k, ⟨e⟩⟩ := (IsIsotypicOfType.of_isSimpleRing R (↥S) M).linearEquiv_fun
   refine ⟨k, ?_, ⟨(e.conjAlgEquiv K).trans (endVecAlgEquivMatrixEnd (Fin k) K R (↥S))⟩⟩
   simp [(e.restrictScalars K).finrank_eq, Module.finrank_pi_fintype]
 

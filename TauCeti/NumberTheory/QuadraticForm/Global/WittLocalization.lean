@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.BaseChange
 public import TauCeti.NumberTheory.QuadraticForm.Global.LocalWittClass
+import TauCeti.LinearAlgebra.QuadraticForm.Witt.SepClosed
 
 /-!
 # The global-to-local map of Witt rings of a number field
@@ -31,7 +32,10 @@ square in every `K_v`, its Clifford invariant `c(x) ∈ Br(K)` splits over every
 signature vanishes at every real place.
 
 Complex places are omitted: the Witt ring of `ℂ` is `ZMod 2`, detected by the dimension modulo
-two, which the finite places already see.
+two, which the finite places already see. Scalar extension along the complex embedding of an
+infinite place is defined as well, and two classes with the same image under the global-to-local
+map have the same image at every complex embedding, so adding complex coordinates would not change
+the kernel.
 
 That the global-to-local map is injective is the Hasse–Minkowski theorem for Witt classes; this
 file does not prove it.
@@ -39,6 +43,8 @@ file does not prove it.
 ## Main definitions
 
 * `TauCeti.WittRing.atRealPlace`: scalar extension of Witt classes along a real embedding.
+* `TauCeti.WittRing.atComplexEmbedding`: scalar extension of Witt classes along the complex
+  embedding of an infinite place.
 * `TauCeti.WittRing.globalToLocal`: the global-to-local map of Witt rings.
 
 ## Main results
@@ -48,6 +54,10 @@ file does not prove it.
 * `TauCeti.WittRing.globalToLocal_eq_zero_iff`: the kernel of the global-to-local map, described
   by the dimension modulo two, the signed discriminant, the Clifford invariant and the real
   signatures.
+* `TauCeti.WittRing.signature_atRealPlace_wittClass_formClass`: the signature of the real
+  coordinate of the Witt class of a regular form is the difference of its two inertia indices.
+* `TauCeti.WittRing.atComplexEmbedding_eq_of_globalToLocal_eq`: classes with the same image under
+  the global-to-local map agree at every complex embedding.
 * `QuadraticForm.globalToLocal_wittClass_formClass_eq_iff`: two regular forms have the same image
   under the global-to-local map exactly when their ranks have the same parity, their signed
   discriminants and Clifford invariants agree at every finite place and their signatures agree at
@@ -56,7 +66,8 @@ file does not prove it.
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
-  American Mathematical Society (2005), Chapter VI, §3, for the map `W(K) → ∏_v W(K_v)`, and
+  American Mathematical Society (2005), Chapter II, §§1–3, for scalar extension of Witt classes
+  and the real and complex Witt rings, Chapter VI, §3, for the map `W(K) → ∏_v W(K_v)`, and
   Chapter V, §3, for the signed discriminant and the Clifford invariant.
 * O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), 63:20 for the local
   classification.
@@ -74,7 +85,7 @@ namespace WittRing
 
 variable {K : Type u} [Field K]
 
-section RealPlace
+section InfinitePlace
 
 variable [Invertible (2 : K)]
 
@@ -103,7 +114,49 @@ theorem atRealPlace_wittClass_formClass {V : Type v} [AddCommGroup V] [Module K 
   let : Algebra K ℝ := (InfinitePlace.embedding_of_isReal w.2).toAlgebra
   rw [QuadraticForm.formClass_atRealPlace Q hQ w, ← baseChange_wittClass, atRealPlace_def]
 
-end RealPlace
+/-- The signature of the localization at a real place of the Witt class of a regular form is the
+difference of the positive and negative indices of the form at that place. -/
+theorem signature_atRealPlace_wittClass_formClass {V : Type v} [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    signature (atRealPlace w (wittClass (formClass Q hQ))) =
+      (Q.realPositiveIndex w : ℤ) - Q.realNegativeIndex w := by
+  rw [atRealPlace_wittClass_formClass, signature_wittClass, signature_formClass,
+    QuadraticForm.realPositiveIndex_eq_sigPos, QuadraticForm.realNegativeIndex_eq_sigNeg]
+
+/-- **Localization of Witt classes at a complex embedding**: scalar extension `W(K) → W(ℂ)` along
+the complex embedding of the infinite place `w`. -/
+noncomputable def atComplexEmbedding (w : InfinitePlace K) : WittRing K →+* WittRing ℂ :=
+  letI : Algebra K ℂ := w.embedding.toAlgebra
+  baseChange
+
+/-- Localization of Witt classes at a complex embedding is scalar extension along the complex
+embedding of the place. -/
+theorem atComplexEmbedding_def (w : InfinitePlace K) :
+    letI : Algebra K ℂ := w.embedding.toAlgebra
+    atComplexEmbedding w = baseChange :=
+  (rfl)
+
+/-- The localization at a complex embedding of the Witt class of a regular form is the Witt class
+of the form's scalar extension along that embedding. -/
+@[simp]
+theorem atComplexEmbedding_wittClass_formClass {V : Type v} [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
+    atComplexEmbedding w (wittClass (formClass Q hQ)) =
+      wittClass (formClass (Q.atComplexEmbedding w)
+        (QuadraticForm.Nondegenerate.atComplexEmbedding hQ w)) := by
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  rw [QuadraticForm.formClass_atComplexEmbedding Q hQ w, ← baseChange_wittClass,
+    atComplexEmbedding_def]
+
+/-- A Witt class vanishes at a complex embedding exactly when it has even dimension. -/
+@[simp]
+theorem atComplexEmbedding_eq_zero_iff (x : WittRing K) (w : InfinitePlace K) :
+    atComplexEmbedding w x = 0 ↔ dimMod2 x = 0 := by
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  simpa only [atComplexEmbedding_def] using baseChange_eq_zero_iff_dimMod2_eq_zero (L := ℂ) x
+
+end InfinitePlace
 
 variable [NumberField K]
 
@@ -162,6 +215,17 @@ theorem globalToLocal_eq_zero_iff (x : WittRing K) :
   -- A number field has a finite place, so even dimension at every finite place is even dimension.
   exact ⟨fun ⟨⟨hn, hd, hc⟩, hs⟩ => ⟨hn (Classical.arbitrary _), hd, hc, hs⟩,
     fun ⟨hn, hd, hc, hs⟩ => ⟨⟨fun _ => hn, hd, hc⟩, hs⟩⟩
+
+/-- Two Witt classes with the same image under the global-to-local map have the same image at
+every complex embedding. -/
+theorem atComplexEmbedding_eq_of_globalToLocal_eq {x y : WittRing K}
+    (h : globalToLocal K x = globalToLocal K y) (w : InfinitePlace K) :
+    atComplexEmbedding w x = atComplexEmbedding w y := by
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  have hv := congrArg (fun z => z.1 (Classical.arbitrary (HeightOneSpectrum (𝓞 K)))) h
+  simp only [globalToLocal_apply_fst] at hv
+  simpa only [atComplexEmbedding_def] using
+    baseChange_eq_of_baseChange_eq_of_isSepClosed (M := ℂ) hv
 
 end WittRing
 

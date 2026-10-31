@@ -47,6 +47,8 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 
 * `TauCeti.zeroSectionCompl`: the nonzero vectors `E₀` of a bundle.
 * `TauCeti.thomPair`: the Thom pair `(E, E₀)`.
+* `TauCeti.thomPairOver`: the Thom pair `(E|_W, E₀|_W)` of the restriction to a subset `W` of the
+  base; over the whole base it is the Thom pair `(E, E₀)` (`TauCeti.thomPairOverUnivIso`).
 * `TauCeti.fiberThomPairMap`: the inclusion of the fibre pair `(E_b, E_b ∖ {0})` into the Thom
   pair.
 * `TauCeti.IsThomClass`: a relative class restricting to a generator on every fibre.
@@ -103,6 +105,48 @@ variable [TopologicalSpace (TotalSpace F E)]
 section. -/
 abbrev thomPair : TopPair.{w} :=
   TopPair.ofSubset (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E)
+
+/-- The Thom pair `(E|_W, E₀|_W)` of the restriction of a bundle to a subset `W` of its base: the
+vectors over `W`, relative to the nonzero ones, as subspaces of the total space. -/
+abbrev thomPairOver (W : Set B) : TopPair.{w} :=
+  TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
+    (inter_subset_left : π F E ⁻¹' W ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' W)
+
+/-- The map of pairs `(E|_B, E₀|_B) ⟶ (E, E₀)` forgetting that every vector lies over the base. -/
+private def thomPairOverUnivHom : thomPairOver F E univ ⟶ thomPair F E :=
+  TopPair.ofHom (TopCat.isoOfHomeo ((Homeomorph.setCongr preimage_univ).trans
+      (Homeomorph.Set.univ (TotalSpace F E)))).hom
+    (TopCat.ofHom ⟨fun v ↦ ⟨v.1, v.2.2⟩, by fun_prop⟩) (by ext; rfl)
+
+/-- Over the whole base, the Thom pair `(E|_B, E₀|_B)` of the restriction is the Thom pair
+`(E, E₀)`. -/
+def thomPairOverUnivIso : thomPairOver F E univ ≅ thomPair F E :=
+  have : IsIso (TopPair.Hom.fst (thomPairOverUnivHom F E)) := (TopCat.isoOfHomeo _).isIso_hom
+  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (thomPairOverUnivHom F E) fun v ↦
+    ⟨⟨v.1, trivial, v.2⟩, rfl⟩
+  asIso (thomPairOverUnivHom F E)
+
+@[simp]
+theorem thomPairOverUnivIso_hom_fst_apply (v : π F E ⁻¹' univ) :
+    TopPair.Hom.fst (thomPairOverUnivIso F E).hom v = v.1 :=
+  (rfl)
+
+@[simp]
+theorem thomPairOverUnivIso_hom_snd_apply (v : ↥(π F E ⁻¹' univ ∩ zeroSectionCompl F E)) :
+    TopPair.Hom.snd (thomPairOverUnivIso F E).hom v = ⟨v.1, v.2.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem thomPairOverUnivIso_inv_fst_apply (v : TotalSpace F E) :
+    TopPair.Hom.fst (thomPairOverUnivIso F E).inv v = ⟨v, trivial⟩ :=
+  Subtype.ext ((thomPairOverUnivIso_hom_fst_apply F E _).symm.trans
+    ((TopPair.proj₁.mapIso (thomPairOverUnivIso F E)).inv_hom_id_apply v))
+
+@[simp]
+theorem thomPairOverUnivIso_inv_snd_apply (v : zeroSectionCompl F E) :
+    TopPair.Hom.snd (thomPairOverUnivIso F E).inv v = ⟨v.1, trivial, v.2⟩ :=
+  Subtype.ext (congrArg Subtype.val ((TopPair.Hom.w_apply (thomPairOverUnivIso F E).inv v).trans
+    (thomPairOverUnivIso_inv_fst_apply F E v.1)) :)
 
 end Pair
 

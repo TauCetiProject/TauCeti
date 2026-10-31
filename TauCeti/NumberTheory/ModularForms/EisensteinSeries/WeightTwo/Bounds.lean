@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Independence
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Subspace
 public import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
-public import TauCeti.NumberTheory.ModularForms.LFunction.Basic
-import Mathlib.NumberTheory.LSeries.Injectivity
+import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
 # Coefficient bounds for weight-two Eisenstein series
@@ -18,17 +16,14 @@ The corrected series `E₂(z) - t E₂(tz)` has Fourier coefficients
 `-24 (σ₁(n) - t σ₁(n/t))`, with the second summand present only when `t ∣ n`, and the normalized
 raised series `E₂^{ψ,φ,t}` with characters has positive coefficients `σ₁^{ψ,φ}(n/t)` at the
 multiples of `t`, bounded by `σ₁(n)`. For every `ε > 0` these coefficients are therefore
-`O(n^(1+ε))`. The estimate holds on the span of the corrected series at all nontrivial divisor
-levels of a fixed level `N`, and on the span in `M₂(Γ₁(N))` of the weight-two Eisenstein series
-of all indices `(ψ, φ, t)` (`TauCeti.EisensteinSeries.CharIndex.weightTwoForm`). The coefficient
-L-series of these forms therefore have abscissa of absolute convergence at most `2`, and the same
-bound holds after adding an arbitrary cusp form, by Hecke's cusp-form bound. Once these series
-are known to span a complement of the cusp forms, this is the bound `2` for every form of weight
-two on `Γ₁(N)`, the weight-two case of Diamond–Shurman, Proposition 5.9.1.
+`O(n^(1+ε))`, and so are those of every form in the span in `M₂(Γ₁(N))` of the weight-two
+Eisenstein series of all indices `(ψ, φ, t)` (`TauCeti.EisensteinSeries.CharIndex.weightTwoForm`).
+Since these series span a complement of the cusp forms, this is the Eisenstein half of the bound
+`aₙ = O(n^(1+ε))` for every form of weight two on `Γ₁(N)`, and hence of the abscissa bound `2`
+for its L-series, the weight-two case of Diamond–Shurman, Proposition 5.9.1
+(`TauCeti.ModularFormClass.abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le`).
 
-The ε-family avoids asserting the false bound `σ₁(n) = O(n)`. The span of the corrected series
-covers only the trivial-character series; at some nonsquarefree levels the Eisenstein part of
-`M₂(Γ₀(N))` also requires series with nontrivial characters, which the second family includes.
+The ε-family avoids asserting the false bound `σ₁(n) = O(n)`.
 
 ## Main results
 
@@ -37,10 +32,6 @@ covers only the trivial-character series; at some nonsquarefree levels the Eisen
   of a corrected series, and of the weight-two series of an index, are `O(n^(1+ε))`.
 * `TauCeti.EisensteinSeries.isBigO_qExpansion_coeff_of_mem_span_weightTwoForm`: the same bound
   for every linear combination of the weight-two series with character.
-* `abscissaOfAbsConv_qExpansion_coeff_le_of_mem_sup_span_correctedE2AtLevel` and
-  `abscissaOfAbsConv_qExpansion_coeff_le_of_mem_sup_span_weightTwoForm`, in the namespace
-  `TauCeti.EisensteinSeries`: the abscissa bound `2` for a combination of the series plus a cusp
-  form.
 
 ## References
 
@@ -102,64 +93,6 @@ theorem isBigO_qExpansion_coeff_correctedE2 (t : ℕ) [NeZero t] {ε : ℝ} (hε
   refine (norm_qExpansion_coeff_correctedE2_le t (by linarith : 1 < 1 + ε) hn).trans_eq ?_
   rw [Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (Nat.cast_nonneg n) _)]
   ring
-
-/-- On a fixed level, every linear combination of corrected weight-two series at its
-nontrivial divisor levels has coefficients `O(n^(1+ε))` for every `ε > 0`. -/
-theorem isBigO_qExpansion_coeff_of_mem_span_correctedE2AtLevel (N : ℕ) [_hN : NeZero N] {ε : ℝ}
-    (hε : 0 < ε) {f : ModularForm ((Gamma0 N).map (mapGL ℝ)) 2}
-    (hf : f ∈ Submodule.span ℂ (Set.range (correctedE2AtLevel N))) :
-    (fun n ↦ (qExpansion 1 f).coeff n) =O[atTop]
-      (fun n : ℕ ↦ (n : ℝ) ^ (1 + ε)) := by
-  let Q := ModularForm.qExpansionLinearMap one_pos (one_mem_strictPeriods_Gamma0_map N) 2
-  suffices (fun n ↦ (Q f).coeff n) =O[atTop]
-      (fun n : ℕ ↦ (n : ℝ) ^ (1 + ε)) by
-    simpa only [Q, ModularForm.qExpansionLinearMap_apply] using this
-  induction hf using Submodule.span_induction with
-  | mem g hg =>
-      obtain ⟨d, rfl⟩ := hg
-      have heq : ⇑(correctedE2AtLevel N d) = ⇑(@correctedE2 d.val ⟨by omega⟩) :=
-        funext (correctedE2AtLevel_apply N d)
-      simpa only [Q, ModularForm.qExpansionLinearMap_apply, heq] using
-        @isBigO_qExpansion_coeff_correctedE2 d.val ⟨by omega⟩ ε hε
-  | zero => simpa using (isBigO_zero (fun n : ℕ ↦ (n : ℝ) ^ (1 + ε)) atTop)
-  | add g h _ _ hg hh => simpa using hg.add hh
-  | smul c g _ hg => simpa using hg.const_mul_left c
-
-/-- The coefficient L-series of any form in the corrected weight-two Eisenstein span
-converges absolutely for `Re s > 2`. -/
-theorem abscissaOfAbsConv_qExpansion_coeff_le_of_mem_span_correctedE2AtLevel (N : ℕ) [NeZero N]
-    {f : ModularForm ((Gamma0 N).map (mapGL ℝ)) 2}
-    (hf : f ∈ Submodule.span ℂ (Set.range (correctedE2AtLevel N))) :
-    LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 f).coeff n) ≤ 2 := by
-  apply LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable (x := 2)
-  intro y hy
-  have hε : 0 < (y - 2) / 2 := by linarith
-  have hO := isBigO_qExpansion_coeff_of_mem_span_correctedE2AtLevel N hε hf
-  apply LSeriesSummable_of_isBigO_rpow (x := 2 + (y - 2) / 2)
-    (by simp only [Complex.ofReal_re]; linarith)
-  have hexp : 2 + (y - 2) / 2 - 1 = 1 + (y - 2) / 2 := by ring
-  simpa only [hexp] using hO
-
-/-- Adding a weight-two cusp form to a linear combination of corrected Eisenstein series
-preserves the abscissa bound `2`. -/
-theorem abscissaOfAbsConv_qExpansion_coeff_le_of_mem_sup_span_correctedE2AtLevel
-    (N : ℕ) [NeZero N] {f : ModularForm ((Gamma0 N).map (mapGL ℝ)) 2}
-    (hf : f ∈ Submodule.span ℂ (Set.range (correctedE2AtLevel N)) ⊔
-      ModularForm.cuspFormSubmodule ((Gamma0 N).map (mapGL ℝ)) 2) :
-    LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 f).coeff n) ≤ 2 := by
-  obtain ⟨e, he, c, hc, rfl⟩ := Submodule.mem_sup.mp hf
-  obtain ⟨g, rfl⟩ := hc
-  have he' := abscissaOfAbsConv_qExpansion_coeff_le_of_mem_span_correctedE2AtLevel N he
-  have hg : LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 g).coeff n) ≤ 2 := by
-    have h := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le g
-    rw [strictWidthInfty_Gamma0] at h
-    have hcast : ((((2 : ℤ) : ℝ) / 2 : ℝ) : EReal) + 1 = 2 := by norm_num
-    rwa [hcast] at h
-  have hcoe : ⇑(CuspForm.toModularFormₗ g) = ⇑g :=
-    funext (CuspForm.toModularFormₗ_apply g)
-  simp only [FunLike.coe_add,
-    ModularForm.qExpansion_add one_pos (one_mem_strictPeriods_Gamma0_map N), map_add, hcoe]
-  exact (LSeries.abscissaOfAbsConv_add_le _ _).trans (max_le he' hg)
 
 /-! ### The weight-two series with character -/
 
@@ -233,41 +166,5 @@ theorem isBigO_qExpansion_coeff_of_mem_span_weightTwoForm {ε : ℝ} (hε : 0 < 
   | zero => simpa using (isBigO_zero (fun n : ℕ ↦ (n : ℝ) ^ (1 + ε)) atTop)
   | add g h _ _ hg hh => simpa using hg.add hh
   | smul c g _ hg => simpa using hg.const_mul_left c
-
-/-- The coefficient L-series of any linear combination of the weight-two Eisenstein series of
-the indices of level `N` converges absolutely for `Re s > 2`. -/
-theorem abscissaOfAbsConv_qExpansion_coeff_le_of_mem_span_weightTwoForm
-    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) 2}
-    (hf : f ∈ Submodule.span ℂ (Set.range (CharIndex.weightTwoForm (N := N)))) :
-    LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 f).coeff n) ≤ 2 := by
-  apply LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable (x := 2)
-  intro y hy
-  have hε : 0 < (y - 2) / 2 := by linarith
-  have hO := isBigO_qExpansion_coeff_of_mem_span_weightTwoForm hε hf
-  apply LSeriesSummable_of_isBigO_rpow (x := 2 + (y - 2) / 2)
-    (by simp only [Complex.ofReal_re]; linarith)
-  have hexp : 2 + (y - 2) / 2 - 1 = 1 + (y - 2) / 2 := by ring
-  simpa only [hexp] using hO
-
-/-- Adding a weight-two cusp form on `Γ₁(N)` to a linear combination of the weight-two
-Eisenstein series of the indices of level `N` preserves the abscissa bound `2`. -/
-theorem abscissaOfAbsConv_qExpansion_coeff_le_of_mem_sup_span_weightTwoForm
-    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) 2}
-    (hf : f ∈ Submodule.span ℂ (Set.range (CharIndex.weightTwoForm (N := N))) ⊔
-      ModularForm.cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) 2) :
-    LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 f).coeff n) ≤ 2 := by
-  obtain ⟨e, he, c, hc, rfl⟩ := Submodule.mem_sup.mp hf
-  obtain ⟨g, rfl⟩ := hc
-  have he' := abscissaOfAbsConv_qExpansion_coeff_le_of_mem_span_weightTwoForm he
-  have hg : LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 g).coeff n) ≤ 2 := by
-    have h := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le g
-    rw [strictWidthInfty_Gamma1] at h
-    have hcast : ((((2 : ℤ) : ℝ) / 2 : ℝ) : EReal) + 1 = 2 := by norm_num
-    rwa [hcast] at h
-  have hcoe : ⇑(CuspForm.toModularFormₗ g) = ⇑g :=
-    funext (CuspForm.toModularFormₗ_apply g)
-  simp only [FunLike.coe_add,
-    ModularForm.qExpansion_add one_pos (one_mem_strictPeriods_Gamma1_map N), map_add, hcoe]
-  exact (LSeries.abscissaOfAbsConv_add_le _ _).trans (max_le he' hg)
 
 end TauCeti.EisensteinSeries
