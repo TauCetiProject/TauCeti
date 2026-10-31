@@ -48,12 +48,14 @@ noncomputable def chainShift (b : Basis (Σ i, Fin (len i)) R M) : Module.End R 
 
 /-- The chain shift moves a basis vector one step along its chain, or kills it at the end of the
 chain. -/
+@[simp]
 theorem chainShift_basis (b : Basis (Σ i, Fin (len i)) R M) (i : ι) (j : Fin (len i)) :
     b.chainShift (b ⟨i, j⟩) = if h : (j : ℕ) + 1 < len i then b ⟨i, ⟨j + 1, h⟩⟩ else 0 :=
   b.constr_basis ℕ _ _
 
 /-- A power of the chain shift moves a basis vector along its chain, or kills it once it reaches
 the end of the chain. -/
+@[simp]
 theorem pow_chainShift_basis (b : Basis (Σ i, Fin (len i)) R M) (k : ℕ) (i : ι)
     (j : Fin (len i)) :
     (b.chainShift ^ k) (b ⟨i, j⟩) = if h : (j : ℕ) + k < len i then b ⟨i, ⟨j + k, h⟩⟩ else 0 := by
@@ -62,17 +64,15 @@ theorem pow_chainShift_basis (b : Basis (Σ i, Fin (len i)) R M) (k : ℕ) (i : 
   | succ k ih =>
     rw [pow_succ', Module.End.mul_apply, ih]
     split_ifs with h₁ h₂ h₂
-    all_goals rw [← add_assoc] at h₂
-    · rw [chainShift_basis, dite_eq_left_of_eq_true (eq_true h₂)]
-      simp [add_assoc]
-    · simp [chainShift_basis, h₂]
+    · simp [add_assoc, h₂]
+    · simp [add_assoc, h₂]
     · omega
     · exact map_zero _
 
 /-- Each basis vector is a power of the chain shift applied to the first vector of its chain. -/
 theorem pow_chainShift_basis_zero (b : Basis (Σ i, Fin (len i)) R M) (i : ι) (j : Fin (len i)) :
     (b.chainShift ^ (j : ℕ)) (b ⟨i, ⟨0, j.pos⟩⟩) = b ⟨i, j⟩ := by
-  simp [pow_chainShift_basis]
+  simp
 
 /-- The first vectors `b ⟨i, 0⟩` of the chains of a basis are the heads of a Jordan-chain basis
 of its chain shift, provided every chain is nonempty. Its underlying basis is `b`
@@ -83,7 +83,7 @@ basis, which is indexed by the chain lengths, reduces to the index type of `b`. 
   len := len
   head i := b ⟨i, ⟨0, hlen i⟩⟩
   len_pos := hlen
-  pow_len_apply_head i := by simp [pow_chainShift_basis]
+  pow_len_apply_head i := by simp
   linearIndependent := by
     convert b.linearIndependent with p
     exact b.pow_chainShift_basis_zero p.1 p.2
@@ -151,17 +151,10 @@ theorem toMatrix_chainShift (b : Basis (Σ i, Fin (len i)) R M) :
     rw [b.repr_self, show (⟨j' + 1, h₁⟩ : Fin (len i)) = j from Fin.ext h₂.symm,
       Finsupp.single_eq_same]
   · rw [b.repr_self, Finsupp.single_apply, ite_eq_right_iff]
-    intro h
-    exfalso
-    simp only [Sigma.mk.injEq] at h
-    obtain ⟨rfl, h⟩ := h
-    have := Fin.val_eq_of_eq (eq_of_heq h)
-    dsimp only at this h₂
-    exact h₂ ⟨rfl, by omega⟩
+    rintro ⟨⟩
+    exact absurd ⟨rfl, rfl⟩ h₂
   · obtain ⟨rfl, h₂⟩ := h₂
-    have := j.isLt
-    dsimp only at h₁ h₂
-    omega
+    exact absurd (h₂ ▸ j.isLt) h₁
   · simp
 
 end Module.Basis
@@ -191,12 +184,10 @@ theorem exists_jordanPartition_eq (μ : Nat.Partition (finrank K V)) :
   let l := μ.parts.toList
   have hlen (i : Fin l.length) : 0 < l[i] :=
     μ.parts_pos (Multiset.mem_toList.mp (List.getElem_mem _))
-  have hcard :
-      Fintype.card (Fin (finrank K V)) = Fintype.card (Σ i : Fin l.length, Fin l[i]) := by
-    rw [Fintype.card_fin, Fintype.card_sigma]
-    simp only [Fintype.card_fin, Fin.getElem_fin]
+  have hsum : ∑ i : Fin l.length, l[i] = finrank K V := by
+    simp only [Fin.getElem_fin]
     rw [Fin.sum_univ_getElem, ← Multiset.sum_coe, Multiset.coe_toList, μ.parts_sum]
-  let b := (Module.finBasis K V).reindex (Fintype.equivOfCardEq hcard)
+  let b := (Module.finBasis K V).reindex (finSigmaFinEquiv.trans (finCongr hsum)).symm
   refine ⟨b.chainShift, b.isNilpotent_chainShift, Nat.Partition.ext ?_⟩
   rw [b.jordanPartition_chainShift_parts hlen, Fin.univ_val_map]
   simp only [Fin.getElem_fin]
