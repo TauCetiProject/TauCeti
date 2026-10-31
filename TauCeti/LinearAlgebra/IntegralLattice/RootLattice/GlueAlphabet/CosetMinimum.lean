@@ -52,7 +52,7 @@ shortest vector of the word's coset is a family of shortest vectors of the label
 `TauCeti.IntegralLattice.isLeast_form_self_pi`.  The two label-level consequences pass to words:
 half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero word.  For words
 over the `A₂` alphabet `ℤ/3`, every nonzero label has shortest norm `2/3`, so `μ(w)` is two
-thirds of the Hamming weight of `w` (`sum_glueMinimum_A_two`).
+thirds of the Hamming weight of `w` (`sum_glueMinimum_A_two_eq_two_div_three_mul_hammingNorm`).
 
 ## Main declarations
 
@@ -67,8 +67,8 @@ thirds of the Hamming weight of `w` (`sum_glueMinimum_A_two`).
 * `TauCeti.DynkinType.quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two`:
   `q(w) = μ(w) / 2 mod ℤ`.
 * `TauCeti.DynkinType.sum_glueMinimum_eq_zero_iff`: `μ(w) = 0` exactly when `w = 0`.
-* `TauCeti.DynkinType.sum_glueMinimum_A_two`: over `A₂`, `μ(w)` is two thirds of the Hamming
-  weight of `w`.
+* `TauCeti.DynkinType.sum_glueMinimum_A_two_eq_two_div_three_mul_hammingNorm`: over `A₂`, `μ(w)`
+  is two thirds of the Hamming weight of `w`.
 * `TauCeti.DynkinType.sum_glueMinimum_A_one_eq_hammingNorm_div_two`: for a word in copies of the
   `A₁` glue alphabet, `μ(w)` is half its Hamming weight.
 
@@ -326,7 +326,8 @@ theorem sum_glueMinimum_eq_zero_iff {w : ∀ i, (t i).glueAlphabet (ht i)} :
 
 /-- **The shortest norm of an `A₂` glue word is two thirds of its Hamming weight**: the coset of
 a nonzero label of the `A₂` alphabet `ℤ/3` has shortest norm `2/3`. -/
-theorem sum_glueMinimum_A_two (ht : (A 2).IsSimplyLaced) (w : ι → ZMod 3) :
+theorem sum_glueMinimum_A_two_eq_two_div_three_mul_hammingNorm (ht : (A 2).IsSimplyLaced)
+    (w : ι → ZMod 3) :
     ∑ i, (A 2).glueMinimum ht (w i) = 2 / 3 * hammingNorm w := by
   have h (a : ZMod 3) : (A 2).glueMinimum ht a = if a = 0 then 0 else 2 / 3 := by
     rw [glueMinimum_A]

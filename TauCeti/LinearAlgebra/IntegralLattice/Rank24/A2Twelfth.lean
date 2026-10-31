@@ -43,7 +43,8 @@ table subgroup has order `729` and is a quadratic Lagrangian of the glue-word mo
 order and Lagrangian conditions needed to glue twelve `A₂` root lattices along it.
 
 Each nonzero label of `ℤ/3` names a coset of `A₂` of minimum norm `2/3`, so the minimum norm of a
-glue word is two thirds of its Hamming weight (`TauCeti.DynkinType.sum_glueMinimum_A_two`).
+glue word is two thirds of its Hamming weight
+(`TauCeti.DynkinType.sum_glueMinimum_A_two_eq_two_div_three_mul_hammingNorm`).
 Nonzero ternary Golay words have weight at least `6`, hence every nonzero word of the table
 subgroup has minimum norm at least `4`.  Gluing the orthogonal sum `R` of twelve `A₂` root
 lattices along the table subgroup by `TauCeti.DynkinType.gluedLattice` therefore gives a positive
@@ -298,7 +299,7 @@ theorem four_le_sum_glueMinimum_of_mem_a2TwelfthGlueSubgroup {w : a2TwelfthGlueM
   have hpos : hammingNorm x ≠ 0 := hammingNorm_ne_zero_iff.mpr hw0
   have h6 : (6 : ℚ) ≤ hammingNorm x := by exact_mod_cast (by omega : 6 ≤ hammingNorm x)
   exact (by linarith : (4 : ℚ) ≤ 2 / 3 * hammingNorm x).trans_eq
-    (sum_glueMinimum_A_two (isSimplyLaced_A 2) x).symm
+    (sum_glueMinimum_A_two_eq_two_div_three_mul_hammingNorm (isSimplyLaced_A 2) x).symm
 
 /-- The orthogonal sum `A₂¹²` of twelve `A₂` root lattices. -/
 noncomputable abbrev a2TwelfthRootLattice : IntegralLattice (Fin 12 → Fin (A 2).rank → ℚ) :=
