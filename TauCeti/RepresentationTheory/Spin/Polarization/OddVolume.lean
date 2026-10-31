@@ -145,9 +145,9 @@ theorem spinAction_complexVolume :
     simp
   -- Evaluate both sides on the vacuum: `u` gives `λ`, and each of the `ℓ` pairs gives `-i`.
   have h1 := congr($ha 1)
-  rw [complexVolume_eq_prod_pairs_mul b hb (b.isOrthoᵢ_associated hQ), map_smul, map_mul,
-    map_list_prod, LinearMap.smul_apply, Module.End.mul_apply, hu, map_smul, hpairs,
-    Module.algebraMap_end_apply, smul_smul, smul_smul] at h1
+  rw [complexVolume_eq_prod_pairs_mul b hb (b.isOrthoᵢ_associated hQ)] at h1
+  simp only [map_smul, map_mul, map_list_prod, LinearMap.smul_apply, Module.End.mul_apply, hu,
+    hpairs, Module.algebraMap_end_apply, smul_smul] at h1
   have hI : Complex.I ^ ℓ * (-1) ^ ℓ * Complex.I ^ ℓ = 1 := by
     rw [mul_comm, ← mul_assoc, ← mul_pow, Complex.I_mul_I, ← mul_pow]
     simp

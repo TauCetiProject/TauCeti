@@ -134,10 +134,10 @@ theorem complexVolume_eq_prod_pairs_mul {ℓ : ℕ} [Fact (finrank ℝ V = 2 * �
       ι (Q.baseChange ℂ) (1 ⊗ₜ b ⟨2 * k, by omega⟩) *
         ι (Q.baseChange ℂ) (1 ⊗ₜ b ⟨2 * k + 1, by omega⟩)).prod *
       ι (Q.baseChange ℂ) (1 ⊗ₜ b (Fin.last (2 * ℓ)))) := by
-  rw [complexVolume_eq o b hb hQb, List.finRange_succ_last, List.map_append, List.map_append,
-    List.prod_append, List.map_map, List.map_map, ← List.ofFn_eq_map, List.ofFn_mul',
-    List.prod_flatten, List.map_ofFn, show (2 * ℓ + 1 + 1) / 2 = ℓ + 1 by omega]
-  simp [List.ofFn_succ, Function.comp_def]
+  rw [complexVolume_eq o b hb hQb, List.finRange_succ_last,
+    show (2 * ℓ + 1 + 1) / 2 = ℓ + 1 by omega]
+  simp [List.prod_append, ← List.ofFn_eq_map, List.ofFn_mul', List.prod_flatten, List.ofFn_succ,
+    Function.comp_def]
 
 /-- **The normalized complex volume element in rank zero**: for the positive orientation of a
 zero-dimensional space, `Γ = 1`. By `CliffordAlgebra.complexVolume_neg_orientation`, the negative
