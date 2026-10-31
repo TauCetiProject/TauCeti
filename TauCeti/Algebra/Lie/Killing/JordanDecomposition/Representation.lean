@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Algebra.Lie.Killing.JordanDecomposition.Canonical
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
-import Mathlib.Algebra.Lie.AdjointAction.JordanChevalley
-import Mathlib.Algebra.Lie.TraceForm
-import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
-import TauCeti.Algebra.Lie.Killing.Perfect
-import TauCeti.Algebra.Lie.Weights.Central
+import TauCeti.Algebra.Lie.AdjointAction.JordanChevalley
+import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.Killing.EndSubalgebra
 import TauCeti.LinearAlgebra.End.Adjoin
 import TauCeti.RepresentationTheory.Lie.AdNilpotent
 
@@ -38,24 +36,21 @@ decomposition of `x ∈ L`. Then:
 * `n` is a polynomial in `x`, so `n` preserves every `L`-submodule `W ⊆ V`, and its restriction to
   `W` is nilpotent, hence has trace zero.
 
-By Weyl's theorem `L` has an `L`-stable complement `Q` in `𝔤𝔩(V)`; write `n = a + q` with `a ∈ L`
-and `q ∈ Q`. The bracket of `q` with `L` lies in `L ∩ Q = 0`, so `q` commutes with `L`. Elements of
-`L` have trace zero on each `L`-submodule, because `L` is perfect, so `q` also preserves every
-`L`-submodule with trace zero on it. Schur's lemma makes `q` a scalar on each irreducible
-`L`-submodule, and that scalar vanishes by the trace condition. Since `V` is a sum of irreducible
-submodules, again by Weyl's theorem, `q = 0` and `n = a ∈ L`.
+Hence `n ∈ L` by the membership criterion `LieSubalgebra.mem_of_forall_lie_mem` for Killing Lie
+subalgebras of `𝔤𝔩(V)`, whose proof combines Weyl's theorem, Schur's lemma and the vanishing of
+traces on a perfect Lie algebra.
 
 For a faithful representation `ρ`, its image is isomorphic to `L`, so it is a Killing Lie
 subalgebra of `𝔤𝔩(V)`; the parts of `ρ x` lie in it and form the internal Jordan decomposition
 there, which is the image of the internal Jordan decomposition of `x`
 (`LieEquiv.map_jordanDecomposition`). That ad-nilpotent elements act nilpotently holds in an
 arbitrary finite-dimensional representation (`TauCeti.isNilpotent_apply_of_isNilpotent_ad`); this
-file does not treat semisimple parts in representations with a nonzero kernel.
+file does not treat semisimple parts in representations with a nonzero kernel. Conversely, an
+element with nilpotent image under a faithful representation is ad-nilpotent over any field, so
+the nilpotence criterion does not assume algebraic closedness.
 
 ## Main results
 
-* `LieSubalgebra.isSemisimple_ad_of_isSemisimple_ad`: an element of a Lie subalgebra that is
-  ad-semisimple in the ambient Lie algebra is ad-semisimple in the subalgebra.
 * `LieSubalgebra.mem_of_isNilpotent_of_add_mem`, `LieSubalgebra.mem_of_isSemisimple_of_add_mem`:
   a Killing Lie subalgebra of `𝔤𝔩(V)` contains the Jordan–Chevalley parts of its elements.
 * `LieHom.apply_nilpotentPart_eq`, `LieHom.apply_semisimplePart_eq`: a faithful representation
@@ -79,99 +74,8 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace LieSubalgebra
 
-/-- An element of a Lie subalgebra whose adjoint action on the ambient Lie algebra is semisimple
-also has semisimple adjoint action on the subalgebra. This is the semisimple analogue of
-`LieSubalgebra.isNilpotent_ad_of_isNilpotent_ad`. -/
-theorem isSemisimple_ad_of_isSemisimple_ad {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-    (L' : LieSubalgebra R L) {x : L'} (h : (ad R L x).IsSemisimple) : (ad R L' x).IsSemisimple := by
-  have hp : L'.toSubmodule ∈ (ad R L x).invtSubmodule :=
-    (mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun y hy ↦ L'.lie_mem x.2 hy
-  -- The restriction of `ad x` to `L'` is, elementwise by definition, the adjoint action on `L'`.
-  exact (LinearEquiv.isSemisimple_iff _ _ (LinearEquiv.refl R L') (by ext; rfl)).1 (h.restrict hp)
-
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
-  (L : LieSubalgebra K (Module.End K V))
-
-/-- Every element of `L` preserves each `L`-submodule of `V`. -/
-private theorem apply_mem_of_mem {z : Module.End K V} (hz : z ∈ L) (W : LieSubmodule K L V) :
-    ∀ w ∈ W, z w ∈ W :=
-  fun w hw ↦ by simpa using W.lie_mem (x := ⟨z, hz⟩) hw
-
-/-- Every element of `L` has trace zero on each `L`-submodule of `V`, because `L` is perfect. -/
-private theorem trace_restrict_eq_zero_of_mem [FiniteDimensional K V] [IsKilling K L]
-    {z : Module.End K V} (hz : z ∈ L) (W : LieSubmodule K L V) :
-    LinearMap.trace K W (z.restrict (apply_mem_of_mem L hz W)) = 0 := by
-  -- The restriction of `z` to `W` is, by definition, the action of `z` on the Lie module `W`.
-  have hzW : z.restrict (apply_mem_of_mem L hz W) = toEnd K L W ⟨z, hz⟩ := rfl
-  rw [hzW]
-  refine trace_toEnd_eq_zero_of_mem_lcs K L W le_rfl
-    (derivedSeries_le_lowerCentralSeries K L 1 ?_)
-  rw [TauCeti.derivedSeries_one_eq_top_of_isKilling]
-  exact LieSubmodule.mem_top _
-
-variable [FiniteDimensional K V] [CharZero K] [IsAlgClosed K] [IsKilling K L]
-
-/-- An endomorphism `q` of `V` that commutes with `L`, preserves every `L`-submodule and has trace
-zero on each of them vanishes: by Schur's lemma it is a scalar on each irreducible summand of `V`,
-and the trace condition forces that scalar to be zero. -/
-private theorem eq_zero_of_forall_commute (q : Module.End K V) (hcomm : ∀ z ∈ L, Commute z q)
-    (hinv : ∀ W : LieSubmodule K L V, ∀ w ∈ W, q w ∈ W)
-    (htr : ∀ W : LieSubmodule K L V, LinearMap.trace K W (q.restrict (hinv W)) = 0) :
-    q = 0 := by
-  obtain ⟨k, N, hint, hirr⟩ := TauCeti.exists_isInternal_isIrreducible_of_isKilling K L V
-  suffices h : ∀ i, (N i : Submodule K V) ≤ LinearMap.ker q by
-    rw [← LinearMap.ker_eq_top, eq_top_iff, ← hint.submodule_iSup_eq_top]
-    exact iSup_le h
-  intro i
-  have := hirr i
-  have := LieModule.nontrivial_of_isIrreducible K L (N i)
-  -- The restriction of `q` to the irreducible summand `N i` is a morphism of `L`-modules.
-  let f : N i →ₗ⁅K,L⁆ N i :=
-    { q.restrict (hinv (N i)) with
-      map_lie' := fun {z w} ↦ Subtype.ext <| by
-        simp only [LinearMap.toFun_eq_coe, LieSubmodule.coe_bracket, LinearMap.coe_restrict_apply,
-          coe_bracket_of_module, Module.End.lie_apply]
-        exact congr($((hcomm z z.2).eq) (w : V)).symm }
-  obtain ⟨c, hc⟩ := TauCeti.exists_forall_apply_eq_smul K L (N i) f
-  have hres : q.restrict (hinv (N i)) = c • LinearMap.id := LinearMap.ext hc
-  have hc0 : c = 0 := by
-    have := htr (N i)
-    rw [hres, map_smul, LinearMap.trace_id, smul_eq_mul, mul_eq_zero] at this
-    exact this.resolve_right (Nat.cast_ne_zero.2 Module.finrank_pos.ne')
-  intro v hv
-  simpa [LinearMap.coe_restrict_apply, hc0] using congr(($hres ⟨v, hv⟩ : V))
-
-/-- An endomorphism of `V` that normalizes `L`, preserves every `L`-submodule of `V` and has trace
-zero on each of them lies in `L`. Split it along an `L`-stable complement of `L` in `𝔤𝔩(V)`: the
-complementary component commutes with `L`, so it vanishes by `eq_zero_of_forall_commute`. -/
-private theorem mem_of_forall_lie_mem (y : Module.End K V) (hnorm : ∀ z ∈ L, ⁅y, z⁆ ∈ L)
-    (hinv : ∀ W : LieSubmodule K L V, ∀ w ∈ W, y w ∈ W)
-    (htr : ∀ W : LieSubmodule K L V, LinearMap.trace K W (y.restrict (hinv W)) = 0) : y ∈ L := by
-  obtain ⟨Q, hQ⟩ := TauCeti.exists_isCompl_of_isKilling L.toLieSubmodule
-  obtain ⟨a, ha, q, hq, rfl⟩ :=
-    (LieSubmodule.mem_sup _ _ _).1 (hQ.sup_eq_top ▸ LieSubmodule.mem_top y)
-  have ha' : a ∈ L := ha
-  suffices q = 0 by simpa [this] using ha'
-  have hqW (W : LieSubmodule K L V) (w : V) (hw : w ∈ W) : q w ∈ W := by
-    simpa using W.sub_mem (hinv W w hw) (apply_mem_of_mem L ha' W w hw)
-  refine eq_zero_of_forall_commute L q ?_ hqW fun W ↦ ?_
-  · -- The bracket of `q` with `L` lies in both `L` and `Q`, hence vanishes.
-    intro z hz
-    have hzQ : ⁅z, q⁆ ∈ Q := by simpa using Q.lie_mem (x := ⟨z, hz⟩) hq
-    have hzL : ⁅z, q⁆ ∈ L := by
-      have : ⁅z, q⁆ = -⁅a + q, z⁆ - ⁅z, a⁆ := by
-        rw [add_lie, ← lie_skew z q, ← lie_skew z a]
-        abel
-      rw [this]
-      exact L.sub_mem (L.neg_mem (hnorm z hz)) (L.lie_mem hz ha')
-    have h0 : ⁅z, q⁆ ∈ L.toLieSubmodule ⊓ Q := ⟨(L.mem_toLieSubmodule _).2 hzL, hzQ⟩
-    rw [hQ.inf_eq_bot, LieSubmodule.mem_bot] at h0
-    rwa [LieRing.of_associative_ring_bracket, sub_eq_zero] at h0
-  · have hsplit : q.restrict (hqW W) =
-        (a + q).restrict (hinv W) - a.restrict (apply_mem_of_mem L ha' W) := by
-      ext w
-      simp [LinearMap.coe_restrict_apply]
-    rw [hsplit, map_sub, htr W, trace_restrict_eq_zero_of_mem L ha' W, sub_zero]
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [CharZero K] [IsAlgClosed K] (L : LieSubalgebra K (Module.End K V)) [IsKilling K L]
 
 /-- **A Killing Lie subalgebra of `𝔤𝔩(V)` contains the nilpotent parts of its elements.** Over an
 algebraically closed field of characteristic zero, if `L ⊆ 𝔤𝔩(V)` has nondegenerate Killing form
@@ -214,9 +118,13 @@ namespace LieHom
 
 open TauCeti.LieAlgebra
 
-variable {K L V : Type*} [Field K] [CharZero K] [IsAlgClosed K]
+variable {K L V : Type*} [Field K] [CharZero K]
   [LieRing L] [LieAlgebra K L] [FiniteDimensional K L] [IsKilling K L]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+section IsAlgClosed
+
+variable [IsAlgClosed K]
 
 /-- **A faithful representation carries the internal semisimple part to the Jordan–Chevalley
 semisimple part.** If `ρ` is injective and `ρ x = n + s` is a Jordan–Chevalley decomposition, then
@@ -252,6 +160,7 @@ theorem apply_nilpotentPart_eq (ρ : L →ₗ⁅K⁆ Module.End K V) (hρ : Func
 /-- A faithful finite-dimensional representation of a Killing Lie algebra over an algebraically
 closed field of characteristic zero carries the semisimple part of the internal Jordan
 decomposition to a semisimple endomorphism. -/
+@[simp]
 theorem isSemisimple_apply_semisimplePart (ρ : L →ₗ⁅K⁆ Module.End K V)
     (hρ : Function.Injective ρ) (x : L) : (ρ (semisimplePart K x)).IsSemisimple := by
   obtain ⟨n, hn, s, hs, hn_nil, hs_ss, hx⟩ := (ρ x).exists_isNilpotent_isSemisimple
@@ -270,14 +179,16 @@ theorem isSemisimple_apply_iff_isSemisimple_ad (ρ : L →ₗ⁅K⁆ Module.End 
   rw [← nilpotentPart_eq_zero_iff K, ← hρ.eq_iff, map_zero]
   exact ρ.apply_nilpotentPart_eq hρ (Commute.zero_left _) IsNilpotent.zero h (zero_add _).symm
 
-/-- Under a faithful finite-dimensional representation, an element of a Killing Lie algebra over an
-algebraically closed field of characteristic zero is ad-nilpotent exactly when its image is
-nilpotent. -/
+end IsAlgClosed
+
+/-- Under a faithful finite-dimensional representation, an element of a Killing Lie algebra over a
+field of characteristic zero is ad-nilpotent exactly when its image is nilpotent. -/
 theorem isNilpotent_apply_iff_isNilpotent_ad (ρ : L →ₗ⁅K⁆ Module.End K V)
     (hρ : Function.Injective ρ) (x : L) :
     IsNilpotent (ρ x) ↔ IsNilpotent (ad K L x) := by
   refine ⟨fun h ↦ ?_, TauCeti.isNilpotent_apply_of_isNilpotent_ad⟩
-  rw [← semisimplePart_eq_zero_iff K, ← hρ.eq_iff, map_zero]
-  exact ρ.apply_semisimplePart_eq hρ (Commute.zero_right _) h isSemisimple_zero (add_zero _).symm
+  -- `ad (ρ x)` is nilpotent, and `ρ` carries powers of `ad x` to powers of `ad (ρ x)`.
+  obtain ⟨k, hk⟩ := ad_nilpotent_of_nilpotent (R := K) h
+  exact ⟨k, LinearMap.ext fun y ↦ hρ (by simp [hk])⟩
 
 end LieHom
