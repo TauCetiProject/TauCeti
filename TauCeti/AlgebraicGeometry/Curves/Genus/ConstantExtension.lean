@@ -159,12 +159,11 @@ theorem genus_eq_genus_of_constantCompositum_eq_top_of_algEquiv [IsIntegral X]
     ((algebraMap F F').comp (e.symm : X.functionField →+* F)).toAlgebra
   have : IsScalarTower k X.functionField F' := .of_algebraMap_eq fun c ↦ by
     simp [RingHom.algebraMap_toAlgebra, IsScalarTower.algebraMap_apply k F F']
-  have hX : constantCompositum X.functionField k' F' = ⊤ := by
-    refine IntermediateField.toSubfield_injective ?_
-    rw [IntermediateField.top_toSubfield, ← IntermediateField.top_toSubfield (F := F), ← h,
-      constantCompositum_def, constantCompositum_def, IntermediateField.adjoin_toSubfield,
-      IntermediateField.adjoin_toSubfield, RingHom.algebraMap_toAlgebra, RingHom.coe_comp,
-      RingHom.coe_coe, e.symm.surjective.range_comp]
+  have hrange : (algebraMap X.functionField F').range = (algebraMap F F').range := by
+    ext z
+    simp [RingHom.algebraMap_toAlgebra, e.symm.surjective.exists]
+  have hX : constantCompositum X.functionField k' F' = ⊤ :=
+    (constantCompositum_eq_top_iff_of_range_eq _ k' F' hrange).2 h
   rw [genus_eq_genus_functionField_of_constantCompositum_eq_top (k := k) hX]
   exact genus_eq_of_ringEquiv (RingEquiv.refl k) e.toRingEquiv fun c ↦ e.commutes c
 
