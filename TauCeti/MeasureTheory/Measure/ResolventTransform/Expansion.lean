@@ -61,13 +61,11 @@ private lemma resolvent_add_sum_eq {z : ℂ} (hz : z.im ≠ 0) (x : ℝ) (r : �
       z⁻¹ ^ r * ((x : ℂ) ^ r * resolvent z x) := by
   have hz₀ : z ≠ 0 := fun h ↦ hz (by simp [h])
   have hxz : (x : ℂ) - z ≠ 0 := fun h ↦ hz (by simpa using (congrArg Complex.im h).symm)
+  have hg := geom_sum_mul ((x : ℂ) * z⁻¹) r
+  simp_rw [pow_succ, ← mul_assoc, ← sum_mul, ← mul_pow]
   rw [resolvent, Ring.inverse_eq_inv', coe_algebraMap]
-  induction r with
-  | zero => simp
-  | succ r ih =>
-    rw [sum_range_succ, ← add_assoc, ih]
-    linear_combination -(z⁻¹ ^ (r + 1) * (x : ℂ) ^ r) * mul_inv_cancel₀ hxz -
-      (z⁻¹ ^ r * (x : ℂ) ^ r * ((x : ℂ) - z)⁻¹) * inv_mul_cancel₀ hz₀
+  field_simp at hg ⊢
+  linear_combination hg
 
 /-- **Finite moment expansion of the resolvent transform.** If `μ` is a finite measure on `ℝ`
 with finite `r`th absolute moment and `z` is off the real axis, then
