@@ -244,6 +244,12 @@ theorem mem_smul_submoduleOf_iff {c : ℕ} {v : L} :
   · rintro ⟨w, rfl⟩
     exact ⟨w, w.2, by rw [Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul]⟩
 
+variable (L) in
+/-- For `c : ℕ`, the lattice `cL = (c : ℝ) • L` is contained in `L`. -/
+theorem natCast_smul_le (c : ℕ) : (c : ℝ) • L ≤ L := by
+  rintro _ ⟨w, hw, rfl⟩
+  simpa [Nat.cast_smul_eq_nsmul] using L.nsmul_mem hw c
+
 variable (L) [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
 /-- The quotient `L / cL` of a full lattice of rank `n` has `c ^ n` elements. For `c = 0` this
