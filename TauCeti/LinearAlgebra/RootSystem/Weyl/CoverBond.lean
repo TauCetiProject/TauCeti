@@ -44,8 +44,6 @@ saturated chain of `W / W_λ` are the integers that the description of Lakshmiba
   of a cover is strictly positive**.
 * `TauCeti.exists_nat_reflectionBond_eq_of_minimalCosetRepCovBy`: **the bond of a cover is a
   positive integer** when `λ` is integral.
-* `TauCeti.reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg`: a cover `y ⋖ x` with
-  `⟨x λ, αᵢ^∨⟩ < 0 ≤ ⟨y λ, αᵢ^∨⟩` is given by the simple reflection, `y λ = sᵢ (x λ)`.
 * `TauCeti.exists_mul_sub_eq_intCast_of_minimalCosetRepCovBy`: for a root datum, if `a` times the
   bond of a cover `y ⋖ x` is an integer, then so is `a (f (x λ) - f (y λ))` for every integral
   linear form `f`.
@@ -156,53 +154,6 @@ theorem exists_nat_reflectionBond_eq_of_minimalCosetRepCovBy (hlam : lam ∈ dom
   rw [reflectionBond_eq_coroot' hβ hβx hne, hz] at hpos ⊢
   have hz0 : 0 < z := Int.cast_pos.mp hpos
   exact ⟨z.toNat, by omega, by rw [← Int.cast_natCast, Int.toNat_of_nonneg hz0.le]⟩
-
-/-- **A cover leaving the negative side of a simple wall is the simple reflection.** If `y ⋖ x` is
-a cover of `W / W_λ` and `αᵢ` is a simple root with `⟨x λ, αᵢ^∨⟩ < 0 ≤ ⟨y λ, αᵢ^∨⟩`, then
-`y λ = sᵢ (x λ)`. By the reflection test the minimal representative `v` of `sᵢ x` lies strictly
-below `x`; since `sᵢ` does not shorten `y`, the lifting property gives `y ≤ v`, and the cover
-forces `y = v`. -/
-theorem reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg
-    (hlam : lam ∈ dominantChamber P b) {x y : P.weylGroup}
-    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) (i : b.support)
-    (hx : P.coroot' i (x • lam) < 0) (hy : 0 ≤ P.coroot' i (y • lam)) :
-    P.reflection i (x • lam) = y • lam := by
-  set cs := weylCoxeterSystem P b
-  have hi : b.IsPos i := b.isPos_of_mem_support i.2
-  have hsmul (w : P.weylGroup) :
-      (RootPairing.weylGroup.ofIdx P i * w) • lam = P.reflection i (w • lam) := by
-    rw [mul_smul, RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul]
-  -- The minimal representative `v` of `sᵢ x` lies strictly below `x`.
-  obtain ⟨v, ⟨hv, hvlam⟩, -⟩ :=
-    existsUnique_isMinimalCosetRep_smul_eq hlam (RootPairing.weylGroup.ofIdx P i * x)
-  have hvx := bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_neg hlam hv hvlam hi hx
-  -- `sᵢ` does not shorten `y`: the minimal representative `u` of `sᵢ y` lies above `y`.
-  have hydesc : ¬cs.IsLeftDescent y i := by
-    obtain ⟨u, ⟨hu, hulam⟩, -⟩ :=
-      existsUnique_isMinimalCosetRep_smul_eq hlam (RootPairing.weylGroup.ofIdx P i * y)
-    have hyu : cs.BruhatLE y u := by
-      rcases hy.lt_or_eq with hpos | hzero
-      · exact (bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_pos hlam
-          h.isMinimalCosetRep_left hulam hi hpos).1
-      · obtain rfl := eq_of_isMinimalCosetRep_of_coroot'_eq_zero hlam h.isMinimalCosetRep_left hu
-          hulam hzero.symm
-        exact cs.bruhatLE_refl u
-    have hus := bruhatLE_of_isMinimalCosetRep_of_smul_eq hlam hu hulam
-    rw [CoxeterSystem.IsLeftDescent, weylCoxeterSystem_simple]
-    exact (hyu.trans hus).length_le.not_gt
-  -- By the lifting property `y ≤ sᵢ x`, hence `y ≤ v`.
-  have hysx : cs.BruhatLE y (cs.simple i * x) := by
-    have := h.bruhatLE.inv.bruhatLE_mul_simple (i := i)
-      (by rwa [CoxeterSystem.isRightDescent_inv_iff])
-    rwa [← cs.inv_simple, ← mul_inv_rev, cs.bruhatLE_inv_iff] at this
-  have hyv : cs.BruhatLE y v := by
-    refine h.isMinimalCosetRep_left.bruhatLE_of_bruhatLE_mul cs
-      ((inv_mul_mem_parabolic_wallIndices_iff hlam (u := v)
-        (w := RootPairing.weylGroup.ofIdx P i * x)).mpr hvlam.symm) ?_
-    rwa [mul_inv_cancel_left, ← weylCoxeterSystem_simple]
-  -- The cover forces `v = y`.
-  have hvy := (h.eq_or_eq v hv hyv hvx.1).resolve_right hvx.2
-  rw [← hsmul, ← hvlam, hvy]
 
 omit [P.flip.IsReduced] in
 /-- **A simple reflection off the walls through `λ` covers the identity in `W / W_λ`**: if
