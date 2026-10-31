@@ -208,7 +208,7 @@ variable (f : A) (e : ℕ) (Af Cf : Type*) [CommRing Af] [Algebra A Af] [IsLocal
 
 /-- Localizing the standard cover `A[x]/(x^e − f)` away from `f` gives the standard cover of
 `A_f` along the image of `f`. It composes the base change of `AdjoinRoot`
-(`AdjoinRoot.tensorAlgEquiv`) with the pushout square of the localization. -/
+(`AdjoinRoot.algebraTensorAlgEquiv`) with the pushout square of the localization. -/
 noncomputable def standardTameCoverAwayAlgEquiv :
     standardTameCover Af (algebraMap A Af f) e ≃ₐ[Af] Cf :=
   have : IsLocalization
@@ -216,9 +216,8 @@ noncomputable def standardTameCoverAwayAlgEquiv :
     rw [Algebra.algebraMapSubmonoid, Submonoid.map_powers]
     infer_instance
   have := (Algebra.isPushout_of_isLocalization (.powers f) Af (standardTameCover A f e) Cf).symm
-  (AdjoinRoot.mapAlgEquiv (Algebra.TensorProduct.rid A Af Af) _ _
-      (by simp [Algebra.smul_def])).symm.trans <|
-    (AdjoinRoot.tensorAlgEquiv (T := Af) (X ^ e - C f) _ rfl).symm.trans
+  (AdjoinRoot.mapAlgEquiv AlgEquiv.refl _ _ (.of_eq (by simp))).trans <|
+    (AdjoinRoot.algebraTensorAlgEquiv Af (X ^ e - C f)).symm.trans
       (Algebra.IsPushout.equiv A Af _ Cf)
 
 /-- The isomorphism `A_f[x]/(x^e − f) ≃ A[x]/(x^e − f)_f` sends the root to the root. -/
@@ -226,11 +225,8 @@ noncomputable def standardTameCoverAwayAlgEquiv :
 theorem standardTameCoverAwayAlgEquiv_root :
     standardTameCoverAwayAlgEquiv f e Af Cf (AdjoinRoot.root _) =
       algebraMap (standardTameCover A f e) Cf (AdjoinRoot.root _) := by
-  have h : (AdjoinRoot.tensorAlgEquiv (T := Af) (X ^ e - C f) _ rfl).symm (AdjoinRoot.root _) =
-      (1 : Af) ⊗ₜ[A] AdjoinRoot.root _ := by
-    rw [AlgEquiv.symm_apply_eq, AdjoinRoot.tensorAlgEquiv_root]
   rw [standardTameCoverAwayAlgEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
-    AdjoinRoot.symm_mapAlgEquiv, AdjoinRoot.coe_mapAlgEquiv, AdjoinRoot.map_root, h,
+    AdjoinRoot.coe_mapAlgEquiv, AdjoinRoot.map_root, AdjoinRoot.algebraTensorAlgEquiv_symm_root,
     Algebra.IsPushout.equiv_tmul, map_one, one_mul]
 
 variable {e} in
