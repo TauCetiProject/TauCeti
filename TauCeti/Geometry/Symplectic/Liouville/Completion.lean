@@ -95,8 +95,9 @@ theorem flowOf_notMem (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z
   have hIcc : Icc 0 t ⊆ {τ | (τ, x) ∈ flowDomain Z} := hdom ▸
     ordConnected_maximalIntegralCurveInterval.out (mem_flowDomain.1 (mem_flowDomain_zero hZs x))
       (mem_flowDomain.1 htx)
-  have hlt := (isMIntegralCurveOn_flowOf hZs x).lt_apply_of_le_apply hs hIcc hf
-    (fun y hy ↦ ⟨(hfc y hy).1.mdifferentiableAt (by simp), (hfc y hy).2⟩)
+  have hlt := (isMIntegralCurveOn_flowOf hZs x).lt_apply_of_le_apply hs hIcc
+    (hf.comp_continuousOn ((isMIntegralCurveOn_flowOf hZs x).continuousOn.mono hIcc))
+    (fun τ _ hτ ↦ ⟨(hfc _ hτ).1.mdifferentiableAt (by simp), (hfc _ hτ).2⟩)
     (by rwa [flowOf_zero hZs]) ⟨ht, le_rfl⟩
   exact not_le.2 hlt
 
