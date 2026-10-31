@@ -13,6 +13,7 @@ import Mathlib.Analysis.Complex.IsIntegral
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.NumberTheory.NumberField.Global.Places.Height
 import TauCeti.NumberTheory.NumberField.AdjoinPair
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
@@ -65,6 +66,12 @@ of bounded degree and bounded house.
   lies in the number field `ℚ(α)` of degree `deg α`, with the same house.
 * `NumberField.house_natCast_mul_pow_mul_pow_le`: the house of `c bⁿ αʲ` in a number field is
   at most `(2 b max(1, ⌈α⌉))ⁿ` when `c ≤ 2ⁿ` and `j ≤ n`.
+* `NumberField.one_le_norm_mul_house_pow`: Liouville's inequality, a nonzero algebraic integer
+  `x` of a number field of degree `d` satisfies `1 ≤ ‖σ x‖ ⌈x⌉ᵈ⁻¹` for every complex embedding
+  `σ`.
+* `NumberField.eq_zero_of_norm_le_exp_of_house_le_exp`: Liouville's inequality in exponential
+  form, an element `y` of a number field with `m ^ N y` integral is zero once `‖σ y‖`, `⌈y⌉` and
+  `|m| ^ N` are small enough.
 * `TauCeti.inv_norm_le_pow_mul_house_pow_of_mem_rootSet`,
   `TauCeti.inv_norm_le_natDenominator_pow_mul_house_pow_of_mem_rootSet`,
   `TauCeti.inv_norm_le_natDenominator_pow_mul_house_pow`: every complex conjugate `z` of a
@@ -369,6 +376,45 @@ theorem exists_numberField_of_isIntegral_natCast_mul {α : F} {b : ℕ} (hb : b 
     simpa [IntermediateField.AdjoinSimple.coe_gen] using hbα
   · rw [← house_coe, ← IntermediateField.algebraMap_apply, hα']
 
+/-- **Liouville's inequality** in a number field `K` of degree `d`: a nonzero algebraic integer
+`x ∈ K` satisfies `1 ≤ ‖σ x‖ ⌈x⌉ᵈ⁻¹` for every embedding `σ : K →+* ℂ`, since its norm is a
+nonzero integer. -/
+theorem _root_.NumberField.one_le_norm_mul_house_pow {K : Type*} [Field K] [NumberField K]
+    {x : K} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) (σ : K →+* ℂ) :
+    1 ≤ ‖σ x‖ * NumberField.house x ^ (Module.finrank ℚ K - 1) := by
+  have h1 : (1 : ℝ) ≤ |(Algebra.norm ℚ x : ℝ)| :=
+    NumberField.RingOfIntegers.one_le_abs_norm (α := ⟨x, hx⟩) fun h ↦ h0 (congr_arg Subtype.val h)
+  rw [← Real.norm_eq_abs, Rat.norm_cast_real] at h1
+  exact h1.trans (NumberField.norm_norm_le_norm_mul_house_pow x σ)
+
+/-- **Liouville's inequality in exponential form.** Let `K` be a number field of degree `d`,
+`σ : K →+* ℂ`, `y ∈ K` and `m ≠ 0` an integer with `m ^ N y` an algebraic integer. If
+`‖σ y‖ ≤ exp A`, `⌈y⌉ ≤ exp B` and `|m| ^ N ≤ exp C` with `C + A + (d - 1) (C + B) < 0`,
+then `y = 0`. -/
+theorem _root_.NumberField.eq_zero_of_norm_le_exp_of_house_le_exp {K : Type*} [Field K]
+    [NumberField K] (σ : K →+* ℂ) {y : K} {m : ℤ} (hm : m ≠ 0) {N : ℕ}
+    (hint : IsIntegral ℤ ((m : K) ^ N * y)) {A B C : ℝ} (hσ : ‖σ y‖ ≤ Real.exp A)
+    (hy : NumberField.house y ≤ Real.exp B) (hmC : |(m : ℝ)| ^ N ≤ Real.exp C)
+    (h : C + A + (Module.finrank ℚ K - 1 : ℕ) * (C + B) < 0) :
+    y = 0 := by
+  by_contra hy0
+  have hx0 : (m : K) ^ N * y ≠ 0 := mul_ne_zero (pow_ne_zero _ (Int.cast_ne_zero.2 hm)) hy0
+  have hσx : ‖σ ((m : K) ^ N * y)‖ ≤ Real.exp C * Real.exp A := by
+    rw [map_mul, map_pow, map_intCast, norm_mul, norm_pow, Complex.norm_intCast]
+    exact mul_le_mul hmC hσ (norm_nonneg _) (Real.exp_pos _).le
+  have hhx : NumberField.house ((m : K) ^ N * y) ≤ Real.exp C * Real.exp B := by
+    refine (NumberField.house_mul_le _ _).trans
+      (mul_le_mul ?_ hy (NumberField.house_nonneg _) (Real.exp_pos _).le)
+    rwa [NumberField.house_pow, NumberField.house_intCast, Int.cast_abs]
+  have hlt :
+      Real.exp C * Real.exp A * (Real.exp C * Real.exp B) ^ (Module.finrank ℚ K - 1) < 1 := by
+    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_nat_mul, ← Real.exp_add]
+    exact Real.exp_lt_one_iff.2 (by linarith)
+  refine absurd (lt_of_le_of_lt ?_ hlt) (lt_irrefl 1)
+  exact (NumberField.one_le_norm_mul_house_pow hint hx0 σ).trans <| mul_le_mul hσx
+    (pow_le_pow_left₀ (NumberField.house_nonneg _) hhx _)
+    (pow_nonneg (NumberField.house_nonneg _) _) (by positivity)
+
 /-- A Liouville-type lower bound for the conjugates of a nonzero algebraic number: if `b ≠ 0`
 and `b x` is integral over `ℤ`, then every complex conjugate `z` of `x` satisfies
 `‖z‖⁻¹ ≤ bᵈ ⌈x⌉ᵈ⁻¹`, that is, `‖z‖ ≥ b⁻ᵈ ⌈x⌉¹⁻ᵈ`, where `d` is the degree of `x`. For an
@@ -384,22 +430,18 @@ theorem inv_norm_le_pow_mul_house_pow_of_mem_rootSet {x : F} {b : ℕ} (hb : b �
   rw [hmin] at hz
   obtain ⟨σ, rfl⟩ : ∃ σ : K →+* ℂ, σ α = z := by
     rwa [← NumberField.Embeddings.range_eval_eq_rootSet_minpoly] at hz
-  -- The norm of the nonzero algebraic integer `b α` is a nonzero integer `n`; it is the product
-  -- of `b z` with `d - 1` further conjugates of `b α`, each of modulus at most `b ⌈x⌉`.
-  obtain ⟨n, hn⟩ := IsIntegrallyClosed.isIntegral_iff.mp (Algebra.isIntegral_norm ℚ hint)
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    exact Algebra.norm_ne_zero_iff.mpr (mul_ne_zero (Nat.cast_ne_zero.mpr hb) hα0 : (b : K) * α ≠ 0)
-      (by rw [← hn, map_zero])
-  have hnorm := NumberField.norm_norm_le_norm_mul_house_pow ((b : K) * α) σ
-  rw [← hn, NumberField.house_nat_mul, hhouse, hfin, hmin] at hnorm
+  -- Liouville's inequality for the nonzero algebraic integer `b α`, whose conjugates have modulus
+  -- at most `b ⌈x⌉`.
+  have hnorm := NumberField.one_le_norm_mul_house_pow hint
+    (mul_ne_zero (Nat.cast_ne_zero.mpr hb) hα0) σ
+  rw [NumberField.house_nat_mul, hhouse, hfin, hmin] at hnorm
   have hd : (minpoly ℚ α).natDegree = (minpoly ℚ α).natDegree - 1 + 1 :=
     (Nat.sub_add_cancel (minpoly.natDegree_pos (Algebra.IsIntegral.isIntegral α))).symm
   have hσ : 0 < ‖σ α‖ := norm_pos_iff.mpr ((map_ne_zero σ).mpr hα0)
   rw [hmin, inv_le_iff_one_le_mul₀' hσ]
-  calc (1 : ℝ) ≤ |(n : ℝ)| := by exact_mod_cast Int.one_le_abs hn0
-    _ ≤ b * ‖σ α‖ * (b * house (algebraMap K F α)) ^ ((minpoly ℚ α).natDegree - 1) := by
-      simpa [Int.norm_eq_abs] using hnorm
+  calc (1 : ℝ)
+      ≤ b * ‖σ α‖ * (b * house (algebraMap K F α)) ^ ((minpoly ℚ α).natDegree - 1) := by
+        simpa using hnorm
     _ = _ := by rw [hd, pow_succ, Nat.add_sub_cancel]; ring
 
 /-- The lower bound `‖z‖⁻¹ ≤ den(x)ᵈ ⌈x⌉ᵈ⁻¹` for every complex conjugate `z` of a nonzero
