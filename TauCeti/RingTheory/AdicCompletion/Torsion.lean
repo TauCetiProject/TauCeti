@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.AdicCompletion.Finite

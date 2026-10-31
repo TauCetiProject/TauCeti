@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
-public import Mathlib.RingTheory.AdicCompletion.Exactness
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicCompletion.Pi
 
