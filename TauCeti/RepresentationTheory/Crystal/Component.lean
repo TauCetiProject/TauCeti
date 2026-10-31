@@ -248,38 +248,32 @@ def StrictIso.componentIso (C : c.graph.ConnectedComponent) :
   toEquiv := SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C
   wt_toFun x := ψ.wt_apply x.1
   e_toFun i x := by
-    -- `isoEquivSupp` sends a vertex to its image, so the value below is `ψ x`; the same fact for
-    -- the isomorphism is `StrictIso.componentIso_apply`.
-    have hFx : ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun x).1
-        = ψ x.1 := rfl
-    cases h : c.e i x.1 with
-    | none =>
-      have h₁ : (d.component (ψ.toGraphIso.connectedComponentEquiv C)).e i
-          ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun x) = none := by
-        rw [component_eq_restrict, ← Option.unattach_eq_none_iff]
-        simp only [unattach_restrict_e, hFx, ψ.e_apply, h, Option.map_none]
-      have h₂ : (c.component C).e i x = none := by
-        rw [component_eq_restrict, ← Option.unattach_eq_none_iff]
-        simp only [unattach_restrict_e, h]
-      rw [h₁, h₂, Option.map_none]
-    | some z =>
-      have hz : z ∈ C.supp := C.mem_supp_of_adj_mem_supp x.2 (c.graph_adj_of_e_eq_some h)
-      have h₂ : (c.component C).e i x = some ⟨z, hz⟩ := by
-        rw [component_eq_restrict]
-        exact restrict_e_eq_some_iff.2 h
-      have h₁ : (d.component (ψ.toGraphIso.connectedComponentEquiv C)).e i
-          ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun x)
-            = some ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun
-              ⟨z, hz⟩) := by
-        rw [component_eq_restrict, restrict_e_eq_some_iff]
-        simp only [hFx, ψ.e_apply, h, Option.map_some, Option.some.injEq]
-        rfl
-      rw [h₁, h₂, Option.map_some]
+    -- `isoEquivSupp` acts on vertices as `ψ`, so pushing `Subtype.val` through the required
+    -- equality leaves the ambient compatibility `ψ.e_apply`.
+    have hΦ : ∀ y : ↥C, ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun y).1
+        = ψ y.1 := fun _ => rfl
+    apply Option.map_injective Subtype.val_injective
+    rw [Option.map_map]
+    conv_rhs => rw [Option.map_subtype (g := ψ) (fun x _ => rfl)]
+    change ((d.component (ψ.toGraphIso.connectedComponentEquiv C)).e i
+        ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun x)).unattach
+      = Option.map ψ ((c.component C).e i x).unattach
+    rw [component_eq_restrict, component_eq_restrict, unattach_restrict_e, unattach_restrict_e, hΦ,
+      ψ.e_apply]
 
 /-- The underlying map of `StrictIso.componentIso` sends a vertex `x` of `C` to `ψ x.1`. -/
 @[simp]
 theorem StrictIso.componentIso_apply (C : c.graph.ConnectedComponent) (x : C) :
     (ψ.componentIso C x).1 = ψ x.1 := (rfl)
+
+/-- The underlying map of the inverse of `StrictIso.componentIso` sends a vertex `y` of the target
+component to `ψ.symm y.1`. -/
+@[simp]
+theorem StrictIso.componentIso_symm_apply (C : c.graph.ConnectedComponent)
+    (y : (ψ.toGraphIso.connectedComponentEquiv C)) :
+    ((ψ.componentIso C).symm y).1 = ψ.symm y.1 := by
+  apply EquivLike.injective ψ
+  rw [← StrictIso.componentIso_apply, StrictIso.apply_symm_apply, StrictIso.apply_symm_apply]
 
 end Iso
 
