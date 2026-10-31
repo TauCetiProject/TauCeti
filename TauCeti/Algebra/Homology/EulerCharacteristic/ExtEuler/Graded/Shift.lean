@@ -235,9 +235,13 @@ noncomputable def shiftSourceObjIso (Y : C) (j : ℤ) :
   ((e.powSuccRightIso (j - 1)).app Y).symm ≪≫
     eqToIso (congrArg (fun i : ℤ => (e ^ i).functor.obj Y) (by ring : j - 1 + 1 = j))
 
+-- An equivalence of abelian categories preserves binary products, hence is additive.
+local instance : e.functor.Additive :=
+  CategoryTheory.Functor.additive_of_preserves_binary_products _
+
 section CommRingSource
 
-variable [CommRing k] [Linear k C] [e.functor.Additive] [e.functor.Linear k]
+variable [CommRing k] [Linear k C] [e.functor.Linear k]
 
 /-- Shifting the source of a bigraded `Ext` group lowers its internal degree by one:
 `Ext^{n,j}(X{1}, Y) ≅ Ext^{n,j-1}(X, Y)`. -/
@@ -279,7 +283,7 @@ end CommRingSource
 
 section FieldSource
 
-variable [Field k] [Linear k C] [e.functor.Additive] [e.functor.Linear k]
+variable [Field k] [Linear k C] [e.functor.Linear k]
 variable {k e}
 variable {X Y : C}
 
