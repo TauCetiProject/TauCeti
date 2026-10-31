@@ -56,7 +56,9 @@ theorem hasProjectiveDimensionLT_succ_of_isColimit [Small.{v} R] {c : Cocone F} 
   have hsum (m : ℕ) (hm : n ≤ m) : HasProjectiveDimensionLT (of R (⨁ i, F.obj i)) m :=
     hasProjectiveDimensionLT_of_isColimit_cofan (coproductCoconeIsColimit fun i ↦ F.obj i) m
       fun i ↦ hasProjectiveDimensionLT_of_ge _ n m hm
-  exact (shortExact_telescopeShortComplex F hc).hasProjectiveDimensionLT_X₃ n (hsum n le_rfl)
-    (hsum (n + 1) n.le_succ)
+  have hS := shortExact_telescopeShortComplex F hc
+  rw [← telescopeShortComplex_X₃ F c]
+  exact hS.hasProjectiveDimensionLT_X₃ n (telescopeShortComplex_X₁ F c ▸ hsum n le_rfl)
+    (telescopeShortComplex_X₂ F c ▸ hsum (n + 1) n.le_succ)
 
 end ModuleCat

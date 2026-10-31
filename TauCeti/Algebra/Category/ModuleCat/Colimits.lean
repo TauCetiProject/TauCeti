@@ -181,7 +181,7 @@ theorem telescopeDiff_injective : Function.Injective (telescopeDiff F) := by
 /-- The telescope sequence `⨁ₙ Fₙ → ⨁ₙ Fₙ → c.pt` of a cocone `c` over a sequence of modules
 `F`: the first map is `telescopeDiff F`, the second is induced by the legs of `c`. It is short
 exact when `c` is a colimit cocone (`ModuleCat.shortExact_telescopeShortComplex`). -/
-@[expose, simps] noncomputable def telescopeShortComplex (c : Cocone F) :
+noncomputable def telescopeShortComplex (c : Cocone F) :
     ShortComplex (ModuleCat.{v} R) :=
   ShortComplex.mk (ofHom (telescopeDiff F))
     (ConcreteCategory.ofHom (C := ModuleCat R) (X := of R (⨁ n, F.obj n)) (Y := c.pt)
@@ -189,6 +189,27 @@ exact when `c` is a colimit cocone (`ModuleCat.shortExact_telescopeShortComplex`
     ext : 1
     refine DirectSum.linearMap_ext _ fun n ↦ LinearMap.ext fun x ↦ ?_
     simp
+
+@[simp]
+theorem telescopeShortComplex_X₁ (c : Cocone F) :
+    (telescopeShortComplex F c).X₁ = of R (⨁ n, F.obj n) := (rfl)
+
+@[simp]
+theorem telescopeShortComplex_X₂ (c : Cocone F) :
+    (telescopeShortComplex F c).X₂ = of R (⨁ n, F.obj n) := (rfl)
+
+@[simp]
+theorem telescopeShortComplex_X₃ (c : Cocone F) : (telescopeShortComplex F c).X₃ = c.pt := (rfl)
+
+theorem telescopeShortComplex_f (c : Cocone F) :
+    (telescopeShortComplex F c).f = eqToHom (telescopeShortComplex_X₁ F c) ≫
+      ofHom (telescopeDiff F) ≫ eqToHom (telescopeShortComplex_X₂ F c).symm := (rfl)
+
+theorem telescopeShortComplex_g (c : Cocone F) :
+    (telescopeShortComplex F c).g = eqToHom (telescopeShortComplex_X₂ F c) ≫
+      ConcreteCategory.ofHom (C := ModuleCat R) (X := of R (⨁ n, F.obj n)) (Y := c.pt)
+        (toModule R ℕ c.pt fun n ↦ (c.ι.app n).hom) ≫
+      eqToHom (telescopeShortComplex_X₃ F c).symm := (rfl)
 
 /-- The cocone over `F` with point the cokernel of `telescopeDiff F`, whose legs are the
 summand inclusions followed by the quotient map. -/
