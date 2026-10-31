@@ -6,14 +6,14 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.Basic
-public import TauCeti.GroupTheory.DoubleCoset.Basic
+public import TauCeti.GroupTheory.GroupAction.ConjAct
 
 /-!
 # Moving the base point of a decomposition quotient
 
 `DoubleCoset.DecompQuotient Γ₁ Γ₂ g` is `Γ₁ ⧸ (gΓ₂g⁻¹).subgroupOf Γ₁`, so it depends on `g`
 only through the conjugate `gΓ₂g⁻¹`. The conjugation facts themselves are general subgroup
-theory and live in `TauCeti.GroupTheory.DoubleCoset.Basic`
+theory and live in `TauCeti.GroupTheory.GroupAction.ConjAct`
 (`Subgroup.conjAct_smul_mul_right_of_mem_normalizer` and
 `Subgroup.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer`); this file turns them into
 equivalences of the quotients:
