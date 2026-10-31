@@ -76,15 +76,6 @@ a piece containing it, followed by a chart of that piece. -/
 protected noncomputable def chartedSpace : ChartedSpace H D.toGlueData.glued :=
   TauCeti.chartedSpaceOfIsOpenEmbedding (fun i ↦ D.ι_isOpenEmbedding i) D.ι_jointly_surjective
 
-/-- Every chart of the glued space is the inverse of the canonical inclusion of a piece followed by
-a chart of that piece. -/
-theorem exists_chartAt_chartedSpace_eq (x : D.toGlueData.glued) :
-    ∃ (i : D.J) (y : D.U i), D.toGlueData.ι i y = x ∧
-      haveI : Nonempty (D.U i) := ⟨y⟩
-      @chartAt H _ _ _ (D.chartedSpace H) x =
-        ((D.ι_isOpenEmbedding i).toOpenPartialHomeomorph _).symm.trans (chartAt H y) :=
-  TauCeti.exists_chartAt_chartedSpaceOfIsOpenEmbedding_eq _ D.ι_jointly_surjective x
-
 /-! ### Compatible overlap atlases -/
 
 variable [∀ ij, ChartedSpace H (D.V ij)]
