@@ -68,9 +68,21 @@ private theorem below_inter_subset {n ℓ : ℕ} {i : ι} (hi : lvl i = ℓ) :
     below A lvl i ∩ {j | lvl j ≤ n} ⊆ {j | ℓ + 1 ≤ lvl j ∧ lvl j ≤ n} :=
   fun _ hj ↦ ⟨hi ▸ hj.1.1, hj.2⟩
 
+/-- Replacing the part `s ∩ t` of `s` by `u` moves `s` by at most `u ∪ (s ∩ t)`. -/
+private theorem symmDiff_sdiff_union_subset (s t u : Set X) : ((s \ t) ∪ u) ∆ s ⊆ u ∪ (s ∩ t) := by
+  intro x hx
+  simp only [mem_symmDiff, mem_union, Set.mem_sdiff, mem_inter_iff] at hx ⊢
+  tauto
+
 end Combinatorics
 
 variable {X : Type*} [MeasurableSpace X]
+
+/-- Replacing the part `s ∩ t` of `s` by a disjoint set `u` of the same mass keeps the mass. -/
+private theorem measure_sdiff_union_eq {μ : Measure X} {s t u : Set X} (ht : MeasurableSet t)
+    (hu : MeasurableSet u) (hus : Disjoint u s) (hμu : μ u = μ (s ∩ t)) :
+    μ ((s \ t) ∪ u) = μ s := by
+  rw [measure_union (hus.symm.mono_left sdiff_subset) hu, hμu, measure_sdiff_add_inter _ ht]
 
 section Laminar
 
@@ -182,6 +194,33 @@ private theorem measure_inter_occupied_le_sdiff (hZ : IsAlloc μ A m {j | lvl j 
 
 end Reallocation
 
+omit [Countable ι] in
+/-- From the first stage allocating `i` on, the stages of `i` move by at most twice the demand
+below `i` in total, which is at most `2 * μ (A i)`. -/
+private theorem tsum_measure_symmDiff_stages_le
+    (hm : ∀ i, m i + ∑' j, (below A lvl i).indicator m j ≤ μ (A i)) {Zs : ℕ → ι → Set X}
+    (hZs : ∀ n i, lvl i < n →
+      μ (Zs (n + 1) i ∆ Zs n i) ≤ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j)
+    (i : ι) : ∑' l, μ (Zs (l + 1 + (lvl i + 1)) i ∆ Zs (l + (lvl i + 1)) i) ≤ 2 * μ (A i) :=
+  calc ∑' l, μ (Zs (l + 1 + (lvl i + 1)) i ∆ Zs (l + (lvl i + 1)) i)
+      ≤ ∑' l, 2 * ∑' j, (below A lvl i ∩ {j | lvl j = l + (lvl i + 1)}).indicator m j :=
+        ENNReal.tsum_le_tsum fun l ↦ by
+          have := hZs (l + (lvl i + 1)) i (by omega)
+          rwa [show l + (lvl i + 1) + 1 = l + 1 + (lvl i + 1) by omega] at this
+    _ ≤ ∑' n, 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j :=
+        ENNReal.tsum_comp_le_tsum_of_injective (add_left_injective _)
+          (fun n ↦ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j)
+    _ = 2 * ∑' j, (below A lvl i).indicator m j := by
+        rw [ENNReal.tsum_mul_left, ← ENNReal.tsum_fiberwise _ lvl]
+        refine congrArg (2 * ·) (tsum_congr fun n ↦ ?_)
+        have hfib : lvl ⁻¹' {n} ∩ below A lvl i = below A lvl i ∩ {j | lvl j = n} := by
+          ext j
+          simp [and_comm]
+        rw [tsum_subtype, indicator_indicator, hfib]
+    _ ≤ 2 * μ (A i) := by
+        gcongr
+        exact le_add_self.trans (hm i)
+
 variable [StandardBorelSpace X] [NullSingletonClass μ]
   (hA : ∀ i, MeasurableSet (A i)) (hAfin : ∀ i, μ (A i) ≠ ∞)
   (hlvl : ∀ i j, i ≠ j → lvl i = lvl j → Disjoint (A i) (A j))
@@ -210,6 +249,8 @@ private theorem reallocated_of_succ
   have hW'A {i : ι} (hi : lvl i = ℓ) : W' i ⊆ A i := by
     rw [hW'ℓ hi]
     exact union_subset (sdiff_subset.trans (hZ.subset i (hZi hi))) ((hGsub i hi).trans sdiff_subset)
+  have hGZ {i : ι} (hi : lvl i = ℓ) : Disjoint (G i) (Z i) :=
+    (disjoint_sdiff_left.mono_left (hGsub i hi)).mono_right subset_union_left
   have hGU {i : ι} (hi : lvl i = ℓ) : Disjoint (W' i) (U i) := by
     rw [hW'ℓ hi]
     exact disjoint_union_left.2 ⟨disjoint_sdiff_left,
@@ -235,15 +276,8 @@ private theorem reallocated_of_succ
     · exact hW'A h.symm
     · exact hW'gt h ▸ hW.subset i ⟨h, hi.2⟩
   · rcases hi.1.eq_or_lt with h | h
-    · have hi' := h.symm
-      have hZG : Disjoint (Z i \ U i) (G i) :=
-        Disjoint.mono (sdiff_subset.trans subset_union_left) (hGsub i hi') disjoint_sdiff_right
-      calc μ (W' i) = μ (Z i \ U i) + μ (G i) := by
-            rw [hW'ℓ hi', measure_union hZG (hGm i hi')]
-        _ = μ (Z i \ U i) + μ (Z i ∩ U i) := by rw [hGμ i hi']
-        _ = m i := by
-            rw [measure_sdiff_add_inter _ (measurableSet_occupied hW hi'),
-              hZ.measure_eq i (hZi hi')]
+    · rw [hW'ℓ h.symm, measure_sdiff_union_eq (measurableSet_occupied hW h.symm) (hGm i h.symm)
+        (hGZ h.symm) (hGμ i h.symm), hZ.measure_eq i (hZi h.symm)]
     · exact hW'gt h ▸ hW.measure_eq i ⟨h, hi.2⟩
   · rcases hi.1.eq_or_lt with h | h <;> rcases hj.1.eq_or_lt with h' | h'
     · exact (hlvl i j hij (h.symm.trans h')).mono (hW'A h.symm) (hW'A h'.symm)
@@ -264,14 +298,8 @@ private theorem reallocated_of_succ
   · rcases hi.eq_or_lt with h | h
     · have hi' := h.symm
       calc μ (W' i ∆ Z i) ≤ μ (G i ∪ (Z i ∩ U i)) := by
-            refine measure_mono fun x hx ↦ ?_
-            rw [hW'ℓ hi', mem_symmDiff] at hx
-            rcases hx with ⟨hxZ' | hxG, hxZ⟩ | ⟨hxZ, hxW⟩
-            · exact absurd hxZ'.1 hxZ
-            · exact Or.inl hxG
-            · by_cases hxU : x ∈ U i
-              · exact Or.inr ⟨hxZ, hxU⟩
-              · exact absurd (Or.inl ⟨hxZ, hxU⟩) hxW
+            rw [hW'ℓ hi']
+            exact measure_mono (symmDiff_sdiff_union_subset _ _ _)
         _ ≤ μ (G i) + μ (Z i ∩ U i) := measure_union_le _ _
         _ ≤ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j := by
             rw [hGμ i hi', ← two_mul]
@@ -362,27 +390,9 @@ theorem exists_disjoint_subset_measure_eq_of_laminar [StandardBorelSpace X] (μ 
     simp only [Y, show L + L' + lvl j + (lvl i + 1) = L + L' + lvl i + (lvl j + 1) by omega] at h₁
     exact disjoint_left.1 ((hZs _).1.disjoint (by omega : lvl i < _) (hYlt j _) hij) h₁ h₂
   · -- The stages of `i` change by summable amounts, so they converge almost everywhere.
-    have hsum : ∑' l, μ (Y i (l + 1) ∆ Y i l) ≠ ∞ := by
-      refine ne_top_of_le_ne_top
-        (ENNReal.mul_ne_top (ENNReal.ofNat_ne_top (n := 2)) (hAfin i)) ?_
-      calc ∑' l, μ (Y i (l + 1) ∆ Y i l)
-          ≤ ∑' l, 2 * ∑' j, (below A lvl i ∩ {j | lvl j = l + (lvl i + 1)}).indicator m j :=
-            ENNReal.tsum_le_tsum fun l ↦ by
-              have := (hZs (l + (lvl i + 1))).2 i (by omega)
-              rwa [show l + (lvl i + 1) + 1 = l + 1 + (lvl i + 1) by omega] at this
-        _ ≤ ∑' n, 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j :=
-            ENNReal.tsum_comp_le_tsum_of_injective (add_left_injective _)
-              (fun n ↦ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j)
-        _ = 2 * ∑' j, (below A lvl i).indicator m j := by
-            rw [ENNReal.tsum_mul_left, ← ENNReal.tsum_fiberwise _ lvl]
-            refine congrArg (2 * ·) (tsum_congr fun n ↦ ?_)
-            have hfib : lvl ⁻¹' {n} ∩ below A lvl i = below A lvl i ∩ {j | lvl j = n} := by
-              ext j
-              simp [and_comm]
-            rw [tsum_subtype, indicator_indicator, hfib]
-        _ ≤ 2 * μ (A i) := by
-            gcongr
-            exact le_add_self.trans (hm' i)
+    have hsum : ∑' l, μ (Y i (l + 1) ∆ Y i l) ≠ ∞ :=
+      ne_top_of_le_ne_top (ENNReal.mul_ne_top (ENNReal.ofNat_ne_top (n := 2)) (hAfin i))
+        (tsum_measure_symmDiff_stages_le hm' (fun n ↦ (hZs n).2) i)
     have h := tendsto_measure_of_ae_tendsto_indicator atTop
       (MeasurableSet.measurableSet_liminf (hYm i)) (hYm i) (hA i) (hAfin i)
       (.of_forall fun l ↦ (hZs _).1.subset i (hYlt i l))
