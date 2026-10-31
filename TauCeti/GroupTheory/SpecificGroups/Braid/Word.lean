@@ -214,6 +214,13 @@ theorem levelAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.levelAt k = none := by
 theorem levelAt_ne_none_iff {k : ℕ} : w.levelAt k ≠ none ↔ k < w.length := by
   simp [levelAt]
 
+/-- A position carries level `l` exactly when it holds a letter of level `l`. -/
+theorem levelAt_eq_some_iff {k l : ℕ} :
+    w.levelAt k = some l ↔ ∃ hk : k < w.length, (w[k].1 : ℕ) = l := by
+  refine ⟨fun h ↦ ?_, fun ⟨hk, h⟩ ↦ h ▸ w.levelAt_of_lt hk⟩
+  have hk : k < w.length := (levelAt_ne_none_iff w).1 (by simp [h])
+  exact ⟨hk, Option.some_inj.1 ((w.levelAt_of_lt hk).symm.trans h)⟩
+
 /-- The sign of a letter of the word. -/
 @[simp]
 theorem signAt_of_lt {k : ℕ} (hk : k < w.length) : w.signAt k = (w[k].2 : ℤ) := by
@@ -223,6 +230,12 @@ theorem signAt_of_lt {k : ℕ} (hk : k < w.length) : w.signAt k = (w[k].2 : ℤ)
 @[simp]
 theorem signAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.signAt k = 0 := by
   simp [signAt, hk]
+
+/-- Every letter of the word has sign `1` or `-1`. -/
+theorem signAt_eq_one_or_eq_neg_one {k : ℕ} (hk : k < w.length) :
+    w.signAt k = 1 ∨ w.signAt k = -1 := by
+  rw [signAt_of_lt w hk]
+  rcases Int.units_eq_one_or w[k].2 with h | h <;> simp [h]
 
 /-- Stabilization keeps the level of every letter of the original word. -/
 @[simp]

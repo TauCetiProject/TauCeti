@@ -20,8 +20,9 @@ that action to their additive form. The underlying action is defined for coalgeb
 
 ## Main declarations
 
-* `TauCeti.ScalarAut.groupLikeMap_smul`: the induced map on group-like elements is equivariant.
 * `TauCeti.ScalarAut.instGroupLikeDistribMulAction`: the induced action on group-like elements.
+* `BialgHom.mapGroupLike_baseChangeMap_smul`: the map on group-like elements induced by a
+  scalar-extended bialgebra morphism is equivariant.
 * `BialgHom.map_smul_iff_groupLike`: equivariance can be checked on spanning group-like elements.
 -/
 
@@ -50,17 +51,6 @@ noncomputable instance instGroupLikeDistribMulAction :
     apply _root_.GroupLike.val_injective
     simp only [val_smul, _root_.GroupLike.val_mul, smul_def, map_mul]
 
-/-- The map on group-like elements induced by scalar extension is equivariant for scalar
-automorphisms. -/
-@[simp]
-theorem groupLikeMap_smul {B : Type*} [Semiring B] [Bialgebra K B] (f : A →ₐc[K] B)
-    (σ : L ≃ₐ[K] L) (x : _root_.GroupLike L (L ⊗[K] A)) :
-    GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id L L) f) (σ • x) =
-      σ • GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id L L) f) x := by
-  apply _root_.GroupLike.val_injective
-  simp only [GroupLike.val_map, val_smul]
-  exact baseChangeMap_smul (f : A →ₐ[K] B) σ x.val
-
 end ScalarAut
 
 end TauCeti
@@ -70,6 +60,17 @@ namespace BialgHom
 variable {k L A B : Type*} [CommSemiring k] [CommSemiring L] [Algebra k L]
   [Semiring A] [Bialgebra k A] [Semiring B] [Bialgebra k B]
 
+/-- The map on group-like elements induced by scalar extension is equivariant for scalar
+automorphisms. -/
+@[simp]
+theorem mapGroupLike_baseChangeMap_smul (f : A →ₐc[k] B) (σ : L ≃ₐ[k] L)
+    (x : GroupLike L (L ⊗[k] A)) :
+    (Bialgebra.TensorProduct.map (BialgHom.id L L) f).mapGroupLike (σ • x) =
+      σ • (Bialgebra.TensorProduct.map (BialgHom.id L L) f).mapGroupLike x := by
+  apply GroupLike.val_injective
+  simp only [val_mapGroupLike, TauCeti.ScalarAut.val_smul]
+  exact TauCeti.ScalarAut.baseChangeMap_smul (f : A →ₐ[k] B) σ x.val
+
 /-- A map out of a scalar extension spanned by group-like elements commutes with a scalar
 automorphism exactly when its restriction to group-like elements does. -/
 theorem map_smul_iff_groupLike (f : L ⊗[k] A →ₐc[L] L ⊗[k] B)
@@ -78,7 +79,7 @@ theorem map_smul_iff_groupLike (f : L ⊗[k] A →ₐc[L] L ⊗[k] B)
     (σ : L ≃ₐ[k] L) :
     (∀ x, f (σ • x) = σ • f x) ↔
       ∀ x : GroupLike L (L ⊗[k] A),
-        TauCeti.GroupLike.map f (σ • x) = σ • TauCeti.GroupLike.map f x := by
+        f.mapGroupLike (σ • x) = σ • f.mapGroupLike x := by
   constructor
   · intro h x
     apply GroupLike.val_injective
@@ -89,7 +90,7 @@ theorem map_smul_iff_groupLike (f : L ⊗[k] A →ₐc[L] L ⊗[k] B)
       apply LinearMap.ext_on_range hA
       intro x
       simpa only [LinearMap.comp_apply, BialgHom.coe_toLinearMap,
-        TauCeti.ScalarAut.semilinearMap_apply, TauCeti.GroupLike.val_map,
+        TauCeti.ScalarAut.semilinearMap_apply, BialgHom.val_mapGroupLike,
         TauCeti.ScalarAut.val_smul] using congrArg GroupLike.val (h x)
     intro x
     simpa only [LinearMap.comp_apply, BialgHom.coe_toLinearMap,

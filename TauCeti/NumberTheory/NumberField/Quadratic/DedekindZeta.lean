@@ -54,6 +54,8 @@ stated in each of these three cases.
 
 * `TauCeti.NumberField.normCoeff_one_eq_zetaMul`: the ideal-counting coefficients of `ζ_K` are
   the Dirichlet convolution `ζ * χ_D` (Mathlib's `DirichletCharacter.zetaMul`).
+* `TauCeti.NumberField.dedekindZetaCoeff_eq_sum_divisors`: the number of ideals of norm `n ≠ 0`
+  is `∑_{d ∣ n} χ_D(d)`.
 * `TauCeti.NumberField.dedekindZeta_eq_riemannZeta_mul_LFunction`: `ζ_K(s) = ζ(s) L(s, χ_D)`
   on `Re s > 1`.
 * `TauCeti.NumberField.dedekindZeta_residue_eq_LFunction_one`: the residue of `ζ_K` at `1` is
@@ -168,16 +170,28 @@ theorem normCoeff_one_eq_zetaMul :
     normCoeff K 1 = DirichletCharacter.zetaMul
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) := by
-  have hmul : (normCoeff K (1 : IdealArithmeticFunction K)).IsMultiplicative := by
-    rw [normCoeff_eq_eulerProduct isMultiplicative_one]
-    exact isMultiplicative_eulerProduct rfl
-  refine (ArithmeticFunction.IsMultiplicative.eq_iff_eq_on_prime_powers _ hmul _
+  refine (ArithmeticFunction.IsMultiplicative.eq_iff_eq_on_prime_powers _
+    isMultiplicative_one.normCoeff _
     (DirichletCharacter.isMultiplicative_zetaMul _)).mpr fun p k hp ↦ ?_
   have := Fact.mk hp
   rw [normCoeff_one_apply_prime_pow hK, DirichletCharacter.zetaMul,
     ArithmeticFunction.coe_zeta_mul_apply, Nat.sum_divisors_prime_pow hp]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp [toArithmeticFunction, hp.ne_zero]
+
+/-- **The number of ideals of a given norm in a quadratic field.** If `K` is a quadratic field of
+discriminant `D`, the number `dedekindZetaCoeff K n` of ideals of `𝓞 K` of norm `n ≠ 0` is
+`∑_{d ∣ n} χ_D(d)`. -/
+theorem dedekindZetaCoeff_eq_sum_divisors {n : ℕ} (hn : n ≠ 0) :
+    (dedekindZetaCoeff K n : ℤ) =
+      ∑ d ∈ n.divisors, fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) d := by
+  have h := congr($(normCoeff_one_eq_zetaMul hK) n)
+  simp only [normCoeff_one_apply, hn, ↓reduceIte] at h
+  apply Int.cast_injective (α := ℂ)
+  rw [Int.cast_natCast, h]
+  simp only [DirichletCharacter.zetaMul, ArithmeticFunction.coe_zeta_mul_apply, Int.cast_sum]
+  refine Finset.sum_congr rfl fun d hd ↦ ?_
+  simp [toArithmeticFunction, Nat.ne_of_gt (Nat.pos_of_mem_divisors hd)]
 
 /-- **The Dedekind zeta function of a quadratic field factors as `ζ(s) L(s, χ_D)`** on the
 half-plane `Re s > 1`, where `χ_D` is the complex quadratic character of the discriminant `D`

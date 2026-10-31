@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Set.Card
 
 /-!
-# Cardinalities of images, of complements and of preimages under division
+# Cardinalities of images, of complements, of preimages under division and of sigma fibres
 
 Two maps on a common index type that identify the same pairs of indices take equally many values
 on every set of indices (`Set.encard_image_eq_encard_image_of_eq_iff`): the second map factors
@@ -21,6 +21,9 @@ repeat each term `n` times, such as the singular values of a block sum of `n` co
 
 Adding a fresh element to a set removes one element from its complement
 (`Set.encard_compl_insert_add_one`).
+
+The points of the range of an injective map `φ` into a sigma type that lie in the fibre over `i`
+are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`).
 
 The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` on infinite sets,
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
@@ -52,6 +55,22 @@ theorem encard_compl_insert_add_one {α : Type*} {s : Set α} {x : α} (hx : x �
     (insert x s)ᶜ.encard + 1 = sᶜ.encard := by
   rw [← encard_sdiff_singleton_add_one (mem_compl hx), insert_eq, compl_union, sdiff_eq,
     inter_comm]
+
+/-- The points of the range of an injective map into a sigma type lying over the index `i` are
+counted by the arguments mapped over `i`. -/
+theorem ncard_preimage_sigmaMk_range {κ α : Type*} {Y : κ → Type*}
+    {φ : α → Σ i, Y i} (hφ : Function.Injective φ) (i : κ) :
+    (Sigma.mk i ⁻¹' range φ).ncard = {a | (φ a).1 = i}.ncard := by
+  have himage : range φ ∩ range (Sigma.mk i) = φ '' {a | (φ a).1 = i} := by
+    rw [range_sigmaMk]
+    ext z
+    constructor
+    · rintro ⟨⟨a, rfl⟩, hi⟩
+      exact ⟨a, hi, rfl⟩
+    · rintro ⟨a, hi, rfl⟩
+      exact ⟨⟨a, rfl⟩, hi⟩
+  rw [← preimage_inter_range, ncard_preimage_of_injective_subset_range sigma_mk_injective
+    inter_subset_right, himage, ncard_image_of_injective _ hφ]
 
 /-- The preimage of a set `S ⊆ ℕ` under `i ↦ i / n` has `n` times as many elements as `S`. Both
 sides are `0` when `S` is infinite or `n = 0`. -/
