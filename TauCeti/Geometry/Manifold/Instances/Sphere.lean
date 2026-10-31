@@ -20,6 +20,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -199,11 +200,10 @@ theorem stereographic'_eq_zero_iff {v x : sphere (0 : E) 1} (hx : x ≠ v) :
 /-- The complements of two antipodal points cover the sphere. -/
 theorem compl_singleton_sup_compl_singleton_neg_eq_top (v : sphere (0 : E) 1) :
     (⟨{v}ᶜ, isOpen_compl_singleton⟩ ⊔ ⟨{-v}ᶜ, isOpen_compl_singleton⟩ :
-      Opens (sphere (0 : E) 1)) = ⊤ :=
-  eq_top_iff.mpr fun x _ ↦ by
-    by_cases hx : x = v
-    · exact Opens.mem_sup.mpr (Or.inr (show x ≠ -v from hx ▸ ne_neg_of_mem_unit_sphere ℝ v))
-    · exact Opens.mem_sup.mpr (Or.inl hx)
+      Opens (sphere (0 : E) 1)) = ⊤ := by
+  have := HasUniqueDiv.of_isTorsionFree ℝ E
+  ext1
+  simpa using compl_singleton_union_compl_singleton_neg one_ne_zero v
 
 /-- Stereographic projection from `v`, as a smooth diffeomorphism from the sphere minus `v` onto the
 model space `ℝⁿ`. -/
