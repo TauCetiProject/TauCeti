@@ -75,14 +75,6 @@ private theorem exists_eq_smul_tmul_self (t : I ⊗[V] I) :
     rw [tmul_self_eq_pow_smul (z := ⟨w, hw⟩) ha, tmul_self_eq_pow_smul (z := ⟨w, hw⟩) hb,
       smul_smul, smul_smul, add_smul]
 
-/-- Under condition (A), the cyclic submodules of `I` form a directed family. -/
-private theorem directed_span_singleton : Directed (· ≤ ·) fun y : I ↦ V ∙ y := by
-  intro y y'
-  obtain ⟨w, hw, ⟨a, ha⟩, ⟨b, hb⟩⟩ := hdir y y.2 y' y'.2
-  refine ⟨⟨w, hw⟩, ?_, ?_⟩ <;> dsimp only <;> rw [span_singleton_le_iff_mem, mem_span_singleton]
-  · exact ⟨a, Subtype.ext (by simp [ha, mul_comm])⟩
-  · exact ⟨b, Subtype.ext (by simp [hb, mul_comm])⟩
-
 /-- Under condition (A), the elements of `J • I`, for `J` the annihilator of `z ∈ I`, have the
 form `j * w` with `j * z = 0` and `w ∈ I` a divisor of `z`. -/
 private theorem exists_mul_of_mem_torsionOf_smul_top (z : I) {u : I}
@@ -116,7 +108,7 @@ private theorem exists_tmul_self_eq_smul_of_smul_eq_zero (hI : IsIdempotentElem 
   obtain ⟨Q, hPQ, ⟨S, rfl⟩, hQ⟩ :=
     TensorProduct.eq_zero_of_fg_of_subtype_eq_zero (fg_span_singleton x) ht₀
   -- By condition (A), `Q` lies in a cyclic submodule `V ∙ z` of `I`, and `x = a • z`.
-  obtain ⟨z, hz⟩ := (directed_span_singleton hdir).finset_le S
+  obtain ⟨z, hz⟩ := (Ideal.directed_span_singleton_of_exists_dvd hdir).finset_le S
   have hQz : span V (S : Set I) ≤ V ∙ z :=
     span_le.mpr fun y hy ↦ hz y hy (mem_span_singleton_self y)
   have hPz := hPQ.trans hQz

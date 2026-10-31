@@ -22,6 +22,10 @@ unions of principal ideals, the input of the basic setups of almost mathematics.
 
 ## Main results
 
+* `Submodule.exists_eq_smul_of_directed`: in a locally cyclic module, every finite family is a
+  family of multiples of one element.
+* `Ideal.directed_span_singleton_of_exists_dvd`: an ideal in which any two elements have a common
+  divisor in the ideal is a locally cyclic module.
 * `Module.Flat.iff_forall_smul_eq_zero_of_directed`: a locally cyclic module is flat if and only
   if every relation `r • x = 0` is trivial.
 
@@ -33,12 +37,12 @@ unions of principal ideals, the input of the basic setups of almost mathematics.
 
 public section
 
-namespace Module.Flat
-
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
+namespace Submodule
+
 /-- In a locally cyclic module, every finite family is a family of multiples of one element. -/
-private theorem exists_eq_smul_of_directed (h : Directed (· ≤ ·) fun x : M ↦ R ∙ x)
+theorem exists_eq_smul_of_directed (h : Directed (· ≤ ·) fun x : M ↦ R ∙ x)
     {ι : Type*} [Finite ι] (x : ι → M) : ∃ (z : M) (a : ι → R), ∀ i, x i = a i • z := by
   classical
   have := Fintype.ofFinite ι
@@ -47,6 +51,25 @@ private theorem exists_eq_smul_of_directed (h : Directed (· ≤ ·) fun x : M �
     hz (x i) (Finset.mem_image_of_mem x (Finset.mem_univ i)) (Submodule.mem_span_singleton_self _)
   choose a ha using fun i ↦ Submodule.mem_span_singleton.mp (hmem i)
   exact ⟨z, a, fun i ↦ (ha i).symm⟩
+
+end Submodule
+
+namespace Ideal
+
+/-- An ideal in which any two elements have a common divisor in the ideal is locally cyclic: its
+cyclic submodules form a directed family. -/
+theorem directed_span_singleton_of_exists_dvd {I : Ideal R}
+    (hdir : ∀ x ∈ I, ∀ y ∈ I, ∃ z ∈ I, z ∣ x ∧ z ∣ y) : Directed (· ≤ ·) fun y : I ↦ R ∙ y := by
+  intro y y'
+  obtain ⟨w, hw, ⟨a, ha⟩, ⟨b, hb⟩⟩ := hdir y y.2 y' y'.2
+  refine ⟨⟨w, hw⟩, ?_, ?_⟩ <;> dsimp only <;> rw [Submodule.span_singleton_le_iff_mem,
+    Submodule.mem_span_singleton]
+  · exact ⟨a, Subtype.ext (by simp [ha, mul_comm])⟩
+  · exact ⟨b, Subtype.ext (by simp [hb, mul_comm])⟩
+
+end Ideal
+
+namespace Module.Flat
 
 /-- A locally cyclic module is flat if and only if every relation `r • x = 0` is trivial: `x` is
 a multiple `d • y` with `r * d = 0` (equational criterion for flatness). -/
@@ -57,14 +80,14 @@ theorem iff_forall_smul_eq_zero_of_directed (h : Directed (· ≤ ·) fun x : M 
   · intro _ r x hrx
     obtain ⟨k, a, y, hxy, hay⟩ :=
       isTrivialRelation_of_sum_smul_eq_zero (f := fun _ : Unit ↦ r) (x := fun _ ↦ x) (by simpa)
-    obtain ⟨z, b, hb⟩ := exists_eq_smul_of_directed h y
+    obtain ⟨z, b, hb⟩ := Submodule.exists_eq_smul_of_directed h y
     refine ⟨∑ j, a () j * b j, z, ?_, ?_⟩
     · simp [hxy (), hb, Finset.sum_smul, mul_smul]
     · have hay' (j : Fin k) : r * a () j = 0 := by simpa using hay j
       simp [Finset.mul_sum, ← mul_assoc, hay']
   · intro htriv
     refine of_forall_isTrivialRelation fun {l f x} hfx ↦ ?_
-    obtain ⟨z, a, ha⟩ := exists_eq_smul_of_directed h x
+    obtain ⟨z, a, ha⟩ := Submodule.exists_eq_smul_of_directed h x
     have hz : (∑ i, f i * a i) • z = 0 := by
       simpa [ha, Finset.sum_smul, mul_smul] using hfx
     obtain ⟨d, y, rfl, hd⟩ := htriv _ z hz
