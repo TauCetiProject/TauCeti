@@ -54,6 +54,8 @@ kernel-product continuity results are new.
 * `TauCeti.NovikovModule.tendsto_nhds_iff`: convergence means eventual agreement of the
   coefficients above every potential cutoff.
 * The instances `T2Space`, `CompleteSpace`, `NonarchimedeanAddGroup` and `ContinuousConstSMul`.
+* `TauCeti.NovikovModule.continuous_of_forall_mem_potentialFiltration`: an additive map sending
+  some `U_D` into each `U_E` is continuous.
 * `TauCeti.NovikovModule.denseRange_ofFinsupp`: finite combinations are dense.
 * `TauCeti.NovikovModule.continuousSMul_module`: the Novikov scalar action is continuous.
 * `TauCeti.NovikovModule.continuous_kernelMap`: kernel maps are continuous.
@@ -221,6 +223,18 @@ instance : T2Space (NovikovModule R F) :=
     exact ⟨_, potentialFiltration_mem_nhds_zero (F s - 1), fun ha' =>
       hs (ha' s (sub_one_lt _))⟩
 
+/-- An additive map between completed combinations is continuous for the potential-cutoff
+topologies when, for every cutoff `E`, it sends some `U_D` into `U_E`. -/
+theorem continuous_of_forall_mem_potentialFiltration {S' 𝓕 : Type*} {F' : S' → ℝ}
+    [FunLike 𝓕 (NovikovModule R F) (NovikovModule R F')]
+    [AddMonoidHomClass 𝓕 (NovikovModule R F) (NovikovModule R F')] (f : 𝓕)
+    (hf : ∀ E, ∃ D, ∀ a ∈ potentialFiltration R F D, f a ∈ potentialFiltration R F' E) :
+    Continuous f :=
+  continuous_of_continuousAt_zero f <| by
+    rw [ContinuousAt, map_zero]
+    exact (hasBasis_nhds_zero.tendsto_iff hasBasis_nhds_zero).2 fun E _ =>
+      (hf E).imp fun _ hD => ⟨trivial, hD⟩
+
 /-- The potential-cutoff topology is nonarchimedean: the open subgroups `U_C` form a basis of
 neighbourhoods of `0`. -/
 instance : NonarchimedeanAddGroup (NovikovModule R F) where
@@ -231,11 +245,11 @@ instance : NonarchimedeanAddGroup (NovikovModule R F) where
 /-- Multiplication by a fixed ground-ring scalar is continuous in the potential-cutoff
 topology. -/
 instance : ContinuousConstSMul R (NovikovModule R F) where
-  continuous_const_smul c := by
-    refine continuous_of_continuousAt_zero (DistribSMul.toAddMonoidHom (NovikovModule R F) c) ?_
-    rw [ContinuousAt, map_zero]
-    exact (hasBasis_nhds_zero.tendsto_iff hasBasis_nhds_zero).2 fun C _ =>
-      ⟨C, trivial, fun _ ha => smul_mem_potentialFiltration c ha⟩
+  continuous_const_smul c :=
+    (continuous_of_forall_mem_potentialFiltration
+      (DistribSMul.toAddMonoidHom (NovikovModule R F) c) fun C =>
+        ⟨C, fun _ ha => smul_mem_potentialFiltration c ha⟩).congr
+      (DistribSMul.toAddMonoidHom_apply _ c)
 
 /-- The coefficient of a completed combination at a generator is locally constant in the
 potential-cutoff topology. -/
@@ -373,11 +387,8 @@ theorem kernelMap_mem_potentialFiltration {D : ℝ} {a : NovikovModule R F₁}
 /-- A kernel map is continuous for the potential-cutoff topologies. -/
 @[fun_prop]
 theorem continuous_kernelMap : Continuous (kernelMap hm hmfin) :=
-  continuous_of_continuousAt_zero _ <| by
-    rw [ContinuousAt, map_zero]
-    exact (hasBasis_nhds_zero.tendsto_iff hasBasis_nhds_zero).2 fun D _ =>
-      ⟨D - C, trivial, fun a ha => by
-        simpa using kernelMap_mem_potentialFiltration hm hmfin ha⟩
+  continuous_of_forall_mem_potentialFiltration _ fun D =>
+    ⟨D - C, fun a ha => by simpa using kernelMap_mem_potentialFiltration hm hmfin ha⟩
 
 end KernelMap
 
@@ -398,26 +409,22 @@ theorem kernelProduct_mem_potentialFiltration {D₁ D₂ : ℝ} {a : NovikovModu
 /-- A kernel product is continuous in its second input for the potential-cutoff topologies. -/
 @[fun_prop]
 theorem continuous_kernelProduct_right (a : NovikovModule R F₁) :
-    Continuous (kernelProduct hn hfin a) :=
-  continuous_of_continuousAt_zero _ <| by
-    obtain ⟨A, hA⟩ := exists_mem_potentialFiltration a
-    rw [ContinuousAt, map_zero]
-    exact (hasBasis_nhds_zero.tendsto_iff hasBasis_nhds_zero).2 fun D _ =>
-      ⟨D - A - C, trivial, fun b hb => by
-        simpa using monotone_potentialFiltration (le_of_eq (by ring))
-          (kernelProduct_mem_potentialFiltration hn hfin hA hb)⟩
+    Continuous (kernelProduct hn hfin a) := by
+  obtain ⟨A, hA⟩ := exists_mem_potentialFiltration a
+  exact continuous_of_forall_mem_potentialFiltration _ fun D =>
+    ⟨D - A - C, fun b hb => monotone_potentialFiltration (le_of_eq (by ring))
+      (kernelProduct_mem_potentialFiltration hn hfin hA hb)⟩
 
 /-- A kernel product is continuous in its first input for the potential-cutoff topologies. -/
 @[fun_prop]
 theorem continuous_kernelProduct_left (b : NovikovModule R F₂) :
-    Continuous fun a => kernelProduct hn hfin a b :=
-  continuous_of_continuousAt_zero ((kernelProduct hn hfin).flip b) <| by
-    obtain ⟨B, hB⟩ := exists_mem_potentialFiltration b
-    rw [ContinuousAt, map_zero]
-    exact (hasBasis_nhds_zero.tendsto_iff hasBasis_nhds_zero).2 fun D _ =>
-      ⟨D - B - C, trivial, fun a ha => by
-        simpa using monotone_potentialFiltration (le_of_eq (by ring))
-          (kernelProduct_mem_potentialFiltration hn hfin ha hB)⟩
+    Continuous fun a => kernelProduct hn hfin a b := by
+  obtain ⟨B, hB⟩ := exists_mem_potentialFiltration b
+  refine (continuous_of_forall_mem_potentialFiltration ((kernelProduct hn hfin).flip b)
+    fun D => ⟨D - B - C, fun a ha => ?_⟩).congr fun a => LinearMap.flip_apply _ _ _
+  rw [LinearMap.flip_apply]
+  exact monotone_potentialFiltration (le_of_eq (by ring))
+    (kernelProduct_mem_potentialFiltration hn hfin ha hB)
 
 /-- A kernel product is jointly continuous in its two inputs for the potential-cutoff
 topologies. -/
@@ -425,17 +432,17 @@ topologies. -/
 theorem continuous_kernelProduct :
     Continuous fun p : NovikovModule R F₁ × NovikovModule R F₂ =>
       kernelProduct hn hfin p.1 p.2 := by
+  -- `continuous_of_continuousAt_zero₂` needs the product as a bundled `→+` of `→+`.
   let B := LinearMap.toAddMonoidHom'.comp (kernelProduct hn hfin).toAddMonoidHom
-  have hB : ∀ a b, B a b = kernelProduct hn hfin a b := fun _ _ => rfl
-  refine continuous_of_continuousAt_zero₂ B ?_
-    (fun a => (continuous_kernelProduct_right hn hfin a).continuousAt)
-    (fun b => (continuous_kernelProduct_left hn hfin b).continuousAt)
-  rw [ContinuousAt, nhds_prod_eq]
-  change Tendsto _ _ (𝓝 (B 0 0))
-  rw [map_zero]
-  exact ((hasBasis_nhds_zero.prod hasBasis_nhds_zero).tendsto_iff hasBasis_nhds_zero).2
-    fun D _ => ⟨((D - C) / 2, (D - C) / 2), ⟨trivial, trivial⟩, fun p hp => by
-      simpa [hB, add_halves] using kernelProduct_mem_potentialFiltration hn hfin hp.1 hp.2⟩
+  have hB : ∀ a, ⇑(B a) = kernelProduct hn hfin a := fun a => by simp [B]
+  have h0 : Tendsto (fun p : NovikovModule R F₁ × NovikovModule R F₂ =>
+      kernelProduct hn hfin p.1 p.2) (𝓝 (0, 0)) (𝓝 0) :=
+    ((hasBasis_nhds_zero.prod_nhds hasBasis_nhds_zero).tendsto_iff hasBasis_nhds_zero).2
+      fun D _ => ⟨((D - C) / 2, (D - C) / 2), ⟨trivial, trivial⟩, fun p hp => by
+        simpa [add_halves] using kernelProduct_mem_potentialFiltration hn hfin hp.1 hp.2⟩
+  simpa only [hB] using continuous_of_continuousAt_zero₂ B (by simpa [ContinuousAt, hB] using h0)
+    (fun a => by simpa only [hB] using (continuous_kernelProduct_right hn hfin a).continuousAt)
+    (fun b => by simpa only [hB] using (continuous_kernelProduct_left hn hfin b).continuousAt)
 
 end KernelProduct
 
