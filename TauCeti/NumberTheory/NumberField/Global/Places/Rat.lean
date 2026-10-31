@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import Mathlib.NumberTheory.Ostrowski
-public import TauCeti.NumberTheory.NumberField.SUnits.Rat.Basic
+public import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.Analysis.AbsoluteValue.Equivalence
 
 /-!
@@ -21,6 +22,9 @@ Ridout's theorem.
 Ostrowski's theorem supplies equivalence with a `p`-adic absolute value. The known value at
 the rational prime generating the place's maximal ideal then fixes the prime and exponent.
 The inverse dictionary uses `primesEquiv.symm` to supply the corresponding finite place.
+The local-value formulas `Rat.HeightOneSpectrum.finitePlace_mk_natGenerator` and
+`Rat.HeightOneSpectrum.finitePlace_mk_inv_natGenerator` evaluate a place at its generating prime
+and its inverse.
 
 ## References
 
@@ -33,7 +37,26 @@ The inverse dictionary uses `primesEquiv.symm` to supply the corresponding finit
 
 public section
 
-open NumberField Rat.HeightOneSpectrum
+open IsDedekindDomain NumberField Rat.HeightOneSpectrum
+
+namespace Rat.HeightOneSpectrum
+
+variable (v : HeightOneSpectrum (𝓞 ℚ))
+
+/-- The absolute value of the rational prime of `v` at the finite place `v` is its inverse. -/
+theorem finitePlace_mk_natGenerator :
+    FinitePlace.mk v (natGenerator v) = ((natGenerator v : ℕ) : ℝ)⁻¹ := by
+  rw [FinitePlace.mk_apply, FinitePlace.norm_embedding', valuation_natGenerator,
+    WithZeroMulInt.toNNReal_neg_apply _ WithZero.exp_ne_zero, WithZero.log_exp]
+  simp
+
+/-- The absolute value of the inverse of the rational prime of `v` at the finite place `v` is
+the prime. -/
+theorem finitePlace_mk_inv_natGenerator :
+    FinitePlace.mk v ((natGenerator v : ℚ)⁻¹) = natGenerator v := by
+  rw [map_inv₀, finitePlace_mk_natGenerator, inv_inv]
+
+end Rat.HeightOneSpectrum
 
 namespace NumberField.FinitePlace
 
