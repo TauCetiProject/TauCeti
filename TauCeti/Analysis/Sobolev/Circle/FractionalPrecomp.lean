@@ -205,30 +205,24 @@ variable {F F' : ℝ → ℝ} {c M : ℝ} (hs0 : 0 < s) (hs1 : s < 1)
   (hF : ∀ x, HasDerivAt F (F' x) x) (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x)
   (hc : 0 < c) (hcF : ∀ x, c ≤ F' x) (hMF : ∀ x, F' x ≤ M)
 
-/-- Precomposition with `φ` on `H^s`, as a continuous linear map; its inclusion into `H⁰` is
-`precompEquivOfLift`. -/
-private def precompFractionalOfLift : CircleSobolev s ℂ →L[ℂ] CircleSobolev s ℂ :=
-  precompFractional hs0 hs1
+include hs1 in
+/-- Precomposition with `φ` preserves `H^s`: `φ` is `M`-Lipschitz and pushes Haar measure forward
+to at most `c⁻¹` times Haar measure. -/
+private theorem exists_inclusion_eq_precompEquivOfLift (a : CircleSobolev s ℂ) :
+    ∃ b : CircleSobolev s ℂ,
+      inclusion hs0.le b = precompEquivOfLift hF hper hφ hc hcF hMF (inclusion hs0.le a) := by
+  rw [precompEquivOfLift_apply]
+  exact exists_inclusion_eq_precomp hs0 hs1
     (lipschitzWith_toNNReal_of_lift hF hφ (fun x ↦ hc.le.trans (hcF x)) hMF)
     (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne')
-    (map_haarAddCircle_le_of_lift hF hper hφ hc hcF)
+    (map_haarAddCircle_le_of_lift hF hper hφ hc hcF) a
 
-private theorem inclusion_precompFractionalOfLift (a : CircleSobolev s ℂ) :
-    inclusion hs0.le (precompFractionalOfLift hs0 hs1 hF hper hφ hc hcF hMF a) =
-      precompEquivOfLift hF hper hφ hc hcF hMF (inclusion hs0.le a) :=
-  (inclusion_precompFractional _ _ _ _ _ a).trans (precompEquivOfLift_apply _ _ _ _ _ _ _).symm
-
-private theorem injective_precompFractionalOfLift :
-    Function.Injective (precompFractionalOfLift hs0 hs1 hF hper hφ hc hcF hMF) := fun a b hab ↦
-  inclusion_injective hs0.le ((precompEquivOfLift hF hper hφ hc hcF hMF).injective
-    (by rw [← inclusion_precompFractionalOfLift hs0 hs1,
-      ← inclusion_precompFractionalOfLift hs0 hs1, hab]))
-
-/-- Precomposition on `H^s` is surjective: the inverse map of the circle has a lift with
+include hs1 in
+/-- The inverse precomposition preserves `H^s`: the inverse map of the circle has a lift with
 derivative between `M⁻¹` and `c⁻¹`, so precomposition with it preserves `H^s` as well. -/
-private theorem surjective_precompFractionalOfLift :
-    Function.Surjective (precompFractionalOfLift hs0 hs1 hF hper hφ hc hcF hMF) := by
-  intro b
+private theorem exists_inclusion_eq_precompEquivOfLift_symm (b : CircleSobolev s ℂ) :
+    ∃ a : CircleSobolev s ℂ, inclusion hs0.le a =
+      (precompEquivOfLift hF hper hφ hc hcF hMF).symm (inclusion hs0.le b) := by
   have hpos (x : ℝ) : 0 < F' x := hc.trans_le (hcF x)
   have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
   obtain ⟨G, -, hFG, hperG, hG⟩ := exists_lift_inverse hF hper hpos
@@ -242,10 +236,8 @@ private theorem surjective_precompFractionalOfLift :
   have hM : 0 < M⁻¹ := inv_pos.2 ((hpos 0).trans_le (hMF 0))
   have hMG (y : ℝ) : M⁻¹ ≤ (F' (G y))⁻¹ := inv_anti₀ (hpos _) (hMF _)
   have hcG (y : ℝ) : (F' (G y))⁻¹ ≤ c⁻¹ := inv_anti₀ hc (hcF _)
-  refine ⟨precompFractionalOfLift hs0 hs1 hG hperG hψ hM hMG hcG b, inclusion_injective hs0.le ?_⟩
-  rw [inclusion_precompFractionalOfLift, inclusion_precompFractionalOfLift,
-    ← precompEquivOfLift_symm_eq hF hper hφ hc hcF hMF hG hperG hψ hM hMG hcG hψφ,
-    ContinuousLinearEquiv.apply_symm_apply]
+  rw [precompEquivOfLift_symm_eq hF hper hφ hc hcF hMF hG hperG hψ hM hMG hcG hψφ]
+  exact exists_inclusion_eq_precompEquivOfLift hs0 hs1 hG hperG hψ hM hMG hcG b
 
 /-- **Circle diffeomorphisms act on `H^s`, `0 < s < 1`.** Let `φ` be the map of the circle with
 lift `F`, so that `F (x + T) = F x + T` and `φ x = F x`, and suppose that `F` is differentiable
@@ -253,9 +245,9 @@ with `0 < c ≤ F' ≤ M`. Then for every `0 < s < 1`, `u ↦ u ∘ φ` is a con
 automorphism of `H^s`. Its inverse is precomposition with the inverse map of the circle
 (`TauCeti.CircleSobolev.precompFractionalEquivOfLift_symm_eq`). -/
 def precompFractionalEquivOfLift : CircleSobolev s ℂ ≃L[ℂ] CircleSobolev s ℂ :=
-  ContinuousLinearEquiv.ofBijective (precompFractionalOfLift hs0 hs1 hF hper hφ hc hcF hMF)
-    (LinearMap.ker_eq_bot.2 (injective_precompFractionalOfLift hs0 hs1 hF hper hφ hc hcF hMF))
-    (LinearMap.range_eq_top.2 (surjective_precompFractionalOfLift hs0 hs1 hF hper hφ hc hcF hMF))
+  restrictEquiv hs0.le hs0.le (precompEquivOfLift hF hper hφ hc hcF hMF)
+    (exists_inclusion_eq_precompEquivOfLift hs0 hs1 hF hper hφ hc hcF hMF)
+    (exists_inclusion_eq_precompEquivOfLift_symm hs0 hs1 hF hper hφ hc hcF hMF)
 
 /-- In `H⁰`, precomposition on `H^s` is the precomposition `precompEquivOfLift`: the inclusion of
 `u ∘ φ` into `H⁰` is the precomposition of the inclusion of `u`. -/
@@ -263,15 +255,14 @@ def precompFractionalEquivOfLift : CircleSobolev s ℂ ≃L[ℂ] CircleSobolev s
 theorem inclusion_precompFractionalEquivOfLift (a : CircleSobolev s ℂ) :
     inclusion hs0.le (precompFractionalEquivOfLift hs0 hs1 hF hper hφ hc hcF hMF a) =
       precompEquivOfLift hF hper hφ hc hcF hMF (inclusion hs0.le a) :=
-  inclusion_precompFractionalOfLift hs0 hs1 hF hper hφ hc hcF hMF a
+  inclusion_restrictEquiv _ _ _ _ _ a
 
 /-- In `H⁰`, the inverse of precomposition on `H^s` is the inverse of `precompEquivOfLift`. -/
 @[simp]
 theorem inclusion_precompFractionalEquivOfLift_symm (a : CircleSobolev s ℂ) :
     inclusion hs0.le ((precompFractionalEquivOfLift hs0 hs1 hF hper hφ hc hcF hMF).symm a) =
-      (precompEquivOfLift hF hper hφ hc hcF hMF).symm (inclusion hs0.le a) := by
-  rw [ContinuousLinearEquiv.eq_symm_apply, ← inclusion_precompFractionalEquivOfLift hs0 hs1,
-    ContinuousLinearEquiv.apply_symm_apply]
+      (precompEquivOfLift hF hper hφ hc hcF hMF).symm (inclusion hs0.le a) :=
+  inclusion_restrictEquiv_symm _ _ _ _ _ a
 
 /-- Precomposition on the different fractional orders is compatible with the inclusions
 `H^s → H^t`. -/

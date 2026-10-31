@@ -39,7 +39,8 @@ product when `E` has them.
 * `TauCeti.CircleSobolev.single n x`: the Fourier monomial `x e^{inθ}`.
 * `TauCeti.CircleSobolev.inclusion`: the continuous inclusion `H^s → H^t` for `t ≤ s`.
 * `TauCeti.CircleSobolev.restrict`: a continuous linear map `H^t → H^t'` carrying `H^s` into
-  `H^s'`, as a continuous linear map `H^s → H^s'` (by the closed graph theorem).
+  `H^s'`, as a continuous linear map `H^s → H^s'` (by the closed graph theorem), and
+  `TauCeti.CircleSobolev.restrictEquiv`, its analogue for continuous linear isomorphisms.
 * `TauCeti.CircleSobolev.toContinuousMap`: for `s > 1/2`, the continuous function on
   `AddCircle T` given by the uniformly convergent Fourier series.
 
@@ -638,6 +639,36 @@ theorem inclusion_restrict [CompleteSpace E] (a : CircleSobolev s E) :
   inclusion_restrictFun h h' P hP a
 
 end Restrict
+
+section RestrictEquiv
+
+variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s') (P : CircleSobolev t E ≃L[ℂ] CircleSobolev t' E)
+  (hP : ∀ a : CircleSobolev s E, ∃ b : CircleSobolev s' E, inclusion h' b = P (inclusion h a))
+  (hP' : ∀ b : CircleSobolev s' E, ∃ a : CircleSobolev s E,
+    inclusion h a = P.symm (inclusion h' b))
+
+/-- **Restriction of an isomorphism to smaller Sobolev spaces.** A continuous linear isomorphism
+`P : H^t → H^t'` such that `P` carries `H^s` into `H^s'` and `P⁻¹` carries `H^s'` into `H^s`, for
+`t ≤ s` and `t' ≤ s'`, as a continuous linear isomorphism `H^s → H^s'`. -/
+def restrictEquiv [CompleteSpace E] : CircleSobolev s E ≃L[ℂ] CircleSobolev s' E :=
+  ContinuousLinearEquiv.equivOfInverse (restrict h h' P fun a ↦ by simpa using hP a)
+    (restrict h' h P.symm fun b ↦ by simpa using hP' b)
+    (fun a ↦ inclusion_injective h (by simp))
+    (fun b ↦ inclusion_injective h' (by simp))
+
+/-- In `H^t'`, `restrictEquiv` is `P`. -/
+@[simp]
+theorem inclusion_restrictEquiv [CompleteSpace E] (a : CircleSobolev s E) :
+    inclusion h' (restrictEquiv h h' P hP hP' a) = P (inclusion h a) :=
+  inclusion_restrict h h' (P : CircleSobolev t E →L[ℂ] CircleSobolev t' E) _ a
+
+/-- In `H^t`, the inverse of `restrictEquiv` is the inverse of `P`. -/
+@[simp]
+theorem inclusion_restrictEquiv_symm [CompleteSpace E] (b : CircleSobolev s' E) :
+    inclusion h ((restrictEquiv h h' P hP hP').symm b) = P.symm (inclusion h' b) :=
+  inclusion_restrict h' h (P.symm : CircleSobolev t' E →L[ℂ] CircleSobolev t E) _ b
+
+end RestrictEquiv
 
 /-- **Rellich's theorem** on the circle: the inclusion `H^s → H^t` is a compact operator for
 `t < s` when `E` is finite-dimensional. -/
