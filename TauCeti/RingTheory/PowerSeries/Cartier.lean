@@ -17,8 +17,9 @@ The Cartier operator of modulus `q` and index `r` selects coefficients at the in
 multiplication by an expanded series, and the expanded Cartier components reconstruct the
 original series. Over a finite field, expansion by its cardinality is the Frobenius power,
 so these identities give the usual Cartier identities used in residue averaging.
-In prime characteristic, a series with zero derivative is the expansion of its residue-zero
-Cartier component.
+A series whose coefficients vanish away from the multiples of the modulus is the expansion of
+its residue-zero Cartier component; in prime characteristic this applies to a series with zero
+derivative.
 
 The definition and finite-field multiplication identity follow Section 3, definition and
 Proposition 4, of Rowland–Stipulanti–Yassawi, *An elementary proof of Bridy's theorem*
@@ -172,6 +173,16 @@ theorem sum_X_pow_mul_expand_cartier (q : ℕ) (hq : q ≠ 0) (F : PowerSeries R
   · intro hnot
     exact (hnot (Finset.mem_range.mpr (Nat.mod_lt n hq'))).elim
 
+/-- A series whose coefficients vanish away from the multiples of `q` is the expansion of its
+residue-zero Cartier component. -/
+theorem expand_cartier_zero_of_coeff_eq_zero (q : ℕ) (hq : q ≠ 0) {F : PowerSeries R}
+    (hF : ∀ n, ¬ q ∣ n → F.coeff n = 0) : expand q hq (cartier R q 0 F) = F := by
+  ext n
+  by_cases hn : q ∣ n
+  · obtain ⟨m, rfl⟩ := hn
+    simp
+  · rw [coeff_expand_of_not_dvd _ _ _ hn, hF n hn]
+
 end CommRing
 
 section Characteristic
@@ -181,12 +192,8 @@ variable {R : Type*} [CommRing R] {p : ℕ} [Fact p.Prime] [CharP R p]
 /-- The residue-zero Cartier component recovers a series with zero derivative by expansion
 in prime characteristic. -/
 theorem expand_cartier_of_derivative_eq_zero {f : PowerSeries R}
-    (hf : derivative f = 0) : expand p (Fact.out : p.Prime).ne_zero (cartier R p 0 f) = f := by
-  ext n
-  by_cases hn : p ∣ n
-  · obtain ⟨m, rfl⟩ := hn
-    simp
-  · rw [coeff_expand_of_not_dvd _ _ _ hn, coeff_eq_zero_of_derivative_eq_zero hf hn]
+    (hf : derivative f = 0) : expand p (Fact.out : p.Prime).ne_zero (cartier R p 0 f) = f :=
+  expand_cartier_zero_of_coeff_eq_zero _ _ fun _ hn ↦ coeff_eq_zero_of_derivative_eq_zero hf hn
 
 end Characteristic
 
