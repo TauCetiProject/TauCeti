@@ -28,6 +28,8 @@ This file develops the coordinate structure of `C₀(I, E)`:
 * `ZeroAtInftyContinuousMap.mkOfDiscrete`: a family tending to zero along the cofinite filter as
   an element of `C₀(I, E)`;
 * `ZeroAtInftyContinuousMap.single i x`: the coordinate vector supported at `i` with value `x`,
+  and `ZeroAtInftyContinuousMap.singleCLM R i`: the isometry `x ↦ single i x` as a continuous
+  linear map;
   of norm `‖x‖` (`ZeroAtInftyContinuousMap.norm_single`), so that on an infinite index the
   coordinate vectors with a fixed nonzero value are not norm null
   (`ZeroAtInftyContinuousMap.not_tendsto_single_cofinite`); a finite sum of coordinate vectors at
@@ -50,8 +52,9 @@ This file develops the coordinate structure of `C₀(I, E)`:
 * `ZeroAtInftyContinuousMap.continuousLinearMap_ext`: continuous linear maps out of `C₀(I, E)`
   are determined by their values on coordinate vectors;
 * `ZeroAtInftyContinuousMap.indicatorCLM R S`: the coordinate projection `f ↦ S.indicator f`
-  onto a set `S` of indices, of norm at most one; on `C₀(I, R)` it has finite rank when `S` is
-  finite (`ZeroAtInftyContinuousMap.isFiniteRank_indicatorCLM`); these projections converge
+  onto a set `S` of indices, of norm at most one; it has finite rank when `S` is finite and the
+  coefficients form a finitely generated module, as on `C₀(I, R)`
+  (`ZeroAtInftyContinuousMap.isFiniteRank_indicatorCLM`); these projections converge
   to the original family when every coordinate is retained eventually
   (`ZeroAtInftyContinuousMap.tendsto_indicatorCLM`).
 
@@ -324,17 +327,28 @@ theorem indicatorCLM_finset_apply [DecidableEq I] (s : Finset I) (f : C₀(I, β
   ext j
   simp [sum_single_apply, Set.indicator_apply]
 
-/-- The coordinate projection of `C₀(I, R)` onto a finite set of indices has finite rank: its
-range lies in the span of the corresponding unit vectors. -/
-theorem isFiniteRank_indicatorCLM {R : Type*} [SeminormedRing R] (s : Finset I) :
-    ((indicatorCLM R (s : Set I) : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R)).IsFiniteRank := by
+/-- The coordinate projection of `C₀(I, β)` onto a finite set of indices has finite rank when `β`
+is a finitely generated module, for instance on `C₀(I, R)`: its range lies in the span of the
+coordinate vectors at these indices with values in a finite generating set of `β`. -/
+theorem isFiniteRank_indicatorCLM [Module.Finite R β] (s : Finset I) :
+    ((indicatorCLM R (s : Set I) : C₀(I, β) →L[R] C₀(I, β)) :
+      C₀(I, β) →ₗ[R] C₀(I, β)).IsFiniteRank := by
   classical
-  refine LinearMap.isFiniteRank_iff_forall_mem.2 ⟨Submodule.span R ((single · (1 : R)) '' s),
-    Submodule.fg_span (s.finite_toSet.image _), fun f ↦ ?_⟩
+  obtain ⟨t, ht⟩ := Module.Finite.fg_top (R := R) (M := β)
+  refine LinearMap.isFiniteRank_iff_forall_mem.2
+    ⟨Submodule.span R ((fun x : I × β ↦ single x.1 x.2) '' (s ×ˢ t : Finset (I × β))),
+      Submodule.fg_span ((s ×ˢ t).finite_toSet.image _), fun f ↦ ?_⟩
   rw [ContinuousLinearMap.coe_coe, indicatorCLM_finset_apply]
-  exact Submodule.sum_mem _ fun i hi ↦ smul_single_one i (f i) ▸
-    Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
+  refine Submodule.sum_mem _ fun i hi ↦ ?_
+  suffices ∀ b ∈ Submodule.span R (t : Set β), single i b ∈ Submodule.span R
+      ((fun x : I × β ↦ single x.1 x.2) '' (s ×ˢ t : Finset (I × β))) from
+    this _ (ht ▸ Submodule.mem_top)
+  intro b hb
+  induction hb using Submodule.span_induction with
+  | mem b hb => exact Submodule.subset_span ⟨(i, b), Finset.mem_product.2 ⟨hi, hb⟩, rfl⟩
+  | zero => exact (single_zero (β := β) i).symm ▸ zero_mem _
+  | add b c _ _ hb hc => exact (single_add i b c).symm ▸ add_mem hb hc
+  | smul r b _ hb => exact (single_smul i r b).symm ▸ Submodule.smul_mem _ r hb
 
 end Indicator
 
@@ -348,6 +362,29 @@ theorem norm_single [DecidableEq I] (i : I) (b : β) : ‖single i b‖ = ‖b�
   refine le_antisymm ((norm_le (norm_nonneg b)).2 fun j ↦ ?_) ?_
   · by_cases h : j = i <;> simp [h]
   · simpa using norm_coe_le_norm (single i b) i
+
+section
+
+variable (R : Type*) [Semiring R] [Module R β] [ContinuousConstSMul R β] [DecidableEq I]
+
+/-- The **coordinate vector** map `b ↦ single i b`, as a continuous linear map
+`β →L[R] C₀(I, β)`. It is an isometry by `norm_single`. -/
+noncomputable def singleCLM (i : I) : β →L[R] C₀(I, β) :=
+  -- LinearMap.mkContinuous requires ring scalars, so attach continuity directly for semirings.
+  let L : β →ₗ[R] C₀(I, β) :=
+    { toFun := single i
+      map_add' := single_add i
+      map_smul' := single_smul i }
+  { L with
+    cont := AddMonoidHomClass.continuous_of_bound L 1 fun b ↦ by simp [L] }
+
+variable {R}
+
+@[simp]
+theorem singleCLM_apply (i : I) (b : β) : singleCLM R i b = single i b :=
+  (rfl)
+
+end
 
 /-- A finite sum of coordinate vectors at distinct coordinates has the maximum of their norms as
 its norm; the empty sum has norm zero. -/

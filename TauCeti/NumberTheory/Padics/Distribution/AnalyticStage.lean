@@ -73,11 +73,13 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 * `TauCeti.AnalyticStage.transition_injective`: the transition is injective when multiplication
   by `p` on the coefficients is injective.
 * `TauCeti.AnalyticStage.norm_transition_le`: the transition does not increase norms.
-* `TauCeti.AnalyticStage.eval_transition`: the transition is compatible with evaluation.
+* `TauCeti.AnalyticStage.eval_transition`, `TauCeti.AnalyticStage.eval_comp_transition`: the
+  transition is compatible with evaluation.
 * `TauCeti.AnalyticStage.transitionLE_comp`: re-expansion through an intermediate level is
   re-expansion to the final level.
 * `TauCeti.AnalyticStage.norm_transitionLE_le`: every multi-level transition decreases norms.
-* `TauCeti.AnalyticStage.eval_transitionLE`: every multi-level transition preserves evaluation.
+* `TauCeti.AnalyticStage.eval_transitionLE`, `TauCeti.AnalyticStage.eval_comp_transitionLE`:
+  every multi-level transition preserves evaluation.
 * `TauCeti.AnalyticStage.transitionLE_injective`: multi-level transitions are injective under
   the same scalar-regularity hypothesis.
 
@@ -338,7 +340,9 @@ private theorem tendsto_norm_p_pow_cofinite :
   rw [Nat.cofinite_eq_atTop]
   exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) PadicInt.norm_p_lt_one
 
-private theorem tendsto_norm_pow_mul_cofinite {ι : Type*} [Finite ι] (C : ℝ) :
+/-- On `ι × ℕ` with `ι` finite, the weights `‖p‖ ^ j * C` of the coefficients of `vʲ` tend to zero
+along the cofinite filter. They bound the coefficients after raising the level. -/
+theorem tendsto_norm_pow_mul_cofinite {ι : Type*} [Finite ι] (C : ℝ) :
     Tendsto (fun i : ι × ℕ ↦ ‖(p : ℤ_[p])‖ ^ i.2 * C) cofinite (𝓝 0) := by
   have hpow : Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n * C) cofinite (𝓝 0) := by
     simpa using (tendsto_norm_p_pow_cofinite (p := p)).mul_const C
@@ -497,6 +501,12 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
         rw [Finset.mem_range, not_lt] at hj
         simp [transitionScalar, Nat.choose_eq_zero_of_lt (Nat.lt_of_succ_le hj)]
 
+/-- Evaluation after the transition is evaluation, as an identity of continuous linear maps. -/
+@[simp]
+theorem eval_comp_transition :
+    (eval (p := p) (h := h + 1) (E := E) S).comp (transition S) = eval S :=
+  ContinuousLinearMap.ext (eval_transition S)
+
 variable {k l : ℕ}
 
 /-- Re-expansion from level `h` to level `k`, obtained by composing adjacent transitions. -/
@@ -608,6 +618,13 @@ theorem eval_transitionLE (hhk : h ≤ k) (c : AnalyticStage p h E) :
   | base => simp
   | succ k hhk ih =>
     rw [transitionLE_succ S hhk, ContinuousLinearMap.comp_apply, eval_transition, ih]
+
+/-- Evaluation after re-expansion between two levels is evaluation, as an identity of continuous
+linear maps. -/
+@[simp]
+theorem eval_comp_transitionLE (hhk : h ≤ k) :
+    (eval (p := p) (h := k) (E := E) S).comp (transitionLE S hhk) = eval S :=
+  ContinuousLinearMap.ext (eval_transitionLE S hhk)
 
 /-- Re-expansion between any two levels is injective if multiplication by `p` on the
 coefficient module is injective. -/
