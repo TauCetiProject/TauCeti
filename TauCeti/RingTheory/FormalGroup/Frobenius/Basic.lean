@@ -14,10 +14,11 @@ import TauCeti.RingTheory.PowerSeries.Expand
 
 Over a commutative ring of prime characteristic `p`, the series `X ^ p` is a homomorphism
 from a formal group to its coefficient Frobenius twist. Its `h`-fold iterate has series
-`X ^ (p ^ h)` and composes by expanding the outer series. A homomorphism with zero linear
-coefficient factors uniquely through this Frobenius homomorphism. Its factor is obtained by
-selecting the coefficients in degrees divisible by `p`, using the residue-zero Cartier
-operator. The coefficient ring may have nilpotents, and the formal groups need not be
+`X ^ (p ^ h)` and composes by expanding the outer series. It is natural with respect to
+homomorphisms, whose Frobenius twists are their base changes along Frobenius. A homomorphism
+with zero linear coefficient factors uniquely through this Frobenius homomorphism. Its factor
+is obtained by selecting the coefficients in degrees divisible by `p`, using the residue-zero
+Cartier operator. The coefficient ring may have nilpotents, and the formal groups need not be
 commutative.
 
 This is the Frobenius factorization argument of Silverman, *The Arithmetic of Elliptic
@@ -83,6 +84,29 @@ theorem comp_iterateFrobeniusHom_toPowerSeries (h : ℕ)
         g.toPowerSeries := by
   rw [comp_toPowerSeries, FormalGroup.iterateFrobeniusHom_toPowerSeries,
     PowerSeries.expand_apply]
+
+/-- Iterated relative Frobenius is natural: the coefficient Frobenius twist of `f` after
+Frobenius on the source equals Frobenius on the target after `f`, that is,
+`f^(p^h)(X ^ (p ^ h)) = f(X) ^ (p ^ h)`. -/
+theorem map_comp_iterateFrobeniusHom (f : FormalGroupHom F G) (h : ℕ) :
+    (f.map (iterateFrobenius R p h)).comp (F.iterateFrobeniusHom p h) =
+      (G.iterateFrobeniusHom p h).comp f := by
+  ext : 1
+  rw [comp_iterateFrobeniusHom_toPowerSeries, map_toPowerSeries, ← PowerSeries.map_expand,
+    PowerSeries.map_iterateFrobenius_expand p (Fact.out : p.Prime).ne_zero, comp_toPowerSeries,
+    FormalGroup.iterateFrobeniusHom_toPowerSeries, PowerSeries.subst_pow f.hasSubst,
+    PowerSeries.subst_X f.hasSubst]
+
+/-- Relative Frobenius is natural: the coefficient Frobenius twist of `f` after Frobenius on the
+source equals Frobenius on the target after `f`, that is, `f^(p)(X ^ p) = f(X) ^ p`. -/
+theorem map_comp_frobeniusHom (f : FormalGroupHom F G) :
+    (f.map (frobenius R p)).comp (F.frobeniusHom p) = (G.frobeniusHom p).comp f := by
+  ext : 1
+  rw [comp_toPowerSeries, comp_toPowerSeries, FormalGroup.frobeniusHom_toPowerSeries,
+    FormalGroup.frobeniusHom_toPowerSeries, map_toPowerSeries,
+    ← PowerSeries.expand_apply p (Fact.out : p.Prime).ne_zero, ← PowerSeries.map_expand,
+    PowerSeries.map_frobenius_expand p (Fact.out : p.Prime).ne_zero,
+    PowerSeries.subst_pow f.hasSubst, PowerSeries.subst_X f.hasSubst]
 
 /-- The factor of a homomorphism with zero tangent map through relative Frobenius. -/
 noncomputable def frobeniusFactor (f : FormalGroupHom F G)

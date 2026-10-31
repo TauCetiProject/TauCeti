@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 
 /-!
@@ -18,6 +19,7 @@ base-changed formal group.
 
 * `FormalGroup.map_nsmulSeries`: `[n]_F` commutes with base change.
 * `FormalGroup.coeff_nsmulSeries_map`: coefficientwise form of the base-change identity.
+* `FormalGroup.map_nsmulHom`: the bundled endomorphism `[n]` commutes with base change.
 -/
 
 public section
@@ -53,5 +55,12 @@ theorem map_nsmulSeries (F : FormalGroup R) (f : R →+* S) (n : ℕ) :
 theorem coeff_nsmulSeries_map (F : FormalGroup R) (f : R →+* S) (n k : ℕ) :
     PowerSeries.coeff k ((F.map f).nsmulSeries n) = f (PowerSeries.coeff k (F.nsmulSeries n)) := by
   rw [← F.map_nsmulSeries f n, PowerSeries.coeff_map]
+
+/-- Multiplication by `n` commutes with base change as a bundled endomorphism. -/
+@[simp]
+theorem map_nsmulHom (F : FormalGroup R) [F.IsComm] (f : R →+* S) (n : ℕ) :
+    (F.nsmulHom n).map f = (F.map f).nsmulHom n := by
+  ext : 1
+  simp
 
 end FormalGroup
