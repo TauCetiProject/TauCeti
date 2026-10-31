@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
+public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 
@@ -19,11 +20,19 @@ Its inverse uses time `-(a * t)`.
 Every zero of the field is fixed throughout. In particular, a field vanishing outside a
 compact set generates a motion supported in the same set.
 
-This converts cut-off local vector fields into ambient motions with controlled support.
-It does not assert extension of an arbitrary isotopy through embeddings.
+A time-dependent `C^n` vector field `X` whose suspension is complete generates a diffeotopy
+too (`TauCeti.timeDependentFlowDiffeotopy`): the motion at time `t ∈ [0,1]` is its
+time-dependent flow from time `0` to time `t`, with inverse the flow from `t` back to `0`. This
+holds in particular when `X` vanishes outside a fixed compact set at all times
+(`TauCeti.isCompleteVectorField_timeDependentSuspensionField`). Points at which `X` vanishes at all
+times are fixed throughout.
+
+This converts cut-off local vector fields into ambient motions with controlled support. The
+isotopy extension theorem runs the time-dependent diffeotopy of the ambient velocity field of an
+isotopy through embeddings.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
-Theorems 9.12 and 9.16.
+Theorems 9.12, 9.16 and 9.48.
 -/
 
 public section
@@ -137,5 +146,63 @@ theorem compactlySupportedFlowDiffeotopy_eqOn_compl (hn : 1 ≤ n)
     EqOn (fun x => compactlySupportedFlowDiffeotopy hn hv hK hzero a (t, x)) id Kᶜ :=
   fun x hx => compactlySupportedFlowDiffeotopy_apply_of_eq_zero hn hv hK hzero a
     (hzero x hx) t
+
+/-! ### Time-dependent vector fields -/
+
+section TimeDependent
+
+variable {X : ℝ → (x : M) → TangentSpace I x}
+
+/-- Run a time-dependent `C^n` vector field with complete suspension, `1 ≤ n`, from time `0`: the
+motion at time `t ∈ [0, 1]` is the time-dependent flow of `X` from time `0` to time `t`. -/
+def timeDependentFlowDiffeotopy (hn : 1 ≤ n)
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (hcomplete : IsCompleteVectorField (timeDependentSuspensionField X)) :
+    Diffeotopy I n M := by
+  have hX₁ := hX.of_le (m := 1) (by exact_mod_cast hn)
+  have hs := contMDiff_timeDependentFlowOf hcomplete hn hX
+  have ht : ContMDiff (𝓡∂ 1) 𝓘(ℝ) n (fun t : unitInterval => (t : ℝ)) :=
+    contMDiff_subtypeVal_Icc
+  exact
+    { toDiffeomorph :=
+        { toEquiv :=
+            { toFun := fun p => (p.1, timeDependentFlowOf X 0 p.1 p.2)
+              invFun := fun p => (p.1, timeDependentFlowOf X p.1 0 p.2)
+              left_inv := fun p => by
+                simp [timeDependentFlowOf_trans hcomplete hX₁, timeDependentFlowOf_self hX₁]
+              right_inv := fun p => by
+                simp [timeDependentFlowOf_trans hcomplete hX₁, timeDependentFlowOf_self hX₁] }
+          contMDiff_toFun := contMDiff_fst.prodMk (hs.comp
+            ((contMDiff_const.prodMk (ht.comp contMDiff_fst)).prodMk contMDiff_snd))
+          contMDiff_invFun := contMDiff_fst.prodMk (hs.comp
+            (((ht.comp contMDiff_fst).prodMk contMDiff_const).prodMk contMDiff_snd)) }
+      fst_apply := fun _ => rfl
+      snd_apply_zero' := fun x => timeDependentFlowOf_self hX₁ 0 x }
+
+variable (hn : 1 ≤ n)
+  (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+    (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+  (hcomplete : IsCompleteVectorField (timeDependentSuspensionField X))
+
+/-- The time-dependent motion at time `t` is the time-dependent flow from `0` to `t`. -/
+@[simp] theorem timeDependentFlowDiffeotopy_apply (p : unitInterval × M) :
+    timeDependentFlowDiffeotopy hn hX hcomplete p = timeDependentFlowOf X 0 p.1 p.2 :=
+  (rfl)
+
+/-- The inverse time-dependent motion at time `t` is the time-dependent flow from `t` back
+to `0`. -/
+@[simp] theorem timeDependentFlowDiffeotopy_toDiffeomorph_symm_apply (p : unitInterval × M) :
+    (timeDependentFlowDiffeotopy hn hX hcomplete).toDiffeomorph.symm p =
+      (p.1, timeDependentFlowOf X p.1 0 p.2) :=
+  (rfl)
+
+/-- A point at which the field vanishes at all times is fixed throughout the time-dependent
+motion. -/
+theorem timeDependentFlowDiffeotopy_apply_of_forall_eq_zero {x : M} (hx : ∀ u, X u x = 0)
+    (t : unitInterval) : timeDependentFlowDiffeotopy hn hX hcomplete (t, x) = x :=
+  timeDependentFlowOf_eq_self_of_forall_eq_zero (hX.of_le (by exact_mod_cast hn)) hx 0 t
+
+end TimeDependent
 
 end TauCeti
