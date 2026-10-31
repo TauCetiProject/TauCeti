@@ -87,6 +87,10 @@ def puncture (e : E → M) : Opens M :=
 theorem mem_puncture {e : E → M} {x : M} : x ∈ puncture e ↔ x ≠ e 0 :=
   Iff.rfl
 
+@[simp]
+theorem coe_puncture (e : E → M) : (puncture e : Set M) = {e 0}ᶜ :=
+  (rfl)
+
 /-- An injective map carrying the centre of the ball `e` to the centre of the ball `e'` carries
 the punctured summand `M ∖ {e 0}` into the punctured summand `M' ∖ {e' 0}`. -/
 theorem apply_mem_puncture {M' : Type*} [TopologicalSpace M'] [T1Space M'] {e : E → M}

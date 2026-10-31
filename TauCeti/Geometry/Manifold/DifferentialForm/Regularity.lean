@@ -39,6 +39,8 @@ differentiation commutes with this extension.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`: the exterior
   derivative lowers regularity by one.
 * `TauCeti.mextDeriv_mem_smoothBundleForms`: the exterior derivative preserves smooth forms.
+* `TauCeti.exists_mextDeriv_eq_of_forall_eventuallyEq_add_const`: a global function which near
+  every point differs by a constant from a local primitive of a `1`-form is itself a primitive.
 * `TauCeti.mextDerivₗ`: the exterior derivative as a linear map on smooth fixed-coefficient forms.
 * `TauCeti.mdifferentiableAt_ofFunction`: the `0`-form of a differentiable function is a
   differentiable section.
@@ -393,6 +395,21 @@ theorem mdifferentiableAt_ofFunction [IsManifold I 1 M] {f : M → F} {x : M}
   rw [heq]
   exact ((ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E F (Fin 0)).toContinuousLinearEquiv
     : F →L[ℝ] E [⋀^Fin 0]→L[ℝ] F).mdifferentiableAt.comp x hf
+
+/-- **Local primitives glue to a global one.** If near every point `x` the function `f` differs by
+a constant from a function `g` which is `C^r` at `x` (`r ≠ 0`) with `d g = φ` at `x`, then the
+`0`-form of `f` is a `C^r` primitive of `φ`. -/
+theorem exists_mextDeriv_eq_of_forall_eventuallyEq_add_const [IsManifold I 1 M]
+    {r : WithTop ℕ∞} (hr : r ≠ 0) {φ : RoughForm I M F 1} {f : M → F}
+    (hloc : ∀ x, ∃ g : M → F, ∃ c : F, ContMDiffAt I 𝓘(ℝ, F) r g x ∧
+      (∀ᶠ y in 𝓝 x, f y = g y + c) ∧ mextDeriv (RoughForm.ofFunction I g) x = φ x) :
+    ∃ ψ : RoughForm I M F 0, IsSmoothForm I r ψ ∧ mextDeriv ψ = φ := by
+  refine ⟨RoughForm.ofFunction I f, isSmoothForm_ofFunction_iff.mpr fun x ↦ ?_, funext fun x ↦ ?_⟩
+  · obtain ⟨g, c, hg, hfg, -⟩ := hloc x
+    exact (hg.add contMDiffAt_const).congr_of_eventuallyEq hfg
+  · obtain ⟨g, c, hg, hfg, hdg⟩ := hloc x
+    rw [← hdg]
+    exact mextDeriv_ofFunction_eq_of_eventuallyEq_add_const (hg.mdifferentiableAt hr) hfg
 
 end Regularity
 

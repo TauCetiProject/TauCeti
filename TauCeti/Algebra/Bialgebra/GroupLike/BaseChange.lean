@@ -64,7 +64,7 @@ theorem val_groupLikeBaseChange (g : _root_.GroupLike R A) :
 
 /-- Extending a character commutes with a bialgebra morphism. -/
 @[simp]
-theorem groupLikeBaseChange_map {B : Type*} [Semiring B] [Bialgebra R B]
+theorem groupLikeBaseChange_mapGroupLike {B : Type*} [Semiring B] [Bialgebra R B]
     (f : A →ₐc[R] B) (g : _root_.GroupLike R A) :
     groupLikeBaseChange (K := K) (f.mapGroupLike g) =
       (Bialgebra.TensorProduct.map (BialgHom.id K K) f).mapGroupLike (groupLikeBaseChange g) := by

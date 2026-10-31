@@ -76,6 +76,11 @@ theorem suspensionCover_eq_suspensionCover_iff {p p' : (ℝ × ℝ) × M} :
     rw [hs, QuotientAddGroup.eq]
     exact AddSubgroup.mem_zmultiples_iff.2 ⟨-n, by rw [zsmul_eq_mul, mul_one]; push_cast; ring⟩
 
+/-- Integer deck transformations preserve the suspension covering map. -/
+theorem suspensionCover_deck (j k : ℤ) (p : (ℝ × ℝ) × M) :
+    suspensionCover φ (p.1 + ((j : ℝ), (k : ℝ)), (φ ^ (-k)) p.2) = suspensionCover φ p :=
+  (suspensionCover_eq_suspensionCover_iff φ).2 ⟨j, k, rfl⟩
+
 variable [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
 
 /-- The covering map is a smooth local diffeomorphism. -/
