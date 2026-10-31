@@ -19,8 +19,8 @@ or half-line, with height `⊤` elsewhere. These are exactly the heights of
 `TauCeti.FiniteSlopeData` and `TauCeti.InfiniteSlopeData`. Since the Newton polygon is the
 greatest convex minorant of the coefficient heights, `H` lies below the Newton polygon of `f`
 exactly when every coefficient satisfies `H n ≤ v (coeff n f)`. Because `H` is `⊤` outside its
-domain, this includes the vanishing of the coefficients there; the domain is part of the data,
-and agreement of endpoints is a separate statement.
+domain, this includes the coefficients there having infinite valuation; the domain is part of the
+data, and agreement of endpoints is a separate statement.
 
 For a square matrix `A` the relevant polynomial is the Fredholm determinant
 `det (1 - X A) = Matrix.charpolyRev A`, the reverse of the characteristic polynomial. With this
@@ -28,11 +28,12 @@ convention:
 
 * its Newton polygon starts at `(0, 0)` and has height `v (det A)` at the dimension `d`;
 * its finite slopes are the negatives of the finite slopes of the characteristic polynomial,
-  hence, when the characteristic polynomial splits in a valued extension, the valuations of the
-  nonzero eigenvalues, counted with multiplicity;
-* there are `d - a` of them, where `a` is the order of vanishing of the characteristic
-  polynomial at zero: zero eigenvalues lower the degree of `det (1 - X A)` and contribute no
-  finite slope, so a singular matrix has a polygon ending before `d`.
+  hence, when the characteristic polynomial splits in a valued extension in which only zero has
+  infinite valuation, the valuations of the nonzero eigenvalues, counted with multiplicity;
+* if only zero has infinite valuation, there are `d - a` of them, where `a` is the order of
+  vanishing of the characteristic polynomial at zero: zero eigenvalues lower the degree of
+  `det (1 - X A)` and contribute no finite slope, so a singular matrix has a polygon ending
+  before `d`.
 
 The comparison with a Hodge polygon of length at least `d` starting at `0` needs only
 coefficient bounds in degrees at most `d`. Since the coefficients of `det (1 - X A)` are signed
@@ -49,9 +50,11 @@ example from row bounds or invariant factors, is a separate matter; here they ar
 * `Matrix.newtonPolygon_charpolyRev_zero`, `Matrix.newtonPolygon_charpolyRev_card`: the endpoint
   heights `0` and `v (det A)` of the Newton polygon of `det (1 - X A)`.
 * `Matrix.newtonSlopes_charpolyRev`, `Matrix.newtonSlopes_charpolyRev_eq_map_roots_map`: the
-  finite slopes of `det (1 - X A)` are the valuations of the nonzero eigenvalues.
-* `Matrix.card_newtonSlopes_charpolyRev`: their number is the dimension minus the multiplicity
-  of the eigenvalue zero.
+  finite slopes of `det (1 - X A)` are the negated slopes of the characteristic polynomial, and,
+  when it splits in a valued extension where only zero has infinite valuation, the valuations of
+  the nonzero eigenvalues.
+* `Matrix.card_newtonSlopes_charpolyRev`: if only zero has infinite valuation, their number is
+  the dimension minus the multiplicity of the eigenvalue zero.
 * `Matrix.heights_le_newtonPolygon_charpolyRev_iff`,
   `Matrix.heights_le_newtonPolygon_charpolyRev_of_principalMinor`: Hodge lower bounds for the
   Newton polygon of `det (1 - X A)` from coefficient bounds or from principal-minor bounds.
@@ -120,8 +123,9 @@ variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] {v : AddValua
 theorem newtonPolygon_charpolyRev_zero : A.charpolyRev.newtonPolygon v 0 = 0 := by
   rw [newtonPolygon_apply_zero, coeff_charpolyRev_zero, AddValuation.map_one]
 
-/-- At the dimension `d`, the Newton polygon of `det (1 - X A)` has height `v (det A)`. It is
-infinite when `A` is singular, the polygon then ending at the smaller degree of `det (1 - X A)`. -/
+/-- At the dimension `d`, the Newton polygon of `det (1 - X A)` has height `v (det A)`, the
+valuation of its degree-`d` coefficient `(-1) ^ d * det A`. It is infinite when `A` is singular,
+or more generally when `det A` has infinite valuation. -/
 @[simp]
 theorem newtonPolygon_charpolyRev_card :
     A.charpolyRev.newtonPolygon v (Fintype.card ι) = v A.det := by
