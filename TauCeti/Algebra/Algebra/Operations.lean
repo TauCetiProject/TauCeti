@@ -14,8 +14,10 @@ import Mathlib.Tactic.Ring
 Two facts about the powers of a submodule of an algebra.
 
 Once the powers of a submodule `M` repeat once, `M ^ (n + 1) = M ^ n`, they are constant from `n`
-on. Only the recursion `M ^ (k + 1) = M ^ k * M` is used, so this holds in a noncommutative
-algebra and in particular for one-sided ideals of a noncommutative ring.
+on. This is `TauCeti.pow_eq_pow_of_pow_succ_eq_pow` for submodules, which Mathlib makes a monoid
+only over a commutative base (`Submodule.idemSemiring`). Only the recursion
+`M ^ (k + 1) = M ^ k * M` is used, so it holds without that assumption, in particular for left
+ideals (`Ideal R`) of a noncommutative ring.
 
 For submodules `X` and `Y` of a commutative algebra, write `V = X ⊔ Y`. A product of `i + j + 1`
 elements of `V` is a sum of products with at least `i + 1` factors from `X` or at least `j + 1`
@@ -44,7 +46,10 @@ section Semiring
 
 variable {R A : Type*} [Semiring R] [Semiring A] [Module R A] [IsScalarTower R A A]
 
-/-- Once the powers of a submodule repeat once, they are constant from that point on. -/
+/-- Once the powers of a submodule repeat once, they are constant from that point on.
+
+Over a commutative base this is `TauCeti.pow_eq_pow_of_pow_succ_eq_pow`; here neither `R` nor
+`A` need be commutative. -/
 theorem pow_eq_pow_of_pow_succ_eq_pow {M : Submodule R A} {n : ℕ} (h : M ^ (n + 1) = M ^ n)
     {k : ℕ} (hk : n ≤ k) : M ^ k = M ^ n := by
   induction k, hk using Nat.le_induction with
