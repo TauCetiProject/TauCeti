@@ -32,11 +32,11 @@ the integrals over `N` and `M`.
 
 ## Main results
 
-* `TauCeti.integrableTopForm_mpullback_iff`: pullback along a homeomorphism with invertible
+* `Homeomorph.integrableTopForm_mpullback_iff`: pullback along a homeomorphism with invertible
   derivative preserves and reflects integrability of top forms.
-* `TauCeti.integralTopForm_mpullback_of_isOrientationPreservingAt`: an orientation-preserving
+* `Homeomorph.integralTopForm_mpullback_of_isOrientationPreservingAt`: an orientation-preserving
   such homeomorphism preserves the integral.
-* `TauCeti.integralTopForm_mpullback_of_isOrientationReversingAt`: an orientation-reversing one
+* `Homeomorph.integralTopForm_mpullback_of_isOrientationReversingAt`: an orientation-reversing one
   negates it.
 
 ## References
@@ -54,13 +54,13 @@ noncomputable section
 open Set MeasureTheory
 open scoped Manifold
 
-namespace TauCeti
-
 variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M]
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J 1 N] {k : ℕ}
+
+namespace TauCeti
 
 section ChartPiece
 
@@ -174,6 +174,12 @@ theorem RoughForm.integral_signedInChartAt_mpullback_eq (φ : RoughForm J N ℝ 
 
 end ChartPiece
 
+end TauCeti
+
+namespace Homeomorph
+
+open TauCeti
+
 /-- Pullback along a homeomorphism that is differentiable with invertible manifold derivative
 at every point preserves and reflects integrability of top forms. -/
 theorem integrableTopForm_mpullback_iff (f : M ≃ₜ N) (hf : MDifferentiable I J f)
@@ -194,7 +200,7 @@ theorem integrableTopForm_mpullback_iff (f : M ≃ₜ N) (hf : MDifferentiable I
   constructor
   · intro h
     obtain ⟨hc, ⟨b⟩, hi⟩ := (integrableTopForm_iff _).mp h
-    rw [RoughForm.tsupport_mpullback_eq_preimage f hd, f.isCompact_preimage] at hc
+    rw [φ.tsupport_mpullback_eq_preimage f hd, f.isCompact_preimage] at hc
     refine φ.integrableTopForm_of_open_cover hc b (fun p ↦ f p) (fun p ↦ f '' u p)
       (fun p ↦ f.isOpenMap _ (hu p))
       (fun p ↦ image_subset_iff.mpr inter_subset_right) (fun y _ ↦ mem_iUnion.mpr
@@ -222,7 +228,7 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt (f : M ≃ₜ N)
   classical
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
-  have hint := integrableTopForm_mpullback_iff f hf (fun x ↦ (ho x).isInvertible_mfderiv) φ
+  have hint := f.integrableTopForm_mpullback_iff hf (fun x ↦ (ho x).isInvertible_mfderiv) φ
   by_cases hφ : IntegrableTopForm φ
   swap
   · rw [integralTopForm_eq_zero_of_not_integrable _ _ hφ,
@@ -283,7 +289,7 @@ theorem integralTopForm_mpullback_of_isOrientationReversingAt (f : M ≃ₜ N)
     (ho : ∀ x, Manifold.Orientation.IsOrientationReversingAt o o' f x)
     (φ : RoughForm J N ℝ k) : integralTopForm o (mpullback I J f φ) = -integralTopForm o' φ := by
   rw [← integralTopForm_neg]
-  refine integralTopForm_mpullback_of_isOrientationPreservingAt f hf (fun x ↦ ?_) φ
+  refine f.integralTopForm_mpullback_of_isOrientationPreservingAt hf (fun x ↦ ?_) φ
   exact (Manifold.Orientation.isOrientationPreservingAt_neg_right o o' f x).2 (ho x)
 
-end TauCeti
+end Homeomorph

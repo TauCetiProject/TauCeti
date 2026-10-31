@@ -140,8 +140,8 @@ theorem isCompact_tsupport_mpullback {f : X → Y} (hf : IsProperMap f)
 
 /-- Along a homeomorphism whose manifold derivative is invertible at every point, the
 topological support of a pullback is the preimage of the support of the form. -/
-theorem tsupport_mpullback_eq_preimage (f : X ≃ₜ Y)
-    (hd : ∀ x, (mfderiv I I' f x).IsInvertible) (φ : RoughForm I' Y F k) :
+theorem tsupport_mpullback_eq_preimage (φ : RoughForm I' Y F k) (f : X ≃ₜ Y)
+    (hd : ∀ x, (mfderiv I I' f x).IsInvertible) :
     _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (mpullback I I' f φ) =
       f ⁻¹' _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ := by
   refine (tsupport_mpullback_subset_preimage f.continuous φ).antisymm fun x hx ↦ ?_
