@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
-public import Mathlib.CategoryTheory.Filtered.Final
+public import TauCeti.CategoryTheory.Limits.Final
 
 /-!
 # Cofinal subsequences of module towers
@@ -48,6 +48,7 @@ variable (F : ModuleTower.{v} R) (φ : ℕ →o ℕ)
 theorem subsequence_transitionOfLE {n m : ℕ} (h : n ≤ m) :
     (F.subsequence φ).transitionOfLE h = F.transitionOfLE (φ.monotone h) := by
   rw [transitionOfLE_def, transitionOfLE_def]
+  -- Precomposition maps this order morphism to the unique morphism between the selected indices.
   rfl
 
 @[simp]
@@ -56,18 +57,20 @@ theorem subsequence_transition (n : ℕ) :
   rw [← transitionOfLE_succ, subsequence_transitionOfLE]
 
 private def limSubsequenceIso (hφ : ∀ n, ∃ m, n ≤ φ m) :
-    ModuleCat.of R F.lim ≅ ModuleCat.of R (F.subsequence φ).lim := by
-  letI : φ.monotone.functor.Final := φ.monotone.final_functor_iff.mpr hφ
-  exact ((Functor.Initial.isLimitWhiskerEquiv φ.monotone.functor.op F.limCone).symm
-    F.isLimitLimCone).conePointUniqueUpToIso (F.subsequence φ).isLimitLimCone
+    ModuleCat.of R F.lim ≅ ModuleCat.of R (F.subsequence φ).lim :=
+  (F.isLimitLimCone.whiskerOfCofinal φ hφ).conePointUniqueUpToIso
+    (F.subsequence φ).isLimitLimCone
 
 private theorem limSubsequenceIso_hom_comp_π (hφ : ∀ n, ∃ m, n ≤ φ m) (n : ℕ) :
     (F.limSubsequenceIso φ hφ).hom ≫ ModuleCat.ofHom ((F.subsequence φ).limπ n) =
       ModuleCat.ofHom (F.limπ (φ n)) := by
-  let : φ.monotone.functor.Final := φ.monotone.final_functor_iff.mpr hφ
-  exact IsLimit.conePointUniqueUpToIso_hom_comp
-    ((Functor.Initial.isLimitWhiskerEquiv φ.monotone.functor.op F.limCone).symm
-      F.isLimitLimCone) (F.subsequence φ).isLimitLimCone (op n)
+  have h := congrArg ModuleCat.Hom.hom
+    (IsLimit.conePointUniqueUpToIso_hom_comp (F.isLimitLimCone.whiskerOfCofinal φ hφ)
+      (F.subsequence φ).isLimitLimCone (op n))
+  simp only [ModuleCat.hom_comp, Cone.whisker_π, Functor.whiskerLeft_app] at h
+  -- The selected leg has source the cone point, definitionally the concrete limit module.
+  erw [(F.subsequence φ).limCone_π_app n, F.limCone_π_app (φ n)] at h
+  exact ModuleCat.hom_ext h
 
 /-- Restricting compatible families to a cofinal monotone sequence preserves the inverse
 limit. The forward map is restriction, even when the sequence repeats indices. -/

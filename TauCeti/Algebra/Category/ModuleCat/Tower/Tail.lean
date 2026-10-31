@@ -5,22 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Subsequence
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.CategoryTheory.Whiskering
 
 /-!
 # Removing finite initial segments of module towers
 
-Deleting the first `k` terms of a tower changes neither its limit nor its first derived limit.
-The comparison maps restrict product families to the tail; their inverses are induced by the
-composite transition maps from the tail back to the original tower. Both comparisons are natural
+The tail is a subsequence of a tower, so `ModuleTower.limSubsequenceEquiv` compares its
+limit with the original limit. Deleting the first `k` terms also preserves the first derived
+limit. Its comparison restricts product families to the tail; the inverse is induced by the
+composite transition maps from the tail back to the original tower. This comparison is natural
 in tower morphisms. No surjectivity or Mittag-Leffler hypothesis is needed. Consequently, a tower
 whose transitions are surjective from some index on has vanishing `lim¹`.
 
-The proof uses the shift presentation of `lim` and `lim¹` from `ModuleTower.Basic`: a finite
+The proof uses the shift presentation of `lim¹` from `ModuleTower.Basic`: a finite
 telescoping sum makes the composite of restriction and transition equal to the identity modulo
-the shift. These comparisons allow finite changes of starting index in inverse-limit sequences.
+the shift. This comparison allows finite changes of starting index in inverse-limit sequences.
 
 ## References
 
@@ -42,20 +43,9 @@ variable {R : Type u} [Ring R]
 
 /-- The tail of a tower starting at its `k`-th term. -/
 abbrev tail (F : ModuleTower.{v} R) (k : ℕ) : ModuleTower.{v} R :=
-  (show Monotone (fun n : ℕ ↦ k + n) from fun _ _ h ↦ Nat.add_le_add_left h k).functor.op ⋙ F
+  F.subsequence ⟨(k + ·), fun _ _ h ↦ Nat.add_le_add_left h k⟩
 
 variable (F : ModuleTower.{v} R) (k : ℕ)
-
-@[simp]
-theorem tail_transitionOfLE {n m : ℕ} (h : n ≤ m) :
-    (F.tail k).transitionOfLE h = F.transitionOfLE (Nat.add_le_add_left h k) := by
-  rw [transitionOfLE_def, transitionOfLE_def]
-  rfl
-
-@[simp]
-theorem tail_transition (n : ℕ) : (F.tail k).transition n = F.transition (k + n) := by
-  rw [transition_def, transition_def]
-  rfl
 
 /-- Restriction of a product family to a tail. -/
 def tailRestriction : F.Product →ₗ[R] (F.tail k).Product :=
@@ -70,7 +60,8 @@ theorem tailRestriction_apply (x : F.Product) (n : ℕ) :
 theorem tailRestriction_shift :
     F.tailRestriction k ∘ₗ F.shift = (F.tail k).shift ∘ₗ F.tailRestriction k := by
   ext x n
-  simp only [LinearMap.comp_apply, tailRestriction_apply, shift_apply, tail_transition]
+  simp only [LinearMap.comp_apply, tailRestriction_apply, shift_apply,
+    ← transitionOfLE_succ, subsequence_transitionOfLE]
   rfl
 
 /-- Composite transition maps give a morphism from a tail to the original tower. -/
@@ -83,17 +74,6 @@ theorem tailToSelf_app (n : ℕ) :
     ((F.tailToSelf k).app (op n)).hom = F.transitionOfLE (Nat.le_add_left n k) := by
   rw [transitionOfLE_def]
   rfl
-
-/-- Restriction of compatible families to a tail. -/
-private def limTailMap : F.lim →ₗ[R] (F.tail k).lim :=
-  (F.tailRestriction k).restrict fun x hx ↦ by
-    rw [lim_eq_ker, LinearMap.mem_ker] at hx ⊢
-    rw [← LinearMap.comp_apply, ← tailRestriction_shift, LinearMap.comp_apply, hx, map_zero]
-
-@[simp]
-private theorem coe_limTailMap_apply (x : F.lim) :
-    (F.limTailMap k x : (F.tail k).Product) = F.tailRestriction k x :=
-  (rfl)
 
 /-- Restriction on the cokernels of the difference maps. -/
 private def limOneTailMap : F.limOne →ₗ[R] (F.tail k).limOne :=
@@ -124,40 +104,6 @@ private theorem shift_tailCorrection (x : F.Product) :
   convert! key using 1 <;> congr! 3
   all_goals exact congr_index _ _ (by omega)
 
-/-- Deleting finitely many initial terms preserves the inverse limit. The forward map is
-restriction, and the inverse is induced by the composite transition maps. -/
-def limTailEquiv : F.lim ≃ₗ[R] (F.tail k).lim :=
-  LinearEquiv.ofLinearMap (F.limTailMap k) (limMap (F.tailToSelf k))
-    (by
-      apply LinearMap.ext
-      intro x
-      apply Subtype.ext
-      funext n
-      simpa only [LinearMap.comp_apply, coe_limTailMap_apply, tailRestriction_apply,
-        coe_limMap_apply, productMap_apply, tailToSelf_app, tail_transitionOfLE,
-        LinearMap.id_apply] using
-        (F.tail k).transitionOfLE_coe_lim x (Nat.le_add_left n k))
-    (by
-      apply LinearMap.ext
-      intro x
-      apply Subtype.ext
-      funext n
-      simpa only [LinearMap.comp_apply, coe_limMap_apply, productMap_apply, tailToSelf_app,
-        coe_limTailMap_apply, tailRestriction_apply, LinearMap.id_apply] using
-        F.transitionOfLE_coe_lim x (Nat.le_add_left n k))
-
-@[simp]
-theorem coe_limTailEquiv_apply (x : F.lim) (n : ℕ) :
-    (F.limTailEquiv k x : (F.tail k).Product) n = (x : F.Product) (k + n) :=
-  (rfl)
-
-@[simp]
-theorem coe_limTailEquiv_symm_apply (x : (F.tail k).lim) (n : ℕ) :
-    ((F.limTailEquiv k).symm x : F.Product) n =
-      F.transitionOfLE (Nat.le_add_left n k) ((x : (F.tail k).Product) n) := by
-  simp only [limTailEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
-    coe_limMap_apply, productMap_apply, tailToSelf_app]
-
 private theorem limOne_tailToSelf_restriction (x : F.Product) :
     (Submodule.Quotient.mk (productMap (F.tailToSelf k) (F.tailRestriction k x)) : F.limOne) =
       Submodule.Quotient.mk x := by
@@ -176,7 +122,8 @@ def limOneTailEquiv : F.limOne ≃ₗ[R] (F.tail k).limOne :=
       have h : F.tailRestriction k (productMap (F.tailToSelf k) x) =
           productMap ((F.tail k).tailToSelf k) ((F.tail k).tailRestriction k x) := by
         ext n
-        simp only [tailRestriction_apply, productMap_apply, tailToSelf_app, tail_transitionOfLE]
+        simp only [tailRestriction_apply, productMap_apply, tailToSelf_app,
+          subsequence_transitionOfLE]
       rw [h]
       exact (F.tail k).limOne_tailToSelf_restriction k x)
     (by
@@ -204,20 +151,10 @@ theorem subsingleton_limOne_of_surjective_of_le
     (h : ∀ n, k ≤ n → Function.Surjective (F.transition n)) : Subsingleton F.limOne :=
   (F.limOneTailEquiv k).toEquiv.subsingleton_congr.2 <|
     (F.tail k).subsingleton_limOne_of_surjective fun n ↦ by
-      rw [tail_transition]
+      erw [subsequence_transition, transitionOfLE_succ]
       exact h _ (Nat.le_add_right k n)
 
 variable {F} {G : ModuleTower.{v} R}
-
-/-- The inverse-limit tail comparison is natural in morphisms of towers. -/
-theorem limTailEquiv_naturality (f : F ⟶ G) :
-    (G.limTailEquiv k).toLinearMap ∘ₗ limMap f =
-      limMap (Functor.whiskerLeft _ f) ∘ₗ (F.limTailEquiv k).toLinearMap := by
-  apply LinearMap.ext
-  intro x
-  apply Subtype.ext
-  funext n
-  simp
 
 /-- The `lim¹` tail comparison is natural in morphisms of towers. -/
 theorem limOneTailEquiv_naturality (f : F ⟶ G) :
@@ -229,6 +166,8 @@ theorem limOneTailEquiv_naturality (f : F ⟶ G) :
     Submodule.mkQ_apply, limOneMap_mk, limOneTailEquiv_mk]
   congr 1
   funext n
-  simp
+  simp only [tailRestriction_apply, productMap_apply]
+  -- Evaluating the shift order hom sends n to k + n, including in the dependent source module.
+  rfl
 
 end TauCeti.ModuleTower

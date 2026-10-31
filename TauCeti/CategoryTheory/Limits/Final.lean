@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Final
+public import Mathlib.CategoryTheory.Filtered.Final
 
 /-!
-# Cones with a fixed apex along an initial functor
+# Cones along initial functors
 
 For an initial functor `F : C ⥤ D`, Mathlib's `CategoryTheory.Functor.Initial.conesEquiv`
 identifies the category of cones over `G : D ⥤ E` with the category of cones over `F ⋙ G`, and
@@ -16,6 +16,11 @@ both of its unit and counit are the identity on cone points. This file records t
 bijection between natural transformations `const X ⟶ G` and `const X ⟶ F ⋙ G` for a fixed apex
 `X`, given by whiskering along `F`. It is the form in which initiality is used to compare
 constant presheaves on two sites.
+
+`CategoryTheory.Limits.IsLimit.whiskerOfCofinal` combines Mathlib's
+`Monotone.final_functor_iff` with `Functor.Initial.isLimitWhiskerEquiv`: a limit cone
+over an inverse system remains a limit after restriction along a cofinal monotone map
+from a directed preorder.
 -/
 
 public section
@@ -45,3 +50,15 @@ lemma constHomEquiv_apply (π : (Functor.const D).obj X ⟶ G) :
     constHomEquiv F G X π = Functor.whiskerLeft F π := (rfl)
 
 end CategoryTheory.Functor.Initial
+
+namespace CategoryTheory.Limits.IsLimit
+
+/-- Restriction along a cofinal monotone map from a directed preorder preserves a limit
+cone over an inverse system. -/
+noncomputable def whiskerOfCofinal {J K C : Type*} [Preorder J] [Preorder K]
+    [IsDirectedOrder J] [Category* C] {F : Kᵒᵖ ⥤ C} {c : Cone F} (hc : IsLimit c)
+    (φ : J →o K) (hφ : ∀ k, ∃ j, k ≤ φ j) : IsLimit (c.whisker φ.monotone.functor.op) := by
+  letI : φ.monotone.functor.Final := φ.monotone.final_functor_iff.mpr hφ
+  exact (Functor.Initial.isLimitWhiskerEquiv φ.monotone.functor.op c).symm hc
+
+end CategoryTheory.Limits.IsLimit
