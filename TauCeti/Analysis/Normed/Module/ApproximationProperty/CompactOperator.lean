@@ -6,18 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Hull
-public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Normed.Module.ApproximationProperty.Basic
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import Mathlib.Analysis.Normed.Lp.lpHolder
-import Mathlib.Analysis.RCLike.Lemmas
+import Mathlib.Analysis.Normed.Lp.lpSpace
 import TauCeti.Analysis.Convex.TotallyBounded
-import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
-import TauCeti.Analysis.Normed.Module.Annihilator
+import TauCeti.Analysis.Normed.Module.Dual.NullSequence
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
-import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
+import TauCeti.Analysis.Normed.Operator.Compact.NullSequence
 
 /-!
 # The approximation property and approximation of compact operators
@@ -43,14 +39,14 @@ annihilates `(φ (y n))ₙ` for every `φ ∈ Y*`, because `J (∑ aₙ • yₙ
 Convexity then carries the estimates from `y` to its closed convex hull, hence to `K`. Indexing
 `ℓ¹` by `ULift ℕ` places `Y` in the universe of the source spaces.
 
+The compact operator on `ℓ¹` is `TauCeti.exists_isCompactOperator_apply_eq`, and the duality
+step is `TauCeti.exists_forall_norm_sub_lt_of_finiteDimensional`; both live in general modules
+below approximation-property theory.
+
 ## Main statements
 
 * `TauCeti.HasApproximationProperty.mem_closure_setOf_hasFiniteRange`: on a space with the
   approximation property, every compact operator into it is a limit of finite-rank operators.
-* `TauCeti.exists_isCompactOperator_apply_eq`: a family tending to zero in a Banach space is the
-  image of a family tending to zero in `ℓ¹` under a compact operator.
-* `TauCeti.exists_dual_forall_norm_sub_lt`: for an injective operator `J` out of a Banach space,
-  every functional is approximated by functionals `ψ ∘ J` uniformly along each null sequence.
 * `TauCeti.exists_hasFiniteRange_forall_norm_sub_lt_of_mem_closure`: if an injective operator
   `J` out of a Banach space is a limit of finite-rank operators, the identity is approximated by
   finite-rank operators uniformly on the closed convex hull of `J ∘ y` for each null sequence
@@ -69,7 +65,7 @@ Convexity then carries the estimates from `y` to its closed convex hull, hence t
 public section
 
 open Filter Set
-open scoped NNReal ENNReal Topology lp ZeroAtInfty
+open scoped Topology lp
 
 namespace TauCeti
 
@@ -105,132 +101,8 @@ end Forward
 
 section RCLike
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-! ### The compact-disk construction -/
-
-/-- A family tending to zero is the product of a scalar family and a vector family that both
-tend to zero. -/
-theorem exists_smul_eq_of_tendsto_zero {ι : Type*} {l : Filter ι} {x : ι → E}
-    (hx : Tendsto x l (𝓝 0)) :
-    ∃ r : ι → 𝕜, Tendsto r l (𝓝 0) ∧ ∃ w : ι → E, Tendsto w l (𝓝 0) ∧ ∀ i, r i • w i = x i := by
-  -- Take `r i = √‖x i‖` and `w i = (r i)⁻¹ • x i`; both have norm `√‖x i‖`.
-  have hsqrt : Tendsto (fun i ↦ √‖x i‖) l (𝓝 0) := by
-    have := (Real.continuous_sqrt.tendsto 0).comp (tendsto_zero_iff_norm_tendsto_zero.mp hx)
-    rwa [Real.sqrt_zero] at this
-  have hnorm (i : ι) : ‖((√‖x i‖ : ℝ) : 𝕜)⁻¹ • x i‖ = √‖x i‖ := by
-    rw [norm_smul, norm_inv, RCLike.norm_ofReal, abs_of_nonneg (Real.sqrt_nonneg _),
-      inv_mul_eq_div, Real.div_sqrt]
-  refine ⟨fun i ↦ ((√‖x i‖ : ℝ) : 𝕜), ?_, fun i ↦ ((√‖x i‖ : ℝ) : 𝕜)⁻¹ • x i, ?_, fun i ↦ ?_⟩
-  · rw [tendsto_zero_iff_norm_tendsto_zero]
-    simpa [abs_of_nonneg (Real.sqrt_nonneg _)] using hsqrt
-  · rw [tendsto_zero_iff_norm_tendsto_zero]
-    simpa only [hnorm] using hsqrt
-  · rcases eq_or_ne (√‖x i‖) 0 with h | h
-    · simp_all
-    · exact smul_inv_smul₀ (RCLike.ofReal_ne_zero.mpr h) _
-
-/-- A family `x` in a Banach space tending to zero along the cofinite filter is the image, under a
-compact operator `T : ℓ¹ →L[𝕜] E`, of a family in `ℓ¹` tending to zero along the cofinite
-filter. -/
-theorem exists_isCompactOperator_apply_eq [CompleteSpace E] {ι : Type*} {x : ι → E}
-    (hx : Tendsto x cofinite (𝓝 0)) :
-    ∃ T : ℓ^1(ι, 𝕜) →L[𝕜] E, IsCompactOperator T ∧
-      ∃ y : ι → ℓ^1(ι, 𝕜), Tendsto y cofinite (𝓝 0) ∧ ∀ i, T (y i) = x i := by
-  classical
-  -- Write `x i = r i • s i • v i` with null factors; `T` multiplies by `s` and then synthesizes
-  -- with `v`, and the family in `ℓ¹` is `r i • eᵢ`.
-  obtain ⟨r, hr, w, hw, hrw⟩ := exists_smul_eq_of_tendsto_zero (𝕜 := 𝕜) hx
-  obtain ⟨s, hs, v, hv, hsv⟩ := exists_smul_eq_of_tendsto_zero (𝕜 := 𝕜) hw
-  let d : ℓ^∞(ι, 𝕜) := ⟨s, memℓp_infty hs.norm.bddAbove_range_of_cofinite⟩
-  let v' : ℓ^∞(ι, E) := ⟨v, memℓp_infty hv.norm.bddAbove_range_of_cofinite⟩
-  -- The synthesis operator `a ↦ ∑ aᵢ • vᵢ`, from the `ℓ¹`-`ℓ∞` pairing.
-  let V : ℓ^1(ι, 𝕜) →L[𝕜] E :=
-    (lp.dualPairing 1 ∞ (fun _ ↦ ContinuousLinearMap.lsmul 𝕜 𝕜) (K := 1)
-      fun _ ↦ ContinuousLinearMap.opNorm_lsmul_le.trans_eq NNReal.coe_one.symm).flip v'
-  refine ⟨V ∘L lp.diagonalCLM d, (lp.isCompactOperator_diagonalCLM d ?_).clm_comp V,
-    fun i ↦ lp.single 1 i (r i), ?_, fun i ↦ ?_⟩
-  · simpa [d] using hs.norm
-  · rw [tendsto_zero_iff_norm_tendsto_zero]
-    simpa [lp.norm_single] using hr.norm
-  · rw [← hrw, ← hsv, smul_smul]
-    simp only [V, ContinuousLinearMap.comp_apply, lp.diagonalCLM_single,
-      ContinuousLinearMap.flip_apply]
-    rw [lp.dualPairing_apply, tsum_eq_single i fun j hj ↦ by simp [hj]]
-    simp [d, v', mul_comm]
-
-/-! ### Approximation along null sequences through an injective operator -/
-
-variable {Y : Type*} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [CompleteSpace Y]
-
-open ZeroAtInftyContinuousMap in
-/-- Let `J : Y →L[𝕜] E` be injective, with `Y` complete, and let `y` be a null sequence in `Y`.
-Every continuous functional `φ` on `Y` is approximated by functionals of the form `ψ ∘ J`,
-uniformly along `y`. -/
-theorem exists_dual_forall_norm_sub_lt {J : Y →L[𝕜] E} (hJ : Function.Injective J) {y : ℕ → Y}
-    (hy : Tendsto y atTop (𝓝 0)) (φ : StrongDual 𝕜 Y) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ ψ : StrongDual 𝕜 E, ∀ n, ‖φ (y n) - ψ (J (y n))‖ < δ := by
-  classical
-  -- The values of a functional along `y` form a null sequence, that is, an element of `c₀`.
-  have hseq (χ : StrongDual 𝕜 Y) : Tendsto (fun n ↦ χ (y n)) cofinite (𝓝 0) := by
-    rw [Nat.cofinite_eq_atTop, ← map_zero χ]
-    exact (χ.continuous.tendsto 0).comp hy
-  let L : StrongDual 𝕜 E →ₗ[𝕜] C₀(ℕ, 𝕜) :=
-    { toFun ψ := mkOfDiscrete (fun n ↦ (ψ ∘L J) (y n)) (hseq (ψ ∘L J))
-      map_add' _ _ := by ext; simp
-      map_smul' _ _ := by ext; simp }
-  -- A functional `Λ` on `c₀` annihilating the range of `L` is a series `∑ aₙ eₙ*` with `a ∈ ℓ¹`.
-  -- It pairs each coefficient sequence with the vector `z = ∑ aₙ • yₙ`, and `J z = 0`.
-  have hmem : mkOfDiscrete _ (hseq φ) ∈ (LinearMap.range L).topologicalClosure := by
-    rw [Submodule.mem_topologicalClosure_iff_forall_dual_eq_zero]
-    intro Λ hΛ
-    obtain ⟨C, hC⟩ := hy.norm.bddAbove_range
-    have hs : Summable fun n ↦ Λ (single n 1) • y n :=
-      Summable.of_norm_bounded ((summable_norm_apply_single_one Λ).mul_right C) fun n ↦ by
-        rw [norm_smul]
-        exact mul_le_mul_of_nonneg_left (hC ⟨n, rfl⟩) (norm_nonneg _)
-    have hval (χ : StrongDual 𝕜 Y) :
-        Λ (mkOfDiscrete _ (hseq χ)) = χ (∑' n, Λ (single n 1) • y n) :=
-      (hasSum_apply_single_one_mul Λ _).unique (by simpa using hs.hasSum.mapL χ)
-    have hz : ∑' n, Λ (single n 1) • y n = 0 := hJ <| by
-      rw [map_zero]
-      refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun ψ ↦ ?_
-      rw [← ContinuousLinearMap.comp_apply, ← hval]
-      exact hΛ _ ⟨ψ, rfl⟩
-    rw [hval, hz, map_zero]
-  rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe] at hmem
-  obtain ⟨_, ⟨ψ, rfl⟩, hψ⟩ := Metric.mem_closure_iff.mp hmem δ hδ
-  rw [dist_eq_norm] at hψ
-  refine ⟨ψ, fun n ↦ lt_of_le_of_lt ?_ hψ⟩
-  simpa [L] using norm_coe_le_norm (mkOfDiscrete _ (hseq φ) - L ψ) n
-
-/-- Let `J : Y →L[𝕜] E` be injective, with `Y` complete, and let `y` be a null sequence in `Y`.
-Every operator `G` from `Y` into a finite-dimensional space `V` is approximated by operators of
-the form `S ∘ J`, uniformly along `y`. -/
-theorem exists_forall_norm_sub_lt_of_finiteDimensional {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] {J : Y →L[𝕜] E} (hJ : Function.Injective J)
-    {y : ℕ → Y} (hy : Tendsto y atTop (𝓝 0)) (G : Y →L[𝕜] V) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ S : E →L[𝕜] V, ∀ n, ‖G (y n) - S (J (y n))‖ < δ := by
-  classical
-  -- Approximate each coordinate of `G` in a basis `b` of `V`, with error `δ / (∑ i, ‖b i‖ + 1)`.
-  let b := Module.finBasis 𝕜 V
-  set M := ∑ i, ‖b i‖
-  have hM : 0 ≤ M := Finset.sum_nonneg fun i _ ↦ norm_nonneg _
-  choose ψ hψ using fun i ↦ exists_dual_forall_norm_sub_lt hJ hy
-    (LinearMap.toContinuousLinearMap (b.coord i) ∘L G) (δ := δ / (M + 1)) (by positivity)
-  refine ⟨∑ i, (ψ i).smulRight (b i), fun n ↦ ?_⟩
-  calc ‖G (y n) - (∑ i, (ψ i).smulRight (b i)) (J (y n))‖
-      = ‖∑ i, (b.coord i (G (y n)) - ψ i (J (y n))) • b i‖ := by
-        conv_lhs => rw [← b.sum_repr (G (y n))]
-        simp [sub_smul, Finset.sum_sub_distrib]
-    _ ≤ ∑ i, ‖b.coord i (G (y n)) - ψ i (J (y n))‖ * ‖b i‖ :=
-        (norm_sum_le _ _).trans_eq (by simp only [norm_smul])
-    _ ≤ ∑ i, δ / (M + 1) * ‖b i‖ :=
-        Finset.sum_le_sum fun i _ ↦ by gcongr; simpa using (hψ i n).le
-    _ = δ / (M + 1) * M := by rw [Finset.mul_sum]
-    _ < δ := by
-        rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-        nlinarith
+variable {𝕜 E Y : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [CompleteSpace Y]
 
 /-- Let `J : Y →L[𝕜] E` be injective, with `Y` complete, and an operator-norm limit of bounded
 finite-rank operators. For every null sequence `y` in `Y`, the identity of `E` is approximated
