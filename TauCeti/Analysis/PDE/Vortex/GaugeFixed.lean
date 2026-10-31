@@ -286,25 +286,17 @@ section Vacuum
 
 open scoped SchwartzMap LineDeriv
 
-/-- A coordinate partial derivative of a Schwartz field is a coordinate of its line
-derivative. -/
-private theorem fderiv_apply_eq_lineDerivOp_apply (y : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)))
-    (i : Fin 4) (z v : ℂ) : fderiv ℝ (fun w ↦ y w i) z v = (∂_{v} y) z i := by
-  have hp := ((EuclideanSpace.proj i).hasFDerivAt.comp z y.differentiableAt.hasFDerivAt).fderiv
-  simpa [Function.comp_def, SchwartzMap.lineDerivOp_apply_eq_fderiv] using
-    congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) hp
-
 /-- At the vacuum, the gauge-fixed operator is `vacuumOperator`. -/
 theorem gaugeFixedOperator_vacuumField (y : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ) :
     gaugeFixedOperator vacuumField y z = vacuumOperator y z := by
   ext i
-  fin_cases i <;> simp [fderiv_apply_eq_lineDerivOp_apply] <;> ring
+  fin_cases i <;> simp [SchwartzMap.fderiv_apply_eq_lineDerivOp_apply] <;> ring
 
 /-- At the vacuum, the formal adjoint of the gauge-fixed operator is `vacuumAdjoint`. -/
 theorem gaugeFixedAdjoint_vacuumField (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ) :
     gaugeFixedAdjoint vacuumField η z = vacuumAdjoint η z := by
   ext i
-  fin_cases i <;> simp [fderiv_apply_eq_lineDerivOp_apply] <;> ring
+  fin_cases i <;> simp [SchwartzMap.fderiv_apply_eq_lineDerivOp_apply] <;> ring
 
 end Vacuum
 
