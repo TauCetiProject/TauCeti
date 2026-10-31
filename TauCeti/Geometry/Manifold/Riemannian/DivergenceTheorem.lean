@@ -173,8 +173,7 @@ theorem integrable_divergence (hX : ContMDiff I I.tangent 1 (T% X))
     (hc : HasCompactSupport (β := E) X) :
     Integrable (divergence I X) (riemannianVolume I M) :=
   (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
-    (by simpa using hX)).continuous.integrable_of_hasCompactSupport
-      (hc.mono' fun x hx ↦ by_contra fun h ↦ hx (divergence_eq_zero_of_notMem_tsupport I h))
+    (by simpa using hX)).continuous.integrable_of_hasCompactSupport (hc.divergence I)
 
 /-- The divergence theorem for a compactly supported field whose support lies in one chart. -/
 private theorem integral_divergence_eq_zero_of_tsupport_subset
@@ -294,8 +293,7 @@ theorem integral_mul_divergence_of_hasCompactSupport_right {f : M → ℝ}
     (hXc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _))
     ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
       (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport
-      (HasCompactSupport.mul_left (hXc.mono' fun x hx ↦
-        by_contra fun h ↦ hx (divergence_eq_zero_of_notMem_tsupport I h))))
+      (hXc.divergence I).mul_left)
 
 /-- **Green's first identity** on a manifold without boundary: for a compactly supported `C¹`
 function `f` and a `C²` function `g`, `∫ f Δg dV = -∫ ⟪grad f, grad g⟫ dV`. -/
@@ -314,15 +312,11 @@ theorem integral_mul_laplaceBeltrami_right_eq_left {f g : M → ℝ} (hf : ContM
     ∫ x, f x * laplaceBeltrami I g x ∂riemannianVolume I M =
       ∫ x, laplaceBeltrami I f x * g x ∂riemannianVolume I M := by
   have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
-  -- The gradient of `f` vanishes off the support of `f`, so it is compactly supported.
-  have hgradc : HasCompactSupport (β := E) (mgradient I f) :=
-    hfc.mono' fun x hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
-      (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
   simp_rw [mul_comm (laplaceBeltrami I f _), laplaceBeltrami_def]
   rw [integral_mul_divergence (hf.of_le (by norm_num)) hfc
       (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])),
     integral_mul_divergence_of_hasCompactSupport_right (hg.of_le (by norm_num))
-      (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])) hgradc]
+      (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])) (hfc.mgradient I)]
   congr 1
   refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
   exact (inner_mgradient_right _).symm.trans (inner_mgradient _)
