@@ -49,6 +49,8 @@ For two arbitrary families of variables, the analogous comparison into multivari
   univariate variable, and the remaining variables to constants.
 * `MvPowerSeries.norm_restrictedOptionEquiv` and `MvPowerSeries.isometry_restrictedOptionEquiv`:
   it preserves the Gauss norms.
+* `MvPowerSeries.coe_restrictedOptionEquiv_restrictedMap`: it commutes with bounded coefficient
+  maps, acting on the coefficient ring of restricted series in the remaining variables.
 * `MvPowerSeries.isRestricted_of_map_subtype_eq_optionEquivLeft`: transporting restriction from
   constant radius `r` to an iterated series with coefficient radius `ρ ≤ r`.
 
@@ -340,5 +342,18 @@ theorem norm_restrictedOptionEquiv (f : Flat) : ‖restrictedOptionEquiv f‖ = 
 theorem isometry_restrictedOptionEquiv :
     Isometry (restrictedOptionEquiv (σ := σ) (R := R) (c := c)) :=
   AddMonoidHomClass.isometry_iff_norm _ |>.mpr norm_restrictedOptionEquiv
+
+/-- The comparison commutes with bounded coefficient maps: the iterated series of the
+coefficientwise image of `f` under `φ : R →+* S` is the image of the iterated series of `f` under
+the coefficientwise map `R{Y/(c ∘ some)} →+* S{Y/(c ∘ some)}` induced by `φ`. -/
+theorem coe_restrictedOptionEquiv_restrictedMap {S : Type*} [NormedCommRing S]
+    [IsUltrametricDist S] (φ : R →+* S) {C : ℝ} (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖) (f : Flat) :
+    (restrictedOptionEquiv (TauCeti.MvPowerSeries.restrictedMap φ hφ f) :
+        PowerSeries (IsRestricted.subring (R := S) (fun i : σ ↦ c (some i)))) =
+      PowerSeries.map (TauCeti.MvPowerSeries.restrictedMap φ hφ)
+        (restrictedOptionEquiv f : PowerSeries Inner) := by
+  ext n : 1
+  refine Subtype.ext (MvPowerSeries.ext fun t ↦ ?_)
+  simp [coeff_coeff_optionEquivLeft, TauCeti.MvPowerSeries.coeff_restrictedMap]
 
 end MvPowerSeries
