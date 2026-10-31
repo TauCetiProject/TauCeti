@@ -405,9 +405,10 @@ theorem evaln_sound {O : ℕ →. ℕ} {k : ℕ} {c : Code} (h : evaln σ k c n 
   split_ifs at hy with hz
   exact hσ z hz y hy
 
-/-- **Completeness.** If the answers `σ` are exactly the values of the oracle `O`, every value of
-a program relative to `O` is the output of a successful run against `σ` at some fuel. -/
-theorem exists_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some y ↔ y ∈ O z)
+/-- **Completeness.** If the answers `σ` give every value of the oracle `O`, every value of a
+program relative to `O` is the output of a successful run against `σ` at some fuel. The answers
+may go beyond `O` at addresses where `O` is undefined. -/
+theorem exists_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ} (hσ : ∀ z y, y ∈ O z → σ z = some y)
     {c : Code} {y : ℕ} (h : y ∈ eval O c n) : ∃ k d, evaln σ k c n = some d ∧ d.output = y := by
   induction c generalizing n y with
   | zero =>
@@ -424,7 +425,7 @@ theorem exists_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ} (hσ : ∀ z y, σ z
     exact ⟨n + 1, _, evaln_succ_right_eq_some.2 ⟨le_rfl, rfl⟩, h.symm⟩
   | oracle =>
     rw [eval_oracle] at h
-    exact ⟨n + 1, _, evaln_succ_oracle_eq_some.2 ⟨le_rfl, y, (hσ n y).2 h, rfl⟩, rfl⟩
+    exact ⟨n + 1, _, evaln_succ_oracle_eq_some.2 ⟨le_rfl, y, hσ n y h, rfl⟩, rfl⟩
   | pair cf cg hf hg =>
     obtain ⟨y₁, h₁, y₂, h₂, rfl⟩ := mem_eval_pair.1 h
     obtain ⟨k₁, d₁, hd₁, rfl⟩ := hf h₁
@@ -471,7 +472,7 @@ theorem exists_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ} (hσ : ∀ z y, σ z
       obtain ⟨x, hx, ⟨-, hy⟩ | ⟨hx0, hy⟩⟩ := mem_eval_rfind'.1 h
       · omega
       · obtain ⟨k₁, dx, hdx, rfl⟩ := hf hx
-        obtain ⟨k₂, d', hd', hd'y⟩ := ih (m + 1) (by rwa [show j + (m + 1) = j + 1 + m by omega])
+        obtain ⟨k₂, d', hd', hd'y⟩ := ih (m + 1) (by rwa [← Nat.add_assoc, Nat.add_right_comm])
         exact ⟨max (max k₁ k₂) (Nat.pair a m) + 1, _, evaln_succ_rfind'_eq_some.2
           ⟨by omega, dx, evaln_mono (by omega) hdx,
             Or.inr ⟨hx0, d', evaln_mono (by omega) hd', rfl⟩⟩, by simp [hd'y]; omega⟩
@@ -481,7 +482,7 @@ theorem exists_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ} (hσ : ∀ z y, σ z
 against `σ`. -/
 theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some y ↔ y ∈ O z)
     {c : Code} {y : ℕ} : y ∈ eval O c n ↔ ∃ k d, evaln σ k c n = some d ∧ d.output = y :=
-  ⟨exists_evaln_eq_some_of_mem_eval hσ, fun ⟨_, _, h, hy⟩ =>
+  ⟨exists_evaln_eq_some_of_mem_eval fun z y => (hσ z y).2, fun ⟨_, _, h, hy⟩ =>
     hy ▸ evaln_sound h fun z _ y' hy' => (hσ z y').1 hy'⟩
 
 end TauCeti.Oracle.Single.Code
