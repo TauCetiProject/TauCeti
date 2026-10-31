@@ -423,6 +423,16 @@ theorem mem_maximalIdeal_iff_ord_pos {f : P.integers} (hf : (f : F) ≠ 0) :
     f ∈ IsLocalRing.maximalIdeal P.integers ↔ 0 < P.ord (f : F) :=
   Valuation.mem_maximalIdeal_iff_ord_pos P.valuation hf
 
+/-- Multiplying by a function `s` of order `d` at `P` clears exactly the poles of order at most
+`d`: `s * x ∈ 𝒪_P` if and only if `v_P(x) ≤ exp d`. -/
+theorem mul_mem_integers_iff {P : Place k F} {s x : F} {d : ℤ} (hs0 : s ≠ 0)
+    (hs : P.ord s = d) : s * x ∈ P.integers ↔ P.valuation x ≤ WithZero.exp d := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rw [P.mem_integers_iff_ord_nonneg, P.ord_mul hs0 hx, P.valuation_eq_exp_neg_ord hx,
+    WithZero.exp_le_exp, hs]
+  omega
+
 /-- The valuation ring of a place is a proper subring of `F` (Stichtenoth,
 Definition 1.1.4). -/
 theorem integers_ne_top : P.integers ≠ ⊤ :=

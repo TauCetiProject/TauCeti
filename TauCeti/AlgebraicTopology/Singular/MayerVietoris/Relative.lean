@@ -78,6 +78,8 @@ corner pair with `(A ∪ B, C ∪ D)`.
 * `TopCat.epi_pairMayerVietorisFromBiprod_zero` and `TopCat.mono_pairMayerVietorisToBiprod`:
   surjectivity at the degree-zero endpoint, and injectivity of the first map when
   `Hₖ₊₁(A ∪ B, C ∪ D)` vanishes.
+* `TopCat.isZero_singularHomology_ofInclusion_union`: `Hₙ(A ∪ B, C ∪ D)` vanishes when `Hₙ(A, C)`,
+  `Hₙ(B, D)` and `Hₙ₋₁(A ∩ B, C ∩ D)` do.
 
 ## References
 
@@ -884,6 +886,26 @@ lemma epi_pairMayerVietorisFromBiprod_zero : Epi (pairMayerVietorisFromBiprod R 
     (isPushout_toSmallSingularPair_right hCA hDB)
   rw [← mayerVietorisFromBiprod_comp_homologyMap_smallSingularPairToUnion]
   exact epi_comp _ _
+
+include hA hB hC hD in
+/-- **Vanishing propagates along the Mayer–Vietoris sequence of two pairs**: if `Hₙ(A, C)` and
+`Hₙ(B, D)` vanish, and so does `Hₙ₋₁(A ∩ B, C ∩ D)` when `n` is positive, then `Hₙ(A ∪ B, C ∪ D)`
+vanishes. -/
+lemma isZero_singularHomology_ofInclusion_union {n : ℕ}
+    (hAC : IsZero ((TopPair.ofInclusion hCA).singularHomology R n))
+    (hBD : IsZero ((TopPair.ofInclusion hDB).singularHomology R n))
+    (hABCD : ∀ m, m + 1 = n →
+      IsZero ((TopPair.ofInclusion (Set.inter_subset_inter hCA hDB)).singularHomology R m)) :
+    IsZero ((TopPair.ofInclusion (Set.union_subset_union hCA hDB)).singularHomology R n) := by
+  have hbiprod : IsZero ((TopPair.ofInclusion hCA).singularHomology R n ⊞
+      (TopPair.ofInclusion hDB).singularHomology R n) := (biprod_isZero_iff _ _).2 ⟨hAC, hBD⟩
+  cases n with
+  | zero =>
+    have := epi_pairMayerVietorisFromBiprod_zero R hCA hDB hA hB hC hD
+    exact IsZero.of_epi_eq_zero (pairMayerVietorisFromBiprod R hCA hDB 0) (hbiprod.eq_of_src _ _)
+  | succ m =>
+    exact (pairMayerVietoris_exact₃ R hCA hDB hA hB hC hD (m + 1) m).isZero_of_both_isZero hbiprod
+      (hABCD m rfl)
 
 end Pair
 

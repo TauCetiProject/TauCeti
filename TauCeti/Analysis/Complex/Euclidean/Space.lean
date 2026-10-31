@@ -40,6 +40,15 @@ theorem complexToRealEuclidean_apply (z : ι → ℂ) (k : ι ⊕ ι) :
     complexToRealEuclidean ι z k =
       Sum.elim (fun i ↦ (z i).re) (fun i ↦ (z i).im) k := (rfl)
 
+/-- The real Euclidean pairing of split coordinates is the real part of the complex
+Hermitian pairing. -/
+@[simp]
+theorem inner_complexToRealEuclidean (z w : ι → ℂ) :
+    inner ℝ (complexToRealEuclidean ι z) (complexToRealEuclidean ι w) =
+      (star z ⬝ᵥ w).re := by
+  simp [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fintype.sum_sum_type,
+    Complex.mul_re, Finset.sum_add_distrib, mul_comm]
+
 /-- Recombine the two real coordinate blocks into a complex vector. -/
 theorem complexToRealEuclidean_symm_apply (x : EuclideanSpace ℝ (ι ⊕ ι)) (i : ι) :
     (complexToRealEuclidean ι).symm x i =

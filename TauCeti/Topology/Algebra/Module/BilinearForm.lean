@@ -17,6 +17,7 @@ import TauCeti.Analysis.Matrix.PosDef
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Module.QuadraticMap
 
 /-!
 # Nondegeneracy of the bilinear form of a continuous linear map into the dual
@@ -42,6 +43,10 @@ transporting `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` from matrices thro
   continuous linear map into the dual is left-separating if and only if the map is injective.
 * `ContinuousLinearMap.isSymm_toBilinForm_iff`: the bilinear form of a continuous linear map into
   the dual is symmetric if and only if the map takes symmetric values.
+* `ContinuousLinearMap.ker_toBilinForm`: the kernel of the bilinear form of a continuous linear
+  map into the dual is the kernel of the map.
+* `ContinuousLinearMap.inf_eq_bot_of_le_ker`: a subspace on which the diagonal of the form has no
+  nonzero zeros meets every subspace of the kernel trivially.
 * `ContinuousLinearMap.isInvertible_of_injective` and
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
@@ -50,6 +55,9 @@ transporting `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` from matrices thro
   with left-separating bilinear form is invertible.
 * `ContinuousLinearMap.isInvertible_of_pos`: in finite dimensions, a map into the dual that is
   positive on nonzero diagonal vectors is invertible.
+* `ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq`: a continuous bilinear form negative on
+  the nonzero vectors of a finite-dimensional subspace is bounded there by a negative multiple of
+  the squared norm.
 * `TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft`:
   contraction with a bilinear form is invertible exactly when it is left-separating in
   finite dimensions, identifying covectors with vectors for local contraction equations.
@@ -89,6 +97,22 @@ the map takes symmetric values. -/
 theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
     L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
   LinearMap.isSymm_def
+
+/-- The kernel of the bilinear form of a continuous linear map into the dual space is the kernel of
+the map. -/
+theorem _root_.ContinuousLinearMap.ker_toBilinForm (L : E →L[𝕜] E →L[𝕜] 𝕜) :
+    LinearMap.ker L.toBilinForm = L.ker := by
+  ext x
+  simp [LinearMap.ext_iff, ContinuousLinearMap.ext_iff]
+
+/-- A subspace on whose nonzero vectors the diagonal of a continuous bilinear form does not vanish
+meets every subspace of the kernel of the form trivially. -/
+theorem _root_.ContinuousLinearMap.inf_eq_bot_of_le_ker {L : E →L[𝕜] E →L[𝕜] 𝕜}
+    {N M : Submodule 𝕜 E} (hN : ∀ x ∈ N, x ≠ 0 → L x x ≠ 0) (hM : M ≤ L.ker) : N ⊓ M = ⊥ := by
+  refine eq_bot_iff.2 fun x hx ↦ ?_
+  by_contra hx0
+  have h : L x = 0 := hM hx.2
+  exact hN x hx.1 hx0 (by simp [h])
 
 end
 
@@ -145,6 +169,32 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_pos
   ContinuousLinearMap.isInvertible_of_separatingLeft fun v hv ↦ by
     by_contra hv0
     exact (hpos v hv0).ne' (hv v)
+
+/-- A continuous bilinear form that is negative on the nonzero vectors of a finite-dimensional
+subspace is uniformly negative there: it is bounded by a negative multiple of the squared norm. -/
+theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (L : E →L[ℝ] E →L[ℝ] ℝ) (N : Submodule ℝ E) [FiniteDimensional ℝ N]
+    (hN : ∀ x ∈ N, x ≠ 0 → L x x < 0) :
+    ∃ c > 0, ∀ x ∈ N, L x x ≤ -(c * ‖x‖ ^ 2) := by
+  set Q := L.toBilinForm.toQuadraticMap.restrict N
+  have hQ : Q.Anisotropic := fun x hx ↦ by
+    by_contra hx0
+    have h := hN x x.2 (by simpa using hx0)
+    simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
+      ContinuousLinearMap.toBilinForm_apply] at hx
+    linarith
+  have hcont : Continuous Q :=
+    (L.continuous.comp continuous_subtype_val).clm_apply continuous_subtype_val
+  obtain ⟨c, hc, hle⟩ := hQ.exists_pos_mul_norm_sq_le hcont
+  refine ⟨c, hc, fun x hx ↦ ?_⟩
+  rcases eq_or_ne x 0 with rfl | hx0
+  · simp
+  have h := hle ⟨x, hx⟩
+  simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
+    ContinuousLinearMap.toBilinForm_apply, Real.norm_eq_abs, abs_of_neg (hN x hx hx0),
+    ← Submodule.norm_coe] at h
+  linarith
 
 section Convex
 

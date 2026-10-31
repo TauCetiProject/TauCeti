@@ -21,6 +21,10 @@ class. In odd rank the labels enumerate the cyclic group of order four.
 it is an equivalence of types, not an assertion that digit addition is cyclic in even rank.
 These labels allow finite glue words to be checked before using them in discriminant groups.
 
+`glueLabelAdd` is the addition of labels induced by the group law of the alphabet
+(`glueLabelEquiv_glueLabelAdd`): addition modulo the order of a cyclic alphabet, and the bitwise
+exclusive or of the labels for even `Dₙ`.
+
 Reference: Conway and Sloane, *Sphere Packings, Lattices and Groups*, Chapter 4 §3
 and Chapter 16 §1.
 -/
@@ -224,5 +228,117 @@ theorem glueLabelCount_pos (t : DynkinType) (ht : t.IsSimplyLaced) :
     (t.glueLabelEquiv ht).symm 0 = ⟨0, t.glueLabelCount_pos ht⟩ := by
   apply (t.glueLabelEquiv ht).symm_apply_eq.mpr
   exact (glueLabelEquiv_zero t ht).symm
+
+/-! ### Addition of labels -/
+
+/-- **Addition of Conway--Sloane glue labels**: the label of the sum of the classes labelled `a`
+and `b` (`glueLabelEquiv_glueLabelAdd`).  It is addition modulo the order of the cyclic alphabets,
+and for `Dₙ` with `n` even it is the bitwise exclusive or of the labels `0`, spinor, vector,
+cospinor, so that spinor plus vector is cospinor.  It is `0` for the other types. -/
+@[expose] def glueLabelAdd : DynkinType → ℕ → ℕ → ℕ
+  | A n, a, b => (a + b) % (n + 1)
+  | D n, a, b => if Even n then a ^^^ b else (a + b) % 4
+  | E6, a, b => (a + b) % 3
+  | E7, a, b => (a + b) % 2
+  | _, _, _ => 0
+
+/-- Labels of `Aₙ` add modulo `n + 1`. -/
+@[simp]
+theorem glueLabelAdd_A (n a b : ℕ) : (A n).glueLabelAdd a b = (a + b) % (n + 1) :=
+  (rfl)
+
+/-- Labels of `Dₙ` add by bitwise exclusive or for even `n`, and modulo `4` for odd `n`. -/
+@[simp]
+theorem glueLabelAdd_D (n a b : ℕ) :
+    (D n).glueLabelAdd a b = if Even n then a ^^^ b else (a + b) % 4 :=
+  (rfl)
+
+/-- Labels of `E₆` add modulo `3`. -/
+@[simp]
+theorem glueLabelAdd_E6 (a b : ℕ) : E6.glueLabelAdd a b = (a + b) % 3 :=
+  (rfl)
+
+/-- Labels of `E₇` add modulo `2`. -/
+@[simp]
+theorem glueLabelAdd_E7 (a b : ℕ) : E7.glueLabelAdd a b = (a + b) % 2 :=
+  (rfl)
+
+/-- The only label of `E₈` is `0`. -/
+@[simp]
+theorem glueLabelAdd_E8 (a b : ℕ) : E8.glueLabelAdd a b = 0 :=
+  (rfl)
+
+/-- The sum of two labels is a label. -/
+theorem glueLabelAdd_lt (t : DynkinType) {a b : ℕ}
+    (ha : a < t.glueLabelCount) (hb : b < t.glueLabelCount) :
+    t.glueLabelAdd a b < t.glueLabelCount := by
+  cases t with
+  | A n => exact Nat.mod_lt _ n.succ_pos
+  | D n =>
+    simp only [glueLabelAdd, glueLabelCount] at ha hb ⊢
+    split_ifs
+    · interval_cases a <;> interval_cases b <;> decide
+    · exact Nat.mod_lt _ (by norm_num)
+  | E6 => exact Nat.mod_lt _ (by norm_num)
+  | E7 => exact Nat.mod_lt _ (by norm_num)
+  | E8 => exact Nat.zero_lt_one
+  | B _ | C _ | F4 | G2 => exact absurd ha (Nat.not_lt_zero a)
+
+/-- **The class of the sum of two labels is the sum of their classes.** -/
+theorem glueLabelEquiv_glueLabelAdd (t : DynkinType) (ht : t.IsSimplyLaced)
+    (a b : Fin t.glueLabelCount) :
+    t.glueLabelEquiv ht ⟨t.glueLabelAdd a b, t.glueLabelAdd_lt a.isLt b.isLt⟩ =
+      t.glueLabelEquiv ht a + t.glueLabelEquiv ht b := by
+  cases t with
+  | A n =>
+    rw [glueLabelEquiv_A, glueLabelEquiv_A, glueLabelEquiv_A]
+    simp only [glueLabelAdd, ZMod.natCast_mod, Nat.cast_add]
+    -- The alphabet is `ZMod (n + 1)` by definition, with the same addition.
+    rfl
+  | D n =>
+    by_cases hn : Even n
+    · apply (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn)).injective
+      simp only [map_add, QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+      rw [glueLabelEquiv_D_of_even, glueLabelEquiv_D_of_even, glueLabelEquiv_D_of_even]
+      obtain ⟨a, ha⟩ := a
+      obtain ⟨b, hb⟩ := b
+      simp only [glueLabelAdd, hn, ↓reduceIte]
+      simp only [glueLabelCount] at ha hb
+      -- Each case is a closed equation in `ZMod 2 × ZMod 2`, checked by evaluation.
+      interval_cases a <;> interval_cases b <;> rfl
+    · have hn' : Odd n := Nat.not_even_iff_odd.mp hn
+      apply (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_odd n ht hn')).injective
+      simp only [map_add, QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+      rw [glueLabelEquiv_D_of_odd n ht hn', glueLabelEquiv_D_of_odd n ht hn',
+        glueLabelEquiv_D_of_odd n ht hn']
+      simp only [glueLabelAdd, hn, ↓reduceIte, ZMod.natCast_mod, Nat.cast_add]
+      -- The odd model is `ZMod 4` by definition, with the same addition.
+      rfl
+  | E6 =>
+    rw [glueLabelEquiv_E6, glueLabelEquiv_E6, glueLabelEquiv_E6]
+    simp only [glueLabelAdd, ZMod.natCast_mod, Nat.cast_add]
+    -- The alphabet is `ZMod 3` by definition, with the same addition.
+    rfl
+  | E7 =>
+    rw [glueLabelEquiv_E7, glueLabelEquiv_E7, glueLabelEquiv_E7]
+    simp only [glueLabelAdd, ZMod.natCast_mod, Nat.cast_add]
+    -- The alphabet is `ZMod 2` by definition, with the same addition.
+    rfl
+  | E8 => exact Subsingleton.elim _ _
+  | B n => exact (not_isSimplyLaced_B n ht).elim
+  | C n => exact (not_isSimplyLaced_C n ht).elim
+  | F4 => exact (not_isSimplyLaced_F4 ht).elim
+  | G2 => exact (not_isSimplyLaced_G2 ht).elim
+
+/-- The label of a sum of two classes is the sum of their labels. -/
+@[simp]
+theorem val_glueLabelEquiv_symm_add (t : DynkinType) (ht : t.IsSimplyLaced)
+    (x y : t.glueAlphabet ht) :
+    ((t.glueLabelEquiv ht).symm (x + y)).val =
+      t.glueLabelAdd ((t.glueLabelEquiv ht).symm x) ((t.glueLabelEquiv ht).symm y) := by
+  have h := t.glueLabelEquiv_glueLabelAdd ht ((t.glueLabelEquiv ht).symm x)
+    ((t.glueLabelEquiv ht).symm y)
+  rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply] at h
+  rw [← h, Equiv.symm_apply_apply]
 
 end TauCeti.DynkinType

@@ -23,7 +23,13 @@ We also prove local continuity of inversion for Hom-bundle sections with a Banac
 source. This local result does not require finite rank or invertibility away from the
 point under consideration. The inverse is Mathlib's `ContinuousLinearMap.inverse`,
 which is zero at noninvertible maps. In the same generality, invertibility of the fibre
-maps is an open condition along a continuous Hom-bundle section.
+maps is an open condition along a continuous Hom-bundle section, and composition of
+continuous Hom-bundle sections is continuous.
+
+For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
+exactly when it is continuous in every pair of a source chart and a target chart, on their
+common domain, with chart expressions `VectorBundleCore.inChartCoordinates`
+(`VectorBundleCore.continuous_hom_bundle_iff_forall_continuousOn`).
 
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
 the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom`.
@@ -200,6 +206,65 @@ theorem Continuous.clm_bundle_inverse
 
 end Inverse
 
+section Comp
+
+variable {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+  {E₃ : B → Type*} [∀ x, AddCommGroup (E₃ x)] [∀ x, Module 𝕜 (E₃ x)]
+  [∀ x, TopologicalSpace (E₃ x)] [TopologicalSpace (TotalSpace F₃ E₃)]
+  [FiberBundle F₃ E₃] [VectorBundle 𝕜 F₃ E₃]
+  [∀ x, IsTopologicalAddGroup (E₃ x)] [∀ x, ContinuousSMul 𝕜 (E₃ x)]
+  {b : M → B} {ψ : ∀ m, E₂ (b m) →L[𝕜] E₃ (b m)} {ϕ : ∀ m, E₁ (b m) →L[𝕜] E₂ (b m)}
+  {s : Set M} {x : M}
+
+/-- Composition of Hom-bundle sections continuous within a set is continuous within it. -/
+theorem ContinuousWithinAt.clm_bundle_comp
+    (hψ : ContinuousWithinAt (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+      (E := fun y ↦ E₂ y →L[𝕜] E₃ y) (b m) (ψ m)) s x)
+    (hϕ : ContinuousWithinAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) (b m) (ϕ m)) s x) :
+    ContinuousWithinAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+      (E := fun y ↦ E₁ y →L[𝕜] E₃ y) (b m) ((ψ m).comp (ϕ m))) s x := by
+  simp only [continuousWithinAt_hom_bundle] at hψ hϕ ⊢
+  have h₂ := mem_baseSet_trivializationAt F₂ E₂ (b x)
+  refine ⟨hϕ.1, (hψ.2.clm_comp hϕ.2).congr_of_eventuallyEq ?_
+    (ContinuousLinearMap.inCoordinates_comp _ _ h₂)⟩
+  filter_upwards [hϕ.1.preimage_mem_nhdsWithin
+    ((trivializationAt F₂ E₂ (b x)).open_baseSet.mem_nhds h₂)] with m hm
+  exact ContinuousLinearMap.inCoordinates_comp _ _ hm
+
+/-- Composition of Hom-bundle sections continuous at a point is continuous there. -/
+theorem ContinuousAt.clm_bundle_comp
+    (hψ : ContinuousAt (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+      (E := fun y ↦ E₂ y →L[𝕜] E₃ y) (b m) (ψ m)) x)
+    (hϕ : ContinuousAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) (b m) (ϕ m)) x) :
+    ContinuousAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+      (E := fun y ↦ E₁ y →L[𝕜] E₃ y) (b m) ((ψ m).comp (ϕ m))) x := by
+  rw [← continuousWithinAt_univ] at hψ hϕ ⊢
+  exact hψ.clm_bundle_comp hϕ
+
+/-- Composition of Hom-bundle sections continuous on a set is continuous on it. -/
+theorem ContinuousOn.clm_bundle_comp
+    (hψ : ContinuousOn (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+      (E := fun y ↦ E₂ y →L[𝕜] E₃ y) (b m) (ψ m)) s)
+    (hϕ : ContinuousOn (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) (b m) (ϕ m)) s) :
+    ContinuousOn (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+      (E := fun y ↦ E₁ y →L[𝕜] E₃ y) (b m) ((ψ m).comp (ϕ m))) s :=
+  fun x hx ↦ (hψ x hx).clm_bundle_comp (hϕ x hx)
+
+/-- Composition of continuous Hom-bundle sections is continuous. -/
+theorem Continuous.clm_bundle_comp
+    (hψ : Continuous (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+      (E := fun y ↦ E₂ y →L[𝕜] E₃ y) (b m) (ψ m)))
+    (hϕ : Continuous (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) (b m) (ϕ m))) :
+    Continuous (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+      (E := fun y ↦ E₁ y →L[𝕜] E₃ y) (b m) ((ψ m).comp (ϕ m))) :=
+  continuous_iff_continuousAt.mpr fun _ ↦ hψ.continuousAt.clm_bundle_comp hϕ.continuousAt
+
+end Comp
+
 namespace TauCeti
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
@@ -259,3 +324,57 @@ theorem exists_bundleHomeomorph_of_bijective (ϕ : ∀ x, E₁ x →L[𝕜] E₂
 end TauCeti
 
 end
+
+namespace VectorBundleCore
+
+variable {𝕜 B F G ι κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+section inChartCoordinates
+
+variable {Z : VectorBundleCore 𝕜 B F ι} {W : VectorBundleCore 𝕜 B G κ}
+
+/-- A section of the Hom bundle between two cores that is continuous on the common domain of
+a source chart and a target chart is continuous in those charts there. -/
+theorem continuousOn_inChartCoordinates {f : B → F →L[𝕜] G} {i : ι} {j : κ}
+    (hf : ContinuousOn (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x))
+      (Z.baseSet i ∩ W.baseSet j)) :
+    ContinuousOn (fun x ↦ Z.inChartCoordinates W i j x (f x)) (Z.baseSet i ∩ W.baseSet j) := by
+  have : MemTrivializationAtlas (Z.localTriv i) := ⟨⟨i, rfl⟩⟩
+  have : MemTrivializationAtlas (W.localTriv j) := ⟨⟨j, rfl⟩⟩
+  -- Read the section in the Hom-bundle trivialization built from the two fixed charts.
+  let e := (Z.localTriv i).continuousLinearMap (RingHom.id 𝕜) (W.localTriv j)
+  have he : ContinuousOn (fun x ↦ (e ⟨x, f x⟩).2) (Z.baseSet i ∩ W.baseSet j) :=
+    (e.continuousOn.comp hf fun _ hx ↦ e.mem_source.2 hx).snd
+  refine he.congr fun x hx ↦ ContinuousLinearMap.ext fun v ↦ ?_
+  simp only [e, Trivialization.continuousLinearMap_apply, localTriv_continuousLinearMapAt _ hx.2,
+    localTriv_symmL _ hx.1, inChartCoordinates_apply]
+  -- The remaining composite is stated between the core fibres, which are `F` and `G`.
+  rfl
+
+/-- A family of fibre maps is a continuous section of the Hom bundle between two cores exactly
+when it is continuous in every pair of charts. -/
+theorem continuous_hom_bundle_iff_forall_continuousOn {f : B → F →L[𝕜] G} :
+    (Continuous fun x ↦
+      TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x)) ↔
+    ∀ i j, ContinuousOn (fun x ↦ Z.inChartCoordinates W i j x (f x))
+      (Z.baseSet i ∩ W.baseSet j) := by
+  refine ⟨fun hf _ _ ↦ continuousOn_inChartCoordinates hf.continuousOn,
+    fun h ↦ continuous_iff_continuousAt.2 fun x₀ ↦ ?_⟩
+  have hx₀ : x₀ ∈ Z.baseSet (Z.indexAt x₀) ∩ W.baseSet (W.indexAt x₀) :=
+    ⟨Z.mem_baseSet_at x₀, W.mem_baseSet_at x₀⟩
+  have hU := ((Z.isOpen_baseSet _).inter (W.isOpen_baseSet _)).mem_nhds hx₀
+  rw [continuousAt_hom_bundle]
+  refine ⟨continuousAt_id, ((h _ _).continuousAt hU).congr ?_⟩
+  filter_upwards [hU] with x hx
+  ext v
+  rw [Z.inCoordinates_eq W (f x) hx.1 hx.2, inChartCoordinates_apply]
+  -- `ContinuousLinearMap.comp_apply` does not fire on a vector of the core fibre `Z.Fiber`,
+  -- which is the model fibre `F` only up to unfolding.
+  rfl
+
+end inChartCoordinates
+
+end VectorBundleCore

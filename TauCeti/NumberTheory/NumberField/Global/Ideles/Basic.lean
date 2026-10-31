@@ -158,6 +158,11 @@ namespace NumberField.IdeleClassGroup
 variable (R : Type*) [CommRing R] [IsDedekindDomain R]
 variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
 
+/-- The idele class group is commutative. This instance makes commutativity available to
+instance search without unfolding the quotient abbreviation. -/
+instance instIsMulCommutative : IsMulCommutative (IdeleClassGroup R K) :=
+  ⟨⟨fun a b ↦ mul_comm a b⟩⟩
+
 /-- The embedding of the units of the completion at an infinite place into the idele class group
 is continuous. -/
 @[continuity, fun_prop]

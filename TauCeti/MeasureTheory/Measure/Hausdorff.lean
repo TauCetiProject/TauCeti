@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Zero-dimensional Hausdorff measure
@@ -33,6 +34,12 @@ open neighbourhood gives `H_r ≤ G_r ≤ H_r'` for `r' < r`. Hence
 `μH[d] (s) = ⨆ r > 0, H_r (s)` is the countable supremum `⨆ k, G_(1 / k) (s)` of upper
 semicontinuous functions of `y`.
 
+## Covers by closed balls
+
+In a metric space, `μH[d] A ≤ M` as soon as `A` has countable covers by closed balls of arbitrarily
+small radii `rᵢ` with `∑ (2 rᵢ) ^ d` arbitrarily close to `M`, since a closed ball of radius `r` has
+diameter at most `2 r`.
+
 ## Main declarations
 
 * `TauCeti.hausdorffMeasure_zero_eq_count`: zero-dimensional Hausdorff measure is counting
@@ -40,6 +47,8 @@ semicontinuous functions of `y`.
 * `IsCompact.measurable_hausdorffMeasure_inter_preimage`: fiber measures of a continuous map on a
   compact set are measurable.
 * `IsSigmaCompact.measurable_hausdorffMeasure_inter_preimage`: the same on a σ-compact set.
+* `TauCeti.hausdorffMeasure_le_of_forall_exists_closedBall_cover`: an upper bound for `μH[d]` from
+  countable covers by small closed balls.
 
 ## References
 
@@ -197,3 +206,36 @@ theorem IsSigmaCompact.measurable_hausdorffMeasure_inter_preimage {A : Set X}
       (hf.mono (accumulate_subset_iUnion n)) d
 
 end Compact
+
+universe u
+
+namespace TauCeti
+
+/-- **Hausdorff measure from closed-ball covers.** If for every `δ > 0` and `ε > 0` the set `A` is
+covered by countably many closed balls of radii at most `δ` with `∑ (2 rᵢ) ^ d ≤ M + ε`, then
+`μH[d] A ≤ M`. This is `hausdorffMeasure_le_liminf_tsum` for covers by closed balls. -/
+theorem hausdorffMeasure_le_of_forall_exists_closedBall_cover {X : Type u} [MetricSpace X]
+    [MeasurableSpace X] [BorelSpace X] {d : ℝ} (hd : 0 ≤ d) {A : Set X} {M : ℝ≥0∞}
+    (h : ∀ δ : ℝ, 0 < δ → ∀ ε : ℝ≥0∞, 0 < ε →
+      ∃ (ι : Type u) (_ : Countable ι) (x : ι → X) (r : ι → ℝ), (∀ i, r i ≤ δ) ∧
+        A ⊆ ⋃ i, closedBall (x i) (r i) ∧ ∑' i, ENNReal.ofReal (2 * r i) ^ d ≤ M + ε) :
+    μH[d] A ≤ M := by
+  choose ι hι x r hrδ hA hsum using fun n : ℕ =>
+    h (1 / (n + 1)) Nat.one_div_pos_of_nat (n : ℝ≥0∞)⁻¹ (ENNReal.inv_pos.2 (by simp))
+  have hlim : Tendsto (fun n : ℕ => M + (n : ℝ≥0∞)⁻¹) atTop (𝓝 M) := by
+    simpa using tendsto_const_nhds.add ENNReal.tendsto_inv_nat_nhds_zero
+  have hδ : Tendsto (fun n : ℕ => ENNReal.ofReal (2 * (1 / (n + 1)))) atTop (𝓝 0) := by
+    simpa using ENNReal.tendsto_ofReal (tendsto_one_div_add_atTop_nhds_zero_nat.const_mul 2)
+  -- Instance argument of `hausdorffMeasure_le_liminf_tsum`.
+  have : ∀ n, Countable (ι n) := hι
+  calc μH[d] A ≤ liminf (fun n => ∑' i, ediam (closedBall (x n i) (r n i)) ^ d) atTop :=
+        hausdorffMeasure_le_liminf_tsum d A _ hδ _
+          (Eventually.of_forall fun n i => (ediam_closedBall_le _ _).trans
+            (ENNReal.ofReal_le_ofReal (by linarith [hrδ n i])))
+          (Eventually.of_forall hA)
+    _ ≤ liminf (fun n : ℕ => M + (n : ℝ≥0∞)⁻¹) atTop :=
+        liminf_le_liminf (Eventually.of_forall fun n => (ENNReal.tsum_le_tsum fun i =>
+          ENNReal.rpow_le_rpow (ediam_closedBall_le _ _) hd).trans (hsum n))
+    _ = M := hlim.liminf_eq
+
+end TauCeti

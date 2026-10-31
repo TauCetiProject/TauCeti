@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Irreducible
-public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup
+public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup.Even
 public import TauCeti.RepresentationTheory.Spin.LineSign
 import TauCeti.Algebra.CentralSimple.End
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
@@ -48,6 +48,14 @@ the grade involution `CliffordAlgebra.monomialGroupInvolute`, which sends `±e_s
 `±(-1) ^ #s e_s`. In odd dimension the parity twist therefore exchanges the two irreducible
 representations in which `ε` acts by `-1`.
 
+On the even signed monomials `CliffordAlgebra.monomialGroupEven Q b`, the `±e_s` with `#s` even,
+the grade involution is the identity, so there the parity operator is an equivalence between the
+representations of `P⁻` and of `P` themselves. The even signed monomials span the even
+Clifford subalgebra, which in odd dimension the Fock action identifies with `End S`, so there
+this common restriction is irreducible. Thus the two inequivalent irreducible representations
+with `ε ↦ -1` in odd dimension restrict to one and the same irreducible representation of the
+even signed monomials.
+
 The classification itself is Morita theory for the simple ring `End S`: a module over it with no
 proper nonzero submodule is isomorphic to `S` (`IsIsotypicOfType.of_isSimpleRing`).
 
@@ -57,6 +65,9 @@ proper nonzero submodule is isomorphic to `S` (`IsIsotypicOfType.of_isSimpleRing
   monomials on the spinor module of a polarization.
 * `TauCeti.SpinPolarizationData.monomialGroupRepEquivNegLineCoordinate`: the parity operator, as an
   equivalence between the representation of `P⁻` and the parity twist of that of `P`.
+* `TauCeti.SpinPolarizationData.monomialGroupRepEvenEquivNegLineCoordinate`: the parity operator,
+  as an equivalence between the restrictions of the representations of `P⁻` and of `P` to the
+  even signed monomials.
 
 ## Main results
 
@@ -74,6 +85,13 @@ proper nonzero submodule is isomorphic to `S` (`IsIsotypicOfType.of_isSimpleRing
   these two are inequivalent.
 * `TauCeti.monomialGroup_finrank_eq_two_pow_of_odd`: in dimension `2l + 1`, over a separably closed
   field, every such representation has dimension `2 ^ l`.
+* `TauCeti.SpinPolarizationData.isIrreducible_monomialGroupRep_comp_subtype_of_odd`: in odd
+  dimension the spinor representation stays irreducible on the even signed monomials.
+* `TauCeti.SpinPolarizationData.nonempty_equiv_monomialGroupRep_comp_subtype_of_odd` and
+  `TauCeti.monomialGroup_nonempty_equiv_comp_subtype_of_odd`: in odd dimension every irreducible
+  representation in which `ε` acts by `-1` has, on the even signed monomials, the restriction of
+  the spinor representation of `P`; over a separably closed field any two of them have equivalent
+  restrictions.
 
 ## References
 
@@ -130,6 +148,25 @@ noncomputable def monomialGroupRepEquivNegLineCoordinate :
 @[simp]
 theorem monomialGroupRepEquivNegLineCoordinate_apply (s : ExteriorAlgebra K P.W) :
     P.monomialGroupRepEquivNegLineCoordinate v s = involute s :=
+  (rfl)
+
+/-- **The two signs of the line coordinate agree on the even signed monomials.** The grade
+involution fixes every even signed monomial, so the parity operator `J = involute` of `⋀·W` is an
+equivalence between the restrictions of the spinor representations of `P⁻ = P.negLineCoordinate`
+and of `P` to the even signed monomials `CliffordAlgebra.monomialGroupEven Q v`. -/
+noncomputable def monomialGroupRepEvenEquivNegLineCoordinate :
+    Representation.Equiv
+      ((P.negLineCoordinate.monomialGroupRep v).comp (monomialGroupEven Q v).subtype)
+      ((P.monomialGroupRep v).comp (monomialGroupEven Q v).subtype) :=
+  .mk (involuteEquiv (Q := (0 : QuadraticForm K P.W))).toLinearEquiv fun g ↦
+    LinearMap.ext fun s ↦ by
+      simp [P.spinAction_negLineCoordinate_apply, mem_monomialGroupEven_iff.mp g.2]
+
+/-- The parity equivalence `P.monomialGroupRepEvenEquivNegLineCoordinate v` is the grade
+involution of `⋀·W`. -/
+@[simp]
+theorem monomialGroupRepEvenEquivNegLineCoordinate_apply (s : ExteriorAlgebra K P.W) :
+    P.monomialGroupRepEvenEquivNegLineCoordinate v s = involute s :=
   (rfl)
 
 end CommRing
@@ -328,6 +365,54 @@ theorem isEmpty_equiv_monomialGroupRep_negLineCoordinate
   have hT : T 1 = 0 := (smul_eq_zero.mp h2).resolve_left (mul_ne_zero (Invertible.ne_zero 2) ha)
   exact one_ne_zero (EquivLike.injective T (hT.trans (map_zero T).symm))
 
+/-! ### Restriction to the even signed monomials in odd dimension -/
+
+/-- **In odd dimension the spinor representation stays irreducible on the even signed
+monomials.** These span the even Clifford subalgebra
+(`CliffordAlgebra.span_monomialGroupEven_eq_even`), whose Fock action already realizes every
+endomorphism of the spinor module in odd dimension (`TauCeti.evenSpinAction_surjective`). -/
+theorem isIrreducible_monomialGroupRep_comp_subtype_of_odd
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
+    (hV : Odd (finrank F V)) :
+    Representation.IsIrreducible
+      ((P.monomialGroupRep b).comp (monomialGroupEven Q b).subtype) := by
+  have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
+  apply Representation.isIrreducible_of_asAlgebraHom_surjective
+  intro f
+  obtain ⟨⟨x, hx⟩, rfl⟩ := evenSpinAction_surjective P hV f
+  -- The Fock action carries the span of the even signed monomials into the range.
+  have hle : (Submodule.span F (Set.range fun g : monomialGroupEven Q b ↦
+      (((g : monomialGroup Q b) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))).map
+        (spinAction Q P).toLinearMap ≤ LinearMap.range (Representation.asAlgebraHom
+          ((P.monomialGroupRep b).comp (monomialGroupEven Q b).subtype)).toLinearMap := by
+    rw [Submodule.map_span, Submodule.span_le]
+    rintro _ ⟨_, ⟨g, rfl⟩, rfl⟩
+    exact ⟨MonoidAlgebra.of F _ g, by simp⟩
+  rw [span_monomialGroupEven_eq_even hb hQ] at hle
+  obtain ⟨z, hz⟩ := hle ⟨x, hx, rfl⟩
+  exact ⟨z, by simpa using hz⟩
+
+/-- **In odd dimension both irreducible representations with `ε ↦ -1` restrict to the same
+representation of the even signed monomials.** For an orthogonal basis whose generators square to
+`±1` of a space of odd dimension, every irreducible representation of the group of signed monomials
+in which `ε` acts by `-1` is, on `CliffordAlgebra.monomialGroupEven Q b`, equivalent to the
+spinor representation of `P`: it is the representation of `P` or of `P⁻`, and the parity operator
+identifies these two on the even signed monomials. -/
+theorem nonempty_equiv_monomialGroupRep_comp_subtype_of_odd
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
+    (hV : Odd (finrank F V)) (ρ : Representation F (monomialGroup Q b) W)
+    [Representation.IsIrreducible ρ] (hρ : ρ (monomialGroupEpsilon Q b) = -1) :
+    Nonempty (Representation.Equiv (ρ.comp (monomialGroupEven Q b).subtype)
+      ((P.monomialGroupRep b).comp (monomialGroupEven Q b).subtype)) := by
+  rcases P.nonempty_equiv_monomialGroupRep_or_of_odd hb hQ hV ρ hρ with h | h
+  · obtain ⟨e⟩ := h
+    exact ⟨.mk e.toLinearEquiv fun g ↦ e.isIntertwining' g⟩
+  · obtain ⟨e⟩ := h
+    let e' : Representation.Equiv (ρ.comp (monomialGroupEven Q b).subtype)
+        ((P.negLineCoordinate.monomialGroupRep b).comp (monomialGroupEven Q b).subtype) :=
+      .mk e.toLinearEquiv fun g ↦ e.isIntertwining' g
+    exact ⟨e'.trans (P.monomialGroupRepEvenEquivNegLineCoordinate b)⟩
+
 end Classification
 
 end SpinPolarizationData
@@ -388,6 +473,28 @@ theorem monomialGroup_finrank_eq_two_pow_of_odd
     with h | h
   · exact h.some.toLinearEquiv.finrank_eq
   · exact h.some.toLinearEquiv.finrank_eq
+
+/-- **In odd dimension the two irreducible representations with `ε ↦ -1` agree on the even signed
+monomials.** Over a separably closed field, for an orthogonal basis whose generators square to `±1`
+of a space of odd dimension, any two irreducible representations of the group of signed monomials
+in which `ε` acts by `-1` have equivalent restrictions to `CliffordAlgebra.monomialGroupEven Q b`,
+although they need not be equivalent themselves
+(`TauCeti.SpinPolarizationData.isEmpty_equiv_monomialGroupRep_negLineCoordinate`). -/
+theorem monomialGroup_nonempty_equiv_comp_subtype_of_odd
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
+    (hV : Odd (finrank F V)) {W' : Type*} [AddCommGroup W'] [Module F W']
+    (ρ : Representation F (monomialGroup Q b) W) [Representation.IsIrreducible ρ]
+    (σ : Representation F (monomialGroup Q b) W') [Representation.IsIrreducible σ]
+    (hρ : ρ (monomialGroupEpsilon Q b) = -1)
+    (hσ : σ (monomialGroupEpsilon Q b) = -1) :
+    Nonempty (Representation.Equiv (ρ.comp (monomialGroupEven Q b).subtype)
+      (σ.comp (monomialGroupEven Q b).subtype)) := by
+  have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
+  let P := SpinPolarizationData.ofNondegenerate Q
+    (QuadraticMap.nondegenerate_of_isOrthoᵢ hb fun i ↦ by rcases hQ i with h | h <;> simp [h])
+  obtain ⟨e⟩ := P.nonempty_equiv_monomialGroupRep_comp_subtype_of_odd hb hQ hV ρ hρ
+  obtain ⟨e'⟩ := P.nonempty_equiv_monomialGroupRep_comp_subtype_of_odd hb hQ hV σ hσ
+  exact ⟨e.trans e'.symm⟩
 
 end SepClosed
 

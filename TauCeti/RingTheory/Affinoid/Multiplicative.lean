@@ -74,15 +74,13 @@ theorem supSeminorm_mul (hA : IsAffinoidAlgebra K A)
     Huber.mem_powerBoundedSubring.mpr (hA.isPowerBounded_iff_supSeminorm_le_one.mpr hu.le)
   have hnil {u : A} (hu : supSeminorm K u = 1) (hu' : u ∈ Huber.powerBoundedSubring A) :
       ⟨u, hu'⟩ ∉ Huber.topologicallyNilpotentIdeal A := by
-    rw [Huber.mem_topologicallyNilpotentIdeal, hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one,
-      hu]
+    rw [hA.mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one, Subtype.coe_mk, hu]
     exact lt_irrefl 1
   -- In the domain `A° ⧸ A°°` the product of the two normalised elements is nonzero.
   have hprod : ¬supSeminorm K ((c : K) • f ^ m * ((d : K) • g ^ m)) < 1 := by
     have := mt (hP.mem_or_mem (x := ⟨_, hpb hc⟩) (y := ⟨_, hpb hd⟩))
       (not_or.mpr ⟨hnil hc (hpb hc), hnil hd (hpb hd)⟩)
-    rwa [Huber.mem_topologicallyNilpotentIdeal, Subring.coe_mul,
-      hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one] at this
+    rwa [hA.mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one, Subring.coe_mul] at this
   have hcd : ((c : K) • f ^ m * ((d : K) • g ^ m)) = ((c : K) * d) • (f * g) ^ m := by
     rw [smul_mul_smul_comm, mul_pow]
   rw [hcd, hA.supSeminorm_smul, hA.supSeminorm_pow _ hm0, not_lt] at hprod
@@ -103,17 +101,16 @@ theorem isPrime_topologicallyNilpotentIdeal_of_supSeminorm_mul [Nontrivial A]
     (hA : IsAffinoidAlgebra K A)
     (h : ∀ f g : A, supSeminorm K (f * g) = supSeminorm K f * supSeminorm K g) :
     (Huber.topologicallyNilpotentIdeal A).IsPrime := by
-  have hmem {u : Huber.powerBoundedSubring A} :
-      u ∈ Huber.topologicallyNilpotentIdeal A ↔ supSeminorm K (u : A) < 1 := by
-    rw [Huber.mem_topologicallyNilpotentIdeal, hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one]
   have hle (u : Huber.powerBoundedSubring A) : supSeminorm K (u : A) ≤ 1 :=
     hA.isPowerBounded_iff_supSeminorm_le_one.mp (Huber.mem_powerBoundedSubring.mp u.2)
   refine Ideal.isPrime_iff.mpr ⟨fun htop ↦ ?_, fun {u v} huv ↦ ?_⟩
-  · have := hmem.mp ((Ideal.eq_top_iff_one _).mp htop)
+  · have := hA.mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one.mp
+      ((Ideal.eq_top_iff_one _).mp htop)
     rw [OneMemClass.coe_one, supSeminorm_one] at this
     exact lt_irrefl 1 this
-  · rw [hmem, Subring.coe_mul, h] at huv
-    rw [hmem, hmem]
+  · rw [hA.mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one, Subring.coe_mul, h] at huv
+    rw [hA.mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one,
+      hA.mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one]
     by_contra! huv'
     have h1 : 1 ≤ supSeminorm K (u : A) * supSeminorm K (v : A) := by
       simpa using mul_le_mul huv'.1 huv'.2 zero_le_one (supSeminorm_nonneg _)

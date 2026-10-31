@@ -34,6 +34,7 @@ also holds with the opposite phase (`ZLattice.IsIntegral.sum_discriminantPairing
 
 * `ZLattice.thetaCoset_S_smul`: the inversion law at a general translate.
 * `ZLattice.thetaSeries_S_smul`, `ZLattice.thetaSeries_slash_S`: the scalar inversion law.
+* `ZLattice.IsUnimodular.thetaSeries_slash_S`: the scalar inversion law of a unimodular lattice.
 * `ZLattice.IsIntegral.thetaCoset_S_smul`: the vector-valued inversion law.
 
 ## References
@@ -113,6 +114,17 @@ theorem thetaSeries_slash_S (hk : finrank ℝ E = 2 * k) :
   rw [ModularForm.SL_slash_apply, thetaSeries_S_smul L hk, ModularGroup.denom_S, Pi.smul_apply,
     smul_eq_mul, zpow_neg, zpow_natCast]
   field_simp
+
+omit [MeasurableSpace E] [BorelSpace E] in
+variable {L} in
+/-- **The inversion law of a unimodular lattice**: if `L = L^∨` and `dim E = 2k`, then in weight
+`k`, `Θ_L ∣[k] S = (-i)^k Θ_L`. -/
+theorem IsUnimodular.thetaSeries_slash_S (hU : IsUnimodular L) (hk : finrank ℝ E = 2 * k) :
+    thetaSeries L ∣[(k : ℤ)] ModularGroup.S = (-I) ^ k • thetaSeries L := by
+  -- The statement involves no measure; the inversion law uses the Borel volume.
+  borelize E
+  rw [ZLattice.thetaSeries_slash_S L hk, hU.dual_eq, hU.covolume_eq_one]
+  simp
 
 namespace IsIntegral
 
