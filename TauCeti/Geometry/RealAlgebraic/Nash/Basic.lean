@@ -10,8 +10,8 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.ChangeOrigin
 import Mathlib.Analysis.Analytic.Polynomial
-import Mathlib.Order.Filter.Germ.Basic
 import Mathlib.RingTheory.Algebraic.Integral
+import TauCeti.Order.Filter.Germ.MvPolynomial
 
 /-!
 # Nash germs
@@ -38,7 +38,7 @@ nonvanishing germs:
 The algebraic closure properties come from Mathlib's algebraic elements of an algebra over a
 domain (`IsAlgebraic.add`, `IsAlgebraic.mul`, `IsAlgebraic.invOf`): a polynomial relation near `x`
 is exactly algebraicity of the germ of `f` at `x` over `ℝ[y]`, where polynomials act on germs as
-polynomial functions.
+polynomial functions (`Filter.Germ.isAlgebraic_coe_iff`).
 
 ## Main declarations
 
@@ -109,45 +109,15 @@ theorem IsNashAt.eventually_isNashAt (hf : IsNashAt f x) : ∀ᶠ y in 𝓝 x, I
 
 /-! ### Nash germs as algebraic germs -/
 
-/-- Polynomials in the coordinates act on germs at `x` of real functions as polynomial
-functions. -/
-@[instance_reducible]
-private noncomputable def germAlgebra (x : σ → ℝ) : Algebra (MvPolynomial σ ℝ) (Germ (𝓝 x) ℝ) :=
-  ((Germ.coeRingHom (𝓝 x)).comp (RingHom.pi fun y ↦ MvPolynomial.eval y)).toAlgebra
-
-attribute [local instance] germAlgebra
-
-omit [Fintype σ] in
-private theorem aeval_coe_germ (P : (MvPolynomial σ ℝ)[X]) (f : (σ → ℝ) → ℝ) :
-    aeval (f : Germ (𝓝 x) ℝ) P =
-      ((fun y ↦ (P.map (MvPolynomial.eval y)).eval (f y) : (σ → ℝ) → ℝ) : Germ (𝓝 x) ℝ) := by
-  have key : (fun y ↦ (P.map (MvPolynomial.eval y)).eval (f y)) =
-      P.eval₂ (RingHom.pi fun y ↦ MvPolynomial.eval y) f := by
-    ext y
-    rw [eval_map]
-    -- `Pi.evalRingHom _ y` composed with `RingHom.pi` is `MvPolynomial.eval y` by definition.
-    exact (hom_eval₂ P (RingHom.pi fun y ↦ MvPolynomial.eval y)
-      (Pi.evalRingHom (fun _ : σ → ℝ ↦ ℝ) y) f).symm
-  rw [key, aeval_def, RingHom.algebraMap_toAlgebra]
-  -- `Germ.coeRingHom` is the coercion to germs by definition (`Germ.coe_coeRingHom`).
-  exact (hom_eval₂ (p := P) (g := Germ.coeRingHom (R := ℝ) (𝓝 x)) ..).symm
-
-omit [Fintype σ] in
-/-- A polynomial relation near `x` is algebraicity of the germ at `x` over `ℝ[y]`. -/
-private theorem exists_relation_iff_isAlgebraic :
-    (∃ P : (MvPolynomial σ ℝ)[X], P ≠ 0 ∧
-      ∀ᶠ y in 𝓝 x, (P.map (MvPolynomial.eval y)).eval (f y) = 0) ↔
-      IsAlgebraic (MvPolynomial σ ℝ) (f : Germ (𝓝 x) ℝ) := by
-  simp only [IsAlgebraic, aeval_coe_germ, ← Germ.coe_zero, Germ.coe_eq, EventuallyEq,
-    Pi.zero_apply]
+attribute [local instance] Germ.mvPolynomialAlgebra
 
 private theorem IsNashAt.isAlgebraic (hf : IsNashAt f x) :
     IsAlgebraic (MvPolynomial σ ℝ) (f : Germ (𝓝 x) ℝ) :=
-  exists_relation_iff_isAlgebraic.1 hf.2
+  Germ.isAlgebraic_coe_iff.2 hf.2
 
 private theorem IsNashAt.of_isAlgebraic (hfa : AnalyticAt ℝ f x)
     (hf : IsAlgebraic (MvPolynomial σ ℝ) (f : Germ (𝓝 x) ℝ)) : IsNashAt f x :=
-  ⟨hfa, exists_relation_iff_isAlgebraic.2 hf⟩
+  ⟨hfa, Germ.isAlgebraic_coe_iff.1 hf⟩
 
 /-! ### Polynomial functions -/
 
@@ -155,15 +125,8 @@ private theorem IsNashAt.of_isAlgebraic (hfa : AnalyticAt ℝ f x)
 theorem _root_.MvPolynomial.isNashAt_eval (p : MvPolynomial σ ℝ) :
     IsNashAt (fun y ↦ MvPolynomial.eval y p) x := by
   refine .of_isAlgebraic ?_ ?_
-  · have hcoord (i : σ) : AnalyticAt ℝ (fun y : σ → ℝ ↦ y i) x :=
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : σ ↦ ℝ) i).analyticAt x
-    simpa [MvPolynomial.coe_aeval_eq_eval] using
-      AnalyticAt.aeval_mvPolynomial (A := ℝ) (B := ℝ) hcoord p
-  · have h : ((fun y ↦ MvPolynomial.eval y p : (σ → ℝ) → ℝ) : Germ (𝓝 x) ℝ) =
-        algebraMap (MvPolynomial σ ℝ) (Germ (𝓝 x) ℝ) p := by
-      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, Germ.coe_coeRingHom]
-      congr 1 with y
-    rw [h]
+  · exact AnalyticOnNhd.eval_mvPolynomial p x (Set.mem_univ x)
+  · rw [← Germ.mvPolynomialAlgebra_algebraMap_apply]
     exact isAlgebraic_algebraMap p
 
 /-- Constant functions are Nash germs. -/
