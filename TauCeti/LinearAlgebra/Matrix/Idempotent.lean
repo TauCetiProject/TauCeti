@@ -37,6 +37,8 @@ so direct sums of modules correspond to block sums of idempotents.
   isomorphic if and only if the matrices are algebraically equivalent.
 * `Module.Finite.exists_linearEquiv_range_vecMulLinear`: a finitely generated projective module is
   isomorphic to the range of an idempotent matrix.
+* `Matrix.mem_range_vecMulLinear_fromBlocks_iff`: a row vector lies in the range of a
+  block-diagonal matrix exactly when its two parts lie in the ranges of the blocks.
 * `Matrix.rangeVecMulLinearFromBlocksEquiv`: the range of a block-diagonal matrix is the product of
   the ranges of its blocks.
 
@@ -139,32 +141,33 @@ theorem nonempty_linearEquiv_range_vecMulLinear_iff {e : Matrix ι ι A} {f : Ma
 
 variable {ι' κ' : Type*}
 
+/-- A row vector lies in the range of right multiplication by the block-diagonal matrix
+`Matrix.fromBlocks e 0 0 f` exactly when its two parts lie in the ranges of `e` and of `f`. -/
+theorem mem_range_vecMulLinear_fromBlocks_iff {e : Matrix ι ι' A} {f : Matrix κ κ' A}
+    {v : ι' ⊕ κ' → A} :
+    v ∈ range (fromBlocks e 0 0 f).vecMulLinear ↔
+      v ∘ Sum.inl ∈ range e.vecMulLinear ∧ v ∘ Sum.inr ∈ range f.vecMulLinear := by
+  constructor
+  · rintro ⟨u, rfl⟩
+    refine ⟨⟨u ∘ Sum.inl, ?_⟩, ⟨u ∘ Sum.inr, ?_⟩⟩ <;>
+      rw [vecMulLinear_apply, vecMulLinear_apply, ← Sum.elim_comp_inl_inr u, vecMul_fromBlocks] <;>
+      simp
+  · rintro ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
+    refine ⟨Sum.elim a b, ?_⟩
+    rw [← Sum.elim_comp_inl_inr v, ← ha, ← hb]
+    simp [vecMul_fromBlocks]
+
 /-- **Block sums of matrices.** The range of right multiplication by the block-diagonal matrix
-`Matrix.fromBlocks e 0 0 f` is the product of the ranges of `e` and of `f`: a row vector lies in
-it exactly when its two parts lie in the ranges of the two blocks. -/
+`Matrix.fromBlocks e 0 0 f` is the product of the ranges of `e` and of `f`. -/
 def rangeVecMulLinearFromBlocksEquiv (e : Matrix ι ι' A) (f : Matrix κ κ' A) :
     range (fromBlocks e 0 0 f).vecMulLinear ≃ₗ[A]
       range e.vecMulLinear × range f.vecMulLinear where
-  toFun v := (⟨(v : ι' ⊕ κ' → A) ∘ Sum.inl, by
-      obtain ⟨u, hu⟩ := v.2
-      exact ⟨u ∘ Sum.inl, by
-        rw [← hu, vecMulLinear_apply, vecMulLinear_apply, ← Sum.elim_comp_inl_inr u,
-          vecMul_fromBlocks]
-        simp⟩⟩,
-    ⟨(v : ι' ⊕ κ' → A) ∘ Sum.inr, by
-      obtain ⟨u, hu⟩ := v.2
-      exact ⟨u ∘ Sum.inr, by
-        rw [← hu, vecMulLinear_apply, vecMulLinear_apply, ← Sum.elim_comp_inl_inr u,
-          vecMul_fromBlocks]
-        simp⟩⟩)
-  invFun p := ⟨Sum.elim p.1 p.2, by
-    obtain ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ := p
-    obtain ⟨u, rfl⟩ := ha
-    obtain ⟨w, rfl⟩ := hb
-    exact ⟨Sum.elim u w, by simp [vecMul_fromBlocks]⟩⟩
+  toFun v := (⟨(v : ι' ⊕ κ' → A) ∘ Sum.inl, (mem_range_vecMulLinear_fromBlocks_iff.1 v.2).1⟩,
+    ⟨(v : ι' ⊕ κ' → A) ∘ Sum.inr, (mem_range_vecMulLinear_fromBlocks_iff.1 v.2).2⟩)
+  invFun p := ⟨Sum.elim p.1 p.2, mem_range_vecMulLinear_fromBlocks_iff.2 ⟨p.1.2, p.2.2⟩⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  left_inv v := Subtype.ext (Sum.elim_comp_inl_inr _)
+  left_inv _ := Subtype.ext (Sum.elim_comp_inl_inr _)
   right_inv _ := rfl
 
 @[simp]

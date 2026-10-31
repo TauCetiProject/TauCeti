@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GroupWithZero.Idempotent
 public import Mathlib.Data.Nat.Factorial.Basic
 public import TauCeti.Data.Matrix.Block
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
@@ -109,6 +110,13 @@ theorem evenPairing_mk (e : A) (he : IsIdempotentElem e) (m : ℕ)
       (m ! : R)⁻¹ • ((φ : cyclicCochains R A M (2 * m)) :
         MultilinearMap R (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
   simp [evenPairing]
+
+/-- The even pairing with the zero idempotent vanishes. -/
+@[simp]
+theorem evenPairing_zero (m : ℕ) :
+    evenPairing (R := R) (M := M) (0 : A) .zero m = 0 := by
+  ext φ
+  simp [← Pi.zero_def]
 
 /-- **Connes' even pairing** of an idempotent matrix `e` with cyclic cohomology: on the class of a
 cyclic cocycle `φ` of degree `2m`, it is `(m!)⁻¹ (φ#Tr)(e, …, e)`. -/

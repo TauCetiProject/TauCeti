@@ -27,11 +27,9 @@ idempotent matrix `e` (`Module.Finite.exists_linearEquiv_range_vecMulLinear`), a
 through `e`. The choice of `e` does not matter: two idempotents presenting isomorphic modules are
 algebraically equivalent, `e = x y` and `f = y x`
 (`Matrix.nonempty_linearEquiv_range_vecMulLinear_iff`), and the even pairing is invariant under
-algebraic equivalence. The last fact reduces to conjugation invariance of the pairing: after
-replacing `x` by `e x f` and `y` by `f y e`, the block matrix `w = !![1 - e, x; y, 1 - f]`
-satisfies `w² = 1` and conjugates `e ⊕ 0` to `0 ⊕ f`. Additivity on short exact sequences follows
-from additivity of the pairing on block sums, since a short exact sequence of projective modules
-splits.
+algebraic equivalence (`TauCeti.cyclicCohomology.evenPairing_matrixExtension_eq_of_mul_eq`).
+Additivity on short exact sequences follows from additivity of the pairing on block sums, since a
+short exact sequence of projective modules splits.
 
 ## Main definitions
 
@@ -39,8 +37,6 @@ splits.
 
 ## Main results
 
-* `TauCeti.cyclicCohomology.evenPairing_matrixExtension_eq_of_mul_eq`: invariance of the even
-  pairing of idempotent matrices under algebraic equivalence.
 * `TauCeti.cyclicCohomology.evenPairing_matrixExtension_eq_of_linearEquiv`: idempotent matrices
   presenting isomorphic modules have the same even pairing.
 * `TauCeti.cyclicCohomology.evenPairingK0_of`: the pairing of the class of a module presented by an
@@ -70,60 +66,7 @@ section AlgebraicEquivalence
 variable {R A M : Type*} [Field R] [CharZero R] [Ring A] [Algebra R A] [AddCommGroup M]
   [Module R M]
 
-/-- The even pairing with the zero idempotent vanishes. -/
-@[simp]
-theorem evenPairing_zero (m : ℕ) :
-    evenPairing (R := R) (M := M) (0 : A) .zero m = 0 := by
-  ext φ
-  rw [LinearMap.comp_apply, evenPairing_mk, LinearMap.zero_comp, LinearMap.zero_apply,
-    MultilinearMap.map_coord_zero _ (0 : Fin (2 * m + 1)) rfl, smul_zero]
-
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
-
-/-- Bordering an idempotent matrix by a zero block does not change its even pairing. -/
-private theorem evenPairing_fromBlocks_zero_matrixExtension {e : Matrix ι ι A}
-    (he : IsIdempotentElem e) (m : ℕ) (c : cyclicCohomology R A M (2 * m)) :
-    evenPairing (Matrix.fromBlocks e 0 0 (0 : Matrix κ κ A)) (he.fromBlocks_zero₁₂_zero₂₁ .zero) m
-        (matrixExtension M (ι ⊕ κ) (2 * m) c) =
-      evenPairing e he m (matrixExtension M ι (2 * m) c) := by
-  rw [evenPairing_fromBlocks_matrixExtension he .zero, evenPairing_zero, LinearMap.zero_apply,
-    add_zero]
-
-/-- **Invariance of the even pairing under algebraic equivalence.** If `e = x y` and `f = y x` for
-idempotent matrices `e` and `f` and rectangular matrices `x` and `y`, then `e` and `f` have the
-same even pairing with every cyclic cohomology class. -/
-theorem evenPairing_matrixExtension_eq_of_mul_eq {e : Matrix ι ι A} {f : Matrix κ κ A}
-    (he : IsIdempotentElem e) (hf : IsIdempotentElem f) {x : Matrix ι κ A} {y : Matrix κ ι A}
-    (hxy : x * y = e) (hyx : y * x = f) (m : ℕ) (c : cyclicCohomology R A M (2 * m)) :
-    evenPairing e he m (matrixExtension M ι (2 * m) c) =
-      evenPairing f hf m (matrixExtension M κ (2 * m) c) := by
-  subst hxy hyx
-  -- Idempotence of `x y` and `y x`, as rewriting rules on left-associated alternating words.
-  have h₁' : x * y * x * y = x * y := by rw [Matrix.mul_assoc (x * y), he.eq]
-  have h₂' : y * x * y * x = y * x := by rw [Matrix.mul_assoc (y * x), hf.eq]
-  -- The block matrix `w = !![1 - x y, x y x; y x y, 1 - y x]` is an involution conjugating
-  -- `x y ⊕ 0` to `0 ⊕ y x`.
-  set w := Matrix.fromBlocks (1 - x * y) (x * y * x) (y * x * y) (1 - y * x)
-  have hww : w * w = 1 := by
-    rw [Matrix.fromBlocks_multiply, ← Matrix.fromBlocks_one]
-    congr 1 <;> simp only [Matrix.mul_sub, Matrix.sub_mul, Matrix.one_mul, Matrix.mul_one,
-      ← Matrix.mul_assoc, h₁', h₂'] <;> abel
-  have hconj : w * Matrix.fromBlocks (x * y) 0 0 0 * w = Matrix.fromBlocks 0 0 0 (y * x) := by
-    rw [Matrix.fromBlocks_multiply, Matrix.fromBlocks_multiply]
-    congr 1 <;> simp only [Matrix.mul_sub, Matrix.sub_mul, Matrix.one_mul, Matrix.mul_one,
-      Matrix.mul_zero, Matrix.zero_mul, add_zero, ← Matrix.mul_assoc, h₁', h₂'] <;> abel
-  let u : (Matrix (ι ⊕ κ) (ι ⊕ κ) A)ˣ := ⟨w, w, hww, hww⟩
-  have key : ∀ (g : Matrix (ι ⊕ κ) (ι ⊕ κ) A) (hg : IsIdempotentElem g),
-      (u : Matrix (ι ⊕ κ) (ι ⊕ κ) A) * Matrix.fromBlocks (x * y) 0 0 0 *
-        (↑u⁻¹ : Matrix (ι ⊕ κ) (ι ⊕ κ) A) = g →
-        evenPairing (R := R) (M := M) g hg m =
-          evenPairing _ (he.fromBlocks_zero₁₂_zero₂₁ .zero) m := by
-    rintro _ _ rfl
-    exact evenPairing_units_conj u _ _ m
-  rw [← evenPairing_fromBlocks_zero_matrixExtension (κ := κ) he,
-    ← key _ (IsIdempotentElem.zero.fromBlocks_zero₁₂_zero₂₁ hf) hconj,
-    evenPairing_fromBlocks_matrixExtension .zero hf, evenPairing_zero, LinearMap.zero_apply,
-    zero_add]
 
 /-- **The even pairing only depends on the module presented by an idempotent.** If idempotent
 matrices `e` and `f` have isomorphic ranges of right multiplication on row vectors, then they have
