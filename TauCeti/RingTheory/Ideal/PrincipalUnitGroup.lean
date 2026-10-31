@@ -25,8 +25,10 @@ The principal unit group of `I` is the kernel of reduction of units modulo `I`, 
 in the Jacobson radical this reduction is surjective, so that `Rˣ ⧸ (1 + I) ≃ (R ⧸ I)ˣ`. For ideals
 `J' ≤ J` with `J * J ≤ J'` and `J` in the Jacobson radical, the map `1 + x ↦ x` identifies
 `(1 + J) ⧸ (1 + J')` with the additive group `J ⧸ J'`, because
-`(1 + x)(1 + y) = 1 + (x + y) + x y` with `x y ∈ J'`. Applied to the powers of an ideal `I` in the
-Jacobson radical, this gives the filtration of `1 + I` by the subgroups `1 + I ^ n`, whose
+`(1 + x)(1 + y) = 1 + (x + y) + x y` with `x y ∈ J'`. Without `J' ≤ J`, the same map identifies
+`(1 + J) ⧸ ((1 + J) ∩ (1 + J'))` with `J ⧸ (J ∩ J')`; these are the quotients the API states, via
+`Subgroup.subgroupOf` and `Submodule.comap J.subtype J'`. Applied to the powers of an ideal `I` in
+the Jacobson radical, this gives the filtration of `1 + I` by the subgroups `1 + I ^ n`, whose
 successive quotients are the additive groups `I ^ n ⧸ I ^ (n + 1)`.
 When `I ^ n = 0` the filtration reaches the trivial group at step `n` (`principalUnitGroup_bot`),
 so `1 + I` is an iterated extension of additive groups.
@@ -37,9 +39,10 @@ so `1 + I` is an iterated extension of additive groups.
 * `Ideal.unitsQuotientPrincipalUnitGroupEquiv`: for `I` in the Jacobson radical,
   `Rˣ ⧸ (1 + I) ≃* (R ⧸ I)ˣ`.
 * `Ideal.principalUnitGroupToQuotient`: for `J * J ≤ J'`, the homomorphism `1 + x ↦ x mod J'`
-  from `1 + J` to the additive group of `J ⧸ J'`.
+  from `1 + J` to the additive group of `J ⧸ (J ∩ J')`, which is `J ⧸ J'` when `J' ≤ J`.
 * `Ideal.principalUnitGroupQuotientEquiv`: for `J * J ≤ J'` and `J` in the Jacobson radical,
-  `(1 + J) ⧸ (1 + J') ≃* J ⧸ J'`.
+  `(1 + J) ⧸ ((1 + J) ∩ (1 + J')) ≃* J ⧸ (J ∩ J')`, which reads `(1 + J) ⧸ (1 + J') ≃* J ⧸ J'`
+  when `J' ≤ J`.
 * `Ideal.principalUnitGroupPowQuotientEquiv`: the successive quotients
   `(1 + I ^ (n + 1)) ⧸ (1 + I ^ (n + 2)) ≃* I ^ (n + 1) ⧸ I ^ (n + 2)` of the filtration by powers.
 
@@ -136,8 +139,8 @@ theorem unitsQuotientPrincipalUnitGroupEquiv_mk {I : Ideal R} (hI : I ≤ jacobs
     TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
 /-- For ideals with `J * J ≤ J'`, the map `1 + x ↦ x mod J'` is a homomorphism from the principal
-unit group of `J` to the additive group of `J ⧸ J'`: `(1 + x)(1 + y) = 1 + (x + y) + x y` with
-`x y ∈ J'`. -/
+unit group of `J` to the additive group of `J ⧸ (J ∩ J')` (written `Submodule.comap J.subtype J'`;
+this is `J ⧸ J'` when `J' ≤ J`): `(1 + x)(1 + y) = 1 + (x + y) + x y` with `x y ∈ J'`. -/
 def principalUnitGroupToQuotient (J J' : Ideal R) (h : J * J ≤ J') :
     J.principalUnitGroup →* Multiplicative (J ⧸ Submodule.comap J.subtype J') where
   toFun u := .ofAdd (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, mem_principalUnitGroup.mp u.2⟩)
@@ -169,8 +172,8 @@ theorem ker_principalUnitGroupToQuotient {J J' : Ideal R} (h : J * J ≤ J') :
     Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, Subgroup.mem_subgroupOf]
   simp
 
-/-- When `J` lies in the Jacobson radical, every element of `J ⧸ J'` is the class of `u - 1` for a
-principal unit `u` of `J`: if `x ∈ J`, then `1 + x` is a unit. -/
+/-- When `J` lies in the Jacobson radical, every element of `J ⧸ (J ∩ J')` is the class of `u - 1`
+for a principal unit `u` of `J`: if `x ∈ J`, then `1 + x` is a unit. -/
 theorem principalUnitGroupToQuotient_surjective {J J' : Ideal R} (h : J * J ≤ J')
     (hJ : J ≤ jacobson ⊥) : Function.Surjective (principalUnitGroupToQuotient J J' h) := by
   intro q
@@ -184,7 +187,8 @@ theorem principalUnitGroupToQuotient_surjective {J J' : Ideal R} (h : J * J ≤ 
     simp
 
 /-- For ideals with `J * J ≤ J'` and `J` contained in the Jacobson radical, the quotient of the
-principal unit group of `J` by that of `J'` is the additive group `J ⧸ J'`, by `1 + x ↦ x`. -/
+principal unit group of `J` by its intersection with that of `J'` is the additive group
+`J ⧸ (J ∩ J')`, by `1 + x ↦ x`. When `J' ≤ J` this is `(1 + J) ⧸ (1 + J') ≃* J ⧸ J'`. -/
 noncomputable def principalUnitGroupQuotientEquiv {J J' : Ideal R} (h : J * J ≤ J')
     (hJ : J ≤ jacobson ⊥) :
     J.principalUnitGroup ⧸ J'.principalUnitGroup.subgroupOf J.principalUnitGroup ≃*
