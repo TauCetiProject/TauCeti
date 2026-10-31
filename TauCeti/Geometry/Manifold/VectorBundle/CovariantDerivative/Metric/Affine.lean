@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
-
--- Use the defining tensor equality without the extra manifold regularity required by the
--- section-based characterization `isMetricCompatible_iff`.
-import all Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 
 /-!
 # Affine operations on metric connections
@@ -31,8 +28,8 @@ metric compatibility; regularity of the resulting connection is a separate quest
 ## Main results
 
 * `CovariantDerivative.IsMetricCompatible.addOneForm_iff`: the skew-adjoint criterion.
-* `CovariantDerivative.IsMetricCompatible.iff_difference`: the difference criterion relative
-  to a fixed metric connection.
+* `CovariantDerivative.isMetricCompatible_iff_inner_difference_add_inner_difference_eq_zero`:
+  the difference criterion relative to a fixed metric connection.
 * `CovariantDerivative.IsMetricCompatible.inner_difference_add_inner_difference_eq_zero`:
   the difference of metric connections is skew-adjoint.
 * `CovariantDerivative.IsMetricCompatible.affineCombination`: affine combinations preserve
@@ -64,14 +61,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {cov cov' : CovariantDerivative I F V}
 
 /-- Adding an endomorphism-valued one-form changes the metric defect by the negative of
-its symmetric part. The tangent direction is the last argument of `A`. -/
+twice its symmetric part. The tangent direction is the last argument of `A`. -/
 @[simp]
 theorem derivMetricTensor_addOneForm (cov : CovariantDerivative I F V)
     (A : Π x : M, V x →L[ℝ] TangentSpace I x →L[ℝ] V x)
     (x : M) (u v : V x) (X : TangentSpace I x) :
     (cov.addOneForm A).derivMetricTensor x u v X =
       cov.derivMetricTensor x u v X - inner ℝ (A x u X) v - inner ℝ u (A x v X) := by
-  simp only [derivMetricTensor_apply_eq_extend, addOneForm, add_apply,
+  simp only [derivMetricTensor_apply_eq_extend, addOneForm_apply, add_apply,
     extend_apply_self, inner_add_left, inner_add_right]
   abel
 
@@ -82,15 +79,15 @@ theorem IsMetricCompatible.addOneForm_iff (hcov : cov.IsMetricCompatible)
     (cov.addOneForm A).IsMetricCompatible ↔
       ∀ (x : M) (X : TangentSpace I x) (u v : V x),
         inner ℝ (A x u X) v + inner ℝ u (A x v X) = 0 := by
-  unfold IsMetricCompatible at *
+  rw [isMetricCompatible_iff_derivMetricTensor_eq_zero] at hcov ⊢
   constructor
   · intro h x X u v
     have heq := congrArg (fun T ↦ T x u v X) h
-    simp only [derivMetricTensor_addOneForm, hcov, Pi.zero_apply, zero_apply] at heq
+    simp only [derivMetricTensor_addOneForm, hcov, zero_apply] at heq
     linarith
   · intro h
     ext x u v X
-    simp only [derivMetricTensor_addOneForm, hcov, Pi.zero_apply, zero_apply]
+    simp only [derivMetricTensor_addOneForm, hcov, zero_apply]
     linarith [h x X u v]
 
 /-- The metric defect is affine in the connection, including for weights depending on the
@@ -100,7 +97,7 @@ theorem derivMetricTensor_affineCombination (cov cov' : CovariantDerivative I F 
     (f : M → ℝ) (x : M) (u v : V x) (X : TangentSpace I x) :
     (cov.affineCombination cov' f).derivMetricTensor x u v X =
       f x * cov.derivMetricTensor x u v X + (1 - f x) * cov'.derivMetricTensor x u v X := by
-  simp only [derivMetricTensor_apply_eq_extend, affineCombination, Pi.add_apply,
+  simp only [derivMetricTensor_apply_eq_extend, affineCombination_toFun, Pi.add_apply,
     Pi.smul_apply', Pi.sub_apply, Pi.one_apply, add_apply, smul_apply,
     inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right]
   ring
@@ -110,39 +107,33 @@ need not be nonnegative. -/
 theorem IsMetricCompatible.affineCombination (hcov : cov.IsMetricCompatible)
     (hcov' : cov'.IsMetricCompatible) (f : M → ℝ) :
     (cov.affineCombination cov' f).IsMetricCompatible := by
-  unfold IsMetricCompatible at *
+  rw [isMetricCompatible_iff_derivMetricTensor_eq_zero] at hcov hcov' ⊢
   ext x u v X
-  simp only [derivMetricTensor_affineCombination, hcov, hcov', Pi.zero_apply,
-    zero_apply, mul_zero, add_zero]
+  simp only [derivMetricTensor_affineCombination, hcov, hcov', zero_apply, mul_zero, add_zero]
 
-/-- The symmetric part of the difference of two connections is the difference of their
+/-- Twice the symmetric part of the difference of two connections is the difference of their
 metric defects, with the order reversed. -/
 theorem inner_difference_add_inner_difference (cov cov' : CovariantDerivative I F V)
     (x : M) (X : TangentSpace I x) (u v : V x) :
     inner ℝ (cov.difference cov' x u X) v + inner ℝ u (cov.difference cov' x v X) =
       cov'.derivMetricTensor x u v X - cov.derivMetricTensor x u v X := by
-  have hd (w : V x) : cov.difference cov' x w =
-      cov (extend F w) x - cov' (extend F w) x := by
-    simpa only [difference, extend_apply_self] using
-      IsCovariantDerivativeOn.difference_apply cov.isCovariantDerivativeOnUniv
-        cov'.isCovariantDerivativeOnUniv (hσ := mdifferentiableAt_extend I F w)
-  simp only [hd, sub_apply, inner_sub_left, inner_sub_right,
+  simp only [difference_apply_eq_extend, sub_apply, inner_sub_left, inner_sub_right,
     derivMetricTensor_apply_eq_extend]
   abel
 
 /-- Relative to a fixed metric connection, a connection is metric exactly when their
 endomorphism-valued difference is skew-adjoint in every tangent direction. -/
-theorem IsMetricCompatible.iff_difference (hcov' : cov'.IsMetricCompatible) :
+theorem isMetricCompatible_iff_inner_difference_add_inner_difference_eq_zero
+    (hcov' : cov'.IsMetricCompatible) :
     cov.IsMetricCompatible ↔
       ∀ (x : M) (X : TangentSpace I x) (u v : V x),
         inner ℝ (cov.difference cov' x u X) v +
           inner ℝ u (cov.difference cov' x v X) = 0 := by
-  unfold IsMetricCompatible at *
-  simp only [inner_difference_add_inner_difference, hcov', Pi.zero_apply,
-    zero_apply, zero_sub, neg_eq_zero]
+  rw [isMetricCompatible_iff_derivMetricTensor_eq_zero] at hcov' ⊢
+  simp only [inner_difference_add_inner_difference, hcov', zero_apply, zero_sub, neg_eq_zero]
   constructor
   · intro h x X u v
-    simp only [h, Pi.zero_apply, zero_apply]
+    simp only [h, zero_apply]
   · intro h
     ext x u v X
     exact h x X u v
@@ -153,6 +144,6 @@ theorem IsMetricCompatible.inner_difference_add_inner_difference_eq_zero
     (hcov : cov.IsMetricCompatible) (hcov' : cov'.IsMetricCompatible)
     (x : M) (X : TangentSpace I x) (u v : V x) :
     inner ℝ (cov.difference cov' x u X) v + inner ℝ u (cov.difference cov' x v X) = 0 :=
-  hcov'.iff_difference.mp hcov x X u v
+  (isMetricCompatible_iff_inner_difference_add_inner_difference_eq_zero hcov').mp hcov x X u v
 
 end CovariantDerivative
