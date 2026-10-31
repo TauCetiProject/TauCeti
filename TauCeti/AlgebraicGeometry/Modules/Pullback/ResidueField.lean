@@ -136,6 +136,11 @@ private lemma isAffineOpen_preimage : IsAffineOpen (X.fromSpecResidueField y ⁻
   rw [fromSpecResidueField_preimage_eq_top (y : X) y.2]
   exact isAffineOpen_top _
 
+/-- Restriction from `⊤` to `ι⁻¹ U = ⊤` is an isomorphism. -/
+private instance isIso_homOfLE_preimage :
+    IsIso (homOfLE le_top : X.fromSpecResidueField y ⁻¹ᵁ U ⟶ ⊤) :=
+  homOfLE_isIso_of_eq _ (fromSpecResidueField_preimage_eq_top (y : X) y.2)
+
 /-- On `U ∋ y`, the morphism `ι : Spec κ(y) ⟶ X` sends a function to its value at `y`, restricted
 from `⊤` to `ι⁻¹ U`. -/
 private lemma app_fromSpecResidueField_apply (r : Γ(X, U)) :
@@ -147,8 +152,6 @@ private lemma app_fromSpecResidueField_apply (r : Γ(X, U)) :
 /-- `κ(y) ≅ Γ(Spec κ(y), ι⁻¹ U)` as `Γ(X, U)`-modules, by restriction from `⊤` to `ι⁻¹ U = ⊤`. -/
 private def residueFieldEquivPreimage :
     X.residueField y ≃ₗ[Γ(X, U)] Γ(Spec (X.residueField y), X.fromSpecResidueField y ⁻¹ᵁ U) :=
-  have : IsIso (homOfLE le_top : X.fromSpecResidueField y ⁻¹ᵁ U ⟶ ⊤) :=
-    homOfLE_isIso_of_eq _ (fromSpecResidueField_preimage_eq_top (y : X) y.2)
   LinearEquiv.ofBijective
     { toFun c := (Spec (X.residueField y)).presheaf.map (homOfLE le_top).op
         ((Scheme.ΓSpecIso (X.residueField y)).inv c)
@@ -211,8 +214,6 @@ private lemma bijective_liftBaseChange_pullbackSectionsLE [M.IsQuasicoherent]
       (top_le_preimage (y : X) y.2) m) :
     Function.Bijective (f.liftBaseChange (X.residueField y)) := by
   -- Restriction from `⊤` to `ι⁻¹ U = ⊤` is bijective.
-  have : IsIso (homOfLE le_top : X.fromSpecResidueField y ⁻¹ᵁ U ⟶ ⊤) :=
-    homOfLE_isIso_of_eq _ (fromSpecResidueField_preimage_eq_top (y : X) y.2)
   have hρ : Function.Bijective (((pullback (X.fromSpecResidueField y)).obj M).presheaf.map
       (homOfLE le_top : X.fromSpecResidueField y ⁻¹ᵁ U ⟶ ⊤).op) :=
     ConcreteCategory.bijective_of_isIso _

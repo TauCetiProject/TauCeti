@@ -102,8 +102,8 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
     -- Restriction to `D(f)` factors through the neighbourhood `W` where `a` and `b` agree.
     have hres (i : W ⟶ U) (m : Γ(M, U)) :
         M.basicOpenRestrict f m = M.presheaf.map (homOfLE hfW).op (M.presheaf.map i.op m) := by
-      rw [basicOpenRestrict_apply, ← M.presheaf.map_comp_apply, ← op_comp]
-      rfl
+      rw [basicOpenRestrict_apply, ← M.presheaf.map_comp_apply, ← op_comp,
+        Subsingleton.elim (homOfLE hfW ≫ i) (homOfLE (X.basicOpen_le f))]
     obtain ⟨c, hc⟩ := IsLocalizedModule.exists_of_eq (S := Submonoid.powers f)
       (f := M.basicOpenRestrict f) (x₁ := a) (x₂ := b) (by rw [hres iU, hres iU', hab])
     exact ⟨⟨c, mem_primeCompl_of_mem_powers hU hxf c.2⟩, hc⟩

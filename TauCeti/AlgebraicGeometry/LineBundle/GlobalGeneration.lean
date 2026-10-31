@@ -229,11 +229,9 @@ theorem IsGloballyGenerated.nonempty_generatingSections {L : InvertibleSheaf X}
       SheafOfModules.sectionsMap g (L.obj.sectionsEquivTop.symm s) :=
     (heval f).symm.trans
       ((congrArg (fun p ↦ SheafOfModules.freeHomEquiv N p s) hfg).trans (heval g))
-  have htop := congrArg (fun t ↦ t.val (op ⊤)) h
-  -- Use the definitionally equal public application, at the global section `s`.
-  change f.app ⊤ ((L.obj.sectionsEquivTop.symm s).val (op ⊤)) =
-    g.app ⊤ ((L.obj.sectionsEquivTop.symm s).val (op ⊤)) at htop
-  rwa [← Scheme.Modules.sectionsEquivTop_apply, Equiv.apply_symm_apply] at htop
+  have htop := congrArg N.sectionsEquivTop h
+  rwa [Scheme.Modules.sectionsEquivTop_sectionsMap, Scheme.Modules.sectionsEquivTop_sectionsMap,
+    Equiv.apply_symm_apply] at htop
 
 /-- Global generation of a line bundle is equivalent to the existence of Mathlib's
 family of generating global sections. -/

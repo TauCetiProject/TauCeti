@@ -376,6 +376,11 @@ lemma sectionsEquivTop_symm_val (t : Γ(M, ⊤)) (U : X.Opens) :
     (M.sectionsEquivTop.symm t).val (op U) = M.presheaf.map U.leTop.op t :=
   (rfl)
 
+/-- Applying `p : M ⟶ N` to a compatible family of sections applies `p` to its global section. -/
+lemma sectionsEquivTop_sectionsMap {N : X.Modules} (p : M ⟶ N) (s : M.sections) :
+    N.sectionsEquivTop (SheafOfModules.sectionsMap p s) = p.app ⊤ (M.sectionsEquivTop s) :=
+  (rfl)
+
 /-- Morphisms `𝒪_X ⟶ M` out of the structure sheaf are the global sections of `M`: a morphism
 goes to the image of `1` over `X`. This is Mathlib's `SheafOfModules.unitHomEquiv`, followed by
 the evaluation of a compatible family of sections at the terminal open `X`
