@@ -11,6 +11,8 @@ public import Mathlib.Data.Set.SymmDiff
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 -- Proof-only: the integrability of indicators of bounded intervals.
 import TauCeti.MeasureTheory.Integral.Bochner.Set
+-- Proof-only: a subsequence of functions with vanishing integrals tends to `0` a.e.
+import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 
 /-!
 # Layer-cake formulas for products and distances
@@ -314,22 +316,10 @@ theorem exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt (m : Measure α) 
     (h : Tendsto (fun n ↦ ∫⁻ a, ‖f n a - g a‖ₑ ∂m) atTop (𝓝 0)) :
     ∃ ns : ℕ → ℕ, StrictMono ns ∧
       ∀ᵐ s, Tendsto (fun j ↦ m ({a | s < f (ns j) a} ∆ {a | s < g a})) atTop (𝓝 0) := by
-  -- The defect `F n s` at level `s` is measurable in `s` and integrates to `∫ |f n - g|`.
-  set F : ℕ → ℝ → ℝ≥0∞ := fun n s ↦ m ({a | s < f n a} ∆ {a | s < g a})
-  have hF (n : ℕ) : ∫⁻ s, F n s = ∫⁻ a, ‖f n a - g a‖ₑ ∂m :=
-    (lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt m (hf n) hg).symm
-  have hFm (n : ℕ) : Measurable (F n) := measurable_measure_symmDiff_setOf_lt m (hf n) hg
-  -- Along a subsequence with `∫ F (ns j) < 2⁻ʲ`, the sum `∑ⱼ F (ns j) s` is finite for almost
-  -- every `s`, so its terms tend to zero.
-  obtain ⟨ns, hns, hlt⟩ := extraction_forall_of_eventually fun j ↦
-    h.eventually (gt_mem_nhds (ENNReal.pow_pos (a := 2⁻¹) (by simp) j))
-  refine ⟨ns, hns, ?_⟩
-  have hsum : ∫⁻ s, ∑' j, F (ns j) s ≠ ∞ := by
-    rw [lintegral_tsum fun j ↦ (hFm (ns j)).aemeasurable]
-    simp_rw [hF]
-    exact ((ENNReal.tsum_le_tsum fun j ↦ (hlt j).le).trans_lt (by simp)).ne
-  filter_upwards [ae_lt_top (Measurable.tsum fun j ↦ hFm (ns j)) hsum] with s hs
-  exact ENNReal.tendsto_atTop_zero_of_tsum_ne_top hs.ne
+  -- The defect at level `s` is measurable in `s` and integrates to `∫ |f n - g|`.
+  refine TauCeti.exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral
+    (fun n ↦ (measurable_measure_symmDiff_setOf_lt m (hf n) hg).aemeasurable) ?_
+  simpa only [← lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt m (hf _) hg] using h
 
 end MeasureTheory.Measure
 

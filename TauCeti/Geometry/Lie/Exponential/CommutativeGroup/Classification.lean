@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Algebra.Module.ZLattice.Quotient
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import TauCeti.Topology.Circle.AddCircle
 
 /-!
 # Compact connected commutative Lie groups are products of circles
@@ -79,31 +79,20 @@ theorem lieGroupUnitAddTorusEquiv_symm_apply (x : ι → ℝ) :
 /-- Circle coordinates of a compact connected commutative Lie group. Each integral period in
 the chosen exponential-kernel basis becomes one full turn in the corresponding circle. -/
 def lieGroupPiCircleEquiv : G ≃ₜ* (ι → Circle) :=
-  let e := lieGroupUnitAddTorusEquiv b
-  let c := Homeomorph.piCongrRight fun _ : ι =>
-    AddCircle.homeomorphCircle (one_ne_zero : (1 : ℝ) ≠ 0)
-  { toFun := fun g => c (e (Additive.ofMul g))
-    invFun := fun z => Additive.toMul (e.symm (c.symm z))
+  let e := (lieGroupUnitAddTorusEquiv b).trans unitAddTorusEquivPiCircle
+  { toFun := fun g => (e (Additive.ofMul g)).toMul
+    invFun := fun z => (e.symm (Additive.ofMul z)).toMul
     left_inv := fun g => by simp
     right_inv := fun z => by simp
-    continuous_toFun := c.continuous.comp (e.continuous.comp continuous_ofMul)
-    continuous_invFun := continuous_toMul.comp (e.symm.continuous.comp c.symm.continuous)
-    map_mul' := fun x y => by
-      rw [ofMul_mul, map_add]
-      apply funext
-      intro i
-      simp only [c, Homeomorph.piCongrRight_apply, AddCircle.homeomorphCircle_apply,
-        Pi.add_apply, AddCircle.toCircle_add, Pi.mul_apply] }
+    continuous_toFun := continuous_toMul.comp (e.continuous.comp continuous_ofMul)
+    continuous_invFun := continuous_toMul.comp (e.symm.continuous.comp continuous_ofMul)
+    map_mul' := fun x y => by rw [ofMul_mul, map_add, toMul_add] }
 
 /-- Multiplicative circle coordinates are the canonical unit-circle images of additive ones. -/
 theorem lieGroupPiCircleEquiv_apply (g : G) (i : ι) :
     lieGroupPiCircleEquiv b g i =
-      AddCircle.toCircle (lieGroupUnitAddTorusEquiv b (Additive.ofMul g) i) := by
-  -- Expose the coordinate homeomorphism stored in the continuous group equivalence so that
-  -- its evaluation lemmas apply; rewriting does not unfold the enclosing structure extension.
-  change (Homeomorph.piCongrRight fun _ : ι =>
-    AddCircle.homeomorphCircle (one_ne_zero : (1 : ℝ) ≠ 0)) _ i = _
-  rw [Homeomorph.piCongrRight_apply, AddCircle.homeomorphCircle_apply]
+      AddCircle.toCircle (lieGroupUnitAddTorusEquiv b (Additive.ofMul g) i) :=
+  toMul_unitAddTorusEquivPiCircle_apply _ i
 
 /-- In circle coordinates, the exponential is the coordinatewise complex exponential, with
 period one in the chosen lattice basis. -/

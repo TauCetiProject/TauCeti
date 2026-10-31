@@ -159,6 +159,15 @@ theorem T_sub_algebraMap_mul_T_add_algebraMap_eq_zero (i : Fin (n - 1)) :
     Algebra.smul_def, map_sub]
   abel
 
+/-- The element `T i + q⁻¹` is idempotent up to `q + q⁻¹`. -/
+theorem T_add_algebraMap_mul_self (i : Fin (n - 1)) :
+    (T q i + algebraMap R _ (↑q⁻¹ : R)) * (T q i + algebraMap R _ (↑q⁻¹ : R)) =
+      ((q : R) + ↑q⁻¹) • (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
+  have hq : (q : R) * ↑q⁻¹ = 1 := q.mul_inv
+  simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, smul_mul_assoc, mul_smul_comm,
+    smul_smul, one_mul, mul_one, T_mul_self, smul_add, hq, sub_smul, add_smul, one_smul]
+  abel
+
 /-- Two generators on adjacent pairs of strands satisfy the braid relation. -/
 theorem T_braid {i j : Fin (n - 1)} (h : (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i) :
     T q i * T q j * T q i = T q j * T q i * T q j := by

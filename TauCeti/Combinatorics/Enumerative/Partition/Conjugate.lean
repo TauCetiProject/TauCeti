@@ -14,9 +14,11 @@ public import TauCeti.Combinatorics.Young.Partitions
 Mathlib defines the conjugate `Nat.Partition.conjugate` of a natural-number partition by
 transposing its Young diagram, and proves that conjugation is an involution
 (`Nat.Partition.conjugate_conjugate`).  This file records the parts and the Young diagram of the
-conjugate, and proves that conjugation reverses the dominance order. Consequently dominance can
-be read off column by column: `μ` dominates `ν` exactly when, for every `k`, the first `k` columns
-of the Young diagram of `μ` hold at most as many boxes as those of `ν`
+conjugate, and proves that conjugation reverses the dominance order. The parts of the conjugate
+are the column lengths of the original partition: `Nat.Partition.sum_map_conjugate_parts` turns a
+sum over them into a sum over columns, where column `k` counts the parts larger than `k`.
+Consequently dominance can be read off column by column: `μ` dominates `ν` exactly when, for every
+`k`, the first `k` columns of the Young diagram of `μ` hold at most as many boxes as those of `ν`
 (`Nat.Partition.dominates_iff_forall_sum_map_min_le`).
 
 The reversal theorem supplies the order duality behind the row/column symmetry of Specht
@@ -184,6 +186,31 @@ theorem conjugate_parts_sort {n : ℕ} (μ : n.Partition) :
     μ.conjugate.parts.sort (· ≥ ·) = (YoungDiagram.ofPartition μ).transpose.rowLens := by
   rw [← YoungDiagram.rowLens_ofPartition_eq_sort_parts μ.conjugate,
     YoungDiagram.ofPartition_conjugate]
+
+/-- **The parts of the conjugate partition are the column lengths.** A sum over the parts of the
+conjugate of `μ` is the sum over columns `k`, where column `k` has one cell for each part of `μ`
+larger than `k`. The range of columns may be any bound on the parts of `μ`; the empty columns
+beyond the largest part contribute `g 0 = 0`. -/
+theorem sum_map_conjugate_parts {M : Type*} [AddCommMonoid M] {n : ℕ} (μ : n.Partition)
+    (g : ℕ → M) (hg : g 0 = 0) {m : ℕ} (hm : ∀ i ∈ μ.parts, i ≤ m) :
+    (μ.conjugate.parts.map g).sum =
+      ∑ k ∈ Finset.range m, g (μ.parts.filter (k < ·)).card := by
+  set D := YoungDiagram.ofPartition μ
+  -- A column beyond the bound `m` is empty, so the first row has length at most `m`.
+  have hcol (k : ℕ) : (0 < D.colLen k) ↔ k < D.rowLen 0 := by
+    rw [← YoungDiagram.mem_iff_lt_colLen, YoungDiagram.mem_iff_lt_rowLen]
+  have hrow : D.rowLen 0 ≤ m := by
+    by_contra! h
+    have hpos := (hcol m).mpr h
+    rw [YoungDiagram.colLen_ofPartition, Multiset.card_pos_iff_exists_mem] at hpos
+    obtain ⟨i, hi⟩ := hpos
+    rw [Multiset.mem_filter] at hi
+    exact (hm i hi.1).not_gt hi.2
+  rw [conjugate_parts, YoungDiagram.sum_map_coe_rowLens, YoungDiagram.colLen_transpose]
+  simp only [YoungDiagram.rowLen_transpose, ← YoungDiagram.colLen_ofPartition]
+  refine Finset.sum_subset (Finset.range_subset_range.mpr hrow) fun k _ hk => ?_
+  rw [Finset.mem_range, ← hcol, not_lt, Nat.le_zero] at hk
+  rw [hk, hg]
 
 /-- **Conjugation of partitions reverses dominance.** If `μ` dominates `ν`, then the conjugate
 of `ν` dominates the conjugate of `μ`. -/

@@ -31,6 +31,8 @@ every `f`-invariant submodule while scaling the `ν`-eigenvector by `(ν - μ) ^
   scaled by `(ν - μ) ^ k` under `(f - μ • 1) ^ k`.
 * `TauCeti.biSup_inf_eigenspace_eq_self`: a summand whose scalar is attained only by itself is cut
   out by the corresponding eigenspace.
+* `Module.End.eigenspace_eq_of_iSup_eq_top`: if the summands span the whole space and the scalars
+  are pairwise distinct, every summand is an eigenspace.
 * `TauCeti.isCompl_eigenspace_one_neg_one`: the `1`- and `-1`-eigenspaces of an involution are
   complementary over a commutative ring in which `2` is a unit.
 -/
@@ -116,3 +118,15 @@ theorem biSup_inf_eigenspace_eq_self {ι : Type w} (A : Module.End K V) (W : ι 
   rw [hsplit, sup_inf_assoc_of_le _ (hW k hk), disjoint_iff.mp hdisj, sup_bot_eq]
 
 end TauCeti
+
+/-- **Summands of a spanning family with distinct scalars are eigenspaces.** If the `W j` span `V`,
+every `W j` consists of eigenvectors of `A` of eigenvalue `g j`, and `g` is injective, then the
+`g k`-eigenspace of `A` is exactly `W k`. -/
+theorem Module.End.eigenspace_eq_of_iSup_eq_top [IsDomain K] [Module.IsTorsionFree K V]
+    {ι : Type w} (A : Module.End K V) {W : ι → Submodule K V} {g : ι → K}
+    (hW : ∀ j, W j ≤ A.eigenspace (g j)) (htop : ⨆ j, W j = ⊤) (hg : Function.Injective g)
+    (k : ι) :
+    A.eigenspace (g k) = W k := by
+  have h := TauCeti.biSup_inf_eigenspace_eq_self A W g (s := Set.univ) (fun j _ ↦ hW j)
+    (Set.mem_univ k) fun j _ hjk ↦ hg.ne hjk
+  rwa [iSup_univ, htop, top_inf_eq] at h
