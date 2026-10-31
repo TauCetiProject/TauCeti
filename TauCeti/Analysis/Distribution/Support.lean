@@ -26,10 +26,11 @@ When `dsupport T` is a compact subset of `Ω`, a test `χ` equal to one near `ds
 `c`. For degree-zero currents and `c` the unit `0`-form it is the augmentation of the current, the
 total coefficient of a finite sum of point masses. No constant test function is inserted into the
 domain of `T`: when the support of `T` is not a compact subset of `Ω`, no such cutoff exists and
-`augmentation T c` is the junk value zero. On maps whose supports are compact subsets of `Ω`, the
-augmentation is additive and homogeneous. It sends the point evaluation `φ ↦ ℓ (φ x)` to `ℓ c`,
-and it vanishes on the boundary `T ∘ d` of a current, because the exterior derivative of a cutoff
-equal to one vanishes near the support.
+`augmentation T c` is the junk value zero. The augmentation of an additive map is additive in `c`,
+and that of a linear map is homogeneous in `c`. On maps whose supports are compact subsets of `Ω`,
+the augmentation is also additive and homogeneous in the map. It sends the point evaluation
+`φ ↦ ℓ (φ x)` to `ℓ c`, and it vanishes on the boundary `T ∘ d` of a current, because the exterior
+derivative of a cutoff equal to one vanishes near the support.
 
 ## Main declarations
 
@@ -161,6 +162,46 @@ theorem dsupport_comp_extDerivCLM_subset {k : ℕ} (f : 𝓓(Ω, E [⋀^Fin (k +
 
 end Augmentation
 
+section AugmentationConst
+
+/-- The augmentation of a map vanishing at zero is zero at the zero vector. -/
+@[simp]
+theorem augmentation_zero_right [Zero V] [FunLike 𝓕 𝓓^{n}(Ω, F) V]
+    [ZeroHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕) : augmentation T (0 : F) = 0 := by
+  unfold augmentation
+  split_ifs
+  · rw [← map_zero T]
+    congr 1
+    ext x
+    simp
+  · rfl
+
+/-- The augmentation of an additive map is additive in the vector. -/
+theorem augmentation_add_right [AddZeroClass V] [FunLike 𝓕 𝓓^{n}(Ω, F) V]
+    [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕) (c d : F) :
+    augmentation T (c + d) = augmentation T c + augmentation T d := by
+  unfold augmentation
+  split_ifs
+  · rw [← map_add]
+    congr 1
+    ext x
+    simp
+  · simp
+
+/-- The augmentation of a linear map is homogeneous in the vector. -/
+theorem augmentation_smul_right [AddCommMonoid V] [Module ℝ V] [FunLike 𝓕 𝓓^{n}(Ω, F) V]
+    [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) V] (T : 𝓕) (a : ℝ) (c : F) :
+    augmentation T (a • c) = a • augmentation T c := by
+  unfold augmentation
+  split_ifs
+  · rw [← map_smul]
+    congr 1
+    ext x
+    simp [smul_comm a]
+  · simp
+
+end AugmentationConst
+
 section AugmentationGroup
 
 variable [FiniteDimensional ℝ E] [AddCommGroup V] [FunLike 𝓕 𝓓^{n}(Ω, F) V]
@@ -243,7 +284,7 @@ end AugmentationGroup
 section Module
 
 variable [FiniteDimensional ℝ E] [AddCommGroup V] [Module ℝ V] [FunLike 𝓕 𝓓^{n}(Ω, F) V]
-  [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) V] (T : 𝓕)
+  [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
 
 /-- The augmentation is homogeneous. -/
 theorem augmentation_smul (a : ℝ)
