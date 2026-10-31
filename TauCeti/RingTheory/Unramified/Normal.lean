@@ -77,11 +77,8 @@ theorem IsEtaleAt.of_isUnramifiedAt_of_height_le [IsNoetherianRing R] [FiniteTyp
     exact ⟨a, by simp [ψ, ha, IsLocalization.lift_eq]⟩
   -- The prime `Q` of `P.Ring` under the maximal ideal of `S_q` lies over `p`.
   let Q := (maximalIdeal T).comap ψ
-  have : Q.LiesOver p := by
-    refine ⟨Ideal.ext fun r ↦ ?_⟩
-    rw [Ideal.under_def, Ideal.mem_comap, q.over_def p, Ideal.under_def, Ideal.mem_comap,
-      Ideal.mem_comap, ← IsLocalization.AtPrime.to_map_mem_maximal_iff T q, AlgHom.commutes,
-      ← IsScalarTower.algebraMap_apply]
+  have : (maximalIdeal T).LiesOver p := .trans _ q p
+  have : Q.LiesOver p := inferInstance
   obtain rfl := Q.over_def p
   let D := Localization.AtPrime Q
   have hunit (y : Q.primeCompl) : IsUnit (ψ y) :=

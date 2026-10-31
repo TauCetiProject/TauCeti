@@ -42,8 +42,9 @@ map at `x` is formally unramified iff `Γ(X, V)` is unramified over `Γ(Y, U)` a
 `AlgebraicGeometry.Scheme.Hom.unramifiedAt_spec_iff`: `Spec S ⟶ Spec R` is étale (resp.
 unramified) at `q` exactly when `Algebra.IsEtaleAt R q` (resp. `Algebra.IsUnramifiedAt R q`).
 
-Over a locally Noetherian `Y` whose local ring at `f x` is a normal domain, a formally unramified
-stalk map at `x` already makes `f` étale near `x` as soon as `dim 𝒪_{Y, f x} ≤ dim 𝒪_{X, x}`
+For `f` locally of finite type over a locally Noetherian `Y` whose local ring at `f x` is a normal
+domain, a formally unramified stalk map at `x` already makes `f` étale near `x` as soon as
+`dim 𝒪_{Y, f x} ≤ dim 𝒪_{X, x}`
 (`AlgebraicGeometry.Scheme.Hom.exists_etale_of_formallyUnramified_stalkMap_of_ringKrullDim_le`,
 the scheme form of `Algebra.IsEtaleAt.of_isUnramifiedAt_of_height_le`).
 
