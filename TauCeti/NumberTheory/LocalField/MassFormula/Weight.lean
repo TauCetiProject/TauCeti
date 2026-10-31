@@ -105,6 +105,13 @@ theorem tsum_one_div_natCard_residueField_pow_wildExponent_eq_iff :
     ENNReal.mul_right_inj one_div_natCard_residueField_pow_mul_one_sub_ne_zero
       one_div_natCard_residueField_pow_mul_one_sub_ne_top]
 
+/-- The weight `q ^ (-k)` in `ℝ≥0∞` is the cast of the weight in `ℝ≥0`. -/
+private theorem coe_one_div_natCard_residueField_pow (k : ℕ) :
+    ((1 / (Nat.card 𝓀[K] : ℝ≥0) ^ k : ℝ≥0) : ℝ≥0∞) = 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k := by
+  rw [ENNReal.coe_div (pow_ne_zero _ (Nat.cast_ne_zero.2 Nat.card_pos.ne'))]
+  push_cast
+  rfl
+
 /-- **The real-valued form of the weighted count**: the real series
 `∑_{L ∈ σ_K(n)} q ^ (-c(L))` sums to `s` exactly when the `ℝ≥0∞` sum is `s`. At `s = n`, this
 relates the mass formula to its real-valued restatement. -/
@@ -112,14 +119,9 @@ theorem hasSum_one_div_natCard_residueField_pow_wildExponent_iff {s : ℝ≥0} :
     HasSum (fun L : totallyRamifiedOfDegree K n ↦
       1 / (Nat.card 𝓀[K] : ℝ) ^ L.1.wildExponent) s ↔
       ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = s := by
-  -- Both weights are casts of the weight `q ^ (-c(L))` in `ℝ≥0`.
-  have hcoe (k : ℕ) :
-      ((1 / (Nat.card 𝓀[K] : ℝ≥0) ^ k : ℝ≥0) : ℝ≥0∞) = 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k := by
-    rw [ENNReal.coe_div (pow_ne_zero _ (Nat.cast_ne_zero.2 Nat.card_pos.ne'))]
-    push_cast
-    rfl
-  simp only [← hcoe, ← ENNReal.summable.hasSum_iff, ENNReal.hasSum_coe, ← NNReal.hasSum_coe,
-    NNReal.coe_div, NNReal.coe_one, NNReal.coe_pow, NNReal.coe_natCast]
+  simp only [← coe_one_div_natCard_residueField_pow, ← ENNReal.summable.hasSum_iff,
+    ENNReal.hasSum_coe, ← NNReal.hasSum_coe, NNReal.coe_div, NNReal.coe_one, NNReal.coe_pow,
+    NNReal.coe_natCast]
 
 /-- **The real-valued weighted count converges exactly when the `ℝ≥0∞` sum is finite.** With the
 mass formula, this makes the real series `∑_{L ∈ σ_K(n)} q ^ (-c(L))` converge, also when `σ_K(n)`
@@ -128,13 +130,7 @@ theorem summable_one_div_natCard_residueField_pow_wildExponent_iff :
     Summable (fun L : totallyRamifiedOfDegree K n ↦
       1 / (Nat.card 𝓀[K] : ℝ) ^ L.1.wildExponent) ↔
       ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent ≠ ∞ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have hs := h.hasSum
-    lift ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ) ^ L.1.wildExponent to ℝ≥0
-      using tsum_nonneg fun _ ↦ by positivity with s
-    rw [hasSum_one_div_natCard_residueField_pow_wildExponent_iff.1 hs]
-    exact ENNReal.coe_ne_top
-  · exact (hasSum_one_div_natCard_residueField_pow_wildExponent_iff.2
-      (ENNReal.coe_toNNReal h).symm).summable
+  simp only [← coe_one_div_natCard_residueField_pow, ENNReal.tsum_coe_ne_top_iff_summable_coe,
+    NNReal.coe_div, NNReal.coe_one, NNReal.coe_pow, NNReal.coe_natCast]
 
 end TauCeti
