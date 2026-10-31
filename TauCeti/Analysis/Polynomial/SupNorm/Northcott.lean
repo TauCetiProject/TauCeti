@@ -36,15 +36,21 @@ only finitely many nonzero values at `ξ`, respectively finitely many roots othe
 `δ` is chosen below all of their sizes. These height gaps are what lets an exponent defined by
 infinitely many solutions of bounded degree be controlled through their heights.
 
-The values and roots live in an arbitrary normed ring, so the statements apply both to real
-approximation by real algebraic numbers and to real or complex approximation by complex
-algebraic numbers.
+The value gap holds for `ξ` in an arbitrary normed ring, and the root gap for `ξ` in a normed
+commutative domain of characteristic zero, so the statements apply both to real approximation
+by real algebraic numbers and to real or complex approximation by complex algebraic numbers.
 
 ## References
 
 * Y. Bugeaud, *Approximation by Algebraic Numbers*, Cambridge University Press (2004), §3.1.
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), §1.6.
+
+The statements are adapted from Ralf Stephan's `DiophantineApproximation/PolynomialSupNorm.lean`
+in [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/09835cb23557ae5ae0cf55a9c4ab9055f5d60338/DiophantineApproximation/PolynomialSupNorm.lean),
+commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0). Here they are restated at the
+normed-ring level, and the proofs reuse the bounded-coefficient finiteness of integer
+polynomials.
 -/
 
 public section
