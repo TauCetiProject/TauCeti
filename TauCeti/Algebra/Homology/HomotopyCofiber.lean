@@ -46,6 +46,12 @@ complex. Both cones sit in the degreewise split short exact sequences
 last term is `F` shifted by one degree with negated differential; the same sequence computes the
 torsion of a mapping cone of based complexes.
 
+For a short exact sequence which need not split, the canonical cone comparison is still a
+quasi-isomorphism (`HomologicalComplex.homotopyCofiber.quasiIso_descShortComplex`). Its kernel
+is the contractible cone of the identity of the first term. This extends the integer-indexed
+mapping-cone comparison in Joël Riou's `Mathlib.Algebra.Homology.HomotopyCategory.ShortExact`
+to general complex shapes with predecessors.
+
 ## Main definitions
 
 * `CategoryTheory.ShortComplex.Splitting.homotopyCofiberHomotopyEquiv`: the homotopy equivalence
@@ -75,6 +81,8 @@ torsion of a mapping cone of based complexes.
   `HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f`: the components of a map of cones.
 * `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom`: a map of mapping cones induced by
   quasi-isomorphisms is a quasi-isomorphism.
+* `HomologicalComplex.homotopyCofiber.quasiIso_descShortComplex`: the cone of the first map of a
+  short exact sequence maps quasi-isomorphically to its last term.
 * `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom_id`: any morphism induces a
   quasi-isomorphism between the mapping cones of identities.
 
@@ -88,6 +96,53 @@ public section
 
 open CategoryTheory Category HomologicalComplex
 
+namespace HomologicalComplex.homotopyCofiber
+
+variable {C ι : Type*} [Category* C] [Preadditive C] {c : ComplexShape ι} [DecidableRel c.Rel]
+
+/-- The canonical map from the cone of the first map of a short complex to its last term. -/
+noncomputable def descShortComplex (S : ShortComplex (HomologicalComplex C c))
+    [HasHomotopyCofiber S.f] :
+    homotopyCofiber S.f ⟶ S.X₃ :=
+  desc S.f S.g (Homotopy.ofEq S.zero)
+
+/-- For a short complex given by its maps, the comparison is the canonical cone descent. -/
+@[simp]
+theorem descShortComplex_mk {F G K : HomologicalComplex C c} (f : F ⟶ G) (g : G ⟶ K)
+    (w : f ≫ g = 0) [HasHomotopyCofiber f] :
+    descShortComplex (ShortComplex.mk f g w) = desc f g (Homotopy.ofEq w) :=
+  (rfl)
+
+/-- The cone comparison restricts to the second map of the short complex. -/
+@[reassoc (attr := simp)]
+theorem inr_descShortComplex (S : ShortComplex (HomologicalComplex C c))
+    [HasHomotopyCofiber S.f] :
+    inr S.f ≫ descShortComplex S = S.g := by
+  simp [descShortComplex]
+
+/-- On the shifted first summand, the cone comparison is zero. -/
+@[reassoc (attr := simp)]
+theorem inlX_descShortComplex_f (S : ShortComplex (HomologicalComplex C c))
+    [HasHomotopyCofiber S.f] (i j : ι) (hij : c.Rel j i) :
+    inlX S.f i j hij ≫ (descShortComplex S).f j = 0 := by
+  simp [descShortComplex]
+
+/-- On the second summand, the cone comparison is the second map of the short complex. -/
+@[reassoc (attr := simp)]
+theorem inrX_descShortComplex_f (S : ShortComplex (HomologicalComplex C c))
+    [HasHomotopyCofiber S.f] (i : ι) :
+    inrX S.f i ≫ (descShortComplex S).f i = S.g.f i := by
+  simp [descShortComplex]
+
+/-- If no successor exists, the right inclusion is inverse to the cone's coordinate map. -/
+@[reassoc (attr := simp)]
+lemma inrX_XIso_hom {F G : HomologicalComplex C c} (φ : F ⟶ G) [HasHomotopyCofiber φ]
+    (i : ι) (hi : ¬ c.Rel i (c.next i)) :
+    inrX φ i ≫ (XIso φ i hi).hom = 𝟙 _ := by
+  simp [inrX, hi]
+
+end HomologicalComplex.homotopyCofiber
+
 namespace CategoryTheory.ShortComplex.Splitting
 
 variable {C ι : Type*} [Category* C] [Preadditive C] {c : ComplexShape ι} [DecidableRel c.Rel]
@@ -99,7 +154,7 @@ homotopy equivalent to `S.X₃`. The map from the cone is induced by `S.g`, and 
 is the section `σ.s` followed by the inclusion of `S.X₂` into the cone. -/
 noncomputable def homotopyCofiberHomotopyEquiv :
     _root_.HomotopyEquiv (homotopyCofiber S.f) S.X₃ where
-  hom := homotopyCofiber.desc S.f S.g (_root_.Homotopy.ofEq S.zero)
+  hom := homotopyCofiber.descShortComplex S
   inv := σ.s ≫ homotopyCofiber.inr S.f
   homotopyInvHomId := _root_.Homotopy.ofEq (by simp)
   -- On the `X₂`-summand of the cone, the homotopy is `-r` into the `X₁`-summand.
@@ -116,20 +171,20 @@ noncomputable def homotopyCofiberHomotopyEquiv :
     by_cases hj : c.Rel j (c.next j)
     · rw [dNext_eq _ hj, dite_eq_left hj]
       apply homotopyCofiber.ext_from_X S.f (c.next j) j hj
-      · simp [homotopyCofiber.desc_f _ _ _ _ _ hj, homotopyCofiber.d_sndX_assoc _ _ _ hj,
+      · simp [homotopyCofiber.d_sndX_assoc _ _ _ hj,
           reassoc_of% hfr]
-      · simp [homotopyCofiber.desc_f _ _ _ _ _ hj, homotopyCofiber.inlX_d S.f i j _ hij hj,
+      · simp [homotopyCofiber.inlX_d S.f i j _ hij hj,
           homotopyCofiber.d_sndX_assoc _ _ _ hj, reassoc_of% hrf]
     · rw [dNext_eq_zero _ _ hj, zero_add]
       apply homotopyCofiber.ext_from_X' S.f j hj
-      simp [homotopyCofiber.desc_f' _ _ _ _ hj, homotopyCofiber.inlX_d' S.f i j hij hj,
+      simp [homotopyCofiber.inlX_d' S.f i j hij hj,
         reassoc_of% hrf]
 
 /-- The map from the mapping cone in `homotopyCofiberHomotopyEquiv` is induced by `S.g`. -/
 @[simp]
 theorem homotopyCofiberHomotopyEquiv_hom :
     (σ.homotopyCofiberHomotopyEquiv hc).hom =
-      homotopyCofiber.desc S.f S.g (_root_.Homotopy.ofEq S.zero) :=
+      homotopyCofiber.descShortComplex S :=
   (rfl)
 
 /-- The homotopy inverse in `homotopyCofiberHomotopyEquiv` is the section `σ.s` followed by the
@@ -144,7 +199,7 @@ include σ hc in
 `S.f` to `S.X₃` induced by `S.g` is a quasi-isomorphism. -/
 theorem quasiIso_homotopyCofiberDesc [∀ i, (homotopyCofiber S.f).HasHomology i]
     [∀ i, S.X₃.HasHomology i] :
-    _root_.QuasiIso (homotopyCofiber.desc S.f S.g (_root_.Homotopy.ofEq S.zero)) :=
+    _root_.QuasiIso (homotopyCofiber.descShortComplex S) :=
   σ.homotopyCofiberHomotopyEquiv_hom hc ▸ (σ.homotopyCofiberHomotopyEquiv hc).quasiIso_hom
 
 end CategoryTheory.ShortComplex.Splitting
@@ -411,5 +466,118 @@ lemma quasiIso_mapArrowHom (α : Arrow.mk φ ⟶ Arrow.mk φ') [QuasiIso α.left
     (coneShortComplex_shortExact φ hc) (coneShortComplex_shortExact φ' hc) inferInstance h₃
 
 end QuasiIso
+
+end HomologicalComplex.homotopyCofiber
+
+/-! ### The cone of a monomorphism -/
+
+namespace HomologicalComplex.homotopyCofiber
+
+open Limits ZeroObject
+
+variable {C ι : Type*} [Category* C] {c : ComplexShape ι} [DecidableRel c.Rel]
+
+section Preadditive
+
+variable [Preadditive C]
+
+/-- The cone comparison is natural in morphisms of short complexes. -/
+@[reassoc]
+theorem mapArrowHom_descShortComplex
+    {S T : ShortComplex (HomologicalComplex C c)}
+    [HasHomotopyCofiber S.f] [HasHomotopyCofiber T.f] (α : S ⟶ T)
+    (hc : ∀ j, ∃ i, c.Rel i j) :
+    mapArrowHom S.f T.f hc (Arrow.homMk α.τ₁ α.τ₂ α.comm₁₂) ≫
+      descShortComplex T = descShortComplex S ≫ α.τ₃ := by
+  ext i
+  by_cases hi : c.Rel i (c.next i)
+  · apply ext_from_X S.f (c.next i) i hi
+    · simp
+    · simpa using congrArg (fun f ↦ f.f i) α.comm₂₃
+  · apply ext_from_X' S.f i hi
+    simpa using congrArg (fun f ↦ f.f i) α.comm₂₃
+
+end Preadditive
+
+variable [Abelian C]
+
+private noncomputable def descShortComplexKernelSequence
+    (S : ShortComplex (HomologicalComplex C c)) (hc : ∀ j, ∃ i, c.Rel i j) :
+    ShortComplex (HomologicalComplex C c) :=
+  ShortComplex.mk
+    (mapArrowHom (𝟙 S.X₁) S.f hc (Arrow.homMk (𝟙 _) S.f))
+    (descShortComplex S) (by
+      ext i
+      by_cases hi : c.Rel i (c.next i)
+      · apply ext_from_X (𝟙 S.X₁) (c.next i) i hi <;>
+          simp [comp_f, ← comp_f S.f S.g, S.zero]
+      · apply ext_from_X' (𝟙 S.X₁) i hi
+        simp [comp_f, ← comp_f S.f S.g, S.zero])
+
+private theorem descShortComplexKernelSequence_shortExact
+    {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact)
+    (hc : ∀ j, ∃ i, c.Rel i j) :
+    (descShortComplexKernelSequence S hc).ShortExact := by
+  apply shortExact_of_degreewise_shortExact _
+  intro i
+  have hSi := (shortExact_iff_degreewise_shortExact S).mp hS i
+  -- When a successor exists, the evaluated sequence is the sum of `id ⟶ 0` and `S`.
+  by_cases hi : c.Rel i (c.next i)
+  · let T := ShortComplex.mk (𝟙 (S.X₁.X (c.next i))) (0 : _ ⟶ (0 : C)) (by simp)
+    have hT : T.ShortExact :=
+      (ShortComplex.Splitting.ofIsIsoOfIsZero T inferInstance (Limits.isZero_zero C)).shortExact
+    let e : ((descShortComplexKernelSequence S hc).map (eval C c i)) ≅
+        TauCeti.shortComplexBiprod T (S.map (eval C c i)) :=
+      ShortComplex.isoMk (XIsoBiprod (𝟙 S.X₁) i (c.next i) hi)
+        (XIsoBiprod S.f i (c.next i) hi) (isoZeroBiprod (Limits.isZero_zero C))
+        (by
+          apply ext_from_X (𝟙 S.X₁) (c.next i) i hi <;>
+            dsimp only [descShortComplexKernelSequence, TauCeti.shortComplexBiprod, T,
+              ShortComplex.map, eval]
+          all_goals simp)
+        (by
+          apply ext_from_X S.f (c.next i) i hi <;>
+            dsimp only [descShortComplexKernelSequence, TauCeti.shortComplexBiprod, T,
+              ShortComplex.map, eval]
+          all_goals simp)
+    exact (ShortComplex.shortExact_iff_of_iso e).mpr (hT.biprod hSi)
+  · let e : ((descShortComplexKernelSequence S hc).map (eval C c i)) ≅
+        S.map (eval C c i) :=
+      ShortComplex.isoMk (XIso (𝟙 S.X₁) i hi) (XIso S.f i hi) (Iso.refl _)
+        (by
+          apply ext_from_X' (𝟙 S.X₁) i hi
+          dsimp only [descShortComplexKernelSequence, ShortComplex.map, eval]
+          simp)
+        (by
+          apply ext_from_X' S.f i hi
+          dsimp only [descShortComplexKernelSequence, ShortComplex.map, eval]
+          simp)
+    exact (ShortComplex.shortExact_iff_of_iso e).mpr hSi
+
+/-- For a short exact sequence of complexes, the canonical map from the cone of its first
+map to its last term is a quasi-isomorphism. Every degree must have a predecessor. -/
+theorem quasiIso_descShortComplex {S : ShortComplex (HomologicalComplex C c)}
+    (hS : S.ShortExact) (hc : ∀ j, ∃ i, c.Rel i j) : QuasiIso (descShortComplex S) := by
+  -- Its kernel is the contractible cone of the identity of the first term.
+  let T := descShortComplexKernelSequence S hc
+  let U := ShortComplex.mk (0 : (0 : HomologicalComplex C c) ⟶ S.X₃) (𝟙 S.X₃) (by simp)
+  have hU : U.ShortExact :=
+    (ShortComplex.Splitting.ofIsZeroOfIsIso U (Limits.isZero_zero _) inferInstance).shortExact
+  let α : T ⟶ U := ShortComplex.homMk 0 (descShortComplex S) (𝟙 _) (by
+    have hz := (descShortComplexKernelSequence S hc).zero
+    dsimp only [descShortComplexKernelSequence] at hz
+    dsimp only [U, T, descShortComplexKernelSequence]
+    rw [hz]
+    exact zero_comp)
+    (by simp [T, U, descShortComplexKernelSequence])
+  have h₁ : QuasiIso α.τ₁ := by
+    rw [quasiIso_iff]
+    intro i
+    rw [quasiIsoAt_iff_isIso_homologyMap]
+    exact (acyclic_id S.X₁ hc i).isZero_homology.isIso
+      ((homologyFunctor C c i).map_isZero (Limits.isZero_zero _)) _
+  -- The third component of the constructed `homMk` is the identity on `T.X₃ = S.X₃`.
+  exact HomologySequence.quasiIso_τ₂ α (descShortComplexKernelSequence_shortExact hS hc)
+    hU h₁ (inferInstanceAs (QuasiIso (𝟙 S.X₃)))
 
 end HomologicalComplex.homotopyCofiber
