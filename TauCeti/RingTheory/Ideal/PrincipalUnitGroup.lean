@@ -23,10 +23,11 @@ isomorphism from the additive group of `I` onto this group (`Ideal.expMulEquiv`)
 
 The principal unit group of `I` is the kernel of reduction of units modulo `I`, and when `I` lies
 in the Jacobson radical this reduction is surjective, so that `Rˣ ⧸ (1 + I) ≃ (R ⧸ I)ˣ`. For ideals
-`J' ≤ J` with `J * J ≤ J'`, the map `1 + x ↦ x` identifies `(1 + J) ⧸ (1 + J')` with the additive
-group `J ⧸ J'`, because `(1 + x)(1 + y) = 1 + (x + y) + x y` with `x y ∈ J'`. Applied to the
-powers of an ideal `I` in the Jacobson radical, this gives the filtration of `1 + I` by the
-subgroups `1 + I ^ n`, whose successive quotients are the additive groups `I ^ n ⧸ I ^ (n + 1)`.
+`J' ≤ J` with `J * J ≤ J'` and `J` in the Jacobson radical, the map `1 + x ↦ x` identifies
+`(1 + J) ⧸ (1 + J')` with the additive group `J ⧸ J'`, because
+`(1 + x)(1 + y) = 1 + (x + y) + x y` with `x y ∈ J'`. Applied to the powers of an ideal `I` in the
+Jacobson radical, this gives the filtration of `1 + I` by the subgroups `1 + I ^ n`, whose
+successive quotients are the additive groups `I ^ n ⧸ I ^ (n + 1)`.
 When `I ^ n = 0` the filtration reaches the trivial group at step `n` (`principalUnitGroup_bot`),
 so `1 + I` is an iterated extension of additive groups.
 
@@ -208,6 +209,13 @@ noncomputable def principalUnitGroupPowQuotientEquiv {I : Ideal R} (hI : I ≤ j
       Multiplicative (↥(I ^ (n + 1)) ⧸ Submodule.comap (I ^ (n + 1)).subtype (I ^ (n + 2))) :=
   principalUnitGroupQuotientEquiv (by rw [← pow_add]; exact pow_le_pow_right (by omega))
     ((pow_le_self n.succ_ne_zero).trans hI)
+
+@[simp]
+theorem principalUnitGroupPowQuotientEquiv_mk {I : Ideal R} (hI : I ≤ jacobson ⊥) (n : ℕ)
+    (u : (I ^ (n + 1)).principalUnitGroup) :
+    principalUnitGroupPowQuotientEquiv hI n u =
+      .ofAdd (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, mem_principalUnitGroup.mp u.2⟩) :=
+  principalUnitGroupQuotientEquiv_mk _ _ u
 
 end CommRing
 

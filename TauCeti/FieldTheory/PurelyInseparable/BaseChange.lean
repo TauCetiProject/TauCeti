@@ -24,18 +24,19 @@ over `L`, so `𝔪` is nilpotent.
 
 Given a `k`-embedding `ι : K → L`, which exists for instance when `L` is algebraically closed and
 is then unique, multiplication `a ⊗ x ↦ a ι(x)` is a surjection `L ⊗[k] K → L` of `L`-algebras.
-Its kernel is `𝔪`, so the residue field of `L ⊗[k] K` is `L` and `L ⊗[k] K = L ⊕ 𝔪`; hence
-`dim_L 𝔪 = [K : k] - 1`. On units, the multiplication map is surjective with kernel the principal
-unit group `1 + 𝔪`:
+Its kernel is `𝔪`, so the residue field of `L ⊗[k] K` is `L` and `L ⊗[k] K = L ⊕ 𝔪`; hence, when
+`K / k` is finite, `dim_L 𝔪 = [K : k] - 1`. On units, the multiplication map is surjective with
+kernel the principal unit group `1 + 𝔪`:
 
 ```text
 1 → 1 + 𝔪 → (L ⊗[k] K)ˣ → Lˣ → 1.
 ```
 
-The subgroup `1 + 𝔪` is filtered by the principal unit groups `1 + 𝔪 ^ n`, which reach the
-trivial group because `𝔪` is nilpotent; their successive quotients are the additive groups
-`𝔪 ^ n ⧸ 𝔪 ^ (n + 1)` (`Ideal.principalUnitGroupPowQuotientEquiv`). For `L` an algebraic closure
-of `k`, `(L ⊗[k] K)ˣ` is the group of `L`-points of the Weil restriction `R_{K/k} 𝔾ₘ`, and the
+The subgroup `1 + 𝔪` is filtered by the principal unit groups `1 + 𝔪 ^ n`, whose successive
+quotients are the additive groups `𝔪 ^ n ⧸ 𝔪 ^ (n + 1)`
+(`Ideal.principalUnitGroupPowQuotientEquiv`). When `K / k` is finite, `𝔪` is nilpotent, so this
+filtration reaches the trivial group. For finite `K / k` and `L` an algebraic closure of `k`,
+`(L ⊗[k] K)ˣ` is the group of `L`-points of the Weil restriction `R_{K/k} 𝔾ₘ`, and the
 exact sequence above is the rational-point form of its extension of `𝔾ₘ` by a unipotent group of
 dimension `[K : k] - 1`, the reason `R_{K/k} 𝔾ₘ` is not reductive when `K ≠ k`. This file treats
 only the ring and its units, not the group scheme.
@@ -49,15 +50,16 @@ only the ring and its units, not the group scheme.
 * `TauCeti.IsPurelyInseparable.isNilpotent_maximalIdeal_tensorProduct`: for finite `K / k` the
   maximal ideal is nilpotent.
 * `TauCeti.IsPurelyInseparable.ker_productLeftAlgHom`: the kernel of multiplication
-  `L ⊗[k] K → L` along an embedding `K → L` is the maximal ideal.
-* `TauCeti.IsPurelyInseparable.finrank_maximalIdeal_tensorProduct_add_one`: the maximal ideal has
-  dimension `[K : k] - 1` over `L`.
-* `TauCeti.IsPurelyInseparable.ker_unitsMap_productLeftAlgHom`: on units, multiplication has
-  kernel `1 + 𝔪`.
-* `TauCeti.IsPurelyInseparable.unitsTensorProductQuotientEquiv`:
+  `L ⊗[k] K → L` along a `k`-embedding `K → L` is the maximal ideal.
+* `TauCeti.IsPurelyInseparable.finrank_maximalIdeal_tensorProduct_add_one`: for finite `K / k`
+  admitting a `k`-embedding `K → L`, the maximal ideal has dimension `[K : k] - 1` over `L`.
+* `TauCeti.IsPurelyInseparable.ker_unitsMap_productLeftAlgHom`: on units, multiplication along a
+  `k`-embedding `K → L` has kernel `1 + 𝔪`.
+* `TauCeti.IsPurelyInseparable.unitsTensorProductQuotientEquiv`: for a `k`-embedding `K → L`,
   `(L ⊗[k] K)ˣ ⧸ (1 + 𝔪) ≃* Lˣ`.
 * `TauCeti.IsPurelyInseparable.exists_principalUnitGroup_pow_maximalIdeal_tensorProduct_eq_bot`:
-  the filtration of `1 + 𝔪` by the subgroups `1 + 𝔪 ^ n` reaches the trivial group.
+  for finite `K / k`, the filtration of `1 + 𝔪` by the subgroups `1 + 𝔪 ^ n` reaches the trivial
+  group.
 
 ## References
 
