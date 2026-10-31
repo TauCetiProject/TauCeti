@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+import TauCeti.FieldTheory.Finite.PowNeOne
 
 /-!
 # Perfectness of special linear groups
@@ -96,22 +97,11 @@ theorem commutator_eq_top {a : F} (ha : a ≠ 0) (hasq : a ^ 2 ≠ 1) :
   rw [TransvectionStruct.toSpecialLinearGroup_mk]
   exact transvection_mem_commutator hij ha hasq c
 
-/-- A field with at least four elements has a nonzero element whose square is not one: a
-generator of its cyclic unit group has order at least three. This is the argument of Mathlib's
-private lemma behind `Matrix.ProjectiveSpecialLinearGroup.rank_two_simple`. -/
-private theorem exists_ne_zero_sq_ne_one (hF : 4 ≤ Nat.card F) : ∃ a : F, a ≠ 0 ∧ a ^ 2 ≠ 1 := by
-  have : Finite F := (Nat.card_pos_iff.1 (by omega)).2
-  obtain ⟨x, hx⟩ : IsCyclic Fˣ := inferInstance
-  refine ⟨x, Units.ne_zero x, fun h ↦ ?_⟩
-  grw [Nat.card_eq_card_units_add_one F, ← orderOf_eq_card_of_forall_mem_zpowers hx,
-    orderOf_le_of_pow_eq_one zero_lt_two (Units.ext <| by simpa using h)] at hF
-  omega
-
 /-- The special linear group over a field with at least four elements is perfect, in every finite
 rank. -/
 theorem commutator_eq_top_of_four_le_natCard (hF : 4 ≤ Nat.card F) :
     commutator (SpecialLinearGroup ι F) = ⊤ :=
-  have ⟨_, ha, hasq⟩ := exists_ne_zero_sq_ne_one hF
+  have ⟨_, ha, hasq⟩ := TauCeti.FiniteField.exists_ne_zero_pow_ne_one two_ne_zero hF
   commutator_eq_top ha hasq
 
 /-- A transvection `xᵢⱼ(c)` is a commutator as soon as a third index `k` is available: it is
