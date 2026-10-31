@@ -140,8 +140,12 @@ instance instNontrivialQuotientCenter [Nontrivial R] [NeZero m] :
       Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr i i
   have he := congrArg (fun M : Matrix (Fin (m + m)) (Fin (m + m)) R ↦
     M (Fin.castAdd m i) (i.addNat m)) hc
-  simp [coe_positiveLongRootTransvectionUnit, TauCeti.coe_transvectionUnit,
-    Matrix.transvection, Matrix.scalar, Matrix.diagonal, hij] at he
+  simp only [coe_positiveLongRootTransvectionUnit,
+    TauCeti.coe_transvectionUnit_eq_one_add_single, finSumFinEquiv_apply_left,
+    finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat, Matrix.add_apply,
+    Matrix.one_apply_ne hij, Matrix.single_apply_same, zero_add,
+    Matrix.scalar_apply, Matrix.diagonal_apply_ne _ hij] at he
+  exact one_ne_zero he
 
 variable (m)
 

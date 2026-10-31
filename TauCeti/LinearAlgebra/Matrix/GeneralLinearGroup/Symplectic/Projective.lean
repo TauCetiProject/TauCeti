@@ -42,9 +42,12 @@ theorem forall_projective_smul_eq_iff_mem_center (g : GLSymplecticFin m K) :
     obtain ⟨c, hc⟩ := (Projectivization.forall_smul_eq_iff_exists_smul g).mp hg
     have hscalar : (g.val : Matrix _ _ K) = Matrix.scalar (Fin (m + m)) c := by
       ext i j
-      simpa [Subgroup.smul_def, Units.smul_def, Matrix.smul_eq_mulVec,
-        Matrix.mulVec_single, Pi.single_apply, Matrix.scalar, Matrix.diagonal, eq_comm] using
-        congrFun (hc (Pi.single j 1)) i
+      have hcol := hc (Pi.single j 1)
+      simp only [Subgroup.smul_def, Units.smul_def, Matrix.smul_eq_mulVec,
+        Matrix.mulVec_single_one] at hcol
+      simpa only [Matrix.col_apply, Pi.smul_apply, smul_eq_mul, Pi.single_apply,
+        Matrix.scalar_apply, Matrix.diagonal_apply, mul_ite, mul_one, mul_zero] using
+        congrFun hcol i
     exact mem_center_of_val_eq_scalar hscalar
   · intro hg
     by_cases hm : m = 0
