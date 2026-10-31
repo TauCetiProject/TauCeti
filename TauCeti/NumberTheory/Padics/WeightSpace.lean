@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.AddChar
+public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm
 import Mathlib.Analysis.Normed.Algebra.Ultra
 
@@ -41,6 +42,10 @@ division ring over `ℚ_p`, such as the field `ℂ_p`, this holds with no furthe
 ## Main definitions
 
 * `TauCeti.WeightSpace p R`: the continuous homomorphisms `ℤ_pˣ →ₜ* Rˣ`.
+* `TauCeti.WeightSpace.weightTest κ`: a weight `κ`, viewed as the scalar-valued continuous
+  character `x ↦ (κ x : R)`.
+* `TauCeti.WeightSpace.inclusion K`: the weight `x ↦ x` with values in a normed `ℚ_p`-algebra
+  field `K`.
 * `TauCeti.WeightSpace.finiteChar κ`: the finite part `κ ∘ ω : Δ →* Rˣ`.
 * `TauCeti.WeightSpace.principalChar κ`: the additive character `s ↦ κ(exp(q s))` of `ℤ_p`.
 * `TauCeti.WeightSpace.coord κ`: the coordinate `T_κ = κ(γ) - 1`.
@@ -83,6 +88,24 @@ variable {p}
 section Monoid
 
 variable {R : Type*} [Monoid R] [TopologicalSpace R]
+
+/-- A weight `κ : ℤ_pˣ → Rˣ`, viewed as the `R`-valued continuous character `x ↦ (κ x : R)`.
+Its underlying continuous function is the test function integrated against measures. -/
+noncomputable def weightTest (κ : WeightSpace p R) : ℤ_[p]ˣ →ₜ* R where
+  toMonoidHom := (Units.coeHom R).comp κ.toMonoidHom
+  continuous_toFun := Units.continuous_val.comp κ.continuous
+
+@[simp]
+theorem weightTest_apply (κ : WeightSpace p R) (x : ℤ_[p]ˣ) : κ.weightTest x = (κ x : R) :=
+  (rfl)
+
+/-- A weight is determined by its scalar-valued character. -/
+theorem weightTest_injective : Function.Injective (weightTest (p := p) (R := R)) :=
+  fun κ κ' h ↦ ContinuousMonoidHom.ext fun x ↦ Units.ext (by simpa using congr($h x))
+
+@[simp]
+theorem weightTest_inj {κ κ' : WeightSpace p R} : κ.weightTest = κ'.weightTest ↔ κ = κ' :=
+  weightTest_injective.eq_iff
 
 /-- The *finite part* `κ ∘ ω : (ℤ/qℤ)ˣ → Rˣ` of a weight `κ`, where `ω` is the section
 `TauCeti.padicUnitsSection p`. -/
@@ -175,6 +198,25 @@ theorem norm_coord_lt_one_of_normedAlgebra {K : Type*} [NormedDivisionRing K]
   have : IsBoundedSMul ℤ_[p] K := .of_norm_smul_le fun r x ↦ norm_smul_le (r : ℚ_[p]) x
   have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := K)
   exact norm_coord_lt_one κ
+
+section Inclusion
+
+variable (K : Type*) [NormedField K] [NormedAlgebra ℚ_[p] K]
+
+/-- The weight `x ↦ x` of `ℤ_pˣ` with values in a normed `ℚ_p`-algebra `K`. Its powers are the
+algebraic weights `x ↦ x ^ k`. -/
+noncomputable def inclusion : WeightSpace p K where
+  toMonoidHom := Units.map (padicIntAlgebraMap p K).toMonoidHom
+  continuous_toFun := Continuous.units_map _ continuous_padicIntAlgebraMap
+
+variable {K}
+
+@[simp]
+theorem coe_inclusion_apply (x : ℤ_[p]ˣ) :
+    (inclusion K x : K) = padicIntAlgebraMap p K x :=
+  (rfl)
+
+end Inclusion
 
 section Construction
 

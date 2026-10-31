@@ -39,11 +39,6 @@ and a measure on `ℤ_pˣ` whose positive moments vanish is zero
 
 ## Main definitions
 
-* `TauCeti.WeightSpace.weightTest κ`: a weight `κ`, viewed as a scalar-valued continuous character
-  `x ↦ (κ x : R)` of `ℤ_pˣ`; its underlying continuous function is the test function integrated
-  against measures.
-* `TauCeti.padicIntAlgebraMap p K`: the structure map `ℤ_p → K` of a normed `ℚ_p`-algebra.
-* `TauCeti.WeightSpace.inclusion K`: the weight `x ↦ x` of `ℤ_pˣ` with values in `K`.
 * `TauCeti.measureFun K`: the ring homomorphism `ν ↦ (κ ↦ ∫ κ dν)`.
 
 ## Main results
@@ -69,76 +64,6 @@ open scoped AbstractMeasure
 namespace TauCeti
 
 variable {p : ℕ} [Fact p.Prime]
-
-namespace WeightSpace
-
-variable {R : Type*} [Monoid R] [TopologicalSpace R]
-
-/-- A weight `κ : ℤ_pˣ → Rˣ`, viewed as the `R`-valued continuous character `x ↦ (κ x : R)`.
-Its underlying continuous function is the test function integrated against measures. -/
-noncomputable def weightTest (κ : WeightSpace p R) : ℤ_[p]ˣ →ₜ* R where
-  toMonoidHom := (Units.coeHom R).comp κ.toMonoidHom
-  continuous_toFun := Units.continuous_val.comp κ.continuous
-
-@[simp]
-theorem weightTest_apply (κ : WeightSpace p R) (x : ℤ_[p]ˣ) : κ.weightTest x = (κ x : R) :=
-  (rfl)
-
-/-- A weight is determined by its scalar-valued character. -/
-theorem weightTest_injective : Function.Injective (weightTest (p := p) (R := R)) :=
-  fun κ κ' h ↦ ContinuousMonoidHom.ext fun x ↦ Units.ext (by simpa using congr($h x))
-
-@[simp]
-theorem weightTest_inj {κ κ' : WeightSpace p R} : κ.weightTest = κ'.weightTest ↔ κ = κ' :=
-  weightTest_injective.eq_iff
-
-end WeightSpace
-
-section Algebra
-
-variable (p) (K : Type*) [NormedField K] [NormedAlgebra ℚ_[p] K]
-
-/-- The structure map `ℤ_p → K` of a normed `ℚ_p`-algebra `K`, through `ℚ_p`. It is an isometry
-onto its image (`TauCeti.norm_padicIntAlgebraMap`). -/
-noncomputable def padicIntAlgebraMap : ℤ_[p] →+* K :=
-  (algebraMap ℚ_[p] K).comp PadicInt.Coe.ringHom
-
-variable {p K}
-
-@[simp]
-theorem padicIntAlgebraMap_apply (a : ℤ_[p]) :
-    padicIntAlgebraMap p K a = algebraMap ℚ_[p] K a :=
-  (rfl)
-
-theorem norm_padicIntAlgebraMap (a : ℤ_[p]) : ‖padicIntAlgebraMap p K a‖ = ‖a‖ := by
-  simp [norm_algebraMap']
-
-theorem norm_padicIntAlgebraMap_le_one (a : ℤ_[p]) : ‖padicIntAlgebraMap p K a‖ ≤ 1 :=
-  (norm_padicIntAlgebraMap a).trans_le a.norm_le_one
-
-theorem padicIntAlgebraMap_injective : Function.Injective (padicIntAlgebraMap p K) :=
-  (algebraMap ℚ_[p] K).injective.comp PadicInt.isEmbedding_coe_ringHom.injective
-
-theorem continuous_padicIntAlgebraMap : Continuous (padicIntAlgebraMap p K) :=
-  (continuous_algebraMap ℚ_[p] K).comp PadicInt.isEmbedding_coe_ringHom.continuous
-
-namespace WeightSpace
-
-variable (K) in
-/-- The weight `x ↦ x` of `ℤ_pˣ` with values in a normed `ℚ_p`-algebra `K`. Its powers are the
-algebraic weights `x ↦ x ^ k`. -/
-noncomputable def inclusion : WeightSpace p K where
-  toMonoidHom := Units.map (padicIntAlgebraMap p K).toMonoidHom
-  continuous_toFun := Continuous.units_map _ continuous_padicIntAlgebraMap
-
-@[simp]
-theorem coe_inclusion_apply (x : ℤ_[p]ˣ) :
-    (inclusion K x : K) = padicIntAlgebraMap p K x :=
-  (rfl)
-
-end WeightSpace
-
-end Algebra
 
 section MeasureFun
 
@@ -166,7 +91,7 @@ theorem measureFun_apply (ν : D(ℤ_[p]ˣ, ℤ_[p])) (κ : WeightSpace p K) :
 @[simp]
 theorem measureFun_dirac (x : ℤ_[p]ˣ) (κ : WeightSpace p K) :
     measureFun K (dirac ℤ_[p] x) κ = κ x :=
-  extendedCharacterRingHom_dirac _ _ _ x
+  (extendedCharacterRingHom_dirac _ _ _ x).trans (κ.weightTest_apply x)
 
 /-- The integral of the power weight `x ↦ x ^ k` is the image in `K` of the moment
 `ν(x ↦ x ^ k)`. -/
@@ -203,8 +128,8 @@ theorem norm_measureFun_le (ν : D(ℤ_[p]ˣ, ℤ_[p])) (κ : WeightSpace p K) :
       (extendCoefficients (padicIntAlgebraMap p K) norm_padicIntAlgebraMap_le_one ν)‖ := by
   -- The weight takes values of norm one, so its test function has norm at most one.
   have hκ : ‖(κ.weightTest : C(ℤ_[p]ˣ, K))‖ ≤ 1 :=
-    (ContinuousMap.norm_le _ zero_le_one).2 fun x ↦
-      (norm_apply_eq_one_of_compactSpace κ x).le
+    (ContinuousMap.norm_le _ zero_le_one).2 fun x ↦ by
+      simpa using (norm_apply_eq_one_of_compactSpace κ x).le
   rw [measureFun_apply, ← coe_toCLMEquiv]
   exact (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hκ)
 
