@@ -73,9 +73,8 @@ theorem units_eq_zero_of_positive_moments (μ : D(ℤ_[p]ˣ, ℤ_[p]))
     rw [(amiceTransform_eq_C_iff ν).2 hν, map_smul]
     ext n
     rcases eq_or_ne n 0 with rfl | hn
-    · simp [coeff_amiceTransform, mahler_apply]
-    · simp [coeff_amiceTransform, mahler_apply, PowerSeries.coeff_C, hn,
-        Ring.choose_zero_pos ℤ_[p] (Nat.pos_of_ne_zero hn)]
+    · simp
+    · simp [PowerSeries.coeff_C, hn]
   -- Restricting back to the units recovers `μ`, while `δ₀` restricts to zero.
   rw [← restrictUnits_map_unitsVal μ, ← hν_def, hδ, map_smul,
     restrictUnits_dirac_of_not_isUnit not_isUnit_zero, smul_zero]
