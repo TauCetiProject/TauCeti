@@ -112,6 +112,7 @@ theorem toMatrix_mulRight_eq_leftMulMatrix_iff (h2 : IsLeftRegular (2 : R)) (a :
 
 /-- The determinant of left multiplication by a quaternion `a` is `normSq a ^ 2`; over `ℝ` this
 is `‖a‖ ^ 4`. -/
+@[simp]
 theorem det_mulLeft (a : ℍ[R]) : LinearMap.det (LinearMap.mulLeft R a) = normSq a ^ 2 := by
   rw [← LinearMap.det_toMatrix (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1)),
     Algebra.toMatrix_lmul_eq, Algebra.leftMulMatrix_quaternion]
@@ -120,6 +121,7 @@ theorem det_mulLeft (a : ℍ[R]) : LinearMap.det (LinearMap.mulLeft R a) = normS
 
 /-- The determinant of right multiplication by a quaternion `a` is `normSq a ^ 2`; over `ℝ` this
 is `‖a‖ ^ 4`. -/
+@[simp]
 theorem det_mulRight (a : ℍ[R]) : LinearMap.det (LinearMap.mulRight R a) = normSq a ^ 2 := by
   rw [← LinearMap.det_toMatrix (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1)),
     toMatrix_mulRight]
@@ -130,6 +132,7 @@ end Quaternion
 
 /-- The algebra norm `ℍ[R] → R`, the determinant of left multiplication, is the square of the
 quaternion norm `normSq`. -/
+@[simp]
 theorem Algebra.norm_quaternion_apply (a : ℍ[R]) : Algebra.norm R a = normSq a ^ 2 := by
   rw [Algebra.norm_eq_matrix_det (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1)),
     ← Algebra.toMatrix_lmul_eq, LinearMap.det_toMatrix, Quaternion.det_mulLeft]
