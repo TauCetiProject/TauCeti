@@ -5,8 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Stable.LevyMeasure
-import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+public import TauCeti.Probability.Distributions.Stable.SmallJumps
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -20,9 +19,6 @@ compensation
 at zero and is bounded outside a neighbourhood of zero. The cutoff integrals converge to
 this integral,
 which is the analytic input to compensated compound Poisson approximations.
-
-The estimates reuse Mathlib's complex exponential remainder bound and its local
-integrability criterion for radial powers.
 
 ## References
 
@@ -38,38 +34,6 @@ open MeasureTheory Real Set Filter
 open scoped Topology
 
 namespace TauCeti.Probability
-
-/-- The small jumps of a stable Lévy measure have a finite second moment on every ball.
-The assertion includes the zero measures at invalid parameters. -/
-theorem integrableOn_sq_stableLevyMeasure (α β r : ℝ) :
-    IntegrableOn (fun x : ℝ ↦ x ^ 2) (Metric.ball 0 r) (stableLevyMeasure α β) := by
-  by_cases h : 0 < α ∧ α < 2 ∧ |β| ≤ 1
-  · have hd : Measurable (stableLevyDensity α β) :=
-      measurable_stableLevyDensity.comp
-        (measurable_const.prodMk measurable_id :
-          Measurable (fun x : ℝ ↦ ((α, β), x)))
-    rw [IntegrableOn, stableLevyMeasure_def, restrict_withDensity measurableSet_ball,
-      integrable_withDensity_iff_integrable_smul' hd.ennreal_ofReal
-        (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
-    simp only [ENNReal.toReal_ofReal (stableLevyDensity_nonneg _ _ _), smul_eq_mul]
-    apply integrableOn_ball_of_norm_le_rpow (by simp : 1 ≤ Module.finrank ℝ ℝ)
-      (α := α - 1) (C := 2 * (Gamma (1 + α) * sin (π * α / 2) / π))
-      (by simp only [Module.finrank_self]; norm_num; linarith [h.2.1]) ?_ (by fun_prop)
-    filter_upwards [ae_restrict_of_ae ((volume : Measure ℝ).ae_ne 0)] with x hx
-    have hnorm : ‖stableLevyDensity α β x * x ^ 2‖ = stableLevyDensity α β x * x ^ 2 :=
-      Real.norm_of_nonneg (mul_nonneg (stableLevyDensity_nonneg _ _ _) (sq_nonneg _))
-    have hp : |x| ^ (-(α + 1)) * x ^ 2 = |x| ^ (1 - α) := by
-      rw [← sq_abs, ← rpow_two, ← rpow_add (abs_pos.mpr hx)]
-      congr 1
-      ring
-    have hb : (if 0 < x then 1 + β else 1 - β) ≤ 2 := by
-      split_ifs <;> linarith [(abs_le.mp h.2.2).1, (abs_le.mp h.2.2).2]
-    rw [hnorm, stableLevyDensity_of_ne_zero ⟨h.1, h.2.1⟩ h.2.2 hx, mul_assoc, hp,
-      Real.norm_eq_abs, neg_sub]
-    nlinarith [mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_left hb (stableLevyDensity_coefficient_pos ⟨h.1, h.2.1⟩).le)
-      (rpow_nonneg (abs_nonneg x) (1 - α))]
-  · simp [IntegrableOn, stableLevyMeasure_eq_zero_of_not h]
 
 /-- The sine-compensated characteristic kernel is absolutely integrable against the stable
 Lévy measure, including at shape one and both full-skewness boundaries. -/

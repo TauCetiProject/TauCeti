@@ -94,6 +94,9 @@ abbrev SphereModule (k : ℕ) := Mod SymmetricSequence.{0} (SymmetricSequence.sp
 `S^(k)`. -/
 noncomputable example (k : ℕ) : MonoidalCategory (SphereModule k) := inferInstance
 
+/- The smash product over each sphere monoid `S^(k)` is symmetric monoidal. -/
+noncomputable example (k : ℕ) : SymmetricCategory (SphereModule k) := inferInstance
+
 /-- Symmetric spectra are the `S^(1)`-modules: restricting scalars along the isomorphism of
 monoids `S^(1) ≅ S` is an equivalence of categories, which does not change the underlying
 symmetric sequences. -/

@@ -25,7 +25,8 @@ constructions.
 
 Combined with the decomposition `L = n⁻ ⊕ 𝔟`, it gives the **triangular decomposition**
 `triangularMulEquiv : U(n⁻) ⊗ (U(H) ⊗ U(n⁺)) ≃ U(L)`, `f ⊗ h ⊗ e ↦ f h e`: every element of `U(L)`
-is uniquely a sum of such ordered products, up to the relations of the tensor product. Its inverse
+is uniquely a sum of such ordered products, up to the relations of the tensor product, so a linear
+map out of `U(L)` is determined by its values on them (`linearMap_ext_triangular`). Its inverse
 is what the Harish-Chandra projection `U(L) → U(H)` is built from.
 
 ## References
@@ -165,5 +166,29 @@ theorem triangularMulEquiv_symm_mul_mul (f : U (negativeNilradical H b)) (h : U 
             UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e) =
       f ⊗ₜ (h ⊗ₜ e) := by
   rw [← triangularMulEquiv_tmul H b, LinearEquiv.symm_apply_apply]
+
+variable {H} in
+/-- **Linear maps out of `U(L)` are determined on ordered products**: two linear maps from `U(L)`
+agree once they agree on every ordered product `f h e` of the triangular decomposition. -/
+theorem linearMap_ext_triangular {M : Type*} [AddCommMonoid M] [Module K M]
+    {g g' : _root_.UniversalEnvelopingAlgebra K L →ₗ[K] M}
+    (hg : ∀ (f : _root_.UniversalEnvelopingAlgebra K (negativeNilradical H b))
+      (h : _root_.UniversalEnvelopingAlgebra K H)
+      (e : _root_.UniversalEnvelopingAlgebra K (positiveNilradical H b)),
+      g (UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
+          UniversalEnvelopingAlgebra.map K H.incl h *
+            UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e) =
+        g' (UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
+          UniversalEnvelopingAlgebra.map K H.incl h *
+            UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e)) :
+    g = g' := by
+  have hcomp : g ∘ₗ (triangularMulEquiv H b).toLinearMap =
+      g' ∘ₗ (triangularMulEquiv H b).toLinearMap :=
+    TensorProduct.ext_threefold' fun f h e ↦ by
+      simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, triangularMulEquiv_tmul] using
+        hg f h e
+  refine LinearMap.ext fun u ↦ ?_
+  obtain ⟨t, rfl⟩ := (triangularMulEquiv H b).surjective u
+  exact LinearMap.congr_fun hcomp t
 
 end TauCeti.UniversalEnvelopingAlgebra

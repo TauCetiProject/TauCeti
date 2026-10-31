@@ -20,6 +20,9 @@ multiplies its scalar curvature by `c⁻¹`, the scalar curvature of `Sⁿ(r)` i
 Hence `Sⁿ(r)` has positive scalar curvature exactly when `n ≥ 2`: the two-point sphere `S⁰` and
 the circle `S¹` are flat.
 
+Likewise the unit sphere has constant sectional curvature `1`, and multiplying a metric by `c > 0`
+multiplies its sectional curvature by `c⁻¹`, so `Sⁿ(r)` has constant sectional curvature `1 / r²`.
+
 ## Main definitions
 
 * `TauCeti.sphereRoundMetricOfRadius`: the round metric of radius `r` on the unit sphere.
@@ -28,6 +31,9 @@ the circle `S¹` are flat.
 
 * `TauCeti.sphereRoundMetricOfRadius_inner_eq_inner_mvfderiv_smul`: the round metric of radius `r`
   is induced by the embedding `p ↦ r • p`.
+* `TauCeti.isConstantCurvatureTensor_sphereRoundMetricOfRadius` and
+  `TauCeti.hasConstantSectionalCurvature_sphereRoundMetricOfRadius`: the round sphere of radius
+  `r` has constant sectional curvature `1 / r²`.
 * `TauCeti.scalarCurvature_sphereRoundMetricOfRadius`: the round `n`-sphere of radius `r` has
   scalar curvature `n (n - 1) / r²`.
 * `TauCeti.hasPositiveScalarCurvature_sphereRoundMetricOfRadius_iff`: the round `n`-sphere of
@@ -83,6 +89,29 @@ theorem sphereRoundMetricOfRadius_inner_eq_inner_mvfderiv_smul (hr : 0 < r)
       -mvfderiv_apply_eq_mfderiv_apply]
   rw [h, h, real_inner_smul_left, real_inner_smul_right, sphereRoundMetricOfRadius_inner,
     inner_tangentSpace_sphere, ← mul_assoc, sq]
+
+/-- The round sphere of radius `r` has the constant-curvature tensor with parameter `1 / r²`:
+`R(w, u) v = r⁻² (⟪u, v⟫ w - ⟪w, v⟫ u)` for its metric `⟪·, ·⟫`. -/
+theorem isConstantCurvatureTensor_sphereRoundMetricOfRadius (hr : 0 < r) :
+    (sphereRoundMetricOfRadius (E := E) (n := n) r hr).IsConstantCurvatureTensor (r ^ 2)⁻¹ := by
+  rw [sphereRoundMetricOfRadius,
+    ContMDiffRiemannianMetric.isConstantCurvatureTensor_rescale_const_iff _ (pow_pos hr 2),
+    mul_inv_cancel₀ (pow_pos hr 2).ne']
+  exact isConstantCurvatureTensor_sphereRoundMetric_ofLE
+
+/-- **Sectional curvature of the round sphere.** The round sphere of radius `r` has constant
+sectional curvature `1 / r²`. -/
+theorem hasConstantSectionalCurvature_sphereRoundMetricOfRadius (hr : 0 < r) :
+    letI : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
+      ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩
+    CovariantDerivative.HasConstantSectionalCurvature
+      (CovariantDerivative.leviCivitaConnection (𝓡 n) (sphere (0 : E) 1))
+      (CovariantDerivative.isMetricCompatible_leviCivitaConnection (𝓡 n)) (r ^ 2)⁻¹ :=
+  letI : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
+    ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩
+  CovariantDerivative.hasConstantSectionalCurvature_of_curvatureTensor_eq_smul_inner_sub _ _ _
+    (ContMDiffRiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq _ _
+      (isConstantCurvatureTensor_sphereRoundMetricOfRadius hr))
 
 /-- **Scalar curvature of the round sphere.** The round `n`-sphere of radius `r` has scalar
 curvature `n (n - 1) / r²`. -/
