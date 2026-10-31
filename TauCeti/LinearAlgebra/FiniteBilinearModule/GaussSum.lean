@@ -577,13 +577,9 @@ theorem gaussSign_pi {ι : Type*} [Fintype ι] (B : ι → FiniteQuadraticModule
     (hB : ∀ i, (B i).IsNondegenerate) : (pi B).gaussSign = ∑ i, (B i).gaussSign := by
   classical
   refine gaussSign_eq_of_gaussSum_eq _ ?_
-  have hexp (s : Finset ι) :
-      expCircle (ZMod.toRatAddCircle 8 (∑ i ∈ s, (B i).gaussSign)) =
-        ∏ i ∈ s, expCircle (ZMod.toRatAddCircle 8 (B i).gaussSign) := by
-    induction s using Finset.induction_on with
-    | empty => simp
-    | insert i s hi ih =>
-      rw [Finset.sum_insert hi, Finset.prod_insert hi, map_add, AddChar.map_add_eq_mul, ih]
+  have hexp := map_prod expCircle.toMonoidHom
+    (fun i ↦ Multiplicative.ofAdd (ZMod.toRatAddCircle 8 (B i).gaussSign)) Finset.univ
+  simp only [AddChar.toMonoidHom_apply, ← ofAdd_sum, toAdd_ofAdd, ← map_sum] at hexp
   rw [gaussSum_pi, Finset.prod_congr rfl fun i _ ↦ (hB i).gaussSum_eq, Finset.prod_mul_distrib,
     hexp, Nat.card_pi, Nat.cast_prod, Real.sqrt_prod _ fun i _ ↦ Nat.cast_nonneg _, ofReal_prod]
 

@@ -101,8 +101,28 @@ theorem dyadicCyclic_pairing_intCast (i j : ℤ) :
   ring
 
 /-- `q_θ^{(2)}(2^k)` has `2^k` elements. Its carrier is `ℤ/2^k` by definition. -/
+@[simp]
 theorem natCard_dyadicCyclic : Nat.card (dyadicCyclic k θ) = 2 ^ k :=
   Nat.card_zmod (2 ^ k)
+
+variable {θ} in
+/-- For odd `θ`, the quadratic form of `q_θ^{(2)}(2)` does not take values in `½ℤ/ℤ`: on the
+generator it is `θ/4`, so `q(1) + q(1) = θ/2 ≠ 0`. -/
+theorem dyadicCyclic_one_quadratic_add_self_ne_zero (hθ : Odd θ) :
+    (dyadicCyclic 1 θ).quadratic (1 : ZMod (2 ^ 1)) +
+      (dyadicCyclic 1 θ).quadratic (1 : ZMod (2 ^ 1)) ≠ 0 := by
+  have hq := dyadicCyclic_quadratic_intCast 1 θ 1
+  rw [Int.cast_one] at hq
+  rw [hq, ← AddCircle.coe_add, Ne, AddCircle.coe_eq_zero_iff]
+  rintro ⟨n, hn⟩
+  have hn' : ((2 * n : ℤ) : ℚ) = θ := by
+    rw [zsmul_eq_mul, mul_one] at hn
+    push_cast
+    rw [hn]
+    ring
+  obtain ⟨t, ht⟩ := hθ
+  have := Int.cast_injective hn'
+  omega
 
 /-- **`q_θ^{(2)}(2^k)` is nondegenerate exactly when `θ` is odd.** For even `θ` the nonzero
 element `2^{k-1}` lies in the radical. -/

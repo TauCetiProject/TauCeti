@@ -36,8 +36,8 @@ doubled form is an integral unimodular lattice of the same signature, even when 
 
 The boundary clauses 4 to 7 cannot be dropped: the tuples `(0; 4, 0, 0)`, `(1; 3, 0, 1)`,
 `(1; 4, 0, 2)` and `(0; 4, 0, 4)` satisfy every condition before clause 4, 5, 6 and 7
-respectively, and `TauCeti.IntegralLattice.twoElementaryAdmissible_independence` records that none
-of them is admissible.
+respectively, and `TauCeti.IntegralLattice.not_twoElementaryAdmissible_boundary_witnesses`
+records that none of them is admissible.
 
 ## Main definitions
 
@@ -92,9 +92,9 @@ structure TwoElementaryAdmissible (δ : ZMod 2) (tp tm a : ℕ) : Prop where
   /-- (7) `t₊ − t₋ ≡ 0 (mod 8)` when `δ = 0` and `a = t₊ + t₋`. -/
   eight_of_a_eq_rank : δ = 0 → a = tp + tm → (((tp : ℤ) - (tm : ℤ) : ℤ) : ZMod 8) = 0
 
-/-- **The four independence witnesses are not admissible**: `(0; 4, 0, 0)`, `(1; 3, 0, 1)`,
+/-- **The four boundary witnesses are not admissible**: `(0; 4, 0, 0)`, `(1; 3, 0, 1)`,
 `(1; 4, 0, 2)` and `(0; 4, 0, 4)` fail conditions 4, 5, 6 and 7 respectively. -/
-theorem twoElementaryAdmissible_independence :
+theorem not_twoElementaryAdmissible_boundary_witnesses :
     ¬ TwoElementaryAdmissible 0 4 0 0 ∧ ¬ TwoElementaryAdmissible 1 3 0 1 ∧
       ¬ TwoElementaryAdmissible 1 4 0 2 ∧ ¬ TwoElementaryAdmissible 0 4 0 4 := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_, fun h ↦ ?_, fun h ↦ ?_⟩

@@ -89,9 +89,16 @@ theorem dyadicU_pairing (x y : ZMod (2 ^ k) × ZMod (2 ^ k)) :
   ring
 
 /-- `u^{(2)}(2^k)` has `2^k · 2^k` elements. Its carrier is `(ℤ/2^k)²` by definition. -/
+@[simp]
 theorem natCard_dyadicU : Nat.card (dyadicU k) = 2 ^ k * 2 ^ k := by
   rw [show Nat.card (dyadicU k) = Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) from rfl, Nat.card_prod,
     Nat.card_zmod]
+
+/-- The quadratic form of `u^{(2)}(2)` takes values in `½ℤ/ℤ`. -/
+theorem dyadicU_one_quadratic_add_self_eq_zero (x : ZMod (2 ^ 1) × ZMod (2 ^ 1)) :
+    (dyadicU 1).quadratic x + (dyadicU 1).quadratic x = 0 := by
+  rw [dyadicU_quadratic, ← map_add, ← two_mul, show (2 : ZMod (2 ^ 1)) = 0 from rfl, zero_mul,
+    map_zero]
 
 /-- **`u^{(2)}(2^k)` is nondegenerate**: pairing with the two coordinate vectors recovers the
 two coordinates. -/
@@ -177,9 +184,16 @@ theorem dyadicV_pairing (x y : ZMod (2 ^ k) × ZMod (2 ^ k)) :
   ring
 
 /-- `v^{(2)}(2^k)` has `2^k · 2^k` elements. Its carrier is `(ℤ/2^k)²` by definition. -/
+@[simp]
 theorem natCard_dyadicV : Nat.card (dyadicV k) = 2 ^ k * 2 ^ k := by
   rw [show Nat.card (dyadicV k) = Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) from rfl, Nat.card_prod,
     Nat.card_zmod]
+
+/-- The quadratic form of `v^{(2)}(2)` takes values in `½ℤ/ℤ`. -/
+theorem dyadicV_one_quadratic_add_self_eq_zero (x : ZMod (2 ^ 1) × ZMod (2 ^ 1)) :
+    (dyadicV 1).quadratic x + (dyadicV 1).quadratic x = 0 := by
+  rw [dyadicV_quadratic, ← map_add, ← two_mul, show (2 : ZMod (2 ^ 1)) = 0 from rfl, zero_mul,
+    map_zero]
 
 /-- **`v^{(2)}(2^k)` is nondegenerate**: pairing with the two coordinate vectors recovers
 `2x₁ + x₂` and `x₁ + 2x₂`, which determine `x` because `3` is a unit modulo `2^k`. -/

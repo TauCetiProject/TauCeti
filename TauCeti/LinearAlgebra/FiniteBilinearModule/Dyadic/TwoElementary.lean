@@ -82,17 +82,6 @@ private theorem two_nsmul_eq_zero_pi {ι : Type*} [Fintype ι] {B : ι → Finit
   simp only [Pi.smul_apply, Pi.single_eq_same] at h
   exact h
 
-/-- If `2` kills `1` in `ℤ/n`, then `n ∣ 2`. -/
-private theorem dvd_two_of_two_nsmul_one_eq_zero {n : ℕ} (h : 2 • (1 : ZMod n) = 0) : n ∣ 2 :=
-  (ZMod.natCast_eq_zero_iff 2 n).mp (by simpa [nsmul_eq_mul] using h)
-
-/-- If `2` kills `1` in `ℤ/2^{k+1}`, then `k = 0`. -/
-private theorem eq_zero_of_two_nsmul_one_eq_zero {k : ℕ} (h : 2 • (1 : ZMod (2 ^ (k + 1))) = 0) :
-    k = 0 := by
-  have := (Nat.pow_dvd_pow_iff_le_right (by norm_num)).mp
-    ((dvd_two_of_two_nsmul_one_eq_zero h).trans (pow_one 2).symm.dvd)
-  omega
-
 /-- **A nondegenerate `2`-elementary module is an orthogonal sum of generators of exponent one**:
 of cyclic modules `q_θ^{(2)}(2)` with `θ` odd, and of copies of `u^{(2)}(2)` and `v^{(2)}(2)`.
 This is the generator decomposition `exists_isometry_prod_pi_generators` in which `2` kills every
@@ -105,28 +94,33 @@ theorem exists_isometry_prod_pi_of_two_nsmul_eq_zero (A : FiniteQuadraticModule.
   obtain ⟨a, m, hm, θ, b, k, η, c, ku, d, kv, hmθ, hη, ⟨f⟩⟩ :=
     exists_isometry_prod_pi_generators A hA
   have hf := two_nsmul_eq_zero_of_isometry f h2
+  -- `1 ∈ ℤ/n` has additive order `n`, so `2` kills it only if `n ∣ 2`.
+  have hpow {j : ℕ} (h : 2 • (1 : ZMod (2 ^ (j + 1))) = 0) : j = 0 := by
+    have := (Nat.pow_dvd_pow_iff_le_right (by norm_num)).mp
+      ((ZMod.addOrderOf_one _ ▸ addOrderOf_dvd_of_nsmul_eq_zero h).trans (pow_one 2).symm.dvd)
+    omega
   -- An odd cyclic summand `ℤ/m` with `m > 1` odd is not killed by `2`.
   have ha : a = 0 := by
     by_contra ha
     let i : Fin a := ⟨0, Nat.pos_of_ne_zero ha⟩
     have h : 2 • (1 : ZMod (m i)) = 0 := two_nsmul_eq_zero_pi (two_nsmul_eq_zero_fst hf) i _
-    have h2m := Nat.le_of_dvd two_pos (dvd_two_of_two_nsmul_one_eq_zero h)
+    have h2m := Nat.le_of_dvd two_pos (ZMod.addOrderOf_one _ ▸ addOrderOf_dvd_of_nsmul_eq_zero h)
     have h1m := (hmθ i).1.one_lt
     obtain ⟨t, ht⟩ := hm i
     omega
   -- A summand of exponent `k + 1 ≥ 2` is not killed by `2`.
-  have hk (i : Fin b) : k i = 0 := eq_zero_of_two_nsmul_one_eq_zero
+  have hk (i : Fin b) : k i = 0 := hpow
     (two_nsmul_eq_zero_pi (two_nsmul_eq_zero_fst (two_nsmul_eq_zero_snd hf)) i _)
   have hku (i : Fin c) : ku i = 0 := by
     have h : 2 • ((1, 0) : ZMod (2 ^ (ku i + 1)) × ZMod (2 ^ (ku i + 1))) = 0 :=
       two_nsmul_eq_zero_pi
         (two_nsmul_eq_zero_fst (two_nsmul_eq_zero_snd (two_nsmul_eq_zero_snd hf))) i _
-    exact eq_zero_of_two_nsmul_one_eq_zero (by simpa using congrArg Prod.fst h)
+    exact hpow (by simpa using congrArg Prod.fst h)
   have hkv (i : Fin d) : kv i = 0 := by
     have h : 2 • ((1, 0) : ZMod (2 ^ (kv i + 1)) × ZMod (2 ^ (kv i + 1))) = 0 :=
       two_nsmul_eq_zero_pi
         (two_nsmul_eq_zero_snd (two_nsmul_eq_zero_snd (two_nsmul_eq_zero_snd hf))) i _
-    exact eq_zero_of_two_nsmul_one_eq_zero (by simpa using congrArg Prod.fst h)
+    exact hpow (by simpa using congrArg Prod.fst h)
   subst ha
   obtain rfl : k = fun _ ↦ 0 := funext hk
   obtain rfl : ku = fun _ ↦ 0 := funext hku
@@ -160,54 +154,15 @@ private theorem exists_invariants_of_two_nsmul_eq_zero {A : FiniteQuadraticModul
       gaussSign_pi _ fun _ ↦ isNondegenerate_dyadicV _]
     simp [gaussSign_dyadicU, gaussSign_dyadicV, mul_comm]
   · -- The rank-two generators take values in `½ℤ/ℤ`; `q_θ^{(2)}(2)` takes `θ/4` on `1`.
-    have hU (y : ZMod (2 ^ 1) × ZMod (2 ^ 1)) :
-        (dyadicU 1).quadratic y + (dyadicU 1).quadratic y = 0 := by
-      rw [dyadicU_quadratic, ← map_add, ← two_mul, show (2 : ZMod (2 ^ 1)) = 0 from rfl,
-        zero_mul, map_zero]
-    have hV (y : ZMod (2 ^ 1) × ZMod (2 ^ 1)) :
-        (dyadicV 1).quadratic y + (dyadicV 1).quadratic y = 0 := by
-      rw [dyadicV_quadratic, ← map_add, ← two_mul, show (2 : ZMod (2 ^ 1)) = 0 from rfl,
-        zero_mul, map_zero]
-    constructor
-    · intro h
-      by_contra hb
-      obtain ⟨i⟩ : Nonempty (Fin b) := ⟨⟨0, Nat.pos_of_ne_zero hb⟩⟩
-      -- The generator of the `i`-th cyclic summand has `q = θ/4`, so `q + q = θ/2 ≠ 0`.
-      obtain ⟨x₀, hx₀i, hx₀j⟩ : ∃ x₀ : pi fun i ↦ dyadicCyclic 1 (η i),
-          x₀ i = (1 : ZMod (2 ^ 1)) ∧ ∀ j ≠ i, x₀ j = 0 :=
-        ⟨@Pi.single _ (fun j ↦ dyadicCyclic 1 (η j)) _ _ i (1 : ZMod (2 ^ 1)),
-          Pi.single_eq_same _ _, fun j hj ↦ Pi.single_eq_of_ne hj _⟩
-      have hq := dyadicCyclic_quadratic_intCast 1 (η i) 1
-      rw [Int.cast_one] at hq
-      have hi := h (f (x₀, 0))
-      rw [f.map_app, prod_quadratic, QuadraticMap.map_zero, add_zero, pi_quadratic,
-        Finset.sum_eq_single i (fun j _ hj ↦ by rw [hx₀j j hj, QuadraticMap.map_zero]) (by simp),
-        hx₀i, hq, ← AddCircle.coe_add, AddCircle.coe_eq_zero_iff] at hi
-      obtain ⟨n, hn⟩ := hi
-      have hn' : ((2 * n : ℤ) : ℚ) = η i := by
-        rw [zsmul_eq_mul, mul_one] at hn
-        push_cast
-        rw [hn]
-        ring
-      obtain ⟨t, ht⟩ := hη i
-      have := Int.cast_injective hn'
-      omega
-    · rintro rfl x
-      obtain ⟨y, rfl⟩ := f.toLinearEquiv.surjective x
-      -- `f` applies as its underlying linear equivalence.
-      rw [show f.toLinearEquiv y = f y from rfl, f.map_app]
-      obtain ⟨y₁, y₂, y₃⟩ := y
-      have h₁ : (pi fun i : Fin 0 ↦ dyadicCyclic 1 (η i)).quadratic y₁ = 0 := by
-        rw [pi_quadratic, Finset.univ_eq_empty, Finset.sum_empty]
-      have h₂ : (pi fun _ : Fin c ↦ dyadicU 1).quadratic y₂ +
-          (pi fun _ : Fin c ↦ dyadicU 1).quadratic y₂ = 0 := by
-        rw [pi_quadratic, ← Finset.sum_add_distrib]
-        exact Finset.sum_eq_zero fun i _ ↦ hU _
-      have h₃ : (pi fun _ : Fin d ↦ dyadicV 1).quadratic y₃ +
-          (pi fun _ : Fin d ↦ dyadicV 1).quadratic y₃ = 0 := by
-        rw [pi_quadratic, ← Finset.sum_add_distrib]
-        exact Finset.sum_eq_zero fun i _ ↦ hV _
-      rw [prod_quadratic, prod_quadratic, h₁, zero_add, add_add_add_comm, h₂, h₃, add_zero]
+    rw [← f.forall_quadratic_add_self_eq_zero_iff, forall_quadratic_add_self_eq_zero_prod_iff,
+      forall_quadratic_add_self_eq_zero_prod_iff, forall_quadratic_add_self_eq_zero_pi_iff,
+      forall_quadratic_add_self_eq_zero_pi_iff, forall_quadratic_add_self_eq_zero_pi_iff]
+    refine ⟨fun h ↦ ?_, fun hb ↦ ⟨fun i ↦ (hb ▸ i).elim0,
+      fun _ ↦ dyadicU_one_quadratic_add_self_eq_zero,
+      fun _ ↦ dyadicV_one_quadratic_add_self_eq_zero⟩⟩
+    by_contra hb
+    let i : Fin b := ⟨0, Nat.pos_of_ne_zero hb⟩
+    exact dyadicCyclic_one_quadratic_add_self_ne_zero (hη i) (h.1 i _)
 
 /-- **The Gauss-sum invariant of a nondegenerate `2`-elementary module of order `2^a` has the
 parity of `a`**: each cyclic summand `q_θ^{(2)}(2)` contributes `±1`, and each rank-two summand
@@ -227,17 +182,6 @@ theorem exists_gaussSign_eq_add_two_mul_of_two_nsmul_eq_zero {A : FiniteQuadrati
   simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one]
   push_cast
   ring
-
-/-- A nondegenerate module whose quadratic form takes values in `½ℤ/ℤ` is killed by `2`: the
-pairing `q(x + y) - q(x) - q(y)` is then killed by `2`. -/
-theorem two_nsmul_eq_zero_of_quadratic_add_self_eq_zero {A : FiniteQuadraticModule.{u}}
-    (hA : A.IsNondegenerate) (hq : ∀ x : A, A.quadratic x + A.quadratic x = 0) (x : A) :
-    2 • x = 0 := by
-  refine FiniteBilinearModule.IsNondegenerate.eq_zero_of_forall_pairing_eq_zero _ hA fun y ↦ ?_
-  rw [FiniteBilinearModule.pairing_nsmul_left, ← polar_eq_pairing, QuadraticMap.polar, two_nsmul]
-  calc _ = (A.quadratic (x + y) + A.quadratic (x + y)) - (A.quadratic x + A.quadratic x) -
-        (A.quadratic y + A.quadratic y) := by abel
-    _ = 0 := by rw [hq, hq, hq, sub_zero, sub_zero]
 
 /-- **A nondegenerate module whose quadratic form takes values in `½ℤ/ℤ` has Gauss-sum invariant
 `0` or `4`**: it is an orthogonal sum of copies of `u^{(2)}(2)` and `v^{(2)}(2)`. -/
