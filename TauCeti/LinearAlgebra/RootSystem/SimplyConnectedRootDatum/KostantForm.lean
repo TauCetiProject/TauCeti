@@ -244,7 +244,7 @@ theorem geckRepresentation_ι (x : t.lieAlgebra ht) :
     t.geckRepresentation ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) =
       Matrix.toLinAlgEquiv' (x : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) := by
   rw [geckRepresentation_def]
-  exact LieSubalgebra.matrixRepresentation_ι (t.lieAlgebra ht) x
+  exact LieSubalgebra.matrixRepresentation_ι x
 
 /-- The pointwise form of `TauCeti.DynkinType.geckRepresentation_ι`: a Lie generator acts by
 multiplying a coordinate vector by its underlying matrix. -/
@@ -252,7 +252,7 @@ theorem geckRepresentation_ι_apply (x : t.lieAlgebra ht) (v : t.GeckIndex ht �
     t.geckRepresentation ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) *ᵥ v := by
   rw [geckRepresentation_def]
-  exact LieSubalgebra.matrixRepresentation_ι_apply (t.lieAlgebra ht) x v
+  exact LieSubalgebra.matrixRepresentation_ι_apply x v
 
 /-- **The defining representation is faithful on the Lie algebra.** Distinct elements of the
 pinned Lie algebra act
@@ -271,8 +271,7 @@ value ring. -/
 theorem isNilpotent_geckRepresentation_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) :
     IsNilpotent (t.geckRepresentation ht
       (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
-  rw [geckRepresentation_def]
-  apply LieSubalgebra.isNilpotent_matrixRepresentation_ι (t.lieAlgebra ht)
+  rw [geckRepresentation_def, LieSubalgebra.isNilpotent_matrixRepresentation_ι_iff]
   cases i with
   | inl i => simpa only [LieAlgebra.Basis.rootGenerator_inl] using
       t.isNilpotent_coe_lieBasis_e ht i

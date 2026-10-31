@@ -13,6 +13,8 @@ public import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
+import Mathlib.Algebra.Module.LocalizedModule.Submodule
+import Mathlib.RingTheory.Flat.Localization
 
 /-!
 # Basic depth of modules
@@ -65,6 +67,8 @@ The regular-sequence transfer lemmas for linear maps live in
   combines the depth-zero criterion with
   `TauCeti.maximalIdeal_mem_associatedPrimes_localizedModule_iff` from
   `TauCeti.RingTheory.Ideal.AssociatedPrime.Localization`.
+* `TauCeti.depth_localizedModule_quotSMulTop_add_one`: dividing a finite module by an `M`-regular
+  element of a prime `p` lowers the depth of the localization at `p` by exactly one.
 
 The two quotient-depth results, together with Mathlib's
 `Module.supportDim_add_length_eq_supportDim_of_isRegular`, make Cohen–Macaulayness stable under
@@ -471,5 +475,27 @@ theorem one_le_depth_localizedModule_iff {p : Ideal R} [p.IsPrime] :
     1 ≤ depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) ↔
       p ∉ associatedPrimes R M := by
   rw [Order.one_le_iff_ne_zero, Ne, depth_localizedModule_eq_zero_iff]
+
+
+/-- Let `M` be a finite module over a Noetherian ring and `a` an `M`-regular element of a prime
+`p`. Dividing by `a` lowers the depth of the localization at `p` by exactly one:
+`depth (M ⧸ a M)_p + 1 = depth M_p`. -/
+theorem depth_localizedModule_quotSMulTop_add_one [Module.Finite R M] {a : R}
+    (reg : IsSMulRegular M a) (p : Ideal R) [p.IsPrime] (ha : a ∈ p) :
+    depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl (QuotSMulTop a M))) +
+      1 = depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) := by
+  let Rₚ := Localization.AtPrime p
+  -- Localization commutes with the quotient by `a`.
+  let e : LocalizedModule p.primeCompl (QuotSMulTop a M) ≃ₗ[Rₚ]
+      QuotSMulTop (algebraMap R Rₚ a) (LocalizedModule p.primeCompl M) :=
+    (localizedQuotientEquiv _ _).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ (by
+      rw [Submodule.localized, ← Submodule.ideal_span_singleton_smul,
+        Submodule.localized'_smul, Ideal.localized'_eq_map, Submodule.localized'_top,
+        Ideal.map_span, Set.image_singleton, Submodule.ideal_span_singleton_smul])
+  have hmax : algebraMap R Rₚ a ∈ maximalIdeal Rₚ :=
+    (IsLocalization.AtPrime.to_map_mem_maximal_iff Rₚ p a).2 ha
+  rw [IsLocalRing.depth_eq_of_linearEquiv e]
+  exact depth_quotSMulTop_succ_eq_depth (reg.of_isLocalizedModule (S := Rₚ) p.primeCompl
+    (LocalizedModule.mkLinearMap p.primeCompl M)) hmax
 
 end TauCeti

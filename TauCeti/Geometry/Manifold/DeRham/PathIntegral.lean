@@ -93,38 +93,30 @@ theorem exists_mextDeriv_eq_of_forall_pathIntegral_eq_zero [FiniteDimensional �
   choose γ hγ hγ₀ hγ₁ using fun y : M ↦ exists_contMDiff_curve (I := I) (n := ⊤) x₀ y
   set f : M → F := fun y ↦ pathIntegral φ (γ y) 0 1 with hf_def
   -- Near each point `x`, `f` differs by a constant from a local primitive `g` of `φ`.
-  have hloc (x : M) : ∃ g : M → F, ContMDiff I 𝓘(ℝ, F) r g ∧
-      (∀ᶠ y in 𝓝 x, f y = g y + (f x - g x)) ∧
-      mextDeriv (RoughForm.ofFunction I g) x = φ x := by
-    obtain ⟨U, hU, ψ, hψ, hdψ⟩ :=
-      exists_mextDeriv_eq_nhds hr hφ (x := x) (Eventually.of_forall fun y ↦ congrFun hclosed y)
-    have hψ' := hψ
-    rw [RoughForm.eq_ofFunction ψ, isSmoothForm_ofFunction_iff] at hψ'
-    refine ⟨fun y ↦ ψ y 0, hψ', ?_, ?_⟩
-    · filter_upwards [eventually_exists_contMDiff_curve (I := I) (n := ⊤) hU] with y hy
-      obtain ⟨c, hc, hc₀, hc₁, hcU⟩ := hy
-      have hc' : ContMDiff 𝓘(ℝ, ℝ) I 1 c := hc.of_le (by simp)
-      -- Integrate along the chosen curve to `x` followed by the short curve `c` from `x` to `y`.
-      have hcat : f y = f x + pathIntegral φ c 0 1 := by
-        simp only [hf_def]
-        rw [pathIntegral_eq_of_forall_pathIntegral_eq_zero hφ₀ h (hγ y) (hγ₀ y) (hγ₁ y)
-            ((hγ x).curveConcat hc (hγ₁ x) hc₀)
-            (fun t ht ↦ by rw [curveConcat_of_le (by linarith), hγ₀ x _ (by linarith)])
-            (fun t ht ↦ by rw [curveConcat_of_lt (by linarith), hc₁ _ (by linarith)]),
-          pathIntegral_curveConcat hφ₀ ((hγ x).of_le (by simp)) hc' (hγ₁ x) hc₀]
-      rw [hcat, pathIntegral_congr (ψ := mextDeriv ψ) fun t _ ↦ (hdψ _ (hcU t)).symm,
-        pathIntegral_mextDeriv (hψ.of_le (by exact_mod_cast hr)) hc', hc₁ 1 le_rfl,
-        hc₀ 0 le_rfl]
-      abel
-    · rw [← RoughForm.eq_ofFunction]
-      exact hdψ x (mem_of_mem_nhds hU)
-  refine ⟨RoughForm.ofFunction I f, isSmoothForm_ofFunction_iff.mpr fun x ↦ ?_, funext fun x ↦ ?_⟩
-  · obtain ⟨g, hg, hfg, -⟩ := hloc x
-    exact ((hg x).add contMDiffAt_const).congr_of_eventuallyEq hfg
-  · obtain ⟨g, hg, hfg, hdg⟩ := hloc x
-    rw [← hdg]
-    exact mextDeriv_ofFunction_eq_of_eventuallyEq_add_const
-      ((hg x).mdifferentiableAt (by simpa using (zero_lt_one.trans_le hr).ne')) hfg
+  refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
+    (by simpa using (zero_lt_one.trans_le hr).ne') (f := f) fun x ↦ ?_
+  obtain ⟨U, hU, ψ, hψ, hdψ⟩ :=
+    exists_mextDeriv_eq_nhds hr hφ (x := x) (Eventually.of_forall fun y ↦ congrFun hclosed y)
+  have hψ' := hψ
+  rw [RoughForm.eq_ofFunction ψ, isSmoothForm_ofFunction_iff] at hψ'
+  refine ⟨fun y ↦ ψ y 0, f x - ψ x 0, hψ' x, ?_, ?_⟩
+  · filter_upwards [eventually_exists_contMDiff_curve (I := I) (n := ⊤) hU] with y hy
+    obtain ⟨c, hc, hc₀, hc₁, hcU⟩ := hy
+    have hc' : ContMDiff 𝓘(ℝ, ℝ) I 1 c := hc.of_le (by simp)
+    -- Integrate along the chosen curve to `x` followed by the short curve `c` from `x` to `y`.
+    have hcat : f y = f x + pathIntegral φ c 0 1 := by
+      simp only [hf_def]
+      rw [pathIntegral_eq_of_forall_pathIntegral_eq_zero hφ₀ h (hγ y) (hγ₀ y) (hγ₁ y)
+          ((hγ x).curveConcat hc (hγ₁ x) hc₀)
+          (fun t ht ↦ by rw [curveConcat_of_le (by linarith), hγ₀ x _ (by linarith)])
+          (fun t ht ↦ by rw [curveConcat_of_lt (by linarith), hc₁ _ (by linarith)]),
+        pathIntegral_curveConcat hφ₀ ((hγ x).of_le (by simp)) hc' (hγ₁ x) hc₀]
+    rw [hcat, pathIntegral_congr (ψ := mextDeriv ψ) fun t _ ↦ (hdψ _ (hcU t)).symm,
+      pathIntegral_mextDeriv (hψ.of_le (by exact_mod_cast hr)) hc', hc₁ 1 le_rfl,
+      hc₀ 0 le_rfl]
+    abel
+  · rw [← RoughForm.eq_ofFunction]
+    exact hdψ x (mem_of_mem_nhds hU)
 
 /-- A closed smooth real `1`-form on a preconnected manifold is exact exactly when its integral
 along every smooth loop at a base point `x₀` vanishes. -/

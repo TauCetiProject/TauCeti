@@ -72,6 +72,8 @@ elementary matrices against the diagonal torus.
 * `TauCeti.commutatorElement_transvectionUnit` and
   `TauCeti.commutatorElement_transvectionUnit_reverse`: the commutators of two chaining
   transvections in either orientation.
+* `Equiv.reindexGL_transvectionUnit`: relabelling the indices sends a transvection to the
+  transvection at the relabelled pair of indices.
 * `TauCeti.det_transvectionUnit` and `TauCeti.transvectionUnit_injective`: a transvection has
   determinant `1`, and distinct parameters give distinct transvections.
 * `TauCeti.diagGL_mul_transvectionUnit_mul_inv`: conjugation by an invertible diagonal matrix.
@@ -622,3 +624,20 @@ theorem transvectionWeylElement_mul_diagGL_mul_inv (hij : i ≠ j) (t : Fin N �
 end Torus
 
 end TauCeti
+
+namespace Equiv
+
+open TauCeti
+
+variable {n m : Type*} [DecidableEq n] [Fintype n] [DecidableEq m] [Fintype m] {A : Type*} [Ring A]
+  {i j : n}
+
+/-- Relabelling the indices sends an elementary matrix to the elementary matrix with the same
+parameter at the relabelled pair of indices. -/
+theorem reindexGL_transvectionUnit (e : n ≃ m) (hij : i ≠ j) (a : A) :
+    e.reindexGL A (transvectionUnit hij a) = transvectionUnit (e.injective.ne hij) a := by
+  ext : 1
+  simp [coe_transvectionUnit_eq_one_add_single, submatrix_add, submatrix_single_equiv,
+    submatrix_one_equiv]
+
+end Equiv

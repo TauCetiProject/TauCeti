@@ -149,12 +149,13 @@ theorem rectifiableSignedArea_comp_of_antitoneOn (hcont : ContinuousOn γ (Icc a
     rectifiableSignedArea (γ ∘ φ) c d = -rectifiableSignedArea γ a b :=
   rectifiableCurveIntegral_comp_of_antitoneOn hcont hcd hφ hφm hφc hφd
 
-/-- A circle of radius `R` about the origin, traversed once counterclockwise, has geometric
-signed area `π R²`. -/
+/-- A circle of radius `R`, traversed once counterclockwise from any initial angle `θ`, has
+geometric signed area `π R²`. -/
 @[simp]
-theorem rectifiableSignedArea_circleMap_zero (R : ℝ) :
-    rectifiableSignedArea (circleMap 0 R) 0 (2 * π) = π * R ^ 2 := by
-  rw [(lipschitzWith_circleMap 0 R).lipschitzOnWith.absolutelyContinuousOnInterval
-    |>.rectifiableSignedArea_eq_signedArea Real.two_pi_pos.le, signedArea_circleMap_zero]
+theorem rectifiableSignedArea_circleMap (c : ℂ) (R θ : ℝ) :
+    rectifiableSignedArea (circleMap c R) θ (θ + 2 * π) = π * R ^ 2 := by
+  rw [(lipschitzWith_circleMap c R).lipschitzOnWith.absolutelyContinuousOnInterval
+    |>.rectifiableSignedArea_eq_signedArea (le_add_of_nonneg_right Real.two_pi_pos.le),
+    signedArea_circleMap]
 
 end TauCeti
