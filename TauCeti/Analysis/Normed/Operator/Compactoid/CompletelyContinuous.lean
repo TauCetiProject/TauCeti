@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Operator.Compactoid
 public import TauCeti.Analysis.Normed.Module.Bases.ModelSpace
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Compactoid
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 
 /-!
 # Operators with compactoid image are completely continuous
