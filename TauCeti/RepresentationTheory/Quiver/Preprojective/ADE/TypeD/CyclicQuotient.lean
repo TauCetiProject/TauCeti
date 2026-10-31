@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Grading
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Augmentation
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 
 /-!
@@ -51,6 +51,8 @@ Consequently the commutator submodule of `Π⁺(Dₙ)` is exactly the kernel of 
 the vertex coefficients, and the augmentation induces `Π⁺(Dₙ) / [Π⁺(Dₙ), Π⁺(Dₙ)] ≃ k^{Dₙ}`.
 Through the bipartite sign rescaling, the same vanishing holds for the additive preprojective
 algebra of every orientation of `Dₙ`.
+These consequences, and the case of a path between distinct vertices, do not depend on the graph;
+they are in `TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient`.
 
 ## Main results
 
@@ -121,9 +123,8 @@ the long arm, are sums of commutators. -/
 private theorem forkTurn_add_pow_succ_mem_commutatorSubmodule (t : ℕ) :
     (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (t + 1) ∈ commutatorSubmodule k Π := by
   rw [forkTurn_add_eq_neg_forkDown_mul_forkUp k hn hG, neg_pow]
-  have h := pow_d_mul_u_mem_commutatorSubmodule k (forkDown_mul_forkUp_add k hn hG)
-    (forkUp_self_eq_zero k hG) t.succ_pos
-  rcases neg_one_pow_eq_or Π (t + 1) with hs | hs <;> simp [hs, h]
+  exact neg_one_pow_mul_mem_commutatorSubmodule (pow_d_mul_u_mem_commutatorSubmodule k
+    (forkDown_mul_forkUp_add k hn hG) (forkUp_self_eq_zero k hG) t.succ_pos) (t + 1)
 
 /-- If `2` is a unit, every element of a positive power of the span of the two leaf backtracks
 is a sum of commutators. -/
@@ -303,47 +304,24 @@ theorem signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule (h2 : IsUnit (2
   · subst hab
     exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork k (c := n - 3)
       (by omega) (diagramGraph_D_adj hn) h2 p hx
-  · -- A path between distinct vertices is the commutator of the target idempotent with itself.
-    have hl :
-        σ (vertexIdempotent k (vertex DG b)) * σ (ofPath ⟨_, _, p⟩) = σ (ofPath ⟨_, _, p⟩) := by
-      rw [← map_mul, vertexIdempotent_mul_ofPath]
-    have hr : σ (ofPath ⟨_, _, p⟩) * σ (vertexIdempotent k (vertex DG b)) = 0 := by
-      rw [← map_mul, ofPath_mul_vertexIdempotent_of_ne _
-        fun h => hab (vertex_injective DG h).symm, map_zero]
-    have hcomm := mul_sub_mul_mem_commutatorSubmodule k Π
-      (σ (vertexIdempotent k (vertex DG b))) (σ (ofPath ⟨_, _, p⟩))
-    rwa [hl, hr, sub_zero] at hcomm
+  · exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_ne k p
+      fun h => hab (vertex_injective DG h)
 
 /-- **The cyclic quotient of the signless algebra of `Dₙ` vanishes in positive degrees** when `2`
 is a unit: every homogeneous piece of positive path degree lies in the commutator submodule. -/
 theorem signlessPreprojectiveGrade_D_le_commutatorSubmodule (h2 : IsUnit (2 : k)) {d : ℕ}
-    (hd : 0 < d) : signlessPreprojectiveGrade k Q d ≤ commutatorSubmodule k Π := by
-  intro x hx
-  obtain ⟨y, hy, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k Q).1 hx
-  rw [grade_eq_span_range] at hy
-  refine (Submodule.span_le
-    (p := (commutatorSubmodule k Π).comap (σ : pathAlgebra k Q →ₐ[k] Π).toLinearMap)).2 ?_ hy
-  rintro _ ⟨⟨p, hp⟩, rfl⟩
-  exact signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2 p (hp ▸ hd)
+    (hd : 0 < d) : signlessPreprojectiveGrade k Q d ≤ commutatorSubmodule k Π :=
+  signlessPreprojectiveGrade_le_commutatorSubmodule k
+    (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2) hd
 
 /-- **The commutator submodule of the signless algebra of `Dₙ` is the augmentation kernel** when
 `2` is a unit. The augmentation onto the commutative algebra of vertex coefficients kills
 commutators, and every element of its kernel is a combination of paths of positive length. -/
 theorem commutatorSubmodule_signlessPreprojectiveAlgebra_D_eq_ker (h2 : IsUnit (2 : k)) :
     commutatorSubmodule k Π =
-      LinearMap.ker (signlessPreprojectiveAugmentation (R := Q) k).toLinearMap := by
-  refine le_antisymm ((commutatorSubmodule_le_ker_iff _).2 fun x y => ?_) fun x hx => ?_
-  · simp only [AlgHom.toLinearMap_apply, map_mul, mul_comm]
-  · rw [LinearMap.mem_ker, AlgHom.toLinearMap_apply, ← RingHom.mem_ker,
-      ker_signlessPreprojectiveAugmentation,
-      Ideal.mem_map_iff_of_surjective _ (signlessPreprojectiveMk_surjective k Q)] at hx
-    obtain ⟨f, hf, rfl⟩ := hx
-    rw [← (pathAlgebraBasis k Q).linearCombination_repr f, Finsupp.linearCombination_apply,
-      Finsupp.sum, map_sum]
-    refine Submodule.sum_mem _ fun x hx => ?_
-    rw [map_smul, coe_pathAlgebraBasis]
-    exact Submodule.smul_mem _ _ (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2 x
-      (mem_arrowIdeal_iff.1 hf x (Finsupp.mem_support_iff.1 hx)))
+      LinearMap.ker (signlessPreprojectiveAugmentation (R := Q) k).toLinearMap :=
+  commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker k
+    (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2)
 
 /-- **The cyclic quotient of the signless algebra of `Dₙ` is the module of vertex coefficients**,
 by the augmentation, when `2` is a unit. -/
@@ -382,31 +360,18 @@ sum of commutators**, over every commutative ring in which `2` is a unit. -/
 theorem preprojectiveMk_D_ofPath_mem_commutatorSubmodule (h2 : IsUnit (2 : k))
     (x : Quiver.TotalPath (Symmetrify (OrientedQuiver DG o))) (hx : 0 < x.2.2.length) :
     preprojectiveMk k (OrientedQuiver DG o) (ofPath x) ∈
-      commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver DG o)) := by
-  let e := (dColoring n).signlessPreprojectiveAlgebraEquiv k o
-  have hsymm :
-      e.symm (preprojectiveMk k (OrientedQuiver DG o) (ofPath x)) ∈ commutatorSubmodule k Π := by
-    simp only [e, SimpleGraph.Coloring.signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk,
-      rescale_ofPath, map_smul, orientationPathAlgebraEquiv_symm_ofPath]
-    exact Submodule.smul_mem _ _ (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2 _
-      (by rwa [Prefunctor.length_mapTotalPath]))
-  have h := map_mem_commutatorSubmodule e hsymm
-  rwa [AlgEquiv.apply_symm_apply] at h
+      commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver DG o)) :=
+  (dColoring n).preprojectiveMk_ofPath_mem_commutatorSubmodule k o
+    (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2) x hx
 
 /-- **The cyclic quotient of the preprojective algebra of an orientation of `Dₙ` vanishes in
 positive degrees** when `2` is a unit: every homogeneous piece of positive path degree lies in the
 commutator submodule. -/
 theorem preprojectiveGrade_D_le_commutatorSubmodule (h2 : IsUnit (2 : k)) {d : ℕ} (hd : 0 < d) :
     preprojectiveGrade k (OrientedQuiver DG o) d ≤
-      commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver DG o)) := by
-  intro x hx
-  obtain ⟨y, hy, rfl⟩ := (mem_preprojectiveGrade_iff k (OrientedQuiver DG o)).1 hx
-  rw [grade_eq_span_range] at hy
-  refine (Submodule.span_le
-    (p := (commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver DG o))).comap
-      (preprojectiveMk k (OrientedQuiver DG o)).toLinearMap)).2 ?_ hy
-  rintro _ ⟨⟨p, hp⟩, rfl⟩
-  exact preprojectiveMk_D_ofPath_mem_commutatorSubmodule k o h2 p (hp ▸ hd)
+      commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver DG o)) :=
+  preprojectiveGrade_le_commutatorSubmodule k
+    (preprojectiveMk_D_ofPath_mem_commutatorSubmodule k o h2) hd
 
 end Orientation
 

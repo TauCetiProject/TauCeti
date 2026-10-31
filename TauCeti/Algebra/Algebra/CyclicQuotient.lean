@@ -31,8 +31,9 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
 
 ## Main results
 
-* `TauCeti.neg_mem_commutatorSubmodule`: the commutator submodule is closed under negation, even
-  over a semiring of scalars.
+* `TauCeti.neg_mem_commutatorSubmodule` and `TauCeti.neg_one_pow_mul_mem_commutatorSubmodule`: the
+  commutator submodule is closed under negation and under multiplication by signs, even over a
+  semiring of scalars.
 * `TauCeti.commutatorSubmodule_le_ker_iff`: a linear map kills the commutator submodule exactly
   when it takes equal values on `x * y` and `y * x`.
 * `TauCeti.map_mem_commutatorSubmodule`: a multiplicative linear map, such as an algebra
@@ -78,6 +79,15 @@ theorem neg_mem_commutatorSubmodule {x : A} (hx : x ∈ commutatorSubmodule k A)
   | zero => simp
   | add y z _ _ hy hz => rw [neg_add]; exact add_mem hy hz
   | smul r y _ hy => simpa [smul_neg] using Submodule.smul_mem _ r hy
+
+variable {k} in
+/-- The commutator submodule is closed under multiplication by a sign `(-1) ^ e`, even when `k` is
+only a semiring. -/
+theorem neg_one_pow_mul_mem_commutatorSubmodule {B : Type*} [Ring B] [Module k B] {x : B}
+    (hx : x ∈ commutatorSubmodule k B) (e : ℕ) : (-1 : B) ^ e * x ∈ commutatorSubmodule k B := by
+  rcases neg_one_pow_eq_or B e with h | h
+  · simpa [h] using hx
+  · simpa [h] using neg_mem_commutatorSubmodule hx
 
 variable {k A} in
 /-- A linear map kills the commutator submodule exactly when it is invariant under exchanging the
