@@ -61,10 +61,12 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [T1Space M] {N : Type*} [TopologicalSpace N] [T1Space N]
   {e₁ : E → M} {e₂ : E → N}
 
+omit [InnerProductSpace ℝ E] in
 /-- **Removing the centre of a ball keeps a space preconnected**, when the ball `e : E → M` is an
-open embedding of a real inner product space of dimension at least two: near its centre, `M` is
-the ball, and the ball punctured at its centre is connected. -/
-theorem isPreconnected_puncture [PreconnectedSpace M] (h : 1 < Module.rank ℝ E) {e : E → M}
+open embedding of a real normed space of dimension at least two: near its centre, `M` is the
+ball, and the ball punctured at its centre is connected. -/
+theorem isPreconnected_puncture [NormedSpace ℝ E] [PreconnectedSpace M]
+    (h : 1 < Module.rank ℝ E) {e : E → M}
     (he : IsOpenEmbedding e) : IsPreconnected (puncture e : Set M) := by
   -- The inverse of the ball is a partial homeomorphism of `M` onto `E` around the centre.
   set φ := (he.toOpenPartialHomeomorph e).symm
