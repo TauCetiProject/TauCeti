@@ -196,6 +196,13 @@ theorem mem_shafarevichTateGroupKer_iff {c : W₁.shafarevichTateGroup τ} :
         (c : H1 (AbsoluteGaloisGroup K) W₁.PointCoeff) = 0 :=
   (AddMonoidHom.mem_ker ..).trans (by rw [AddMonoidHom.comp_apply, AddSubgroup.coe_subtype])
 
+/-- The kernel used in the isogeny descent sequence is the kernel of the induced map on Sha. -/
+theorem shafarevichTateGroupKer_eq_ker_shafarevichTateMap :
+    φ.shafarevichTateGroupKer τ = ((ofIsogeny φ).shafarevichTateMap τ).ker := by
+  ext c
+  rw [mem_shafarevichTateGroupKer_iff, AddMonoidHom.mem_ker, ← Subtype.val_inj,
+    Hom.coe_shafarevichTateMap, ZeroMemClass.coe_zero, Hom.pointH1Map_def]
+
 /-! ### The `φ`-descent sequence of Selmer groups -/
 
 section Descent
