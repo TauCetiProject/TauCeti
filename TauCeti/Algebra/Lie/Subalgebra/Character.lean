@@ -24,7 +24,7 @@ for the left ideals induced along a directed family of Lie subalgebras in
   brackets of `B`, as a character of `B`.
 -/
 
-@[expose] public section
+public section
 
 namespace LieSubalgebra
 

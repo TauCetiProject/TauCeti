@@ -677,17 +677,18 @@ theorem iInf_span_range_ι_sub_algebraMap {ι : Type*} [Nonempty ι] {B : ι →
       rintro _ ⟨j, -, rfl⟩
       exact (bC j).2
     have : FiniteDimensional K V := FiniteDimensional.span_of_finite K (S.finite_toSet.image _)
-    obtain ⟨i, hi⟩ := Submodule.exists_inf_eq_inf_iInf_of_directed V _
-      (hB.mono_comp (· ≥ ·) fun _ _ h ↦ (LieSubalgebra.toSubmodule_le_toSubmodule _ _).2 h)
-    simp only [Function.comp_apply] at hi
-    have hVi : Disjoint V (B i : Submodule K L) := by
-      rw [disjoint_iff, hi, eq_bot_iff]
-      intro x hx
-      refine Submodule.disjoint_def.1 (hC.disjoint.symm.mono_left hVC) x hx.1 (hmem.2 fun j ↦ ?_)
-      exact (Submodule.mem_iInf _).1 hx.2 j
+    have hdisj : Disjoint V (⨅ j, (B j : Submodule K L)) :=
+      Submodule.disjoint_def.2 fun x hx hx' ↦ Submodule.disjoint_def.1
+        (hC.disjoint.symm.mono_left hVC) x hx (hmem.2 fun j ↦ (Submodule.mem_iInf _).1 hx' j)
+    obtain ⟨i, hVi⟩ := Submodule.exists_disjoint_of_directed V (fun j ↦ (B j : Submodule K L))
+      (hB.mono_comp (· ≥ ·) fun _ _ h ↦ (LieSubalgebra.toSubmodule_le_toSubmodule _ _).2 h) hdisj
     have hindep := linearIndepOn_mkQ_pbwMonomial ((B i).restrictCharacter χ (hχ i))
       (v := fun j ↦ (bC j : L)) (s := ↑S)
       ((bC.linearIndependent.map' C.subtype C.ker_subtype).comp _ Subtype.val_injective) hVi d
+    have hJi : Submodule.span UK (Set.range fun x : B i ↦ _root_.UniversalEnvelopingAlgebra.ι K
+        (x : L) - algebraMap K UK ((B i).restrictCharacter χ (hχ i) x)) = J (B i) := by
+      simp only [LieSubalgebra.restrictCharacter_apply, J]
+    rw [hJi] at hindep
     -- Hence `y = 0`.
     have hc0 : c = 0 := by
       refine linearIndepOn_iff.1 hindep c (fun α hα ↦ ⟨hc hα, fun j hj ↦ ?_⟩) ?_
