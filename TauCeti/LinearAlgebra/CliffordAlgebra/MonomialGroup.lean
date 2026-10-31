@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.Exponent
+public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.Algebra.Group.CommuteOrNeg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
@@ -23,6 +24,10 @@ import Mathlib.GroupTheory.Coset.Card
 import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
 -- Non-public: `CliffordAlgebra.neZeroTwo` gives `2 ≠ 0`, which shows `ε = -1` is not `1`.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+-- Non-public: `CliffordAlgebra.involute_eq_self_iff` identifies the even signed monomials with
+-- those in the even subalgebra.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The finite group of signed monomials of a Clifford algebra
@@ -87,6 +92,8 @@ representations of `G`.
 * `CliffordAlgebra.monomialGroupLift`: algebra maps from the Clifford algebra are the monoid maps
   from the group sending `ε` to `-1`.
 * `CliffordAlgebra.monomialGroupInvolute`: the grade involution, as an automorphism of the group.
+* `CliffordAlgebra.monomialGroupEven`: the even signed monomials, the subgroup fixed by the grade
+  involution.
 
 ## Main results
 
@@ -95,6 +102,13 @@ representations of `G`.
 * `CliffordAlgebra.mem_center_monomialGroup_iff`: a signed basis monomial is central exactly when
   its support is empty or is the full odd-cardinality index set.
 * `CliffordAlgebra.monomialGroup_commuteOrNeg`: signed monomials commute or anticommute.
+* `CliffordAlgebra.involute_eq_or_eq_neg_of_mem_monomialGroup`: signed monomials are homogeneous.
+* `CliffordAlgebra.mem_monomialGroupEven_iff_mem_even` and
+  `CliffordAlgebra.monomialGroupEquiv_mem_monomialGroupEven_iff`: the even signed monomials are
+  those in the even Clifford subalgebra, the `±e_s` with `#s` even.
+* `CliffordAlgebra.index_monomialGroupEven` and `CliffordAlgebra.natCard_monomialGroupEven`: they
+  form a subgroup of index two, of order `2 ^ n`.
+* `CliffordAlgebra.span_monomialGroupEven_eq_even`: they span the even Clifford subalgebra.
 * `CliffordAlgebra.monomialGroup_val_eq_or_neg_of_isConj`: conjugation changes a signed monomial by
   at most its central sign.
 * `CliffordAlgebra.monomialGroupEpsilon_mem_center`: `ε = -1` is central.
@@ -239,6 +253,110 @@ theorem coe_monomialGroupInvolute_apply (g : monomialGroup Q v) :
 theorem monomialGroupInvolute_symm :
     (monomialGroupInvolute v).symm = monomialGroupInvolute (Q := Q) v :=
   (rfl)
+
+/-! ### The even signed monomials -/
+
+section Even
+
+variable {v}
+
+/-- **A signed monomial is homogeneous**: the grade involution fixes it or negates it. -/
+theorem involute_eq_or_eq_neg_of_mem_monomialGroup {u : (CliffordAlgebra Q)ˣ}
+    (hu : u ∈ monomialGroup Q v) :
+    involute (u : CliffordAlgebra Q) = u ∨ involute (u : CliffordAlgebra Q) = -u := by
+  rw [monomialGroup_def] at hu
+  induction hu using Subgroup.closure_induction with
+  | mem u hu =>
+    rcases hu with hu | ⟨i, hu⟩
+    · exact Or.inl (by simp [hu])
+    · exact Or.inr (by simp [hu])
+  | one => exact Or.inl (by simp)
+  | mul u w _ _ hu hw => rcases hu with hu | hu <;> rcases hw with hw | hw <;> simp [hu, hw]
+  | inv u _ hu =>
+    have h : involute ((u⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
+        involute (u : CliffordAlgebra Q) = 1 := by
+      rw [← map_mul, Units.inv_mul, map_one]
+    rcases hu with hu | hu
+    · rw [hu] at h
+      exact Or.inl (Units.eq_inv_of_mul_eq_one_right h)
+    · rw [hu, mul_neg, ← neg_mul] at h
+      exact Or.inr (neg_eq_iff_eq_neg.mp (Units.eq_inv_of_mul_eq_one_right h))
+
+variable (Q) in
+/-- **The even signed monomials**: the subgroup of the group of signed monomials fixed by the grade
+involution `CliffordAlgebra.monomialGroupInvolute`. Once `2` is invertible these are the signed
+monomials lying in the even Clifford subalgebra
+(`CliffordAlgebra.mem_monomialGroupEven_iff_mem_even`), and for an orthogonal basis they are the
+`±e_s` with `#s` even (`CliffordAlgebra.monomialGroupEquiv_mem_monomialGroupEven_iff`). -/
+noncomputable def monomialGroupEven (v : I → M) : Subgroup (monomialGroup Q v) :=
+  (monomialGroupInvolute v).toMonoidHom.eqLocus (MonoidHom.id _)
+
+/-- A signed monomial is even exactly when the grade involution fixes its value. -/
+theorem mem_monomialGroupEven_iff {g : monomialGroup Q v} :
+    g ∈ monomialGroupEven Q v ↔
+      involute ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+        ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+  rw [← coe_monomialGroupInvolute_apply, ← Units.ext_iff, ← Subtype.ext_iff]
+  -- Membership in `MonoidHom.eqLocus f g` is the equation `f x = g x` by definition.
+  exact Iff.rfl
+
+/-- The central element `ε = -1` is even. -/
+@[simp]
+theorem monomialGroupEpsilon_mem_monomialGroupEven :
+    monomialGroupEpsilon Q v ∈ monomialGroupEven Q v := by
+  simp [mem_monomialGroupEven_iff]
+
+section Invertible
+
+variable [Invertible (2 : R)]
+
+/-- **The even signed monomials are those in the even Clifford subalgebra**, once `2` is
+invertible. -/
+theorem mem_monomialGroupEven_iff_mem_even {g : monomialGroup Q v} :
+    g ∈ monomialGroupEven Q v ↔ ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q := by
+  rw [mem_monomialGroupEven_iff, involute_eq_self_iff, ← even_toSubmodule,
+    Subalgebra.mem_toSubmodule]
+
+/-- A signed monomial is not even exactly when the grade involution negates its value, over a
+nontrivial ring in which `2` is invertible. -/
+theorem notMem_monomialGroupEven_iff [Nontrivial R] {g : monomialGroup Q v} :
+    g ∉ monomialGroupEven Q v ↔
+      involute ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+        -((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+  rw [mem_monomialGroupEven_iff]
+  refine ⟨(involute_eq_or_eq_neg_of_mem_monomialGroup g.2).resolve_left, fun h h' ↦ ?_⟩
+  -- A unit equal to its negative would make `2` vanish in the Clifford algebra.
+  have h2 : (2 : CliffordAlgebra Q) * ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 0 := by
+    rw [two_mul]
+    nth_rewrite 1 [← h.symm.trans h']
+    exact neg_add_cancel _
+  exact two_ne_zero ((Units.mul_left_eq_zero _).mp h2)
+
+/-- **The even signed monomials have index two** as soon as one generator squares to a unit, over a
+nontrivial ring in which `2` is invertible: multiplying by that odd generator exchanges the even
+and the odd signed monomials. -/
+theorem index_monomialGroupEven [Nontrivial R] {i : I} (hi : IsUnit (Q (v i))) :
+    (monomialGroupEven Q v).index = 2 := by
+  obtain ⟨a, ha⟩ := exists_monomialGroup_val_eq_ι v hi
+  have hodd : involute ((a : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      -((a : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+    rw [ha, involute_ι]
+  refine Subgroup.index_eq_two_iff.mpr ⟨a, fun g ↦ ?_⟩
+  have hmul : involute (((g * a : monomialGroup Q v) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      -(involute ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
+        ((a : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := by
+    simp only [Subgroup.coe_mul, Units.val_mul, map_mul, hodd, mul_neg]
+  by_cases hg : g ∈ monomialGroupEven Q v
+  · refine Or.inr ⟨hg, ?_⟩
+    rw [notMem_monomialGroupEven_iff, hmul, mem_monomialGroupEven_iff.mp hg]
+    simp
+  · refine Or.inl ⟨?_, hg⟩
+    rw [mem_monomialGroupEven_iff, hmul, notMem_monomialGroupEven_iff.mp hg]
+    simp
+
+end Invertible
+
+end Even
 
 /-! ### The sign subgroup generated by `ε` -/
 
@@ -752,6 +870,64 @@ theorem finite_monomialGroup [Finite I] [Nontrivial R]
     rw [natCard_monomialGroup hb hQ]
     positivity
   exact (Nat.card_ne_zero.mp h).2
+
+/-! ### The even signed monomials of an orthogonal basis -/
+
+/-- **The even signed monomials are the `±e_s` with `#s` even**, for an orthogonal basis whose
+generators square to `±1` over a nontrivial ring in which `2` is invertible. -/
+theorem monomialGroupEquiv_mem_monomialGroupEven_iff [Nontrivial R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
+    (p : Finset I × ℤˣ) :
+    monomialGroupEquiv hb hQ p ∈ monomialGroupEven Q b ↔ Even p.1.card := by
+  have hinv : involute (((monomialGroupEquiv hb hQ p : monomialGroup Q b) :
+      (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      (-1 : R) ^ p.1.card • ((monomialGroupEquiv hb hQ p : monomialGroup Q b) :
+        (CliffordAlgebra Q)ˣ) := by
+    rw [coe_monomialGroupEquiv_apply, map_zsmul, involute_basis hb, smul_comm]
+  rcases Nat.even_or_odd p.1.card with h | h
+  · rw [mem_monomialGroupEven_iff, hinv, h.neg_one_pow, one_smul]
+    exact iff_of_true rfl h
+  · refine iff_of_false (notMem_monomialGroupEven_iff.mpr ?_) (Nat.not_even_iff_odd.mpr h)
+    rw [hinv, h.neg_one_pow, neg_one_smul]
+
+/-- **The even signed monomials span the even Clifford subalgebra**, for an orthogonal basis whose
+generators square to `±1`, once `2` is invertible: the even subalgebra has the `e_s` with `#s` even
+as a basis, and each of them is an even signed monomial. -/
+theorem span_monomialGroupEven_eq_even (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
+    Submodule.span R (Set.range fun g : monomialGroupEven Q b ↦
+      (((g : monomialGroup Q b) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) =
+      (even Q).toSubmodule := by
+  refine le_antisymm (Submodule.span_le.mpr ?_) fun x hx ↦ ?_
+  · rintro _ ⟨g, rfl⟩
+    exact mem_monomialGroupEven_iff_mem_even.mp g.2
+  -- Expand `x` in the basis `e_s`; only the terms with `#s` even survive.
+  have hx' : involute x = x := involute_eq_of_mem_even (by rwa [← even_toSubmodule])
+  rw [← (basis Q b).linearCombination_repr x, Finsupp.linearCombination_apply]
+  refine Submodule.finsuppSum_mem _ _ _ _ fun s _ ↦ ?_
+  rcases Nat.even_or_odd s.card with h | h
+  · obtain ⟨u, hu⟩ := exists_monomialGroup_val_eq_basis hb hQ s
+    have hu' : u ∈ monomialGroupEven Q b := by
+      rw [mem_monomialGroupEven_iff, hu, involute_basis hb, h.neg_one_pow, one_smul]
+    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨⟨u, hu'⟩, hu⟩)
+  · -- The coordinate of `x` at an odd `s` is its own negative, hence zero.
+    have h2 : (2 : R) * (basis Q b).repr x s = 0 := by
+      have := basis_repr_involute hb x s
+      rw [hx', h.neg_one_pow] at this
+      linear_combination this
+    rw [(isUnit_of_invertible (2 : R)).mul_right_eq_zero.mp h2, zero_smul]
+    exact zero_mem _
+
+/-- **The order of the even signed monomials**: for a nonempty finite orthogonal basis of `n`
+generators squaring to `±1`, over a nontrivial ring in which `2` is invertible, there are
+`2 ^ n` of them, half of the group of signed monomials. -/
+theorem natCard_monomialGroupEven [Fintype I] [Nonempty I] [Nontrivial R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
+    Nat.card (monomialGroupEven Q b) = 2 ^ Fintype.card I := by
+  have h := (monomialGroupEven Q b).card_mul_index
+  rw [index_monomialGroupEven (isUnit_of_eq_one_or_neg_one b hQ (Classical.arbitrary I)),
+    natCard_monomialGroup hb hQ, pow_succ] at h
+  exact Nat.eq_of_mul_eq_mul_right two_pos h
 
 /-! ### The quotient by the sign subgroup of an orthogonal basis -/
 
