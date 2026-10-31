@@ -27,7 +27,9 @@ A morphism `Spec B ⟶ X` over `Spec R` whose image lies in an affine open `Spec
 
 For an arbitrary scheme `q : T ⟶ Spec R`, a morphism `f : T ⟶ Spec A` lies over `Spec R`
 exactly when the ring map `A ⟶ Γ(T, ⊤)` of `f` restricts along `R ⟶ A` to the ring map
-`R ⟶ Γ(T, ⊤)` of `q` (`TauCeti.AlgebraicGeometry.comp_spec_map_eq_iff`).
+`R ⟶ Γ(T, ⊤)` of `q` (`TauCeti.AlgebraicGeometry.comp_spec_map_eq_iff`). Hence for an
+`R`-algebra `A`, such morphisms are the `R`-algebra homomorphisms `A →ₐ[R] Γ(T, ⊤)`, where `R` acts
+on global functions through `q` (`TauCeti.AlgebraicGeometry.overHomSpecEquivAlgHom`).
 
 ## Main declarations
 
@@ -37,6 +39,8 @@ exactly when the ring map `A ⟶ Γ(T, ⊤)` of `f` restricts along `R ⟶ A` to
   with image in an affine open over `Spec R` factors through it by an algebra homomorphism.
 * `TauCeti.AlgebraicGeometry.comp_spec_map_eq_iff`: a morphism `T ⟶ Spec A` lies over `Spec R`
   if and only if its ring map `A ⟶ Γ(T, ⊤)` is compatible with `R`.
+* `TauCeti.AlgebraicGeometry.overHomSpecEquivAlgHom`: for an `R`-algebra `A`, morphisms
+  `T ⟶ Spec A` over `Spec R` are the `R`-algebra homomorphisms `A →ₐ[R] Γ(T, ⊤)`.
 -/
 
 public section
@@ -93,5 +97,56 @@ theorem comp_spec_map_eq_iff {T : Scheme.{u}} {R A : CommRingCat.{u}} (π : R �
       π ≫ (Scheme.ΓSpecIso A).inv ≫ f.appTop = (Scheme.ΓSpecIso R).inv ≫ q.appTop := by
   rw [Scheme.ΓSpecIso_inv_naturality_assoc, ← Scheme.Hom.comp_appTop]
   exact ⟨fun h ↦ h ▸ rfl, fun h ↦ ext_to_Spec h⟩
+
+/-- **Points of `Spec A` over `Spec R`.** For an `R`-algebra `A` and a scheme `q : T ⟶ Spec R`,
+morphisms `T ⟶ Spec A` over `Spec R` correspond to `R`-algebra homomorphisms `A →ₐ[R] Γ(T, ⊤)`,
+where `R` acts on global functions through `q`. A morphism goes to its ring map
+`A ⟶ Γ(T, ⊤)`; an algebra homomorphism goes to its adjoint under the Γ–Spec adjunction. -/
+noncomputable def overHomSpecEquivAlgHom {R : CommRingCat.{u}} (A : Type u) [CommRing A]
+    [Algebra R A] (T : Over (Spec R)) :
+    letI := ((Scheme.ΓSpecIso R).inv ≫ T.hom.appTop).hom.toAlgebra
+    (T ⟶ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap R A)))) ≃
+      (A →ₐ[R] Γ(T.left, ⊤)) :=
+  letI := ((Scheme.ΓSpecIso R).inv ≫ T.hom.appTop).hom.toAlgebra
+  { toFun t :=
+      { ((Scheme.ΓSpecIso _).inv ≫ t.left.appTop).hom with
+        commutes' := ConcreteCategory.congr_hom
+          ((comp_spec_map_eq_iff (R := R) _ t.left T.hom).mp (Over.w t)) }
+    invFun φ := Over.homMk (ΓSpec.adjunction.homEquiv T.left (Opposite.op (.of A))
+        (CommRingCat.ofHom φ.toRingHom).op) <| by
+      refine (comp_spec_map_eq_iff (R := R) _ _ T.hom).mpr ?_
+      rw [ΓSpecIso_inv_ΓSpec_adjunction_homEquiv]
+      ext r
+      exact φ.commutes r
+    left_inv t := Over.OverMorphism.ext (ext_to_Spec (ΓSpecIso_inv_ΓSpec_adjunction_homEquiv _))
+    right_inv φ := AlgHom.ext fun a ↦ ConcreteCategory.congr_hom
+      (ΓSpecIso_inv_ΓSpec_adjunction_homEquiv (X := T.left) (CommRingCat.ofHom φ.toRingHom)) a }
+
+/-- The `R`-algebra homomorphism of a point `t : T ⟶ Spec A` over `Spec R` is its ring map
+`A ⟶ Γ(T, ⊤)`. -/
+lemma overHomSpecEquivAlgHom_apply {R : CommRingCat.{u}} (A : Type u) [CommRing A]
+    [Algebra R A] (T : Over (Spec R))
+    (t : T ⟶ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap R A)))) (a : A) :
+    overHomSpecEquivAlgHom A T t a = ((Scheme.ΓSpecIso _).inv ≫ t.left.appTop) a :=
+  (rfl)
+
+/-- The point of `Spec A` over `Spec R` of an `R`-algebra homomorphism `φ : A →ₐ[R] Γ(T, ⊤)` has
+ring map `φ`. -/
+lemma overHomSpecEquivAlgHom_symm_appTop {R : CommRingCat.{u}} (A : Type u) [CommRing A]
+    [Algebra R A] (T : Over (Spec R)) :
+    letI := ((Scheme.ΓSpecIso R).inv ≫ T.hom.appTop).hom.toAlgebra
+    ∀ φ : A →ₐ[R] Γ(T.left, ⊤), (Scheme.ΓSpecIso _).inv ≫
+      ((overHomSpecEquivAlgHom A T).symm φ).left.appTop = CommRingCat.ofHom φ.toRingHom :=
+  fun _ ↦ ΓSpecIso_inv_ΓSpec_adjunction_homEquiv _
+
+/-- The bijection `overHomSpecEquivAlgHom` is natural in the scheme over `Spec R`: composing a
+point with `g : T' ⟶ T` composes its algebra homomorphism with pullback of functions along `g`. -/
+lemma overHomSpecEquivAlgHom_comp {R : CommRingCat.{u}} (A : Type u) [CommRing A] [Algebra R A]
+    {T' T : Over (Spec R)} (g : T' ⟶ T)
+    (t : T ⟶ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap R A)))) (a : A) :
+    overHomSpecEquivAlgHom A T' (g ≫ t) a = g.left.appTop (overHomSpecEquivAlgHom A T t a) := by
+  rw [overHomSpecEquivAlgHom_apply, overHomSpecEquivAlgHom_apply, Over.comp_left,
+    Scheme.Hom.comp_appTop, CommRingCat.comp_apply, CommRingCat.comp_apply,
+    CommRingCat.comp_apply]
 
 end TauCeti.AlgebraicGeometry
