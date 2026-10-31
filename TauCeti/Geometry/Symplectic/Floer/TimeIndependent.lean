@@ -18,8 +18,8 @@ autonomous Hamiltonian. For the cylindrical perturbation `K = H dt`, the Floer e
 map `u` of the strip `(s, t)` reads `∂_s u + J (∂_t u - X_H(u)) = 0`. A solution that does not
 depend on `t`, `u(s, t) = γ(s)`, therefore solves the ordinary differential equation
 `γ' = J X_H(γ)`. When `ω` is `J`-invariant, `J X_H` is the gradient of `H` for the bilinear form
-`g = ω(·, J ·)`, so the time-independent Floer solutions are exactly the (upward) gradient lines of
-`H` for `g`, and their Floer energy density is `dH(γ')`.
+`g = ω(·, J ·)`, so the time-independent Floer solutions are exactly the gradient lines of `H`
+for `g`, and their Floer energy density is `dH(γ(s)) γ'(s)`.
 
 In the cotangent model `V × V` of a Euclidean space `V`, with its standard symplectic form
 `ω₀ = Σ dqᵢ ∧ dpᵢ` and complex structure `J(q, p) = (-p, q)`, take `H(q, p) = h(q)`. Then
@@ -43,9 +43,7 @@ is the passage from the perturbed equation to holomorphic strips between the two
 * `TauCeti.SymplecticForm.Invariant.isComplexLinearMap_perturbedFDeriv_comp_fst_iff`: for a
   `J`-invariant form, exactly when `γ'` is the gradient of `H` for `g = ω(·, J ·)`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_comp_fst`: the energy density of a time-independent
-  map is `dH(γ')`.
-* `TauCeti.stdSymplecticForm_hamiltonianVectorField_comp_fst`: in the cotangent model,
-  `X_H(q, p) = (0, -∇h(q))` for `H(q, p) = h(q)`.
+  map is `dH(γ(s)) γ'(s)`.
 * `TauCeti.isComplexLinearMap_perturbedFDeriv_comp_fst_iff_hasDerivAt`: in the cotangent model,
   a time-independent map solves the Floer equation exactly when `γ' = (∇h(q), 0)`.
 * `TauCeti.floerEnergyDensity_comp_fst_eq_norm_gradient_sq`: in the cotangent model, the energy
@@ -126,7 +124,8 @@ theorem Invariant.isComplexLinearMap_perturbedFDeriv_comp_fst_iff (hJ : ω.Invar
   rw [map_sub, LinearMap.sub_apply, h, hJ.associatedBilinForm_hamiltonianVectorField, sub_self]
 
 /-- **The energy density of a time-independent map.** For the perturbation `K = H dt`, the Floer
-energy density of `(s, t) ↦ γ(s)` at `z` is `dH(γ(s)) γ'(s)`, the derivative of `H` along `γ`. -/
+energy density of `(s, t) ↦ γ(s)` at `z` is `fderiv ℝ H (γ(s)) (γ'(s))`. When `H` is
+differentiable at `γ(s)`, this is the derivative of `H ∘ γ` at `s`. -/
 theorem floerEnergyDensity_comp_fst (hγ : DifferentiableAt ℝ γ z.1) :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) z =
       fderiv ℝ H (γ z.1) (deriv γ z.1) := by
@@ -143,19 +142,6 @@ open SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {h : V → ℝ}
-
-/-- In the cotangent model `V × V`, the Hamiltonian vector field of `H(q, p) = h(q)` is
-`X_H(q, p) = (0, -∇h(q))`: the flow moves the momentum by `-∇h` and fixes the position. -/
-theorem stdSymplecticForm_hamiltonianVectorField_comp_fst {x : V × V}
-    (hh : DifferentiableAt ℝ h x.1) :
-    (stdSymplecticForm (V := V)).hamiltonianVectorField (fun y ↦ h y.1) x = (0, -∇ h x.1) := by
-  have hcomp : HasFDerivAt (fun y : V × V ↦ h y.1)
-      ((fderiv ℝ h x.1).comp (ContinuousLinearMap.fst ℝ V V)) x :=
-    hh.hasFDerivAt.comp x hasFDerivAt_fst
-  refine stdSymplecticForm_hamiltonianVectorField ?_
-  convert hcomp using 1
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp [inner_gradient_left]
 
 /-- **Time-independent Floer solutions in the cotangent model.** For `H(q, p) = h(q)` on `V × V`
 with the standard symplectic and complex structures, the map `(s, t) ↦ γ(s)` solves the Floer
