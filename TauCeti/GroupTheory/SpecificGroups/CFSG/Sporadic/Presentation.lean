@@ -91,6 +91,11 @@ def SporadicName.presentation : SporadicName → GroupPresentation
   | .B => Sporadic.BabyMonster.presentation
   | .M => Sporadic.Monster.presentation
 
+/-- The presentation selected for the first Janko group is the transcribed ATLAS presentation. -/
+@[simp]
+theorem SporadicName.presentation_J1 : SporadicName.J1.presentation = Sporadic.j1Presentation :=
+  (rfl)
+
 /-- Every sporadic presentation has the relator count stated in its metadata.
 
 This is deliberately not `@[simp]`: `GroupPresentation.matchesMetadata_iff` is itself a `simp`
