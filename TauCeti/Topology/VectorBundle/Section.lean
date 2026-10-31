@@ -22,7 +22,8 @@ function `x ↦ (e ⟨x, s x⟩).2` (`Bundle.Trivialization.continuousAt_section
 `Bundle.Trivialization.continuousOn_section_iff`), with no atlas or linearity assumption on `e`.
 Sums, finite sums, scalar multiples by continuous functions and locally finite sums of continuous
 sections are continuous (`ContinuousAt.add_section`, `ContinuousAt.smul_section`,
-`ContinuousAt.sum_section`, `Continuous.finsum_section_of_locallyFinite`), and a function with
+`ContinuousAt.sum_section`, `Continuous.finsum_section_of_locallyFinite`; for global scalar
+multiples use `Continuous.smul_totalSpace`), and a function with
 closed support inside an open set multiplies a section continuous on that set into a globally
 continuous section (`ContinuousOn.smul_section_of_tsupport`).
 
@@ -142,12 +143,6 @@ theorem ContinuousOn.smul_section (hf : ContinuousOn f u)
     (hs : ContinuousOn (fun x ↦ TotalSpace.mk' F x (s x)) u) :
     ContinuousOn (fun x ↦ TotalSpace.mk' F x (f x • s x)) u :=
   fun x hx ↦ (hf x hx).smul_section (hs x hx)
-
-/-- The product of a continuous scalar function and a continuous section is continuous. -/
-theorem Continuous.smul_section (hf : Continuous f)
-    (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x)) :
-    Continuous fun x ↦ TotalSpace.mk' F x (f x • s x) :=
-  hf.smul_totalSpace hs
 
 /-- The product `f • s` of a continuous scalar function `f` and a section `s` is continuous as soon
 as `s` is continuous on an open set containing the closed support of `f`. This is the vector
