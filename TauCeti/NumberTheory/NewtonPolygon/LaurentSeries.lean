@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
 public import TauCeti.RingTheory.HahnSeries.Multiplication
-public import TauCeti.RingTheory.LaurentSeries.Valuation
+public import TauCeti.RingTheory.LaurentSeries.Valuation.Basic
 
 /-!
 # Newton polygons and initial polynomials over Laurent series

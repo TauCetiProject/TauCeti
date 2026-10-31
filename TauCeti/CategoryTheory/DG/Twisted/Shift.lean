@@ -43,6 +43,13 @@ the comparison morphisms.  This second description makes the associativity and u
 these isomorphisms a cancellation of comparison morphisms, the signs `(-1)^((a + b) * c + a * b)`
 and `(-1)^(a * (b + c) + b * c)` agreeing.
 
+In the same way the shifts commute up to the closed degree-zero isomorphism
+`TauCeti.DGTwistedObject.shiftCommHom P a b`, the composite of comparison morphisms
+`P⟦a⟧⟦b⟧ ⟶ P⟦a⟧ ⟶ P ⟶ P⟦b⟧ ⟶ P⟦b⟧⟦a⟧`.  The shift by `b` of the comparison morphism `P⟦a⟧ ⟶ P`
+is `(-1)^(a * b)` times this isomorphism followed by the comparison morphism `P⟦b⟧⟦a⟧ ⟶ P⟦b⟧`
+(`TauCeti.DGTwistedObject.dgMap_fromShift`); this is the sign by which the shift of a cone differs
+from the cone of the shifted morphism.
+
 Shifts are the second ingredient, with extensions (see
 `TauCeti/CategoryTheory/DG/Twisted/Extension.lean`), of the cone `(Q ⊕ P⟦1⟧, δ)` of a closed
 degree-zero morphism `u : P ⟶ Q` of twisted objects, along the closed degree-one morphism
@@ -56,6 +63,8 @@ degree-zero morphism `u : P ⟶ Q` of twisted objects, along the closed degree-o
   morphisms `P ⟶ P⟦n⟧` of degree `-n` and `P⟦n⟧ ⟶ P` of degree `n`.
 * `TauCeti.DGTwistedObject.shiftAddHom` and `TauCeti.DGTwistedObject.shiftAddInv`: the mutually
   inverse closed degree-zero morphisms `P⟦a + b⟧ ⟶ P⟦a⟧⟦b⟧` and `P⟦a⟧⟦b⟧ ⟶ P⟦a + b⟧`.
+* `TauCeti.DGTwistedObject.shiftCommHom`: the closed degree-zero isomorphism
+  `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧`.
 
 ## Main results
 
@@ -80,6 +89,11 @@ degree-zero morphism `u : P ⟶ Q` of twisted objects, along the closed degree-o
 * `TauCeti.DGTwistedObject.shiftAddHom_assoc`, `TauCeti.DGTwistedObject.shiftAddHom_zero_add` and
   `TauCeti.DGTwistedObject.shiftAddHom_add_zero`: the associativity and unit coherences of
   `shiftAddHom`.
+* `TauCeti.DGTwistedObject.dgComp_shiftCommHom_shiftCommHom`: `shiftCommHom P a b` and
+  `shiftCommHom P b a` are inverse, and
+  `TauCeti.DGTwistedObject.shiftCommHom_eq_dgComp_shiftAddInv` expresses `shiftCommHom` through
+  the comparisons of iterated shifts.
+* `TauCeti.DGTwistedObject.dgMap_fromShift`: the shift of a comparison morphism.
 
 ## References
 
@@ -287,6 +301,11 @@ private theorem dgComp_fromShift_toShift' (n : ℤ) {m : ℤ} (h : n + -n = m) :
   obtain rfl : m = 0 := by omega
   rw [dgComp_fromShift_toShift, castDeg_self]
 
+private theorem dgComp_toShift_fromShift' (n : ℤ) {m : ℤ} (h : -n + n = m) :
+    dgComp R (toShift P n) (fromShift P n) h = castDeg R (by omega) (dgId R _) := by
+  obtain rfl : m = 0 := by omega
+  rw [dgComp_toShift_fromShift, castDeg_self]
+
 private theorem dgComp_toShift_fromShift_assoc' (n : ℤ) {q m m' : ℤ} (x : DGHom R q P Z)
     (h : n + q = m) (h' : -n + m = m') :
     dgComp R (toShift P n) (dgComp R (fromShift P n) x h) h' = castDeg R (by omega) x := by
@@ -463,6 +482,91 @@ theorem shiftAddHom_add_zero (n : ℤ) :
   exact dgComp_eq_castDeg_dgComp R _ _ _
 
 end comparison
+
+/-! ### The commutation of shifts -/
+
+section commutation
+
+/-- The comparison `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧`, a closed degree-zero isomorphism: the comparison
+morphisms `P⟦a⟧⟦b⟧ ⟶ P⟦a⟧ ⟶ P ⟶ P⟦b⟧ ⟶ P⟦b⟧⟦a⟧`. -/
+noncomputable def shiftCommHom (a b : ℤ) :
+    DGHom R 0 ((shiftFunctor R b).obj ((shiftFunctor R a).obj P))
+      ((shiftFunctor R a).obj ((shiftFunctor R b).obj P)) :=
+  dgComp R (fromShift ((shiftFunctor R a).obj P) b)
+    (dgComp R (fromShift P a)
+      (dgComp R (toShift P b) (toShift ((shiftFunctor R b).obj P) a) rfl) rfl) (by omega)
+
+/-- The comparison `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧` is `P⟦a⟧⟦b⟧ ⟶ P⟦a⟧ ⟶ P ⟶ P⟦b⟧ ⟶ P⟦b⟧⟦a⟧`. -/
+theorem shiftCommHom_def (a b : ℤ) :
+    shiftCommHom P a b = dgComp R (fromShift ((shiftFunctor R a).obj P) b)
+      (dgComp R (fromShift P a)
+        (dgComp R (toShift P b) (toShift ((shiftFunctor R b).obj P) a) rfl) rfl) (by omega) :=
+  (rfl)
+
+/-- The comparison `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧` is closed. -/
+@[simp↓]
+theorem dgDifferential_shiftCommHom (a b : ℤ) : dgDifferential R 0 (shiftCommHom P a b) = 0 := by
+  simp -proj only [shiftCommHom_def, dgDifferential_dgComp, dgDifferential_fromShift,
+    dgDifferential_toShift, zero_dgComp, dgComp_zero, smul_zero, add_zero]
+
+/-- The comparisons `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧ ⟶ P⟦a⟧⟦b⟧` compose to the identity. -/
+@[simp↓]
+theorem dgComp_shiftCommHom_shiftCommHom (a b : ℤ) :
+    dgComp R (shiftCommHom P a b) (shiftCommHom P b a) (add_zero 0) = dgId R _ := by
+  simp -proj only [shiftCommHom_def, dgComp_assoc_eq_castDeg, dgComp_toShift_fromShift_assoc',
+    dgComp_fromShift_toShift_assoc', dgComp_castDeg_eq_castDeg, castDeg_castDeg,
+    dgComp_fromShift_toShift', castDeg_self]
+
+/-- The comparisons `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧ ⟶ P⟦a⟧⟦b⟧` followed by `x` are `x`. -/
+@[simp↓]
+theorem dgComp_shiftCommHom_shiftCommHom_assoc (a b : ℤ)
+    {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {m : ℤ}
+    (x : DGHom R m ((shiftFunctor R b).obj ((shiftFunctor R a).obj P)) Z) :
+    dgComp R (shiftCommHom P a b) (dgComp R (shiftCommHom P b a) x (zero_add m)) (zero_add m) =
+      x := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add m) (by omega),
+    dgComp_shiftCommHom_shiftCommHom, dgId_dgComp]
+
+/-- A sign times the comparison `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧`, followed by the same sign times the
+comparison `P⟦b⟧⟦a⟧ ⟶ P⟦a⟧⟦b⟧` and then `x`, is `x`. -/
+theorem units_smul_dgComp_shiftCommHom_units_smul_dgComp_shiftCommHom (ε : ℤˣ) (a b : ℤ)
+    {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {m : ℤ}
+    (x : DGHom R m ((shiftFunctor R b).obj ((shiftFunctor R a).obj P)) Z) :
+    ε • dgComp R (shiftCommHom P a b) (ε • dgComp R (shiftCommHom P b a) x (zero_add m))
+      (zero_add m) = x := by
+  rw [dgComp_units_smul, smul_smul, Int.units_mul_self, one_smul,
+    dgComp_shiftCommHom_shiftCommHom_assoc]
+
+/-- The comparison `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧` is the comparison `P⟦a⟧⟦b⟧ ⟶ P⟦a + b⟧`, followed by the
+comparison `P⟦a + b⟧ ⟶ P ⟶ P⟦b + a⟧` and the comparison `P⟦b + a⟧ ⟶ P⟦b⟧⟦a⟧`. -/
+theorem shiftCommHom_eq_dgComp_shiftAddInv (a b : ℤ) :
+    shiftCommHom P a b = dgComp R (shiftAddInv P a b)
+      (dgComp R (dgComp R (fromShift P (a + b)) (toShift P (b + a)) (by omega))
+        (shiftAddHom P b a) (add_zero 0)) (add_zero 0) := by
+  simp -proj only [shiftCommHom_def, shiftAddHom_eq_negOnePow_smul_dgComp,
+    shiftAddInv_eq_negOnePow_smul_dgComp, units_smul_dgComp, dgComp_units_smul, map_zsmul_unit,
+    smul_smul, mul_comm b a, Int.units_mul_self, one_smul, dgComp_assoc_eq_castDeg,
+    dgComp_toShift_fromShift_assoc', dgComp_castDeg_eq_castDeg, castDeg_castDeg]
+  exact dgComp_eq_castDeg_dgComp R _ _ _
+
+/-- **The shift of a comparison morphism**: the shift by `b` of the comparison morphism
+`P⟦a⟧ ⟶ P` is `(-1)^(a * b)` times the comparison `P⟦a⟧⟦b⟧ ⟶ P⟦b⟧⟦a⟧` followed by the
+comparison morphism `P⟦b⟧⟦a⟧ ⟶ P⟦b⟧`. -/
+theorem dgMap_fromShift (a b : ℤ) :
+    (shiftFunctor R b).dgMap a (fromShift P a) =
+      (a * b).negOnePow • dgComp R (shiftCommHom P a b)
+        (fromShift ((shiftFunctor R b).obj P) a) (zero_add a) := by
+  -- After composing with `P⟦b⟧ ⟶ P ⟶ P⟦b⟧`, the naturality of `P⟦b⟧ ⟶ P` applies to the shift
+  -- of `P⟦a⟧ ⟶ P`.
+  rw [← dgComp_dgId R ((shiftFunctor R b).dgMap a (fromShift P a)),
+    ← dgComp_fromShift_toShift P b,
+    ← dgComp_assoc R _ _ _ rfl (add_neg_cancel b) (by omega),
+    dgComp_fromShift b (fromShift P a) rfl, units_smul_dgComp, mul_comm b a]
+  congr 1
+  simp -proj only [shiftCommHom_def, dgComp_assoc_eq_castDeg, dgComp_castDeg_eq_castDeg,
+    castDeg_castDeg, dgComp_toShift_fromShift', dgComp_dgId_eq_castDeg]
+
+end commutation
 
 end DGTwistedObject
 

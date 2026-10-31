@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Monomial
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 public import Mathlib.Data.Finsupp.Weight
 
@@ -235,6 +236,12 @@ theorem coe_weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFam
     (a : P.ringOfDefinition) :
     ((P.weightedRingOfDefinitionC hT a : P.weightedRingOfDefinition hT) :
       weightedRestrictedSubring T hT) = weightedC T hT (a : A) := (rfl)
+
+/-- `A₀⟨X⟩_T` contains the weighted variables `t Xᵢ` with `t ∈ Tᵢ`. -/
+theorem weightedC_mul_weightedX_mem_weightedRingOfDefinition (P : PairOfDefinition A)
+    (hT : IsWeightFamily T) {i : Fin k} {t : A} (ht : t ∈ T i) :
+    weightedC T hT t * weightedX T hT i ∈ P.weightedRingOfDefinition hT :=
+  weightedC_mul_weightedX_mem_weightedSubring ht
 
 /-- `Iⁿ⟨X⟩_T`, an **ideal of `A₀⟨X⟩_T`**: the series all of whose coefficients meet the `Iⁿ`
 bound. The ideal of definition of `A⟨X⟩_T` is the case `n = 1`; the general `n` is named because
