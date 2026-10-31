@@ -195,6 +195,21 @@ theorem ord_X_pos_iff {P : Place k (RatFunc k)} :
     0 < P.ord (RatFunc.X : RatFunc k) ↔ P = adicOfIrreducible (irreducible_X (R := k)) := by
   simpa using ord_X_sub_C_pos_iff (a := (0 : k)) (P := P)
 
+/-- **The place of an irreducible polynomial `q` is the only zero of `q`**: a place of `k(X)` is
+the place of `q` exactly when `q` has positive order there. -/
+theorem ord_algebraMap_pos_iff {q : k[X]} (hq : Irreducible q) {P : Place k (RatFunc k)} :
+    0 < P.ord (algebraMap k[X] (RatFunc k) q) ↔ P = adicOfIrreducible hq := by
+  classical
+  refine ⟨fun h ↦ ?_, by rintro rfl; simp [ord_adicOfIrreducible_algebraMap_irreducible hq hq]⟩
+  rcases eq_infty_or_exists_eq_adicOfIrreducible P with rfl | ⟨r, hr, rfl⟩
+  · rw [ord_infty, RatFunc.intDegree_polynomial] at h
+    have := hq.natDegree_pos
+    omega
+  · rw [ord_adicOfIrreducible_algebraMap_irreducible hr hq] at h
+    split_ifs at h with hassoc
+    · exact (adicOfIrreducible_eq_adicOfIrreducible_iff hr hq).mpr hassoc
+    · exact absurd h (lt_irrefl 0)
+
 /-- **The order of `c X ^ a (X - 1) ^ b`** at a place `P` of `k(X)` is
 `a · ord_P X + b · ord_P (X - 1)`. -/
 theorem ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow (P : Place k (RatFunc k)) {c : k}

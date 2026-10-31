@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
-public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import Mathlib.FieldTheory.RatFunc.IntermediateField
 
 /-!
@@ -15,14 +15,20 @@ import Mathlib.FieldTheory.RatFunc.IntermediateField
 
 For a field extension `k' / k`, the rational function field `k'(X)` is the constant field
 extension `k(X) · k'` of `k(X)`, for any `k(X)`-algebra structure on `k'(X)` sending `X` to `X`.
-When `k' / k` is finite, the place at infinity of `k'(X)` is the only place over the place at
-infinity of `k(X)`.
+A polynomial over `k` is carried to the same polynomial over `k'`. When `k' / k` is finite, the
+place at infinity of `k'(X)` is the only place over the place at infinity of `k(X)`. In any
+algebraic extension of `k(X)`, a place lies over the place of an irreducible polynomial exactly
+when that polynomial vanishes there.
 
 ## Main results
 
 * `TauCeti.constantCompositum_eq_top_of_X_mem`: a compositum `F · k'` inside `k'(X)` containing
   `X` is all of `k'(X)`.
 * `TauCeti.constantCompositum_ratFunc_eq_top`: `k'(X)` is the compositum of `k(X)` and `k'`.
+* `TauCeti.algebraMap_ratFunc_algebraMap_polynomial`: the image in `k'(X)` of a polynomial over
+  `k` is that polynomial with its coefficients mapped into `k'`.
+* `TauCeti.Place.restrict_eq_adicOfIrreducible_iff`: a place of an algebraic extension of `k(X)`
+  lies over the place of an irreducible polynomial `q` exactly when `q` vanishes there.
 * `TauCeti.Place.restrict_ratFunc_eq_infty_iff`: a place of `k'(X)` lies over the place at
   infinity of `k(X)` exactly when it is the place at infinity of `k'(X)`.
 -/
@@ -55,7 +61,43 @@ theorem constantCompositum_ratFunc_eq_top [Algebra (RatFunc k) (RatFunc k')]
     constantCompositum (RatFunc k) k' (RatFunc k') = ⊤ :=
   constantCompositum_eq_top_of_X_mem (hX ▸ IntermediateField.algebraMap_mem _ RatFunc.X)
 
+open Polynomial in
+/-- **The image in `k'(X)` of a polynomial over `k` is that polynomial with its coefficients mapped
+into `k'`**, for any `k(X)`-algebra structure on `k'(X)` over `k` sending `X` to `X`. -/
+theorem algebraMap_ratFunc_algebraMap_polynomial [Algebra k k']
+    [Algebra (RatFunc k) (RatFunc k')] [IsScalarTower k (RatFunc k) (RatFunc k')]
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (q : k[X]) :
+    algebraMap (RatFunc k) (RatFunc k') (algebraMap k[X] (RatFunc k) q) =
+      algebraMap k'[X] (RatFunc k') (q.map (algebraMap k k')) := by
+  induction q using Polynomial.induction_on' with
+  | add p q hp hq => simp only [map_add, Polynomial.map_add, hp, hq]
+  | monomial n c =>
+    rw [← C_mul_X_pow_eq_monomial, map_mul, map_mul, map_pow, map_pow, RatFunc.algebraMap_X, hX,
+      Polynomial.map_mul, Polynomial.map_pow, map_X, map_C, map_mul, map_pow, RatFunc.algebraMap_X,
+      RatFunc.algebraMap_C, RatFunc.algebraMap_C, ← RatFunc.algebraMap_eq_C,
+      ← IsScalarTower.algebraMap_apply, ← RatFunc.algebraMap_eq_C,
+      ← IsScalarTower.algebraMap_apply k k' (RatFunc k')]
+
 namespace Place
+
+section Restrict
+
+variable {F' : Type*} [Field F'] [Algebra k k'] [Algebra k' F'] [Algebra (RatFunc k) F']
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k (RatFunc k) F']
+variable [Algebra.IsIntegral (RatFunc k) F']
+
+open Polynomial in
+/-- **A place lies over the place of an irreducible polynomial `q` of `k(X)` exactly when `q`
+vanishes there**, in any algebraic extension of `k(X)`. -/
+theorem restrict_eq_adicOfIrreducible_iff {q : k[X]} (hq : Irreducible q) (Q : Place k' F') :
+    Q.restrict k (RatFunc k) = adicOfIrreducible hq ↔
+      0 < Q.ord (algebraMap (RatFunc k) F' (algebraMap k[X] (RatFunc k) q)) := by
+  rw [← ord_algebraMap_pos_iff hq, ord_algebraMap_restrict k (RatFunc k) Q]
+  have he : (0 : ℤ) < ramificationIdx (RatFunc k) Q := by
+    exact_mod_cast ramificationIdx_pos (RatFunc k) Q
+  exact ⟨fun h ↦ mul_pos he h, fun h ↦ pos_of_mul_pos_right h he.le⟩
+
+end Restrict
 
 variable [Algebra k k'] [FiniteDimensional k k']
 variable [Algebra (RatFunc k) (RatFunc k')] [IsScalarTower k (RatFunc k) (RatFunc k')]
