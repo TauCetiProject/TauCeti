@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
-# Coordinate overlaps, measurability and precompact chart neighborhoods
+# Coordinate overlaps, measurability, precompact chart neighborhoods and transported charts
 
 Mathlib's extended chart at a point is a `PartialEquiv` between a manifold and its model vector
 space. Its restrictions to the chart source and target are mutually continuous, hence the chart
@@ -28,6 +28,11 @@ inverse charts of nested open subsets differ only by the inclusion. Over `ℝ`, 
 a convex neighbourhood within the model range, inside the chart target, on which flat calculus
 applies even when the manifold has boundary.
 
+For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
+homeomorphism `Ψ` is again a chart, `OpenPartialHomeomorph.extendTrans`. When the charts lie in the
+maximal atlas and `Ψ` is smooth with smooth inverse, the transition maps between such charts are
+smooth.
+
 ## Main results
 
 * `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
@@ -45,6 +50,9 @@ applies even when the manifold has boundary.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
   chart point within the model range, inside the chart target, with unique derivatives and
   interior accumulating at the chart point.
+* `OpenPartialHomeomorph.extendTrans` and `OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`:
+  charts read in the model vector space and moved by a homeomorphism, and their smooth transition
+  maps.
 -/
 
 public section
@@ -364,3 +372,66 @@ theorem exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt {E H M : Type*}
       ⟨Metric.mem_ball_self hε, I.range_subset_closure_interior hx⟩
 
 end TauCeti
+
+open scoped ContDiff
+
+namespace OpenPartialHomeomorph
+
+section ExtendTrans
+
+variable {𝕜 E F H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [TopologicalSpace H]
+  [TopologicalSpace M]
+
+/-- A chart `c` of `M`, read in the vector space `E` of a boundaryless model `I` and then moved to
+`F` by a homeomorphism `Ψ`. Its coordinates are `Ψ ∘ c.extend I`. -/
+noncomputable def extendTrans (c : OpenPartialHomeomorph M H) (I : ModelWithCorners 𝕜 E H)
+    [I.Boundaryless] (Ψ : E ≃ₜ F) : OpenPartialHomeomorph M F :=
+  (c.trans I.toHomeomorph.toOpenPartialHomeomorph).trans Ψ.toOpenPartialHomeomorph
+
+variable (c : OpenPartialHomeomorph M H) (I : ModelWithCorners 𝕜 E H) [I.Boundaryless]
+  (Ψ : E ≃ₜ F)
+
+/-- The source of `c.extendTrans I Ψ` is the source of `c`. -/
+@[simp]
+theorem extendTrans_source : (c.extendTrans I Ψ).source = c.source := by
+  simp [extendTrans, mfld_simps]
+
+/-- The target of `c.extendTrans I Ψ` is the target of `c`, read in `E` and moved by `Ψ`. -/
+@[simp]
+theorem extendTrans_target :
+    (c.extendTrans I Ψ).target = Ψ.symm ⁻¹' (I.symm ⁻¹' c.target) := by
+  ext v
+  simp [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]
+
+/-- The chart `c.extendTrans I Ψ` reads a point through `c`, then `I`, then `Ψ`. -/
+@[simp]
+theorem extendTrans_apply (w : M) : c.extendTrans I Ψ w = Ψ (I (c w)) := by
+  simp [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_apply]
+
+/-- The inverse of `c.extendTrans I Ψ` is the inverse of `Ψ`, then of `I`, then of `c`. -/
+@[simp]
+theorem extendTrans_symm_apply (v : F) :
+    (c.extendTrans I Ψ).symm v = c.symm (I.symm (Ψ.symm v)) := by
+  simp [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]
+
+/-- The transition map between two charts `c.extendTrans I Ψ` is `C^m` when `c` runs over the
+maximal atlas of `M` and `Ψ` over homeomorphisms that are `C^m` with `C^m` inverses. -/
+theorem contDiffOn_extendTrans_comp_symm [NormedSpace 𝕜 F] [ChartedSpace H M] {m : ℕ∞ω}
+    {c₁ c₂ : OpenPartialHomeomorph M H} (hc₁ : c₁ ∈ IsManifold.maximalAtlas I m M)
+    (hc₂ : c₂ ∈ IsManifold.maximalAtlas I m M) {Ψ₁ Ψ₂ : E ≃ₜ F}
+    (hΨ₁ : ContDiff 𝕜 m Ψ₁.symm) (hΨ₂ : ContDiff 𝕜 m Ψ₂) :
+    ContDiffOn 𝕜 m (c₂.extendTrans I Ψ₂ ∘ (c₁.extendTrans I Ψ₁).symm)
+      ((c₁.extendTrans I Ψ₁).symm ≫ₕ c₂.extendTrans I Ψ₂).source := by
+  have hmaps : Set.MapsTo Ψ₁.symm ((c₁.extendTrans I Ψ₁).symm ≫ₕ c₂.extendTrans I Ψ₂).source
+      (I.extendCoordChange c₁ c₂).source := by
+    intro v hv
+    simp only [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply] at hv ⊢
+    exact ⟨⟨by simp [I.range_eq_univ], hv.1⟩, hv.2⟩
+  refine (hΨ₂.comp_contDiffOn ((I.contDiffOn_extendCoordChange hc₁ hc₂).comp
+    hΨ₁.contDiffOn hmaps)).congr fun v _ ↦ ?_
+  simp [mfld_simps]
+
+end ExtendTrans
+
+end OpenPartialHomeomorph

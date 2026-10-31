@@ -82,7 +82,7 @@ theorem spatialFDeriv_mulInvariantExp_mul_mulInvariantExp
     (f : C^∞⟮I, G; 𝓘(ℝ, F'), F'⟯) (g : G)
     (X Y : GroupLieAlgebra I G) (s : ℝ) :
     let _ : T2Space G := I.t2Space_of_lieGroup ∞
-    spatialFDeriv (fun p : ℝ × ℝ =>
+    spatialFDeriv (𝕜 := ℝ) (fun p : ℝ × ℝ =>
       f (mulInvariantExp (I := I) (G := G) (p.1 • X) * g *
         mulInvariantExp (I := I) (G := G) (p.2 • Y))) 0 s 1 =
       mvfderiv I f (mulInvariantExp (I := I) (G := G) (s • X) * g)
@@ -166,7 +166,7 @@ theorem mvfderiv_mulRightInvariantVectorField_mulInvariantVectorField_commute
     (contDiff_comp_mulInvariantExp_mul_mulInvariantExp f.contMDiff g X Y).of_le
       (by simp)
   -- Identify the two partial derivatives with the invariant directional derivatives.
-  have hspaceFun : (fun s => spatialFDeriv F 0 s 1) =
+  have hspaceFun : (fun s => spatialFDeriv (𝕜 := ℝ) F 0 s 1) =
       fun s => LYf (γX s * g) := by
     funext s
     simpa only [LYf, tangentToLeftInvariantDerivation_apply] using
