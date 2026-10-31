@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.Huber.Reduction
 public import TauCeti.RingTheory.Affinoid.PowerBounded
+import TauCeti.RingTheory.Affinoid.MaximumModulus
+import TauCeti.RingTheory.Affinoid.Multiplicative
 import TauCeti.RingTheory.Affinoid.ValueGroup
 
 /-!
@@ -22,9 +24,25 @@ The forward implication uses the value-group exponent to rescale a power of an e
 supremum seminorm one. This criterion does not require reducedness of either algebra; it is
 not a claim of injectivity on the original algebras.
 
+For a nonzero affinoid algebra `A`, the canonical reduction `A° / A°°` is a domain exactly when
+the supremum seminorm of `A` is multiplicative; this restates
+`TauCeti.IsAffinoidAlgebra.supSeminorm_mul_iff_isPrime` for the reduction carrier. In particular
+the canonical reduction of a Tate algebra is a domain, because there the supremum seminorm is the
+multiplicative Gauss norm.
+
+## Main results
+
+* `AlgHom.reductionMap`: the ring homomorphism `A° / A°° → B° / B°°` induced by `A →ₐ[K] B`.
+* `AlgHom.injective_reductionMap_iff_supSeminorm_eq`: it is injective exactly when the
+  homomorphism preserves supremum seminorms.
+* `TauCeti.IsAffinoidAlgebra.isDomain_canonicalReduction_iff`: for nonzero `A`, the canonical
+  reduction is a domain exactly when `|f g|sup = |f|sup |g|sup` for all `f` and `g`.
+* `TauCeti.MvPowerSeries.isDomain_canonicalReduction`: the canonical reduction of a Tate algebra
+  is a domain.
+
 ## References
 
-* Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §6.3.1.
+* Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §§6.2 and 6.3.1.
 -/
 
 public section
@@ -161,3 +179,34 @@ theorem injective_reductionMap_iff_supSeminorm_eq (f : A →ₐ[K] B)
     rwa [h] at ha
 
 end AlgHom
+
+namespace TauCeti
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+
+namespace IsAffinoidAlgebra
+
+variable {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A]
+    [CompleteSpace A]
+
+/-- **The canonical reduction of a nonzero affinoid algebra is a domain exactly when its
+supremum seminorm is multiplicative.** -/
+theorem isDomain_canonicalReduction_iff [Nontrivial A] (hA : IsAffinoidAlgebra K A) :
+    IsDomain (CanonicalReduction A) ↔
+      ∀ f g : A, supSeminorm K (f * g) = supSeminorm K f * supSeminorm K g := by
+  rw [Ideal.Quotient.isDomain_iff_prime, hA.supSeminorm_mul_iff_isPrime]
+
+end IsAffinoidAlgebra
+
+namespace MvPowerSeries
+
+/-- The canonical reduction of a Tate algebra `K⟨X₁, …, Xₙ⟩` is a domain, since its supremum
+seminorm is the multiplicative Gauss norm. -/
+instance isDomain_canonicalReduction {n : ℕ} :
+    IsDomain (CanonicalReduction
+      (_root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1))) :=
+  isAffinoidAlgebra_tate.isDomain_canonicalReduction_iff.mpr fun f g ↦ by simp [norm_mul]
+
+end MvPowerSeries
+
+end TauCeti

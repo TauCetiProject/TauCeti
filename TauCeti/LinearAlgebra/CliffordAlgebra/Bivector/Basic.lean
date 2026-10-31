@@ -41,6 +41,8 @@ rotation.
 * `CliffordAlgebra.map_bivector_lie_ι`: any ring homomorphism `f` out of the
   Clifford algebra satisfies `⁅f (bivector Q a b), f (ι Q x)⁆ =
   f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b))`.
+* `CliffordAlgebra.ι_mul_ι_lie_ι`: the commutator of a product of two generators with a third,
+  valid without inverting `2`.
 * `CliffordAlgebra.ι_mul_ι_eq_bivector_add`: the product of two generators is
   its Clifford bivector plus its scalar symmetric part.
 * `CliffordAlgebra.bivector_eq_ι_mul_ι_of_isOrtho` and
@@ -349,6 +351,19 @@ theorem map_bivector_lie_ι {A : Type*} [Ring A] {F : Type*}
       f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b)) := by
   rw [Ring.lie_def, ← map_mul, ← map_mul, ← map_sub]
   rw [← Ring.lie_def, bivector_lie_ι]
+
+omit [Invertible (2 : R)] in
+/-- **The commutator of a product of two generators with a third generator**:
+`⁅ι a * ι b, ι x⁆ = ι (polar b x • a - polar a x • b)`. The product differs from the bivector of
+`a` and `b` by a scalar, so this is the same infinitesimal rotation as in `bivector_lie_ι`, but it
+holds without inverting `2`. -/
+theorem ι_mul_ι_lie_ι (a b x : M) :
+    ⁅ι Q a * ι Q b, ι Q x⁆ =
+      ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b) := by
+  rw [Ring.lie_def, mul_assoc, ι_mul_ι_comm (Q := Q) b x, ← mul_assoc, ι_mul_ι_comm (Q := Q) x a,
+    QuadraticMap.polar_comm Q x a, map_sub, map_smul, map_smul, Algebra.smul_def,
+    Algebra.smul_def, mul_sub, sub_mul, ← Algebra.commutes (QuadraticMap.polar Q b x) (ι Q a)]
+  noncomm_ring
 
 section Map
 

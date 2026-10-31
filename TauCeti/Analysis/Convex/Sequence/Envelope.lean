@@ -38,6 +38,8 @@ input: geometric conclusions about `lowerConvexEnvelope a` assume `IsAdmissible 
   when it lies below `a`.
 * `lowerConvexEnvelope_mono` and `lowerConvexEnvelope_idem`: the envelope is monotone
   on admissible inputs and idempotent.
+* `lowerConvexEnvelope_inf_lowerConvexEnvelope`: the envelope of the pointwise minimum of two
+  admissible sequences depends only on their envelopes.
 * `lowerConvexEnvelope_ne_top_iff`: the finite domain of an admissible envelope is the
   integer convex hull of the finite indices of the sequence.
 * `lowerConvexEnvelope_eq_of_forall_lt` and `lowerConvexEnvelope_eq_of_forall_gt`: the
@@ -244,6 +246,21 @@ theorem lowerConvexEnvelope_mono (hb : IsAdmissible b) (hba : b ≤ a) :
     lowerConvexEnvelope b ≤ lowerConvexEnvelope a :=
   le_lowerConvexEnvelope (isConvexSeq_lowerConvexEnvelope b)
     ((lowerConvexEnvelope_le hb).trans hba)
+
+/-- For admissible `a` and `b`, the envelope of the pointwise minimum of their envelopes is the
+envelope of `a ⊓ b`. So the greatest convex minorant of `a ⊓ b` depends only on the envelopes of
+`a` and `b`, and by `le_lowerConvexEnvelope` it lies above every common convex minorant of the
+two envelopes. The pointwise minimum of two envelopes need not itself be convex. -/
+theorem lowerConvexEnvelope_inf_lowerConvexEnvelope (ha : IsAdmissible a) (hb : IsAdmissible b) :
+    lowerConvexEnvelope (lowerConvexEnvelope a ⊓ lowerConvexEnvelope b) =
+      lowerConvexEnvelope (a ⊓ b) :=
+  le_antisymm
+    (lowerConvexEnvelope_mono ((isConvexSeq_lowerConvexEnvelope a).isAdmissible.inf
+        (isConvexSeq_lowerConvexEnvelope b).isAdmissible)
+      (inf_le_inf (lowerConvexEnvelope_le ha) (lowerConvexEnvelope_le hb)))
+    (le_lowerConvexEnvelope (isConvexSeq_lowerConvexEnvelope _)
+      (le_inf (lowerConvexEnvelope_mono (ha.inf hb) inf_le_left)
+        (lowerConvexEnvelope_mono (ha.inf hb) inf_le_right)))
 
 /-! ### Finite domain and endpoints -/
 

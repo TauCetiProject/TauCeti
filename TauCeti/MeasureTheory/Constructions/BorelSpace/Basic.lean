@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
-# Measurability through an inducing map, and of σ-compact sets
+# Measurability through an inducing map
 
 For an inducing map `f : α → β` between Borel spaces, the Borel σ-algebra of `α` is the
 pullback of the Borel σ-algebra of `β` along `f`. Hence a map `g` into `α` is measurable exactly
@@ -16,13 +16,9 @@ when `f ∘ g` is. Unlike `MeasurableEmbedding.measurable_comp_iff`, this needs 
 of the range of `f`: a topological embedding with non-measurable range still detects
 measurability of maps into its domain.
 
-A σ-compact set in a Hausdorff space with open sets measurable is a countable union of compact,
-hence closed, sets, so it is measurable.
-
 ## Main results
 
 * `Topology.IsInducing.measurable_comp_iff`
-* `IsSigmaCompact.measurableSet`
 -/
 
 public section
@@ -39,10 +35,3 @@ theorem Topology.IsInducing.measurable_comp_iff {α β γ : Type*} [TopologicalS
     rw [BorelSpace.measurable_eq (α := α), BorelSpace.measurable_eq (α := β), hf.eq_induced,
       borel_comap]
   rw [measurable_iff_comap_le, measurable_iff_comap_le, hα, MeasurableSpace.comap_comp]
-
-/-- A σ-compact set in a Hausdorff space is measurable. -/
-theorem IsSigmaCompact.measurableSet {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
-    [OpensMeasurableSpace α] [T2Space α] {s : Set α} (hs : IsSigmaCompact s) :
-    MeasurableSet s := by
-  obtain ⟨K, hK, rfl⟩ := hs
-  exact .iUnion fun n ↦ (hK n).measurableSet
