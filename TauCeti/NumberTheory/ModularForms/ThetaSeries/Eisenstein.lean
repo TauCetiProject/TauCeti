@@ -74,11 +74,12 @@ theorem thetaForm_eq_of_qExpansion_coeff_zero {k : ℕ} (hL : IsEven L) (hU : Is
   rw [← sub_eq_zero]
   refine sturm_bound_levelOne_nat ?_
   -- Since `k < 12`, the Sturm bound asks only that the constant term of `Θ_L - f` vanish.
-  rw [Nat.div_eq_of_lt hk12, Nat.cast_zero, pos_iff_ne_zero,
-    PowerSeries.order_ne_zero_iff_constCoeff_eq_zero,
-    ← PowerSeries.coeff_zero_eq_constantCoeff_apply, FunLike.coe_sub,
-    ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL, map_sub, coe_thetaForm,
-    hL.qExpansion_thetaSeries_coeff_zero, hf, sub_self]
+  suffices h : (qExpansion 1 (thetaForm hL hU hk - f)).coeff 0 = 0 by
+    simpa [Nat.div_eq_of_lt hk12, pos_iff_ne_zero,
+      PowerSeries.order_ne_zero_iff_constCoeff_eq_zero] using h
+  have hsub := ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL (thetaForm hL hU hk) f
+  have hθ := hL.qExpansion_thetaSeries_coeff_zero
+  simp_all
 
 omit [IsZLattice ℝ L] in
 /-- If the theta series of an even lattice is the normalized Eisenstein series of weight `k`, then
@@ -124,9 +125,8 @@ of weight `8`. -/
 theorem thetaForm_eq_E₄_mul_E₄ (hL : IsEven L) (hU : IsUnimodular L) (h16 : finrank ℝ E = 16) :
     thetaForm hL hU (k := 8) h16 = mcast (by norm_num) (E₄.mul E₄) :=
   hL.thetaForm_eq_of_qExpansion_coeff_zero hU h16 (by norm_num) <| by
-    rw [coe_mcast, ModularForm.qExpansion_mul one_pos one_mem_strictPeriods_SL,
-      PowerSeries.coeff_zero_eq_constantCoeff_apply, map_mul,
-      ← PowerSeries.coeff_zero_eq_constantCoeff_apply, E_qExpansion_coeff_zero _ ⟨2, rfl⟩, mul_one]
+    have hE := E_qExpansion_coeff_zero (by norm_num : 3 ≤ 4) ⟨2, rfl⟩
+    simp_all [ModularForm.qExpansion_mul one_pos one_mem_strictPeriods_SL]
 
 /-- The theta series of an even unimodular lattice of rank `16` is `E₄²`, as a function on the
 upper half-plane. -/
