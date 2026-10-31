@@ -67,7 +67,9 @@ private theorem abs_apply_le_opNorm_mul_norm_ιMulti (ω : E [⋀^Fin k]→L[ℝ
     |ω v| ≤ ‖ω‖ * ‖ιMulti ℝ k v‖ := by
   by_cases hv : LinearIndependent ℝ v
   swap
-  · rw [show ω v = 0 from ω.toAlternatingMap.map_linearDependent v hv, abs_zero]
+  · have hω : ω v = 0 := by
+      simpa [coe_toAlternatingMap] using ω.toAlternatingMap.map_linearDependent v hv
+    rw [hω, abs_zero]
     positivity
   set W := Submodule.span ℝ (Set.range v)
   let w : Fin k → W := fun i ↦ ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩
