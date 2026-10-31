@@ -51,7 +51,7 @@ integrals such as Carlson's elliptic integrals near both endpoints of `(0, ∞)`
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
   `r ≤ 0` along the positive real axis.
-* `TauCeti.tendsto_ofReal_add_cpow_neg` -- for `x` in the slit plane and real `s > 0`,
+* `TauCeti.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
 * `TauCeti.continuousOn_ofReal_add_cpow` -- for `x ∈ slitPlane ∪ {0}`, `(t + x) ^ s` is
   continuous in the real variable `t > 0`.
@@ -255,16 +255,18 @@ theorem exists_norm_ofReal_add_cpow_le_mul_one_add_rpow {x : ℂ} (hx : x ∈ sl
   rw [Complex.norm_cpow_real, ← Real.mul_rpow hc.le (by linarith)]
   exact Real.rpow_le_rpow_of_nonpos (by positivity) (h t ht) hr
 
-/-- For `x` in the slit plane and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number
-`t` tends to `∞`. -/
-theorem tendsto_ofReal_add_cpow_neg {x : ℂ} (hx : x ∈ slitPlane) {s : ℝ} (hs : 0 < s) :
+/-- For any complex `x` and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number `t`
+tends to `∞`. -/
+theorem tendsto_ofReal_add_cpow_neg (x : ℂ) {s : ℝ} (hs : 0 < s) :
     Tendsto (fun t : ℝ => ((t : ℂ) + x) ^ (-(s : ℂ))) atTop (𝓝 0) := by
-  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
+  -- `‖t + x‖ ≥ t - ‖x‖` by the triangle inequality.
   have hnorm : Tendsto (fun t : ℝ => ‖(t : ℂ) + x‖) atTop atTop := by
-    refine tendsto_atTop_mono' atTop ?_
-      ((tendsto_atTop_add_const_left atTop 1 tendsto_id).const_mul_atTop hc)
+    refine tendsto_atTop_mono' atTop ?_ (tendsto_atTop_add_const_right atTop (-‖x‖) tendsto_id)
     filter_upwards [eventually_ge_atTop 0] with t ht
-    exact h t ht
+    have h := norm_add_le ((t : ℂ) + x) (-x)
+    rw [add_neg_cancel_right, norm_neg, Complex.norm_real, Real.norm_of_nonneg ht] at h
+    simp only [id]
+    linarith
   refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
   simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
   exact (tendsto_rpow_neg_atTop hs).comp hnorm
