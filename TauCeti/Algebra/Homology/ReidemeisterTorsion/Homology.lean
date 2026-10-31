@@ -339,8 +339,9 @@ theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det
       (c (j + 1)).det (c' (j + 1)) ^ ((j + 1).negOnePow : ℤ) :=
     (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
       Function.mulSupport_subset_iff'.2 fun j hj ↦ by
+        have hn0 : n (j + 1) = 0 := by simpa using hj
         have : IsEmpty (Fin (n (j + 1))) := by
-          rw [show n (j + 1) = 0 by simpa using hj]; infer_instance
+          rw [hn0]; infer_instance
         simp
   have hshift : ∏ᶠ i : ℤ, (c i).det (c' i) ^ (i.negOnePow : ℤ) =
       ∏ᶠ j : ℤ, (c (j + 1)).det (c' (j + 1)) ^ ((j + 1).negOnePow : ℤ) :=
@@ -378,8 +379,9 @@ theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology
     (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
       Function.mulSupport_subset_iff'.2 fun j hj ↦ by
         -- The homology vanishes where the complex vanishes.
+        have hn0 : n (j + 1) = 0 := by simpa using hj
         have : IsEmpty (Fin (n (j + 1))) := by
-          rw [show n (j + 1) = 0 by simpa using hj]; infer_instance
+          rw [hn0]; infer_instance
         have := (c (j + 1)).repr.toEquiv.subsingleton
         have hC : C.ExactAt (j + 1) := .of_isZero (ModuleCat.isZero_of_subsingleton _)
         have := ModuleCat.subsingleton_of_isZero hC.isZero_homology

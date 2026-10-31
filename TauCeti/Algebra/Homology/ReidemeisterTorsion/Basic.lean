@@ -271,6 +271,7 @@ def chosenBoundaryLift (j : ℤ) (k : Fin (finrank F (LinearMap.range (C.d (j + 
 
 /-- The lifts `chosenBoundaryLift C c j` are mapped by the differential to the basis
 `chosenBoundaryBasis C c j`. -/
+@[simp]
 theorem chosenBoundaryLift_spec (j : ℤ) (k) :
     (C.d (j + 1) j).hom (chosenBoundaryLift C c j k) = chosenBoundaryBasis C c j k :=
   congrArg Subtype.val (Function.surjInv_eq (C.d (j + 1) j).hom.surjective_rangeRestrict _)
