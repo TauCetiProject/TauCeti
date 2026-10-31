@@ -13,6 +13,8 @@ public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.Data.Finsupp.Choose
 public import TauCeti.Data.Finsupp.Interval
 
+import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+
 /-!
 # Hasse derivatives of multivariate polynomials
 
@@ -39,7 +41,10 @@ Roth's theorem.
 * `MvPolynomial.eval_const_hasseDeriv_monomial`: the jet `∂^d (a X^m)` at a diagonal point
   `(x, …, x)`.
 * `MvPolynomial.abv_coeff_hasseDeriv_le`: for an absolute value `v`,
-  `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`.
+  `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`; with partial degrees `≤ rᵢ` and coefficients
+  bounded by `B` this is `MvPolynomial.abv_coeff_hasseDeriv_le_two_pow_mul`, and at a
+  nonarchimedean `v` the factor `2 ^ |m + d|` disappears
+  (`MvPolynomial.abv_coeff_hasseDeriv_le_of_isNonarchimedean`).
 * `MvPolynomial.abs_eval_hasseDeriv_le`: over a linearly ordered ring, the jets of a polynomial
   with partial degrees `≤ rᵢ` and coefficients bounded by `B` satisfy
   `|(∂^d P)(a)| ≤ B ∏ᵢ (rᵢ + 1) ∏ᵢ (2 max(1, |aᵢ|)) ^ rᵢ`.
@@ -136,6 +141,33 @@ theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrd
     Finsupp.prod_congr fun j _ ↦ by rw [Finsupp.add_apply]
   rw [h, ← Nat.cast_ofNat, ← Nat.cast_pow]
   exact Nat.mono_cast (Finsupp.prod_choose_le_two_pow_degree d (m + d))
+
+/-- If `P` has partial degrees `degreeOf i P ≤ r i` and coefficients of absolute value at most
+`B`, then every coefficient of every Hasse derivative of `P` has absolute value at most
+`2 ^ ∑ᵢ rᵢ * B`. -/
+theorem abv_coeff_hasseDeriv_le_two_pow_mul {S : Type*} [Semiring S] [PartialOrder S]
+    [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
+    {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : S} (hB : ∀ μ, abv (P.coeff μ) ≤ B)
+    (d m : σ →₀ ℕ) : abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * B := by
+  refine (abv_coeff_hasseDeriv_le abv d m P).trans ?_
+  by_cases hm : P.coeff (m + d) = 0
+  · simpa [hm] using mul_nonneg (pow_nonneg zero_le_two (∑ i, r i)) ((abv.nonneg _).trans (hB 0))
+  refine mul_le_mul (pow_le_pow_right₀ one_le_two ?_) (hB _) (abv.nonneg _)
+    (pow_nonneg zero_le_two _)
+  rw [Finsupp.degree_eq_sum]
+  exact Finset.sum_le_sum fun j _ ↦ (monomial_le_degreeOf j (mem_support_iff.2 hm)).trans (hdeg j)
+
+/-- At a nonarchimedean absolute value the binomial coefficients of a Hasse derivative are at
+most `1`, so `v([X^m] ∂^d P) ≤ v([X^(m + d)] P)`. -/
+theorem abv_coeff_hasseDeriv_le_of_isNonarchimedean {S : Type*} [Semiring S] [LinearOrder S]
+    [IsOrderedRing S] [IsDomain S] {abv : AbsoluteValue R S} (hv : IsNonarchimedean abv)
+    (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    abv ((hasseDeriv d P).coeff m) ≤ abv (P.coeff (m + d)) := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · simp [Subsingleton.elim ((hasseDeriv d P).coeff m) 0]
+  rw [hasseDeriv_coeff, abv.map_mul]
+  exact mul_le_of_le_one_left (abv.nonneg _)
+    (hv.apply_natCast_le_one (by simp) abv.map_one)
 
 /-- The jets of a polynomial over a linearly ordered ring with partial degrees
 `degreeOf i P ≤ r i` and coefficients bounded by `B` are bounded at every point `a`:

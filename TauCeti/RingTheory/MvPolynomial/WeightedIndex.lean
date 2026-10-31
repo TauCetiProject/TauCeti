@@ -558,18 +558,9 @@ theorem exists_hasseDeriv_eval_ne_zero {P : MvPolynomial σ R} {r : σ → ℕ}
     (mt (weightedIndex_eq_top_of_taylor_eq_zero r) hb)
   rw [hasseDeriv_map] at hd
   refine ⟨d, hd, ?_, fun i ↦ (degreeOf_hasseDeriv_le d P i).trans ((Nat.sub_le _ _).trans (hdeg i)),
-    fun μ ↦ ?_⟩
-  · rw [hbd, tsub_le_iff_right, ← hasseDeriv_map]
-    exact weightedIndex_le_weightedIndex_hasseDeriv_add r a d _
-  -- `|[X^μ] ∂^d P| ≤ 2 ^ |μ + d| |[X^(μ + d)] P|`, and `|μ + d| ≤ ∑ᵢ rᵢ` when
-  -- `[X^(μ + d)] P ≠ 0`.
-  refine (abv_coeff_hasseDeriv_le abv d μ P).trans ?_
-  by_cases hμ : P.coeff (μ + d) = 0
-  · simpa [hμ] using mul_nonneg (pow_nonneg zero_le_two (∑ i, r i)) ((abv.nonneg _).trans (hB 0))
-  refine mul_le_mul (pow_le_pow_right₀ one_le_two ?_) (hB _) (abv.nonneg _)
-    (pow_nonneg zero_le_two _)
-  rw [Finsupp.degree_eq_sum]
-  exact Finset.sum_le_sum fun j _ ↦ (monomial_le_degreeOf j (mem_support_iff.2 hμ)).trans (hdeg j)
+    abv_coeff_hasseDeriv_le_two_pow_mul abv hdeg hB d⟩
+  rw [hbd, tsub_le_iff_right, ← hasseDeriv_map]
+  exact weightedIndex_le_weightedIndex_hasseDeriv_add r a d _
 
 end AbsoluteValue
 
