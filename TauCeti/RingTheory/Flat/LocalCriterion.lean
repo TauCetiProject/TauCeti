@@ -336,10 +336,9 @@ private theorem flat_of_isWeaklyRegular_map_algebraMap_aux (n : ℕ) :
     have : Flat (R ⧸ I) (S ⧸ J) := ih _ _ _ (by simpa using hn) hrs' hreg'
     -- Hence `S ⧸ x S` is flat over `R ⧸ (x)`, and the local criterion lifts this to `S`.
     have eR : QuotSMulTop x S ≃ₗ[R] S ⧸ J :=
-      Submodule.quotEquivOfEq _ (J.restrictScalars R) (by
-        ext s
-        simp [hJ, Submodule.mem_smul_pointwise_iff_exists, Ideal.mem_span_singleton',
-          Algebra.smul_def, mul_comm]) ≪≫ₗ Submodule.Quotient.restrictScalarsEquiv R J
+      Submodule.quotEquivOfEq _ (J.restrictScalars R)
+        (by rw [← Submodule.ideal_span_singleton_smul, Ideal.smul_top_eq_map]) ≪≫ₗ
+        Submodule.Quotient.restrictScalarsEquiv R J
     have : Flat (R ⧸ I) (QuotSMulTop x S) :=
       .of_linearEquiv (eR.extendScalarsOfSurjective Ideal.Quotient.mk_surjective)
     exact Flat.of_flat_quotSMulTop_of_isLocalHom (S := S) hx

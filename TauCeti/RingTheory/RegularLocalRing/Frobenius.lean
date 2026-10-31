@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RingHom.Flat
-import Mathlib.RingTheory.RingHom.FaithfullyFlat
+import TauCeti.Algebra.CharP.Frobenius.Basic
 import Mathlib.Algebra.CharP.Basic
 import Mathlib.RingTheory.Localization.AtPrime.Basic
 import TauCeti.RingTheory.CohenMacaulay.RegularSequence
@@ -37,12 +37,13 @@ where `p = 1` and Frobenius is the identity, they hold trivially.
 
 ## Main results
 
-* `isLocalHom_frobenius`: Frobenius is a local homomorphism.
 * `TauCeti.IsRegularLocalRing.flat_frobenius`: Frobenius of a regular local ring is flat.
 * `TauCeti.IsRegularRing.flat_frobenius`: **Kunz's theorem**, Frobenius of a regular ring is
   flat.
-* `TauCeti.isReduced_of_flat_frobenius`: a ring of characteristic `p > 0` with flat Frobenius is
-  reduced, so regularity cannot be dropped.
+
+Frobenius is a local homomorphism by `TauCeti.isLocalHom_frobenius`, and regularity cannot be
+dropped: a ring of exponential characteristic `p > 1` with flat Frobenius is reduced
+(`TauCeti.isReduced_of_flat_frobenius`).
 
 ## References
 
@@ -58,10 +59,6 @@ open IsLocalRing Ideal RingTheory.Sequence
 
 variable {R : Type*} [CommRing R] (p : ℕ) [ExpChar R p]
 
-/-- Frobenius is a local homomorphism: `a` is a unit as soon as `a ^ p` is. -/
-instance isLocalHom_frobenius : IsLocalHom (frobenius R p) :=
-  ⟨fun _ ha ↦ (isUnit_pow_iff (expChar_pos R p).ne').1 ha⟩
-
 namespace TauCeti
 
 /-- **Frobenius of a regular local ring is flat.** In a regular local ring of exponential
@@ -72,7 +69,8 @@ theorem IsRegularLocalRing.flat_frobenius [IsRegularLocalRing R] : (frobenius R 
     Submodule.FG.exists_span_finset_card_eq_spanFinrank (maximalIdeal R).fg_of_isNoetherianRing
   have hofList : ofList s.toList = maximalIdeal R := by simpa [ofList] using hspan
   refine RingHom.Flat.of_isWeaklyRegular_map (frobenius R p) hofList ?_
-  refine (isCohenMacaulay.isRegular_of_le_radical (fun r hr ↦ ?_) ?_ ?_).toIsWeaklyRegular
+  refine (isCohenMacaulay.isRegular_of_le_radical (fun r hr ↦ ?_)
+    (le_trans ?_ (radical_mono le_sup_left)) ?_).toIsWeaklyRegular
   · obtain ⟨r, hr', rfl⟩ := List.mem_map.1 hr
     exact map_nonunit (frobenius R p) r (hofList ▸ subset_span hr')
   · -- Every `r` in the system of parameters has `r ^ p` among the new generators.
@@ -104,18 +102,5 @@ theorem IsRegularRing.flat_frobenius [IsRegularRing R] : (frobenius R p).Flat :=
   rw [hcomp]
   exact (RingHom.Flat.localRingHom (RingHom.Flat.id R) J _ hQ).comp
     (IsRegularLocalRing.flat_frobenius p)
-
-/-- **Flat Frobenius forces reducedness.** If the Frobenius endomorphism of a ring of exponential
-characteristic `p > 1` is flat, then the ring is reduced. Frobenius induces the identity on the
-prime spectrum, so flatness makes it faithfully flat, hence injective. In particular, regularity
-cannot be dropped from `TauCeti.IsRegularRing.flat_frobenius`: Frobenius of `𝔽_p[ε] ⧸ (ε²)` kills
-`ε` and is not flat. -/
-theorem isReduced_of_flat_frobenius (hp : 1 < p) (h : (frobenius R p).Flat) : IsReduced R := by
-  have hcomap : Function.Surjective (PrimeSpectrum.comap (frobenius R p)) := fun P ↦
-    ⟨P, PrimeSpectrum.ext <| Ideal.ext fun _ ↦ P.2.pow_mem_iff_mem p (zero_lt_one.trans hp)⟩
-  have hinj := (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.2 ⟨h, hcomap⟩).injective
-  refine ⟨fun a ⟨n, hn⟩ ↦ hinj.iterate n ?_⟩
-  rw [iterate_frobenius, iterate_map_zero]
-  exact pow_eq_zero_of_le (Nat.lt_pow_self hp).le hn
 
 end TauCeti
