@@ -12,7 +12,7 @@ import Mathlib.Analysis.Convex.Measure
 import Mathlib.Analysis.Matrix.Order
 
 /-!
-# Correlation coordinates and Lebesgue measure on correlation matrices
+# Correlation coordinates and the reference Lebesgue measure for correlation matrices
 
 A correlation matrix is a positive-semidefinite symmetric matrix with unit diagonal. The
 correlation matrices form a subset of the affine space of unit-diagonal symmetric matrices, and
@@ -26,7 +26,9 @@ range is exactly the unit-diagonal matrices; the continuous linear map
 
 Pushing coordinate Lebesgue measure forward along this embedding gives
 `TauCeti.correlationLebesgue p`, the reference measure for laws of random correlation matrices
-such as the LKJ distributions. It is concentrated on the unit-diagonal matrices, it is invariant
+such as the LKJ distributions. It measures the whole affine space of unit-diagonal symmetric
+matrices, not only the positive-semidefinite ones: positivity is imposed separately, for instance
+by the support of a density. It is concentrated on the unit-diagonal matrices, it is invariant
 under simultaneous permutation of rows and columns and under sign changes of the coordinate axes,
 and in dimensions zero and one it is the Dirac measure at the identity.
 
@@ -44,7 +46,8 @@ positive-semidefinite correlation matrices with zero determinant, is Lebesgue-nu
 * `TauCeti.correlationCoordinates` — the strictly lower entries of a symmetric matrix.
 * `TauCeti.range_correlationMatrix` — the range is the unit-diagonal symmetric matrices.
 * `TauCeti.isClosedEmbedding_correlationMatrix`, `TauCeti.measurableEmbedding_correlationMatrix`.
-* `TauCeti.correlationLebesgue` — Lebesgue measure on correlation matrices.
+* `TauCeti.correlationLebesgue` — Lebesgue measure on the unit-diagonal symmetric matrices, the
+  reference measure for random correlation matrices.
 * `TauCeti.correlationLebesgue_of_le_one` — in dimension at most one it is the Dirac measure at
   the identity.
 * `TauCeti.map_symmetricCongruenceLinearMap_permMatrix_correlationLebesgue`,
@@ -105,27 +108,29 @@ def correlationMatrix :
 
 variable {p}
 
-/-- A correlation matrix has ones on the diagonal. -/
+/-- The matrix `TauCeti.correlationMatrix p x` has ones on the diagonal. -/
 @[simp]
 theorem coe_correlationMatrix_apply_self (x : strictLowerTriangle p → ℝ) (i : Fin p) :
     (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ) i i = 1 := by
   simp [correlationMatrix]
 
-/-- A strictly lower entry of a correlation matrix is its coordinate. -/
+/-- A strictly lower entry of `TauCeti.correlationMatrix p x` is its coordinate. -/
 @[simp]
 theorem coe_correlationMatrix_apply_of_gt (x : strictLowerTriangle p → ℝ) {i j : Fin p}
     (h : j < i) :
     (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ) i j = x ⟨(i, j), h⟩ := by
   simp [correlationMatrix, coe_symmetricCoordinates_symm_apply_of_ge p _ h.le, h]
 
-/-- A strictly upper entry of a correlation matrix is the coordinate at the reflected position. -/
+/-- A strictly upper entry of `TauCeti.correlationMatrix p x` is the coordinate at the reflected
+position. -/
 @[simp]
 theorem coe_correlationMatrix_apply_of_lt (x : strictLowerTriangle p → ℝ) {i j : Fin p}
     (h : i < j) :
     (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ) i j = x ⟨(j, i), h⟩ := by
   simp [correlationMatrix, coe_symmetricCoordinates_symm_apply_of_le p _ h.le, h]
 
-/-- An off-diagonal entry of a correlation matrix is the coordinate at the sorted position. -/
+/-- An off-diagonal entry of `TauCeti.correlationMatrix p x` is the coordinate at the sorted
+position. -/
 theorem coe_correlationMatrix_apply_of_ne (x : strictLowerTriangle p → ℝ) {i j : Fin p}
     (h : i ≠ j) :
     (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ) i j =
@@ -144,7 +149,7 @@ theorem coe_correlationMatrix_zero :
   · simp
   · simp [h, h.ne']
 
-/-- Scaling the coordinates by `c` moves the correlation matrix towards the identity:
+/-- Scaling the coordinates by `c` moves `TauCeti.correlationMatrix p x` towards the identity:
 `R (c • x) = c • R x + (1 - c) • 1`. -/
 theorem coe_correlationMatrix_smul (c : ℝ) (x : strictLowerTriangle p → ℝ) :
     (correlationMatrix p (c • x) : Matrix (Fin p) (Fin p) ℝ) =
@@ -186,7 +191,8 @@ variable (p) in
 theorem correlationMatrix_injective : Function.Injective (correlationMatrix p) :=
   (leftInverse_correlationCoordinates_correlationMatrix p).injective
 
-/-- A unit-diagonal symmetric matrix is the correlation matrix of its strictly lower entries. -/
+/-- A unit-diagonal symmetric matrix is the value of `TauCeti.correlationMatrix` at its strictly
+lower entries. -/
 theorem correlationMatrix_correlationCoordinates
     {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
     (hA : ∀ i, (A : Matrix (Fin p) (Fin p) ℝ) i i = 1) :
@@ -199,7 +205,8 @@ theorem correlationMatrix_correlationCoordinates
   · simp [h]
 
 variable (p) in
-/-- The correlation matrices are exactly the unit-diagonal symmetric matrices. -/
+/-- The range of `TauCeti.correlationMatrix p` is exactly the set of unit-diagonal symmetric
+matrices. -/
 theorem range_correlationMatrix :
     range (correlationMatrix p) = {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       ∀ i, (A : Matrix (Fin p) (Fin p) ℝ) i i = 1} := by
@@ -209,24 +216,25 @@ theorem range_correlationMatrix :
   simp
 
 variable (p) in
-/-- The correlation matrix map is a closed embedding: an affine homeomorphism onto the closed
-set of unit-diagonal symmetric matrices. -/
+/-- The map `TauCeti.correlationMatrix p` is a closed embedding: an affine homeomorphism onto the
+closed set of unit-diagonal symmetric matrices. -/
 theorem isClosedEmbedding_correlationMatrix : IsClosedEmbedding (correlationMatrix p) :=
   (leftInverse_correlationCoordinates_correlationMatrix p).isClosedEmbedding
     (correlationCoordinates p).continuous (correlationMatrix p).continuous
 
 variable (p) in
-/-- The correlation matrix map is a measurable embedding of the coordinate space into the
+/-- The map `TauCeti.correlationMatrix p` is a measurable embedding of the coordinate space into the
 symmetric matrices. -/
 theorem measurableEmbedding_correlationMatrix : MeasurableEmbedding (correlationMatrix p) :=
   (isClosedEmbedding_correlationMatrix p).measurableEmbedding
 
-/-! ### Lebesgue measure on correlation matrices -/
+/-! ### Lebesgue measure on unit-diagonal symmetric matrices -/
 
 variable (p) in
-/-- Lebesgue measure on the correlation matrices: the pushforward of Lebesgue measure on the
-strictly lower coordinates along `TauCeti.correlationMatrix p`. It is the reference measure for
-laws of random correlation matrices. -/
+/-- Lebesgue measure on the affine space of unit-diagonal symmetric matrices: the pushforward of
+Lebesgue measure on the strictly lower coordinates along `TauCeti.correlationMatrix p`. It does not
+impose positive semidefiniteness; it is the reference measure against which laws of random
+correlation matrices are described, with positivity imposed separately. -/
 def correlationLebesgue : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
   (volume : Measure (strictLowerTriangle p → ℝ)).map (correlationMatrix p)
 
@@ -235,8 +243,8 @@ theorem measurePreserving_correlationMatrix :
     MeasurePreserving (correlationMatrix p) volume (correlationLebesgue p) :=
   ⟨(correlationMatrix p).continuous.measurable, rfl⟩
 
-/-- The measure of a set of symmetric matrices is the volume of the coordinates of the
-correlation matrices it contains. -/
+/-- The measure of a set `s` of symmetric matrices is the volume of the coordinates `x` with
+`TauCeti.correlationMatrix p x ∈ s`, that is, of the unit-diagonal matrices in `s`. -/
 theorem correlationLebesgue_apply (s : Set (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) :
     correlationLebesgue p s = volume (correlationMatrix p ⁻¹' s) :=
   (measurableEmbedding_correlationMatrix p).map_apply _ _
@@ -384,12 +392,14 @@ theorem volume_frontier_posDefCorrelationRegion :
 
 /-! ### Invariance under permutations and sign changes
 
-Conjugating a correlation matrix by a permutation matrix or by a diagonal sign matrix gives a
-correlation matrix whose coordinates are those of the original, permuted and multiplied by signs.
+Conjugating a unit-diagonal symmetric matrix by a permutation matrix or by a diagonal sign matrix
+gives a unit-diagonal symmetric matrix whose coordinates are those of the original, permuted and
+multiplied by signs.
 Such signed permutations of the coordinates preserve Lebesgue measure. -/
 
-/-- A measurable self-map of the symmetric matrices that acts on correlation matrices through a
-permutation and sign change of the coordinates preserves `TauCeti.correlationLebesgue`. -/
+/-- A measurable self-map of the symmetric matrices that acts on the values of
+`TauCeti.correlationMatrix` through a permutation and sign change of the coordinates preserves
+`TauCeti.correlationLebesgue`. -/
 private theorem map_correlationLebesgue_of_signedPerm
     {f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) →
       selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
