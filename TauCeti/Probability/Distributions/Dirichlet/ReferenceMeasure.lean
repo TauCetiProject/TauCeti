@@ -50,7 +50,7 @@ theorem dirichletChartChange_apply (r s : ι) (x : {i // i ≠ r} → ℝ)
 
 /-- Reconstructing after a chart transition gives the same point of the hyperplane. -/
 @[simp]
-theorem dirichletChart_chartChange (r s : ι) (x : {i // i ≠ r} → ℝ) :
+theorem dirichletChart_dirichletChartChange (r s : ι) (x : {i // i ≠ r} → ℝ) :
     dirichletChart s (dirichletChartChange r s x) = dirichletChart r x :=
   (dirichletChart_eq_self_iff s _).2 (sum_dirichletChart r x)
 
@@ -64,7 +64,7 @@ theorem dirichletChartChange_self (r : ι) (x : {i // i ≠ r} → ℝ) :
 /-- Successive changes of deleted coordinate compose. In particular, reversing a transition
 is its inverse. -/
 @[simp]
-theorem dirichletChartChange_comp (r s t : ι) (x : {i // i ≠ r} → ℝ) :
+theorem dirichletChartChange_dirichletChartChange (r s t : ι) (x : {i // i ≠ r} → ℝ) :
     dirichletChartChange s t (dirichletChartChange r s x) = dirichletChartChange r t x := by
   ext j
   simp
@@ -93,30 +93,31 @@ private theorem dirichletChart_swap_eq_affine (r s : ι) :
     simp
   let k : {i // i ≠ r} := ⟨s, hrs⟩
   let M : Matrix {i // i ≠ r} {i // i ≠ r} ℝ :=
-    (1 : Matrix {i // i ≠ r} {i // i ≠ r} ℝ).updateRow k (fun _ ↦ -1)
+    (1 : Matrix {i // i ≠ r} {i // i ≠ r} ℝ).updateRow k (-1)
   have hdet : M.det = -1 := by
     have hrow : (∑ j : {i // i ≠ r}, (-1 : ℝ) • (1 : Matrix {i // i ≠ r} {i // i ≠ r} ℝ) j) =
-        fun _ ↦ (-1 : ℝ) := by
+        (-1 : {i // i ≠ r} → ℝ) := by
       ext j
       simp [Finset.sum_apply, Matrix.one_apply]
-    simpa only [hrow, Matrix.det_one, smul_eq_mul, mul_one] using
-      Matrix.det_updateRow_sum (1 : Matrix {i // i ≠ r} {i // i ≠ r} ℝ) k (fun _ ↦ -1)
+    simpa only [Pi.neg_apply, Pi.one_apply, hrow, Matrix.det_one, smul_eq_mul, mul_one] using
+      Matrix.det_updateRow_sum (1 : Matrix {i // i ≠ r} {i // i ≠ r} ℝ) k (-1)
   let L := (Matrix.toLin' M).toContinuousLinearMap
+  have hL (x : {i // i ≠ r} → ℝ) : L x = Function.update x k (-∑ j, x j) := by
+    simp [L, M, Matrix.toLin'_apply, Matrix.updateRow_mulVec, neg_dotProduct, one_dotProduct]
   refine ⟨L, Pi.single k 1, ?_, ?_⟩
   · ext x j
     by_cases hjs : (j : ι) = s
     · have hj : j = k := Subtype.ext hjs
       subst j
-      simp [L, M, Matrix.toLin'_apply, Matrix.mulVec, dotProduct, k, sub_eq_add_neg]
+      simp [hL, k, sub_eq_add_neg]
     · have hj : j ≠ k := fun h ↦ hjs (congrArg Subtype.val h)
-      simp [Equiv.swap_apply_of_ne_of_ne j.property hjs, L, M,
-        Matrix.toLin'_apply, Matrix.mulVec, dotProduct, hj, k, Matrix.one_apply]
+      simp [Equiv.swap_apply_of_ne_of_ne j.property hjs, hL, hj]
   · simp [L, LinearMap.det_toLin', hdet]
 
 /-- The absolute Jacobian of a deleted-coordinate chart transition is one. The target
 coordinates are reindexed by swapping the reference categories, so the derivative is an
 endomorphism of the source coordinate space. -/
-theorem abs_det_fderiv_dirichletChartChange (r s : ι) (x : {i // i ≠ r} → ℝ) :
+theorem abs_det_fderiv_dirichletChart_swap (r s : ι) (x : {i // i ≠ r} → ℝ) :
     |(fderiv ℝ (fun (y : {i // i ≠ r} → ℝ) (j : {i // i ≠ r}) ↦
       dirichletChart r y (Equiv.swap r s j)) x).toLinearMap.det| = 1 := by
   obtain ⟨L, c, hf, hdet⟩ := dirichletChart_swap_eq_affine r s
@@ -160,6 +161,6 @@ theorem map_dirichletChart_volume_eq (r s : ι) :
       (volume : Measure ({i // i ≠ s} → ℝ)).map (dirichletChart s) := by
   rw [← (measurePreserving_dirichletChartChange r s).map_eq,
     Measure.map_map measurable_dirichletChart (measurable_dirichletChartChange r s)]
-  simp only [Function.comp_def, dirichletChart_chartChange]
+  simp only [Function.comp_def, dirichletChart_dirichletChartChange]
 
 end TauCeti.Probability
