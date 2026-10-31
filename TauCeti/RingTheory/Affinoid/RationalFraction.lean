@@ -62,6 +62,7 @@ Weierstrass fractions `A⟨f⟩` are the case `g = 1`.
 * `TauCeti.RationalFraction.isUnit_algebraMap`: `g` is a unit of `A⟨f/g⟩` when
   `(g, f₁, …, fₘ) = A`.
 * `TauCeti.RationalFraction.isPowerBounded_ratio`: each `fᵢ/g` is power-bounded.
+* `TauCeti.RationalFraction.awayLift_divBy`: the map `A[1/g] → A⟨f/g⟩` sends `fᵢ/g` to `fᵢ/g`.
 * `TauCeti.RationalFraction.continuous_lift`: the extension is continuous.
 * `TauCeti.RationalFraction.algHom_ext`: maps out of `A⟨f/g⟩` are determined on `A`.
 * `TauCeti.RationalFraction.existsUnique_algHom`: the universal property.
@@ -171,6 +172,16 @@ theorem ratio_eq_algebraMap_mul_inverse (h : Ideal.span (insert g (Set.range f))
   rw [← algebraMap_mul_ratio i, mul_comm, ← mul_assoc,
     Ring.inverse_mul_cancel (algebraMap A (RationalFraction g f) g) (isUnit_algebraMap h),
     one_mul]
+
+/-- If `g, f₁, …, fₘ` generate the unit ideal of `A`, the map `A[1/g] → A⟨f/g⟩` induced by the unit
+`g` sends the fraction `fᵢ/g` to the ratio `fᵢ/g`. -/
+@[simp]
+theorem awayLift_divBy (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away g S]
+    (h : Ideal.span (insert g (Set.range f)) = ⊤) (i : Fin m) :
+    IsLocalization.Away.lift g (isUnit_algebraMap h) (divBy (f i) g : S) = ratio g f i :=
+  (isUnit_algebraMap h).mul_left_cancel <| by
+    rw [algebraMap_mul_ratio, ← IsLocalization.Away.lift_eq g (isUnit_algebraMap h) (S := S),
+      ← map_mul, algebraMap_mul_divBy, IsLocalization.Away.lift_eq]
 
 /-- Without the unit-ideal hypothesis the denominator need not become a unit: for `g = 0` and
 `f = 0` the ideal `rationalIdeal 0 0` is zero, and `0` is not a unit of the nonzero algebra
@@ -305,8 +316,9 @@ include hA h in
 generate the unit ideal of the affinoid algebra `A`, the rational fraction algebra is isomorphic to
 the completion of the localisation `S = A[1/g]` for its Huber topology. The isomorphism is the
 structure map on `A` (`completionLocEquiv_algebraMap`), sends `fᵢ/g` to the fraction `fᵢ/g` of `S`
-(`completionLocEquiv_ratio`), and is a homeomorphism (`continuous_completionLocEquiv` and
-`continuous_completionLocEquiv_symm`).
+(`completionLocEquiv_ratio`; the inverse forms are `completionLocEquiv_symm_toCompletionLoc`,
+`completionLocEquiv_symm_coe_divBy` and `completionLocEquiv_symm_coe`), and is a homeomorphism
+(`continuous_completionLocEquiv` and `continuous_completionLocEquiv_symm`).
 
 The standing hypothesis `hden` of the Huber construction always holds here, by
 `TauCeti.Huber.PairOfDefinition.hasDenominatorPower_of_isOpen_span`, because the numerators span
@@ -385,6 +397,39 @@ theorem completionLocEquiv_awayLift (x : S) :
     IsLocalization.ringHom_ext (Submonoid.powers g) <| RingHom.ext fun a ↦ by simp
   exact DFunLike.congr_fun hext x
 
+/-- The inverse of `completionLocEquiv` sends the image of `a` in `A⟨T/g⟩` to the image of `a` in
+`A⟨f/g⟩`. Use it with `rw`: `simp` first rewrites `toCompletionLoc` by `toCompletionLoc_apply`, so
+the left-hand side is not in simp normal form. -/
+theorem completionLocEquiv_symm_toCompletionLoc (a : A) :
+    letI := locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+    (completionLocEquiv hA P S hden h).symm
+        (toCompletionLoc P (insert g (Set.range f)) g S hden a) = algebraMap A _ a :=
+  (RingEquiv.symm_apply_eq _).2 (completionLocEquiv_algebraMap hA P S hden h a).symm
+
+/-- The inverse of `completionLocEquiv` sends the fraction `fᵢ/g` of `A[1/g]` to the ratio `fᵢ/g`
+of `A⟨f/g⟩`. Use it with `rw`: `simp` reaches the ratio through `completionLocEquiv_symm_coe` and
+`awayLift_divBy`. -/
+theorem completionLocEquiv_symm_coe_divBy (i : Fin m) :
+    letI := locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+    (completionLocEquiv hA P S hden h).symm ((divBy (f i) g : S) : UniformSpace.Completion S) =
+      ratio g f i :=
+  (RingEquiv.symm_apply_eq _).2 (completionLocEquiv_ratio hA P S hden h i).symm
+
+/-- On `A[1/g]`, the inverse of `completionLocEquiv` is the map `A[1/g] → A⟨f/g⟩` induced by the
+unit `g`. -/
+@[simp]
+theorem completionLocEquiv_symm_coe (x : S) :
+    letI := locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
+    letI := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
+    (completionLocEquiv hA P S hden h).symm (x : UniformSpace.Completion S) =
+      IsLocalization.Away.lift g (isUnit_algebraMap h) x :=
+  (RingEquiv.symm_apply_eq _).2 (completionLocEquiv_awayLift hA P S hden h x).symm
+
 end HuberLocalization
 
 include hA in
@@ -405,7 +450,7 @@ theorem denseRange_awayLift (S : Type*) [CommRing S] [Algebra A S] [IsLocalizati
   have hlift : (IsLocalization.Away.lift g (isUnit_algebraMap h) : S → RationalFraction g f) =
       (completionLocEquiv hA P S hden h).symm ∘ ((↑) : S → UniformSpace.Completion S) := by
     funext x
-    rw [Function.comp_apply, RingEquiv.eq_symm_apply, completionLocEquiv_awayLift]
+    rw [Function.comp_apply, completionLocEquiv_symm_coe]
   rw [hlift]
   exact (completionLocEquiv hA P S hden h).symm.surjective.denseRange.comp
     UniformSpace.Completion.denseRange_coe (continuous_completionLocEquiv_symm hA P S hden h)
