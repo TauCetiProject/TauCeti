@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Coordinate
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 import Mathlib.Algebra.Category.Ring.FilteredColimits
+import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # The local ring of a node
@@ -151,6 +152,27 @@ theorem fst_surjective : Function.Surjective (fst I J p q) := fun f ↦ by
 theorem snd_surjective : Function.Surjective (snd I J p q) := fun g ↦ by
   obtain ⟨f, hf⟩ := eval_surjective I X p (holomorphicStructureSheaf.eval J Y q g)
   exact ⟨mk f g hf, rfl⟩
+
+variable (I J p q) in
+/-- The product of the branch stalks is finite over the node ring. -/
+theorem finite_subtype : (nodeLocalRing I J p q).subtype.Finite := by
+  let A := (holomorphicStructureSheaf I X).presheaf.stalk p
+  let B := (holomorphicStructureSheaf J Y).presheaf.stalk q
+  let N := nodeLocalRing I J p q
+  let := (nodeLocalRing I J p q).subtype.toAlgebra
+  let f : (N × N) →ₗ[N] (A × B) :=
+    (LinearMap.toSpanSingleton N (A × B) (1, 0)).coprod
+      (LinearMap.toSpanSingleton N (A × B) (0, 1))
+  apply Module.Finite.of_surjective f
+  intro z
+  obtain ⟨a, ha⟩ := fst_surjective (I := I) (J := J) (q := q) z.1
+  obtain ⟨b, hb⟩ := snd_surjective (I := I) (J := J) (p := p) z.2
+  refine ⟨(a, b), ?_⟩
+  -- Scalar multiplication uses the branch inclusion, so the two idempotents select its factors.
+  simp only [f, LinearMap.coprod_apply, LinearMap.toSpanSingleton_apply, Algebra.smul_def,
+    RingHom.algebraMap_toAlgebra, Subring.subtype_apply, Prod.mul_def, mul_one, mul_zero,
+    Prod.mk_add_mk, add_zero, zero_add]
+  exact Prod.ext ((fst_apply a).symm.trans ha) ((snd_apply b).symm.trans hb)
 
 /-- Every complex number is the value at the node of some germ. -/
 theorem eval_surjective : Function.Surjective (eval I J p q) :=

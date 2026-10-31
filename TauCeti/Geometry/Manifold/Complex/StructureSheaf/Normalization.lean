@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.NodeLocalRing
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.DiscreteValuationRing
 public import Mathlib.RingTheory.Polynomial.RationalRoot
-import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Normalization of an analytic node
@@ -42,6 +41,56 @@ open scoped Manifold nonZeroDivisors
 
 namespace TauCeti.holomorphicStructureSheaf.nodeLocalRing
 
+section BranchComparison
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H}
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
+  {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y] (p : X) (q : Y)
+
+local notation "A" => TopCat.Presheaf.stalk (C := CommRingCat)
+  (TopCat.Sheaf.presheaf (holomorphicStructureSheaf I X)) p
+local notation "B" => TopCat.Presheaf.stalk (C := CommRingCat)
+  (TopCat.Sheaf.presheaf (holomorphicStructureSheaf J Y)) q
+local notation "N" => nodeLocalRing I J p q
+
+variable (K L : Type*) [CommRing K]
+  [Algebra ((holomorphicStructureSheaf I X).presheaf.stalk p) K]
+  [CommRing L] [Algebra ((holomorphicStructureSheaf J Y).presheaf.stalk q) L]
+
+/-- Restriction to the two branches followed by the algebra maps to `K` and `L`. For branch
+fraction fields this is the inclusion into pairs of meromorphic germs. -/
+def branchFractionMap : N →+* K × L :=
+  ((algebraMap A K).prodMap (algebraMap B L)).comp (nodeLocalRing I J p q).subtype
+
+/-- The fraction comparison is the componentwise algebra map composed with the branch inclusion. -/
+theorem branchFractionMap_def :
+    branchFractionMap (I := I) (J := J) p q K L =
+      ((algebraMap A K).prodMap (algebraMap B L)).comp (nodeLocalRing I J p q).subtype :=
+  (rfl)
+
+/-- The fraction comparison takes the componentwise images of the branch restrictions. -/
+@[simp]
+theorem branchFractionMap_apply (f : N) :
+    branchFractionMap p q K L f =
+      (algebraMap A K (fst I J p q f), algebraMap B L (snd I J p q f)) := by
+  simp [branchFractionMap, fst_apply, snd_apply, Prod.map]
+
+variable [IsFractionRing ((holomorphicStructureSheaf I X).presheaf.stalk p) K]
+  [IsFractionRing ((holomorphicStructureSheaf J Y).presheaf.stalk q) L]
+
+/-- The meromorphic branch comparison is injective. -/
+theorem branchFractionMap_injective :
+    Function.Injective (branchFractionMap (I := I) (J := J) p q K L) := by
+  intro f g h
+  rw [branchFractionMap_apply, branchFractionMap_apply] at h
+  exact ext (IsFractionRing.injective A K (congrArg Prod.fst h))
+    (IsFractionRing.injective B L (congrArg Prod.snd h))
+
+end BranchComparison
+
 variable {X Y : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y] (p : X) (q : Y)
 
@@ -50,23 +99,6 @@ local notation "A" => TopCat.Presheaf.stalk (C := CommRingCat)
 local notation "B" => TopCat.Presheaf.stalk (C := CommRingCat)
   (TopCat.Sheaf.presheaf (holomorphicStructureSheaf 𝓘(ℂ) Y)) q
 local notation "N" => nodeLocalRing 𝓘(ℂ) 𝓘(ℂ) p q
-
-/-- The product of the branch stalks is finite over the node ring. -/
-theorem finite_subtype : (nodeLocalRing 𝓘(ℂ) 𝓘(ℂ) p q).subtype.Finite := by
-  let := (nodeLocalRing 𝓘(ℂ) 𝓘(ℂ) p q).subtype.toAlgebra
-  let f : (N × N) →ₗ[N] (A × B) :=
-    (LinearMap.toSpanSingleton N (A × B) (1, 0)).coprod
-      (LinearMap.toSpanSingleton N (A × B) (0, 1))
-  apply Module.Finite.of_surjective f
-  intro z
-  obtain ⟨a, ha⟩ := fst_surjective (I := 𝓘(ℂ)) (J := 𝓘(ℂ)) (q := q) z.1
-  obtain ⟨b, hb⟩ := snd_surjective (I := 𝓘(ℂ)) (J := 𝓘(ℂ)) (p := p) z.2
-  refine ⟨(a, b), ?_⟩
-  -- Scalar multiplication uses the branch inclusion, so the two idempotents select its factors.
-  simp only [f, LinearMap.coprod_apply, LinearMap.toSpanSingleton_apply, Algebra.smul_def,
-    RingHom.algebraMap_toAlgebra, Subring.subtype_apply, Prod.mul_def, mul_one, mul_zero,
-    Prod.mk_add_mk, add_zero, zero_add]
-  exact Prod.ext ((fst_apply a).symm.trans ha) ((snd_apply b).symm.trans hb)
 
 variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
@@ -102,37 +134,14 @@ variable (K L : Type*) [CommRing K]
   [Algebra ((holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk p) K]
   [CommRing L] [Algebra ((holomorphicStructureSheaf 𝓘(ℂ) Y).presheaf.stalk q) L]
 
-/-- Restriction to the two branches followed by the algebra maps to `K` and `L`. For branch
-fraction fields this is the inclusion into pairs of meromorphic germs. -/
-def branchFractionMap : N →+* K × L :=
-  ((algebraMap A K).prodMap (algebraMap B L)).comp
-    (nodeLocalRing 𝓘(ℂ) 𝓘(ℂ) p q).subtype
-
-omit [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] in
-/-- The fraction comparison takes the componentwise images of the branch restrictions. -/
-@[simp]
-theorem branchFractionMap_apply (f : N) :
-    branchFractionMap p q K L f =
-      (algebraMap A K (fst 𝓘(ℂ) 𝓘(ℂ) p q f),
-        algebraMap B L (snd 𝓘(ℂ) 𝓘(ℂ) p q f)) := by
-  simp [branchFractionMap, fst_apply, snd_apply, Prod.map]
-
 variable [IsFractionRing ((holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk p) K]
   [IsFractionRing ((holomorphicStructureSheaf 𝓘(ℂ) Y).presheaf.stalk q) L]
 
-omit [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] in
-/-- The meromorphic branch comparison is injective. -/
-theorem branchFractionMap_injective : Function.Injective (branchFractionMap p q K L) := by
-  intro f g h
-  rw [branchFractionMap_apply, branchFractionMap_apply] at h
-  exact ext (IsFractionRing.injective A K (congrArg Prod.fst h))
-    (IsFractionRing.injective B L (congrArg Prod.snd h))
-
 /-- The product of the branch fraction fields is the total ring of fractions of the node. -/
 theorem isFractionRing_branchFractionMap :
-    let := (branchFractionMap p q K L).toAlgebra
+    let := (branchFractionMap (I := 𝓘(ℂ)) (J := 𝓘(ℂ)) p q K L).toAlgebra
     IsFractionRing N (K × L) := by
-  let := (branchFractionMap p q K L).toAlgebra
+  let := (branchFractionMap (I := 𝓘(ℂ)) (J := 𝓘(ℂ)) p q K L).toAlgebra
   refine ⟨?_, ?_, ?_⟩
   · intro f
     have hf := (mem_nonZeroDivisors_iff p q f.val).mp f.property
@@ -168,10 +177,10 @@ theorem isFractionRing_branchFractionMap :
 /-- The product of the holomorphic branch stalks is the integral closure of the node ring in
 its total ring of meromorphic fractions. -/
 theorem isIntegralClosure_branchFractionMap :
-    let := (branchFractionMap p q K L).toAlgebra
+    let := (branchFractionMap (I := 𝓘(ℂ)) (J := 𝓘(ℂ)) p q K L).toAlgebra
     let := ((algebraMap A K).prodMap (algebraMap B L)).toAlgebra
     IsIntegralClosure (A × B) N (K × L) := by
-  let := (branchFractionMap p q K L).toAlgebra
+  let := (branchFractionMap (I := 𝓘(ℂ)) (J := 𝓘(ℂ)) p q K L).toAlgebra
   let := ((algebraMap A K).prodMap (algebraMap B L)).toAlgebra
   refine ⟨?_, ?_⟩
   · intro a b h
@@ -192,19 +201,19 @@ theorem isIntegralClosure_branchFractionMap :
       obtain ⟨b, hb⟩ := (isIntegrallyClosed_iff L).mp inferInstance hb
       exact ⟨(a, b), Prod.ext ha hb⟩
     · rintro ⟨z, rfl⟩
-      exact ((finite_subtype p q).to_isIntegral z).map
+      exact ((finite_subtype 𝓘(ℂ) 𝓘(ℂ) p q).to_isIntegral z).map
         ((algebraMap A K).prodMap (algebraMap B L))
 
 /-- A node is not integrally closed: its normalization separates the two branches. -/
 theorem not_isIntegrallyClosed : ¬ IsIntegrallyClosed N := by
   let K := FractionRing A
   let L := FractionRing B
-  let := (branchFractionMap p q K L).toAlgebra
+  let := (branchFractionMap (I := 𝓘(ℂ)) (J := 𝓘(ℂ)) p q K L).toAlgebra
   have := isFractionRing_branchFractionMap p q K L
   have hint : IsIntegral N ((1, 0) : K × L) := by
     simpa only [IsIntegral, RingHom.algebraMap_toAlgebra, branchFractionMap,
       RingHom.coe_prodMap, Prod.map, map_one, map_zero] using
-      ((finite_subtype p q).to_isIntegral (1, 0)).map
+      ((finite_subtype 𝓘(ℂ) 𝓘(ℂ) p q).to_isIntegral (1, 0)).map
         ((algebraMap A K).prodMap (algebraMap B L))
   intro h
   obtain ⟨f, hf⟩ := (isIntegrallyClosed_iff (K × L)).mp h hint
