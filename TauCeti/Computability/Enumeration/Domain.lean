@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Computability.Halting
+public import Mathlib.Computability.RE
 
 /-!
 # c.e. sets of naturals are domains of codes
