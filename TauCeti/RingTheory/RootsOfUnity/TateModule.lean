@@ -596,11 +596,10 @@ variable (ζ) in
 /-- **The Tate module of a domain with compatible primitive roots of unity is `ℤ̂`.** If `ζ` is a
 point of `lim_n μ_n(R)` whose level-`n` component is a primitive `n`-th root of unity for every
 `n`, then `zHat.lift ζ` is an isomorphism of topological groups `ℤ̂ ≃ₜ* lim_n μ_n(R)`; this is its
-inverse, sending `ζ` to the canonical generator `zHat.gen`.
-
-The construction follows `TauCeti.maximalUnramifiedGaloisGroupEquivZHat`: a bijective
-`zHat.lift`, whose inverse is continuous because `ℤ̂` is compact and the target is Hausdorff. -/
+inverse, sending `ζ` to the canonical generator `zHat.gen`. -/
 noncomputable def continuousMulEquivZHat : PrimeToPTateModule 1 R ≃ₜ* zHat.{u} :=
+  -- The construction follows `TauCeti.maximalUnramifiedGaloisGroupEquivZHat`: a bijective
+  -- `zHat.lift`, whose inverse is continuous because `ℤ̂` is compact and the target is Hausdorff.
   let e : zHat.{u} ≃* PrimeToPTateModule 1 R :=
     MulEquiv.ofBijective (zHat.lift ζ).toMonoidHom
       ⟨zHatLift_injective hζ, zHatLift_surjective hζ⟩
