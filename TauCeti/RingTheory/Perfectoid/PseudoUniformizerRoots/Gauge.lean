@@ -134,10 +134,18 @@ theorem gauge_zpow_mul (m : ℤ) (n : ℕ) (x : R) :
     rw [← Real.rpow_mul_natCast zero_le_two]
     field_simp
     simp [Real.rpow_neg, Real.rpow_intCast]
+  have hroot : (ϖ.zpow m n : R) ^ p ^ n = ((ϖ.normDatum.pseudoUniformizer ^ m : Rˣ) : R) := by
+    simpa [zpow_def] using congrArg Units.val (ϖ.zpow_pow m n)
+  have hscale (y : R) : ϖ.gauge ((ϖ.normDatum.pseudoUniformizer ^ m : Rˣ) * y) =
+      (1 / 2) ^ m * ϖ.gauge y :=
+    spectralSeminorm_zpow_mul ϖ.normDatum m y
   have hpow (y : R) := ϖ.isPowMul_gauge y (Nat.one_le_iff_ne_zero.mpr hN)
   refine (pow_left_inj₀ (apply_nonneg _ _) (by positivity) hN).mp ?_
-  rw [← hpow, mul_pow, mul_pow, h2, ← hpow, ← Units.val_pow_eq_pow_val, zpow_pow, zpow_def]
-  exact spectralSeminorm_zpow_mul ϖ.normDatum m _
+  calc ϖ.gauge (ϖ.zpow m n * x) ^ p ^ n
+      = ϖ.gauge ((ϖ.normDatum.pseudoUniformizer ^ m : Rˣ) * x ^ p ^ n) := by
+        rw [← hpow, mul_pow, hroot]
+    _ = (2 ^ (-((m : ℝ) / p ^ n)) * ϖ.gauge x) ^ p ^ n := by
+        rw [hscale, hpow, mul_pow, h2]
 
 /-- Multiplication by `ϖ ^ (-(m / p ^ n))` scales the spectral gauge by `2 ^ (m / p ^ n)`. -/
 private theorem gauge_zpow_neg_mul (m : ℤ) (n : ℕ) (x : R) :
@@ -165,6 +173,11 @@ private theorem gauge_pow_le_one {x : R} (hx : ϖ.gauge x ≤ 1) (k : ℕ) : ϖ.
   · rw [ϖ.isPowMul_gauge _ hk]
     exact pow_le_one₀ (apply_nonneg _ _) hx
 
+/-- **The open unit ball of the spectral gauge is `R°°`**: `|x|_ϖ < 1` exactly when `x` is
+topologically nilpotent. -/
+theorem gauge_lt_one_iff {x : R} : ϖ.gauge x < 1 ↔ IsTopologicallyNilpotent x :=
+  spectralSeminorm_lt_one_iff _
+
 /-- **The closed unit ball of the spectral gauge is `R°`.** -/
 theorem gauge_le_one_iff {x : R} : ϖ.gauge x ≤ 1 ↔ x ∈ powerBoundedSubring R := by
   refine ⟨fun hx ↦ ?_, fun hx ↦
@@ -172,20 +185,14 @@ theorem gauge_le_one_iff {x : R} : ϖ.gauge x ≤ 1 ↔ x ∈ powerBoundedSubrin
   -- Each `ϖ x ^ k` has gauge at most `1 / 2`, so it is topologically nilpotent and lies in `R°`;
   -- hence the powers of `x` lie in the bounded set `ϖ⁻¹ R°`.
   have hpow (k : ℕ) : (ϖ.unitRoot 0 : R) * x ^ k ∈ powerBoundedSubring R := by
-    refine mem_powerBoundedSubring.mpr (.of_isTopologicallyNilpotent ?_)
-    rw [← spectralSeminorm_lt_one_iff ϖ.normDatum, ← normDatum_pseudoUniformizer,
-      spectralSeminorm_pseudoUniformizer_mul, normDatum_radius, ← gauge_eq_spectralSeminorm]
+    refine mem_powerBoundedSubring.mpr (.of_isTopologicallyNilpotent (ϖ.gauge_lt_one_iff.mp ?_))
+    rw [coe_unitRoot, gauge_root_zero_mul]
     linarith [ϖ.gauge_pow_le_one hx k]
   refine mem_powerBoundedSubring.mpr <| isPowerBounded_iff.mpr <|
     ((isBounded_singleton ((ϖ.unitRoot 0)⁻¹ : Rˣ).1).mul
       IsUniform.isBounded_powerBoundedSubring).subset ?_
   rintro _ ⟨k, rfl⟩
   exact ⟨_, rfl, _, hpow k, Units.inv_mul_cancel_left _ _⟩
-
-/-- **The open unit ball of the spectral gauge is `R°°`**: `|x|_ϖ < 1` exactly when `x` is
-topologically nilpotent. -/
-theorem gauge_lt_one_iff {x : R} : ϖ.gauge x < 1 ↔ IsTopologicallyNilpotent x :=
-  spectralSeminorm_lt_one_iff _
 
 /-- **The closed balls of the spectral gauge**: `|x|_ϖ ≤ 2 ^ (-(m / p ^ n))` exactly when
 `ϖ ^ (-(m / p ^ n)) x ∈ R°`, i.e. the closed ball of radius `2 ^ (-q)` is `ϖ ^ q R°`. -/
