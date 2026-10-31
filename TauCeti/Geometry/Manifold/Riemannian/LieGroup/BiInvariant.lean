@@ -99,7 +99,25 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 section Connection
 
 variable [LieGroup I 3 G] [RiemannianBundle (fun g : G ↦ TangentSpace I g)]
-  [IsContMDiffRiemannianBundle I 1 E (fun g : G ↦ TangentSpace I g)]
+
+/-- Ad-invariance of the inner product at the identity, stated with `inner`:
+`⟪⁅x, y⁆, z⟫ = -⟪y, ⁅x, z⁆⟫`. -/
+private theorem inner_lie_left
+    (had : LinearMap.BilinForm.lieInvariant (TangentSpace I (1 : G))
+      (innerₗ (TangentSpace I (1 : G))))
+    (x y z : TangentSpace I (1 : G)) :
+    inner ℝ ⁅x, y⁆ z = -inner ℝ y ⁅x, z⁆ := by
+  simpa only [innerₗ_apply_apply] using had x y z
+
+/-- For an ad-invariant inner product at the identity, `⟪⁅b, c⁆, a⟫ = ⟪⁅a, b⁆, c⟫`. -/
+private theorem inner_lie_cyclic
+    (had : LinearMap.BilinForm.lieInvariant (TangentSpace I (1 : G))
+      (innerₗ (TangentSpace I (1 : G))))
+    (a b c : TangentSpace I (1 : G)) :
+    inner ℝ ⁅b, c⁆ a = inner ℝ ⁅a, b⁆ c := by
+  rw [inner_lie_left had, ← lie_skew a b, inner_neg_left, real_inner_comm]
+
+variable [IsContMDiffRiemannianBundle I 1 E (fun g : G ↦ TangentSpace I g)]
   {cov : CovariantDerivative I E (fun g : G ↦ TangentSpace I g)}
 
 /-- The **Koszul formula for left-invariant fields**. For a left-invariant metric on a Lie group,
@@ -143,14 +161,8 @@ theorem apply_mulInvariantVectorField (hcov : cov.IsLeviCivitaConnection)
   -- multiplication is differentiable).
   obtain ⟨c, rfl⟩ : ∃ c : TangentSpace I (1 : G), mulInvariantVectorField c g = w :=
     ⟨_, TauCeti.mulInvariantVectorField_mfderiv_inv_mul w⟩
-  rw [hcov.inner_apply_mulInvariantVectorField hL, hL]
-  -- Ad-invariance of the inner product at the identity, in terms of `inner`.
-  have had' (x y z : TangentSpace I (1 : G)) : inner ℝ ⁅x, y⁆ z = -inner ℝ y ⁅x, z⁆ := had x y z
-  have h₁ : inner ℝ ⁅b, c⁆ a = inner ℝ ⁅a, b⁆ c := by
-    rw [had', ← lie_skew a b, inner_neg_left, real_inner_comm]
-  have h₂ : inner ℝ ⁅c, a⁆ b = inner ℝ ⁅a, b⁆ c := by
-    rw [← h₁, had', ← lie_skew b c, inner_neg_left, real_inner_comm]
-  rw [h₁, h₂, real_inner_smul_left]
+  rw [hcov.inner_apply_mulInvariantVectorField hL, hL, inner_lie_cyclic had a b c,
+    inner_lie_cyclic had b c a, inner_lie_cyclic had a b c, real_inner_smul_left]
   ring
 
 /-- The vector-field form of `apply_mulInvariantVectorField`, for rewriting inside iterated
@@ -243,9 +255,8 @@ theorem inner_curvatureTensor_mulInvariantVectorField (hcov : cov.IsLeviCivitaCo
     inner ℝ (cov.curvatureTensor g (mulInvariantVectorField a g) (mulInvariantVectorField b g)
         (mulInvariantVectorField b g)) (mulInvariantVectorField a g) =
       (4 : ℝ)⁻¹ * inner ℝ ⁅a, b⁆ ⁅a, b⁆ := by
-  have had' (x y z : TangentSpace I (1 : G)) : inner ℝ ⁅x, y⁆ z = -inner ℝ y ⁅x, z⁆ := had x y z
   rw [hcov.curvatureTensor_mulInvariantVectorField hL had, hL, real_inner_smul_left,
-    ← lie_skew ⁅a, b⁆ b, inner_neg_left, had', ← lie_skew a b, inner_neg_right]
+    ← lie_skew ⁅a, b⁆ b, inner_neg_left, inner_lie_left had, ← lie_skew a b, inner_neg_right]
   ring
 
 /-- For a bi-invariant metric on a smooth Lie group, the sectional numerator at the identity is
