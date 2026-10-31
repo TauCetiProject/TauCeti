@@ -196,13 +196,7 @@ section Site
 
 /-- The inclusion of the admissible opens contained in `U` into the admissible opens of `G`. -/
 abbrev iicFunctor (U : B) : Set.Iic U ⥤ B :=
-  (Subtype.mono_coe _).functor
-
-instance (U : B) : (iicFunctor U).Full :=
-  ⟨fun g ↦ ⟨homOfLE (Subtype.coe_le_coe.mp (leOfHom g)), Subsingleton.elim _ _⟩⟩
-
-instance (U : B) : (iicFunctor U).Faithful :=
-  ⟨fun _ ↦ Subsingleton.elim _ _⟩
+  (OrderEmbedding.subtype (· ∈ Set.Iic U)).monotone.functor
 
 /-- The inclusion functor of `Set.Iic U` sends admissible covers of the induced G-topology to
 admissible covers of `G`. -/
