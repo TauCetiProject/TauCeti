@@ -21,7 +21,8 @@ The derivation `J.alternatingDerivation` of `(k+1)`-forms corresponds under alte
 `k`-forms. The main theorem concerns a first-order variation `(η, A)` of a pair `(ω, J)`, where
 `ω` has type `(p,q)` and `J² = -1`: the endomorphisms `A v` anticommute with `J`, and `η`
 satisfies the derivative of the type equation. The alternation of `η` then has components of the
-types `(p+2,q-1)`, `(p+1,q)`, `(p,q+1)` and `(p-1,q+2)` only.
+types `(p+2,q-1)`, `(p+1,q)`, `(p,q+1)` and `(p-1,q+2)` only. When `J` does not vary, so that
+every `η v` has type `(p,q)`, only the types `(p+1,q)` and `(p,q+1)` remain.
 
 On an almost complex manifold this is the pointwise reason why the exterior derivative of a form
 of type `(p,q)` has components of these four types only.
@@ -34,6 +35,8 @@ of type `(p,q)` has components of these four types only.
   derivations.
 * `ContinuousAlternatingMap.IsOfType.typeProjection_alternatizeUncurryFin_eq_zero`: the four
   bidegrees.
+* `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_eq_zero_of_forall_isOfType`: the
+  two bidegrees for a constant `J`.
 
 ## References
 
@@ -132,6 +135,30 @@ private lemma eq_zero_of_typeShift {V : Type*} [AddCommGroup V] [Module ℂ V] {
       t • g₃ - f₂ + (7 : ℂ) • f₃ - (6 : ℂ) • f₆ + (10 : ℂ) • g₂
   exact (smul_eq_zero.1 hpoly).resolve_left ht
 
+/-- The shift `t = ((P - Q) - (p - q)) * I` between the eigenvalues of types `(P,Q)` and `(p,q)`,
+for `P + Q = p + q + 1`, is `(2 (P - p) - 1) * I`. It is a root of `t² + 1` only when
+`P - p ∈ {0, 1}`. -/
+private lemma typeShift_sq_add_one_ne_zero {p q P Q : ℕ} (hPQ : P + Q = p + q + 1) (hP : P ≠ p)
+    (hP' : P ≠ p + 1) :
+    (((P : ℂ) - Q) * I - ((p : ℂ) - q) * I) ^ 2 + 1 ≠ 0 := by
+  set n : ℤ := 2 * P - 2 * p - 1 with hn
+  have hk : (P : ℂ) + Q = p + q + 1 := by exact_mod_cast hPQ
+  have htn : ((P : ℂ) - Q) * I - ((p : ℂ) - q) * I = (n : ℂ) * I := by
+    rw [hn]
+    push_cast
+    linear_combination (-I) * hk
+  have hn9 : 9 ≤ n ^ 2 := by
+    rcases lt_or_gt_of_ne hP with h | h
+    · nlinarith
+    · have h' : p + 1 < P := lt_of_le_of_ne h (Ne.symm hP')
+      nlinarith
+  rw [htn]
+  have h : ((n : ℂ) * I) ^ 2 + 1 = ((1 - n ^ 2 : ℤ) : ℂ) := by
+    push_cast
+    linear_combination (n : ℂ) ^ 2 * I_sq
+  rw [h, Int.cast_ne_zero]
+  nlinarith
+
 end ContinuousLinearMap
 
 namespace ContinuousAlternatingMap
@@ -212,5 +239,39 @@ theorem IsOfType.typeProjection_alternatizeUncurryFin_eq_zero
     (by linear_combination (norm := module) e1) (by linear_combination (norm := module) e2)
     (by linear_combination (norm := module) e3) (by linear_combination (norm := module) e4)
     (by linear_combination (norm := module) e5) (by linear_combination (norm := module) e6)
+
+/-- **Two bidegrees for a constant structure.** If every form `η v` of a family has type `(p,q)`
+for `J` with `J² = -1`, the alternation of `η` has components of the types `(p+1,q)` and
+`(p,q+1)` only. For a variation of the form alone, with `J` fixed, this sharpens the four
+bidegrees of `IsOfType.typeProjection_alternatizeUncurryFin_eq_zero` to two.
+
+In holomorphic charts of a complex manifold the almost complex structure is constant, so this is
+the pointwise reason why the exterior derivative of a form of type `(p,q)` on a complex manifold is
+the sum of its components of types `(p+1,q)` and `(p,q+1)`. -/
+theorem typeProjection_alternatizeUncurryFin_eq_zero_of_forall_isOfType
+    {J : E →L[ℝ] E} (hJ : ∀ v, J (J v) = -v) {p q : ℕ} {η : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F}
+    (hη : ∀ v, (η v).IsOfType J p q) {P Q : ℕ} (h₁ : (P, Q) ≠ (p + 1, q))
+    (h₂ : (P, Q) ≠ (p, q + 1)) :
+    J.typeProjection P Q (alternatizeUncurryFin η) = 0 := by
+  by_cases hPQ : P + Q = k + 1
+  swap
+  · simp [typeProjection_eq_zero hJ hPQ]
+  have hk := (hη 0).add_eq
+  set c : ℂ := ((p : ℂ) - q) * I
+  have hJJ : (η ∘L J) ∘L J = -η := by ext v; simp [hJ]
+  -- With `x₁` and `x₂` the type-`(P,Q)` components of the alternations of `η` and `η ∘ J`, the
+  -- intertwining of the derivations gives `t • x₁ = x₂` and `t • x₂ = -x₁` for the shift `t`.
+  have e1 := smul_typeProjection_alternatizeUncurryFin (P := P) (Q := Q) hJ (θ := η)
+    (θ' := c • η) fun v ↦ by simp [(hη v).alternatingDerivation_eq, c]
+  have e2 := smul_typeProjection_alternatizeUncurryFin (P := P) (Q := Q) hJ (θ := η ∘L J)
+    (θ' := c • (η ∘L J)) fun v ↦ by simp [(hη (J v)).alternatingDerivation_eq, c]
+  rw [hJJ, alternatizeUncurryFin_neg, alternatizeUncurryFin_smul, map_neg, map_smul] at e2
+  rw [alternatizeUncurryFin_smul, map_smul] at e1
+  set t : ℂ := ((P : ℂ) - Q) * I - c
+  have hpoly : (t ^ 2 + 1) • J.typeProjection P Q (alternatizeUncurryFin η) = 0 := by
+    linear_combination (norm := module) t • e1 + e2
+  refine (smul_eq_zero.1 hpoly).resolve_left
+    (typeShift_sq_add_one_ne_zero (hPQ.trans (by rw [hk])) (fun h ↦ h₂ (Prod.ext h (by omega)))
+      fun h ↦ h₁ (Prod.ext h (by omega)))
 
 end ContinuousAlternatingMap
