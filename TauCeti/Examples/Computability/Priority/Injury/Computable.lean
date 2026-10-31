@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.Priority.Computable
+public import TauCeti.Computability.Priority.Injury.Computable
 public import Mathlib.Computability.Halting
 import Mathlib.Computability.Reduce
 
