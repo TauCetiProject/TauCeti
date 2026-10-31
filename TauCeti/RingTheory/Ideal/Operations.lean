@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Ring.Subgroup
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.Ideal.Operations
 
 import Mathlib.Algebra.Ring.GeomSum
@@ -32,6 +33,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.span_range_fin_two_eq_top_iff`: a pair generates the unit ideal exactly when its entries
   are coprime.
 * `LinearMap.apply_mem_of_mem_smul_top`: a linear functional carries `I • M` into `I`.
+* `Module.Basis.mem_smul_top_iff`: for a module with a basis, `I • M` consists of the vectors
+  whose coordinates all lie in `I`.
 * `Ideal.span_insert_eq_top_of_subset`: a generating set `S` may be replaced by a set `S'`, both
   taken together with a common element `a`, as soon as every element of `S` is `a` itself or
   belongs to `S'`.
@@ -277,6 +280,20 @@ theorem apply_mem_of_mem_smul_top (f : M →ₗ[R] R) {I : Ideal R} [I.IsTwoSide
   rwa [Submodule.mem_comap, smul_eq_mul, Ideal.mul_top] at this
 
 end LinearMap
+
+namespace Module.Basis
+
+variable {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- For a module with a basis `b`, a vector lies in `I • M` exactly when all of its coordinates
+lie in the ideal `I`. -/
+theorem mem_smul_top_iff (b : Basis ι R M) {I : Ideal R} [I.IsTwoSided] {x : M} :
+    x ∈ I • (⊤ : Submodule R M) ↔ ∀ i, b.repr x i ∈ I := by
+  refine ⟨fun hx i ↦ LinearMap.apply_mem_of_mem_smul_top (b.coord i) hx, fun hx ↦ ?_⟩
+  rw [← b.linearCombination_repr x, Finsupp.linearCombination_apply]
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem_smul (hx i) Submodule.mem_top
+
+end Module.Basis
 
 universe u
 
