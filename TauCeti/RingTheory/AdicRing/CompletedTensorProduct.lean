@@ -11,10 +11,6 @@ public import Mathlib.Topology.Algebra.UniformRing
 public import TauCeti.RingTheory.AdicCompletion.Algebra
 public import TauCeti.RingTheory.AdicRing.Basic
 
-import Mathlib.RingTheory.FiniteStability
-import Mathlib.RingTheory.TensorProduct.Quotient
-import TauCeti.RingTheory.AdicCompletion.Noetherian
-
 /-!
 # The completed tensor product of adic rings
 
@@ -57,11 +53,6 @@ The completion is formed with the chosen ideals of definition `TauCeti.IsAdicRin
   out of `B ⊗̂_A C` into a Hausdorff ring agreeing on `B` and on `C` are equal.
 * `TauCeti.AdicRing.CompletedTensorProduct.existsUnique_lift`: the universal property of
   `B ⊗̂_A C`.
-* `TauCeti.AdicRing.CompletedTensorProduct.isNoetherianRing_quotient_tensorIdeal`: the quotient
-  `(B ⊗[A] C) ⧸ J` is noetherian when `C` is noetherian and `B ⧸ I_B` is a finitely generated
-  `A`-algebra.
-* `TauCeti.AdicRing.CompletedTensorProduct.isNoetherianRing_of_finiteType`: `B ⊗̂_A C` is
-  noetherian when `C` is noetherian and `B ⧸ I_B` is a finitely generated `A`-algebra.
 
 ## References
 
@@ -336,40 +327,6 @@ theorem existsUnique_lift (β : B →ₐ[A] D) (γ : C →ₐ[A] D) (hβ : Conti
     fun _ hψ ↦ lift_unique hβ hγ hψ.1 hψ.2.1 hψ.2.2⟩
 
 end Lift
-
-section Noetherian
-
-variable (A B C)
-
-/-- The quotient of `B ⊗[A] C` by `I_B ⊗ 1 + 1 ⊗ I_C` is noetherian when `C` is noetherian and
-`B ⧸ I_B` is a finitely generated `A`-algebra. -/
-theorem isNoetherianRing_quotient_tensorIdeal [IsNoetherianRing C]
-    [Algebra.FiniteType A (B ⧸ IsAdicRing.ideal B)] :
-    IsNoetherianRing (B ⊗[A] C ⧸ tensorIdeal A B C) := by
-  set I := IsAdicRing.ideal B
-  -- `C ⊗[A] (B ⧸ I_B)` is a finitely generated `C`-algebra, hence noetherian
-  have : IsNoetherianRing (C ⊗[A] (B ⧸ I)) := Algebra.FiniteType.isNoetherianRing C _
-  -- and it is isomorphic to `(B ⊗[A] C) ⧸ I_B ⊗ 1`, which surjects onto the quotient by `J`
-  let e : C ⊗[A] (B ⧸ I) ≃+* B ⊗[A] C ⧸ I.map (algebraMap B (B ⊗[A] C)) :=
-    (Algebra.TensorProduct.comm A C (B ⧸ I)).toRingEquiv.trans
-      (Algebra.TensorProduct.quotientTensorEquiv A C B I).toRingEquiv
-  have hle : I.map (algebraMap B (B ⊗[A] C)) ≤ tensorIdeal A B C :=
-    Ideal.map_le_iff_le_comap.mpr fun b hb ↦ by
-      rw [Ideal.mem_comap, Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self,
-        RingHom.id_apply]
-      exact tmul_one_mem_tensorIdeal hb
-  exact isNoetherianRing_of_surjective _ _ ((Ideal.Quotient.factor hle).comp e.toRingHom)
-    ((Ideal.Quotient.factor_surjective hle).comp e.surjective)
-
-/-- **Noetherianity of the completed tensor product.** If `C` is noetherian and `B ⧸ I_B` is a
-finitely generated `A`-algebra, then `B ⊗̂_A C` is noetherian. -/
-theorem isNoetherianRing_of_finiteType [IsNoetherianRing C]
-    [Algebra.FiniteType A (B ⧸ IsAdicRing.ideal B)] :
-    IsNoetherianRing (CompletedTensorProduct A B C) :=
-  have := isNoetherianRing_quotient_tensorIdeal A B C
-  Ideal.isNoetherianRing_adicCompletion_of_fg _ (tensorIdeal_fg A B C)
-
-end Noetherian
 
 end CompletedTensorProduct
 

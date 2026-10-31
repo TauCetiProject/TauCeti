@@ -8,20 +8,35 @@ module
 public import TauCeti.RingTheory.AdicRing.CompletedTensorProduct
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
+-- `B ⊗̂_A C` is by definition an adic completion; the proof of noetherianity unfolds this.
+import all TauCeti.RingTheory.AdicRing.CompletedTensorProduct
+import Mathlib.RingTheory.FiniteStability
+import Mathlib.RingTheory.TensorProduct.Quotient
+import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 
 /-!
-# Noetherianity of the completed tensor product over a strictly topologically finite type ring
+# Noetherianity of the completed tensor product
 
-Let `A` carry the `I`-adic topology for a finitely generated ideal `I`, and let `B` and `C` be
+Let `B` and `C` be adic rings of finite ideal type which are algebras over a commutative ring
+`A`, with ideals of definition `I_B` and `I_C`, and let `J = I_B ⊗ 1 + 1 ⊗ I_C`. If `C` is
+noetherian and `B ⧸ I_B` is a finitely generated `A`-algebra, then `(B ⊗[A] C) ⧸ J` is a quotient
+of the finitely generated `C`-algebra `C ⊗[A] (B ⧸ I_B)`, hence noetherian, and so its `J`-adic
+completion `B ⊗̂_A C` is noetherian.
+
+Now let `A` carry the `I`-adic topology for a finitely generated ideal `I`, and let `B` and `C` be
 adic rings of finite ideal type which are `A`-algebras. If `B` is strictly topologically of finite
 type over `A`, that is, an open quotient of some `A⟨X₁, …, Xₖ⟩`, and `C` is noetherian, then the
-completed tensor product `B ⊗̂_A C` is noetherian. This reduces to
-`TauCeti.AdicRing.CompletedTensorProduct.isNoetherianRing_of_finiteType`, since `B ⧸ I_B` is then
-a finitely generated `A`-algebra.
+completed tensor product `B ⊗̂_A C` is noetherian. This reduces to the previous statement, since
+`B ⧸ I_B` is then a finitely generated `A`-algebra.
 
 ## Main results
 
+* `TauCeti.AdicRing.CompletedTensorProduct.isNoetherianRing_quotient_tensorIdeal`: the quotient
+  `(B ⊗[A] C) ⧸ J` is noetherian when `C` is noetherian and `B ⧸ I_B` is a finitely generated
+  `A`-algebra.
+* `TauCeti.AdicRing.CompletedTensorProduct.isNoetherianRing_of_finiteType`: `B ⊗̂_A C` is
+  noetherian when `C` is noetherian and `B ⧸ I_B` is a finitely generated `A`-algebra.
 * `TauCeti.AdicRing.CompletedTensorProduct.isNoetherianRing`: `B ⊗̂_A C` is noetherian when `C`
   is noetherian and `B` is strictly topologically of finite type over `A` with an `I`-adic
   topology, `I` finitely generated.
@@ -35,9 +50,41 @@ public section
 
 namespace TauCeti.AdicRing.CompletedTensorProduct
 
-variable {A : Type*} (B C : Type*) [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+open TensorProduct
+
+variable (A B C : Type*) [CommRing A]
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B] [Algebra A B]
   [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsAdicRing C] [Algebra A C]
+
+/-- The quotient of `B ⊗[A] C` by `I_B ⊗ 1 + 1 ⊗ I_C` is noetherian when `C` is noetherian and
+`B ⧸ I_B` is a finitely generated `A`-algebra. -/
+theorem isNoetherianRing_quotient_tensorIdeal [IsNoetherianRing C]
+    [Algebra.FiniteType A (B ⧸ IsAdicRing.ideal B)] :
+    IsNoetherianRing (B ⊗[A] C ⧸ tensorIdeal A B C) := by
+  set I := IsAdicRing.ideal B
+  -- `C ⊗[A] (B ⧸ I_B)` is a finitely generated `C`-algebra, hence noetherian
+  have : IsNoetherianRing (C ⊗[A] (B ⧸ I)) := Algebra.FiniteType.isNoetherianRing C _
+  -- and it is isomorphic to `(B ⊗[A] C) ⧸ I_B ⊗ 1`, which surjects onto the quotient by `J`
+  let e : C ⊗[A] (B ⧸ I) ≃+* B ⊗[A] C ⧸ I.map (algebraMap B (B ⊗[A] C)) :=
+    (Algebra.TensorProduct.comm A C (B ⧸ I)).toRingEquiv.trans
+      (Algebra.TensorProduct.quotientTensorEquiv A C B I).toRingEquiv
+  have hle : I.map (algebraMap B (B ⊗[A] C)) ≤ tensorIdeal A B C :=
+    Ideal.map_le_iff_le_comap.mpr fun b hb ↦ by
+      rw [Ideal.mem_comap, Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self,
+        RingHom.id_apply]
+      exact tmul_one_mem_tensorIdeal hb
+  exact isNoetherianRing_of_surjective _ _ ((Ideal.Quotient.factor hle).comp e.toRingHom)
+    ((Ideal.Quotient.factor_surjective hle).comp e.surjective)
+
+/-- **Noetherianity of the completed tensor product.** If `C` is noetherian and `B ⧸ I_B` is a
+finitely generated `A`-algebra, then `B ⊗̂_A C` is noetherian. -/
+theorem isNoetherianRing_of_finiteType [IsNoetherianRing C]
+    [Algebra.FiniteType A (B ⧸ IsAdicRing.ideal B)] :
+    IsNoetherianRing (CompletedTensorProduct A B C) :=
+  have := isNoetherianRing_quotient_tensorIdeal A B C
+  Ideal.isNoetherianRing_adicCompletion_of_fg _ (tensorIdeal_fg A B C)
+
+variable {A} [TopologicalSpace A] [NonarchimedeanRing A]
 
 /-- **Noetherianity of the completed tensor product** (EGA I, Ch. I, 10.13.5). Let `A` carry the
 `I`-adic topology for a finitely generated ideal `I`. If `B` is strictly topologically of finite
