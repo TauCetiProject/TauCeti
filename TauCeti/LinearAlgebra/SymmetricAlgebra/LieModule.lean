@@ -39,6 +39,8 @@ functions `S(L*)^L` with the Weyl-invariant polynomial functions on a Cartan sub
   is a Lie module over `L` through these derivations, with
   `TauCeti.SymmetricAlgebra.lie_eq_lieModuleDerivation` identifying the bracket.
 * `TauCeti.SymmetricAlgebra.lieInvariants`: the subalgebra `S(M)^L` of Lie invariants.
+* `TauCeti.SymmetricAlgebra.homogeneousLieInvariant`: the homogeneous invariants `S^n(M)^L` of
+  degree `n`.
 
 ## Main results
 
@@ -201,6 +203,20 @@ theorem decompose_mem_lieInvariants_iff {p : S} :
 theorem decompose_mem_lieInvariants {p : S} (hp : p ∈ lieInvariants R L M) (n : ℕ) :
     (DirectSum.decompose (homogeneousSubmodule R M) p n : S) ∈ lieInvariants R L M :=
   decompose_mem_lieInvariants_iff.mpr hp n
+
+variable (R L M) in
+/-- The **homogeneous Lie invariants** `S^n(M)^L` of degree `n`: the invariants that are
+homogeneous of degree `n`. -/
+noncomputable def homogeneousLieInvariant (n : ℕ) : Submodule R S :=
+  Subalgebra.toSubmodule (lieInvariants R L M) ⊓ homogeneousSubmodule R M n
+
+/-- Membership in the homogeneous Lie invariants of degree `n`: `p` is invariant and homogeneous
+of degree `n`. -/
+@[simp]
+theorem mem_homogeneousLieInvariant {n : ℕ} {p : S} :
+    p ∈ homogeneousLieInvariant R L M n ↔
+      p ∈ lieInvariants R L M ∧ p ∈ homogeneousSubmodule R M n :=
+  Iff.rfl
 
 section Equiv
 
