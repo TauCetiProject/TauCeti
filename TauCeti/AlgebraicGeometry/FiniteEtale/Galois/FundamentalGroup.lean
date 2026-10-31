@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.Profinite
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import TauCeti.CategoryTheory.Galois.ContAction
 public import TauCeti.CategoryTheory.Galois.Transport
 
@@ -65,63 +66,41 @@ namespace TauCeti.FiniteEtaleScheme
 
 variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω]
 
-/-- `K`-morphisms `Spec Ω ⟶ Spec A` are `K`-algebra maps `A →ₐ[K] Ω`. -/
-private noncomputable def algSpecHomEquiv (A : CommAlgCat.{u} K) :
-    ((algSpec (CommRingCat.of K)).obj (op (CommAlgCat.of K Ω)) ⟶
-      (algSpec (CommRingCat.of K)).obj (op A)) ≃ (A →ₐ[K] Ω) :=
-  ((algSpec.fullyFaithful (R := CommRingCat.of K)).homEquiv
-      (X := op (CommAlgCat.of K Ω)) (Y := op A)).symm.trans <|
-    Quiver.Hom.opEquiv.symm.trans
-      { toFun := CommAlgCat.Hom.hom, invFun := CommAlgCat.ofHom
-        left_inv _ := rfl, right_inv _ := rfl }
-
-private theorem algSpecHomEquiv_apply (A : CommAlgCat.{u} K)
-    (g : (algSpec (CommRingCat.of K)).obj (op (CommAlgCat.of K Ω)) ⟶
-      (algSpec (CommRingCat.of K)).obj (op A)) :
-    algSpecHomEquiv K Ω A g =
-      ((algSpec.fullyFaithful (R := CommRingCat.of K)).preimage
-        (X := op (CommAlgCat.of K Ω)) (Y := op A) g).unop.hom :=
-  rfl
-
-private theorem algSpecHomEquiv_comp {A B : CommAlgCat.{u} K} (h : B ⟶ A)
-    (g : (algSpec (CommRingCat.of K)).obj (op (CommAlgCat.of K Ω)) ⟶
-      (algSpec (CommRingCat.of K)).obj (op A)) :
-    algSpecHomEquiv K Ω B (g ≫ (algSpec (CommRingCat.of K)).map h.op) =
-      (algSpecHomEquiv K Ω A g).comp h.hom := by
-  rw [algSpecHomEquiv_apply, algSpecHomEquiv_apply, Functor.FullyFaithful.preimage_comp,
-    Functor.FullyFaithful.preimage_map]
-  rfl
-
 /-- The lifts of `Spec Ω ⟶ Spec K` to the spectrum of a finite étale `K`-algebra `A` are the
 `K`-algebra maps `A →ₐ[K] Ω`, naturally in `A`. -/
 private noncomputable def algSpecCompCoyonedaIso :
     (CommAlgCat.finiteEtale (CommRingCat.of K)).ι.op ⋙ algSpec (CommRingCat.of K) ⋙
         coyoneda.obj (op (Over.mk (Spec.map (CommRingCat.ofHom (algebraMap K Ω))))) ≅
       CommAlgCat.FiniteEtale.fiber K Ω ⋙ FintypeCat.incl :=
-  NatIso.ofComponents (fun A ↦ (algSpecHomEquiv K Ω A.unop.obj).toIso) fun f ↦ by
-    ext g
-    suffices algSpecHomEquiv K Ω _ (g ≫ (algSpec _).map f.unop.hom.op) =
-        (algSpecHomEquiv K Ω _ g).comp f.unop.hom.hom by simpa
-    exact algSpecHomEquiv_comp K Ω f.unop.hom g
-
-private theorem algSpec_map_algSpecHomEquiv (A : CommAlgCat.{u} K)
-    (g : Over.mk (Spec.map (CommRingCat.ofHom (algebraMap K Ω))) ⟶
-      (algSpec (CommRingCat.of K)).obj (op A)) :
-    (algSpec (CommRingCat.of K)).map (CommAlgCat.ofHom (algSpecHomEquiv K Ω A g)).op = g :=
-  (algSpecHomEquiv K Ω A).symm_apply_apply g
-
-private theorem functor_comp_ι :
-    (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).functor ⋙
-        (finiteEtaleSchemeProperty (Spec (.of K))).ι =
-      (CommAlgCat.finiteEtale (CommRingCat.of K)).ι.op ⋙ algSpec (CommRingCat.of K) := by
-  rw [finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor, spec_comp_ι]
+  NatIso.ofComponents
+    (fun A ↦ (AlgebraicGeometry.algSpecHomEquivAlgHom A.unop.obj (.of K Ω)).toIso)
+    fun {A B} f ↦ by
+      ext g
+      suffices AlgebraicGeometry.algSpecHomEquivAlgHom B.unop.obj (.of K Ω)
+          (g ≫ (algSpec _).map f.unop.hom.op) =
+            (AlgebraicGeometry.algSpecHomEquivAlgHom A.unop.obj (.of K Ω) g).comp
+              f.unop.hom.hom by
+        simpa
+      exact AlgebraicGeometry.algSpecHomEquivAlgHom_comp (A := A.unop.obj) (B := .of K Ω)
+        f.unop.hom g
 
 private theorem algSpecCompCoyonedaIso_hom_app_apply
     (A : (CommAlgCat.FiniteEtale.{u} (CommRingCat.of K))ᵒᵖ)
     (g : ((CommAlgCat.finiteEtale (CommRingCat.of K)).ι.op ⋙ algSpec (CommRingCat.of K) ⋙
         coyoneda.obj (op (Over.mk (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))))).obj A) :
-    (algSpecCompCoyonedaIso K Ω).hom.app A g = algSpecHomEquiv K Ω A.unop.obj g :=
+    (algSpecCompCoyonedaIso K Ω).hom.app A g =
+      AlgebraicGeometry.algSpecHomEquivAlgHom A.unop.obj (.of K Ω) g :=
   rfl
+
+/-- The forward functor of the finite étale anti-equivalence, followed by the inclusion, is
+Mathlib's `algSpec` on finite étale algebras. The definitions involved are not exposed, so this
+is an equation of functors obtained by rewriting with
+`finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor` and `spec_comp_ι`. -/
+private theorem functor_comp_ι :
+    (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).functor ⋙
+        (finiteEtaleSchemeProperty (Spec (.of K))).ι =
+      (CommAlgCat.finiteEtale (CommRingCat.of K)).ι.op ⋙ algSpec (CommRingCat.of K) := by
+  rw [finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor, spec_comp_ι]
 
 variable [IsSepClosed Ω]
 
@@ -149,9 +128,27 @@ noncomputable def fiberIsoFiniteEtaleFiber :
         CommAlgCat.FiniteEtale.fiber K Ω :=
   Functor.fullyFaithfulCancelRight FintypeCat.incl (fiberCompInclIsoFiniteEtaleFiber K Ω)
 
+/-- A point `y` of the geometric fibre of `X`, as a lift of `Spec Ω ⟶ Spec K` to `X`, goes to
+the `K`-algebra map of that lift transported to the spectrum of the coordinate algebra. -/
+private theorem fiberCompInclIsoFiniteEtaleFiber_hom_app_apply
+    (X : FiniteEtaleScheme (Spec (.of K)))
+    (y : (fiber (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).obj X) :
+    (fiberCompInclIsoFiniteEtaleFiber K Ω).hom.app X y =
+      AlgebraicGeometry.algSpecHomEquivAlgHom _ (.of K Ω) ((fiberCompInclIso _).hom.app X y ≫
+        ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).counitIso.inv.app X).hom ≫
+          eqToHom (Functor.congr_obj (functor_comp_ι K) _)) := by
+  refine (?_ : _ = (algSpecCompCoyonedaIso K Ω).hom.app _ _).trans
+    (algSpecCompCoyonedaIso_hom_app_apply K Ω _ _)
+  simp [fiberCompInclIsoFiniteEtaleFiber]
+  -- The two sides differ only in how the types of the morphisms of types are written: `simp`
+  -- unfolds composites of functors on one side only.
+  rfl
+
 /-- The `K`-algebra map that `fiberIsoFiniteEtaleFiber K Ω` attaches to a point `y` of the
 geometric fibre of a finite étale `K`-scheme `X` has as spectrum the lift of `Spec Ω ⟶ Spec K`
-to `X` given by `y`, transported to the spectrum of the coordinate algebra of `X`. -/
+to `X` given by `y`, transported to the spectrum of the coordinate algebra of `X`. That
+spectrum is the target of the counit of `finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme` by
+`finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor` and `spec_obj_obj`. -/
 theorem algSpec_map_fiberIsoFiniteEtaleFiber_hom_app (X : FiniteEtaleScheme (Spec (.of K)))
     (y : (fiber (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).obj X) :
     (algSpec (CommRingCat.of K)).map
@@ -161,6 +158,7 @@ theorem algSpec_map_fiberIsoFiniteEtaleFiber_hom_app (X : FiniteEtaleScheme (Spe
           eqToHom (by
             rw [finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor, Functor.comp_obj,
               spec_obj_obj]
+            -- `CommAlgCat.ofHom` writes the coordinate algebra `A` as `CommAlgCat.of K A`.
             rfl) := by
   have h : (fiberIsoFiniteEtaleFiber K Ω).hom.app X y =
       (fiberCompInclIsoFiniteEtaleFiber K Ω).hom.app X y := by
@@ -168,15 +166,10 @@ theorem algSpec_map_fiberIsoFiniteEtaleFiber_hom_app (X : FiniteEtaleScheme (Spe
     rw [ObjectProperty.ι_map] at this
     rw [fiberIsoFiniteEtaleFiber, Functor.fullyFaithfulCancelRight_hom_app, ← FintypeCat.hom_apply,
       this]
-  rw [h]
-  simp only [fiberCompInclIsoFiniteEtaleFiber, Functor.isoWhiskerLeft_trans, Iso.trans_hom,
-    Iso.symm_hom, Functor.isoWhiskerRight_hom, Functor.isoWhiskerLeft_hom, eqToIso.hom,
-    NatTrans.comp_app, Functor.comp_obj, ObjectProperty.ι_obj, Functor.flip_obj_obj,
-    yoneda_obj_obj, Functor.id_obj, Functor.leftUnitor_inv_app, Functor.whiskerRight_app,
-    Functor.comp_map, ObjectProperty.ι_map, Functor.flip_obj_map, yoneda_map_app, Functor.op_obj,
-    Functor.whiskerLeft_app, eqToHom_app, Functor.associator_hom_app, Category.id_comp, comp_apply,
-    TypeCat.hom_ofHom, TypeCat.Fun.coe_mk, Category.assoc]
-  rw [algSpecCompCoyonedaIso_hom_app_apply, algSpec_map_algSpecHomEquiv]
+  rw [h, fiberCompInclIsoFiniteEtaleFiber_hom_app_apply,
+    AlgebraicGeometry.algSpec_map_algSpecHomEquivAlgHom]
+  -- Both casts are `eqToHom`s to the same object, written as `A` and as `CommAlgCat.of K A`.
+  rfl
 
 /-- `Gal(Ω/K)` acts on the geometric fibre at `Spec Ω ⟶ Spec K` of a finite étale `K`-scheme
 through its action on the `Ω`-points of the coordinate algebra
@@ -194,7 +187,8 @@ theorem fiberIsoFiniteEtaleFiber_hom_app_smul (X : FiniteEtaleScheme (Spec (.of 
     (σ : Gal(Ω/K)) (y : (fiber (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).obj X) :
     (fiberIsoFiniteEtaleFiber K Ω).hom.app X (σ • y) =
       (σ : Ω →ₐ[K] Ω).comp ((fiberIsoFiniteEtaleFiber K Ω).hom.app X y) :=
-  (FintypeCat.equivEquivIso.symm ((fiberIsoFiniteEtaleFiber K Ω).app X)).apply_symm_apply _
+  ((FintypeCat.equivEquivIso.symm ((fiberIsoFiniteEtaleFiber K Ω).app X)).apply_symm_apply _).trans
+    (AlgEquiv.smul_algHom_def σ _)
 
 variable [IsGalois K Ω]
 
@@ -213,7 +207,11 @@ instance instIsFundamentalGroupFiber :
     (F' := ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).inverse ⋙ galoisFiber K Ω) ⋙
       forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u})
     (fiberIsoFiniteEtaleFiber K Ω) fun X σ y ↦
-    fiberIsoFiniteEtaleFiber_hom_app_smul K Ω X σ y
+      -- `σ` acts on `A →ₐ[K] Ω` by postcomposition, and on the underlying finite set of a finite
+      -- continuous `Gal(Ω/K)`-set through `ρ`.
+      ((fiberIsoFiniteEtaleFiber_hom_app_smul K Ω X σ y).trans
+        (AlgEquiv.smul_algHom_def σ _).symm).trans <|
+        (galoisFiber_obj_ρ_apply K Ω _ σ _).symm.trans (Action.ρ_apply_eq_smul _ σ _)
 
 /-- **The étale fundamental group of a field is its absolute Galois group.** For a separable
 closure `Ω` of `K`, the automorphism group of the geometric fibre functor of finite étale

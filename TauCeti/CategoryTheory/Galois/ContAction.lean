@@ -75,7 +75,8 @@ theorem isConnected_obj (X : ContAction FintypeCat.{u} G) [IsConnected X] : IsCo
     obtain ⟨y⟩ := (not_initial_iff_fiber_nonempty (Action.forget FintypeCat G) Y).mp hY
     have : IsIso j := IsConnected.noTrivialComponent _ j
       (not_initial_of_inhabited (forget₂ (ContAction FintypeCat.{u} G) FintypeCat.{u}) y)
-    exact inferInstanceAs (IsIso ((Action.isContinuous FintypeCat G).ι.map j))
+    have : IsIso ((Action.isContinuous FintypeCat G).ι.map j) := inferInstance
+    rwa [ObjectProperty.ι_map, ObjectProperty.homMk_hom] at this
 
 /-- `G` acts transitively on a connected finite continuous `G`-set. -/
 theorem isPretransitive_of_isConnected (X : ContAction FintypeCat.{u} G) [IsConnected X] :
