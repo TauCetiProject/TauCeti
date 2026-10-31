@@ -21,6 +21,10 @@ derives further closure properties from those constructors:
 
 The last one is the closure property needed to evaluate the search instruction of a code, whose
 search starts at the second component of its input rather than at zero.
+
+It also restates computability in `O` of natural-valued functions on `ℕ` and `ℕ × ℕ` in terms of
+`Nat.RecursiveIn` (`ComputableIn.nat_iff`, `ComputableIn₂.nat_iff`), in the manner of
+`Primrec.nat_iff` and `Primrec₂.nat_iff`.
 -/
 
 public section
@@ -62,3 +66,17 @@ theorem rfind' (hf : Nat.RecursiveIn O f) :
   simp [Seq.seq, Part.map_map, Function.comp_def]
 
 end Nat.RecursiveIn
+
+variable {O : Set (ℕ →. ℕ)}
+
+/-- A function `ℕ → ℕ` is computable in `O` exactly when its lift to a total partial function is
+recursive in `O`. -/
+theorem ComputableIn.nat_iff {f : ℕ → ℕ} :
+    ComputableIn O f ↔ Nat.RecursiveIn O fun n => Part.some (f n) :=
+  RecursiveIn.iff_nat
+
+/-- A binary function on `ℕ` is computable in `O` exactly when its uncurried form on codes of
+pairs, `Nat.unpaired f`, is recursive in `O`. -/
+theorem ComputableIn₂.nat_iff {f : ℕ → ℕ → ℕ} :
+    ComputableIn₂ O f ↔ Nat.RecursiveIn O fun n => Part.some (Nat.unpaired f n) := by
+  simp [ComputableIn₂, ComputableIn, RecursiveIn, Nat.unpaired]

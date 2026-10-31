@@ -22,11 +22,12 @@ such stages: `f s x = g x` whenever `m x ≤ s`.
 These are the notions of the Limit Lemma, by which the functions computable relative to the
 halting problem are exactly the limits of uniformly computable sequences, and of the Modulus
 Lemma, by which a function computable in a c.e. set has a computable approximation with a modulus
-computable in that set. Neither lemma is proved here. What is proved is the elementary calculus of
-limits and moduli, and the unrelativized fact that a uniformly computable sequence with a
-computable modulus has a computable limit. Convergence alone does not suffice: the halting problem
-is the limit of its increasing approximation by step-bounded evaluation, which therefore has no
-computable modulus.
+computable in that set. Neither lemma is proved here; `TauCeti.Computability.Approximation.Limit`
+proves the half of the Limit Lemma that places limits below the jump. What is proved here is the
+elementary calculus of limits and moduli, and the unrelativized fact that a uniformly computable
+sequence with a computable modulus has a computable limit. Convergence alone does not suffice:
+the halting problem is the limit of its increasing approximation by step-bounded evaluation, which
+therefore has no computable modulus.
 
 ## Main definitions
 
