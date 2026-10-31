@@ -23,11 +23,14 @@ A relation `G : SetRel X X` is read as a directed graph in which loops are allow
   `G`-independent sets. For the edge relation of a `SimpleGraph` it is the existence of a
   measurable `G.Coloring ℕ`.
 
-Countable Borel colorings are the dividing line of the Kechris–Solecki–Todorcevic G₀ dichotomy:
-an analytic relation on a Polish space either has one, or admits a continuous homomorphism from
-the graph G₀ on Cantor space. For an equivalence relation `E`, the inequivalence relation
-`{p | ¬ E p.1 p.2}` has a countable Borel coloring exactly when `E` has Borel classes and
-countably many of them, which turns counting the classes of `E` into a coloring problem.
+Countable Borel colorings are the dividing line of the Kechris–Solecki–Todorcevic G₀ dichotomy.
+A coloring does not see the direction of a pair, so the dichotomy concerns the symmetrization
+`G ∪ G.inv`: an analytic relation `G` on a Polish space either has a countable Borel coloring, or
+the graph G₀ on Cantor space admits a continuous homomorphism into `G ∪ G.inv`.
+
+For an equivalence relation `E`, the inequivalence relation `{p | ¬ E p.1 p.2}` has a countable
+Borel coloring exactly when `E` has Borel classes and countably many of them, which turns
+counting the classes of `E` into a coloring problem.
 
 The Kechris–Solecki–Todorcevic lemma `SetRel.exists_measurableSet_isIndependent_superset` says
 that, in a Hausdorff space with its Borel σ-algebra, every analytic independent set of an
