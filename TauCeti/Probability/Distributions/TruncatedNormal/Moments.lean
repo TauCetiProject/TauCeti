@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.TruncatedNormal.Basic
-public import Mathlib.Probability.Moments.MGFAnalytic
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.Probability.Distributions.Tilted
 
@@ -142,9 +141,7 @@ private theorem hasDerivAt_mgf_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l
     ring
   have hmass₀ := (hasDerivAt_measureReal_gaussianReal hv hlr.le hs₁ hs₂ (m + v * t)).comp t hmean
   have hmass : HasDerivAt (fun t : ℝ => (gaussianReal (m + v * t) v).real s) _ t := hmass₀
-  rw [show mgf id (truncatedNormalMeasure m v s) = fun t => exp (m * t + v * t ^ 2 / 2) *
-      (gaussianReal (m + v * t) v).real s / (gaussianReal m v).real s from
-    funext (mgf_id_truncatedNormalMeasure m v s)]
+  rw [funext (mgf_id_truncatedNormalMeasure m v s)]
   convert (hexp.fun_mul hmass).div_const ((gaussianReal m v).real s) using 1
   ring
 
