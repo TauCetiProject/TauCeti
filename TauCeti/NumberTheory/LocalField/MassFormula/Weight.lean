@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
-public import Mathlib.Topology.Instances.NNReal.Lemmas
 
 /-!
 # The weights of Serre's mass formula
@@ -15,9 +14,9 @@ public import Mathlib.Topology.Instances.NNReal.Lemmas
 Let `K` be a nonarchimedean local field with residue field of cardinality `q`. Serre's mass
 formula weights each `L ∈ σ_K(n)` by `q ^ (-c(L))`, where `c(L) = d(L) - n + 1` is the wild
 exponent. Serre proves it by integrating root counts over the Eisenstein region, whose volume is
-`q ^ (-n) · (1 - q⁻¹)`: the root count of `L` integrates to `q ^ (-(d(L) + 1)) · (1 - q⁻¹)`, and
-since `d(L) + 1 = n + c(L)`, this is the volume of the region times `q ^ (-c(L))`. This file
-records that factorization and its consequence: the mass formula
+`q ^ (-n) · (1 - q⁻¹)` for `0 < n`: the root count of `L` integrates to
+`q ^ (-(d(L) + 1)) · (1 - q⁻¹)`, and since `d(L) + 1 = n + c(L)`, this is the volume of the region
+times `q ^ (-c(L))`. This file records that factorization and its consequence: the mass formula
 `∑_{L ∈ σ_K(n)} q ^ (-c(L)) = n` is equivalent to
 `∑_{L ∈ σ_K(n)} q ^ (-(d(L) + 1)) · (1 - q⁻¹) = n · q ^ (-n) · (1 - q⁻¹)`, the form in which the
 integration produces it.
@@ -55,8 +54,8 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {n : ℕ}
 
-/-- The common factor `q ^ (-n) · (1 - q⁻¹)` of the weights, the volume of the Eisenstein region,
-is nonzero. -/
+/-- The common factor `q ^ (-n) · (1 - q⁻¹)` of the weights is nonzero. For `0 < n`, it is the
+volume of the Eisenstein region. -/
 private theorem one_div_natCard_residueField_pow_mul_one_sub_ne_zero :
     1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ 0 := by
   have hq : (1 : ℝ≥0∞) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
@@ -92,9 +91,10 @@ theorem tsum_one_div_natCard_residueField_pow_discriminantExponent_add_one_mul :
 
 /-- **The mass formula in discriminant weights**: the weighted count `∑_{L ∈ σ_K(n)} q ^ (-c(L))`
 is `n` exactly when the weights `q ^ (-(d(L) + 1)) · (1 - q⁻¹)` sum to `n · q ^ (-n) · (1 - q⁻¹)`,
-which is `n` times the volume of the Eisenstein region for the Haar measure normalized on the
-integer box. By `TauCeti.tsum_lintegral_rootCount_eq_of_normalized`, the right side holds once each
-root-count integral over the Eisenstein region is evaluated as `q ^ (-(d(L) + 1)) · (1 - q⁻¹)`. -/
+which for `0 < n` is `n` times the volume of the Eisenstein region for the Haar measure normalized
+on the integer box. By `TauCeti.tsum_lintegral_rootCount_eq_of_normalized`, the right side holds
+once each root-count integral over the Eisenstein region is evaluated as
+`q ^ (-(d(L) + 1)) · (1 - q⁻¹)`. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent_eq_iff :
     ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = n ↔
       ∑' L : totallyRamifiedOfDegree K n,
