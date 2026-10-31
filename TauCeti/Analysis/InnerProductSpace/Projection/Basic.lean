@@ -27,7 +27,8 @@ For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u
 
 The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the only one: a vector
 `w` with `‖w‖ ≤ ‖P_U w‖` equals `P_U w`. Equivalently, `v ∈ U` exactly when adding a vector of
-`Uᗮ` never decreases the norm of `v`.
+`Uᗮ` never decreases the norm of `v`. Over `ℝ`, Pythagoras splits the squared distance from a
+point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`.
 
 Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
 nonzero vector of `U` is orthogonal to `V`.
@@ -66,6 +67,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   is its projection.
 * `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
   `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
+* `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
+  `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.starProjection_sub_starProjection_sq_mul_starProjection`,
@@ -273,6 +276,27 @@ self-adjoint compressions, together with `LinearMap.adjoint_comp`. -/
 theorem adjoint_orthogonalProjectionOnto_toLinearMap [FiniteDimensional 𝕜 E] :
     LinearMap.adjoint U.orthogonalProjectionOnto.toLinearMap = U.subtype := by
   rw [← U.adjoint_subtype, LinearMap.adjoint_adjoint]
+
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  (R : Submodule ℝ F) [R.HasOrthogonalProjection]
+
+/-- Pythagoras for the squared distance from `b + c`, where `b ∈ R` and `c ∈ Rᗮ`: the
+components of `v - (b + c)` along `R` and `Rᗮ` are `P v - b` and `v - P v - c`, where `P` is the
+orthogonal projection onto `R`. -/
+theorem norm_sub_add_sq_of_mem_of_mem_orthogonal (v : F) {b c : F} (hb : b ∈ R) (hc : c ∈ Rᗮ) :
+    ‖v - (b + c)‖ ^ 2 = ‖R.starProjection v‖ ^ 2 + ‖v - R.starProjection v - c‖ ^ 2 -
+      2 * ⟪b, R.starProjection v⟫_ℝ + ‖b‖ ^ 2 := by
+  have hperp : v - R.starProjection v - c ∈ Rᗮ :=
+    Rᗮ.sub_mem (R.sub_starProjection_mem_orthogonal v) hc
+  have hsplit : v - (b + c) = (R.starProjection v - b) + (v - R.starProjection v - c) := by abel
+  rw [hsplit, norm_add_sq_real,
+    R.inner_right_of_mem_orthogonal (R.sub_mem (R.starProjection_apply_mem v) hb) hperp,
+    norm_sub_sq_real, real_inner_comm]
+  ring
+
+end Real
 
 end Submodule
 

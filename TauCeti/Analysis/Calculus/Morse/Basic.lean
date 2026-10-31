@@ -87,10 +87,14 @@ the notion be read off in any chart.
   `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`: near a
   nondegenerate critical point the differential is bounded below by a multiple of the distance,
   and the Morse form of Łojasiewicz's inequality holds.
+* `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: criticality is invariant under a change of
+  coordinates with invertible differential.
 * `TauCeti.isNondegenerateCriticalPoint_comp_iff` and `TauCeti.IsNondegenerateCriticalPoint.comp`:
   nondegeneracy is invariant under a change of coordinates with invertible differential.
 * `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
   nondegeneracy is invariant under negating the function.
+* `TauCeti.isNondegenerateCriticalPoint_add_const_iff`: nondegeneracy is invariant under adding a
+  constant.
 * `ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self`: the local model. A
   continuous bilinear form `B` whose polarization `B.flip + B` is invertible makes `z ↦ B z z` a
   function with a nondegenerate critical point at the origin.
@@ -230,21 +234,31 @@ in `TauCeti.Analysis.Calculus.SecondDerivative` because it involves no nondegene
 Hessian at a critical point, and hence nondegeneracy, does not depend on the choice of chart.
 -/
 
+/-- **Criticality does not depend on the coordinates.** If `f` is differentiable at `φ b`, `φ` is
+differentiable at `b`, and the differential of `φ` at `b` is invertible, then `b` is a critical
+point of `f ∘ φ` exactly when `φ b` is a critical point of `f`. -/
+theorem fderiv_comp_eq_zero_iff_of_isInvertible {φ : F → E} {b : F}
+    (hf : DifferentiableAt ℝ f (φ b)) (hφ : DifferentiableAt ℝ φ b)
+    (hinv : (fderiv ℝ φ b).IsInvertible) :
+    fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 := by
+  obtain ⟨e, he⟩ := hinv
+  -- The differential of `f ∘ φ` at `b` is that of `f` at `φ b` precomposed with the equivalence
+  -- `e`, so one vanishes exactly when the other does.
+  rw [fderiv_comp (x := b) hf hφ, ← he]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ext u; simp⟩
+  ext u
+  simpa using congrArg (fun L : F →L[ℝ] ℝ ↦ L (e.symm u)) h
+
 /-- **Nondegeneracy of a critical point does not depend on the coordinates.** If `f` is `C²` at
 `φ b`, `φ` is `C²` at `b`, and the differential of `φ` at `b` is invertible, then `f ∘ φ` has a
 nondegenerate critical point at `b` exactly when `f` has one at `φ b`. -/
 theorem isNondegenerateCriticalPoint_comp_iff {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
     (hφ : ContDiffAt ℝ 2 φ b) (hinv : (fderiv ℝ φ b).IsInvertible) :
     IsNondegenerateCriticalPoint (f ∘ φ) b ↔ IsNondegenerateCriticalPoint f (φ b) := by
+  have hcrit : fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 :=
+    fderiv_comp_eq_zero_iff_of_isInvertible (hf.differentiableAt (by norm_num))
+      (hφ.differentiableAt (by norm_num)) hinv
   obtain ⟨e, he⟩ := hinv
-  -- The differential of `f ∘ φ` at `b` is that of `f` at `φ b` precomposed with the equivalence
-  -- `e`, so one vanishes exactly when the other does.
-  have hcrit : fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 := by
-    rw [fderiv_comp (x := b) (hf.differentiableAt (by norm_num))
-      (hφ.differentiableAt (by norm_num)), ← he]
-    refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ext u; simp⟩
-    ext u
-    simpa using congrArg (fun L : F →L[ℝ] ℝ ↦ L (e.symm u)) h
   -- The Hessian pulls back as `ψ ↦ ψ ∘ e` composed with the Hessian composed with `e`, and each of
   -- the three factors is invertible.
   have hEq : fderiv ℝ f (φ b) = 0 → fderiv ℝ (fderiv ℝ (f ∘ φ)) b =
@@ -293,6 +307,19 @@ gives both directions. -/
 theorem isNondegenerateCriticalPoint_neg :
     IsNondegenerateCriticalPoint (-f) x ↔ IsNondegenerateCriticalPoint f x :=
   ⟨fun h ↦ by simpa using h.neg, IsNondegenerateCriticalPoint.neg⟩
+
+/-- **Nondegeneracy of a critical point is invariant under adding a constant**, which changes
+neither the differential nor the second derivative. -/
+@[simp]
+theorem isNondegenerateCriticalPoint_add_const_iff (c : ℝ) :
+    IsNondegenerateCriticalPoint (fun y ↦ f y + c) x ↔ IsNondegenerateCriticalPoint f x := by
+  have hfun : fderiv ℝ (fun y ↦ f y + c) = fderiv ℝ f := funext fun _ ↦ fderiv_add_const c
+  refine ⟨fun h ↦ ⟨?_, ?_, ?_⟩, fun h ↦ ⟨h.contDiffAt.add contDiffAt_const, ?_, ?_⟩⟩
+  · simpa using h.contDiffAt.sub (contDiffAt_const (c := c))
+  · simpa [hfun] using h.fderiv_eq_zero
+  · simpa [hfun] using h.isInvertible
+  · simpa [hfun] using h.fderiv_eq_zero
+  · simpa [hfun] using h.isInvertible
 
 end Morse
 
