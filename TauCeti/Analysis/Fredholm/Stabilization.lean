@@ -63,13 +63,14 @@ theorem IsFredholm.coprod_of_finiteDimensional {T : E →L[𝕜] F} (hT : IsFred
 variable [CompleteSpace E] [CompleteSpace F]
   {X : Type*} [TopologicalSpace X] {T : X → E →L[𝕜] F} {x₀ : X}
 
-/-- A continuous family Fredholm at one point admits a fixed finite-dimensional target
+/-- A family continuous and Fredholm at one point admits a fixed finite-dimensional target
 stabilizer and fixed kernel coordinate on a neighbourhood. Pairing the stabilized operator
-with this coordinate is invertible there. Thus `kernelHomeomorph` supplies actual local
-product charts, with model the finite-dimensional stabilized kernel at the base point.
+with this coordinate is invertible there. For continuous families, `kernelHomeomorph`
+supplies actual local product charts, with model the finite-dimensional stabilized kernel
+at the base point.
 No Fredholm hypothesis is imposed away from the base point. -/
 theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (T x₀))
-    (hT : Continuous T) :
+    (hT : ContinuousAt T x₀) :
     ∃ S : Submodule 𝕜 F, FiniteDimensional 𝕜 S ∧
       ∃ q : (E × S) →L[𝕜] ((T x₀).coprod S.subtypeL).ker,
         ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧
@@ -89,7 +90,7 @@ theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (
     refine ⟨(A x₀).implicitCoordEquiv (LinearMap.range_eq_top.mpr hsurj)
       hfred.closedComplemented_ker, ?_⟩
     exact coe_implicitCoordEquiv _ _ _
-  have hA : Continuous A := hT.continuousLinearMapCoprod continuous_const
+  have hA : ContinuousAt A x₀ := hT.continuousLinearMapCoprod continuousAt_const
   obtain ⟨U, hU, hx₀, hUinv⟩ := exists_isOpen_isInvertible_prod hA hinv
   exact ⟨S, inferInstance, q, U, hU, hx₀, hUinv⟩
 

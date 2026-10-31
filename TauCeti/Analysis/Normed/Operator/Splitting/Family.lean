@@ -94,14 +94,16 @@ theorem kernelHomeomorph_change_apply {G' : Type*}
       (p.1, (q' ∘L (A p.1).kerSection q) p.2) :=
   (rfl)
 
-/-- An invertible pair remains invertible on an open neighbourhood in any continuous family.
-The same complementary coordinate gives kernel coordinates throughout that neighbourhood. -/
-theorem exists_isOpen_isInvertible_prod {x₀ : X} (hA : Continuous A)
+/-- An invertible pair remains invertible on an open neighbourhood for a family continuous
+at the base point. The same complementary coordinate gives kernel coordinates throughout
+that neighbourhood. -/
+theorem exists_isOpen_isInvertible_prod {x₀ : X} (hA : ContinuousAt A x₀)
     (h : ((A x₀).prod q).IsInvertible) :
     ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧ ∀ x ∈ U, ((A x).prod q).IsInvertible := by
-  have hp : Continuous (fun x ↦ (A x).prod q) :=
-    (prodL (𝕜 := 𝕜) (E := E) (F := F) (G := G) 𝕜).continuous.comp
-      (hA.prodMk continuous_const)
-  exact ⟨_, isOpen_setOfPred_isInvertible.preimage hp, h, fun _ hx ↦ hx⟩
+  have hp : ContinuousAt (fun x ↦ (A x).prod q) x₀ :=
+    (prodL (𝕜 := 𝕜) (E := E) (F := F) (G := G) 𝕜).continuousAt.comp
+      (hA.prodMk continuousAt_const)
+  obtain ⟨U, hUsub, hU, hx₀⟩ := mem_nhds_iff.mp (hp.eventually h.eventually_nhds)
+  exact ⟨U, hU, hx₀, fun _ hx ↦ hUsub hx⟩
 
 end ContinuousLinearMap
