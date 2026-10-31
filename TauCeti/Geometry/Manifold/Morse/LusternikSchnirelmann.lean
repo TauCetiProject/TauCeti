@@ -31,6 +31,18 @@ manifold is locally contractible, `U` can be taken to be a union of one categori
 critical point, so the count grows by at most the number of critical points in the band
 (`TauCeti.exists_lsCategoryCount_sublevel_le_add`).
 
+The bound also holds one compact open part at a time: the count of a compact open subset `C`, such
+as a connected component of a compact manifold, is at most the number of critical points of `f` in
+`C` (`TauCeti.lsCategoryCount_univ_le_encard_criticalPoints_inter`), since `C` is itself a compact
+boundaryless manifold on which the critical points of the restriction of `f` are those of `f`. A
+compact manifold has finitely many components. Their Lusternik–Schnirelmann counts add up to the
+count of `M` (`TauCeti.lsCategoryCount_univ_eq_finsum_connectedComponents`) and their numbers of
+critical points add up to that of `f`
+(`TauCeti.totalCriticalCount_eq_finsum_connectedComponents`), so summing these bounds over the
+components recovers the bound for `M`. In dimension zero the bound is an equality, both sides
+being the number of points of `M`
+(`TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_finrank_eq_zero`).
+
 ## Main declarations
 
 * `TauCeti.lsCategoryCount_sublevel_le_of_band`: the count of `{f ≤ b}` is at most that of
@@ -41,6 +53,10 @@ critical point, so the count grows by at most the number of critical points in t
   critical points in `{f ≤ t}`.
 * `TauCeti.lsCategoryCount_univ_le_totalCriticalCount`: the Lusternik–Schnirelmann theorem on a
   compact manifold.
+* `TauCeti.lsCategoryCount_univ_le_encard_criticalPoints_inter`: the same bound for a compact open
+  part of `M`, such as a connected component of a compact manifold.
+* `TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_finrank_eq_zero`: equality in dimension
+  zero.
 
 ## References
 
@@ -53,6 +69,7 @@ critical point, so the count grows by at most the number of critical points in t
 public section
 
 open Set
+open TopologicalSpace (Opens)
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -78,6 +95,21 @@ private theorem exists_pos_criticalPoints_inter_band_subset {b c : ℝ} (hcb : c
   refine hηW ?_ ⟨⟨x, ⟨hx, (by linarith : f x ≤ b)⟩, rfl⟩, hxc⟩
   rw [Metric.mem_ball, Real.dist_eq, abs_sub_lt_iff]
   constructor <;> linarith
+
+/-- **The Lusternik–Schnirelmann count in dimension zero.** On a manifold modelled on a
+zero-dimensional space every point is critical and every subset is open, so the
+Lusternik–Schnirelmann count of `M` equals the number of critical points of any function `f`: both
+are the number of points of `M`, possibly `⊤`. -/
+theorem lsCategoryCount_univ_eq_totalCriticalCount_of_finrank_eq_zero [FiniteDimensional ℝ E]
+    (hE : Module.finrank ℝ E = 0) : lsCategoryCount M univ = totalCriticalCount I f := by
+  have : Subsingleton E := Module.finrank_zero_iff.mp hE
+  have : Subsingleton H := I.injective.subsingleton
+  have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+  -- Each tangent space is the zero space `E`, on which the derivative of `f` vanishes.
+  have hcrit : criticalPoints I f = univ := eq_univ_of_forall fun x ↦ by
+    have : Subsingleton (TangentSpace I x) := ‹Subsingleton E›
+    exact mem_criticalPoints.mpr (ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0])
+  rw [lsCategoryCount_eq_encard, totalCriticalCount_def, hcrit]
 
 variable [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I ∞ M]
 
@@ -191,5 +223,26 @@ theorem lsCategoryCount_univ_le_totalCriticalCount [CompactSpace M]
     have hu : {x | f x ≤ t} = univ := eq_univ_of_forall fun x ↦ ht (mem_range_self x)
     simpa [hu, totalCriticalCount_def] using lsCategoryCount_sublevel_le_encard hf (lt_add_one t)
       (isClosed_le hf.continuous continuous_const).isCompact (hfin.subset inter_subset_left)
+
+/-- **The Lusternik–Schnirelmann bound on a compact open part.** If `C` is a compact open subset
+of a boundaryless manifold `M`, for instance a connected component of a compact manifold, then the
+Lusternik–Schnirelmann count of `C`, as a space in its own right, is at most the number of critical
+points of a smooth function `f` lying in `C`. The critical points may be degenerate; if there are
+infinitely many in `C`, their count is `⊤`.
+
+Summed over the finitely many components of a compact manifold `M`, using
+`TauCeti.lsCategoryCount_univ_eq_finsum_connectedComponents` and
+`TauCeti.totalCriticalCount_eq_finsum_connectedComponents`, these bounds recover
+`TauCeti.lsCategoryCount_univ_le_totalCriticalCount`. -/
+theorem lsCategoryCount_univ_le_encard_criticalPoints_inter (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {C : Set M} (hCo : IsOpen C) (hCc : IsCompact C) :
+    lsCategoryCount C univ ≤ (criticalPoints I f ∩ C).encard := by
+  let U : Opens M := ⟨C, hCo⟩
+  have : CompactSpace U := isCompact_iff_compactSpace.mp hCc
+  have h := lsCategoryCount_univ_le_totalCriticalCount (I := I) (M := U)
+    (hf.comp contMDiff_subtype_val)
+  rw [totalCriticalCount_comp_subtypeVal (hf.mdifferentiable (by simp)).mdifferentiableOn] at h
+  -- The open submanifold `U` has carrier `C` by construction, so `↥U` is the subtype `↥C`.
+  exact h
 
 end TauCeti
