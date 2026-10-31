@@ -96,11 +96,8 @@ theorem isUnit_and_norm_ringInverse_le_of_finiteSection {M : ℝ}
       (norm_le_norm_ringInverse_mul_norm_apply hu y).trans
         (mul_le_mul_of_nonneg_right hn (norm_nonneg _))) x
   obtain ⟨n, -, hn⟩ := hM.exists
-  have hinj : Function.Injective (adjoint T) := by
-    refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
-    simpa [hx] using lower hM' x
   exact isUnit_and_norm_ringInverse_le_of_forall_norm_le ((norm_nonneg _).trans hn) (lower hM)
-    hinj
+    (injective_of_forall_norm_le (lower hM'))
 
 /-- An operator whose finite sections form a stable sequence is invertible. -/
 theorem isUnit_of_isStableSequence_finiteSection (h : IsStableSequence (T.finiteSection b)) :
@@ -123,9 +120,7 @@ theorem norm_finiteSection_solution_sub_le {M : ℝ} {n : ℕ} (hu : IsUnit (T.f
   have hres : Ring.inverse A (c (T x)) - c x = Ring.inverse A (c (T z)) := by
     have hAc : A (c x) = c (T (b.finiteProjection n x)) := by
       simp [A, c, finiteSection_coordinateCutoff]
-    have hinv : Ring.inverse A (A (c x)) = c x := by
-      rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel A hu, one_apply_eq_self]
-    simp only [z, map_sub, ← hAc, hinv]
+    simp only [z, map_sub, ← hAc, ringInverse_apply_apply hu]
   have hsplit : b.finiteInclusion n (Ring.inverse A (c (T x))) - x =
       b.finiteInclusion n (Ring.inverse A (c (T z))) - z := by
     rw [← hres, map_sub]
@@ -168,9 +163,8 @@ theorem tendsto_finiteSection_solution_ringInverse (h : IsStableSequence (T.fini
     Tendsto
       (fun n ↦ b.finiteInclusion n (Ring.inverse (T.finiteSection b n) (b.coordinateCutoff n y)))
       atTop (𝓝 (Ring.inverse T y)) := by
-  have hy : T (Ring.inverse T y) = y := by
-    rw [← mul_apply_eq_comp, Ring.mul_inverse_cancel T
-      (isUnit_of_isStableSequence_finiteSection h), one_apply_eq_self]
+  have hy : T (Ring.inverse T y) = y :=
+    apply_ringInverse_apply (isUnit_of_isStableSequence_finiteSection h) y
   simpa only [hy] using tendsto_finiteSection_solution h (Ring.inverse T y)
 
 end ContinuousLinearMap

@@ -59,14 +59,13 @@ theorem isStableSequence_iff_exists_forall_norm_le [∀ n, FiniteDimensional �
     (isStableSequence_def _).mpr ⟨max M 0, hM.mono fun n h ↦ ?_⟩⟩
   have h' : ∀ x, ‖x‖ ≤ max M 0 * ‖A n x‖ := fun x ↦
     (h x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
-  have hinj : Function.Injective (A n) := by
-    refine (injective_iff_map_eq_zero (A n)).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
-    simpa [hx] using h' x
+  have hinj : Function.Injective (A n) := ContinuousLinearMap.injective_of_forall_norm_le h'
   -- The lower bound makes the algebraic inverse continuous, so no completeness is needed.
   let e : E n ≃ₗ[𝕜] E n := LinearEquiv.ofBijective (A n : E n →ₗ[𝕜] E n)
     ⟨hinj, LinearMap.injective_iff_surjective.mp hinj⟩
+  have he : ∀ x, e x = A n x := fun x ↦ LinearEquiv.ofBijective_apply _ x
   let e' : E n ≃L[𝕜] E n := e.toContinuousLinearEquivOfBounds ‖A n‖ (max M 0) (A n).le_opNorm
-    fun y ↦ (h' (e.symm y)).trans_eq (by rw [show A n (e.symm y) = y from e.apply_symm_apply y])
+    fun y ↦ (h' (e.symm y)).trans_eq (by rw [← he, e.apply_symm_apply])
   have hunit : IsUnit (A n) := ⟨(ContinuousLinearEquiv.unitsEquiv 𝕜 (E n)).symm e', rfl⟩
   exact ⟨hunit, ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le hunit
     (le_max_right _ _) h'⟩

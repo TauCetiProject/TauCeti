@@ -106,6 +106,7 @@ theorem IsStableSequence.exists_conditionNumber_le {a : ∀ n, R n} (ha : IsStab
   exact mul_le_mul hCn hn (norm_nonneg _) ((norm_nonneg _).trans hCn)
 
 /-- A sequence in normed star rings is stable exactly when the sequence of its stars is. -/
+@[simp]
 theorem isStableSequence_star_iff [∀ n, StarRing (R n)] [∀ n, NormedStarGroup (R n)]
     {a : ∀ n, R n} : IsStableSequence (fun n ↦ star (a n)) ↔ IsStableSequence a := by
   simp only [IsStableSequence, isUnit_star, Ring.inverse_star, norm_star]

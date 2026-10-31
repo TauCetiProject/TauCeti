@@ -69,20 +69,14 @@ is invertible, and its inverse has norm at most `M`. -/
 theorem isUnit_and_norm_ringInverse_le_of_forall_norm_le {T : E →L[𝕜] E} {M : ℝ} (hM : 0 ≤ M)
     (hT : ∀ x, ‖x‖ ≤ M * ‖T x‖) (hT' : Function.Injective (adjoint T)) :
     IsUnit T ∧ ‖Ring.inverse T‖ ≤ M := by
-  have hinj : Function.Injective T := by
-    refine (injective_iff_map_eq_zero T).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
-    simpa [hx] using hT x
   have hanti : AntilipschitzWith (Real.toNNReal M) T :=
     AddMonoidHomClass.antilipschitz_of_bound T fun x ↦ by
       simpa [Real.coe_toNNReal _ hM] using hT x
-  have hclosed : IsClosed (T.range : Set E) := by
-    rw [LinearMap.coe_range]
-    exact hanti.isClosed_range T.uniformContinuous
-  have : CompleteSpace T.range := hclosed.completeSpace_coe
-  have hrange : T.range = ⊤ := by
-    rw [← Submodule.orthogonal_eq_bot_iff, orthogonal_range, LinearMap.ker_eq_bot]
+  have hdense : T.range.topologicalClosure = ⊤ := by
+    rw [Submodule.topologicalClosure_eq_top_iff, orthogonal_range, LinearMap.ker_eq_bot]
     exact hT'
-  have hunit : IsUnit T := isUnit_iff_bijective.mpr ⟨hinj, LinearMap.range_eq_top.mp hrange⟩
+  have hunit : IsUnit T := isUnit_iff_bijective.mpr
+    ((bijective_iff_dense_range_and_antilipschitz T).mpr ⟨hdense, _, hanti⟩)
   exact ⟨hunit, norm_ringInverse_le_of_forall_norm_le hunit hM hT⟩
 
 /-- The adjoint of an operator on a Hilbert space is invertible exactly when the operator is. -/
