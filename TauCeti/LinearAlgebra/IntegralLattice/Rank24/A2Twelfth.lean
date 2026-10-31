@@ -284,19 +284,21 @@ ternary image is a nonzero word of the extended ternary Golay code, so it has we
 theorem four_le_sum_glueMinimum_of_mem_a2TwelfthGlueSubgroup {w : a2TwelfthGlueModule}
     (hw : w ∈ a2TwelfthGlueSubgroup) (hw0 : w ≠ 0) :
     4 ≤ ∑ i, (A 2).glueMinimum (isSimplyLaced_A 2) (w i) := by
-  -- The ternary image is a signed permutation of `w`, so it has the same Hamming weight.
-  have hweight : hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) (a2TwelfthGolayIsometry w) =
-      hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) w :=
-    (congrArg (hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3))
-      (a2TwelfthGolayIsometry_eq_signedEquiv w)).trans (hammingNorm_signedEquiv _ _ _)
+  -- The module of glue words and the coordinate power of the `A₂` glue alphabet both have
+  -- carrier `Fin 12 → ZMod 3` once `glueAlphabet` is unfolded, so `w` and its image are read
+  -- once as ternary words to take their Hamming weights.
+  let x : Fin 12 → ZMod 3 := w
+  let y : Fin 12 → ZMod 3 := a2TwelfthGolayIsometry w
+  -- The ternary image is a signed permutation of `x`, so it has the same Hamming weight.
+  have hweight : hammingNorm y = hammingNorm x := by
+    rw [show y = _ from a2TwelfthGolayIsometry_eq_signedEquiv x, hammingNorm_signedEquiv]
   have hmem := TernaryGolay.hammingNorm_mem (mem_a2TwelfthGlueSubgroup_iff.mp hw)
   rw [hweight, Finset.mem_insert, Finset.mem_insert, Finset.mem_insert,
     Finset.mem_singleton] at hmem
-  have hpos : hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) w ≠ 0 := hammingNorm_ne_zero_iff.mpr hw0
-  have h6 : (6 : ℚ) ≤ hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) w := by
-    exact_mod_cast (by omega : 6 ≤ hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) w)
-  exact (by linarith : (4 : ℚ) ≤ 2 / 3 * hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) w).trans_eq
-    (sum_glueMinimum_A_two (isSimplyLaced_A 2) w).symm
+  have hpos : hammingNorm x ≠ 0 := hammingNorm_ne_zero_iff.mpr hw0
+  have h6 : (6 : ℚ) ≤ hammingNorm x := by exact_mod_cast (by omega : 6 ≤ hammingNorm x)
+  exact (by linarith : (4 : ℚ) ≤ 2 / 3 * hammingNorm x).trans_eq
+    (sum_glueMinimum_A_two (isSimplyLaced_A 2) x).symm
 
 /-- The orthogonal sum `A₂¹²` of twelve `A₂` root lattices. -/
 noncomputable abbrev a2TwelfthRootLattice : IntegralLattice (Fin 12 → Fin (A 2).rank → ℚ) :=
