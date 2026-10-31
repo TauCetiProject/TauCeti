@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.AlgebraicTopology.Singular.Torus.Exterior
 public import TauCeti.AlgebraicTopology.Singular.Torus.Lattice
 public import TauCeti.Topology.Category.TopCat.MonObj
+public import TauCeti.Topology.Circle.AddCircle
 
 /-!
 # The homology of a lattice quotient is the exterior algebra on the lattice
@@ -160,42 +161,27 @@ variable {ι : Type} [Fintype ι] (b : Module.Basis ι ℤ L)
 
 /-- Circle coordinates on the quotient `E / L`: the identification
 `Module.Basis.quotientLatticeEquiv` of `E ⧸ L` with the additive torus, read on the orbit space
-through `Submodule.orbitRelQuotientAddEquiv` and on the unit circle through
-`AddCircle.homeomorphCircle`. -/
-private def circleCoord : AddAction.orbitRel.Quotient L E ≃ (ι → ULift Circle) :=
+through `Submodule.orbitRelQuotientAddEquiv` and on the unit circles through
+`TauCeti.unitAddTorusEquivPiCircle`. -/
+private def circleCoord : AddAction.orbitRel.Quotient L E ≃+ Additive (ι → Circle) :=
   haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
-  (L.orbitRelQuotientAddEquiv.trans
-      (Module.Basis.quotientLatticeEquiv (L := L.toAddSubgroup) b).toAddEquiv).toEquiv.trans <|
-    Equiv.piCongrRight fun _ ↦
-      (AddCircle.homeomorphCircle (one_ne_zero : (1 : ℝ) ≠ 0)).toEquiv.trans Equiv.ulift.symm
+  L.orbitRelQuotientAddEquiv.trans
+    ((Module.Basis.quotientLatticeEquiv (L := L.toAddSubgroup) b).trans
+      unitAddTorusEquivPiCircle).toAddEquiv
 
-private theorem circleCoord_apply (x : AddAction.orbitRel.Quotient L E) (i : ι) :
-    haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
-    circleCoord L b x i = ULift.up (AddCircle.toCircle ((L.orbitRelQuotientAddEquiv.trans
-      (Module.Basis.quotientLatticeEquiv (L := L.toAddSubgroup) b).toAddEquiv) x i)) := by
-  simp [circleCoord, AddCircle.homeomorphCircle_apply]
-
-private theorem continuous_circleCoord : Continuous (circleCoord L b) := by
-  have : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
-  -- the orbit space and `E ⧸ L` are both quotients of `E` by the same relation
-  have he : Continuous L.orbitRelQuotientAddEquiv :=
-    isQuotientMap_quotient_mk'.continuous_iff.2 <|
-      continuous_quotient_mk'.congr fun v ↦ (L.orbitRelQuotientAddEquiv_mk v).symm
-  refine continuous_pi fun i ↦ continuous_uliftUp.comp <|
-    (AddCircle.homeomorphCircle _).continuous.comp <| (continuous_apply i).comp <|
-      (Module.Basis.quotientLatticeEquiv (L := L.toAddSubgroup) b).continuous.comp he
+private theorem continuous_circleCoord : Continuous (circleCoord L b) :=
+  haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
+  ((Module.Basis.quotientLatticeEquiv (L := L.toAddSubgroup) b).trans
+    unitAddTorusEquivPiCircle).continuous.comp L.continuous_orbitRelQuotientAddEquiv
 
 /-- Circle coordinates, as a continuous homomorphism from the multiplicative form of `E / L`. -/
 private def circleCoordMul :
     Multiplicative (AddAction.orbitRel.Quotient L E) →ₜ* (ι → ULift Circle) where
-  toFun x := circleCoord L b (Multiplicative.toAdd x)
-  map_one' := by
-    ext i
-    simp [circleCoord_apply]
-  map_mul' x y := by
-    ext i
-    simp [circleCoord_apply, AddCircle.toCircle_add]
-  continuous_toFun := (continuous_circleCoord L b).comp continuous_toAdd
+  toMonoidHom := (MonoidHom.compLeft MulEquiv.ulift.symm.toMonoidHom ι).comp
+    (circleCoord L b).toMultiplicative.toMonoidHom
+  continuous_toFun := continuous_pi fun i ↦ continuous_uliftUp.comp <|
+    (continuous_apply i).comp <| continuous_toMul.comp <|
+      (continuous_circleCoord L b).comp continuous_toAdd
 
 end CircleCoordinates
 
@@ -213,7 +199,8 @@ theorem bijective_pontryaginExteriorPower_orbitRelQuotient (n : ℕ) :
   -- `Multiplicative (E / L)` is a type synonym carrying the topology of `E / L`
   have : IsIso f := (TopCat.isIso_iff_isHomeomorph f).2 <|
     (isHomeomorph_iff_continuous_bijective (X := AddAction.orbitRel.Quotient L E)).2
-      ⟨continuous_circleCoord L b, (circleCoord L b).bijective⟩
+      ⟨(circleCoordMul L b).continuous,
+        (Equiv.piCongrRight fun _ ↦ Equiv.ulift.symm).bijective.comp (circleCoord L b).bijective⟩
   exact TopCat.bijective_pontryaginExteriorPower_of_isIso f
     (bijective_pontryaginExteriorPower_torus ℤ _ n)
 

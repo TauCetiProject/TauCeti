@@ -32,7 +32,8 @@ The orbit space `AddAction.orbitRel.Quotient p M` of translation by a submodule,
 carrier for quotients such as complex tori, is second countable when `M` is
 (`Submodule.instSecondCountableTopologyOrbitRelQuotient`), by Mathlib's
 `ContinuousConstVAdd.secondCountableTopology`. It is a topological additive group when `M` is
-(`Submodule.instIsTopologicalAddGroupOrbitRelQuotient`). The map of orbit spaces induced by a
+(`Submodule.instIsTopologicalAddGroupOrbitRelQuotient`), and its identification with `M ⧸ p` is
+continuous (`Submodule.continuous_orbitRelQuotientAddEquiv`). The map of orbit spaces induced by a
 continuous semilinear map is continuous (`Submodule.continuous_orbitRelQuotientMap`).
 -/
 
@@ -77,6 +78,14 @@ instance Submodule.instIsTopologicalAddGroupOrbitRelQuotient {R M : Type*} [Ring
   continuous_neg :=
     AddAction.isOpenQuotientMap_quotientMk.isQuotientMap.continuous_iff.2 <|
       (continuous_quotient_mk'.comp continuous_neg).congr fun x ↦ (p.orbitRelQuotient_mk_neg x).symm
+
+/-- `Submodule.orbitRelQuotientAddEquiv` is continuous: the orbit space and `M ⧸ p` are both
+quotients of `M` by the same relation. -/
+theorem Submodule.continuous_orbitRelQuotientAddEquiv {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] (p : Submodule R M) :
+    Continuous p.orbitRelQuotientAddEquiv :=
+  isQuotientMap_quotient_mk'.continuous_iff.2 <|
+    continuous_quotient_mk'.congr fun x ↦ (p.orbitRelQuotientAddEquiv_mk x).symm
 
 /-- If a closed submodule `S` contains `p`, its image `S / p` in the orbit space of translation by
 `p` is closed. -/

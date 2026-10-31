@@ -67,18 +67,11 @@ instance Submodule.instCompactSpaceOrbitRelQuotient {E : Type*} [NormedAddCommGr
 /-- The additive quotient of a finite-dimensional real normed space by a full lattice is compact. -/
 instance QuotientAddGroup.instCompactSpaceOfIsZLattice {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [FiniteDimensional ℝ E] (L : AddSubgroup E) [DiscreteTopology L]
-    [IsZLattice ℝ L.toIntSubmodule] : CompactSpace (E ⧸ L) := by
+    [IsZLattice ℝ L.toIntSubmodule] : CompactSpace (E ⧸ L) :=
   -- Reuse the compact orbit space above. The quotient by L.toIntSubmodule is the quotient
   -- by L: toIntSubmodule retains L as its underlying additive subgroup.
-  let e := L.toIntSubmodule.orbitRelQuotientAddEquiv
-  apply e.surjective.compactSpace
-  apply isQuotientMap_quotient_mk'.continuous_iff.mpr
-  -- The quotient-map criterion uses Quotient.mk', while the evaluation lemma for e uses
-  -- Quotient.mk with an explicit relation; expose that constructor to apply the lemma.
-  change Continuous (fun x : E => e (_root_.Quotient.mk _ x))
-  simpa only [e, Submodule.orbitRelQuotientAddEquiv_mk] using
-    (show Continuous (Submodule.Quotient.mk : E → E ⧸ L.toIntSubmodule) from
-      continuous_quotient_mk')
+  L.toIntSubmodule.orbitRelQuotientAddEquiv.surjective.compactSpace
+    L.toIntSubmodule.continuous_orbitRelQuotientAddEquiv
 
 noncomputable section
 
