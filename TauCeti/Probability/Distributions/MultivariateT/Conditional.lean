@@ -62,11 +62,6 @@ namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
-/-- The Gaussian family `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`. -/
-private theorem measurable_multivariateGaussian_inv_smul (m : EuclideanSpace ℝ ι)
-    (S : Matrix ι ι ℝ) : Measurable fun τ : ℝ => multivariateGaussian m (τ⁻¹ • S) :=
-  measurable_multivariateGaussian.comp (measurable_const.prodMk (by fun_prop))
-
 /-- The Gamma–Gaussian density identity behind the conditional law. On the positive half-line,
 the Gamma density of the precision `τ` (shape and rate `ν / 2`) times the density of
 `N(a, τ⁻¹ • R)` at `x` factors as the multivariate t density at `x` times the Gamma density of
@@ -282,27 +277,6 @@ namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
-/-- Scaling the joint covariance by `τ⁻¹` leaves the Gaussian regression mean unchanged and
-scales the conditional covariance by `τ⁻¹`. -/
-private theorem gaussianCondKernel_inv_smul (m : EuclideanSpace ℝ (ι ⊕ κ))
-    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) {τ : ℝ}
-    (hτ : 0 < τ) (x₂ : EuclideanSpace ℝ κ) :
-    m.gaussianCondKernel (τ⁻¹ • S) x₂ =
-      multivariateGaussian (m.gaussianCondMean S x₂) (τ⁻¹ • S.gaussianCondCov) := by
-  have hS₂₂' : ((τ⁻¹ • S).submatrix Sum.inr Sum.inr).PosDef := by
-    simpa only [Matrix.submatrix_smul, Pi.smul_apply] using hS₂₂.smul (inv_pos.mpr hτ)
-  have hinv : (τ⁻¹ • S.submatrix Sum.inr Sum.inr)⁻¹ = τ • (S.submatrix Sum.inr Sum.inr)⁻¹ := by
-    simpa [Units.smul_def] using Matrix.inv_smul' (S.submatrix Sum.inr Sum.inr)
-      (Units.mk0 _ (inv_pos.mpr hτ).ne') hS₂₂.det_pos.ne'.isUnit
-  rw [EuclideanSpace.gaussianCondKernel_apply, EuclideanSpace.gaussianCondMean_of_posDef m hS₂₂',
-    Matrix.gaussianCondCov_of_posDef hS₂₂', EuclideanSpace.gaussianCondMean_of_posDef m hS₂₂,
-    Matrix.gaussianCondCov_of_posDef hS₂₂]
-  simp only [Matrix.submatrix_smul, Pi.smul_apply, hinv]
-  congr 2
-  · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, mul_inv_cancel₀ hτ.ne', one_smul]
-  · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, smul_sub, mul_inv_cancel₀ hτ.ne',
-      mul_one]
-
 /-- **The joint law of a multivariate t vector factors through the conditional t kernel.** If
 the observed scale block `S₂₂` is positive definite, the joint law of the observed and retained
 blocks is the multivariate t law of the observed block, with scale `S₂₂` and `ν` degrees of
@@ -366,7 +340,8 @@ theorem _root_.EuclideanSpace.map_snd_fst_multivariateTMeasure (m : EuclideanSpa
         filter_upwards [ae_pos_gammaMeasure (ν / 2) (ν / 2)] with τ hτ
         rw [EuclideanSpace.map_snd_fst_multivariateGaussian m (hS.smul (inv_pos.mpr hτ).le),
           Measure.compProd_apply hA]
-        simp only [Matrix.submatrix_smul, Pi.smul_apply, gaussianCondKernel_inv_smul m hS₂₂ hτ]
+        simp only [Matrix.submatrix_smul, Pi.smul_apply,
+          EuclideanSpace.gaussianCondKernel_inv_smul m hS₂₂ hτ]
         -- The sides differ only by the local abbreviations `m₂`, `mean` and `C`.
         rfl
     _ = ∫⁻ x₂, ∫⁻ τ, multivariateGaussian (mean x₂) (τ⁻¹ • C) (Prod.mk x₂ ⁻¹' A)

@@ -37,6 +37,8 @@ A positive-definite observed block recovers the ordinary inverse formula.
   regression residual and the observed block.
 * `EuclideanSpace.gaussianCondKernel_of_submatrix_eq_zero` — the unconditional first-block
   Gaussian law when the observed covariance block is zero.
+* `EuclideanSpace.gaussianCondKernel_inv_smul` — scaling the joint covariance by `τ⁻¹` keeps
+  the regression mean and scales the conditional covariance by `τ⁻¹`.
 * `EuclideanSpace.gaussianCondMean_of_posDef` and `Matrix.gaussianCondCov_of_posDef` —
   the ordinary-inverse formulas for a positive-definite observed covariance block.
 
@@ -223,6 +225,27 @@ theorem gaussianCondKernel_of_submatrix_eq_zero (m : EuclideanSpace ℝ (ι ⊕ 
     m.gaussianCondKernel S x₂ =
       multivariateGaussian (EuclideanSpace.sumEquivProd m).1 (S.submatrix Sum.inl Sum.inl) := by
   simp [gaussianCondKernel_apply, gaussianCondMean_def, Matrix.gaussianCondCov_def, hS₂₂]
+
+/-- Scaling the joint covariance by `τ⁻¹` leaves the Gaussian regression mean unchanged and
+scales the conditional covariance by `τ⁻¹`. -/
+theorem gaussianCondKernel_inv_smul (m : EuclideanSpace ℝ (ι ⊕ κ))
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) {τ : ℝ}
+    (hτ : 0 < τ) (x₂ : EuclideanSpace ℝ κ) :
+    m.gaussianCondKernel (τ⁻¹ • S) x₂ =
+      multivariateGaussian (m.gaussianCondMean S x₂) (τ⁻¹ • S.gaussianCondCov) := by
+  have hS₂₂' : ((τ⁻¹ • S).submatrix Sum.inr Sum.inr).PosDef := by
+    simpa only [Matrix.submatrix_smul, Pi.smul_apply] using hS₂₂.smul (inv_pos.mpr hτ)
+  have hinv : (τ⁻¹ • S.submatrix Sum.inr Sum.inr)⁻¹ = τ • (S.submatrix Sum.inr Sum.inr)⁻¹ := by
+    simpa [Units.smul_def] using Matrix.inv_smul' (S.submatrix Sum.inr Sum.inr)
+      (Units.mk0 _ (inv_pos.mpr hτ).ne') hS₂₂.det_pos.ne'.isUnit
+  rw [gaussianCondKernel_apply, gaussianCondMean_of_posDef m hS₂₂',
+    Matrix.gaussianCondCov_of_posDef hS₂₂', gaussianCondMean_of_posDef m hS₂₂,
+    Matrix.gaussianCondCov_of_posDef hS₂₂]
+  simp only [Matrix.submatrix_smul, Pi.smul_apply, hinv]
+  congr 2
+  · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, mul_inv_cancel₀ hτ.ne', one_smul]
+  · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, smul_sub, mul_inv_cancel₀ hτ.ne',
+      mul_one]
 
 instance isMarkovKernel_gaussianCondKernel (m : EuclideanSpace ℝ (ι ⊕ κ))
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) : IsMarkovKernel (gaussianCondKernel m S) where
