@@ -11,6 +11,9 @@ public import TauCeti.KnotTheory.Markov.TristramLevine
 /-!
 # The Seifert matrix of a connected sum of closed braids
 
+As in `TauCeti.KnotTheory.BraidWord.SeifertMatrix.Basic`, the elementary braids are numbered from
+`1` in the prose: `σᵢ` is `TauCeti.BraidGroup.sigma (i - 1)`, the letter of level `i - 1`.
+
 For braid words `w₁` on `n + 1` strands and `w₂` on `m + 1` strands, the word
 `TauCeti.BraidWord.connectedSum w₁ w₂` on `n + m + 1` strands is `w₁` on the strands `0, …, n`
 followed by `w₂` moved up onto the strands `n, …, n + m`. The two braids share the strand `n`, so
@@ -38,15 +41,17 @@ multiplicative under this connected sum
 `TauCeti.BraidWord.alexander_seifertMatrix_connectedSum`). Additivity under connected sum is what
 makes the signature, a concordance invariant, a homomorphism on the knot concordance group, whose
 group operation is the connected sum. As an application, the granny knot (the connected sum of two
-right-handed trefoils, the closure of `σ₀³ σ₁³`) has signature `-4` while the square knot (a
-right-handed trefoil plus a left-handed one, the closure of `σ₀³ σ₁⁻³`) has signature `0`,
+right-handed trefoils, the closure of `σ₁³ σ₂³`) has signature `-4` while the square knot (a
+right-handed trefoil plus a left-handed one, the closure of `σ₁³ σ₂⁻³`) has signature `0`,
 although the two have the same Alexander polynomial `(t - 1 + t⁻¹)²`. So the two braids are not
 Markov equivalent (`TauCeti.not_markovEquiv_granny_square`).
 
+The word `TauCeti.BraidWord.connectedSum` itself, with the levels and signs of its letters and the
+braid `TauCeti.BraidWord.toBraid_connectedSum` it represents, is in
+`TauCeti.GroupTheory.SpecificGroups.Braid.Word`.
+
 ## Main definitions
 
-* `TauCeti.BraidWord.connectedSum w₁ w₂`: the word `w₁` followed by `w₂` shifted up by `n`
-  strands, whose closure is the connected sum of the closures.
 * `TauCeti.BraidWord.seifertLoopsConnectedSumEquiv`: the basis loops of the connected sum are
   those of the two summands.
 
@@ -55,11 +60,12 @@ Markov equivalent (`TauCeti.not_markovEquiv_granny_square`).
 * `TauCeti.BraidWord.submatrix_seifertMatrix_connectedSum`: the Seifert matrix of the connected
   sum is the block diagonal matrix of the Seifert matrices of the summands.
 * `TauCeti.BraidWord.tristramLevineSignature_seifertMatrix_connectedSum` and
-  `TauCeti.MarkovBraid.tristramLevineSignature_mk_connectedSum`: the Tristram–Levine signature of
-  the connected sum is the sum of the signatures of the summands.
-* `TauCeti.BraidWord.alexander_seifertMatrix_connectedSum`: for Seifert surfaces of even rank, the
-  Alexander polynomial of the connected sum is the product of those of the summands.
-* `TauCeti.not_markovEquiv_granny_square`: the braids `σ₀³ σ₁³` and `σ₀³ σ₁⁻³` of the granny
+  `TauCeti.MarkovBraid.tristramLevineSignature_mk_castAdd_mul_natAdd`: the Tristram–Levine
+  signature of the connected sum is the sum of the signatures of the summands.
+* `TauCeti.BraidWord.alexander_seifertMatrix_connectedSum`: when the Seifert surface of the first
+  summand has even rank, the Alexander polynomial of the connected sum is the product of those of
+  the summands.
+* `TauCeti.not_markovEquiv_granny_square`: the braids `σ₁³ σ₂³` and `σ₁³ σ₂⁻³` of the granny
   knot and the square knot are not Markov equivalent.
 
 ## References
@@ -82,66 +88,6 @@ open KnotTheory LaurentPolynomial
 
 variable {n m : ℕ} (w₁ : BraidWord (n + 1)) (w₂ : BraidWord (m + 1))
 
-/-- The **connected sum** of braid words: `w₁` on the strands `0, …, n` followed by `w₂` moved up
-onto the strands `n, …, n + m`, so that the two braids share the strand `n`. Its closure is the
-connected sum of the closures of `w₁` and `w₂`, along the components through the shared strand. -/
-def connectedSum : BraidWord (n + m + 1) :=
-  w₁.map (fun x ↦ ((Fin.castAdd m x.1 : Fin (n + m)), x.2)) ++
-    w₂.map (fun x ↦ ((Fin.natAdd n x.1 : Fin (n + m)), x.2))
-
-/-- The defining equation of `TauCeti.BraidWord.connectedSum`. -/
-theorem connectedSum_def :
-    w₁.connectedSum w₂ = w₁.map (fun x ↦ ((Fin.castAdd m x.1 : Fin (n + m)), x.2)) ++
-      w₂.map (fun x ↦ ((Fin.natAdd n x.1 : Fin (n + m)), x.2)) :=
-  (rfl)
-
--- The list type is written `Fin (n + m) × ℤˣ` rather than `BraidWord (n + m + 1)`, for the reason
--- given at `TauCeti.BraidWord.length_strandIncl`.
-/-- The connected sum has the letters of both words. -/
-@[simp]
-theorem length_connectedSum :
-    List.length (α := Fin (n + m) × ℤˣ) (w₁.connectedSum w₂) = w₁.length + w₂.length := by
-  simp [connectedSum_def]
-
-/-- The letters of `w₁` keep their level in the connected sum. -/
-@[simp]
-theorem levelAt_connectedSum_of_lt {k : ℕ} (hk : k < w₁.length) :
-    (w₁.connectedSum w₂).levelAt k = w₁.levelAt k := by
-  rw [levelAt_def, levelAt_def, connectedSum_def,
-    List.getElem?_append_left (by simpa using hk), List.getElem?_map, Option.map_map]
-  rfl
-
-/-- The letters of `w₂` are moved up by `n` levels in the connected sum. -/
-@[simp]
-theorem levelAt_connectedSum_add (k : ℕ) :
-    (w₁.connectedSum w₂).levelAt (w₁.length + k) = (w₂.levelAt k).map (n + ·) := by
-  rw [levelAt_def, levelAt_def, connectedSum_def,
-    List.getElem?_append_right (by simp), List.length_map, Nat.add_sub_cancel_left,
-    List.getElem?_map, Option.map_map, Option.map_map]
-  rfl
-
-/-- The letters of `w₁` keep their sign in the connected sum. -/
-@[simp]
-theorem signAt_connectedSum_of_lt {k : ℕ} (hk : k < w₁.length) :
-    (w₁.connectedSum w₂).signAt k = w₁.signAt k := by
-  rw [signAt_def, signAt_def, connectedSum_def,
-    List.getElem?_append_left (by simpa using hk), List.getElem?_map, Option.map_map]
-  rfl
-
-/-- The letters of `w₂` keep their sign in the connected sum. -/
-@[simp]
-theorem signAt_connectedSum_add (k : ℕ) :
-    (w₁.connectedSum w₂).signAt (w₁.length + k) = w₂.signAt k := by
-  rw [signAt_def, signAt_def, connectedSum_def,
-    List.getElem?_append_right (by simp), List.length_map, Nat.add_sub_cancel_left,
-    List.getElem?_map, Option.map_map]
-  rfl
-
-/-- A letter of `w₁` lies on a level below `n`. -/
-private theorem exists_levelAt_eq_some_lt {k : ℕ} (hk : k < w₁.length) :
-    ∃ l < n, w₁.levelAt k = some l :=
-  ⟨_, by have := (w₁[k]).1.isLt; omega, w₁.levelAt_of_lt hk⟩
-
 /-! ### The loops of a connected sum -/
 
 /-- The letters at positions at least `w₁.length` come from `w₂`, on levels at least `n`. -/
@@ -152,16 +98,6 @@ private theorem levelAt_connectedSum_ne_of_lt_of_le {j k : ℕ} (hj : j < w₁.l
   rw [levelAt_connectedSum_of_lt w₁ w₂ hj, hjl, levelAt_connectedSum_add]
   cases w₂.levelAt k <;> simp
   omega
-
-/-- The two bands of a loop are in order. -/
-private theorem IsSeifertLoop.fst_lt_snd {k : ℕ} {w : BraidWord k} {p : ℕ × ℕ}
-    (h : w.IsSeifertLoop p) : p.1 < p.2 :=
-  (w.isSeifertLoop_iff.1 h).1
-
-/-- The first band of a loop is a letter of the word. -/
-private theorem IsSeifertLoop.fst_lt_length {k : ℕ} {w : BraidWord k} {p : ℕ × ℕ}
-    (h : w.IsSeifertLoop p) : p.1 < w.length :=
-  (w.isSeifertLoop_iff.1 h).1.trans (w.isSeifertLoop_iff.1 h).2.1
 
 /-- A loop of the connected sum starting in `w₁` is a loop of `w₁`. -/
 theorem isSeifertLoop_connectedSum_iff_of_lt {p : ℕ × ℕ} (hp : p.1 < w₁.length) :
@@ -327,27 +263,30 @@ theorem tristramLevineSignature_seifertMatrix_connectedSum (ω : ℂ) :
     tristramLevineSignature_fromBlocks_zero]
 
 /-- **The Alexander polynomial is multiplicative under connected sum of closed braids**, when the
-canonical Seifert surfaces of the summands have even rank `2 * g₁` and `2 * g₂`, as for knots. -/
-theorem alexander_seifertMatrix_connectedSum {g₁ g₂ : ℕ} (h₁ : w₁.seifertLoops.card = 2 * g₁)
-    (h₂ : w₂.seifertLoops.card = 2 * g₂) :
+canonical Seifert surface of the first summand has even rank `2 * g₁`, as for a knot. -/
+theorem alexander_seifertMatrix_connectedSum {g₁ : ℕ} (h₁ : w₁.seifertLoops.card = 2 * g₁) :
     alexander (w₁.connectedSum w₂).seifertMatrix =
       alexander w₁.seifertMatrix * alexander w₂.seifertMatrix := by
   rw [← Matrix.alexander_submatrix_equiv_self _ (seifertLoopsConnectedSumEquiv w₁ w₂),
-    submatrix_seifertMatrix_connectedSum, alexander_fromBlocks_zero _ _ (by simpa using h₁)
-      (by simpa using h₂)]
+    submatrix_seifertMatrix_connectedSum, alexander_fromBlocks_zero _ _ (by simpa using h₁)]
 
 end BraidWord
 
 namespace MarkovBraid
 
-open BraidWord
+open BraidGroup BraidWord
 
-/-- **The Tristram–Levine signature is additive under connected sum of braids**: the closure of
-the connected sum of two braid words has the sum of the signatures of their closures. -/
-theorem tristramLevineSignature_mk_connectedSum {n m : ℕ} (w₁ : BraidWord (n + 1))
-    (w₂ : BraidWord (m + 1)) (ω : ℂ) :
-    tristramLevineSignature ⟨n + m, (w₁.connectedSum w₂).toBraid⟩ ω =
-      tristramLevineSignature ⟨n, w₁.toBraid⟩ ω + tristramLevineSignature ⟨m, w₂.toBraid⟩ ω := by
+/-- **The Tristram–Levine signature is additive under connected sum of braids**: the braid
+`castAdd m b₁ * natAdd n b₂`, which is `b₁` on the bottom strands followed by `b₂` on the top ones,
+sharing one strand, closes to a connected sum of the closures of `b₁` and `b₂`, and its signature
+is the sum of theirs. -/
+theorem tristramLevineSignature_mk_castAdd_mul_natAdd {n m : ℕ} (b₁ : BraidGroup (n + 1))
+    (b₂ : BraidGroup (m + 1)) (ω : ℂ) :
+    tristramLevineSignature ⟨n + m, castAdd m b₁ * natAdd n b₂⟩ ω =
+      tristramLevineSignature ⟨n, b₁⟩ ω + tristramLevineSignature ⟨m, b₂⟩ ω := by
+  obtain ⟨w₁, rfl⟩ := toBraid_surjective b₁
+  obtain ⟨w₂, rfl⟩ := toBraid_surjective b₂
+  rw [← toBraid_connectedSum]
   simp only [tristramLevineSignature_mk, tristramLevineSignature_seifertMatrix_connectedSum]
 
 end MarkovBraid
@@ -358,61 +297,64 @@ namespace BraidWord
 
 open KnotTheory LaurentPolynomial
 
-/-- The canonical Seifert surface of the closure of `σ₀³` has two basis loops. -/
+/-- The canonical Seifert surface of the closure of `σ₁³` has two basis loops. -/
 private theorem card_seifertLoops_trefoil :
     (seifertLoops (n := 2) [(0, 1), (0, 1), (0, 1)]).card = 2 * 1 := by
   obtain ⟨e, -⟩ := seifertMatrix_trefoil
   simpa using (Fintype.card_congr e).symm
 
-/-- The canonical Seifert surface of the closure of `σ₀⁻³` has two basis loops. -/
+/-- The canonical Seifert surface of the closure of `σ₁⁻³` has two basis loops. -/
 private theorem card_seifertLoops_mirrorTrefoil :
     (seifertLoops (n := 2) [(0, -1), (0, -1), (0, -1)]).card = 2 * 1 := by
   obtain ⟨e, -⟩ := seifertMatrix_mirrorTrefoil
   simpa using (Fintype.card_congr e).symm
 
-/-- The granny knot, the closure of `σ₀³ σ₁³`, has Alexander polynomial `(t - 1 + t⁻¹)²`. -/
+/-- The granny knot, the closure of `σ₁³ σ₂³`, has Alexander polynomial `(t - 1 + t⁻¹)²`. -/
 theorem alexander_seifertMatrix_granny :
     alexander (connectedSum (n := 1) (m := 1) [(0, 1), (0, 1), (0, 1)]
       [(0, 1), (0, 1), (0, 1)]).seifertMatrix = (T 1 - 1 + T (-1)) ^ 2 := by
-  have h := card_seifertLoops_trefoil
-  rw [alexander_seifertMatrix_connectedSum (g₁ := 1) (g₂ := 1) _ _ h h,
+  rw [alexander_seifertMatrix_connectedSum (g₁ := 1) _ _ card_seifertLoops_trefoil,
     alexander_seifertMatrix_trefoil, sq]
 
-/-- The square knot, the closure of `σ₀³ σ₁⁻³`, has the same Alexander polynomial
+/-- The square knot, the closure of `σ₁³ σ₂⁻³`, has the same Alexander polynomial
 `(t - 1 + t⁻¹)²` as the granny knot. -/
 theorem alexander_seifertMatrix_square :
     alexander (connectedSum (n := 1) (m := 1) [(0, 1), (0, 1), (0, 1)]
       [(0, -1), (0, -1), (0, -1)]).seifertMatrix = (T 1 - 1 + T (-1)) ^ 2 := by
-  rw [alexander_seifertMatrix_connectedSum (g₁ := 1) (g₂ := 1) _ _ card_seifertLoops_trefoil
-    card_seifertLoops_mirrorTrefoil, alexander_seifertMatrix_trefoil,
-    alexander_seifertMatrix_mirrorTrefoil, sq]
+  rw [alexander_seifertMatrix_connectedSum (g₁ := 1) _ _ card_seifertLoops_trefoil,
+    alexander_seifertMatrix_trefoil, alexander_seifertMatrix_mirrorTrefoil, sq]
 
 end BraidWord
 
 open BraidGroup BraidWord KnotTheory in
-/-- **The granny knot and the square knot are not Markov equivalent.** The braid `σ₀³ σ₁³` closes
-to the granny knot, the connected sum of two right-handed trefoils, and `σ₀³ σ₁⁻³` to the square
-knot, the connected sum of a right-handed and a left-handed trefoil. By additivity their
-Tristram–Levine signatures at `ω = -1` are `-2 - 2 = -4` and `-2 + 2 = 0`, whereas their
-Alexander polynomials agree, both being `(t - 1 + t⁻¹)²`
+/-- **The granny knot and the square knot are not Markov equivalent.** The braid `σ₁³ σ₂³`
+(`sigma 0 ^ 3 * sigma 1 ^ 3`) closes to the granny knot, the connected sum of two right-handed
+trefoils, and `σ₁³ σ₂⁻³` to the square knot, the connected sum of a right-handed and a
+left-handed trefoil. By additivity their Tristram–Levine signatures at `ω = -1` are
+`-2 - 2 = -4` and `-2 + 2 = 0`, whereas their Alexander polynomials agree, both being
+`(t - 1 + t⁻¹)²`
 (`TauCeti.BraidWord.alexander_seifertMatrix_granny`,
 `TauCeti.BraidWord.alexander_seifertMatrix_square`). -/
 theorem not_markovEquiv_granny_square :
     ¬ MarkovEquiv ⟨2, sigma 0 ^ 3 * sigma 1 ^ 3⟩ ⟨2, sigma 0 ^ 3 * (sigma 1)⁻¹ ^ 3⟩ := fun h ↦ by
   let r : BraidWord 2 := [(0, 1), (0, 1), (0, 1)]
   let l : BraidWord 2 := [(0, -1), (0, -1), (0, -1)]
-  -- The connected sums of these explicit words compute by `rfl`.
-  have hgranny : (r.connectedSum r).toBraid = sigma 0 ^ 3 * sigma 1 ^ 3 := by
-    rw [show r.connectedSum r = [(0, 1), (0, 1), (0, 1), (1, 1), (1, 1), (1, 1)] from (rfl)]
-    simp only [toBraid_cons, toBraid_nil, Units.val_one, zpow_one, mul_one, pow_succ, pow_zero,
-      one_mul, mul_assoc]
-  have hsquare : (r.connectedSum l).toBraid = sigma 0 ^ 3 * (sigma 1)⁻¹ ^ 3 := by
-    rw [show r.connectedSum l = [(0, 1), (0, 1), (0, 1), (1, -1), (1, -1), (1, -1)] from (rfl)]
-    simp only [toBraid_cons, toBraid_nil, Units.val_one, Units.val_neg, zpow_one, zpow_neg,
-      mul_one, pow_succ, pow_zero, one_mul, mul_assoc]
-  have := h.tristramLevineSignature_eq (-1)
-  rw [← hgranny, ← hsquare, MarkovBraid.tristramLevineSignature_mk_connectedSum r r,
-    MarkovBraid.tristramLevineSignature_mk_connectedSum r l] at this
+  have hr₁ : r.toBraid = sigma 0 ^ 3 := by
+    simp only [r, toBraid_cons, toBraid_nil, Units.val_one, zpow_one, mul_one, pow_three]
+  have hl₁ : l.toBraid = (sigma 0)⁻¹ ^ 3 := by
+    simp only [l, toBraid_cons, toBraid_nil, Units.val_neg, Units.val_one, zpow_neg, zpow_one,
+      mul_one, pow_three]
+  -- The indices `Fin.castAdd 1 0` and `Fin.natAdd 1 0` are `0` and `1` by definition.
+  have hgranny : castAdd 1 r.toBraid * natAdd 1 r.toBraid = sigma 0 ^ 3 * sigma 1 ^ 3 := by
+    rw [hr₁, map_pow, map_pow, castAdd_sigma, natAdd_sigma]
+    rfl
+  have hsquare : castAdd 1 r.toBraid * natAdd 1 l.toBraid = sigma 0 ^ 3 * (sigma 1)⁻¹ ^ 3 := by
+    rw [hr₁, hl₁, map_pow, map_pow, map_inv, castAdd_sigma, natAdd_sigma]
+    rfl
+  rw [← hgranny, ← hsquare] at h
+  have := ((MarkovBraid.tristramLevineSignature_mk_castAdd_mul_natAdd r.toBraid r.toBraid
+    (-1)).symm.trans (h.tristramLevineSignature_eq (-1))).trans
+      (MarkovBraid.tristramLevineSignature_mk_castAdd_mul_natAdd r.toBraid l.toBraid (-1))
   have hr : MarkovBraid.tristramLevineSignature ⟨1, r.toBraid⟩ (-1) = -2 := by
     rw [MarkovBraid.tristramLevineSignature_mk, tristramLevineSignature_neg_one,
       signature_seifertMatrix_trefoil]

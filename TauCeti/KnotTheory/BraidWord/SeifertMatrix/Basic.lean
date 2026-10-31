@@ -140,6 +140,16 @@ theorem isSeifertLoop_iff {p : ℕ × ℕ} :
       ∀ k < p.2, p.1 < k → w.levelAt k ≠ w.levelAt p.1 :=
   Iff.rfl
 
+/-- The two bands of a loop are in order. -/
+theorem IsSeifertLoop.fst_lt_snd {w : BraidWord n} {p : ℕ × ℕ} (h : w.IsSeifertLoop p) :
+    p.1 < p.2 :=
+  (w.isSeifertLoop_iff.1 h).1
+
+/-- The first band of a loop is a letter of the word. -/
+theorem IsSeifertLoop.fst_lt_length {w : BraidWord n} {p : ℕ × ℕ} (h : w.IsSeifertLoop p) :
+    p.1 < w.length :=
+  h.fst_lt_snd.trans (w.isSeifertLoop_iff.1 h).2.1
+
 /-- A loop is determined by its first band. -/
 theorem IsSeifertLoop.eq_of_fst_eq {w : BraidWord n} {p q : ℕ × ℕ} (hp : w.IsSeifertLoop p)
     (hq : w.IsSeifertLoop q) (h : p.1 = q.1) : p = q := by

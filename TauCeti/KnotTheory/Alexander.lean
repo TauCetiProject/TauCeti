@@ -458,15 +458,14 @@ theorem alexander_eq_of_card {g : ℕ} (V : Matrix ι ι R) (h : Fintype.card ι
   rw [alexander_def, h]
   norm_num
 
-/-- **The Alexander polynomial is multiplicative along a block diagonal** of blocks of even
-size, as for the Seifert matrix of a connected sum. -/
-theorem alexander_fromBlocks_zero {κ : Type*} [Fintype κ] [DecidableEq κ] {g h : ℕ}
-    (V : Matrix ι ι R) (W : Matrix κ κ R) (hV : Fintype.card ι = 2 * g)
-    (hW : Fintype.card κ = 2 * h) :
+/-- **The Alexander polynomial is multiplicative along a block diagonal** whose first block has
+even size, as for the Seifert matrix of a connected sum. -/
+theorem alexander_fromBlocks_zero {κ : Type*} [Fintype κ] [DecidableEq κ] {g : ℕ}
+    (V : Matrix ι ι R) (W : Matrix κ κ R) (hV : Fintype.card ι = 2 * g) :
     alexander (fromBlocks V 0 0 W) = alexander V * alexander W := by
-  have hcard : Fintype.card (ι ⊕ κ) = 2 * (g + h) := by rw [Fintype.card_sum, hV, hW]; ring
-  rw [alexander_eq_of_card _ hcard, alexander_eq_of_card V hV, alexander_eq_of_card W hW,
-    alexanderMatrix_fromBlocks_zero, det_fromBlocks_zero₂₁, Nat.cast_add, neg_add, T_add]
+  rw [alexander_def, alexander_def W, alexander_eq_of_card V hV, Fintype.card_sum, hV,
+    Nat.add_comm, Nat.add_mul_div_left _ _ two_pos, alexanderMatrix_fromBlocks_zero,
+    det_fromBlocks_zero₂₁, Nat.cast_add, neg_add, T_add]
   ring
 
 /-- **The Alexander polynomial is symmetric**: `Δ(t⁻¹) = Δ(t)`. This is exactly what the
@@ -513,8 +512,8 @@ theorem alexander_neg {g : ℕ} (V : Matrix ι ι R) (h : Fintype.card ι = 2 * 
     refine Matrix.ext fun i j => ?_
     simp only [alexanderMatrix_apply, Matrix.neg_apply, map_neg]
     ring
-  rw [alexander_eq_of_card _ h, alexander_eq_of_card V h, hneg, det_neg, h, pow_mul, neg_one_sq,
-    one_pow, one_mul]
+  rw [alexander_eq_of_card _ h, alexander_eq_of_card V h, hneg]
+  simp [det_neg, h, pow_mul]
 
 /-- `Δ(1)` is the determinant of the intersection form `V - Vᵀ` of the Seifert surface. For a
 knot that form is unimodular, so `Δ(1) = ±1`. -/
