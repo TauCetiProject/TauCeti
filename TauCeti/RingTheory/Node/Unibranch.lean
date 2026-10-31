@@ -39,10 +39,6 @@ open Polynomial
 
 variable (R : Type*) [CommRing R] [IsDomain R]
 
-/-- The ideal of the origin of the split node over a domain is prime. -/
-instance isPrime_ker_origin : (RingHom.ker (origin R).toRingHom).IsPrime :=
-  RingHom.ker_isPrime _
-
 /-- In the local ring of the split node at the origin, neither coordinate is nilpotent. -/
 theorem not_isNilpotent_algebraMap_coord (i : Fin 2) :
     ¬ IsNilpotent (algebraMap (NodeAlgebra R 0)

@@ -54,6 +54,12 @@ that is, if each of its local rings is a geometrically unibranch local ring. -/
 class IsGeometricallyUnibranch (X : Scheme.{u}) : Prop where
   isGeometricallyUnibranchAt : ∀ x : X, X.IsGeometricallyUnibranchAt x
 
+/-- The local rings of a geometrically unibranch scheme are geometrically unibranch. -/
+instance IsGeometricallyUnibranch.isGeometricallyUnibranch_stalk (X : Scheme.{u})
+    [IsGeometricallyUnibranch X] (x : X) :
+    IsLocalRing.IsGeometricallyUnibranch (X.presheaf.stalk x) :=
+  IsGeometricallyUnibranch.isGeometricallyUnibranchAt x
+
 /-- A normal scheme is geometrically unibranch: its local rings are integrally closed domains. -/
 instance IsGeometricallyUnibranch.of_isNormalScheme (X : Scheme.{u})
     [TauCeti.AlgebraicGeometry.IsNormalScheme X] : IsGeometricallyUnibranch X :=

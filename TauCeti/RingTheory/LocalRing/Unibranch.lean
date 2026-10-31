@@ -61,6 +61,8 @@ class IsUnibranch : Prop where
   isLocalRing :
     IsLocalRing (integralClosure (A ⧸ nilradical A) (FractionRing (A ⧸ nilradical A)))
 
+attribute [instance] IsUnibranch.isDomain IsUnibranch.isLocalRing
+
 variable {A} in
 /-- A domain `A` is unibranch if and only if its integral closure in its fraction field is a
 local ring. -/
@@ -92,7 +94,7 @@ theorem isUnibranch_iff_isLocalRing_integralClosure [IsDomain A] :
 integral closure `A'` of `A ⧸ nilradical A` in its fraction field is a local homomorphism. When
 `A'` is local, this supplies the residue field extension of `A'` over `A` used in the definition
 of a geometrically unibranch local ring. -/
-theorem isLocalHom_algebraMap_integralClosure [IsLocalRing A] [IsDomain (A ⧸ nilradical A)] :
+instance isLocalHom_algebraMap_integralClosure [IsLocalRing A] [IsDomain (A ⧸ nilradical A)] :
     IsLocalHom (algebraMap A
       (integralClosure (A ⧸ nilradical A) (FractionRing (A ⧸ nilradical A)))) := by
   have : IsLocalHom (algebraMap A (A ⧸ nilradical A)) :=
@@ -109,11 +111,11 @@ class IsGeometricallyUnibranch [IsLocalRing A] : Prop extends IsUnibranch A wher
   /-- The residue field of the integral closure of the reduction is purely inseparable over the
   residue field of `A`. -/
   isPurelyInseparable :
-    letI := toIsUnibranch.isDomain
-    letI := toIsUnibranch.isLocalRing
-    letI := isLocalHom_algebraMap_integralClosure A
+    letI := toIsUnibranch
     IsPurelyInseparable (ResidueField A)
       (ResidueField (integralClosure (A ⧸ nilradical A) (FractionRing (A ⧸ nilradical A))))
+
+attribute [instance] IsGeometricallyUnibranch.isPurelyInseparable
 
 variable {A}
 
@@ -125,18 +127,15 @@ theorem IsGeometricallyUnibranch.of_isIntegrallyClosed_quotient [IsLocalRing A]
     IsGeometricallyUnibranch A := by
   set B := A ⧸ nilradical A
   set A' := integralClosure B (FractionRing B)
-  have hsurj : Function.Surjective (algebraMap B A') := by
-    intro x
-    have hx : (x : FractionRing B) ∈ (⊥ : Subalgebra B (FractionRing B)) := by
-      rw [← IsIntegrallyClosed.integralClosure_eq_bot B (FractionRing B)]
-      exact x.2
-    obtain ⟨b, hb⟩ := Algebra.mem_bot.mp hx
-    exact ⟨b, Subtype.ext hb⟩
+  let e : A' ≃ₐ[B] B :=
+    (Subalgebra.equivOfEq _ _ (IsIntegrallyClosed.integralClosure_eq_bot B (FractionRing B))).trans
+      (Algebra.botEquivOfInjective (IsFractionRing.injective B (FractionRing B)))
+  have hsurj : Function.Surjective (algebraMap B A') := fun x ↦
+    ⟨e x, by simpa using (e.symm.commutes (e x)).symm⟩
   have hsurjA : Function.Surjective (algebraMap A A') := by
     rw [IsScalarTower.algebraMap_eq A B A']
     exact hsurj.comp Ideal.Quotient.mk_surjective
   have : IsLocalRing A' := .of_surjective' _ hsurjA
-  have : IsLocalHom (algebraMap A A') := isLocalHom_algebraMap_integralClosure A
   refine { toIsUnibranch := ⟨inferInstance, inferInstance⟩, isPurelyInseparable := ?_ }
   have hres : Function.Surjective (algebraMap (ResidueField A) (ResidueField A')) := by
     intro x
