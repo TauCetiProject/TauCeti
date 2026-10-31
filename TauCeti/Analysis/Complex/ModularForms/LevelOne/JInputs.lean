@@ -45,8 +45,9 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 
 ## Main results
 
-* `TauCeti.ModularForm.j`, `TauCeti.ModularForm.j_smul`, `TauCeti.ModularForm.j_sub_1728`: the
-  invariant, its modular invariance, and the identity `j - 1728 = E₆² / Δ`.
+* `TauCeti.ModularForm.j`, `TauCeti.ModularForm.j_smul`, `TauCeti.ModularForm.j_smul_SL2Z`,
+  `TauCeti.ModularForm.j_sub_1728`: the invariant, its modular invariance, and the identity
+  `j - 1728 = E₆² / Δ`.
 * `TauCeti.ModularForm.E₄_ρ`, `TauCeti.ModularForm.E₆_I`: the elliptic zeros of `E₄` and `E₆`.
 * `TauCeti.ModularForm.j_ρ`, `TauCeti.ModularForm.j_I`: `j ρ = 0` and `j i = 1728`.
 * `TauCeti.ModularForm.analyticOrderAt_j_comp_ofComplex_ρ`: `j` vanishes to order `3` at `ρ`.
@@ -94,12 +95,10 @@ theorem j_apply (z : ℍ) : j z = E₄ z ^ 3 / discriminant z := by rfl
 theorem j_mdifferentiable : MDiff j := by
   exact (ModularForm.holo' E₄).pow 3 |>.div (CuspForm.discriminant.holo') discriminant_ne_zero
 
--- A direct-action `@[simp]` variant fails `simpNF`:
--- `ModularGroup.sl_moeb` simplifies its left side.
-/-- The weight factors cancel, so `j` is invariant under `SL₂(ℤ)`. -/
-@[simp]
-theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
-    j ((map (Int.castRingHom ℝ) γ) • z) = j z := by
+-- Not `@[simp]`: `ModularGroup.sl_moeb` simplifies its left side, so it fails `simpNF`.
+/-- The weight factors cancel, so `j` is invariant under the action of `SL₂(ℤ)` on the upper
+half-plane: `j (γ τ) = j τ`. -/
+theorem j_smul_SL2Z (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
   have hγ : mapGL ℝ γ ∈ (𝒮ℒ : Subgroup (GL (Fin 2) ℝ)) := ⟨γ, rfl⟩
   have hE : (⇑(E₄.pow 3) ∣[(12 : ℤ)] (mapGL ℝ γ)) = ⇑(E₄.pow 3) := by
     simpa using SlashInvariantForm.slash_action_eqn (E₄.pow 3) _ hγ
@@ -115,9 +114,13 @@ theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
     rw [hE, hΔ]
   have hpow (w : ℍ) : (E₄.pow 3) w = E₄ w ^ 3 := by
     exact congrFun (ModularForm.coe_pow E₄ 3) w
-  have hz := congrFun h z
-  have hinv : j (γ • z) = j z := by
-    simpa [SL_slash_apply, j, hpow] using hz
+  simpa [SL_slash_apply, j, hpow] using congrFun h z
+
+/-- The weight factors cancel, so `j` is invariant under `SL₂(ℤ)`, acting through
+`SL₂(ℝ)`. -/
+@[simp]
+theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
+    j ((map (Int.castRingHom ℝ) γ) • z) = j z := by
   have hAction : (map (Int.castRingHom ℝ) γ) • z = γ • z := by
     rw [MulAction.compHom_smul_def, MulAction.compHom_smul_def]
     have hMap : mapGL ℝ (map (Int.castRingHom ℝ) γ) = mapGL ℝ γ := by
@@ -125,7 +128,7 @@ theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
       simp [mapGL_coe_matrix]
     exact congrArg (· • z) hMap
   rw [hAction]
-  exact hinv
+  exact j_smul_SL2Z γ z
 
 /-- The identity `j - 1728 = E₆² / Δ`. -/
 theorem j_sub_1728 (z : ℍ) : j z - 1728 = E₆ z ^ 2 / discriminant z := by
