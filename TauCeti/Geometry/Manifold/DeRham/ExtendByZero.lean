@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
+import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 
 /-!
 # Extension by zero of compactly supported forms
@@ -37,6 +38,12 @@ extension by zero is discontinuous at the other origin.
   supported de Rham complexes.
 * `TauCeti.compactlySupportedDeRhamCohomology.extendByZero`: the induced map on compactly supported
   de Rham cohomology, computed on classes by `extendByZero_mk`.
+* `TauCeti.mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_exactForms` and
+  `TauCeti.mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_closedForms`: let `η` be a
+  smooth form on `W`, exact on an open subset `U ≤ W`, and let a smooth function on `W` vanish near
+  `W \ U` and equal one off a compact set. Then `dη` is the exterior derivative of a compactly
+  supported form. In degree zero it suffices that `W \ U` is compact, `U` is preconnected and `η`
+  is locally constant on `U`.
 
 ## References
 
@@ -294,5 +301,94 @@ theorem compactlySupportedDeRhamComplex.homologyMap_extendByZero {U W : Opens M}
     HomologicalComplex.homologyMap (compactlySupportedDeRhamComplex.extendByZero (I := I) h) k =
       ModuleCat.ofHom (compactlySupportedDeRhamCohomology.extendByZero h k) :=
   (rfl)
+
+/-! ### Compactly supported primitives from exactness near infinity
+
+Let `U ≤ W` be open subsets whose difference `W \ U` stays in a compact set. A form `η` on `W`
+whose restriction to `U` is exact, `η = dθ` on `U`, differs from a compactly supported form by an
+exact form: for a smooth function `ρ` on `W` vanishing near `W \ U` and equal to one off a compact
+set, the form `η - d(ρ θ)`, with `ρ θ` extended by zero from `U`, vanishes wherever `ρ` is
+identically one. Hence `dη` is the exterior derivative of a compactly supported form. In degree
+zero the same holds when `U` is preconnected and `η` is locally constant on `U`: then `η` is
+constant on `U`, and subtracting that constant leaves a form supported in `W \ U`. -/
+
+section ExactNearInfinity
+
+omit [T2Space M]
+
+open Topology
+
+variable {U W : Opens M} (h : U ≤ W)
+
+/-- Let `ρ` be a smooth function on `W` that vanishes near every point of `W` outside `U` and
+such that `1 - ρ` has compact support. If a smooth form `η` on `W` is exact on `U`, then `dη` is
+the exterior derivative of a compactly supported form on `W`. -/
+theorem mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_exactForms {ρ : W → ℝ}
+    (hρ : ContMDiff I 𝓘(ℝ) ∞ ρ) (hρU : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, ρ y = 0)
+    (hρc : HasCompactSupport fun x ↦ 1 - ρ x) {k : ℕ} {η : SmoothForm I W ℝ (k + 1)}
+    (hη : SmoothForm.mpullback (Opens.inclusion h) (contMDiff_inclusion h) η ∈
+      exactForms I U (k + 1)) :
+    mextDerivₗ I (k + 1) η ∈ exactCompactlySupportedForms I W (k + 2) := by
+  rw [exactForms_succ] at hη
+  obtain ⟨θ, hθ⟩ := hη
+  -- The cut-off primitive `ρ θ`, extended by zero from `U` to `W`.
+  let μ : SmoothForm I W ℝ k :=
+    ⟨RoughForm.extendByZero W fun y : U ↦ ρ (Opens.inclusion h y) • θ.1 y,
+      (θ.isSmoothForm.extendByZero_smul h hρ hρU).mem_smoothBundleForms⟩
+  rw [exactCompactlySupportedForms_succ]
+  refine ⟨η - mextDerivₗ I k μ, (mem_compactlySupportedForms I).mpr ?_, ?_⟩
+  · refine hρc.of_isClosed_subset (_root_.isClosed_tsupport _) <| closure_minimal (fun x hx ↦ ?_)
+      (isClosed_tsupport _)
+    by_contra hxρ
+    -- Near `x` the function `ρ` is identically one, so `x` lies in `U`.
+    have hρ1 : ∀ᶠ y in 𝓝 x, ρ y = 1 :=
+      (notMem_tsupport_iff_eventuallyEq.mp hxρ).mono fun y hy ↦ (sub_eq_zero.mp hy).symm
+    have hxU : (x : M) ∈ U := by
+      by_contra hxU
+      obtain ⟨y, hy₀, hy₁⟩ := ((hρU x hxU).and hρ1).exists
+      exact zero_ne_one (hy₀.symm.trans hy₁)
+    obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hxU⟩, rfl⟩
+    -- On `U` near `x` the cut-off primitive is `θ`, so `dμ` agrees with `dθ = η` at `x`.
+    have hμ : ∀ᶠ y in 𝓝 x, (fun y : U ↦ ρ (Opens.inclusion h y) • θ.1 y) y = θ.1 y := by
+      filter_upwards [(continuous_inclusion h).continuousAt.eventually hρ1] with y hy
+      rw [hy, one_smul]
+    apply hx
+    rw [Submodule.coe_sub, mextDerivₗ_apply, Pi.sub_apply,
+      ← mpullback_inclusion_apply h (mextDeriv μ.1), mpullback_inclusion_mextDeriv,
+      RoughForm.mpullback_inclusion_extendByZero, mextDeriv_congr_of_eventuallyEq hμ,
+      ← mextDerivₗ_apply, hθ, SmoothForm.coe_mpullback, mpullback_inclusion_apply, sub_self]
+    -- The two zeros are the zero of the fibre and the value of the zero form at `x`.
+    rfl
+  · rw [map_sub, ← LinearMap.comp_apply (mextDerivₗ I (k + 1)), mextDerivₗ_comp_mextDerivₗ,
+      LinearMap.zero_apply, sub_zero]
+
+/-- Let `U ≤ W` be open subsets such that the points of `W` outside `U` form a compact set, with
+`U` preconnected. If a smooth function `η` on `W` is locally constant on `U`, then its differential
+`dη` is the differential of a compactly supported function on `W`. -/
+theorem mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_closedForms
+    [PreconnectedSpace U] (hU : IsCompact {x : W | (x : M) ∉ U}) {η : SmoothForm I W ℝ 0}
+    (hη : SmoothForm.mpullback (Opens.inclusion h) (contMDiff_inclusion h) η ∈
+      closedForms I U 0) :
+    mextDerivₗ I 0 η ∈ exactCompactlySupportedForms I W 1 := by
+  obtain ⟨c, hc⟩ := ((mem_closedForms_zero_iff I _).mp hη).exists_eq_const
+  -- The constant function `c` on `W`, a closed `0`-form.
+  let γ := (closedFormsZeroEquiv I W).symm (LocallyConstant.const W c)
+  rw [exactCompactlySupportedForms_succ]
+  refine ⟨η - γ.1, (mem_compactlySupportedForms I).mpr ?_, ?_⟩
+  · refine hU.of_isClosed_subset (isClosed_tsupport _) <| closure_minimal (fun x hx ↦ ?_)
+      (U.isOpen.preimage continuous_subtype_val).isClosed_compl
+    intro hxU
+    obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hxU⟩, rfl⟩
+    refine hx (ContinuousAlternatingMap.ext fun v ↦ ?_)
+    have hcx := congrFun hc x
+    simp only [SmoothForm.coe_mpullback, mpullback_inclusion_apply, Function.const_apply] at hcx
+    rw [Subsingleton.elim v 0, Submodule.coe_sub, Pi.sub_apply,
+      coe_closedFormsZeroEquiv_symm_apply, ContinuousAlternatingMap.sub_apply,
+      RoughForm.ofFunction_apply, LocallyConstant.coe_const, Function.const_apply]
+    -- The right-hand side is the zero alternating map evaluated at the empty tuple.
+    exact (sub_eq_zero.mpr hcx).trans rfl
+  · rw [map_sub, (mem_closedForms_iff_mextDerivₗ_eq_zero I γ.1).mp γ.2, sub_zero]
+
+end ExactNearInfinity
 
 end TauCeti

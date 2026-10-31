@@ -28,9 +28,9 @@ On a manifold modelled on a finite-dimensional space, every alternating form of 
 dimension is zero, so `H^k_c(M)` vanishes for `k > dim M`.
 
 Pullback along a smooth proper map preserves compact support, so `H^•_c` is contravariant for
-smooth proper maps. Pullback along a general smooth map does not preserve compact support: the
-constant map `ℝ → pt` pulls the constant function `1` back to a function without compact
-support.
+smooth proper maps, and a diffeomorphism induces an isomorphism. Pullback along a general smooth
+map does not preserve compact support: the constant map `ℝ → pt` pulls the constant function `1`
+back to a function without compact support.
 
 ## Main definitions
 
@@ -44,6 +44,8 @@ support.
 * `TauCeti.compactlySupportedDeRhamComplex.ι`: the inclusion into the de Rham complex.
 * `TauCeti.compactlySupportedDeRhamComplex.map`: the cochain map induced by a smooth proper map.
 * `TauCeti.compactlySupportedDeRhamCohomology.map`: the induced map on cohomology.
+* `TauCeti.compactlySupportedDeRhamCohomology.equivOfDiffeomorph`: the induced isomorphism for a
+  diffeomorphism.
 * `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_of_finrank_lt`: `H^k_c(M) = 0` above
   the dimension.
 
@@ -613,6 +615,37 @@ theorem toDeRhamCohomology_map (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : 
   congr 1
   apply Subtype.ext
   rw [compactlySupportedClosedForms.coe_mpullback, closedForms.coe_mpullback]
+
+/-- A diffeomorphism `Φ : M ≃ M'`, which is a proper map, induces a linear equivalence
+`H^k_c(M') ≃ H^k_c(M)` on compactly supported de Rham cohomology: pullback along `Φ`, with inverse
+pullback along `Φ.symm`. -/
+def equivOfDiffeomorph (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ) :
+    compactlySupportedDeRhamCohomology I' M' k ≃ₗ[ℝ] compactlySupportedDeRhamCohomology I M k :=
+  LinearEquiv.ofLinearMap (map Φ Φ.contMDiff Φ.toHomeomorph.isProperMap k)
+    (map Φ.symm Φ.symm.contMDiff Φ.symm.toHomeomorph.isProperMap k)
+    (by
+      refine (map_comp _ _ _ _ _ _ k).symm.trans ?_
+      convert map_id (I := I) (M := M) k
+      exact funext Φ.symm_apply_apply)
+    (by
+      refine (map_comp _ _ _ _ _ _ k).symm.trans ?_
+      convert map_id (I := I') (M := M') k
+      exact funext Φ.apply_symm_apply)
+
+/-- The equivalence induced by a diffeomorphism is pullback along it. -/
+@[simp]
+theorem equivOfDiffeomorph_apply (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ)
+    (c : compactlySupportedDeRhamCohomology I' M' k) :
+    equivOfDiffeomorph Φ k c = map Φ Φ.contMDiff Φ.toHomeomorph.isProperMap k c :=
+  (rfl)
+
+/-- The inverse of the equivalence induced by a diffeomorphism is pullback along its inverse. -/
+@[simp]
+theorem equivOfDiffeomorph_symm_apply (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ)
+    (c : compactlySupportedDeRhamCohomology I M k) :
+    (equivOfDiffeomorph Φ k).symm c =
+      map Φ.symm Φ.symm.contMDiff Φ.symm.toHomeomorph.isProperMap k c :=
+  (rfl)
 
 end compactlySupportedDeRhamCohomology
 
