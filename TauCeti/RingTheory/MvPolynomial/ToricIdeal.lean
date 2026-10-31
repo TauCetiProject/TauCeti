@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.MonoidAlgebra.Exactness
 public import Mathlib.RingTheory.FiniteType
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Polynomial.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
 public import Mathlib.Algebra.EuclideanDomain.Int
