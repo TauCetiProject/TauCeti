@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Embedding.Boundary
-public import Mathlib.Algebra.Homology.Embedding.TruncLE
+public import Mathlib.Algebra.Homology.Embedding.TruncLEHomology
+public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 
 /-!
-# Morphisms into the canonical truncation `truncLE'`
+# Good truncation of complexes
 
 Let `e : c.Embedding c'` be an embedding of complex shapes with `e.IsTruncLE`, and let `K` be a
 homological complex of shape `c'`.  Mathlib's canonical truncation `K.truncLE' e` agrees with the
@@ -25,6 +26,8 @@ cochain complexes indexed by `ℤ`, the truncation `K.truncLE' embeddingDownNat`
 truncation `τ_{≥ 0} K` in homological grading: its degree `n > 0` is `K^{-n}`, its degree `0` is
 the cycles `Z⁰ K`, and its homology in degree `n` is `H^{-n} K`.  The last section records the
 inclusion of each of its degrees into `K` and how it meets the differentials.
+`HomologicalComplex.truncLE'HomologyIso` gives the homology comparison for an arbitrary
+embedding of complex shapes, including boundary degrees, naturally in `K`.
 
 ## Main definitions and results
 
@@ -144,6 +147,62 @@ lemma liftTruncLE'_truncLE'ToRestriction :
     liftTruncLE' φ hφ ≫ K.truncLE'ToRestriction e = φ := by
   ext i
   exact liftTruncLE'.f_comp φ hφ i
+
+section Homology
+
+variable [HasZeroObject C]
+
+/-- The comparison of good truncation with extension by zero is natural. -/
+@[reassoc]
+lemma truncLEIso_hom_naturality {L : HomologicalComplex C c'} [∀ i, L.HasHomology i]
+    (φ : K ⟶ L) :
+    truncLEMap φ e ≫ (L.truncLEIso e).hom =
+      (K.truncLEIso e).hom ≫ extendMap (truncLE'Map φ e) e := by
+  ext i
+  -- Both the truncation and its comparison with extension are defined by dualizing extension.
+  -- Express their components using the same optional degree so that it can be eliminated.
+  change (extend.mapX (truncGE'Map ((opFunctor C c').map φ.op) e.op) (e.r i)).unop ≫
+      (extend.XOpIso (L.truncLE' e) (e.r i)).inv.unop =
+    (extend.XOpIso (K.truncLE' e) (e.r i)).inv.unop ≫
+      extend.mapX (truncLE'Map φ e) (e.r i)
+  cases e.r i <;> dsimp [extend.XOpIso, extend.mapX, extend.X, truncLE'Map, unopFunctor]
+  · exact (Limits.isZero_zero Cᵒᵖ).unop.eq_of_src _ _
+  · exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+variable (K e)
+
+/-- Good truncation preserves homology at every degree of the embedded complex shape,
+including its boundary degrees. -/
+noncomputable def truncLE'HomologyIso (i : ι) :
+    (K.truncLE' e).homology i ≅ K.homology (e.f i) :=
+  ((K.truncLE' e).extendHomologyIso e (j := i) rfl).symm ≪≫
+    homologyMapIso (K.truncLEIso e).symm (e.f i) ≪≫
+      asIso (homologyMap (K.ιTruncLE e) (e.f i))
+
+variable {K e}
+
+/-- The homology comparison for good truncation is natural in the original complex. -/
+@[reassoc]
+lemma truncLE'HomologyIso_hom_naturality {L : HomologicalComplex C c'}
+    [∀ i, L.HasHomology i] (φ : K ⟶ L) (i : ι) :
+    homologyMap (truncLE'Map φ e) i ≫ (L.truncLE'HomologyIso e i).hom =
+      (K.truncLE'HomologyIso e i).hom ≫ homologyMap φ (e.f i) := by
+  have ht : extendMap (truncLE'Map φ e) e ≫ (L.truncLEIso e).inv =
+      (K.truncLEIso e).inv ≫ truncLEMap φ e := by
+    apply (cancel_epi (K.truncLEIso e).hom).1
+    rw [← Category.assoc, ← truncLEIso_hom_naturality]
+    simp
+  have hc : extendMap (truncLE'Map φ e) e ≫ (L.truncLEIso e).inv ≫ L.ιTruncLE e =
+      (K.truncLEIso e).inv ≫ K.ιTruncLE e ≫ φ := by
+    rw [← Category.assoc, ht, Category.assoc, ιTruncLE_naturality]
+  rw [← cancel_epi ((K.truncLE' e).extendHomologyIso e (j := i) rfl).hom,
+    ← Category.assoc, ← extendHomologyIso_hom_naturality]
+  simp only [truncLE'HomologyIso, Iso.trans_hom, Iso.symm_hom, homologyMapIso_hom, asIso_hom,
+    Category.assoc, Iso.hom_inv_id_assoc]
+  simpa only [homologyMap_comp, Category.assoc] using
+    congrArg (fun g ↦ homologyMap g (e.f i)) hc
+
+end Homology
 
 end HomologicalComplex
 
