@@ -77,20 +77,6 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {J : ∀ t, TangentSpace I (γ t)} {s : Set ℝ} {a t : ℝ}
 
-omit [T2Space M] in
-/-- The covariant derivative of a scalar multiple of the velocity of a geodesic is the derivative
-of the scalar times the velocity, since the velocity field of a geodesic is parallel. -/
-theorem IsGeodesicCurveOn.alongCurveWithin_smul_curveVelocityWithin
-    (h : IsGeodesicCurveOn I γ s) {f : ℝ → ℝ} (ht : t ∈ s)
-    (hf : DifferentiableWithinAt ℝ f s t) :
-    alongCurveWithin (leviCivitaConnection I M) γ
-        (fun r ↦ f r • curveVelocityWithin I γ s r) s t =
-      derivWithin f s t • curveVelocityWithin I γ s t := by
-  rw [alongCurveWithin_smul _ γ _ f s hf
-      (differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn h.contMDiffOn ht
-        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))),
-    ← accelerationWithin_def, h.accelerationWithin_eq_zero t ht, smul_zero, add_zero]
-
 /-- **Tangential Jacobi fields.** Along a geodesic, the velocity scaled by an affine function
 `α + β t` of the parameter is a Jacobi field. -/
 theorem IsGeodesicCurveOn.isJacobiFieldOn_affine_smul_curveVelocityWithin [I.Boundaryless]
