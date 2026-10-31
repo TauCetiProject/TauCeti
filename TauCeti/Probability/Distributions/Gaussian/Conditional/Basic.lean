@@ -24,12 +24,21 @@ A positive-definite observed block recovers the ordinary inverse formula.
 ## Main definitions
 
 * `EuclideanSpace.gaussianCondMean` — the affine conditional mean;
-* `Matrix.gaussianCondCov` — the conditional covariance, as a Schur complement;
+* `Matrix.gaussianCondCov` — the conditional covariance, as a generalized (pseudoinverse)
+  Schur complement;
 * `EuclideanSpace.gaussianCondKernel` — the corresponding Markov kernel.
 
 ## Main results
 
 * `TauCeti.Probability.condDistrib_multivariateGaussian` — the conditional-distribution formula.
+* `EuclideanSpace.map_snd_fst_multivariateGaussian` — the joint-law factorization into the
+  observed marginal and conditional kernel.
+* `ProbabilityTheory.HasLaw.indepFun_gaussianResidual` — independence of the centered
+  regression residual and the observed block.
+* `EuclideanSpace.gaussianCondKernel_of_submatrix_eq_zero` — the unconditional first-block
+  Gaussian law when the observed covariance block is zero.
+* `EuclideanSpace.gaussianCondMean_of_posDef` and `Matrix.gaussianCondCov_of_posDef` —
+  the ordinary-inverse formulas for a positive-definite observed covariance block.
 
 ## References
 
@@ -236,6 +245,13 @@ private noncomputable def gaussianResidualMatrix
 private noncomputable def gaussianSndMatrix : Matrix κ (ι ⊕ κ) ℝ :=
   Matrix.fromCols 0 1
 
+omit [Fintype ι] [DecidableEq ι] in
+private theorem gaussianRegressionMatrix_mul_block22 [Finite ι]
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef) :
+    gaussianRegressionMatrix S * S.submatrix Sum.inr Sum.inr = S.submatrix Sum.inl Sum.inr := by
+  simpa only [gaussianRegressionMatrix, Matrix.toBlocks₁₂, Matrix.toBlocks₂₂,
+    Matrix.submatrix] using hS.toBlocks₁₂_mul_covariancePseudoInverse_mul
+
 private theorem gaussianSndMatrix_mulVec (x : EuclideanSpace ℝ (ι ⊕ κ)) :
     (gaussianSndMatrix (ι := ι) (κ := κ)).toEuclideanLin x =
       (EuclideanSpace.sumEquivProd x).2 := by
@@ -282,9 +298,7 @@ private theorem gaussianResidualMatrix_mul_cov_mul_transpose
   let A := gaussianRegressionMatrix S
   have hblocks : Matrix.fromBlocks S₁₁ S₁₂ S₂₁ S₂₂ = S := by
     ext (i | i) (j | j) <;> rfl
-  have hAS₂₂ : A * S₂₂ = S₁₂ := by
-    simpa only [A, S₁₂, S₂₂, gaussianRegressionMatrix, Matrix.toBlocks₁₂, Matrix.toBlocks₂₂,
-      Matrix.submatrix] using hS.toBlocks₁₂_mul_covariancePseudoInverse_mul
+  have hAS₂₂ : A * S₂₂ = S₁₂ := gaussianRegressionMatrix_mul_block22 hS
   -- Unfold the residual map to expose multiplication of partitioned matrices.
   change Matrix.fromCols 1 (-A) * S * (Matrix.fromCols 1 (-A)).transpose = S.gaussianCondCov
   calc
@@ -311,9 +325,7 @@ private theorem gaussianResidualMatrix_mul_cov_mul_snd_transpose
   let A := gaussianRegressionMatrix S
   have hblocks : Matrix.fromBlocks S₁₁ S₁₂ S₂₁ S₂₂ = S := by
     ext (i | i) (j | j) <;> rfl
-  have hAS₂₂ : A * S₂₂ = S₁₂ := by
-    simpa only [A, S₁₂, S₂₂, gaussianRegressionMatrix, Matrix.toBlocks₁₂, Matrix.toBlocks₂₂,
-      Matrix.submatrix] using hS.toBlocks₁₂_mul_covariancePseudoInverse_mul
+  have hAS₂₂ : A * S₂₂ = S₁₂ := gaussianRegressionMatrix_mul_block22 hS
   -- Unfold the two linear maps to expose multiplication of partitioned matrices.
   change Matrix.fromCols 1 (-A) * S *
     (Matrix.fromCols (0 : Matrix κ ι ℝ) (1 : Matrix κ κ ℝ)).transpose =

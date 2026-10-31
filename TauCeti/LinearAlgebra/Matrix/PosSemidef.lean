@@ -15,6 +15,7 @@ It provides rank-one and constant matrices, finite Schur products, Schur powers,
 products of weights over unions of finite sets, and the quadratic-form characterization.
 It also gives block matrix-vector constraints over commutative star-ordered rings with a
 proper star: a null vector of a diagonal block is a null vector of the block above or below it.
+Diagonal blocks also inherit positive semidefiniteness.
 
 The results apply in particular to positive-definite kernels, represented directly as matrices,
 but do not depend on Tau Ceti's positive-definite-function theory.
@@ -198,6 +199,15 @@ theorem Matrix.PosSemidef.hadamard_pow {α 𝕜 : Type*} [RCLike 𝕜] {K : α �
       exact heq ▸ ih.hadamard hK
 
 namespace Matrix.PosSemidef
+
+/-- The lower-right diagonal block of a positive-semidefinite matrix is positive semidefinite. -/
+theorem toBlocks₂₂ {R ι κ : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) R} (hS : S.PosSemidef) : S.toBlocks₂₂.PosSemidef := by
+  have hblock : S.toBlocks₂₂ = S.submatrix Sum.inr Sum.inr := by
+    ext i j
+    rfl
+  rw [hblock]
+  exact hS.submatrix Sum.inr
 
 variable {R ι κ : Type*} [CommRing R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
   [IsProperStar R] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) R}

@@ -15,6 +15,8 @@ public import TauCeti.Analysis.Matrix.PosSemidef.Block
 The Schur complement formed with the covariance pseudoinverse is positive semidefinite
 for every positive-semidefinite block matrix. This permits singular observed covariances
 in the conditional-covariance formula, including zero covariance and empty coordinate types.
+The file also proves the block cancellation identity `S₁₂ S₂₂⁺ S₂₂ = S₁₂` for
+positive-semidefinite block matrices: the kernel of `S₂₂` is contained in that of `S₁₂`.
 
 The proofs use `Matrix.PosSemidef.schur_complement₂₂` and the second Penrose equation for
 `Matrix.covariancePseudoInverse`.
@@ -40,9 +42,7 @@ theorem PosSemidef.toBlocks₁₂_mul_covariancePseudoInverse_mul
   apply Matrix.toEuclideanLin.injective
   apply LinearMap.ext
   intro x
-  have h22 : S.toBlocks₂₂.PosSemidef := by
-    simpa only [toBlocks₂₂, Matrix.submatrix] using hS.submatrix Sum.inr
-  have hD := isMoorePenroseInverse_covariancePseudoInverse h22
+  have hD := isMoorePenroseInverse_covariancePseudoInverse hS.toBlocks₂₂
   have hker : S.toBlocks₂₂.toEuclideanLin
       (S.toBlocks₂₂.covariancePseudoInverse.toEuclideanLin (S.toBlocks₂₂.toEuclideanLin x) - x) =
       0 := by

@@ -27,17 +27,16 @@ open MeasureTheory ProbabilityTheory
 
 variable {ι κ : Type*} [Fintype κ] [DecidableEq κ]
 
+local instance {m n : Type*} [Finite m] [Finite n] :
+    SecondCountableTopology (Matrix m n ℝ) :=
+  inferInstanceAs (SecondCountableTopology (m → n → ℝ))
+
 namespace Matrix
 
 /-- The generalized conditional covariance is measurable in the joint covariance entries. -/
 @[fun_prop]
 theorem measurable_gaussianCondCov [Finite ι] :
     Measurable (fun S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ => S.gaussianCondCov) := by
-  let := Fintype.ofFinite ι
-  let : SecondCountableTopology (Matrix κ κ ℝ) :=
-    inferInstanceAs (SecondCountableTopology (κ → κ → ℝ))
-  let : SecondCountableTopology (Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) :=
-    inferInstanceAs (SecondCountableTopology ((ι ⊕ κ) → (ι ⊕ κ) → ℝ))
   have hP : Measurable fun S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ =>
       (S.submatrix Sum.inr Sum.inr).covariancePseudoInverse :=
     Matrix.measurable_covariancePseudoInverse.comp (continuous_id.matrix_submatrix _ _).measurable
@@ -58,10 +57,6 @@ variable [Fintype ι]
 theorem measurable_gaussianCondMean : Measurable fun q : (EuclideanSpace ℝ (ι ⊕ κ) ×
       Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) × EuclideanSpace ℝ κ =>
       q.1.1.gaussianCondMean q.1.2 q.2 := by
-  let : SecondCountableTopology (Matrix κ κ ℝ) :=
-    inferInstanceAs (SecondCountableTopology (κ → κ → ℝ))
-  let : SecondCountableTopology (Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) :=
-    inferInstanceAs (SecondCountableTopology ((ι ⊕ κ) → (ι ⊕ κ) → ℝ))
   have hP : Measurable fun q : (EuclideanSpace ℝ (ι ⊕ κ) ×
       Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) × EuclideanSpace ℝ κ =>
       (q.1.2.submatrix Sum.inr Sum.inr).covariancePseudoInverse :=
