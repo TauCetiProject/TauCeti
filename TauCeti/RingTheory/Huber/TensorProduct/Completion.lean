@@ -196,6 +196,19 @@ theorem ker_toCompletion : RingHom.ker (toCompletion A B C) = (⊥ : Ideal (B �
 /-- Algebraic tensors are dense in the separated completed tensor ring. -/
 theorem denseRange_toCompletion : DenseRange (toCompletion A B C) := Completion.denseRange_coe
 
+/-- The completed tensor ring is the uniform completion of `B ⊗[A] C` for the tensor topology. -/
+noncomputable def equivCompletion : CompletedTensor A B C ≃+* Completion (B ⊗[A] C) :=
+  RingEquiv.refl _
+
+/-- The identification with the uniform completion sends the image of `x ∈ B ⊗[A] C` to the
+canonical image of `x`. -/
+@[simp] theorem equivCompletion_toCompletion (x : B ⊗[A] C) :
+    equivCompletion A B C (toCompletion A B C x) = x := (rfl)
+
+/-- The identification with the uniform completion is a homeomorphism. -/
+theorem isHomeomorph_equivCompletion : IsHomeomorph (equivCompletion A B C) :=
+  (Homeomorph.refl (Completion (B ⊗[A] C))).isHomeomorph
+
 /-- The closure of the image of a ring of integral elements of `B ⊗[A] C` with the tensor
 topology is a ring of integral elements of the completed tensor ring (Wedhorn, Lemma 7.47). -/
 theorem isRingOfIntegralElements_topologicalClosure_map_toCompletion

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.RootCount
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 import TauCeti.NumberTheory.LocalField.InertiaDegree
+import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Fibre
 import TauCeti.NumberTheory.LocalField.RootCount.Ball
 import TauCeti.RingTheory.DiscreteValuationRing.RootPartition
 import TauCeti.RingTheory.DiscreteValuationRing.Sphere
@@ -27,6 +28,12 @@ for every measure on coefficient space, without Haar, normalization, regularity 
 assumptions on the polynomials. This isolates the integration step from the arithmetic
 calculation of the individual fibre volumes.
 
+When the balls are centred at uniformizers and have order at least `2`, the fibre of the
+Eisenstein region over each ball is the image of the set of all integral coefficient vectors
+whose polynomial has a root in that ball. The integral is therefore also a sum of measures of
+such integral fibres, the sets on which the local root criterion at the centre and the volume
+computation in power-basis coordinates operate.
+
 Once those volumes are known, the integral is determined. Take balls of order `r` with `1 < r`
 and `d < r`, where `d` is the discriminant exponent of `L`. If the coefficient fibre over each
 such ball centred at a uniformizer has measure `q ^ (-(r + d))`, the root-count integral is
@@ -38,6 +45,9 @@ into such balls has `q ^ (r - 1) - q ^ (r - 2)` members, and `L / K` has residue
 
 * `IntermediateField.lintegral_rootCount_eq_sum_measure`: the root-count integral is the sum of
   the measures of the coefficient fibres of a disjoint ball cover of the uniformizers.
+* `IntermediateField.lintegral_rootCount_eq_sum_measure_image`: for a partition of the
+  uniformizers into balls of order at least `2`, the root-count integral is the sum of the
+  measures of the integral coefficient fibres.
 * `IntermediateField.lintegral_rootCount_eq_of_measure_eq`: if every such fibre over a ball of
   order `r` has measure `q ^ (-(r + d))`, the root-count integral is `q ^ (-(d + 1)) (1 - q⁻¹)`.
 
@@ -116,6 +126,48 @@ theorem _root_.IntermediateField.lintegral_rootCount_eq_sum_measure
     _ = ∑ c ∈ C, μ (eisensteinSet K n ∩ B c) := by
       refine Finset.sum_congr rfl fun c _ ↦ ?_
       rw [lintegral_indicator_fun_one (hB c), Measure.restrict_apply (hB c), Set.inter_comm]
+
+/-- **Root-count integrals as sums of integral coefficient fibres.** Let `L ∈ σ_K(n)`, with its
+canonical local-field structure, and let `C` index a partition of the uniformizers of `L` into
+balls `v_L(x - c) ≥ r` whose order `r` exceeds both `1` and the discriminant exponent `d(L)`.
+Then the integral of `L.rootCount` over the Eisenstein region is the sum, over the balls, of the
+measures of the sets of coefficient vectors of monic polynomials over `𝒪[K]` having a root in
+the ball. The bound `1 < r` follows from `d(L) < r` unless `n = 1`, where `d(L) = 0`. -/
+theorem _root_.IntermediateField.lintegral_rootCount_eq_sum_measure_image
+    {n : ℕ} {L : IntermediateField K (SeparableClosure K)}
+    (hL : L ∈ totallyRamifiedOfDegree K n) :
+    letI := (mem_totallyRamifiedOfDegree_iff.1 hL).2.finite
+    letI := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+    letI := finiteIntermediateFieldTopology K (SeparableClosure K) L
+    haveI := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+    haveI := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+    ∀ [MeasurableSpace (Fin n → K)] [OpensMeasurableSpace (Fin n → K)]
+      (μ : Measure (Fin n → K)) {r : ℕ}, 1 < r → L.discriminantExponent < r →
+      ∀ C : Finset 𝒪[L], {x : 𝒪[L] | addVal 𝒪[L] x = 1} =
+        ⋃ c ∈ C, {x : 𝒪[L] | (r : ℕ∞) ≤ addVal 𝒪[L] (x - c)} →
+      (C : Set 𝒪[L]).PairwiseDisjoint
+        (fun c ↦ {x : 𝒪[L] | (r : ℕ∞) ≤ addVal 𝒪[L] (x - c)}) →
+      ∫⁻ a in eisensteinSet K n, (L.rootCount a : ℝ≥0∞) ∂μ =
+        ∑ c ∈ C, μ ((fun b : Fin n → 𝒪[K] ↦ fun i ↦ (b i : K)) '' {b | ∃ z : 𝒪[L],
+          aeval z (monicOfCoeff b) = 0 ∧ (r : ℕ∞) ≤ addVal 𝒪[L] (z - c)}) := by
+  have hL' := mem_totallyRamifiedOfDegree_iff.1 hL
+  let _ := hL'.2.finite
+  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+  intro _ _ μ r hr1 hr C hcover hdisj
+  have hn : ramificationIndex K L = n :=
+    ((isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1
+      ((IntermediateField.isTotallyRamified_iff L).1 hL'.2)).trans hL'.1
+  rw [L.lintegral_rootCount_eq_sum_measure hL μ hr C hcover.subset hdisj]
+  refine Finset.sum_congr rfl fun c hc ↦ ?_
+  -- Each centre lies in its own ball, hence on the sphere of uniformizers.
+  have hc1 : c ∈ {x : 𝒪[L] | addVal 𝒪[L] x = 1} :=
+    hcover ▸ Set.mem_biUnion hc (by
+      rw [Set.mem_ofPred_eq, sub_self, IsDiscreteValuationRing.addVal_zero]
+      exact le_top)
+  rw [eisensteinSet_inter_setOf_exists_aeval_monicOfCoeff_eq_zero_le_addVal_eq_image hn hr1 hc1]
 
 /-- **The root-count integral from the local fibre volumes.** Let `L ∈ σ_K(n)`, with discriminant
 exponent `d`, and let `1 < r` and `d < r`. Suppose that for every uniformizer `c` of `L`, the

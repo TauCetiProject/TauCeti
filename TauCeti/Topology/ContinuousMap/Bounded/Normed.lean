@@ -39,6 +39,9 @@ range of `f₀`, is continuous at `f₀` (`BoundedContinuousFunction.apply_mem_o
 isometry equivalence of a submodule of `α →ᵇ β` that it preserves, and
 `ContinuousLinearMap.compLeftContinuousBounded_compContinuous` says that postcomposition with a
 continuous linear map commutes with precomposition.
+
+`BoundedContinuousFunction.exists_finite_range_dist_lt` says that on a discrete space every bounded
+real function is a uniform limit of finite-valued bounded functions.
 -/
 
 public section
@@ -187,5 +190,25 @@ theorem compContinuousₗᵢ_symm_apply (s : S) (a b : C(α, α)) (hab : ∀ x, 
     ((compContinuousₗᵢ (𝕜 := 𝕜) s a b hab hba ha hb).symm f : α →ᵇ β) =
       (f : α →ᵇ β).compContinuous b :=
   (rfl)
+
+/-- On a discrete space, every bounded real function is a uniform limit of finite-valued
+bounded functions: `δ * ⌊f / δ⌋` is within `δ` of `f`. -/
+theorem exists_finite_range_dist_lt {X : Type*} [TopologicalSpace X] [DiscreteTopology X]
+    (f : X →ᵇ ℝ) {ε : ℝ} (hε : 0 < ε) : ∃ g : X →ᵇ ℝ, (Set.range g).Finite ∧ dist f g < ε := by
+  set δ := ε / 2 with hδ_def
+  have hδ : 0 < δ := half_pos hε
+  have hrange : (Set.range fun x => δ * ⌊f x / δ⌋).Finite := by
+    refine ((Set.finite_Icc ⌊-‖f‖ / δ⌋ ⌊‖f‖ / δ⌋).image fun n : ℤ => δ * n).subset
+      (Set.range_subset_iff.2 fun x => Set.mem_image_of_mem _ ?_)
+    have hx := abs_le.1 (Real.norm_eq_abs (f x) ▸ f.norm_coe_le_norm x)
+    exact ⟨Int.floor_mono (div_le_div_of_nonneg_right hx.1 hδ.le),
+      Int.floor_mono (div_le_div_of_nonneg_right hx.2 hδ.le)⟩
+  refine ⟨mkOfDiscrete _ _ fun x y =>
+      dist_le_diam_of_mem hrange.isBounded (Set.mem_range_self x) (Set.mem_range_self y),
+    hrange, lt_of_le_of_lt ((f.dist_le hδ.le).2 fun x => ?_) (by linarith)⟩
+  have h : f x - δ * ⌊f x / δ⌋ = δ * Int.fract (f x / δ) := by
+    rw [Int.fract, mul_sub, mul_div_cancel₀ _ hδ.ne']
+  rw [mkOfDiscrete_apply, Real.dist_eq, h, abs_of_nonneg (mul_nonneg hδ.le (Int.fract_nonneg _))]
+  exact mul_le_of_le_one_right hδ.le (Int.fract_lt_one _).le
 
 end BoundedContinuousFunction

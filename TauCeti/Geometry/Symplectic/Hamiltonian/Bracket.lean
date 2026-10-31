@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+public import TauCeti.Geometry.Symplectic.Hamiltonian.SymplecticVectorField
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
-import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
@@ -23,6 +22,11 @@ functions `f` and `g`, then
 so the Lie bracket `[X, Y]` is a Hamiltonian vector field of `-σ(X, Y)`
 (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mvfderiv_eval₂` and
 `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mlieBracket`). No nondegeneracy is needed.
+
+More generally, the Lie bracket of two symplectic vector fields `X` and `Y`, that is smooth vector
+fields with closed contractions `ι_X σ` and `ι_Y σ`, is a Hamiltonian vector field of `σ(Y, X)`
+(`TauCeti.SmoothTwoForm.isHamiltonianVectorField_mlieBracket`), although `X` and `Y` themselves
+need not be Hamiltonian.
 
 For a nondegenerate closed form on a finite-dimensional manifold, where the Poisson bracket is
 `{f, g} = σ(X_f, X_g) = df(X_g)`, this says
@@ -120,6 +124,53 @@ theorem mlieBracket (hσ : σ.IsClosed) (hX : σ.IsHamiltonianVectorField f X)
       hX.mvfderiv_eval₂ hσ hY (hf x) (hg x) (hX' x) (hY' x), neg_neg]
 
 end IsHamiltonianVectorField
+
+/-- **The bracket of symplectic vector fields is Hamiltonian.** For a closed two-form `σ` and
+smooth vector fields `X`, `Y` with closed contractions, `[X, Y]` is a Hamiltonian vector field of
+`σ(Y, X)`: `ι_{[X, Y]} σ = d(σ(Y, X))`. -/
+theorem isHamiltonianVectorField_mlieBracket (hσ : σ.IsClosed)
+    {X Y : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯} (hX : X ∈ σ.symplecticVectorFields)
+    (hY : Y ∈ σ.symplecticVectorFields) :
+    σ.IsHamiltonianVectorField (fun x ↦ SmoothBundleForm.eval₂ σ x (Y x) (X x))
+      (mlieBracket I X Y) := by
+  refine isHamiltonianVectorField_iff.2 fun x v ↦ ?_
+  -- Extend `v` to a vector field `Z`, differentiable at `x`.
+  let Z : (y : M) → TangentSpace I y := FiberBundle.extend E v
+  have hZ : MDifferentiableAt I I.tangent (fun y ↦ (Z y : TangentBundle I M)) x :=
+    FiberBundle.mdifferentiableAt_extend I E v
+  have hZx : Z x = v := FiberBundle.extend_apply_self E v
+  have hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x :=
+    X.contMDiff.mdifferentiableAt (by simp)
+  have hYd : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) x :=
+    Y.contMDiff.mdifferentiableAt (by simp)
+  -- `L_X σ = 0`, evaluated on `(Y, Z)` by the bracket formula.
+  have hL := mlieDerivForm_apply_vectorField (V := X) (X := ![Y, Z]) (σ.mdifferentiableAt x)
+    (fun i ↦ by fin_cases i <;> assumption)
+  have hL0 : mlieDerivForm X σ.1 x (fun i ↦ ![⇑Y, Z] i x) = 0 := by
+    rw [(mem_symplecticVectorFields_iff_mlieDerivForm_eq_zero hσ).1 hX]
+    rfl
+  -- `d(ι_Y σ) = 0`, evaluated on `(X, Z)` by the invariant formula.
+  have hd := SmoothForm.mextDeriv_apply_one (φ := σ.interiorₗ Y) hXd hZ
+  have hd0 : mextDeriv (σ.interiorₗ Y).1 x ![X x, Z x] = 0 := by
+    rw [coe_interiorₗ, mem_symplecticVectorFields_iff.1 hY]
+    rfl
+  have hfun : (fun y ↦ σ.1 y fun i ↦ ![⇑Y, Z] i y) = fun y ↦ σ.1 y ![Y y, Z y] := by
+    funext y
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  have hu (w : TangentSpace I x) :
+      Function.update (fun i ↦ ![⇑Y, Z] i x) 0 w = ![w, Z x] ∧
+        Function.update (fun i ↦ ![⇑Y, Z] i x) 1 w = ![Y x, w] := by
+    constructor <;> funext i <;> fin_cases i <;> rfl
+  rw [hL0, hfun, Fin.sum_univ_two, (hu _).1, (hu _).2] at hL
+  rw [hd0, coe_interiorₗ] at hd
+  simp only [RoughForm.interior_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one] at hL hd
+  -- Subtracting the two identities leaves `σ([X, Y], Z) = Z(σ(Y, X))`.
+  rw [← hZx]
+  simp only [SmoothBundleForm.eval₂_apply]
+  linarith
 
 namespace IsNondegenerate
 

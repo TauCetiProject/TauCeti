@@ -36,6 +36,8 @@ cardinality of its orbit under `Gal(k/ℚ)`, which is the index of its stabilize
 * `TauCeti.AlgebraicBelyiPair.conj`: the conjugate of an algebraic Belyi pair along `σ : k ≃+* k'`.
 * `TauCeti.AlgebraicBelyiPair.conjAlgHom` and `TauCeti.AlgebraicBelyiPair.conjAlgEquiv`:
   conjugation of morphisms and isomorphisms of pairs.
+* `TauCeti.AlgebraicBelyiPair.conjCurveAlgEquiv`: conjugation of isomorphisms of function fields
+  over `k`, not necessarily compatible with the Belyi maps.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.conj`: conjugation of isomorphism classes, and the
   `MulAction` of a group `G` acting on `k` by ring automorphisms.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.trueOrbitSize`: the size of the `Gal(k/ℚ)`-orbit of a
@@ -46,6 +48,8 @@ cardinality of its orbit under `Gal(k/ℚ)`, which is the index of its stabilize
 * `TauCeti.AlgebraicBelyiPair.finrank_conj`: conjugation preserves the degree.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.conj_refl` and
   `TauCeti.AlgebraicBelyiPair.IsoClass.conj_conj`: conjugation of classes is functorial in `σ`.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_eq_mk_iff`: `σ` stabilizes the class of `X`
+  exactly when the conjugate of `X` along `σ` is isomorphic to `X` as a pair.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.degree_smul`: the action preserves the degree.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.trueOrbitSize_eq_index`: the true orbit size is the index
   of the stabilizer.
@@ -154,6 +158,22 @@ theorem conjAlgEquiv_conjRingEquiv (e : X ≃ₐ[RatFunc k] Y) (x : X) :
     conjAlgEquiv σ e (conjRingEquiv σ X x) = conjRingEquiv σ Y (e x) :=
   conjAlgHom_conjRingEquiv σ (e : X →ₐ[RatFunc k] Y) x
 
+/-- **Conjugation of isomorphisms of curves**: an isomorphism over `k` of the function fields of
+two algebraic Belyi pairs, not necessarily compatible with their Belyi maps, is also an
+isomorphism over `k'` of the function fields of their conjugates along `σ`. -/
+noncomputable def conjCurveAlgEquiv (e : X ≃ₐ[k] Y) : X.conj σ ≃ₐ[k'] Y.conj σ :=
+  AlgEquiv.ofRingEquiv
+    (f := (conjRingEquiv σ X).symm.trans (e.toRingEquiv.trans (conjRingEquiv σ Y))) fun c ↦ by
+    obtain ⟨c, rfl⟩ := σ.surjective c
+    rw [← conjRingEquiv_algebraMap σ X c, ← conjRingEquiv_algebraMap σ Y c]
+    simp only [RingEquiv.trans_apply, RingEquiv.symm_apply_apply, AlgEquiv.coe_toRingEquiv,
+      AlgEquiv.commutes]
+
+@[simp]
+theorem conjCurveAlgEquiv_conjRingEquiv (e : X ≃ₐ[k] Y) (x : X) :
+    conjCurveAlgEquiv σ e (conjRingEquiv σ X x) = conjRingEquiv σ Y (e x) := by
+  simp [conjCurveAlgEquiv]
+
 variable (X)
 
 /-- Conjugating along the identity of `k` gives back an isomorphic pair. -/
@@ -228,6 +248,14 @@ theorem smul_def (g : G) (c : IsoClass k) :
 
 theorem smul_mk (g : G) : g • mk X = mk (X.conj (MulSemiringAction.toRingEquiv G k g)) :=
   conj_mk _ X
+
+variable {X} in
+/-- An automorphism `g` of `k` **stabilizes the class** of an algebraic Belyi pair `X` exactly
+when the conjugate of `X` along `g` is isomorphic to `X` as a pair, that is by an isomorphism of
+function fields over `k(t)`. -/
+theorem smul_mk_eq_mk_iff {g : k ≃ₐ[ℚ] k} :
+    g • mk X = mk X ↔ Nonempty (X.conj (g : k ≃+* k) ≃ₐ[RatFunc k] X) := by
+  rw [smul_mk, MulSemiringAction.toRingEquiv_algEquiv, mk_eq_mk_iff]
 
 /-- **The Galois action preserves the degree** of an isomorphism class. -/
 @[simp]

@@ -110,8 +110,8 @@ theorem monomialGroupRep_apply (g : monomialGroup Q v) :
   (rfl)
 
 /-- The central element `ε = -1` acts on the spinor module by `-1`. -/
-theorem monomialGroupRep_neg_one :
-    P.monomialGroupRep v ⟨-1, neg_one_mem_monomialGroup v⟩ = -1 := by
+theorem monomialGroupRep_monomialGroupEpsilon :
+    P.monomialGroupRep v (monomialGroupEpsilon Q v) = -1 := by
   simp
 
 /-- **The two signs of the line coordinate are exchanged by parity.** The parity operator
@@ -166,7 +166,7 @@ corresponding Clifford action is `⊥` or `⊤`. -/
 private theorem eq_bot_or_eq_top_of_map_monomialGroupLift_le
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     (ρ : Representation F (monomialGroup Q b) W) [Representation.IsIrreducible ρ]
-    (hρ : ρ ⟨-1, neg_one_mem_monomialGroup b⟩ = -1) (N : Submodule F W)
+    (hρ : ρ (monomialGroupEpsilon Q b) = -1) (N : Submodule F W)
     (hN : ∀ x, N.map (monomialGroupLift hb hQ ⟨ρ, hρ⟩ x) ≤ N) : N = ⊥ ∨ N = ⊤ := by
   let σ : Subrepresentation ρ := ⟨N, fun g w hw ↦ by
     rw [← monomialGroupLift_apply_coe hb hQ ⟨ρ, hρ⟩ g]
@@ -184,7 +184,7 @@ isomorphic to `S`. -/
 private theorem nonempty_equiv_monomialGroupRep_of_ker_le
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     (ρ : Representation F (monomialGroup Q b) W) [hirr : Representation.IsIrreducible ρ]
-    (hρ : ρ ⟨-1, neg_one_mem_monomialGroup b⟩ = -1)
+    (hρ : ρ (monomialGroupEpsilon Q b) = -1)
     (hker : ∀ x, spinAction Q P x = 0 → monomialGroupLift hb hQ ⟨ρ, hρ⟩ x = 0) :
     Nonempty (ρ.Equiv (P.monomialGroupRep b)) := by
   have := hirr.nontrivial
@@ -236,7 +236,7 @@ of any polarization `P`. -/
 theorem nonempty_equiv_monomialGroupRep_of_even
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     (hV : Even (finrank F V)) (ρ : Representation F (monomialGroup Q b) W)
-    [Representation.IsIrreducible ρ] (hρ : ρ ⟨-1, neg_one_mem_monomialGroup b⟩ = -1) :
+    [Representation.IsIrreducible ρ] (hρ : ρ (monomialGroupEpsilon Q b) = -1) :
     Nonempty (ρ.Equiv (P.monomialGroupRep b)) :=
   P.nonempty_equiv_monomialGroupRep_of_ker_le hb hQ ρ hρ fun x hx ↦ by
     rw [spinAction_injective P hV (hx.trans (map_zero _).symm), map_zero]
@@ -248,7 +248,7 @@ of a polarization `P` or to that of `P⁻ = P.negLineCoordinate`. -/
 theorem nonempty_equiv_monomialGroupRep_or_of_odd
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     (hV : Odd (finrank F V)) (ρ : Representation F (monomialGroup Q b) W)
-    [Representation.IsIrreducible ρ] (hρ : ρ ⟨-1, neg_one_mem_monomialGroup b⟩ = -1) :
+    [Representation.IsIrreducible ρ] (hρ : ρ (monomialGroupEpsilon Q b) = -1) :
     Nonempty (ρ.Equiv (P.monomialGroupRep b)) ∨
       Nonempty (ρ.Equiv (P.negLineCoordinate.monomialGroupRep b)) := by
   have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
@@ -349,8 +349,8 @@ theorem monomialGroup_nonempty_equiv_of_even
     (hV : Even (finrank F V)) {W' : Type*} [AddCommGroup W'] [Module F W']
     (ρ : Representation F (monomialGroup Q b) W) [Representation.IsIrreducible ρ]
     (σ : Representation F (monomialGroup Q b) W') [Representation.IsIrreducible σ]
-    (hρ : ρ ⟨-1, neg_one_mem_monomialGroup b⟩ = -1)
-    (hσ : σ ⟨-1, neg_one_mem_monomialGroup b⟩ = -1) :
+    (hρ : ρ (monomialGroupEpsilon Q b) = -1)
+    (hσ : σ (monomialGroupEpsilon Q b) = -1) :
     Nonempty (ρ.Equiv σ) := by
   have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
   let P := SpinPolarizationData.ofNondegenerate Q
@@ -364,7 +364,7 @@ a separably closed field, for an orthogonal basis whose generators square to `±
 theorem monomialGroup_finrank_eq_two_pow_of_even
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     {l : ℕ} (hV : finrank F V = 2 * l) (ρ : Representation F (monomialGroup Q b) W)
-    [Representation.IsIrreducible ρ] (hρ : ρ ⟨-1, neg_one_mem_monomialGroup b⟩ = -1) :
+    [Representation.IsIrreducible ρ] (hρ : ρ (monomialGroupEpsilon Q b) = -1) :
     finrank F W = 2 ^ l := by
   have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
   let P := SpinPolarizationData.ofNondegenerate Q
@@ -378,7 +378,7 @@ theorem monomialGroup_finrank_eq_two_pow_of_even
 theorem monomialGroup_finrank_eq_two_pow_of_odd
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     {l : ℕ} (hV : finrank F V = 2 * l + 1) (ρ : Representation F (monomialGroup Q b) W)
-    [Representation.IsIrreducible ρ] (hρ : ρ ⟨-1, neg_one_mem_monomialGroup b⟩ = -1) :
+    [Representation.IsIrreducible ρ] (hρ : ρ (monomialGroupEpsilon Q b) = -1) :
     finrank F W = 2 ^ l := by
   have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
   let P := SpinPolarizationData.ofNondegenerate Q
