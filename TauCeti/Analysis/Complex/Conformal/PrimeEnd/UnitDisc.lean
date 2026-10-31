@@ -369,6 +369,7 @@ theorem impression_unitDiscPrimeEnd (ζ : sphere (0 : ℂ) 1) :
 
 /-- **The filter of the prime end at a circle point is the neighbourhood filter of that point
 within the disc**: the caps of the radial chain at `ζ` form a basis of `𝓝[ball 0 1] ζ`. -/
+@[simp]
 theorem domainFilter_unitDiscPrimeEnd (ζ : sphere (0 : ℂ) 1) :
     (unitDiscPrimeEnd ζ).domainFilter = 𝓝[ball 0 1] (ζ : ℂ) := by
   have hζ : ‖(ζ : ℂ)‖ = 1 := mem_sphere_zero_iff_norm.mp ζ.2

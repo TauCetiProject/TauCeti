@@ -113,25 +113,19 @@ theorem isOpen_setOf_mem_toFilter {V : Set ℂ} (hV : IsOpen V) :
     IsOpen {x : PrimeEndCompactification U | V ∈ x.toFilter} :=
   TopologicalSpace.isOpen_generateFrom_of_mem ⟨V, hV, rfl⟩
 
-/-- Every open set is a union of basic open sets. -/
-private theorem exists_subset_of_isOpen {s : Set (PrimeEndCompactification U)} (hs : IsOpen s)
-    {x : PrimeEndCompactification U} (hx : x ∈ s) :
-    ∃ V : Set ℂ, IsOpen V ∧ V ∈ x.toFilter ∧ {y | V ∈ y.toFilter} ⊆ s := by
-  -- an open set of the generated topology is built from the generating sets by `GenerateOpen`
-  induction hs generalizing x with
-  | basic s hs =>
-    obtain ⟨V, hV, rfl⟩ := hs
-    exact ⟨V, hV, hx, subset_rfl⟩
-  | univ => exact ⟨univ, isOpen_univ, univ_mem, subset_univ _⟩
-  | inter s t _ _ hs ht =>
-    obtain ⟨V, hV, hVx, hVs⟩ := hs hx.1
-    obtain ⟨W, hW, hWx, hWt⟩ := ht hx.2
-    exact ⟨V ∩ W, hV.inter hW, inter_mem hVx hWx, fun y hy =>
-      ⟨hVs (mem_of_superset hy inter_subset_left), hWt (mem_of_superset hy inter_subset_right)⟩⟩
-  | sUnion S _ hS =>
-    obtain ⟨t, htS, hxt⟩ := hx
-    obtain ⟨V, hV, hVx, hVt⟩ := hS t htS hxt
-    exact ⟨V, hV, hVx, hVt.trans (subset_sUnion_of_mem htS)⟩
+/-- The sets of points whose filters contain a given open subset of `ℂ` form a basis of the
+topology: they are closed under intersection and include `univ`. -/
+private theorem isTopologicalBasis :
+    TopologicalSpace.IsTopologicalBasis {s : Set (PrimeEndCompactification U) |
+      ∃ V : Set ℂ, IsOpen V ∧ s = {x | V ∈ x.toFilter}} := by
+  have h := TopologicalSpace.isTopologicalBasis_of_subbasis_of_inter
+    (t := (inferInstance : TopologicalSpace (PrimeEndCompactification U))) rfl ?_
+  · have huniv : (univ : Set (PrimeEndCompactification U)) ∈
+        {s | ∃ V : Set ℂ, IsOpen V ∧ s = {x | V ∈ x.toFilter}} :=
+      ⟨univ, isOpen_univ, by simp⟩
+    rwa [insert_eq_of_mem huniv] at h
+  rintro _ ⟨V, hV, rfl⟩ _ ⟨W, hW, rfl⟩
+  exact ⟨V ∩ W, hV.inter hW, by ext; simp [inter_mem_iff]⟩
 
 /-- **The basic neighbourhoods.** The neighbourhoods of a point `x` of the prime-end
 compactification have a basis consisting of the sets of points whose filters contain `V`, for
@@ -139,11 +133,11 @@ compactification have a basis consisting of the sets of points whose filters con
 theorem hasBasis_nhds (x : PrimeEndCompactification U) :
     (𝓝 x).HasBasis (fun V : Set ℂ => IsOpen V ∧ V ∈ x.toFilter)
       fun V => {y | V ∈ y.toFilter} := by
-  refine ⟨fun t => ⟨fun ht => ?_, fun ⟨V, ⟨hV, hVx⟩, hVt⟩ =>
-    mem_of_superset ((isOpen_setOf_mem_toFilter hV).mem_nhds hVx) hVt⟩⟩
-  obtain ⟨s, hst, hs, hxs⟩ := mem_nhds_iff.mp ht
-  obtain ⟨V, hV, hVx, hVs⟩ := exists_subset_of_isOpen hs hxs
-  exact ⟨V, ⟨hV, hVx⟩, hVs.trans hst⟩
+  refine ⟨fun t => isTopologicalBasis.mem_nhds_iff.trans ⟨?_, ?_⟩⟩
+  · rintro ⟨_, ⟨V, hV, rfl⟩, hx, ht⟩
+    exact ⟨V, ⟨hV, hx⟩, ht⟩
+  · rintro ⟨V, ⟨hV, hx⟩, ht⟩
+    exact ⟨_, ⟨V, hV, rfl⟩, hx, ht⟩
 
 /-- The inclusion of `U` into its prime-end compactification is continuous. -/
 @[fun_prop]
@@ -285,6 +279,7 @@ private theorem closedBallHomeomorphPrimeEndCompactification_apply (z : closedBa
   (rfl)
 
 /-- Inside the disc, the homeomorphism onto the prime-end compactification is the inclusion. -/
+@[simp]
 theorem closedBallHomeomorphPrimeEndCompactification_apply_of_mem_ball
     (z : closedBall (0 : ℂ) 1) (hz : (z : ℂ) ∈ ball 0 1) :
     closedBallHomeomorphPrimeEndCompactification z = point ⟨z, hz⟩ := by
