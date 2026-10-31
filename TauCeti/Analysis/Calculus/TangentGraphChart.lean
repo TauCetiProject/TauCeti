@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 -- Private: used only inside proofs.
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Calculus.TangentCone.Chart
 
 /-!
 # Graph coordinates over the tangent space
@@ -71,26 +72,24 @@ theorem ContDiffOn.exists_openPartialHomeomorph_starProjection (hF : ContDiffOn 
   -- The coordinate `σ = e₀⁻¹ ∘ Pr ∘ F` on `E`, whose differential at `u₀` is the identity.
   set σ : E → E := fun u ↦ e₀.symm (Pr (F u))
   have hσC : ContDiffOn ℝ n σ U := (e₀.symm.contDiff.comp Pr.contDiff).comp_contDiffOn hF
-  have hσd : ∀ u ∈ U, HasFDerivAt σ ((e₀.symm : R →L[ℝ] E) ∘L Pr ∘L fderiv ℝ F u) u :=
-    fun u hu ↦ e₀.symm.hasFDerivAt.comp u (Pr.hasFDerivAt.comp u
-      ((hF.differentiableOn hn0 u hu).differentiableAt (hU.mem_nhds hu)).hasFDerivAt)
-  have hσ₀ : HasFDerivAt σ ((ContinuousLinearEquiv.refl ℝ E : E ≃L[ℝ] E) : E →L[ℝ] E) u₀ := by
-    convert hσd u₀ hu₀ using 1
+  have hσ₀ : ((ContinuousLinearEquiv.refl ℝ E : E ≃L[ℝ] E) : E →L[ℝ] E) = fderiv ℝ σ u₀ := by
+    have hFd := ((hF.differentiableOn hn0 u₀ hu₀).differentiableAt (hU.mem_nhds hu₀)).hasFDerivAt
+    have hσd : HasFDerivAt σ ((e₀.symm : R →L[ℝ] E) ∘L Pr ∘L fderiv ℝ F u₀) u₀ :=
+      e₀.symm.hasFDerivAt.comp u₀ (Pr.hasFDerivAt.comp u₀ hFd)
+    rw [hσd.fderiv]
     ext v
     exact (e₀.symm_apply_apply v).symm
-  -- The inverse function theorem makes `σ` a chart near `u₀`; restrict its source to `U`.
-  have hσU : ∀ u ∈ U, ContDiffAt ℝ n σ u := fun u hu ↦ hσC.contDiffAt (hU.mem_nhds hu)
-  have hstrict := (hσU u₀ hu₀).hasStrictFDerivAt' hσ₀ hn0
-  let Φ := (hstrict.toOpenPartialHomeomorph σ).restrOpen U hU
-  have hΦ : (Φ : E → E) = σ := by simp [Φ]
-  refine ⟨e₀, Φ, ⟨hstrict.mem_toOpenPartialHomeomorph_source, hu₀⟩, fun u hu ↦ hu.2,
-    fun u _ ↦ ?_, fun u hu ↦ ?_, fun w hw ↦ ?_⟩
+  -- The inverse function theorem makes `σ` a chart near `u₀` with source inside `U`; a chart
+  -- that is differentiable with differentiable inverse has invertible differential.
+  obtain ⟨Φ, hΦ, hu₀Φ, hΦU, hsymm⟩ := ContDiffOn.exists_openPartialHomeomorph hσC hU hu₀ hn hσ₀
+  have hsymm' : ∀ w ∈ Φ.target, ContDiffAt ℝ n Φ.symm w := fun w hw ↦
+    hsymm.contDiffAt (Φ.open_target.mem_nhds hw)
+  have hΦC : ∀ u ∈ Φ.source, ContDiffAt ℝ n Φ u := fun u hu ↦
+    hΦ ▸ hσC.contDiffAt (hU.mem_nhds (hΦU hu))
+  refine ⟨e₀, Φ, hu₀Φ, hΦU, fun u _ ↦ ?_, fun u hu ↦ ⟨hΦC u hu, ?_⟩, hsymm'⟩
   · rw [hΦ, R.starProjection_apply]
     exact congrArg Subtype.val (e₀.apply_symm_apply _)
-  · rw [hΦ, (hσd u hu.2).fderiv]
-    exact ⟨hσU u hu.2,
-      hstrict.isInvertible_of_mem_toOpenPartialHomeomorph_source hu.1 (hσd u hu.2)⟩
-  · have hs : Φ.symm w ∈ U := (Φ.map_target hw).2
-    simpa [Φ] using hstrict.contDiffAt_toOpenPartialHomeomorph_symm hw.1 (hσU _ hs)
+  · exact Φ.isInvertible_fderiv hu ((hΦC u hu).differentiableAt hn0)
+      ((hsymm' _ (Φ.map_source hu)).differentiableAt hn0)
 
 end TauCeti

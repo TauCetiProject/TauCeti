@@ -132,11 +132,9 @@ private theorem exists_isOpen_ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_co
     exact h.add contDiffAt_const
   -- Criticality passes to `g` at `Φ u`, since the differential of `Φ` there is invertible.
   have hgcrit : fderiv ℝ (fun w ↦ f c w - L w) (Φ u) = 0 := by
-    have h := hcrit
-    rw [hev'.fderiv_eq, fderiv_comp u (hgu.differentiableAt (by norm_num))
-      (hΦu.differentiableAt (by norm_num)), ← hTu] at h
-    ext v
-    simpa [g, fderiv_add_const] using congrArg (fun L : E →L[ℝ] ℝ ↦ L (Tu.symm v)) h
+    rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible (hgu.differentiableAt (by norm_num))
+      (hΦu.differentiableAt (by norm_num)) ⟨Tu, hTu⟩] at hcrit
+    simpa [g, fderiv_add_const] using hcrit
   have hnd : IsNondegenerateCriticalPoint g (Φ u) :=
     (isNondegenerateCriticalPoint_add_const_iff _).2
       (hasNondegenerateCriticalPointsOn_iff.1 ha (Φ.map_source hu) hgcrit)
