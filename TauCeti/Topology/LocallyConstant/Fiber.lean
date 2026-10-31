@@ -26,21 +26,21 @@ namespace LocallyConstant
 variable {X α : Type*} [TopologicalSpace X]
 
 /-- The fiber `f⁻¹{a}` of a locally constant function `f`, as an open subset of `X`. -/
-@[expose] def fiberOpens (f : LocallyConstant X α) (a : α) : Opens X :=
+def fiberOpens (f : LocallyConstant X α) (a : α) : Opens X :=
   ⟨f ⁻¹' {a}, f.isLocallyConstant.isOpen_fiber a⟩
 
 @[simp]
 theorem mem_fiberOpens {f : LocallyConstant X α} {a : α} {x : X} :
     x ∈ f.fiberOpens a ↔ f x = a :=
-  Iff.rfl
+  (Iff.rfl)
 
 @[simp]
 theorem coe_fiberOpens (f : LocallyConstant X α) (a : α) :
     (f.fiberOpens a : Set X) = f ⁻¹' {a} :=
-  rfl
+  (rfl)
 
 /-- The fibers of a locally constant function cover its domain. -/
 theorem iSup_fiberOpens (f : LocallyConstant X α) : ⨆ a, f.fiberOpens a = ⊤ :=
-  top_unique fun x _ ↦ Opens.mem_iSup.2 ⟨f x, rfl⟩
+  top_unique fun x _ ↦ Opens.mem_iSup.2 ⟨f x, mem_fiberOpens.2 rfl⟩
 
 end LocallyConstant

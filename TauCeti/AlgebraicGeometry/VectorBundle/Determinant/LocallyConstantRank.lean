@@ -71,14 +71,6 @@ lemma det_obj (E : FiniteLocallyFreeSheaf X) :
     (det E).obj = (AlgebraicGeometry.locallyConstantExteriorPower E.rank).obj E.obj :=
   (rfl)
 
-/-- `⋀^r` of an identity, followed by the transport along `r = r`, is the identity. -/
-private lemma locallyConstantExteriorPower_map_id_comp_eqToHom {r : LocallyConstant X ℕ}
-    (h : r = r) (M : X.Modules) :
-    (AlgebraicGeometry.locallyConstantExteriorPower r).map (𝟙 M) ≫
-        eqToHom (congrArg (fun r ↦ (AlgebraicGeometry.locallyConstantExteriorPower r).obj M) h) =
-      𝟙 _ := by
-  simp
-
 /-- `⋀^r` of a composite, followed by transport along `r = r''`, is the composite of the
 transported maps along `r = r'` and `r' = r''`. -/
 private lemma locallyConstantExteriorPower_map_comp_comp_eqToHom
@@ -106,9 +98,11 @@ def determinantCore : Core (FiniteLocallyFreeSheaf X) ⥤ InvertibleSheaf X wher
         (rank_eq_of_iso ((Scheme.Modules.isFiniteLocallyFree X).ι.mapIso e.iso)))
   map_id E := by
     ext1
-    simp only [ObjectProperty.homMk_hom, coreCategory_id_iso, Iso.refl_hom,
-      ObjectProperty.FullSubcategory.id_hom]
-    exact locallyConstantExteriorPower_map_id_comp_eqToHom rfl _
+    simp only [coreCategory_id_iso, Iso.refl_hom, ObjectProperty.FullSubcategory.id_hom,
+      CategoryTheory.Functor.map_id, ObjectProperty.homMk_hom]
+    -- What remains is the transport along a proof of `rank E = rank E`, which is trivial.
+    refine (Category.id_comp _).trans ?_
+    exact eqToHom_refl _ _
   map_comp {E F G} e f := by
     ext1
     simp only [ObjectProperty.homMk_hom, coreCategory_comp_iso, Iso.trans_hom,

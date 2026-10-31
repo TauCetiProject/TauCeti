@@ -53,7 +53,8 @@ private def pullbackFiberIso (r : LocallyConstant X ℕ) (n : ℕ) (M : X.Module
       (Scheme.Modules.pullback (Scheme.Opens.ι (r.fiberOpens n))).obj
         ((SheafOfModules.exteriorPower X.sheaf n).obj M) :=
   ((restrictFunctorIsoPullback (Scheme.Opens.ι (r.fiberOpens n))).app _).symm ≪≫
-    (restrictLocallyConstantExteriorPowerIso r (r.fiberOpens n) fun _ hx ↦ hx).app M ≪≫
+    (restrictLocallyConstantExteriorPowerIso r (r.fiberOpens n)
+      fun _ hx ↦ LocallyConstant.mem_fiberOpens.1 hx).app M ≪≫
     (restrictFunctorIsoPullback (Scheme.Opens.ι (r.fiberOpens n))).app _
 
 /-- The exterior power `⋀^r E` of a finite locally free sheaf in a locally constant degree `r` is
@@ -112,7 +113,7 @@ theorem rank_locallyConstantExteriorPower_apply (r : LocallyConstant X ℕ)
     (E : FiniteLocallyFreeSheaf X) (x : X) :
     ((locallyConstantExteriorPower X r).obj E).rank x = (E.rank x).choose (r x) := by
   -- Compute the rank after pulling back to the open set `r⁻¹{r x}` containing `x`.
-  let y : Scheme.Opens.toScheme (r.fiberOpens (r x)) := ⟨x, rfl⟩
+  let y : Scheme.Opens.toScheme (r.fiberOpens (r x)) := ⟨x, LocallyConstant.mem_fiberOpens.2 rfl⟩
   calc ((locallyConstantExteriorPower X r).obj E).rank x
       = ((pullback (Scheme.Opens.ι (r.fiberOpens (r x)))).obj
           ((locallyConstantExteriorPower X r).obj E)).rank y :=

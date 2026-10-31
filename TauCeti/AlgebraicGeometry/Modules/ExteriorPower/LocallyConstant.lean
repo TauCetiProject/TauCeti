@@ -70,9 +70,27 @@ sections of `⋀ⁿ M` over the sets `V ∩ r⁻¹{n}`. -/
   map_id M := by simp
   map_comp φ ψ := by simp [Limits.Pi.map_comp_map]
 
+/-- `⋀^r M` is the product over `n` of the factors `locallyConstantExteriorPowerFactor r n`. -/
+@[simp]
+lemma locallyConstantExteriorPower_obj (r : LocallyConstant X ℕ) (M : X.Modules) :
+    (locallyConstantExteriorPower r).obj M =
+      ∏ᶜ fun n ↦ (locallyConstantExteriorPowerFactor r n).obj M :=
+  (rfl)
+
+/-- `⋀^r φ` is the product over `n` of the maps `(locallyConstantExteriorPowerFactor r n).map φ`,
+compared through the projections onto the `n`-th factor. -/
+@[simp, reassoc]
+lemma locallyConstantExteriorPower_map_π (r : LocallyConstant X ℕ) {M N : X.Modules}
+    (φ : M ⟶ N) (n : ℕ) :
+    (locallyConstantExteriorPower r).map φ ≫
+        Pi.π (fun m ↦ (locallyConstantExteriorPowerFactor r m).obj N) n =
+      Pi.π (fun m ↦ (locallyConstantExteriorPowerFactor r m).obj M) n ≫
+        (locallyConstantExteriorPowerFactor r n).map φ :=
+  Limits.Pi.map_π (fun m ↦ (locallyConstantExteriorPowerFactor r m).map φ) n
+
 /-- The projection of `⋀^r M` onto its `n`-th factor, the pushforward of the restriction of
 `⋀ⁿ M` to `r⁻¹{n}`. -/
-@[expose] def locallyConstantExteriorPowerπ (r : LocallyConstant X ℕ) (n : ℕ) :
+def locallyConstantExteriorPowerπ (r : LocallyConstant X ℕ) (n : ℕ) :
     locallyConstantExteriorPower r ⟶ locallyConstantExteriorPowerFactor r n where
   app M := Pi.π (fun m ↦ (locallyConstantExteriorPowerFactor r m).obj M) n
   naturality _ _ _ := by simp [locallyConstantExteriorPower]
@@ -82,7 +100,7 @@ sections of `⋀ⁿ M` over the sets `V ∩ r⁻¹{n}`. -/
 lemma locallyConstantExteriorPowerπ_app (r : LocallyConstant X ℕ) (n : ℕ) (M : X.Modules) :
     (locallyConstantExteriorPowerπ r n).app M =
       Pi.π (fun m ↦ (locallyConstantExteriorPowerFactor r m).obj M) n :=
-  rfl
+  (rfl)
 
 /-- Over an open `V` on which `r` is constantly `n`, the projection of `⋀^r M` onto its `n`-th
 factor is an isomorphism on sections. -/
@@ -95,6 +113,10 @@ theorem isIso_locallyConstantExteriorPowerπ_app_app (r : LocallyConstant X ℕ)
   -- preimage of `V`, which is empty; they form a module over the zero ring `Γ(r⁻¹{m}, ∅)`.
   have h : (Scheme.Opens.ι (r.fiberOpens m)) ⁻¹ᵁ V = ⊥ :=
     eq_bot_iff.2 fun x hx ↦ hm ((LocallyConstant.mem_fiberOpens.1 x.2).symm.trans (hV x.1 hx))
+  -- The `m`-th factor is by definition the composite `⋀ᵐ ⋙ restrict ⋙ pushforward`. Neither
+  -- `rw` nor `simp` can apply `Functor.comp_obj` to it: `SheafOfModules.exteriorPower X.sheaf m`
+  -- only type-checks after unfolding the type of `X.sheaf`, beyond instance transparency. So the
+  -- composite is unfolded by `change`.
   change Subsingleton Γ((pushforward (Scheme.Opens.ι (r.fiberOpens m))).obj _, V)
   rw [pushforward_obj_obj]
   exact h ▸ Module.subsingleton Γ((Scheme.Opens.toScheme (r.fiberOpens m)), ⊥) _
@@ -109,7 +131,8 @@ private def factorι (r : LocallyConstant X ℕ) (n : ℕ) :
 private theorem isIso_factorι_app_app (r : LocallyConstant X ℕ) (M : X.Modules) {n : ℕ}
     {V : X.Opens} (hV : ∀ x ∈ V, r x = n) :
     IsIso (Scheme.Modules.Hom.app ((factorι r n).app M) V) :=
-  isIso_restrictAdjunction_unit_app_app (r.fiberOpens n) _ fun x hx ↦ hV x hx
+  isIso_restrictAdjunction_unit_app_app (r.fiberOpens n) _ fun x hx ↦
+    LocallyConstant.mem_fiberOpens.2 (hV x hx)
 
 /-- Over an open `U` on which `r` is constantly `n`, the restricted unit
 `(⋀ⁿ M)|_U ⟶ ((r⁻¹{n}).ι_* (⋀ⁿ M|_{r⁻¹{n}}))|_U` is an isomorphism, naturally in `M`. -/
@@ -122,6 +145,15 @@ private def restrictFactorιIso (r : LocallyConstant X ℕ) {n : ℕ} (U : X.Ope
       isIso_factorι_app_app r M fun x hx ↦ hU x (hV hx)
   have := NatIso.isIso_of_isIso_app (Functor.whiskerRight (factorι r n) (restrictFunctor U.ι))
   asIso (Functor.whiskerRight (factorι r n) (restrictFunctor U.ι))
+
+/-- The forward map of `restrictFactorιIso` is the restricted unit. -/
+private lemma restrictFactorιIso_hom_app (r : LocallyConstant X ℕ) {n : ℕ} (U : X.Opens)
+    (hU : ∀ x ∈ U, r x = n) (M : X.Modules) :
+    (restrictFactorιIso r U hU).hom.app M =
+      (restrictFunctor U.ι).map ((restrictAdjunction (Scheme.Opens.ι (r.fiberOpens n))).unit.app
+        ((SheafOfModules.exteriorPower X.sheaf n).obj M)) :=
+  -- By construction, the forward map is the whiskered unit `factorι r n`.
+  (rfl)
 
 /-- **Restriction of `⋀^r M` to an open where `r` is constant.** Over an open `U` on which the
 locally constant function `r` takes the value `n`, the restriction of `⋀^r M` is the restriction
@@ -139,6 +171,15 @@ def restrictLocallyConstantExteriorPowerIso (r : LocallyConstant X ℕ) {n : ℕ
   asIso (Functor.whiskerRight (locallyConstantExteriorPowerπ r n) (restrictFunctor U.ι)) ≪≫
     (restrictFactorιIso r U hU).symm
 
+/-- By construction, `restrictLocallyConstantExteriorPowerIso` is the restricted projection
+followed by the inverse of `restrictFactorιIso`. -/
+private lemma restrictLocallyConstantExteriorPowerIso_hom_app (r : LocallyConstant X ℕ) {n : ℕ}
+    (U : X.Opens) (hU : ∀ x ∈ U, r x = n) (M : X.Modules) :
+    (restrictLocallyConstantExteriorPowerIso r U hU).hom.app M =
+      (restrictFunctor U.ι).map ((locallyConstantExteriorPowerπ r n).app M) ≫
+        (restrictFactorιIso r U hU).inv.app M :=
+  (rfl)
+
 /-- `restrictLocallyConstantExteriorPowerIso` is the restricted projection onto the `n`-th
 factor, read through the restricted unit `⋀ⁿ M ⟶ (r⁻¹{n}).ι_* (⋀ⁿ M|_{r⁻¹{n}})`. -/
 @[reassoc]
@@ -147,10 +188,13 @@ lemma restrictLocallyConstantExteriorPowerIso_hom_app_comp (r : LocallyConstant 
     (restrictLocallyConstantExteriorPowerIso r U hU).hom.app M ≫
         (restrictFunctor U.ι).map ((restrictAdjunction (Scheme.Opens.ι (r.fiberOpens n))).unit.app
           ((SheafOfModules.exteriorPower X.sheaf n).obj M)) =
-      (restrictFunctor U.ι).map ((locallyConstantExteriorPowerπ r n).app M) :=
+      (restrictFunctor U.ι).map ((locallyConstantExteriorPowerπ r n).app M) := by
   -- The isomorphism is the restricted projection followed by the inverse of the restricted
   -- unit `restrictFactorιIso`, whose forward map is the second factor on the left.
-  (Category.assoc _ _ _).trans <|
+  rw [← restrictFactorιIso_hom_app r U hU, restrictLocallyConstantExteriorPowerIso_hom_app]
+  -- `rw` cannot cancel `inv ≫ hom` here, since `SheafOfModules.exteriorPower X.sheaf n` is not
+  -- type-correct at instance transparency; so it is cancelled by an explicit term.
+  exact (Category.assoc _ _ _).trans <|
     (congrArg (_ ≫ ·) ((restrictFactorιIso r U hU).inv_hom_id_app M)).trans (Category.comp_id _)
 
 /-- If `r` is constantly `n`, the unit `⋀ⁿ M ⟶ (r⁻¹{n}).ι_* (⋀ⁿ M|_{r⁻¹{n}})` is an
@@ -162,6 +206,15 @@ private def factorιIso (r : LocallyConstant X ℕ) {n : ℕ} (hr : ∀ x, r x =
   have := NatIso.isIso_of_isIso_app (factorι r n)
   asIso (factorι r n)
 
+/-- The forward map of `factorιIso` is the unit. -/
+private lemma factorιIso_hom_app (r : LocallyConstant X ℕ) {n : ℕ} (hr : ∀ x, r x = n)
+    (M : X.Modules) :
+    (factorιIso r hr).hom.app M =
+      (restrictAdjunction (Scheme.Opens.ι (r.fiberOpens n))).unit.app
+        ((SheafOfModules.exteriorPower X.sheaf n).obj M) :=
+  -- By construction, the forward map is `factorι r n`.
+  (rfl)
+
 /-- **`⋀^r M` in constant degree.** If the locally constant function `r` is constantly `n`,
 then `⋀^r M` is the `n`-th exterior power `⋀ⁿ M`, naturally in `M`. -/
 def locallyConstantExteriorPowerIso (r : LocallyConstant X ℕ) {n : ℕ} (hr : ∀ x, r x = n) :
@@ -172,6 +225,14 @@ def locallyConstantExteriorPowerIso (r : LocallyConstant X ℕ) {n : ℕ} (hr : 
   have := NatIso.isIso_of_isIso_app (locallyConstantExteriorPowerπ r n)
   asIso (locallyConstantExteriorPowerπ r n) ≪≫ (factorιIso r hr).symm
 
+/-- By construction, `locallyConstantExteriorPowerIso` is the projection followed by the inverse
+of `factorιIso`. -/
+private lemma locallyConstantExteriorPowerIso_hom_app (r : LocallyConstant X ℕ) {n : ℕ}
+    (hr : ∀ x, r x = n) (M : X.Modules) :
+    (locallyConstantExteriorPowerIso r hr).hom.app M =
+      (locallyConstantExteriorPowerπ r n).app M ≫ (factorιIso r hr).inv.app M :=
+  (rfl)
+
 /-- `locallyConstantExteriorPowerIso` is the projection onto the `n`-th factor, read through the
 unit `⋀ⁿ M ⟶ (r⁻¹{n}).ι_* (⋀ⁿ M|_{r⁻¹{n}})`. -/
 @[reassoc]
@@ -180,10 +241,12 @@ lemma locallyConstantExteriorPowerIso_hom_app_comp (r : LocallyConstant X ℕ) {
     (locallyConstantExteriorPowerIso r hr).hom.app M ≫
         (restrictAdjunction (Scheme.Opens.ι (r.fiberOpens n))).unit.app
           ((SheafOfModules.exteriorPower X.sheaf n).obj M) =
-      (locallyConstantExteriorPowerπ r n).app M :=
+      (locallyConstantExteriorPowerπ r n).app M := by
   -- The isomorphism is the projection followed by the inverse of the unit `factorιIso`, whose
   -- forward map is the second factor on the left.
-  (Category.assoc _ _ _).trans <|
+  rw [← factorιIso_hom_app r hr, locallyConstantExteriorPowerIso_hom_app]
+  -- As above, `inv ≫ hom` is cancelled by an explicit term rather than by `rw`.
+  exact (Category.assoc _ _ _).trans <|
     (congrArg (_ ≫ ·) ((factorιIso r hr).inv_hom_id_app M)).trans (Category.comp_id _)
 
 end

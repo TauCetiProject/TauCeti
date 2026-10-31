@@ -59,9 +59,9 @@ theorem bijective_app_π_of_subsingleton {ι : Type v} [Small.{u} ι] (F : ι �
     · subst hj
       exact hst
     · exact (h j hj).elim _ _
-  -- `G.map φ` is by definition the map `φ.app U` on sections over `U`.
-  change Function.Bijective (G.map (Pi.π F i))
-  rw [he, types_comp]
+  -- `G` is by definition the functor of sections over `U`, so `G.map φ` is `φ.app U`.
+  have hG : ⇑((Pi.π F i).app U) = G.map (Pi.π F i) := rfl
+  rw [hG, he, types_comp]
   exact (hev.comp (equivShrink _).symm.bijective).comp
     ((isIso_iff_bijective e.hom).mp inferInstance)
 
