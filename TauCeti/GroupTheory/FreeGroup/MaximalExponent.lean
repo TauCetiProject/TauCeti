@@ -6,15 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
-public import TauCeti.GroupTheory.ProperPower
 
 /-!
 # Bounds on root exponents in a free group
 
 The cyclically reduced part of a nonidentity word has positive length. Consequently,
 the exponent of any positive power representing a nonidentity element is bounded by
-the length of that element's reduced word. This gives a root with greatest exponent,
-the first step in constructing the intrinsic maximal root of a free-group element.
+the length of that element's reduced word.
 
 The length calculation is in `TauCeti.GroupTheory.FreeGroup.CyclicallyReduced`.
 -/
@@ -53,13 +51,5 @@ theorem le_norm_of_pow_eq {x y : FreeGroup α} {n : ℕ}
       n * (reduceCyclically y.toWord).length := Nat.le_add_left _ _
 
 end
-
-/-- A nonidentity free-group element has a root whose exponent is greatest among
-all of its root exponents. This root is not a proper power. -/
-theorem exists_root_maximal_exponent {x : FreeGroup α} (hx : x ≠ 1) :
-    ∃ (r : FreeGroup α) (k : ℕ), k ≠ 0 ∧ r ^ k = x ∧ ¬Group.IsProperPower r ∧
-      ∀ (y : FreeGroup α) (n : ℕ), y ^ n = x → n ≤ k := by
-  classical
-  exact Group.exists_maximalRoot_of_bddAbove hx ⟨norm x, fun _ ⟨_, hy⟩ => le_norm_of_pow_eq hx hy⟩
 
 end FreeGroup
