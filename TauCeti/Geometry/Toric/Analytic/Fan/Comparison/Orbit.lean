@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.Manifold
 public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.TorusAction
 public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Complex
 
