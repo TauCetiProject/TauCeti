@@ -85,9 +85,12 @@ theorem subsingleton_deRhamCohomology_sphere_one (hn : 1 < n) :
   obtain ⟨v⟩ := nonempty_sphere (E := E) (m := n) Fact.out
   set U : Opens (sphere (0 : E) 1) := ⟨{v}ᶜ, isOpen_compl_singleton⟩
   set V : Opens (sphere (0 : E) 1) := ⟨{-v}ᶜ, isOpen_compl_singleton⟩
-  -- `U ⊓ V` is connected, as it is diffeomorphic to `ℝⁿ \ {0}` with `n ≥ 2`.
-  have : ConnectedSpace (U ⊓ V : Opens (sphere (0 : E) 1)) :=
-    (stereographicPuncturedDiffeomorph v).toHomeomorph.connectedSpace_iff.mpr <|
+  -- `U ⊓ V` is connected, as it is diffeomorphic to `ℝⁿ \ {0}` with `n ≥ 2`. The domain of
+  -- `stereographicPuncturedDiffeomorph v` is the open set with carrier `{v}ᶜ ∩ {-v}ᶜ`, which
+  -- `Opens.mk_inf_mk` identifies with `U ⊓ V`.
+  have : ConnectedSpace (U ⊓ V : Opens (sphere (0 : E) 1)) := by
+    simp only [U, V, Opens.mk_inf_mk, Set.inf_eq_inter]
+    exact (stereographicPuncturedDiffeomorph v).toHomeomorph.connectedSpace_iff.mpr <|
       isConnected_iff_connectedSpace.mp <| isConnected_compl_singleton_of_one_lt_rank
         (by rw [← finrank_eq_rank, finrank_euclideanSpace_fin]; exact_mod_cast hn) 0
   rw [(deRhamCohomology.equivOfDiffeomorph
@@ -97,11 +100,7 @@ theorem subsingleton_deRhamCohomology_sphere_one (hn : 1 < n) :
   obtain ⟨d, rfl⟩ := deRhamCohomology.mayerVietorisδ_surjective
     (subsingleton_deRhamCohomology_sphere_compl_singleton v 0)
     (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) 0) c
-  obtain ⟨r, hr⟩ :=
-    (deRhamCohomologyZeroEquiv (𝓡 n) (U ⊓ V : Opens (sphere (0 : E) 1)) d).exists_eq_const
-  obtain rfl : d = deRhamCohomology.const (𝓡 n) (U ⊓ V : Opens (sphere (0 : E) 1)) r :=
-    (deRhamCohomologyZeroEquiv _ _).injective
-      (by rw [deRhamCohomology.deRhamCohomologyZeroEquiv_const, hr])
+  obtain ⟨r, rfl⟩ := deRhamCohomology.exists_eq_const d
   exact deRhamCohomology.mayerVietorisδ_const U V r
 
 end Cover
@@ -122,14 +121,17 @@ theorem nonempty_linearEquiv_deRhamCohomology_sphere_succ [Fact (finrank ℝ E =
       deRhamCohomology (𝓡 (n + 1)) (sphere (0 : E) 1) (k + 2)) := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ (n + 1)
   obtain ⟨v⟩ := nonempty_sphere (E := E) (m := n + 1) Fact.out
+  have e := deRhamCohomology.mayerVietorisδEquiv
+    (subsingleton_deRhamCohomology_sphere_compl_singleton (n := n + 1) v k)
+    (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) k)
+    (subsingleton_deRhamCohomology_sphere_compl_singleton v (k + 1))
+    (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) (k + 1))
+  -- Identify the intersection of the cover with the domain `{v}ᶜ ∩ {-v}ᶜ` of
+  -- `stereographicPuncturedDiffeomorph v`.
+  simp only [Opens.mk_inf_mk, Set.inf_eq_inter] at e
   exact ⟨(deRhamCohomology.puncturedSpaceEquivSphere (EuclideanSpace ℝ (Fin (n + 1))) n
       (k + 1)).symm ≪≫ₗ
-    deRhamCohomology.equivOfDiffeomorph (stereographicPuncturedDiffeomorph v) (k + 1) ≪≫ₗ
-    deRhamCohomology.mayerVietorisδEquiv
-      (subsingleton_deRhamCohomology_sphere_compl_singleton v k)
-      (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) k)
-      (subsingleton_deRhamCohomology_sphere_compl_singleton v (k + 1))
-      (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) (k + 1)) ≪≫ₗ
+    deRhamCohomology.equivOfDiffeomorph (stereographicPuncturedDiffeomorph v) (k + 1) ≪≫ₗ e ≪≫ₗ
     (deRhamCohomology.equivOfDiffeomorph
       (Diffeomorph.ofTop _ (compl_singleton_sup_compl_singleton_neg_eq_top v))
       (k + 2)).symm⟩
