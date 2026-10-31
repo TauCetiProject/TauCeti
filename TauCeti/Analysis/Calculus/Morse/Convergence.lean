@@ -44,13 +44,13 @@ which is exactly what a Morse function on a compact set provides, by
 The three steps are the classical ones (Audin--Damian, Chapter 2).
 
 *The energy converges.* Along the trajectory `f` is antitone
-(`TauCeti.IsIntegralCurveOn.antitoneOn_comp_neg_gradient`) and is bounded below on `K`, so
+(`IsIntegralCurveOn.antitoneOn_comp_neg_gradient`) and is bounded below on `K`, so
 `f ∘ γ` has a limit.
 
 *The gradient dies.* The trajectory is Lipschitz, with the bound on `‖∇ f‖` over `K` as its
 constant, and `∇ f` is uniformly continuous on `K`; so if `‖∇ f (γ t)‖ ≥ ε` at some time `t`, the
 same holds with `ε / 2` throughout a time interval `[t, t + δ]` whose length `δ` does not depend on
-`t`. The energy identity `TauCeti.IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` then makes
+`t`. The energy identity `IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` then makes
 `f` drop by at least `δ (ε / 2) ^ 2` across that interval — impossible infinitely often, since the
 energy converges. Hence `∇ f (γ t) → 0`.
 
@@ -62,18 +62,18 @@ and a map into a compact set with a unique cluster point converges to it
 
 ## Main results
 
-* `TauCeti.IsIntegralCurveOn.exists_tendsto_comp_atTop`: the energy `f ∘ γ` converges.
-* `TauCeti.IsIntegralCurveOn.tendsto_gradient_atTop`: the gradient along the trajectory tends
+* `IsIntegralCurveOn.exists_tendsto_comp_atTop`: the energy `f ∘ γ` converges.
+* `IsIntegralCurveOn.tendsto_gradient_atTop`: the gradient along the trajectory tends
   to `0`.
-* `TauCeti.IsIntegralCurveOn.gradient_eq_zero_of_mapClusterPt`: every point of the ω-limit set is
+* `IsIntegralCurveOn.gradient_eq_zero_of_mapClusterPt`: every point of the ω-limit set is
   a critical point.
-* `TauCeti.IsIntegralCurveOn.exists_tendsto_atTop`: **a confined negative gradient trajectory
+* `IsIntegralCurveOn.exists_tendsto_atTop`: **a confined negative gradient trajectory
   converges to a critical point**, when the critical points in the confining compact set are
   finite in number.
-* `TauCeti.IsIntegralCurveOn.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn`: the Morse
+* `IsIntegralCurveOn.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn`: the Morse
   form of the same statement, where the finiteness comes from nondegeneracy.
-* `TauCeti.IsIntegralCurveOn.exists_tendsto_atBot`: the corresponding backward-time statement.
-* `TauCeti.IsIntegralCurveOn.exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn`: its Morse
+* `IsIntegralCurveOn.exists_tendsto_atBot`: the corresponding backward-time statement.
+* `IsIntegralCurveOn.exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn`: its Morse
   form, where finiteness follows from nondegeneracy.
 
 ## References
@@ -87,10 +87,8 @@ and a map into a compact set with a unique cluster point converges to it
 
 public section
 
-open Filter Function InnerProductSpace MeasureTheory Metric Set
+open Filter Function InnerProductSpace MeasureTheory Metric Set TauCeti
 open scoped Gradient Interval Topology
-
-namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f : E → ℝ} {γ : ℝ → E} {K : Set E} {x : E}
@@ -179,7 +177,7 @@ private theorem energy_drop_of_le_norm_gradient {C δ ε η : ℝ}
     exact ((hcontg.mono hIcc).norm).pow 2
   have heq : ∫ s in t..(t + δ), ‖∇ f (γ s)‖ ^ 2 = f (γ t) - f (γ (t + δ)) :=
     integral_norm_gradient_sq_eq_sub hγ (huIcc ▸ hIcc)
-      (fun s hs ↦ hdiff _ (hmaps (hIcc (huIcc ▸ hs)))) hint
+      (fun s hs ↦ hdiff _ (hmaps (hIcc (huIcc ▸ hs))))
   rw [← heq]
   have hmono : ∫ _s in t..(t + δ), (ε / 2) ^ 2 ≤ ∫ s in t..(t + δ), ‖∇ f (γ s)‖ ^ 2 :=
     intervalIntegral.integral_mono_on htδ intervalIntegrable_const hint fun s hs ↦
@@ -258,7 +256,7 @@ of `f` in it**, provided `f` has only finitely many critical points there.
 Some such hypothesis is needed: a negative gradient trajectory can spiral forever towards a circle
 of critical points and then have no limit, its ω-limit set being the whole circle. The finiteness
 holds for a Morse function, which is
-`TauCeti.IsIntegralCurveOn.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn` below.
+`IsIntegralCurveOn.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn` below.
 
 Nothing is claimed about the *rate* of convergence, nor about the backward limit: the reversed
 curve `fun t ↦ γ (-t)` is a negative gradient trajectory of `-f`, so the backward limit is this
@@ -374,5 +372,3 @@ theorem exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn
     fun y hy ↦ ⟨hy.1, (hzero y).mp hy.2⟩
 
 end IsIntegralCurveOn
-
-end TauCeti

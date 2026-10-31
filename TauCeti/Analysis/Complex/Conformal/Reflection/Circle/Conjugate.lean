@@ -25,10 +25,9 @@ fractional-linear coordinate, then uses the conjugation-composition lemma from
 `Reflection/Basic.lean`. The accompanying involution theorem records that applying the operation
 again recovers the original map when both radii are nonzero.
 
-This is a prerequisite for the circle case of layer L4 in the conformal-mapping roadmap: Schwarz
-reflection "across an analytic arc / circle by Möbius reduction". The construction follows the
-standard circle-reflection formula; see Ahlfors, *Complex Analysis*, Chapters 4--6. This L4
-material is absent from the upstream Mathlib Riemann-mapping draft mathlib4#33505.
+It is the analytic input to the circle case of the Schwarz reflection principle, proved by Möbius
+reduction in `Reflection/Circle/Principle.lean`. The construction follows the
+standard circle-reflection formula; see Ahlfors, *Complex Analysis*, Chapters 4--6.
 -/
 
 public section

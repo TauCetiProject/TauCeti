@@ -24,9 +24,9 @@ Read in a trivialization `e'` of the bundle's atlas, the frame becomes a family 
 operators of `F`, the coordinate change from the frame trivialization to `e'`. Its entries are the
 coordinates of the frame sections in `e'`, hence `C^n`, and its inverse is `C^n` because operator
 inversion is smooth. This gives both the continuity needed to define the trivialization and its
-`C^n` compatibility with the atlas. The same construction for the frames of a distribution, a
-subbundle of the tangent bundle with the subspace topology, is
-`TauCeti.IsDistributionFrameOn.trivialization`. Mathlib's `Bundle.Trivialization.localFrame`
+`C^n` compatibility with the atlas. The same construction for continuous local frames of a family
+of subspaces of a topological vector bundle, with the subspace topology, is
+`TauCeti.IsSubbundleFrameOn.trivialization`. Mathlib's `Bundle.Trivialization.localFrame`
 gives the converse direction for trivializations of the bundle's own atlas.
 
 For a bundle of rank one a single section that vanishes nowhere on `U` is a local frame on `U`.

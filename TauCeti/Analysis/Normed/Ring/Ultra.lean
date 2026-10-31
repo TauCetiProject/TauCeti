@@ -15,7 +15,8 @@ public import TauCeti.Algebra.Order.BigOperators.ProdSubProd
 An ultrametric seminormed ring is a nonarchimedean topological ring: its open balls about zero
 are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1`, the closed unit
 ball is an open subring. In an ultrametric normed ring, a finite product of elements each within
-`ε ≤ 1` of `1` is again within `ε` of `1`.
+`ε ≤ 1` of `1` is again within `ε` of `1`. A series `∑_{n ≥ 1} f(qⁿ w)` of terms bounded by their
+arguments is bounded by its first argument `q w`.
 
 Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
 `‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one.
@@ -29,7 +30,10 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
 * `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
   `‖1‖ = 1`, an open subring.
 * `TauCeti.norm_one_sub_of_norm_lt_one`: subtracting an element of norm less than one from one
-  leaves the norm equal to one.
+  leaves the norm equal to one; `TauCeti.norm_div_one_sub_pow`: so does dividing by a power of
+  such a `1 - w`.
+* `TauCeti.norm_tsum_le_norm_mul`: a one-sided series `∑_{n ≥ 1} f(qⁿ w)` whose terms are bounded
+  by their arguments has norm at most `‖q w‖`.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
 -/
@@ -102,6 +106,28 @@ theorem norm_one_sub_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass
   rw [sub_eq_add_neg, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm]
   · simp [hx.le]
   · exact ne_of_gt (by simpa using hx)
+
+/-- Dividing by a power of `1 - w` with `‖w‖ < 1` does not change norms in an ultrametric normed
+division ring. -/
+theorem norm_div_one_sub_pow {K : Type*} [NormedDivisionRing K] [IsUltrametricDist K] (z : K)
+    {w : K} (hw : ‖w‖ < 1) (k : ℕ) : ‖z / (1 - w) ^ k‖ = ‖z‖ := by
+  rw [norm_div, norm_pow, norm_one_sub_of_norm_lt_one hw, one_pow, div_one]
+
+/-- A one-sided series `∑_{n ≥ 1} f(qⁿ w)` with values in an ultrametric group, whose terms are
+bounded by their arguments, has norm at most `‖q w‖` when `‖q‖ ≤ 1` and `‖q w‖ < 1`. -/
+theorem norm_tsum_le_norm_mul {R E : Type*} [SeminormedRing R]
+    [SeminormedAddCommGroup E] [IsUltrametricDist E] (f : R → E)
+    (hf : ∀ w : R, ‖w‖ < 1 → ‖f w‖ ≤ ‖w‖) {q w : R} (hq : ‖q‖ ≤ 1) (hw : ‖q * w‖ < 1) :
+    ‖∑' n : ℕ, f (q ^ (n + 1) * w)‖ ≤ ‖q * w‖ := by
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg _) fun n ↦ ?_
+  have h : ‖q ^ (n + 1) * w‖ ≤ ‖q * w‖ := by
+    induction n with
+    | zero => rw [zero_add, pow_one]
+    | succ n ih =>
+      calc ‖q ^ (n + 1 + 1) * w‖ = ‖q * (q ^ (n + 1) * w)‖ := by rw [pow_succ', mul_assoc]
+        _ ≤ ‖q‖ * ‖q ^ (n + 1) * w‖ := norm_mul_le _ _
+        _ ≤ ‖q * w‖ := mul_le_of_le_one_left (norm_nonneg _) hq |>.trans ih
+  exact (hf _ (h.trans_lt hw)).trans h
 
 /-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
 `a * b`. -/

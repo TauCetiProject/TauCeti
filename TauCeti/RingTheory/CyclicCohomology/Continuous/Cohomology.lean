@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.CyclicCohomology.Cohomology
 public import TauCeti.RingTheory.CyclicCohomology.OperatorTopology
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
@@ -26,6 +27,15 @@ The class map is an open quotient map. Its continuous linear universal property 
 identifies this explicit quotient with the cohomology of the native cyclic cochain
 complex. In degree zero, the class map identifies cohomology with the continuous
 traces. No local convexity or completeness assumption is needed for these constructions.
+For Hausdorff coefficients, `continuousCyclicCohomology.t2Space_iff` shows that cohomology is
+Hausdorff exactly when the continuous coboundaries are closed.
+
+Forgetting continuity sends continuous cocycles to cocycles and continuous coboundaries to
+coboundaries, so it induces the comparison map
+`continuousCyclicCohomology.toCyclicCohomology` to algebraic cyclic cohomology. This map need
+not be injective or surjective. Continuous homomorphisms of nonunital algebras pull continuous
+cyclic cohomology back by continuous linear maps (`continuousCyclicCohomology.map`),
+functorially and compatibly with the comparison map.
 
 The underlying complex is also defined for nonunital algebras; its cohomology is not
 called continuous cyclic cohomology here. For nonunital algebras the relative
@@ -33,6 +43,8 @@ forced-unitization construction is needed instead.
 
 ## References
 
+* A. Connes, *Noncommutative differential geometry*, Publ. Math. IHÉS 62 (1985), Part II,
+  §§1–2.
 * A. Connes, *Noncommutative Geometry*, Chapter III, §1.
 * J.-L. Loday, *Cyclic Homology*, §2.1.
 
@@ -76,6 +88,16 @@ theorem mem_continuousCyclicCocycles_iff {n : ℕ} {φ : continuousCyclicCochain
     φ ∈ continuousCyclicCocycles 𝕜 A M n ↔
       continuousCyclicHochschildCoboundary 𝕜 A M n φ = 0 :=
   LinearMap.mem_ker
+
+/-- A continuous cyclic cochain is a continuous cocycle exactly when its underlying algebraic
+cyclic cochain is a cocycle. -/
+theorem mem_continuousCyclicCocycles_iff_hochschildCoboundary {n : ℕ}
+    {φ : continuousCyclicCochains 𝕜 A M n} :
+    φ ∈ continuousCyclicCocycles 𝕜 A M n ↔
+      hochschildCoboundary 𝕜 A M n (φ : ContinuousMultilinearMap 𝕜
+        (fun _ : Fin (n + 1) ↦ A) M).toMultilinearMap = 0 := by
+  rw [mem_continuousCyclicCocycles_iff, ← Subtype.val_inj]
+  simp [← ContinuousMultilinearMap.toMultilinearMap_injective.eq_iff]
 
 /-- Continuous cyclic zero-cocycles are precisely continuous traces. -/
 theorem mem_continuousCyclicCocycles_zero_iff {φ : continuousCyclicCochains 𝕜 A M 0} :
@@ -145,6 +167,65 @@ theorem isClosed_continuousCyclicCocycles [ContinuousSMul 𝕜 A] [T2Space M] (n
   isClosed_singleton.preimage (continuous_continuousCyclicHochschildCoboundary 𝕜 A M n)
 
 end Nonunital
+
+section NonunitalMaps
+
+variable {𝕜 A B M : Type*} [NormedField 𝕜] [NonUnitalRing A] [Module 𝕜 A]
+  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [TopologicalSpace A] [ContinuousMul A]
+  [NonUnitalRing B] [Module 𝕜 B] [IsScalarTower 𝕜 B B] [SMulCommClass 𝕜 B B]
+  [TopologicalSpace B] [ContinuousMul B] [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
+  [IsTopologicalAddGroup M] [ContinuousConstSMul 𝕜 M]
+
+open continuousCyclicCochains
+
+/-- A continuous cyclic cocycle is a cyclic cocycle. -/
+theorem continuousCyclicCochains.toCyclicCochains_mem_cyclicCocycles {n : ℕ}
+    {φ : continuousCyclicCochains 𝕜 A M n} (hφ : φ ∈ continuousCyclicCocycles 𝕜 A M n) :
+    toCyclicCochains 𝕜 A M n φ ∈ cyclicCocycles 𝕜 A M n := by
+  rw [mem_continuousCyclicCocycles_iff_hochschildCoboundary] at hφ
+  simpa using hφ
+
+/-- A continuous cyclic coboundary is a cyclic coboundary. -/
+theorem continuousCyclicCochains.toCyclicCochains_mem_cyclicCoboundaries {n : ℕ}
+    {φ : continuousCyclicCochains 𝕜 A M n} (hφ : φ ∈ continuousCyclicCoboundaries 𝕜 A M n) :
+    toCyclicCochains 𝕜 A M n φ ∈ cyclicCoboundaries 𝕜 A M n := by
+  cases n with
+  | zero =>
+    rw [continuousCyclicCoboundaries_zero, Submodule.mem_bot] at hφ
+    simp [hφ]
+  | succ n =>
+    obtain ⟨ψ, rfl⟩ := (mem_continuousCyclicCoboundaries_succ_iff 𝕜 A M).1 hφ
+    exact (mem_cyclicCoboundaries_succ_iff 𝕜 A M).2 ⟨toCyclicCochains 𝕜 A M n ψ,
+      (toCyclicCochains_continuousCyclicHochschildCoboundary ψ).symm⟩
+
+/-- Pulling back a continuous cyclic cocycle along a continuous homomorphism of nonunital
+algebras gives a continuous cyclic cocycle. -/
+theorem continuousCyclicCochainsMap_mem_continuousCyclicCocycles (f : A →ₙₐ[𝕜] B)
+    (hf : Continuous f) {n : ℕ} {φ : continuousCyclicCochains 𝕜 B M n}
+    (hφ : φ ∈ continuousCyclicCocycles 𝕜 B M n) :
+    continuousCyclicCochainsMap M ⟨(f : A →ₗ[𝕜] B), hf⟩ n φ ∈
+      continuousCyclicCocycles 𝕜 A M n := by
+  rw [continuousCyclicCocycles, LinearMap.mem_ker,
+    continuousCyclicHochschildCoboundary_continuousCyclicCochainsMap f hf,
+    LinearMap.mem_ker.1 hφ, map_zero]
+
+/-- Pulling back a continuous cyclic coboundary along a continuous homomorphism of nonunital
+algebras gives a continuous cyclic coboundary. -/
+theorem continuousCyclicCochainsMap_mem_continuousCyclicCoboundaries (f : A →ₙₐ[𝕜] B)
+    (hf : Continuous f) {n : ℕ} {φ : continuousCyclicCochains 𝕜 B M n}
+    (hφ : φ ∈ continuousCyclicCoboundaries 𝕜 B M n) :
+    continuousCyclicCochainsMap M ⟨(f : A →ₗ[𝕜] B), hf⟩ n φ ∈
+      continuousCyclicCoboundaries 𝕜 A M n := by
+  cases n with
+  | zero =>
+    rw [continuousCyclicCoboundaries_zero, Submodule.mem_bot] at hφ ⊢
+    rw [hφ, map_zero]
+  | succ n =>
+    obtain ⟨ψ, rfl⟩ := (mem_continuousCyclicCoboundaries_succ_iff 𝕜 B M).1 hφ
+    exact (mem_continuousCyclicCoboundaries_succ_iff 𝕜 A M).2
+      ⟨_, continuousCyclicHochschildCoboundary_continuousCyclicCochainsMap f hf ψ⟩
+
+end NonunitalMaps
 
 section Unital
 
@@ -308,8 +389,124 @@ theorem zeroEquiv_symm_mk (φ : continuousCyclicCocycles 𝕜 A M 0) :
     (zeroEquiv 𝕜 A M).symm (mk 𝕜 A M 0 φ) = φ :=
   (zeroEquiv 𝕜 A M).symm_apply_apply φ
 
+variable [ContinuousSMul 𝕜 A] [T2Space M]
+
+/-- For Hausdorff `M`, continuous cyclic cohomology is Hausdorff exactly when the continuous
+cyclic coboundaries are closed in the continuous cyclic cochains. -/
+theorem t2Space_iff (n : ℕ) :
+    T2Space (continuousCyclicCohomology 𝕜 A M n) ↔
+      IsClosed (continuousCyclicCoboundaries 𝕜 A M n :
+        Set (continuousCyclicCochains 𝕜 A M n)) := by
+  let S := (continuousCyclicCoboundaries 𝕜 A M n).comap (continuousCyclicCocycles 𝕜 A M n).subtype
+  have hclosed : IsClosed (S : Set (continuousCyclicCocycles 𝕜 A M n)) ↔
+      IsClosed (continuousCyclicCoboundaries 𝕜 A M n : Set (continuousCyclicCochains 𝕜 A M n)) := by
+    rw [(isClosed_continuousCyclicCocycles 𝕜 A M n).isClosedEmbedding_subtypeVal
+      |>.isClosed_iff_image_isClosed]
+    -- `S` is the preimage of the coboundaries, which lie in the cocycles.
+    exact iff_of_eq (congrArg IsClosed (Set.image_preimage_eq_of_subset fun x hx ↦
+      ⟨⟨x, continuousCyclicCoboundaries_le_continuousCyclicCocycles 𝕜 A M n hx⟩, rfl⟩))
+  rw [← hclosed]
+  -- The quotient by a submodule is the quotient by its additive subgroup.
+  refine ⟨fun _ ↦ (QuotientAddGroup.t1Space_iff (G := continuousCyclicCocycles 𝕜 A M n)
+    (N := S.toAddSubgroup)).1 ?_, fun hS ↦ ?_⟩
+  · exact inferInstanceAs (T1Space (continuousCyclicCohomology 𝕜 A M n))
+  · have := (QuotientAddGroup.t1Space_iff (G := continuousCyclicCocycles 𝕜 A M n)
+      (N := S.toAddSubgroup)).2 hS
+    -- Naming the group instance keeps instance search for separation axioms fast.
+    have : IsTopologicalAddGroup (continuousCyclicCocycles 𝕜 A M n ⧸ S.toAddSubgroup) :=
+      QuotientAddGroup.instIsTopologicalAddGroup _
+    have : T2Space (continuousCyclicCocycles 𝕜 A M n ⧸ S.toAddSubgroup) := inferInstance
+    exact this
+
 end continuousCyclicCohomology
 
 end Unital
+
+section Maps
+
+universe u
+
+variable {𝕜 : Type*} {A B C : Type u} {M : Type*} [NormedField 𝕜] [Ring A] [Algebra 𝕜 A]
+  [TopologicalSpace A] [ContinuousMul A] [Ring B] [Algebra 𝕜 B] [TopologicalSpace B]
+  [ContinuousMul B] [Ring C] [Algebra 𝕜 C] [TopologicalSpace C] [ContinuousMul C]
+  [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul 𝕜 M]
+
+namespace continuousCyclicCohomology
+
+variable (M) in
+/-- The continuous linear map on continuous cyclic cohomology induced by a continuous
+homomorphism of nonunital algebras; the homomorphism need not preserve the unit. -/
+def map (f : A →ₙₐ[𝕜] B) (hf : Continuous f) (n : ℕ) :
+    continuousCyclicCohomology 𝕜 B M n →L[𝕜] continuousCyclicCohomology 𝕜 A M n :=
+  desc ((mk 𝕜 A M n).comp
+      ⟨(continuousCyclicCochainsMap M ⟨(f : A →ₗ[𝕜] B), hf⟩ n).restrict
+        fun _ hφ ↦ continuousCyclicCochainsMap_mem_continuousCyclicCocycles f hf hφ,
+        ((continuous_continuousCyclicCochainsMap _ n).comp
+          continuous_subtype_val).subtype_mk _⟩)
+    fun _ hφ ↦ (mk_eq_zero_iff 𝕜 A M _).2
+      (continuousCyclicCochainsMap_mem_continuousCyclicCoboundaries f hf hφ)
+
+/-- The induced map sends the class of a continuous cocycle to the class of its pullback. -/
+@[simp]
+theorem map_mk (f : A →ₙₐ[𝕜] B) (hf : Continuous f) {n : ℕ}
+    (φ : continuousCyclicCocycles 𝕜 B M n) :
+    map M f hf n (mk 𝕜 B M n φ) =
+      mk 𝕜 A M n ⟨continuousCyclicCochainsMap M ⟨(f : A →ₗ[𝕜] B), hf⟩ n φ,
+        continuousCyclicCochainsMap_mem_continuousCyclicCocycles f hf φ.2⟩ :=
+  desc_mk _ _ _
+
+/-- The identity homomorphism induces the identity on continuous cyclic cohomology. The
+continuity proof is a hypothesis so that the lemma applies to whichever proof appears. -/
+@[simp]
+theorem map_id (h : Continuous (NonUnitalAlgHom.id 𝕜 A)) (n : ℕ) :
+    map M (NonUnitalAlgHom.id 𝕜 A) h n = ContinuousLinearMap.id 𝕜 _ :=
+  hom_ext fun φ ↦ by
+    rw [map_mk, ContinuousLinearMap.id_apply]
+    exact congrArg _ (Subtype.ext (LinearMap.congr_fun (continuousCyclicCochainsMap_id M n) φ.1))
+
+/-- Continuous cyclic cohomology is contravariantly functorial. -/
+theorem map_comp (f : A →ₙₐ[𝕜] B) (hf : Continuous f) (g : B →ₙₐ[𝕜] C) (hg : Continuous g)
+    (hgf : Continuous (g.comp f)) (n : ℕ) :
+    map M (g.comp f) hgf n = (map M f hf n).comp (map M g hg n) :=
+  hom_ext fun φ ↦ by
+    rw [ContinuousLinearMap.comp_apply, map_mk, map_mk, map_mk]
+    exact congrArg _ (Subtype.ext (LinearMap.congr_fun (continuousCyclicCochainsMap_comp M
+      ⟨(f : A →ₗ[𝕜] B), hf⟩ ⟨(g : B →ₗ[𝕜] C), hg⟩ n) φ.1))
+
+variable (𝕜 A M) in
+/-- The comparison map `HCⁿ_cont(A; M) → HCⁿ(A; M)` from continuous to algebraic cyclic
+cohomology, induced by forgetting continuity of cocycles. -/
+def toCyclicCohomology (n : ℕ) :
+    continuousCyclicCohomology 𝕜 A M n →ₗ[𝕜] cyclicCohomology 𝕜 A M n :=
+  Submodule.liftQ _ (cyclicCohomology.mk 𝕜 A M n ∘ₗ
+      ((continuousCyclicCochains.toCyclicCochains 𝕜 A M n).restrict fun _ hφ ↦
+        continuousCyclicCochains.toCyclicCochains_mem_cyclicCocycles hφ))
+    fun _ hφ ↦ LinearMap.mem_ker.2 ((cyclicCohomology.mk_eq_zero_iff 𝕜 A M n _).2
+      (continuousCyclicCochains.toCyclicCochains_mem_cyclicCoboundaries hφ))
+
+/-- The comparison map sends the class of a continuous cocycle to the class of its underlying
+algebraic cocycle. -/
+@[simp]
+theorem toCyclicCohomology_mk {n : ℕ} (φ : continuousCyclicCocycles 𝕜 A M n) :
+    toCyclicCohomology 𝕜 A M n (mk 𝕜 A M n φ) =
+      cyclicCohomology.mk 𝕜 A M n
+        ⟨continuousCyclicCochains.toCyclicCochains 𝕜 A M n φ,
+          continuousCyclicCochains.toCyclicCochains_mem_cyclicCocycles φ.2⟩ :=
+  (rfl)
+
+/-- The comparison with algebraic cyclic cohomology is natural for continuous homomorphisms. -/
+theorem toCyclicCohomology_map (f : A →ₙₐ[𝕜] B) (hf : Continuous f) (n : ℕ)
+    (z : continuousCyclicCohomology 𝕜 B M n) :
+    toCyclicCohomology 𝕜 A M n (map M f hf n z) =
+      cyclicCohomology.map M f n (toCyclicCohomology 𝕜 B M n z) := by
+  obtain ⟨φ, rfl⟩ := mk_surjective 𝕜 B M n z
+  rw [map_mk, toCyclicCohomology_mk, toCyclicCohomology_mk, cyclicCohomology.map_mk]
+  exact congrArg _ (Subtype.ext
+    (continuousCyclicCochains.toCyclicCochains_continuousCyclicCochainsMap _ φ.1))
+
+end continuousCyclicCohomology
+
+end Maps
 
 end TauCeti

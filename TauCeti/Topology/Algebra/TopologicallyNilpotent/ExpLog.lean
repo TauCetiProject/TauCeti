@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
+public import Mathlib.RingTheory.Derivation.Basic
 public import Mathlib.RingTheory.PowerSeries.Log
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Evaluation
+public import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
 public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
 /-!
@@ -38,7 +40,8 @@ nilpotent and in every ideal containing `a`. The functional equation
 `exp (a + b) = exp a * exp b` is the Cauchy product of the exponential series in the complete
 nonarchimedean ring `S`, matched coefficientwise with Mathlib's
 `PowerSeries.exp_mul_exp_eq_exp_add`; its proof follows that of Mathlib's
-`NormedSpace.exp_add_of_commute_of_mem_ball`.
+`NormedSpace.exp_add_of_commute_of_mem_ball`. A continuous derivation differentiates the
+logarithm series termwise, and the geometric series for `u⁻¹` gives `u * D (log u) = D u`.
 
 ## Main definitions
 
@@ -58,6 +61,8 @@ nonarchimedean ring `S`, matched coefficientwise with Mathlib's
   identities.
 * `IsTopologicallyNilpotent.exp_add`, `IsTopologicallyNilpotent.log_mul`: the functional
   equations.
+* `IsTopologicallyNilpotent.mul_derivation_log`: a continuous derivation `D` satisfies
+  `u * D (log u) = D u`.
 -/
 
 public section
@@ -196,6 +201,34 @@ theorem exp_add (ha : IsTopologicallyNilpotent a) (hb : IsTopologicallyNilpotent
 theorem log_mul (hu : IsTopologicallyNilpotent (u - 1)) (hv : IsTopologicallyNilpotent (v - 1)) :
     NormedSpace.log (u * v) = NormedSpace.log u + NormedSpace.log v := by
   rw [← (hu.log.add hv.log).log_exp, hu.log.exp_add hv.log, hu.exp_log, hv.exp_log]
+
+/-- A continuous derivation `D` differentiates the logarithm as `D (log u) = u⁻¹ * D u`, in the
+form `u * D (log u) = D u`, when `u - 1` is topologically nilpotent. -/
+theorem mul_derivation_log {R : Type*} [CommSemiring R] [Algebra R S] (D : Derivation R S S)
+    (hD : Continuous D) (hu : IsTopologicallyNilpotent (u - 1)) :
+    u * D (NormedSpace.log u) = D u := by
+  -- The derivative of the `n + 1`-st term of the logarithm series is `(1 - u) ^ n * D u`.
+  have hterm (n : ℕ) : D (((-1) ^ (n + 1 + 1) / (n + 1 : ℕ) : ℚ) • (u - 1) ^ (n + 1)) =
+      (-(u - 1)) ^ n * D (u - 1) := by
+    have hq : ((-1) ^ (n + 1 + 1) / (n + 1 : ℕ) : ℚ) * (n + 1 : ℕ) = (-1) ^ n := by
+      field_simp
+      ring
+    rw [map_rat_smul, Derivation.leibniz_pow, Nat.add_sub_cancel, ← Nat.cast_smul_eq_nsmul ℚ,
+      smul_smul, hq, neg_pow (u - 1), mul_assoc]
+    simp [Algebra.smul_def]
+  have hlog : HasSum (fun n : ℕ => (-(u - 1)) ^ n * D (u - 1)) (D (NormedSpace.log u)) := by
+    have h := (hasSum_nat_add_iff' 1).2 (hu.hasSum_log.map D hD)
+    rw [Finset.sum_range_one] at h
+    convert h using 1
+    · exact funext fun n => (hterm n).symm
+    · simp
+  have := IsLinearTopology.nonarchimedeanAddGroup S (M := S)
+  have hgeom := hu.neg.summable_pow
+  rw [hlog.unique (hgeom.hasSum.mul_right _), ← mul_assoc]
+  -- Write the remaining factor `u` as `1 - q` with `q = -(u - 1)`, so that the geometric series
+  -- identity `(1 - q) * ∑ qⁿ = 1` applies.
+  nth_rw 1 [show u = 1 - -(u - 1) by ring]
+  rw [hgeom.one_sub_mul_tsum_pow, one_mul, map_sub, Derivation.map_one_eq_zero, sub_zero]
 
 end IsTopologicallyNilpotent
 

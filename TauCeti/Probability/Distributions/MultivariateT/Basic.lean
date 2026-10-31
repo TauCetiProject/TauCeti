@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.ChiSquared.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Affine
 public import TauCeti.Probability.Distributions.Gaussian.Density
+import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # Multivariate t laws
@@ -32,6 +33,7 @@ the same rule as for Gaussian laws and leave the degrees of freedom unchanged.
   location.
 * `TauCeti.Probability.hasLaw_multivariateT_of_gaussian_chiSquared`: the random-variable
   construction from independent Gaussian and chi-squared variables.
+* `TauCeti.Probability.multivariateTMeasure_eq_bind`: the chi-squared mixture of Gaussian laws.
 * `TauCeti.Probability.map_affine_multivariateTMeasure`: closure under affine maps.
 * `TauCeti.Probability.ae_mem_affineRange_multivariateTMeasure`: concentration on
   `m + range S`.
@@ -132,6 +134,33 @@ theorem hasLaw_multivariateT_of_gaussian_chiSquared (m : EuclideanSpace ℝ ι)
   exact hmix.fun_comp (hZV.hasLaw_prod hZ hV)
 
 end HasLaw
+
+/-- For valid parameters, the multivariate t law is a chi-squared mixture of Gaussian laws: given
+that the chi-squared factor takes the value `v`, the variable is Gaussian with mean `m` and
+covariance `(ν / v) • S`. -/
+theorem multivariateTMeasure_eq_bind (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ} {ν : ℝ}
+    (hν : 0 < ν) (hS : S.PosSemidef) :
+    multivariateTMeasure m S ν =
+      (chiSquaredMeasure ν).bind fun v => multivariateGaussian m ((ν / v) • S) := by
+  have := isProbabilityMeasure_chiSquaredMeasure hν.le
+  have hmix := measurable_scaleMixture m ν
+  have hK : Measurable fun v : ℝ => (multivariateGaussian 0 S).map fun z => m + √(ν / v) • z :=
+    TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry
+      (f := fun v z => m + √(ν / v) • z) (by fun_prop)
+  have hbind : multivariateTMeasure m S ν =
+      (chiSquaredMeasure ν).bind fun v => (multivariateGaussian 0 S).map fun z => m + √(ν / v) • z
+      := by
+    ext s hs
+    rw [multivariateTMeasure_of_posSemidef m hν hS, Measure.map_apply hmix hs,
+      Measure.prod_apply_symm (hmix hs), Measure.bind_apply hs hK.aemeasurable]
+    refine lintegral_congr fun v => ?_
+    rw [Measure.map_apply (by fun_prop) hs]
+    rfl
+  rw [hbind]
+  refine Measure.bind_congr_right ?_
+  filter_upwards [ae_pos_chiSquaredMeasure hν] with v hv
+  rw [map_add_smul_multivariateGaussian 0 hS m, Real.sq_sqrt (div_pos hν hv).le, smul_zero,
+    add_zero]
 
 /-- **Affine images of multivariate t laws.** The image under `x ↦ L x + c` is the multivariate
 t law with location `L m + c`, scale `L * S * Lᵀ` and the same degrees of freedom. The matrix
