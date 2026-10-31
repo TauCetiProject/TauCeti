@@ -22,9 +22,10 @@ product. In particular this applies to an algebra isomorphism onto the endomorph
 spinor space; see `CliffordAlgebra.existsUnique_pos_mul_inner_of_surjective`. The same holds
 relative to a positive definite compatible Hermitian form instead of an inner product
 (`CliffordAlgebra.existsUnique_pos_mul_of_surjective`). No existence of a compatible form is
-asserted here; for Euclidean spaces of even dimension it is
-`CliffordAlgebra.exists_sesqForm_map_eq_map_conjStar`. Surjectivity is
-essential: reducible modules can have independently rescaled metrics on multiplicity spaces.
+asserted here; for an algebra isomorphism onto `End S` with `Q v = -‖v‖ ^ 2` on an
+even-dimensional Euclidean space, it is `CliffordAlgebra.exists_sesqForm_map_eq_map_conjStar`.
+Surjectivity is essential: reducible modules can have independently rescaled metrics on
+multiplicity spaces.
 
 The forms use Mathlib's conjugate-first convention. The uniqueness argument is the
 full-matrix-algebra case of Schur's lemma, implemented using rank-one operators by

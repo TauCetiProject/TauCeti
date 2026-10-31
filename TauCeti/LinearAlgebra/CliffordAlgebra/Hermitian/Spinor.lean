@@ -68,9 +68,9 @@ Euclidean space with `Q v = -‖v‖²` and an algebra isomorphism `ρ` from the
 algebra onto the endomorphisms of `S`, there is a positive definite Hermitian form `H` on `S` with
 `H (ρ a x) y = H x (ρ (conjStar Q a) y)` for every `a`.
 
-It is the normalized Fock metric transported along an intertwiner from the Fock module, and it is
-unique up to a positive real scalar (`CliffordAlgebra.existsUnique_pos_mul_of_surjective`).
-Dimension zero, where `S` is a line, is included. -/
+The form is unique up to a positive real scalar
+(`CliffordAlgebra.existsUnique_pos_mul_of_surjective`). Dimension zero, where `S` is a line, is
+included. -/
 theorem exists_sesqForm_map_eq_map_conjStar (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (hV : Even (finrank ℝ V)) (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S) :
     ∃ H : S →ₗ⋆[ℂ] S →ₗ[ℂ] ℂ, H.IsPosSemidef ∧ (∀ x, x ≠ 0 → H x x ≠ 0) ∧
