@@ -175,14 +175,12 @@ theorem fiberStalkMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (F : X.Presheaf C) (z : Z
     fiberStalkMap C (f ≫ g) F z =
       fiberStalkMap C g (f _* F) z ≫
         Limits.Pi.map (fun y : { y : Y // g y = z } ↦ fiberStalkMap C f F y.1) ≫
-          Pi.lift fun x : { x : X // (f ≫ g) x = z } ↦
-            Pi.π (fun y : { y : Y // g y = z } ↦ ∏ᶜ fun x' : { x' : X // f x' = y.1 } ↦
-              F.stalk x'.1) ⟨f x.1, x.2⟩ ≫
-            Pi.π (fun x' : { x' : X // f x' = f x.1 } ↦ F.stalk x'.1) ⟨x.1, rfl⟩ :=
+          Pi.map' (fun x : { x : X // (f ≫ g) x = z } ↦ (⟨f x.1, x.2⟩ : { y : Y // g y = z }))
+            fun x ↦ Pi.π (fun x' : { x' : X // f x' = f x.1 } ↦ F.stalk x'.1) ⟨x.1, rfl⟩ :=
   -- The two sides start at the stalks of `(f ≫ g) _* F` and of `g _* (f _* F)`, which agree only up
   -- to unfolding; extensionality is taken at the latter, so that the right side can be rewritten.
   Pi.hom_ext (X := (g _* (f _* F)).stalk z) _ _ fun x ↦ by
-    rw [Category.assoc, Category.assoc, Pi.lift_comp_π, Limits.Pi.map_π_assoc]
+    rw [Category.assoc, Category.assoc, Pi.map'_comp_π, Limits.Pi.map_π_assoc]
     exact fiberStalkMap_comp_π f g F z x
 
 section Concrete
