@@ -35,6 +35,8 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 ## Main results
 
 * `IsNilpotent.exists_pow_apply_eq_zero`: a nilpotent endomorphism is locally nilpotent.
+* `Module.End.sum_range_smul_pow_apply_eq_of_le`: at a vector killed by `f ^ k`, a power series in
+  `f` may be truncated at any length beyond `k`.
 * `Module.End.neg_pow_apply_eq_zero_iff`: a power of `-f` kills a vector exactly when the same
   power of `f` does.
 * `Module.End.forall_exists_neg_pow_apply_eq_zero_iff`: `-f` is locally nilpotent exactly when `f`
@@ -60,6 +62,16 @@ theorem IsNilpotent.exists_pow_apply_eq_zero {R M : Type*} [Semiring R] [AddComm
     [Module R M] {f : Module.End R M} (hf : IsNilpotent f) (x : M) : ∃ n, (f ^ n) x = 0 := by
   obtain ⟨n, hn⟩ := hf
   exact ⟨n, by rw [hn, LinearMap.zero_apply]⟩
+
+/-- A power series in `f` applied to a vector killed by `f ^ k` does not change when it is
+truncated at any length beyond `k`, whatever its coefficients. -/
+theorem Module.End.sum_range_smul_pow_apply_eq_of_le {R S M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [SMulZeroClass S M] (f : Module.End R M) (c : ℕ → S)
+    {x : M} {k l : ℕ} (hk : (f ^ k) x = 0) (hkl : k ≤ l) :
+    ∑ i ∈ Finset.range l, c i • (f ^ i) x = ∑ i ∈ Finset.range k, c i • (f ^ i) x := by
+  have h : ∑ i ∈ Finset.Ico k l, c i • (f ^ i) x = 0 := Finset.sum_eq_zero fun i hi ↦ by
+    rw [Module.End.pow_map_zero_of_le (Finset.mem_Ico.1 hi).1 hk, smul_zero]
+  rw [← Finset.sum_range_add_sum_Ico _ hkl, h, add_zero]
 
 variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
 

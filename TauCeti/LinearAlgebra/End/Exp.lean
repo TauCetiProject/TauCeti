@@ -55,15 +55,6 @@ namespace Module.End
 variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M] [Module ℚ M]
   (f : Module.End R M)
 
-/-- The exponential series of `f` at a vector killed by `f ^ k` does not change when it is
-truncated at any length beyond `k`. -/
-private theorem sum_range_eq_of_le {x : M} {k l : ℕ} (hk : (f ^ k) x = 0) (hkl : k ≤ l) :
-    ∑ i ∈ range l, (i.factorial : ℚ)⁻¹ • (f ^ i) x =
-      ∑ i ∈ range k, (i.factorial : ℚ)⁻¹ • (f ^ i) x := by
-  rw [← sum_range_add_sum_Ico _ hkl, add_eq_left]
-  refine sum_eq_zero fun i hi ↦ ?_
-  rw [pow_map_zero_of_le (mem_Ico.1 hi).1 hk, smul_zero]
-
 variable (hf : ∀ x, ∃ n, (f ^ n) x = 0)
 
 /-- The exponential series of `f` at `x`, truncated at some power of `f` that kills `x`. -/
@@ -72,8 +63,8 @@ private noncomputable def expFun (x : M) : M :=
 
 private theorem expFun_eq_sum {x : M} {k : ℕ} (hk : (f ^ k) x = 0) :
     expFun f hf x = ∑ i ∈ range k, (i.factorial : ℚ)⁻¹ • (f ^ i) x := by
-  rw [expFun, ← sum_range_eq_of_le f (hf x).choose_spec (le_max_left _ k),
-    sum_range_eq_of_le f hk (le_max_right _ k)]
+  rw [expFun, ← sum_range_smul_pow_apply_eq_of_le f _ (hf x).choose_spec (le_max_left _ k),
+    sum_range_smul_pow_apply_eq_of_le f _ hk (le_max_right _ k)]
 
 /-- The truncated exponential series is `R`-linear. -/
 private noncomputable def expLinearMap : M →ₗ[R] M where
