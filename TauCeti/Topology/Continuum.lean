@@ -17,8 +17,13 @@ counterpart, `IsPreconnected.sUnion_directed`, and Cantor's intersection theorem
 `IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed`, but not the preservation of
 connectedness under a directed intersection; this file supplies it.
 
-Directed intersections of continua arise as boundary cluster sets, ω-limit sets and prime-end
-impressions, each of which is thereby a continuum.
+Boundary cluster sets, ω-limit sets and prime-end impressions are such intersections under
+suitable hypotheses — a continuous map or curve with values in a compact set, approached through
+connected regions or along a half-line, or a null chain in a bounded domain — and are then
+preconnected or continua: see `TauCeti.isConnected_clusterSetOn`,
+`TauCeti.isPreconnected_setOf_mapClusterPt_atTop` and
+`TauCeti.IsNullChain.isConnected_nullChainImpression`. Without such hypotheses these sets need not
+be connected, or even nonempty.
 
 Both hypotheses on the family are essential. Without directedness a circle and a secant line are
 two continua meeting in two points, a disconnected intersection. Without compactness the theorem
