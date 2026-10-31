@@ -274,8 +274,7 @@ theorem realizeWeights_scaleHidden (A : MLPSpec K (L + 1)) (i : Fin L) {e : ℕ}
   rw [evalPrefix_zeroBias_scaleHidden A i he, scaleHidden_apply_succ, ← mulVec_mulVec]
   congr 1
   ext j
-  rw [mulVec_diagonal, ← mul_assoc, Units.val_pow_eq_pow_val, ← mul_pow, Units.inv_mul, one_pow,
-    one_mul]
+  simp [mulVec_diagonal, ← mul_assoc, ← mul_pow]
 
 /-! ### The hidden-neuron symmetry equivalence -/
 
