@@ -21,7 +21,10 @@ analytic families across a vanishing leading coefficient.
 `Polynomial.isRoot_integralNormalization_mul_iff` recovers the original root equation from
 a normalized root scaled by the leading coefficient, including zero and constant polynomials.
 The same scaling preserves root multiplicities
-(`Polynomial.rootMultiplicity_integralNormalization_mul`).
+(`Polynomial.rootMultiplicity_integralNormalization_mul`); over a field the roots of the
+normalization are exactly those of `f` multiplied by the leading coefficient
+(`Polynomial.roots_integralNormalization`), so their number of distinct roots agrees
+(`Polynomial.card_roots_toFinset_integralNormalization`).
 `Polynomial.integralNormalization_eq_prod_X_sub_C` transports a complete linear
 factorization, including repeated roots, to the normalized polynomial over any commutative ring.
 `Polynomial.Monic.integralNormalization_C_mul` gives the underlying scalar-multiple identity
@@ -102,6 +105,31 @@ theorem rootMultiplicity_integralNormalization_mul {R : Type*} [CommRing R] [IsD
   rwa [← integralNormalization_mul_C_leadingCoeff,
     rootMultiplicity_mul (mul_ne_zero (monic_integralNormalization hf).ne_zero (C_ne_zero.2 hlc)),
     rootMultiplicity_C, add_zero] at h
+
+section Field
+
+variable {F : Type*} [Field F]
+
+/-- Over a field, the roots of `p.integralNormalization` are those of `p` multiplied by the
+leading coefficient of `p`, with multiplicities. -/
+theorem roots_integralNormalization (p : F[X]) :
+    p.integralNormalization.roots = p.roots.map (p.leadingCoeff * ·) := by
+  obtain rfl | hp := eq_or_ne p 0
+  · simp
+  have ha := leadingCoeff_ne_zero.2 hp
+  rw [← roots_C_mul _ ha, mul_comm, integralNormalization_mul_C_leadingCoeff,
+    roots_scaleRoots _ (isUnit_iff_ne_zero.mpr ha)]
+
+/-- Over a field, integral normalization preserves the number of distinct roots. -/
+@[simp]
+theorem card_roots_toFinset_integralNormalization [DecidableEq F] (p : F[X]) :
+    p.integralNormalization.roots.toFinset.card = p.roots.toFinset.card := by
+  obtain rfl | hp := eq_or_ne p 0
+  · simp
+  rw [roots_integralNormalization, Multiset.toFinset_map,
+    Finset.card_image_of_injective _ (mul_right_injective₀ (leadingCoeff_ne_zero.2 hp))]
+
+end Field
 
 variable {R ι : Type*} [CommRing R] [Fintype ι]
 
