@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 public import Mathlib.RingTheory.Valuation.Extension
 public import TauCeti.RingTheory.LaurentSeries.Level.Basis
-public import TauCeti.RingTheory.LaurentSeries.ValuationRing
+public import TauCeti.RingTheory.LaurentSeries.Valuation.Ring
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
