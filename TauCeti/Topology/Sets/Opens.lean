@@ -19,42 +19,25 @@ indexed by.
 
 ## Main results
 
-* `TauCeti.TopologicalSpace.Opens.isBasis_of_isTopologicalBasis` : a basis presented as a family
-  of sets yields one presented as a family of `Opens`.
+* `TopologicalSpace.IsTopologicalBasis.isBasis_opens` : a basis presented as a family of sets
+  yields one presented as a family of `Opens`.
 -/
-
-namespace TauCeti
-
-open _root_.TopologicalSpace
 
 public section
 
-universe u
+namespace TopologicalSpace.IsTopologicalBasis
 
-namespace TopologicalSpace.Opens
-
-variable {X : Type u} [TopologicalSpace X]
+variable {X : Type*} [TopologicalSpace X]
 
 /-- **A basis of sets is a basis of opens.** A basis presented as a `Set (Set X)`, the form
 `TopologicalSpace.IsTopologicalBasis` takes, yields one presented as a `Set (Opens X)`, the form
 `Opens.IsBasis` takes: keep the opens whose underlying set is a member. Nothing is lost, since
-every member of a topological basis is open.
-
-Both presentations occur in Mathlib and each has its own API, so this is a bridge between two
-existing forms rather than a claim that either is the standard one. -/
-theorem isBasis_of_isTopologicalBasis {S : Set (Set X)} (hS : IsTopologicalBasis S) :
+every member of a topological basis is open. -/
+theorem isBasis_opens {S : Set (Set X)} (hS : IsTopologicalBasis S) :
     Opens.IsBasis {U : Opens X | (U : Set X) ∈ S} := by
-  have himg : ((↑) : Opens X → Set X) '' {U : Opens X | (U : Set X) ∈ S} = S := by
-    ext V
-    constructor
-    · rintro ⟨U, hU, rfl⟩
-      exact hU
-    · exact fun hV ↦ ⟨⟨V, hS.isOpen hV⟩, hV, rfl⟩
-  rw [Opens.IsBasis, himg]
-  exact hS
+  rwa [Opens.IsBasis, ← Set.preimage_ofPred_eq, Set.ofPred_mem_eq,
+    Set.image_preimage_eq_of_subset fun s hs ↦ ⟨⟨s, hS.isOpen hs⟩, rfl⟩]
 
-end TopologicalSpace.Opens
+end TopologicalSpace.IsTopologicalBasis
 
 end
-
-end TauCeti

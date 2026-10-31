@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Resolution
-public import Mathlib.RepresentationTheory.Homological.GroupHomology.Basic
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.ChangeOfGroups
 
 /-!
 # Equivariant maps on coinvariant singular chains
@@ -19,6 +19,21 @@ with group homology.
 The map sends the class of `a ⊗ c` to the class of `a ⊗ f_* c`. It respects identities and
 composition, and is defined for arbitrary continuous actions, without freeness or
 contractibility assumptions. The descent uses Mathlib's `Representation.Coinvariants.lift`.
+
+Before passing to coinvariants, pushing chains forward along `f` is a chain map
+`TauCeti.singularChainsRepResMap` from the equivariant singular chains of `E` to the restriction
+along `φ` of those of `F`, and it preserves the augmentations
+(`TauCeti.singularChainsRepResMap_f_zero_comp_augmentation`). The map on coinvariants is the
+change-of-groups map `MonoidHom.coinvariantsTensorChainMap` induced by it
+(`TauCeti.singularChainsCoinvariantsMap_eq_coinvariantsTensorChainMap`), which is how the
+group-homology naturality of `MonoidHom.groupHomologyIso_hom_naturality` applies to singular
+chains.
+
+## Main definitions
+
+* `TauCeti.singularChainsRepResMap`: the equivariant pushforward of singular chains, as a chain
+  map into the restricted complex.
+* `TauCeti.singularChainsCoinvariantsMap`: the induced chain map on coinvariants.
 
 ## References
 
@@ -58,6 +73,50 @@ theorem singularChains_map_f_representation (n : ℕ) (g : G)
   simpa only [Functor.map_comp, HomologicalComplex.comp_f, ModuleCat.comp_apply] using
     ConcreteCategory.congr_hom
     (congrArg (fun q ↦ q.f n) (congrArg (singularChains k).map h)) c
+
+/-- The pushforward of singular `n`-chains along an equivariant map, as a morphism of
+representations of `G` into the restriction along `φ`. -/
+private def singularChainsRepResHom (n : ℕ) :
+    (singularChainsRep k E G).X n ⟶ Rep.res φ ((singularChainsRep k F H).X n) :=
+  Rep.ofHom
+    { toLinearMap := (((singularChains k).map f).f n).hom
+      isIntertwining' g := LinearMap.ext fun c ↦ singularChains_map_f_representation k f hf n g c }
+
+/-- **Pushing singular chains forward along an equivariant map** is a chain map from the
+equivariant singular chains of `E` to the restriction along `φ` of the equivariant singular chains
+of `F`. -/
+def singularChainsRepResMap :
+    singularChainsRep k E G ⟶
+      ((Rep.resFunctor φ).mapHomologicalComplex _).obj (singularChainsRep k F H) where
+  f n := singularChainsRepResHom k f hf n
+  comm' i j hij := by
+    subst i
+    rw [Functor.mapHomologicalComplex_obj_d, singularChainsRep_d, singularChainsRep_d]
+    ext c
+    -- Both composites push `c` forward along `f` and take the singular boundary, in either order.
+    exact (singularChainsRepDifferential_hom_apply k F H j _).trans
+      ((ConcreteCategory.congr_hom (((singularChains k).map f).comm (j + 1) j) c).trans
+        (congrArg (((singularChains k).map f).f j)
+          (singularChainsRepDifferential_hom_apply k E G j c).symm))
+
+/-- The equivariant chain map pushes chains forward along `f`. -/
+-- Match before simplification changes the presentation of the restricted target carrier.
+@[simp↓]
+theorem singularChainsRepResMap_f_hom_apply (n : ℕ) (c : ((singularChains k).obj E).X n) :
+    ((singularChainsRepResMap k f hf).f n).hom c = ((singularChains k).map f).f n c :=
+  (rfl)
+
+/-- The equivariant pushforward of singular chains preserves the augmentations. -/
+theorem singularChainsRepResMap_f_zero_comp_augmentation :
+    (singularChainsRepResMap k f hf).f 0 ≫
+        (Rep.resFunctor φ).map ((singularChainsRepAugmentation k F H).f 0) =
+      (singularChainsRepAugmentation k E G).f 0 := by
+  ext c
+  rw [singularChainsRepAugmentation_f_zero, singularChainsRepAugmentation_f_zero]
+  -- Both sides are the augmentation, after pushing `c` forward along `f` on the left.
+  exact (LinearMap.congr_fun (singularAugmentRep_hom_toLinearMap k F H) _).trans
+    ((singularAugment_map f c).trans
+      (LinearMap.congr_fun (singularAugmentRep_hom_toLinearMap k E G) c).symm)
 
 end Equivariance
 
@@ -187,5 +246,19 @@ theorem singularChainsCoinvariantsMap_comp {ψ : H →* K} (q : F ⟶ D)
     singularChainsCoinvariantsMap_f_mk]
   simp only [Functor.map_comp, HomologicalComplex.comp_f]
   rfl
+
+/-- The map on coinvariant singular chains is the change-of-groups map on tensor coinvariants
+induced by the equivariant pushforward of chains, with the identity on the trivial coefficients
+`k`. -/
+theorem singularChainsCoinvariantsMap_eq_coinvariantsTensorChainMap :
+    singularChainsCoinvariantsMap k f hf =
+      φ.coinvariantsTensorChainMap (B := Rep.trivial k H k) (𝟙 (Rep.trivial k G k))
+        (singularChainsRepResMap k f hf) :=
+  -- Both sides evaluate on a tensor class `⟦a ⊗ c⟧` to `⟦a ⊗ f_* c⟧`.
+  HomologicalComplex.hom_ext _ _ fun n ↦
+    Rep.coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a c ↦
+      (singularChainsCoinvariantsMap_f_mk k f hf n a c).trans
+        (φ.coinvariantsTensorChainMap_f_mk (B := Rep.trivial k H k) (𝟙 (Rep.trivial k G k))
+          (singularChainsRepResMap k f hf) n a c).symm)
 
 end TauCeti

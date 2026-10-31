@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Topology.LocallyFinite
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
@@ -20,6 +21,11 @@ finitely many locally finite families is locally finite (`LocallyFinite.iUnion`)
 In a pseudometric space, a locally finite family of closed sets has the following useful local
 description: around each point there is a ball such that every member of the family meeting the
 ball contains the centre.
+
+On a normal paracompact space, positive continuous functions on the members of a locally finite
+closed family admit a single positive continuous strict minorant. This allows local error
+tolerances to be assembled without a uniform lower bound on a noncompact space. The minorant is
+constructed with Mathlib's `exists_continuous_forall_mem_convex_of_local_const`.
 -/
 
 public section
@@ -36,6 +42,45 @@ theorem comp_fst [Finite κ] (hf : LocallyFinite f) : LocallyFinite fun p : ι �
   fun x ↦
     let ⟨U, hU, hfin⟩ := hf x
     ⟨U, hU, (hfin.prod (finite_univ (α := κ))).subset fun _ hp ↦ ⟨hp, mem_univ _⟩⟩
+
+/-- Positive continuous tolerances on a locally finite family of closed sets admit a positive
+continuous strict minorant on the whole space. No covering or compactness assumption is needed. -/
+theorem exists_continuous_pos_lt [NormalSpace X] [ParacompactSpace X]
+    (hf : LocallyFinite f) (hclosed : ∀ i, IsClosed (f i)) {ε : ι → X → ℝ}
+    (hε : ∀ i, ContinuousOn (ε i) (f i)) (hpos : ∀ i, ∀ x ∈ f i, 0 < ε i x) :
+    ∃ δ : C(X, ℝ), (∀ x, 0 < δ x) ∧ ∀ i, ∀ x ∈ f i, δ x < ε i x := by
+  classical
+  let t (x : X) : Set ℝ := Ioi 0 ∩ ⋂ i, ⋂ (_ : x ∈ f i), Iio (ε i x)
+  have hconv (x : X) : Convex ℝ (t x) :=
+    (convex_Ioi (0 : ℝ)).inter (convex_iInter fun i ↦
+      convex_iInter fun _ ↦ convex_Iio (ε i x))
+  have hlocal (x : X) : ∃ c : ℝ, ∀ᶠ y in nhds x, c ∈ t y := by
+    -- Finitely many constraints are active at x. Each admits a local positive constant.
+    have hi (i : ι) (hx : x ∈ f i) :
+        ∃ c > 0, ∀ᶠ y in nhds x, y ∈ f i → c < ε i y := by
+      refine ⟨ε i x / 2, half_pos (hpos i x hx), ?_⟩
+      have := (hε i x hx).eventually (Ioi_mem_nhds (half_lt_self (hpos i x hx)))
+      exact eventually_nhdsWithin_iff.mp this
+    have hfinite (s : Finset ι) (hs : ∀ i ∈ s, x ∈ f i) :
+        ∃ c > 0, ∀ᶠ y in nhds x, ∀ i ∈ s, y ∈ f i → c < ε i y := by
+      induction s using Finset.induction_on with
+      | empty => exact ⟨1, one_pos, Filter.Eventually.of_forall (by simp)⟩
+      | @insert i s his ih =>
+        obtain ⟨a, ha, hya⟩ := hi i (hs i (by simp))
+        obtain ⟨b, hb, hyb⟩ := ih (fun j hj ↦ hs j (by simp [hj]))
+        refine ⟨min a b, lt_min ha hb, ?_⟩
+        filter_upwards [hya, hyb] with y hya hyb j hj hy
+        rcases Finset.mem_insert.mp hj with rfl | hj
+        · exact (min_le_left _ _).trans_lt (hya hy)
+        · exact (min_le_right _ _).trans_lt (hyb j hj hy)
+    obtain ⟨c, hc, hyc⟩ := hfinite (hf.point_finite x).toFinset (by simp)
+    refine ⟨c, ?_⟩
+    filter_upwards [hyc, hf.eventually_subset hclosed x] with y hy hsub
+    exact ⟨hc, by simpa only [mem_iInter, mem_Iio] using
+      (fun i hi ↦ hy i (by simpa using hsub hi) hi)⟩
+  obtain ⟨δ, hδ⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
+  refine ⟨δ, fun x ↦ (hδ x).1, fun i x hx ↦ ?_⟩
+  exact mem_iInter.mp (mem_iInter.mp (hδ x).2 i) hx
 
 /-- The pointwise union of finitely many locally finite families is locally finite. -/
 protected theorem iUnion [Finite κ] {f : κ → ι → Set X} (hf : ∀ k, LocallyFinite (f k)) :

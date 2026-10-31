@@ -56,19 +56,23 @@ namespace IsCompletelyMonotoneOnIoi
 continuous on `[0, ∞)` is a Bernstein function. -/
 theorem isBernsteinFunction_halfLinePrimitive (hf : IsCompletelyMonotoneOnIoi f)
     (hcont : ContinuousOn f (Ici 0)) : IsBernsteinFunction (halfLinePrimitive f) := by
+  have hloc : MeasureTheory.LocallyIntegrableOn f (Ici 0) :=
+    hcont.locallyIntegrableOn measurableSet_Ici
+  have hderiv (t : ℝ) (ht : t ∈ Ioi 0) : deriv (halfLinePrimitive f) t = f t :=
+    deriv_halfLinePrimitive hloc (hcont t ht.le) ht.le
   have hcontinuous : ContinuousOn (halfLinePrimitive f) (Ici 0) :=
-    (continuous_halfLinePrimitive hcont).continuousOn
+    (continuous_halfLinePrimitive hloc).continuousOn
   have hcontDiff : ContDiffOn ℝ ∞ (halfLinePrimitive f) (Ioi 0) := by
     rw [contDiffOn_infty_iff_deriv_of_isOpen isOpen_Ioi]
-    refine ⟨fun t ht ↦
-      (hasDerivAt_halfLinePrimitive hcont ht.le).differentiableAt.differentiableWithinAt, ?_⟩
-    exact hf.contDiffOn.congr fun t ht ↦ deriv_halfLinePrimitive hcont ht.le
+    refine ⟨fun t ht ↦ (hasDerivAt_halfLinePrimitive hloc (hcont t ht.le) ht.le)
+      |>.differentiableAt.differentiableWithinAt, ?_⟩
+    exact hf.contDiffOn.congr hderiv
   rw [isBernsteinFunction_iff]
   refine ⟨hcontinuous, hcontDiff, fun t ht ↦ ?_, ?_⟩
   · rw [halfLinePrimitive_def]
     exact intervalIntegral.integral_nonneg ht fun x _ ↦
       hf.nonneg_of_continuousWithinAt (hcont 0 self_mem_Ici) (le_max_right x 0)
-  · exact hf.congr fun t ht ↦ deriv_halfLinePrimitive hcont ht.le
+  · exact hf.congr hderiv
 
 /-- The primitive `t ↦ ∫₀ᵗ f` of a function that is completely monotone on `(0, ∞)` and
 continuous on `[0, ∞)` is a Bernstein function. -/

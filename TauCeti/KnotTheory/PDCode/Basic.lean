@@ -657,6 +657,17 @@ theorem orientation_crossing_of_add_two_eq (D : OrientedPDCode n) (i : Fin n) {s
   rw [← hst, ← PDCode.oppositeCrossingSlot_apply, PDCode.crossing_apply, PDCode.crossing_apply,
     D.orientation_oppositeCrossingSlot]
 
+/-- The orientations at the four slots of a crossing are determined by those at the slots `0`
+and `1`, since the orientation reverses between opposite slots. -/
+theorem orientation_crossing_eq (D : OrientedPDCode n) (i : Fin n) (k : Fin 4) :
+    D.orientation (D.crossing i k) =
+      ![D.orientation (D.crossing i 0), D.orientation (D.crossing i 1),
+        !D.orientation (D.crossing i 0), !D.orientation (D.crossing i 1)] k := by
+  fin_cases k <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val, Matrix.cons_val_zero,
+      Matrix.cons_val_one, D.orientation_crossing_of_add_two_eq i (s := 0) (t := 2) (by decide),
+      D.orientation_crossing_of_add_two_eq i (s := 1) (t := 3) (by decide)]
+
 /-- An arc joins half-edges of opposite orientations, so no half-edge is paired with one of the
 same orientation. -/
 theorem ne_edgePair_of_orientation_eq (D : OrientedPDCode n) {x y : Fin (4 * n)}

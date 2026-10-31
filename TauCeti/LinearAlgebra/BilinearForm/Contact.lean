@@ -28,6 +28,13 @@ contact together whenever `f` vanishes nowhere.
 For an alternating `B`, the hyperplane `ker a` carries a nondegenerate alternating form, so it has
 even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`).
 
+For an alternating `B` and a contact covector `a`, the bilinear form `B + a ⊗ a`,
+`(v, w) ↦ B v w + a v * a w`, is left-separating
+(`Module.Dual.IsContact.separatingLeft_add_smulRight`), so in finite dimension `v ↦ B v + a(v) a`
+is an isomorphism onto the dual. This is the pointwise contact flat map `X ↦ ι_X dα + α(X) α` of a
+contact form. The preimage of `a` itself is characterized by the Reeb equations: `B r + a(r) a = a`
+exactly when `a r = 1` and `B r = 0` (`Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`).
+
 ## Main declarations
 
 * `Module.Dual.IsContact`: `a ≠ 0` and `B` is nondegenerate on `ker a`.
@@ -38,6 +45,9 @@ even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`).
   under nonzero rescaling of `a` and of `B`.
 * `Module.Dual.IsContact.even_finrank_ker`, `Module.Dual.IsContact.odd_finrank`: the dimension
   count.
+* `Module.Dual.IsContact.separatingLeft_add_smulRight`: `B + a ⊗ a` is left-separating.
+* `Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`: the preimage of `a` under
+  `v ↦ B v + a(v) a`.
 
 ## References
 
@@ -123,5 +133,38 @@ theorem IsContact.odd_finrank [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsCo
     Odd (finrank K V) := by
   rw [← finrank_ker_add_one_of_ne_zero h.ne_zero]
   exact (h.even_finrank_ker hB).add_one
+
+/-! ### The contact flat map -/
+
+/-- For an alternating `B` and a contact covector `a`, the bilinear form `B + a ⊗ a`,
+`(v, w) ↦ B v w + a v * a w`, is left-separating. This is the linear algebra behind the
+contact flat map `v ↦ ι_v dα + α(v) α` of a contact form, which is invertible in finite
+dimension. -/
+theorem IsContact.separatingLeft_add_smulRight (hB : B.IsAlt) (h : a.IsContact B) :
+    (B + a.smulRight a).SeparatingLeft := by
+  intro v hv
+  have hvv : a v = 0 := by
+    simpa [hB v] using hv v
+  refine Subtype.ext_iff.1 (h.nondegenerate_restrict.1 ⟨v, hvv⟩ fun w ↦ ?_)
+  simpa [w.2] using hv w
+
+/-- For an alternating `B` and a contact covector `a`, a vector `r` solves `B r + a(r) a = a`
+exactly when `a r = 1` and `r` is `B`-orthogonal to everything: these are the Reeb equations. -/
+theorem IsContact.add_smulRight_apply_eq_self_iff (hB : B.IsAlt) (h : a.IsContact B) {r : V} :
+    (B + a.smulRight a) r = a ↔ a r = 1 ∧ B r = 0 := by
+  refine ⟨fun hr ↦ ?_, fun ⟨h₁, h₂⟩ ↦ by ext w; simp [h₁, h₂]⟩
+  have hr' (w : V) : B r w + a r * a w = a w := by
+    simpa using LinearMap.congr_fun hr w
+  -- Evaluating at `r` itself gives `a r * a r = a r`, so `a r` is `0` or `1`.
+  have hrr : a r * a r = a r := by
+    simpa [hB r] using hr' r
+  have h₁ : a r = 1 := by
+    by_cases h₀ : a r = 0
+    · -- If `a r = 0`, then `r ∈ ker a` is `B`-orthogonal to `ker a`, so `r = 0` and `a = 0`.
+      have hr₀ : r = 0 := Subtype.ext_iff.1 <| h.nondegenerate_restrict.1 ⟨r, h₀⟩ fun w ↦ by
+        simpa [h₀, w.2] using hr' w
+      exact absurd (LinearMap.ext fun w ↦ by simpa [hr₀] using (hr' w).symm) h.ne_zero
+    · exact (mul_eq_left₀ h₀).1 hrr
+  exact ⟨h₁, LinearMap.ext fun w ↦ by simpa [h₁] using hr' w⟩
 
 end Module.Dual

@@ -13,11 +13,10 @@ public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 
 A line is a removable set for *continuous* holomorphic functions: if `F` is continuous on an open
 set `Ω ⊆ ℂ` and holomorphic on `Ω` off a line, then `F` is holomorphic on all of `Ω`. This is the
-straight-line base case toward the L4 analytic-arc removability result in the conformal-mapping
-roadmap (`ConformalMapping/README.md`); curved analytic arcs remain outside this module's scope.
-It is the analytic content that makes the Schwarz reflection principle work, and it is what lets
-two functions holomorphic on the two open sides of a line be glued along it as soon as the glued
-function is continuous.
+straight-line base case of removability across analytic arcs; circles and charted analytic arcs are
+treated in `Removability/Circle.lean` and `Removability/Arc.lean`. It is the analytic content that
+makes the Schwarz reflection principle work, and it is what lets two functions holomorphic on the
+two open sides of a line be glued along it as soon as the glued function is continuous.
 
 The proof is the classical Morera argument. By
 `Complex.isConservativeOn_and_continuousOn_iff_isDifferentiableOn`, holomorphy on an open set is
@@ -31,10 +30,9 @@ boundary integral vanish, and the shared axis edge cancels when the two halves a
 arbitrary line is reduced to the real axis by the affine chart `w ↦ p + (q - p) * w`, which is a
 biholomorphism of `ℂ` carrying `ℝ` onto the line through `p` and `q`.
 
-In accordance with the conformal-mapping roadmap's generality bar, the results are stated for
-scalar-valued functions `F : ℂ → ℂ`, even though the Morera argument and its Mathlib inputs also
-support Banach-valued functions. The roadmap deliberately requires every theorem added in layers
-L0–L6 to remain scalar; the Banach-valued generalization is therefore outside this module's scope.
+The results are stated for scalar-valued functions `F : ℂ → ℂ`, the generality at which the
+conformal-mapping development uses them, even though the Morera argument and its Mathlib inputs
+also support Banach-valued functions.
 
 ## Main results
 
@@ -52,10 +50,7 @@ L0–L6 to remain scalar; the Banach-valued generalization is therefore outside 
 
 The Cauchy foundations consumed here are Mathlib's: the rectangle Cauchy–Goursat theorem
 (`Analysis/Complex/CauchyIntegral.lean`) and the disc Morera theorem
-(`Analysis/Complex/HasPrimitives.lean`). Layer L4 of the roadmap is absent from the upstream
-Mathlib Riemann-mapping effort leanprover-community/mathlib4#33505, so this is new Lean
-formalization rather than a shim; any shared foundational API should still be refactored onto
-Mathlib's once that human-curated work lands.
+(`Analysis/Complex/HasPrimitives.lean`).
 
 ## References
 
