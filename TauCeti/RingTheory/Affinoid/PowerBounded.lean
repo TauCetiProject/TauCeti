@@ -15,7 +15,6 @@ import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
 import TauCeti.RingTheory.Affinoid.QuotientNorm
 import TauCeti.RingTheory.Huber.Normed
-import TauCeti.RingTheory.Huber.Uniform
 import TauCeti.RingTheory.IntegralClosure.Quotient
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
