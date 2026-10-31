@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.Simple
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Trace
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
 public import TauCeti.CategoryTheory.Semisimple.Basic
 
@@ -49,7 +49,7 @@ theorem rightDim_ne_zero_of_simple (X : C) [Simple X] [FiniteDimensional k (X �
   have : IsSplitMono (η_ X Xᘁ) :=
     isSplitMono_of_nonzero_from_simple (coevaluation_ne_zero (Simple.not_isZero X))
   let := pivotalExactPairing X
-  obtain ⟨c, hc⟩ := hom_tensor_unit_eq_smul_evaluation_of_simple_right k
+  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_right k
     (retraction (η_ X Xᘁ))
   have h : c • rightDim X = 𝟙 (𝟙_ C) := by
     rw [← rightTrace_id, rightTrace_def, id_whiskerRight, Category.id_comp,
@@ -67,7 +67,7 @@ theorem leftDim_ne_zero_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶
   let := pivotalExactPairing X
   have : IsSplitMono (η_ Xᘁ X) :=
     isSplitMono_of_nonzero_from_simple (coevaluation_ne_zero (Simple.not_isZero Xᘁ))
-  obtain ⟨c, hc⟩ := hom_tensor_unit_eq_smul_evaluation_of_simple_left k
+  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_left k
     (retraction (η_ Xᘁ X))
   have h : c • leftDim X = 𝟙 (𝟙_ C) := by
     rw [← leftTrace_id, leftTrace_def, whiskerLeft_id, Category.id_comp,
@@ -116,7 +116,7 @@ theorem exists_leftTrace_comp_ne_zero {X Y : C} {f : X ⟶ Y} (hf : f ≠ 0) :
 
 include k in
 /-- The right trace pairing detects zero morphisms. -/
-theorem rightTrace_comp_eq_zero_iff {X Y : C} (f : X ⟶ Y) :
+theorem forall_rightTrace_comp_eq_zero_iff {X Y : C} (f : X ⟶ Y) :
     (∀ g : Y ⟶ X, rightTrace (f ≫ g) = 0) ↔ f = 0 := by
   constructor
   · intro h
@@ -128,7 +128,7 @@ theorem rightTrace_comp_eq_zero_iff {X Y : C} (f : X ⟶ Y) :
 
 include k in
 /-- The left trace pairing detects zero morphisms. -/
-theorem leftTrace_comp_eq_zero_iff {X Y : C} (f : X ⟶ Y) :
+theorem forall_leftTrace_comp_eq_zero_iff {X Y : C} (f : X ⟶ Y) :
     (∀ g : Y ⟶ X, leftTrace (f ≫ g) = 0) ↔ f = 0 := by
   constructor
   · intro h

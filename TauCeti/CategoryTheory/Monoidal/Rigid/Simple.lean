@@ -96,7 +96,7 @@ theorem not_isZero_tensorObj [Preadditive C] [HasKernels C] [MonoidalPreadditive
 
 /-- If the right member of an exact pairing is split simple, every morphism from the
 paired tensor product to the unit is a scalar multiple of the evaluation. -/
-theorem hom_tensor_unit_eq_smul_evaluation_of_simple_right (k : Type*) [Field k] [IsAlgClosed k]
+theorem hom_tensorUnit_eq_smul_evaluation_of_simple_right (k : Type*) [Field k] [IsAlgClosed k]
     [Preadditive C] [HasKernels C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
     {X Y : C} [ExactPairing X Y] [Simple Y] [FiniteDimensional k (Y ⟶ Y)]
     (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : k, f = c • ε_ X Y := by
@@ -113,7 +113,7 @@ theorem hom_tensor_unit_eq_smul_evaluation_of_simple_right (k : Type*) [Field k]
 
 /-- If the left member of an exact pairing is split simple, every morphism from the
 paired tensor product to the unit is a scalar multiple of the evaluation. -/
-theorem hom_tensor_unit_eq_smul_evaluation_of_simple_left (k : Type*) [Field k] [IsAlgClosed k]
+theorem hom_tensorUnit_eq_smul_evaluation_of_simple_left (k : Type*) [Field k] [IsAlgClosed k]
     [Preadditive C] [HasKernels C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
     {X Y : C} [ExactPairing X Y] [Simple X] [FiniteDimensional k (X ⟶ X)]
     (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : k, f = c • ε_ X Y := by
