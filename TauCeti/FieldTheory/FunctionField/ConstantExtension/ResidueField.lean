@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FiniteDescent
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis
 public import TauCeti.FieldTheory.FunctionField.Place.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
+public import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
 
 /-!
 # Residue fields in a constant field extension
@@ -280,16 +281,6 @@ theorem exists_constantCompositum_eq_top_and_forall_degree_eq_one (hF : IsFuncti
     ⟨r, hroot⟩).comp ((IntermediateField.equivOfEq hγ).trans IntermediateField.topEquiv).symm
   refine ⟨F', k', inferInstance, inferInstance, htop, fun P' hP' ↦ ?_⟩
   exact degree_eq_one_of_constantCompositum_eq_top hF hex htop P' (hP' ▸ φ)
-
-/-- A field `K` generated over `k` by an integral element `x` embeds into every extension `L` of
-`k` over which some nonzero multiple of the minimal polynomial of `x` splits. -/
-private theorem nonempty_algHom_of_minpoly_dvd {K L : Type*} [Field K] [Field L] [Algebra k K]
-    [Algebra k L] {x : K} (hx : k⟮x⟯ = ⊤) (hint : IsIntegral k x) {f : k[X]} (hf0 : f ≠ 0)
-    (hdvd : minpoly k x ∣ f) (hsplit : (f.map (algebraMap k L)).Splits) :
-    Nonempty (K →ₐ[k] L) := by
-  refine IntermediateField.nonempty_algHom_of_adjoin_splits (S := {x}) (fun s hs ↦ ?_) hx
-  rw [Set.mem_singleton_iff.mp hs]
-  exact ⟨hint, hsplit.of_dvd (Polynomial.map_ne_zero hf0) (Polynomial.map_dvd _ hdvd)⟩
 
 omit [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Algebra F F']
   [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsSeparable k k'] in
