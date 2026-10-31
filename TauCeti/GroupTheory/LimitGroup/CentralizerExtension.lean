@@ -225,6 +225,29 @@ def homEquiv : (CentralizerExt u n →* K) ≃
 @[simp] theorem homEquiv_symm_apply (p) :
     (homEquiv (u := u) (n := n) (K := K)).symm p = lift p.1.1 p.1.2 p.2.1 p.2.2 := (rfl)
 
+/-- Parameters with equal full centralizers give canonically isomorphic extensions, fixing
+`G` and preserving each new letter. -/
+def equivOfCentralizerEq {v : G} (h : centralizer {u} = centralizer {v}) :
+    CentralizerExt u n ≃* CentralizerExt v n :=
+  (lift of t commute_t_t fun c hc i => commute_of_t (h ▸ hc) i).toMulEquiv
+    (lift of t commute_t_t fun c hc i => commute_of_t (h.symm ▸ hc) i)
+    (hom_ext (by ext; simp) (by intro i; simp))
+    (hom_ext (by ext; simp) (by intro i; simp))
+
+@[simp] theorem equivOfCentralizerEq_of {v : G} (h : centralizer {u} = centralizer {v})
+    (g : G) : equivOfCentralizerEq (n := n) h (of g) = of g := by
+  simp [equivOfCentralizerEq]
+
+@[simp] theorem equivOfCentralizerEq_t {v : G} (h : centralizer {u} = centralizer {v})
+    (i : Fin n) : equivOfCentralizerEq h (t i) = t i := by
+  simp [equivOfCentralizerEq]
+
+@[simp] theorem equivOfCentralizerEq_symm {v : G} (h : centralizer {u} = centralizer {v}) :
+    (equivOfCentralizerEq (n := n) h).symm = equivOfCentralizerEq h.symm := by
+  ext x
+  simp only [equivOfCentralizerEq, MonoidHom.toMulEquiv_symm_apply,
+    MonoidHom.toMulEquiv_apply]
+
 /-- For `k : Fin n → ℤ`, the retraction of `G(u, ℤⁿ)` onto `G` sending `tᵢ` to `u ^ kᵢ`. -/
 def retraction (k : Fin n → ℤ) : CentralizerExt u n →* G :=
   lift (.id G) (fun i => u ^ k i) (fun _ _ => Commute.zpow_zpow_self _ _ _)

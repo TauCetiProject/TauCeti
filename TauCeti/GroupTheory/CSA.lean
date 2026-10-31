@@ -149,6 +149,18 @@ theorem isCSA_iff_isCommTransitive_and_commute_conj :
     rw [hMC, Subgroup.mem_centralizer_singleton_iff]
     exact (hconj x g hx ((commute_iff_eq _ _).2 (setLike_mul_comm hxM hgxM))).eq.symm
 
+/-- A nonidentity power has the same centralizer as its base in a commutative-transitive group.
+The nonidentity hypothesis is on the power, so no torsion-freeness assumption is needed. -/
+theorem IsCommTransitive.centralizer_singleton_pow (hG : IsCommTransitive G) {x : G} {n : ℕ}
+    (hx : x ^ n ≠ 1) : Subgroup.centralizer {x ^ n} = Subgroup.centralizer {x} := by
+  ext y
+  simp only [Subgroup.mem_centralizer_singleton_iff]
+  constructor
+  · intro hy
+    exact (hG y (x ^ n) x hx hy (Commute.self_pow x n).symm).eq
+  · intro hy
+    exact (Commute.pow_right hy n).eq
+
 /-- In a torsion-free commutative-transitive group, a nonidentity element is not conjugate to its
 inverse. -/
 theorem IsCommTransitive.not_isConj_inv [IsMulTorsionFree G] (hG : IsCommTransitive G) {x : G}
