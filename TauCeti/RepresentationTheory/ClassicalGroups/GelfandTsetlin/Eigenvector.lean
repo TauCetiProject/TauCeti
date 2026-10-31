@@ -45,7 +45,7 @@ second row. The differential of the restriction of `V_λ` to `GL n ℂ` is the d
 `V_λ` on the upper-left corner `𝔤𝔩ₙ ⊆ 𝔤𝔩ₙ₊₁`
 (`TauCeti.IsRationalRep.differential_comp_glBlockSucc`), so `f` intertwines the action of
 `U(𝔤𝔩ₙ)` on `V_μ` with the action of its image in `U(𝔤𝔩ₙ₊₁)` on `V_λ`
-(`TauCeti.UniversalEnvelopingAlgebra.map_lift_apply_of_map_apply`). The Gelfand–Tsetlin generators
+(`UniversalEnvelopingAlgebra.map_lift_apply_of_map_apply`). The Gelfand–Tsetlin generators
 at the levels `k ≤ n` lie in that image, and induction on `n` concludes.
 
 ## Main results
