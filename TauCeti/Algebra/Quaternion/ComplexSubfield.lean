@@ -14,9 +14,8 @@ public import Mathlib.Analysis.Quaternion
 -- property saying that an `ℝ`-algebra map out of `ℂ` is exactly a square root of `-1`, and for
 -- `Complex.conjAe`, the conjugation this file realizes by `j`.
 public import Mathlib.LinearAlgebra.Complex.Module
--- `Mathlib.Algebra.Ring.Action.ConjAct` supplies the action of `Aˣ` on a semiring `A` by
--- conjugation, used in a proof to see conjugation by a unit as an `ℝ`-algebra automorphism.
-import Mathlib.Algebra.Ring.Action.ConjAct
+import TauCeti.Algebra.Field.Basic
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # The two embeddings of `ℂ` in the quaternions are conjugate
@@ -35,12 +34,12 @@ Centrality of the source cannot simply be dropped either, since complex conjugat
 `TauCeti.exists_unit_conj_of_algEquiv` instead.
 
 The proof uses none of the central simple machinery. An `ℝ`-algebra map `ℂ →ₐ[ℝ] A` is the same
-thing as a square root of `-1` in `A` (Mathlib's `Complex.lift`), and two such maps agree as soon
-as they agree on `Complex.I` (`Complex.algHom_ext`), so what has to be proved is that any two
-square roots of `-1` in `ℍ[ℝ]` are conjugate. In any division ring, given `x * x = u * u = -1`, the
-element `w = 1 - u * x` satisfies `u * w = w * x`, both sides being `x + u`; and `w` vanishes
-exactly when `u * x = 1`, that is when `u = -x`. For `x = i` that excluded case is settled by `j`,
-which anticommutes with `i`. So every square root of `-1` in `ℍ[ℝ]` is conjugate to `i`, hence
+thing as a square root of `-1` in `A` (Mathlib's `Complex.lift`), and a conjugacy between two
+such maps holds as soon as it holds at `Complex.I` (`Units.conj_complexAlgHom_apply`), so what has
+to be proved is that any two square roots of `-1` in `ℍ[ℝ]` are conjugate. In any division ring,
+two square roots `x`, `u` of `-1` are conjugate by `1 - u * x` unless `u * x = 1`, that is unless
+`u = -x` (`TauCeti.exists_unit_conj_of_mul_ne_one`). For `x = i` that excluded case is settled by
+`j`, which anticommutes with `i`. So every square root of `-1` in `ℍ[ℝ]` is conjugate to `i`, hence
 any two are conjugate to each other. Complex conjugation is exactly the excluded case, which is
 why `j` is the explicit witness.
 
@@ -50,10 +49,6 @@ why `j` is the explicit witness.
 
 ## Main statements
 
-* `TauCeti.exists_unit_conj_of_mul_ne_one`: in a division ring, two square roots `x`, `u` of `-1`
-  with `u * x ≠ 1` are conjugate by a unit.
-* `TauCeti.conj_unit_complexAlgHom_apply`: a conjugacy between two `ℝ`-algebra maps out of `ℂ`
-  holds everywhere once it holds at `Complex.I`.
 * `TauCeti.Quaternion.conj_jUnit_ofComplex_I`: conjugation by `j` negates `i`.
 * `TauCeti.Quaternion.exists_unit_conj_of_mul_self_eq_neg_one`: any two square roots of `-1` in
   `ℍ[ℝ]` are conjugate by a unit.
@@ -96,27 +91,6 @@ open scoped Quaternion
 open _root_.Quaternion (ofComplex)
 
 namespace TauCeti
-
-/-- **Two square roots of `-1` in a division ring that are not negatives of one another are
-conjugate.** The conjugating element is `1 - u * x`: it satisfies
-`u * (1 - u * x) = (1 - u * x) * x`, both sides being `x + u`, and it is nonzero exactly by the
-hypothesis `u * x ≠ 1`, which says `u ≠ -x` because `x⁻¹ = -x`. -/
-theorem exists_unit_conj_of_mul_ne_one {D : Type*} [DivisionRing D] {x u : D} (hx : x * x = -1)
-    (hu : u * u = -1) (h : u * x ≠ 1) :
-    ∃ w : Dˣ, u = (w : D) * x * ((w⁻¹ : Dˣ) : D) := by
-  refine ⟨Units.mk0 _ (sub_ne_zero.2 (Ne.symm h)), (Units.eq_mul_inv_iff_mul_eq _).2 ?_⟩
-  rw [Units.val_mk0, sub_mul, mul_sub, mul_assoc, hx, ← mul_assoc, hu]
-  simp [add_comm]
-
-/-- **Conjugation of an `ℝ`-algebra map out of `ℂ` is detected on `Complex.I`.** If `g` agrees with
-the `w`-conjugate of `f` at `i` then it agrees with it everywhere: conjugation by `w` is an
-`ℝ`-algebra automorphism, and `ℝ`-algebra maps out of `ℂ` are determined by their value at `i`. -/
-theorem conj_unit_complexAlgHom_apply {A : Type*} [Semiring A] [Algebra ℝ A] (w : Aˣ)
-    (f g : ℂ →ₐ[ℝ] A) (h : g Complex.I = (w : A) * f Complex.I * ((w⁻¹ : Aˣ) : A)) (z : ℂ) :
-    g z = (w : A) * f z * ((w⁻¹ : Aˣ) : A) := by
-  have hfg : g = (MulSemiringAction.toAlgHom ℝ A (ConjAct.toConjAct w)).comp f :=
-    Complex.algHom_ext (by simpa [ConjAct.units_smul_def] using h)
-  simpa [ConjAct.units_smul_def] using DFunLike.congr_fun hfg z
 
 namespace Quaternion
 
@@ -175,13 +149,13 @@ theorem exists_unit_conj_complexAlgHom (f g : ℂ →ₐ[ℝ] ℍ[ℝ]) :
     ∃ w : ℍ[ℝ]ˣ, ∀ z : ℂ, g z = (w : ℍ[ℝ]) * f z * ((w⁻¹ : ℍ[ℝ]ˣ) : ℍ[ℝ]) := by
   obtain ⟨w, hw⟩ := exists_unit_conj_of_mul_self_eq_neg_one (Complex.lift.symm f).prop
     (Complex.lift.symm g).prop
-  exact ⟨w, conj_unit_complexAlgHom_apply w f g hw⟩
+  exact ⟨w, w.conj_complexAlgHom_apply f g hw⟩
 
 /-- **Complex conjugation on `ℂ ⊆ ℍ[ℝ]` is conjugation by `j`**: the explicit witness in place of
 the existential of `TauCeti.Quaternion.exists_unit_conj_complexAlgHom`. -/
 theorem ofComplex_conjAe (z : ℂ) :
     ofComplex (Complex.conjAe z) = (jUnit : ℍ[ℝ]) * ofComplex z * ((jUnit⁻¹ : ℍ[ℝ]ˣ) : ℍ[ℝ]) := by
-  refine conj_unit_complexAlgHom_apply jUnit ofComplex (ofComplex.comp Complex.conjAe.toAlgHom) ?_ z
+  refine jUnit.conj_complexAlgHom_apply ofComplex (ofComplex.comp Complex.conjAe.toAlgHom) ?_ z
   rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, Complex.conjAe_coe, Complex.conj_I, map_neg,
     conj_jUnit_ofComplex_I]
 
