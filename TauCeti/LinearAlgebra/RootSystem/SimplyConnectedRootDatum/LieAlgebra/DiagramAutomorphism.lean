@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.GeckConstruction.PinnedSymmetry
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
 /-!
 # Diagram automorphisms of the pinned split Lie algebra
@@ -20,11 +19,12 @@ hᵢ ↦ h_{σ i},   eᵢ ↦ e_{σ i},   fᵢ ↦ f_{σ i}.
 
 It is built without Serre's theorem. Geck's matrices carry no sign choices, so reindexing them along
 the coordinate permutation `TauCeti.DynkinType.geckDiagramIndexEquiv` of the pinned Geck module
-carries each numbered generator to the one renumbered by `σ`
-(`RootPairing.Equiv.map_lieAlgebra_geckIndexEquiv`), and `TauCeti.DynkinType.diagramLieEquiv` is
-the restriction of that conjugation to the pinned Lie algebra. On the Geck module it is therefore
-conjugation by `TauCeti.DynkinType.geckDiagramModuleEquiv`, the coordinate permutation from which
-the graph automorphism `TauCeti.DynkinType.geckGraphAut` of the Geck carrier is built.
+carries each numbered generator to the one renumbered by `σ`, and
+`TauCeti.DynkinType.diagramLieEquiv` is the resulting equivalence
+`RootPairing.Equiv.geckLieEquivOfEquiv` of Geck's Lie algebra, read on the pinned carrier. On the
+Geck module it is therefore conjugation by `TauCeti.DynkinType.geckDiagramModuleEquiv`, the
+coordinate permutation from which the graph automorphism `TauCeti.DynkinType.geckGraphAut` of the
+Geck carrier is built.
 
 The raising and lowering generators generate the Lie algebra, so a Lie homomorphism out of it is
 determined by their images (`TauCeti.DynkinType.lieHom_ext`). That makes `σ ↦ diagramLieEquiv σ`
@@ -39,11 +39,6 @@ weight.
 
 ## Main results
 
-* `TauCeti.DynkinType.lieHom_ext` and `TauCeti.DynkinType.lieEquiv_ext`: Lie homomorphisms and
-  equivalences out of the pinned Lie algebra agreeing on the raising and lowering generators are
-  equal.
-* `TauCeti.DynkinType.map_lieAlgebra_geckDiagramIndexEquiv`: conjugation by the Geck coordinate
-  permutation maps the pinned Lie algebra onto itself.
 * `TauCeti.DynkinType.diagramLieEquiv_lieBasis_h`, `diagramLieEquiv_lieBasis_e` and
   `diagramLieEquiv_lieBasis_f`: the automorphism renumbers the Chevalley generators by `σ`.
 * `TauCeti.DynkinType.coe_diagramLieEquiv`: as matrices, it is reindexing along the coordinate
@@ -81,57 +76,26 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {t : DynkinType} (ht : t.Valid) {σ τ : Equiv.Perm (Fin t.rank)}
 
-/-! ## Homomorphisms out of the pinned Lie algebra -/
-
-/-- **A Lie homomorphism out of the pinned Lie algebra is determined by its values on the raising
-and lowering generators.** The two homomorphisms agree after composing with the surjection from the
-Serre presentation, because the Cartan generators there are brackets of the others. -/
-theorem lieHom_ext {L : Type*} [LieRing L] [LieAlgebra ℚ L] {g₁ g₂ : t.lieAlgebra ht →ₗ⁅ℚ⁆ L}
-    (he : ∀ i, g₁ ((t.lieBasis ht).e i) = g₂ ((t.lieBasis ht).e i))
-    (hf : ∀ i, g₁ ((t.lieBasis ht).f i) = g₂ ((t.lieBasis ht).f i)) : g₁ = g₂ := by
-  have hcomp : g₁.comp (t.serreLift ht) = g₂.comp (t.serreLift ht) := by
-    refine serre_hom_ext (fun i => ?_) (fun i => ?_) fun i => ?_
-    · rw [LieHom.comp_apply, LieHom.comp_apply, serreLift_serreH,
-        ← ((t.lieBasis ht).sl2 i).lie_e_f, LieHom.map_lie, LieHom.map_lie, he, hf]
-    · simpa using he i
-    · simpa using hf i
-  ext x
-  obtain ⟨y, rfl⟩ := t.serreLift_surjective ht x
-  exact congr($hcomp y)
-
-/-- **A Lie equivalence out of the pinned Lie algebra is determined by its values on the raising and
-lowering generators**, the equivalence form of `TauCeti.DynkinType.lieHom_ext`. -/
-theorem lieEquiv_ext {L : Type*} [LieRing L] [LieAlgebra ℚ L] {e₁ e₂ : t.lieAlgebra ht ≃ₗ⁅ℚ⁆ L}
-    (he : ∀ i, e₁ ((t.lieBasis ht).e i) = e₂ ((t.lieBasis ht).e i))
-    (hf : ∀ i, e₁ ((t.lieBasis ht).f i) = e₂ ((t.lieBasis ht).f i)) : e₁ = e₂ :=
-  LieEquiv.ext fun x => congr($(lieHom_ext ht (g₁ := e₁.toLieHom) (g₂ := e₂.toLieHom) he hf) x)
-
 /-! ## The diagram automorphism -/
-
-/-- Conjugation by the Geck coordinate permutation of a diagram symmetry maps the pinned Lie
-algebra onto itself. -/
-theorem map_lieAlgebra_geckDiagramIndexEquiv (hσ : σ ∈ t.diagramSymmetry) :
-    (t.lieAlgebra ht).map
-        (Matrix.reindexAlgEquiv ℚ ℚ (t.geckDiagramIndexEquiv ht hσ)).toLieEquiv.toLieHom =
-      t.lieAlgebra ht := by
-  rw [lieAlgebra_def, geckDiagramIndexEquiv_def]
-  exact (t.rationalDiagramAut ht hσ).map_lieAlgebra_geckIndexEquiv _
-    (coe_geckDiagramBaseEquiv_apply ht hσ)
 
 /-- **The diagram automorphism of the pinned split Lie algebra** attached to a symmetry `σ` of the
 Bourbaki-numbered Cartan matrix: the automorphism `hᵢ ↦ h_{σ i}`, `eᵢ ↦ e_{σ i}`, `fᵢ ↦ f_{σ i}`.
-It is the restriction of conjugation by the coordinate permutation
-`TauCeti.DynkinType.geckDiagramIndexEquiv` of the pinned Geck module. -/
+It is Geck's equivalence `RootPairing.Equiv.geckLieEquivOfEquiv` along the rational diagram
+automorphism, the restriction of conjugation by the coordinate permutation
+`TauCeti.DynkinType.geckDiagramIndexEquiv` of the pinned Geck module, read on the pinned carrier. -/
 def diagramLieEquiv (hσ : σ ∈ t.diagramSymmetry) : t.lieAlgebra ht ≃ₗ⁅ℚ⁆ t.lieAlgebra ht :=
-  LieEquiv.ofSubalgebras _ _ (Matrix.reindexAlgEquiv ℚ ℚ (t.geckDiagramIndexEquiv ht hσ)).toLieEquiv
-    (t.map_lieAlgebra_geckDiagramIndexEquiv ht hσ)
+  ((t.geckLieEquiv ht).trans ((t.rationalDiagramAut ht hσ).geckLieEquivOfEquiv
+    (t.geckDiagramBaseEquiv ht σ) (coe_geckDiagramBaseEquiv_apply ht hσ))).trans
+      (t.geckLieEquiv ht).symm
 
 /-- **The diagram automorphism is conjugation by the Geck coordinate permutation**, read on
 matrices. -/
 theorem coe_diagramLieEquiv (hσ : σ ∈ t.diagramSymmetry) (x : t.lieAlgebra ht) :
     (t.diagramLieEquiv ht hσ x : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) =
       Matrix.reindexAlgEquiv ℚ ℚ (t.geckDiagramIndexEquiv ht hσ) x :=
-  LieEquiv.ofSubalgebras_apply _ _ _ _ x
+by
+  rw [diagramLieEquiv, LieEquiv.trans_apply, LieEquiv.trans_apply, coe_geckLieEquiv_symm,
+    RootPairing.Equiv.geckLieEquivOfEquiv_apply, coe_geckLieEquiv, geckDiagramIndexEquiv_def]
 
 /-- **The diagram automorphism renumbers the Cartan generators by the diagram symmetry.** -/
 @[simp]
