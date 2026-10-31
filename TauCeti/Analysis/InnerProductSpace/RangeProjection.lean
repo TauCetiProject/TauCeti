@@ -16,7 +16,9 @@ If `B : F →L[𝕜] V` is an operator between inner product spaces whose Gram o
 invertible, the orthogonal projection of `V` onto the range of `B` is `B (B† B)⁻¹ B†`. When `F` is
 finite-dimensional, `B† B` is invertible exactly when `B` is injective.
 
-Over `ℝ` this explicit formula shows that the projection depends smoothly on the operator: for a
+Over `ℝ` or `ℂ` this formula gives continuity for arbitrary topological parameter spaces
+(`ContinuousAt.starProjection_range`), with no inner product required on the source model.
+Over `ℝ` it also shows that the projection depends smoothly on the operator: for a
 `C^n` family of injective operators `A u : E →L[ℝ] V` out of a finite-dimensional real normed
 space `E`, the orthogonal projections of `V` onto the ranges of `A u` form a `C^n` family. Applied
 to the derivative of an immersion into a Euclidean space, this says that the tangent spaces, and
@@ -167,6 +169,46 @@ theorem Submodule.starProjection_inverse_apply {K W : Submodule 𝕜 V}
   rw [← hRw, hinv, hw']
 
 end Submodule
+
+section ContinuousAt
+
+variable {𝕜 X E V : Type*} [RCLike 𝕜] [TopologicalSpace X]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
+
+/-- Orthogonal projection onto the range depends continuously on an operator out of a
+finite-dimensional space at every injective operator. The parameter space is arbitrary. -/
+theorem ContinuousAt.starProjection_range {A : X → E →L[𝕜] V} {x : X}
+    (hA : ContinuousAt A x) (hinj : Injective (A x)) :
+    ContinuousAt (fun y ↦ (A y).range.starProjection) x := by
+  -- Use Euclidean coordinates on the source to take adjoints without choosing a metric on `E`.
+  let F := EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))
+  let j : F ≃L[𝕜] E := ContinuousLinearEquiv.ofFinrankEq (by simp [F])
+  let B : X → F →L[𝕜] V := fun y ↦ (A y).comp (j : F →L[𝕜] E)
+  have hrange (y : X) : (B y).range = (A y).range :=
+    LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr j.surjective)
+  have hB : ContinuousAt B x := hA.clm_comp continuousAt_const
+  have hB' : ContinuousAt (fun y ↦ ContinuousLinearMap.adjoint (B y)) x :=
+    ContinuousLinearMap.adjoint.continuous.continuousAt.comp hB
+  have hG := (ContinuousLinearMap.isUnit_adjoint_comp_self_iff (B x)).2
+    (hinj.comp j.injective)
+  have hi : ContinuousAt
+      (fun y ↦ Ring.inverse (ContinuousLinearMap.adjoint (B y) ∘L B y)) x := by
+    have h : ContinuousAt (Ring.inverse : (F →L[𝕜] F) → F →L[𝕜] F)
+        (hG.unit : F →L[𝕜] F) := NormedRing.inverse_continuousAt hG.unit
+    rw [hG.unit_spec] at h
+    exact h.comp (f := fun y : X ↦ ContinuousLinearMap.adjoint (B y) ∘L B y)
+      (hB'.clm_comp hB)
+  have hev : ∀ᶠ y in 𝓝 x, Injective (B y) :=
+    hB.preimage_mem_nhds
+      (ContinuousLinearMap.isOpen_injective.mem_nhds (hinj.comp j.injective))
+  refine (hB.clm_comp (hi.clm_comp hB')).congr_of_eventuallyEq ?_
+  filter_upwards [hev] with y hy
+  simp only [← hrange y]
+  exact ContinuousLinearMap.starProjection_range_eq
+    ((ContinuousLinearMap.isUnit_adjoint_comp_self_iff _).2 hy)
+
+end ContinuousAt
 
 section ContDiffAt
 
