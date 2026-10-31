@@ -152,12 +152,7 @@ theorem expAd_symm (x : L) (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) :
     (expAd x hx).symm =
       expAd (-x) (by simpa only [map_neg, Module.End.neg_pow_apply_eq_zero_iff] using hx) := by
   ext y
-  obtain ⟨k, hk⟩ := hx y
-  rw [expAd_apply_eq_sum (x := -x) _ (k := k)
-      (by rwa [map_neg, Module.End.neg_pow_apply_eq_zero_iff]),
-    expAd, LieDerivation.locallyNilpotentExp_symm_apply_eq_sum _ _
-      (by rwa [LieDerivation.coe_ad_apply_eq_ad_apply]),
-    LieDerivation.coe_ad_apply_eq_ad_apply, map_neg]
+  simp only [expAd, LieDerivation.locallyNilpotentExp_symm, map_neg]
 
 /-- **`exp (ad x)` is natural in Lie homomorphisms**: a Lie homomorphism `f` carries
 `exp (ad x) y` to `exp (ad (f x)) (f y)`. The local nilpotence of `ad (f x)` is a hypothesis, since
@@ -167,16 +162,9 @@ theorem _root_.LieHom.map_expAd {L' : Type*} [LieRing L'] [LieAlgebra K L'] [Lie
     (f : L →ₗ⁅K⁆ L') {x : L} (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0)
     (hfx : ∀ y, ∃ k, ((ad K L' (f x)) ^ k) y = 0) (y : L) :
     f (expAd x hx y) = expAd (f x) hfx (f y) := by
-  have hpow (i : ℕ) : ((ad K L' (f x)) ^ i) (f y) = f (((ad K L x) ^ i) y) := by
-    induction i with
-    | zero => rfl
-    | succ i ih =>
-      rw [pow_succ', Module.End.mul_apply, ih, pow_succ', Module.End.mul_apply, ad_apply,
-        ad_apply, f.map_lie]
-  obtain ⟨k, hk⟩ := hx y
-  rw [expAd_apply_eq_sum hx hk, expAd_apply_eq_sum hfx (k := k) (by rw [hpow, hk, map_zero]),
-    map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [hpow, map_rat_smul]
+  simp only [expAd, ← LieEquiv.coe_toLinearEquiv, LieDerivation.toLinearEquiv_locallyNilpotentExp]
+  exact Module.End.map_locallyNilpotentExp _ _ _ f (fun z ↦ by
+    simp only [LieDerivation.coe_ad_apply_eq_ad_apply, LieAlgebra.ad_apply, LieHom.map_lie]) y
 
 /-- The two-term truncation of `exp (ad x)`, valid on a vector killed by two brackets with `x`. -/
 lemma expAd_apply_of_lie_lie_eq_zero {x y : L} (hx : ∀ z, ∃ k, ((ad K L x) ^ k) z = 0)

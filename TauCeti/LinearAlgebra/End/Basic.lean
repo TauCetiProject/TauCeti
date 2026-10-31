@@ -20,9 +20,6 @@ the endomorphism semiring beyond nontriviality itself.
 A vector on which every endomorphism of a list acts by the same scalar `z` is acted on by their
 product through `z ^ l.length` (`Module.End.list_prod_apply_eq_pow_smul`).
 
-The powers of `-f` act as the powers of `f` up to the sign `(-1) ^ n`
-(`Module.End.neg_pow_apply`).
-
 An endomorphism of a torsion-free module over a domain some power of which is a scalar other than
 one has no nonzero fixed vectors (`TauCeti.injective_one_sub_of_pow_eq_smul_one`).
 -/
@@ -69,14 +66,5 @@ theorem list_prod_apply_eq_pow_smul {R M : Type*} [Semiring R] [AddCommMonoid M]
   | cons a l ih =>
     rw [List.prod_cons, Module.End.mul_apply, ih fun a ha ↦ h a (List.mem_cons_of_mem _ ha),
       map_smul, h a List.mem_cons_self, smul_smul, List.length_cons, pow_succ]
-
-/-- The powers of `-f` are the powers of `f` up to sign. -/
-theorem neg_pow_apply {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
-    (f : Module.End R M) (n : ℕ) (x : M) : ((-f) ^ n) x = ((-1 : ℤ) ^ n) • (f ^ n) x := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ', Module.End.mul_apply, ih, LinearMap.neg_apply, map_zsmul, pow_succ' f,
-      Module.End.mul_apply, pow_succ' (-1 : ℤ), neg_one_mul, neg_smul]
 
 end Module.End

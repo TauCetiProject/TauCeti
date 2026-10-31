@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Derivation.Basic
 public import TauCeti.LinearAlgebra.End.Exp
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Algebra.Lie.Basic
 import Mathlib.Tactic.FieldSimp
 
@@ -36,8 +37,10 @@ locally nilpotent, but no single power of it is known to vanish.
 
 ## Main results
 
+* `LieDerivation.pow_toLinearMap_apply_lie`: the Leibniz rule for the powers of `D`.
 * `LieDerivation.locallyNilpotentExp_apply_eq_sum`: the exponential at an element killed by
   `D ^ k` is the exponential series truncated at length `k`.
+* `LieDerivation.locallyNilpotentExp_symm`: the inverse is the exponential of `-D`.
 * `LieDerivation.locallyNilpotentExp_eq_exp`: for nilpotent `D` it is `LieDerivation.exp`.
 
 ## References
@@ -54,8 +57,19 @@ open Finset
 
 namespace LieDerivation
 
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [Module ℚ L]
-  (D : LieDerivation R L L) (hD : ∀ x, ∃ n, (D.toLinearMap ^ n) x = 0)
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] (D : LieDerivation R L L)
+
+/-- **The Leibniz rule for the powers of a Lie derivation**, stated for the powers of its
+underlying endomorphism: `Dⁿ ⁅x, y⁆` is the sum of `(n choose i) • ⁅Dⁱ x, Dʲ y⁆` over `i + j = n`.
+This is Mathlib's `LieDerivation.iterate_apply_lie`, which is stated for iterates of `D`. -/
+theorem pow_toLinearMap_apply_lie (n : ℕ) (x y : L) :
+    (D.toLinearMap ^ n) ⁅x, y⁆ =
+      ∑ ij ∈ antidiagonal n,
+        n.choose ij.1 • ⁅(D.toLinearMap ^ ij.1) x, (D.toLinearMap ^ ij.2) y⁆ := by
+  rw [Module.End.pow_apply, coeFn_coe, D.iterate_apply_lie]
+  simp only [← coeFn_coe, ← Module.End.pow_apply]
+
+variable [Module ℚ L] (hD : ∀ x, ∃ n, (D.toLinearMap ^ n) x = 0)
 
 /-- The exponential of a locally nilpotent derivation preserves the bracket. -/
 private theorem locallyNilpotentExp_lie (x y : L) :
@@ -74,8 +88,7 @@ private theorem locallyNilpotentExp_lie (x y : L) :
     · rw [hxN i h, zero_lie]
     · rw [hyN j h, lie_zero]
   have hxy : (D.toLinearMap ^ (N + N)) ⁅x, y⁆ = 0 := by
-    rw [Module.End.pow_apply, coeFn_coe, D.iterate_apply_lie]
-    simp only [← coeFn_coe, ← Module.End.pow_apply]
+    rw [pow_toLinearMap_apply_lie]
     refine sum_eq_zero fun ij hij ↦ ?_
     rw [mem_antidiagonal] at hij
     rw [hvan ij.1 ij.2 (by omega), smul_zero]
@@ -88,17 +101,14 @@ private theorem locallyNilpotentExp_lie (x y : L) :
       ⁅(D.toLinearMap ^ p.1) x, (D.toLinearMap ^ p.2) y⁆)
     (fun i j h ↦ by rw [hvan i j h, smul_zero])]
   refine sum_congr rfl fun n _ ↦ ?_
-  rw [Module.End.pow_apply, coeFn_coe, D.iterate_apply_lie, smul_sum]
-  simp only [← coeFn_coe, ← Module.End.pow_apply]
+  rw [pow_toLinearMap_apply_lie, smul_sum]
   refine sum_congr rfl fun p hp ↦ ?_
   rw [mem_antidiagonal] at hp
   subst hp
-  rw [← Nat.cast_smul_eq_nsmul ℚ, smul_smul]
+  -- The coefficient identity `((i + j) choose i) / (i + j)! = 1 / (i! j!)`.
+  rw [← Nat.cast_smul_eq_nsmul ℚ, smul_smul, Nat.cast_add_choose]
   congr 1
   field_simp
-  exact_mod_cast (by
-    simpa [Nat.add_comm, Nat.mul_right_comm] using
-      Nat.add_choose_mul_factorial_mul_factorial p.2 p.1)
 
 /-- **The exponential of a locally nilpotent derivation.** If every element of `L` is killed by
 some power of the derivation `D`, the exponential series `∑ (Dⁱ x) / i!` is a finite sum at every
@@ -127,11 +137,21 @@ theorem locallyNilpotentExp_symm_apply_eq_sum {x : L} {k : ℕ} (hk : (D.toLinea
       ∑ i ∈ range k, (i.factorial : ℚ)⁻¹ • ((-D.toLinearMap) ^ i) x :=
   Module.End.locallyNilpotentExp_symm_apply_eq_sum _ hD hk
 
+/-- **The inverse of the exponential is the exponential of `-D`.** -/
+@[simp]
+theorem locallyNilpotentExp_symm :
+    (D.locallyNilpotentExp hD).symm = (-D).locallyNilpotentExp
+      (by simpa only [coe_neg_linearMap, Module.End.neg_pow_apply_eq_zero_iff] using hD) := by
+  ext x
+  obtain ⟨k, hk⟩ := hD x
+  rw [locallyNilpotentExp_symm_apply_eq_sum D hD hk, locallyNilpotentExp_apply_eq_sum (-D) _
+    (by rwa [coe_neg_linearMap, Module.End.neg_pow_apply_eq_zero_iff]), coe_neg_linearMap]
+
 /-- For a nilpotent derivation, the exponential is Mathlib's `LieDerivation.exp`. -/
 theorem locallyNilpotentExp_eq_exp (h : IsNilpotent D.toLinearMap) :
     D.locallyNilpotentExp hD = LieDerivation.exp D h := by
   ext x
-  rw [exp_map_apply, ← Module.End.locallyNilpotentExp_eq_exp _ hD h]
-  rfl
+  rw [exp_map_apply, ← Module.End.locallyNilpotentExp_eq_exp _ hD h, ← LieEquiv.coe_toLinearEquiv,
+    toLinearEquiv_locallyNilpotentExp, LinearEquiv.coe_coe]
 
 end LieDerivation
