@@ -86,6 +86,14 @@ theorem levelParameter_pow :
   rw [levelParameter, levelPowerBasis_gen, ← map_pow, LaurentSeries.Level.parameter_pow]
   exact (levelEquiv K d).commutes (HahnSeries.single 1 1)
 
+/-- The level parameter `t ^ (1 / d)`, viewed in the Puiseux field, is a `d`-th root of the base
+Laurent parameter. -/
+theorem coe_levelParameter_pow :
+    (levelParameter K d : puiseuxField K) ^ (d : ℕ) =
+      algebraMap K⸨X⸩ (puiseuxField K) (HahnSeries.single 1 1) := by
+  rw [← SubmonoidClass.coe_pow, levelParameter_pow]
+  rfl
+
 /-- The minimal polynomial of the actual level parameter is `T ^ d - X`. -/
 theorem minpoly_levelParameter :
     minpoly K⸨X⸩ (levelParameter K d) =

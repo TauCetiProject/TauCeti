@@ -32,6 +32,34 @@ open scoped TensorProduct Pointwise
 
 namespace Submodule
 
+section Congruence
+
+variable {R A : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
+
+/-- Two endomorphisms agreeing on two submodules have the same twisted co-Leibniz term on
+tensors of elements of those submodules, where an auxiliary twist `τ` acts on the left tensor
+factor before `b` is applied to the right tensor factor. -/
+theorem rTensor_add_lTensor_rTensor_congr
+    {b₁ b₂ τ : A →ₗ[R] A}
+    (P Q : Submodule R A) (hP : ∀ z ∈ P, b₁ z = b₂ z)
+    (hQ : ∀ z ∈ Q, b₁ z = b₂ z) (w : P ⊗[R] Q) :
+    LinearMap.rTensor A b₁ (TensorProduct.mapIncl P Q w) +
+        LinearMap.lTensor A b₁
+          (LinearMap.rTensor A τ (TensorProduct.mapIncl P Q w)) =
+      LinearMap.rTensor A b₂ (TensorProduct.mapIncl P Q w) +
+        LinearMap.lTensor A b₂
+          (LinearMap.rTensor A τ (TensorProduct.mapIncl P Q w)) := by
+  induction w using TensorProduct.inductionOn with
+  | tmul u v =>
+      simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype,
+        LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]
+      rw [hP _ u.2, hQ _ v.2]
+  | add u v hu hv =>
+      simp only [map_add]
+      rw [add_add_add_comm, hu, hv, ← add_add_add_comm]
+
+end Congruence
+
 section Map
 
 variable {R A M N : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
