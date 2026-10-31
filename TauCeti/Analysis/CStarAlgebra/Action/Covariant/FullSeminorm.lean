@@ -147,7 +147,7 @@ theorem fullSeminorm_star (f : ConvolutionAlgebra α μ) :
     fullSeminorm α μ (star f) = fullSeminorm α μ f := by
   have key (g : ConvolutionAlgebra α μ) : fullSeminorm α μ (star g) ≤ fullSeminorm α μ g := by
     refine (fullSeminorm_le_iff (apply_nonneg _ g)).2 fun _ _ _ _ P => ?_
-    rw [map_star, norm_star]
+    rw [map_star, _root_.norm_star]
     exact norm_integratedStarAlgHom_le_fullSeminorm P g
   exact le_antisymm (key f) (by simpa using key (star f))
 
