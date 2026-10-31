@@ -167,24 +167,23 @@ abbrev QuasicoherentAlgebra (X : Scheme.{u}) :=
 instance (A : QuasicoherentAlgebra X) : A.obj.X.IsQuasicoherent := A.property
 
 variable (X) in
--- Exposed so that the underlying module of `(QuasicoherentAlgebra.forget X).obj A` is seen to be
--- `A.obj.X`, which statements about the free-forgetful adjunction
--- `TauCeti.AlgebraicGeometry.symmetricAlgebraAdjunction` need in order to typecheck.
 /-- The forgetful functor from quasicoherent commutative `𝒪_X`-algebras to quasicoherent
 sheaves, sending an algebra to its underlying module. -/
-@[expose]
 def QuasicoherentAlgebra.forget : QuasicoherentAlgebra X ⥤ QuasicoherentSheaf X :=
   ObjectProperty.lift _ (ObjectProperty.ι _ ⋙ CommMon.forget X.Modules) fun A ↦ A.property
 
-@[simp]
-theorem QuasicoherentAlgebra.forget_obj_obj (A : QuasicoherentAlgebra X) :
-    ((QuasicoherentAlgebra.forget X).obj A).obj = A.obj.X :=
-  (rfl)
+/-- The underlying module of `(QuasicoherentAlgebra.forget X).obj A` is that of `A`. -/
+def QuasicoherentAlgebra.forgetObjIso (A : QuasicoherentAlgebra X) :
+    ((QuasicoherentAlgebra.forget X).obj A).obj ≅ A.obj.X :=
+  Iso.refl _
 
+/-- Under the identifications `QuasicoherentAlgebra.forgetObjIso`, the forgetful functor sends an
+algebra morphism to its underlying module morphism. -/
 @[simp]
 theorem QuasicoherentAlgebra.forget_map_hom {A A' : QuasicoherentAlgebra X} (f : A ⟶ A') :
-    ((QuasicoherentAlgebra.forget X).map f).hom = f.hom.hom.hom :=
-  (rfl)
+    ((QuasicoherentAlgebra.forget X).map f).hom =
+      (forgetObjIso A).hom ≫ f.hom.hom.hom ≫ (forgetObjIso A').inv :=
+  (Category.id_comp _).symm.trans (Category.comp_id _).symm
 
 /-- Affine schemes over `X`: the structure morphism, not necessarily the scheme, is affine.
 Morphisms are arbitrary scheme morphisms over `X`. -/
