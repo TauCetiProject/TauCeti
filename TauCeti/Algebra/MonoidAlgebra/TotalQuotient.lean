@@ -12,7 +12,9 @@ public import Mathlib.RingTheory.Finiteness.Finsupp
 public import Mathlib.RepresentationTheory.Maschke
 public import Mathlib.RingTheory.Jacobson.Semiprimary
 public import Mathlib.RingTheory.FiniteType
+public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Reduced
+public import TauCeti.Algebra.Regular.NatCast
 public import TauCeti.RingTheory.Localization.Reduced
 public import TauCeti.RingTheory.Localization.FractionRing
 
@@ -141,7 +143,7 @@ additive torsion by a proper ideal has characteristic zero. -/]
 theorem MonoidAlgebra.charZero_quotient_of_isFractionRing {I : Ideal K} (hI : I ≠ ⊤) :
     CharZero (K ⧸ I) :=
   IsFractionRing.charZero_quotient (MonoidAlgebra R M) K
-    (fun _ hn ↦ MonoidAlgebra.natCast_mem_nonZeroDivisors hn) hI
+    (fun _ ↦ TauCeti.natCast_mem_nonZeroDivisors) hI
 
 end CharZero
 

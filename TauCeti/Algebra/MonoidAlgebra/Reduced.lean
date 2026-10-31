@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MonoidAlgebra.MapDomain
-public import Mathlib.Algebra.GroupWithZero.NonZeroDivisors
+public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.Algebra.Ring.IsFormallyReal
 public import Mathlib.RingTheory.Nilpotent.Basic
 import Mathlib.Tactic.Ring
@@ -23,8 +22,7 @@ when `x = 0`.
 If `x ^ 2 = 0`, then `y = x * σ x` satisfies `y * σ y = x ^ 2 * σ x ^ 2 = 0`, so `y = 0` and then
 `x = 0`. Hence `R[G]` is reduced (`MonoidAlgebra.isReduced_of_isFormallyReal`). No finiteness of
 `G` is needed, and `G` may have torsion: for instance `ℤ[G]` is reduced for every commutative
-group `G`. Over any coefficient semiring `R` without additive torsion, positive integers are
-non-zero-divisors of `R[M]` for every monoid `M` (`MonoidAlgebra.natCast_mem_nonZeroDivisors`).
+group `G`.
 
 ## References
 
@@ -34,25 +32,9 @@ non-zero-divisors of `R[M]` for every monoid `M` (`MonoidAlgebra.natCast_mem_non
 
 public section
 
-open scoped nonZeroDivisors
-
 namespace MonoidAlgebra
 
-section Group
-
-variable {R G : Type*} [CommSemiring R] [CommGroup G]
-
-/-- The coefficient of the identity in `x * σ x`, where `σ x` is the image of `x` under the
-involution induced by inversion, is the sum of the squares of the coefficients of `x`. -/
-@[to_additive (dont_translate := R) coeff_mul_mapDomainRingEquiv_neg_zero
-/-- The coefficient of zero in `x * σ x`, where `σ x` is the image of `x` under the involution
-induced by negation, is the sum of the squares of the coefficients of `x`. -/]
-theorem coeff_mul_mapDomainRingEquiv_inv_one (x : MonoidAlgebra R G) :
-    (x * mapDomainRingEquiv R (MulEquiv.inv G) x).coeff 1 =
-      ∑ g ∈ x.coeff.support, x.coeff g * x.coeff g := by
-  simp [coeff_mul_apply_left, Finsupp.sum]
-
-variable [IsFormallyReal R]
+variable {R G : Type*} [CommSemiring R] [IsFormallyReal R] [CommGroup G]
 
 @[to_additive (dont_translate := R) eq_zero_of_coeff_mul_mapDomainRingEquiv_neg_zero]
 private theorem eq_zero_of_coeff_mul_mapDomainRingEquiv_inv_one {x : MonoidAlgebra R G}
@@ -84,21 +66,5 @@ instance isReduced_of_isFormallyReal : IsReduced (MonoidAlgebra R G) := by
     generalize mapDomainRingEquiv R (MulEquiv.inv G) x = y
     simp [show x * y * (y * x) = x ^ 2 * y ^ 2 by ring, hx]
   exact eq_zero_of_coeff_mul_mapDomainRingEquiv_inv_one (by simp [hy])
-
-end Group
-
-/-- Positive integers are non-zero-divisors of a monoid algebra over a semiring without additive
-torsion. -/
-@[to_additive (dont_translate := R)
-/-- Positive integers are non-zero-divisors of an additive monoid algebra over a semiring without
-additive torsion. -/]
-theorem natCast_mem_nonZeroDivisors {R M : Type*} [Semiring R] [IsAddTorsionFree R] [Monoid M]
-    {n : ℕ} (hn : n ≠ 0) : (n : MonoidAlgebra R M) ∈ (MonoidAlgebra R M)⁰ := by
-  have key (x : MonoidAlgebra R M) (hx : n • x = 0) : x = 0 := by
-    ext m
-    exact (nsmul_eq_zero_iff_right hn).mp (by
-      simpa only [coeff_smul_apply, coeff_zero, Finsupp.coe_zero, Pi.zero_apply] using
-        congr(($hx).coeff m))
-  exact ⟨fun x hx ↦ key x (by rwa [nsmul_eq_mul]), fun x hx ↦ key x (by rwa [nsmul_eq_mul'])⟩
 
 end MonoidAlgebra
