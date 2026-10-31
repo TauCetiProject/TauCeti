@@ -45,7 +45,8 @@ track with compact source, it is a closed embedding (`TauCeti.IsCollaredTrack.is
 Not formalized here: that any two concordant knots in connected-sum position are joined by a
 concordance in connected-sum position, an isotopy-extension argument moving a standard arc of the
 annulus onto the strip. That is the step from this construction to the connected sum being well
-defined on concordance classes.
+defined on concordance classes. `TauCeti.KnotTheory.ConnectedSum.BoostConcordance` carries it out
+for concordances which are already the standard strip near the arc `{-i} × ℝ`.
 
 ## Main definitions
 
@@ -60,8 +61,9 @@ defined on concordance classes.
   `TauCeti.SmoothEmbedding.Concordance.IsConnectedSumPosition.final`: the ends of a concordance in
   connected-sum position are knots in connected-sum position.
 * `TauCeti.SmoothEmbedding.Concordance.isConnectedSumPosition_refl`,
-  `TauCeti.SmoothEmbedding.Concordance.IsConnectedSumPosition.symm`: the constant and the reversed
-  concordance are in connected-sum position.
+  `TauCeti.SmoothEmbedding.Concordance.IsConnectedSumPosition.symm`,
+  `TauCeti.SmoothEmbedding.Concordance.IsConnectedSumPosition.trans`: the constant, the reversed
+  and the stacked concordances are in connected-sum position.
 * `TauCeti.SmoothEmbedding.Concordance.connectedSum_refl`,
   `TauCeti.SmoothEmbedding.Concordance.symm_connectedSum`: the connected sum of constant
   concordances is constant, and reversal distributes over the connected sum.
@@ -176,6 +178,32 @@ theorem IsConnectedSumPosition.symm (hF : F.IsConnectedSumPosition ι) :
   inner_pos {p} hp := by
     obtain ⟨z, t⟩ := p
     simpa using hF.inner_pos (p := (z, 1 - t)) hp
+
+/-- The stacked concordance of two concordances in connected-sum position is in connected-sum
+position. -/
+theorem IsConnectedSumPosition.trans {K'' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
+    {G : Concordance K' K''} (hF : F.IsConnectedSumPosition ι) (hG : G.IsConnectedSumPosition ι) :
+    (F.trans G).IsConnectedSumPosition ι where
+  eventuallyEq_prodMap {p} hp := by
+    -- Both halves of the stacked track are read at rescaled times, near which each concordance is
+    -- the standard strip.
+    have hF' := (Continuous.tendsto (f := fun q : Circle × ℝ => (q.1, 3 * q.2)) (by fun_prop)
+      p).eventually (hF.eventuallyEq_prodMap (p := (p.1, 3 * p.2)) hp)
+    have hG' := (Continuous.tendsto (f := fun q : Circle × ℝ => (q.1, 3 * q.2 - 2)) (by fun_prop)
+      p).eventually (hG.eventuallyEq_prodMap (p := (p.1, 3 * p.2 - 2)) hp)
+    filter_upwards [hF', hG'] with q hqF hqG
+    obtain ⟨z, t⟩ := q
+    simp only [Prod.map_apply, id_eq] at hqF hqG
+    rcases le_or_gt t (1 / 2) with ht | ht
+    · rw [trans_apply_of_le _ _ _ ht, hqF]
+      simp
+    · rw [trans_apply_of_lt _ _ _ ht, hqG]
+      simp
+  inner_pos {p} hp := by
+    obtain ⟨z, t⟩ := p
+    rcases le_or_gt t (1 / 2) with ht | ht
+    · simpa [trans_apply_of_le _ _ _ ht] using hF.inner_pos (p := (z, 3 * t)) hp
+    · simpa [trans_apply_of_lt _ _ _ ht] using hG.inner_pos (p := (z, 3 * t - 2)) hp
 
 /-! ### The turned-over second concordance -/
 

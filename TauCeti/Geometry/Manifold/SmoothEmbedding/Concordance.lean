@@ -42,6 +42,8 @@ source is the circle.
   smooth isotopy, as a concordance.
 * `TauCeti.SmoothEmbedding.Concordance.ofSourceDiffeotopy`: the trace of a diffeotopy of the
   source, a concordance from an embedding to its reparametrization by the final diffeomorphism.
+* `TauCeti.SmoothEmbedding.Concordance.ofDiffeotopies`: the trace of a diffeotopy of the target
+  and one of the source run together, a concordance from `f` to `Φ.final ∘ f ∘ Ψ.final`.
 * `TauCeti.SmoothEmbedding.Concordant`: the concordance relation.
 
 ## Main results
@@ -66,8 +68,8 @@ needs the model of `N` to be finite-dimensional. The same criterion for the isot
 requires that assumption in `ofSmoothIsotopy` as well as `trans` and statements depending on them.
 
 The traces of diffeotopies and smooth isotopies are reparametrized by `Real.smoothTransition`,
-which is `C^∞` but not analytic; `ofDiffeotopy`, `ofSourceDiffeotopy` and `ofSmoothIsotopy`
-therefore assume `n ≤ ∞`.
+which is `C^∞` but not analytic; `ofDiffeotopy`, `ofSourceDiffeotopy`, `ofDiffeotopies` and
+`ofSmoothIsotopy` therefore assume `n ≤ ∞`.
 
 ## References
 
@@ -499,6 +501,38 @@ theorem ofSourceDiffeotopy_apply (hn : n ≤ ∞) (Ψ : Diffeotopy I n M)
       (f (Ψ (⟨Real.smoothTransition (2 * p.2 - 1 / 2), Real.smoothTransition.nonneg _,
         Real.smoothTransition.le_one _⟩, p.1)), p.2) := by
   simp [← coe_toSmoothEmbedding, ofSourceDiffeotopy, collaredSmoothTransitionUnit,
+    smoothTransitionUnit]
+
+/-- The **trace of an ambient and a source diffeotopy run together**: for diffeotopies `Φ` of `N`
+and `Ψ` of `M`, the concordance `(x, t) ↦ (Φ (ρ t, f (Ψ (ρ t, x))), t)` from `f` to
+`Φ.final ∘ f ∘ Ψ.final`, where `ρ(t) = Real.smoothTransition (2 * t - 1 / 2)`. Unlike the stacked
+traces of `Φ` and of `Ψ`, every time slice is `Φₛ ∘ f ∘ Ψₛ` for a single time `s`, so a property
+of `f` preserved by all such conjugations holds along the whole concordance. -/
+def ofDiffeotopies (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (Ψ : Diffeotopy I n M)
+    (f : SmoothEmbedding I J n M N) :
+    Concordance f ((f.transDiffeomorph Φ.final).compDiffeomorph Ψ.final) where
+  toSmoothEmbedding := ((f.prodMap SmoothEmbedding.id).compDiffeomorph
+    (traceDiffeomorph Ψ hn)).transDiffeomorph (traceDiffeomorph Φ hn)
+  isCollaredTrack_toSmoothEmbedding :=
+    { exists_pos_apply_eq_left := by
+        refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
+        simp [collaredSmoothTransitionUnit_eq_zero_of_le ht]
+      exists_pos_apply_eq_right := by
+        refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
+        simp [collaredSmoothTransitionUnit_eq_one_of_ge (t := t) (by linarith),
+          Diffeotopy.final_apply]
+      snd_apply_mem_Ioo := fun _ _ ht => by simpa using ht }
+
+/-- The joint trace of an ambient and a source diffeotopy at `(x, t)` applies `Ψ`, then `f`, then
+`Φ`, all at the reparametrized time `Real.smoothTransition (2 * t - 1 / 2)`. -/
+@[simp]
+theorem ofDiffeotopies_apply (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (Ψ : Diffeotopy I n M)
+    (f : SmoothEmbedding I J n M N) (p : M × ℝ) :
+    ofDiffeotopies hn Φ Ψ f p =
+      (Φ (⟨Real.smoothTransition (2 * p.2 - 1 / 2), Real.smoothTransition.nonneg _,
+        Real.smoothTransition.le_one _⟩, f (Ψ (⟨Real.smoothTransition (2 * p.2 - 1 / 2),
+          Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩, p.1))), p.2) := by
+  simp [← coe_toSmoothEmbedding, ofDiffeotopies, collaredSmoothTransitionUnit,
     smoothTransitionUnit]
 
 end Concordance
