@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
@@ -232,16 +233,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   {Ω : Opens E} {v : E} {μ : Measure E} [μ.IsAddHaarMeasure] {u u' : E → F} {ψ : E → ℝ}
   {K : ℝ≥0}
 
-/-- The bumps of outer radius `1 / (n + 1)` and inner radius half of it, used to mollify a
-Lipschitz factor. -/
-private noncomputable def leibnizBump (n : ℕ) : ContDiffBump (0 : E) where
-  rIn := 1 / (2 * (n + 1))
-  rOut := 1 / (n + 1)
-  rIn_pos := by positivity
-  rIn_lt_rOut := by
-    rw [one_div_lt_one_div (by positivity) (by positivity)]
-    linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
-
 /-- **The Leibniz rule for weak directional derivatives with a Lipschitz factor.** If `u'` is a
 weak derivative of `u` in the direction `v` on `Ω` and `ψ` is Lipschitz, then `ψ u` is weakly
 differentiable in the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`, where
@@ -262,11 +253,12 @@ theorem HasWeakLineDerivOn.lipschitzWith_smul (h : HasWeakLineDerivOn μ Ω u u'
     exact (h.locallyIntegrableOn.integrableOn_compact_subset hk hkc).bdd_smul (K * ‖v‖)
       hψ'm.aestronglyMeasurable (Eventually.of_forall hψ'b)
   -- Mollify `ψ` by normalized bumps of radius `1 / (n + 1)`.
-  set ρ : ℕ → ContDiffBump (0 : E) := leibnizBump
+  set ρ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking one_pos
   set ψn : ℕ → E → ℝ := fun n => (ρ n).normed μ ⋆[lsmul ℝ ℝ, μ] ψ
-  have hρ : Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
+  have hρ : Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0) :=
+    ContDiffBump.tendsto_rOut_shrinking one_pos
   have h'ρ : ∀ᶠ n in atTop, (ρ n).rOut ≤ 2 * (ρ n).rIn :=
-    Eventually.of_forall fun n => le_of_eq (by simp only [ρ, leibnizBump]; field_simp)
+    Eventually.of_forall fun n => (ContDiffBump.rOut_shrinking_eq_two_mul_rIn one_pos n).le
   have hsmooth : ∀ n, ContDiff ℝ ∞ (ψn n) := fun n =>
     (ρ n).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ)
       (ρ n).contDiff_normed hψ.continuous.locallyIntegrable

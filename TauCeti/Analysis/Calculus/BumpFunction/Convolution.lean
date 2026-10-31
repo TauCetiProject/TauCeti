@@ -17,7 +17,8 @@ upgrades the pointwise convergence of Mathlib's
 simultaneous approximation of the derivatives of a compactly supported smooth function.
 
 The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
-`closedBall 0 ρ.rOut + tsupport g`.
+`closedBall 0 ρ.rOut + tsupport g`, and provides the standard shrinking sequence of bumps
+`ContDiffBump.shrinking`, of radii `R / (n + 1)` and `R / (2 * (n + 1))`.
 -/
 
 public section
@@ -26,6 +27,45 @@ open ContinuousLinearMap MeasureTheory Filter Metric
 open scoped Convolution Topology Pointwise
 
 namespace ContDiffBump
+
+section Shrinking
+
+variable {X : Type*} {c : X} {R : ℝ}
+
+/-- The bumps of outer radius `R / (n + 1)` and inner radius half of that. Their radii shrink to
+zero while the outer radius stays twice the inner one, as Lebesgue differentiation along
+normalized bump convolutions requires. -/
+@[expose] noncomputable def shrinking (hR : 0 < R) (n : ℕ) : ContDiffBump c where
+  rIn := R / (2 * (n + 1))
+  rOut := R / (n + 1)
+  rIn_pos := by positivity
+  rIn_lt_rOut := div_lt_div_of_pos_left hR (by positivity) (by linarith)
+
+/-- The inner radius of `ContDiffBump.shrinking`. -/
+@[simp]
+theorem rIn_shrinking (hR : 0 < R) (n : ℕ) :
+    (shrinking hR n : ContDiffBump c).rIn = R / (2 * (n + 1)) :=
+  rfl
+
+/-- The outer radius of `ContDiffBump.shrinking`. -/
+@[simp]
+theorem rOut_shrinking (hR : 0 < R) (n : ℕ) :
+    (shrinking hR n : ContDiffBump c).rOut = R / (n + 1) :=
+  rfl
+
+/-- The outer radius of `ContDiffBump.shrinking` is twice its inner radius. -/
+theorem rOut_shrinking_eq_two_mul_rIn (hR : 0 < R) (n : ℕ) :
+    (shrinking hR n : ContDiffBump c).rOut = 2 * (shrinking hR n : ContDiffBump c).rIn := by
+  simp only [rOut_shrinking, rIn_shrinking]
+  field_simp
+
+/-- The radii of `ContDiffBump.shrinking` tend to zero. -/
+theorem tendsto_rOut_shrinking (hR : 0 < R) :
+    Tendsto (fun n : ℕ => (shrinking hR n : ContDiffBump c).rOut) atTop (𝓝 0) := by
+  simp only [rOut_shrinking]
+  exact tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
+
+end Shrinking
 
 variable {G F : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   [FiniteDimensional ℝ G] [MeasurableSpace G] [BorelSpace G]

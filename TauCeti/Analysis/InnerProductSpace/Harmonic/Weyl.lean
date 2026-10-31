@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Convergence
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -287,14 +288,6 @@ private theorem dist_setAverage_ball_le_of_harmonicOnNhd {U f : E → ℝ} {y : 
         rw [eLpNorm_one_eq_lintegral_enorm hUf.aestronglyMeasurable]
         exact integral_norm_eq_lintegral_enorm hUf.aestronglyMeasurable
 
-/-- The normalized bumps of outer radius `R / (n + 1)` and inner radius half of that, which shrink
-to the origin. -/
-private noncomputable def shrinkingBump {R : ℝ} (hR : 0 < R) (n : ℕ) : ContDiffBump (0 : E) where
-  rIn := R / (2 * (n + 1))
-  rOut := R / (n + 1)
-  rIn_pos := by positivity
-  rIn_lt_rOut := div_lt_div_of_pos_left hR (by positivity) (by linarith)
-
 /-- **Weyl's lemma near a point.** If `u` is weakly harmonic on `Ω` and
 `closedBall x (3 * R) ⊆ Ω`, then `u` agrees almost everywhere on `ball x R` with a function
 harmonic on `ball x R`. -/
@@ -307,11 +300,10 @@ private theorem exists_harmonicOnNhd_ball_ae_eq (hu : LocallyIntegrableOn u Ω �
   have hf : Integrable f μ :=
     (hu.integrableOn_compact_subset hxΩ (isCompact_closedBall x _)).integrable_indicator
       measurableSet_closedBall
-  set φ : ℕ → ContDiffBump (0 : E) := shrinkingBump hR
+  set φ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking hR
   have hφR : ∀ n, (φ n).rOut ≤ R := fun n ↦
     div_le_self hR.le (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
-  have hφ0 : Tendsto (fun n ↦ (φ n).rOut) atTop (𝓝 0) :=
-    tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
+  have hφ0 : Tendsto (fun n ↦ (φ n).rOut) atTop (𝓝 0) := ContDiffBump.tendsto_rOut_shrinking hR
   set U : ℕ → E → ℝ := fun n ↦ (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] f
   -- Each mollification is harmonic on `ball x (2R)`, where it only sees `u` on `K ⊆ Ω`.
   have hsub : ∀ n, ∀ y ∈ ball x (2 * R), closedBall y (φ n).rOut ⊆ ball x (3 * R) :=
@@ -344,9 +336,7 @@ private theorem exists_harmonicOnNhd_ball_ae_eq (hu : LocallyIntegrableOn u Ω �
     hunif.tendstoLocallyUniformlyOn, ?_⟩
   -- By Lebesgue differentiation, `U n → f` almost everywhere, so `h = f = u` a.e. on `ball x R`.
   have hae := ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable (μ := μ) (K := 2) hφ0
-    (Eventually.of_forall fun n ↦ le_of_eq (by
-      simp only [φ, shrinkingBump]
-      field_simp))
+    (Eventually.of_forall fun n ↦ (ContDiffBump.rOut_shrinking_eq_two_mul_rIn hR n).le)
     hf.locallyIntegrable
   rw [EventuallyEq, ae_restrict_iff' measurableSet_ball]
   filter_upwards [hae] with y hy hyx
