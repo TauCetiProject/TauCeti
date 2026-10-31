@@ -41,6 +41,8 @@ sum `-2`, because its form takes the value `1/2` on the three nonzero elements o
 ## Main declarations
 
 * `TauCeti.FiniteQuadraticModule.gaussSign_dyadicCyclic`: `sign q_θ^{(2)}(2^k) = θ + 4kω(θ)`.
+* `TauCeti.FiniteQuadraticModule.gaussSign_dyadicCyclic_one_eq_one_or_eq_neg_one`: in particular
+  `sign q_θ^{(2)}(2) = ±1`.
 * `TauCeti.FiniteQuadraticModule.gaussSign_dyadicU` and
   `TauCeti.FiniteQuadraticModule.gaussSum_dyadicU`: `sign u^{(2)}(2^k) = 0` and its Gauss sum
   is `2^k`.
@@ -93,17 +95,6 @@ private theorem intCast_sq_add_mul_add_sq {m : ℕ} (a b : ℤ) :
 private theorem two_zsmul_intCast {m : ℕ} (j : ℤ) :
     (2 : ℤ) • (j : ZMod m) = ((2 * j : ℤ) : ZMod m) := by
   rw [zsmul_eq_mul, Int.cast_mul]
-
-/-- `q_θ^{(2)}(2^k)` has `2^k` elements. Its carrier is `ℤ/2^k` by definition; this is the only
-place below where that representation is used to count it. -/
-private theorem natCard_dyadicCyclic [NeZero k] (θ : ℤ) : Nat.card (dyadicCyclic k θ) = 2 ^ k :=
-  Nat.card_zmod (2 ^ k)
-
-/-- `v^{(2)}(2^k)` has `2^k · 2^k` elements. Its carrier is `(ℤ/2^k)²` by definition; this is the
-only place below where that representation is used to count it. -/
-private theorem natCard_dyadicV : Nat.card (dyadicV k) = 2 ^ k * 2 ^ k := by
-  rw [show Nat.card (dyadicV k) = Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) from rfl, Nat.card_prod,
-    Nat.card_zmod]
 
 variable {k} in
 /-- The Gauss-sum invariant of `q_θ^{(2)}(2^{k+2})` is that of `q_θ^{(2)}(2^k)`, for odd `θ`
@@ -375,6 +366,38 @@ theorem gaussSign_dyadicCyclic [NeZero k] {θ : ℤ} (hθ : Odd θ) :
     (dyadicCyclic k θ).gaussSign = ((θ + 4 * k * ((θ ^ 2 - 1) / 8) : ℤ) : ZMod 8) := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (NeZero.ne k)
   exact gaussSign_dyadicCyclic_add_one hθ j
+
+/-- **The Gauss-sum invariant of `q_θ^{(2)}(2)` is `±1`** for odd `θ`: it is `1` for
+`θ ≡ 1 (mod 4)` and `-1` for `θ ≡ 3 (mod 4)`. -/
+theorem gaussSign_dyadicCyclic_one_eq_one_or_eq_neg_one {θ : ℤ} (hθ : Odd θ) :
+    (dyadicCyclic 1 θ).gaussSign = 1 ∨ (dyadicCyclic 1 θ).gaussSign = -1 := by
+  rw [gaussSign_dyadicCyclic (k := 1) hθ]
+  obtain ⟨t, rfl⟩ := hθ
+  -- Write `θ = 8m + 2j + 1` with `0 ≤ j < 4`; then `(θ² - 1) / 8 = 8m² + 2m(2j + 1) + j(j + 1)/2`.
+  obtain ⟨m, j, hj0, hj4, rfl⟩ : ∃ m j : ℤ, 0 ≤ j ∧ j < 4 ∧ t = 4 * m + j :=
+    ⟨t / 4, t % 4, Int.emod_nonneg _ (by norm_num), Int.emod_lt_of_pos _ (by norm_num),
+      by omega⟩
+  have h8 : (8 : ZMod 8) = 0 := rfl
+  have hdiv (c : ℤ) (h : (2 * (4 * m + j) + 1) ^ 2 - 1 = 8 * c) :
+      ((2 * (4 * m + j) + 1) ^ 2 - 1) / 8 = c := by
+    rw [h, Int.mul_ediv_cancel_left _ (by norm_num)]
+  interval_cases j
+  · rw [hdiv (8 * m ^ 2 + 2 * m) (by ring)]
+    left
+    push_cast
+    linear_combination (4 * m ^ 2 + 2 * m : ZMod 8) * h8
+  · rw [hdiv (8 * m ^ 2 + 6 * m + 1) (by ring)]
+    right
+    push_cast
+    linear_combination (4 * m ^ 2 + 4 * m + 1 : ZMod 8) * h8
+  · rw [hdiv (8 * m ^ 2 + 10 * m + 3) (by ring)]
+    left
+    push_cast
+    linear_combination (4 * m ^ 2 + 6 * m + 2 : ZMod 8) * h8
+  · rw [hdiv (8 * m ^ 2 + 14 * m + 6) (by ring)]
+    right
+    push_cast
+    linear_combination (4 * m ^ 2 + 8 * m + 4 : ZMod 8) * h8
 
 /-- **The Gauss-sum invariant of `v^{(2)}(2^k)` is `4k`.** This is Nikulin's value
 `sign v^{(2)}(2^k) ≡ 4k (mod 8)`; it also holds at `k = 0`, where the module is trivial. -/

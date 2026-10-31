@@ -91,9 +91,10 @@ pairing vanishes, while its Gauss sum is `(1 + i)² = 2i ≠ 2`, so it is not me
   uniqueness `TauCeti.FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq`.
 * `TauCeti.FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq_mul`: nondegenerate modules whose
   Gauss sums differ by a nonnegative real factor have the same invariant.
-* `TauCeti.FiniteQuadraticModule.gaussSign_prod`, `TauCeti.FiniteQuadraticModule.gaussSign_neg`
-  and `TauCeti.FiniteQuadraticModule.gaussSign_eq_zero_of_isMetabolic`: additivity, behaviour under
-  negation, and vanishing on metabolic modules.
+* `TauCeti.FiniteQuadraticModule.gaussSign_prod`, `TauCeti.FiniteQuadraticModule.gaussSign_pi`,
+  `TauCeti.FiniteQuadraticModule.gaussSign_neg` and
+  `TauCeti.FiniteQuadraticModule.gaussSign_eq_zero_of_isMetabolic`: additivity over orthogonal sums,
+  behaviour under negation, and vanishing on metabolic modules.
 
 ## References
 
@@ -569,6 +570,18 @@ theorem gaussSign_prod {B : FiniteQuadraticModule} (hA : A.IsNondegenerate)
   rw [gaussSum_prod, hA.gaussSum_eq, hB.gaussSum_eq, map_add, AddChar.map_add_eq_mul, Nat.card_prod,
     Nat.cast_mul, Real.sqrt_mul (Nat.cast_nonneg _), ofReal_mul]
   ring
+
+/-- **The Gauss-sum invariant is additive** over orthogonal sums of finite families of
+nondegenerate modules. -/
+theorem gaussSign_pi {ι : Type*} [Fintype ι] (B : ι → FiniteQuadraticModule)
+    (hB : ∀ i, (B i).IsNondegenerate) : (pi B).gaussSign = ∑ i, (B i).gaussSign := by
+  classical
+  refine gaussSign_eq_of_gaussSum_eq _ ?_
+  have hexp := map_prod expCircle.toMonoidHom
+    (fun i ↦ Multiplicative.ofAdd (ZMod.toRatAddCircle 8 (B i).gaussSign)) Finset.univ
+  simp only [AddChar.toMonoidHom_apply, ← ofAdd_sum, toAdd_ofAdd, ← map_sum] at hexp
+  rw [gaussSum_pi, Finset.prod_congr rfl fun i _ ↦ (hB i).gaussSum_eq, Finset.prod_mul_distrib,
+    hexp, Nat.card_pi, Nat.cast_prod, Real.sqrt_prod _ fun i _ ↦ Nat.cast_nonneg _, ofReal_prod]
 
 /-- Negating the quadratic form negates the Gauss-sum invariant. -/
 @[simp]
