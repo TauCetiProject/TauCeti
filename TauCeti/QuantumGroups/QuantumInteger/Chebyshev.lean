@@ -38,7 +38,7 @@ index by one, and transfers the polynomial identities of
 * `TauCeti.qInt_two_left`, `TauCeti.qInt_neg_two_left`: at `δ = 2` and `δ = -2`, `[n]` is `n` and
   `(-1)^(n+1) n`; in characteristic zero these never vanish for `n ≥ 1`, while in characteristic
   `p` they vanish at `n = p`.
-* `TauCeti.map_qInt`: quantum integers commute with ring homomorphisms.
+* `RingHom.map_qInt`: quantum integers commute with ring homomorphisms.
 
 ## References
 
@@ -122,10 +122,18 @@ theorem qInt_neg_two_left (n : ℕ) : qInt R (-2) n = (-1) ^ (n + 1) * n := by
   · simp
   · simp [qInt_def, pow_succ]
 
+end TauCeti
+
+namespace RingHom
+
+open TauCeti
+
+variable {R R' : Type*} [CommRing R] [CommRing R']
+
 /-- Quantum integers commute with ring homomorphisms: `f [n]_δ = [n]_{f δ}`. -/
 @[simp]
-theorem map_qInt {R' : Type*} [CommRing R'] (f : R →+* R') (δ : R) (n : ℕ) :
+theorem map_qInt (f : R →+* R') (δ : R) (n : ℕ) :
     f (qInt R δ n) = qInt R' (f δ) n := by
   rw [qInt_def, qInt_def, ← eval_map_apply, map_S]
 
-end TauCeti
+end RingHom
