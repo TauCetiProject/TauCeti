@@ -50,6 +50,15 @@ Hahn series with real exponents.
   zero, at any slope.
 * `Polynomial.initialPolynomial_monomial`: the initial polynomial of `a Yⁿ` is `lc(a) Yⁿ`.
 * `Polynomial.initialPolynomial_mul`: initial polynomials are multiplicative.
+* `Polynomial.coeff_initialPolynomial_eq_ite_forall_le`: the coefficients of the initial
+  polynomial in terms of the orders of the coefficients.
+* `Polynomial.newtonPolygon_map_expand` and `Polynomial.newtonSlopes_map_expand`: the
+  ramification `X ↦ X ^ q` of the coefficients multiplies the Newton polygon and its slopes by
+  `q`.
+* `Polynomial.initialPolynomial_map_expand`: after that ramification, the initial polynomial at
+  slope `q σ` is the initial polynomial of `P` at slope `σ`.
+* `Polynomial.initialPolynomial_comp_C_mul_X`: the rescaling `Y ↦ c Y` shifts the slope by
+  `ord(c)` and substitutes `lc(c) Y` in the initial polynomial.
 
 ## References
 
@@ -94,6 +103,33 @@ theorem coeff_initialPolynomial (P : R⸨X⸩[X]) (σ : ℝ) (n : ℕ) :
   · intro hn
     rw [notMem_support_iff.mp hn]
     split_ifs <;> simp
+
+open scoped Classical in
+/-- The `n`-th coefficient of the initial polynomial at slope `σ`, in terms of orders: it is the
+leading coefficient of `aₙ` when `ord(aₙ) - σ n ≤ ord(aₘ) - σ m` for every nonzero coefficient
+`aₘ`, and zero otherwise. For `aₙ = 0` both branches vanish. -/
+theorem coeff_initialPolynomial_eq_ite_forall_le (P : R⸨X⸩[X]) (σ : ℝ) (n : ℕ) :
+    (P.initialPolynomial σ).coeff n =
+      if ∀ m, P.coeff m ≠ 0 →
+          ((P.coeff n).order : ℝ) - σ * n ≤ (P.coeff m).order - σ * m then
+        (P.coeff n).leadingCoeff
+      else 0 := by
+  rw [coeff_initialPolynomial]
+  by_cases hn : P.coeff n = 0
+  · simp [hn]
+  have key {m : ℕ} (hm : P.coeff m ≠ 0) : (realAddVal R (P.coeff m)).toEReal -
+      ((σ * m : ℝ) : EReal) = (((P.coeff m).order - σ * m : ℝ) : EReal) := by
+    rw [realAddVal_of_ne_zero hm, WithTop.toEReal_coe, ← EReal.coe_sub]
+  -- The tilted height at `n` is the infimum of all tilted heights exactly when it is the least.
+  refine if_congr ⟨fun h m hm => ?_, fun h => ?_⟩ rfl rfl
+  · have hle := supportingValue_le (fun m => realAddVal R (P.coeff m)) σ m
+    rwa [← h, key hn, key hm, EReal.coe_le_coe_iff] at hle
+  · refine le_antisymm (le_supportingValue_iff.mpr fun m => ?_) (supportingValue_le _ σ n)
+    by_cases hm : P.coeff m = 0
+    · rw [hm, AddValuation.map_zero, WithTop.toEReal_top, EReal.top_sub_coe]
+      exact le_top
+    · rw [key hn, key hm, EReal.coe_le_coe_iff]
+      exact h m hm
 
 /-- The initial polynomial of the zero polynomial is zero. -/
 @[simp]
@@ -290,5 +326,64 @@ theorem initialPolynomialHom_apply (P : R⸨X⸩[X]) (σ : ℝ) :
 theorem initialPolynomial_pow (P : R⸨X⸩[X]) (k : ℕ) (σ : ℝ) :
     (P ^ k).initialPolynomial σ = P.initialPolynomial σ ^ k :=
   map_pow (initialPolynomialHom R σ) P k
+
+/-! ### Ramified substitution and rescaling -/
+
+section Ramified
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- The ramification `X ↦ X ^ q` of the coefficients multiplies the Newton polygon by `q`. -/
+theorem newtonPolygon_map_expand (P : R⸨X⸩[X]) (q : ℕ+) :
+    (P.map (LaurentSeries.expand R q : R⸨X⸩ →+* R⸨X⸩)).newtonPolygon (realAddVal R) =
+      fun n => (P.newtonPolygon (realAddVal R) n).map ((q : ℝ) * ·) :=
+  P.newtonPolygon_map_eq_map_mul _ _ (by positivity) (realAddVal_expand q)
+
+/-- The ramification `X ↦ X ^ q` of the coefficients multiplies every finite slope by `q`. -/
+theorem newtonSlopes_map_expand (P : R⸨X⸩[X]) (q : ℕ+) :
+    (P.map (LaurentSeries.expand R q : R⸨X⸩ →+* R⸨X⸩)).newtonSlopes (realAddVal R) =
+      (P.newtonSlopes (realAddVal R)).map ((q : ℝ) * ·) :=
+  P.newtonSlopes_map_eq_map_mul _ _ (by positivity) (realAddVal_expand q)
+
+/-- The ramification `X ↦ X ^ q` of the coefficients does not change initial polynomials, once
+the slope is multiplied by `q`: the initial polynomial of the ramified polynomial at slope `q σ`
+is the initial polynomial of `P` at slope `σ`. -/
+theorem initialPolynomial_map_expand (P : R⸨X⸩[X]) (q : ℕ+) (σ : ℝ) :
+    (P.map (LaurentSeries.expand R q : R⸨X⸩ →+* R⸨X⸩)).initialPolynomial (q * σ) =
+      P.initialPolynomial σ := by
+  classical
+  ext n
+  simp only [coeff_initialPolynomial_eq_ite_forall_le, coeff_map, RingHom.coe_coe,
+    LaurentSeries.order_expand, map_ne_zero_iff _ (LaurentSeries.expand_injective q)]
+  refine if_congr (forall_congr' fun m => imp_congr_right fun _ => ?_)
+    (LaurentSeries.leadingCoeff_expand q _) rfl
+  have hq : (0 : ℝ) < q := by positivity
+  push_cast
+  constructor <;> intro h <;> nlinarith
+
+/-- Substituting `c Y` for `Y`, with `c ≠ 0`, shifts the slopes by `ord(c)` and rescales the
+initial polynomial by the leading coefficient of `c`: the initial polynomial of `P(c Y)` at
+slope `σ` is `Pσ'(lc(c) Y)`, where `Pσ'` is the initial polynomial of `P` at `σ - ord(c)`. -/
+theorem initialPolynomial_comp_C_mul_X (P : R⸨X⸩[X]) {c : R⸨X⸩} (hc : c ≠ 0) (σ : ℝ) :
+    (P.comp (C c * X)).initialPolynomial σ =
+      (P.initialPolynomial (σ - c.order)).comp (C c.leadingCoeff * X) := by
+  classical
+  ext n
+  rw [comp_C_mul_X_coeff, coeff_initialPolynomial_eq_ite_forall_le,
+    coeff_initialPolynomial_eq_ite_forall_le]
+  by_cases hn : P.coeff n = 0
+  · simp [hn]
+  simp only [comp_C_mul_X_coeff, ite_mul, zero_mul]
+  refine if_congr (forall_congr' fun m => ?_)
+    (by rw [HahnSeries.leadingCoeff_mul, TauCeti.hahnSeries_leadingCoeff_pow]) rfl
+  by_cases hm : P.coeff m = 0
+  · simp [hm]
+  simp only [ne_eq, mul_eq_zero, hm, pow_eq_zero_iff', hc, false_and, or_self, not_false_eq_true,
+    order_mul hn (pow_ne_zero n hc), order_mul hm (pow_ne_zero m hc), order_pow, nsmul_eq_mul,
+    forall_const]
+  push_cast
+  constructor <;> intro h <;> linarith
+
+end Ramified
 
 end Polynomial

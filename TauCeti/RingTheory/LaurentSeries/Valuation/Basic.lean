@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.HahnSeries.Valuation
 public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.LaurentSeries.Ramified
 
 /-!
 # The real order valuation on Laurent series
@@ -26,6 +27,8 @@ coefficient heights, so this lets it apply to polynomials over `R⸨X⸩`.
 * `LaurentSeries.realAddVal_eq_top_iff`: only zero has infinite valuation.
 * `LaurentSeries.realAddVal_le_of_coeff_ne_zero`: a nonzero coefficient at `k` bounds the
   valuation by `k`.
+* `LaurentSeries.realAddVal_expand`: the ramification `X ↦ X ^ d` multiplies the valuation by
+  `d`.
 -/
 
 public section
@@ -74,5 +77,14 @@ theorem realAddVal_le_of_coeff_ne_zero {f : R⸨X⸩} {k : ℤ} (hk : f.coeff k 
     realAddVal R f ≤ ((k : ℝ) : WithTop ℝ) := by
   rw [realAddVal_of_ne_zero (ne_zero_of_coeff_ne_zero hk), WithTop.coe_le_coe, Int.cast_le]
   exact order_le_of_coeff_ne_zero hk
+
+/-- The ramification `X ↦ X ^ d` multiplies the valuation by `d`. -/
+theorem realAddVal_expand {R : Type*} [CommRing R] [IsDomain R] (d : ℕ+) (f : R⸨X⸩) :
+    realAddVal R (expand R d f) = (realAddVal R f).map ((d : ℝ) * ·) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rw [realAddVal_of_ne_zero hf, realAddVal_of_ne_zero
+    ((map_ne_zero_iff _ (expand_injective d)).mpr hf), order_expand, WithTop.map_coe]
+  norm_cast
 
 end LaurentSeries
