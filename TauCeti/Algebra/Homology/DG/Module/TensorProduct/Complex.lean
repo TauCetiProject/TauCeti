@@ -20,6 +20,13 @@ complex. Its homogeneous pure tensors have differential
 The construction combines the quotient grading with the existing balanced differential and
 `gradedCochainComplex`. It is underived and requires no flatness assumption.
 
+Equivariant degree-zero chain maps in the two factors induce a chain map of balanced tensor
+complexes (`TauCeti.BalancedTensorProduct.cochainComplexMap`), sending `m ⊗ n` to `f(m) ⊗ g(n)`;
+there is no Koszul sign because both maps have degree zero. The maps are supplied as ground-ring
+linear maps with equivariance, degree, and differential compatibility proofs, so the
+construction applies to module and bimodule morphisms alike. Identity and composition agree with
+the corresponding operations on cochain complexes.
+
 ## References
 
 * B. Keller, *Deriving DG categories*, Section 6.1.
@@ -161,5 +168,117 @@ theorem cochainComplex_d_apply (hM : IsDGRightModule hA ℳ dM)
       BalancedTensorProduct R A M N) = differential hM hN z := by
   unfold cochainComplex
   rw [gradedCochainComplex_d_apply]
+
+end TauCeti.BalancedTensorProduct
+
+/-! ### Maps of balanced tensor complexes -/
+
+namespace TauCeti.BalancedTensorProduct
+
+open CategoryTheory MulOpposite
+
+universe uR uA u
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {dA : A →ₗ[R] A}
+  {hA : IsDGAlgebra 𝒜 dA}
+  {M N M' N' : Type u}
+  [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
+  [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+  [AddCommGroup M'] [Module R M'] [Module Aᵐᵒᵖ M'] [IsScalarTower R Aᵐᵒᵖ M']
+  [AddCommGroup N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
+  {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N}
+  {ℳ' : ℤ → Submodule R M'} {𝒩' : ℤ → Submodule R N'}
+  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+  [DirectSum.Decomposition ℳ'] [DirectSum.Decomposition 𝒩']
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+  [SetLike.GradedSMul 𝒜 𝒩]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ']
+  [SetLike.GradedSMul 𝒜 𝒩']
+  {dM : M →ₗ[R] M} {dN : N →ₗ[R] N}
+  {dM' : M' →ₗ[R] M'} {dN' : N' →ₗ[R] N'}
+  (hM : IsDGRightModule hA ℳ dM) (hN : IsDGLeftModule hA 𝒩 dN)
+  (hM' : IsDGRightModule hA ℳ' dM') (hN' : IsDGLeftModule hA 𝒩' dN')
+
+attribute [local instance] tensorGradedRight tensorGradedLeft
+
+/-- Equivariant degree-zero chain maps induce a map of ordinary balanced tensor complexes,
+sending `m ⊗ n` to `f m ⊗ g n`. -/
+noncomputable def cochainComplexMap (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hg : ∀ (a : A) n, g (a • n) = a • g n)
+    (hf₀ : LinearMap.IsHomogeneous f ℳ ℳ' 0) (hg₀ : LinearMap.IsHomogeneous g 𝒩 𝒩' 0)
+    (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
+    cochainComplex hM hN ⟶ cochainComplex hM' hN' :=
+  gradedCochainComplexHom (map f g hf hg) (isHomogeneous_map_grading f g hf hg hf₀ hg₀)
+    (differential_naturality hM hN hM' hN' f g hf hg hf₀ hfd hgd)
+
+variable (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+  (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hg : ∀ (a : A) n, g (a • n) = a • g n)
+  (hf₀ : LinearMap.IsHomogeneous f ℳ ℳ' 0) (hg₀ : LinearMap.IsHomogeneous g 𝒩 𝒩' 0)
+  (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN)
+
+/-- In the canonical identifications of the complex terms with their degree pieces,
+the induced map acts by the ordinary balanced tensor map. -/
+@[simp]
+theorem cochainComplexMap_f_apply (p : ℤ)
+    (z : (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+      (InternalGrading.ofDecomposition 𝒩)).piece p) :
+    (eqToHom (cochainComplex_X hM' hN' p)
+      ((cochainComplexMap hM hN hM' hN' f g hf hg hf₀ hg₀ hfd hgd).f p
+        ((eqToHom (cochainComplex_X hM hN p).symm) z)) :
+      BalancedTensorProduct R A M' N') = map f g hf hg z := by
+  unfold cochainComplexMap cochainComplex
+  exact gradedCochainComplexHom_f_apply _ _ _ p z
+
+/-- Tensoring the identity maps gives the identity chain map. -/
+@[simp]
+theorem cochainComplexMap_id :
+    cochainComplexMap hM hN hM hN LinearMap.id LinearMap.id
+      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+      (LinearMap.isHomogeneous_id ℳ) (LinearMap.isHomogeneous_id 𝒩) rfl rfl =
+        𝟙 (cochainComplex hM hN) := by
+  unfold cochainComplexMap cochainComplex
+  rw [← gradedCochainComplexHom_id]
+  congr 1
+  exact map_id
+
+section Composition
+
+variable {M'' N'' : Type u}
+  [AddCommGroup M''] [Module R M''] [Module Aᵐᵒᵖ M''] [IsScalarTower R Aᵐᵒᵖ M'']
+  [AddCommGroup N''] [Module R N''] [Module A N''] [IsScalarTower R A N'']
+  {ℳ'' : ℤ → Submodule R M''} {𝒩'' : ℤ → Submodule R N''}
+  [DirectSum.Decomposition ℳ''] [DirectSum.Decomposition 𝒩'']
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ'']
+  [SetLike.GradedSMul 𝒜 𝒩'']
+  {dM'' : M'' →ₗ[R] M''} {dN'' : N'' →ₗ[R] N''}
+  (hM'' : IsDGRightModule hA ℳ'' dM'') (hN'' : IsDGLeftModule hA 𝒩'' dN'')
+  (f' : M' →ₗ[R] M'') (g' : N' →ₗ[R] N'')
+  (hf' : ∀ (a : A) m, f' (op a • m) = op a • f' m)
+  (hg' : ∀ (a : A) n, g' (a • n) = a • g' n)
+  (hf'₀ : LinearMap.IsHomogeneous f' ℳ' ℳ'' 0)
+  (hg'₀ : LinearMap.IsHomogeneous g' 𝒩' 𝒩'' 0)
+  (hf'd : dM'' ∘ₗ f' = f' ∘ₗ dM') (hg'd : dN'' ∘ₗ g' = g' ∘ₗ dN')
+
+/-- Tensoring preserves composition of degree-zero equivariant chain maps.
+
+The simp rule combines induced maps, so the intermediate DG-module data can be inferred
+from the composition. -/
+@[simp ←]
+theorem cochainComplexMap_comp :
+    cochainComplexMap hM hN hM'' hN'' (f' ∘ₗ f) (g' ∘ₗ g)
+      (fun a m ↦ by simp only [LinearMap.comp_apply, hf, hf'])
+      (fun a n ↦ by simp only [LinearMap.comp_apply, hg, hg'])
+      (by simpa only [add_zero] using hf'₀.comp hf₀)
+      (by simpa only [add_zero] using hg'₀.comp hg₀)
+      (LinearMap.comp_comm_comp hf'd hfd) (LinearMap.comp_comm_comp hg'd hgd) =
+        cochainComplexMap hM hN hM' hN' f g hf hg hf₀ hg₀ hfd hgd ≫
+          cochainComplexMap hM' hN' hM'' hN'' f' g' hf' hg' hf'₀ hg'₀ hf'd hg'd := by
+  unfold cochainComplexMap cochainComplex
+  rw [← gradedCochainComplexHom_comp]
+  congr 1
+  exact map_comp f g f' g' hf hg hf' hg'
+
+end Composition
 
 end TauCeti.BalancedTensorProduct

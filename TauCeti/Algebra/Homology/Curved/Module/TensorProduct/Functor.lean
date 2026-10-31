@@ -24,8 +24,9 @@ functor of `M`.
   chain maps. Hence the functor descends to a functor from the curved homotopy category to
   Mathlib's homotopy category of cochain complexes.
 
-Curved modules have no cohomology, so the second functor is the meaningful one: it is the
-underived tensor product `- ⊗_A N` on curved homotopy categories, with no flatness hypothesis.
+Curved modules have no cohomology in general (`dM ∘ dM` need not vanish), so the second
+functor is the meaningful one: it is the underived tensor product `- ⊗_A N` on curved homotopy
+categories, with no flatness hypothesis.
 
 ## Main definitions
 
@@ -81,6 +82,7 @@ noncomputable abbrev tensorCochainComplexMap {M M' : CurvedDGRightModuleCat.{u, 
 
 /-- Tensoring closed curved right modules with the curved left module `N`: a curved right module
 `M` goes to the balanced tensor complex `M ⊗_A N`, and a closed morphism `f` to `f ⊗ 1`. -/
+-- Exposed because the public `map` lemmas below only typecheck when the object map reduces.
 @[expose]
 noncomputable def tensorCochainComplexFunctor :
     ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h) ⥤
@@ -137,6 +139,7 @@ theorem homotopic_tensorCochainComplexFunctor_map {M M' : CurvedDGRightModuleCat
         using sub_eq_iff_eq_add.mp (hk x))⟩
 
 /-- Tensoring with the curved left module `N`, descended to the curved homotopy category. -/
+-- Exposed because the public `map` lemmas below only typecheck when the object map reduces.
 @[expose]
 noncomputable def tensorHomotopyFunctor :
     DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h) ⥤

@@ -322,8 +322,7 @@ theorem curvedCochainComplexMap_comp :
       (fun a n ↦ by simp only [LinearMap.comp_apply, hg, hg'])
       (by simpa only [add_zero] using hf'₀.comp hf₀)
       (by simpa only [add_zero] using hg'₀.comp hg₀)
-      (by rw [← LinearMap.comp_assoc, hf'd, LinearMap.comp_assoc, hfd, LinearMap.comp_assoc])
-      (by rw [← LinearMap.comp_assoc, hg'd, LinearMap.comp_assoc, hgd, LinearMap.comp_assoc]) =
+      (LinearMap.comp_comm_comp hf'd hfd) (LinearMap.comp_comm_comp hg'd hgd) =
       curvedCochainComplexMap hM hN hM' hN' f g hf hg hf₀ hg₀ hfd hgd ≫
         curvedCochainComplexMap hM' hN' hM'' hN'' f' g' hf' hg' hf'₀ hg'₀ hf'd hg'd := by
   unfold curvedCochainComplexMap curvedCochainComplex
@@ -351,5 +350,24 @@ noncomputable def curvedCochainComplexMapHomotopy {f₁ f₂ k : M →ₗ[R] M'}
     (by simpa only [add_zero] using isHomogeneous_map_grading k g hk hg hk₁ hg₀)
     (map_eq_leibnizDifferential_comp_map_add_map_comp_add hM.leibniz
       hN.leibniz hM'.leibniz hN'.leibniz hg hf₁ hf₂ hk hk₁ hfk hgd)
+
+/-- In the canonical identifications of the complex terms with their degree pieces, the
+components of the homotopy induced by `k` act by the balanced tensor map `k ⊗ g`. -/
+theorem curvedCochainComplexMapHomotopy_hom_apply {f₁ f₂ k : M →ₗ[R] M'}
+    (hf₁ : ∀ (a : A) m, f₁ (op a • m) = op a • f₁ m)
+    (hf₂ : ∀ (a : A) m, f₂ (op a • m) = op a • f₂ m)
+    (hk : ∀ (a : A) m, k (op a • m) = op a • k m)
+    (hf₁₀ : LinearMap.IsHomogeneous f₁ ℳ ℳ' 0) (hf₂₀ : LinearMap.IsHomogeneous f₂ ℳ ℳ' 0)
+    (hk₁ : LinearMap.IsHomogeneous k ℳ ℳ' (-1))
+    (hf₁d : dM' ∘ₗ f₁ = f₁ ∘ₗ dM) (hf₂d : dM' ∘ₗ f₂ = f₂ ∘ₗ dM)
+    (hfk : f₁ = dM' ∘ₗ k + k ∘ₗ dM + f₂) (p q : ℤ) (hpq : p + -1 = q)
+    (z : (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+      (InternalGrading.ofDecomposition 𝒩)).piece p) :
+    (eqToHom (curvedCochainComplex_X hM' hN' q)
+      ((curvedCochainComplexMapHomotopy hM hN hM' hN' g hg hg₀ hgd hf₁ hf₂ hk hf₁₀ hf₂₀ hk₁ hf₁d
+        hf₂d hfk).hom p q ((eqToHom (curvedCochainComplex_X hM hN p).symm) z)) :
+      BalancedTensorProduct R A M' N') = map k g hk hg z := by
+  unfold curvedCochainComplexMapHomotopy curvedCochainComplex
+  exact gradedCochainComplexHomotopy_hom_apply _ _ _ _ _ _ _ p q hpq z
 
 end TauCeti.BalancedTensorProduct

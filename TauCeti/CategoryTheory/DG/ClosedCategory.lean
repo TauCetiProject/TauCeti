@@ -353,8 +353,10 @@ namespace DGHomotopyCategory
 variable {E}
 
 /-- A functor out of the closed degree-zero category which identifies closed morphisms with the
-same class in `H⁰` descends to the DG homotopy category. Its object map is exposed: it is the
-identity on underlying DG objects, which the statements below rely on. -/
+same class in `H⁰` descends to the DG homotopy category. On objects it is `F` applied to the
+underlying DG object, and it sends the class of a closed morphism `f` to `F.map f`. -/
+-- Exposed because statements about descended functors in importing modules, such as their
+-- `map` lemmas, only typecheck when this object map reduces.
 @[expose]
 noncomputable def lift (F : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C ⥤ E)
     (hF : ∀ ⦃X Y⦄ (f g : X ⟶ Y),
@@ -366,7 +368,10 @@ noncomputable def lift (F : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) �
     (Y := ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (underlying R Y)) φ)
   map_id X := by
     rw [← F.map_id]
-    exact hF _ _ (by rw [Functor.map_preimage, CategoryTheory.Functor.map_id]; rfl)
+    exact hF _ _ (by
+      rw [Functor.map_preimage, CategoryTheory.Functor.map_id]
+      -- `of R (underlying R X)` reduces to `X`, so both sides are the identity of `X`.
+      rfl)
   map_comp φ ψ := by
     rw [← F.map_comp]
     exact hF _ _ (by rw [Functor.map_comp, Functor.map_preimage, Functor.map_preimage,
