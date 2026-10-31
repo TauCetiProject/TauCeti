@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.Supporting
+public import TauCeti.Logic.Function.Extend
 
 /-!
 # Integer-indexed height sequences
@@ -208,11 +209,6 @@ theorem isIntAdmissible_comp_add_right_iff (k : ℤ) :
 
 /-! ### Extension by infinity at negative indices -/
 
-/-- The extension of a one-sided sequence is infinite at negative indices. -/
-private theorem extend_natCast_of_neg {a : ℕ → WithTop ℝ} {n : ℤ} (hn : n < 0) :
-    Function.extend ((↑) : ℕ → ℤ) a ⊤ n = ⊤ :=
-  Function.extend_apply' _ _ _ fun ⟨m, hm⟩ => by omega
-
 /-- Extending a one-sided height sequence by infinity at the negative indices preserves and
 reflects convexity. -/
 @[simp]
@@ -220,13 +216,13 @@ theorem isIntConvexSeq_extend_iff {a : ℕ → WithTop ℝ} :
     IsIntConvexSeq (Function.extend ((↑) : ℕ → ℤ) a ⊤) ↔ IsConvexSeq a := by
   refine ⟨fun ha => by simpa [Nat.cast_injective.extend_apply] using ha.isConvexSeq 0,
     fun ha => ⟨⟨fun i hi j hj l hl => ?_⟩, fun n hn hn₂ => ?_⟩⟩
-  · have hi₀ : 0 ≤ i := not_lt.mp fun h => hi (extend_natCast_of_neg h)
+  · have hi₀ : 0 ≤ i := not_lt.mp fun h => hi (Function.extend_natCast_of_neg _ _ h)
     lift i to ℕ using hi₀
     lift j to ℕ using (Int.natCast_nonneg i).trans (hl.1.trans hl.2)
     lift l to ℕ using (Int.natCast_nonneg i).trans hl.1
     simp only [Set.mem_ofPred_eq, Nat.cast_injective.extend_apply] at hi hj ⊢
     exact ha.ordConnected.out hi hj ⟨by exact_mod_cast hl.1, by exact_mod_cast hl.2⟩
-  · have hn₀ : 0 ≤ n := not_lt.mp fun h => hn (extend_natCast_of_neg h)
+  · have hn₀ : 0 ≤ n := not_lt.mp fun h => hn (Function.extend_natCast_of_neg _ _ h)
     lift n to ℕ using hn₀
     have e₁ : (n : ℤ) + 1 = ((n + 1 : ℕ) : ℤ) := by push_cast; ring
     have e₂ : (n : ℤ) + 2 = ((n + 2 : ℕ) : ℤ) := by push_cast; ring
@@ -247,7 +243,7 @@ theorem isIntAdmissible_extend_iff {a : ℕ → WithTop ℝ} :
   obtain ⟨c, m, hcm⟩ := isAdmissible_iff.mp ha
   refine ⟨c, m, fun n => ?_⟩
   · rcases lt_or_ge n 0 with hn | hn
-    · simp [extend_natCast_of_neg hn]
+    · simp [Function.extend_natCast_of_neg _ _ hn]
     · lift n to ℕ using hn
       simpa [Nat.cast_injective.extend_apply] using hcm n
 
@@ -417,11 +413,11 @@ theorem intLowerConvexEnvelope_extend (a : ℕ → WithTop ℝ) :
       ⟨isIntConvexSeq_extend_iff.mpr (isConvexSeq_lowerConvexEnvelope a), fun n => ?_,
         fun g hg hga n => ?_⟩).symm
     · rcases lt_or_ge n 0 with hn | hn
-      · simp [extend_natCast_of_neg hn]
+      · simp [Function.extend_natCast_of_neg _ _ hn]
       · lift n to ℕ using hn
         simpa [Nat.cast_injective.extend_apply] using lowerConvexEnvelope_le ha n
     · rcases lt_or_ge n 0 with hn | hn
-      · simp [extend_natCast_of_neg hn]
+      · simp [Function.extend_natCast_of_neg _ _ hn]
       · lift n to ℕ using hn
         have hle := le_lowerConvexEnvelope (a := a) (by simpa using hg.isConvexSeq 0)
           (fun m => by simpa [Nat.cast_injective.extend_apply] using hga m)
@@ -430,7 +426,7 @@ theorem intLowerConvexEnvelope_extend (a : ℕ → WithTop ℝ) :
       lowerConvexEnvelope_of_not_isAdmissible ha]
     funext n
     rcases lt_or_ge n 0 with hn | hn
-    · simp [extend_natCast_of_neg hn]
+    · simp [Function.extend_natCast_of_neg _ _ hn]
     · lift n to ℕ using hn
       simp [Nat.cast_injective.extend_apply]
 
@@ -442,7 +438,7 @@ theorem intLowerConvexEnvelope_eq_of_forall_lt {k : ℤ} (hk : ∀ n < k, a n = 
   have ha : a = fun n => Function.extend ((↑) : ℕ → ℤ) (fun i : ℕ => a (k + i)) ⊤ (n + -k) := by
     funext n
     rcases lt_or_ge n k with hn | hn
-    · rw [hk n hn, extend_natCast_of_neg (by omega)]
+    · rw [hk n hn, Function.extend_natCast_of_neg _ _ (by omega), Pi.top_apply]
     · obtain ⟨i, hi⟩ : ∃ i : ℕ, (i : ℤ) = n + -k := ⟨(n + -k).toNat, by omega⟩
       rw [← hi, Nat.cast_injective.extend_apply]
       congr 1
@@ -538,7 +534,8 @@ theorem intSupportingValue_extend (a : ℕ → WithTop ℝ) (σ : ℝ) :
   · simpa [Nat.cast_injective.extend_apply] using
       intSupportingValue_le (Function.extend ((↑) : ℕ → ℤ) a ⊤) σ m
   · rcases lt_or_ge n 0 with hn | hn
-    · rw [extend_natCast_of_neg hn, WithTop.toEReal_top, EReal.top_sub_coe]
+    · rw [Function.extend_natCast_of_neg _ _ hn, Pi.top_apply, WithTop.toEReal_top,
+        EReal.top_sub_coe]
       exact le_top
     · lift n to ℕ using hn
       simpa [Nat.cast_injective.extend_apply] using supportingValue_le a σ n
