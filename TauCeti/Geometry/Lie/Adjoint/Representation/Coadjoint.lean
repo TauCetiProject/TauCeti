@@ -110,14 +110,14 @@ theorem contMDiff_coadjointRepresentation_apply (ν : Module.Dual ℝ (GroupLieA
   rfl
 
 /-- The derivative at the identity of the component `g ↦ (Ad*_g ν) ξ = ν (Ad_{g⁻¹} ξ)` of the
-coadjoint action, in the direction `η`, is `ν ⁅ξ, η⁆`.
-
-`GroupLieAlgebra I G` reduces definitionally to the model `E`; the `show E from` ascriptions expose
-that model to the manifold derivative API and view `ν` as a linear functional on `E`. -/
+coadjoint action, in the direction `η`, is `ν ⁅ξ, η⁆`. -/
 theorem mvfderiv_coadjointRepresentation_apply_one (ν : Module.Dual ℝ (GroupLieAlgebra I G))
     (ξ η : GroupLieAlgebra I G) :
     mvfderiv I (fun g : G ↦ coadjointRepresentation ℝ I G g ν ξ) 1 η = ν ⁅ξ, η⁆ := by
   simp only [coadjointRepresentation_apply, ← tangentAd_apply]
+  -- `GroupLieAlgebra I G` reduces definitionally to the model `E`; the `show E from` ascriptions
+  -- below expose that model to the manifold derivative API and view `ν` as a linear functional
+  -- on `E`.
   -- `g ↦ Ad_g ξ`, viewed as a map into the model `E`, and inversion are differentiable at `1`.
   have hT : MDifferentiableAt I 𝓘(ℝ, E) (fun g : G ↦ show E from tangentAd (I := I) g ξ) 1 :=
     (contMDiff_tangentAd_apply_const (I := I) (G := G) (show E from ξ)).mdifferentiableAt
