@@ -253,11 +253,10 @@ theorem augmentation_sub (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsuppo
   rw [hTN, hNS] at h
   rw [h, sub_eq_add_neg]
 
-/-- **The augmentation of a point evaluation.** For `x ∈ Ω` and a continuous linear map `ℓ`, the
+/-- **The augmentation of a point evaluation.** For `x ∈ Ω` and an additive map `ℓ`, the
 evaluation `φ ↦ ℓ (φ x)` has augmentation `ℓ c` at `c`. For the degree-zero point current and the
 unit `0`-form it is one. -/
-theorem augmentation_apply_apply [Module ℝ V] [TopologicalSpace V] {x : E} (hx : x ∈ Ω)
-    (ℓ : F →L[ℝ] V) (c : F) :
+theorem augmentation_apply_apply {x : E} (hx : x ∈ Ω) (ℓ : F →+ V) (c : F) :
     augmentation (fun φ : 𝓓^{n}(Ω, F) ↦ ℓ (φ x)) c = ℓ c := by
   let A : 𝓓^{n}(Ω, F) →+ V :=
     { toFun φ := ℓ (φ x), map_zero' := by simp, map_add' φ ψ := by simp }
@@ -275,9 +274,9 @@ theorem augmentation_apply_apply [Module ℝ V] [TopologicalSpace V] {x : E} (hx
 @[simp]
 theorem augmentation_delta {x : E} (hx : x ∈ Ω) (c : ℝ) :
     augmentation (delta x : 𝓓'^{n}(Ω, ℝ)) c = c := by
-  have h : ⇑(delta x : 𝓓'^{n}(Ω, ℝ)) = fun φ ↦ ContinuousLinearMap.id ℝ ℝ (φ x) :=
+  have h : ⇑(delta x : 𝓓'^{n}(Ω, ℝ)) = fun φ ↦ AddMonoidHom.id ℝ (φ x) :=
     funext fun φ ↦ delta_apply x φ
-  rw [h, augmentation_apply_apply hx, ContinuousLinearMap.id_apply]
+  rw [h, augmentation_apply_apply hx, AddMonoidHom.id_apply]
 
 end AugmentationGroup
 
