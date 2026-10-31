@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Groupoid.ActionCategory
+public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
 public import TauCeti.GroupTheory.GroupAction.Effective
 
 /-!
