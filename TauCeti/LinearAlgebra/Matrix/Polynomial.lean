@@ -43,8 +43,8 @@ variable {n R : Type*} [Fintype n] [DecidableEq n]
 /-- Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the
 coefficients of the polynomial and to the entries of the matrix. -/
 @[simp]
-theorem aeval_map {R S : Type*} [CommSemiring R] [CommSemiring S] (φ : R →+* S)
-    (A : Matrix n n R) (f : R[X]) :
+theorem aeval_map {R S : Type*} [CommSemiring R] [CommSemiring S] (A : Matrix n n R)
+    (φ : R →+* S) (f : R[X]) :
     aeval (A.map φ) (f.map φ) = (aeval A f).map φ := by
   refine (map_aeval_eq_aeval_map (S := Matrix n n R) (U := Matrix n n S) (φ := φ)
     (ψ := φ.mapMatrix) (RingHom.ext fun r ↦ ?_) f A).symm

@@ -25,13 +25,6 @@ Applied over `R[T]` to `T - f` it identifies the characteristic polynomial of `f
 `χ_{f(A)}` depends on `A` only through `χ_A`. These identities hold over every commutative ring,
 including rings with zero divisors, where no factorisation of `χ_A` is available.
 
-The proof is by universality. If `f = c ∏ (X - βⱼ)` splits over a field, then
-`f(A) = c ∏ (A - βⱼ)`, and `det (A - β) = (-1) ^ n χ_A(β)` gives `c ^ n ∏ ±χ_A(βⱼ)`, which is the
-resultant. Both sides commute with ring homomorphisms, so the identity transfers along injective
-ring homomorphisms and surjective covers. Mathlib's universality principle for resultants,
-`Polynomial.induction_of_Splits_of_injective_of_surjective`, then extends it from split
-polynomials over fields to every commutative ring.
-
 ## Main results
 
 * `Matrix.det_aeval_eq_resultant`: `det f(A) = Res(χ_A, f)`.
@@ -87,6 +80,13 @@ private theorem map_det_aeval_eq_resultant_iff (φ : R →+* S) (A : Matrix ι �
       (aeval (A.map φ) (f.map φ)).det =
         (A.map φ).charpoly.resultant (f.map φ) (Fintype.card ι) m := by
   rw [aeval_map, RingHom.map_det, RingHom.mapMatrix_apply, ← resultant_map_map, charpoly_map]
+
+/- The proof is by universality. If `f = c ∏ (X - βⱼ)` splits over a field, then
+`f(A) = c ∏ (A - βⱼ)`, and `det (A - β) = (-1) ^ n χ_A(β)` gives `c ^ n ∏ ±χ_A(βⱼ)`, which is the
+resultant. Both sides commute with ring homomorphisms, so the identity transfers along injective
+ring homomorphisms and surjective covers. Mathlib's universality principle for resultants,
+`Polynomial.induction_of_Splits_of_injective_of_surjective`, then extends it from split
+polynomials over fields to every commutative ring. -/
 
 /-- **Determinants of polynomials in a matrix are resultants.** For a square matrix `A` of size
 `n` and a polynomial `f` of degree at most `m`, `det f(A) = Res(χ_A, f)`, the resultant of the
