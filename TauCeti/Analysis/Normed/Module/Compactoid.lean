@@ -37,6 +37,8 @@ field, the two notions agree (`TauCeti.isCompactoidSet_iff_totallyBounded`).
 * `TauCeti.isCompactoidSet_iff_forall_mem_nhds`: the formulation through zero neighbourhoods.
 * `TauCeti.isCompactoidSet_of_forall_exists_finset`: approximation by finite subfamilies of a
   fixed family suffices.
+* `TauCeti.IsCompactoidSet.exists_seq_forall_exists_finset`: conversely, a compactoid set is
+  approximated by finite pieces of one sequence.
 * `TauCeti.isCompactoidSet_of_forall_exists_norm_sub_lt`: a set approximated arbitrarily well by
   compactoid sets is compactoid.
 * `TauCeti.IsCompactoidSet.mono`, `TauCeti.IsCompactoidSet.union`,
@@ -110,6 +112,42 @@ theorem isCompactoidSet_of_forall_exists_finset {ι : Type*} {S : Set E} (v : ι
   obtain ⟨a, ha, hx⟩ := ht x hx
   refine ⟨fun k ↦ a (t.equivFin.symm k), fun k ↦ ha _, ?_⟩
   rwa [Equiv.sum_comp t.equivFin.symm (fun i ↦ a i • v i), Finset.sum_coe_sort t fun i ↦ a i • v i]
+
+/-- **A compactoid set is approximated by finite pieces of one sequence**: there is a sequence `v`
+such that, for every `ε > 0`, every point of `S` is within `ε` of a combination of finitely many
+fixed terms of `v` with coefficients of norm at most one. Consequently `S` lies in the closure of
+the span of `v`. -/
+theorem IsCompactoidSet.exists_seq_forall_exists_finset {S : Set E} (hS : IsCompactoidSet K S) :
+    ∃ v : ℕ → E, ∀ ε : ℝ, 0 < ε → ∃ t : Finset ℕ, ∀ x ∈ S,
+      ∃ a : ℕ → K, (∀ i, ‖a i‖ ≤ 1) ∧ ‖x - ∑ i ∈ t, a i • v i‖ < ε := by
+  classical
+  choose m w hw using fun n : ℕ ↦ isCompactoidSet_iff.1 hS (1 / (n + 1)) Nat.one_div_pos_of_nat
+  -- Enumerate the approximating families for all the radii `1 / (n + 1)` at once.
+  let e : (Σ n, Fin (m n)) → ℕ := Encodable.encode
+  have he : Function.Injective e := Encodable.encode_injective
+  refine ⟨Function.extend e (fun p ↦ w p.1 p.2) 0, fun ε hε ↦ ?_⟩
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
+  refine ⟨Finset.univ.image fun i : Fin (m n) ↦ e ⟨n, i⟩, fun x hx ↦ ?_⟩
+  obtain ⟨a, ha, hxa⟩ := hw n x hx
+  -- Keep the coefficients of the `n`-th family and put zero everywhere else.
+  let b : (Σ n, Fin (m n)) → K := fun p ↦ if h : p.1 = n then a (Fin.cast (congrArg m h) p.2) else 0
+  refine ⟨Function.extend e b 0, fun i ↦ ?_, ?_⟩
+  · by_cases hi : ∃ p, e p = i
+    · obtain ⟨p, rfl⟩ := hi
+      rw [he.extend_apply]
+      dsimp only [b]
+      split_ifs
+      · exact ha _
+      · simp
+    · simp [Function.extend_apply' _ _ _ hi]
+  · have hsum : ∑ i ∈ Finset.univ.image fun i : Fin (m n) ↦ e ⟨n, i⟩, Function.extend e b 0 i •
+        Function.extend e (fun p ↦ w p.1 p.2) 0 i = ∑ i, a i • w n i := by
+      rw [Finset.sum_image fun i _ j _ h ↦ by simpa using he h]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [he.extend_apply, he.extend_apply]
+      simp [b]
+    rw [hsum]
+    exact hxa.trans hn
 
 /-- A subset of a compactoid set is compactoid. -/
 theorem IsCompactoidSet.mono {S T : Set E} (hT : IsCompactoidSet K T) (hST : S ⊆ T) :

@@ -49,7 +49,7 @@ the grade involution `CliffordAlgebra.monomialGroupInvolute`, which sends `±e_s
 representations in which `ε` acts by `-1`.
 
 The classification itself is Morita theory for the simple ring `End S`: a module over it with no
-proper nonzero submodule is isomorphic to `S` (`TauCeti.IsIsotypicOfType.of_isSimpleRing`).
+proper nonzero submodule is isomorphic to `S` (`IsIsotypicOfType.of_isSimpleRing`).
 
 ## Main definitions
 

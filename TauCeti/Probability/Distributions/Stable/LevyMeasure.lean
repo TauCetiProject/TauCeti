@@ -22,6 +22,9 @@ Restricting to either tail gives a multiple of a Pareto law or its reflection. I
 removing a positive neighbourhood of zero leaves positive finite mass, and conditioning on
 that set gives a probability jump law for compound Poisson approximations.
 
+Integrability against the Lévy measure is Lebesgue integrability after multiplying by the
+density, and integrals against it split into power-weighted integrals over the two half-lines.
+
 ## References
 
 * J. P. Nolan, *Univariate Stable Distributions: Models for Heavy Tailed Data*, Springer,
@@ -266,5 +269,45 @@ theorem isProbabilityMeasure_cond_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ 
     IsProbabilityMeasure (cond (stableLevyMeasure α β) {x | ε < |x|}) := by
   exact cond_isProbabilityMeasure_of_finite (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
     (stableLevyMeasure_abs_gt_ne_top hε)
+
+/-- The density of a stable Lévy measure turns integrable functions into Lebesgue-integrable
+ones. -/
+theorem integrable_stableLevyDensity_smul_iff {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (α β : ℝ) {g : ℝ → E} :
+    Integrable g (stableLevyMeasure α β) ↔
+      Integrable (fun x ↦ stableLevyDensity α β x • g x) := by
+  have hd : Measurable (stableLevyDensity α β) :=
+    measurable_stableLevyDensity.comp
+      (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
+  rw [stableLevyMeasure_def, integrable_withDensity_iff_integrable_smul' hd.ennreal_ofReal
+    (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  simp only [ENNReal.toReal_ofReal (stableLevyDensity_nonneg _ _ _)]
+
+/-- Integrals against a stable Lévy measure split into power-weighted integrals over the two
+half-lines. -/
+theorem integral_stableLevyMeasure_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) {g : ℝ → E} (hg : Integrable g (stableLevyMeasure α β)) :
+    ∫ x, g x ∂stableLevyMeasure α β =
+      (Gamma (1 + α) * sin (π * α / 2) / π * (1 + β)) •
+          (∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) • g x) +
+        (Gamma (1 + α) * sin (π * α / 2) / π * (1 - β)) •
+          ∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) • g (-x) := by
+  have hd : Measurable (stableLevyDensity α β) :=
+    measurable_stableLevyDensity.comp
+      (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
+  have hint := (integrable_stableLevyDensity_smul_iff α β).mp hg
+  rw [stableLevyMeasure_def, integral_withDensity_eq_integral_toReal_smul hd.ennreal_ofReal
+    (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  simp only [ENNReal.toReal_ofReal (stableLevyDensity_nonneg _ _ _)]
+  have hIic := integral_comp_neg_Ioi 0 (fun x ↦ stableLevyDensity α β x • g x)
+  rw [neg_zero] at hIic
+  rw [← intervalIntegral.integral_Iic_add_Ioi (b := 0) hint.integrableOn hint.integrableOn,
+    ← hIic, add_comm, ← integral_smul, ← integral_smul]
+  congr 1
+  · refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) ↦ ?_
+    rw [stableLevyDensity_of_ne_zero hα hβ hx.ne', ite_eq_left hx, abs_of_pos hx, smul_smul]
+  · refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) ↦ ?_
+    rw [stableLevyDensity_of_ne_zero hα hβ (neg_ne_zero.mpr hx.ne'),
+      ite_eq_right (not_lt.mpr (neg_nonpos.mpr hx.le)), abs_neg, abs_of_pos hx, smul_smul]
 
 end TauCeti.Probability

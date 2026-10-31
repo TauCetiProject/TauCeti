@@ -16,7 +16,8 @@ import TauCeti.MeasureTheory.Function.ConditionalExpectation
 /-!
 # Martingale convergence theorems
 
-Lévy's downward theorem for conditional expectations along a decreasing filtration.
+Lévy's downward theorem for conditional expectations along a decreasing filtration, and the `Lᵖ`
+forms of Lévy's upward and downward theorems.
 
 This is the flagship of the reverse-martingale infrastructure: the finite-horizon reversal
 (`Martingale/Reverse.lean`), the pathwise crossing adapters (`Martingale/Crossings/`), the
@@ -33,6 +34,15 @@ result (`Martingale/AntitoneLimit.lean`) all feed into `tendsto_ae_condExp_iInf`
   analytic uses want; it mirrors Mathlib's upward `MeasureTheory.tendsto_eLpNorm_condExp`.
 - `MemLp.tendsto_eLpNorm_condExp_iInf`: the `Lᵖ` form — for `f ∈ Lᵖ` with `p < ∞`, the
   convergence holds in `Lᵖ`.
+- `MemLp.tendsto_eLpNorm_condExp`: Lévy's upward theorem in `Lᵖ` — for a filtration `ℱ` and
+  `f ∈ Lᵖ` with `p < ∞`, `μ[f | ℱ n]` converges in `Lᵖ` to `μ[f | ⨆ n, ℱ n]`, upgrading Mathlib's
+  `L¹` form `MeasureTheory.tendsto_eLpNorm_condExp`. Both `Lᵖ` forms reduce to the almost
+  everywhere and `L¹` forms by approximating `f` with simple functions.
+- `MemLp.tendsto_eLpNorm_condExp_of_tendsto`: this common reduction, for any sequence of
+  sub-σ-algebras `𝔽 n` and limit `m` — if `μ[g | 𝔽 n] → μ[g | m]` almost everywhere and in `L¹`
+  for every real `g`, then `μ[f | 𝔽 n] → μ[f | m]` in `Lᵖ` for `f ∈ Lᵖ` with `p < ∞`. Its
+  bounded step `tendsto_eLpNorm_condExp_of_ae_bdd` upgrades almost-everywhere convergence to
+  `Lᵖ` convergence, for `1 ≤ p < ∞`, for an essentially bounded function.
 - `measure_inter_eq_mul_of_forall_zero_or_one_iInf`: factorization along a decreasing filtration
   with `μ`-trivial intersection — if `B' n` is `𝔽 n`-measurable with `μ (B' n)` and `μ (A ∩ B' n)`
   independent of `n`, then `μ (A ∩ B) = μ A * μ B`.
@@ -65,7 +75,7 @@ open TauCeti.MeasureTheory
 
 namespace MeasureTheory
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+variable {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω}
 
 /-- **Identification of the reverse-martingale limit.** If `μ[f | 𝔽 n]` converges to `Xlim` both
 almost everywhere and in `L¹`, along an antitone filtration, then `Xlim` is the conditional
@@ -184,17 +194,17 @@ theorem tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → Measur
     Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) 1 μ) atTop (𝓝 0) :=
   (tendsto_ae_and_eLpNorm_condExp_iInf h_filtration h_le0 f).2
 
-/-- Lévy's downward theorem in `Lᵖ`, for `1 ≤ p < ∞` and an essentially bounded function `g`. -/
-private lemma tendsto_eLpNorm_condExp_iInf_of_ae_bdd [IsFiniteMeasure μ]
-    {𝔽 : ℕ → MeasurableSpace Ω} (h_filtration : Antitone 𝔽)
-    (h_le0 : 𝔽 0 ≤ (inferInstance : MeasurableSpace Ω)) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
-    {g : Ω → ℝ} {R : ℝ} (hR : ∀ᵐ ω ∂μ, |g ω| ≤ R) :
-    Tendsto (fun n => eLpNorm (μ[g | 𝔽 n] - μ[g | ⨅ n, 𝔽 n]) p μ) atTop (𝓝 0) := by
+/-- `Lᵖ` convergence of the conditional expectations of an essentially bounded function, for
+`1 ≤ p < ∞`, given their almost-everywhere convergence. -/
+theorem tendsto_eLpNorm_condExp_of_ae_bdd [IsFiniteMeasure μ]
+    {𝔽 : ℕ → MeasurableSpace Ω} {m : MeasurableSpace Ω} {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    {g : Ω → ℝ} {R : ℝ} (hR : ∀ᵐ ω ∂μ, |g ω| ≤ R)
+    (h_ae : ∀ᵐ ω ∂μ, Tendsto (fun n => μ[g | 𝔽 n] ω) atTop (𝓝 (μ[g | m] ω))) :
+    Tendsto (fun n => eLpNorm (μ[g | 𝔽 n] - μ[g | m]) p μ) atTop (𝓝 0) := by
   -- The conditional expectations of `g` inherit its essential bound, so they are uniformly
   -- integrable in `Lᵖ`, and Vitali's theorem upgrades the a.e. convergence to `Lᵖ` convergence.
   refine tendsto_Lp_finite_of_tendsto_ae hp hp' (fun _ => integrable_condExp.aestronglyMeasurable)
-    (MemLp.of_bound integrable_condExp.aestronglyMeasurable R ?_) ?_
-    (tendsto_ae_condExp_iInf h_filtration h_le0 g)
+    (MemLp.of_bound integrable_condExp.aestronglyMeasurable R ?_) ?_ h_ae
   · simpa only [Real.norm_eq_abs] using ae_bdd_abs_condExp_of_ae_bdd_abs hR
   -- Above the level `R + 1` every `μ[g | 𝔽 n]` vanishes a.e., which is uniform integrability.
   refine unifIntegrable_of hp hp' (fun _ => integrable_condExp.aestronglyMeasurable)
@@ -207,16 +217,16 @@ private lemma tendsto_eLpNorm_condExp_iInf_of_ae_bdd [IsFiniteMeasure μ]
     linarith [Real.le_coe_toNNReal R]
   simp [eLpNorm_congr_ae h_zero]
 
-/-- **Conditional expectation converges in `Lᵖ` along a decreasing filtration (Lévy's downward
-theorem, `Lᵖ` form).**
-
-For a decreasing filtration `𝔽ₙ`, a finite exponent `p` and `f ∈ Lᵖ`, the sequence `μ[f | 𝔽ₙ]`
-converges in `Lᵖ` to `μ[f | ⨅ₙ 𝔽ₙ]`. For `p = 1` the integrability hypothesis is superfluous; see
-`tendsto_eLpNorm_condExp_iInf`. -/
-theorem MemLp.tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
-    (h_filtration : Antitone 𝔽) (h_le0 : 𝔽 0 ≤ (inferInstance : MeasurableSpace Ω))
+/-- `Lᵖ` convergence of conditional expectations from their convergence almost everywhere and
+in `L¹`: if, for every real function `g`, `μ[g | 𝔽 n]` converges to `μ[g | m]` both almost
+everywhere and in `L¹`, then for a finite exponent `p` and `f ∈ Lᵖ` the convergence holds in
+`Lᵖ`. This is the common step of Lévy's upward and downward theorems in `Lᵖ`. -/
+theorem MemLp.tendsto_eLpNorm_condExp_of_tendsto [IsFiniteMeasure μ]
+    {𝔽 : ℕ → MeasurableSpace Ω} {m : MeasurableSpace Ω}
+    (h_ae : ∀ g : Ω → ℝ, ∀ᵐ ω ∂μ, Tendsto (fun n => μ[g | 𝔽 n] ω) atTop (𝓝 (μ[g | m] ω)))
+    (h_L1 : ∀ g : Ω → ℝ, Tendsto (fun n => eLpNorm (μ[g | 𝔽 n] - μ[g | m]) 1 μ) atTop (𝓝 0))
     {p : ℝ≥0∞} (hp : p ≠ ∞) {f : Ω → ℝ} (hf : MemLp f p μ) :
-    Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) p μ) atTop (𝓝 0) := by
+    Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - μ[f | m]) p μ) atTop (𝓝 0) := by
   rcases le_total p 1 with hp1 | hp1
   · -- For `p ≤ 1` the `Lᵖ` seminorm is controlled by the `L¹` norm, as `μ` is finite.
     rcases eq_or_ne p 0 with rfl | hp0
@@ -225,8 +235,7 @@ theorem MemLp.tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → 
     have h_exp : 0 ≤ 1 / p.toReal - 1 / (1 : ℝ≥0∞).toReal := by
       rw [ENNReal.toReal_one, div_one, sub_nonneg, one_le_div (ENNReal.toReal_pos hp0 hp)]
       exact ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using hp1)
-    have h_lim := ENNReal.Tendsto.mul_const
-      (MeasureTheory.tendsto_eLpNorm_condExp_iInf (μ := μ) h_filtration h_le0 f)
+    have h_lim := ENNReal.Tendsto.mul_const (h_L1 f)
       (Or.inr (ENNReal.rpow_ne_top_of_nonneg h_exp (measure_ne_top μ Set.univ)))
     rw [zero_mul] at h_lim
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h_lim (fun _ => zero_le)
@@ -238,29 +247,55 @@ theorem MemLp.tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → 
   have hfi : Integrable f μ := hf.integrable hp1
   refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
   have hε3 : 0 < ε / 3 := ENNReal.div_pos hε.ne' ENNReal.ofNat_ne_top
+  -- The local `m` would otherwise be found as the measurable structure of the simple function.
+  let _ : MeasurableSpace Ω := mΩ
   obtain ⟨g, hfg, hg⟩ := hf.exists_simpleFunc_eLpNorm_sub_lt hp hε3.ne'
   obtain ⟨C, hC⟩ := g.exists_forall_norm_le
   have hgi : Integrable g μ := hg.integrable hp1
   have hg_bdd : ∀ᵐ ω ∂μ, |g ω| ≤ C := ae_of_all _ fun ω => Real.norm_eq_abs (g ω) ▸ hC ω
   filter_upwards [ENNReal.tendsto_nhds_zero.1
-    (tendsto_eLpNorm_condExp_iInf_of_ae_bdd h_filtration h_le0 hp1 hp hg_bdd) (ε / 3) hε3]
-    with n hn
-  have h_split : μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n] =ᵐ[μ]
-      (μ[⇑g | 𝔽 n] - μ[⇑g | ⨅ n, 𝔽 n]) + (μ[f - ⇑g | 𝔽 n] - μ[f - ⇑g | ⨅ n, 𝔽 n]) := by
-    filter_upwards [condExp_sub hfi hgi (𝔽 n), condExp_sub hfi hgi (⨅ n, 𝔽 n)] with ω h₁ h₂
+    (tendsto_eLpNorm_condExp_of_ae_bdd hp1 hp hg_bdd (h_ae g)) (ε / 3) hε3] with n hn
+  have h_split : μ[f | 𝔽 n] - μ[f | m] =ᵐ[μ]
+      (μ[⇑g | 𝔽 n] - μ[⇑g | m]) + (μ[f - ⇑g | 𝔽 n] - μ[f - ⇑g | m]) := by
+    filter_upwards [condExp_sub hfi hgi (𝔽 n), condExp_sub hfi hgi m] with ω h₁ h₂
     simp only [Pi.add_apply, Pi.sub_apply, h₁, h₂]
     ring
-  have h_fg : ∀ m : MeasurableSpace Ω, eLpNorm (μ[f - ⇑g | m]) p μ ≤ ε / 3 := fun m =>
+  have h_fg : ∀ m' : MeasurableSpace Ω, eLpNorm (μ[f - ⇑g | m']) p μ ≤ ε / 3 := fun m' =>
     (eLpNorm_condExp_le_eLpNorm _ hp1).trans hfg.le
-  calc eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) p μ
-      ≤ eLpNorm (μ[⇑g | 𝔽 n] - μ[⇑g | ⨅ n, 𝔽 n]) p μ
-          + (eLpNorm (μ[f - ⇑g | 𝔽 n]) p μ + eLpNorm (μ[f - ⇑g | ⨅ n, 𝔽 n]) p μ) := by
+  calc eLpNorm (μ[f | 𝔽 n] - μ[f | m]) p μ
+      ≤ eLpNorm (μ[⇑g | 𝔽 n] - μ[⇑g | m]) p μ
+          + (eLpNorm (μ[f - ⇑g | 𝔽 n]) p μ + eLpNorm (μ[f - ⇑g | m]) p μ) := by
         rw [eLpNorm_congr_ae h_split]
         refine (eLpNorm_add_le hp1).trans ?_
         gcongr
         exact eLpNorm_sub_le hp1
     _ ≤ ε / 3 + (ε / 3 + ε / 3) := by gcongr <;> apply h_fg
     _ = ε := by rw [← add_assoc, ENNReal.add_thirds]
+
+/-- **Conditional expectation converges in `Lᵖ` along a decreasing filtration (Lévy's downward
+theorem, `Lᵖ` form).**
+
+For a decreasing filtration `𝔽ₙ`, a finite exponent `p` and `f ∈ Lᵖ`, the sequence `μ[f | 𝔽ₙ]`
+converges in `Lᵖ` to `μ[f | ⨅ₙ 𝔽ₙ]`. For `p = 1` the integrability hypothesis is superfluous; see
+`tendsto_eLpNorm_condExp_iInf`. -/
+theorem MemLp.tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
+    (h_filtration : Antitone 𝔽) (h_le0 : 𝔽 0 ≤ (inferInstance : MeasurableSpace Ω))
+    {p : ℝ≥0∞} (hp : p ≠ ∞) {f : Ω → ℝ} (hf : MemLp f p μ) :
+    Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) p μ) atTop (𝓝 0) :=
+  hf.tendsto_eLpNorm_condExp_of_tendsto (tendsto_ae_condExp_iInf h_filtration h_le0)
+    (MeasureTheory.tendsto_eLpNorm_condExp_iInf h_filtration h_le0) hp
+
+/-- **Conditional expectation converges in `Lᵖ` along a filtration (Lévy's upward theorem, `Lᵖ`
+form).**
+
+For a filtration `ℱ`, a finite exponent `p` and `f ∈ Lᵖ`, the sequence `μ[f | ℱ n]` converges in
+`Lᵖ` to `μ[f | ⨆ n, ℱ n]`. This upgrades Mathlib's `L¹` form
+`MeasureTheory.tendsto_eLpNorm_condExp`, where no integrability hypothesis is needed. -/
+theorem MemLp.tendsto_eLpNorm_condExp [IsFiniteMeasure μ] {ℱ : Filtration ℕ mΩ}
+    {p : ℝ≥0∞} (hp : p ≠ ∞) {f : Ω → ℝ} (hf : MemLp f p μ) :
+    Tendsto (fun n => eLpNorm (μ[f | ℱ n] - μ[f | ⨆ n, ℱ n]) p μ) atTop (𝓝 0) :=
+  hf.tendsto_eLpNorm_condExp_of_tendsto (fun g => tendsto_ae_condExp g)
+    (fun g => MeasureTheory.tendsto_eLpNorm_condExp g) hp
 
 /-- **Factorization along a decreasing filtration with trivial tail.** If `B' n` is `𝔽 n`-measurable
 along an antitone sequence of sub-σ-algebras whose intersection is `μ`-trivial, and neither

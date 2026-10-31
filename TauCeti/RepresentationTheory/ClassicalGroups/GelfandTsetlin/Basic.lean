@@ -246,6 +246,13 @@ instance : Unique (GTPattern 0) where
   default := ⟨fun _ _ => 0, fun _ => rfl, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
   uniq P := by ext i j; exact P.entry_eq_zero (by omega)
 
+/-- There is exactly one pattern for `GL 0`, and it has every dominant weight of `GL 0` as top
+weight. -/
+instance uniqueTopWeightZero (l : DominantWeight 0) :
+    Unique {P : GTPattern 0 // P.topWeight = l} where
+  default := ⟨default, Subsingleton.elim _ _⟩
+  uniq _ := Subtype.ext (Subsingleton.elim _ _)
+
 end GTPattern
 
 /-! ### Interlacing -/

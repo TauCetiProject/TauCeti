@@ -6,13 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+
+-- Only the characterization lemma below accesses the unexposed defining tensor equality.
+import all Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
-# Higher metric product rules
+# Metric compatibility and higher metric product rules
 
-This module records the twice-differentiated product rule for a metric-compatible covariant
+This module characterizes metric compatibility as the vanishing of `derivMetricTensor`, without
+assuming manifold regularity
+(`CovariantDerivative.isMetricCompatible_iff_derivMetricTensor_eq_zero`).
+
+It also records the twice-differentiated product rule for a metric-compatible covariant
 derivative. It supplies the second-derivative calculation used to establish curvature
 skew-adjointness and can be reused in other calculations with metric-compatible connections.
 
@@ -31,13 +38,20 @@ namespace CovariantDerivative
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V]
   [ContMDiffVectorBundle 1 F V I] [IsContMDiffRiemannianBundle I 1 F V]
-  {n : ℕ∞ω} {cov : CovariantDerivative I F V} [ContMDiffCovariantDerivative cov n]
+  {cov : CovariantDerivative I F V}
+
+/-- Metric compatibility is precisely the vanishing of the covariant derivative of the metric
+as a tensor. Unlike the section-based characterization, this needs no manifold regularity. -/
+theorem isMetricCompatible_iff_derivMetricTensor_eq_zero :
+    cov.IsMetricCompatible ↔ cov.derivMetricTensor = fun _ ↦ 0 := (Iff.rfl)
+
+variable [IsManifold I 1 M] {n : ℕ∞ω} [ContMDiffCovariantDerivative cov n]
 
 /-- The twice-differentiated metric product rule for a `C^n` metric-compatible connection. -/
 theorem IsMetricCompatible.mvfderiv_mvfderiv_inner

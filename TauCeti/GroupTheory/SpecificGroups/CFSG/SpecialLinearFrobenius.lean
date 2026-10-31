@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.FieldCoordinates
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
 public import TauCeti.GroupTheory.FixedSubgroup
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The finite-field descent of the special linear group
@@ -40,6 +41,8 @@ closure.
 * `TauCeti.ValidLieTypeIndex.specialLinear_mem_range_galoisFieldEmbedding_iff` and
   `TauCeti.ValidLieTypeIndex.specialLinear_mem_fixedSubgroup_frobenius_iff`: the two entrywise
   characterizations of the finite-field points.
+* `TauCeti.ValidLieTypeIndex.specialLinear_mem_range_extensionGaloisFieldEmbedding_iff`: the
+  entrywise characterization of the points over the field with `q ^ k` elements.
 * `TauCeti.ValidLieTypeIndex.specialLinear_range_galoisFieldEmbedding_eq_fixedSubgroup`: the range
   of the coefficient embedding is the fixed subgroup of the entrywise Frobenius.
 * `TauCeti.ValidLieTypeIndex.finite_fixedSubgroup_specialLinear`: that fixed subgroup is finite.
@@ -66,35 +69,18 @@ theorem specialLinear_mem_range_galoisFieldEmbedding_iff
     (g : SpecialLinearGroup ι d.Closure) :
     g ∈ (SpecialLinearGroup.map (n := ι) d.galoisFieldEmbedding).range ↔
       ∀ i j, (g i j) ^ d.fieldOrder = g i j := by
-  constructor
-  · rintro ⟨g₀, rfl⟩ i j
-    exact d.mem_range_galoisFieldEmbedding_iff.mp
-      ⟨g₀ i j, by rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
-        Matrix.map_apply]⟩
-  · intro hg
-    obtain ⟨A, hA⟩ := (Matrix.exists_map_galoisFieldEmbedding_iff_frobenius
-      (d := d) (g : Matrix ι ι d.Closure)).mpr hg
-    have hdet : A.det = 1 := by
-      apply d.galoisFieldEmbedding.injective
-      calc
-        d.galoisFieldEmbedding A.det = (A.map d.galoisFieldEmbedding).det :=
-          d.galoisFieldEmbedding.map_det A
-        _ = (g : Matrix ι ι d.Closure).det := congrArg Matrix.det hA
-        _ = 1 := g.property
-        _ = d.galoisFieldEmbedding 1 := (map_one _).symm
-    refine ⟨⟨A, hdet⟩, ?_⟩
-    apply Subtype.ext
-    exact hA
+  rw [SpecialLinearGroup.mem_range_map_iff d.galoisFieldEmbedding.injective]
+  exact forall₂_congr fun _ _ ↦ d.mem_range_galoisFieldEmbedding_iff
 
-/-- The coefficient embedding of the finite special linear group is injective. -/
-theorem specialLinear_map_galoisFieldEmbedding_injective
-    (d : ValidLieTypeIndex) {ι : Type*} [Fintype ι] [DecidableEq ι] :
-    Function.Injective (SpecialLinearGroup.map (n := ι) d.galoisFieldEmbedding) := by
-  intro A B hAB
-  apply Subtype.ext
-  ext i j
-  apply d.galoisFieldEmbedding.injective
-  exact congrArg (fun g : SpecialLinearGroup ι d.Closure => g i j) hAB
+/-- A special linear matrix over the closure has coordinates in the field with `q ^ k` elements
+exactly when every entry is fixed by the `q ^ k`-power map. -/
+theorem specialLinear_mem_range_extensionGaloisFieldEmbedding_iff
+    {d : ValidLieTypeIndex} {k : ℕ} (hk : k ≠ 0) {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (g : SpecialLinearGroup ι d.Closure) :
+    g ∈ (SpecialLinearGroup.map (n := ι) (d.extensionGaloisFieldEmbedding k hk)).range ↔
+      ∀ i j, (g i j) ^ d.fieldOrder ^ k = g i j := by
+  rw [SpecialLinearGroup.mem_range_map_iff (d.extensionGaloisFieldEmbedding k hk).injective]
+  exact forall₂_congr fun _ _ ↦ mem_range_extensionGaloisFieldEmbedding_iff hk
 
 /-- A special linear matrix over the closure is fixed by the entrywise `q`-power Frobenius exactly
 when every entry is. -/
@@ -136,7 +122,8 @@ def specialLinearEquivFrobeniusFixedPoints
     SpecialLinearGroup ι (GaloisField d.characteristic d.fieldExponent) ≃*
       fixedSubgroup (SpecialLinearGroup.map (n := ι)
         (iterateFrobenius d.Closure d.characteristic d.fieldExponent)) :=
-  (MonoidHom.ofInjective (specialLinear_map_galoisFieldEmbedding_injective d)).trans
+  (MonoidHom.ofInjective
+      (SpecialLinearGroup.map_injective d.galoisFieldEmbedding.injective)).trans
     (MulEquiv.subgroupCongr (specialLinear_range_galoisFieldEmbedding_eq_fixedSubgroup d))
 
 /-- The isomorphism to the Frobenius fixed points is the entrywise extension of coefficients along
