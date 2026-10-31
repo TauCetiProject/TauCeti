@@ -103,6 +103,12 @@ at least a cutoff depending on the vector. -/
 def IsSmooth (σ : C →ₗ[R] Module.End R M) : Prop :=
   ∀ m : M, ∃ N : ℤ, ∀ u ∈ orderSubmodule R L N, σ u m = 0
 
+/-- An action of formal currents is smooth when every vector is killed by the currents of some
+order. -/
+theorem isSmooth_iff {σ : C →ₗ[R] Module.End R M} :
+    IsSmooth σ ↔ ∀ m : M, ∃ N : ℤ, ∀ u ∈ orderSubmodule R L N, σ u m = 0 :=
+  Iff.rfl
+
 variable {ρ : LieAlgebra.loopAlgebra R ℤ L →ₗ[R] Module.End R M}
 
 /-- If all modes of order at least `N` kill `m`, then so does every polynomial current of order at
