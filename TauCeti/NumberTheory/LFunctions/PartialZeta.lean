@@ -112,6 +112,7 @@ theorem rayClassCoeff_apply_of_not_isCoprimeTo {𝔪 : Modulus K} (c : RayClassG
   rw [rayClassCoeff, dite_eq_right hI]
 
 /-- The indicator of `c` at an ideal of the carrier `integralIdealsPrimeTo 𝔪` lying in `c`. -/
+@[simp]
 theorem rayClassCoeff_apply_of_idealClass_eq {𝔪 : Modulus K} {c : RayClassGroup 𝔪}
     {I : (Ideal (𝓞 K))⁰} (hI : (I : Ideal (𝓞 K)) ∈ integralIdealsPrimeTo 𝔪)
     (hc : idealClass 𝔪 ⟨I, hI⟩ = c) : rayClassCoeff 𝔪 c I = 1 := by
@@ -119,6 +120,7 @@ theorem rayClassCoeff_apply_of_idealClass_eq {𝔪 : Modulus K} {c : RayClassGro
     ite_eq_left hc]
 
 /-- The indicator of `c` vanishes at an ideal of the carrier lying in another class. -/
+@[simp]
 theorem rayClassCoeff_apply_of_idealClass_ne {𝔪 : Modulus K} {c : RayClassGroup 𝔪}
     {I : (Ideal (𝓞 K))⁰} (hI : (I : Ideal (𝓞 K)) ∈ integralIdealsPrimeTo 𝔪)
     (hc : idealClass 𝔪 ⟨I, hI⟩ ≠ c) : rayClassCoeff 𝔪 c I = 0 := by
