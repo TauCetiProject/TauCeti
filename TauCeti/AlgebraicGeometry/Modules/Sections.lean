@@ -33,6 +33,9 @@ containing the pairwise intersections (`Scheme.Modules.sectionsDiffPiBaseLinear`
 By the sheaf condition the first is injective and its image is the kernel of the second
 (`Scheme.Modules.sectionsRestrictPiBaseLinear_injective`,
 `Scheme.Modules.exact_sectionsRestrictPiBaseLinear`).
+
+Morphisms `𝒪_X ⟶ M` out of the structure sheaf are the global sections of `M`
+(`Scheme.Modules.unitHomEquivTop`).
 -/
 
 public section
@@ -348,5 +351,27 @@ lemma pushforwardSectionsBaseLinearEquiv_symm_apply (M : X.Modules) (U : Y.Opens
   rfl
 
 end
+
+section UnitHom
+
+variable {X : Scheme.{u}} (M : X.Modules)
+
+/-- Morphisms `𝒪_X ⟶ M` out of the structure sheaf are the global sections of `M`: a morphism
+goes to the image of `1` over `X`. This is Mathlib's `SheafOfModules.unitHomEquiv`, followed by
+the evaluation of a compatible family of sections at the terminal open `X`. -/
+noncomputable def unitHomEquivTop : (SheafOfModules.unit X.ringCatSheaf ⟶ M) ≃ Γ(M, ⊤) :=
+  (SheafOfModules.unitHomEquiv M).trans
+    { toFun s := s.val (op ⊤)
+      invFun t := PresheafOfModules.sectionsMk (fun U ↦ M.presheaf.map U.unop.leTop.op t)
+        fun {U _} f ↦ (ConcreteCategory.congr_hom (M.presheaf.map_comp U.unop.leTop.op f) t).symm
+      left_inv s := PresheafOfModules.sections_ext _ _ fun U ↦
+        PresheafOfModules.sections_property s U.unop.leTop.op
+      right_inv t := by
+        -- `sectionsMk` evaluates by its defining family, here restriction from `⊤` to `⊤`.
+        change M.presheaf.map (⊤ : X.Opens).leTop.op t = t
+        rw [show (⊤ : X.Opens).leTop = 𝟙 _ from Subsingleton.elim _ _, op_id,
+          CategoryTheory.Functor.map_id, ConcreteCategory.id_apply] }
+
+end UnitHom
 
 end AlgebraicGeometry.Scheme.Modules
