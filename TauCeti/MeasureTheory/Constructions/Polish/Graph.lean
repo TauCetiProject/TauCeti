@@ -23,11 +23,12 @@ from a standard Borel space, hence a measurable embedding
 measurable as soon as its first coordinate is (`MeasurableSet.measurable_iff_measurable_fst`).
 Applied to `x ↦ (x, f x)`, this recovers `f` from its graph. The same argument applies to maps
 defined on a subset `s ⊆ X`: the graph `s.graphOn f` is measurable if and only if `s` is
-measurable and `f` is measurable on `s` (`measurableSet_graphOn_iff`). Since every set `G` with
-`InjOn Prod.fst G` is of the form `graphOn f (Prod.fst '' G)` (`Set.exists_eq_graphOn_image_fst`),
-this describes all measurable sets with at most one point in each vertical section: their domain
-is measurable (`MeasurableSet.of_graphOn`) and the partial function they name is measurable on it
-(`MeasurableSet.measurable_domRestrict_of_graphOn`).
+measurable and `f` is measurable on `s` (`TauCeti.measurableSet_graphOn_iff`). When `Y` is
+nonempty, every set `G` with `InjOn Prod.fst G` is of the form `graphOn f (Prod.fst '' G)`
+(`Set.exists_eq_graphOn_image_fst`), so this describes all measurable sets with at most one point
+in each vertical section: their domain is measurable (`MeasurableSet.of_graphOn`) and the partial
+function they name is measurable on it (`MeasurableSet.measurable_domRestrict_of_graphOn`). The
+projection embedding above needs no such hypothesis.
 
 The analytic form is Souslin's theorem. If the graph of `f` is analytic, the preimage
 `f ⁻¹' t = (Function.graph f).preimage t` of a Borel set is analytic, and so is the preimage of
@@ -39,19 +40,20 @@ its complement; a set that is analytic with analytic complement is Borel.
   most one point above each `x` is a measurable embedding.
 * `MeasurableSet.measurable_iff_measurable_fst`: a map with values in such a set is measurable if
   and only if its first coordinate is.
-* `measurableSet_graphOn_iff`: a partial map between standard Borel spaces has measurable graph if
-  and only if its domain is measurable and it is measurable on its domain.
-* `measurableSet_graph_iff_measurable`: a map between standard Borel spaces is measurable if and
-  only if its graph is measurable.
-* `measurable_of_analyticSet_graph`, `analyticSet_graph_iff_measurable`: a map between Polish
-  spaces is measurable if and only if its graph is analytic.
+* `TauCeti.measurableSet_graphOn_iff`: a partial map between standard Borel spaces has
+  measurable graph if and only if its domain is measurable and it is measurable on its domain.
+* `TauCeti.measurableSet_graph_iff_measurable`: a map between standard Borel spaces is
+  measurable if and only if its graph is measurable.
+* `MeasureTheory.AnalyticSet.measurable_of_graph`, `TauCeti.analyticSet_graph_iff_measurable`:
+  a map between Polish spaces is measurable if and only if its graph is analytic.
 
 ## References
 
 * A. S. Kechris, *Classical Descriptive Set Theory*, Graduate Texts in Mathematics 156,
   Springer, 1995, Theorem 14.12 (the Borel graph theorem) and Theorem 15.1 (Lusin–Souslin).
-* The names and statements of `measurable_of_analyticSet_graph` and
-  `analyticSet_graph_iff_measurable` follow Mathlib PR 41945,
+* The statements of `MeasureTheory.AnalyticSet.measurable_of_graph` and
+  `TauCeti.analyticSet_graph_iff_measurable` follow `measurable_of_analyticSet_graph` and
+  `analyticSet_graph_iff_measurable` in Mathlib PR 41945,
   `feat(Polish): add analyticSet_graph_iff_measurable` (generantao, with Zelong Li, Aaron Liu and
   Wojciech Nawrocki), whose proof of the analytic direction is adapted here.
 * The treatment of measurable sets with at most one point above each `x` through the projection
@@ -103,6 +105,8 @@ theorem MeasurableSet.measurable_domRestrict_of_graphOn {s : Set X} {f : X → Y
     (h.measurable_iff_measurable_fst fst_injOn_graph fun x ↦ by simp).2 measurable_subtype_coe
   exact measurable_snd.comp this
 
+namespace TauCeti
+
 /-- **The Borel graph theorem for partial maps.** The graph of `f` on `s`, for standard Borel
 spaces `X` and `Y`, is measurable if and only if `s` is measurable and `f` is measurable on
 `s`. -/
@@ -120,14 +124,16 @@ theorem measurableSet_graph_iff_measurable {f : X → Y} :
       measurable_id
   exact measurable_snd.comp this
 
+end TauCeti
+
 end StandardBorel
 
 /-- **Souslin's theorem for graphs.** A map from a Hausdorff space with its Borel sets measurable
 to a Polish space, whose graph is analytic, is measurable. -/
 @[fun_prop]
-theorem measurable_of_analyticSet_graph [TopologicalSpace X] [T2Space X] [MeasurableSpace X]
-    [OpensMeasurableSpace X] [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y]
-    [BorelSpace Y] {f : X → Y} (hf : AnalyticSet f.graph) : Measurable f := by
+theorem MeasureTheory.AnalyticSet.measurable_of_graph [TopologicalSpace X] [T2Space X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] [TopologicalSpace Y] [PolishSpace Y]
+    [MeasurableSpace Y] [BorelSpace Y] {f : X → Y} (hf : AnalyticSet f.graph) : Measurable f := by
   intro t ht
   refine AnalyticSet.measurableSet_of_compl ?_ ?_
   · rw [preimage_eq]
@@ -135,9 +141,13 @@ theorem measurable_of_analyticSet_graph [TopologicalSpace X] [T2Space X] [Measur
   · rw [← preimage_compl, preimage_eq]
     exact hf.relPreimage ht.compl.analyticSet
 
+namespace TauCeti
+
 /-- **The Borel graph theorem, analytic form.** A map between Polish spaces is measurable if and
 only if its graph is analytic. -/
 theorem analyticSet_graph_iff_measurable [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X]
     [BorelSpace X] [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
     {f : X → Y} : AnalyticSet f.graph ↔ Measurable f :=
-  ⟨measurable_of_analyticSet_graph, fun hf ↦ hf.measurableSet_graph.analyticSet⟩
+  ⟨AnalyticSet.measurable_of_graph, fun hf ↦ hf.measurableSet_graph.analyticSet⟩
+
+end TauCeti
