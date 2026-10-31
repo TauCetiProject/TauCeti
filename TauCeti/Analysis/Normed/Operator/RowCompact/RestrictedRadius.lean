@@ -7,12 +7,9 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.RowCompact
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
-import Mathlib.Data.Finsupp.Weight
-import Mathlib.LinearAlgebra.Dimension.Finite
-import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.RingTheory.MvPowerSeries.Trunc
 import Mathlib.Topology.WithTopology
-import TauCeti.Data.Finsupp.Weight
+import TauCeti.Analysis.SpecificLimits.MonomialWeight
 
 /-!
 # Improvement of radius is compact
@@ -45,8 +42,6 @@ at `c`.
 
 ## Main results
 
-* `Finsupp.tendsto_prod_pow_cofinite_nhds_zero`: over finitely many variables, the monomial
-  weights `∏ wᵢ ^ tᵢ` with `0 ≤ wᵢ < 1` tend to zero along the cofinite filter of exponents.
 * `TauCeti.MvPowerSeries.isCompletelyContinuous_restrictedRadiusCLM`: strict radius restriction
   is completely continuous.
 * `TauCeti.MvPowerSeries.not_isCompletelyContinuous_id_isRestrictedSubring`: equal radii give no
@@ -68,31 +63,6 @@ public section
 open Filter Topology
 open scoped ZeroAtInfty
 
-namespace Finsupp
-
-/-- Over finitely many variables, the monomial weights `∏ wᵢ ^ tᵢ` of polyradii `w` with
-`0 ≤ wᵢ < 1` tend to zero along the cofinite filter of exponents. -/
-theorem tendsto_prod_pow_cofinite_nhds_zero {σ : Type*} [Finite σ] {w : σ → ℝ}
-    (h0 : ∀ i, 0 ≤ w i) (h1 : ∀ i, w i < 1) :
-    Tendsto (fun t : σ →₀ ℕ ↦ t.prod (w · ^ ·)) cofinite (𝓝 0) := by
-  rcases isEmpty_or_nonempty σ with hσ | hσ
-  · simp [cofinite_eq_bot]
-  have := Fintype.ofFinite σ
-  -- Every weight is bounded by `q ^ degree t`, where `q < 1` is the largest `wᵢ`.
-  set q := Finset.univ.sup' Finset.univ_nonempty w
-  have hwq (i : σ) : w i ≤ q := Finset.le_sup' w (Finset.mem_univ i)
-  have hq1 : q < 1 := (Finset.sup'_lt_iff _).2 fun i _ ↦ h1 i
-  have hdeg : Tendsto (fun t : σ →₀ ℕ ↦ t.degree) cofinite atTop :=
-    tendsto_atTop.2 fun N ↦ (finite_of_degree_lt N).eventually_cofinite_notMem.mono
-      fun _ ht ↦ not_lt.1 ht
-  refine squeeze_zero (fun t ↦ Finset.prod_nonneg fun i _ ↦ pow_nonneg (h0 i) _) (fun t ↦ ?_)
-    ((tendsto_pow_atTop_nhds_zero_of_lt_one ((h0 _).trans (hwq hσ.some)) hq1).comp hdeg)
-  rw [Function.comp_apply, ← prod_pow_eq_pow_degree]
-  exact Finset.prod_le_prod₀ (fun i _ ↦ pow_nonneg (h0 i) _) fun i _ ↦
-    pow_le_pow_left₀ (h0 i) (hwq i) _
-
-end Finsupp
-
 namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries
@@ -100,16 +70,6 @@ open _root_.MvPowerSeries
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
 section Finiteness
-
-/-- Over a nontrivial ring, restricted series in at least one variable do not form a finitely
-generated module: the restricted monomials are linearly independent and infinite in number. -/
-theorem not_finite_isRestrictedSubring [Nontrivial R] [Nonempty σ] (c : σ → ℝ) :
-    ¬Module.Finite R (IsRestricted.subring (R := R) c) := fun _ ↦
-  Module.Finite.not_linearIndependent_of_infinite _
-    ((MvPolynomial.basisMonomials σ R).linearIndependent.map'
-      (polynomialToRestricted c).toLinearMap
-      (LinearMap.ker_eq_bot.2 fun _ _ h ↦
-        MvPolynomial.coe_injective σ R (by simpa using congrArg Subtype.val h)))
 
 /-- Over a complete nontrivial ring, the identity of a restricted-series algebra in at least one
 variable is not completely continuous. Hence radius restriction is not completely continuous for
