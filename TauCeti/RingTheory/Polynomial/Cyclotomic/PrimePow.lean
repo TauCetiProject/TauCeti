@@ -11,6 +11,9 @@ public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 public import Mathlib.RingTheory.Polynomial.Eisenstein.IsIntegral
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Basic
 
+import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.NumberTheory.Basic
+
 /-!
 # The shifted prime-power cyclotomic polynomials
 
@@ -43,6 +46,8 @@ available in `O⟦T⟧`. When `p` is a prime element of a domain `R` (for instan
   every ideal containing `p`.
 * `Polynomial.irreducible_cyclotomic_prime_pow_comp_X_add_one`: over a domain in which `p` is
   prime, `ξ_n` is irreducible.
+* `Polynomial.sq_dvd_eval_cyclotomic_prime_pow_comp_X_add_one_sub`: if `p ∣ t ^ p ^ k`, then
+  `ξ_{n+1}(t) ≡ p` modulo `p ^ 2` for every `n > k`.
 
 ## References
 
@@ -149,5 +154,29 @@ theorem irreducible_cyclotomic_prime_pow_comp_X_add_one [IsDomain R] (hpR : Prim
       ((Ideal.span_singleton_prime hpR.ne_zero).2 hpR)
       (monic_cyclotomic_comp_X_add_one _).isPrimitive
       (by simpa using Nat.totient_pos.2 (pow_pos hp.out.pos _))
+
+/-- **`ξ_{n+1}(t) ≡ p` modulo `p ^ 2` once `t ^ p ^ k` is divisible by `p` and `n > k`.**
+
+On a ring in which `p` lies in the Jacobson radical, this says that `ξ_{n+1}(t)` is `p` times a
+unit; this is how the cyclotomic factors act on a finite free quotient `O⟦T⟧ ⧸ (F)` of the Iwasawa
+algebra by a distinguished polynomial `F` (NSW Lemma 5.3.18). -/
+theorem sq_dvd_eval_cyclotomic_prime_pow_comp_X_add_one_sub {t : R} {k n : ℕ}
+    (ht : (p : R) ∣ t ^ p ^ k) (hkn : k < n) :
+    (p : R) ^ 2 ∣ ((cyclotomic (p ^ (n + 1)) R).comp (X + 1)).eval t - p := by
+  have hk : (p : R) ∣ (1 + t) ^ p ^ k - 1 := by
+    obtain ⟨r, hr⟩ := exists_add_pow_prime_pow_eq hp.out 1 t k
+    rw [hr, show 1 ^ p ^ k + t ^ p ^ k + p * 1 * t * r - 1 = t ^ p ^ k + p * (t * r) by ring]
+    exact dvd_add ht (dvd_mul_right _ _)
+  have hn : (p : R) ^ 2 ∣ (1 + t) ^ p ^ n - 1 := by
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_lt hkn
+    have h := dvd_sub_pow_of_dvd_sub hk (j + 1)
+    rw [one_pow, ← pow_mul, ← pow_add, show k + (j + 1) = k + j + 1 by omega] at h
+    exact (pow_dvd_pow _ (by omega)).trans h
+  have hsum : ((cyclotomic (p ^ (n + 1)) R).comp (X + 1)).eval t - p =
+      ∑ i ∈ range p, (((1 + t) ^ p ^ n) ^ i - 1) := by
+    rw [cyclotomic_prime_pow_comp_X_add_one_eq_sum, ← coe_evalRingHom, map_sum]
+    simp [sum_sub_distrib, ← pow_mul, mul_comm]
+  rw [hsum]
+  exact dvd_sum fun i _ ↦ hn.trans (sub_one_dvd_pow_sub_one _ i)
 
 end Polynomial
