@@ -110,7 +110,7 @@ abbrev CentralizerExt (u : G) (n : ℕ) : Type u :=
 
 namespace CentralizerExt
 
-variable {u : G} {n : ℕ} {K : Type v} [Group K]
+variable {u : G} {n : ℕ} {K : Type v}
 
 open Monoid.PushoutI
 
@@ -151,7 +151,7 @@ theorem commute_t_t (i j : Fin n) : Commute (t i : CentralizerExt u n) (t j) :=
 
 /-- Homomorphisms out of `G(u, ℤⁿ)` agree when they agree on `G` and on the new letters. -/
 @[ext high]
-theorem hom_ext {f g : CentralizerExt u n →* K} (hof : f.comp of = g.comp of)
+theorem hom_ext [Monoid K] {f g : CentralizerExt u n →* K} (hof : f.comp of = g.comp of)
     (ht : ∀ i, f (t i) = g (t i)) : f = g := by
   refine Monoid.PushoutI.hom_ext_nonempty fun b => ?_
   cases b
@@ -171,6 +171,8 @@ theorem hom_ext {f g : CentralizerExt u n →* K} (hof : f.comp of = g.comp of)
     simp only [MonoidHom.coe_comp, Function.comp_apply]
     rw [hcv, map_mul, map_mul, map_mul, hl]
     exact congrArg _ (DFunLike.congr_fun hr v)
+
+variable [Group K]
 
 /-- A homomorphism out of `G(u, ℤⁿ)` is given by a homomorphism `φ` on `G` and pairwise commuting
 images `τ i` of the new letters that commute with `φ (C_G(u))`. -/
