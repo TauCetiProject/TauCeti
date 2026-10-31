@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.TensorProduct.Basic
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 
 /-!
 # The real points of a conjugate-linear involution
@@ -62,6 +64,9 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   star module have the `ℝ`-dimension that the module has over `ℂ`.
 * `TauCeti.exists_one_tmul_add_I_tmul`: every element of `ℂ ⊗[ℝ] W` is `1 ⊗ₜ w₁ + I ⊗ₜ w₂`; this
   is what makes the lift injective.
+* `LinearMap.liftBaseChange_complex_injective_of_conj`: more generally, an injective real-linear
+  map whose values a conjugate-linear map fixes induces an injective map on the complexification,
+  for any real structure compatible with the complex one.
 * `TauCeti.tmulConj_involutive`, `TauCeti.tmulConj_tmul` and `TauCeti.tmulConj_eq_self_iff`: the
   conjugation of a complexification and its real points.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
@@ -94,6 +99,9 @@ consumer works from.
 
 The real scalar structure on `V` is Mathlib's `Module.complexToReal`, the one `Module ℂ V` induces,
 so `r • v` and `(r : ℂ) • v` are definitionally equal and no scalar tower hypothesis is carried.
+The injectivity argument `LinearMap.liftBaseChange_complex_injective_of_conj` is the exception: it
+takes an arbitrary real structure with `IsScalarTower ℝ ℂ E`, so that it also serves spaces such
+as `Matrix n n ℂ` whose real structure is not syntactically `Module.complexToReal`.
 
 ## References
 
@@ -216,6 +224,39 @@ theorem exists_one_tmul_add_I_tmul {W : Type*} [AddCommGroup W] [Module ℝ W] (
   rw [← hc, Finsupp.sum_fintype _ _ (by simp), Fin.sum_univ_two, Complex.coe_basisOneI]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
 
+/-! ### Real-linear maps into the real points -/
+
+section LiftBaseChange
+
+variable {E W : Type*} [AddCommGroup E] [Module ℂ E] [Module ℝ E] [IsScalarTower ℝ ℂ E]
+  [AddCommGroup W] [Module ℝ W]
+
+/-- **Vectors fixed by a conjugate-linear map complexify injectively.**  If a conjugate-linear
+`K` fixes every value of an injective real-linear map `f : W → E`, then the induced map
+`ℂ ⊗[ℝ] W → E`, `c ⊗ₜ w ↦ c • f w`, is injective: applying `K` to a relation
+`f w₁ + I • f w₂ = 0` flips the sign of its `I`-component, so adding the two relations kills
+`f w₂` and leaves `2 • f w₁ = 0`.
+
+The real structure on `E` is an arbitrary one compatible with the complex structure
+(`IsScalarTower ℝ ℂ E`), so this also applies to spaces such as `Matrix n n ℂ` whose real
+structure is not syntactically `Module.complexToReal`. -/
+theorem _root_.LinearMap.liftBaseChange_complex_injective_of_conj (f : W →ₗ[ℝ] E)
+    {K : E →ₛₗ[starRingEnd ℂ] E} (hf : Function.Injective f) (hK : ∀ w, K (f w) = f w) :
+    Function.Injective (f.liftBaseChange ℂ) := by
+  rw [injective_iff_map_eq_zero]
+  intro u hu
+  obtain ⟨w₁, w₂, rfl⟩ := exists_one_tmul_add_I_tmul u
+  have h : f w₁ + Complex.I • f w₂ = 0 := by simpa using hu
+  have hconj : f w₁ + (-Complex.I) • f w₂ = 0 := by simpa [hK] using congrArg K h
+  have h₁ : f w₁ = 0 := by
+    have h2 : (2 : ℂ) • f w₁ = 0 := by linear_combination (norm := module) h + hconj
+    simpa using h2
+  have h₂ : f w₂ = 0 := by simpa [h₁] using h
+  rw [hf (h₁.trans (map_zero f).symm), hf (h₂.trans (map_zero f).symm)]
+  simp
+
+end LiftBaseChange
+
 /-! ### The complexification of the real points -/
 
 variable (K) in
@@ -240,31 +281,11 @@ theorem realPointsLift_surjective (hK : Function.Involutive K) :
     exact conjRealPart_add_I_smul_conjImaginaryPart v⟩
 
 /-- The lift is injective for **any** conjugate-linear `K`: only its surjectivity uses that `K` is
-involutive. -/
-theorem realPointsLift_injective : Function.Injective (realPointsLift K) := by
-  rw [injective_iff_map_eq_zero]
-  intro u hu
-  obtain ⟨w₁, w₂, rfl⟩ := exists_one_tmul_add_I_tmul u
-  rw [map_add, realPointsLift_tmul, realPointsLift_tmul, one_smul] at hu
-  -- Applying `K` flips the sign of the `I`-component, so both components vanish.
-  have hconj : (w₁ : V) - Complex.I • (w₂ : V) = 0 := by
-    have h := congrArg K hu
-    rwa [map_add, map_smulₛₗ, Complex.conj_I, neg_smul, ← sub_eq_add_neg, w₁.2, w₂.2,
-      map_zero] at h
-  have h₁ : (w₁ : V) = 0 := by
-    have h2 : ((w₁ : V) + Complex.I • (w₂ : V)) + ((w₁ : V) - Complex.I • (w₂ : V))
-        = (2 : ℂ) • (w₁ : V) := by
-      rw [two_smul]
-      abel
-    rw [hu, hconj, add_zero] at h2
-    -- `(2 : ℂ) • w₁ = 0` forces `w₁ = 0`: `smul_eq_zero` and `2 ≠ 0`.
-    simpa using h2.symm
-  have h₂ : (w₂ : V) = 0 := by
-    have hI : Complex.I • (w₂ : V) = 0 := by rw [← hu, h₁, zero_add]
-    simpa using hI
-  rw [Submodule.coe_eq_zero] at h₁ h₂
-  rw [h₁, h₂]
-  simp
+involutive.  This is `LinearMap.liftBaseChange_complex_injective_of_conj` for the inclusion of
+the real points. -/
+theorem realPointsLift_injective : Function.Injective (realPointsLift K) :=
+  (realPoints K).subtype.liftBaseChange_complex_injective_of_conj Subtype.val_injective
+    fun w ↦ w.2
 
 /-- **A complex vector space is the complexification of the real points of any conjugation on
 it.**  The isomorphism is `c ⊗ₜ w ↦ c • w`; surjectivity is the decomposition
