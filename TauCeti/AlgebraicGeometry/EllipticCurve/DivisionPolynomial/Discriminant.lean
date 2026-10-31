@@ -34,12 +34,14 @@ consumer instantiate it. For a short model (`a₁ = a₃ = 0`, so
 * `WeierstrassCurve.dvd_four_mul_Δ_of_dvd_Ψ₂Sq_of_dvd_four_mul_Ψ₃`: over any commutative
   ring, a common divisor of `Ψ₂Sq(x)` and `4·Ψ₃(x)` divides `4Δ`.
 * `WeierstrassCurve.evalEval_ψ₂_sq`: on the curve, `ψ₂(x, y)² = Ψ₂Sq(x)`.
+* `WeierstrassCurve.evalEval_ψ₂_sq_eq_iff`: conversely, over a domain with `2 ≠ 0`, a solution of
+  `ψ₂(x, y)² = Ψ₂Sq(x)` lies on the curve.
 * `WeierstrassCurve.isUnit_two_of_evalEval_ψ₂_eq_zero`: if `W` is elliptic and `ψ₂` vanishes at
   two points whose `x`-coordinates differ by a unit, then `2` is a unit, since modulo `2` both `a₁`
   and `a₃` vanish and then so does `Δ`.
 
-Stated over an arbitrary commutative ring: no domain or integrality hypothesis, and no ellipticity
-hypothesis outside `isUnit_two_of_evalEval_ψ₂_eq_zero`.
+Stated over an arbitrary commutative ring: no domain or integrality hypothesis outside
+`evalEval_ψ₂_sq_eq_iff`, and no ellipticity hypothesis outside `isUnit_two_of_evalEval_ψ₂_eq_zero`.
 
 ⚠ **No torsion hypothesis appears here, and no part of `lutz_nagell` is proved.** The headline is a
 statement about polynomials, usable by any caller with a common divisor in hand, and
@@ -89,6 +91,21 @@ theorem _root_.WeierstrassCurve.evalEval_ψ₂_sq (h : W.toAffine.Equation x y) 
   have hsq := congrArg (Polynomial.evalEval x y) W.ψ₂_sq
   rw [_root_.WeierstrassCurve.Affine.Equation] at h
   simpa [h, evalEval_C] using hsq
+
+/-- **A solution of `ψ₂(x, y)² = Ψ₂Sq(x)` lies on the curve**, when `2 ≠ 0` in a domain: the two
+sides differ by `4` times the Weierstrass polynomial at `(x, y)`. This is the converse of
+`evalEval_ψ₂_sq`. -/
+theorem _root_.WeierstrassCurve.evalEval_ψ₂_sq_eq_iff [NoZeroDivisors R] (h2 : (2 : R) ≠ 0) :
+    W.ψ₂.evalEval x y ^ 2 = (W.Ψ₂Sq).eval x ↔ W.toAffine.Equation x y := by
+  refine ⟨fun h ↦ ?_, W.evalEval_ψ₂_sq⟩
+  rw [_root_.WeierstrassCurve.ψ₂, _root_.WeierstrassCurve.Affine.evalEval_polynomialY] at h
+  simp only [_root_.WeierstrassCurve.Ψ₂Sq, _root_.WeierstrassCurve.b₂,
+    _root_.WeierstrassCurve.b₄, _root_.WeierstrassCurve.b₆, eval_add, eval_mul, eval_C, eval_pow,
+    eval_X] at h
+  rw [_root_.WeierstrassCurve.Affine.equation_iff, ← sub_eq_zero]
+  have h4 : (2 * 2 : R) * (y ^ 2 + W.a₁ * x * y + W.a₃ * y -
+      (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆)) = 0 := by linear_combination h
+  simpa [h2] using h4
 
 /-- The Bézout combination exhibiting `4Δ` from `Ψ₂Sq(x)` and `Ψ₃(x)`.
 
