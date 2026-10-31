@@ -19,8 +19,9 @@ second factor* is the `m × m` matrix `Matrix.partialTraceRight Y` with entries
 the partial trace `Tr₂` of quantum mechanics, which forgets the second subsystem.
 
 The partial trace preserves the trace, `Matrix.trace_partialTraceRight`, sends a Kronecker product
-`A ⊗ₖ B` to `Tr B • A`, `Matrix.partialTraceRight_kronecker`, and is a bimodule map over the
-first factor: `Tr₂ ((A ⊗ₖ 1) * Y * (B ⊗ₖ 1)) = A * Tr₂ Y * B`
+`A ⊗ₖ B` to `Tr B • A`, `Matrix.partialTraceRight_kronecker`, sends `1` to `card n • 1`,
+`Matrix.partialTraceRight_one`, and is a bimodule map over the first factor:
+`Tr₂ ((A ⊗ₖ 1) * Y * (B ⊗ₖ 1)) = A * Tr₂ Y * B`
 (`Matrix.partialTraceRight_kronecker_one_mul`, `Matrix.partialTraceRight_mul_kronecker_one`). It
 commutes with conjugate transposition and preserves positive semidefiniteness, since each
 diagonal block is a compression of `Y`.
@@ -89,6 +90,13 @@ theorem partialTraceRight_kronecker [CommSemiring R] (A : Matrix m m R) (B : Mat
     partialTraceRight (A ⊗ₖ B) = trace B • A := by
   ext
   simp [trace, Finset.sum_mul, mul_comm (A _ _)]
+
+/-- The partial trace of the identity is `card n • 1`. -/
+@[simp]
+theorem partialTraceRight_one [NonAssocSemiring R] [DecidableEq m] [DecidableEq n] :
+    partialTraceRight (1 : Matrix (m × n) (m × n) R) = (Fintype.card n : R) • 1 := by
+  ext i j
+  by_cases hij : i = j <;> simp [hij]
 
 variable [Semiring R] [Fintype m] [DecidableEq n]
 

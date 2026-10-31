@@ -35,10 +35,10 @@ It preserves the trace, commutes with adjoints and preserves positive semidefini
 partial trace `QuantumSpin.expectation` divides by the number of configurations of `Λ' \ Λ`. It
 composes in the same way, commutes with adjoints, preserves positive semidefiniteness, and is a
 bimodule map, `E (ι a * X * ι b) = a * E X * b`. It rescales the trace so as to preserve the
-normalized traces, and in characteristic zero it is a left inverse of the inclusion,
-`E (ι x) = x`. Composition with `E` is the operation that extends a state of `A_Λ` to `A_Λ'` by
-the normalized trace on the sites of `Λ' \ Λ`, as needed for finite-volume states of spin
-systems.
+normalized traces, and in characteristic zero it is unital and a left inverse of the inclusion,
+`E 1 = 1` and `E (ι x) = x`. Composition with `E` is the operation that extends a state of `A_Λ`
+to `A_Λ'` by the normalized trace on the sites of `Λ' \ Λ`, as needed for finite-volume states of
+spin systems.
 
 ## References
 
@@ -322,6 +322,14 @@ theorem partialTrace_partialTrace (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'') (X :
 
 end PartialTrace
 
+/-- Tracing out the sites of `Λ'` outside `Λ` from the identity gives the number of
+configurations of those sites. -/
+@[simp]
+theorem partialTrace_one [NonAssocSemiring R] [DecidableEq S] (h : Λ ⊆ Λ') :
+    partialTrace h (1 : Matrix (Λ' → S) (Λ' → S) R) =
+      (Fintype.card ({i : Λ' // (i : L) ∉ Λ} → S) : R) • 1 := by
+  rw [partialTrace, submatrix_one_equiv, partialTraceRight_one]
+
 section PartialTraceInclusion
 
 variable [CommSemiring R] [DecidableEq S] [StarRing R]
@@ -423,6 +431,13 @@ theorem _root_.Matrix.PosSemidef.quantumSpinExpectation {R : Type*} [Field R] [P
         rw [star_inv₀, star_natCast, inv_mul_cancel₀ hc, one_mul]
       exact hcc ▸ star_left_conjugate_nonneg (Nat.cast_nonneg _) _
   exact (hX.quantumSpinPartialTrace h).smul hc
+
+/-- The normalized partial trace is unital: `E 1 = 1`. -/
+@[simp]
+theorem expectation_one [CharZero R] [Nonempty S] [DecidableEq S] (h : Λ ⊆ Λ') :
+    expectation h (1 : Matrix (Λ' → S) (Λ' → S) R) = 1 := by
+  rw [expectation_apply, partialTrace_one, smul_smul,
+    inv_mul_cancel₀ (Nat.cast_ne_zero.2 Fintype.card_ne_zero), one_smul]
 
 variable [DecidableEq S] [StarRing R]
 
