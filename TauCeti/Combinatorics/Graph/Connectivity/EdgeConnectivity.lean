@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
-public import TauCeti.Combinatorics.Graph.Connectivity.Bridge
+public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Delete
 public import TauCeti.Combinatorics.Graph.Incidence

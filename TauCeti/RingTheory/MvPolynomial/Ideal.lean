@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.Polynomial.Ideal
+import TauCeti.RingTheory.Localization.Ideal
 
 /-!
 # Ideals of multivariate polynomial rings
@@ -24,7 +25,10 @@ is maximal over a field.
 
 For arbitrary ideals given by generating sets, adjoining one auxiliary variable reduces their
 intersection to contraction: multiply the first family by `X none` and the second by
-`1 - X none`, then contract along `rename some`. This formula needs no monomial order.
+`1 - X none`, then contract along `rename some`. Similarly, the saturation of an ideal `I` by a
+polynomial `f`, the set of `g` with `f ^ n * g ∈ I` for some `n`, is the contraction along
+`rename some` of `I + (f X_none - 1)`; it is also the contraction of `I` from the localization
+away from `f`. These formulas need no monomial order.
 
 ## Main results
 
@@ -36,11 +40,15 @@ intersection to contraction: multiply the first family by `X none` and the secon
   constant coefficient of `q`.
 * `Ideal.span_inf_span_eq_comap_rename_some`: an intersection of generated ideals is the
   contraction of an ideal in one more variable.
+* `Ideal.mem_comap_rename_some_map_rename_some_sup_span_iff` and
+  `Ideal.comap_rename_some_map_rename_some_sup_span`: the saturation of an ideal by a polynomial is
+  the contraction of an ideal in one more variable, and the contraction from the localization.
 
 ## References
 
 * D. Cox, J. Little, D. O'Shea, *Ideals, Varieties, and Algorithms*, Chapter 4, §3,
-  computing intersections by elimination.
+  computing intersections by elimination, and Chapter 4, §4, computing saturations by
+  elimination.
 -/
 
 public section
@@ -112,5 +120,35 @@ theorem span_inf_span_eq_comap_rename_some (s t : Set (MvPolynomial σ R)) :
   rw [span_inf_span_eq_comap_C, ← hmap, ← hcomp, ← comap_comap,
     K.comap_map_of_bijective e (optionEquivLeft R σ).bijective,
     AlgHom.toRingHom_eq_coe, comap_coe]
+
+/-- **Saturation by an added variable.** A polynomial `g` lies in the contraction along
+`rename some` of `I + (f X_none - 1)` if and only if some power of `f` multiplies it into `I`. -/
+theorem mem_comap_rename_some_map_rename_some_sup_span_iff {I : Ideal (MvPolynomial σ R)}
+    {f g : MvPolynomial σ R} :
+    g ∈ (I.map (rename some) ⊔ span {rename some f * X none - 1}).comap
+      (rename (R := R) some) ↔ ∃ n : ℕ, f ^ n * g ∈ I := by
+  -- Transport to polynomials in `X none` over `MvPolynomial σ R`, where `rename some` is `C`.
+  let e := (optionEquivLeft R σ).toAlgHom
+  have hcomp : e.comp (rename (R := R) some) = Polynomial.CAlgHom := by
+    ext; simp [e]
+  have hf : e (rename some f) = Polynomial.C f := AlgHom.congr_fun hcomp f
+  have hX : e (X none) = Polynomial.X := optionEquivLeft_X_none R σ
+  have hmap : (I.map (rename some) ⊔ span {rename some f * X none - 1}).map e =
+      I.map (Polynomial.CAlgHom (R := R)) ⊔ span {Polynomial.C f * Polynomial.X - 1} := by
+    simp [map_sup, map_mapₐ, map_span, hcomp, hf, hX]
+  rw [← comap_map_of_bijective e (optionEquivLeft R σ).bijective (I := I.map (rename some) ⊔ _),
+    hmap, comap_comapₐ, hcomp]
+  exact mem_comap_C_map_C_sup_span_C_mul_X_sub_one_iff
+
+/-- The contraction along `rename some` of `I + (f X_none - 1)` is the contraction of `I` from
+the localization `S` of `MvPolynomial σ R` away from `f`. -/
+theorem comap_rename_some_map_rename_some_sup_span (I : Ideal (MvPolynomial σ R))
+    (f : MvPolynomial σ R) (S : Type*) [CommSemiring S] [Algebra (MvPolynomial σ R) S]
+    [IsLocalization.Away f S] :
+    (I.map (rename some) ⊔ span {rename some f * X none - 1}).comap (rename (R := R) some) =
+      (I.map (algebraMap _ S)).comap (algebraMap _ S) := by
+  ext g
+  rw [mem_comap_rename_some_map_rename_some_sup_span_iff, mem_comap,
+    IsLocalization.Away.algebraMap_mem_map_algebraMap_iff f]
 
 end Ideal
