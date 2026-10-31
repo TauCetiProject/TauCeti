@@ -71,6 +71,8 @@ function `X₁ / X₀` on that chart going to `X`.
 
 * `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_coord_pow_mul_add_coord_pow_mul`: a form
   of degree `k + l` with `k ≤ l + 1` is `X₀ᵏ a + X₁ᵏ b` for forms `a` and `b` of degree `l`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_coord_pow_mul_add_coord_pow_mul_add`: for
+  `k = l + m + 2`, a form of degree `k + l` is `X₀ᵏ a + X₁ᵏ b + (X₀X₁)ˡ⁺¹ c` with `c` of degree `m`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.coord_mem_nonZeroDivisors`: homogeneous coordinates
   are nonzerodivisors over any ring, so every `polynomialChartι` is schematically dense.
 * `TauCeti.AlgebraicGeometry.projectiveLine.opensRange_polynomialChartι` and
@@ -110,6 +112,8 @@ function `X₁ / X₀` on that chart going to `X`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.natDegree_dehomogenize_le` and
   `TauCeti.AlgebraicGeometry.projectiveLine.dehomogenize_eq_zero_iff`: dehomogenizing a form of
   degree `j` gives a polynomial of degree at most `j`, and is injective on such forms.
+* `TauCeti.AlgebraicGeometry.projectiveLine.eq_zero_of_coord_pow_mul_eq`: a form `c` of degree
+  `m` with `X₀ᵏ X₁ᵏ' c = (X₀X₁)ᵐ⁺¹ (X₁ᵏ' a - X₀ᵏ b)`, for `b` of degree `k' - m - 2`, vanishes.
 
 ## References
 
@@ -218,6 +222,54 @@ theorem exists_eq_coord_pow_mul_add_coord_pow_mul {k l : ℕ} (hkl : k ≤ l + 1
   obtain ⟨a, ha, rfl⟩ := Submodule.mem_span_singleton_mul.mp ha'
   obtain ⟨b, hb, rfl⟩ := Submodule.mem_span_singleton_mul.mp hb'
   exact ⟨a, ha, b, hb, rfl⟩
+
+/-- For `k = l + m + 2`, a form of degree `k + l` is `X₀ᵏ a + X₁ᵏ b + (X₀X₁)ˡ⁺¹ c` with `a` and `b`
+of degree `l` and `c` of degree `m`: a monomial `X₀ᵅ X₁ᵝ` of degree `k + l` with `α, β < k` has
+`α, β ≥ l + 1`. -/
+theorem exists_eq_coord_pow_mul_add_coord_pow_mul_add {m k l : ℕ} (hk : k = l + m + 2)
+    {r : _root_.SymmetricAlgebra R (Fin 2 → R)} (hr : r ∈ 𝒜 (k + l)) :
+    ∃ a ∈ 𝒜 l, ∃ b ∈ 𝒜 l, ∃ c ∈ 𝒜 m,
+      r = coord R 0 ^ k * a + coord R 1 ^ k * b + (coord R 0 * coord R 1) ^ (l + 1) * c := by
+  let S : Submodule R (_root_.SymmetricAlgebra R (Fin 2 → R)) :=
+    (𝒜 l).map (LinearMap.mulLeft R (coord R 0 ^ k)) ⊔
+      (𝒜 l).map (LinearMap.mulLeft R (coord R 1 ^ k)) ⊔
+      (𝒜 m).map (LinearMap.mulLeft R ((coord R 0 * coord R 1) ^ (l + 1)))
+  suffices hS : 𝒜 (k + l) ≤ S by
+    obtain ⟨y, hy, z, ⟨c, hc, rfl⟩, rfl⟩ := Submodule.mem_sup.mp (hS hr)
+    obtain ⟨_, ⟨a, ha, rfl⟩, _, ⟨b, hb, rfl⟩, rfl⟩ := Submodule.mem_sup.mp hy
+    exact ⟨a, ha, b, hb, c, hc, rfl⟩
+  -- the forms of degree `k + l` are spanned by the products of `k + l` coordinates
+  have he : Submodule.span R (Set.range fun i : Fin 2 ↦ (Pi.single i 1 : Fin 2 → R)) = ⊤ := by
+    rw [← funext (Pi.basisFun_apply R (Fin 2)), (Pi.basisFun R (Fin 2)).span_eq]
+  rw [SymmetricAlgebra.homogeneousSubmodule_eq_span_of_span R _ _ he, Submodule.span_le]
+  rintro _ ⟨L, hL, rfl⟩
+  have hcoord (i : Fin 2) :
+      _root_.SymmetricAlgebra.ι R (Fin 2 → R) (Pi.single i 1) = coord R i := by
+    fin_cases i <;> simp [ι_eq_smul_coord_add_smul_coord R 0]
+  -- the product is `X₀ᵅ X₁ᵝ`, where `α` and `β` count the factors, so `α + β = k + l`
+  have hlen : L.count 0 + L.count 1 = k + l := by
+    rw [← hL, ← Multiset.coe_card, ← Multiset.sum_count_eq_card (s := Finset.univ) (by simp),
+      Fin.sum_univ_two, Multiset.coe_count, Multiset.coe_count]
+  rw [SetLike.mem_coe, List.map_congr_left fun i _ ↦ hcoord i, Finset.prod_list_map_count,
+    Finset.prod_subset (Finset.subset_univ _) fun i _ hi ↦ by
+      rw [List.count_eq_zero_of_not_mem (by simpa using hi), pow_zero],
+    Fin.prod_univ_two]
+  generalize L.count 0 = α at hlen
+  generalize L.count 1 = β at hlen
+  by_cases hα : k ≤ α
+  · refine Submodule.mem_sup_left (Submodule.mem_sup_left ⟨coord R 0 ^ (α - k) * coord R 1 ^ β,
+      coord_pow_mul_coord_pow_mem R (by omega), ?_⟩)
+    rw [LinearMap.mulLeft_apply, ← mul_assoc, ← pow_add, Nat.add_sub_cancel' hα]
+  by_cases hβ : k ≤ β
+  · refine Submodule.mem_sup_left (Submodule.mem_sup_right ⟨coord R 0 ^ α * coord R 1 ^ (β - k),
+      coord_pow_mul_coord_pow_mem R (by omega), ?_⟩)
+    rw [LinearMap.mulLeft_apply, mul_left_comm, ← pow_add, Nat.add_sub_cancel' hβ]
+  · refine Submodule.mem_sup_right ⟨coord R 0 ^ (α - (l + 1)) * coord R 1 ^ (β - (l + 1)),
+      coord_pow_mul_coord_pow_mem R (by omega), ?_⟩
+    obtain ⟨α', rfl⟩ : ∃ α', α = l + 1 + α' := ⟨α - (l + 1), by omega⟩
+    obtain ⟨β', rfl⟩ : ∃ β', β = l + 1 + β' := ⟨β - (l + 1), by omega⟩
+    rw [LinearMap.mulLeft_apply, Nat.add_sub_cancel_left, Nat.add_sub_cancel_left]
+    ring
 
 /-- **Dehomogenization** at `Xᵢ`: the `R`-algebra map `R[X₀, X₁] → R[X]` setting `Xᵢ = 1` and the
 other homogeneous coordinate to `X`. -/
@@ -329,6 +381,28 @@ theorem dehomogenize_eq_zero_iff (i : Fin 2) {j : ℕ} {p : _root_.SymmetricAlge
   rw [Away.val_mk, val_zero, Localization.mk_eq_mk', IsLocalization.mk'_eq_zero_iff] at h'
   obtain ⟨⟨_, k, rfl⟩, hk⟩ := h'
   exact (pow_mem (coord_mem_nonZeroDivisors R i) k).2 p (by simpa [mul_comm] using hk)
+
+/-- If `X₀ᵏ X₁ᵏ' c = (X₀X₁)ᵐ⁺¹ (X₁ᵏ' a - X₀ᵏ b)` for a form `c` of degree `m` and a form `b` of
+degree `k' - m - 2`, then `c = 0`: after setting `X₀ = 1`, the coefficients of `X^{k' + i}`,
+`i ≤ m`, of the right-hand side vanish. -/
+theorem eq_zero_of_coord_pow_mul_eq {m k k' j' : ℕ} (hk' : j' + m + 2 = k')
+    {a b c : _root_.SymmetricAlgebra R (Fin 2 → R)} (hb : b ∈ 𝒜 j') (hc : c ∈ 𝒜 m)
+    (h : coord R 0 ^ k * coord R 1 ^ k' * c =
+      (coord R 0 * coord R 1) ^ (m + 1) * (coord R 1 ^ k' * a - coord R 0 ^ k * b)) :
+    c = 0 := by
+  have h₁ : dehomogenize R 0 (coord R 1) = X := dehomogenize_coord_rev R 0
+  have hD := congrArg (dehomogenize R 0) h
+  simp only [map_mul, map_pow, map_sub, dehomogenize_coord_self, one_pow, one_mul, h₁] at hD
+  refine (dehomogenize_eq_zero_iff R 0 hc).mp (Polynomial.ext fun i ↦ ?_)
+  rw [coeff_zero]
+  rcases lt_or_ge m i with hi | hi
+  · exact coeff_eq_zero_of_natDegree_lt ((natDegree_dehomogenize_le R 0 hc).trans_lt hi)
+  have hcoeff := congrArg (fun p ↦ coeff p (i + k')) hD
+  simp only [coeff_X_pow_mul, mul_sub, ← mul_assoc, ← pow_add, coeff_sub] at hcoeff
+  rw [hcoeff, coeff_X_pow_mul', ite_eq_right (by omega), coeff_X_pow_mul', zero_sub, neg_eq_zero]
+  split_ifs
+  · exact coeff_eq_zero_of_natDegree_lt ((natDegree_dehomogenize_le R 0 hb).trans_lt (by omega))
+  · rfl
 
 /-- The inverse of the chart isomorphism sends `X` to the other coordinate over `Xᵢ`. -/
 @[simp]
