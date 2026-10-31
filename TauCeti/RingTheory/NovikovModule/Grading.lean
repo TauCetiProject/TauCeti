@@ -17,10 +17,13 @@ completion. In torsor coordinates the degree of a coefficient is the total degre
 degree of the reference lift. Consequently changing reference lifts preserves total degree,
 and homogeneous Novikov scalars act by adding their degree.
 
-A supported bilinear kernel with a fixed degree shift extends to a product with that same
-shift on homogeneous completed combinations. Its coordinate matrix has the corresponding
-reference-degree shifts. These results apply to the supported kernel construction of
-`TauCeti.NovikovModule.kernelProduct`; they do not require discrete or injective periods.
+A supported kernel with a fixed degree shift extends to a map with that same shift on
+homogeneous completed combinations, and likewise a supported bilinear kernel extends to a
+product with that shift. The coordinate matrix of a product kernel has the corresponding
+reference-degree shifts. These results apply to the supported kernel constructions
+`TauCeti.NovikovModule.kernelMap` and `TauCeti.NovikovModule.kernelProduct`; they do not require
+discrete or injective periods. A diagonal kernel whose coefficient depends only on the degree
+acts on each homogeneous piece as a scalar.
 
 The coordinate construction follows `TauCeti.NovikovModule.coordinates`, and the coefficient
 pieces are `TauCeti.NovikovSeries.gradeBy`.
@@ -67,6 +70,13 @@ theorem mem_gradeBy_iff {d : S → D} {k : D} {a : NovikovModule R F} :
 theorem val_eq_zero_of_mem_gradeBy {d : S → D} {k : D} {a : NovikovModule R F}
     (ha : a ∈ gradeBy R F d k) {s : S} (hs : d s ≠ k) : a.val s = 0 :=
   by_contra fun h => hs (ha s h)
+
+/-- A point mass at a generator is homogeneous of the degree of that generator. -/
+theorem single_mem_gradeBy [DecidableEq S] (d : S → D) (s : S) (r : R) :
+    (single s r : NovikovModule R F) ∈ gradeBy R F d (d s) :=
+  fun t ht => by
+    by_contra h
+    exact ht (by rw [single_val]; exact Pi.single_eq_of_ne (fun e => h (congrArg d e)) _)
 
 /-- An affine reversal of generator degrees relabels the same homogeneous pieces. -/
 @[simp]
@@ -143,6 +153,46 @@ theorem smul_mem_gradeBy {j k : D} {b : NovikovSeries R H N} {a : NovikovModule 
 end Coordinates
 
 end Semiring
+
+section Map
+
+variable [Semiring R] {S₁ S₀ : Type*} {F₁ : S₁ → ℝ} {F₀ : S₀ → ℝ} {C : ℝ} {m : S₁ → S₀ → R}
+  (hm : ∀ p₁ p₀, m p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C) (hmfin : ∀ p₁, m p₁ ∈ NovikovModule R F₀)
+  [Add D] {d₁ : S₁ → D} {d₀ : S₀ → D} {ε : D}
+
+/-- A supported kernel whose nonzero coefficients have degree shift `ε` gives a map with the
+same shift on homogeneous completed combinations. -/
+theorem kernelMap_mem_gradeBy (hd : ∀ p₁ p₀, m p₁ p₀ ≠ 0 → d₀ p₀ = d₁ p₁ + ε)
+    {k : D} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ k) :
+    kernelMap hm hmfin a ∈ gradeBy R F₀ d₀ (k + ε) := by
+  rw [mem_gradeBy_iff] at ha ⊢
+  intro p₀ hp₀
+  rw [kernelMap_apply_val] at hp₀
+  obtain ⟨p₁, hp⟩ : ∃ p₁, a.val p₁ * m p₁ p₀ ≠ 0 := by
+    by_contra! h
+    exact hp₀ (finsum_eq_zero_of_forall_eq_zero h)
+  rw [hd p₁ p₀ (right_ne_zero_of_mul hp), ha p₁ (left_ne_zero_of_mul hp)]
+
+end Map
+
+section Diagonal
+
+variable [CommSemiring R] [DecidableEq S] {F : S → ℝ} {C : ℝ} {d : S → D} {s : D → R}
+
+/-- On homogeneous completed combinations of degree `k`, the diagonal kernel with coefficient
+`s (d p)` from `p` to itself is multiplication by `s k`. -/
+theorem kernelMap_diagonal_eq_smul_of_mem_gradeBy
+    (hm : ∀ p q, (if p = q then s (d p) else 0) ≠ 0 → F q ≤ F p + C)
+    (hmfin : ∀ p, (fun q => if p = q then s (d p) else 0) ∈ NovikovModule R F)
+    {k : D} {a : NovikovModule R F} (ha : a ∈ gradeBy R F d k) :
+    kernelMap hm hmfin a = s k • a := by
+  ext p
+  rw [kernelMap_diagonal_apply_val, Submodule.coe_smul, Pi.smul_apply, smul_eq_mul]
+  by_cases hp : a.val p = 0
+  · simp [hp]
+  · rw [mem_gradeBy_iff.1 ha p hp, mul_comm]
+
+end Diagonal
 
 section Kernel
 

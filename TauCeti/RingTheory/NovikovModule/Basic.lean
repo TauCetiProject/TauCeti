@@ -69,6 +69,25 @@ threshold. -/
 theorem mem_iff {a : S → R} : a ∈ NovikovModule R F ↔
     ∀ C : ℝ, {s | a s ≠ 0 ∧ C < F s}.Finite := Iff.rfl
 
+/-- A coefficient function with finite support is a completed combination. -/
+theorem mem_of_finite_support {a : S → R} (ha : (Function.support a).Finite) :
+    a ∈ NovikovModule R F :=
+  fun _ => ha.subset fun _ hs => hs.1
+
+/-- A point mass at a generator is a completed combination. -/
+theorem pi_single_mem [DecidableEq S] (s : S) (r : R) : Pi.single s r ∈ NovikovModule R F :=
+  mem_of_finite_support ((Set.finite_singleton s).subset Pi.support_single_subset)
+
+/-- The point mass `r` at a generator `s`, as a completed combination. -/
+def single [DecidableEq S] (s : S) (r : R) : NovikovModule R F :=
+  ⟨Pi.single s r, pi_single_mem s r⟩
+
+/-- The coefficients of a point mass. -/
+@[simp]
+theorem single_val [DecidableEq S] (s : S) (r : R) :
+    (single s r : NovikovModule R F).val = Pi.single s r :=
+  (rfl)
+
 /-- Only finitely many nonzero coefficients occur above any fixed potential threshold. -/
 theorem finite_gt (a : NovikovModule R F) (C : ℝ) :
     {s | a.val s ≠ 0 ∧ C < F s}.Finite := a.property C
