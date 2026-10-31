@@ -59,6 +59,8 @@ corresponding identity between kernels (`NovikovModule.kernelMap_kernelMap`).
 * `TauCeti.NovikovModule.tensor_mem_gradeBy`,
   `TauCeti.NovikovModule.degree_eq_of_tensorDifferential_ne_zero`: the tensor product adds degrees,
   and the tensor differential raises the total degree by one.
+* `TauCeti.NovikovModule.kernelMap_tensorDifferential_eq_add`: the map of the tensor differential
+  is the sum of the maps of its two Koszul summands.
 * `TauCeti.NovikovModule.kernelMap_tensorDifferential_tensor`: the Leibniz rule for the tensor
   differential.
 * `TauCeti.NovikovModule.kernelMap_tensorDifferential_kernelMap_tensorDifferential_tensor`,
@@ -333,6 +335,22 @@ variable {C : ℝ}
   (hD : ∀ p q, tensorDifferential d₁ δ₁ δ₂ p q ≠ 0 → F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + C)
   (hDfin : ∀ p, tensorDifferential d₁ δ₁ δ₂ p ∈ NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2)
 
+/-- **The map of the tensor differential splits.** It is the sum of the maps of its two Koszul
+summands `δ₁ ⊗ 1` and `(-1)^(d₁) ⊗ δ₂`, for any potential bounds of the summands. -/
+theorem kernelMap_tensorDifferential_eq_add {C' C'' : ℝ}
+    (h₁ : ∀ p q, kernelTensor δ₁ (fun p₂ q₂ => if p₂ = q₂ then (1 : R) else 0) p q ≠ 0 →
+      F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + C')
+    (h₁fin : ∀ p, kernelTensor δ₁ (fun p₂ q₂ => if p₂ = q₂ then (1 : R) else 0) p ∈
+      NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2)
+    (h₂ : ∀ p q, kernelTensor (fun p₁ q₁ => if p₁ = q₁ then ((d₁ p₁).negOnePow : R) else 0)
+      δ₂ p q ≠ 0 → F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + C'')
+    (h₂fin : ∀ p, kernelTensor (fun p₁ q₁ => if p₁ = q₁ then ((d₁ p₁).negOnePow : R) else 0)
+      δ₂ p ∈ NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2) :
+    kernelMap hD hDfin = kernelMap h₁ h₁fin + kernelMap h₂ h₂fin := by
+  rw [← kernelMap_add h₁ h₁fin h₂ h₂fin (tensorDifferential_eq_add d₁ δ₁ δ₂ ▸ hD)
+    (tensorDifferential_eq_add d₁ δ₁ δ₂ ▸ hDfin), kernelMap_inj]
+  exact tensorDifferential_eq_add d₁ δ₁ δ₂
+
 include hδ₁ hδ₂ in
 /-- **The Leibniz rule for the tensor differential.** On the tensor product of a combination `a`
 of degree `i` with any `b`, the tensor differential is `δ₁ a ⊗ b + (-1)^i a ⊗ δ₂ b`. -/
@@ -341,11 +359,11 @@ theorem kernelMap_tensorDifferential_tensor {i : ℤ} {a : NovikovModule R F₁}
     kernelMap hD hDfin (tensor a b) =
       tensor (kernelMap hδ₁ hδ₁fin a) b +
         (i.negOnePow : R) • tensor a (kernelMap hδ₂ hδ₂fin b) := by
-  rw [show kernelMap hD hDfin = _ from kernelMap_add
+  rw [kernelMap_tensorDifferential_eq_add hD hDfin
       (fun _ _ => potential_le_of_kernelTensor_one_ne_zero hδ₁)
       (kernelTensor_mem hδ₁fin (diagonal_mem _))
       (fun _ _ => potential_le_of_kernelTensor_sign_ne_zero hδ₂)
-      (kernelTensor_mem (diagonal_mem _) hδ₂fin) hD hDfin, LinearMap.add_apply,
+      (kernelTensor_mem (diagonal_mem _) hδ₂fin), LinearMap.add_apply,
     kernelMap_kernelTensor_tensor hδ₁ hδ₁fin potential_le_of_diagonal_one_ne_zero (diagonal_mem _),
     kernelMap_kernelTensor_tensor potential_le_of_diagonal_sign_ne_zero (diagonal_mem _) hδ₂ hδ₂fin,
     kernelMap_eq_id, kernelMap_diagonal_eq_smul_of_mem_gradeBy (s := fun n : ℤ => (n.negOnePow : R))
