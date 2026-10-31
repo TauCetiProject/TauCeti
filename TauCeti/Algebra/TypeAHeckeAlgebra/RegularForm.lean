@@ -119,7 +119,7 @@ theorem re_canonicalTrace_star_mul_self_nonneg [Finite W] (x : TypeAHeckeAlgebra
   rw [re_canonicalTrace_star_mul_self]
   exact Finset.sum_nonneg fun _ _ => sq_nonneg _
 
-/-- The canonical trace form is positive definite, including at `q = ±1`. -/
+/-- The canonical trace form is definite: `τ(x* x) = 0` only for `x = 0`, including at `q = ±1`. -/
 @[simp]
 theorem canonicalTrace_star_mul_self_eq_zero_iff [Finite W] (x : TypeAHeckeAlgebra 𝕜 q n) :
     canonicalTrace cs (star x * x) = 0 ↔ x = 0 := by

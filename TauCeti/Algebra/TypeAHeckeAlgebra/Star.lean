@@ -224,7 +224,7 @@ theorem strandIncl_star (x : TypeAHeckeAlgebra R q n) :
   apply toInfinite_injective R q (n + 1)
   simp [toInfinite_strandIncl]
 
-/-- Reversal of a reduced word sends the PBW vector `T_w` to `T_(w⁻¹)`. -/
+/-- The real-parameter involution sends the PBW vector `T_w` to `T_(w⁻¹)`. -/
 @[simp]
 theorem star_Tw {W : Type*} [Group W]
     (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W) (w : W) :
