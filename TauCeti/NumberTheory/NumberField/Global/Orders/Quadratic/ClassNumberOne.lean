@@ -51,8 +51,8 @@ public section
 
 open NumberField Module
 open TauCeti.Multiquadratic (fundamentalDiscriminantChar isFundamentalDiscr_discr
-  fundamentalDiscriminantChar_isQuadratic fundamentalDiscriminantChar_two
-  fundamentalDiscriminantChar_natCast_eq_legendreSym)
+  fundamentalDiscriminantChar_le_one fundamentalDiscriminantChar_two
+  fundamentalDiscriminantChar_two_eq_one_iff fundamentalDiscriminantChar_natCast_eq_legendreSym)
 
 namespace TauCeti.GlobalNumberFields.NumberFieldOrder
 
@@ -122,7 +122,8 @@ private theorem eq_two_of_prod_eq_two (hc : ∀ p, c p ≤ 1) (hc2 : c 2 = 0) (h
   obtain ⟨hp2, hv⟩ := sub_le_of_prod_eq hc h hp
   have := (Nat.prime_of_mem_primeFactors hp).two_le
   obtain rfl : p = 2 := by
-    rcases (show p = 2 ∨ p = 3 by have := hc p; omega) with h | rfl
+    have hp23 : p = 2 ∨ p = 3 := by have := hc p; omega
+    rcases hp23 with h | rfl
     · exact h
     · push_cast at hp2
       linarith
@@ -172,18 +173,6 @@ private theorem prod_pow_mul_sub_prime {p : ℕ} (hp : p.Prime) :
 /-! ### The character at `2` and `3` -/
 
 variable {D : ℤ}
-
-/-- The character of a fundamental discriminant takes values at most `1`. -/
-private theorem fundamentalDiscriminantChar_le_one (hD : Int.IsFundamentalDiscr D)
-    (x : ZMod D.natAbs) : fundamentalDiscriminantChar D hD x ≤ 1 := by
-  rcases fundamentalDiscriminantChar_isQuadratic hD x with h | h | h <;> simp [h]
-
-/-- `χ_D(2) = 1` iff `D ≡ 1 (mod 8)`, that is, iff `2` splits. -/
-private theorem fundamentalDiscriminantChar_two_eq_one_iff (hD : Int.IsFundamentalDiscr D) :
-    fundamentalDiscriminantChar D hD (2 : ℕ) = 1 ↔ D % 8 = 1 := by
-  have := hD.emod_four_eq_zero_or_one
-  rw [Nat.cast_ofNat, fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
-  split_ifs <;> simp <;> omega
 
 /-- For `D = -4`, `χ_D(2) = 0` and `χ_D(3) = -1`. -/
 private theorem fundamentalDiscriminantChar_two_three_of_eq_neg_four
