@@ -26,7 +26,7 @@ here. Concretely, every element of `Hₙ₊₁` is uniquely a sum `∑ m, a m * 
 coefficients `a m` in `Hₙ` (`TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquiv`), and the
 coefficients depend `Hₙ`-linearly on the element
 (`TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquiv_symm_mul`). This is the left-module form of
-the decomposition `Hₙ₊₁ = Hₙ + Hₙ Tₙ₋₁ Hₙ`
+the decomposition `Hₙ₊₂ = Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁`
 (`TauCeti.InfiniteTypeAHeckeAlgebra.toSubmodule_stage_add_two`). These coordinates are the ones in
 which Jones computes the Ocneanu trace recursively, one strand at a time.
 
@@ -104,8 +104,8 @@ theorem cosetRep_mul_T_of_add_one_lt {n m i : ℕ} (h : i + 1 < m) :
     obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hx
     exact commute_T (Or.inr (by grind [List.Ico.mem]))).eq
 
-/-- Multiplying the descending product on the right by its lowest generator uses the quadratic
-relation. -/
+/-- For `m < n`, multiplying the descending product on the right by its lowest generator `T m`
+gives `(q - q⁻¹) • cosetRep q n m + cosetRep q n (m + 1)`. -/
 theorem cosetRep_mul_T_self {n m : ℕ} (h : m < n) :
     cosetRep q n m * T q m = ((q : R) - ↑q⁻¹) • cosetRep q n m + cosetRep q n (m + 1) := by
   rw [← cosetRep_succ_mul_T h, mul_assoc, T_mul_self, mul_add, mul_smul_comm, mul_one]
@@ -143,12 +143,17 @@ modules of the same rank over a commutative ring is bijective. -/
 variable (R q) in
 /-- The sum `∑ m, a m * cosetRep q n m` with coefficients in the stage of the first `n` strands. -/
 private def cosetSum (n : ℕ) : (Fin (n + 1) → stage R q n) →ₗ[R] InfiniteTypeAHeckeAlgebra R q :=
-  ∑ m : Fin (n + 1), LinearMap.mulRight R (cosetRep q n m) ∘ₗ (stage R q n).val.toLinearMap ∘ₗ
-    LinearMap.proj m
+  LinearMap.lsum R (fun _ : Fin (n + 1) ↦ stage R q n) R fun m ↦
+    LinearMap.mulRight R (cosetRep q n m) ∘ₗ (stage R q n).val.toLinearMap
 
 private theorem cosetSum_apply {n : ℕ} (a : Fin (n + 1) → stage R q n) :
     cosetSum R q n a = ∑ m, (a m : InfiniteTypeAHeckeAlgebra R q) * cosetRep q n m := by
-  simp [cosetSum]
+  simp [cosetSum, LinearMap.lsum_apply]
+
+private theorem cosetSum_single {n : ℕ} (m : Fin (n + 1)) (b : stage R q n) :
+    cosetSum R q n (Pi.single m b) = (b : InfiniteTypeAHeckeAlgebra R q) * cosetRep q n m := by
+  rw [cosetSum, LinearMap.lsum_piSingle]
+  rfl
 
 private theorem cosetSum_mem_stage {n : ℕ} (a : Fin (n + 1) → stage R q n) :
     cosetSum R q n a ∈ stage R q (n + 1) := by
@@ -157,11 +162,8 @@ private theorem cosetSum_mem_stage {n : ℕ} (a : Fin (n + 1) → stage R q n) :
     mul_mem (stage_mono n.le_succ (a m).2) (cosetRep_mem_stage n m)
 
 private theorem mul_cosetRep_mem_range {n m : ℕ} (hm : m ≤ n) {a : InfiniteTypeAHeckeAlgebra R q}
-    (ha : a ∈ stage R q n) : a * cosetRep q n m ∈ LinearMap.range (cosetSum R q n) := by
-  refine ⟨Pi.single ⟨m, by omega⟩ ⟨a, ha⟩, ?_⟩
-  rw [cosetSum_apply, Finset.sum_eq_single ⟨m, by omega⟩ (fun b _ hb ↦ by
-    rw [Pi.single_eq_of_ne hb, ZeroMemClass.coe_zero, zero_mul]) (by simp)]
-  simp
+    (ha : a ∈ stage R q n) : a * cosetRep q n m ∈ LinearMap.range (cosetSum R q n) :=
+  ⟨Pi.single ⟨m, by omega⟩ ⟨a, ha⟩, cosetSum_single _ _⟩
 
 /-- Right multiplication by a generator of the stage `n + 1` keeps the products `a * cosetRep q n m`
 inside the sums `∑ m, a m * cosetRep q n m`. -/
@@ -260,9 +262,7 @@ theorem cosetEquiv_symm_inclusion {n : ℕ} (b : stage R q n) :
     (cosetEquiv R q n).symm (Subalgebra.inclusion (stage_mono n.le_succ) b) =
       Pi.single (Fin.last n) b := by
   rw [LinearEquiv.symm_apply_eq]
-  refine Subtype.ext ?_
-  rw [coe_cosetEquiv_apply, Finset.sum_eq_single (Fin.last n) (fun m _ hm ↦ by
-    rw [Pi.single_eq_of_ne hm, ZeroMemClass.coe_zero, zero_mul]) (by simp)]
+  refine Subtype.ext ((cosetSum_single (Fin.last n) b).trans ?_).symm
   simp
 
 end CosetEquiv
