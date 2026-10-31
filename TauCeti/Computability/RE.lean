@@ -15,6 +15,8 @@ adds the closure properties needed to read off the effectivity of predicates ass
 computable pieces:
 
 * `ComputablePred.and`: computable predicates are closed under conjunction;
+* `ComputablePred.exists_eq_some_and`: testing a computable predicate on the value of a computable
+  optional function, when that value is present, is computable;
 * `ComputablePred.exists_lt`: a bounded existential quantifier over a computable predicate is
   computable, uniformly in the bound;
 * `ComputablePred.rePred_exists`: an unbounded existential quantifier over a computable predicate
@@ -37,6 +39,16 @@ protected theorem and {p q : α → Prop} (hp : ComputablePred p) (hq : Computab
   obtain ⟨_, hp⟩ := hp
   obtain ⟨_, hq⟩ := hq
   exact Computable.computablePred <| (Primrec.and.to_comp.comp hp hq).of_eq fun a => by simp
+
+/-- Testing a computable predicate on the value of a computable optional function, when that value
+is present, is computable. -/
+theorem exists_eq_some_and {β : Type*} [Primcodable β] {f : α → Option β} {q : α → β → Prop}
+    (hf : Computable f) (hq : ComputablePred fun x : α × β => q x.1 x.2) :
+    ComputablePred fun a => ∃ b, f a = some b ∧ q a b := by
+  classical
+  refine Computable.computablePred <|
+    (Computable.option_casesOn hf (Computable.const false) hq.decide.to₂).of_eq fun a => ?_
+  cases f a <;> simp
 
 /-- A bounded existential quantifier over a computable predicate is computable, uniformly in the
 bound. -/
@@ -65,10 +77,7 @@ theorem rePred_exists {p : α → ℕ → Prop} (hp : ComputablePred fun x : α 
   replace hp := hp.decide
   have h : Partrec fun a => Nat.rfind fun n => Part.some (decide (p a n)) :=
     Partrec.rfind hp.partrec
-  refine h.dom_re.of_eq fun a => ⟨fun h => ?_, fun ⟨n, hn⟩ => ?_⟩
-  · obtain ⟨n, hn⟩ := Part.dom_iff_mem.1 h
-    exact ⟨n, by simpa using Nat.rfind_spec hn⟩
-  · obtain ⟨m, hm, -⟩ := Nat.rfind_min' (p := fun n => decide (p a n)) (by simpa using hn)
-    exact Part.dom_iff_mem.2 ⟨m, hm⟩
+  refine h.dom_re.of_eq fun a => ?_
+  simpa using Nat.rfind_dom (p := fun n => Part.some (decide (p a n)))
 
 end ComputablePred

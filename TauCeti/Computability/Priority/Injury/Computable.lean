@@ -50,16 +50,6 @@ namespace Priority
 
 variable {A : ℕ → Finset ℕ} {r : ℕ → ℕ → Option ℕ}
 
-/-- Whether a number lies at or below the active restraint is computable from the requirement, the
-stage and the number. -/
-private theorem computablePred_le_restraint (hr : Computable₂ r) :
-    ComputablePred fun p : ℕ × ℕ × ℕ => ∃ b, r p.1 p.2.1 = some b ∧ p.2.2 ≤ b := by
-  classical
-  refine Computable.computablePred <|
-    (Computable.option_casesOn (hr.comp fst (fst.comp snd)) (const false)
-      (Primrec.nat_le.decide.to_comp.comp (snd.comp (snd.comp fst)) snd).to₂).of_eq fun p => ?_
-  cases r p.1 p.2.1 <;> simp
-
 /-- **The injury events are computable**, uniformly in the requirement, when membership in the
 stages and the restraints are computable. -/
 theorem computablePred_mem_injuryEvents (hA : ComputablePred fun p : ℕ × ℕ => p.2 ∈ A p.1)
@@ -70,7 +60,11 @@ theorem computablePred_mem_injuryEvents (hA : ComputablePred fun p : ℕ × ℕ 
         fun _ => Iff.rfl⟩ hA
   have hold : ComputablePred fun p : ℕ × ℕ × ℕ => p.2.2 ∈ A p.2.1 :=
     ComputablePred.computable_of_manyOneReducible ⟨fun p => p.2, snd, fun _ => Iff.rfl⟩ hA
-  exact (hnew.and (hold.not.and (computablePred_le_restraint hr))).of_eq fun p => by simp
+  have hle : ComputablePred fun p : ℕ × ℕ × ℕ => ∃ b, r p.1 p.2.1 = some b ∧ p.2.2 ≤ b :=
+    ComputablePred.exists_eq_some_and (hr.comp fst (fst.comp snd))
+      (PrimrecPred.computablePred
+        (Primrec.nat_le.comp (Primrec.snd.comp (Primrec.snd.comp Primrec.fst)) Primrec.snd))
+  exact (hnew.and (hold.not.and hle)).of_eq fun p => by simp
 
 /-- **Nonemptiness of the injury batches is computable**, uniformly in the requirement and the
 stage, when membership in the stages and the restraints are computable. -/
