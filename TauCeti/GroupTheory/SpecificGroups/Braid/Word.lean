@@ -33,6 +33,8 @@ defines the words and the braid each word represents.
 * `TauCeti.BraidWord.toBraid_strandIncl` and `TauCeti.BraidWord.toBraid_stabilize`: these word
   operations represent `TauCeti.BraidGroup.strandIncl` and the stabilization of
   `TauCeti.IsMarkovMove`.
+* `TauCeti.BraidWord.levelAt_append_singleton` and `TauCeti.BraidWord.signAt_append_singleton`:
+  appending a letter adds its level and sign at the end of the word.
 * `TauCeti.BraidWord.levelAt_stabilize_of_lt` and `TauCeti.BraidWord.signAt_stabilize_of_lt`:
   stabilization keeps the level and the sign of every letter of the original word, while
   `TauCeti.BraidWord.levelAt_stabilize_length` and `TauCeti.BraidWord.signAt_stabilize_length`
@@ -236,6 +238,26 @@ theorem signAt_eq_one_or_eq_neg_one {k : ℕ} (hk : k < w.length) :
     w.signAt k = 1 ∨ w.signAt k = -1 := by
   rw [signAt_of_lt w hk]
   rcases Int.units_eq_one_or w[k].2 with h | h <;> simp [h]
+
+/-- Appending a letter `y` puts its level at position `w.length` and keeps every other level. -/
+theorem levelAt_append_singleton (y : Fin (n - 1) × ℤˣ) (k : ℕ) :
+    (w ++ [y]).levelAt k = if k = w.length then some (y.1 : ℕ) else w.levelAt k := by
+  rw [levelAt_def, levelAt_def]
+  rcases lt_trichotomy k w.length with h | rfl | h
+  · simp [List.getElem?_append_left h, h.ne]
+  · simp
+  · simp only [h.ne', ↓reduceIte]
+    rw [List.getElem?_eq_none (by simp; omega), List.getElem?_eq_none h.le]
+
+/-- Appending a letter `y` puts its sign at position `w.length` and keeps every other sign. -/
+theorem signAt_append_singleton (y : Fin (n - 1) × ℤˣ) (k : ℕ) :
+    (w ++ [y]).signAt k = if k = w.length then (y.2 : ℤ) else w.signAt k := by
+  rw [signAt_def, signAt_def]
+  rcases lt_trichotomy k w.length with h | rfl | h
+  · simp [List.getElem?_append_left h, h.ne]
+  · simp
+  · simp only [h.ne', ↓reduceIte]
+    rw [List.getElem?_eq_none (by simp; omega), List.getElem?_eq_none h.le]
 
 /-- Stabilization keeps the level of every letter of the original word. -/
 @[simp]
