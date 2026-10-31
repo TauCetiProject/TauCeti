@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.Monoidal.KFlat.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 public import Mathlib.CategoryTheory.Functor.OfSequence
+public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 import Mathlib.CategoryTheory.Abelian.Refinements
 import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 
@@ -34,6 +35,11 @@ mapping cone of `φ`, and every cohomology class of `P` which `f` sends to zero 
 cone. The cone is an extension of the shift of `E` by `P`, split in each degree, so it is
 again K-flat. The colimit of the resulting sequence is K-flat, and its map to `K` is a
 quasi-isomorphism because cohomology commutes with sequential colimits.
+
+Given covers `p X : E X ⟶ X` of all objects, this colimit is `CochainComplex.kFlatResolution`,
+with the quasi-isomorphism `CochainComplex.kFlatResolution.π` to `K`. Every term of every stage
+is built from the objects `E X` by binary biproducts
+(`CochainComplex.kFlatResolution.prop_sequence_obj_X`).
 
 ## References
 
@@ -68,14 +74,8 @@ variable {E : ℤ → C} (e : ∀ n, E n ⟶ boundaryPairs f n)
 
 /-- The cells attached to `P`: the cycle components of the pairs parametrized by `E`. -/
 abbrev attachingMap {P K : CochainComplex C ℤ} (f : P ⟶ K) {E : ℤ → C}
-    (e : ∀ n, E n ⟶ boundaryPairs f n) : graded (.up ℤ) E ⟶ P where
-  f n := e n ≫ pullback.fst _ _ ≫ P.iCycles n
-  comm' _ _ _ := by simp
-
-@[reassoc]
-lemma toGradedCycles_cyclesMap_attachingMap (n : ℤ) :
-    toGradedCycles E n ≫ cyclesMap (attachingMap f e) n = e n ≫ pullback.fst _ _ := by
-  simp [← cancel_mono (P.iCycles n)]
+    (e : ∀ n, E n ⟶ boundaryPairs f n) : graded (.up ℤ) E ⟶ P :=
+  P.fromGraded fun n ↦ e n ≫ pullback.fst _ _
 
 /-- The boundary components of the pairs parametrized by `E`, a null-homotopy of
 `attachingMap f e ≫ f`. -/
@@ -120,8 +120,9 @@ lemma comp_homologyMap_inr_eq_zero [∀ n, Epi (e n)] {n : ℤ} {X : C}
       homologyMap_zero]
   have hzero : z ≫ e n ≫ pullback.fst _ _ ≫ P.homologyπ n ≫
       homologyMap (mappingCone.inr (attachingMap f e)) n = 0 := by
-    rw [← toGradedCycles_cyclesMap_attachingMap_assoc, ← homologyπ_naturality_assoc,
-      ← homologyMap_comp, hcells, comp_zero, comp_zero, comp_zero]
+    rw [← Category.assoc (e n),
+      ← P.toGradedCycles_cyclesMap_fromGraded_assoc (fun n ↦ e n ≫ pullback.fst _ _) n,
+      ← homologyπ_naturality_assoc, ← homologyMap_comp, hcells, comp_zero, comp_zero, comp_zero]
   have hz' : π₃ ≫ π₂ ≫ x = z ≫ e n ≫ pullback.fst _ _ := by
     simpa using hz =≫ pullback.fst _ _
   rw [← cancel_epi (π₃ ≫ π₂ ≫ π₁), comp_zero]
@@ -143,8 +144,10 @@ def stage : ℕ → Σ P : CochainComplex C ℤ, P ⟶ K
   | k + 1 => ⟨mappingCone (attachingMap (stage k).2 fun n ↦ p (boundaryPairs (stage k).2 n)),
       attachDesc (stage k).2 fun n ↦ p (boundaryPairs (stage k).2 n)⟩
 
-/-- The sequence of stages of the resolution. -/
-abbrev sequence : ℕ ⥤ CochainComplex C ℤ :=
+/-- The sequence of stages of the resolution `kFlatResolution E p K`: first the complex of
+covers `p` of the cycles of `K`, then repeatedly the complex obtained by attaching cells along
+the covers of all pairs of a cycle and a primitive of its image in `K`. -/
+public def sequence : ℕ ⥤ CochainComplex C ℤ :=
   Functor.ofSequence (X := fun k ↦ (stage E p K k).1) fun k ↦ mappingCone.inr
     (attachingMap (stage E p K k).2 fun n ↦ p (boundaryPairs (stage E p K k).2 n))
 
@@ -155,7 +158,7 @@ lemma sequence_map_succ (k : ℕ) :
   Functor.ofSequence_map_homOfLE_succ _ k
 
 /-- The morphisms from the stages of the resolution to `K`. -/
-abbrev toComplex : sequence E p K ⟶ (Functor.const ℕ).obj K :=
+public def toComplex : sequence E p K ⟶ (Functor.const ℕ).obj K :=
   NatTrans.ofSequence (fun k ↦ (stage E p K k).2) fun k ↦ by
     simp only [sequence_map_succ, Functor.const_obj_map]
     exact (inr_attachDesc _ _).trans (Category.comp_id _).symm
@@ -184,6 +187,19 @@ lemma quasiIso_colimit_desc [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape 
       rw [Functor.comp_map, sequence_map_succ]
       exact this
   exact isIso_of_mono_of_epi _
+
+/-- Every term of every stage of the resolution is built from objects `E X` by binary
+biproducts. Hence it satisfies every property of objects which holds for the objects `E X` and
+is closed under isomorphisms and binary products, such as flatness. -/
+public lemma prop_sequence_obj_X (Q : ObjectProperty C) [Q.IsClosedUnderIsomorphisms]
+    [Q.IsClosedUnderBinaryProducts] (hE : ∀ X, Q (E X)) :
+    ∀ (k : ℕ) (n : ℤ), Q (((sequence E p K).obj k).X n)
+  | 0, _ => hE _
+  | k + 1, n => Q.prop_of_iso (homotopyCofiber.XIsoBiprod
+      (attachingMap (stage E p K k).2 fun n ↦ p (boundaryPairs (stage E p K k).2 n))
+      n (n + 1) rfl).symm
+      (Q.prop_of_isLimit_binaryFan (BinaryBiproduct.isLimit _ _) (hE _)
+        (prop_sequence_obj_X Q hE k n))
 
 end Sequence
 
@@ -224,7 +240,50 @@ end KFlat
 
 end kFlatResolution
 
-open kFlatResolution in
+section Resolution
+
+variable [HasColimitsOfShape ℕ C] (E : C → C) (p : ∀ X, E X ⟶ X) (K : CochainComplex C ℤ)
+
+/-- The K-flat resolution of `K` with respect to the covers `p X : E X ⟶ X`: the colimit of the
+stages `kFlatResolution.sequence E p K`, obtained by attaching cells. -/
+public abbrev kFlatResolution : CochainComplex C ℤ :=
+  colimit (kFlatResolution.sequence E p K)
+
+/-- The morphism from the K-flat resolution of `K` to `K`, a quasi-isomorphism when every
+`p X` is an epimorphism (`CochainComplex.kFlatResolution.quasiIso_π`). -/
+public def kFlatResolution.π : kFlatResolution E p K ⟶ K :=
+  colimit.desc _ (Cocone.mk K (kFlatResolution.toComplex E p K))
+
+/-- The morphism `kFlatResolution.π` restricts to the given morphisms on the stages. -/
+@[reassoc (attr := simp)]
+public lemma kFlatResolution.ι_π (k : ℕ) :
+    colimit.ι (kFlatResolution.sequence E p K) k ≫ kFlatResolution.π E p K =
+      (kFlatResolution.toComplex E p K).app k :=
+  colimit.ι_desc ..
+
+/-- If sequential colimits in `C` are exact and every `p X` is an epimorphism, then the K-flat
+resolution of `K` is quasi-isomorphic to `K`. -/
+public instance kFlatResolution.quasiIso_π [HasExactColimitsOfShape ℕ C] [∀ X, Epi (p X)] :
+    QuasiIso (kFlatResolution.π E p K) :=
+  kFlatResolution.quasiIso_colimit_desc E p K
+
+/-- The resolution `kFlatResolution E p K` is K-flat when the objects `E X` are flat, and
+countable coproducts and sequential colimits are exact and commute with tensoring by each
+object. -/
+public instance isKFlat_kFlatResolution [MonoidalCategory C] [MonoidalPreadditive C]
+    [∀ K L : CochainComplex C ℤ, HasTensor K L]
+    [HasExactColimitsOfShape ℕ C] [∀ X : C, PreservesColimitsOfShape ℕ (tensorRight X)]
+    [HasColimitsOfShape (Discrete ℤ) C] [HasExactColimitsOfShape (Discrete ℤ) C]
+    [∀ X : C, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)]
+    [∀ X, PreservesFiniteLimits (tensorLeft (E X))]
+    [∀ X, PreservesFiniteColimits (tensorLeft (E X))] :
+    (kFlatResolution E p K).IsKFlat :=
+  have : ∀ k, ((kFlatResolution.sequence E p K).obj k).IsKFlat :=
+    kFlatResolution.isKFlat_stage E p K
+  isKFlat_of_isColimit (colimit.isColimit _)
+
+end Resolution
+
 /-- **K-flat resolutions of unbounded complexes.** Let `C` be an abelian monoidal category in which
 every object is a quotient of a flat object, and in which countable coproducts and sequential
 colimits are exact and commute with tensoring by each object. Then every cochain complex `K` in
@@ -239,7 +298,6 @@ public theorem exists_quasiIso_isKFlat [MonoidalCategory C] [MonoidalPreadditive
       PreservesFiniteColimits (tensorLeft E)) :
     ∃ (P : CochainComplex C ℤ) (π : P ⟶ K), QuasiIso π ∧ P.IsKFlat := by
   choose E p hp hflat hflat' using hC
-  have : ∀ k, ((sequence E p K).obj k).IsKFlat := isKFlat_stage E p K
-  exact ⟨_, _, quasiIso_colimit_desc E p K, isKFlat_of_isColimit (colimit.isColimit _)⟩
+  exact ⟨kFlatResolution E p K, kFlatResolution.π E p K, inferInstance, inferInstance⟩
 
 end CochainComplex
