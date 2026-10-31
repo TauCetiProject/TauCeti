@@ -441,7 +441,7 @@ theorem exists_equivariant_chart (χ : OpenPartialHomeomorph X E) {x : X} (hxχ 
       sub_self, map_zero]
   · intro y hy
     simpa only [one_smul, symm_target] using (e₀.mem_restrInvariant_source_iff.mp hy 1).1
-  · simpa using hasStrictFDerivAt_bochnerChart_comp_symm hA (χ.map_source hxχ)
+  · exact hasStrictFDerivAt_bochnerChart_comp_symm hA (χ.map_source hxχ)
 
 /-- **The derivative representation detects the ineffective kernel.** In the setting of
 `OpenPartialHomeomorph.exists_equivariant_chart`, an element of `G` acts as the identity near the

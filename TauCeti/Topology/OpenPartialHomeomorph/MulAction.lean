@@ -71,6 +71,16 @@ theorem restrInvariant_def [Finite G] [ContinuousConstSMul G X] (e : OpenPartial
     e.restrInvariant G = e.restrOpen (⋂ g : G, (g • ·) ⁻¹' e.source)
       (isOpen_iInter_of_finite fun g => e.open_source.preimage (continuous_const_smul g)) := (rfl)
 
+/-- Invariant restriction does not change the forward map. -/
+@[simp]
+theorem coe_restrInvariant [Finite G] [ContinuousConstSMul G X] (e : OpenPartialHomeomorph X Y) :
+    ⇑(e.restrInvariant G) = e := (rfl)
+
+/-- Invariant restriction does not change the inverse map. -/
+@[simp]
+theorem coe_restrInvariant_symm [Finite G] [ContinuousConstSMul G X]
+    (e : OpenPartialHomeomorph X Y) : ⇑(e.restrInvariant G).symm = e.symm := (rfl)
+
 /-- A point belongs to the invariant restriction exactly when its whole orbit is in the source. -/
 @[simp]
 theorem mem_restrInvariant_source_iff [Finite G] [ContinuousConstSMul G X]
