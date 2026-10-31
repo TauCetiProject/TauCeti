@@ -33,6 +33,8 @@ of the discounted process `e^{-μ t} S_t` and the conditional moments `E[S_t ^ q
 ## Main declarations
 
 * `TauCeti.Probability.geometricBrownianMotion`: the process `s * exp ((μ - σ² / 2) t + σ W_t)`.
+* `TauCeti.Probability.geometricBrownianMotion_sub_mul_min`: the change of drift that accompanies
+  a change of the driving process `W_t` to `W_t - θ t`.
 * `TauCeti.Probability.rpow_geometricBrownianMotion`: real powers of `S_t` as multiples of
   exponential martingales.
 * `ProbabilityTheory.IsPreBrownianReal.hasLaw_geometricBrownianMotion`: for `s > 0`, `S_t` is
@@ -94,6 +96,16 @@ theorem geometricBrownianMotion_eq_mul_exponentialMartingale (s μ σ : ℝ) (W 
     (t : ℝ≥0) (ω : Ω) :
     geometricBrownianMotion s μ σ W t ω = s * exp (μ * t) * exponentialMartingale σ W t ω := by
   rw [geometricBrownianMotion_def, exponentialMartingale_def, mul_assoc, ← exp_add]
+  ring_nf
+
+/-- **Change of drift.** Up to a horizon `T`, the geometric Brownian motion with drift `μ` driven
+by `W` is the geometric Brownian motion with drift `μ + σ θ` driven by `t ↦ W_t - θ min(t, T)`. This
+is the process that Girsanov's theorem turns into a Brownian motion under a change of measure. -/
+theorem geometricBrownianMotion_sub_mul_min (s μ σ θ : ℝ) (W : ℝ≥0 → Ω → ℝ) {t T : ℝ≥0}
+    (htT : t ≤ T) (ω : Ω) :
+    geometricBrownianMotion s (μ + σ * θ) σ (fun t ω ↦ W t ω - θ * (min t T : ℝ≥0)) t ω =
+      geometricBrownianMotion s μ σ W t ω := by
+  rw [geometricBrownianMotion_def, geometricBrownianMotion_def, min_eq_left htT]
   ring_nf
 
 /-- For a nonnegative initial value, a real power `S_t ^ q` of a geometric Brownian motion is
