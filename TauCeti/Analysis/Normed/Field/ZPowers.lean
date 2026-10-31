@@ -23,6 +23,9 @@ The proof uses Mathlib's Archimedean fundamental-interval theorem
 `existsUnique_sub_zpow_mem_Ioc` on positive norms. Neither completeness, nontriviality of the
 norm nor discreteness of the value group is required. This is the multiplicative parameter
 normalisation used for Tate uniformisation.
+
+A nonzero integer power of an element of norm less than one has norm different from one; in
+particular `1 - qᵏ ≠ 0`, and a unit of norm one other than `1` is not a power of `q`.
 -/
 
 public section
@@ -63,6 +66,25 @@ theorem eq_of_norm_mem_Ioc_of_quotient_zpowers_eq (q : Kˣ) (hq : ‖(q : K)‖ 
   have hn0 : n = 0 := (hm_unique n (by simpa [hnu] using hu)).trans
     (hm_unique 0 (by simpa using hv)).symm
   simpa [hn0] using hnu.symm
+
+/-- A nonzero power of an element of norm less than one does not have norm one. -/
+theorem norm_zpow_ne_one {q : K} (hq : ‖q‖ < 1) {k : ℤ} (hk : k ≠ 0) : ‖q ^ k‖ ≠ 1 := by
+  rw [norm_zpow, Ne, zpow_eq_one_iff_right₀ (norm_nonneg _) hq.ne]
+  exact hk
+
+/-- A nonzero power of an element of norm less than one is not one. -/
+theorem one_sub_zpow_ne_zero {q : K} (hq : ‖q‖ < 1) {k : ℤ} (hk : k ≠ 0) : 1 - q ^ k ≠ 0 := by
+  intro h
+  apply norm_zpow_ne_one hq hk
+  rw [← sub_eq_zero.mp h, norm_one]
+
+/-- A unit of norm one other than `1` is not a power of a unit `q` with `‖q‖ < 1`. -/
+theorem notMem_zpowers_of_norm_eq_one {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1)
+    (hu₁ : u ≠ 1) : u ∉ Subgroup.zpowers q := by
+  rintro ⟨n, rfl⟩
+  have hq₀ : 0 < ‖(q : K)‖ := norm_pos_iff.mpr q.ne_zero
+  rw [Units.val_zpow_eq_zpow_val, norm_zpow, zpow_eq_one_iff_right₀ hq₀.le hq.ne] at hu
+  exact hu₁ (by simp [hu])
 
 /-- The quotient of the units by the powers of `q`, identified with its unique representatives
 in `‖q‖ < ‖u‖ ≤ 1`. This is an equivalence of sets, not of topological spaces or groups. -/

@@ -37,13 +37,21 @@ bridge, and `Graph.IsLink.reachable_deleteEdges_iff_of_not_reachable` that reach
 is unchanged.  Counting components, `Graph.isBridge_iff_componentCount_deleteEdges_eq_add_one`
 shows that, when there are finitely many components, an edge is a bridge exactly when deleting it
 increases the number of connected components by one; deleting any other edge leaves the number
-unchanged (`Graph.componentCount_deleteEdges_of_not_isBridge`).
+unchanged (`Graph.componentCount_deleteEdges_of_not_isBridge`).  Collecting the bridges into
+`Graph.bridgeSet`, `Graph.componentCount_deleteEdges_of_subset_bridgeSet_of_finite` shows that,
+with finitely many components, deleting a finite set of bridges adds one component per deleted
+bridge.  With finitely many actual vertices, `G` has finitely many bridges
+(`Graph.finite_bridgeSet`) and deleting all of them leaves exactly
+`G.componentCount + G.bridgeSet.ncard` components (`Graph.componentCount_deleteEdges_bridgeSet`).
+Deleting every bridge leaves a graph without bridges
+(`Graph.not_isBridge_deleteEdges_bridgeSet`).
 
 A multigraph is a forest, `Graph.IsForest`, when it has no cycles; since loops and pairs of
 parallel edges are cycles of multigraphs, a forest has neither.
 `Graph.isForest_iff_forall_isBridge` shows that a multigraph is a forest exactly when every actual
-edge is a bridge.  Only the component count after deleting a bridge assumes finitely many
-components; the other statements need no finiteness assumptions.
+edge is a bridge.  Only the component counts assume finiteness: of the components when deleting
+one bridge or finitely many bridges, and of the actual vertices when deleting all bridges; the
+other statements need no finiteness assumptions.
 
 The statements follow the corresponding results for simple graphs in Mathlib,
 `SimpleGraph.isBridge_iff`, `SimpleGraph.isBridge_iff_forall_walk_mem_edges`,
@@ -115,6 +123,22 @@ theorem IsLink.not_isBridge_of_isLink_of_ne (he : G.IsLink e x y) (hf : G.IsLink
   apply IsLink.reachable (e := f)
   rw [deleteEdges_isLink]
   exact ⟨hf, hfe⟩
+
+/-- The set of bridges of `G`. -/
+def bridgeSet (G : Graph α β) : Set β := {e | G.IsBridge e}
+
+@[simp]
+theorem mem_bridgeSet : e ∈ G.bridgeSet ↔ G.IsBridge e := Iff.rfl
+
+/-- Every bridge is an actual edge. -/
+theorem bridgeSet_subset_edgeSet (G : Graph α β) : G.bridgeSet ⊆ E(G) :=
+  fun _ he ↦ IsBridge.mem_edgeSet he
+
+/-- The ends of an edge that is not a bridge remain reachable from each other after deleting
+all bridges. -/
+theorem IsLink.reachable_deleteEdges_bridgeSet (h : G.IsLink e x y) (he : ¬ G.IsBridge e) :
+    (G.deleteEdges G.bridgeSet).Reachable x y :=
+  IsLink.reachable (e := e) ((deleteEdges_isLink ..).mpr ⟨h, he⟩)
 
 /-! ### Bridges and connected components -/
 
@@ -201,6 +225,52 @@ theorem isBridge_iff_componentCount_deleteEdges_eq_add_one [Finite G.ConnectedCo
   ⟨IsBridge.componentCount_deleteEdges, fun h ↦ by_contra fun he ↦ by
     simp [componentCount_deleteEdges_of_not_isBridge he] at h⟩
 
+/-- With finitely many connected components, deleting a finite set of bridges increases the
+number of connected components by the number of deleted bridges. -/
+theorem componentCount_deleteEdges_of_subset_bridgeSet_of_finite [Finite G.ConnectedComponent]
+    {F : Set β} (hF : F ⊆ G.bridgeSet) (hFfin : F.Finite) :
+    (G.deleteEdges F).componentCount = G.componentCount + F.ncard := by
+  induction F, hFfin using Set.Finite.induction_on with
+  | empty => simp
+  | @insert e F heF hFfin ih =>
+    have he : G.IsBridge e := hF (mem_insert e F)
+    -- A bridge of `G` remains a bridge after deleting other edges.
+    have he' : (G.deleteEdges F).IsBridge e :=
+      he.anti_of_mem deleteEdges_le (by simpa using ⟨he.mem_edgeSet, heF⟩)
+    have hcount := ih ((subset_insert e F).trans hF)
+    -- The ends of `e` are vertices, so the count is positive and hence the components finite.
+    have hG : G.componentCount ≠ 0 := by
+      obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet he.mem_edgeSet
+      rw [Ne, componentCount_eq_zero_iff]
+      exact (nonempty_of_mem h.left_mem).ne_empty
+    have : Finite (G.deleteEdges F).ConnectedComponent :=
+      Nat.finite_of_card_ne_zero (by rw [← componentCount_def, hcount]; omega)
+    rw [ncard_insert_of_notMem heF hFfin, ← union_singleton, ← deleteEdges_deleteEdges,
+      he'.componentCount_deleteEdges, hcount, add_assoc]
+
+/-- A multigraph with finitely many actual vertices has finitely many bridges. -/
+theorem finite_bridgeSet [Finite V(G)] : G.bridgeSet.Finite := by
+  by_contra h
+  obtain ⟨F, hF, hcard⟩ := Set.Infinite.exists_subset_ncard_eq h (V(G).ncard + 1)
+  have hFfin : F.Finite := finite_of_ncard_pos (by omega)
+  have : Finite V(G.deleteEdges F) := by rwa [vertexSet_deleteEdges]
+  have hle := (G.deleteEdges F).componentCount_le_ncard_vertexSet
+  rw [componentCount_deleteEdges_of_subset_bridgeSet_of_finite hF hFfin,
+    vertexSet_deleteEdges] at hle
+  omega
+
+/-- With finitely many actual vertices, deleting a set of bridges increases the number of connected
+components by the number of deleted bridges. -/
+theorem componentCount_deleteEdges_of_subset_bridgeSet [Finite V(G)] {F : Set β}
+    (hF : F ⊆ G.bridgeSet) : (G.deleteEdges F).componentCount = G.componentCount + F.ncard :=
+  componentCount_deleteEdges_of_subset_bridgeSet_of_finite hF (finite_bridgeSet.subset hF)
+
+/-- **Counting bridges.**  With finitely many actual vertices, deleting all bridges leaves as
+many connected components as `G` has components and bridges together. -/
+theorem componentCount_deleteEdges_bridgeSet [Finite V(G)] :
+    (G.deleteEdges G.bridgeSet).componentCount = G.componentCount + G.bridgeSet.ncard :=
+  componentCount_deleteEdges_of_subset_bridgeSet subset_rfl
+
 /-! ### Bridges and cycles -/
 
 /-- A bridge lies on no cycle. -/
@@ -227,6 +297,19 @@ theorem isBridge_iff_forall_cycle_notMem (he : e ∈ E(G)) :
   refine hcyc (.cons e h q.bypass) ?_ (by simp)
   exact (Walk.cons_isCycle_iff ..).mpr
     ⟨q.bypass_isPath, fun hm ↦ hq e (q.edges_bypass_subset_edges hm) rfl⟩
+
+/-- Deleting all bridges leaves a graph without bridges. -/
+theorem not_isBridge_deleteEdges_bridgeSet (G : Graph α β) (e : β) :
+    ¬ (G.deleteEdges G.bridgeSet).IsBridge e := by
+  intro he
+  obtain ⟨heG, hnb⟩ : e ∈ E(G) ∧ ¬ G.IsBridge e := by simpa using he.mem_edgeSet
+  -- A non-bridge lies on a cycle of `G`, which uses no bridge and so survives the deletion.
+  obtain ⟨u, p, hp, hep⟩ : ∃ u, ∃ p : G.Walk u u, p.IsCycle ∧ e ∈ p.edges := by
+    simpa [isBridge_iff_forall_cycle_notMem heG] using hnb
+  have hpD : ∀ f ∈ p.edges, f ∈ E(G.deleteEdges G.bridgeSet) := fun f hf ↦ by
+    simpa using ⟨p.edges_subset_edgeSet hf, fun hfb ↦ hfb.notMem_edges_of_isCycle hp hf⟩
+  exact he.notMem_edges_of_isCycle ((Walk.isCycle_transfer deleteEdges_le p hpD).mpr hp)
+    (by simpa using hep)
 
 /-! ### Forests -/
 

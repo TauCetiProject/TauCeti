@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Contractible
+public import TauCeti.AlgebraicTopology.Cohomology.Twisted.GroupCohomology
 public import TauCeti.AlgebraicTopology.Singular.Twisted.GroupHomology
 
 /-!
-# The homology of a classifying space with local coefficients is group homology
+# The (co)homology of a classifying space with local coefficients is group (co)homology
 
 For every group `G`, every commutative ring `k` and every `k`-linear representation `A` of `G`,
 the homology of Milnor's classifying space `classifyingSpace G` with local coefficients in `A` is
@@ -30,6 +31,17 @@ induces a morphism of local systems `TauCeti.classifyingSpaceLocalSystemMap k f`
 map `Hₙ(BG; A) ⟶ Hₙ(BG; A')` corresponds to Mathlib's map `groupHomology.map (MonoidHom.id G) f`
 (`TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`).
 
+Dually, for a `k`-module `N`, the cohomology of `classifyingSpace G` with coefficients in the same
+local system and values in `N` is the group cohomology of `G` with coefficients in the internal
+hom `Homₖ(A, N)`, where `N` carries the trivial action
+(`TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology`):
+
+`Hⁿ(BG; A, N) ≅ Hⁿ(G, Homₖ(A, N))`.
+
+Twisted cochains with values in `N` are maps out of the twisted chains, so this is cohomology with
+coefficients in the dual local system `Homₖ(A, N)`; it comes from
+`IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology`.
+
 ## Main definitions
 
 * `TauCeti.classifyingSpaceLocalSystem`: the local coefficient system on `classifyingSpace G`
@@ -38,6 +50,8 @@ map `Hₙ(BG; A) ⟶ Hₙ(BG; A')` corresponds to Mathlib's map `groupHomology.m
   of representations.
 * `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology`: the isomorphism
   `Hₙ(BG; A) ≅ Hₙ(G, A)`.
+* `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology`: the isomorphism
+  `Hⁿ(BG; A, N) ≅ Hⁿ(G, Homₖ(A, N))`.
 
 ## Main results
 
@@ -83,6 +97,21 @@ def classifyingSpaceTwistedHomologyIsoGroupHomology (n : ℕ) :
   IsQuotientCoveringMap.twistedHomologyIsoGroupHomology (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k A n
+
+variable (N : Type u) [AddCommGroup N] [Module k N]
+
+/-- **The cohomology of the classifying space with local coefficients is group cohomology**: for
+every group `G`, every representation `A` of `G` over a commutative ring `k` and every `k`-module
+`N`, the cohomology `Hⁿ(BG; A, N)` of Milnor's classifying space with coefficients in the local
+system associated to `A` and values in `N` is Mathlib's group cohomology `Hⁿ(G, Homₖ(A, N))` of
+the internal hom into the trivial representation `N`. It comes from the free resolution of `k` by
+the singular chains of `universalGSpace G`. -/
+def classifyingSpaceTwistedCohomologyIsoGroupCohomology (n : ℕ) :
+    (classifyingSpaceLocalSystem k A).twistedCohomology k (ModuleCat.of k N) n ≅
+      groupCohomology ((Rep.ihom A).obj (Rep.trivial k G N)) n :=
+  IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k A N n
 
 variable {k A} {A' : Rep.{u} k G}
 

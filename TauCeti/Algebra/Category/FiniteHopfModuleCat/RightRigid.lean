@@ -69,6 +69,11 @@ def dualEvaluation (M : FiniteHopfModuleCat k H) :
 theorem dualEvaluation_hom_hom (M : FiniteHopfModuleCat k H) :
     (dualEvaluation M).hom.hom = dualEval k H M := (rfl)
 
+/-- Evaluation applies the functional to the vector. -/
+theorem dualEvaluation_tmul (M : FiniteHopfModuleCat k H) (φ : dual M) (m : M) :
+    (dualEvaluation M).hom.hom (tmul k H φ m) = (trivialEquiv k H).symm (dualEquiv k H M φ m) :=
+  dualEval_tmul k H M φ m
+
 /-- The finite-dimensional coevaluation into the tensor product with the contragredient, as a
 morphism. -/
 def dualCoevaluation (M : FiniteHopfModuleCat k H) :

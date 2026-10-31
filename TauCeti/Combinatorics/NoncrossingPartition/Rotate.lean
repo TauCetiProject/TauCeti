@@ -29,6 +29,10 @@ order automorphism of the lattice `NC(n)`: the rotation of `NC(n)`.
   `TauCeti.NoncrossingPartition.parts_rotate_symm` — the parts of `rotate n π` are the images of
   the parts of `π` under `finRotate n`, and those of `(rotate n).symm π` their images under its
   inverse.
+* `TauCeti.NoncrossingPartition.mem_part_rotate` and
+  `TauCeti.NoncrossingPartition.mem_part_rotate_symm` — two positions lie in a common part of
+  `rotate n π` (of `(rotate n).symm π`) exactly when the positions before (after) them lie in a
+  common part of `π`.
 * `TauCeti.NoncrossingPartition.prod_parts_rotate` — a product over the parts of `rotate n π` is
   the product over the parts `B` of `π` evaluated at the rotated parts.
 
@@ -144,6 +148,22 @@ theorem parts_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) :
 theorem parts_rotate_symm (π : NoncrossingPartition (univ : Finset (Fin n))) :
     ((rotate n).symm π).1.parts = π.1.parts.image fun B => B.map (finRotate n).symm.toEmbedding :=
   Finpartition.parts_comap_copy_equiv π.1 (finRotate n)
+
+/-- Two positions lie in a common part of the rotation `rotate n π` exactly when the positions
+before them lie in a common part of `π`. -/
+@[simp]
+theorem mem_part_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) {x y : Fin n} :
+    y ∈ (rotate n π).1.part x ↔ (finRotate n).symm y ∈ π.1.part ((finRotate n).symm x) := by
+  simp only [Finpartition.mem_part_iff_exists, parts_rotate, mem_image, exists_exists_and_eq_and,
+    mem_map_equiv]
+
+/-- Two positions lie in a common part of the inverse rotation `(rotate n).symm π` exactly when
+the positions after them lie in a common part of `π`. -/
+@[simp]
+theorem mem_part_rotate_symm (π : NoncrossingPartition (univ : Finset (Fin n))) {x y : Fin n} :
+    y ∈ ((rotate n).symm π).1.part x ↔ finRotate n y ∈ π.1.part (finRotate n x) := by
+  simp only [Finpartition.mem_part_iff_exists, parts_rotate_symm, mem_image,
+    exists_exists_and_eq_and, mem_map_equiv, Equiv.symm_symm]
 
 /-- A product over the parts of the rotation `rotate n π` is the product over the parts `B` of `π`
 evaluated at the rotated parts `finRotate n '' B`. -/

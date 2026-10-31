@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
@@ -49,6 +50,8 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   alternating form on a compatibly graded space has a homogeneous symplectic basis.**
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J`: **a nondegenerate alternating form has
   a symplectic basis.**
+* `LinearMap.BilinForm.basis_det_eq_one_of_toMatrix_eq_J`: two symplectic bases of the same form
+  have relative determinant `1`.
 * `LinearMap.BilinForm.IsAlt.even_finrank`: a space carrying a nondegenerate alternating form has
   even dimension.
 * `LinearMap.BilinForm.IsAlt.exists_basis_apply_eq_J_inl_zero_eq`: every nonzero vector is the
@@ -189,6 +192,21 @@ private theorem IsAlt.apply_cons_cons_eq_J {m : ℕ}
       Matrix.one_apply, Fin.succ_inj, Fin.succ_ne_zero, fun a : Fin m => (Fin.succ_ne_zero a).symm]
 
 end CommRing
+
+section Determinant
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- **Symplectic bases have unit relative determinant.** Two bases in which `B` has the standard
+symplectic matrix `Matrix.J` differ by a symplectic matrix, so `b.det c = 1`. -/
+theorem basis_det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
+    {B : BilinForm R M} {b c : Basis (l ⊕ l) R M} (hb : BilinForm.toMatrix b B = Matrix.J l R)
+    (hc : BilinForm.toMatrix c B = Matrix.J l R) : b.det c = 1 := by
+  have h := toMatrix_mul_basis_toMatrix b c B
+  rw [hb, hc, ← SymplecticGroup.mem_iff'] at h
+  rw [Basis.det_apply, SymplecticGroup.det_eq_one h]
+
+end Determinant
 
 section FinrankTwo
 

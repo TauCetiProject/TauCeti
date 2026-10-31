@@ -38,6 +38,7 @@ decreasing family of submodules, such as completed enveloping algebras of affine
 * `TauCeti.ModuleTower.hasBasis_nhds_zero`: the kernels of the projections form a basis of
   neighbourhoods of zero.
 * `TauCeti.ModuleTower.tendsto_nhds_iff`: convergence is eventual agreement in every coordinate.
+* `TauCeti.ModuleTower.isClosed_ker_limπ`: the kernels of the projections are closed.
 * `TauCeti.ModuleTower.isLocallyConstant_limπ`: the projections are locally constant.
 * `TauCeti.ModuleTower.instT2Space`, `TauCeti.ModuleTower.instCompleteSpace`: the limit is
   Hausdorff and complete.
@@ -119,6 +120,10 @@ theorem ker_limπ_mem_nhds_zero (n : ℕ) : (LinearMap.ker (F.limπ n) : Set F.l
 /-- The kernel of every projection is open. -/
 theorem isOpen_ker_limπ (n : ℕ) : IsOpen (LinearMap.ker (F.limπ n) : Set F.lim) :=
   (LinearMap.ker (F.limπ n)).toAddSubgroup.isOpen_of_mem_nhds (F.ker_limπ_mem_nhds_zero n)
+
+/-- The kernel of every projection is closed, being an open subgroup. -/
+theorem isClosed_ker_limπ (n : ℕ) : IsClosed (LinearMap.ker (F.limπ n) : Set F.lim) :=
+  (LinearMap.ker (F.limπ n)).toAddSubgroup.isClosed_of_isOpen (F.isOpen_ker_limπ n)
 
 /-- The projections `lim A → Aₙ` are locally constant: they are continuous for the discrete
 topology on `Aₙ`. -/

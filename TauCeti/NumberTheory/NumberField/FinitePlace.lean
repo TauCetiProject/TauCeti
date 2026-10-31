@@ -20,6 +20,7 @@ The valuation dictionary `FinitePlace.mk_apply_le_one_iff` and
 `FinitePlace.mk_apply_eq_one_iff` compares the finite-place absolute value with the adic valuation.
 These comparisons follow Ralf Stephan's `ArithmeticHeights/SUnit.lean` in
 `rwst/Subspace-Theorems` at `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0).
+`FinitePlace.mk_apply_le_one_iff_algebraMap_mem` reads integrality in the adic completion instead.
 
 The file also records that a number field always *has* a finite place: the finite places are the
 height one primes of its ring of integers, and that ring is a Dedekind domain which is not a
@@ -74,6 +75,13 @@ theorem mk_apply_le_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
   rw [mk_apply, norm_embedding, HeightOneSpectrum.adicAbv_def]
   norm_cast
   exact WithZeroMulInt.toNNReal_le_one_iff (HeightOneSpectrum.one_lt_absNorm_nnreal v)
+
+/-- An element is integral at a prime iff its finite-place absolute value is at most one, read in
+the completion: its image lies in the ring of integers of the adic completion. -/
+theorem mk_apply_le_one_iff_algebraMap_mem (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    mk v x ≤ 1 ↔ algebraMap K (v.adicCompletion K) x ∈ v.adicCompletionIntegers K := by
+  rw [mk_apply_le_one_iff, HeightOneSpectrum.mem_adicCompletionIntegers]
+  simp [HeightOneSpectrum.algebraMap_adicCompletion]
 
 /-- An element has valuation one at a prime iff its finite-place absolute value is one. -/
 theorem mk_apply_eq_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
