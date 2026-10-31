@@ -74,14 +74,16 @@ theorem integral_fun_smul_of_smul_left [NormedDivisionRing 𝕜] [Module 𝕜 E]
 measure, when the pairing is `𝕜`-linear in its second argument.
 
 This generalizes Mathlib's `MeasureTheory.VectorMeasure.integral_smul_vectorMeasure` (real
-scalars). The case split on completeness of `G` and the comparison of variations through
-`variation_smul` in the non-integrable branch are adapted from its proof; the integrable branch
-uses `map_integral_comp_eq_integral_mapRangeL` instead. -/
+scalars). -/
 theorem integral_smul_vectorMeasure_of_smul_right [NormedField 𝕜] [NormedAlgebra ℝ 𝕜]
     [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G]
     {μ : VectorMeasure X F} {B : E →L[ℝ] F →L[ℝ] G}
     (hB : ∀ (c : 𝕜) x y, B x (c • y) = c • B x y) (c : 𝕜) (f : X → E) :
     ∫ᵛ x, f x ∂[B; c • μ] = c • ∫ᵛ x, f x ∂[B; μ] := by
+  -- The case split on completeness of `G` and the comparison of variations through
+  -- `variation_smul` in the non-integrable branch are adapted from the proof of Mathlib's
+  -- `MeasureTheory.VectorMeasure.integral_smul_vectorMeasure`; the integrable branch uses
+  -- `map_integral_comp_eq_integral_mapRangeL` instead.
   by_cases hG : CompleteSpace G; swap
   · simp [integral_of_not_completeSpace hG]
   rcases eq_or_ne c 0 with rfl | hc
