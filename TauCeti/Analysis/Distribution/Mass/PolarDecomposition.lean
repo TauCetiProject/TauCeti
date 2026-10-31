@@ -70,6 +70,25 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [FiniteDimensional ℝ F] {Ω : Opens E} {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, F) ℝ]
   [LinearMapClass 𝓕 ℝ 𝓓(Ω, F) ℝ] {T : 𝓕}
 
+omit [FiniteDimensional ℝ F] in
+/-- A field of functionals on a separable space that is bounded by `C` in each direction, almost
+everywhere, is bounded by `C` in norm almost everywhere. -/
+private theorem ae_norm_le_of_forall_ae_norm_apply_le [SeparableSpace F] {X : Type*}
+    [MeasurableSpace X] {μ : Measure X} {τ : X → StrongDual ℝ F} {C : ℝ} (hC : 0 ≤ C)
+    (h : ∀ v, ∀ᵐ x ∂μ, ‖τ x v‖ ≤ C * ‖v‖) : ∀ᵐ x ∂μ, ‖τ x‖ ≤ C := by
+  filter_upwards [ae_all_iff.2 fun n => h (denseSeq F n)] with x hx
+  refine ContinuousLinearMap.opNorm_le_bound _ hC fun v => ?_
+  exact (denseRange_denseSeq F).induction_on v
+    (isClosed_le (τ x).continuous.norm (continuous_const.mul continuous_norm)) hx
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+/-- The pairing `x ↦ τ(x) (φ x)` of a locally integrable field `τ` of functionals on `F` with a
+test `φ` is integrable. -/
+private theorem integrable_apply_of_locallyIntegrable {μ : Measure Ω} {τ : Ω → StrongDual ℝ F}
+    (hτ : LocallyIntegrable τ μ) (φ : 𝓓(Ω, F)) : Integrable (fun x => τ x (φ x)) μ :=
+  (integrable_bilin_subtype (NormedSpace.inclusionInDoubleDual ℝ F) hτ φ).congr
+    (ae_of_all _ fun x => by simp)
+
 section Existence
 
 variable (hT : HasLocallyFiniteMass T)
@@ -85,6 +104,33 @@ private theorem enorm_apply_postcompCLM_le (v : F) (ψ : 𝓓(Ω, ℝ)) :
   congr with x
   simp only [postcompCLM_apply, Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply,
     enorm_eq_nnnorm, nnnorm_smul, ENNReal.coe_mul, mul_comm]
+
+omit [FiniteDimensional ℝ F] in
+/-- A locally integrable field `τ` representing `T` against `‖T‖` satisfies `|τ v| ≤ ‖v‖` almost
+everywhere, in each direction `v`. -/
+private theorem ae_enorm_apply_le {τ : Ω → StrongDual ℝ F}
+    (hτl : LocallyIntegrable τ (massMeasure T))
+    (hτ : ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T) (v : F) :
+    ∀ᵐ x ∂massMeasure T, ‖τ x v‖ₑ ≤ ‖v‖ₑ := by
+  have := Ω.isOpen.locallyCompactSpace
+  refine TauCeti.ae_enorm_le_of_forall_enorm_integral_inner_le (k := fun _ => ‖v‖ₑ)
+    (locallyIntegrable_iff.2 fun K hK => ?_) measurable_const (fun K hK => ?_)
+    fun U _ ψ hψU hψ => ?_
+  · exact (hτl.integrableOn_isCompact hK).apply_continuousLinearMap v
+  · rw [setLIntegral_const]
+    exact ENNReal.mul_ne_top enorm_ne_top hK.measure_lt_top.ne
+  · rw [setLIntegral_const, massMeasure_preimage_coe hT U.isOpen, mul_comm]
+    have : ∫ x, inner ℝ (ψ x) (τ x v) ∂massMeasure T =
+        T (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) ψ) := by
+      rw [hτ]
+      congr with x
+      simp [mul_comm]
+    rw [this]
+    refine enorm_apply_le_localMass_mul_of_forall_enorm_le T
+      (by rw [postcompCLM_apply]; exact (tsupport_comp_subset (map_zero _) ψ).trans hψU)
+      fun x => ?_
+    simpa [enorm_smul] using mul_le_of_le_one_left (by positivity)
+      (by simpa [← ofReal_norm] using hψ x : ‖ψ x‖ₑ ≤ 1)
 
 /-- Existence of a density of norm at most one representing `T` against `‖T‖`. -/
 private theorem exists_le_one [ContinuousMapClass 𝓕 𝓓(Ω, F) ℝ] :
@@ -122,36 +168,12 @@ private theorem exists_le_one [ContinuousMapClass 𝓕 𝓓(Ω, F) ℝ] :
           rw [← integral_finsetSum _ fun i _ => hint i]
           congr with x
           simp [hτv, ψ, c]
-  -- In each direction `v`, `|τ v| ≤ ‖v‖` almost everywhere.
-  have hdir (v : F) : ∀ᵐ x ∂lam, ‖τ x v‖ₑ ≤ ‖v‖ₑ := by
-    refine TauCeti.ae_enorm_le_of_forall_enorm_integral_inner_le (k := fun _ => ‖v‖ₑ)
-      (locallyIntegrable_iff.2 fun K hK => ?_) measurable_const (fun K hK => ?_)
-      fun U _ ψ hψU hψ => ?_
-    · rw [show (fun x => τ x v) = fun x => ∑ i, b.coord i v * h i x from funext fun x => hτv x v]
-      exact integrable_finsetSum _ fun i _ => ((hloc i).integrableOn_isCompact hK).const_mul _
-    · rw [setLIntegral_const]
-      exact ENNReal.mul_ne_top enorm_ne_top hK.measure_lt_top.ne
-    · rw [setLIntegral_const, massMeasure_preimage_coe hT U.isOpen, mul_comm]
-      have : ∫ x, inner ℝ (ψ x) (τ x v) ∂lam =
-          T (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) ψ) := by
-        rw [hrep]
-        congr with x
-        simp [mul_comm]
-      rw [this]
-      refine enorm_apply_le_localMass_mul_of_forall_enorm_le T
-        (by rw [postcompCLM_apply]; exact (tsupport_comp_subset (map_zero _) ψ).trans hψU)
-        fun x => ?_
-      simpa [enorm_smul] using mul_le_of_le_one_left (by positivity)
-        (by simpa [← ofReal_norm] using hψ x : ‖ψ x‖ₑ ≤ 1)
-  refine ⟨τ, by fun_prop, ?_, hrep⟩
-  -- Combine the directional bounds along a dense sequence.
-  filter_upwards [ae_all_iff.2 fun n => hdir (TopologicalSpace.denseSeq F n)] with x hx
-  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v => ?_
-  refine (TopologicalSpace.denseRange_denseSeq F).induction_on v
-    (isClosed_le (τ x).continuous.norm (continuous_const.mul continuous_norm)) fun n => ?_
-  have := hx n
-  rw [← ofReal_norm, ← ofReal_norm, ENNReal.ofReal_le_ofReal_iff (norm_nonneg _)] at this
-  simpa using this
+  have hτl : LocallyIntegrable τ lam := locallyIntegrable_iff.2 fun K hK =>
+    integrable_finsetSum _ fun i _ => ((hloc i).integrableOn_isCompact hK).smul_const _
+  refine ⟨τ, by fun_prop, ae_norm_le_of_forall_ae_norm_apply_le zero_le_one fun v => ?_, hrep⟩
+  filter_upwards [ae_enorm_apply_le hT hτl hrep v] with x hx
+  rw [one_mul]
+  rwa [← ofReal_norm, ← ofReal_norm, ENNReal.ofReal_le_ofReal_iff (norm_nonneg _)] at hx
 
 omit [FiniteDimensional ℝ F] in
 /-- A density of norm at most one representing `T` against `‖T‖` has norm one almost
@@ -243,8 +265,7 @@ theorem locallyIntegrable_polarDensity : LocallyIntegrable (polarDensity T) (mas
 integrable with respect to the mass measure. -/
 theorem integrable_polarDensity_apply (φ : 𝓓(Ω, F)) :
     Integrable (fun x => polarDensity T x (φ x)) (massMeasure T) :=
-  (integrable_bilin_subtype (NormedSpace.inclusionInDoubleDual ℝ F)
-    (locallyIntegrable_polarDensity hT) φ).congr (ae_of_all _ fun x => by simp)
+  integrable_apply_of_locallyIntegrable (locallyIntegrable_polarDensity hT) φ
 
 /-- **Uniqueness of the polar density.** A locally integrable field `τ` of functionals on `F`
 with `T φ = ∫ τ(x) (φ x) d‖T‖(x)` for every test `φ` agrees with the polar density at almost
@@ -262,8 +283,8 @@ theorem ae_eq_polarDensity {τ : Ω → StrongDual ℝ F} (hτ : LocallyIntegrab
     · exact ((hτ.sub hτ').integrableOn_isCompact hK).apply_continuousLinearMap v
     · set φ := postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) ψ
       have h0 : ∫ x, τ x (φ x) - polarDensity T x (φ x) ∂massMeasure T = 0 := by
-        rw [integral_sub ((φ.integrable_bilin_subtype (NormedSpace.inclusionInDoubleDual ℝ F)
-          hτ).congr (ae_of_all _ fun x => by simp)) (integrable_polarDensity_apply hT φ), ← h,
+        rw [integral_sub (integrable_apply_of_locallyIntegrable hτ φ)
+          (integrable_polarDensity_apply hT φ), ← h,
           ← apply_eq_integral_polarDensity hT, sub_self]
       have : ∫ x, inner ℝ (ψ x) ((τ x - polarDensity T x) v) ∂massMeasure T = 0 := by
         rw [← h0]
