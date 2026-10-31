@@ -400,16 +400,6 @@ theorem hasRightQuotientFDerivAt_iff_tendsto_mul_inv :
   -- `Δ * h⁻¹ - a = (Δ - a * h) * h⁻¹`, and the norm is multiplicative.
   rw [div_eq_mul_inv, ← norm_inv, ← norm_mul, sub_mul, mul_assoc, mul_inv_cancel₀ hh, mul_one]
 
-/-- A quaternion is real exactly when it commutes with every quaternion. -/
-private theorem im_eq_zero_iff_forall_commute {x : ℍ} : x.im = 0 ↔ ∀ h, Commute x h := by
-  refine ⟨fun hx h ↦ ?_, fun hx ↦ ?_⟩
-  · rw [← Quaternion.re_add_im x, hx, add_zero]
-    exact Quaternion.coe_commute _ _
-  · have hcenter : x ∈ Subalgebra.center ℝ ℍ :=
-      Subalgebra.mem_center_iff.mpr fun h ↦ (hx h).symm.eq
-    obtain ⟨r, rfl⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out hcenter)
-    simp
-
 /-! ### Simultaneous left and right slopes -/
 
 namespace HasLeftQuotientFDerivAt
@@ -426,7 +416,7 @@ theorem im_eq_zero_of_hasRightQuotientFDerivAt (hb : HasLeftQuotientFDerivAt f q
     (ha : HasRightQuotientFDerivAt f q a) : b.im = 0 := by
   have hD := hb.hasFDerivAt.unique ha.hasFDerivAt
   obtain rfl := hb.eq_of_hasRightQuotientFDerivAt ha
-  exact im_eq_zero_iff_forall_commute.mpr fun h ↦
+  exact Quaternion.im_eq_zero_iff_forall_commute.mpr fun h ↦
     (commute_iff_eq b h).mpr (by simpa using (DFunLike.congr_fun hD h).symm)
 
 end HasLeftQuotientFDerivAt
@@ -480,7 +470,7 @@ theorem _root_.HasFDerivAt.rightQuotientDifferentiableAt_iff {D : ℍ →L[ℝ] 
 /-- `x * h * y = h * x * y` for every `h` exactly when `y = 0` or `x` is real. -/
 private theorem forall_mul_mul_eq_iff {x y : ℍ} :
     (∀ h, x * h * y = h * x * y) ↔ y = 0 ∨ x.im = 0 := by
-  rw [im_eq_zero_iff_forall_commute]
+  rw [Quaternion.im_eq_zero_iff_forall_commute]
   refine ⟨fun H ↦ or_iff_not_imp_left.mpr fun hy h ↦
     (commute_iff_eq x h).mpr (mul_right_cancel₀ hy (H h)), ?_⟩
   rintro (rfl | hx) h
@@ -490,7 +480,7 @@ private theorem forall_mul_mul_eq_iff {x y : ℍ} :
 /-- `y * h * x = y * x * h` for every `h` exactly when `y = 0` or `x` is real. -/
 private theorem forall_mul_mul_eq_iff' {x y : ℍ} :
     (∀ h, y * h * x = y * x * h) ↔ y = 0 ∨ x.im = 0 := by
-  rw [im_eq_zero_iff_forall_commute]
+  rw [Quaternion.im_eq_zero_iff_forall_commute]
   refine ⟨fun H ↦ or_iff_not_imp_left.mpr fun hy h ↦ ?_, ?_⟩
   · exact (commute_iff_eq x h).mpr (mul_left_cancel₀ hy (by simpa only [mul_assoc] using H h)).symm
   rintro (rfl | hx) h
@@ -527,13 +517,10 @@ theorem inv_iff (hf : HasLeftQuotientFDerivAt f q b) (hq : f q ≠ 0) :
       b = 0 ∨ (f q).im = 0 := by
   have hD : HasFDerivAt (fun x ↦ (f x)⁻¹) _ q := (hasFDerivAt_inv' hq).comp q hf.hasFDerivAt
   have hinv : (f q)⁻¹.im = 0 ↔ (f q).im = 0 := by
-    simp only [im_eq_zero_iff_forall_commute, Commute.inv_left_iff₀]
+    simp only [Quaternion.im_eq_zero_iff_forall_commute, Commute.inv_left_iff₀]
   rw [hD.hasLeftQuotientFDerivAt_iff, ← hinv, ← forall_mul_mul_eq_iff]
   refine forall_congr' fun h ↦ ?_
-  simp only [ContinuousLinearMap.comp_apply, neg_apply,
-    ContinuousLinearMap.mulLeftRight_apply, ContinuousLinearMap.flip_apply,
-    ContinuousLinearMap.mul_apply', mul_neg, neg_inj, ← mul_assoc]
-  exact mul_left_inj' (inv_ne_zero hq)
+  simp [← mul_assoc, inv_ne_zero hq]
 
 /-- If `f` has left slope `b` at `q` and `f q ≠ 0`, then `x ↦ (f x)⁻¹` has some left slope at `q`
 exactly when `b = 0` or `f q` is real; the slope is then `-((f q)⁻¹ * b * (f q)⁻¹)`
@@ -564,9 +551,7 @@ theorem mul_iff (hf : HasRightQuotientFDerivAt f q a) (hg : HasRightQuotientFDer
   rw [(hf.hasFDerivAt.fun_mul' hg.hasFDerivAt).hasRightQuotientFDerivAt_iff,
     ← forall_mul_mul_eq_iff']
   refine forall_congr' fun h ↦ ?_
-  simp only [add_apply, smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul, op_smul_eq_mul,
-    add_mul, mul_assoc]
-  rw [add_comm, add_left_inj]
+  simp [add_mul, mul_assoc, add_comm (a * _)]
 
 /-- If `f` and `g` have right slopes `a` and `c` at `q`, then `f * g` has some right slope at `q`
 exactly when `a = 0` or `g q` is real; the slope is then `a * g q + f q * c`
@@ -587,7 +572,7 @@ theorem inv_iff (hf : HasRightQuotientFDerivAt f q a) (hq : f q ≠ 0) :
       a = 0 ∨ (f q).im = 0 := by
   have hD : HasFDerivAt (fun x ↦ (f x)⁻¹) _ q := (hasFDerivAt_inv' hq).comp q hf.hasFDerivAt
   have hinv : (f q)⁻¹.im = 0 ↔ (f q).im = 0 := by
-    simp only [im_eq_zero_iff_forall_commute, Commute.inv_left_iff₀]
+    simp only [Quaternion.im_eq_zero_iff_forall_commute, Commute.inv_left_iff₀]
   have ha : (f q)⁻¹ * a = 0 ↔ a = 0 := by simp [hq]
   rw [hD.hasRightQuotientFDerivAt_iff, ← hinv, ← ha, ← forall_mul_mul_eq_iff']
   refine forall_congr' fun h ↦ ?_

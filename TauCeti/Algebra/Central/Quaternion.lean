@@ -39,6 +39,8 @@ than excluding it.
   image of `R`.
 * `TauCeti.Quaternion.instIsCentral`: `ℍ[R]` is a central `R`-algebra when `R` has no zero divisors
   and `2 ≠ 0` in `R`. This is the roadmap's `quaternion_isCentral` at `R = ℝ`.
+* `TauCeti.Quaternion.im_eq_zero_iff_forall_commute`: under the same hypotheses, a quaternion is a
+  scalar iff it commutes with every quaternion.
 * `TauCeti.Quaternion.isEmpty_algEquiv_matrix`: over a linearly ordered commutative ring, `ℍ[R]` is
   not isomorphic to a matrix algebra of size at least two, so over a field its Brauer class is
   nontrivial.
@@ -164,6 +166,19 @@ divisors in which `2 ≠ 0`, the centre of `ℍ[R]` is exactly the image of `R`.
 `R = ℝ` this is the centrality half of the statement that `ℍ[ℝ]` is a central simple `ℝ`-algebra. -/
 instance instIsCentral [NoZeroDivisors R] [NeZero (2 : R)] : Algebra.IsCentral R ℍ[R] :=
   ⟨(center_eq_bot fun _ _ h ↦ mul_left_cancel₀ (NeZero.ne (2 : R)) h).le⟩
+
+/-- **A quaternion is a scalar exactly when it commutes with every quaternion**, over a commutative
+ring with no zero divisors in which `2 ≠ 0`. This is `TauCeti.Quaternion.instIsCentral` phrased
+through the imaginary part. -/
+theorem im_eq_zero_iff_forall_commute [NoZeroDivisors R] [NeZero (2 : R)] :
+    x.im = 0 ↔ ∀ y, Commute x y := by
+  refine ⟨fun hx y ↦ ?_, fun hx ↦ ?_⟩
+  · rw [← _root_.Quaternion.re_add_im x, hx, add_zero]
+    exact _root_.Quaternion.coe_commute _ _
+  · have hcenter : x ∈ Subalgebra.center R ℍ[R] :=
+      Subalgebra.mem_center_iff.mpr fun y ↦ (hx y).symm.eq
+    obtain ⟨r, rfl⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out hcenter)
+    simp
 
 end CommRing
 
