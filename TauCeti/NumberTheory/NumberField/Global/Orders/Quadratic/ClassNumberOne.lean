@@ -91,6 +91,14 @@ private theorem sub_le_of_prod_eq (hc : ∀ p, c p ≤ 1) {n : ℤ}
   have : (p : ℤ) ≤ (p : ℤ) ^ (f.factorization p - 1) := le_self_pow₀ (by linarith) (by omega)
   nlinarith
 
+/-- If `q` is the only prime factor of `f ≠ 0` and it divides `f` exactly once, then `f = q`. -/
+private theorem eq_of_forall_mem_primeFactors_eq {q : ℕ} (hf : f ≠ 0) (hq : q.Prime)
+    (h : ∀ p ∈ f.primeFactors, p = q) (hv : f.factorization q = 1) : f = q := by
+  have hfq := Nat.eq_prime_pow_of_unique_prime_dvd (p := q) hf fun hd hdvd ↦
+    h _ (Nat.mem_primeFactors.mpr ⟨hd, hdvd, hf⟩)
+  rw [hfq, Nat.factorization_pow_self hq] at hv
+  rwa [hv, pow_one] at hfq
+
 /-- If the local factors of `f > 1` multiply to `1`, then `f = 2` and `c(2) = 1`. -/
 private theorem eq_two_of_prod_eq_one (hc : ∀ p, c p ≤ 1) (hf : 1 < f)
     (h : ∏ p ∈ f.primeFactors, (p : ℤ) ^ (f.factorization p - 1) * (p - c p) = 1) :
@@ -105,10 +113,8 @@ private theorem eq_two_of_prod_eq_one (hc : ∀ p, c p ≤ 1) (hf : 1 < f)
   obtain ⟨p, hp⟩ := Nat.nonempty_primeFactors.mpr hf
   obtain ⟨rfl, h21, hv⟩ := hpf p hp
   -- `2` is the only prime factor of `f`, and it occurs once.
-  have hf2 := Nat.eq_prime_pow_of_unique_prime_dvd (p := 2) (by omega) fun hd hdvd ↦
-    (hpf _ (Nat.mem_primeFactors.mpr ⟨hd, hdvd, by omega⟩)).1
-  rw [hf2, Nat.factorization_pow_self Nat.prime_two] at hv
-  exact ⟨by rwa [hv, pow_one] at hf2, h21⟩
+  exact ⟨eq_of_forall_mem_primeFactors_eq (by omega) Nat.prime_two (fun p hp ↦ (hpf p hp).1) hv,
+    h21⟩
 
 /-- If `c(2) = 0`, `c(3) = -1` and the local factors of `f > 1` multiply to `2`, then `f = 2`. -/
 private theorem eq_two_of_prod_eq_two (hc : ∀ p, c p ≤ 1) (hc2 : c 2 = 0) (hc3 : c 3 = -1)
@@ -128,10 +134,7 @@ private theorem eq_two_of_prod_eq_two (hc : ∀ p, c p ≤ 1) (hc2 : c 2 = 0) (h
   obtain ⟨p, hp⟩ := Nat.nonempty_primeFactors.mpr hf
   obtain ⟨rfl, hv⟩ := hpf p hp
   -- `2` is the only prime factor of `f`, and it occurs once.
-  have hf2 := Nat.eq_prime_pow_of_unique_prime_dvd (p := 2) (by omega) fun hd hdvd ↦
-    (hpf _ (Nat.mem_primeFactors.mpr ⟨hd, hdvd, by omega⟩)).1
-  rw [hf2, Nat.factorization_pow_self Nat.prime_two] at hv
-  rwa [hv, pow_one] at hf2
+  exact eq_of_forall_mem_primeFactors_eq (by omega) Nat.prime_two (fun p hp ↦ (hpf p hp).1) hv
 
 /-- If `c(2) = -1`, `c(3) = 0` and the local factors of `f > 1` multiply to `3`, then `f = 2` or
 `f = 3`. -/
@@ -163,12 +166,8 @@ private theorem eq_two_or_eq_three_of_prod_eq_three (hc : ∀ p, c p ≤ 1) (hc2
   obtain ⟨q, hq⟩ := Nat.nonempty_primeFactors.mpr hf
   have hall : ∀ p ∈ f.primeFactors, p = q := fun p hp ↦ by
     rcases (hpf p hp).1 with rfl | rfl <;> rcases (hpf q hq).1 with rfl | rfl <;> tauto
-  have hfq := Nat.eq_prime_pow_of_unique_prime_dvd (p := q) (by omega) fun hd hdvd ↦
-    hall _ (Nat.mem_primeFactors.mpr ⟨hd, hdvd, by omega⟩)
   obtain ⟨hq23, hv⟩ := hpf q hq
-  rw [hfq, Nat.factorization_pow_self (Nat.prime_of_mem_primeFactors hq)] at hv
-  rw [hv, pow_one] at hfq
-  rwa [hfq]
+  rwa [eq_of_forall_mem_primeFactors_eq (by omega) (Nat.prime_of_mem_primeFactors hq) hall hv]
 
 /-- The product of the local factors of a prime `p` is `p - c(p)`. -/
 private theorem prod_pow_mul_sub_prime {p : ℕ} (hp : p.Prime) :
