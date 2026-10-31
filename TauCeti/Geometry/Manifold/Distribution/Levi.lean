@@ -44,7 +44,8 @@ to the restriction of `dα` to `D`.
 * `TauCeti.IsDistributionFrameOn.distributionLeviForm_apply_eq_zero_iff` and
   `TauCeti.distributionLeviForm_apply_eq_zero_iff`: the Levi form vanishes on two values exactly
   when the Lie bracket of their extensions is tangent to `D`.
-* `TauCeti.distributionLeviForm_swap`: the Levi form is antisymmetric.
+* `TauCeti.distributionLeviForm_swap` and `TauCeti.distributionLeviForm_self`: the Levi form is
+  antisymmetric and alternating.
 * `TauCeti.isInvolutiveDistribution_iff_distributionLeviForm_eq_zero`: a `C¹` distribution is
   involutive exactly when its Levi form vanishes at every point.
 * `TauCeti.distributionLeviForm_standardContactDistribution_ne_zero`: the Levi form of the standard
@@ -196,6 +197,14 @@ theorem distributionLeviForm_swap (u v : D x) :
   split_ifs with h
   · simp only [IsDistributionFrameOn.leviForm, LinearMap.mk₂_apply, neg_neg]
     rw [mlieBracket_swap_apply, map_neg, neg_neg]
+  · simp
+
+/-- The Levi form of a distribution is alternating: it vanishes on the diagonal. -/
+@[simp]
+theorem distributionLeviForm_self (u : D x) : distributionLeviForm D x u u = 0 := by
+  unfold distributionLeviForm
+  split_ifs with h
+  · simp [IsDistributionFrameOn.leviForm]
   · simp
 
 variable [IsRCLikeNormedField 𝕜]
