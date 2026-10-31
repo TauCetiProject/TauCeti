@@ -8,7 +8,8 @@ module
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.GroupHomology
-public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.ChangeOfGroups
+import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 
 /-!
 # The singular cohomology of the base of a contractible free cover is group cohomology
@@ -36,6 +37,17 @@ Both identifications are natural in the coefficients: postcomposing cochains wit
 on trivial representations
 (`IsQuotientCoveringMap.singularCohomologyIsoGroupCohomology_hom_naturality`).
 
+Both identifications are also natural for maps of quotient covers equivariant along arbitrary group
+homomorphisms. For a map `b : B ⟶ C` of bases covered by a map `f : E ⟶ F` of total spaces
+equivariant along `φ : G →* H`, pulling cochains back along `b` corresponds to the cochain map
+`u ↦ f_* ≫ u` on invariant cochains of the total spaces
+(`singularCochainComplexMap_comp_singularCochainComplexIsoLinearYonedaObj_hom`, in the namespace
+`IsQuotientCoveringMap`), and, for contractible total spaces, `b^*` on singular cohomology
+corresponds to Mathlib's change-of-group map `groupCohomology.map φ` with the identity on the
+trivial coefficients `M`
+(`IsQuotientCoveringMap.singularCohomologyMap_comp_singularCohomologyIsoGroupCohomology_hom`). No
+hypothesis on `φ` is needed.
+
 This is the cohomological counterpart of `IsQuotientCoveringMap.singularHomologyIsoGroupHomology`.
 
 ## Main definitions
@@ -54,10 +66,14 @@ This is the cohomological counterpart of `IsQuotientCoveringMap.singularHomology
 * `IsQuotientCoveringMap.singularCochainComplexIsoLinearYonedaObj_hom_naturality`,
   `IsQuotientCoveringMap.singularCohomologyIsoGroupCohomology_hom_naturality`: the comparisons of
   cochains and of cohomology are natural in the coefficients.
+* `singularCochainComplexMap_comp_singularCochainComplexIsoLinearYonedaObj_hom`,
+  `IsQuotientCoveringMap.singularCohomologyMap_comp_singularCohomologyIsoGroupCohomology_hom`: the
+  comparisons of cochains and of cohomology are natural in the covering and the group.
 
 ## References
 
-* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4 and Section III.1.
+* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4, Section III.1, and
+  Section III.8.
 -/
 
 public section
@@ -77,7 +93,8 @@ variable {E B : TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
 /-- Pulling back along `p` identifies the `M`-valued singular `n`-cochains of the base with the
 `G`-invariant cochains of the total space: by `singularChainsRepCoinvariantsTensorIso`, they are
 the `M`-valued maps on the coinvariants `(k ⊗ Cₙ(E))_G`, which are the morphisms
-`k ⊗ Cₙ(E) ⟶ M` of representations to the trivial representation (`Rep.coinvariantsAdjunction`). -/
+`k ⊗ Cₙ(E) ⟶ M` of representations to the trivial representation
+(`Rep.coinvariantsHomLinearEquiv`). -/
 private def singularCochainLinearEquiv (n : ℕ) :
     haveI := hG.toContinuousConstSMul
     (((singularChains k).obj B).X n ⟶ ModuleCat.of k M) ≃ₗ[k]
@@ -86,9 +103,7 @@ private def singularCochainLinearEquiv (n : ℕ) :
   Linear.homCongr k
       (HomologicalComplex.Hom.isoApp (hG.singularChainsRepCoinvariantsTensorIso k) n).symm
       (Iso.refl _) ≪≫ₗ
-    { (Rep.coinvariantsAdjunction k G).homEquiv _ (ModuleCat.of k M) with
-      map_add' _ _ := by ext; simp [Rep.add_hom, Adjunction.homEquiv_unit]
-      map_smul' _ _ := by ext; simp [Rep.smul_hom, Adjunction.homEquiv_unit] } ≪≫ₗ
+    Rep.coinvariantsHomLinearEquiv M _ ≪≫ₗ
     Linear.homCongr k (λ_ _) (Iso.refl _)
 
 /-- The pulled-back cochain evaluates a chain of the total space on its image in the base. -/
@@ -104,7 +119,12 @@ private lemma singularCochainLinearEquiv_apply_hom_apply (n : ℕ)
   -- `singularChainsRepCoinvariantsTensorIso` are taken of `Rep.trivial k G k ⊗ Cₙ(E)`, and of
   -- `Rep.of (singularChainsRepresentation k E G n)` rather than `(singularChainsRep k E G).X n`.
   -- These objects agree only by definition, so the composite is not type-correct at reducible
-  -- transparency and those lemmas do not fire on it.
+  -- transparency and those lemmas do not fire on it. The middle step is evaluated by
+  -- `Rep.coinvariantsHomLinearEquiv_apply_hom_apply`, applied up to definitional equality.
+  change (Rep.coinvariantsHomLinearEquiv M (Rep.trivial k G k ⊗ (singularChainsRep k E G).X n)
+    ((HomologicalComplex.Hom.isoApp (hG.singularChainsRepCoinvariantsTensorIso k) n).hom ≫
+      f ≫ 𝟙 _)).hom ((λ_ (Rep.of (singularChainsRepresentation k E G n))).inv.hom c) = _
+  refine (Rep.coinvariantsHomLinearEquiv_apply_hom_apply M _ _).trans ?_
   change f ((HomologicalComplex.Hom.isoApp (hG.singularChainsRepCoinvariantsTensorIso k) n).hom
     (Rep.coinvariantsTensorMk _ _ 1 c)) = _
   exact congrArg f.hom
@@ -219,6 +239,16 @@ def singularCohomologyIsoGroupCohomology [ContractibleSpace E] (n : ℕ) :
       (hG.singularCochainComplexIsoLinearYonedaObj k M) ≪≫
     (groupCohomologyIso _ n (singularChainsResolution k E G)).symm
 
+/-- The comparison `Hⁿ(B; M) ≅ Hⁿ(G, M)` is the cohomology of the comparison of cochains followed
+by the inverse of `groupCohomologyIso` for the resolution by singular chains of `E`. -/
+lemma singularCohomologyIsoGroupCohomology_hom_eq [ContractibleSpace E] (n : ℕ) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hG.isCancelSMul
+    (hG.singularCohomologyIsoGroupCohomology k M n).hom =
+      HomologicalComplex.homologyMap (hG.singularCochainComplexIsoLinearYonedaObj k M).hom n ≫
+        (groupCohomologyIso _ n (singularChainsResolution k E G)).inv :=
+  Iso.trans_hom _ _
+
 /-- **The comparison of singular cohomology with group cohomology is natural in the
 coefficients**: for the quotient covering map `p : E ⟶ B` of an action of `G` with contractible
 total space and a `k`-linear map `f : M →ₗ[k] N`, the isomorphisms `Hⁿ(B; M) ≅ Hⁿ(G, M)` and
@@ -238,16 +268,11 @@ theorem singularCohomologyIsoGroupCohomology_hom_naturality [ContractibleSpace E
   have := hG.isCancelSMul
   -- The comparison is the cohomology of the comparison of cochains followed by the inverse of
   -- `groupCohomologyIso` for the resolution by singular chains of `E`, and both are natural.
-  have e (L : Type u) [AddCommGroup L] [Module k L] :
-      (hG.singularCohomologyIsoGroupCohomology k L n).hom =
-        HomologicalComplex.homologyMap (hG.singularCochainComplexIsoLinearYonedaObj k L).hom n ≫
-          (groupCohomologyIso _ n (singularChainsResolution k E G)).inv :=
-    Iso.trans_hom _ _
   have hcochains := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
     (congrArg (HomologicalComplex.homologyMap · n)
       (hG.singularCochainComplexIsoLinearYonedaObj_hom_naturality k M f)).trans
         (HomologicalComplex.homologyMap_comp _ _ n)
-  rw [e, e]
+  rw [singularCohomologyIsoGroupCohomology_hom_eq, singularCohomologyIsoGroupCohomology_hom_eq]
   -- The two naturality squares are pasted in term mode: the complex of
   -- `singularChainsResolution k E G` is `singularChainsRep k E G` only by unfolding, so the
   -- composites do not typecheck at the transparency `rw` uses.
@@ -255,5 +280,95 @@ theorem singularCohomologyIsoGroupCohomology_hom_naturality [ContractibleSpace E
     (Category.assoc _ _ _).trans <|
     (congrArg (_ ≫ ·) (TauCeti.Rep.groupCohomologyIso_inv_naturality _
       (singularChainsResolution k E G) n)).trans (Category.assoc _ _ _).symm
+
+
+section ChangeOfGroups
+
+variable {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+  (hH : IsQuotientCoveringMap q H) {φ : G →* H} (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+  (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
+
+include hb in
+/-- **The comparison of cochains is natural for maps of quotient covers.** For quotient covers
+`p : E ⟶ B` and `q : F ⟶ C`, a map `f : E ⟶ F` equivariant along any group homomorphism
+`φ : G →* H` and lying over `b : B ⟶ C`, pulling an `M`-valued cochain of `C` back along `b` and
+then along `p` is pulling it back along `q` and then along `f`, viewed as the change-of-group map
+`MonoidHom.linearYonedaObjMap` of invariant cochains with the identity on the trivial
+coefficients `M`. -/
+@[reassoc]
+lemma singularCochainComplexMap_comp_singularCochainComplexIsoLinearYonedaObj_hom :
+    haveI := hG.toContinuousConstSMul
+    haveI := hH.toContinuousConstSMul
+    TopCat.singularCochainComplexMap (R := ModuleCat.of k k) (k := k) (M := ModuleCat.of k M) b ≫
+        (hG.singularCochainComplexIsoLinearYonedaObj k M).hom =
+      (hH.singularCochainComplexIsoLinearYonedaObj k M).hom ≫
+        φ.linearYonedaObjMap (A := Rep.trivial k H M) (B := Rep.trivial k G M)
+          (𝟙 (Rep.trivial k G M)) (singularChainsRepResMap k f hf) := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  refine HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext <|
+    LinearMap.ext fun (u : ((singularChains k).obj C).X n ⟶ ModuleCat.of k M) ↦ ?_
+  refine Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun c ↦ ?_
+  have hc : ((singularChains k).map b).f n (((singularChains k).map p).f n c) =
+      ((singularChains k).map q).f n (((singularChains k).map f).f n c) := by
+    have h := ConcreteCategory.congr_hom (congrArg (fun t ↦ ((singularChains k).map t).f n) hb) c
+    simp only [Functor.map_comp, HomologicalComplex.comp_f] at h
+    exact h
+  -- Both cochains of `E` send a chain `c` to the value of `u` on its image in `C`, through `B`
+  -- on the left and through `F` on the right. The composites are stated between singular cochain
+  -- complexes and `linearYonedaObj` complexes, which agree only by unfolding, so the comparison
+  -- lemmas are applied in term mode rather than by `simp`.
+  have hY (w : Rep.of (singularChainsRepresentation k F H n) ⟶ Rep.trivial k H M) :
+      (((φ.linearYonedaObjMap (A := Rep.trivial k H M) (B := Rep.trivial k G M)
+        (𝟙 (Rep.trivial k G M)) (singularChainsRepResMap k f hf)).f n) w).hom c =
+        w.hom (((singularChains k).map f).f n c) :=
+    -- The cochain map precomposes with the pushforward `f_*` of chains; composing morphisms of
+    -- representations and evaluating is evaluating in turn.
+    (congrArg (fun t : (singularChainsRep k E G).X n ⟶ Rep.trivial k G M ↦ t.hom c)
+      (φ.linearYonedaObjMap_f_apply (A := Rep.trivial k H M) (B := Rep.trivial k G M)
+        (𝟙 (Rep.trivial k G M)) (singularChainsRepResMap k f hf) n w)).trans
+      (congrArg w.hom (singularChainsRepResMap_f_hom_apply k f hf n c))
+  exact (hG.singularCochainComplexIsoLinearYonedaObj_hom_f_hom_apply k M n _ c).trans <|
+    (congrArg (fun x ↦ u x) hc).trans <|
+      (hH.singularCochainComplexIsoLinearYonedaObj_hom_f_hom_apply k M n u _).symm.trans (hY _).symm
+
+include hf hb in
+/-- **The comparison of singular cohomology with group cohomology is natural in the covering and
+the group.** For quotient covers `p : E ⟶ B` and `q : F ⟶ C` with contractible total spaces, a map
+`f : E ⟶ F` equivariant along any group homomorphism `φ : G →* H` and lying over `b : B ⟶ C`, the
+identifications `Hⁿ(C; M) ≅ Hⁿ(H, M)` and `Hⁿ(B; M) ≅ Hⁿ(G, M)` carry `b^*` to Mathlib's
+change-of-group map `groupCohomology.map φ`, with the identity on the trivial coefficients `M`. -/
+@[reassoc]
+theorem singularCohomologyMap_comp_singularCohomologyIsoGroupCohomology_hom [ContractibleSpace E]
+    [ContractibleSpace F] (n : ℕ) :
+    TopCat.singularCohomologyMap (R := ModuleCat.of k k) (k := k) (M := ModuleCat.of k M) b n ≫
+        (hG.singularCohomologyIsoGroupCohomology k M n).hom =
+      (hH.singularCohomologyIsoGroupCohomology k M n).hom ≫
+        groupCohomology.map φ (A := Rep.trivial k H M) (B := Rep.trivial k G M)
+          (𝟙 (Rep.trivial k G M)) n := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  have := hG.isCancelSMul
+  have := hH.isCancelSMul
+  -- The comparison is the cohomology of the comparison of cochains followed by the inverse of
+  -- `groupCohomologyIso` for the resolution by singular chains, and both are natural.
+  have hcochains := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
+    (congrArg (HomologicalComplex.homologyMap · n)
+      (hG.singularCochainComplexMap_comp_singularCochainComplexIsoLinearYonedaObj_hom k M hH f hf b
+        hb)).trans (HomologicalComplex.homologyMap_comp _ _ n)
+  rw [hG.singularCohomologyIsoGroupCohomology_hom_eq,
+    hH.singularCohomologyIsoGroupCohomology_hom_eq]
+  -- The two naturality squares are pasted in term mode: the complex of
+  -- `singularChainsResolution k E G` is `singularChainsRep k E G` only by unfolding, so the
+  -- composites do not typecheck at the transparency `rw` uses.
+  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) hcochains).trans <|
+    (Category.assoc _ _ _).trans <|
+    (congrArg (_ ≫ ·) (φ.groupCohomologyIso_inv_naturality (A := Rep.trivial k H M)
+      (B := Rep.trivial k G M) (𝟙 (Rep.trivial k G M)) (singularChainsResolution k E G)
+      (singularChainsResolution k F H) (singularChainsRepResMap k f hf)
+      (singularChainsRepResMap_f_zero_comp_augmentation k f hf) n)).trans
+    (Category.assoc _ _ _).symm
+
+end ChangeOfGroups
 
 end IsQuotientCoveringMap

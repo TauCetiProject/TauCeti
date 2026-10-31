@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.Casimir
 public import TauCeti.Algebra.Lie.Weights.WeylInvariance
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.Lie.HighestWeight.Separation
 
 /-!
 # Freudenthal's multiplicity recursion
@@ -27,8 +28,10 @@ with `⟨·,·⟩` the invariant form `TauCeti.invForm` and `ρ` the Weyl vector
 The anchor at the top weight, `dim Mλ = 1`, is
 `TauCeti.formalCharacter_coeff_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top`. Reading the
 formula downwards from there as a computation of the lower multiplicities needs one more
-ingredient, namely that the scalar on the left is nonzero at every weight strictly below `λ`;
-that nonvanishing is a separate prerequisite, and is not proved here.
+ingredient, namely that the scalar on the left is nonzero at every weight strictly below `λ`.
+That is the separation of the weights of a highest weight module by the Casimir scalar,
+`TauCeti.casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector`, and
+with it the recursion is solved for `dim Mμ` at every `μ ≠ λ`.
 
 ## The two halves
 
@@ -62,8 +65,11 @@ the `⟨μ + ρ, μ + ρ⟩` of the statement comes from.
 
 * `TauCeti.sum_weightString_neg_eq_add`: **the two directions of a root string differ by the
   summand at the foot of the string**, the reflection symmetry in the form the recursion consumes.
+* `TauCeti.freudenthalRHS`: the double sum `∑_{α > 0} ∑_{j ≥ 1} dim M_{μ + jα} · ⟨μ + jα, α⟩`.
 * `TauCeti.freudenthal_multiplicity_formula`: **Freudenthal's multiplicity recursion** for a
   finite-dimensional highest weight module.
+* `TauCeti.coeff_formalCharacter_eq_freudenthalRHS_div`: **the recursion solved for the
+  multiplicity** at every linear form other than the highest weight.
 
 ## Implementation notes
 
@@ -190,6 +196,40 @@ theorem sum_weightString_erase_zero_eq_add_sum_erase_zero {beta : Dual K H}
     rw [add_assoc mu beta, ← succ_nsmul']
   rw [zero_add, one_nsmul]
   exact congrArg _ (Finset.sum_congr rfl fun k _ ↦ by rw [hrung])
+
+/-! ### The right-hand side of the recursion -/
+
+section FreudenthalRHS
+
+variable [IsTriangularizable K H L]
+
+variable (M) in
+/-- **The Freudenthal double sum** `∑_{α > 0} ∑_{j ≥ 1} dim M_{μ + jα} · ⟨μ + jα, α⟩` attached to a
+base `b` and a linear form `μ` on the Cartan subalgebra. The inner sum runs over the `α`-string
+above `μ` with the rung `μ` itself removed, a finite set because `M` is finite-dimensional. Twice
+this sum is the right-hand side of Freudenthal's multiplicity recursion
+`TauCeti.freudenthal_multiplicity_formula`. -/
+noncomputable def freudenthalRHS (b : (IsKilling.rootSystem H).Base) (mu : Dual K H) : K :=
+  ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
+    ∑ j ∈ (weightString M
+        (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root i)) mu).erase 0,
+      (finrank K (genWeightSpace M
+          ((mu + j • ((i : Weight K H L) : Dual K H) : Dual K H) : H → K)) : K) *
+        invForm (mu + j • ((i : Weight K H L) : Dual K H)) ((i : Weight K H L) : Dual K H)
+
+/-- **The defining formula of the Freudenthal double sum.** The definition is sealed, so this is the
+equation through which the sum is unfolded, here and downstream. -/
+theorem freudenthalRHS_def (b : (IsKilling.rootSystem H).Base) (mu : Dual K H) :
+    freudenthalRHS M b mu =
+      ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
+        ∑ j ∈ (weightString M
+            (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root i)) mu).erase 0,
+          (finrank K (genWeightSpace M
+              ((mu + j • ((i : Weight K H L) : Dual K H) : Dual K H) : H → K)) : K) *
+            invForm (mu + j • ((i : Weight K H L) : Dual K H)) ((i : Weight K H L) : Dual K H) :=
+  (rfl)
+
+end FreudenthalRHS
 
 variable [IsAlgClosed K]
 
@@ -387,11 +427,11 @@ highest weight vector of weight `λ`. Then for every linear form `μ` on the Car
 
 `(⟨λ + ρ, λ + ρ⟩ - ⟨μ + ρ, μ + ρ⟩) · dim Mμ = 2 ∑_{α > 0} ∑_{j ≥ 1} dim M_{μ + jα} · ⟨μ + jα, α⟩`,
 
-the inner sum running over the `α`-string above `μ` with the rung `μ` itself removed.
+the inner sum running over the `α`-string above `μ` with the rung `μ` itself removed; the double
+sum is `TauCeti.freudenthalRHS`.
 
 Together with `dim Mλ = 1` at the top weight this is the recursion for the multiplicities below
-`λ`. Running it as a downward computation of `dim Mμ` needs in addition that the scalar on the
-left is nonzero there, which is not proved here. -/
+`λ`; solved for `dim Mμ` it is `TauCeti.coeff_formalCharacter_eq_freudenthalRHS_div`. -/
 theorem freudenthal_multiplicity_formula {b : (IsKilling.rootSystem H).Base} {lam : Dual K H}
     {v : M} (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
     (mu : Dual K H) :
@@ -400,14 +440,9 @@ theorem freudenthal_multiplicity_formula {b : (IsKilling.rootSystem H).Base} {la
         invForm (mu + weylVector (IsKilling.rootSystem H) b)
           (mu + weylVector (IsKilling.rootSystem H) b)) *
         (finrank K (genWeightSpace M (mu : H → K)) : K) =
-      2 * ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
-        ∑ j ∈ (weightString M
-            (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root i)) mu).erase 0,
-          (finrank K (genWeightSpace M
-            ((mu + j • ((i : Weight K H L) : Dual K H) : Dual K H) : H → K)) : K) *
-            invForm (mu + j • ((i : Weight K H L) : Dual K H))
-              ((i : Weight K H L) : Dual K H) := by
+      2 * freudenthalRHS M b mu := by
   classical
+  rw [freudenthalRHS_def]
   -- The Casimir operator acts on all of `M`, hence on `Mμ`, by the scalar of the highest weight.
   have hop : casimirGenWeightSpaceEnd M (mu : H → K) =
       casimirScalar b lam • (LinearMap.id : Module.End K (genWeightSpace M (mu : H → K))) := by
@@ -435,5 +470,45 @@ theorem freudenthal_multiplicity_formula {b : (IsKilling.rootSystem H).Base} {la
   rw [hfoot] at hsum
   simp only [casimirScalar_def] at hsum
   linear_combination hsum
+
+/-- **Freudenthal's recursion, solved for the multiplicity.** Let `M` be a finite-dimensional
+module generated by a highest weight vector of weight `λ`. At every linear form `μ ≠ λ` on the
+Cartan subalgebra,
+
+`dim Mμ = 2 ∑_{α > 0} ∑_{j ≥ 1} dim M_{μ + jα} · ⟨μ + jα, α⟩ / (⟨λ + ρ, λ + ρ⟩ - ⟨μ + ρ, μ + ρ⟩)`.
+
+The right-hand side only involves the multiplicities of the weights `μ + jα` with `j ≥ 1` lying
+strictly above `μ`, so, starting from `dim Mλ = 1`, it determines the multiplicities of `M` by
+downward recursion from the top weight. At a weight `μ ≠ λ` of `M` the denominator is nonzero by
+`TauCeti.casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector`; at a
+form `μ` that is not a weight both sides vanish. The hypothesis `μ ≠ λ` cannot be dropped: at
+`μ = λ` the denominator vanishes while `dim Mλ = 1`. -/
+theorem coeff_formalCharacter_eq_freudenthalRHS_div {b : (IsKilling.rootSystem H).Base}
+    {lam : Dual K H} {v : M} (hv : IsHighestWeightVector b lam v)
+    (hgen : LieSubmodule.lieSpan K L {v} = ⊤) {mu : Dual K H} (hne : mu ≠ lam) :
+    ((formalCharacter K H M).coeff mu : K) =
+      2 * freudenthalRHS M b mu /
+        (invForm (lam + weylVector (IsKilling.rootSystem H) b)
+            (lam + weylVector (IsKilling.rootSystem H) b) -
+          invForm (mu + weylVector (IsKilling.rootSystem H) b)
+            (mu + weylVector (IsKilling.rootSystem H) b)) := by
+  have hfreud := freudenthal_multiplicity_formula hv hgen mu
+  rw [formalCharacter_coeff, Int.cast_natCast]
+  by_cases hmu : genWeightSpace M (mu : H → K) = ⊥
+  · -- off the weights, the recursion forces the double sum to vanish as well
+    rw [LieSubmodule.finrank_eq_zero_of_eq_bot hmu, Nat.cast_zero, mul_zero, eq_comm,
+      mul_eq_zero, or_iff_right two_ne_zero] at hfreud
+    rw [LieSubmodule.finrank_eq_zero_of_eq_bot hmu, Nat.cast_zero, hfreud, mul_zero, zero_div]
+  · -- at a weight below the top, the Casimir scalars of `λ` and `μ` differ
+    have hden : invForm (lam + weylVector (IsKilling.rootSystem H) b)
+          (lam + weylVector (IsKilling.rootSystem H) b) -
+        invForm (mu + weylVector (IsKilling.rootSystem H) b)
+          (mu + weylVector (IsKilling.rootSystem H) b) ≠ 0 := by
+      have hsep :=
+        casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector hv hgen
+          hmu hne
+      rw [casimirScalar_def, casimirScalar_def] at hsep
+      exact sub_ne_zero.mpr fun h ↦ hsep (by rw [h])
+    rw [eq_div_iff hden, mul_comm, hfreud]
 
 end TauCeti

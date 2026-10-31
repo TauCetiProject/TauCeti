@@ -34,6 +34,8 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
   such a `1 - w`.
 * `TauCeti.norm_tsum_le_norm_mul`: a one-sided series `∑_{n ≥ 1} f(qⁿ w)` whose terms are bounded
   by their arguments has norm at most `‖q w‖`.
+* `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
+  from one gives norm at least one.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
 -/
@@ -106,6 +108,12 @@ theorem norm_one_sub_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass
   rw [sub_eq_add_neg, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm]
   · simp [hx.le]
   · exact ne_of_gt (by simpa using hx)
+
+/-- Subtracting an element whose norm is not one from one gives norm at least one. -/
+theorem one_le_norm_one_sub_of_norm_ne_one {R : Type*} [SeminormedRing R] [NormOneClass R]
+    [IsUltrametricDist R] {x : R} (hx : ‖x‖ ≠ 1) : 1 ≤ ‖1 - x‖ := by
+  rw [sub_eq_add_neg, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by simpa using hx.symm)]
+  simp
 
 /-- Dividing by a power of `1 - w` with `‖w‖ < 1` does not change norms in an ultrametric normed
 division ring. -/

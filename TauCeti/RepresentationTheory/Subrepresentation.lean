@@ -81,6 +81,7 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.ker_subtype`
 * `Subrepresentation.subtype_eq_zero_iff`
 * `Subrepresentation.subtype_surjective_iff`
+* `Subrepresentation.isIntertwiningMap_dualRestrict`
 * `Subrepresentation.coe_toRepresentation_asAlgebraHom_apply`
 * `Subrepresentation.asModuleEquivAsSubmodule`
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
@@ -202,6 +203,13 @@ whole representation. -/
 theorem subtype_surjective_iff (ρ' : Subrepresentation ρ) :
     Function.Surjective ρ'.subtype ↔ ρ' = ⊤ := by
   rw [Representation.IntertwiningMap.surjective_iff_range_eq_top, range_subtype]
+
+/-- Restricting linear forms to a subrepresentation intertwines the dual representation with the
+dual of the subrepresentation: it is the transpose of the inclusion. -/
+theorem isIntertwiningMap_dualRestrict {k H V : Type*} [CommSemiring k] [Group H]
+    [AddCommMonoid V] [Module k V] {τ : Representation k H V} (S : Subrepresentation τ) :
+    Representation.IsIntertwiningMap τ.dual S.toRepresentation.dual S.toSubmodule.dualRestrict :=
+  Representation.IsIntertwiningMap.dualMap ⟨fun _ _ ↦ rfl⟩
 
 /-- The group-algebra action on a subrepresentation, coerced to the ambient module, is the
 original group-algebra action. -/

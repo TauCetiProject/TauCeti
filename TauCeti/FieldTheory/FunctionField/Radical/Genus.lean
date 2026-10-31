@@ -14,6 +14,8 @@ import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 import TauCeti.FieldTheory.FunctionField.Different.Radical
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
+import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
+import TauCeti.FieldTheory.FunctionField.Divisor.RatFunc
 import TauCeti.FieldTheory.Kummer.Cyclic
 import TauCeti.FieldTheory.Kummer.Extension
 
@@ -49,6 +51,10 @@ separable, and the places above `P` are totally ramified, so `k` stays the exact
 
 `2g' - 2 = n (2g - 2) + ∑_{P ∈ S} (n - r_P) deg P`.
 
+Over `F = k(x)` with `u = f(x)` for a squarefree polynomial `f` of degree `m ≥ 1`, every zero of
+`f` is such a place, `r_P = 1` at the zeros of `f`, and `r_∞ = gcd(n, m)` at infinity; since the
+zeros of `f` have total degree `m`, this gives `2g' = (n - 1) (m - 2) + n - gcd(n, m)`.
+
 When instead `F` contains a primitive `n`-th root of unity and `u` is not a `p`-th power in `F`
 for any prime `p ∣ n` (Stichtenoth's hypotheses for a Kummer extension, Proposition 3.7.3), the
 degree `[F' : F] = n` and separability are consequences
@@ -72,6 +78,8 @@ keeps the factor `[k' : k]`.
 * `TauCeti.two_mul_genus_sub_two_eq_of_pow_eq_of_gcd_ord_eq_one`: the genus formula
   `2g' - 2 = n (2g - 2) + ∑ (n - r_P) deg P` in that case, and
   `TauCeti.two_mul_genus_eq_of_pow_eq_of_gcd_ord_eq_one_ratFunc` its form over `k(x)`.
+* `TauCeti.two_mul_genus_eq_of_pow_eq_of_squarefree`: the genus of a superelliptic equation
+  `y ^ n = f(x)` with `f` squarefree of degree `m`, `2g = (n - 1) (m - 2) + n - gcd(n, m)`.
 
 ## References
 
@@ -84,7 +92,7 @@ The divisor, degree and Hurwitz assembly follows the Artin–Schreier genus form
 
 public section
 
-open scoped IntermediateField
+open scoped IntermediateField Polynomial
 
 namespace TauCeti
 
@@ -314,6 +322,69 @@ theorem two_mul_genus_eq_of_pow_eq_of_gcd_ord_eq_one_ratFunc {y : F} {n : ℕ}
   have hg := two_mul_genus_sub_two_eq_of_pow_eq_of_gcd_ord_eq_one (IsFunctionField.ratFunc k)
     inferInstance hgen hy hn hu S hS P hP
   rw [genus_ratFunc, Nat.cast_zero] at hg
+  linear_combination hg
+
+/-- **The genus of a superelliptic equation** `y ^ n = f(x)` (Stichtenoth, Corollary 3.7.4 and
+Example 3.7.6): if `F = k(x)(y)` with `y ^ n = f(x)` for a squarefree polynomial `f ∈ k[X]` of
+degree `m ≥ 1`, and `n` is invertible in `k`, then
+
+`2g = (n - 1) (m - 2) + n - gcd(n, m)`.
+
+The only places of `k(x)` over which `F` can ramify are the zeros of `f`, each with
+ramification index `n`, and the place at infinity, with ramification index `n / gcd(n, m)`; such
+a place is ramified precisely when its index exceeds `1`. Neither a root of unity in `k` nor any
+other hypothesis on `k` is needed. -/
+theorem two_mul_genus_eq_of_pow_eq_of_squarefree {y : F} {n : ℕ} {f : k[X]}
+    (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ n = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) (hn : (n : k) ≠ 0)
+    (hf : Squarefree f) (hdeg : 0 < f.natDegree) :
+    2 * (genus k F : ℤ) = (n - 1) * (f.natDegree - 2) + n - Nat.gcd n f.natDegree := by
+  classical
+  set u := algebraMap k[X] (RatFunc k) f
+  have hu : u ≠ 0 := RatFunc.algebraMap_ne_zero hf.ne_zero
+  set Z := Divisor.zeros (IsFunctionField.ratFunc k) (Units.mk0 u hu)
+  -- At a finite place, the squarefree `f` has order `0` or `1`; at infinity it has order `-m`.
+  have hord (P : Place k (RatFunc k)) (hP : P ≠ Place.infty k) : P.ord u = 0 ∨ P.ord u = 1 := by
+    obtain ⟨q, hq, rfl⟩ := (Place.eq_infty_or_exists_eq_adicOfIrreducible P).resolve_left hP
+    rw [Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf]
+    split_ifs <;> simp
+  have hinf : (Place.infty k).ord u = -f.natDegree := by
+    rw [Place.ord_infty, RatFunc.intDegree_polynomial]
+  have hnot : Place.infty k ∉ Z.support := by
+    rw [Divisor.mem_support_zeros_iff, Units.val_mk0, hinf]
+    omega
+  have hord_one (P : Place k (RatFunc k)) (hP : P ∈ Z.support) : P.ord u = 1 := by
+    have hpos := (Divisor.mem_support_zeros_iff (IsFunctionField.ratFunc k)).mp hP
+    exact (hord P (fun he ↦ hnot (he ▸ hP))).resolve_left hpos.ne'
+  -- The zeros of `f` are simple, so their total degree is the degree of their divisor, `m`.
+  have hsum : ∑ P ∈ Z.support, (P.degree : ℤ) = f.natDegree := by
+    have hdegZ := Divisor.degree_zeros_algebraMap hf.ne_zero
+    rw [Divisor.degree_apply, Finsupp.sum] at hdegZ
+    rw [← hdegZ]
+    refine Finset.sum_congr rfl fun P hP ↦ ?_
+    rw [← WeilDivisor.coeff, Divisor.coeff_zeros, Units.val_mk0, hord_one P hP]
+    simp
+  have hS (P : Place k (RatFunc k)) (hP : P ∉ insert (Place.infty k) Z.support) :
+      (n : ℤ) ∣ P.ord u := by
+    rw [Finset.mem_insert, not_or, Divisor.mem_support_zeros_iff, Units.val_mk0] at hP
+    rw [(hord P hP.1).resolve_right (by omega)]
+    exact dvd_zero _
+  -- `f` has order one at the place of any irreducible factor.
+  obtain ⟨q, hq, hqf⟩ := WfDvdMonoid.exists_irreducible_factor
+    (Polynomial.not_isUnit_of_natDegree_pos f hdeg) hf.ne_zero
+  have hg := two_mul_genus_eq_of_pow_eq_of_gcd_ord_eq_one_ratFunc hgen hy hn hu
+    (insert (Place.infty k) Z.support) hS (Place.adicOfIrreducible hq) (by
+      rw [Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf]
+      simp [hqf])
+  have hzeros : ∑ P ∈ Z.support, ((n : ℤ) - Int.gcd n (P.ord u)) * P.degree =
+      (n - 1) * f.natDegree := by
+    rw [← hsum, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun P hP ↦ ?_
+    rw [hord_one P hP]
+    simp
+  rw [Finset.sum_insert hnot, hzeros, hinf, Int.gcd_neg, Int.gcd_natCast_natCast,
+    Place.degree_infty] at hg
+  push_cast at hg
   linear_combination hg
 
 end RatFunc

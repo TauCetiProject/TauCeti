@@ -219,6 +219,16 @@ theorem add_apply (f g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a
   simpa only [valueL_apply, BoundedContinuousFunction.add_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_add f g)
 
+theorem neg_apply (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
+    (-f) p = -f p := by
+  simpa only [valueL_apply, BoundedContinuousFunction.neg_apply] using
+    congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_neg f)
+
+theorem sub_apply (f g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
+    (f - g) p = f p - g p := by
+  simpa only [valueL_apply, BoundedContinuousFunction.sub_apply] using
+    congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_sub f g)
+
 theorem smul_apply (c : ℝ) (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
     (c • f) p = c • f p := by
   simpa only [valueL_apply, BoundedContinuousFunction.smul_apply] using
@@ -379,6 +389,25 @@ theorem norm_valueL_le (f : ParabolicC2HolderSpace α E F hab) : ‖valueL f‖ 
   rw [norm_eq]
   linarith [norm_nonneg (spatialFDerivL f), norm_nonneg (spatialSecondFDerivL f),
     norm_nonneg (timeDerivL f)]
+
+/-- The Hölder norm of the Hessian field is bounded by the reduced parabolic norm. -/
+theorem norm_spatialSecondFDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖spatialSecondFDerivL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f), norm_nonneg (timeDerivL f)]
+
+/-- The Hölder norm of the time-derivative field is bounded by the reduced parabolic norm. -/
+theorem norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖timeDerivL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f),
+    norm_nonneg (spatialSecondFDerivL f)]
+
+/-- The time-derivative projection has operator norm at most one. -/
+theorem norm_timeDerivL_le_one :
+    ‖timeDerivL (α := α) (E := E) (F := F) (hab := hab)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa using norm_timeDerivL_le f
 
 /-- The Hessian field gives the native second iterated Fréchet derivative of each slice. -/
 theorem iteratedFDeriv_two_apply (f : ParabolicC2HolderSpace α E F hab)

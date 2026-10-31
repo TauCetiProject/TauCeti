@@ -227,6 +227,12 @@ instance : NormedAddCommGroup (UCB G) :=
 instance : CompleteSpace (UCB G) :=
   isClosed_ucb.completeSpace_coe
 
+/-- Scalar multiplication on `UCB G` scales the supremum norm: `‖c • f‖ = ‖c‖ * ‖f‖`. Typeclass
+search does not derive this from the inherited normed space structure, because the norm on
+`UCB G` is found through the normed ring structure of the subalgebra. -/
+instance : NormSMulClass ℝ (UCB G) :=
+  ⟨fun c f => norm_smul c (f : G →ᵇ ℝ)⟩
+
 /-- Constant functions belong to `ucb G`. -/
 @[simp]
 theorem const_mem_ucb (c : ℝ) : BoundedContinuousFunction.const G c ∈ ucb G :=

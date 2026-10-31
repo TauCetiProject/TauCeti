@@ -149,6 +149,20 @@ variable {M N} in
   apply (tensorEquiv R H M N).injective
   simp
 
+/-- Negating the first factor negates the pure tensor. -/
+@[simp] theorem neg_tmul {M N : Type*} [AddCommGroup M] [Module R M] [Module H M]
+    [IsScalarTower R H M] [AddCommGroup N] [Module R N] [Module H N] [IsScalarTower R H N]
+    (m : M) (n : N) : tmul R H (-m) n = -tmul R H m n := by
+  apply (tensorEquiv R H M N).injective
+  simp [TensorProduct.neg_tmul]
+
+/-- Negating the second factor negates the pure tensor. -/
+@[simp] theorem tmul_neg {M N : Type*} [AddCommGroup M] [Module R M] [Module H M]
+    [IsScalarTower R H M] [AddCommGroup N] [Module R N] [Module H N] [IsScalarTower R H N]
+    (m : M) (n : N) : tmul R H m (-n) = -tmul R H m n := by
+  apply (tensorEquiv R H M N).injective
+  simp [TensorProduct.tmul_neg]
+
 variable {R H M N} in
 /-- Prove a proposition about coproduct tensors by pure tensors and addition. -/
 @[elab_as_elim] theorem Tensor.inductionOn {P : Tensor R H M N → Prop}
@@ -175,6 +189,19 @@ variable {R H M N} in
 theorem tensorEquiv_smul (h : H) (x : Tensor R H M N) :
     tensorEquiv R H M N (h • x) =
       tensorAction R H M N h (tensorEquiv R H M N x) := (rfl)
+
+variable {R H M N} in
+/-- An element with coproduct `a ⊗ a` acts on the coproduct tensor product as the tensor product
+of its actions on the two factors. -/
+theorem tensorEquiv_smul_of_comul_eq_tmul {a : H} (ha : Coalgebra.comul (R := R) a = a ⊗ₜ[R] a)
+    (x : Tensor R H M N) :
+    tensorEquiv R H M N (a • x) =
+      TensorProduct.map (Algebra.lsmul R R M a) (Algebra.lsmul R R N a)
+        (tensorEquiv R H M N x) := by
+  rw [tensorEquiv_smul, tensorAction_apply, ha]
+  induction tensorEquiv R H M N x using TensorProduct.inductionOn with
+  | tmul m n => simp
+  | add y z hy hz => simp only [map_add, hy, hz]
 
 variable {M' N' : Type*}
 variable [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']

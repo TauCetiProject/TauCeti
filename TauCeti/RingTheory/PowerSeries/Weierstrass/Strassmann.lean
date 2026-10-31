@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Analysis.Normed.Algebra.Ultra
 public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Strassmann's theorem
@@ -29,11 +30,18 @@ As a consequence, a series restricted at `c` that vanishes on an infinite subset
 of radius `c` is zero. The bound is sharp: `X ^ p - X` over `ℚ_p` is distinguished of degree `p` at
 the unit radius and vanishes at the `p` Teichmüller representatives in `ℤ_p`.
 
+The identity principle extends to series with coefficients in a normed space `E` over `K` that
+carries a jointly injective family of continuous linear maps `φⱼ : E → Lⱼ` into complete normed
+field extensions of `K`: each `φⱼ` turns such a series into a restricted series over `Lⱼ`.
+
 ## Main results
 
 * `TauCeti.PowerSeries.IsDistinguished.encard_setOf_evalAt_eq_zero_le`: Strassmann's theorem.
 * `PowerSeries.IsRestricted.eq_zero_of_infinite_of_evalAt_eq_zero`: the identity principle for
   restricted series.
+* `TauCeti.PowerSeries.eq_zero_of_hasSum_pow_smul`: the identity principle for series with
+  coefficients in a normed space with a jointly injective family of functionals into complete
+  field extensions.
 
 ## References
 
@@ -102,3 +110,52 @@ theorem IsRestricted.eq_zero_of_infinite_of_evalAt_eq_zero (hfr : f.IsRestricted
   exact ENat.natCast_ne_top s (top_le_iff.mp h)
 
 end PowerSeries
+
+namespace TauCeti.PowerSeries
+
+open Filter
+open scoped Topology
+
+variable {K E : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [NormedAddCommGroup E]
+  [NormedSpace K E] {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)]
+  [∀ j, NormedAlgebra K (L j)] [∀ j, CompleteSpace (L j)]
+
+/-- **Identity principle for module-valued series.** Let `E` be a normed space over an ultrametric
+nontrivially normed field `K`, with a jointly injective family of continuous linear maps
+`φⱼ : E → Lⱼ` into complete normed field extensions of `K`. A sequence `β` in `E` with
+`‖β k‖ rᵏ → 0`, whose series `∑ₖ xᵏ • β k` sums to zero at every point of an infinite subset of
+the disc of radius `r`, is zero. -/
+theorem eq_zero_of_hasSum_pow_smul (φ : ∀ j, E →L[K] L j)
+    (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {r : ℝ} {β : ℕ → E}
+    (hβ : Tendsto (fun k ↦ ‖β k‖ * r ^ k) atTop (𝓝 0)) {S : Set K} (hS : S.Infinite)
+    (hSr : ∀ x ∈ S, ‖x‖ ≤ r) (h : ∀ x ∈ S, HasSum (fun k ↦ x ^ k • β k) 0) : β = 0 := by
+  -- Each `φⱼ` turns `β` into the coefficients of a restricted series over `Lⱼ`, which is zero
+  -- by Strassmann's theorem.
+  have hr := hS.nontrivial.pos_of_forall_norm_le hSr
+  funext k
+  refine hφ _ fun j ↦ ?_
+  have : IsUltrametricDist (L j) := .of_normedAlgebra K
+  set f : _root_.PowerSeries (L j) := .mk fun k ↦ φ j (β k) with hf_def
+  have hf : f.IsRestricted r := by
+    rw [_root_.PowerSeries.isRestricted_iff']
+    refine squeeze_zero (fun k ↦ by positivity) (fun k ↦ ?_)
+      (by simpa using hβ.const_mul ‖φ j‖)
+    rw [hf_def, _root_.PowerSeries.coeff_mk, ← mul_assoc]
+    exact mul_le_mul_of_nonneg_right ((φ j).le_opNorm _) (by positivity)
+  have hzero : f = 0 := by
+    refine hf.eq_zero_of_infinite_of_evalAt_eq_zero hr
+      (hS.image (algebraMap K (L j)).injective.injOn) ?_ ?_
+    · rintro _ ⟨x, hx, rfl⟩
+      rw [norm_algebraMap']
+      exact hSr x hx
+    · rintro _ ⟨x, hx, rfl⟩
+      have hterm (n : ℕ) :
+          _root_.PowerSeries.coeff n f • algebraMap K (L j) x ^ n = φ j (x ^ n • β n) := by
+        rw [hf_def, _root_.PowerSeries.coeff_mk, map_smul, smul_eq_mul, Algebra.smul_def, map_pow,
+          mul_comm]
+      rw [_root_.PowerSeries.evalAt_def, tsum_congr hterm]
+      simpa only [Function.comp_def, map_zero] using
+        ((h x hx).map (φ j) (φ j).continuous).tsum_eq
+  simpa [hf_def] using congrArg (_root_.PowerSeries.coeff k) hzero
+
+end TauCeti.PowerSeries
