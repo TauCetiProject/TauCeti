@@ -28,8 +28,6 @@ in degrees `n` and `0`, with zero differential. Its homology is the mod-two homo
 
 ## Main declarations
 
-* `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
-* `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.IsAdaptedPseudoGradient.isMorseSmale_sphereHeight`: every pseudo-gradient adapted to the
   height function is Morse–Smale.
 * `TauCeti.IsAdaptedPseudoGradient.morseTrajectorySlice_sphereHeight`: the trajectories from the
@@ -52,50 +50,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
-
-/-- The critical points of the height function on the sphere are the north pole `v` and the south
-pole `-v`. -/
-@[simp]
-theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
-    criticalPoints (𝓡 n) (sphereHeight v) = {v, -v} := by
-  ext x
-  simp
-
-omit [Fact (finrank ℝ E = n + 1)] in
-/-- **The equator of the circle has two points.** In a two-dimensional real inner product space,
-exactly two points of the unit circle have height zero in the direction of a unit vector `v`. -/
-theorem ncard_setOf_sphereHeight_eq_zero (hE : finrank ℝ E = 2) (v : sphere (0 : E) 1) :
-    {x | sphereHeight v x = 0}.ncard = 2 := by
-  have : Fact (finrank ℝ E = 1 + 1) := ⟨hE⟩
-  -- The equator is the unit circle of the line `K = (ℝ ∙ v)ᗮ`, which is `{w, -w}` for a unit `w`.
-  set K := (ℝ ∙ (v : E))ᗮ
-  have hK : finrank ℝ K = 1 :=
-    Submodule.finrank_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere v)
-  have : Nontrivial K := Module.nontrivial_of_finrank_eq_succ hK
-  obtain ⟨w, hw⟩ := exists_norm_eq K zero_le_one
-  have hw0 : w ≠ 0 := by
-    rintro rfl
-    simp at hw
-  have hwK : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 w.2
-  let u : sphere (0 : E) 1 := ⟨w, by simpa using hw⟩
-  rw [ncard_eq_two]
-  refine ⟨u, -u, ne_neg_of_mem_unit_sphere ℝ u, ?_⟩
-  ext x
-  simp only [mem_ofPred_eq, sphereHeight_apply, mem_insert_iff, mem_singleton_iff]
-  refine ⟨fun hx ↦ ?_, ?_⟩
-  · obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' w hw0).1 hK
-      ⟨x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 hx⟩
-    have hcx : c • (w : E) = x := congrArg Subtype.val hc
-    have hc1 : |c| = 1 := by
-      have := congrArg norm hcx
-      rwa [norm_smul, Submodule.norm_coe, hw, mul_one, Real.norm_eq_abs,
-        norm_eq_of_mem_sphere] at this
-    rcases abs_eq zero_le_one |>.1 hc1 with rfl | rfl
-    · exact Or.inl (Subtype.ext (by simpa [u] using hcx.symm))
-    · exact Or.inr (Subtype.ext (by simpa [u] using hcx.symm))
-  · rintro (rfl | rfl)
-    · exact hwK
-    · simp [u, hwK]
 
 namespace IsAdaptedPseudoGradient
 
@@ -151,6 +105,7 @@ theorem morseBoundaryCoeff_sphereHeight (p q : criticalPoints (𝓡 n) (sphereHe
 /-- **The mod-two Morse boundary of the height function on the sphere is zero.** For every
 pseudo-gradient adapted to the height function, the mod-two Morse complex is the free
 `ZMod 2`-module on the two poles with zero differential. -/
+@[simp]
 theorem morseBoundary_sphereHeight : h.morseBoundary hf = 0 := by
   ext p q
   simp
