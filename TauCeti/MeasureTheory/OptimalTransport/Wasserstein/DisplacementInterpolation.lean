@@ -22,9 +22,9 @@ At the endpoints `p = 1` and `p = ∞` only the forward implication is asserted.
 interpolation follows from uniqueness of the endpoint optimizer together with almost-everywhere
 uniqueness of the ground geodesics; neither condition alone is substituted for both.
 
-On a separable Banach space the affine interpolation of an optimal coupling satisfies this
-relation. The graph-plan specialization identifies map-induced affine interpolation with the
-same relation, without assuming that the transport map is everywhere measurable.
+On a separable real normed space the affine interpolation of an optimal coupling satisfies this
+relation. The affine interpolation induced by an optimal transport map is also a displacement
+interpolation, without assuming that the transport map is everywhere measurable.
 
 ## References
 
@@ -42,32 +42,6 @@ namespace TauCeti
 
 variable {p : ℝ≥0∞}
 
-section Definition
-
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
-
-/-- A curve of probability laws is a displacement interpolation if it is the curve of time
-marginals of a probability dynamic plan on constant-speed geodesics with optimal endpoint law.
-The optimality uses `eLpNorm`, so it includes the infinite exponent and infinite values. -/
-def IsDisplacementInterpolation (p : ℝ≥0∞) (μ : I → ProbabilityMeasure X) : Prop :=
-  ∃ η : Measure C(I, X), IsProbabilityMeasure η ∧
-    (∀ᵐ c ∂η, c ∈ geodesicPaths X) ∧
-    (∀ t, η.timeMarginal t = (μ t : Measure X)) ∧
-    eLpNorm (fun z : X × X ↦ edist z.1 z.2) p η.endpointLaw =
-      wassersteinEDist p (μ 0 : Measure X) (μ 1 : Measure X)
-
-/-- The dynamic-plan characterization of displacement interpolation. -/
-theorem isDisplacementInterpolation_iff {μ : I → ProbabilityMeasure X} :
-    IsDisplacementInterpolation p μ ↔
-      ∃ η : Measure C(I, X), IsProbabilityMeasure η ∧
-        (∀ᵐ c ∂η, c ∈ geodesicPaths X) ∧
-        (∀ t, η.timeMarginal t = (μ t : Measure X)) ∧
-        eLpNorm (fun z : X × X ↦ edist z.1 z.2) p η.endpointLaw =
-          wassersteinEDist p (μ 0 : Measure X) (μ 1 : Measure X) :=
-  Iff.rfl
-
-end Definition
-
 section Distance
 
 variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
@@ -80,7 +54,7 @@ theorem IsDisplacementInterpolation.wassersteinEDist_eq (h : IsDisplacementInter
     (s t : I) :
     wassersteinEDist p (μ s : Measure X) (μ t : Measure X) =
       edist s t * wassersteinEDist p (μ 0 : Measure X) (μ 1 : Measure X) := by
-  obtain ⟨η, hηP, hη, hmarg, hopt⟩ := h
+  obtain ⟨η, hηP, hη, hmarg, hopt⟩ := isDisplacementInterpolation_iff.1 h
   simpa only [hmarg] using wassersteinEDist_timeMarginal_eq hη hp
     (by simpa only [hmarg] using hopt) (by simpa only [hmarg] using hfin) s t
 
@@ -103,14 +77,15 @@ theorem exists_isDisplacementInterpolation [IsGeodesicSpace X] (hp : 1 ≤ p)
     rw [← Measure.isProbabilityMeasure_map_iff (ContinuousMap.measurable_eval 0).aemeasurable,
       ← Measure.timeMarginal_def, h0]
     infer_instance
-  refine ⟨fun t ↦ (η.timeMarginal t).toProbabilityMeasure, ?_, ?_, ?_⟩
+  refine ⟨fun t ↦ (η.timeMarginal t).toProbabilityMeasure,
+    isDisplacementInterpolation_iff.2 ?_, ?_, ?_⟩
   · exact ⟨η, inferInstance, hη, fun _ ↦ by simp, by simpa only
       [Measure.coe_toProbabilityMeasure, h0, h1] using hopt⟩
   · exact ProbabilityMeasure.toMeasure_injective (by simpa using h0)
   · exact ProbabilityMeasure.toMeasure_injective (by simpa using h1)
 
-/-- Displacement interpolation is independent of presentation when the endpoint optimizer is
-unique and almost every pair under that optimizer has at most one ground geodesic.
+/-- Under a unique endpoint optimizer and almost-everywhere uniqueness of ground geodesics,
+two displacement interpolations with the same endpoint laws coincide.
 This applies also to the infinite exponent, unlike the converse characterization of geodesics. -/
 theorem IsDisplacementInterpolation.eq_of_ae_subsingleton
     {μ ν : I → ProbabilityMeasure X} (hμ : IsDisplacementInterpolation p μ)
@@ -121,8 +96,8 @@ theorem IsDisplacementInterpolation.eq_of_ae_subsingleton
         wassersteinEDist p (μ 0 : Measure X) (μ 1 : Measure X) → π' = π)
     (hgeo : ∀ᵐ z ∂π, {c | c ∈ geodesicPaths X ∧ c 0 = z.1 ∧ c 1 = z.2}.Subsingleton) :
     μ = ν := by
-  obtain ⟨η, hηP, hη, hmarg, hopt⟩ := hμ
-  obtain ⟨η', hη'P, hη', hmarg', hopt'⟩ := hν
+  obtain ⟨η, hηP, hη, hmarg, hopt⟩ := isDisplacementInterpolation_iff.1 hμ
+  obtain ⟨η', hη'P, hη', hmarg', hopt'⟩ := isDisplacementInterpolation_iff.1 hν
   have hηπ : η.endpointLaw = π := hπ _ (by
     simpa only [← Measure.endpointLaw_def, hmarg] using η.isCoupling_map_timeMarginal 0 1) hopt
   have hη'π : η'.endpointLaw = π := hπ _ (by
@@ -132,16 +107,6 @@ theorem IsDisplacementInterpolation.eq_of_ae_subsingleton
     (hηπ.trans hη'π.symm) (hηπ ▸ hgeo)
   funext t
   exact ProbabilityMeasure.toMeasure_injective ((hmarg t).symm.trans (heq ▸ hmarg' t))
-
-/-- At strictly intermediate exponents, displacement interpolation characterizes geodesic
-segments of the finite-moment Wasserstein space. No geodesicity of the ground space is assumed. -/
-theorem WassersteinSpace.isGeodesicSegment_iff_isDisplacementInterpolation [Fact (1 ≤ p)]
-    (hp1 : 1 < p) (hp : p ≠ ∞) {γ : ℝ → WassersteinSpace p X} :
-    IsGeodesicSegment γ (γ 0) (γ 1) ↔
-      IsDisplacementInterpolation p (fun t : I ↦ (γ t : ProbabilityMeasure X)) := by
-  rw [isDisplacementInterpolation_iff]
-  simpa only [Icc.coe_zero, Icc.coe_one] using
-    WassersteinSpace.isGeodesicSegment_iff_exists_ae_mem_geodesicPaths hp1 hp (γ := γ)
 
 end Polish
 
@@ -162,19 +127,10 @@ theorem isDisplacementInterpolation_of_map_smul_add_smul
       π.map fun z ↦ (1 - (t : ℝ)) • z.1 + (t : ℝ) • z.2) :
     IsDisplacementInterpolation p μ := by
   have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
-  have hseg : Measurable (segmentPath : E × E → C(I, E)) := segmentPath.continuous.measurable
-  have hend : (π.map segmentPath).endpointLaw = π := by
-    rw [Measure.endpointLaw_def, Measure.map_map ContinuousMap.measurable_endpoints hseg]
-    convert Measure.map_id
-    ext z <;> simp
-  refine ⟨π.map segmentPath, inferInstance, ?_, ?_, by rwa [hend]⟩
-  · exact (ae_map_iff hseg.aemeasurable isClosed_geodesicPaths.measurableSet).2
-      (.of_forall segmentPath_mem_geodesicPaths)
-  · intro t
-    rw [Measure.timeMarginal_map _ hseg, hmarg]
-    congr 1
-    ext z
-    simp [AffineMap.lineMap_apply_module]
+  apply isDisplacementInterpolation_iff.2
+  refine ⟨π.map segmentPath, inferInstance, π.ae_mem_geodesicPaths_map_segmentPath,
+    fun t ↦ (π.timeMarginal_map_segmentPath t).trans (hmarg t).symm, ?_⟩
+  rwa [Measure.endpointLaw_map_segmentPath]
 
 /-- The affine curve induced by an optimal transport map is a displacement interpolation.
 Transport-map feasibility is `HasLaw`, so an a.e.-measurable representative suffices. -/

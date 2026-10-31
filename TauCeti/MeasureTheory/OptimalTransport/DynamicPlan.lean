@@ -214,6 +214,39 @@ theorem timeMarginal_withDensity_apply_of_ae_eq {η : Measure C(I, X)} {w : C(I,
   rw [timeMarginal_apply _ t hs, withDensity_apply _ hS, setLIntegral_congr_fun_ae hS hw,
     setLIntegral_const]
 
+section Affine
+
+open TauCeti (segmentPath geodesicPaths isClosed_geodesicPaths segmentPath_mem_geodesicPaths)
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
+
+/-- Lifting a law of pairs of points to their affine segments gives a plan concentrated on
+constant-speed geodesics, without requiring completeness or strict convexity. -/
+theorem ae_mem_geodesicPaths_map_segmentPath (π : Measure (E × E)) :
+    ∀ᵐ c ∂π.map segmentPath, c ∈ geodesicPaths E :=
+  (ae_map_iff segmentPath.continuous.measurable.aemeasurable
+    isClosed_geodesicPaths.measurableSet).2 (.of_forall segmentPath_mem_geodesicPaths)
+
+/-- The endpoint law of the affine-segment lift is the original law of pairs of points. -/
+@[simp]
+theorem endpointLaw_map_segmentPath (π : Measure (E × E)) :
+    (π.map segmentPath).endpointLaw = π := by
+  rw [endpointLaw_def, map_map ContinuousMap.measurable_endpoints segmentPath.continuous.measurable]
+  convert Measure.map_id
+  ext z <;> simp
+
+/-- The law at time `t` of the affine-segment lift is affine interpolation of the endpoint law. -/
+theorem timeMarginal_map_segmentPath (π : Measure (E × E)) (t : I) :
+    (π.map segmentPath).timeMarginal t =
+      π.map fun z ↦ (1 - (t : ℝ)) • z.1 + (t : ℝ) • z.2 := by
+  rw [timeMarginal_map _ segmentPath.continuous.measurable]
+  congr 1
+  ext z
+  simp [AffineMap.lineMap_apply_module]
+
+end Affine
+
 section Polish
 
 open TauCeti (geodesicPaths isClosed_geodesicPaths isClosed_setOf_mem_geodesicPaths_endpoints)
