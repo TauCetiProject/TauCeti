@@ -17,10 +17,12 @@ completion. In torsor coordinates the degree of a coefficient is the total degre
 degree of the reference lift. Consequently changing reference lifts preserves total degree,
 and homogeneous Novikov scalars act by adding their degree.
 
-A supported bilinear kernel with a fixed degree shift extends to a product with that same
-shift on homogeneous completed combinations. Its coordinate matrix has the corresponding
-reference-degree shifts. These results apply to the supported kernel construction of
-`TauCeti.NovikovModule.kernelProduct`; they do not require discrete or injective periods.
+A supported kernel with a fixed degree shift extends to a map with that same shift on
+homogeneous completed combinations, and likewise a supported bilinear kernel extends to a
+product with that shift. The coordinate matrix of a product kernel has the corresponding
+reference-degree shifts. These results apply to the supported kernel constructions
+`TauCeti.NovikovModule.kernelMap` and `TauCeti.NovikovModule.kernelProduct`; they do not require
+discrete or injective periods.
 
 The coordinate construction follows `TauCeti.NovikovModule.coordinates`, and the coefficient
 pieces are `TauCeti.NovikovSeries.gradeBy`.
@@ -143,6 +145,27 @@ theorem smul_mem_gradeBy {j k : D} {b : NovikovSeries R H N} {a : NovikovModule 
 end Coordinates
 
 end Semiring
+
+section Map
+
+variable [Semiring R] {S₁ S₀ : Type*} {F₁ : S₁ → ℝ} {F₀ : S₀ → ℝ} {C : ℝ} {m : S₁ → S₀ → R}
+  (hm : ∀ p₁ p₀, m p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C) (hmfin : ∀ p₁, m p₁ ∈ NovikovModule R F₀)
+  [Add D] {d₁ : S₁ → D} {d₀ : S₀ → D} {ε : D}
+
+/-- A supported kernel whose nonzero coefficients have degree shift `ε` gives a map with the
+same shift on homogeneous completed combinations. -/
+theorem kernelMap_mem_gradeBy (hd : ∀ p₁ p₀, m p₁ p₀ ≠ 0 → d₀ p₀ = d₁ p₁ + ε)
+    {k : D} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ k) :
+    kernelMap hm hmfin a ∈ gradeBy R F₀ d₀ (k + ε) := by
+  rw [mem_gradeBy_iff] at ha ⊢
+  intro p₀ hp₀
+  rw [kernelMap_apply_val] at hp₀
+  obtain ⟨p₁, hp⟩ : ∃ p₁, a.val p₁ * m p₁ p₀ ≠ 0 := by
+    by_contra! h
+    exact hp₀ (finsum_eq_zero_of_forall_eq_zero h)
+  rw [hd p₁ p₀ (right_ne_zero_of_mul hp), ha p₁ (left_ne_zero_of_mul hp)]
+
+end Map
 
 section Kernel
 

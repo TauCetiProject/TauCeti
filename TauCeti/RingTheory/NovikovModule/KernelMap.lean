@@ -55,6 +55,8 @@ the periods is assumed.
 * `TauCeti.NovikovModule.kernelMap_add`, `TauCeti.NovikovModule.kernelMap_zero`: the map is
   additive in the kernel.
 * `TauCeti.NovikovModule.kernelMap_eq_id`: the identity kernel gives the identity map.
+* `TauCeti.NovikovModule.kernelMap_eq_kernelMap_iff`: a kernel map determines its kernel, through
+  the images of point masses (`TauCeti.NovikovModule.kernelMap_pi_single_apply_val`).
 * `TauCeti.NovikovModule.coordinates_kernelMap`: the matrix formula in lift coordinates.
 
 ## References
@@ -187,6 +189,37 @@ theorem kernelMap_eq_id {S : Type*} [DecidableEq S] {F : S → ℝ}
   simp only [kernelMap_apply_val, LinearMap.id_apply, mul_ite, mul_one, mul_zero]
   rw [finsum_eq_single _ q fun p hp => by simp [hp]]
   simp
+
+/-- A diagonal kernel, with coefficient `s p` from `p` to itself and `0` off the diagonal,
+multiplies each coefficient by `s`. -/
+theorem kernelMap_diagonal_apply_val {S : Type*} [DecidableEq S] {F : S → ℝ} {s : S → R}
+    (hm : ∀ p q, (if p = q then s p else 0) ≠ 0 → F q ≤ F p + C)
+    (hmfin : ∀ p, (fun q => if p = q then s p else 0) ∈ NovikovModule R F)
+    (a : NovikovModule R F) (q : S) :
+    (kernelMap hm hmfin a).val q = a.val q * s q := by
+  rw [kernelMap_apply_val, finsum_eq_single _ q fun p hp => by simp [hp]]
+  simp
+
+/-- The image of the point mass `r` at an input generator `p₁` has the coefficients `r * m p₁`
+of the output of the kernel at `p₁`. -/
+theorem kernelMap_pi_single_apply_val [DecidableEq S₁] (p₁ : S₁) (r : R) (p₀ : S₀) :
+    (kernelMap hm hmfin ⟨Pi.single p₁ r, pi_single_mem p₁ r⟩).val p₀ = r * m p₁ p₀ := by
+  rw [kernelMap_apply_val, finsum_eq_single _ p₁ fun p hp => by simp [hp]]
+  simp
+
+/-- **A kernel map determines its kernel.** Two kernel maps, possibly with different potential
+bounds, coincide exactly when their kernels do. -/
+theorem kernelMap_eq_kernelMap_iff {C' : ℝ} {m' : S₁ → S₀ → R}
+    (hm' : ∀ p₁ p₀, m' p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C')
+    (hmfin' : ∀ p₁, m' p₁ ∈ NovikovModule R F₀) :
+    kernelMap hm hmfin = kernelMap hm' hmfin' ↔ m = m' := by
+  classical
+  refine ⟨fun h => funext fun p₁ => funext fun p₀ => ?_, ?_⟩
+  · simpa only [kernelMap_pi_single_apply_val, one_mul] using
+      congrArg (fun f => (f ⟨Pi.single p₁ 1, pi_single_mem p₁ 1⟩).val p₀) h
+  · rintro rfl
+    ext a p₀
+    simp
 
 end Map
 
