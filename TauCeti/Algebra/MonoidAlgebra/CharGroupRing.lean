@@ -23,10 +23,10 @@ gives the joint evaluation `O[G] → ∏_{ψ ∈ Ψ} O`, whose image is the *cha
 kernels of the evaluations at the members of `Ψ`.
 
 Character group rings are the coefficient orders of the integral Brumer–Stark and Euler-system
-arguments of Dasgupta and Kakde: for `G` finite they interpolate between `O[G]` itself
-(`Ψ` all characters) and `O` (`Ψ = {1}`), and quotients of `O[G]` by norm elements and by
-character idempotents are of this form (Dasgupta–Kakde, Lemma 2.2). They are in general proper
-suborders of the product `∏_{ψ ∈ Ψ} O`.
+arguments of Dasgupta and Kakde: they interpolate between `O` (`Ψ = {1}`) and, for `G` finite
+and `O` a domain with enough roots of unity, `O[G]` itself (`Ψ` all characters). Quotients of
+`O[G]` by norm elements and by character idempotents are of this form (Dasgupta–Kakde,
+Lemma 2.2). They are in general proper suborders of the product `∏_{ψ ∈ Ψ} O`.
 
 The main theorem is that the joint evaluation at all characters is injective when `G` is finite
 and `O` is a domain with enough roots of unity (`TauCeti.jointEval_injective`), so that the
