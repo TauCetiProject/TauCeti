@@ -287,22 +287,46 @@ theorem qExpansion_coeff_descendSlash_eq_of_coprime [NeZero N] (hp : p.Prime) (h
 /-! ### The descent witness -/
 
 /-- **The descent witness** (Miyake, Lemma 4.6.8, the inductive step). For `f ∈ S_k(Γ₁(N), χ)`
-with `χ` pulled back from `χ₀` modulo `N / p`, vanishing at every index coprime to `p L` for a
-squarefree `L` coprime to `p` whose primes divide `N`, there is `F ∈ S_k(Γ₁(N / p), χ₀)` with
+with `χ` pulled back from `χ₀` modulo `N / p`, vanishing at every index coprime to `p L` for an
+arbitrary `L` coprime to `p` whose primes divide `N`, there is `F ∈ S_k(Γ₁(N / p), χ₀)` with
 `a_m(F) = a_{pm}(f)` at every `m` coprime to `L`: the descent of `f`, rescaled by
-`p / |family|`, by the coefficient formula of the descent and the coprime-filter descent. -/
+`p / |family|`, by the coefficient formula of the descent and the coprime-filter descent.
+The proof replaces `L` by the product of its distinct prime factors. -/
 theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_coeff_mul_of_coprime [NeZero N]
-    (hp : p.Prime) (hpN : p ∣ N) {L : ℕ} (hL : Squarefree L) (hLN : L.primeFactors ⊆ N.primeFactors)
+    (hp : p.Prime) (hpN : p ∣ N) {L : ℕ} (hLN : L.primeFactors ⊆ N.primeFactors)
     (hpL : Nat.Coprime p L) {χ : (ZMod N)ˣ →* ℂˣ} {χ₀ : (ZMod (N / p))ˣ →* ℂˣ}
     (hcomp : χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN)))
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ)
     (hvan : ∀ n, Nat.Coprime n (p * L) → (qExpansion 1 f).coeff n = 0) :
     ∃ F : CuspForm ((Gamma1 (N / p)).map (mapGL ℝ)) k, F ∈ cuspFormCharSpace k χ₀ ∧
       ∀ m, Nat.Coprime m L → (qExpansion 1 F).coeff m = (qExpansion 1 f).coeff (p * m) := by
+  let L₀ := ∏ q ∈ L.primeFactors, q
+  have hL₀ : Squarefree L₀ :=
+    Finset.squarefree_prod_of_pairwise_isCoprime
+      (fun q hq r hr hqr ↦ Nat.coprime_iff_isRelPrime.mp
+        ((Nat.coprime_primes (Nat.prime_of_mem_primeFactors hq)
+          (Nat.prime_of_mem_primeFactors hr)).mpr hqr))
+      (fun q hq ↦ (Nat.prime_of_mem_primeFactors hq).squarefree)
+  have hL0 : L ≠ 0 := by
+    intro h
+    exact hp.ne_one (by simpa [h] using hpL)
+  have hcop (n : ℕ) : Nat.Coprime n L₀ ↔ Nat.Coprime n L := by
+    refine ⟨fun hn ↦ Nat.coprime_of_dvd fun q hq hqn hqL ↦ ?_,
+      fun hn ↦ hn.coprime_dvd_right L.prod_primeFactors_dvd⟩
+    have hqL₀ : q ∣ L₀ := Finset.dvd_prod_of_mem _ (Nat.mem_primeFactors.mpr ⟨hq, hqL, hL0⟩)
+    exact hq.ne_one (Nat.eq_one_of_dvd_coprimes hn hqn hqL₀)
+  have hLN₀ : L₀.primeFactors ⊆ N.primeFactors := by
+    exact (Nat.primeFactors_mono L.prod_primeFactors_dvd hL0).trans hLN
+  have hpL₀ := (hcop p).mpr hpL
+  have hvan₀ : ∀ n, Nat.Coprime n (p * L₀) → (qExpansion 1 f).coeff n = 0 := by
+    intro n hn
+    exact hvan n (Nat.coprime_mul_iff_right.mpr
+      ⟨(Nat.coprime_mul_iff_right.mp hn).1,
+        (hcop n).mp (Nat.coprime_mul_iff_right.mp hn).2⟩)
   have : NeZero p := ⟨hp.ne_zero⟩
   obtain ⟨g, hg, hgcoeff⟩ :=
-    exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_coeff_mul χ hf hp hpN hcomp hL hLN
-      hpL hvan
+    exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_coeff_mul χ hf hp hpN hcomp
+      hL₀ hLN₀ hpL₀ hvan₀
   have hp0 : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hp.ne_zero
   have hcount : (descendMatrixCount p N : ℂ) ≠ 0 := by
     by_cases h : p ^ 2 ∣ N
@@ -313,10 +337,11 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_coeff_mul_of_coprime [N
   refine ⟨((p : ℂ) / descendMatrixCount p N) • descendCuspForm k hp hpN hcomp hf,
     Submodule.smul_mem _ _ (descendCuspForm_mem_cuspFormCharSpace k hp hpN hcomp hf),
     fun m hm ↦ ?_⟩
+  have hm := (hcop m).mpr hm
   rw [FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos (one_mem_strictPeriods_Gamma1_map _), map_smul,
     smul_eq_mul, coe_descendCuspForm,
-    qExpansion_coeff_descendSlash_eq_of_coprime hp hpN hL hpL hcomp hf hvan hg hgcoeff m hm,
+    qExpansion_coeff_descendSlash_eq_of_coprime hp hpN hL₀ hpL₀ hcomp hf hvan₀ hg hgcoeff m hm,
     hgcoeff m, ite_eq_left hm]
   field_simp
 

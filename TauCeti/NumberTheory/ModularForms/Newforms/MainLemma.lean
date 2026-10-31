@@ -61,11 +61,11 @@ variable {N p : ℕ} [NeZero N] {k : ℤ}
 
 /-- **The inductive step of the Main Lemma** (Miyake, Lemma 4.6.8). For `f ∈ S_k(Γ₁(N), χ)` with
 `χ` pulled back from `χ₀` modulo `N / p`, vanishing at every index coprime to `p L` for a
-squarefree `L` coprime to `p` whose primes divide `N`, there is `f_p ∈ S_k(Γ₁(N), χ)` supported
+`L` coprime to `p` whose primes divide `N`, there is `f_p ∈ S_k(Γ₁(N), χ)` supported
 on the multiples of `p` with `f − f_p` vanishing at every index coprime to `L`: the level-raise
 `V_p` of the descent witness of level `N / p`. -/
 theorem exists_mem_qSupportedOnDvdSubmodule_and_qExpansion_coeff_sub_eq_zero (hp : p.Prime)
-    (hpN : p ∣ N) {L : ℕ} (hL : Squarefree L) (hLN : L.primeFactors ⊆ N.primeFactors)
+    (hpN : p ∣ N) {L : ℕ} (hLN : L.primeFactors ⊆ N.primeFactors)
     (hpL : Nat.Coprime p L) {χ : (ZMod N)ˣ →* ℂˣ} {χ₀ : (ZMod (N / p))ˣ →* ℂˣ}
     (hcomp : χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN)))
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ)
@@ -76,7 +76,7 @@ theorem exists_mem_qSupportedOnDvdSubmodule_and_qExpansion_coeff_sub_eq_zero (hp
       ∀ n, Nat.Coprime n L → (qExpansion 1 ⇑(f - g)).coeff n = 0 := by
   have : NeZero p := ⟨hp.ne_zero⟩
   obtain ⟨F, hF, hFcoeff⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_coeff_mul_of_coprime
-    hp hpN hL hLN hpL hcomp hf hvan
+    hp hpN hLN hpL hcomp hf hvan
   have hdvd : p * (N / p) ∣ N := dvd_of_eq (Nat.mul_div_cancel' hpN)
   refine ⟨CuspForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) F, ?_, ?_,
     fun n hn ↦ ?_⟩
@@ -146,7 +146,7 @@ theorem exists_eq_sum_of_forall_coprime_prod_qExpansion_coeff_eq_zero {χ : (ZMo
     have hpN : p ∣ N := Nat.dvd_of_mem_primeFactors (hS hpS)
     have hS' : S.erase p ⊆ N.primeFactors := fun q hq ↦ hS (Finset.mem_of_mem_erase hq)
     have hcard' : (S.erase p).card = m := by rw [Finset.card_erase_of_mem hpS, hcard]; rfl
-    obtain ⟨hsq, hpL, hLN⟩ := squarefree_prod_and_coprime_of_subset_primeFactors
+    obtain ⟨-, hpL, hLN⟩ := squarefree_prod_and_coprime_of_subset_primeFactors
       ((Finset.erase_subset _ _).trans hS) hp (Finset.notMem_erase p S)
     have hprod : S.prod id = p * (S.erase p).prod id := by
       rw [← Finset.mul_prod_erase S id hpS]; rfl
@@ -163,7 +163,7 @@ theorem exists_eq_sum_of_forall_coprime_prod_qExpansion_coeff_eq_zero {χ : (ZMo
       obtain ⟨χ₀, hcomp⟩ :=
         DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough (Nat.div_dvd_of_dvd hpN) hfac
       obtain ⟨gp, hgp_supp, hgp_char, hdiff⟩ :=
-        exists_mem_qSupportedOnDvdSubmodule_and_qExpansion_coeff_sub_eq_zero hp hpN hsq hLN hpL
+        exists_mem_qSupportedOnDvdSubmodule_and_qExpansion_coeff_sub_eq_zero hp hpN hLN hpL
           hcomp hf hvan'
       obtain ⟨g, hsum, hsupp, hchar⟩ := ih hS' (Submodule.sub_mem _ hf hgp_char) hdiff hcard'
       exact exists_eq_sum_of_sub_eq_sum_erase hpS hgp_supp hgp_char hsum hsupp hchar
