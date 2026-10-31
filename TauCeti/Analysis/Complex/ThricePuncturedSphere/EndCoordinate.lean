@@ -94,6 +94,10 @@ def endScale : Puncture → ℂ
 theorem endScale_ne_zero (q : Puncture) : q.endScale ≠ 0 := by
   cases q <;> norm_num
 
+/-- The ends other than the one at `∞` are positive. -/
+theorem endSign_eq_one {q : Puncture} (hq : q ≠ inf) : q.endSign = 1 := by
+  cases q <;> simp_all
+
 /-- The end centers are the two finite punctures, so they lie outside the punctured sphere. -/
 theorem endCenter_eq_zero_or_eq_one (q : Puncture) : q.endCenter = 0 ∨ q.endCenter = 1 := by
   cases q <;> simp
@@ -132,6 +136,18 @@ theorem re_endCoord (q : Puncture) (w : ℂ) :
     (q.endCoord w).re = -Real.log ‖(w - q.endCenter) / q.endScale‖ / (2 * π) := by
   rw [endCoord, ← Complex.ofReal_ofNat, ← Complex.ofReal_mul, Complex.div_ofReal_re,
     Complex.neg_re, Complex.log_re]
+
+/-- The center of an end has longitudinal coordinate `0`, the junk value of the logarithm of
+`0`. -/
+@[simp]
+theorem re_endCoord_endCenter (q : Puncture) : (q.endCoord q.endCenter).re = 0 := by
+  simp [re_endCoord]
+
+/-- A point with nonzero longitudinal coordinate is not the center of the end. -/
+theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
+    (h : (q.endCoord w).re ≠ 0) : w ≠ q.endCenter := by
+  rintro rfl
+  exact h q.re_endCoord_endCenter
 
 /-- The angular coordinate of a point of an end. -/
 theorem im_endCoord (q : Puncture) (w : ℂ) :
@@ -300,6 +316,14 @@ theorem cylindricalEndLift_ne_zero_and_ne_one (q : Puncture) {z : ℂ}
   obtain ⟨p, -, hp⟩ := q.exists_mem_neighborhood_cylindricalEndLift hz
   rw [← hp]
   exact p.2
+
+/-- A point with positive signed longitudinal coordinate on an end lies in the thrice-punctured
+sphere: it is neither `0` nor `1`. -/
+theorem ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos (q : Puncture) {w : ℂ}
+    (h : 0 < q.endSign * (q.endCoord w).re) : w ≠ 0 ∧ w ≠ 1 := by
+  have hw : w ≠ q.endCenter := q.ne_endCenter_of_re_endCoord_ne_zero fun h' => by simp [h'] at h
+  rw [← q.cylindricalEndLift_endCoord hw]
+  exact q.cylindricalEndLift_ne_zero_and_ne_one h
 
 /-- Distinct ends have disjoint images on their parts with positive signed longitudinal
 coordinate. -/
