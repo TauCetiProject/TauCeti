@@ -61,20 +61,15 @@ theorem meromorphicOrderAt_completedRiemannZeta_zero :
   rw [completedRiemannZeta_eq, sub_zero, zpow_neg_one, smul_eq_mul]
   field_simp
 
-/-- The completed Riemann zeta function has a simple pole at `1`. -/
+/-- The completed Riemann zeta function has a simple pole at `1`, transported from the pole at
+`0` along the functional equation `completedRiemannZeta_one_sub`. -/
 theorem meromorphicOrderAt_completedRiemannZeta_one :
     meromorphicOrderAt completedRiemannZeta 1 = (-1 : ℤ) := by
-  have h₀ : AnalyticAt ℂ completedRiemannZeta₀ 1 := differentiable_completedZeta₀.analyticAt 1
-  have h1 : (1 : ℂ) ≠ 0 := one_ne_zero
-  refine (meromorphicOrderAt_eq_int_iff (meromorphic_completedRiemannZeta 1)).2
-    ⟨fun z ↦ (z - 1) * completedRiemannZeta₀ z - (z - 1) / z + 1,
-      by fun_prop (disch := assumption), by simp, ?_⟩
-  filter_upwards [self_mem_nhdsWithin, eventually_ne_nhdsWithin (one_ne_zero (α := ℂ))]
-    with z (hz : z ≠ 1) hz0
-  have hz1 : z - 1 ≠ 0 := sub_ne_zero.2 hz
-  have hz1' : 1 - z ≠ 0 := sub_ne_zero.2 (Ne.symm hz)
-  rw [completedRiemannZeta_eq, zpow_neg_one, smul_eq_mul]
-  field_simp
-  ring
+  have h := meromorphicOrderAt_comp_of_deriv_ne_zero (f := completedRiemannZeta)
+    (g := fun z : ℂ ↦ 1 - z) (x := 1) (by fun_prop) (by simp)
+  rw [sub_self, meromorphicOrderAt_completedRiemannZeta_zero] at h
+  rw [← h]
+  congr 1
+  exact funext fun z ↦ (completedRiemannZeta_one_sub z).symm
 
 end TauCeti

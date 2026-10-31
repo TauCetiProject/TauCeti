@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Analysis.Meromorphic.Conj
+public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 public import TauCeti.NumberTheory.LSeries.Conjugate
 
 /-!
@@ -40,8 +41,8 @@ of the three predicates. Since Mathlib's value of a function at a pole carries n
 functional equation is asserted only off the polar loci; `HasFunctionalEquation.eventuallyEq`
 upgrades it to an equality of punctured germs at every point.
 
-The coefficient at `0`, which `LSeries` never reads, is deliberately left free: independently
-defined cards may use different values there.
+The coefficient at `0`, which `LSeries` never reads, is normalized to `0` (the convention of
+Mathlib's `ArithmeticFunction`), so that a card is determined by its meaningful data.
 
 ## Main definitions
 
@@ -73,13 +74,16 @@ namespace TauCeti.LFunctions
 /-- **Completed L-function data in the analytic normalization.** The Dirichlet coefficients
 `coeff`, the conductor `N`, the real and complex gamma shifts, the root number `ε`, the completed
 function `Λ`, and the polar divisor, which records the order of the pole of `Λ` at each point.
-The intended properties of these data are the predicates `HasDirichletAgreement`,
-`HasMeromorphicContinuation` and `HasFunctionalEquation`; the record itself imposes none of them.
+The coefficient at `0` is normalized to `0`. The intended properties of these data are the
+predicates `HasDirichletAgreement`, `HasMeromorphicContinuation` and `HasFunctionalEquation`; the
+record itself imposes none of them.
 -/
 @[ext]
 structure AnalyticLFunctionData where
-  /-- The Dirichlet coefficients `a n`; the coefficient at `0` is never read by `LSeries`. -/
+  /-- The Dirichlet coefficients `a n`, indexed from `1`. -/
   coeff : ℕ → ℂ
+  /-- The coefficient at `0`, which `LSeries` never reads, is normalized to `0`. -/
+  coeff_zero : coeff 0 = 0
   /-- The conductor `N`. -/
   conductor : ℕ+
   /-- The real gamma shifts `μ_j`, each contributing a factor `Γ_ℝ(s + μ_j)`. -/
@@ -117,6 +121,7 @@ reflected completed function `s ↦ conj Λ(conj s)`, and the conjugate polar di
 is unchanged. -/
 noncomputable def dual : AnalyticLFunctionData where
   coeff n := conj (d.coeff n)
+  coeff_zero := by simp [d.coeff_zero]
   conductor := d.conductor
   gammaR := d.gammaR.map conj
   gammaC := d.gammaC.map conj
@@ -194,13 +199,6 @@ structure HasFunctionalEquation : Prop where
 
 variable {d}
 
-/-- Conjugating the argument and the coefficients conjugates the conductor power. -/
-private theorem conj_natCast_cpow (N : ℕ) (s : ℂ) :
-    conj ((N : ℂ) ^ (conj s / 2)) = (N : ℂ) ^ (s / 2) := by
-  have h := Complex.cpow_conj (N : ℂ) (s / 2) (by simpa using Real.pi_pos.ne)
-  simp only [map_div₀, map_ofNat, Complex.conj_natCast] at h
-  rw [h, Complex.conj_conj]
-
 /-- The dual of a card that agrees with a Dirichlet series agrees with the conjugate series. -/
 theorem HasDirichletAgreement.dual (h : d.HasDirichletAgreement) :
     d.dual.HasDirichletAgreement where
@@ -210,8 +208,10 @@ theorem HasDirichletAgreement.dual (h : d.HasDirichletAgreement) :
     have hLs : LSeries d.dual.coeff s = conj (LSeries d.coeff (conj s)) := by
       have hc : d.dual.coeff = star d.coeff := funext fun n ↦ by simp
       simpa [hc, Complex.star_def] using TauCeti.LSeries.LSeries_star d.coeff (conj s)
-    rw [dual_completed_apply, h.completed_eq _ (by simpa using hs), map_mul, map_mul,
-      conj_natCast_cpow, gammaFactor_dual, dual_conductor, hLs]
+    have hN := TauCeti.ofReal_cpow_conj (d.conductor : ℕ).cast_nonneg (s / 2)
+    rw [Complex.ofReal_natCast, map_div₀, map_ofNat] at hN
+    rw [dual_completed_apply, h.completed_eq _ (by simpa using hs), map_mul, map_mul, hN,
+      Complex.conj_conj, gammaFactor_dual, dual_conductor, hLs]
 
 /-- The dual of a meromorphically continued card is meromorphically continued, with the
 conjugate poles. -/

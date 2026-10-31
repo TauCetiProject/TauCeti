@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
-public import Mathlib.NumberTheory.LSeries.Dirichlet
 public import TauCeti.NumberTheory.LFunctions.Data.Basic
 public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
@@ -14,7 +13,8 @@ public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 # The completed L-function card of the Riemann zeta function
 
 The Riemann zeta function is the basic example of completed L-function data: its coefficients
-are all `1`, its conductor is `1`, it has the single real gamma shift `0` and no complex one, so
+are those of the arithmetic function `ArithmeticFunction.zeta`, that is, `1` at every positive
+index, its conductor is `1`, it has the single real gamma shift `0` and no complex one, so
 its gamma factor is `Γ_ℝ(s) = π^(-s/2) Γ(s/2)` and its degree is `1`, its root number is `1`, its
 completed function is Mathlib's `completedRiemannZeta`, and its polar divisor consists of the
 simple poles at `0` and `1`.
@@ -24,7 +24,8 @@ and proves that it satisfies `HasDirichletAgreement`, `HasMeromorphicContinuatio
 `HasFunctionalEquation`. The analytic input is the meromorphy and the simple poles of
 `completedRiemannZeta` (`TauCeti.NumberTheory.LSeries.CompletedRiemannZeta`) and, from Mathlib,
 the functional equation `completedRiemannZeta_one_sub`, the reflection symmetry
-`completedRiemannZeta_conj`, and the Dirichlet series `LSeries_one_eq_riemannZeta`.
+`completedRiemannZeta_conj`, and the Dirichlet series
+`ArithmeticFunction.LSeries_zeta_eq_riemannZeta`.
 
 ## Main results
 
@@ -40,11 +41,12 @@ open Complex ComplexConjugate
 
 namespace TauCeti.LFunctions
 
-/-- **The Riemann zeta card.** Coefficients `1`, conductor `1`, the single real gamma shift `0`
-and no complex gamma shift, root number `1`, completed function `completedRiemannZeta`, and simple
-poles at `0` and `1`. -/
+/-- **The Riemann zeta card.** Coefficients `ArithmeticFunction.zeta`, conductor `1`, the single
+real gamma shift `0` and no complex gamma shift, root number `1`, completed function
+`completedRiemannZeta`, and simple poles at `0` and `1`. -/
 noncomputable def riemannZetaData : AnalyticLFunctionData where
-  coeff _ := 1
+  coeff n := ArithmeticFunction.zeta n
+  coeff_zero := by simp
   conductor := 1
   gammaR := {0}
   gammaC := 0
@@ -53,7 +55,8 @@ noncomputable def riemannZetaData : AnalyticLFunctionData where
   polarOrder := Finsupp.single 0 1 + Finsupp.single 1 1
 
 @[simp]
-theorem riemannZetaData_coeff (n : ℕ) : riemannZetaData.coeff n = 1 := (rfl)
+theorem riemannZetaData_coeff (n : ℕ) :
+    riemannZetaData.coeff n = ArithmeticFunction.zeta n := (rfl)
 
 @[simp]
 theorem riemannZetaData_conductor : riemannZetaData.conductor = 1 := (rfl)
@@ -98,14 +101,15 @@ theorem riemannZetaData_dual : riemannZetaData.dual = riemannZetaData := by
 /-- On `Re s > 1`, the completed Riemann zeta function is `Γ_ℝ(s) ζ(s)`, the completion of the
 Dirichlet series with all coefficients `1`. -/
 theorem riemannZetaData_hasDirichletAgreement : riemannZetaData.HasDirichletAgreement where
-  coeff_one := rfl
+  coeff_one := by simp
   degree_pos := by simp
   completed_eq s hs := by
     have hΓ : Gammaℝ s ≠ 0 := Gammaℝ_ne_zero_of_re_pos (by linarith)
     have hs0 : s ≠ 0 := by
       rintro rfl
       norm_num at hs
-    have hL : LSeries riemannZetaData.coeff s = riemannZeta s := LSeries_one_eq_riemannZeta hs
+    have hL : LSeries riemannZetaData.coeff s = riemannZeta s :=
+      ArithmeticFunction.LSeries_zeta_eq_riemannZeta hs
     rw [hL, riemannZeta_def_of_ne_zero hs0]
     simp [field]
 
