@@ -39,11 +39,14 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
 * `SSet.join.joinFiberZeroIso`, `SSet.join.joinFiberOneIso`: the parts of `K ⋆ L` over the vertices
   `0` and `1` are `K` and `L`, through the inverses of the inclusions.
 * `SSet.join.map`: the functoriality of the join in both variables.
+* `SSet.join.edgeMk`: the edge of `K ⋆ L` from a vertex of `K` to a vertex of `L`.
 
 ## Main results
 
 * `SSet.join.homEquiv`: maps `X ⟶ K ⋆ L` correspond to join data on `X`, naturally in `X`
   (`SSet.join.homEquiv_comp`); this is the representability `SSet.join.representableBy`.
+* `SSet.join.edge_mem_joinFiber_zero`: an edge of `K ⋆ L` ending over the vertex `0` lies over
+  `0`.
 * `SSet.join.isoOfIsTerminal`: the join of two terminal simplicial sets, such as
   `Δ[0] ⋆ Δ[0]`, is `Δ[1]`.
 * `SSet.join.quasicategory`: the join of two quasicategories is a quasicategory (Joyal).
@@ -637,6 +640,53 @@ def isoOfIsTerminal (hK : Limits.IsTerminal K) (hL : Limits.IsTerminal L) : join
 lemma isoOfIsTerminal_hom (hK : Limits.IsTerminal K) (hL : Limits.IsTerminal L) :
     (isoOfIsTerminal hK hL).hom = π K L :=
   (rfl)
+
+/-- The edge of the join `K ⋆ L` from a vertex `x` of `K` to a vertex `y` of `L`: the join data on
+`Δ[1]` splitting its vertices as `{0}` and `{1}`, with the constant maps at `x` and `y`. -/
+def edgeMk (x : K _⦋0⦌) (y : L _⦋0⦌) : (join K L).Edge ((inl K L).app _ x) ((inr K L).app _ y) :=
+  Edge.mk (objEquiv.symm ⟨𝟙 Δ[1], const x, const y⟩)
+    (objEquiv.injective (by
+      rw [SimplicialObject.δ, objEquiv_map, inl, homEquiv_symm_app]
+      refine JoinData.ext ?_ (fun _ _ _ _ ↦ ?_) (fun _ _ _ hz ↦ by simp at hz)
+      · -- Both maps `Δ[0] ⟶ Δ[1]` pick the vertex `0`.
+        apply yonedaEquiv.injective
+        refine stdSimplex.ext _ _ fun j ↦ ?_
+        fin_cases j
+        rfl
+      · -- Both sides are images of `x` under maps to `⦋0⦌`, which are unique.
+        exact congrArg (fun f ↦ K.map f x) (Subsingleton.elim _ _)))
+    (objEquiv.injective (by
+      rw [SimplicialObject.δ, objEquiv_map, inr, homEquiv_symm_app]
+      refine JoinData.ext ?_ (fun _ _ _ hz ↦ by simp at hz) (fun _ _ _ _ ↦ ?_)
+      · -- Both maps `Δ[0] ⟶ Δ[1]` pick the vertex `1`.
+        apply yonedaEquiv.injective
+        refine stdSimplex.ext _ _ fun j ↦ ?_
+        fin_cases j
+        rfl
+      · -- Both sides are images of `y` under maps to `⦋0⦌`, which are unique.
+        exact congrArg (fun f ↦ L.map f y) (Subsingleton.elim _ _)))
+
+/-- The join data of the edge `edgeMk x y` on `Δ[1]`. -/
+@[simp]
+lemma objEquiv_edgeMk_edge (x : K _⦋0⦌) (y : L _⦋0⦌) :
+    objEquiv (edgeMk x y).edge = ⟨𝟙 Δ[1], const x, const y⟩ :=
+  (rfl)
+
+/-- An edge of the join `K ⋆ L` whose target lies over the vertex `0` lies over `0`, since the
+projection to `Δ[1]` is monotone along the edge. -/
+lemma edge_mem_joinFiber_zero {v w : (join K L) _⦋0⦌} (e : (join K L).Edge v w)
+    (hw : w ∈ (joinFiber (univ K L).p 0).obj _) :
+    e.edge ∈ (joinFiber (univ K L).p 0).obj _ := by
+  rw [univ_p, mem_joinFiber_iff] at hw ⊢
+  have h1 : (π K L).app (op ⦋1⦌) e.edge 1 = 0 := by
+    -- The target of the edge is its face opposite to the vertex `0`.
+    refine Eq.trans ?_ ((congrArg (fun t ↦ (π K L).app (op ⦋0⦌) t 0) e.tgt_eq).trans (hw 0))
+    have hnat := ConcreteCategory.congr_hom
+      (SimplicialObject.δ_naturality (π K L) (0 : Fin 2)) e.edge
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hnat
+    rw [hnat, stdSimplex.δ_apply]
+    rfl
+  exact fun j ↦ le_antisymm (h1 ▸ stdSimplex.monotone_apply _ (Fin.le_last j)) (Fin.zero_le _)
 
 end join
 

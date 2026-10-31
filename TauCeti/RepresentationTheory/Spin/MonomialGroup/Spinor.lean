@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Irreducible
-public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup
+public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup.Even
 public import TauCeti.RepresentationTheory.Spin.LineSign
 import TauCeti.Algebra.CentralSimple.End
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
