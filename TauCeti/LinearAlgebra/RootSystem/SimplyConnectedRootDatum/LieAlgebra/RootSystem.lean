@@ -38,6 +38,8 @@ weight included, so the file also translates a family indexed by the root number
 * `TauCeti.DynkinType.rootEquiv_simpleIndex` and
   `TauCeti.DynkinType.rootEquiv_reflectionPerm_self`: the enumeration matches the numbered simple
   roots and commutes with negation.
+* `TauCeti.DynkinType.coe_rootEquiv_eq_add`: the enumeration carries sums of roots of the
+  rational root system to sums of weights.
 * `TauCeti.DynkinType.extendRootFamily`: a family of vectors indexed by the root numbers, extended
   by `0` to the weight-indexed family that `TauCeti.IsSl2System` and `TauCeti.IsChevalleySystem`
   take.
@@ -172,6 +174,26 @@ theorem coe_rootEquiv_eq_iff {α : Fin t.numRoots}
     (t.cartanBasis ht).ext fun i => by
       simp only [Weight.toLinear_apply, rootEquiv_apply_cartanBasis, h]
   exact Weight.ext fun x => LinearMap.congr_fun hlin x
+
+/-- **The enumeration is additive**: when root `γ` of the rational root system is the sum of roots
+`α` and `β`, the root numbered `γ` of the Lie algebra is the sum of those numbered `α` and `β`. -/
+theorem coe_rootEquiv_eq_add {α β γ : Fin t.numRoots}
+    (h : (t.rationalRootSystem ht).root γ =
+      (t.rationalRootSystem ht).root α + (t.rationalRootSystem ht).root β) :
+    ((t.rootEquiv ht γ : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) :
+        t.cartanSubalgebra ht → ℚ) =
+      (t.rootEquiv ht α : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) +
+        (t.rootEquiv ht β : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) := by
+  have hlin : ((t.rootEquiv ht γ : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) :
+      t.cartanSubalgebra ht →ₗ[ℚ] ℚ) =
+      (t.rootEquiv ht α : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) +
+        ((t.rootEquiv ht β : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) :
+          t.cartanSubalgebra ht →ₗ[ℚ] ℚ) :=
+    (t.cartanBasis ht).ext fun i => by
+      simpa only [LinearMap.add_apply, Weight.toLinear_apply, rootEquiv_apply_cartanBasis,
+        Pi.add_apply, root_rationalRootSystem] using congrFun h i
+  funext z
+  exact LinearMap.congr_fun hlin z
 
 /-- **The enumeration commutes with negation**: the root indexed by the reflection of `α` in itself,
 which is the index of `-α` in the pinned datum, is the negative of the root indexed by `α`. -/
