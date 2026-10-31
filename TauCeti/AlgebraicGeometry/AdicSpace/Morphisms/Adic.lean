@@ -25,9 +25,11 @@ for adic homomorphisms, the chart construction that also defines
 The main theorem identifies adic morphisms with the morphisms sending analytic points to analytic
 points (Huber 1994, Proposition 3.2(ii); Wedhorn, Proposition 8.39). On an affinoid chart this is
 Wedhorn's Lemma 7.46: the morphism `Spa(φ)` induced by `φ : (A, A⁺) → (B, B⁺)`, with `B` complete,
-sends analytic points to analytic points exactly when `φ` is adic. Globally, a morphism sending
-analytic points to analytic points restricts, over affinoid opens `U ⊆ f⁻¹(V)` with complete
-models, to the morphism induced by its global-sections map, which is then adic.
+sends analytic points to analytic points exactly when `φ` is adic
+(`TauCeti.ValuationSpectrum.mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap_iff`).
+Globally, a morphism sending analytic points to analytic points restricts, over affinoid opens
+`U ⊆ f⁻¹(V)` with complete models, to the morphism induced by its global-sections map, which is
+then adic.
 
 Since every morphism of pre-adic spaces pulls analytic points back to analytic points, the
 characterisation gives the formal properties at once: adic morphisms contain the identities, the
@@ -43,9 +45,6 @@ homomorphism is. Adic morphisms are thus the morphisms that restrict to the anal
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap_iff`: the
-  morphism of adic spectra induced by a morphism of Huber pairs with complete target sends
-  analytic points to analytic points exactly when the ring homomorphism is adic.
 * `TauCeti.AdicSpace.isAdic_iff_mapsTo_analyticPoints`: a morphism of adic spaces is adic exactly
   when it sends analytic points to analytic points.
 * `TauCeti.AdicSpace.IsAdic.isMultiplicative`, `TauCeti.AdicSpace.IsAdic.respectsIso`: identities
@@ -74,63 +73,6 @@ namespace TauCeti
 open Huber
 
 universe u
-
-namespace ValuationSpectrum
-
-open PreAdicSpace
-
-variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-  {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
-  (P : PairOfDefinition A) (P' : PairOfDefinition B) {Aplus : Subring A} {Bplus : Subring B}
-  (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
-  (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
-  (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
-    (presentationLimitPresheaf P' Bplus))
-
-/-- **Wedhorn Lemma 7.46(1), on adic spectra**: if `φ` is adic, the morphism `Spa(φ)` it induces
-sends analytic points to analytic points. -/
-theorem _root_.TauCeti.Huber.IsAdicHom.mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap
-    {φ : A →+* B} (hφ : IsAdicHom φ) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) :
-    Set.MapsTo (presentationLimitPreAdicSpaceComap φ hφ.continuous hplus hAplus hBplus hP hP'
-        hsheaf).base
-      (presentationLimitPreAdicSpace P' Bplus hBplus hP').analyticPoints
-      (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints := by
-  intro x hx
-  rw [analyticPoints_presentationLimitPreAdicSpace] at hx ⊢
-  have h := hφ.mapsTo_spaAnalytic hplus hx
-  rw [← presentationLimitPreAdicSpaceComap_base_val φ hφ.continuous hplus hAplus hBplus hP hP'
-    hsheaf x] at h
-  exact h
-
-/-- **Wedhorn Lemma 7.46, on adic spectra**: for a continuous `φ : A → B` with `B` complete, the
-morphism `Spa(φ)` it induces sends analytic points to analytic points exactly when `φ` is adic. -/
-theorem mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap_iff {B : Type u} [CommRing B]
-    [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [CompleteSpace B] [T2Space B]
-    [IsHuberRing B] [IsHuberRing A] (P' : PairOfDefinition B) {Bplus : Subring B}
-    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b) (hP' : P'.ringOfDefinition ≤ Bplus)
-    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
-      (presentationLimitPresheaf P' Bplus))
-    (φ : A →+* B) (hφ : Continuous φ) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) :
-    Set.MapsTo (presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).base
-        (presentationLimitPreAdicSpace P' Bplus hBplus hP').analyticPoints
-        (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints ↔ IsAdicHom φ := by
-  refine ⟨fun h ↦ isAdicHom_of_mapsTo_spaAnalytic hφ (Aplus := Aplus)
-    (fun _ hb ↦ mem_powerBoundedSubring.mpr (hBplus hb)) fun v hv ↦ ?_,
-    fun h ↦ h.mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap P P' hAplus hBplus hP hP'
-      hsheaf hplus⟩
-  -- read `v` as a point of `Spa(B, B⁺)`, analytic there
-  let x : presentationLimitPreAdicSpace P' Bplus hBplus hP' := ⟨v, spaAnalytic_subset_spa _ hv⟩
-  have hx : x ∈ (presentationLimitPreAdicSpace P' Bplus hBplus hP').analyticPoints := by
-    rw [analyticPoints_presentationLimitPreAdicSpace]
-    exact hv
-  have hφx := h hx
-  rw [analyticPoints_presentationLimitPreAdicSpace] at hφx
-  -- membership in the preimage under `Subtype.val` is membership of the underlying valuation
-  have hφx' : ((presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).base x :
-      spa Aplus).1 ∈ spaAnalytic Aplus := hφx
-  rwa [presentationLimitPreAdicSpaceComap_base_val] at hφx'
-
-end ValuationSpectrum
 
 namespace AdicSpace
 

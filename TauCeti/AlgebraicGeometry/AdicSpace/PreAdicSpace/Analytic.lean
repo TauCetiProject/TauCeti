@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.PresentationLimit
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.AdicHom
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Analytic
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Cofinality
@@ -71,6 +73,10 @@ constructions on Tate affinoids, such as completed tensor products, apply to non
   open immersion neither creates nor destroys the preservation of analytic points.
 * `TauCeti.ValuationSpectrum.analyticPoints_presentationLimitPreAdicSpace_of_isTateRing`: every
   point of the adic spectrum of a Tate ring is analytic.
+* `TauCeti.ValuationSpectrum.mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap_iff`: the
+  morphism of adic spectra induced by a morphism of Huber pairs with complete target sends
+  analytic points to analytic points exactly when the ring homomorphism is adic (Wedhorn,
+  Lemma 7.46).
 * `TauCeti.PreAdicSpace.analyticPoints_analyticLocus`: every point of `X_a` is analytic.
 * `TauCeti.PreAdicSpace.isIso_analyticLocus_ι_iff`: `X_a ⟶ X` is an isomorphism exactly when
   every point of `X` is analytic.
@@ -82,7 +88,7 @@ constructions on Tate affinoids, such as completed tensor products, apply to non
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Definition 7.39,
-  Proposition 7.49, Proposition and Definition 8.36, Remark 8.37 and Proposition 8.39.
+  Lemma 7.46, Proposition 7.49, Proposition and Definition 8.36, Remark 8.37 and Proposition 8.39.
 * [R. Huber, *A generalization of formal schemes and rigid analytic varieties*], §3.
 -/
 
@@ -366,6 +372,63 @@ theorem analyticPoints_presentationLimitPreAdicSpace_of_isTateRing [IsTateRing A
     (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints = Set.univ := by
   rw [analyticPoints_presentationLimitPreAdicSpace, spaAnalytic_eq_spa_of_isTateRing]
   exact Set.eq_univ_of_forall fun x ↦ x.2
+
+end ValuationSpectrum
+
+namespace ValuationSpectrum
+
+open PreAdicSpace
+
+variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+  (P : PairOfDefinition A) (P' : PairOfDefinition B) {Aplus : Subring A} {Bplus : Subring B}
+  (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+  (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+  (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+    (presentationLimitPresheaf P' Bplus))
+
+/-- **Wedhorn Lemma 7.46(1), on adic spectra**: if `φ` is adic, the morphism `Spa(φ)` it induces
+sends analytic points to analytic points. -/
+theorem _root_.TauCeti.Huber.IsAdicHom.mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap
+    {φ : A →+* B} (hφ : IsAdicHom φ) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) :
+    Set.MapsTo (presentationLimitPreAdicSpaceComap φ hφ.continuous hplus hAplus hBplus hP hP'
+        hsheaf).base
+      (presentationLimitPreAdicSpace P' Bplus hBplus hP').analyticPoints
+      (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints := by
+  intro x hx
+  rw [analyticPoints_presentationLimitPreAdicSpace] at hx ⊢
+  have h := hφ.mapsTo_spaAnalytic hplus hx
+  rw [← presentationLimitPreAdicSpaceComap_base_val φ hφ.continuous hplus hAplus hBplus hP hP'
+    hsheaf x] at h
+  exact h
+
+/-- **Wedhorn Lemma 7.46, on adic spectra**: for a continuous `φ : A → B` with `B` complete, the
+morphism `Spa(φ)` it induces sends analytic points to analytic points exactly when `φ` is adic. -/
+theorem mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap_iff {B : Type u} [CommRing B]
+    [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [CompleteSpace B] [T2Space B]
+    [IsHuberRing B] [IsHuberRing A] (P' : PairOfDefinition B) {Bplus : Subring B}
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus))
+    (φ : A →+* B) (hφ : Continuous φ) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) :
+    Set.MapsTo (presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).base
+        (presentationLimitPreAdicSpace P' Bplus hBplus hP').analyticPoints
+        (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints ↔ IsAdicHom φ := by
+  refine ⟨fun h ↦ isAdicHom_of_mapsTo_spaAnalytic hφ (Aplus := Aplus)
+    (fun _ hb ↦ mem_powerBoundedSubring.mpr (hBplus hb)) fun v hv ↦ ?_,
+    fun h ↦ h.mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap P P' hAplus hBplus hP hP'
+      hsheaf hplus⟩
+  -- read `v` as a point of `Spa(B, B⁺)`, analytic there
+  let x : presentationLimitPreAdicSpace P' Bplus hBplus hP' := ⟨v, spaAnalytic_subset_spa _ hv⟩
+  have hx : x ∈ (presentationLimitPreAdicSpace P' Bplus hBplus hP').analyticPoints := by
+    rw [analyticPoints_presentationLimitPreAdicSpace]
+    exact hv
+  have hφx := h hx
+  rw [analyticPoints_presentationLimitPreAdicSpace] at hφx
+  -- membership in the preimage under `Subtype.val` is membership of the underlying valuation
+  have hφx' : ((presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).base x :
+      spa Aplus).1 ∈ spaAnalytic Aplus := hφx
+  rwa [presentationLimitPreAdicSpaceComap_base_val] at hφx'
 
 end ValuationSpectrum
 
