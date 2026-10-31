@@ -40,6 +40,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {ι : Type*} {M : ι → Type*} [∀ i, TopologicalSpace (M i)] [∀ i, ChartedSpace H (M i)]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω}
 
+namespace TauCeti
+
 /-- The extended chart of a disjoint union at `⟨i, x⟩` agrees on the copy of `M i` with the
 extended chart of `M i` at `x`. -/
 @[mfld_simps]
@@ -85,9 +87,11 @@ theorem contMDiff_sigmaMk (i : ι) : ContMDiff I I n (Sigma.mk i : M i → Σ i,
     rw [ChartedSpace.sigma_chartAt_mk_apply, (chartAt H x).right_inv hy.1, I.right_inv hy.2]
   · simp
 
+end TauCeti
+
 /-- **Maps of disjoint unions.** A family of `C^n` maps `g i : M i → M' (f i)` induces a `C^n` map
 `Sigma.map f g` of disjoint unions. -/
 theorem ContMDiff.sigmaMap {ι' : Type*} {M' : ι' → Type*} [∀ i, TopologicalSpace (M' i)]
     [∀ i, ChartedSpace H' (M' i)] {f : ι → ι'} {g : ∀ i, M i → M' (f i)}
     (hg : ∀ i, ContMDiff I J n (g i)) : ContMDiff I J n (Sigma.map f g) :=
-  contMDiff_sigma_iff.mpr fun i ↦ (contMDiff_sigmaMk (f i)).comp (hg i)
+  TauCeti.contMDiff_sigma_iff.mpr fun i ↦ (TauCeti.contMDiff_sigmaMk (f i)).comp (hg i)
