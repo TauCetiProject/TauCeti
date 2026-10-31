@@ -47,16 +47,17 @@ characters, which are characters of `G`; hence every point on which all characte
 trivial is killed by the quotient map, over every commutative value algebra. This gives the
 equality of Hopf ideals, without a reducedness assumption on the common kernel of characters.
 
-In the commutative case the point characterization is
-`TauCeti.HopfAlgebra.Point.mem_quotientPointsSubgroup_unipotentRadical_iff`, which is an input
-here through the classification of solvable reductive groups. The common kernel of characters was
-already known to have only unipotent points
-(`TauCeti.CommHopfAlgCat.geometricallyUnipotentPointsCommHopfAlgProperty_characterKernelIdeal`).
+For commutative `G` see
+`TauCeti.HopfAlgebra.Point.mem_quotientPointsSubgroup_unipotentRadical_iff`. The weaker statement
+that the common kernel of characters has only unipotent points is
+`TauCeti.CommHopfAlgCat.geometricallyUnipotentPointsCommHopfAlgProperty_characterKernelIdeal`.
 
 ## Main declarations
 
 * `TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical`: `G ⧸ R_u(G)` is a
   torus.
+* `TauCeti.FiniteTypeCommHopfAlgCat.groupLikeSpannedProperty_coinvariants_unipotentRadical`:
+  `G ⧸ R_u(G)` is spanned by its characters.
 * `TauCeti.FiniteTypeCommHopfAlgCat.mem_quotientPointsSubgroup_unipotentRadical_iff`: a rational
   point lies in `R_u(G)` exactly when it is unipotent.
 * `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_characterKernelIdeal`:
@@ -112,6 +113,17 @@ theorem torus_coinvariants_unipotentRadical :
       (CommHopfAlgCat.faithfullyFlat_coinvariantsι hR)
   exact (reductive_coinvariants_unipotentRadical G hconnected).torus_of_geometricallySolvable hQ
 
+/-- The torus `G ⧸ R_u(G)` of a connected solvable group is spanned by its characters, over an
+algebraically closed field. -/
+theorem groupLikeSpannedProperty_coinvariants_unipotentRadical :
+    let hR := isNormal_unipotentRadicalDefiningIdeal G
+    letI := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
+    let Q : FiniteTypeCommHopfAlgCat.{u, u} k :=
+      ⟨CommHopfAlgCat.coinvariants hR,
+        (finiteTypeCommHopfAlgProperty_iff _).mpr hR.finiteType_coinvariants⟩
+    DiagonalizableGroup.groupLikeSpannedProperty k Q :=
+  (torusCommHopfAlgProperty.split k _ (torus_coinvariants_unipotentRadical G)).groupLikeSpanned k _
+
 /-- **The unipotent rational points of a connected solvable group are the rational points of its
 unipotent radical**, over an algebraically closed field and in every characteristic. In
 particular the unipotent rational points form a subgroup. -/
@@ -136,8 +148,7 @@ theorem mem_quotientPointsSubgroup_unipotentRadical_iff (g : WithConv (G →ₐ[
     -- Every rational point of the torus `G ⧸ R_u(G)` is semisimple.
     have hss :=
       ((DiagonalizableGroup.groupLikeSpannedProperty_iff_isCocomm_and_forall_isSemisimplePoint
-        Q).mp ((torusCommHopfAlgProperty.split k Q
-          (torus_coinvariants_unipotentRadical G)).groupLikeSpanned k Q)).2
+        Q).mp (groupLikeSpannedProperty_coinvariants_unipotentRadical G)).2
     -- So the image of `g`, which is unipotent, is the identity.
     have h1 : BialgHom.mapDomain ι.hom g = 1 :=
       (hss _).eq_one_of_isUnipotent (hg.mapDomain ι.hom)
@@ -162,8 +173,7 @@ theorem unipotentRadicalDefiningIdeal_eq_characterKernelIdeal :
     have hspan : Submodule.span k (Set.range (GroupLike.val (R := k) (A := Q))) = ⊤ :=
       Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top.mp
         ((DiagonalizableGroup.groupLikeSpannedProperty_iff k Q).mp
-          ((torusCommHopfAlgProperty.split k Q
-            (torus_coinvariants_unipotentRadical G)).groupLikeSpanned k Q))
+          (groupLikeSpannedProperty_coinvariants_unipotentRadical G))
     let φ := (CommHopfAlgCat.mkQuotient G.obj C).hom.toAlgHom
     have hφ : ∀ x : GroupLike k G, φ x = 1 :=
       (_root_.CommHopfAlgCat.characterKernelIdeal_toIdeal_le_ker_iff G.obj φ).mp
@@ -176,9 +186,7 @@ theorem unipotentRadicalDefiningIdeal_eq_characterKernelIdeal :
       refine AlgHom.ext_of_adjoin_eq_top hadjoin ?_
       rintro _ ⟨y, rfl⟩
       have hy := y.isGroupLikeElem_val
-      rw [AlgHom.comp_apply, AlgHom.comp_apply, Bialgebra.counitAlgHom_apply, hy.counit_eq_one,
-        map_one]
-      exact hφ ⟨ι.hom y, hy.map ι.hom⟩
+      simpa [hy.counit_eq_one] using hφ ⟨ι.hom y, hy.map ι.hom⟩
     rw [← CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq hR, ← HopfIdeal.toIdeal_le_toIdeal,
       ← CommHopfAlgCat.mkQuotient_ker G.obj C]
     exact (CommHopfAlgCat.kernelHopfIdeal_toIdeal_le_ker_iff ι φ).mpr hcomp
