@@ -72,27 +72,6 @@ namespace SmoothForm
 variable {E H W : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace W] [ChartedSpace H W] [IsManifold I ∞ W]
 
-/-- The coordinate one-form `dz` of the real line. -/
-private def realLineCoordForm : SmoothForm 𝓘(ℝ) ℝ ℝ 1 :=
-  const (ContinuousAlternatingMap.ofSubsingleton ℝ ℝ ℝ 0 (ContinuousLinearMap.id ℝ ℝ))
-
-private theorem realLineCoordForm_apply (z : ℝ) (v : Fin 1 → TangentSpace 𝓘(ℝ) z) :
-    realLineCoordForm.1 z v = v 0 := by
-  rw [realLineCoordForm, const_apply]
-  -- Tangent vectors of `ℝ` are real numbers, on which `NormedSpace.fromTangentSpace` is the
-  -- identity.
-  rfl
-
-/-- The pullback of `dz` along a real function `h` is the differential `dh`. -/
-private theorem mpullback_realLineCoordForm {E' H' X : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace X]
-    [ChartedSpace H' X] (h : X → ℝ) :
-    TauCeti.mpullback J 𝓘(ℝ) h realLineCoordForm.1 = mextDeriv (RoughForm.ofFunction J h) := by
-  funext x
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [TauCeti.mpullback_apply, realLineCoordForm_apply, mextDeriv_ofFunction,
-    ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply]
-
 /-- The **contactization form** `dz - θ` on `W × ℝ` of a one-form `θ` on `W`, where `z` is the
 real coordinate and `θ` is pulled back along the projection to `W`. When `-dθ` is nondegenerate it
 is a contact form (`TauCeti.SmoothForm.isContactForm_contactization_iff`). -/
@@ -106,9 +85,9 @@ theorem contactization_apply (θ : SmoothForm I W ℝ 1) (p : W × ℝ)
     θ.contactization.1 p ![v] =
       NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 -
         θ.1 p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] := by
-  rw [contactization, Submodule.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply,
-    mpullback_apply, mpullback_apply, mfderiv_fst, mfderiv_snd, realLineCoordForm_apply,
-    Matrix.vec_single_eq_const, Matrix.vec_single_eq_const, Manifold.tangentSpaceProdEquiv_apply,
+  simp only [contactization, Submodule.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply,
+    mpullback_apply, mfderiv_fst, mfderiv_snd, realLineCoordForm_apply,
+    Matrix.vec_single_eq_const, Manifold.tangentSpaceProdEquiv_apply,
     NormedSpace.fromTangentSpace_apply]
   -- Both sides read off the components of `v`.
   rfl
@@ -222,7 +201,8 @@ theorem contactizationShift_symm_apply (hg : ContMDiff I 𝓘(ℝ) ∞ g) (p : W
 
 /-- **Change of primitive.** If `θ' = θ + dg` for a smooth function `g` on `W`, then the
 diffeomorphism `(w, z) ↦ (w, z - g w)` of `W × ℝ` pulls the contactization form `dz - θ` back to
-`dz - θ'`. It is therefore a strict contactomorphism between the two contactizations. -/
+`dz - θ'`. When `-dθ` is nondegenerate, so that both forms are contact forms, it is therefore a
+strict contactomorphism between the two contactizations. -/
 theorem mpullback_contactizationShift_contactization (hg : ContMDiff I 𝓘(ℝ) ∞ g)
     {θ θ' : SmoothForm I W ℝ 1} (hθ' : θ'.1 = θ.1 + mextDeriv (RoughForm.ofFunction I g)) :
     SmoothForm.mpullback (contactizationShift I hg) (contactizationShift I hg).contMDiff
@@ -232,22 +212,30 @@ theorem mpullback_contactizationShift_contactization (hg : ContMDiff I 𝓘(ℝ)
     (hg.comp contMDiff_fst).mdifferentiable (by simp)
   have hsub : MDifferentiable (I.prod 𝓘(ℝ)) 𝓘(ℝ) (Prod.snd - g ∘ Prod.fst : W × ℝ → ℝ) :=
     (contMDiff_snd.sub (hg.comp contMDiff_fst)).mdifferentiable (by simp)
+  -- The shift changes the coordinate `z` by `-g`, so it pulls `dz` back to `d(z - g)`.
+  have hdz : mpullback (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) (contactizationShift I hg)
+      (mpullback (I.prod 𝓘(ℝ)) 𝓘(ℝ) Prod.snd SmoothForm.realLineCoordForm.1) =
+        mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ)) (Prod.snd - g ∘ Prod.fst : W × ℝ → ℝ)) := by
+    rw [← mpullback_comp hΦ mdifferentiable_snd]
+    exact SmoothForm.mpullback_realLineCoordForm _
+  -- The shift fixes the first coordinate, so it fixes forms pulled back from `W`.
+  have hθ : mpullback (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) (contactizationShift I hg)
+      (mpullback (I.prod 𝓘(ℝ)) I Prod.fst θ.1) =
+        mpullback (I.prod 𝓘(ℝ)) I Prod.fst θ.1 := by
+    rw [← mpullback_comp hΦ mdifferentiable_fst]
+    rfl
   -- `dz = d(z - g) + d(g ∘ pr₁)` on `W × ℝ`.
-  have hdz : mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ)) (Prod.snd : W × ℝ → ℝ)) =
+  have hsplit : mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ)) (Prod.snd : W × ℝ → ℝ)) =
       mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ)) (Prod.snd - g ∘ Prod.fst : W × ℝ → ℝ)) +
         mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ)) (g ∘ Prod.fst : W × ℝ → ℝ)) := by
     rw [← mextDeriv_ofFunction_add hsub hgf, sub_add_cancel]
-  -- The shift fixes the first coordinate, and changes the second by `-g`.
-  have hfst : Prod.fst ∘ contactizationShift I hg = Prod.fst := rfl
-  have hsnd : Prod.snd ∘ contactizationShift I hg = (Prod.snd - g ∘ Prod.fst : W × ℝ → ℝ) := rfl
+  -- Pulling `dg` back to `W × ℝ` gives `d(g ∘ pr₁)`.
+  have hdg : mpullback (I.prod 𝓘(ℝ)) I Prod.fst (mextDeriv (RoughForm.ofFunction I g)) =
+      mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ)) (g ∘ Prod.fst : W × ℝ → ℝ)) :=
+    mpullback_mextDeriv_ofFunction mdifferentiable_fst (hg.mdifferentiable (by simp))
   apply Subtype.ext
-  rw [SmoothForm.contactization, SmoothForm.contactization, map_sub, Submodule.coe_sub,
-    Submodule.coe_sub, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-    SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-    ← mpullback_comp hΦ mdifferentiable_snd,
-    ← mpullback_comp hΦ mdifferentiable_fst, hfst, hsnd, SmoothForm.mpullback_realLineCoordForm,
-    SmoothForm.mpullback_realLineCoordForm, hθ', mpullback_add,
-    mpullback_mextDeriv_ofFunction mdifferentiable_fst (hg.mdifferentiable (by simp)), hdz]
+  simp only [SmoothForm.contactization, map_sub, Submodule.coe_sub, SmoothForm.coe_mpullback]
+  rw [hdz, hθ, hθ', mpullback_add, hdg, SmoothForm.mpullback_realLineCoordForm, hsplit]
   abel
 
 end Shift

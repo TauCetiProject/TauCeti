@@ -567,6 +567,19 @@ theorem const_apply {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   rw [const_toRoughForm, ContinuousAlternatingMap.compContinuousLinearMap_apply]
   rfl
 
+/-- The coordinate one-form `dz` of the real line. -/
+@[expose] def realLineCoordForm : SmoothForm 𝓘(ℝ) ℝ ℝ 1 :=
+  const (ContinuousAlternatingMap.ofSubsingleton ℝ ℝ ℝ 0 (ContinuousLinearMap.id ℝ ℝ))
+
+/-- The coordinate one-form `dz` of the real line sends a tangent vector to itself. -/
+@[simp]
+theorem realLineCoordForm_apply (z : ℝ) (v : Fin 1 → TangentSpace 𝓘(ℝ) z) :
+    realLineCoordForm.1 z v = v 0 := by
+  rw [realLineCoordForm, const_apply]
+  -- Tangent vectors of `ℝ` are real numbers, on which `NormedSpace.fromTangentSpace` is the
+  -- identity.
+  rfl
+
 /-- Evaluate a degree-two smooth form on an ordered pair of tangent vectors.
 
 This ordered-pair view supplies the arguments for the algebraic bilinear-form conversion and
