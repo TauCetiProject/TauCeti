@@ -41,6 +41,8 @@ of a family of degree-`d` equations is the preimage of a linear section of the i
 * `TauCeti.veroneseRelation R N d q`: the quadratic binomial `y_a y_b - y_c y_e` attached to a
   quadruple `q = ((a, b), (c, e))` of indices of exponent vectors with `α_a + α_b = α_c + α_e`.
 * `TauCeti.veroneseLinearForm d p`: a polynomial of degree `d` as a linear form in the monomials.
+* `TauCeti.veroneseLocalInverse K d i`: the coordinates `y_(d e_i + e_j)` of a vector indexed by
+  the monomials of degree `d + 1`, a local inverse of the Veronese map in homogeneous coordinates.
 
 ## Main results
 
@@ -50,6 +52,8 @@ of a family of degree-`d` equations is the preimage of a linear section of the i
 * `TauCeti.eval_veroneseRelation`, `TauCeti.eval_veroneseLinearForm`,
   `TauCeti.coeff_single_veroneseLinearForm`: evaluating the quadratic binomials and the linear
   forms, and the coefficients of the linear forms.
+* `TauCeti.veroneseLocalInverse_veroneseMonomials`: the local inverse recovers `v i ^ d • v`
+  from the monomials of degree `d + 1` of `v`.
 * `Projectivization.veronese_injective`: the Veronese map of positive degree is injective.
 * `Projectivization.range_veronese`: over `ℂ`, the image of the Veronese map of positive degree is
   the zero locus of the quadratic binomials.
@@ -157,6 +161,39 @@ theorem veroneseMonomials_ne_zero {K : Type*} [CommSemiring K] [NoZeroDivisors K
   refine Function.ne_iff.mpr
     ⟨(veroneseExponentEquiv N d).symm ⟨Pi.single i d, Fintype.sum_pi_single' i d⟩, ?_⟩
   simpa [Fintype.prod_pow_pi_single] using pow_ne_zero d hi
+
+/-! ### Local inverses -/
+
+section LocalInverse
+
+variable (K : Type*) [CommSemiring K]
+
+/-- The coordinates `y_(d e_i + e_j)`, for `j : Fin N`, of a vector `y` indexed by the monomials of
+degree `d + 1`. On the vector of monomials of `v` they are the coordinates of `v i ^ d • v`
+(`TauCeti.veroneseLocalInverse_veroneseMonomials`), so in homogeneous coordinates this linear map
+inverts the Veronese map on the affine open where the `i`-th coordinate is nonzero. -/
+noncomputable def veroneseLocalInverse (d : ℕ) (i : Fin N) :
+    (Fin (veroneseDim N (d + 1)) → K) →ₗ[K] Fin N → K :=
+  LinearMap.funLeft K K fun j ↦ (veroneseExponentEquiv N (d + 1)).symm
+    ⟨Pi.single i d + Pi.single j 1, by simp [sum_add_distrib]⟩
+
+variable {K}
+
+@[simp]
+theorem veroneseLocalInverse_apply (d : ℕ) (i : Fin N) (y : Fin (veroneseDim N (d + 1)) → K)
+    (j : Fin N) :
+    veroneseLocalInverse K d i y j = y ((veroneseExponentEquiv N (d + 1)).symm
+      ⟨Pi.single i d + Pi.single j 1, by simp [sum_add_distrib]⟩) :=
+  (rfl)
+
+/-- The coordinates `y_(d e_i + e_j)` of the vector of monomials of degree `d + 1` of `v` are the
+monomials `v i ^ d * v j`. -/
+theorem veroneseLocalInverse_veroneseMonomials (d : ℕ) (i : Fin N) (v : Fin N → K) :
+    veroneseLocalInverse K d i (veroneseMonomials (d + 1) v) = v i ^ d • v := by
+  ext j
+  simp [pow_add, prod_mul_distrib, Fintype.prod_pow_pi_single]
+
+end LocalInverse
 
 /-! ### Relations among monomials -/
 
