@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MvPolynomial.Sum
-public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
+public import TauCeti.RingTheory.MvPolynomial.DegreePadding
 
 /-!
 # Polynomial realization maps and input coefficients
@@ -33,6 +33,8 @@ coefficient presentation. Composing with the coordinates gives
 `polynomialCoefficientCoordinates P`, whose coordinates are polynomial in the parameters.
 Raising the degree bound zero-pads these coordinates, and the padded coordinates are given by the
 same coefficient formula, so the coordinates for different bounds correspond under zero-padding.
+`boundedEvaluation_padding_polynomialCoefficientCoordinates` shows that evaluating the padded
+coordinates still recovers exactly the same realization.
 
 The jointly polynomial setting and the coefficient/function viewpoint follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
@@ -201,6 +203,17 @@ polynomial in the parameters. -/
     (w : W → K) (i : J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P}) :
     polynomialCoefficientCoordinates P w i = eval w ((inputPolynomial P i.1).coeff i.2) := by
   simp [polynomialCoefficientCoordinates, coeff_map]
+
+/-- Enlarging the uniform input-degree bound by zero-padding the coefficient coordinates
+preserves the realization at every parameter and every input. -/
+theorem boundedEvaluation_padding_polynomialCoefficientCoordinates
+    (P : J → MvPolynomial (W ⊕ X) K) {d : ℕ} (h : polynomialInputDegree P ≤ d) (w : W → K) :
+    boundedEvaluation X K J d
+        ((boundedCoefficientEquiv X K J d).symm
+          (boundedCoefficientPadding h (polynomialCoefficientCoordinates P w))) =
+      polynomialRealization P w := by
+  rw [boundedEvaluation_padding, polynomialCoefficientCoordinates, LinearEquiv.symm_apply_apply]
+  exact congrFun (boundedEvaluation_comp_polynomialCoefficientMap P) w
 
 /-- Raising the degree bound to any `d ≥ polynomialInputDegree P` zero-pads the finite coefficient
 coordinates, and the padded coordinates are given by the same formula: each is the evaluation at
