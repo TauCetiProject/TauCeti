@@ -17,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
@@ -108,43 +109,6 @@ theorem carlsonRF_def (x y z : ℂ) :
 theorem carlsonRC_def (x y : ℂ) : carlsonRC x y = carlsonRF x y y :=
   (rfl)
 
-/-! ### Bounds on the factors of the integrand -/
-
-/-- For `x ∈ slitPlane ∪ {0}`, the factor `(t + x)^(-1/2)` is `O(t^(-1/2))` for `t > 0`. -/
-private theorem exists_norm_cpow_le_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
-    ∃ C, ∀ t : ℝ, 0 < t → ‖((t : ℂ) + x) ^ (-(1 / 2) : ℂ)‖ ≤ C * t ^ (-(1 / 2) : ℝ) := by
-  simp only [show (-(1 / 2) : ℂ) = ((-(1 / 2) : ℝ) : ℂ) by norm_num, Complex.norm_cpow_real]
-  rcases hx with hx | hx
-  · obtain ⟨c, hc, h⟩ := TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
-    refine ⟨c ^ (-(1 / 2) : ℝ), fun t ht => ?_⟩
-    have h1 : c * t ≤ ‖(t : ℂ) + x‖ := by
-      have : c * (1 + t) ≤ ‖x + (t : ℂ)‖ := h x (Metric.mem_ball_self hc) ⟨t, ht.le⟩
-      rw [add_comm]
-      nlinarith
-    rw [← Real.mul_rpow hc.le ht.le]
-    exact Real.rpow_le_rpow_of_nonpos (by positivity) h1 (by norm_num)
-  · refine ⟨1, fun t ht => ?_⟩
-    rw [mem_singleton_iff.mp hx, add_zero, Complex.norm_real,
-      Real.norm_of_nonneg ht.le, one_mul]
-
-/-- For `y ∈ slitPlane`, the factor `(t + y)^(-1/2)` is bounded for `t ≥ 0`. -/
-private theorem exists_norm_cpow_le {y : ℂ} (hy : y ∈ slitPlane) :
-    ∃ C, ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + y) ^ (-(1 / 2) : ℂ)‖ ≤ C := by
-  simp only [show (-(1 / 2) : ℂ) = ((-(1 / 2) : ℝ) : ℂ) by norm_num, Complex.norm_cpow_real]
-  obtain ⟨c, hc, h⟩ := TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add hy
-  refine ⟨c ^ (-(1 / 2) : ℝ), fun t ht => ?_⟩
-  have h1 : c ≤ ‖(t : ℂ) + y‖ := by
-    have : c * (1 + t) ≤ ‖y + (t : ℂ)‖ := h y (Metric.mem_ball_self hc) ⟨t, ht⟩
-    rw [add_comm]
-    nlinarith
-  exact Real.rpow_le_rpow_of_nonpos hc h1 (by norm_num)
-
-/-- For `x ∈ slitPlane ∪ {0}`, the factor `(t + x)^(-1/2)` is continuous for `t > 0`. -/
-private theorem continuousOn_cpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
-    ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)) (Ioi 0) := fun _ ht =>
-  ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
-    (TauCeti.ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
-
 /-! ### Convergence -/
 
 /-- **Convergence of `R_F`.** The integrand of `carlsonRF x y z` is integrable on `(0, ∞)` when
@@ -154,13 +118,18 @@ theorem integrableOn_carlsonRF_integrand {x y z : ℂ} (hx : x ∈ slitPlane ∪
     (hy : y ∈ slitPlane) (hz : z ∈ slitPlane) :
     IntegrableOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) *
       ((t : ℂ) + z) ^ (-(1 / 2) : ℂ)) (Ioi 0) := by
-  obtain ⟨Cx, hCx⟩ := exists_norm_cpow_le_rpow hx
-  obtain ⟨Cy, hCy⟩ := exists_norm_cpow_le hy
-  obtain ⟨Cz, hCz⟩ := exists_norm_cpow_le hz
-  obtain ⟨Cy', hCy'⟩ := exists_norm_cpow_le_rpow (Or.inl hy)
-  obtain ⟨Cz', hCz'⟩ := exists_norm_cpow_le_rpow (Or.inl hz)
-  have hcont := ((continuousOn_cpow hx).mul (continuousOn_cpow (Or.inl hy))).mul
-    (continuousOn_cpow (Or.inl hz))
+  have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
+  obtain ⟨Cx, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hx hr
+  obtain ⟨Cy, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hy hr
+  obtain ⟨Cz, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hz hr
+  obtain ⟨Cy', hCy'⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow (Or.inl hy) hr
+  obtain ⟨Cz', hCz'⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow (Or.inl hz) hr
+  push_cast at hCx hCy hCz hCy' hCz'
+  have hcpow {w : ℂ} (hw : w ∈ slitPlane ∪ {0}) :
+      ContinuousOn (fun t : ℝ => ((t : ℂ) + w) ^ (-(1 / 2) : ℂ)) (Ioi 0) := fun _ ht =>
+    ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
+      (TauCeti.ofReal_add_mem_slitPlane_of_mem_union hw ht)).continuousWithinAt
+  have hcont := ((hcpow hx).mul (hcpow (Or.inl hy))).mul (hcpow (Or.inl hz))
   rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
   refine IntegrableOn.union ?_ ?_
   · -- Near `0` the last two factors are bounded and the first is `O(t^(-1/2))`.
@@ -276,7 +245,9 @@ theorem carlsonRF_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRF x x x = x ^ 
       show (-(1 / 2) : ℂ) + -(1 / 2) + -(1 / 2) = -(1 / 2) - 1 by norm_num]
     ring
   have hlim : Tendsto (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)) atTop (𝓝 0) := by
-    obtain ⟨C, hC⟩ := exists_norm_cpow_le_rpow (Or.inl hx)
+    obtain ⟨C, hC⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow (Or.inl hx)
+      (by norm_num : (-(1 / 2) : ℝ) ≤ 0)
+    push_cast at hC
     have h0 : Tendsto (fun t : ℝ => C * t ^ (-(1 / 2) : ℝ)) atTop (𝓝 0) := by
       simpa using (tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 2)).const_mul C
     rw [show (0 : ℂ) = -2 * 0 by simp]
@@ -294,24 +265,21 @@ theorem carlsonRC_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRC x x = x ^ (-
 
 /-! ### Real arguments -/
 
-/-- At a positive real base, the principal power `(t + w) ^ (-1/2)` is the real one. -/
-private theorem ofReal_add_cpow_neg_half {w t : ℝ} (hw : 0 ≤ w) (ht : 0 < t) :
-    ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) = (((t + w) ^ (-(1 / 2) : ℝ) : ℝ) : ℂ) := by
-  rw [Complex.ofReal_cpow (by linarith)]
-  push_cast
-  rfl
-
 /-- **`R_F` is positive at real arguments**: for real `x ≥ 0` and `y, z > 0`, `R_F(x, y, z)` is a
 positive real number (in the order `ComplexOrder`, so its imaginary part is `0`). By symmetry, any
 one of the three arguments may be the one that vanishes. -/
 theorem carlsonRF_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 < y) (hz : 0 < z) :
     0 < carlsonRF x y z := by
+  have hreal {w t : ℝ} (hw : 0 ≤ w) (ht : 0 < t) :
+      ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) = (((t + w) ^ (-(1 / 2) : ℝ) : ℝ) : ℂ) := by
+    rw [Complex.ofReal_cpow (by linarith)]
+    push_cast
+    rfl
   set f : ℝ → ℝ := fun t => (t + x) ^ (-(1 / 2) : ℝ) * (t + y) ^ (-(1 / 2) : ℝ) *
     (t + z) ^ (-(1 / 2) : ℝ) with hf
   have heq : EqOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) *
       ((t : ℂ) + z) ^ (-(1 / 2) : ℂ)) (fun t => ((f t : ℝ) : ℂ)) (Ioi 0) := fun t ht => by
-    simp only [hf, ofReal_add_cpow_neg_half hx ht, ofReal_add_cpow_neg_half hy.le ht,
-      ofReal_add_cpow_neg_half hz.le ht, Complex.ofReal_mul]
+    simp only [hf, hreal hx ht, hreal hy.le ht, hreal hz.le ht, Complex.ofReal_mul]
   have hint : IntegrableOn f (Ioi 0) := by
     have h := (integrableOn_carlsonRF_integrand (TauCeti.ofReal_mem_slitPlane_union_zero hx)
       (ofReal_mem_slitPlane.mpr hy)
@@ -346,7 +314,8 @@ private theorem carlsonRC_ofReal_eq_of_hasDerivAt {x y : ℝ} (hx : 0 ≤ x) (hy
       (fun t => (((√(t + x))⁻¹ * (t + y)⁻¹ : ℝ) : ℂ)) (Ioi 0) := fun t ht => by
     have ht : (0 : ℝ) < t := ht
     dsimp only
-    rw [ofReal_add_cpow_neg_half hx ht, Real.sqrt_eq_rpow, ← Real.rpow_neg (by linarith)]
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_neg (by linarith), Complex.ofReal_mul,
+      Complex.ofReal_cpow (by linarith)]
     push_cast
     rfl
   have hint : IntegrableOn (fun t : ℝ => (√(t + x))⁻¹ * (t + y)⁻¹) (Ioi 0) := by
@@ -358,19 +327,6 @@ private theorem carlsonRC_ofReal_eq_of_hasDerivAt {x y : ℝ} (hx : 0 ≤ x) (hy
   rw [carlsonRC_eq_integral, setIntegral_congr_fun measurableSet_Ioi heq,
     integral_complex_ofReal, integral_Ioi_of_hasDerivAt_of_tendsto hG0 hG hint hGlim]
   push_cast
-  ring
-
-/-- The ratio `(t + x) / (t + y)` tends to `1` as `t → ∞`. -/
-private theorem tendsto_add_div_add_atTop (x y : ℝ) :
-    Tendsto (fun t : ℝ => (t + x) / (t + y)) atTop (𝓝 1) := by
-  have h := (tendsto_const_nhds (x := x - y)).div_atTop
-    (tendsto_atTop_add_const_right atTop y tendsto_id)
-  rw [show (1 : ℝ) = 1 + 0 by simp]
-  refine (h.const_add 1).congr' ?_
-  filter_upwards [eventually_gt_atTop (-y)] with t ht
-  have : t + y ≠ 0 := by linarith
-  simp only [id]
-  field_simp
   ring
 
 /-- **Elementary `R_C`, circular case** (DLMF 19.2.19): for real `0 ≤ x < y`,
@@ -413,7 +369,7 @@ theorem carlsonRC_ofReal_eq_arccos {x y : ℝ} (hx : 0 ≤ x) (hxy : x < y) :
     field_simp
     rw [Real.sq_sqrt (by linarith), Real.sq_sqrt hty.le]
     ring
-  · have h1 := (Real.continuous_sqrt.tendsto 1).comp (tendsto_add_div_add_atTop x y)
+  · have h1 := (Real.continuous_sqrt.tendsto 1).comp (TauCeti.tendsto_add_div_add_atTop x y)
     rw [Real.sqrt_one] at h1
     simpa using ((Real.continuous_arccos.tendsto 1).comp h1).const_mul (-(2 / √(y - x)))
 
@@ -453,7 +409,7 @@ theorem carlsonRC_ofReal_eq_arcosh {x y : ℝ} (hy : 0 < y) (hyx : y < x) :
   · simp only [zero_add]
     congr 1
     field_simp
-  · have h1 := (Real.continuous_sqrt.tendsto 1).comp (tendsto_add_div_add_atTop x y)
+  · have h1 := (Real.continuous_sqrt.tendsto 1).comp (TauCeti.tendsto_add_div_add_atTop x y)
     rw [Real.sqrt_one] at h1
     have h1' : Tendsto (fun t => √((t + x) / (t + y))) atTop (𝓝[Ici 1] 1) :=
       tendsto_nhdsWithin_iff.mpr ⟨h1, by
