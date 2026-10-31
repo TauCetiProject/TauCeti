@@ -36,6 +36,10 @@ the images of the generators of the Lazard ring in a polynomial ring.
   is at most its degree.
 * `MonomialOrder.withBotDegree_sub_lt`: if `q` has degree at most that of `f ≠ 0` and the same
   coefficient of `X^(deg f)`, then `f - q` has smaller degree than `f`.
+* `MvPolynomial.monomial_mem_iff_monomial_one_mem`: a subalgebra contains `c X^a` for a unit `c`
+  if and only if it contains `X^a`.
+* `MonomialOrder.leadingTerm_mem_iff`: over a field, a subalgebra contains the leading term of a
+  nonzero polynomial if and only if it contains its leading monomial.
 * `MonomialOrder.toSyn_degree_monomial_mul_le`: `c X^a * b` has degree at most `a + deg b`.
 * `MonomialOrder.monomial_one_mul_sub_smul_eq_monomial_mul_sPolynomial`: if `b₀` has a unit
   leading coefficient, then `X^a * b` minus `lc b` times the product of `b₀` of the same degree
@@ -60,6 +64,15 @@ the images of the generators of the Lazard ring in a polynomial ring.
 public section
 
 open MvPolynomial
+
+/-- A subalgebra contains a monomial with unit coefficient if and only if it contains the
+corresponding monomial with coefficient one. -/
+theorem MvPolynomial.monomial_mem_iff_monomial_one_mem {σ R : Type*} [CommSemiring R]
+    {a : σ →₀ ℕ} {c : R} (C : Subalgebra R (MvPolynomial σ R)) (hc : IsUnit c) :
+    monomial a c ∈ C ↔ monomial a 1 ∈ C := by
+  obtain ⟨u, rfl⟩ := hc
+  rw [← mul_one (u : R), ← smul_eq_mul, ← smul_monomial, ← Units.smul_def,
+    ← Subalgebra.mem_toSubmodule, Submodule.smul_mem_iff', Subalgebra.mem_toSubmodule]
 
 namespace MonomialOrder
 
@@ -102,8 +115,7 @@ contains its leading monomial. -/
 theorem leadingTerm_mem_iff {k : Type*} [Field k] {f : MvPolynomial σ k}
     (C : Subalgebra k (MvPolynomial σ k)) (hf : f ≠ 0) :
     m.leadingTerm f ∈ C ↔ monomial (m.degree f) 1 ∈ C := by
-  rw [leadingTerm_eq_leadingCoeff_smul_monomial_one, ← Subalgebra.mem_toSubmodule,
-    Submodule.smul_mem_iff _ (m.leadingCoeff_ne_zero_iff.2 hf), Subalgebra.mem_toSubmodule]
+  rw [leadingTerm, monomial_mem_iff_monomial_one_mem C (m.leadingCoeff_ne_zero_iff.2 hf).isUnit]
 
 /-- **Cancellation of leading terms by an S-polynomial.** If `b₀` has unit leading coefficient
 `u₀` and `deg b₀ ≤ a + deg b`, the difference between `X^a * b` and `lc b` times the normalized

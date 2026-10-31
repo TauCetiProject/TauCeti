@@ -269,9 +269,8 @@ theorem monomial_mem_initialAlgebra_iff {c : k} :
     monomial a c ∈ m.initialAlgebra A ↔ a ∈ m.leadingExponents A ∨ c = 0 := by
   rcases eq_or_ne c 0 with rfl | hc
   · simp
-  have h : monomial a c = c • monomial a (1 : k) := by simp [smul_monomial]
-  rw [h, ← Subalgebra.mem_toSubmodule, Submodule.smul_mem_iff _ hc, Subalgebra.mem_toSubmodule,
-    initialAlgebra_def, monomial_one_mem_adjoin_leadingTerm_iff,
+  rw [monomial_mem_iff_monomial_one_mem _ hc.isUnit, initialAlgebra_def,
+    monomial_one_mem_adjoin_leadingTerm_iff,
     closure_image_degree_eq_leadingExponents]
   simp [hc]
 
@@ -347,8 +346,9 @@ into `σ →₀ ℕ`. -/
 theorem coe_initialAlgebraEquiv (x : AddMonoidAlgebra k (m.leadingExponents A)) :
     (m.initialAlgebraEquiv A x : MvPolynomial σ k) = AddMonoidAlgebra.mapDomain Subtype.val x := by
   rw [initialAlgebraEquiv, AlgEquiv.trans_apply, Subalgebra.equivOfEq_apply]
-  -- The underlying element of `AlgEquiv.ofInjective f _ x` is `f x` by definition.
-  exact AddMonoidAlgebra.mapDomainAlgHom_apply k k _ x
+  exact (AlgEquiv.ofInjective_apply _
+    (AddMonoidAlgebra.mapDomain_injective Subtype.val_injective) x).trans
+    (AddMonoidAlgebra.mapDomainAlgHom_apply k k _ x)
 
 @[simp]
 theorem coe_initialAlgebraEquiv_single (a : m.leadingExponents A) (c : k) :
