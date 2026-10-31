@@ -41,7 +41,6 @@ positive-semidefinite correlation matrices with zero determinant, is Lebesgue-nu
 
 ## Main declarations
 
-* `TauCeti.strictLowerTriangle` — the index type of strictly lower positions.
 * `TauCeti.correlationMatrix` — the unit-diagonal symmetric matrix with prescribed strictly lower
   entries, as a continuous affine map.
 * `TauCeti.correlationCoordinates` — the strictly lower entries of a symmetric matrix.
@@ -55,6 +54,10 @@ positive-semidefinite correlation matrices with zero determinant, is Lebesgue-nu
   `TauCeti.map_symmetricCongruenceLinearMap_diagonal_correlationLebesgue` — invariance under
   permutation and sign-change conjugation.
 * `TauCeti.posDefCorrelationRegion` — the coordinates of positive-definite correlation matrices.
+* `TauCeti.coe_correlationMatrix_partialCorrelationGram` — reconstruction of partial-correlation
+  Gram matrices from their correlation coordinates on the closed cube.
+* `TauCeti.partialCorrelationGram_mem_posDefCorrelationRegion` — partial correlations in the open
+  cube give coordinates in the positive-definite correlation region.
 * `TauCeti.volume_posDefCorrelationRegion_pos`, `TauCeti.volume_posDefCorrelationRegion_lt_top`.
 * `TauCeti.closure_posDefCorrelationRegion` — the closure is the positive-semidefinite region.
 * `TauCeti.frontier_posDefCorrelationRegion`, `TauCeti.volume_frontier_posDefCorrelationRegion` —
@@ -301,21 +304,29 @@ theorem zero_mem_posDefCorrelationRegion : (0 : strictLowerTriangle p → ℝ) �
     posDefCorrelationRegion p := by
   simpa using Matrix.PosDef.one
 
+/-- On the closed partial-correlation cube, reconstruction from correlation coordinates
+returns the original Gram matrix. -/
+@[simp]
+theorem coe_correlationMatrix_partialCorrelationGram {z : strictLowerTriangle p → ℝ}
+    (hz : ∀ ij, |z ij| ≤ 1) :
+    (correlationMatrix p (correlationCoordinates p
+      ⟨partialCorrelationGram z,
+        Matrix.isHermitian_iff_isSelfAdjoint.1 (posSemidef_partialCorrelationGram z).isHermitian⟩) :
+      Matrix (Fin p) (Fin p) ℝ) = partialCorrelationGram z := by
+  exact congrArg Subtype.val
+    (correlationMatrix_correlationCoordinates (partialCorrelationGram_apply_self hz))
+
 /-- The Gram matrix of partial correlations in the open cube lies in the positive-definite
 correlation region when expressed in strictly lower coordinates. -/
 theorem partialCorrelationGram_mem_posDefCorrelationRegion {z : strictLowerTriangle p → ℝ}
     (hz : ∀ ij, |z ij| < 1) :
-    (fun ij : strictLowerTriangle p ↦ partialCorrelationGram z ij.1.1 ij.1.2) ∈
+    correlationCoordinates p
+      ⟨partialCorrelationGram z,
+        Matrix.isHermitian_iff_isSelfAdjoint.1 (posSemidef_partialCorrelationGram z).isHermitian⟩ ∈
       posDefCorrelationRegion p := by
-  let A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
-    ⟨partialCorrelationGram z,
-      Matrix.isHermitian_iff_isSelfAdjoint.1 (posSemidef_partialCorrelationGram z).isHermitian⟩
-  have hdiag : ∀ i, (A : Matrix (Fin p) (Fin p) ℝ) i i = 1 :=
-    partialCorrelationGram_apply_self fun ij ↦ (hz ij).le
-  have hcoords := correlationMatrix_correlationCoordinates hdiag
-  rw [mem_posDefCorrelationRegion]
-  convert posDef_partialCorrelationGram hz using 1
-  exact congrArg Subtype.val hcoords
+  rw [mem_posDefCorrelationRegion,
+    coe_correlationMatrix_partialCorrelationGram (fun ij ↦ (hz ij).le)]
+  exact posDef_partialCorrelationGram hz
 
 /-- Every off-diagonal entry of a positive-definite correlation matrix lies in `(-1, 1)`: its
 `2 × 2` principal minor `1 - x (i, j) ^ 2` is positive. -/

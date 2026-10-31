@@ -214,12 +214,12 @@ theorem posSemidef_partialCorrelationGram (z : strictLowerTriangle p → ℝ) :
 /-- Coordinates strictly between `-1` and `1` give a positive-definite correlation matrix. -/
 theorem posDef_partialCorrelationGram {z : strictLowerTriangle p → ℝ}
     (hz : ∀ ij, |z ij| < 1) : (partialCorrelationGram z).PosDef := by
-  apply (posSemidef_partialCorrelationGram z).posDef_iff_det_ne_zero.2
-  rw [partialCorrelationGram, Matrix.det_mul, Matrix.det_transpose,
-    Matrix.det_of_isLowerTriangular _ (isLowerTriangular_partialCorrelationCholesky z)]
-  exact mul_ne_zero (Finset.prod_ne_zero_iff.2 fun i _ ↦
-    (partialCorrelationCholesky_diag_pos hz i).ne')
-    (Finset.prod_ne_zero_iff.2 fun i _ ↦ (partialCorrelationCholesky_diag_pos hz i).ne')
+  -- Reverse the index order to apply upper-triangular row independence.
+  simpa only [partialCorrelationGram, Matrix.conjTranspose_eq_transpose_of_trivial] using
+    Matrix.PosDef.mul_conjTranspose_self (partialCorrelationCholesky z)
+      (vecMul_injective_of_submatrix_isUpperTriangular (ι := (Fin p)ᵒᵈ)
+        id (fun _ _ hij ↦ partialCorrelationCholesky_apply_of_lt z hij)
+        (fun i ↦ (partialCorrelationCholesky_diag_pos hz i).ne'))
 
 /-- On the closed cube the Gram determinant is the product of the residual variances
 `1 - zᵢⱼ²`. This includes the empty product in dimensions zero and one. -/
