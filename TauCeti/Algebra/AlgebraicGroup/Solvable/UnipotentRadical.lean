@@ -58,6 +58,8 @@ that the common kernel of characters has only unipotent points is
   torus.
 * `TauCeti.FiniteTypeCommHopfAlgCat.groupLikeSpannedProperty_coinvariants_unipotentRadical`:
   `G ⧸ R_u(G)` is spanned by its characters.
+* `TauCeti.FiniteTypeCommHopfAlgCat.characterKernelIdeal_le_unipotentRadicalDefiningIdeal`: the
+  characters of any `G` are trivial on `R_u(G)`.
 * `TauCeti.FiniteTypeCommHopfAlgCat.mem_quotientPointsSubgroup_unipotentRadical_iff`: a rational
   point lies in `R_u(G)` exactly when it is unipotent.
 * `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_characterKernelIdeal`:
@@ -78,8 +80,41 @@ namespace TauCeti.FiniteTypeCommHopfAlgCat
 
 universe u
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
+variable {k : Type u} [Field k]
 variable (G : FiniteTypeCommHopfAlgCat.{u, u} k)
+
+/-- Every rational point of the unipotent radical `R_u(G)` is unipotent. -/
+theorem isUnipotentPoint_of_mem_quotientPointsSubgroup_unipotentRadical
+    {g : WithConv (G →ₐ[k] k)}
+    (hg : g ∈ CommHopfAlgCat.quotientPointsSubgroup G.obj (unipotentRadicalDefiningIdeal G)
+      (CommAlgCat.of k k)) :
+    HopfAlgebra.IsUnipotentPoint g := by
+  obtain ⟨q, rfl⟩ := hg
+  exact ((isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal G).smoothUnipotent
+    |>.isUnipotentPoint q).mapDomain
+    (CommHopfAlgCat.mkQuotient G.obj (unipotentRadicalDefiningIdeal G)).hom
+
+variable [IsAlgClosed k]
+
+/-- The characters of `G` are trivial on its unipotent radical, scheme-theoretically, over an
+algebraically closed field. -/
+theorem characterKernelIdeal_le_unipotentRadicalDefiningIdeal :
+    _root_.CommHopfAlgCat.characterKernelIdeal G.obj ≤ unipotentRadicalDefiningIdeal G := by
+  -- The reduced subgroup `R_u(G)` consists of unipotent points, on which characters are trivial.
+  let J := unipotentRadicalDefiningIdeal G
+  let _ : Algebra.Smooth k (FiniteTypeCommHopfAlgCat.quotient G J) :=
+    ((smoothUnipotentCommHopfAlgProperty_iff k _).mp
+      (isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal G).smoothUnipotent).1
+  let _ : IsReduced (CommHopfAlgCat.quotient G.obj J) := isReduced_of_smooth k _
+  apply HopfIdeal.le_of_quotientPointsSubgroup_le (K := k)
+  intro g hg
+  have hu := isUnipotentPoint_of_mem_quotientPointsSubgroup_unipotentRadical G hg
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  intro h hh
+  have hle := (_root_.CommHopfAlgCat.characterKernelIdeal_toIdeal_le_ker_iff G.obj g.ofConv).mpr
+    hu.apply_groupLike_eq_one
+  exact hle (HopfIdeal.mem_toIdeal.mpr hh)
+
 variable [IsReduced G] [ConnectedSpace (PrimeSpectrum G)]
 variable [Group.IsSolvable (WithConv (G →ₐ[k] k))]
 
@@ -131,30 +166,25 @@ particular the unipotent rational points form a subgroup. -/
 theorem mem_quotientPointsSubgroup_unipotentRadical_iff (g : WithConv (G →ₐ[k] k)) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup G.obj (unipotentRadicalDefiningIdeal G)
         (CommAlgCat.of k k) ↔ HopfAlgebra.IsUnipotentPoint g := by
-  constructor
-  · rintro ⟨q, rfl⟩
-    exact ((isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal G).smoothUnipotent
-      |>.isUnipotentPoint q).mapDomain
-      (CommHopfAlgCat.mkQuotient G.obj (unipotentRadicalDefiningIdeal G)).hom
-  · intro hg
-    let hR := isNormal_unipotentRadicalDefiningIdeal G
-    let _ := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
-    let Q : FiniteTypeCommHopfAlgCat.{u, u} k :=
-      ⟨CommHopfAlgCat.coinvariants hR,
-        (finiteTypeCommHopfAlgProperty_iff _).mpr hR.finiteType_coinvariants⟩
-    let ι := CommHopfAlgCat.coinvariantsι hR
-    let _ : IsReduced Q := isReduced_of_injective ι.hom.toAlgHom.toRingHom
-      (CommHopfAlgCat.hopfSubalgebraι_injective hR.isHopfSubalgebra_coinvariants)
-    -- Every rational point of the torus `G ⧸ R_u(G)` is semisimple.
-    have hss :=
-      ((DiagonalizableGroup.groupLikeSpannedProperty_iff_isCocomm_and_forall_isSemisimplePoint
-        Q).mp (groupLikeSpannedProperty_coinvariants_unipotentRadical G)).2
-    -- So the image of `g`, which is unipotent, is the identity.
-    have h1 : BialgHom.mapDomain ι.hom g = 1 :=
-      (hss _).eq_one_of_isUnipotent (hg.mapDomain ι.hom)
-    rw [BialgHom.mapDomain_apply] at h1
-    have hmem := (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff ι (CommAlgCat.of k k) g).mp h1
-    rwa [CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq hR] at hmem
+  refine ⟨isUnipotentPoint_of_mem_quotientPointsSubgroup_unipotentRadical G, fun hg ↦ ?_⟩
+  let hR := isNormal_unipotentRadicalDefiningIdeal G
+  let _ := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
+  let Q : FiniteTypeCommHopfAlgCat.{u, u} k :=
+    ⟨CommHopfAlgCat.coinvariants hR,
+      (finiteTypeCommHopfAlgProperty_iff _).mpr hR.finiteType_coinvariants⟩
+  let ι := CommHopfAlgCat.coinvariantsι hR
+  let _ : IsReduced Q := isReduced_of_injective ι.hom.toAlgHom.toRingHom
+    (CommHopfAlgCat.hopfSubalgebraι_injective hR.isHopfSubalgebra_coinvariants)
+  -- Every rational point of the torus `G ⧸ R_u(G)` is semisimple.
+  have hss :=
+    ((DiagonalizableGroup.groupLikeSpannedProperty_iff_isCocomm_and_forall_isSemisimplePoint
+      Q).mp (groupLikeSpannedProperty_coinvariants_unipotentRadical G)).2
+  -- So the image of `g`, which is unipotent, is the identity.
+  have h1 : BialgHom.mapDomain ι.hom g = 1 :=
+    (hss _).eq_one_of_isUnipotent (hg.mapDomain ι.hom)
+  rw [BialgHom.mapDomain_apply] at h1
+  have hmem := (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff ι (CommAlgCat.of k k) g).mp h1
+  rwa [CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq hR] at hmem
 
 /-- **The unipotent radical of a connected solvable group is the common kernel of its
 characters**, scheme-theoretically, over an algebraically closed field and in every
@@ -190,19 +220,6 @@ theorem unipotentRadicalDefiningIdeal_eq_characterKernelIdeal :
     rw [← CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq hR, ← HopfIdeal.toIdeal_le_toIdeal,
       ← CommHopfAlgCat.mkQuotient_ker G.obj C]
     exact (CommHopfAlgCat.kernelHopfIdeal_toIdeal_le_ker_iff ι φ).mpr hcomp
-  · -- The reduced subgroup `R_u(G)` consists of unipotent points, on which characters are trivial.
-    let J := unipotentRadicalDefiningIdeal G
-    let _ : Algebra.Smooth k (FiniteTypeCommHopfAlgCat.quotient G J) :=
-      ((smoothUnipotentCommHopfAlgProperty_iff k _).mp
-        (isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal G).smoothUnipotent).1
-    let _ : IsReduced (CommHopfAlgCat.quotient G.obj J) := isReduced_of_smooth k _
-    apply HopfIdeal.le_of_quotientPointsSubgroup_le (K := k)
-    intro g hg
-    have hu := (mem_quotientPointsSubgroup_unipotentRadical_iff G g).mp hg
-    rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-    intro h hh
-    have hle := (_root_.CommHopfAlgCat.characterKernelIdeal_toIdeal_le_ker_iff G.obj g.ofConv).mpr
-      hu.apply_groupLike_eq_one
-    exact hle (HopfIdeal.mem_toIdeal.mpr hh)
+  · exact characterKernelIdeal_le_unipotentRadicalDefiningIdeal G
 
 end TauCeti.FiniteTypeCommHopfAlgCat
