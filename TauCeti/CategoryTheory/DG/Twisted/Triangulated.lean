@@ -101,6 +101,13 @@ theorem dgDifferential_coneHomOfHomotopy_dgId_zero :
   dgDifferential_coneHomOfHomotopy_zero hu hw (dgDifferential_dgId R P) hv
     (by rw [huv, dgId_dgComp])
 
+/-- The morphism of cones `cone w ⟶ cone v` induced by `u` and the identity of `S`, for
+`w = u ≫ v`, is closed. -/
+theorem dgDifferential_coneHomOfHomotopy_zero_dgId :
+    dgDifferential R 0 (coneHomOfHomotopy hw hv u (dgId R S) 0) = 0 :=
+  dgDifferential_coneHomOfHomotopy_zero hw hv hu (dgDifferential_dgId R S)
+    (by rw [dgComp_dgId, huv])
+
 omit huv in
 /-- The composite `cone u ⟶ cone w ⟶ cone v` of the morphisms of cones induced by `(𝟙 P, v)` and
 `(u, 𝟙 S)` is the projection onto `Q` followed by `v` and the inclusion of `S`, plus the projection
@@ -217,8 +224,7 @@ theorem dgDifferential_coneCompInv : dgDifferential R 0 (coneCompInv hu hv hw hu
       dgMap_dgComp_fromShift_assoc, dgMap_dgComp_fromShift_assoc]
   simp -proj only [coneCompInv, map_add, dgDifferential_dgComp, dgDifferential_extensionFst,
     dgDifferential_extensionSnd, dgDifferential_extensionInr,
-    dgDifferential_coneHomOfHomotopy_zero hw hv hu (dgDifferential_dgId R S)
-      (by rw [dgComp_dgId, huv]),
+    dgDifferential_coneHomOfHomotopy_zero_dgId hu hv hw huv,
     ← EnrichedFunctor.dgMap_dgDifferential, map_neg, EnrichedFunctor.dgMap_dgComp,
     zero_dgComp, dgComp_zero, smul_zero, add_zero, zero_add, Int.negOnePow_zero, one_smul,
     neg_dgComp, coneMorphism_def, dgMap_fromShift_self]
@@ -345,27 +351,32 @@ private noncomputable def coneCompHomotopy :
 
 /-- The comparison morphism `cone (cone u ⟶ cone w) ⟶ cone v` followed by its inverse, through
 the summands `S` and `P⟦1⟧` of `cone w` and `Q⟦1⟧` of `(cone u)⟦1⟧`. -/
-private theorem dgComp_coneCompInv_coneCompHom
-    (hm₁ : dgDifferential R 0 (coneHomOfHomotopy hu hw (dgId R P) v 0) = 0) :
+private theorem dgComp_coneCompInv_coneCompHom :
     dgComp R (coneCompInv hu hv hw huv) (coneCompHom hu hv hw huv) (add_zero 0) =
-      dgComp R (extensionFst R (dgDifferential_coneMorphism hm₁))
+      dgComp R (extensionFst R (dgDifferential_coneMorphism
+            (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv)))
           (dgComp R (extensionFst R (dgDifferential_coneMorphism hw))
             (dgComp R (extensionInl R (dgDifferential_coneMorphism hw))
-              (extensionInl R (dgDifferential_coneMorphism hm₁)) (add_zero 0)) (add_zero 0))
-          (add_zero 0) +
-        dgComp R (extensionFst R (dgDifferential_coneMorphism hm₁))
+              (extensionInl R (dgDifferential_coneMorphism
+                (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv))) (add_zero 0))
+            (add_zero 0)) (add_zero 0) +
+        dgComp R (extensionFst R (dgDifferential_coneMorphism
+            (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv)))
           (dgComp R (extensionSnd R (dgDifferential_coneMorphism hw))
             (dgComp R ((shiftFunctor R 1).dgMap 0 u)
               (dgComp R ((shiftFunctor R 1).dgMap 0
                   (extensionInl R (dgDifferential_coneMorphism hu)))
-                (extensionInr R (dgDifferential_coneMorphism hm₁)) (add_zero 0)) (add_zero 0))
-            (add_zero 0)) (add_zero 0) +
-        dgComp R (extensionSnd R (dgDifferential_coneMorphism hm₁))
+                (extensionInr R (dgDifferential_coneMorphism
+                  (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv))) (add_zero 0))
+              (add_zero 0)) (add_zero 0)) (add_zero 0) +
+        dgComp R (extensionSnd R (dgDifferential_coneMorphism
+            (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv)))
           (dgComp R ((shiftFunctor R 1).dgMap 0 (extensionFst R (dgDifferential_coneMorphism hu)))
             (dgComp R ((shiftFunctor R 1).dgMap 0
                 (extensionInl R (dgDifferential_coneMorphism hu)))
-              (extensionInr R (dgDifferential_coneMorphism hm₁)) (add_zero 0)) (add_zero 0))
-          (add_zero 0) := by
+              (extensionInr R (dgDifferential_coneMorphism
+                (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv))) (add_zero 0))
+            (add_zero 0)) (add_zero 0) := by
   simp -proj only [coneCompHom, coneCompInv, add_dgComp, dgComp_add,
     dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
     dgComp_coneHomOfHomotopy_zero_extensionFst_assoc,
@@ -472,7 +483,7 @@ private theorem dgDifferential_coneCompHomotopy :
     ← EnrichedFunctor.dgMap_dgDifferential, EnrichedFunctor.dgMap_dgComp, zero_dgComp,
     zero_add, Int.negOnePow_zero, one_smul, neg_dgComp, coneMorphism_def, dgMap_fromShift_self,
     units_smul_dgComp, dgComp_units_smul, dgComp_add, h₁, h₂, h₃,
-    dgComp_coneCompInv_coneCompHom hu hv hw huv hm₁,
+    dgComp_coneCompInv_coneCompHom hu hv hw huv,
     dgId_cone_coneHomOfHomotopy_dgId_zero hu hw hm₁]
   simp only [mul_one, Int.negOnePow_neg, Int.negOnePow_one, Units.neg_smul, one_smul, neg_neg,
     neg_add]
@@ -520,8 +531,7 @@ noncomputable def coneCompTriangle :
     (homOf R (coneHomOfHomotopy hu hw (dgId R P) v 0)
       ((mem_dgCycles R).mpr (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv)))
     (homOf R (coneHomOfHomotopy hw hv u (dgId R S) 0)
-      ((mem_dgCycles R).mpr (dgDifferential_coneHomOfHomotopy_zero hw hv hu
-        (dgDifferential_dgId R S) (by rw [dgComp_dgId, huv]))))
+      ((mem_dgCycles R).mpr (dgDifferential_coneHomOfHomotopy_zero_dgId hu hv hw huv)))
     (homOf R (extensionSnd R (dgDifferential_coneMorphism hv))
         ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _)) ≫
       (homOf R (extensionInl R (dgDifferential_coneMorphism hu))
@@ -551,8 +561,7 @@ theorem coneCompTriangle_mor₁ :
 @[simp]
 theorem coneCompTriangle_mor₂ :
     (coneCompTriangle hu hv hw huv).mor₂ = homOf R (coneHomOfHomotopy hw hv u (dgId R S) 0)
-      ((mem_dgCycles R).mpr (dgDifferential_coneHomOfHomotopy_zero hw hv hu
-        (dgDifferential_dgId R S) (by rw [dgComp_dgId, huv]))) :=
+      ((mem_dgCycles R).mpr (dgDifferential_coneHomOfHomotopy_zero_dgId hu hv hw huv)) :=
   (rfl)
 
 @[simp]
@@ -578,8 +587,7 @@ theorem coneCompTriangle_mem_distinguishedTriangles :
   -- rewritten inside the implicit objects of the composites.
   · -- The second morphism is the inclusion of `cone w` followed by the inverse comparison.
     have h : homOf R (coneHomOfHomotopy hw hv u (dgId R S) 0)
-          ((mem_dgCycles R).mpr (dgDifferential_coneHomOfHomotopy_zero hw hv hu
-            (dgDifferential_dgId R S) (by rw [dgComp_dgId, huv]))) ≫
+          ((mem_dgCycles R).mpr (dgDifferential_coneHomOfHomotopy_zero_dgId hu hv hw huv)) ≫
           (coneCompIso hu hv hw huv).hom =
         homOf R (extensionInl R (dgDifferential_coneMorphism
           (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv)))
