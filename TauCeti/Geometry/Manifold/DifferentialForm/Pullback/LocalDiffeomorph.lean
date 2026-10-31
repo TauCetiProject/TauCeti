@@ -25,9 +25,10 @@ this gives `IsLocalDiffeomorph.isSmoothForm_mpullback_iff`, and, since pullback 
 exterior derivative, a smooth form is closed exactly when its pullback is
 (`IsLocalDiffeomorph.isClosed_mpullback_iff`).
 
-These facts are what let forms on a covering space that are invariant under the deck group
-descend to the base. The descent `TauCeti.RoughForm.descendAlong` reads a form at a chosen
-preimage through the inverse of the derivative of `f` there. Given a family of self-maps of the
+These facts are what let forms on a covering space whose deck group acts transitively on each
+fibre descend to the base when they are invariant under the deck group. The descent
+`TauCeti.RoughForm.descendAlong` reads a form at a chosen preimage through the inverse of the
+derivative of `f` there. Given a family of self-maps of the
 source lying over `f` and transitive on its fibres, invariance under the family makes the choice
 of preimage irrelevant, so the descent pulls back to the form
 (`IsLocalDiffeomorph.mpullback_descendAlong`). Hence a form is a pullback along `f` exactly
@@ -152,7 +153,8 @@ theorem IsLocalDiffeomorph.mpullback_descendAlong {ι : Type*} (hf : IsLocalDiff
 `n ≠ 0`, and let `σ` be a family of differentiable self-maps of `M` over `f` (`f ∘ σ i = f`) that
 is transitive on the fibres of `f`: two points with the same image are equal or are related by
 some `σ i`. Then a form on `M` is the pullback of a form on `M'` exactly when it is invariant
-under every `σ i`. For a covering map, the `σ i` are deck transformations. -/
+under every `σ i`. For a covering map whose deck transformations act transitively on each fibre,
+one can take the `σ i` to be the deck transformations. -/
 theorem IsLocalDiffeomorph.exists_mpullback_eq_iff {ι : Type*} (hf : IsLocalDiffeomorph I I' n f)
     (hn : n ≠ 0) {σ : ι → M → M} (hσ : ∀ i, MDifferentiable I I (σ i))
     (hfσ : ∀ i, f ∘ σ i = f) (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y)
