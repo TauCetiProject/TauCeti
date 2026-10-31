@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.FiniteCover
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
+public import TauCeti.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 import Mathlib.AlgebraicGeometry.Modules.Tilde
 
@@ -49,9 +50,7 @@ theorem subsingleton_cohomology_of_card_le_of_isAffineHom_to_proj
     (hcov : ⨆ i ∈ s, Proj.basicOpen 𝒜 (a i) = ⊤)
     (F : X.Modules) [F.IsQuasicoherent] (q : ℕ) (hq : s.card ≤ q) :
     Subsingleton (Cohomology F q) := by
-  have : X.IsSeparated := by
-    rw [Scheme.isSeparated_iff, ← terminal.comp_from f]
-    infer_instance
+  have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated f
   refine Modules.subsingleton_cohomology_of_isAffineOpen_of_card_le F hs
     (fun i ↦ f ⁻¹ᵁ Proj.basicOpen 𝒜 (a i)) (fun i hi ↦ ?_) ?_ q hq
   · obtain ⟨m, hm, hai⟩ := ha i hi
