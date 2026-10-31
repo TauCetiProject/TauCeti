@@ -85,9 +85,9 @@ theorem range_prependWord (w : List α) : Set.range w.prependWord = w.wordCylind
 /-! ### Prepending a word
 
 `Stream' α` is by definition `ℕ → α`, and `Stream'.get s n` is by definition `s n`, so a sequence
-`x : ℕ → α` is a stream and `w.prependWord x` is the stream `w ++ₛ x`. The next three lemmas
-record this identification; the lemmas after them reach Mathlib's `Stream'` API only through
-these three. -/
+`x : ℕ → α` is a stream and `w.prependWord x` is the stream `w ++ₛ x`. The next two lemmas,
+together with the equation lemma `Stream'.get.eq_1 : s.get n = s n`, record this identification;
+the lemmas after them reach Mathlib's `Stream'` API only through these. -/
 
 theorem prependWord_eq_appendStream' (w : List α) (x : ℕ → α) : w.prependWord x = w ++ₛ x :=
   (rfl)
@@ -95,10 +95,6 @@ theorem prependWord_eq_appendStream' (w : List α) (x : ℕ → α) : w.prependW
 theorem prependWord_apply_eq_get (w : List α) (x : ℕ → α) (n : ℕ) :
     w.prependWord x n = (w ++ₛ x).get n :=
   (rfl)
-
-/-- `Stream'.get` evaluates a sequence `ℕ → α`, viewed as a stream. -/
-private theorem stream_get_eq (x : ℕ → α) (n : ℕ) : Stream'.get x n = x n :=
-  rfl
 
 @[simp]
 theorem prependWord_apply_of_lt (x : ℕ → α) (h : n < w.length) : w.prependWord x n = w[n] :=
@@ -108,7 +104,7 @@ theorem prependWord_apply_of_lt (x : ℕ → α) (h : n < w.length) : w.prependW
 theorem prependWord_length_add (w : List α) (x : ℕ → α) (n : ℕ) :
     w.prependWord x (w.length + n) = x n :=
   ((prependWord_apply_eq_get w x _).trans (Stream'.get_append_right _ _ _)).trans
-    (stream_get_eq x n)
+    (Stream'.get.eq_1 x n)
 
 theorem prependWord_apply_of_length_le (x : ℕ → α) (h : w.length ≤ n) :
     w.prependWord x n = x (n - w.length) := by
