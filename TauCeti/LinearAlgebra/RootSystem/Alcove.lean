@@ -48,6 +48,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 ## Main definitions
 
 * `RootPairing.fundamentalAlcove`: the open fundamental alcove of a base.
+* `RootPairing.closedFundamentalAlcove`: the closed fundamental alcove, cut out by the
+  non-strict inequalities.
 
 ## Main results
 
@@ -62,6 +64,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.mem_fundamentalAlcove_iff_of_mem`: **the fundamental alcove is a cell of the affine
   root-hyperplane arrangement**: a point lies in it exactly when it lies on no affine root
   hyperplane and on the same side as a given point of the alcove of each of them.
+* `RootPairing.mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove`: the fundamental alcove is
+  the part of the closed fundamental alcove lying on no affine root hyperplane.
 * `RootPairing.convex_fundamentalAlcove`: the fundamental alcove is convex.
 * `RootPairing.fundamentalAlcove_nonempty`: over a linearly ordered field the fundamental alcove
   is nonempty.
@@ -110,6 +114,26 @@ the coweight space at which every simple root is positive. -/
 lemma fundamentalAlcove_subset_openDominantChamber :
     fundamentalAlcove P b ⊆ openDominantChamber P.flip b.flip := fun x hx ↦
   (mem_openDominantChamber P.flip b.flip x).mpr fun i hi ↦ by simpa using hx.1 i (by simpa using hi)
+
+/-- The **closed fundamental alcove** of a base `b`: the points of the coweight space at which every
+simple root is nonnegative and the highest root `θ = b.highestRoot` is at most `1`. For a real root
+system it is the closure of `RootPairing.fundamentalAlcove`. Over an archimedean ring the affine
+Weyl group carries every point into it
+(`RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove`). -/
+def closedFundamentalAlcove : Set N :=
+  {x | (∀ i ∈ b.support, 0 ≤ P.root' i x) ∧ P.root' b.highestRoot x ≤ 1}
+
+/-- Membership in the closed fundamental alcove. -/
+@[simp]
+lemma mem_closedFundamentalAlcove {x : N} :
+    x ∈ closedFundamentalAlcove P b ↔
+      (∀ i ∈ b.support, 0 ≤ P.root' i x) ∧ P.root' b.highestRoot x ≤ 1 :=
+  Iff.rfl
+
+/-- The fundamental alcove lies in the closed fundamental alcove. -/
+lemma fundamentalAlcove_subset_closedFundamentalAlcove :
+    fundamentalAlcove P b ⊆ closedFundamentalAlcove P b := fun _ hx ↦
+  ⟨fun i hi ↦ (hx.1 i hi).le, hx.2.le⟩
 
 end Definition
 
@@ -193,6 +217,16 @@ theorem mem_fundamentalAlcove_iff_of_mem (hx : x ∈ fundamentalAlcove P b) :
     · obtain ⟨h₁, h₂⟩ := h b.highestRoot 1
       push_cast at h₁ h₂
       exact lt_of_le_of_ne (not_lt.mp fun h' ↦ hx.2.not_gt (h₁.mp h')) h₂
+
+/-- **The fundamental alcove is the part of the closed fundamental alcove lying on no affine root
+hyperplane.** -/
+theorem mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove :
+    x ∈ fundamentalAlcove P b ↔
+      x ∈ closedFundamentalAlcove P b ∧ ∀ j (k : ℤ), P.root' j x ≠ k := by
+  refine ⟨fun hx ↦ ⟨fundamentalAlcove_subset_closedFundamentalAlcove P b hx,
+    root'_ne_intCast_of_mem_fundamentalAlcove hx⟩, fun ⟨hx, h⟩ ↦ ⟨fun i hi ↦ ?_, ?_⟩⟩
+  · exact (hx.1 i hi).lt_of_ne' (by simpa using h i 0)
+  · exact hx.2.lt_of_ne (by simpa using h b.highestRoot 1)
 
 end Alcove
 
