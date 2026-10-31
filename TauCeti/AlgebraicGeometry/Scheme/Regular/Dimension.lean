@@ -23,10 +23,10 @@ dimension is not étale-local, so the dimension condition is imposed on every no
 non-emptiness is required separately.
 
 The point of this formulation is that it is invariant under étale surjective morphisms
-(`TauCeti.AlgebraicGeometry.isRegularOfDim_iff_of_etale_of_surjective`). An étale morphism
+(`AlgebraicGeometry.Scheme.Hom.isRegularOfDim_iff_of_etale_of_surjective`). An étale morphism
 `f : X ⟶ Y` preserves and reflects regularity of local rings, and preserves the Krull dimension of
-Noetherian local rings (`TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_etale`,
-`TauCeti.AlgebraicGeometry.ringKrullDim_stalk_eq_of_etale`). The Krull dimension of an open
+Noetherian local rings (`AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_etale`,
+`AlgebraicGeometry.Scheme.Hom.ringKrullDim_stalk_eq_of_etale`). The Krull dimension of an open
 subscheme `U` is the supremum of the Krull dimensions of the local rings at the points of `U`
 (`TauCeti.AlgebraicGeometry.topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk`). Since `f` is
 open, every nonempty open of `X` maps onto a nonempty open of `Y` with the same local dimensions,
@@ -42,7 +42,7 @@ and when `f` is surjective every nonempty open of `Y` is the image of its nonemp
   to a scheme regular of dimension `d` is regular of dimension `d`.
 * `TauCeti.AlgebraicGeometry.IsRegularOfDim.of_etale_of_surjective`: the target of an étale
   surjective morphism from a scheme regular of dimension `d` is regular of dimension `d`.
-* `TauCeti.AlgebraicGeometry.isRegularOfDim_iff_of_etale_of_surjective`: the two combined.
+* `AlgebraicGeometry.Scheme.Hom.isRegularOfDim_iff_of_etale_of_surjective`: the two combined.
 
 ## References
 
@@ -54,9 +54,9 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry
-
 universe u
+
+namespace TauCeti.AlgebraicGeometry
 
 /-- A scheme `X` is **regular of dimension `d`** when it is nonempty, all of its local rings are
 regular, and every nonempty open subscheme of `X` has Krull dimension `d`. This is the notion of
@@ -81,27 +81,27 @@ theorem IsRegularOfDim.iSup_ringKrullDim_stalk_eq (h : IsRegularOfDim X d) (U : 
 
 /-- **Regularity of dimension `d` ascends along étale morphisms.** If `f : X ⟶ Y` is étale, `X`
 is nonempty and `Y` is regular of dimension `d`, then `X` is regular of dimension `d`. -/
-theorem IsRegularOfDim.of_etale (f : X ⟶ Y) [Etale f] [Nonempty X] (h : IsRegularOfDim Y d) :
+theorem IsRegularOfDim.of_etale (h : IsRegularOfDim Y d) (f : X ⟶ Y) [Etale f] [Nonempty X] :
     IsRegularOfDim X d where
   nonempty := ‹_›
   isRegularLocalRing_stalk x :=
-    (isRegularLocalRing_stalk_iff_of_etale f x).mp (h.isRegularLocalRing_stalk (f x))
+    (f.isRegularLocalRing_stalk_iff_of_etale x).mp (h.isRegularLocalRing_stalk (f x))
   topologicalKrullDim_eq U hU := by
     -- the image of `U` is a nonempty open of `Y` with the same local dimensions as `U`
     rw [topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk,
-      iSup_ringKrullDim_stalk_eq_of_etale f U ⟨f '' U, f.isOpenMap _ U.isOpen⟩ rfl fun x ↦ ?_]
+      f.iSup_ringKrullDim_stalk_eq_of_etale U ⟨f '' U, f.isOpenMap _ U.isOpen⟩ rfl fun x ↦ ?_]
     · exact h.iSup_ringKrullDim_stalk_eq _ (hU.image _)
     · have := h.isRegularLocalRing_stalk (f x)
-      exact (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mp inferInstance
+      exact (f.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType x).mp inferInstance
 
 /-- **Regularity of dimension `d` descends along étale surjective morphisms.** If `f : X ⟶ Y` is
 étale and surjective and `X` is regular of dimension `d`, then `Y` is regular of dimension `d`. -/
-theorem IsRegularOfDim.of_etale_of_surjective (f : X ⟶ Y) [Etale f] [Surjective f]
-    (h : IsRegularOfDim X d) : IsRegularOfDim Y d where
+theorem IsRegularOfDim.of_etale_of_surjective (h : IsRegularOfDim X d) (f : X ⟶ Y) [Etale f]
+    [Surjective f] : IsRegularOfDim Y d where
   nonempty := h.nonempty.map f
   isRegularLocalRing_stalk y := by
     obtain ⟨x, rfl⟩ := f.surjective y
-    exact (isRegularLocalRing_stalk_iff_of_etale f x).mpr (h.isRegularLocalRing_stalk x)
+    exact (f.isRegularLocalRing_stalk_iff_of_etale x).mpr (h.isRegularLocalRing_stalk x)
   topologicalKrullDim_eq V hV := by
     -- the preimage of `V` is a nonempty open of `X` with the same local dimensions as `V`
     have hV' : ((f ⁻¹ᵁ V : X.Opens) : Set X).Nonempty := by
@@ -109,16 +109,24 @@ theorem IsRegularOfDim.of_etale_of_surjective (f : X ⟶ Y) [Etale f] [Surjectiv
       obtain ⟨x, rfl⟩ := f.surjective y
       exact ⟨x, hy⟩
     rw [topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk,
-      ← iSup_ringKrullDim_stalk_eq_of_etale f (f ⁻¹ᵁ V) V (Set.image_preimage_eq _ f.surjective)
+      ← f.iSup_ringKrullDim_stalk_eq_of_etale (f ⁻¹ᵁ V) V (Set.image_preimage_eq _ f.surjective)
         fun x ↦ have := h.isRegularLocalRing_stalk x; inferInstance]
     exact h.iSup_ringKrullDim_stalk_eq _ hV'
+
+end TauCeti.AlgebraicGeometry
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open TauCeti.AlgebraicGeometry
+
+variable {X Y : Scheme.{u}} {d : ℕ}
 
 /-- **Regularity of dimension `d` is invariant under étale surjective morphisms**: if
 `f : X ⟶ Y` is étale and surjective, then `X` is regular of dimension `d` exactly when `Y` is. -/
 theorem isRegularOfDim_iff_of_etale_of_surjective (f : X ⟶ Y) [Etale f] [Surjective f] :
     IsRegularOfDim X d ↔ IsRegularOfDim Y d := by
-  refine ⟨IsRegularOfDim.of_etale_of_surjective f, fun h ↦ ?_⟩
+  refine ⟨fun h ↦ h.of_etale_of_surjective f, fun h ↦ ?_⟩
   have : Nonempty X := h.nonempty.map fun y ↦ (f.surjective y).choose
   exact h.of_etale f
 
-end TauCeti.AlgebraicGeometry
+end AlgebraicGeometry.Scheme.Hom

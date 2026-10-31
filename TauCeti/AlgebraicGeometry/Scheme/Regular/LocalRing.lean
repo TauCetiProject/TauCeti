@@ -22,8 +22,8 @@ rings, so they preserve and reflect their regularity.
 More generally, an étale morphism `f : X ⟶ Y` induces at each point `x` a flat local
 homomorphism `𝒪_{Y, f x} ⟶ 𝒪_{X, x}` under which the maximal ideal of the source generates the
 maximal ideal of the target, and which preserves and reflects Noetherianity
-(`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_formallyUnramified`,
-`TauCeti.AlgebraicGeometry.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`). Between
+(`AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_stalkMap_of_formallyUnramified`,
+`AlgebraicGeometry.Scheme.Hom.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`). Between
 Noetherian local rings such a homomorphism both preserves and reflects regularity
 (`TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq`).
 
@@ -34,18 +34,18 @@ Noetherian local rings such a homomorphism both preserves and reflects regularit
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec`
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk_Spec`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_isOpenImmersion`
-* `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_etale`
+* `AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_etale`
 -/
 
 public section
 
 open CategoryTheory AlgebraicGeometry
 
+universe u
+
 namespace TauCeti
 
 namespace AlgebraicGeometry
-
-universe u
 
 /-- If the sections over an affine open `U` form a regular ring, the local rings at the points of
 `U` are regular. -/
@@ -100,7 +100,11 @@ theorem isRegularLocalRing_stalk_iff_of_isOpenImmersion {X Y : Scheme.{u}} (f : 
   let e := (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv
   ⟨fun _ ↦ .of_ringEquiv e, fun _ ↦ .of_ringEquiv e.symm⟩
 
-section Etale
+end AlgebraicGeometry
+
+end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Etale f] (x : X)
 
@@ -118,8 +122,4 @@ theorem isRegularLocalRing_stalk_iff_of_etale :
   · have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mpr inferInstance
     exact (TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq h).mp hx
 
-end Etale
-
-end AlgebraicGeometry
-
-end TauCeti
+end AlgebraicGeometry.Scheme.Hom

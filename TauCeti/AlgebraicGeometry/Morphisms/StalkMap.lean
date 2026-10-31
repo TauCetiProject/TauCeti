@@ -68,15 +68,15 @@ implies quasi-finiteness of `Γ(X, V)` over `Γ(Y, U)` at the prime of `x` for a
 `Algebra.QuasiFiniteAt R q`.
 
 Viewing the stalk map as an algebra `𝒪_{Y, f x} → 𝒪_{X, x}`, it is local
-(`TauCeti.AlgebraicGeometry.isLocalHom_stalkMap_toAlgebra`), essentially of finite type when `f`
-is locally of finite type (`TauCeti.AlgebraicGeometry.essFiniteType_stalkMap_toAlgebra`), and
+(`AlgebraicGeometry.Scheme.Hom.isLocalHom_stalkMap_toAlgebra`), essentially of finite type when `f`
+is locally of finite type (`AlgebraicGeometry.Scheme.Hom.essFiniteType_stalkMap_toAlgebra`), and
 formally unramified when `f` is
-(`TauCeti.AlgebraicGeometry.formallyUnramified_stalkMap_toAlgebra`). When `f` is moreover flat,
+(`AlgebraicGeometry.Scheme.Hom.formallyUnramified_stalkMap_toAlgebra`). When `f` is moreover flat,
 the stalk map is faithfully flat, so `𝒪_{Y, f x}` is Noetherian exactly when `𝒪_{X, x}` is
-(`TauCeti.AlgebraicGeometry.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`).
+(`AlgebraicGeometry.Scheme.Hom.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`).
 For `f` formally unramified and locally of finite type, the maximal ideal of `𝒪_{Y, f x}`
 generates the maximal ideal of `𝒪_{X, x}` along the stalk map
-(`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_formallyUnramified`).
+(`AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_stalkMap_of_formallyUnramified`).
 
 The passage from the stalk to a neighbourhood follows Mathlib's
 `AlgebraicGeometry.exists_smooth_of_formallySmooth_stalk`: Mathlib's
@@ -374,15 +374,11 @@ theorem exists_appLE_quasiFiniteAt_iff (f : X ⟶ Y) (x : X) :
   exact ⟨U, hU, V, hV, hVU, hxV, (HasRingHomProperty.resLE_iff @LocallyOfFiniteType hU hV hVU).mp
     this, hqf.quasiFiniteAt hV hU hVU hxV⟩
 
-end Scheme.Hom
+section StalkAlgebra
 
-end AlgebraicGeometry
+open IsLocalRing
 
-open AlgebraicGeometry IsLocalRing
-
-namespace TauCeti.AlgebraicGeometry
-
-variable {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
+variable (f : X ⟶ Y) (x : X)
 
 /-- The stalk map at `x` of a morphism `f : X ⟶ Y`, as an algebra, is local. -/
 theorem isLocalHom_stalkMap_toAlgebra :
@@ -441,4 +437,8 @@ theorem map_maximalIdeal_stalkMap_of_formallyUnramified [FormallyUnramified f]
   have := formallyUnramified_stalkMap_toAlgebra f x
   exact Algebra.FormallyUnramified.map_maximalIdeal
 
-end TauCeti.AlgebraicGeometry
+end StalkAlgebra
+
+end Scheme.Hom
+
+end AlgebraicGeometry

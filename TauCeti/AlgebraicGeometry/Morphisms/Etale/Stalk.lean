@@ -15,29 +15,27 @@ import TauCeti.RingTheory.KrullDimension.Fiber
 An étale morphism `f : X ⟶ Y` induces at each point `x` a flat local homomorphism
 `𝒪_{Y, f x} ⟶ 𝒪_{X, x}`, essentially of finite type, under which the maximal ideal of the source
 generates the maximal ideal of the target
-(`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_formallyUnramified`). Such a
+(`AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_stalkMap_of_formallyUnramified`). Such a
 homomorphism is faithfully flat, so Noetherianity descends along it, and it ascends because the
 target is a localization of a finitely generated algebra
-(`TauCeti.AlgebraicGeometry.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`). Between
+(`AlgebraicGeometry.Scheme.Hom.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`). Between
 Noetherian local rings it preserves the Krull dimension
 (`TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`). Consequently, an open of `X` with
 Noetherian local rings and its image in `Y` have the same supremum of local dimensions.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.ringKrullDim_stalk_eq_of_etale`
-* `TauCeti.AlgebraicGeometry.iSup_ringKrullDim_stalk_eq_of_etale`
+* `AlgebraicGeometry.Scheme.Hom.ringKrullDim_stalk_eq_of_etale`
+* `AlgebraicGeometry.Scheme.Hom.iSup_ringKrullDim_stalk_eq_of_etale`
 -/
 
 public section
 
 open CategoryTheory AlgebraicGeometry IsLocalRing
 
-namespace TauCeti
-
-namespace AlgebraicGeometry
-
 universe u
+
+namespace AlgebraicGeometry.Scheme.Hom
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
 
@@ -70,6 +68,4 @@ theorem iSup_ringKrullDim_stalk_eq_of_etale (U : X.Opens) (V : Y.Opens) (hUV : f
     rw [← hxy, ringKrullDim_stalk_eq_of_etale f x]
     exact le_iSup (fun x : U ↦ ringKrullDim (X.presheaf.stalk x)) ⟨x, hx⟩
 
-end AlgebraicGeometry
-
-end TauCeti
+end AlgebraicGeometry.Scheme.Hom

@@ -34,7 +34,7 @@ rigidifiers `δ₁`, `δ₂`, represented by `U₁` and `U₂`, the scheme `𝕄
 These projections are étale and surjective, being base changes of the representing morphisms of
 `δ₂` and of `δ₁` (`ModuliProblem.RelRepData.mem_base_of_forget_snd`), and regularity of dimension
 `d` is invariant under étale surjective morphisms
-(`TauCeti.AlgebraicGeometry.isRegularOfDim_iff_of_etale_of_surjective`).
+(`AlgebraicGeometry.Scheme.Hom.isRegularOfDim_iff_of_etale_of_surjective`).
 
 ## Main definitions
 
@@ -79,7 +79,7 @@ theorem isRegularOfDim_rep_iff_of_hom {U V : EllObj B} (a : V ⟶ U) [Etale a.ba
     MorphismProperty.of_isPullback (P := @Etale) h.flip ‹_›
   have : Surjective ((D.repIsoPullback a).hom.left ≫ pullback.fst (D.rep U).hom a.base) :=
     MorphismProperty.of_isPullback (P := @Surjective) h.flip ‹_›
-  exact isRegularOfDim_iff_of_etale_of_surjective
+  exact Scheme.Hom.isRegularOfDim_iff_of_etale_of_surjective
     ((D.repIsoPullback a).hom.left ≫ pullback.fst (D.rep U).hom a.base)
 
 /-- **Independence of the rigidifier.** Let `δ₁` and `δ₂` be moduli problems which are
