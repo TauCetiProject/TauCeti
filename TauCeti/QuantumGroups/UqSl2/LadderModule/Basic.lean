@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
 public import TauCeti.QuantumGroups.UqSl2.Commutator
+public import TauCeti.QuantumGroups.UqSl2.QuantumTrace
 public import TauCeti.QuantumGroups.UqSl2.Weights
 
 import Mathlib.Tactic
@@ -59,6 +60,8 @@ determines a unique module map from `L_m^ε` that sends `v₀` to `v`, and more 
 * `TauCeti.UqSl2.LadderModule.lift_vec_zero`: `lift` sends `v₀` to the given vector.
 * `TauCeti.UqSl2.LadderModule.lift_injective`: the map induced by a nonzero vector is injective.
 * `TauCeti.UqSl2.LadderModule.algebraMap_end_bijective`: Schur's lemma for `L_m^ε`.
+* `TauCeti.UqSl2.LadderModule.trace_rep_kInv`, `trace_rep_k`: the traces of `K⁻¹` and of `K` on
+  `L_m^ε` are both `ε [m + 1]_q`.
 * `TauCeti.UqSl2.LadderModule.nonempty_linearEquiv_iff`: `L_m^ε ≅ L_n^δ` iff `m = n` and
   `ε = δ`, at a generic parameter.
 
@@ -599,6 +602,14 @@ theorem trace_rep_kInv (hq : q - q⁻¹ ≠ 0) :
   congr 1
   refine Finset.sum_congr rfl fun j _ => ?_
   ring_nf
+
+/-- The trace of `K` on `L_m^ε` is `ε [m + 1]_q`, the same as the trace of `K⁻¹`. -/
+theorem trace_rep_k (hq : q - q⁻¹ ≠ 0) :
+    LinearMap.trace ℂ _ (rep q m ε (k q)) = ε * quantumInteger q ((m : ℤ) + 1) := by
+  have hrep (a : UqSl2 q) : Algebra.lsmul ℂ ℂ (LadderModule q m ε) a = rep q m ε a :=
+    LinearMap.ext fun x => smul_def a x
+  simpa [hrep, trace_rep_kInv hq] using trace_lsmul_k_comp_eq_trace_lsmul_kInv_comp hq
+    (LinearMap.id : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q m ε)
 
 /-- At a generic parameter, `L_m^ε` and `L_n^δ` are isomorphic exactly when `m = n` and
 `ε = δ`. -/

@@ -190,6 +190,19 @@ theorem tensorEquiv_smul (h : H) (x : Tensor R H M N) :
     tensorEquiv R H M N (h • x) =
       tensorAction R H M N h (tensorEquiv R H M N x) := (rfl)
 
+variable {R H M N} in
+/-- An element with coproduct `a ⊗ a` acts on the coproduct tensor product as the tensor product
+of its actions on the two factors. -/
+theorem tensorEquiv_smul_of_comul_eq_tmul {a : H} (ha : Coalgebra.comul (R := R) a = a ⊗ₜ[R] a)
+    (x : Tensor R H M N) :
+    tensorEquiv R H M N (a • x) =
+      TensorProduct.map (Algebra.lsmul R R M a) (Algebra.lsmul R R N a)
+        (tensorEquiv R H M N x) := by
+  rw [tensorEquiv_smul, tensorAction_apply, ha]
+  induction tensorEquiv R H M N x using TensorProduct.inductionOn with
+  | tmul m n => simp
+  | add y z hy hz => simp only [map_add, hy, hz]
+
 variable {M' N' : Type*}
 variable [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
 variable [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
