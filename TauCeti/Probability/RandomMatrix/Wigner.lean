@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
-public import Mathlib.Probability.IdentDistrib
+public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
 
 /-!
@@ -72,11 +72,13 @@ section Deterministic
 variable (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) {n : ℕ} (ω : Ω)
 
 /-- Above the diagonal the Wigner matrix has entry `ξ (i, j)/√n`. -/
+@[simp]
 theorem wignerMatrix_apply_of_lt {i j : Fin n} (h : i.val < j.val) :
     wignerMatrix ξ η n ω i j = (Real.sqrt n : ℂ)⁻¹ * ξ ⟨(i.val, j.val), h⟩ ω := by
   rw [wignerMatrix, of_apply, dite_eq_left h]
 
 /-- Below the diagonal the Wigner matrix has entry `conj (ξ (j, i))/√n`. -/
+@[simp]
 theorem wignerMatrix_apply_of_gt {i j : Fin n} (h : j.val < i.val) :
     wignerMatrix ξ η n ω i j = (Real.sqrt n : ℂ)⁻¹ * star (ξ ⟨(j.val, i.val), h⟩ ω) := by
   rw [wignerMatrix, of_apply, dite_eq_right h.not_gt, dite_eq_left h]
@@ -265,20 +267,13 @@ theorem identDistrib_wignerMatrix {Ω' : Type*} [MeasurableSpace Ω'] {P' : Meas
     (hindep' : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ' (fun i ω ↦ (η' i ω : ℂ)) k) P')
     (hξξ' : ∀ ij, IdentDistrib (ξ ij) (ξ' ij) P P') (hηη' : ∀ i, IdentDistrib (η i) (η' i) P P')
     (n : ℕ) : IdentDistrib (wignerMatrix ξ η n) (wignerMatrix ξ' η' n) P P' := by
-  have hξ ij := (hξξ' ij).aemeasurable_fst
-  have hη i := (hηη' i).aemeasurable_fst
-  have hξ' ij := (hξξ' ij).aemeasurable_snd
-  have hη' i := (hηη' i).aemeasurable_snd
+  have h (k : StrictUpper ⊕ ℕ) : IdentDistrib (Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k)
+      (Sum.elim ξ' (fun i ω ↦ (η' i ω : ℂ)) k) P P' := by
+    cases k with
+    | inl ij => exact hξξ' ij
+    | inr i => exact (hηη' i).comp Complex.measurable_ofReal
   rw [← wignerOfArray_comp, ← wignerOfArray_comp]
-  refine IdentDistrib.comp ⟨aemeasurable_pi_iff.2 (aemeasurable_array hξ hη),
-    aemeasurable_pi_iff.2 (aemeasurable_array hξ' hη'), ?_⟩ (measurable_wignerOfArray n)
-  rw [hindep.map_fun_eq_infinitePi_map₀' (aemeasurable_array hξ hη),
-    hindep'.map_fun_eq_infinitePi_map₀' (aemeasurable_array hξ' hη')]
-  congr 1
-  ext1 k
-  cases k with
-  | inl ij => exact (hξξ' ij).map_eq
-  | inr i => exact ((hηη' i).comp Complex.measurable_ofReal).map_eq
+  exact (IdentDistrib.pi h hindep hindep').comp (measurable_wignerOfArray n)
 
 end Independence
 
