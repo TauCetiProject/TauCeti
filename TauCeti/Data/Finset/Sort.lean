@@ -46,6 +46,17 @@ section LinearOrder
 
 variable {α β : Type*} [LinearOrder α] [LinearOrder β] {s : Finset α} {f : α → β}
 
+/-- Collapsing `j` onto its predecessor `i` in `s` is monotone on `s`, identifies only
+`i` and `j`, and strictly decreases the cardinality of the image of `s`. -/
+theorem collapse_adjacent_spec {i j : α} (hi : i ∈ s) (hj : j ∈ s) (hij : i < j)
+    (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) :
+    MonotoneOn (fun z => if z = j then i else z) s ∧
+      (∀ {u v}, (if u = j then i else u) = (if v = j then i else v) → u ≠ v →
+        (u = i ∨ u = j) ∧ (v = i ∨ v = j)) ∧
+      #(s.image fun z => if z = j then i else z) < #s :=
+  ⟨fun z hz w _ hzw => by grind [hadj z hz], fun huv hne => by grind,
+    card_image_le.lt_of_ne fun h => hij.ne (card_image_iff.1 h hi hj (by simp))⟩
+
 /-- For a map `f` that is monotone on `s`, listing the values of `f` on `s` in increasing order and
 replacing each value `y` by the increasing list of the points of `s` over `y` lists `s` in
 increasing order. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
@@ -231,6 +232,12 @@ subsets cut out by inequalities on the corresponding eigenvalues. -/
 noncomputable def eigenvectorSpan (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (s : Set (Fin n)) : Submodule 𝕜 E :=
   Submodule.span 𝕜 (hT.eigenvectorBasis hn '' s)
+
+/-- The selected eigenvector span is the span of the same indices in the orthonormal basis. -/
+theorem eigenvectorSpan_eq_spanIndices (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) (s : Set (Fin n)) :
+    hT.eigenvectorSpan hn s = (hT.eigenvectorBasis hn).spanIndices s := by
+  rw [eigenvectorSpan, OrthonormalBasis.spanIndices_eq_span]
 
 /-- The span of the eigenvectors at embedded indices equals their canonical eigenvector span. -/
 theorem span_range_eigenvectorBasis_apply_eq_eigenvectorSpan (hT : T.IsSymmetric)

@@ -30,7 +30,7 @@ central simple over `K`: it is the untwisted, "split" central simple algebra of 
 `Mathlib.Algebra.Central.End` covers the endomorphisms of any free module. This file supplies the
 missing half, simplicity, as the instance typeclass inference needs, so that `Module.End K V` is
 available wherever a central simple algebra is asked for, and computes the degree. The simplicity
-theorem itself is the more general `TauCeti.IsSimpleRing.moduleEnd`, for finite modules over simple
+theorem itself is the more general `IsSimpleRing.moduleEnd`, for finite modules over simple
 Artinian rings; this file promotes its field specialization to an instance.
 
 Simplicity is not reproved here. The general theorem presents an endomorphism ring as a matrix
@@ -46,7 +46,7 @@ hypothesis.
 
 * `TauCeti.IsSimpleRing.moduleEnd_of_field`: `Module.End K V` is a simple ring, for `V` a nonzero
   finite-dimensional `K`-vector space, as an instance specialization of
-  `TauCeti.IsSimpleRing.moduleEnd`.
+  `IsSimpleRing.moduleEnd`.
 * `TauCeti.Algebra.deg_moduleEnd`: the degree of `Module.End K V` is `Module.finrank K V`, for any
   finite-dimensional `V` -- nonzero or not, since the degree is defined for every algebra whose
   dimension is a square. Equivalently
@@ -79,7 +79,7 @@ variable [Nontrivial V]
 
 Finite-dimensionality cannot be dropped: on an infinite-dimensional `V` the finite-rank
 endomorphisms are a proper nonzero two-sided ideal. This is the field specialization of
-`TauCeti.IsSimpleRing.moduleEnd`. -/
+`IsSimpleRing.moduleEnd`. -/
 instance IsSimpleRing.moduleEnd_of_field : IsSimpleRing (Module.End K V) :=
   IsSimpleRing.moduleEnd
 

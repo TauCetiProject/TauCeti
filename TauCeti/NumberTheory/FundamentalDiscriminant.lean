@@ -26,6 +26,11 @@ public section
 
 namespace Int
 
+/-- The absolute value of a fundamental discriminant is a nonzero Dirichlet-character level. -/
+theorem IsFundamentalDiscr.neZero_natAbs {D : ℤ} (hD : IsFundamentalDiscr D) :
+    NeZero D.natAbs :=
+  ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+
 /-- A product of coprime fundamental discriminants is a fundamental discriminant. -/
 theorem IsFundamentalDiscr.mul {D E : ℤ} (hD : IsFundamentalDiscr D)
     (hE : IsFundamentalDiscr E) (hcop : IsCoprime D E) : IsFundamentalDiscr (D * E) := by

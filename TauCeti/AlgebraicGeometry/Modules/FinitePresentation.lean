@@ -67,13 +67,7 @@ instance isFinitePresentation_tilde [Module.FinitePresentation R M] :
   obtain ⟨s, hs, t, ht⟩ := Module.FinitePresentation.out (R := R) (M := M)
   let P := presentationTilde M (s : Set M) hs (t : Set (s →₀ R)) ht
   have : P.IsFinite := isFinite_presentationTilde M _ hs _ ht
-  let q := P.quasicoherentData
-  have : q.IsFinitePresentation := by
-    refine { isFinite_presentation := ?_ }
-    intro U
-    dsimp [q, SheafOfModules.Presentation.quasicoherentData]
-    apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
-  exact SheafOfModules.IsFinitePresentation.mk (M := tilde M) ⟨q, inferInstance⟩
+  exact P.isFinitePresentation
 
 /-- A finite global presentation on `Spec R` gives a finitely presented module of global
 sections over `R`. -/

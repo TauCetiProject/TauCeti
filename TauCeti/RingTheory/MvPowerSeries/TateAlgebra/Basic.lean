@@ -8,10 +8,12 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import Mathlib.RingTheory.MvPowerSeries.GaussNorm
+public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Data.Finsupp.MonomialOrder
 import Mathlib.SetTheory.Cardinal.Order
+import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
 # The Gauss norm on multivariate restricted power series
@@ -39,6 +41,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
+* `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound gives
+  the same Gauss-norm bound, even across different coefficient rings.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
   polyradius the norm is the largest coefficient norm, and it is attained.
@@ -73,6 +77,12 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 -/
 
 public section
+
+/-- Restricted series over a normed domain form a domain at any polyradius. -/
+instance TauCeti.instIsDomainIsRestrictedSubring {σ R : Type*}
+    [NormedRing R] [IsUltrametricDist R] [IsDomain R] (c : σ → ℝ) :
+    IsDomain (MvPowerSeries.IsRestricted.subring (R := R) c) :=
+  NoZeroDivisors.to_isDomain _
 
 namespace MvPowerSeries
 
@@ -576,6 +586,11 @@ theorem norm_algebraMap_isRestrictedSubring (r : R) :
     Subtype.ext (coe_algebraMap_isRestrictedSubring r)
   rw [h, norm_C]
 
+/-- The constant-series embedding is an isometry. -/
+theorem isometry_algebraMap_isRestrictedSubring :
+    Isometry (algebraMap R (IsRestricted.subring (R := R) c)) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_algebraMap_isRestrictedSubring
+
 end NormedCommRing
 
 section Rename
@@ -587,16 +602,8 @@ variable {σ τ R : Type*} [NormedCommRing R]
 restricted at the reindexed polyradii `c ∘ e`. -/
 theorem isRestricted_renameEquiv_iff (e : σ ≃ τ) {c : τ → ℝ} {f : MvPowerSeries σ R} :
     IsRestricted c (renameEquiv R e f) ↔ IsRestricted (c ∘ e) f := by
-  -- the weighted coefficients of `f` are those of the renamed series, reindexed along `e`
-  have h : (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * t.prod ((c ∘ e) · ^ ·)) =
-      (fun u : τ →₀ ℕ ↦ ‖coeff u (renameEquiv R e f)‖ * u.prod (c · ^ ·)) ∘
-        Finsupp.equivCongrLeft e := by
-    funext t
-    have hc : coeff (t.equivMapDomain e) (rename e f) = coeff t f := by
-      simpa [Finsupp.embDomain_eq_mapDomain, Finsupp.equivMapDomain_eq_mapDomain] using
-        coeff_embDomain_rename e.toEmbedding f t
-    simp [hc, Finsupp.prod_equivMapDomain]
-  rw [IsRestricted, IsRestricted, h, ← (Finsupp.equivCongrLeft e).injective.comap_cofinite_eq]
+  rw [IsRestricted, IsRestricted, weightedCoeff_renameEquiv,
+    ← (Finsupp.equivCongrLeft e).injective.comap_cofinite_eq]
   exact (tendsto_comap'_iff (by rw [(Finsupp.equivCongrLeft e).range_eq_univ]; exact univ_mem)).symm
 
 variable [IsUltrametricDist R]
@@ -615,6 +622,19 @@ underlying series. -/
 theorem IsRestricted.coe_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ)
     (f : IsRestricted.subring (R := R) (c ∘ e)) :
     (renameAlgEquiv e c f : MvPowerSeries τ R) = renameEquiv R e f := (rfl)
+
+/-- Reindexing positive polyradii keeps them positive. -/
+instance IsRestricted.fact_pos_comp {c : τ → ℝ} [∀ i, Fact (0 < c i)] (e : σ → τ) (i : σ) :
+    Fact (0 < (c ∘ e) i) :=
+  ⟨Fact.out (p := 0 < c (e i))⟩
+
+/-- Renaming the variables of restricted series preserves the Gauss norm. -/
+@[simp]
+theorem IsRestricted.norm_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ) [∀ i, Fact (0 < c i)]
+    (f : IsRestricted.subring (R := R) (c ∘ e)) : ‖renameAlgEquiv e c f‖ = ‖f‖ := by
+  rw [norm_eq_gaussNorm, norm_eq_gaussNorm,
+    gaussNorm, gaussNorm, coe_renameAlgEquiv, ← (Finsupp.equivCongrLeft e).iSup_comp]
+  exact congrArg iSup (weightedCoeff_renameEquiv e c (f : MvPowerSeries σ R)).symm
 
 end Rename
 
@@ -691,5 +711,23 @@ noncomputable instance instNormedAlgebraIsRestrictedSubring :
       _ ≤ ‖r‖ * ‖f‖ := mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) (norm_nonneg r)
 
 end NormedField
+
+/-- A coefficientwise norm bound gives the same Gauss-norm bound for restricted series over
+possibly different coefficient rings, at the same positive polyradii. -/
+theorem norm_le_mul_of_norm_coeff_le {σ R S : Type*}
+    [NormedRing R] [IsUltrametricDist R] [NormedRing S] [IsUltrametricDist S]
+    {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    {f : IsRestricted.subring (R := R) c} {g : IsRestricted.subring (R := S) c}
+    {K : ℝ} (hK : 0 ≤ K)
+    (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ K * ‖coeff t (g : MvPowerSeries σ S)‖) :
+    ‖f‖ ≤ K * ‖g‖ := by
+  refine (norm_le_iff (mul_nonneg hK (norm_nonneg g))).mpr fun t ↦ ?_
+  calc
+    ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+        K * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
+      mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
+    _ ≤ K * ‖g‖ := by
+      rw [mul_assoc]
+      exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hK
 
 end TauCeti.MvPowerSeries

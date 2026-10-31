@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import TauCeti.NumberTheory.LocalField.Different.Wild
+import TauCeti.NumberTheory.LocalField.MassFormula.Infinite
 
 /-!
 # Finiteness of the totally ramified extensions of given degree
@@ -23,9 +24,11 @@ weighted sum is finite exactly when `σ_K(n)` is finite. In the tame case, when 
 characteristic does not divide `n`, every weight is `1` and the weighted sum is the cardinality
 of `σ_K(n)`.
 
-Together with the mass formula, these give the forward half of Serre's finiteness dichotomy and
-the tame count `#σ_K(n) = n`. The converse half, that `σ_K(n)` is infinite when `(n : K) = 0`,
-is `TauCeti.infinite_totallyRamifiedOfDegree`.
+Together with the converse half, that `σ_K(n)` is infinite when `(n : K) = 0`
+(`TauCeti.infinite_totallyRamifiedOfDegree`), this says that `σ_K(n)` is infinite exactly when
+`K` has equal characteristic `p` with `p ∣ n` or the weighted sum is infinite. The mass formula,
+which makes the weighted sum `n`, then gives Serre's finiteness dichotomy; it also gives the tame
+count `#σ_K(n) = n`.
 
 ## Main results
 
@@ -38,6 +41,9 @@ is `TauCeti.infinite_totallyRamifiedOfDegree`.
 * `TauCeti.tsum_one_div_natCard_residueField_pow_wildExponent_eq_encard`: if the residue
   characteristic does not divide `n`, `∑_{L ∈ σ_K(n)} q ^ (-c(L))` is the cardinality of
   `σ_K(n)`.
+* `TauCeti.infinite_totallyRamifiedOfDegree_iff_or_tsum_eq_top`: for `0 < n`, `σ_K(n)` is
+  infinite exactly when `K` has equal characteristic `p` with `p ∣ n`, or
+  `∑_{L ∈ σ_K(n)} q ^ (-c(L))` is infinite.
 
 ## References
 
@@ -135,5 +141,20 @@ theorem tsum_one_div_natCard_residueField_pow_wildExponent_eq_encard {n : ℕ}
   rw [← ENNReal.tsum_set_one]
   refine tsum_congr fun L ↦ ?_
   rw [(IntermediateField.wildExponent_eq_zero_iff L.2).2 hn, pow_zero, div_one]
+
+/-- **Serre's finiteness dichotomy, relative to the weighted count**: for `0 < n`, `σ_K(n)` is
+infinite exactly when `K` has equal characteristic `p`, the residue characteristic, with `p ∣ n`,
+or the weighted count `∑_{L ∈ σ_K(n)} q ^ (-c(L))` of Serre's mass formula is infinite. Since the
+mass formula makes that count `n`, the second alternative never occurs. -/
+theorem infinite_totallyRamifiedOfDegree_iff_or_tsum_eq_top {n : ℕ} (hn : 0 < n) :
+    (totallyRamifiedOfDegree K n).Infinite ↔
+      (ringChar K = ringChar 𝓀[K] ∧ ringChar 𝓀[K] ∣ n) ∨
+        ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = ∞ := by
+  rw [← natCast_eq_zero_iff_ringChar_eq_ringChar_residueField_and_dvd hn]
+  by_cases hnK : (n : K) = 0
+  · simpa [hnK] using infinite_totallyRamifiedOfDegree hn hnK
+  · rw [← not_iff_not, Set.not_infinite,
+      ← tsum_one_div_natCard_residueField_pow_wildExponent_ne_top_iff_finite hnK]
+    simp [hnK]
 
 end TauCeti

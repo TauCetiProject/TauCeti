@@ -89,7 +89,7 @@ It is the unique form pulling back to `dt` along the quotient map `ℝ → AddCi
 (`AddCircle.eq_timeForm_iff`). -/
 def timeForm : SmoothForm 𝓘(ℝ) (AddCircle p) ℝ 1 :=
   ⟨fun x ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace 𝓘(ℝ) x) ℝ 0
-    (ContinuousLinearMap.id ℝ ℝ), (isSmoothForm_timeForm p).mem_smoothForms⟩
+    (ContinuousLinearMap.id ℝ ℝ), (isSmoothForm_timeForm p).mem_smoothBundleForms⟩
 
 /-- The time form sends a tangent vector of `AddCircle p` to itself. -/
 @[simp]
@@ -114,7 +114,7 @@ theorem timeForm_apply_ne_zero (x : AddCircle p) : (timeForm p).1 x ≠ 0 := fun
 
 /-- The time form is closed: on the one-dimensional circle every two-form vanishes. -/
 theorem isClosed_timeForm : (timeForm p).IsClosed :=
-  (SmoothForm.isClosed_def _).mpr (mextDeriv_eq_zero_of_finrank_le (by simp) _)
+  SmoothForm.isClosed_of_finrank_le (by simp) _
 
 /-! ### Pullback to the real line -/
 
