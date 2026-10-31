@@ -152,8 +152,9 @@ theorem coe_symmetricAlgebraInvariantsTrivialProdEquiv_symm
           ρ.symmetricAlgebraInvariants.val x) :=
   (rfl)
 
-/-- The equivalence `Representation.symmetricAlgebraInvariantsTrivialProdEquiv` is the restriction
-of `SymmetricAlgebra.prodEquiv`, followed by the inclusion of the invariants of `M`. -/
+/-- The equivalence `Representation.symmetricAlgebraInvariantsTrivialProdEquiv`, followed by the
+inclusion of the invariants of `M` tensored with `Sym N`, is the restriction of
+`SymmetricAlgebra.prodEquiv` to the invariants of `N × M`. -/
 @[simp]
 theorem lTensor_val_symmetricAlgebraInvariantsTrivialProdEquiv
     (p : ((trivial R G N).prod ρ).symmetricAlgebraInvariants) :
