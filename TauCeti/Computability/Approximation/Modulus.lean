@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Computability.Partrec
 public import Mathlib.Order.Filter.AtTopBot.Basic
-public import Mathlib.Order.Interval.Finset.Defs
-import Mathlib.Order.Interval.Finset.Basic
+public import Mathlib.Order.PartialSups
 import Mathlib.Order.Filter.Finite
 
 /-!
@@ -150,24 +149,18 @@ theorem IsModulus.forall_mem_of_sup_le (hm : IsModulus f g m) {F : Finset α} {s
     (hs : F.sup m ≤ s) : ∀ x ∈ F, f s x = g x :=
   fun x hx => hm x s ((Finset.le_sup hx).trans hs)
 
-/-- A modulus can be replaced by the modulus `x ↦ max_{y ≤ x} m y`, which is monotone
-(`TauCeti.Approximation.monotone_sup_Iic`). From that stage on, every coordinate up to `x` is
-correct. -/
-theorem IsModulus.sup_Iic [Preorder α] [LocallyFiniteOrderBot α] (hm : IsModulus f g m) :
-    IsModulus f g fun x => (Finset.Iic x).sup m :=
-  hm.mono fun _ => Finset.le_sup (Finset.mem_Iic.2 le_rfl)
-
-/-- The modulus `x ↦ max_{y ≤ x} m y` is monotone. -/
-theorem monotone_sup_Iic [Preorder α] [LocallyFiniteOrderBot α] (m : α → ℕ) :
-    Monotone fun x => (Finset.Iic x).sup m :=
-  fun _ _ hxy => Finset.sup_mono (Finset.Iic_subset_Iic.2 hxy)
+/-- A modulus can be replaced by its partial suprema `x ↦ max_{y ≤ x} m y`, which are monotone
+(`partialSups_monotone`). From that stage on, every coordinate up to `x` is correct. -/
+theorem IsModulus.partialSups [Preorder α] [LocallyFiniteOrderBot α] (hm : IsModulus f g m) :
+    IsModulus f g (partialSups m) :=
+  hm.mono (le_partialSups m)
 
 /-- A convergent sequence on a locally finite order with a bottom, such as `ℕ`, has a monotone
 modulus. -/
 theorem Converges.exists_monotone_isModulus [Preorder α] [LocallyFiniteOrderBot α]
     (h : Converges f g) : ∃ m : α → ℕ, Monotone m ∧ IsModulus f g m := by
   obtain ⟨m, hm⟩ := h.exists_isModulus
-  exact ⟨_, monotone_sup_Iic m, hm.sup_Iic⟩
+  exact ⟨_, partialSups_monotone m, hm.partialSups⟩
 
 /-! ### Shifts and reindexing -/
 
