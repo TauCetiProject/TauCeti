@@ -192,7 +192,7 @@ theorem isIntegral_powerBoundedMap (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K
   exact hpb
 
 /-- **Integral homomorphisms are integral on canonical reductions.** An integral homomorphism of
-affinoid algebras induces an integral map `Ã → B̃` of canonical reductions. -/
+affinoid algebras induces an integral map from the canonical reduction of `A` to that of `B`. -/
 theorem isIntegral_reductionMap (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
     (hB : IsAffinoidAlgebra K B) (hf : f.toRingHom.IsIntegral) :
     (f.reductionMap hA hB).IsIntegral := by
