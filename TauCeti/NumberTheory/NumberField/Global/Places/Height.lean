@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # The logarithmic height as a sum over the places
