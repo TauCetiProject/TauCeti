@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Affinoid.Restricted
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 
-import TauCeti.RingTheory.Huber.ClosedSubmodule
+import TauCeti.RingTheory.Affinoid.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.LocalizationTopology.Quotient
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.Topology.Algebra.Ring.Ideal
@@ -291,19 +291,13 @@ variable (P : PairOfDefinition A) (S : Type*) [CommRing S] [Algebra A S] [IsLoca
   (h : Ideal.span (insert g (Set.range f)) = ⊤)
 
 include hA in
--- Every ideal of the noetherian Banach algebra `A⟨X₁, …, Xₘ⟩` is closed, and the Gauss comparison
--- carries the Huber relation ideal onto `rationalIdeal g f`.
+-- Every ideal of `A⟨X₁, …, Xₘ⟩` is closed, since the affinoid algebra `A` is strongly noetherian.
 private theorem isClosed_rationalRelationIdeal :
     IsClosed (rationalRelationIdeal f g : Set (weightedRestrictedSubring
-      (fun _ : Fin m ↦ ({1} : Set A)) isWeightFamily_one_weight)) := by
-  have := (hA.isRestricted_subring (τ := Fin m)).isNoetherianRing
-  have := IsTateRing.of_normedAlgebra K (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1))
-  have hJ : rationalRelationIdeal f g =
-      (rationalIdeal g f).comap restrictedMvPowerSeriesGaussEquiv := by
-    rw [rationalIdeal, Ideal.comap_map_of_bijective _ restrictedMvPowerSeriesGaussEquiv.bijective]
-  rw [hJ, Ideal.coe_comap]
-  exact (isClosed_of_isNoetherian (rationalIdeal g f)).preimage
-    continuous_restrictedMvPowerSeriesGaussEquiv
+      (fun _ : Fin m ↦ ({1} : Set A)) isWeightFamily_one_weight)) :=
+  have := IsTateRing.of_normedAlgebra K A
+  have := hA.isStronglyNoetherian
+  (rationalRelationIdeal f g).isClosed_weightedRestrictedSubring_one_weight
 
 include hA h in
 /-- **`A⟨f/g⟩` is the Huber rational localisation `A⟨T/g⟩`** for the numerators
