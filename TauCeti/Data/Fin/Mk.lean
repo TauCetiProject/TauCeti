@@ -10,7 +10,7 @@ public import Mathlib.Logic.Equiv.Fin.Rotate
 /-!
 # Finite ordinal maps at explicit points
 
-This file evaluates `finRotate`, `Fin.succAbove` and `Fin.ofNat` at points written `⟨k, h⟩`. The
+This file evaluates `finRotate` and `Fin.succAbove` at points written `⟨k, h⟩`. The
 corresponding Mathlib lemmas are not usable by `simp` on such points: `finRotate_of_lt` uses its
 hypothesis in the bound proof of its left-hand side, `finRotate_last'` needs the index to be
 syntactically the last one, and `Fin.succAbove_of_castSucc_lt` and `Fin.succAbove_of_le_castSucc`
@@ -23,7 +23,6 @@ these maps on explicit points of a `Fin` type of variable size.
 * `Fin.finRotate_mk` and `Fin.finRotate_mk_of_eq`: the cyclic successor of `⟨k, _⟩` below and at
   the last index.
 * `Fin.succAbove_mk_of_lt` and `Fin.succAbove_mk_of_le`: `succAbove` on points written `⟨i, _⟩`.
-* `Fin.ofNat_eq_mk`: `Fin.ofNat n m` is `⟨m, h⟩` when `m < n`.
 -/
 
 public section
@@ -52,9 +51,5 @@ theorem succAbove_mk_of_lt {n p i : ℕ} (hp : p < n + 1) (hi : i < n) (h : i < 
 theorem succAbove_mk_of_le {n p i : ℕ} (hp : p < n + 1) (hi : i < n) (h : p ≤ i) :
     (⟨p, hp⟩ : Fin (n + 1)).succAbove ⟨i, hi⟩ = ⟨i + 1, by omega⟩ :=
   succAbove_of_le_castSucc _ _ h
-
-/-- `Fin.ofNat n m` is the point `⟨m, h⟩` when `m < n`. -/
-theorem ofNat_eq_mk {n m : ℕ} [NeZero n] (h : m < n) : Fin.ofNat n m = ⟨m, h⟩ :=
-  Fin.ext (by simp [Nat.mod_eq_of_lt h])
 
 end Fin

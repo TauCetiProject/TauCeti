@@ -266,15 +266,15 @@ private theorem chainGrid_X_toPerm (n j : ℕ) (hj : 2 * j + 1 < n + 5) :
     set R := finRotate (n + 5) ^ 2
     -- `R` carries the transposition of the previous step to `A`, which fixes `0` and `1`.
     have hRB : R * swap (Fin.ofNat (n + 5) (2 * j)) (Fin.ofNat (n + 5) (2 * j + 1)) = A * R := by
-      simp (disch := omega) only [R, A, mul_swap_eq_swap_mul, Fin.ofNat_eq_mk, pow_two,
-        Perm.mul_apply, Fin.finRotate_mk]
+      simp (disch := omega) only [R, A, mul_swap_eq_swap_mul, Fin.ofNat_eq_cast,
+        Fin.natCast_eq_mk, pow_two, Perm.mul_apply, Fin.finRotate_mk]
       congr 3
     have hconj : A * swap 0 1 * A = swap 0 1 := by
       have hA : A⁻¹ = A := swap_inv _ _
       nth_rw 2 [← hA]
       rw [← swap_apply_apply]
-      simp (disch := omega) only [A, Fin.ofNat_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def,
-        Fin.mk.injEq, ite_eq_right]
+      simp (disch := omega) only [A, Fin.ofNat_eq_cast, Fin.natCast_eq_mk, ← Fin.mk_zero,
+        ← Fin.mk_one, swap_apply_def, Fin.mk.injEq, ite_eq_right]
     calc A * (swap 0 1 * R * swap (Fin.ofNat (n + 5) (2 * j)) (Fin.ofNat (n + 5) (2 * j + 1))) * A
         = A * swap 0 1 * A * R * A := by rw [mul_assoc (swap 0 1), hRB]; simp only [mul_assoc]
       _ = swap 0 1 * R * A := by rw [hconj]
@@ -326,8 +326,9 @@ private theorem movesTo_chainGrid_succ (n j : ℕ) (hj : 2 * (j + 1) + 1 < n + 4
     refine rowsNoninterleaving_of_apply (c := ⟨2 * (j + 1), by omega⟩) (d := ⟨2 * j + 1, by omega⟩)
       (c' := ⟨2 * (j + 1) + 1, by omega⟩) (d' := ⟨2 * j, by omega⟩) ?_ ?_ ?_ ?_ ?_ <;>
     simp (disch := omega) only [hO, hX, chainPerm, Perm.one_apply, Perm.mul_apply, pow_two,
-      Fin.ofNat_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk,
-      Grid.noninterleaving_iff, Grid.mem_cIoo, ne_eq, Fin.mk.injEq, ite_eq_right, ↓reduceIte] <;>
+      Fin.ofNat_eq_cast, Fin.natCast_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def,
+      Fin.finRotate_mk, Grid.noninterleaving_iff, Grid.mem_cIoo, ne_eq, Fin.mk.injEq, ite_eq_right,
+      ↓reduceIte] <;>
     grind
   have hcol : ((chainGrid n j).swapRows ⟨2 * (j + 1), by omega⟩
       (finRotate (n + 5) ⟨2 * (j + 1), by omega⟩)).ColumnsNoninterleaving
@@ -336,15 +337,16 @@ private theorem movesTo_chainGrid_succ (n j : ℕ) (hj : 2 * (j + 1) + 1 < n + 4
     -- The `X`-marking of column `2 j + 3` wraps around the top of the grid in the last step.
     rcases Nat.lt_or_ge (2 * j + 5) (n + 5) with h | h <;>
     simp (disch := omega) only [swapRows_O, swapRows_X, GridState.swapRows_apply, hO, hX,
-      chainPerm, Perm.one_apply, Perm.mul_apply, pow_two, Fin.ofNat_eq_mk, ← Fin.mk_zero,
-      ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk, Fin.finRotate_mk_of_eq,
+      chainPerm, Perm.one_apply, Perm.mul_apply, pow_two, Fin.ofNat_eq_cast, Fin.natCast_eq_mk,
+      ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk, Fin.finRotate_mk_of_eq,
       Grid.noninterleaving_iff, Grid.mem_cIoo, ne_eq, Fin.mk.injEq, ite_eq_left, ite_eq_right,
       ↓reduceIte] <;>
     grind
   have h := ((chainGrid n j).movesTo_swapRows _ hrow).trans (movesTo_swapColumns _ _ hcol)
   rw [hrot] at h
-  rw [chainGrid, Fin.ofNat_eq_mk (show 2 * (j + 1) < n + 5 by omega),
-    Fin.ofNat_eq_mk (show 2 * (j + 1) + 1 < n + 5 by omega)]
+  rw [chainGrid, Fin.ofNat_eq_cast, Fin.ofNat_eq_cast,
+    Fin.natCast_eq_mk (show 2 * (j + 1) < n + 5 by omega),
+    Fin.natCast_eq_mk (show 2 * (j + 1) + 1 < n + 5 by omega)]
   exact h
 
 private theorem movesTo_chainGrid (k j : ℕ) (hj : j ≤ k + 1) :
@@ -398,16 +400,16 @@ private theorem isStabilization_destabGrid_chainGrid (k : ℕ) :
         Fin.succAbove_mk_of_le, Fin.mk.injEq, ite_eq_left, ite_eq_right]
       omega
     · simp (disch := omega) only [hX, chainPerm, stabilizeO_X,
-        GridState.insertPoint_apply_newColumn, Perm.mul_apply, pow_two, Fin.ofNat_eq_mk,
-        ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk, Fin.mk.injEq, ite_eq_left,
-        ite_eq_right]
+        GridState.insertPoint_apply_newColumn, Perm.mul_apply, pow_two, Fin.ofNat_eq_cast,
+        Fin.natCast_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk,
+        Fin.mk.injEq, ite_eq_left, ite_eq_right]
       omega
     · rw [stabilizeO_X, GridState.insertPoint_apply_succAbove]
       rcases (show i < 2 * k + 2 ∨ i = 2 * k + 2 ∨ i = 2 * k + 3 by omega) with h | h | h <;>
       simp (disch := omega) only [hX, chainPerm, destabGrid_X_toPerm, Perm.mul_apply, pow_two,
-        Fin.ofNat_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk,
-        Fin.finRotate_mk_of_eq, Fin.succAbove_mk_of_lt, Fin.succAbove_mk_of_le, Fin.mk.injEq,
-        ite_eq_left, ite_eq_right, ↓reduceIte]
+        Fin.ofNat_eq_cast, Fin.natCast_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def,
+        Fin.finRotate_mk, Fin.finRotate_mk_of_eq, Fin.succAbove_mk_of_lt, Fin.succAbove_mk_of_le,
+        Fin.mk.injEq, ite_eq_left, ite_eq_right, ↓reduceIte]
   rw [heq]
   refine (isStabilization_iff _ _).mpr (Or.inl ((destabGrid (2 * k)).isOStabilization_stabilizeO
     ⟨2 * k + 3, by omega⟩ ⟨2 * k + 4, by omega⟩ ⟨2 * k + 3, by omega⟩ (Or.inl ?_) (Or.inr ?_)))
