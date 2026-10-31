@@ -65,20 +65,7 @@ namespace TauCeti
 
 namespace puiseuxField
 
-variable {K : Type*} [Field K]
-
-/-- The parameter `t` is the level-`n` image of `u ^ n`. -/
-theorem levelEmbedding_single_self (n : ℕ+) :
-    levelEmbedding K n (HahnSeries.single (n : ℤ) 1) = single K 1 1 :=
-  Subtype.ext <| by
-    rw [coe_levelEmbedding, LaurentSeries.ramifiedEmbedding_single, coe_single, Int.cast_natCast,
-      div_self (by exact_mod_cast n.ne_zero)]
-
-variable [CharZero K]
-
-/-- The derivative of the parameter `t` is `1`. -/
-theorem derivation_single_one : derivation K (single K 1 1) = 1 :=
-  Subtype.ext <| by simp
+variable {K : Type*} [Field K] [CharZero K]
 
 /-! ### Continuous derivations of Puiseux series -/
 
@@ -364,6 +351,7 @@ noncomputable def levelMap (n : ℕ+) :
       (equivPuiseuxField K).symm.map_smul, RingHom.coe_coe]
 
 /-- The level map sends `f du` to `f (t ^ (1 / n)) • d(t ^ (1 / n))`. -/
+@[simp]
 theorem equivPuiseuxField_levelMap (n : ℕ+) (ω : TauCeti.ContinuousKaehlerDifferential K) :
     equivPuiseuxField K (levelMap K n ω) =
       levelEmbedding K n (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K ω) *
