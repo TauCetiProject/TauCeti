@@ -12,7 +12,7 @@ public import Mathlib.Analysis.SpecificLimits.Normed
 /-!
 # Elementary asymptotic criteria
 
-Four general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
+Five general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
 elementary limit of ratios.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
@@ -20,6 +20,10 @@ tends to `a`, provided `g` is eventually nonzero. This criterion converts little
 into limits of normalized functions, and conversely recovers error estimates from ratio limits.
 The quotient is right division: multiplication need not be commutative. For ordered fields,
 the ratio formulation also supports order arguments.
+
+A map `u` whose differences satisfy `u y - u y' = O(y - y')` near `(x, x)`, the difference
+estimate of a strictly differentiable map, is continuous at `x`. Only this Lipschitz-type
+estimate is used, not differentiability.
 
 In a seminormed group the norm is at most one on a neighbourhood of the origin, so there a higher
 power of the norm is dominated by any lower one. This is the comparison that lets a Taylor
@@ -59,6 +63,8 @@ evaluations of elliptic integrals.
   `0 ≤ ρ < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
   are bounded by `A * (|c| / q)ⁿ` at the radius `c`.
+* `TauCeti.continuousAt_of_isBigO_sub`: `u y - u y' = O(y - y')` near `(x, x)` implies continuity
+  of `u` at `x`.
 * `TauCeti.tendsto_add_div_add_atTop`: `(t + x) / (t + y) → 1` as `t → ∞`.
 
 ## Related results
@@ -150,6 +156,19 @@ theorem mul_abs_pow_le_of_forall_mul_pow_le {a : ℕ → ℝ} {q A c : ℝ} (hq 
   calc a n * |c| ^ n = a n * q ^ n * (|c| / q) ^ n := by
         rw [div_pow]; field_simp
     _ ≤ A * (|c| / q) ^ n := by gcongr; exact hA n
+
+/-- A map satisfying the difference estimate of a strictly differentiable map near `x` is
+continuous at `x`. -/
+theorem continuousAt_of_isBigO_sub {E G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup G]
+    {u : E → G} {x : E}
+    (hu : (fun p : E × E ↦ u p.1 - u p.2) =O[𝓝 (x, x)] fun p ↦ p.1 - p.2) :
+    ContinuousAt u x := by
+  have hpair : Tendsto (fun y : E ↦ (y, x)) (𝓝 x) (𝓝 (x, x)) :=
+    tendsto_id.prodMk_nhds tendsto_const_nhds
+  have hsub : Tendsto (fun y : E ↦ y - x) (𝓝 x) (𝓝 0) := by
+    simpa using (tendsto_id (x := 𝓝 x)).sub_const x
+  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
+  simpa using ((hu.comp_tendsto hpair).trans_tendsto hsub).norm
 
 /-- In an ordered field, the ratio `(t + x) / (t + y)` of two translates of `t` tends to `1` as
 `t → ∞`. -/
