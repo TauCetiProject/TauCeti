@@ -293,13 +293,6 @@ private theorem liftAtLinear_apply {f : N →ₗ[R] M} {n : ℕ}
 
 variable [Module.Finite R N]
 
-include hM in
-private theorem exists_forall_mem_torsionBySet_pow (f : N →ₗ[R] M) :
-    ∃ n, ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n) := by
-  obtain ⟨n, hn⟩ := I.exists_le_torsionBySet_pow_of_le_primaryComponent
-    (Module.Finite.fg_top.map f) fun x _ ↦ hM x
-  exact ⟨n, fun y ↦ hn ⟨y, trivial, rfl⟩⟩
-
 /-- Two extensions through residues modulo different powers of `I` agree. -/
 private theorem liftAtLinear_eq {f : N →ₗ[R] M} {m n : ℕ}
     (hm : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ m))
@@ -324,13 +317,16 @@ def torsionLiftEquiv :
     { toFun g := g.restrictScalars R ∘ₗ of I N
       map_add' _ _ := by ext; simp
       map_smul' _ _ := by ext; simp
-      invFun f := liftAtLinear hM (exists_forall_mem_torsionBySet_pow hM f).choose_spec
+      invFun f := liftAtLinear hM
+        (I.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent f fun _ ↦ hM _).choose_spec
       left_inv g := linearMap_ext_of_finite I fun x ↦ ?_
       right_inv f := LinearMap.ext fun x ↦ ?_ }
   · simpa using liftAtLinear_apply hM
-      (exists_forall_mem_torsionBySet_pow hM (g.restrictScalars R ∘ₗ of I N)).choose_spec
+      (I.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent
+        (g.restrictScalars R ∘ₗ of I N) fun _ ↦ hM _).choose_spec
       (eval_of I N _ x)
-  · simpa using liftAtLinear_apply hM (exists_forall_mem_torsionBySet_pow hM f).choose_spec
+  · simpa using liftAtLinear_apply hM
+      (I.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent f fun _ ↦ hM _).choose_spec
       (eval_of I N _ x)
 
 /-- The extension of `f` evaluates a completed element through any of its residues modulo a power
@@ -340,14 +336,17 @@ theorem torsionLiftEquiv_apply {f : N →ₗ[R] M} {n : ℕ}
     (hx : eval I N n x = Submodule.Quotient.mk y) : torsionLiftEquiv hM f x = f y := by
   -- `torsionLiftEquiv` is the inverse of a structure whose `invFun` is `liftAtLinear`.
   have h : torsionLiftEquiv hM f =
-      liftAtLinear hM (exists_forall_mem_torsionBySet_pow hM f).choose_spec := (rfl)
+      liftAtLinear hM
+        (I.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent f fun _ ↦ hM _).choose_spec :=
+      (rfl)
   rw [h, liftAtLinear_eq hM _ hf, liftAtLinear_apply hM hf hx]
 
 /-- The extension of `f` agrees with `f` on the image of `N`. -/
 @[simp]
 theorem torsionLiftEquiv_apply_of (f : N →ₗ[R] M) (x : N) :
     torsionLiftEquiv hM f (of I N x) = f x :=
-  torsionLiftEquiv_apply hM (exists_forall_mem_torsionBySet_pow hM f).choose_spec
+  torsionLiftEquiv_apply hM
+    (I.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent f fun _ ↦ hM _).choose_spec
     (eval_of I N _ x)
 
 /-- The inverse of `torsionLiftEquiv` restricts a linear map along `AdicCompletion.of`. -/
