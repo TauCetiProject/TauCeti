@@ -104,6 +104,7 @@ theorem transferInclusion_obj (X : D) : (𝒞.transferInclusion e c hh hincl hpr
 
 /-- **On Hom modules, the extending functor is the inclusion of the contraction**: it sends a
 morphism `f : X ⟶ Y` of the transferred category to the morphism `i f : e X ⟶ e Y` of `𝒞`. -/
+@[simp]
 theorem homInclusion_map_transferInclusion (X Y : D) (f : homModule (R := R) X Y) :
     homInclusion (R := R) ((𝒞.transferInclusion e c hh hincl hproj hc).obj X)
         ((𝒞.transferInclusion e c hh hincl hproj hc).obj Y)
@@ -159,6 +160,7 @@ theorem transferProjection_obj (U : C) :
 
 /-- **On Hom modules, the projection functor is the projection of the contraction**: it sends a
 morphism `f : U ⟶ V` of `𝒞` to the morphism `p f : e⁻¹ U ⟶ e⁻¹ V` of the transferred category. -/
+@[simp]
 theorem homInclusion_map_transferProjection (U V : C) (f : homModule (R := R) U V) :
     homInclusion (R := R) ((𝒞.transferProjection e c hh hincl hproj hc).obj U)
         ((𝒞.transferProjection e c hh hincl hproj hc).obj V)

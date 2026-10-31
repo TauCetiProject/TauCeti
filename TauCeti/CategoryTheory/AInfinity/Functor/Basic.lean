@@ -475,6 +475,7 @@ theorem ofAInfinityHom_toAInfinityHom :
 
 /-- The map of the `A∞` functor of a path-compatible `A∞` morphism `f` on the Hom module `X ⟶ Y` is
 the linear part of `f`, which sends morphisms `X ⟶ Y` to morphisms `F X ⟶ F Y`. -/
+@[simp]
 theorem homInclusion_map_ofAInfinityHom (X Y : C) (g : homModule (R := R) X Y) :
     homInclusion (R := R) ((ofAInfinityHom f hF hf).obj X) ((ofAInfinityHom f hF hf).obj Y)
         ((ofAInfinityHom f hF hf).map X Y g) =
