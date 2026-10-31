@@ -56,14 +56,10 @@ open Function
 
 namespace Representation
 
-section Semiring
-
-variable {k G A : Type*} [CommSemiring k] [Group G] [AddCommMonoid A] [Module k A]
-variable (ρ : Representation k G A)
-
 section FunLeft
 
-variable (X : Type*) [MulAction G X]
+variable {k G A : Type*} [Semiring k] [Group G] [AddCommMonoid A] [Module k A]
+variable (ρ : Representation k G A) (X : Type*) [MulAction G X]
 
 /-- The representation of `G` on functions `X → A` that translates the argument and acts on the
 values: `(g • φ) x = ρ g (φ (g⁻¹ • x))`. -/
@@ -93,7 +89,8 @@ end FunLeft
 
 section CutoffAverage
 
-variable {X : Type*} [MulAction G X] {c : X → k}
+variable {k G A : Type*} [CommSemiring k] [Group G] [AddCommMonoid A] [Module k A]
+variable (ρ : Representation k G A) {X : Type*} [MulAction G X] {c : X → k}
 
 /-- The average `x ↦ ∑ᶠ g, c (g • x) • ρ g⁻¹ (φ (g • x))` of a function `φ : X → A` against a
 function `c` whose translates sum to one. It is a projection onto the invariants of
@@ -126,8 +123,6 @@ theorem cutoffAverage_comp {Y : Type*} [MulAction G Y] (hc : ∀ x, ∑ᶠ g : G
   simp [map_smul]
 
 end CutoffAverage
-
-end Semiring
 
 section Ring
 
