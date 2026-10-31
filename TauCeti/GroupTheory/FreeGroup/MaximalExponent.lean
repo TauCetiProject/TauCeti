@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
-public import Mathlib.Order.Lattice.Nat
+public import TauCeti.GroupTheory.ProperPower
 
 /-!
 # Bounds on root exponents in a free group
@@ -55,36 +55,11 @@ theorem le_norm_of_pow_eq {x y : FreeGroup α} {n : ℕ}
 end
 
 /-- A nonidentity free-group element has a root whose exponent is greatest among
-all of its positive root exponents. This root is not a positive proper power. -/
-@[to_additive]
+all of its root exponents. This root is not a proper power. -/
 theorem exists_root_maximal_exponent {x : FreeGroup α} (hx : x ≠ 1) :
-    ∃ r k, 0 < k ∧ r ^ k = x ∧
-      (∀ (y : FreeGroup α) (n : ℕ), y ^ n = x → n ≤ k) ∧
-      ∀ (y : FreeGroup α) (m : ℕ), 1 < m → y ^ m ≠ r := by
+    ∃ (r : FreeGroup α) (k : ℕ), k ≠ 0 ∧ r ^ k = x ∧ ¬Group.IsProperPower r ∧
+      ∀ (y : FreeGroup α) (n : ℕ), y ^ n = x → n ≤ k := by
   classical
-  let s : Set ℕ := {n | ∃ y : FreeGroup α, y ^ n = x}
-  have hbdd : BddAbove s := ⟨norm x, by
-    intro n hn
-    obtain ⟨y, hy⟩ := hn
-    exact le_norm_of_pow_eq hx hy⟩
-  have hne : s.Nonempty := ⟨1, by simp [s]⟩
-  let k := sSup s
-  have hk : k ∈ s := Nat.sSup_mem hne hbdd
-  obtain ⟨r, hr⟩ := hk
-  have hk0 : 0 < k := by
-    by_contra h
-    have hkz : k = 0 := by omega
-    rw [hkz, pow_zero] at hr
-    exact hx hr.symm
-  have hmax : ∀ (y : FreeGroup α) (n : ℕ), y ^ n = x → n ≤ k := by
-    intro y n hy
-    exact le_csSup hbdd ⟨y, hy⟩
-  refine ⟨r, k, hk0, hr, hmax, ?_⟩
-  intro y m hm hpower
-  have hroot : y ^ (m * k) = x := by
-    rw [pow_mul, hpower, hr]
-  have hlt : k < m * k := by
-    simpa using Nat.mul_lt_mul_of_pos_right hm hk0
-  exact (hmax y (m * k) hroot).not_gt hlt
+  exact Group.exists_maximalRoot_of_bddAbove hx ⟨norm x, fun _ ⟨_, hy⟩ => le_norm_of_pow_eq hx hy⟩
 
 end FreeGroup

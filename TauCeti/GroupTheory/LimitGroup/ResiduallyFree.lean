@@ -61,6 +61,9 @@ consecutive entries nontrivial.
 * `TauCeti.LimitGroup.IsResiduallyFree.exists_maximalRoot`: in a residually free group every
   nonidentity element is `r ^ k` with `k ≠ 0`, `r` not a proper power, and `k` the greatest root
   exponent of the element.
+* `TauCeti.LimitGroup.IsResiduallyFree.centralizerExt_root_reduction`: in a residually free group
+  every nonidentity element `u` is `r ^ d` with `d ≠ 0`, `r` not a proper power, and
+  `C_G(u) = C_G(r)`.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isCSA`: fully residually free groups are CSA.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isCommTransitive`: fully residually free groups are
   commutative transitive.
@@ -220,16 +223,28 @@ theorem IsResiduallyFree.isMulTorsionFree (h : IsResiduallyFree G) : IsMulTorsio
   inferInstance
 
 /-- Every nonidentity element `u` of a residually free group is `r ^ k` for some `k ≠ 0` and some
-`r` that is not a proper power, with `k` the greatest exponent of a root of `u`. By unique roots
-(`IsResiduallyFree.hasUniqueRoots` and `Subgroup.centralizer_pow_eq`), `u` and `r` have the same
-centralizer. -/
+`r` that is not a proper power, with `k` the greatest exponent of a root of `u`: root exponents of
+`u` are bounded by the reduced-word length of a nonidentity image of `u` in a free group. -/
 theorem IsResiduallyFree.exists_maximalRoot (h : IsResiduallyFree G) {u : G} (hu : u ≠ 1) :
     ∃ (r : G) (k : ℕ), k ≠ 0 ∧ r ^ k = u ∧ ¬IsProperPower r ∧
       ∀ (y : G) (n : ℕ), y ^ n = u → n ≤ k := by
   refine exists_maximalRoot_of_bddAbove hu ?_
   obtain ⟨ι, φ, hφ⟩ := h u hu
-  obtain ⟨-, k, -, -, hk, -⟩ := FreeGroup.exists_root_maximal_exponent hφ
-  exact ⟨k, fun n ⟨y, hy⟩ => hk (φ y) n (by rw [← map_pow, hy])⟩
+  classical
+  exact ⟨FreeGroup.norm (φ u), fun n ⟨y, hy⟩ =>
+    FreeGroup.le_norm_of_pow_eq (y := φ y) hφ (by rw [← map_pow, hy])⟩
+
+/-- Root reduction for extensions of centralizers: every nonidentity element `u` of a residually
+free group is `r ^ d` for some `d ≠ 0` and some `r` that is not a proper power with
+`C_G(u) = C_G(r)`. Hence an extension of the centralizer of `u` is one of the centralizer of `r`
+(`CentralizerExt.congr`), an admissible step when the rank is positive. -/
+theorem IsResiduallyFree.centralizerExt_root_reduction (h : IsResiduallyFree G) {u : G}
+    (hu : u ≠ 1) :
+    ∃ (r : G) (d : ℕ), d ≠ 0 ∧ r ^ d = u ∧ ¬IsProperPower r ∧
+      Subgroup.centralizer {u} = Subgroup.centralizer {r} := by
+  obtain ⟨r, d, hd, rfl, hr, -⟩ := h.exists_maximalRoot hu
+  have := h.hasUniqueRoots
+  exact ⟨r, d, hd, rfl, hr, Subgroup.centralizer_pow_eq r hd⟩
 
 /-- A nontrivial finite group, such as `ℤ/2`, is not residually free. -/
 theorem not_isResiduallyFree_of_finite [Finite G] [Nontrivial G] : ¬IsResiduallyFree G := by
