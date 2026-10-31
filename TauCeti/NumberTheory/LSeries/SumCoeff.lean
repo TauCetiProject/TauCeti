@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.MellinTransform
 public import Mathlib.NumberTheory.LSeries.SumCoeff
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import Mathlib.NumberTheory.LSeries.Dirichlet
+import Mathlib.NumberTheory.LSeries.Linearity
 
 /-!
 # Analytic continuation of an L-series from a bound on its partial sums
@@ -34,6 +37,10 @@ Probabilistic Number Theory*, Chapter II.1).
 * `TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO`: under the bound `A(n) = O(n ^ r)`,
   the function `s ↦ s * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(s + 1))` is
   complex-differentiable on `{s | r < s.re}`.
+* `TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO`: if instead the partial
+  sums are `κ n + O(n ^ r)` with `0 ≤ r ≤ 1`, then `LSeries f s - κ / (s - 1)` continues
+  holomorphically from `Re s > 1` to `Re s > r`. When `r < 1` this half-plane contains `s = 1`, so
+  there `LSeries f` has at most a simple pole, at `s = 1`, with residue `κ`.
 -/
 
 public section
@@ -103,5 +110,40 @@ theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
       (by linarith)).comp s differentiableAt_id.neg
   simp_rw [integral_Ioi_one_eq_mellin]
   exact (differentiableAt_id.mul hmellin).differentiableWithinAt
+
+/-- **Continuation of an L-series with its pole at `s = 1` removed.** If the partial sums
+`∑ k ∈ Icc 1 n, f k` are `κ n + O(n ^ r)` with `0 ≤ r ≤ 1` and `LSeries f` converges absolutely on
+`Re s > 1`, then there is a function holomorphic on the half-plane `Re s > r` that agrees with
+`LSeries f s - κ / (s - 1)` on `Re s > 1`. When `r < 1`, so that the half-plane contains `s = 1`,
+`LSeries f` therefore continues meromorphically to `Re s > r` with at most a simple pole, at
+`s = 1`, of residue `κ`.
+
+`TauCeti.exists_differentiableOn_eq_dedekindZeta_sub` is the Dedekind-zeta instance. -/
+theorem exists_differentiableOn_eq_LSeries_sub_div_of_isBigO (f : ℕ → ℂ) (κ : ℂ) {r : ℝ}
+    (hr₀ : 0 ≤ r) (hr₁ : r ≤ 1)
+    (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, f k - κ * n) =O[atTop] fun n ↦ (n : ℝ) ^ r)
+    (hf : ∀ s : ℂ, 1 < s.re → LSeriesSummable f s) :
+    ∃ G : ℂ → ℂ, DifferentiableOn ℂ G {s | r < s.re} ∧
+      ∀ s : ℂ, 1 < s.re → G s = LSeries f s - κ / (s - 1) := by
+  have hsum (n : ℕ) : ∑ k ∈ Icc 1 n, (f - κ • (1 : ℕ → ℂ)) k = ∑ k ∈ Icc 1 n, f k - κ * n := by
+    simp [sum_sub_distrib, mul_comm]
+  have hO' : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, (f - κ • (1 : ℕ → ℂ)) k) =O[atTop]
+      fun n ↦ (n : ℝ) ^ r := by
+    simpa only [hsum] using hO
+  -- Subtracting `κ` times the coefficients of the Riemann zeta function leaves partial sums
+  -- `O(n ^ r)`, so the partial-summation integral of `f - κ` continues its `L`-series; add
+  -- `κ (ζ(s) - 1/(s-1))`, which is entire (Mathlib's `riemannZeta₀`).
+  refine ⟨fun s ↦ s * (∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, (f - κ • (1 : ℕ → ℂ)) k) *
+      (t : ℂ) ^ (-(s + 1))) + κ * riemannZeta₀ s,
+    (differentiableOn_mul_integral_of_isBigO _ hO').fun_add
+      (differentiable_riemannZeta₀.const_mul _).differentiableOn, fun s hs ↦ ?_⟩
+  have hs1 : LSeriesSummable (κ • (1 : ℕ → ℂ)) s :=
+    LSeriesSummable.smul _ (LSeriesSummable_one_iff.mpr hs)
+  have hs0 : s ≠ 1 := fun h ↦ by simp [h] at hs
+  dsimp only
+  rw [← LSeries_eq_mul_integral _ hr₀ (hr₁.trans_lt hs) ((hf s hs).sub hs1) hO',
+    LSeries_sub (hf s hs) hs1, LSeries_smul, LSeries_one_eq_riemannZeta hs,
+    riemannZeta_eq_inv_sub_add hs0]
+  ring
 
 end TauCeti.LSeries

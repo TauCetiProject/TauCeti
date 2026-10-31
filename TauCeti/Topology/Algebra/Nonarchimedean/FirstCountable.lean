@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Nonarchimedean.OpenAddSubgroupBasis
+public import TauCeti.Topology.Algebra.Nonarchimedean.OpenSubgroupBasis
 
 /-!
 # A first-countable nonarchimedean group has a decreasing basis of open subgroups

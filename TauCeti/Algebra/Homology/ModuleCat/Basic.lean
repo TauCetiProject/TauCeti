@@ -31,6 +31,11 @@ some `L i` (`HomologicalComplex.exists_homologyMap_eq_of_injective`).  Two cycle
 is a boundary have the same homology class
 (`HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d`), and a cycle has zero homology
 class exactly when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`).
+Cycles are elements of the kernel of the outgoing differential
+(`HomologicalComplex.moduleCatCyclesToKer`), that kernel has a homology class map
+(`HomologicalComplex.moduleCatKerHomologyClass`), and the image of the incoming differential, the
+kernel and the homology form an exact sequence
+(`HomologicalComplex.exact_inclusion_moduleCatKerHomologyClass`).
 Given concrete cocycle and coboundary submodules identified with the terms of a cochain complex,
 `HomologicalComplex.moduleCatCohomologyClassOfIso` specializes this class map to the cocycles,
 with its surjectivity and its kernel described by the coboundaries.  When the differential is a
@@ -245,6 +250,58 @@ lemma homologyMap_moduleCatHomologyClass {L : HomologicalComplex (ModuleCat R) c
     iCycles_moduleCatCyclesMk, h]
 
 end HomologyClass
+
+section KerHomologyClass
+
+/-- In a complex of modules the image of the incoming differential `K.d p n` is contained in the
+kernel of the outgoing differential `K.d n m`. -/
+theorem range_d_le_ker_d (p m : ι) :
+    LinearMap.range (K.d p n).hom ≤ LinearMap.ker (K.d n m).hom := by
+  rintro _ ⟨x, rfl⟩
+  exact K.d_comp_d_apply _ _ _ x
+
+/-- A degree-`n` cycle of a complex of modules, as an element of the kernel of the differential
+`K.d n m`. -/
+noncomputable def moduleCatCyclesToKer (m : ι) : K.cycles n →ₗ[R] LinearMap.ker (K.d n m).hom :=
+  (K.iCycles n).hom.codRestrict _ fun y ↦ by
+    rw [LinearMap.mem_ker, ← ModuleCat.comp_apply, iCycles_d]
+    rfl
+
+/-- The element of the kernel of `K.d n m` given by a cycle `y` is `K.iCycles n y`. -/
+@[simp]
+lemma coe_moduleCatCyclesToKer (m : ι) (y : K.cycles n) :
+    (K.moduleCatCyclesToKer n m y : K.X n) = K.iCycles n y :=
+  (rfl)
+
+variable {n} {m : ι} (hm : c.next n = m)
+
+/-- The homology class of an element of the kernel of the outgoing differential `K.d n m`. -/
+noncomputable def moduleCatKerHomologyClass : LinearMap.ker (K.d n m).hom →ₗ[R] K.homology n :=
+  K.moduleCatHomologyClass hm (Submodule.subtype _) fun z ↦ LinearMap.mem_ker.1 z.2
+
+/-- The homology class of the kernel element given by a cycle `y` is the class of `y`. -/
+@[simp]
+lemma moduleCatKerHomologyClass_moduleCatCyclesToKer (y : K.cycles n) :
+    K.moduleCatKerHomologyClass hm (K.moduleCatCyclesToKer n m y) = K.homologyπ n y := by
+  rw [moduleCatKerHomologyClass, moduleCatHomologyClass_apply]
+  congr 1
+  exact K.moduleCat_iCycles_injective _
+    ((K.iCycles_moduleCatCyclesMk _ _ _ _ _).trans (K.coe_moduleCatCyclesToKer n m y))
+
+/-- The boundaries, the cycles and the homology in degree `n` form an exact sequence: the kernel
+of the homology class map on the kernel of `K.d n m` is the image of the incoming differential. -/
+theorem exact_inclusion_moduleCatKerHomologyClass {p : ι} (hp : c.prev n = p) :
+    Function.Exact (Submodule.inclusion (K.range_d_le_ker_d n p m))
+      (K.moduleCatKerHomologyClass hm) := by
+  intro z
+  rw [moduleCatKerHomologyClass, K.moduleCatHomologyClass_eq_zero_iff _ _ _ hp]
+  constructor
+  · rintro ⟨y, hy⟩
+    exact ⟨⟨_, y, rfl⟩, Subtype.ext hy⟩
+  · rintro ⟨⟨_, y, rfl⟩, rfl⟩
+    exact ⟨y, rfl⟩
+
+end KerHomologyClass
 
 section CochainPresentation
 

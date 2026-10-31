@@ -164,4 +164,18 @@ theorem smoothTensorInducedTrivialF2Iso_hom_apply_tprod
   exact ((trivialF2Equiv G).apply_symm_apply _).trans
     (tensorInducedTrivialF2LinearEquiv_tprod G U hU s x)
 
+/-- `smoothTensorInducedTrivialF2Iso_hom_apply_tprod`, stated for the raw pure tensor
+`PiTensorProduct.tprod ℤ x` formed with the `ℤ`-module structure of the `DiscreteRep`. Rewriting
+cannot fold such a tensor back into `smoothTensorInducedTrivialF2Tprod` across that instance, so
+the computation rule is transported along `smoothTensorInducedTrivialF2Tprod_eq` here once. -/
+theorem smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod
+    (x : G ⧸ U → (DiscreteRep.trivialF2 U).V) :
+    letI : Module ℤ (DiscreteRep.trivialF2 U).V := (DiscreteRep.trivialF2 U).module
+    trivialF2Equiv G ((smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom
+        (PiTensorProduct.tprod ℤ x)) =
+      ∏ i, trivialF2Equiv U (x i) :=
+  (congrArg (fun y ↦ trivialF2Equiv G ((smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom y))
+    (smoothTensorInducedTrivialF2Tprod_eq G U hU s x)).symm.trans
+    (smoothTensorInducedTrivialF2Iso_hom_apply_tprod G U hU s x)
+
 end TauCeti

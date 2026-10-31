@@ -32,6 +32,8 @@ available to the categorical exactness and extension APIs.
 
 * `ModuleCat.comp_conj_mapQ`: the map induced by `f` on two presented quotients composed with the
   projection of the source is the projection of the target composed with `f`.
+* `Submodule.shortExact_quotientInfSupShortComplex`: for submodules `S` and `T`, the Mayer–Vietoris
+  sequence `0 → M ⧸ (S ⊓ T) → M ⧸ S × M ⧸ T → M ⧸ (S ⊔ T) → 0` is short exact.
 -/
 
 public section
@@ -74,5 +76,70 @@ theorem shortExact_quotientShortComplex (S : Submodule A M) :
     S.quotientShortComplex.ShortExact :=
   ModuleCat.shortComplex_shortExact _ (LinearMap.exact_subtype_mkQ S)
     S.injective_subtype S.mkQ_surjective
+
+/-- The Mayer–Vietoris short complex `M ⧸ (S ⊓ T) → M ⧸ S × M ⧸ T → M ⧸ (S ⊔ T)` of two
+submodules, sending `x` to `(x, x)` and `(x, y)` to `x - y`. -/
+abbrev quotientInfSupShortComplex (S T : Submodule A M) : ShortComplex (ModuleCat.{v} A) :=
+  ModuleCat.shortComplexOfCompEqZero
+    ((factor (inf_le_left : S ⊓ T ≤ S)).prod (factor (inf_le_right : S ⊓ T ≤ T)))
+    ((factor (le_sup_left : S ≤ S ⊔ T)).coprod (-factor (le_sup_right : T ≤ S ⊔ T))) (by
+      ext x
+      simp)
+
+/-- The first map of the Mayer–Vietoris short complex is the pair of quotient factorizations. -/
+theorem quotientInfSupShortComplex_f_hom (S T : Submodule A M) :
+    (quotientInfSupShortComplex S T).f.hom =
+      (factor (inf_le_left : S ⊓ T ≤ S)).prod (factor (inf_le_right : S ⊓ T ≤ T)) :=
+  rfl
+
+/-- The second map of the Mayer–Vietoris short complex is the difference of the quotient
+factorizations. -/
+theorem quotientInfSupShortComplex_g_hom (S T : Submodule A M) :
+    (quotientInfSupShortComplex S T).g.hom =
+      (factor (le_sup_left : S ≤ S ⊔ T)).coprod (-factor (le_sup_right : T ≤ S ⊔ T)) :=
+  rfl
+
+/-- The first map of the Mayer–Vietoris short complex sends the class of `x` to the diagonal
+pair of its classes. -/
+theorem quotientInfSupShortComplex_f_mk (S T : Submodule A M) (x : M) :
+    (quotientInfSupShortComplex S T).f (Quotient.mk x) = (Quotient.mk x, Quotient.mk x) :=
+  rfl
+
+/-- The second map of the Mayer–Vietoris short complex sends a pair of classes to the class of
+the difference of the representatives. -/
+theorem quotientInfSupShortComplex_g_mk (S T : Submodule A M) (y z : M) :
+    (quotientInfSupShortComplex S T).g (Quotient.mk y, Quotient.mk z) =
+      Quotient.mk (y - z) := by
+  simp [sub_eq_add_neg]
+
+/-- The Mayer–Vietoris short complex of two submodules is short exact. -/
+theorem shortExact_quotientInfSupShortComplex (S T : Submodule A M) :
+    (quotientInfSupShortComplex S T).ShortExact := by
+  refine ModuleCat.shortComplex_shortExact (quotientInfSupShortComplex S T) ?_ ?_ ?_
+  · rintro ⟨y, z⟩
+    induction y using Quotient.induction_on with | _ y
+    induction z using Quotient.induction_on with | _ z
+    rw [quotientInfSupShortComplex_g_mk, Quotient.mk_eq_zero]
+    refine ⟨fun h ↦ ?_, ?_⟩
+    · -- If `y - z = s + t` with `s ∈ S` and `t ∈ T`, then `y - s = z + t` maps to `(y, z)`.
+      obtain ⟨s, hs, t, ht, hst⟩ := mem_sup.1 h
+      refine ⟨Quotient.mk (y - s), ?_⟩
+      rw [quotientInfSupShortComplex_f_mk]
+      simp only [Prod.mk.injEq, Quotient.eq]
+      exact ⟨by simpa using hs, by rwa [sub_right_comm, ← hst, add_sub_cancel_left]⟩
+    · rintro ⟨x, hx⟩
+      induction x using Quotient.induction_on with | _ x
+      rw [quotientInfSupShortComplex_f_mk] at hx
+      simp only [Prod.mk.injEq, Quotient.eq] at hx
+      rw [show y - z = -(x - y) + (x - z) by abel]
+      exact add_mem (neg_mem (mem_sup_left hx.1)) (mem_sup_right hx.2)
+  · intro x y h
+    induction x using Quotient.induction_on with | _ x
+    induction y using Quotient.induction_on with | _ y
+    rw [quotientInfSupShortComplex_f_mk, quotientInfSupShortComplex_f_mk] at h
+    simpa only [Prod.mk.injEq, Quotient.eq, mem_inf] using h
+  · intro z
+    induction z using Quotient.induction_on with | _ z
+    exact ⟨(Quotient.mk z, 0), by simp⟩
 
 end Submodule

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.Algebra.Subalgebra.Pi
+public import Mathlib.Algebra.Algebra.Subalgebra.Prod
 public import Mathlib.Algebra.Central.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.Noetherian.Basic
@@ -27,9 +28,12 @@ and the ring of scalars a central subalgebra provides.
 * `TauCeti.centerPiAlgEquiv` splits the center of a product of algebras as the product of the
   centers, upgrading Mathlib's `Subalgebra.center_pi` from an equality of subalgebras of
   `Π i, S i` to an algebra equivalence with `Π i, Subalgebra.center R (S i)`.
+  `TauCeti.centerProdAlgEquiv` is the same splitting for a binary product `A × B`, upgrading
+  `Subalgebra.center_prod`.
 * `TauCeti.centerAlgEquivOfIsCentral` identifies the center of a central algebra with its base
   semiring when the scalar action is faithful. Its dimension is therefore one
-  (`TauCeti.finrank_center_of_isCentral`).
+  (`TauCeti.finrank_center_of_isCentral`). For a product of two such algebras the center is the
+  split algebra `K × K` (`TauCeti.centerProdAlgEquivOfIsCentral`).
 * `TauCeti.isCentral_iff_surjective_algebraMap` records that a commutative algebra is central
   exactly when its structure map is surjective, the precise sense in which centrality is a strong
   condition on a field extension.
@@ -276,6 +280,32 @@ theorem centerPiAlgEquiv_symm_apply_coe (y : Π i, Subalgebra.center R (S i)) (i
 
 end Pi
 
+section Prod
+
+/-- The center of a product of two algebras is the product of their centers. -/
+def centerProdAlgEquiv :
+    Subalgebra.center R (A × B) ≃ₐ[R] Subalgebra.center R A × Subalgebra.center R B :=
+  (Subalgebra.equivOfEq _ _ Subalgebra.center_prod).trans
+    (AlgEquiv.ofRingEquiv (f := Subsemiring.prodEquiv (Subalgebra.center R A).toSubsemiring
+      (Subalgebra.center R B).toSubsemiring) fun _ => rfl)
+
+-- As for `centerPiAlgEquiv`, these three lemmas are the defining equations of the unexposed
+-- `centerProdAlgEquiv`; `(rfl)` keeps the definitional step inside this module.
+@[simp]
+theorem coe_fst_centerProdAlgEquiv (x : Subalgebra.center R (A × B)) :
+    ((centerProdAlgEquiv x).1 : A) = (x : A × B).1 := (rfl)
+
+@[simp]
+theorem coe_snd_centerProdAlgEquiv (x : Subalgebra.center R (A × B)) :
+    ((centerProdAlgEquiv x).2 : B) = (x : A × B).2 := (rfl)
+
+/-- The inverse of `centerProdAlgEquiv` pairs a central element of each factor. -/
+@[simp]
+theorem coe_centerProdAlgEquiv_symm (y : Subalgebra.center R A × Subalgebra.center R B) :
+    (centerProdAlgEquiv.symm y : A × B) = ((y.1 : A), (y.2 : B)) := (rfl)
+
+end Prod
+
 section IsCentral
 
 variable (K D : Type*) [CommSemiring K] [Semiring D] [Algebra K D]
@@ -302,6 +332,35 @@ theorem algebraMap_centerAlgEquivOfIsCentral (x : Subalgebra.center K D) :
 @[simp]
 theorem finrank_center_of_isCentral : Module.finrank K (Subalgebra.center K D) = 1 :=
   ((centerAlgEquivOfIsCentral K D).toLinearEquiv.finrank_eq).trans (CommSemiring.finrank_self K)
+
+section Prod
+
+variable (K D₁ D₂ : Type*) [CommSemiring K] [Semiring D₁] [Semiring D₂] [Algebra K D₁]
+  [Algebra K D₂] [FaithfulSMul K D₁] [FaithfulSMul K D₂] [Algebra.IsCentral K D₁]
+  [Algebra.IsCentral K D₂]
+
+/-- The center of a product of two central algebras with faithful scalars is the split algebra
+`K × K`. Its two coordinate idempotents are the units of the two factors. -/
+noncomputable def centerProdAlgEquivOfIsCentral : Subalgebra.center K (D₁ × D₂) ≃ₐ[K] K × K :=
+  centerProdAlgEquiv.trans
+    ((centerAlgEquivOfIsCentral K D₁).prodCongr (centerAlgEquivOfIsCentral K D₂))
+
+/-- The inverse of `centerProdAlgEquivOfIsCentral` applies the structure map in each factor. -/
+@[simp]
+theorem coe_centerProdAlgEquivOfIsCentral_symm (r : K × K) :
+    ((centerProdAlgEquivOfIsCentral K D₁ D₂).symm r : D₁ × D₂) =
+      (algebraMap K D₁ r.1, algebraMap K D₂ r.2) := by
+  simp [centerProdAlgEquivOfIsCentral]
+
+/-- `centerProdAlgEquivOfIsCentral` sends a central element to the pair of scalars it is the image
+of. -/
+@[simp]
+theorem algebraMap_centerProdAlgEquivOfIsCentral (x : Subalgebra.center K (D₁ × D₂)) :
+    (algebraMap K D₁ (centerProdAlgEquivOfIsCentral K D₁ D₂ x).1,
+      algebraMap K D₂ (centerProdAlgEquivOfIsCentral K D₁ D₂ x).2) = (x : D₁ × D₂) := by
+  rw [← coe_centerProdAlgEquivOfIsCentral_symm, AlgEquiv.symm_apply_apply]
+
+end Prod
 
 end IsCentral
 

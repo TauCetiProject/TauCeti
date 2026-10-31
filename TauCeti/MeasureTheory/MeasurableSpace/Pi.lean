@@ -16,8 +16,11 @@ the flattened index `finProdFinEquiv (r, j) = j + m * r` is position `j` of bloc
 records that reindexing as a measurable equivalence, together with the restriction to one fixed
 subblock.
 
-These are general measurable finite-product constructions, independent of any measure or
-stochastic process.
+It also records that extending a family along an arbitrary map of index types, with a fixed
+default outside the range, is measurable in the family (`TauCeti.MeasureTheory.measurable_extend`).
+
+These are general measurable product constructions, independent of any measure or stochastic
+process.
 
 ## Main definitions
 
@@ -79,6 +82,17 @@ theorem blockRestriction_apply (m n : ℕ) (r : Fin n) (x : Fin (n * m) → α) 
 theorem measurable_blockRestriction (m n : ℕ) (r : Fin n) :
     Measurable (blockRestriction (α := α) m n r) :=
   (measurable_pi_apply r).comp (blockSplitEquiv α m n).measurable
+
+/-- Extending a family `g : ι → α` along a map `f : ι → κ`, with the fixed default `e` off the
+range of `f`, is measurable in `g`. For `f = Subtype.val` this is extension of a subfamily by a
+default value. -/
+theorem measurable_extend {ι κ : Type*} (f : ι → κ) (e : κ → α) :
+    Measurable fun g : ι → α ↦ Function.extend f g e := by
+  refine measurable_pi_iff.2 fun k ↦ ?_
+  by_cases h : ∃ i, f i = k
+  · simp only [Function.extend, h, dite_true]
+    exact measurable_pi_apply _
+  · simp [Function.extend_apply' _ _ _ h]
 
 end MeasureTheory
 

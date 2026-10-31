@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
+public import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
 
 /-!
 # Restricting local properties of scheme morphisms
@@ -14,9 +15,11 @@ For a morphism of schemes `f : X ⟶ Y` and an open `U` of `Y`, Mathlib's `f ∣
 restriction `f ⁻¹ᵁ U ⟶ U`. A property local on the target passes from this restriction to
 every smaller open. An open immersion restricts to an isomorphism over opens in its range.
 Restricting the source to an open equal to the full preimage gives a pullback square, which
-transfers properties stable under base change to `Scheme.Hom.resLE`. Dually, in a pullback square
-of the inclusion of an open `U` along `f`, pullback of functions along the top morphism identifies
-the functions on `f ⁻¹ᵁ U` with the global functions of the base change.
+transfers properties stable under base change to `Scheme.Hom.resLE`. Between affine opens, a
+property attached to a ring-hom property holds for `Scheme.Hom.resLE` iff the ring-hom property
+holds for `Scheme.Hom.appLE`. Dually, in a pullback square of the inclusion of an open `U` along
+`f`, pullback of functions along the top morphism identifies the functions on `f ⁻¹ᵁ U` with the
+global functions of the base change.
 
 ## Main results
 
@@ -28,6 +31,8 @@ the functions on `f ⁻¹ᵁ U` with the global functions of the base change.
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
+* `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
+  attached to a ring-hom property `Q` holds for `f.resLE U V` iff `Q` holds for `f.appLE U V`.
 * `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal morphisms induce the same maps
   `Γ(Y, U) ⟶ Γ(X, V)`, whatever the proofs of `V ≤ f ⁻¹ᵁ U`.
 * `CategoryTheory.CommSq.appLE_app_topIso_hom`: in a commutative square over the inclusion of an
@@ -85,6 +90,19 @@ theorem Scheme.Hom.isIso_morphismRestrict_of_isIso_comp {Z : Scheme.{u}} (ι : Z
   -- `h` is passed explicitly: the source of the composite in its type is written
   -- `(ι ≫ f) ⁻¹ᵁ V` rather than `ι ⁻¹ᵁ f ⁻¹ᵁ V`, which instance search does not unfold.
   exact @IsIso.of_isIso_comp_left _ _ _ _ _ (ι ∣_ f ⁻¹ᵁ V) (f ∣_ V) _ h
+
+/-- Let `V ⊆ f⁻¹ U` with `U` and `V` affine, and let `P` be a morphism property attached to the
+ring-hom property `Q`. Then `P` holds for the restriction `V ⟶ U` of `f` iff `Q` holds for
+`f.appLE U V : Γ(Y, U) ⟶ Γ(X, V)`. -/
+theorem HasRingHomProperty.resLE_iff (P : MorphismProperty Scheme.{u})
+    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop} [HasRingHomProperty P Q]
+    {f : X ⟶ Y} {U : Y.Opens} (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V)
+    (hVU : V ≤ f ⁻¹ᵁ U) : P (f.resLE U V hVU) ↔ Q (f.appLE U V hVU).hom := by
+  have : IsAffine U := hU
+  have : IsAffine V := hV
+  rw [HasRingHomProperty.iff_of_isAffine (P := P)]
+  exact (HasRingHomProperty.isLocal_ringHomProperty P).respectsIso.arrow_mk_iso_iff
+    (arrowResLEAppIso f U V hVU)
 
 /-- Equal morphisms induce the same maps on sections `Γ(Y, U) ⟶ Γ(X, V)`. Unlike rewriting along
 `f = g`, this applies when the proofs of `V ≤ f ⁻¹ᵁ U` and of `V ≤ g ⁻¹ᵁ U` are unrelated. -/
