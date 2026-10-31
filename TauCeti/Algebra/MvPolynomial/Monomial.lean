@@ -30,6 +30,8 @@ univariate polynomial in the variable `Xᵢ`, on monomials.
   exponents.
 * `MvPolynomial.coeff_prod_univ_X_pow`: the coefficients of the monomial `∏ᵢ Xᵢ ^ Lᵢ` in finitely
   many variables.
+* `MvPolynomial.coeff_prod_X_pow_mul_prod_X_pow`: the coefficients of a product `Xᵃ Yᵇ` of
+  monomials in two disjoint groups of variables.
 * `MvPolynomial.eval₂_monomial_sumElim_of_eq_one`: evaluating `c X^a Y^e` with every `X`
   variable set to `1` gives the value of `c Y^e`.
 * `Polynomial.toMvPolynomial_monomial`: a univariate monomial placed in `Xᵢ` is the multivariate
@@ -100,6 +102,19 @@ theorem coeff_prod_univ_X_pow [Fintype ι] (L : ι → ℕ) (K : ι →₀ ℕ) 
     (∏ i, (X i : MvPolynomial ι A) ^ L i).coeff K = if ∀ i, L i = K i then 1 else 0 := by
   classical
   simp [coeff_prod_X_pow, Finsupp.ext_iff, eq_comm]
+
+/-- The coefficient of `Xᵉ` in the product `Xᵃ Yᵇ` of monomials in two disjoint groups of
+finitely many variables `Xᵢ = X (inl i)` and `Yⱼ = X (inr j)` is `1` when `a` and `b` are the
+restrictions of `e` and `0` otherwise. -/
+theorem coeff_prod_X_pow_mul_prod_X_pow {κ : Type*} [Fintype ι] [Fintype κ] (a : ι → ℕ)
+    (b : κ → ℕ) (e : ι ⊕ κ →₀ ℕ) :
+    ((∏ i, (X (Sum.inl i) : MvPolynomial (ι ⊕ κ) A) ^ a i) *
+        ∏ j, (X (Sum.inr j) : MvPolynomial (ι ⊕ κ) A) ^ b j).coeff e =
+      if (∀ i, a i = e (Sum.inl i)) ∧ ∀ j, b j = e (Sum.inr j) then 1 else 0 := by
+  have h := Fintype.prod_sum_type (fun k ↦ (X k : MvPolynomial (ι ⊕ κ) A) ^ Sum.elim a b k)
+  simp only [Sum.elim_inl, Sum.elim_inr] at h
+  rw [← h, coeff_prod_univ_X_pow]
+  simp [Sum.forall]
 
 /-- Evaluating the monomial `c X^a Y^e` in the variables `τ ⊕ σ` at a point whose `.inl`
 coordinates are all `1` gives the value of `c Y^e` at the `.inr` coordinates. -/

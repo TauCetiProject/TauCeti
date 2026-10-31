@@ -182,14 +182,13 @@ theorem conwayPolynomial_eq_of_alexander_eq {κ : Type*} [Fintype κ] [Decidable
   rw [h, hcard] at hV
   simpa only [hu, IsUnit.unit_spec] using hV.trans hW.symm
 
-/-- Changing the last diagonal entry by `r` changes the Conway polynomial by
-`-r X` times the polynomial of the deleted minor. In particular, decreasing it
-by one gives the usual positive Conway skein factor `X`. -/
-theorem conwayPolynomial_add_diagonal_single {n : ℕ}
-    (V : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (r : R) :
-    (V + diagonal (Pi.single (Fin.last n) r)).conwayPolynomial - V.conwayPolynomial =
+/-- Changing the diagonal entry at `x` by `r` changes the Conway polynomial by
+`-r X` times the polynomial of the minor with the row and column of `x` deleted. In particular,
+decreasing it by one gives the usual positive Conway skein factor `X`. -/
+theorem conwayPolynomial_add_diagonal_single (V : Matrix ι ι R) (x : ι) (r : R) :
+    (V + diagonal (Pi.single x r)).conwayPolynomial - V.conwayPolynomial =
       -Polynomial.C r * Polynomial.X *
-        (V.submatrix Fin.castSucc Fin.castSucc).conwayPolynomial := by
+        (V.submatrix ((↑) : {y // y ≠ x} → ι) (↑)).conwayPolynomial := by
   apply eval₂_C_T_neg_sub_T_injective (R := R)
   simp only [Polynomial.eval₂_sub, Polynomial.eval₂_mul, Polynomial.eval₂_neg,
     Polynomial.eval₂_C, Polynomial.eval₂_X,

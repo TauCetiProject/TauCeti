@@ -42,6 +42,8 @@ program uniformly in the oracle.
 
 * `TauCeti.Oracle.Single.Code.primrec₂_pair` and its neighbours: the program constructors are
   primitive recursive on numbers of programs.
+* `TauCeti.Oracle.Single.Code.mem_eval_pair`, `TauCeti.Oracle.Single.Code.mem_eval_rfind'`: the
+  values of a pairing, and one step of a search.
 * `TauCeti.Oracle.Single.Code.eval_toSingleOracleCode`: a query-free program computes the same
   function as the ordinary code it comes from, relative to every oracle.
 * `TauCeti.Oracle.Single.Code.exists_code`: adequacy, `Nat.RecursiveIn {O} f ↔ ∃ c, eval O c = f`.
@@ -254,6 +256,12 @@ theorem eval_pair (cf cg : Code) (n : ℕ) :
     eval O (pair cf cg) n = Nat.pair <$> eval O cf n <*> eval O cg n :=
   (rfl)
 
+/-- The outputs of `pair cf cg` are the pairings of outputs of `cf` and `cg`. -/
+theorem mem_eval_pair {cf cg : Code} {n y : ℕ} :
+    y ∈ eval O (pair cf cg) n ↔ ∃ y₁ ∈ eval O cf n, ∃ y₂ ∈ eval O cg n, Nat.pair y₁ y₂ = y := by
+  simp only [eval_pair, Seq.seq, Part.map_eq_map, Part.bind_map, Part.mem_bind_iff,
+    Part.mem_map_iff]
+
 /-- `comp cf cg` runs `cg`, then `cf` on its output. -/
 @[simp]
 theorem eval_comp (cf cg : Code) (n : ℕ) :
@@ -280,6 +288,46 @@ theorem eval_rfind' (cf : Code) (a m : ℕ) :
     eval O (rfind' cf) (Nat.pair a m) =
       (Nat.rfind fun n => (fun m => m = 0) <$> eval O cf (Nat.pair a (n + m))).map (· + m) := by
   rw [eval, Nat.unpaired, Nat.unpair_pair]
+
+/-- One step of the search of `rfind' cf` from `m`: the search returns `m` when `cf` outputs `0`
+at `m`, and otherwise, when `cf` halts at `m` with a nonzero output, continues from `m + 1`. -/
+theorem mem_eval_rfind' {cf : Code} {a m y : ℕ} :
+    y ∈ eval O (rfind' cf) (Nat.pair a m) ↔ ∃ x ∈ eval O cf (Nat.pair a m),
+      x = 0 ∧ y = m ∨ x ≠ 0 ∧ y ∈ eval O (rfind' cf) (Nat.pair a (m + 1)) := by
+  have key {k j : ℕ} : j ∈ Nat.rfind (fun n => (fun m => decide (m = 0)) <$>
+      eval O cf (Nat.pair a (n + k))) ↔ (∃ x ∈ eval O cf (Nat.pair a (j + k)), x = 0) ∧
+        ∀ {i}, i < j → ∃ x ∈ eval O cf (Nat.pair a (i + k)), x ≠ 0 := by
+    refine Nat.mem_rfind.trans ?_
+    simp [Part.mem_map_iff]
+  simp only [eval_rfind', Part.mem_map_iff, key]
+  constructor
+  · rintro ⟨j, ⟨⟨x, hx, hx0⟩, hlt⟩, rfl⟩
+    cases j with
+    | zero => exact ⟨x, by simpa using hx, Or.inl ⟨hx0, by simp⟩⟩
+    | succ j =>
+      obtain ⟨x', hx', hx'0⟩ := hlt (Nat.succ_pos j)
+      refine ⟨x', by simpa using hx', Or.inr ⟨hx'0, j,
+        ⟨⟨x, by simpa [Nat.add_right_comm, Nat.add_assoc] using hx, hx0⟩, fun {i} hi => ?_⟩,
+        by omega⟩⟩
+      obtain ⟨z, hz, hz0⟩ := hlt (Nat.succ_lt_succ hi)
+      exact ⟨z, by simpa [Nat.add_right_comm, Nat.add_assoc] using hz, hz0⟩
+  · rintro ⟨x, hx, ⟨rfl, rfl⟩ | ⟨hx0, j, ⟨⟨z, hz, hz0⟩, hlt⟩, rfl⟩⟩
+    · exact ⟨0, ⟨⟨0, by simpa using hx, rfl⟩, fun h => absurd h (by omega)⟩, by simp⟩
+    · refine ⟨j + 1,
+        ⟨⟨z, by simpa [Nat.add_right_comm, Nat.add_assoc] using hz, hz0⟩, fun {i} hi => ?_⟩,
+        by omega⟩
+      cases i with
+      | zero => exact ⟨x, by simpa using hx, hx0⟩
+      | succ i =>
+        obtain ⟨w, hw, hw0⟩ := hlt (Nat.lt_of_succ_lt_succ hi)
+        exact ⟨w, by simpa [Nat.add_right_comm, Nat.add_assoc] using hw, hw0⟩
+
+/-- The search of `rfind' cf` from `m` returns a number at least `m`. -/
+theorem le_of_mem_eval_rfind' {cf : Code} {a m y : ℕ}
+    (h : y ∈ eval O (rfind' cf) (Nat.pair a m)) : m ≤ y := by
+  rw [eval_rfind', Part.mem_map_iff] at h
+  obtain ⟨j, -, rfl⟩ := h
+  exact Nat.le_add_left m j
 
 /-! ### Adequacy -/
 

@@ -32,7 +32,7 @@ module.
 * `TauCeti.linearMapIsotypicComponentEquiv`: the hom space from `S` into its isotypic component
   is linearly equivalent to the hom space from `S` into the ambient module.
 
-* `TauCeti.IsSemisimpleModule.linearEquivIsotypicComponents`: a semisimple module is linearly
+* `IsSemisimpleModule.linearEquivIsotypicComponents`: a semisimple module is linearly
   equivalent to the direct sum of its isotypic components.
 
 ## Main statements
@@ -40,14 +40,14 @@ module.
 * `TauCeti.finrank_linearMap_isotypicComponent`: restricting the target to its isotypic
   component preserves the `finrank` of the hom space out of the simple module.
 
-* `TauCeti.IsSemisimpleModule.linearEquivIsotypicComponents_apply_coe` and
-  `TauCeti.IsSemisimpleModule.linearEquivIsotypicComponents_symm_single`: the equivalence and its
+* `IsSemisimpleModule.linearEquivIsotypicComponents_apply_coe` and
+  `IsSemisimpleModule.linearEquivIsotypicComponents_symm_single`: the equivalence and its
   inverse on a single isotypic component.
 
-* `TauCeti.IsSemisimpleModule.isCompl_isotypicComponent_sSup_sdiff`: an isotypic component is
+* `IsSemisimpleModule.isCompl_isotypicComponent_sSup_sdiff`: an isotypic component is
   complementary to the sum of the other isotypic components.
 
-* `TauCeti.IsSemisimpleModule.exists_forall_smul_eq_ite`: for a semisimple module finite over its
+* `IsSemisimpleModule.exists_forall_smul_eq_ite`: for a semisimple module finite over its
   endomorphism ring, an element of the ring acts as the identity on the simple submodules of a
   given type and as zero on all the others, by Jacobson density.
 -/
@@ -134,7 +134,7 @@ theorem linearMap_eq_zero (h : IsIsotypicOfType R M N)
 
 end IsIsotypicOfType
 
-namespace TauCeti.IsSemisimpleModule
+namespace IsSemisimpleModule
 
 variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
   [DecidableEq (isotypicComponents R M)]
@@ -172,9 +172,9 @@ theorem linearEquivIsotypicComponents_apply_of_mem {c : isotypicComponents R M} 
     (hx : x ∈ c.1) : linearEquivIsotypicComponents R M x = DFinsupp.single c ⟨x, hx⟩ :=
   linearEquivIsotypicComponents_apply_coe ⟨x, hx⟩
 
-end TauCeti.IsSemisimpleModule
+end IsSemisimpleModule
 
-namespace TauCeti.IsSemisimpleModule
+namespace IsSemisimpleModule
 
 section Projection
 
@@ -250,7 +250,7 @@ theorem exists_forall_smul_eq_ite [IsSemisimpleModule R M] [Module.Finite (Modul
 
 end Projection
 
-end TauCeti.IsSemisimpleModule
+end IsSemisimpleModule
 
 namespace TauCeti
 
