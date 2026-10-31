@@ -35,8 +35,8 @@ an equivalence relation with the Baire property and meagre classes is meagre in 
 * `IsMeagre.prod_left`, `IsMeagre.prod_right`: a product with a meagre factor is meagre.
 * `BaireMeasurableSet.baireMeasurableSet_curry_left`: comeagrely many sections of a set with the
   Baire property have the Baire property.
-* `BaireMeasurableSet.eventually_eventually_left_iff_mem_residual`: **the Kuratowski–Ulam
-  theorem**, with the right-hand form `eventually_eventually_right_iff_mem_residual` and the
+* `BaireMeasurableSet.mem_curry_iff_mem_residual`: **the Kuratowski–Ulam theorem**, with the
+  right-hand form `eventually_eventually_right_iff_mem_residual` and the
   exchange of quantifiers `eventually_eventually_swap`.
 * `BaireMeasurableSet.eventually_isMeagre_curry_left_iff_isMeagre` and
   `BaireMeasurableSet.isMeagre_of_forall_isMeagre_curry_left`: the meagre-sections forms.
@@ -178,8 +178,9 @@ theorem frequently_curry_of_not_isMeagre (hs : BaireMeasurableSet s) (hn : ¬ Is
   rintro p ⟨hp, hpsu⟩
   exact hpsu.2 (hSu ▸ subset_sUnion_of_mem hbS hp)
 
-/-- **The Kuratowski–Ulam theorem**, filter form: a set with the Baire property in a product of
-second countable spaces belongs to the curried residual filter if and only if it is comeagre. -/
+/-- **The Kuratowski–Ulam theorem.** A set `s` with the Baire property in a product of second
+countable spaces is comeagre if and only if it belongs to the curried residual filter, that is,
+if and only if comeagrely many sections `(x, ·) ⁻¹' s` are comeagre. -/
 theorem mem_curry_iff_mem_residual (hs : BaireMeasurableSet s) :
     s ∈ (residual X).curry (residual Y) ↔ s ∈ residual (X × Y) := by
   refine ⟨fun h ↦ ?_, fun h ↦ TauCeti.curry_le_residual h⟩
@@ -187,27 +188,19 @@ theorem mem_curry_iff_mem_residual (hs : BaireMeasurableSet s) :
   have hn : ¬ IsMeagre sᶜ := by rwa [IsMeagre, compl_compl]
   exact hs.compl.frequently_curry_of_not_isMeagre hn (mem_of_superset h fun _ hp hpc ↦ hpc hp)
 
-/-- **The Kuratowski–Ulam theorem.** A set `s` with the Baire property in a product of second
-countable spaces is comeagre if and only if comeagrely many sections `(x, ·) ⁻¹' s` are
-comeagre. -/
-theorem eventually_eventually_left_iff_mem_residual (hs : BaireMeasurableSet s) :
-    (∀ᵇ x : X, ∀ᵇ y : Y, (x, y) ∈ s) ↔ s ∈ residual (X × Y) :=
-  hs.mem_curry_iff_mem_residual
-
 /-- **The Kuratowski–Ulam theorem**, right-hand form. A set `s` with the Baire property in a
 product of second countable spaces is comeagre if and only if comeagrely many sections
 `(·, y) ⁻¹' s` are comeagre. -/
 theorem eventually_eventually_right_iff_mem_residual (hs : BaireMeasurableSet s) :
     (∀ᵇ y : Y, ∀ᵇ x : X, (x, y) ∈ s) ↔ s ∈ residual (X × Y) := by
   rw [← (Homeomorph.prodComm Y X).residual_map_eq]
-  exact eventually_eventually_left_iff_mem_residual
-    (hs.preimage continuous_swap (Homeomorph.prodComm Y X).isOpenMap)
+  exact (hs.preimage continuous_swap (Homeomorph.prodComm Y X).isOpenMap).mem_curry_iff_mem_residual
 
 /-- For a set with the Baire property in a product of second countable spaces, the two orders of
 the category quantifiers agree. -/
 theorem eventually_eventually_swap (hs : BaireMeasurableSet s) :
     (∀ᵇ x : X, ∀ᵇ y : Y, (x, y) ∈ s) ↔ ∀ᵇ y : Y, ∀ᵇ x : X, (x, y) ∈ s :=
-  hs.eventually_eventually_left_iff_mem_residual.trans
+  hs.mem_curry_iff_mem_residual.trans
     hs.eventually_eventually_right_iff_mem_residual.symm
 
 /-- **The Kuratowski–Ulam theorem**, meagre form. A set `s` with the Baire property in a product of
@@ -215,7 +208,7 @@ second countable spaces is meagre if and only if comeagrely many sections `(x, �
 meagre. -/
 theorem eventually_isMeagre_curry_left_iff_isMeagre (hs : BaireMeasurableSet s) :
     (∀ᵇ x : X, IsMeagre ((x, ·) ⁻¹' s)) ↔ IsMeagre s :=
-  hs.compl.eventually_eventually_left_iff_mem_residual
+  hs.compl.mem_curry_iff_mem_residual
 
 /-- A set with the Baire property in a product of second countable spaces all of whose sections
 `(x, ·) ⁻¹' s` are meagre is meagre. -/
