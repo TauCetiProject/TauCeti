@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Pi.Lemmas
-public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.GroupTheory.GroupAction.Basic
 
 /-!
@@ -21,12 +20,14 @@ exactly when the action is transitive, for instance when every transition map is
 
 These are the terms of the Milnor sequence for the components of a homotopy limit of a tower of
 spaces, such as the mapping space out of a CW complex along its skeleta: there `Gₙ` is the
-fundamental group of the `n`-th stage at a chosen compatible family of base points. Choosing
-another compatible family `x` of points of `∏ₙ Gₙ` replaces the transition maps by their
-conjugates `gₙ₊₁ ↦ xₙ rₙ(gₙ₊₁) xₙ⁻¹` (`TauCeti.GroupTower.conj`); right translation by `x⁻¹`
-identifies the two orbit sets, sending the orbit of `x` to the base point
-(`TauCeti.GroupTower.limOneEquivConj`), and the stabilizer of `x` is the limit of the conjugated
-tower (`TauCeti.GroupTower.stabilizer_eq_lim_conj`).
+fundamental group of the `n`-th stage at a chosen compatible family of base points.
+
+Algebraically, the orbit of an arbitrary family of group elements `x : ∀ n, G n` (with no
+compatibility condition) may serve as the reference orbit instead of that of `1`. Changing the
+reference to `x` replaces the transition maps by their conjugates `gₙ₊₁ ↦ xₙ rₙ(gₙ₊₁) xₙ⁻¹`
+(`TauCeti.GroupTower.conj`); right translation by `x⁻¹` identifies the two orbit sets, sending the
+orbit of `x` to the base point (`TauCeti.GroupTower.limOneEquivConj`), and the stabilizer of `x`
+is the limit of the conjugated tower (`TauCeti.GroupTower.stabilizer_eq_lim_conj`).
 
 When the groups are abelian this orbit set is the cokernel of the shift map
 `gₙ ↦ gₙ rₙ(gₙ₊₁)⁻¹`; for towers of modules this comparison with `TauCeti.ModuleTower.limOne` is
@@ -133,10 +134,11 @@ theorem limOne_mk_eq_mk_iff {x y : ∀ n, G n} :
     funext_iff]
 
 /-- If every transition map is surjective then the twisted action is transitive: every family
-`x` is carried to the identity family by the family `g` defined recursively by `g₀ = 1` and a
-choice of preimage `gₙ₊₁` of `gₙ xₙ`. -/
+lies in the orbit of the identity family. -/
 theorem isPretransitive_of_surjective (h : ∀ n, Function.Surjective (r n)) :
     MulAction.IsPretransitive (∀ n, G n) r.Twisted := by
+  -- `x` is carried to the identity family by the family `g` defined recursively by `g₀ = 1`
+  -- and a choice of preimage `gₙ₊₁` of `gₙ xₙ`.
   have key (x : r.Twisted) : ∃ g : ∀ n, G n, g • x = ⟨1⟩ := by
     let g : ∀ n, G n := fun n ↦
       Nat.rec (motive := fun n ↦ G n) 1 (fun n gn ↦ Function.surjInv (h n) (gn * x.val n)) n
@@ -219,6 +221,9 @@ lemma limOneEquivConj_mk (x : ∀ n, G n) (y : r.Twisted) :
     r.limOneEquivConj x (Quotient.mk'' y) = Quotient.mk'' (r.twistedEquivConj x y) :=
   (rfl)
 
+-- Higher priority than `limOneEquivConj_mk`, so that the class of `x` normalizes to the base
+-- point instead of to the class of the translated family.
+@[simp high]
 lemma limOneEquivConj_mk_self (x : ∀ n, G n) :
     r.limOneEquivConj x (Quotient.mk'' ⟨x⟩) = 1 := by
   rw [limOneEquivConj_mk, one_def]
