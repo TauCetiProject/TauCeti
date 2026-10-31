@@ -10,16 +10,26 @@ public import TauCeti.Algebra.Category.ModuleCat.Quotient
 public import TauCeti.RingTheory.Ideal.Radical
 public import TauCeti.RingTheory.Perfect.TensorProduct
 
-/-!
-# Tor independence of radical quotients of perfect rings
+import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+import TauCeti.RingTheory.Perfect.PerfectClosure
 
-Let `A` be a perfect ring of prime characteristic `p`, let `I` be a radical ideal of `A` and let
-`C` be a perfect `A`-algebra. We show that `Tor_i^A(A ⧸ I, C) = 0` for every `i > 0`, with `Tor`
-Mathlib's `CategoryTheory.Tor` in `ModuleCat A`. Thus the derived tensor product of `A ⧸ I` and `C`
-over `A` is concentrated in degree zero, where it is `(A ⧸ I) ⊗[A] C ≃ C ⧸ I C`. This is the case
-`B = A ⧸ I` of the Tor independence of perfect rings, which asserts `Tor_i^A(B, C) = 0` for all
-`i > 0` and all maps `B ← A → C` of perfect rings; the general case reduces to this one by
-presenting `B` as a quotient of a perfect polynomial algebra over `A`, which is flat over `A`.
+/-!
+# Tor independence of perfect rings
+
+Let `A` be a perfect ring of prime characteristic `p` and let `B` and `C` be perfect `A`-algebras.
+We show that `Tor_i^A(B, C) = 0` for every `i > 0`, with `Tor` Mathlib's `CategoryTheory.Tor` in
+`ModuleCat A` (`TauCeti.isZero_Tor_succ_of_perfectRing`). Thus the derived tensor product of `B`
+and `C` over `A` is concentrated in degree zero, where it is `B ⊗[A] C`. All three rings must be
+perfect: over the perfect ring `(k[x, y] ⧸ (x y))_perf`, the non-perfect quotients by `x` and by
+`y` have nonzero `Tor₂` (Bhatt and Scholze, Remark 11.33).
+
+The main case is `B = A ⧸ I` for a radical ideal `I` of `A`
+(`TauCeti.isZero_Tor_succ_quotient_of_isRadical`). The general case reduces to it by presenting
+`B` as the quotient of the perfect polynomial algebra `P = A[X_b ^ (1 / p ^ ∞) : b ∈ B]` by a
+radical ideal (`TauCeti.exists_surjective_perfectClosure_mvPolynomial`). Since `P` is flat over `A`
+(`TauCeti.flat_perfectClosureOf_comp_C`), flat base change identifies the vanishing of
+`Tor_i^A(B, C)` with that of `Tor_i^P(B, P ⊗[A] C)` (`ModuleCat.isZero_Tor_restrictScalars_iff`),
+and `P ⊗[A] C` is a perfect `P`-algebra (`Algebra.TensorProduct.perfectRing`).
 
 As in the proof of Bhatt and Scholze, everything reduces to Frobenius-root ideals. For
 `J_f = √(f)`, the short exact sequence `0 → J_f → A → A ⧸ J_f → 0` and the flatness of `J_f`
@@ -42,23 +52,29 @@ directly.
   reduced `A`-algebra `C`.
 * `TauCeti.isZero_Tor_succ_quotient_of_isRadical`: `Tor_{n+1}^A(A ⧸ I, C) = 0` for every radical
   ideal `I` of `A` and every perfect `A`-algebra `C`.
+* `TauCeti.isZero_Tor_succ_of_perfectRing`: `Tor_{n+1}^A(B, C) = 0` for all perfect `A`-algebras
+  `B` and `C`.
 
 ## References
 
 * B. Bhatt and P. Scholze, *Projectivity of the Witt vector affine Grassmannian*,
-  Invent. Math. 209 (2017), Lemma 3.16 and its proof.
+  Invent. Math. 209 (2017), Lemma 3.16 and its proof, and Remark 11.33.
 -/
 
 public section
 
 open CategoryTheory Limits
+open scoped TensorProduct
 
 namespace TauCeti
 
 universe u
 
 variable {A : Type u} [CommRing A] {p : ℕ} [ExpChar A p] [PerfectRing A p] [Fact p.Prime]
-  (C : Type u) [CommRing C] [Algebra A C]
+
+section Quotient
+
+variable (C : Type u) [CommRing C] [Algebra A C]
 
 /-- **Tor of the quotient by a Frobenius-root ideal.** For a Frobenius-root ideal `J_f = √(f)` of a
 perfect ring `A` and a reduced `A`-algebra `C`, `Tor_{n+1}^A(A ⧸ J_f, C) = 0`. -/
@@ -108,5 +124,41 @@ theorem isZero_Tor_succ_quotient_of_isRadical [ExpChar C p] [PerfectRing C p] {I
     have key := ModuleCat.isZero_Tor_succ_quotient_iSup (M := ModuleCat.of A C)
       (X := ModuleCat.of A A) I.directed_radical_fg (n + 1) fun N ↦ fg N.2.1
     rwa [Ideal.iSup_radical_fg, hI.radical] at key
+
+end Quotient
+
+/-- **Tor independence of perfect rings.** For perfect algebras `B` and `C` over a perfect ring `A`
+of prime characteristic `p`, `Tor_{n+1}^A(B, C) = 0`. -/
+theorem isZero_Tor_succ_of_perfectRing (B C : Type u) [CommRing B] [CommRing C] [Algebra A B]
+    [Algebra A C] [ExpChar B p] [PerfectRing B p] [ExpChar C p] [PerfectRing C p] (n : ℕ) :
+    IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj (ModuleCat.of A B)).obj (ModuleCat.of A C)) := by
+  have hp := (Fact.out : p.Prime)
+  have : CharP A p := (expChar_prime_iff (R := A) hp).1 inferInstance
+  have : CharP B p := (expChar_prime_iff (R := B) hp).1 inferInstance
+  -- Present `B` as the quotient of a perfect polynomial algebra `P`, flat over `A`, by a radical
+  -- ideal.
+  let P := PerfectClosure (MvPolynomial B A) p
+  let f : A →+* P := (PerfectClosure.of (MvPolynomial B A) p).comp MvPolynomial.C
+  obtain ⟨g, hg, hgf, hker⟩ := exists_surjective_perfectClosure_mvPolynomial p (algebraMap A B)
+  let e := RingHom.quotientKerEquivOfSurjective hg
+  have he (a : A) (b : B) : e.symm (a • b) = f a • e.symm b := by
+    rw [Algebra.smul_def, ← RingHom.congr_fun hgf a, RingHom.comp_apply, map_mul,
+      RingHom.quotientKerEquivOfSurjective_symm_apply, Algebra.smul_def,
+      Ideal.Quotient.algebraMap_eq]
+  let eB : B ≃ₗ[A] (ModuleCat.restrictScalars f).obj (ModuleCat.of P (P ⧸ RingHom.ker g)) :=
+    { e.symm.toAddEquiv with map_smul' := he }
+  refine IsZero.of_iso ?_ (((Tor (ModuleCat.{u} A) (n + 1)).mapIso eB.toModuleIso).app _)
+  -- By flat base change it suffices to show `Tor_{n+1}^P(P ⧸ ker g, P ⊗[A] C) = 0`.
+  rw [ModuleCat.isZero_Tor_restrictScalars_iff f (flat_perfectClosureOf_comp_C A B p)]
+  let := f.toAlgebra
+  refine IsZero.of_iso ?_ (((Tor (ModuleCat.{u} P) (n + 1)).obj _).mapIso
+    (ModuleCat.extendScalarsAlgebraMapIso (ModuleCat.of A C)))
+  rcases subsingleton_or_nontrivial (P ⊗[A] C) with _ | _
+  · have := (ModuleCat.isZero_of_subsingleton (ModuleCat.of P (P ⊗[A] C))).projective
+    exact isZero_Tor_succ_of_projective (ModuleCat.{u} P) _ (ModuleCat.of P (P ⊗[A] C)) n
+  -- `P ⊗[A] C` is a nonzero `A`-algebra, so it has characteristic `p`, and it is perfect.
+  have : CharP (P ⊗[A] C) p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
+    rw [← map_natCast (algebraMap A (P ⊗[A] C)), CharP.cast_eq_zero, map_zero]
+  exact isZero_Tor_succ_quotient_of_isRadical (p := p) (P ⊗[A] C) hker n
 
 end TauCeti
