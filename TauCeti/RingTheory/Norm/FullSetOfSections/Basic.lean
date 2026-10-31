@@ -77,6 +77,7 @@ In the remaining results, `B` is free of finite rank over `A`.
   (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B` indexed by `κ`, `s` is a full set of
   sections if and only if the norm form factors into linear forms,
   `Norm (∑ j, Xⱼ ⊗ bⱼ) = ∏ i, ∑ j, sᵢ(bⱼ) • Xⱼ` in `MvPolynomial κ A`.
+* `TauCeti.IsFullSetOfSections.trace_eq_sum`: the trace is the sum of the values at the sections.
 * `TauCeti.IsFullSetOfSections.card_eq_finrank`: over a nontrivial ring, a full set of sections
   has exactly `rank B` members.
 * `TauCeti.isFullSetOfSections_evalAlgHom`: the coordinate projections of `ι → A`, the sections
@@ -385,6 +386,18 @@ set of sections. -/
 theorem IsFullSetOfSections.norm_eq_prod (h : IsFullSetOfSections s) (b : B) :
     Algebra.norm A b = ∏ i, s i b := by
   rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.lid A B).symm, h.norm_eq]
+  simp
+
+/-- The trace of a function is the sum of its values at a full set of sections. -/
+theorem IsFullSetOfSections.trace_eq_sum (h : IsFullSetOfSections s) (b : B) :
+    Algebra.trace A B b = ∑ i, s i b := by
+  classical
+  let e := Module.Free.chooseBasis A B
+  rw [Algebra.trace_eq_matrix_trace e, Matrix.trace_eq_neg_charpoly_nextCoeff]
+  have hc : (Algebra.leftMulMatrix e b).charpoly = (Algebra.lmul A B b).charpoly :=
+    LinearMap.charpoly_toMatrix _ e
+  rw [hc, h.charpoly_eq_prod, Polynomial.Monic.nextCoeff_prod _ _
+    (fun i _ ↦ Polynomial.monic_X_sub_C _)]
   simp
 
 /-- Over a nontrivial ring, a full set of sections has as many members as the rank of `B`. -/
