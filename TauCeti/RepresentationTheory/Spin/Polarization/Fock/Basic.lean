@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.RepresentationTheory.Spin.Polarization.ComplexStructure
 public import TauCeti.RepresentationTheory.Spin.Polarization.DegreeScaling
--- Private: the structure theorem is used only in the proof of bijectivity.
+-- Private: the parity of the real dimension and the structure theorem are used only in the proof
+-- of bijectivity.
+import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.RepresentationTheory.Spin.Structure
 
 /-!
@@ -42,8 +44,8 @@ together with the formula for `c(v)`.
 * `TauCeti.AlmostComplexStructure.spinAction_ι_one_tmul`: the native action of a real vector.
 * `TauCeti.AlmostComplexStructure.degreeScaling_comp_spinAction_eq_fockAction_comp`: the degree
   scaling by `√2` intertwines the native action with the normalized one.
-* `TauCeti.AlmostComplexStructure.fockAction_bijective`: in even dimension the normalized action
-  is an isomorphism onto the endomorphisms of `⋀ W`.
+* `TauCeti.AlmostComplexStructure.fockAction_bijective`: the normalized action is an
+  isomorphism onto the endomorphisms of `⋀ W`.
 * `TauCeti.AlmostComplexStructure.fockAction_ι_one_tmul`: the normalized action of a real vector,
   `c(v) = √2 (ε(v^(1,0)) + (1/2) · contraction against polar (Q.baseChange ℂ) · v^(0,1))`.
 * `TauCeti.AlmostComplexStructure.fockAction_ι_one_tmul_mul_self`: the Clifford relation
@@ -136,10 +138,10 @@ theorem degreeScaling_comp_spinAction_eq_fockAction_comp {r : ℂˣ}
   rw [J.fockAction_eq_scaledSpinAction hQJ hQ hr]
   exact (J.spinPolarizationData hQJ hQ).degreeScaling_comp_spinAction r a
 
-/-- **The normalized Fock action is bijective in even dimension**: like the native action
-`TauCeti.spinAction`, of which it is a conjugate, it identifies the complexified Clifford
-algebra with the endomorphisms of `⋀ W`. -/
-theorem fockAction_bijective (h : Even (Module.finrank ℝ V)) :
+/-- **The normalized Fock action is bijective**: like the native action `TauCeti.spinAction`, of
+which it is a conjugate, it identifies the complexified Clifford algebra with the endomorphisms
+of `⋀ W`. The dimension of `V` is even because `V` carries the complex structure `J`. -/
+theorem fockAction_bijective :
     Function.Bijective (J.fockAction hQJ hQ) := by
   have hfock : ⇑(J.fockAction hQJ hQ) =
       (degreeScaling sqrtTwoUnit).toLinearEquiv.conjAlgEquiv ℂ ∘
@@ -150,7 +152,7 @@ theorem fockAction_bijective (h : Even (Module.finrank ℝ V)) :
       SpinPolarizationData.scaledSpinAction_apply, degreeScaling_symm]
   rw [hfock]
   exact (AlgEquiv.bijective _).comp
-    (spinAction_bijective _ (by rwa [Module.finrank_baseChange]))
+    (spinAction_bijective _ (by rw [Module.finrank_baseChange]; exact J.even_finrank_real))
 
 /-- **The normalized Fock action of a real vector**: `c(v)` is `√2` times exterior multiplication
 by `v^(1,0)` plus `√2 / 2` times contraction against

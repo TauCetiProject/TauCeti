@@ -82,8 +82,7 @@ theorem exists_sesqForm_map_eq_map_conjStar (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   have hQnd : Q.Nondegenerate := QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by
     simpa [hQ] using hv
   obtain ⟨b, hb⟩ := J.exists_basis_polar_tmulConj hQJ hQnd hQ ℓ (by omega)
-  let ρF := AlgEquiv.ofBijective (J.fockAction hQJ hQnd)
-    (J.fockAction_bijective hQJ hQnd ⟨ℓ, hℓ⟩)
+  let ρF := AlgEquiv.ofBijective (J.fockAction hQJ hQnd) (J.fockAction_bijective hQJ hQnd)
   -- An intertwiner `T` from the Fock module to `S`.
   obtain ⟨T, hT⟩ := (ρF.symm.trans ρ).eq_linearEquivConjAlgEquiv
   have hρ (a : CliffordAlgebra (Q.baseChange ℂ)) (x : S) :
