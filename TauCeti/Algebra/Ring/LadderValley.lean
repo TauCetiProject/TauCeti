@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Algebra.Ring.Defs
+public import TauCeti.Algebra.Algebra.CyclicQuotient
 import Mathlib.Algebra.Ring.Commute
 
 /-!
@@ -45,6 +46,12 @@ the words climbing from rung `0` and descending back, so on a ladder with no cli
 `N` the turn is nilpotent (`TauCeti.pow_d_mul_u_eq_zero`). This is the situation at the end of an
 arm of a branched graph, read from its branch node.
 
+A valley word which descends and climbs the same number `s > 0` of rungs is closed. Rotating its
+descent past its climb gives a peak word, which the relations turn back into a closed valley word
+whose bottom is `s` rungs lower, or into zero. Hence every closed valley word of positive length
+lies in the commutator submodule (`TauCeti.ladderValley_mem_commutatorSubmodule`). For the
+preprojective algebra of type `A` this makes the cyclic quotient vanish in positive degrees.
+
 ## Main definitions
 
 * `TauCeti.ladderValley`: the valley word descending `s` rungs to rung `m` and climbing `r` rungs.
@@ -60,11 +67,16 @@ arm of a branched graph, read from its branch node.
   rung `0` leaves the turn at rung `0`.
 * `TauCeti.pow_d_mul_u_eq_zero`: on a ladder with no climb from rung `N`, the turn at rung `0` has
   vanishing `N + 1`-st power.
+* `TauCeti.ladderValley_mem_commutatorSubmodule`: under the ladder relations, a closed valley word
+  of positive length is a sum of commutators.
 
 ## References
 
-See W. Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
-problem*, Section 1, for the preprojective relations of a quiver.
+* W. Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
+  problem*, Section 1, for the preprojective relations of a quiver.
+* P. Etingof and C.-H. Eu, *Hochschild and cyclic homology of preprojective algebras of ADE
+  quivers*, Mosc. Math. J. 7 (2007), https://arxiv.org/abs/math/0609006, for the vanishing of
+  the positive-degree cyclic quotient of a Dynkin preprojective algebra.
 -/
 
 public section
@@ -254,6 +266,36 @@ theorem pow_d_mul_u_eq_zero (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
   rw [he]
   simp only [P]
   rw [← u_mul_ladderValley, zero_add, hN, zero_mul, mul_zero, mul_zero]
+
+section Commutator
+
+variable (k : Type*) [Semiring k] [Module k A]
+
+/-- **Closed valley words are sums of commutators.** If the turns at every rung cancel, including
+the single turn `d 0 * u 0` at the bottom rung, then the valley word descending `s > 0` rungs to
+rung `m` and climbing back lies in the commutator submodule `[A, A]`. -/
+theorem ladderValley_mem_commutatorSubmodule (hud₀ : d 0 * u 0 = 0)
+    (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) (m : ℕ) {s : ℕ} (hs : 0 < s) :
+    ladderValley u d m s s ∈ commutatorSubmodule k A := by
+  induction m using Nat.strong_induction_on with
+  | _ m ih =>
+    -- The valley is its climb times its descent; the rotated word climbs first.
+    have hcomm := mul_sub_mul_mem_commutatorSubmodule k A
+      (ladderValley u d m 0 s) (ladderValley u d m s 0)
+    rw [ladderValley_zero_mul_ladderValley] at hcomm
+    have hrot : ladderValley u d m s 0 * ladderValley u d m 0 s ∈ commutatorSubmodule k A := by
+      rcases lt_or_ge m s with hms | hsm
+      · rw [ladderValley_mul_ladderValley_eq_zero hud₀ hud rfl hms]
+        exact zero_mem _
+      · rw [ladderValley_mul_ladderValley hud rfl hsm, zero_add, add_zero]
+        have hlow := ih (m - s) (by omega)
+        rcases neg_one_pow_eq_or A (s * s) with h | h
+        · rwa [h, one_mul]
+        · rw [h, neg_one_mul]
+          exact neg_mem_commutatorSubmodule hlow
+    simpa using add_mem hcomm hrot
+
+end Commutator
 
 end Ring
 

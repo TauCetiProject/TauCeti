@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Choose
+public import Mathlib.Topology.Algebra.Ring.Basic
 import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Topology.Algebra.GroupWithZero
 
 /-!
 # Limits of binomial coefficients along proportional sequences
 
 For fixed `k`, the leading term of `a.choose k` is `a ^ k / k!`. This file records the
-corresponding limit when `a` and the normalizing denominator vary together: if `a i / b i`
-converges to `x` and `b i⁻¹` converges to zero, then
+corresponding limit when `a` and the normalizing denominator vary together: in a topological field
+of characteristic zero, if `a i / b i` converges to `x` and `(b i)⁻¹` converges to zero, then
 
 ```text
   (a i).choose k / (b i) ^ k → x ^ k / k!.
@@ -40,29 +41,17 @@ whose ratio to a common denominator converges.
 
 The separate hypothesis that the inverse denominator tends to zero makes the statement applicable
 to denominators other than the natural index. -/
-theorem tendsto_choose_div_pow_of_tendsto_div {α : Type*} {l : Filter α} {a : α → ℕ}
-    {b : α → ℝ} {x : ℝ}
-    (hab : Tendsto (fun i ↦ (a i : ℝ) / b i) l (nhds x))
-    (hb : Tendsto (fun i ↦ (b i)⁻¹) l (nhds 0)) (k : ℕ) :
-    Tendsto (fun i ↦ ((a i).choose k : ℝ) / (b i) ^ k) l
-      (nhds (x ^ k / (k.factorial : ℝ))) := by
-  have hfactor (j : ℕ) :
-      Tendsto (fun i ↦ (a i : ℝ) / b i - (j : ℝ) / b i) l (nhds x) := by
-    have hj : Tendsto (fun i ↦ (j : ℝ) / b i) l (nhds 0) := by
-      simpa only [div_eq_mul_inv, mul_zero] using
-        (tendsto_const_nhds.mul hb :
-          Tendsto (fun i ↦ (j : ℝ) * (b i)⁻¹) l (nhds ((j : ℝ) * 0)))
-    simpa only [sub_zero] using hab.sub hj
-  have hprod :
-      Tendsto (fun i ↦ ∏ j ∈ Finset.range k,
-        ((a i : ℝ) / b i - (j : ℝ) / b i)) l (nhds (x ^ k)) := by
-    simpa using tendsto_finsetProd (Finset.range k) fun j _ ↦ hfactor j
-  refine Tendsto.congr' (Eventually.of_forall fun i ↦ ?_) (hprod.div_const (k.factorial : ℝ))
-  symm
-  dsimp only
-  rw [Nat.cast_choose_eq_descPochhammer_div, descPochhammer_eval_eq_prod_range]
-  simp_rw [← sub_div]
-  rw [Finset.prod_div_distrib, Finset.prod_const, Finset.card_range]
+theorem tendsto_choose_div_pow_of_tendsto_div {α 𝕜 : Type*} [Field 𝕜] [CharZero 𝕜]
+    [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] {l : Filter α} {a : α → ℕ} {b : α → 𝕜} {x : 𝕜}
+    (hab : Tendsto (fun i ↦ (a i : 𝕜) / b i) l (𝓝 x))
+    (hb : Tendsto (fun i ↦ (b i)⁻¹) l (𝓝 0)) (k : ℕ) :
+    Tendsto (fun i ↦ ((a i).choose k : 𝕜) / b i ^ k) l (𝓝 (x ^ k / k.factorial)) := by
+  have hprod : Tendsto (fun i ↦ ∏ j ∈ Finset.range k, ((a i : 𝕜) / b i - j * (b i)⁻¹)) l
+      (𝓝 (x ^ k)) := by
+    simpa using tendsto_finsetProd (Finset.range k) fun j _ ↦ hab.sub (hb.const_mul (j : 𝕜))
+  refine (hprod.div_const _).congr fun i ↦ ?_
+  simp_rw [Nat.cast_choose_eq_descPochhammer_div, descPochhammer_eval_eq_prod_range, div_eq_mul_inv,
+    ← sub_mul, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_range]
   ring
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Ring.Hom.Defs
 
 import Mathlib.Tactic
 
@@ -270,3 +271,17 @@ theorem quantumInteger_ne_zero {q : K} (hq : IsGenericQuantumParameter q) {r : �
   rw [zpow_sub₀ hq.ne_zero, sub_eq_zero.mp h, div_self (zpow_ne_zero _ hq.ne_zero)]
 
 end TauCeti
+
+namespace RingHom
+
+open TauCeti
+
+variable {K L : Type*} [Field K] [Field L]
+
+/-- Ring homomorphisms between fields commute with the quantum integers. -/
+@[simp]
+theorem map_quantumInteger (φ : K →+* L) (q : K) (r : ℤ) :
+    φ (quantumInteger q r) = quantumInteger (φ q) r := by
+  simp [quantumInteger_def]
+
+end RingHom

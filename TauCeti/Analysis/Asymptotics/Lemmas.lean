@@ -11,7 +11,8 @@ public import Mathlib.Analysis.SpecificLimits.Normed
 /-!
 # Elementary asymptotic criteria
 
-Four general criteria that supplement Mathlib's asymptotics API, and an elementary estimate.
+Four general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
+elementary limit of ratios.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
 tends to `a`, provided `g` is eventually nonzero. This criterion converts little-o error estimates
@@ -35,6 +36,10 @@ If the weighted terms `aₙ qⁿ` of a real sequence are bounded by `A` at a rad
 a radius `c` they are bounded by `A * (|c| / q)ⁿ`. For `|c| < q` this geometric bound is the
 estimate behind every loss of radius for power series.
 
+In an ordered field, the ratio `(t + x) / (t + y)` of two translates tends to `1` as `t → ∞`. This
+is the limit at infinity of antiderivatives built from such ratios, for example in elementary
+evaluations of elliptic integrals.
+
 ## Main results
 
 * `Asymptotics.isLittleO_sub_mul_iff_tendsto_div`: `f - a g = o(g)` if and only if
@@ -47,6 +52,7 @@ estimate behind every loss of radius for power series.
   `0 ≤ ρ < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
   are bounded by `A * (|c| / q)ⁿ` at the radius `c`.
+* `TauCeti.tendsto_add_div_add_atTop`: `(t + x) / (t + y) → 1` as `t → ∞`.
 
 ## Related results
 
@@ -127,5 +133,20 @@ theorem mul_abs_pow_le_of_forall_mul_pow_le {a : ℕ → ℝ} {q A c : ℝ} (hq 
   calc a n * |c| ^ n = a n * q ^ n * (|c| / q) ^ n := by
         rw [div_pow]; field_simp
     _ ≤ A * (|c| / q) ^ n := by gcongr; exact hA n
+
+/-- In an ordered field, the ratio `(t + x) / (t + y)` of two translates of `t` tends to `1` as
+`t → ∞`. -/
+theorem tendsto_add_div_add_atTop {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [TopologicalSpace 𝕜] [OrderTopology 𝕜] (x y : 𝕜) :
+    Tendsto (fun t : 𝕜 ↦ (t + x) / (t + y)) atTop (𝓝 1) := by
+  have h := (tendsto_const_nhds (x := x - y)).div_atTop
+    (tendsto_atTop_add_const_right atTop y tendsto_id)
+  rw [show (1 : 𝕜) = 1 + 0 by simp]
+  refine (h.const_add 1).congr' ?_
+  filter_upwards [eventually_gt_atTop (-y)] with t ht
+  have : t + y ≠ 0 := by linarith
+  simp only [id]
+  field_simp
+  ring
 
 end TauCeti
