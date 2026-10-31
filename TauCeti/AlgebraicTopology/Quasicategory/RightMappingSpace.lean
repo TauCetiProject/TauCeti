@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Basic
-public import Mathlib.AlgebraicTopology.SimplexCategory.Augmented.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
+public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
 
 /-!
@@ -23,7 +23,7 @@ We realise it as a subcomplex of `SimplexCategory.joinVertex.op ⋙ X`, the simp
 `n`-simplices are the `(n + 1)`-simplices of `X`, with simplicial operators acting on the first
 `n + 1` vertices and fixing the last one. Here `SimplexCategory.joinVertex` is the join
 `- ⋆ ⦋0⦌` with a final vertex, the restriction to `SimplexCategory` of the join of
-`AugmentedSimplexCategory`.
+`AugmentedSimplexCategory` (see `TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex`).
 
 If `X` is a quasicategory, every horn `Λ[n, i]` with `0 < i` in `Hom^R_X(x, y)` has a filler: in
 `X` it is an inner horn `Λ[n + 1, i]` whose last face is the constant simplex at `x`. Thus
@@ -33,14 +33,14 @@ is Joyal's theorem on special outer horns, which this file does not prove.)
 
 ## Main definitions
 
-* `SimplexCategory.joinVertex`: the endofunctor `⦋n⦌ ↦ ⦋n⦌ ⋆ ⦋0⦌ = ⦋n + 1⦌` of `SimplexCategory`.
 * `SSet.rightMappingSpace X x y`: the right mapping space `Hom^R_X(x, y)`.
 * `SSet.rightMappingSpace.obj₀Equiv`: its vertices are the edges from `x` to `y`.
 
 ## Main results
 
 * `SSet.mem_rightMappingSpace_iff`: the description of the simplices of `Hom^R_X(x, y)`, and
-  `SSet.rightMappingSpace.coe_δ`: their faces are faces in `X` avoiding the last vertex.
+  `SSet.rightMappingSpace.coe_δ`, `SSet.rightMappingSpace.coe_σ`: their faces and degeneracies
+  are those in `X` avoiding, respectively fixing, the last vertex.
 * `SSet.rightMappingSpace.hornFilling`: if `X` is a quasicategory, the horns `Λ[n, i]` with
   `i ≠ 0` in `Hom^R_X(x, y)` have fillers.
 * `SSet.rightMappingSpace.quasicategory`: the right mapping spaces of a quasicategory are
@@ -54,107 +54,23 @@ is Joyal's theorem on special outer horns, which this file does not prove.)
 
 public section
 
-open CategoryTheory Opposite Simplicial AugmentedSimplexCategory
+open CategoryTheory Opposite Simplicial
 
 universe u
-
-namespace SimplexCategory
-
-/-- A morphism out of `⦋m.len + 1⦌` is determined by its values on the first `m.len + 1`
-vertices and on the last vertex. -/
-private theorem hom_ext_castSucc_last {m n : SimplexCategory} {f g : ⦋m.len + 1⦌ ⟶ n}
-    (h : ∀ i : Fin (m.len + 1), f.toOrderHom i.castSucc = g.toOrderHom i.castSucc)
-    (h' : f.toOrderHom (Fin.last _) = g.toOrderHom (Fin.last _)) : f = g := by
-  ext i : 3
-  cases i using Fin.lastCases
-  exacts [h', h _]
-
-/-- The extension of `f` to the joins with a final vertex sends `i` to `f i`. -/
-private theorem tensorHomOf_castSucc {m n : SimplexCategory} (f : m ⟶ n) (i : Fin (m.len + 1)) :
-    (tensorHomOf f (𝟙 ⦋0⦌)).toOrderHom i.castSucc = (f.toOrderHom i).castSucc := by
-  ext
-  simp [tensorHomOf, Fin.addCases, Fin.is_le]
-
-/-- The extension of `f` to the joins with a final vertex fixes the final vertex. -/
-private theorem tensorHomOf_last {m n : SimplexCategory} (f : m ⟶ n) :
-    (tensorHomOf f (𝟙 ⦋0⦌)).toOrderHom (Fin.last (m.len + 1)) = Fin.last (n.len + 1) := by
-  ext
-  simp [tensorHomOf, Fin.addCases]
-
-/-- The join `m ⋆ ⦋0⦌` with a final vertex, as an endofunctor of `SimplexCategory`: the
-restriction of the join `- ⊗ ⦋0⦌` of `AugmentedSimplexCategory`. It sends `⦋n⦌` to `⦋n + 1⦌` and
-extends a monotone map by sending the final vertex to the final vertex. -/
--- The body is exposed so that `joinVertex.obj ⦋n⦌` is definitionally `⦋n + 1⦌` downstream: the
--- simplices of `joinVertex.op ⋙ X` are then literally simplices of `X`. The functor laws are
--- those of the join, which hold here by definitional unfolding of `tensorHom` on `.of` objects.
-@[expose]
-def joinVertex : SimplexCategory ⥤ SimplexCategory where
-  obj m := ⦋m.len + 1⦌
-  map f := tensorHomOf f (𝟙 ⦋0⦌)
-  map_id m := tensor_id (WithInitial.of m) (WithInitial.of ⦋0⦌)
-  map_comp {a b c} f g := (tensorHom_comp_tensorHom (x₁ := WithInitial.of a)
-    (y₁ := WithInitial.of b) (z₁ := WithInitial.of c) (x₂ := WithInitial.of ⦋0⦌)
-    (y₂ := WithInitial.of ⦋0⦌) (z₂ := WithInitial.of ⦋0⦌) f (𝟙 _) g (𝟙 _)).symm
-
-@[simp]
-theorem joinVertex_obj (m : SimplexCategory) : joinVertex.obj m = ⦋m.len + 1⦌ :=
-  (rfl)
-
-@[simp]
-theorem joinVertex_map_castSucc {m n : SimplexCategory} (f : m ⟶ n) (i : Fin (m.len + 1)) :
-    (joinVertex.map f).toOrderHom i.castSucc = (f.toOrderHom i).castSucc :=
-  tensorHomOf_castSucc f i
-
-@[simp]
-theorem joinVertex_map_last {m n : SimplexCategory} (f : m ⟶ n) :
-    (joinVertex.map f).toOrderHom (Fin.last (m.len + 1)) = Fin.last (n.len + 1) :=
-  tensorHomOf_last f
-
-/-- The join with a final vertex sends the `i`-th coface map to the `i`-th coface map. -/
-theorem joinVertex_map_δ {n : ℕ} (i : Fin (n + 2)) :
-    joinVertex.map (δ i) = δ i.castSucc :=
-  hom_ext_castSucc_last (m := ⦋n⦌)
-    (fun j ↦ (joinVertex_map_castSucc (δ i) j).trans Fin.castSucc_succAbove_castSucc.symm)
-    ((joinVertex_map_last (δ i)).trans
-      (Fin.succAbove_ne_last_last (Fin.castSucc_lt_last i).ne).symm)
-
-/-- The inclusion of `m` into `m ⋆ ⦋0⦌` as the face opposite to the final vertex. -/
-def joinVertexInl (m : SimplexCategory) : m ⟶ joinVertex.obj m :=
-  δ (Fin.last (m.len + 1))
-
-/-- The final vertex of `m ⋆ ⦋0⦌`. -/
-def joinVertexInr (m : SimplexCategory) : ⦋0⦌ ⟶ joinVertex.obj m :=
-  const ⦋0⦌ ⦋m.len + 1⦌ (Fin.last _)
-
-/-- On `⦋n⦌`, the inclusion into the join with a final vertex is the last coface map. -/
-theorem joinVertexInl_mk (n : ℕ) : joinVertexInl ⦋n⦌ = δ (Fin.last (n + 1)) :=
-  (rfl)
-
-/-- On `⦋n⦌`, the final vertex of the join is the vertex `n + 1` of `⦋n + 1⦌`. -/
-theorem joinVertexInr_mk (n : ℕ) : joinVertexInr ⦋n⦌ = const ⦋0⦌ ⦋n + 1⦌ (Fin.last _) :=
-  (rfl)
-
-/-- The inclusion `m ⟶ m ⋆ ⦋0⦌` is natural in `m`. -/
-@[reassoc]
-theorem joinVertexInl_comp_joinVertex_map {m n : SimplexCategory} (f : m ⟶ n) :
-    joinVertexInl m ≫ joinVertex.map f = f ≫ joinVertexInl n := by
-  ext i : 3
-  exact (congrArg (joinVertex.map f).toOrderHom (Fin.succAbove_last_apply i)).trans
-    ((joinVertex_map_castSucc f i).trans (Fin.succAbove_last_apply _).symm)
-
-/-- The join with a final vertex preserves the final vertex. -/
-@[reassoc (attr := simp)]
-theorem joinVertexInr_comp_joinVertex_map {m n : SimplexCategory} (f : m ⟶ n) :
-    joinVertexInr m ≫ joinVertex.map f = joinVertexInr n :=
-  Hom.ext_zero_left _ _ (joinVertex_map_last f)
-
-end SimplexCategory
 
 namespace SSet
 
 open SimplexCategory
 
 variable (X : SSet.{u})
+
+/-- Pulling back a totally degenerate simplex along a simplicial operator gives the totally
+degenerate simplex at the same vertex. -/
+@[simp]
+theorem map_map_const_zero {m m' : SimplexCategory} (f : m' ⟶ m) (x : X _⦋0⦌) :
+    X.map f.op (X.map (SimplexCategory.const m ⦋0⦌ 0).op x) =
+      X.map (SimplexCategory.const m' ⦋0⦌ 0).op x := by
+  rw [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim (f ≫ _)]
 
 /-- The right mapping space `Hom^R_X(x, y)` between vertices `x` and `y` of a simplicial set `X`.
 It is the subcomplex of `joinVertex.op ⋙ X` whose `n`-simplices are the `(n + 1)`-simplices of
@@ -168,8 +84,7 @@ def rightMappingSpace (x y : X _⦋0⦌) : Subcomplex (joinVertex.op ⋙ X) wher
     refine ⟨?_, ?_⟩
     · change X.map (joinVertexInl m'.unop).op (X.map (joinVertex.map f.unop).op σ) = _
       rw [← Functor.map_comp_apply, ← op_comp, joinVertexInl_comp_joinVertex_map, op_comp,
-        Functor.map_comp_apply, hσ.1, ← Functor.map_comp_apply, ← op_comp,
-        Subsingleton.elim (f.unop ≫ SimplexCategory.const m.unop ⦋0⦌ 0)]
+        Functor.map_comp_apply, hσ.1, map_map_const_zero]
     · change X.map (joinVertexInr m'.unop).op (X.map (joinVertex.map f.unop).op σ) = _
       rw [← Functor.map_comp_apply, ← op_comp, joinVertexInr_comp_joinVertex_map, hσ.2]
 
@@ -208,17 +123,19 @@ theorem obj₀Equiv_symm_apply_coe (e : Edge x y) :
     (obj₀Equiv.symm e).1 = e.edge :=
   (rfl)
 
-/-- The faces of `joinVertex.op ⋙ X` are faces of `X` avoiding the last vertex. -/
-private theorem δ_joinVertex {m : ℕ} (a : Fin (m + 2)) (s : X _⦋m + 1 + 1⦌) :
-    SimplicialObject.δ (joinVertex.op ⋙ X) a s = X.δ a.castSucc s :=
-  congrArg (fun g ↦ X.map (Quiver.Hom.op g) s) (joinVertex_map_δ a)
-
 /-- The `j`-th face of an `(n + 1)`-simplex of `Hom^R_X(x, y)` is the `j`-th face of the
 corresponding `(n + 2)`-simplex of `X`. -/
 theorem coe_δ {n : ℕ} (j : Fin (n + 2)) (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n + 1⦌) :
     (SimplicialObject.δ (X.rightMappingSpace x y : SSet.{u}) j s).1 =
       X.δ j.castSucc (s.1 : X _⦋n + 2⦌) :=
-  δ_joinVertex j s.1
+  (ConcreteCategory.congr_hom (X.joinVertex_op_comp_δ j) s.1 :)
+
+/-- The `j`-th degeneracy of an `n`-simplex of `Hom^R_X(x, y)` is the `j`-th degeneracy of the
+corresponding `(n + 1)`-simplex of `X`. -/
+theorem coe_σ {n : ℕ} (j : Fin (n + 1)) (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
+    (SimplicialObject.σ (X.rightMappingSpace x y : SSet.{u}) j s).1 =
+      X.σ j.castSucc (s.1 : X _⦋n + 1⦌) :=
+  (ConcreteCategory.congr_hom (X.joinVertex_op_comp_σ j) s.1 :)
 
 /-! ### Horn filling -/
 
@@ -290,8 +207,7 @@ private theorem isCompatible_liftFace
     -- constant simplex.
     rw [liftFace_last, Fin.pred_last,
       ((mem_rightMappingSpace_iff _).1 (hornFace_mem σ₀ j hj')).1, SimplicialObject.δ,
-      ← Functor.map_comp_apply, ← op_comp,
-      Subsingleton.elim (δ _ ≫ SimplexCategory.const ⦋n + 1⦌ ⦋0⦌ 0)]
+      map_map_const_zero]
   | cast k =>
     have hk' : k ≠ i := fun h ↦ hk (h ▸ rfl)
     rw [liftFace_castSucc σ₀ k hk']
@@ -299,9 +215,9 @@ private theorem isCompatible_liftFace
     · exfalso
       rw [Fin.castSucc_lt_castSucc_iff] at hjk
       omega
-    · have h := (δ_joinVertex _ _).symm.trans
+    · have h := (ConcreteCategory.congr_hom (X.joinVertex_op_comp_δ _) _).symm.trans
         ((hornFace_δ σ₀ j k hj' hk' (Fin.castSucc_lt_castSucc_iff.1 hjk)).trans
-          (δ_joinVertex _ _))
+          (ConcreteCategory.congr_hom (X.joinVertex_op_comp_δ _) _))
       -- The indices agree definitionally: `(k.pred _).castSucc = k.castSucc.pred _` and
       -- `(j.castSucc.castPred _).castSucc = j.castSucc`.
       exact h
@@ -331,8 +247,8 @@ theorem hornFilling [X.Quasicategory] (hi : i ≠ 0)
         fun h ↦ hi (Fin.castSucc_injective _ h).symm
       have h := ((mem_rightMappingSpace_iff _).1 (hornFace_mem σ₀ 0 hi.symm)).2
       rw [← liftFace_castSucc σ₀ 0 hi.symm h0, ← hface _ h0, SimplicialObject.δ,
-        ← Functor.map_comp_apply, ← op_comp, SimplexCategory.const_comp] at h
-      simpa [δ] using h
+        ← Functor.map_comp_apply, ← op_comp] at h
+      exact (congrArg (fun g ↦ X.map g.op t) (joinVertexInr_comp_δ_castSucc 0)).symm.trans h
   let s : (X.rightMappingSpace x y : SSet.{u}) _⦋n + 1⦌ := ⟨t, hmem⟩
   refine ⟨yonedaEquiv.symm s, horn.hom_ext _ _ fun j hj ↦ Subtype.ext ?_⟩
   have hR : (Λ[n + 1, i].ι ≫ yonedaEquiv.symm s).app _ (horn.face i j hj) =
