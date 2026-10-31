@@ -8,7 +8,10 @@ module
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Basic
 
+import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 import TauCeti.Geometry.Lie.Adjoint.Smooth
+import TauCeti.Geometry.Lie.InvariantVectorField.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The adjoint and coadjoint representations on the tangent Lie algebra
@@ -32,6 +35,8 @@ moment maps of Hamiltonian group actions are equivariant.
 
 * `TauCeti.Lie.contMDiff_coadjointRepresentation_apply`: for a smooth real Lie group with
   finite-dimensional model, each component `g ↦ (Ad*_g ν) ξ` of the coadjoint action is smooth.
+* `TauCeti.Lie.mvfderiv_coadjointRepresentation_apply_one`: the derivative at the identity of
+  `g ↦ (Ad*_g ν) ξ` in the direction `η` is `ν ⁅ξ, η⁆`.
 
 ## References
 
@@ -100,6 +105,34 @@ theorem contMDiff_coadjointRepresentation_apply (ν : Module.Dual ℝ (GroupLieA
       (contMDiff_inv I ∞))).congr fun g ↦ ?_
   rw [coadjointRepresentation_apply, Function.comp_apply, Function.comp_apply, tangentAd_apply]
   rfl
+
+/-- The derivative at the identity of the component `g ↦ (Ad*_g ν) ξ = ν (Ad_{g⁻¹} ξ)` of the
+coadjoint action, in the direction `η`, is `ν ⁅ξ, η⁆`.
+
+`GroupLieAlgebra I G` reduces definitionally to the model `E`; the `show E from` ascriptions expose
+that model to the manifold derivative API and view `ν` as a linear functional on `E`. -/
+theorem mvfderiv_coadjointRepresentation_apply_one (ν : Module.Dual ℝ (GroupLieAlgebra I G))
+    (ξ η : GroupLieAlgebra I G) :
+    mvfderiv I (fun g : G ↦ coadjointRepresentation ℝ I G g ν ξ) 1 η = ν ⁅ξ, η⁆ := by
+  simp only [coadjointRepresentation_apply, ← tangentAd_apply]
+  -- `g ↦ Ad_g ξ`, viewed as a map into the model `E`, and inversion are differentiable at `1`.
+  have hT : MDifferentiableAt I 𝓘(ℝ, E) (fun g : G ↦ show E from tangentAd (I := I) g ξ) 1 :=
+    (contMDiff_tangentAd_apply_const (I := I) (G := G) (show E from ξ)).mdifferentiableAt
+      (by simp)
+  have hinv : MDifferentiableAt I I (fun g : G ↦ g⁻¹) 1 :=
+    (contMDiff_inv I 1).mdifferentiableAt one_ne_zero
+  have hAd := mvfderiv_tangentAd_apply_one (I := I) (G := G) (-η) ξ
+  dsimp only at hAd
+  -- Chain rule through the continuous functional `ν` and inversion: the derivative is
+  -- `ν (ad (-η) ξ) = ν ⁅ξ, η⁆`.
+  let φ := LinearMap.toContinuousLinearMap (show E →ₗ[ℝ] ℝ from ν)
+  have hcomp := mvfderiv_comp_apply_of_differentiableAt (I := I) (φ := φ)
+    (g := (fun g : G ↦ show E from tangentAd (I := I) g ξ) ∘ fun g : G ↦ g⁻¹)
+    φ.differentiableAt (hT.comp_of_eq (1 : G) hinv inv_one) η
+  rw [φ.fderiv, mvfderiv_comp_apply_of_eq (1 : G) hT hinv inv_one,
+    GroupLieAlgebra.mfderiv_inv_one_apply, hAd] at hcomp
+  rw [← lie_skew, ← neg_lie]
+  exact hcomp
 
 end Smooth
 

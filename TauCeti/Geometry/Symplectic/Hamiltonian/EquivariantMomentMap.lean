@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Adjoint.Coadjoint
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 
-import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
-import TauCeti.Geometry.Lie.Adjoint.Smooth
 import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -337,34 +335,16 @@ theorem mvfderiv_momentDefect_one (h : σ.IsMomentMap (InfinitesimalAction.funda
       fundamentalVectorField_apply]
     exact mvfderiv_comp_apply_of_eq (g := fun y : M ↦ μ y ξ) (f := fun g : G ↦ g • x) 1
       (h.mdifferentiableAt ξ x) horbit (one_smul G x) η
-  -- The derivative of `g ↦ μ x (Ad_{g⁻¹} ξ)` is `μ x (ad (-η) ξ) = μ x ⁅ξ, η⁆`.
-  have hT : MDifferentiableAt I 𝓘(ℝ, E)
-      (fun g : G ↦ show E from Lie.tangentAd (I := I) g (ξ : GroupLieAlgebra I G)) 1 :=
-    (Lie.contMDiff_tangentAd_apply_const (I := I) (G := G) (show E from ξ)).mdifferentiableAt
-      (by simp)
-  have hinv : MDifferentiableAt I I (fun g : G ↦ g⁻¹) 1 :=
-    (contMDiff_inv I 1).mdifferentiableAt one_ne_zero
-  have hAd := Lie.mvfderiv_tangentAd_apply_one (I := I) (G := G) (-η) ξ
-  dsimp only at hAd
-  have h₂ : mvfderiv I (fun g : G ↦ μ x (Lie.tangentAd (I := I) g⁻¹ ξ)) 1 η = μ x ⁅ξ, η⁆ := by
-    let φ := LinearMap.toContinuousLinearMap (show E →ₗ[ℝ] ℝ from μ x)
-    have hcomp := mvfderiv_comp_apply_of_differentiableAt (I := I) (φ := φ)
-      (g := (fun g : G ↦ show E from Lie.tangentAd (I := I) g (ξ : GroupLieAlgebra I G)) ∘
-        fun g : G ↦ g⁻¹) φ.differentiableAt (hT.comp_of_eq (1 : G) hinv inv_one) η
-    rw [φ.fderiv, mvfderiv_comp_apply_of_eq (1 : G) hT hinv inv_one,
-      GroupLieAlgebra.mfderiv_inv_one_apply, hAd] at hcomp
-    rw [← lie_skew, ← neg_lie]
-    exact hcomp
   have hd₁ : MDifferentiableAt I 𝓘(ℝ) (fun g : G ↦ μ (g • x) ξ) 1 :=
     (h.mdifferentiableAt ξ x).comp_of_eq (1 : G) horbit (one_smul G x)
-  simp only [momentDefect_def, LinearMap.sub_apply, Lie.coadjointRepresentation_apply,
-    ← Lie.tangentAd_apply]
-  have hd₂ : MDifferentiableAt I 𝓘(ℝ) (fun g : G ↦ μ x (Lie.tangentAd (I := I) g⁻¹ ξ)) 1 := by
-    simpa only [Lie.coadjointRepresentation_apply, ← Lie.tangentAd_apply] using
-      (Lie.contMDiff_coadjointRepresentation_apply (μ x) ξ).mdifferentiableAt (by simp)
-  rw [mvfderiv_fun_sub hd₁ hd₂,
-    sub_apply, h₁, h₂, momentCocycle_apply, LinearEquiv.apply_symm_apply,
-    InfinitesimalAction.fundamental_apply, InfinitesimalAction.fundamental_apply]
+  have hd₂ : MDifferentiableAt I 𝓘(ℝ)
+      (fun g : G ↦ Lie.coadjointRepresentation ℝ I G g (μ x) ξ) 1 :=
+    (Lie.contMDiff_coadjointRepresentation_apply (μ x) ξ).mdifferentiableAt (by simp)
+  simp only [momentDefect_def, LinearMap.sub_apply]
+  -- The derivative of `g ↦ (Ad*_g (μ x)) ξ` is `μ x ⁅ξ, η⁆`.
+  rw [mvfderiv_fun_sub hd₁ hd₂, sub_apply, h₁, Lie.mvfderiv_coadjointRepresentation_apply_one,
+    momentCocycle_apply, LinearEquiv.apply_symm_apply, InfinitesimalAction.fundamental_apply,
+    InfinitesimalAction.fundamental_apply]
 
 /-- **Infinitesimal equivariance integrates over a connected group.** Let a preconnected Lie group
 act by symplectomorphisms of a preconnected manifold. A moment map of the action by fundamental
@@ -403,15 +383,13 @@ theorem isEquivariantMomentMap_of_momentCocycle_eq_zero [PreconnectedSpace G]
   have hzero : mvfderiv I (fun k : G ↦
       momentDefect μ k x₀ (Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ)) 1 = 0 := by
     ext v
-    rw [h.mvfderiv_momentDefect_one, hc]
-    -- Mathlib has no evaluation lemma for the zero `2`-cochain; it evaluates to zero by definition.
-    rfl
+    rw [h.mvfderiv_momentDefect_one, hc, ← LieModule.Cohomology.twoCochain_val_apply,
+      ZeroMemClass.coe_zero, LinearMap.zero_apply, LinearMap.zero_apply, map_zero, zero_apply]
   rw [zero_apply, ← hcomp, Function.comp_def, htrans,
     mvfderiv_fun_add mdifferentiableAt_const
       ((h.contMDiff_momentDefect_apply x₀ _).mdifferentiableAt (by simp)),
     mvfderiv_const, zero_add, hzero]
-  -- The zero linear map on the tangent space at `g` evaluates to zero by definition.
-  rfl
+  exact zero_apply _
 
 end IsMomentMap
 
