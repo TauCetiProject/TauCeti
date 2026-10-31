@@ -94,7 +94,8 @@ theorem continuousAt_of_eventually_eq_smul [SeparatingDual 𝕜 F] {c : X → �
     rw [hx, ← map_smul]
     exact e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hxb _
   simp only [Function.comp_apply, hφx] at hℓx
-  rw [hφx, hψx, map_smul, smul_eq_mul, mul_div_assoc, div_self hℓx, mul_one]
+  rw [hφx, hψx, map_smul, smul_eq_mul]
+  exact mul_div_cancel_right₀ _ hℓx
 
 end TauCeti.VectorBundle
 

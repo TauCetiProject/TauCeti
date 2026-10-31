@@ -13,21 +13,25 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import Mathlib.Topology.Instances.Sign
 import Mathlib.Topology.Order.MonotoneContinuity
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
 # Reparametrizing periodic integral curves
 
-Let `γ` be a periodic integral curve of a vector field `X` on a manifold, and let `Y` be a second
-vector field which is a nonzero multiple of `X` along `γ`: `Y (γ t) = h t • X (γ t)` with `h t ≠ 0`.
-Then `γ` traces a periodic integral curve of `Y` after a change of time. If `h` is continuous and
-positive, the new time is `θ t = ∫₀ᵗ 1 / h`, and `γ ∘ θ⁻¹` is an integral curve of `Y`, since
-`(θ⁻¹)' = h ∘ θ⁻¹`. Periodicity of `γ` makes `h ∘ γ`, hence `θ - (θ T / T) • id`, periodic, so `θ`
-is a homeomorphism of `ℝ` and `γ ∘ θ⁻¹` has period `θ T`. If `h` is negative, the time is reversed.
+Let `γ` be a `T`-periodic integral curve of a vector field `X` on a manifold, and let `Y` be a
+second vector field which is a nonzero multiple of `X` along `γ`: `Y (γ t) = h t • X (γ t)` with
+`h t ≠ 0`, for a continuous `T`-periodic function `h`. Then `γ` traces a periodic integral curve of
+`Y` after a change of time. If `h` is positive, the new time is `θ t = ∫₀ᵗ 1 / h`, and `γ ∘ θ⁻¹` is
+an integral curve of `Y`, since `(θ⁻¹)' = h ∘ θ⁻¹`. Periodicity of `h` makes
+`θ - (θ T / T) • id` periodic, so `θ` is a homeomorphism of `ℝ` and `γ ∘ θ⁻¹` has period `θ T`.
+If `h` is negative, the time is reversed.
 
-When `X` and `Y` are continuous along `γ` and `X` does not vanish on it, the factor `h` is forced
-to be continuous and periodic, so only the pointwise proportionality has to be checked.
+When `X` does not vanish along `γ`, the factor `h t` is uniquely determined by
+`Y (γ t) = h t • X (γ t)`; since `γ (t + T) = γ t`, uniqueness forces `h` to be `T`-periodic. If
+moreover `X` and `Y` are continuous along `γ`, then `h` is continuous, so only the pointwise
+proportionality has to be checked.
 
 This is how one closed orbit of a line field, the closed characteristic of a hypersurface in a
 symplectic manifold, is traced by the periodic orbits of different vector fields spanning the line
@@ -58,16 +62,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {γ : ℝ → M} {X Y : (x : M) → TangentSpace I x} {T : ℝ} {h : ℝ → ℝ}
 
 namespace IsMIntegralCurve
-
-/-- A continuous nonvanishing function on `ℝ` has constant sign. -/
-private theorem forall_pos_or_forall_neg (hh : Continuous h) (hh0 : ∀ t, h t ≠ 0) :
-    (∀ t, 0 < h t) ∨ ∀ t, h t < 0 := by
-  by_contra hne
-  push Not at hne
-  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ := hne
-  obtain ⟨c, -, hc⟩ := intermediate_value_uIcc (a := a) (b := b) hh.continuousOn
-    (show (0 : ℝ) ∈ uIcc (h a) (h b) from mem_uIcc.2 (Or.inl ⟨ha, hb⟩))
-  exact hh0 c hc
 
 /-- The reparametrization for a positive factor `h`: the time change is the inverse of
 `θ t = ∫₀ᵗ 1 / h`. -/
@@ -102,7 +96,8 @@ private theorem exists_homeomorph_isMIntegralCurve_comp_of_pos (hγ : IsMIntegra
       have h₁ := hθT (n * T)
       have h₂ := hθT (-((n + 1 : ℕ) * T))
       push_cast at h₁ h₂ ⊢
-      rw [show -(((n : ℝ) + 1) * T) + T = -(n * T) by ring, ih.2] at h₂
+      have hn : -(((n : ℝ) + 1) * T) + T = -(n * T) := by ring
+      rw [hn, ih.2] at h₂
       rw [← add_one_mul, ih.1] at h₁
       constructor <;> linarith
   have hθsurj : Surjective θ := fun y ↦ by
@@ -145,8 +140,14 @@ theorem exists_homeomorph_isMIntegralCurve_comp_of_periodic
     (hh0 : ∀ t, h t ≠ 0) (hhT : Periodic h T) (hY : ∀ t, Y (γ t) = h t • X (γ t)) :
     ∃ ψ : ℝ ≃ₜ ℝ, ψ 0 = 0 ∧ ∃ T', T' ≠ 0 ∧ Periodic (γ ∘ ψ) T' ∧
       IsMIntegralCurve (γ ∘ ψ) Y := by
-  rcases forall_pos_or_forall_neg hh hh0 with hpos | hneg
-  · exact exists_homeomorph_isMIntegralCurve_comp_of_pos hγ hT hper hh hpos hhT hY
+  -- A continuous nonvanishing function on `ℝ` has the constant sign of its value at `0`.
+  have hsign : ∀ t, SignType.sign (h t) = SignType.sign (h 0) := fun t ↦
+    isPreconnected_univ.sign_eq_of_continuousOn hh.continuousOn (fun t _ ↦ hh0 t) trivial trivial
+  rcases (hh0 0).lt_or_gt with hneg0 | hpos0
+  swap
+  · exact exists_homeomorph_isMIntegralCurve_comp_of_pos hγ hT hper hh
+      (fun t ↦ sign_eq_one_iff.1 ((hsign t).trans (sign_pos hpos0))) hhT hY
+  have hneg : ∀ t, h t < 0 := fun t ↦ sign_eq_neg_one_iff.1 ((hsign t).trans (sign_neg hneg0))
   -- For a negative factor, reparametrize along `-Y` with the factor `-h`, then reverse time.
   obtain ⟨ψ, hψ0, T', hT', hper', hψ⟩ :=
     exists_homeomorph_isMIntegralCurve_comp_of_pos (Y := fun x ↦ -Y x) hγ hT hper hh.neg
