@@ -117,6 +117,21 @@ private theorem lastT_mul_rep {n m : ℕ} (h : m ≤ n) :
     lastT q n * incl q (n + 1) (rep q n m) = rep q (n + 1) m :=
   Subtype.ext (cosetRep_succ h).symm
 
+/-- A functional `ψ` on the stage `n + 2` satisfies `ψ (x * y) = ψ (y * x)` for every `y` once this
+holds for `y` in the stage `n + 1` and for `y = a * T n * b` with `a`, `b` in the stage `n + 1`. -/
+private theorem stage_map_mul_comm {n : ℕ} {ψ : stage R q (n + 2) →ₗ[R] R}
+    {x : stage R q (n + 2)} (h₁ : ∀ b, ψ (x * incl q (n + 1) b) = ψ (incl q (n + 1) b * x))
+    (h₂ : ∀ a b, ψ (x * (incl q (n + 1) a * lastT q n * incl q (n + 1) b)) =
+      ψ (incl q (n + 1) a * lastT q n * incl q (n + 1) b * x))
+    (y : stage R q (n + 2)) : ψ (x * y) = ψ (y * x) := by
+  have h := stage_linearMap_ext (f := ψ ∘ₗ LinearMap.mulLeft R x)
+    (g := ψ ∘ₗ LinearMap.mulRight R x) (fun b ↦ ?_) (fun a b ↦ ?_)
+  · exact LinearMap.congr_fun h y
+  · simpa only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
+      using h₁ b
+  · simpa only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
+      using h₂ a b
+
 variable (z : R)
 
 /-- The extension of a functional `φ` on the stage `n + 1` to the stage `n + 2`: in the coset
@@ -157,30 +172,34 @@ private theorem extend_incl_mul_lastT_mul_incl (hφ : ∀ x y, φ (x * y) = φ (
   rw [hm, extend_incl_mul_rep, ← mul_assoc, hφ]
   simp only [mul_assoc]
 
+/-- `b * T n ↦ z * φ b`. -/
+private theorem extend_incl_mul_lastT (hφ : ∀ x y, φ (x * y) = φ (y * x))
+    (b : stage R q (n + 1)) : extend z φ (incl q (n + 1) b * lastT q n) = z * φ b := by
+  have h := extend_incl_mul_lastT_mul_incl z hφ b 1
+  rwa [map_one, mul_one, one_mul] at h
+
+/-- `T n * b ↦ z * φ b`. -/
+private theorem extend_lastT_mul_incl (hφ : ∀ x y, φ (x * y) = φ (y * x))
+    (b : stage R q (n + 1)) : extend z φ (lastT q n * incl q (n + 1) b) = z * φ b := by
+  have h := extend_incl_mul_lastT_mul_incl z hφ 1 b
+  rwa [map_one, one_mul, mul_one] at h
+
 /-- `b * T n * T n ↦ ((q - q⁻¹) * z + 1) * φ b`. -/
 private theorem extend_incl_mul_lastT_mul_lastT (hφ : ∀ x y, φ (x * y) = φ (y * x))
     (b : stage R q (n + 1)) :
     extend z φ (incl q (n + 1) b * lastT q n * lastT q n) =
       (((q : R) - ↑q⁻¹) * z + 1) * φ b := by
-  have h : incl q (n + 1) b * lastT q n * lastT q n =
-      ((q : R) - ↑q⁻¹) • (incl q (n + 1) b * lastT q n * incl q (n + 1) 1) +
-        incl q (n + 1) b := by
-    rw [map_one, mul_one, mul_assoc, lastT_mul_lastT, mul_add, mul_smul_comm, mul_one]
-  rw [h, map_add, map_smul, extend_incl_mul_lastT_mul_incl z hφ, extend_incl, one_mul,
-    smul_eq_mul]
+  rw [mul_assoc, lastT_mul_lastT, mul_add, mul_smul_comm, mul_one, map_add, map_smul,
+    extend_incl_mul_lastT z hφ, extend_incl, smul_eq_mul]
   ring
 
 /-- The extension of a trace is tracial against the stage `n + 1`. -/
 private theorem extend_incl_mul_comm (hφ : ∀ x y, φ (x * y) = φ (y * x))
     (b : stage R q (n + 1)) (x : stage R q (n + 2)) :
     extend z φ (incl q (n + 1) b * x) = extend z φ (x * incl q (n + 1) b) := by
-  have h := stage_linearMap_ext (f := extend z φ ∘ₗ LinearMap.mulLeft R (incl q (n + 1) b))
-    (g := extend z φ ∘ₗ LinearMap.mulRight R (incl q (n + 1) b)) (fun c ↦ ?_) (fun a c ↦ ?_)
-  · exact LinearMap.congr_fun h x
-  · simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
-    rw [← map_mul, ← map_mul, extend_incl, extend_incl, hφ]
-  · simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
-    rw [← mul_assoc, ← mul_assoc, ← map_mul, mul_assoc _ _ (incl q (n + 1) b), ← map_mul,
+  refine stage_map_mul_comm (fun c ↦ ?_) (fun a c ↦ ?_) x
+  · rw [← map_mul, ← map_mul, extend_incl, extend_incl, hφ]
+  · rw [← mul_assoc, ← mul_assoc, ← map_mul, mul_assoc _ _ (incl q (n + 1) b), ← map_mul,
       extend_incl_mul_lastT_mul_incl z hφ, extend_incl_mul_lastT_mul_incl z hφ, mul_assoc]
 
 /-- `T n * T n * b ↦ ((q - q⁻¹) * z + 1) * φ b`. -/
@@ -308,22 +327,9 @@ private theorem extend_extend_mul_lastT_mul_mul_lastT_comm (hφ : ∀ x y, φ (x
 private theorem extend_extend_lastT_mul_comm (hφ : ∀ x y, φ (x * y) = φ (y * x))
     (hφ' : ∀ x y, extend z φ (x * y) = extend z φ (y * x)) (y : stage R q (m + 3)) :
     extend z (extend z φ) (lastT q (m + 1) * y) = extend z (extend z φ) (y * lastT q (m + 1)) := by
-  have h := stage_linearMap_ext (n := m + 1)
-    (f := extend z (extend z φ) ∘ₗ LinearMap.mulLeft R (lastT q (m + 1)))
-    (g := extend z (extend z φ) ∘ₗ LinearMap.mulRight R (lastT q (m + 1)))
-    (fun w ↦ ?_) (fun a b ↦ ?_)
-  · exact LinearMap.congr_fun h y
-  · simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
-    have e₁ : lastT q (m + 1) * incl q (m + 2) w =
-        incl q (m + 2) 1 * lastT q (m + 1) * incl q (m + 2) w := by
-      rw [map_one, one_mul]
-    have e₂ : incl q (m + 2) w * lastT q (m + 1) =
-        incl q (m + 2) w * lastT q (m + 1) * incl q (m + 2) 1 := by
-      rw [map_one, mul_one]
-    rw [e₁, e₂, extend_incl_mul_lastT_mul_incl z hφ', extend_incl_mul_lastT_mul_incl z hφ',
-      mul_one, one_mul]
-  · simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
-    rw [← mul_assoc, ← mul_assoc, ← extend_incl_mul_comm z hφ']
+  refine stage_map_mul_comm (fun w ↦ ?_) (fun a b ↦ ?_) y
+  · rw [extend_lastT_mul_incl z hφ', extend_incl_mul_lastT z hφ']
+  · rw [← mul_assoc, ← mul_assoc, ← extend_incl_mul_comm z hφ']
     simp only [← mul_assoc]
     exact extend_extend_mul_lastT_mul_mul_lastT_comm z hφ hφ' b a
 
@@ -332,22 +338,16 @@ stage `m + 2` are traces, then so is the extension of the extension to the stage
 private theorem extend_extend_mul_comm (hφ : ∀ x y, φ (x * y) = φ (y * x))
     (hφ' : ∀ x y, extend z φ (x * y) = extend z φ (y * x)) (x y : stage R q (m + 3)) :
     extend z (extend z φ) (x * y) = extend z (extend z φ) (y * x) := by
-  have h := stage_linearMap_ext (n := m + 1)
-    (f := extend z (extend z φ) ∘ₗ LinearMap.mulLeft R x)
-    (g := extend z (extend z φ) ∘ₗ LinearMap.mulRight R x) (fun b ↦ ?_) (fun a b ↦ ?_)
-  · exact LinearMap.congr_fun h y
-  · simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
-    exact (extend_incl_mul_comm z hφ' b x).symm
-  · simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
-    calc extend z (extend z φ) (x * (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b))
-        = extend z (extend z φ) (incl q (m + 2) b * x * incl q (m + 2) a * lastT q (m + 1)) := by
-          rw [← mul_assoc, ← mul_assoc, ← extend_incl_mul_comm z hφ']
-          simp only [mul_assoc]
-      _ = extend z (extend z φ) (lastT q (m + 1) * (incl q (m + 2) b * x * incl q (m + 2) a)) :=
-          (extend_extend_lastT_mul_comm z hφ hφ' _).symm
-      _ = extend z (extend z φ) (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b * x) := by
-          rw [← mul_assoc, ← mul_assoc, ← extend_incl_mul_comm z hφ']
-          simp only [mul_assoc]
+  refine stage_map_mul_comm (fun b ↦ (extend_incl_mul_comm z hφ' b x).symm) (fun a b ↦ ?_) y
+  calc extend z (extend z φ) (x * (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b))
+      = extend z (extend z φ) (incl q (m + 2) b * x * incl q (m + 2) a * lastT q (m + 1)) := by
+        rw [← mul_assoc, ← mul_assoc, ← extend_incl_mul_comm z hφ']
+        simp only [mul_assoc]
+    _ = extend z (extend z φ) (lastT q (m + 1) * (incl q (m + 2) b * x * incl q (m + 2) a)) :=
+        (extend_extend_lastT_mul_comm z hφ hφ' _).symm
+    _ = extend z (extend z φ) (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b * x) := by
+        rw [← mul_assoc, ← mul_assoc, ← extend_incl_mul_comm z hφ']
+        simp only [mul_assoc]
 
 end Step
 
@@ -435,11 +435,11 @@ theorem isMarkovTrace_ocneanuTrace (z : R) : IsMarkovTrace z (ocneanuTrace R q z
     have hxT : x * T q n ∈ stage R q (n + 2) :=
       mul_mem (stage_mono n.succ.le_succ hx) (T_mem_stage (by omega))
     have e : (⟨x * T q n, hxT⟩ : stage R q (n + 2)) =
-        incl q (n + 1) ⟨x, hx⟩ * lastT q n * incl q (n + 1) 1 := by
+        incl q (n + 1) ⟨x, hx⟩ * lastT q n := by
       ext
       simp [lastT]
     rw [ocneanuTrace_eq_stageTrace z hxT, ocneanuTrace_eq_stageTrace z hx, e, stageTrace_succ,
-      extend_incl_mul_lastT_mul_incl z (stageTrace_mul_comm z n), one_mul]
+      extend_incl_mul_lastT z (stageTrace_mul_comm z n)]
 
 /-- **Ocneanu's theorem.** Every Markov trace with parameter `z` is the Ocneanu trace. -/
 theorem IsMarkovTrace.eq_ocneanuTrace {z : R} {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
