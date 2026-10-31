@@ -50,8 +50,8 @@ elementary sums. A variant with closed intervals needs only a monotone partition
 (`TauCeti.Finance.isSelfFinancing_iff_forall_mem_Icc`).
 
 Self-financing does not depend on the unit of account: multiplying both prices by a process that
-does not vanish at the trading dates preserves it (`TauCeti.Finance.isSelfFinancing_mul_iff`). In
-particular, when the bond price does not vanish on `[τ 0, τ n]`, the discounted wealth of a
+does not vanish at the rebalancing dates preserves it (`TauCeti.Finance.isSelfFinancing_mul_iff`).
+In particular, when the bond price does not vanish on `[τ 0, τ n]`, the discounted wealth of a
 self-financing strategy, measured in bond shares, is the initial discounted cost plus the gains
 from the discounted stock `S / β` alone (`TauCeti.Finance.isSelfFinancing_iff_discounted`).
 The bond holding is therefore determined by the stock holding and the initial capital `v`: when
@@ -85,33 +85,11 @@ namespace TauCeti.Finance
 variable {Ω ι : Type*} {τ : ℕ → ι} {n j : ℕ} {t : ι}
   {a a₁ a₂ b b₁ b₂ : ℕ → Ω → ℝ} {S β X N : ι → Ω → ℝ} {v : Ω → ℝ}
 
-/-- Two dates of a partition that is monotone up to `n`, both indexed up to `n`, are ordered like
-their indices. -/
-private theorem le_of_monotoneOn [Preorder ι] (hτ : MonotoneOn τ (Set.Iic n)) {i k : ℕ}
-    (hik : i ≤ k) (hk : k ≤ n) : τ i ≤ τ k :=
-  hτ (hik.trans hk) hk hik
-
-/-- A partition that is monotone up to `n` becomes monotone once frozen after `n`. -/
-private theorem monotone_min [Preorder ι] (hτ : MonotoneOn τ (Set.Iic n)) :
-    Monotone fun k ↦ τ (min k n) :=
-  fun _ _ hik ↦ le_of_monotoneOn hτ (min_le_min_right n hik) (min_le_right _ _)
-
 /-! ### Simple holdings and their gains -/
 
 section Gains
 
 variable [LinearOrder ι]
-
-/-- A date lies in `(τ 0, τ n]` exactly when it lies in some interval `(τ j, τ (j + 1)]` with
-`j < n`, for a partition that is monotone up to `n`. -/
-private theorem mem_Ioc_iff_exists_lt (hτ : MonotoneOn τ (Set.Iic n)) :
-    t ∈ Set.Ioc (τ 0) (τ n) ↔ ∃ j < n, t ∈ Set.Ioc (τ j) (τ (j + 1)) := by
-  have h := (monotone_min hτ).biUnion_Ico_Ioc_map_succ 0 n
-  simp only [Nat.zero_min, min_self, Order.succ_eq_add_one] at h
-  rw [← h]
-  simp only [Set.mem_iUnion, Set.mem_Ico, Nat.zero_le, true_and, exists_prop]
-  exact exists_congr fun j ↦ and_congr_right fun hj ↦ by
-    rw [min_eq_left hj.le, min_eq_left (show j + 1 ≤ n from hj)]
 
 /-- The holding process of a simple strategy that holds `a j` units on the interval
 `(τ j, τ (j + 1)]`, for `j < n`, and nothing outside `(τ 0, τ n]`:
@@ -144,26 +122,26 @@ theorem simpleHolding_of_mem_Ioc (hτ : MonotoneOn τ (Set.Iic n)) (hj : j < n)
   rw [simpleHolding_def, sum_eq_single_of_mem j (mem_range.2 hj), Set.indicator_of_mem ht]
   intro i hi hij
   refine Set.indicator_of_notMem (fun hit ↦ ?_) _
-  have hdisj := (monotone_min hτ).pairwise_disjoint_on_Ioc_succ hij
-  simp only [Function.onFun, Order.succ_eq_add_one, min_eq_left (mem_range.1 hi).le,
-    min_eq_left (show i + 1 ≤ n from mem_range.1 hi), min_eq_left hj.le,
-    min_eq_left (show j + 1 ≤ n from hj)] at hdisj
-  exact Set.disjoint_left.1 hdisj hit ht
+  -- Intervals with different indices are disjoint.
+  rcases lt_or_gt_of_ne hij with hij | hij
+  · exact (hit.2.trans (hτ (hij.trans hj) hj.le hij)).not_gt ht.1
+  · exact (ht.2.trans (hτ (hij.trans (mem_range.1 hi)) (mem_range.1 hi).le hij)).not_gt hit.1
 
 /-- Outside `(τ 0, τ n]` a simple strategy over a partition monotone up to `n` holds nothing. -/
 @[simp]
 theorem simpleHolding_of_notMem_Ioc (hτ : MonotoneOn τ (Set.Iic n))
     (ht : t ∉ Set.Ioc (τ 0) (τ n)) (ω : Ω) : simpleHolding τ n a t ω = 0 := by
-  simp only [mem_Ioc_iff_exists_lt hτ, not_exists, not_and] at ht
-  exact sum_eq_zero fun i hi ↦ Set.indicator_of_notMem (ht i (mem_range.1 hi)) _
+  refine sum_eq_zero fun i hi ↦ Set.indicator_of_notMem (fun hit ↦ ht ?_) _
+  exact Set.Ioc_subset_Ioc (hτ (Nat.zero_le n) (mem_range.1 hi).le (Nat.zero_le i))
+    (hτ (mem_range.1 hi) Set.self_mem_Iic (mem_range.1 hi)) hit
 
 /-- The gains over a partition monotone up to `n` vanish up to its first date. -/
 @[simp]
 theorem simpleGains_of_le (hτ : MonotoneOn τ (Set.Iic n)) (ht : t ≤ τ 0) (X : ι → Ω → ℝ)
     (ω : Ω) : simpleGains τ n a X t ω = 0 := by
   refine sum_eq_zero fun i hi ↦ ?_
-  have h₀ : t ≤ τ i := ht.trans (le_of_monotoneOn hτ (Nat.zero_le _) (mem_range.1 hi).le)
-  have h₁ : t ≤ τ (i + 1) := ht.trans (le_of_monotoneOn hτ (Nat.zero_le _) (mem_range.1 hi))
+  have h₀ : t ≤ τ i := ht.trans (hτ (Nat.zero_le n) (mem_range.1 hi).le (Nat.zero_le i))
+  have h₁ : t ≤ τ (i + 1) := ht.trans (hτ (Nat.zero_le n) (mem_range.1 hi) (Nat.zero_le _))
   simp [h₀, h₁]
 
 /-- After the last date of a partition monotone up to `n`, the gains stay at their terminal
@@ -171,8 +149,8 @@ value. -/
 theorem simpleGains_of_ge (hτ : MonotoneOn τ (Set.Iic n)) (ht : τ n ≤ t) (X : ι → Ω → ℝ)
     (ω : Ω) : simpleGains τ n a X t ω = simpleGains τ n a X (τ n) ω := by
   refine sum_congr rfl fun i hi ↦ ?_
-  have h₀ : τ i ≤ τ n := le_of_monotoneOn hτ (mem_range.1 hi).le le_rfl
-  have h₁ : τ (i + 1) ≤ τ n := le_of_monotoneOn hτ (mem_range.1 hi) le_rfl
+  have h₀ : τ i ≤ τ n := hτ (mem_range.1 hi).le Set.self_mem_Iic (mem_range.1 hi).le
+  have h₁ : τ (i + 1) ≤ τ n := hτ (mem_range.1 hi) Set.self_mem_Iic (mem_range.1 hi)
   simp [h₀, h₁, h₀.trans ht, h₁.trans ht]
 
 /-- The gains from trading a constant price vanish. -/
@@ -186,19 +164,19 @@ the position `a j` times the price change since `τ j`. -/
 theorem simpleGains_of_mem_Icc (hτ : MonotoneOn τ (Set.Iic n)) (hj : j < n)
     (ht : t ∈ Set.Icc (τ j) (τ (j + 1))) (X : ι → Ω → ℝ) (ω : Ω) :
     simpleGains τ n a X t ω = simpleGains τ n a X (τ j) ω + a j ω * (X t ω - X (τ j) ω) := by
-  have hjj : τ j ≤ τ (j + 1) := le_of_monotoneOn hτ (Nat.le_succ j) hj
+  have hjj : τ j ≤ τ (j + 1) := hτ hj.le hj (Nat.le_succ j)
   rw [← sub_eq_iff_eq_add', simpleGains_def, simpleGains_def, ← sum_sub_distrib,
     sum_eq_single_of_mem j (mem_range.2 hj)]
   · simp [ht.1, ht.2, hjj]
   · intro i hi hij
     rcases lt_or_gt_of_ne hij with hij | hij
     · -- An interval before `τ j` has been traded completely at both times.
-      have h₁ : τ (i + 1) ≤ τ j := le_of_monotoneOn hτ hij hj.le
-      have h₀ : τ i ≤ τ j := le_of_monotoneOn hτ hij.le hj.le
+      have h₁ : τ (i + 1) ≤ τ j := hτ (hij.trans hj) hj.le hij
+      have h₀ : τ i ≤ τ j := hτ (hij.trans hj).le hj.le hij.le
       simp [h₀, h₁, h₀.trans ht.1, h₁.trans ht.1]
     · -- An interval after `τ (j + 1)` has not been traded yet at either time.
-      have h₀ : τ (j + 1) ≤ τ i := le_of_monotoneOn hτ hij (mem_range.1 hi).le
-      have h₁ : τ (j + 1) ≤ τ (i + 1) := le_of_monotoneOn hτ (by omega) (mem_range.1 hi)
+      have h₀ : τ (j + 1) ≤ τ i := hτ hj (mem_range.1 hi).le hij
+      have h₁ : τ (j + 1) ≤ τ (i + 1) := hτ hj (mem_range.1 hi) (Nat.succ_le_succ hij.le)
       simp [ht.2.trans h₀, ht.2.trans h₁, hjj.trans h₀, hjj.trans h₁]
 
 /-- At a rebalancing date `τ j`, `j ≤ n`, of a partition monotone up to `n`, the gains are the
@@ -209,7 +187,7 @@ theorem simpleGains_apply_eq_sum (hτ : MonotoneOn τ (Set.Iic n)) (hj : j ≤ n
   induction j with
   | zero => simp [simpleGains_of_le hτ le_rfl]
   | succ j ih =>
-    rw [simpleGains_of_mem_Icc hτ hj ⟨le_of_monotoneOn hτ (Nat.le_succ j) hj, le_rfl⟩,
+    rw [simpleGains_of_mem_Icc hτ hj ⟨hτ (Nat.le_of_succ_le hj) hj (Nat.le_succ j), le_rfl⟩,
       ih (Nat.le_of_succ_le hj), sum_range_succ]
 
 /-- The gains are additive in the strategy. -/
@@ -286,7 +264,7 @@ theorem stronglyAdapted_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
     have ht : t ≤ τ j := (not_le.1 hjt).le
     convert stronglyMeasurable_const (b := (0 : ℝ)) using 1
     ext ω
-    rw [min_eq_right (ht.trans (le_of_monotoneOn hτ (Nat.le_succ j) (mem_range.1 hj))),
+    rw [min_eq_right (ht.trans (hτ (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))),
       min_eq_right ht, sub_self, mul_zero]
 
 end Measurability
@@ -324,15 +302,29 @@ theorem IsSelfFinancing.smul (h : IsSelfFinancing τ n a b S β) (c : ℝ) :
   simp only [Pi.smul_apply, smul_eq_mul]
   linear_combination c * h j hj ω
 
+/-- **The terminal wealth** of a self-financing strategy: the final portfolio `(a n, b n)`, valued
+at the last date `τ (n + 1)`, is worth the initial cost plus the discrete gains from trading the
+stock and the bond. -/
+theorem IsSelfFinancing.terminal_wealth_eq (h : IsSelfFinancing τ (n + 1) a b S β) (ω : Ω) :
+    a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω =
+      a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω +
+        ∑ i ∈ range (n + 1), a i ω * (S (τ (i + 1)) ω - S (τ i) ω) +
+        ∑ i ∈ range (n + 1), b i ω * (β (τ (i + 1)) ω - β (τ i) ω) := by
+  induction n with
+  | zero => simp only [zero_add, sum_range_one]; ring
+  | succ n ih =>
+    rw [sum_range_succ _ (n + 1), sum_range_succ _ (n + 1)]
+    linear_combination ih (fun j hj ω ↦ h j (by omega) ω) + h n (by omega) ω
+
 /-- Self-financing does not depend on the unit of account: multiplying both prices by a process
-that does not vanish at the trading dates `τ j`, `j < n`, preserves it. -/
-theorem isSelfFinancing_mul_iff (hN : ∀ j < n, ∀ ω, N (τ j) ω ≠ 0) :
+that does not vanish at the rebalancing dates `τ (j + 1)`, `j + 1 < n`, preserves it. -/
+theorem isSelfFinancing_mul_iff (hN : ∀ j, j + 1 < n → ∀ ω, N (τ (j + 1)) ω ≠ 0) :
     IsSelfFinancing τ n a b (S * N) (β * N) ↔ IsSelfFinancing τ n a b S β := by
   refine forall₂_congr fun j hj ↦ forall_congr' fun ω ↦ ?_
   simp only [Pi.mul_apply]
   constructor
   · intro h
-    refine mul_right_cancel₀ (hN (j + 1) hj ω) ?_
+    refine mul_right_cancel₀ (hN j hj ω) ?_
     linear_combination h
   · intro h
     linear_combination N (τ (j + 1)) ω * h
@@ -366,7 +358,7 @@ theorem isSelfFinancing_iff_forall_lt (hτ : MonotoneOn τ (Set.Iic n)) :
       simpleGains τ n c X (τ (j + 1)) ω =
         simpleGains τ n c X (τ j) ω + c j ω * (X (τ (j + 1)) ω - X (τ j) ω) :=
     fun j hj c X ω ↦ simpleGains_of_mem_Icc hτ (by omega)
-      ⟨le_of_monotoneOn hτ (Nat.le_succ j) hj.le, le_rfl⟩ X ω
+      ⟨hτ (Nat.le_of_succ_le hj.le) hj.le (Nat.le_succ j), le_rfl⟩ X ω
   constructor
   · intro h j hj ω
     induction j with
@@ -391,21 +383,8 @@ theorem isSelfFinancing_iff_forall_mem_Icc (hτ : MonotoneOn τ (Set.Iic n)) :
   rw [isSelfFinancing_iff_forall_lt hτ]
   refine forall₂_congr fun j hj ↦ forall_congr' fun ω ↦ ⟨fun h t ht ↦ ?_, fun h ↦ ?_⟩
   · exact (wealth_eq_iff_of_mem_Icc hτ hj ht ω).2 h
-  · have hjj : τ j ≤ τ (j + 1) := le_of_monotoneOn hτ (Nat.le_succ j) hj
+  · have hjj : τ j ≤ τ (j + 1) := hτ hj.le hj (Nat.le_succ j)
     exact (wealth_eq_iff_of_mem_Icc hτ hj ⟨le_rfl, hjj⟩ ω).1 (h _ ⟨le_rfl, hjj⟩)
-
-/-- **The terminal wealth** of a self-financing strategy over a partition monotone up to `n + 1`:
-the final portfolio `(a n, b n)`, valued at the last date `τ (n + 1)`, is worth the initial cost
-plus the discrete gains from trading the stock and the bond. -/
-theorem IsSelfFinancing.terminal_wealth_eq (h : IsSelfFinancing τ (n + 1) a b S β)
-    (hτ : MonotoneOn τ (Set.Iic (n + 1))) (ω : Ω) :
-    a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω =
-      a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω +
-        ∑ i ∈ range (n + 1), a i ω * (S (τ (i + 1)) ω - S (τ i) ω) +
-        ∑ i ∈ range (n + 1), b i ω * (β (τ (i + 1)) ω - β (τ i) ω) := by
-  rw [← simpleGains_apply_eq_sum hτ le_rfl, ← simpleGains_apply_eq_sum hτ le_rfl]
-  exact (isSelfFinancing_iff_forall_mem_Icc hτ).1 h n n.lt_succ_self ω _
-    ⟨le_of_monotoneOn hτ (Nat.le_succ n) le_rfl, le_rfl⟩
 
 /-- **The simple-strategy formula**: a strategy over a partition strictly increasing up to `n` is
 self-financing exactly when its wealth `V_t = a_t S_t + b_t β_t` satisfies
@@ -419,7 +398,17 @@ theorem isSelfFinancing_iff_forall_mem_Ioc (hτ : StrictMonoOn τ (Set.Iic n)) :
   rw [isSelfFinancing_iff_forall_mem_Icc hτ.monotoneOn]
   constructor
   · intro h ω t ht
-    obtain ⟨j, hj, ht⟩ := (mem_Ioc_iff_exists_lt hτ.monotoneOn).1 ht
+    obtain ⟨j, hj, ht⟩ : ∃ j < n, t ∈ Set.Ioc (τ j) (τ (j + 1)) := by
+      -- Frozen after `n`, the partition is monotone and its intervals cover `(τ 0, τ n]`.
+      have hcover :=
+        (Set.monotoneOn_iff_monotone.1 hτ.monotoneOn).IicExtend.biUnion_Ico_Ioc_map_succ 0 n
+      simp only [Set.IicExtend_apply, Nat.min_zero, min_self, Order.succ_eq_add_one,
+        Set.mem_Ico, Nat.zero_le, true_and] at hcover
+      rw [← hcover] at ht
+      simp only [Set.mem_iUnion, exists_prop] at ht
+      obtain ⟨j, hj, ht⟩ := ht
+      rw [min_eq_right hj.le, min_eq_right (Nat.add_one_le_of_lt hj)] at ht
+      exact ⟨j, hj, ht⟩
     rw [simpleHolding_of_mem_Ioc hτ.monotoneOn hj ht, simpleHolding_of_mem_Ioc hτ.monotoneOn hj ht]
     exact h j hj ω t (Set.Ioc_subset_Icc_self ht)
   · intro h j hj ω t ht
@@ -427,7 +416,8 @@ theorem isSelfFinancing_iff_forall_mem_Ioc (hτ : StrictMonoOn τ (Set.Iic n)) :
     -- `(τ j, τ (j + 1)]`, already determines the value of the portfolio `(a j, b j)`.
     have hmem : τ (j + 1) ∈ Set.Ioc (τ j) (τ (j + 1)) :=
       ⟨hτ (Set.mem_Iic.2 hj.le) (Set.mem_Iic.2 hj) (Nat.lt_succ_self j), le_rfl⟩
-    have hend := h ω (τ (j + 1)) ((mem_Ioc_iff_exists_lt hτ.monotoneOn).2 ⟨j, hj, hmem⟩)
+    have hend := h ω (τ (j + 1))
+      ⟨hτ (Nat.zero_le n) hj (Nat.succ_pos j), hτ.monotoneOn hj Set.self_mem_Iic hj⟩
     rw [simpleHolding_of_mem_Ioc hτ.monotoneOn hj hmem,
       simpleHolding_of_mem_Ioc hτ.monotoneOn hj hmem] at hend
     exact (wealth_eq_iff_of_mem_Icc hτ.monotoneOn hj ht ω).2
@@ -443,8 +433,8 @@ theorem isSelfFinancing_iff_discounted (hτ : MonotoneOn τ (Set.Iic n))
       (a j ω * S t ω + b j ω * β t ω) / β t ω =
         (a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) / β (τ 0) ω + simpleGains τ n a (S / β) t ω := by
   have hdate : ∀ k ≤ n, τ k ∈ Set.Icc (τ 0) (τ n) := fun k hk ↦
-    ⟨le_of_monotoneOn hτ (Nat.zero_le k) hk, le_of_monotoneOn hτ hk le_rfl⟩
-  rw [← isSelfFinancing_mul_iff (N := β⁻¹) fun j hj ω ↦ inv_ne_zero (hβ _ (hdate j hj.le) ω),
+    ⟨hτ (Nat.zero_le n) hk (Nat.zero_le k), hτ hk Set.self_mem_Iic hk⟩
+  rw [← isSelfFinancing_mul_iff (N := β⁻¹) fun j hj ω ↦ inv_ne_zero (hβ _ (hdate _ hj.le) ω),
     ← div_eq_mul_inv S β, isSelfFinancing_iff_forall_mem_Icc hτ]
   refine forall₂_congr fun j hj ↦ forall_congr' fun ω ↦ forall₂_congr fun t ht ↦ ?_
   have ht₀ : t ∈ Set.Icc (τ 0) (τ n) :=
@@ -529,7 +519,7 @@ theorem stronglyMeasurable_selfFinancingBond [Preorder ι] {mΩ : MeasurableSpac
     (ha : ∀ i ≤ j, StronglyMeasurable[ℱ (τ i)] (a i)) (hS : StronglyAdapted ℱ S)
     (hβ : StronglyAdapted ℱ β) :
     StronglyMeasurable[ℱ (τ j)] (selfFinancingBond τ v a S β j) := by
-  have hle : ∀ i ≤ j, τ i ≤ τ j := fun i hi ↦ le_of_monotoneOn hτ hi le_rfl
+  have hle : ∀ i ≤ j, τ i ≤ τ j := fun i hi ↦ hτ hi Set.self_mem_Iic hi
   have hdisc : ∀ i ≤ j, StronglyMeasurable[ℱ (τ j)] fun ω ↦ S (τ i) ω / β (τ i) ω :=
     fun i hi ↦ (hS.stronglyMeasurable_le (hle i hi)).div (hβ.stronglyMeasurable_le (hle i hi))
   have hgains : StronglyMeasurable[ℱ (τ j)] fun ω ↦
