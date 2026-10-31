@@ -57,9 +57,8 @@ theorem nonempty_homotopy_of_comp {K K' I : CochainComplex C ℤ} [I.IsKInjectiv
     rw [isIso_Qh_map_iff, HomotopyCategory.quotient_map_mem_quasiIso_iff]
     exact HomologicalComplex.mem_quasiIso_iff _ |>.2 inferInstance
   refine ⟨HomotopyCategory.homotopyOfEq _ _ ((Qh_map_bijective _ I).injective ?_)⟩
-  rw [← cancel_epi (Qh.map ((HomotopyCategory.quotient _ _).map f)), ← Functor.map_comp,
-    ← Functor.map_comp, ← Functor.map_comp, ← Functor.map_comp,
-    HomotopyCategory.eq_of_homotopy _ _ h]
+  rw [← cancel_epi (Qh.map ((HomotopyCategory.quotient _ _).map f))]
+  simp only [← Functor.map_comp, HomotopyCategory.eq_of_homotopy _ _ h]
 
 /-- K-injective replacements are unique up to homotopy equivalence: if `f₁ : K ⟶ I₁` and
 `f₂ : K ⟶ I₂` are quasi-isomorphisms into K-injective complexes, there is a homotopy equivalence
@@ -168,10 +167,12 @@ instance isKInjective_kInjectiveReplacement_obj_as (X : DerivedCategory C) :
 
 private theorem kInjectiveReplacementAdjunction_counit_app (X : DerivedCategory C) :
     (kInjectiveReplacementAdjunction C).counit.app X = (iso X).hom := by
-  simp [kInjectiveReplacementAdjunction, homEquiv_symm_apply]
-  -- The two sides differ only in their source, `Qh.obj ((kInjectiveReplacement C).obj X)`, which
-  -- is the image of the chosen replacement `complex X` by construction of the functor.
-  rfl
+  simp only [kInjectiveReplacementAdjunction, Adjunction.adjunctionOfEquivRight_counit_app,
+    homEquiv_symm_apply]
+  -- The source `Qh.obj ((kInjectiveReplacement C).obj X)` is definitionally the image of the
+  -- chosen replacement `complex X`; the term-mode `congrArg` sees through this unfolding.
+  exact (congrArg (· ≫ (iso X).hom) (Qh.map_id ((kInjectiveReplacement C).obj X))).trans
+    (Category.id_comp _)
 
 instance : IsIso (kInjectiveReplacementAdjunction C).counit := by
   have (X : DerivedCategory C) : IsIso ((kInjectiveReplacementAdjunction C).counit.app X) := by
@@ -196,6 +197,17 @@ theorem quasiIso_kInjectiveReplacementAdjunction_unit_app (K : HomotopyCategory 
     HomotopyCategory.quasiIso C _ ((kInjectiveReplacementAdjunction C).unit.app K) :=
   (isIso_Qh_map_iff _).1 inferInstance
 
+/-- A chain map `K ⟶ I(K)` representing the unit of the adjunction is a quasi-isomorphism of
+complexes into the K-injective replacement of `K`. -/
+theorem quasiIso_of_quotient_map_eq_kInjectiveReplacementAdjunction_unit_app
+    {K : CochainComplex C ℤ}
+    (f : K ⟶ ((kInjectiveReplacement C).obj (Qh.obj ((HomotopyCategory.quotient _ _).obj K))).as)
+    (hf : (HomotopyCategory.quotient _ _).map f =
+      (kInjectiveReplacementAdjunction C).unit.app ((HomotopyCategory.quotient _ _).obj K)) :
+    QuasiIso f := by
+  rw [← HomologicalComplex.mem_quasiIso_iff, ← HomotopyCategory.quotient_map_mem_quasiIso_iff, hf]
+  exact quasiIso_kInjectiveReplacementAdjunction_unit_app _
+
 /-- The essential image of the K-injective replacement functor consists exactly of the
 K-injective complexes. -/
 theorem mem_essImage_kInjectiveReplacement_iff (K : HomotopyCategory C (.up ℤ)) :
@@ -204,10 +216,7 @@ theorem mem_essImage_kInjectiveReplacement_iff (K : HomotopyCategory C (.up ℤ)
   rw [← (kInjectiveReplacementAdjunction C).isIso_unit_app_iff_mem_essImage]
   obtain ⟨f, hf⟩ := (HomotopyCategory.quotient _ _).map_surjective
     ((kInjectiveReplacementAdjunction C).unit.app K)
-  have : QuasiIso f := by
-    rw [← HomologicalComplex.mem_quasiIso_iff, ← HomotopyCategory.quotient_map_mem_quasiIso_iff,
-      hf]
-    exact quasiIso_kInjectiveReplacementAdjunction_unit_app K
+  have := quasiIso_of_quotient_map_eq_kInjectiveReplacementAdjunction_unit_app f hf
   obtain ⟨e, rfl⟩ := (CochainComplex.IsKInjective.quasiIso_iff f).1 this
   rw [← hf]
   exact (HomotopyCategory.isoOfHomotopyEquiv e).isIso_hom
