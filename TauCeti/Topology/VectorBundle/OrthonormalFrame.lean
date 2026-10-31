@@ -131,6 +131,7 @@ theorem frame_smul_apply (g : (unitary (V →L[ℝ] V))ᵐᵒᵖ) (p : Orthonorm
   rfl
 
 /-- The action is free: only the identity fixes a frame. -/
+@[simp]
 theorem smul_eq_self_iff {g : unitary (V →L[ℝ] V)} {p : OrthonormalFrameBundle F E V} :
     op g • p = p ↔ g = 1 := by
   refine ⟨fun h ↦ ?_, by rintro rfl; exact one_smul _ p⟩
