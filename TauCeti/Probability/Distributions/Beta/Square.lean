@@ -7,11 +7,15 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Basic
 import TauCeti.Probability.Distributions.Beta.Reflection
+import TauCeti.Probability.Distributions.Beta.Quantile
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Analysis.SpecialFunctions.Beta
 
 /-!
-# Squaring a centered symmetric Beta variable
+# Squares of Beta variables
+
+Squaring a `Beta(a, 1)` variable halves its first shape parameter. This identifies the squared
+normalized radius of a uniform ball point from the power-function radius law.
 
 If `X` has the symmetric Beta law with positive shape `a`, then `(2 * X - 1) ^ 2`
 has the Beta law with shapes `1 / 2` and `a`. This converts the magnitude of a symmetric
@@ -30,6 +34,23 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti.Probability
+
+/-- Squaring a Beta variable with second shape one halves its first shape. -/
+@[simp]
+theorem betaMeasure_map_sq_one_right {a : ℝ} (ha : 0 < a) :
+    (betaMeasure a 1).map (fun x ↦ x ^ 2) = betaMeasure (a / 2) 1 := by
+  have := isProbabilityMeasureBeta ha one_pos
+  have := isProbabilityMeasureBeta (half_pos ha) one_pos
+  rw [← Measure.map_quantile_volume_Ioo (betaMeasure a 1),
+    Measure.map_map (by fun_prop) (Measure.measurable_quantile _),
+    ← Measure.map_quantile_volume_Ioo (betaMeasure (a / 2) 1)]
+  apply Measure.map_congr
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with u hu
+  simp only [Function.comp_apply, quantile_betaMeasure_one_right ha hu,
+    quantile_betaMeasure_one_right (half_pos ha) hu]
+  rw [← Real.rpow_natCast, ← Real.rpow_mul hu.1.le]
+  congr 1
+  simp [div_eq_mul_inv, mul_comm]
 
 private theorem betaPDFReal_centered_sq {a x : ℝ} (ha : 0 < a) (hx : 0 < x) :
     2 * x * betaPDFReal (1 / 2) a (x ^ 2) = betaPDFReal a a ((x + 1) / 2) := by
