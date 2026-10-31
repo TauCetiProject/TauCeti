@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Probability.Renewal.Measure
 
 /-!
@@ -261,17 +262,10 @@ section RenewalEquation
 
 variable [IsLocallyFiniteMeasure μ.renewalMeasure]
 
-private theorem renewalMeasure_Iic_ne_top (t : ℝ≥0) : μ.renewalMeasure (Iic t) ≠ ∞ := by
-  rw [← Icc_bot]
-  exact measure_Icc_lt_top.ne
-
-private theorem measure_Iic_ne_top [SFinite μ] (t : ℝ≥0) : μ (Iic t) ≠ ∞ :=
-  ne_top_of_le_ne_top (renewalMeasure_Iic_ne_top (μ := μ) t) (Measure.le_renewalMeasure μ _)
-
 /-- `h ∗ U` is bounded on each `[0, T]` when `h` is, for a locally finite renewal measure `U`. -/
 private theorem abs_renewalConv_renewalMeasure_le (hC : ∀ s ≤ T, |h s| ≤ C) :
     ∀ s ≤ T, |renewalConv h μ.renewalMeasure s| ≤ C * μ.renewalMeasure.real (Iic T) :=
-  fun _ ↦ abs_renewalConv_le hC (renewalMeasure_Iic_ne_top T)
+  fun _ ↦ abs_renewalConv_le hC measure_Iic_lt_top.ne
 
 /-- **Existence for the renewal equation.** If the renewal measure `U` of `F` is locally finite
 and `h` is measurable and bounded on `[0, t]`, then `g = h ∗ U` satisfies the renewal equation
@@ -280,13 +274,14 @@ theorem renewalConv_renewalMeasure_eq_add [SFinite μ] (hh : Measurable h)
     (hC : ∀ s ≤ t, |h s| ≤ C) :
     renewalConv h μ.renewalMeasure t =
       h t + renewalConv (renewalConv h μ.renewalMeasure) μ t := by
-  have hUt := renewalMeasure_Iic_ne_top (μ := μ) t
+  have := Measure.isLocallyFiniteMeasure_of_renewalMeasure μ
+  have hUt : μ.renewalMeasure (Iic t) ≠ ∞ := measure_Iic_lt_top.ne
   -- `μ ∗ U ≤ U` by the renewal equation for measures, so it is finite on `[0, t]`.
   have hconv : (μ ∗ μ.renewalMeasure) (Iic t) ≠ ∞ := by
     refine ne_top_of_le_ne_top hUt ?_
     conv_rhs => rw [Measure.renewalMeasure_eq_dirac_add_conv]
     exact le_add_self
-  rw [renewalConv_renewalConv hh hC hUt (measure_Iic_ne_top t), Measure.conv_comm]
+  rw [renewalConv_renewalConv hh hC hUt measure_Iic_lt_top.ne, Measure.conv_comm]
   conv_lhs => rw [Measure.renewalMeasure_eq_dirac_add_conv]
   rw [renewalConv_add_measure (integrableOn_Iic_sub hh hC (by simp))
     (integrableOn_Iic_sub hh hC hconv), renewalConv_dirac_zero]
@@ -296,6 +291,7 @@ theorem renewalConv_renewalMeasure_eq_add [SFinite μ] (hh : Measurable h)
 then `d = 0`. -/
 theorem eq_zero_of_renewalConv_eq_self [SFinite μ] {d : ℝ≥0 → ℝ} (hd : Measurable d)
     (hdb : ∀ t, ∃ C, ∀ s ≤ t, |d s| ≤ C) (hfix : renewalConv d μ = d) : d = 0 := by
+  have := Measure.isLocallyFiniteMeasure_of_renewalMeasure μ
   -- Iterating, `d = d ∗ F^{∗n}` for every `n`.
   have hpow : ∀ n t, renewalConv d (μ.convolutionPower n) t = d t := fun n ↦ by
     induction n with
@@ -304,18 +300,18 @@ theorem eq_zero_of_renewalConv_eq_self [SFinite μ] {d : ℝ≥0 → ℝ} (hd : 
       intro t
       obtain ⟨C, hC⟩ := hdb t
       rw [Measure.convolutionPower_succ, ← renewalConv_renewalConv hd hC
-        (ne_top_of_le_ne_top (renewalMeasure_Iic_ne_top t)
-          (Measure.convolutionPower_le_renewalMeasure μ n _)) (measure_Iic_ne_top t),
+        (ne_top_of_le_ne_top measure_Iic_lt_top.ne
+          (Measure.convolutionPower_le_renewalMeasure μ n _)) measure_Iic_lt_top.ne,
         funext ih, hfix]
   -- The masses `F^{∗n} [0, t]` are summable, hence tend to zero, so `d t = 0`.
   ext t
   obtain ⟨C, hC⟩ := hdb t
   have hlim : Tendsto (fun n ↦ C * (μ.convolutionPower n).real (Iic t)) atTop (𝓝 0) := by
     simpa using ((Measure.summable_convolutionPower_real
-      (renewalMeasure_Iic_ne_top t)).tendsto_atTop_zero).const_mul C
+      measure_Iic_lt_top.ne).tendsto_atTop_zero).const_mul C
   have hle : ∀ n, |d t| ≤ C * (μ.convolutionPower n).real (Iic t) := fun n ↦ by
     rw [← hpow n t]
-    exact abs_renewalConv_convolutionPower_le hC (renewalMeasure_Iic_ne_top t) n le_rfl
+    exact abs_renewalConv_convolutionPower_le hC measure_Iic_lt_top.ne n le_rfl
   simpa using ge_of_tendsto' hlim hle
 
 /-- **Uniqueness for the renewal equation.** If the renewal measure `U` of `F` is locally finite,
@@ -325,6 +321,7 @@ theorem eq_renewalConv_renewalMeasure [SFinite μ] (hh : Measurable h)
     (hhb : ∀ t, ∃ C, ∀ s ≤ t, |h s| ≤ C) (hg : Measurable g)
     (hgb : ∀ t, ∃ C, ∀ s ≤ t, |g s| ≤ C) (hgeq : g = h + renewalConv g μ) :
     g = renewalConv h μ.renewalMeasure := by
+  have := Measure.isLocallyFiniteMeasure_of_renewalMeasure μ
   -- The difference of the two solutions solves the homogeneous equation.
   refine sub_eq_zero.1 (eq_zero_of_renewalConv_eq_self (μ := μ)
     (hg.sub (measurable_renewalConv hh _)) (fun T ↦ ?_) (funext fun t ↦ ?_))
@@ -334,9 +331,9 @@ theorem eq_renewalConv_renewalMeasure [SFinite μ] (hh : Measurable h)
     exact (abs_sub _ _).trans (add_le_add (hC₁ s hs) (abs_renewalConv_renewalMeasure_le hC₂ s hs))
   · obtain ⟨C₁, hC₁⟩ := hgb t
     obtain ⟨C₂, hC₂⟩ := hhb t
-    rw [renewalConv_sub (integrableOn_Iic_sub hg hC₁ (measure_Iic_ne_top t))
+    rw [renewalConv_sub (integrableOn_Iic_sub hg hC₁ measure_Iic_lt_top.ne)
       (integrableOn_Iic_sub (measurable_renewalConv hh _)
-        (abs_renewalConv_renewalMeasure_le hC₂) (measure_Iic_ne_top t)),
+        (abs_renewalConv_renewalMeasure_le hC₂) measure_Iic_lt_top.ne),
       Pi.sub_apply, renewalConv_renewalMeasure_eq_add hh hC₂, congrFun hgeq t, Pi.add_apply]
     ring
 

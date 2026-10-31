@@ -39,6 +39,8 @@ measure and the renewal function are the objects of the renewal limit theorems a
 * `MeasureTheory.Measure.convolutionPower_le_renewalMeasure`,
   `MeasureTheory.Measure.summable_convolutionPower_real` — each `F^{∗n}` is dominated by `U`, and
   the masses `F^{∗n} s` are summable when `U s` is finite.
+* `MeasureTheory.Measure.isLocallyFiniteMeasure_of_renewalMeasure` — `F` is locally finite when
+  `U` is.
 * `MeasureTheory.Measure.renewalMeasure_eq_dirac_add_conv` — the renewal equation
   `U = δ₀ + F ∗ U`.
 * `MeasureTheory.Measure.renewalFunction_eq_tsum` — `m t = ∑_{n ≥ 1} F^{∗n} [0, t]`.
@@ -93,6 +95,12 @@ theorem convolutionPower_le_renewalMeasure (μ : Measure α) (n : ℕ) :
 theorem le_renewalMeasure [MeasurableAdd₂ α] (μ : Measure α) [SFinite μ] :
     μ ≤ μ.renewalMeasure :=
   (convolutionPower_one μ).ge.trans (convolutionPower_le_renewalMeasure μ 1)
+
+/-- An s-finite measure whose renewal measure is locally finite is itself locally finite. -/
+theorem isLocallyFiniteMeasure_of_renewalMeasure [MeasurableAdd₂ α] [TopologicalSpace α]
+    (μ : Measure α) [SFinite μ] [IsLocallyFiniteMeasure μ.renewalMeasure] :
+    IsLocallyFiniteMeasure μ :=
+  isLocallyFiniteMeasure_of_le (le_renewalMeasure μ)
 
 /-- The masses of a set `s` under the convolution powers are summable when the renewal measure
 gives `s` finite mass. No measurability of `s` is needed. -/
