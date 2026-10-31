@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
-public import Mathlib.Topology.MetricSpace.Isometry
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Order.ProjIcc
 public import Mathlib.Topology.UnitInterval
+public import TauCeti.Topology.MetricSpace.Isometry
 
 /-!
 # The cylinder on a relative CW complex
@@ -53,7 +53,7 @@ product of a relative CW complex with any compact regular space
 The construction adapts that of the finite product `TauCeti.cwComplexProd`
 (`TauCeti/Topology/CWComplex/Classical/Product.lean`): the characteristic map of a cell of the
 cylinder is the product of the characteristic map of a cell of `C` with that of the interval,
-precomposed with the sup-norm isometry `Fin.appendIsometry` splitting off the last coordinate.
+precomposed with the sup-norm isometry `Fin.initLastIsometry` splitting off the last coordinate.
 
 ## References
 
@@ -175,79 +175,43 @@ private theorem image_sphere_intervalCellMap : intervalCellMap '' sphere 0 1 = {
   rw [Real.sphere_eq_pair 0 zero_le_one, image_pair, intervalCellMap_apply, intervalCellMap_apply]
   norm_num [projIcc_left, projIcc_right]
 
-/-- The identification of `Fin (n + 1) → ℝ` with `(Fin n → ℝ) × ℝ`, splitting off the last
-coordinate; it is an isometry for the sup norms. -/
-private def cylinderIsometry (n : ℕ) : (Fin (n + 1) → ℝ) ≃ᵢ (Fin n → ℝ) × ℝ :=
-  (Fin.appendIsometry n 1).symm.trans
-    { toEquiv := (Equiv.refl _).prodCongr (Equiv.funUnique (Fin 1) ℝ)
-      isometry_toFun := isometry_id.prodMap (IsometryEquiv.funUnique (Fin 1) ℝ).isometry }
-
-private theorem cylinderIsometry_apply {n : ℕ} (x : Fin (n + 1) → ℝ) :
-    cylinderIsometry n x = (Fin.init x, x (Fin.last n)) := by
-  -- `Fin.appendIsometry` restricts `x` along `Fin.castAdd 1` and `Fin.natAdd n`; the second factor
-  -- is a bare `IsometryEquiv` structure, which `simp` evaluates through its `toEquiv`.
-  have hinit (i : Fin n) : Fin.castAdd 1 i = i.castSucc := Fin.ext (by simp)
-  have hlast : Fin.natAdd n (0 : Fin 1) = Fin.last n := Fin.ext (by simp)
-  ext i <;> simp [cylinderIsometry, ← IsometryEquiv.coe_toEquiv, Fin.init, hinit, hlast]
-
-private theorem cylinderIsometry_zero (n : ℕ) : cylinderIsometry n 0 = 0 := by
-  ext <;> simp [cylinderIsometry_apply, Fin.init]
-
-private theorem image_ball_cylinderIsometry (n : ℕ) :
-    cylinderIsometry n '' ball 0 1 = ball 0 1 ×ˢ ball 0 1 := by
-  rw [IsometryEquiv.image_ball, cylinderIsometry_zero, ball_prod_same, Prod.zero_eq_mk]
-
-private theorem image_closedBall_cylinderIsometry (n : ℕ) :
-    cylinderIsometry n '' closedBall 0 1 = closedBall 0 1 ×ˢ closedBall 0 1 := by
-  rw [IsometryEquiv.image_closedBall, cylinderIsometry_zero, closedBall_prod_same,
-    Prod.zero_eq_mk]
-
-private theorem image_sphere_cylinderIsometry (n : ℕ) :
-    cylinderIsometry n '' sphere 0 1 =
-      sphere 0 1 ×ˢ closedBall 0 1 ∪ closedBall 0 1 ×ˢ sphere 0 1 := by
-  rw [IsometryEquiv.image_sphere, cylinderIsometry_zero, sphere_prod, Prod.fst_zero, Prod.snd_zero]
-
-private theorem preimage_ball_cylinderIsometry (n : ℕ) :
-    cylinderIsometry n ⁻¹' (ball 0 1 ×ˢ ball 0 1) = ball 0 1 :=
-  ((cylinderIsometry n).toEquiv.preimage_eq_iff_eq_image _ _).2
-    (image_ball_cylinderIsometry n).symm
-
 variable {X : Type u} [TopologicalSpace X] {C D : Set X} [RelCWComplex C D]
 
 /-- The characteristic map of the cylinder on the `n`-cell `i` of `C`: the product of the
 characteristic map of `i` with that of the interval, after splitting off the last coordinate. -/
 private def cylinderCellMap {n : ℕ} (i : cell C n) : PartialEquiv (Fin (n + 1) → ℝ) (X × I) :=
-  (cylinderIsometry n).toEquiv.transPartialEquiv ((map n i).prod intervalCellMap)
+  (Fin.initLastIsometry ℝ n).toEquiv.transPartialEquiv ((map n i).prod intervalCellMap)
 
 private theorem cylinderCellMap_apply {n : ℕ} (i : cell C n) (x : Fin (n + 1) → ℝ) :
-    cylinderCellMap i x = Prod.map (map n i) intervalCellMap (cylinderIsometry n x) :=
+    cylinderCellMap i x = Prod.map (map n i) intervalCellMap (Fin.initLastIsometry ℝ n x) :=
   (rfl)
 
 private theorem image_cylinderCellMap {n : ℕ} (i : cell C n) (s : Set (Fin (n + 1) → ℝ)) :
-    cylinderCellMap i '' s = Prod.map (map n i) intervalCellMap '' (cylinderIsometry n '' s) := by
+    cylinderCellMap i '' s =
+      Prod.map (map n i) intervalCellMap '' (Fin.initLastIsometry ℝ n '' s) := by
   rw [image_image]
   exact image_congr fun x _ ↦ cylinderCellMap_apply i x
 
 private theorem image_ball_cylinderCellMap {n : ℕ} (i : cell C n) :
     cylinderCellMap i '' ball 0 1 = openCell n i ×ˢ Ioo 0 1 := by
-  rw [image_cylinderCellMap, image_ball_cylinderIsometry, prodMap_image_prod,
+  rw [image_cylinderCellMap, Fin.image_ball_initLastIsometry, prodMap_image_prod,
     image_ball_intervalCellMap, openCell]
 
 private theorem image_closedBall_cylinderCellMap {n : ℕ} (i : cell C n) :
     cylinderCellMap i '' closedBall 0 1 = closedCell n i ×ˢ univ := by
-  rw [image_cylinderCellMap, image_closedBall_cylinderIsometry, prodMap_image_prod,
+  rw [image_cylinderCellMap, Fin.image_closedBall_initLastIsometry, prodMap_image_prod,
     image_closedBall_intervalCellMap, closedCell]
 
 private theorem image_sphere_cylinderCellMap {n : ℕ} (i : cell C n) :
     cylinderCellMap i '' sphere 0 1 = cellFrontier n i ×ˢ univ ∪ closedCell n i ×ˢ {0, 1} := by
-  simp only [image_cylinderCellMap, image_sphere_cylinderIsometry, image_union,
+  simp only [image_cylinderCellMap, Fin.image_sphere_initLastIsometry, image_union,
     prodMap_image_prod, image_closedBall_intervalCellMap, image_sphere_intervalCellMap,
     cellFrontier, closedCell]
 
 private theorem source_cylinderCellMap {n : ℕ} (i : cell C n) :
     (cylinderCellMap i).source = ball 0 1 := by
   simp only [cylinderCellMap, Equiv.transPartialEquiv_source, PartialEquiv.prod_source, source_eq,
-    intervalCellMap_source, IsometryEquiv.coe_toEquiv, preimage_ball_cylinderIsometry]
+    intervalCellMap_source, IsometryEquiv.coe_toEquiv, Fin.preimage_ball_prod_initLastIsometry]
 
 variable (C D) in
 /-- The cells of the cylinder on `(C, D)`: there are no `0`-cells, and the `(n + 1)`-cells are the
@@ -294,11 +258,12 @@ def relCWComplexCylinder : RelCWComplex (C ×ˢ (univ : Set I)) (C ×ˢ {0, 1} �
   continuousOn
     | 0, i => PEmpty.elim i
     | n + 1, i => ((continuousOn n i).prodMap continuous_intervalCellMap.continuousOn).comp
-        (cylinderIsometry n).continuous.continuousOn fun x hx ↦
-          ⟨(image_closedBall_cylinderIsometry n ▸ mem_image_of_mem _ hx).1, mem_univ _⟩
+        (Fin.initLastIsometry ℝ n).continuous.continuousOn fun x hx ↦
+          ⟨(Fin.image_closedBall_initLastIsometry (α := ℝ) n 1 ▸ mem_image_of_mem _ hx).1,
+            mem_univ _⟩
   continuousOn_symm
     | 0, i => PEmpty.elim i
-    | n + 1, i => (cylinderIsometry n).symm.continuous.comp_continuousOn
+    | n + 1, i => (Fin.initLastIsometry ℝ n).symm.continuous.comp_continuousOn
         ((continuousOn_symm n i).prodMap continuous_intervalCellMap_symm.continuousOn)
   pairwiseDisjoint' := by
     rintro ⟨_ | n, i⟩ - ⟨_ | m, j⟩ - hne
@@ -383,7 +348,7 @@ theorem map_relCWComplexCylinder_apply (x : Fin (n + 1) → ℝ) :
     @map (X × I) _ (C ×ˢ univ) _ (relCWComplexCylinder C D) (n + 1) i x =
       (map n (cellCylinderEquiv n i) (Fin.init x),
         projIcc 0 1 zero_le_one ((x (Fin.last n) + 1) / 2)) := by
-  rw [map_relCWComplexCylinder, cylinderCellMap_apply, cylinderIsometry_apply, Prod.map_apply,
+  rw [map_relCWComplexCylinder, cylinderCellMap_apply, Fin.initLastIsometry_apply, Prod.map_apply,
     intervalCellMap_apply]
 
 /-- The open cell of the cylinder on an `n`-cell is the product of the open cell with the open
