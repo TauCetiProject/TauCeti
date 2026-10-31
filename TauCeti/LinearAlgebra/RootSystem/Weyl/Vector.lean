@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
+public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
 
 /-!
 # The Weyl vector of a base
@@ -54,6 +55,12 @@ positive coroot is not merely positive but at least `1`, being a positive intege
 * `TauCeti.smul_twoWeylVector_sub_twoWeylVector` and `TauCeti.smul_weylVector_sub_weylVector`:
   a Weyl-group element `w` moves `2ρ` and `ρ` by a sum of roots,
   `w (2ρ) - 2ρ = -2 ∑_{α > 0, w⁻¹ α < 0} α` and `w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α`.
+* `TauCeti.smul_two_smul_sub_twoWeylVector_of_forall_coroot'_eq_one` and
+  `TauCeti.smul_sub_eq_neg_sum_inversionsFinset_of_forall_coroot'_eq_one`: a weight `d` pairing
+  to `1` with every simple coroot differs from `ρ` by a Weyl-invariant weight, `2d - 2ρ`, and so
+  moves as `ρ` does, `w d - d = -∑_{α > 0, w⁻¹ α < 0} α`, as soon as `2` is a non-zero-divisor on
+  the weight space. No halving is needed, so this applies to integral weight lattices in which `ρ`
+  does not exist.
 * `TauCeti.coroot'_twoWeylVector_eq_two_mul_height_flip` and
   `TauCeti.coroot'_weylVector_eq_height_flip`: `⟨2ρ, α^∨⟩ = 2 ht(α^∨)` and `⟨ρ, α^∨⟩ = ht(α^∨)` for
   an arbitrary root `α`, the general form of the two preceding identities.
@@ -227,6 +234,51 @@ theorem smul_twoWeylVector_sub_twoWeylVector (w : P.weylGroup) :
   rw [hw, twoWeylVector_def,
     ← Finset.sum_sdiff (inversionsFinset_subset_posRootsFinset P b w⁻¹)]
   module
+
+section Substitute
+
+/-! ### Integral substitutes for the Weyl vector
+
+Over an integral weight lattice `ρ` itself need not exist, since the sum of the positive roots
+need not be divisible by `2`. A weight `d` pairing to `1` with every simple coroot can play its
+role: `2d - 2ρ` is killed by every simple coroot, hence fixed by the Weyl group, so `d` moves under
+the Weyl group exactly as `ρ` would. -/
+
+variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
+
+/-- If `⟨d, αᵢ^∨⟩ = 1` for a simple root `αᵢ`, then `αᵢ^∨` kills `2d - 2ρ`. -/
+theorem coroot'_two_smul_sub_twoWeylVector_eq_zero {d : M} {i : ι} (hi : i ∈ b.support)
+    (hd : P.coroot' i d = 1) :
+    P.coroot' i ((2 : R) • d - twoWeylVector P b) = 0 := by
+  rw [map_sub, map_smul, hd, coroot'_twoWeylVector P b hi, smul_eq_mul, mul_one, sub_self]
+
+/-- **A weight pairing to `1` with every simple coroot differs from `ρ` by a Weyl-invariant
+weight**: if `⟨d, αᵢ^∨⟩ = 1` for every simple root, then `2d - 2ρ` is fixed by the Weyl group. -/
+theorem smul_two_smul_sub_twoWeylVector_of_forall_coroot'_eq_one {d : M}
+    (hd : ∀ i ∈ b.support, P.coroot' i d = 1) (w : P.weylGroup) :
+    w • ((2 : R) • d - twoWeylVector P b) = (2 : R) • d - twoWeylVector P b :=
+  smul_eq_self_of_forall_coroot'_eq_zero b
+    (fun i hi ↦ coroot'_two_smul_sub_twoWeylVector_eq_zero P b hi (hd i hi)) w
+
+/-- **A weight pairing to `1` with every simple coroot moves as the Weyl vector does**: if
+`⟨d, αᵢ^∨⟩ = 1` for every simple root and `2` is a non-zero-divisor on `M`, then
+`w d - d = -∑_{α > 0, w⁻¹ α < 0} α`, the shift `TauCeti.smul_weylVector_sub_weylVector` of `ρ`. -/
+theorem smul_sub_eq_neg_sum_inversionsFinset_of_forall_coroot'_eq_one {d : M}
+    (hd : ∀ i ∈ b.support, P.coroot' i d = 1) (h2 : IsSMulRegular M (2 : R))
+    (w : P.weylGroup) :
+    w • d - d = -∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+  refine h2 ?_
+  have h := smul_two_smul_sub_twoWeylVector_of_forall_coroot'_eq_one P b hd w
+  have h' := smul_twoWeylVector_sub_twoWeylVector P b w
+  rw [smul_sub, smul_comm w (2 : R) d] at h
+  dsimp only
+  -- `linear_combination` would read the Weyl-group scalars as coefficients, so the two translates
+  -- are made atoms first.
+  generalize w • d = a at h ⊢
+  generalize w • twoWeylVector P b = t at h h'
+  linear_combination (norm := module) h + h'
+
+end Substitute
 
 section Weyl
 
