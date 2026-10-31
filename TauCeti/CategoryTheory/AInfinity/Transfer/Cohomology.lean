@@ -24,9 +24,10 @@ homotopy preserve every hom module, so it is compatible with the hom modules.
 Homological transfer of `A∞` categories (`TauCeti.AInfinityCategory.transfer`) along this
 contraction gives the **minimal model** `TauCeti.AInfinityCategory.minimalModel`: an `A∞` category
 on the cohomology quiver whose differential vanishes and whose composition is the composition
-induced on cohomology, `[g] ∘ [f] = [g ∘ f]`.  This is the existence half of Kadeishvili's theorem
-for `A∞` categories.  The higher operations `m₃, m₄, …` of the minimal model record the coherence
-which the graded cohomology category forgets.
+induced on cohomology, `[g] ∘ [f] = [g ∘ f]`.  This is the minimal structure of Kadeishvili's
+theorem for `A∞` categories; the comparison `A∞` quasi-equivalence between the minimal model and
+`𝒞` is not constructed in this file.  The higher operations `m₃, m₄, …` of the minimal model record
+the coherence which the graded cohomology category forgets.
 
 ## Main definitions
 
@@ -116,35 +117,32 @@ noncomputable def cohomologyContraction :
   proj := 𝒞.contractionProj
   homotopy := 𝒞.contractionHomotopy
   dM_comp_incl := totalHom_linearMap_ext fun X Y a ↦ by
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, contractionIncl_homInclusion,
-      ← homInclusion_homDifferential, ← homAlgebra_differential,
-      LinearContraction.dM_incl_apply, LinearMap.zero_apply, map_zero, map_zero,
-      LinearMap.zero_apply, map_zero]
+    have h := (𝒞.homAlgebra X.obj Y.obj).cohomologyContraction.dM_incl_apply a
+    rw [homAlgebra_differential_apply] at h
+    simp only [LinearMap.comp_apply, LinearMap.zero_apply, map_zero, contractionIncl_homInclusion,
+      ← homInclusion_homDifferential, h]
   proj_comp_dM := totalHom_linearMap_ext fun X Y f ↦ by
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, ← homInclusion_homDifferential,
-      contractionProj_homInclusion, contractionProj_homInclusion, ← homAlgebra_differential,
-      LinearContraction.proj_dM_apply, LinearMap.zero_apply, map_zero, LinearMap.zero_apply]
+    have h := (𝒞.homAlgebra X Y).cohomologyContraction.proj_dM_apply f
+    rw [homAlgebra_differential_apply] at h
+    simp only [LinearMap.comp_apply, LinearMap.zero_apply, map_zero, contractionProj_homInclusion,
+      ← homInclusion_homDifferential, h]
   proj_comp_incl := totalHom_linearMap_ext fun X Y a ↦ by
-    rw [LinearMap.comp_apply, contractionIncl_homInclusion, contractionProj_homInclusion,
-      LinearContraction.proj_incl_apply, LinearMap.id_apply]
+    simp [contractionIncl_homInclusion, contractionProj_homInclusion]
   dM_comp_homotopy_add_homotopy_comp_dM := totalHom_linearMap_ext fun X Y f ↦ by
     have h := LinearMap.congr_fun
       (𝒞.homAlgebra X Y).cohomologyContraction.dM_comp_homotopy_add_homotopy_comp_dM f
     simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply,
-      LinearMap.id_apply] at h ⊢
-    rw [homAlgebra_differential_apply, homAlgebra_differential_apply] at h
-    rw [contractionHomotopy_homInclusion, ← homInclusion_homDifferential,
-      ← homInclusion_homDifferential, contractionHomotopy_homInclusion,
-      contractionProj_homInclusion, contractionIncl_homInclusion, ← map_add, h, map_sub]
+      LinearMap.id_apply, homAlgebra_differential_apply] at h
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply,
+      LinearMap.id_apply, contractionHomotopy_homInclusion, contractionProj_homInclusion,
+      contractionIncl_homInclusion, ← homInclusion_homDifferential]
+    rw [← map_add, h, map_sub]
   homotopy_comp_incl := totalHom_linearMap_ext fun X Y a ↦ by
-    rw [LinearMap.comp_apply, contractionIncl_homInclusion, contractionHomotopy_homInclusion,
-      LinearSpecialContraction.homotopy_incl_apply, map_zero, LinearMap.zero_apply]
+    simp [contractionIncl_homInclusion, contractionHomotopy_homInclusion]
   proj_comp_homotopy := totalHom_linearMap_ext fun X Y f ↦ by
-    rw [LinearMap.comp_apply, contractionHomotopy_homInclusion, contractionProj_homInclusion,
-      LinearSpecialContraction.proj_homotopy_apply, map_zero, LinearMap.zero_apply]
+    simp [contractionHomotopy_homInclusion, contractionProj_homInclusion]
   homotopy_comp_homotopy := totalHom_linearMap_ext fun X Y f ↦ by
-    rw [LinearMap.comp_apply, contractionHomotopy_homInclusion, contractionHomotopy_homInclusion,
-      LinearSpecialContraction.homotopy_homotopy_apply, map_zero, LinearMap.zero_apply]
+    simp [contractionHomotopy_homInclusion]
 
 /-- The inclusion of the cohomology contraction chooses cycle representatives in the Hom complex
 between the underlying objects. -/
@@ -224,10 +222,12 @@ the objects of the cohomology quiver with those of `C`. -/
 theorem isHomCompatible_cohomologyContraction :
     𝒞.cohomologyContraction.IsHomCompatible 𝒞.cohomologyQuiverEquiv where
   incl_homInclusion_mem X Y a := by
-    rw [cohomologyContraction_incl_homInclusion]
+    rw [cohomologyContraction_incl_homInclusion, cohomologyQuiverEquiv_apply,
+      cohomologyQuiverEquiv_apply]
     exact LinearMap.mem_range_self _ _
   proj_homInclusion_mem U V f := by
-    rw [cohomologyContraction_proj_homInclusion (X := ⟨U⟩) (Y := ⟨V⟩)]
+    rw [cohomologyContraction_proj_homInclusion (X := ⟨U⟩) (Y := ⟨V⟩),
+      cohomologyQuiverEquiv_symm_apply, cohomologyQuiverEquiv_symm_apply]
     exact LinearMap.mem_range_self _ _
   homotopy_homInclusion_mem U V f := by
     rw [cohomologyContraction_homotopy_homInclusion]

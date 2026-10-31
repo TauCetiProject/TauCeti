@@ -222,7 +222,6 @@ theorem grading_cohomologyQuiver (X Y : 𝒞.CohomologyQuiver) :
     grading (R := R) X Y = (𝒞.homAlgebra X.obj Y.obj).cohomologyGrading := (rfl)
 
 /-- The objects of the cohomology quiver are the objects of `C`. -/
-@[expose]
 def cohomologyQuiverEquiv : 𝒞.CohomologyQuiver ≃ C where
   toFun X := X.obj
   invFun X := ⟨X⟩
