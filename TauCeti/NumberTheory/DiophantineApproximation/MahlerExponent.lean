@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Polynomial.Norm
 public import TauCeti.NumberTheory.DiophantineApproximation.LinearFormExponent
 import Mathlib.FieldTheory.PrimitiveElement
+import Mathlib.NumberTheory.NumberField.House
 import TauCeti.Analysis.Polynomial.L1Norm
 import TauCeti.FieldTheory.Minpoly.Primitive
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
@@ -50,23 +51,22 @@ open scoped ENNReal IntermediateField
 
 namespace TauCeti
 
-/-- The trivial bound for the value of an integer polynomial of degree at most `n` at a complex
-number: `|P(z)| ≤ (n + 1) H(P) max(1, |z|) ^ n`. -/
-private theorem norm_aeval_le {n : ℕ} {P : ℤ[X]} (hP : P.natDegree ≤ n) (z : ℂ) :
-    ‖aeval z P‖ ≤ (n + 1) * P.supNorm * max 1 ‖z‖ ^ n := by
-  have hmap : aeval z P = (P.map (Int.castRingHom ℂ)).eval z := by
-    rw [aeval_def, eval_map, algebraMap_int_eq]
-  have hl1 : (P.map (Int.castRingHom ℂ)).l1Norm ≤ (n + 1) * P.supNorm := by
-    rw [l1Norm_map _ _ fun x ↦ by simp [Int.norm_eq_abs]]
-    refine P.l1Norm_le_natDegree_add_one_mul_supNorm.trans ?_
-    have := P.supNorm_nonneg
-    gcongr
-  rw [hmap]
-  refine (norm_eval_le_l1Norm_mul _ z).trans ?_
-  have := P.supNorm_nonneg
-  gcongr
-  · exact le_max_left _ _
-  · exact natDegree_map_le.trans hP
+/-- If `x = s g` is an algebraic integer, then the conjugate under `σ` of the algebraic integer
+`(P.scaleRoots s)(x)` is `s ^ deg P P(σ g)`. -/
+private theorem map_aeval_scaleRoots {F : Type*} [Field F] [NumberField F] (P : ℤ[X]) {s : ℤ}
+    {g : F} {x : 𝓞 F} (hx : (x : F) = s • g) (σ : F →+* ℂ) :
+    σ (aeval x (P.scaleRoots s) : F) = (s : ℂ) ^ P.natDegree * aeval (σ g) P := by
+  have hσP : σ (aeval g P) = aeval (σ g) P := (aeval_algHom_apply σ.toIntAlgHom g P).symm
+  rw [RingOfIntegers.coe_eq_algebraMap, ← aeval_algebraMap_apply,
+    ← RingOfIntegers.coe_eq_algebraMap, hx, scaleRoots_aeval_smul, map_zsmul, hσP, zsmul_eq_mul,
+    Int.cast_pow]
+
+/-- The absolute value form of `map_aeval_scaleRoots`, for `0 ≤ s`. -/
+private theorem norm_map_aeval_scaleRoots {F : Type*} [Field F] [NumberField F] (P : ℤ[X])
+    {s : ℤ} (hs : 0 ≤ s) {g : F} {x : 𝓞 F} (hx : (x : F) = s • g) (σ : F →+* ℂ) :
+    ‖σ (aeval x (P.scaleRoots s) : F)‖ = (s : ℝ) ^ P.natDegree * ‖aeval (σ g) P‖ := by
+  rw [map_aeval_scaleRoots P hx, norm_mul, norm_pow, Complex.norm_intCast,
+    abs_of_nonneg (by exact_mod_cast hs : (0 : ℝ) ≤ s)]
 
 end TauCeti
 
@@ -86,95 +86,62 @@ theorem IsAlgebraic.exists_pos_le_norm_aeval_mul_supNorm_pow {ξ : ℂ} (hξ : I
   have : NumberField F := ⟨⟩
   set g : F := IntermediateField.AdjoinSimple.gen ℚ ξ
   set s : ℤ := (primitiveMinpoly g).leadingCoeff
-  have hs : (1 : ℝ) ≤ s := by exact_mod_cast leadingCoeff_primitiveMinpoly_pos g
-  set x : 𝓞 F := ⟨s • g, isIntegral_leadingCoeff_primitiveMinpoly_smul
-    (Algebra.IsAlgebraic.isAlgebraic g)⟩
+  have hs : 0 < s := leadingCoeff_primitiveMinpoly_pos g
+  have hs1 : (1 : ℝ) ≤ s := by exact_mod_cast hs
+  have hsg : IsIntegral ℤ (s • g) :=
+    isIntegral_leadingCoeff_primitiveMinpoly_smul (Algebra.IsAlgebraic.isAlgebraic g)
+  set x : 𝓞 F := ⟨s • g, hsg⟩
+  have hx : (x : F) = s • g := RingOfIntegers.coe_mk hsg
   set D := (minpoly ℚ ξ).natDegree
   have hD : Module.finrank ℚ F = D := IntermediateField.adjoin.finrank hξ.isIntegral
   -- `R` bounds every conjugate of `ξ`; the constant `B` is chosen so that `B H(P)` bounds every
   -- conjugate of the algebraic integer `γ` attached to `P` further down.
-  set R : ℝ := 1 + ∑ σ : F →ₐ[ℚ] ℂ, ‖σ g‖
-  have hR (σ : F →ₐ[ℚ] ℂ) : max 1 ‖σ g‖ ≤ R :=
-    max_le (le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _))
-      (le_add_of_nonneg_of_le zero_le_one
-        (Finset.single_le_sum (f := (‖· g‖)) (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ σ)))
+  set R : ℝ := max 1 (house g)
+  have hR (σ : F →+* ℂ) : max 1 ‖σ g‖ ≤ R := max_le_max le_rfl (norm_embedding_le_house g σ)
   set B : ℝ := (s : ℝ) ^ n * ((n + 1) * R ^ n)
   have hB : 0 < B := by positivity
   refine ⟨((s : ℝ) ^ n * B ^ (D - 1))⁻¹, by positivity, fun P hP hPξ ↦ ?_⟩
   set d := P.natDegree
   have hH := P.supNorm_nonneg
-  set σ₀ : F →ₐ[ℚ] ℂ := IntermediateField.val F
+  set σ₀ : F →+* ℂ := (IntermediateField.val F).toRingHom
   have hσ₀ : σ₀ g = ξ := IntermediateField.AdjoinSimple.coe_gen ℚ ξ
   -- The algebraic integer `γ = (P.scaleRoots s)(s g)` has conjugates `σ γ = s ^ d P(σ g)`.
   set γ : 𝓞 F := aeval x (P.scaleRoots s)
-  have hγ (σ : F →ₐ[ℚ] ℂ) : σ (γ : F) = (s : ℂ) ^ d * aeval (σ g) P := by
-    have h : (γ : F) = s ^ d • aeval g P := by
-      rw [← scaleRoots_aeval_smul]
-      exact (aeval_algebraMap_apply F x (P.scaleRoots s)).symm
-    have hσP : σ (aeval g P) = aeval (σ g) P :=
-      (aeval_algHom_apply (σ : F →+* ℂ).toIntAlgHom g P).symm
-    rw [h, map_zsmul, hσP, zsmul_eq_mul, Int.cast_pow]
+  have hγ (σ : F →+* ℂ) : ‖σ (γ : F)‖ = (s : ℝ) ^ d * ‖aeval (σ g) P‖ :=
+    norm_map_aeval_scaleRoots P hs.le hx σ
   have hγ0 : γ ≠ 0 := by
-    rintro h0
-    have h := hγ σ₀
-    have hs0 : (s : ℂ) ≠ 0 := by exact_mod_cast (leadingCoeff_primitiveMinpoly_pos g).ne'
-    rw [h0, hσ₀] at h
-    exact mul_ne_zero (pow_ne_zero _ hs0) hPξ (by simpa using h.symm)
-  have hsd : (s : ℝ) ^ d ≤ (s : ℝ) ^ n := pow_le_pow_right₀ hs hP
-  have hbound (σ : F →ₐ[ℚ] ℂ) : ‖σ (γ : F)‖ ≤ B * P.supNorm := by
-    rw [hγ, norm_mul, norm_pow, Complex.norm_intCast, abs_of_nonneg (by linarith)]
+    refine fun h0 ↦ (mul_pos (pow_pos (zero_lt_one.trans_le hs1) d) (norm_pos_iff.2 hPξ)).ne' ?_
+    rw [← hσ₀, ← hγ σ₀, h0]
+    simp
+  have hsd : (s : ℝ) ^ d ≤ (s : ℝ) ^ n := pow_le_pow_right₀ hs1 hP
+  -- Every conjugate of `γ`, and hence its house, is at most `B H(P)`.
+  have hhouse : house (γ : F) ≤ B * P.supNorm := by
+    obtain ⟨σ, -, hσ⟩ :=
+      Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : F →+* ℂ ↦ ‖φ γ‖₊
+    rw [house_eq_sup', hσ, coe_nnnorm, hγ]
     calc (s : ℝ) ^ d * ‖aeval (σ g) P‖
         ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * max 1 ‖σ g‖ ^ n) := by
           gcongr
-          exact norm_aeval_le hP _
+          have hmap : (P.map (Int.castRingHom ℂ)).supNorm = P.supNorm := by
+            simp [supNorm_eq_iSup, Int.norm_eq_abs]
+          rw [aeval_def, algebraMap_int_eq, ← eval_map, ← hmap]
+          exact norm_eval_le_add_one_mul_supNorm_mul (natDegree_map_le.trans hP) _
       _ ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * R ^ n) := by
           gcongr
           exact hR σ
       _ = B * P.supNorm := by ring
   -- Since `γ` is a nonzero algebraic integer, its conjugate `σ₀ γ = s ^ d P(ξ)` is bounded below
-  -- in terms of the bound `B H(P)` on all its conjugates.
-  have key := RingOfIntegers.one_le_norm_mul_pow_of_forall_norm_le hγ0 σ₀ hbound
-  rw [hγ, hσ₀, norm_mul, norm_pow, Complex.norm_intCast, abs_of_nonneg (by linarith), hD] at key
+  -- in terms of the bound `B H(P)` on its other conjugates.
+  have key : 1 ≤ ‖σ₀ γ‖ * house (γ : F) ^ (D - 1) := by
+    simpa [← Rat.norm_cast_real, hD] using
+      (RingOfIntegers.one_le_abs_norm hγ0).trans (norm_norm_le_norm_mul_house_pow (γ : F) σ₀)
+  rw [hγ, hσ₀] at key
+  have := house_nonneg (γ : F)
   rw [inv_le_iff_one_le_mul₀ (by positivity)]
-  calc (1 : ℝ) ≤ (s : ℝ) ^ d * ‖aeval ξ P‖ * (B * P.supNorm) ^ (D - 1) := key
+  calc (1 : ℝ) ≤ (s : ℝ) ^ d * ‖aeval ξ P‖ * house (γ : F) ^ (D - 1) := key
     _ ≤ (s : ℝ) ^ n * ‖aeval ξ P‖ * (B * P.supNorm) ^ (D - 1) := by gcongr
     _ = ‖aeval ξ P‖ * P.supNorm ^ (D - 1) * ((s : ℝ) ^ n * B ^ (D - 1)) := by
           rw [mul_pow]; ring
-
-namespace TauCeti
-
-/-- The integer polynomial `x₀ + ∑ j, xⱼ X ^ (j + 1)`, whose value at `ξ` is the linear form of
-`x` at the powers `ξ, ξ ^ 2, …, ξ ^ n`. -/
-private noncomputable def linearFormPoly {n : ℕ} (x : ℤ × (Fin n → ℤ)) : ℤ[X] :=
-  C x.1 + ∑ j, C (x.2 j) * X ^ (j.val + 1)
-
-private theorem natDegree_linearFormPoly_le {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
-    (linearFormPoly x).natDegree ≤ n :=
-  (natDegree_add_le _ _).trans <| max_le (by simp) <| natDegree_sum_le_of_forall_le _ _
-    fun j _ ↦ (natDegree_C_mul_X_pow_le _ _).trans j.isLt
-
-private theorem aeval_linearFormPoly {n : ℕ} (x : ℤ × (Fin n → ℤ)) (ξ : ℝ) :
-    aeval (ξ : ℂ) (linearFormPoly x) = ((x.1 + ∑ j, x.2 j * ξ ^ (j.val + 1) : ℝ) : ℂ) := by
-  simp [linearFormPoly]
-
-private theorem supNorm_linearFormPoly_le {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
-    (linearFormPoly x).supNorm ≤ ‖x‖ := by
-  rw [supNorm_eq_iSup]
-  refine ciSup_le fun i ↦ ?_
-  simp only [linearFormPoly, coeff_add, coeff_C, finsetSum_coeff, coeff_C_mul_X_pow]
-  rcases i with _ | k
-  · simpa using norm_fst_le x
-  · by_cases hk : k < n
-    · have h (j : Fin n) : k = j.val ↔ ⟨k, hk⟩ = j := (Fin.ext_iff (a := ⟨k, hk⟩)).symm
-      simpa [h] using (norm_le_pi_norm x.2 ⟨k, hk⟩).trans (norm_snd_le x)
-    · have h (j : Fin n) : k ≠ j.val := by
-        have := j.isLt
-        omega
-      simp [h]
-
-end TauCeti
-
-open TauCeti
 
 /-- **Liouville's bound for Mahler's exponent.** If `ξ` is a real algebraic number of degree `D`
 over `ℚ`, then `wₙ(ξ) ≤ D - 1` for every `n`. -/
@@ -196,7 +163,9 @@ theorem IsAlgebraic.mahlerExponent_le {ξ : ℝ} (hξ : IsAlgebraic ℚ ξ) (n :
   rw [mem_closedBall_zero_iff]
   set L : ℝ := x.1 + ∑ j, x.2 j * ξ ^ (j.val + 1)
   have hL : ‖aeval (ξ : ℂ) (linearFormPoly x)‖ = |L| := by
-    rw [aeval_linearFormPoly, Complex.norm_real, Real.norm_eq_abs]
+    rw [aeval_linearFormPoly, ← Real.norm_eq_abs, ← Complex.norm_real]
+    push_cast [L]
+    rfl
   have hx0 : 0 < ‖x‖ := norm_pos_iff.2 fun h ↦ by simp [L, h] at hx
   have hc' : c ≤ ‖x‖ ^ ((e : ℝ) - w) := by
     calc c ≤ |L| * (linearFormPoly x).supNorm ^ e := by
@@ -230,7 +199,7 @@ namespace TauCeti
 @[simp]
 theorem mahlerExponent_ratCast (n : ℕ) (q : ℚ) : mahlerExponent n q = 0 := by
   have h := (isAlgebraic_algebraMap (R := ℚ) (A := ℝ) q).mahlerExponent_le n
-  rwa [minpoly.eq_X_sub_C, natDegree_X_sub_C, Nat.sub_self, Nat.cast_zero, nonpos_iff_eq_zero,
-    eq_ratCast] at h
+  rw [minpoly.eq_X_sub_C] at h
+  simpa using h
 
 end TauCeti
