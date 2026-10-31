@@ -76,7 +76,7 @@ theorem eq_one_of_isCentralPoint_of_odd (hodd : Odd n)
     (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A))
     (hg : HopfAlgebra.IsCentralPoint g) : g = 1 := by
   have hmatrix := Matrix.SpecialOrthogonalGroup.eq_one_of_mem_center_of_odd h2
-    (pointsMulEquiv R n (A := A) g) (by simpa using hn) (by simpa using hodd)
+    (pointsMulEquiv R n (A := A) g) (by simpa using hodd)
     ((isCentralPoint_iff_mem_center_pointsMulEquiv n hn h2 g).mp hg)
   exact (pointsMulEquiv R n).injective (hmatrix.trans (map_one _).symm)
 
