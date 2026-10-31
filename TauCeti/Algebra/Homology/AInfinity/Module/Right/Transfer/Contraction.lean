@@ -105,7 +105,7 @@ theorem baseBarDifferential_sq (G : InternalGrading R M) (d : Module.End R M)
   have hw : AA.coaugmentedBarDifferential (AA.coaugmentedBarDifferential w) = 0 :=
     LinearMap.congr_fun AA.coaugmentedBarDifferential_sq w
   have he : (G.shift 1).koszulTwist 1 (d x) = -d ((G.shift 1).koszulTwist 1 x) := by
-    simpa using LinearMap.congr_fun (hd'.koszulTwist_comp_eq_smul 1) x
+    simpa using hd'.koszulTwist_apply 1 x
   simp only [LinearMap.comp_apply, baseBarDifferential_tmul, map_add,
     LinearMap.zero_apply, hx, hw, he, TensorProduct.zero_tmul, TensorProduct.tmul_zero,
     add_zero, zero_add, TensorProduct.neg_tmul]
@@ -142,40 +142,60 @@ coalgebra. These are the unperturbed differentials, not the full module bar diff
 noncomputable def barContraction :
     LinearSpecialContraction
       (baseBarDifferential AA MM.grading MM.differential) (baseBarDifferential AA G dN) :=
-  c.tensorRight (MM.grading.shift 1) (G.shift 1) AA.coaugmentedBarDifferential
+  -- The tensor sums in baseBarDifferential_def are exactly the endomorphisms used by
+  -- rTensor. We use this defining equality here to avoid transporting the contraction.
+  c.rTensor (MM.grading.shift 1) (G.shift 1) AA.coaugmentedBarDifferential
     (LinearMap.isHomogeneous_shift_piece_iff.2 hh)
     (LinearMap.isHomogeneous_shift_piece_iff.2 hi)
     (LinearMap.isHomogeneous_shift_piece_iff.2 hp)
 
-/-- The underlying weak bar contraction is the tensor extension of the weak contraction. -/
 @[simp]
-theorem toLinearContraction_barContraction :
-    (MM.barContraction c hh hi hp).toLinearContraction = (by
-      rw [baseBarDifferential_def, baseBarDifferential_def]
-      exact c.toLinearContraction.tensorRight (MM.grading.shift 1) (G.shift 1)
-        AA.coaugmentedBarDifferential
-        (LinearMap.isHomogeneous_shift_piece_iff.2 hh)
-        (LinearMap.isHomogeneous_shift_piece_iff.2 hi)
-        (LinearMap.isHomogeneous_shift_piece_iff.2 hp)) := by
-  simp only [barContraction, LinearSpecialContraction.toLinearContraction_tensorRight,
-    eq_mpr_eq_cast, cast_cast]
-  exact eq_of_heq (cast_heq _ _).symm
-
--- Simplify the maps before the underlying-contraction rewrite introduces transports.
-@[simp↓]
 theorem barContraction_incl :
     (MM.barContraction c hh hi hp).incl = c.incl.rTensor (TensorWords R A) := by
   simp [barContraction]
 
-@[simp↓]
+@[simp]
 theorem barContraction_proj :
     (MM.barContraction c hh hi hp).proj = c.proj.rTensor (TensorWords R A) := by
   simp [barContraction]
 
-@[simp↓]
+@[simp]
 theorem barContraction_homotopy :
     (MM.barContraction c hh hi hp).homotopy = c.homotopy.rTensor (TensorWords R A) := by
   simp [barContraction]
+
+/-- The bar contraction's inclusion has degree zero in the total suspended grading. -/
+theorem isHomogeneous_barContraction_incl :
+    LinearMap.IsHomogeneous (MM.barContraction c hh hi hp).incl
+      (barGrading AA G).piece (barGrading AA MM.grading).piece 0 := by
+  simpa only [barContraction_incl, LinearContraction.rTensor_incl,
+    barGrading_eq_tensorProduct] using
+    c.toLinearContraction.isHomogeneous_rTensor_incl (MM.grading.shift 1) (G.shift 1)
+      AA.coaugmentedBarDifferential (LinearMap.isHomogeneous_shift_piece_iff.2 hh)
+      (LinearMap.isHomogeneous_shift_piece_iff.2 hi)
+      (LinearMap.isHomogeneous_shift_piece_iff.2 hp) (TensorWords.grading (AA.grading.shift 1))
+
+/-- The bar contraction's projection has degree zero in the total suspended grading. -/
+theorem isHomogeneous_barContraction_proj :
+    LinearMap.IsHomogeneous (MM.barContraction c hh hi hp).proj
+      (barGrading AA MM.grading).piece (barGrading AA G).piece 0 := by
+  simpa only [barContraction_proj, LinearContraction.rTensor_proj,
+    barGrading_eq_tensorProduct] using
+    c.toLinearContraction.isHomogeneous_rTensor_proj (MM.grading.shift 1) (G.shift 1)
+      AA.coaugmentedBarDifferential (LinearMap.isHomogeneous_shift_piece_iff.2 hh)
+      (LinearMap.isHomogeneous_shift_piece_iff.2 hi)
+      (LinearMap.isHomogeneous_shift_piece_iff.2 hp) (TensorWords.grading (AA.grading.shift 1))
+
+/-- The bar contraction's homotopy has degree minus one in the total suspended grading. -/
+theorem isHomogeneous_barContraction_homotopy :
+    LinearMap.IsHomogeneous (MM.barContraction c hh hi hp).homotopy
+      (barGrading AA MM.grading).piece (barGrading AA MM.grading).piece (-1) := by
+  simpa only [barContraction_homotopy, LinearContraction.rTensor_homotopy,
+    barGrading_eq_tensorProduct] using
+    c.toLinearContraction.isHomogeneous_rTensor_homotopy (MM.grading.shift 1) (G.shift 1)
+      AA.coaugmentedBarDifferential (LinearMap.isHomogeneous_shift_piece_iff.2 hh)
+      (LinearMap.isHomogeneous_shift_piece_iff.2 hi)
+      (LinearMap.isHomogeneous_shift_piece_iff.2 hp) (TensorWords.grading (AA.grading.shift 1))
 
 /-- The source differential of the extended contraction is square-zero. -/
 theorem baseBarDifferential_differential_sq :

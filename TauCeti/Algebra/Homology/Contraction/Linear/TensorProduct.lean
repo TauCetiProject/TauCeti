@@ -48,7 +48,7 @@ variable (c : LinearContraction dM dN)
 
 /-- Tensor a graded contraction on the right with a fixed module with endomorphism.
 The tensor endomorphisms use the Koszul sign on the second summand. -/
-noncomputable def tensorRight :
+noncomputable def rTensor :
     LinearContraction
       (TensorProduct.map dM LinearMap.id + TensorProduct.map (G.koszulTwist 1) dP)
       (TensorProduct.map dN LinearMap.id + TensorProduct.map (H.koszulTwist 1) dP) where
@@ -59,20 +59,20 @@ noncomputable def tensorRight :
     apply TensorProduct.ext'
     intro x y
     have h : G.koszulTwist 1 (c.incl x) = c.incl (H.koszulTwist 1 x) := by
-      simpa using LinearMap.congr_fun (hi.koszulTwist_comp_eq_smul 1) x
+      simpa using hi.koszulTwist_apply 1 x
     simp [h]
   proj_comp_dM := by
     apply TensorProduct.ext'
     intro x y
     have h : H.koszulTwist 1 (c.proj x) = c.proj (G.koszulTwist 1 x) := by
-      simpa using LinearMap.congr_fun (hp.koszulTwist_comp_eq_smul 1) x
+      simpa using hp.koszulTwist_apply 1 x
     simp [h]
   proj_comp_incl := by ext x y; simp
   dM_comp_homotopy_add_homotopy_comp_dM := by
     apply TensorProduct.ext'
     intro x y
     have h : G.koszulTwist 1 (c.homotopy x) = -c.homotopy (G.koszulTwist 1 x) := by
-      simpa using LinearMap.congr_fun (hh.koszulTwist_comp_eq_smul 1) x
+      simpa using hh.koszulTwist_apply 1 x
     have hc := LinearMap.congr_fun c.dM_comp_homotopy_add_homotopy_comp_dM x
     simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply,
       LinearMap.id_apply] at hc
@@ -86,14 +86,35 @@ noncomputable def tensorRight :
       _ = _ := by rw [hc, TensorProduct.sub_tmul]
 
 @[simp]
-theorem tensorRight_incl : (c.tensorRight G H dP hh hi hp).incl = c.incl.rTensor P := (rfl)
+theorem rTensor_incl : (c.rTensor G H dP hh hi hp).incl = c.incl.rTensor P := (rfl)
 
 @[simp]
-theorem tensorRight_proj : (c.tensorRight G H dP hh hi hp).proj = c.proj.rTensor P := (rfl)
+theorem rTensor_proj : (c.rTensor G H dP hh hi hp).proj = c.proj.rTensor P := (rfl)
 
 @[simp]
-theorem tensorRight_homotopy :
-    (c.tensorRight G H dP hh hi hp).homotopy = c.homotopy.rTensor P := (rfl)
+theorem rTensor_homotopy :
+    (c.rTensor G H dP hh hi hp).homotopy = c.homotopy.rTensor P := (rfl)
+
+/-- The tensor extension's inclusion has degree zero for any grading on the right factor. -/
+theorem isHomogeneous_rTensor_incl (K : InternalGrading R P) :
+    LinearMap.IsHomogeneous (c.rTensor G H dP hh hi hp).incl
+      (H.tensorProduct K).piece (G.tensorProduct K).piece 0 := by
+  simpa only [rTensor_incl, LinearMap.rTensor_def, add_zero] using
+    hi.tensorProduct (LinearMap.isHomogeneous_id (R := R) K.piece)
+
+/-- The tensor extension's projection has degree zero for any grading on the right factor. -/
+theorem isHomogeneous_rTensor_proj (K : InternalGrading R P) :
+    LinearMap.IsHomogeneous (c.rTensor G H dP hh hi hp).proj
+      (G.tensorProduct K).piece (H.tensorProduct K).piece 0 := by
+  simpa only [rTensor_proj, LinearMap.rTensor_def, add_zero] using
+    hp.tensorProduct (LinearMap.isHomogeneous_id (R := R) K.piece)
+
+/-- The tensor extension's homotopy has degree minus one for any grading on the right factor. -/
+theorem isHomogeneous_rTensor_homotopy (K : InternalGrading R P) :
+    LinearMap.IsHomogeneous (c.rTensor G H dP hh hi hp).homotopy
+      (G.tensorProduct K).piece (G.tensorProduct K).piece (-1) := by
+  simpa only [rTensor_homotopy, LinearMap.rTensor_def, add_zero] using
+    hh.tensorProduct (LinearMap.isHomogeneous_id (R := R) K.piece)
 
 end LinearContraction
 
@@ -106,31 +127,31 @@ variable (c : LinearSpecialContraction dM dN)
 
 /-- Tensoring a graded special contraction with a fixed differential module preserves
 all three side conditions. -/
-noncomputable def tensorRight :
+noncomputable def rTensor :
     LinearSpecialContraction
       (TensorProduct.map dM LinearMap.id + TensorProduct.map (G.koszulTwist 1) dP)
       (TensorProduct.map dN LinearMap.id + TensorProduct.map (H.koszulTwist 1) dP) where
-  toLinearContraction := c.toLinearContraction.tensorRight G H dP hh hi hp
+  toLinearContraction := c.toLinearContraction.rTensor G H dP hh hi hp
   homotopy_comp_incl := by ext x y; simp
   proj_comp_homotopy := by ext x y; simp
   homotopy_comp_homotopy := by ext x y; simp
 
 /-- Forgetting the side conditions commutes with tensoring a special contraction. -/
 @[simp]
-theorem toLinearContraction_tensorRight :
-    (c.tensorRight G H dP hh hi hp).toLinearContraction =
-      c.toLinearContraction.tensorRight G H dP hh hi hp := (rfl)
+theorem toLinearContraction_rTensor :
+    (c.rTensor G H dP hh hi hp).toLinearContraction =
+      c.toLinearContraction.rTensor G H dP hh hi hp := (rfl)
 
 -- Simplify the maps before rewriting the underlying contraction.
 @[simp↓]
-theorem tensorRight_incl : (c.tensorRight G H dP hh hi hp).incl = c.incl.rTensor P := (rfl)
+theorem rTensor_incl : (c.rTensor G H dP hh hi hp).incl = c.incl.rTensor P := (rfl)
 
 @[simp↓]
-theorem tensorRight_proj : (c.tensorRight G H dP hh hi hp).proj = c.proj.rTensor P := (rfl)
+theorem rTensor_proj : (c.rTensor G H dP hh hi hp).proj = c.proj.rTensor P := (rfl)
 
 @[simp↓]
-theorem tensorRight_homotopy :
-    (c.tensorRight G H dP hh hi hp).homotopy = c.homotopy.rTensor P := (rfl)
+theorem rTensor_homotopy :
+    (c.rTensor G H dP hh hi hp).homotopy = c.homotopy.rTensor P := (rfl)
 
 end LinearSpecialContraction
 
