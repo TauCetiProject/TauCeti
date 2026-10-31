@@ -15,8 +15,10 @@ import TauCeti.Algebra.BigOperators.Fin
 
 **Shimura's Theorem 3.20**: for `p` prime, the `p`-local Hecke ring `R_p = pLocalSubring n p` of
 `(SL_n(ℤ), Δ)` is the polynomial ring `ℤ[X₁, …, Xₙ]` on the diagonal prime cosets
-`heckeGen k = T(1, …, 1, p, …, p)`, with `k + 1` entries equal to `p`. This is the rank-`n`
-spherical Hecke algebra at `p` in its classical double-coset form.
+`heckeGen k = T(1, …, 1, p, …, p)`, with `k + 1` entries equal to `p`. Here `R_p` is spanned by
+the double cosets of integral matrices with `p`-power determinant: it is the positive part of the
+spherical Hecke algebra of `GL_n(ℚ_p)`, which is obtained from it by inverting the scalar coset
+`T(p, …, p)`.
 
 The proof is a leading-term argument. The monomial `∏ k, heckeGen k ^ e k` is a sum of diagonal
 double cosets `T(p ^ g)` that is triangular for the dominance order of exponent vectors, `a`
@@ -116,21 +118,6 @@ variable [NeZero n]
 
 attribute [local instance] commSemiringIntegralHeckeRingLocal
 
-/-- Every element of the Hecke ring is the sum of its coefficients times the basis elements. -/
-private lemma eq_sum_smul_single (x : IntegralHeckeRing n) :
-    x = ∑ D ∈ x.support, x D • HeckeCosetModule.single ℤ D 1 := by
-  conv_lhs => rw [← HeckeCosetModule.sum_single ℤ x, HeckeCosetModule.sum_def]
-  exact sum_congr rfl fun D _ ↦ (HeckeCosetModule.smul_single_one ℤ D (x D)).symm
-
-/-- The coefficients of a product, expanded along the support of the left factor. -/
-private lemma mul_apply_eq_sum (x y : IntegralHeckeRing n)
-    (E : HeckeCoset (posDetInt n) (SLnZ n) (SLnZ n)) :
-    (x * y) E = ∑ D ∈ x.support, x D * (HeckeCosetModule.single ℤ D 1 * y) E := by
-  conv_lhs => rw [eq_sum_smul_single x, sum_mul]
-  refine (Finset.sum_apply' E).trans (sum_congr rfl fun D _ ↦ ?_)
-  rw [smul_mul_assoc]
-  exact HeckeCosetModule.smul_apply _ _ _
-
 /-- `x` is triangular with leading coset `T(p ^ a)`: that coset occurs with coefficient `1`, and
 every coset that occurs is `T(p ^ g)` for a monotone `g` dominated by `a`. -/
 private def IsTriangular (p : ℕ) (a : Fin n → ℕ) (x : IntegralHeckeRing n) : Prop :=
@@ -167,11 +154,11 @@ private lemma IsTriangular.mul_diagElem {p : ℕ} (hp : p.Prime) {a f : Fin n �
       exists_primePowDiag_of_diagElem_mul_apply_ne_zero hp hg hf hDE
     exact ⟨g, hg, rfl, hag, h, hh, rfl, hsum, hpart⟩
   refine ⟨?_, fun E hE ↦ ?_⟩
-  · rw [mul_apply_eq_sum]
+  · rw [HeckeCosetModule.mul_def, HeckeCosetModule.mul_apply_eq_sum]
     have hmem : diagCoset (primePowDiag n p a) ∈ x.support := by
       rw [HeckeCosetModule.mem_support_iff, hx.1]
       exact one_ne_zero
-    rw [sum_eq_single_of_mem _ hmem, hx.1, one_mul, ← diagElem_def,
+    rw [sum_eq_single_of_mem _ hmem, hx.1, one_mul, ← diagElem_def, ← HeckeCosetModule.mul_def,
       diagElem_primePowDiag_mul_apply_diagCoset_add hp.pos ha hf]
     intro D hD hne
     by_contra hDE
@@ -185,7 +172,7 @@ private lemma IsTriangular.mul_diagElem {p : ℕ} (hp : p.Prime) {a f : Fin n �
     obtain rfl : a + f = h :=
       funext fun i ↦ Nat.pow_right_injective hp.two_le (by simpa using congrFun hEq i)
     exact hne (by rw [hag.antisymm hgh.of_add_right])
-  · rw [mul_apply_eq_sum] at hE
+  · rw [HeckeCosetModule.mul_def, HeckeCosetModule.mul_apply_eq_sum] at hE
     obtain ⟨D, hD, hDE⟩ := exists_ne_zero_of_sum_ne_zero hE
     obtain ⟨g, -, -, hag, h, hh, rfl, hgh⟩ :=
       key (HeckeCosetModule.mem_support_iff.1 hD) (right_ne_zero_of_mul hDE)
@@ -281,14 +268,6 @@ theorem evalHom_injective {p : ℕ} (hp : p.Prime) : Function.Injective (evalHom
   · exact hne (DFunLike.coe_injective (leadingExponent_injective heq))
   · exact (hmax d' hd').not_gt (hdom.defect_lt heq)
 
-omit [NeZero n] in
-/-- The leading exponent vectors of monomials are exactly the monotone exponent vectors. -/
-private lemma exists_leadingExponent_eq {g : Fin n → ℕ} (hg : Monotone g) :
-    ∃ e, leadingExponent e = g := by
-  refine ⟨Fin.invAccumulate n n (g ∘ Fin.rev), funext fun i ↦ ?_⟩
-  rw [leadingExponent_apply, Fin.accumulate_invAccumulate le_rfl (hg.comp_antitone Fin.rev_anti),
-    Function.comp_apply, Fin.rev_rev]
-
 /-- Every generator `T(p ^ g)` of `R_p` is a polynomial in the `heckeGen k`. A coset `T(p ^ g)`
 with `g` monotone is the leading coset of a monomial, whose remaining cosets lie strictly below
 `T(p ^ g)` in the dominance order, so this follows by induction along that order. -/
@@ -298,7 +277,7 @@ private lemma pLocalSubring_le_evalHom_range {p : ℕ} (hp : p.Prime) :
   refine (pLocalSubring_le_iff n p _).2 fun g hg ↦ ?_
   induction hm : defect g using Nat.strong_induction_on generalizing g with
   | _ m ih =>
-  obtain ⟨e, rfl⟩ := exists_leadingExponent_eq hg
+  obtain ⟨e, rfl⟩ := exists_leadingExponent_eq_iff.2 hg
   set M : IntegralHeckeRing n := ∏ k, heckeGen n p k ^ e k
   set D₀ := diagCoset (primePowDiag n p (leadingExponent e))
   have hM : M ∈ (evalHom n p).range := ⟨∏ k, MvPolynomial.X k ^ e k, by simp [M, map_prod]⟩
@@ -310,7 +289,7 @@ private lemma pLocalSubring_le_evalHom_range {p : ℕ} (hp : p.Prime) :
   have hsplit : diagElem (primePowDiag n p (leadingExponent e)) =
       M - ∑ D ∈ M.support.erase D₀, M D • HeckeCosetModule.single ℤ D 1 := by
     have h := (add_sum_erase M.support (fun D ↦ M D • HeckeCosetModule.single ℤ D 1) hmem).trans
-      (eq_sum_smul_single M).symm
+      (HeckeCosetModule.eq_sum_smul_single M).symm
     rw [hD₀, one_smul] at h
     rw [diagElem_def]
     exact eq_sub_of_add_eq h

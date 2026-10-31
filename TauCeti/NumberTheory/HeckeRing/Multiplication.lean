@@ -32,6 +32,8 @@ stack merges.
 ## Main results
 
 * `HeckeCosetModule.single_mul_single`: the product of two basis elements.
+* `HeckeCosetModule.mul_apply_eq_sum`: the coefficients of a product, expanded along the support
+  of the left factor.
 * `HeckeCosetModule.mul_single_single_of_mulMap_eq`: when the coset decomposition of `D₁ · D₂`
   multiplies into a single coset `D₃` with multiplicity at most one, `[D₁] · [D₂] = [D₃]` —
   stated for three subgroups and `mul`, so it covers the bimodule case, not only the ring.
@@ -119,6 +121,18 @@ lemma mul_single_single [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃
   rw [mul_eq_sum, sum_single_index, sum_single_index]
   · simp
   · rw [sum_single_index] <;> simp
+
+/-- The coefficients of a convolution product, expanded along the support of the left factor:
+the coefficient of `E` in `f * g` is `∑_D f(D) · ([D] * g)(E)`. -/
+lemma mul_apply_eq_sum [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃]
+    (f : HeckeCosetModule Δ H₁ H₂ R) (g : HeckeCosetModule Δ H₂ H₃ R) (E : HeckeCoset Δ H₁ H₃) :
+    mul R f g E = ∑ D ∈ f.support, f D * mul R (single R D 1) g E := by
+  rw [mul_eq_sum, sum_apply, sum_def]
+  refine Finset.sum_congr rfl fun D _ ↦ ?_
+  rw [mul_eq_sum, sum_single_index, sum_apply, sum_apply, sum_def, sum_def, Finset.mul_sum]
+  · simp only [smul_apply, one_mul]
+  · simp only [zero_smul]
+    exact Finsupp.sum_fun_zero (f := g)
 
 /-- The product of two basis elements of the Hecke ring. -/
 lemma single_mul_single {H : Subgroup G} [IsHeckeTriple Δ H H]

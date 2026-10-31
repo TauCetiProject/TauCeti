@@ -45,6 +45,8 @@ power, needs no lemma of its own here.
 * `HeckeRing.GLn.leadingExponent_injective`: **the exponents of a Hecke monomial are recovered
   from its leading elementary-divisor vector** — `Fin.accumulate_injective` transported along
   `Fin.rev`.
+* `HeckeRing.GLn.exists_leadingExponent_eq_iff`: the leading exponent vectors are exactly the
+  monotone vectors, the inverse being `Fin.invAccumulate`.
 * `HeckeRing.GLn.isDvdChain_primePowDiag_leadingExponent`: the vector is monotone
   (`HeckeRing.GLn.leadingExponent_monotone`), so the leading diagonal `T(p ^ leadingExponent e)`
   is a divisibility chain — for `0 < p` a canonical diagonal, by `primePowDiag_pos`.
@@ -154,6 +156,16 @@ lemma leadingExponent_injective : Function.Injective (leadingExponent (n := n)) 
   intro e f h
   refine Fin.accumulate_injective le_rfl (funext fun k ↦ ?_)
   simpa only [leadingExponent_apply, Fin.rev_rev] using congr_fun h (Fin.rev k)
+
+/-- **The leading exponent vectors are exactly the monotone vectors.** One direction is
+`leadingExponent_monotone`; conversely a monotone `g` is the leading exponent vector of its
+consecutive differences read backwards, `Fin.invAccumulate` of `g ∘ Fin.rev`. -/
+lemma exists_leadingExponent_eq_iff {g : Fin n → ℕ} :
+    (∃ e, leadingExponent e = g) ↔ Monotone g := by
+  refine ⟨fun ⟨e, he⟩ ↦ he ▸ leadingExponent_monotone e, fun hg ↦ ?_⟩
+  refine ⟨Fin.invAccumulate n n (g ∘ Fin.rev), funext fun i ↦ ?_⟩
+  rw [leadingExponent_apply, Fin.accumulate_invAccumulate le_rfl (hg.comp_antitone Fin.rev_anti),
+    Function.comp_apply, Fin.rev_rev]
 
 /-- The weight of the leading diagonal: the total of the leading exponent vector is
 `∑ k, (k + 1) * e k`, the generator `heckeGen k` contributing `k + 1` for each of its `e k`
