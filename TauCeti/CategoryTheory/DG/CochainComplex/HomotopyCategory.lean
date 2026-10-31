@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Homology.HomotopyCategory
 public import TauCeti.CategoryTheory.DG.ClosedCategory
 public import TauCeti.CategoryTheory.DG.CochainComplex.Basic
+public import TauCeti.CategoryTheory.DG.FullSubcategory
+public import TauCeti.CategoryTheory.DG.Functor.Basic
 
 /-!
 # The homotopy category of the DG category of cochain complexes
@@ -46,6 +48,8 @@ its differential graded nerve, to be compared with Mathlib's homotopy and derive
   `H⁰` exactly when they are homotopic.
 * `TauCeti.quotient_comp_homotopyCategoryToDGHomotopyCategory`: the comparison of homotopy
   categories is compatible with the quotient functors.
+* `TauCeti.DGFullSubcategory.homotopyCategoryToDGHomotopyCategory_obj_eq`: on `H⁰` of a full DG
+  subcategory of cochain complexes, the inclusion agrees on objects with the comparison.
 
 ## References
 
@@ -284,5 +288,20 @@ instance : (homotopyCategoryToDGHomotopyCategory R C).Linear R where
       (congrArg (r • ·) (homotopyCategoryToDGHomotopyCategory_map_quotient_map R f)).symm
     simp only [map_smul, Submodule.coe_smul]
     exact DGHomotopyCategory.homOf_smul R r _ _
+
+namespace DGFullSubcategory
+
+/-- Including an object of `H⁰` of a full DG subcategory of cochain complexes into `H⁰` of all
+cochain complexes gives the image of the class of its underlying complex under the comparison
+`TauCeti.homotopyCategoryToDGHomotopyCategory` with Mathlib's homotopy category. -/
+theorem homotopyCategoryToDGHomotopyCategory_obj_eq {P : CochainComplex C ℤ → Prop}
+    (X : DGHomotopyCategory R (DGFullSubcategory P)) :
+    (homotopyCategoryToDGHomotopyCategory R C).obj
+        ((HomotopyCategory.quotient C _).obj (DGHomotopyCategory.underlying R X).obj) =
+      (inclusion (R := R)).mapDGHomotopyCategory.obj X := by
+  obtain ⟨X, rfl⟩ := DGHomotopyCategory.of_surjective R X
+  simp
+
+end DGFullSubcategory
 
 end TauCeti
