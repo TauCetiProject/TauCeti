@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
+import TauCeti.Analysis.ODE.Wronskian
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
@@ -154,23 +155,11 @@ theorem IsJacobiFieldOn.alongCurveWithin_smul_sub_smul_eq_zero
     h.alongCurveWithin_alongCurveWithin_eq_neg_smul ht (hκ t ht) (hV t ht), hc]
   module
 
-/-- The scalar Wronskian of the fundamental pair of solutions of `f'' = -c f` is identically
-one. -/
-private theorem wronskian_eq_one {c a : ℝ} {φ φ' ψ ψ' : ℝ → ℝ}
-    (hφ : ∀ t, HasDerivAt φ (φ' t) t) (hφ' : ∀ t, HasDerivAt φ' (-c * φ t) t)
-    (hψ : ∀ t, HasDerivAt ψ (ψ' t) t) (hψ' : ∀ t, HasDerivAt ψ' (-c * ψ t) t)
-    (hφa : φ a = 0) (hφ'a : φ' a = 1) (hψa : ψ a = 1) (hψ'a : ψ' a = 0) (t : ℝ) :
-    ψ t * φ' t - φ t * ψ' t = 1 := by
-  have hderiv : ∀ t, HasDerivAt (fun r ↦ ψ r * φ' r - φ r * ψ' r) 0 t := fun t ↦
-    (((hψ t).mul (hφ' t)).sub ((hφ t).mul (hψ' t))).congr_deriv (by ring)
-  have hconst := is_const_of_deriv_eq_zero (fun t ↦ (hderiv t).differentiableAt)
-    (fun t ↦ (hderiv t).deriv) t a
-  simpa [hφa, hφ'a, hψa, hψ'a] using hconst
-
 /-- **Normal Jacobi fields in constant curvature.** On a preconnected parameter set along which the
 sectional curvature is `κ`, let `J` be a Jacobi field orthogonal to the velocity. Let `φ`, `ψ` solve
 `f'' = -κ |γ'|² f` with `φ(a) = 0`, `φ'(a) = 1`, `ψ(a) = 1` and `ψ'(a) = 0`. Then
-`J = ψ P + φ Q` for parallel fields `P` and `Q` along `γ` with `P(a) = J(a)` and `Q(a) = DJ(a)`. -/
+`J = ψ P + φ Q` for parallel fields `P` and `Q` along `γ` with `P(a) = J(a)` and `Q(a) = DJ(a)`,
+whose coordinate readings are differentiable on `s`. -/
 theorem IsJacobiFieldOn.exists_eq_smul_add_smul
     (h : IsJacobiFieldOn I γ V s) (hs : IsPreconnected s) (ha : a ∈ s)
     (hκ : ∀ t ∈ s, (leviCivitaConnection I M).HasSectionalCurvatureAt
@@ -184,16 +173,24 @@ theorem IsJacobiFieldOn.exists_eq_smul_add_smul
     ∃ P Q : ∀ t, TangentSpace I (γ t),
       (∀ t ∈ s, alongCurveWithin (leviCivitaConnection I M) γ P s t = 0) ∧
       (∀ t ∈ s, alongCurveWithin (leviCivitaConnection I M) γ Q s t = 0) ∧
+      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ P (γ t)) s t) ∧
+      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q (γ t)) s t) ∧
       P a = V a ∧ Q a = alongCurveWithin (leviCivitaConnection I M) γ V s a ∧
       ∀ t ∈ s, V t = ψ t • P t + φ t • Q t := by
   refine ⟨fun r ↦ φ' r • V r - φ r • alongCurveWithin (leviCivitaConnection I M) γ V s r,
     fun r ↦ (-1 : ℝ) •
       (ψ' r • V r - ψ r • alongCurveWithin (leviCivitaConnection I M) γ V s r),
     fun t ht ↦ h.alongCurveWithin_smul_sub_smul_eq_zero hs ha hκ hV hφ hφ' ht,
-    fun t ht ↦ ?_, by simp [hφa, hφ'a], by simp [hψa, hψ'a], fun t _ ↦ ?_⟩
+    fun t ht ↦ ?_, fun t ht ↦ h.differentiableWithinAt_sectionCoord_smul_sub_smul ht
+      (hφ' t).differentiableAt (hφ t).differentiableAt, fun t ht ↦ ?_,
+    by simp [hφa, hφ'a], by simp [hψa, hψ'a], fun t _ ↦ ?_⟩
   · rw [alongCurveWithin_const_smul,
       h.alongCurveWithin_smul_sub_smul_eq_zero hs ha hκ hV hψ hψ' ht, smul_zero]
-  · have hw := wronskian_eq_one hφ hφ' hψ hψ' hφa hφ'a hψa hψ'a t
+  · rw [sectionCoord_smul]
+    exact (differentiableWithinAt_const _).smul
+      (h.differentiableWithinAt_sectionCoord_smul_sub_smul ht (hψ' t).differentiableAt
+        (hψ t).differentiableAt)
+  · have hw := wronskian_eq_one_of_hasDerivAt hφ hφ' hψ hψ' hφa hφ'a hψa hψ'a t
     calc V t = (ψ t * φ' t - φ t * ψ' t) • V t := by rw [hw, one_smul]
       _ = _ := by module
 
@@ -226,7 +223,7 @@ theorem IsJacobiFieldOn.norm_sq_eq
   have hPQ := hm.inner_eq_of_alongCurveWithin_eq_zero h.uniqueDiffOn hs hγ hPd hQd hP hQ ht ha
   have hQQ := hm.inner_eq_of_alongCurveWithin_eq_zero h.uniqueDiffOn hs hγ hQd hQd hQ hQ ht ha
   simp only [hφa, hφ'a, hψa, hψ'a, zero_smul, one_smul, sub_zero, zero_sub] at hPP hPQ hQQ
-  have hw := wronskian_eq_one hφ hφ' hψ hψ' hφa hφ'a hψa hψ'a t
+  have hw := wronskian_eq_one_of_hasDerivAt hφ hφ' hψ hψ' hφa hφ'a hψa hψ'a t
   have hVt : V t = ψ t • (φ' t • V t - φ t • alongCurveWithin (leviCivitaConnection I M) γ V s t) -
       φ t • (ψ' t • V t - ψ t • alongCurveWithin (leviCivitaConnection I M) γ V s t) := by
     calc V t = (ψ t * φ' t - φ t * ψ' t) • V t := by rw [hw, one_smul]
