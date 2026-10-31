@@ -12,7 +12,10 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 # Convex interpolation of Riemannian metrics
 
 `Bundle.ContMDiffRiemannianMetric.convexCombination g h t` is the metric
-`(1 - t) g + t h`, for `t` in the unit interval. The construction uses the convex cone of
+`(1 - t) g + t h`, for `t` in the unit interval. It is the constant-weight case of
+`Bundle.ContMDiffRiemannianMetric.convexCombinationFun g h f`, the metric `(1 - f) g + f h` for
+a `C^n` weight `f` on the base with values in `[0, 1]`; for instance, a weight depending only on
+`t` interpolates two cylinder metrics on `M × ℝ` along the cylinder. The construction uses the
 positive symmetric bilinear sections, and allows arbitrary regularity and boundary charts.
 It preserves the metric at every point where the two input metrics agree.
 
@@ -46,23 +49,52 @@ variable
   [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V]
 
+/-- Convex interpolation of two finite-rank Riemannian metrics with a weight varying over the
+base: over `x` it is `(1 - f x) g + f x h`, for a `C^n` function `f` with values in `[0, 1]`.
+This preserves positive definiteness, not necessarily positive scalar curvature. -/
+def convexCombinationFun (g h : ContMDiffRiemannianMetric IB n F V) (f : B → ℝ)
+    (hf : ContMDiff IB 𝓘(ℝ) n f) (hf₀ : ∀ x, 0 ≤ f x) (hf₁ : ∀ x, f x ≤ 1) :
+    ContMDiffRiemannianMetric IB n F V :=
+  ofPositiveDefiniteSection
+    ⟨fun x ↦ (1 - f x) • g.inner x + f x • h.inner x,
+      ((contMDiff_const.sub hf).smul_section g.contMDiff).add_section
+        (hf.smul_section h.contMDiff)⟩
+    ((TauCeti.Manifold.mem_positiveDefiniteBilinearSections _).2
+      ⟨(TauCeti.Manifold.mem_symmetricBilinearSections _).2 fun x v w ↦ by
+          simp [g.symm x v w, h.symm x v w],
+        fun x v hv ↦ by
+          have hg := g.pos x v hv
+          have hh := h.pos x v hv
+          simp only [ContMDiffSection.coeFn_mk, add_apply, smul_apply, smul_eq_mul]
+          rcases (hf₁ x).lt_or_eq with hlt | heq
+          · exact add_pos_of_pos_of_nonneg (mul_pos (sub_pos.2 hlt) hg)
+              (mul_nonneg (hf₀ x) hh.le)
+          · simpa [heq] using hh⟩)
+
+/-- The inner product of a metric interpolated with a varying weight is the weighted sum of
+inner products. -/
+@[simp]
+theorem convexCombinationFun_inner (g h : ContMDiffRiemannianMetric IB n F V) (f : B → ℝ)
+    (hf : ContMDiff IB 𝓘(ℝ) n f) (hf₀ : ∀ x, 0 ≤ f x) (hf₁ : ∀ x, f x ≤ 1) (x : B)
+    (v w : V x) :
+    (g.convexCombinationFun h f hf hf₀ hf₁).inner x v w =
+      (1 - f x) * g.inner x v w + f x * h.inner x v w := by
+  simp [convexCombinationFun]
+
 /-- Convex interpolation of two finite-rank Riemannian metrics, with weights `1 - t` and `t`.
 This preserves positive definiteness, not necessarily positive scalar curvature. -/
 def convexCombination (g h : ContMDiffRiemannianMetric IB n F V) (t : unitInterval) :
     ContMDiffRiemannianMetric IB n F V :=
-  ofPositiveDefiniteSection ((1 - (t : ℝ)) • g.toBilinearSection +
-    (t : ℝ) • h.toBilinearSection)
-    (TauCeti.Manifold.convex_positiveDefiniteBilinearSections
-      g.toBilinearSection_mem h.toBilinearSection_mem
-      (sub_nonneg.mpr t.property.2) t.property.1 (sub_add_cancel 1 (t : ℝ)))
+  g.convexCombinationFun h (fun _ ↦ (t : ℝ)) contMDiff_const (fun _ ↦ t.property.1)
+    (fun _ ↦ t.property.2)
 
-/-- The underlying section of an interpolated metric is the same convex combination. -/
+/-- Interpolation with a constant weight is `convexCombination`. -/
 @[simp]
-theorem toBilinearSection_convexCombination
-    (g h : ContMDiffRiemannianMetric IB n F V) (t : unitInterval) :
-    (g.convexCombination h t).toBilinearSection =
-      (1 - (t : ℝ)) • g.toBilinearSection + (t : ℝ) • h.toBilinearSection := by
-  simp [convexCombination]
+theorem convexCombinationFun_const (g h : ContMDiffRiemannianMetric IB n F V)
+    (t : unitInterval) :
+    g.convexCombinationFun h (fun _ ↦ (t : ℝ)) contMDiff_const (fun _ ↦ t.property.1)
+      (fun _ ↦ t.property.2) = g.convexCombination h t :=
+  (rfl)
 
 /-- The inner product of an interpolated metric is the weighted sum of inner products. -/
 @[simp]
@@ -70,7 +102,16 @@ theorem convexCombination_inner
     (g h : ContMDiffRiemannianMetric IB n F V) (t : unitInterval) (x : B) (v w : V x) :
     (g.convexCombination h t).inner x v w =
       (1 - (t : ℝ)) * g.inner x v w + (t : ℝ) * h.inner x v w := by
-  simp [convexCombination]
+  rw [← convexCombinationFun_const, convexCombinationFun_inner]
+
+/-- The underlying section of an interpolated metric is the same convex combination. -/
+@[simp]
+theorem toBilinearSection_convexCombination
+    (g h : ContMDiffRiemannianMetric IB n F V) (t : unitInterval) :
+    (g.convexCombination h t).toBilinearSection =
+      (1 - (t : ℝ)) • g.toBilinearSection + (t : ℝ) • h.toBilinearSection := by
+  ext x v w
+  simp
 
 /-- Interpolation starts at the first metric. -/
 @[simp]
@@ -122,6 +163,23 @@ private local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) :=
   ContinuousLinearMap.toNormedSpace
 
 omit [I.Boundaryless] in
+/-- On a chart target, the coordinate bilinear form of a metric interpolated with a varying
+weight is the interpolation of the coordinate bilinear forms, with the weight read through the
+inverse chart. -/
+theorem chartMetric_convexCombinationFun
+    (g h : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (f : M → ℝ)
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, 0 ≤ f x) (hf₁ : ∀ x, f x ≤ 1) (x : M) {z : E}
+    (hz : z ∈ (extChartAt I x).target) :
+    (g.convexCombinationFun h f hf hf₀ hf₁).toNondegenerateMetric.chartMetric x z =
+      (1 - f ((extChartAt I x).symm z)) • g.toNondegenerateMetric.chartMetric x z +
+        f ((extChartAt I x).symm z) • h.toNondegenerateMetric.chartMetric x z := by
+  ext v w
+  simp only [(g.convexCombinationFun h f hf hf₀ hf₁).toNondegenerateMetric.chartMetric_apply hz,
+    g.toNondegenerateMetric.chartMetric_apply hz, h.toNondegenerateMetric.chartMetric_apply hz,
+    toNondegenerateMetric_apply, convexCombinationFun_inner, add_apply, smul_apply,
+    smul_eq_mul]
+
+omit [I.Boundaryless] in
 /-- On a chart target, the coordinate bilinear form of an interpolated metric is the
 interpolation of the coordinate bilinear forms. -/
 theorem chartMetric_convexCombination
@@ -129,11 +187,8 @@ theorem chartMetric_convexCombination
     (t : unitInterval) (x : M) {z : E} (hz : z ∈ (extChartAt I x).target) :
     (g.convexCombination h t).toNondegenerateMetric.chartMetric x z =
       (1 - (t : ℝ)) • g.toNondegenerateMetric.chartMetric x z +
-        (t : ℝ) • h.toNondegenerateMetric.chartMetric x z := by
-  ext v w
-  simp only [(g.convexCombination h t).toNondegenerateMetric.chartMetric_apply hz,
-    g.toNondegenerateMetric.chartMetric_apply hz, h.toNondegenerateMetric.chartMetric_apply hz,
-    toNondegenerateMetric_apply, convexCombination_inner, add_apply, smul_apply, smul_eq_mul]
+        (t : ℝ) • h.toNondegenerateMetric.chartMetric x z :=
+  chartMetric_convexCombinationFun g h _ _ _ _ x hz
 
 /-- Every coordinate derivative of an interpolated metric is the corresponding weighted sum.
 The weights are constant in the spatial variable. -/
