@@ -172,6 +172,18 @@ instance : UniformSpace (NovikovModule R F) :=
 instance : IsUniformAddGroup (NovikovModule R F) :=
   isUniformAddGroup_of_addCommGroup
 
+/- When the coefficient ring has its own topology, as `ℤ` does, the carrier is also a subtype of
+the product space `S → R`, whose coefficientwise topology is a different instance. These checks
+pin down that instance resolution selects the potential-cutoff structures. -/
+example {S : Type*} (F : S → ℝ) :
+    (inferInstance : TopologicalSpace (NovikovModule ℤ F)) = (potentialFilterBasis ℤ F).topology :=
+  rfl
+
+example {S : Type*} (F : S → ℝ) :
+    (inferInstance : UniformSpace (NovikovModule ℤ F)) =
+      IsTopologicalAddGroup.rightUniformSpace (NovikovModule ℤ F) :=
+  rfl
+
 /-- The subgroups `U_C` form a basis of neighbourhoods of `0` in the potential-cutoff
 topology. -/
 theorem hasBasis_nhds_zero :
