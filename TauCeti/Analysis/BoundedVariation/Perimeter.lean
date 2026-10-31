@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The perimeter of a set in an open set
@@ -131,8 +132,7 @@ theorem perimeter_le_liminf [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ]
   -- The indicator of a null-measurable set is locally integrable.
   have hli {t : Set E} (ht : NullMeasurableSet t μ) :
       LocallyIntegrableOn (t.indicator (1 : E → ℝ)) Ω μ :=
-    (((locallyIntegrable_const 1).indicator (measurableSet_toMeasurable μ t)).congr
-      (indicator_ae_eq_of_ae_eq_set ht.toMeasurable_ae_eq)).locallyIntegrableOn _
+    locallyIntegrableOn_indicator_const (ht.mono Measure.restrict_le_self) 1
   refine totalVariationOn_le_liminf (hs.mono fun i hi => hli hi) (hli hs₀) fun K hK hKΩ => ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h K hK hKΩ)
     (fun _ => zero_le) fun i => ?_

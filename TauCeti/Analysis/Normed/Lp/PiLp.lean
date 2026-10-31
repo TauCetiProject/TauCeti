@@ -23,6 +23,12 @@ Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` t
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons.
 
+Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i`
+in the slot `f i`, and the vectors so obtained are those whose coordinates outside the range of
+`f` vanish. In particular, extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k`
+coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the
+vectors so obtained are those whose coordinates `j ≥ k` vanish.
+
 ## Source
 
 The coordinate-norm estimate is adapted from
@@ -155,3 +161,48 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : PiLp 2 β) (r : ℝ) :
 end PseudoMetricSpace
 
 end PiLp
+
+namespace LinearIsometry
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 E : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E]
+  [Module 𝕜 E] {ι ι' : Type*} [Fintype ι] [Fintype ι'] {k n : ℕ}
+
+/-- Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` puts its coordinate
+`i` in the slot `f i`. -/
+theorem piLpExtendByZero_apply_apply (f : ι ↪ ι') (v : PiLp p fun _ : ι ↦ E) (i : ι) :
+    piLpExtendByZero p 𝕜 E f v (f i) = v i := by
+  simpa using f.injective.extend_apply (fun i ↦ v i) 0 i
+
+/-- The vectors of `Lᵖ(ι', E)` obtained by extending a vector of `Lᵖ(ι, E)` by zero along an
+embedding `f : ι ↪ ι'` are those whose coordinates outside the range of `f` vanish. -/
+theorem range_piLpExtendByZero (f : ι ↪ ι') :
+    Set.range (piLpExtendByZero p 𝕜 E f) =
+      {y : PiLp p fun _ : ι' ↦ E | ∀ j ∉ Set.range f, y j = 0} := by
+  refine Set.ext fun y ↦ ⟨?_, fun hy ↦ ?_⟩
+  · rintro ⟨w, rfl⟩ j hj
+    exact piLpExtendByZero_apply_eq_zero hj w
+  · refine ⟨WithLp.toLp p fun i ↦ y (f i), PiLp.ext fun j ↦ ?_⟩
+    by_cases hj : j ∈ Set.range f
+    · obtain ⟨i, rfl⟩ := hj
+      rw [piLpExtendByZero_apply_apply, PiLp.toLp_apply]
+    · rw [piLpExtendByZero_apply_eq_zero hj, hy j hj]
+
+/-- Extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of
+`Lᵖ(Fin n, E)` puts its coordinates in the slots `j < k` and zeros elsewhere. -/
+theorem piLpExtendByZero_castLEEmb_apply (hk : k ≤ n) (w : PiLp p fun _ : Fin k ↦ E)
+    (j : Fin n) :
+    piLpExtendByZero p 𝕜 E (Fin.castLEEmb hk) w j = if h : j.val < k then w ⟨j, h⟩ else 0 := by
+  split_ifs with h
+  · have hj : Fin.castLEEmb hk ⟨j, h⟩ = j := Fin.ext rfl
+    conv_lhs => rw [← hj]
+    exact piLpExtendByZero_apply_apply _ w _
+  · exact piLpExtendByZero_apply_eq_zero (by simpa [Fin.range_castLE] using h) w
+
+/-- The vectors of `Lᵖ(Fin n, E)` obtained by extending a vector of `Lᵖ(Fin k, E)` by zero are
+those whose coordinates `j ≥ k` vanish. -/
+theorem range_piLpExtendByZero_castLEEmb (hk : k ≤ n) :
+    Set.range (piLpExtendByZero p 𝕜 E (Fin.castLEEmb hk)) =
+      {y : PiLp p fun _ : Fin n ↦ E | ∀ j : Fin n, k ≤ j.val → y j = 0} := by
+  simp [range_piLpExtendByZero, Fin.range_castLE]
+
+end LinearIsometry

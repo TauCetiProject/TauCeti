@@ -19,6 +19,9 @@ of a map over the base to a fibre and the relabelling `Equiv.compFiberEquiv` of 
 bijection of bases — come from `TauCeti.Logic.Function.Fiber`; this file adds their
 compatibility with monodromy.
 
+A continuous section of a cover is a map to it from the trivial cover, so monodromy along a path
+carries the value of the section at the start to its value at the end.
+
 More generally, a map of covering spaces lying over a continuous map of bases carries the lift of
 a path to the lift of its image, so it carries monodromy along a path to monodromy along the image
 path, and likewise for loop classes under the induced map of fundamental groups.
@@ -32,6 +35,7 @@ packages its functoriality in the covering map.
 
 * `IsCoveringMap.fiberMap_monodromy`: a map of covers intertwines monodromy transport
   on their fibres.
+* `IsCoveringMap.monodromy_section`: monodromy follows a continuous section of a cover.
 * `IsCoveringMap.permutationRepresentation_eq_of_fiberMap`: a map of covers respecting
   numberings identifies the numbered monodromy representations.
 * `IsCoveringMap.monodromyNatTrans`: a map of covers induces a natural transformation
@@ -101,6 +105,15 @@ theorem _root_.IsCoveringMap.fiberMap_monodromy (hp : _root_.IsCoveringMap p)
   refine eq_of_heq (HEq.trans (show HEq (Γ.map (q'.comp f)) (Γ.map p') by rw [hcomp]) ?_)
   rw [hp.map_liftPathQuotient a e]
   exact (Path.Homotopic.Quotient.cast_heq _ _).trans (Path.Homotopic.Quotient.cast_heq _ _).symm
+
+/-- Monodromy along a path carries the value of a continuous section of the covering at the start
+of the path to its value at the end: the section lifts the path. -/
+theorem _root_.IsCoveringMap.monodromy_section (hp : _root_.IsCoveringMap p) {s : X → E}
+    (hs : Continuous s) (hps : ∀ x, s x ∈ p ⁻¹' {x}) {x y : X} (a : Path.Homotopic.Quotient x y) :
+    hp.monodromy a ⟨s x, hps x⟩ = ⟨s y, hps y⟩ := by
+  obtain ⟨γ⟩ := a
+  refine Subtype.ext ((hp.monodromy_eq_apply_one (Γ := ⟨s ∘ γ, hs.comp γ.continuous⟩)
+    (funext fun t ↦ hps (γ t)) ?_).trans ?_) <;> simp
 
 /-- A map of covers that preserves the numberings of two fibres identifies their numbered
 monodromy representations. -/

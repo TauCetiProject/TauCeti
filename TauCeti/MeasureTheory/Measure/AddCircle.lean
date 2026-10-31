@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Measure.WithDensity
+public import TauCeti.Topology.Algebra.InfiniteSum.Automorphize
 
 /-!
-# Densities in a half-open angle chart
+# Densities on the additive circle
 
 Reading an additive-circle point in the chart `[a, a + T)` sends circle volume to
 restricted Lebesgue measure. For a law with density relative to normalized Haar measure,
@@ -17,6 +18,11 @@ the real chart density is the lifted density divided by the period `T`.
 
 These identities allow cdfs and quantiles of circular laws to be computed in a fixed
 angle chart, with an explicit choice at the seam.
+
+In the other direction, reducing a real law with density `f` modulo `T` gives the circle law
+whose density relative to circle volume is the periodization
+`QuotientAddGroup.automorphize f`, which at a real point `x` is `∑ k : ℤ, f (x + k • T)`.
+This is how wrapped laws on the circle obtain their densities.
 
 Reading the circle in the symmetric chart `(-T/2, T/2]`, on which the distance to `0` is `|x|`,
 also bounds the integral of a radial function `h ↦ g ‖h‖` by twice the integral of `g` over the
@@ -72,6 +78,49 @@ theorem map_coe_equivIco_withDensity_haarAddCircle (a : ℝ)
   rw [hvol, withDensity_smul_measure, Measure.map_smul, hmap]
   · exact (withDensity_smul _ (hf.comp AddCircle.measurable_mk')).symm
   · exact (measurable_subtype_coe.comp (measurableEquivIco T a).measurable).aemeasurable
+
+section Periodization
+
+variable {M : Type*} [TopologicalSpace M] [AddCommMonoid M]
+
+/-- The periodization of a function on `ℝ`, evaluated at a real point, is the sum of the
+function over the translates of that point by multiples of the period. -/
+theorem automorphize_coe (f : ℝ → M) (x : ℝ) :
+    QuotientAddGroup.automorphize f (x : AddCircle T) = ∑' k : ℤ, f (x + k • T) := by
+  let e : ℤ ≃ (AddSubgroup.zmultiples T).op :=
+    (AddSubgroup.zmultiplesEquivInt hT.out.ne').symm.toEquiv.trans (AddSubgroup.equivOp _)
+  rw [QuotientAddGroup.automorphize_mk, ← e.tsum_eq]
+  refine tsum_congr fun k ↦ congrArg f ?_
+  simp [e, AddSubgroup.vadd_def, AddSubgroup.coe_zmultiplesEquivInt_symm_apply]
+
+/-- Reducing a real law with density `f` modulo `T` gives the circle law whose density
+relative to circle volume is the periodization of `f`.
+
+The proof is the unfolding argument of `QuotientAddGroup.integral_eq_integral_automorphize`,
+carried out for lower integrals of `ℝ≥0∞`-valued functions so that no integrability hypothesis
+is needed. -/
+theorem map_coe_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
+    (volume.withDensity f).map ((↑) : ℝ → AddCircle T) =
+      volume.withDensity (QuotientAddGroup.automorphize f) := by
+  ext A hA
+  have hA' : MeasurableSet (((↑) : ℝ → AddCircle T) ⁻¹' A) := AddCircle.measurable_mk' hA
+  have hmeas (γ : (AddSubgroup.zmultiples T).op) :
+      AEMeasurable (fun x ↦ (((↑) : ℝ → AddCircle T) ⁻¹' A).indicator f (γ +ᵥ x))
+        (volume.restrict (Ioc 0 (0 + T))) :=
+    ((hf.indicator hA').comp (measurable_const_vadd γ)).aemeasurable
+  rw [Measure.map_apply AddCircle.measurable_mk' hA, withDensity_apply _ hA',
+    withDensity_apply _ hA, ← lintegral_indicator hA', ← lintegral_indicator hA,
+    ← AddCircle.lintegral_preimage (T := T) 0]
+  refine ((isAddFundamentalDomain_Ioc' hT.out 0).lintegral_eq_tsum'' _).trans ?_
+  rw [← lintegral_tsum hmeas]
+  refine setLIntegral_congr_fun measurableSet_Ioc fun x _ ↦ ?_
+  have hx (γ : (AddSubgroup.zmultiples T).op) : ((γ +ᵥ x : ℝ) : AddCircle T) = x :=
+    QuotientAddGroup.mk_add_of_mem x γ.2
+  by_cases h : (x : AddCircle T) ∈ A
+  · simp [indicator, hx, h, QuotientAddGroup.automorphize_mk]
+  · simp [indicator, hx, h]
+
+end Periodization
 
 /-- A radial function on the circle integrates to at most twice its integral over the half line:
 `∫⁻ h, g ‖h‖ ≤ 2 ∫⁻ t in (0, ∞), g t`. -/

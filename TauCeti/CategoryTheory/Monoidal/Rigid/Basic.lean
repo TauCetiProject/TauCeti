@@ -11,7 +11,8 @@ public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 # Exact pairings in rigid monoidal categories
 
 This file records evaluation and coevaluation formulas for the self-pairing of the unit, for
-transported exact pairings, and for the adjunction associated to an exact pairing. It also
+transported exact pairings, and for the adjunction associated to an exact pairing, and registers
+the resulting adjoints of tensoring with a dualizable object as instances. It also
 computes the loop obtained by closing up a tensor product `f ⊗ₘ g` of endomorphisms with the
 tensor product pairings: in string diagrams, the loop of `f` sits inside the loop of `g`.
 
@@ -30,6 +31,11 @@ tensor product pairings: in string diagrams, the loop of `f` sits inside the loo
   with the tensor product pairings nests the loop of one factor inside the loop of the other;
 * `TauCeti.tensorLeftAdjunction_unit_app` and `TauCeti.tensorLeftAdjunction_counit_app`: the unit
   and counit of the adjunction associated to an exact pairing;
+* `TauCeti.isRightAdjoint_tensorLeft`, `TauCeti.isLeftAdjoint_tensorLeft`,
+  `TauCeti.isLeftAdjoint_tensorRight` and `TauCeti.isRightAdjoint_tensorRight`: tensoring with an
+  object having a right (resp. left) dual is a right (resp. left) adjoint on the left and a left
+  (resp. right) adjoint on the right, so in a rigid category tensoring on either side preserves all
+  limits and colimits;
 * `TauCeti.ExactPairing.homUnitEquiv`: for an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C`
   correspond to morphisms `𝟙_ C ⟶ Y`.
 -/
@@ -166,6 +172,32 @@ theorem tensorLeftAdjunction_unit_app (Z : C) :
 theorem tensorLeftAdjunction_counit_app (Z : C) :
     (tensorLeftAdjunction D Y).counit.app Z = (α_ Y D Z).inv ≫ ε_ D Y ▷ Z ≫ (λ_ Z).hom := by
   simp [tensorLeftAdjunction, tensorLeftHomEquiv]
+
+section Adjoint
+
+variable (X : C)
+
+/-- Tensoring on the left with an object having a right dual is a right adjoint, with left
+adjoint given by tensoring on the left with the dual. -/
+instance isRightAdjoint_tensorLeft [HasRightDual X] : (tensorLeft X).IsRightAdjoint :=
+  (tensorLeftAdjunction X Xᘁ).isRightAdjoint
+
+/-- Tensoring on the left with an object having a left dual is a left adjoint, with right adjoint
+given by tensoring on the left with the dual. -/
+instance isLeftAdjoint_tensorLeft [HasLeftDual X] : (tensorLeft X).IsLeftAdjoint :=
+  (tensorLeftAdjunction (ᘁX) X).isLeftAdjoint
+
+/-- Tensoring on the right with an object having a right dual is a left adjoint, with right
+adjoint given by tensoring on the right with the dual. -/
+instance isLeftAdjoint_tensorRight [HasRightDual X] : (tensorRight X).IsLeftAdjoint :=
+  (tensorRightAdjunction X Xᘁ).isLeftAdjoint
+
+/-- Tensoring on the right with an object having a left dual is a right adjoint, with left
+adjoint given by tensoring on the right with the dual. -/
+instance isRightAdjoint_tensorRight [HasLeftDual X] : (tensorRight X).IsRightAdjoint :=
+  (tensorRightAdjunction (ᘁX) X).isRightAdjoint
+
+end Adjoint
 
 namespace ExactPairing
 

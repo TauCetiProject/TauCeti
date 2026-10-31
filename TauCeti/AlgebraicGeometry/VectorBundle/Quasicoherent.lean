@@ -56,6 +56,14 @@ instance : (toQuasicoherent X).Full :=
 instance : (toQuasicoherent X).Faithful :=
   ObjectProperty.faithful_ιOfLE _
 
+/-- The inclusion of finite locally free sheaves into quasicoherent sheaves is additive. In
+particular it preserves finite biproducts, and so finite products and coproducts. -/
+-- `CategoryTheory.ObjectProperty.ιOfLE_additive` does not apply: the two full subcategories are
+-- taken in `X.Modules` and in `SheafOfModules X.ringCatSheaf`, which instance search does not
+-- identify.
+instance : (toQuasicoherent X).Additive where
+  map_add := rfl
+
 @[simp]
 theorem toQuasicoherent_obj_obj (E : FiniteLocallyFreeSheaf X) :
     ((toQuasicoherent X).obj E).obj = E.obj :=

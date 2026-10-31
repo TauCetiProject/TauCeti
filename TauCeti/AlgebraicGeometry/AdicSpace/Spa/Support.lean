@@ -7,8 +7,11 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 public import TauCeti.RingTheory.Huber.UnitGroup
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 
+import TauCeti.RingTheory.RingHom.FaithfullyFlat
 import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
@@ -24,7 +27,11 @@ closure J ≠ ⊤  ↔  ∃ v ∈ Spa (A, A⁺), J ⊆ supp v.
 For `J = 0` this is the emptiness criterion of Wedhorn's Proposition 7.49(1). Over a complete
 Hausdorff Huber pair no proper ideal is dense, so every proper ideal lies in a support: this is
 Wedhorn's Proposition 7.51 in the form his §8 uses, and for a maximal ideal the containment is an
-equality. Its standard consequence proved here is the unit criterion of Proposition 7.52(2).
+equality. Its standard consequences proved here are the unit criterion of Proposition 7.52(2) and
+a test for faithful flatness: a flat ring map out of a complete Hausdorff Huber pair is faithfully
+flat as soon as the support of every point of `Spa (A, A⁺)` is contracted from the target, since
+every maximal ideal is such a support. In particular a flat morphism of Huber pairs out of a
+complete Hausdorff pair that is surjective on adic spectra is faithfully flat.
 Corollary 7.53, which characterizes when a finite set's standard rational family covers the
 spectrum, is read off from it in
 `TauCeti/AlgebraicGeometry/AdicSpace/Spa/RationalSubset/Cover.lean`.
@@ -72,6 +79,11 @@ of the maximal ideal is all the argument uses.
   all of it.
 * `TauCeti.ValuationSpectrum.isUnit_iff_forall_mem_spa_notMem_supp` : **Wedhorn Proposition
   7.52(2)**, as a criterion.
+* `TauCeti.ValuationSpectrum.faithfullyFlat_iff_flat_and_forall_mem_spa_supp_mem_range_comap` :
+  over a complete Hausdorff Huber pair, a ring map is faithfully flat exactly when it is flat and
+  the support of every point of `Spa (A, A⁺)` is contracted from the target.
+* `TauCeti.Huber.Pair.Hom.faithfullyFlat_of_surjective_spaComap` : a flat morphism of Huber pairs
+  out of a complete Hausdorff pair that is surjective on adic spectra is faithfully flat.
 
 ## References
 
@@ -200,8 +212,46 @@ theorem isUnit_iff_forall_mem_spa_notMem_supp (Aplus : Subring A)
     span_eq_top_iff_forall_mem_spa_exists_notMem_supp Aplus hplus]
   simp
 
+/-- **Faithful flatness is detected on the adic spectrum.** Over a complete Hausdorff Huber pair
+`(A, A⁺)`, a ring map `φ : A → B` is faithfully flat exactly when it is flat and the support of
+every point of `Spa (A, A⁺)` is contracted from a prime of `B`. Compared with
+`RingHom.FaithfullyFlat.iff_flat_and_comap_surjective`, only the supports of points of the adic
+spectrum need to be hit; these include every maximal ideal (Wedhorn, Proposition 7.51). -/
+theorem faithfullyFlat_iff_flat_and_forall_mem_spa_supp_mem_range_comap (Aplus : Subring A)
+    (hplus : IsRingOfIntegralElements Aplus) {B : Type*} [CommRing B] (φ : A →+* B) :
+    φ.FaithfullyFlat ↔
+      φ.Flat ∧ ∀ v ∈ spa Aplus, suppFun v ∈ Set.range (PrimeSpectrum.comap φ) := by
+  refine ⟨fun h ↦ ⟨h.flat, fun v _ ↦
+    (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp h).2 _⟩, fun ⟨hflat, h⟩ ↦ ?_⟩
+  refine RingHom.FaithfullyFlat.of_flat_of_forall_isMaximal_mem_range_comap hflat fun m hm ↦ ?_
+  -- the maximal ideal `m` is the support of a point, hence contracted from a prime of `B`
+  obtain ⟨v, hv, hvm⟩ := exists_mem_spa_supp_eq_of_isMaximal Aplus hplus m
+  obtain ⟨q, hq⟩ := h v hv
+  exact ⟨q, PrimeSpectrum.ext <| by rw [hq, suppFun_asIdeal, hvm]⟩
+
 end Complete
 
 end TauCeti.ValuationSpectrum
+
+namespace TauCeti.Huber.Pair.Hom
+
+open TauCeti.ValuationSpectrum
+
+variable {A B : Type*} [CommRing A] [UniformSpace A] [T2Space A] [CompleteSpace A]
+  [IsTopologicalRing A] [IsUniformAddGroup A] [IsHuberRing A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {S : Pair A}
+  {T : Pair B}
+
+/-- **A flat morphism of Huber pairs that is surjective on adic spectra is faithfully flat.** If
+`f : (A, A⁺) → (B, B⁺)` is a morphism of Huber pairs with `A` complete and Hausdorff, `B` is flat
+over `A` and `Spa(B, B⁺) → Spa(A, A⁺)` is surjective, then `B` is faithfully flat over `A`. -/
+theorem faithfullyFlat_of_surjective_spaComap {f : Hom S T} (hflat : f.toRingHom.Flat)
+    (hf : Function.Surjective f.spaComap) : f.toRingHom.FaithfullyFlat := by
+  refine (faithfullyFlat_iff_flat_and_forall_mem_spa_supp_mem_range_comap S.plus
+    S.isRingOfIntegralElements _).mpr ⟨hflat, fun v hv ↦ ?_⟩
+  obtain ⟨w, hw⟩ := hf ⟨v, hv⟩
+  exact ⟨suppFun w.1, by rw [← suppFun_comap, ← spaComap_val, hw]⟩
+
+end TauCeti.Huber.Pair.Hom
 
 end

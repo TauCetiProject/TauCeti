@@ -131,6 +131,12 @@ instance SymmetricSequence.preservesColimits_tensorLeft (X : SymmetricSequence.{
     PreservesColimits (tensorLeft X) where
   preservesColimitsOfShape := inferInstance
 
+/-- Day convolution with a fixed symmetric sequence on the right also preserves colimits small in
+the simplex universe, by the braiding. -/
+instance SymmetricSequence.preservesColimits_tensorRight (X : SymmetricSequence.{u}) :
+    PreservesColimits (tensorRight X) where
+  preservesColimitsOfShape := { preservesColimit := inferInstance }
+
 /- Day convolution makes symmetric sequences of pointed simplicial sets a symmetric monoidal
 category, through the instance `DayFunctor.symmetricCategory`. -/
 noncomputable example : SymmetricCategory SymmetricSequence.{u} := inferInstance

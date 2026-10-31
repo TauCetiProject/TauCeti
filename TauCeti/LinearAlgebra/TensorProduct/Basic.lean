@@ -21,6 +21,9 @@ the Casimir element of a trace commute with multiplication.
 ## Main declarations
 
 * `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
+* `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
+* `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
+  of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
@@ -64,6 +67,19 @@ theorem assoc_rTensor_lTensor_comp (f : N →ₗ[R] P) (g : Q →ₗ[R] S)
         (TensorProduct.assoc R T N Q (ρ.rTensor Q t)) := by
   simp only [lTensor_def, rTensor_map, comp_id]
   rw [← map_rTensor, ← TensorProduct.map_map_assoc]
+
+/-- Tensoring maps on the two factors commutes, elementwise: `(𝟙 ⊗ g) ∘ (f ⊗ 𝟙)` and
+`(f ⊗ 𝟙) ∘ (𝟙 ⊗ g)` agree on every element. -/
+theorem lTensor_rTensor_comm (f : M →ₗ[R] P) (g : N →ₗ[R] Q) (x : M ⊗[R] N) :
+    g.lTensor P (f.rTensor N x) = f.rTensor Q (g.lTensor M x) := by
+  rw [← comp_apply, lTensor_comp_rTensor, ← rTensor_comp_lTensor, comp_apply]
+
+/-- Injectivity of `f ⊗ 𝟙 M` only depends on `M` up to isomorphism. -/
+theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
+    Function.Injective (f.rTensor M) ↔ Function.Injective (f.rTensor Q) := by
+  have h : e.lTensor P ∘ f.rTensor M = f.rTensor Q ∘ e.lTensor N :=
+    funext fun x ↦ lTensor_rTensor_comm f e.toLinearMap x
+  rw [← EquivLike.comp_injective _ (e.lTensor P), h, EquivLike.injective_comp]
 
 end Naturality
 

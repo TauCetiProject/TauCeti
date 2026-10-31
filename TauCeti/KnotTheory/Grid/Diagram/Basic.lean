@@ -803,6 +803,22 @@ theorem swapColumns_O (a b : Fin n) : (G.swapColumns a b).O = G.O.swapColumns a 
 theorem swapColumns_X (a b : Fin n) : (G.swapColumns a b).X = G.X.swapColumns a b :=
   rfl
 
+/-- Exchanging two rows and the same two columns conjugates the `X`-permutation by the
+transposition. -/
+theorem swapRows_swapColumns_X_toPerm (a b : Fin n) :
+    ((G.swapRows a b).swapColumns a b).X.toPerm =
+      Equiv.swap a b * G.X.toPerm * Equiv.swap a b := by
+  ext c
+  simp
+
+/-- Exchanging two rows and the same two columns conjugates the `O`-permutation by the
+transposition. -/
+theorem swapRows_swapColumns_O_toPerm (a b : Fin n) :
+    ((G.swapRows a b).swapColumns a b).O.toPerm =
+      Equiv.swap a b * G.O.toPerm * Equiv.swap a b := by
+  ext c
+  simp
+
 /-- Row swaps transport the `O` marking set by the row transposition. -/
 theorem mem_OSet_swapRows (a b : Fin n) (p : Fin n × Fin n) :
     p ∈ (G.swapRows a b).OSet ↔ (p.1, Equiv.swap a b p.2) ∈ G.OSet := by
