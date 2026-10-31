@@ -271,6 +271,7 @@ omit [Module B L] [IsScalarTower A B L] in
 /-- The base change isomorphism sends `a ⊗ ψ` to the `A'`-linear map `⋀^d B' → ⋀^d L'` which
 extends `a • ψ` along the comparisons `⋀^d B → ⋀^d B'` and `⋀^d L → ⋀^d L'` of exterior powers
 with their base changes. -/
+@[simp]
 theorem toHom_baseChangeEquiv_tmul_apply (hf : IsBaseChange A' f) (a : A')
     (ψ : ModuleNorm A B d L) (x : ⋀[A]^d B) :
     toHom A' B' d L' (baseChangeEquiv d hf (a ⊗ₜ ψ))
