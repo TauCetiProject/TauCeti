@@ -57,6 +57,8 @@ of singular values give at most the sum of its first `k` terms
 * `LinearMap.kyFanSum_subtype_comp_comp_orthogonalProjectionOnto`: extending a map by zero
   between source and target ambient spaces preserves its Ky Fan sums.
 * `LinearMap.IsSymmetric.sum_re_inner_apply_self_le_sum_eigenvalues`: Ky Fan's trace inequality.
+* `LinearMap.IsPositive.sum_re_inner_apply_self_le_re_trace`: for a positive operator, the diagonal
+  entries along an orthonormal family sum to at most the trace.
 
 ## Provenance
 
@@ -450,5 +452,14 @@ theorem sum_re_inner_apply_self_le_sum_eigenvalues (hT : T.IsSymmetric) (hn : fi
         simp [Finset.mem_range.mp hj]
 
 end IsSymmetric
+
+/-- For a positive operator `T` and an orthonormal family `(wᵢ)`, the diagonal entries
+`re ⟪T wᵢ, wᵢ⟫` sum to at most `re (tr T)`. -/
+theorem IsPositive.sum_re_inner_apply_self_le_re_trace {T : E →ₗ[𝕜] E} (hT : T.IsPositive)
+    {ι : Type*} [Fintype ι] {w : ι → E} (hw : Orthonormal 𝕜 w) :
+    ∑ i, RCLike.re ⟪T (w i), w i⟫ ≤ RCLike.re (trace 𝕜 E T) := by
+  rw [hT.isSymmetric.re_trace_eq_sum_eigenvalues rfl]
+  exact (hT.isSymmetric.sum_re_inner_apply_self_le_sum_eigenvalues rfl hw).trans
+    (sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun j _ _ ↦ hT.nonneg_eigenvalues rfl j)
 
 end LinearMap

@@ -30,6 +30,8 @@ inequality holds for bounded linear maps from a Hilbert space to an inner produc
 
 * `ContinuousLinearMap.kyFanGauge_eq_kyFanSum`: between finite-dimensional inner product spaces,
   `Kₖ(T)` is the Ky Fan `k`-sum of the singular values of `T`.
+* `ContinuousLinearMap.kyFanGauge_orthogonalProjectionOnto_comp_comp_subtypeL_le`: compressing a map
+  to subspaces of its source and target does not increase its Ky Fan gauges.
 * `TauCeti.HasMinMaxLowerBound.kyFanGauge_add_le`: on a pair with the converse min–max
   localization property, `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)`.
 * `ContinuousLinearMap.kyFanGauge_add_le`: **Ky Fan triangle inequality**,
@@ -51,6 +53,20 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
 namespace ContinuousLinearMap
+
+/-- Compressing `T` to subspaces `V ≤ E` and `W ≤ F`, by the inclusion of `V` and the orthogonal
+projection onto `W`, does not increase its Ky Fan gauges. -/
+theorem kyFanGauge_orthogonalProjectionOnto_comp_comp_subtypeL_le (T : E →L[𝕜] F)
+    (V : Submodule 𝕜 E) (W : Submodule 𝕜 F) [W.HasOrthogonalProjection] (k : ℕ) :
+    (W.orthogonalProjectionOnto.comp (T.comp V.subtypeL)).kyFanGauge k ≤ T.kyFanGauge k :=
+  calc (W.orthogonalProjectionOnto.comp (T.comp V.subtypeL)).kyFanGauge k
+      ≤ ‖W.orthogonalProjectionOnto‖₊ * T.kyFanGauge k * ‖V.subtypeL‖₊ :=
+        kyFanGauge_comp_comp_le _ _ _ k
+    _ ≤ 1 * T.kyFanGauge k * 1 := by
+        gcongr
+        · exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
+        · exact_mod_cast V.norm_subtypeL_le
+    _ = T.kyFanGauge k := by rw [one_mul, mul_one]
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
@@ -78,17 +94,8 @@ theorem HasMinMaxLowerBound.kyFanGauge_add_le (h : HasMinMaxLowerBound 𝕜 E F)
   obtain ⟨V, _, hV⟩ := h.exists_singularValue_le_compression (S + T) k
     (δ := ε / (k + 1)) (by positivity)
   set P := (V.map (S + T : E →ₗ[𝕜] F)).orthogonalProjectionOnto
-  -- Compressing by `P` and the inclusion of `V`, both of norm at most one, does not increase
-  -- approximation numbers.
-  have hcomp : ∀ X : E →L[𝕜] F,
-      (P.comp (X.comp V.subtypeL)).kyFanGauge k ≤ X.kyFanGauge k := fun X ↦
-    calc (P.comp (X.comp V.subtypeL)).kyFanGauge k
-        ≤ ‖P‖₊ * X.kyFanGauge k * ‖V.subtypeL‖₊ := kyFanGauge_comp_comp_le _ _ _ k
-      _ ≤ 1 * X.kyFanGauge k * 1 := by
-        gcongr
-        · exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
-        · exact_mod_cast V.norm_subtypeL_le
-      _ = X.kyFanGauge k := by rw [one_mul, mul_one]
+  have hcomp (X : E →L[𝕜] F) : (P.comp (X.comp V.subtypeL)).kyFanGauge k ≤ X.kyFanGauge k :=
+    X.kyFanGauge_orthogonalProjectionOnto_comp_comp_subtypeL_le V _ k
   -- The finite-dimensional Ky Fan inequality for the compressions.
   have hfin : ((P.comp ((S + T).comp V.subtypeL)).kyFanGauge k : ℝ) ≤
       (P.comp (S.comp V.subtypeL)).kyFanGauge k + (P.comp (T.comp V.subtypeL)).kyFanGauge k := by
