@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Algebra.Group.ZPow
 
 /-!
 # Shear automorphisms of a product
@@ -30,9 +31,23 @@ the multiplicative group of a local field attached to two uniformizers differ by
 * `MonoidHom.prodShear_one`: the shear by the trivial homomorphism is the identity.
 * `MonoidHom.prodShear_trans_prodShear`: shears compose by multiplying the
   homomorphisms.
+* `TauCeti.continuous_zpowGroupHom`: the power homomorphisms of a commutative topological group
+  are continuous, so they give shears.
 -/
 
 public section
+
+namespace TauCeti
+
+/-- The power homomorphism `g ↦ g ^ n` of a commutative topological group is continuous, so it
+shears products (`MonoidHom.prodShear`). -/
+@[to_additive /-- The multiple homomorphism `g ↦ n • g` of a commutative topological additive
+group is continuous. -/]
+theorem continuous_zpowGroupHom {G : Type*} [CommGroup G] [TopologicalSpace G]
+    [IsTopologicalGroup G] (n : ℤ) : Continuous (zpowGroupHom n : G →* G) :=
+  continuous_zpow n
+
+end TauCeti
 
 namespace MonoidHom
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Path
+public import TauCeti.Topology.Algebra.Group.Shear
 public import TauCeti.Topology.Circle.AddCircle
 import TauCeti.Algebra.Group.Pow
 
@@ -89,6 +90,19 @@ def torusCurve (p q : ℤ) : Path ((1 : Circle), (1 : Circle)) (1, 1) where
 theorem torusCurve_apply (p q : ℤ) (t : unitInterval) :
     torusCurve p q t = (Circle.exp (2 * Real.pi * (p * t)), Circle.exp (2 * Real.pi * (q * t))) :=
   (rfl)
+
+/-- The shear `(a, b) ↦ (a, aᵐ b)` carries the `(p, q)` curve to the `(p, q + m p)` curve. -/
+theorem prodShear_torusCurve (m p q : ℤ) (t : unitInterval) :
+    (MonoidHom.prodShear (zpowGroupHom m) (continuous_zpowGroupHom m)).toHomeomorph
+      (torusCurve p q t) = torusCurve p (q + m * p) t := by
+  simp only [ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass,
+    MonoidHom.prodShear_apply, zpowGroupHom_apply, torusCurve_apply]
+  refine Prod.ext rfl ?_
+  dsimp only
+  rw [← Circle.exp_intCast_mul, ← Circle.exp_add]
+  congr 1
+  push_cast
+  ring
 
 /-! ### The gluing of the boundary tori -/
 
