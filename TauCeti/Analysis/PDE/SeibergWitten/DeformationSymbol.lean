@@ -157,7 +157,7 @@ basis `e` with `J e₀ = e₁` and `J e₂ = e₃`, the form `ω_u` is a self-du
 def deformationComplexStructure (J : AlmostComplexStructure V) :
     ℝ × ⋀[ℝ]^2 V →ₗ[ℝ] ℝ × ⋀[ℝ]^2 V where
   toFun p := (-(√2 / 2 * ⟪J.kahlerForm, p.2⟫),
-    (√2 / 2 * p.1) • J.kahlerForm + (2⁻¹ : ℝ) • J.toLinearMap.exteriorSquareDerivation p.2)
+    (√2 / 2 * p.1) • J.kahlerForm + (2⁻¹ : ℝ) • exteriorPower.lieMap 2 J.toLinearMap p.2)
   map_add' p q := by
     simp only [Prod.fst_add, Prod.snd_add, inner_add_right, map_add, Prod.mk_add_mk, mul_add,
       add_smul, smul_add, neg_add]
@@ -180,7 +180,7 @@ theorem deformationComplexStructure_apply_fst (J : AlmostComplexStructure V)
 theorem deformationComplexStructure_apply_snd (J : AlmostComplexStructure V)
     (p : ℝ × ⋀[ℝ]^2 V) :
     (deformationComplexStructure J p).2 =
-      (√2 / 2 * p.1) • J.kahlerForm + (2⁻¹ : ℝ) • J.toLinearMap.exteriorSquareDerivation p.2 :=
+      (√2 / 2 * p.1) • J.kahlerForm + (2⁻¹ : ℝ) • exteriorPower.lieMap 2 J.toLinearMap p.2 :=
   (rfl)
 
 /-! ### Complex linearity for the complex orientation -/
@@ -198,7 +198,7 @@ theorem hodgeStar_deformationComplexStructure_snd {p : ℝ × ⋀[ℝ]^2 V}
     o.hodgeStar hkl (deformationComplexStructure J p).2 = (deformationComplexStructure J p).2 := by
   rw [deformationComplexStructure_apply_snd, map_add, map_smul, map_smul,
     AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he,
-    o.hodgeStar_exteriorSquareDerivation hkl (AlmostComplexStructure.inner_apply_left
+    o.hodgeStar_lieMap_two hkl (AlmostComplexStructure.inner_apply_left
       (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)), hp]
 
 /-- **`J′` is a complex structure on `ℝ ⊕ Λ⁺`**: `J′ (J′ (f, η)) = -(f, η)` for self-dual `η`. -/
@@ -209,14 +209,14 @@ theorem deformationComplexStructure_deformationComplexStructure {p : ℝ × ⋀[
   have hω : ⟪J.kahlerForm, J.kahlerForm⟫ = 2 := by
     rw [AlmostComplexStructure.inner_kahlerForm_self hJ, Fact.out (p := finrank ℝ V = 4)]
     norm_num
-  have hDω : J.toLinearMap.exteriorSquareDerivation J.kahlerForm = 0 :=
-    AlmostComplexStructure.exteriorSquareDerivation_kahlerForm hJ
+  have hDω : exteriorPower.lieMap 2 J.toLinearMap J.kahlerForm = 0 :=
+    AlmostComplexStructure.lieMap_kahlerForm hJ
   -- `⟪ω, D_J η⟫ = -⟪D_J ω, η⟫ = 0`.
-  have hωD : ⟪J.kahlerForm, J.toLinearMap.exteriorSquareDerivation p.2⟫ = 0 := by
-    rw [real_inner_comm, inner_exteriorSquareDerivation_left
+  have hωD : ⟪J.kahlerForm, exteriorPower.lieMap 2 J.toLinearMap p.2⟫ = 0 := by
+    rw [real_inner_comm, inner_lieMap_two_left
       (AlmostComplexStructure.inner_apply_left hJ), hDω, inner_zero_right, neg_zero]
   have hDD :=
-    AlmostComplexStructure.exteriorSquareDerivation_exteriorSquareDerivation_of_hodgeStar_eq_self
+    AlmostComplexStructure.lieMap_lieMap_of_hodgeStar_eq_self
       h₀ h₂ hkl he hp
   refine Prod.ext ?_ ?_
   · simp only [deformationComplexStructure_apply_fst, deformationComplexStructure_apply_snd,
@@ -248,8 +248,8 @@ theorem deformationSymbol_comp_toLinearMap (ξ : V) :
     linear_combination (-⟪ξ, J a⟫ / 2) * Real.mul_self_sqrt zero_le_two
   · simp only [deformationSymbol_apply_snd, deformationComplexStructure_apply_snd,
       deformationSymbol_apply_fst, map_smul, map_add,
-      ← o.hodgeStar_exteriorSquareDerivation hkl (AlmostComplexStructure.inner_apply_left hJ),
-      LinearMap.exteriorSquareDerivation_ιMulti]
+      ← o.hodgeStar_lieMap_two hkl (AlmostComplexStructure.inner_apply_left hJ),
+      exteriorPower.lieMap_two_apply_ιMulti]
     rw [map_sub] at hz
     linear_combination (norm := module) (√2 / 4 : ℝ) • hz
 

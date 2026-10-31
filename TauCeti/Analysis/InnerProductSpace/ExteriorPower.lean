@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
-public import TauCeti.LinearAlgebra.ExteriorPower.Derivation
+public import TauCeti.Algebra.Lie.ExteriorPower
 
 /-!
 # Linear isometries of exterior powers
@@ -24,7 +24,7 @@ act skew-adjointly on two-forms.
 * `exteriorPower.ext_inner_ιMulti`: elements of `⋀ⁿ E` with the same inner products against all
   wedges of vectors are equal, and `exteriorPower.linearMap_ext_inner_ιMulti` is the
   corresponding extensionality principle for linear maps between exterior powers.
-* `exteriorPower.inner_exteriorSquareDerivation_left`: the derivation action `D_A` of a
+* `exteriorPower.inner_lieMap_two_left`: the derivation action `D_A` of a
   skew-adjoint `A` on two-forms is skew-adjoint, `⟪D_A x, y⟫ = -⟪x, D_A y⟫`.
 -/
 
@@ -87,14 +87,14 @@ theorem linearMap_ext_inner_ιMulti {m : ℕ} {f g : ⋀[ℝ]^n E →ₗ[ℝ] �
 /-- **Skew-adjoint endomorphisms act skew-adjointly on two-forms**: if `⟪A u, w⟫ = -⟪u, A w⟫`
 for all `u, w`, then the derivation action `D_A (u ∧ w) = A u ∧ w + u ∧ A w` satisfies
 `⟪D_A x, y⟫ = -⟪x, D_A y⟫`. -/
-theorem inner_exteriorSquareDerivation_left {A : E →ₗ[ℝ] E}
+theorem inner_lieMap_two_left {A : E →ₗ[ℝ] E}
     (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (x y : ⋀[ℝ]^2 E) :
-    ⟪A.exteriorSquareDerivation x, y⟫ = -⟪x, A.exteriorSquareDerivation y⟫ := by
+    ⟪lieMap 2 A x, y⟫ = -⟪x, lieMap 2 A y⟫ := by
   -- On wedges of two vectors both sides are sums of `2 × 2` Gram determinants.
   have key (a b u w : E) :
-      ⟪A.exteriorSquareDerivation (ιMulti ℝ 2 ![a, b]), ιMulti ℝ 2 ![u, w]⟫ =
-        -⟪ιMulti ℝ 2 ![a, b], A.exteriorSquareDerivation (ιMulti ℝ 2 ![u, w])⟫ := by
-    simp only [LinearMap.exteriorSquareDerivation_ιMulti, inner_add_left, inner_add_right,
+      ⟪lieMap 2 A (ιMulti ℝ 2 ![a, b]), ιMulti ℝ 2 ![u, w]⟫ =
+        -⟪ιMulti ℝ 2 ![a, b], lieMap 2 A (ιMulti ℝ 2 ![u, w])⟫ := by
+    simp only [lieMap_two_apply_ιMulti, inner_add_left, inner_add_right,
       inner_ιMulti_two, hA a, hA b, real_inner_comm (A u), real_inner_comm (A w), hA u, hA w]
     ring
   have hv (v : Fin 2 → E) : v = ![v 0, v 1] := by

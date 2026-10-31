@@ -22,7 +22,7 @@ Let `V` be a finite-dimensional real inner product space and `J` an almost compl
 `TauCeti.AlmostComplexStructure.kahlerForm J ∈ ⋀² V`, characterized by
 `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`, and `‖ω‖² = dim V / 2`. In dimension four, in a unitary frame
 `e₁, e₂ = J e₁, e₃, e₄ = J e₃`, it is `ω = e₁ ∧ e₂ + e₃ ∧ e₄`. The endomorphism `J` acts on
-two-forms as a derivation `D_J (u ∧ w) = J u ∧ w + u ∧ J w` (`LinearMap.exteriorSquareDerivation`),
+two-forms as a derivation `D_J (u ∧ w) = J u ∧ w + u ∧ J w` (`exteriorPower.lieMap 2 J`),
 which is skew-adjoint and kills `ω`.
 
 In dimension four, for the complex orientation, the one in which unitary frames are positively
@@ -48,11 +48,11 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`.
-* `exteriorSquareDerivation_kahlerForm`: `D_J ω = 0`.
+* `lieMap_kahlerForm`: `D_J ω = 0`.
 * `inner_apply_apply_of_orthonormalBasis`: a `J` with a unitary frame is orthogonal.
 * `kahlerForm_eq_ιMulti_add_ιMulti`: `ω = e₀ ∧ e₁ + e₂ ∧ e₃` in a unitary frame.
 * `hodgeStar_kahlerForm`: `⋆ω = ω` for the complex orientation.
-* `exteriorSquareDerivation_exteriorSquareDerivation_of_hodgeStar_eq_self`:
+* `lieMap_lieMap_of_hodgeStar_eq_self`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
 
@@ -117,11 +117,11 @@ theorem inner_kahlerForm_self : ⟪J.kahlerForm, J.kahlerForm⟫ = finrank ℝ V
 
 /-- The derivation action of `J` on two-forms kills the Kähler form: `D_J ω = 0`. -/
 @[simp]
-theorem exteriorSquareDerivation_kahlerForm :
-    J.toLinearMap.exteriorSquareDerivation J.kahlerForm = 0 := by
+theorem lieMap_kahlerForm :
+    exteriorPower.lieMap 2 J.toLinearMap J.kahlerForm = 0 := by
   refine ext_inner_ιMulti fun v ↦ ?_
   rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm,
-    inner_exteriorSquareDerivation_left (inner_apply_left hJ)]
+    inner_lieMap_two_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
   simp [inner_add_right, inner_kahlerForm_ιMulti hJ, hJ]
 
 end Orthogonal
@@ -190,17 +190,17 @@ theorem hodgeStar_kahlerForm : o.hodgeStar hkl J.kahlerForm = J.kahlerForm := by
 include he h₀ h₂ in
 /-- The square of the derivation action of `J` on the self-dual part of a two-form:
 `D_J² (x + ⋆x) = 4 ⟪ω, x⟫ ω - 4 (x + ⋆x)`. -/
-private theorem exteriorSquareDerivation_exteriorSquareDerivation_add_hodgeStar
+private theorem lieMap_lieMap_add_hodgeStar
     (x : ⋀[ℝ]^2 V) :
-    J.toLinearMap.exteriorSquareDerivation (J.toLinearMap.exteriorSquareDerivation
+    exteriorPower.lieMap 2 J.toLinearMap (exteriorPower.lieMap 2 J.toLinearMap
       (x + o.hodgeStar hkl x)) =
       (4 * ⟪J.kahlerForm, x⟫) • J.kahlerForm - (4 : ℝ) • (x + o.hodgeStar hkl x) := by
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  set D := J.toLinearMap.exteriorSquareDerivation
+  set D := exteriorPower.lieMap 2 J.toLinearMap
   -- Move both derivations to the right, where they act on the wedge `u ∧ w`.
   have hD (z y : ⋀[ℝ]^2 V) : ⟪D (D z), y⟫ = ⟪z, D (D y)⟫ := by
-    rw [inner_exteriorSquareDerivation_left (inner_apply_left hJ),
-      inner_exteriorSquareDerivation_left (inner_apply_left hJ), neg_neg]
+    rw [inner_lieMap_two_left (inner_apply_left hJ),
+      inner_lieMap_two_left (inner_apply_left hJ), neg_neg]
   have key : D ∘ₗ D ∘ₗ (LinearMap.id + (o.hodgeStar hkl).toLinearMap) =
       (4 : ℝ) • (innerₗ _ J.kahlerForm).smulRight J.kahlerForm -
         (4 : ℝ) • (LinearMap.id + (o.hodgeStar hkl).toLinearMap) := by
@@ -209,7 +209,7 @@ private theorem exteriorSquareDerivation_exteriorSquareDerivation_add_hodgeStar
       show v' = ![v' 0, v' 1] from (FinVec.etaExpand_eq v').symm]
     simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.smul_apply,
       LinearMap.add_apply, LinearMap.id_apply, LinearEquiv.coe_coe, LinearMap.smulRight_apply,
-      innerₗ_apply_apply, hD, D, LinearMap.exteriorSquareDerivation_ιMulti, map_add,
+      innerₗ_apply_apply, hD, D, exteriorPower.lieMap_two_apply_ιMulti, map_add,
       J.apply_apply, inner_add_left, inner_add_right, inner_sub_left, real_inner_smul_left,
       inner_kahlerForm_ιMulti hJ, o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two,
       o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four]
@@ -226,11 +226,11 @@ include he h₀ h₂ in
 /-- **`J` acts on the self-dual two-forms as a rotation about `ω`**: for self-dual `η`,
 `D_J² η = 2 ⟪ω, η⟫ ω - 4 η`. Since `⟪ω, ω⟫ = 2`, the map `D_J / 2` is zero on `ω` and squares to
 `-1` on the orthogonal complement of `ω` in `Λ⁺`. -/
-theorem exteriorSquareDerivation_exteriorSquareDerivation_of_hodgeStar_eq_self
+theorem lieMap_lieMap_of_hodgeStar_eq_self
     {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η = η) :
-    J.toLinearMap.exteriorSquareDerivation (J.toLinearMap.exteriorSquareDerivation η) =
+    exteriorPower.lieMap 2 J.toLinearMap (exteriorPower.lieMap 2 J.toLinearMap η) =
       (2 * ⟪J.kahlerForm, η⟫) • J.kahlerForm - (4 : ℝ) • η := by
-  have h := exteriorSquareDerivation_exteriorSquareDerivation_add_hodgeStar h₀ h₂ hkl he η
+  have h := lieMap_lieMap_add_hodgeStar h₀ h₂ hkl he η
   rw [hη, map_add, map_add] at h
   linear_combination (norm := module) (2⁻¹ : ℝ) • h
 

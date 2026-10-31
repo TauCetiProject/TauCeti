@@ -28,7 +28,7 @@ In dimension four, the Hodge star of a wedge of two vectors pairs with another s
 volume of the four vectors, `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`
 (`Orientation.inner_hodgeStar_ιMulti_two`), and the derivation action
 `D_A (u ∧ w) = A u ∧ w + u ∧ A w` of a skew-adjoint endomorphism `A` commutes with the Hodge star
-on two-forms (`Orientation.hodgeStar_exteriorSquareDerivation`).
+on two-forms (`Orientation.hodgeStar_lieMap_two`).
 
 ## References
 
@@ -212,10 +212,10 @@ theorem inner_hodgeStar_ιMulti_two (hkl : 2 + 2 = finrank ℝ V) (a b u w : V) 
 `⋆ (D_A x) = D_A (⋆ x)` for the derivation action `D_A` of a skew-adjoint `A`. This is the
 infinitesimal form of the invariance of `⋆` under rotations; it holds because `D_A` acts on
 `⋀⁴ V` by `tr A = 0`. -/
-theorem hodgeStar_exteriorSquareDerivation (hkl : 2 + 2 = finrank ℝ V) {A : V →ₗ[ℝ] V}
+theorem hodgeStar_lieMap_two (hkl : 2 + 2 = finrank ℝ V) {A : V →ₗ[ℝ] V}
     (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (x : ⋀[ℝ]^2 V) :
-    o.hodgeStar hkl (A.exteriorSquareDerivation x) =
-      A.exteriorSquareDerivation (o.hodgeStar hkl x) := by
+    o.hodgeStar hkl (exteriorPower.lieMap 2 A x) =
+      exteriorPower.lieMap 2 A (o.hodgeStar hkl x) := by
   set e := (stdOrthonormalBasis ℝ V).reindex (finCongr (Fact.out : finrank ℝ V = 4))
     |>.adjustToOrientation o
   have he : e.toBasis.orientation = o := OrthonormalBasis.orientation_adjustToOrientation _ _
@@ -237,11 +237,11 @@ theorem hodgeStar_exteriorSquareDerivation (hkl : 2 + 2 = finrank ℝ V) {A : V 
       simp [hd, hm 1 0, hm 2 0, hm 3 0, hm 2 1, hm 3 1, hm 3 2] <;> ring
   have hv (v : Fin 2 → V) : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   refine LinearMap.congr_fun (linearMap_ext_inner_ιMulti (f := (o.hodgeStar hkl).toLinearMap ∘ₗ
-    A.exteriorSquareDerivation) (g := A.exteriorSquareDerivation ∘ₗ
+    exteriorPower.lieMap 2 A) (g := exteriorPower.lieMap 2 A ∘ₗ
     (o.hodgeStar hkl).toLinearMap) fun v v' ↦ ?_) x
   rw [hv v, hv v']
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, inner_exteriorSquareDerivation_left hA,
-    LinearMap.exteriorSquareDerivation_ιMulti, map_add, inner_add_left, inner_add_right,
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, inner_lieMap_two_left hA,
+    exteriorPower.lieMap_two_apply_ιMulti, map_add, inner_add_left, inner_add_right,
     o.inner_hodgeStar_ιMulti_two hkl, o.volumeForm_robust e he, Basis.det_apply,
     Matrix.det_fin_four]
   simp only [Basis.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply, Matrix.cons_val_zero,
