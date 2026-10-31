@@ -53,6 +53,9 @@ markings; the number of vertices decreases at every step.
   the contracted vertex.
 * `TauCeti.DualGraph.logCanonicalDegree_contractTail` and
   `TauCeti.DualGraph.logCanonicalDegree_contractBridge`: the change of log-canonical degrees.
+* `TauCeti.DualGraph.IsSemistable.logCanonicalDegree_contractTail`: in a semistable graph,
+  contracting a rational tail with at most one marking leaves the other log-canonical degrees
+  unchanged.
 * `TauCeti.DualGraph.isStable_iff_forall_not_stabilizationStep`: in the stable range, a graph is
   stable exactly when it admits no stabilization step.
 * `TauCeti.DualGraph.exists_reflTransGen_stabilizationStep_isStable`: in the stable range,
@@ -482,6 +485,18 @@ theorem logCanonicalDegree_contractTail (u : G.Vertex) (hu : u ≠ v) :
   have hval := valence_contractTail hv u hu
   rw [logCanonicalDegree_def, logCanonicalDegree_def, numMarkings_contractTail hv u hu]
   split_ifs at hval ⊢ <;> push_cast <;> omega
+
+/-- In a semistable graph, contracting a rational tail carrying at most one marking does not change
+the log-canonical degrees of the other vertices: the tail carries exactly one marking, which moves
+to its attachment. -/
+theorem IsSemistable.logCanonicalDegree_contractTail (hG : G.IsSemistable)
+    (ht : G.IsRationalTail v) (hm : G.numMarkings v ≤ 1) (u : G.Vertex) (hu : u ≠ v) :
+    (G.contractTail (G.isRationalTail_iff.mp ht).2).logCanonicalDegree ⟨u, hu⟩ =
+      G.logCanonicalDegree u := by
+  have := ht.logCanonicalDegree_eq
+  have := G.isSemistable_iff.mp hG v
+  rw [DualGraph.logCanonicalDegree_contractTail]
+  split_ifs <;> omega
 
 end Markings
 

@@ -58,6 +58,13 @@ and semistable when none has negative degree; `TauCeti.DualGraph.IsStable` and
   with exactly one marking or an unmarked rational bridge
   (`TauCeti.DualGraph.isRationalTail_or_isRationalBridge_of_logCanonicalDegree_eq_zero`).
 
+## Reindexing
+
+`TauCeti.DualGraph.reindex` reindexes the markings along a map `e : κ → ι`, keeping the curve and
+taking the `e i`-th marking as the new `i`-th marking. Along an equivalence it reorders the
+markings and preserves log-canonical degrees, stability and semistability; along
+`some : ι → Option ι` it forgets the marking `none`.
+
 ## Implementation notes
 
 An edge carries an ordered pair of endpoints, so the two branches of a node are always two
@@ -588,6 +595,84 @@ theorem isStable_iff_forall_not_isRationalTail_and_not_isRationalBridge [Fintype
         · exact (hG v).2 ⟨hgv, h, fun e he₀ he₁ ↦ hloop ⟨e, he₀, he₁⟩⟩
     · have := two_mul_arithmeticGenus_of_valence_eq_zero hval
       omega
+
+/-! ### Reindexing the markings -/
+
+section Reindex
+
+variable (G) {κ : Type*}
+
+/-- The dual graph with markings reindexed along `e : κ → ι`: the same curve, with the `e i`-th
+marking of `G` as its `i`-th marking. Along an equivalence this reorders the markings, and along
+`some : ι → Option ι` it forgets the marking `none`. -/
+abbrev reindex (e : κ → ι) : DualGraph κ where
+  Vertex := G.Vertex
+  Edge := G.Edge
+  endpoint := G.endpoint
+  genus := G.genus
+  marking i := G.marking (e i)
+  connected := G.connected
+
+variable (e : κ → ι)
+
+@[simp]
+lemma reindex_id : G.reindex id = G :=
+  rfl
+
+/-- Reindexing twice is reindexing along the composite. -/
+@[simp]
+lemma reindex_reindex {μ : Type*} (f : μ → κ) : (G.reindex e).reindex f = G.reindex (e ∘ f) :=
+  rfl
+
+@[simp]
+lemma endpoint_reindex (x : G.Edge) (i : Fin 2) : (G.reindex e).endpoint x i = G.endpoint x i :=
+  rfl
+
+@[simp]
+lemma genus_reindex (x : G.Vertex) : (G.reindex e).genus x = G.genus x :=
+  rfl
+
+@[simp]
+lemma marking_reindex (i : κ) : (G.reindex e).marking i = G.marking (e i) :=
+  rfl
+
+/-- Reindexing the markings does not change the valences. -/
+@[simp]
+lemma valence_reindex (x : G.Vertex) : (G.reindex e).valence x = G.valence x := by
+  rw [valence_def, valence_def]
+
+/-- Reindexing the markings does not change the arithmetic genus. -/
+@[simp]
+lemma arithmeticGenus_reindex : (G.reindex e).arithmeticGenus = G.arithmeticGenus := by
+  rw [arithmeticGenus_def, arithmeticGenus_def, firstBetti_def, firstBetti_def]
+
+/-- Reindexing along an equivalence does not change the number of markings on a vertex. -/
+@[simp]
+theorem numMarkings_reindex_equiv [Fintype ι] [Fintype κ] (e : κ ≃ ι) (x : G.Vertex) :
+    (G.reindex e).numMarkings x = G.numMarkings x := by
+  simp only [numMarkings_def, card_filter]
+  exact e.sum_comp fun i ↦ if G.marking i = x then 1 else 0
+
+/-- Reindexing along an equivalence does not change the log-canonical degrees. -/
+@[simp]
+theorem logCanonicalDegree_reindex_equiv [Fintype ι] [Fintype κ] (e : κ ≃ ι) (x : G.Vertex) :
+    (G.reindex e).logCanonicalDegree x = G.logCanonicalDegree x := by
+  rw [logCanonicalDegree_def, logCanonicalDegree_def, numMarkings_reindex_equiv, genus_reindex,
+    valence_reindex]
+
+/-- Reindexing along an equivalence preserves stability. -/
+@[simp]
+theorem isStable_reindex_equiv_iff [Fintype ι] [Fintype κ] (e : κ ≃ ι) :
+    (G.reindex e).IsStable ↔ G.IsStable := by
+  simp only [isStable_iff, logCanonicalDegree_reindex_equiv]
+
+/-- Reindexing along an equivalence preserves semistability. -/
+@[simp]
+theorem isSemistable_reindex_equiv_iff [Fintype ι] [Fintype κ] (e : κ ≃ ι) :
+    (G.reindex e).IsSemistable ↔ G.IsSemistable := by
+  simp only [isSemistable_iff, logCanonicalDegree_reindex_equiv]
+
+end Reindex
 
 end DualGraph
 

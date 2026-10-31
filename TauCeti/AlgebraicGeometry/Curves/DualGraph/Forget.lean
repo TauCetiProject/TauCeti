@@ -6,15 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Contraction
-import Mathlib.Data.Fintype.BigOperators
 
 /-!
 # Forgetting a marking of a stable dual graph
 
-Reindexing the markings of a pointed nodal curve along a map `e : κ → ι` keeps the curve and
-takes the `e i`-th marking as the new `i`-th marking; along an equivalence this reorders the
-markings, and along `some : ι → Option ι` it forgets the marking `none`. The dual graph of the
-reindexed curve is `TauCeti.DualGraph.reindex`.
+Forgetting the marking `none` of a dual graph with markings indexed by `Option ι` is reindexing
+its markings along `some : ι → Option ι`, `TauCeti.DualGraph.reindex`.
 
 Forgetting one marking of a stable `(n + 1)`-pointed curve of genus `g` is the input of Knudsen's
 single-marking contraction. Write `B = ω(s₁ + ⋯ + sₙ)` for the log-canonical sheaf of the curve
@@ -30,15 +27,13 @@ fibrewise facts behind the contraction:
   `TauCeti.DualGraph.isRationalTail_or_isRationalBridge_of_logCanonicalDegree_eq_zero`, so it is
   contracted by a single stabilization step;
 * that step yields a stable graph, and when it contracts a tail the log-canonical degrees of the
-  remaining vertices are those of `B`, so `B` is the pullback of the log-canonical sheaf of the
-  contracted curve.
+  remaining vertices are those of `B`, by
+  `TauCeti.DualGraph.IsSemistable.logCanonicalDegree_contractTail`. This is the numerical
+  dual-graph analogue of `B` being the pullback of the log-canonical sheaf of the contracted
+  curve; it does not prove the sheaf-level formula.
 
 In particular, after forgetting one marking of a stable graph in the stable range, stabilization
 takes at most one step.
-
-## Main definitions
-
-* `TauCeti.DualGraph.reindex`: the dual graph with markings reindexed along a map.
 
 ## Main results
 
@@ -69,87 +64,9 @@ namespace DualGraph
 
 open Finset
 
-universe u v w
+universe u v
 
-variable {ι : Type v} {κ : Type w}
-
-/-! ### Reindexing the markings -/
-
-section Reindex
-
-variable (G : DualGraph.{u} ι)
-
-/-- The dual graph with markings reindexed along `e : κ → ι`: the same curve, with the `e i`-th
-marking of `G` as its `i`-th marking. Along an equivalence this reorders the markings, and along
-`some : ι → Option ι` it forgets the marking `none`. -/
-abbrev reindex (e : κ → ι) : DualGraph.{u} κ where
-  Vertex := G.Vertex
-  Edge := G.Edge
-  endpoint := G.endpoint
-  genus := G.genus
-  marking i := G.marking (e i)
-  connected := G.connected
-
-variable (e : κ → ι)
-
-@[simp]
-lemma reindex_id : G.reindex id = G :=
-  rfl
-
-/-- Reindexing twice is reindexing along the composite. -/
-@[simp]
-lemma reindex_reindex {μ : Type*} (f : μ → κ) : (G.reindex e).reindex f = G.reindex (e ∘ f) :=
-  rfl
-
-@[simp]
-lemma endpoint_reindex (x : G.Edge) (i : Fin 2) : (G.reindex e).endpoint x i = G.endpoint x i :=
-  rfl
-
-@[simp]
-lemma genus_reindex (x : G.Vertex) : (G.reindex e).genus x = G.genus x :=
-  rfl
-
-@[simp]
-lemma marking_reindex (i : κ) : (G.reindex e).marking i = G.marking (e i) :=
-  rfl
-
-/-- Reindexing the markings does not change the valences. -/
-@[simp]
-lemma valence_reindex (x : G.Vertex) : (G.reindex e).valence x = G.valence x := by
-  rw [valence_def, valence_def]
-
-/-- Reindexing the markings does not change the arithmetic genus. -/
-@[simp]
-lemma arithmeticGenus_reindex : (G.reindex e).arithmeticGenus = G.arithmeticGenus := by
-  rw [arithmeticGenus_def, arithmeticGenus_def, firstBetti_def, firstBetti_def]
-
-/-- Reindexing along an equivalence does not change the number of markings on a vertex. -/
-@[simp]
-theorem numMarkings_reindex_equiv [Fintype ι] [Fintype κ] (e : κ ≃ ι) (x : G.Vertex) :
-    (G.reindex e).numMarkings x = G.numMarkings x := by
-  simp only [numMarkings_def, card_filter]
-  exact e.sum_comp fun i ↦ if G.marking i = x then 1 else 0
-
-/-- Reindexing along an equivalence does not change the log-canonical degrees. -/
-@[simp]
-theorem logCanonicalDegree_reindex_equiv [Fintype ι] [Fintype κ] (e : κ ≃ ι) (x : G.Vertex) :
-    (G.reindex e).logCanonicalDegree x = G.logCanonicalDegree x := by
-  rw [logCanonicalDegree_def, logCanonicalDegree_def, numMarkings_reindex_equiv, genus_reindex,
-    valence_reindex]
-
-/-- Reindexing along an equivalence preserves stability. -/
-@[simp]
-theorem isStable_reindex_equiv_iff [Fintype ι] [Fintype κ] (e : κ ≃ ι) :
-    (G.reindex e).IsStable ↔ G.IsStable := by
-  simp only [isStable_iff, logCanonicalDegree_reindex_equiv]
-
-/-- Reindexing along an equivalence preserves semistability. -/
-@[simp]
-theorem isSemistable_reindex_equiv_iff [Fintype ι] [Fintype κ] (e : κ ≃ ι) :
-    (G.reindex e).IsSemistable ↔ G.IsSemistable := by
-  simp only [isSemistable_iff, logCanonicalDegree_reindex_equiv]
-
-end Reindex
+variable {ι : Type v}
 
 /-! ### Forgetting one marking -/
 
@@ -210,20 +127,6 @@ theorem IsStable.logCanonicalDegree_reindex_some_pos_of_ne (hG : G.IsStable) {x 
   rw [logCanonicalDegree_reindex_some, ite_eq_right (hmx.trans_ne hy.symm)]
   omega
 
-/-- **Forgetting a marking and contracting the resulting tail.** If forgetting one marking of a
-stable graph leaves a rational tail with at most one marking, contracting it does not change the
-log-canonical degrees of the other vertices: the log-canonical sheaf of the curve with the marking
-forgotten is the pullback of that of the contracted curve. -/
-theorem IsStable.logCanonicalDegree_contractTail_reindex_some (hG : G.IsStable) {x : G.Vertex}
-    (hx : (G.reindex some).IsRationalTail x) (hm : (G.reindex some).numMarkings x ≤ 1)
-    (y : G.Vertex) (hy : y ≠ x) :
-    ((G.reindex some).contractTail ((isRationalTail_iff _).mp hx).2).logCanonicalDegree ⟨y, hy⟩ =
-      (G.reindex some).logCanonicalDegree y := by
-  have hdeg := hx.logCanonicalDegree_eq
-  have := (isSemistable_iff _).mp hG.isSemistable_reindex_some x
-  rw [logCanonicalDegree_contractTail]
-  split_ifs <;> omega
-
 /-- A stabilization step after forgetting one marking of a stable graph yields a stable graph. -/
 theorem IsStable.isStable_of_stabilizationStep_reindex_some (hG : G.IsStable)
     {H : DualGraph.{u} ι} (h : StabilizationStep (G.reindex some) H) : H.IsStable := by
@@ -231,7 +134,7 @@ theorem IsStable.isStable_of_stabilizationStep_reindex_some (hG : G.IsStable)
   | contractTail hx hm =>
     have hdeg := hx.logCanonicalDegree_eq
     refine (isStable_iff _).mpr fun ⟨y, hy⟩ ↦ ?_
-    rw [hG.logCanonicalDegree_contractTail_reindex_some hx hm y hy]
+    rw [hG.isSemistable_reindex_some.logCanonicalDegree_contractTail hx hm y hy]
     exact hG.logCanonicalDegree_reindex_some_pos_of_ne (by omega) hy
   | @contractBridge x hx hm =>
     have hdeg := hx.logCanonicalDegree_eq
