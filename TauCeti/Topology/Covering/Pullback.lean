@@ -133,10 +133,6 @@ namespace IsCoveringMap
 variable {E B A : Type*} [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace A]
   {p : E → B} (hp : IsCoveringMap p) {φ : C(A, B)} {ψ : C(B, A)}
 
-/-- The projection `A ×_B E → E`, bundled as a continuous map. -/
-private def pullbackSnd (φ : C(A, B)) (p : E → B) : C(Pullback φ p, E) :=
-  ⟨Pullback.snd, Pullback.continuous_snd⟩
-
 /-- The lift, starting at the identity of `E`, of the homotopy `H` run backwards from `p`
 to `φ ∘ ψ ∘ p`. -/
 private noncomputable def revLift (H : (φ.comp ψ).Homotopy (.id B)) : C(I × E, E) :=
@@ -170,17 +166,16 @@ private theorem homotopic_pullbackSnd_comp_pullbackInv (H : (φ.comp ψ).Homotop
     ((pullbackSnd φ p).comp (hp.pullbackInv H)).Homotopic (.id E) :=
   ⟨{ toContinuousMap :=
        (hp.revLift H).comp ((ContinuousMap.mk σ continuous_symm).prodMap (.id E))
-     map_zero_left e := by simp [pullbackSnd, pullbackInv, Pullback.snd]
+     map_zero_left e := by simp [pullbackInv, Pullback.snd]
      map_one_left e := by simp [hp.revLift_zero] }⟩
 
 /-- The lift of the homotopy `H`, run forwards along the first coordinate of the iterated fibre
 product `B ×_A (A ×_B E)`, starting at its last coordinate. -/
 private noncomputable def fwdLift (H : (φ.comp ψ).Homotopy (.id B)) :
     C(I × Pullback ψ (Pullback.fst : Pullback φ p → A), E) :=
-  hp.liftHomotopy (H.toContinuousMap.comp ((ContinuousMap.id I).prodMap
-      ⟨Pullback.fst, Pullback.continuous_fst⟩))
+  hp.liftHomotopy (H.toContinuousMap.comp ((ContinuousMap.id I).prodMap (pullbackFst ψ _)))
     ((pullbackSnd φ p).comp (pullbackSnd ψ _)) fun x ↦ by
-    simp only [ContinuousMap.comp_apply, prodMap_apply, ContinuousMap.coe_mk, Prod.map,
+    simp only [ContinuousMap.comp_apply, prodMap_apply, coe_pullbackFst, coe_pullbackSnd, Prod.map,
       ContinuousMap.id_apply, Homotopy.coe_toContinuousMap, H.apply_zero]
     exact (congrArg φ x.2).trans x.1.2.2
 
@@ -204,6 +199,14 @@ private noncomputable def pullbackInvLift (H : (φ.comp ψ).Homotopy (.id B)) :
     C(E, Pullback ψ (Pullback.fst : Pullback φ p → A)) where
   toFun e := ⟨(p e, hp.pullbackInv H e), rfl⟩
   continuous_toFun := (hp.continuous.prodMk (hp.pullbackInv H).continuous).subtype_mk _
+
+/-- The last coordinate of `pullbackInvLift e` is `pullbackInv e`. -/
+private theorem pullbackSnd_comp_pullbackInvLift (H : (φ.comp ψ).Homotopy (.id B)) :
+    (pullbackSnd ψ (Pullback.fst : Pullback φ p → A)).comp (hp.pullbackInvLift H) =
+      hp.pullbackInv H := by
+  -- `pullbackInvLift` is defined with `pullbackInv` as its second coordinate
+  ext1 e
+  rfl
 
 /-- Following `H` forwards and then backwards returns to the start: `pullbackInvLift` is a left
 inverse of `fwdEnd`. -/
@@ -238,24 +241,21 @@ private theorem homotopic_pullbackInv_comp_pullbackSnd (H : (φ.comp ψ).Homotop
        map_zero_left x := hp.fwdLift_zero H x
        map_one_left _ := rfl }⟩
   -- `pullbackInv = s ∘ pullbackInvLift`; insert `s ∘ hq.pullbackInv K ≃ id` on the right
-  have e₁ : (hp.pullbackInv H).comp (pullbackSnd φ p) =
-      s.comp (((hp.pullbackInvLift H).comp (pullbackSnd φ p)).comp (.id _)) := rfl
-  have e₂ : s.comp (((hp.pullbackInvLift H).comp (pullbackSnd φ p)).comp
-        (s.comp (hq.pullbackInv K))) =
-      s.comp (((hp.pullbackInvLift H).comp ((pullbackSnd φ p).comp s)).comp
-        (hq.pullbackInv K)) := rfl
-  rw [e₁]
-  refine ((Homotopic.refl _).comp ((Homotopic.refl _).comp h₁.symm)).trans ?_
-  rw [e₂]
-  refine ((Homotopic.refl _).comp (((Homotopic.refl _).comp h₂).comp (Homotopic.refl _))).trans ?_
-  rw [hp.pullbackInvLift_comp_fwdEnd H]
+  rw [← hp.pullbackSnd_comp_pullbackInvLift H, ← ContinuousMap.comp_id ((s.comp _).comp _)]
+  refine ((Homotopic.refl _).comp h₁.symm).trans ?_
+  -- regroup so that `s` followed by the projection to `E` appears, and replace it by `fwdEnd`
+  rw [ContinuousMap.comp_assoc, ContinuousMap.comp_assoc,
+    ← ContinuousMap.comp_assoc (pullbackSnd φ p) s]
+  refine ((Homotopic.refl _).comp ((Homotopic.refl _).comp (h₂.comp (Homotopic.refl _)))).trans ?_
+  rw [← ContinuousMap.comp_assoc (hp.pullbackInvLift H), hp.pullbackInvLift_comp_fwdEnd H,
+    ContinuousMap.id_comp]
   exact h₁
 
 /-- **Pulling a covering back along a homotopy equivalence.** If `p : E → B` is a covering map
 and `e : A ≃ₕ B` is a homotopy equivalence, then the projection `A ×_B E → E` from the fibre
 product of `e` and `p` is a homotopy equivalence. -/
 noncomputable def pullbackHomotopyEquiv (e : A ≃ₕ B) : Pullback e p ≃ₕ E where
-  toFun := pullbackSnd e.toFun p
+  toFun := pullbackSnd e p
   invFun := hp.pullbackInv e.right_inv.some
   left_inv := hp.homotopic_pullbackInv_comp_pullbackSnd e.right_inv.some e.left_inv.some
   right_inv := hp.homotopic_pullbackSnd_comp_pullbackInv e.right_inv.some
@@ -263,6 +263,13 @@ noncomputable def pullbackHomotopyEquiv (e : A ≃ₕ B) : Pullback e p ≃ₕ E
 @[simp]
 theorem coe_pullbackHomotopyEquiv (e : A ≃ₕ B) :
     ⇑(hp.pullbackHomotopyEquiv e) = Pullback.snd :=
+  (rfl)
+
+/-- The first coordinate of the homotopy inverse of the projection `A ×_B E → E` at `x` is
+`e.symm (p x)`. -/
+@[simp]
+theorem pullbackHomotopyEquiv_symm_apply_fst (e : A ≃ₕ B) (x : E) :
+    ((hp.pullbackHomotopyEquiv e).symm x).fst = e.symm (p x) :=
   (rfl)
 
 end IsCoveringMap
