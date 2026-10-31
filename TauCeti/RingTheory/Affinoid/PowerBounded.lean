@@ -53,6 +53,8 @@ value of the minimal polynomial; it therefore lifts to a monic polynomial over `
 * `TauCeti.IsAffinoidAlgebra.mem_iff_supSeminorm_le_one_of_isReduced_quotient`: an open bounded
   subring `B` containing a topologically nilpotent regular element `ϖ` of `A` with `B ⧸ ϖB`
   reduced is `{f | |f|sup ≤ 1}`.
+* `TauCeti.IsAffinoidAlgebra.isPowerBounded_mul_inverse_iff`: for a unit `c`, `b c⁻¹` is
+  power-bounded if and only if `|b(x)| ≤ |c(x)|` at every classical point `x`.
 
 ## References
 
@@ -234,5 +236,17 @@ theorem mem_iff_supSeminorm_le_one_of_isReduced_quotient (hA : IsAffinoidAlgebra
     f ∈ B ↔ supSeminorm K f ≤ 1 := by
   rw [← Huber.isPowerBounded_iff_mem_of_isReduced_quotient hBo hBb hϖ hϖr hred,
     hA.isPowerBounded_iff_supSeminorm_le_one]
+
+/-- **Power-bounded ratios.** In an affinoid algebra with a complete ultrametric algebra norm, for
+a unit `c` the ratio `b c⁻¹` is power-bounded if and only if `|b(y)| ≤ |c(y)|` at every classical
+point `y`. -/
+theorem isPowerBounded_mul_inverse_iff (hA : IsAffinoidAlgebra K A) {b c : A} (hc : IsUnit c) :
+    Huber.IsPowerBounded (b * Ring.inverse c) ↔
+      ∀ y : MaximalSpectrum A, pointNorm K y b ≤ pointNorm K y c := by
+  rw [hA.isPowerBounded_iff_supSeminorm_le_one, hA.supSeminorm_le_iff zero_le_one]
+  refine forall_congr' fun y ↦ ?_
+  have hpos : 0 < pointNorm K y c :=
+    (pointNorm_nonneg c).lt_of_ne' (hA.isUnit_iff_forall_pointNorm_ne_zero.mp hc y)
+  rw [hA.pointNorm_mul, hA.pointNorm_inverse y hc, ← div_eq_mul_inv, div_le_one hpos]
 
 end TauCeti.IsAffinoidAlgebra
