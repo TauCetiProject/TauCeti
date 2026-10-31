@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.Data.Finset.Grade
-public import Mathlib.Order.Interval.Finset.Basic
 import Mathlib.Data.Finset.Dedup
 
 /-!
@@ -22,9 +21,8 @@ functor `CategoryTheory.Functor.ofCubeEdges` from such data. Its morphism for `S
 edges along a maximal chain from `S` to `T`; the square condition makes this independent of the
 chain, since any two orderings of the elements of `T \ S` are related by adjacent transpositions.
 
-Morphisms of cubes are checked on edges too: `CategoryTheory.NatTrans.ofCovBy` builds a natural
-transformation between functors on any locally finite partial order, such as `Finset ι`, from
-components that commute with the maps of the covering relations.
+Morphisms of cubes are checked on edges too, by `CategoryTheory.NatTrans.ofCovBy` in
+`TauCeti.CategoryTheory.Category.Preorder`.
 
 This is the form in which the cube of resolutions of a link diagram is defined: the edge maps are
 the merge and split maps of the two smoothings at one crossing, and the commuting faces are the
@@ -34,11 +32,13 @@ signed totalization `CategoryTheory.Functor.cubeComplex`.
 ## Main definitions
 
 * `CategoryTheory.Functor.ofCubeEdges`: the functor `Finset ι ⥤ C` with prescribed covering edges,
-  characterised by `Functor.ofCubeEdges_obj` and `Functor.ofCubeEdges_map_homOfLE_of_covBy`.
-* `CategoryTheory.NatTrans.ofCovBy`: a natural transformation between functors on a locally
-  finite partial order whose naturality is checked on covering relations only.
+  characterised by `Functor.ofCubeEdges_obj`, `Functor.ofCubeEdges_map` and
+  `Functor.ofCubeEdges_map_homOfLE_of_covBy`.
 
 ## References
+
+The construction follows the pattern of Mathlib's `CategoryTheory.Functor.ofSequence` (Joël Riou,
+`Mathlib.CategoryTheory.Functor.OfSequence`), which builds a functor on `ℕ` from its successor maps.
 
 * D. Bar-Natan, *On Khovanov's categorification of the Jones polynomial*, Algebr. Geom. Topol. 2
   (2002), §2.
@@ -164,12 +164,14 @@ private theorem chainMap_eq
     obtain ⟨hb, ha, hl⟩ := h
     obtain ⟨ha', hb', hl'⟩ := h'
     have e : insert b (insert a S) = insert a (insert b S) := insert_comm b a S
-    simp only [chainMap]
-    -- Move the reindexing `eqToHom` between the two orders of insertion onto the second edge of
-    -- the route through `insert a S`, so that both routes end at the same vertex.
-    rw [chainMap_eq_eqToHom_comp X d e l hl' hl, ← Category.assoc (d (covBy_insert hb')),
-      ← edge_eq_comp_eqToHom X d (covBy_insert hb') (e ▸ covBy_insert hb') e, ← Category.assoc,
-      ← Category.assoc, comm]
+    -- Reindex the route through `insert a S` so that both routes end at the same vertex; then the
+    -- two first edges form a square face.
+    have edge : d (covBy_insert hb') ≫ eqToHom (congrArg X e) = d (e ▸ covBy_insert hb') :=
+      (edge_eq_comp_eqToHom X d _ _ e).symm
+    have square := comm (covBy_insert hb) (covBy_insert ha) (covBy_insert ha')
+      (e ▸ covBy_insert hb')
+    simp only [chainMap, chainMap_eq_eqToHom_comp X d e l hl' hl, reassoc_of% edge,
+      reassoc_of% square]
   | trans p₁ _ ih₁ ih₂ =>
     have h₂ := isChain_of_perm p₁ h
     exact (ih₁ h h₂).trans (ih₂ h₂ h')
@@ -208,12 +210,20 @@ variable (X : Finset ι → C) (d : ∀ ⦃S T : Finset ι⦄, S ⋖ T → (X S 
 /-- The commutative cube `Finset ι ⥤ C` with vertices `X S` and edge maps `d h : X S ⟶ X T` for
 the covering relations `h : S ⋖ T`, assuming every square face of edges commutes. The morphism
 for `S ⊆ T` composes the edges along any maximal chain from `S` to `T`. -/
+-- Exposed so that `(ofCubeEdges X d comm).obj S` is definitionally `X S` for importers: the edge
+-- lemma `ofCubeEdges_map_homOfLE_of_covBy` and every use of the cube on its edges rely on it.
 @[expose, simps obj]
 def ofCubeEdges : Finset ι ⥤ C where
   obj := X
   map f := OfCubeEdges.map X d (leOfHom f)
   map_id S := OfCubeEdges.map_id S
   map_comp f g := (OfCubeEdges.map_comp comm (leOfHom f) (leOfHom g)).symm
+
+/-- The cube `Functor.ofCubeEdges` sends `S ⊆ T` to the composite of the edges along a maximal
+chain from `S` to `T`. -/
+theorem ofCubeEdges_map {S T : Finset ι} (f : S ⟶ T) :
+    (ofCubeEdges X d comm).map f = OfCubeEdges.map X d (leOfHom f) :=
+  rfl
 
 /-- The cube `Functor.ofCubeEdges` sends each covering relation to its prescribed edge map. -/
 @[simp]
@@ -222,32 +232,5 @@ theorem ofCubeEdges_map_homOfLE_of_covBy {S T : Finset ι} (h : S ⋖ T) :
   OfCubeEdges.map_of_covBy h
 
 end Functor
-
-namespace NatTrans
-
-variable {α : Type*} [PartialOrder α] [LocallyFiniteOrder α] {F G : α ⥤ C}
-  (app : ∀ a, F.obj a ⟶ G.obj a)
-  (naturality : ∀ ⦃a b : α⦄ (h : a ⋖ b),
-    F.map (homOfLE h.le) ≫ app b = app a ≫ G.map (homOfLE h.le))
-
-/-- A natural transformation between functors on a locally finite partial order, from components
-that commute with the maps of the covering relations `a ⋖ b`. Since every inequality is a chain of
-covering relations, this suffices for naturality. -/
-@[expose, simps app]
-def ofCovBy : F ⟶ G where
-  app := app
-  naturality a b f := by
-    suffices H : ∀ h : a ≤ b, F.map (homOfLE h) ≫ app b = app a ≫ G.map (homOfLE h) by
-      rw [← Subsingleton.elim (homOfLE (leOfHom f)) f]
-      exact H (leOfHom f)
-    clear f
-    intro h
-    induction le_iff_reflTransGen_covBy.1 h with
-    | refl => simp
-    | @tail b c hab hbc ih =>
-      rw [← homOfLE_comp (le_iff_reflTransGen_covBy.2 hab) hbc.le, F.map_comp, G.map_comp,
-        Category.assoc, naturality hbc, ← Category.assoc, ih, Category.assoc]
-
-end NatTrans
 
 end CategoryTheory
