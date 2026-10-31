@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
+public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
@@ -39,12 +39,12 @@ relation `c₄³ - c₆² = 1728Δ` (`WeierstrassCurve.Universal.adjoinC₄C₆�
 
 Deligne's theorem is proved in two steps. First, after inverting `6` a change of variables with
 `u⁻¹ = 6` carries every Weierstrass curve to `y² = x³ - 27c₄x - 54c₆`
-(`WeierstrassCurve.exists_variableChange_smul_eq_c₄_c₆`); evaluating an integral modular form `f`
-of weight `k` there shows that `6ᵏ f` is a polynomial in `c₄` and `c₆`. Second, `ℤ[c₄, c₆, Δ]`
-is saturated with respect to `6`: every element of it is `α(c₄, Δ) + c₆ β(c₄, Δ)`, and reducing
-modulo `6` on the curve with `a₁ = x` and `a₆ = -y` over `(ℤ/6)[x, y]`, whose invariants are the
-monomials `x⁴`, `-x⁶` and `x⁶y`, shows that if this element is divisible by `6` then so are `α`
-and `β`.
+(`WeierstrassCurve.exists_variableChange_smul_eq_shortCurve`); evaluating an integral modular
+form `f` of weight `k` there shows that `6ᵏ f` is a polynomial in `c₄` and `c₆`. Second,
+`ℤ[c₄, c₆, Δ]` is saturated with respect to `6`: every element of it is
+`α(c₄, Δ) + c₆ β(c₄, Δ)`, and reducing modulo `6` on the curve with `a₁ = x` and `a₆ = -y` over
+`(ℤ/6)[x, y]`, whose invariants are the monomials `x⁴`, `-x⁶` and `x⁶y`, shows that if this
+element is divisible by `6` then so are `α` and `β`.
 
 ## Main definitions
 
@@ -385,7 +385,7 @@ theorem IsIntegralModularForm.six_pow_mul_mem_adjoin (hf : IsIntegralModularForm
     Invertible.map C n
   let : Invertible (2 : MvPolynomial Coeff ℚ) := (invC 2 two_ne_zero).copy 2 (map_ofNat C 2).symm
   let : Invertible (3 : MvPolynomial Coeff ℚ) := (invC 3 three_ne_zero).copy 3 (map_ofNat C 3).symm
-  obtain ⟨C, hu, hC⟩ := exists_variableChange_smul_eq_c₄_c₆ (Universal.curve.map φ)
+  obtain ⟨C, hu, hC⟩ := exists_variableChange_smul_eq_shortCurve (Universal.curve.map φ)
   set W₀ := shortCurve (-27 * Universal.curve.c₄) (-54 * Universal.curve.c₆)
   have hW₀ : C • Universal.curve.map φ = W₀.map φ := by
     rw [hC, map_shortCurve]

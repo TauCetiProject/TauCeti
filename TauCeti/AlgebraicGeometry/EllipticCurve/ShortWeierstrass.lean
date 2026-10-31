@@ -60,6 +60,9 @@ with `u = 1`, and this is the canonical representative of the pair.
   scalings are the only changes of variables between short equations
   (`WeierstrassCurve.variableChange_a₄_of_isShortNF`), so this is the whole coefficient freedom
   of a short equation.
+* `WeierstrassCurve.exists_variableChange_smul_eq_shortCurve`: when `2` and `3` are invertible,
+  completing the square and the cube and then scaling by `u⁻¹ = 6` carries every curve to
+  `shortCurve (-27c₄) (-54c₆)`, whose coefficients are integral polynomials in `c₄` and `c₆`.
 * `WeierstrassCurve.ofCInvariants_c₄`, `WeierstrassCurve.ofCInvariants_c₆` and
   `WeierstrassCurve.ofCInvariants_Δ`: its invariants are `c₄`, `c₆` and `(c₄³ - c₆²)/1728`.
 * `WeierstrassCurve.smul_ofCInvariants`: every Weierstrass equation is the
@@ -169,6 +172,41 @@ about an arbitrary `[W.IsShortNF]` reaches the explicit `y² = x³ + Ax + B` sha
     (⟨u, 0, 0, 0⟩ : VariableChange R) • shortCurve A B =
       shortCurve (u⁻¹ ^ 4 * A) (u⁻¹ ^ 6 * B) := by
   ext <;> simp [variableChange_def]
+
+/-! ### An integral short equation after inverting `2` and `3`
+
+Completing the square and the cube moves `W` to a short equation with `a₄ = -c₄ / 48` and
+`a₆ = -c₆ / 864`; scaling it by `u⁻¹ = 6` clears these denominators. -/
+
+section IntegralShortNF
+
+variable (W : WeierstrassCurve R) [Invertible (2 : R)] [Invertible (3 : R)]
+
+/-- When `2` and `3` are invertible, every Weierstrass curve is carried to the short equation
+`y² = x³ - 27c₄x - 54c₆` by a change of variables with `u⁻¹ = 6`. The coefficients of this
+equation are integral polynomials in the invariants `c₄` and `c₆` of `W`. -/
+theorem exists_variableChange_smul_eq_shortCurve :
+    ∃ C : VariableChange R, (↑C.u⁻¹ : R) = 6 ∧
+      C • W = shortCurve (-27 * W.c₄) (-54 * W.c₆) := by
+  have h6 : (6 : R) * (⅟2 * ⅟3) = 1 := by
+    rw [show (6 : R) = 2 * 3 by norm_num, mul_mul_mul_comm, mul_invOf_self, mul_invOf_self,
+      mul_one]
+  let u : Rˣ := ⟨6, ⅟2 * ⅟3, h6, by rw [mul_comm, h6]⟩
+  have hu : W.toShortNF.u = 1 := by simp [toShortNF, toCharNeTwoNF, VariableChange.mul_def]
+  refine ⟨⟨u⁻¹, 0, 0, 0⟩ * W.toShortNF, by simp [VariableChange.mul_def, hu, u], ?_⟩
+  -- The short equation `V` has the invariants of `W`, which are `-48 a₄` and `-864 a₆`.
+  rw [mul_smul]
+  set V := W.toShortNF • W
+  have h₄ : W.c₄ = -48 * V.a₄ := by
+    rw [← c₄_of_isShortNF, variableChange_c₄, hu, inv_one, Units.val_one, one_pow, one_mul]
+  have h₆ : W.c₆ = -864 * V.a₆ := by
+    rw [← c₆_of_isShortNF, variableChange_c₆, hu, inv_one, Units.val_one, one_pow, one_mul]
+  have : V.IsShortNF := W.toShortNF_spec
+  clear_value V
+  rw [← shortCurve_a₄_a₆ V, smul_shortCurve, h₄, h₆]
+  congr 1 <;> simp [u] <;> ring
+
+end IntegralShortNF
 
 section CInvariants
 
