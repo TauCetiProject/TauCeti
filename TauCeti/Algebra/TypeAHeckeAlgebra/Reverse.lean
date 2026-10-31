@@ -29,6 +29,8 @@ Reversal turns left modules into right modules; it is used to obtain the right c
 * `TauCeti.InfiniteTypeAHeckeAlgebra.reverseOpEquiv`: reversal as an algebra isomorphism with the
   opposite algebra.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.reverse`: reversal as an `R`-linear anti-automorphism.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.stageReverse`: reversal restricted to a stage, as an
+  `R`-linear involution.
 
 ## Main results
 
@@ -169,6 +171,25 @@ theorem reverse_mem_stage {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q} (hx : x 
 theorem reverse_mem_stage_iff {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q} :
     reverse x ∈ stage R q n ↔ x ∈ stage R q n :=
   ⟨fun h ↦ by simpa using reverse_mem_stage h, reverse_mem_stage⟩
+
+variable (R q) in
+/-- Reversal, restricted to the stage of the first `n` strands: an `R`-linear involution of
+`Hₙ`. -/
+def stageReverse (n : ℕ) : stage R q n ≃ₗ[R] stage R q n :=
+  .ofInvolutive (reverse.restrict (p := Subalgebra.toSubmodule (stage R q n))
+    (q := Subalgebra.toSubmodule (stage R q n)) fun _ ↦ reverse_mem_stage)
+    fun x ↦ Subtype.ext (reverse_reverse (x : InfiniteTypeAHeckeAlgebra R q))
+
+/-- Reversal restricted to a stage is computed by reversal in the infinite algebra. -/
+@[simp]
+theorem coe_stageReverse {n : ℕ} (x : stage R q n) :
+    (stageReverse R q n x : InfiniteTypeAHeckeAlgebra R q) = reverse x :=
+  (rfl)
+
+/-- Reversal restricted to a stage is its own inverse. -/
+@[simp]
+theorem stageReverse_symm (n : ℕ) : (stageReverse R q n).symm = stageReverse R q n :=
+  (rfl)
 
 end InfiniteTypeAHeckeAlgebra
 

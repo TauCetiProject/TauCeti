@@ -347,17 +347,6 @@ section RightCosetEquiv
 open MulOpposite
 
 variable (R q) in
-/-- Reversal, restricted to the stage of the first `n` strands. -/
-private def stageReverse (n : ℕ) : stage R q n ≃ₗ[R] stage R q n :=
-  .ofInvolutive (reverse.restrict (p := Subalgebra.toSubmodule (stage R q n))
-    (q := Subalgebra.toSubmodule (stage R q n)) fun _ ↦ reverse_mem_stage)
-    fun x ↦ Subtype.ext (reverse_reverse (x : InfiniteTypeAHeckeAlgebra R q))
-
-private theorem coe_stageReverse {n : ℕ} (x : stage R q n) :
-    (stageReverse R q n x : InfiniteTypeAHeckeAlgebra R q) = reverse x :=
-  (rfl)
-
-variable (R q) in
 /-- **The right coset basis.** The stage of the first `n + 1` strands is a free right module over
 the stage of the first `n` strands with basis the ascending products `rightCosetRep q n m`,
 `m = 0, …, n`: the `R`-linear map sending coefficients `a : Fin (n + 1) → Hₙ` to
@@ -373,7 +362,7 @@ noncomputable def rightCosetEquiv (n : ℕ) :
 theorem coe_rightCosetEquiv_apply {n : ℕ} (a : Fin (n + 1) → stage R q n) :
     (rightCosetEquiv R q n a : InfiniteTypeAHeckeAlgebra R q) =
       ∑ m : Fin (n + 1), rightCosetRep q n m * (a m : InfiniteTypeAHeckeAlgebra R q) := by
-  simp [rightCosetEquiv, coe_stageReverse, map_sum]
+  simp [rightCosetEquiv, map_sum]
 
 /-- The right coset isomorphism is linear for right multiplication by the stage of the first `n`
 strands, which acts on the coefficients through the opposite ring. -/
