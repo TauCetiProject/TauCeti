@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.Data.Matrix.DotProduct
 import TauCeti.Data.ZMod.MulCastHom.Sum
 import TauCeti.InformationTheory.Coding.CharacterSum
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Quadric
 
 /-!
@@ -363,8 +364,7 @@ theorem IsSymm.sum_stdAddChar_dotProduct_mulVec_eq_jacobiSym (hA : A.IsSymm) {k 
     have hJ (w : ℤ) (c : ℕ) (hw : IsCoprime w c) :
         jacobiSym ((-1) ^ k * (w ^ (2 * k) * A.det)) c = jacobiSym ((-1) ^ k * A.det) c := by
       rw [show (-1) ^ k * (w ^ (2 * k) * A.det) = (w ^ k) ^ 2 * ((-1) ^ k * A.det) by ring,
-        jacobiSym.mul_left, jacobiSym.sq_one' (Int.isCoprime_iff_gcd_eq_one.1 hw.pow_left),
-        one_mul]
+        TauCeti.jacobiSym_sq_mul_of_isCoprime hw.pow_left]
     rw [hJ u a hua, hJ v b hvb, jacobiSym.mul_right]
     push_cast
     ring

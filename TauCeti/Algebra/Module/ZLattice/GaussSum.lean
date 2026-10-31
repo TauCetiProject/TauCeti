@@ -9,7 +9,9 @@ public import TauCeti.Algebra.Module.ZLattice.FrickePartner
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+import TauCeti.Data.Matrix.DotProduct
 import TauCeti.GroupTheory.Coset.Fiber
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.NumberTheory.QuadraticForm.GaussSum
 
 /-!
@@ -579,13 +581,13 @@ theorem IsEven.gaussSum_eq_jacobiSym {k : ℕ} (hk : finrank ℝ E = 2 * k) {a :
     induction y using Submodule.Quotient.induction_on with | H v
     have hFv : F (Submodule.Quotient.mk v) = Int.castRingHom (ZMod c) ∘ b.repr v :=
       funext (b.quotientSmulEquivPiZMod_mk c v)
-    rw [gaussTerm_mk_eq_stdAddChar hL (u := u) (by rw [hu₀, hr]; push_cast; ring),
-      LinearMap.BilinForm.apply_eq_dotProduct_toMatrix_mulVec b, ← smul_eq_mul (a := u),
-      ← dotProduct_smul, ← smul_mulVec, ← eq_intCast (Int.castRingHom (ZMod c)),
-      RingHom.map_dotProduct, hFv]
-    congr 2
-    funext i
-    exact RingHom.map_mulVec (Int.castRingHom (ZMod c)) (u • G) _ i
+    have hq : u * hL.isIntegral.integralForm v v = b.repr v ⬝ᵥ (u • G) *ᵥ b.repr v := by
+      rw [LinearMap.BilinForm.apply_eq_dotProduct_toMatrix_mulVec b, smul_mulVec, dotProduct_smul,
+        smul_eq_mul]
+    -- Reduce `xᵀ (u G) x` modulo `c` entrywise.
+    rw [gaussTerm_mk_eq_stdAddChar hL (u := u) (by rw [hu₀, hr]; push_cast; ring), hq,
+      ← eq_intCast (Int.castRingHom (ZMod c)), RingHom.map_dotProduct_mulVec, hFv,
+      Int.coe_castRingHom]
   -- The Gauss sum of `x ↦ xᵀ (u G) x` modulo `c`, with `det (u G) = u^(2k) det G` and
   -- `det G = |L^∨ / L|`.
   have hu : IsCoprime u c := by
@@ -603,7 +605,7 @@ theorem IsEven.gaussSum_eq_jacobiSym {k : ℕ} (hk : finrank ℝ E = 2 * k) {a :
       (hdetG ▸ hu.pow_left.mul_left hdet), hdetG,
     show (-1) ^ k * (u ^ (2 * k) * Nat.card (DiscriminantGroup L)) =
       (u ^ k) ^ 2 * ((-1) ^ k * Nat.card (DiscriminantGroup L)) by ring,
-    jacobiSym.mul_left, jacobiSym.sq_one' (Int.isCoprime_iff_gcd_eq_one.1 hu.pow_left), one_mul]
+    TauCeti.jacobiSym_sq_mul_of_isCoprime hu.pow_left]
 
 /-- **The dual Gauss sum at an odd modulus.** Let `L` be an even full lattice of even rank `2k`
 and level `N`, `a` an odd modulus, and `t` a multiple of `N` prime to `a`. With the Jacobi symbol
@@ -635,11 +637,10 @@ theorem IsEven.dualGaussSum_eq_jacobiSym {k : ℕ} (hk : finrank ℝ E = 2 * k) 
   have hNa : IsCoprime ((level L : ℤ) ^ k) a := ht.of_mul_left_left.pow_left
   have hDD'a : IsCoprime ((D : ℤ) * D') a := by rw [hDD', pow_mul']; exact hNa.pow_left
   have hJ : jacobiSym ((-1) ^ k * D') a = jacobiSym ((-1) ^ k * D) a := by
-    have h := congrArg (jacobiSym · a) (show (-1) ^ k * (D' : ℤ) * D ^ 2 =
-        (-1) ^ k * D * ((level L : ℤ) ^ k) ^ 2 by rw [← pow_mul', ← hDD']; ring)
-    simpa only [jacobiSym.mul_left,
-      jacobiSym.sq_one' (Int.isCoprime_iff_gcd_eq_one.1 hDD'a.of_mul_left_left),
-      jacobiSym.sq_one' (Int.isCoprime_iff_gcd_eq_one.1 hNa), mul_one] using h
+    rw [← TauCeti.jacobiSym_sq_mul_of_isCoprime hDD'a.of_mul_left_left,
+      ← TauCeti.jacobiSym_sq_mul_of_isCoprime hNa ((-1) ^ k * D)]
+    congr 1
+    linear_combination (-1) ^ k * (D : ℤ) * hDD'
   rw [dualGaussSum_level_mul hL s a,
     (isEven_sqrt_level_smul_dual L).gaussSum_eq_jacobiSym hk ha ht.of_mul_left_right
       hDD'a.of_mul_left_right, hJ, mul_assoc]

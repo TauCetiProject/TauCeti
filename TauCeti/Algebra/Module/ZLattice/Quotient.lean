@@ -15,6 +15,7 @@ public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Module.Submodule
+import TauCeti.LinearAlgebra.FreeModule.ModN
 
 /-!
 # Quotients by full lattices: compactness, circle coordinates and `L / cL`
@@ -268,12 +269,8 @@ noncomputable def _root_.Module.Basis.quotientSmulEquivPiZMod {ι : Type*} [Fini
 theorem _root_.Module.Basis.quotientSmulEquivPiZMod_mk {ι : Type*} [Finite ι] (b : Basis ι ℤ L)
     (c : ℕ) [NeZero c] (v : L) (i : ι) :
     b.quotientSmulEquivPiZMod c (Submodule.Quotient.mk v) i = (b.repr v i : ZMod c) := by
-  have := Fintype.ofFinite ι
-  have hv : (Submodule.Quotient.mk v : ModN L c) = ∑ j, (b.repr v j : ZMod c) • ModN.basis b j := by
-    conv_lhs => rw [← b.sum_repr v, ← Submodule.mkQ_apply, map_sum]
-    simp [ModN.basis_apply_eq_mkQ, ModN.mkQ, Int.cast_smul_eq_zsmul]
   rw [Module.Basis.quotientSmulEquivPiZMod, LinearEquiv.trans_apply, quotEquivOfEq_mk,
-    LinearEquiv.restrictScalars_apply, hv, Basis.equivFun_apply, Basis.repr_sum_self]
+    LinearEquiv.restrictScalars_apply, Basis.equivFun_apply, ModN.basis_repr_mk]
 
 variable (L) [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
