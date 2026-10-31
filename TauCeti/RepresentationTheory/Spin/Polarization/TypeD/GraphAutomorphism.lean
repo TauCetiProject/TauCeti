@@ -750,10 +750,10 @@ private theorem typeDGraphIsometry_apply (hn : 2 ≤ n) (x : V) :
 
 /-- The reflection in the graph vector is an involution. -/
 private theorem typeDGraphIsometry_apply_apply (hn : 2 ≤ n) (x : V) :
-    P.typeDGraphIsometry b hn (P.typeDGraphIsometry b hn x) = x := by
-  rw [typeDGraphIsometry_apply, typeDGraphIsometry_apply, polar_add_right, polar_smul_right,
-    polar_self, quadraticForm_typeDGraphVector]
-  module
+    P.typeDGraphIsometry b hn (P.typeDGraphIsometry b hn x) = x :=
+  letI : Invertible (Q (P.typeDGraphVector b hn)) :=
+    invertibleOfNonzero (by simp)
+  LinearEquiv.congr_fun (TauCeti.QuadraticMap.reflection_mul_self Q _) x
 
 /-- In the hyperbolic basis, the reflection in the graph vector is the swap matrix of the last
 hyperbolic pair. -/
@@ -877,6 +877,7 @@ noncomputable def typeDGraphHalfSpinLieModuleEquiv (hn : 2 ≤ n) (hline : P.lin
 
 /-- The Lie module form of the fork exchange is the linear fork exchange of the half-spin
 summands. -/
+@[simp]
 theorem typeDGraphHalfSpinLieModuleEquiv_apply (hn : 2 ≤ n) (hline : P.line = ⊥)
     (s : spinPlus Q P) :
     letI : LieRingModule (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinPlus Q P) :=
