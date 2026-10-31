@@ -24,7 +24,7 @@ public section
 
 open CategoryTheory Limits TopologicalSpace
 
-universe u
+universe u v
 
 namespace AlgebraicGeometry.Scheme.Modules
 
@@ -33,8 +33,8 @@ variable {X : Scheme.{u}}
 /-- Over an open `U` on which every factor other than `F i` has only the zero section, the
 projection from the sections of a product of `𝒪_X`-modules to the sections of `F i` is
 bijective. -/
-theorem bijective_app_π_of_subsingleton {ι : Type} (F : ι → X.Modules) (i : ι) (U : X.Opens)
-    (h : ∀ j ≠ i, Subsingleton Γ(F j, U)) :
+theorem bijective_app_π_of_subsingleton {ι : Type v} [Small.{u} ι] (F : ι → X.Modules)
+    [HasProduct F] (i : ι) (U : X.Opens) (h : ∀ j ≠ i, Subsingleton Γ(F j, U)) :
     Function.Bijective ((Pi.π F i).app U) := by
   classical
   -- Sections over `U` form a limit-preserving functor to types, so they turn the product into
@@ -45,20 +45,24 @@ theorem bijective_app_π_of_subsingleton {ι : Type} (F : ι → X.Modules) (i :
       ((evaluation (Opens X)ᵒᵖ Ab.{u}).obj (Opposite.op U) ⋙ CategoryTheory.forget Ab.{u}) :=
     comp_preservesLimits _ _
   have : PreservesLimitsOfSize.{u, u} G := comp_preservesLimits _ _
-  have : PreservesLimitsOfSize.{0, 0} G := preservesSmallestLimits_of_preservesLimits G
-  let e := PreservesProduct.iso G F ≪≫ Types.productIso fun j ↦ G.obj (F j)
-  have he : G.map (Pi.π F i) = e.hom ≫ ↾fun s : (∀ j, G.obj (F j)) ↦ s i := by
+  -- `ι` is `u`-small, so `G` preserves `ι`-indexed products.
+  have : PreservesLimitsOfShape (Discrete ι) G :=
+    preservesLimitsOfShape_of_equiv (Discrete.equivalence (equivShrink.{u} ι).symm) G
+  let e := PreservesProduct.iso G F ≪≫ Types.Small.productIso fun j ↦ G.obj (F j)
+  have he : G.map (Pi.π F i) =
+      e.hom ≫ ↾fun s ↦ (equivShrink (∀ j, G.obj (F j))).symm s i := by
     simp [e, piComparison_comp_π]
   have hev : Function.Bijective fun s : (∀ j, G.obj (F j)) ↦ s i := by
     refine ⟨fun s t hst ↦ funext fun j ↦ ?_,
-      fun x ↦ ⟨Function.update (e.hom (0 : Γ(∏ᶜ F, U))) i x, by simp⟩⟩
+      fun x ↦ ⟨Function.update (fun j ↦ (0 : Γ(F j, U))) i x, Function.update_self ..⟩⟩
     by_cases hj : j = i
     · subst hj
       exact hst
     · exact (h j hj).elim _ _
-  have hG : Function.Bijective (G.map (Pi.π F i)) := by
-    rw [he, types_comp]
-    exact hev.comp ((isIso_iff_bijective e.hom).mp inferInstance)
-  exact hG
+  -- `G.map φ` is by definition the map `φ.app U` on sections over `U`.
+  change Function.Bijective (G.map (Pi.π F i))
+  rw [he, types_comp]
+  exact (hev.comp (equivShrink _).symm.bijective).comp
+    ((isIso_iff_bijective e.hom).mp inferInstance)
 
 end AlgebraicGeometry.Scheme.Modules
