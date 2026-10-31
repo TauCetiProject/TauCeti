@@ -64,6 +64,10 @@ it from there.
 
 ## Main results
 
+* `MvPowerSeries.eval₂_sub_eval₂_mem` : congruent evaluation points have congruent values modulo
+  any closed ideal.
+* `MvPowerSeries.continuous_eval₂_of_continuous` : evaluation of a fixed series is continuous
+  in any finite continuous family of admissible arguments.
 * `MvPowerSeries.eval₂_mem_pow` : arguments in `I ^ k`, and a constant term whose image under
   `φ` lies in `I ^ k`, confine the value to `I ^ k`.
 * `MvPowerSeries.eval₂_mem_pow_mul` : if the coefficient images vanish below total degree `c`,
@@ -129,6 +133,45 @@ variable {R : Type*} [CommRing R] [UniformSpace R] [IsTopologicalSemiring R] [Is
 variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [CompleteSpace S]
     [T2Space S] [IsTopologicalRing S] [IsLinearTopology S S]
 variable {φ : R →+* S} {a : σ → S} {I : Ideal S}
+
+/-- Evaluation preserves congruences between admissible arguments modulo a closed ideal.
+The variable type need not be finite. -/
+theorem eval₂_sub_eval₂_mem (hφ : Continuous φ) (ha : HasEval a) {b : σ → S}
+    (hb : HasEval b) (hI : IsClosed (I : Set S)) (hab : ∀ i, a i - b i ∈ I)
+    (f : MvPowerSeries σ R) : eval₂ φ a f - eval₂ φ b f ∈ I := by
+  classical
+  have hs := (hasSum_eval₂ hφ ha f).sub (hasSum_eval₂ hφ hb f)
+  rw [← hs.tsum_eq]
+  apply tsum_mem hI
+  intro d
+  apply Ideal.Quotient.eq_zero_iff_mem.mp
+  rw [map_sub, sub_eq_zero]
+  simp only [map_mul, Finsupp.prod, map_prod, map_pow]
+  congr 1
+  apply Finset.prod_congr rfl
+  intro i _
+  rw [Ideal.Quotient.eq.mpr (hab i)]
+
+/-- A fixed power series is continuous in finitely many continuously varying admissible
+arguments. No common ideal of definition for these arguments is required. -/
+theorem continuous_eval₂_of_continuous [Finite σ] {X : Type*} [TopologicalSpace X]
+    (hφ : Continuous φ) {a : X → σ → S} (ha : ∀ i, Continuous (fun x ↦ a x i))
+    (heval : ∀ x, HasEval (a x)) (f : MvPowerSeries σ R) :
+    Continuous (fun x ↦ eval₂ φ (a x) f) := by
+  rw [continuous_iff_continuousAt]
+  intro x
+  apply tendsto_sub_nhds_zero_iff.mp
+  apply (IsLinearTopology.hasBasis_open_ideal (R := S)).tendsto_right_iff.mpr
+  intro I hI
+  have hargs : ∀ᶠ y in nhds x, ∀ i, a y i - a x i ∈ I := by
+    apply Filter.eventually_all.mpr
+    intro i
+    have hzero : Filter.Tendsto (fun y ↦ a y i - a x i) (nhds x) (nhds 0) := by
+      simpa only [sub_self] using ((ha i).continuousAt (x := x)).sub_const (a x i)
+    exact hzero.eventually (hI.mem_nhds I.zero_mem)
+  filter_upwards [hargs] with y hy
+  exact eval₂_sub_eval₂_mem hφ (heval y) (heval x)
+    (I.toAddSubgroup.isClosed_of_isOpen hI) hy f
 
 /-- **The value lies in `I ^ k` when the arguments do and `φ` sends the constant term there.**
 Every monomial of positive degree already carries an argument, hence a factor from `I ^ k`; the
