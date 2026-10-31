@@ -7,12 +7,12 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.EssentialImage
 public import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
-import Mathlib.LinearAlgebra.FreeModule.PID
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 import TauCeti.Algebra.MonoidAlgebra.Torsion
+import TauCeti.GroupTheory.FiniteAbelian.TorsionFree
 
 /-!
 # Characterization of tori among groups of multiplicative type
@@ -47,23 +47,6 @@ namespace TauCeti
 
 universe u
 
-private theorem exists_mulEquiv_finsupp_int
-    (G : Type u) [CommGroup G] [Group.FG G] [IsMulTorsionFree G] :
-    ∃ n : ℕ, Nonempty (G ≃* Multiplicative (Fin n →₀ ℤ)) := by
-  have : HasUniqueRoots G :=
-    ⟨fun _ hn _ _ h ↦ eq_of_pow_eq_pow_of_commute hn (Commute.all _ _) h⟩
-  let _ : Module.Finite ℤ (Additive G) :=
-    Module.Finite.iff_addGroup_fg.mpr (inferInstance : AddGroup.FG (Additive G))
-  let _ : Module.IsTorsionFree ℤ (Additive G) := inferInstance
-  let _ : Module.Free ℤ (Additive G) := Module.free_of_finite_type_torsion_free'
-  let b := Module.Free.chooseBasis ℤ (Additive G)
-  let _ : Finite (Module.Free.ChooseBasisIndex ℤ (Additive G)) :=
-    Module.Finite.finite_basis b
-  let eι := Finite.equivFin (Module.Free.ChooseBasisIndex ℤ (Additive G))
-  let e : Additive G ≃+ (Fin (Nat.card (Module.Free.ChooseBasisIndex ℤ (Additive G))) →₀ ℤ) :=
-    b.repr.toAddEquiv.trans (Finsupp.domCongr eι)
-  exact ⟨_, ⟨AddEquiv.toMultiplicative e⟩⟩
-
 /-- **The coordinate Hopf algebra of a finitely generated torsion-free commutative group is a
 split torus.** Such a `G` is free of some finite rank `n`, which is then the rank of the split
 torus. -/
@@ -71,10 +54,12 @@ theorem splitTorusCommHopfAlgProperty_coordinateRing (K : Type u) [CommRing K]
     (G : FGCommGrpCat.{u}) [IsMulTorsionFree G] :
     splitTorusCommHopfAlgProperty K (DiagonalizableGroup.coordinateRing K G) := by
   rw [splitTorusCommHopfAlgProperty_iff]
-  obtain ⟨n, ⟨e⟩⟩ := exists_mulEquiv_finsupp_int G
+  obtain ⟨-, S, -, hS⟩ := Group.fg_iff'.mp (inferInstance : Group.FG G)
+  obtain ⟨n, -, ⟨e⟩⟩ := CommGroup.equiv_multiplicative_fin_int_of_isMulTorsionFree hS
   exact ⟨n, ⟨ObjectProperty.isoMk _ <| _root_.CommHopfAlgCat.isoMk
     (MonoidAlgebra.domCongrBialgEquiv K K
-      ((AddEquiv.toMultiplicative (Finsupp.domCongr Equiv.ulift)).trans e.symm))⟩⟩
+      ((AddEquiv.toMultiplicative ((Finsupp.domCongr Equiv.ulift).trans
+        (Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin n)).toAddEquiv)).trans e.symm))⟩⟩
 
 /-- **Every split torus is diagonalizable:** its coordinate Hopf algebra is spanned by its
 group-like elements. -/
