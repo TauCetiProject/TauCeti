@@ -126,6 +126,7 @@ theorem hom_ext_of_fiberFunctor {f g : A ⟶ D}
 
 variable (𝕜 B) in
 /-- The trivial point-indexed core of rank `n`. This construction also works on the empty base. -/
+-- Expose the rank projection so the dependent fibre model reduces to `Fin n → 𝕜`.
 @[expose]
 def trivial (n : ℕ) : FiniteRankBundleCore 𝕜 B where
   rank := n
@@ -141,6 +142,12 @@ def trivial (n : ℕ) : FiniteRankBundleCore 𝕜 B where
   indexAt_eq := fun _ => rfl
 
 @[simp] theorem rank_trivial (n : ℕ) : (trivial 𝕜 B n).rank = n := (rfl)
+
+@[simp] theorem localTriv_baseSet_trivial (n : ℕ) (x : B) :
+    ((trivial 𝕜 B n).core.localTriv x).baseSet = Set.univ := (rfl)
+
+@[simp] theorem coordChange_trivial (n : ℕ) (i j x : B) :
+    (trivial 𝕜 B n).core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin n → 𝕜) := (rfl)
 
 /-- The trivial rank-zero core is a zero object. -/
 theorem isZero_trivial_zero : IsZero (trivial 𝕜 B 0) where
@@ -167,6 +174,7 @@ instance : HasZeroObject (FiniteRankBundleCore 𝕜 B) :=
 variable (𝕜) in
 /-- Present an actual vector bundle of rank `n` by its point-indexed core.
 The original fibre universe does not occur in the type of the result. -/
+-- Expose the rank projection so the dependent fibre model reduces to `Fin n → 𝕜`.
 @[expose]
 noncomputable def ofBundle (n : ℕ) (E : B → Type*)
     [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
@@ -182,6 +190,12 @@ noncomputable def ofBundle (n : ℕ) (E : B → Type*)
     [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace (Fin n → 𝕜) E)]
     [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] :
     (ofBundle 𝕜 n E).rank = n := (rfl)
+
+@[simp] theorem core_ofBundle (n : ℕ) (E : B → Type*)
+    [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+    [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace (Fin n → 𝕜) E)]
+    [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] :
+    (ofBundle 𝕜 n E).core = pointIndexedCore 𝕜 (Fin n → 𝕜) E := (rfl)
 
 section Isomorphisms
 
