@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Theta
-public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.ThetaCoefficients
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.ThetaProduct
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Uniformization
 import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.Analysis.SpecificLimits.Normed
@@ -45,8 +44,6 @@ fundamental annulus `‖q‖ < ‖u‖ ≤ 1` includes the unit circle, where th
 
 ## Main results
 
-* `TauCeti.exists_hasSum_tateTheta_mul_tateTheta`: the Laurent coefficients of
-  `θ(a u) θ(a⁻¹ u)` are quasi-periodic of degree two, over every complete normed field.
 * `TauCeti.exists_hasSum_tateTheta_sq_mul_tateUniformizationX`: the Laurent coefficients of
   `θ(u)² (X(u) + 2 s₁(q))` are quasi-periodic of degree two.
 * `TauCeti.exists_tateTheta_mul_tateTheta_eq`: `θ(a u) θ(a⁻¹ u) = α θ(u)² (X(u) - X(a))`.
@@ -71,148 +68,93 @@ namespace TauCeti
 
 variable {K : Type*} [NormedField K]
 
-/-! ### The theta coefficients and products of theta functions -/
+/-! ### The coefficients of `θ²` -/
 
 section Theta
 
-/-- The Laurent coefficient `(-1)ⁿ q^(n (n - 1) / 2)` of the theta function. -/
-private noncomputable def thetaCoeff (q : Kˣ) (n : ℤ) : K :=
-  (-1) ^ n * (q : K) ^ (n * (n - 1) / 2)
+private theorem hasSum_tateThetaCoeff_one [CompleteSpace K] (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    HasSum (tateThetaCoeff q) 0 := by
+  simpa [← tateThetaCoeff_def] using hasSum_tateTheta q 1 hq
 
-private theorem hasSum_thetaCoeff_one [CompleteSpace K] (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    HasSum (thetaCoeff q) 0 := by
-  unfold thetaCoeff
-  simpa using hasSum_tateTheta q 1 hq
-
-private theorem thetaCoeff_add_one (q : Kˣ) (n : ℤ) :
-    thetaCoeff q (n + 1) = -(q : K) ^ n * thetaCoeff q n := by
-  rw [thetaCoeff, thetaCoeff, Int.add_mul_add_sub_one_ediv_two n 1]
-  simp only [mul_one, sub_self, mul_zero, Int.zero_ediv, add_zero]
-  rw [zpow_add₀ (neg_ne_zero.mpr one_ne_zero), zpow_add₀ q.ne_zero, zpow_one]
+private theorem tateThetaCoeff_one_sub (q : Kˣ) (n : ℤ) :
+    tateThetaCoeff q (1 - n) = -tateThetaCoeff q n := by
+  rw [tateThetaCoeff_def, tateThetaCoeff_def, Int.one_sub_mul_one_sub_sub_one_ediv_two,
+    sub_eq_add_neg, zpow_add₀ (neg_ne_zero.mpr one_ne_zero), zpow_one, zpow_neg, ← inv_zpow,
+    inv_neg_one]
   ring
 
-private theorem thetaCoeff_one_sub (q : Kˣ) (n : ℤ) :
-    thetaCoeff q (1 - n) = -thetaCoeff q n := by
-  rw [thetaCoeff, thetaCoeff, Int.one_sub_mul_one_sub_sub_one_ediv_two, sub_eq_add_neg,
-    zpow_add₀ (neg_ne_zero.mpr one_ne_zero), zpow_one, zpow_neg, ← inv_zpow, inv_neg_one]
-  ring
-
-private theorem norm_thetaCoeff_le_one (q : Kˣ) (hq : ‖(q : K)‖ < 1) (n : ℤ) :
-    ‖thetaCoeff q n‖ ≤ 1 := by
-  rw [thetaCoeff, norm_mul, norm_zpow, norm_neg, norm_one, one_zpow, one_mul, norm_zpow]
+private theorem norm_tateThetaCoeff_le_one (q : Kˣ) (hq : ‖(q : K)‖ < 1) (n : ℤ) :
+    ‖tateThetaCoeff q n‖ ≤ 1 := by
+  rw [tateThetaCoeff_def, norm_mul, norm_zpow, norm_neg, norm_one, one_zpow, one_mul, norm_zpow]
   refine zpow_le_one₀ (norm_pos_iff.mpr q.ne_zero) hq.le (Int.ediv_nonneg ?_ (by norm_num))
   rcases le_or_gt n 0 with h | h <;> nlinarith
 
-/-- The Laurent coefficients of `θ(a u) θ(a⁻¹ u)`. -/
-private noncomputable def thetaProdCoeff (q a : Kˣ) (n : ℤ) : K :=
-  ∑' m, thetaCoeff q m * (a : K) ^ m * (thetaCoeff q (n - m) * ((a⁻¹ : Kˣ) : K) ^ (n - m))
-
-private theorem thetaProdCoeff_add_two (q a : Kˣ) (n : ℤ) :
-    thetaProdCoeff q a (n + 2) = (q : K) ^ n * thetaProdCoeff q a n := by
-  rw [thetaProdCoeff, thetaProdCoeff, ← (Equiv.addRight (1 : ℤ)).tsum_eq, ← tsum_mul_left]
-  congr 1 with m
-  have h₁ : n + 2 - (m + 1) = n - m + 1 := by ring
-  simp only [Equiv.coe_addRight, h₁, thetaCoeff_add_one, Units.val_inv_eq_inv_val, inv_zpow',
-    zpow_add₀ a.ne_zero, zpow_one, zpow_sub₀ q.ne_zero, neg_add, zpow_neg]
-  field_simp
-
-private theorem thetaProdCoeff_mem (q a : Kˣ) :
-    thetaProdCoeff q a ∈ tateThetaCoefficients q 1 2 := by
-  rw [mem_tateThetaCoefficients_iff]
-  intro n
-  simp [thetaProdCoeff_add_two]
-
 /-- The coefficients of `θ²` satisfy `t(-n) = qⁿ t(n)`, reflecting `θ(u⁻¹)² = u⁻² θ(u)²`. -/
-private theorem thetaProdCoeff_one_neg (q : Kˣ) (n : ℤ) :
-    thetaProdCoeff q 1 (-n) = (q : K) ^ n * thetaProdCoeff q 1 n := by
-  rw [← thetaProdCoeff_add_two, thetaProdCoeff, thetaProdCoeff,
-    ← (Equiv.subLeft (1 : ℤ)).tsum_eq (f := fun m ↦ thetaCoeff q m * ((1 : Kˣ) : K) ^ m *
-      (thetaCoeff q (n + 2 - m) * ((1⁻¹ : Kˣ) : K) ^ (n + 2 - m)))]
+private theorem tateThetaProductCoeff_one_neg (q : Kˣ) (n : ℤ) :
+    tateThetaProductCoeff q 1 (-n) = (q : K) ^ n * tateThetaProductCoeff q 1 n := by
+  rw [← tateThetaProductCoeff_add_two, tateThetaProductCoeff_def, tateThetaProductCoeff_def,
+    ← (Equiv.subLeft (1 : ℤ)).tsum_eq (f := fun m ↦ tateThetaCoeff q m * ((1 : Kˣ) : K) ^ m *
+      (tateThetaCoeff q (n + 2 - m) * ((1⁻¹ : Kˣ) : K) ^ (n + 2 - m)))]
   congr 1 with m
   simp only [Equiv.subLeft_apply, Units.val_one, one_zpow, inv_one, mul_one]
-  rw [show n + 2 - (1 - m) = 1 - (-n - m) by ring, thetaCoeff_one_sub, thetaCoeff_one_sub]
+  rw [show n + 2 - (1 - m) = 1 - (-n - m) by ring, tateThetaCoeff_one_sub,
+    tateThetaCoeff_one_sub]
   ring
 
-private theorem thetaProdCoeff_one_eq (q : Kˣ) (n : ℤ) :
-    thetaProdCoeff q 1 n = ∑' m, thetaCoeff q m * thetaCoeff q (n - m) := by
-  simp [thetaProdCoeff]
-
-/-- The term of index `n` of the theta series at `b u`, written with the coefficient
-`thetaCoeff q n * bⁿ`. -/
-private theorem thetaCoeff_mul_zpow_mul_zpow (q b u : Kˣ) (n : ℤ) :
-    thetaCoeff q n * (b : K) ^ n * (u : K) ^ n =
-      (-1) ^ n * (q : K) ^ (n * (n - 1) / 2) * ((b * u : Kˣ) : K) ^ n := by
-  rw [Units.val_mul, mul_zpow, mul_assoc, thetaCoeff]
+private theorem tateThetaProductCoeff_one_eq (q : Kˣ) (n : ℤ) :
+    tateThetaProductCoeff q 1 n = ∑' m, tateThetaCoeff q m * tateThetaCoeff q (n - m) := by
+  simp [tateThetaProductCoeff_def]
 
 variable [CompleteSpace K]
 
-private theorem hasSum_thetaProdCoeff (q a u : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    HasSum (fun n ↦ thetaProdCoeff q a n * (u : K) ^ n)
-      (tateTheta q (a * u) * tateTheta q (a⁻¹ * u)) := by
-  -- Both theta series converge absolutely, so their Cauchy product converges to the product.
-  have h := hasSum_laurent_mul_of_summable_norm (f := fun n ↦ thetaCoeff q n * (a : K) ^ n)
-    (g := fun n ↦ thetaCoeff q n * ((a⁻¹ : Kˣ) : K) ^ n) u.ne_zero
-    (by simpa only [thetaCoeff_mul_zpow_mul_zpow] using summable_norm_tateTheta q (a * u) hq)
-    (by simpa only [thetaCoeff_mul_zpow_mul_zpow] using summable_norm_tateTheta q (a⁻¹ * u) hq)
-  simp only [thetaCoeff_mul_zpow_mul_zpow, (hasSum_tateTheta q _ hq).tsum_eq] at h
-  exact h
+private theorem hasSum_tateThetaProductCoeff_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    HasSum (fun n ↦ tateThetaProductCoeff q 1 n * (u : K) ^ n) (tateTheta q u ^ 2) := by
+  simpa [sq] using hasSum_tateThetaProductCoeff q 1 u hq
 
-private theorem hasSum_thetaProdCoeff_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    HasSum (fun n ↦ thetaProdCoeff q 1 n * (u : K) ^ n) (tateTheta q u ^ 2) := by
-  simpa [sq] using hasSum_thetaProdCoeff q 1 u hq
-
-private theorem hasSum_thetaProdCoeff_one_one (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    HasSum (thetaProdCoeff q 1) 0 := by
-  simpa using hasSum_thetaProdCoeff_one q 1 hq
-
-/-- **The Laurent expansion of `θ(a u) θ(a⁻¹ u)`.** Its coefficients are quasi-periodic of
-degree two, and the Laurent series converges at every unit. This holds over every complete
-normed field, archimedean or not. -/
-theorem exists_hasSum_tateTheta_mul_tateTheta (q : Kˣ) (hq : ‖(q : K)‖ < 1) (a : Kˣ) :
-    ∃ b ∈ tateThetaCoefficients q 1 2, ∀ u : Kˣ,
-      HasSum (fun n ↦ b n * (u : K) ^ n) (tateTheta q (a * u) * tateTheta q (a⁻¹ * u)) :=
-  ⟨_, thetaProdCoeff_mem q a, fun u ↦ hasSum_thetaProdCoeff q a u hq⟩
+private theorem hasSum_tateThetaProductCoeff_one_one (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    HasSum (tateThetaProductCoeff q 1) 0 := by
+  simpa using hasSum_tateThetaProductCoeff_one q 1 hq
 
 variable [IsUltrametricDist K]
 
 /-- The first moment `∑ n t(n)` of the coefficients of `θ²` vanishes: it is twice the product
 of the first moment of the coefficients of `θ` with `θ(1) = 0`. -/
-private theorem hasSum_intCast_mul_thetaProdCoeff_one (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    HasSum (fun n : ℤ ↦ (n : K) * thetaProdCoeff q 1 n) 0 := by
-  have hθ := hasSum_thetaCoeff_one q hq
+private theorem hasSum_intCast_mul_tateThetaProductCoeff_one (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    HasSum (fun n : ℤ ↦ (n : K) * tateThetaProductCoeff q 1 n) 0 := by
+  have hθ := hasSum_tateThetaCoeff_one q hq
   have hsum (c : ℤ → K) (hc : ∀ m, ‖c m‖ ≤ 1) :
-      Summable (fun m ↦ c m * thetaCoeff q m) :=
+      Summable (fun m ↦ c m * tateThetaCoeff q m) :=
     summable_mul_of_norm_le_one hθ.summable hc
-  have hc (n m : ℤ) (k : ℤ) : ‖(k : K) * thetaCoeff q (n - m)‖ ≤ 1 := by
+  have hc (n m : ℤ) (k : ℤ) : ‖(k : K) * tateThetaCoeff q (n - m)‖ ≤ 1 := by
     rw [norm_mul]
-    calc ‖(k : K)‖ * ‖thetaCoeff q (n - m)‖ ≤ 1 * 1 :=
+    calc ‖(k : K)‖ * ‖tateThetaCoeff q (n - m)‖ ≤ 1 * 1 :=
           mul_le_mul (IsUltrametricDist.norm_intCast_le_one K k)
-            (norm_thetaCoeff_le_one q hq _) (norm_nonneg _) zero_le_one
+            (norm_tateThetaCoeff_le_one q hq _) (norm_nonneg _) zero_le_one
       _ = 1 := one_mul 1
-  have hdθ : HasSum (fun n : ℤ ↦ ((n : K) * thetaCoeff q n) * (1 : K) ^ n)
-      (∑' n : ℤ, (n : K) * thetaCoeff q n) := by
+  have hdθ : HasSum (fun n : ℤ ↦ ((n : K) * tateThetaCoeff q n) * (1 : K) ^ n)
+      (∑' n : ℤ, (n : K) * tateThetaCoeff q n) := by
     simpa [mul_comm] using (hsum (fun n ↦ (n : K)) fun n ↦
       IsUltrametricDist.norm_intCast_le_one K n).hasSum
   have h := hasSum_laurent_mul one_ne_zero hdθ (by simpa using hθ)
   simp only [mul_zero, one_zpow, mul_one] at h
   convert h.mul_left 2 using 1
   · funext n
-    have h₁ := hsum (fun m ↦ (m : K) * thetaCoeff q (n - m)) (fun m ↦ hc n m m)
-    have h₂ := hsum (fun m ↦ ((n - m : ℤ) : K) * thetaCoeff q (n - m)) (fun m ↦ hc n m _)
-    have hswap : ∑' m : ℤ, ((n - m : ℤ) : K) * thetaCoeff q (n - m) * thetaCoeff q m =
-        ∑' m : ℤ, (m : K) * thetaCoeff q (n - m) * thetaCoeff q m := by
+    have h₁ := hsum (fun m ↦ (m : K) * tateThetaCoeff q (n - m)) (fun m ↦ hc n m m)
+    have h₂ := hsum (fun m ↦ ((n - m : ℤ) : K) * tateThetaCoeff q (n - m)) (fun m ↦ hc n m _)
+    have hswap : ∑' m : ℤ, ((n - m : ℤ) : K) * tateThetaCoeff q (n - m) * tateThetaCoeff q m =
+        ∑' m : ℤ, (m : K) * tateThetaCoeff q (n - m) * tateThetaCoeff q m := by
       rw [← (Equiv.subLeft n).tsum_eq]
       congr 1 with m
       simp only [Equiv.subLeft_apply, sub_sub_cancel]
       ring
-    rw [thetaProdCoeff_one_eq, ← tsum_mul_left]
-    calc ∑' m : ℤ, (n : K) * (thetaCoeff q m * thetaCoeff q (n - m))
-        = ∑' m : ℤ, ((m : K) * thetaCoeff q (n - m) * thetaCoeff q m +
-            ((n - m : ℤ) : K) * thetaCoeff q (n - m) * thetaCoeff q m) := by
+    rw [tateThetaProductCoeff_one_eq, ← tsum_mul_left]
+    calc ∑' m : ℤ, (n : K) * (tateThetaCoeff q m * tateThetaCoeff q (n - m))
+        = ∑' m : ℤ, ((m : K) * tateThetaCoeff q (n - m) * tateThetaCoeff q m +
+            ((n - m : ℤ) : K) * tateThetaCoeff q (n - m) * tateThetaCoeff q m) := by
           congr 1 with m
           push_cast
           ring
-      _ = 2 * ∑' m : ℤ, (m : K) * thetaCoeff q m * thetaCoeff q (n - m) := by
+      _ = 2 * ∑' m : ℤ, (m : K) * tateThetaCoeff q m * tateThetaCoeff q (n - m) := by
           rw [h₁.tsum_add h₂, hswap, ← two_mul]
           congr 2 with m
           ring
@@ -275,25 +217,25 @@ variable [CompleteSpace K]
 /-- The coefficients of `θ² (X + 2 s₁)`: the Cauchy product of `k / (1 - qᵏ)` with the
 coefficients of `θ²`. -/
 private noncomputable def tateXCoeff (q : Kˣ) (n : ℤ) : K :=
-  ∑' k, xCoeff q k * thetaProdCoeff q 1 (n - k)
+  ∑' k, xCoeff q k * tateThetaProductCoeff q 1 (n - k)
 
 private theorem hasSum_xCoeff_mul (q : Kˣ) (hq : ‖(q : K)‖ < 1) (n : ℤ) :
-    HasSum (fun k ↦ xCoeff q k * thetaProdCoeff q 1 (n - k)) (tateXCoeff q n) := by
+    HasSum (fun k ↦ xCoeff q k * tateThetaProductCoeff q 1 (n - k)) (tateXCoeff q n) := by
   refine (summable_mul_of_norm_le_one ?_ (norm_xCoeff_le_one hq)).hasSum
-  exact ((Equiv.subLeft n).summable_iff.mpr (hasSum_thetaProdCoeff_one_one q hq).summable)
+  exact ((Equiv.subLeft n).summable_iff.mpr (hasSum_tateThetaProductCoeff_one_one q hq).summable)
 
 /-- `∑ₖ k q⁻ᵏ t(n - k) = 0`, by the reflection `t(-j) = qʲ t(j)` and the vanishing of the
 zeroth and first moments of `t`. -/
 private theorem hasSum_intCast_mul_zpow_neg_mul (q : Kˣ) (hq : ‖(q : K)‖ < 1) (n : ℤ) :
-    HasSum (fun k : ℤ ↦ (k : K) * (q : K) ^ (-k) * thetaProdCoeff q 1 (n - k)) 0 := by
+    HasSum (fun k : ℤ ↦ (k : K) * (q : K) ^ (-k) * tateThetaProductCoeff q 1 (n - k)) 0 := by
   rw [← (Equiv.subLeft n).hasSum_iff, ← (Equiv.neg ℤ).hasSum_iff]
-  have h := (((hasSum_thetaProdCoeff_one_one q hq).mul_left (n : K)).add
-    (hasSum_intCast_mul_thetaProdCoeff_one q hq)).mul_left ((q : K) ^ (-n))
+  have h := (((hasSum_tateThetaProductCoeff_one_one q hq).mul_left (n : K)).add
+    (hasSum_intCast_mul_tateThetaProductCoeff_one q hq)).mul_left ((q : K) ^ (-n))
   simp only [mul_zero, add_zero] at h
   convert h using 1
   funext j
   simp only [Function.comp_apply, Equiv.neg_apply, Equiv.subLeft_apply, sub_neg_eq_add,
-    show n - (n + j) = -j by ring, thetaProdCoeff_one_neg, zpow_add₀ q.ne_zero, zpow_neg]
+    show n - (n + j) = -j by ring, tateThetaProductCoeff_one_neg, zpow_add₀ q.ne_zero, zpow_neg]
   push_cast
   field_simp
 
@@ -303,7 +245,7 @@ private theorem tateXCoeff_add_two (q : Kˣ) (hq : ‖(q : K)‖ < 1) (n : ℤ) 
     ((q : K) ^ n)
   rw [add_zero] at h
   refine (hasSum_xCoeff_mul q hq (n + 2)).unique (h.congr_fun fun k ↦ ?_)
-  rw [show n + 2 - k = n - k + 2 by ring, thetaProdCoeff_add_two]
+  rw [show n + 2 - k = n - k + 2 by ring, tateThetaProductCoeff_add_two]
   rcases eq_or_ne k 0 with rfl | hk
   · simp [xCoeff]
   have h₁ := one_sub_zpow_ne_zero hq hk
@@ -383,9 +325,9 @@ private theorem hasSum_x2Coeff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) (hu₁ : ‖
 /-- The second difference of the coefficients of `θ² (X + 2 s₁)` is the Cauchy product of the
 second difference of the coefficients of `X + 2 s₁` with the coefficients of `θ²`. -/
 private theorem tsum_x2Coeff_mul (q : Kˣ) (hq : ‖(q : K)‖ < 1) (n : ℤ) :
-    ∑' k, x2Coeff q k * thetaProdCoeff q 1 (n - k) =
+    ∑' k, x2Coeff q k * tateThetaProductCoeff q 1 (n - k) =
       tateXCoeff q n - 2 * tateXCoeff q (n - 1) + tateXCoeff q (n - 2) := by
-  have hshift (j : ℤ) : HasSum (fun k ↦ xCoeff q (k - j) * thetaProdCoeff q 1 (n - k))
+  have hshift (j : ℤ) : HasSum (fun k ↦ xCoeff q (k - j) * tateThetaProductCoeff q 1 (n - k))
       (tateXCoeff q (n - j)) := by
     rw [← (Equiv.addRight j).hasSum_iff]
     convert hasSum_xCoeff_mul q hq (n - j) using 2 with k
@@ -418,7 +360,7 @@ private theorem hasSum_tateXCoeff_of_norm (q u : Kˣ) (hu₁ : ‖(q : K)‖ < �
   have hΔ := (hA.sub ((hasSum_laurent_shift u.ne_zero 1 hA).mul_left 2)).add
     (hasSum_laurent_shift u.ne_zero 2 hA)
   have hC := hasSum_laurent_mul u.ne_zero (hasSum_x2Coeff q u hq hqu hqu' hu)
-    (hasSum_thetaProdCoeff_one q u hq)
+    (hasSum_tateThetaProductCoeff_one q u hq)
   simp only [tsum_x2Coeff_mul q hq] at hC
   simp only [zpow_one, zpow_two] at hΔ
   have heq := hC.unique (hΔ.congr_fun fun n ↦ by ring)
@@ -573,40 +515,40 @@ theorem exists_tateTheta_mul_tateTheta_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1) {a 
   have hθ {v : Kˣ} (hv : v ∉ Subgroup.zpowers q) : tateTheta q v ≠ 0 :=
     fun h ↦ hv ((tateTheta_eq_zero_iff q v hq).mp h)
   obtain ⟨u₀, v₀, hu₀, hv₀, hne⟩ := exists_tateUniformizationX_ne q hq
-  let T : tateThetaCoefficients q 1 2 := ⟨_, thetaProdCoeff_mem q 1⟩
+  let T : tateThetaCoefficients q 1 2 := ⟨_, tateThetaProductCoeff_mem q 1⟩
   let A : tateThetaCoefficients q 1 2 := ⟨_, tateXCoeff_mem q hq⟩
-  let P : tateThetaCoefficients q 1 2 := ⟨_, thetaProdCoeff_mem q a⟩
+  let P : tateThetaCoefficients q 1 2 := ⟨_, tateThetaProductCoeff_mem q a⟩
   -- `θ²` and `θ² (X + 2 s₁)` span the two-dimensional coefficient space.
   have hT : T ≠ 0 := by
     intro h
-    have h' := hasSum_thetaProdCoeff_one q u₀ hq
-    simp only [show thetaProdCoeff q 1 = 0 from congrArg Subtype.val h, Pi.zero_apply,
+    have h' := hasSum_tateThetaProductCoeff_one q u₀ hq
+    simp only [show tateThetaProductCoeff q 1 = 0 from congrArg Subtype.val h, Pi.zero_apply,
       zero_mul] at h'
     exact hθ hu₀ (pow_eq_zero_iff two_ne_zero |>.mp (hasSum_zero.unique h').symm)
   have hind : LinearIndependent K ![T, A] := by
     refine (LinearIndependent.pair_iff' hT).mpr fun c hc ↦ hne ?_
-    have hcoef (n : ℤ) : tateXCoeff q n = c * thetaProdCoeff q 1 n :=
+    have hcoef (n : ℤ) : tateXCoeff q n = c * tateThetaProductCoeff q 1 n :=
       (congrFun (congrArg Subtype.val hc) n).symm
     have hconst {u : Kˣ} (hu : u ∉ Subgroup.zpowers q) :
         tateUniformizationX q u + 2 * divisorSumAt 1 (q : K) = c := by
       have h₁ := hasSum_tateXCoeff q hq hu
       simp only [hcoef, mul_assoc] at h₁
-      have h₂ := h₁.unique ((hasSum_thetaProdCoeff_one q u hq).mul_left c)
+      have h₂ := h₁.unique ((hasSum_tateThetaProductCoeff_one q u hq).mul_left c)
       exact mul_left_cancel₀ (pow_ne_zero 2 (hθ hu)) (by linear_combination h₂)
     linear_combination hconst hu₀ - hconst hv₀
   have hspan := hind.span_eq_top_of_card_eq_finrank (by simp)
   obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun K).mp (hspan ▸ Submodule.mem_top :
     P ∈ Submodule.span K (Set.range ![T, A]))
   simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one] at hc
-  have hcoef (n : ℤ) : thetaProdCoeff q a n =
-      c 0 * thetaProdCoeff q 1 n + c 1 * tateXCoeff q n :=
+  have hcoef (n : ℤ) : tateThetaProductCoeff q a n =
+      c 0 * tateThetaProductCoeff q 1 n + c 1 * tateXCoeff q n :=
     (congrFun (congrArg Subtype.val hc) n).symm
   have hid {u : Kˣ} (hu : u ∉ Subgroup.zpowers q) :
       tateTheta q (a * u) * tateTheta q (a⁻¹ * u) = c 0 * tateTheta q u ^ 2 +
         c 1 * (tateTheta q u ^ 2 * (tateUniformizationX q u + 2 * divisorSumAt 1 (q : K))) := by
-    have h := hasSum_thetaProdCoeff q a u hq
+    have h := hasSum_tateThetaProductCoeff q a u hq
     simp only [hcoef, add_mul, mul_assoc] at h
-    exact h.unique (((hasSum_thetaProdCoeff_one q u hq).mul_left (c 0)).add
+    exact h.unique (((hasSum_tateThetaProductCoeff_one q u hq).mul_left (c 0)).add
       ((hasSum_tateXCoeff q hq hu).mul_left (c 1)))
   -- At `u = a` the left side vanishes, which determines `c 0`.
   have hc₀ : c 0 = -(c 1 * (tateUniformizationX q a + 2 * divisorSumAt 1 (q : K))) := by
@@ -619,7 +561,7 @@ theorem exists_tateTheta_mul_tateTheta_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1) {a 
   refine ⟨c 1, fun h₁ ↦ ?_, fun u hu ↦ ?_⟩
   · -- Otherwise `θ(a u) θ(a⁻¹ u)` would vanish identically, in particular at `u = 1`.
     rw [h₁, zero_mul, neg_zero] at hc₀
-    have h := hasSum_thetaProdCoeff q a 1 hq
+    have h := hasSum_tateThetaProductCoeff q a 1 hq
     simp only [hcoef, hc₀, h₁, zero_mul, add_zero, mul_one, tateTheta_inv] at h
     rcases mul_eq_zero.mp (hasSum_zero.unique h).symm with h' | h'
     · exact hθ ha h'
