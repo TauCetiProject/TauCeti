@@ -476,7 +476,7 @@ private theorem abs_card_filter_routeHolds_sub_le
     -- Replace the indicator of `t` by `d`, then the remaining indicators by induction.
     calc |a - d * q * n₀| ≤ |a - d * b| + |b - q * n₀| := by
           rw [mul_assoc]
-          exact abs_sub_mul_le_of_le_one hd₀ hd₁
+          exact abs_sub_mul_le_of_abs_le_one ((abs_of_nonneg hd₀).trans_le hd₁)
       _ ≤ η * ∏ m, (#(φ.vertexCell m) : ℝ) + #s * η * ∏ m, (#(φ.vertexCell m) : ℝ) :=
         add_le_add hstep hih
       _ = _ := by push_cast; ring
@@ -514,7 +514,8 @@ theorem abs_placedInducedCopyCount_sub_expectedInducedCountAt_le (hφ : φ.Trans
   set L : ℝ := ((lowerRouteCountAt φ ψ : ℕ) : ℝ)
   set E := expectedLowerRouteCountAt φ ψ
   -- Compare with the lower-route count, first replacing the top colors, then the pair colors.
-  calc |N - D * E| ≤ |N - D * L| + |L - E| := abs_sub_mul_le_of_le_one hD₀ hD₁
+  calc |N - D * E| ≤ |N - D * L| + |L - E| :=
+      abs_sub_mul_le_of_abs_le_one ((abs_of_nonneg hD₀).trans_le hD₁)
     _ ≤ F.k.choose 3 * η * ∏ i, (#(φ.vertexCell i) : ℝ) +
         F.k.choose 2 * ε * ∏ i, (#(φ.vertexCell i) : ℝ) := add_le_add htop hpair
     _ = _ := by ring
