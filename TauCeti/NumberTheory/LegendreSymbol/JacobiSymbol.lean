@@ -35,7 +35,8 @@ part.
   both statements can be lowered to `|a|`.
 * `TauCeti.jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one`: `J(a | b) = J(b | |a|)` for
   `a ≡ 1 (mod 4)` and odd `b`.
-* `TauCeti.jacobiSym_sq_mul_of_isCoprime`: `J(x² y | b) = J(y | b)` for `x` prime to `b`.
+* `TauCeti.jacobiSym_sq_mul_of_isCoprime`: `J(x² y | b) = J(y | b)` for `x` prime to `b`, and
+  `TauCeti.jacobiSym_mul_pow_two_mul_mul_of_isCoprime`, its form `J(s x^(2k) y | b) = J(s y | b)`.
 
 ## References
 
@@ -145,5 +146,12 @@ theorem jacobiSym_eq_sign_mul_of_emod_four_eq_zero {a : ℤ} (ha : a % 4 = 0) {b
 theorem jacobiSym_sq_mul_of_isCoprime {x : ℤ} {b : ℕ} (hx : IsCoprime x b) (y : ℤ) :
     jacobiSym (x ^ 2 * y) b = jacobiSym y b := by
   rw [jacobiSym.mul_left, jacobiSym.sq_one' (Int.isCoprime_iff_gcd_eq_one.1 hx), one_mul]
+
+/-- An even power of a factor prime to the denominator does not change the Jacobi symbol:
+`J(s x^(2k) y | b) = J(s y | b)` when `x` is prime to `b`. -/
+theorem jacobiSym_mul_pow_two_mul_mul_of_isCoprime {x : ℤ} {b : ℕ} (hx : IsCoprime x b)
+    (s y : ℤ) (k : ℕ) : jacobiSym (s * (x ^ (2 * k) * y)) b = jacobiSym (s * y) b := by
+  rw [show s * (x ^ (2 * k) * y) = (x ^ k) ^ 2 * (s * y) by ring,
+    jacobiSym_sq_mul_of_isCoprime hx.pow_left]
 
 end TauCeti

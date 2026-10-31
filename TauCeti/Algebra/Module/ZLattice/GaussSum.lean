@@ -579,15 +579,14 @@ theorem IsEven.gaussSum_eq_jacobiSym {k : ℕ} (hk : finrank ℝ E = 2 * k) {a :
   have hterm (y : L ⧸ ((c : ℝ) • L).submoduleOf L) : gaussTerm L hL a c 0 y =
       ZMod.stdAddChar (F y ⬝ᵥ (u • G).map (Int.cast : ℤ → ZMod c) *ᵥ F y) := by
     induction y using Submodule.Quotient.induction_on with | H v
-    have hFv : F (Submodule.Quotient.mk v) = Int.castRingHom (ZMod c) ∘ b.repr v :=
+    have hFv : F (Submodule.Quotient.mk v) = fun i ↦ (b.repr v i : ZMod c) :=
       funext (b.quotientSmulEquivPiZMod_mk c v)
     have hq : u * hL.isIntegral.integralForm v v = b.repr v ⬝ᵥ (u • G) *ᵥ b.repr v := by
       rw [LinearMap.BilinForm.apply_eq_dotProduct_toMatrix_mulVec b, smul_mulVec, dotProduct_smul,
         smul_eq_mul]
     -- Reduce `xᵀ (u G) x` modulo `c` entrywise.
-    rw [gaussTerm_mk_eq_stdAddChar hL (u := u) (by rw [hu₀, hr]; push_cast; ring), hq,
-      ← eq_intCast (Int.castRingHom (ZMod c)), RingHom.map_dotProduct_mulVec, hFv,
-      Int.coe_castRingHom]
+    rw [gaussTerm_mk_eq_stdAddChar hL (u := u) (by rw [hu₀, hr]; push_cast; ring), hq, hFv,
+      intCast_dotProduct_mulVec]
   -- The Gauss sum of `x ↦ xᵀ (u G) x` modulo `c`, with `det (u G) = u^(2k) det G` and
   -- `det G = |L^∨ / L|`.
   have hu : IsCoprime u c := by
@@ -603,9 +602,7 @@ theorem IsEven.gaussSum_eq_jacobiSym {k : ℕ} (hk : finrank ℝ E = 2 * k) {a :
       (fun z ↦ ZMod.stdAddChar (z ⬝ᵥ (u • G).map (Int.cast : ℤ → ZMod c) *ᵥ z)) hterm,
     hG.sum_stdAddChar_dotProduct_mulVec_eq_jacobiSym hcard hc
       (hdetG ▸ hu.pow_left.mul_left hdet), hdetG,
-    show (-1) ^ k * (u ^ (2 * k) * Nat.card (DiscriminantGroup L)) =
-      (u ^ k) ^ 2 * ((-1) ^ k * Nat.card (DiscriminantGroup L)) by ring,
-    TauCeti.jacobiSym_sq_mul_of_isCoprime hu.pow_left]
+    TauCeti.jacobiSym_mul_pow_two_mul_mul_of_isCoprime hu]
 
 /-- **The dual Gauss sum at an odd modulus.** Let `L` be an even full lattice of even rank `2k`
 and level `N`, `a` an odd modulus, and `t` a multiple of `N` prime to `a`. With the Jacobi symbol
