@@ -93,38 +93,6 @@ theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord
     ((h.contMDiffOn t ht).mdifferentiableWithinAt (by norm_num))
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
 
-omit [T2Space M] in
-/-- The Levi-Civita covariant derivative of a section with a `C²` tangent-bundle lift, within a
-parameter set with unique derivatives, has a `C¹` tangent-bundle lift. -/
-theorem contMDiffOn_alongCurveWithin_leviCivitaConnection (hs : UniqueDiffOn ℝ s)
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s) :
-    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
-      (fun r ↦ TotalSpace.mk' E (γ r)
-        (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s := by
-  let : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : IsManifold I (1 + 1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : ContMDiffVectorBundle (1 + 1) E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  exact CovariantDerivative.contMDiffOn_alongCurveWithin (n := 1)
-    (leviCivitaConnection I M) γ V
-    (fun x ↦ contMDiffCovariantDerivativeOn_leviCivitaConnection
-      (m := ∞) (k := ∞) (trivializationAt E (TangentSpace I) x).open_baseSet
-      (by simp) (by simp)) hs hV
-
-omit [T2Space M] in
-/-- The Levi-Civita covariant derivative of a section with a `C²` tangent-bundle lift, within a
-parameter set with unique derivatives, has differentiable coordinate readings there. -/
-theorem differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
-    (hs : UniqueDiffOn ℝ s)
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
-    (ht : t ∈ s) :
-    DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
-  TauCeti.Manifold.differentiableWithinAt_sectionCoord γ _
-    ((contMDiffOn_alongCurveWithin_leviCivitaConnection hs hV t ht).mdifferentiableWithinAt
-      one_ne_zero)
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-
 /-- The first covariant derivative of a Jacobi field has a `C¹` tangent-bundle lift. -/
 theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin (h : IsJacobiFieldOn I γ V s) :
     ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
