@@ -111,13 +111,6 @@ variable {R K : Type u} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 
-/-- A property of morphisms invariant under isomorphism holds for the generic fibre of a model
-exactly when it holds for the prescribed curve `C ⟶ Spec K`. -/
-private lemma genericFiber_hom_iff (M : Model R K C toK) (P : MorphismProperty Scheme.{u})
-    [P.RespectsIso] : P (genericFiber R K M.toBase).hom ↔ P toK := by
-  rw [← Over.w M.genericFiberIso.hom]
-  exact MorphismProperty.cancel_left_of_respectsIso P _ toK
-
 /-- A model over a discrete valuation ring is at worst nodal of relative dimension one exactly when
 its generic curve and its special fibre are at worst nodal. -/
 theorem atWorstNodalOfRelativeDimensionOne_toBase_iff (M : Model R K C toK) :
@@ -125,7 +118,8 @@ theorem atWorstNodalOfRelativeDimensionOne_toBase_iff (M : Model R K C toK) :
       AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne toK ∧
         AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne (specialFiber R M.toBase).hom := by
   rw [AlgebraicGeometry.atWorstNodalOfRelativeDimensionOne_iff_genericFiber_and_specialFiber
-    (R := .of R) K, M.genericFiber_hom_iff @AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne]
+    (R := .of R) K, MorphismProperty.over_iso_iff
+      @AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne M.genericFiberIso]
   exact ⟨fun h ↦ h.2.2, fun h ↦ ⟨M.flat, M.locallyOfFinitePresentation, h⟩⟩
 
 /-- A model over a discrete valuation ring is a prestable family exactly when it is proper and its
@@ -135,7 +129,7 @@ theorem prestableFamily_toBase_iff (M : Model R K C toK) :
       M.IsProper ∧ AlgebraicGeometry.PrestableFamily toK ∧
         AlgebraicGeometry.PrestableFamily (specialFiber R M.toBase).hom := by
   rw [AlgebraicGeometry.prestableFamily_iff_genericFiber_and_specialFiber (R := .of R) K,
-    M.genericFiber_hom_iff @AlgebraicGeometry.PrestableFamily]
+    MorphismProperty.over_iso_iff @AlgebraicGeometry.PrestableFamily M.genericFiberIso]
   exact ⟨fun h ↦ ⟨h.1, h.2.2.2⟩,
     fun h ↦ ⟨h.1, M.flat, M.locallyOfFinitePresentation, h.2⟩⟩
 
