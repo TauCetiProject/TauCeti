@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Order.BigOperators.Sum.Min
 public import TauCeti.Combinatorics.Enumerative.Partition.Conjugate
 public import Mathlib.Data.Multiset.Fintype
 public import Mathlib.Logic.Relation
@@ -34,6 +35,8 @@ rank criterion for nilpotent orbit closures (Gerstenhaber's theorem) to single b
   members `a j ≤ a i` of `a` keep the inequality strict for all `a j ≤ k ≤ a i`.
 * `Nat.Partition.IsBoxMove ν μ`: `μ` is obtained from `ν` by moving one box from a row to a
   weakly longer row.
+* `Nat.Partition.sum_map_min_add_of_parts_add_eq`: the exact effect of a box move on the column
+  counts.
 * `Nat.Partition.IsBoxMove.strictlyDominates`: a box move produces a strictly dominating
   partition.
 * `Nat.Partition.dominates_iff_reflTransGen_isBoxMove` and
@@ -55,15 +58,6 @@ public section
 namespace Finset
 
 variable {ι κ : Type*}
-
-/-- For `p < q`, the second differences of column counts at `p` and `q` count the members of a
-family strictly between `p` and `q`. -/
-private theorem sum_min_add_sum_min_eq {α : Type*} (u : Finset α) (c : α → ℕ) {p q : ℕ}
-    (hpq : p < q) :
-    ∑ l ∈ u, min (p + 1) (c l) + ∑ l ∈ u, min (q - 1) (c l) =
-      ∑ l ∈ u, min p (c l) + ∑ l ∈ u, min q (c l) + #{l ∈ u | p < c l ∧ c l < q} := by
-  rw [card_filter, ← sum_add_distrib, ← sum_add_distrib, ← sum_add_distrib]
-  exact sum_congr rfl fun l _ => by split_ifs <;> omega
 
 /-- A pair of rows realising a strict inequality of column counts. Let `a` and `b` be finite
 families of natural numbers with the same sum, such that for every `k` the column count
@@ -143,7 +137,7 @@ theorem isBoxMove_iff {ν μ : n.Partition} :
 
 /-- Moving a box from a row of length `b + 1` to a row of length `a` lowers the number of boxes in
 the first `k` columns by one for `b < k ≤ a`, and leaves it unchanged otherwise. -/
-private theorem sum_map_min_add_of_parts_add_eq {ν μ : n.Partition} {a b : ℕ} (hba : b < a)
+theorem sum_map_min_add_of_parts_add_eq {ν μ : n.Partition} {a b : ℕ} (hba : b < a)
     (h : μ.parts + {a, b + 1} = ν.parts + ({a + 1, b} : Multiset ℕ).filter (· ≠ 0)) (k : ℕ) :
     (μ.parts.map (min k)).sum + (if b < k ∧ k ≤ a then 1 else 0) =
       (ν.parts.map (min k)).sum := by
@@ -205,25 +199,18 @@ theorem StrictlyDominates.exists_isBoxMove {μ ν : n.Partition} (h : μ.Strictl
       (Finset.insert_subset hx (Finset.singleton_subset_iff.mpr hy))
     rwa [Finset.insert_val_of_notMem (by simpa using hxy), Multiset.map_cons,
       Finset.singleton_val, Multiset.map_singleton, ha, hb, ← Multiset.insert_eq_cons] at this
-  let ξ : n.Partition :=
-    { parts := ν.parts - {a, b + 1} + ({a + 1, b} : Multiset ℕ).filter (· ≠ 0)
-      parts_pos := by
-        intro i hi
-        rcases Multiset.mem_add.mp hi with hi | hi
-        · exact ν.parts_pos (Multiset.mem_of_le (Multiset.sub_le_self _ _) hi)
-        · exact Nat.pos_of_ne_zero (Multiset.mem_filter.mp hi).2
-      parts_sum := by
-        have hsplit := congrArg Multiset.sum (tsub_add_cancel_of_le hpair)
-        have hfilter : (({a + 1, b} : Multiset ℕ).filter (· ≠ 0)).sum = a + 1 + b := by
-          rcases Nat.eq_zero_or_pos b with rfl | hb
-          · simp [Multiset.filter_singleton]
-          · simp [Multiset.filter_singleton, hb.ne']
-        rw [Multiset.sum_add, hfilter]
-        simp only [Multiset.sum_add, Multiset.insert_eq_cons, Multiset.sum_cons,
-          Multiset.sum_singleton, ν.parts_sum] at hsplit ⊢
-        omega }
+  have hsum : (ν.parts - {a, b + 1} + {a + 1, b}).sum = n := by
+    have hsplit := congrArg Multiset.sum (tsub_add_cancel_of_le hpair)
+    simp only [Multiset.sum_add, Multiset.insert_eq_cons, Multiset.sum_cons,
+      Multiset.sum_singleton, ν.parts_sum] at hsplit ⊢
+    omega
+  let ξ : n.Partition := ofSums n (ν.parts - {a, b + 1} + {a + 1, b}) hsum
   have hmove : ξ.parts + {a, b + 1} = ν.parts + ({a + 1, b} : Multiset ℕ).filter (· ≠ 0) := by
-    rw [add_right_comm, tsub_add_cancel_of_le hpair]
+    have hpos : (ν.parts - {a, b + 1}).filter (· ≠ 0) = ν.parts - {a, b + 1} :=
+      Multiset.filter_eq_self.mpr fun i hi =>
+        (ν.parts_pos (Multiset.mem_of_le (Multiset.sub_le_self _ _) hi)).ne'
+    change (ν.parts - {a, b + 1} + {a + 1, b}).filter (· ≠ 0) + {a, b + 1} = _
+    rw [Multiset.filter_add, hpos, add_right_comm, tsub_add_cancel_of_le hpair]
   have hba : b < a := by omega
   refine ⟨ξ, ⟨a, b, hba, hmove⟩, dominates_iff_forall_sum_map_min_le.mpr fun k => ?_⟩
   have hcol := sum_map_min_add_of_parts_add_eq hba hmove k
