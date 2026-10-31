@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Coxeter.Bipartite
+public import TauCeti.GroupTheory.Coxeter.Graph
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
