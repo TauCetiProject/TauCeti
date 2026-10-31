@@ -237,7 +237,7 @@ def extendRootFamily (x : Fin t.numRoots → t.lieAlgebra ht) :
   rw [← val_neg_root, ← rootEquiv_reflectionPerm_self, extendRootFamily_rootEquiv]
 
 /-- The extended family vanishes at the zero weight. -/
-theorem extendRootFamily_of_isZero (x : Fin t.numRoots → t.lieAlgebra ht)
+@[simp] theorem extendRootFamily_of_isZero (x : Fin t.numRoots → t.lieAlgebra ht)
     {χ : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)} (hχ : χ.IsZero) :
     extendRootFamily x χ = 0 := by
   refine Function.extend_apply' _ _ _ fun ⟨α, hα⟩ => ?_
