@@ -38,8 +38,9 @@ into an open set.
   inverted closure together with `0`.
 * `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub` and
   `TauCeti.frontier_insert_zero_image_inv_sub`: an open set with bounded complement, inverted about
-  a point outside its closure and completed by `0`, is open; the completed inversion of any set has
-  the completed inverted closure as closure, and here the inverted frontier as frontier.
+  any point and completed by `0`, is open; the completed inversion of any set has the completed
+  inverted closure as closure; and for a centre outside the closure of such an open set, the
+  inverted frontier as frontier.
 -/
 
 public section
@@ -136,14 +137,15 @@ theorem isBounded_image_inv_sub (hq : q ∉ closure U) :
   rw [norm_inv]
   exact inv_anti₀ hr hrz
 
-/-- Inverting an open set `U` with bounded complement about a point `q` outside it, and adding `0`,
-the image of infinity, gives an open set: `U` contains a neighbourhood of infinity, which the
-inversion carries onto a punctured neighbourhood of `0`. -/
-theorem isOpen_insert_zero_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U)
-    (hUc : IsBounded Uᶜ) : IsOpen (insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' U)) := by
+/-- Inverting an open set `U` with bounded complement about any point `q`, and adding `0`, the
+image of infinity, gives an open set: `U` contains a neighbourhood of infinity, which the inversion
+carries onto a punctured neighbourhood of `0`. -/
+theorem isOpen_insert_zero_image_inv_sub (hUo : IsOpen U) (hUc : IsBounded Uᶜ) :
+    IsOpen (insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' U)) := by
   obtain ⟨R, hR, hRU⟩ := hUc.subset_ball_lt 0 q
   rw [image_inv_sub_eq_preimage_add_inv, isOpen_iff_mem_nhds]
-  rintro w (rfl | hw)
+  intro w hw
+  rcases eq_or_ne w 0 with rfl | hw0
   · -- a point `w ≠ 0` with `‖w‖ < R⁻¹` is sent by `w ↦ q + w⁻¹` outside `ball q R`
     refine Filter.mem_of_superset (ball_mem_nhds 0 (inv_pos.mpr hR)) fun w hw => ?_
     rcases eq_or_ne w 0 with rfl | hw0
@@ -154,9 +156,9 @@ theorem isOpen_insert_zero_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U)
     have hin := hRU h
     rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_inv] at hin
     exact lt_asymm hin hRw
-  · have hw0 : w ≠ 0 := fun h => hqU (by simpa [h] using hw)
-    exact Filter.mem_of_superset
-      ((continuousAt_const.add (continuousAt_inv₀ hw0)).preimage_mem_nhds (hUo.mem_nhds hw))
+  · exact Filter.mem_of_superset
+      ((continuousAt_const.add (continuousAt_inv₀ hw0)).preimage_mem_nhds
+        (hUo.mem_nhds ((mem_insert_iff.mp hw).resolve_left hw0)))
       (subset_insert _ _)
 
 /-- Inverting any set `U` about any point `q` and adding `0`, the image of infinity, commutes with
@@ -208,7 +210,7 @@ theorem frontier_insert_zero_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure 
     rintro ⟨z, hz, hz0⟩
     rw [inv_eq_zero, sub_eq_zero] at hz0
     exact hq (hz0 ▸ hz)
-  rw [(isOpen_insert_zero_image_inv_sub hUo (fun h => hq (subset_closure h)) hUc).frontier_eq,
+  rw [(isOpen_insert_zero_image_inv_sub hUo hUc).frontier_eq,
     closure_insert_zero_image_inv_sub, insert_sdiff_of_mem _ (mem_insert _ _),
     sdiff_insert_of_notMem h0,
     ← image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹) (inv_injective.comp (sub_left_injective (b := q))),

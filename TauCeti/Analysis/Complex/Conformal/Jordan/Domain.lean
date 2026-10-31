@@ -179,8 +179,8 @@ theorem IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull 
     exact Cardinal.one_lt_two
   have hUb : ¬Bornology.IsBounded (filledHull C)ᶜ := fun h =>
     NormedSpace.unbounded_univ ℝ ℂ (by simpa using h.union hUc)
-  refine ⟨isOpen_insert_zero_image_inv_sub hC.isClosed.isClosed_filledHull.isOpen_compl
-    (not_not_intro hp.1) hUc, ?_, (isBounded_image_inv_sub hpU).insert 0, ?_⟩
+  refine ⟨isOpen_insert_zero_image_inv_sub hC.isClosed.isClosed_filledHull.isOpen_compl hUc,
+    ?_, (isBounded_image_inv_sub hpU).insert 0, ?_⟩
   · -- the inverted outside is connected, and `0`, the image of infinity, lies in its closure
     have hcont : ContinuousOn (fun z : ℂ => (z - p)⁻¹) (filledHull C)ᶜ :=
       ContinuousOn.inv₀ (by fun_prop) fun z hz =>
