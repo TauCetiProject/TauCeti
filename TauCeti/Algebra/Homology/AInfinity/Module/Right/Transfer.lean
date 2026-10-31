@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Inverse
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Cohomology
 public import TauCeti.Algebra.Homology.Contraction.Linear.TensorProduct
 public import TauCeti.Algebra.Homology.Contraction.Perturbation
@@ -41,9 +43,11 @@ morphisms intertwining the bar differentials, hence morphisms of right `A∞` mo
 `TauCeti.AInfinityRightModule.transferProjection`, with linear parts `i` and `p`.  Both are
 quasi-isomorphisms, and the projection is a left inverse of the inclusion.
 
-Unlike the transfer of an `A∞` algebra structure, where the tensor-trick homotopy is only a
-coderivation homotopy, here the homotopy `h ⊗ 1` acts on the module input alone, so it is a
-comodule morphism and so is everything built from it.  This is what makes the comodule
+The construction follows the transfer of an `A∞` algebra structure,
+`TauCeti.AInfinityAlgebra.transfer` in `TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Basic`.
+Unlike that case, where the tensor-trick homotopy is only a coderivation homotopy, here the
+homotopy `h ⊗ 1` acts on the module input alone, so it is a comodule morphism and so is everything
+built from it.  This is what makes the comodule
 compatibility of the perturbed data a formal consequence of the perturbation lemma.
 
 ## Main definitions
@@ -107,14 +111,6 @@ variable {AA : AInfinityAlgebra R A}
 
 /-! ### The unary and higher parts of the bar differential -/
 
-/-- The bar-comodule grading is the tensor product of the suspended module grading and the
-suspended tensor-word grading. -/
-private theorem barGrading_eq_tensorProduct {P : Type*} [AddCommGroup P] [Module R P]
-    (G : InternalGrading R P) :
-    barGrading AA G = (G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1)) := by
-  ext p
-  rw [barGrading_piece]
-
 section Unary
 
 variable (AA) (G : InternalGrading R M) (d : Module.End R M)
@@ -172,7 +168,7 @@ theorem isHomogeneous_unaryBarDifferential
   refine isHomogeneous_gradedCoderiv _ ?_
   have hd' := hd.tensorProduct
     (LinearMap.isHomogeneous_id (R := R) (TensorWords.grading (AA.grading.shift 1)).piece)
-  rw [barGrading_eq_tensorProduct, LinearMap.rTensor_def]
+  rw [barGrading_def, LinearMap.rTensor_def]
   simpa only [zero_add, add_zero, LinearMap.comp_assoc] using
     (TensorWords.isHomogeneous_rid_comp_lTensor_counit (G.shift 1) (AA.grading.shift 1)).comp hd'
 
@@ -185,13 +181,12 @@ theorem unaryBarDifferential_comp_self
   refine TensorProduct.ext' fun x w ↦ ?_
   have hdd := LinearMap.congr_fun hdd x
   have hbb := LinearMap.congr_fun AA.coaugmentedBarDifferential_sq w
-  have hτd := hd.koszulTwist_apply 1 x
-  have hττ := LinearMap.congr_fun ((G.shift 1).koszulTwist_comp_self 1) x
-  simp only [LinearMap.comp_apply, LinearMap.zero_apply, LinearMap.id_apply] at hdd hbb hττ
-  rw [one_mul, Int.negOnePow_one, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one,
-    neg_one_smul] at hτd
+  have hτd : (G.shift 1).koszulTwist 1 (d x) = -d ((G.shift 1).koszulTwist 1 x) := by
+    simpa using hd.koszulTwist_apply 1 x
+  simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hdd hbb
   simp only [LinearMap.comp_apply, unaryBarDifferential_tmul, map_add, LinearMap.zero_apply,
-    hdd, hbb, hτd, hττ, TensorProduct.zero_tmul, TensorProduct.tmul_zero, TensorProduct.neg_tmul]
+    hdd, hbb, hτd, InternalGrading.koszulTwist_koszulTwist, TensorProduct.zero_tmul,
+    TensorProduct.tmul_zero, TensorProduct.neg_tmul]
   abel
 
 end Unary
@@ -263,43 +258,33 @@ theorem coact_comp_higherBarDifferential :
     LinearMap.rTensor_sub]
   abel
 
+/-- On a pure word of length `n`, `δ (k ⊗ 1)` produces words of length less than `n`, so by
+strong induction its `(n + 1)`-st power kills the word. -/
+private theorem pow_succ_higherBarDifferential_comp_rTensor_tmul_of_tprod (k : Module.End R M)
+    (n : ℕ) (x : M) (a : Fin n → A) :
+    ((MM.higherBarDifferential ∘ₗ k.rTensor (TensorWords R A)) ^ (n + 1))
+      (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) = 0 := by
+  induction n using Nat.strong_induction_on generalizing x with
+  | _ n ih =>
+    rw [pow_succ, Module.End.mul_apply, LinearMap.comp_apply, LinearMap.rTensor_tmul,
+      higherBarDifferential_tmul_of_tprod, map_sum]
+    refine Finset.sum_eq_zero fun j hj ↦ ?_
+    have hj : j < n := Finset.mem_range.1 hj
+    rw [subword_eq_of_tprod R a (show j + 1 + (n - (j + 1)) ≤ n by omega)]
+    exact Module.End.pow_map_zero_of_le (k := n - (j + 1) + 1) (by omega)
+      (ih (n - (j + 1)) (by omega) _ fun i ↦ a ⟨j + 1 + i.1, by omega⟩)
+
 /-- **Local nilpotence.**  Followed by any map `k ⊗ 1` acting on the module input only, the higher
 part is locally nilpotent, since it strictly lowers the length of the algebra word. -/
 theorem exists_pow_higherBarDifferential_comp_rTensor_apply_eq_zero (k : Module.End R M)
     (z : M ⊗[R] TensorWords R A) :
     ∃ n, ((MM.higherBarDifferential ∘ₗ k.rTensor (TensorWords R A)) ^ n) z = 0 := by
-  set f := MM.higherBarDifferential ∘ₗ k.rTensor (TensorWords R A)
-  let P : Submodule R (M ⊗[R] TensorWords R A) :=
-    { carrier := {z | ∃ n, (f ^ n) z = 0}
-      add_mem' := by
-        rintro z z' ⟨a, ha⟩ ⟨b, hb⟩
-        refine ⟨max a b, ?_⟩
-        rw [map_add, Module.End.pow_map_zero_of_le (le_max_left _ _) ha,
-          Module.End.pow_map_zero_of_le (le_max_right _ _) hb, add_zero]
-      zero_mem' := ⟨0, map_zero _⟩
-      smul_mem' := by
-        rintro r z ⟨a, ha⟩
-        exact ⟨a, by rw [map_smul, ha, smul_zero]⟩ }
-  -- On a pure word of length `n`, `f` produces words of length less than `n`, so by strong
-  -- induction `f ^ (n + 1)` kills it.
-  have hword : ∀ (n : ℕ) (x : M) (a : Fin n → A),
-      (f ^ (n + 1)) (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) = 0 := by
-    intro n
-    induction n using Nat.strong_induction_on with
-    | _ n ih =>
-      intro x a
-      have hf : f (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
-          ∑ j ∈ Finset.range n, MM.taylor (k x ⊗ₜ[R] subword R a 0 (j + 1)) ⊗ₜ[R]
-            subword R a (j + 1) (n - (j + 1)) := by
-        simp only [f, LinearMap.comp_apply, LinearMap.rTensor_tmul,
-          higherBarDifferential_tmul_of_tprod]
-      rw [pow_succ, Module.End.mul_apply, hf, map_sum]
-      refine Finset.sum_eq_zero fun j hj ↦ ?_
-      have hj : j < n := Finset.mem_range.1 hj
-      rw [subword_eq_of_tprod R a (show j + 1 + (n - (j + 1)) ≤ n by omega)]
-      exact Module.End.pow_map_zero_of_le (k := n - (j + 1) + 1) (by omega)
-        (ih (n - (j + 1)) (by omega) (MM.taylor (k x ⊗ₜ[R] subword R a 0 (j + 1)))
-          fun i ↦ a ⟨j + 1 + i.1, by omega⟩)
+  set f : Module.End R (M ⊗[R] TensorWords R A) :=
+    MM.higherBarDifferential ∘ₗ k.rTensor (TensorWords R A)
+  -- The vectors killed by a power of `f` form the submodule `P`.
+  let P := Module.End.maxGenEigenspace f 0
+  have hmem (z) : z ∈ P ↔ ∃ n, (f ^ n) z = 0 := by
+    simp only [P, Module.End.mem_maxGenEigenspace, zero_smul, sub_zero]
   have hP : ∀ z, z ∈ P := by
     intro z
     induction z using TensorProduct.inductionOn with
@@ -308,12 +293,12 @@ theorem exists_pow_higherBarDifferential_comp_rTensor_apply_eq_zero (k : Module.
       have h : P.mkQ ∘ₗ TensorProduct.mk R M (TensorWords R A) x = 0 :=
         TensorWords.linearMap_ext R A fun n a ↦ by
           rw [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.zero_apply,
-            Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-          exact ⟨n + 1, hword n x a⟩
+            Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, hmem]
+          exact ⟨n + 1, MM.pow_succ_higherBarDifferential_comp_rTensor_tmul_of_tprod k n x a⟩
       have hw := LinearMap.congr_fun h w
       rwa [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.zero_apply,
         Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hw
-  exact hP z
+  exact (hmem z).1 (hP z)
 
 /-- The unit required by the perturbation lemma: `1 + δ (k ⊗ 1)` is invertible. -/
 theorem isUnit_one_add_higherBarDifferential_mul_rTensor (k : Module.End R M) :
@@ -328,16 +313,6 @@ private theorem coact_comp_rTensor {P : Type*} [AddCommGroup P] [Module R P] (f 
       (f.rTensor (TensorWords R A)).rTensor (TensorWords R A) ∘ₗ
         Comodule.coact (R := R) (C := TensorWords R A) (M := P ⊗[R] TensorWords R A) :=
   (Comodule.Hom.cofreeMap (C := TensorWords R A) f).map_coact_eq.symm
-
-/-- A homogeneous map `f` gives a map `f ⊗ 1` of the bar comodules of the same degree. -/
-private theorem isHomogeneous_rTensor {P : Type*} [AddCommGroup P] [Module R P]
-    {G : InternalGrading R P} {G' : InternalGrading R N} {f : P →ₗ[R] N} {r : ℤ}
-    (hf : LinearMap.IsHomogeneous f G.piece G'.piece r) :
-    LinearMap.IsHomogeneous (f.rTensor (TensorWords R A)) (barGrading AA G).piece
-      (barGrading AA G').piece r := by
-  rw [barGrading_eq_tensorProduct, barGrading_eq_tensorProduct, LinearMap.rTensor_def]
-  simpa only [add_zero] using (LinearMap.isHomogeneous_shift_piece_iff.2 hf).tensorProduct
-    (LinearMap.isHomogeneous_id (R := R) (TensorWords.grading (AA.grading.shift 1)).piece)
 
 /-! ### The bar contraction and the perturbation -/
 
@@ -394,26 +369,6 @@ theorem isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy :
   rw [barContraction_homotopy]
   exact MM.isUnit_one_add_higherBarDifferential_mul_rTensor c.homotopy
 
-/-- The inverse of an invertible comodule endomorphism commutes with the coaction. -/
-private theorem coact_comp_ringInverse {P : Type*} [AddCommGroup P] [Module R P]
-    [Comodule R (TensorWords R A) P] {U : Module.End R P} (hU : IsUnit U)
-    (h : Comodule.coact (R := R) (C := TensorWords R A) (M := P) ∘ₗ U =
-      U.rTensor (TensorWords R A) ∘ₗ Comodule.coact (R := R) (C := TensorWords R A) (M := P)) :
-    Comodule.coact (R := R) (C := TensorWords R A) (M := P) ∘ₗ Ring.inverse U =
-      (Ring.inverse U).rTensor (TensorWords R A) ∘ₗ
-        Comodule.coact (R := R) (C := TensorWords R A) (M := P) := by
-  set ρ := Comodule.coact (R := R) (C := TensorWords R A) (M := P)
-  set V := Ring.inverse U
-  have hUV : U ∘ₗ V = LinearMap.id := Ring.mul_inverse_cancel U hU
-  have hVU : V ∘ₗ U = LinearMap.id := Ring.inverse_mul_cancel U hU
-  calc ρ ∘ₗ V = (V ∘ₗ U).rTensor (TensorWords R A) ∘ₗ ρ ∘ₗ V := by
-        rw [hVU, LinearMap.rTensor_id, LinearMap.id_comp]
-    _ = V.rTensor (TensorWords R A) ∘ₗ (ρ ∘ₗ U) ∘ₗ V := by
-        rw [h, LinearMap.rTensor_comp]
-        simp only [LinearMap.comp_assoc]
-    _ = V.rTensor (TensorWords R A) ∘ₗ ρ := by
-        rw [LinearMap.comp_assoc, hUV, LinearMap.comp_id]
-
 /-- The perturbation operator `X = (1 + δ (h ⊗ 1))⁻¹ δ` commutes with the coaction, since `δ` and
 `h ⊗ 1` do. -/
 theorem coact_comp_perturbationSeries :
@@ -422,24 +377,13 @@ theorem coact_comp_perturbationSeries :
       ((MM.barContraction c hh hincl hproj).perturbationSeries MM.higherBarDifferential).rTensor
           (TensorWords R A) ∘ₗ
         Comodule.coact (R := R) (C := TensorWords R A) (M := M ⊗[R] TensorWords R A) := by
-  set ρ := Comodule.coact (R := R) (C := TensorWords R A) (M := M ⊗[R] TensorWords R A)
-  have hδ : ρ ∘ₗ MM.higherBarDifferential =
-      MM.higherBarDifferential.rTensor (TensorWords R A) ∘ₗ ρ :=
-    MM.coact_comp_higherBarDifferential
-  have hK : ρ ∘ₗ c.homotopy.rTensor (TensorWords R A) =
-      (c.homotopy.rTensor (TensorWords R A)).rTensor (TensorWords R A) ∘ₗ ρ :=
-    coact_comp_rTensor c.homotopy
-  have hU : ρ ∘ₗ (1 + MM.higherBarDifferential * c.homotopy.rTensor (TensorWords R A)) =
-      (1 + MM.higherBarDifferential * c.homotopy.rTensor (TensorWords R A)).rTensor
-        (TensorWords R A) ∘ₗ ρ := by
-    rw [Module.End.mul_eq_comp, Module.End.one_eq_id, LinearMap.comp_add, LinearMap.comp_id,
-      ← LinearMap.comp_assoc, hδ, LinearMap.comp_assoc, hK, LinearMap.rTensor_add,
-      LinearMap.rTensor_id, LinearMap.rTensor_comp, LinearMap.add_comp, LinearMap.id_comp,
-      LinearMap.comp_assoc]
-  rw [LinearSpecialContraction.perturbationSeries_def, barContraction_homotopy,
-    Module.End.mul_eq_comp, ← LinearMap.comp_assoc,
-    coact_comp_ringInverse (MM.isUnit_one_add_higherBarDifferential_mul_rTensor c.homotopy) hU,
-    LinearMap.comp_assoc, hδ, LinearMap.rTensor_comp, LinearMap.comp_assoc]
+  -- Package `δ`, and hence `1 + δ (h ⊗ 1)`, its inverse and `X`, as comodule morphisms.
+  let δ : Comodule.Hom R (TensorWords R A) (M ⊗[R] TensorWords R A) (M ⊗[R] TensorWords R A) :=
+    ⟨MM.higherBarDifferential, MM.coact_comp_higherBarDifferential.symm⟩
+  let U := Comodule.Hom.id R (TensorWords R A) (M ⊗[R] TensorWords R A) +
+    δ.comp (Comodule.Hom.cofreeMap c.homotopy)
+  rw [LinearSpecialContraction.perturbationSeries_def, barContraction_homotopy]
+  exact ((Comodule.Hom.ringInverse U).comp δ).map_coact_eq.symm
 
 /-- The perturbation operator has degree one. -/
 theorem isHomogeneous_perturbationSeries :

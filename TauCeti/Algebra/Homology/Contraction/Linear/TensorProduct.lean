@@ -62,22 +62,19 @@ include hincl in
 /-- The inclusion, of degree zero, commutes with the Koszul twists. -/
 private theorem koszulTwist_incl (x : N) :
     GM.koszulTwist 1 (c.incl x) = c.incl (GN.koszulTwist 1 x) := by
-  rw [hincl.koszulTwist_apply 1 x, mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one,
-    one_smul]
+  simpa using hincl.koszulTwist_apply 1 x
 
 include hproj in
 /-- The projection, of degree zero, commutes with the Koszul twists. -/
 private theorem koszulTwist_proj (x : M) :
     GN.koszulTwist 1 (c.proj x) = c.proj (GM.koszulTwist 1 x) := by
-  rw [hproj.koszulTwist_apply 1 x, mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one,
-    one_smul]
+  simpa using hproj.koszulTwist_apply 1 x
 
 include hh in
 /-- The homotopy, of degree `-1`, anticommutes with the Koszul twist. -/
 private theorem koszulTwist_homotopy (x : M) :
     GM.koszulTwist 1 (c.homotopy x) = -c.homotopy (GM.koszulTwist 1 x) := by
-  rw [hh.koszulTwist_apply 1 x, one_mul, Int.negOnePow_neg, Int.negOnePow_one, Units.val_neg,
-    Units.val_one, Int.cast_neg, Int.cast_one, neg_one_smul]
+  simpa using hh.koszulTwist_apply 1 x
 
 /-- **Tensoring a special contraction with a module carrying an operator.**  A special
 contraction `(i, p, h)` of `(M, d_M)` onto `(N, d_N)`, by maps of degrees `0`, `0` and `-1`,
