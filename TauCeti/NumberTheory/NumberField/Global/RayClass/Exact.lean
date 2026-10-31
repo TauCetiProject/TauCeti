@@ -399,11 +399,9 @@ theorem residueSignRayClass_injective_iff (𝔪 : Modulus K) :
 the infinite part is empty.** -/
 theorem neg_one_mem_unitsCongruenceSubgroup_iff (𝔪 : Modulus K) :
     -1 ∈ unitsCongruenceSubgroup 𝔪 ↔ (2 : 𝓞 K) ∈ 𝔪.finitePart ∧ 𝔪.infinitePart = ∅ := by
-  rw [← ker_unitsResidueSignHom, MonoidHom.mem_ker, unitsResidueSignHom_neg_one, Prod.mk_eq_one,
-    Units.ext_iff, Units.val_neg, Units.val_one, neg_eq_iff_add_eq_zero, one_add_one_eq_two,
-    ← map_ofNat (Ideal.Quotient.mk 𝔪.finitePart) 2, Ideal.Quotient.eq_zero_iff_mem, funext_iff,
-    Finset.eq_empty_iff_forall_notMem]
-  simp
+  rw [← ker_unitsResidueSignHom, MonoidHom.mem_ker, unitsResidueSignHom_neg_one]
+  simp [Units.ext_iff, neg_eq_iff_add_eq_zero, one_add_one_eq_two, funext_iff,
+    Finset.eq_empty_iff_forall_notMem, ← Ideal.Quotient.eq_zero_iff_mem, map_ofNat]
 
 /-- **Some integer unit is not congruent to one modulo `𝔪`** as soon as `2` does not lie in the
 finite part or the infinite part selects a real place: the unit `-1` is then not congruent to

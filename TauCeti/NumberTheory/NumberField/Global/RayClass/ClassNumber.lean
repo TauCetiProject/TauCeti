@@ -155,10 +155,8 @@ theorem nonempty_rayClassGroup_equiv_prod_iff (𝔪 : Modulus K) :
         ((𝓞 K ⧸ 𝔪.finitePart)ˣ × (𝔪.infinitePart → ℤˣ)) × ClassGroup (𝓞 K)) ↔
       unitsCongruenceSubgroup 𝔪 = ⊤ := by
   have : Finite (𝓞 K ⧸ 𝔪.finitePart) := Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
-  rw [← Finite.card_eq, ← card_rayClassGroup_eq_iff, Nat.card_prod, Nat.card_prod, Nat.card_fun,
-    Nat.card_eq_fintype_card (α := ℤˣ), Fintype.card_units_int,
-    Nat.card_eq_fintype_card (α := 𝔪.infinitePart), Fintype.card_coe,
-    mul_comm (Nat.card (ClassGroup (𝓞 K)))]
+  rw [← Finite.card_eq, ← card_rayClassGroup_eq_iff]
+  simp [Nat.card_fun, mul_comm]
 
 /-- **The ray class group is not the direct product of the residue units, the sign patterns and the
 class group** as soon as some integer unit is not congruent to one modulo `𝔪`, for instance when `𝔪`
