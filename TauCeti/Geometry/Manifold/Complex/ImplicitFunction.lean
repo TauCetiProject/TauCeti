@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ImplicitFunction
-public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
 # The joint holomorphic implicit function theorem on manifolds
@@ -70,22 +70,9 @@ theorem exists_jointImplicitFunction_of_eventually_mdifferentiableAt
   let g : E × F → K := fun q ↦ c (G (e.symm q.1, d.symm q.2))
   let a : E × F := (e u.1, d u.2)
   have hga : g a = c (G u) := by simp [g, a, e.left_inv hu, d.left_inv hv]
-  have hback : Tendsto (fun q : E × F ↦ (e.symm q.1, d.symm q.2)) (𝓝 a) (𝓝 u) :=
-    (e.tendsto_symm hu).prodMap_nhds (d.tendsto_symm hv)
   have hgc : ContinuousAt G u := hG.self_of_nhds.continuousAt
-  have hg : ∀ᶠ q in 𝓝 a, DifferentiableAt ℂ g q := by
-    filter_upwards [(continuous_fst.tendsto a).eventually
-      (e.open_target.mem_nhds (e.map_source hu)),
-      (continuous_snd.tendsto a).eventually (d.open_target.mem_nhds (d.map_source hv)),
-      hback.eventually hG,
-      (hgc.tendsto.comp hback).eventually (c.open_source.mem_nhds hw)] with q hqe hqd hqG hqc
-    have hq := (mdifferentiableAt_of_mem_maximalAtlas hc hqc).comp q
-      (hqG.comp q
-        (((mdifferentiableAt_symm_of_mem_maximalAtlas he hqe).comp q mdifferentiableAt_fst).prodMk
-          ((mdifferentiableAt_symm_of_mem_maximalAtlas hd hqd).comp q mdifferentiableAt_snd)))
-    apply mdifferentiableAt_iff_differentiableAt.1
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact hq
+  have hg : ∀ᶠ q in 𝓝 a, DifferentiableAt ℂ g q :=
+    eventually_differentiableAt_chart_comp_of_eventually_mdifferentiableAt he hd hc hu hv hw hG
   obtain ⟨φ, hφ, hφa, -, hφeq⟩ :=
     exists_jointImplicitFunction_of_eventually_differentiableAt hg hinv
   rw [hga] at hφ hφa hφeq
@@ -103,16 +90,10 @@ theorem exists_jointImplicitFunction_of_eventually_mdifferentiableAt
   have htarget : ∀ᶠ p : M × P in 𝓝 (u.1, G u), φ (e p.1, c p.2) ∈ d.target :=
     hout.eventually (d.open_target.mem_nhds (d.map_source hv))
   have hψ : ∀ᶠ p in 𝓝 (u.1, G u),
-      MDifferentiableAt (𝓘(ℂ, E).prod 𝓘(ℂ, K)) 𝓘(ℂ, F) ψ p := by
-    filter_upwards [hfront.eventually hφ, htarget,
-      (continuous_fst.tendsto (u.1, G u)).eventually (e.open_source.mem_nhds hu),
-      (continuous_snd.tendsto (u.1, G u)).eventually (c.open_source.mem_nhds hw)]
-      with p hp hpt hpe hpc
-    exact (mdifferentiableAt_symm_of_mem_maximalAtlas hd hpt).comp p
-      (hp.differentiableAt.mdifferentiableAt.comp p
-        ((mdifferentiableAt_prod_module_iff _).2
-          ⟨(mdifferentiableAt_of_mem_maximalAtlas he hpe).comp p mdifferentiableAt_fst,
-            (mdifferentiableAt_of_mem_maximalAtlas hc hpc).comp p mdifferentiableAt_snd⟩))
+      MDifferentiableAt (𝓘(ℂ, E).prod 𝓘(ℂ, K)) 𝓘(ℂ, F) ψ p :=
+    eventually_mdifferentiableAt_chart_symm_comp_of_eventually_differentiableAt
+      he hd hc hu hw (hφ.mono fun _ hp ↦ hp.differentiableAt)
+      (by rw [hφa]; exact d.map_source hv)
   -- Transport the solved-form equivalence before specializing it to the solution graph.
   have hcoords : Tendsto (fun q : (M × N) × P ↦ ((e q.1.1, d q.1.2), c q.2))
       (𝓝 (u, G u)) (𝓝 (a, c (G u))) :=
