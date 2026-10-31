@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.PSeries
 
 import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.Analysis.Normed.Operator.Banach
 
 /-!
 # Fourier-coefficient Sobolev spaces on the circle
@@ -37,6 +38,8 @@ product when `E` has them.
   `‖a‖² = ∑ₙ weight (2 s) n * ‖a.coeff n‖²` (`CircleSobolev.hasSum_norm_sq`).
 * `TauCeti.CircleSobolev.single n x`: the Fourier monomial `x e^{inθ}`.
 * `TauCeti.CircleSobolev.inclusion`: the continuous inclusion `H^s → H^t` for `t ≤ s`.
+* `TauCeti.CircleSobolev.restrict`: a continuous linear map `H^t → H^t'` carrying `H^s` into
+  `H^s'`, as a continuous linear map `H^s → H^s'` (by the closed graph theorem).
 * `TauCeti.CircleSobolev.toContinuousMap`: for `s > 1/2`, the continuous function on
   `AddCircle T` given by the uniformly convergent Fourier series.
 
@@ -584,6 +587,57 @@ theorem inclusion_injective (h : t ≤ s) :
 theorem norm_inclusion_le (h : t ≤ s) (a : CircleSobolev s E) : ‖inclusion h a‖ ≤ ‖a‖ := by
   simpa using norm_le_of_forall_le (a := a) (b := inclusion h a) zero_le_one
     (by simpa using weight_mul_norm_le_of_le h a)
+
+section Restrict
+
+variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s')
+  (P : CircleSobolev t E →L[ℂ] CircleSobolev t' E)
+  (hP : ∀ a : CircleSobolev s E, ∃ b : CircleSobolev s' E, inclusion h' b = P (inclusion h a))
+
+/-- A map `P` carrying `H^s` into `H^s'`, as a function `H^s → H^s'`. -/
+private def restrictFun (a : CircleSobolev s E) : CircleSobolev s' E :=
+  (hP a).choose
+
+private theorem inclusion_restrictFun (a : CircleSobolev s E) :
+    inclusion h' (restrictFun h h' P hP a) = P (inclusion h a) :=
+  (hP a).choose_spec
+
+/-- A map `P` carrying `H^s` into `H^s'`, as a linear map `H^s → H^s'`. -/
+private def restrictLinear : CircleSobolev s E →ₗ[ℂ] CircleSobolev s' E where
+  toFun := restrictFun h h' P hP
+  map_add' a b := inclusion_injective h' (by
+    simp only [map_add, inclusion_restrictFun])
+  map_smul' z a := inclusion_injective h' (by
+    simp only [map_smul, inclusion_restrictFun, RingHom.id_apply])
+
+/-- The graph of `restrictLinear` is closed: it is the set of pairs `(u, v)` with
+`v = P u` in `H^t'`. -/
+private theorem isClosed_graph_restrictLinear :
+    IsClosed ((restrictLinear h h' P hP).graph : Set (CircleSobolev s E × CircleSobolev s' E)) := by
+  have hgr : ((restrictLinear h h' P hP).graph : Set (CircleSobolev s E × CircleSobolev s' E)) =
+      {p | inclusion h' p.2 = P (inclusion h p.1)} := by
+    ext ⟨a, b⟩
+    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_ofPred_eq]
+    refine ⟨fun hb ↦ hb ▸ inclusion_restrictFun h h' P hP a, fun hb ↦ ?_⟩
+    exact inclusion_injective h' (hb.trans (inclusion_restrictFun h h' P hP a).symm)
+  rw [hgr]
+  exact isClosed_eq ((inclusion _).continuous.comp continuous_snd)
+    ((P.continuous.comp (inclusion _).continuous).comp continuous_fst)
+
+/-- **Restriction of an operator to smaller Sobolev spaces.** A continuous linear map
+`P : H^t → H^t'` carrying `H^s` into `H^s'`, for `t ≤ s` and `t' ≤ s'`, as a continuous linear map
+`H^s → H^s'`. It is continuous by the closed graph theorem. -/
+def restrict [CompleteSpace E] : CircleSobolev s E →L[ℂ] CircleSobolev s' E :=
+  ContinuousLinearMap.ofIsClosedGraph (isClosed_graph_restrictLinear h h' P hP)
+
+/-- In `H^t'`, `restrict` is `P`: the inclusion of the image of `u` is `P` applied to the inclusion
+of `u`. -/
+@[simp]
+theorem inclusion_restrict [CompleteSpace E] (a : CircleSobolev s E) :
+    inclusion h' (restrict h h' P hP a) = P (inclusion h a) :=
+  inclusion_restrictFun h h' P hP a
+
+end Restrict
 
 /-- **Rellich's theorem** on the circle: the inclusion `H^s → H^t` is a compact operator for
 `t < s` when `E` is finite-dimensional. -/

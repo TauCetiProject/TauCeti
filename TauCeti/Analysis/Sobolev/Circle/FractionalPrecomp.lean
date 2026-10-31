@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.Circle.Slobodeckij
 
-import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
 import TauCeti.MeasureTheory.Measure.QuasiMeasurePreserving
 
@@ -82,49 +81,6 @@ namespace CircleSobolev
 variable {T : ℝ} [hT : Fact (0 < T)] {s : ℝ} {φ : AddCircle T → AddCircle T} {C : ℝ≥0∞}
   {K : ℝ≥0}
 
-/-! ### The energy as a double integral -/
-
-/-- The squared `H⁰` distance between `a` and its rotation by `h` is the integral of
-`‖g (x + h) - g x‖²`, for any representative `g` of the `L²` function of `a`. -/
-private theorem enorm_rotate_sub_sq {a : CircleSobolev 0 ℂ} {g : AddCircle T → ℂ}
-    (hg : toLpₗᵢ T a =ᵐ[haarAddCircle] g) (h : AddCircle T) :
-    ‖rotate h a - a‖ₑ ^ 2 = ∫⁻ x, ‖g (x + h) - g x‖ₑ ^ 2 ∂haarAddCircle := by
-  have htr : ⇑(toLpₗᵢ T a) ∘ (· + h) =ᵐ[haarAddCircle] g ∘ (· + h) :=
-    (measurePreserving_add_right haarAddCircle h).quasiMeasurePreserving.ae_eq_comp hg
-  have hae : ⇑(toLpₗᵢ T (rotate h a - a)) =ᵐ[haarAddCircle] fun x ↦ g (x + h) - g x := by
-    rw [map_sub]
-    filter_upwards [Lp.coeFn_sub (toLpₗᵢ T (rotate h a)) (toLpₗᵢ T a), toLpₗᵢ_rotate h a, htr,
-      hg] with x h₁ h₂ h₃ h₄
-    simp only [Function.comp_apply] at h₂ h₃
-    rw [h₁, Pi.sub_apply, h₂, h₃, h₄]
-  have h2 := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero
-    ((Lp.aestronglyMeasurable _).congr hae)
-  simp only [NNReal.coe_ofNat, ENNReal.coe_ofNat, ENNReal.rpow_two] at h2
-  rw [← (toLpₗᵢ T).enorm_map, Lp.enorm_def, eLpNorm_congr_ae hae, h2]
-
-/-- The energy of order `s` of `a ∈ H⁰` is the double integral
-`∫∫ ‖g y - g x‖² / ‖y - x‖ ^ (1 + 2 s) dy dx`, for any measurable representative `g` of the `L²`
-function of `a`. -/
-private theorem slobodeckijEnergy_eq_lintegral_lintegral {a : CircleSobolev 0 ℂ}
-    {g : AddCircle T → ℂ} (hgm : Measurable g) (hg : toLpₗᵢ T a =ᵐ[haarAddCircle] g) (s : ℝ) :
-    slobodeckijEnergy T s a = ∫⁻ x, ∫⁻ y, ‖g y - g x‖ₑ ^ 2 *
-      ENNReal.ofReal (‖y - x‖ ^ (1 + 2 * s))⁻¹ ∂volume ∂haarAddCircle := by
-  calc slobodeckijEnergy T s a
-      = ∫⁻ h, ∫⁻ x, ‖g (x + h) - g x‖ₑ ^ 2 * ENNReal.ofReal (‖h‖ ^ (1 + 2 * s))⁻¹
-          ∂haarAddCircle ∂volume := by
-        rw [slobodeckijEnergy_def]
-        refine lintegral_congr fun h ↦ ?_
-        rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top, ← enorm_rotate_sub_sq hg h,
-          div_eq_mul_inv, ENNReal.ofReal_mul (sq_nonneg _), ← ofReal_norm,
-          ENNReal.ofReal_pow (norm_nonneg _)]
-    _ = ∫⁻ x, ∫⁻ h, ‖g (x + h) - g x‖ₑ ^ 2 * ENNReal.ofReal (‖h‖ ^ (1 + 2 * s))⁻¹
-          ∂volume ∂haarAddCircle :=
-        (lintegral_lintegral_swap (Measurable.aemeasurable (by fun_prop))).symm
-    _ = _ := lintegral_congr fun x ↦ by
-        have h := lintegral_add_left_eq_self (μ := volume)
-          (fun y ↦ ‖g y - g x‖ₑ ^ 2 * ENNReal.ofReal (‖y - x‖ ^ (1 + 2 * s))⁻¹) x
-        simpa only [add_sub_cancel_left] using h
-
 /-! ### Precomposition and the energy -/
 
 omit hT in
@@ -173,8 +129,8 @@ theorem slobodeckijEnergy_precomp_le (hs : 0 ≤ 1 + 2 * s) (hK : LipschitzWith 
   have hgφ : toLpₗᵢ T (precomp T hφm hC hmap a) =ᵐ[haarAddCircle] g ∘ φ :=
     (toLpₗᵢ_precomp hφm hC hmap a).trans
       ((QuasiMeasurePreserving.of_map_le_smul hφm hmap).ae_eq_comp hu.ae_eq_mk)
-  rw [slobodeckijEnergy_eq_lintegral_lintegral (hgm.comp hφm) hgφ,
-    slobodeckijEnergy_eq_lintegral_lintegral hgm hu.ae_eq_mk]
+  rw [slobodeckijEnergy_eq_lintegral_lintegral T (hgm.comp hφm) hgφ,
+    slobodeckijEnergy_eq_lintegral_lintegral T hgm hu.ae_eq_mk]
   -- The integrand of the energy of `a`, as a function on the square.
   set Ψ : AddCircle T × AddCircle T → ℝ≥0∞ := fun z ↦
     ‖g z.2 - g z.1‖ₑ ^ 2 * ENNReal.ofReal (‖z.2 - z.1‖ ^ (1 + 2 * s))⁻¹
@@ -222,57 +178,14 @@ theorem exists_inclusion_eq_precomp (hs0 : 0 < s) (hs1 : s < 1) (hK : LipschitzW
   exact ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.pow_ne_top hC) ENNReal.ofReal_ne_top)
     (ne_top_of_le_ne_top ENNReal.ofReal_ne_top (hD a))
 
-/-- Precomposition with `φ` on `H^s`, as a function. -/
-private def precompFractionalFun (hs0 : 0 < s) (hs1 : s < 1) (hK : LipschitzWith K φ)
-    (hC : C ≠ ∞) (hmap : (haarAddCircle : Measure (AddCircle T)).map φ ≤ C • haarAddCircle)
-    (a : CircleSobolev s ℂ) : CircleSobolev s ℂ :=
-  (exists_inclusion_eq_precomp hs0 hs1 hK hC hmap a).choose
-
-private theorem inclusion_precompFractionalFun (hs0 : 0 < s) (hs1 : s < 1)
-    (hK : LipschitzWith K φ) (hC : C ≠ ∞)
-    (hmap : (haarAddCircle : Measure (AddCircle T)).map φ ≤ C • haarAddCircle)
-    (a : CircleSobolev s ℂ) :
-    inclusion hs0.le (precompFractionalFun hs0 hs1 hK hC hmap a) =
-      precomp T hK.continuous.measurable hC hmap (inclusion hs0.le a) :=
-  (exists_inclusion_eq_precomp hs0 hs1 hK hC hmap a).choose_spec
-
-/-- Precomposition with `φ` on `H^s`, as a linear map. -/
-private def precompFractionalLinear (hs0 : 0 < s) (hs1 : s < 1) (hK : LipschitzWith K φ)
-    (hC : C ≠ ∞) (hmap : (haarAddCircle : Measure (AddCircle T)).map φ ≤ C • haarAddCircle) :
-    CircleSobolev s ℂ →ₗ[ℂ] CircleSobolev s ℂ where
-  toFun := precompFractionalFun hs0 hs1 hK hC hmap
-  map_add' a b := inclusion_injective hs0.le (by
-    simp only [map_add, inclusion_precompFractionalFun])
-  map_smul' z a := inclusion_injective hs0.le (by
-    simp only [map_smul, inclusion_precompFractionalFun, RingHom.id_apply])
-
-/-- The graph of precomposition on `H^s` is closed: it is the set of pairs `(u, v)` with
-`v = u ∘ φ` in `H⁰`. -/
-private theorem isClosed_graph_precompFractionalLinear (hs0 : 0 < s) (hs1 : s < 1)
-    (hK : LipschitzWith K φ) (hC : C ≠ ∞)
-    (hmap : (haarAddCircle : Measure (AddCircle T)).map φ ≤ C • haarAddCircle) :
-    IsClosed ((precompFractionalLinear hs0 hs1 hK hC hmap).graph :
-      Set (CircleSobolev s ℂ × CircleSobolev s ℂ)) := by
-  have h : ((precompFractionalLinear hs0 hs1 hK hC hmap).graph :
-      Set (CircleSobolev s ℂ × CircleSobolev s ℂ)) =
-        {p | inclusion hs0.le p.2 =
-          precomp T hK.continuous.measurable hC hmap (inclusion hs0.le p.1)} := by
-    ext ⟨a, b⟩
-    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_ofPred_eq]
-    refine ⟨fun h ↦ h ▸ inclusion_precompFractionalFun hs0 hs1 hK hC hmap a, fun h ↦ ?_⟩
-    exact inclusion_injective hs0.le
-      (h.trans (inclusion_precompFractionalFun hs0 hs1 hK hC hmap a).symm)
-  rw [h]
-  exact isClosed_eq ((inclusion _).continuous.comp continuous_snd)
-    (((precomp T _ hC hmap).continuous.comp (inclusion _).continuous).comp continuous_fst)
-
 /-- **Precomposition on `H^s`, `0 < s < 1`.** For a `K`-Lipschitz map `φ` of the circle pushing
 Haar measure forward to at most `C` times Haar measure, `C < ∞`, the continuous linear map
 `u ↦ u ∘ φ` of `H^s`. It is continuous by the closed graph theorem. -/
 def precompFractional (hs0 : 0 < s) (hs1 : s < 1) (hK : LipschitzWith K φ) (hC : C ≠ ∞)
     (hmap : (haarAddCircle : Measure (AddCircle T)).map φ ≤ C • haarAddCircle) :
     CircleSobolev s ℂ →L[ℂ] CircleSobolev s ℂ :=
-  ContinuousLinearMap.ofIsClosedGraph (isClosed_graph_precompFractionalLinear hs0 hs1 hK hC hmap)
+  restrict hs0.le hs0.le (precomp T hK.continuous.measurable hC hmap)
+    (exists_inclusion_eq_precomp hs0 hs1 hK hC hmap)
 
 /-- In `H⁰`, `precompFractional` is the precomposition `precomp`: the inclusion of `u ∘ φ` into
 `H⁰` is the precomposition of the inclusion of `u`. -/
@@ -282,7 +195,7 @@ theorem inclusion_precompFractional (hs0 : 0 < s) (hs1 : s < 1) (hK : LipschitzW
     (a : CircleSobolev s ℂ) :
     inclusion hs0.le (precompFractional hs0 hs1 hK hC hmap a) =
       precomp T hK.continuous.measurable hC hmap (inclusion hs0.le a) :=
-  inclusion_precompFractionalFun hs0 hs1 hK hC hmap a
+  inclusion_restrict _ _ _ _ a
 
 /-! ### Circle diffeomorphisms -/
 
@@ -292,18 +205,11 @@ variable {F F' : ℝ → ℝ} {c M : ℝ} (hs0 : 0 < s) (hs1 : s < 1)
   (hF : ∀ x, HasDerivAt F (F' x) x) (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x)
   (hc : 0 < c) (hcF : ∀ x, c ≤ F' x) (hMF : ∀ x, F' x ≤ M)
 
-omit hT in
-include hF hper hφ hc hcF hMF in
-/-- A map of the circle with lift `F`, `0 < c ≤ F' ≤ M`, is `M`-Lipschitz. -/
-private theorem lipschitzWith_toNNReal_of_lift : LipschitzWith M.toNNReal φ :=
-  lipschitzWith_of_lift hF hper hφ fun x ↦ by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_of_nonneg (hc.le.trans (hcF x))]
-    exact (hMF x).trans (Real.le_coe_toNNReal M)
-
 /-- Precomposition with `φ` on `H^s`, as a continuous linear map; its inclusion into `H⁰` is
 `precompEquivOfLift`. -/
 private def precompFractionalOfLift : CircleSobolev s ℂ →L[ℂ] CircleSobolev s ℂ :=
-  precompFractional hs0 hs1 (lipschitzWith_toNNReal_of_lift hF hper hφ hc hcF hMF)
+  precompFractional hs0 hs1
+    (lipschitzWith_toNNReal_of_lift hF hφ (fun x ↦ hc.le.trans (hcF x)) hMF)
     (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne')
     (map_haarAddCircle_le_of_lift hF hper hφ hc hcF)
 
@@ -330,8 +236,9 @@ private theorem surjective_precompFractionalOfLift :
   set e := homeomorphOfLift φ (strictMono_of_hasDerivAt_pos hF hpos) hFc hper hφ
   have hψφ : Function.LeftInverse e.symm φ :=
     homeomorphOfLift_symm_apply_apply (strictMono_of_hasDerivAt_pos hF hpos) hFc hper hφ
-  have hψ (y : ℝ) : e.symm y = G y := by
-    rw [show ((y : ℝ) : AddCircle T) = φ (G y) by rw [hφ, hFG y], hψφ]
+  have hψ (y : ℝ) : e.symm y = G y :=
+    calc e.symm y = e.symm (φ (G y)) := by rw [hφ, hFG y]
+      _ = G y := hψφ _
   have hM : 0 < M⁻¹ := inv_pos.2 ((hpos 0).trans_le (hMF 0))
   have hMG (y : ℝ) : M⁻¹ ≤ (F' (G y))⁻¹ := inv_anti₀ (hpos _) (hMF _)
   have hcG (y : ℝ) : (F' (G y))⁻¹ ≤ c⁻¹ := inv_anti₀ hc (hcF _)

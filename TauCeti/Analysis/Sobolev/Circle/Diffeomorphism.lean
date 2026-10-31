@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.Circle.ChainRule
 
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
 
 /-!
@@ -29,8 +28,9 @@ in `H^k`, and multiplication by the smooth function `F'` preserves `H^k`
 (`TauCeti.CircleSobolev.mulFourierSeries`), so `u ∘ φ ∈ H^(k+1)`. Precomposition is therefore a
 linear map of `H^k`. Its graph is closed: it is the inverse image, under the continuous inclusions
 `H^k × H^k → H⁰ × H⁰`, of the closed graph of the bounded precomposition operator on `H⁰`. So it
-is continuous by the closed graph theorem. The inverse map of the circle has the smooth lift `F⁻¹`
-(`Homeomorph.contDiff_symm_deriv`), which gives the inverse operator.
+is continuous by the closed graph theorem (`TauCeti.CircleSobolev.restrict`). The inverse map of
+the circle has the smooth lift `F⁻¹` (`Homeomorph.contDiff_symm_deriv`), which gives the inverse
+operator.
 
 ## Main definitions
 
@@ -146,54 +146,16 @@ private theorem exists_inclusion_eq_precompEquivOfLift (k : ℕ) (a : CircleSobo
     simp only [inclusion_inclusion] at hv ⊢
     exact hv
 
-/-- Precomposition with `φ` on `H^k`, as a function. -/
-private def precompNatFun (k : ℕ) (a : CircleSobolev k ℂ) : CircleSobolev k ℂ :=
-  (exists_inclusion_eq_precompEquivOfLift hF hper hφ hc hcF hMF hF' k a).choose
-
-private theorem inclusion_precompNatFun (k : ℕ) (a : CircleSobolev k ℂ) :
-    inclusion (Nat.cast_nonneg k) (precompNatFun hF hper hφ hc hcF hMF hF' k a) =
-      precompEquivOfLift hF hper hφ hc hcF hMF (inclusion (Nat.cast_nonneg k) a) :=
-  (exists_inclusion_eq_precompEquivOfLift hF hper hφ hc hcF hMF hF' k a).choose_spec
-
-/-- Precomposition with `φ` on `H^k`, as a linear map. -/
-private def precompNat (k : ℕ) : CircleSobolev k ℂ →ₗ[ℂ] CircleSobolev k ℂ where
-  toFun := precompNatFun hF hper hφ hc hcF hMF hF' k
-  map_add' a b := inclusion_injective (Nat.cast_nonneg k) (by
-    simp only [map_add, inclusion_precompNatFun])
-  map_smul' z a := inclusion_injective (Nat.cast_nonneg k) (by
-    simp only [map_smul, inclusion_precompNatFun, RingHom.id_apply])
-
-private theorem precompNat_apply (k : ℕ) (a : CircleSobolev k ℂ) :
-    precompNat hF hper hφ hc hcF hMF hF' k a = precompNatFun hF hper hφ hc hcF hMF hF' k a :=
-  (rfl)
-
-/-- The graph of precomposition on `H^k` is closed: it is the set of pairs `(u, v)` with
-`v = u ∘ φ` in `H⁰`. -/
-private theorem isClosed_graph_precompNat (k : ℕ) :
-    IsClosed ((precompNat hF hper hφ hc hcF hMF hF' k).graph :
-      Set (CircleSobolev k ℂ × CircleSobolev k ℂ)) := by
-  have h : ((precompNat hF hper hφ hc hcF hMF hF' k).graph :
-      Set (CircleSobolev k ℂ × CircleSobolev k ℂ)) =
-        {p | inclusion (Nat.cast_nonneg k) p.2 =
-          precompEquivOfLift hF hper hφ hc hcF hMF (inclusion (Nat.cast_nonneg k) p.1)} := by
-    ext ⟨a, b⟩
-    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_ofPred_eq, precompNat_apply]
-    refine ⟨fun h ↦ h ▸ inclusion_precompNatFun hF hper hφ hc hcF hMF hF' k a, fun h ↦ ?_⟩
-    exact inclusion_injective (Nat.cast_nonneg k)
-      (h.trans (inclusion_precompNatFun hF hper hφ hc hcF hMF hF' k a).symm)
-  rw [h]
-  exact isClosed_eq ((inclusion _).continuous.comp continuous_snd)
-    (((precompEquivOfLift hF hper hφ hc hcF hMF).continuous.comp
-      (inclusion _).continuous).comp continuous_fst)
-
 /-- Precomposition with `φ` on `H^k`, as a continuous linear map, by the closed graph theorem. -/
 private def precompNatCLM (k : ℕ) : CircleSobolev k ℂ →L[ℂ] CircleSobolev k ℂ :=
-  ContinuousLinearMap.ofIsClosedGraph (isClosed_graph_precompNat hF hper hφ hc hcF hMF hF' k)
+  restrict (Nat.cast_nonneg k) (Nat.cast_nonneg k)
+    (precompEquivOfLift hF hper hφ hc hcF hMF : CircleSobolev 0 ℂ →L[ℂ] CircleSobolev 0 ℂ)
+    (exists_inclusion_eq_precompEquivOfLift hF hper hφ hc hcF hMF hF' k)
 
 private theorem inclusion_precompNatCLM (k : ℕ) (a : CircleSobolev k ℂ) :
     inclusion (Nat.cast_nonneg k) (precompNatCLM hF hper hφ hc hcF hMF hF' k a) =
       precompEquivOfLift hF hper hφ hc hcF hMF (inclusion (Nat.cast_nonneg k) a) :=
-  inclusion_precompNatFun hF hper hφ hc hcF hMF hF' k a
+  inclusion_restrict _ _ _ _ a
 
 private theorem injective_precompNatCLM (k : ℕ) :
     Function.Injective (precompNatCLM hF hper hφ hc hcF hMF hF' k) := fun a b hab ↦

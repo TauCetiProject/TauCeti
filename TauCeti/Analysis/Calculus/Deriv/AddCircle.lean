@@ -36,7 +36,8 @@ the derivative of a lift is a Lipschitz constant of the circle map for the quoti
 * `AddCircle.exists_lift_inverse`: a lift with positive derivative has an inverse `G`, which is
   again a lift, with derivative `G' y = (F' (G y))⁻¹`.
 * `AddCircle.lipschitzWith_of_lift`: a lift with derivative bounded by `C` in norm gives a
-  `C`-Lipschitz map of the circle.
+  `C`-Lipschitz map of the circle; in particular a lift with derivative in `[0, M]` gives an
+  `M`-Lipschitz map (`AddCircle.lipschitzWith_toNNReal_of_lift`).
 -/
 
 public section
@@ -101,11 +102,10 @@ theorem exists_lift_inverse (hF : ∀ x, HasDerivAt F (F' x) x) (hper : ∀ x, F
 
 omit hT in
 /-- **A bound on the derivative of a lift is a Lipschitz constant.** If the lift `F` of `φ`,
-`F (x + T) = F x + T` and `φ x = F x`, has derivative bounded by `C` in norm, then `φ` is
-`C`-Lipschitz for the quotient metric of the circle. -/
+`φ x = F x`, has derivative bounded by `C` in norm, then `φ` is `C`-Lipschitz for the quotient
+metric of the circle. -/
 theorem lipschitzWith_of_lift {φ : AddCircle T → AddCircle T} (hF : ∀ x, HasDerivAt F (F' x) x)
-    (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) {C : NNReal}
-    (hC : ∀ x, ‖F' x‖₊ ≤ C) : LipschitzWith C φ := by
+    (hφ : ∀ x : ℝ, φ x = F x) {C : NNReal} (hC : ∀ x, ‖F' x‖₊ ≤ C) : LipschitzWith C φ := by
   have hL : LipschitzWith C F := lipschitzWith_of_nnnorm_deriv_le
     (fun x ↦ (hF x).differentiableAt) fun x ↦ (hF x).deriv ▸ hC x
   refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
@@ -117,13 +117,23 @@ theorem lipschitzWith_of_lift {φ : AddCircle T → AddCircle T} (hF : ∀ x, Ha
     rw [← zsmul_eq_mul, coe_zsmul, coe_period, smul_zero]
   have hdist : dist (x : AddCircle T) y = |x - (y + k * T)| := by
     rw [dist_eq_norm, ← coe_sub, norm_eq, sub_add_eq_sub_sub]
-  have hφy : φ y = ((F (y + k * T) : ℝ) : AddCircle T) := by
-    rw [hφ, lift_add_int_mul hper, coe_add, hk, add_zero]
+  have hy : ((y : ℝ) : AddCircle T) = ((y + k * T : ℝ) : AddCircle T) := by
+    rw [coe_add, hk, add_zero]
   calc dist (φ x) (φ y) = ‖((F x - F (y + k * T) : ℝ) : AddCircle T)‖ := by
-        rw [dist_eq_norm, hφ, hφy, coe_sub]
+        rw [dist_eq_norm, hy, hφ, hφ, coe_sub]
     _ ≤ ‖F x - F (y + k * T)‖ := QuotientAddGroup.norm_mk_le_norm
     _ ≤ C * |x - (y + k * T)| := by
         simpa only [dist_eq_norm, Real.norm_eq_abs] using hL.dist_le_mul x (y + k * T)
     _ = C * dist (x : AddCircle T) y := by rw [hdist]
+
+omit hT in
+/-- A map of the circle with lift `F`, `φ x = F x`, and derivative `0 ≤ F' ≤ M` is
+`M`-Lipschitz for the quotient metric of the circle. -/
+theorem lipschitzWith_toNNReal_of_lift {φ : AddCircle T → AddCircle T} {M : ℝ}
+    (hF : ∀ x, HasDerivAt F (F' x) x) (hφ : ∀ x : ℝ, φ x = F x) (h0F : ∀ x, 0 ≤ F' x)
+    (hMF : ∀ x, F' x ≤ M) : LipschitzWith M.toNNReal φ :=
+  lipschitzWith_of_lift hF hφ fun x ↦ by
+    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_of_nonneg (h0F x)]
+    exact (hMF x).trans (Real.le_coe_toNNReal M)
 
 end AddCircle
