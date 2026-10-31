@@ -183,13 +183,8 @@ theorem enorm_apply_le_localMass_mul (T : 𝓕) (hφU : tsupport φ ⊆ U) :
 theorem enorm_apply_le_localMass_mul_of_forall_enorm_le (T : 𝓕) (hφU : tsupport φ ⊆ U)
     (hφc : ∀ x, ‖φ x‖ₑ ≤ c) : ‖T φ‖ₑ ≤ localMass T U * c := by
   refine (enorm_apply_le_localMass_mul T hφU).trans (mul_le_mul_right ?_ _)
-  rcases eq_top_or_lt_top c with rfl | hc
-  · exact le_top
-  rw [← ENNReal.ofReal_toReal hc.ne, ← ofReal_norm]
-  refine ENNReal.ofReal_le_ofReal <| (BoundedContinuousFunction.norm_le ENNReal.toReal_nonneg).2
-    fun x => ?_
-  rw [← ENNReal.ofReal_le_iff_le_toReal hc.ne, ofReal_norm]
-  exact hφc x
+  rw [BoundedContinuousFunction.enorm_eq_iSup_enorm]
+  exact iSup_le hφc
 
 theorem enorm_apply_le_mass_mul (T : 𝓕) (φ : 𝓓^{n}(Ω, F)) :
     ‖T φ‖ₑ ≤ mass T * ‖(φ : E →ᵇ F)‖ₑ := by

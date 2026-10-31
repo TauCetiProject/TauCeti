@@ -330,10 +330,11 @@ private theorem enorm_apply_le_lintegral_add_mul (hT : HasLocallyFiniteMass T)
       (BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) y) hε.le
     let j : Fin N := ⟨⌈‖φ y‖ / ε⌉₊ - 1, by omega⟩
     have hx : (⟨y, φ.tsupport_subset hy⟩ : Ω) ∈ levelSet φ ε j :=
-      ⟨hy, show ⌈‖φ y‖ / ε⌉₊ = ⌈‖φ y‖ / ε⌉₊ - 1 + 1 by omega⟩
+      ⟨hy, (Nat.sub_add_cancel hpos).symm⟩
     refine mem_iUnion.2 ⟨some j, ⟨⟨_, hEG j hx, rfl⟩, hφW hy⟩, ?_⟩
     have h := (mem_levelSet hε hx).2
-    exact show ‖φ y‖ < ((j : ℕ) + 2) * ε by linarith
+    rw [mem_ofPred_eq]
+    linarith
   have hMW : M = localMass T W := massMeasure_preimage_coe hT hW
   calc ‖T φ‖ₑ ≤ ∑ i, localMass T (V i) * b i := enorm_apply_le_sum_localMass_mul T hVo hcover hVb
     _ = localMass T (W ∩ {y | ‖φ y‖ < ε}) * ENNReal.ofReal ε +
@@ -364,9 +365,8 @@ theorem enorm_apply_le_lintegral_massMeasure (hT : HasLocallyFiniteMass T) (φ :
   obtain ⟨W, hW, hφW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure
     φ.hasCompactSupport.isCompact Ω.isOpen φ.tsupport_subset
   set M := massMeasure T ((↑) ⁻¹' W)
-  have hM : M ≠ ⊤ := by
-    rw [show M = localMass T W from massMeasure_preimage_coe hT hW]
-    exact ne_top_of_le_ne_top ((hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT _ hWc hWΩ)
+  have hM : M ≠ ⊤ := (massMeasure_preimage_coe hT hW).trans_ne <|
+    ne_top_of_le_ne_top ((hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT _ hWc hWΩ)
       (localMass_mono subset_closure)
   -- Let `ε → 0` in the level-set estimate.
   set I := ∫⁻ x, ‖φ x‖ₑ ∂massMeasure T
