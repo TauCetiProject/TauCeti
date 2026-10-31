@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Operator.Extend
-public import Mathlib.MeasureTheory.Integral.FinMeasAdditive
 public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Function.Lp.SimpleFunc
+public import TauCeti.MeasureTheory.Integral.AddContent
 public import TauCeti.MeasureTheory.Measure.AddContent
 
 /-!
@@ -42,10 +42,9 @@ carries a left-invariant normalized positive functional exactly when the measura
 left-invariant finitely additive probability vanishing on `μ`-null sets
 (`MeasureTheory.exists_positiveLinearMap_lpTop_iff_exists_addContent`).
 
-The finite sums are Mathlib's `MeasureTheory.SimpleFunc.setToSimpleFunc`, the density of simple
-functions is `MeasureTheory.SimpleFunc.denseRange_toLpTop`, and the extension is
-`LinearMap.extendOfNorm`, as in the correspondence for bounded functions on a discrete space,
-`PositiveLinearMap.addContentEquiv`.
+The finite sums are `MeasureTheory.AddContent.integralSimple`, the density of simple functions is
+`MeasureTheory.SimpleFunc.denseRange_toLpTop`, and the extension is `LinearMap.extendOfNorm`, as in
+the correspondence for bounded functions on a discrete space, `PositiveLinearMap.addContentEquiv`.
 
 ## Main definitions
 
@@ -55,6 +54,8 @@ functions is `MeasureTheory.SimpleFunc.denseRange_toLpTop`, and the extension is
 
 ## Main results
 
+* `PositiveLinearMap.ofAddContentLpTop_toLpTop`: the functional associated to `ν` integrates simple
+  functions against `ν`.
 * `PositiveLinearMap.toAddContentLpTop_ofAddContentLpTop_apply`,
   `PositiveLinearMap.ofAddContentLpTop_toAddContentLpTop`: the two constructions are inverse, on
   measurable sets.
@@ -141,99 +142,34 @@ section ofAddContent
 /-! ### Integration against a content vanishing on null sets
 
 A real content `ν` on the measurable sets is integrated first on simple functions, by
-`∑ c, c * ν {x | g x = c}`, and then on all of `L∞` by continuity. For the finite sums we use
-Mathlib's `SimpleFunc.setToSimpleFunc` with the zero measure: for it, `FinMeasAdditive` is plain
-finite additivity on disjoint measurable sets, and every simple function is integrable. -/
+`∑ c, c * ν {x | g x = c}` (`MeasureTheory.AddContent.integralSimple`), and then on all of `L∞` by
+continuity. -/
 
 variable (ν : AddContent ℝ {s : Set α | MeasurableSet s})
 
-/-- The set function `s ↦ ν s • id`, in the form used by `SimpleFunc.setToSimpleFunc`. -/
-private def contentCLM (s : Set α) : ℝ →L[ℝ] ℝ :=
-  ν s • ContinuousLinearMap.id ℝ ℝ
-
-private theorem finMeasAdditive_contentCLM :
-    FinMeasAdditive (0 : Measure α) (contentCLM ν) := by
-  intro s t hs ht _ _ hst
-  simp [contentCLM, addContent_union isSetRing_measurableSet hs ht hst, add_smul]
-
-/-- The integral of simple functions against `ν`. -/
-private def integralSimple : SimpleFunc α ℝ →ₗ[ℝ] ℝ where
-  toFun := SimpleFunc.setToSimpleFunc (contentCLM ν)
-  map_add' _ _ := SimpleFunc.setToSimpleFunc_add _ (finMeasAdditive_contentCLM ν)
-    integrable_zero_measure integrable_zero_measure
-  map_smul' c _ := SimpleFunc.setToSimpleFunc_smul_real _ (finMeasAdditive_contentCLM ν) c
-    integrable_zero_measure
-
-private theorem integralSimple_apply (g : SimpleFunc α ℝ) :
-    integralSimple ν g = SimpleFunc.setToSimpleFunc (contentCLM ν) g :=
-  (rfl)
-
-private theorem integralSimple_piecewise (hs : MeasurableSet s) (c : ℝ) :
-    integralSimple ν (SimpleFunc.piecewise s hs
-      (SimpleFunc.const α c) (SimpleFunc.const α 0)) = c * ν s := by
-  rw [integralSimple_apply, SimpleFunc.setToSimpleFunc_indicator _ (by simp [contentCLM])]
-  simp [contentCLM, mul_comm]
-
 variable (μ) in
-/-- The integral against `ν` on `L∞(μ)`, extending `integralSimple ν` by continuity. It is
+/-- The integral against `ν` on `L∞(μ)`, extending `ν.integralSimple` by continuity. It is
 meaningful when `ν` is nonnegative and vanishes on `μ`-null sets. -/
 private def integral : Lp ℝ ∞ μ →L[ℝ] ℝ :=
-  (integralSimple ν).extendOfNorm (SimpleFunc.toLpTop μ ℝ)
+  (ν.integralSimple fun _ hs => hs).extendOfNorm (SimpleFunc.toLpTop μ ℝ)
 
-variable {ν}
-
-/-- The integral of a simple function against a content vanishing on null sets only depends on
-its almost-everywhere class. -/
-private theorem integralSimple_congr_ae (hnull : ∀ s, MeasurableSet s → μ s = 0 → ν s = 0)
-    {g g' : SimpleFunc α ℝ} (h : g =ᵐ[μ] g') : integralSimple ν g = integralSimple ν g' := by
-  refine SimpleFunc.setToSimpleFunc_congr' _ (finMeasAdditive_contentCLM ν)
-    integrable_zero_measure integrable_zero_measure fun x y hxy => ?_
-  have hmeas := (SimpleFunc.measurableSet_fiber g x).inter (SimpleFunc.measurableSet_fiber g' y)
-  -- The set where `g = x` and `g' = y` lies in the null set where `g ≠ g'`.
-  have hnull' : μ (g ⁻¹' {x} ∩ g' ⁻¹' {y}) = 0 :=
-    measure_mono_null (fun z hz => by simp_all) (ae_iff.1 h)
-  simp [contentCLM, hnull _ hmeas hnull']
-
-variable (hν : ∀ s, MeasurableSet s → 0 ≤ ν s)
-include hν
-
-private theorem integralSimple_le {g : SimpleFunc α ℝ} {c : ℝ} (h : ∀ x, g x ≤ c) :
-    integralSimple ν g ≤ c * ν univ := by
-  have := SimpleFunc.setToSimpleFunc_mono (finMeasAdditive_contentCLM ν)
-    (fun s hs _ x hx => by simpa [contentCLM] using mul_nonneg (hν s hs) hx)
-    integrable_zero_measure integrable_zero_measure
-    ((SimpleFunc.coe_le_coe (f := g) (g := SimpleFunc.const α c)).1 fun x => by
-      simpa using h x)
-  rw [SimpleFunc.setToSimpleFunc_const _ (by simp [contentCLM])] at this
-  simpa [integralSimple_apply, contentCLM, mul_comm] using this
-
-variable (hnull : ∀ s, MeasurableSet s → μ s = 0 → ν s = 0)
-include hnull
+variable {ν} (hν : ∀ s, MeasurableSet s → 0 ≤ ν s)
+  (hnull : ∀ s, MeasurableSet s → μ s = 0 → ν s = 0)
+include hν hnull
 
 private theorem norm_integralSimple_le (g : SimpleFunc α ℝ) :
-    ‖integralSimple ν g‖ ≤ ν univ * ‖SimpleFunc.toLpTop μ ℝ g‖ := by
+    ‖ν.integralSimple (fun _ hs => hs) g‖ ≤ ν univ * ‖SimpleFunc.toLpTop μ ℝ g‖ := by
   set c := ‖SimpleFunc.toLpTop μ ℝ g‖
   -- Clamping `g` to `[-c, c]` changes it only on a null set.
-  set g' := g.map fun y => max (-c) (min c y)
-  have hgg' : g =ᵐ[μ] g' := by
-    filter_upwards [SimpleFunc.coeFn_toLpTop (𝕜 := ℝ) g,
-      Lp.ae_norm_le_norm_top (SimpleFunc.toLpTop μ ℝ g)] with x hx hle
-    rw [hx, Real.norm_eq_abs] at hle
-    rw [SimpleFunc.map_apply, min_eq_right (le_of_abs_le hle : g x ≤ c),
-      max_eq_right (neg_le_of_abs_le hle : -c ≤ g x)]
-  have hc : 0 ≤ c := norm_nonneg _
-  have hg' (x : α) : |g' x| ≤ c :=
-    abs_le.2 ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
-  rw [integralSimple_congr_ae hnull hgg', Real.norm_eq_abs, abs_le, mul_comm]
-  refine ⟨?_, integralSimple_le hν fun x => le_of_abs_le (hg' x)⟩
-  have := integralSimple_le hν (g := -g') fun x => by
-    rw [SimpleFunc.coe_neg, Pi.neg_apply]
-    exact neg_le.2 (neg_le_of_abs_le (hg' x))
-  rw [map_neg] at this
-  linarith
+  have hgg' : g =ᵐ[μ] g.map fun y => max (-c) (min c y) :=
+    Lp.ae_eq_max_min_norm_top (SimpleFunc.coeFn_toLpTop (𝕜 := ℝ) g)
+  rw [AddContent.integralSimple_congr_ae _ hnull hgg', Real.norm_eq_abs, mul_comm]
+  refine AddContent.abs_integralSimple_le _ hν fun x => abs_le.2
+    ⟨le_max_left _ _, max_le ?_ (min_le_left _ _)⟩
+  linarith [norm_nonneg (SimpleFunc.toLpTop μ ℝ g)]
 
 private theorem integral_toLpTop (g : SimpleFunc α ℝ) :
-    integral μ ν (SimpleFunc.toLpTop μ ℝ g) = integralSimple ν g :=
+    integral μ ν (SimpleFunc.toLpTop μ ℝ g) = ν.integralSimple (fun _ hs => hs) g :=
   LinearMap.extendOfNorm_eq SimpleFunc.denseRange_toLpTop ⟨_, norm_integralSimple_le hν hnull⟩ g
 
 private theorem norm_integral_apply_le (f : Lp ℝ ∞ μ) : ‖integral μ ν f‖ ≤ ν univ * ‖f‖ :=
@@ -243,40 +179,23 @@ private theorem norm_integral_apply_le (f : Lp ℝ ∞ μ) : ‖integral μ ν f
 private theorem integral_indicatorConstLpTop (hs : MeasurableSet s) :
     integral μ ν (indicatorConstLpTop μ hs 1) = ν s := by
   rw [← SimpleFunc.toLpTop_piecewise_const (𝕜 := ℝ), integral_toLpTop hν hnull,
-    integralSimple_piecewise, one_mul]
+    AddContent.integralSimple_piecewise, one_mul]
 
 /-- The integral against a nonnegative content vanishing on null sets is positive. -/
 private theorem integral_nonneg {f : Lp ℝ ∞ μ} (hf : 0 ≤ f) : 0 ≤ integral μ ν f := by
-  -- For `0 ≤ f`, the class `‖f‖ - f` has norm at most `‖f‖`, so applying the bound
-  -- `|integral g| ≤ ν univ * ‖g‖` to it gives `‖f‖ * ν univ - integral f ≤ ‖f‖ * ν univ`.
-  have hbound := norm_integral_apply_le hν hnull (‖f‖ • TauCeti.linftyOne - f)
-  have hnorm : ‖‖f‖ • TauCeti.linftyOne - f‖ ≤ ‖f‖ := by
-    refine Lp.norm_le_of_ae_bound_top (norm_nonneg f) ?_
-    filter_upwards [Lp.coeFn_sub (‖f‖ • TauCeti.linftyOne) f,
-      Lp.coeFn_smul ‖f‖ (TauCeti.linftyOne (μ := μ)), TauCeti.coeFn_linftyOne,
-      (Lp.coeFn_nonneg f).2 hf, Lp.ae_norm_le_norm_top f] with x hsub hsmul h1 h0 hle
-    rw [Pi.zero_apply] at h0
-    rw [hsub, Pi.sub_apply, hsmul, Pi.smul_apply, h1, smul_eq_mul, mul_one, Real.norm_eq_abs,
-      abs_of_nonneg (by rw [Real.norm_eq_abs] at hle; linarith [le_abs_self (f x)])]
-    linarith
   have h₁ : integral μ ν TauCeti.linftyOne = ν univ := by
     simpa using integral_indicatorConstLpTop hν hnull MeasurableSet.univ
-  rw [map_sub, map_smul, h₁, smul_eq_mul, Real.norm_eq_abs] at hbound
-  have := (le_abs_self _).trans hbound
-  nlinarith [mul_le_mul_of_nonneg_left hnorm (hν univ MeasurableSet.univ)]
-
-omit hν hnull in
-/-- A positive functional on `L∞` integrates simple functions against its content. -/
-private theorem comp_toLpTop (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) :
-    M.toLinearMap ∘ₗ SimpleFunc.toLpTop μ ℝ =
-      integralSimple M.toLinearMap.toAddContentLpTop := by
-  ext g
-  induction g using SimpleFunc.induction with
-  | const c hs =>
-    rw [LinearMap.comp_apply, SimpleFunc.toLpTop_piecewise_const, integralSimple_piecewise,
-      LinearMap.toAddContentLpTop_apply _ hs, ← smul_eq_mul, ← map_smul, ← indicatorConstLpTop_smul,
-      smul_eq_mul, mul_one]
-  | add _ hf hg => simp_all
+  refine (integral μ ν).toLinearMap.apply_nonneg_of_norm_smul_sub_le (u := TauCeti.linftyOne)
+    (fun g => by simpa [h₁, ← Real.norm_eq_abs] using norm_integral_apply_le hν hnull g) ?_
+  refine Lp.norm_le_of_ae_bound_top (norm_nonneg f) ?_
+  filter_upwards [Lp.coeFn_sub (‖f‖ • TauCeti.linftyOne) f,
+    Lp.coeFn_smul ‖f‖ (TauCeti.linftyOne (μ := μ)), TauCeti.coeFn_linftyOne,
+    (Lp.coeFn_nonneg f).2 hf, Lp.ae_norm_le_norm_top f] with x hsub hsmul h1 h0 hle
+  rw [Pi.zero_apply] at h0
+  rw [Real.norm_eq_abs, abs_of_nonneg h0] at hle
+  rw [hsub, Pi.sub_apply, hsmul, Pi.smul_apply, h1, smul_eq_mul, mul_one, Real.norm_eq_abs,
+    abs_of_nonneg (by linarith)]
+  linarith
 
 omit hν hnull in
 /-- A positive functional on `L∞` is the integral against its content. -/
@@ -285,9 +204,14 @@ private theorem integral_toAddContentLpTop (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (
   let mL : Lp ℝ ∞ μ →L[ℝ] ℝ :=
     { toLinearMap := M.toLinearMap
       cont := PositiveLinearMap.continuous_of_forall_le_norm_smul M Lp.le_norm_smul_linftyOne }
+  -- On simple functions, `M` is the integral against its content.
+  have hM := AddContent.eq_integralSimple M.toLinearMap.toAddContentLpTop (fun _ hs => hs)
+    (L := M.toLinearMap ∘ₗ SimpleFunc.toLpTop μ ℝ) fun s hs c => by
+      rw [LinearMap.comp_apply, SimpleFunc.toLpTop_piecewise_const]
+      simpa [hs] using congrArg M (indicatorConstLpTop_smul μ hs c (1 : ℝ))
   have h := LinearMap.extendOfNorm_unique SimpleFunc.denseRange_toLpTop _
     (norm_integralSimple_le (fun s _ => M.toAddContentLpTop_nonneg s)
-      (fun _ _ h => M.toLinearMap.toAddContentLpTop_eq_zero h)) mL (comp_toLpTop M)
+      (fun _ _ h => M.toLinearMap.toAddContentLpTop_eq_zero h)) mL hM
   exact congrArg (· f) h
 
 omit hν hnull in
@@ -310,6 +234,13 @@ theorem ofAddContentLpTop_apply_indicatorConstLpTop (hs : MeasurableSet s) :
 theorem ofAddContentLpTop_linftyOne :
     ofAddContentLpTop ν hν hnull TauCeti.linftyOne = ν univ := by
   simpa using ofAddContentLpTop_apply_indicatorConstLpTop hν hnull MeasurableSet.univ
+
+/-- The functional associated to a content `ν` integrates the class of a simple function against
+`ν`. -/
+@[simp]
+theorem ofAddContentLpTop_toLpTop (g : SimpleFunc α ℝ) :
+    ofAddContentLpTop ν hν hnull (SimpleFunc.toLpTop μ ℝ g) = ν.integralSimple (fun _ hs => hs) g :=
+  integral_toLpTop hν hnull g
 
 /-- The content of the functional associated to `ν` agrees with `ν` on measurable sets. -/
 theorem toAddContentLpTop_ofAddContentLpTop_apply (hs : MeasurableSet s) :

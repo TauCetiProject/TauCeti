@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
-public import TauCeti.MeasureTheory.Function.Lp.SimpleFunc
+public import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
 # Left translation on `Lᵖ` of a group

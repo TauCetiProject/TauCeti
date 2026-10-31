@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Function.LpOrder
+public import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The constant one in `L∞`
 
 This file defines the constant-one element of `L∞` on an arbitrary measure space. Unlike
 `MeasureTheory.Lp.const`, the construction needs no finite-measure hypothesis because the
-essential supremum of a constant is always finite.
+essential supremum of a constant is always finite. Every real element `f` of `L∞` lies below
+`‖f‖` times the constant one (`MeasureTheory.Lp.le_norm_smul_linftyOne`).
 -/
 
 public section
@@ -36,3 +38,17 @@ theorem coeFn_linftyOne :
   MemLp.coeFn_toLp (memLp_top_const (1 : ℝ))
 
 end TauCeti
+
+namespace MeasureTheory.Lp
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+/-- In real `L∞`, every element lies below its norm times the constant one. -/
+theorem le_norm_smul_linftyOne (f : Lp ℝ ∞ μ) : f ≤ ‖f‖ • TauCeti.linftyOne := by
+  rw [← coeFn_le]
+  filter_upwards [ae_norm_le_norm_top f, coeFn_smul ‖f‖ (TauCeti.linftyOne (μ := μ)),
+    TauCeti.coeFn_linftyOne] with x hx hs h1
+  rw [hs, Pi.smul_apply, h1, smul_eq_mul, mul_one]
+  exact (le_abs_self _).trans hx
+
+end MeasureTheory.Lp
