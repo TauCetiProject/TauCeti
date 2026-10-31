@@ -9,6 +9,7 @@ public import Mathlib.Order.SuccPred.Fin
 public import Mathlib.Algebra.Order.Star.Rat
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
 /-!
 # The classical Cartan matrices are of finite type, and the simply-laced ones positive definite
@@ -61,7 +62,8 @@ again.
   those two families being simply laced, the constant-one vector is a symmetriser for them, and
   its symmetrisation is the Cartan matrix itself read over `ℚ`; so the Gram models give positive
   definiteness of the Cartan matrix with no symmetriser in the way, and the finite-type statements
-  for `A` and `D` are read off these. Types `B` and `C` have no such statement at rank `2` and
+  for `A` and `D` are read off these. `TauCeti.posDef_cartanMatrix_A` is the type-`A` statement
+  read back over `ℤ`. Types `B` and `C` have no such statement at rank `2` and
   above, where their Cartan matrices are not symmetric; the degenerate ranks `0` and `1`, at which
   they coincide with `A 0` and `A 1`, are handled in
   `TauCeti.LinearAlgebra.RootSystem.FiniteType.SimplyLaced`.
@@ -196,6 +198,10 @@ theorem posDef_map_intCast_cartanMatrix_A (n : ℕ) :
     ((CartanMatrix.A n).map (Int.cast : ℤ → ℚ)).PosDef := by
   rw [← simpleCorootsA_mul_conjTranspose]
   exact Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsA_vecMul_injective n)
+
+/-- **The Cartan matrix of type `Aₙ` is positive definite** over `ℤ`, at every rank. -/
+theorem posDef_cartanMatrix_A (n : ℕ) : (CartanMatrix.A n).PosDef :=
+  Matrix.posDef_map_intCast_iff.mp (posDef_map_intCast_cartanMatrix_A n)
 
 /-- **The Cartan matrix of type `Aₙ` is of finite type**, at every rank. The family is simply
 laced, so the constant-one vector is a symmetriser and `TauCeti.posDef_map_intCast_cartanMatrix_A`

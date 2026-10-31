@@ -16,7 +16,9 @@ public import TauCeti.RingTheory.Ideal.Quotient.Operations
 Let `R` be a Noetherian local ring and `x₁, …, x_r` a regular sequence in its maximal ideal `𝔪`.
 If `R ⧸ (x₁, …, x_r)` is a regular local ring, then so is `R` (Stacks, Lemma 10.106.7 (00NU)).
 The case `r = 1` is used in the proof of Abhyankar's lemma for a regular divisor: the local rings
-of a scheme along a regular divisor are regular.
+of a scheme along a regular divisor are regular. Globally, if `x` is a nonzerodivisor of a
+Noetherian ring `R` with `R ⧸ (x)` regular, then `R` is regular at every prime containing `x`, since
+`R_P ⧸ (x)` is a localization of `R ⧸ (x)`.
 
 ## Main results
 
@@ -28,6 +30,11 @@ of a scheme along a regular divisor are regular.
   regular local ring.
 * `TauCeti.IsRegularLocalRing.of_quotient_nonZeroDivisor`: the case of one nonzerodivisor `x` in
   the maximal ideal.
+* `TauCeti.IsRegularLocalRing.localization_of_quotient_nonZeroDivisor`: for a nonzerodivisor `x`
+  of a Noetherian ring `R` and a prime `P` of `R ⧸ (x)` at which `R ⧸ (x)` is regular, `R` is
+  regular at the preimage of `P`.
+* `TauCeti.IsRegularLocalRing.localization_of_isRegularRing_quotient`: if moreover `R ⧸ (x)` is a
+  regular ring, then `R` is regular at every prime containing `x`.
 
 ## References
 
@@ -105,6 +112,48 @@ theorem of_quotient_nonZeroDivisor {x : R} (hx : x ∈ maximalIdeal R) (hreg : x
     ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors hreg hx
   exact isRegularLocalRing_of_quotient_of_spanFinrank_le (Ideal.span {x}) hn
     (by exact_mod_cast hdim.le)
+
+omit [IsLocalRing R] in
+/-- **Regularity lifts along a nonzerodivisor, at a prime.** Let `x` be a nonzerodivisor of a
+Noetherian ring `R` and `P` a prime of `R ⧸ (x)` at which `R ⧸ (x)` is regular. Then `R` is
+regular at the preimage of `P`, a prime containing `x`. -/
+theorem localization_of_quotient_nonZeroDivisor {x : R} (hx : x ∈ nonZeroDivisors R)
+    (P : Ideal (R ⧸ span {x})) [P.IsPrime] [IsRegularLocalRing (Localization.AtPrime P)] :
+    IsRegularLocalRing (Localization.AtPrime (P.comap (Ideal.Quotient.mk (span {x})))) := by
+  set Q := P.comap (Ideal.Quotient.mk (span {x}))
+  set B := Localization.AtPrime Q
+  have hxm : algebraMap R B x ∈ maximalIdeal B := by
+    rw [IsLocalization.AtPrime.to_map_mem_maximal_iff _ Q]
+    simp [Q, Ideal.Quotient.eq_zero_iff_mem.mpr (mem_span_singleton_self x)]
+  have hxreg : algebraMap R B x ∈ nonZeroDivisors B :=
+    IsLocalization.map_nonZeroDivisors_le Q.primeCompl B ⟨x, hx, rfl⟩
+  -- `B ⧸ (x)` is the localization of `R ⧸ (x)` at `P`
+  have hspan : (span {x}).map (algebraMap R B) = span {algebraMap R B x} := by
+    rw [Ideal.map_span, Set.image_singleton]
+  have hloc : IsLocalization P.primeCompl (B ⧸ (span {x}).map (algebraMap R B)) := by
+    rw [← P.map_primeCompl_comap_of_surjective _ Ideal.Quotient.mk_surjective]
+    exact (inferInstance : IsLocalization (Algebra.algebraMapSubmonoid (R ⧸ span {x}) Q.primeCompl)
+      (B ⧸ (span {x}).map (algebraMap R B)))
+  have : IsRegularLocalRing (B ⧸ span {algebraMap R B x}) :=
+    .of_ringEquiv ((IsLocalization.algEquiv P.primeCompl _
+      (Localization.AtPrime P)).toRingEquiv.symm.trans (quotientEquivAlgOfEq R hspan).toRingEquiv)
+  exact of_quotient_nonZeroDivisor B hxm hxreg
+
+omit [IsLocalRing R] in
+/-- **Regularity lifts along a nonzerodivisor with regular quotient.** If `x` is a nonzerodivisor
+of a Noetherian ring `R` and `R ⧸ (x)` is a regular ring, then `R` is regular at every prime
+containing `x`. -/
+theorem localization_of_isRegularRing_quotient {x : R} (hx : x ∈ nonZeroDivisors R)
+    [IsRegularRing (R ⧸ span {x})] (P : Ideal R) [P.IsPrime] (hxP : x ∈ P) :
+    IsRegularLocalRing (Localization.AtPrime P) := by
+  -- `P` is the preimage of the prime `P ⧸ (x)` of `R ⧸ (x)`
+  obtain ⟨P', _, rfl⟩ : ∃ P' : Ideal (R ⧸ span {x}), P'.IsPrime ∧
+      P'.comap (Ideal.Quotient.mk _) = P :=
+    ⟨P.map (Ideal.Quotient.mk _), map_isPrime_of_surjective Ideal.Quotient.mk_surjective
+      (by rwa [mk_ker, span_singleton_le_iff_mem]), by
+        rw [comap_map_of_surjective' _ Ideal.Quotient.mk_surjective, mk_ker,
+          sup_eq_left.mpr ((span_singleton_le_iff_mem P).mpr hxP)]⟩
+  exact localization_of_quotient_nonZeroDivisor hx P'
 
 end IsRegularLocalRing
 

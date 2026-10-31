@@ -25,6 +25,10 @@ induced on Čech nerves by a refinement of covers does not depend on the chosen 
 to homotopy. This is the input for `TauCeti.CategoryTheory.cechComplexMapHomotopy`, which shows
 that the maps induced on Čech complexes by two refinement maps are homotopic.
 
+The simplices of `cechNerveTerminalFrom U`, the Čech nerve of `U ⟶ ⊤_ C` with `⦋n⦌ ↦ Uⁿ⁺¹`, are
+determined by their vertices, and every family of vertices is the family of vertices of a simplex
+(`CategoryTheory.cechNerveTerminalFrom.hom_ext` and `CategoryTheory.cechNerveTerminalFrom.lift`).
+
 For an object `T`, the morphisms from `T` into the Čech nerve of `f` form an augmented simplicial
 set over the morphisms `T ⟶ f.right` which lift along `f.hom`. It has an extra degeneracy, which
 inserts a chosen lift of the base as a new first factor; this is Mathlib's extra degeneracy of the
@@ -40,6 +44,8 @@ the singular chains subordinate to the family.
 * `CategoryTheory.Arrow.augmentedCechNerveMapsFrom`: the morphisms from `T` into the Čech nerve,
   augmented over the morphisms which lift along `f.hom`.
 * `CategoryTheory.Arrow.AugmentedCechNerveMapsFrom.extraDegeneracy`: its extra degeneracy.
+* `CategoryTheory.cechNerveTerminalFrom.lift`: the simplex of `cechNerveTerminalFrom U` with given
+  vertices.
 
 ## References
 
@@ -301,3 +307,40 @@ noncomputable def AugmentedCechNerveMapsFrom.extraDegeneracy (T : C) :
     exact sFun_comp_σ_succ i σ
 
 end CategoryTheory.Arrow
+
+namespace CategoryTheory.cechNerveTerminalFrom
+
+variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] (U : C)
+
+/-- The `i`-th vertex of a simplex of `cechNerveTerminalFrom U` is its `i`-th factor. -/
+@[simp]
+theorem map_const_π {m : ℕ} (i : Fin (⦋m⦌.len + 1)) :
+    (cechNerveTerminalFrom U).map (SimplexCategory.const ⦋0⦌ ⦋m⦌ i).op ≫
+      Pi.π (fun _ : Fin (⦋0⦌.len + 1) ↦ U) 0 = Pi.π (fun _ : Fin (⦋m⦌.len + 1) ↦ U) i := by
+  simp [cechNerveTerminalFrom]
+
+/-- Two morphisms into `(cechNerveTerminalFrom U) _⦋m⦌` agree if they have the same vertices. -/
+theorem hom_ext {Z : C} {m : ℕ} {a b : Z ⟶ (cechNerveTerminalFrom U) _⦋m⦌}
+    (h : ∀ i, a ≫ (cechNerveTerminalFrom U).map (SimplexCategory.const ⦋0⦌ ⦋m⦌ i).op =
+      b ≫ (cechNerveTerminalFrom U).map (SimplexCategory.const ⦋0⦌ ⦋m⦌ i).op) : a = b :=
+  Pi.hom_ext _ _ fun i ↦ by
+    -- The source of `Pi.π` is `(cechNerveTerminalFrom U) _⦋0⦌` only up to unfolding, which
+    -- blocks rewriting with associativity, so the composites are reassociated as terms.
+    have e := map_const_π U i
+    exact (congrArg (a ≫ ·) e.symm).trans <| (Category.assoc _ _ _).symm.trans <|
+      (congrArg (· ≫ _) (h i)).trans <| (Category.assoc _ _ _).trans (congrArg (b ≫ ·) e)
+
+/-- The morphism into `(cechNerveTerminalFrom U) _⦋m⦌` with prescribed vertices `a i`. -/
+noncomputable def lift {Z : C} {m : ℕ} (a : Fin (m + 1) → (Z ⟶ (cechNerveTerminalFrom U) _⦋0⦌)) :
+    Z ⟶ (cechNerveTerminalFrom U) _⦋m⦌ :=
+  Pi.lift fun i ↦ a i ≫ Pi.π (fun _ : Fin 1 ↦ U) 0
+
+/-- The `i`-th vertex of `lift U a` is `a i`. -/
+@[reassoc (attr := simp)]
+theorem lift_map_const {Z : C} {m : ℕ} (a : Fin (m + 1) → (Z ⟶ (cechNerveTerminalFrom U) _⦋0⦌))
+    (i : Fin (m + 1)) :
+    lift U a ≫ (cechNerveTerminalFrom U).map (SimplexCategory.const ⦋0⦌ ⦋m⦌ i).op = a i :=
+  Pi.hom_ext _ _ fun k ↦ by
+    simp [lift, cechNerveTerminalFrom, Fin.fin_one_eq_zero k]
+
+end CategoryTheory.cechNerveTerminalFrom

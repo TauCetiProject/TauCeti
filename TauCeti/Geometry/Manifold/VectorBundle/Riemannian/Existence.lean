@@ -75,7 +75,6 @@ theorem nonempty_contMDiffRiemannianMetric [∀ b, ContinuousConstSMul ℝ (E b)
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
   let φ : F →L[ℝ] F →L[ℝ] ℝ :=
     (innerSL ℝ).bilinearComp T.toContinuousLinearMap T.toContinuousLinearMap
-  have hφ (u w : F) : φ u w = inner ℝ (T u) (T w) := by simp [φ]
   -- The local metric pulled back along the preferred trivialization at `x`.
   let g (x b : B) : E b →L[ℝ] E b →L[ℝ] ℝ :=
     (ContinuousLinearMap.precomp ℝ ((trivializationAt F E x).continuousLinearMapAt ℝ b)).comp
@@ -92,21 +91,10 @@ theorem nonempty_contMDiffRiemannianMetric [∀ b, ContinuousConstSMul ℝ (E b)
       refine ⟨(trivializationAt F E x).baseSet,
         (trivializationAt F E x).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E x),
         g x, Manifold.contMDiffOn_trivializationAt_pullbackForm φ x, fun b hb ↦ ?_⟩
-      -- Over the base set, `g x b` is `φ` read through the fibre isomorphism `L : E b ≃ F`.
-      set L := (trivializationAt F E x).continuousLinearEquivAt ℝ b hb
-      have hg (v w : E b) : g x b v w = inner ℝ (T (L v)) (T (L w)) := by
-        simp [g, hφ, L, Trivialization.coe_continuousLinearEquivAt_eq _ hb]
-      refine ⟨fun v w ↦ by rw [hg, hg, real_inner_comm], fun v hv ↦ ?_, ?_⟩
-      · rw [hg, real_inner_self_eq_norm_sq]
-        have : T (L v) ≠ 0 := by simpa using hv
-        positivity
-      · -- The unit set is the image of the Euclidean unit ball under `L⁻¹ ∘ T⁻¹`.
-        refine ((NormedSpace.isVonNBounded_ball ℝ _ 1).image
-          (L.symm.toContinuousLinearMap.comp T.symm.toContinuousLinearMap)).subset ?_
-        intro v hv
-        refine ⟨T (L v), ?_, by simp⟩
-        rw [mem_ofPred_eq, hg, real_inner_self_eq_norm_sq] at hv
-        simpa using (sq_lt_one_iff₀ (norm_nonneg _)).mp hv
+      -- Over the base set, `g x b` is the Euclidean inner product read through `T ∘ e b`.
+      set L := ((trivializationAt F E x).continuousLinearEquivAt ℝ b hb).trans T
+      refine L.mem_setOfPred_symm_pos_isVonNBounded_of_inner fun v w ↦ ?_
+      simp [g, φ, L, Trivialization.coe_continuousLinearEquivAt_eq _ hb]
   exact ⟨⟨s, fun b ↦ (hs b).1, fun b ↦ (hs b).2.1, fun b ↦ (hs b).2.2, s.contMDiff⟩⟩
 
 end TauCeti

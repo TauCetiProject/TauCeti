@@ -17,6 +17,9 @@ transposing its Young diagram, and proves that conjugation is an involution
 conjugate, and proves that conjugation reverses the dominance order. The parts of the conjugate
 are the column lengths of the original partition: `Nat.Partition.sum_map_conjugate_parts` turns a
 sum over them into a sum over columns, where column `k` counts the parts larger than `k`.
+Consequently dominance can be read off column by column: `μ` dominates `ν` exactly when, for every
+`k`, the first `k` columns of the Young diagram of `μ` hold at most as many boxes as those of `ν`
+(`Nat.Partition.dominates_iff_forall_sum_map_min_le`).
 
 The reversal theorem supplies the order duality behind the row/column symmetry of Specht
 modules and permutation modules.
@@ -230,5 +233,20 @@ of `ν` exactly when `ν` dominates `μ`. -/
 theorem conjugate_dominates_conjugate_iff {n : ℕ} {μ ν : n.Partition} :
     μ.conjugate.Dominates ν.conjugate ↔ ν.Dominates μ :=
   ⟨fun h => by simpa using h.conjugate, fun h => h.conjugate⟩
+
+/-- Dominance compared column by column: `μ` dominates `ν` exactly when, for every `k`, the first
+`k` columns of the Young diagram of `μ` hold at most as many boxes as those of `ν`. These boxes
+number `∑ᵢ min k λᵢ` over the parts `λᵢ`. For the Jordan type of a nilpotent endomorphism this
+sum is the dimension of the kernel of its `k`-th power. -/
+theorem dominates_iff_forall_sum_map_min_le {n : ℕ} {μ ν : n.Partition} :
+    μ.Dominates ν ↔ ∀ k, (μ.parts.map (min k)).sum ≤ (ν.parts.map (min k)).sum := by
+  have hsort (ξ : n.Partition) (k : ℕ) :
+      ((ξ.parts.sort (· ≥ ·)).map (min k)).sum = (ξ.parts.map (min k)).sum := by
+    rw [← Multiset.sum_coe, ← Multiset.map_coe, Multiset.sort_eq]
+  rw [← conjugate_dominates_conjugate_iff, dominates_iff]
+  refine forall_congr' fun k => ?_
+  rw [conjugate_parts_sort, conjugate_parts_sort, TauCeti.sum_take_transpose_rowLens,
+    TauCeti.sum_take_transpose_rowLens, YoungDiagram.rowLens_ofPartition_eq_sort_parts,
+    YoungDiagram.rowLens_ofPartition_eq_sort_parts, hsort, hsort]
 
 end Nat.Partition

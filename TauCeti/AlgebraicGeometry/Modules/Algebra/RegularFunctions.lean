@@ -19,8 +19,10 @@ pushforward of its structure sheaf.
 The construction uses Mathlib's `Functor.mapCommMon` and `CommMon.trivial`, together with the
 canonical lax monoidal pushforward of sheaves of modules. The section calculation identifies
 its multiplication with multiplication of regular functions; it is needed to recover coordinate
-algebras from affine morphisms. For `q : T ⟶ Y` and `f : Y ⟶ X`, the identification
-`f_* q_* ≅ (q ≫ f)_*` of lax monoidal functors gives the comparison
+algebras from affine morphisms. For `f : X ⟶ Y`, module maps from the free sheaf on `I` to
+`f_* 𝒪_X` are `I`-indexed families of global functions on `X`
+(`AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv`). For `q : T ⟶ Y` and `f : Y ⟶ X`, the
+identification `f_* q_* ≅ (q ≫ f)_*` of lax monoidal functors gives the comparison
 `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso` of function algebras
 `f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T`.
 
@@ -116,6 +118,36 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv
     f.pushforwardStructureAlgebraΓRingEquiv.symm x =
       X.presheaf.map (homOfLE (by simp : ⊤ ≤ f ⁻¹ᵁ ⊤)).op
         (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤ x) :=
+  (rfl)
+
+/-- Module maps from the free sheaf on `I` to the function algebra `f_* 𝒪_X` of a morphism
+`f : X ⟶ Y` are `I`-indexed families of global functions on `X`: a module map goes to the global
+functions on `X` that are its values on the basis sections. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv (I : Type u) :
+    (SheafOfModules.free (R := Y.ringCatSheaf) I ⟶
+        (Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)) ≃ (I → Γ(X, ⊤)) :=
+  (SheafOfModules.freeHomEquiv _).trans <| Equiv.piCongrRight fun _ ↦
+    { toFun s := f.pushforwardStructureAlgebraΓRingEquiv.symm (s.val (op ⊤))
+      invFun b := PresheafOfModules.sectionsMk
+        (fun U ↦ ((Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)).presheaf.map
+          U.unop.leTop.op (f.pushforwardStructureAlgebraΓRingEquiv b))
+        (fun _ _ _ ↦ (ConcreteCategory.congr_hom
+          (((Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)).presheaf.map_comp _ _) _).symm)
+      left_inv s := PresheafOfModules.sections_ext _ _ fun U ↦
+        (congrArg _ (RingEquiv.apply_symm_apply _ _)).trans (s.property U.unop.leTop.op)
+      -- Over `⊤`, the restriction `homOfLE le_top` is the identity morphism of `⊤`.
+      right_inv b := (congrArg f.pushforwardStructureAlgebraΓRingEquiv.symm
+        (ConcreteCategory.congr_hom (((Scheme.Modules.pushforward f).obj
+          (𝟙_ X.Modules)).presheaf.map_id (op ⊤)) _)).trans (RingEquiv.symm_apply_apply _ b) }
+
+/-- The family of global functions of a module map `𝒪_Y^I ⟶ f_* 𝒪_X` consists of its values on
+the basis sections, viewed as global functions on `X`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv_apply (I : Type u)
+    (φ : SheafOfModules.free (R := Y.ringCatSheaf) I ⟶
+      (Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)) (i : I) :
+    f.freeHomPushforwardEquiv I φ i =
+      f.pushforwardStructureAlgebraΓRingEquiv.symm
+        ((SheafOfModules.freeHomEquiv _ φ i).val (op ⊤)) :=
   (rfl)
 
 /-- The structure map on sections of the function algebra is pullback of regular functions

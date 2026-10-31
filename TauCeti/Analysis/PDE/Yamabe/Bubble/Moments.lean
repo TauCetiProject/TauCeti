@@ -45,6 +45,9 @@ and the second moment of `U²`, which grow like `t⁴ log (1 / t)` as `t → 0`.
 * `TauCeti.Yamabe.integrable_norm_sub_rpow_mul_norm_fderiv_bubble_sq` and
   `TauCeti.Yamabe.integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq`: moments of the energy
   density.
+* `TauCeti.Yamabe.tendsto_integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent` and
+  `TauCeti.Yamabe.tendsto_integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq`: every integrable
+  positive-order moment tends to zero with the bubble scale.
 * `TauCeti.Yamabe.setIntegral_ball_norm_sub_rpow_mul_bubble_rpow_criticalExponent`,
   `TauCeti.Yamabe.setIntegral_ball_norm_sub_rpow_mul_norm_fderiv_bubble_sq` and
   `TauCeti.Yamabe.setIntegral_ball_norm_sub_rpow_mul_bubble_sq`, with their `abs_…_sub_mul_log_le`
@@ -67,7 +70,7 @@ noncomputable section
 
 namespace TauCeti.Yamabe
 
-open InnerProductSpace MeasureTheory Metric Module ProbabilityTheory Real Set
+open Filter InnerProductSpace MeasureTheory Metric Module ProbabilityTheory Real Set Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -136,6 +139,24 @@ theorem integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent
     beta (((finrank ℝ E : ℝ) + p) / 2) (((finrank ℝ E : ℝ) - p) / 2)) / 2) *
       (hscale + htwo_pow)
 
+/-- Every positive critical-mass moment of order less than the dimension tends to zero as the
+bubble scale tends to zero from above, for any additive Haar measure. -/
+theorem tendsto_integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent
+    (μ : Measure E) [μ.IsAddHaarMeasure] (hn : finrank ℝ E ≠ 2) {p : ℝ} (hp : 0 < p)
+    (hpn : p < finrank ℝ E) (b : E) :
+    Tendsto (fun t : ℝ ↦ ∫ x, ‖x - b‖ ^ p *
+      bubble t b x ^ criticalExponent (finrank ℝ E) ∂μ) (𝓝[>] 0) (𝓝 0) := by
+  have ht : Tendsto (fun t : ℝ ↦ t ^ p) (𝓝[>] 0) (𝓝 0) := by
+    simpa only [Real.zero_rpow hp.ne'] using
+      (Real.continuousAt_rpow_const 0 p (Or.inr hp.le)).continuousWithinAt.tendsto (s := Ioi 0)
+  have hlim := ((ht.const_mul ((2 : ℝ) ^ (finrank ℝ E - 1))).mul_const
+    (beta (((finrank ℝ E : ℝ) + p) / 2) (((finrank ℝ E : ℝ) - p) / 2))).const_mul
+      ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))
+  simp only [mul_zero, zero_mul] at hlim
+  apply hlim.congr'
+  filter_upwards [self_mem_nhdsWithin] with t ht
+  rw [integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent μ hn hp.le hpn ht b]
+
 /-- In dimension `n > 2`, the moment of order `0 ≤ p < n - 2` about the centre of the
 Dirichlet-energy density of a bubble is integrable for every additive Haar measure. -/
 theorem integrable_norm_sub_rpow_mul_norm_fderiv_bubble_sq
@@ -171,6 +192,25 @@ theorem integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq
   linear_combination ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1) * t ^ p *
     beta (((finrank ℝ E : ℝ) + p + 2) / 2) (((finrank ℝ E : ℝ) - p - 2) / 2)) *
       (2 ^ (finrank ℝ E - 3) * hC + (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 * t ^ 2 * htwo_pow)
+
+/-- Every positive Dirichlet-energy moment of order less than `n - 2` tends to zero as the
+bubble scale tends to zero from above, for any additive Haar measure. -/
+theorem tendsto_integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq
+    (μ : Measure E) [μ.IsAddHaarMeasure] {p : ℝ} (hp : 0 < p)
+    (hpn : p < (finrank ℝ E : ℝ) - 2) (b : E) :
+    Tendsto (fun t : ℝ ↦ ∫ x, ‖x - b‖ ^ p * ‖fderiv ℝ (bubble t b) x‖ ^ 2 ∂μ)
+      (𝓝[>] 0) (𝓝 0) := by
+  have ht : Tendsto (fun t : ℝ ↦ t ^ p) (𝓝[>] 0) (𝓝 0) := by
+    simpa only [Real.zero_rpow hp.ne'] using
+      (Real.continuousAt_rpow_const 0 p (Or.inr hp.le)).continuousWithinAt.tendsto (s := Ioi 0)
+  have hlim := ((ht.const_mul ((2 : ℝ) ^ (finrank ℝ E - 3))).mul_const
+    (beta (((finrank ℝ E : ℝ) + p + 2) / 2)
+      (((finrank ℝ E : ℝ) - p - 2) / 2))).const_mul
+        (((finrank ℝ E : ℝ) - 2) ^ 2 * (finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))
+  simp only [mul_zero, zero_mul] at hlim
+  apply hlim.congr'
+  filter_upwards [self_mem_nhdsWithin] with t ht
+  rw [integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq μ hp.le hpn ht b]
 
 /-! ### Truncated moments at the logarithmic endpoint
 

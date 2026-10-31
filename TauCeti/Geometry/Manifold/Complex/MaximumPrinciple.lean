@@ -28,6 +28,13 @@ no properness hypothesis on the immersion.
 `not_isImmersion_of_isManifoldStrictlyPlurisubharmonicAt` states the obstruction using
 manifold strict plurisubharmonicity and real manifold `C²` regularity.
 
+More generally, if the ambient function is only strongly `q`-pseudoconvex, so that its Levi form
+is positive on a complex subspace of codimension at most `q`, then a nonempty compact complex
+manifold immersing holomorphically into the domain has complex dimension at most `q`
+(`finrank_le_of_isStronglyPseudoconvexAt`, and `finrank_le_of_isManifoldStronglyPseudoconvexAt`
+on a complex manifold). This version needs a finite-dimensional ambient model, while the strictly
+plurisubharmonic obstruction does not.
+
 ## References
 
 * R. Hain, *Notes on the Morse theory of complex manifolds*.
@@ -36,7 +43,7 @@ manifold strict plurisubharmonicity and real manifold `C²` regularity.
 
 public section
 
-open Filter Set Topology
+open Filter Module Set Topology
 open scoped Manifold
 
 namespace TauCeti
@@ -129,6 +136,36 @@ theorem not_forall_injective_mfderiv_of_re_leviForm_pos
     EmbeddingLike.map_ne_zero_iff.mpr (((hinj x).ne_iff' (map_zero _)).mpr hu)
   exact (not_lt_of_ge (hx u)) (hpos x _ hw)
 
+/-- **Compact complex submanifolds of strongly `q`-pseudoconvex domains.** If a nonempty compact
+complex manifold `M` immerses holomorphically into a domain carrying a real function that is
+`C²` and strongly `q`-pseudoconvex in the charts at every point of the image, then
+`dim_ℂ M ≤ q`. At a maximum of the restriction, the Levi form is nonpositive on the image of the
+tangent space, which therefore meets the Levi-positive subspace of codimension at most `q` only
+in `0`. -/
+theorem finrank_le_of_isStronglyPseudoconvexAt [CompactSpace M] [Nonempty M]
+    [FiniteDimensional ℂ F] {q : ℕ}
+    (hf₂ : ∀ x, ContDiffAt ℝ 2 (f ∘ (extChartAt J (g x)).symm)
+      (extChartAt J (g x) (g x)))
+    (hpos : ∀ x, IsStronglyPseudoconvexAt q (f ∘ (extChartAt J (g x)).symm)
+      (extChartAt J (g x) (g x)))
+    (hg : ContMDiff I J 2 g) (hinj : ∀ x, Function.Injective (mfderiv I J g x)) :
+    finrank ℂ E ≤ q := by
+  obtain ⟨x, hx⟩ := exists_forall_re_leviForm_mfderiv_nonpos hf₂ hg
+  obtain ⟨P, hP, hPpos⟩ := isStronglyPseudoconvexAt_iff.mp (hpos x)
+  -- The tangent image, read in the model space `F`.
+  let T : TangentSpace I x →ₗ[ℂ] F :=
+    (tangentSpaceCastModel J (g x)).toLinearEquiv.toLinearMap ∘ₗ (mfderiv I J g x).toLinearMap
+  have hT : Function.Injective T := (tangentSpaceCastModel J (g x)).injective.comp (hinj x)
+  have hdisj : Disjoint (LinearMap.range T) P := by
+    rw [Submodule.disjoint_def]
+    rintro _ ⟨v, rfl⟩ hvP
+    by_contra hv
+    exact (hx v).not_gt (hPpos _ hvP hv)
+  have hW : finrank ℂ (LinearMap.range T) = finrank ℂ E :=
+    (LinearMap.finrank_range_of_inj hT).trans (tangentSpaceCastModel I x).toLinearEquiv.finrank_eq
+  have := Submodule.finrank_add_finrank_le_of_disjoint hdisj
+  omega
+
 variable {P : Type*} [TopologicalSpace P] [ChartedSpace F P] {u : P → ℝ} {i : M → P}
 
 /-- A nonempty compact complex manifold with a nonzero tangent direction admits no holomorphic
@@ -152,5 +189,27 @@ theorem not_isImmersion_of_isManifoldStrictlyPlurisubharmonicAt
       modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_id,
       Function.id_comp] using
       (isManifoldStrictlyPlurisubharmonicAt_iff.mp (hpos x) w hw)
+
+/-- **Compact complex submanifolds of strongly `q`-pseudoconvex manifolds.** A nonempty compact
+complex manifold admitting a holomorphic `C²` immersion into a complex manifold that carries a real
+function, `C²` and strongly `q`-pseudoconvex at every point of the image, has complex dimension at
+most `q`. No properness or exhaustion hypothesis on the function is needed. -/
+theorem finrank_le_of_isManifoldStronglyPseudoconvexAt [CompactSpace M] [Nonempty M]
+    [FiniteDimensional ℂ F] {q : ℕ}
+    (hpos : ∀ x, IsManifoldStronglyPseudoconvexAt F q u (i x))
+    (hu : ∀ x, ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u (i x))
+    (hi : Manifold.IsImmersion I 𝓘(ℂ, F) 2 i) : finrank ℂ E ≤ q := by
+  refine finrank_le_of_isStronglyPseudoconvexAt
+    (I := I) (J := 𝓘(ℂ, F)) (f := u) (g := i) ?_ ?_
+    hi.contMDiff (hi.mfderiv_injective (by norm_num))
+  · intro x
+    simpa only [extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
+      modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp] using
+      (hu x).contDiffAt_comp_chartAt_symm
+  · intro x
+    rw [isStronglyPseudoconvexAt_iff]
+    simpa only [manifoldLeviForm_def, extChartAt_coe, extChartAt_coe_symm,
+      modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_id,
+      Function.id_comp] using isManifoldStronglyPseudoconvexAt_iff.mp (hpos x)
 
 end TauCeti
