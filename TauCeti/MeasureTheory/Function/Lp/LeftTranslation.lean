@@ -69,8 +69,9 @@ def leftTranslation : G →* (Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ) where
     simp [DomMulAct.mk_one]
   map_mul' g h := by
     ext f : 1
-    change DomMulAct.mk (g * h)⁻¹ • f = DomMulAct.mk g⁻¹ • DomMulAct.mk h⁻¹ • f
-    rw [mul_inv_rev, DomMulAct.mk_mul, smul_smul]
+    simp only [mul_inv_rev, DomMulAct.mk_mul, DomMulAct.mk_inv, LinearIsometryEquiv.coe_mk,
+      DistribMulAction.toLinearEquiv_apply, LinearIsometryEquiv.coe_mul, Function.comp_apply,
+      smul_smul]
 
 variable {μ p 𝕜}
 
