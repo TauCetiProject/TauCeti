@@ -265,11 +265,10 @@ theorem conductor_dvd_iff_forall_odd {R : Type*} [CommMonoidWithZero R] {N : ℕ
   have hfac : (changeLevel (dvd_mul_right N d) χ).FactorsThrough d := by
     refine (factorsThrough_iff_ker_unitsMap (dvd_mul_left d N)).mpr fun u hu ↦ ?_
     obtain ⟨a, ha, hao, rfl⟩ := ZMod.exists_odd_unitOfCoprime_eq u
-    rw [MonoidHom.mem_ker, ZMod.unitsMap_unitOfCoprime, Units.ext_iff,
-      ZMod.coe_unitOfCoprime, Units.val_one, ← Nat.cast_one, ZMod.natCast_eq_natCast_iff] at hu
-    rw [MonoidHom.mem_ker, Units.ext_iff, MulChar.coe_toUnitHom, ZMod.coe_unitOfCoprime,
-      changeLevel_natCast_of_coprime _ _ ha, Units.val_one]
-    exact h a hao (ha.coprime_dvd_right (dvd_mul_right N d)) hu
+    have had : a ≡ 1 [MOD d] := by
+      simpa [Units.ext_iff, ← ZMod.natCast_eq_natCast_iff] using hu
+    simpa [Units.ext_iff, changeLevel_natCast_of_coprime _ _ ha] using
+      h a hao (ha.coprime_dvd_right (dvd_mul_right N d)) had
   simpa [conductor_changeLevel] using conductor_dvd_of_mem_conductorSet _ hfac
 
 /-- **Raising a product through an intermediate level.** If `a ∣ m`, `b ∣ m` and `m ∣ n`, the
