@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.KrullDimension.Module
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.Nakayama
 public import Mathlib.RingTheory.QuotSMulTop
+public import TauCeti.RingTheory.Ideal.Colon
 
 /-!
 # Associated primes, dimension, and quotients by a regular element
@@ -30,9 +31,8 @@ A separate fact describes the associated primes of a reduced ring:
 * `IsAssociatedPrime.mem_minimalPrimes_of_isReduced`: every associated prime of a reduced ring is
   a minimal prime.
 
-For an `R`-algebra `S`, the ideal `(N : x)` of a submodule `N` of an `S`-module commutes with
-restricting scalars to `R` (`Submodule.comap_colon_singleton`). Two consequences compare the
-associated primes of an `S`-module `M` over `S` and over `R`:
+For an `R`-algebra `S`, two facts compare the associated primes of an `S`-module `M` over `S`
+and over `R`, using `Submodule.comap_colon_singleton` from `TauCeti.RingTheory.Ideal.Colon`:
 
 * `IsAssociatedPrime.comap`: the contraction of an associated prime over `S` is an associated
   prime over `R`.
@@ -133,13 +133,6 @@ section Algebra
 
 variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S] [AddCommMonoid M]
   [Module R M] [Module S M] [IsScalarTower R S M]
-
-/-- For a submodule `N` of an `S`-module `M` and `x ∈ M`, the ideal `(N : x)` of `R` is the
-preimage of the ideal `(N : x)` of `S`. -/
-theorem Submodule.comap_colon_singleton (N : Submodule S M) (x : M) :
-    (N.colon {x}).comap (algebraMap R S) = (N.restrictScalars R).colon {x} := by
-  ext r
-  simp [Submodule.mem_colon_singleton]
 
 namespace IsAssociatedPrime
 

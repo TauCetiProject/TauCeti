@@ -23,6 +23,8 @@ ideal contained in the Jacobson radical is again contained in the Jacobson radic
   contraction along `g` of a prime of `T`.
 * `Ideal.primesOver_eq_singleton_under_of_primesOver_eq_singleton`: a prime alone above `p` in
   `T` contracts to a prime alone above `p` in any intermediate ring over which `T` is integral.
+* `Ideal.comap_eq_maximalIdeal_of_isIntegral`: along an integral algebra over a local ring, every
+  maximal ideal contracts to the maximal ideal.
 * `Ideal.map_le_jacobson_bot_of_isIntegral`: along an integral algebra, the extension of an ideal
   in the Jacobson radical lies in the Jacobson radical.
 
@@ -74,5 +76,12 @@ theorem map_le_jacobson_bot_of_isIntegral [Algebra S T] [Algebra.IsIntegral S T]
   refine le_sInf fun M ⟨_, hM⟩ ↦ map_le_iff_le_comap.mpr <| hI.trans <| sInf_le
     ⟨bot_le, isMaximal_comap_of_isIntegral_of_isMaximal (algebraMap S T)
       (fun x ↦ Algebra.IsIntegral.isIntegral x) M⟩
+
+/-- Along an integral algebra over a local ring, every maximal ideal contracts to the maximal
+ideal. -/
+theorem comap_eq_maximalIdeal_of_isIntegral {R : Type*} [CommRing R] [IsLocalRing R]
+    [Algebra R S] [Algebra.IsIntegral R S] (P : Ideal S) [P.IsMaximal] :
+    P.comap (algebraMap R S) = IsLocalRing.maximalIdeal R :=
+  IsLocalRing.eq_maximalIdeal (isMaximal_under_of_isIntegral_of_isMaximal (R := R) P)
 
 end Ideal

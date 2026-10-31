@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Regular.RegularSequence
-import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.Ideal.GoingUp
 
 /-!
 # Depth along a finite ring map
@@ -52,11 +52,6 @@ namespace IsLocalRing
 variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [IsLocalRing R] [Algebra R S]
   [Module.Finite R S]
 
-/-- A maximal ideal of a finite algebra over a local ring contracts to the maximal ideal. -/
-private theorem comap_eq_maximalIdeal (𝔫 : Ideal S) [𝔫.IsMaximal] :
-    𝔫.comap (algebraMap R S) = maximalIdeal R :=
-  eq_maximalIdeal (Ideal.isMaximal_under_of_isIntegral_of_isMaximal (R := R) 𝔫)
-
 variable [IsNoetherianRing R] [Small.{w} R] {N : Type w} [AddCommGroup N] [Module R N] [Module S N]
   [IsScalarTower R S N]
 
@@ -76,7 +71,7 @@ theorem depth_eq_zero_iff_exists_isMaximal :
       (by rw [Ideal.under_def, hcomap]; exact maximalIdeal.isMaximal R)
     exact ⟨𝔫, this, TauCeti.depth_localizedModule_eq_zero_iff.2 h𝔫⟩
   · have hass := (TauCeti.depth_localizedModule_eq_zero_iff (M := N)).1 h𝔫
-    exact comap_eq_maximalIdeal (R := R) 𝔫 ▸ IsAssociatedPrime.comap hass
+    exact Ideal.comap_eq_maximalIdeal_of_isIntegral (R := R) 𝔫 ▸ IsAssociatedPrime.comap hass
 
 variable [Module.Finite S N]
 
@@ -115,7 +110,7 @@ private theorem natCast_le_depth_iff (n : ℕ) :
       @ih (QuotSMulTop y N) _ _ _ _ _]
     refine forall_congr' fun 𝔫 ↦ forall_congr' fun _ ↦ ?_
     have hy : y ∈ 𝔫 := by
-      rw [← Ideal.mem_comap, comap_eq_maximalIdeal]
+      rw [← Ideal.mem_comap, Ideal.comap_eq_maximalIdeal_of_isIntegral]
       exact hx
     rw [← TauCeti.depth_localizedModule_quotSMulTop_add_one regS 𝔫 hy,
       ENat.add_le_add_iff_right ENat.one_ne_top]
