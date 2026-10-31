@@ -304,7 +304,7 @@ geometric cocharacter. -/
 private noncomputable def cocharacterMonoidHom (T : MultiplicativeTypeCommHopfAlgCat k)
     (f : cocharacterLattice T) : geometricCharacterFG T →* Multiplicative ℤ :=
   (MulEquiv.ulift : ULift.{u} (Multiplicative ℤ) ≃* Multiplicative ℤ).toMonoidHom.comp
-    (FGCommGrpCat.toMonoidHom (cocharacterFGMap T f))
+    (cocharacterFGMap T f).hom.hom
 
 private theorem cocharacterGroupSchemeMap_eq (T : MultiplicativeTypeCommHopfAlgCat k)
     (f : cocharacterLattice T) :
@@ -423,7 +423,7 @@ private theorem powEndGroupSchemeMap_injective :
   -- each is determined by its value at the generator.
   simp only [DiagonalizableGroup.powEndGroupSchemeMap_def,
     DiagonalizableGroup.characterGroupSchemeMap_def, ← diagonalizableGroupSchemeHomEquiv_apply,
-    EmbeddingLike.apply_eq_iff_eq, FGCommGrpCat.hom_ext_iff, FGCommGrpCat.toMonoidHom_ofHom] at h
+    EmbeddingLike.apply_eq_iff_eq, FGCommGrpCat.hom_ext_iff, FGCommGrpCat.hom_hom_ofHom] at h
   -- `simp` does not unfold the carrier of `multiplicativeCharacterGroup` to `ULift`, so the lifted
   -- exponents are compared by rewriting.
   rwa [ULift.up_inj, EmbeddingLike.apply_eq_iff_eq] at h

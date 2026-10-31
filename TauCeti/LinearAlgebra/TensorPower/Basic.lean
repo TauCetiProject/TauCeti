@@ -15,12 +15,18 @@ Mathlib's `TensorPower.mulEquiv` identifies `⨂[R]^k M ⊗[R] ⨂[R]^m M` with 
 file records the inverse operation: `TensorPower.splitAt` cuts a tensor power of length `n` after
 its first `k` factors, landing in `⨂[R]^k M ⊗[R] ⨂[R]^(n - k) M`, together with its value on pure
 tensors and the fact that it is injective. It also identifies the first tensor power with the
-underlying module.
+underlying module, and shows that `TensorPower.mulEquiv` is natural with respect to tensor-power
+maps.
 
 ## Main definitions
 
 * `TensorPower.splitAt`: split a tensor power at a specified position.
 * `TauCeti.TensorPower.oneEquiv`: identify the first tensor power with the underlying module.
+
+## Main results
+
+* `TauCeti.TensorPower.mulEquiv_comp_map`: `TensorPower.mulEquiv` intertwines tensor-power maps
+  with the tensor-power map of the appended family.
 
 -/
 
@@ -50,6 +56,35 @@ tensor. -/
 theorem oneEquiv_symm_apply (a : M) :
     (oneEquiv R M).symm a = PiTensorProduct.tprod R (fun _ ↦ a) :=
   PiTensorProduct.subsingletonEquiv_symm_apply' 0 a
+
+section map
+
+variable {R M} {N : Type*} [AddCommMonoid N] [Module R N]
+
+/-- Concatenating tensor powers intertwines the tensor product of two tensor-power maps with the
+tensor-power map of the appended family of factors. -/
+theorem mulEquiv_comp_map {d e : ℕ} (f : Fin d → M →ₗ[R] N) (g : Fin e → M →ₗ[R] N) :
+    (TensorPower.mulEquiv (R := R) (M := N) (n := d) (m := e)).toLinearMap ∘ₗ
+        TensorProduct.map (PiTensorProduct.map f) (PiTensorProduct.map g) =
+      PiTensorProduct.map (Fin.append f g) ∘ₗ TensorPower.mulEquiv.toLinearMap := by
+  refine TensorProduct.ext ?_
+  ext x y
+  simp only [LinearMap.compMultilinearMap_apply, LinearMap.compr₂ₛₗ_apply, TensorProduct.mk_apply,
+    LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, TensorProduct.map_tmul,
+    PiTensorProduct.map_tprod, ← TensorPower.gMul_def, TensorPower.tprod_mul_tprod]
+  congr 1 with i
+  refine Fin.addCases (fun _ ↦ ?_) (fun _ ↦ ?_) i <;> simp
+
+/-- Conjugating by `TensorPower.mulEquiv` turns the tensor product of two tensor-power
+endomorphisms into the tensor-power endomorphism of the appended family. -/
+theorem mulEquiv_conj_map {d e : ℕ} (f : Fin d → M →ₗ[R] M) (g : Fin e → M →ₗ[R] M) :
+    (TensorPower.mulEquiv (R := R) (M := M) (n := d) (m := e)).conj
+        (TensorProduct.map (PiTensorProduct.map f) (PiTensorProduct.map g)) =
+      PiTensorProduct.map (Fin.append f g) := by
+  rw [LinearEquiv.conj_apply, mulEquiv_comp_map, LinearMap.comp_assoc,
+    LinearEquiv.comp_symm, LinearMap.comp_id]
+
+end map
 
 end TauCeti.TensorPower
 
