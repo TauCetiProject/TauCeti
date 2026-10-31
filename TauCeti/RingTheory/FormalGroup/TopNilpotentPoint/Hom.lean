@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.FormalGroup.Hom
+public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Basic
 
 /-!
