@@ -101,12 +101,8 @@ theorem wordProd_eq_colorClassProd {x : Bool} {l : List B} (hl : l.Nodup)
     ext i
     simp [hmem]
   rw [colorClassProd]
-  -- The commutation proof depends on the index set, so replace the set by `l.toFinset` together
-  -- with that proof rather than rewriting under it.
-  generalize_proofs hcomm
-  generalize (Finset.univ.filter fun i ↦ c i = x) = s at hcomm hs ⊢
-  subst hs
-  exact (Finset.noncommProd_toFinset _ _ _ hl).symm
+  exact ((Finset.noncommProd_congr hs (fun _ _ ↦ rfl) _).trans
+    (Finset.noncommProd_toFinset _ _ _ hl)).symm
 
 /-- The product of the simple reflections of a colour class is an involution. -/
 @[simp]
