@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Cell.Map
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
+public import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Topology.Category.TopCat.OpenEmbedding
 
 /-!
@@ -378,17 +379,6 @@ theorem isClosedEmbedding_morseCellComparison [T2Space M] [Finite ι] (hfc : Con
 
 end Attachment
 
-/-- The closed ball of radius `√ε` lies in the closed ball of radius `√(2ε)`: the cells of a chart
-whose target contains the latter, as in `TauCeti.exists_sublevel_union_cells_deformation`, fit in
-its target. -/
-theorem closedBall_sqrt_subset_closedBall_sqrt_two_mul {X : Type*} [PseudoMetricSpace X] (x : X)
-    (ε : ℝ) : closedBall x √ε ⊆ closedBall x √(2 * ε) := by
-  refine closedBall_subset_closedBall ?_
-  rcases le_total 0 ε with h | h
-  · exact Real.sqrt_le_sqrt (by linarith)
-  · rw [Real.sqrt_eq_zero_of_nonpos h]
-    positivity
-
 section Deformation
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -411,17 +401,20 @@ theorem exists_morseCellAttachment_deformation [Finite ι] (hfs : ContMDiff I �
     (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (ψ i).source) :
     ∃ g : C({x | f x ≤ c + ε}, morseCellAttachment (fun i ↦ (ψ i).toOpenPartialHomeomorph) k hk
-        hε.le (fun i ↦ (hball i).trans' (closedBall_sqrt_subset_closedBall_sqrt_two_mul _ _)) hf),
+        hε.le
+        (fun i ↦ (hball i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε))) hf),
       LeftInverse g (morseCellComparison (fun i ↦ (ψ i).toOpenPartialHomeomorph) k hk hε.le
-        (fun i ↦ (hball i).trans' (closedBall_sqrt_subset_closedBall_sqrt_two_mul _ _)) hf) ∧
+        (fun i ↦ (hball i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
+        hf) ∧
       (ContinuousMap.id _).HomotopicRel
         ((morseCellComparison (fun i ↦ (ψ i).toOpenPartialHomeomorph) k hk hε.le
-          (fun i ↦ (hball i).trans' (closedBall_sqrt_subset_closedBall_sqrt_two_mul _ _))
+          (fun i ↦ (hball i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
           hf).hom.comp g)
         (range (morseCellComparison (fun i ↦ (ψ i).toOpenPartialHomeomorph) k hk hε.le
-          (fun i ↦ (hball i).trans' (closedBall_sqrt_subset_closedBall_sqrt_two_mul _ _)) hf)) := by
+          (fun i ↦ (hball i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
+          hf)) := by
   have hball' (i : ι) : closedBall 0 √ε ⊆ (ψ i).target :=
-    (hball i).trans' (closedBall_sqrt_subset_closedBall_sqrt_two_mul _ _)
+    (hball i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε))
   set φ := fun i ↦ (ψ i).toOpenPartialHomeomorph
   set Φ := morseCellComparison φ k hk hε.le hball' hf
   obtain ⟨r, hr, ⟨G⟩⟩ :=
