@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Order.Filter.Cofinite
+public import TauCeti.Order.Filter.Cofinite.Basic
 public import TauCeti.RingTheory.NovikovSeries.ExpLog
 public import TauCeti.RingTheory.NovikovSeries.InfiniteProduct
 
