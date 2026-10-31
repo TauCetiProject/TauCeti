@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Basic
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Normed.Field.Lipschitz
 import TauCeti.Analysis.Sobolev.Leibniz
-import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
+import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
