@@ -35,6 +35,8 @@ rotated braid words.
   permutation formed by `T ++ V` on the entries of `V`, and on the last entry of `T`.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
 * `List.ofFn_comp_finRotate_pow`: precomposing with a power of `finRotate` rotates `List.ofFn`.
+* `List.apply_rotate_of_append_singleton`: a function of lists that is unchanged by moving the
+  first entry to the end is invariant under every rotation.
 -/
 
 public section
@@ -167,5 +169,19 @@ theorem ofFn_comp_finRotate_pow {α : Type*} {n : ℕ} (f : Fin n → α) (k : �
     simp only [List.getElem_ofFn, Function.comp_apply, getElem_rotate, length_ofFn]
     congr 1
     exact Fin.ext (Fin.coe_finRotate_pow k ⟨i, hi⟩)
+
+/-- A function of lists that does not change when the first entry is moved to the end is invariant
+under every rotation. -/
+theorem apply_rotate_of_append_singleton {α β : Type*} (f : List α → β)
+    (hf : ∀ x l, f (l ++ [x]) = f (x :: l)) (l : List α) (k : ℕ) : f (l.rotate k) = f l := by
+  induction k with
+  | zero => rw [rotate_zero]
+  | succ k ih =>
+    rw [← rotate_rotate]
+    rcases h : l.rotate k with _ | ⟨y, u⟩
+    · rw [h] at ih
+      rw [rotate_nil, ih]
+    · rw [h] at ih
+      rw [rotate_cons_succ, rotate_zero, hf, ih]
 
 end List

@@ -8,6 +8,8 @@ module
 public import TauCeti.KnotTheory.BraidWord.SeifertMatrix.Basic
 public import TauCeti.KnotTheory.SeifertMatrix.Conway
 
+import TauCeti.Data.List.Rotate
+
 /-!
 # The Conway skein relation for the Seifert determinant of a closed braid
 
@@ -81,64 +83,17 @@ theorem seifertConwayDeterminant_seifertMatrix_append_singleton (x : Fin (n - 1)
 @[simp]
 theorem seifertConwayDeterminant_seifertMatrix_rotate (w : BraidWord n) (k : ℕ) :
     (seifertMatrix (n := n) (w.rotate k)).seifertConwayDeterminant =
-      w.seifertMatrix.seifertConwayDeterminant := by
-  induction k with
-  | zero => rw [List.rotate_zero]
-  | succ k ih =>
-    rw [← List.rotate_rotate]
-    rcases h : w.rotate k with _ | ⟨y, u⟩
-    · rw [h] at ih
-      rw [List.rotate_nil, ih]
-    · rw [h] at ih
-      rw [List.rotate_cons_succ, List.rotate_zero,
-        seifertConwayDeterminant_seifertMatrix_append_singleton, ih]
+      w.seifertMatrix.seifertConwayDeterminant :=
+  List.apply_rotate_of_append_singleton
+    (fun w : BraidWord n ↦ w.seifertMatrix.seifertConwayDeterminant)
+    seifertConwayDeterminant_seifertMatrix_append_singleton w k
 
 /-! ### Appending a letter -/
 
 section Append
 
-variable (v : BraidWord n)
-
-private theorem levelAt_append_singleton_of_lt (y : Fin (n - 1) × ℤˣ) {k : ℕ}
-    (hk : k < v.length) : (v ++ [y]).levelAt k = v.levelAt k := by
-  simp only [levelAt_append_singleton, hk.ne, ↓reduceIte]
-
-private theorem signAt_append_singleton_of_lt (y : Fin (n - 1) × ℤˣ) {k : ℕ}
-    (hk : k < v.length) : (v ++ [y]).signAt k = v.signAt k := by
-  simp only [signAt_append_singleton, hk.ne, ↓reduceIte]
-
-private theorem levelAt_append_singleton_length (y : Fin (n - 1) × ℤˣ) :
-    (v ++ [y]).levelAt v.length = some (y.1 : ℕ) := by
-  simp
-
-/-- The loops of `v ++ [(i, ε)]` do not depend on the sign `ε` of the appended letter. -/
-private theorem mem_seifertLoops_append_singleton_iff (i : Fin (n - 1)) (ε ε' : ℤˣ)
-    (c : ℕ × ℕ) : c ∈ (v ++ [(i, ε)]).seifertLoops ↔ c ∈ (v ++ [(i, ε')]).seifertLoops := by
-  simp only [mem_seifertLoops, isSeifertLoop_iff, levelAt_append_singleton, List.length_append,
-    List.length_singleton]
-
-/-- A loop of `v ++ [y]` not running through the last letter is a loop of `v`. -/
-private theorem isSeifertLoop_append_singleton_iff (y : Fin (n - 1) × ℤˣ) {c : ℕ × ℕ}
-    (hc : c.2 < v.length) : (v ++ [y]).IsSeifertLoop c ↔ v.IsSeifertLoop c := by
-  simp only [isSeifertLoop_iff, List.length_append, List.length_singleton]
-  constructor
-  · rintro ⟨h12, -, hl, hb⟩
-    rw [levelAt_append_singleton_of_lt v y hc,
-      levelAt_append_singleton_of_lt v y (h12.trans hc)] at hl
-    refine ⟨h12, hc, hl, fun k hk hk' ↦ ?_⟩
-    have := hb k hk hk'
-    rwa [levelAt_append_singleton_of_lt v y (hk.trans hc),
-      levelAt_append_singleton_of_lt v y (h12.trans hc)] at this
-  · rintro ⟨h12, -, hl, hb⟩
-    refine ⟨h12, by omega, ?_, fun k hk hk' ↦ ?_⟩
-    · rwa [levelAt_append_singleton_of_lt v y hc,
-        levelAt_append_singleton_of_lt v y (h12.trans hc)]
-    · rw [levelAt_append_singleton_of_lt v y (hk.trans hc),
-        levelAt_append_singleton_of_lt v y (h12.trans hc)]
-      exact hb k hk hk'
-
-variable {v} {i : Fin (n - 1)} {t : ℕ} (ht : t < v.length) (htl : v.levelAt t = some (i : ℕ))
-  (htg : ∀ k, t < k → v.levelAt k ≠ some (i : ℕ))
+variable {v : BraidWord n} {i : Fin (n - 1)} {t : ℕ} (ht : t < v.length)
+  (htl : v.levelAt t = some (i : ℕ)) (htg : ∀ k, t < k → v.levelAt k ≠ some (i : ℕ))
 include ht htl htg
 
 /-- The last letter of level `i` in `v` and an appended letter of level `i` span a loop. -/
@@ -266,20 +221,6 @@ private theorem seifertConwayDeterminant_seifertMatrix_append_skein :
 
 end Append
 
-/-- The last position of a letter of level `i` in a word that has one. -/
-private theorem exists_last_levelAt (v : BraidWord n) {i : Fin (n - 1)}
-    (h : ∃ x ∈ v, x.1 = i) :
-    ∃ t < v.length, v.levelAt t = some (i : ℕ) ∧ ∀ k, t < k → v.levelAt k ≠ some (i : ℕ) := by
-  obtain ⟨x, hx, rfl⟩ := h
-  obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem hx
-  have hP : v.levelAt k = some (v[k].1 : ℕ) := levelAt_of_lt v hk
-  let t := Nat.findGreatest (fun j ↦ v.levelAt j = some (v[k].1 : ℕ)) v.length
-  have htl : v.levelAt t = some (v[k].1 : ℕ) :=
-    Nat.findGreatest_spec (P := fun j ↦ v.levelAt j = some (v[k].1 : ℕ)) hk.le hP
-  refine ⟨t, (levelAt_ne_none_iff v).1 (by simp [htl]), htl, fun j hj hjl ↦ ?_⟩
-  have hjlen : j < v.length := (levelAt_ne_none_iff v).1 (by simp [hjl])
-  exact Nat.findGreatest_is_greatest hj hjlen.le hjl
-
 /-! ### The skein relation -/
 
 /-- **The Conway skein relation for the Seifert determinant of a closed braid.** If the level `i`
@@ -294,9 +235,9 @@ theorem seifertConwayDeterminant_seifertMatrix_skein (u v : BraidWord n) (i : Fi
   have hrot (ε : ℤˣ) : (u ++ (i, ε) :: v).rotate (u ++ [(i, ε)]).length = v ++ u ++ [(i, ε)] := by
     rw [show u ++ (i, ε) :: v = (u ++ [(i, ε)]) ++ v by simp, List.rotate_append_length_eq,
       List.append_assoc]
-  have h' : ∃ x ∈ v ++ u, x.1 = i := by
+  have h' : ∃ x ∈ v ++ u, (x.1 : ℕ) = i := by
     obtain ⟨x, hx, hxi⟩ := h
-    exact ⟨x, List.mem_append.2 ((List.mem_append.1 hx).symm), hxi⟩
+    exact ⟨x, List.mem_append.2 ((List.mem_append.1 hx).symm), congrArg Fin.val hxi⟩
   obtain ⟨t, ht, htl, htg⟩ := exists_last_levelAt (v ++ u) h'
   rw [← seifertConwayDeterminant_seifertMatrix_rotate (u ++ (i, 1) :: v), hrot,
     ← seifertConwayDeterminant_seifertMatrix_rotate (u ++ (i, -1) :: v), hrot,
