@@ -19,6 +19,8 @@ import Mathlib.RingTheory.Finiteness.Prod
 import Mathlib.RingTheory.Finiteness.Small
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.Rank
+import Mathlib.RingTheory.RingHom.Etale
+import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.RingTheory.TensorProduct.Pi
 import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.Tactic.LinearCombination
@@ -61,6 +63,7 @@ there only through sections of faithfully flat covers and roots of separable pol
 * `TauCeti.isFiniteEtaleSplit_iff_of_full_of_essSurj`: the condition is invariant under a ring
   map along which base change `CommAlgCat.FiniteEtale.baseChange` is full and essentially
   surjective (e.g. an equivalence of categories).
+* `RingEquiv.isFiniteEtaleSplit`: the condition is invariant under ring isomorphisms.
 
 ## Implementation notes
 
@@ -446,3 +449,27 @@ theorem isFiniteEtaleSplit_iff_of_full_of_essSurj
 end BaseChange
 
 end TauCeti
+
+namespace RingEquiv
+
+/-- Having no nonsplit finite étale covers is invariant under ring isomorphisms: a faithfully flat
+finite étale `R`-algebra is faithfully flat and finite étale over `A` through `e`, and its section
+over `A` composed with `e` is a section over `R`. -/
+theorem isFiniteEtaleSplit {A R : Type*} [CommRing A] [CommRing R]
+    [TauCeti.IsFiniteEtaleSplit A] (e : A ≃+* R) : TauCeti.IsFiniteEtaleSplit R := by
+  refine TauCeti.isFiniteEtaleSplit_iff_exists_section.mpr fun T _ _ _ _ _ ↦ ?_
+  let : Algebra A R := e.toRingHom.toAlgebra
+  let : Algebra A T := ((algebraMap R T).comp e.toRingHom).toAlgebra
+  have : IsScalarTower A R T := .of_algebraMap_eq fun _ ↦ rfl
+  have : Algebra.Etale A R := RingHom.Etale.of_bijective e.bijective
+  have : Module.Finite A R := RingHom.Finite.of_surjective _ e.surjective
+  have : Module.FaithfullyFlat A R := RingHom.FaithfullyFlat.of_bijective e.bijective
+  have : Algebra.Etale A T := .comp A R T
+  have : Module.Finite A T := .trans R T
+  have : Module.FaithfullyFlat A T := .trans A R T
+  obtain ⟨σ⟩ := TauCeti.IsFiniteEtaleSplit.nonempty_algHom (R := A) A T
+  exact ⟨{ e.toRingHom.comp σ.toRingHom with
+    commutes' r := by
+      simpa [RingHom.algebraMap_toAlgebra] using congr_arg e (σ.commutes (e.symm r)) }⟩
+
+end RingEquiv
