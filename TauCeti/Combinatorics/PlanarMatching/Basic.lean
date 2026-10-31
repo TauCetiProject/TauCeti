@@ -113,8 +113,8 @@ theorem coe_rotate_symm_apply (x : PlanarMatching k) :
     ((rotate k).symm x : PerfectMatching (Fin k)) =
       PerfectMatching.congr (finRotate k).symm x := by
   apply (PerfectMatching.congr (finRotate k)).injective
-  rw [← coe_rotate_apply, Equiv.apply_symm_apply, PerfectMatching.congr_trans,
-    Equiv.symm_trans_self, PerfectMatching.congr_refl]
+  rw [← coe_rotate_apply, Equiv.apply_symm_apply]
+  simp
 
 /-- Rotation moves the arc `{a, x a}` to `{finRotate k a, finRotate k (x a)}`. -/
 theorem rotate_apply_val_apply (x : PlanarMatching k) (a : Fin k) :
@@ -128,9 +128,7 @@ theorem coe_rotate_pow_apply (j : ℕ) (x : PlanarMatching k) :
       PerfectMatching.congr (finRotate k ^ j : Perm (Fin k)) x := by
   induction j with
   | zero => exact (PerfectMatching.congr_refl _).symm
-  | succ j ih =>
-    rw [pow_succ', Perm.mul_apply, coe_rotate_apply, ih, PerfectMatching.congr_trans, pow_succ',
-      Perm.mul_def]
+  | succ j ih => simp [pow_succ', ih, Perm.mul_def]
 
 /-- Rotating `k` times around a circle of `k` boundary points is the identity. -/
 @[simp]
@@ -187,9 +185,7 @@ theorem reflect_mul_rotate_mul_reflect (k : ℕ) :
     have := i.neZero
     simp
   refine Equiv.ext fun x => Subtype.ext ?_
-  rw [Perm.inv_def, coe_rotate_symm_apply, ← hrev, Perm.mul_apply, Perm.mul_apply,
-    coe_reflect_apply, coe_rotate_apply, coe_reflect_apply, PerfectMatching.congr_trans,
-    PerfectMatching.congr_trans]
+  simp [Perm.inv_def, Equiv.trans_assoc, hrev]
 
 end PlanarMatching
 
