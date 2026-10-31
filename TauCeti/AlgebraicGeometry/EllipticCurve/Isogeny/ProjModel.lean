@@ -83,48 +83,31 @@ open WeierstrassCurve
 variable {K : Type u} [Field K] {W₁ W₂ W₃ : WeierstrassCurve K}
   [W₁.IsElliptic] [W₂.IsElliptic] [W₃.IsElliptic]
 
-/-- The identification of function fields `projModelFunctionFieldEquiv`, as an equivalence of
-`K`-algebras for the algebra structure defined by the structure morphism. This is the structure
-for which pullbacks of rational functions are `K`-algebra maps; `projModelFunctionFieldAlgEquiv`
-uses the transported structure instead. -/
-private noncomputable def projModelFunctionFieldBaseAlgEquiv (W : WeierstrassCurve K) :
-    W.projModel.functionField ≃ₐ[K] W.toAffine.FunctionField :=
-  AlgEquiv.ofRingEquiv (f := W.projModelFunctionFieldEquiv) fun c ↦
-    (projModelFunctionFieldEquiv_algebraMap W c).trans (by rw [RingEquiv.refl_apply])
-
-private theorem projModelFunctionFieldBaseAlgEquiv_apply (W : WeierstrassCurve K)
-    (z : W.projModel.functionField) :
-    projModelFunctionFieldBaseAlgEquiv W z = W.projModelFunctionFieldEquiv z := by
-  rw [projModelFunctionFieldBaseAlgEquiv, AlgEquiv.ofRingEquiv_apply]
-
-private theorem projModelFunctionFieldBaseAlgEquiv_symm_apply (W : WeierstrassCurve K)
-    (z : W.toAffine.FunctionField) :
-    (projModelFunctionFieldBaseAlgEquiv W).symm z = W.projModelFunctionFieldEquiv.symm z := by
-  rw [projModelFunctionFieldBaseAlgEquiv, AlgEquiv.ofRingEquiv_symm_apply]
+omit [W₁.IsElliptic] [W₂.IsElliptic] in
+/-- Transport of `K`-embeddings of function fields from the projective models to the affine
+equations, along `projModelFunctionFieldBaseAlgEquiv`. -/
+private noncomputable abbrev pullbackEquiv :
+    (W₂.projModel.functionField →ₐ[K] W₁.projModel.functionField) ≃
+      (W₂.toAffine.FunctionField →ₐ[K] W₁.toAffine.FunctionField) :=
+  AlgEquiv.arrowCongr W₂.projModelFunctionFieldBaseAlgEquiv W₁.projModelFunctionFieldBaseAlgEquiv
 
 /-- The pullback of rational functions along a morphism of projective models, read on the
 function fields of the affine equations. -/
 private noncomputable def affinePullback (f : W₁.projModelCurve ⟶ W₂.projModelCurve) :
     W₂.toAffine.FunctionField →ₐ[K] W₁.toAffine.FunctionField :=
-  ((projModelFunctionFieldBaseAlgEquiv W₁).toAlgHom.comp (f.hom.functionFieldAlgHom K)).comp
-    (projModelFunctionFieldBaseAlgEquiv W₂).symm.toAlgHom
+  pullbackEquiv (f.hom.functionFieldAlgHom K)
 
 private theorem affinePullback_apply (f : W₁.projModelCurve ⟶ W₂.projModelCurve)
     (z : W₂.toAffine.FunctionField) :
     affinePullback f z =
       W₁.projModelFunctionFieldEquiv (f.hom.functionFieldAlgHom K
         (W₂.projModelFunctionFieldEquiv.symm z)) := by
-  simp [affinePullback, projModelFunctionFieldBaseAlgEquiv_apply,
-    projModelFunctionFieldBaseAlgEquiv_symm_apply]
+  simp [affinePullback]
 
 /-- A morphism of projective models is determined by its pullback on the affine function fields. -/
 private theorem affinePullback_injective :
-    Function.Injective (affinePullback (W₁ := W₁) (W₂ := W₂)) := fun f g h ↦ by
-  refine RegularProperCurveCat.functionFieldAlgHom_injective (AlgHom.ext fun z ↦ ?_)
-  apply W₁.projModelFunctionFieldEquiv.injective
-  have := congrArg (fun σ : W₂.toAffine.FunctionField →ₐ[K] W₁.toAffine.FunctionField ↦
-    σ (W₂.projModelFunctionFieldEquiv z)) h
-  simpa only [affinePullback_apply, RingEquiv.symm_apply_apply] using this
+    Function.Injective (affinePullback (W₁ := W₁) (W₂ := W₂)) :=
+  pullbackEquiv.injective.comp RegularProperCurveCat.functionFieldAlgHom_injective
 
 private theorem affinePullback_id :
     affinePullback (𝟙 W₁.projModelCurve) = AlgHom.id K W₁.toAffine.FunctionField :=
@@ -133,24 +116,22 @@ private theorem affinePullback_id :
 private theorem affinePullback_comp (f : W₁.projModelCurve ⟶ W₂.projModelCurve)
     (g : W₂.projModelCurve ⟶ W₃.projModelCurve) :
     affinePullback (f ≫ g) = (affinePullback f).comp (affinePullback g) :=
-  AlgHom.ext fun z ↦ by simp [affinePullback_apply]
+  (congrArg pullbackEquiv (Scheme.Hom.functionFieldAlgHom_comp K f.hom g.hom)).trans
+    (AlgEquiv.arrowCongr_comp _ W₂.projModelFunctionFieldBaseAlgEquiv _ _ _)
 
 /-- A `K`-embedding of the function fields of the affine equations, read on the function fields of
 the projective models. -/
 private noncomputable def projPullback
     (σ : W₂.toAffine.FunctionField →ₐ[K] W₁.toAffine.FunctionField) :
     W₂.projModel.functionField →ₐ[K] W₁.projModel.functionField :=
-  ((projModelFunctionFieldBaseAlgEquiv W₁).symm.toAlgHom.comp σ).comp
-    (projModelFunctionFieldBaseAlgEquiv W₂).toAlgHom
+  pullbackEquiv.symm σ
 
 private theorem affinePullback_homOfAlgHom
     (σ : W₂.toAffine.FunctionField →ₐ[K] W₁.toAffine.FunctionField) :
     affinePullback (RegularProperCurveCat.homOfAlgHom (Y := W₂.projModelCurve) (projPullback σ)) =
       σ := by
-  refine AlgHom.ext fun z ↦ ?_
-  rw [affinePullback_apply, RegularProperCurveCat.functionFieldAlgHom_homOfAlgHom]
-  simp [projPullback, projModelFunctionFieldBaseAlgEquiv_apply,
-    projModelFunctionFieldBaseAlgEquiv_symm_apply]
+  rw [affinePullback, RegularProperCurveCat.functionFieldAlgHom_homOfAlgHom, projPullback,
+    Equiv.apply_symm_apply]
 
 /-- **A morphism of projective models carries `O₁` to `O₂` exactly when the place at infinity of
 `K(W₁)` restricts to the place at infinity of `K(W₂)`** along the pullback of rational functions. -/
