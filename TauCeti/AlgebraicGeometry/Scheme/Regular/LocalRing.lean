@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Stalk
+import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 import TauCeti.RingTheory.RegularLocalRing.Flat
 
 /-!

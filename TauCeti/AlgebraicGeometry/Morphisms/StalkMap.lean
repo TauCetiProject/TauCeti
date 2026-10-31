@@ -35,6 +35,10 @@ map at `x` is formally unramified iff `Γ(X, V)` is unramified over `Γ(Y, U)` a
 `AlgebraicGeometry.Scheme.Hom.unramifiedAt_spec_iff`: `Spec S ⟶ Spec R` is étale (resp.
 unramified) at `q` exactly when `Algebra.IsEtaleAt R q` (resp. `Algebra.IsUnramifiedAt R q`).
 
+For `f` formally unramified and locally of finite type, the maximal ideal of `𝒪_{Y, f x}`
+generates the maximal ideal of `𝒪_{X, x}` along the stalk map
+(`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_formallyUnramified`).
+
 The passage from the stalk to a neighbourhood follows Mathlib's
 `AlgebraicGeometry.exists_smooth_of_formallySmooth_stalk`: Mathlib's
 `Algebra.exists_formallyUnramified_of_isUnramifiedAt` and `Algebra.exists_etale_of_isEtaleAt`
@@ -211,3 +215,29 @@ theorem unramifiedAt_spec_iff [Algebra.FiniteType R S] (q : PrimeSpectrum S) :
 end Scheme.Hom
 
 end AlgebraicGeometry
+
+open AlgebraicGeometry IsLocalRing
+
+namespace TauCeti.AlgebraicGeometry
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
+
+/-- Along the stalk map at `x` of a morphism `f : X ⟶ Y` that is formally unramified and locally of
+finite type, the maximal ideal of the local ring of `Y` at `f x` generates the maximal ideal of the
+local ring of `X` at `x`. -/
+theorem map_maximalIdeal_stalkMap_of_formallyUnramified [FormallyUnramified f]
+    [LocallyOfFiniteType f] :
+    (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom =
+      maximalIdeal (X.presheaf.stalk x) := by
+  algebraize [(f.stalkMap x).hom]
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
+  have : Algebra.EssFiniteType (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+    rw [← RingHom.essFiniteType_algebraMap, RingHom.algebraMap_toAlgebra]
+    exact LocallyOfFiniteType.stalkMap f x
+  have : Algebra.FormallyUnramified (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+    rw [← RingHom.formallyUnramified_algebraMap, RingHom.algebraMap_toAlgebra]
+    exact FormallyUnramified.stalkMap f x
+  exact Algebra.FormallyUnramified.map_maximalIdeal
+
+end TauCeti.AlgebraicGeometry
