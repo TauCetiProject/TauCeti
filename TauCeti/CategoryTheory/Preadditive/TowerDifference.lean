@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import Mathlib.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.CategoryTheory.Preadditive.Basic
 public import TauCeti.CategoryTheory.Functor.ProZero
+import TauCeti.CategoryTheory.Functor.InverseSystem
 
 /-!
 # The product–difference map of a tower
@@ -17,9 +18,13 @@ public import TauCeti.CategoryTheory.Functor.ProZero
 Let `F : ℕᵒᵖ ⥤ C` be a tower `F₀ ← F₁ ← F₂ ← ⋯` in a preadditive category whose terms have a
 product. The *product–difference map* is the endomorphism `1 - s` of `∏ₙ Fₙ`, where the `n`-th
 component of `s` is the projection to `Fₙ₊₁` followed by the transition `Fₙ₊₁ ⟶ Fₙ`. Its kernel is
-the limit of the tower, and in an abelian category its cokernel is `lim¹`; the derived limit of a
-tower of complexes is the fibre of the same map. This presentation is what the Milnor sequence,
-relating `lim` and `lim¹` of cohomology to the cohomology of a derived limit, is built on.
+the limit of the tower. Its cokernel is what we call `lim¹` of the tower; this agrees with the first
+right derived functor of `lim` in an abelian category with exact countable products, such as a
+category of modules, but not in general (for instance for sheaves). Likewise, the derived limit of
+a tower of complexes is the fibre of the same map only when the products used compute derived
+products, as products in the derived category do. Under such hypotheses this presentation is what
+the Milnor sequence, relating `lim` and `lim¹` of cohomology to the cohomology of a derived limit,
+is built on.
 
 For a pro-zero tower the product–difference map is an isomorphism: since every term `Fₙ` is killed
 by some composite transition `Fₙ₊ₖ ⟶ Fₙ`, the formal inverse `∑ₖ sᵏ` has only finitely many nonzero
@@ -152,25 +157,11 @@ section ProZero
 
 variable {F : ℕᵒᵖ ⥤ C}
 
-omit [Preadditive C] in
-/-- Projections to two equal terms of a tower, followed by the composite transitions to a fixed
-term, agree. This absorbs the index arithmetic `n + 1 + k = n + (k + 1)`. -/
-private lemma π_map_congr [HasProduct fun n : ℕ ↦ F.obj (op n)] {n i j : ℕ} (h : i = j)
-    (hi : n ≤ i) (hj : n ≤ j) :
-    Pi.π (fun n : ℕ ↦ F.obj (op n)) i ≫ F.map (homOfLE hi).op =
-      Pi.π (fun n : ℕ ↦ F.obj (op n)) j ≫ F.map (homOfLE hj).op := by
-  subst h
-  rfl
-
-omit [Preadditive C] in
-private lemma map_comp_map {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) :
-    F.map (homOfLE hjk).op ≫ F.map (homOfLE hij).op = F.map (homOfLE (hij.trans hjk)).op := by
-  rw [← F.map_comp, ← op_comp, homOfLE_comp]
-
 /-- **Pro-zero towers have invertible product–difference map.** If every term of a tower is killed
 by some composite transition, then `1 - s` is an isomorphism of `∏ₙ Fₙ`: its inverse is `∑ₖ sᵏ`,
 whose `n`-th component is a finite sum because the composites `Fₙ₊ₖ ⟶ Fₙ` vanish for large `k`.
-Consequently the kernel (`lim`) and the cokernel (`lim¹`) of the product–difference map vanish. -/
+Consequently the kernel of the product–difference map, which is the limit of the tower, and its
+cokernel, which is what we call `lim¹` of the tower, both vanish. -/
 theorem IsProZero.isIso_towerDifference (hF : F.IsProZero)
     [HasProduct fun n : ℕ ↦ F.obj (op n)] : IsIso F.towerDifference := by
   -- `t n k` is the composite transition `Fₙ₊ₖ ⟶ Fₙ` and `S n N = ∑_{k < N} πₙ₊ₖ ≫ t n k`.
@@ -182,17 +173,17 @@ theorem IsProZero.isIso_towerDifference (hF : F.IsProZero)
     obtain ⟨m, hnm, hm⟩ := (isProZero_iff_forall_exists_le F).1 hF n
     refine ⟨m - n, fun k hk ↦ ?_⟩
     have hmk : m ≤ n + k := by lia
-    simp only [t, ← map_comp_map hnm hmk, hm, Limits.comp_zero]
+    simp only [t, ← F.map_homOfLE_op_comp_map_homOfLE_op hnm hmk, hm, Limits.comp_zero]
   choose N hN using hN
   have hS : ∀ n M, N n ≤ M → S n M = S n (N n) := fun n M hM ↦
     (Finset.sum_subset (Finset.range_mono hM) fun k _ hk ↦ by
       simp [f, hN n k (by simpa using hk)]).symm
   have hf₀ (n : ℕ) : f n 0 = Pi.π _ n := by
-    simp [f, t, π_map_congr (F := F) (Nat.add_zero n) (Nat.le_add_right n 0) le_rfl]
+    simp [f, t, F.π_comp_map_homOfLE_op_congr (Nat.add_zero n) (Nat.le_add_right n 0) le_rfl]
   have hf_succ (n k : ℕ) : Pi.π _ (n + k + 1) ≫ F.map (homOfLE (Nat.le_add_right (n + k) 1)).op ≫
       t n k = f n (k + 1) := by
-    simp only [f, t, map_comp_map]
-    exact π_map_congr (by lia) _ _
+    simp only [f, t, map_homOfLE_op_comp_map_homOfLE_op]
+    exact F.π_comp_map_homOfLE_op_congr (by lia) _ _
   refine ⟨Pi.lift fun n ↦ S n (N n), Pi.hom_ext _ _ fun n ↦ ?_, Pi.hom_ext _ _ fun n ↦ ?_⟩
   · -- `(1 - s) ≫ ∑ₖ sᵏ` telescopes to `f n 0 - f n (N n) = πₙ`.
     have hD (k : ℕ) : F.towerDifference ≫ f n k = f n k - f n (k + 1) := by
@@ -209,8 +200,8 @@ theorem IsProZero.isIso_towerDifference (hF : F.IsProZero)
         ∑ k ∈ Finset.range M, f n (k + 1) := by
       simp only [S, Preadditive.sum_comp]
       refine Finset.sum_congr rfl fun k _ ↦ ?_
-      simp only [f, t, Category.assoc, map_comp_map]
-      exact π_map_congr (by lia) _ _
+      simp only [f, t, Category.assoc, map_homOfLE_op_comp_map_homOfLE_op]
+      exact F.π_comp_map_homOfLE_op_congr (by lia) _ _
     simp only [Category.assoc, towerDifference_π, Preadditive.comp_sub, Pi.lift_comp_π_assoc,
       Pi.lift_comp_π, Category.id_comp]
     rw [← hS (n + 1) M (by lia), hshift, ← hS n (M + 1) (by lia)]
