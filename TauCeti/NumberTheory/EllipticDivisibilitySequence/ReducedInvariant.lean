@@ -67,7 +67,7 @@ six-way split. Each branch reindexes one or two complements by `normEDS_mul_comp
 `normEDS_mul_complEDS`, stated at `W (n * k)`, and which absorbs the `Int.ediv_mul_cancel` step on
 the divisibility that `m % 6 = r` supplies. The residues `0`, `1` and
 `5` go through the `6`-complement once each and rewrite `W 6` as `(W 5 - d ^ 2) * b * c`
-(`WeierstrassCurve.normEDS_six`, `Six.lean`); the residues `2`, `3` and `4` each split the work
+(`TauCeti.normEDS_six`, `Six.lean`); the residues `2`, `3` and `4` each split the work
 between a `2`-complement and a `3`-complement.
 
 Note that `b, c ≠ 0` over a domain would **not** by itself make `normEDS b c d 6` a
@@ -126,8 +126,7 @@ cancelled quotient, is ported here as
 `IsEllipticNet.invarDenom_normEDS_one_eq_reducedInvarDenom_mul`. Both links the source's proof
 uses are available: `normEDS_mul_complEDS_div` is ported into `Complement.lean`, derived there
 from Mathlib's unconditional `normEDS_mul_complEDS` together with `Int.ediv_mul_cancel` rather
-than proved afresh, and `normEDS_six_eq_mul` is
-`WeierstrassCurve.normEDS_six` (`Six.lean`).
+than proved afresh, and `normEDS_six_eq_mul` is `TauCeti.normEDS_six` (`Six.lean`).
 
 That file's header reads `Authors: David Kurniadi Angdinata`; following this
 repository's convention for adapted material the upstream authorship is credited here rather than
@@ -189,7 +188,7 @@ is split between two factors, one giving up `b` through a `2`-complement and ano
 through a `3`-complement.
 
 The factor `normEDS b c d 5 - d ^ 2` appearing in the residues `0`, `1` and `5` is `normEDS b c d
-6` with `b * c` removed: `WeierstrassCurve.normEDS_six` reads `W 6 = (W 5 - d ^ 2) * b * c`, so a
+6` with `b * c` removed: `TauCeti.normEDS_six` reads `W 6 = (W 5 - d ^ 2) * b * c`, so a
 residue that takes `b * c` out through the single `6`-complement is left carrying the remaining
 factor. It is not claimed to be a unit: over an arbitrary commutative ring nothing here proves it
 invertible. -/
@@ -333,7 +332,7 @@ theorem invarDenom_normEDS_one_eq_reducedInvarDenom_mul :
   have h6 : ∀ k : ℤ, (6 : ℤ) ∣ k →
       _root_.normEDS b c d k =
         (_root_.normEDS b c d 5 - d ^ 2) * complEDS b c d 6 (k / 6) * (b * c) :=
-    fun k h ↦ by rw [← normEDS_mul_complEDS_div 6 k h, WeierstrassCurve.normEDS_six]; ring
+    fun k h ↦ by rw [← normEDS_mul_complEDS_div 6 k h, TauCeti.normEDS_six]; ring
   have h3 : ∀ k : ℤ, (3 : ℤ) ∣ k → _root_.normEDS b c d k = complEDS b c d 3 (k / 3) * c :=
     fun k h ↦ by rw [← normEDS_mul_complEDS_div 3 k h, normEDS_three]; ring
   have h2 : ∀ k : ℤ, (2 : ℤ) ∣ k → _root_.normEDS b c d k = complEDS b c d 2 (k / 2) * b :=

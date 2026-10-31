@@ -57,6 +57,8 @@ zero.
 ## Main results
 
 * `TauCeti.CurrentAlgebra.orderLeftIdeal_antitone`: the left ideals decrease.
+* `TauCeti.CurrentAlgebra.iInf_orderLeftIdeal_natCast`: the left ideals of natural orders have the
+  same intersection as all of them.
 * `TauCeti.CurrentAlgebra.exists_forall_mul_mem_orderLeftIdeal`: the right-shift estimate
   `∀ b N, ∃ M, I_M b ⊆ I_N`.
 * `TauCeti.CurrentAlgebra.smoothModules_orderLeftIdeal_iff`: smoothness for the family `I_N` is
@@ -125,6 +127,18 @@ variable (Φ hΦ hΦs a)
 theorem orderLeftIdeal_antitone : Antitone (orderLeftIdeal Φ hΦ hΦs a) := fun _ _ h ↦
   orderLeftIdeal_le_iff.2 fun _ hu ↦
     envelopingι_mem_orderLeftIdeal (orderSubmodule_antitone R L h hu)
+
+/-- The left ideals `I_n` of natural orders `n` decrease as `n` grows. -/
+theorem orderLeftIdeal_natCast_antitone :
+    Antitone fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n :=
+  (orderLeftIdeal_antitone Φ hΦ hΦs a).comp_monotone Nat.mono_cast
+
+/-- The left ideals `I_n` of natural orders `n` have the same intersection as all the left ideals
+`I_N`, since the natural numbers are cofinal among the orders. -/
+theorem iInf_orderLeftIdeal_natCast :
+    ⨅ n : ℕ, orderLeftIdeal Φ hΦ hΦs a n = ⨅ N : ℤ, orderLeftIdeal Φ hΦ hΦs a N := by
+  refine le_antisymm (le_iInf fun N ↦ ?_) (le_iInf fun n ↦ iInf_le _ _)
+  exact (iInf_le _ N.toNat).trans (orderLeftIdeal_antitone Φ hΦ hΦs a (Int.self_le_toNat N))
 
 variable {Φ hΦ hΦs a}
 

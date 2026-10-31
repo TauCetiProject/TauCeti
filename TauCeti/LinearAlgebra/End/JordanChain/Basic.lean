@@ -39,6 +39,25 @@ the kernel-dimension formulas only need a division ring.
   lengths, see `Module.End.JordanChainBasis.apply_equiv`.
 * `Module.End.exists_linearEquiv_conj_eq_iff`: two nilpotent endomorphisms of finite-dimensional
   vector spaces are conjugate if and only if `dim ker f ^ k = dim ker g ^ k` for every `k`.
+* `Module.End.JordanChainBasis.joinEnds`: the rank-one endomorphism sending the last vector of one
+  chain to the last vector of another.
+* `Module.End.JordanChainBasis.finrank_range_add_smul_joinEnds_pow` and
+  `Module.End.JordanChainBasis.exists_linearEquiv_conj_add_smul_joinEnds`: for `t ≠ 0` the
+  endomorphisms `f + t • joinEnds i j` are conjugate to one another, and the rank of the `k`-th
+  power exceeds that of `f ^ k` by one exactly when `len j ≤ k ≤ len i`.
+
+## Elementary degenerations
+
+For chains `i ≠ j` of lengths `m = len i` and `r = len j`, adding `t • joinEnds i j` to `f` links
+the end of chain `i` to the end of chain `j`. When `r ≤ m` and `t ≠ 0` the result has Jordan chains
+of lengths `m + 1` and `r - 1` in place of `m` and `r` (the second one disappearing when `r = 1`),
+as the rank formula shows, and at `t = 0` it is `f` again. So, over a topological field in which `0`
+is not isolated, `f` is a limit of conjugates of an endomorphism whose Jordan type is obtained from
+that of `f` by moving one box from a shorter part to a longer one. These moves generate the
+dominance order on partitions, and this family is the degeneration behind the description of
+nilpotent orbit closures by dominance. Over an infinite field the same family puts `f` in the
+Zariski closure of that conjugacy class. When `m < r` the rank formula shows that the perturbation
+does not change the Jordan type.
 
 ## Implementation notes
 
@@ -50,6 +69,8 @@ choose a linear form `φ` with `φ (f ^ (m - 1) v) ≠ 0`. The common kernel in 
 ## References
 
 * P. R. Halmos, *Finite-Dimensional Vector Spaces*, §57.
+* M. Gerstenhaber, *On dominance and varieties of commuting matrices*, Ann. of Math. **73**
+  (1961), 324–348.
 -/
 
 public section
@@ -456,5 +477,212 @@ theorem exists_linearEquiv_conj_eq_iff [FiniteDimensional K V] [FiniteDimensiona
     exact ⟨c.equiv d σ hσ, c.conj_equiv d σ hσ⟩
 
 end Field
+
+section Degeneration
+
+namespace JordanChainBasis
+
+section Semiring
+
+variable [Semiring K] [AddCommMonoid V] [Module K V] {f : End K V} {ι : Type*}
+
+/-- The coordinate of depth `b` in a Jordan-chain basis vanishes on the range of `f ^ k` when
+`b < k`. -/
+@[simp]
+theorem basis_coord_comp_pow_eq_zero (c : f.JordanChainBasis ι) {p : Σ i, Fin (c.len i)}
+    {k : ℕ} (hk : (p.2 : ℕ) < k) : c.basis.coord p ∘ₗ f ^ k = 0 := by
+  refine c.basis.ext fun q => ?_
+  rw [LinearMap.comp_apply, c.pow_apply_basis k q.1 q.2]
+  split_ifs with h
+  · rw [Basis.coord_apply, Basis.repr_self, Finsupp.single_eq_of_ne, LinearMap.zero_apply]
+    intro hq
+    have := congrArg (fun r : Σ i, Fin (c.len i) => (r.2 : ℕ)) hq
+    simp only at this
+    omega
+  · simp
+
+/-- The last vector `f ^ (len j - 1) (head j)` of chain `j` lies in the range of `f ^ k` exactly
+when `k < len j`. -/
+theorem pow_apply_head_mem_range_pow_iff [Nontrivial K] (c : f.JordanChainBasis ι) (j : ι)
+    (k : ℕ) : (f ^ (c.len j - 1)) (c.head j) ∈ LinearMap.range (f ^ k) ↔ k < c.len j := by
+  refine ⟨fun ⟨y, hy⟩ => ?_, fun hk => ⟨(f ^ (c.len j - 1 - k)) (c.head j), ?_⟩⟩
+  · by_contra! hk
+    have h := LinearMap.congr_fun (c.basis_coord_comp_pow_eq_zero
+      (p := ⟨j, ⟨c.len j - 1, by have := c.len_pos j; omega⟩⟩) (k := k)
+      (by dsimp only; have := c.len_pos j; omega)) y
+    rw [LinearMap.comp_apply, hy,
+      ← basis_apply c ⟨j, ⟨c.len j - 1, by have := c.len_pos j; omega⟩⟩, Basis.coord_apply,
+      Basis.repr_self, Finsupp.single_eq_same, LinearMap.zero_apply] at h
+    exact one_ne_zero h
+  · rw [← mul_apply, ← pow_add]
+    congr 2
+    omega
+
+end Semiring
+
+section CommSemiring
+
+variable [CommSemiring K] [AddCommMonoid V] [Module K V] {f : End K V} {ι : Type*}
+
+/-- The rank-one endomorphism sending the last vector `f ^ (len i - 1) (head i)` of chain `i` to
+the last vector of chain `j`, and every other vector of the Jordan-chain basis to `0`. -/
+noncomputable def joinEnds (c : f.JordanChainBasis ι) (i j : ι) : End K V :=
+  (c.basis.coord ⟨i, ⟨c.len i - 1, by have := c.len_pos i; omega⟩⟩).smulRight
+    ((f ^ (c.len j - 1)) (c.head j))
+
+/-- The endomorphism `joinEnds i j` multiplies the last vector of chain `j` by the coordinate of
+the last vector of chain `i`. -/
+theorem joinEnds_apply (c : f.JordanChainBasis ι) (i j : ι) (x : V) :
+    c.joinEnds i j x =
+      c.basis.repr x ⟨i, ⟨c.len i - 1, by have := c.len_pos i; omega⟩⟩ •
+        (f ^ (c.len j - 1)) (c.head j) := by
+  simp only [joinEnds, LinearMap.smulRight_apply, Basis.coord_apply]
+
+/-- The endomorphism `joinEnds i j` sends the last vector of chain `i` to the last vector of
+chain `j`. -/
+@[simp]
+theorem joinEnds_pow_apply_head (c : f.JordanChainBasis ι) (i j : ι) :
+    c.joinEnds i j ((f ^ (c.len i - 1)) (c.head i)) = (f ^ (c.len j - 1)) (c.head j) := by
+  rw [joinEnds_apply, ← basis_apply c ⟨i, ⟨c.len i - 1, by have := c.len_pos i; omega⟩⟩,
+    Basis.repr_self, Finsupp.single_eq_same, one_smul]
+
+/-- The image of `joinEnds i j` is killed by `f`, being spanned by the end of a chain. -/
+@[simp]
+theorem mul_joinEnds (c : f.JordanChainBasis ι) (i j : ι) : f * c.joinEnds i j = 0 := by
+  ext x
+  rw [mul_apply, joinEnds_apply, map_smul, ← mul_apply, ← pow_succ',
+    Nat.sub_add_cancel (c.len_pos j), c.pow_len_apply_head, smul_zero, LinearMap.zero_apply]
+
+/-- For distinct chains `i ≠ j`, the endomorphism `joinEnds i j` squares to zero. -/
+@[simp]
+theorem joinEnds_mul_joinEnds (c : f.JordanChainBasis ι) {i j : ι} (hij : i ≠ j) :
+    c.joinEnds i j * c.joinEnds i j = 0 := by
+  ext x
+  rw [mul_apply, joinEnds_apply (x := x), map_smul, joinEnds_apply,
+    ← basis_apply c ⟨j, ⟨c.len j - 1, by have := c.len_pos j; omega⟩⟩, Basis.repr_self,
+    Finsupp.single_eq_of_ne, zero_smul, smul_zero, LinearMap.zero_apply]
+  intro h
+  exact hij (congrArg Sigma.fst h)
+
+/-- The endomorphism `joinEnds i j` vanishes on the range of `f ^ k` once `len i ≤ k`. -/
+@[simp]
+theorem joinEnds_mul_pow_of_le (c : f.JordanChainBasis ι) (i j : ι) {k : ℕ} (hk : c.len i ≤ k) :
+    c.joinEnds i j * f ^ k = 0 := by
+  ext x
+  have h := LinearMap.congr_fun (c.basis_coord_comp_pow_eq_zero
+    (p := ⟨i, ⟨c.len i - 1, by have := c.len_pos i; omega⟩⟩) (k := k)
+    (by dsimp only; have := c.len_pos i; omega)) x
+  rw [LinearMap.comp_apply, Basis.coord_apply, LinearMap.zero_apply] at h
+  rw [mul_apply, joinEnds_apply, h, zero_smul, LinearMap.zero_apply]
+
+/-- For distinct chains `i ≠ j`, the powers of `f + t • joinEnds i j` are
+`f ^ (k + 1) + t • joinEnds i j * f ^ k`, since `f * joinEnds i j` and `joinEnds i j ^ 2`
+vanish. -/
+theorem add_smul_joinEnds_pow_succ (c : f.JordanChainBasis ι) {i j : ι} (hij : i ≠ j) (t : K)
+    (k : ℕ) :
+    (f + t • c.joinEnds i j) ^ (k + 1) = f ^ (k + 1) + t • (c.joinEnds i j * f ^ k) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', ih, pow_succ' f (k + 1)]
+    simp only [add_mul, mul_add, smul_mul_assoc, mul_smul_comm, ← mul_assoc, c.mul_joinEnds,
+      c.joinEnds_mul_joinEnds hij, zero_mul, smul_zero, add_zero]
+
+/-- For distinct chains `i ≠ j` of a finite Jordan-chain basis, `f + t • joinEnds i j` is
+nilpotent. -/
+theorem isNilpotent_add_smul_joinEnds [Finite ι] (c : f.JordanChainBasis ι) {i j : ι}
+    (hij : i ≠ j) (t : K) : IsNilpotent (f + t • c.joinEnds i j) := by
+  obtain ⟨N, hN⟩ := c.isNilpotent
+  exact ⟨N + 1, by rw [c.add_smul_joinEnds_pow_succ hij, hN, mul_zero, smul_zero, pow_succ, hN,
+    zero_mul, add_zero]⟩
+
+end CommSemiring
+
+section Field
+
+variable [Field K] [AddCommGroup V] [Module K V] {f : End K V} {ι : Type*}
+
+/-- For `t ≠ 0` and `0 < k ≤ len i`, the range of `(f + t • joinEnds i j) ^ k` is spanned by the
+range of `f ^ k` together with the last vector of chain `j`. -/
+theorem range_add_smul_joinEnds_pow (c : f.JordanChainBasis ι) {i j : ι} (hij : i ≠ j) {t : K}
+    (ht : t ≠ 0) {k : ℕ} (hk₀ : 0 < k) (hk : k ≤ c.len i) :
+    LinearMap.range ((f + t • c.joinEnds i j) ^ k) =
+      LinearMap.range (f ^ k) ⊔ K ∙ (f ^ (c.len j - 1)) (c.head j) := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hk₀
+  rw [zero_add] at hk ⊢
+  set d := (f ^ (c.len j - 1)) (c.head j)
+  have hE (x : V) : (t • (c.joinEnds i j * f ^ k)) x ∈ K ∙ d := by
+    rw [LinearMap.smul_apply, mul_apply, joinEnds_apply]
+    exact smul_mem _ _ (smul_mem _ _ (mem_span_singleton_self d))
+  -- The vector `f ^ (len i - k - 1) (head i)` is sent to `t • d`.
+  have hd : d ∈ LinearMap.range ((f + t • c.joinEnds i j) ^ (k + 1)) := by
+    refine ⟨t⁻¹ • (f ^ (c.len i - (k + 1))) (c.head i), ?_⟩
+    rw [map_smul, c.add_smul_joinEnds_pow_succ hij, LinearMap.add_apply, LinearMap.smul_apply,
+      mul_apply, ← mul_apply (f ^ (k + 1)), ← pow_add, ← mul_apply (f ^ k), ← pow_add,
+      Nat.add_sub_cancel' hk, show k + (c.len i - (k + 1)) = c.len i - 1 by omega,
+      c.pow_len_apply_head, joinEnds_pow_apply_head, zero_add, smul_smul, inv_mul_cancel₀ ht,
+      one_smul]
+  have hspan := (span_singleton_le_iff_mem _ _).2 hd
+  apply le_antisymm
+  · rintro _ ⟨x, rfl⟩
+    rw [c.add_smul_joinEnds_pow_succ hij, LinearMap.add_apply]
+    exact add_mem (mem_sup_left ⟨x, rfl⟩) (mem_sup_right (hE x))
+  · refine sup_le ?_ hspan
+    rintro _ ⟨x, rfl⟩
+    have h := congrArg (· - (t • (c.joinEnds i j * f ^ k)) x)
+      (LinearMap.congr_fun (c.add_smul_joinEnds_pow_succ hij t k) x)
+    simp only [LinearMap.add_apply, add_sub_cancel_right] at h
+    rw [← h]
+    exact sub_mem ⟨x, rfl⟩ (hspan (hE x))
+
+/-- **Ranks along an elementary degeneration.** For distinct chains `i ≠ j` and `t ≠ 0`, the rank
+of `(f + t • joinEnds i j) ^ k` exceeds the rank of `f ^ k` by one when `len j ≤ k ≤ len i`, and
+equals it otherwise. -/
+theorem finrank_range_add_smul_joinEnds_pow [Finite ι] (c : f.JordanChainBasis ι) {i j : ι}
+    (hij : i ≠ j) {t : K} (ht : t ≠ 0) (k : ℕ) :
+    finrank K (LinearMap.range ((f + t • c.joinEnds i j) ^ k)) =
+      finrank K (LinearMap.range (f ^ k)) + if c.len j ≤ k ∧ k ≤ c.len i then 1 else 0 := by
+  cases nonempty_fintype ι
+  have : FiniteDimensional K V := .of_basis c.basis
+  rcases Nat.eq_zero_or_pos k with rfl | hk₀
+  · rw [pow_zero, pow_zero, left_eq_add, ite_eq_right_iff]
+    have := c.len_pos j
+    omega
+  by_cases hk : k ≤ c.len i
+  · rw [c.range_add_smul_joinEnds_pow hij ht hk₀ hk]
+    split_ifs with hj
+    · rw [finrank_sup_span_singleton]
+      rw [c.pow_apply_head_mem_range_pow_iff]
+      omega
+    · rw [add_zero, sup_eq_left.2]
+      rw [span_singleton_le_iff_mem, c.pow_apply_head_mem_range_pow_iff]
+      omega
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hk₀
+    rw [zero_add] at hk ⊢
+    rw [c.add_smul_joinEnds_pow_succ hij, c.joinEnds_mul_pow_of_le i j (by omega), smul_zero,
+      add_zero, left_eq_add, ite_eq_right_iff]
+    omega
+
+/-- **The elementary degeneration has a single orbit away from `t = 0`.** For distinct chains
+`i ≠ j` and `s, t ≠ 0`, the endomorphisms `f + s • joinEnds i j` and `f + t • joinEnds i j` are
+conjugate. -/
+theorem exists_linearEquiv_conj_add_smul_joinEnds [Finite ι] (c : f.JordanChainBasis ι)
+    {i j : ι} (hij : i ≠ j) {s t : K} (hs : s ≠ 0) (ht : t ≠ 0) :
+    ∃ e : V ≃ₗ[K] V, e.conj (f + s • c.joinEnds i j) = f + t • c.joinEnds i j := by
+  cases nonempty_fintype ι
+  have : FiniteDimensional K V := .of_basis c.basis
+  refine (exists_linearEquiv_conj_eq_iff (c.isNilpotent_add_smul_joinEnds hij s)
+    (c.isNilpotent_add_smul_joinEnds hij t)).2 fun k => ?_
+  have hs' := LinearMap.finrank_range_add_finrank_ker ((f + s • c.joinEnds i j) ^ k)
+  have ht' := LinearMap.finrank_range_add_finrank_ker ((f + t • c.joinEnds i j) ^ k)
+  rw [c.finrank_range_add_smul_joinEnds_pow hij hs] at hs'
+  rw [c.finrank_range_add_smul_joinEnds_pow hij ht] at ht'
+  omega
+
+end Field
+
+end JordanChainBasis
+
+end Degeneration
 
 end Module.End

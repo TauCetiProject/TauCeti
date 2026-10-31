@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import TauCeti.AlgebraicGeometry.AffineScheme
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
+public import TauCeti.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.Etale.Locus
+public import TauCeti.RingTheory.QuasiFinite.Localization
 public import TauCeti.RingTheory.Unramified.LocalRing
 
 /-!
-# Unramified and étale at a point, read off from the stalk map
+# Unramified, étale and quasi-finite at a point, read off from the stalk map
 
 For a morphism of schemes `f : X ⟶ Y` and a point `x : X`, the Stacks Project calls `f`
 *unramified at `x`* (Definition 29.36.1 (02G4)) if `x` has an open neighbourhood `U` such that
@@ -35,6 +38,16 @@ map at `x` is formally unramified iff `Γ(X, V)` is unramified over `Γ(Y, U)` a
 `AlgebraicGeometry.Scheme.Hom.unramifiedAt_spec_iff`: `Spec S ⟶ Spec R` is étale (resp.
 unramified) at `q` exactly when `Algebra.IsEtaleAt R q` (resp. `Algebra.IsUnramifiedAt R q`).
 
+Mathlib defines quasi-finiteness at `x` in stalk form, `f.QuasiFiniteAt x`, and shows that it
+implies quasi-finiteness of `Γ(X, V)` over `Γ(Y, U)` at the prime of `x` for affine opens
+`x ∈ V ⊆ f⁻¹ U` (`AlgebraicGeometry.Scheme.Hom.QuasiFiniteAt.quasiFiniteAt`). The converse is
+`AlgebraicGeometry.Scheme.Hom.quasiFiniteAt_of_appLE`. With both directions,
+`AlgebraicGeometry.Scheme.Hom.exists_appLE_quasiFiniteAt_iff` shows that `f` is quasi-finite at
+`x` in the sense of the Stacks Project, Tag 01TD, iff `f` is locally of finite type near `x` and
+`f.QuasiFiniteAt x`. For `Spec S ⟶ Spec R`,
+`AlgebraicGeometry.Scheme.Hom.quasiFiniteAt_spec_iff` identifies quasi-finiteness at `q` with
+`Algebra.QuasiFiniteAt R q`.
+
 For `f` formally unramified and locally of finite type, the maximal ideal of `𝒪_{Y, f x}`
 generates the maximal ideal of `𝒪_{X, x}` along the stalk map
 (`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_formallyUnramified`).
@@ -49,6 +62,7 @@ neighbourhood of `x`. For étaleness the stalk condition is first turned into `A
 
 ## References
 
+* [The Stacks Project, Tag 01TD](https://stacks.math.columbia.edu/tag/01TD)
 * [The Stacks Project, Definition 29.36.1 (02G4)](https://stacks.math.columbia.edu/tag/02G4)
 * [The Stacks Project, Definition 29.37.1 (02GI)](https://stacks.math.columbia.edu/tag/02GI)
 * [The Stacks Project, Lemma 29.37.15 (02GU)](https://stacks.math.columbia.edu/tag/02GU)
@@ -109,11 +123,8 @@ theorem HasRingHomProperty.resLE_basicOpen (P : MorphismProperty Scheme.{u})
     (hVU : V ≤ f ⁻¹ᵁ U) (r : Γ(X, V))
     (H : Q ((algebraMap Γ(X, V) (Localization.Away r)).comp (f.appLE U V hVU).hom)) :
     P (f.resLE U (X.basicOpen r) ((X.basicOpen_le r).trans hVU)) := by
-  have : IsAffine U := hU
-  have : IsAffine (X.basicOpen r) := hV.basicOpen r
   have hQ := (HasRingHomProperty.isLocal_ringHomProperty P).respectsIso
-  rw [HasRingHomProperty.iff_of_isAffine (P := P)]
-  refine (hQ.arrow_mk_iso_iff (arrowResLEAppIso f U _ _)).mpr ?_
+  refine (resLE_iff P hU (hV.basicOpen r) _).mpr ?_
   have := hV.isLocalization_basicOpen r
   -- Transport `H` along `Γ(X, V)_r ≃ Γ(X, D(r))` and identify the composite with `f.appLE`.
   convert hQ.1 _ (IsLocalization.algEquiv (.powers r) _ Γ(X, X.basicOpen r)).toRingEquiv H
@@ -138,6 +149,14 @@ theorem HasRingHomProperty.exists_ι_comp_of_away (P : MorphismProperty Scheme.{
 
 namespace Scheme.Hom
 
+/-- If `i ≫ f` is formally unramified for an open immersion `i`, the stalk map of `f` at `i x` is
+formally unramified. -/
+theorem formallyUnramified_stalkMap_of_isOpenImmersion_comp (f : X ⟶ Y) {U : Scheme.{u}}
+    (i : U ⟶ X) [IsOpenImmersion i] (x : U) [FormallyUnramified (i ≫ f)] :
+    (f.stalkMap (i x)).hom.FormallyUnramified :=
+  (RingHom.FormallyUnramified.respectsIso.stalkMap_comp_isOpenImmersion_iff i f x).mp
+    (FormallyUnramified.stalkMap _ _)
+
 /-- A morphism locally of finite type is unramified at `x` in the sense of Stacks, Definition
 29.36.1 (02G4), iff its stalk map at `x` is formally unramified. -/
 @[stacks 02G4 "equivalence with the stalk form"]
@@ -145,8 +164,7 @@ theorem unramifiedAt_iff_stalkMap (f : X ⟶ Y) [LocallyOfFiniteType f] (x : X) 
     (∃ U : X.Opens, x ∈ U ∧ LocallyOfFiniteType (U.ι ≫ f) ∧ FormallyUnramified (U.ι ≫ f)) ↔
       (f.stalkMap x).hom.FormallyUnramified := by
   refine ⟨fun ⟨U, hxU, _, _⟩ ↦ ?_, fun H ↦ ?_⟩
-  · exact (RingHom.FormallyUnramified.respectsIso.stalkMap_comp_isOpenImmersion_iff U.ι f
-      ⟨x, hxU⟩).mp (FormallyUnramified.stalkMap _ _)
+  · exact formallyUnramified_stalkMap_of_isOpenImmersion_comp f U.ι ⟨x, hxU⟩
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
@@ -169,8 +187,7 @@ theorem etaleAt_iff_stalkMap (f : X ⟶ Y) [LocallyOfFinitePresentation f] (x : 
   refine ⟨fun ⟨U, hxU, _⟩ ↦ ⟨?_, ?_⟩, fun ⟨hflat, hfu⟩ ↦ ?_⟩
   · exact (RingHom.Flat.respectsIso.stalkMap_comp_isOpenImmersion_iff U.ι f
       ⟨x, hxU⟩).mp (Flat.stalkMap _ _)
-  · exact (RingHom.FormallyUnramified.respectsIso.stalkMap_comp_isOpenImmersion_iff U.ι f
-      ⟨x, hxU⟩).mp (FormallyUnramified.stalkMap _ _)
+  · exact formallyUnramified_stalkMap_of_isOpenImmersion_comp f U.ι ⟨x, hxU⟩
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
@@ -211,6 +228,61 @@ theorem unramifiedAt_spec_iff [Algebra.FiniteType R S] (q : PrimeSpectrum S) :
     HasRingHomProperty.Spec_iff.mpr (RingHom.finiteType_algebraMap.mpr ‹_›)
   exact (unramifiedAt_iff_stalkMap (Spec.map (CommRingCat.ofHom (algebraMap R S))) q).trans
     (formallyUnramified_stalkMap_specMap_iff q)
+
+/-- Let `x ∈ V ⊆ f⁻¹ U` with `U` and `V` affine. If `Γ(X, V)` is quasi-finite over `Γ(Y, U)` at
+the prime of `x`, then `f` is quasi-finite at `x`. This is the converse of Mathlib's
+`AlgebraicGeometry.Scheme.Hom.QuasiFiniteAt.quasiFiniteAt`. -/
+theorem quasiFiniteAt_of_appLE {f : X ⟶ Y} {x : X} {V : X.Opens} (hV : IsAffineOpen V)
+    {U : Y.Opens} (hU : IsAffineOpen U) (hVU : V ≤ f ⁻¹ᵁ U) (hxV : x ∈ V)
+    (h : (f.appLE U V hVU).hom.QuasiFiniteAt (hV.primeIdealOf ⟨x, hxV⟩).asIdeal) :
+    f.QuasiFiniteAt x := by
+  algebraize [(f.appLE U V hVU).hom]
+  rw [QuasiFiniteAt, RingHom.QuasiFinite.respectsIso.arrow_mk_iso_iff
+    (IsAffineOpen.arrowStalkMapIso f U hU V hV hVU hxV)]
+  exact (Localization.quasiFinite_localRingHom_iff _ _
+    congr($(IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hxV).1).symm).mpr h
+
+/-- The morphism `Spec S ⟶ Spec R` is quasi-finite at `q` iff `S` is quasi-finite over `R` at
+`q` in Mathlib's sense `Algebra.QuasiFiniteAt`. -/
+theorem quasiFiniteAt_spec_iff (q : PrimeSpectrum S) :
+    (Spec.map (CommRingCat.ofHom (algebraMap R S))).QuasiFiniteAt q ↔
+      Algebra.QuasiFiniteAt R q.asIdeal := by
+  have h := RingHom.QuasiFinite.respectsIso.arrow_mk_iso_iff
+    (Scheme.arrowStalkMapSpecIso (CommRingCat.ofHom (algebraMap R S)) q)
+  simp only [CommRingCat.hom_ofHom] at h
+  exact h.trans (Localization.quasiFinite_localRingHom_iff _ _ _)
+
+/-- A morphism `f` is quasi-finite at `x` in the sense of the Stacks Project, Tag 01TD, that is,
+there are affine opens `x ∈ V ⊆ f⁻¹ U` such that `Γ(X, V)` is of finite type over `Γ(Y, U)` and
+quasi-finite over it at the prime of `x`, iff `f` is locally of finite type on an open
+neighbourhood of `x` and quasi-finite at `x` in Mathlib's stalk form `Scheme.Hom.QuasiFiniteAt`.
+
+Quasi-finiteness at a prime is Mathlib's `Algebra.QuasiFiniteAt`; for algebras of finite type it
+agrees with the Stacks Project's notion (the prime is isolated in its fibre) by Mathlib's
+`Algebra.quasiFiniteAt_iff_isOpen_singleton_fiber`. -/
+@[stacks 01TD "equivalence with the stalk form"]
+theorem exists_appLE_quasiFiniteAt_iff (f : X ⟶ Y) (x : X) :
+    (∃ (U : Y.Opens) (_ : IsAffineOpen U) (V : X.Opens) (hV : IsAffineOpen V)
+        (hVU : V ≤ f ⁻¹ᵁ U) (hxV : x ∈ V), (f.appLE U V hVU).hom.FiniteType ∧
+          (f.appLE U V hVU).hom.QuasiFiniteAt (hV.primeIdealOf ⟨x, hxV⟩).asIdeal) ↔
+      (∃ W : X.Opens, x ∈ W ∧ LocallyOfFiniteType (W.ι ≫ f)) ∧ f.QuasiFiniteAt x := by
+  refine ⟨fun ⟨U, hU, V, hV, hVU, hxV, hft, hqf⟩ ↦
+    ⟨⟨V, hxV, ?_⟩, quasiFiniteAt_of_appLE hV hU hVU hxV hqf⟩, fun ⟨⟨W, hxW, _⟩, hqf⟩ ↦ ?_⟩
+  · have := (HasRingHomProperty.resLE_iff @LocallyOfFiniteType hU hV hVU).mpr hft
+    rw [← f.resLE_comp_ι hVU]
+    infer_instance
+  obtain ⟨_, ⟨U : Y.Opens, hU, rfl⟩, hxU, -⟩ :=
+    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
+  obtain ⟨_, ⟨V : X.Opens, hV, rfl⟩, hxV, hVWU⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
+    (Set.mem_inter hxW hxU) (W.2.inter (U.2.preimage f.continuous))
+  have hVU : V ≤ f ⁻¹ᵁ U := fun _ hy ↦ (hVWU hy).2
+  -- `V.ι ≫ f` factors through `W.ι ≫ f`, hence so does the restriction `V ⟶ U` of `f`.
+  have : LocallyOfFiniteType (f.resLE U V hVU ≫ U.ι) := by
+    rw [f.resLE_comp_ι hVU, ← X.homOfLE_ι fun _ hy ↦ (hVWU hy).1, Category.assoc]
+    infer_instance
+  have := locallyOfFiniteType_of_comp (f.resLE U V hVU) U.ι
+  exact ⟨U, hU, V, hV, hVU, hxV, (HasRingHomProperty.resLE_iff @LocallyOfFiniteType hU hV hVU).mp
+    this, hqf.quasiFiniteAt hV hU hVU hxV⟩
 
 end Scheme.Hom
 
