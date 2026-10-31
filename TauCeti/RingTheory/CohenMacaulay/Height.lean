@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.Depth.WeaklyRegular
 import TauCeti.RingTheory.Regular.RegularSequence
-import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
 # Height and coheight of primes in a Cohen–Macaulay local ring
@@ -100,9 +99,3 @@ theorem height_add_ringKrullDim_quotient (h : IsCohenMacaulay R R) (p : Ideal R)
   exact_mod_cast hlen ▸ hbound
 
 end Module.IsCohenMacaulay
-
-/-- In particular, every prime `p` of a regular local ring satisfies
-`ht p + dim (R ⧸ p) = dim R`. -/
-example {R : Type u} [CommRing R] [IsRegularLocalRing R] (p : Ideal R) [p.IsPrime] :
-    p.height + ringKrullDim (R ⧸ p) = ringKrullDim R :=
-  TauCeti.IsRegularLocalRing.isCohenMacaulay.height_add_ringKrullDim_quotient p
