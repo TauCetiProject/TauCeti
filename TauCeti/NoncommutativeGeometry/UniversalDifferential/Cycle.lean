@@ -30,11 +30,11 @@ cocycle (`TauCeti.UniversalForms.isClosedGradedTrace_trace_iff`).
 Since `ι` does not preserve an existing unit of `A`, this realizes cocycles such as
 `(a, b, c) ↦ abc` on `ℂ`, which are nonzero on `(1, 1, 1)`.
 
-The trace property is proved generator by generator. Commutation with a zero-form `ι(a)` is the
-cocycle identity `bφ = 0` on words with coefficient in `A`, and cyclicity of `φ` on words with
-scalar coefficient. Closedness and the Leibniz rule then move a differential `dι(a)` past a form
-of degree `n - 1` with the sign `(-1)ⁿ⁻¹`. Since every form of degree `q` is a sum of products
-`ω dι(a)` with `ω` of degree `q - 1`, these two cases give the graded trace property in general.
+The graded trace property of `∫_φ` against the generators of `⨁ m, Ωᵐ` encodes the two conditions
+on `φ`. Commutation with a zero-form `ι(a)` amounts to the cocycle identity `bφ = 0` on words with
+coefficient in `A`, and to cyclicity of `φ` on words with scalar coefficient. The forms of
+positive degree `q` are sums of products `ω dι(a)` with `ω` of degree `q - 1`, while the
+zero-forms are the scalar multiples of `1` plus the images `ι(a)`.
 
 ## Main definitions
 
@@ -89,6 +89,7 @@ theorem trace_of_word (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) (x :
   simp
 
 /-- The functional `∫_φ` vanishes on forms of degree other than `n`. -/
+@[simp]
 theorem trace_of_of_ne (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) {m : ℕ} (h : m ≠ n)
     (ω : UniversalForms k A m) : trace φ (DirectSum.of _ m ω) = 0 := by
   simp [trace, ← DirectSum.lof_eq_of k, DirectSum.component.of, h]
@@ -151,12 +152,8 @@ private theorem trace_mul_ι (hφ : φ ∈ cyclicCochains k A M n)
   induction ω using induction_on k A with
   | hadd ω η hω hη => rw [map_add, add_mul, mul_add, map_add, map_add, hω, hη]
   | hword x b =>
-    have hsplit : word k A x b = x.fst • word k A 1 b + word k A (x.snd : Unitization k A) b := by
-      rw [word_def, word_def, word_def, TensorProduct.smul_tmul', ← TensorProduct.add_tmul,
-        ← Algebra.algebraMap_eq_smul_one, Unitization.algebraMap_eq_inl,
-        Unitization.inl_fst_add_inr_snd_eq]
-    rw [hsplit, map_add, DirectSum.of_smul, add_mul, mul_add, smul_mul_assoc, mul_smul_comm,
-      map_add, map_add, map_smul, map_smul]
+    rw [word_eq_smul_one_add, map_add, DirectSum.of_smul, add_mul, mul_add, smul_mul_assoc,
+      mul_smul_comm, map_add, map_add, map_smul, map_smul]
     refine congrArg₂ (· + ·) (congrArg (x.fst • ·) ?_) ?_
     · -- A word with scalar coefficient: this is cyclicity of `φ`.
       cases n with

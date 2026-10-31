@@ -58,13 +58,6 @@ noncomputable section
 
 variable {k A}
 
-/-- Including a reindexed form in the direct sum is including the original form. -/
-@[simp]
-theorem of_cast {n m : ℕ} (h : n = m) (ω : UniversalForms k A n) :
-    DirectSum.of (UniversalForms k A) m (cast k A h ω) = DirectSum.of (UniversalForms k A) n ω := by
-  subst h
-  rw [cast_refl]
-
 /-! ### The grading -/
 
 variable (k A) in
@@ -109,10 +102,6 @@ theorem of_word_one_eq_differential {n : ℕ} (a : Fin (n + 1) → A) :
       differential k A (DirectSum.of _ n (word k A (a 0 : Unitization k A) (Fin.tail a))) := by
   rw [differential_of, d_word, Unitization.snd_inr, Fin.cons_self_tail]
 
-/-- The unit of `⨁ n, Ωⁿ` is the empty word with coefficient `1`. -/
-theorem one_def : (1 : ⨁ n, UniversalForms k A n) = DirectSum.of _ 0 (word k A 1 Fin.elim0) := by
-  rw [DirectSum.one_def, gOne_def]
-
 /-! ### The algebra structure -/
 
 variable [IsScalarTower k A A] [SMulCommClass k A A]
@@ -123,20 +112,6 @@ noncomputable def gradedAlgebra : GradedAlgebra (grading k A) :=
   Graded.gradedAlgebraExtendByZero _
 
 attribute [instance] gradedAlgebra
-
-/-- The product in `⨁ n, Ωⁿ` of two homogeneous forms is their product of universal forms. -/
-@[simp]
-theorem of_mul_of {n m : ℕ} (ω : UniversalForms k A n) (η : UniversalForms k A m) :
-    DirectSum.of (UniversalForms k A) n ω * DirectSum.of (UniversalForms k A) m η =
-      DirectSum.of (UniversalForms k A) (n + m) (mul k A n m ω η) :=
-  DirectSum.of_mul_of ω η
-
-/-- Left multiplication by a zero-form `y` multiplies the coefficient of a word. -/
-theorem of_word_mul_of_word {n : ℕ} (y x : Unitization k A) (a : Fin n → A) :
-    DirectSum.of (UniversalForms k A) 0 (word k A y Fin.elim0) *
-        DirectSum.of (UniversalForms k A) n (word k A x a) =
-      DirectSum.of (UniversalForms k A) n (word k A (y * x) a) := by
-  rw [of_mul_of, ← cast_word_mul, of_cast]
 
 /-! ### The inclusion of the algebra -/
 
@@ -167,9 +142,7 @@ theorem of_zero_eq_smul_one_add_ι (ω : UniversalForms k A 0) :
     DirectSum.of _ 0 ω = (zeroEquiv k A ω).fst • 1 + ι k A (zeroEquiv k A ω).snd := by
   obtain ⟨x, rfl⟩ := (zeroEquiv k A).symm.surjective ω
   rw [LinearEquiv.apply_symm_apply, ι_apply, one_def, ← DirectSum.of_smul, ← map_add,
-    zeroEquiv_symm_apply, word_def, word_def, word_def, TensorProduct.smul_tmul',
-    ← TensorProduct.add_tmul, ← Algebra.algebraMap_eq_smul_one, Unitization.algebraMap_eq_inl,
-    Unitization.inl_fst_add_inr_snd_eq]
+    zeroEquiv_symm_apply, ← word_eq_smul_one_add]
 
 /-- **Appending a letter is right multiplication by its differential**: `ω db = ω · dι(b)`. -/
 theorem of_snoc {n : ℕ} (ω : UniversalForms k A n) (b : A) :
