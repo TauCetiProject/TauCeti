@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Stream.Init
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 public import Mathlib.Topology.MetricSpace.PiNat
 
@@ -22,9 +23,11 @@ the word they begin with. Constructions on Cantor space indexed by words, such a
 Mathlib's cylinders `PiNat.cylinder x n` are indexed instead by a point and a length, and
 `PiNat.res x n` lists the first `n` values of `x` newest first. The two conventions are related
 by `PiNat.wordCylinder_reverse_res`, which says that `wordCylinder (res x n).reverse` is
-`cylinder x n`. Mathlib's `Stream'.appendStream'` is the same operation as `prependWord` on the
-type synonym `Stream' α`, whose API is phrased through `Stream'.get`; here points of `ℕ → α` are
-used directly so that the product topology and the `PiNat` API apply without unfolding.
+`cylinder x n`. The point `prependWord w x` is Mathlib's `Stream'.appendStream' w x`, and its
+basic API is derived from Mathlib's lemmas about `Stream'.appendStream'`. It is typed as a point
+of `ℕ → α` because the type synonym `Stream' α` carries no topology or measurable structure, and
+Mathlib's lemmas, phrased through `Stream'.get`, do not apply to evaluation `y n` by `simp` or
+`rw`.
 
 The coordinate flip `PiNat.flipAt n` negates the `n`-th coordinate of a point of Cantor space.
 It is an involutive homeomorphism, and it maps the cylinder of a word `w` onto the cylinder of
@@ -73,48 +76,38 @@ variable {α : Type*}
 /-! ### Prepending a word -/
 
 /-- `prependWord w x` is the point of `ℕ → α` that starts with the letters of the word `w`, read
-left to right, and continues with the point `x`. -/
-def prependWord (w : List α) (x : ℕ → α) (n : ℕ) : α :=
-  if h : n < w.length then w[n] else x (n - w.length)
+left to right, and continues with the point `x`: Mathlib's `Stream'.appendStream' w x`, typed as a
+point of `ℕ → α`. -/
+def prependWord (w : List α) (x : ℕ → α) : ℕ → α :=
+  w ++ₛ x
 
 variable {w v : List α} {x y : ℕ → α} {n : ℕ}
 
-theorem prependWord_apply_of_lt (h : n < w.length) : prependWord w x n = w[n] := by
-  simp [prependWord, h]
-
-theorem prependWord_apply_of_le (h : w.length ≤ n) : prependWord w x n = x (n - w.length) := by
-  simp [prependWord, h.not_gt]
+theorem prependWord_apply_of_lt (h : n < w.length) : prependWord w x n = w[n] :=
+  Stream'.get_append_left n w x h
 
 @[simp]
 theorem prependWord_apply_length_add (w : List α) (x : ℕ → α) (n : ℕ) :
-    prependWord w x (w.length + n) = x n := by
-  simp [prependWord_apply_of_le]
+    prependWord w x (w.length + n) = x n :=
+  Stream'.get_append_right n w x
+
+theorem prependWord_apply_of_le (h : w.length ≤ n) : prependWord w x n = x (n - w.length) := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  simp
 
 @[simp]
-theorem prependWord_apply_length (w : List α) (x : ℕ → α) : prependWord w x w.length = x 0 := by
-  simpa using prependWord_apply_length_add w x 0
+theorem prependWord_apply_length (w : List α) (x : ℕ → α) : prependWord w x w.length = x 0 :=
+  Stream'.get_append_length w x
 
 @[simp]
-theorem prependWord_nil (x : ℕ → α) : prependWord [] x = x := by
-  ext n
-  simp [prependWord]
+theorem prependWord_nil (x : ℕ → α) : prependWord [] x = x :=
+  Stream'.nil_append_stream x
 
 /-- Prepending `v ++ w` is prepending `w` and then `v`. -/
 @[simp]
 theorem prependWord_append (v w : List α) (x : ℕ → α) :
-    prependWord (v ++ w) x = prependWord v (prependWord w x) := by
-  ext n
-  rcases lt_or_ge n v.length with hv | hv
-  · rw [prependWord_apply_of_lt (by simp; omega), prependWord_apply_of_lt hv,
-      List.getElem_append_left]
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hv
-  rw [prependWord_apply_length_add]
-  rcases lt_or_ge k w.length with hw | hw
-  · rw [prependWord_apply_of_lt (by simp; omega), prependWord_apply_of_lt hw,
-      List.getElem_append_right (by omega)]
-    simp
-  · rw [prependWord_apply_of_le (by simp; omega), prependWord_apply_of_le hw]
-    simp [Nat.sub_add_eq]
+    prependWord (v ++ w) x = prependWord v (prependWord w x) :=
+  Stream'.append_append_stream v w x
 
 /-- A point is recovered from its first `w.length` coordinates, here given by the word `w`, and
 its remaining coordinates. -/
@@ -125,8 +118,8 @@ theorem prependWord_eq_self (hy : ∀ i (h : i < w.length), y i = w[i]) :
   · rw [prependWord_apply_of_lt h, hy n h]
   · rw [prependWord_apply_of_le h, Nat.add_sub_cancel' h]
 
-theorem prependWord_injective (w : List α) : Injective (prependWord w) := fun x y h =>
-  funext fun n => by simpa using congrFun h (w.length + n)
+theorem prependWord_injective (w : List α) : Injective (prependWord w) :=
+  Stream'.append_right_injective w
 
 @[simp]
 theorem prependWord_inj : prependWord w x = prependWord w y ↔ x = y :=
@@ -136,17 +129,17 @@ theorem prependWord_inj : prependWord w x = prependWord w y ↔ x = y :=
 theorem continuous_prependWord [TopologicalSpace α] (w : List α) :
     Continuous (prependWord w) := by
   refine continuous_pi fun n => ?_
-  unfold prependWord
-  split_ifs
-  exacts [continuous_const, continuous_apply _]
+  rcases lt_or_ge n w.length with h | h
+  · simpa only [prependWord_apply_of_lt h] using continuous_const
+  · simpa only [prependWord_apply_of_le h] using continuous_apply _
 
 @[fun_prop]
 theorem measurable_prependWord [MeasurableSpace α] (w : List α) :
     Measurable (prependWord w) := by
   refine Measurable.of_eval fun n => ?_
-  unfold prependWord
-  split_ifs
-  exacts [measurable_const, measurable_pi_apply _]
+  rcases lt_or_ge n w.length with h | h
+  · simpa only [prependWord_apply_of_lt h] using measurable_const
+  · simpa only [prependWord_apply_of_le h] using measurable_pi_apply _
 
 /-! ### Word cylinders -/
 
