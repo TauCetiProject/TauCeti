@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Smoothness of the complemented-kernel implicit function theorem
@@ -42,6 +43,12 @@ which the underlying homeomorphism, and its consumer `TauCeti.levelSetChart`, ar
 every `n : ℕ∞ω`. For product domains over `RCLike` scalars, this file strengthens Mathlib's
 pointwise conclusion to smoothness on one open neighbourhood.
 
+The implicit-function chart `Φ x = (f x, P (x - a))` also shows that a function `g` is locally a
+function of `f` as soon as its derivative vanishes on the kernel of the derivative of `f`. Read
+through `Φ`, such a `g` has zero derivative along each slice `{y} × ker f'`, so it is constant on
+the convex pieces of those slices. Near `a` it is therefore `h ∘ f` with `h y = g (Φ⁻¹ (y, 0))`,
+and `h` is as smooth as `f` and `g`.
+
 ## Main results
 
 * `ContDiffOn.exists_isOpen_contDiffOn_implicitFunction`: a `C^n` equation on an open set with
@@ -70,6 +77,9 @@ pointwise conclusion to smoothness on one open neighbourhood.
 * `HasStrictFDerivAt.exists_isSliceChart_preimage_zero`: near a point where a `C^n` map has
   surjective derivative with complemented kernel, a `C^n` ambient chart flattens its zero set onto
   that kernel.
+* `ContDiffAt.exists_eventuallyEq_comp_of_ker_fderiv_le`: near such a point, a `C^n` function
+  whose derivative vanishes on the kernel of the derivative of `f` is `h ∘ f` for a function `h`
+  which is `C^n` at `f a`.
 -/
 
 public section
@@ -431,5 +441,106 @@ theorem exists_isSliceChart_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) (hf : Ha
       mem_singleton_iff]
 
 end HasStrictFDerivAt
+
+/-! ### Functions constant along the level sets of a submersion -/
+
+namespace ContDiffAt
+
+open Metric
+
+variable {𝕜 E F G : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {f : E → F} {g : E → G} {a : E} {n : ℕ∞ω}
+
+/-- **A function whose derivative kills the kernel of a submersion locally factors through it.**
+Let `f` be `C^n`, `n ≠ 0`, at `a`, with surjective derivative there whose kernel is complemented,
+and let `g` be `C^n` at `a`. If at every point near `a` the derivative of `g` vanishes on the kernel
+of the derivative of `f`, then near `a` the function `g` is `h ∘ f` for a function `h` which is
+`C^n` at `f a`. In other words `g` is locally a function of `f`. -/
+theorem exists_eventuallyEq_comp_of_ker_fderiv_le (hf : ContDiffAt 𝕜 n f a)
+    (hg : ContDiffAt 𝕜 n g a) (hn : n ≠ 0) (hf' : (fderiv 𝕜 f a).range = ⊤)
+    (hker : (fderiv 𝕜 f a).ker.ClosedComplemented)
+    (hfg : ∀ᶠ x in 𝓝 a, (fderiv 𝕜 f x).ker ≤ (fderiv 𝕜 g x).ker) :
+    ∃ h : F → G, ContDiffAt 𝕜 n h (f a) ∧ g =ᶠ[𝓝 a] h ∘ f := by
+  -- Straighten `f` with the implicit-function chart `Φ x = (f x, P (x - a))`. On a ball around
+  -- `(f a, 0)`, `g ∘ Φ.symm` is constant along each slice `{y} × ker f'`, so the factor is
+  -- `h y = g (Φ.symm (y, 0))`.
+  set f' := fderiv 𝕜 f a
+  have hfs : HasStrictFDerivAt f f' a := hf.hasStrictFDerivAt hn
+  have : CompleteSpace f'.ker := hker.isClosed.completeSpace_coe
+  set Φ := hfs.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker
+  have hΦa : Φ.symm (f a, 0) = a :=
+    hfs.implicitToOpenPartialHomeomorphOfComplemented_symm_self hf' hker
+  have htarget : (f a, (0 : f'.ker)) ∈ Φ.target :=
+    hfs.mem_implicitToOpenPartialHomeomorphOfComplemented_target hf' hker
+  have h1 : (1 : ℕ∞ω) ≤ n := ENat.one_le_iff_ne_zero_withTop.2 hn
+  -- The points near `a` at which `f` is `C¹`, `g` is differentiable, the kernel inclusion holds
+  -- and the implicit-function chart has a `C¹` inverse.
+  have hgood : ∀ᶠ x in 𝓝 a, ContDiffAt 𝕜 1 f x ∧ DifferentiableAt 𝕜 g x ∧
+      (fderiv 𝕜 f x).ker ≤ (fderiv 𝕜 g x).ker ∧ x ∈ hfs.implicitCoordSource hf' hker := by
+    filter_upwards [(hf.of_le h1).eventually (by simp), (hg.of_le h1).eventually (by simp), hfg,
+      (hfs.isOpen_implicitCoordSource hf' hker).mem_nhds (hfs.mem_implicitCoordSource hf' hker)]
+      with x hfx hgx hx hsx
+    exact ⟨hfx, hgx.differentiableAt one_ne_zero, hx, hsx⟩
+  have hW : ∀ᶠ p in 𝓝 (f a, (0 : f'.ker)), p ∈ Φ.target ∧ (ContDiffAt 𝕜 1 f (Φ.symm p) ∧
+      DifferentiableAt 𝕜 g (Φ.symm p) ∧ (fderiv 𝕜 f (Φ.symm p)).ker ≤ (fderiv 𝕜 g (Φ.symm p)).ker ∧
+      Φ.symm p ∈ hfs.implicitCoordSource hf' hker) := by
+    refine (Φ.open_target.eventually_mem htarget).and ?_
+    have hcont : Tendsto Φ.symm (𝓝 (f a, 0)) (𝓝 a) := by
+      have := Φ.continuousAt_symm htarget
+      rwa [ContinuousAt, hΦa] at this
+    exact hcont.eventually hgood
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hW
+  -- On each slice `{y} × ker f'` of the ball, `g ∘ Φ.symm` has zero derivative, so it is constant.
+  have hslice : ∀ y ∈ ball (f a) ε, ∀ v ∈ ball (0 : f'.ker) ε,
+      g (Φ.symm (y, v)) = g (Φ.symm (y, 0)) := by
+    intro y hy v hv
+    have hmem : ∀ w ∈ ball (0 : f'.ker) ε, (y, w) ∈ ball (f a, (0 : f'.ker)) ε := fun w hw ↦ by
+      rw [← ball_prod_same]; exact ⟨hy, hw⟩
+    have hderiv : ∀ w ∈ ball (0 : f'.ker) ε,
+        DifferentiableAt 𝕜 (fun w ↦ Φ.symm (y, w)) w ∧
+          DifferentiableAt 𝕜 (fun w ↦ g (Φ.symm (y, w))) w ∧
+          fderiv 𝕜 (fun w ↦ g (Φ.symm (y, w))) w = 0 := by
+      intro w hw
+      obtain ⟨hpt, hfp, hgp, hkp, hsp⟩ := hball (hmem w hw)
+      have hsymm : ContDiffAt 𝕜 1 Φ.symm (y, w) :=
+        hfs.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem hf' hker hpt hsp
+          (hfp.differentiableAt one_ne_zero).hasFDerivAt hfp
+      have hs : DifferentiableAt 𝕜 (fun w ↦ Φ.symm (y, w)) w :=
+        (hsymm.differentiableAt one_ne_zero).comp w
+          (differentiableAt_const _ |>.prodMk differentiableAt_id)
+      refine ⟨hs, hgp.comp w hs, ?_⟩
+      -- The slice map stays in the level `f ⁻¹' {y}`, so its derivative lands in `ker df`.
+      have hlevel : (fun w ↦ f (Φ.symm (y, w))) =ᶠ[𝓝 w] fun _ ↦ y := by
+        filter_upwards [isOpen_ball.mem_nhds hw] with w' hw'
+        have := congrArg Prod.fst (Φ.right_inv (hball (hmem w' hw')).1)
+        rwa [hfs.implicitToOpenPartialHomeomorphOfComplemented_fst hf' hker] at this
+      have hf0 : (fderiv 𝕜 f (Φ.symm (y, w))).comp (fderiv 𝕜 (fun w ↦ Φ.symm (y, w)) w) = 0 := by
+        rw [← fderiv_fun_comp w (hfp.differentiableAt one_ne_zero) hs]
+        exact hlevel.fderiv_eq.trans (fderiv_const_apply y)
+      rw [fderiv_fun_comp w hgp hs]
+      ext u
+      exact hkp (LinearMap.mem_ker.2 (DFunLike.congr_fun hf0 u))
+    let : NormedSpace ℝ f'.ker := NormedSpace.restrictScalars ℝ 𝕜 _
+    exact isOpen_ball.is_const_of_fderiv_eq_zero (convex_ball _ _).isPreconnected
+      (fun w hw ↦ (hderiv w hw).2.1.differentiableWithinAt) (fun w hw ↦ (hderiv w hw).2.2) hv
+      (mem_ball_self hε)
+  refine ⟨fun y ↦ g (Φ.symm (y, 0)), ?_, ?_⟩
+  · have hsymm := hfs.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm hf hf' hker
+    rw [← hΦa] at hg
+    exact hg.comp (f a) (hsymm.comp (f a) (contDiffAt_id.prodMk contDiffAt_const))
+  · have hsrc := hfs.mem_implicitToOpenPartialHomeomorphOfComplemented_source hf' hker
+    have hΦself : Φ a = (f a, 0) := hfs.implicitToOpenPartialHomeomorphOfComplemented_self hf' hker
+    have hcont : Tendsto Φ (𝓝 a) (𝓝 (f a, 0)) := hΦself ▸ Φ.continuousAt hsrc
+    filter_upwards [Φ.open_source.mem_nhds hsrc, hcont (ball_mem_nhds _ hε)] with x hx hxb
+    have hΦx : Φ x = (f x, (Φ x).2) :=
+      Prod.ext (hfs.implicitToOpenPartialHomeomorphOfComplemented_fst hf' hker x) rfl
+    rw [Set.mem_preimage, ← ball_prod_same, hΦx] at hxb
+    calc g x = g (Φ.symm (f x, (Φ x).2)) := by rw [← hΦx, Φ.left_inv hx]
+      _ = g (Φ.symm (f x, 0)) := hslice _ hxb.1 _ hxb.2
+
+end ContDiffAt
 
 end
