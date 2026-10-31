@@ -11,7 +11,12 @@ public import TauCeti.Algebra.Homology.Embedding.StupidTrunc
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
-import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
+import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
+import Mathlib.Algebra.Homology.BifunctorShift
+import TauCeti.Algebra.Homology.HomologySequenceLemmas
+import TauCeti.Algebra.Homology.HomotopyCofiber
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # K-flat cochain complexes
@@ -22,12 +27,34 @@ in any integer degree is K-flat, and a bounded complex of flat objects is K-flat
 The statements apply to modules and to sheaves of modules without choosing points
 of the underlying site.
 
+K-flatness is invariant under homotopy equivalence and shifts, and has the two out of three
+property in degreewise split short exact sequences, so the mapping cone of a morphism of K-flat
+complexes is K-flat. Tensoring with a K-flat complex preserves quasi-isomorphisms, and this
+characterizes K-flat complexes; it is the property that makes K-flat complexes compute derived
+tensor products.
+
 K-flat complexes are closed under colimits whose shape has exact colimits in the
 underlying category and commutes with tensoring by each object, such as filtered
 colimits of modules. A complex which is bounded above is the sequential colimit of
 its brutal truncations, so a bounded above complex of flat objects is K-flat. These
 are the two ingredients of K-flat resolutions of unbounded complexes. Some bound
 is needed: an unbounded acyclic complex of flat objects need not be K-flat.
+
+## Main results
+
+* `CochainComplex.isKFlat_of_homotopyEquiv`, `CochainComplex.isKFlat_shift_iff`: invariance
+  under homotopy equivalence and shifts.
+* `CategoryTheory.ShortComplex.ShortExact.isKFlat_X₁`, `isKFlat_X₂`, `isKFlat_X₃`: two out of
+  three in a degreewise split short exact sequence.
+* `CochainComplex.isKFlat_mappingCone`: mapping cones of morphisms of K-flat complexes.
+* `CochainComplex.quasiIso_id_tensorHom`, `CochainComplex.isKFlat_iff_quasiIso_id_tensorHom`:
+  tensoring with a K-flat complex preserves quasi-isomorphisms, and this characterizes
+  K-flatness.
+* `CochainComplex.isKFlat_single_of_flat`, `CochainComplex.isKFlat_of_bounded_flat`: flat
+  objects and bounded complexes of flat objects are K-flat.
+* `CochainComplex.isKFlat_of_isColimit`: closure under suitable colimits.
+* `CochainComplex.isKFlat_of_boundedAbove_flat`: bounded above complexes of flat objects are
+  K-flat.
 
 The tensor factor containing the K-flat complex is placed on the left. In a symmetric
 monoidal category this is the usual K-flat condition, with the two factors interchanged
@@ -36,7 +63,8 @@ by the Koszul symmetry.
 ## References
 
 * The Stacks Project, Cohomology on Sites, Section 21.17, Flat resolutions.
-* The Stacks Project, More on Algebra, Section 15.60, K-flat complexes.
+* The Stacks Project, More on Algebra, Section 15.60, K-flat complexes, in particular Tag
+  06Y2 for shifts and the two out of three property.
 -/
 
 public section
@@ -69,6 +97,30 @@ lemma isKFlat_of_iso {K L : CochainComplex C ℤ} (e : K ≅ L) [K.IsKFlat] :
   exact ExactAt.of_iso (IsKFlat.acyclic_tensor A hA i)
     (((curriedTensor C).map₂CochainComplex.flip.obj A).mapIso e)
 
+/-- K-flatness is invariant under homotopy equivalence, so it is a property of objects of the
+homotopy category. -/
+theorem isKFlat_of_homotopyEquiv {K L : CochainComplex C ℤ} (e : HomotopyEquiv K L)
+    [K.IsKFlat] : L.IsKFlat := by
+  constructor
+  intro A hA i
+  exact (exactAt_iff_of_quasiIsoAt
+    (HomotopyEquiv.mapBifunctor (curriedTensor C) (.up ℤ) e (HomotopyEquiv.refl A)).hom i).1
+      (IsKFlat.acyclic_tensor A hA i)
+
+/-- A shift of a K-flat complex is K-flat. -/
+instance isKFlat_shift (K : CochainComplex C ℤ) [K.IsKFlat] (n : ℤ) : (K⟦n⟧).IsKFlat := by
+  constructor
+  intro A hA i
+  refine ExactAt.of_iso ?_ (mapBifunctorShift₁Iso K A (curriedTensor C) n).symm
+  exact (exactAt_shift_iff (tensorObj K A) n i (n + i) rfl).2 (IsKFlat.acyclic_tensor A hA _)
+
+/-- A complex is K-flat if and only if any of its shifts is. -/
+@[simp]
+lemma isKFlat_shift_iff (K : CochainComplex C ℤ) (n : ℤ) : (K⟦n⟧).IsKFlat ↔ K.IsKFlat :=
+  ⟨fun _ ↦ isKFlat_of_iso (K := (K⟦n⟧)⟦-n⟧)
+    ((shiftFunctorCompIsoId _ n (-n) (add_neg_cancel n)).app K),
+    fun _ ↦ inferInstance⟩
+
 end CochainComplex
 
 namespace CategoryTheory.ShortComplex.ShortExact
@@ -81,6 +133,32 @@ theorem isKFlat_X₂ {S : ShortComplex (CochainComplex C ℤ)}
   intro A hA
   exact (shortExact_tensorRightShortComplex A S hS).acyclic_X₂
     (CochainComplex.IsKFlat.acyclic_tensor A hA) (CochainComplex.IsKFlat.acyclic_tensor A hA)
+
+/-- K-flatness passes to the subcomplex in a degreewise split extension of complexes whose
+middle and quotient terms are K-flat. -/
+theorem isKFlat_X₁ {S : ShortComplex (CochainComplex C ℤ)}
+    (hS : S.ShortExact) [∀ i, IsSplitMono (S.f.f i)]
+    [S.X₂.IsKFlat] [S.X₃.IsKFlat] : S.X₁.IsKFlat := by
+  constructor
+  intro A hA
+  have h₂ := CochainComplex.IsKFlat.acyclic_tensor (K := S.X₂) A hA
+  have h₃ := CochainComplex.IsKFlat.acyclic_tensor (K := S.X₃) A hA
+  have hT := shortExact_tensorRightShortComplex A S hS
+  exact hT.acyclic_X₁ ((_root_.quasiIso_iff _).2 fun i ↦
+    (quasiIsoAt_iff_exactAt _ i (h₂ i)).2 (h₃ i))
+
+/-- K-flatness passes to the quotient in a degreewise split extension of complexes whose
+subcomplex and middle terms are K-flat. -/
+theorem isKFlat_X₃ {S : ShortComplex (CochainComplex C ℤ)}
+    (hS : S.ShortExact) [∀ i, IsSplitMono (S.f.f i)]
+    [S.X₁.IsKFlat] [S.X₂.IsKFlat] : S.X₃.IsKFlat := by
+  constructor
+  intro A hA
+  have h₁ := CochainComplex.IsKFlat.acyclic_tensor (K := S.X₁) A hA
+  have h₂ := CochainComplex.IsKFlat.acyclic_tensor (K := S.X₂) A hA
+  have hT := shortExact_tensorRightShortComplex A S hS
+  exact hT.acyclic_X₃ ((_root_.quasiIso_iff _).2 fun i ↦
+    (quasiIsoAt_iff_exactAt _ i (h₁ i)).2 (h₂ i))
 
 end CategoryTheory.ShortComplex.ShortExact
 
@@ -96,6 +174,82 @@ theorem isKFlat_single_of_flat (M : C) (n : ℤ)
   refine ExactAt.of_iso (L := tensorObj ((single C (.up ℤ) n).obj M) A) ?_ e.symm
   exact (exactAt_shift_iff (((tensorLeft M).mapHomologicalComplex (.up ℤ)).obj A)
     (-n) i (-n + i) rfl).2 ((hA _).map (tensorLeft M))
+
+/-- The mapping cone of a morphism between K-flat complexes is K-flat. -/
+instance isKFlat_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) [K.IsKFlat] [L.IsKFlat] :
+    (mappingCone φ).IsKFlat := by
+  let S := mappingCone.triangleRotateShortComplex φ
+  have hS : S.ShortExact := shortExact_of_degreewise_shortExact _ fun n ↦
+    (mappingCone.triangleRotateShortComplexSplitting φ n).shortExact
+  have (n : ℤ) : IsSplitMono (S.f.f n) :=
+    (mappingCone.triangleRotateShortComplexSplitting φ n).isSplitMono_f
+  have : S.X₁.IsKFlat := inferInstanceAs L.IsKFlat
+  have : S.X₃.IsKFlat := inferInstanceAs (K⟦(1 : ℤ)⟧).IsKFlat
+  exact hS.isKFlat_X₂
+
+section QuasiIso
+
+variable (K : CochainComplex C ℤ) [K.IsKFlat]
+
+/-- Tensoring with a K-flat complex preserves quasi-isomorphisms which are split monomorphisms in
+each degree: their cokernel is acyclic, and stays so after tensoring. -/
+private lemma quasiIso_id_tensorHom_of_isSplitMono {A B : CochainComplex C ℤ} (i : A ⟶ B)
+    [QuasiIso i] [∀ n, IsSplitMono (i.f n)] : QuasiIso (tensorHom (𝟙 K) i) := by
+  have : Mono i := mono_of_mono_f i fun _ ↦ inferInstance
+  have hS := TauCeti.cokernelSequence_shortExact i
+  have (n : ℤ) : IsSplitMono ((ShortComplex.cokernelSequence i).f.f n) :=
+    inferInstanceAs (IsSplitMono (i.f n))
+  have hA : (ShortComplex.cokernelSequence i).X₃.Acyclic := hS.quasiIso_f_iff.1 ‹_›
+  exact (shortExact_tensorLeftShortComplex K hS).quasiIso_f_iff.2
+    (IsKFlat.acyclic_tensor _ hA)
+
+/-- Tensoring with a K-flat complex preserves the projection `Z ⊞ B ⟶ B` when `Z` is acyclic: its
+kernel `Z` stays acyclic after tensoring. -/
+private lemma quasiIso_id_tensorHom_biprod_snd {Z B : CochainComplex C ℤ} (hZ : Z.Acyclic) :
+    QuasiIso (tensorHom (𝟙 K) (biprod.snd : Z ⊞ B ⟶ B)) := by
+  have hS := (ShortComplex.Splitting.ofHasBinaryBiproduct Z B).shortExact
+  have (n : ℤ) : IsSplitMono ((biprod.inl : Z ⟶ Z ⊞ B).f n) :=
+    IsSplitMono.mk' ⟨(biprod.fst : Z ⊞ B ⟶ Z).f n, by rw [← comp_f, biprod.inl_fst, id_f]⟩
+  exact (shortExact_tensorLeftShortComplex K hS).quasiIso_g_iff.2 (IsKFlat.acyclic_tensor _ hZ)
+
+/-- **Tensoring with a K-flat complex preserves quasi-isomorphisms.** -/
+instance quasiIso_id_tensorHom {A B : CochainComplex C ℤ} (f : A ⟶ B) [QuasiIso f] :
+    QuasiIso (tensorHom (𝟙 K) f) := by
+  -- Factor `f` as `A ⟶ Z ⊞ B ⟶ B`, where `Z` is the acyclic mapping cone of `𝟙 A`, the first map
+  -- is `(inr, f)`, split in each degree, and the second is the projection.
+  let Z := homotopyCofiber (𝟙 A)
+  have hZ : Z.Acyclic := homotopyCofiber.acyclic_id A fun j ↦ ⟨j - 1, by simp⟩
+  let i : A ⟶ Z ⊞ B := biprod.lift (homotopyCofiber.inr (𝟙 A)) f
+  have (n : ℤ) : IsSplitMono (i.f n) := IsSplitMono.mk'
+    { retraction := (biprod.fst : Z ⊞ B ⟶ Z).f n ≫ homotopyCofiber.sndX (𝟙 A) n
+      id := by
+        rw [← Category.assoc, ← comp_f, biprod.lift_fst, homotopyCofiber.inr_f,
+          homotopyCofiber.inrX_sndX] }
+  have hf : i ≫ biprod.snd = f := biprod.lift_snd _ _
+  have : QuasiIso (biprod.snd : Z ⊞ B ⟶ B) :=
+    ((ShortComplex.Splitting.ofHasBinaryBiproduct Z B).shortExact).quasiIso_g_iff.2 hZ
+  have : QuasiIso i := (quasiIso_iff_comp_right i biprod.snd).1 (hf ▸ ‹_›)
+  have := quasiIso_id_tensorHom_of_isSplitMono K i
+  have := quasiIso_id_tensorHom_biprod_snd K (B := B) hZ
+  have e : tensorHom (𝟙 K) f = tensorHom (𝟙 K) i ≫ tensorHom (𝟙 K) biprod.snd := by
+    simpa [hf] using mapBifunctorMap_comp (curriedTensor C) (.up ℤ) (𝟙 K) (𝟙 K) i biprod.snd
+  rw [e]
+  infer_instance
+
+end QuasiIso
+
+open ZeroObject in
+/-- A complex is K-flat if and only if tensoring with it preserves quasi-isomorphisms. -/
+theorem isKFlat_iff_quasiIso_id_tensorHom (K : CochainComplex C ℤ) :
+    K.IsKFlat ↔ ∀ ⦃A B : CochainComplex C ℤ⦄ (f : A ⟶ B) [QuasiIso f],
+      QuasiIso (tensorHom (𝟙 K) f) := by
+  refine ⟨fun _ _ _ f _ ↦ inferInstance, fun h ↦ ⟨fun A hA i ↦ ?_⟩⟩
+  have : QuasiIso (0 : A ⟶ 0) := (quasiIso_iff _).2 fun j ↦
+    (quasiIsoAt_iff_exactAt' _ j (acyclic_of_isZero _ (isZero_zero _) j)).2 (hA j)
+  have hz : IsZero (tensorObj K (0 : CochainComplex C ℤ)) :=
+    ((curriedTensor C).mapBifunctorLeft (.up ℤ) (.up ℤ) K).map_isZero (isZero_zero _)
+  exact (quasiIsoAt_iff_exactAt' (tensorHom (𝟙 K) (0 : A ⟶ 0)) i
+    (acyclic_of_isZero _ hz i)).1 inferInstance
 
 section Colimit
 
