@@ -36,6 +36,8 @@ product when `E` has them.
 * `TauCeti.CircleSobolev s E`: the Sobolev space of order `s`, with norm
   `‖a‖² = ∑ₙ weight (2 s) n * ‖a.coeff n‖²` (`CircleSobolev.hasSum_norm_sq`).
 * `TauCeti.CircleSobolev.single n x`: the Fourier monomial `x e^{inθ}`.
+* `TauCeti.CircleSobolev.reflect`: the linear isometric reflection `n ↦ -n` of the Fourier
+  coefficients.
 * `TauCeti.CircleSobolev.inclusion`: the continuous inclusion `H^s → H^t` for `t ≤ s`.
 * `TauCeti.CircleSobolev.toContinuousMap`: for `s > 1/2`, the continuous function on
   `AddCircle T` given by the uniformly convergent Fourier series.
@@ -418,6 +420,38 @@ theorem memℓp_of_forall_le {a : CircleSobolev s E} {c : ℤ → E} {C : ℝ}
   rw [Pi.smul_apply, norm_smul, norm_smul, norm_smul, norm_weight, norm_weight, Real.norm_eq_abs]
   exact (h n).trans
     (mul_le_mul_of_nonneg_right (le_abs_self C) (mul_nonneg (weight_nonneg s n) (norm_nonneg _)))
+
+private theorem hasSum_sq_weight_mul_norm_coeff_neg (a : CircleSobolev s E) :
+    HasSum (fun n ↦ (weight s n * ‖a.coeff (-n)‖) ^ 2) (‖a‖ ^ 2) := by
+  have h := (Equiv.neg ℤ).hasSum_iff.2 (hasSum_sq_weight_mul_norm_coeff a)
+  simpa only [Function.comp_def, Equiv.neg_apply, weight_neg_right] using h
+
+/-- The element of `H^s` with the Fourier coefficients of `a` reflected across frequency zero. -/
+private def reflectFun (a : CircleSobolev s E) : CircleSobolev s E :=
+  ⟨fun n ↦ a.coeff (-n),
+    (memℓp_weight_smul_iff _).2 (hasSum_sq_weight_mul_norm_coeff_neg a).summable⟩
+
+/-- The reflection `n ↦ -n` of the Fourier coefficients, as a linear isometric automorphism of
+`H^s`. It corresponds to the reflection `x ↦ -x` of the circle. -/
+def reflect : CircleSobolev s E ≃ₗᵢ[ℂ] CircleSobolev s E where
+  toFun := reflectFun
+  invFun := reflectFun
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv a := CircleSobolev.ext <| funext fun n ↦ congrArg a.coeff (neg_neg n)
+  right_inv a := CircleSobolev.ext <| funext fun n ↦ congrArg a.coeff (neg_neg n)
+  norm_map' a := by
+    have h := (hasSum_sq_weight_mul_norm_coeff (reflectFun a)).unique
+      (hasSum_sq_weight_mul_norm_coeff_neg a)
+    exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 h
+
+@[simp]
+theorem coeff_reflect (a : CircleSobolev s E) (n : ℤ) : (reflect a).coeff n = a.coeff (-n) :=
+  (rfl)
+
+@[simp]
+theorem reflect_symm : (reflect : CircleSobolev s E ≃ₗᵢ[ℂ] CircleSobolev s E).symm = reflect :=
+  (rfl)
 
 /-- Dominated convergence in `H^s`: if the Fourier coefficients of `b x` converge to those of `a`
 and the squared weighted norms `((1 + |n|) ^ s ‖(b x).coeff n - a.coeff n‖) ^ 2` are eventually

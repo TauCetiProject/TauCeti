@@ -86,33 +86,6 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   (Q : QuadraticForm R M) [Invertible (2 : R)]
 
 omit [Invertible (2 : R)] in
-/-- The commutator of a product of two Clifford generators with a third generator. -/
-private theorem lie_ι_mul_ι_ι (x y z : M) :
-    ⁅ι Q x * ι Q y, ι Q z⁆ =
-      QuadraticMap.polar Q y z • ι Q x - QuadraticMap.polar Q x z • ι Q y := by
-  rw [Ring.lie_def]
-  calc
-    ι Q x * ι Q y * ι Q z - ι Q z * (ι Q x * ι Q y) =
-        ι Q x * ι Q y * ι Q z -
-          (algebraMap R (CliffordAlgebra Q) (QuadraticMap.polar Q z x) -
-            ι Q x * ι Q z) * ι Q y := by
-      rw [← mul_assoc, ι_mul_ι_comm (Q := Q) z x]
-    _ = ι Q x * ι Q y * ι Q z -
-          algebraMap R (CliffordAlgebra Q) (QuadraticMap.polar Q z x) * ι Q y +
-          ι Q x * (ι Q z * ι Q y) := by noncomm_ring
-    _ = ι Q x * ι Q y * ι Q z -
-          algebraMap R (CliffordAlgebra Q) (QuadraticMap.polar Q z x) * ι Q y +
-          ι Q x * (algebraMap R (CliffordAlgebra Q) (QuadraticMap.polar Q z y) -
-            ι Q y * ι Q z) := by
-      rw [ι_mul_ι_comm (Q := Q) z y]
-    _ = QuadraticMap.polar Q y z • ι Q x -
-          QuadraticMap.polar Q x z • ι Q y := by
-      rw [QuadraticMap.polar_comm Q y z, QuadraticMap.polar_comm Q x z]
-      simp only [mul_sub, Algebra.smul_def,
-        ← Algebra.commutes (QuadraticMap.polar Q z y) (ι Q x)]
-      noncomm_ring
-
-omit [Invertible (2 : R)] in
 /-- The commutator of two products of Clifford generators, in a form that does not divide by
 `2`. -/
 theorem lie_ι_mul_ι_ι_mul_ι (x y z w : M) :
@@ -128,7 +101,7 @@ theorem lie_ι_mul_ι_ι_mul_ι (x y z w : M) :
       simp only [Ring.lie_def]
       noncomm_ring
     _ = _ := by
-      rw [lie_ι_mul_ι_ι, lie_ι_mul_ι_ι]
+      rw [ι_mul_ι_lie_ι, ι_mul_ι_lie_ι, map_sub, map_smul, map_smul, map_sub, map_smul, map_smul]
       simp only [sub_mul, mul_sub, smul_mul_assoc, mul_smul_comm]
       rw [QuadraticMap.polar_comm Q y z, QuadraticMap.polar_comm Q x z,
         QuadraticMap.polar_comm Q y w]

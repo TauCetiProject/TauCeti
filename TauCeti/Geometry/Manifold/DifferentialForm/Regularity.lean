@@ -109,6 +109,16 @@ theorem differentiableWithinAt_inChartAt [IsManifold I 1 M]
       rw [extChartAt_to_inv]
       exact (φ.inCoordinates_eq_inChartAt (mem_extChartAt_source x)).symm)
 
+/-- On a boundaryless manifold, a section differentiable at `x` has a coordinate expression in the
+chart centred at `x` that is differentiable at the chart image of `x`. -/
+theorem differentiableAt_inChartAt [IsManifold I 1 M] [I.Boundaryless]
+    (φ : RoughForm I M F k) {x : M}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x) :
+    DifferentiableAt ℝ (φ.inChartAt x) (extChartAt I x x) := by
+  have h := φ.differentiableWithinAt_inChartAt (s := univ) hφ.mdifferentiableWithinAt
+  rwa [preimage_univ, univ_inter, I.range_eq_univ, differentiableWithinAt_univ] at h
+
 /-- Section regularity within a subset implies flat regularity in the chart centred at the
 point. The derivative set is the inverse image of the subset intersected with the model range. -/
 theorem contDiffWithinAt_inChartAt [IsManifold I 1 M] {n : WithTop ℕ∞}

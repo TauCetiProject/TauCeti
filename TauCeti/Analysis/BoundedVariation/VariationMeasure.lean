@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
 public import TauCeti.MeasureTheory.Measure.ContentOfOpens
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # The variation measure of a function of locally finite variation
@@ -31,6 +32,9 @@ regular measures follows from `MeasureTheory.Measure.OuterRegular.ext_isOpen`.
 
 ## Main declarations
 
+* `TauCeti.forall_isCompact_exists_totalVariationOn_ne_top_iff`: along an exhaustion of `Ω` by
+  relatively compact open sets, the variation is locally finite on `Ω` exactly when it is finite
+  on each of them.
 * `TauCeti.variationMeasure μ Ω u`: the variation measure `|Du|` on `Ω`, a regular measure.
 * `TauCeti.variationMeasure_preimage_coe`: `|Du|(U) = totalVariationOn μ U u` for every open
   `U ⊆ Ω`, and `TauCeti.variationMeasure_univ`: `|Du|(Ω) = totalVariationOn μ Ω u`.
@@ -95,6 +99,22 @@ private theorem variationContent_measure_preimage_coe [BorelSpace E] (hU : U ≤
   exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ hφ (himage ▸ hV)
 
 end Content
+
+/-! ### Local finiteness of the variation -/
+
+/-- Along an exhaustion `V` of `Ω` by open sets with compact closures in `Ω`, a function has locally
+finite variation on `Ω` exactly when it has finite variation on every `V j`. -/
+theorem forall_isCompact_exists_totalVariationOn_ne_top_iff {V : ℕ → Opens E}
+    (hVc : ∀ j, IsCompact (closure (V j : Set E))) (hVΩ : ∀ j, closure (V j : Set E) ⊆ Ω)
+    (hVmono : Monotone V) (hVU : ⋃ j, (V j : Set E) = Ω) {w : E → ℝ} :
+    (∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U w ≠ ∞) ↔
+      ∀ j, totalVariationOn μ (V j) w ≠ ∞ := by
+  refine ⟨fun h j => ?_, fun h K hK hKΩ => ?_⟩
+  · obtain ⟨U, hU, hfin⟩ := h _ (hVc j) (hVΩ j)
+    exact ne_top_of_le_ne_top hfin (totalVariationOn_mono (subset_closure.trans hU))
+  · obtain ⟨j, hj⟩ := hK.elim_directed_cover (fun j => (V j : Set E)) (fun j => (V j).isOpen)
+      (hVU ▸ hKΩ) fun i j => ⟨max i j, hVmono (le_max_left i j), hVmono (le_max_right i j)⟩
+    exact ⟨V j, hj, h j⟩
 
 /-! ### The variation measure -/
 
@@ -163,11 +183,8 @@ theorem eq_variationMeasure (hu : LocallyIntegrableOn u Ω μ)
     (h : ∀ U : Opens E, U ≤ Ω → ν ((↑) ⁻¹' (U : Set E)) = totalVariationOn μ U u) :
     ν = variationMeasure μ Ω u := by
   refine Measure.OuterRegular.ext_isOpen fun W hW => ?_
-  -- An open subset of `Ω` is the trace of its image, an open subset of `E` inside `Ω`.
-  let U : Opens E := ⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩
-  have hU : U ≤ Ω := Subtype.coe_image_subset _ _
-  have hW' : ((↑) : Ω → E) ⁻¹' (U : Set E) = W := preimage_image_eq W Subtype.val_injective
-  rw [← hW', h U hU, variationMeasure_preimage_coe hu hfin hU]
+  obtain ⟨U, hU, rfl⟩ := Ω.exists_le_preimage_coe_eq hW
+  rw [h U hU, variationMeasure_preimage_coe hu hfin hU]
 
 /-- **Restriction to an open subset.** For `U ⊆ Ω` open, the variation measure on `U` is the
 pullback of the variation measure on `Ω` along the inclusion `U → Ω`. -/

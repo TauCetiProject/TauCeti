@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.Multiplicity
 -- Non-public: these declarations appear only inside proofs.
 import TauCeti.Algebra.Lie.GeneralLinear.Existence
 import TauCeti.Algebra.Lie.UniversalEnveloping.Multiplicity
+import TauCeti.Algebra.Lie.Submodule.Decomposition
 
 /-!
 # The single-weight isotypy criterion for `gl_n`
@@ -20,7 +21,9 @@ the general linear Lie algebra. If every irreducible submodule has the same high
 every pair of irreducible submodules is equivalent. Under complete reducibility, the module is the
 direct sum of copies of the named irreducible with that weight when the module is nonzero. For the
 zero module, the result is the empty direct sum and makes no dominance or irreducibility claim
-about the named carrier.
+about the named carrier. A multiplicity-free variant decomposes a completely reducible module into
+the named irreducibles of a family of weights, once the highest weight vectors of each weight in
+the family are known to be unique up to scalars and to exhaust those of dominant weight.
 
 The foundational `LieModule.IsIsotypic` assertion is pairwise. The counted direct-sum theorem adds
 complete reducibility explicitly, since it is not automatic for representations of a reductive Lie
@@ -43,6 +46,9 @@ algebra unless its centre acts semisimply.
 * `isIsotypicOfType_glIrreducible_of_forall_isGlHighestWeightVector`: the fixed-carrier criterion.
 * `nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_isGlHighestWeightVector`: the counted
   direct-sum criterion for a completely reducible module.
+* `nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_exists_eq_smul`: the multiplicity-free
+  criterion, decomposing a completely reducible module whose highest weight vectors of each weight
+  in a given family are unique up to scalars.
 
 ## References
 
@@ -222,6 +228,74 @@ theorem nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_isGlHighestWei
   let _ := isIrreducible_glIrreducible (K := K) hmu
   exact _root_.LieModule.nonempty_lieModuleEquiv_of_isIsotypicOfType _
     (isIsotypicOfType_glIrreducible_of_forall_isGlHighestWeightVector h)
+
+/-- **The multiplicity-free direct-sum criterion for `gl_N`.** Let `M` be a finite-dimensional
+completely reducible `gl_N`-module over an algebraically closed field, and `lam` an injective family
+of weights indexed by `T`. Suppose that every highest weight vector of `M` of dominant weight has
+weight some `lam t`, that every `lam t` is the weight of a highest weight vector, and that any two
+highest weight vectors of weight `lam t` are proportional. Then `M` is the direct sum of the named
+irreducibles `glIrreducible N (lam t)`, each occurring once.
+
+Complete reducibility is again an explicit hypothesis. -/
+theorem nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_exists_eq_smul
+    [IsAlgClosed K] [FiniteDimensional K M]
+    [ComplementedLattice (LieSubmodule K (Matrix (Fin N) (Fin N) K) M)]
+    {T : Type*} {lam : T → Fin N → K} (hlam : Function.Injective lam)
+    (hweight : ∀ (nu : Fin N → K) (v : M), IsGlHighestWeightVector nu v →
+      IsGlDominantIntegral nu → ∃ t, nu = lam t)
+    (hexists : ∀ t, ∃ v : M, IsGlHighestWeightVector (lam t) v)
+    (hsmul : ∀ t (v w : M), IsGlHighestWeightVector (lam t) v →
+      IsGlHighestWeightVector (lam t) w → ∃ c : K, w = c • v) :
+    Nonempty (M ≃ₗ⁅K,Matrix (Fin N) (Fin N) K⁆ ⨁ t : T, glIrreducible N (lam t)) := by
+  obtain ⟨k, P, hP, hirr⟩ := TauCeti.exists_isInternal_isIrreducible K (Matrix (Fin N) (Fin N) K) M
+  -- Every irreducible summand has a highest weight vector, of weight some `lam t`.
+  have hex : ∀ i, ∃ t, ∃ y : P i, IsGlHighestWeightVector (lam t) y := by
+    intro i
+    let _ := hirr i
+    let _ : Nontrivial (P i) := _root_.LieModule.nontrivial_of_isIrreducible (R := K)
+      (L := Matrix (Fin N) (Fin N) K) (M := P i)
+    obtain ⟨nu, y, hy⟩ := exists_isGlHighestWeightVector (K := K) (n := Fin N) (M := P i)
+    obtain ⟨t, rfl⟩ := hweight nu y (isGlHighestWeightVector_coe_iff.mpr hy)
+      hy.isGlDominantIntegral
+    exact ⟨t, y, hy⟩
+  choose τ y hy using hex
+  -- Distinct summands have distinct labels, since the highest weight vectors of one weight are
+  -- proportional while the summands are independent.
+  have hτinj : Function.Injective τ := by
+    intro i j hij
+    by_contra hne
+    obtain ⟨c, hc⟩ := hsmul (τ i) _ _ (isGlHighestWeightVector_coe_iff.mpr (hy i))
+      (hij ▸ isGlHighestWeightVector_coe_iff.mpr (hy j))
+    have hmem : ((y j : P j) : M) ∈ (P i).toSubmodule := hc ▸ Submodule.smul_mem _ c (y i).2
+    exact (hy j).ne_zero (Subtype.ext (Submodule.disjoint_def.mp
+      (hP.submodule_iSupIndep.pairwiseDisjoint hne) _ hmem (y j).2))
+  -- Every label occurs: some summand projection of a highest weight vector of weight `lam t` is
+  -- nonzero, and all highest weight vectors of an irreducible module have the same weight.
+  have hτsurj : Function.Surjective τ := by
+    intro t
+    obtain ⟨w, hw⟩ := hexists t
+    obtain ⟨i, hi⟩ : ∃ i, hP.lieModuleProjection i w ≠ 0 := by
+      by_contra h
+      refine hw.ne_zero ?_
+      rw [← hP.sum_lieModuleProjection_apply w]
+      exact Finset.sum_eq_zero fun i _ => not_not.mp fun hi => h ⟨i, hi⟩
+    have hmem : hP.lieModuleProjection i w ∈ P i := by
+      rw [← hP.lieModuleProjection_range i]
+      exact ⟨w, rfl⟩
+    let _ := hirr i
+    exact ⟨i, hlam ((hy i).weight_eq_of_isIrreducible
+      (isGlHighestWeightVector_coe_iff.mp (hw.map _ hi) :
+        IsGlHighestWeightVector (lam t) (⟨_, hmem⟩ : P i))).symm⟩
+  have hcard : ∀ t, Nat.card {i // τ i = t} = 1 := fun t =>
+    Nat.card_eq_one_iff_exists.mpr ⟨⟨_, (hτsurj t).choose_spec⟩,
+      fun ⟨i, hi⟩ => Subtype.ext (hτinj (hi.trans (hτsurj t).choose_spec.symm))⟩
+  obtain ⟨e⟩ := DirectSum.nonempty_lieModuleEquiv_sigma_of_isInternal
+    (S := fun t => glIrreducible N (lam t)) (m := fun _ => 1) P hP τ
+    (fun i => let _ := hirr i
+      have hy' := hy i
+      nonempty_lieModuleEquiv_glIrreducible (hy'.isGlDominantIntegral) hy') hcard
+  exact ⟨e.trans (DirectSum.lieModuleEquivCongrLeft K (Matrix (Fin N) (Fin N) K)
+    (Equiv.sigmaUnique _ fun _ => Fin 1))⟩
 
 end Fin
 
