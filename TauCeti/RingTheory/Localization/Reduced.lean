@@ -20,8 +20,7 @@ A prime ideal of a reduced Noetherian ring consists of zero divisors exactly whe
 `K` of a reduced Noetherian ring `A` has Krull dimension zero. Being Noetherian too, `K` is
 Artinian (`IsFractionRing.isArtinianRing_of_isReduced`), and it is reduced. Mathlib's
 `IsArtinianRing.equivPi` then decomposes `K` as the finite product of its residue fields `K ⧸ m`
-over its maximal ideals `m`. When every positive integer is a non-zero-divisor of `A`, these
-residue fields have characteristic zero (`IsFractionRing.charZero_quotient`).
+over its maximal ideals `m`.
 
 ## References
 
@@ -51,7 +50,8 @@ theorem isArtinianRing_of_isReduced [IsNoetherianRing A] [IsReduced A] : IsArtin
   -- Every prime of `K` contracts to a minimal prime of `A`, so every prime of `K` is minimal.
   have hmin (P : Ideal K) [P.IsPrime] : P ∈ minimalPrimes K := by
     have hP : P.comap (algebraMap A K) ∈ minimalPrimes A :=
-      Ideal.mem_minimalPrimes_iff_disjoint_nonZeroDivisors.mpr
+      (Ideal.mem_minimalPrimes_iff_disjoint_nonZeroDivisors
+        (minimalPrimes.finite_of_isNoetherianRing A)).mpr
         ((IsLocalization.isPrime_iff_isPrime_disjoint A⁰ K P).mp ‹_›).2.symm
     have h := IsLocalization.minimalPrimes_map A⁰ K (⊥ : Ideal A)
     rw [Ideal.map_bot] at h
@@ -59,16 +59,5 @@ theorem isArtinianRing_of_isReduced [IsNoetherianRing A] [IsReduced A] : IsArtin
   refine Ring.KrullDimLE.mk₀ fun P hP ↦ ?_
   obtain ⟨M, hM, hPM⟩ := P.exists_le_maximal hP.ne_top
   rwa [le_antisymm hPM ((hmin M).2 ⟨hP, bot_le⟩ hPM)]
-
-/-- If every positive integer is a non-zero-divisor of `A`, then every quotient of the total
-quotient ring of `A` by a proper ideal has characteristic zero. -/
-theorem charZero_quotient (h : ∀ n : ℕ, n ≠ 0 → (n : A) ∈ A⁰) {I : Ideal K} (hI : I ≠ ⊤) :
-    CharZero (K ⧸ I) := by
-  refine charZero_of_inj_zero fun n hn ↦ ?_
-  by_contra h0
-  have hu : IsUnit (n : K) := by
-    simpa using IsLocalization.map_units K ⟨(n : A), h n h0⟩
-  have := Ideal.Quotient.nontrivial_iff.mpr hI
-  exact (hu.map (Ideal.Quotient.mk I)).ne_zero (by simpa using hn)
 
 end IsFractionRing

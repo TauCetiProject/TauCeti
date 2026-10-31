@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Jacobson.Semiprimary
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.MonoidAlgebra.Reduced
 public import TauCeti.RingTheory.Localization.Reduced
+public import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
 # Total quotient rings of monoid algebras
