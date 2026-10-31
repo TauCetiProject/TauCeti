@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-public import TauCeti.Data.Nat.GCD
 import TauCeti.Data.ZMod.Units
 
 /-!

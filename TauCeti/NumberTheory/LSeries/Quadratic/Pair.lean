@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Nat.GCD
 public import TauCeti.NumberTheory.LSeries.ZetaMul
 public import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 
@@ -60,6 +61,19 @@ theorem zetaMulPairCoeffs_eq_zetaMul_mul_pmul (χ : DirichletCharacter ℂ M)
     ArithmeticFunction.pmul_zeta, toArithmeticFunction_mul,
     ArithmeticFunction.pmul_comm (toArithmeticFunction (ψ ·)), mul_assoc]
 
+/-- The prime-power coefficients are the convolution of `zetaMul` with its character twist. -/
+theorem zetaMulPairCoeffs_prime_pow (χ : DirichletCharacter ℂ M)
+    (ψ : DirichletCharacter ℂ N) {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    χ.zetaMulPairCoeffs ψ (p ^ k) = ∑ i ∈ Finset.range (k + 1),
+      χ.zetaMul (p ^ i) * (toArithmeticFunction (ψ ·)).pmul χ.zetaMul (p ^ (k - i)) := by
+  rw [zetaMulPairCoeffs_eq_zetaMul_mul_pmul, mul_apply,
+    Nat.sum_divisorsAntidiagonal (fun a b ↦
+      χ.zetaMul a * (toArithmeticFunction (ψ ·)).pmul χ.zetaMul b),
+    Nat.sum_divisors_prime_pow hp]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [← pow_sub_mul_pow p (Nat.le_of_lt_succ (Finset.mem_range.mp hi)),
+    Nat.mul_div_cancel _ (pow_pos hp.pos _)]
+
 /-- The four-factor coefficient function is symmetric in the characters. -/
 theorem zetaMulPairCoeffs_comm (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N) :
     χ.zetaMulPairCoeffs ψ = ψ.zetaMulPairCoeffs χ := by
@@ -95,13 +109,8 @@ private theorem zetaMulPairCoeffs_prime_pow_nonneg_of_eq_neg_one
     {χ : DirichletCharacter ℂ M} {ψ : DirichletCharacter ℂ N}
     (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) {p : ℕ} (hp : p.Prime)
     (hχp : χ p = -1) (k : ℕ) : 0 ≤ χ.zetaMulPairCoeffs ψ (p ^ k) := by
-  rw [zetaMulPairCoeffs_eq_zetaMul_mul_pmul, mul_apply,
-    Nat.sum_divisorsAntidiagonal (fun a b ↦
-      χ.zetaMul a * (toArithmeticFunction (ψ ·)).pmul χ.zetaMul b),
-    Nat.sum_divisors_prime_pow hp]
-  refine Finset.sum_nonneg fun i hi ↦ ?_
-  rw [← pow_sub_mul_pow p (Nat.le_of_lt_succ (Finset.mem_range.mp hi)),
-    Nat.mul_div_cancel _ (pow_pos hp.pos _)]
+  rw [zetaMulPairCoeffs_prime_pow χ ψ hp]
+  refine Finset.sum_nonneg fun i _ ↦ ?_
   exact mul_nonneg (zetaMul_prime_pow_nonneg (MulChar.isQuadratic_iff_sq_eq_one.mp hχ) hp i)
     (twist_zetaMul_prime_pow_nonneg hψ hp hχp (k - i))
 
@@ -116,16 +125,12 @@ theorem zetaMulPairCoeffs_prime_pow_nonneg {χ : DirichletCharacter ℂ M}
   · rw [zetaMulPairCoeffs_comm]
     exact zetaMulPairCoeffs_prime_pow_nonneg_of_eq_neg_one hψ hχ hp hψp k
   have hψ0 : 0 ≤ ψ p := by rcases hψ p with h | h | h <;> simp_all
-  rw [zetaMulPairCoeffs_eq_zetaMul_mul_pmul, mul_apply,
-    Nat.sum_divisorsAntidiagonal (fun a b ↦
-      χ.zetaMul a * (toArithmeticFunction (ψ ·)).pmul χ.zetaMul b),
-    Nat.sum_divisors_prime_pow hp]
-  refine Finset.sum_nonneg fun i hi ↦ ?_
-  rw [← pow_sub_mul_pow p (Nat.le_of_lt_succ (Finset.mem_range.mp hi)),
-    Nat.mul_div_cancel _ (pow_pos hp.pos _), ArithmeticFunction.pmul_apply,
-    toArithmeticFunction_apply_pow ψ hp.ne_zero]
-  exact mul_nonneg (zetaMul_nonneg (MulChar.isQuadratic_iff_sq_eq_one.mp hχ) _)
-    (mul_nonneg (pow_nonneg hψ0 _) (zetaMul_nonneg (MulChar.isQuadratic_iff_sq_eq_one.mp hχ) _))
+  have hχsq := MulChar.isQuadratic_iff_sq_eq_one.mp hχ
+  rw [zetaMulPairCoeffs_prime_pow χ ψ hp]
+  refine Finset.sum_nonneg fun i _ ↦ ?_
+  rw [ArithmeticFunction.pmul_apply, toArithmeticFunction_apply_pow ψ hp.ne_zero]
+  exact mul_nonneg (zetaMul_nonneg hχsq _)
+    (mul_nonneg (pow_nonneg hψ0 _) (zetaMul_nonneg hχsq _))
 
 /-- All Dirichlet coefficients of `ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` are nonnegative
 real numbers for quadratic characters, without any conductor or distinctness restriction. -/
