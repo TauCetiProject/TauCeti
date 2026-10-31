@@ -86,10 +86,12 @@ theorem continuous_pluckerMap :
         Continuous fun f : finiteFullRankFrame 𝕜 r N ↦ f.1))
       (fun f ↦ (plucker_ne_zero_iff _).2 f.2)
 
-/-- Finite Grassmannians are Hausdorff when their Plücker coordinate spaces have
-separating duals. In particular, this applies over the real and complex numbers. -/
-instance [T2Space 𝕜] [SeparatingDual 𝕜 (Set.powersetCard (Fin N) r → 𝕜)] :
-    T2Space (finiteGrassmannian 𝕜 r N) :=
-  T2Space.of_injective_continuous pluckerMap_injective continuous_pluckerMap
+/-- Finite Grassmannians over Hausdorff topological fields are Hausdorff.
+In particular, this applies over the real and complex numbers. -/
+instance [T2Space 𝕜] : T2Space (finiteGrassmannian 𝕜 r N) := by
+  let : SeparatingDual 𝕜 (Set.powersetCard (Fin N) r → 𝕜) := ⟨fun x hx ↦ by
+    obtain ⟨s, hs⟩ := Function.ne_iff.mp hx
+    exact ⟨ContinuousLinearMap.proj s, hs⟩⟩
+  exact T2Space.of_injective_continuous pluckerMap_injective continuous_pluckerMap
 
 end TauCeti.finiteGrassmannian
