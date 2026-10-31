@@ -32,18 +32,6 @@ variable {l : Type*} [Fintype l] [DecidableEq l] {R : Type*} [CommRing R]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- Transpose preserves the symplectic Lie algebra. -/
-theorem transpose_mem_sp {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
-    Xᵀ ∈ sp l R := by
-  rw [mem_sp, transpose_transpose, eq_neg_iff_add_eq_zero]
-  exact mul_J_add_J_mul_transpose_eq_zero hX
-
-/-- On the symplectic Lie algebra, conjugation by `J` is negative transpose. -/
-theorem J_conj_eq_neg_transpose {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
-    J l R * X * (J l R)⁻¹ = -Xᵀ := by
-  rw [(mem_sp_iff_transpose_eq_J_conj_neg X).mp hX]
-  simp
-
 variable (l R)
 
 /-- The involutive Lie automorphism `X ↦ -Xᵀ` of the symplectic Lie algebra. -/
