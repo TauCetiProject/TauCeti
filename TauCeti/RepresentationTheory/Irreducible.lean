@@ -226,7 +226,8 @@ theorem IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one {ρ : Representati
   classical
   let := hρ
   let e := IntertwiningMap.equivAlgEnd (ρ := ρ)
-  exact (mul_self_eq_one_iff.mp (show e f * e f = 1 by rw [← map_mul, hf, map_one])).imp
+  have he : e f * e f = 1 := by rw [← map_mul, hf, map_one]
+  exact (mul_self_eq_one_iff.mp he).imp
     (fun h ↦ e.injective (by simpa using h)) fun h ↦ e.injective (by simpa using h)
 
 open scoped MonoidAlgebra in

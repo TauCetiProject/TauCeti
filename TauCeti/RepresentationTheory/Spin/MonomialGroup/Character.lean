@@ -30,25 +30,24 @@ This file turns those group-theoretic facts into representation theory. A repres
 group of signed monomials on which `ε` acts by the identity is the same as a representation of the
 quotient. For a pairwise orthogonal family of generators and over an algebraically closed field,
 such a representation is one-dimensional whenever it is finite-dimensional and irreducible, because
-the quotient is commutative for such a family; and over any field `F` in which `2` is invertible
-the quotient has exactly `2 ^ n` characters, each of which carries such a representation on a line.
-The field of the representations and the coefficient ring of the Clifford algebra are independent.
-The complementary sector, where `ε` acts by `-1`, is the one `CliffordAlgebra.monomialGroupLift`
-identifies with the Clifford modules, classified through the spinor module in
-`TauCeti.RepresentationTheory.Spin.MonomialGroup.Spinor`.
+the quotient is commutative for such a family. The field of the representations and the
+coefficient ring of the Clifford algebra are independent. The complementary sector, where `ε` acts
+by `-1`, is the one `CliffordAlgebra.monomialGroupLift` identifies with the Clifford modules,
+classified through the spinor module in `TauCeti.RepresentationTheory.Spin.MonomialGroup.Spinor`.
 
 Since `ε` is central of order two, it acts on an irreducible representation by `1` or by `-1`.
 For an orthogonal basis whose generators square to `±1`, the two halves above are assembled into
 a classification. Any two signed monomials commute up to `ε` and every signed monomial squares to
 `1` or `ε`, so in a representation in which `ε` acts by `1` the operators commute and square to the
-identity. Over a field of characteristic not two, Schur's lemma makes each of them `±1` on an
-irreducible representation, without any algebraic closure or finite dimension assumption. So an
-irreducible representation in which `ε` acts by `1` is the line of a character trivial on `ε`, that
-is of exactly one of the `2 ^ n` sign characters
-`CliffordAlgebra.monomialGroupCharacter hb hQ t : ±e_s ↦ (-1) ^ #(s ∩ t)`. Together with the spinor
-classification this describes all the irreducible representations of the group over a separably
-closed field of characteristic not two; in dimension one, for instance, all four of them are
-one-dimensional.
+identity. Schur's lemma makes each of them `±1` on an irreducible representation, over any field
+and without any algebraic closure, finite dimension or finiteness of the basis, so such a
+representation is the line of a character trivial on `ε`. For a finite basis and over a field of
+characteristic not two, this character is exactly one of the `2 ^ n` sign characters
+`CliffordAlgebra.monomialGroupCharacter hb hQ t : ±e_s ↦ (-1) ^ #(s ∩ t)`, and these are all the
+characters trivial on `ε` with values in a domain of characteristic not two. Together with the
+spinor classification this describes all the irreducible representations of the group over a
+separably closed field of characteristic not two; in dimension one, for instance, all four of them
+are one-dimensional.
 
 ## Main results
 
@@ -57,19 +56,20 @@ one-dimensional.
   representation on which `ε` acts trivially is a line, and
   `CliffordAlgebra.ofLinearCharacter_comp_mk_apply_monomialGroupEpsilon` goes the other way, from a
   character of the quotient to a representation on which `ε` acts trivially.
-* `CliffordAlgebra.natCard_monoidHom_quotient_monomialGroupSign` and
-  `CliffordAlgebra.natCard_monoidHom_monomialGroup_apply_monomialGroupEpsilon_eq_one`: for a
-  finite orthogonal basis of `n` generators squaring to `±1` over a nontrivial ring in which `2` is
-  invertible, and with values in a field in which `2` is invertible, there are exactly `2 ^ n`
-  characters of the quotient, equivalently `2 ^ n` characters of the group of signed monomials
-  sending `ε` to `1`.
+* `CliffordAlgebra.natCard_monoidHom_quotient_monomialGroupSign`: for a finite orthogonal basis of
+  `n` generators squaring to `±1` over a nontrivial ring in which `2` is invertible, and with values
+  in a field in which `2` is invertible, the quotient has exactly `2 ^ n` characters.
+* `CliffordAlgebra.natCard_monoidHom_monomialGroup_apply_monomialGroupEpsilon_eq_one`: with values
+  in a domain of characteristic not two, the group of signed monomials has exactly `2 ^ n`
+  characters sending `ε` to `1`, namely the sign characters `χ_t`.
 * `TauCeti.monomialGroup_apply_monomialGroupEpsilon_eq_one_or_eq_neg_one`: `ε` acts on an
   irreducible representation by `1` or by `-1`.
-* `TauCeti.monomialGroup_existsUnique_nonempty_equiv_ofLinearCharacter`: for an orthogonal basis
-  whose generators square to `±1` and over a field of characteristic not two, an irreducible
+* `TauCeti.monomialGroup_existsUnique_nonempty_equiv_ofLinearCharacter`: for a finite orthogonal
+  basis whose generators square to `±1` and over a field of characteristic not two, an irreducible
   representation in which `ε` acts by `1` is equivalent to the line of the sign character `χ_t`
-  for exactly one index set `t`, and
-  `TauCeti.monomialGroup_finrank_eq_one_of_apply_monomialGroupEpsilon_eq_one`: it is a line.
+  for exactly one index set `t`.
+* `TauCeti.monomialGroup_finrank_eq_one_of_apply_monomialGroupEpsilon_eq_one`: over any field, an
+  irreducible representation in which `ε` acts by `1` is a line.
 * `TauCeti.monomialGroup_finrank_eq_one_of_finrank_eq_one`: in dimension one, over a separably
   closed field, every irreducible representation is a line.
 
@@ -153,16 +153,22 @@ theorem natCard_monoidHom_quotient_monomialGroupSign [Fintype I] [Nontrivial R]
   rw [CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity _ F,
     natCard_quotient_monomialGroupSign hb hQ]
 
-/-- **The group of signed monomials has exactly `2 ^ n` characters sending `ε` to `1`**, with
-values in a field in which `2` is invertible: they are the characters of the quotient by the sign
-subgroup. -/
+/-- **There are `2 ^ n` characters trivial on `ε`**: for an orthogonal basis of `n` vectors whose
+generators square to `±1`, the characters of the group of signed monomials with values in a domain
+of characteristic not two that are trivial on `ε = -1` are the `2 ^ n` sign characters `χ_t`. -/
 theorem natCard_monoidHom_monomialGroup_apply_monomialGroupEpsilon_eq_one [Fintype I] [Nontrivial R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
-    {F : Type*} [Field F] (hF : (2 : F) ≠ 0) :
-    Nat.card {χ : monomialGroup Q b →* Fˣ // χ (monomialGroupEpsilon Q b) = 1} =
+    (k : Type*) [CommRing k] [IsDomain k] [NeZero (2 : k)] :
+    Nat.card {χ : monomialGroup Q b →* kˣ // χ (monomialGroupEpsilon Q b) = 1} =
       2 ^ Fintype.card I := by
-  rw [Nat.card_congr (monomialGroupSignCharEquiv (Q := Q) b),
-    natCard_monoidHom_quotient_monomialGroupSign hb hQ hF]
+  rw [← Fintype.card_finset, ← Nat.card_eq_fintype_card]
+  refine (Nat.card_congr (Equiv.ofBijective (fun t ↦
+    ⟨(Units.map (Int.castRingHom k : ℤ →* k)).comp (monomialGroupCharacter hb hQ t), by simp⟩)
+    ⟨fun t t' h ↦ ?_, fun χ ↦ ?_⟩)).symm
+  · exact (existsUnique_monomialGroupCharacter_eq hb hQ _ (by simp)).unique rfl
+      (congrArg Subtype.val h).symm
+  · obtain ⟨t, ht, -⟩ := existsUnique_monomialGroupCharacter_eq hb hQ χ.1 χ.2
+    exact ⟨t, Subtype.ext ht⟩
 
 end CliffordAlgebra
 
@@ -178,16 +184,22 @@ theorem monomialGroup_apply_monomialGroupEpsilon_eq_one_or_eq_neg_one {R M I : T
     {W : Type*} [AddCommGroup W] [Module k W] (ρ : Representation k (monomialGroup Q v) W)
     [ρ.IsIrreducible] :
     ρ (monomialGroupEpsilon Q v) = 1 ∨ ρ (monomialGroupEpsilon Q v) = -1 := by
-  let T : IntertwiningMap ρ ρ :=
-    (ρ (monomialGroupEpsilon Q v)).intertwiningMap_of_isIntertwiningMap ρ ρ fun h w ↦ by
-      rw [← Module.End.mul_apply, ← map_mul,
-        ← Subgroup.mem_center_iff.mp (monomialGroupEpsilon_mem_center v) h, map_mul,
-        Module.End.mul_apply]
-  have hT : T * T = 1 := DFunLike.ext _ _ fun w ↦ by
-    simp [T, ← Module.End.mul_apply, ← map_mul]
+  let ε := monomialGroupEpsilon Q v
+  have hcentral : ε ∈ Submonoid.center (monomialGroup Q v) := by
+    simpa only [← Subgroup.center_toSubmonoid, Subgroup.mem_toSubmonoid] using
+      monomialGroupEpsilon_mem_center v
+  let T := IntertwiningMap.centralMul ρ ε hcentral
+  -- Mathlib exposes no projection lemma for the underlying action of `centralMul`.
+  have hTmap : T.toLinearMap = ρ ε := rfl
+  have hTapply (w : W) : T w = ρ ε w := rfl
+  have hεε : ε * ε = 1 := monomialGroupEpsilon_mul_self v
+  have hT : T * T = 1 := by
+    apply IntertwiningMap.ext
+    simp only [IntertwiningMap.coe_mul, hTmap, ← map_mul, hεε, map_one]
+    rfl
   rcases (inferInstance : ρ.IsIrreducible).eq_one_or_eq_neg_one_of_mul_self_eq_one hT with h | h
-  · exact Or.inl (LinearMap.ext fun w ↦ by simpa [T] using DFunLike.congr_fun h w)
-  · exact Or.inr (LinearMap.ext fun w ↦ by simpa [T] using DFunLike.congr_fun h w)
+  · exact Or.inl (LinearMap.ext fun w ↦ by simpa [hTapply, ε] using DFunLike.congr_fun h w)
+  · exact Or.inr (LinearMap.ext fun w ↦ by simpa [hTapply, ε] using DFunLike.congr_fun h w)
 
 section Classification
 
@@ -220,12 +232,33 @@ private theorem apply_eq_one_or_eq_neg_one_of_apply_monomialGroupEpsilon_eq_one
     have hsq : ρ g * ρ g = 1 := by
       rw [← map_mul]
       rcases (mem_monomialGroupSign_iff b).mp (mul_self_mem_monomialGroupSign b
-        (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij)) hQ g) with h | h <;>
+          (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij)) hQ g) with h | h <;>
         simp [h, hρ]
     simpa [T] using DFunLike.congr_fun hsq w
   rcases (inferInstance : ρ.IsIrreducible).eq_one_or_eq_neg_one_of_mul_self_eq_one hT with h | h
   · exact Or.inl (LinearMap.ext fun w ↦ by simpa [T] using DFunLike.congr_fun h w)
   · exact Or.inr (LinearMap.ext fun w ↦ by simpa [T] using DFunLike.congr_fun h w)
+
+omit [Nontrivial R] [LinearOrder I] in
+/-- The scalar actions of the signed monomials assemble into a character trivial on `ε`. -/
+private theorem exists_character_of_apply_monomialGroupEpsilon_eq_one
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
+    (ρ : Representation k (monomialGroup Q b) W) [ρ.IsIrreducible]
+    (hρ : ρ (monomialGroupEpsilon Q b) = 1) :
+    ∃ ψ : monomialGroup Q b →* kˣ, ψ (monomialGroupEpsilon Q b) = 1 ∧
+      ∀ g, ρ g = (ψ g : k) • (1 : Module.End k W) := by
+  have hirr : ρ.IsIrreducible := inferInstance
+  have := hirr.nontrivial
+  have hscalar {x y : kˣ} (h : (x : k) • (1 : Module.End k W) = (y : k) • 1) : x = y :=
+    Units.ext (smul_left_injective k one_ne_zero h)
+  have hsign (g : monomialGroup Q b) : ∃ c : kˣ, ρ g = (c : k) • 1 := by
+    rcases apply_eq_one_or_eq_neg_one_of_apply_monomialGroupEpsilon_eq_one hb hQ ρ hρ g with h | h
+    · exact ⟨1, by simp [h]⟩
+    · exact ⟨-1, by simp [h]⟩
+  choose c hc using hsign
+  let ψ : monomialGroup Q b →* kˣ := .mk' c fun g h ↦ hscalar <| by
+    rw [← hc, map_mul, hc, hc, Units.val_mul, mul_smul, smul_one_mul]
+  exact ⟨ψ, hscalar (by simp [ψ, ← hc, hρ]), hc⟩
 
 /-- **The irreducible representations in which `ε` acts by `1` are the sign characters.** For an
 orthogonal basis indexed by a finite type whose generators square to `±1`, over a field of
@@ -243,33 +276,26 @@ theorem monomialGroup_existsUnique_nonempty_equiv_ofLinearCharacter [Finite I] [
   -- A scalar operator determines its scalar, since `W` is nonzero.
   have hscalar {x y : kˣ} (h : (x : k) • (1 : Module.End k W) = (y : k) • 1) : x = y :=
     Units.ext (smul_left_injective k one_ne_zero h)
-  -- Every signed monomial acts by a sign, and these signs form a character trivial on `ε`.
-  have hsign (g : monomialGroup Q b) : ∃ c : kˣ, ρ g = (c : k) • 1 := by
-    rcases apply_eq_one_or_eq_neg_one_of_apply_monomialGroupEpsilon_eq_one hb hQ ρ hρ g with h | h
-    · exact ⟨1, by simp [h]⟩
-    · exact ⟨-1, by simp [h]⟩
-  choose c hc using hsign
-  let ψ : monomialGroup Q b →* kˣ := .mk' c fun g h ↦ hscalar <| by
-    rw [← hc, map_mul, hc, hc, Units.val_mul, mul_smul, smul_one_mul]
-  have hψ : ψ (monomialGroupEpsilon Q b) = 1 := hscalar (by simp [ψ, ← hc, hρ])
+  obtain ⟨ψ, hψ, hc⟩ := exists_character_of_apply_monomialGroupEpsilon_eq_one hb hQ ρ hρ
   obtain ⟨t, ht, huniq⟩ := existsUnique_monomialGroupCharacter_eq hb hQ ψ hψ
   refine ⟨t, (hirr.nonempty_equiv_ofLinearCharacter_iff _).mpr fun g ↦ by rw [ht]; exact hc g,
     fun t' ht' ↦ huniq t' (MonoidHom.ext fun g ↦ hscalar ?_)⟩
   rw [← (hirr.nonempty_equiv_ofLinearCharacter_iff _).mp ht' g]
   exact hc g
 
+omit [Nontrivial R] [LinearOrder I] in
 /-- **An irreducible representation in which `ε` acts by `1` is a line**, for an orthogonal basis
-indexed by a finite type whose generators square to `±1`, over a field of characteristic not two.
-Unlike `CliffordAlgebra.finrank_eq_one_of_apply_monomialGroupEpsilon_eq_one`, this needs neither an
+whose generators square to `±1`, over any field; the basis need not be finite. Unlike
+`CliffordAlgebra.finrank_eq_one_of_apply_monomialGroupEpsilon_eq_one`, this needs neither an
 algebraically closed field nor a finite-dimensional representation, but it needs the generators to
 square to `±1`. -/
-theorem monomialGroup_finrank_eq_one_of_apply_monomialGroupEpsilon_eq_one [Finite I]
-    [NeZero (2 : k)] (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
-    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
+theorem monomialGroup_finrank_eq_one_of_apply_monomialGroupEpsilon_eq_one
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     (ρ : Representation k (monomialGroup Q b) W) [ρ.IsIrreducible]
     (hρ : ρ (monomialGroupEpsilon Q b) = 1) :
     finrank k W = 1 := by
-  obtain ⟨t, ⟨e⟩, -⟩ := monomialGroup_existsUnique_nonempty_equiv_ofLinearCharacter hb hQ ρ hρ
+  obtain ⟨ψ, -, hψ⟩ := exists_character_of_apply_monomialGroupEpsilon_eq_one hb hQ ρ hρ
+  obtain ⟨e⟩ := (inferInstance : ρ.IsIrreducible).nonempty_equiv_ofLinearCharacter_iff ψ |>.mpr hψ
   rw [e.toLinearEquiv.finrank_eq, finrank_self]
 
 end Classification
@@ -286,8 +312,6 @@ theorem monomialGroup_finrank_eq_one_of_finrank_eq_one {F : Type*} [Field F] [Is
     (hV : finrank F V = 1) {W : Type*} [AddCommGroup W] [Module F W]
     (ρ : Representation F (monomialGroup Q b) W) [ρ.IsIrreducible] :
     finrank F W = 1 := by
-  have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
-  have : Finite I := Module.Finite.finite_basis b
   rcases monomialGroup_apply_monomialGroupEpsilon_eq_one_or_eq_neg_one b ρ with hρ | hρ
   · exact monomialGroup_finrank_eq_one_of_apply_monomialGroupEpsilon_eq_one hb hQ ρ hρ
   · simpa using monomialGroup_finrank_eq_two_pow_of_odd hb hQ (l := 0) (by simpa using hV) ρ hρ

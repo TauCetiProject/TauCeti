@@ -1206,8 +1206,10 @@ theorem monomialGroupSupport_surjective [Finite I] (hb : (QuadraticMap.associate
   simp only [toAdd_ofAdd, Finset.coe_filter, Finset.mem_univ, true_and]
   by_cases hi : x.toAdd i = 1
   · simp [hi]
-  · rw [Set.indicator_of_notMem (show i ∉ {i | x.toAdd i = 1} from hi)]
-    exact (((show ∀ a : ZMod 2, a = 0 ∨ a = 1 by decide) _).resolve_right hi).symm
+  · have hnot : i ∉ {i | x.toAdd i = 1} := hi
+    have hbinary : ∀ a : ZMod 2, a = 0 ∨ a = 1 := by decide
+    rw [Set.indicator_of_notMem hnot]
+    exact ((hbinary _).resolve_right hi).symm
 
 omit [Fintype I] in
 /-- **The group of signed monomials modulo the sign subgroup is the elementary abelian group
@@ -1318,7 +1320,7 @@ theorem existsUnique_monomialGroupCharacter_eq [Finite I]
     have hx : (χ x : k) * χ x = 1 := by
       rw [← Units.val_mul, ← map_mul]
       rcases (mem_monomialGroupSign_iff b).mp (mul_self_mem_monomialGroupSign b
-        (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij)) hQ x) with h | h <;>
+          (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij)) hQ x) with h | h <;>
         simp [h, hχ]
     exact (mul_self_eq_one_iff.mp hx).imp Units.ext Units.ext
   choose g hg using fun i : I ↦ exists_monomialGroup_val_eq_basis hb hQ {i}
