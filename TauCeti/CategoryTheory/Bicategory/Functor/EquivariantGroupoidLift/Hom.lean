@@ -178,7 +178,6 @@ lemma comp_fiberIso_inv_as_app (φ : L.Hom L') (ψ : L'.Hom L'') (p : Γ)
 /-- A `2`-morphism `φ ⟶ ψ` of morphisms of lifts: a modification of the joint strong
 transformations, compatible with the fiber isomorphisms of `φ` and `ψ` at every object of every
 fiber. -/
-@[ext]
 structure Hom₂ (φ ψ : L.Hom L') where
   /-- The modification of joint strong transformations. -/
   joint : φ.joint ⟶ ψ.joint
@@ -200,8 +199,8 @@ instance : Category (L.Hom L') where
       ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (Ξ.comm p a)).trans (Θ.comm p a)))⟩
 
 @[ext]
-lemma hom₂_ext {φ ψ : L.Hom L'} {Θ Ξ : φ ⟶ ψ} (h : Θ.joint = Ξ.joint) : Θ = Ξ :=
-  Hom₂.ext h
+lemma hom₂_ext {φ ψ : L.Hom L'} {Θ Ξ : φ ⟶ ψ} (h : Θ.joint = Ξ.joint) : Θ = Ξ := by
+  cases Θ; cases Ξ; congr
 
 @[simp]
 lemma Hom₂.id_joint (φ : L.Hom L') : Hom₂.joint (𝟙 φ) = 𝟙 φ.joint :=
