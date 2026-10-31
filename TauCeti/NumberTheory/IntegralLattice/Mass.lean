@@ -52,6 +52,10 @@ the genus of `E₈ ⊕ E₈`.
 ## Main results
 
 * `TauCeti.IntegralLattice.properMass_eq_two_mul_mass`: in positive rank, `m⁺ = 2m`.
+* `TauCeti.IntegralLattice.sum_inv_natCard_isometry_le_mass` and
+  `TauCeti.IntegralLattice.sum_inv_natCard_isometry_eq_mass_iff`: pairwise non-isometric lattices
+  in a genus carry at most its mass, and, when every class has a finite isometry group, they carry
+  all of it exactly when they represent every class.
 * `TauCeti.IntegralLattice.mass_eq_one_of_finrank_eq_zero` and
   `TauCeti.IntegralLattice.properMass_eq_one_of_finrank_eq_zero`: in rank zero, `m = m⁺ = 1`.
 * `TauCeti.IntegralLattice.mass_eq_inv_two_of_finrank_eq_one` and
@@ -177,6 +181,69 @@ theorem properMass_eq_two_mul_mass (hL : L.genusClasses.Finite) (hn : 0 < finran
     ncard_mul_inv_natCard_specialOrthogonalGroup hV c]
 
 end Mass
+
+section Family
+
+variable {ι : Type*} [Fintype ι] {f : ι → IntegralLattice V}
+
+/-- The reciprocal isometry group orders of pairwise non-isometric lattices sum to the mass terms
+of their classes. -/
+private theorem sum_inv_natCard_isometry_eq_sum_image [DecidableEq (IsometryQuotient V)]
+    (hf : Pairwise fun i j ↦ IsEmpty (Isometry (f i) (f j))) :
+    ∑ i, ((Nat.card (Isometry (f i) (f i)) : ℚ))⁻¹ =
+      ∑ c ∈ Finset.univ.image (isometryClass ∘ f), ((Nat.card (Isometry c.out c.out) : ℚ))⁻¹ := by
+  rw [Finset.sum_image fun i _ j _ hij ↦ injective_isometryClass_comp hf hij]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp (isometryClass_out (f i).isometryClass)
+  rw [Function.comp_apply, e.natCard_isometry_eq]
+
+/-- The classes of a family of lattices in the genus of `L` are classes in the genus of `L`. -/
+private theorem image_isometryClass_comp_subset [DecidableEq (IsometryQuotient V)]
+    (hL : L.genusClasses.Finite) (hgen : ∀ i, L.SameGenus (f i)) :
+    Finset.univ.image (isometryClass ∘ f) ⊆ hL.toFinset := fun _ hc ↦ by
+  obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hc
+  exact hL.mem_toFinset.mpr (range_isometryClass_comp_subset hgen ⟨i, rfl⟩)
+
+/-- **Pairwise non-isometric lattices in a genus carry at most its mass**: the reciprocal orders
+of their isometry groups sum to at most the mass, for a genus with finitely many classes. -/
+theorem sum_inv_natCard_isometry_le_mass (hL : L.genusClasses.Finite)
+    (hgen : ∀ i, L.SameGenus (f i)) (hf : Pairwise fun i j ↦ IsEmpty (Isometry (f i) (f j))) :
+    ∑ i, ((Nat.card (Isometry (f i) (f i)) : ℚ))⁻¹ ≤ L.mass := by
+  classical
+  rw [sum_inv_natCard_isometry_eq_sum_image hf, mass_def, finsum_mem_eq_finite_toFinset_sum _ hL]
+  exact Finset.sum_le_sum_of_subset_of_nonneg (image_isometryClass_comp_subset hL hgen)
+    fun _ _ _ ↦ by positivity
+
+/-- **A mass check certifies a complete set of classes.** Let the genus of `L` contain finitely
+many classes, each with a finite isometry group, as for a definite lattice. Then pairwise
+non-isometric lattices in the genus represent every class exactly when the reciprocal orders of
+their isometry groups sum to the mass: a missing class would contribute a positive term. -/
+theorem sum_inv_natCard_isometry_eq_mass_iff (hL : L.genusClasses.Finite)
+    (hO : ∀ M : IntegralLattice V, L.SameGenus M → Finite (Isometry M M))
+    (hgen : ∀ i, L.SameGenus (f i)) (hf : Pairwise fun i j ↦ IsEmpty (Isometry (f i) (f j))) :
+    ∑ i, ((Nat.card (Isometry (f i) (f i)) : ℚ))⁻¹ = L.mass ↔ Nat.card ι = L.classNumber := by
+  classical
+  rw [card_eq_classNumber_iff_of_pairwise_isEmpty_isometry hL hgen hf,
+    sum_inv_natCard_isometry_eq_sum_image hf, mass_def, finsum_mem_eq_finite_toFinset_sum _ hL]
+  have hsub := image_isometryClass_comp_subset hL hgen
+  refine ⟨fun h M hM ↦ ?_, fun h ↦ ?_⟩
+  · by_contra hne
+    push Not at hne
+    have hM' : M.isometryClass ∉ Finset.univ.image (isometryClass ∘ f) := by
+      simp only [Finset.mem_image, Finset.mem_univ, true_and, Function.comp_apply,
+        isometryClass_eq_isometryClass_iff, not_exists, not_nonempty_iff]
+      exact fun i ↦ ⟨fun e ↦ (hne i).false e⟩
+    have := hO _ (mem_genusClasses_iff.mp (isometryClass_mem_genusClasses_iff.mpr hM))
+    refine h.not_lt (Finset.sum_lt_sum_of_subset hsub
+      (hL.mem_toFinset.mpr (isometryClass_mem_genusClasses_iff.mpr hM)) hM' ?_
+      fun _ _ _ ↦ by positivity)
+    exact inv_pos.mpr (Nat.cast_pos.mpr (Nat.card_pos_iff.mpr ⟨⟨Isometry.refl _⟩, this⟩))
+  · refine congrArg (Finset.sum · _) (hsub.antisymm fun c hc ↦ ?_)
+    obtain ⟨i, ⟨e⟩⟩ := h c.out (mem_genusClasses_iff.mp (hL.mem_toFinset.mp hc))
+    exact Finset.mem_image.mpr
+      ⟨i, Finset.mem_univ i, e.isometryClass_eq.trans (isometryClass_out c)⟩
+
+end Family
 
 section LowRank
 

@@ -15,7 +15,8 @@ import Mathlib.Topology.Algebra.Module.Equiv.Prod
 
 Pulling a stack back along a map of its base pulls every section and sector back along the
 corresponding map of the cylinder, leaving the distinguished coordinate unchanged. Polynomial
-base maps preserve semialgebraic stacks. When the base map is a coordinate permutation,
+base maps, and restriction to a semialgebraic subset of the base, preserve semialgebraic stacks.
+When the base map is a coordinate permutation,
 analyticity of the ambient cells is preserved as well.
 
 These results transport the geometric output of polynomial lifting between coordinate orders.
@@ -60,6 +61,21 @@ theorem IsSemialgebraicStack.comp {C : Set (Fin n → ℝ)} {θ : Fin k → C �
     convert (hθ.isSemialgebraic_sectorSet j).preimage_eval q using 1
     ext y
     simp only [mem_preimage, hq, f]
+
+/-- Restricting a semialgebraic stack over `C` to a semialgebraic subset `D ⊆ C` gives a
+semialgebraic stack over `D`. Its cells are the parts of the original cells lying over `D`
+(`TauCeti.stackCells_inclusion`). -/
+theorem IsSemialgebraicStack.restrict {C D : Set (Fin n → ℝ)} {θ : Fin k → C → ℝ}
+    (hθ : IsSemialgebraicStack C θ) (hD : IsSemialgebraic D) (h : D ⊆ C) :
+    IsSemialgebraicStack D fun i ↦ θ i ∘ inclusion h where
+  continuous i := (hθ.continuous i).comp (continuous_inclusion h)
+  strictMono x := hθ.strictMono (inclusion h x)
+  isSemialgebraic_sectionSet i := by
+    rw [image_cylinder_sectionSet_inclusion]
+    exact (hθ.isSemialgebraic_sectionSet i).inter hD.preimage_tail
+  isSemialgebraic_sectorSet j := by
+    rw [image_cylinder_sectorSet_inclusion]
+    exact (hθ.isSemialgebraic_sectorSet j).inter hD.preimage_tail
 
 /-- Reordering only the base coordinates preserves a semialgebraic stack and analyticity
 of its cells. The newly lifted coordinate remains first. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Artanh
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 
 /-!
 # The addition formula and the monotonicity of the hyperbolic tangent, and `sinh (r / 2)`
@@ -15,7 +16,7 @@ Mathlib's `Analysis/Complex/Trigonometric.lean` defines `Real.sinh`, `Real.cosh`
 and proves the two addition formulae `Real.sinh_add` and `Real.cosh_add`, but records none for
 `Real.tanh`; `Analysis/SpecialFunctions/Artanh.lean` inverts `Real.tanh` on `(-1, 1)` and proves
 that the inverse is strictly monotone, but does not state the monotonicity of `Real.tanh`
-itself, nor its continuity. This file supplies these, together with the square of
+itself, nor its continuity or smoothness. This file supplies these, together with the square of
 `Real.sinh (r / 2)` in terms of the exponentials `exp (± r / 2)`.
 
 ## Main declarations
@@ -24,8 +25,8 @@ itself, nor its continuity. This file supplies these, together with the square o
   tangent of a sum is the Möbius sum of the hyperbolic tangents.
 * `Real.tanh_strictMono` and `Real.tanh_lt_tanh_iff` — `Real.tanh` is strictly monotone, so it
   compares two real numbers exactly as they compare, and is positive on the positive reals.
-* `Real.tanh_nonneg` and `Real.continuous_tanh` — `Real.tanh` is nonnegative on `[0, ∞)` and
-  continuous.
+* `Real.tanh_nonneg`, `Real.tanh_neg_iff`, `Real.continuous_tanh` and `Real.contDiff_tanh` —
+  `Real.tanh` is nonnegative on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and smooth.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 
 The formula `Real.tanh_add` is the quotient of the other two, both sides carrying the factor
@@ -90,6 +91,11 @@ theorem _root_.Real.tanh_lt_tanh_iff {a b : ℝ} : Real.tanh a < Real.tanh b ↔
 theorem _root_.Real.tanh_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ Real.tanh x := by
   simpa only [Real.tanh_zero] using Real.tanh_strictMono.monotone hx
 
+/-- The hyperbolic tangent is negative exactly on the negative reals. -/
+@[simp]
+theorem _root_.Real.tanh_neg_iff {x : ℝ} : Real.tanh x < 0 ↔ x < 0 := by
+  simpa only [Real.tanh_zero] using @Real.tanh_lt_tanh_iff x 0
+
 /-- The hyperbolic tangent is continuous: it is the quotient of `exp x - exp (-x)` by the
 positive function `exp x + exp (-x)`. -/
 @[continuity, fun_prop]
@@ -97,6 +103,13 @@ theorem _root_.Real.continuous_tanh : Continuous Real.tanh := by
   simp_rw [funext Real.tanh_eq]
   exact (by fun_prop : Continuous fun x ↦ Real.exp x - Real.exp (-x)).div (by fun_prop)
     fun x ↦ (add_pos (Real.exp_pos x) (Real.exp_pos (-x))).ne'
+
+/-- The hyperbolic tangent is smooth: it is the quotient of `sinh` by the positive function
+`cosh`. -/
+@[fun_prop]
+theorem _root_.Real.contDiff_tanh {n : WithTop ℕ∞} : ContDiff ℝ n Real.tanh := by
+  simp_rw [funext Real.tanh_eq_sinh_div_cosh]
+  exact Real.contDiff_sinh.div Real.contDiff_cosh fun x ↦ (Real.cosh_pos x).ne'
 
 /-- The square of `sinh (r / 2)` in terms of `exp (± r / 2)`:
 `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`. -/
