@@ -88,14 +88,6 @@ private theorem exists_residueField_of_ringHom {L : Type*} [Field L] (g₁ : K�
     rw [RingHom.comp_apply, RingHom.comp_apply, hΦ]
     simp [Φ, G₁, G₂]
 
-/-- A domain is flat over a Bézout domain mapping injectively into it: over a Bézout domain,
-torsion-free modules are flat. -/
-private theorem flat_of_algebraMap_injective {R S : Type*} [CommRing R] [IsDomain R] [IsBezout R]
-    [CommRing S] [IsDomain S] [Algebra R S] (h : Function.Injective (algebraMap R S)) :
-    Module.Flat R S := by
-  rwa [Module.Flat.flat_iff_torsion_eq_bot_of_isBezout,
-    ← Submodule.isTorsionFree_iff_torsion_eq_bot, Module.isTorsionFree_iff_algebraMap_injective]
-
 /-- Let `ψ : S →+* L` map into a valuation subring `W` of the field `L`, sending an ideal `Q` into
 the nonunits of `W`. If a valuation subring `V` of `K` maps to `S` with its maximal ideal in `Q`,
 compatibly with `g : K →+* L`, then `W` dominates the image of `V`, so `W` pulls back to `V`. -/
@@ -126,9 +118,9 @@ theorem exists_comap_eq_of_comap_eq (V₁ : ValuationSubring K₁) (V₂ : Valua
   let : Algebra V₀ V₂ := ((algebraMap K₀ K₂).restrict V₀ V₂ h₂).toAlgebra
   have : IsLocalHom (algebraMap V₀ V₁) := isLocalHom_restrict V₁ _ rfl
   have : IsLocalHom (algebraMap V₀ V₂) := isLocalHom_restrict V₂ _ h
-  have : Module.Flat V₀ V₁ := flat_of_algebraMap_injective fun _ _ hab ↦
+  have : Module.Flat V₀ V₁ := Module.Flat.of_algebraMap_injective_of_isBezout fun _ _ hab ↦
     Subtype.ext ((algebraMap K₀ K₁).injective (congrArg Subtype.val hab))
-  have : Module.Flat V₀ V₂ := flat_of_algebraMap_injective fun _ _ hab ↦
+  have : Module.Flat V₀ V₂ := Module.Flat.of_algebraMap_injective_of_isBezout fun _ _ hab ↦
     Subtype.ext ((algebraMap K₀ K₂).injective (congrArg Subtype.val hab))
   -- a minimal prime `P₀` of `V₁ ⊗[V₀] V₂` below a prime `Q` over both maximal ideals
   obtain ⟨Q, hQ, hJQ⟩ := Ideal.exists_le_maximal _
