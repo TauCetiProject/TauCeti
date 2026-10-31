@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.LocallyConstant.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Pow
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.ZHat
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
 
 import TauCeti.Data.Rat.NumDenDvd
@@ -772,18 +772,19 @@ theorem zpowHat_ofMul_continuousMulEquivZHat (x : PrimeToPTateModule 1 R) :
 /-- **The unit relating two compatible families of primitive roots of unity.** If every component
 of `ζ` and of `ζ'` is primitive, `zHatUnit hζ hζ'` is the unit `u` of the profinite integers with
 `ζ ^ᶻ u = ζ'` (`TauCeti.PrimeToPTateModule.zpowHat_zHatUnit`); it is the unique such profinite
-integer (`TauCeti.PrimeToPTateModule.zpowHat_eq_iff_eq_zHatUnit`). Its value is the coordinate of
-`ζ'` relative to `ζ` and its inverse the coordinate of `ζ` relative to `ζ'`. -/
+integer (`TauCeti.PrimeToPTateModule.zpowHat_eq_iff_eq_zHatUnit`). It is the unit that
+`TauCeti.zHat.continuousAutEquivUnits` attaches to the coordinate change from `ζ'` to `ζ`, so its
+value is the coordinate of `ζ'` relative to `ζ`. -/
 noncomputable def zHatUnit : (Additive zHat.{u})ˣ :=
-  Units.mkOfMulEqOne (Additive.ofMul (continuousMulEquivZHat ζ hζ ζ'))
-    (Additive.ofMul (continuousMulEquivZHat ζ' hζ' ζ)) <| zpowHat_right_injective hζ <| by
-      simp only [zpowHat_mul, zpowHat_ofMul_continuousMulEquivZHat, zpowHat_one]
+  zHat.continuousAutEquivUnits
+    ((continuousMulEquivZHat ζ' hζ').symm.trans (continuousMulEquivZHat ζ hζ))
 
 /-- The unit `zHatUnit hζ hζ'` is the coordinate of `ζ'` relative to `ζ`. -/
 theorem coe_zHatUnit :
     (zHatUnit.{u} hζ hζ' : Additive zHat.{u}) =
-      Additive.ofMul (continuousMulEquivZHat ζ hζ ζ') :=
-  (rfl)
+      Additive.ofMul (continuousMulEquivZHat ζ hζ ζ') := by
+  rw [zHatUnit, zHat.coe_continuousAutEquivUnits_apply, ContinuousMulEquiv.trans_apply,
+    continuousMulEquivZHat_symm_apply, zHat.lift_gen]
 
 /-- `ζ` raised to the unit `zHatUnit hζ hζ'` is `ζ'`. -/
 @[simp]
@@ -855,21 +856,10 @@ coordinate relative to `ζ` raised to the inverse of `zHatUnit hζ hζ'`. -/
 theorem continuousMulEquivZHat_apply_eq_zpowHat (x : PrimeToPTateModule 1 R) :
     continuousMulEquivZHat.{u} ζ' hζ' x =
       continuousMulEquivZHat.{u} ζ hζ x ^ᶻ ((zHatUnit.{u} hζ hζ')⁻¹ : (Additive zHat.{u})ˣ) := by
-  -- Normalize the `Additive` conversions: the new coordinate is the old one times `u⁻¹`.
-  have hc : Additive.ofMul (continuousMulEquivZHat.{u} ζ hζ x ^ᶻ
-      ((zHatUnit.{u} hζ hζ')⁻¹ : (Additive zHat.{u})ˣ)) =
-        Additive.ofMul (continuousMulEquivZHat ζ hζ x) * zHatUnit hζ' hζ := by
-    rw [← inv_zHatUnit]
-    exact congrArg Additive.ofMul (toMul_zpowHat _ _)
-  refine Additive.ofMul.injective (zpowHat_right_injective hζ' ?_)
-  calc ζ' ^ᶻ Additive.ofMul (continuousMulEquivZHat ζ' hζ' x)
-      = x := zpowHat_ofMul_continuousMulEquivZHat hζ' x
-    _ = (ζ' ^ᶻ (zHatUnit hζ' hζ : Additive zHat.{u})) ^ᶻ
-          Additive.ofMul (continuousMulEquivZHat ζ hζ x) := by
-      rw [zpowHat_zHatUnit, zpowHat_ofMul_continuousMulEquivZHat]
-    _ = ζ' ^ᶻ Additive.ofMul (continuousMulEquivZHat ζ hζ x ^ᶻ
-          ((zHatUnit.{u} hζ hζ')⁻¹ : (Additive zHat.{u})ˣ)) := by
-      rw [hc, mul_comm, zpowHat_mul]
+  -- The coordinate change from `ζ` to `ζ'` is powering by the unit `zHatUnit hζ' hζ` it defines.
+  rw [inv_zHatUnit, ← zHat.continuousAutOfUnit_apply, ← zHat.continuousAutEquivUnits_symm_apply,
+    zHatUnit, MulEquiv.symm_apply_apply, ContinuousMulEquiv.trans_apply,
+    ContinuousMulEquiv.symm_apply_apply]
 
 end ZHatUnit
 
