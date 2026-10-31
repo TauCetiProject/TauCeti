@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.AdicCompletion.UniformCompletion
 public import TauCeti.RingTheory.Huber.TensorProduct.Completion
 import TauCeti.RingTheory.Huber.Completion.Noetherian
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 
 /-!
@@ -82,18 +83,6 @@ noncomputable local instance adicTensorUniformity : UniformSpace (B ⊗[A] C) :=
 local instance adicTensorUniformAddGroup : IsUniformAddGroup (B ⊗[A] C) :=
   isUniformAddGroup_of_addCommGroup
 
-/-- An ideal lies in an additive subgroup `U` as soon as every multiple of each of its generators
-lies in `U`. -/
-private theorem coe_span_subset_of_forall_mul_mem {E : Type*} [CommRing E] {X : Set E}
-    {U : AddSubgroup E} (h : ∀ x ∈ X, ∀ e : E, e * x ∈ U) :
-    ((Ideal.span X : Ideal E) : Set E) ⊆ U := by
-  intro y hy
-  have hy' : y ∈ (Submodule.span E X).toAddSubmonoid := hy
-  rw [Submodule.span_eq_closure] at hy'
-  refine (AddSubmonoid.closure_le (S := U.toAddSubmonoid)).mpr ?_ hy'
-  rintro _ ⟨e, -, x, hx, rfl⟩
-  exact h x hx e
-
 /-- The tensor topology of `I`-adic and `J`-adic rings, stated for the local instance. -/
 private theorem isAdic_tensorTopology_aux (hI : IsAdic I) (hJ : IsAdic J) :
     IsAdic (I.map includeLeftRingHom ⊔
@@ -123,7 +112,7 @@ private theorem isAdic_tensorTopology_aux (hI : IsAdic I) (hJ : IsAdic J) :
       (hr.continuous.tendsto' 0 0 (map_zero inr) hVC)
     -- Every multiple of the image of an element of `Iᵐ` lies in `VB · inr(C) ⊆ U`.
     have hIU : (((I ^ m).map inl : Ideal (B ⊗[A] C)) : Set (B ⊗[A] C)) ⊆ U := by
-      refine coe_span_subset_of_forall_mul_mem ?_
+      refine Ideal.coe_span_subset_of_forall_mul_mem (U := U.toAddSubgroup.toAddSubmonoid) ?_
       rintro _ ⟨b, hb, rfl⟩ e
       induction e using TensorProduct.inductionOn with
       | tmul b' c =>
@@ -132,7 +121,7 @@ private theorem isAdic_tensorTopology_aux (hI : IsAdic I) (hJ : IsAdic J) :
       | add x y hx hy => simpa [add_mul] using U.add_mem hx hy
     -- Every multiple of the image of an element of `Jᵐ'` lies in `VC · inl(B) ⊆ U`.
     have hJU : (((J ^ m').map inr : Ideal (B ⊗[A] C)) : Set (B ⊗[A] C)) ⊆ U := by
-      refine coe_span_subset_of_forall_mul_mem ?_
+      refine Ideal.coe_span_subset_of_forall_mul_mem (U := U.toAddSubgroup.toAddSubmonoid) ?_
       rintro _ ⟨c, hc, rfl⟩ e
       induction e using TensorProduct.inductionOn with
       | tmul b c' =>
@@ -154,72 +143,6 @@ theorem isAdic_tensorTopology (hI : IsAdic I) (hJ : IsAdic J) :
 
 namespace CompletedTensor
 
-private theorem continuous_coeRingHom_comp_includeLeft :
-    Continuous (Completion.coeRingHom.comp includeLeftRingHom : B →+* Completion (B ⊗[A] C)) :=
-  (Completion.continuous_coe _).comp (isAdicHom_includeLeft_tensorTopology A B C).continuous
-
-private theorem continuous_coeRingHom_comp_includeRight :
-    Continuous (Completion.coeRingHom.comp ((includeRight : C →ₐ[A] B ⊗[A] C) : C →+* B ⊗[A] C)) :=
-  (Completion.continuous_coe _).comp (isAdicHom_includeRight_tensorTopology A B C).continuous
-
-/-- The extension to `B ⊗̂_A C` of the canonical map from `B ⊗[A] C` to its uniform completion. -/
-private noncomputable def toUniformCompletion :
-    CompletedTensor A B C →+* Completion (B ⊗[A] C) :=
-  lift (Completion.coeRingHom.comp includeLeftRingHom)
-    (Completion.coeRingHom.comp ((includeRight : C →ₐ[A] B ⊗[A] C) : C →+* B ⊗[A] C))
-    (by rw [RingHom.comp_assoc, RingHom.comp_assoc, includeLeftRingHom_comp_algebraMap,
-      AlgHom.toRingHom_eq_coe])
-    (continuous_coeRingHom_comp_includeLeft A) (continuous_coeRingHom_comp_includeRight A)
-
-private theorem continuous_toUniformCompletion :
-    Continuous (toUniformCompletion A (B := B) (C := C)) :=
-  continuous_lift ..
-
-private theorem toUniformCompletion_toCompletion (x : B ⊗[A] C) :
-    toUniformCompletion A (toCompletion A B C x) = x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul b c =>
-    rw [toCompletion_tmul, map_mul, toUniformCompletion, lift_inl, lift_inr]
-    simp [← Completion.coe_mul]
-  | add x y hx hy => rw [map_add, map_add, hx, hy, Completion.coe_add]
-
-/-- The extension to the uniform completion of the canonical map into `B ⊗̂_A C`. -/
-private noncomputable def ofUniformCompletion :
-    Completion (B ⊗[A] C) →+* CompletedTensor A B C :=
-  Completion.extensionHom (toCompletion A B C) (continuous_toCompletion A B C)
-
-private theorem ofUniformCompletion_coe (x : B ⊗[A] C) :
-    ofUniformCompletion A (x : Completion (B ⊗[A] C)) = toCompletion A B C x :=
-  Completion.extensionHom_coe _ _ x
-
-/-- The completed tensor ring is the uniform completion of `B ⊗[A] C` for the tensor topology.
-The identification is assembled from the universal properties of both sides, so that it only uses
-the interface of `CompletedTensor`. -/
-private noncomputable def equivCompletion : CompletedTensor A B C ≃+* Completion (B ⊗[A] C) :=
-  RingEquiv.ofRingHom (toUniformCompletion A) (ofUniformCompletion A)
-    (DFunLike.coe_injective <| Completion.ext
-      ((continuous_toUniformCompletion A).comp Completion.continuous_extension) continuous_id
-      fun x ↦ by simp [ofUniformCompletion_coe, toUniformCompletion_toCompletion])
-    (hom_ext (Completion.continuous_extension.comp (continuous_toUniformCompletion A))
-      continuous_id
-      (by
-        ext b
-        simpa [ofUniformCompletion_coe] using
-          congrArg (ofUniformCompletion A) (toUniformCompletion_toCompletion A (b ⊗ₜ[A] (1 : C))))
-      (by
-        ext c
-        simpa [ofUniformCompletion_coe] using
-          congrArg (ofUniformCompletion A) (toUniformCompletion_toCompletion A ((1 : B) ⊗ₜ[A] c))))
-
-private theorem equivCompletion_toCompletion (x : B ⊗[A] C) :
-    equivCompletion A (toCompletion A B C x) = x :=
-  toUniformCompletion_toCompletion A x
-
-private theorem isHomeomorph_equivCompletion :
-    IsHomeomorph (equivCompletion A (B := B) (C := C)) :=
-  (Homeomorph.mk (equivCompletion A).toEquiv (continuous_toUniformCompletion A)
-    Completion.continuous_extension).isHomeomorph
-
 /-- **The completed tensor product of adic rings is adic.** If the topologies of `B` and `C` are
 the `I`-adic and `J`-adic topologies for finitely generated ideals, the topology of `B ⊗̂_A C` is
 the adic topology of the ideal generated by the images of `I` and `J`. -/
@@ -227,10 +150,11 @@ theorem isAdic_map_toCompletion (hI : IsAdic I) (hIfg : I.FG) (hJ : IsAdic J) (h
     IsAdic ((I.map includeLeftRingHom ⊔
       J.map ((includeRight : C →ₐ[A] B ⊗[A] C) : C →+* B ⊗[A] C)).map (toCompletion A B C)) := by
   have h := ((isAdic_tensorTopology_aux A hI hJ).map_coeRingHom
-    (Submodule.FG.sup (hIfg.map _) (hJfg.map _))).comap (equivCompletion A)
-    (isHomeomorph_equivCompletion A).isInducing
-  have he : (equivCompletion A).symm.toRingHom.comp Completion.coeRingHom = toCompletion A B C :=
-    RingHom.ext fun x ↦ (RingEquiv.symm_apply_eq _).mpr (equivCompletion_toCompletion A x).symm
+    (Submodule.FG.sup (hIfg.map _) (hJfg.map _))).comap (equivCompletion A B C)
+    (isHomeomorph_equivCompletion A B C).isInducing
+  have he :
+      (equivCompletion A B C).symm.toRingHom.comp Completion.coeRingHom = toCompletion A B C :=
+    RingHom.ext fun x ↦ (RingEquiv.symm_apply_eq _).mpr (equivCompletion_toCompletion A B C x).symm
   rw [← he, ← Ideal.map_map, RingEquiv.toRingHom_eq_coe, Ideal.map_comap_of_equiv,
     RingEquiv.symm_symm]
   exact h
@@ -244,8 +168,9 @@ noncomputable def equivAdicCompletion (hI : IsAdic I) (hIfg : I.FG) (hJ : IsAdic
     CompletedTensor A B C ≃+* AdicCompletion
       (I.map includeLeftRingHom ⊔ J.map ((includeRight : C →ₐ[A] B ⊗[A] C) : C →+* B ⊗[A] C))
       (B ⊗[A] C) :=
-  (equivCompletion A).trans <| (isAdic_tensorTopology_aux A hI hJ).completionEquivAdicCompletion
-    (Submodule.FG.sup (hIfg.map _) (hJfg.map _))
+  (equivCompletion A B C).trans <|
+    (isAdic_tensorTopology_aux A hI hJ).completionEquivAdicCompletion
+      (Submodule.FG.sup (hIfg.map _) (hJfg.map _))
 
 /-- The isomorphism `equivAdicCompletion` sends the image of `x ∈ B ⊗[A] C` in the completed
 tensor product to its image in the adic completion. -/
@@ -253,7 +178,7 @@ tensor product to its image in the adic completion. -/
 theorem equivAdicCompletion_toCompletion (hI : IsAdic I) (hIfg : I.FG) (hJ : IsAdic J)
     (hJfg : J.FG) (x : B ⊗[A] C) :
     equivAdicCompletion A hI hIfg hJ hJfg (toCompletion A B C x) = algebraMap _ _ x := by
-  rw [equivAdicCompletion, RingEquiv.trans_apply, equivCompletion_toCompletion]
+  rw [equivAdicCompletion, RingEquiv.trans_apply, equivCompletion_toCompletion A B C]
   exact IsAdic.completionEquivAdicCompletion_coe _ _ x
 
 /-- The inverse of `equivAdicCompletion` sends the image of `x ∈ B ⊗[A] C` in the adic completion
@@ -280,7 +205,7 @@ theorem isHomeomorph_equivAdicCompletion (hI : IsAdic I) (hIfg : I.FG) (hJ : IsA
     (B ⊗[A] C)))
     (I.map includeLeftRingHom ⊔ J.map ((includeRight : C →ₐ[A] B ⊗[A] C) : C →+* B ⊗[A] C)))
   ((isAdic_tensorTopology_aux A hI hJ).isHomeomorph_completionEquivAdicCompletion
-    (Submodule.FG.sup (hIfg.map _) (hJfg.map _))).comp (isHomeomorph_equivCompletion A)
+    (Submodule.FG.sup (hIfg.map _) (hJfg.map _))).comp (isHomeomorph_equivCompletion A B C)
 
 end CompletedTensor
 

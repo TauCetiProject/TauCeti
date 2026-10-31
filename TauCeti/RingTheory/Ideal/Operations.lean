@@ -47,6 +47,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.span_pair_pow_eq_span_singleton`: if `z (1 - t) = x ^ n` with `t ∈ (x, z)` and
   the left ideals `(x, z)` and `(z)` are two-sided, then `(x, z) ^ n = (z)`.
 * `Ideal.isTwoSided_span_of_subset_center`: a left ideal spanned by central elements is two-sided.
+* `Ideal.coe_span_subset_of_forall_mul_mem`: a left ideal lies in an additive submonoid containing
+  every left multiple of its generators.
 * `Submodule.mem_span_algebraMap_smul_iff`: over an algebra `A`, the action on a submodule `N` of
   the left ideal spanned by a scalar `x` produces exactly the multiples `x • w` with `w ∈ N`.
 * `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: if a subalgebra and a principal left
@@ -207,6 +209,17 @@ theorem span_singleton_pow_sup_span_singleton_pow (a : R) (j m : ℕ) :
     exact ⟨a ^ (m - j), pow_sub_mul_pow a h⟩
   · rw [min_eq_right h, sup_eq_right, span_singleton_le_iff_mem, mem_span_singleton']
     exact ⟨a ^ (j - m), pow_sub_mul_pow a h⟩
+
+/-- A left ideal lies in an additive submonoid `U` as soon as every left multiple of each of its
+generators lies in `U`. -/
+theorem coe_span_subset_of_forall_mul_mem {U : AddSubmonoid R} (h : ∀ x ∈ S, ∀ r : R, r * x ∈ U) :
+    (span S : Set R) ⊆ U := by
+  intro y hy
+  have hy' : y ∈ (Submodule.span R S).toAddSubmonoid := hy
+  rw [Submodule.span_eq_closure] at hy'
+  refine (AddSubmonoid.closure_le (S := U)).mpr ?_ hy'
+  rintro _ ⟨r, -, x, hx, rfl⟩
+  exact h x hx r
 
 variable {A : Type*} [Semiring A] {s : Set A}
 
