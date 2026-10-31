@@ -73,21 +73,6 @@ namespace TauCeti
 open MeasureTheory Measure Set Module
 open scoped ENNReal NNReal
 
-section Localization
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A section of height at most `H` lies in the section of height `H`, so it inherits its
-boundedness and the inclusion of its closure in the domain. -/
-private theorem isBounded_convexSection_and_closure_subset_of_le {Ω : Set E} {u : E → ℝ} {x : E}
-    {ℓ : E →ₗ[ℝ] ℝ} {h H : ℝ} (hhH : h ≤ H)
-    (hH : Bornology.IsBounded (convexSection Ω u x ℓ H) ∧ closure (convexSection Ω u x ℓ H) ⊆ Ω) :
-    Bornology.IsBounded (convexSection Ω u x ℓ h) ∧ closure (convexSection Ω u x ℓ h) ⊆ Ω :=
-  ⟨hH.1.subset (convexSection_mono_height hhH),
-    (closure_mono (convexSection_mono_height hhH)).trans hH.2⟩
-
-end Localization
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [Nontrivial E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
