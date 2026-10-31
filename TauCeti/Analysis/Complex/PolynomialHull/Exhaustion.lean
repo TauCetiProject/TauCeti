@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import TauCeti.Analysis.Complex.PolynomialHull.Basic
-public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+public import TauCeti.Analysis.Complex.Pseudoconvex
 import Mathlib.Analysis.Analytic.Polynomial
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.Complex.NegLogOneSubNormSq
+import TauCeti.Analysis.Complex.PiBall
+import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 
 /-!
 # The plurisubharmonic exhaustion of a polynomial polyhedron
@@ -30,9 +33,9 @@ exhaustion is the input of the `L²` criterion for a domain to be Stein (Hörman
 V), which is how the interiors of polynomial polyhedra serve as Stein neighbourhoods of
 polynomially convex compact sets; that criterion is not proved here.
 
-The basic computation is that of the Levi form of `-log (1 - ‖g‖²)` for a holomorphic map `g`
-into a complex inner product space, at a point where `‖g‖ < 1`. Its diagonal at `v` is at least
-`‖Dg(v)‖²` (`TauCeti.norm_fderiv_apply_sq_le_re_leviForm_neg_log_one_sub_norm_sq`). The
+The basic input is the Levi form of `-log (1 - ‖g‖²)` for a holomorphic map `g` with `‖g‖ < 1`,
+whose diagonal at `v` is at least `‖Dg(v)‖²`
+(`TauCeti.norm_fderiv_apply_sq_le_re_leviForm_neg_log_one_sub_norm_sq`). The
 polynomial terms of `ψ` are therefore plurisubharmonic, while the coordinate terms together
 contribute `∑ᵢ |vᵢ / R|²`, which is positive for `v ≠ 0`. Every term of `ψ` is nonnegative on `D`,
 so `ψ(z) ≤ c` bounds each `|zᵢ / R|²` and each `|p(z)|²` by `1 - exp (-c) < 1`; these bounds cut
@@ -40,8 +43,6 @@ out a compact subset of `D`.
 
 ## Main declarations
 
-* `TauCeti.norm_fderiv_apply_sq_le_re_leviForm_neg_log_one_sub_norm_sq`: the Levi form of
-  `-log (1 - ‖g‖²)` dominates `‖Dg(·)‖²` for holomorphic `g` with `‖g‖ < 1`.
 * `TauCeti.polynomialPolyhedronExhaustion R s`: the exhaustion function `ψ`.
 * `TauCeti.contDiffOn_polynomialPolyhedronExhaustion`: `ψ` is smooth on `D`.
 * `TauCeti.isStrictlyPlurisubharmonicAt_polynomialPolyhedronExhaustion`: `ψ` is strictly
@@ -61,51 +62,6 @@ open MvPolynomial Metric Set
 
 namespace TauCeti
 
-section LogPotential
-
-variable {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-  [NormedAddCommGroup E] [InnerProductSpace ℂ E] {g : V → E} {x : V}
-
-/-- `y ↦ -log (1 - ‖g y‖²)` is as smooth as the holomorphic map `g` where `‖g‖ < 1`. -/
-private theorem contDiffAt_neg_log_one_sub_norm_sq {n : WithTop ℕ∞} (hg : ContDiffAt ℂ n g x)
-    (hx : ‖g x‖ < 1) : ContDiffAt ℝ n (fun y ↦ -Real.log (1 - ‖g y‖ ^ 2)) x := by
-  have hpos : 0 < 1 - ‖g x‖ ^ 2 := by nlinarith [norm_nonneg (g x)]
-  exact ((contDiffAt_const.sub ((hg.restrict_scalars ℝ).norm_sq ℂ)).log hpos.ne').neg
-
-/-- **The Levi form of `-log (1 - ‖g‖²)`.** For a holomorphic map `g` into a complex inner product
-space with `‖g x‖ < 1`, the Levi diagonal of `y ↦ -log (1 - ‖g y‖²)` at `x` in the direction `v`
-is at least `‖Dg(x) v‖²`. In particular its Levi form at `x` is positive semidefinite, and
-positive definite (the function is strictly plurisubharmonic at `x`) when `Dg(x)` is injective. -/
-theorem norm_fderiv_apply_sq_le_re_leviForm_neg_log_one_sub_norm_sq (hg : ContDiffAt ℂ 2 g x)
-    (hx : ‖g x‖ < 1) (v : V) :
-    ‖fderiv ℂ g x v‖ ^ 2 ≤ (leviForm (fun y ↦ -Real.log (1 - ‖g y‖ ^ 2)) x v v).re := by
-  set t := ‖g x‖ ^ 2
-  have ht : 0 < 1 - t := by nlinarith [norm_nonneg (g x)]
-  -- Write the function as `h ∘ f` with `f = ‖g‖²` and `h t = -log (1 - t)`.
-  set h : ℝ → ℝ := fun t ↦ -Real.log (1 - t)
-  have hderiv {u : ℝ} (hu : u < 1) : HasDerivAt h (1 - u)⁻¹ u := by
-    simpa [h, Pi.neg_def, div_eq_inv_mul] using
-      (((hasDerivAt_id u).const_sub 1).log (sub_pos.2 hu).ne').neg
-  have hderiv₂ : HasDerivAt (deriv h) (((1 - t) ^ 2)⁻¹) t := by
-    have heq : deriv h =ᶠ[nhds t] fun u ↦ (1 - u)⁻¹ :=
-      (eventually_lt_nhds (sub_pos.1 ht)).mono fun u hu ↦ (hderiv hu).deriv
-    refine HasDerivAt.congr_of_eventuallyEq ?_ heq
-    simpa [Pi.inv_def] using ((hasDerivAt_id t).const_sub 1).inv ht.ne'
-  have hh : ContDiffAt ℝ 2 h t := ((contDiffAt_const.sub contDiffAt_id).log ht.ne').neg
-  have hf : ContDiffAt ℝ 2 (fun y ↦ ‖g y‖ ^ 2) x := (hg.restrict_scalars ℝ).norm_sq ℂ
-  have hh₂ : 0 ≤ iteratedDeriv 2 h t := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one, hderiv₂.deriv]
-    positivity
-  have key := le_re_leviForm_scalar_comp_apply_self (f := fun y ↦ ‖g y‖ ^ 2) hh hf hh₂ v
-  have hLf : (leviForm (fun y ↦ ‖g y‖ ^ 2) x v v).re = ‖fderiv ℂ g x v‖ ^ 2 := by
-    simpa using re_leviForm_norm_sq_sub_comp_apply_self (a := 0) hg v
-  rw [(hderiv (sub_pos.1 ht)).deriv, hLf] at key
-  refine le_trans ?_ key
-  rw [← div_eq_inv_mul]
-  exact le_div_self (sq_nonneg _) ht (by linarith [sq_nonneg ‖g x‖])
-
-end LogPotential
-
 section polynomialPolyhedron
 
 variable {ι : Type*} [Fintype ι] {R : ℝ} {s : Finset (MvPolynomial ι ℂ)} {z : ι → ℂ}
@@ -124,16 +80,6 @@ theorem polynomialPolyhedronExhaustion_def (R : ℝ) (s : Finset (MvPolynomial �
       ∑ i, -Real.log (1 - ‖z i / R‖ ^ 2) + ∑ p ∈ s, -Real.log (1 - ‖eval z p‖ ^ 2) :=
   (rfl)
 
-/-- On the strict polyhedron, every coordinate `zᵢ / R` has modulus `< 1`. -/
-private theorem norm_div_lt_one_of_mem_ball (hz : z ∈ ball 0 R) (i : ι) : ‖z i / R‖ < 1 := by
-  have hR : 0 < R := pos_of_mem_ball hz
-  rw [norm_div, Complex.norm_real, Real.norm_of_nonneg hR.le, div_lt_one hR]
-  exact (norm_le_pi_norm z i).trans_lt (mem_ball_zero_iff.1 hz)
-
-private theorem contDiff_div_coord (R : ℝ) (i : ι) {n : WithTop ℕ∞} :
-    ContDiff ℂ n fun z : ι → ℂ ↦ z i / R :=
-  (contDiff_apply ℂ (fun _ : ι ↦ ℂ) i).div_const _
-
 /-- The exhaustion function is smooth on `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}`. -/
 theorem contDiffOn_polynomialPolyhedronExhaustion {n : WithTop ℕ∞} :
     ContDiffOn ℝ n (polynomialPolyhedronExhaustion R s)
@@ -141,7 +87,8 @@ theorem contDiffOn_polynomialPolyhedronExhaustion {n : WithTop ℕ∞} :
   refine ContDiffAt.contDiffWithinAt ?_
   have hp : ∀ p ∈ s, ‖eval z p‖ < 1 := fun p hp ↦ mem_iInter₂.1 hz.2 p hp
   exact (ContDiffAt.sum fun i _ ↦ contDiffAt_neg_log_one_sub_norm_sq
-      (contDiff_div_coord R i).contDiffAt (norm_div_lt_one_of_mem_ball hz.1 i)).add
+      ((contDiff_apply ℂ (fun _ : ι ↦ ℂ) i).div_const (R : ℂ)).contDiffAt
+      (Complex.pi_norm_div_lt_one_of_mem_ball hz.1 i)).add
     (ContDiffAt.sum fun p hps ↦ contDiffAt_neg_log_one_sub_norm_sq
       ((AnalyticOnNhd.eval_mvPolynomial p z (mem_univ z)).contDiffAt) (hp p hps))
 
@@ -155,8 +102,9 @@ theorem isStrictlyPlurisubharmonicAt_polynomialPolyhedronExhaustion
   have hR : 0 < R := pos_of_mem_ball hz.1
   have hp : ∀ p ∈ s, ‖eval z p‖ < 1 := fun p hp ↦ mem_iInter₂.1 hz.2 p hp
   have hcoord (i : ι) : ContDiffAt ℝ 2 (fun z : ι → ℂ ↦ -Real.log (1 - ‖z i / R‖ ^ 2)) z :=
-    contDiffAt_neg_log_one_sub_norm_sq (contDiff_div_coord R i).contDiffAt
-      (norm_div_lt_one_of_mem_ball hz.1 i)
+    contDiffAt_neg_log_one_sub_norm_sq
+      ((contDiff_apply ℂ (fun _ : ι ↦ ℂ) i).div_const (R : ℂ)).contDiffAt
+      (Complex.pi_norm_div_lt_one_of_mem_ball hz.1 i)
   have hpoly : ∀ p ∈ s, ContDiffAt ℝ 2 (fun z : ι → ℂ ↦ -Real.log (1 - ‖eval z p‖ ^ 2)) z :=
     fun p hps ↦ contDiffAt_neg_log_one_sub_norm_sq
       ((AnalyticOnNhd.eval_mvPolynomial p z (mem_univ z)).contDiffAt) (hp p hps)
@@ -186,7 +134,8 @@ theorem isStrictlyPlurisubharmonicAt_polynomialPolyhedronExhaustion
   have hlow (j : ι) : ‖v j / R‖ ^ 2 ≤
       (leviForm (fun z : ι → ℂ ↦ -Real.log (1 - ‖z j / R‖ ^ 2)) z v v).re := by
     simpa [hderiv j] using norm_fderiv_apply_sq_le_re_leviForm_neg_log_one_sub_norm_sq
-      ((contDiff_div_coord R j).contDiffAt) (norm_div_lt_one_of_mem_ball hz.1 j) v
+      ((contDiff_apply ℂ (fun _ : ι ↦ ℂ) j).div_const (R : ℂ)).contDiffAt
+      (Complex.pi_norm_div_lt_one_of_mem_ball hz.1 j) v
   have hpos₁ : 0 < ∑ j, (leviForm (fun z : ι → ℂ ↦ -Real.log (1 - ‖z j / R‖ ^ 2)) z v v).re := by
     refine Finset.sum_pos' (fun j _ ↦ (sq_nonneg _).trans (hlow j)) ⟨i, Finset.mem_univ i, ?_⟩
     refine lt_of_lt_of_le ?_ (hlow i)
@@ -198,16 +147,6 @@ theorem isStrictlyPlurisubharmonicAt_polynomialPolyhedronExhaustion
       (norm_fderiv_apply_sq_le_re_leviForm_neg_log_one_sub_norm_sq
         ((AnalyticOnNhd.eval_mvPolynomial p z (mem_univ z)).contDiffAt) (hp p hps) v)
   linarith
-
-/-- For `a < 1`, `-log (1 - a) ≤ c` exactly when `a ≤ 1 - exp (-c)`. -/
-private theorem neg_log_one_sub_le_iff {a c : ℝ} (ha : a < 1) :
-    -Real.log (1 - a) ≤ c ↔ a ≤ 1 - Real.exp (-c) := by
-  rw [neg_le, Real.le_log_iff_exp_le (by linarith)]
-  constructor <;> intro h <;> linarith
-
-private theorem neg_log_one_sub_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha : a < 1) :
-    0 ≤ -Real.log (1 - a) :=
-  neg_nonneg.2 (Real.log_nonpos (by linarith) (by linarith))
 
 /-- **The exhaustion property.** Every sublevel set of the exhaustion function in
 `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}` is compact. -/
@@ -243,24 +182,24 @@ theorem isCompact_inter_setOf_polynomialPolyhedronExhaustion_le (c : ℝ) :
       K ∩ polynomialPolyhedronExhaustion R s ⁻¹' Iic c := by
     refine Subset.antisymm (fun z ⟨hz, hzc⟩ ↦ ⟨?_, hzc⟩) fun z ⟨hz, hzc⟩ ↦ ⟨hKD hz, hzc⟩
     have hcoord (i : ι) : ‖z i / R‖ ^ 2 < 1 := by
-      have := norm_div_lt_one_of_mem_ball hz.1 i
+      have := Complex.pi_norm_div_lt_one_of_mem_ball hz.1 i
       nlinarith [norm_nonneg (z i / R)]
     have hpoly (p) (hp : p ∈ s) : ‖eval z p‖ ^ 2 < 1 := by
       have : ‖eval z p‖ < 1 := mem_iInter₂.1 hz.2 p hp
       nlinarith [norm_nonneg (eval z p)]
     have h₁ : 0 ≤ ∑ i, -Real.log (1 - ‖z i / R‖ ^ 2) :=
-      Finset.sum_nonneg fun i _ ↦ neg_log_one_sub_nonneg (sq_nonneg _) (hcoord i)
+      Finset.sum_nonneg fun i _ ↦ Real.neg_log_one_sub_nonneg (sq_nonneg _) (hcoord i).le
     have h₂ : 0 ≤ ∑ p ∈ s, -Real.log (1 - ‖eval z p‖ ^ 2) :=
-      Finset.sum_nonneg fun p hp ↦ neg_log_one_sub_nonneg (sq_nonneg _) (hpoly p hp)
+      Finset.sum_nonneg fun p hp ↦ Real.neg_log_one_sub_nonneg (sq_nonneg _) (hpoly p hp).le
     have hzc' : polynomialPolyhedronExhaustion R s z ≤ c := hzc
     rw [polynomialPolyhedronExhaustion_def] at hzc'
-    refine ⟨fun i ↦ (neg_log_one_sub_le_iff (hcoord i)).1 ?_, fun p hp ↦
-      (neg_log_one_sub_le_iff (hpoly p hp)).1 ?_⟩
-    · have := Finset.single_le_sum (fun j _ ↦ neg_log_one_sub_nonneg (sq_nonneg _) (hcoord j))
-        (Finset.mem_univ i)
+    refine ⟨fun i ↦ (Real.neg_log_one_sub_le_iff (hcoord i)).1 ?_, fun p hp ↦
+      (Real.neg_log_one_sub_le_iff (hpoly p hp)).1 ?_⟩
+    · have := Finset.single_le_sum
+        (fun j _ ↦ Real.neg_log_one_sub_nonneg (sq_nonneg _) (hcoord j).le) (Finset.mem_univ i)
       linarith
-    · have := Finset.single_le_sum (fun q hq ↦ neg_log_one_sub_nonneg (sq_nonneg _) (hpoly q hq))
-        hp
+    · have := Finset.single_le_sum
+        (fun q hq ↦ Real.neg_log_one_sub_nonneg (sq_nonneg _) (hpoly q hq).le) hp
       linarith
   rw [hDK]
   exact hKc.of_isClosed_subset (((contDiffOn_polynomialPolyhedronExhaustion (n := 0)).mono
