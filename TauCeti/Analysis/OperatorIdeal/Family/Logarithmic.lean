@@ -66,7 +66,8 @@ namespace OperatorIdealFamily
 
 /-- The weights `log (N + 2)` of the logarithmic gauge are nonzero. -/
 private theorem ofReal_log_add_two_ne_zero (N : ℕ) : ENNReal.ofReal (Real.log (N + 2)) ≠ 0 := by
-  simpa using Real.log_pos (show (1 : ℝ) < N + 2 by linarith [N.cast_nonneg (α := ℝ)])
+  have h : (1 : ℝ) < N + 2 := by linarith [N.cast_nonneg (α := ℝ)]
+  simpa using Real.log_pos h
 
 variable (𝕜 : Type u) [RCLike 𝕜]
 
@@ -198,8 +199,9 @@ theorem isCompactOperator_of_mem_finiteSubmodule_logarithmic {T : E →L[𝕜] F
     have h1 := hC (N + 1)
     have h2 : ((N : ℝ) + 1) * T.singularValue N ≤ T.kyFanGauge (N + 1) := by
       exact_mod_cast T.mul_singularValue_le_kyFanGauge_succ N
+    have h3 : (1 : ℝ) + (N + 1) = N + 2 := by ring
     push_cast at h1
-    rw [show (1 : ℝ) + (N + 1) = N + 2 by ring] at h1
+    rw [h3] at h1
     linarith
   rw [mul_div_assoc', le_div_iff₀ (by positivity)]
   linarith
