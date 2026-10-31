@@ -213,7 +213,7 @@ theorem eigenspace_realFockAction_sum_ι_mul_ι (p : ℕ) :
     Module.End.eigenspace (J.realFockAction hQJ hQnd (∑ k, ι Q (b k) * ι Q (J (b k))))
         (Complex.I * (4 * p - finrank ℝ V)) =
       ⋀[ℂ]^p (J.spinPolarizationData hQJ hQnd).W :=
-  TauCeti.eigenspace_eq_of_iSup_eq_top _ (W := fun q : ℕ ↦ ⋀[ℂ]^q _)
+  Module.End.eigenspace_eq_of_iSup_eq_top _ (W := fun q : ℕ ↦ ⋀[ℂ]^q _)
     (g := fun q : ℕ ↦ Complex.I * (4 * q - finrank ℝ V))
     (fun q ↦ fun _ hs ↦ Module.End.mem_eigenspace_iff.2
       (J.realFockAction_sum_ι_mul_ι_of_mem_exteriorPower hQJ hQ b hQnd hs))
@@ -264,7 +264,7 @@ theorem eigenspace_realFockAction_bivectorExterior (he₁ : e 1 = J (e 0)) (he�
         (exteriorPower.ιMulti ℝ 2 ![e 0, e 1] + exteriorPower.ιMulti ℝ 2 ![e 2, e 3])))
         (Complex.I * (2 * p - 2)) =
       ⋀[ℂ]^p (J.spinPolarizationData hQJ hQnd).W :=
-  TauCeti.eigenspace_eq_of_iSup_eq_top _ (W := fun q : ℕ ↦ ⋀[ℂ]^q _)
+  Module.End.eigenspace_eq_of_iSup_eq_top _ (W := fun q : ℕ ↦ ⋀[ℂ]^q _)
     (g := fun q : ℕ ↦ Complex.I * (2 * q - 2))
     (fun q ↦ fun _ hs ↦ Module.End.mem_eigenspace_iff.2
       (J.realFockAction_bivectorExterior_of_mem_exteriorPower hQJ hQ e hQnd he₁ he₃ hs))
