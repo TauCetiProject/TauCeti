@@ -23,6 +23,8 @@ This is the indexed form of Mathlib's lemmas for the binary disjoint union `M �
 * `contMDiff_sigmaMk`: the inclusion of a component is `C^n`.
 * `contMDiffAt_sigma_iff`, `contMDiff_sigma_iff`: a map out of a disjoint union is `C^n` exactly
   when its restriction to each component is.
+* `contMDiffAt_sigmaMk_comp_iff`, `contMDiff_sigmaMk_comp_iff`: a map into a component is `C^n`
+  exactly when its composite with the inclusion of the component is.
 * `ContMDiff.sigmaMap`: a family of `C^n` maps between components induces a `C^n` map of
   disjoint unions.
 -/
@@ -86,6 +88,21 @@ theorem contMDiff_sigmaMk (i : ι) : ContMDiff I I n (Sigma.mk i : M i → Σ i,
       OpenPartialHomeomorph.extend_coe_symm, id]
     rw [ChartedSpace.sigma_chartAt_mk_apply, (chartAt H x).right_inv hy.1, I.right_inv hy.2]
   · simp
+
+/-- **Maps into a component.** A map into the component `M i` is `C^n` at a point exactly when its
+composite with the inclusion of `M i` into the disjoint union is. -/
+theorem contMDiffAt_sigmaMk_comp_iff {i : ι} {g : N → M i} {x : N} :
+    ContMDiffAt J I n (Sigma.mk i ∘ g) x ↔ ContMDiffAt J I n g x := by
+  have h : ⇑(extChartAt I ((Sigma.mk i ∘ g) x)) ∘ (Sigma.mk i ∘ g) ∘ (extChartAt J x).symm =
+      extChartAt I (g x) ∘ g ∘ (extChartAt J x).symm :=
+    funext fun _ ↦ extChartAt_sigmaMk_apply
+  rw [contMDiffAt_iff, contMDiffAt_iff, ← IsOpenEmbedding.sigmaMk.isInducing.continuousAt_iff, h]
+
+/-- A map into the component `M i` is `C^n` exactly when its composite with the inclusion of
+`M i` into the disjoint union is. -/
+theorem contMDiff_sigmaMk_comp_iff {i : ι} {g : N → M i} :
+    ContMDiff J I n (Sigma.mk i ∘ g) ↔ ContMDiff J I n g :=
+  forall_congr' fun _ ↦ contMDiffAt_sigmaMk_comp_iff
 
 end TauCeti
 

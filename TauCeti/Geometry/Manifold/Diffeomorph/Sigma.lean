@@ -22,6 +22,11 @@ diffeomorphisms of a disjoint union supported on a single component.
 
 * `Diffeomorph.sigmaCongrRight`: the diffeomorphism of disjoint unions acting componentwise.
 * `Diffeomorph.sigmaCongrRightHom`: the same construction as a group homomorphism.
+
+## Main results
+
+* `Diffeomorph.exists_sigmaCongrRight_eq_iff`: a diffeomorphism of disjoint unions is componentwise
+  exactly when it preserves the index of every point.
 -/
 
 public section
@@ -78,6 +83,32 @@ theorem sigmaCongrRight_refl :
 theorem sigmaCongrRight_trans (e : ∀ i, M i ≃ₘ^n⟮I, J⟯ M' i) (e' : ∀ i, M' i ≃ₘ^n⟮J, K⟯ M'' i) :
     (sigmaCongrRight e).trans (sigmaCongrRight e') = sigmaCongrRight fun i ↦ (e i).trans (e' i) :=
   Diffeomorph.ext fun _ ↦ rfl
+
+/-- **Index-preserving diffeomorphisms are componentwise.** A diffeomorphism of disjoint unions is
+of the form `sigmaCongrRight e` exactly when it preserves the index of every point. -/
+theorem exists_sigmaCongrRight_eq_iff {F : (Σ i, M i) ≃ₘ^n⟮I, J⟯ Σ i, M' i} :
+    (∃ e : ∀ i, M i ≃ₘ^n⟮I, J⟯ M' i, sigmaCongrRight e = F) ↔ ∀ x, (F x).1 = x.1 := by
+  refine ⟨fun ⟨e, he⟩ x ↦ by rw [← he, sigmaCongrRight_apply], fun hF ↦ ?_⟩
+  have hF' (y : Σ i, M' i) : (F.symm y).1 = y.1 := (hF _).symm.trans (by rw [apply_symm_apply])
+  -- The maps of components read off from `F` and its inverse.
+  let f (i : ι) (x : M i) : M' i := cast (congrArg M' (hF ⟨i, x⟩)) (F ⟨i, x⟩).2
+  let g (i : ι) (y : M' i) : M i := cast (congrArg M (hF' ⟨i, y⟩)) (F.symm ⟨i, y⟩).2
+  have hf (i : ι) (x : M i) : (⟨i, f i x⟩ : Σ i, M' i) = F ⟨i, x⟩ :=
+    Sigma.ext (hF ⟨i, x⟩).symm (cast_heq _ _)
+  have hg (i : ι) (y : M' i) : (⟨i, g i y⟩ : Σ i, M i) = F.symm ⟨i, y⟩ :=
+    Sigma.ext (hF' ⟨i, y⟩).symm (cast_heq _ _)
+  refine ⟨fun i ↦
+    { toFun := f i
+      invFun := g i
+      left_inv x := sigma_mk_injective <| by rw [hg, hf, symm_apply_apply]
+      right_inv y := sigma_mk_injective <| by rw [hf, hg, apply_symm_apply]
+      contMDiff_toFun := (TauCeti.contMDiff_sigmaMk_comp_iff (g := f i)).mp <| by
+        rw [show Sigma.mk i ∘ f i = F ∘ Sigma.mk i from funext (hf i)]
+        exact F.contMDiff.comp (TauCeti.contMDiff_sigmaMk i)
+      contMDiff_invFun := (TauCeti.contMDiff_sigmaMk_comp_iff (g := g i)).mp <| by
+        rw [show Sigma.mk i ∘ g i = F.symm ∘ Sigma.mk i from funext (hg i)]
+        exact F.symm.contMDiff.comp (TauCeti.contMDiff_sigmaMk i) },
+    Diffeomorph.ext fun ⟨i, x⟩ ↦ hf i x⟩
 
 /-- **Componentwise action as a group homomorphism.** The self-diffeomorphisms of the components
 act on their disjoint union, the family `e` acting by `sigmaCongrRight e`. -/
