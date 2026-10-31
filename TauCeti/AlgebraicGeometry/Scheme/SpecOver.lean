@@ -25,12 +25,18 @@ homomorphism `A →+* K` and need not be `K`-linear.
 A morphism `Spec B ⟶ X` over `Spec R` whose image lies in an affine open `Spec A ⟶ X` over
 `Spec R` factors through it by an `R`-algebra homomorphism `A →ₐ[R] B`.
 
+For an arbitrary scheme `q : T ⟶ Spec R`, a morphism `f : T ⟶ Spec A` lies over `Spec R`
+exactly when the ring map `A ⟶ Γ(T, ⊤)` of `f` restricts along `R ⟶ A` to the ring map
+`R ⟶ Γ(T, ⊤)` of `q` (`TauCeti.AlgebraicGeometry.comp_spec_map_eq_iff`).
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.specOverHomEquivAlgHom`: morphisms `Spec B ⟶ Spec A` over `Spec R`
   are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.exists_spec_map_comp_eq_of_range_subset`: a morphism over `Spec R`
   with image in an affine open over `Spec R` factors through it by an algebra homomorphism.
+* `TauCeti.AlgebraicGeometry.comp_spec_map_eq_iff`: a morphism `T ⟶ Spec A` lies over `Spec R`
+  if and only if its ring map `A ⟶ Γ(T, ⊤)` is compatible with `R`.
 -/
 
 public section
@@ -77,5 +83,15 @@ theorem exists_spec_map_comp_eq_of_range_subset {X : Scheme.{u}} [X.Over (Spec (
     rw [Scheme.Hom.isOver_iff, ← comp_over f, IsOpenImmersion.lift_fac_assoc, comp_over]
   refine ⟨specOverHomEquivAlgHom ⟨_, hlift⟩, ?_⟩
   rw [AlgHom.toRingHom_eq_coe, spec_map_specOverHomEquivAlgHom, IsOpenImmersion.lift_fac]
+
+/-- A morphism `f : T ⟶ Spec A` lies over `Spec R`, for the structure map `Spec A ⟶ Spec R` of a
+ring map `π : R ⟶ A` and a morphism `q : T ⟶ Spec R`, exactly when the ring map `A ⟶ Γ(T, ⊤)` of
+`f` restricts along `π` to the ring map `R ⟶ Γ(T, ⊤)` of `q`. -/
+theorem comp_spec_map_eq_iff {T : Scheme.{u}} {R A : CommRingCat.{u}} (π : R ⟶ A)
+    (f : T ⟶ Spec A) (q : T ⟶ Spec R) :
+    f ≫ Spec.map π = q ↔
+      π ≫ (Scheme.ΓSpecIso A).inv ≫ f.appTop = (Scheme.ΓSpecIso R).inv ≫ q.appTop := by
+  rw [Scheme.ΓSpecIso_inv_naturality_assoc, ← Scheme.Hom.comp_appTop]
+  exact ⟨fun h ↦ h ▸ rfl, fun h ↦ ext_to_Spec h⟩
 
 end TauCeti.AlgebraicGeometry

@@ -160,6 +160,18 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_algebraMap
     Scheme.Hom.pushforwardStructureAlgebra_one, Scheme.Modules.sectionsFunctor_ε]
   rfl
 
+/-- On global sections, the structure map of the function algebra of `f : X ⟶ Y`, read in the
+global functions on `X`, is the pullback `Γ(Y, ⊤) ⟶ Γ(X, ⊤)` of global functions along `f`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_algebraMap
+    (s : Γ(Y, ⊤)) :
+    f.pushforwardStructureAlgebraΓRingEquiv.symm
+        (algebraMap Γ(Y, ⊤) Γ(f.pushforwardStructureAlgebra.X, ⊤) s) = f.appTop s := by
+  rw [Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply,
+    Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_apply,
+    Scheme.Hom.pushforwardStructureAlgebra_algebraMap]
+  -- The restriction from `f ⁻¹ᵁ ⊤` to `⊤` is the identity of `⊤`.
+  exact ConcreteCategory.congr_hom (X.presheaf.map_id (op ⊤)) _
+
 /-- The presheaf of rings underlying the function algebra is naturally the direct image of
 the structure presheaf. -/
 def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso :
