@@ -66,38 +66,6 @@ namespace TauCeti
 
 variable {a b a' b' : ℤ_[2]}
 
-/-- For `k ≥ 1`, a unit represented by `⟨a, 2ᵏ b⟩` is congruent to `a` or to `a + 2ᵏ b`
-modulo `8`. -/
-private theorem eight_dvd_sub_or_eight_dvd_sub_add_of_eq {c x y : ℤ_[2]} {k : ℕ}
-    (hk : k ≠ 0) (hc : IsUnit c) (h : a * x ^ 2 + 2 ^ k * b * y ^ 2 = c) :
-    (8 : ℤ_[2]) ∣ c - a ∨ (8 : ℤ_[2]) ∣ c - (a + 2 ^ k * b) := by
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
-  -- `x` is a unit, since otherwise `2` divides `c`.
-  have hx : IsUnit x := by
-    by_contra hx
-    obtain ⟨w, rfl⟩ := not_isUnit_iff_dvd.mp hx
-    refine not_isUnit_iff_dvd.mpr ⟨a * 2 * w ^ 2 + 2 ^ j * b * y ^ 2, ?_⟩ hc
-    rw [← h]
-    push_cast
-    ring
-  have hx8 := eight_dvd_sq_sub_one_of_isUnit hx
-  by_cases hy : IsUnit y
-  · right
-    have he : c - (a + 2 ^ (j + 1) * b) = a * (x ^ 2 - 1) + 2 ^ (j + 1) * b * (y ^ 2 - 1) := by
-      rw [← h]
-      ring
-    rw [he]
-    exact dvd_add (dvd_mul_of_dvd_right hx8 _)
-      (dvd_mul_of_dvd_right (eight_dvd_sq_sub_one_of_isUnit hy) _)
-  · left
-    obtain ⟨z, rfl⟩ := not_isUnit_iff_dvd.mp hy
-    have he : c - a = a * (x ^ 2 - 1) + 8 * (2 ^ j * b * z ^ 2) := by
-      rw [← h]
-      push_cast
-      ring
-    rw [he]
-    exact dvd_add (dvd_mul_of_dvd_right hx8 _) (dvd_mul_right _ _)
-
 /-- If `a ≡ a'` modulo `8` and the determinants agree up to squares, then `⟨a, 2ᵏ b⟩` and
 `⟨a', 2ᵏ b'⟩` have coefficients in the same unit square classes, hence are isometric. -/
 private theorem equivalent_toBilin'_diagonal_two_pow_mul_of_eight_dvd (ha : IsUnit a)
