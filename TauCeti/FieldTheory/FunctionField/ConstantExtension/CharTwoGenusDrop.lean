@@ -6,47 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.InseparableGenusDrop
-public import TauCeti.FieldTheory.FunctionField.Radical.Genus
--- Proof-only: the place at infinity of `k(y)` and its orders.
-import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
--- Proof-only: separability of a radical extension.
-import TauCeti.FieldTheory.Kummer.Extension
+public import TauCeti.FieldTheory.FunctionField.PlaneCurve.Mordell
 -- Proof-only: a compositum inside `k'(X)` containing `X` is everything.
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 
 /-!
 # A genus-one function field in characteristic two that becomes rational
 
-Let `k` be a field in which `3` is invertible, `a ∈ k`, and `F = k(x, y)` with `y` transcendental
-over `k` and
+Let `k` be a field of characteristic two, `a ∈ k` not a square, and `F = k(x, y)` with `y`
+transcendental over `k` and
 
 `y ^ 2 = x ^ 3 + a`.
 
-Then `y` is a separating element, `F / k(y)` being separable of degree three, and `k` is the exact
-constant field of `F`. If moreover `Y ^ 2 - a` is squarefree, then `F / k` has genus one. These
-follow from the radical extension `x ^ 3 = y ^ 2 - a` of `k(y)`, which is tame because `3` is
-invertible in `k`, with the superelliptic genus formula
-`TauCeti.two_mul_genus_eq_of_pow_eq_of_squarefree`: the zeros of `Y ^ 2 - a`, of total degree
-two, and the place at infinity are totally ramified, so `2g - 2 = 3 (-2) + 2 · 2 + 2 · 1 = 0`.
+Since `3` is invertible in `k` and `Y ^ 2 - a` is squarefree, `y` is a separating element, `k` is
+the exact constant field of `F`, and `F / k` has genus one
+(`TauCeti.genus_eq_one_of_sq_eq_pow_three_add`). The equation has Weierstrass shape with
+`a₁ = a₂ = a₃ = a₄ = 0`, so its discriminant `-432 a ^ 2` vanishes, although `F` has genus one.
+The singularity becomes visible over `k(b)`, `b ^ 2 = a`: there `(y + b) ^ 2 = x ^ 3` is a cusp,
+and with `u = (y + b) / x` one has `x = u ^ 2` and `y + b = u ^ 3`, so the constant field
+extension `F · k(b)` is the rational function field `k(b)(u)` and has genus zero. A purely
+inseparable constant field extension can therefore lower the genus even of a separably generated
+function field with exact constants. The odd-characteristic counterpart is `TauCeti.GenusDrop`.
 
-In characteristic two, `Y ^ 2 - a` is squarefree exactly when `a` is not a square. The equation
-then has Weierstrass shape with `a₁ = a₂ = a₃ = a₄ = 0`, so its discriminant `-432 a ^ 2` vanishes,
-although `F` has genus one. The singularity becomes visible over `k(b)`, `b ^ 2 = a`: there
-`(y + b) ^ 2 = x ^ 3` is a cusp, and with `u = (y + b) / x` one has `x = u ^ 2` and `y + b = u ^ 3`,
-so the constant field extension `F · k(b)` is the rational function field `k(b)(u)` and has genus
-zero. A purely inseparable constant field extension can therefore lower the genus even of a
-separably generated function field with exact constants. The odd-characteristic counterpart is
-`TauCeti.GenusDrop`.
-
-This file proves the general statements, and realizes the genus drop for `k = 𝔽₂(t)` inside
-`k' = 𝔽₂(s)`, `t = s ^ 2`, and `F' = k'(u)` with `x = u ^ 2` and `y = u ^ 3 + s`.
+This file realizes the genus drop for `k = 𝔽₂(t)` inside `k' = 𝔽₂(s)`, `t = s ^ 2`, and
+`F' = k'(u)` with `x = u ^ 2` and `y = u ^ 3 + s`.
 
 ## Main results
 
-* `TauCeti.finrank_adjoin_eq_three_of_sq_eq_pow_three_add` and
-  `TauCeti.isSeparable_adjoin_of_sq_eq_pow_three_add`: `F / k(y)` is separable of degree three.
-* `TauCeti.isIntegrallyClosedIn_of_sq_eq_pow_three_add`: `k` is the exact constant field of `F`.
-* `TauCeti.genus_eq_one_of_sq_eq_pow_three_add`: `F / k` has genus one.
 * `TauCeti.CharTwoGenusDrop.curveField`: the field `F = k(x, y)` inside `F' = 𝔽₂(s)(u)`.
 * `TauCeti.CharTwoGenusDrop.constantCompositum_eq_top`: `F' = F · k'`.
 * `TauCeti.CharTwoGenusDrop.genus_lt_genus`: `F' / k'` has genus `0`, below the genus `1` of
@@ -60,108 +46,7 @@ This file proves the general statements, and realizes the genus drop for `k = �
 
 public section
 
-open Polynomial
-
 open scoped IntermediateField
-
-namespace TauCeti
-
-variable {k F : Type*} [Field k] [Field F] [Algebra k F]
-variable {a : k} {x y : F}
-
-/-! ### The curve `y ^ 2 = x ^ 3 + a` -/
-
-/-- Over `k(y)`, the equation reads `x ^ 3 = y ^ 2 - a`. -/
-private theorem pow_three_eq_algebraMap (hy : Transcendental k y)
-    (heq : y ^ 2 = x ^ 3 + algebraMap k F a) :
-    let := ratFuncAlgebraOfTranscendental hy
-    x ^ 3 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) (X ^ 2 - C a)) := by
-  intro
-  have := isScalarTower_ratFuncAlgebraOfTranscendental hy
-  rw [map_sub, map_sub, map_pow, map_pow, RatFunc.algebraMap_X,
-    algebraMap_ratFuncAlgebraOfTranscendental_X hy, RatFunc.algebraMap_C,
-    ← RatFunc.algebraMap_eq_C, ← IsScalarTower.algebraMap_apply, heq, add_sub_cancel_right]
-
-/-- `x` generates `F` over `k(y)`. -/
-private theorem adjoin_eq_top_ratFunc (hy : Transcendental k y) (hgen : k⟮x, y⟯ = ⊤) :
-    let := ratFuncAlgebraOfTranscendental hy
-    (RatFunc k)⟮x⟯ = ⊤ := by
-  let := ratFuncAlgebraOfTranscendental hy
-  have := isScalarTower_ratFuncAlgebraOfTranscendental hy
-  refine top_le_iff.mp ?_
-  rw [← IntermediateField.adjoin_eq_top_of_adjoin_eq_top (E := RatFunc k) k hgen,
-    IntermediateField.adjoin_le_iff, Set.insert_subset_iff, Set.singleton_subset_iff]
-  exact ⟨IntermediateField.mem_adjoin_simple_self _ _, by
-    simpa using IntermediateField.algebraMap_mem (RatFunc k)⟮x⟯ RatFunc.X⟩
-
-/-- At the place at infinity of `k(y)`, `Y ^ 2 - a` has order `-2`, prime to `3`. -/
-private theorem gcd_ord_infty :
-    Int.gcd (3 : ℕ) ((Place.infty k).ord (algebraMap k[X] (RatFunc k) (X ^ 2 - C a))) = 1 := by
-  rw [Place.ord_infty, RatFunc.intDegree_polynomial, natDegree_X_pow_sub_C, Int.gcd_neg]
-  rfl
-
-variable (h3 : (3 : k) ≠ 0) (hy : Transcendental k y) (hgen : k⟮x, y⟯ = ⊤)
-  (heq : y ^ 2 = x ^ 3 + algebraMap k F a)
-include hy hgen heq
-
-/-- **`y ^ 2 = x ^ 3 + a` has degree three over `k(y)`**, in every characteristic. -/
-theorem finrank_adjoin_eq_three_of_sq_eq_pow_three_add : Module.finrank k⟮y⟯ F = 3 := by
-  let := ratFuncAlgebraOfTranscendental hy
-  have := isScalarTower_ratFuncAlgebraOfTranscendental hy
-  rw [← algebraMap_ratFuncAlgebraOfTranscendental_X hy, finrank_adjoin_algebraMap_X]
-  refine (Place.infty k).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one
-    (adjoin_eq_top_ratFunc hy hgen) (pow_three_eq_algebraMap hy heq) three_ne_zero ?_
-  rw [Valuation.ord_def, ← Place.ord_def]
-  exact gcd_ord_infty
-
-include h3
-
-/-- **`y` is a separating element of `y ^ 2 = x ^ 3 + a`** when `3` is invertible in `k`:
-`F / k(y)` is separable. -/
-theorem isSeparable_adjoin_of_sq_eq_pow_three_add : Algebra.IsSeparable k⟮y⟯ F := by
-  -- the radicand `y ^ 2 - a`, as an element of `k(y)`
-  let u : k⟮y⟯ := ⟨y ^ 2 - algebraMap k F a,
-    sub_mem (pow_mem (IntermediateField.mem_adjoin_simple_self k y) 2)
-      (IntermediateField.algebraMap_mem _ a)⟩
-  have hu : u ≠ 0 := fun h ↦ hy ⟨X ^ 2 - C a, X_pow_sub_C_ne_zero two_pos a, by
-    simpa [u, ← Subtype.val_inj] using h⟩
-  have hx : x ^ 3 = algebraMap k⟮y⟯ F u := by
-    simp only [u, IntermediateField.algebraMap_apply]
-    rw [heq, add_sub_cancel_right]
-  have hgen' : k⟮y⟯⟮x⟯ = ⊤ := by
-    refine top_le_iff.mp ?_
-    rw [← IntermediateField.adjoin_eq_top_of_adjoin_eq_top (E := k⟮y⟯) k hgen,
-      IntermediateField.adjoin_le_iff, Set.insert_subset_iff, Set.singleton_subset_iff]
-    exact ⟨IntermediateField.mem_adjoin_simple_self _ _,
-      IntermediateField.algebraMap_mem k⟮y⟯⟮x⟯
-        (⟨y, IntermediateField.mem_adjoin_simple_self k y⟩ : k⟮y⟯)⟩
-  refine isSeparable_of_pow_eq_of_adjoin_eq_top ?_ hu hx hgen'
-  rwa [Nat.cast_ofNat, ← map_ofNat (algebraMap k k⟮y⟯), ne_eq, map_eq_zero]
-
-/-- **`y ^ 2 = x ^ 3 + a` has exact constants** when `3` is invertible in `k`: `k` is
-algebraically closed in `F`. -/
-theorem isIntegrallyClosedIn_of_sq_eq_pow_three_add : IsIntegrallyClosedIn k F := by
-  let := ratFuncAlgebraOfTranscendental hy
-  have := isScalarTower_ratFuncAlgebraOfTranscendental hy
-  exact isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one (IsFunctionField.ratFunc k)
-    inferInstance (adjoin_eq_top_ratFunc hy hgen) (pow_three_eq_algebraMap hy heq)
-    (by rwa [Nat.cast_ofNat]) (RatFunc.algebraMap_ne_zero (X_pow_sub_C_ne_zero two_pos a))
-    (Place.infty k) gcd_ord_infty
-
-/-- **`y ^ 2 = x ^ 3 + a` has genus one** when `3` is invertible in `k` and `Y ^ 2 - a` is
-squarefree. -/
-theorem genus_eq_one_of_sq_eq_pow_three_add (ha : Squarefree (X ^ 2 - C a)) :
-    genus k F = 1 := by
-  let := ratFuncAlgebraOfTranscendental hy
-  have := isScalarTower_ratFuncAlgebraOfTranscendental hy
-  have hg := two_mul_genus_eq_of_pow_eq_of_squarefree (adjoin_eq_top_ratFunc hy hgen)
-    (pow_three_eq_algebraMap hy heq) (by rwa [Nat.cast_ofNat]) ha
-    (by rw [natDegree_X_pow_sub_C]; exact two_pos)
-  rw [natDegree_X_pow_sub_C] at hg
-  norm_num at hg
-  omega
-
-end TauCeti
 
 /-! ### The genus drop over `𝔽₂(t) ⊆ 𝔽₂(s)` -/
 
@@ -221,7 +106,7 @@ theorem adjoin_curveX_curveY_eq_top : (constants 2)⟮curveX, curveY⟯ = ⊤ :=
   IntermediateField.lift_injective _ (by
     rw [IntermediateField.lift_adjoin, IntermediateField.lift_top, Set.image_insert_eq,
       Set.image_singleton, coe_curveX, coe_curveY]
-    rfl)
+    exact curveField_def.symm)
 
 /-- The equation `y ^ 2 = x ^ 3 + t` in `F`. -/
 theorem curveY_sq : curveY ^ 2 = curveX ^ 3 + algebraMap (constants 2) curveField (radicand 2) :=
