@@ -18,9 +18,10 @@ every exponent `v_p(m)` modulo `n` and collect the quotients into `u`. Equivalen
 
 The typical source of this hypothesis is an equation `P * Q = y ^ n` in which `P` and `Q` share
 no prime factor outside `S`: at such a prime only one of `P`, `Q` contributes, so its multiplicity
-is a multiple of `n`. This is the first step in the reduction of superelliptic equations
-`y ^ n = f(x)` with `f` factoring over `ℤ` to finitely many Thue equations: each factor is
-an `n`-th power up to one of finitely many coefficients `a`.
+is a multiple of `n`. This is the first step in the reduction of a superelliptic equation
+`y ^ n = (p x + q) (r x + s)` with two nonproportional linear factors to finitely many Thue
+equations: a common prime of the two factors divides the fixed integer `q r - p s ≠ 0`, so each
+factor is an `n`-th power up to one of finitely many coefficients `a`.
 
 ## Main results
 

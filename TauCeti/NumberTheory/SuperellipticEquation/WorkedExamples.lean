@@ -11,10 +11,12 @@ public import TauCeti.NumberTheory.DiophantineApproximation.Roth.BinaryForm
 /-!
 # The superelliptic equation `y ^ 3 = 2 x (x - 3)` via Thue equations
 
-A superelliptic equation `y ^ n = f(x)` whose right-hand side factors over `ℤ` reduces to
-finitely many Thue equations: two factors of `f(x)` share only primes dividing a fixed integer,
-so each is an `n`-th power up to one of finitely many coefficients, and eliminating `x` between
-them gives a binary form of degree `n`.
+A superelliptic equation `y ^ n = (p x + q) (r x + s)` with `n ≥ 3`, integers `p, r ≠ 0` and
+`p s - q r ≠ 0` (two nonproportional linear factors) reduces to finitely many Thue equations: a
+prime dividing both factors divides `r (p x + q) - p (r x + s) = q r - p s`, so each factor is an
+`n`-th power up to one of finitely many coefficients, and eliminating `x` between
+`p x + q = a u ^ n` and `r x + s = b v ^ n` gives the Thue equation
+`r a U ^ n - p b V ^ n = q r - p s` of degree `n`.
 
 This file carries out the reduction for `y ^ 3 = 2 x (x - 3)`. A prime dividing both `2 x` and
 `x - 3` divides `2 x - 2 (x - 3) = 6`, so by
