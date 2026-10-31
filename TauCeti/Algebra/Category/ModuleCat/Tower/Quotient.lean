@@ -93,13 +93,6 @@ theorem ker_quotientsπ (n : ℕ) : LinearMap.ker (quotientsπ J hJ n) = J n :=
 theorem quotientsπ_eq_zero_iff {n : ℕ} {x : M} : quotientsπ J hJ n x = 0 ↔ x ∈ J n := by
   rw [← LinearMap.mem_ker, ker_quotientsπ]
 
-/-- Linear maps out of a term of the tower of quotients agree once they agree on `M`. -/
-@[ext]
-theorem quotients_hom_ext {P : Type*} [AddCommGroup P] [Module R P] {n : ℕ}
-    {f g : (quotients J hJ).obj (op n) →ₗ[R] P}
-    (h : f ∘ₗ quotientsπ J hJ n = g ∘ₗ quotientsπ J hJ n) : f = g :=
-  Submodule.linearMap_qext _ h
-
 @[simp]
 theorem transitionOfLE_quotientsπ {n k : ℕ} (h : n ≤ k) (x : M) :
     (quotients J hJ).transitionOfLE h (quotientsπ J hJ k x) = quotientsπ J hJ n x := by
