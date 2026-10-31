@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Delete
@@ -43,6 +43,7 @@ actual vertex set.
   with the simple-graph predicates.
 * `Graph.isEdgeReachable_iff_le_edgeReachability`, `Graph.isEdgeConnected_iff_le_edgeConnectivity`:
   the numerical invariants record exactly the thresholds at which the predicates hold.
+* `Graph.edgeConnectivity_ofSimpleGraph`: agreement with the simple-graph edge connectivity.
 * `Graph.edgeConnectivity_eq_iInf_edgeReachability`: edge connectivity is the least local edge
   reachability between actual vertices.
 * `Graph.edgeReachability_le_nonloopIncidenceCount`: local edge reachability between distinct
@@ -246,6 +247,14 @@ theorem isEdgeConnected_iff_le_edgeConnectivity (k : ℕ) :
     G.IsEdgeConnected k ↔ k ≤ G.edgeConnectivity :=
   (Antitone.natCast_le_iSup_iff (fun _ _ hkl (h : G.IsEdgeConnected _) ↦ h.anti hkl)
     IsEdgeConnected.zero).symm
+
+/-- The edge connectivity of `Graph.ofSimpleGraph H` is the edge connectivity of `H`. -/
+@[simp]
+theorem edgeConnectivity_ofSimpleGraph (H : SimpleGraph α) :
+    (Graph.ofSimpleGraph H).edgeConnectivity = H.edgeConnectivity :=
+  ENat.eq_of_forall_natCast_le_iff fun k ↦ by
+    rw [← isEdgeConnected_iff_le_edgeConnectivity,
+      ← SimpleGraph.isEdgeConnected_iff_le_edgeConnectivity, isEdgeConnected_ofSimpleGraph_iff]
 
 theorem edgeReachability_comm (x y : α) : G.edgeReachability x y = G.edgeReachability y x :=
   ENat.eq_of_forall_natCast_le_iff fun k ↦ by
