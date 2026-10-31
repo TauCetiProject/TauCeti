@@ -37,24 +37,6 @@ variable {G : Graph α β} {H : Graph α' β'} {K : Graph α'' β''}
 
 namespace Iso
 
-private theorem prefunctor_ext {V : Type u} {W : Type u'} [Quiver.{v} V] [Quiver.{v'} W]
-    {F G : Prefunctor V W} (h_obj : ∀ x, F.obj x = G.obj x)
-    (h_map : ∀ (x y : V) (a : x ⟶ y),
-      F.map a = Quiver.homOfEq (G.map a) (h_obj x).symm (h_obj y).symm) : F = G := by
-  obtain ⟨Fobj, Fmap⟩ := F
-  obtain ⟨Gobj, Gmap⟩ := G
-  obtain rfl : Fobj = Gobj := funext h_obj
-  simp only [Prefunctor.mk.injEq, heq_eq_eq, true_and]
-  ext x y a
-  simpa only [Quiver.homOfEq_rfl] using h_map x y a
-
-private theorem path_cast_cons {V : Type u} [Quiver.{v} V]
-    {x y z x' y' z' : V} (p : Quiver.Path x y) (a : y ⟶ z)
-    (hx : x = x') (hy : y = y') (hz : z = z') :
-    (p.cons a).cast hx hz = (p.cast hx hy).cons (a.cast hy hz) := by
-  subst hx hy hz
-  rfl
-
 /-- Transport an arrow of the bidirected arrow family. -/
 def mapHom (f : Iso G H) {x y : G.vertexSet} (a : G.BidirectedHom x y) :
     H.BidirectedHom (f.vertexEquiv x) (f.vertexEquiv y) :=
@@ -116,17 +98,12 @@ theorem toPrefunctor_map (f : Iso G H) {x y : G.vertexSet} (a : G.BidirectedHom 
 @[simp]
 theorem toPrefunctor_refl (G : Graph α β) :
     (refl G).toPrefunctor = @Prefunctor.id G.vertexSet (Quiver.mk G.BidirectedHom) := by
-  refine @prefunctor_ext G.vertexSet G.vertexSet (Quiver.mk G.BidirectedHom)
-    (Quiver.mk G.BidirectedHom)
-    (refl G).toPrefunctor
-      (@Prefunctor.id G.vertexSet (Quiver.mk G.BidirectedHom))
-      (refl_vertexEquiv_apply G) ?_
-  intro x y a
-  unfold toPrefunctor Prefunctor.id
-  refine (@Quiver.eq_homOfEq_iff G.vertexSet (Quiver.mk G.BidirectedHom)
-    ((refl G).vertexEquiv x) ((refl G).vertexEquiv y) x y ((refl G).mapHom a) a
-    (refl_vertexEquiv_apply G x).symm (refl_vertexEquiv_apply G y).symm).2 ?_
-  exact mapHom_refl G a
+  refine @Prefunctor.ext G.vertexSet (Quiver.mk G.BidirectedHom)
+    G.vertexSet (Quiver.mk G.BidirectedHom) _ _ (refl_vertexEquiv_apply G)
+      fun x y a ↦ eq_of_heq ?_
+  rw [heq_eqRec_iff, heq_eqRec_iff]
+  exact (@Quiver.Hom.cast_heq G.vertexSet (Quiver.mk G.BidirectedHom) _ _ _ _ _ _ _).symm.trans
+    (heq_of_eq (mapHom_refl G a))
 
 /-- Composition of graph isomorphisms induces composition of bidirected prefunctors. -/
 @[simp]
@@ -135,19 +112,12 @@ theorem toPrefunctor_trans (f : Iso G H) (g : Iso H K) :
       @Prefunctor.comp G.vertexSet (Quiver.mk G.BidirectedHom)
         H.vertexSet (Quiver.mk H.BidirectedHom) K.vertexSet (Quiver.mk K.BidirectedHom)
         f.toPrefunctor g.toPrefunctor := by
-  refine @prefunctor_ext G.vertexSet K.vertexSet (Quiver.mk G.BidirectedHom)
-    (Quiver.mk K.BidirectedHom) (f.trans g).toPrefunctor
-      (@Prefunctor.comp G.vertexSet (Quiver.mk G.BidirectedHom)
-        H.vertexSet (Quiver.mk H.BidirectedHom) K.vertexSet (Quiver.mk K.BidirectedHom)
-        f.toPrefunctor g.toPrefunctor) (trans_vertexEquiv_apply f g) ?_
-  intro x y a
-  unfold toPrefunctor Prefunctor.comp
-  refine (@Quiver.eq_homOfEq_iff K.vertexSet (Quiver.mk K.BidirectedHom)
-    ((f.trans g).vertexEquiv x) ((f.trans g).vertexEquiv y)
-      (g.vertexEquiv (f.vertexEquiv x)) (g.vertexEquiv (f.vertexEquiv y))
-      ((f.trans g).mapHom a) (g.mapHom (f.mapHom a))
-      (trans_vertexEquiv_apply f g x).symm (trans_vertexEquiv_apply f g y).symm).2 ?_
-  exact mapHom_trans f g a
+  refine @Prefunctor.ext G.vertexSet (Quiver.mk G.BidirectedHom)
+    K.vertexSet (Quiver.mk K.BidirectedHom) _ _ (trans_vertexEquiv_apply f g)
+      fun x y a ↦ eq_of_heq ?_
+  rw [heq_eqRec_iff, heq_eqRec_iff]
+  exact (@Quiver.Hom.cast_heq K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _ _ _ _).symm.trans
+    (heq_of_eq (mapHom_trans f g a))
 
 /-- Transport a directed walk of the bidirected arrow family. -/
 def mapPath (f : Iso G H) {x y : G.vertexSet} (p : ArrowWalk G.BidirectedHom x y) :
@@ -179,12 +149,13 @@ theorem mapPath_refl (G : Graph α β) {x y : G.vertexSet}
   induction p with
   | nil => simp
   | cons p a ih =>
-      rw [mapPath_cons,
-        @path_cast_cons G.vertexSet (Quiver.mk G.BidirectedHom) _ _ _ _ _ _
-          ((refl G).mapPath p) ((refl G).mapHom a)
-          (refl_vertexEquiv_apply G _) (refl_vertexEquiv_apply G _)
-          (refl_vertexEquiv_apply G _),
-        ih, mapHom_refl]
+      rw [mapPath_cons, @Quiver.Path.cast_eq_iff_heq G.vertexSet (Quiver.mk G.BidirectedHom)]
+      congr 1
+      exacts [refl_vertexEquiv_apply G _, refl_vertexEquiv_apply G _,
+        refl_vertexEquiv_apply G _,
+        (@Quiver.Path.cast_eq_iff_heq G.vertexSet (Quiver.mk G.BidirectedHom) _ _ _ _ _ _ _ _).1 ih,
+        (@Quiver.Hom.cast_eq_iff_heq G.vertexSet (Quiver.mk G.BidirectedHom) _ _ _ _ _ _ _ _).1
+          (mapHom_refl G a)]
 
 /-- Transport along a composite isomorphism applies the two directed-walk transports in order. -/
 @[simp]
@@ -196,12 +167,14 @@ theorem mapPath_trans (f : Iso G H) (g : Iso H K) {x y : G.vertexSet}
   induction p with
   | nil => simp
   | cons p a ih =>
-      rw [mapPath_cons,
-        @path_cast_cons K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _ _ _
-          ((f.trans g).mapPath p) ((f.trans g).mapHom a)
-          (trans_vertexEquiv_apply f g _) (trans_vertexEquiv_apply f g _)
-          (trans_vertexEquiv_apply f g _),
-        ih, mapHom_trans, mapPath_cons, mapPath_cons]
+      rw [mapPath_cons, mapPath_cons, mapPath_cons,
+        @Quiver.Path.cast_eq_iff_heq K.vertexSet (Quiver.mk K.BidirectedHom)]
+      congr 1
+      exacts [trans_vertexEquiv_apply f g _, trans_vertexEquiv_apply f g _,
+        trans_vertexEquiv_apply f g _,
+        (@Quiver.Path.cast_eq_iff_heq K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _ _ _ _ _).1 ih,
+        (@Quiver.Hom.cast_eq_iff_heq K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _ _ _ _ _).1
+          (mapHom_trans f g a)]
 
 /-- Mapping a directed walk forward and then along the inverse isomorphism fixes it. -/
 @[simp]
