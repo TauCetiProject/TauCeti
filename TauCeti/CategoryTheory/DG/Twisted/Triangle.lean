@@ -312,6 +312,7 @@ theorem dgComp_extensionInr_coneHomOfHomotopy (a : DGHom R 0 P P') (b : DGHom R 
 /-- The inclusion of `P⟦1⟧` into `cone u`, followed by the morphism of cones induced by `a` and
 `b` with zero homotopy and then `x`, is the shift of `a` followed by the inclusion of `P'⟦1⟧` into
 `cone u'` and then `x`. -/
+@[simp↓]
 theorem dgComp_extensionInr_coneHomOfHomotopy_zero_assoc (a : DGHom R 0 P P')
     (b : DGHom R 0 Q Q') {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {n : ℤ}
     (x : DGHom R n (cone u' hu') Z) :
@@ -344,6 +345,7 @@ theorem dgComp_coneHomOfHomotopy_extensionFst (a : DGHom R 0 P P') (b : DGHom R 
 /-- The morphism of cones induced by `a` and `b` with zero homotopy, followed by the projection of
 `cone u'` onto `Q'` and then `x`, is the projection of `cone u` onto `Q` followed by `b` and then
 `x`. -/
+@[simp↓]
 theorem dgComp_coneHomOfHomotopy_zero_extensionFst_assoc (a : DGHom R 0 P P')
     (b : DGHom R 0 Q Q') {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {n : ℤ}
     (x : DGHom R n Q' Z) :
