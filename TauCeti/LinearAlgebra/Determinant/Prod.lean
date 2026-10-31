@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
-import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
 # The determinant of an endomorphism of `R × R`
