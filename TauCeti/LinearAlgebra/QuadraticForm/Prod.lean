@@ -33,7 +33,8 @@ the image: an orthogonal transformation of `Q₁.prod Q₂` is such an orthogona
 maps each summand into itself. No finiteness is needed for this, since a linear automorphism of
 `M₁ × M₂` preserving both summands is automatically a product of automorphisms of the summands.
 For finite free modules the determinant of an orthogonal sum is the product of the determinants,
-so the embedding restricts to the special orthogonal groups.
+so the embedding restricts to the special orthogonal groups. Concatenating orthogonal families of
+the two summands gives an orthogonal family of the orthogonal sum.
 
 ## Main definitions
 
@@ -60,6 +61,8 @@ so the embedding restricts to the special orthogonal groups.
   summands whose two diagonal blocks have determinant one.
 * `QuadraticMap.det_orthogonalGroupProd`: the determinant of an orthogonal sum is the product of
   the determinants.
+* `QuadraticMap.isOrthoᵢ_associated_prod`: orthogonal families of the summands concatenate to an
+  orthogonal family of `Q₁.prod Q₂`.
 
 ## References
 
@@ -426,5 +429,25 @@ theorem orthogonalGroupProd_one_reflectionOrthogonal (w : M₂) [Invertible (Q�
   ext x <;> simp [reflection_apply]
 
 end Reflection
+
+section Orthogonal
+
+variable {R M₁ M₂ N : Type*} [CommRing R] [Invertible (2 : R)] [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N] [Module R N]
+  {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+
+/-- Concatenating a `Q₁`-orthogonal family of `M₁` and a `Q₂`-orthogonal family of `M₂`, placed in
+the two summands, gives a family orthogonal for the orthogonal sum `Q₁.prod Q₂`. -/
+theorem isOrthoᵢ_associated_prod {ι₁ ι₂ : Type*} {v₁ : ι₁ → M₁} {v₂ : ι₂ → M₂}
+    (h₁ : (associated Q₁).IsOrthoᵢ v₁) (h₂ : (associated Q₂).IsOrthoᵢ v₂) :
+    (associated (Q₁.prod Q₂)).IsOrthoᵢ (Sum.elim (fun i ↦ (v₁ i, 0)) fun j ↦ (0, v₂ j)) := by
+  rw [LinearMap.isOrthoᵢ_def] at h₁ h₂ ⊢
+  rintro (i | i) (j | j) hij
+  · simpa using h₁ i j (Sum.inl.inj_iff.not.1 hij)
+  · simp
+  · simp
+  · simpa using h₂ i j (Sum.inr.inj_iff.not.1 hij)
+
+end Orthogonal
 
 end QuadraticMap
