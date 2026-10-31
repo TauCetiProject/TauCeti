@@ -5,17 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.GraphPlanDensity
+public import TauCeti.MeasureTheory.OptimalTransport.Pratelli
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 
 /-!
 # The Wasserstein distance as a Monge infimum
 
-On a Polish metric space, the `p`-th power of the Wasserstein distance from an atomless law with
-finite `p`-moment is a Monge infimum over transport maps, for every finite nonzero exponent `p`
-(`TauCeti.wassersteinEDist_rpow_eq_mongeCost`). The cost `edist x y ^ p` has the integrable split
-upper envelope `K * (edist x₀ x ^ p + edist x₀ y ^ p)` when both laws have finite `p`-moment, so
-this is a corollary of `TauCeti.mongeCost_eq_transportCost_of_le_split`. No moment is needed on
-the target: if it has none, both sides are `∞`.
+On a Polish metric space, the `p`-th power of the Wasserstein distance from an atomless law is a
+Monge infimum over transport maps, for every finite nonzero exponent `p`
+(`TauCeti.wassersteinEDist_rpow_eq_mongeCost`). The cost `edist x y ^ p` is continuous, so this is
+a corollary of Pratelli's theorem `TauCeti.mongeCost_eq_transportCost_of_continuous`. No moment
+condition is needed: if a law has no finite `p`-moment, both sides may be `∞`.
 
 ## References
 
@@ -35,31 +35,17 @@ namespace TauCeti
 variable {X : Type*} [MeasurableSpace X] [MetricSpace X] [PolishSpace X] [BorelSpace X]
   {μ : Measure X} [IsProbabilityMeasure μ] [NullSingletonClass μ]
 
-/-- **The Wasserstein distance is a Monge infimum.** For an atomless source law with finite
-`p`-moment on a Polish metric space, the `p`-th power of the Wasserstein distance to any
-probability law is the infimum of `∫⁻ x, edist x (T x) ^ p ∂μ` over the transport maps `T`, for
-every finite nonzero exponent `p`. -/
-theorem wassersteinEDist_rpow_eq_mongeCost {p : ℝ≥0∞} {ν : Measure X} [IsProbabilityMeasure ν]
-    (hp0 : p ≠ 0) (hp : p ≠ ∞) (hμ : HasFiniteMoment p μ) :
+/-- **The Wasserstein distance is a Monge infimum.** For an atomless source law on a Polish metric
+space, the `p`-th power of the Wasserstein distance to any measure is the infimum of
+`∫⁻ x, edist x (T x) ^ p ∂μ` over the transport maps `T`, for every finite nonzero exponent
+`p`. -/
+theorem wassersteinEDist_rpow_eq_mongeCost {p : ℝ≥0∞} {ν : Measure X} (hp0 : p ≠ 0)
+    (hp : p ≠ ∞) :
     wassersteinEDist p μ ν ^ p.toReal =
       mongeCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) μ ν := by
-  have hd : Measurable fun z : X × X ↦ edist z.1 z.2 := measurable_edist
-  rw [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
-  by_cases hν : HasFiniteMoment p ν
-  swap
-  · have htop := transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment hd hp0 hp hμ hν
-    rw [htop, eq_comm, ← top_le_iff, ← htop]
-    exact transportCost_le_mongeCost _ _ _
-  obtain ⟨x₀, -⟩ := hasFiniteMoment_def.1 hμ
-  set K := ENNReal.LpAddConst (ENNReal.ofReal p.toReal)⁻¹
-  have hK : K ≠ ∞ := (ENNReal.LpAddConst_lt_top _).ne
-  have hm : Measurable fun x : X ↦ K * edist x₀ x ^ p.toReal :=
-    (measurable_edist_right.pow_const _).const_mul _
-  have hc : Continuous fun z : X × X ↦ edist z.1 z.2 ^ p.toReal :=
-    ENNReal.continuous_rpow_const.comp continuous_edist
-  exact (mongeCost_eq_transportCost_of_le_split (c := fun z : X × X ↦ edist z.1 z.2 ^ p.toReal)
-    hc hm.aemeasurable hm.aemeasurable (hμ.lintegral_const_mul_edist_rpow_ne_top hp0 hp x₀ hK)
-    (hν.lintegral_const_mul_edist_rpow_ne_top hp0 hp x₀ hK) fun z ↦
-      edist_rpow_le_mul_edist_rpow_add_mul_edist_rpow ENNReal.toReal_nonneg x₀ z.1 z.2).symm
+  have : Nonempty X := nonempty_of_isProbabilityMeasure μ
+  rw [wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp]
+  exact (mongeCost_eq_transportCost_of_continuous
+    (ENNReal.continuous_rpow_const.comp continuous_edist)).symm
 
 end TauCeti
