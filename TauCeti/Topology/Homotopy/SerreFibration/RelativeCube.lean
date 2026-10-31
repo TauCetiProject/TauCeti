@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.SerreFibration.Basic
-public import TauCeti.Topology.Homotopy.Extension.Basic
+public import TauCeti.Topology.Homotopy.HurewiczFibration.RelativeLifting
 public import TauCeti.Topology.Homotopy.Cube.Radius
 
 /-!
@@ -28,9 +28,10 @@ In particular, no regular lifting function is required. The zero-dimensional cub
 * A. Hatcher, *Algebraic Topology*, Section 4.2, relative homotopy lifting for fibrations.
 * A. Strøm, *Note on cofibrations II*, Math. Scand. 22 (1968), 130–142.
 
-The variable-time lifting argument extends the square construction in
+The radial geometry extends the square construction in
 `TauCeti.Topology.Homotopy.OpenBoxLifting`, using `cubeRadius` and `cubeScale` for the
-finite-dimensional cube geometry.
+finite-dimensional cube geometry. The final lifting step reuses
+`HasHomotopyLiftingProperty.zeroSetSDR_liftingInclusion`.
 -/
 
 public noncomputable section
@@ -126,11 +127,13 @@ private theorem cubeLiftDeform_zero_mem (x : I × (N → I)) :
     have hd' : cubeLiftDen x = 2 * cubeRadius x.2 := h
     rw [div_mul_eq_mul_div, ← hd', div_self hd.ne']
 
-private theorem cubeLiftDeform_zero_of_mem {x : I × (N → I)}
-    (hx : x ∈ cylinderExtensionDomain (Cube.boundary N)) : cubeLiftDeform 0 x = x := by
-  have ht : (⟨cubeLiftTime x, cubeLiftTime_mem x⟩ : I) = 0 :=
-    Subtype.ext (cubeLiftTime_eq_zero hx)
-  simpa only [ht] using cubeLiftDeform_time x
+private theorem cubeLiftTime_eq_zero_iff (x : I × (N → I)) :
+    cubeLiftTime x = 0 ↔ x ∈ cylinderExtensionDomain (Cube.boundary N) := by
+  refine ⟨fun hx ↦ ?_, cubeLiftTime_eq_zero⟩
+  have ht : (⟨cubeLiftTime x, cubeLiftTime_mem x⟩ : I) = 0 := Subtype.ext hx
+  have he := cubeLiftDeform_time x
+  rw [ht] at he
+  exact he ▸ cubeLiftDeform_zero_mem x
 
 end Radial
 
@@ -139,7 +142,7 @@ variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
 
 /-- A map with the homotopy lifting property for the cube cylinder lifts a homotopy on the
 cube with arbitrary prescribed, compatible lifts on its bottom face and boundary cylinder. -/
-theorem HasHomotopyLiftingProperty.exists_lift_cubeBoundary
+theorem HasHomotopyLiftingProperty.exists_lift_openBox
     (hp : HasHomotopyLiftingProperty p (I × (N → I)))
     (f : C(cylinderExtensionDomain (Cube.boundary N), E)) (H : C(I × (N → I), B))
     (hf : ∀ x, p (f x) = H x) :
@@ -149,16 +152,19 @@ theorem HasHomotopyLiftingProperty.exists_lift_cubeBoundary
   let r : C(I × (N → I), cylinderExtensionDomain (Cube.boundary N)) :=
     ⟨fun x ↦ ⟨cubeLiftDeform 0 x, cubeLiftDeform_zero_mem x⟩,
       (continuous_cubeLiftDeform.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩
-  let K : C(I × (I × (N → I)), B) :=
-    ⟨fun y ↦ H (cubeLiftDeform y.1 y.2), H.continuous.comp continuous_cubeLiftDeform⟩
-  obtain ⟨L, hL, hL₀⟩ := hp (f.comp r) K fun x ↦ (hf (r x)).symm
   let τ : C(I × (N → I), I) :=
     ⟨fun x ↦ ⟨cubeLiftTime x, cubeLiftTime_mem x⟩, continuous_cubeLiftTime.subtype_mk _⟩
-  refine ⟨⟨fun x ↦ L (τ x, x), by fun_prop⟩, funext fun x ↦ ?_, fun x ↦ ?_⟩
-  · exact (congrFun hL (τ x, x)).trans (congrArg H (cubeLiftDeform_time x))
-  · have hτ : τ x = 0 := Subtype.ext (cubeLiftTime_eq_zero x.2)
-    have hr : r x = x := Subtype.ext (cubeLiftDeform_zero_of_mem x.2)
-    simp only [ContinuousMap.coe_mk, hτ, hL₀, ContinuousMap.comp_apply, hr]
+  apply hp.zeroSetSDR_liftingInclusion τ
+    (fun x ↦ Subtype.ext_iff.trans (cubeLiftTime_eq_zero_iff x)) r ?_ f H hf
+  exact ⟨{
+    toFun := fun y ↦ cubeLiftDeform (σ y.1) y.2
+    continuous_toFun := continuous_cubeLiftDeform.comp
+      ((continuous_symm.comp continuous_fst).prodMk continuous_snd)
+    map_zero_left := fun x ↦ by
+      simp [cubeLiftDeform, min_eq_left (cubeLiftTime_mem x).2]
+    map_one_left := fun _ ↦ by simp [r]
+    prop' := fun s x hx ↦ by
+      simp [cubeLiftDeform, cubeLiftTime_eq_zero hx, min_eq_left (sub_nonneg.mpr s.2.2)] }⟩
 
 namespace TopCat
 
@@ -169,7 +175,7 @@ universe u
 /-- **Relative cube lifting for a Serre fibration.** A continuous lift on the bottom face and
 all boundary sides of `I × Iⁿ` extends to a lift of the entire homotopy. There is no
 nonemptiness assumption, and `n = 0` recovers lifting with a prescribed starting point. -/
-theorem exists_lift_cubeBoundary_of_mem_serreFibrations {E B : TopCat.{u}} {p : E ⟶ B}
+theorem exists_lift_openBox_of_mem_serreFibrations {E B : TopCat.{u}} {p : E ⟶ B}
     (hp : serreFibrations p) (n : ℕ)
     (f : C(cylinderExtensionDomain (Cube.boundary (Fin n)), E))
     (H : C(I × (Fin n → I), B)) (hf : ∀ x, p (f x) = H x) :
@@ -177,7 +183,7 @@ theorem exists_lift_cubeBoundary_of_mem_serreFibrations {E B : TopCat.{u}} {p : 
       ∀ x : cylinderExtensionDomain (Cube.boundary (Fin n)), G x = f x := by
   have h := (mem_serreFibrations_iff_cube.1 hp (n + 1)).of_homeomorph
     (cubeSplitHomeomorph n).symm
-  exact h.exists_lift_cubeBoundary f H hf
+  exact h.exists_lift_openBox f H hf
 
 end TopCat
 
