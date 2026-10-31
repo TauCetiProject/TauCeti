@@ -303,15 +303,22 @@ theorem isGroebnerBasis_iff_forall_exists_degree_le_degree
   rw [Set.mem_preimage, SetLike.mem_coe, hlt]
   exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨g, hgG, rfl⟩)
 
+/-- If the nonzero members of `G` have unit leading coefficients, then so do the nonzero leading
+terms of members of `G`. -/
+theorem isUnit_leadingCoeff_of_mem_image_leadingTerm
+    (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
+    ∀ p ∈ m.leadingTerm '' G, p ≠ 0 → IsUnit (m.leadingCoeff p) := by
+  rintro _ ⟨g, hg, rfl⟩ hg0
+  rw [leadingCoeff_leadingTerm]
+  exact hG g hg (by rintro rfl; simp at hg0)
+
 /-- The leading terms of a Gröbner basis `G` of `I` whose nonzero members have unit leading
 coefficients form a Gröbner basis of the ideal of leading terms of `I`. -/
 theorem IsGroebnerBasis.image_leadingTerm (h : m.IsGroebnerBasis G I)
     (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
     m.IsGroebnerBasis (m.leadingTerm '' G) (Ideal.span (m.leadingTerm '' I)) := by
-  refine (isGroebnerBasis_iff_forall_exists_degree_le_degree ?_).2 ⟨?_, fun p hp hp0 ↦ ?_⟩
-  · rintro _ ⟨g, hg, rfl⟩ hg0
-    rw [leadingCoeff_leadingTerm]
-    exact hG g hg (by rintro rfl; simp at hg0)
+  refine (isGroebnerBasis_iff_forall_exists_degree_le_degree
+    (isUnit_leadingCoeff_of_mem_image_leadingTerm hG)).2 ⟨?_, fun p hp hp0 ↦ ?_⟩
   · rw [h.span_leadingTerm_image]
     exact Ideal.subset_span
   · rw [h.span_leadingTerm_image] at hp
