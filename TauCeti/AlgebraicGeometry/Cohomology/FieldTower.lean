@@ -13,7 +13,8 @@ public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 Let `κ / k` be an extension of fields and let `X` be a scheme over `κ`, regarded as a scheme over
 `k` through `Spec κ ⟶ Spec k`. The cohomology groups `Hⁱ(X, M)` of a sheaf of modules on `X` are
 then vector spaces over both fields, and the `k`-structure is the restriction of the
-`κ`-structure (`Scheme.Modules.isScalarTower_cohomology_of_comp_eq`). By the tower law,
+`κ`-structure (`Scheme.Modules.isScalarTower_cohomology_of_comp_eq`, in
+`TauCeti.AlgebraicGeometry.Cohomology.Module.Base`). By the tower law,
 
 `dim_k Hⁱ(X, M) = [κ : k] · dim_κ Hⁱ(X, M)`,
 
@@ -31,8 +32,6 @@ which is zero on an infinite-dimensional space.
 
 ## Main results
 
-* `Scheme.Modules.isScalarTower_cohomology_of_comp_eq`: for a scheme over an `R`-algebra `S`, the
-  actions of `R` and `S` on cohomology form a scalar tower.
 * `Scheme.Modules.finrank_cohomology_eq_finrank_mul`: `dim_k Hⁱ = [κ : k] · dim_κ Hⁱ`.
 * `Scheme.Modules.eulerCharBelow_eq_finrank_mul`: the same relation for truncated Euler
   characteristics.
@@ -57,27 +56,6 @@ universe u
 noncomputable section
 
 namespace Scheme.Modules
-
-section ScalarTower
-
-variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] {X : Scheme.{u}}
-  [X.Over (Spec (.of R))] [X.Over (Spec (.of S))]
-
-/-- If the structure morphism of `X` to `Spec R` factors through `Spec S`, then the action of `R`
-on the cohomology of a sheaf of modules on `X` is the restriction of the action of `S`. -/
-lemma _root_.AlgebraicGeometry.Scheme.Modules.isScalarTower_cohomology_of_comp_eq
-    (h : (X ↘ Spec (.of S)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R S)) =
-      (X ↘ Spec (.of R))) (M : X.Modules) (i : ℕ) :
-    IsScalarTower R S (Cohomology M i) :=
-  .of_algebraMap_smul fun r x ↦ by
-    -- On global functions, `R` acts through `S`.
-    have hr := X.baseRingToStructurePresheaf_app_algebraMap h ⊤ r
-    rw [Scheme.baseRingToStructurePresheaf_app_top,
-      Scheme.baseRingToStructurePresheaf_app_top] at hr
-    rw [base_smul_cohomology, base_smul_cohomology]
-    exact congrArg (· • x) hr
-
-end ScalarTower
 
 variable {k κ : Type u} [Field k] [Field κ] [Algebra k κ] {X : Scheme.{u}}
   [X.Over (Spec (.of k))] [X.Over (Spec (.of κ))]
