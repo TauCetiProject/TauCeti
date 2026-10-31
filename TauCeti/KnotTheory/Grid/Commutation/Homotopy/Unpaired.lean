@@ -24,7 +24,9 @@ The argument has two independent parts.
   a commutation hexagon, that piece covers the `X`-marking of its own cut-away column, which must
   therefore be the single one. Its hexagon carries no `X`-marking, the other piece carries none
   either, and the repartition is a counted composite
-  (`GridDiagram.exists_toRectangleDecomposition_eq_of_isRepartition`).
+  (`GridDiagram.exists_toRectangleDecomposition_eq_of_isRepartition`, an instance of
+  `GridDiagram.exists_toRectangleDecomposition_eq_of_isRepartition_of_mem_iff` via
+  `GridDiagram.mem_commutationHexagons_iff_XSet_inter_eq`).
 * *Shapes.* For a same-side overlap, the recut cuts the L-shaped union the other way, and one of
   its pieces again underlies a commutation hexagon of the same kind
   (`GridHexagonCompositeDecomposition.exists_hexagon_of_isRecut`).
@@ -54,64 +56,18 @@ namespace TauCeti.GridDiagram
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
 
 local notation "a" => C.column
-local notation "b" => finRotate n C.column
 
 /-! ### Promoting a repartition to a counted composite -/
 
-/-- Every `X`-marking covered by a counted composite is one and the same. -/
-private theorem exists_eq_of_mem_XSet_of_mem_coveredSquares_union {x z : GridState n}
-    {F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z}
-    (hF : F ∈ G.hexagonCompositeDecompositions C x z) :
-    ∃ c : Fin n, ∀ p ∈ G.XSet,
-      p ∈ F.toRectangleDecomposition.first.toGridRectangle.coveredSquares ∪
-          F.toRectangleDecomposition.second.toGridRectangle.coveredSquares →
-        p = (c, G.X c) := by
-  have hhex {u v : GridState n}
-      {P : GridCommutationHexagonBetween a C.turnRow C.oppositeTurnRow u v}
-      (hP : P ∈ G.commutationHexagons C u v) {p : Fin n × Fin n} (hX : p ∈ G.XSet)
-      (hp : p ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares) :
-      p = (P.cutColumn, G.X P.cutColumn) := by
-    have hmem := Finset.mem_inter.mpr ⟨hX, hp⟩
-    rw [G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP] at hmem
-    exact Finset.mem_singleton.mp hmem
-  cases F with
-  | inl F =>
-    obtain ⟨hP, hr⟩ := (G.mem_hexagonRectangleDecompositions C F).mp
-      ((G.inl_mem_hexagonCompositeDecompositions C F).mp hF)
-    refine ⟨F.hexagon.cutColumn, fun p hX hp => ?_⟩
-    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl] at hp
-    rcases Finset.mem_union.mp hp with hp | hp
-    · exact hhex hP hX hp
-    · exact (Finset.disjoint_left.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr) hp hX).elim
-  | inr F =>
-    obtain ⟨hr, hP⟩ := (G.mem_rectangleHexagonDecompositions C F).mp
-      ((G.inr_mem_hexagonCompositeDecompositions C F).mp hF)
-    refine ⟨F.hexagon.cutColumn, fun p hX hp => ?_⟩
-    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr] at hp
-    rcases Finset.mem_union.mp hp with hp | hp
-    · exact (Finset.disjoint_left.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr) hp hX).elim
-    · exact hhex hP hX hp
-
-/-- A commutation hexagon whose underlying rectangle lies in a domain covering at most one
-`X`-marking carries no `X`-marking, and its underlying rectangle covers that one. -/
-private theorem disjoint_XSet_and_mem_of_coveredSquares_subset {u v : GridState n}
-    (P : GridCommutationHexagonBetween a C.turnRow C.oppositeTurnRow u v)
-    {S : Finset (Fin n × Fin n)} {c : Fin n} (hc : ∀ p ∈ G.XSet, p ∈ S → p = (c, G.X c))
-    (hsub : P.toGridRectangleBetween.toGridRectangle.coveredSquares ⊆ S) :
-    Disjoint P.coveredSquares G.XSet ∧
-      (c, G.X c) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
-  have hcut := G.cutColumn_X_mem_toGridRectangle_coveredSquares C P
-  have heq := hc _ ((G.mk_mem_XSet _ _).mpr rfl) (hsub hcut)
-  refine ⟨Finset.disjoint_left.mpr fun {p} hp hX => ?_, heq ▸ hcut⟩
-  obtain ⟨d, r⟩ := p
-  -- A covered square lies outside both columns next to the replaced line, so in the rectangle.
-  have hda : d ≠ a := fun h => P.mk_notMem_coveredSquares_left_column r (h ▸ hp)
-  have hdb : d ≠ b := fun h => P.mk_notMem_coveredSquares_right_column r (h ▸ hp)
-  have hrect := (P.mem_coveredSquares_iff_of_ne hda hdb).mp hp
-  have hcol : d = P.cutColumn := (Prod.mk.inj ((hc _ hX (hsub hrect)).trans heq.symm)).1
-  cases P with
-  | inl P => exact hda (by rwa [GridCommutationHexagonBetween.cutColumn_inl] at hcol)
-  | inr P => exact hdb (by rwa [GridCommutationHexagonBetween.cutColumn_inr] at hcol)
+/-- The counted composites are the counted hexagons and unblocked rectangles, in either order. -/
+private theorem mem_hexagonCompositeDecompositions_iff_mem_disjSum {x z : GridState n}
+    (F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z) :
+    F ∈ G.hexagonCompositeDecompositions C x z ↔
+      F ∈ (GridTwoStepDecomposition.decompositionsOf (G.commutationHexagons C)
+          G.unblockedRectangles x z).disjSum
+        (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles
+          (G.commutationHexagons C) x z) := by
+  cases F <;> simp
 
 /-- A repartition of a counted composite into two empty rectangles, one of which underlies a
 commutation hexagon, is the underlying rectangle decomposition of a counted composite. -/
@@ -125,31 +81,11 @@ theorem exists_toRectangleDecomposition_eq_of_isRepartition {x z : GridState n}
       ∃ P : GridCommutationHexagonBetween a C.turnRow C.oppositeTurnRow E.middle z,
         P.toGridRectangleBetween = E.second) :
     ∃ F' ∈ G.hexagonCompositeDecompositions C x z, F'.toRectangleDecomposition = E := by
-  obtain ⟨c, hc⟩ := G.exists_eq_of_mem_XSet_of_mem_coveredSquares_union C hF
-  rw [← hrep.coveredSquares_union_eq] at hc
-  -- The piece without the hexagon misses the single `X`-marking, which the hexagon piece covers.
-  have hdisj := Finset.disjoint_left.mp hrep.disjoint_coveredSquares_right
-  rcases hhex with ⟨P, hP⟩ | ⟨P, hP⟩
-  · obtain ⟨hPX, hcP⟩ := G.disjoint_XSet_and_mem_of_coveredSquares_subset C P hc
-      (hP ▸ Finset.subset_union_left)
-    refine ⟨Sum.inl ⟨E.middle, P, E.second⟩, ?_, ?_⟩
-    · simp only [inl_mem_hexagonCompositeDecompositions, mem_hexagonRectangleDecompositions,
-        mem_commutationHexagons, mem_unblockedRectangles]
-      refine ⟨⟨hP ▸ hfirst, hPX⟩, hsecond, Finset.disjoint_left.mpr fun {p} hp hX => ?_⟩
-      obtain rfl := hc p hX (Finset.mem_union_right _ hp)
-      exact hdisj (hP ▸ hcP) hp
-    · simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl,
-        GridHexagonRectangleDecomposition.toRectangleDecomposition, hP]
-  · obtain ⟨hPX, hcP⟩ := G.disjoint_XSet_and_mem_of_coveredSquares_subset C P hc
-      (hP ▸ Finset.subset_union_right)
-    refine ⟨Sum.inr ⟨E.middle, E.first, P⟩, ?_, ?_⟩
-    · simp only [inr_mem_hexagonCompositeDecompositions, mem_rectangleHexagonDecompositions,
-        mem_commutationHexagons, mem_unblockedRectangles]
-      refine ⟨⟨hfirst, Finset.disjoint_left.mpr fun {p} hp hX => ?_⟩, hP ▸ hsecond, hPX⟩
-      obtain rfl := hc p hX (Finset.mem_union_left _ hp)
-      exact hdisj hp (hP ▸ hcP)
-    · simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
-        GridRectangleHexagonDecomposition.toRectangleDecomposition, hP]
+  obtain ⟨F', hF', hF'E⟩ := exists_toRectangleDecomposition_eq_of_isRepartition_of_mem_iff
+    (G.mem_commutationHexagons_iff_XSet_inter_eq C)
+    (G.cutColumn_X_mem_toGridRectangle_coveredSquares C)
+    ((G.mem_hexagonCompositeDecompositions_iff_mem_disjSum C F).mp hF) hrep hfirst hsecond hhex
+  exact ⟨F', (G.mem_hexagonCompositeDecompositions_iff_mem_disjSum C F').mpr hF', hF'E⟩
 
 /-! ### Same-side composites are paired -/
 
@@ -162,13 +98,11 @@ theorem exists_isRecut_of_hasSameSideOverlap {x z : GridState n}
     (hsame : F.toRectangleDecomposition.HasSameSideOverlap) :
     ∃ F' ∈ G.hexagonCompositeDecompositions C x z,
       F.toRectangleDecomposition.IsRecut F'.toRectangleDecomposition := by
-  obtain ⟨hfirst, hsecond⟩ := G.isEmpty_of_mem_hexagonCompositeDecompositions C hF
-  have hrecut := F.toRectangleDecomposition.isRecut_recut
-    (F.toRectangleDecomposition.hasSameSideOverlap_iff.mp hsame).1 hfirst hsecond
-  obtain ⟨F', hF', hF'E⟩ := G.exists_toRectangleDecomposition_eq_of_isRepartition C hF
-    hrecut.isRepartition hrecut.isEmpty_first hrecut.isEmpty_second
-    (F.exists_hexagon_of_isRecut hsame hfirst hsecond hrecut)
-  exact ⟨F', hF', hF'E ▸ hrecut⟩
+  obtain ⟨F', hF', hrecut⟩ := exists_isRecut_of_hasSameSideOverlap_of_mem_iff
+    (G.mem_commutationHexagons_iff_XSet_inter_eq C)
+    (G.cutColumn_X_mem_toGridRectangle_coveredSquares C)
+    ((G.mem_hexagonCompositeDecompositions_iff_mem_disjSum C F).mp hF) hsame
+  exact ⟨F', (G.mem_hexagonCompositeDecompositions_iff_mem_disjSum C F').mpr hF', hrecut⟩
 
 /-- Off the diagonal, every unpaired hexagon composite has a mixed-side overlap: its two
 rectangles share exactly one side column, initial for one and terminal for the other. -/
