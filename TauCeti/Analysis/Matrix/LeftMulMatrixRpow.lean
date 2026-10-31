@@ -49,11 +49,6 @@ group or a Spin group, as needed for polar decompositions.
 * `Algebra.bilin_leftMulMatrixRpow_eq_of_forall_pow`: a bilinear identity satisfied by all
   natural powers of an element with positive semidefinite matrix is satisfied by all its real
   powers.
-
-## References
-
-* A. W. Knapp, *Lie Groups Beyond an Introduction*, second edition, Progress in Mathematics 140,
-  Birkhäuser, 2002, Chapter I, §17 (real powers of positive elements of algebraic matrix groups).
 -/
 
 public section
