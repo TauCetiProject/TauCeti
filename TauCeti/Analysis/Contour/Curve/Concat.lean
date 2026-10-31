@@ -26,12 +26,15 @@ path-independence argument needs: running a curve backwards, and following one c
   curve on the open interior of its parameter interval, so it splits as the sum of the contour
   integrals of `γ` and `δ`.
 
+The two regularity statements hold for curves in any real normed space; the contour integrals
+use complex curves.
+
 ## Main results
 
 * `TauCeti.IsPiecewiseC1On.comp_const_sub` — reversal preserves piecewise `C¹` regularity.
+* `TauCeti.IsPiecewiseC1On.if_le` — concatenation preserves piecewise `C¹` regularity.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_comp_const_sub` — the contour integral of the
   reversed curve.
-* `TauCeti.IsPiecewiseC1On.if_le` — concatenation preserves piecewise `C¹` regularity.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_congr` — the contour integral depends on the curve
   only through its values on the open parameter interval.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_eq_add_of_eqOn` — the contour integral along a
@@ -44,7 +47,9 @@ namespace TauCeti.Contour
 
 open Set MeasureTheory
 
-variable {γ δ : ℝ → ℂ} {a b c : ℝ}
+section Regularity
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {γ δ : ℝ → E} {a b c : ℝ}
 
 /-- **Reversal of a piecewise-`C¹` curve.** If `γ` is piecewise `C¹` on `[[a, b]]`, then the
 reversed curve `t ↦ γ (c - t)` is piecewise `C¹` on `[[c - a, c - b]]`, with the reflected
@@ -73,18 +78,6 @@ theorem _root_.TauCeti.IsPiecewiseC1On.comp_const_sub (h : IsPiecewiseC1On γ a 
         ⟨by linarith [hx.2], by linarith [hx.1]⟩
     exact (hC1 _ _ hsub hdisj').comp (contDiff_const.sub contDiff_id).contDiffOn
       fun t ht => ⟨by linarith [ht.2], by linarith [ht.1]⟩
-
-/-- **The contour integral along a reversed curve.** The contour integral of `t ↦ γ (c - t)` over
-`a..b` is the contour integral of `γ` over `c - a..c - b`. In particular, for `c = a + b` the
-transformed endpoints are `b` and `a`, in reverse order, so it is
-`∫ t in b..a, deriv γ t • f (γ t)`, the negative of the contour integral of `γ` over `a..b`. -/
-theorem intervalIntegral_deriv_smul_comp_const_sub {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] (γ : ℝ → ℂ) (f : ℂ → E) (a b c : ℝ) :
-    ∫ t in a..b, deriv (fun t => γ (c - t)) t • f (γ (c - t)) =
-      ∫ t in c - a..c - b, deriv γ t • f (γ t) := by
-  simp only [deriv_comp_const_sub, neg_smul, intervalIntegral.integral_neg]
-  rw [intervalIntegral.integral_comp_sub_left (fun t => deriv γ t • f (γ t)) c,
-    intervalIntegral.integral_symm (c - b) (c - a)]
 
 /-- **Concatenation of piecewise-`C¹` curves.** If `γ` is piecewise `C¹` on `[a, b]`, `δ` is
 piecewise `C¹` on `[b, c]`, and the two agree at `b`, then the curve following `γ` up to time `b`
@@ -129,6 +122,24 @@ theorem _root_.TauCeti.IsPiecewiseC1On.if_le (h₁ : IsPiecewiseC1On γ a b)
       refine (hC₂ d e (uIcc_of_le hbc ▸ hsub) (Set.disjoint_left.2 fun x hx hxde =>
         hnot x (by simp [Finset.mem_coe.1 hx]) hxde)).congr fun t ht => hη₂ (hsub ht)
 
+end Regularity
+
+section Integral
+
+variable {γ δ : ℝ → ℂ} {a b c : ℝ}
+
+/-- **The contour integral along a reversed curve.** The contour integral of `t ↦ γ (c - t)` over
+`a..b` is the contour integral of `γ` over `c - a..c - b`. In particular, for `c = a + b` the
+transformed endpoints are `b` and `a`, in reverse order, so it is
+`∫ t in b..a, deriv γ t • f (γ t)`, the negative of the contour integral of `γ` over `a..b`. -/
+theorem intervalIntegral_deriv_smul_comp_const_sub {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] (γ : ℝ → ℂ) (f : ℂ → E) (a b c : ℝ) :
+    ∫ t in a..b, deriv (fun t => γ (c - t)) t • f (γ (c - t)) =
+      ∫ t in c - a..c - b, deriv γ t • f (γ t) := by
+  simp only [deriv_comp_const_sub, neg_smul, intervalIntegral.integral_neg]
+  rw [intervalIntegral.integral_comp_sub_left (fun t => deriv γ t • f (γ t)) c,
+    intervalIntegral.integral_symm (c - b) (c - a)]
+
 /-- **The contour integral sees only the open parameter interval.** If two curves agree on the
 open interval between `a` and `b`, their contour integrals over `a..b` agree, even though the
 integrand involves the derivative of the curve. -/
@@ -154,5 +165,7 @@ theorem intervalIntegral_deriv_smul_eq_add_of_eqOn {E : Type*} [NormedAddCommGro
       (hγi.congr_uIoo ((hγ.deriv isOpen_Ioo).comp_left₂ hγ.comp_left).symm)
       (hδi.congr_uIoo ((hδ.deriv isOpen_Ioo).comp_left₂ hδ.comp_left).symm),
     intervalIntegral_deriv_smul_congr hγ, intervalIntegral_deriv_smul_congr hδ]
+
+end Integral
 
 end TauCeti.Contour
