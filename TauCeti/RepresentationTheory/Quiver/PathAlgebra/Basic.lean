@@ -1306,7 +1306,7 @@ variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q]
 /-- Two `k`-linear maps out of the enveloping algebra `kQ ⊗[k] kQᵐᵒᵖ` agree once they agree on the
 `x ⊗ q`, for paths `q`. -/
 @[ext]
-theorem envelope_ext {M : Type*} [AddCommMonoid M] [Module k M]
+theorem tensorProduct_op_linearMap_ext {M : Type*} [AddCommMonoid M] [Module k M]
     {f g : pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ →ₗ[k] M}
     (h : ∀ (x : pathAlgebra k Q) {s t : Q} (q : Quiver.Path s t),
       f (x ⊗ₜ[k] op (ofPath ⟨s, t, q⟩)) = g (x ⊗ₜ[k] op (ofPath ⟨s, t, q⟩))) : f = g :=

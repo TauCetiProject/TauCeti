@@ -442,7 +442,7 @@ private theorem homotopy_comp_mulRight_arrowTensorBoundary (b : Σ i j : Q, i �
     homotopy ∘ₗ LinearMap.mulRight k (arrowTensorBoundary k Q b) =
       -(arrowTensorProj (k := k) b).restrictScalars k := by
   -- Both sides are `k`-linear, so they agree as linear maps, compared on the `x ⊗ q`.
-  refine envelope_ext fun x s t q ↦ ?_
+  refine tensorProduct_op_linearMap_ext fun x s t q ↦ ?_
   obtain ⟨i, j, c⟩ := b
   simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.neg_apply,
     LinearMap.restrictScalars_apply]
@@ -487,7 +487,7 @@ private theorem coe_arrowTensorDifferential_homotopy (v : 𝒜ᵉ) :
           (LinearMap.toSpanSingleton 𝒜ᵉ _ (Bimodule.of (AlgHom.id k 𝒜) 1)).restrictScalars k ∘ₗ
             LinearMap.mulRight k (vertexTensorIdempotent k Q) -
         LinearMap.mulRight k (vertexTensorIdempotent k Q) := by
-    refine envelope_ext fun x s t q ↦ ?_
+    refine tensorProduct_op_linearMap_ext fun x s t q ↦ ?_
     simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.mulRight_apply,
       LinearMap.restrictScalars_apply, Submodule.subtype_apply, TensorProduct.mk_apply,
       LinearMap.flip_apply, LinearEquiv.coe_coe, LinearMap.toSpanSingleton_apply]
