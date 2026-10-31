@@ -57,6 +57,26 @@ structure IsIsolatingRank (ρ : RelationalConfiguration L ℕ → Ordinal.{0}) :
 
 variable {ρ σ : RelationalConfiguration L ℕ → Ordinal.{0}}
 
+/-- An isomorphism-invariant rank induced on the isomorphism classes represented in `K`. -/
+def rankOnIsoClasses (hinv : ∀ ⦃c d⦄, isoSetoid L ℕ c d → ρ c = ρ d)
+    (K : Set (RelationalConfiguration L ℕ)) :
+    Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)) → Ordinal.{0} :=
+  Quotient.lift (fun c : K => ρ c) (fun _ _ hcd => hinv hcd)
+
+@[simp]
+theorem rankOnIsoClasses_mk (hinv : ∀ ⦃c d⦄, isoSetoid L ℕ c d → ρ c = ρ d)
+    (K : Set (RelationalConfiguration L ℕ)) (c : K) :
+    rankOnIsoClasses hinv K (Quotient.mk _ c) = ρ c := (rfl)
+
+/-- The induced rank still takes only countable values. -/
+theorem rankOnIsoClasses_lt_omega_one
+    (hinv : ∀ ⦃c d⦄, isoSetoid L ℕ c d → ρ c = ρ d) (hρ : ∀ c, ρ c < ω₁)
+    (K : Set (RelationalConfiguration L ℕ))
+    (q : Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) :
+    rankOnIsoClasses hinv K q < ω₁ := by
+  induction q using Quotient.inductionOn with
+  | h c => exact hρ c
+
 namespace IsIsolatingRank
 
 /-- Isolation holds at every level at or above the rank of the first configuration. -/
@@ -82,35 +102,18 @@ theorem comap_isoSetoid_eq_bfEquivSetoid (h : IsIsolatingRank ρ)
   exact ⟨fun hcd => isoSetoid_le_bfEquivSetoid α hcd,
     fun hcd => h.isolates_of_le (hK c c.2) hcd⟩
 
-/-- The rank induced on the isomorphism classes represented in `K`. -/
-def onIsoClasses (h : IsIsolatingRank ρ) (K : Set (RelationalConfiguration L ℕ)) :
-    Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)) → Ordinal.{0} :=
-  Quotient.lift (fun c : K => ρ c) (fun _ _ hcd => h.iso_invariant hcd)
-
-@[simp]
-theorem onIsoClasses_mk (h : IsIsolatingRank ρ) (K : Set (RelationalConfiguration L ℕ))
-    (c : K) : h.onIsoClasses K (Quotient.mk _ c) = ρ c := (rfl)
-
-/-- The induced rank still takes only countable values. -/
-theorem onIsoClasses_lt_omega_one (h : IsIsolatingRank ρ)
-    (K : Set (RelationalConfiguration L ℕ))
-    (q : Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) :
-    h.onIsoClasses K q < ω₁ := by
-  induction q using Quotient.inductionOn with
-  | h c => exact h.lt_omega_one c
-
 /-- A rank stratum of isomorphism classes injects into the quotient at that level.
 This is the step that makes it possible to count classes stratum by stratum. -/
 theorem exists_injective_rank_fiber (h : IsIsolatingRank ρ)
     (K : Set (RelationalConfiguration L ℕ)) (α : Ordinal.{0}) :
-    ∃ f : (h.onIsoClasses K ⁻¹' {α}) →
+    ∃ f : (rankOnIsoClasses h.iso_invariant K ⁻¹' {α}) →
       Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)), Function.Injective f := by
-  let f : (h.onIsoClasses K ⁻¹' {α}) →
+  let f : (rankOnIsoClasses h.iso_invariant K ⁻¹' {α}) →
       Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)) :=
     fun q => Quotient.mk _ q.1.out
   refine ⟨f, fun q r heq => Subtype.ext ?_⟩
   have hq : ρ q.1.out.val = α := by
-    rw [← h.onIsoClasses_mk K q.1.out, Quotient.out_eq]
+    rw [← rankOnIsoClasses_mk h.iso_invariant K q.1.out, Quotient.out_eq]
     exact q.2
   have hqr := Quotient.exact
     (s := (bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)) heq
@@ -125,10 +128,12 @@ theorem mk_isoClasses_le_aleph_one (h : IsIsolatingRank ρ)
     (hlevels : ∀ α : Ordinal.{0}, α < ω₁ →
       #(Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _))) ≤ ℵ₁) :
     #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₁ := by
-  have hfib (α : Ordinal.{0}) (hα : α < ω₁) : #(h.onIsoClasses K ⁻¹' {α}) ≤ ℵ₁ := by
+  have hfib (α : Ordinal.{0}) (hα : α < ω₁) :
+      #(rankOnIsoClasses h.iso_invariant K ⁻¹' {α}) ≤ ℵ₁ := by
     obtain ⟨f, hf⟩ := h.exists_injective_rank_fiber K α
     exact (mk_le_of_injective hf).trans (hlevels α hα)
-  have hb := mk_le_aleph_one_mul_of_mk_preimage_le (h.onIsoClasses_lt_omega_one K) hfib
+  have hb := mk_le_aleph_one_mul_of_mk_preimage_le
+    (rankOnIsoClasses_lt_omega_one h.iso_invariant h.lt_omega_one K) hfib
   rwa [mul_eq_self (aleph0_le_aleph 1)] at hb
 
 /-- Countably many classes at each countable back-and-forth level give at most `ℵ₁`
@@ -150,14 +155,10 @@ theorem exists_rank_bound_of_countable_isoClasses
     (K : Set (RelationalConfiguration L ℕ))
     [Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)))] :
     ∃ β < ω₁, ∀ c ∈ K, ρ c < β := by
-  let r : Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)) → Ordinal.{0} :=
-    Quotient.lift (fun c : K => ρ c) (fun _ _ hcd => hinv hcd)
-  have hr (q) : r q < ω₁ := by
-    induction q using Quotient.inductionOn with
-    | h c => exact hρ c
   obtain ⟨β, hβ, hb⟩ := (Set.to_countable (Set.univ :
     Set (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))))).exists_lt_omega_one_forall_lt
-      (r := r) (fun q _ => hr q)
-  exact ⟨β, hβ, fun c hc => hb (Quotient.mk _ ⟨c, hc⟩) (mem_univ _)⟩
+      (r := rankOnIsoClasses hinv K) (fun q _ => rankOnIsoClasses_lt_omega_one hinv hρ K q)
+  refine ⟨β, hβ, fun c hc => ?_⟩
+  simpa only [rankOnIsoClasses_mk] using hb (Quotient.mk _ ⟨c, hc⟩) (mem_univ _)
 
 end TauCeti
