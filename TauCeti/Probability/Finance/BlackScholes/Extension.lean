@@ -97,6 +97,7 @@ theorem putValue_def (s r σ K τ : ℝ) :
   (rfl)
 
 /-- In the interior of the pricing domain the extended call is the closed-form price. -/
+@[simp]
 theorem callValue_of_pos (hs : 0 < s) (hτ : 0 < τ) : callValue s r σ K τ = callPrice s r σ K τ :=
   ite_eq_left ⟨hs, hτ⟩
 
@@ -106,6 +107,7 @@ theorem callValue_of_nonpos (h : s ≤ 0 ∨ τ ≤ 0) :
   ite_eq_right fun h' => h.elim h'.1.not_ge h'.2.not_ge
 
 /-- In the interior of the pricing domain the extended put is the closed-form price. -/
+@[simp]
 theorem putValue_of_pos (hs : 0 < s) (hτ : 0 < τ) : putValue s r σ K τ = putPrice s r σ K τ :=
   ite_eq_left ⟨hs, hτ⟩
 
