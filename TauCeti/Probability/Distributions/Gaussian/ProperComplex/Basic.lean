@@ -88,6 +88,18 @@ theorem posSemidef_complexGaussianRealCovariance_iff [Finite ι] (C : Matrix ι 
   · intro h
     exact (Matrix.posSemidef_realify_iff.mpr h).smul (by norm_num : (0 : ℝ) ≤ 2⁻¹)
 
+/-- Real and complex covariance matrices are positive definite simultaneously. -/
+@[simp]
+theorem posDef_complexGaussianRealCovariance_iff [Finite ι] (C : Matrix ι ι ℂ) :
+    (complexGaussianRealCovariance C).PosDef ↔ C.PosDef := by
+  constructor
+  · intro h
+    apply Matrix.posDef_realify_iff.mp
+    simpa [complexGaussianRealCovariance, smul_smul] using
+      h.smul (by norm_num : (0 : ℝ) < 2)
+  · intro h
+    exact (Matrix.posDef_realify_iff.mpr h).smul (by norm_num : (0 : ℝ) < 2⁻¹)
+
 /-- The real covariance depends continuously on the complex matrix entries. -/
 @[fun_prop]
 theorem continuous_complexGaussianRealCovariance :

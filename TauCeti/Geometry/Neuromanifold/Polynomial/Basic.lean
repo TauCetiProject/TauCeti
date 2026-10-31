@@ -31,8 +31,10 @@ over an infinite integral domain, and
 `boundedEvaluation_comp_polynomialCoefficientMap` recovers the realization map from the
 coefficient presentation. Composing with the coordinates gives
 `polynomialCoefficientCoordinates P`, whose coordinates are polynomial in the parameters.
-`boundedEvaluation_padding_polynomialCoefficientCoordinates` allows any larger input-degree
-bound: zero-padding the coefficient coordinates still recovers exactly the same realization.
+Raising the degree bound zero-pads these coordinates, and the padded coordinates are given by the
+same coefficient formula, so the coordinates for different bounds correspond under zero-padding.
+`boundedEvaluation_padding_polynomialCoefficientCoordinates` shows that evaluating the padded
+coordinates still recovers exactly the same realization.
 
 The jointly polynomial setting and the coefficient/function viewpoint follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
@@ -212,6 +214,22 @@ theorem boundedEvaluation_padding_polynomialCoefficientCoordinates
       polynomialRealization P w := by
   rw [boundedEvaluation_padding, polynomialCoefficientCoordinates, LinearEquiv.symm_apply_apply]
   exact congrFun (boundedEvaluation_comp_polynomialCoefficientMap P) w
+
+/-- Raising the degree bound to any `d ≥ polynomialInputDegree P` zero-pads the finite coefficient
+coordinates, and the padded coordinates are given by the same formula: each is the evaluation at
+the parameters of the corresponding input coefficient. The padding is thus independent of the
+parameters, and the coefficients it introduces vanish identically. -/
+theorem extendByZero_polynomialCoefficientCoordinates_apply (P : J → MvPolynomial (W ⊕ X) K)
+    {d : ℕ} (h : polynomialInputDegree P ≤ d) (w : W → K)
+    (i : J × {s : X →₀ ℕ // s.degree ≤ d}) :
+    Function.ExtendByZero.linearMap K K (Prod.map (id : J → J)
+        (Subtype.impEmbedding (fun s : X →₀ ℕ => s.degree ≤ polynomialInputDegree P)
+          (fun s => s.degree ≤ d) fun _ hs => hs.trans h))
+        (polynomialCoefficientCoordinates P w) i =
+      eval w ((inputPolynomial P i.1).coeff i.2) := by
+  rw [polynomialCoefficientCoordinates, ← boundedCoefficientEquiv_inclusion_comp h,
+    boundedCoefficientEquiv_apply]
+  simp [coeff_map]
 
 end Coordinates
 

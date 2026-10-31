@@ -10,6 +10,10 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.QuotSMulTop
+public import Mathlib.RingTheory.Regular.RegularSequence
+public import Mathlib.RingTheory.RingHom.Flat
+import Mathlib.RingTheory.Ideal.Over
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.Filtration
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.Flat.Stability
@@ -38,6 +42,18 @@ inductive step of miracle flatness (Stacks, Lemma 10.128.1 (00R4)): there `R` is
 `x ∈ 𝔪_R ∖ 𝔪_R²` is a nonzerodivisor on the Cohen–Macaulay ring `S`, and `S ⧸ x S` is flat over the
 regular local ring `R ⧸ (x)` by induction on the dimension.
 
+Iterating the criterion along a sequence gives a flatness test for a local homomorphism `R → S`
+of Noetherian local rings: if `r₁, …, rₙ` generate the maximal ideal of `R` and their images form
+a weakly `S`-regular sequence, then `S` is flat over `R`
+(`Module.Flat.of_isWeaklyRegular_map_algebraMap`). Dividing by `r₁` on both sides preserves the
+hypotheses, and for `n = 0` the ring `R` is a field. The test needs no regularity of `R` or
+Cohen–Macaulayness of `S`; these are only ways of producing the regular sequence. For instance,
+the Frobenius endomorphism of a regular local ring of characteristic `p` sends a regular system
+of parameters to their `p`-th powers, again a regular sequence, which proves Kunz's theorem
+(`TauCeti.IsRegularLocalRing.flat_frobenius`). The ring homomorphism form
+`RingHom.Flat.of_isWeaklyRegular_map` applies to such endomorphisms without an algebra
+structure of a ring over itself.
+
 ## Implementation notes
 
 By Mathlib's ideal criterion it suffices that `M ⊗[R] J → M` is injective for every ideal `J`. Let
@@ -65,6 +81,9 @@ the general local criterion (Stacks, Lemma 10.99.7 (00MK)).
 * `Module.Flat.quotSMulTop`: `M ⧸ x M` is flat over `R ⧸ (x)` when `M` is flat over `R`.
 * `Module.flat_quotSMulTop_iff_flat`: for an `M`-regular `x` as above, `M ⧸ x M` is flat over
   `R ⧸ (x)` if and only if `M` is flat over `R`.
+* `Module.Flat.of_isWeaklyRegular_map_algebraMap`: a local homomorphism `R → S` of Noetherian
+  local rings is flat if generators of the maximal ideal of `R` map to a weakly `S`-regular
+  sequence; `RingHom.Flat.of_isWeaklyRegular_map` is the same for a ring homomorphism.
 
 ## References
 
@@ -258,3 +277,95 @@ theorem flat_quotSMulTop_iff_flat [IsNoetherianRing R] {S : Type*} [CommRing S]
   ⟨fun _ ↦ Flat.of_flat_quotSMulTop hx reg, fun _ ↦ inferInstance⟩
 
 end Module
+
+namespace Module
+
+open IsLocalRing RingTheory.Sequence Pointwise
+
+universe u v
+
+/-- The induction on the length behind `Module.Flat.of_isWeaklyRegular_map_algebraMap`, stated for
+all local homomorphisms in the given universes so that it applies to `R ⧸ (x) → S ⧸ x S`. -/
+private theorem flat_of_isWeaklyRegular_map_algebraMap_aux (n : ℕ) :
+    ∀ (R : Type u) (S : Type v) [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [CommRing S]
+      [IsLocalRing S] [IsNoetherianRing S] [Algebra R S] [IsLocalHom (algebraMap R S)]
+      (rs : List R), rs.length = n → Ideal.ofList rs = maximalIdeal R →
+      IsWeaklyRegular S (rs.map (algebraMap R S)) → Flat R S := by
+  induction n with
+  | zero =>
+    intro R S _ _ _ _ _ _ _ _ rs hn hrs _
+    obtain rfl := List.length_eq_zero_iff.1 hn
+    have hR : IsField R := isField_iff_maximalIdeal_eq.2 (by simpa using hrs.symm)
+    exact RingHom.flat_algebraMap_iff.1 (RingHom.Flat.of_isField hR _)
+  | succ n ih =>
+    intro R S _ _ _ _ _ _ _ _ rs hn hrs hreg
+    obtain ⟨x, rs, rfl⟩ := List.exists_cons_of_length_eq_add_one hn
+    rw [List.map_cons, isWeaklyRegular_cons_iff] at hreg
+    obtain ⟨reg, hreg⟩ := hreg
+    have hx : x ∈ maximalIdeal R := hrs ▸ Ideal.subset_span List.mem_cons_self
+    set I := Ideal.span {x}
+    set J := I.map (algebraMap R S)
+    have hJ : J = Ideal.span {algebraMap R S x} := by
+      simp only [J, I, Ideal.map_span, Set.image_singleton]
+    have hJm : J ≤ maximalIdeal S := hJ ▸ (Ideal.span_singleton_le_iff_mem _).2
+      (map_nonunit (algebraMap R S) x hx)
+    have : Nontrivial (R ⧸ I) :=
+      Ideal.Quotient.nontrivial_iff.2 (ne_top_of_le_ne_top (maximalIdeal.isMaximal R).ne_top
+        ((Ideal.span_singleton_le_iff_mem _).2 hx))
+    have : Nontrivial (S ⧸ J) :=
+      Ideal.Quotient.nontrivial_iff.2 (ne_top_of_le_ne_top (maximalIdeal.isMaximal S).ne_top hJm)
+    have : IsLocalRing (R ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
+    have : IsLocalRing (S ⧸ J) := .of_surjective' _ Ideal.Quotient.mk_surjective
+    have : IsLocalHom (Ideal.Quotient.mk J) := .of_surjective _ Ideal.Quotient.mk_surjective
+    have : IsLocalHom (algebraMap (R ⧸ I) (S ⧸ J)) := ⟨fun a ha ↦ by
+      obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
+      exact (isUnit_of_map_unit (algebraMap R S) a
+        (isUnit_of_map_unit (Ideal.Quotient.mk J) _ ha)).map _⟩
+    -- The inductive hypothesis applies to `R ⧸ (x) → S ⧸ x S`.
+    have hrs' : Ideal.ofList (rs.map (Ideal.Quotient.mk I)) = maximalIdeal (R ⧸ I) := by
+      rw [← Ideal.map_ofList, ← map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective,
+        ← hrs, Ideal.ofList_cons, Ideal.map_sup, Ideal.map_quotient_self, bot_sup_eq]
+    have eS : QuotSMulTop (algebraMap R S x) S ≃ₗ[S] S ⧸ J := Submodule.quotEquivOfEq _ _ <| by
+      rw [hJ, ← Submodule.ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top]
+    have hreg' : IsWeaklyRegular (S ⧸ J)
+        ((rs.map (Ideal.Quotient.mk I)).map (algebraMap (R ⧸ I) (S ⧸ J))) := by
+      rw [List.map_map]
+      have := (isWeaklyRegular_map_algebraMap_iff (R := S) (S := S ⧸ J) (M := S ⧸ J)
+        (rs.map (algebraMap R S))).2 ((eS.isWeaklyRegular_congr _).1 hreg)
+      rwa [List.map_map] at this
+    have : Flat (R ⧸ I) (S ⧸ J) := ih _ _ _ (by simpa using hn) hrs' hreg'
+    -- Hence `S ⧸ x S` is flat over `R ⧸ (x)`, and the local criterion lifts this to `S`.
+    have eR : QuotSMulTop x S ≃ₗ[R] S ⧸ J :=
+      Submodule.quotEquivOfEq _ (J.restrictScalars R)
+        (by rw [← Submodule.ideal_span_singleton_smul, Ideal.smul_top_eq_map]) ≪≫ₗ
+        Submodule.Quotient.restrictScalarsEquiv R J
+    have : Flat (R ⧸ I) (QuotSMulTop x S) :=
+      .of_linearEquiv (eR.extendScalarsOfSurjective Ideal.Quotient.mk_surjective)
+    exact Flat.of_flat_quotSMulTop_of_isLocalHom (S := S) hx
+      ((isSMulRegular_algebraMap_iff (A := S)).1 reg)
+
+variable {R S : Type*} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [CommRing S]
+  [IsLocalRing S] [IsNoetherianRing S]
+
+/-- **Flatness from a regular sequence.** Let `R → S` be a local homomorphism of Noetherian local
+rings. If `r₁, …, rₙ` generate the maximal ideal of `R` and their images form a weakly `S`-regular
+sequence, then `S` is flat over `R`. This iterates the local criterion
+`Module.Flat.of_flat_quotSMulTop_of_isLocalHom` along the sequence. -/
+theorem Flat.of_isWeaklyRegular_map_algebraMap [Algebra R S] [IsLocalHom (algebraMap R S)]
+    {rs : List R} (hrs : Ideal.ofList rs = maximalIdeal R)
+    (hreg : IsWeaklyRegular S (rs.map (algebraMap R S))) : Flat R S :=
+  flat_of_isWeaklyRegular_map_algebraMap_aux _ R S rs rfl hrs hreg
+
+end Module
+
+/-- **Flatness from a regular sequence**, for a local homomorphism `f : R →+* S` of Noetherian
+local rings: if `r₁, …, rₙ` generate the maximal ideal of `R` and `f r₁, …, f rₙ` is a weakly
+`S`-regular sequence, then `f` is flat. Unlike `Module.Flat.of_isWeaklyRegular_map_algebraMap`,
+this applies to endomorphisms, such as Frobenius, without an algebra structure of `R` over
+itself. -/
+theorem RingHom.Flat.of_isWeaklyRegular_map {R S : Type*} [CommRing R] [IsLocalRing R]
+    [IsNoetherianRing R] [CommRing S] [IsLocalRing S] [IsNoetherianRing S] (f : R →+* S)
+    [IsLocalHom f] {rs : List R} (hrs : Ideal.ofList rs = IsLocalRing.maximalIdeal R)
+    (hreg : RingTheory.Sequence.IsWeaklyRegular S (rs.map f)) : f.Flat := by
+  algebraize [f]
+  exact Module.Flat.of_isWeaklyRegular_map_algebraMap (R := R) (S := S) hrs hreg

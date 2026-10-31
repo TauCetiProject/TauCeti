@@ -59,6 +59,8 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
 * `Representation.toSubmodule_symmetricAlgebraInvariants`: as a submodule, it is the module of
   invariants of the induced representation.
 * `Representation.ι_mem_symmetricAlgebraInvariants_iff`: its degree-one part is `M^G`.
+* `Representation.map_symmetricAlgebraInvariants_of_leftInverse`: an intertwining map with an
+  intertwining right inverse carries the invariant subalgebra onto the invariant subalgebra.
 * `Representation.mem_invariants_symmetricAlgebraOverInvariants_iff`: the invariants of the
   action over the invariant subalgebra are the invariant subalgebra.
 * `Representation.symmetricAlgebraHomogeneous_apply`: on `Symⁿ M`, `g` acts by the map
@@ -206,6 +208,21 @@ theorem faithfulSMul_symmetricAlgebraMulSemiringAction_iff :
   · simp [symmetricAlgebraMulSemiringAction_smul, hg]
   · simpa [symmetricAlgebraMulSemiringAction_smul] using h (SymmetricAlgebra.ι R M m)
 
+variable {ρ} in
+/-- The symmetric-algebra map induced by an intertwining map intertwines the induced
+representations. -/
+theorem IsIntertwiningMap.symmetricAlgebraMap {N : Type*} [AddCommMonoid N] [Module R N]
+    {ρ' : Representation R G N} {f : M →ₗ[R] N} (hf : IsIntertwiningMap ρ ρ' f) :
+    IsIntertwiningMap ρ.symmetricAlgebra ρ'.symmetricAlgebra
+      (SymmetricAlgebra.map R f).toLinearMap := by
+  refine ⟨fun g p ↦ ?_⟩
+  have h : (SymmetricAlgebra.map R f).comp (SymmetricAlgebra.map R (ρ g)) =
+      (SymmetricAlgebra.map R (ρ' g)).comp (SymmetricAlgebra.map R f) := by
+    simp only [SymmetricAlgebra.map_comp_map]
+    exact congrArg _ (LinearMap.ext (hf.isIntertwining g))
+  simpa only [symmetricAlgebra_apply, AlgHom.toLinearMap_apply, AlgHom.comp_apply] using
+    DFunLike.congr_fun h p
+
 /-- The invariant subalgebra `Sym(M)^G`: the elements of `Sym M` fixed by the induced action of
 every element of `G`, that is, the fixed subalgebra `FixedPoints.subalgebra` of the bundled
 action. -/
@@ -241,6 +258,33 @@ theorem ι_mem_symmetricAlgebraInvariants_iff (m : M) :
     SymmetricAlgebra.ι R M m ∈ ρ.symmetricAlgebraInvariants ↔ ∀ g : G, ρ g m = m := by
   simp only [mem_symmetricAlgebraInvariants, symmetricAlgebra_ι,
     (ι_injective R M).eq_iff]
+
+section Map
+
+variable {ρ} {N : Type*} [AddCommMonoid N] [Module R N] {ρ' : Representation R G N}
+
+/-- The symmetric-algebra map induced by an intertwining map sends invariants to invariants. -/
+theorem map_mem_symmetricAlgebraInvariants {f : M →ₗ[R] N} (hf : IsIntertwiningMap ρ ρ' f)
+    {p : SymmetricAlgebra R M} (hp : p ∈ ρ.symmetricAlgebraInvariants) :
+    SymmetricAlgebra.map R f p ∈ ρ'.symmetricAlgebraInvariants := by
+  refine (ρ'.mem_symmetricAlgebraInvariants _).2 fun g ↦ ?_
+  rw [← AlgHom.toLinearMap_apply, ← hf.symmetricAlgebraMap.isIntertwining,
+    (ρ.mem_symmetricAlgebraInvariants p).1 hp g, AlgHom.toLinearMap_apply]
+
+/-- **Invariants of an equivariant retract.** If `f : M → N` intertwines `ρ` with `ρ'` and has
+an intertwining right inverse, the induced map carries the invariant subalgebra of `ρ` onto that
+of `ρ'`. For instance, when `N` is an invariant direct summand of `M`, every invariant of `Sym N`
+is the image of an invariant of `Sym M`. -/
+theorem map_symmetricAlgebraInvariants_of_leftInverse {f : M →ₗ[R] N} {s : N →ₗ[R] M}
+    (hf : IsIntertwiningMap ρ ρ' f) (hs : IsIntertwiningMap ρ' ρ s)
+    (hfs : Function.LeftInverse f s) :
+    ρ.symmetricAlgebraInvariants.map (SymmetricAlgebra.map R f) =
+      ρ'.symmetricAlgebraInvariants :=
+  le_antisymm (Subalgebra.map_le.2 fun _ ↦ map_mem_symmetricAlgebraInvariants hf)
+    fun q hq ↦ ⟨SymmetricAlgebra.map R s q, map_mem_symmetricAlgebraInvariants hs hq,
+      SymmetricAlgebra.map_leftInverse R hfs q⟩
+
+end Map
 
 /-- The action of `G` on `Sym M` induced by `ρ`, as a representation by linear maps over the
 invariant subalgebra `Sym(M)^G`: each `ρ g` fixes the invariants, so it is linear over them. Its

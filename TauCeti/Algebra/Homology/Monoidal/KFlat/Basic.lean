@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Homology.Embedding.StupidTrunc
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
+public import TauCeti.Algebra.Homology.Single.Coproduct
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
 import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 import Mathlib.Algebra.Homology.BifunctorShift
@@ -36,9 +37,12 @@ tensor products.
 K-flat complexes are closed under colimits whose shape has exact colimits in the
 underlying category and commutes with tensoring by each object, such as filtered
 colimits of modules. A complex which is bounded above is the sequential colimit of
-its brutal truncations, so a bounded above complex of flat objects is K-flat. These
-are the two ingredients of K-flat resolutions of unbounded complexes. Some bound
-is needed: an unbounded acyclic complex of flat objects need not be K-flat.
+its brutal truncations, so a bounded above complex of flat objects is K-flat. A
+complex with zero differentials is the coproduct of its terms, so it is K-flat when
+its terms are flat and countable coproducts are exact. Some bound or condition on the
+differentials is needed: an unbounded acyclic complex of flat objects need not be
+K-flat. K-flat resolutions of unbounded complexes are constructed in
+`TauCeti.Algebra.Homology.Monoidal.KFlat.Resolution`.
 
 ## Main results
 
@@ -54,6 +58,8 @@ is needed: an unbounded acyclic complex of flat objects need not be K-flat.
   objects and bounded complexes of flat objects are K-flat.
 * `CochainComplex.isKFlat_of_isColimit`: closure under suitable colimits.
 * `CochainComplex.isKFlat_of_boundedAbove_flat`: bounded above complexes of flat objects are
+  K-flat.
+* `CochainComplex.isKFlat_of_d_eq_zero`: complexes with zero differentials and flat terms are
   K-flat.
 
 The tensor factor containing the K-flat complex is placed on the left. In a symmetric
@@ -274,6 +280,24 @@ theorem isKFlat_of_isColimit {G : S ⥤ CochainComplex C ℤ} {s : Cocone G} (hs
     ((exactAt_iff_isZero_homology _ _).1 (IsKFlat.acyclic_tensor A hA i)).eq_of_src _ _
 
 end Colimit
+
+section ZeroDifferential
+
+variable [HasColimitsOfShape (Discrete ℤ) C] [HasExactColimitsOfShape (Discrete ℤ) C]
+  [∀ X : C, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)]
+
+/-- A cochain complex with zero differentials and flat terms is K-flat, when countable
+coproducts in `C` are exact and commute with tensoring by each object. -/
+theorem isKFlat_of_d_eq_zero (K : CochainComplex C ℤ) (hK : ∀ i j, K.d i j = 0)
+    [∀ i, PreservesFiniteLimits (tensorLeft (K.X i))]
+    [∀ i, PreservesFiniteColimits (tensorLeft (K.X i))] : K.IsKFlat := by
+  have (n : Discrete ℤ) :
+      IsKFlat ((Discrete.functor fun n ↦ (single C (.up ℤ) n).obj (K.X n)).obj n) :=
+    isKFlat_single_of_flat _ n.as
+  exact isKFlat_of_isColimit (G := Discrete.functor fun n ↦ (single C (.up ℤ) n).obj (K.X n))
+    (HomologicalComplex.isColimitCofanSingleOfDEqZero K hK)
+
+end ZeroDifferential
 
 section Bounded
 

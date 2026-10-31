@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.Prod
 public import Mathlib.Algebra.Module.Torsion.Prod
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import TauCeti.Algebra.Lie.Submodule.Atom
 
 /-!
 # The highest weight of a `gl n`-module determines it
@@ -69,6 +70,10 @@ surjective.
 * `TauCeti.exists_eq_smul_of_isGlHighestWeightVector_of_mem_lieSpan`: **the highest weight line.** A
   vector of weight `μ` in the module a highest weight vector `v` of weight `μ` generates is a
   multiple of `v`.
+* `TauCeti.IsGlHighestWeightVector.weight_eq_of_mem_lieSpan` and
+  `TauCeti.IsGlHighestWeightVector.weight_eq_of_isIrreducible`: two highest weight vectors that
+  generate each other, in particular any two highest weight vectors of an irreducible module, have
+  the same weight.
 * `TauCeti.weightSpace_eq_span_singleton_of_isGlHighestWeightVector_of_lieSpan_eq_top` and
   `TauCeti.finrank_weightSpace_eq_one_of_isGlHighestWeightVector_of_lieSpan_eq_top`: in a cyclic
   highest weight module, the top weight space is exactly the generator line and has rank one.
@@ -279,6 +284,14 @@ private theorem lie_single_mem_lowerHeightSubmodule (hv : IsGlHighestWeightVecto
         (lie_single_mem_heightEigenspace hy)
   simpa only [Submodule.mem_comap, toEnd_apply_apply] using key hm
 
+/-- Everything a highest weight vector generates lies in the span of that vector together with
+the height eigenspaces strictly below it. -/
+private theorem lieSpan_toSubmodule_le_lowerHeightSubmodule (hv : IsGlHighestWeightVector mu v) :
+    (LieSubmodule.lieSpan R (Matrix n n R) {v} : Submodule R M) ≤ lowerHeightSubmodule mu M v :=
+  lieSpan_toSubmodule_le_of_isGlHighestWeightVector hv mem_lowerHeightSubmodule_self
+    fun _ hx _ hm => lie_mem_of_mem_strictLowerTriangular
+      (fun _ _ hab _ hm => lie_single_mem_lowerHeightSubmodule hv hab hm) hx hm
+
 /-! ### The highest weight line -/
 
 variable [IsDomain R] [CharZero R] [Module.IsTorsionFree R M]
@@ -300,6 +313,49 @@ private theorem disjoint_heightEigenspace_zero :
   exact le_iSup₂ (f := fun (c : R) (_ : c ∈ {c : R | c ≠ glHeight R n mu + ((0 : ℤ) : R)}) =>
     Module.End.eigenspace (toEnd R (Matrix n n R) M (glHeightMatrix R n)) c) _ hmem
 
+/-- A vector at height `0` in the span of `v` and the lower height eigenspaces is a multiple of
+`v`. -/
+private theorem exists_eq_smul_of_mem_lowerHeightSubmodule_of_mem_heightEigenspace_zero
+    (hv : IsGlHighestWeightVector mu v) {w : M} (hwN : w ∈ lowerHeightSubmodule mu M v)
+    (hw0 : w ∈ heightEigenspace mu M 0) : ∃ c : R, w = c • v := by
+  rw [lowerHeightSubmodule, Submodule.mem_sup] at hwN
+  obtain ⟨y, hy, z, hz, rfl⟩ := hwN
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
+  refine ⟨c, ?_⟩
+  have hcv : c • v ∈ heightEigenspace mu M 0 :=
+    Submodule.smul_mem _ _ (mem_heightEigenspace_zero_of_isGlHighestWeightVector hv)
+  have hz0 : z ∈ heightEigenspace mu M 0 := by
+    have hzeq : z = c • v + z - c • v := by abel
+    rw [hzeq]
+    exact sub_mem hw0 hcv
+  rw [Submodule.disjoint_def.mp disjoint_heightEigenspace_zero z hz0 hz, add_zero]
+
+omit [CharZero R] in
+/-- A nonzero height eigenvector in the span of `v` and the lower height eigenspaces has its
+eigenvalue a nonpositive integer step away from the height of `v`. -/
+private theorem exists_nonpos_of_mem_lowerHeightSubmodule (hv : IsGlHighestWeightVector mu v)
+    {c : R} {w : M} (hw : w ≠ 0)
+    (hwc : ⁅glHeightMatrix R n, w⁆ = c • w) (hwN : w ∈ lowerHeightSubmodule mu M v) :
+    ∃ k : ℤ, k ≤ 0 ∧ c = glHeight R n mu + (k : R) := by
+  by_contra hc
+  let S : Set R := {c' | ∃ k : ℤ, k ≤ 0 ∧ c' = glHeight R n mu + (k : R)}
+  have hcS : c ∉ S := fun ⟨k, hk, hck⟩ => hc ⟨k, hk, hck⟩
+  have hle : lowerHeightSubmodule mu M v ≤ ⨆ c' ∈ S,
+      Module.End.eigenspace (toEnd R (Matrix n n R) M (glHeightMatrix R n)) c' := by
+    have hleS : ∀ k : ℤ, k ≤ 0 → heightEigenspace mu M k ≤ ⨆ c' ∈ S,
+        Module.End.eigenspace (toEnd R (Matrix n n R) M (glHeightMatrix R n)) c' :=
+      fun k hk => le_iSup₂_of_le (f := fun (c' : R) (_ : c' ∈ S) =>
+        Module.End.eigenspace (toEnd R (Matrix n n R) M (glHeightMatrix R n)) c')
+          _ ⟨k, hk, rfl⟩ le_rfl
+    refine sup_le ?_ (iSup₂_le fun k hk => hleS k hk.le)
+    · rw [Submodule.span_singleton_le_iff_mem]
+      exact hleS 0 le_rfl (mem_heightEigenspace_zero_of_isGlHighestWeightVector hv)
+  have hwc' : w ∈ Module.End.eigenspace (toEnd R (Matrix n n R) M (glHeightMatrix R n)) c := by
+    simpa using hwc
+  exact hw (Submodule.disjoint_def.mp
+    ((Module.End.eigenspaces_iSupIndep
+      (toEnd R (Matrix n n R) M (glHeightMatrix R n))).disjoint_biSup hcS) w hwc' (hle hwN))
+
 /-- **The highest weight line.** In the module a highest weight vector `v` of weight `μ` generates,
 every vector on which the diagonal matrix units act by `μ` is a multiple of `v`. In particular `v`
 really is, up to a scalar, the only highest weight vector of weight `μ` there. -/
@@ -307,26 +363,45 @@ theorem exists_eq_smul_of_isGlHighestWeightVector_of_mem_lieSpan
     (hv : IsGlHighestWeightVector mu v) {w : M}
     (hw : w ∈ LieSubmodule.lieSpan R (Matrix n n R) {v})
     (hweight : ∀ i : n, ⁅(single i i (1 : R) : Matrix n n R), w⁆ = mu i • w) :
-    ∃ c : R, w = c • v := by
-  have hstab : ∀ x ∈ strictLowerTriangular R n, ∀ m ∈ lowerHeightSubmodule mu M v,
-      ⁅x, m⁆ ∈ lowerHeightSubmodule mu M v := fun _ hx _ hm =>
-    lie_mem_of_mem_strictLowerTriangular
-      (fun _ _ hab _ hm => lie_single_mem_lowerHeightSubmodule hv hab hm) hx hm
-  have hwN : w ∈ lowerHeightSubmodule mu M v :=
-    lieSpan_toSubmodule_le_of_isGlHighestWeightVector hv mem_lowerHeightSubmodule_self hstab hw
-  rw [lowerHeightSubmodule, Submodule.mem_sup] at hwN
-  obtain ⟨y, hy, z, hz, rfl⟩ := hwN
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
-  refine ⟨c, ?_⟩
-  have hcv : c • v ∈ heightEigenspace mu M 0 :=
-    Submodule.smul_mem _ _ (mem_heightEigenspace_zero_of_isGlHighestWeightVector hv)
-  have hsum : c • v + z ∈ heightEigenspace mu M 0 :=
-    mem_heightEigenspace_zero_of_forall_lie_single_self hweight
-  have hz0 : z ∈ heightEigenspace mu M 0 := by
-    have hzeq : z = c • v + z - c • v := by abel
-    rw [hzeq]
-    exact sub_mem hsum hcv
-  rw [Submodule.disjoint_def.mp disjoint_heightEigenspace_zero z hz0 hz, add_zero]
+    ∃ c : R, w = c • v :=
+  exists_eq_smul_of_mem_lowerHeightSubmodule_of_mem_heightEigenspace_zero hv
+    (lieSpan_toSubmodule_le_lowerHeightSubmodule hv hw)
+    (mem_heightEigenspace_zero_of_forall_lie_single_self hweight)
+
+/-- **Two highest weight vectors that generate each other have the same weight.** Each lies in the
+module the other generates, so each height is at most the other and the two heights agree; the
+first vector is then at the top height of the module the second generates, hence a multiple of
+it. -/
+theorem IsGlHighestWeightVector.weight_eq_of_mem_lieSpan {nu : n → R} {u : M}
+    (hv : IsGlHighestWeightVector mu v) (hu : IsGlHighestWeightVector nu u)
+    (hu_mem : u ∈ LieSubmodule.lieSpan R (Matrix n n R) {v})
+    (hv_mem : v ∈ LieSubmodule.lieSpan R (Matrix n n R) {u}) : nu = mu := by
+  have huN := lieSpan_toSubmodule_le_lowerHeightSubmodule hv hu_mem
+  have hu_eig := lie_glHeightMatrix_eq_smul hu.lie_single_self_eq_smul
+  obtain ⟨k, hk, hku⟩ := exists_nonpos_of_mem_lowerHeightSubmodule hv hu.ne_zero hu_eig huN
+  obtain ⟨l, hl, hlv⟩ := exists_nonpos_of_mem_lowerHeightSubmodule hu hv.ne_zero
+    (lie_glHeightMatrix_eq_smul hv.lie_single_self_eq_smul)
+    (lieSpan_toSubmodule_le_lowerHeightSubmodule hu hv_mem)
+  have hkl : ((k + l : ℤ) : R) = ((0 : ℤ) : R) := by
+    rw [Int.cast_add, Int.cast_zero]
+    linear_combination -hku - hlv
+  have hk0 : k = 0 := by have := Int.cast_injective hkl; omega
+  subst hk0
+  have hu0 : u ∈ heightEigenspace mu M 0 := by
+    rw [mem_heightEigenspace, hu_eig, hku]
+  obtain ⟨c, rfl⟩ := exists_eq_smul_of_mem_lowerHeightSubmodule_of_mem_heightEigenspace_zero hv
+    huN hu0
+  have hc : c ≠ 0 := fun hc => hu.ne_zero (by rw [hc, zero_smul])
+  exact hu.weight_eq (hv.smul hc)
+
+/-- **All highest weight vectors of an irreducible `gl n R`-module have the same weight**, since
+each of them generates the module. -/
+theorem IsGlHighestWeightVector.weight_eq_of_isIrreducible
+    [LieModule.IsIrreducible R (Matrix n n R) M] {nu : n → R} {u : M}
+    (hv : IsGlHighestWeightVector mu v) (hu : IsGlHighestWeightVector nu u) : nu = mu :=
+  hv.weight_eq_of_mem_lieSpan hu
+    (by simp [lieSpan_singleton_eq_top_of_ne_zero hv.ne_zero])
+    (by simp [lieSpan_singleton_eq_top_of_ne_zero hu.ne_zero])
 
 /-- **The top weight space is the highest weight line.** If a highest weight vector `v` generates
 its `gl n R`-module, then the honest weight space of its weight is exactly `R · v`. -/
