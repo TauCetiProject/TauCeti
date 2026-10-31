@@ -40,6 +40,8 @@ of singular values give at most the sum of its first `k` terms
 
 * `LinearMap.kyFanSum`: the Ky Fan `k`-sum of singular values.
 * `LinearMap.norm_sum_inner_le_kyFanSum`: Ky Fan's maximum principle, the upper bound.
+* `LinearMap.sum_re_inner_apply_le_kyFanSum`: the corresponding upper bound for the real parts
+  of the diagonal pairings.
 * `LinearMap.exists_orthonormal_sum_inner_eq_kyFanSum`: the leading singular pairs attain it.
 * `LinearMap.norm_sum_inner_add_inner_le_kyFanSum`: the upper bound for families transformed by two
   pairs of symmetric operators whose squared norms add up to at most the identity.
@@ -245,6 +247,17 @@ theorem norm_sum_inner_le_kyFanSum {ι : Type*} [Fintype ι] (A : E →ₗ[𝕜]
     ‖∑ i, ⟪u i, A (v i)⟫‖ ≤ A.kyFanSum (Fintype.card ι) := by
   simpa using A.norm_sum_inner_add_inner_le_kyFanSum IsSymmetric.one IsSymmetric.zero
     IsSymmetric.one IsSymmetric.zero (fun y ↦ by simp) (fun x ↦ by simp) hu hv
+
+/-- The real diagonal pairing of two orthonormal families under `A` is bounded by the Ky Fan sum
+of its singular values. -/
+theorem sum_re_inner_apply_le_kyFanSum {ι : Type*} [Fintype ι] (A : E →ₗ[𝕜] F)
+    (u : ι → F) (v : ι → E) (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) :
+    ∑ i : ι, RCLike.re (inner 𝕜 (u i) (A (v i))) ≤ A.kyFanSum (Fintype.card ι) := by
+  calc
+    ∑ i : ι, RCLike.re (inner 𝕜 (u i) (A (v i))) =
+        RCLike.re (∑ i : ι, inner 𝕜 (u i) (A (v i))) := by rw [← map_sum]
+    _ ≤ ‖∑ i : ι, inner 𝕜 (u i) (A (v i))‖ := RCLike.re_le_norm _
+    _ ≤ A.kyFanSum (Fintype.card ι) := A.norm_sum_inner_le_kyFanSum hu hv
 
 /-- **Ky Fan's maximum principle**, attainment: the first `k` right singular vectors and the
 corresponding unit left singular vectors, completed where the singular value vanishes, are
