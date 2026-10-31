@@ -51,6 +51,14 @@ computations with traces of matrices.
   characteristic roots in it, counted with algebraic multiplicity;
 * `Matrix.map_spectralMeasure_ofReal` — for a complex Hermitian matrix, the eigenvalue measure is
   the pushforward of the spectral measure along `ℝ → ℂ`;
+* `Matrix.spectralMeasure_apply_singleton_zero` — the zero atom has mass equal to the normalized
+  nullity;
+* `Matrix.trace_pow_mul_conjTranspose_eq_trace_pow_conjTranspose_mul` — positive powers of the
+  two Gram matrices of a rectangular matrix have equal traces;
+* `Matrix.gram_charpoly_roots_filter_ne_zero_eq` — their nonzero eigenvalues agree, counted with
+  multiplicity;
+* `Matrix.gram_spectralMeasure_moments_mul_card_eq` — their positive spectral moments agree after
+  weighting by the matrix dimensions;
 * `Matrix.eigenvalueMeasure_toMeasure_of_isNilpotent` — a nilpotent matrix has eigenvalue measure
   `δ₀`;
 * `Matrix.integral_pow_spectralMeasure` — the `k`-th moment of the spectral measure is the
@@ -101,6 +109,75 @@ theorem spectralMeasure_apply (A : Matrix n n 𝕜) (hA : A.IsHermitian) {s : Se
     (A.spectralMeasure hA : Measure ℝ) s =
       ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, s.indicator 1 (hA.eigenvalues i) :=
   empiricalMeasureOfFintype_apply hs
+
+/-- The spectral measure's atom at zero is the proportion of zero eigenvalues, expressed in terms
+of the matrix rank. -/
+theorem spectralMeasure_apply_singleton_zero (A : Matrix n n 𝕜) (hA : A.IsHermitian) :
+    (A.spectralMeasure hA : Measure ℝ) {0} =
+      ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ *
+        ((Fintype.card n - A.rank : ℕ) : ℝ≥0∞) := by
+  have hcard : Fintype.card {i // hA.eigenvalues i = 0} = Fintype.card n - A.rank := by
+    have hpartition :=
+      Fintype.card_subtype_compl fun i : n => hA.eigenvalues i ≠ 0
+    rw [← hA.rank_eq_card_non_zero_eigs] at hpartition
+    simpa using hpartition
+  have hsum :
+      ∑ i, ({0} : Set ℝ).indicator (1 : ℝ → ℝ≥0∞) (hA.eigenvalues i) =
+        (Fintype.card {i // hA.eigenvalues i = 0} : ℝ≥0∞) := by
+    simp [Set.indicator_apply, Fintype.card_subtype]
+  rw [spectralMeasure_apply A hA (measurableSet_singleton 0), hsum, hcard]
+
+/-- The positive powers of the two Gram matrices of a rectangular matrix have equal traces.
+This is the moment identity underlying the equality of their nonzero spectra. -/
+theorem trace_pow_mul_conjTranspose_eq_trace_pow_conjTranspose_mul {p n : ℕ}
+    (X : Matrix (Fin p) (Fin n) ℂ) {k : ℕ} (hk : k ≠ 0) :
+    ((X * Xᴴ) ^ k).trace = ((Xᴴ * X) ^ k).trace := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
+  have hpow (m : ℕ) : (X * Xᴴ) ^ m * X = X * (Xᴴ * X) ^ m := by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      calc
+        (X * Xᴴ) ^ (m + 1) * X = (X * Xᴴ) ^ m * (X * Xᴴ) * X := by rw [pow_succ]
+        _ = (X * Xᴴ) ^ m * X * (Xᴴ * X) := by simp [Matrix.mul_assoc]
+        _ = X * (Xᴴ * X) ^ m * (Xᴴ * X) := by rw [ih]
+        _ = X * (Xᴴ * X) ^ (m + 1) := by rw [pow_succ, Matrix.mul_assoc]
+  calc
+    ((X * Xᴴ) ^ (m + 1)).trace = ((X * Xᴴ) ^ m * X * Xᴴ).trace := by
+      rw [pow_succ]
+      simp only [Matrix.mul_assoc]
+    _ = (Xᴴ * ((X * Xᴴ) ^ m * X)).trace := by
+      rw [Matrix.trace_mul_comm ((X * Xᴴ) ^ m * X) Xᴴ]
+    _ = (Xᴴ * (X * (Xᴴ * X) ^ m)).trace := by rw [hpow]
+    _ = ((Xᴴ * X) ^ (m + 1)).trace := by
+      rw [← Matrix.mul_assoc, pow_succ']
+
+/-- The two Gram matrices of a rectangular complex matrix have the same nonzero characteristic
+roots, counted with multiplicity. Since both are Hermitian, these are their nonzero eigenvalues. -/
+theorem gram_charpoly_roots_filter_ne_zero_eq {p n : ℕ}
+    (X : Matrix (Fin p) (Fin n) ℂ) :
+    Multiset.filter (fun z : ℂ => z ≠ 0) (X * Xᴴ).charpoly.roots =
+      Multiset.filter (fun z : ℂ => z ≠ 0) (Xᴴ * X).charpoly.roots := by
+  classical
+  have hA_ne : (X * Xᴴ).charpoly ≠ (0 : Polynomial ℂ) :=
+    (Matrix.charpoly_monic _).ne_zero
+  have hB_ne : (Xᴴ * X).charpoly ≠ (0 : Polynomial ℂ) :=
+    (Matrix.charpoly_monic _).ne_zero
+  have hroots := congrArg Polynomial.roots (Matrix.charpoly_mul_comm' X Xᴴ)
+  rw [Polynomial.roots_mul
+        (mul_ne_zero (pow_ne_zero _ Polynomial.X_ne_zero) hA_ne),
+      Polynomial.roots_mul
+        (mul_ne_zero (pow_ne_zero _ Polynomial.X_ne_zero) hB_ne),
+      Polynomial.roots_X_pow, Polynomial.roots_X_pow] at hroots
+  have hroots_nonzero :=
+    congrArg (Multiset.filter (fun z : ℂ => z ≠ 0)) hroots
+  have hzero_roots (k : ℕ) :
+      Multiset.filter (fun z : ℂ => z ≠ 0) (k • ({0} : Multiset ℂ)) = 0 := by
+    induction k with
+    | zero => simp
+    | succ k ih => simp [succ_nsmul, ih]
+  simp only [Multiset.filter_add, hzero_roots, zero_add] at hroots_nonzero
+  exact hroots_nonzero
 
 /-- Integrating against the spectral measure is averaging over the eigenvalues. -/
 theorem integral_spectralMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -222,6 +299,24 @@ theorem integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) 
       ((Fintype.card n : ℕ) : ℝ)⁻¹ * RCLike.re (A ^ k).trace := by
   rw [integral_spectralMeasure, smul_eq_mul, hA.trace_pow_eq_sum_eigenvalues_pow, map_sum]
   simp_rw [← RCLike.ofReal_pow, RCLike.ofReal_re]
+
+/-- The positive moments of the two Gram-matrix spectral measures agree after weighting by the
+dimensions of their respective matrices. This is the normalized-measure form of
+`trace_pow_mul_conjTranspose_eq_trace_pow_conjTranspose_mul`. -/
+theorem gram_spectralMeasure_moments_mul_card_eq {p n : ℕ} [NeZero p] [NeZero n]
+    (X : Matrix (Fin p) (Fin n) ℂ) {k : ℕ} (hk : k ≠ 0) :
+    (Fintype.card (Fin n) : ℝ) *
+        ∫ x, x ^ k ∂((Xᴴ * X).spectralMeasure
+          (by simpa using isHermitian_mul_conjTranspose_self Xᴴ) : Measure ℝ) =
+      (Fintype.card (Fin p) : ℝ) *
+        ∫ x, x ^ k ∂((X * Xᴴ).spectralMeasure
+          (isHermitian_mul_conjTranspose_self X) : Measure ℝ) := by
+  rw [integral_pow_spectralMeasure, integral_pow_spectralMeasure,
+    Fintype.card_fin, Fintype.card_fin,
+    trace_pow_mul_conjTranspose_eq_trace_pow_conjTranspose_mul X hk]
+  have hp : (p : ℝ) ≠ 0 := by exact_mod_cast NeZero.ne p
+  have hn : (n : ℝ) ≠ 0 := by exact_mod_cast NeZero.ne n
+  field_simp
 
 /-- Off the spectrum, the resolvent transform `m(z) = ∫ (x - z)⁻¹ dL_A(x)` of the spectral measure
 of a complex Hermitian matrix is the normalized trace of its resolvent `(A - z • 1)⁻¹`. -/
