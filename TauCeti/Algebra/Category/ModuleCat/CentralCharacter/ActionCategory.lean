@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Action
+public import Mathlib.CategoryTheory.Bicategory.Functor.Cat.ObjectProperty
 public import TauCeti.Algebra.Category.ModuleCat.CentralCharacter.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Twist
-public import TauCeti.CategoryTheory.Bicategory.Functor.FullSubcategory
 public import TauCeti.CategoryTheory.Monoidal.Action.Pseudofunctor
 
 /-!
@@ -30,14 +30,18 @@ labelled by `g`.
   `ActionCategory.π`, so that an arrow labelled `g` is sent to restriction of scalars along
   `(a g)⁻¹`. Its unit and composition comparisons are `ModuleCat.restrictScalarsId'App` and
   `ModuleCat.restrictScalarsComp'App`, whose underlying linear maps are identities.
+* `TauCeti.discreteCentralCharacterObjectProperty X a χ` is the property of objects of
+  `actionCategoryTwist X a` cutting out the strict discrete character fiber
+  `discreteCentralCharacterModules (χ x)` over each `x`. It is closed under the transport
+  functors (`TauCeti.isClosedUnderMapObj_discreteCentralCharacterObjectProperty`).
 * `TauCeti.discreteCentralCharacterFamily X a ha χ hχ` is the family of strict discrete
-  character fibers `x ↦ discreteCentralCharacterModules (χ x)`, with the twist functors as
-  transport and the same unit and composition comparisons. Its transport functors are
-  `R`-linear.
+  character fibers, Mathlib's `Pseudofunctor.ObjectProperty.fullsubcategory` for this property,
+  with the twist functors as transport and the same unit and composition comparisons. Its
+  transport functors are `R`-linear.
 * `TauCeti.discreteCentralCharacterFamilyι X a ha χ hχ` is the inclusion of the fibers into all
-  modules, a strong transformation to `actionCategoryTwist X a` with identity naturality
-  isomorphisms. It expresses that the inclusions of the fibers are equivariant for the twists
-  moving the characters.
+  modules, Mathlib's `Pseudofunctor.ObjectProperty.ι`: a strong transformation to
+  `actionCategoryTwist X a` with identity naturality isomorphisms. It expresses that the
+  inclusions of the fibers are equivariant for the twists moving the characters.
 
 For instance `X` may be a space of parameters `p` of central characters `χ p`, with a group
 acting both on the parameters and, compatibly, on the algebra; arrows of `G ⋉ X` then transport
@@ -127,17 +131,30 @@ lemma eq_comp_centerCongr_symm_of_hom {x y : LocallyDiscrete (ActionCategory G X
 
 variable (X a)
 
+omit [TopologicalSpace A] in
+/-- The strict discrete character fibers `x ↦ discreteCentralCharacterModules (χ x)`, as a
+property of objects of the twisting family `actionCategoryTwist X a`. -/
+def discreteCentralCharacterObjectProperty : (actionCategoryTwist.{v} X a).ObjectProperty where
+  prop x := discreteCentralCharacterModules.{v} (χ x.as.back)
+
+include ha hχ in
+/-- The twists carry each strict discrete character fiber to the fiber of the transported
+character. -/
+theorem isClosedUnderMapObj_discreteCentralCharacterObjectProperty :
+    (discreteCentralCharacterObjectProperty.{v} X a χ).IsClosedUnderMapObj where
+  map_obj {_ _ _} hM f := by
+    change discreteCentralCharacterModules _ _
+    rw [eq_comp_centerCongr_symm_of_hom χ hχ f]
+    exact discreteCentralCharacterModules_restrictScalars _ _ (ha _) hM
+
 /-- The strict discrete character fibers `x ↦ discreteCentralCharacterModules (χ x)` over the
 action groupoid `G ⋉ X`, with the twists along `(a g)⁻¹` as transport functors. It is the
 restriction of `actionCategoryTwist X a` to these fibers, so its unit and composition comparisons
 are restrictions of those of `ModuleCat.restrictScalars`. -/
 noncomputable def discreteCentralCharacterFamily :
     LocallyDiscrete (ActionCategory G X) ⥤ᵖ Cat.{v, max u (v + 1)} :=
-  (actionCategoryTwist.{v} X a).fullSubcategory
-    (fun x ↦ discreteCentralCharacterModules.{v} (χ x.as.back))
-    (fun f M hM ↦ by
-      rw [eq_comp_centerCongr_symm_of_hom χ hχ f]
-      exact discreteCentralCharacterModules_restrictScalars _ _ (ha _) hM)
+  haveI := isClosedUnderMapObj_discreteCentralCharacterObjectProperty X a ha χ hχ
+  (discreteCentralCharacterObjectProperty.{v} X a χ).fullsubcategory
 
 /-- The inclusion of the strict discrete character fibers into all modules is equivariant: it is
 a strong transformation from `discreteCentralCharacterFamily` to `actionCategoryTwist` whose
@@ -145,7 +162,8 @@ components are the inclusions and whose naturality isomorphisms are identities. 
 noncomputable def discreteCentralCharacterFamilyι :
     Pseudofunctor.StrongTrans (discreteCentralCharacterFamily.{v} X a ha χ hχ)
       (actionCategoryTwist.{v} X a) :=
-  Pseudofunctor.fullSubcategoryι _ _ _
+  haveI := isClosedUnderMapObj_discreteCentralCharacterObjectProperty X a ha χ hχ
+  (discreteCentralCharacterObjectProperty.{v} X a χ).ι
 
 variable {X a ha χ hχ}
 
