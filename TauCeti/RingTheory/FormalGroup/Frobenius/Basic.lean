@@ -92,21 +92,19 @@ theorem map_comp_iterateFrobeniusHom (f : FormalGroupHom F G) (h : ℕ) :
     (f.map (iterateFrobenius R p h)).comp (F.iterateFrobeniusHom p h) =
       (G.iterateFrobeniusHom p h).comp f := by
   ext : 1
-  rw [comp_iterateFrobeniusHom_toPowerSeries, map_toPowerSeries, ← PowerSeries.map_expand,
-    PowerSeries.map_iterateFrobenius_expand p (Fact.out : p.Prime).ne_zero, comp_toPowerSeries,
-    FormalGroup.iterateFrobeniusHom_toPowerSeries, PowerSeries.subst_pow f.hasSubst,
-    PowerSeries.subst_X f.hasSubst]
+  rw [comp_iterateFrobeniusHom_toPowerSeries, map_toPowerSeries, ← PowerSeries.map_expand]
+  simp [PowerSeries.map_iterateFrobenius_expand p (Fact.out : p.Prime).ne_zero,
+    PowerSeries.subst_pow f.hasSubst, PowerSeries.subst_X f.hasSubst]
 
 /-- Relative Frobenius is natural: the coefficient Frobenius twist of `f` after Frobenius on the
 source equals Frobenius on the target after `f`, that is, `f^(p)(X ^ p) = f(X) ^ p`. -/
 theorem map_comp_frobeniusHom (f : FormalGroupHom F G) :
     (f.map (frobenius R p)).comp (F.frobeniusHom p) = (G.frobeniusHom p).comp f := by
   ext : 1
-  rw [comp_toPowerSeries, comp_toPowerSeries, FormalGroup.frobeniusHom_toPowerSeries,
-    FormalGroup.frobeniusHom_toPowerSeries, map_toPowerSeries,
-    ← PowerSeries.expand_apply p (Fact.out : p.Prime).ne_zero, ← PowerSeries.map_expand,
-    PowerSeries.map_frobenius_expand p (Fact.out : p.Prime).ne_zero,
-    PowerSeries.subst_pow f.hasSubst, PowerSeries.subst_X f.hasSubst]
+  simpa only [comp_toPowerSeries, map_toPowerSeries,
+    FormalGroup.iterateFrobeniusHom_toPowerSeries, FormalGroup.frobeniusHom_toPowerSeries,
+    pow_one, iterateFrobenius_one] using
+    congrArg FormalGroupHom.toPowerSeries (f.map_comp_iterateFrobeniusHom 1)
 
 /-- The factor of a homomorphism with zero tangent map through relative Frobenius. -/
 noncomputable def frobeniusFactor (f : FormalGroupHom F G)
