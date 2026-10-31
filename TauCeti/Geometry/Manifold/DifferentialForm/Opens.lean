@@ -37,6 +37,10 @@ whenever the extension vanishes near every point of `W` outside `U`
 These are the gluing and cut-off steps of the Mayer–Vietoris sequence of de Rham cohomology, and
 the extension step of its compactly supported variant.
 
+On a product `U × M` with an open subset `U` of a normed space, the differential of the first
+coordinate reads the first coordinate of a tangent vector
+(`TauCeti.mextDeriv_ofFunction_coe_fst_apply`).
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapters 14 and 17.
@@ -232,6 +236,22 @@ theorem eventually_extendByZero_smul_eq_zero {U W : Opens M} (h : U ≤ W) (ω :
 
 
 end RoughForm
+
+/-- On a product `U × M` of an open subset `U` of a normed space `F` with a manifold `M`, the
+exterior derivative of the first coordinate, read in `F`, reads the first coordinate of a tangent
+vector. -/
+theorem mextDeriv_ofFunction_coe_fst_apply {U : Opens F} (z : U × M)
+    (v : TangentSpace (𝓘(ℝ, F).prod I) z) :
+    mextDeriv (RoughForm.ofFunction (𝓘(ℝ, F).prod I) fun z : U × M ↦ (z.1 : F)) z ![v] =
+      v.1 := by
+  have h : (fun z : U × M ↦ (z.1 : F)) = Subtype.val ∘ Prod.fst := rfl
+  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_apply_eq_mfderiv_apply, h, mfderiv_comp z
+      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) mdifferentiableAt_fst,
+    ContinuousLinearMap.comp_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+    Manifold.tangentSpaceOpenEquiv_apply, mfderiv_fst]
+  -- Tangent vectors of `U × M` are pairs.
+  rfl
 
 variable [IsManifold I 1 M]
 

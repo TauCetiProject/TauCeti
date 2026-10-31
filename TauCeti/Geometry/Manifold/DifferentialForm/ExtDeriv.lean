@@ -46,6 +46,8 @@ differentiable function is closed exactly when the function is locally constant.
   of a function is its manifold derivative.
 * `TauCeti.mextDeriv_ofFunction_eq_zero_iff`: the `0`-form of a differentiable function is closed
   exactly when the function is locally constant.
+* `TauCeti.mextDeriv_ofFunction_snd_apply`: the differential of the second coordinate of `M × F`
+  reads the second coordinate of a tangent vector.
 * `TauCeti.mextDeriv_eq_zero_of_finrank_le`: on a manifold of dimension at most `k`, the exterior
   derivative of every `k`-form vanishes.
 
@@ -425,6 +427,15 @@ theorem mextDeriv_ofFunction_add {f g : M → F} (hf : MDifferentiable I 𝓘(�
   funext x
   ext v
   simp [mextDeriv_ofFunction, mvfderiv_add (hf x) (hg x)]
+
+/-- On a product `M × F` with a normed space `F`, the exterior derivative of the second coordinate
+reads the second coordinate of a tangent vector. -/
+theorem mextDeriv_ofFunction_snd_apply (z : M × F) (v : TangentSpace (I.prod 𝓘(ℝ, F)) z) :
+    mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ, F)) fun z : M × F ↦ z.2) z ![v] = v.2 := by
+  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_apply_eq_mfderiv_apply, mfderiv_snd]
+  -- Tangent vectors of `M × F` are pairs.
+  rfl
 
 /-! ### Forms of top degree -/
 
