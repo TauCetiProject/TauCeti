@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.TitsSystem.Coxeter
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.QuotientGroup.Map
 import Mathlib.Tactic.Group
 
@@ -281,14 +282,10 @@ theorem comap_bruhatCell (w : (T.comap f hf).WeylGroup) :
 `⋂ g B g⁻¹` of `B`: every `g : G` is `f y * t` with `t ∈ B ∩ N`, and `t` normalizes `B`. -/
 theorem normalCore_comap_subgroupB :
     (T.comap f hf).subgroupB.normalCore = T.subgroupB.normalCore.comap f := by
-  refine le_antisymm (fun x hx g ↦ ?_) fun x hx y ↦ by simpa using hx (f y)
-  -- Write `g⁻¹ = f y * t`, so that `g (f x) g⁻¹ = t⁻¹ f (y⁻¹ x y) t`.
-  obtain ⟨y, t, ht, hyt⟩ := hf g⁻¹
-  have hconj : g * f x * g⁻¹ = t⁻¹ * f (y⁻¹ * x * y⁻¹⁻¹) * t⁻¹⁻¹ := by
-    rw [← inv_inv g, ← hyt, map_mul, map_mul, map_inv, inv_inv]
-    group
-  rw [hconj]
-  exact mul_mem (mul_mem (inv_mem ht.1) (hx y⁻¹)) (inv_mem (inv_mem ht.1))
+  rw [comap_subgroupB]
+  exact Subgroup.normalCore_comap_of_forall_exists_mul_eq f fun g ↦
+    let ⟨x, t, ht, h⟩ := hf g
+    ⟨x, t, ht.1, h⟩
 
 /-- **A pulled-back Tits system is irreducible exactly when the original one is**, since the two
 Weyl groups are identified together with their simple reflections. -/
