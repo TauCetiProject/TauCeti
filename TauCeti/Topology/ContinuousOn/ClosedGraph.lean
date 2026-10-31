@@ -8,11 +8,14 @@ module
 public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
-# Continuity on a set from a closed graph
+# Closed graphs and continuity on a set
 
 A function whose graph over a set `s` is closed and whose values on `s` lie in a compact set is
 continuous on `s`. This is the relative form of Mathlib's `continuous_of_isClosed_graph`; it
 identifies a bounded single-valued closure of a graph with a continuous function.
+Conversely, `ContinuousOn.closure_graphOn_inter` recovers a continuous function's graph from
+its restriction to a relatively dense subset. This permits extending a description of a graph
+across an exceptional locus without making any choices of values there.
 -/
 
 public section
@@ -39,3 +42,37 @@ theorem continuousOn_of_isClosed_graphOn {f : X → Y} {s : Set X} {K : Set Y}
   exact continuousOn_iff_continuous_domRestrict.mpr (continuous_subtype_val.comp hF)
 
 end TauCeti
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- A continuous function on `s` is recovered from its graph on a relatively dense subset `t`:
+the graph closure, restricted back to points over `s`, is exactly its graph on `s`. -/
+theorem ContinuousOn.closure_graphOn_inter [T2Space Y] {f : X → Y} {s t : Set X}
+    (hf : ContinuousOn f s) (hts : t ⊆ s) (hst : s ⊆ closure t) :
+    closure (t.graphOn f) ∩ (s ×ˢ univ) = s.graphOn f := by
+  let e : s × Y → X × Y := Prod.map Subtype.val id
+  have he : Topology.IsEmbedding e := Topology.IsEmbedding.subtypeVal.prodMap .id
+  have himage : e '' (Function.graph (fun x : s ↦ f x) ∩ ((Subtype.val ⁻¹' t) ×ˢ univ)) =
+      t.graphOn f := by
+    ext ⟨x, y⟩
+    simp only [mem_image, mem_inter_iff, Function.mem_graph, mem_prod, mem_preimage,
+      mem_univ, and_true, Prod.exists, e, Prod.map_apply, id_eq, Prod.mk.injEq,
+      mem_graphOn]
+    constructor
+    · rintro ⟨a, b, ⟨hab, ha⟩, rfl, rfl⟩
+      exact ⟨ha, hab⟩
+    · rintro ⟨hx, rfl⟩
+      exact ⟨⟨x, hts hx⟩, f x, ⟨rfl, hx⟩, rfl, rfl⟩
+  have hclosed := (continuousOn_iff_continuous_domRestrict.mp hf).isClosed_graph
+  apply Subset.antisymm
+  · rintro ⟨x, y⟩ ⟨hxy, hx, -⟩
+    have hpre : (⟨x, hx⟩, y) ∈ e ⁻¹' closure (t.graphOn f) := hxy
+    rw [← himage, ← he.closure_eq_preimage_closure_image] at hpre
+    exact mem_graphOn.mpr ⟨hx, closure_minimal inter_subset_left hclosed hpre⟩
+  · rintro ⟨x, y⟩ hxy
+    obtain ⟨hx, hy⟩ := mem_graphOn.mp hxy
+    dsimp only at hy
+    subst y
+    refine ⟨?_, hx, mem_univ _⟩
+    simpa only [graphOn, id_eq] using
+      (continuousWithinAt_id.prodMk ((hf x hx).mono hts)).mem_closure_image (hst hx)
