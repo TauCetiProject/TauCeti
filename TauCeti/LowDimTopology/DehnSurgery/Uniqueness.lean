@@ -99,15 +99,12 @@ theorem exists_fillingSlope_torusHomeomorph_eq (h : IsSolidTorusNeighborhood f �
     set c := h.framedBoundaryTorus.coord v with hc
     have hcop : IsCoprime c.1 c.2 :=
       isPrimitive_prod_iff.1 ((h.framedBoundaryTorus.coord.isPrimitive_iff).2 hv)
-    obtain ⟨a, b, hab⟩ := hcop
-    let M : Matrix.SpecialLinearGroup (Fin 2) ℤ :=
-      ⟨!![c.1, -b; c.2, a], by rw [Matrix.det_fin_two_of]; linear_combination hab⟩
+    obtain ⟨M, hM₀, hM₁⟩ := hcop.exists_SL2_col 0
     refine ⟨Matrix.SpecialLinearGroup.toGL M, ?_⟩
     rw [fillingSlope_torusHomeomorph]
     refine Slope.mk_eq_mk _ _ (Or.inl (h.framedBoundaryTorus.coord.injective ?_))
     rw [FramedBoundaryTorus.coord_torusCurveClass, ← hc,
-      Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
-    simp [M]
+      Matrix.SpecialLinearGroup.coe_GL_coe_matrix, hM₀, hM₁]
 
 end IsSolidTorusNeighborhood
 
