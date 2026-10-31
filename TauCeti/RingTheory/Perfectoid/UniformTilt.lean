@@ -706,35 +706,27 @@ variable {C D : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTo
   [IsTateRing D] [CompleteSpace D] [T2Space D] [IsUniform D]
   [Fact (IsTopologicallyNilpotent (p : D))]
 
-/-- Mathlib's `Perfection.coeffMonoidHom_mapMonoidHom`, stated through the coordinates
-`uniformTilt.coeff` of the type synonym so that it can be used for rewriting. -/
-private theorem coeff_mapMonoidHom (g : B →* C) (x : uniformTilt p B) (n : ℕ) :
-    coeff p C n (Perfection.mapMonoidHom p g x) = g (coeff p B n x) :=
-  Perfection.coeffMonoidHom_mapMonoidHom p g x n
-
 /-- **Functoriality of the tilt**: a continuous ring homomorphism `g : B → C` induces the ring
 homomorphism `g♭ : B♭ → C♭`, `(x⁽ⁿ⁾)ₙ ↦ (g x⁽ⁿ⁾)ₙ` (Kedlaya, *Arizona Winter School notes*,
 Lemma 2.7.1(d)). Continuity of `g` is what makes `g♭` additive for the limit addition. -/
 noncomputable def map (g : B →+* C) (hg : Continuous g) : uniformTilt p B →+* uniformTilt p C :=
   { (Perfection.mapMonoidHom p g.toMonoidHom : uniformTilt p B →* uniformTilt p C) with
-    map_zero' := ext fun n ↦ by
-      simp only [MonoidHom.toOneHom_coe, OneHom.toFun_eq_coe]
-      rw [coeff_mapMonoidHom, coeff_zero, coeff_zero]
-      exact map_zero g
+    map_zero' := ext fun n ↦
+      (Perfection.coeffMonoidHom_mapMonoidHom p g.toMonoidHom (0 : uniformTilt p B) n).trans
+        (map_zero g)
     map_add' := fun x y ↦ ext fun n ↦ by
-      simp only [MonoidHom.toOneHom_coe, OneHom.toFun_eq_coe]
-      rw [coeff_mapMonoidHom]
       -- both sides are the limit of `(g x⁽ⁿ⁺ᵐ⁾ + g y⁽ⁿ⁺ᵐ⁾) ^ p ^ m`
       refine tendsto_nhds_unique ((hg.tendsto _).comp (coeff_add x y n))
         ((coeff_add _ _ n).congr fun m ↦ ?_)
-      simp [coeff_mapMonoidHom] }
+      simp only [Function.comp_apply, map_pow, map_add]
+      rfl }
 
 /-- The coordinates of `g♭ x` are the images under `g` of the coordinates of `x`; for `n = 0` this
 is `(g♭ x)♯ = g x♯`. -/
 @[simp]
 theorem coeff_map (g : B →+* C) (hg : Continuous g) (x : uniformTilt p B) (n : ℕ) :
     coeff p C n (map g hg x) = g (coeff p B n x) :=
-  coeff_mapMonoidHom g.toMonoidHom x n
+  Perfection.coeffMonoidHom_mapMonoidHom p g.toMonoidHom x n
 
 /-- The identity of `B` induces the identity of the tilt. -/
 @[simp]
