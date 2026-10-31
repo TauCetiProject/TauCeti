@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.FormalGroup.Height
+public import TauCeti.RingTheory.FormalGroup.Height.Basic
 import TauCeti.Data.Fin.Basic
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # Formal group laws of infinite height are additive
@@ -155,38 +156,12 @@ end AddError
 
 section Leading
 
-/-- The degree-`n` part of the additivity defect of `g`, as a polynomial. -/
-private noncomputable def leadingError (n : ℕ) (g : PowerSeries R) : MvPolynomial (Fin 2) R :=
-  MvPolynomial.homogeneousComponent n (truncTotal (n + 1) (addError F g))
-
-private theorem coe_leadingError (n : ℕ) (g : PowerSeries R) :
-    (leadingError F n g : MvPowerSeries (Fin 2) R) = homogeneousComponent n (addError F g) := by
-  ext d
-  rw [MvPolynomial.coeff_coe, leadingError, MvPolynomial.coeff_homogeneousComponent,
-    coeff_homogeneousComponent]
-  split_ifs with hd
-  · exact coeff_truncTotal _ (by omega)
-  · rfl
-
-/-- If the additivity defect of `g` vanishes below degree `n`, its degree-`n` part at a family `x`
-of series without constant term is the polynomial `leadingError F n g` evaluated at the linear
-parts of `x`. -/
-private theorem homogeneousComponent_subst_addError {τ : Type*} {n : ℕ} {g : PowerSeries R}
-    (hn : n ≤ (addError F g).order) {x : Fin 2 → MvPowerSeries τ R} (hx : HasSubst x)
-    (hx₀ : ∀ i, constantCoeff (x i) = 0) {l : Fin 2 → MvPolynomial τ R}
-    (hl : ∀ i, homogeneousComponent 1 (x i) = l i) :
-    homogeneousComponent n ((addError F g).subst x) =
-      (MvPolynomial.aeval l (leadingError F n g) : MvPowerSeries τ R) := by
-  rw [homogeneousComponent_subst_of_le_order hn hx hx₀, ← coe_leadingError, subst_coe]
-  simp_rw [hl]
-  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
-    (leadingError F n g) (f := l)).symm
-
 variable {F}
 
 /-- The degree-`n` part of the additivity defect is an additive 2-cocycle. -/
-private theorem isAddCocycle₂_leadingError {n : ℕ} {g : PowerSeries R}
-    (hn : n ≤ (addError F g).order) : (leadingError F n g).IsAddCocycle₂ := by
+private theorem isAddCocycle₂_addError {n : ℕ} {g : PowerSeries R}
+    (hn : n ≤ (addError F g).order) :
+    (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) (addError F g))).IsAddCocycle₂ := by
   have hX (i : Fin 3) := PowerSeries.HasSubst.X (S := R) i
   have hX₀ (i : Fin 3) := constantCoeff_X (R := R) i
   have hF₀ (i j : Fin 3) :
@@ -195,42 +170,44 @@ private theorem isAddCocycle₂_leadingError {n : ℕ} {g : PowerSeries R}
       (fun s ↦ by fin_cases s <;> simp) F.toPowerSeries, F.zero_constantCoeff, map_zero]
   have h := congrArg (homogeneousComponent n) (addError_cocycle F g)
   rw [map_add, map_add,
-    homogeneousComponent_subst_addError F hn (hasSubst_finTwo (hX 0) (hX 1))
+    homogeneousComponent_subst_eq_coe_aeval hn (a := ![X 0, X 1])
       (l := ![MvPolynomial.X 0, MvPolynomial.X 1]) (fun i ↦ by fin_cases i <;> simp)
       (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]),
-    homogeneousComponent_subst_addError F hn
-      (hasSubst_finTwo (F.hasSubst_subst_pair (hX 0) (hX 1)) (hX 2))
+    homogeneousComponent_subst_eq_coe_aeval hn
+      (a := ![F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) R), X 1], X 2])
       (l := ![MvPolynomial.X 0 + MvPolynomial.X 1, MvPolynomial.X 2])
       (fun i ↦ by fin_cases i <;> simp [hF₀])
       (fun i ↦ by
         fin_cases i <;>
           simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
             F.lin_coeff_Y (hX₀ 0) (hX₀ 1), homogeneousComponent_one_X]),
-    homogeneousComponent_subst_addError F hn
-      (hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2)))
+    homogeneousComponent_subst_eq_coe_aeval hn
+      (a := ![X 0, F.toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) R), X 2]])
       (l := ![MvPolynomial.X 0, MvPolynomial.X 1 + MvPolynomial.X 2])
       (fun i ↦ by fin_cases i <;> simp [hF₀])
       (fun i ↦ by
         fin_cases i <;>
           simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
             F.lin_coeff_Y (hX₀ 1) (hX₀ 2), homogeneousComponent_one_X]),
-    homogeneousComponent_subst_addError F hn (hasSubst_finTwo (hX 1) (hX 2))
+    homogeneousComponent_subst_eq_coe_aeval hn (a := ![X 1, X 2])
       (l := ![MvPolynomial.X 1, MvPolynomial.X 2]) (fun i ↦ by fin_cases i <;> simp)
       (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X])] at h
   rw [MvPolynomial.isAddCocycle₂_iff]
   exact MvPolynomial.coe_inj.mp (by rw [MvPolynomial.coe_add, MvPolynomial.coe_add]; exact h)
 
 /-- The degree-`n` part of the additivity defect is symmetric when `F` is commutative. -/
-private theorem isSymmetric_leadingError [F.IsComm] {n : ℕ} {g : PowerSeries R}
-    (hn : n ≤ (addError F g).order) : (leadingError F n g).IsSymmetric := by
+private theorem isSymmetric_addError [F.IsComm] {n : ℕ} {g : PowerSeries R}
+    (hn : n ≤ (addError F g).order) :
+    (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) (addError F g))).IsSymmetric := by
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  have h : MvPolynomial.aeval ![MvPolynomial.X 1, MvPolynomial.X 0] (leadingError F n g) =
-      leadingError F n g := by
+  have h : MvPolynomial.aeval ![MvPolynomial.X 1, MvPolynomial.X 0]
+      (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) (addError F g))) =
+        MvPolynomial.homogeneousComponent n (truncTotal (n + 1) (addError F g)) := by
     refine MvPolynomial.coe_inj.mp ?_
-    rw [← homogeneousComponent_subst_addError F hn (hasSubst_finTwo (hX 1) (hX 0))
+    rw [← homogeneousComponent_subst_eq_coe_aeval hn (a := ![X 1, X 0])
       (fun i ↦ by fin_cases i <;> simp)
       (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]),
-      subst_addError_X_one_X_zero, coe_leadingError]
+      subst_addError_X_one_X_zero, coe_homogeneousComponent_truncTotal]
   intro e
   rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
   · simp
@@ -263,10 +240,11 @@ private theorem subst_nsmulSeries_eq_nsmul_add_sum {g : PowerSeries R}
 /-- **The obstruction in degree `pᵏ` vanishes when `[p]_F = 0`.** If the additivity defect of `g`
 vanishes below degree `n = pᵏ`, `k ≥ 1`, and its degree-`n` part is `c C_n`, then `c = 0`: the
 degree-`n` part of `g([p]_F(X)) - p g(X) = 0` is `c ∑_{j < p} C_n(j X, X) = -c Xⁿ`. -/
-private theorem eq_zero_of_leadingError_eq_smul_lazardCocycle {p : ℕ} (hp : p.Prime)
+private theorem eq_zero_of_addError_eq_smul_lazardCocycle {p : ℕ} (hp : p.Prime)
     (hF : F.nsmulSeries p = 0) {k : ℕ} (hk : k ≠ 0) {g : PowerSeries R}
     (hg : PowerSeries.constantCoeff g = 0) (hn : p ^ k ≤ (addError F g).order) {c : R}
-    (hc : leadingError F (p ^ k) g = c • TauCeti.lazardCocycle (p ^ k) R) : c = 0 := by
+    (hc : MvPolynomial.homogeneousComponent (p ^ k) (truncTotal (p ^ k + 1) (addError F g)) =
+      c • TauCeti.lazardCocycle (p ^ k) R) : c = 0 := by
   have hpR : (p : R) = 0 := F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
   -- the defects `Φ([j]_F(X), X)`, `j < p`, sum to `g([p]_F(X)) - p g(X) = 0`
   have hsum := F.subst_nsmulSeries_eq_nsmul_add_sum hg p
@@ -281,7 +259,7 @@ private theorem eq_zero_of_leadingError_eq_smul_lazardCocycle {p : ℕ} (hp : p.
           ![(j : MvPolynomial Unit R) * MvPolynomial.X (), MvPolynomial.X ()]
           (TauCeti.lazardCocycle (p ^ k) R)) := by
     rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply,
-      homogeneousComponent_subst_addError F hn (F.hasSubst_nsmulSeries_X j)
+      homogeneousComponent_subst_eq_coe_aeval hn (a := ![F.nsmulSeries j, PowerSeries.X])
       (fun i ↦ by fin_cases i; exacts [F.constantCoeff_nsmulSeries j, PowerSeries.constantCoeff_X])
       (fun i ↦ ?_), hc, _root_.map_smul]
     fin_cases i
@@ -309,20 +287,21 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp
     ∃ c : R, ((n + 1 : ℕ) : ℕ∞) ≤ (addError F (g - c • PowerSeries.X ^ n)).order ∧
       ∀ k, n = p ^ k → c = 0 := by
   have hpR : (p : R) = 0 := F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
-  have hh : (leadingError F n g).IsHomogeneous n :=
+  have hh :
+      (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) (addError F g))).IsHomogeneous n :=
     MvPolynomial.homogeneousComponent_isHomogeneous _ _
   obtain ⟨r, hr⟩ := TauCeti.exists_eq_smul_lazardCocycle (by omega) hh
-    (isSymmetric_leadingError hn) (isAddCocycle₂_leadingError hn)
+    (isSymmetric_addError hn) (isAddCocycle₂_addError hn)
   by_cases hpow : ∃ k, n = p ^ k
   · obtain ⟨k, rfl⟩ := hpow
     have hk : k ≠ 0 := by
       rintro rfl
       simp at hn₂
-    have hr₀ := F.eq_zero_of_leadingError_eq_smul_lazardCocycle hp hF hk hg hn hr
+    have hr₀ := F.eq_zero_of_addError_eq_smul_lazardCocycle hp hF hk hg hn hr
     refine ⟨0, ?_, fun _ _ ↦ rfl⟩
     rw [zero_smul, sub_zero]
     refine succ_le_order_of_homogeneousComponent_eq_zero hn ?_
-    rw [← coe_leadingError, hr, hr₀, zero_smul, MvPolynomial.coe_zero]
+    rw [← coe_homogeneousComponent_truncTotal, hr, hr₀, zero_smul, MvPolynomial.coe_zero]
   · -- `d_n` is prime to `p`, hence a unit in `R`, and `r C_n = (r d_n⁻¹) ((X + Y)ⁿ - Xⁿ - Yⁿ)`
     have hd : IsUnit ((TauCeti.lazardGcd n : ℕ) : R) := by
       have hcop : (TauCeti.lazardGcd n).Coprime p := Nat.Coprime.symm <|
@@ -331,8 +310,9 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp
       have : IsCoprime ((TauCeti.lazardGcd n : ℕ) : R) (p : R) := by
         simpa using (Nat.isCoprime_iff_coprime.mpr hcop).intCast (R := R)
       rwa [hpR, isCoprime_zero_right] at this
-    have hc : leadingError F n g = (r * ↑hd.unit⁻¹) • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n -
-        MvPolynomial.X 0 ^ n - MvPolynomial.X 1 ^ n : MvPolynomial (Fin 2) R) := by
+    have hc : MvPolynomial.homogeneousComponent n (truncTotal (n + 1) (addError F g)) =
+        (r * ↑hd.unit⁻¹) • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n -
+          MvPolynomial.X 0 ^ n - MvPolynomial.X 1 ^ n : MvPolynomial (Fin 2) R) := by
       rw [hr, ← TauCeti.lazardGcd_nsmul_lazardCocycle (by omega), ← Nat.cast_smul_eq_nsmul R,
         smul_smul, mul_assoc, hd.val_inv_mul, mul_one]
     set c := r * ↑hd.unit⁻¹
@@ -343,8 +323,8 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp
       rw [addError_sub]
       exact le_order_sub hn (le_order_addError F hXn)
     refine succ_le_order_of_homogeneousComponent_eq_zero hn' ?_
-    rw [addError_sub, map_sub, homogeneousComponent_addError_smul_X_pow, ← coe_leadingError, hc,
-      sub_self]
+    rw [addError_sub, map_sub, homogeneousComponent_addError_smul_X_pow,
+      ← coe_homogeneousComponent_truncTotal, hc, sub_self]
 
 end PSeries
 
@@ -355,31 +335,6 @@ section Construction
 private noncomputable def approx (c : ℕ → PowerSeries R → R) : ℕ → PowerSeries R
   | 0 => PowerSeries.X
   | n + 1 => approx c n - c (n + 2) (approx c n) • PowerSeries.X ^ (n + 2)
-
-/-- The approximations stabilise: `approx c n` and `approx c n'` agree below degree
-`min n n' + 2`. -/
-private theorem coeff_approx_eq_coeff_approx (c : ℕ → PowerSeries R → R) {m n n' : ℕ}
-    (hm : m < n + 2) (hm' : m < n' + 2) :
-    PowerSeries.coeff m (approx c n) = PowerSeries.coeff m (approx c n') := by
-  wlog h : n ≤ n' generalizing n n'
-  · exact (this hm' hm (by omega)).symm
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h
-  induction j with
-  | zero => rfl
-  | succ j ih =>
-    rw [ih (by omega) (by omega), ← add_assoc, approx, map_sub, PowerSeries.coeff_smul,
-      PowerSeries.coeff_X_pow]
-    simp [show m ≠ n + j + 2 by omega]
-
-/-- The limit of the approximations. -/
-private noncomputable def approxLimit (c : ℕ → PowerSeries R → R) : PowerSeries R :=
-  PowerSeries.mk fun m ↦ PowerSeries.coeff m (approx c m)
-
-/-- The limit agrees with `approx c n` below degree `n + 2`. -/
-private theorem coeff_approxLimit (c : ℕ → PowerSeries R → R) {m n : ℕ} (hm : m < n + 2) :
-    PowerSeries.coeff m (approxLimit c) = PowerSeries.coeff m (approx c n) := by
-  rw [approxLimit, PowerSeries.coeff_mk]
-  exact coeff_approx_eq_coeff_approx c (by omega) hm
 
 /-- **Existence of the normalised logarithm**, by passing to the limit of the approximations. -/
 private theorem exists_logarithm [F.IsComm] {p : ℕ} (hp : p.Prime) (hF : F.nsmulSeries p = 0) :
@@ -409,21 +364,27 @@ private theorem exists_logarithm [F.IsComm] {p : ℕ} (hp : p.Prime) (hF : F.nsm
       split_ifs with h
       · simp [hc₀ k h.symm]
       · simp
-  refine ⟨approxLimit c, ?_, ?_, fun k hk ↦ ?_, ?_⟩
-  · rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_approxLimit c (n := 0) (by omega),
-      PowerSeries.coeff_zero_eq_constantCoeff_apply, (key 0).1]
-  · rw [coeff_approxLimit c (n := 0) (by omega)]
+  -- the limit of the approximations
+  obtain ⟨g, hlim⟩ := PowerSeries.exists_forall_le_order_sub (f := approx c) fun n ↦ by
+    rw [approx, sub_sub_cancel_left, PowerSeries.order_neg]
+    refine PowerSeries.nat_le_order _ _ fun i hi ↦ ?_
+    simp [PowerSeries.coeff_X_pow, show i ≠ n + 2 by omega]
+  have hcoeff {m n : ℕ} (hm : m < n) :
+      PowerSeries.coeff m g = PowerSeries.coeff m (approx c n) := by
+    rw [← sub_eq_zero, ← map_sub]
+    exact PowerSeries.coeff_of_lt_order m ((hlim n).trans_lt' (by exact_mod_cast hm))
+  refine ⟨g, ?_, ?_, fun k hk ↦ ?_, ?_⟩
+  · rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, hcoeff (n := 1) one_pos,
+      PowerSeries.coeff_zero_eq_constantCoeff_apply, (key 1).1]
+  · rw [hcoeff (n := 2) one_lt_two]
     simp [approx]
-  · rw [coeff_approxLimit c (n := p ^ k) (by omega), (key _).2.2 k hk]
+  · rw [hcoeff (Nat.lt_succ_self (p ^ k)), (key _).2.2 k hk]
   · -- the additivity defect of the limit vanishes below every degree
     refine order_eq_top_iff.mp (top_le_iff.mp (ENat.forall_natCast_le_iff_le.mp fun m _ ↦ ?_))
-    have hlim : ((m + 2 : ℕ) : ℕ∞) ≤ (approxLimit c - approx c m).order :=
-      PowerSeries.nat_le_order _ _ fun i hi ↦ by rw [map_sub, coeff_approxLimit c hi, sub_self]
-    have hdiff := le_order_addError F hlim
+    have hdiff := le_order_addError F (hlim m)
     rw [addError_sub] at hdiff
-    have h := le_order_add (key m).2.1 hdiff
-    rw [add_sub_cancel] at h
-    exact (Nat.cast_le.mpr (by omega : m ≤ m + 2)).trans h
+    have h := le_order_add ((key m).2.1.trans' (by exact_mod_cast (by omega : m ≤ m + 2))) hdiff
+    rwa [add_sub_cancel] at h
 
 end Construction
 

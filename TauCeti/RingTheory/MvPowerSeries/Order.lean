@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
+public import Mathlib.RingTheory.MvPowerSeries.Trunc
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Lowest-degree homogeneous components of powers, products and substitutions
@@ -20,7 +22,13 @@ constant coefficient, the degree-`p` component of `f(a)` only depends on the deg
 of `f` and on the linear parts of the `a i`, into which it is substituted
 (`MvPowerSeries.homogeneousComponent_subst_of_le_order`). This is how the lowest-degree term of an
 expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + ⋯`, is read off as
-the polynomial `f_p(X + Y, Z)`.
+the polynomial `f_p(X + Y, Z)` (`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`).
+
+Substitution is Lipschitz for the order: if `a i - b i` has order at least `n` for all `i`, then
+`f(a) - f(b)` has order at least `n + k - 1` when `f` has order at least `k`
+(`MvPowerSeries.le_order_subst_sub_subst`), and in degrees at most `n` it agrees with the linear
+part `∑ᵢ fᵢ (a i - b i)` of `f` applied to the differences
+(`MvPowerSeries.coeff_subst_sub_subst_of_degree_le`).
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`).
@@ -225,6 +233,165 @@ theorem homogeneousComponent_subst_of_le_order {f : MvPowerSeries σ R} {p : ℕ
     · rw [zero_smul]
 
 end Subst
+
+section Leading
+
+variable {R : Type*}
+
+/-- The polynomial `homogeneousComponent n (truncTotal (n + 1) f)` is the degree-`n` homogeneous
+component of `f`. -/
+theorem coe_homogeneousComponent_truncTotal {σ : Type*} [Finite σ] [CommRing R] (n : ℕ)
+    (f : MvPowerSeries σ R) :
+    ((MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f) : MvPolynomial σ R) :
+      MvPowerSeries σ R) = homogeneousComponent n f := by
+  ext d
+  rw [MvPolynomial.coeff_coe, MvPolynomial.coeff_homogeneousComponent,
+    coeff_homogeneousComponent]
+  split_ifs with hd
+  · exact coeff_truncTotal _ (by omega)
+  · rfl
+
+/-- **The lowest-degree component of a substitution, as a polynomial.** If `f` has order at least
+`n` and the series `a i` have zero constant coefficient and linear parts `l i`, the degree-`n`
+component of `f(a)` is the degree-`n` component of `f`, as a polynomial, evaluated at the `l i`. -/
+theorem homogeneousComponent_subst_eq_coe_aeval {σ τ : Type*} [Finite σ] [CommRing R]
+    {f : MvPowerSeries σ R} {n : ℕ} (hf : n ≤ f.order) {a : σ → MvPowerSeries τ R}
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) {l : σ → MvPolynomial τ R}
+    (hl : ∀ i, homogeneousComponent 1 (a i) = l i) :
+    homogeneousComponent n (f.subst a) = (MvPolynomial.aeval l
+      (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)) : MvPowerSeries τ R) := by
+  rw [homogeneousComponent_subst_of_le_order hf (hasSubst_of_constantCoeff_zero ha₀) ha₀,
+    ← coe_homogeneousComponent_truncTotal,
+    subst_coe]
+  simp_rw [hl]
+  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
+    (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)) (f := l)).symm
+
+/-- Substituting series without constant term does not lower the order. -/
+theorem le_order_subst_of_constantCoeff_zero {σ τ : Type*} [CommRing R] {f : MvPowerSeries σ R}
+    {n : ℕ∞} (hf : n ≤ f.order) {a : σ → MvPowerSeries τ R} (ha : HasSubst a)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) : n ≤ (f.subst a).order := by
+  refine (le_order_subst ha f).trans' ?_
+  calc n ≤ 1 * f.order := by rwa [one_mul]
+    _ ≤ (⨅ i, (a i).order) * f.order := by
+      gcongr
+      exact le_iInf fun i ↦ one_le_order_iff_constCoeff_eq_zero.mpr (ha₀ i)
+
+end Leading
+
+section Differences
+
+variable {σ τ R : Type*} [CommRing R] {n : ℕ}
+
+/-- The order of `x y - x' y'` is at least the smaller of the orders of `(x - x') y` and
+`x' (y - y')`. -/
+private theorem le_order_mul_sub_mul {x x' y y' : MvPowerSeries τ R} {m : ℕ∞}
+    (h₁ : m ≤ (x - x').order + y.order) (h₂ : m ≤ x'.order + (y - y').order) :
+    m ≤ (x * y - x' * y').order := by
+  rw [show x * y - x' * y' = (x - x') * y + x' * (y - y') by ring]
+  exact le_order_add (h₁.trans le_order_mul) (h₂.trans le_order_mul)
+
+/-- If `x - y` has order at least `n` and `x`, `y` have zero constant coefficient, then
+`xᵏ - yᵏ` has order at least `n + k - 1` for `k ≥ 1`. -/
+private theorem le_order_pow_sub_pow {x y : MvPowerSeries τ R} (hx : constantCoeff x = 0)
+    (hy : constantCoeff y = 0) (hxy : (n : ℕ∞) ≤ (x - y).order) {k : ℕ} (hk : k ≠ 0) :
+    ((n + k - 1 : ℕ) : ℕ∞) ≤ (x ^ k - y ^ k).order := by
+  induction k with
+  | zero => exact absurd rfl hk
+  | succ k ih =>
+    rcases Nat.eq_zero_or_pos k with rfl | hk₀
+    · simpa using hxy
+    rw [pow_succ, pow_succ]
+    refine le_order_mul_sub_mul ((add_le_add (ih hk₀.ne') (one_le_order_iff_constCoeff_eq_zero.mpr
+      hx)).trans' ?_) ((add_le_add (le_order_pow_of_constantCoeff_eq_zero k hy) hxy).trans' ?_)
+    · exact_mod_cast (by omega : n + (k + 1) - 1 ≤ n + k - 1 + 1)
+    · exact_mod_cast (by omega : n + (k + 1) - 1 ≤ k + n)
+
+/-- **Monomials in close arguments are closer.** If the series `a i` and `b i` have zero constant
+coefficient and `a i - b i` has order at least `n` for every `i`, then for `d ≠ 0` the monomials
+`aᵈ` and `bᵈ` differ by a series of order at least `n + |d| - 1`. -/
+theorem le_order_prod_pow_sub_prod_pow {ι : Type*} {a b : ι → MvPowerSeries τ R}
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) (hb₀ : ∀ i, constantCoeff (b i) = 0)
+    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) {d : ι →₀ ℕ} (hd : d ≠ 0) :
+    ((n + d.degree - 1 : ℕ) : ℕ∞) ≤
+      ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k).order := by
+  classical
+  induction d using Finsupp.induction with
+  | zero => exact absurd rfl hd
+  | single_add i k f hi hk ih =>
+    have hprod (c : ι → MvPowerSeries τ R) : ((Finsupp.single i k + f).prod fun i k ↦ c i ^ k) =
+        c i ^ k * f.prod fun i k ↦ c i ^ k := by
+      rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
+        Finsupp.prod_single_index (h := fun i k ↦ c i ^ k) (pow_zero _)]
+    rw [hprod, hprod, map_add, Finsupp.degree_single]
+    rcases eq_or_ne f 0 with rfl | hf
+    · simpa using le_order_pow_sub_pow (ha₀ i) (hb₀ i) (hab i) hk
+    have hf₀ : f.degree ≠ 0 := fun h ↦ hf ((Finsupp.degree_eq_zero_iff f).mp h)
+    refine le_order_mul_sub_mul ((add_le_add (le_order_pow_sub_pow (ha₀ i) (hb₀ i) (hab i) hk)
+      (degree_le_order_prod_pow ha₀ f)).trans' ?_)
+      ((add_le_add (le_order_pow_of_constantCoeff_eq_zero k (hb₀ i)) (ih hf)).trans' ?_)
+    · exact_mod_cast (by omega : n + (k + f.degree) - 1 ≤ n + k - 1 + f.degree)
+    · exact_mod_cast (by omega : n + (k + f.degree) - 1 ≤ k + (n + f.degree - 1))
+
+/-- The coefficients of `H(a) - H(b)` are the sums of the coefficients of `H` times those of the
+differences `aᵈ - bᵈ` of monomials. -/
+private theorem coeff_subst_sub_subst {H : MvPowerSeries σ R} {a b : σ → MvPowerSeries τ R}
+    (ha : HasSubst a) (hb : HasSubst b) (e : τ →₀ ℕ) :
+    coeff e (H.subst a - H.subst b) = ∑ᶠ d, coeff d H •
+      coeff e ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k) := by
+  simp_rw [map_sub, smul_sub]
+  rw [coeff_subst ha, coeff_subst hb,
+    finsum_sub_distrib (coeff_subst_finite ha H e) (coeff_subst_finite hb H e)]
+
+/-- **Substitution is Lipschitz for the order.** Let `H` have order at least `k`, and let the
+series `a i` and `b i` have zero constant coefficient, with `a i - b i` of order at least `n`.
+Then `H(a) - H(b)` has order at least `n + k - 1`. -/
+theorem le_order_subst_sub_subst {H : MvPowerSeries σ R} {k : ℕ}
+    (hH : (k : ℕ∞) ≤ H.order) {a b : σ → MvPowerSeries τ R} (ha : HasSubst a) (hb : HasSubst b)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) (hb₀ : ∀ i, constantCoeff (b i) = 0)
+    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) :
+    ((n + k - 1 : ℕ) : ℕ∞) ≤ (H.subst a - H.subst b).order := by
+  refine nat_le_order fun e he ↦ ?_
+  rw [coeff_subst_sub_subst ha hb]
+  refine finsum_eq_zero_of_forall_eq_zero fun d ↦ ?_
+  rcases eq_or_ne d 0 with rfl | hd
+  · simp
+  by_cases hdk : d.degree < k
+  · rw [coeff_of_lt_order (hH.trans_lt' (by exact_mod_cast hdk)), zero_smul]
+  · rw [coeff_of_lt_order ((le_order_prod_pow_sub_prod_pow ha₀ hb₀ hab hd).trans_lt'
+      (by exact_mod_cast (by omega : e.degree < n + d.degree - 1))), smul_zero]
+
+/-- **The linear part of a difference of substitutions.** If the series `a i` and `b i` have zero
+constant coefficient and `a i - b i` has order at least `n`, then in degrees at most `n` the
+coefficients of `H(a) - H(b)` are those of `∑ᵢ hᵢ (a i - b i)`, where `hᵢ` is the coefficient of
+`Xᵢ` in `H`. -/
+theorem coeff_subst_sub_subst_of_degree_le [Fintype σ] (H : MvPowerSeries σ R)
+    {a b : σ → MvPowerSeries τ R} (ha : HasSubst a) (hb : HasSubst b)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) (hb₀ : ∀ i, constantCoeff (b i) = 0)
+    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) {e : τ →₀ ℕ} (he : e.degree ≤ n) :
+    coeff e (H.subst a - H.subst b) =
+      ∑ i, coeff (Finsupp.single i 1) H * coeff e (a i - b i) := by
+  classical
+  rw [coeff_subst_sub_subst ha hb, finsum_eq_sum_of_support_subset (s := Finset.univ.image
+    fun i ↦ Finsupp.single i 1), Finset.sum_image fun i _ j _ h ↦ by
+      simpa using Finsupp.single_left_inj (one_ne_zero (α := ℕ)) |>.mp h]
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Finsupp.prod_single_index (h := fun i k ↦ a i ^ k) (pow_zero _),
+      Finsupp.prod_single_index (h := fun i k ↦ b i ^ k) (pow_zero _), pow_one, pow_one,
+      smul_eq_mul]
+  · intro d hd
+    rw [Function.mem_support] at hd
+    rcases eq_or_ne d 0 with rfl | hd₀
+    · simp at hd
+    by_cases hd₁ : d.degree = 1
+    · obtain ⟨i, rfl⟩ := (Set.ext_iff.mp Finsupp.range_single_one d).mpr hd₁
+      simp
+    · refine absurd ?_ hd
+      rw [coeff_of_lt_order ((le_order_prod_pow_sub_prod_pow ha₀ hb₀ hab hd₀).trans_lt'
+        (by exact_mod_cast (by have := (Finsupp.degree_eq_zero_iff d).not.mpr hd₀; omega :
+          e.degree < n + d.degree - 1))), smul_zero]
+
+end Differences
 
 open Finsupp
 
