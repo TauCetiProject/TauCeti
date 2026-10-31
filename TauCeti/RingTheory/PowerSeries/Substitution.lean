@@ -66,7 +66,6 @@ of a completed group algebra attached to two topological generators.
   has trivial kernel.
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
 * `PowerSeries.coeff_one_subst`: linear coefficients multiply under substitution.
-* `PowerSeries.map_substInvOfIsUnit`: compositional inverses commute with coefficient maps.
 * `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
 * `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
   the substituted series.
@@ -274,24 +273,6 @@ theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries 
   simp [mul_comm, constantCoeff_subst_of_constantCoeff_zero hφ, coeff_mul_X_pow']
 
 end Algebra
-
-/-- The compositional inverse of a series `P = u X + ⋯` with `u` a unit commutes with applying a
-ring homomorphism to the coefficients. -/
-theorem map_substInvOfIsUnit {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) {P : R⟦X⟧}
-    (hP : constantCoeff P = 0) (hP' : IsUnit (coeff 1 P)) :
-    (P.substInvOfIsUnit hP').map f =
-      (P.map f).substInvOfIsUnit (by simpa only [coeff_map] using hP'.map f) := by
-  have hQ := HasSubst.substInvOfIsUnit P hP'
-  refine (P.map f).eq_substInvOfIsUnit_of_subst_eq_X
-    (by rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff, hP,
-      map_zero]) _
-    (.of_constantCoeff_zero' (by
-      rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff,
-        constantCoeff_substInvOfIsUnit, map_zero])) ?_
-  -- `PowerSeries.map` is `MvPowerSeries.map` on the unit index type.
-  rw [show (P.substInvOfIsUnit hP').map f = MvPowerSeries.map f (P.substInvOfIsUnit hP') from rfl,
-    ← map_subst hQ, P.subst_substInvOfIsUnit_right hP hP']
-  exact map_X f
 
 section Perturbation
 

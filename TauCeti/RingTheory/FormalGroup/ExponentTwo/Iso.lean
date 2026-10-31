@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Basic
 public import TauCeti.RingTheory.FormalGroup.Hom
 public import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
-import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.SubstInv
 
 /-!
 # The normalised strict isomorphism of a formal group law of exponent two
@@ -28,6 +28,10 @@ Unlike over a `ℚ`-algebra, `F` has many strict isomorphisms to the additive fo
 whose forward series has no term of degree `2ᵏ`, `k ≥ 1`. Both series commute with every
 coefficient-ring homomorphism, injective or not (`FormalGroup.map_exponentTwoLog`,
 `FormalGroup.map_exponentTwoExp`), because the normalisation is preserved by base change.
+
+The construction of `FormalGroup.exponentTwoExp` and `FormalGroup.exponentTwoLogIso` and the
+characterisation `FormalGroup.eq_exponentTwoLogIso_iff` are adapted from Tau Ceti PR #21049
+(https://github.com/TauCetiProject/TauCeti/pull/21049). The base-change proofs here are new.
 
 ## Main definitions
 
@@ -153,10 +157,11 @@ theorem eq_exponentTwoLogIso_iff (f : TauCeti.FormalGroupIso F (𝔾ₐ (R := R)
 /-- **The normalised logarithm commutes with base change**: applying a ring homomorphism
 `f : R →+* S` to the coefficients of the normalised logarithm of `F` gives the normalised logarithm
 of `F.map f`. -/
-theorem map_exponentTwoLog (f : R →+* S)
-    (hF' : (F.map f).nsmulSeries 2 = 0 := by rw [← F.map_nsmulSeries, hF, map_zero]) :
-    (F.exponentTwoLog hF).map f = (F.map f).exponentTwoLog hF' := by
-  refine (F.map f).eq_exponentTwoLog hF' ?_ (by simp) (fun k hk ↦ ?_)
+@[simp]
+theorem map_exponentTwoLog (f : R →+* S) :
+    (F.exponentTwoLog hF).map f =
+      (F.map f).exponentTwoLog (by rw [← F.map_nsmulSeries, hF, map_zero]) := by
+  refine (F.map f).eq_exponentTwoLog _ ?_ (by simp) (fun k hk ↦ ?_)
     (F.subst_map_toPowerSeries_map f (F.subst_toPowerSeries_exponentTwoLog hF))
   · rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
       PowerSeries.coeff_zero_eq_constantCoeff_apply, F.constantCoeff_exponentTwoLog hF, map_zero]
@@ -165,12 +170,13 @@ theorem map_exponentTwoLog (f : R →+* S)
 /-- **The normalised exponential commutes with base change**: applying a ring homomorphism
 `f : R →+* S` to the coefficients of the normalised exponential of `F` gives the normalised
 exponential of `F.map f`. -/
-theorem map_exponentTwoExp (f : R →+* S)
-    (hF' : (F.map f).nsmulSeries 2 = 0 := by rw [← F.map_nsmulSeries, hF, map_zero]) :
-    (F.exponentTwoExp hF).map f = (F.map f).exponentTwoExp hF' := by
+@[simp]
+theorem map_exponentTwoExp (f : R →+* S) :
+    (F.exponentTwoExp hF).map f =
+      (F.map f).exponentTwoExp (by rw [← F.map_nsmulSeries, hF, map_zero]) := by
   rw [exponentTwoExp, PowerSeries.map_substInvOfIsUnit f (F.constantCoeff_exponentTwoLog hF),
     exponentTwoExp]
   congr 1
-  exact F.map_exponentTwoLog hF f hF'
+  exact F.map_exponentTwoLog hF f
 
 end FormalGroup
