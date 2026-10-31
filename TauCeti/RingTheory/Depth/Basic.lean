@@ -13,8 +13,8 @@ public import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
-import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Flat.Localization
+import TauCeti.RingTheory.Localization.Module
 
 /-!
 # Basic depth of modules
@@ -485,16 +485,10 @@ theorem depth_localizedModule_quotSMulTop_add_one [Module.Finite R M] {a : R}
     depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl (QuotSMulTop a M))) +
       1 = depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) := by
   let Rₚ := Localization.AtPrime p
-  -- Localization commutes with the quotient by `a`.
-  let e : LocalizedModule p.primeCompl (QuotSMulTop a M) ≃ₗ[Rₚ]
-      QuotSMulTop (algebraMap R Rₚ a) (LocalizedModule p.primeCompl M) :=
-    (localizedQuotientEquiv _ _).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ (by
-      rw [Submodule.localized, ← Submodule.ideal_span_singleton_smul,
-        Submodule.localized'_smul, Ideal.localized'_eq_map, Submodule.localized'_top,
-        Ideal.map_span, Set.image_singleton, Submodule.ideal_span_singleton_smul])
   have hmax : algebraMap R Rₚ a ∈ maximalIdeal Rₚ :=
     (IsLocalization.AtPrime.to_map_mem_maximal_iff Rₚ p a).2 ha
-  rw [IsLocalRing.depth_eq_of_linearEquiv e]
+  -- Localization commutes with the quotient by `a`.
+  rw [IsLocalRing.depth_eq_of_linearEquiv (localizedQuotSMulTopEquiv M a p.primeCompl)]
   exact depth_quotSMulTop_succ_eq_depth (reg.of_isLocalizedModule (S := Rₚ) p.primeCompl
     (LocalizedModule.mkLinearMap p.primeCompl M)) hmax
 
