@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Ideal.CompatibleRoots
 public import TauCeti.RingTheory.Ideal.Flat
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+public import TauCeti.RingTheory.Subring.Basic
 public import Mathlib.RingTheory.Perfection
 
 /-!
@@ -112,14 +113,6 @@ theorem IsRingOfIntegralElements.comap_topologicallyNilpotentIdeal_eq_span_range
       Subring.coe_inclusion] using
       (h.isTopologicallyNilpotent_iff_exists_dvd hp r hr _).mpr ⟨n, dvd_rfl⟩
 
-/-- Pulling an ideal of `A°` back along the inclusion `A° ⊆ A°` does nothing. -/
-private theorem comap_inclusion_self (hle : powerBoundedSubring A ≤ powerBoundedSubring A)
-    (I : Ideal (powerBoundedSubring A)) : I.comap ((powerBoundedSubring A).inclusion hle) = I := by
-  have hi : (powerBoundedSubring A).inclusion hle = RingHom.id _ := by
-    ext x
-    rfl
-  rw [hi, Ideal.comap_id]
-
 /-- In a Huber ring, `A°` is a ring of integral elements. -/
 private theorem isRingOfIntegralElements_powerBoundedSubring [IsHuberRing A] :
     IsRingOfIntegralElements (powerBoundedSubring A) := by
@@ -133,7 +126,7 @@ theorem topologicallyNilpotentIdeal_eq_span_range [IsHuberRing A] (hp : 2 ≤ p)
       (Perfection.coeffMonoidHom (powerBoundedSubring A) p 0 r : A)) :
     topologicallyNilpotentIdeal A =
       Ideal.span (Set.range fun n ↦ Perfection.coeffMonoidHom (powerBoundedSubring A) p n r) := by
-  simpa only [comap_inclusion_self] using
+  simpa only [Subring.inclusion_rfl, Ideal.comap_id] using
     isRingOfIntegralElements_powerBoundedSubring.comap_topologicallyNilpotentIdeal_eq_span_range
       hp r hr
 
@@ -166,8 +159,9 @@ theorem isIdempotentElem_topologicallyNilpotentIdeal [IsHuberRing A] (hp : 2 ≤
     (hr : IsPseudoUniformizer
       (Perfection.coeffMonoidHom (powerBoundedSubring A) p 0 r : A)) :
     IsIdempotentElem (topologicallyNilpotentIdeal A) := by
-  simpa only [comap_inclusion_self] using isRingOfIntegralElements_powerBoundedSubring
-    |>.isIdempotentElem_comap_topologicallyNilpotentIdeal hp r hr
+  simpa only [Subring.inclusion_rfl, Ideal.comap_id] using
+    isRingOfIntegralElements_powerBoundedSubring
+      |>.isIdempotentElem_comap_topologicallyNilpotentIdeal hp r hr
 
 /-- In a Huber ring admitting compatible roots of a pseudouniformiser, the ideal `A°°` is a flat
 `A°`-module. -/
@@ -178,6 +172,6 @@ theorem flat_topologicallyNilpotentIdeal [IsHuberRing A] (hp : 2 ≤ p)
     Module.Flat (powerBoundedSubring A) (topologicallyNilpotentIdeal A) := by
   have := isRingOfIntegralElements_powerBoundedSubring
     |>.flat_comap_topologicallyNilpotentIdeal hp r hr
-  rwa [comap_inclusion_self] at this
+  rwa [Subring.inclusion_rfl, Ideal.comap_id] at this
 
 end TauCeti.Huber
