@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import Mathlib.Geometry.Euclidean.Volume.Measure
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 
 /-!
 # Orthogonal line coordinates and Lebesgue sections
@@ -87,6 +88,19 @@ theorem lintegral_eq_lintegral_lintegral_line (e : E) (he : ‖e‖ = 1)
     lintegral_prod (fun p ↦ g (orthogonalLineEquiv e he p))
       (aemeasurable_comp_orthogonalLineEquiv e he hg)]
   simp only [orthogonalLineEquiv_apply]
+
+open Filter Topology in
+/-- If `∫⁻ g n → 0`, then along a subsequence the integrals of `g` along almost every line
+parallel to `e` tend to `0`. Applied to `g n = ‖f n - u‖ₑ`, `L¹` convergence of `f n` to `u`
+gives `L¹` convergence of their restrictions on almost every line, along a subsequence. -/
+theorem exists_strictMono_ae_tendsto_lintegral_line (e : E) (he : ‖e‖ = 1)
+    {g : ℕ → E → ℝ≥0∞} (hg : ∀ n, AEMeasurable (g n) volume)
+    (h : Tendsto (fun n ↦ ∫⁻ x, g n x) atTop (𝓝 0)) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ᵐ y : (ℝ ∙ e)ᗮ,
+      Tendsto (fun j ↦ ∫⁻ t : ℝ, g (φ j) ((y : E) + t • e)) atTop (𝓝 0) :=
+  exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral
+    (fun n ↦ aemeasurable_lintegral_line e he (hg n))
+    (by simpa only [lintegral_eq_lintegral_lintegral_line e he (hg _)] using h)
 
 /-- Volume-a.e. equal sets have a.e. equal parallel sections for almost every transverse point.
 The exceptional transverse null set is allowed to depend on the direction. -/
