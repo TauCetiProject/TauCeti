@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Generators
 public import Mathlib.Topology.JacobsonSpace
 public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
+public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Skyscraper
 
 /-!
@@ -181,18 +182,6 @@ theorem isGloballyGenerated_iff_forall_isClosed [JacobsonSpace X] {L : Invertibl
   obtain ⟨s, hs⟩ := h x hxclosed
   exact hxU (Opens.mem_iSup.mpr ⟨s, hs⟩)
 
-/-- The compatible family obtained by restricting a global section of a line bundle. -/
-noncomputable def compatibleSection (L : InvertibleSheaf X) (s : Γ(L.obj, ⊤)) : L.obj.sections :=
-  PresheafOfModules.sectionsMk (fun U ↦ L.obj.presheaf.map U.unop.leTop.op s)
-    (fun {U _} f ↦
-      (ConcreteCategory.congr_hom (L.obj.presheaf.map_comp U.unop.leTop.op f) s).symm)
-
-/-- The compatible family associated to a global section evaluates by restriction. -/
-@[simp]
-theorem compatibleSection_val (L : InvertibleSheaf X) (s : Γ(L.obj, ⊤)) (U : X.Opens) :
-    (compatibleSection L s).val (op U) = L.obj.presheaf.map U.leTop.op s :=
-  (rfl)
-
 /-- Morphisms out of a globally generated line bundle are determined by global sections. -/
 theorem IsGloballyGenerated.hom_ext {L : InvertibleSheaf X} (hL : L.IsGloballyGenerated)
     {N : X.Modules} (f g : L.obj ⟶ N) (htop : ∀ s : Γ(L.obj, ⊤), f.app ⊤ s = g.app ⊤ s) :
@@ -224,32 +213,27 @@ theorem IsGloballyGenerated.hom_ext {L : InvertibleSheaf X} (hL : L.IsGloballyGe
 morphism from the free sheaf is an epimorphism. -/
 theorem IsGloballyGenerated.nonempty_generatingSections {L : InvertibleSheaf X}
     (hL : L.IsGloballyGenerated) : Nonempty L.obj.GeneratingSections := by
-  refine ⟨{ I := Γ(L.obj, ⊤), s := compatibleSection L, epi := ?_ }⟩
+  refine ⟨{ I := Γ(L.obj, ⊤), s := L.obj.sectionsEquivTop.symm, epi := ?_ }⟩
   -- Select the scheme-module category before introducing cancellation morphisms.
   change @Epi X.Modules _ _ _ _
   refine ⟨fun {N : X.Modules} f g hfg ↦ hL.hom_ext f g fun s ↦ ?_⟩
   -- Compute the free-sheaf universal property through its public evaluation equations.
   have heval (p : L.obj ⟶ N) :
       SheafOfModules.freeHomEquiv N
-        ((SheafOfModules.freeHomEquiv L.obj).symm (compatibleSection L) ≫ p) s =
-        SheafOfModules.sectionsMap p (compatibleSection L s) :=
+        ((SheafOfModules.freeHomEquiv L.obj).symm (L.obj.sectionsEquivTop.symm) ≫ p) s =
+        SheafOfModules.sectionsMap p (L.obj.sectionsEquivTop.symm s) :=
     (SheafOfModules.freeHomEquiv_comp_apply _ p s).trans
       (congrArg (fun t ↦ SheafOfModules.sectionsMap p (t s))
-        ((SheafOfModules.freeHomEquiv L.obj).apply_symm_apply (compatibleSection L)))
-  have h : SheafOfModules.sectionsMap f (compatibleSection L s) =
-      SheafOfModules.sectionsMap g (compatibleSection L s) :=
+        ((SheafOfModules.freeHomEquiv L.obj).apply_symm_apply (L.obj.sectionsEquivTop.symm)))
+  have h : SheafOfModules.sectionsMap f (L.obj.sectionsEquivTop.symm s) =
+      SheafOfModules.sectionsMap g (L.obj.sectionsEquivTop.symm s) :=
     (heval f).symm.trans
       ((congrArg (fun p ↦ SheafOfModules.freeHomEquiv N p s) hfg).trans (heval g))
   have htop := congrArg (fun t ↦ t.val (op ⊤)) h
-  have hres : L.obj.presheaf.map (⊤ : X.Opens).leTop.op s = s := by
-    -- The restriction from the top open to itself is the identity morphism.
-    have hi : (⊤ : X.Opens).leTop.op = 𝟙 (op (⊤ : X.Opens)) := Subsingleton.elim _ _
-    rw [hi, L.obj.presheaf.map_id]
-    rfl
-  -- Use the definitionally equal public application before simplifying the top restriction.
-  change f.app ⊤ ((compatibleSection L s).val (op ⊤)) =
-    g.app ⊤ ((compatibleSection L s).val (op ⊤)) at htop
-  simpa only [compatibleSection_val, hres] using htop
+  -- Use the definitionally equal public application, at the global section `s`.
+  change f.app ⊤ ((L.obj.sectionsEquivTop.symm s).val (op ⊤)) =
+    g.app ⊤ ((L.obj.sectionsEquivTop.symm s).val (op ⊤)) at htop
+  rwa [← Scheme.Modules.sectionsEquivTop_apply, Equiv.apply_symm_apply] at htop
 
 /-- Global generation of a line bundle is equivalent to the existence of Mathlib's
 family of generating global sections. -/
