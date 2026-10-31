@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import TauCeti.Data.Fin.Basic
 import TauCeti.RingTheory.FormalGroup.Point.Order
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
-import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint
+import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Basic
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
