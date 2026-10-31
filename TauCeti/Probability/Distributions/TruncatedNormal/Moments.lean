@@ -31,7 +31,8 @@ interval with finite bounds `l < r` at positive variance, write `s₀ = √v`, `
 
 **Mean and variance.** At positive variance and for an interval with extended bounds `l < r`,
 the moments involve the Gaussian density at the two bounds. At an infinite bound this density is
-replaced by its limit `0`, which is the role of `gaussianPDFRealEReal`. Writing `g` for it,
+replaced by its limit `0`, which is the role of `gaussianPDFRealEReal` from
+`TauCeti.Probability.Distributions.Gaussian.Basic`. Writing `g` for it,
 `Z = N(m, v)(s)` for the mass of the interval, and `x.toReal` for the real value of a finite
 bound,
 
@@ -43,14 +44,10 @@ density `φ` and finite bounds these become the classical
 `E[X] = m + s₀ (φ α - φ β) / Z` and
 `Var X = v (1 + (α φ α - β φ β) / Z - ((φ α - φ β) / Z)²)`.
 
-The mean and variance are the first two derivatives at `0` of the closed-form mgf: as a function
-of the mean `μ`, the Gaussian mass of the interval is a difference of cdf values at the bounds,
-whose derivative is a difference of Gaussian densities.
-
-## Main definitions
-
-* `TauCeti.Probability.gaussianPDFRealEReal` — the Gaussian density at an extended real point,
-  zero at `±∞`.
+The mean `M'(0)` and the second moment `M''(0)` are the first two derivatives at `0` of the
+closed-form mgf `M`, and the variance is `M''(0) - M'(0)²`. As a function of the mean `μ`, the
+Gaussian mass of the interval is a difference of cdf values at the bounds, whose derivative is a
+difference of Gaussian densities (`hasDerivAt_measureReal_gaussianReal`).
 
 ## Main results
 
@@ -80,31 +77,6 @@ open scoped ENNReal NNReal
 namespace TauCeti.Probability
 
 variable {m : ℝ} {v : ℝ≥0} {s : Set ℝ} {l r : EReal}
-
-/-! ### The Gaussian density at an extended bound -/
-
-/-- The Gaussian density of `N(m, v)` at an extended real point: `gaussianPDFReal m v x` at a
-real point `x`, and `0`, the limit of the density, at `⊥` and `⊤`. -/
-def gaussianPDFRealEReal (m : ℝ) (v : ℝ≥0) : EReal → ℝ :=
-  EReal.rec 0 (gaussianPDFReal m v) 0
-
-/-- At a real point, `gaussianPDFRealEReal` is the Gaussian density. -/
-@[simp]
-theorem gaussianPDFRealEReal_coe (m : ℝ) (v : ℝ≥0) (x : ℝ) :
-    gaussianPDFRealEReal m v x = gaussianPDFReal m v x := (rfl)
-
-/-- At `⊥`, `gaussianPDFRealEReal` vanishes. -/
-@[simp]
-theorem gaussianPDFRealEReal_bot (m : ℝ) (v : ℝ≥0) : gaussianPDFRealEReal m v ⊥ = 0 := (rfl)
-
-/-- At `⊤`, `gaussianPDFRealEReal` vanishes. -/
-@[simp]
-theorem gaussianPDFRealEReal_top (m : ℝ) (v : ℝ≥0) : gaussianPDFRealEReal m v ⊤ = 0 := (rfl)
-
-/-- The Gaussian density at an extended real point is nonnegative. -/
-theorem gaussianPDFRealEReal_nonneg (m : ℝ) (v : ℝ≥0) (e : EReal) :
-    0 ≤ gaussianPDFRealEReal m v e := by
-  induction e <;> simp [gaussianPDFReal_nonneg]
 
 /-! ### Moment-generating function -/
 
@@ -141,72 +113,6 @@ theorem memLp_id_truncatedNormalMeasure (m : ℝ) (v : ℝ≥0) (s : Set ℝ) (p
     MemLp id p (truncatedNormalMeasure m v s) :=
   memLp_of_mem_interior_integrableExpSet (by simp) p
 
-/-! ### Interval masses as functions of the mean -/
-
-/-- At positive variance, the Gaussian mass up to an extended bound `e`, as a function of the
-mean, has derivative minus the Gaussian density at `e`. -/
-private theorem hasDerivAt_measureReal_gaussianReal_preimage_Iic (hv : v ≠ 0) (e : EReal)
-    (μ : ℝ) :
-    HasDerivAt (fun μ => (gaussianReal μ v).real (Real.toEReal ⁻¹' Iic e))
-      (-gaussianPDFRealEReal μ v e) μ := by
-  induction e with
-  | bot =>
-    have h : Real.toEReal ⁻¹' Iic ⊥ = ∅ := by
-      ext x
-      simp
-    simp only [h, measureReal_empty, gaussianPDFRealEReal_bot, neg_zero]
-    exact hasDerivAt_const μ 0
-  | top => simpa using hasDerivAt_const μ (1 : ℝ)
-  | coe x =>
-    have hcdf : (fun μ => (gaussianReal μ v).real (Real.toEReal ⁻¹' Iic (x : EReal))) =
-        fun μ => cdf (gaussianReal 0 v) (x - μ) := by
-      funext μ
-      rw [EReal.preimage_coe_Iic, ← cdf_eq_real, cdf_gaussianReal_eq μ hv,
-        cdf_gaussianReal_eq 0 hv, sub_zero]
-    rw [hcdf, gaussianPDFRealEReal_coe, ← zero_add μ, ← gaussianPDFReal_sub, zero_add]
-    simpa [Function.comp_def] using (hasDerivAt_cdf_gaussianReal 0 hv (x - μ)).comp μ
-      ((hasDerivAt_id' μ).const_sub x)
-
-/-- At positive variance, the Gaussian density at an extended bound `e`, as a function of the
-mean `μ`, has derivative `(e - μ) / v` times the density; both vanish at an infinite bound. -/
-private theorem hasDerivAt_gaussianPDFRealEReal (hv : v ≠ 0) (e : EReal) (μ : ℝ) :
-    HasDerivAt (fun μ => gaussianPDFRealEReal μ v e)
-      ((e.toReal - μ) * gaussianPDFRealEReal μ v e / v) μ := by
-  induction e with
-  | bot => simpa using hasDerivAt_const μ (0 : ℝ)
-  | top => simpa using hasDerivAt_const μ (0 : ℝ)
-  | coe x =>
-    simp only [gaussianPDFRealEReal_coe, EReal.toReal_coe, gaussianPDFReal]
-    have hv' : (v : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hv
-    have hq : HasDerivAt (fun μ : ℝ => -(x - μ) ^ 2 / (2 * (v : ℝ))) ((x - μ) / v) μ := by
-      convert ((((hasDerivAt_id' μ).const_sub x).fun_pow 2).fun_neg).div_const (2 * (v : ℝ))
-        using 1
-      field_simp
-      ring
-    convert hq.exp.const_mul (√(2 * π * v))⁻¹ using 1
-    ring
-
-/-- The derivative in the mean of the Gaussian mass of an interval with extended bounds. -/
-private theorem hasDerivAt_measureReal_gaussianReal (hv : v ≠ 0) (hlr : l < r)
-    (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) (μ : ℝ) :
-    HasDerivAt (fun μ => (gaussianReal μ v).real s)
-      (gaussianPDFRealEReal μ v l - gaussianPDFRealEReal μ v r) μ := by
-  have hmass (μ : ℝ) := by
-    have := nullSingletonClass_gaussianReal (μ := μ) hv
-    exact Measure.measureReal_eq_sub_of_preimage_Ioo_subset (μ := gaussianReal μ v) hlr.le hs₁
-      hs₂
-  simp_rw [hmass]
-  convert (hasDerivAt_measureReal_gaussianReal_preimage_Iic hv r μ).sub
-    (hasDerivAt_measureReal_gaussianReal_preimage_Iic hv l μ) using 1
-  ring
-
-/-- At positive variance, every set containing the open interval with extended bounds `l < r` has
-positive Gaussian mass, whatever the mean. -/
-private theorem measureReal_gaussianReal_pos (hv : v ≠ 0) (hlr : l < r)
-    (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (μ : ℝ) : 0 < (gaussianReal μ v).real s :=
-  ENNReal.toReal_pos ((gaussianReal_preimage_Ioo_pos μ hv hlr).trans_le (measure_mono hs₁)).ne'
-    (measure_ne_top _ _)
-
 /-! ### Mean, variance and cumulant-generating function of an interval truncation -/
 
 /-- The cumulant-generating function of a normal law of positive variance truncated to an
@@ -217,9 +123,9 @@ theorem cgf_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
       m * t + v * t ^ 2 / 2 + log ((gaussianReal (m + v * t) v).real s) -
         log ((gaussianReal m v).real s) := by
   rw [cgf, mgf_id_truncatedNormalMeasure,
-    log_div (by positivity [(measureReal_gaussianReal_pos hv hlr hs₁ (m + v * t)).ne'])
-      (measureReal_gaussianReal_pos hv hlr hs₁ m).ne',
-    log_mul (exp_pos _).ne' (measureReal_gaussianReal_pos hv hlr hs₁ (m + v * t)).ne', log_exp]
+    log_div (by positivity [(measureReal_gaussianReal_pos (m + v * t) hv hlr hs₁).ne'])
+      (measureReal_gaussianReal_pos m hv hlr hs₁).ne',
+    log_mul (exp_pos _).ne' (measureReal_gaussianReal_pos (m + v * t) hv hlr hs₁).ne', log_exp]
 
 /-- The derivative of the moment-generating function of an interval truncation. -/
 private theorem hasDerivAt_mgf_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
@@ -251,7 +157,7 @@ theorem integral_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
     ∫ x, x ∂truncatedNormalMeasure m v s =
       m + v * (gaussianPDFRealEReal m v l - gaussianPDFRealEReal m v r) /
         (gaussianReal m v).real s := by
-  have hZ := (measureReal_gaussianReal_pos hv hlr hs₁ m).ne'
+  have hZ := (measureReal_gaussianReal_pos m hv hlr hs₁).ne'
   have h := deriv_mgf_zero (X := id) (μ := truncatedNormalMeasure m v s) (by simp)
   rw [(hasDerivAt_mgf_id_truncatedNormalMeasure hv hlr hs₁ hs₂ 0).deriv] at h
   simp only [id_eq, mul_zero, add_zero, zero_pow two_ne_zero, zero_div, exp_zero,
@@ -271,7 +177,7 @@ theorem variance_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
         v * ((gaussianPDFRealEReal m v l - gaussianPDFRealEReal m v r) /
           (gaussianReal m v).real s) ^ 2) := by
   have hv' : (v : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hv
-  have hZ := (measureReal_gaussianReal_pos hv hlr hs₁ m).ne'
+  have hZ := (measureReal_gaussianReal_pos m hv hlr hs₁).ne'
   have := isProbabilityMeasure_truncatedNormalMeasure_of_lt (m := m) hv hlr hs₁
   -- The second moment is the second derivative of the mgf at `0`.
   have hmean : HasDerivAt (fun t : ℝ => m + v * t) v 0 := by
@@ -309,18 +215,6 @@ theorem variance_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
 
 /-! ### Finite bounds in standardized form -/
 
-/-- At positive variance, the Gaussian mass of a set between the open and the closed interval
-with finite bounds `l < r` is a difference of standard Gaussian cdf values. -/
-private theorem measureReal_gaussianReal_eq_cdf_zero_one {l r : ℝ} (hv : v ≠ 0) (hlr : l < r)
-    (hs₁ : Ioo l r ⊆ s) (hs₂ : s ⊆ Icc l r) (μ : ℝ) :
-    (gaussianReal μ v).real s = cdf (gaussianReal 0 1) ((r - μ) / √(v : ℝ)) -
-      cdf (gaussianReal 0 1) ((l - μ) / √(v : ℝ)) := by
-  have := nullSingletonClass_gaussianReal (μ := μ) hv
-  rw [Measure.measureReal_eq_sub_of_preimage_Ioo_subset (l := l) (r := r)
-      (EReal.coe_le_coe_iff.2 hlr.le)
-      (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc])]
-  simp only [EReal.preimage_coe_Iic, ← cdf_eq_real, cdf_gaussianReal_eq_cdf_zero_one μ hv]
-
 /-- The moment-generating function of a normal law of positive variance truncated to an
 interval with finite bounds `l < r`: with `s₀ = √v`, `α = (l - m) / s₀`, `β = (r - m) / s₀` and
 `Φ` the standard Gaussian cdf, it is
@@ -340,8 +234,8 @@ theorem mgf_id_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v ≠ 0)
     rw [hvσ]
     field_simp
     ring
-  rw [mgf_id_truncatedNormalMeasure, measureReal_gaussianReal_eq_cdf_zero_one hv hlr hs₁ hs₂,
-    measureReal_gaussianReal_eq_cdf_zero_one hv hlr hs₁ hs₂, hshift, hshift]
+  rw [mgf_id_truncatedNormalMeasure, measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂,
+    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂, hshift, hshift]
 
 /-- The mean of a normal law of positive variance truncated to an interval with finite bounds
 `l < r`: with `s₀ = √v`, `α = (l - m) / s₀`, `β = (r - m) / s₀`, `φ` and `Φ` the standard Gaussian
@@ -356,8 +250,8 @@ theorem integral_id_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v �
   have hv' : (0 : ℝ) < √(v : ℝ) := Real.sqrt_pos.2 (NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv))
   rw [integral_id_truncatedNormalMeasure (l := l) (r := r) hv (EReal.coe_lt_coe_iff.2 hlr)
       (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc]),
-    measureReal_gaussianReal_eq_cdf_zero_one hv hlr hs₁ hs₂]
-  simp only [gaussianPDFRealEReal_coe, gaussianPDFReal_eq_gaussianPDFReal_zero_one m hv]
+    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂]
+  simp only [gaussianPDFRealEReal_coe, gaussianPDFReal_eq_gaussianPDFReal_zero_one m v]
   have hvσ : (v : ℝ) = √(v : ℝ) ^ 2 := (Real.sq_sqrt (NNReal.coe_nonneg v)).symm
   generalize √(v : ℝ) = σ at hv' hvσ ⊢
   rw [hvσ]
@@ -380,14 +274,14 @@ theorem variance_id_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v �
   have hv' : (0 : ℝ) < √(v : ℝ) := Real.sqrt_pos.2 (NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv))
   have hZ : cdf (gaussianReal 0 1) ((r - m) / √(v : ℝ)) -
       cdf (gaussianReal 0 1) ((l - m) / √(v : ℝ)) ≠ 0 := by
-    rw [← measureReal_gaussianReal_eq_cdf_zero_one hv hlr hs₁ hs₂]
-    exact (measureReal_gaussianReal_pos hv (EReal.coe_lt_coe_iff.2 hlr)
-      (by rwa [EReal.preimage_coe_Ioo]) m).ne'
+    rw [← measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂]
+    exact (measureReal_gaussianReal_pos m hv (EReal.coe_lt_coe_iff.2 hlr)
+      (by rwa [EReal.preimage_coe_Ioo])).ne'
   rw [variance_id_truncatedNormalMeasure (l := l) (r := r) hv (EReal.coe_lt_coe_iff.2 hlr)
       (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc]),
-    measureReal_gaussianReal_eq_cdf_zero_one hv hlr hs₁ hs₂]
+    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂]
   simp only [gaussianPDFRealEReal_coe, EReal.toReal_coe,
-    gaussianPDFReal_eq_gaussianPDFReal_zero_one m hv]
+    gaussianPDFReal_eq_gaussianPDFReal_zero_one m v]
   have hvσ : (v : ℝ) = √(v : ℝ) ^ 2 := (Real.sq_sqrt (NNReal.coe_nonneg v)).symm
   generalize √(v : ℝ) = σ at hv' hvσ hZ ⊢
   rw [hvσ]
