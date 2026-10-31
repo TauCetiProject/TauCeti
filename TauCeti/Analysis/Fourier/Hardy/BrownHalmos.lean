@@ -57,12 +57,6 @@ private theorem inner_hardyBasis_add_eq {T : HardySpace →L[ℂ] HardySpace}
   | zero => rfl
   | succ k ih => rw [← add_assoc, ← add_assoc, h, ih]
 
-/-- The Fourier coefficients of the `L²` Fourier mode `e_m` are those of the monomial `e_m`. -/
-private theorem fourierCoeff_fourierBasis (m k : ℤ) :
-    fourierCoeff (fourierBasis (T := 1) m) k = if k = m then 1 else 0 := by
-  rw [coe_fourierBasis, fourierCoeff_congr_ae (coeFn_fourierLp 2 m), fourierCoeff_fourier,
-    Pi.single_apply]
-
 /-- A Hardy matrix that is constant along diagonals is the matrix of Fourier coefficients
 `b̂(i - j)` of a square-integrable circle function `b`, namely
 `b = T e₀ + conj (T† e₀) - ⟪e₀, T e₀⟫`. -/
@@ -94,12 +88,12 @@ private theorem exists_fourierCoeff_eq_inner {T : HardySpace →L[ℂ] HardySpac
       ContinuousLinearMap.adjoint_inner_left]
   -- Off the diagonal one summand vanishes; on it, the correction `c` cancels the double count.
   have hcol (d : ℕ) : fourierCoeff b d = ⟪hardyBasis d, T (hardyBasis 0)⟫_ℂ := by
-    rw [hb, fourierCoeff_star, fourierCoeff_fourierBasis, hT]
+    rw [hb, fourierCoeff_star, coe_fourierBasis, fourierCoeff_fourierLp, hT]
     rcases Nat.eq_zero_or_pos d with rfl | hd
     · simpa [c] using hA 0
     · simp [HardySpace.fourierCoeff_eq_zero _ (by omega : -(d : ℤ) < 0), hd.ne']
   have hrow (d : ℕ) : fourierCoeff b (-d) = ⟪hardyBasis 0, T (hardyBasis d)⟫_ℂ := by
-    rw [hb, fourierCoeff_star, fourierCoeff_fourierBasis, neg_neg, hA]
+    rw [hb, fourierCoeff_star, coe_fourierBasis, fourierCoeff_fourierLp, neg_neg, hA]
     rcases Nat.eq_zero_or_pos d with rfl | hd
     · simpa [c] using hT 0
     · simp [HardySpace.fourierCoeff_eq_zero _ (by omega : -(d : ℤ) < 0), hd.ne']
@@ -122,17 +116,6 @@ private theorem ambient_coe_hardyBasis (T : HardySpace →L[ℂ] HardySpace) (j 
     ambient T (hardyBasis j) = T (hardyBasis j) := by
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     orthogonalProjectionOnto_mem_subspace_eq_self, subtypeL_apply]
-
-/-- The matrix coefficient `⟪e_m, e_n b⟫` of multiplication by the monomial `e_n` is the Fourier
-coefficient `b̂(m - n)`. -/
-private theorem inner_fourierBasis_multiplicationOperator_fourier
-    (b : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) (m n : ℤ) :
-    ⟪fourierBasis (T := 1) m, Lp.multiplicationOperator
-      (ContinuousMap.toLp (E := ℂ) ∞ AddCircle.haarAddCircle ℂ (fourier n)) b⟫_ℂ =
-      fourierCoeff b (m - n) := by
-  rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr, Lp.multiplicationOperator_apply]
-  -- `ContinuousMap.toLp ∞` of `fourier n` is `fourierLp ∞ n` by definition.
-  exact fourierCoeff_fourierLp_smul n b m
 
 /-- For trigonometric polynomials `f` and `q`, the matrix coefficient of multiplication by a
 symbol `b` of the shift-invariant Hardy matrix of `T` is the matrix coefficient of `T` at the
@@ -163,7 +146,8 @@ private theorem eventually_inner_multiplicationOperator_eq {T : HardySpace →L[
           fourierBasis (T := 1) n := by
         rw [coe_fourierBasis]
       -- Both sides are the matrix entry `b̂(m - n) = ⟪e_{N+m}, T e_{N+n}⟫`.
-      rw [hq₂, inner_fourierBasis_multiplicationOperator_fourier]
+      -- `ContinuousMap.toLp ∞` of `fourier n` is the abbreviation `fourierLp ∞ n`.
+      rw [hq₂, inner_fourierBasis_multiplicationOperator_fourierLp]
       simp only [Lp.multiplicationOperator_apply, fourierLp_smul_fourierBasis]
       rw [hi, hj, ← coe_hardyBasis, ← coe_hardyBasis, ambient_coe_hardyBasis, ← coe_inner, ← hb]
       congr 1

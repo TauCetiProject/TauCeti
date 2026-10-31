@@ -72,6 +72,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   shifts its Fourier coefficients by `n`.
 * `TauCeti.fourierCoeff_star`: the Fourier coefficients of the complex conjugate of an `Lᵖ`
   function are the conjugates of its reflected coefficients.
+* `TauCeti.fourierCoeff_fourierLp`: the Fourier coefficients of the `Lᵖ` monomial `e_n` are `1`
+  at `n` and `0` elsewhere.
 
 ## Tags
 
@@ -280,6 +282,12 @@ theorem fourierCoeff_star {p : ℝ≥0∞} (f : Lp ℂ p (haarAddCircle (T := T)
   congr 1
   funext x
   rw [neg_neg, Pi.star_apply, smul_eq_mul, smul_eq_mul, map_mul, fourier_neg, RCLike.star_def]
+
+/-- The Fourier coefficients of the `Lᵖ` monomial `e_n` are those of the continuous monomial
+`e_n`: `1` at `n` and `0` elsewhere. -/
+theorem fourierCoeff_fourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (n k : ℤ) :
+    fourierCoeff (fourierLp (T := T) p n) k = if k = n then 1 else 0 := by
+  rw [fourierCoeff_congr_ae (coeFn_fourierLp p n), fourierCoeff_fourier, Pi.single_apply]
 
 end TauCeti
 
