@@ -41,7 +41,9 @@ schemes over `k` and their convolution groups of points are set up.
 * `TauCeti.PointTopology.topology`: the point topology on `A →ₐ[k] R`, a scoped instance in the
   namespace `TauCeti.PointTopology`.
 * `TauCeti.PointTopology.instTopologicalSpaceWithConv`: the point topology on
-  `WithConv (A →ₐ[k] R)`, with `TauCeti.PointTopology.isHomeomorph_ofConv`.
+  `WithConv (A →ₐ[k] R)`, with `TauCeti.PointTopology.isHomeomorph_ofConv`,
+  `TauCeti.PointTopology.continuous_withConv_iff` and
+  `TauCeti.PointTopology.continuous_eval_ofConv`.
 * `TauCeti.PointTopology.isEmbedding_coeFn`, `TauCeti.PointTopology.continuous_eval` and
   `TauCeti.PointTopology.continuous_iff`: the characterization by evaluations.
 * `TauCeti.PointTopology.polynomialHomeomorph` and
@@ -117,6 +119,11 @@ evaluation is. -/
 theorem continuous_withConv_iff {X : Type*} [TopologicalSpace X] {g : X → WithConv (A →ₐ[k] R)} :
     Continuous g ↔ ∀ a, Continuous fun y ↦ (g y).ofConv a :=
   isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.trans continuous_iff
+
+/-- Evaluation at `a` is continuous on `WithConv (A →ₐ[k] R)`. -/
+@[continuity, fun_prop]
+theorem continuous_eval_ofConv (a : A) : Continuous fun x : WithConv (A →ₐ[k] R) ↦ x.ofConv a :=
+  (continuous_eval a).comp isHomeomorph_ofConv.continuous
 
 variable (k R) in
 /-- The points of the affine line: evaluation at the variable is a homeomorphism from

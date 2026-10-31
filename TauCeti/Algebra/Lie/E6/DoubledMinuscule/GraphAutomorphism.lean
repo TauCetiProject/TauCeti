@@ -447,6 +447,18 @@ theorem matrixWeight_graphMatrixPerm (i : Fin 54) (k : Fin 6) :
   rw [matrixIndexEquiv_symm_graphMatrixPerm]
   exact weight_graphPerm_graphPerm _ _
 
+/-- The signed graph symmetry carries each weight component of the doubled lattice to the component
+of the weight relabelled by the diagram involution. -/
+private theorem matrixWeight_of_repr_ne_zero (i j : Fin 54)
+    (hij : matrixBasis.repr (graphModuleEquiv.toAddEquiv.invariantRestrict
+      lattice.toAddSubgroup graphModuleEquiv_mem_lattice_iff (matrixBasis j)) i ≠ 0)
+    (k : Fin 6) :
+    matrixWeight i (graphPermE6 k) = matrixWeight j k := by
+  obtain rfl := AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
+    graphModuleEquiv.toAddEquiv lattice.toAddSubgroup graphModuleEquiv_mem_lattice_iff matrixBasis
+    graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis hij
+  exact matrixWeight_graphMatrixPerm j k
+
 /-! ## The graph automorphism of the carrier -/
 
 private noncomputable def toralGraphAutomorphism :
@@ -460,8 +472,7 @@ private noncomputable def toralGraphAutomorphism :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis matrixWeight
     graphRootPerm graphModuleEquiv graphModuleEquiv_mem_lattice_iff
     graphModuleEquiv_ι_rep_serreRootGenerator graphRootPerm.surjective
-    graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis graphPermE6
-    matrixWeight_graphMatrixPerm
+    graphPermE6 matrixWeight_of_repr_ne_zero
 
 /-- **The graph automorphism of the doubled type-`E₆` minuscule carrier**, characterized on
 the numbered simple-root subgroups and represented weight torus. -/
@@ -579,8 +590,7 @@ theorem map_points_conj_graphAutomorphismMatrix (A : Type v) [CommRing A] :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis matrixWeight
     graphRootPerm graphModuleEquiv graphModuleEquiv_mem_lattice_iff
     graphModuleEquiv_ι_rep_serreRootGenerator graphRootPerm.surjective
-    graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis graphPermE6
-    matrixWeight_graphMatrixPerm A
+    graphPermE6 matrixWeight_of_repr_ne_zero A
 
 /-- **The graph automorphism on matrix-valued points of the doubled carrier**, given by
 conjugation by its signed monomial matrix. -/
@@ -632,7 +642,7 @@ theorem graphAutomorphismPoints_weightTorusPoints (A : Type v) [CommRing A]
     exact congrArg (fun z => torusCharacter z (matrixWeight i))
       (funext fun k => by
         rw [MulEquiv.arrowCongr_apply, MulEquiv.refl_apply, graphPermE6_symm])
-  have hconj := kostantNumberedSymmetryMatrix_conj_diagGL
+  have hconj := kostantNumberedSymmetryMatrix_conj_diagGL_of_monomial
     lattice.toAddSubgroup matrixBasis graphModuleEquiv graphModuleEquiv_mem_lattice_iff
     graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis A
     (fun i => torusCharacter s (matrixWeight i))
@@ -660,8 +670,7 @@ theorem schemePointsMulEquiv_graphAutomorphism_comp_carrierι
       rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis matrixWeight
       graphRootPerm graphModuleEquiv graphModuleEquiv_mem_lattice_iff
       graphModuleEquiv_ι_rep_serreRootGenerator graphRootPerm.surjective
-      graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis graphPermE6
-      matrixWeight_graphMatrixPerm A p
+      graphPermE6 matrixWeight_of_repr_ne_zero A p
 
 /-- The graph automorphism on points is natural in the value ring. In particular, it commutes
 with every iterated Frobenius map. -/
