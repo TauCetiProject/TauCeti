@@ -28,6 +28,11 @@ A bound `F = O(x ^ r)` at infinity survives the dilation `x ↦ c x` for `c > 0`
 rapid decay at infinity, `O(x ^ r)` for every `r`, passes to rescaled functions such as the
 theta kernels of a lattice at a level.
 
+An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` as soon as the
+dominated function is bounded on compact intervals and the dominating one is bounded away from
+zero. This is how an asymptotic estimate becomes an explicit inequality valid at every point,
+which a summation argument can apply at infinitely many points at once.
+
 A fixed power of a shifted natural number times a geometric sequence of ratio in `[0, 1)` tends
 to zero. This is the form needed to absorb polynomial growth after shifting an index.
 
@@ -43,6 +48,8 @@ estimate behind every loss of radius for power series.
   whenever `n ≤ m`.
 * `Asymptotics.IsBigO.comp_const_mul_rpow`: `F = O(x ^ r)` at infinity implies
   `F (c x) = O(x ^ r)` for `c > 0`.
+* `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
+  when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
   `0 ≤ ρ < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -88,6 +95,27 @@ theorem IsBigO.comp_const_mul_rpow {E : Type*} [Norm E] {F : ℝ → E} {r c : �
   refine ((isBigO_refl (fun x : ℝ ↦ x ^ r) atTop).const_mul_left (c ^ r)).congr' ?_ .rfl
   filter_upwards [eventually_ge_atTop 0] with x hx
   simp [Real.mul_rpow hc.le hx]
+
+/-- **An eventual big-O bound holds on a whole half-line.** If `f = O(g)` at `atTop`, `f` is
+bounded on every interval `[a, b]`, and `‖g‖` is bounded below by a positive constant on
+`[a, ∞)`, then `f = O(g)` uniformly on `[a, ∞)`. -/
+theorem IsBigO.isBigO_principal_Ici {E F : Type*} [Norm E] [Norm F] {f : ℝ → E} {g : ℝ → F}
+    {a c : ℝ} (h : f =O[atTop] g) (hc : 0 < c) (hg : ∀ x, a ≤ x → c ≤ ‖g x‖)
+    (hf : ∀ b, ∃ B, ∀ x ∈ Set.Icc a b, ‖f x‖ ≤ B) :
+    f =O[𝓟 (Set.Ici a)] g := by
+  obtain ⟨c₀, hc₀⟩ := h.bound
+  obtain ⟨b, hb⟩ := eventually_atTop.mp hc₀
+  obtain ⟨B, hB⟩ := hf b
+  refine isBigO_principal.mpr ⟨max c₀ (max B 0 / c), fun x hx ↦ ?_⟩
+  have hgx := hg x hx
+  have hg0 : 0 ≤ ‖g x‖ := hc.le.trans hgx
+  rcases le_or_gt b x with hbx | hbx
+  · exact (hb x hbx).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hg0)
+  · calc ‖f x‖ ≤ max B 0 := (hB x ⟨hx, hbx.le⟩).trans (le_max_left _ _)
+      _ ≤ max B 0 / c * ‖g x‖ := by
+        rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+        exact mul_le_mul_of_nonneg_left hgx (le_max_right _ _)
+      _ ≤ max c₀ (max B 0 / c) * ‖g x‖ := mul_le_mul_of_nonneg_right (le_max_right _ _) hg0
 
 end Asymptotics
 

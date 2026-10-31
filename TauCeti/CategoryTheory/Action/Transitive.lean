@@ -17,7 +17,8 @@ an `ObjectProperty`, shows it is closed under isomorphisms, and names the result
 subcategory.
 
 The action referred to is the one `Action.instMulAction` puts on the underlying type `ToType A`,
-so both conjuncts are read through that instance rather than through `A.ρ`.
+so both conjuncts are read through that instance rather than through `A.ρ`; Mathlib's
+`Action.ρ_apply_eq_smul` converts between the two.
 Following Mathlib's convention, `MulAction.IsPretransitive` allows the empty set, so nonemptiness
 is a genuine extra condition and is imposed separately.
 
@@ -30,8 +31,6 @@ that type then fails to elaborate.
 
 * `TauCeti.isTransitiveAction`: the property of being a transitive `G`-set.
 * `TauCeti.isTransitiveAction_iff`: its two conjuncts.
-* `TauCeti.smul_eq_ρ_apply`: the scalar multiplication both conjuncts refer to is evaluation of
-  the representation.
 * `TauCeti.TransitiveAction`: transitive `G`-sets as a full subcategory of all `G`-sets, with
   `TauCeti.TransitiveAction.mk`, `TauCeti.TransitiveAction.forget`,
   `TauCeti.TransitiveAction.isTransitiveAction` and
@@ -52,25 +51,17 @@ variable (G : Type v) [Monoid G]
 def isTransitiveAction : ObjectProperty (Action (Type u) G) :=
   fun A => MulAction.IsPretransitive G (ToType A) ∧ Nonempty (ToType A)
 
-variable {G}
-
-/-- The scalar multiplication that `Action.instMulAction` puts on the underlying type of a `G`-set
-is evaluation of its representation. -/
-theorem smul_eq_ρ_apply (A : Action (Type u) G) (g : G) (x : ToType A) : g • x = A.ρ g x :=
-  rfl
-
-variable (G)
-
 /-- Transitivity of a `G`-set is preserved by isomorphisms of `G`-sets: an isomorphism is an
 equivariant bijection on underlying types. -/
 instance : (isTransitiveAction G).IsClosedUnderIsomorphisms where
   of_iso {A B} e h :=
     ⟨h.1.of_surjective_map
         (f := (⟨ConcreteCategory.hom e.hom.hom, fun g x => by
-          simp only [id_eq, smul_eq_ρ_apply, ← types_comp_apply, e.hom.comm]⟩ :
+          rw [id_eq, ← Action.ρ_apply_eq_smul A g x, ← Action.ρ_apply_eq_smul B g]
+          simp only [← types_comp_apply, e.hom.comm]⟩ :
             MulActionHom (id : G → G) (ToType A) (ToType B)))
         ((Action.forget _ G).mapIso e).toEquiv.surjective,
-      ⟨ConcreteCategory.hom e.hom.hom h.2.some⟩⟩
+      h.2.map (ConcreteCategory.hom e.hom.hom)⟩
 
 variable {G}
 

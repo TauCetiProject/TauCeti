@@ -81,7 +81,7 @@ theorem tendsto_eLpNorm_countableStepGraphonAvg (W : Graphon Ω μ) :
       atTop (𝓝 0) := by
   let ℱ := TauCeti.MeasureTheory.countableSquareFiltration Ω
   let f : Ω × Ω → ℝ := fun z => W z.1 z.2
-  have hfint : Integrable f (μ.prod μ) := W.toSymmKernel.integrable_uncurry μ
+  have hfint : Integrable f (μ.prod μ) := W.toSymmKernel.integrable_uncurry
   have hfmeas : StronglyMeasurable[⨆ n, ℱ n] f :=
     W.measurable.stronglyMeasurable.mono
       TauCeti.MeasureTheory.iSup_countableSquareFiltration.ge

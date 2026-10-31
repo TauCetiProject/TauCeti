@@ -76,7 +76,7 @@ theorem nonempty_end_algEquiv_self (P : SplitWedderburnAlgebraPresentation k A)
   have hm : ∀ i, IsSimpleRing (Matrix (Fin (P.degree i)) (Fin (P.degree i)) k) :=
     fun i ↦ inferInstance
   have hs : ∀ c : isotypicComponents A A, IsSimpleRing (Module.End A c.1) :=
-    fun c ↦ isSimpleRing_moduleEnd_of_isIsotypic (IsIsotypic.isotypicComponents c.2)
+    fun c ↦ (IsIsotypic.isotypicComponents c.2).isSimpleRing_moduleEnd
   -- Compare the factors of End_A(A), retaining the base field through the opposite algebra.
   let E : (∀ c : isotypicComponents A A, Module.End A c.1) ≃ₐ[k]
       ∀ i, Matrix (Fin (P.degree i)) (Fin (P.degree i)) k :=

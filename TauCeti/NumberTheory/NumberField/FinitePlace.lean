@@ -40,7 +40,9 @@ as minus the `v`-adic order times `log N(v)`, the form in which valuations enter
 
 Finally, `NumberField.FinitePlace.hasFiniteMulSupport_iSup` records that the maximum of the
 finite-place absolute values of the coordinates of a nonzero finite tuple is `1` at all but
-finitely many finite places.
+finitely many finite places, and `NumberField.FinitePlace.hasFiniteMulSupport_max_one` and
+`NumberField.FinitePlace.hasFiniteMulSupport_min_one` record the same for the absolute value of an
+element truncated from below or above at `1`.
 -/
 
 public section
@@ -108,6 +110,21 @@ theorem hasFiniteMulSupport_iSup {ι : Type*} [Finite ι] {y : ι → K} (hy : y
   have : Nonempty {i // y i ≠ 0} := nonempty_subtype.mpr (Function.ne_iff.mp hy)
   simp_rw [Finite.iSup_eq_iSup_subtype hy]
   exact .iSup fun i ↦ FinitePlace.hasFiniteMulSupport i.property
+
+/-- Truncating the finite places of `x` from below keeps finite multiplicative support. For
+`x = 0` the family is constantly `1`. -/
+theorem hasFiniteMulSupport_max_one (x : K) :
+    Function.HasFiniteMulSupport fun v : FinitePlace K ↦ max (v x) 1 := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [Function.HasFiniteMulSupport]
+  · exact Function.HasFiniteMulSupport.fun_comp (FinitePlace.hasFiniteMulSupport hx)
+      (g := fun t ↦ max t 1) (max_self 1)
+
+/-- Truncating the finite places of a nonzero `x` from above keeps finite multiplicative
+support. -/
+theorem hasFiniteMulSupport_min_one {x : K} (hx : x ≠ 0) :
+    Function.HasFiniteMulSupport fun v : FinitePlace K ↦ min 1 (v x) :=
+  Function.HasFiniteMulSupport.fun_comp (FinitePlace.hasFiniteMulSupport hx) (min_self 1)
 
 end NumberField.FinitePlace
 
