@@ -78,11 +78,6 @@ theorem restrictTotalDegree_eq_span (m : ℕ) :
       Submodule.span R ((monomial · 1) '' {s : σ →₀ ℕ | s.degree ≤ m}) := by
   rw [restrictTotalDegree_eq_restrictSupport, restrictSupport_eq_span]
 
-/-- In finitely many variables there are finitely many exponent vectors of degree at most `m`. -/
-instance _root_.Finsupp.finite_subtype_degree_le [Finite σ] (m : ℕ) :
-    Finite {s : σ →₀ ℕ // s.degree ≤ m} :=
-  (Finsupp.finite_of_degree_le m).to_subtype
-
 variable (σ R) in
 /-- The monomial basis of the polynomials of total degree at most `m`, indexed by the exponent
 vectors of degree at most `m`. It is Mathlib's `MvPolynomial.basisRestrictSupport`, with the
@@ -105,7 +100,16 @@ coefficient. -/
 theorem basisRestrictTotalDegree_repr_apply (m : ℕ) (p : restrictTotalDegree σ R m)
     (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
     (basisRestrictTotalDegree σ R m).repr p s = (p : MvPolynomial σ R).coeff s.1 := by
-  rfl
+  classical
+  -- Coefficients are additive and homogeneous, and take the monomial basis to the standard one.
+  refine (basisRestrictTotalDegree σ R m).repr_apply_eq
+    (fun q t ↦ (q : MvPolynomial σ R).coeff t.1) (fun _ _ ↦ ?_) (fun _ _ ↦ ?_) (fun t ↦ ?_) p s
+  · ext
+    simp
+  · ext
+    simp
+  · ext t'
+    simp [coeff_monomial, Finsupp.single_apply, Subtype.ext_iff]
 
 open Polynomial in
 /-- If each `q k` with `k ≤ m` is a combination of the `p j` with `j ≤ k`, then the products

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Neuromanifold.Basic
 public import TauCeti.Geometry.Neuromanifold.Polynomial
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
+public import TauCeti.Data.Finsupp.Weight
 import Mathlib.LinearAlgebra.StdBasis
 import Mathlib.Algebra.MvPolynomial.Funext
 
@@ -15,11 +16,9 @@ import Mathlib.Algebra.MvPolynomial.Funext
 # Faithful coefficient presentations of polynomial models
 
 A presentation of a realization map `f : W → X → Y` is a coefficient map `c : W → V` together
-with an evaluation `E : V → X → Y` satisfying `E (c w) = f w`. When `E` is injective (faithful),
-the realized functions are the evaluations of the coefficient image, two parameters realize the
-same function exactly when they have the same coefficients, and the coefficient image is
-equivalent to the realized-function type. These comparisons only use injectivity of `E`, so they
-apply to every faithful presentation, linear or not.
+with an evaluation `E : V → X → Y` satisfying `E (c w) = f w`; the comparisons for a faithful
+(injective) presentation are in `TauCeti.Geometry.Neuromanifold.Basic`. This file specialises
+them to jointly polynomial models.
 
 For a jointly polynomial tuple `P`, the coefficient space is the product, over output
 coordinates, of the polynomials in the inputs of total degree at most `d`. Evaluating these
@@ -30,8 +29,9 @@ coefficients give the linear equivalence `coefficientCoordinates J d` with the f
 space indexed by pairs of an output coordinate and an exponent vector of degree at most `d`. In
 these coordinates the coefficient map of `P` has polynomial coordinates in the parameters.
 
-Faithfulness needs infinitely many scalars: over a finite field, distinct polynomials can define
-the same function. A presentation by sampled outputs is not automatically faithful.
+Over an infinite integral domain, evaluation is faithful for every degree bound. Over a finite
+field it can fail to be faithful, since distinct polynomials of large degree can define the same
+function. A presentation by sampled outputs is not automatically faithful.
 
 The jointly polynomial setting and its finite ambient coefficient space follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
@@ -48,49 +48,6 @@ noncomputable section
 namespace TauCeti.Neuromanifold
 
 open MvPolynomial
-
-section Faithful
-
-variable {W V X Y : Type*} {f : W → X → Y} {E : V → X → Y} {c : W → V}
-
-/-- The functions realized by `f` are the evaluations of the coefficient image of any
-presentation `E (c w) = f w`. -/
-theorem realizedFunctions_eq_image_range (h : ∀ w, E (c w) = f w) :
-    realizedFunctions f = E '' Set.range c := by
-  rw [realizedFunctions_def, ← Set.range_comp]
-  exact congrArg Set.range (funext fun w => (h w).symm)
-
-/-- For a faithful presentation, parameters realize the same function exactly when they have
-the same coefficients. -/
-theorem apply_eq_apply_iff_of_injective (hE : Function.Injective E) (h : ∀ w, E (c w) = f w)
-    {w v : W} : c w = c v ↔ f w = f v := by
-  rw [← h, ← h, hE.eq_iff]
-
-/-- For a faithful presentation, parameter equivalence is equality of coefficients. -/
-theorem parameterSetoid_eq_ker (hE : Function.Injective E) (h : ∀ w, E (c w) = f w) :
-    parameterSetoid f = Setoid.ker c := by
-  ext w v
-  rw [parameterSetoid_iff, Setoid.ker_def, apply_eq_apply_iff_of_injective hE h]
-
-/-- For a faithful presentation, the realization fibre over the evaluation of `v` is the set of
-parameters with coefficients `v`. -/
-theorem fiber_apply_eq_preimage (hE : Function.Injective E) (h : ∀ w, E (c w) = f w) (v : V) :
-    fiber f (E v) = c ⁻¹' {v} := by
-  ext w
-  rw [mem_fiber, Set.mem_preimage, Set.mem_singleton_iff, ← h, hE.eq_iff]
-
-/-- For a faithful presentation, evaluation identifies the coefficient image with the realized
-functions. -/
-def rangeEquivRealizedFunctions (hE : Function.Injective E) (h : ∀ w, E (c w) = f w) :
-    Set.range c ≃ realizedFunctions f :=
-  (Equiv.Set.image E _ hE).trans (Set.equivOfEq (realizedFunctions_eq_image_range h).symm)
-
-/-- The identification of the coefficient image with the realized functions is evaluation. -/
-@[simp] theorem coe_rangeEquivRealizedFunctions_apply (hE : Function.Injective E)
-    (h : ∀ w, E (c w) = f w) (z : Set.range c) :
-    (rangeEquivRealizedFunctions hE h z : X → Y) = E z := (rfl)
-
-end Faithful
 
 section Evaluation
 
