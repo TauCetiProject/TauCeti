@@ -211,9 +211,8 @@ theorem isMomentMap_cotangentMomentMap :
         cotangentLiftSpLieHom :=
     InfinitesimalAction.ext fun A ↦ funext fun x ↦ by
       rw [InfinitesimalAction.cotangentLinear_apply, InfinitesimalAction.comp_apply,
-        InfinitesimalAction.comp_apply, InfinitesimalAction.linear_apply]
-      -- The inclusion of `cotangentLiftSpLieHom A` is `cotangentLiftLieHom V A` by definition.
-      rfl
+        InfinitesimalAction.comp_apply, InfinitesimalAction.linear_apply, LieSubalgebra.coe_incl,
+        coe_cotangentLiftSpLieHom]
   rw [hμ, ha]
   exact (strongDualCotangentSymplecticForm (V := V)).isMomentMap_linearMomentMap.comp
     cotangentLiftSpLieHom
