@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.RingTheory.Depth.Basic
 import Mathlib.RingTheory.LocalRing.Module
 import Mathlib.RingTheory.KrullDimension.Regular
-import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
 import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 import TauCeti.Data.ENat.Basic
 import TauCeti.RingTheory.Depth.WeaklyRegular
@@ -66,26 +65,6 @@ open CategoryTheory Abelian IsLocalRing
 namespace IsLocalRing
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
-
-/-- If `0 → K → F → M → 0` is a free presentation with `K` finite free and `K ⊆ 𝔪 F`, then
-`depth M + 1 ≤ depth K`. -/
-private theorem depth_add_one_le_depth_ker {F M : Type v} [AddCommGroup F] [Module R F]
-    [AddCommGroup M] [Module R M] {g : F →ₗ[R] M} (hg : Function.Surjective g)
-    [Module.Free R (LinearMap.ker g)] [Module.Finite R (LinearMap.ker g)]
-    (hker : LinearMap.ker g ≤ maximalIdeal R • ⊤) :
-    depth (ModuleCat.of R M) + 1 ≤ depth (ModuleCat.of R (LinearMap.ker g)) := by
-  have hI : maximalIdeal R ≤ Module.annihilator R (Shrink.{v} (R ⧸ maximalIdeal R)) := by
-    rw [(Shrink.linearEquiv R _).annihilator_eq, Ideal.annihilator_quotient]
-  have hrange : LinearMap.range (LinearMap.ker g).subtype ≤ maximalIdeal R • ⊤ := by
-    rwa [Submodule.range_subtype]
-  have key (n : ℕ) (x : Ext (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R)))
-      (ModuleCat.of R (LinearMap.ker g)) n) :
-      x.comp (Ext.mk₀ (ModuleCat.ofHom (LinearMap.ker g).subtype)) (add_zero n) = 0 :=
-    Ext.comp_mk₀_eq_zero_of_range_le_smul_top hI _ hrange x
-  have h := ModuleCat.depth_trd_add_one_le_fst_of_comp_mk₀_eq_zero
-    (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) (LinearMap.shortExact_shortComplexKer hg) key
-  -- `h` is the goal, with `IsLocalRing.depth` unfolded to `ModuleCat.depth`.
-  exact h
 
 variable [IsNoetherianRing R]
 

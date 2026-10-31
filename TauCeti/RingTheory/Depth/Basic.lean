@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
 import TauCeti.Data.ENat.Basic
 
 /-!
@@ -51,6 +52,8 @@ The regular-sequence transfer lemmas for linear maps live in
   `ModuleCat.depth_min_snd_trd_add_one_le_fst_right`.
 * `IsLocalRing.depth_prod` and `IsLocalRing.depth_eq_depth_self_of_free`: the depth of a product
   is the minimum of the depths, so a nonzero finite free module has the depth of the ring.
+* `IsLocalRing.depth_add_one_le_depth_ker`: for a free presentation `0 → K → F → M → 0` with
+  `K` finite free and `K ⊆ 𝔪 F`, `depth M + 1 ≤ depth K`.
 * `IsLocalRing.depth_quotSMulTop_succ_eq_depth`: dividing a finite module by an `M`-regular element
   of the maximal ideal lowers the depth by exactly one.
 * `IsLocalRing.depth_add_length_eq_depth_of_isRegular`: dividing a finite module by an `M`-regular
@@ -288,6 +291,27 @@ theorem depth_eq_depth_self_of_free (M : Type v) [AddCommGroup M] [Module R M] [
   have := b.index_nonempty
   rw [depth_eq_of_linearEquiv (b.equivFun.trans
     (LinearEquiv.funCongrLeft R R (Fintype.equivFin _).symm)), key _ Fintype.card_pos]
+
+open CategoryTheory Abelian in
+/-- If `0 → K → F → M → 0` is a free presentation with `K` finite free and `K ⊆ 𝔪 F`, then
+`depth M + 1 ≤ depth K`. -/
+theorem depth_add_one_le_depth_ker {F M : Type v} [AddCommGroup F] [Module R F]
+    [AddCommGroup M] [Module R M] {g : F →ₗ[R] M} (hg : Function.Surjective g)
+    [Module.Free R (LinearMap.ker g)] [Module.Finite R (LinearMap.ker g)]
+    (hker : LinearMap.ker g ≤ maximalIdeal R • ⊤) :
+    depth (ModuleCat.of R M) + 1 ≤ depth (ModuleCat.of R (LinearMap.ker g)) := by
+  have hI : maximalIdeal R ≤ Module.annihilator R (Shrink.{v} (R ⧸ maximalIdeal R)) := by
+    rw [(Shrink.linearEquiv R _).annihilator_eq, Ideal.annihilator_quotient]
+  have hrange : LinearMap.range (LinearMap.ker g).subtype ≤ maximalIdeal R • ⊤ := by
+    rwa [Submodule.range_subtype]
+  have key (n : ℕ) (x : Ext (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R)))
+      (ModuleCat.of R (LinearMap.ker g)) n) :
+      x.comp (Ext.mk₀ (ModuleCat.ofHom (LinearMap.ker g).subtype)) (add_zero n) = 0 :=
+    Ext.comp_mk₀_eq_zero_of_range_le_smul_top hI _ hrange x
+  have h := ModuleCat.depth_trd_add_one_le_fst_of_comp_mk₀_eq_zero
+    (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) (LinearMap.shortExact_shortComplexKer hg) key
+  unfold IsLocalRing.depth Ideal.depth
+  exact h
 
 end Free
 
