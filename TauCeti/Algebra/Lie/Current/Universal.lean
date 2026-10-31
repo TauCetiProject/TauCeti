@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Current.ContinuousCohomology
 public import TauCeti.Algebra.Lie.Current.Perfect
+public import TauCeti.Algebra.Lie.Extension.Topology
 public import TauCeti.Algebra.Lie.Perfect
 
 import TauCeti.Algebra.Lie.Killing.Basic
@@ -21,8 +22,10 @@ with values in an arbitrary vector space with trivial action, receives a unique 
 map from the scalar residue extension over the identity on currents.
 
 The existence theorem gives its full coordinate formula `(u, t) ↦ (u, t • z - f u)` with
-`f` a continuous one-cochain. In particular it supplies the continuity estimate needed to
-topologize this map: the correction vanishes on some high-order current subspace. The
+`f` a continuous one-cochain: the correction vanishes on some high-order current subspace.
+Consequently the unique map is continuous for the topologies of
+`TauCeti.Algebra.Lie.Extension.Topology`, in which the central kernels are discrete
+(`TauCeti.CurrentAlgebra.continuous_residueExtensionLift`). The
 coefficient space need not be finite-dimensional. Uniqueness holds among all Lie algebra
 maps over currents, without prescribing their restriction to the central kernel.
 
@@ -57,8 +60,8 @@ local notation "TK" => TrivialLieModule K C K
 local notation "TZ" => TrivialLieModule K C Z
 local notation "cΦ" => twoCocycleOfBilinear K L Φ hΦ hΦs
 
-/-- A continuous cocycle extension with arbitrary trivial coefficients receives a map from
-the scalar residue extension. Its central coordinate is `t • z - f u`, where `f` vanishes
+/-- A continuous cocycle extension with arbitrary trivial coefficients receives a continuous map
+from the scalar residue extension. Its central coordinate is `t • z - f u`, where `f` vanishes
 on a high-order current subspace. -/
 theorem exists_residueExtensionLift
     (hspan : ∀ Ψ : LinearMap.BilinForm K L, Ψ.lieInvariant L → ∃ t : K, Ψ = t • Φ)
@@ -66,7 +69,7 @@ theorem exists_residueExtensionLift
     (hc : (c : twoCochain K C TZ) ∈ continuousTwoCocycle K C TZ) :
     ∃ z : Z, ∃ f : oneCochain K C TZ, ∃ N : ℤ,
       (∀ u ∈ orderSubmodule K L N, f u = 0) ∧
-      ∃ F : ofTwoCocycle cΦ →ₗ⁅K⁆ ofTwoCocycle c,
+      ∃ F : ofTwoCocycle cΦ →ₗ⁅K⁆ ofTwoCocycle c, Continuous F ∧
         ∀ (u : C) (t : TK), F (ofProd cΦ (u, t)) =
           ofProd c (u, (TrivialLieModule.equiv K C Z).symm
             ((TrivialLieModule.equiv K C K t) • z) - f u) := by
@@ -79,7 +82,8 @@ theorem exists_residueExtensionLift
     LinearMap.toSpanSingleton K Z z ∘ₗ (TrivialLieModule.equiv K C K).toLinearMap
   let F₀ := ofTwoCocycle.map cΦ LieHom.id e d (fun u v ↦ by simp [d, e])
   let F := (LieEquiv.ofCoboundary d c f hcf).toLieHom.comp F₀
-  refine ⟨z, f, N, hN, F, fun u t ↦ ?_⟩
+  refine ⟨z, f, N, hN, F, ((ofTwoCocycle.continuous_ofCoboundary_iff d c f hcf).mpr hf).comp
+    (ofTwoCocycle.continuous_map cΦ continuous_id e d _), fun u t ↦ ?_⟩
   simp [F, F₀, e, LieEquiv.ofCoboundary]
 
 /-- The nonzero scalar residue extension is initial among extensions represented by
@@ -91,7 +95,7 @@ theorem existsUnique_residueExtensionLift
     (hc : (c : twoCochain K C TZ) ∈ continuousTwoCocycle K C TZ) :
     ∃! F : ofTwoCocycle cΦ →ₗ⁅K⁆ ofTwoCocycle c,
       (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj cΦ := by
-  obtain ⟨z, f, N, hN, F, hF⟩ := exists_residueExtensionLift hΦ hΦs hspan hne c hc
+  obtain ⟨z, f, N, hN, F, -, hF⟩ := exists_residueExtensionLift hΦ hΦs hspan hne c hc
   have hproj : (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj cΦ := by
     apply LieHom.ext
     intro v
@@ -114,6 +118,25 @@ theorem existsUnique_residueExtensionLift
   simp only [bracket_ofTwoCocycle, hv₁, lie_zero, trivial_lie_zero, map_zero,
     sub_zero, add_zero]
   exact of_zero c
+
+/-- **The universal map is continuous.** Every Lie algebra map over the identity on currents
+from the nonzero scalar residue extension to an extension represented by a continuous two-cocycle
+with arbitrary trivial coefficients is continuous, for the topologies in which the central kernels
+are discrete. -/
+theorem continuous_residueExtensionLift
+    (hspan : ∀ Ψ : LinearMap.BilinForm K L, Ψ.lieInvariant L → ∃ t : K, Ψ = t • Φ)
+    (hne : ∃ x y z : L, Φ ⁅x, y⁆ z ≠ 0) (c : twoCocycle K C TZ)
+    (hc : (c : twoCochain K C TZ) ∈ continuousTwoCocycle K C TZ)
+    {F : ofTwoCocycle cΦ →ₗ⁅K⁆ ofTwoCocycle c}
+    (hF : (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj cΦ) : Continuous F := by
+  obtain ⟨_, _, _, _, G, hGc, hG⟩ := exists_residueExtensionLift hΦ hΦs hspan hne c hc
+  obtain ⟨_, -, huniq⟩ := existsUnique_residueExtensionLift hΦ hΦs hspan hne c hc
+  have hGp : (ofTwoCocycle.proj c).comp G = ofTwoCocycle.proj cΦ := by
+    apply LieHom.ext
+    intro v
+    obtain ⟨⟨u, t⟩, rfl⟩ := (ofProd cΦ).surjective v
+    simp [hG]
+  rwa [(huniq F hF).trans (huniq G hGp).symm]
 
 /-- For a simple Lie algebra over an algebraically closed field of characteristic zero,
 the Killing residue extension has a unique map over currents into every continuous

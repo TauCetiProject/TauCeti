@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import TauCeti.Data.Finsupp.Weight
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
 
 /-!
 # Iteration of Gauss-normed restricted series in one variable
@@ -90,13 +91,9 @@ the separated variable needs to be positive. -/
 theorem isRestricted_coeff_optionEquivLeft (hc : 0 < c none) {f : MvPowerSeries (Option σ) R}
     (hf : IsRestricted c f) (n : ℕ) :
     IsRestricted (fun i ↦ c (some i)) (PowerSeries.coeff n (optionEquivLeft σ R f)) := by
-  have hi : Function.Injective (fun t : σ →₀ ℕ ↦ t.optionElim n) := fun t u h ↦ by
-    simpa using congrArg Finsupp.some h
-  have h := (hf.comp hi.tendsto_cofinite).const_mul (c none ^ n)⁻¹
-  rw [mul_zero] at h
-  refine h.congr fun t ↦ ?_
-  rw [Function.comp_apply, ← norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow]
-  field_simp [(pow_pos hc n).ne']
+  rw [← isRestrictedFamily_coeff_iff]
+  simpa only [coeff_coeff_optionEquivLeft] using
+    ((isRestrictedFamily_coeff_iff f).mpr hf).comp_optionElim hc n
 
 variable [IsUltrametricDist R] [∀ i, Fact (0 < c i)]
 

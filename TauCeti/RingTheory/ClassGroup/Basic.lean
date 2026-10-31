@@ -30,6 +30,9 @@ trivial class, and the class `[v]` of a height one prime.
   holds over any domain.
 * `ClassGroup.mk_num`: an invertible fractional ideal and its integral numerator have the
   same class, over any domain and any choice of fraction field.
+* `TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup`: a Dedekind domain is a principal
+  ideal ring exactly when its class group is trivial, with no finiteness of the class group
+  assumed.
 * `IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk0`: the defining formula for `[v]`, as
   `ClassGroup.mk0` of `v.asIdeal`. This needs no fraction field.
 * `IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk`: `[v]` is the class of `v.asIdeal` seen
@@ -94,6 +97,17 @@ theorem ClassGroup.mk_num {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [Fie
   rw [hnum, map_mul, ClassGroup.mk_toPrincipalIdeal, one_mul]
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+
+/-- **A Dedekind domain is a principal ideal ring exactly when its class group is trivial.**
+Mathlib's `card_classGroup_eq_one_iff` is the same statement with the class number, and needs a
+`Fintype` instance on the class group that this form does not ask for. -/
+theorem TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup :
+    IsPrincipalIdealRing R ↔ Subsingleton (ClassGroup R) := by
+  refine ⟨fun _ ↦ Fintype.card_le_one_iff_subsingleton.mp (card_classGroup_eq_one (R := R)).le,
+    fun _ ↦ ?_⟩
+  have := Fintype.ofFinite (ClassGroup R)
+  exact card_classGroup_eq_one_iff.mp
+    (Fintype.card_eq_one_iff.mpr ⟨1, fun _ ↦ Subsingleton.elim _ _⟩)
 
 /-- The class of a height one prime `v` in the ideal class group of `R`. -/
 noncomputable def IsDedekindDomain.HeightOneSpectrum.classGroupMk (v : HeightOneSpectrum R) :
