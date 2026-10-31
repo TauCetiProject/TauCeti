@@ -12,7 +12,8 @@ public import Mathlib.Algebra.Ring.IsFormallyReal
 
 In a formally real ring, an element with vanishing square is zero. If `n • a = 0` for a positive
 natural number `n`, then `n • (a * a) = (n • a) * a` is a sum of `n` squares equal to zero, so
-`a * a = 0` and therefore `a = 0`.
+`a * a = 0` and therefore `a = 0`. Hence a formally real ring has unique division by positive
+natural numbers (`HasUniqueDiv.of_isFormallyReal`), so it is additively torsion-free.
 -/
 
 public section
@@ -35,3 +36,10 @@ theorem eq_zero_of_nsmul_eq_zero {n : ℕ} (hn : n ≠ 0) {a : R} (h : n • a =
     h, zero_mul]
 
 end IsFormallyReal
+
+/-- A formally real ring has unique division by positive natural numbers. -/
+instance HasUniqueDiv.of_isFormallyReal {R : Type*} [NonUnitalNonAssocRing R]
+    [IsFormallyReal R] : HasUniqueDiv R where
+  nsmul_right_injective _ hn _ _ h :=
+    sub_eq_zero.mp <| IsFormallyReal.eq_zero_of_nsmul_eq_zero hn <| by
+      simp only [nsmul_sub, h, sub_self]

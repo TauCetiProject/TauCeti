@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
+public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import Mathlib.RingTheory.LocalProperties.Reduced
 public import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
 

@@ -23,8 +23,8 @@ when `x = 0`.
 If `x ^ 2 = 0`, then `y = x * σ x` satisfies `y * σ y = x ^ 2 * σ x ^ 2 = 0`, so `y = 0` and then
 `x = 0`. Hence `R[G]` is reduced (`MonoidAlgebra.isReduced_of_isFormallyReal`). No finiteness of
 `G` is needed, and `G` may have torsion: for instance `ℤ[G]` is reduced for every commutative
-group `G`. Positive integers are non-zero-divisors of `R[M]` for every monoid `M`
-(`MonoidAlgebra.natCast_mem_nonZeroDivisors`), as `R` has no additive torsion.
+group `G`. Over any coefficient semiring `R` without additive torsion, positive integers are
+non-zero-divisors of `R[M]` for every monoid `M` (`MonoidAlgebra.natCast_mem_nonZeroDivisors`).
 
 ## References
 
@@ -87,15 +87,16 @@ instance isReduced_of_isFormallyReal : IsReduced (MonoidAlgebra R G) := by
 
 end Group
 
-/-- Positive integers are non-zero-divisors of a monoid algebra over a formally real ring. -/
+/-- Positive integers are non-zero-divisors of a monoid algebra over a semiring without additive
+torsion. -/
 @[to_additive (dont_translate := R)
-/-- Positive integers are non-zero-divisors of an additive monoid algebra over a formally real
-ring. -/]
-theorem natCast_mem_nonZeroDivisors {R M : Type*} [Semiring R] [IsFormallyReal R] [Monoid M]
+/-- Positive integers are non-zero-divisors of an additive monoid algebra over a semiring without
+additive torsion. -/]
+theorem natCast_mem_nonZeroDivisors {R M : Type*} [Semiring R] [IsAddTorsionFree R] [Monoid M]
     {n : ℕ} (hn : n ≠ 0) : (n : MonoidAlgebra R M) ∈ (MonoidAlgebra R M)⁰ := by
   have key (x : MonoidAlgebra R M) (hx : n • x = 0) : x = 0 := by
     ext m
-    exact IsFormallyReal.eq_zero_of_nsmul_eq_zero hn (by
+    exact (nsmul_eq_zero_iff_right hn).mp (by
       simpa only [coeff_smul_apply, coeff_zero, Finsupp.coe_zero, Pi.zero_apply] using
         congr(($hx).coeff m))
   exact ⟨fun x hx ↦ key x (by rwa [nsmul_eq_mul]), fun x hx ↦ key x (by rwa [nsmul_eq_mul'])⟩

@@ -129,15 +129,15 @@ theorem AddMonoidAlgebra.algEquivPiField_apply
 
 section CharZero
 
-variable (R M K : Type*) [CommRing R] [IsFormallyReal R] [CommMonoid M]
+variable (R M K : Type*) [CommRing R] [IsAddTorsionFree R] [CommMonoid M]
   [CommRing K] [Algebra (MonoidAlgebra R M) K] [IsFractionRing (MonoidAlgebra R M) K]
 
 include R M in
-/-- Every quotient of the total quotient ring of a monoid ring over a formally real ring by a proper
-ideal has characteristic zero. -/
+/-- Every quotient of the total quotient ring of a monoid ring over a ring without additive torsion
+by a proper ideal has characteristic zero. -/
 @[to_additive (dont_translate := R K)
-/-- Every quotient of the total quotient ring of an additive monoid ring over a formally real ring
-by a proper ideal has characteristic zero. -/]
+/-- Every quotient of the total quotient ring of an additive monoid ring over a ring without
+additive torsion by a proper ideal has characteristic zero. -/]
 theorem MonoidAlgebra.charZero_quotient_of_isFractionRing {I : Ideal K} (hI : I ≠ ⊤) :
     CharZero (K ⧸ I) :=
   IsFractionRing.charZero_quotient (MonoidAlgebra R M) K
