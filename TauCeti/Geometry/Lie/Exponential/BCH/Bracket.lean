@@ -127,6 +127,68 @@ private theorem apply_eq_of_bch_identities
     Prod.snd_add, zero_add, add_zero, smul_add]
   abel
 
+/-- Conjugation by `lieExp (t • X)` moves `lieExp (t • Y)` across `lieExp (t • X)`, which relates
+the quadratic form of the second derivative of the local BCH germ at `(X, Y)` and at `(Y, X)`:
+`S (X, Y) (X, Y) = S (Y, X) (Y, X) + 2 ⁅X, Y⁆`. -/
+private theorem fderiv_fderiv_lieLocalBCH_representative_apply_swap
+    (X Y : LeftInvariantDerivation I G) :
+    fderiv ℝ (fderiv ℝ fun p : LeftInvariantDerivation I G × LeftInvariantDerivation I G ↦
+        lieLog (I := I) (lieExp p.1 * lieExp p.2)) (0, 0) (X, Y) (X, Y) =
+      fderiv ℝ (fderiv ℝ fun p : LeftInvariantDerivation I G × LeftInvariantDerivation I G ↦
+        lieLog (I := I) (lieExp p.1 * lieExp p.2)) (0, 0) (Y, X) (Y, X) + (⁅X, Y⁆ + ⁅X, Y⁆) := by
+  -- Conjugating gives `bch (t • X) (t • Y) = bch (t • B t Y) (t • X)` with
+  -- `B t = exp (t • ad X)`, by the adjoint-exponential formula. The curve
+  -- `γ t = (t • B t Y, t • X)` has velocity `(Y, X)` and acceleration `(2 ⁅X, Y⁆, 0)` at `0`, and
+  -- `iteratedDeriv_two_comp` compares the second derivatives of the two sides at `0`.
+  let 𝔤 := LeftInvariantDerivation I G
+  let f : 𝔤 × 𝔤 → 𝔤 := fun p ↦ lieLog (I := I) (lieExp p.1 * lieExp p.2)
+  have hf : ContDiffAt ℝ 2 f (0, 0) :=
+    contDiffAt_lieLocalBCH_representative.of_le (WithTop.coe_le_coe.mpr le_top)
+  have hDf : fderiv ℝ f (0, 0) =
+      ContinuousLinearMap.fst ℝ 𝔤 𝔤 + ContinuousLinearMap.snd ℝ 𝔤 𝔤 :=
+    hasFDerivAt_lieLocalBCH_representative.fderiv
+  let A : 𝔤 →L[ℝ] 𝔤 := LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ 𝔤 X)
+  let B : ℝ → 𝔤 → 𝔤 := fun t Z ↦ NormedSpace.exp (t • A) Z
+  have hB : ∀ Z t, HasDerivAt (fun t ↦ B t Z) (B t (A Z)) t := by
+    intro Z t
+    simpa [B] using (hasDerivAt_exp_smul_const A t).clm_apply (hasDerivAt_const t Z)
+  have hB0 : ∀ Z, B 0 Z = Z := by simp [B]
+  have hconj : ∀ t : ℝ, lieExp (I := I) (t • X) * lieExp (t • Y) =
+      lieExp (t • B t Y) * lieExp (t • X) := by
+    intro t
+    have h := Lie.conj_lieExp (I := I) (lieExp (t • X)) (t • Y)
+    rw [map_smul, LeftInvariantDerivation.Ad_lieExp_apply, map_smul, map_smul] at h
+    exact mul_inv_eq_iff_eq_mul.mp h
+  let ρ : ℝ → 𝔤 × 𝔤 := fun t ↦ t • (X, Y)
+  let γ : ℝ → 𝔤 × 𝔤 := fun t ↦ (t • B t Y, t • X)
+  have hργ : f ∘ ρ = f ∘ γ := by
+    funext t
+    simp [f, ρ, γ, hconj]
+  have hρ0 : ρ 0 = (0, 0) := by simp [ρ]
+  have hγ0 : γ 0 = (0, 0) := by simp [γ]
+  have hρ' : deriv ρ 0 = (X, Y) := by
+    simpa [ρ] using ((hasDerivAt_id (0 : ℝ)).smul_const ((X, Y) : 𝔤 × 𝔤)).deriv
+  have hρ'' : iteratedDeriv 2 ρ 0 = 0 := by
+    rw [iteratedDeriv_succ, iteratedDeriv_one,
+      show deriv ρ = fun _ ↦ (X, Y) from funext fun t ↦ by
+        simpa [ρ] using ((hasDerivAt_id t).smul_const ((X, Y) : 𝔤 × 𝔤)).deriv,
+      deriv_const]
+  have hγ' : deriv γ = fun t ↦ (t • B t (A Y) + B t Y, X) := funext fun t ↦ by
+    simpa using (((hasDerivAt_id t).smul (hB Y t)).prodMk ((hasDerivAt_id t).smul_const X)).deriv
+  have hγ'' : iteratedDeriv 2 γ 0 = (A Y + A Y, 0) := by
+    rw [iteratedDeriv_succ, iteratedDeriv_one, hγ']
+    simpa [hB0] using
+      ((((hasDerivAt_id (0 : ℝ)).smul (hB (A Y) 0)).add (hB Y 0)).prodMk
+        (hasDerivAt_const (0 : ℝ) X)).deriv
+  have hγc : ContDiffAt ℝ 2 γ 0 :=
+    (contDiffAt_id.smul (((NormedSpace.exp_analytic (𝕂 := ℝ) _).contDiffAt.comp 0
+      (contDiffAt_id.smul_const A)).clm_apply contDiffAt_const)).prodMk
+        (contDiffAt_id.smul contDiffAt_const)
+  have h := iteratedDeriv_two_comp (f := f) (γ := ρ) (t := 0) (by rwa [hρ0])
+    (contDiffAt_id.smul contDiffAt_const)
+  rw [hργ, iteratedDeriv_two_comp (by rwa [hγ0]) hγc, hρ0, hγ0, hρ', hρ'', hγ', hγ'', hDf] at h
+  simpa [hB0, A] using h.symm
+
 /-- **The second derivative of the local BCH germ.** At the origin, the second derivative of the
 representative `(X, Y) ↦ lieLog (lieExp X * lieExp Y)` of `TauCeti.lieLocalBCH I G` is the
 symmetric bilinear map `(p, q) ↦ ½ (⁅p.1, q.2⁆ + ⁅q.1, p.2⁆)`. -/
@@ -135,106 +197,41 @@ theorem fderiv_fderiv_lieLocalBCH_representative_apply
     fderiv ℝ (fderiv ℝ fun p : LeftInvariantDerivation I G × LeftInvariantDerivation I G ↦
         lieLog (I := I) (lieExp p.1 * lieExp p.2)) (0, 0) p q =
       (2⁻¹ : ℝ) • (⁅p.1, q.2⁆ + ⁅q.1, p.2⁆) := by
-  -- Write `f` for the representative and `S` for its second derivative at the origin. Along a
-  -- curve `γ` through the origin, the second derivative of `f ∘ γ` at `0` is
-  -- `S (γ' 0) (γ' 0) + f' (γ'' 0)`, where `f'`, the first derivative of `f` at the origin, is
-  -- addition. Four identities between curves pin down `S`:
-  -- * `bch (t • X) 0 = t • X` and `bch 0 (t • Y) = t • Y`, so `S` vanishes on each axis;
-  -- * `bch (t • X) (t • X) = t • (X + X)`, so `S` vanishes on the diagonal;
-  -- * conjugating `lieExp (t • Y)` by `lieExp (t • X)` gives
-  --   `bch (t • X) (t • Y) = bch (t • Ad (lieExp (t • X)) Y) (t • X)`, and by the
-  --   adjoint-exponential formula `Ad (lieExp (t • X)) Y = exp (t • ad X) Y` the second curve has
-  --   velocity `(Y, X)` and acceleration `(2 ⁅X, Y⁆, 0)` at `0`.
-  -- The linear algebra in `apply_eq_of_bch_identities` then determines `S`.
+  -- Write `f` for the representative and `S` for its second derivative at the origin. Since
+  -- `bch (t • X) 0 = t • X`, `bch 0 (t • Y) = t • Y` and `bch (t • X) (t • X) = t • (X + X)`,
+  -- `f` is linear along both coordinate axes and the diagonal, so these are isotropic for `S`.
+  -- Together with `fderiv_fderiv_lieLocalBCH_representative_apply_swap`, the linear algebra in
+  -- `apply_eq_of_bch_identities` determines `S`.
   let 𝔤 := LeftInvariantDerivation I G
   let f : 𝔤 × 𝔤 → 𝔤 := fun p ↦ lieLog (I := I) (lieExp p.1 * lieExp p.2)
-  -- `S` abbreviates the second derivative at the origin; `change` names it in the goal.
-  let S := fderiv ℝ (fderiv ℝ f) 0
-  change S p q = _
   have hf : ContDiffAt ℝ 2 f (0, 0) :=
     contDiffAt_lieLocalBCH_representative.of_le (WithTop.coe_le_coe.mpr le_top)
-  have hsymm : ∀ v w, S v w = S w v :=
+  have hsymm : ∀ v w, fderiv ℝ (fderiv ℝ f) (0, 0) v w = fderiv ℝ (fderiv ℝ f) (0, 0) w v :=
     (hf.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField])).eq
-  have hDf : fderiv ℝ f 0 =
-      ContinuousLinearMap.fst ℝ 𝔤 𝔤 + ContinuousLinearMap.snd ℝ 𝔤 𝔤 :=
-    hasFDerivAt_lieLocalBCH_representative.fderiv
-  -- The second derivative of `f` along a curve through the origin, by the second-order chain
-  -- rule.
-  have hcurve : ∀ {γ : ℝ → 𝔤 × 𝔤}, γ 0 = 0 → ContDiffAt ℝ 2 γ 0 →
-      iteratedDeriv 2 (f ∘ γ) 0 =
-        S (deriv γ 0) (deriv γ 0) + ((iteratedDeriv 2 γ 0).1 + (iteratedDeriv 2 γ 0).2) := by
-    intro γ h0 hγ
-    have h := fderiv_fderiv_comp_apply (by rwa [h0]) hγ 1 1
-    rw [fderiv_fderiv_apply_eq_smul_iteratedDeriv, fderiv_fderiv_apply_eq_smul_iteratedDeriv,
-      h0, hDf] at h
-    simpa [fderiv_apply_one_eq_deriv] using h
-  have hsmul : ∀ v : 𝔤 × 𝔤, deriv (fun t : ℝ ↦ t • v) = fun _ ↦ v := fun v ↦ funext fun t ↦ by
-    simpa using ((hasDerivAt_id t).smul_const v).deriv
-  have hray' : ∀ v : 𝔤 × 𝔤, iteratedDeriv 2 (fun t : ℝ ↦ t • v) 0 = 0 := fun v ↦ by
-    rw [iteratedDeriv_succ, iteratedDeriv_one, hsmul, deriv_const]
-  -- A ray through the origin along which `f` is linear lies in the null cone of `S`.
-  have hray : ∀ (v : 𝔤 × 𝔤) (Z : 𝔤), (∀ᶠ t in 𝓝 (0 : ℝ), f (t • v) = t • Z) → S v v = 0 := by
-    intro v Z hv
-    have hd : deriv (f ∘ fun t : ℝ ↦ t • v) =ᶠ[𝓝 0] fun _ ↦ Z := by
-      filter_upwards [(show f ∘ (fun t : ℝ ↦ t • v) =ᶠ[𝓝 0] fun t ↦ t • Z from hv).deriv]
-        with t ht
-      rw [ht]
-      simpa using ((hasDerivAt_id t).smul_const Z).deriv
-    have h := hcurve (γ := fun t ↦ t • v) (by simp) (contDiffAt_id.smul contDiffAt_const)
-    rw [iteratedDeriv_succ, iteratedDeriv_one, hd.deriv_eq, deriv_const, hray', hsmul] at h
-    simpa using h.symm
-  -- On a line through the origin, `f` is eventually the identity after `lieExp`.
+  -- On a line through the origin, `lieLog` inverts `lieExp`.
   have hline : ∀ Z : 𝔤, ∀ᶠ t in 𝓝 (0 : ℝ), lieLog (I := I) (lieExp (t • Z)) = t • Z := by
     intro Z
     have ht : Tendsto (fun t : ℝ ↦ t • Z) (𝓝 0) (𝓝 0) := by
       simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).smul_const Z
     exact ht.eventually (eventually_lieLog_lieExp (I := I) (G := G))
-  -- The quadratic form of `S` vanishes on both coordinate axes and on the diagonal.
-  have hfst : ∀ X : 𝔤, S (X, 0) (X, 0) = 0 := fun X ↦
+  have hray : ∀ (v : 𝔤 × 𝔤) (Z : 𝔤), (∀ᶠ t in 𝓝 (0 : ℝ), f (t • v) = t • Z) →
+      fderiv ℝ (fderiv ℝ f) (0, 0) v v = 0 := fun v Z hv ↦
+    fderiv_fderiv_apply_self_eq_zero_of_eventually_eq_add_smul (z := Z) hf (by
+      filter_upwards [hv] with t ht
+      simpa [f] using ht)
+  have hfst : ∀ X : 𝔤, fderiv ℝ (fderiv ℝ f) (0, 0) (X, 0) (X, 0) = 0 := fun X ↦
     hray _ X (by filter_upwards [hline X] with t ht; simpa [f] using ht)
-  have hsnd : ∀ Y : 𝔤, S (0, Y) (0, Y) = 0 := fun Y ↦
+  have hsnd : ∀ Y : 𝔤, fderiv ℝ (fderiv ℝ f) (0, 0) (0, Y) (0, Y) = 0 := fun Y ↦
     hray _ Y (by filter_upwards [hline Y] with t ht; simpa [f] using ht)
-  have hdiag : ∀ X : 𝔤, S (X, X) (X, X) = 0 := fun X ↦ hray _ (X + X) (by
-    filter_upwards [hline (X + X)] with t ht
-    have h2 : lieExp (I := I) (t • X) * lieExp (t • X) = lieExp (t • (X + X)) := by
-      rw [smul_add, ← add_smul, lieExp_add_smul]
-    simp only [f, Prod.smul_mk, h2]
-    exact ht)
-  -- Conjugation by `lieExp (t • X)` moves the second factor across the first.
-  have hAd : ∀ X Y : 𝔤, S (X, Y) (X, Y) = S (Y, X) (Y, X) + (⁅X, Y⁆ + ⁅X, Y⁆) := by
-    intro X Y
-    let A : 𝔤 →L[ℝ] 𝔤 := LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ 𝔤 X)
-    let B : ℝ → 𝔤 → 𝔤 := fun t Z ↦ NormedSpace.exp (t • A) Z
-    have hB : ∀ Z t, HasDerivAt (fun t ↦ B t Z) (B t (A Z)) t := by
-      intro Z t
-      simpa [B] using (hasDerivAt_exp_smul_const A t).clm_apply (hasDerivAt_const t Z)
-    have hB0 : ∀ Z, B 0 Z = Z := by simp [B]
-    have hconj : ∀ t : ℝ, lieExp (I := I) (t • X) * lieExp (t • Y) =
-        lieExp (t • B t Y) * lieExp (t • X) := by
-      intro t
-      have h := Lie.conj_lieExp (I := I) (lieExp (t • X)) (t • Y)
-      rw [map_smul, LeftInvariantDerivation.Ad_lieExp_apply, map_smul, map_smul] at h
-      exact mul_inv_eq_iff_eq_mul.mp h
-    let γ : ℝ → 𝔤 × 𝔤 := fun t ↦ (t • B t Y, t • X)
-    have hγ : f ∘ (fun t : ℝ ↦ t • ((X, Y) : 𝔤 × 𝔤)) = f ∘ γ := by
-      funext t
-      simp [f, γ, hconj]
-    have hγ' : deriv γ = fun t ↦ (t • B t (A Y) + B t Y, X) := funext fun t ↦ by
-      simpa using (((hasDerivAt_id t).smul (hB Y t)).prodMk ((hasDerivAt_id t).smul_const X)).deriv
-    have hγ'' : iteratedDeriv 2 γ 0 = (A Y + A Y, 0) := by
-      rw [iteratedDeriv_succ, iteratedDeriv_one, hγ']
-      simpa [hB0] using
-        ((((hasDerivAt_id (0 : ℝ)).smul (hB (A Y) 0)).add (hB Y 0)).prodMk
-          (hasDerivAt_const (0 : ℝ) X)).deriv
-    have hγc : ContDiffAt ℝ 2 γ 0 :=
-      (contDiffAt_id.smul (((NormedSpace.exp_analytic (𝕂 := ℝ) _).contDiffAt.comp 0
-        (contDiffAt_id.smul_const A)).clm_apply contDiffAt_const)).prodMk
-          (contDiffAt_id.smul contDiffAt_const)
-    have h₁ := hcurve (γ := fun t ↦ t • ((X, Y) : 𝔤 × 𝔤)) (by simp)
-      (contDiffAt_id.smul contDiffAt_const)
-    rw [hγ, hcurve (by simp [γ]) hγc, hγ', hγ'', hsmul, hray'] at h₁
-    simpa [hB0, A] using h₁.symm
-  exact apply_eq_of_bch_identities S hsymm hfst hsnd hdiag hAd p q
+  have hdiag : ∀ X : 𝔤, fderiv ℝ (fderiv ℝ f) (0, 0) (X, X) (X, X) = 0 := fun X ↦
+    hray _ (X + X) (by
+      filter_upwards [hline (X + X)] with t ht
+      have h2 : lieExp (I := I) (t • X) * lieExp (t • X) = lieExp (t • (X + X)) := by
+        rw [smul_add, ← add_smul, lieExp_add_smul]
+      simp only [f, Prod.smul_mk, h2]
+      exact ht)
+  exact apply_eq_of_bch_identities _ hsymm hfst hsnd hdiag
+    fderiv_fderiv_lieLocalBCH_representative_apply_swap p q
 
 /-- **The bracket term of the local Baker--Campbell--Hausdorff germ.** Near the origin,
 `bch X Y = X + Y + ½ ⁅X, Y⁆ + O(‖(X, Y)‖ ³)`: to second order, the local group law of `G` read
