@@ -425,24 +425,6 @@ theorem isHomogeneousOfDegree_gamma : (gamma R A d).IsHomogeneousOfDegree d := b
   simpa using (linearEquiv R A d).symm.toLinearMap.isHomogeneousOfDegree_toPolynomialLaw.comp
     (DividedPowerAlgebra.isHomogeneousOfDegree_gamma (R := R) (M := A) d)
 
-/-- The base change of the identification with `Γ^d_R(A)` carries the internal product to the
-multiplication of `S ⊗[R] RobyAlgebra R A d`. -/
-private theorem baseChange_linearEquiv_symm_homogeneousMul {S : Type*} [CommSemiring S]
-    [Algebra R S] (x y : S ⊗[R] homogeneousSubmodule (R := R) (M := A) d) :
-    (linearEquiv R A d).symm.toLinearMap.baseChange S
-        (BilinMap.baseChange S (homogeneousMul R A d) x y) =
-      (linearEquiv R A d).symm.toLinearMap.baseChange S x *
-        (linearEquiv R A d).symm.toLinearMap.baseChange S y := by
-  induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx', add_mul]
-  | tmul s a =>
-    induction y using TensorProduct.inductionOn with
-    | add y y' hy hy' => simp only [map_add, hy, hy', mul_add]
-    | tmul t b =>
-      simp only [LinearMap.BilinMap.baseChange_tmul, LinearMap.baseChange_tmul,
-        Algebra.TensorProduct.tmul_mul_tmul, LinearEquiv.coe_coe, mul_def,
-        LinearEquiv.apply_symm_apply]
-
 /-- **The universal multiplicative law**: `x ↦ γ_d(x)` is multiplicative for the product of the
 Roby algebra, after every scalar extension. -/
 theorem isMultiplicative_gamma : (gamma R A d).IsMultiplicative where
@@ -451,8 +433,17 @@ theorem isMultiplicative_gamma : (gamma R A d).IsMultiplicative where
       Algebra.TensorProduct.one_def, LinearEquiv.coe_coe, ← linearEquiv_one,
       LinearEquiv.symm_apply_apply]
   toFun'_mul x y := by
+    have h : (homogeneousMul R A d).compr₂ (linearEquiv R A d).symm.toLinearMap =
+        (LinearMap.mul R (RobyAlgebra R A d)).compl₁₂ (linearEquiv R A d).symm.toLinearMap
+          (linearEquiv R A d).symm.toLinearMap :=
+      LinearMap.ext₂ fun x y ↦ by
+        rw [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.mul_apply',
+          LinearEquiv.coe_coe, mul_def, LinearEquiv.apply_symm_apply,
+          LinearEquiv.apply_symm_apply]
     simp only [PolynomialLaw.toFun'_eq_toFun, gamma_toFun]
-    rw [← homogeneousMul_baseChange_gamma, baseChange_linearEquiv_symm_homogeneousMul]
+    rw [← homogeneousMul_baseChange_gamma, ← LinearMap.compr₂_apply,
+      ← LinearMap.BilinMap.baseChange_compr₂, h, LinearMap.BilinMap.baseChange_compl₁₂,
+      LinearMap.compl₁₂_apply, LinearMap.BilinMap.baseChange_mul]
 
 /-- `γ_d(x * y) = γ_d(x) * γ_d(y)` in the Roby algebra. -/
 @[simp]
