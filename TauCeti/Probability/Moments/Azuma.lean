@@ -18,6 +18,8 @@ inequality then controls the sum.
 
 ## Main results
 
+* `ProbabilityTheory.hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero` — the conditional
+  Hoeffding lemma for a general interval;
 * `ProbabilityTheory.hasCondSubgaussianMGF_of_bounded` — a bounded conditionally centered
   random variable is conditionally sub-Gaussian;
 * `ProbabilityTheory.measureReal_sum_range_ge_le_of_bounded_martingale_differences` — the
@@ -43,18 +45,14 @@ namespace ProbabilityTheory
 
 variable {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω}
 
-/-- A conditionally centered random variable whose values lie in `[-b, b]` is conditionally
-sub-Gaussian with parameter `b ^ 2`. -/
-theorem hasCondSubgaussianMGF_of_bounded [StandardBorelSpace Ω] [IsProbabilityMeasure μ]
-    {m : MeasurableSpace Ω} (hm : m ≤ mΩ) {X : Ω → ℝ} {b : ℝ}
-    (hb : 0 ≤ b) (hX : Measurable[mΩ] X)
-    (hbound : ∀ᵐ ω ∂μ, |X ω| ≤ b)
+/-- A conditionally centered random variable whose values lie in `[a, b]` is conditionally
+sub-Gaussian with parameter `((‖b - a‖₊ / 2) ^ 2)`. -/
+theorem hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero [StandardBorelSpace Ω]
+    [IsProbabilityMeasure μ] {m : MeasurableSpace Ω} (hm : m ≤ mΩ) {X : Ω → ℝ} {a b : ℝ}
+    (hX : Measurable[mΩ] X) (hbound : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc a b)
     (hmean : μ[X | m] =ᵐ[μ] 0) :
-    HasCondSubgaussianMGF m hm X ⟨b ^ 2, sq_nonneg b⟩ μ := by
-  have hIcc : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc (-b) b := by
-    filter_upwards [hbound] with ω hω
-    exact abs_le.mp hω
-  have hX_int : Integrable X μ := Integrable.of_mem_Icc (-b) b hX.aemeasurable hIcc
+    HasCondSubgaussianMGF m hm X ((‖b - a‖₊ / 2) ^ 2) μ := by
+  have hX_int : Integrable X μ := Integrable.of_mem_Icc a b hX.aemeasurable hbound
   have hmean_trim : μ[X | m] =ᵐ[μ.trim hm] 0 :=
     (stronglyMeasurable_condExp.ae_eq_trim_iff hm stronglyMeasurable_const).2 hmean
   have hzero_kernel :
@@ -63,32 +61,46 @@ theorem hasCondSubgaussianMGF_of_bounded [StandardBorelSpace Ω] [IsProbabilityM
       hmean_trim
   have hbound_kernel :
       ∀ᵐ ω ∂μ.trim hm, ∀ᵐ y ∂condExpKernel (mΩ := mΩ) μ m ω,
-        X y ∈ Set.Icc (-b) b := by
+        X y ∈ Set.Icc a b := by
     have hcomp : condExpKernel (mΩ := mΩ) μ m ∘ₘ μ.trim hm = μ :=
       condExpKernel_comp_trim (mΩ := mΩ) hm
     apply Measure.ae_ae_of_ae_comp
     rw [hcomp]
-    exact hIcc
-  change Kernel.HasSubgaussianMGF X ⟨b ^ 2, sq_nonneg b⟩
+    exact hbound
+  change Kernel.HasSubgaussianMGF X ((‖b - a‖₊ / 2) ^ 2)
     (condExpKernel (mΩ := mΩ) μ m) (μ.trim hm)
   refine Kernel.HasSubgaussianMGF.of_rat ?_ ?_
   · intro t
     rw [condExpKernel_comp_trim (mΩ := mΩ) hm]
-    exact integrable_exp_mul_of_mem_Icc hX.aemeasurable hIcc
+    exact integrable_exp_mul_of_mem_Icc hX.aemeasurable hbound
   · intro q
     filter_upwards [hzero_kernel, hbound_kernel] with ω hzero hω
     have : IsProbabilityMeasure (condExpKernel (mΩ := mΩ) μ m ω) :=
       (inferInstance : IsMarkovKernel (condExpKernel (mΩ := mΩ) μ m)).isProbabilityMeasure ω
     have hsub := hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero
       (hX.aemeasurable) hω hzero
-    have hparam : ((‖b - -b‖₊ / 2) ^ 2 : ℝ≥0) = ⟨b ^ 2, sq_nonneg b⟩ := by
-      apply Subtype.ext
-      simp only [sub_neg_eq_add, NNReal.val_eq_coe, NNReal.coe_pow, NNReal.coe_div, coe_nnnorm,
-        norm_eq_abs, NNReal.coe_ofNat]
-      rw [abs_of_nonneg (by positivity : 0 ≤ b + b)]
-      ring
-    rw [hparam] at hsub
     exact hsub.mgf_le q
+
+/-- A conditionally centered random variable whose values lie in `[-b, b]` is conditionally
+sub-Gaussian with parameter `b ^ 2`. -/
+theorem hasCondSubgaussianMGF_of_bounded [StandardBorelSpace Ω] [IsProbabilityMeasure μ]
+    {m : MeasurableSpace Ω} (hm : m ≤ mΩ) {X : Ω → ℝ} {b : ℝ}
+    (hb : 0 ≤ b) (hX : Measurable[mΩ] X) (hbound : ∀ᵐ ω ∂μ, |X ω| ≤ b)
+    (hmean : μ[X | m] =ᵐ[μ] 0) :
+    HasCondSubgaussianMGF m hm X ⟨b ^ 2, sq_nonneg b⟩ μ := by
+  have hIcc : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc (-b) b := by
+    filter_upwards [hbound] with ω hω
+    exact abs_le.mp hω
+  have hsub := @hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero Ω mΩ μ inferInstance
+    inferInstance m hm X (-b) b hX hIcc hmean
+  have hparam : ((‖b - -b‖₊ / 2) ^ 2 : ℝ≥0) = ⟨b ^ 2, sq_nonneg b⟩ := by
+    apply Subtype.ext
+    simp only [sub_neg_eq_add, NNReal.val_eq_coe, NNReal.coe_pow, NNReal.coe_div, coe_nnnorm,
+      norm_eq_abs, NNReal.coe_ofNat]
+    rw [abs_of_nonneg (by positivity : 0 ≤ b + b)]
+    ring
+  rw [hparam] at hsub
+  exact hsub
 
 /-- **Azuma-Hoeffding inequality.** Let `Y i` be a strongly adapted sequence of martingale
 differences with `|Y i| ≤ b i` almost surely, mean zero at time zero, and conditional mean zero at
