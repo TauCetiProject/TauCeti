@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential
+public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Basic
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.ContinuousDerivation
 
 /-!
