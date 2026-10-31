@@ -47,6 +47,7 @@ is a topological property: it is invariant under homeomorphisms
 
 ## Main results
 
+* `TauCeti.isWeeksManifold_iff`: the definition of `TauCeti.IsWeeksManifold`, restated.
 * `TauCeti.IsWeeksManifold.intro`: a filling of the exterior of the Whitehead link along these
   slopes, for orientation-preserving neighbourhoods, is a Weeks manifold.
 * `TauCeti.IsWeeksManifold.of_homeomorph`, `TauCeti.isWeeksManifold_congr`: being a Weeks
@@ -92,6 +93,20 @@ def IsWeeksManifold (Y : Type*) [TopologicalSpace Y] : Prop :=
 
 variable {Y : Type*} [TopologicalSpace Y] {Y' : Type*} [TopologicalSpace Y']
 
+/-- `Y` is a Weeks manifold exactly when, for some solid torus neighbourhoods of the components of
+the Whitehead link preserving orientation at their core points, `Y` is a Dehn filling of the link
+exterior along the surgery slopes of coefficients `5` and `5 / 2`. -/
+theorem isWeeksManifold_iff : IsWeeksManifold Y ↔
+    ∃ (Φ : Fin 2 → SolidTorus → sphere (0 : EuclideanSpace ℝ (Fin 4)) 1)
+      (h : IsSolidTorusLinkNeighborhood (fun i ↦ whiteheadLink i) Φ),
+      (∀ i, IsOrientationPreservingAtCore (Φ i)
+        (EuclideanSpace.basisFun (Fin 4) ℝ).toBasis.orientation) ∧
+      Nonempty (LinkDehnFilling h
+        (h.surgerySlope (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
+          (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _)
+          ![((5 : ℚ) : OnePoint ℚ), ((5 / 2 : ℚ) : OnePoint ℚ)]) Y) :=
+  Iff.rfl
+
 /-- A Dehn filling of the exterior of the Whitehead link along the surgery slopes of coefficients
 `5` and `5 / 2`, for solid torus neighbourhoods preserving orientation at their core points, is a
 Weeks manifold. -/
@@ -105,13 +120,13 @@ theorem IsWeeksManifold.intro
         (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _)
         ![((5 : ℚ) : OnePoint ℚ), ((5 / 2 : ℚ) : OnePoint ℚ)]) Y) :
     IsWeeksManifold Y :=
-  ⟨Φ, h, hΦ, ⟨F⟩⟩
+  isWeeksManifold_iff.2 ⟨Φ, h, hΦ, ⟨F⟩⟩
 
 /-- A space homeomorphic to a Weeks manifold is a Weeks manifold: the Dehn filling is carried
 along the homeomorphism. -/
 theorem IsWeeksManifold.of_homeomorph (hY : IsWeeksManifold Y) (e : Y ≃ₜ Y') :
     IsWeeksManifold Y' := by
-  obtain ⟨Φ, h, hΦ, ⟨F⟩⟩ := hY
+  obtain ⟨Φ, h, hΦ, ⟨F⟩⟩ := isWeeksManifold_iff.1 hY
   exact .intro hΦ (F.transHomeomorph e)
 
 /-- **Being a Weeks manifold is a topological property.** -/

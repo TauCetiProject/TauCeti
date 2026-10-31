@@ -62,6 +62,8 @@ derivative sends `(1, 0)`, `(i, 0)` and `(0, 1)` to the third, fourth and second
 
 ## Main results
 
+* `TauCeti.isOrientationPreservingAtCore_iff`: the definition of
+  `TauCeti.IsOrientationPreservingAtCore`, restated.
 * `TauCeti.isOrientationPreservingAtCore_neg_iff`: `Φ` preserves the opposite orientation exactly
   when its reading at the core has a derivative with negative volume form.
 * `TauCeti.IsOrientationPreservingAtCore.not_neg`: `Φ` does not preserve both orientations.
@@ -139,13 +141,21 @@ def IsOrientationPreservingAtCore (Φ : SolidTorus → sphere (0 : E) 1)
 
 variable {Φ : SolidTorus → sphere (0 : E) 1} {o : Orientation ℝ E (Fin 4)}
 
+/-- `Φ` preserves orientation at its core point exactly when its reading there has a derivative
+on which the volume form of `o`, with the outward normal first, is positive. -/
+theorem isOrientationPreservingAtCore_iff :
+    IsOrientationPreservingAtCore Φ o ↔ ∃ L : ℂ × ℝ →L[ℝ] E,
+      HasFDerivAt (SolidTorus.coreReading Φ) L 0 ∧
+        0 < o.volumeForm ![(Φ (0, 1) : E), L (1, 0), L (I, 0), L (0, 1)] :=
+  Iff.rfl
+
 /-- `Φ` preserves the opposite orientation at its core point exactly when the volume form of `o`
 is negative on the outward normal and the derivative of its reading there. -/
 theorem isOrientationPreservingAtCore_neg_iff :
     IsOrientationPreservingAtCore Φ (-o) ↔ ∃ L : ℂ × ℝ →L[ℝ] E,
       HasFDerivAt (SolidTorus.coreReading Φ) L 0 ∧
         o.volumeForm ![(Φ (0, 1) : E), L (1, 0), L (I, 0), L (0, 1)] < 0 := by
-  simp only [IsOrientationPreservingAtCore, o.volumeForm_neg_orientation,
+  simp only [isOrientationPreservingAtCore_iff, o.volumeForm_neg_orientation,
     neg_apply, neg_pos]
 
 /-- A solid torus does not preserve both orientations of `S³` at its core point: the derivative
@@ -154,7 +164,7 @@ theorem IsOrientationPreservingAtCore.not_neg (h : IsOrientationPreservingAtCore
     ¬IsOrientationPreservingAtCore Φ (-o) := by
   rw [isOrientationPreservingAtCore_neg_iff]
   rintro ⟨L', hL', hneg⟩
-  obtain ⟨L, hL, hpos⟩ := h
+  obtain ⟨L, hL, hpos⟩ := isOrientationPreservingAtCore_iff.1 h
   rw [hL'.unique hL] at hneg
   exact hneg.not_gt hpos
 
@@ -216,7 +226,7 @@ theorem isOrientationPreservingAtCore_unknotSolidTorus :
     IsOrientationPreservingAtCore unknotSolidTorus
       (EuclideanSpace.basisFun (Fin 4) ℝ).toBasis.orientation := by
   obtain ⟨L, hL, h₁, hI, ht⟩ := exists_hasFDerivAt_coreReading_unknotSolidTorus
-  refine ⟨L, hL, ?_⟩
+  refine isOrientationPreservingAtCore_iff.2 ⟨L, hL, ?_⟩
   rw [coe_unknotSolidTorus_zero_one, h₁, hI, ht, volumeForm_single_zero_two_three_one]
   exact one_pos
 
