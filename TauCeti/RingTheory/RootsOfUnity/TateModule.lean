@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
@@ -78,6 +78,8 @@ order, the profinite power map `a ↦ ζ ^ a` identifies the Tate module with th
   character vanishes exactly on `ℤ`.
 * `TauCeti.PrimeToPTateModule.coe_proj_zHatLift`: the level-`n` component of `zHat.lift ζ a` is
   `ζ_n` raised to the residue of `a` modulo `n`.
+* `TauCeti.PrimeToPTateModule.hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj`: a point whose
+  components are all primitive supplies all `n`-th roots of unity, for every `n ≠ 0`.
 * `TauCeti.PrimeToPTateModule.zHatLift_injective`, `TauCeti.PrimeToPTateModule.zHatLift_surjective`:
   if every component of `ζ` is primitive, `zHat.lift ζ : ℤ̂ → lim_n μ_n(R)` is bijective.
 * The instances `IsTopologicalGroup`, `T2Space`, `TotallyDisconnectedSpace`,
@@ -566,6 +568,13 @@ variable {ζ : PrimeToPTateModule 1 R}
   (hζ : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ : Rˣ) m)
 include hζ
 
+/-- A point of the Tate module whose components are all primitive supplies a primitive `n`-th root
+of unity in `R`, hence all `n`-th roots of unity, for every `n ≠ 0`. -/
+theorem hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj (n : ℕ) [NeZero n] :
+    HasEnoughRootsOfUnity R n :=
+  ⟨⟨_, IsPrimitiveRoot.coe_units_iff.2 (hζ ⟨n, NeZero.ne n, Nat.coprime_one_right _⟩)⟩,
+    rootsOfUnity.isCyclic R n⟩
+
 /-- If every component of `ζ` is primitive, then `zHat.lift ζ` is injective: the level-`n`
 component of `zHat.lift ζ a` is `ζ_n` raised to the residue of `a` modulo `n`, which determines
 that residue, and a profinite integer is determined by its residues. -/
@@ -587,7 +596,10 @@ variable (ζ) in
 /-- **The Tate module of a domain with compatible primitive roots of unity is `ℤ̂`.** If `ζ` is a
 point of `lim_n μ_n(R)` whose level-`n` component is a primitive `n`-th root of unity for every
 `n`, then `zHat.lift ζ` is an isomorphism of topological groups `ℤ̂ ≃ₜ* lim_n μ_n(R)`; this is its
-inverse, sending `ζ` to the canonical generator `zHat.gen`. -/
+inverse, sending `ζ` to the canonical generator `zHat.gen`.
+
+The construction follows `TauCeti.maximalUnramifiedGaloisGroupEquivZHat`: a bijective
+`zHat.lift`, whose inverse is continuous because `ℤ̂` is compact and the target is Hausdorff. -/
 noncomputable def continuousMulEquivZHat : PrimeToPTateModule 1 R ≃ₜ* zHat.{u} :=
   let e : zHat.{u} ≃* PrimeToPTateModule 1 R :=
     MulEquiv.ofBijective (zHat.lift ζ).toMonoidHom

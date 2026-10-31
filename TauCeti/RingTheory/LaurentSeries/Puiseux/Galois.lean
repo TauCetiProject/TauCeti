@@ -250,13 +250,6 @@ variable {ζ : PrimeToPTateModule 1 K}
   (hζ : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ : Kˣ) m)
 include hζ
 
-/-- A point of the Tate module with primitive components supplies a primitive `n`-th root of unity
-in `K`, hence all `n`-th roots of unity, for every `n > 0`. -/
-private theorem hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj (n : ℕ+) :
-    HasEnoughRootsOfUnity K n :=
-  ⟨⟨_, IsPrimitiveRoot.coe_units_iff.2 (hζ ⟨n, n.ne_zero, Nat.coprime_one_right _⟩)⟩,
-    rootsOfUnity.isCyclic K n⟩
-
 variable (K ζ) in
 /-- **The Galois group of the Puiseux field is `ℤ̂`.** If `ζ = (ζₙ)ₙ` is a compatible family of
 primitive `n`-th roots of unity in `K`, the Galois group of the Puiseux field over `K⸨X⸩`, with
