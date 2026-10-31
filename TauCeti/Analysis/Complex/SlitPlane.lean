@@ -19,6 +19,9 @@ the distance to a pole also gives a slit-plane quotient.
 The module also records a locally uniform lower bound for the distance from a point of the slit
 plane to the closed negative half-axis. This bound locally dominates slit-plane kernels and thus
 supports differentiation and holomorphy arguments for parameter-dependent Stieltjes integrals.
+Translating a point of the slit plane by a nonnegative real number `t` keeps it in the slit
+plane, and `‖t + x‖` then grows at least linearly in `t`; these facts control integrands of the
+form `(t + x) ^ s` over `t ∈ (0, ∞)`, such as those of Carlson's symmetric elliptic integrals.
 
 These criteria feed logarithm evaluations of index integrals: a curve piece confined to a
 half-plane about the winding point has slit-compatible chord ratios, so its index integral
@@ -30,6 +33,8 @@ is a principal logarithm.
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
+* `TauCeti.ofReal_add_mem_slitPlane_of_nonneg`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
+* `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 -/
 
 public section
@@ -130,6 +135,36 @@ theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈
       ‖z + ((x : ℝ) : ℂ)‖ = ‖(w + ((x : ℝ) : ℂ)) + (z - w)‖ := by congr 1; ring
       _ ≤ ‖w + ((x : ℝ) : ℂ)‖ + ‖z - w‖ := norm_add_le _ _
   nlinarith [hzc x x.coe_nonneg, x.coe_nonneg]
+
+/-- Adding a nonnegative real number keeps a point of the slit plane in the slit plane. -/
+theorem ofReal_add_mem_slitPlane_of_nonneg {x : ℂ} (hx : x ∈ slitPlane) {t : ℝ}
+    (ht : 0 ≤ t) : (t : ℂ) + x ∈ slitPlane := by
+  rw [mem_slitPlane_iff] at hx ⊢
+  simp only [Complex.add_re, Complex.ofReal_re, Complex.add_im, Complex.ofReal_im, zero_add]
+  exact hx.imp (fun h => by linarith) id
+
+/-- Adding a positive real number moves a point of `slitPlane ∪ {0}` into the slit plane. -/
+theorem ofReal_add_mem_slitPlane_of_mem_union {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {t : ℝ}
+    (ht : 0 < t) : (t : ℂ) + x ∈ slitPlane := by
+  rcases hx with hx | hx
+  · exact ofReal_add_mem_slitPlane_of_nonneg hx ht.le
+  · rw [Set.mem_singleton_iff.mp hx, add_zero]
+    exact ofReal_mem_slitPlane.mpr ht
+
+/-- A nonnegative real number lies in `slitPlane ∪ {0}`. -/
+theorem ofReal_mem_slitPlane_union_zero {x : ℝ} (hx : 0 ≤ x) :
+    (x : ℂ) ∈ slitPlane ∪ {0} := by
+  rcases hx.eq_or_lt with h | h
+  · exact Or.inr (by simp [← h])
+  · exact Or.inl (ofReal_mem_slitPlane.mpr h)
+
+/-- For `x ∈ slitPlane`, `‖t + x‖` grows at least linearly: `c (1 + t) ≤ ‖t + x‖` for `t ≥ 0`. -/
+theorem exists_pos_mul_one_add_le_norm_ofReal_add {x : ℂ} (hx : x ∈ slitPlane) :
+    ∃ c, 0 < c ∧ ∀ t : ℝ, 0 ≤ t → c * (1 + t) ≤ ‖(t : ℂ) + x‖ := by
+  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
+  refine ⟨c, hc, fun t ht => ?_⟩
+  rw [add_comm (t : ℂ)]
+  exact h x (Metric.mem_ball_self hc) ⟨t, ht⟩
 
 end TauCeti
 

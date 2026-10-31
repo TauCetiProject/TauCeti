@@ -10,11 +10,10 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -32,21 +31,21 @@ Carlson's normal form of Legendre's integrals, the complete integral of the seco
 
 The integral converges absolutely when `x, y, z` lie in `Complex.slitPlane ∪ {0}` and at most
 one of them is `0`. Since the integrand is symmetric in `x, y, z`, the convergence theorem
-`TauCeti.Complex.integrableOn_carlsonRG_integrand` is stated with the possibly vanishing argument
+`Complex.integrableOn_carlsonRG_integrand` is stated with the possibly vanishing argument
 in the first position. Outside this domain `carlsonRG` is a totalized value and carries no
 meaning.
 
 ## Main results
 
-* `TauCeti.Complex.carlsonRG` — the integral `R_G`.
-* `TauCeti.Complex.integrableOn_carlsonRG_integrand` — absolute convergence of the defining
+* `Complex.carlsonRG` — the integral `R_G`.
+* `Complex.integrableOn_carlsonRG_integrand` — absolute convergence of the defining
   integral.
-* `TauCeti.Complex.carlsonRG_comm_left`, `TauCeti.Complex.carlsonRG_comm_right` — `R_G` is
+* `Complex.carlsonRG_comm_left`, `Complex.carlsonRG_comm_right` — `R_G` is
   symmetric in its three arguments.
-* `TauCeti.Complex.carlsonRG_ofReal_mul` — homogeneity of degree `1/2` under positive real
+* `Complex.carlsonRG_ofReal_mul` — homogeneity of degree `1/2` under positive real
   scaling.
-* `TauCeti.Complex.carlsonRG_self` — the diagonal value `R_G(x, x, x) = x^(1/2)`.
-* `TauCeti.Complex.carlsonRG_pos` — `R_G` is a positive real number at nonnegative real
+* `Complex.carlsonRG_self` — the diagonal value `R_G(x, x, x) = x^(1/2)`.
+* `Complex.carlsonRG_pos` — `R_G` is a positive real number at nonnegative real
   arguments, at most one of them zero.
 
 ## References
@@ -68,7 +67,7 @@ open MeasureTheory Set Filter Topology
 open Complex (slitPlane mem_slitPlane_iff ofReal_mem_slitPlane)
 open scoped ComplexOrder
 
-namespace TauCeti.Complex
+namespace Complex
 
 /-- **Carlson's completely symmetric elliptic integral of the second kind** (DLMF 19.16.3):
 `R_G(x, y, z) = ¼ ∫₀^∞ (t + x)^(-1/2) (t + y)^(-1/2) (t + z)^(-1/2)
@@ -92,53 +91,30 @@ theorem carlsonRG_def (x y z : ℂ) :
 
 /-! ### Bounds on the factors of the integrand -/
 
-/-- Adding a nonnegative real number keeps a point of the slit plane in the slit plane. -/
-private theorem ofReal_add_mem_slitPlane_of_nonneg {x : ℂ} (hx : x ∈ slitPlane) {t : ℝ}
-    (ht : 0 ≤ t) : (t : ℂ) + x ∈ slitPlane := by
-  rw [mem_slitPlane_iff] at hx ⊢
-  simp only [Complex.add_re, Complex.ofReal_re, Complex.add_im, Complex.ofReal_im, zero_add]
-  exact hx.imp (fun h => by linarith) id
-
-/-- Adding a positive real number moves a point of `slitPlane ∪ {0}` into the slit plane. -/
-private theorem ofReal_add_mem_slitPlane_of_mem_union {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {t : ℝ}
-    (ht : 0 < t) : (t : ℂ) + x ∈ slitPlane := by
-  rcases hx with hx | hx
-  · exact ofReal_add_mem_slitPlane_of_nonneg hx ht.le
-  · rw [mem_singleton_iff.mp hx, add_zero]
-    exact ofReal_mem_slitPlane.mpr ht
-
-/-- For `y ∈ slitPlane`, `‖t + y‖` grows at least linearly: `c (1 + t) ≤ ‖t + y‖` for `t ≥ 0`. -/
-private theorem exists_mul_one_add_le_norm {y : ℂ} (hy : y ∈ slitPlane) :
-    ∃ c, 0 < c ∧ ∀ t : ℝ, 0 ≤ t → c * (1 + t) ≤ ‖(t : ℂ) + y‖ := by
-  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hy
-  refine ⟨c, hc, fun t ht => ?_⟩
-  rw [add_comm (t : ℂ)]
-  exact h y (Metric.mem_ball_self hc) ⟨t, ht⟩
+/-- The norm of the principal power `w ^ (-1/2)` is the real power `‖w‖ ^ (-1/2)`. -/
+private theorem norm_cpow_neg_half (w : ℂ) : ‖w ^ (-(1 / 2) : ℂ)‖ = ‖w‖ ^ (-(1 / 2) : ℝ) := by
+  simpa using Complex.norm_cpow_real w (-(1 / 2))
 
 /-- For `x ∈ slitPlane ∪ {0}`, the factor `(t + x)^(-1/2)` is `O(t^(-1/2))` for `t > 0`. -/
 private theorem exists_norm_cpow_le_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
     ∃ C, 0 < C ∧ ∀ t : ℝ, 0 < t → ‖((t : ℂ) + x) ^ (-(1 / 2) : ℂ)‖ ≤ C * t ^ (-(1 / 2) : ℝ) := by
-  have hnorm (w : ℂ) : ‖w ^ (-(1 / 2) : ℂ)‖ = ‖w‖ ^ (-(1 / 2) : ℝ) := by
-    simpa using Complex.norm_cpow_real w (-(1 / 2))
   rcases hx with hx | hx
-  · obtain ⟨c, hc, h⟩ := exists_mul_one_add_le_norm hx
+  · obtain ⟨c, hc, h⟩ := TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add hx
     refine ⟨c ^ (-(1 / 2) : ℝ), by positivity, fun t ht => ?_⟩
     have h1 : c * t ≤ ‖(t : ℂ) + x‖ := by nlinarith [h t ht.le]
-    rw [hnorm, ← Real.mul_rpow hc.le ht.le]
+    rw [norm_cpow_neg_half, ← Real.mul_rpow hc.le ht.le]
     exact Real.rpow_le_rpow_of_nonpos (by positivity) h1 (by norm_num)
   · refine ⟨1, one_pos, fun t ht => ?_⟩
-    rw [mem_singleton_iff.mp hx, add_zero, hnorm, Complex.norm_real, Real.norm_of_nonneg ht.le,
-      one_mul]
+    rw [mem_singleton_iff.mp hx, add_zero, norm_cpow_neg_half, Complex.norm_real,
+      Real.norm_of_nonneg ht.le, one_mul]
 
 /-- For `y ∈ slitPlane`, the factor `(t + y)^(-1/2)` is `O((1 + t)^(-1/2))` for `t ≥ 0`. -/
 private theorem exists_norm_cpow_le_one_add_rpow {y : ℂ} (hy : y ∈ slitPlane) :
     ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t →
       ‖((t : ℂ) + y) ^ (-(1 / 2) : ℂ)‖ ≤ C * (1 + t) ^ (-(1 / 2) : ℝ) := by
-  obtain ⟨c, hc, h⟩ := exists_mul_one_add_le_norm hy
+  obtain ⟨c, hc, h⟩ := TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add hy
   refine ⟨c ^ (-(1 / 2) : ℝ), by positivity, fun t ht => ?_⟩
-  rw [show (-(1 / 2) : ℂ) = -((1 / 2 : ℝ) : ℂ) by push_cast; ring,
-    ← Complex.ofReal_neg, Complex.norm_cpow_real,
-    ← Real.mul_rpow hc.le (by linarith)]
+  rw [norm_cpow_neg_half, ← Real.mul_rpow hc.le (by linarith)]
   exact Real.rpow_le_rpow_of_nonpos (by positivity) (h t ht) (by norm_num)
 
 /-- For `x ∈ slitPlane ∪ {0}`, the term `x / (t + x) · t` of the integrand is bounded for
@@ -146,7 +122,7 @@ private theorem exists_norm_cpow_le_one_add_rpow {y : ℂ} (hy : y ∈ slitPlane
 private theorem exists_norm_div_mul_le {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 0 < t → ‖x / ((t : ℂ) + x) * t‖ ≤ C := by
   rcases hx with hx | hx
-  · obtain ⟨c, hc, h⟩ := exists_mul_one_add_le_norm hx
+  · obtain ⟨c, hc, h⟩ := TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add hx
     refine ⟨‖x‖ / c, by positivity, fun t ht => ?_⟩
     have hpos : 0 < ‖(t : ℂ) + x‖ := lt_of_lt_of_le (by positivity) (h t ht.le)
     rw [norm_mul, norm_div, Complex.norm_real, Real.norm_of_nonneg ht.le, div_mul_eq_mul_div,
@@ -159,49 +135,14 @@ private theorem exists_norm_div_mul_le {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) 
 private theorem continuousOn_cpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
     ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)) (Ioi 0) := fun _ ht =>
   ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
-    (ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
+    (TauCeti.ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
 
 /-- For `x ∈ slitPlane ∪ {0}`, the term `x / (t + x)` is continuous for `t > 0`. -/
 private theorem continuousOn_div {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
     ContinuousOn (fun t : ℝ => x / ((t : ℂ) + x)) (Ioi 0) := fun _ ht =>
   (continuousAt_const.div (Complex.continuous_ofReal.add continuous_const).continuousAt
-    (Complex.slitPlane_ne_zero (ofReal_add_mem_slitPlane_of_mem_union hx ht))).continuousWithinAt
-
-/-- The comparison function `t^(-1/2) (1 + t)⁻¹` is integrable on `(0, ∞)`: it is `O(t^(-1/2))`
-near `0` and `O(t^(-3/2))` near `∞`. -/
-private theorem integrableOn_rpow_neg_half_mul_one_add_inv :
-    IntegrableOn (fun t : ℝ => t ^ (-(1 / 2) : ℝ) * (1 + t)⁻¹) (Ioi 0) := by
-  have hcont : ContinuousOn (fun t : ℝ => t ^ (-(1 / 2) : ℝ) * (1 + t)⁻¹) (Ioi 0) := by
-    intro t ht
-    have ht : (0 : ℝ) < t := ht
-    have h1 : ContinuousAt (fun t : ℝ => 1 + t) t := continuousAt_const.add continuousAt_id
-    exact ((Real.continuousAt_rpow_const _ _ (Or.inl ht.ne')).mul
-      (h1.inv₀ (by linarith))).continuousWithinAt
-  rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
-  refine IntegrableOn.union ?_ ?_
-  · have h := intervalIntegral.intervalIntegrable_rpow' (a := 0) (b := 1)
-      (r := -(1 / 2)) (by norm_num)
-    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at h
-    refine h.mono' ((hcont.mono Ioc_subset_Ioi_self).aestronglyMeasurable measurableSet_Ioc) ?_
-    refine (ae_restrict_iff' measurableSet_Ioc).mpr (Eventually.of_forall fun t ht => ?_)
-    have ht0 : 0 < t := ht.1
-    rw [Real.norm_of_nonneg (by positivity)]
-    calc t ^ (-(1 / 2) : ℝ) * (1 + t)⁻¹ ≤ t ^ (-(1 / 2) : ℝ) * 1 := by
-          gcongr
-          exact inv_le_one_of_one_le₀ (by linarith)
-      _ = t ^ (-(1 / 2) : ℝ) := mul_one _
-  · refine (integrableOn_Ioi_rpow_of_lt (a := -(3 / 2)) (by norm_num) one_pos).mono'
-      ((hcont.mono (Ioi_subset_Ioi zero_le_one)).aestronglyMeasurable measurableSet_Ioi) ?_
-    refine (ae_restrict_iff' measurableSet_Ioi).mpr (Eventually.of_forall fun t ht => ?_)
-    have ht0 : (0 : ℝ) < t := one_pos.trans ht
-    rw [Real.norm_of_nonneg (by positivity)]
-    calc t ^ (-(1 / 2) : ℝ) * (1 + t)⁻¹ ≤ t ^ (-(1 / 2) : ℝ) * t ^ (-1 : ℝ) := by
-          rw [Real.rpow_neg_one]
-          gcongr
-          linarith
-      _ = t ^ (-(3 / 2) : ℝ) := by
-          rw [← Real.rpow_add ht0]
-          norm_num
+    (Complex.slitPlane_ne_zero
+      (TauCeti.ofReal_add_mem_slitPlane_of_mem_union hx ht))).continuousWithinAt
 
 /-! ### Convergence -/
 
@@ -225,7 +166,8 @@ theorem integrableOn_carlsonRG_integrand {x y z : ℂ} (hx : x ∈ slitPlane ∪
     (continuousOn_cpow (Or.inl hz))).mul (((continuousOn_div hx).add
       (continuousOn_div (Or.inl hy))).add (continuousOn_div (Or.inl hz)))).mul
     Complex.continuous_ofReal.continuousOn
-  refine (integrableOn_rpow_neg_half_mul_one_add_inv.const_mul
+  -- The majorant `t^(-1/2) (1 + t)⁻¹` is the beta-integral integrand with `a = b = 1/2`.
+  refine ((TauCeti.integrableOn_rpow_mul_one_add_rpow one_half_pos one_half_pos).const_mul
     (Cx * Cy * Cz * (Dx + Dy + Dz))).mono' (hcont.aestronglyMeasurable measurableSet_Ioi) ?_
   refine (ae_restrict_iff' measurableSet_Ioi).mpr (Eventually.of_forall fun t ht => ?_)
   have ht : (0 : ℝ) < t := ht
@@ -233,15 +175,17 @@ theorem integrableOn_carlsonRG_integrand {x y z : ℂ} (hx : x ∈ slitPlane ∪
       Dx + Dy + Dz := by
     rw [add_mul, add_mul]
     exact (norm_add₃_le).trans (add_le_add_three (hDx t ht) (hDy t ht) (hDz t ht))
-  have hone : (1 + t) ^ (-(1 / 2) : ℝ) * (1 + t) ^ (-(1 / 2) : ℝ) = (1 + t)⁻¹ := by
-    rw [← Real.rpow_add (by linarith), ← Real.rpow_neg_one]
+  have hone : (1 + t) ^ (-(1 / 2) : ℝ) * (1 + t) ^ (-(1 / 2) : ℝ) =
+      (1 + t) ^ (-((1 / 2 : ℝ) + 1 / 2)) := by
+    rw [← Real.rpow_add (by linarith)]
     norm_num
+  have hhalf : (1 / 2 : ℝ) - 1 = -(1 / 2) := by norm_num
   rw [mul_assoc _ _ (t : ℂ), norm_mul, norm_mul, norm_mul]
   calc _ ≤ Cx * t ^ (-(1 / 2) : ℝ) * (Cy * (1 + t) ^ (-(1 / 2) : ℝ)) *
         (Cz * (1 + t) ^ (-(1 / 2) : ℝ)) * (Dx + Dy + Dz) := by
         gcongr
         exacts [hCx t ht, hCy t ht.le, hCz t ht.le]
-    _ = _ := by rw [← hone]; ring
+    _ = _ := by rw [hhalf, ← hone]; ring
 
 /-! ### Symmetry -/
 
@@ -299,23 +243,11 @@ theorem carlsonRG_ofReal_mul {l : ℝ} (hl : 0 < l) (x y z : ℂ) :
 
 /-! ### Diagonal value -/
 
-/-- For `x` in the slit plane and real `s > 0`, `(t + x)^(-s)` tends to `0` as `t → ∞`. -/
-private theorem tendsto_ofReal_add_cpow_neg {x : ℂ} (hx : x ∈ slitPlane) {s : ℝ} (hs : 0 < s) :
-    Tendsto (fun t : ℝ => ((t : ℂ) + x) ^ (-(s : ℂ))) atTop (𝓝 0) := by
-  obtain ⟨c, hc, h⟩ := exists_mul_one_add_le_norm hx
-  have hnorm : Tendsto (fun t : ℝ => ‖(t : ℂ) + x‖) atTop atTop := by
-    refine tendsto_atTop_mono' atTop ?_
-      ((tendsto_atTop_add_const_left atTop 1 tendsto_id).const_mul_atTop hc)
-    filter_upwards [eventually_ge_atTop 0] with t ht
-    exact h t ht
-  refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
-  simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
-  exact (tendsto_rpow_neg_atTop hs).comp hnorm
-
 /-- **The diagonal value of `R_G`**: `R_G(x, x, x) = x^(1/2)` for `x` in the slit plane. -/
+@[simp]
 theorem carlsonRG_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRG x x x = x ^ (1 / 2 : ℂ) := by
   have hmem (t : ℝ) (ht : 0 ≤ t) : (t : ℂ) + x ∈ slitPlane :=
-    ofReal_add_mem_slitPlane_of_nonneg hx ht
+    TauCeti.ofReal_add_mem_slitPlane_of_nonneg hx ht
   have hx0 : x ≠ 0 := Complex.slitPlane_ne_zero hx
   -- `-6x (t + x)^(-1/2) + 2x² (t + x)^(-3/2)` is an antiderivative of `3x t (t + x)^(-5/2)`.
   have hderiv : ∀ t ∈ Ici (0 : ℝ),
@@ -351,8 +283,10 @@ theorem carlsonRG_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRG x x x = x ^ 
     linear_combination (3 * x * u ^ 5) * ht' + (3 * x * u ^ 3) * hu2'
   have hlim : Tendsto (fun t : ℝ => -6 * x * ((t : ℂ) + x) ^ (-((1 / 2 : ℝ) : ℂ)) +
       2 * x ^ 2 * ((t : ℂ) + x) ^ (-((3 / 2 : ℝ) : ℂ))) atTop (𝓝 0) := by
-    simpa using ((tendsto_ofReal_add_cpow_neg hx (by norm_num : (0 : ℝ) < 1 / 2)).const_mul
-      (-6 * x)).add ((tendsto_ofReal_add_cpow_neg hx (by norm_num : (0 : ℝ) < 3 / 2)).const_mul
+    simpa using
+      ((TauCeti.tendsto_ofReal_add_cpow_neg hx (by norm_num : (0 : ℝ) < 1 / 2)).const_mul
+        (-6 * x)).add
+      ((TauCeti.tendsto_ofReal_add_cpow_neg hx (by norm_num : (0 : ℝ) < 3 / 2)).const_mul
         (2 * x ^ 2))
   rw [carlsonRG_def, integral_Ioi_of_hasDerivAt_of_tendsto' hderiv
     (integrableOn_carlsonRG_integrand (Or.inl hx) hx hx) hlim]
@@ -368,13 +302,6 @@ theorem carlsonRG_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRG x x x = x ^ 
   linear_combination (3 / 2 : ℂ) * h1 - (1 / 2 : ℂ) * h2
 
 /-! ### Real arguments -/
-
-/-- A nonnegative real number lies in `slitPlane ∪ {0}`. -/
-private theorem ofReal_mem_slitPlane_union_zero {x : ℝ} (hx : 0 ≤ x) :
-    (x : ℂ) ∈ slitPlane ∪ {0} := by
-  rcases hx.eq_or_lt with h | h
-  · exact Or.inr (by simp [← h])
-  · exact Or.inl (ofReal_mem_slitPlane.mpr h)
 
 /-- At a positive real base, the principal power `(t + w) ^ (-1/2)` is the real one. -/
 private theorem ofReal_add_cpow_neg_half {w t : ℝ} (hw : 0 ≤ w) (ht : 0 < t) :
@@ -399,7 +326,7 @@ theorem carlsonRG_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 < y) (hz : 0 < z) :
         ofReal_add_cpow_neg_half hz.le ht, Complex.ofReal_mul, Complex.ofReal_div,
         Complex.ofReal_add]
   have hint : IntegrableOn f (Ioi 0) := by
-    have h := (integrableOn_carlsonRG_integrand (ofReal_mem_slitPlane_union_zero hx)
+    have h := (integrableOn_carlsonRG_integrand (TauCeti.ofReal_mem_slitPlane_union_zero hx)
       (ofReal_mem_slitPlane.mpr hy) (ofReal_mem_slitPlane.mpr hz)).congr_fun heq measurableSet_Ioi
     simpa using h.re
   have hpos (t : ℝ) (ht : t ∈ Ioi 0) : 0 < f t := by
@@ -412,9 +339,7 @@ theorem carlsonRG_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 < y) (hz : 0 < z) :
     refine lt_of_lt_of_le ?_ (measure_mono fun t ht => ⟨(hpos t ht).ne', ht⟩ :
       volume (Ioi (0 : ℝ)) ≤ volume (Function.support f ∩ Ioi 0))
     simp
-  rw [carlsonRG_def, setIntegral_congr_fun measurableSet_Ioi heq, integral_complex_ofReal,
-    show (1 / 4 : ℂ) * ((∫ t in Ioi (0 : ℝ), f t : ℝ) : ℂ) =
-      ((1 / 4 * ∫ t in Ioi (0 : ℝ), f t : ℝ) : ℂ) by push_cast; ring]
-  exact Complex.zero_lt_real.mpr (by positivity)
+  rw [carlsonRG_def, setIntegral_congr_fun measurableSet_Ioi heq, integral_complex_ofReal]
+  exact mul_pos (by norm_num) (Complex.zero_lt_real.mpr hI)
 
-end TauCeti.Complex
+end Complex

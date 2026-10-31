@@ -11,6 +11,8 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
@@ -41,6 +43,8 @@ a Schwarz--Christoffel map in the reciprocal coordinate at infinity.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
+* `TauCeti.tendsto_ofReal_add_cpow_neg` -- for `x` in the slit plane and real `s > 0`,
+  `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
 -/
 
 public section
@@ -104,6 +108,20 @@ theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ} (hr : 0 < r)
     calc
       u.arg * r⁻¹ ≤ (r * Real.pi) * r⁻¹ := mul_le_mul_of_nonneg_right harg.2 (inv_nonneg.mpr hr.le)
       _ = Real.pi := by field_simp
+
+/-- For `x` in the slit plane and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number
+`t` tends to `∞`. -/
+theorem tendsto_ofReal_add_cpow_neg {x : ℂ} (hx : x ∈ slitPlane) {s : ℝ} (hs : 0 < s) :
+    Tendsto (fun t : ℝ => ((t : ℂ) + x) ^ (-(s : ℂ))) atTop (𝓝 0) := by
+  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
+  have hnorm : Tendsto (fun t : ℝ => ‖(t : ℂ) + x‖) atTop atTop := by
+    refine tendsto_atTop_mono' atTop ?_
+      ((tendsto_atTop_add_const_left atTop 1 tendsto_id).const_mul_atTop hc)
+    filter_upwards [eventually_ge_atTop 0] with t ht
+    exact h t ht
+  refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
+  simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
+  exact (tendsto_rpow_neg_atTop hs).comp hnorm
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
 where every base equals one. -/
