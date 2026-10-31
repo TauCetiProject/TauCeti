@@ -32,7 +32,7 @@ example (K : Type) [Field K] : IsFiniteEtaleSplit (LocallyConstant Unit K) ↔ I
   let e : LocallyConstant Unit K ≃+* K := RingEquiv.ofBijective (LocallyConstant.evalRingHom ())
     ⟨fun f g h ↦ LocallyConstant.ext fun _ ↦ h, fun a ↦ ⟨LocallyConstant.const Unit a, rfl⟩⟩
   rw [← isFiniteEtaleSplit_iff_isSepClosed]
-  exact ⟨fun _ ↦ .of_ringEquiv e, fun _ ↦ .of_ringEquiv e.symm⟩
+  exact ⟨fun _ ↦ e.isFiniteEtaleSplit, fun _ ↦ e.symm.isFiniteEtaleSplit⟩
 
 /-- For the empty space, the function ring is the zero ring, and it has no nonsplit finite étale
 covers whatever the coefficient ring. -/

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.LocallyConstant.Algebra
 public import TauCeti.Algebra.Colimit.Ring
-public import TauCeti.RingTheory.Etale.FiniteEtaleSplit
+public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 public import TauCeti.RingTheory.Etale.NoetherianDescent
 
 /-!
@@ -34,7 +34,6 @@ and `A` a separably closed field, this is the locally constant case of Scholze's
 * `TauCeti.IsFiniteEtaleSplit.of_forall_finitePresentation`: if every ring map from a finitely
   presented ring into `R` factors through a ring without nonsplit finite étale covers, then `R`
   has none.
-* `TauCeti.IsFiniteEtaleSplit.of_ringEquiv`: the condition is invariant under ring isomorphisms.
 * `Ring.DirectLimit.isFiniteEtaleSplit`: a directed colimit, over a nonempty index set, of rings
   without nonsplit finite étale covers has none.
 * `LocallyConstant.isFiniteEtaleSplit`: if `A` has no nonsplit finite étale covers, then neither
@@ -76,12 +75,6 @@ theorem IsFiniteEtaleSplit.of_forall_finitePresentation {R : Type u} [CommRing R
     -- `A ⊗[R₀] T₀` is totally split over `A`, hence so is its base change to `R`.
     exact ((Algebra.IsTotallySplit.of_isFiniteEtaleSplit (A ⊗[R₀] T₀)).baseChange R).of_algEquiv
       ((Algebra.TensorProduct.cancelBaseChange R₀ A R R T₀).trans e.symm)
-
-/-- Having no nonsplit finite étale covers is invariant under ring isomorphisms. -/
-theorem IsFiniteEtaleSplit.of_ringEquiv {A : Type v} {R : Type u} [CommRing A] [CommRing R]
-    [IsFiniteEtaleSplit A] (e : A ≃+* R) : IsFiniteEtaleSplit R :=
-  .of_forall_finitePresentation fun _ _ _ g ↦
-    ⟨A, _, inferInstance, e.symm.toRingHom.comp g, e.toRingHom, by ext; simp⟩
 
 end TauCeti
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Etale.FiniteEtaleSplit
+import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 import TauCeti.RingTheory.Henselian.Etale
 import Mathlib.NumberTheory.Padics.Complex
 import TauCeti.RingTheory.AdjoinRoot.Separable
