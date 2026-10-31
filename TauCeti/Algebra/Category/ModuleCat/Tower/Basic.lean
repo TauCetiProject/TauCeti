@@ -194,6 +194,7 @@ theorem limπ_apply (n : ℕ) (x : F.lim) : F.limπ n x = (x : F.Product) n :=
   (rfl)
 
 /-- Two points of `lim A` are equal when all their coordinates agree. -/
+@[ext]
 theorem lim_ext {x y : F.lim} (h : ∀ n, F.limπ n x = F.limπ n y) : x = y :=
   Subtype.ext <| funext h
 

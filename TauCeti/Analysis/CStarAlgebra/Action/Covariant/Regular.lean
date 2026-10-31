@@ -11,7 +11,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
 public import TauCeti.RepresentationTheory.Continuous.LeftRegular
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
 import TauCeti.MeasureTheory.Function.Lp.Indicator
-import TauCeti.MeasureTheory.Group.ConvolutionSupport
+import TauCeti.MeasureTheory.Group.Convolution.Support
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!

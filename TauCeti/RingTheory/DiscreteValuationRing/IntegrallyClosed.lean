@@ -23,11 +23,15 @@ the dimension.
 
 ## Main results
 
+* `IsPrincipalIdealRing.of_krullDimLE_one`: a Noetherian integrally closed local domain of Krull
+  dimension at most one is a principal ideal ring.
 * `IsDiscreteValuationRing.of_krullDimLE_one`: a Noetherian integrally closed local domain of
   Krull dimension at most one that is not a field is a discrete valuation ring.
 * `IsDiscreteValuationRing.of_ringKrullDim_eq_one`: the dimension-one specialization.
 * `IsLocalization.AtPrime.isDiscreteValuationRing_of_height_eq_one`: the localization of a
   Noetherian integrally closed domain at a prime of height one is a discrete valuation ring.
+* `IsLocalization.AtPrime.isPrincipalIdealRing_of_height_le_one`: the localization of a
+  Noetherian integrally closed domain at a prime of height at most one is a principal ideal ring.
 
 ## References
 
@@ -44,6 +48,16 @@ public section
 
 open IsLocalRing
 
+/-- A Noetherian integrally closed local domain of Krull dimension at most one is a principal
+ideal ring: it is a field or a discrete valuation ring. -/
+theorem IsPrincipalIdealRing.of_krullDimLE_one {R : Type*} [CommRing R] [IsDomain R]
+    [IsLocalRing R] [IsNoetherianRing R] [IsIntegrallyClosed R] [Ring.KrullDimLE 1 R] :
+    IsPrincipalIdealRing R := by
+  have hnormal : IsIntegrallyClosed R ∧
+      ∀ P : Ideal R, P ≠ ⊥ → P.IsPrime → P = maximalIdeal R :=
+    ⟨inferInstance, fun P hP _ ↦ eq_maximalIdeal (Ideal.isMaximal_of_isPrime_of_ne_bot P hP)⟩
+  exact ((tfae_of_isNoetherianRing_of_isLocalRing_of_isDomain R).out 4 1).mp hnormal
+
 namespace IsDiscreteValuationRing
 
 /-- A Noetherian integrally closed local domain of Krull dimension at most one that is not a
@@ -52,11 +66,7 @@ theorem of_krullDimLE_one {R : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
     [IsNoetherianRing R] [IsIntegrallyClosed R] [Ring.KrullDimLE 1 R]
     (hnot : ¬ IsField R) : _root_.IsDiscreteValuationRing R := by
   have hmax : maximalIdeal R ≠ ⊥ := fun hbot ↦ hnot (isField_iff_maximalIdeal_eq.mpr hbot)
-  have hnormal : IsIntegrallyClosed R ∧
-      ∀ P : Ideal R, P ≠ ⊥ → P.IsPrime → P = maximalIdeal R :=
-    ⟨inferInstance, fun P hP _ ↦ eq_maximalIdeal (Ideal.isMaximal_of_isPrime_of_ne_bot P hP)⟩
-  have : IsPrincipalIdealRing R :=
-    ((tfae_of_isNoetherianRing_of_isLocalRing_of_isDomain R).out 4 1).mp hnormal
+  have : IsPrincipalIdealRing R := .of_krullDimLE_one
   exact { not_a_field' := hmax }
 
 /-- A Noetherian integrally closed local domain of Krull dimension one is a discrete valuation
@@ -85,3 +95,18 @@ theorem IsLocalization.AtPrime.isDiscreteValuationRing_of_height_eq_one {A : Typ
   have := isIntegrallyClosed_of_isLocalization Aₚ P.primeCompl P.primeCompl_le_nonZeroDivisors
   refine IsDiscreteValuationRing.of_ringKrullDim_eq_one ?_
   rw [IsLocalization.AtPrime.ringKrullDim_eq_height P Aₚ, hP, WithBot.coe_one]
+
+/-- The localization of a Noetherian integrally closed domain at a prime of height at most one is
+a principal ideal ring: a field at the zero ideal, and a discrete valuation ring at a prime of
+height one. -/
+theorem IsLocalization.AtPrime.isPrincipalIdealRing_of_height_le_one {A : Type*} [CommRing A]
+    [IsDomain A] [IsNoetherianRing A] [IsIntegrallyClosed A] {P : Ideal A} [P.IsPrime]
+    (hP : P.height ≤ 1) (Aₚ : Type*) [CommRing Aₚ] [IsDomain Aₚ] [Algebra A Aₚ]
+    [IsLocalization.AtPrime Aₚ P] : IsPrincipalIdealRing Aₚ := by
+  have := IsLocalization.AtPrime.isLocalRing Aₚ P
+  have := IsLocalization.isNoetherianRing P.primeCompl Aₚ inferInstance
+  have := isIntegrallyClosed_of_isLocalization Aₚ P.primeCompl P.primeCompl_le_nonZeroDivisors
+  have : Ring.KrullDimLE 1 Aₚ := Ring.krullDimLE_iff.mpr <| by
+    rw [IsLocalization.AtPrime.ringKrullDim_eq_height P Aₚ]
+    exact_mod_cast hP
+  exact .of_krullDimLE_one

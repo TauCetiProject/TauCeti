@@ -6,20 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Basic
+public import Mathlib.RingTheory.Localization.Away.Basic
+import Mathlib.RingTheory.Localization.Away.AdjoinRoot
+import TauCeti.RingTheory.Localization.Ideal
 
 /-!
-# Ideal intersections by adjoining a variable
+# Ideal intersections and saturations by adjoining a variable
 
 For ideals `I` and `J` of a commutative ring, their intersection is the contraction along
 `Polynomial.C` of `X * I + (1 - X) * J`. Here multiplication by a polynomial means
 multiplication by its principal ideal, and the ideals of coefficients are extended to the
 polynomial ring. The generator version makes this a reduction of intersection to elimination.
+
+The saturation of an ideal `I` by an element `r`, the set of `x` with `r ^ n * x ∈ I` for some
+`n`, is the contraction along `Polynomial.C` of `I[X] + (r X - 1)`. Since `R[X] ⧸ (r X - 1)` is
+the localization of `R` away from `r` (`Localization.awayEquivAdjoin`), this is the contraction of
+`I` from that localization, so saturation is also reduced to elimination.
+
 No field or Noetherian hypothesis is needed.
 
 ## References
 
 * D. Cox, J. Little, D. O'Shea, *Ideals, Varieties, and Algorithms*, Chapter 4, §3,
-  the added-variable construction for intersections of ideals.
+  the added-variable construction for intersections of ideals, and Chapter 4, §4,
+  the added-variable construction for saturations.
 -/
 
 public section
@@ -57,5 +67,34 @@ theorem span_inf_span_eq_comap_C (s t : Set R) :
         (C : R →+* R[X]) := by
   rw [inf_eq_comap_C, map_span, map_span, span_mul_span, span_mul_span, ← span_union]
   simp only [Set.singleton_mul, Set.image_image]
+
+/-- **Saturation by an added variable.** An element `x` lies in the contraction along `C` of
+`I[X] + (r X - 1)` if and only if some power of `r` multiplies it into `I`. -/
+theorem mem_comap_C_map_C_sup_span_C_mul_X_sub_one_iff {I : Ideal R} {r x : R} :
+    x ∈ (I.map C ⊔ span {C r * X - 1}).comap (C : R →+* R[X]) ↔ ∃ n : ℕ, r ^ n * x ∈ I := by
+  have := IsLocalization.adjoin_inv r
+  let π := AdjoinRoot.mk (C r * X - 1)
+  -- The added-variable ideal is the preimage of the extension of `I` to `R[X] ⧸ (r X - 1)`,
+  -- which is the localization of `R` away from `r`.
+  have hJ : I.map C ⊔ span {C r * X - 1} = ((I.map C).map π).comap π := by
+    rw [comap_map_of_surjective _ AdjoinRoot.mk_surjective, ← RingHom.ker_eq_comap_bot]
+    congr 1
+    ext g
+    rw [RingHom.mem_ker, AdjoinRoot.mk_eq_zero, mem_span_singleton]
+  have hπC : π.comp C = algebraMap R (AdjoinRoot (C r * X - 1)) := by
+    ext x
+    simp [π, AdjoinRoot.algebraMap_eq]
+  rw [hJ, comap_comap, map_map, hπC, mem_comap,
+    IsLocalization.Away.algebraMap_mem_map_algebraMap_iff r]
+
+/-- The contraction along `C` of `I[X] + (r X - 1)` is the contraction of `I` from the
+localization `S` of `R` away from `r`. -/
+theorem comap_C_map_C_sup_span_C_mul_X_sub_one (I : Ideal R) (r : R) (S : Type*) [CommSemiring S]
+    [Algebra R S] [IsLocalization.Away r S] :
+    (I.map C ⊔ span {C r * X - 1}).comap (C : R →+* R[X]) =
+      (I.map (algebraMap R S)).comap (algebraMap R S) := by
+  ext x
+  rw [mem_comap_C_map_C_sup_span_C_mul_X_sub_one_iff, mem_comap,
+    IsLocalization.Away.algebraMap_mem_map_algebraMap_iff r]
 
 end Ideal

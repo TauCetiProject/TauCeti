@@ -39,8 +39,9 @@ every tangent space. The Gauss formula for the isometric inclusion `Sⁿ → E` 
 * `TauCeti.ricciTensor_sphere`: the Ricci tensor of the round `n`-sphere is `n - 1` times the
   metric.
 * `TauCeti.scalarCurvature_sphere`: the scalar curvature of the round `n`-sphere is `n (n - 1)`.
-* `TauCeti.scalarCurvature_sphereRoundMetric_ofLE`: the same, for the round metric regarded as a
-  smooth metric.
+* `TauCeti.scalarCurvature_sphereRoundMetric_ofLE` and
+  `TauCeti.isConstantCurvatureTensor_sphereRoundMetric_ofLE`: the scalar curvature and the
+  constant-curvature tensor for the round metric regarded as a smooth metric.
 
 ## References
 
@@ -236,5 +237,13 @@ theorem scalarCurvature_sphereRoundMetric_ofLE (p : sphere (0 : E) 1) :
   rw [ContMDiffRiemannianMetric.scalarCurvature_eq_scalarCurvature_leviCivitaConnection _
     (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm]
   exact scalarCurvature_sphere p
+
+/-- The round metric on the unit sphere, regarded as a smooth metric, has the constant-curvature
+tensor with parameter `1`. -/
+theorem isConstantCurvatureTensor_sphereRoundMetric_ofLE :
+    ((sphereRoundMetric (E := E) (n := n)).ofLE le_top).IsConstantCurvatureTensor 1 :=
+  (ContMDiffRiemannianMetric.isConstantCurvatureTensor_iff_of_riemannianBundle_eq
+    (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm 1).2 fun p w u v ↦ by
+      rw [curvatureTensor_sphere, one_smul]
 
 end TauCeti

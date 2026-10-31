@@ -30,6 +30,8 @@ coefficients, and constructs the corresponding linear normal-form map.
 
 * `MonomialOrder.disjoint_restrictSupport_standardMonomials`: no nonzero polynomial supported on
   the standard monomials of `I` lies in `I`. This holds for every ideal, with no Gröbner basis.
+* `MonomialOrder.standardMonomials_span_leadingTerm`: `I` and its ideal of leading terms have the
+  same standard monomials.
 * `MonomialOrder.IsGroebnerBasis.normalForm_eq_iff`: `normalForm f` is characterized as the
   polynomial supported on the standard monomials that is congruent to `f` modulo `I`.
 * `MonomialOrder.IsGroebnerBasis.isRemainder_iff_eq_normalForm`: the remainders of `f` on division
@@ -76,6 +78,21 @@ any nonzero element of `I`. -/
 theorem mem_standardMonomials_iff :
     c ∈ m.standardMonomials I ↔ ∀ p ∈ I, p ≠ 0 → ¬ m.degree p ≤ c :=
   Iff.rfl
+
+variable (m I) in
+/-- An ideal and its ideal of leading terms have the same standard monomials. -/
+@[simp]
+theorem standardMonomials_span_leadingTerm :
+    m.standardMonomials (Ideal.span (m.leadingTerm '' (I : Set (MvPolynomial σ R)))) =
+      m.standardMonomials I := by
+  ext c
+  simp only [mem_standardMonomials_iff]
+  refine ⟨fun hc p hp hp0 hpc ↦ ?_, fun hc q hq hq0 hqc ↦ ?_⟩
+  · exact hc _ (Ideal.subset_span ⟨p, hp, rfl⟩) ((m.leadingTerm_eq_zero_iff p).not.2 hp0)
+      ((m.degree_leadingTerm p).symm ▸ hpc)
+  · obtain ⟨p, hp, hp0, hpq⟩ := exists_degree_le_of_mem_span_leadingTerm hq
+      (m.degree_mem_support hq0)
+    exact hc p hp hp0 (hpq.trans hqc)
 
 /-- The standard monomials of `I` are the exponents not divisible by the leading monomial of a
 nonzero element of a Gröbner basis of `I`. -/

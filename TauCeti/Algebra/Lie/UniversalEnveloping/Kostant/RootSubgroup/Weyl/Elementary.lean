@@ -34,6 +34,8 @@ about the three exponentials alone.
   representative is the product `xᵢ(1) xⱼ(-1) xᵢ(1)` of parametrized root-subgroup elements.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantWeylGL_mem_kostantElementarySubgroup`: it therefore
   belongs to the elementary group.
+* `TauCeti.UniversalEnvelopingAlgebra.mapScalarExtensionAutomorphisms_kostantWeylGL`: it is
+  natural in the value ring.
 
 ## References
 
@@ -77,6 +79,18 @@ theorem kostantWeylGL_eq_kostantRootSubgroupParam_mul (A : CommAlgCat.{w} ℤ) :
   refine LinearMap.ext fun z => ?_
   simp only [Units.val_mul, Module.End.mul_apply, kostantRootSubgroupParam_val_apply,
     toAdd_ofAdd]
+
+/-- **Scalar extension of the Weyl representative.** Extending scalars along a morphism of value
+rings carries the Weyl representative over `A` to the one over `B`: its three factors have the
+integer parameters `1` and `-1`, which every morphism fixes. -/
+theorem mapScalarExtensionAutomorphisms_kostantWeylGL {A B : CommAlgCat.{w} ℤ} (φ : A ⟶ B) :
+    GeneralLinear.mapScalarExtensionAutomorphisms (V := M) φ (kostantWeylGL e h ρ M hM hi hj A) =
+      kostantWeylGL e h ρ M hM hi hj B := by
+  rw [kostantWeylGL_eq_kostantRootSubgroupParam_mul,
+    kostantWeylGL_eq_kostantRootSubgroupParam_mul, map_mul, map_mul,
+    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
+    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam, toAdd_ofAdd, toAdd_ofAdd,
+    map_neg, map_one φ.hom]
 
 include e hM in
 /-- **The Weyl representative lies in the elementary group**, being a product of three

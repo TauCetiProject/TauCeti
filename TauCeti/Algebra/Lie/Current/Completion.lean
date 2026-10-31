@@ -64,6 +64,8 @@ and every `N` there is `M` such that `I_M x` lies in the kernel of the projectio
 * `TauCeti.CurrentAlgebra.exists_forall_limπ_smul_eq_zero`: the orbit maps of the action of `U` on
   `Û` are continuous.
 * `TauCeti.CurrentAlgebra.limπ_mul`: the coordinates of a product, `(x y)_N = x · y_N`.
+* `TauCeti.CurrentAlgebra.limπ_one`, `TauCeti.CurrentAlgebra.coe_one_apply`: the coordinates of
+  the unit are the classes of `1`.
 * `TauCeti.CurrentAlgebra.exists_forall_mul_mem_completedOrderLeftIdeal`: the right-shift estimate
   in `Û`.
 
@@ -136,6 +138,20 @@ theorem limπ_mul (x y : CompletedEnveloping Φ hΦ hΦs a) (n : ℕ) :
           (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a) n)
         x ((orderQuotientTower Φ hΦ hΦs a).limπ n y) :=
   ModuleTower.limπ_limMul _ x y n
+
+/-- The coordinates of the unit of the completed enveloping algebra: `1_n` is the class of `1`. -/
+theorem limπ_one (n : ℕ) :
+    (orderQuotientTower Φ hΦ hΦs a).limπ n 1 =
+      ModuleTower.quotientsπ _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) n 1 :=
+  LinearMap.congr_fun (ModuleTower.limπ_comp_toLimQuotients _ _ n) 1
+
+/-- The coordinates of the unit of the completed enveloping algebra, in the simp normal form
+`↑x n` of `TauCeti.ModuleTower.limπ_apply`. -/
+@[simp]
+theorem coe_one_apply (n : ℕ) :
+    ((1 : CompletedEnveloping Φ hΦ hΦs a) : (orderQuotientTower Φ hΦ hΦs a).Product) n =
+      ModuleTower.quotientsπ _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) n 1 :=
+  (ModuleTower.limπ_apply _ n 1).symm.trans (limπ_one n)
 
 variable (Φ hΦ hΦs a)
 
@@ -229,7 +245,6 @@ instance : IsTopologicalRing (CompletedEnveloping Φ hΦ hΦs a) where
 /-- The left ideals `ker (Û → U / I_n)` are closed. -/
 theorem isClosed_completedOrderLeftIdeal (n : ℕ) :
     IsClosed (completedOrderLeftIdeal Φ hΦ hΦs a n : Set (CompletedEnveloping Φ hΦ hΦs a)) :=
-  AddSubgroup.isClosed_of_isOpen (completedOrderLeftIdeal Φ hΦ hΦs a n).toAddSubgroup
-    ((orderQuotientTower Φ hΦ hΦs a).isOpen_ker_limπ n)
+  (orderQuotientTower Φ hΦ hΦs a).isClosed_ker_limπ n
 
 end TauCeti.CurrentAlgebra
