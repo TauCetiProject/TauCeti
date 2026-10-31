@@ -137,8 +137,8 @@ theorem fiberStalkMap_id_π (F : X.Presheaf C) (x : X) :
 instance isIso_fiberStalkMap_id (F : X.Presheaf C) (x : X) :
     IsIso (fiberStalkMap C (𝟙 X) F x) := by
   let : Unique { x' : X // (𝟙 X) x' = x } := ⟨⟨⟨x, rfl⟩⟩, fun x' ↦ Subtype.ext x'.2⟩
-  -- `(productUniqueIso _).hom` is the projection to the default point `⟨x, rfl⟩`.
-  have h : fiberStalkMap C (𝟙 X) F x ≫ (productUniqueIso _).hom = 𝟙 _ := fiberStalkMap_id_π F x
+  have h : fiberStalkMap C (𝟙 X) F x ≫ (productUniqueIso _).hom = 𝟙 _ := by
+    rw [productUniqueIso_hom]; exact fiberStalkMap_id_π F x
   have : IsIso (fiberStalkMap C (𝟙 X) F x ≫ (productUniqueIso _).hom) := h ▸ IsIso.id _
   exact IsIso.of_isIso_comp_right _ (productUniqueIso _).hom
 
