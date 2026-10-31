@@ -168,6 +168,33 @@ private lemma dayStructureMap_mk_one_comp (f : X.X ⟶ Y.X)
   rw [dayStructureMap_mk_one, dayStructureMap_mk_one, Category.assoc, whisker_exchange_assoc]
   exact congrArg (_ ≫ ·) (hf n)
 
+/-- Every map of symmetric sequences is compatible with the action of the unit level, which acts
+through the unit `S⁰ ≅ K^∧0`. -/
+private lemma dayStructureMap_unit_comp (f : X.X ⟶ Y.X) (q : FiniteBijection) :
+    X.dayStructureMap (𝟙_ _) q ≫ f.natTrans.app (𝟙_ _ ⊗ q) =
+      (SymmetricSequence.smashPow K).functor.obj (𝟙_ _) ◁ f.natTrans.app q ≫
+        Y.dayStructureMap (𝟙_ _) q := by
+  rw [← cancel_epi (Functor.LaxMonoidal.ε (SymmetricSequence.smashPow K).functor ▷ _),
+    ← whisker_exchange_assoc]
+  simp
+
+/-- Compatibility of a map of symmetric sequences with the actions of two levels gives its
+compatibility with the action of their block sum, whose multiplication map is an isomorphism. -/
+private lemma dayStructureMap_tensor_comp (f : X.X ⟶ Y.X) {p p' : FiniteBijection}
+    (hp : ∀ q, X.dayStructureMap p q ≫ f.natTrans.app (p ⊗ q) =
+      (SymmetricSequence.smashPow K).functor.obj p ◁ f.natTrans.app q ≫ Y.dayStructureMap p q)
+    (hp' : ∀ q, X.dayStructureMap p' q ≫ f.natTrans.app (p' ⊗ q) =
+      (SymmetricSequence.smashPow K).functor.obj p' ◁ f.natTrans.app q ≫
+        Y.dayStructureMap p' q)
+    (q : FiniteBijection) :
+    X.dayStructureMap (p ⊗ p') q ≫ f.natTrans.app ((p ⊗ p') ⊗ q) =
+      (SymmetricSequence.smashPow K).functor.obj (p ⊗ p') ◁ f.natTrans.app q ≫
+        Y.dayStructureMap (p ⊗ p') q := by
+  rw [← cancel_epi (Functor.LaxMonoidal.μ (SymmetricSequence.smashPow K).functor p p' ▷ _),
+    dayStructureMap_assoc_assoc, ← whisker_exchange_assoc, dayStructureMap_assoc,
+    NatTrans.naturality, reassoc_of% (hp (p' ⊗ q)), ← whiskerLeft_comp_assoc, hp',
+    whiskerLeft_comp_assoc, associator_naturality_right_assoc]
+
 /-- A map of underlying symmetric sequences is a module map exactly when it commutes with the
 single structure maps `K ∧ X_n ⟶ X_(1+n)`: the iterated structure maps are composites of these. -/
 theorem isModHom_iff_smashPowStructureMap (f : X.X ⟶ Y.X) :
@@ -179,32 +206,11 @@ theorem isModHom_iff_smashPowStructureMap (f : X.X ⟶ Y.X) :
   intro p
   obtain ⟨k⟩ := p
   induction k with
-  | zero =>
-    -- The level `mk 0` is the monoidal unit, which acts through the unit `S⁰ ≅ K^∧0`.
-    have key (q : FiniteBijection) :
-        X.dayStructureMap (𝟙_ _) q ≫ f.natTrans.app (𝟙_ _ ⊗ q) =
-          (SymmetricSequence.smashPow K).functor.obj (𝟙_ _) ◁ f.natTrans.app q ≫
-            Y.dayStructureMap (𝟙_ _) q := by
-      rw [← cancel_epi (Functor.LaxMonoidal.ε (SymmetricSequence.smashPow K).functor ▷ _),
-        dayStructureMap_unit_assoc, ← whisker_exchange_assoc, dayStructureMap_unit,
-        NatTrans.naturality, leftUnitor_naturality_assoc]
-    exact key
+  | zero => exact dayStructureMap_unit_comp f
   | succ k ih =>
-    -- The level `mk (k + 1)` is `mk 1 ⊗ mk k`, and block concatenation `K ∧ K^∧k ≅ K^∧(1+k)` is
-    -- an isomorphism, so the iterated action is the level-one action after the level-`k` action.
-    have key (q : FiniteBijection) :
-        X.dayStructureMap (FiniteBijection.mk 1 ⊗ FiniteBijection.mk k) q ≫
-            f.natTrans.app ((FiniteBijection.mk 1 ⊗ FiniteBijection.mk k) ⊗ q) =
-          (SymmetricSequence.smashPow K).functor.obj
-              (FiniteBijection.mk 1 ⊗ FiniteBijection.mk k) ◁ f.natTrans.app q ≫
-            Y.dayStructureMap (FiniteBijection.mk 1 ⊗ FiniteBijection.mk k) q := by
-      rw [← cancel_epi (Functor.LaxMonoidal.μ (SymmetricSequence.smashPow K).functor
-          (FiniteBijection.mk 1) (FiniteBijection.mk k) ▷ _),
-        dayStructureMap_assoc_assoc, ← whisker_exchange_assoc, dayStructureMap_assoc,
-        NatTrans.naturality, dayStructureMap_mk_one_comp_assoc f hf, ← whiskerLeft_comp_assoc,
-        ih, whiskerLeft_comp_assoc, associator_naturality_right_assoc]
+    -- The level `mk (k + 1)` is the block sum `mk 1 ⊗ mk k`.
     rw [Nat.add_comm k 1]
-    exact key
+    exact dayStructureMap_tensor_comp f (dayStructureMap_mk_one_comp f hf) ih
 
 /-- A module map from `Σ_n`-equivariant based maps `X_n ⟶ Y_n` commuting with the single
 structure maps. -/
