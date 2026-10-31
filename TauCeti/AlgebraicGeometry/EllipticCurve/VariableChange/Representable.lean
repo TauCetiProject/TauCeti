@@ -172,8 +172,8 @@ groups `VariableChange R`, without transporting points across object equalities.
 theorem pointsFunctor_map_apply {R S : CommRingCat.{u}} (f : R ⟶ S)
     (C : VariableChange R) : pointsFunctor.map f C = C.map f.hom := (rfl)
 
-/-- The group functor of Weierstrass changes of variables is represented on affine test
-schemes by `Spec ℤ[u,r,s,t][u⁻¹]`, expressed as corepresentability on commutative rings. -/
+/-- The underlying type-valued functor of Weierstrass changes of variables is corepresented
+by `ℤ[u,r,s,t][u⁻¹]`. The group-scheme structure is not constructed here. -/
 def pointsCorepresentableBy :
     (pointsFunctor.{u} ⋙ forget GrpCat).CorepresentableBy
       (CommRingCat.of (ULift.{u} Universal.CoordinateRing)) where
