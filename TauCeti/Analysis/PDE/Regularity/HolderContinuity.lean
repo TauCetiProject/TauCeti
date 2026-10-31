@@ -242,7 +242,7 @@ Haar measure `mu`, such that the following holds. Let `a` be measurable and unif
 precise representative of `u` is Hölder continuous with exponent `α` on every compact `K ⊆ Ω`.
 This is the case `b = 0` of
 `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_isCompact_drift`. -/
-theorem exists_holderOnWith_preciseRepresentative_of_isCompact [Nonempty ι] :
+theorem exists_holderOnWith_preciseRepresentative_of_isCompact :
     ∃ α : ℝ≥0, 0 < α ∧ α ≤ 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
       {K : Set (EuclideanSpace ℝ ι)},
@@ -251,11 +251,19 @@ theorem exists_holderOnWith_preciseRepresentative_of_isCompact [Nonempty ι] :
       (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
       IsCompact K → K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
         ∃ C : ℝ≥0, HolderOnWith C α (preciseRepresentative mu (W1p.value u)) K := by
-  obtain ⟨α, hα, hα1, hhol⟩ :=
-    exists_holderOnWith_preciseRepresentative_of_isCompact_drift (mu := mu) (lam := lam)
-      (Lam := Lam)
-  exact ⟨α, hα, hα1, fun h ha hu hK hKΩ =>
-    hhol (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hK hKΩ⟩
+  cases isEmpty_or_nonempty ι with
+  | inl h =>
+      let : IsEmpty ι := h
+      refine ⟨1, zero_lt_one, le_rfl, ?_⟩
+      intro Omega a u K _ _ _ _ _
+      exact ⟨0, Set.subsingleton_of_subsingleton.holderOnWith 0 1 _⟩
+  | inr h =>
+      let : Nonempty ι := h
+      obtain ⟨α, hα, hα1, hhol⟩ :=
+        exists_holderOnWith_preciseRepresentative_of_isCompact_drift (mu := mu) (lam := lam)
+          (Lam := Lam)
+      exact ⟨α, hα, hα1, fun h ha hu hK hKΩ =>
+        hhol (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hK hKΩ⟩
 
 /-- **Continuity of weak solutions with a drift.** Let `n ≥ 1` be the dimension. Let `a` be
 measurable and uniformly elliptic on `Ω`, let `b` be measurable and bounded on `Ω`, and let
