@@ -20,9 +20,9 @@ is *first order* if the square of its ideal sheaf vanishes (Stacks, Definition 3
 The basic example is `Spec k ⟶ Spec k[ε]`, for the dual numbers `k[ε] = k[x] ⧸ (x²)`.
 
 First-order thickenings are the test objects of infinitesimal deformation theory: formally smooth,
-formally unramified and formally étale morphisms are defined by lifting along them, and the lifts
-along a first-order thickening with ideal `I` form a torsor under a module of homomorphisms into
-`I`.
+formally unramified and formally étale morphisms are defined by lifting along them, and when a
+lift along a first-order thickening with ideal `I` exists, the set of such lifts is a torsor under a
+module of homomorphisms into `I`.
 
 ## Main definitions
 
@@ -40,8 +40,8 @@ along a first-order thickening with ideal `I` form a torsor under a module of ho
   `φ : R ⟶ S`, `Spec S ⟶ Spec R` is a first-order thickening if and only if the kernel of `φ` has
   square zero.
 * Thickenings contain the isomorphisms and are stable under composition and base change;
-  isomorphisms are first-order thickenings, and the projections `pullback.fst` and
-  `pullback.snd` base-changed from a first-order thickening are first-order thickenings.
+  first-order thickenings contain the isomorphisms, respect isomorphisms and are stable under base
+  change.
 * `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.isThickening`: a first-order thickening is a
   thickening, and `TauCeti.AlgebraicGeometry.IsThickening.isUniversalHomeomorphism`: a thickening
   is a universal homeomorphism.
@@ -83,10 +83,12 @@ theorem isThickening_iff_ker_le_nilradical (i : Z ⟶ X) [IsClosedImmersion i] :
   -- The image of a closed immersion is closed, and it is the support of the ideal sheaf.
   have hrange : (i.ker.support : Set X) = Set.range i := by
     rw [Scheme.Hom.support_ker, i.isClosedEmbedding.isClosed_range.closure_eq]
-  rw [isThickening_iff, ← Scheme.IdealSheafData.vanishingIdeal_top,
-    ← Scheme.IdealSheafData.le_support_iff_le_vanishingIdeal, top_le_iff, surjective_iff,
-    ← Set.range_eq_univ, ← hrange, ← TopologicalSpace.Closeds.coe_eq_univ]
-  exact and_iff_right ‹_›
+  -- An ideal sheaf lies in the nilradical exactly when its support is everything.
+  have hnil : i.ker ≤ X.nilradical ↔ i.ker.support = ⊤ := by
+    rw [← Scheme.IdealSheafData.vanishingIdeal_top,
+      ← Scheme.IdealSheafData.le_support_iff_le_vanishingIdeal, top_le_iff]
+  simp [isThickening_iff, surjective_iff, hnil, ← Set.range_eq_univ, ← hrange,
+    ‹IsClosedImmersion i›]
 
 namespace IsThickening
 
@@ -181,6 +183,22 @@ instance pullback_snd (i : Z ⟶ X) (f : Y ⟶ X) [IsFirstOrderThickening i] :
     IsFirstOrderThickening (pullback.snd i f) := by
   rw [← pullbackSymmetry_hom_comp_fst]
   infer_instance
+
+/-- Postcomposing a first-order thickening with an isomorphism gives a first-order thickening. -/
+instance comp_of_isIso_right (i : Z ⟶ Y) (e : Y ⟶ X) [IsFirstOrderThickening i] [IsIso e] :
+    IsFirstOrderThickening (i ≫ e) := by
+  -- Up to an isomorphism of sources, `i ≫ e` is the base change of `i` along `inv e`.
+  rw [← IsIso.inv_hom_id_assoc (pullback.snd (inv e) i) (i ≫ e), ← pullback.condition_assoc,
+    IsIso.inv_hom_id, Category.comp_id]
+  infer_instance
+
+/-- First-order thickenings are stable under composition with isomorphisms on either side. -/
+instance respectsIso : RespectsIso @IsFirstOrderThickening.{u} :=
+  RespectsIso.mk _ (fun e i _ ↦ comp_of_isIso e.hom i) (fun e i _ ↦ comp_of_isIso_right i e.hom)
+
+/-- First-order thickenings are stable under base change along arbitrary pullback squares. -/
+instance isStableUnderBaseChange : IsStableUnderBaseChange @IsFirstOrderThickening.{u} :=
+  IsStableUnderBaseChange.mk' fun _ _ _ f i _ _ ↦ pullback_fst f i
 
 /-- For a surjective ring map `φ : R ⟶ S`, the closed immersion `Spec S ⟶ Spec R` is a first-order
 thickening if and only if the kernel of `φ` has square zero. -/
