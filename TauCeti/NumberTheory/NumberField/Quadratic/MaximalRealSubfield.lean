@@ -58,20 +58,15 @@ variable {K : Type*} [Field K] [NumberField K] [Algebra.IsQuadraticExtension ℚ
   [IsTotallyComplex K]
 
 variable (K) in
-/-- **The maximal real subfield of an imaginary quadratic field is `ℚ`.** It is a subfield over
-which `K` is quadratic, and `K` is already quadratic over `ℚ`. -/
+/-- **The maximal real subfield of an imaginary quadratic field is `ℚ`.** Since `K / ℚ` is a
+CM extension, this is Mathlib's `NumberField.CMExtension.equivMaximalRealSubfield`. -/
 @[simp]
 theorem maximalRealSubfield_eq_fieldRange :
     maximalRealSubfield K = (algebraMap ℚ K).fieldRange := by
-  have h := Module.finrank_mul_finrank ℚ (maximalRealSubfield K) K
-  rw [Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield K) K,
-    Algebra.IsQuadraticExtension.finrank_eq_two ℚ K] at h
-  have h1 : Module.finrank ℚ (maximalRealSubfield K) = 1 := by omega
-  refine le_antisymm (fun x hx ↦ ?_) ?_
-  · obtain ⟨q, hq⟩ := (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp h1).2 ⟨x, hx⟩
-    exact ⟨q, congrArg Subtype.val hq⟩
-  · rintro _ ⟨q, rfl⟩
-    simp
+  refine le_antisymm (fun x hx ↦ ⟨_,
+    CMExtension.algebraMap_equivMaximalRealSubfield_symm_apply ℚ K ⟨x, hx⟩⟩) ?_
+  rintro _ ⟨q, rfl⟩
+  simp
 
 /-- **Real elements of an imaginary quadratic field are rational.** Under any complex embedding,
 an element of an imaginary quadratic field has a real image exactly when it is rational. -/
