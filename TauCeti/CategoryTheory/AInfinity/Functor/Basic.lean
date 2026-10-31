@@ -52,8 +52,6 @@ such as those of homological transfer, become `A∞` functors.
   given by a strict functor.
 * `TauCeti.AInfinityStrictFunctor.toAInfinityFunctor`: a strict functor as an `A∞` functor.
 * `TauCeti.AInfinityFunctor.id`: the identity `A∞` functor.
-* `TauCeti.AInfinityHom.liftInduced`: the factorization of an `A∞` morphism of total algebras
-  which is path-compatible along an injective map of objects through the induced category.
 * `TauCeti.AInfinityFunctor.ofAInfinityHom`: the `A∞` functor given by an `A∞` morphism of total
   algebras which is path-compatible along an injective map of objects.
 
@@ -69,9 +67,6 @@ such as those of homological transfer, become `A∞` functors.
 * `TauCeti.AInfinityFunctor.map_homDifferential`: the map on a Hom module is a chain map.
 * `TauCeti.AInfinityStrictFunctor.toAInfinityFunctor_map`: the map on Hom modules of a strict
   functor, as an `A∞` functor, is its map as a strict functor.
-* `TauCeti.AInfinityHom.inducedInclusion_comp_liftInduced` and
-  `TauCeti.AInfinityHom.eq_liftInduced`: the factorization of a path-compatible `A∞` morphism
-  through the total algebra of the induced category recovers the morphism and is unique.
 * `TauCeti.AInfinityFunctor.homInclusion_map_ofAInfinityHom`: the functor of a path-compatible
   `A∞` morphism acts on Hom modules by the linear part of the morphism.
 
@@ -445,125 +440,15 @@ variable {ℬ : AInfinityCategory R C} {𝒞 : AInfinityCategory R D} {F : C →
   (hf : IsWordPathCompatible F f.taylor)
 
 include hf in
-/-- The Taylor map of an `A∞` morphism which is path-compatible along `F` takes values in the image
-of the total module of morphisms of the induced quiver: composable words go to morphisms between
-images of objects, and non-composable words go to zero. -/
-private theorem taylor_mem_range_totalHomMap (w : ReducedTensorWords R (TotalHom R C)) :
-    f.taylor w ∈ LinearMap.range (totalHomMap R F) := by
-  have hle : (⨆ X : C, ⨆ Y : C, composableWords R X Y) ⊔ nonComposableWords R C ≤
-      (LinearMap.range (totalHomMap R F)).comap f.taylor := by
-    refine sup_le (iSup_le fun X ↦ iSup_le fun Y w hw ↦ ?_) fun w hw ↦ ?_
-    · obtain ⟨g, hg⟩ := hf.mem_range_of_mem_composableWords hw
-      exact ⟨homInclusion (R := R) (C := InducedQuiver D F) ⟨X⟩ ⟨Y⟩ g,
-        (totalHomMap_homInclusion _ _ g).trans hg⟩
-    · rw [Submodule.mem_comap, hf.eq_zero_of_mem_nonComposableWords hw]
-      exact zero_mem _
-  rw [iSup_composableWords_sup_nonComposableWords] at hle
-  exact hle Submodule.mem_top
-
-/-- The Taylor map of an `A∞` morphism which is path-compatible along an injective map of objects,
-lifted along the map of total modules of the induced quiver. -/
-private noncomputable def liftTaylor :
-    ReducedTensorWords R (TotalHom R C) →ₗ[R] TotalHom R (InducedQuiver D F) :=
-  (LinearEquiv.ofInjective _ (totalHomMap_injective hF)).symm.toLinearMap ∘ₗ
-    f.taylor.codRestrict _ (taylor_mem_range_totalHomMap f hf)
-
-private theorem totalHomMap_liftTaylor (w : ReducedTensorWords R (TotalHom R C)) :
-    totalHomMap R F (liftTaylor f hF hf w) = f.taylor w := by
-  rw [liftTaylor, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.ofInjective_symm_apply,
-    LinearMap.codRestrict_apply]
-
-private theorem totalHomMap_comp_liftTaylor :
-    totalHomMap R F ∘ₗ liftTaylor f hF hf = f.taylor :=
-  LinearMap.ext (totalHomMap_liftTaylor f hF hf)
-
-private theorem isWordPathCompatible_liftTaylor :
-    IsWordPathCompatible (InducedQuiver.mk (F := F)) (liftTaylor f hF hf) where
+private theorem isWordPathCompatible_taylor_liftInduced :
+    IsWordPathCompatible (InducedQuiver.mk (F := F)) (f.liftInduced hF hf).taylor where
   mem_range_of_mem_composableWords {_ _} {_} hw := by
     obtain ⟨g, hg⟩ := hf.mem_range_of_mem_composableWords hw
-    exact ⟨g, totalHomMap_injective hF <|
-      (totalHomMap_homInclusion _ _ g).trans (hg.trans (totalHomMap_liftTaylor f hF hf _).symm)⟩
+    exact ⟨g, totalHomMap_injective hF <| (totalHomMap_homInclusion _ _ g).trans
+      (hg.trans (LinearMap.congr_fun (f.totalHomMap_comp_taylor_liftInduced hF hf) _).symm)⟩
   eq_zero_of_mem_nonComposableWords hw := totalHomMap_injective hF <| by
-    rw [totalHomMap_liftTaylor, hf.eq_zero_of_mem_nonComposableWords hw, map_zero]
-
-private theorem isHomogeneous_liftTaylor :
-    LinearMap.IsHomogeneous (liftTaylor f hF hf)
-      (ReducedTensorWords.gradedPiece (ℬ.grading.shift 1))
-      ((𝒞.induced F).grading.shift 1).piece 0 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro n w hw
-  have h := f.isHomogeneous_taylor.map_mem hw
-  rw [InternalGrading.shift_piece, 𝒞.grading_eq, ← totalHomMap_liftTaylor f hF hf w,
-    totalHomMap_mem_totalGrading_piece_iff hF] at h
-  rwa [InternalGrading.shift_piece, (𝒞.induced F).grading_eq]
-
-/-- The `A∞` equation of the lifted Taylor map: after the injective map of total modules, it is the
-`A∞` equation of `f`, because the inclusion of the total algebra of the induced category is a strict
-`A∞` morphism. -/
-private theorem liftTaylor_comp_barDifferential :
-    (𝒞.induced F).taylor ∘ₗ ReducedTensorWords.coalgHom R (liftTaylor f hF hf) =
-      liftTaylor f hF hf ∘ₗ ℬ.barDifferential := by
-  have hs : totalHomMap R F ∘ₗ (𝒞.induced F).taylor =
-      𝒞.taylor ∘ₗ ReducedTensorWords.map (R := R) (totalHomMap R F) := by
-    simpa only [AInfinityStrictHom.barMap_def, AInfinityCategory.inducedInclusion_toLinearMap]
-      using ((𝒞.inducedInclusion hF).taylor_comp_barMap).symm
-  have h : totalHomMap R F ∘ₗ (𝒞.induced F).taylor ∘ₗ
-      ReducedTensorWords.coalgHom R (liftTaylor f hF hf) =
-        totalHomMap R F ∘ₗ liftTaylor f hF hf ∘ₗ ℬ.barDifferential := by
-    simp only [← LinearMap.comp_assoc, hs, totalHomMap_comp_liftTaylor]
-    simp only [LinearMap.comp_assoc, ReducedTensorWords.map_comp_coalgHom,
-      totalHomMap_comp_liftTaylor, ← f.barMap_eq_coalgHom, f.taylor_comp_barMap]
-  exact LinearMap.ext fun w ↦ totalHomMap_injective hF (LinearMap.congr_fun h w)
-
-/-- **The factorization of a path-compatible `A∞` morphism through the induced category.**  If
-`F : C → D` is injective and the Taylor map of `f : ℬ.toAInfinityAlgebra ⟶ 𝒞.toAInfinityAlgebra`
-sends composable words from `X` to `Y` to morphisms `F X ⟶ F Y` and non-composable words to zero,
-then `f` factors uniquely through the inclusion of the total algebra of `𝒞.induced F`
-(`TauCeti.AInfinityHom.inducedInclusion_comp_liftInduced` and
-`TauCeti.AInfinityHom.eq_liftInduced`). -/
-noncomputable def _root_.TauCeti.AInfinityHom.liftInduced :
-    AInfinityHom ℬ.toAInfinityAlgebra (𝒞.induced F).toAInfinityAlgebra :=
-  AInfinityHom.ofTaylor (liftTaylor f hF hf) (isHomogeneous_liftTaylor f hF hf)
-    (liftTaylor_comp_barDifferential f hF hf)
-
-private theorem taylor_liftInduced : (f.liftInduced hF hf).taylor = liftTaylor f hF hf :=
-  AInfinityHom.taylor_ofTaylor _ _ _
-
-/-- The Taylor map of the factorization of `f` through the induced category is characterized by
-recovering the Taylor map of `f` after the map of total modules. -/
-theorem _root_.TauCeti.AInfinityHom.totalHomMap_comp_taylor_liftInduced :
-    totalHomMap R F ∘ₗ (f.liftInduced hF hf).taylor = f.taylor := by
-  rw [taylor_liftInduced, totalHomMap_comp_liftTaylor]
-
-/-- **The factorization of `f` through the induced category recovers `f`** after the inclusion of
-the total algebra of the induced category. -/
-@[simp]
-theorem _root_.TauCeti.AInfinityHom.inducedInclusion_comp_liftInduced :
-    (𝒞.inducedInclusion hF).toAInfinityHom.comp (f.liftInduced hF hf) = f := by
-  refine AInfinityHom.ext ?_
-  rw [AInfinityStrictHom.taylor_toAInfinityHom_comp, AInfinityCategory.inducedInclusion_toLinearMap,
-    AInfinityHom.totalHomMap_comp_taylor_liftInduced]
-
-/-- **Uniqueness of the factorization**: the factorization of `f` is the only `A∞` morphism into
-the total algebra of the induced category which recovers `f` after the inclusion of total
-algebras. -/
-theorem _root_.TauCeti.AInfinityHom.eq_liftInduced
-    (ψ : AInfinityHom ℬ.toAInfinityAlgebra (𝒞.induced F).toAInfinityAlgebra)
-    (hψ : (𝒞.inducedInclusion hF).toAInfinityHom.comp ψ = f) :
-    ψ = f.liftInduced hF hf := by
-  have h := congrArg AInfinityHom.taylor hψ
-  rw [AInfinityStrictHom.taylor_toAInfinityHom_comp,
-    AInfinityCategory.inducedInclusion_toLinearMap,
-    ← AInfinityHom.totalHomMap_comp_taylor_liftInduced f hF hf] at h
-  exact AInfinityHom.ext <|
-    LinearMap.ext fun w ↦ totalHomMap_injective hF (LinearMap.congr_fun h w)
-
-/-- The linear part of the factorization of `f` through the induced category is the linear part of
-`f` after the map of total modules. -/
-private theorem totalHomMap_linearPart_liftInduced (a : TotalHom R C) :
-    totalHomMap R F ((f.liftInduced hF hf).linearPart a) = f.linearPart a := by
-  rw [AInfinityHom.linearPart_apply, taylor_liftInduced, totalHomMap_liftTaylor,
-    ← AInfinityHom.linearPart_apply]
+    rw [← LinearMap.comp_apply, f.totalHomMap_comp_taylor_liftInduced hF hf,
+      hf.eq_zero_of_mem_nonComposableWords hw, map_zero]
 
 /-- **An `A∞` morphism of total algebras which is path-compatible along an injective map of objects
 is an `A∞` functor** with object map `F`, whose `A∞` morphism is the factorization
@@ -573,10 +458,10 @@ is an `A∞` functor** with object map `F`, whose `A∞` morphism is the factori
 noncomputable def ofAInfinityHom : AInfinityFunctor ℬ 𝒞 where
   obj := F
   toAInfinityHom := f.liftInduced hF hf
+  -- A tactic block, since an exposed body cannot refer to a private lemma directly.
   isPathCompatible_component_of_pos n hn := by
-    refine (AInfinityHom.isWordPathCompatible_taylor_iff _).1 ?_ n hn
-    rw [taylor_liftInduced]
-    exact isWordPathCompatible_liftTaylor f hF hf
+    exact (AInfinityHom.isWordPathCompatible_taylor_iff _).1
+      (isWordPathCompatible_taylor_liftInduced f hF hf) n hn
 
 /-- The object map of the `A∞` functor of a path-compatible `A∞` morphism is the given map. -/
 @[simp]
@@ -596,7 +481,7 @@ theorem homInclusion_map_ofAInfinityHom (X Y : C) (g : homModule (R := R) X Y) :
       f.linearPart (homInclusion X Y g) := by
   have h := congrArg (totalHomMap R F) ((ofAInfinityHom f hF hf).homInclusion_map X Y g)
   exact (totalHomMap_homInclusion (F := F) _ _ _).symm.trans <| h.trans <|
-    totalHomMap_linearPart_liftInduced f hF hf _
+    f.totalHomMap_linearPart_liftInduced hF hf _
 
 end OfAInfinityHom
 
