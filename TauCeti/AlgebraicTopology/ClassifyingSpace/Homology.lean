@@ -26,18 +26,27 @@ singular chains are a free resolution of `k` over `k[G]` whose coinvariants are 
 chains of `classifyingSpace G` (`IsQuotientCoveringMap.singularHomologyIsoGroupHomology`). No
 hypothesis on `G` is needed.
 
-The geometric chain identification commutes with every group homomorphism
-(`MonoidHom.classifyingSpaceSingularChainsCoinvariants_naturality`), before taking homology
-or comparing with an algebraic resolution.
+The identification is natural in the group. The geometric chain identification commutes with
+every group homomorphism (`MonoidHom.classifyingSpaceSingularChainsCoinvariants_naturality`), and
+on homology, for every `φ : G →* H`, the map `Hₙ(BG; k) ⟶ Hₙ(BH; k)` induced by the strictly
+functorial map `MonoidHom.classifyingSpaceMap φ` is Mathlib's change-of-group map
+`groupHomology.map φ` (`MonoidHom.classifyingSpaceSingularHomologyIsoGroupHomology_hom_naturality`).
+No hypothesis on `φ` is needed.
 
 ## Main definitions
 
 * `TauCeti.classifyingSpaceSingularHomologyIsoGroupHomology`: the isomorphism
   `Hₙ(BG; k) ≅ Hₙ(G, k)`.
 
+## Main results
+
+* `MonoidHom.classifyingSpaceSingularHomologyIsoGroupHomology_hom_naturality`,
+  `MonoidHom.classifyingSpaceSingularHomologyIsoGroupHomology_inv_naturality`: the isomorphism
+  is natural in the group.
+
 ## References
 
-* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4.
+* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4 and Section III.8.
 * J. Milnor, *Construction of universal bundles, II*, Ann. of Math. 63 (1956), 430--436.
 -/
 
@@ -94,5 +103,41 @@ theorem classifyingSpaceSingularChainsCoinvariants_naturality (φ : G →* H)
       (isQuotientCoveringMap_classifyingSpaceProj H) _
       (fun g x ↦ φ.universalGSpaceMap_smul g x) _
       (ConcreteCategory.hom_ext _ _ fun x ↦ (φ.classifyingSpaceMap_proj x))
+
+/-- **The singular homology of the classifying space is naturally group homology.** For every
+group homomorphism `φ : G →* H`, the identifications `Hₙ(BG; k) ≅ Hₙ(G, k)` and
+`Hₙ(BH; k) ≅ Hₙ(H, k)` carry the map induced by `MonoidHom.classifyingSpaceMap φ` to Mathlib's
+change-of-group map `groupHomology.map φ`, with the identity on the trivial coefficients `k`. -/
+@[reassoc]
+theorem classifyingSpaceSingularHomologyIsoGroupHomology_hom_naturality (φ : G →* H)
+    (k : Type u) [CommRing k] (n : ℕ) :
+    HomologicalComplex.homologyMap
+        ((singularChains k).map (TopCat.ofHom φ.classifyingSpaceMap)) n ≫
+        (classifyingSpaceSingularHomologyIsoGroupHomology k H n).hom =
+      (classifyingSpaceSingularHomologyIsoGroupHomology k G n).hom ≫
+        groupHomology.map φ (A := Rep.trivial k G k) (B := Rep.trivial k H k)
+          (𝟙 (Rep.trivial k G k)) n :=
+  IsQuotientCoveringMap.singularHomologyIsoGroupHomology_hom_naturality
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+    (F := TopCat.of (universalGSpace H))
+    (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
+    (fun g x ↦ φ.universalGSpaceMap_smul g x) _
+    (ConcreteCategory.hom_ext _ _ fun x ↦ (φ.classifyingSpaceMap_proj x)) n
+
+/-- The inverse identification of group homology with the singular homology of the classifying
+space is natural in the group. -/
+@[reassoc]
+theorem classifyingSpaceSingularHomologyIsoGroupHomology_inv_naturality (φ : G →* H)
+    (k : Type u) [CommRing k] (n : ℕ) :
+    groupHomology.map φ (A := Rep.trivial k G k) (B := Rep.trivial k H k)
+        (𝟙 (Rep.trivial k G k)) n ≫ (classifyingSpaceSingularHomologyIsoGroupHomology k H n).inv =
+      (classifyingSpaceSingularHomologyIsoGroupHomology k G n).inv ≫
+        HomologicalComplex.homologyMap
+          ((singularChains k).map (TopCat.ofHom φ.classifyingSpaceMap)) n := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    φ.classifyingSpaceSingularHomologyIsoGroupHomology_hom_naturality k n, Iso.inv_hom_id_assoc]
 
 end MonoidHom

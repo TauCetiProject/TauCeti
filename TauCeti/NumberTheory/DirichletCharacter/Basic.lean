@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+import TauCeti.Data.ZMod.Units
 
 /-!
 # Factoring a Dirichlet character through a divisor
@@ -40,6 +41,12 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   `d ∣ N` correspond to the characters modulo `d`.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
   at naturals prime to the new level.
+* `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
+  to its level and congruent to `1` modulo a multiple of its conductor.
+* `DirichletCharacter.conductor_dvd_iff_forall_odd`: conversely, the conductor divides `d`, which
+  need not divide the level, as soon as the character is `1` at every *odd* natural number prime
+  to the level and congruent to `1` modulo `d`. This is how a divisibility of the conductor is
+  read off the values of the Kronecker symbol at odd arguments.
 * `DirichletCharacter.changeLevel_trans_mul_toUnitHom`: raising a product of characters through an
   intermediate level, read on unit homomorphisms.
 * `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
@@ -228,6 +235,41 @@ prime to the new level. -/
 theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
+
+/-- **A character is trivial modulo a multiple of its conductor.** If the conductor of `χ`
+divides `d`, then `χ a = 1` for every integer `a` prime to the level with `a ≡ 1 (mod d)`. The
+divisor `d` need not divide the level. -/
+theorem apply_eq_one_of_conductor_dvd {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
+    (χ : DirichletCharacter R N) (hd : χ.conductor ∣ d) {a : ℤ} (ha : IsCoprime a N)
+    (had : a ≡ 1 [ZMOD d]) : χ a = 1 := by
+  rw [← primitiveCharacter_apply_of_isCoprime χ ha,
+    (ZMod.intCast_eq_intCast_iff _ _ _).mpr (had.of_dvd (Int.natCast_dvd_natCast.mpr hd)),
+    Int.cast_one, map_one]
+
+/-- **The conductor, read on odd representatives.** The conductor of `χ` divides `d` exactly
+when `χ a = 1` for every odd natural number `a` prime to the level `N` with `a ≡ 1 (mod d)`.
+The divisor `d` need not divide `N`. Testing only odd `a` is what makes the criterion usable for
+the Kronecker symbol, which agrees with the Jacobi symbol only at odd arguments. -/
+theorem conductor_dvd_iff_forall_odd {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter R N) {d : ℕ} :
+    χ.conductor ∣ d ↔ ∀ a : ℕ, _root_.Odd a → a.Coprime N → a ≡ 1 [MOD d] → χ a = 1 := by
+  refine ⟨fun hd a _ haN had ↦ ?_, fun h ↦ ?_⟩
+  · simpa using χ.apply_eq_one_of_conductor_dvd hd (Nat.isCoprime_iff_coprime.mpr haN)
+      (Int.natCast_modEq_iff.mpr had)
+  rcases eq_or_ne d 0 with rfl | hd
+  · exact dvd_zero _
+  -- The factorisation through `d` is found at the level `N * d`, where every unit congruent to
+  -- `1` modulo `d` is the class of an odd natural number; it descends to `χ` because
+  -- `changeLevel` preserves the conductor.
+  have : NeZero (N * d) := ⟨mul_ne_zero (NeZero.ne N) hd⟩
+  have hfac : (changeLevel (dvd_mul_right N d) χ).FactorsThrough d := by
+    refine (factorsThrough_iff_ker_unitsMap (dvd_mul_left d N)).mpr fun u hu ↦ ?_
+    obtain ⟨a, ha, hao, rfl⟩ := ZMod.exists_odd_unitOfCoprime_eq u
+    have had : a ≡ 1 [MOD d] := by
+      simpa [Units.ext_iff, ← ZMod.natCast_eq_natCast_iff] using hu
+    simpa [Units.ext_iff, changeLevel_natCast_of_coprime _ _ ha] using
+      h a hao (ha.coprime_dvd_right (dvd_mul_right N d)) had
+  simpa [conductor_changeLevel] using conductor_dvd_of_mem_conductorSet _ hfac
 
 /-- **Raising a product through an intermediate level.** If `a ∣ m`, `b ∣ m` and `m ∣ n`, the
 product of `χ₁` and `χ₂` raised directly to level `n` is, on units, their product raised to

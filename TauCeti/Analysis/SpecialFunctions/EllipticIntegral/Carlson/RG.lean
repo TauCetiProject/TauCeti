@@ -105,10 +105,11 @@ theorem integrableOn_carlsonRGIntegrand {x y z : ℂ} (hx : x ∈ slitPlane ∪ 
   unfold carlsonRGIntegrand
   -- The first factor is `O(t^(-1/2))`, the next two are `O((1 + t)^(-1/2))`, and the sum of
   -- the three terms `w / (t + w)` multiplied by `t` is bounded.
-  have hs : (0 : ℝ) ≤ 1 / 2 := by norm_num
-  obtain ⟨Cx, hCx0, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_neg_le_rpow hx hs
-  obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_neg_le_one_add_rpow hy hs
-  obtain ⟨Cz, hCz0, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_neg_le_one_add_rpow hz hs
+  have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
+  obtain ⟨Cx, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hx hr
+  obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hy hr
+  obtain ⟨Cz, hCz0, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hz hr
+  have hCx0 : 0 ≤ Cx := by simpa using (norm_nonneg _).trans (hCx 1 one_pos)
   push_cast at hCx hCy hCz
   obtain ⟨Dx, hDx0, hDx⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le hx
   obtain ⟨Dy, hDy0, hDy⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le (Or.inl hy)
@@ -194,7 +195,7 @@ theorem carlsonRG_ofReal_mul {l : ℝ} (hl : 0 < l) (x y z : ℂ) :
 @[simp]
 theorem carlsonRG_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRG x x x = x ^ (1 / 2 : ℂ) := by
   have hmem (t : ℝ) (ht : 0 ≤ t) : (t : ℂ) + x ∈ slitPlane :=
-    TauCeti.ofReal_add_mem_slitPlane_of_nonneg hx ht
+    TauCeti.ofReal_add_mem_slitPlane hx ht
   have hx0 : x ≠ 0 := Complex.slitPlane_ne_zero hx
   -- `-6x (t + x)^(-1/2) + 2x² (t + x)^(-3/2)` is an antiderivative of `3x t (t + x)^(-5/2)`.
   have hderiv : ∀ t ∈ Ici (0 : ℝ),

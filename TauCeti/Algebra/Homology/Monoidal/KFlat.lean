@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Bifunctor.Colimit
 public import TauCeti.Algebra.Homology.Bifunctor.TwoTermSupport
 public import TauCeti.Algebra.Homology.Embedding.StupidTrunc
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
+public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 import Mathlib.Algebra.Homology.HomologySequenceLemmas
 
 /-!
@@ -20,6 +22,13 @@ in any integer degree is K-flat, and a bounded complex of flat objects is K-flat
 The statements apply to modules and to sheaves of modules without choosing points
 of the underlying site.
 
+K-flat complexes are closed under colimits whose shape has exact colimits in the
+underlying category and commutes with tensoring by each object, such as filtered
+colimits of modules. A complex which is bounded above is the sequential colimit of
+its brutal truncations, so a bounded above complex of flat objects is K-flat. These
+are the two ingredients of K-flat resolutions of unbounded complexes. Some bound
+is needed: an unbounded acyclic complex of flat objects need not be K-flat.
+
 The tensor factor containing the K-flat complex is placed on the left. In a symmetric
 monoidal category this is the usual K-flat condition, with the two factors interchanged
 by the Koszul symmetry.
@@ -27,6 +36,7 @@ by the Koszul symmetry.
 ## References
 
 * The Stacks Project, Cohomology on Sites, Section 21.17, Flat resolutions.
+* The Stacks Project, More on Algebra, Section 15.60, K-flat complexes.
 -/
 
 public section
@@ -87,6 +97,30 @@ theorem isKFlat_single_of_flat (M : C) (n : ℤ)
   exact (exactAt_shift_iff (((tensorLeft M).mapHomologicalComplex (.up ℤ)).obj A)
     (-n) i (-n + i) rfl).2 ((hA _).map (tensorLeft M))
 
+section Colimit
+
+variable {S : Type*} [Category* S] [HasColimitsOfShape S C] [HasExactColimitsOfShape S C]
+  [∀ X : C, PreservesColimitsOfShape S (tensorRight X)]
+
+/-- A colimit of K-flat complexes is K-flat, for colimits of a shape that are exact in `C` and
+commute with tensoring by each object. For modules over a commutative ring this applies to every
+filtered colimit. -/
+theorem isKFlat_of_isColimit {G : S ⥤ CochainComplex C ℤ} {s : Cocone G} (hs : IsColimit s)
+    [∀ j, (G.obj j).IsKFlat] : s.pt.IsKFlat := by
+  have (X : C) : PreservesColimitsOfShape S ((curriedTensor C).flip.obj X) :=
+    inferInstanceAs (PreservesColimitsOfShape S (tensorRight X))
+  constructor
+  intro A hA i
+  -- tensoring with `A` and then taking homology in degree `i` preserves the colimit, and the
+  -- homology of each `G j ⊗ A` vanishes
+  have hH := isColimitOfPreserves (homologyFunctor C (.up ℤ) i)
+    (isColimitOfPreserves ((curriedTensor C).map₂CochainComplex.flip.obj A) hs)
+  rw [exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
+  exact hH.hom_ext fun j ↦
+    ((exactAt_iff_isZero_homology _ _).1 (IsKFlat.acyclic_tensor A hA i)).eq_of_src _ _
+
+end Colimit
+
 section Bounded
 
 variable [∀ M : C, PreservesFiniteColimits (tensorLeft M)]
@@ -143,6 +177,23 @@ theorem isKFlat_of_bounded_flat (K : CochainComplex C ℤ) (a b : ℤ)
   have : K.IsStrictlyLE (a + (b - a).natAbs) :=
     isStrictlyLE_of_le K b _ (by have := Int.le_natAbs (a := b - a); omega)
   exact isKFlat_of_bounded_flat_aux a (b - a).natAbs K fun _ _ _ ↦ inferInstance
+
+/-- A bounded above cochain complex of flat objects is K-flat, when sequential colimits in `C`
+are exact and commute with tensoring by each object, as for modules over a commutative ring. -/
+theorem isKFlat_of_boundedAbove_flat [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape ℕ C]
+    [∀ X : C, PreservesColimitsOfShape ℕ (tensorRight X)] (K : CochainComplex C ℤ) (b : ℤ)
+    [K.IsStrictlyLE b] [∀ i, PreservesFiniteLimits (tensorLeft (K.X i))] : K.IsKFlat := by
+  have (m : ℕ) : (K.stupidTruncGESequence.obj m).IsKFlat := by
+    let T := kernel (K.πStupidTruncLE (-(m : ℤ) - 1))
+    have : T.IsStrictlyGE (-(m : ℤ)) :=
+      (T.isStrictlyGE_iff _).2 fun _ hi ↦ K.isZero_kernel_πStupidTruncLE_X _ (by omega)
+    have : T.IsStrictlyLE (-(m : ℤ) + (b + m).natAbs) := T.isStrictlyLE_of_le b _ (by omega)
+    -- in degrees `≥ -m` the terms of `T` are those of `K`
+    refine isKFlat_of_bounded_flat_aux (-(m : ℤ)) (b + m).natAbs T fun i hi _ ↦ ?_
+    have := K.isIso_kernel_ι_πStupidTruncLE_f (-(m : ℤ) - 1) (i := i) (by omega)
+    exact preservesFiniteLimits_of_natIso
+      ((curriedTensor C).mapIso (asIso ((kernel.ι (K.πStupidTruncLE _)).f i)).symm)
+  exact isKFlat_of_isColimit K.isColimitStupidTruncGESequenceCocone
 
 end Bounded
 

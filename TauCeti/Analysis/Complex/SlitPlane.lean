@@ -16,12 +16,14 @@ direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializatio
 four axis-aligned half-planes cover the common cases. A relative displacement smaller than
 the distance to a pole also gives a slit-plane quotient.
 
+Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
+and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
 The module also records a locally uniform lower bound for the distance from a point of the slit
 plane to the closed negative half-axis. This bound locally dominates slit-plane kernels and thus
 supports differentiation and holomorphy arguments for parameter-dependent Stieltjes integrals.
-Translating a point of the slit plane by a nonnegative real number `t` keeps it in the slit
-plane, and `‖t + x‖` then grows at least linearly in `t`; these facts control integrands of the
-form `(t + x) ^ s` over `t ∈ (0, ∞)`, such as those of Carlson's symmetric elliptic integrals.
+For `x` in the slit plane, `‖t + x‖` grows at least linearly in the real number `t ≥ 0`; this
+controls integrands of the form `(t + x) ^ s` over `t ∈ (0, ∞)`, such as those of Carlson's
+symmetric elliptic integrals.
 For `x ∈ slitPlane ∪ {0}`, the quotient `a / (t + x)` is continuous for `t > 0` and the term
 `x / (t + x) · t` stays bounded.
 
@@ -34,8 +36,9 @@ is a principal logarithm.
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
+* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
+* `TauCeti.ofReal_mem_slitPlane_union_zero`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
-* `TauCeti.ofReal_add_mem_slitPlane_of_nonneg`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
 -/
@@ -103,6 +106,30 @@ theorem div_mem_slitPlane_of_im_neg {z₁ z₂ : ℂ} (h₁ : z₁.im < 0) (h₂
     (by simpa [Complex.mul_re] using neg_pos.mpr h₁)
     (by simpa [Complex.mul_re] using neg_pos.mpr h₂)
 
+/-- Translating a point of the slit plane by a nonnegative real number keeps it in the slit
+plane. -/
+theorem ofReal_add_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
+    (t : ℂ) + z ∈ slitPlane := by
+  rcases mem_slitPlane_iff.mp hz with h | h
+  · exact mem_slitPlane_iff.mpr (Or.inl (by
+      simp only [Complex.add_re, Complex.ofReal_re]; linarith))
+  · exact mem_slitPlane_iff.mpr (Or.inr (by simpa using h))
+
+/-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
+plane. -/
+theorem ofReal_add_mem_slitPlane_of_mem_union {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) {t : ℝ}
+    (ht : 0 < t) : (t : ℂ) + z ∈ slitPlane := by
+  rcases hz with hz | hz
+  · exact ofReal_add_mem_slitPlane hz ht.le
+  · rw [Set.mem_singleton_iff.mp hz, add_zero]
+    exact ofReal_mem_slitPlane.mpr ht
+
+/-- A nonnegative real number lies in `slitPlane ∪ {0}`. -/
+theorem ofReal_mem_slitPlane_union_zero {x : ℝ} (hx : 0 ≤ x) : (x : ℂ) ∈ slitPlane ∪ {0} := by
+  rcases hx.eq_or_lt with h | h
+  · exact Or.inr (by simp [← h])
+  · exact Or.inl (ofReal_mem_slitPlane.mpr h)
+
 /-- On a small ball around a point of the slit plane, the distance from `w` to the point `-x`
 of the closed negative half-axis is bounded below by a fixed multiple of `1 + x`. -/
 theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈ slitPlane) :
@@ -138,28 +165,6 @@ theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈
       ‖z + ((x : ℝ) : ℂ)‖ = ‖(w + ((x : ℝ) : ℂ)) + (z - w)‖ := by congr 1; ring
       _ ≤ ‖w + ((x : ℝ) : ℂ)‖ + ‖z - w‖ := norm_add_le _ _
   nlinarith [hzc x x.coe_nonneg, x.coe_nonneg]
-
-/-- Adding a nonnegative real number keeps a point of the slit plane in the slit plane. -/
-theorem ofReal_add_mem_slitPlane_of_nonneg {x : ℂ} (hx : x ∈ slitPlane) {t : ℝ}
-    (ht : 0 ≤ t) : (t : ℂ) + x ∈ slitPlane := by
-  rw [mem_slitPlane_iff] at hx ⊢
-  simp only [Complex.add_re, Complex.ofReal_re, Complex.add_im, Complex.ofReal_im, zero_add]
-  exact hx.imp (fun h => by linarith) id
-
-/-- Adding a positive real number moves a point of `slitPlane ∪ {0}` into the slit plane. -/
-theorem ofReal_add_mem_slitPlane_of_mem_union {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {t : ℝ}
-    (ht : 0 < t) : (t : ℂ) + x ∈ slitPlane := by
-  rcases hx with hx | hx
-  · exact ofReal_add_mem_slitPlane_of_nonneg hx ht.le
-  · rw [Set.mem_singleton_iff.mp hx, add_zero]
-    exact ofReal_mem_slitPlane.mpr ht
-
-/-- A nonnegative real number lies in `slitPlane ∪ {0}`. -/
-theorem ofReal_mem_slitPlane_union_zero {x : ℝ} (hx : 0 ≤ x) :
-    (x : ℂ) ∈ slitPlane ∪ {0} := by
-  rcases hx.eq_or_lt with h | h
-  · exact Or.inr (by simp [← h])
-  · exact Or.inl (ofReal_mem_slitPlane.mpr h)
 
 /-- For `x ∈ slitPlane`, `‖t + x‖` grows at least linearly: `c (1 + t) ≤ ‖t + x‖` for `t ≥ 0`. -/
 theorem exists_pos_mul_one_add_le_norm_ofReal_add {x : ℂ} (hx : x ∈ slitPlane) :

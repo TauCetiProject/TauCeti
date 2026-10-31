@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Bruhat
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.PrincipalSeries.Basic
 -- The Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff`, its predicate
 -- `TauCeti.MackeyDisjoint`, and the Mackey subgroup the predicate is stated on.
-public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
+public import TauCeti.RepresentationTheory.Induction.Mackey.Split
 -- `TauCeti.irreducibleCharacters`, the set the off-diagonal principal series are shown to belong
 -- to.
 public import TauCeti.RepresentationTheory.CharacterTable.Table

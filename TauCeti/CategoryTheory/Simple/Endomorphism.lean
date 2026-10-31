@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Schur
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
+import Mathlib.LinearAlgebra.Dimension.Free
 
 /-!
 # A converse to Schur's lemma when subobjects split
@@ -18,6 +19,10 @@ as occur for representations over nonsplitting fields.
 
 The nontriviality condition excludes zero objects. Splitting is essential for the converse:
 an arbitrary object with a division endomorphism ring need not be simple.
+`CategoryTheory.simple_of_ringEquiv_end` transports this criterion along a ring isomorphism
+from a division ring. In a `k`-linear category with kernels in which every object is injective,
+a one-dimensional endomorphism space suffices for simplicity over any field `k`
+(`CategoryTheory.simple_of_finrank_end_eq_one`); algebraic closure is not needed.
 
 ## Finite-dimensional representations
 
@@ -35,6 +40,8 @@ characteristic zero nor algebraic closure is needed.
 * Mathlib's `CategoryTheory.isIso_of_hom_simple` supplies the forward implication.
   The converse uses the retraction argument of `FDRep.simple_iff_end_is_rank_one`, replacing
   its scalar-endomorphism hypothesis by invertibility of nonzero endomorphisms.
+* `Module.nonempty_algEquiv_iff_finrank_eq_one` identifies a one-dimensional
+  endomorphism algebra with the coefficient field.
 -/
 
 public section
@@ -73,5 +80,24 @@ theorem simple_iff_nontrivial_end_and_isUnit [∀ Y : C, Injective Y] (X : C) :
       have : Epi f := epi_of_epi r f
       have : IsSplitMono f := IsSplitMono.mk' ⟨r, hfr⟩
       exact isIso_of_epi_of_isSplitMono f
+
+/-- If every object is injective, an object whose endomorphism ring is isomorphic to
+ a division ring is simple. -/
+theorem simple_of_ringEquiv_end [∀ Y : C, Injective Y] (X : C) {D : Type*}
+    [DivisionRing D] (e : D ≃+* End X) : Simple X := by
+  have : Nontrivial (End X) := e.symm.toEquiv.nontrivial
+  refine (simple_iff_nontrivial_end_and_isUnit X).mpr ⟨inferInstance, fun f hf => ?_⟩
+  have hne : e.symm f ≠ 0 := by simpa using hf
+  simpa using (isUnit_iff_ne_zero.mpr hne).map e.toMonoidHom
+
+/-- If every object is injective, a one-dimensional endomorphism space forces
+simplicity over any field. The converse requires a scalar-Schur hypothesis. -/
+theorem simple_of_finrank_end_eq_one (k : Type*) [Field k] [Linear k C]
+    [∀ Y : C, Injective Y] (X : C) (h : Module.finrank k (X ⟶ X) = 1) :
+    Simple X := by
+  have hEnd : Module.finrank k (End X) = 1 :=
+    (End.linearEquiv (R := k) (X := X)).finrank_eq.trans h
+  obtain ⟨e⟩ := (Module.nonempty_algEquiv_iff_finrank_eq_one (R := k) (S := End X)).mpr hEnd
+  exact simple_of_ringEquiv_end X e.toRingEquiv
 
 end CategoryTheory

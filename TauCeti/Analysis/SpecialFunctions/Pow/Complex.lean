@@ -33,6 +33,11 @@ Products `∏ i, (1 - a i * w) ^ e i` are holomorphic near zero, with derivative
 quotient tends to half that second derivative. These coefficients describe the integrand of
 a Schwarz--Christoffel map in the reciprocal coordinate at infinity.
 
+For a nonpositive real exponent `r`, the principal power `(t + x) ^ r` of a translate of `x` along
+the positive real axis is `O(t ^ r)` for `t > 0` when `x ∈ slitPlane ∪ {0}`, and bounded, indeed
+`O((1 + t) ^ r)`, for `t ≥ 0` when `x ∈ slitPlane`. These bounds control the integrands of improper
+integrals such as Carlson's elliptic integrals near both endpoints of `(0, ∞)`.
+
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
@@ -43,14 +48,14 @@ a Schwarz--Christoffel map in the reciprocal coordinate at infinity.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
+* `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
+  `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
+  `r ≤ 0` along the positive real axis.
 * `TauCeti.tendsto_ofReal_add_cpow_neg` -- for `x` in the slit plane and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
-* `TauCeti.exists_norm_ofReal_add_cpow_neg_le_rpow`,
-  `TauCeti.exists_norm_ofReal_add_cpow_neg_le_one_add_rpow` -- for real `s ≥ 0`, the factor
-  `(t + x) ^ (-s)` is `O(t ^ (-s))` for `x ∈ slitPlane ∪ {0}`, and `O((1 + t) ^ (-s))` for
-  `x ∈ slitPlane`.
 * `TauCeti.continuousOn_ofReal_add_cpow` -- for `x ∈ slitPlane ∪ {0}`, `(t + x) ^ s` is
   continuous in the real variable `t > 0`.
+* `Complex.cpow_neg_half_mul_self` -- two principal inverse square roots multiply to the inverse.
 -/
 
 public section
@@ -114,54 +119,6 @@ theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ} (hr : 0 < r)
     calc
       u.arg * r⁻¹ ≤ (r * Real.pi) * r⁻¹ := mul_le_mul_of_nonneg_right harg.2 (inv_nonneg.mpr hr.le)
       _ = Real.pi := by field_simp
-
-/-- For `x` in the slit plane and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number
-`t` tends to `∞`. -/
-theorem tendsto_ofReal_add_cpow_neg {x : ℂ} (hx : x ∈ slitPlane) {s : ℝ} (hs : 0 < s) :
-    Tendsto (fun t : ℝ => ((t : ℂ) + x) ^ (-(s : ℂ))) atTop (𝓝 0) := by
-  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
-  have hnorm : Tendsto (fun t : ℝ => ‖(t : ℂ) + x‖) atTop atTop := by
-    refine tendsto_atTop_mono' atTop ?_
-      ((tendsto_atTop_add_const_left atTop 1 tendsto_id).const_mul_atTop hc)
-    filter_upwards [eventually_ge_atTop 0] with t ht
-    exact h t ht
-  refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
-  simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
-  exact (tendsto_rpow_neg_atTop hs).comp hnorm
-
-/-- For `x ∈ slitPlane ∪ {0}` and real `s ≥ 0`, the factor `(t + x) ^ (-s)` is `O(t ^ (-s))` for
-real `t > 0`. -/
-theorem exists_norm_ofReal_add_cpow_neg_le_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {s : ℝ}
-    (hs : 0 ≤ s) :
-    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 < t → ‖((t : ℂ) + x) ^ (-(s : ℂ))‖ ≤ C * t ^ (-s) := by
-  rw [← Complex.ofReal_neg]
-  rcases hx with hx | hx
-  · obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
-    refine ⟨c ^ (-s), by positivity, fun t ht => ?_⟩
-    have h1 : c * t ≤ ‖(t : ℂ) + x‖ := by nlinarith [h t ht.le]
-    rw [Complex.norm_cpow_real, ← Real.mul_rpow hc.le ht.le]
-    exact Real.rpow_le_rpow_of_nonpos (by positivity) h1 (neg_nonpos.mpr hs)
-  · refine ⟨1, one_pos, fun t ht => ?_⟩
-    rw [Set.mem_singleton_iff.mp hx, add_zero, Complex.norm_cpow_real, Complex.norm_real,
-      Real.norm_of_nonneg ht.le, one_mul]
-
-/-- For `x ∈ slitPlane` and real `s ≥ 0`, the factor `(t + x) ^ (-s)` is `O((1 + t) ^ (-s))` for
-real `t ≥ 0`. -/
-theorem exists_norm_ofReal_add_cpow_neg_le_one_add_rpow {x : ℂ} (hx : x ∈ slitPlane) {s : ℝ}
-    (hs : 0 ≤ s) :
-    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + x) ^ (-(s : ℂ))‖ ≤ C * (1 + t) ^ (-s) := by
-  rw [← Complex.ofReal_neg]
-  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
-  refine ⟨c ^ (-s), by positivity, fun t ht => ?_⟩
-  rw [Complex.norm_cpow_real, ← Real.mul_rpow hc.le (by linarith)]
-  exact Real.rpow_le_rpow_of_nonpos (by positivity) (h t ht) (neg_nonpos.mpr hs)
-
-/-- For `x ∈ slitPlane ∪ {0}` and any complex exponent `s`, the principal power `(t + x) ^ s` is
-continuous in the real variable `t > 0`. -/
-theorem continuousOn_ofReal_add_cpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) (s : ℂ) :
-    ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ioi 0) := fun _ ht =>
-  ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
-    (ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
 where every base equals one. -/
@@ -257,6 +214,79 @@ theorem tendsto_prod_one_sub_mul_cpow_sub_linear_div_sq {ι : Type*} [Fintype ι
   field_simp
   ring
 
+/-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
+`O(t ^ r)` for `t > 0`. -/
+theorem exists_norm_ofReal_add_cpow_le_mul_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {r : ℝ}
+    (hr : r ≤ 0) : ∃ C, ∀ t : ℝ, 0 < t → ‖((t : ℂ) + x) ^ (r : ℂ)‖ ≤ C * t ^ r := by
+  simp only [Complex.norm_cpow_real]
+  rcases hx with hx | hx
+  · obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
+    refine ⟨c ^ r, fun t ht => ?_⟩
+    have h1 : c * t ≤ ‖(t : ℂ) + x‖ := by
+      have : c * (1 + t) ≤ ‖x + (t : ℂ)‖ := h x (Metric.mem_ball_self hc) ⟨t, ht.le⟩
+      rw [add_comm]
+      nlinarith
+    rw [← Real.mul_rpow hc.le ht.le]
+    exact Real.rpow_le_rpow_of_nonpos (by positivity) h1 hr
+  · refine ⟨1, fun t ht => ?_⟩
+    rw [Set.mem_singleton_iff.mp hx, add_zero, Complex.norm_real,
+      Real.norm_of_nonneg ht.le, one_mul]
+
+/-- For `x ∈ slitPlane` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is bounded
+for `t ≥ 0`. -/
+theorem exists_norm_ofReal_add_cpow_le {x : ℂ} (hx : x ∈ slitPlane) {r : ℝ} (hr : r ≤ 0) :
+    ∃ C, ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + x) ^ (r : ℂ)‖ ≤ C := by
+  simp only [Complex.norm_cpow_real]
+  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
+  refine ⟨c ^ r, fun t ht => ?_⟩
+  have h1 : c ≤ ‖(t : ℂ) + x‖ := by
+    have : c * (1 + t) ≤ ‖x + (t : ℂ)‖ := h x (Metric.mem_ball_self hc) ⟨t, ht⟩
+    rw [add_comm]
+    nlinarith
+  exact Real.rpow_le_rpow_of_nonpos hc h1 hr
+
+/-- For `x ∈ slitPlane` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
+`O((1 + t) ^ r)` for `t ≥ 0`. -/
+theorem exists_norm_ofReal_add_cpow_le_mul_one_add_rpow {x : ℂ} (hx : x ∈ slitPlane) {r : ℝ}
+    (hr : r ≤ 0) :
+    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + x) ^ (r : ℂ)‖ ≤ C * (1 + t) ^ r := by
+  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
+  refine ⟨c ^ r, by positivity, fun t ht => ?_⟩
+  rw [Complex.norm_cpow_real, ← Real.mul_rpow hc.le (by linarith)]
+  exact Real.rpow_le_rpow_of_nonpos (by positivity) (h t ht) hr
+
+/-- For `x` in the slit plane and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number
+`t` tends to `∞`. -/
+theorem tendsto_ofReal_add_cpow_neg {x : ℂ} (hx : x ∈ slitPlane) {s : ℝ} (hs : 0 < s) :
+    Tendsto (fun t : ℝ => ((t : ℂ) + x) ^ (-(s : ℂ))) atTop (𝓝 0) := by
+  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
+  have hnorm : Tendsto (fun t : ℝ => ‖(t : ℂ) + x‖) atTop atTop := by
+    refine tendsto_atTop_mono' atTop ?_
+      ((tendsto_atTop_add_const_left atTop 1 tendsto_id).const_mul_atTop hc)
+    filter_upwards [eventually_ge_atTop 0] with t ht
+    exact h t ht
+  refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
+  simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
+  exact (tendsto_rpow_neg_atTop hs).comp hnorm
+
+/-- For `x ∈ slitPlane ∪ {0}` and any complex exponent `s`, the principal power `(t + x) ^ s` is
+continuous in the real variable `t > 0`. -/
+theorem continuousOn_ofReal_add_cpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) (s : ℂ) :
+    ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ioi 0) := fun _ ht =>
+  ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
+    (ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
+
 end TauCeti
+
+namespace Complex
+
+/-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
+theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  · rw [← cpow_add _ _ hw]
+    norm_num [cpow_neg_one]
+
+end Complex
 
 end
