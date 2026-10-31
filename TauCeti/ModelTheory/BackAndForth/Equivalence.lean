@@ -184,6 +184,25 @@ theorem comp {α : Ordinal.{o}} (h : BFEquiv (L := L) α n a b) {m : ℕ}
 theorem symm_iff (α : Ordinal.{o}) (a : Fin n → M) (b : Fin n → N) :
     BFEquiv (L := L) α n a b ↔ BFEquiv (L := L) α n b a := ⟨symm, symm⟩
 
+/-- Equivalence at depth `β + k` extends along any `k` further elements of the first structure to
+equivalence at depth `β`: `k` forth steps match them with elements of the second structure. -/
+theorem exists_bfEquiv_append {β : Ordinal.{o}} {m : ℕ} {a : Fin m → M} {b : Fin m → N}
+    (k : ℕ) (h : BFEquiv (L := L) (β + k) m a b) (x : Fin k → M) :
+    ∃ y : Fin k → N, BFEquiv (L := L) β (m + k) (append a x) (append b y) := by
+  induction k generalizing β with
+  | zero =>
+    refine ⟨Fin.elim0, ?_⟩
+    rw [append_right_nil a x rfl, append_right_nil b _ rfl]
+    have h' := h.comp (Fin.cast (Nat.add_zero m))
+    rwa [Nat.cast_zero, add_zero] at h'
+  | succ k ih =>
+    rw [Nat.add_comm, Nat.cast_add, Nat.cast_one, ← add_assoc] at h
+    obtain ⟨y, hy⟩ := ih h (init x)
+    obtain ⟨z, hz⟩ := ((add_one β _ _).mp hy).2.1 (x (last k))
+    refine ⟨snoc y z, ?_⟩
+    rw [← snoc_init_self x, append_snoc, append_snoc]
+    exact hz
+
 end BFEquiv
 
 /-- An isomorphism carries every tuple to a tuple back-and-forth equivalent to it at every
