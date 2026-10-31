@@ -20,6 +20,8 @@ submonoid `S`:
 * `LocalizedModule.map_comp`: localization is functorial, `(g ∘ f)ₛ = gₛ ∘ fₛ`.
 * `LocalizedModule.bijective_map_lsmul`: multiplication by an element of `S` becomes bijective
   after localizing at `S`.
+* `LocalizedModule.equivLocalization`: the localization of `R` itself as a module is
+  `Localization S`.
 * `LinearMap.exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id`: if `M` is finitely
   presented and `N` is finitely generated, a left inverse of the localization `iₛ` of
   `i : N → M` descends to a map `φ : M → N` with `φ ∘ i` multiplication by some element of `S`.
@@ -53,6 +55,12 @@ theorem bijective_map_lsmul {s : R} (hs : s ∈ S) :
   ext x
   induction x using induction_on with
   | h m t => simp [smul'_mk]
+
+/-- The localization of `R` at `S`, as an `R`-module, is the ring `Localization S`, linearly over
+`Localization S`. -/
+noncomputable def equivLocalization : LocalizedModule S R ≃ₗ[Localization S] Localization S :=
+  (IsLocalizedModule.iso S (Algebra.linearMap R (Localization S))).extendScalarsOfIsLocalization
+    S _
 
 end LocalizedModule
 

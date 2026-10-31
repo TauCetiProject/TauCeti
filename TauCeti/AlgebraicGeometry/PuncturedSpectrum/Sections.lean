@@ -12,6 +12,7 @@ import TauCeti.RingTheory.CohenMacaulay.Normal
 import TauCeti.RingTheory.Depth.WeaklyRegular
 import TauCeti.RingTheory.IntegralClosure.GoingDown
 import TauCeti.RingTheory.KrullDimension.Fiber
+import TauCeti.RingTheory.Localization.Module
 
 /-!
 # Sections of `Spec B` over the preimage of a punctured spectrum
@@ -102,12 +103,7 @@ theorem presheaf_map_leTop_bijective_of_isIntegral [IsLocalRing A] [Algebra.IsIn
   -- A prime outside `W` lies over the maximal ideal of `A`, so it is maximal.
   have : p.asIdeal.IsMaximal := Ideal.isMaximal_of_isIntegral_of_isMaximal_under (R := A) _
     (by rw [not_not.mp (mt (hW p) hp)]; infer_instance)
-  let e : LocalizedModule p.asIdeal.primeCompl B ≃ₗ[Localization.AtPrime p.asIdeal]
-      Localization.AtPrime p.asIdeal :=
-    (IsLocalizedModule.iso p.asIdeal.primeCompl
-      (Algebra.linearMap B (Localization.AtPrime p.asIdeal))).extendScalarsOfIsLocalization
-      p.asIdeal.primeCompl _
-  rw [depth_eq_of_linearEquiv e]
+  rw [depth_eq_of_linearEquiv (LocalizedModule.equivLocalization p.asIdeal.primeCompl)]
   exact hdepth p.asIdeal
 
 /-- Let `A` be a Noetherian integrally closed local domain of dimension at least two and `B` a

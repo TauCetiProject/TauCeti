@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Depth.Bijectivity
 public import TauCeti.RingTheory.MvPolynomial.Ideal
 public import Mathlib.RingTheory.Regular.Flat
+import TauCeti.RingTheory.Localization.Module
 
 /-!
 # Sharpness of the depth-two bijectivity criterion
@@ -109,12 +110,8 @@ private theorem ambient_depth_at_origin :
       (ModuleCat.of (Localization.AtPrime (origin field))
         (LocalizedModule (origin field).primeCompl (Plane field))) := by
   let localRing := Localization.AtPrime (origin field)
-  let equivalence :
-      LocalizedModule (origin field).primeCompl (Plane field) ≃ₗ[localRing] localRing :=
-    (IsLocalizedModule.iso (origin field).primeCompl
-      (Algebra.linearMap (Plane field) localRing)).extendScalarsOfIsLocalization
-      (origin field).primeCompl localRing
-  rw [IsLocalRing.depth_eq_of_linearEquiv equivalence,
+  rw [IsLocalRing.depth_eq_of_linearEquiv
+      (LocalizedModule.equivLocalization (origin field).primeCompl),
     IsLocalRing.depth_eq_sSup_length_isRegular]
   have variables_mem : ∀ scalar ∈
       [MvPolynomial.X (R := field) (0 : Fin 2), MvPolynomial.X 1], scalar ∈ origin field := by
