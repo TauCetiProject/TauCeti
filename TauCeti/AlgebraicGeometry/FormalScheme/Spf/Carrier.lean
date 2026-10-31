@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
-public import TauCeti.RingTheory.AdicRing.Basic
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 
 /-!
 # The underlying space of the formal spectrum
@@ -43,8 +43,8 @@ exactly when `f` is nilpotent modulo `I`.
   if and only if it contains `I`.
 * `TauCeti.FormalScheme.Spf.carrier_eq_zeroLocus`, `TauCeti.FormalScheme.Spf.isClosed_carrier`:
   the underlying space is the Zariski closed set `V(I)`.
-* `TauCeti.FormalScheme.Spf.carrier_eq_empty_iff_subsingleton`: the formal spectrum of an adic
-  ring is empty exactly when the ring is zero.
+* `TauCeti.FormalScheme.Spf.carrier_eq_empty_iff_subsingleton`: the formal spectrum of a
+  separated ring with an ideal of definition is empty exactly when the ring is zero.
 * `TauCeti.FormalScheme.Spf.isBasis_basicOpen`: the basic open sets form a basis.
 * `TauCeti.FormalScheme.Spf.basicOpen_le_basicOpen_iff`: `D(g) ⊆ D(f)` if and only if `g` lies
   in the radical of `f A + I`.
@@ -82,11 +82,8 @@ variable {I J : Ideal A}
 /-- If `I` defines the topology of `A`, a prime ideal of `A` is open if and only if it contains
 `I`. -/
 theorem mem_carrier_iff_le (hI : IsAdic I) {p : PrimeSpectrum A} :
-    p ∈ carrier A ↔ I ≤ p.asIdeal := by
-  have : IsTopologicalRing A := hI ▸ I.nonarchimedean.toIsTopologicalRing
-  refine ⟨fun hp ↦ ?_, fun hp ↦ Submodule.isOpen_mono hp (by simpa using hI.isOpen_pow 1)⟩
-  obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (hp.mem_nhds p.asIdeal.zero_mem)
-  exact Ideal.IsPrime.le_of_pow_le hn
+    p ∈ carrier A ↔ I ≤ p.asIdeal :=
+  hI.isOpen_iff_le_of_isPrime
 
 /-- If `I` defines the topology of `A`, the underlying set of `Spf A` is the zero locus `V(I)`.
 In particular it is the same for all ideals of definition. -/
@@ -108,19 +105,24 @@ theorem carrier_eq_univ [DiscreteTopology A] : carrier A = Set.univ :=
 theorem carrier_eq_empty_iff (hI : IsAdic I) : carrier A = ∅ ↔ I = ⊤ := by
   rw [carrier_eq_zeroLocus hI, zeroLocus_empty_iff_eq_top]
 
-/-- The formal spectrum of an adic ring of finite ideal type is empty if and only if the ring is
-zero: a nonzero adic ring is separated for its ideal of definition, which is therefore proper. -/
-theorem carrier_eq_empty_iff_subsingleton [IsTopologicalRing A] [IsAdicRing A] :
+/-- If `I` defines the topology of `A` and `A` is separated, the formal spectrum is empty if and
+only if `A` is zero: if `I` is the unit ideal, every neighbourhood of `0` is all of `A`, so
+separation forces `A` to be zero. -/
+theorem carrier_eq_empty_iff_subsingleton [T1Space A] (hI : IsAdic I) :
     carrier A = ∅ ↔ Subsingleton A := by
-  rw [carrier_eq_empty_iff (IsAdicRing.ideal_spec A).2.1]
-  refine ⟨fun h ↦ not_nontrivial_iff_subsingleton.mp fun _ ↦ IsAdicRing.ideal_ne_top h,
-    fun _ ↦ Subsingleton.elim _ _⟩
+  rw [carrier_eq_empty_iff hI]
+  refine ⟨fun h ↦ ⟨fun a b ↦ ?_⟩, fun _ ↦ Subsingleton.elim _ _⟩
+  have hnhds (x : A) : x = 0 := by
+    by_contra hx
+    obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (isOpen_ne.mem_nhds (Ne.symm hx))
+    exact hn (by simp [h, Ideal.top_pow]) rfl
+  rw [hnhds a, hnhds b]
 
-/-- The formal spectrum of a nonzero adic ring of finite ideal type is nonempty. -/
-theorem carrier_nonempty [IsTopologicalRing A] [IsAdicRing A] [Nontrivial A] :
-    (carrier A).Nonempty :=
+/-- If `I` defines the topology of `A` and `A` is separated and nonzero, the formal spectrum is
+nonempty. -/
+theorem carrier_nonempty [T1Space A] [Nontrivial A] (hI : IsAdic I) : (carrier A).Nonempty :=
   Set.nonempty_iff_ne_empty.mpr fun h ↦
-    not_subsingleton A (carrier_eq_empty_iff_subsingleton.mp h)
+    not_subsingleton A ((carrier_eq_empty_iff_subsingleton hI).mp h)
 
 section Quotient
 
@@ -130,17 +132,23 @@ applies to every power `J = I ^ (n + 1)`, by `is_ideal_adic_pow`. The inverse se
 `A ⧸ J` to its preimage in `A`. -/
 noncomputable def homeomorphSpecQuotient (hJ : IsAdic J) :
     carrier A ≃ₜ PrimeSpectrum (A ⧸ J) :=
-  ((isClosedEmbedding_comap_of_surjective _ _ Ideal.Quotient.mk_surjective).isEmbedding
-    |>.toHomeomorph.trans <| Homeomorph.setCongr <| by
-      rw [range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective, Ideal.mk_ker,
-        carrier_eq_zeroLocus hJ]).symm
+  have hcarrier : Set.range (PrimeSpectrum.comap (Ideal.Quotient.mk J)) = carrier A := by
+    rw [range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective, Ideal.mk_ker,
+      carrier_eq_zeroLocus hJ]
+  have hmem (q : PrimeSpectrum (A ⧸ J)) : PrimeSpectrum.comap (Ideal.Quotient.mk J) q ∈ carrier A :=
+    hcarrier ▸ Set.mem_range_self q
+  Homeomorph.symm <| IsEmbedding.toHomeomorphOfSurjective
+    ((isEmbedding_comap_of_surjective _ _ Ideal.Quotient.mk_surjective).codRestrict _ hmem)
+    (show Function.Surjective _ from fun p ↦ by
+      obtain ⟨q, hq⟩ := (Set.ext_iff.mp hcarrier p).mpr p.2
+      exact ⟨q, Subtype.ext hq⟩)
 
 /-- The inverse of `homeomorphSpecQuotient` sends a prime of `A ⧸ J` to its preimage in `A`. -/
 @[simp]
 theorem coe_homeomorphSpecQuotient_symm_apply (hJ : IsAdic J) (q : PrimeSpectrum (A ⧸ J)) :
     ((homeomorphSpecQuotient hJ).symm q : PrimeSpectrum A) =
-      PrimeSpectrum.comap (Ideal.Quotient.mk J) q :=
-  (rfl)
+      PrimeSpectrum.comap (Ideal.Quotient.mk J) q := by
+  simp [homeomorphSpecQuotient]
 
 /-- `homeomorphSpecQuotient` sends an open prime of `A` to its image in `A ⧸ J`. -/
 @[simp]
@@ -194,8 +202,8 @@ theorem basicOpen_mul (f g : A) : basicOpen (f * g) = basicOpen f ⊓ basicOpen 
 theorem isBasis_basicOpen : Opens.IsBasis (Set.range (basicOpen (A := A))) := by
   rw [Opens.IsBasis, ← Set.range_comp]
   convert IsInducing.subtypeVal.isTopologicalBasis (isTopologicalBasis_basic_opens (R := A))
-  rw [← Set.range_comp]
-  (rfl)
+  ext
+  simp [basicOpen, Function.comp_def]
 
 /-- If `I` defines the topology of `A`, then `D(g) ⊆ D(f)` in `Spf A` if and only if `g` lies in
 the radical of `f A + I`, that is, if and only if `f` divides a power of `g` modulo `I`. -/
