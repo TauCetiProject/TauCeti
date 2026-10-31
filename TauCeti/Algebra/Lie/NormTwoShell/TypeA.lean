@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.NormTwoShell.Serre
 public import TauCeti.Algebra.Lie.SpecialLinear.Root.Brackets
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.TypeA
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
 /-!
 # The signed shell Lie algebra of type `A` is the special linear Lie algebra
@@ -41,9 +42,11 @@ The proof compares brackets on basis vectors. The Cartan vector `H_h` goes to th
 matrix with entries `D h`, where `D` is `TauCeti.typeASimpleRootMatrix r`, and the pairing
 `⟪h, ε_p - ε_q⟫` is `(D h)_p - (D h)_q`, the eigenvalue of `ad (diagonal (D h))` on `E_(p,q)`.
 For two root vectors the matrix bracket `⁅E_(p,q), E_(s,t)⁆` is nonzero only when `q = s` or
-`t = p`, matching the cases `a + b ∈ Φ` and `a + b = 0` of the shell bracket, and the remaining
-check is that the ordered sign `ε(a, b)` equals the product of the signs of the three signed
-matrix units involved. This is a parity identity, proved from the closed form
+`t = p`, matching the cases `a + b ∈ Φ` and `a + b = 0` of the shell bracket. The remaining check
+compares the ordered sign `ε(a, b)` with the signs `σ` of the signed matrix units involved: for a
+chain `ε_p - ε_q`, `ε_q - ε_t` it is `σ(p,q) σ(q,t) σ(p,t)`, for a reversed chain `ε_p - ε_q`,
+`ε_s - ε_p` it is `-σ(p,q) σ(s,p) σ(s,q)`, and for opposite roots `ε_p - ε_q`, `ε_q - ε_p` it is
+`σ(p,q) σ(q,p)`. These are parity identities, proved from the closed form
 `TauCeti.orderedSignForm_cartanMatrix_A_typeAPairRoot` of the ordered form on two roots.
 
 ## Main definitions
@@ -131,13 +134,6 @@ theorem typeAShellEquiv_cartan (h : Fin r → ℤ) :
       simp [hk]
   exact congr($key h)
 
-/-- The diagonal matrix of `ε_p - ε_q` is `E_(p,p) - E_(q,q)`. -/
-private theorem diagonal_sub_pi_single (p q : Fin (r + 1)) :
-    diagonal (Pi.single p 1 - Pi.single q 1 : Fin (r + 1) → ℤ) =
-      Matrix.single p p 1 - Matrix.single q q 1 := by
-  rw [← diagonal_single, ← diagonal_single]
-  exact (diagonal_sub _ _).symm
-
 /-- The matrix of the image of `H_h` is the diagonal matrix of the classical coordinates `D h`. -/
 theorem coe_typeAShellEquiv_cartan (h : Fin r → ℤ) :
     (typeAShellEquiv r (cartan _ h) : Matrix (Fin (r + 1)) (Fin (r + 1)) ℤ) =
@@ -152,7 +148,8 @@ theorem coe_typeAShellEquiv_cartan (h : Fin r → ℤ) :
       simp only [LinearMap.comp_apply, Pi.basisFun_apply, LinearEquiv.coe_coe,
         typeAShellEquiv_cartan_single, Submodule.subtype_apply, specialLinearCorootBasis_apply,
         val_singleSubSingle, diagonalLinearMap_apply, mulVecLin_apply, hcol]
-      exact (diagonal_sub_pi_single r _ _).symm
+      rw [← diagonal_single k.castSucc (1 : ℤ), ← diagonal_single k.succ (1 : ℤ)]
+      exact diagonal_sub _ _
   exact congr($key h)
 
 /-- The Cartan vector of a root `ε_p - ε_q` goes to `E_(p,p) - E_(q,q)`. -/
@@ -160,7 +157,8 @@ theorem typeAShellEquiv_cartan_typeAPairRoot (p q : Fin (r + 1)) :
     typeAShellEquiv r (cartan _ (typeAPairRoot r p q)) = singleSubSingle p q 1 := by
   apply Subtype.ext
   rw [coe_typeAShellEquiv_cartan, typeASimpleRootMatrix_mulVec_typeAPairRoot, val_singleSubSingle,
-    diagonal_sub_pi_single]
+    ← diagonal_single, ← diagonal_single]
+  exact (diagonal_sub _ _).symm
 
 /-- The raising Chevalley generator `Eₖ` goes to the matrix unit `E_(k,k+1)`. -/
 @[simp]

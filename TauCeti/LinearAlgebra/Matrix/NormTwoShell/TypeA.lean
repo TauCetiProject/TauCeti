@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
-import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
+import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
 /-!
@@ -26,15 +26,16 @@ coordinate at the vertex `k` is `1` for `p ≤ k < q`, `-1` for `q ≤ k < p`, a
 for `p < q` it is the interval root `α_p + ⋯ + α_(q-1)`. The main result is that these vectors,
 for `p ≠ q`, are exactly the norm-two shell of `B`, that is, the roots of `A_r`
 (`TauCeti.typeANormTwoShellEquiv`). A norm-two vector `a` has classical coordinates `D a` of
-squared length `2` and coordinate sum `0`, and an integer vector with these two properties is
-some `ε_p - ε_q` (`TauCeti.exists_eq_single_sub_single_of_dotProduct_self_eq_two`).
+squared length `2` and coordinate sum `0`. By the classification of the integer vectors of squared
+length `2` (`TauCeti.DynkinType.TypeDRoot.exists_eq_single_sub_or_add_or_neg_add`), the sum
+condition leaves only the shape `ε_p - ε_q`.
 
 The file also evaluates the ordered sign form `Matrix.orderedSignForm B` of the ordered sign
 cover on two such roots (`TauCeti.orderedSignForm_cartanMatrix_A_typeAPairRoot`). For the order of
 `Fin r`, the only nonzero strictly lower entries of `B` are the `-1`s just below the diagonal,
-and the form counts the vertices `k` at which the first root has a coordinate at `k + 1` and the
-second one at `k`. These are the facts on which the comparison of the signed shell Lie algebra of
-`A_r` with the trace-zero matrices rests.
+so the form of `a` and `b` is minus the sum `∑ₖ a (k + 1) * b k` of products of adjacent
+coordinates. These are the facts on which the comparison of the signed shell Lie algebra of `A_r`
+with the trace-zero matrices rests.
 
 ## Main definitions
 
@@ -45,9 +46,8 @@ second one at `k`. These are the facts on which the comparison of the signed she
 
 ## Main results
 
-* `TauCeti.posDef_cartanMatrix_A`: the Cartan matrix of type `A_r` is positive definite over `ℤ`.
-* `TauCeti.dotProduct_cartanMatrix_A_mulVec`: its Gram pairing is the dot product of the
-  classical coordinates.
+* `TauCeti.dotProduct_cartanMatrix_A_mulVec`: the Gram pairing of `CartanMatrix.A r` is the dot
+  product of the classical coordinates.
 * `TauCeti.typeASimpleRootMatrix_mulVec_typeAPairRoot`: the classical coordinates of
   `typeAPairRoot r p q` are `ε_p - ε_q`.
 * `TauCeti.typeAPairRoot_dotProduct_cartanMatrix_A_mulVec`: the pairing of two pair roots.
@@ -69,10 +69,6 @@ namespace TauCeti
 open _root_.Matrix
 
 variable (r : ℕ)
-
-/-- **The Cartan matrix of type `A_r` is positive definite** over `ℤ`, at every rank. -/
-theorem posDef_cartanMatrix_A : (CartanMatrix.A r).PosDef :=
-  Matrix.posDef_map_intCast_iff.mp (posDef_map_intCast_cartanMatrix_A r)
 
 /-! ### Classical coordinates -/
 
@@ -223,50 +219,22 @@ theorem typeAPairRoot_eq_coroot (p : DynkinType.TypeAIndex r) :
   ext k
   rw [DynkinType.coroot_typeAIndexEquiv, typeAPairRoot_apply]
 
-/-- **An integer vector of squared length `2` with coordinate sum `0` is `ε_p - ε_q`** for two
-distinct indices `p` and `q`. -/
-theorem exists_eq_single_sub_single_of_dotProduct_self_eq_two {ι : Type*} [Fintype ι]
-    [DecidableEq ι] {v : ι → ℤ} (hv : v ⬝ᵥ v = 2) (hsum : ∑ i, v i = 0) :
-    ∃ p q, p ≠ q ∧ v = Pi.single p 1 - Pi.single q 1 := by
-  -- Every coordinate is `-1`, `0` or `1`, since its square is at most the sum `2`.
-  have hle (i : ι) : v i * v i ≤ 2 :=
-    hv ▸ Finset.single_le_sum (f := fun j ↦ v j * v j) (fun j _ ↦ mul_self_nonneg (v j))
-      (Finset.mem_univ i)
-  have hbound (i : ι) : -1 ≤ v i ∧ v i ≤ 1 := by
-    have := hle i
-    constructor <;> nlinarith
-  have hne : v ≠ 0 := by
-    rintro rfl
-    simp at hv
-  -- A nonzero vector with coordinate sum `0` has a positive and a negative coordinate.
-  obtain ⟨p, hp⟩ : ∃ p, 0 < v p := by
-    by_contra! h
-    exact hne (funext fun i ↦ (Finset.sum_eq_zero_iff_of_nonpos fun j _ ↦ h j).mp hsum i
-      (Finset.mem_univ i))
-  obtain ⟨q, hq⟩ : ∃ q, v q < 0 := by
-    by_contra! h
-    exact hne (funext fun i ↦ (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ h j).mp hsum i
-      (Finset.mem_univ i))
-  have hp1 : v p = 1 := by have := hbound p; omega
-  have hq1 : v q = -1 := by have := hbound q; omega
-  have hpq : p ≠ q := by rintro rfl; omega
-  refine ⟨p, q, hpq, ?_⟩
-  -- The difference `w = v - (ε_p - ε_q)` has squared length `2 - 2 · 2 + 2 = 0`.
-  rw [← sub_eq_zero, ← dotProduct_self_eq_zero]
-  simp only [sub_dotProduct, dotProduct_sub, single_dotProduct, dotProduct_single, one_mul,
-    mul_one, hv, hp1, hq1]
-  simp [hpq, hpq.symm]
-  omega
-
 /-- **Every root of type `A_r` is a pair root.** -/
 theorem exists_typeAPairRoot_eq_of_mem_normTwoShell {a : Fin r → ℤ}
     (ha : a ∈ (CartanMatrix.A r).normTwoShell) :
     ∃ p q, p ≠ q ∧ typeAPairRoot r p q = a := by
   rw [mem_normTwoShell, dotProduct_cartanMatrix_A_mulVec] at ha
-  obtain ⟨p, q, hpq, h⟩ := exists_eq_single_sub_single_of_dotProduct_self_eq_two ha
-    (sum_typeASimpleRootMatrix_mulVec_eq_zero r a)
-  exact ⟨p, q, hpq, typeASimpleRootMatrix_mulVec_injective r <| by
-    rw [typeASimpleRootMatrix_mulVec_typeAPairRoot, h]⟩
+  have hsum := sum_typeASimpleRootMatrix_mulVec_eq_zero r a
+  -- The classical coordinates have squared length `2`, and their sum `0` rules out `±(ε_p + ε_q)`.
+  obtain ⟨p, q, hpq, h | h | h⟩ :=
+    DynkinType.TypeDRoot.exists_eq_single_sub_or_add_or_neg_add
+      (⟨_, ha⟩ : DynkinType.TypeDRoot (r + 1))
+  · exact ⟨p, q, hpq, typeASimpleRootMatrix_mulVec_injective r <| by
+      rw [typeASimpleRootMatrix_mulVec_typeAPairRoot, ← h]⟩
+  all_goals
+    dsimp only at h
+    rw [h] at hsum
+    simp [Finset.sum_add_distrib] at hsum
 
 /-- **The roots of type `A_r` are enumerated by the ordered pairs of distinct indices** of
 `Fin (r + 1)`, the pair `(p, q)` giving the root `ε_p - ε_q`. These are the index pairs of the
@@ -289,12 +257,14 @@ theorem coe_typeANormTwoShellEquiv_apply (p : DynkinType.TypeAIndex r) :
   (rfl)
 
 /-- The root of the pair `(p, q)` is `ε_p - ε_q`. -/
+@[simp]
 theorem typeANormTwoShellEquiv_mk {p q : Fin (r + 1)} (hpq : p ≠ q) :
     typeANormTwoShellEquiv r ⟨(p, q), hpq⟩ =
       ⟨typeAPairRoot r p q, typeAPairRoot_mem_normTwoShell r hpq⟩ :=
   (rfl)
 
 /-- The pair of indices of the root `ε_p - ε_q`. -/
+@[simp]
 theorem typeANormTwoShellEquiv_symm_mk {p q : Fin (r + 1)} (hpq : p ≠ q) :
     (typeANormTwoShellEquiv r).symm ⟨typeAPairRoot r p q, typeAPairRoot_mem_normTwoShell r hpq⟩ =
       ⟨(p, q), hpq⟩ :=
@@ -320,7 +290,7 @@ private theorem typeAPairRoot_eq_sub (p q : Fin (r + 1)) :
     typeAPairRoot r p q = typeAStep r p - typeAStep r q :=
   (rfl)
 
-/-- The ordered form of two step vectors counts the vertices `k ≥ max x (y + 1)`. -/
+/-- The ordered form of two step vectors is minus the number of vertices `k ≥ max x (y + 1)`. -/
 private theorem orderedSignForm_typeAStep (x y : Fin (r + 1)) :
     orderedSignForm (CartanMatrix.A r) (typeAStep r x) (typeAStep r y) =
       -((r - max (x : ℕ) (y + 1) : ℕ) : ℤ) := by
