@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
+public import TauCeti.RepresentationTheory.Quiver.AffineE8.Zigzag
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Tree
 
 /-!
@@ -126,34 +127,13 @@ theorem graph_E7_isContained_underlyingGraph_affineE7 :
       | exact Or.inl ⟨Quiver.AffineE7.Arrow.outerMiddle _⟩
       | exact Or.inr ⟨Quiver.AffineE7.Arrow.outerMiddle _⟩
 
-/-- **Affine `E₈` is contained in the underlying graph of `TauCeti.Quiver.AffineE8`.** The
-trivalent node `0` goes to the centre, the leaf `1` to the short vertex, the arm `2, 3` to the
-medium arm, and the arm `4, …, 8` to the long arm, each numbered outwards. -/
+/-- **Affine `E₈` is contained in the underlying graph of `TauCeti.Quiver.AffineE8`.** This is
+the graph isomorphism `TauCeti.affineE8UnderlyingGraphIso`, which sends the trivalent node `0` to
+the centre, the leaf `1` to the short vertex, the arm `2, 3` to the medium arm, and the arm
+`4, …, 8` to the long arm, each numbered outwards. -/
 theorem graph_E8_isContained_underlyingGraph_affineE8 :
-    E8.graph.IsContained (underlyingGraph Quiver.AffineE8) := by
-  let φ : Fin 9 → Quiver.AffineE8 :=
-    ![.center, .short, .medium4, .medium2, .long5, .long4, .long3, .long2, .long1]
-  refine isContained_underlyingGraph_of_injective φ
-    (fun i j h ↦ by fin_cases i <;> fin_cases j <;> simp [φ] at h ⊢) fun i j h ↦ ?_
-  rw [graph_E8_adj] at h
-  fin_cases i <;> fin_cases j <;> simp at h <;>
-    first
-      | exact Or.inl ⟨Quiver.AffineE8.Arrow.short⟩
-      | exact Or.inr ⟨Quiver.AffineE8.Arrow.short⟩
-      | exact Or.inl ⟨Quiver.AffineE8.Arrow.medium2⟩
-      | exact Or.inr ⟨Quiver.AffineE8.Arrow.medium2⟩
-      | exact Or.inl ⟨Quiver.AffineE8.Arrow.medium4⟩
-      | exact Or.inr ⟨Quiver.AffineE8.Arrow.medium4⟩
-      | exact Or.inl ⟨Quiver.AffineE8.Arrow.long1⟩
-      | exact Or.inr ⟨Quiver.AffineE8.Arrow.long1⟩
-      | exact Or.inl ⟨Quiver.AffineE8.Arrow.long2⟩
-      | exact Or.inr ⟨Quiver.AffineE8.Arrow.long2⟩
-      | exact Or.inl ⟨Quiver.AffineE8.Arrow.long3⟩
-      | exact Or.inr ⟨Quiver.AffineE8.Arrow.long3⟩
-      | exact Or.inl ⟨Quiver.AffineE8.Arrow.long4⟩
-      | exact Or.inr ⟨Quiver.AffineE8.Arrow.long4⟩
-      | exact Or.inl ⟨Quiver.AffineE8.Arrow.long5⟩
-      | exact Or.inr ⟨Quiver.AffineE8.Arrow.long5⟩
+    E8.graph.IsContained (underlyingGraph Quiver.AffineE8) :=
+  affineE8UnderlyingGraphIso.isContained'
 
 end AffineDynkinType
 
