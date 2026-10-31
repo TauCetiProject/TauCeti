@@ -387,7 +387,8 @@ private theorem stageTrace_eq_of_le {m n : ℕ} (h : m ≤ n) {x : InfiniteTypeA
   | base => rfl
   | succ n hmn ih =>
     rw [← ih, stageTrace_succ, ← extend_incl z (stageTrace q z n)]
-    congr 1
+    exact congrArg _ (Subtype.ext
+      (Subalgebra.coe_inclusion _ (⟨x, stage_mono (by omega) hx⟩ : stage R q (n + 1))).symm)
 
 end StageTrace
 
@@ -414,12 +415,12 @@ noncomputable def ocneanuTrace (z : R) : InfiniteTypeAHeckeAlgebra R q →ₗ[R]
   map_add' x y := by
     obtain ⟨n, hx, hy⟩ := exists_mem_stage_and_mem_stage x y
     rw [traceFun_eq z (add_mem hx hy), traceFun_eq z hx, traceFun_eq z hy, ← map_add]
-    rfl
+    exact congrArg _ (Subtype.ext (Subalgebra.coe_add _ ⟨x, hx⟩ ⟨y, hy⟩).symm)
   map_smul' r x := by
     obtain ⟨n, hx, -⟩ := exists_mem_stage_and_mem_stage x x
     rw [traceFun_eq z (Subalgebra.smul_mem _ hx r), traceFun_eq z hx, RingHom.id_apply,
       ← map_smul]
-    rfl
+    exact congrArg _ (Subtype.ext (Subalgebra.coe_smul _ r ⟨x, hx⟩).symm)
 
 private theorem ocneanuTrace_eq_stageTrace (z : R) {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q}
     (hx : x ∈ stage R q (n + 1)) : ocneanuTrace R q z x = stageTrace q z n ⟨x, hx⟩ :=
