@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+public import TauCeti.RingTheory.RegularLocalRing.OfQuotient
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Localization.BaseChange
@@ -26,6 +28,13 @@ when `e` is invertible there. For `e ≥ 1` the root `x` is a nonzerodivisor whe
 quotient `A ⧸ (f)`. So `V(x)` has the same underlying closed set as the preimage of `V(f)`,
 although the scheme-theoretic preimage is `V(x^e)`. The file also defines the shape of the
 conclusions of Stacks, Lemmas 58.31.5 (0EYG) and 58.31.6 (0EYH).
+
+If `e ≥ 1`, `f` is a nonzerodivisor and `A/(f)` is reduced, the cover is the integral closure
+of `A` in its localization away from `f`. If moreover `A` is Noetherian and `A/(f)` is regular,
+the cover is regular at every prime containing the image of `f`. These properties of the local
+models in Stacks, Lemma 58.31.6 (0EYH), do not require `e` to be invertible. They follow from
+`IsIntegrallyClosedIn.of_isLocalization_of_le_powers` and
+`IsRegularLocalRing.localization_of_isRegularRing_quotient` (Stacks 00NU).
 
 ## Main definitions
 
@@ -51,10 +60,16 @@ conclusions of Stacks, Lemmas 58.31.5 (0EYG) and 58.31.6 (0EYH).
   standard étale algebra by `Polynomial.Monic.isStandardEtale_adjoinRoot`.
 * `TauCeti.standardTameCover_etale_away`: if `e` is invertible in `A_f`, the cover is étale over
   `A_f` after inverting `f`.
+* `TauCeti.standardTameCover_isIntegralClosure`: if `f` is a nonzerodivisor and `A/(f)` is
+  reduced, the cover for `e ≥ 1` is the integral closure of `A` in its localization away from `f`.
+* `TauCeti.standardTameCover_isRegularLocalRing_localization`: if `A` is Noetherian, `f` is a
+  nonzerodivisor and `A/(f)` is regular, the cover for `e ≥ 1` is regular at primes over `(f)`.
 
 ## References
 
 * [Stacks Project, Example 58.31.4](https://stacks.math.columbia.edu/tag/0EYF).
+* [Stacks Project, Lemma 58.31.6](https://stacks.math.columbia.edu/tag/0EYH).
+* [Stacks Project, Lemma 10.106.7](https://stacks.math.columbia.edu/tag/00NU).
 * Ported from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
   `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0): `standardTameCover_free` is
@@ -240,5 +255,48 @@ theorem standardTameCover_etale_away (he : IsUnit (e : Af)) : Algebra.Etale Af C
   Algebra.Etale.of_equiv (standardTameCoverAwayAlgEquiv f e Af Cf)
 
 end Away
+
+variable {f : A} {e : ℕ}
+
+/-- If `f` is a nonzerodivisor and `A/(f)` is reduced, the root algebra `A[x]/(x^e - f)`
+for `e > 0` is the integral closure of `A` in its localization away from `f`.
+No invertibility assumption on `e` or Noetherianity assumption on `A` is needed. -/
+theorem standardTameCover_isIntegralClosure (hf : f ∈ nonZeroDivisors A) (he : e ≠ 0)
+    [IsReduced (A ⧸ Ideal.span {f})] (Cf : Type*) [CommRing Cf]
+    [Algebra (standardTameCover A f e) Cf]
+    [IsLocalization.Away (algebraMap A (standardTameCover A f e) f) Cf]
+    [Algebra A Cf] [IsScalarTower A (standardTameCover A f e) Cf] :
+    IsIntegralClosure (standardTameCover A f e) A Cf := by
+  have := (monic_X_pow_sub_C f he).finite_adjoinRoot
+  have : IsReduced
+      (standardTameCover A f e ⧸ Ideal.span {AdjoinRoot.root (X ^ e - C f)}) :=
+    isReduced_of_injective (standardTameCoverQuotientSpanRootAlgEquiv f he)
+      (standardTameCoverQuotientSpanRootAlgEquiv f he).injective
+  have : IsIntegrallyClosedIn (standardTameCover A f e) Cf :=
+    .of_isLocalization_of_le_powers
+      ((standardTameCover_root_mem_nonZeroDivisors_iff he).mpr hf)
+      (Submonoid.powers (algebraMap A (standardTameCover A f e) f))
+      (Submonoid.powers_le.mpr (by
+        rw [AdjoinRoot.algebraMap_eq, ← AdjoinRoot.root_X_pow_sub_C_pow]
+        exact Submonoid.pow_mem _ (Submonoid.mem_powers _) e))
+  exact IsIntegralClosure.of_isIntegrallyClosedIn
+
+/-- If `A` is Noetherian, `f` is a nonzerodivisor and `A/(f)` is regular, then
+`A[x]/(x^e - f)` is regular at every prime over the divisor `(f)`, for every `e > 0`.
+In particular, this applies even when the residue characteristic divides `e`. -/
+theorem standardTameCover_isRegularLocalRing_localization [IsNoetherianRing A]
+    (hf : f ∈ nonZeroDivisors A) (he : e ≠ 0) [IsRegularRing (A ⧸ Ideal.span {f})]
+    (P : Ideal (standardTameCover A f e)) [P.IsPrime]
+    (hfP : algebraMap A (standardTameCover A f e) f ∈ P) :
+    IsRegularLocalRing (Localization.AtPrime P) := by
+  have := (monic_X_pow_sub_C f he).finite_adjoinRoot
+  have := IsNoetherianRing.of_finite A (standardTameCover A f e)
+  have : IsRegularRing
+      (standardTameCover A f e ⧸ Ideal.span {AdjoinRoot.root (X ^ e - C f)}) :=
+    .of_ringEquiv (standardTameCoverQuotientSpanRootAlgEquiv f he).symm.toRingEquiv
+  apply IsRegularLocalRing.localization_of_isRegularRing_quotient
+    ((standardTameCover_root_mem_nonZeroDivisors_iff he).mpr hf) P
+  apply Ideal.IsPrime.mem_of_pow_mem inferInstance e
+  rwa [AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq]
 
 end TauCeti
