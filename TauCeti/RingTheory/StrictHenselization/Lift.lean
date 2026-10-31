@@ -184,12 +184,12 @@ section FieldTarget
 variable (R : Type u) {Ω : Type u} {S : Type v} [CommRing R] [Field Ω] [Algebra R Ω]
   [CommRing S] [Algebra R S] [HenselianLocalRing S]
 
-/-- When the target `Ω` is a field, `lift` is a local homomorphism: if `lift x` is a unit, then
-its reduction `pointMap (toTarget x)` is nonzero, so `toTarget x` is a unit, and hence so is
-`x`. -/
+/-- When the target `Ω` is a field, `lift` is a local homomorphism. -/
 instance isLocalHom_lift (pointMap : Ω →ₐ[R] ResidueField S) :
     IsLocalHom (lift R Ω pointMap) where
   map_nonunit x hx := by
+    -- If `lift x` is a unit, then its reduction `pointMap (toTarget x)` is nonzero, so
+    -- `toTarget x` is a unit in the field `Ω`, and hence so is `x`.
     rw [isUnit_iff_isUnit_toTarget, isUnit_iff_ne_zero]
     intro h
     apply (residue_ne_zero_iff_isUnit _).mpr hx
@@ -199,12 +199,13 @@ instance isLocalHom_lift (pointMap : Ω →ₐ[R] ResidueField S) :
 algebraic extension of its residue field, such as a separable closure. A local homomorphism
 `R → S` into a strictly henselian local ring `S` extends to a local homomorphism from the colimit
 of pointed étale neighbourhoods, that is, from the strict henselization when `Ω` is a separable
-closure. An embedding of `Ω` into the separably closed residue field of `S` exists over the
-residue field of `R`, and `lift` along it is local. -/
+closure. -/
 theorem exists_isLocalHom_lift [IsLocalRing R] [Algebra (ResidueField R) Ω]
     [IsScalarTower R (ResidueField R) Ω] [Algebra.IsSeparable (ResidueField R) Ω]
     [IsSepClosed (ResidueField S)] [IsLocalHom (algebraMap R S)] :
     ∃ f : algebra R Ω →ₐ[R] S, IsLocalHom f :=
+  -- Embed `Ω` into the separably closed residue field of `S` over the residue field of `R`;
+  -- `lift` along this embedding is local.
   ⟨lift R Ω ((IsSepClosed.lift : Ω →ₐ[ResidueField R] ResidueField S).restrictScalars R),
     inferInstance⟩
 

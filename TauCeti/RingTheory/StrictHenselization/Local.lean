@@ -74,10 +74,10 @@ instance isLocalHom_toTarget : IsLocalHom (toTarget R Ω) where
   map_nonunit x hx := (isUnit_iff_isUnit_toTarget R Ω x).mpr hx
 
 /-- The kernel of `toTarget` lies in the Jacobson radical of the colimit of pointed étale
-neighbourhoods: if `toTarget x = 0`, then `toTarget (1 + x * y) = 1` for every `y`, so
-`1 + x * y` is a unit. -/
+neighbourhoods. -/
 theorem ker_toTarget_le_jacobson :
     RingHom.ker (toTarget R Ω).toRingHom ≤ Ideal.jacobson ⊥ := by
+  -- If `toTarget x = 0`, then `toTarget (1 + x * y) = 1` for every `y`, so `1 + x * y` is a unit.
   intro x hx
   have hx0 : toTarget R Ω x = 0 := RingHom.mem_ker.mp hx
   refine Ideal.mem_jacobson_bot.mpr fun y ↦ (isUnit_iff_isUnit_toTarget R Ω _).mpr ?_
