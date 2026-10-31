@@ -17,8 +17,8 @@ such bounds into equalities.
 ## Main results
 
 * `ENat.le_of_inf_le_of_inf_le`: if `c ⊓ (b + 1) ≤ a` and `c ⊓ (a + 1) ≤ b`, then `c ≤ a`.
-* `ENat.add_succ_eq_of_le_of_le`: for finite `b`, the bounds `(b + p) ⊓ (b - 1) ≤ a` and
-  `a + 1 ≤ b` give `a + (p + 1) = b + p`.
+* `ENat.add_succ_eq_of_le_of_le`: the bounds `(b + p) ⊓ (b - 1) ≤ a` and `a + 1 ≤ b` give
+  `a + (p + 1) = b + p`.
 -/
 
 public section
@@ -31,11 +31,11 @@ theorem le_of_inf_le_of_inf_le {a b c : ℕ∞} (ha : c ⊓ (b + 1) ≤ a)
   induction a using ENat.recTopCoe <;> induction b using ENat.recTopCoe <;>
     induction c using ENat.recTopCoe <;> simp_all <;> norm_cast at * <;> omega
 
-/-- If `b` is finite, `(b + p) ⊓ (b - 1) ≤ a` and `a + 1 ≤ b`, then `a + (p + 1) = b + p`. -/
-theorem add_succ_eq_of_le_of_le {a b : ℕ∞} {p : ℕ} (hb : b ≠ ⊤)
+/-- If `(b + p) ⊓ (b - 1) ≤ a` and `a + 1 ≤ b`, then `a + (p + 1) = b + p`. -/
+theorem add_succ_eq_of_le_of_le {a b : ℕ∞} {p : ℕ}
     (h₁ : (b + p) ⊓ (b - 1) ≤ a) (h₂ : a + 1 ≤ b) : a + (p + 1 : ℕ) = b + p := by
   induction b using ENat.recTopCoe with
-  | top => exact absurd rfl hb
+  | top => simp_all
   | coe b =>
     induction a using ENat.recTopCoe with
     | top => simp at h₂

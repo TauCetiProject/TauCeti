@@ -125,7 +125,7 @@ private theorem depth_add_eq_of_projectiveDimension_eq (p : ℕ) (M : Type v) [A
         | coe b => norm_cast at h'; omega
     rw [hF, ← hK] at h₁
     rw [← hK]
-    exact ENat.add_succ_eq_of_le_of_le hKtop h₁ h₂
+    exact ENat.add_succ_eq_of_le_of_le h₁ h₂
 
 end IsLocalRing
 
