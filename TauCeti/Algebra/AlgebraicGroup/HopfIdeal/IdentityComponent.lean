@@ -6,6 +6,8 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Characteristic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.RationalPoint
@@ -19,7 +21,9 @@ For a closed subgroup `N` of an affine group `G`, `HopfIdeal.identityComponent` 
 `N°` as a closed subgroup of `G`. Its quotient coordinate algebra is canonically isomorphic
 to the coordinate algebra obtained by taking the identity component inside `N`.
 
-The identity component has the same tangent Lie algebra as `N`. When `G` and `N` are reduced,
+The identity component has the same tangent Lie algebra as `N`, and when `N` is smooth also the
+same dimension. Conjugating `N` by a rational point `g` conjugates `N°`:
+`(gNg⁻¹)° = gN°g⁻¹`, an equality of closed subgroup schemes. When `G` and `N` are reduced,
 normality of `N` implies normality of `N°` in `G`: the identity component is characteristic
 in `N`, and normality can be tested on rational points. All statements are over an
 algebraically closed field; no connectedness of the ambient group is required.
@@ -28,7 +32,9 @@ algebraically closed field; no connectedness of the ambient group is required.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37 and Chapter 10.
 * The construction uses `CommHopfAlgCat.Hom.quotientIsoOfSurjective`; normality uses
-  `HopfIdeal.IsNormal.comapOfSurjective_of_forall_iso`.
+  `HopfIdeal.IsNormal.comapOfSurjective_of_forall_iso`; conjugation uses
+  `HopfIdeal.quotientConjugationEquiv` and
+  `HopfAlgebra.apply_mem_identityComponentHopfIdeal_iff`.
 -/
 
 public section
@@ -161,6 +167,26 @@ theorem lieSubalgebra_identityComponent (I : HopfIdeal k H) :
     apply (derivationComp_mem_lieSubalgebra_comapOfSurjective_iff _ _ _ _).mpr
     rw [lieSubalgebra_identityComponentHopfIdeal_eq_top]
     exact LieSubalgebra.mem_top _
+
+/-- A smooth closed subgroup and its identity component have the same dimension. -/
+theorem ringKrullDim_quotient_identityComponent_of_smooth (I : HopfIdeal k H)
+    [Algebra.Smooth k (FiniteTypeCommHopfAlgCat.quotient H I)] :
+    ringKrullDim (H ⧸ I.identityComponent.toIdeal) = ringKrullDim (H ⧸ I.toIdeal) := by
+  let _ := I.smooth_identityComponent
+  rw [ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth,
+    ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth, lieSubalgebra_identityComponent]
+
+/-- **Identity components of conjugate subgroups.** Conjugating a closed subgroup `N` by a
+rational point `g` conjugates its identity component: `(gNg⁻¹)° = gN°g⁻¹`. -/
+@[simp]
+theorem identityComponent_conjugate (I : HopfIdeal k H) (g : WithConv (H →ₐ[k] k)) :
+    (I.conjugate g).identityComponent = I.identityComponent.conjugate g := by
+  ext x
+  rw [mem_identityComponent, mem_conjugate, mem_identityComponent,
+    ← HopfAlgebra.apply_mem_identityComponentHopfIdeal_iff
+      (I.quotientConjugationEquiv (I.conjugate g) g rfl),
+    CommHopfAlgCat.mkQuotient_apply, CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk,
+    Ideal.Quotient.mkₐ_eq_mk, quotientConjugationEquiv_mk]
 
 end
 

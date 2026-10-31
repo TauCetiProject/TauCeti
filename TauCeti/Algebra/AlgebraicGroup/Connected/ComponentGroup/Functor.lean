@@ -17,10 +17,11 @@ homomorphism of their component groups. Its underlying function is Mathlib's map
 components of the prime spectra. Compatibility with the rational component maps proves
 multiplicativity and characterizes the induced homomorphism uniquely.
 
-The construction defines a contravariant functor on finite-type commutative Hopf algebras.
-An injective coordinate map induces a surjection on component groups. This gives the
-right-surjectivity part of passing an exact sequence of affine groups to component groups;
-it does not assert exactness at the middle term or injectivity at the left term.
+The construction defines a contravariant functor on finite-type commutative Hopf algebras;
+in particular isomorphic affine groups have isomorphic component groups. An injective
+coordinate map induces a surjection on component groups. This gives the right-surjectivity
+part of passing an exact sequence of affine groups to component groups; it does not assert
+exactness at the middle term or injectivity at the left term.
 
 ## References
 
@@ -125,6 +126,27 @@ theorem mapComponentGroup_comp (f : H ⟶ K) (g : K ⟶ L) :
     mapComponentGroup_rationalComponentMap f]
   simp only [ObjectProperty.FullSubcategory.comp_hom, _root_.CommHopfAlgCat.hom_comp,
     BialgHom.mapDomain_comp, MonoidHom.comp_apply]
+
+/-- Isomorphic affine groups have isomorphic component groups. Coordinate arrows reverse, so
+`e : H ≅ K` induces an equivalence from the components of `Spec K` to those of `Spec H`. -/
+noncomputable def mapComponentGroupMulEquiv (e : H ≅ K) :
+    ConnectedComponents (PrimeSpectrum K) ≃* ConnectedComponents (PrimeSpectrum H) :=
+  MonoidHom.toMulEquiv (mapComponentGroup e.hom) (mapComponentGroup e.inv)
+    (by rw [← mapComponentGroup_comp, e.inv_hom_id, mapComponentGroup_id])
+    (by rw [← mapComponentGroup_comp, e.hom_inv_id, mapComponentGroup_id])
+
+/-- The equivalence of component groups induced by an isomorphism is the induced map. -/
+@[simp]
+theorem mapComponentGroupMulEquiv_apply (e : H ≅ K) (C : ConnectedComponents (PrimeSpectrum K)) :
+    mapComponentGroupMulEquiv e C = mapComponentGroup e.hom C :=
+  (rfl)
+
+/-- The inverse equivalence is induced by the inverse isomorphism. -/
+@[simp]
+theorem mapComponentGroupMulEquiv_symm_apply (e : H ≅ K)
+    (C : ConnectedComponents (PrimeSpectrum H)) :
+    (mapComponentGroupMulEquiv e).symm C = mapComponentGroup e.inv C :=
+  (rfl)
 
 /-- The component group, contravariantly functorial in finite-type coordinate Hopf algebras. -/
 noncomputable def componentGroupFunctor :
