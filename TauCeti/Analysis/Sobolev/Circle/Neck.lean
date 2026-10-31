@@ -99,10 +99,11 @@ private def neckTransferFun (ha : ‖a‖ ≤ 1) (u : CircleSobolev s E) : Circl
   ⟨neckCoeff a u, memℓp_of_forall_le (weight_mul_norm_neckCoeff_le ha u)⟩
 
 /-- The **neck transfer** of the plumbing `xy = a`: the operator on `H^s` sending `u` to
-`∑_{n > 0} aⁿ uₙ e^{-inθ}`. On a nonnegative-frequency `u`, the boundary value of a holomorphic
-function `U` on the unit disc, it gives the values of `x ↦ U(a / x) - U(0)` on the unit circle
-(`CircleSobolev.toContinuousMap_neckTransfer`). It is defined for `‖a‖ ≤ 1`, where its norm is at
-most `‖a‖` (`CircleSobolev.opNorm_neckTransfer_le`); for `‖a‖ > 1` it is the junk value `0`. -/
+`∑_{n > 0} aⁿ uₙ e^{-inθ}`. For `s > 1/2` and complete `E`, on a nonnegative-frequency `u`, the
+boundary value of a holomorphic function `U` on the unit disc, it gives the values of
+`x ↦ U(a / x) - U(0)` on the unit circle (`CircleSobolev.toContinuousMap_neckTransfer`). It is
+defined for `‖a‖ ≤ 1`, where its norm is at most `‖a‖` (`CircleSobolev.opNorm_neckTransfer_le`);
+for `‖a‖ > 1` it is the junk value `0`. -/
 def neckTransfer (a : ℂ) : CircleSobolev s E →L[ℂ] CircleSobolev s E :=
   if ha : ‖a‖ ≤ 1 then
     LinearMap.mkContinuous
@@ -119,11 +120,13 @@ def neckTransfer (a : ℂ) : CircleSobolev s E →L[ℂ] CircleSobolev s E :=
 
 /-- The Fourier coefficients of the neck transfer: the `(-n)`-th one, `n > 0`, is `aⁿ uₙ`, and the
 nonnegative ones vanish. -/
+@[simp]
 theorem coeff_neckTransfer (ha : ‖a‖ ≤ 1) (u : CircleSobolev s E) (n : ℤ) :
     (neckTransfer a u).coeff n = if n < 0 then a ^ n.natAbs • u.coeff (-n) else 0 := by
   simp [neckTransfer, ha, neckTransferFun, neckCoeff]
 
 /-- The neck transfer has no nonnegative frequencies. -/
+@[simp]
 theorem coeff_neckTransfer_of_nonneg (u : CircleSobolev s E) {n : ℤ} (hn : 0 ≤ n) :
     (neckTransfer a u).coeff n = 0 := by
   by_cases ha : ‖a‖ ≤ 1
@@ -137,6 +140,7 @@ theorem coeff_neckTransfer_neg_natCast (ha : ‖a‖ ≤ 1) (u : CircleSobolev s
   rw [coeff_neckTransfer ha, ite_eq_left (by omega), Int.natAbs_neg, Int.natAbs_natCast, neg_neg]
 
 /-- Outside the closed unit disc the neck transfer is the junk value `0`. -/
+@[simp]
 theorem neckTransfer_of_one_lt_norm (ha : 1 < ‖a‖) :
     (neckTransfer a : CircleSobolev s E →L[ℂ] CircleSobolev s E) = 0 := by
   simp [neckTransfer, not_le.2 ha]
@@ -191,6 +195,7 @@ theorem neckTransfer_eq_zero_of_mem_supported (a : ℂ) {u : CircleSobolev s E}
 
 /-- The neck transfer of a Fourier monomial of positive frequency `n` is the monomial of frequency
 `-n` scaled by `aⁿ`. -/
+@[simp]
 theorem neckTransfer_single_natCast (ha : ‖a‖ ≤ 1) {n : ℕ} (hn : n ≠ 0) (x : E) :
     neckTransfer a (single (s := s) n x) = single (-n) (a ^ n • x) := by
   refine CircleSobolev.ext <| funext fun m ↦ ?_
@@ -204,6 +209,7 @@ theorem neckTransfer_single_natCast (ha : ‖a‖ ≤ 1) {n : ℕ} (hn : n ≠ 0
     · rfl
 
 /-- The neck transfer commutes with the inclusion `H^s ⊆ H^t`. -/
+@[simp]
 theorem inclusion_neckTransfer (h : t ≤ s) (a : ℂ) (u : CircleSobolev s E) :
     inclusion h (neckTransfer a u) = neckTransfer a (inclusion h u) := by
   by_cases ha : ‖a‖ ≤ 1
@@ -426,6 +432,7 @@ theorem mem_neckGraph_iff (ha : ‖a‖ ≤ 1) {p : CircleSobolev s E × CircleS
 
 /-- At the node `a = 0` the neck graph is the pair of nonnegative Laurent subspaces, the boundary
 values of holomorphic functions on the two branch discs. -/
+@[simp]
 theorem neckGraph_zero :
     neckGraph s E 0 = (supported s E (Set.Ici 0)).prod (supported s E (Set.Ici 0)) := by
   ext p
