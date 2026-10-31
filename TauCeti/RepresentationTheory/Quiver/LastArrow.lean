@@ -92,13 +92,15 @@ theorem pathLastArrowEquiv_symm_inr {i b : V} (a : V) (p : Quiver.Path i a) (e :
   (rfl)
 
 /-- **The last-arrow recursion for path counts.** The paths `i → b` are the trivial one, present
-exactly when `i = b`, together with a path `i → a` and an arrow `a ⟶ b`. The cardinalities are
-honest counts once the paths out of `i` are finite, which is what the hypothesis
-`[∀ a, Finite (Quiver.Path i a)]` provides; no separate finiteness of the arrows is needed.
+exactly when `i = b`, together with a path `i → a` and an arrow `a ⟶ b`. Only the paths `i → b`
+need to be finite. A single factor `#(i → a)` or `#(a ⟶ b)` may then be the junk value `0` of an
+infinite type, but each summand `#(i → a) * #(a ⟶ b)` is still an honest count: if either type is
+nonempty, the other one injects into the paths `i → b`, so an infinite factor only occurs alongside
+an empty one.
 
 This is the mirror image of `TauCeti.card_path_eq_ite_add_sum_firstArrow`. -/
-theorem card_path_eq_ite_add_sum_lastArrow [DecidableEq V] [Fintype V] (i : V)
-    [∀ a : V, Finite (Quiver.Path i a)] (b : V) :
+theorem card_path_eq_ite_add_sum_lastArrow [DecidableEq V] [Fintype V] (i b : V)
+    [Finite (Quiver.Path i b)] :
     Nat.card (Quiver.Path i b)
       = (if i = b then 1 else 0)
         + ∑ a : V, Nat.card (Quiver.Path i a) * Nat.card (a ⟶ b) := by
