@@ -123,4 +123,22 @@ theorem _root_.IsSelfAdjoint.isSelfAdjoint_resolvent (hA : IsSelfAdjoint A)
   rw [ContinuousLinearMap.isSelfAdjoint_iff', hA.adjoint_resolvent hz,
     RCLike.conj_eq_iff_im.mpr him]
 
+section Complex
+
+open Complex
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  {A : H →ₗ.[ℂ] H}
+
+/-- `i` lies in the resolvent set of a self-adjoint operator. -/
+theorem _root_.IsSelfAdjoint.I_mem_resolventSet (hA : IsSelfAdjoint A) : I ∈ A.resolventSet :=
+  hA.mem_resolventSet_of_im_ne_zero (by simp)
+
+/-- `-i` lies in the resolvent set of a self-adjoint operator. -/
+theorem _root_.IsSelfAdjoint.neg_I_mem_resolventSet (hA : IsSelfAdjoint A) :
+    -I ∈ A.resolventSet :=
+  hA.mem_resolventSet_of_im_ne_zero (by simp)
+
+end Complex
+
 end TauCeti
