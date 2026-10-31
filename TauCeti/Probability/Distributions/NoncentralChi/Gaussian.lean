@@ -6,19 +6,20 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.NoncentralChiSquared.Gaussian
-public import TauCeti.Probability.Distributions.NoncentralChi.PDF
+public import TauCeti.Probability.Distributions.NoncentralChi.Basic
 
 /-!
 # Gaussian constructions of noncentral chi laws
 
 The Euclidean norm of a Gaussian vector with spherical covariance has a noncentral chi law.
 For a vector with mean `s • m` and covariance `s ^ 2 • 1`, the degree is the dimension, the
-noncentrality is `‖m‖`, and the scale is `s`. This includes dimension zero. In dimension two it
-is the Gaussian construction of the Rice distribution.
+noncentrality is `‖m‖`, and the scale is `s`. This includes dimension zero.
 
-The result follows from the corresponding squared-norm construction and the defining square-root
-pushforward of the noncentral chi law. The scaled version is then obtained by transporting the
-identity-covariance Gaussian along scalar multiplication.
+The results come in two forms: as identities of pushforward measures of
+`multivariateGaussian`, and as `HasLaw` statements for random vectors with such a Gaussian law.
+In dimension two they identify the radial distribution of a planar Gaussian as the Rice
+distribution, whose density in terms of the mean norm and coordinate scale is
+`noncentralChiPDFReal_two_div_scale_eq_besselI`.
 
 ## References
 
@@ -61,14 +62,11 @@ private theorem map_norm_smul_multivariateGaussian_noncentral [DecidableEq ι]
         multivariateGaussian (s • m) (s ^ 2 • (1 : Matrix ι ι ℝ)) := by
     simpa using map_add_smul_multivariateGaussian m Matrix.PosSemidef.one 0 s
   rw [← hgauss, Measure.map_map (by fun_prop) (by fun_prop)]
-  have hnorm : (fun z : EuclideanSpace ℝ ι ↦ ‖s • z‖) = fun z ↦ s * ‖z‖ := by
+  have hnorm : ((fun x ↦ ‖x‖) ∘ fun z : EuclideanSpace ℝ ι ↦ s • z) =
+      (fun x : ℝ ↦ s * x) ∘ fun z ↦ ‖z‖ := by
     funext z
-    rw [norm_smul, Real.norm_eq_abs, abs_of_pos hs]
-  change (multivariateGaussian m (1 : Matrix ι ι ℝ)).map (fun z ↦ ‖s • z‖) = _
-  rw [hnorm]
-  change (multivariateGaussian m (1 : Matrix ι ι ℝ)).map
-    ((fun x : ℝ ↦ s * x) ∘ fun z ↦ ‖z‖) = _
-  rw [← Measure.map_map (by fun_prop) (by fun_prop),
+    simp [norm_smul, abs_of_pos hs]
+  rw [hnorm, ← Measure.map_map (by fun_prop) (by fun_prop),
     map_norm_multivariateGaussian_noncentral m,
     noncentralChiMeasure_map_const_mul (s := 1) hs, mul_one]
 
@@ -85,14 +83,6 @@ theorem map_norm_multivariateGaussian_noncentral_of_scale [DecidableEq ι]
   apply NNReal.eq
   simp [norm_smul, Real.norm_eq_abs, abs_of_pos hs, Real.coe_toNNReal _ hs.le]
   field_simp [hs.ne']
-
-/-- The planar specialization of the spherical Gaussian norm construction. This is the measure
-identity underlying the Rice distribution. -/
-theorem map_norm_multivariateGaussian_fin_two_noncentral
-    (m : EuclideanSpace ℝ (Fin 2)) {s : ℝ} (hs : 0 < s) :
-    (multivariateGaussian m (s ^ 2 • (1 : Matrix (Fin 2) (Fin 2) ℝ))).map (fun x ↦ ‖x‖) =
-      noncentralChiMeasure 2 (‖m‖₊ / s.toNNReal) s := by
-  simpa using map_norm_multivariateGaussian_noncentral_of_scale m hs
 
 end TauCeti.Probability
 
@@ -118,16 +108,5 @@ theorem HasLaw.norm_multivariateGaussian_noncentral_of_scale {ι : Type*} [Finty
       (noncentralChiMeasure (Fintype.card ι) (‖m‖₊ / s.toNNReal) s) P :=
   (HasLaw.mk (by fun_prop)
     (map_norm_multivariateGaussian_noncentral_of_scale m hs)).fun_comp hX
-
-/-- The norm of a planar spherical Gaussian random vector has the Rice law, expressed as the
-degree-two noncentral chi law. -/
-theorem HasLaw.norm_multivariateGaussian_fin_two_noncentral
-    {X : Ω → EuclideanSpace ℝ (Fin 2)} {m : EuclideanSpace ℝ (Fin 2)} {s : ℝ}
-    (hs : 0 < s)
-    (hX : HasLaw X
-      (multivariateGaussian m (s ^ 2 • (1 : Matrix (Fin 2) (Fin 2) ℝ))) P) :
-    HasLaw (fun ω ↦ ‖X ω‖) (noncentralChiMeasure 2 (‖m‖₊ / s.toNNReal) s) P :=
-  (HasLaw.mk (by fun_prop)
-    (map_norm_multivariateGaussian_fin_two_noncentral m hs)).fun_comp hX
 
 end ProbabilityTheory
