@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.CohenMacaulay.TrivSqZeroExt
+import TauCeti.RingTheory.Flat.TrivSqZeroExt
 import TauCeti.RingTheory.KrullDimension.Fiber
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
@@ -39,18 +41,12 @@ example {x y : A} (hxy : maximalIdeal A = Ideal.span {x, y}) :
     Nonempty ((A[X] ⧸ (Ideal.span {X ^ 2, C x * X, C y * X} : Ideal A[X])) ≃ₐ[A]
       TrivSqZeroExt A (A ⧸ maximalIdeal A)) := by
   let φ := aeval (R := A) (inr 1 : TrivSqZeroExt A (A ⧸ maximalIdeal A))
-  -- The value of a polynomial at `z` only sees its first two coefficients.
+  -- The value of a polynomial at `z` only sees its first two coefficients, as `z² = 0`.
   have hφp (p : A[X]) : φ p = inl (p.coeff 0) + inr (Ideal.Quotient.mk _ (p.coeff 1)) := by
-    induction p using Polynomial.induction_on' with
-    | add p q hp hq =>
-      rw [map_add, hp, hq, coeff_add, coeff_add, inl_add, map_add, inr_add]
-      abel
-    | monomial n a =>
-      rcases n with _ | _ | n
-      · simp [φ, algebraMap_eq_inl]
-      · ext <;> simp [φ, algebraMap_eq_inl, Algebra.smul_def]
-      · rw [aeval_monomial, pow_succ, pow_succ, mul_assoc, inr_mul_inr, mul_zero, mul_zero]
-        simp [coeff_monomial]
+    have h := aeval_add_of_sq_eq_zero p 0 (inr 1 : TrivSqZeroExt A (A ⧸ maximalIdeal A))
+      (by rw [sq, inr_mul_inr])
+    rw [zero_add, ← coeff_zero_eq_aeval_zero', ← coeff_zero_eq_aeval_zero', coeff_derivative] at h
+    simpa [φ, algebraMap_eq_inl, inl_mul_inr, Algebra.smul_def] using h
   have hφ : Function.Surjective φ := fun s ↦ by
     obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective s.snd
     exact ⟨C s.fst + C b * X, by ext <;> simp [hφp, hb]⟩
