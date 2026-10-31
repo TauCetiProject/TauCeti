@@ -51,6 +51,8 @@ The separated completion of `SpectralTop A` is the ring of the uniformization of
   continuous.
 * `TauCeti.Huber.SpectralTop.isTopologicallyNilpotent_toSpectralTop_iff`: the two topologies have
   the same topologically nilpotent elements.
+* `TauCeti.Huber.SpectralTop.isPseudoUniformizer_toSpectralTop_iff`: the two topologies have the
+  same pseudouniformisers.
 * `TauCeti.Huber.SpectralTop.isTateRing`: `SpectralTop A` is a Tate ring.
 * `TauCeti.Huber.SpectralTop.powerBoundedSubring_eq`: the power-bounded elements of
   `SpectralTop A` are those of spectral seminorm at most one.
@@ -297,6 +299,11 @@ theorem isTopologicallyNilpotent_toSpectralTop_iff {x : A} :
   refine IsTopologicallyNilpotent.of_pow hn0 ?_
   simpa using (IsPowerBounded.of_isTopologicallyNilpotent hu).isTopologicallyNilpotent_mul hn
 
+/-- **The spectral topology has the same pseudouniformisers as `A`.** -/
+theorem isPseudoUniformizer_toSpectralTop_iff {ϖ : A} :
+    IsPseudoUniformizer (toSpectralTop A ϖ) ↔ IsPseudoUniformizer ϖ := by
+  simp [isPseudoUniformizer_iff]
+
 /-- **The spectral topology is a Tate topology**: the image of the power-bounded subring of `A`
 is an open bounded subring of `SpectralTop A`, and a pseudouniformiser of `A` remains one. -/
 instance isTateRing : IsTateRing (SpectralTop A) := by
@@ -306,8 +313,7 @@ instance isTateRing : IsTateRing (SpectralTop A) := by
   have hS {x : SpectralTop A} : x ∈ S ↔ IsPowerBounded ((toSpectralTop A).symm x) :=
     Subring.mem_map_equiv.trans mem_powerBoundedSubring
   refine IsTateRing.of_isOpen_isBounded S ?_ ?_ (ϖ := toSpectralTop A ϖ)
-    (isPseudoUniformizer_iff.mpr ⟨hϖ.isUnit.map _,
-      isTopologicallyNilpotent_toSpectralTop_iff.mpr hϖ.isTopologicallyNilpotent⟩)
+    (isPseudoUniformizer_toSpectralTop_iff.mpr hϖ)
   · -- `S` contains the neighbourhood `u • A°°` of zero.
     obtain ⟨⟨u, hu⟩⟩ := nonempty_pseudoUniformizer (A := A)
     refine S.toAddSubgroup.isOpen_of_mem_nhds
@@ -355,7 +361,7 @@ theorem isPowerBounded_toSpectralTop_iff {x : A} :
     obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (d.radius ^ m)⁻¹ h
     let w : A := (d.pseudoUniformizer : A) ^ m
     have hwx : toSpectralTop A (w * x) ∈ V := hδV ⟨w * x, by
-      simpa [w, spectralSeminorm_pow_mul] using (lt_div_iff₀ hx0).mp hm, rfl⟩
+      simpa [w] using (lt_div_iff₀ hx0).mp hm, rfl⟩
     obtain ⟨y, hy, hyx⟩ := hVU (Set.mul_mem_mul hwx ⟨k, rfl⟩)
     obtain rfl : y = w * x ^ (k + 1) :=
       (toSpectralTop A).injective (by simp [hyx, pow_succ', mul_assoc])

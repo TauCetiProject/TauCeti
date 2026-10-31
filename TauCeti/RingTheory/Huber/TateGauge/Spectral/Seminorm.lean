@@ -102,6 +102,7 @@ theorem spectralSeminorm_zpow_mul (k : ℤ) (x : A) :
     (tateNorm_zpow_mul d k) x
 
 /-- Multiplication by `ϖ ^ n`, `n ∈ ℕ`, scales the spectral seminorm exactly by `r ^ n`. -/
+@[simp]
 theorem spectralSeminorm_pow_mul (n : ℕ) (x : A) :
     spectralSeminorm d ((d.pseudoUniformizer : A) ^ n * x) =
       d.radius ^ n * spectralSeminorm d x := by
