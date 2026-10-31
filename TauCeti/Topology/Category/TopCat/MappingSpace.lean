@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.CompactOpen
 
@@ -35,9 +35,8 @@ not preserve the pushout defining `X`.
 * `TopCat.curryEquiv`: for locally compact `Y`, the bijection between maps `Y ⊗ X ⟶ Z`
   and maps `X ⟶ C(Y, Z)`.
 * `TopCat.closed`: a locally compact space is a closed object of `TopCat`, with internal
-  hom `TopCat.mappingSpace Y`, so that `tensorLeft Y` preserves colimits.
-* `TopCat.preservesColimitsOfSize_tensorRight`: for locally compact `Y`, the functor
-  `- ⊗ Y` preserves colimits.
+  hom `TopCat.mappingSpace Y`. Mathlib's adjunction and braided closed API then show that
+  `tensorLeft Y` and `tensorRight Y` preserve colimits.
 * `TopCat.continuous_iff_of_isColimit_prod`: a map out of `c.pt × Y` is continuous if and
   only if its restrictions to all `F.obj j × Y` are.
 
@@ -116,11 +115,6 @@ theorem tensorLeftAdjunction_homEquiv_symm_apply {X Z : TopCat.{u}}
 internal hom is the mapping space with the compact-open topology. -/
 instance closed : Closed Y :=
   ⟨mappingSpace Y, tensorLeftAdjunction Y⟩
-
-/-- For a locally compact space `Y`, the functor `- ⊗ Y` on `TopCat` preserves colimits. Mathlib
-obtains the corresponding instance for `Y ⊗ -` from `TopCat.closed`. -/
-instance preservesColimitsOfSize_tensorRight : PreservesColimitsOfSize.{w, w'} (tensorRight Y) :=
-  preservesColimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight Y)
 
 variable {J : Type w} [Category.{w'} J] {F : J ⥤ TopCat.{u}} {c : Cocone F}
 
