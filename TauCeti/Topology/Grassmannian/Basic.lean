@@ -61,6 +61,20 @@ namespace finiteFullRankFrame
 
 variable {𝕜 r N}
 
+/-- A nonzero vector gives a one-vector full-rank frame. -/
+def ofNeZero (v : {v : Fin N → 𝕜 // v ≠ 0}) : finiteFullRankFrame 𝕜 1 N :=
+  ⟨fun _ ↦ v.1, linearIndependent_unique_iff.2 v.2⟩
+
+@[simp]
+theorem coe_ofNeZero (v : {v : Fin N → 𝕜 // v ≠ 0}) :
+    (ofNeZero v : Fin 1 → Fin N → 𝕜) = fun _ ↦ v.1 := (rfl)
+
+/-- The one-vector frame depends continuously on the nonzero vector. -/
+@[fun_prop]
+theorem continuous_ofNeZero [TopologicalSpace 𝕜] :
+    Continuous (ofNeZero : {v : Fin N → 𝕜 // v ≠ 0} → finiteFullRankFrame 𝕜 1 N) :=
+  (continuous_pi fun _ ↦ continuous_subtype_val).subtype_mk _
+
 /-- The general linear group acts on frames by left multiplication of the matrix of row
 vectors: `A • f` has `j`th vector `∑ i, A j i • f i`. -/
 instance : SMul (GL (Fin r) 𝕜) (finiteFullRankFrame 𝕜 r N) where

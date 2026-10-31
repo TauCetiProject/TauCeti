@@ -22,6 +22,9 @@ vector bundle over a nontrivially normed field `𝕜`, on the fibre over `b` it 
 linear equivalence `e.continuousLinearEquivAt 𝕜 b`, with inverse its symmetric
 (`Bundle.Trivialization.homeomorphTrivial_apply_eq_continuousLinearEquivAt`,
 `Bundle.Trivialization.homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt`).
+
+More generally, any linear trivialization sends a vector over its base set to a nonzero vector
+exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`).
 -/
 
 public section
@@ -53,6 +56,21 @@ theorem homeomorphTrivial_symm_apply (he : e.baseSet = Set.univ)
     (w : TotalSpace F (Bundle.Trivial B F)) :
     (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.2) := by
   rfl
+
+section Linear
+
+variable (R : Type*) [Semiring R] {F : Type*} [TopologicalSpace F] [AddCommMonoid F] [Module R F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module R (E b)] (e : Trivialization F (π F E)) [e.IsLinear R]
+
+include R in
+/-- A linear trivialization sends a vector over its base set to a nonzero vector exactly when the
+vector is nonzero. -/
+theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
+    (e v).2 ≠ 0 ↔ v.2 ≠ 0 := by
+  simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
+
+end Linear
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {F : Type*} [NormedAddCommGroup F]
   [NormedSpace 𝕜 F] {E : B → Type*} [TopologicalSpace (TotalSpace F E)]

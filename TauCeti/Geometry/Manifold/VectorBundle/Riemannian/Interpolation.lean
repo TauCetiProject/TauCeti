@@ -167,8 +167,8 @@ theorem continuous_convexCombination {P : Type*} [TopologicalSpace P]
     {g h : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {t : P → unitInterval} (hg : Continuous g) (hh : Continuous h) (ht : Continuous t) :
     Continuous (fun p ↦ (g p).convexCombination (h p) (t p)) := by
-  rw [continuous_chartC2_iff] at hg hh ⊢
-  intro x m
+  rw [continuous_chartCk_iff] at hg hh ⊢
+  intro x m hm
   have hformula : (fun q : P × (extChartAt I x).target ↦
       iteratedFDeriv ℝ m ((g q.1).convexCombination (h q.1) (t q.1)
         |>.toNondegenerateMetric.chartMetric x) q.2) =
@@ -180,8 +180,8 @@ theorem continuous_convexCombination {P : Type*} [TopologicalSpace P]
   rw [hformula]
   have hc : Continuous (fun q : P × (extChartAt I x).target ↦ (t q.1 : ℝ)) :=
     ht.subtype_val.comp continuous_fst
-  have hleft := ((continuous_const (y := (1 : ℝ))).sub hc).smul (hg x m)
-  have hright := hc.smul (hh x m)
+  have hleft := ((continuous_const (y := (1 : ℝ))).sub hc).smul (hg x m hm)
+  have hright := hc.smul (hh x m hm)
   exact hleft.add hright
 
 end TangentBundle

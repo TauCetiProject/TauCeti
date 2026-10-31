@@ -41,6 +41,8 @@ structure sheaf.
 
 * `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSections`: base change of sections over an
   affine open, along any base-ring map.
+* `AlgebraicGeometry.Scheme.Hom.flat_sectionsBase_pullback`: flatness of the sections over an
+  affine open survives every base change.
 * `AlgebraicGeometry.Scheme.Hom.liftBaseChange_pullbackSectionsBaseLinear_injective`: for flat
   `R → S`, the comparison `S ⊗[R] Γ(U, M) → Γ(g⁻¹ U, g^* M)` is injective over a quasi-compact
   open `U`.
@@ -301,6 +303,35 @@ theorem isBaseChange_pullbackSections [M.IsQuasicoherent]
   simp only [LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
     Algebra.IsPushout.cancelBaseChange_symm_tmul, map_one]
   exact g.pullbackSectionsEquiv_one_tmul M hU (hU.preimage g) s
+/-- **Flat sections stay flat after base change.** If the sections of a quasi-coherent sheaf `M`
+over an affine open `U` of `X` form a flat `R`-module, then for every base change `Y = X ×_R S`
+along a ring map `R → S`, the sections of the pullback `g^* M` over `g⁻¹ U` form a flat
+`S`-module, being the base change `S ⊗_R Γ(M, U)`. -/
+theorem flat_sectionsBase_pullback [M.IsQuasicoherent]
+    (H : IsPullback g (Y ↘ Spec (.of S)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S)))) (hU : IsAffineOpen U)
+    [Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op U))] :
+    Module.Flat S (((sectionsBasePresheafFunctor S).obj ((pullback g).obj M)).obj
+      (op (g ⁻¹ᵁ U))) := by
+  -- The actions of `R` on sections over `U`, and of `S` and `R` on sections over `g⁻¹ U`, as in
+  -- `isBaseChange_pullbackSections`.
+  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+  let : Module R Γ(M, U) := sectionsBaseModule R M U
+  have : IsScalarTower R Γ(X, U) Γ(M, U) := .of_algebraMap_smul fun _ _ ↦ rfl
+  let : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
+    ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+  let : Module S Γ((pullback g).obj M, g ⁻¹ᵁ U) :=
+    sectionsBaseModule S ((pullback g).obj M) (g ⁻¹ᵁ U)
+  have : IsScalarTower S Γ(Y, g ⁻¹ᵁ U) Γ((pullback g).obj M, g ⁻¹ᵁ U) :=
+    .of_algebraMap_smul fun _ _ ↦ rfl
+  let : Module R Γ((pullback g).obj M, g ⁻¹ᵁ U) := Module.compHom _ (algebraMap R S)
+  have : IsScalarTower R S Γ((pullback g).obj M, g ⁻¹ᵁ U) := .of_algebraMap_smul fun _ _ ↦ rfl
+  -- The object of `sectionsBasePresheafFunctor R` over `U` is `ModuleCat.of R Γ(M, U)` for the
+  -- action `sectionsBaseModule R M U`, so its flatness is that of `Γ(M, U)` by definition; the
+  -- same holds for the conclusion over `g⁻¹ U`.
+  have : Module.Flat R Γ(M, U) :=
+    ‹Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op U))›
+  exact Module.Flat.of_linearEquiv (g.isBaseChange_pullbackSections M U H hU).equiv.symm
 end AlgebraicGeometry.Scheme.Hom
 
 namespace AlgebraicGeometry.Scheme.Hom

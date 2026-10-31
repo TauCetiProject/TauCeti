@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
 public import TauCeti.Algebra.Algebra.Operations
+public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
@@ -70,6 +71,8 @@ function `X₁ / X₀` on that chart going to `X`.
 
 * `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_coord_pow_mul_add_coord_pow_mul`: a form
   of degree `k + l` with `k ≤ l + 1` is `X₀ᵏ a + X₁ᵏ b` for forms `a` and `b` of degree `l`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_coord_pow_mul_add_coord_pow_mul_add`: for
+  `k = l + m + 2`, a form of degree `k + l` is `X₀ᵏ a + X₁ᵏ b + (X₀X₁)ˡ⁺¹ c` with `c` of degree `m`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.coord_mem_nonZeroDivisors`: homogeneous coordinates
   are nonzerodivisors over any ring, so every `polynomialChartι` is schematically dense.
 * `TauCeti.AlgebraicGeometry.projectiveLine.opensRange_polynomialChartι` and
@@ -92,7 +95,9 @@ function `X₁ / X₀` on that chart going to `X`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.chartSectionsEquiv_awayToSection`: on the chart
   `D₊(Xᵢ)`, `chartSectionsEquiv` agrees with the chart isomorphism on the fractions
   `Proj.awayToSection a`, and `TauCeti.AlgebraicGeometry.projectiveLine.awayToSection_algebraMap`:
-  the constants restrict to the fractions `c / 1`.
+  the constants restrict to the fractions `c / 1`, and
+  `TauCeti.AlgebraicGeometry.projectiveLine.val_map_baseRingToGlobalSections`: on every open, the
+  constant global function `r` takes the value `r` in every localization.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isIntegral`: `ℙ¹_R` is integral over a domain.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isRegularLocalRing_stalk`: its local rings are
   regular over a regular ring.
@@ -104,6 +109,11 @@ function `X₁ / X₀` on that chart going to `X`.
   `D₊(X₀)`, the identification of the function field with `R(X)` is `chartSectionsEquiv`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv_symm_X`: that identification sends
   the function `X₁ / X₀` to `X`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.natDegree_dehomogenize_le` and
+  `TauCeti.AlgebraicGeometry.projectiveLine.dehomogenize_eq_zero_iff`: dehomogenizing a form of
+  degree `j` gives a polynomial of degree at most `j`, and is injective on such forms.
+* `TauCeti.AlgebraicGeometry.projectiveLine.eq_zero_of_coord_pow_mul_eq`: a form `c` of degree
+  `m` with `X₀ᵏ X₁ᵏ' c = (X₀X₁)ᵐ⁺¹ (X₁ᵏ' a - X₀ᵏ b)`, for `b` of degree `k' - m - 2`, vanishes.
 
 ## References
 
@@ -141,6 +151,17 @@ noncomputable def coord (i : Fin 2) : _root_.SymmetricAlgebra R (Fin 2 → R) :=
 /-- The homogeneous coordinates have degree one. -/
 theorem coord_mem (i : Fin 2) : coord R i ∈ 𝒜 1 :=
   SymmetricAlgebra.ι_mem_homogeneousSubmodule R _ _
+
+/-- The monomial `X₀ᵃ X₁ᵇ` is a form of degree `a + b`. -/
+theorem coord_pow_mul_coord_pow_mem {a b d : ℕ} (h : a + b = d) :
+    coord R 0 ^ a * coord R 1 ^ b ∈ 𝒜 d := by
+  simpa [← h] using SetLike.mul_mem_graded (SetLike.pow_mem_graded a (coord_mem R 0))
+    (SetLike.pow_mem_graded b (coord_mem R 1))
+
+/-- The power `(X₀X₁)ᵏ` is a form of degree `2k`. -/
+theorem coord_mul_coord_pow_mem (k : ℕ) : (coord R 0 * coord R 1) ^ k ∈ 𝒜 (k * 2) := by
+  simpa [mul_comm] using SetLike.pow_mem_graded k
+    (SetLike.mul_mem_graded (coord_mem R 0) (coord_mem R 1))
 
 /-- Each homogeneous coordinate is a nonzerodivisor, even over a nonreduced base ring. -/
 theorem coord_mem_nonZeroDivisors (i : Fin 2) : coord R i ∈ nonZeroDivisors _ := by
@@ -202,6 +223,54 @@ theorem exists_eq_coord_pow_mul_add_coord_pow_mul {k l : ℕ} (hkl : k ≤ l + 1
   obtain ⟨b, hb, rfl⟩ := Submodule.mem_span_singleton_mul.mp hb'
   exact ⟨a, ha, b, hb, rfl⟩
 
+/-- For `k = l + m + 2`, a form of degree `k + l` is `X₀ᵏ a + X₁ᵏ b + (X₀X₁)ˡ⁺¹ c` with `a` and `b`
+of degree `l` and `c` of degree `m`: a monomial `X₀ᵅ X₁ᵝ` of degree `k + l` with `α, β < k` has
+`α, β ≥ l + 1`. -/
+theorem exists_eq_coord_pow_mul_add_coord_pow_mul_add {m k l : ℕ} (hk : k = l + m + 2)
+    {r : _root_.SymmetricAlgebra R (Fin 2 → R)} (hr : r ∈ 𝒜 (k + l)) :
+    ∃ a ∈ 𝒜 l, ∃ b ∈ 𝒜 l, ∃ c ∈ 𝒜 m,
+      r = coord R 0 ^ k * a + coord R 1 ^ k * b + (coord R 0 * coord R 1) ^ (l + 1) * c := by
+  let S : Submodule R (_root_.SymmetricAlgebra R (Fin 2 → R)) :=
+    (𝒜 l).map (LinearMap.mulLeft R (coord R 0 ^ k)) ⊔
+      (𝒜 l).map (LinearMap.mulLeft R (coord R 1 ^ k)) ⊔
+      (𝒜 m).map (LinearMap.mulLeft R ((coord R 0 * coord R 1) ^ (l + 1)))
+  suffices hS : 𝒜 (k + l) ≤ S by
+    obtain ⟨y, hy, z, ⟨c, hc, rfl⟩, rfl⟩ := Submodule.mem_sup.mp (hS hr)
+    obtain ⟨_, ⟨a, ha, rfl⟩, _, ⟨b, hb, rfl⟩, rfl⟩ := Submodule.mem_sup.mp hy
+    exact ⟨a, ha, b, hb, c, hc, rfl⟩
+  -- the forms of degree `k + l` are spanned by the products of `k + l` coordinates
+  have he : Submodule.span R (Set.range fun i : Fin 2 ↦ (Pi.single i 1 : Fin 2 → R)) = ⊤ := by
+    rw [← funext (Pi.basisFun_apply R (Fin 2)), (Pi.basisFun R (Fin 2)).span_eq]
+  rw [SymmetricAlgebra.homogeneousSubmodule_eq_span_of_span R _ _ he, Submodule.span_le]
+  rintro _ ⟨L, hL, rfl⟩
+  have hcoord (i : Fin 2) :
+      _root_.SymmetricAlgebra.ι R (Fin 2 → R) (Pi.single i 1) = coord R i := by
+    fin_cases i <;> simp [ι_eq_smul_coord_add_smul_coord R 0]
+  -- the product is `X₀ᵅ X₁ᵝ`, where `α` and `β` count the factors, so `α + β = k + l`
+  have hlen : L.count 0 + L.count 1 = k + l := by
+    rw [← hL, ← Multiset.coe_card, ← Multiset.sum_count_eq_card (s := Finset.univ) (by simp),
+      Fin.sum_univ_two, Multiset.coe_count, Multiset.coe_count]
+  rw [SetLike.mem_coe, List.map_congr_left fun i _ ↦ hcoord i, Finset.prod_list_map_count,
+    Finset.prod_subset (Finset.subset_univ _) fun i _ hi ↦ by
+      rw [List.count_eq_zero_of_not_mem (by simpa using hi), pow_zero],
+    Fin.prod_univ_two]
+  generalize L.count 0 = α at hlen
+  generalize L.count 1 = β at hlen
+  by_cases hα : k ≤ α
+  · refine Submodule.mem_sup_left (Submodule.mem_sup_left ⟨coord R 0 ^ (α - k) * coord R 1 ^ β,
+      coord_pow_mul_coord_pow_mem R (by omega), ?_⟩)
+    rw [LinearMap.mulLeft_apply, ← mul_assoc, ← pow_add, Nat.add_sub_cancel' hα]
+  by_cases hβ : k ≤ β
+  · refine Submodule.mem_sup_left (Submodule.mem_sup_right ⟨coord R 0 ^ α * coord R 1 ^ (β - k),
+      coord_pow_mul_coord_pow_mem R (by omega), ?_⟩)
+    rw [LinearMap.mulLeft_apply, mul_left_comm, ← pow_add, Nat.add_sub_cancel' hβ]
+  · refine Submodule.mem_sup_right ⟨coord R 0 ^ (α - (l + 1)) * coord R 1 ^ (β - (l + 1)),
+      coord_pow_mul_coord_pow_mem R (by omega), ?_⟩
+    obtain ⟨α', rfl⟩ : ∃ α', α = l + 1 + α' := ⟨α - (l + 1), by omega⟩
+    obtain ⟨β', rfl⟩ : ∃ β', β = l + 1 + β' := ⟨β - (l + 1), by omega⟩
+    rw [LinearMap.mulLeft_apply, Nat.add_sub_cancel_left, Nat.add_sub_cancel_left]
+    ring
+
 /-- **Dehomogenization** at `Xᵢ`: the `R`-algebra map `R[X₀, X₁] → R[X]` setting `Xᵢ = 1` and the
 other homogeneous coordinate to `X`. -/
 noncomputable def dehomogenize (i : Fin 2) : _root_.SymmetricAlgebra R (Fin 2 → R) →ₐ[R] R[X] :=
@@ -216,6 +285,23 @@ theorem dehomogenize_coord_self (i : Fin 2) : dehomogenize R i (coord R i) = 1 :
 @[simp]
 theorem dehomogenize_coord_rev (i : Fin 2) : dehomogenize R i (coord R i.rev) = X := by
   fin_cases i <;> simp [dehomogenize, coord]
+
+/-- Dehomogenizing a form of degree `j` gives a polynomial of degree at most `j`. -/
+theorem natDegree_dehomogenize_le (i : Fin 2) {j : ℕ} {p : _root_.SymmetricAlgebra R (Fin 2 → R)}
+    (hp : p ∈ 𝒜 j) : (dehomogenize R i p).natDegree ≤ j := by
+  induction hp using Submodule.pow_induction_on_left' with
+  | algebraMap r => simp
+  | add x y _ _ _ hx hy =>
+    rw [map_add]
+    exact (natDegree_add_le _ _).trans (max_le hx hy)
+  | mem_mul x hx _ y _ hy =>
+    obtain ⟨v, rfl⟩ := hx
+    have hv : (dehomogenize R i (_root_.SymmetricAlgebra.ι R (Fin 2 → R) v)).natDegree ≤ 1 := by
+      rw [ι_eq_smul_coord_add_smul_coord R i v, map_add, map_smul, map_smul,
+        dehomogenize_coord_self, dehomogenize_coord_rev]
+      compute_degree
+    rw [map_mul]
+    exact natDegree_mul_le.trans (by omega)
 
 /-! ### The standard affine charts -/
 
@@ -282,6 +368,41 @@ theorem awayEquivPolynomial_mk (i : Fin 2) {n : ℕ} {a : _root_.SymmetricAlgebr
     (ha : a ∈ 𝒜 (n • 1)) :
     awayEquivPolynomial R i (Away.mk 𝒜 (coord_mem R i) n a ha) = dehomogenize R i a :=
   awayToPolynomial_mk R i ha
+
+/-- **Dehomogenization is injective on forms of a fixed degree**: a form of degree `j` vanishes
+once it does after setting `Xᵢ = 1`. -/
+theorem dehomogenize_eq_zero_iff (i : Fin 2) {j : ℕ} {p : _root_.SymmetricAlgebra R (Fin 2 → R)}
+    (hp : p ∈ 𝒜 j) : dehomogenize R i p = 0 ↔ p = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_zero _⟩
+  -- `p / Xᵢʲ` vanishes in the chart ring, so a power of the nonzerodivisor `Xᵢ` kills `p`
+  rw [← awayEquivPolynomial_mk R i (by simpa using hp),
+    map_eq_zero_iff _ (awayEquivPolynomial R i).injective] at h
+  have h' := congrArg HomogeneousLocalization.val h
+  rw [Away.val_mk, val_zero, Localization.mk_eq_mk', IsLocalization.mk'_eq_zero_iff] at h'
+  obtain ⟨⟨_, k, rfl⟩, hk⟩ := h'
+  exact (pow_mem (coord_mem_nonZeroDivisors R i) k).2 p (by simpa [mul_comm] using hk)
+
+/-- If `X₀ᵏ X₁ᵏ' c = (X₀X₁)ᵐ⁺¹ (X₁ᵏ' a - X₀ᵏ b)` for a form `c` of degree `m` and a form `b` of
+degree `k' - m - 2`, then `c = 0`: after setting `X₀ = 1`, the coefficients of `X^{k' + i}`,
+`i ≤ m`, of the right-hand side vanish. -/
+theorem eq_zero_of_coord_pow_mul_eq {m k k' j' : ℕ} (hk' : j' + m + 2 = k')
+    {a b c : _root_.SymmetricAlgebra R (Fin 2 → R)} (hb : b ∈ 𝒜 j') (hc : c ∈ 𝒜 m)
+    (h : coord R 0 ^ k * coord R 1 ^ k' * c =
+      (coord R 0 * coord R 1) ^ (m + 1) * (coord R 1 ^ k' * a - coord R 0 ^ k * b)) :
+    c = 0 := by
+  have h₁ : dehomogenize R 0 (coord R 1) = X := dehomogenize_coord_rev R 0
+  have hD := congrArg (dehomogenize R 0) h
+  simp only [map_mul, map_pow, map_sub, dehomogenize_coord_self, one_pow, one_mul, h₁] at hD
+  refine (dehomogenize_eq_zero_iff R 0 hc).mp (Polynomial.ext fun i ↦ ?_)
+  rw [coeff_zero]
+  rcases lt_or_ge m i with hi | hi
+  · exact coeff_eq_zero_of_natDegree_lt ((natDegree_dehomogenize_le R 0 hc).trans_lt hi)
+  have hcoeff := congrArg (fun p ↦ coeff p (i + k')) hD
+  simp only [coeff_X_pow_mul, mul_sub, ← mul_assoc, ← pow_add, coeff_sub] at hcoeff
+  rw [hcoeff, coeff_X_pow_mul', ite_eq_right (by omega), coeff_X_pow_mul', zero_sub, neg_eq_zero]
+  split_ifs
+  · exact coeff_eq_zero_of_natDegree_lt ((natDegree_dehomogenize_le R 0 hb).trans_lt (by omega))
+  · rfl
 
 /-- The inverse of the chart isomorphism sends `X` to the other coordinate over `Xᵢ`. -/
 @[simp]
@@ -388,6 +509,12 @@ theorem basicOpen_coord_sup_eq_top :
   refine eq_top_iff.mpr fun p _ ↦ TopologicalSpace.Opens.mem_sup.mpr ?_
   have hp : p ∈ (⊤ : (projectiveLine R).Opens) := trivial
   rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup, Fin.exists_fin_two] at hp
+
+/-- The overlap `D₊(X₀) ⊓ D₊(X₁)` of the standard charts lies in `D₊((X₀X₁)ᵏ)` for `k > 0`. -/
+theorem inf_le_basicOpen_coord_mul_coord_pow {k : ℕ} (hk : 0 < k) :
+    Proj.basicOpen 𝒜 (coord R 0) ⊓ Proj.basicOpen 𝒜 (coord R 1) ≤
+      Proj.basicOpen 𝒜 ((coord R 0 * coord R 1) ^ k) := by
+  rw [Proj.basicOpen_pow _ _ _ hk, Proj.basicOpen_mul]
 
 /-- The two polynomial chart ranges cover the projective line. -/
 theorem range_polynomialChartι_union_range_polynomialChartι :
@@ -606,6 +733,38 @@ theorem awayToSection_algebraMap (i : Fin 2) (c : R) :
       (congrFun (congrArg DFunLike.coe Polynomial.algebraMap_eq) c).trans <|
         h.symm.trans (congrArg _ ?_)
   exact (ConcreteCategory.congr_hom (Scheme.Hom.appLE_map _ _ _) _).symm
+
+/-- On every open of the projective line, the restriction of the constant global function `r`
+takes the value `r` in every localization. -/
+theorem val_map_baseRingToGlobalSections (r : R) (U : (projectiveLine R).Opens) (x : U) :
+    ((((projectiveLine R).presheaf.map U.leTop.op
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
+        algebraMap R _ r := by
+  obtain ⟨i, hi⟩ : ∃ i, x.1 ∈ Proj.basicOpen 𝒜 (coord R i) := by
+    have hx : x.1 ∈ (⊤ : (projectiveLine R).Opens) := trivial
+    rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup] at hx
+  -- on the chart `D₊(Xᵢ)` containing `x`, the constant `r` is the fraction `r / 1`
+  have hres : (projectiveLine R).presheaf.map (homOfLE le_top).op
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r) =
+        Proj.awayToSection 𝒜 (coord R i) (algebraMap R _ r) := by
+    rw [Scheme.Modules.baseRingToGlobalSections_apply]
+    exact (awayToSection_algebraMap R i r).symm
+  -- restricting a section keeps its values, which is `Proj.res_apply`, true by `rfl`
+  have hx : ((((projectiveLine R).presheaf.map U.leTop.op
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
+        ((((projectiveLine R).presheaf.map (homOfLE le_top).op
+          (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 ⟨x.1, hi⟩).val) :=
+    rfl
+  refine hx.trans ((congrArg (fun s : Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) ↦
+    (s.1 ⟨x.1, hi⟩).val) hres).trans ?_)
+  refine (ProjectiveSpectrum.Proj.awayToSection_apply 𝒜 (coord R i)
+    ((algebraMap R (HomogeneousLocalization.Away 𝒜 (coord R i))) r) ⟨x.1, hi⟩).trans ?_
+  have hR (L : Type u) [CommRing L] [Algebra (_root_.SymmetricAlgebra R (Fin 2 → R)) L]
+      [Algebra R L] [IsScalarTower R (_root_.SymmetricAlgebra R (Fin 2 → R)) L] :
+      algebraMap R L r = algebraMap _ L (algebraMap R (_root_.SymmetricAlgebra R (Fin 2 → R)) r) :=
+    IsScalarTower.algebraMap_apply _ _ _ r
+  rw [HomogeneousLocalization.val_algebraMap, hR, hR]
+  exact IsLocalization.map_eq _ _
 
 /-! ### Smoothness -/
 

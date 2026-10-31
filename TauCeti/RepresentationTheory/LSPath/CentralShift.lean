@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.Reparametrization
-public import TauCeti.RepresentationTheory.LSPath.RootOperator
+public import TauCeti.RepresentationTheory.LSPath.LinearMap
 import TauCeti.Algebra.Order.Group.MinMax
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.NormNum
@@ -25,6 +25,12 @@ This operation is on **timed presentations**, not on `PLPath` reparametrization 
 of the same straight path acquire different images after adding the same linear path.
 Consequently, central transport of LS paths must first select their distinguished
 representatives; shifting an arbitrary representative is not well-defined.
+
+Keeping time as an extra coordinate avoids this obstruction. `shiftGraph` acts on paths in
+`𝕜 × V` by the linear shear `(t, v) ↦ (t, v + t • χ)`. It agrees with `shiftTimed` on their
+segment presentations, is invertible, and commutes with the actual root operators for the
+lifted root `(0, x)` and coroot `f ∘ snd` whenever `f χ = 0`. This proves commutation before
+forgetting the time coordinate; it does not define a shift on arbitrary paths in `V`.
 
 ## References
 
@@ -152,6 +158,106 @@ theorem endpoint_ofSegments_shiftTimed (χ : V) (p : List (𝕜 × V)) :
   simp only [endpoint_ofSegments, sum_map_snd_shiftTimed]
 
 end OrderedField
+
+/-! ### Central shifts on time–weight graphs -/
+
+section Graph
+
+variable {𝕜 V : Type*} [Field 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V]
+
+/-- Add the linear path of velocity `χ` while retaining time as the first coordinate.
+Unlike a shift on arbitrary paths in `V`, this is well-defined on reparametrization classes. -/
+noncomputable def shiftGraph (p : PLPath 𝕜 (𝕜 × V)) (χ : V) : PLPath 𝕜 (𝕜 × V) :=
+  p.map ((LinearMap.fst 𝕜 𝕜 V).prod
+    (LinearMap.snd 𝕜 𝕜 V + (LinearMap.fst 𝕜 𝕜 V).smulRight χ))
+
+/-- On a segment presentation, the time–weight shear is precisely the timed shift. -/
+@[simp]
+theorem shiftGraph_ofSegments (p : List (𝕜 × V)) (χ : V) :
+    (ofSegments 𝕜 p).shiftGraph χ = ofSegments 𝕜 (shiftTimed χ p) := by
+  simp only [shiftGraph, map_ofSegments, shiftTimed]
+  congr 1
+
+@[simp]
+theorem shiftGraph_zero (p : PLPath 𝕜 (𝕜 × V)) : p.shiftGraph 0 = p := by
+  obtain ⟨l, rfl⟩ := ofSegments_surjective p
+  simp
+
+/-- Successive time–weight shears add their velocities. -/
+@[simp]
+theorem shiftGraph_shiftGraph (p : PLPath 𝕜 (𝕜 × V)) (χ ψ : V) :
+    (p.shiftGraph χ).shiftGraph ψ = p.shiftGraph (χ + ψ) := by
+  obtain ⟨l, rfl⟩ := ofSegments_surjective p
+  simp
+
+end Graph
+
+section GraphRootOperator
+
+variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V]
+
+/-- Lowering commutes with a central shear on the time–weight graph. Both sides use the
+same lifted root `(0, x)` and coroot form `f ∘ snd`. -/
+theorem lower_shiftGraph (p : PLPath 𝕜 (𝕜 × V)) {f : Module.Dual 𝕜 V}
+    {χ : V} (hχ : f χ = 0) (x : V) :
+    lower (f.comp (LinearMap.snd 𝕜 𝕜 V)) (0, x) (p.shiftGraph χ) =
+      (lower (f.comp (LinearMap.snd 𝕜 𝕜 V)) (0, x) p).map (·.shiftGraph χ) := by
+  let g := (LinearMap.fst 𝕜 𝕜 V).prod
+    (LinearMap.snd 𝕜 𝕜 V + (LinearMap.fst 𝕜 𝕜 V).smulRight χ)
+  have hf : (f.comp (LinearMap.snd 𝕜 𝕜 V)).comp g =
+      f.comp (LinearMap.snd 𝕜 𝕜 V) := by
+    apply LinearMap.ext
+    intro v
+    simp [g, LinearMap.comp_apply, LinearMap.prod_apply, Function.prod_apply, hχ]
+  simpa only [shiftGraph, g, LinearMap.prod_apply, Function.prod_apply, LinearMap.fst_apply,
+    LinearMap.add_apply, LinearMap.snd_apply, LinearMap.smulRight_apply, zero_smul,
+    add_zero] using lower_map p hf (0, x)
+
+/-- Raising commutes with a central shear on the time–weight graph. -/
+theorem raise_shiftGraph (p : PLPath 𝕜 (𝕜 × V)) {f : Module.Dual 𝕜 V}
+    {χ : V} (hχ : f χ = 0) (x : V) :
+    raise (f.comp (LinearMap.snd 𝕜 𝕜 V)) (0, x) (p.shiftGraph χ) =
+      (raise (f.comp (LinearMap.snd 𝕜 𝕜 V)) (0, x) p).map (·.shiftGraph χ) := by
+  let g := (LinearMap.fst 𝕜 𝕜 V).prod
+    (LinearMap.snd 𝕜 𝕜 V + (LinearMap.fst 𝕜 𝕜 V).smulRight χ)
+  have hf : (f.comp (LinearMap.snd 𝕜 𝕜 V)).comp g =
+      f.comp (LinearMap.snd 𝕜 𝕜 V) := by
+    apply LinearMap.ext
+    intro v
+    simp [g, LinearMap.comp_apply, LinearMap.prod_apply, Function.prod_apply, hχ]
+  simpa only [shiftGraph, g, LinearMap.prod_apply, Function.prod_apply, LinearMap.fst_apply,
+    LinearMap.add_apply, LinearMap.snd_apply, LinearMap.smulRight_apply, zero_smul,
+    add_zero] using raise_map p hf (0, x)
+
+/-- Lowering the shifted timed path can be computed by lowering its time–weight graph,
+then shearing and forgetting time. The timing is retained until after the root operation. -/
+theorem lower_ofSegments_shiftTimed (p : List (𝕜 × V)) {f : Module.Dual 𝕜 V}
+    {χ : V} (hχ : f χ = 0) (x : V) :
+    lower f x (ofSegments 𝕜 ((shiftTimed χ p).map Prod.snd)) =
+      (lower (f.comp (LinearMap.snd 𝕜 𝕜 V)) (0, x) (ofSegments 𝕜 p)).map
+        (fun q ↦ (q.shiftGraph χ).map (LinearMap.snd 𝕜 𝕜 V)) := by
+  simpa only [shiftGraph_ofSegments, map_ofSegments, LinearMap.coe_snd,
+    LinearMap.snd_apply, Option.map_map, Function.comp_def] using
+    (lower_map ((ofSegments 𝕜 p).shiftGraph χ) rfl (0, x)).trans
+      (congrArg (Option.map (fun q ↦ q.map (LinearMap.snd 𝕜 𝕜 V)))
+        (lower_shiftGraph (ofSegments 𝕜 p) hχ x))
+
+/-- The analogous computation for raising a shifted timed path, retaining time until after
+the root operation. -/
+theorem raise_ofSegments_shiftTimed (p : List (𝕜 × V)) {f : Module.Dual 𝕜 V}
+    {χ : V} (hχ : f χ = 0) (x : V) :
+    raise f x (ofSegments 𝕜 ((shiftTimed χ p).map Prod.snd)) =
+      (raise (f.comp (LinearMap.snd 𝕜 𝕜 V)) (0, x) (ofSegments 𝕜 p)).map
+        (fun q ↦ (q.shiftGraph χ).map (LinearMap.snd 𝕜 𝕜 V)) := by
+  simpa only [shiftGraph_ofSegments, map_ofSegments, LinearMap.coe_snd,
+    LinearMap.snd_apply, Option.map_map, Function.comp_def] using
+    (raise_map ((ofSegments 𝕜 p).shiftGraph χ) rfl (0, x)).trans
+      (congrArg (Option.map (fun q ↦ q.map (LinearMap.snd 𝕜 𝕜 V)))
+        (raise_shiftGraph (ofSegments 𝕜 p) hχ x))
+
+end GraphRootOperator
 
 /-! ### A central shift cannot be made on arbitrary reparametrization classes -/
 

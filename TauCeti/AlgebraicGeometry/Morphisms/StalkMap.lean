@@ -7,6 +7,9 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
+public import Mathlib.AlgebraicGeometry.Noetherian
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
+public import Mathlib.RingTheory.KrullDimension.Basic
 public import TauCeti.AlgebraicGeometry.AffineScheme
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 public import TauCeti.AlgebraicGeometry.Restrict
@@ -14,6 +17,8 @@ public import TauCeti.RingTheory.Etale.Locus
 public import TauCeti.RingTheory.QuasiFinite.Localization
 public import TauCeti.RingTheory.Unramified.LocalRing
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.RingTheory.Unramified.Normal
 
 /-!
 # Unramified, étale and quasi-finite at a point, read off from the stalk map
@@ -30,6 +35,13 @@ shows that both conditions only depend on the stalk map `f.stalkMap x`:
   formally unramified (`AlgebraicGeometry.Scheme.Hom.etaleAt_iff_stalkMap`, Stacks, Lemma
   29.37.15 (02GU), conditions (1) and (4)).
 
+When the local ring of `Y` at `f x` is a Dedekind domain, for instance a discrete valuation ring,
+and the local ring of `X` at `x` is a domain but not a field, flatness of the stalk map is
+automatic, so `f` is étale at `x` as soon as its stalk map is formally unramified
+(`AlgebraicGeometry.Scheme.Hom.exists_etale_of_formallyUnramified_stalkMap_of_isDedekindDomain`).
+This is purity of the branch locus in dimension one, the case from which the proof of Stacks,
+Lemma 58.21.4 (0BMB) starts.
+
 These are compared with Mathlib's affine pointwise notions: on affine opens `V ⊆ f⁻¹ U`, the stalk
 map at `x` is formally unramified iff `Γ(X, V)` is unramified over `Γ(Y, U)` at the prime of `x`
 (`AlgebraicGeometry.formallyUnramified_stalkMap_iff`), in parallel with Mathlib's
@@ -38,6 +50,12 @@ map at `x` is formally unramified iff `Γ(X, V)` is unramified over `Γ(Y, U)` a
 `AlgebraicGeometry.Scheme.Hom.etaleAt_spec_iff` and
 `AlgebraicGeometry.Scheme.Hom.unramifiedAt_spec_iff`: `Spec S ⟶ Spec R` is étale (resp.
 unramified) at `q` exactly when `Algebra.IsEtaleAt R q` (resp. `Algebra.IsUnramifiedAt R q`).
+
+For `f` locally of finite type over a locally Noetherian `Y` whose local ring at `f x` is a normal
+domain, a formally unramified stalk map at `x` already makes `f` étale near `x` as soon as
+`dim 𝒪_{Y, f x} ≤ dim 𝒪_{X, x}`
+(`AlgebraicGeometry.Scheme.Hom.exists_etale_of_formallyUnramified_stalkMap_of_ringKrullDim_le`,
+the scheme form of `Algebra.IsEtaleAt.of_isUnramifiedAt_of_height_le`).
 
 Mathlib defines quasi-finiteness at `x` in stalk form, `f.QuasiFiniteAt x`, and shows that it
 implies quasi-finiteness of `Γ(X, V)` over `Γ(Y, U)` at the prime of `x` for affine opens
@@ -74,6 +92,7 @@ neighbourhood of `x`. For étaleness the stalk condition is first turned into `A
 * [The Stacks Project, Definition 29.36.1 (02G4)](https://stacks.math.columbia.edu/tag/02G4)
 * [The Stacks Project, Definition 29.37.1 (02GI)](https://stacks.math.columbia.edu/tag/02GI)
 * [The Stacks Project, Lemma 29.37.15 (02GU)](https://stacks.math.columbia.edu/tag/02GU)
+* [The Stacks Project, Lemma 58.21.4 (0BMB)](https://stacks.math.columbia.edu/tag/0BMB)
 -/
 
 public section
@@ -208,6 +227,69 @@ theorem etaleAt_iff_stalkMap (f : X ⟶ Y) [LocallyOfFinitePresentation f] (x : 
         (formallyUnramified_stalkMap_iff U hU V hV hVU hxV).mp hfu⟩
   obtain ⟨r, hrx, hr⟩ := Algebra.exists_etale_of_isEtaleAt (R := Γ(Y, U))
     (hV.primeIdealOf ⟨x, hxV⟩).asIdeal
+  exact HasRingHomProperty.exists_ι_comp_of_away @Etale hU hV hVU hxV r hrx
+    (RingHom.etale_algebraMap.mpr hr)
+
+/-- **Purity in dimension one.** Let `f` be locally of finite presentation, for instance locally
+of finite type with `Y` locally Noetherian, and let `x : X` be a point at which the local ring of
+`X` is a domain but not a field (so `x` is not the generic point of an irreducible component of
+`X`), while the local ring of `Y` at `f x` is a Dedekind domain, for instance a discrete valuation
+ring. If the stalk map of `f` at `x` is formally unramified, then `f` is étale on an open
+neighbourhood of `x`. -/
+theorem exists_etale_of_formallyUnramified_stalkMap_of_isDedekindDomain (f : X ⟶ Y)
+    [LocallyOfFinitePresentation f] (x : X) [IsDedekindDomain (Y.presheaf.stalk (f x))]
+    [IsDomain (X.presheaf.stalk x)] (hx : ¬IsField (X.presheaf.stalk x))
+    (hfu : (f.stalkMap x).hom.FormallyUnramified) :
+    ∃ U : X.Opens, x ∈ U ∧ Etale (U.ι ≫ f) := by
+  refine (etaleAt_iff_stalkMap f x).mpr ⟨?_, hfu⟩
+  have := LocallyOfFiniteType.stalkMap f x
+  algebraize [(f.stalkMap x).hom]
+  -- The algebra structure is that of the stalk map, which is a local homomorphism.
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
+  -- The stalk at `x` is torsion-free over the Dedekind domain `𝒪_{Y, f x}`, hence flat over it.
+  have := Algebra.FormallyUnramified.faithfulSMul_of_not_isField
+    (R := Y.presheaf.stalk (f x)) hx
+  exact RingHom.flat_algebraMap_iff.mpr inferInstance
+
+/-- **Unramified over a normal base of the same dimension implies étale** (compare SGA 1,
+Exposé I, Théorème 9.5 (ii)). Let `f` be locally of finite type over a locally Noetherian
+`Y`, with formally unramified stalk map at `x`. If the local ring of `Y` at `f x` is a normal
+domain of dimension at most that of the local ring of `X` at `x`, then `f` is étale on an open
+neighbourhood of `x`. -/
+theorem exists_etale_of_formallyUnramified_stalkMap_of_ringKrullDim_le (f : X ⟶ Y)
+    [IsLocallyNoetherian Y] [LocallyOfFiniteType f] {x : X}
+    [IsDomain (Y.presheaf.stalk (f x))] [IsIntegrallyClosed (Y.presheaf.stalk (f x))]
+    (hfu : (f.stalkMap x).hom.FormallyUnramified)
+    (hdim : ringKrullDim (Y.presheaf.stalk (f x)) ≤ ringKrullDim (X.presheaf.stalk x)) :
+    ∃ U : X.Opens, x ∈ U ∧ Etale (U.ι ≫ f) := by
+  obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
+    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
+  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.2.preimage f.continuous)
+  have : IsNoetherianRing Γ(Y, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
+  have := f.finiteType_appLE hU hV hVU
+  have := f.finitePresentation_appLE hU hV hVU
+  algebraize [(f.appLE U V hVU).hom]
+  -- Transport the hypotheses on the stalks to the localizations of `Γ(Y, U) → Γ(X, V)`.
+  set q := (hV.primeIdealOf ⟨x, hxV⟩).asIdeal
+  set p := (hU.primeIdealOf ⟨f x, hVU hxV⟩).asIdeal
+  have : q.LiesOver p :=
+    ⟨(congrArg PrimeSpectrum.asIdeal
+      (IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hxV)).symm⟩
+  let := X.presheaf.algebra_section_stalk ⟨x, hxV⟩
+  let := Y.presheaf.algebra_section_stalk ⟨f x, hVU hxV⟩
+  have := hV.isLocalization_stalk ⟨x, hxV⟩
+  have := hU.isLocalization_stalk ⟨f x, hVU hxV⟩
+  let e := IsLocalization.algEquiv p.primeCompl (Y.presheaf.stalk (f x)) (Localization.AtPrime p)
+  have : IsDomain (Localization.AtPrime p) := e.symm.toMulEquiv.isDomain _
+  have : IsIntegrallyClosed (Localization.AtPrime p) := .of_equiv e.toRingEquiv
+  have : Algebra.IsUnramifiedAt Γ(Y, U) q :=
+    (formallyUnramified_stalkMap_iff U hU V hV hVU hxV).mp hfu
+  rw [IsLocalization.AtPrime.ringKrullDim_eq_height q (X.presheaf.stalk x),
+    IsLocalization.AtPrime.ringKrullDim_eq_height p (Y.presheaf.stalk (f x))] at hdim
+  have := Algebra.IsEtaleAt.of_isUnramifiedAt_of_height_le p q (by exact_mod_cast hdim)
+  obtain ⟨r, hrx, hr⟩ := Algebra.exists_etale_of_isEtaleAt (R := Γ(Y, U)) q
   exact HasRingHomProperty.exists_ι_comp_of_away @Etale hU hV hVU hxV r hrx
     (RingHom.etale_algebraMap.mpr hr)
 

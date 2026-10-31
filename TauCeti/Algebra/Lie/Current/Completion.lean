@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Quotient
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Ring
 public import TauCeti.Algebra.Lie.Current.LeftIdeal
 
 /-!
@@ -22,9 +22,19 @@ completed enveloping algebra is the inverse limit
 of the discrete left `U`-modules `Q_N = U / I_N`, that is the module of compatible families of
 classes. This file defines it as the limit of the tower of quotients `Q_0 ← Q_1 ← Q_2 ← ⋯`
 (`TauCeti.CurrentAlgebra.orderQuotientTower`), indexed by the natural numbers, which are cofinal
-among the orders. It is a left `U`-module. Its ring structure, in which `(xy)_N = x · y_N`, comes
-from extending the action of `U` on the smooth modules `Q_N` to `Û`, and is not constructed here.
-At `a = 1` and `Φ = -κ` it is the completion `Û_κ` of the level enveloping algebra.
+among the orders. At `a = 1` and `Φ = -κ` it is the completion `Û_κ` of the level enveloping
+algebra.
+
+The completion is an `R`-algebra. Its multiplication is `(x y)_N = x · y_N`, where `x` acts on the
+smooth `U`-module `Q_N` by the extension `TauCeti.ModuleTower.limSmul` of the action of `U`
+(`TauCeti.CurrentAlgebra.limπ_mul`); this is the construction `TauCeti.ModuleTower.limRing` of
+`TauCeti.Algebra.Category.ModuleCat.Tower.Ring`, which applies because of the right-shift estimate
+`I_M b ⊆ I_N`. The canonical map `U → Û` is an algebra map
+(`TauCeti.CurrentAlgebra.toCompletedEnveloping`), and the action of `U` on `Û` is left
+multiplication by its image. The kernels of the projections `Û → Q_N` are open and closed left
+ideals of `Û` (`TauCeti.CurrentAlgebra.completedOrderLeftIdeal`), not two-sided ones, and they
+satisfy the right-shift estimate again: for every `y ∈ Û` and every `N` there is `M` with
+`ker π_M · y ⊆ ker π_N`. Hence `Û` is a topological ring with a left-linear topology.
 
 The completion carries the inverse limit topology of
 `TauCeti.Algebra.Category.ModuleCat.Tower.Topology`: the kernels of the projections `Û → Q_N`
@@ -41,7 +51,11 @@ and every `N` there is `M` such that `I_M x` lies in the kernel of the projectio
 ## Main definitions
 
 * `TauCeti.CurrentAlgebra.orderQuotientTower`: the tower of the quotients `U / I_n`.
-* `TauCeti.CurrentAlgebra.CompletedEnveloping`: the completed enveloping algebra `lim_n U / I_n`.
+* `TauCeti.CurrentAlgebra.CompletedEnveloping`: the completed enveloping algebra `lim_n U / I_n`,
+  with its instances of `Ring`, `Algebra R`, `IsTopologicalRing` and left `IsLinearTopology`.
+* `TauCeti.CurrentAlgebra.toCompletedEnveloping`: the canonical algebra map `U → Û`.
+* `TauCeti.CurrentAlgebra.completedOrderLeftIdeal`: the kernel of the projection `Û → U / I_n`, as
+  a left ideal of `Û`.
 
 ## Main results
 
@@ -49,6 +63,9 @@ and every `N` there is `M` such that `I_M x` lies in the kernel of the projectio
   intersection of the `I_N`.
 * `TauCeti.CurrentAlgebra.exists_forall_limπ_smul_eq_zero`: the orbit maps of the action of `U` on
   `Û` are continuous.
+* `TauCeti.CurrentAlgebra.limπ_mul`: the coordinates of a product, `(x y)_N = x · y_N`.
+* `TauCeti.CurrentAlgebra.exists_forall_mul_mem_completedOrderLeftIdeal`: the right-shift estimate
+  in `Û`.
 
 ## References
 
@@ -60,7 +77,7 @@ public section
 
 noncomputable section
 
-open TauCeti.UniversalEnvelopingAlgebra
+open TauCeti.UniversalEnvelopingAlgebra Topology
 
 namespace TauCeti.CurrentAlgebra
 
@@ -100,5 +117,119 @@ theorem exists_forall_limπ_smul_eq_zero (x : CompletedEnveloping Φ hΦ hΦs a)
   refine ⟨M, fun b hb ↦ ?_⟩
   rw [map_smul, ← hc, ← map_smul, smul_eq_mul, ModuleTower.quotientsπ_eq_zero_iff]
   exact hM b hb
+
+/-! ### The ring structure -/
+
+/-- **The completed enveloping algebra is a ring**, with `(x y)_n = x · y_n` for the action of `Û`
+on the smooth module `U / I_n` extending that of `U`, and unit the image of `1`. -/
+instance : Ring (CompletedEnveloping Φ hΦ hΦs a) :=
+  ModuleTower.limRing (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a)
+
+variable {Φ hΦ hΦs a}
+
+/-- The coordinates of a product in the completed enveloping algebra: `(x y)_n = x · y_n`, where
+`x` acts on the smooth module `U / I_n` as any representative of its `n`-th coordinate. -/
+theorem limπ_mul (x y : CompletedEnveloping Φ hΦ hΦs a) (n : ℕ) :
+    (orderQuotientTower Φ hΦ hΦs a).limπ n (x * y) =
+      ModuleTower.limSmul
+        (ModuleTower.smoothModules_quotients_obj
+          (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a) n)
+        x ((orderQuotientTower Φ hΦ hΦs a).limπ n y) :=
+  ModuleTower.limπ_limMul _ x y n
+
+variable (Φ hΦ hΦs a)
+
+/-- The completed enveloping algebra is an `R`-algebra, through the canonical map `U → Û`. Its
+scalar multiplication by `r : R` is the action of the image of `r` in `U`. -/
+instance : Algebra R (CompletedEnveloping Φ hΦ hΦs a) where
+  smul r x := algebraMap R UK r • x
+  -- The unit of `Û` is the image of `1` and its multiplication is `ModuleTower.limMul`.
+  algebraMap :=
+    { toFun r := ModuleTower.toLimQuotients _ _ (algebraMap R UK r)
+      map_one' := congrArg (ModuleTower.toLimQuotients _ _) (map_one _)
+      map_mul' r s := (congrArg (ModuleTower.toLimQuotients _ _) (map_mul _ r s)).trans
+        (ModuleTower.toLimQuotients_mul (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a)
+          _ _)
+      map_zero' := by rw [map_zero, map_zero]
+      map_add' r s := by rw [map_add, map_add] }
+  commutes' r x := (ModuleTower.smul_eq_limMul _ _ x).symm.trans
+    (ModuleTower.limMul_toLimQuotients_of_commute _ (fun b ↦ Algebra.commute_algebraMap_right r b)
+      x).symm
+  smul_def' r x := ModuleTower.smul_eq_limMul _ _ x
+
+instance : IsScalarTower R UK (CompletedEnveloping Φ hΦ hΦs a) :=
+  .of_algebraMap_smul fun _ _ ↦ rfl
+
+/-- **The canonical algebra map** `U → Û` from the enveloping algebra at a fixed level to its
+completion, sending an element to the family of its classes modulo the left ideals `I_n`. -/
+def toCompletedEnveloping : UK →ₐ[R] CompletedEnveloping Φ hΦ hΦs a where
+  toFun := ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a)
+  map_one' := rfl
+  map_mul' :=
+    ModuleTower.toLimQuotients_mul (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a)
+  map_zero' := map_zero _
+  map_add' := map_add _
+  commutes' _ := rfl
+
+@[simp]
+theorem coe_toCompletedEnveloping :
+    ⇑(toCompletedEnveloping Φ hΦ hΦs a) =
+      ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) :=
+  (rfl)
+
+variable {Φ hΦ hΦs a}
+
+/-- The action of `U` on its completion is left multiplication by the canonical image. -/
+theorem smul_eq_toCompletedEnveloping_mul (b : UK) (x : CompletedEnveloping Φ hΦ hΦs a) :
+    b • x = toCompletedEnveloping Φ hΦ hΦs a b * x :=
+  ModuleTower.smul_eq_limMul _ b x
+
+variable (Φ hΦ hΦs a)
+
+/-- **The kernel of the projection** `Û → U / I_n`, a left ideal of the completed enveloping
+algebra. -/
+def completedOrderLeftIdeal (n : ℕ) :
+    Submodule (CompletedEnveloping Φ hΦ hΦs a) (CompletedEnveloping Φ hΦ hΦs a) where
+  carrier := LinearMap.ker ((orderQuotientTower Φ hΦ hΦs a).limπ n)
+  add_mem' := add_mem
+  zero_mem' := zero_mem _
+  smul_mem' x _ hy := ModuleTower.limπ_limMul_eq_zero _ x hy
+
+variable {Φ hΦ hΦs a}
+
+@[simp]
+theorem mem_completedOrderLeftIdeal {n : ℕ} {x : CompletedEnveloping Φ hΦ hΦs a} :
+    x ∈ completedOrderLeftIdeal Φ hΦ hΦs a n ↔ (orderQuotientTower Φ hΦ hΦs a).limπ n x = 0 :=
+  Iff.rfl
+
+/-- **The right-shift estimate in the completed enveloping algebra.** For every `y ∈ Û` and every
+`n` there is `m` such that `x y` lies in the kernel of the projection to `U / I_n` whenever `x` lies
+in that of the projection to `U / I_m`. -/
+theorem exists_forall_mul_mem_completedOrderLeftIdeal (y : CompletedEnveloping Φ hΦ hΦs a)
+    (n : ℕ) : ∃ m, ∀ x ∈ completedOrderLeftIdeal Φ hΦ hΦs a m,
+      x * y ∈ completedOrderLeftIdeal Φ hΦ hΦs a n :=
+  ModuleTower.exists_forall_limπ_limMul_eq_zero _ y n
+
+variable (Φ hΦ hΦs a)
+
+/-- The left ideals `ker (Û → U / I_n)` form a basis of neighbourhoods of zero. -/
+theorem hasBasis_nhds_zero_completedOrderLeftIdeal :
+    (𝓝 (0 : CompletedEnveloping Φ hΦ hΦs a)).HasBasis (fun _ : ℕ ↦ True)
+      fun n ↦ (completedOrderLeftIdeal Φ hΦ hΦs a n : Set (CompletedEnveloping Φ hΦ hΦs a)) :=
+  (orderQuotientTower Φ hΦ hΦs a).hasBasis_nhds_zero
+
+/-- The topology of the completed enveloping algebra is linear for its left ideals. -/
+instance : IsLinearTopology (CompletedEnveloping Φ hΦ hΦs a) (CompletedEnveloping Φ hΦ hΦs a) :=
+  .mk_of_hasBasis _ (hasBasis_nhds_zero_completedOrderLeftIdeal Φ hΦ hΦs a)
+
+/-- Multiplication on the completed enveloping algebra is continuous. -/
+instance : IsTopologicalRing (CompletedEnveloping Φ hΦ hΦs a) where
+  continuous_mul := ModuleTower.continuous_limMul _
+
+/-- The left ideals `ker (Û → U / I_n)` are closed. -/
+theorem isClosed_completedOrderLeftIdeal (n : ℕ) :
+    IsClosed (completedOrderLeftIdeal Φ hΦ hΦs a n : Set (CompletedEnveloping Φ hΦ hΦs a)) :=
+  AddSubgroup.isClosed_of_isOpen (completedOrderLeftIdeal Φ hΦ hΦs a n).toAddSubgroup
+    ((orderQuotientTower Φ hΦ hΦs a).isOpen_ker_limπ n)
 
 end TauCeti.CurrentAlgebra
