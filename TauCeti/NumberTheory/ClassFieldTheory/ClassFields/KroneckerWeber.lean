@@ -89,7 +89,8 @@ theorem ideleClassArtinMap_eq_ratModulusEquivGal_rayClassQuotient [IsAbelianGalo
     ideleClassArtinMap ℚ F c =
       ratModulusEquivGal n F (rayClassQuotient (ratModulus n (NeZero.ne n)) c) := by
   -- Pass to a modulus `(N n)·∞` that is admissible, being a multiple of the conductor.
-  obtain ⟨N, hN, hdvd⟩ := exists_dvd_ratModulus (abelianConductor ℚ F)
+  obtain ⟨N, hN, hdvd⟩ : ∃ (N : ℕ) (hN : N ≠ 0), abelianConductor ℚ F ∣ ratModulus N hN :=
+    ⟨_, _, dvd_ratModulus_absNorm _⟩
   have hNn : N * n ≠ 0 := mul_ne_zero hN (NeZero.ne n)
   have h : IsAdmissibleModulus ℚ F (ratModulus (N * n) hNn) :=
     (isAdmissibleModulus_iff_abelianConductor_dvd _).mpr
@@ -131,7 +132,8 @@ end Cyclotomic
 field `ℚ(ζ_n)`. -/
 theorem kroneckerWeber (E : Type) [Field E] [NumberField E] [IsAbelianGalois ℚ E] :
     ∃ n : ℕ, n ≠ 0 ∧ Nonempty (E →ₐ[ℚ] CyclotomicField n ℚ) := by
-  obtain ⟨n, hn, hdvd⟩ := exists_dvd_ratModulus (abelianConductor ℚ E)
+  obtain ⟨n, hn, hdvd⟩ : ∃ (n : ℕ) (hn : n ≠ 0), abelianConductor ℚ E ∣ ratModulus n hn :=
+    ⟨_, _, dvd_ratModulus_absNorm _⟩
   have : NeZero n := ⟨hn⟩
   -- Instance search finds `Algebra ℚ (CyclotomicField n ℚ)` through the `ℚ`-algebra structure of
   -- a characteristic-zero field, so the cyclotomic instance is supplied explicitly.

@@ -94,7 +94,7 @@ open _root_.NumberField GlobalNumberFields in
 `L/K` Galois and `M/K` abelian, `N_{L/K}(C_L) ≤ N_{M/K}(C_M)` exactly when `M` embeds in `L`
 over `K`. This is `globalNormSubgroup_le_iff_of_isAbelian` read on the fields cut out by the two
 layers. -/
-theorem range_ideleClassNormMap_le_iff_nonempty_algHom (L M : Type) [Field L] [NumberField L]
+theorem range_ideleClassNormMap_le_iff_nonempty_algHom (L M : Type*) [Field L] [NumberField L]
     [Algebra K L] [IsGalois K L] [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M] :
     (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range ≤
         (ideleClassNormMap K M : IdeleClassGroup (𝓞 M) M →* IdeleClassGroup (𝓞 K) K).range ↔
