@@ -24,10 +24,11 @@ transition functions themselves, not by constant identity matrices in different 
 
 Conversely, `CoordinateHom.ofContinuous` extracts the chart operators of any continuous
 section of Mathlib's Hom bundle between two cores; continuity in a pair of charts on their
-whole common domain is `VectorBundleCore.continuousOn_inChartCoordinates`.
+whole common domain, with chart expressions `VectorBundleCore.inChartCoordinates`, is
+`VectorBundleCore.continuousOn_inChartCoordinates`.
 `CoordinateHom.fiberMapEquiv` identifies coordinate morphisms with these continuous
-sections. For a finite-dimensional source model these are exactly the continuous
-fibrewise linear maps of total spaces, by `TauCeti.continuous_hom_bundle_iff`.
+sections. For a finite-dimensional source model over a complete scalar field these are exactly
+the continuous fibrewise linear maps of total spaces, by `TauCeti.continuous_hom_bundle_iff`.
 `CoordinateHom.comp` composes coordinate morphisms; in charts it multiplies the chart
 operators through any intermediate chart (`CoordinateHom.operator_comp`), and it is
 associative and unital for `CoordinateHom.id`.
@@ -58,41 +59,9 @@ instance continuousSMulFiber (Z : VectorBundleCore 𝕜 B F ι) (x : B) :
     ContinuousSMul 𝕜 (Z.Fiber x) :=
   inferInstanceAs (ContinuousSMul 𝕜 F)
 
-/-- The expression of a fibre map `ϕ` over `x` in the source chart `i` and the target chart
-`j`. Unlike `ContinuousLinearMap.inCoordinates`, the charts need not be preferred charts of
-base points. -/
-def inChartCoordinates (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B G κ)
-    (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) : F →L[𝕜] G :=
-  (W.coordChange (W.indexAt x) j x).comp (ϕ.comp (Z.coordChange i (Z.indexAt x) x))
-
 section inChartCoordinates
 
-variable (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B G κ)
-  (V : VectorBundleCore 𝕜 B H ν)
-
-@[simp] theorem inChartCoordinates_apply (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) (v : F) :
-    Z.inChartCoordinates W i j x ϕ v =
-      W.coordChange (W.indexAt x) j x (ϕ (Z.coordChange i (Z.indexAt x) x v)) := (rfl)
-
-/-- In the preferred charts the coordinate expression of a fibre map is the map itself. -/
-@[simp] theorem inChartCoordinates_indexAt (x : B) (ϕ : F →L[𝕜] G) :
-    Z.inChartCoordinates W (Z.indexAt x) (W.indexAt x) x ϕ = ϕ := by
-  ext v
-  simp [Z.coordChange_self _ x (Z.mem_baseSet_at x),
-    W.coordChange_self _ x (W.mem_baseSet_at x)]
-
-/-- Coordinate expressions of a composite compose through any intermediate chart containing
-the base point. -/
-theorem inChartCoordinates_comp (i : ι) {j : κ} (k : ν) {x : B} (hj : x ∈ W.baseSet j)
-    (ψ : G →L[𝕜] H) (ϕ : F →L[𝕜] G) :
-    Z.inChartCoordinates V i k x (ψ.comp ϕ) =
-      (W.inChartCoordinates V j k x ψ).comp (Z.inChartCoordinates W i j x ϕ) := by
-  ext v
-  simp only [inChartCoordinates_apply, ContinuousLinearMap.comp_apply,
-    W.coordChange_comp _ j _ x ⟨⟨W.mem_baseSet_at x, hj⟩, W.mem_baseSet_at x⟩,
-    W.coordChange_self _ x (W.mem_baseSet_at x)]
-
-variable {Z W}
+variable {Z : VectorBundleCore 𝕜 B F ι} {W : VectorBundleCore 𝕜 B G κ}
 
 /-- A section of the Hom bundle between two cores that is continuous on the common domain of
 a source chart and a target chart is continuous in those charts there. -/
@@ -128,7 +97,9 @@ theorem continuous_hom_bundle_iff_forall_continuousOn {f : B → F →L[𝕜] G}
   rw [continuousAt_hom_bundle]
   refine ⟨continuousAt_id, ((h _ _).continuousAt hU).congr ?_⟩
   filter_upwards [hU] with x hx
-  exact (Z.inCoordinates_eq W (f x) hx.1 hx.2).symm
+  ext v
+  rw [Z.inCoordinates_eq W (f x) hx.1 hx.2, inChartCoordinates_apply]
+  rfl
 
 end inChartCoordinates
 

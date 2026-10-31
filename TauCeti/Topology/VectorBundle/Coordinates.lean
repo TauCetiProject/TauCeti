@@ -27,6 +27,10 @@ of fibre maps as the composite of their coordinate expressions.
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
 trivializations with their core coordinate-change maps.
+`VectorBundleCore.inChartCoordinates` expresses a fibre map between two cores in an arbitrary
+pair of source and target charts, not only the preferred charts of base points, and
+`VectorBundleCore.inChartCoordinates_comp` composes these expressions through any intermediate
+chart containing the base point.
 
 The construction follows Mathlib's `ContinuousLinearMap.inCoordinates` and
 `Bundle.Trivialization.comp_continuousLinearEquivAt_eq_coord_change`.
@@ -57,6 +61,45 @@ variable {𝕜 B F κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace 
         Z.coordChange (Z.indexAt α) (Z.indexAt β) x := by
   ext v
   exact Z.trivializationAt_coordChange_eq hx v
+
+section inChartCoordinates
+
+variable {G H ι ν : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- The expression of a fibre map `ϕ` over `x` in the source chart `i` and the target chart
+`j`. Unlike `ContinuousLinearMap.inCoordinates`, the charts need not be preferred charts of
+base points. -/
+def inChartCoordinates (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B G κ)
+    (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) : F →L[𝕜] G :=
+  (W.coordChange (W.indexAt x) j x).comp (ϕ.comp (Z.coordChange i (Z.indexAt x) x))
+
+variable (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B G κ)
+  (V : VectorBundleCore 𝕜 B H ν)
+
+@[simp] theorem inChartCoordinates_apply (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) (v : F) :
+    Z.inChartCoordinates W i j x ϕ v =
+      W.coordChange (W.indexAt x) j x (ϕ (Z.coordChange i (Z.indexAt x) x v)) := (rfl)
+
+/-- In the preferred charts the coordinate expression of a fibre map is the map itself. -/
+@[simp] theorem inChartCoordinates_indexAt (x : B) (ϕ : F →L[𝕜] G) :
+    Z.inChartCoordinates W (Z.indexAt x) (W.indexAt x) x ϕ = ϕ := by
+  ext v
+  simp [Z.coordChange_self _ x (Z.mem_baseSet_at x),
+    W.coordChange_self _ x (W.mem_baseSet_at x)]
+
+/-- Coordinate expressions of a composite compose through any intermediate chart containing
+the base point. -/
+theorem inChartCoordinates_comp (i : ι) {j : κ} (k : ν) {x : B} (hj : x ∈ W.baseSet j)
+    (ψ : G →L[𝕜] H) (ϕ : F →L[𝕜] G) :
+    Z.inChartCoordinates V i k x (ψ.comp ϕ) =
+      (W.inChartCoordinates V j k x ψ).comp (Z.inChartCoordinates W i j x ϕ) := by
+  ext v
+  simp only [inChartCoordinates_apply, ContinuousLinearMap.comp_apply,
+    W.coordChange_comp _ j _ x ⟨⟨W.mem_baseSet_at x, hj⟩, W.mem_baseSet_at x⟩,
+    W.coordChange_self _ x (W.mem_baseSet_at x)]
+
+end inChartCoordinates
 
 end VectorBundleCore
 
