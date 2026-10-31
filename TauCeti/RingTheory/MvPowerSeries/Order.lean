@@ -23,7 +23,9 @@ expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + �
 the polynomial `f_p(X + Y, Z)`.
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
-(`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`).
+(`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`). Over a commutative ring, if `f` and
+`g` have zero constant coefficient, then `f ^ n - g ^ n` has order larger than that of `f - g` for
+`n ≥ 2` (`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
 The degree-zero component of a series is its constant term
 (`MvPowerSeries.homogeneousComponent_zero`).
 
@@ -51,6 +53,21 @@ theorem le_order_sub [Ring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
     (hg : n ≤ g.order) : n ≤ (f - g).order := by
   rw [sub_eq_add_neg]
   exact le_order_add hf (by rwa [order_neg])
+
+/-- If `f` and `g` have zero constant coefficient and `2 ≤ n`, then the order of `f ^ n - g ^ n`
+exceeds that of `f - g`: it is `f - g` times `∑ fⁱ gⁿ⁻¹⁻ⁱ`, whose constant coefficient vanishes. -/
+theorem order_sub_add_one_le_order_pow_sub_pow [CommRing R] {f g : MvPowerSeries σ R}
+    (hf : constantCoeff f = 0) (hg : constantCoeff g = 0) {n : ℕ} (hn : 2 ≤ n) :
+    (f - g).order + 1 ≤ (f ^ n - g ^ n).order := by
+  rw [← geom_sum₂_mul, add_comm]
+  refine (add_le_add ?_ le_rfl).trans le_order_mul
+  refine one_le_order_iff_constCoeff_eq_zero.mpr ?_
+  rw [map_sum]
+  refine Finset.sum_eq_zero fun i hi ↦ ?_
+  rw [Finset.mem_range] at hi
+  rcases Nat.eq_zero_or_pos i with rfl | hi₀
+  · rw [map_mul, map_pow, map_pow, hg, zero_pow (by omega), mul_zero]
+  · rw [map_mul, map_pow, hf, zero_pow hi₀.ne', zero_mul]
 
 end AddSub
 

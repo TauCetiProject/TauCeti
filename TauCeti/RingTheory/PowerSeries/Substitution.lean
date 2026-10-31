@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
+-- Proof-only: lifting series with coefficients in a subring to series over the subring.
+import TauCeti.RingTheory.MvPowerSeries.Basic
 -- Proof-only: lowest homogeneous components of powers.
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
@@ -86,6 +88,9 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
   degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
   `f` and `φ₁` the linear part of `φ`.
+* `PowerSeries.coeff_subst_eq_sum_range`: the coefficient of `X^d` in `f (a)`, for `a` of zero
+  constant coefficient, is the finite sum `∑_{n ≤ |d|} fₙ [X^d] aⁿ`.
+* `PowerSeries.coeff_subst_mem`: if `f` and `a` have coefficients in a subring, so does `f (a)`.
 * `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
   family by `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only
   through the linear term `Xₛ` of the multivariate series.
@@ -312,6 +317,38 @@ theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries 
   simp only [add_zero, mul_one] at hmul hpow
   rw [subst_mul hφ', subst_pow hφ', subst_X hφ', hmul, hpow]
   simp [mul_comm, constantCoeff_subst_of_constantCoeff_zero hφ, coeff_mul_X_pow']
+
+/-- The coefficient of `X^d` in `f (a)`, for `a` of zero constant coefficient, is the finite sum
+`∑_{n ≤ |d|} fₙ [X^d] aⁿ`: the powers `aⁿ` with `n > |d|` have order greater than `|d|`. This is the
+finite form of Mathlib's `PowerSeries.coeff_subst`. -/
+theorem coeff_subst_eq_sum_range {τ : Type*} {a : MvPowerSeries τ S}
+    (ha : MvPowerSeries.constantCoeff a = 0) (f : R⟦X⟧) (d : τ →₀ ℕ) :
+    MvPowerSeries.coeff d (f.subst a) =
+      ∑ n ∈ Finset.range (d.degree + 1), coeff n f • MvPowerSeries.coeff d (a ^ n) := by
+  rw [coeff_subst (.of_constantCoeff_zero ha)]
+  refine finsum_eq_sum_of_support_subset _ fun n hn ↦ ?_
+  rw [Finset.coe_range, Set.mem_Iio, Nat.lt_succ_iff]
+  by_contra! h
+  refine hn ?_
+  dsimp only
+  rw [MvPowerSeries.coeff_of_lt_order, smul_zero]
+  exact (Nat.cast_lt.mpr h).trans_le (MvPowerSeries.le_order_pow_of_constantCoeff_eq_zero n ha)
+
+/-- If `f` and the substitutable series `a` have coefficients in a subring `A`, then so does
+`f (a)`: it is the image of the substitution computed over `A`. -/
+theorem coeff_subst_mem {τ : Type*} {A : Subring S} {a : MvPowerSeries τ S} (ha : HasSubst a)
+    (ha' : ∀ d, MvPowerSeries.coeff d a ∈ A) {f : S⟦X⟧} (hf : ∀ n, coeff n f ∈ A)
+    (d : τ →₀ ℕ) : MvPowerSeries.coeff d (f.subst a) ∈ A := by
+  obtain ⟨aA, rfl⟩ := MvPowerSeries.exists_map_subtype_eq_of_coeff_mem ha'
+  -- `PowerSeries.map` is `MvPowerSeries.map` in one variable
+  obtain ⟨fA, hfA⟩ := MvPowerSeries.exists_map_subtype_eq_of_coeff_mem (p := f) fun e ↦ by
+    rw [← coeff_def (s := e) rfl]
+    exact hf _
+  obtain rfl : map A.subtype fA = f := hfA
+  have haA : HasSubst aA := by
+    rwa [HasSubst, MvPowerSeries.constantCoeff_map, IsNilpotent.map_iff A.subtype_injective] at ha
+  rw [← map_subst haA, MvPowerSeries.coeff_map]
+  exact Subtype.mem _
 
 end Algebra
 
