@@ -12,10 +12,11 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 
 Let `σ : R →+* R₂` be a surjective ring homomorphism (`[RingHomSurjective σ]`). An injective
 semilinear map `f : M →ₛₗ[σ] N` carries the submodules of `M` to submodules of `N` and preserves
-coverings (`Submodule.map_covBy_of_injective`), and a surjective one pulls the submodules of `N`
-back and preserves coverings (`Submodule.comap_covBy_of_surjective`), so each carries a
-composition series of `R`-submodules to one of `R₂`-submodules:
-`TauCeti.mapCompositionSeriesOfInjective` and `TauCeti.comapCompositionSeriesOfSurjective`.
+coverings (`Submodule.map_covBy_of_injective`), so it carries a composition series of
+`R`-submodules of `M` to one of `R₂`-submodules of `N`: `TauCeti.mapCompositionSeriesOfInjective`.
+A surjective one pulls the submodules of `N` back to submodules of `M` and preserves coverings
+(`Submodule.comap_covBy_of_surjective`), so it carries a composition series of `R₂`-submodules of
+`N` back to one of `R`-submodules of `M`: `TauCeti.comapCompositionSeriesOfSurjective`.
 This file records only how the transported series is built (its length, terms and endpoints).
 
 For a linear map `f : M →ₗ[R] N` over a single ring (the case `σ = RingHom.id R`), the transported
