@@ -414,15 +414,6 @@ omit [DecidableEq α] in
 private theorem mem_cyclePreservingSubgroup {π g : Perm α} :
     g ∈ cyclePreservingSubgroup π ↔ ∀ x, π.SameCycle x (g x) := Iff.rfl
 
-omit [DecidableEq α] in
-/-- If `π₀` moves every point within its cycle of `π`, then each cycle of `π₀` lies in a cycle
-of `π`. -/
-private theorem sameCycle_of_mem_cyclePreservingSubgroup {π π₀ : Perm α}
-    (h : π₀ ∈ cyclePreservingSubgroup π) {x y : α} (hxy : π₀.SameCycle x y) :
-    π.SameCycle x y := by
-  obtain ⟨i, rfl⟩ := hxy
-  exact mem_cyclePreservingSubgroup.mp ((cyclePreservingSubgroup π).zpow_mem h i) x
-
 /-- A transposition of two points in one cycle of `π` moves every point within its cycle. -/
 private theorem swap_mem_cyclePreservingSubgroup {π : Perm α} (h : π.SameCycle a b) :
     Equiv.swap a b ∈ cyclePreservingSubgroup π := by
@@ -432,25 +423,6 @@ private theorem swap_mem_cyclePreservingSubgroup {π : Perm α} (h : π.SameCycl
   rcases eq_or_ne x b with rfl | hxb
   · simpa using h.symm
   · rw [Equiv.swap_apply_of_ne_of_ne hxa hxb]
-
-omit [DecidableEq α] in
-/-- Every subgroup moving points within the cycles of `π` has at least as many orbits as `π` has
-cycles. -/
-private theorem orbitCount_le_card_orbitRelQuotient [Finite α] {π : Perm α}
-    {H : Subgroup (Perm α)} (hH : H ≤ cyclePreservingSubgroup π) :
-    orbitCount π ≤ Nat.card (MulAction.orbitRel.Quotient H α) := by
-  let f : MulAction.orbitRel.Quotient H α → Quotient (SameCycle.setoid π) :=
-    fun q => Quotient.liftOn' q (fun x => Quotient.mk'' x) fun a b hab => by
-      apply Quotient.sound
-      rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff] at hab
-      obtain ⟨g, rfl⟩ := hab
-      exact (mem_cyclePreservingSubgroup.mp (hH g.2) b).symm
-  have hf : Function.Surjective f := by
-    intro q
-    induction q using Quotient.inductionOn'
-    exact ⟨Quotient.mk'' _, rfl⟩
-  rw [orbitCount_def]
-  exact Nat.card_le_card_of_surjective f hf
 
 /-- Multiplying a permutation `σ` on the left by a list of transpositions, starting from a
 permutation `π₀` whose cycles are unions of cycles of `σ`, admits a permutation `π` whose cycles
@@ -482,9 +454,9 @@ private theorem exists_componentPerm_mul [Finite α] (L : List (Perm α))
         · exact hpres g hg
       · have hprod_mem : L.prod * σ ∈ cyclePreservingSubgroup π :=
           mul_mem ((cyclePreservingSubgroup π).list_prod_mem hpres)
-            fun x => sameCycle_of_mem_cyclePreservingSubgroup hπ₀ (hσ x)
+            fun x => (hσ x).of_forall_sameCycle_apply hπ₀
         have hcycle : ¬ (L.prod * σ).SameCycle a b :=
-          fun hcycle => hcomp (sameCycle_of_mem_cyclePreservingSubgroup hprod_mem hcycle)
+          fun hcycle => hcomp (hcycle.of_forall_sameCycle_apply hprod_mem)
         have hprodMerge := orbitCount_swap_mul_add_one_of_not_sameCycle hcycle
         have hcompMerge := orbitCount_swap_mul_add_one_of_not_sameCycle hcomp
         have hab' : (Equiv.swap a b * π).SameCycle a b :=
@@ -526,8 +498,9 @@ theorem card_add_orbitCount_le_length_add_two_mul_card_orbits [Finite α]
     Nat.card α + orbitCount L.prod ≤ L.length +
       2 * Nat.card (MulAction.orbitRel.Quotient (Subgroup.closure {g | g ∈ L}) α) := by
   obtain ⟨π, hbound, hpres⟩ := exists_componentPerm L hL
-  have hcard := orbitCount_le_card_orbitRelQuotient (H := Subgroup.closure {g | g ∈ L})
-    (Subgroup.closure_le _ |>.mpr hpres)
+  have hclosure : Subgroup.closure {g | g ∈ L} ≤ cyclePreservingSubgroup π :=
+    Subgroup.closure_le _ |>.mpr hpres
+  have hcard := orbitCount_le_card_orbitRelQuotient fun _ hg => hclosure hg
   omega
 
 /-- **Hurwitz's transposition bound with a defect.** Let `L ++ Equiv.swap a b :: M` be a list of
@@ -557,9 +530,9 @@ theorem card_add_orbitCount_add_two_le_length_add_two_mul_card_orbits [Finite α
   have hmerge := orbitCount_swap_mul_add_one_of_not_sameCycle h
   have hcoarse {g : Perm α} (hg : g ∈ cyclePreservingSubgroup πM) :
       g ∈ cyclePreservingSubgroup π :=
-    fun x => sameCycle_of_mem_cyclePreservingSubgroup hπM (hg x)
-  have hcard := orbitCount_le_card_orbitRelQuotient
-    (H := Subgroup.closure {g | g ∈ L ++ Equiv.swap a b :: M}) (π := π) <| by
+    fun x => (hg x).of_forall_sameCycle_apply hπM
+  have hclosure : Subgroup.closure {g | g ∈ L ++ Equiv.swap a b :: M} ≤
+      cyclePreservingSubgroup π := by
     rw [Subgroup.closure_le]
     intro g hg
     rcases List.mem_append.mp hg with hg | hg
@@ -567,6 +540,7 @@ theorem card_add_orbitCount_add_two_le_length_add_two_mul_card_orbits [Finite α
     rcases List.mem_cons.mp hg with rfl | hg
     · exact hcoarse (swap_mem_cyclePreservingSubgroup hcomp)
     · exact hcoarse (hpresM g hg)
+  have hcard := orbitCount_le_card_orbitRelQuotient fun _ hg => hclosure hg
   rw [List.prod_append, List.prod_cons, List.length_append, List.length_cons]
   omega
 
