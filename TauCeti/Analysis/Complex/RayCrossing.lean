@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
