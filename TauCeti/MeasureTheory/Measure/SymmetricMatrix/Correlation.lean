@@ -6,21 +6,20 @@ Authors: Claude
 module
 
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
-public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
-import TauCeti.Analysis.Matrix.PosDef
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Convex.Measure
 import Mathlib.Analysis.Matrix.Order
 
 /-!
 # Correlation coordinates and Lebesgue measure on correlation matrices
 
-A correlation matrix is a symmetric matrix with unit diagonal. It is determined by its strictly
-lower entries `R i j`, `j < i`, and every choice of these entries gives one:
-`TauCeti.correlationMatrix p x` reconstructs the matrix from coordinates
-`x : TauCeti.strictLowerTriangle p → ℝ` by symmetry and ones on the diagonal. This is a
+A correlation matrix is a positive-semidefinite symmetric matrix with unit diagonal. The
+correlation matrices form a subset of the affine space of unit-diagonal symmetric matrices, and
+a unit-diagonal symmetric matrix is determined by its strictly lower entries `R i j`, `j < i`,
+which may be chosen freely: `TauCeti.correlationMatrix p x` reconstructs the unit-diagonal
+symmetric matrix with coordinates `x : TauCeti.strictLowerTriangle p → ℝ` by symmetry and ones
+on the diagonal. It is a correlation matrix exactly when it is positive semidefinite. This is a
 continuous affine closed embedding of the coordinate space into the symmetric matrices whose
 range is exactly the unit-diagonal matrices; the continuous linear map
 `TauCeti.correlationCoordinates p` reading off the strictly lower entries inverts it there.
@@ -40,8 +39,8 @@ positive-semidefinite correlation matrices with zero determinant, is Lebesgue-nu
 ## Main declarations
 
 * `TauCeti.strictLowerTriangle` — the index type of strictly lower positions.
-* `TauCeti.correlationMatrix` — the correlation matrix with prescribed strictly lower entries, as
-  a continuous affine map.
+* `TauCeti.correlationMatrix` — the unit-diagonal symmetric matrix with prescribed strictly lower
+  entries, as a continuous affine map.
 * `TauCeti.correlationCoordinates` — the strictly lower entries of a symmetric matrix.
 * `TauCeti.range_correlationMatrix` — the range is the unit-diagonal symmetric matrices.
 * `TauCeti.isClosedEmbedding_correlationMatrix`, `TauCeti.measurableEmbedding_correlationMatrix`.
@@ -71,15 +70,15 @@ open MeasureTheory Topology Filter Set
 
 namespace TauCeti
 
-/-- The strictly lower positions `(i, j)`, `j < i`, of a `p × p` matrix. A correlation matrix is
-determined by its entries there. -/
+/-- The strictly lower positions `(i, j)`, `j < i`, of a `p × p` matrix. A unit-diagonal
+symmetric matrix, in particular a correlation matrix, is determined by its entries there. -/
 abbrev strictLowerTriangle (p : ℕ) := {ij : Fin p × Fin p // ij.2 < ij.1}
 
 variable (p : ℕ)
 
-/-- The correlation matrix with strictly lower entries `x`: the symmetric matrix with ones on the
-diagonal whose entry at `(i, j)`, `j < i`, and at `(j, i)` is `x (i, j)`. It is an affine map of
-the coordinates. -/
+/-- The unit-diagonal symmetric matrix with strictly lower entries `x`: its entry at `(i, j)`,
+`j < i`, and at `(j, i)` is `x (i, j)`. It is an affine map of the coordinates, and its value is a
+correlation matrix exactly when it is positive semidefinite. -/
 def correlationMatrix :
     (strictLowerTriangle p → ℝ) →ᴬ[ℝ] selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) where
   toFun x := (symmetricCoordinates p).symm fun ij =>
@@ -114,14 +113,14 @@ theorem coe_correlationMatrix_apply_self (x : strictLowerTriangle p → ℝ) (i 
 
 /-- A strictly lower entry of a correlation matrix is its coordinate. -/
 @[simp]
-theorem coe_correlationMatrix_apply_of_lt (x : strictLowerTriangle p → ℝ) {i j : Fin p}
+theorem coe_correlationMatrix_apply_of_gt (x : strictLowerTriangle p → ℝ) {i j : Fin p}
     (h : j < i) :
     (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ) i j = x ⟨(i, j), h⟩ := by
   simp [correlationMatrix, coe_symmetricCoordinates_symm_apply_of_ge p _ h.le, h]
 
 /-- A strictly upper entry of a correlation matrix is the coordinate at the reflected position. -/
 @[simp]
-theorem coe_correlationMatrix_apply_of_gt (x : strictLowerTriangle p → ℝ) {i j : Fin p}
+theorem coe_correlationMatrix_apply_of_lt (x : strictLowerTriangle p → ℝ) {i j : Fin p}
     (h : i < j) :
     (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ) i j = x ⟨(j, i), h⟩ := by
   simp [correlationMatrix, coe_symmetricCoordinates_symm_apply_of_le p _ h.le, h]
@@ -217,6 +216,8 @@ theorem isClosedEmbedding_correlationMatrix : IsClosedEmbedding (correlationMatr
     (correlationCoordinates p).continuous (correlationMatrix p).continuous
 
 variable (p) in
+/-- The correlation matrix map is a measurable embedding of the coordinate space into the
+symmetric matrices. -/
 theorem measurableEmbedding_correlationMatrix : MeasurableEmbedding (correlationMatrix p) :=
   (isClosedEmbedding_correlationMatrix p).measurableEmbedding
 
@@ -295,8 +296,8 @@ theorem zero_mem_posDefCorrelationRegion : (0 : strictLowerTriangle p → ℝ) �
     posDefCorrelationRegion p := by
   simpa using Matrix.PosDef.one
 
-/-- Every entry of a positive-definite correlation matrix lies in `(-1, 1)`: its `2 × 2`
-principal minor `1 - x (i, j) ^ 2` is positive. -/
+/-- Every off-diagonal entry of a positive-definite correlation matrix lies in `(-1, 1)`: its
+`2 × 2` principal minor `1 - x (i, j) ^ 2` is positive. -/
 theorem abs_lt_one_of_mem_posDefCorrelationRegion {x : strictLowerTriangle p → ℝ}
     (hx : x ∈ posDefCorrelationRegion p) (ij : strictLowerTriangle p) : |x ij| < 1 := by
   obtain ⟨⟨i, j⟩, hij⟩ := ij
@@ -306,8 +307,8 @@ theorem abs_lt_one_of_mem_posDefCorrelationRegion {x : strictLowerTriangle p →
   have hdet := (hx.submatrix hinj).det_pos
   rw [Matrix.det_fin_two] at hdet
   simp only [Matrix.submatrix_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    coe_correlationMatrix_apply_self, coe_correlationMatrix_apply_of_lt x hij,
-    coe_correlationMatrix_apply_of_gt x hij] at hdet
+    coe_correlationMatrix_apply_self, coe_correlationMatrix_apply_of_gt x hij,
+    coe_correlationMatrix_apply_of_lt x hij] at hdet
   rw [abs_lt]
   constructor <;> nlinarith
 
@@ -324,10 +325,12 @@ theorem isBounded_posDefCorrelationRegion : Bornology.IsBounded (posDefCorrelati
     exact ⟨fun ij => (h ij trivial).1.le, fun ij => (h ij trivial).2.le⟩
 
 variable (p) in
+/-- The positive-definite region has positive volume: it is open and contains the origin. -/
 theorem volume_posDefCorrelationRegion_pos : 0 < volume (posDefCorrelationRegion p) :=
   (isOpen_posDefCorrelationRegion p).measure_pos _ ⟨0, zero_mem_posDefCorrelationRegion p⟩
 
 variable (p) in
+/-- The positive-definite region has finite volume: it is bounded. -/
 theorem volume_posDefCorrelationRegion_lt_top : volume (posDefCorrelationRegion p) < ⊤ :=
   (isBounded_posDefCorrelationRegion p).measure_lt_top
 
@@ -385,17 +388,6 @@ Conjugating a correlation matrix by a permutation matrix or by a diagonal sign m
 correlation matrix whose coordinates are those of the original, permuted and multiplied by signs.
 Such signed permutations of the coordinates preserve Lebesgue measure. -/
 
-/-- A permutation and sign change of the coordinates preserves Lebesgue measure. -/
-private theorem measurePreserving_signedPerm (e : strictLowerTriangle p ≃ strictLowerTriangle p)
-    (c : strictLowerTriangle p → ℝ) (hc : ∀ ij, |c ij| = 1) :
-    MeasurePreserving (fun (x : strictLowerTriangle p → ℝ) ij => c ij * x (e ij)) := by
-  have hmul : MeasurePreserving (fun (y : strictLowerTriangle p → ℝ) ij => c ij * y ij) :=
-    volume_preserving_pi fun ij => ⟨measurable_const_mul _, by
-      rw [Real.map_volume_mul_left fun h0 => by simpa [h0] using hc ij,
-        abs_inv, hc ij, inv_one, ENNReal.ofReal_one, one_smul]⟩
-  exact hmul.comp
-    (volume_preserving_arrowCongr' e.symm (MeasurableEquiv.refl ℝ) (MeasurePreserving.id _))
-
 /-- A measurable self-map of the symmetric matrices that acts on correlation matrices through a
 permutation and sign change of the coordinates preserves `TauCeti.correlationLebesgue`. -/
 private theorem map_correlationLebesgue_of_signedPerm
@@ -406,7 +398,7 @@ private theorem map_correlationLebesgue_of_signedPerm
     (h : ∀ x, f (correlationMatrix p x) = correlationMatrix p fun ij => c ij * x (e ij)) :
     (correlationLebesgue p).map f = correlationLebesgue p := by
   have hR := (correlationMatrix p).continuous.measurable
-  have hg := measurePreserving_signedPerm e c hc
+  have hg := volume_preserving_signedPerm e c hc
   have hcomp : f ∘ correlationMatrix p =
       correlationMatrix p ∘ fun (x : strictLowerTriangle p → ℝ) ij => c ij * x (e ij) :=
     funext h
@@ -446,21 +438,17 @@ theorem map_symmetricCongruenceLinearMap_permMatrix_correlationLebesgue
     (σ : Equiv.Perm (Fin p)) :
     (correlationLebesgue p).map (Matrix.symmetricCongruenceLinearMap (σ.permMatrix ℝ)) =
       correlationLebesgue p := by
-  have hcoe : ∀ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
-      (Matrix.symmetricCongruenceLinearMap (σ.permMatrix ℝ) A : Matrix (Fin p) (Fin p) ℝ) =
-        (A : Matrix (Fin p) (Fin p) ℝ).submatrix σ σ := fun A => by
-    rw [Matrix.coe_symmetricCongruenceLinearMap_apply, Matrix.transpose_permMatrix,
-      Equiv.Perm.permMatrix, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul,
-      PEquiv.mul_toMatrix_toPEquiv, Equiv.Perm.inv_def, Equiv.symm_symm,
-      Matrix.submatrix_submatrix, Function.comp_id, Function.id_comp]
   refine map_correlationLebesgue_of_signedPerm
     (LinearMap.continuous_of_finiteDimensional _).measurable
     (permStrictLowerEquiv σ) 1 (fun _ => by simp) fun x => ?_
   rw [← correlationMatrix_correlationCoordinates (A := Matrix.symmetricCongruenceLinearMap _ _)
-    fun i => by simp [hcoe]]
+    fun i => by simp [-Matrix.coe_symmetricCongruenceLinearMap_apply,
+      Matrix.coe_symmetricCongruenceLinearMap_permMatrix_apply]]
   congr 1
   funext ij
-  simp [hcoe, coe_correlationMatrix_apply_of_ne x (σ.injective.ne ij.2.ne'),
+  simp [-Matrix.coe_symmetricCongruenceLinearMap_apply,
+    Matrix.coe_symmetricCongruenceLinearMap_permMatrix_apply,
+    coe_correlationMatrix_apply_of_ne x (σ.injective.ne ij.2.ne'),
     permStrictLowerEquiv, permStrictLower]
 
 variable (p) in
