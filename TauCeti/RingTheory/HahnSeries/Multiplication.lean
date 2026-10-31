@@ -46,6 +46,10 @@ through `HahnModule.of`, for the action instance underlying the `R`-module struc
 equivalence. The lemmas `HahnModule.coeff_smul_single_zero` and
 `HahnModule.single_smul_single_zero` describe the convolution action of a scalar series on a
 constant module-valued series, coefficientwise and on monomials.
+
+A monomial `single a 1` with coefficient `1` is central (`HahnSeries.commute_single_one`), and
+acting by it on a Hahn module is injective (`HahnModule.single_one_smul_injective`), so such a
+factor can be cancelled from an identity.
 -/
 
 public section
@@ -87,6 +91,17 @@ theorem hahnSeries_orderTop_pow [Nontrivial R] (n : ℕ) {f : HahnSeries Γ R} :
 
 end TauCeti
 
+namespace HahnSeries
+
+/-- A monomial with coefficient `1` is central: it commutes with every Hahn series, even over a
+noncommutative coefficient ring. -/
+theorem commute_single_one {Γ R : Type*} [PartialOrder Γ] [AddCommGroup Γ] [IsOrderedAddMonoid Γ]
+    [NonAssocSemiring R] (a : Γ) (x : HahnSeries Γ R) : Commute (single a (1 : R)) x := by
+  ext n
+  rw [coeff_single_mul, coeff_mul_single, one_mul, mul_one]
+
+end HahnSeries
+
 namespace HahnModule
 
 /-- The coefficientwise scalar action underlying the `R`-module structure, read through `of`.
@@ -113,6 +128,17 @@ theorem ofLinearEquiv_apply {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [Add
 @[simp]
 theorem ofLinearEquiv_symm_apply {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [AddCommMonoid V]
     [Module R V] (f : HahnModule Γ R V) : (ofLinearEquiv R).symm f = (of R).symm f := (rfl)
+
+/-- Acting by a monomial with coefficient `1` is injective on Hahn modules: the coefficient of
+`b +ᵥ a` in `single b 1 • x` is the coefficient of `a` in `x`. -/
+theorem single_one_smul_injective {Γ Γ' R V : Type*} [PartialOrder Γ] [PartialOrder Γ']
+    [VAdd Γ Γ'] [IsOrderedCancelVAdd Γ Γ'] [MonoidWithZero R] [AddCommMonoid V]
+    [MulActionWithZero R V] (b : Γ) :
+    Function.Injective (HahnSeries.single b (1 : R) • · : HahnModule Γ' R V → HahnModule Γ' R V) :=
+  fun x y h ↦ (of R).symm.injective <| HahnSeries.ext <| funext fun a ↦ by
+    simpa only [coeff_single_smul_vadd, one_smul] using
+      congrArg (fun z ↦ ((of R).symm z).coeff (b +ᵥ a)) h
+
 
 open HahnSeries
 

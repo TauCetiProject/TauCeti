@@ -67,12 +67,9 @@ private theorem single_one_smul_derivative_lie (x y : HahnModule ℤ R L) :
 /-- **The Leibniz rule** `D ⁅x, y⁆ = ⁅D x, y⁆ + ⁅x, D y⁆` for the bracket of formal loops. -/
 theorem derivative_lie (x y : HahnModule ℤ R L) :
     derivative R ⁅x, y⁆ = ⁅derivative R x, y⁆ + ⁅x, derivative R y⁆ := by
-  -- Multiply the Leibniz rule for `t D` by `t⁻¹`.
-  have ht : single (-1 : ℤ) (1 : R) * single 1 1 = 1 := by
-    rw [single_mul_single, neg_add_cancel, mul_one, single_zero_one]
-  rw [← one_smul (HahnSeries ℤ R) (derivative R ⁅x, y⁆), ← ht, mul_smul,
-    single_one_smul_derivative_lie, smul_add, ← smul_lie, ← lie_smul, ← mul_smul, ← mul_smul, ht,
-    one_smul, one_smul]
+  -- Cancel the factor `t` from the Leibniz rule for `t D`.
+  refine single_one_smul_injective (1 : ℤ) ?_
+  simp only [single_one_smul_derivative_lie, smul_add, smul_lie, lie_smul]
 
 variable (R L) in
 /-- The derivative of formal loops `L((t))` as a Lie derivation. -/

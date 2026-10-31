@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.HahnSeries.Bilinear
+public import TauCeti.RingTheory.LaurentSeries.Derivative
 public import TauCeti.RingTheory.LaurentSeries.Lattice
 
 /-!
@@ -16,11 +17,11 @@ For a module `V` over a semiring `R`, the `V`-valued Laurent series `V((t))` are
 transports Mathlib's coefficientwise derivative `LaurentSeries.derivative` on `LaurentSeries V`
 through `HahnModule.of` to the derivative `D` of `V((t))`, so that `D (v tⁿ) = n v tⁿ⁻¹`.
 
-Over a commutative ring, `D` is a derivation over the derivative of scalar Laurent series:
+Over a ring, `D` is a derivation over the derivative of scalar Laurent series:
 `D (f • x) = D f • x + f • D x`. The proof goes through the Euler operator `t D`, which multiplies
-the coefficient of `tⁿ` by `n`. The derivative maps the lattice `U_a(V) = tᵃ V⟦t⟧` into
-`U_{a - 1}(V)`, which is its continuity for the lattice topology, and it commutes with linear maps
-of coefficients.
+the coefficient of `tⁿ` by `n`, and then cancels the central factor `t`. The derivative maps the
+lattice `U_a(V) = tᵃ V⟦t⟧` into `U_{a - 1}(V)`, which is its continuity for the lattice topology,
+and it commutes with linear maps of coefficients.
 
 For a bilinear form `Φ` on `V`, extended coefficientwise by `HahnModule.convolution`, the residue
 pairing is `(x, y) ↦ Res Φ(x, D y) dt`, the coefficient of `t⁻¹` in `Φ(x, D y)`. On monomials it
@@ -100,18 +101,6 @@ theorem derivative_mem_lattice {a : ℤ} {x : HahnModule ℤ R V}
   intro n hn
   rw [coeff_derivative, hx (n + 1) (by omega), smul_zero]
 
-/-- The derivative commutes with a linear map `g : V → W` applied to coefficients. -/
-theorem derivative_map (g : V →ₗ[R] W) (x : HahnModule ℤ R V) :
-    derivative R (of R (((of R).symm x).map g)) =
-      of R (((of R).symm (derivative R x)).map g) := by
-  simp [derivative]
-
-end Semiring
-
-section CommRing
-
-variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
-
 /-- The Euler operator `t D` multiplies the coefficient of `tⁿ` by `n`. -/
 theorem coeff_single_one_smul_derivative (x : HahnModule ℤ R V) (n : ℤ) :
     ((of R).symm (single (1 : ℤ) (1 : R) • derivative R x)).coeff n =
@@ -121,15 +110,17 @@ theorem coeff_single_one_smul_derivative (x : HahnModule ℤ R V) (n : ℤ) :
   rw [vadd_eq_add, add_sub_cancel] at h
   rw [h, one_smul, coeff_derivative, sub_add_cancel]
 
-/-- The Euler operator `t D` of scalar Laurent series multiplies the coefficient of `tⁿ` by `n`. -/
-private theorem coeff_single_one_mul_derivative (f : R⸨X⸩) (n : ℤ) :
-    (single (1 : ℤ) (1 : R) * LaurentSeries.derivative R f).coeff n = n • f.coeff n := by
-  have h := coeff_single_mul_add (r := (1 : R)) (x := LaurentSeries.derivative R f) (a := n - 1)
-    (b := (1 : ℤ))
-  rw [sub_add_cancel] at h
-  rw [h, one_mul]
-  simp only [LaurentSeries.derivative_apply, LaurentSeries.hasseDeriv_coeff,
-    Nat.cast_one, sub_add_cancel, Ring.choose_one_right]
+/-- The derivative commutes with a linear map `g : V → W` applied to coefficients. -/
+theorem derivative_map (g : V →ₗ[R] W) (x : HahnModule ℤ R V) :
+    derivative R (of R (((of R).symm x).map g)) =
+      of R (((of R).symm (derivative R x)).map g) := by
+  simp [derivative]
+
+end Semiring
+
+section Ring
+
+variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
 
 /-- The Leibniz rule for the Euler operator `t D`. -/
 private theorem single_one_smul_derivative_smul (f : R⸨X⸩) (x : HahnModule ℤ R V) :
@@ -138,7 +129,7 @@ private theorem single_one_smul_derivative_smul (f : R⸨X⸩) (x : HahnModule �
         f • (single (1 : ℤ) (1 : R) • derivative R x) := by
   ext n
   have hf : (single (1 : ℤ) (1 : R) * LaurentSeries.derivative R f).support ⊆ f.support :=
-    fun i hi h ↦ hi (by rw [coeff_single_one_mul_derivative, h, smul_zero])
+    fun i hi h ↦ hi (by rw [LaurentSeries.coeff_single_one_mul_derivative, h, smul_zero])
   have hx : ((of R).symm (single (1 : ℤ) (1 : R) • derivative R x)).support ⊆
       ((of R).symm x).support :=
     fun i hi h ↦ hi (by rw [coeff_single_one_smul_derivative, h, smul_zero])
@@ -147,19 +138,22 @@ private theorem single_one_smul_derivative_smul (f : R⸨X⸩) (x : HahnModule �
     Finset.smul_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
   obtain ⟨-, -, hij⟩ := (Finset.mem_vaddAntidiagonal _ _).1 hij
-  rw [coeff_single_one_mul_derivative, coeff_single_one_smul_derivative, ← hij, vadd_eq_add,
-    add_zsmul, smul_assoc, smul_comm (f.coeff ij.1) ij.2]
+  rw [LaurentSeries.coeff_single_one_mul_derivative, coeff_single_one_smul_derivative, ← hij,
+    vadd_eq_add, add_zsmul, smul_assoc, smul_comm (f.coeff ij.1) ij.2]
 
 /-- **The Leibniz rule** `D (f • x) = D f • x + f • D x` for a scalar Laurent series `f` and a
 `V`-valued Laurent series `x`. -/
 theorem derivative_smul (f : R⸨X⸩) (x : HahnModule ℤ R V) :
     derivative R (f • x) = LaurentSeries.derivative R f • x + f • derivative R x := by
-  -- Multiply the Leibniz rule for `t D` by `t⁻¹`.
-  have ht : single (-1 : ℤ) (1 : R) * single 1 1 = 1 := by
-    rw [single_mul_single, neg_add_cancel, mul_one, single_zero_one]
-  rw [← one_smul R⸨X⸩ (derivative R (f • x)), ← ht, mul_smul, single_one_smul_derivative_smul,
-    smul_add, ← mul_smul, ← mul_assoc, ht, one_mul, smul_smul, mul_comm _ f, mul_smul,
-    ← mul_smul _ _ (derivative R x), ht, one_smul]
+  -- Cancel the central factor `t` from the Leibniz rule for `t D`.
+  refine single_one_smul_injective (1 : ℤ) ?_
+  simp only [single_one_smul_derivative_smul, smul_add, smul_smul, (commute_single_one 1 f).eq]
+
+end Ring
+
+section CommRing
+
+variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 
 variable (R) in
 /-- The residue pairing `(x, y) ↦ Res Φ(x, D y) dt` of `V`-valued Laurent series attached to a
