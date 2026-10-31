@@ -8,8 +8,8 @@ module
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.GroupHomology
-public import TauCeti.RepresentationTheory.Homological.GroupCohomology.CoinvariantsTensor
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
+import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 
 /-!
 # The singular cohomology of the base of a contractible free cover is group cohomology
