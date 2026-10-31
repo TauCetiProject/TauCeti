@@ -135,6 +135,16 @@ theorem apply_morseCellMap (hk : k ≤ n) (hw : ‖w‖ ≤ 1) :
     ψ (morseCellMap ψ hk ε w) = √ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w :=
   ψ.right_inv (smul_piLpExtendByZero_mem_target hball hk hw)
 
+/-- In the chart, the coordinates of a point of the cell vanish beyond the first `k`. -/
+theorem apply_morseCellMap_apply_eq_zero (hk : k ≤ n) (hw : ‖w‖ ≤ 1) {j : Fin n}
+    (hj : k ≤ j.val) : ψ (morseCellMap ψ hk ε w) j = 0 := by
+  rw [apply_morseCellMap hball hk hw, smul_piLpExtendByZero_apply_of_le hk _ _ hj]
+
+/-- In the chart, the squared norm of the image of a point `w` of the unit disc is `ε ‖w‖²`. -/
+theorem norm_apply_morseCellMap_sq (hk : k ≤ n) (hε : 0 ≤ ε) (hw : ‖w‖ ≤ 1) :
+    ‖ψ (morseCellMap ψ hk ε w)‖ ^ 2 = ε * ‖w‖ ^ 2 := by
+  rw [apply_morseCellMap hball hk hw, norm_smul_piLpExtendByZero_sq hk hε]
+
 /-- The parametrization of the cell is continuous on the unit disc. -/
 theorem continuousOn_morseCellMap (hk : k ≤ n) : ContinuousOn (morseCellMap ψ hk ε)
     (closedBall 0 1) :=
@@ -167,10 +177,10 @@ theorem morseCellMap_image_closedBall (hk : k ≤ n) (hε : 0 < ε) :
   refine Set.ext fun x ↦ ⟨?_, fun ⟨hx, hxε, hxk⟩ ↦ ?_⟩
   · rintro ⟨w, hw, rfl⟩
     rw [mem_closedBall_zero_iff] at hw
-    refine ⟨morseCellMap_mem_source hball hk hw, ?_, fun j hj ↦ ?_⟩
-    · rw [apply_morseCellMap hball hk hw, norm_smul_piLpExtendByZero_sq hk hε.le]
-      exact mul_le_of_le_one_right hε.le (pow_le_one₀ (norm_nonneg _) hw)
-    · rw [apply_morseCellMap hball hk hw, smul_piLpExtendByZero_apply_of_le hk _ _ hj]
+    refine ⟨morseCellMap_mem_source hball hk hw, ?_, fun j hj ↦
+      apply_morseCellMap_apply_eq_zero hball hk hw hj⟩
+    rw [norm_apply_morseCellMap_sq hball hk hε.le hw]
+    exact mul_le_of_le_one_right hε.le (pow_le_one₀ (norm_nonneg _) hw)
   · obtain ⟨v, hv⟩ : ψ x ∈ range (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)) := by
       rw [range_piLpExtendByZero_castLEEmb]
       exact hxk
