@@ -26,9 +26,11 @@ realization in the ordinary coefficient-valued Bochner space; `toL1LI` is its li
 version. Multiplication in that Bochner space is not the pointwise product.
 
 The completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach
-⋆-algebra, Williams's `L¹(G, A)`. The instances of `TauCeti.Analysis.Normed.Ring.Completion` make
-it a complete nonunital normed ring and ⋆-ring with isometric star, into which the compactly
-supported functions embed densely.
+⋆-algebra, Williams's `L¹(G, A)`. The instances of `TauCeti.Analysis.Normed.Ring.Completion`,
+`TauCeti.Topology.Algebra.UniformRing` and `TauCeti.Analysis.CStarAlgebra.Completion` make it a
+complete nonunital normed ring and ⋆-ring with isometric star. The canonical map from the compactly
+supported functions has dense image; it is an embedding when every nonempty open set has positive
+measure, so that the L¹ seminorm is a norm.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
 -/

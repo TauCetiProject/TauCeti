@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.Normed.Module.Completion
 public import TauCeti.Topology.Algebra.UniformRing
 
@@ -15,19 +14,18 @@ public import TauCeti.Topology.Algebra.UniformRing
 The norm of the completion of a seminormed ring extends the norm of the ring by continuity, so
 identities and inequalities between continuous functions of the norm pass from the ring to its
 completion. This file records that submultiplicativity without a unit, multiplicativity,
-`‖x * y‖ = ‖x‖ * ‖y‖`, power-multiplicativity, `‖x ^ n‖ = ‖x‖ ^ n`, and isometry of a star
-operation are such properties. Completing a nonunital seminormed ring with an isometric star
-operation, such as an `L¹` convolution algebra on compactly supported functions, therefore gives
-a nonunital Banach ⋆-algebra. A power-multiplicative norm determines the power-bounded elements
-of a normed ring with a topologically nilpotent unit: they are exactly the elements of norm at
-most one.
+`‖x * y‖ = ‖x‖ * ‖y‖`, and power-multiplicativity, `‖x ^ n‖ = ‖x‖ ^ n`, are such properties.
+Completing a nonunital seminormed ring, such as an `L¹` convolution algebra on compactly supported
+functions, therefore gives a complete nonunital normed ring. Isometry of a star operation passes
+to the completion by `UniformSpace.Completion.instNormedStarGroup` in
+`TauCeti.Analysis.CStarAlgebra.Completion`. A power-multiplicative norm determines the
+power-bounded elements of a normed ring with a topologically nilpotent unit: they are exactly the
+elements of norm at most one.
 
 ## Main results
 
 * `UniformSpace.Completion.instNonUnitalNormedRing`: the completion of a nonunital seminormed
   ring is a nonunital normed ring.
-* `UniformSpace.Completion.instNormedStarGroup`: an isometric star operation stays isometric on
-  the completion.
 * `UniformSpace.Completion.instNormMulClass`: the norm of the completion of a seminormed ring
   with a multiplicative norm is multiplicative.
 * `UniformSpace.Completion.instNormOneClass`: the completion of a seminormed ring in which `1`
@@ -77,11 +75,3 @@ noncomputable instance UniformSpace.Completion.instNonUnitalNormedRing {R : Type
     induction x, y using Completion.induction_on₂ with
     | hp => exact isClosed_le (by fun_prop) (by fun_prop)
     | ih a b => simpa only [← Completion.coe_mul', Completion.norm_coe] using norm_mul_le a b
-
-/-- **An isometric star operation on a seminormed group stays isometric on its completion.** -/
-instance UniformSpace.Completion.instNormedStarGroup {E : Type*} [SeminormedAddCommGroup E]
-    [StarAddMonoid E] [NormedStarGroup E] : NormedStarGroup (Completion E) where
-  norm_star_le x := by
-    induction x using Completion.induction_on with
-    | hp => exact isClosed_le (by fun_prop) (by fun_prop)
-    | ih a => rw [← Completion.coe_star, Completion.norm_coe, Completion.norm_coe, norm_star]
