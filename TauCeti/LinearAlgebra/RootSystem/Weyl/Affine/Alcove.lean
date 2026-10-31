@@ -99,15 +99,6 @@ private lemma wallPerm_wall' (j₀ : ι) (c : ℤ) :
     Prod.mk.injEq, true_and]
   ring
 
-omit [CharZero R] in
-/-- The defining property of `wallPerm`: a root takes the value `αⱼ(s x) = α_{j'}(x) + (k - k')`
-at the image of `x` under the affine reflection, where `(j', k') = wallPerm P j₀ c (j, k)`. -/
-private lemma root'_affineCoreflection_intCast (j₀ j : ι) (c : ℤ) (x : N) :
-    P.root' j (P.affineCoreflection j₀ c x) =
-      P.root' (P.reflectionPerm j₀ j) x + ((P.pairingIn ℤ j j₀ * c : ℤ) : R) := by
-  rw [root'_affineCoreflection, ← P.algebraMap_pairingIn ℤ, algebraMap_int_eq, eq_intCast,
-    Int.cast_mul]
-
 end WallPerm
 
 /-! ### Positive affine roots and the hyperplanes separating a point from the alcove -/
