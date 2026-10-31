@@ -45,6 +45,12 @@ a Schwarz--Christoffel map in the reciprocal coordinate at infinity.
   base on a suitable sector.
 * `TauCeti.tendsto_ofReal_add_cpow_neg` -- for `x` in the slit plane and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
+* `TauCeti.exists_norm_ofReal_add_cpow_neg_le_rpow`,
+  `TauCeti.exists_norm_ofReal_add_cpow_neg_le_one_add_rpow` -- for real `s ≥ 0`, the factor
+  `(t + x) ^ (-s)` is `O(t ^ (-s))` for `x ∈ slitPlane ∪ {0}`, and `O((1 + t) ^ (-s))` for
+  `x ∈ slitPlane`.
+* `TauCeti.continuousOn_ofReal_add_cpow` -- for `x ∈ slitPlane ∪ {0}`, `(t + x) ^ s` is
+  continuous in the real variable `t > 0`.
 -/
 
 public section
@@ -122,6 +128,40 @@ theorem tendsto_ofReal_add_cpow_neg {x : ℂ} (hx : x ∈ slitPlane) {s : ℝ} (
   refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
   simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
   exact (tendsto_rpow_neg_atTop hs).comp hnorm
+
+/-- For `x ∈ slitPlane ∪ {0}` and real `s ≥ 0`, the factor `(t + x) ^ (-s)` is `O(t ^ (-s))` for
+real `t > 0`. -/
+theorem exists_norm_ofReal_add_cpow_neg_le_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {s : ℝ}
+    (hs : 0 ≤ s) :
+    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 < t → ‖((t : ℂ) + x) ^ (-(s : ℂ))‖ ≤ C * t ^ (-s) := by
+  rw [← Complex.ofReal_neg]
+  rcases hx with hx | hx
+  · obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
+    refine ⟨c ^ (-s), by positivity, fun t ht => ?_⟩
+    have h1 : c * t ≤ ‖(t : ℂ) + x‖ := by nlinarith [h t ht.le]
+    rw [Complex.norm_cpow_real, ← Real.mul_rpow hc.le ht.le]
+    exact Real.rpow_le_rpow_of_nonpos (by positivity) h1 (neg_nonpos.mpr hs)
+  · refine ⟨1, one_pos, fun t ht => ?_⟩
+    rw [Set.mem_singleton_iff.mp hx, add_zero, Complex.norm_cpow_real, Complex.norm_real,
+      Real.norm_of_nonneg ht.le, one_mul]
+
+/-- For `x ∈ slitPlane` and real `s ≥ 0`, the factor `(t + x) ^ (-s)` is `O((1 + t) ^ (-s))` for
+real `t ≥ 0`. -/
+theorem exists_norm_ofReal_add_cpow_neg_le_one_add_rpow {x : ℂ} (hx : x ∈ slitPlane) {s : ℝ}
+    (hs : 0 ≤ s) :
+    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + x) ^ (-(s : ℂ))‖ ≤ C * (1 + t) ^ (-s) := by
+  rw [← Complex.ofReal_neg]
+  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
+  refine ⟨c ^ (-s), by positivity, fun t ht => ?_⟩
+  rw [Complex.norm_cpow_real, ← Real.mul_rpow hc.le (by linarith)]
+  exact Real.rpow_le_rpow_of_nonpos (by positivity) (h t ht) (neg_nonpos.mpr hs)
+
+/-- For `x ∈ slitPlane ∪ {0}` and any complex exponent `s`, the principal power `(t + x) ^ s` is
+continuous in the real variable `t > 0`. -/
+theorem continuousOn_ofReal_add_cpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) (s : ℂ) :
+    ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ioi 0) := fun _ ht =>
+  ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
+    (ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
 where every base equals one. -/
