@@ -7,8 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Padics.Measure.PhiPsi
 public import TauCeti.RingTheory.PowerSeries.ResiduePsi
-import TauCeti.NumberTheory.Padics.Measure.Moments
-import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Reduction of series psi modulo `p`
