@@ -283,6 +283,12 @@ theorem zpow_eq_zpow {m m' : ℤ} {n n' : ℕ} (h : m * p ^ n' = m' * p ^ n) :
     ϖ.zpow m n = ϖ.zpow m' n' := by
   rw [← ϖ.zpow_mul_pow m n n', ← ϖ.zpow_mul_pow m' n' n, h, add_comm]
 
+/-- `(ϖ ^ (m / p ^ n)) ^ (p ^ n) = ϖ ^ m`. -/
+@[simp]
+theorem zpow_pow (m : ℤ) (n : ℕ) : ϖ.zpow m n ^ p ^ n = ϖ.zpow m 0 := by
+  rw [zpow_def, ← zpow_natCast, ← _root_.zpow_mul, ← zpow_def]
+  simpa using ϖ.zpow_mul_pow m 0 n
+
 /-- For `m ≥ 0`, `ϖ ^ (m / p ^ n)` lies in `R°`. -/
 theorem zpow_mem_powerBoundedSubring {m : ℤ} (hm : 0 ≤ m) (n : ℕ) :
     (ϖ.zpow m n : R) ∈ powerBoundedSubring R := by
