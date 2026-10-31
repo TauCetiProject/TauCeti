@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Units
-public import Mathlib.LinearAlgebra.Dimension.Finrank
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
-public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Basic
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # The image bundle of a continuous family of projections
@@ -27,13 +25,13 @@ projections used in topological K-theory: classically, over a compact Hausdorff 
 finite-rank vector bundle is isomorphic to one of them, a fact not proved here.
 
 The local trivialization at `x₀` uses the intertwining operator
-`U x = p x * p x₀ + (1 - p x) * (1 - p x₀)`, which satisfies `p x * U x = U x * p x₀` and
-equals `1` at `x₀`. Where `U x` is invertible, which is an open condition containing `x₀`, it
-carries the range of `p x₀` isomorphically onto the range of `p x`
-(`TauCeti.rangeTrivialization`). In particular the ranges of nearby projections are isomorphic
-(`TauCeti.eventually_nonempty_continuousLinearEquiv_range`), so the rank of a continuous family
-of projections is locally constant (`TauCeti.isLocallyConstant_finrank_range`). No compactness,
-separation or finite-dimensionality is assumed of the base or the fibres.
+`U x = p x * p x₀ + (1 - p x) * (1 - p x₀)`, which equals `1` at `x₀`. Where `U x` is
+invertible, which is an open condition containing `x₀`, it carries the range of `p x₀`
+isomorphically onto the range of `p x` (`ContinuousLinearMap.IsIdempotentElem.rangeEquiv`), and
+this gives the trivialization (`TauCeti.rangeTrivialization`). The resulting local constancy of
+the rank of a continuous family of projections is `TauCeti.isLocallyConstant_finrank_range`, in
+`TauCeti/Analysis/Normed/Operator/IdempotentRange.lean`. No compactness, separation or
+finite-dimensionality is assumed of the base or the fibres.
 
 ## Main definitions
 
@@ -50,8 +48,6 @@ separation or finite-dimensionality is assumed of the base or the fibres.
 
 * `TauCeti.rangeVectorBundle`: the ranges of a continuous family of projections form a
   topological vector bundle.
-* `TauCeti.isLocallyConstant_finrank_range`: the rank of a continuous family of projections is
-  locally constant.
 
 ## References
 
@@ -68,8 +64,10 @@ separation or finite-dimensionality is assumed of the base or the fibres.
 
 public section
 
-open Bundle Set Topology Filter
+open Bundle Set Topology
 open scoped Ring
+open ContinuousLinearMap.IsIdempotentElem (apply_coe_range coe_rangeEquiv_apply
+  coe_rangeEquiv_symm_apply)
 
 namespace TauCeti
 
@@ -104,83 +102,14 @@ section Trivialization
 
 variable {p : B → F →L[𝕜] F}
 
-/-- The operator `p x * p x₀ + (1 - p x) * (1 - p x₀)`, which intertwines `p x₀` with `p x`. -/
-private def intertwiner (p : B → F →L[𝕜] F) (x₀ x : B) : F →L[𝕜] F :=
-  p x * p x₀ + (1 - p x) * (1 - p x₀)
-
 private theorem continuous_intertwiner (hp : Continuous p) (x₀ : B) :
-    Continuous (intertwiner p x₀) :=
+    Continuous fun x ↦ p x * p x₀ + (1 - p x) * (1 - p x₀) :=
   (hp.mul continuous_const).add ((continuous_const.sub hp).mul continuous_const)
 
 omit [TopologicalSpace B] in
-private theorem intertwiner_self (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B) :
-    intertwiner p x₀ x₀ = 1 := by
-  rw [intertwiner, (hidem x₀).eq, (hidem x₀).one_sub.eq, add_sub_cancel]
-
-omit [TopologicalSpace B] in
-private theorem mul_intertwiner (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ x : B) :
-    p x * intertwiner p x₀ x = intertwiner p x₀ x * p x₀ := by
-  have h := (hidem x).eq
-  have h₀ := (hidem x₀).eq
-  simp only [intertwiner, mul_add, add_mul, mul_sub, sub_mul, mul_one, one_mul, ← mul_assoc, h]
-  simp only [mul_assoc, h₀]
-  abel
-
-omit [TopologicalSpace B] in
-/-- Where the intertwiner is invertible, its inverse intertwines `p x` with `p x₀`. -/
-private theorem inverse_intertwiner_mul (hidem : ∀ x, IsIdempotentElem (p x)) {x₀ x : B}
-    (hx : IsUnit (intertwiner p x₀ x)) :
-    (intertwiner p x₀ x)⁻¹ʳ * p x = p x₀ * (intertwiner p x₀ x)⁻¹ʳ := by
-  rw [← mul_one ((intertwiner p x₀ x)⁻¹ʳ * p x), ← Ring.mul_inverse_cancel _ hx, ← mul_assoc,
-    mul_assoc _ (p x), mul_intertwiner hidem, ← mul_assoc, Ring.inverse_mul_cancel _ hx, one_mul]
-
-omit [TopologicalSpace B] in
-private theorem apply_intertwiner (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ x : B) (v : F) :
-    p x (intertwiner p x₀ x v) = intertwiner p x₀ x (p x₀ v) :=
-  congr($(mul_intertwiner hidem x₀ x) v)
-
-omit [TopologicalSpace B] in
-private theorem inverse_intertwiner_apply (hidem : ∀ x, IsIdempotentElem (p x)) {x₀ x : B}
-    (hx : IsUnit (intertwiner p x₀ x)) (v : F) :
-    (intertwiner p x₀ x)⁻¹ʳ (p x v) = p x₀ ((intertwiner p x₀ x)⁻¹ʳ v) :=
-  congr($(inverse_intertwiner_mul hidem hx) v)
-
-omit [TopologicalSpace B] in
-private theorem intertwiner_inverse_apply {x₀ x : B} (hx : IsUnit (intertwiner p x₀ x)) (v : F) :
-    intertwiner p x₀ x ((intertwiner p x₀ x)⁻¹ʳ v) = v :=
-  congr($(Ring.mul_inverse_cancel _ hx) v)
-
-omit [TopologicalSpace B] in
-private theorem inverse_intertwiner_apply_intertwiner {x₀ x : B}
-    (hx : IsUnit (intertwiner p x₀ x)) (v : F) :
-    (intertwiner p x₀ x)⁻¹ʳ (intertwiner p x₀ x v) = v :=
-  congr($(Ring.inverse_mul_cancel _ hx) v)
-
-omit [TopologicalSpace B] in
-private theorem apply_coe_range (hidem : ∀ x, IsIdempotentElem (p x)) {x : B}
-    (w : (p x).range) : p x w = w :=
-  LinearMap.IsIdempotentElem.mem_range_iff
-    (ContinuousLinearMap.IsIdempotentElem.toLinearMap (hidem x)) |>.mp w.2
-
-omit [TopologicalSpace B] in
-/-- The intertwiner maps the range of `p x₀` back to itself after its inverse and `p x`. -/
-private theorem apply_inverse_apply_intertwiner (hidem : ∀ x, IsIdempotentElem (p x)) {x₀ x : B}
-    (hx : IsUnit (intertwiner p x₀ x)) (w : (p x₀).range) :
-    p x₀ ((intertwiner p x₀ x)⁻¹ʳ (p x (intertwiner p x₀ x w))) = w := by
-  rw [apply_intertwiner hidem, apply_coe_range hidem, inverse_intertwiner_apply_intertwiner hx,
-    apply_coe_range hidem]
-
-omit [TopologicalSpace B] in
-private theorem apply_intertwiner_apply_inverse (hidem : ∀ x, IsIdempotentElem (p x)) {x₀ x : B}
-    (hx : IsUnit (intertwiner p x₀ x)) (w : (p x).range) :
-    p x (intertwiner p x₀ x (p x₀ ((intertwiner p x₀ x)⁻¹ʳ w))) = w := by
-  rw [← inverse_intertwiner_apply hidem hx, apply_coe_range hidem, intertwiner_inverse_apply hx,
-    apply_coe_range hidem]
-
-omit [TopologicalSpace B] in
 private theorem isUnit_intertwiner_self (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B) :
-    IsUnit (intertwiner p x₀ x₀) := by
-  rw [intertwiner_self hidem]
+    IsUnit (p x₀ * p x₀ + (1 - p x₀) * (1 - p x₀)) := by
+  rw [(hidem x₀).eq, (hidem x₀).one_sub.eq, add_sub_cancel]
   exact isUnit_one
 
 variable [CompleteSpace F]
@@ -188,11 +117,12 @@ variable [CompleteSpace F]
 /-- The base set of the trivialization at `x₀`: the points at which the intertwiner is
 invertible. -/
 private theorem isOpen_setOf_isUnit_intertwiner (hp : Continuous p) (x₀ : B) :
-    IsOpen {x | IsUnit (intertwiner p x₀ x)} :=
+    IsOpen {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} :=
   Units.isOpen.preimage (continuous_intertwiner hp x₀)
 
 private theorem continuousOn_inverse_intertwiner (hp : Continuous p) (x₀ : B) :
-    ContinuousOn (fun x ↦ (intertwiner p x₀ x)⁻¹ʳ) {x | IsUnit (intertwiner p x₀ x)} :=
+    ContinuousOn (fun x ↦ (p x * p x₀ + (1 - p x) * (1 - p x₀))⁻¹ʳ)
+      {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} :=
   fun _ hx ↦ ((NormedRing.inverse_continuousAt hx.unit).comp_of_eq
     (continuous_intertwiner hp x₀).continuousAt hx.unit_spec.symm).continuousWithinAt
 
@@ -206,23 +136,27 @@ isomorphism `φ` of the model fibre with the range of `p x₀`. -/
 noncomputable def rangeTrivialization :
     Trivialization F' (π F' fun x ↦ (p x).range) where
   toFun v := (v.proj, φ.symm ((p x₀).rangeRestrict
-    ((intertwiner p x₀ v.proj)⁻¹ʳ v.2)))
+    ((p v.proj * p x₀ + (1 - p v.proj) * (1 - p x₀))⁻¹ʳ v.2)))
   invFun q := TotalSpace.mk' F' (E := fun x ↦ (p x).range) q.1
-    ((p q.1).rangeRestrict (intertwiner p x₀ q.1 (φ q.2)))
-  source := π F' (fun x ↦ (p x).range) ⁻¹' {x | IsUnit (intertwiner p x₀ x)}
-  target := {x | IsUnit (intertwiner p x₀ x)} ×ˢ univ
+    ((p q.1).rangeRestrict ((p q.1 * p x₀ + (1 - p q.1) * (1 - p x₀)) (φ q.2)))
+  source := π F' (fun x ↦ (p x).range) ⁻¹' {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))}
+  target := {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} ×ˢ univ
   map_source' _ hv := ⟨hv, mem_univ _⟩
   map_target' _ hq := hq.1
   left_inv' := by
-    rintro ⟨x, w⟩ (hx : IsUnit (intertwiner p x₀ x))
+    rintro ⟨x, w⟩ (hx : IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)))
     refine congrArg (TotalSpace.mk x) (Subtype.ext ?_)
     simp only [ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearMap.coe_codRestrict_apply]
-    exact apply_intertwiner_apply_inverse hidem hx w
+    rw [← coe_rangeEquiv_symm_apply (hidem x₀) (hidem x) hx, apply_coe_range (hidem x₀),
+      ← coe_rangeEquiv_apply (hidem x₀) (hidem x) hx, apply_coe_range (hidem x),
+      ContinuousLinearEquiv.apply_symm_apply]
   right_inv' := by
-    rintro ⟨x, v⟩ ⟨hx, -⟩
+    rintro ⟨x, v⟩ ⟨hx : IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)), -⟩
     simp only [TotalSpace.mk', ContinuousLinearMap.coe_codRestrict_apply]
     refine Prod.ext rfl ((φ.symm_apply_eq).mpr (Subtype.ext ?_))
-    exact apply_inverse_apply_intertwiner hidem hx (φ v)
+    rw [← coe_rangeEquiv_apply (hidem x₀) (hidem x) hx, apply_coe_range (hidem x),
+      ← coe_rangeEquiv_symm_apply (hidem x₀) (hidem x) hx, ContinuousLinearEquiv.symm_apply_apply]
+    exact apply_coe_range (hidem x₀) (φ v)
   open_source := (isOpen_setOf_isUnit_intertwiner hp x₀).preimage
     (continuous_proj_totalSpace_range F' p)
   open_target := (isOpen_setOf_isUnit_intertwiner hp x₀).prod isOpen_univ
@@ -237,7 +171,7 @@ noncomputable def rangeTrivialization :
     exact continuous_fst.prodMk ((hp.comp continuous_fst).clm_apply
       ((continuous_intertwiner hp x₀ |>.comp continuous_fst).clm_apply
         (continuous_subtype_val.comp (φ.continuous.comp continuous_snd))))
-  baseSet := {x | IsUnit (intertwiner p x₀ x)}
+  baseSet := {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))}
   open_baseSet := isOpen_setOf_isUnit_intertwiner hp x₀
   source_eq := rfl
   target_eq := rfl
@@ -277,21 +211,21 @@ theorem rangeTrivialization_symm_apply (x : B) (v : F') :
 theorem rangeTrivialization_apply_self (w : (p x₀).range) :
     rangeTrivialization hp hidem x₀ φ ⟨x₀, w⟩ = (x₀, φ.symm w) := by
   refine Prod.ext rfl (congrArg φ.symm (Subtype.ext ?_))
-  rw [ContinuousLinearMap.coe_codRestrict_apply, intertwiner_self hidem, Ring.inverse_one,
-    one_apply_eq_self, apply_coe_range hidem]
+  rw [ContinuousLinearMap.coe_codRestrict_apply, (hidem x₀).eq, (hidem x₀).one_sub.eq,
+    add_sub_cancel, Ring.inverse_one, one_apply_eq_self, apply_coe_range (hidem x₀)]
 
 /-- At the base point `x₀`, the inverse of the trivialization is `φ`. -/
 @[simp]
 theorem rangeTrivialization_symm_apply_self (v : F') :
     (rangeTrivialization hp hidem x₀ φ).toOpenPartialHomeomorph.symm (x₀, v) = ⟨x₀, φ v⟩ := by
   refine congrArg (TotalSpace.mk x₀) (Subtype.ext ?_)
-  rw [ContinuousLinearMap.coe_codRestrict_apply, intertwiner_self hidem, one_apply_eq_self,
-    apply_coe_range hidem]
+  rw [ContinuousLinearMap.coe_codRestrict_apply, (hidem x₀).eq, (hidem x₀).one_sub.eq,
+    add_sub_cancel, one_apply_eq_self, apply_coe_range (hidem x₀)]
 
 /-- The trivialization at `x₀` is linear on every fibre. -/
 instance isLinear_rangeTrivialization : (rangeTrivialization hp hidem x₀ φ).IsLinear 𝕜 where
   linear x _ := (φ.symm.toLinearMap ∘ₗ ((p x₀).rangeRestrict).toLinearMap ∘ₗ
-    ((intertwiner p x₀ x)⁻¹ʳ).toLinearMap ∘ₗ ((p x).range).subtype).isLinear
+    ((p x * p x₀ + (1 - p x) * (1 - p x₀))⁻¹ʳ).toLinearMap ∘ₗ ((p x).range).subtype).isLinear
 
 /-- The coordinate changes between two trivializations given by intertwiners are continuous on
 the intersection of their base sets. -/
@@ -303,8 +237,8 @@ theorem continuousOn_coordChangeL_rangeTrivialization (x₁ : B)
         (rangeTrivialization hp hidem x₁ φ₁).baseSet) := by
   -- On the overlap the coordinate change is an explicit composite of continuous operator families.
   have hc : ContinuousOn (fun x ↦ (φ₁.symm : (p x₁).range →L[𝕜] F') ∘L
-      (p x₁).rangeRestrict ∘L (intertwiner p x₁ x)⁻¹ʳ ∘L
-      p x ∘L intertwiner p x₀ x ∘L ((p x₀).range).subtypeL ∘L
+      (p x₁).rangeRestrict ∘L (p x * p x₁ + (1 - p x) * (1 - p x₁))⁻¹ʳ ∘L
+      p x ∘L (p x * p x₀ + (1 - p x) * (1 - p x₀)) ∘L ((p x₀).range).subtypeL ∘L
       (φ : F' →L[𝕜] (p x₀).range))
       ((rangeTrivialization hp hidem x₀ φ).baseSet ∩
         (rangeTrivialization hp hidem x₁ φ₁).baseSet) :=
@@ -382,14 +316,14 @@ def rangeProdRangeOneSubHomeomorph (F' F'' : Type*) (hp : Continuous p)
   invFun q := ⟨q.1, ((p q.1).rangeRestrict q.2, (1 - p q.1).rangeRestrict q.2)⟩
   left_inv := by
     rintro ⟨x, w₁, w₂⟩
-    have h₂ : (1 - p x) w₂ = w₂ := apply_coe_range (fun x ↦ (hidem x).one_sub) w₂
+    have h₂ : (1 - p x) w₂ = w₂ := apply_coe_range (hidem x).one_sub w₂
     have h₂' := congr($((hidem x).mul_one_sub_self) (w₂ : F))
     rw [mul_apply_eq_comp, h₂, zero_apply] at h₂'
     refine congrArg (TotalSpace.mk x) (Prod.ext (Subtype.ext ?_) (Subtype.ext ?_))
     · simp only [map_add, Submodule.coe_add, ContinuousLinearMap.coe_codRestrict_apply,
-        apply_coe_range hidem w₁, h₂', add_zero]
+        apply_coe_range (hidem x) w₁, h₂', add_zero]
     · simp only [map_add, Submodule.coe_add, ContinuousLinearMap.coe_codRestrict_apply,
-        sub_apply, one_apply_eq_self, apply_coe_range hidem w₁, h₂']
+        sub_apply, one_apply_eq_self, apply_coe_range (hidem x) w₁, h₂']
       abel
   right_inv := by
     rintro ⟨x, v⟩
@@ -429,30 +363,5 @@ theorem rangeProdRangeOneSubHomeomorph_symm_apply (q : B × F) :
   (rfl)
 
 end Complement
-
-section Rank
-
-variable [CompleteSpace F] {p : B → F →L[𝕜] F}
-
-/-- The ranges of nearby projections in a continuous family are isomorphic. -/
-theorem eventually_nonempty_continuousLinearEquiv_range (hp : Continuous p)
-    (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B) :
-    ∀ᶠ x in 𝓝 x₀, Nonempty ((p x₀).range ≃L[𝕜] (p x).range) := by
-  filter_upwards [(isOpen_setOf_isUnit_intertwiner hp x₀).mem_nhds
-    (isUnit_intertwiner_self hidem x₀)] with x hx
-  exact ⟨.equivOfInverse ((p x).rangeRestrict ∘L intertwiner p x₀ x ∘L (p x₀).range.subtypeL)
-    ((p x₀).rangeRestrict ∘L (intertwiner p x₀ x)⁻¹ʳ ∘L (p x).range.subtypeL)
-    (fun w ↦ Subtype.ext (apply_inverse_apply_intertwiner hidem hx w))
-    (fun w ↦ Subtype.ext (apply_intertwiner_apply_inverse hidem hx w))⟩
-
-/-- **The rank of a continuous family of projections is locally constant.** -/
-theorem isLocallyConstant_finrank_range (hp : Continuous p)
-    (hidem : ∀ x, IsIdempotentElem (p x)) :
-    IsLocallyConstant fun x ↦ Module.finrank 𝕜 ((p x).range) :=
-  (IsLocallyConstant.iff_eventually_eq _).mpr fun x₀ ↦
-    (eventually_nonempty_continuousLinearEquiv_range hp hidem x₀).mono fun _ ⟨e⟩ ↦
-      e.toLinearEquiv.finrank_eq.symm
-
-end Rank
 
 end TauCeti
