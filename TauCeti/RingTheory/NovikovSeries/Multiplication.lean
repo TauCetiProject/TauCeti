@@ -53,7 +53,9 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
   multiply by adding exponents.
 * `TauCeti.NovikovSeries.unitsSingle`, `TauCeti.NovikovSeries.isUnit_single`: over an additive
   group, a monomial `u e^g` with unit coefficient is a unit, with inverse `u⁻¹ e^(-g)`.
-* `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series.
+* `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series,
+  and `TauCeti.NovikovSeries.mem_range_ofAddMonoidAlgebra_iff` identifies its image as the series
+  of finite support.
   Over an additive group `H` and for nontrivial `R`, by
   `TauCeti.NovikovSeries.ofFinsupp_surjective_iff` this embedding is onto exactly when `N = 0`.
 
@@ -545,6 +547,13 @@ theorem ofAddMonoidAlgebra_single (h : H) (r : R) :
 theorem ofAddMonoidAlgebra_injective :
     Injective (ofAddMonoidAlgebra : AddMonoidAlgebra R H → NovikovSeries R H N) :=
   fun _ _ hxy => AddMonoidAlgebra.coeff_injective (ofFinsupp_injective hxy)
+
+/-- A Novikov series comes from the group ring exactly when its support is finite. -/
+theorem mem_range_ofAddMonoidAlgebra_iff {a : NovikovSeries R H N} :
+    a ∈ Set.range (ofAddMonoidAlgebra : AddMonoidAlgebra R H → NovikovSeries R H N) ↔
+      a.support.Finite := by
+  rw [← mem_range_ofFinsupp_iff]
+  exact ⟨fun ⟨x, hx⟩ => ⟨x.coeff, hx⟩, fun ⟨f, hf⟩ => ⟨.ofCoeff f, hf⟩⟩
 
 end AddMonoidAlgebra
 
