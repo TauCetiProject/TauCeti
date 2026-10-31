@@ -470,8 +470,6 @@ theorem isFiniteEtaleSplit {A R : Type*} [CommRing A] [CommRing R]
   obtain ⟨σ⟩ := TauCeti.IsFiniteEtaleSplit.nonempty_algHom (R := A) A T
   exact ⟨{ e.toRingHom.comp σ.toRingHom with
     commutes' r := by
-      change e (σ (algebraMap R T r)) = r
-      nth_rw 1 [← e.apply_symm_apply r]
-      exact (congr_arg e (σ.commutes (e.symm r))).trans (e.apply_symm_apply r) }⟩
+      simpa [RingHom.algebraMap_toAlgebra] using congr_arg e (σ.commutes (e.symm r)) }⟩
 
 end RingEquiv
