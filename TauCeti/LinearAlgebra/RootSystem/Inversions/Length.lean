@@ -42,8 +42,8 @@ length-function axioms in their inversion-count spelling.
 * `TauCeti.ncard_inversions_wordProd_modEq_length` and
   `TauCeti.length_modEq_length_of_wordProd_eq`: every word spelling a given element has the same
   length parity, namely that of the inversion count.
-* `TauCeti.finite_weylGroup_of_base`: the Weyl group of a base with finitely many roots is finite,
-  whether or not the roots span.
+* `RootPairing.finite_weylGroup_of_base`: the Weyl group of a base with finitely many roots is
+  finite, whether or not the roots span.
 * `TauCeti.ncard_inversions_inv` and `TauCeti.ncard_inversions_mul_le`: the inversion count is
   invariant under inversion and subadditive.
 * `TauCeti.ncard_inversions_mul_ofIdx_lt_of_mem`,
@@ -160,7 +160,7 @@ include b in
 /-- **The Weyl group of a base with finitely many roots is finite.** Each element is spelled by a
 word in the finitely many simple reflections with as many letters as it has inversions, and there
 are at most as many inversions as positive roots. The roots need not span. -/
-theorem finite_weylGroup_of_base : Finite P.weylGroup := by
+theorem _root_.RootPairing.finite_weylGroup_of_base : Finite P.weylGroup := by
   refine Set.finite_univ_iff.mp
     (((List.finite_length_le b.support (posRoots P b).ncard).image (wordProd P b)).subset ?_)
   rintro w -
