@@ -10,35 +10,34 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.LyingOver
 public import TauCeti.RingTheory.Huber.ModuleTopology.Pair
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.Topology.Algebra.Algebra
+import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 import TauCeti.RingTheory.Valuation.Integral.Basic
 
 /-!
 # The adic spectrum of a finite algebra over a Tate ring
 
-Let `A` be a Tate ring, `A⁺ ⊆ A` an open subring, and `B` a finite `A`-algebra with its natural
+Let `A` be a Tate ring, `A⁺ ⊆ A` a subring, and `B` a finite `A`-algebra with its natural
 topology (`IsModuleTopology A B`). Write `B⁺` for the integral closure of the image of `A⁺` in
-`B`, the plus ring of `TauCeti.Huber.Pair.finiteAlgebra`. This file shows that a point `w` of
-`Spv B` lies in `Spa(B, B⁺)` exactly when its pullback lies in `Spa(A, A⁺)`; in other words
-`Spa(B, B⁺)` is the full preimage of `Spa(A, A⁺)` in `Spv B`. Combined with the lifting of points
-of valuation spectra along primes lying over their supports
+`B`, the plus ring of `TauCeti.Huber.Pair.finiteAlgebra` when `A⁺` is open. This file shows that a
+point `w` of `Spv B` lies in `Spa(B, B⁺)` exactly when its pullback lies in `Spa(A, A⁺)`; in other
+words `Spa(B, B⁺)` is the full preimage of `Spa(A, A⁺)` in `Spv B`. Combined with the lifting of
+points of valuation spectra along primes lying over their supports
 (`TauCeti.ValuationSpectrum.exists_supp_eq_comap_eq`), it follows that
 `Spa(B, B⁺) → Spa(A, A⁺)` hits every point whose support is the contraction of a prime of `B`. In
 particular it is surjective when `B` is faithfully flat over `A`, which is the surjectivity clause
 of the Huber pair of a finite étale algebra.
 
-The content is the continuity of `w`. Fix a pseudouniformiser `ϖ` of `A`. The ring `B⁺` is open
-(`TauCeti.Huber.isOpen_integralClosure_map_algebraMap`) and `w ≤ 1` on it, so the translates of
-`ϖᴺ B⁺` are neighbourhoods on which `w` is at most `w(ϖ)ᴺ`. It remains to see that the powers of
-`w(ϖ)` are cofinal at every `c ∈ B` with `w(c) ≠ 0`. Since `B` is integral over `A`, the prime
-`supp w` is strictly smaller than `supp w + cB` after contraction to `A`
-(`Ideal.under_lt_under_of_integral_mem_sdiff`), so some `a ∈ A` with `w(a) ≠ 0` has the form
-`a = y + c b'` with `w(y) = 0`. Then `w(a) = w(c) w(b')`, a power of `ϖ` pushes `b'` into `B⁺`,
-and continuity of the pullback of `w` makes `w(ϖ)ⁿ < w(a)` for large `n`.
+The content is the continuity of `w` given that of its pullback. Fix a pseudouniformiser `ϖ` of
+`A`. The integers of the pullback of `w` form an open subring of `A`, so the integral closure `C`
+of their image is open in `B` (`TauCeti.Huber.isOpen_integralClosure_map_algebraMap`) and `w ≤ 1`
+on it. Hence the translates of `ϖᴺ C` are neighbourhoods on which `w` is at most `w(ϖ)ᴺ`. It
+remains to see that the powers of `w(ϖ)` are cofinal at every `c ∈ B` with `w(c) ≠ 0`, which
+holds because `B` is integral over `A` (`Valuation.exists_pow_lt_of_isIntegral`).
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.isContinuous_of_comap_mem_spa`: a valuation on `B` whose pullback lies
-  in `Spa(A, A⁺)` is continuous.
+* `TauCeti.ValuationSpectrum.isContinuous_of_isContinuous_comap`: a valuation on `B` whose pullback
+  to `A` is continuous is continuous.
 * `TauCeti.ValuationSpectrum.mem_spa_integralClosure_iff`: `w ∈ Spa(B, B⁺)` iff its pullback lies
   in `Spa(A, A⁺)`.
 * `TauCeti.ValuationSpectrum.exists_mem_spa_supp_eq_comap_eq`: a point of `Spa(A, A⁺)` lifts to
@@ -63,57 +62,15 @@ namespace TauCeti
 
 namespace ValuationSpectrum
 
-section Cofinal
-
-variable {A B : Type*} [CommRing A] [TopologicalSpace A] [CommRing B] [Algebra A B]
-  [Algebra.IsIntegral A B] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
-
-/-- The cofinality step behind `isContinuous_of_comap_mem_spa`. Let `B` be integral over `A`, `V`
-a valuation on `B` whose pullback to `A` is continuous, and `ϖ ∈ A` topologically nilpotent with
-`V(ϖ) ≠ 0`, such that every value of `V` is pushed to at most `1` by a power of `V(ϖ)`. Then the
-powers of `V(ϖ)` fall below every nonzero value of `V`. -/
-private theorem exists_pow_lt_of_isIntegral (V : Valuation B Γ₀)
-    (hu : (V.comap (algebraMap A B)).IsContinuous) {ϖ : A} (hϖ : IsTopologicallyNilpotent ϖ)
-    (hϖ0 : V (algebraMap A B ϖ) ≠ 0) (habs : ∀ b, ∃ m : ℕ, V (algebraMap A B ϖ) ^ m * V b ≤ 1)
-    {c : B} (hc : V c ≠ 0) : ∃ N : ℕ, V (algebraMap A B ϖ) ^ N < V c := by
-  set ι := algebraMap A B
-  -- contracting `supp V ⊊ supp V + cB` to `A` stays strict, as `B` is integral over `A`
-  obtain ⟨a, ha, haq⟩ := IsConcreteLE.exists_of_lt <| Ideal.under_lt_under_of_integral_mem_sdiff
-    (R := A) (le_sup_left : V.supp ≤ V.supp ⊔ Ideal.span {c})
-    ⟨Ideal.mem_sup_right (Ideal.mem_span_singleton_self c), mt (V.mem_supp_iff c).mp hc⟩
-    (Algebra.IsIntegral.isIntegral c)
-  -- so `ι a = y + b' c` with `V y = 0` and `V (ι a) ≠ 0`
-  obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.mp (Ideal.mem_comap.mp ha)
-  obtain ⟨b', rfl⟩ := Ideal.mem_span_singleton'.mp hz
-  have hVa : V (ι a) = V b' * V c := by
-    rw [← hyz, add_comm, Valuation.map_add_supp _ _ hy, map_mul]
-  have hVa0 : V (ι a) ≠ 0 := by rwa [Ideal.mem_comap, Valuation.mem_supp_iff] at haq
-  obtain ⟨m, hm⟩ := habs b'
-  -- continuity of the pullback makes `V (ι ϖ) ^ n < V (ι a)` for large `n`
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, V (ι ϖ) ^ n < V (ι a) := by
-    have h0 : (0 : A) ∈ {x | V.comap ι x < V.comap ι a} := by
-      simpa using zero_lt_iff.mpr hVa0
-    obtain ⟨n, hn⟩ :=
-      (hϖ.eventually ((Valuation.isContinuous_def.mp hu a).mem_nhds h0)).exists
-    exact ⟨n, by simpa using hn⟩
-  refine ⟨n + m, ?_⟩
-  calc V (ι ϖ) ^ (n + m) = V (ι ϖ) ^ n * V (ι ϖ) ^ m := pow_add _ _ _
-    _ < V (ι a) * V (ι ϖ) ^ m := mul_lt_mul_of_pos_right hn (pow_pos (zero_lt_iff.mpr hϖ0) m)
-    _ = V c * (V (ι ϖ) ^ m * V b') := by rw [hVa, mul_comm (V b'), mul_assoc, mul_comm (V b')]
-    _ ≤ V c * 1 := by gcongr
-    _ = V c := mul_one _
-
-end Cofinal
-
 variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
   [CommRing B] [TopologicalSpace B] [Algebra A B] [Module.Finite A B] [IsModuleTopology A B]
   {Aplus : Subring A}
 
 /-- **Continuity of a valuation on a finite algebra over a Tate ring.** If `B` is a finite
-`A`-algebra with its natural topology and the pullback of `w ∈ Spv B` lies in `Spa(A, A⁺)` for an
-open subring `A⁺`, then `w` is continuous. -/
-theorem isContinuous_of_comap_mem_spa (hAplus : IsOpen (Aplus : Set A)) {w : Spv B}
-    (hw : comap (algebraMap A B) w ∈ spa Aplus) : w.IsContinuous := by
+`A`-algebra with its natural topology and the pullback of `w ∈ Spv B` to `A` is continuous, then
+`w` is continuous. -/
+theorem isContinuous_of_isContinuous_comap {w : Spv B}
+    (hw : (comap (algebraMap A B) w).IsContinuous) : w.IsContinuous := by
   have : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
   set V := w.valuation
   set ι := algebraMap A B
@@ -122,18 +79,20 @@ theorem isContinuous_of_comap_mem_spa (hAplus : IsOpen (Aplus : Set A)) {w : Spv
   have hϖ0 : V (ι ϖ) ≠ 0 := (hιϖ.isUnit.map V).ne_zero
   -- the pullback of `V` to `A` is continuous
   have hu : (V.comap ι).IsContinuous := by
-    have h := ((mem_spa_iff _ _).mp hw).1
-    rw [isContinuous_def] at h
-    refine (Valuation.IsEquiv.isContinuous_iff fun x y ↦ ?_).mp h
+    rw [isContinuous_def] at hw
+    refine (Valuation.IsEquiv.isContinuous_iff fun x y ↦ ?_).mp hw
     rw [valuation_le_iff, comap_vle, ← valuation_le_iff, Valuation.comap_apply,
       Valuation.comap_apply]
+  -- the integers `A⁺` of the pullback form an open subring of `A`
+  set Aplus := (V.comap ι).integer
+  have hAplus : IsOpen (Aplus : Set A) := by
+    simpa [Aplus, Valuation.integer] using hu.isOpen_le (b := 1) (by simp)
   -- `V ≤ 1` on the open ring `B⁺`, the integral closure of the image of `A⁺`
   set Bplus := (integralClosure (Aplus.map ι) B).toSubring
   have hle : ∀ b ∈ Bplus, V b ≤ 1 := fun b hb ↦ by
     refine (Subring.integralClosure_subring_le_iff (T := V.integer)).mpr ?_ hb
     rintro _ ⟨a, ha, rfl⟩
-    have h := ((mem_spa_iff _ _).mp hw).2 a ha
-    rwa [comap_vle, map_one, ← valuation_le_iff, map_one] at h
+    exact ha
   have hBplus : IsOpen (Bplus : Set B) := isOpen_integralClosure_map_algebraMap hAplus
   -- a power of `ι ϖ` pushes every element into `B⁺`
   have habs (b : B) : ∃ m : ℕ, V (ι ϖ) ^ m * V b ≤ 1 := by
@@ -143,7 +102,8 @@ theorem isContinuous_of_comap_mem_spa (hAplus : IsOpen (Aplus : Set A)) {w : Spv
   -- each `{b | V b < V c}` contains a translate of the open set `ϖᴺ B⁺` around each of its points
   rw [isContinuous_def, Valuation.isContinuous_iff_forall_ne_zero]
   intro c hc
-  obtain ⟨N, hN⟩ := exists_pow_lt_of_isIntegral V hu hϖ.isTopologicallyNilpotent hϖ0 habs hc
+  obtain ⟨N, hN⟩ :=
+    Valuation.exists_pow_lt_of_isIntegral hu hϖ.isTopologicallyNilpotent hϖ0 habs hc
   obtain ⟨u, hιu⟩ := hιϖ.isUnit
   refine isOpen_iff_mem_nhds.mpr fun b₀ hb₀ ↦ ?_
   have hmem : {x : B | ((u⁻¹ : Bˣ) : B) ^ N * (x - b₀) ∈ Bplus} ∈ 𝓝 b₀ :=
@@ -159,28 +119,28 @@ theorem isContinuous_of_comap_mem_spa (hAplus : IsOpen (Aplus : Set A)) {w : Spv
   exact V.map_add_lt hb₀ (hx'.trans_lt hN)
 
 /-- **The adic spectrum of a finite algebra is the preimage of the base.** For a finite
-`A`-algebra `B` with its natural topology over a Tate ring and an open subring `A⁺`, a point
+`A`-algebra `B` with its natural topology over a Tate ring and a subring `A⁺`, a point
 `w ∈ Spv B` lies in `Spa(B, B⁺)`, with `B⁺` the integral closure of the image of `A⁺`, exactly when
 its pullback lies in `Spa(A, A⁺)`. -/
-theorem mem_spa_integralClosure_iff (hAplus : IsOpen (Aplus : Set A)) {w : Spv B} :
+theorem mem_spa_integralClosure_iff {w : Spv B} :
     w ∈ spa (integralClosure (Aplus.map (algebraMap A B)) B).toSubring ↔
       comap (algebraMap A B) w ∈ spa Aplus := by
   rw [spa_integralClosure]
   refine ⟨comap_mem_spa (continuous_algebraMap A B) fun a ha ↦ Subring.mem_map.mpr ⟨a, ha, rfl⟩,
     fun hw ↦ ?_⟩
   exact (mem_spa_map_iff (continuous_algebraMap A B) Aplus
-    (isContinuous_of_comap_mem_spa hAplus hw)).mpr hw
+    (isContinuous_of_isContinuous_comap ((mem_spa_iff _ _).mp hw).1)).mpr hw
 
-/-- **Lifting points of the adic spectrum to a finite algebra.** Over a Tate ring with an open
-subring `A⁺`, a point `v ∈ Spa(A, A⁺)` is the pullback of a point of `Spa(B, B⁺)` with support any
+/-- **Lifting points of the adic spectrum to a finite algebra.** Over a Tate ring with a subring
+`A⁺`, a point `v ∈ Spa(A, A⁺)` is the pullback of a point of `Spa(B, B⁺)` with support any
 prime `𝔮` of `B` lying over `supp v`, where `B` is a finite `A`-algebra with its natural topology
 and `B⁺` the integral closure of the image of `A⁺`. -/
-theorem exists_mem_spa_supp_eq_comap_eq (hAplus : IsOpen (Aplus : Set A)) {v : Spv A}
-    (hv : v ∈ spa Aplus) (q : Ideal B) [q.IsPrime] (hq : q.comap (algebraMap A B) = v.supp) :
+theorem exists_mem_spa_supp_eq_comap_eq {v : Spv A} (hv : v ∈ spa Aplus) (q : Ideal B) [q.IsPrime]
+    (hq : q.comap (algebraMap A B) = v.supp) :
     ∃ w ∈ spa (integralClosure (Aplus.map (algebraMap A B)) B).toSubring,
       w.supp = q ∧ comap (algebraMap A B) w = v := by
   obtain ⟨w, hwq, hwv⟩ := exists_supp_eq_comap_eq (algebraMap A B) v q hq
-  exact ⟨w, (mem_spa_integralClosure_iff hAplus).mpr (hwv ▸ hv), hwq, hwv⟩
+  exact ⟨w, mem_spa_integralClosure_iff.mpr (hwv ▸ hv), hwq, hwv⟩
 
 end ValuationSpectrum
 
@@ -204,8 +164,8 @@ theorem IsFiniteEtale.surjective_spaComap {φ : Hom S T} (hφ : φ.IsFiniteEtale
   have : Module.Finite A B := hφ.finite
   have : IsModuleTopology A B := hφ.isModuleTopology
   obtain ⟨q, hq⟩ := (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp hff).2 (suppFun x.1)
-  obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq S.isRingOfIntegralElements.isOpen x.2
-    q.asIdeal (by rw [← suppFun_asIdeal]; exact congrArg PrimeSpectrum.asIdeal hq)
+  obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq x.2 q.asIdeal
+    (by rw [← suppFun_asIdeal]; exact congrArg PrimeSpectrum.asIdeal hq)
   exact ⟨⟨w, hφ.plus_eq ▸ hw⟩, Subtype.ext <| by rw [spaComap_val]; exact hwx⟩
 
 end Huber.Pair.Hom
