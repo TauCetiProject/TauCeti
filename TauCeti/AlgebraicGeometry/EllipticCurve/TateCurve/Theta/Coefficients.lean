@@ -11,6 +11,7 @@ import Mathlib.Data.Int.DivMod
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 public import Mathlib.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.Normed.Field.ZPowers
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Tactic.Ring
 
@@ -26,9 +27,12 @@ over any nontrivial commutative ring, including in positive characteristic.
 
 The degree-two case compares products of two translated theta functions with the first Tate
 coordinate, and the degree-three case compares products of three translated theta functions
-with lines in Tate coordinates. Over a complete normed field with `‖q‖ < 1`, the Laurent series
-of every solution of positive degree converges at every unit, by the ratio test along each
-residue class. Uniqueness of analytic Laurent expansions is not asserted.
+with lines in Tate coordinates. The Cauchy product of two solutions solves the recurrence whose
+degree and multiplier are the sums and products of theirs. Over a complete normed field with
+`‖q‖ < 1`, the Laurent series of every solution of positive degree converges at every unit, by
+the ratio test along each residue class; a function transforming like such a series agrees with
+it off `q^ℤ` as soon as it does on the fundamental annulus. Uniqueness of analytic Laurent
+expansions is not asserted.
 
 ## Main declarations
 
@@ -39,8 +43,11 @@ residue class. Uniqueness of analytic Laurent expansions is not asserted.
 * `TauCeti.finrank_tateThetaCoefficients`: its rank over a nontrivial commutative ring.
 * `TauCeti.hasSum_tateThetaCoefficients_mul`: transport of a convergent Laurent sum
   from `u` to `qu`.
+* `TauCeti.tsum_mul_sub_mem_tateThetaCoefficients`: Cauchy products of solutions are solutions.
 * `TauCeti.summable_tateThetaCoefficients`: the Laurent series of a solution converges at
   every unit.
+* `TauCeti.hasSum_tateThetaCoefficients_of_forall_norm`: extension of a Laurent expansion from
+  the fundamental annulus to every unit off `q^ℤ`.
 
 ## References
 
@@ -217,6 +224,25 @@ theorem hasSum_tateThetaCoefficients_mul [TopologicalSpace R] [IsTopologicalRing
         (a.val n * (↑(q ^ n) * ↑(u ^ n))) := by simp only [Units.val_mul]; ring
     _ = _ := by simp
 
+/-- **Products of quasi-periodic coefficient sequences.** The Cauchy product of solutions of the
+recurrences of degrees `d₁` and `d₂` with multipliers `c₁` and `c₂` solves the recurrence of
+degree `d₁ + d₂` with multiplier `c₁ c₂`: it is the coefficient sequence of the product of two
+Laurent series transforming like `f(qw) = c⁻¹ w⁻ᵈ f(w)`. -/
+theorem tsum_mul_sub_mem_tateThetaCoefficients {K : Type*} [Field K] [TopologicalSpace K]
+    [IsTopologicalSemiring K] [T2Space K] {q c₁ c₂ : Kˣ} {d₁ d₂ : ℕ} {a b : ℤ → K}
+    (ha : a ∈ tateThetaCoefficients q c₁ d₁) (hb : b ∈ tateThetaCoefficients q c₂ d₂) :
+    (fun n ↦ ∑' m, a m * b (n - m)) ∈ tateThetaCoefficients q (c₁ * c₂) (d₁ + d₂) := by
+  rw [mem_tateThetaCoefficients_iff] at ha hb ⊢
+  intro n
+  rw [← (Equiv.addRight (d₁ : ℤ)).tsum_eq, ← tsum_mul_left]
+  congr 1 with m
+  rw [Equiv.coe_addRight, ha, show n + ((d₁ + d₂ : ℕ) : ℤ) - (m + d₁) = n - m + d₂ by
+    push_cast; ring, hb]
+  simp only [Units.val_mul, Units.val_zpow_eq_zpow_val]
+  rw [show (q : K) ^ n = (q : K) ^ m * (q : K) ^ (n - m) by
+    rw [← zpow_add₀ q.ne_zero, add_sub_cancel]]
+  ring
+
 section Convergence
 
 variable {K : Type*} [NormedField K]
@@ -303,6 +329,44 @@ theorem summable_tateThetaCoefficients [CompleteSpace K] (q c : Kˣ) (hq : ‖(q
       rw [Int.add_mul_emod_self_left]
       exact Int.emod_eq_of_lt (by omega) (by exact_mod_cast hr')
     simp [this]
+
+/-- **Extension from the fundamental annulus.** Let `f` transform like the Laurent series of a
+solution `a` of the coefficient recurrence, `f(qu) = c⁻¹ u⁻ᵈ f(u)`. If the Laurent series of `a`
+converges to `f(u)` at every `u ≠ 1` of the half-open annulus `‖q‖ < ‖u‖ ≤ 1`, then it converges
+to `f(u)` at every unit `u ∉ q^ℤ`. -/
+theorem hasSum_tateThetaCoefficients_of_forall_norm [CompleteSpace K] (q c : Kˣ)
+    (hq : ‖(q : K)‖ < 1) {d : ℕ} (hd : 0 < d) (a : tateThetaCoefficients q c d) {f : Kˣ → K}
+    (hf : ∀ u, f (q * u) = ↑(c⁻¹ * u ^ (-(d : ℤ))) * f u)
+    (h : ∀ u : Kˣ, ‖(q : K)‖ < ‖(u : K)‖ → ‖(u : K)‖ ≤ 1 → u ≠ 1 →
+      HasSum (fun n ↦ a.val n * (u : K) ^ n) (f u))
+    {u : Kˣ} (hu : u ∉ Subgroup.zpowers q) :
+    HasSum (fun n ↦ a.val n * (u : K) ^ n) (f u) := by
+  have hstep {v : Kˣ} {s : K} (hs : HasSum (fun n ↦ a.val n * (v : K) ^ n) s) :
+      HasSum (fun n ↦ a.val n * ((q * v : Kˣ) : K) ^ n) (↑(c⁻¹ * v ^ (-(d : ℤ))) * s) := by
+    simpa only [Units.val_zpow_eq_zpow_val] using hasSum_tateThetaCoefficients_mul q c d a v
+      (by simpa only [Units.val_zpow_eq_zpow_val] using hs)
+  -- The Laurent series converges to `f` at `v` exactly when it does at `q v`.
+  have hiff (v : Kˣ) : HasSum (fun n ↦ a.val n * (v : K) ^ n) (f v) ↔
+      HasSum (fun n ↦ a.val n * ((q * v : Kˣ) : K) ^ n) (f (q * v)) := by
+    refine ⟨fun h ↦ hf v ▸ hstep h, fun h ↦ ?_⟩
+    have hs := summable_tateThetaCoefficients q c hq hd a v
+    simp only [Units.val_zpow_eq_zpow_val] at hs
+    convert hs.hasSum using 1
+    exact (Units.mul_right_inj _).mp (((hf v).symm.trans (h.unique (hstep hs.hasSum))))
+  have hzpow (k : ℤ) (v : Kˣ) : HasSum (fun n ↦ a.val n * (v : K) ^ n) (f v) ↔
+      HasSum (fun n ↦ a.val n * ((q ^ k * v : Kˣ) : K) ^ n) (f (q ^ k * v)) := by
+    induction k using Int.induction_on with
+    | zero => simp
+    | succ k ih =>
+      rw [ih, hiff (q ^ (k : ℤ) * v),
+        show q * (q ^ (k : ℤ) * v) = q ^ ((k : ℤ) + 1) * v by group]
+    | pred k ih =>
+      rw [ih, hiff (q ^ (-(k : ℤ) - 1) * v),
+        show q * (q ^ (-(k : ℤ) - 1) * v) = q ^ (-(k : ℤ)) * v by group]
+  obtain ⟨k, ⟨hk₁, hk₂⟩, -⟩ := existsUnique_norm_zpow_mul_mem_Ioc q u hq
+  refine (hzpow k u).mpr (h _ hk₁ hk₂ fun h₁ ↦ hu ⟨-k, ?_⟩)
+  dsimp only
+  rw [zpow_neg, inv_eq_of_mul_eq_one_right h₁]
 
 end Convergence
 

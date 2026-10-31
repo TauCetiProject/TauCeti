@@ -30,6 +30,8 @@ or not.
 
 * `TauCeti.tateThetaCoeff_add_one`: the recurrence `c(n + 1) = -qⁿ c(n)` of the theta
   coefficients.
+* `TauCeti.tateThetaCoeff_mul_zpow_mem`, `TauCeti.hasSum_tateThetaCoeff_mul_zpow`: the Laurent
+  coefficients of a translate `θ(b u)` are quasi-periodic of degree one.
 * `TauCeti.tateThetaProductCoeff_mem`: the coefficients are quasi-periodic of degree two.
 * `TauCeti.hasSum_tateThetaProductCoeff`: the Laurent series converges to
   `θ(a u) θ(a⁻¹ u)` at every unit `u`.
@@ -72,6 +74,16 @@ private theorem tateThetaCoeff_mul_zpow_mul_zpow (q b u : Kˣ) (n : ℤ) :
       (-1) ^ n * (q : K) ^ (n * (n - 1) / 2) * ((b * u : Kˣ) : K) ^ n := by
   rw [Units.val_mul, mul_zpow, mul_assoc, tateThetaCoeff_def]
 
+/-- The Laurent coefficients `tateThetaCoeff q n * bⁿ` of `θ(b u)` are quasi-periodic of degree
+one with multiplier `-b`, reflecting `θ(b q u) = -(b u)⁻¹ θ(b u)`. -/
+theorem tateThetaCoeff_mul_zpow_mem (q b : Kˣ) :
+    (fun n ↦ tateThetaCoeff q n * (b : K) ^ n) ∈ tateThetaCoefficients q (-b) 1 := by
+  rw [mem_tateThetaCoefficients_iff]
+  intro n
+  rw [Nat.cast_one, tateThetaCoeff_add_one, zpow_add_one₀ b.ne_zero]
+  simp only [Units.val_mul, Units.val_neg, Units.val_zpow_eq_zpow_val]
+  ring
+
 /-- The Laurent coefficients of `θ(a u) θ(a⁻¹ u)`: the Cauchy product of the coefficients
 `tateThetaCoeff q n * aⁿ` of `θ(a u)` and `tateThetaCoeff q n * a⁻ⁿ` of `θ(a⁻¹ u)`. -/
 noncomputable def tateThetaProductCoeff (q a : Kˣ) (n : ℤ) : K :=
@@ -102,6 +114,11 @@ theorem tateThetaProductCoeff_mem (q a : Kˣ) :
   simp [tateThetaProductCoeff_add_two]
 
 variable [CompleteSpace K]
+
+/-- The Laurent expansion `θ(b u) = ∑ₙ (tateThetaCoeff q n * bⁿ) uⁿ`. -/
+theorem hasSum_tateThetaCoeff_mul_zpow (q b u : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    HasSum (fun n ↦ tateThetaCoeff q n * (b : K) ^ n * (u : K) ^ n) (tateTheta q (b * u)) := by
+  simpa only [tateThetaCoeff_mul_zpow_mul_zpow] using hasSum_tateTheta q (b * u) hq
 
 /-- **The Laurent expansion of `θ(a u) θ(a⁻¹ u)`** converges at every unit `u`, over every
 complete normed field. -/
