@@ -215,4 +215,10 @@ theorem isTopologicallyNilpotent_iff_forall_pointNorm_lt_one (hA : IsAffinoidAlg
     {f : A} : IsTopologicallyNilpotent f ↔ ∀ x, pointNorm K x f < 1 := by
   rw [hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one, hA.supSeminorm_lt_iff one_pos]
 
+/-- A power-bounded element lies in `A°°` exactly when its supremum seminorm is less than one. -/
+theorem mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one (hA : IsAffinoidAlgebra K A)
+    {a : Huber.powerBoundedSubring A} :
+    a ∈ Huber.topologicallyNilpotentIdeal A ↔ supSeminorm K (a : A) < 1 := by
+  rw [Huber.mem_topologicallyNilpotentIdeal, hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one]
+
 end TauCeti.IsAffinoidAlgebra

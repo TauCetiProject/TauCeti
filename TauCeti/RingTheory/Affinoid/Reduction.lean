@@ -190,12 +190,6 @@ namespace IsAffinoidAlgebra
 variable {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A]
     [CompleteSpace A]
 
-/-- A power-bounded element lies in `A°°` exactly when its supremum seminorm is less than one. -/
-theorem mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one (hA : IsAffinoidAlgebra K A)
-    {a : powerBoundedSubring A} :
-    a ∈ topologicallyNilpotentIdeal A ↔ supSeminorm K (a : A) < 1 := by
-  rw [mem_topologicallyNilpotentIdeal, hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one]
-
 /-- **The supremum seminorm is multiplicative when the canonical reduction is a domain.** -/
 @[simp]
 theorem supSeminorm_mul (hA : IsAffinoidAlgebra K A) [IsDomain (CanonicalReduction A)]
