@@ -46,7 +46,6 @@ real gamma shift `0` and no complex gamma shift, root number `1`, completed func
 `completedRiemannZeta`, and simple poles at `0` and `1`. -/
 noncomputable def riemannZetaData : AnalyticLFunctionData where
   coeff n := ArithmeticFunction.zeta n
-  coeff_zero := by simp
   conductor := 1
   gammaR := {0}
   gammaC := 0

@@ -41,8 +41,9 @@ of the three predicates. Since Mathlib's value of a function at a pole carries n
 functional equation is asserted only off the polar loci; `HasFunctionalEquation.eventuallyEq`
 upgrades it to an equality of punctured germs at every point.
 
-The coefficient at `0`, which `LSeries` never reads, is normalized to `0` (the convention of
-Mathlib's `ArithmeticFunction`), so that a card is determined by its meaningful data.
+The coefficient at `0`, which `LSeries` never reads, is deliberately left free: independently
+defined analytic presentations may use different values there, so no global zero convention is
+imposed on the analytic record.
 
 ## Main definitions
 
@@ -74,16 +75,13 @@ namespace TauCeti.LFunctions
 /-- **Completed L-function data in the analytic normalization.** The Dirichlet coefficients
 `coeff`, the conductor `N`, the real and complex gamma shifts, the root number `ε`, the completed
 function `Λ`, and the polar divisor, which records the order of the pole of `Λ` at each point.
-The coefficient at `0` is normalized to `0`. The intended properties of these data are the
-predicates `HasDirichletAgreement`, `HasMeromorphicContinuation` and `HasFunctionalEquation`; the
-record itself imposes none of them.
+The intended properties of these data are the predicates `HasDirichletAgreement`,
+`HasMeromorphicContinuation` and `HasFunctionalEquation`; the record itself imposes none of them.
 -/
 @[ext]
 structure AnalyticLFunctionData where
-  /-- The Dirichlet coefficients `a n`, indexed from `1`. -/
+  /-- The Dirichlet coefficients `a n`; the coefficient at `0` is never read by `LSeries`. -/
   coeff : ℕ → ℂ
-  /-- The coefficient at `0`, which `LSeries` never reads, is normalized to `0`. -/
-  coeff_zero : coeff 0 = 0
   /-- The conductor `N`. -/
   conductor : ℕ+
   /-- The real gamma shifts `μ_j`, each contributing a factor `Γ_ℝ(s + μ_j)`. -/
@@ -121,7 +119,6 @@ reflected completed function `s ↦ conj Λ(conj s)`, and the conjugate polar di
 is unchanged. -/
 noncomputable def dual : AnalyticLFunctionData where
   coeff n := conj (d.coeff n)
-  coeff_zero := by simp [d.coeff_zero]
   conductor := d.conductor
   gammaR := d.gammaR.map conj
   gammaC := d.gammaC.map conj
