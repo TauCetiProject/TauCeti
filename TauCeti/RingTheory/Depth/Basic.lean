@@ -47,6 +47,9 @@ The regular-sequence transfer lemmas for linear maps live in
   `ModuleCat.shortComplexOfConj_shortExact`.
 * `IsLocalRing.depth_quotSMulTop_succ_eq_depth`: dividing a finite module by an `M`-regular element
   of the maximal ideal lowers the depth by exactly one.
+* `IsLocalRing.depth_quotSMulTop_eq_of_surjective` and
+  `IsLocalRing.depth_eq_add_one_of_surjective`: the same statements for a module `Q` presented as
+  the target of a surjection with kernel `x M`.
 * `IsLocalRing.depth_add_length_eq_depth_of_isRegular`: dividing a finite module by an `M`-regular
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
 * `RingEquiv.depth_self_eq`: isomorphic Noetherian local rings have the same depth over
@@ -272,6 +275,24 @@ theorem depth_quotSMulTop_succ_eq_depth [IsNoetherianRing R] [Module.Finite R M]
   · exact ⟨_, [], IsRegular.nil R _, by simp, rfl⟩
   · rintro _ ⟨rs, reg', mem, rfl⟩
     exact le_sSup ⟨x :: rs, reg'.cons reg, List.forall_mem_cons.2 ⟨hx, mem⟩, by simp⟩
+
+/-- If `g : M → Q` is a surjective linear map with kernel `x M`, then `M ⧸ x M` and `Q` have the
+same depth. -/
+theorem depth_quotSMulTop_eq_of_surjective {Q : Type v} [AddCommGroup Q] [Module R Q] {x : R}
+    (g : M →ₗ[R] Q) (hg : Function.Surjective g) (hker : LinearMap.ker g = x • ⊤) :
+    depth (ModuleCat.of R (QuotSMulTop x M)) = depth (ModuleCat.of R Q) :=
+  depth_eq_of_linearEquiv <| (Submodule.quotEquivOfEq _ _ hker.symm).trans
+    (g.quotKerEquivOfSurjective hg)
+
+/-- Over a Noetherian local ring, let `x` in the maximal ideal be regular on a finite module `M`
+and let `g : M → Q` be a surjective linear map with kernel `x M`. Then the depth of `M` is one
+more than the depth of `Q`. This is `IsLocalRing.depth_quotSMulTop_succ_eq_depth` with the
+quotient replaced by an isomorphic module. -/
+theorem depth_eq_add_one_of_surjective [IsNoetherianRing R] [Module.Finite R M] {Q : Type v}
+    [AddCommGroup Q] [Module R Q] {x : R} (hx : x ∈ maximalIdeal R) (reg : IsSMulRegular M x)
+    (g : M →ₗ[R] Q) (hg : Function.Surjective g) (hker : LinearMap.ker g = x • ⊤) :
+    depth (ModuleCat.of R M) = depth (ModuleCat.of R Q) + 1 := by
+  rw [← depth_quotSMulTop_eq_of_surjective g hg hker, depth_quotSMulTop_succ_eq_depth reg hx]
 
 /-- Dividing a finite module `M` over a Noetherian local ring by an `M`-regular sequence
 `r₁, …, rₙ` lowers the depth by exactly `n`. -/
