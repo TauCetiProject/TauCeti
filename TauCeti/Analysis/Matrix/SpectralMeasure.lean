@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import TauCeti.Analysis.Matrix.Resolvent
 public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
+public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 public import TauCeti.Probability.Process.EmpiricalMeasure
 
 /-!
@@ -60,6 +61,14 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   characteristic roots in it, counted with algebraic multiplicity;
 * `Matrix.map_spectralMeasure_ofReal` — for a complex Hermitian matrix, the eigenvalue measure is
   the pushforward of the spectral measure along `ℝ → ℂ`;
+* `Matrix.spectralMeasure_apply_singleton_zero` — the zero atom has mass equal to the normalized
+  nullity;
+* `Matrix.charpoly_roots_filter_ne_zero_mul_eq` — rectangular products have the same nonzero
+  characteristic roots, counted with multiplicity;
+* `Matrix.trace_pow_mul_eq_trace_pow_mul` — positive powers of rectangular products have equal
+  traces;
+* `Matrix.gram_spectralMeasure_moments_mul_card_eq` — their positive spectral moments agree after
+  weighting by the matrix dimensions;
 * `Matrix.PosSemidef.ae_mem_Ici_spectralMeasure` — the spectral measure of a positive-semidefinite
   matrix is concentrated on the nonnegative reals;
 * `Matrix.eigenvalueMeasure_toMeasure_of_isNilpotent` — a nilpotent matrix has eigenvalue measure
@@ -118,6 +127,23 @@ theorem spectralMeasure_apply (A : Matrix n n 𝕜) (hA : A.IsHermitian) {s : Se
     (A.spectralMeasure hA : Measure ℝ) s =
       ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, s.indicator 1 (hA.eigenvalues i) :=
   empiricalMeasureOfFintype_apply hs
+
+/-- The spectral measure's atom at zero is the proportion of zero eigenvalues, expressed in terms
+of the matrix rank. -/
+theorem spectralMeasure_apply_singleton_zero (A : Matrix n n 𝕜) (hA : A.IsHermitian) :
+    (A.spectralMeasure hA : Measure ℝ) {0} =
+      ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ *
+        ((Fintype.card n - A.rank : ℕ) : ℝ≥0∞) := by
+  have hcard : Fintype.card {i // hA.eigenvalues i = 0} = Fintype.card n - A.rank := by
+    have hpartition :=
+      Fintype.card_subtype_compl fun i : n => hA.eigenvalues i ≠ 0
+    rw [← hA.rank_eq_card_non_zero_eigs] at hpartition
+    simpa using hpartition
+  have hsum :
+      ∑ i, ({0} : Set ℝ).indicator (1 : ℝ → ℝ≥0∞) (hA.eigenvalues i) =
+        (Fintype.card {i // hA.eigenvalues i = 0} : ℝ≥0∞) := by
+    simp [Set.indicator_apply, Fintype.card_subtype]
+  rw [spectralMeasure_apply A hA (measurableSet_singleton 0), hsum, hcard]
 
 /-- The spectral measure of a positive-semidefinite matrix is concentrated on the nonnegative
 reals. -/
@@ -256,6 +282,25 @@ theorem integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) 
       ((Fintype.card n : ℕ) : ℝ)⁻¹ * RCLike.re (A ^ k).trace := by
   rw [integral_spectralMeasure, smul_eq_mul, hA.trace_pow_eq_sum_eigenvalues_pow, map_sum]
   simp_rw [← RCLike.ofReal_pow, RCLike.ofReal_re]
+
+/-- The positive moments of the two Gram-matrix spectral measures agree after weighting by the
+dimensions of their respective matrices, over any `RCLike` field and finite nonempty index types. -/
+theorem gram_spectralMeasure_moments_mul_card_eq {p q : Type*} [Fintype p] [DecidableEq p]
+    [Nonempty p] [Fintype q] [DecidableEq q] [Nonempty q] (X : Matrix p q 𝕜) {k : ℕ}
+    (hk : k ≠ 0) :
+    (Fintype.card q : ℝ) *
+        ∫ x, x ^ k ∂((Xᴴ * X).spectralMeasure
+          (by simpa using isHermitian_mul_conjTranspose_self Xᴴ) : Measure ℝ) =
+      (Fintype.card p : ℝ) *
+        ∫ x, x ^ k ∂((X * Xᴴ).spectralMeasure
+          (isHermitian_mul_conjTranspose_self X) : Measure ℝ) := by
+  rw [integral_pow_spectralMeasure, integral_pow_spectralMeasure,
+    ← Matrix.trace_pow_mul_eq_trace_pow_mul Xᴴ X hk]
+  have hp : (Fintype.card p : ℝ) ≠ 0 := by
+    exact_mod_cast (Fintype.card_pos : 0 < Fintype.card p).ne'
+  have hq : (Fintype.card q : ℝ) ≠ 0 := by
+    exact_mod_cast (Fintype.card_pos : 0 < Fintype.card q).ne'
+  field_simp [hp, hq]
 
 /-- Off the spectrum, the resolvent transform `m(z) = ∫ (x - z)⁻¹ dL_A(x)` of the spectral measure
 of a complex Hermitian matrix is the normalized trace of its resolvent `(A - z • 1)⁻¹`. -/
