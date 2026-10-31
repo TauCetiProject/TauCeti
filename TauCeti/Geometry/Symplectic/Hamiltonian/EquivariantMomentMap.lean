@@ -363,33 +363,23 @@ theorem isEquivariantMomentMap_of_momentCocycle_eq_zero [PreconnectedSpace G]
   refine (h.contMDiff_momentDefect_apply x₀ ξ).mdifferentiable (by simp)
     |>.apply_eq_of_mfderiv_eq_zero (fun g ↦ ?_) g₀ 1
   rw [← mvfderiv_eq_zero_iff]
-  ext w
+  refine mfderiv_eq_zero_of_mfderiv_mul_left_one_eq_zero
+    ((h.contMDiff_momentDefect_apply x₀ ξ).mdifferentiableAt (by simp)) ?_
+  rw [← mvfderiv_eq_zero_iff]
   /- Near `g`, the defect is `θ(g k)(ξ) = θ(g)(ξ) + θ(k)(Ad_{g⁻¹} ξ)`, whose derivative in `k`
-  at `1` vanishes because the cocycle does. Every tangent vector at `g` is a left translate. -/
-  have hL : MDifferentiableAt I I (fun k : G ↦ g * k) 1 :=
-    contMDiff_mul_left.mdifferentiableAt one_ne_zero
-  have hw : mfderiv I I (fun k : G ↦ g * k) 1 (mfderiv I I (fun k : G ↦ g⁻¹ * k) g w) = w :=
-    mulInvariantVectorField_mfderiv_inv_mul (I := I) w
+  at `1` vanishes because the cocycle does. -/
   have htrans : (fun k : G ↦ momentDefect μ (g * k) x₀ ξ) = fun k ↦
       momentDefect μ g x₀ ξ +
         momentDefect μ k x₀ (Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ) := by
     funext k
     rw [h.momentDefect_mul_eq (hσ g), LinearMap.add_apply, Lie.coadjointRepresentation_apply]
-  have hθ := h.contMDiff_momentDefect_apply x₀ ξ
-  have hcomp := mvfderiv_comp_apply_of_eq (g := fun k : G ↦ momentDefect μ k x₀ ξ)
-    (f := fun k : G ↦ g * k) (1 : G) (hθ.mdifferentiableAt (by simp)) hL (mul_one g)
-    (mfderiv I I (fun k : G ↦ g⁻¹ * k) g w)
-  rw [hw] at hcomp
-  have hzero : mvfderiv I (fun k : G ↦
-      momentDefect μ k x₀ (Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ)) 1 = 0 := by
-    ext v
-    rw [h.mvfderiv_momentDefect_one, hc, ← LieModule.Cohomology.twoCochain_val_apply,
-      ZeroMemClass.coe_zero, LinearMap.zero_apply, LinearMap.zero_apply, map_zero, zero_apply]
-  rw [zero_apply, ← hcomp, Function.comp_def, htrans,
-    mvfderiv_fun_add mdifferentiableAt_const
+  ext v
+  rw [htrans, mvfderiv_fun_add mdifferentiableAt_const
       ((h.contMDiff_momentDefect_apply x₀ _).mdifferentiableAt (by simp)),
-    mvfderiv_const, zero_add, hzero]
-  exact zero_apply _
+    mvfderiv_const, zero_add, h.mvfderiv_momentDefect_one, hc,
+    ← LieModule.Cohomology.twoCochain_val_apply]
+  -- The zero two-cochain, read as a bilinear map, vanishes.
+  simp only [ZeroMemClass.coe_zero, LinearMap.zero_apply, map_zero, zero_apply]
 
 end IsMomentMap
 

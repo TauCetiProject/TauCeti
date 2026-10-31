@@ -103,7 +103,10 @@ theorem contMDiff_coadjointRepresentation_apply (ν : Module.Dual ℝ (GroupLieA
   refine ((LinearMap.toContinuousLinearMap (show E →ₗ[ℝ] ℝ from ν)).contDiff.comp_contMDiff
     ((contMDiff_tangentAd_apply_const (I := I) (G := G) (show E from ξ)).comp
       (contMDiff_inv I ∞))).congr fun g ↦ ?_
-  rw [coadjointRepresentation_apply, Function.comp_apply, Function.comp_apply, tangentAd_apply]
+  rw [coadjointRepresentation_apply, Function.comp_apply, Function.comp_apply, tangentAd_apply,
+    LinearMap.coe_toContinuousLinearMap']
+  -- The two sides differ only by the `show E from` ascriptions: `ν` is applied once through the
+  -- module structure of `GroupLieAlgebra I G` and once through that of `E`, which are the same.
   rfl
 
 /-- The derivative at the identity of the component `g ↦ (Ad*_g ν) ξ = ν (Ad_{g⁻¹} ξ)` of the
