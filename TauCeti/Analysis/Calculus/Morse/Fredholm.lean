@@ -98,14 +98,6 @@ namespace IsIntegralCurve
 
 open TauCeti TauCeti.WeakDerivStep
 
-/-- Along a negative gradient trajectory of a `C²` function the gradient solves the linearized
-equation `v' = -Hess f(γ) v`. -/
-private theorem hasDerivAt_gradient_comp (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
-    (hf : ContDiff ℝ 2 f) (s : ℝ) :
-    HasDerivAt (fun t ↦ ∇ f (γ t)) (-hessianOperator f (γ s) (∇ f (γ s))) s := by
-  simpa only [map_neg, Function.comp_def] using
-    hf.contDiffAt.hasFDerivAt_gradient.comp_hasDerivAt s (hγ s)
-
 /-- **The gradient along a trajectory lies in the kernel of the linearized operator.** For a `C²`
 function and a negative gradient trajectory `γ` with limits at both ends, `s ↦ ∇f(γ s)`, which is
 minus the velocity of `γ`, is the value of an element of the kernel of
@@ -128,20 +120,8 @@ theorem exists_trajectoryOperator_hessianOperator_eq_zero
     exact TauCeti.IsIntegralCurve.integrable_norm_gradient_sq hγ
       (fun t ↦ hf.differentiable (by norm_num) (γ t))
       ((hf.continuous.tendsto p).comp hbot) ((hf.continuous.tendsto q).comp htop)
-  exact exists_trajectoryOperator_eq_zero_of_hasDerivAt hAL (hasDerivAt_gradient_comp hγ hf) hmem
-
-/-- A negative gradient trajectory between distinct points is not stationary: the gradient does
-not vanish identically along it. -/
-private theorem exists_gradient_ne_zero (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
-    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (hpq : p ≠ q) :
-    ∃ t, ∇ f (γ t) ≠ 0 := by
-  by_contra! h
-  have hconst : γ = fun _ ↦ γ 0 :=
-    funext fun t ↦ is_const_of_deriv_eq_zero (fun t ↦ (hγ t).differentiableAt)
-      (fun t ↦ by simp only [(hγ t).deriv, h t, neg_zero]) t 0
-  rw [hconst] at hbot htop
-  exact hpq ((tendsto_nhds_unique tendsto_const_nhds hbot).symm.trans
-    (tendsto_nhds_unique tendsto_const_nhds htop))
+  exact exists_trajectoryOperator_eq_zero_of_hasDerivAt hAL
+    (fun s ↦ by simpa only [map_neg] using hf.contDiffAt.hasDerivAt_gradient_comp (hγ s)) hmem
 
 /-- **The linearized operator along a nonconstant trajectory has a nonzero kernel.** For a `C²`
 function and a negative gradient trajectory from `p` to `q ≠ p`, the kernel of
@@ -157,7 +137,7 @@ theorem finrank_ker_trajectoryOperator_hessianOperator_pos
     (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous
   have := (kerTrajectoryOperatorEquiv hA AL hAL).symm.finiteDimensional
   obtain ⟨u, hu, hux⟩ := exists_trajectoryOperator_hessianOperator_eq_zero hγ hf hbot htop hAL
-  obtain ⟨t, ht⟩ := exists_gradient_ne_zero hγ hbot htop hpq
+  obtain ⟨t, ht⟩ := TauCeti.IsIntegralCurve.exists_gradient_ne_zero hγ hbot htop hpq
   refine Module.finrank_pos_iff_exists_ne_zero.2 ⟨⟨u, hu⟩, fun h0 ↦ ht ?_⟩
   have hu0 : u = 0 := congrArg Subtype.val h0
   -- The continuous representative `s ↦ ∇f(γ s)` of `u = 0` vanishes everywhere.
@@ -177,19 +157,13 @@ private theorem exists_pos_mul_norm_le_hessianOperator (hp : IsNondegenerateCrit
       ∀ v, α * ‖v‖ ≤ ‖hessianOperator f q v‖ := by
   obtain ⟨e₁, he₁⟩ := hp.isInvertible_hessianOperator
   obtain ⟨e₂, he₂⟩ := hq.isInvertible_hessianOperator
-  set K : ℝ := max ‖(e₁.symm : E →L[ℝ] E)‖ ‖(e₂.symm : E →L[ℝ] E)‖ + 1
-  have hK : 0 < K := by positivity
-  have hbound (e : E ≃L[ℝ] E) (he : ‖(e.symm : E →L[ℝ] E)‖ + 1 ≤ K) (v : E) :
-      K⁻¹ * ‖v‖ ≤ ‖e v‖ := by
-    rw [inv_mul_le_iff₀ hK]
-    calc ‖v‖ = ‖(e.symm : E →L[ℝ] E) (e v)‖ := by simp
-      _ ≤ ‖(e.symm : E →L[ℝ] E)‖ * ‖e v‖ := ContinuousLinearMap.le_opNorm _ _
-      _ ≤ K * ‖e v‖ := by gcongr; linarith
-  refine ⟨K⁻¹, inv_pos.2 hK, fun v ↦ ?_, fun v ↦ ?_⟩
-  · simpa only [← he₁, ContinuousLinearEquiv.coe_coe] using
-      hbound e₁ (by simp only [K]; gcongr; exact le_max_left _ _) v
-  · simpa only [← he₂, ContinuousLinearEquiv.coe_coe] using
-      hbound e₂ (by simp only [K]; gcongr; exact le_max_right _ _) v
+  obtain ⟨c₁, hc₁, h₁⟩ := antilipschitzWith_iff_exists_mul_le_norm.1 ⟨_, e₁.antilipschitzWith⟩
+  obtain ⟨c₂, hc₂, h₂⟩ := antilipschitzWith_iff_exists_mul_le_norm.1 ⟨_, e₂.antilipschitzWith⟩
+  refine ⟨min c₁ c₂, lt_min hc₁ hc₂, fun v ↦ ?_, fun v ↦ ?_⟩
+  · rw [← he₁]
+    exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (h₁ v)
+  · rw [← he₂]
+    exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v)
 
 /-- The coefficient family `s ↦ Hess f(γ s)` of the linearized operator satisfies the hypotheses
 of `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`: it is a `C¹` family of symmetric
