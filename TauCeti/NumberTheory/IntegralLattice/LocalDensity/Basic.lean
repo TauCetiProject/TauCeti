@@ -567,6 +567,16 @@ theorem localDensity_reindex {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ 
     (reindex e e A).localDensity = A.localDensity := by
   simp only [localDensity, localDensityCount_reindex, Fintype.card_congr e]
 
+/-- **Reindexing a diagonal Gram matrix**: an equivalence of index types matching the diagonal
+entries `d' (e i) = d i` leaves the local density of the diagonal matrix unchanged. -/
+theorem localDensity_diagonal_congr {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m)
+    {d : n → ℤ_[p]} {d' : m → ℤ_[p]} (h : ∀ i, d' (e i) = d i) :
+    (diagonal d).localDensity = (diagonal d').localDensity := by
+  rw [← localDensity_reindex e.symm (diagonal d'), reindex_apply, Equiv.symm_symm,
+    submatrix_diagonal_equiv]
+  congr 2
+  exact funext fun i => (h i).symm
+
 /-- **The normalized local density count is the local density from level `2 e + 1` on.** If `A`
 is symmetric and `2 det A ∣ p ^ e`, then for every `r > 2 e` the normalized count
 `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` equals `α_p(A)`. -/

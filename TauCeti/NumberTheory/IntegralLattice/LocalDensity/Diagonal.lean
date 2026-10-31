@@ -61,17 +61,6 @@ namespace Matrix
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- Reindexing a diagonal Gram matrix along an equivalence of index types that matches the
-diagonal entries does not change its local density. -/
-private theorem localDensity_diagonal_congr {κ κ' : Type*} [Fintype κ] [DecidableEq κ]
-    [Fintype κ'] [DecidableEq κ'] (e : κ ≃ κ') {d : κ → ℤ_[p]} {d' : κ' → ℤ_[p]}
-    (h : ∀ i, d' (e i) = d i) :
-    (diagonal d).localDensity = (diagonal d').localDensity := by
-  rw [← localDensity_reindex e.symm (diagonal d'), reindex_apply, Equiv.symm_symm,
-    submatrix_diagonal_equiv]
-  congr 2
-  exact funext fun i => (h i).symm
-
 /-- Splitting a diagonal Jordan form `diag(uᵢ pᵏⁱ)` into its unimodular constituent
 `{i | kᵢ = 0}` and `p` times the diagonal Jordan form `diag(uᵢ pᵏⁱ⁻¹)` on `{i | kᵢ ≠ 0}`. -/
 private theorem diagonal_unit_mul_pow_eq_reindex_fromBlocks {κ : Type*} [DecidableEq κ]
@@ -167,12 +156,13 @@ variable {p : ℕ} [Fact p.Prime] {M : Type*} [AddCommGroup M] [Module ℤ_[p] M
 
 /-- **The local density at an odd prime of a form with a diagonal Jordan basis.** Let `B` be a
 bilinear form over `ℤ_p`, `p` odd, with an orthogonal basis `b₀` whose diagonal entries are
-`B (b₀ i) (b₀ i) = uᵢ pᵏⁱ`. Then the Gram matrix of `B` in every basis `b` has local density
-`p ^ ∑_{j < max k} binom(#{i | j < kᵢ} + 1, 2)` times the product of the densities of the unimodular
-Jordan constituents with diagonal entries `(uᵢ)_{kᵢ = j}`. -/
+`B (b₀ i) (b₀ i) = uᵢ pᵏⁱ`. Then the Gram matrix of `B` in every basis `b`, with any index type,
+has local density `p ^ ∑_{j < max k} binom(#{i | j < kᵢ} + 1, 2)` times the product of the densities
+of the unimodular Jordan constituents with diagonal entries `(uᵢ)_{kᵢ = j}`. -/
 theorem localDensity_toMatrix_of_iIsOrtho (hp : p ≠ 2) {ι : Type*} [Fintype ι] [DecidableEq ι]
     {B : LinearMap.BilinForm ℤ_[p] M} {b₀ : Basis ι ℤ_[p] M} (hb₀ : B.iIsOrtho b₀) {u : ι → ℤ_[p]ˣ}
-    {k : ι → ℕ} (hu : ∀ i, B (b₀ i) (b₀ i) = u i * (p : ℤ_[p]) ^ k i) (b : Basis ι ℤ_[p] M) :
+    {k : ι → ℕ} (hu : ∀ i, B (b₀ i) (b₀ i) = u i * (p : ℤ_[p]) ^ k i) {κ : Type*} [Fintype κ]
+    [DecidableEq κ] (b : Basis κ ℤ_[p] M) :
     (toMatrix b B).localDensity =
       (p : ℚ) ^ (∑ j ∈ Finset.range (univ.sup k), (#{i | j < k i} + 1).choose 2) *
         ∏ j ∈ univ.image k, (diagonal fun i : {i // k i = j} => (u i : ℤ_[p])).localDensity := by
@@ -182,8 +172,13 @@ theorem localDensity_toMatrix_of_iIsOrtho (hp : p ≠ 2) {ι : Type*} [Fintype �
     obtain rfl | hij := eq_or_ne i j
     · rw [hu, diagonal_apply_eq]
     · rw [diagonal_apply_ne _ hij, iIsOrtho_def.mp hb₀ i j hij]
-  have := b₀.invertibleToMatrix b
-  rw [← toMatrix_mul_basis_toMatrix b₀ b B, hdiag,
+  set e := b₀.indexEquiv b
+  have hb : toMatrix (b.reindex e.symm) B = reindex e.symm e.symm (toMatrix b B) := by
+    ext i j
+    simp only [toMatrix_apply, Basis.reindex_apply, Equiv.symm_symm, reindex_apply,
+      submatrix_apply]
+  have := b₀.invertibleToMatrix (b.reindex e.symm)
+  rw [← localDensity_reindex e.symm, ← hb, ← toMatrix_mul_basis_toMatrix b₀ _ B, hdiag,
     localDensity_transpose_mul_mul (isUnit_det_of_invertible _)]
   exact localDensity_diagonal_unit_mul_pow hp u k
 
