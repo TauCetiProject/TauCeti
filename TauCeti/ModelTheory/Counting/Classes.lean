@@ -236,6 +236,7 @@ theorem classOf_eq_inr [Countable M] {n : ℕ} (hM : φ.Realize M) (e : M ≃ Fi
     (Equiv.isoSetoid_encodeVia_iff _ e).2 ⟨Language.Equiv.refl L M⟩
 
 /-- The class of the structure decoded from a model of `φ` on `ℕ` is the class of that model. -/
+@[simp]
 theorem classOf_toStructure_nat (c : modelsOf (V := ℕ) φ) :
     letI := c.1.toStructure
     classOf φ (mem_modelsOf.1 c.2) = .inl ⟦c⟧ := by
@@ -246,6 +247,7 @@ theorem classOf_toStructure_nat (c : modelsOf (V := ℕ) φ) :
 
 /-- The class of the structure decoded from a model of `φ` on `Fin n` is the class of that
 model. -/
+@[simp]
 theorem classOf_toStructure_fin {n : ℕ} (c : modelsOf (V := Fin n) φ) :
     letI := c.1.toStructure
     classOf φ (mem_modelsOf.1 c.2) = .inr ⟨n, ⟦c⟧⟩ := by
