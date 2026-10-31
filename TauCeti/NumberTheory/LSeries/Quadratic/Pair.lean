@@ -151,15 +151,9 @@ theorem LSeriesHasSum_zetaMulPairCoeffs [NeZero M] [NeZero N]
     (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
     LSeriesHasSum (χ.zetaMulPairCoeffs ψ) s
       (riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s) := by
-  have hL {A : ℕ} [NeZero A] (φ : DirichletCharacter ℂ A) :
-      LSeriesHasSum (toArithmeticFunction (φ ·)) s (φ.LFunction s) := by
-    rw [φ.LFunction_eq_LSeries hs]
-    exact (LSeriesHasSum_congr s _ φ.apply_eq_toArithmeticFunction_apply).mp
-      (ZMod.LSeriesSummable_of_one_lt_re φ hs).LSeriesHasSum
-  have hζχ : LSeriesHasSum χ.zetaMul s (riemannZeta s * χ.LFunction s) := by
-    rw [← LSeries_zetaMul χ hs]
-    exact (χ.LSeriesSummable_zetaMul hs).LSeriesHasSum
   exact ArithmeticFunction.LSeriesHasSum_mul
-    (ArithmeticFunction.LSeriesHasSum_mul hζχ (hL ψ)) (hL (χ.mul ψ))
+    (ArithmeticFunction.LSeriesHasSum_mul (χ.LSeriesHasSum_zetaMul hs)
+      (ψ.LSeriesHasSum_toArithmeticFunction hs))
+    ((χ.mul ψ).LSeriesHasSum_toArithmeticFunction hs)
 
 end DirichletCharacter

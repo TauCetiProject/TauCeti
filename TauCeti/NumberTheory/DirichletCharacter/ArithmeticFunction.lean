@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.Dirichlet
+public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
@@ -40,7 +40,11 @@ theorem toArithmeticFunction_mul (χ : DirichletCharacter R M) (ψ : DirichletCh
       (toArithmeticFunction (χ ·)).pmul (toArithmeticFunction (ψ ·)) := by
   ext n
   rw [ArithmeticFunction.pmul_apply]
-  by_cases hn : n = 0 <;> simp [toArithmeticFunction, hn]
+  by_cases hn : n = 0
+  · simp [hn]
+  · rw [← (χ.mul ψ).apply_eq_toArithmeticFunction_apply hn,
+      ← χ.apply_eq_toArithmeticFunction_apply hn,
+      ← ψ.apply_eq_toArithmeticFunction_apply hn, mul_natCast]
 
 end CommMonoidWithZero
 
@@ -64,5 +68,14 @@ theorem toArithmeticFunction_pmul_mul (χ : DirichletCharacter R M)
     ← χ.apply_eq_toArithmeticFunction_apply hd0.2]
   rw [← hdn, Nat.cast_mul, map_mul]
   ring
+
+/-- On `Re s > 1`, a character's arithmetic function has an absolutely convergent
+Dirichlet series with sum equal to its continued L-function. -/
+theorem LSeriesHasSum_toArithmeticFunction {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
+    LSeriesHasSum (toArithmeticFunction (χ ·)) s (χ.LFunction s) := by
+  rw [χ.LFunction_eq_LSeries hs]
+  exact (LSeriesHasSum_congr s _ χ.apply_eq_toArithmeticFunction_apply).mp
+    (ZMod.LSeriesSummable_of_one_lt_re χ hs).LSeriesHasSum
 
 end DirichletCharacter

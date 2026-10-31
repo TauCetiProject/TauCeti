@@ -43,8 +43,8 @@ theorem zetaMul_prime_pow_of_eq_neg_one {χ : DirichletCharacter ℂ N} {p : ℕ
     (hp : p.Prime) (hχ : χ p = -1) (k : ℕ) :
     χ.zetaMul (p ^ k) = if _root_.Even k then 1 else 0 := by
   simp only [zetaMul, ArithmeticFunction.coe_zeta_mul_apply, Nat.sum_divisors_prime_pow hp]
-  simp only [toArithmeticFunction, ArithmeticFunction.coe_mk,
-    pow_ne_zero _ hp.ne_zero, ↓reduceIte, Nat.cast_pow, map_pow, hχ, neg_one_geom_sum]
+  simp_rw [← χ.apply_eq_toArithmeticFunction_apply (pow_ne_zero _ hp.ne_zero),
+    Nat.cast_pow, map_pow, hχ, neg_one_geom_sum]
   simp only [Nat.even_add_one, ite_not]
 
 variable [NeZero N]
@@ -61,5 +61,12 @@ theorem LSeries_zetaMul (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re
   · exact ArithmeticFunction.LSeriesSummable_zeta_iff.mpr hs
   · exact (LSeriesSummable_congr _ fun h ↦ (χ.apply_eq_toArithmeticFunction_apply h).symm).mpr <|
       ZMod.LSeriesSummable_of_one_lt_re χ hs
+
+/-- On `Re s > 1`, the convolution `ζ * χ` has an absolutely convergent Dirichlet series
+with sum `ζ(s) L(s, χ)`. -/
+theorem LSeriesHasSum_zetaMul (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
+    LSeriesHasSum χ.zetaMul s (riemannZeta s * χ.LFunction s) := by
+  rw [← LSeries_zetaMul χ hs]
+  exact (χ.LSeriesSummable_zetaMul hs).LSeriesHasSum
 
 end DirichletCharacter
