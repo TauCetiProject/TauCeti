@@ -83,21 +83,6 @@ theorem gtLine_zero (l : DominantWeight 0) (P : {P : GTPattern 0 // P.topWeight 
 
 variable {n : ℕ}
 
-/-- An interlacing weight `μ` has a nonzero intertwiner from `V_μ` to the restriction of `V_λ`. -/
-private theorem exists_intertwiningMap_ne_zero {l : DominantWeight (n + 1)}
-    {m : DominantWeight n} (hm : m ∈ interlacingWeights l) :
-    ∃ f : IntertwiningMap (rationalWeylRep ℂ n m)
-      ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n)), f ≠ 0 := by
-  -- Fix the additive groups of the two submodule carriers before inferring the additive
-  -- group structure on their space of intertwining maps.
-  let _ : AddCommGroup (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule := inferInstance
-  let _ : AddCommGroup (weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule := inferInstance
-  have hdim : finrank ℂ (IntertwiningMap (rationalWeylRep ℂ n m)
-      ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n))) = 1 := by
-    simp [finrank_intertwiningMap_rationalWeylRep_comp_glBlockSucc, hm]
-  have := Module.nontrivial_of_finrank_eq_succ hdim
-  exact exists_ne 0
-
 /-- Two nonzero intertwiners from `V_μ` to the restriction of `V_λ`, for `μ` interlacing `λ`,
 carry every subspace of `V_μ` to the same subspace of `V_λ`: they differ by a nonzero scalar. -/
 private theorem map_eq_map_of_ne_zero {l : DominantWeight (n + 1)} {m : DominantWeight n}
@@ -106,7 +91,8 @@ private theorem map_eq_map_of_ne_zero {l : DominantWeight (n + 1)} {m : Dominant
       ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n))} (hf : f ≠ 0) (hg : g ≠ 0)
     (W : Submodule ℂ (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule) :
     W.map f.toLinearMap = W.map g.toLinearMap := by
-  -- Fix the additive groups of the carriers, as in `exists_intertwiningMap_ne_zero`.
+  -- Fix the additive groups of the two submodule carriers before inferring the additive
+  -- group structure on their space of intertwining maps.
   let _ : AddCommGroup (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule := inferInstance
   let _ : AddCommGroup (weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule := inferInstance
   have hdim : finrank ℂ (IntertwiningMap (rationalWeylRep ℂ n m)
@@ -129,7 +115,8 @@ theorem gtLine_succ (l : DominantWeight (n + 1)) (P : {P : GTPattern (n + 1) // 
     have h := P.1.topWeight_truncate_mem_interlacingWeights
     rwa [P.2] at h
   rw [gtLine]
-  exact map_eq_map_of_ne_zero hm (Classical.epsilon_spec (exists_intertwiningMap_ne_zero hm))
+  exact map_eq_map_of_ne_zero hm
+    (Classical.epsilon_spec (exists_intertwiningMap_rationalWeylRep_comp_glBlockSucc_ne_zero hm))
     hf _
 
 /-- **Each Gelfand–Tsetlin line is a line.** -/
@@ -144,7 +131,7 @@ theorem finrank_gtLine : ∀ {n : ℕ} (l : DominantWeight n)
     have hm : P.1.truncate.topWeight ∈ interlacingWeights l := by
       have h := P.1.topWeight_truncate_mem_interlacingWeights
       rwa [P.2] at h
-    obtain ⟨f, hf⟩ := exists_intertwiningMap_ne_zero hm
+    obtain ⟨f, hf⟩ := exists_intertwiningMap_rationalWeylRep_comp_glBlockSucc_ne_zero hm
     have hinj : Function.Injective f :=
       (IsIrreducible.injective_or_eq_zero
         (V := ↥(weylModuleOfShape ℂ n P.1.truncate.topWeight.detShiftShape).toSubmodule)
