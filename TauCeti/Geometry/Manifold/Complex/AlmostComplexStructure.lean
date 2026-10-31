@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
-import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
 
 /-!
 # The almost complex structure of a complex manifold
@@ -66,13 +66,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
 
-/-- The real tangent coordinate changes of a complex manifold are complex linear. -/
-private lemma tangentCoordChange_complex_smul {x y z : M}
-    (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) (c : ℂ) (w : E) :
-    tangentCoordChange 𝓘(ℝ, E) x y z (c • w) = c • tangentCoordChange 𝓘(ℝ, E) x y z w := by
-  rw [tangentCoordChange_restrictScalars ℝ (𝕜' := ℂ) h, ContinuousLinearMap.coe_restrictScalars',
-    map_smul]
-
 namespace SmoothAlmostComplexStructure
 
 variable (E M) in
@@ -96,7 +89,7 @@ def ofComplexManifold : SmoothAlmostComplexStructure 𝓘(ℝ, E) M where
           (extChartAt 𝓘(ℝ, E) x₀).source := by
         simp [hx]
       simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply]
-      exact (tangentCoordChange_complex_smul ⟨mem_chart_source E x, hx⟩ _ _).trans
+      exact (tangentCoordChange_smul ℝ (𝕜' := ℂ) ⟨mem_chart_source E x, hx⟩ _ _).trans
         (congrArg (Complex.I • ·)
           ((tangentCoordChange_comp hx').trans (tangentCoordChange_self (by simp [hx]))))⟩
   square_neg x := ContinuousLinearMap.ext fun v ↦ by
@@ -205,7 +198,7 @@ private lemma mpullbackWithin_ofComplexManifold_eventuallyEq
     simpa using hy
   rw [smul_apply, ContinuousLinearMap.id_apply]
   exact (congrArg (tangentCoordChange 𝓘(ℝ, E) y x y)
-    (ofComplexManifold_apply (E := E) y (V y))).trans (tangentCoordChange_complex_smul h _ _)
+    (ofComplexManifold_apply (E := E) y (V y))).trans (tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ _)
 
 variable [FiniteDimensional ℂ E]
 

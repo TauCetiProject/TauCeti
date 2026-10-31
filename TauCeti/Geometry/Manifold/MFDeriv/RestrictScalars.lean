@@ -42,7 +42,8 @@ its complex tangent coordinate changes regarded as `ℝ`-linear maps.
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
 * `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
-  over `𝕜'` with scalars restricted to `𝕜`.
+  over `𝕜'` with scalars restricted to `𝕜`; in particular they are `𝕜'`-linear
+  (`TauCeti.tangentCoordChange_smul`).
 -/
 
 public section
@@ -196,5 +197,14 @@ theorem tangentCoordChange_restrictScalars [IsManifold 𝓘(𝕜', E) 1 M] [IsMa
   have h₂ := hasFDerivWithinAt_tangentCoordChange (I := 𝓘(𝕜, E)) h'
   simp only [modelWithCornersSelf_coe, range_id] at h₁ h₂
   exact (h₂.hasFDerivAt Filter.univ_mem).unique (h₁.hasFDerivAt Filter.univ_mem)
+
+/-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the model over
+`𝕜` is `𝕜'`-linear. For instance, the real tangent coordinate changes of a complex manifold are
+complex linear. -/
+theorem tangentCoordChange_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘(𝕜, E) 1 M] {y z : M}
+    (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) (c : 𝕜') (w : E) :
+    tangentCoordChange 𝓘(𝕜, E) x y z (c • w) = c • tangentCoordChange 𝓘(𝕜, E) x y z w := by
+  rw [tangentCoordChange_restrictScalars 𝕜 (𝕜' := 𝕜') h, ContinuousLinearMap.coe_restrictScalars',
+    map_smul]
 
 end TauCeti

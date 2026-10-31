@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -23,7 +22,7 @@ For a real-linear map `L` into a complex module, its defect from complex lineari
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
-linear (`LinearMap.complexOfMapISmul`, `ContinuousLinearMap.complexOfMapISmul`).
+linear (`LinearMap.complexOfMapISmul`).
 
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
@@ -112,29 +111,6 @@ theorem restrictScalars_complexOfMapISmul (u : V →ₗ[ℝ] W)
   LinearMap.ext fun _ ↦ rfl
 
 end LinearMap
-
-namespace ContinuousLinearMap
-
-variable [TopologicalSpace V] [TopologicalSpace W]
-
-/-- A continuous real-linear map between complex modules that commutes with multiplication by
-`I`, as a continuous complex-linear map. -/
-def complexOfMapISmul (u : V →L[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
-    V →L[ℂ] W :=
-  ⟨u.toLinearMap.complexOfMapISmul h, u.cont⟩
-
-@[simp]
-theorem coe_complexOfMapISmul (u : V →L[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
-    ⇑(u.complexOfMapISmul h) = u :=
-  funext fun _ ↦ rfl
-
-@[simp]
-theorem restrictScalars_complexOfMapISmul (u : V →L[ℝ] W)
-    (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
-    (u.complexOfMapISmul h).restrictScalars ℝ = u :=
-  ContinuousLinearMap.ext fun _ ↦ rfl
-
-end ContinuousLinearMap
 
 end ComplexOfMapISmul
 
