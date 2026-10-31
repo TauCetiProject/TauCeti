@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.ResidueField
-public import Mathlib.AlgebraicGeometry.AffineScheme
-public import Mathlib.RingTheory.Localization.Away.Basic
 
 /-!
 # Invertible coefficient orders on schemes
