@@ -32,6 +32,6 @@ example (k : Type u) [Field k] :
 includes non-regular schemes such as `Spec k[ε]`. -/
 example (R : CommRingCat.{u}) [IsArtinianRing R] : (Spec R).IsCohenMacaulay :=
   (isCohenMacaulay_Spec_iff R).mpr
-    ⟨inferInstance, fun _ _ ↦ Module.isCohenMacaulay_of_krullDimLE_zero⟩
+    TauCeti.Ring.IsCohenMacaulay.of_krullDimLE_zero
 
 end AlgebraicGeometry.Scheme
