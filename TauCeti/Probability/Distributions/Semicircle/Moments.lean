@@ -58,8 +58,8 @@ namespace TauCeti.Probability
 theorem integral_pow_add_two_semicircleMeasure (n : ℕ) :
     (n + 4 : ℝ) * ∫ x, x ^ (n + 2) ∂semicircleMeasure =
       (n + 1) * ∫ x, x ^ n ∂semicircleMeasure := by
-  rw [integral_semicircleMeasure_eq_intervalIntegral (· ^ (n + 2)),
-    integral_semicircleMeasure_eq_intervalIntegral (· ^ n)]
+  simp only [integral_semicircleMeasure_eq_intervalIntegral, smul_eq_mul,
+    mul_comm √(1 - _ ^ 2)]
   linear_combination (2 / π) * integral_pow_add_two_mul_sqrt_one_sub_sq n
 
 /-- Every odd moment of the unit-radius semicircle law vanishes. -/
@@ -70,7 +70,8 @@ theorem integral_pow_two_mul_add_one_semicircleMeasure (n : ℕ) :
   | zero => simp
   | succ n ih =>
     have h := integral_pow_add_two_semicircleMeasure (2 * n + 1)
-    rw [ih, mul_zero, show 2 * n + 1 + 2 = 2 * (n + 1) + 1 by ring] at h
+    have hdeg : 2 * n + 1 + 2 = 2 * (n + 1) + 1 := by ring
+    rw [ih, mul_zero, hdeg] at h
     exact (mul_eq_zero.1 h).resolve_left (by positivity)
 
 /-- The `2n`th moment of the unit-radius semicircle law is `catalan n / 4 ^ n`. -/
@@ -81,7 +82,8 @@ theorem integral_pow_two_mul_semicircleMeasure (n : ℕ) :
   | zero => simp
   | succ n ih =>
     have h := integral_pow_add_two_semicircleMeasure (2 * n)
-    rw [ih, show 2 * n + 2 = 2 * (n + 1) by ring] at h
+    have hdeg : 2 * n + 2 = 2 * (n + 1) := by ring
+    rw [ih, hdeg] at h
     have hcat : ((n + 2 : ℕ) : ℝ) * catalan (n + 1) = 2 * (2 * n + 1) * catalan n := by
       exact_mod_cast Nat.add_two_mul_catalan_succ n
     have hpos : (0 : ℝ) < 2 * n + 4 := by positivity

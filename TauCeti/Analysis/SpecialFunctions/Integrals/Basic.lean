@@ -67,7 +67,8 @@ theorem integral_pow_add_two_mul_sqrt_one_sub_sq (n : ℕ) :
       HasDerivAt (fun y : ℝ ↦ (1 - y ^ 2) ^ (3 / 2 : ℝ)) (-3 * x * √(1 - x ^ 2)) x := by
     convert ((hasDerivAt_pow 2 x).const_sub 1).rpow_const (p := 3 / 2)
       (Or.inr (by norm_num)) using 1
-    rw [sqrt_eq_rpow, show (3 / 2 : ℝ) - 1 = 1 / 2 by norm_num]
+    have hexp : (3 / 2 : ℝ) - 1 = 1 / 2 := by norm_num
+    rw [sqrt_eq_rpow, hexp]
     simp only [Nat.cast_ofNat, Nat.reduceSub, pow_one]
     ring
   have hibp := integral_mul_deriv_eq_deriv_mul hu hv
@@ -88,8 +89,8 @@ theorem integral_pow_add_two_mul_sqrt_one_sub_sq (n : ℕ) :
     have h0 : 0 ≤ 1 - x ^ 2 := by
       rw [uIcc_of_le (by norm_num), mem_Icc] at hx
       nlinarith [hx.1, hx.2]
-    rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add' h0 (by norm_num), rpow_one,
-      ← sqrt_eq_rpow]
+    have hexp : (3 / 2 : ℝ) = 1 + 1 / 2 := by norm_num
+    rw [hexp, rpow_add' h0 (by norm_num), rpow_one, ← sqrt_eq_rpow]
     ring
   -- The boundary terms vanish because `(1 - x ^ 2) ^ (3 / 2)` is zero at `x = ±1`.
   rw [hlhs, hrhs] at hibp

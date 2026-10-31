@@ -109,16 +109,16 @@ theorem semicircleMeasure_eq_withDensity :
 
 /-- Integration against the unit-radius semicircle law, as an interval integral against the
 semicircle height. -/
-theorem integral_semicircleMeasure_eq_intervalIntegral (f : ℝ → ℝ) :
-    ∫ x, f x ∂semicircleMeasure = 2 / π * ∫ x in -1..1, f x * √(1 - x ^ 2) := by
+theorem integral_semicircleMeasure_eq_intervalIntegral {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f : ℝ → E) :
+    ∫ x, f x ∂semicircleMeasure = (2 / π) • ∫ x in -1..1, √(1 - x ^ 2) • f x := by
   rw [semicircleMeasure_eq_withDensity, integral_withDensity_eq_integral_toReal_smul
     measurable_semicirclePDF (.of_forall fun _ ↦ by simp),
-    intervalIntegral.integral_of_le (by norm_num), ← MeasureTheory.integral_const_mul,
+    intervalIntegral.integral_of_le (by norm_num), ← MeasureTheory.integral_smul,
     ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioc (-1) 1)]
   · refine setIntegral_congr_fun measurableSet_Ioc fun x _ ↦ ?_
     rw [semicirclePDF_apply, ENNReal.toReal_ofReal (semicirclePDFReal_nonneg x),
-      semicirclePDFReal_apply, smul_eq_mul]
-    ring
+      semicirclePDFReal_apply, smul_smul]
   · intro x hx
     have hx' : 1 - x ^ 2 ≤ 0 := by
       simp only [mem_Ioc, not_and_or, not_lt, not_le] at hx
