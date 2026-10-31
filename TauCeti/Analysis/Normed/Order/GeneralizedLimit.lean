@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
-public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
+public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 import Mathlib.Algebra.Order.BigOperators.Expect
 import Mathlib.Analysis.Convex.Cone.Extension
 import Mathlib.Analysis.SpecificLimits.Basic
@@ -38,7 +38,6 @@ extensions invariant under a commuting family of operators.
 
 ## Main definitions
 
-* `BoundedContinuousFunction.dilate`: the dilation `n ↦ f (n / k)` of a bounded sequence.
 * `TauCeti.GeneralizedLimit`: positive linear functionals on `ℕ →ᵇ ℝ` extending the limit.
 * `TauCeti.GeneralizedLimit.IsDilationInvariant`: invariance under every dilation by `k ≥ 1`.
 
@@ -69,68 +68,6 @@ noncomputable section
 
 open Filter Topology
 open scoped BigOperators BoundedContinuousFunction
-
-namespace BoundedContinuousFunction
-
-section Dilate
-
-variable {β : Type*} [PseudoMetricSpace β]
-
-/-- The dilation of a bounded sequence `f` by `k`: the sequence `n ↦ f (n / k)`, with
-natural-number division. For `k ≥ 1` it repeats every entry of `f` exactly `k` times. -/
-def dilate (f : ℕ →ᵇ β) (k : ℕ) : ℕ →ᵇ β :=
-  f.compContinuous ⟨(· / k), continuous_of_discreteTopology⟩
-
-@[simp]
-theorem dilate_apply (f : ℕ →ᵇ β) (k n : ℕ) : f.dilate k n = f (n / k) :=
-  (rfl)
-
-@[simp]
-theorem dilate_one (f : ℕ →ᵇ β) : f.dilate 1 = f := by
-  ext n
-  simp
-
-/-- Dilations compose multiplicatively, since `n / l / k = n / (k * l)`. -/
-@[simp]
-theorem dilate_dilate (f : ℕ →ᵇ β) (k l : ℕ) : (f.dilate k).dilate l = f.dilate (k * l) := by
-  ext n
-  simp [Nat.div_div_eq_div_mul, mul_comm]
-
-end Dilate
-
-section DilateLinear
-
-variable {β : Type*} [SeminormedAddCommGroup β]
-
-@[simp]
-theorem zero_dilate (k : ℕ) : (0 : ℕ →ᵇ β).dilate k = 0 := by
-  ext n
-  simp
-
-@[simp]
-theorem add_dilate (f g : ℕ →ᵇ β) (k : ℕ) : (f + g).dilate k = f.dilate k + g.dilate k := by
-  ext n
-  simp
-
-@[simp]
-theorem neg_dilate (f : ℕ →ᵇ β) (k : ℕ) : (-f).dilate k = -f.dilate k := by
-  ext n
-  simp
-
-@[simp]
-theorem sub_dilate (f g : ℕ →ᵇ β) (k : ℕ) : (f - g).dilate k = f.dilate k - g.dilate k := by
-  ext n
-  simp
-
-@[simp]
-theorem smul_dilate {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 β] (c : 𝕜) (f : ℕ →ᵇ β)
-    (k : ℕ) : (c • f).dilate k = c • f.dilate k := by
-  ext n
-  simp
-
-end DilateLinear
-
-end BoundedContinuousFunction
 
 namespace TauCeti
 
@@ -266,24 +203,6 @@ private theorem neg_norm_le_of_mem_dilationUpperBounds {f : ℕ →ᵇ ℝ} {c :
   obtain ⟨n, hn⟩ := h.exists
   exact (Finset.le_expect Finset.univ_nonempty fun i _ ↦ f.neg_norm_le_apply _).trans hn
 
-/-- Averaging over the dilations by `s i * t j` is averaging over the dilations by `s i` of the
-averages over the dilations by `t j`, in either order. -/
-private theorem expect_div_mul {ι κ : Type} [Fintype ι] [Fintype κ] (f : ℕ → ℝ) (s : ι → ℕ)
-    (t : κ → ℕ) (n : ℕ) :
-    𝔼 p : ι × κ, f (n / (s p.1 * t p.2)) = 𝔼 i, 𝔼 j, f (n / s i / t j) ∧
-      𝔼 p : ι × κ, f (n / (s p.1 * t p.2)) = 𝔼 j, 𝔼 i, f (n / t j / s i) := by
-  rw [← Finset.univ_product_univ, Finset.expect_product]
-  refine ⟨by simp [Nat.div_div_eq_div_mul], ?_⟩
-  rw [Finset.expect_comm]
-  simp [Nat.div_div_eq_div_mul, mul_comm]
-
-/-- An eventual upper bound on `f` is eventually an upper bound on finitely many dilations of
-`f` by positive integers. -/
-private theorem eventually_forall_apply_div_le {ι : Type} [Finite ι] {f : ℕ → ℝ} {c : ℝ}
-    {s : ι → ℕ} (hs : ∀ i, 0 < s i) (h : ∀ᶠ n in atTop, f n ≤ c) :
-    ∀ᶠ n in atTop, ∀ i, f (n / s i) ≤ c :=
-  eventually_all.2 fun i ↦ (Nat.tendsto_div_const_atTop (hs i).ne').eventually h
-
 private theorem add_mem_dilationUpperBounds {f g : ℕ → ℝ} {c d : ℝ}
     (hc : c ∈ dilationUpperBounds f) (hd : d ∈ dilationUpperBounds g) :
     c + d ∈ dilationUpperBounds (f + g) := by
@@ -291,14 +210,17 @@ private theorem add_mem_dilationUpperBounds {f g : ℕ → ℝ} {c d : ℝ}
   obtain ⟨κ, _, _, t, ht, hd⟩ := hd
   refine ⟨ι × κ, inferInstance, inferInstance, fun p ↦ s p.1 * t p.2,
     fun p ↦ mul_pos (hs p.1) (ht p.2), ?_⟩
-  filter_upwards [eventually_forall_apply_div_le ht hc, eventually_forall_apply_div_le hs hd]
-    with n hc hd
-  simp only [Pi.add_apply, Finset.expect_add_distrib]
-  refine add_le_add ?_ ?_
-  · rw [(expect_div_mul f s t n).2]
-    exact Finset.expect_le Finset.univ_nonempty fun j _ ↦ hc j
-  · rw [(expect_div_mul g s t n).1]
-    exact Finset.expect_le Finset.univ_nonempty fun i _ ↦ hd i
+  -- Each dilation by a positive integer tends to infinity, so the bounds hold for all dilations.
+  filter_upwards [eventually_all.2 fun j ↦ (Nat.tendsto_div_const_atTop (ht j).ne').eventually hc,
+    eventually_all.2 fun i ↦ (Nat.tendsto_div_const_atTop (hs i).ne').eventually hd] with n hc hd
+  -- Average over `ι × κ` as an iterated average, over `κ` first for `f` and over `ι` for `g`.
+  simp only [Pi.add_apply, Finset.expect_add_distrib, ← Finset.univ_product_univ,
+    Finset.expect_product]
+  rw [Finset.expect_comm]
+  refine add_le_add (Finset.expect_le Finset.univ_nonempty fun j _ ↦ ?_)
+    (Finset.expect_le Finset.univ_nonempty fun i _ ↦ ?_)
+  · simpa [Nat.div_div_eq_div_mul, mul_comm] using hc j
+  · simpa [Nat.div_div_eq_div_mul] using hd i
 
 private theorem smul_mem_dilationUpperBounds {f : ℕ → ℝ} {c r : ℝ} (hr : 0 ≤ r)
     (hc : c ∈ dilationUpperBounds f) : r * c ∈ dilationUpperBounds (r • f) := by
