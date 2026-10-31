@@ -26,8 +26,14 @@ ends. Its value at `w` is a real covector on `ℂ`, so the `ds` and `dt` compone
 along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results are:
 
 * `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`.
-* `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the whole end `q`, where
-  `±s > 0`, its pullback is `β(±s) H_q(t) dt`, that is `K_s = 0` and `K_t = β(±s) H_q(t)`.
+* `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the part `±s > 0` of the
+  end `q` its pullback is the continuation datum `β(±s - 1) H_q(t) dt`.
+* `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift`: on the part `±s ≥ 2` of the end `q`
+  its pullback is `H_q(t) dt`, that is `K_s = 0` and `K_t = H_q(t)`.
+* `TauCeti.Floer.pairOfPantsEndComponent H q v`: the component of the pullback along the tangent
+  vector `v` of the cylinder, in the end coordinates of the end `q`, so that `K_s` and `K_t` are
+  its components along `v = 1` and `v = i`; `TauCeti.Floer.pairOfPantsEndComponent_of_pos`
+  computes them on the part `±s > 0` of the end.
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero`: it is supported
   in the parts `±s > 1` of the three ends, so it vanishes off the ends.
 
@@ -45,7 +51,8 @@ required to have period one: smoothness across the ray where the angular coordin
 
 public noncomputable section
 
-open Set Real Manifold TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
+open Set Real Manifold Topology
+open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 
 namespace TauCeti.Floer
 
@@ -92,10 +99,9 @@ theorem exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero {w : ℂ} {
   obtain ⟨h₁, hw⟩ := one_lt_endSign_mul_re_endCoord hc
   exact ⟨q, q.endCoord w, h₁, q.cylindricalEndLift_endCoord hw⟩
 
-/-- **The perturbation in the coordinates of an end.** On the part `±s > 0` of the end `q`, the
-pullback of the perturbation along the end lift `φ` sends a tangent vector `v` of the cylinder to
-`Im v · β(±s) H_q(t)`, where `β(±s) = smoothTransition (±s - 1)` is the cutoff of the end: its
-`ds` component (`v = 1`) vanishes and its `dt` component (`v = i`) is `β(±s) H_q(t)`. -/
+/-- **The perturbation on an end.** On the part `±s > 0` of the end `q`, the pullback of the
+perturbation along the end lift `φ` is the continuation datum `β(±s - 1) H_q(t) dt`: it sends a
+tangent vector `v` of the cylinder to `Im v · β(±s - 1) H_q(t)`. -/
 theorem pairOfPantsPerturbation_cylindricalEndLift_of_pos {q : Puncture}
     (hH : Function.Periodic (H q) 1) {z : ℂ} (hz : 0 < q.endSign * z.re) (x : M) (v : ℂ) :
     pairOfPantsPerturbation H (q.cylindricalEndLift z) x (deriv q.cylindricalEndLift z * v) =
@@ -116,6 +122,72 @@ theorem pairOfPantsPerturbation_cylindricalEndLift_of_pos {q : Puncture}
         hz (by linarith) (r.cylindricalEndLift_endCoord hw).symm
     simp [hc]
   · simp
+
+/-- **The perturbation is `H_q(t) dt` far out on each end.** On the part `±s ≥ 2` of the end `q`,
+the pullback of the perturbation along the end lift `φ` sends a tangent vector `v` of the
+cylinder to `Im v · H_q(t)`: its `ds` component (`v = 1`) vanishes and its `dt` component
+(`v = i`) is `H_q(t)`. -/
+theorem pairOfPantsPerturbation_cylindricalEndLift {q : Puncture}
+    (hH : Function.Periodic (H q) 1) {z : ℂ} (hz : 2 ≤ q.endSign * z.re) (x : M) (v : ℂ) :
+    pairOfPantsPerturbation H (q.cylindricalEndLift z) x (deriv q.cylindricalEndLift z * v) =
+      v.im * H q z.im x := by
+  rw [pairOfPantsPerturbation_cylindricalEndLift_of_pos hH (by linarith),
+    smoothTransition.one_of_one_le (by linarith), one_mul]
+
+variable {q : Puncture}
+
+/-- The component of the pair-of-pants perturbation along the tangent vector `v` of the cylinder,
+in the end coordinates `z = (s, t)` of the end `q`: the pullback of the perturbation along the end
+lift `φ`, evaluated at the point `s + i t` on `v`. The components `K_s` and `K_t` of the pulled-back
+datum `K_s ds + K_t dt` are those along `v = 1` and `v = i`. -/
+def pairOfPantsEndComponent (H : Puncture → ℝ → M → ℝ) (q : Puncture) (v : ℂ) (z : ℝ × ℝ)
+    (x : M) : ℝ :=
+  pairOfPantsPerturbation H (q.cylindricalEndLift ⟨z.1, z.2⟩) x
+    (deriv q.cylindricalEndLift ⟨z.1, z.2⟩ * v)
+
+theorem pairOfPantsEndComponent_def (H : Puncture → ℝ → M → ℝ) (q : Puncture) (v : ℂ)
+    (z : ℝ × ℝ) (x : M) :
+    pairOfPantsEndComponent H q v z x =
+      pairOfPantsPerturbation H (q.cylindricalEndLift ⟨z.1, z.2⟩) x
+        (deriv q.cylindricalEndLift ⟨z.1, z.2⟩ * v) :=
+  (rfl)
+
+/-- On the part `±s > 0` of the end `q`, the component of the perturbation along `v` is
+`Im v · β(±s - 1) H_q(t)`. -/
+theorem pairOfPantsEndComponent_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+    (hz : 0 < q.endSign * z.1) (v : ℂ) (x : M) :
+    pairOfPantsEndComponent H q v z x =
+      v.im * (smoothTransition (q.endSign * z.1 - 1) * H q z.2 x) :=
+  pairOfPantsPerturbation_cylindricalEndLift_of_pos hH hz x v
+
+/-- On the part `±s > 0` of the end `q`, the `ds` component of the perturbation vanishes. -/
+theorem pairOfPantsEndComponent_one_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+    (hz : 0 < q.endSign * z.1) (x : M) : pairOfPantsEndComponent H q 1 z x = 0 := by
+  simp [pairOfPantsEndComponent_of_pos hH hz]
+
+/-- On the part `±s > 0` of the end `q`, the `dt` component of the perturbation is
+`β(±s - 1) H_q(t)`. -/
+theorem pairOfPantsEndComponent_I_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+    (hz : 0 < q.endSign * z.1) (x : M) :
+    pairOfPantsEndComponent H q Complex.I z x =
+      smoothTransition (q.endSign * z.1 - 1) * H q z.2 x := by
+  simp [pairOfPantsEndComponent_of_pos hH hz]
+
+/-- The part `±s > 0` of the end `q`, in end coordinates, is open. -/
+private theorem isOpen_endSign_mul_fst_pos (q : Puncture) :
+    IsOpen {z : ℝ × ℝ | 0 < q.endSign * z.1} :=
+  isOpen_lt continuous_const (continuous_const.mul continuous_fst)
+
+/-- Near a point of the part `±s > 0` of the end `q`, the components of the perturbation are those
+of the continuation datum `β(±s - 1) H_q(t) dt`. -/
+theorem eventuallyEq_pairOfPantsEndComponent (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+    (hz : 0 < q.endSign * z.1) :
+    pairOfPantsEndComponent H q 1 =ᶠ[𝓝 z] (fun _ _ ↦ 0) ∧
+      pairOfPantsEndComponent H q Complex.I =ᶠ[𝓝 z]
+        fun w x ↦ smoothTransition (q.endSign * w.1 - 1) * H q w.2 x := by
+  have h := (isOpen_endSign_mul_fst_pos q).mem_nhds hz
+  refine ⟨?_, ?_⟩ <;> filter_upwards [h] with w hw <;> funext x
+  exacts [pairOfPantsEndComponent_one_of_pos hH hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]

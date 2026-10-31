@@ -27,7 +27,9 @@ restriction of the ideal sheaf to each affine open. It transports local equation
 flat pullback and identifies the resulting closed subscheme with the fibre product through
 Mathlib's `Scheme.IdealSheafData.comapIso`. By `isEffectiveCartier_iff_exists_isOpenImmersion`,
 the local equations may also be given on affine schemes openly immersed in `X`, such as the
-charts `Spec (A ⊗[R] B)` of a fibre product.
+charts `Spec (A ⊗[R] B)` of a fibre product. Being an effective Cartier divisor is local: it
+suffices to check it after pulling back along open immersions whose images cover `X`
+(`isEffectiveCartier_of_forall_exists_isOpenImmersion`).
 
 Local equations can be shrunk into any neighbourhood
 (`IsEffectiveCartier.exists_eq_span_singleton_le`), because a nonzerodivisor on an affine open
@@ -164,6 +166,21 @@ theorem isEffectiveCartier_iff_exists_isOpenImmersion (I : X.IdealSheafData) :
     rw [← φ.isoOpensRange_inv_comp, comap_comp, hφa, comap_ofIdealTop, Ideal.map_span,
       Set.image_singleton]
     simp [t, e]
+
+/-- **Being an effective Cartier divisor is local.** An ideal sheaf is an effective Cartier divisor
+as soon as every point lies in the image of an open immersion along which it pulls back to an
+effective Cartier divisor. The converse holds by `IsEffectiveCartier.comap`, since open immersions
+are flat. -/
+theorem isEffectiveCartier_of_forall_exists_isOpenImmersion (I : X.IdealSheafData)
+    (h : ∀ x : X, ∃ (W : Scheme.{u}) (φ : W ⟶ X) (_ : IsOpenImmersion φ),
+      x ∈ Set.range φ ∧ (I.comap φ).IsEffectiveCartier) :
+    I.IsEffectiveCartier := by
+  rw [isEffectiveCartier_iff_exists_isOpenImmersion]
+  intro x
+  obtain ⟨W, φ, _, ⟨y, rfl⟩, hW⟩ := h x
+  obtain ⟨Z, _, ψ, _, ⟨z, rfl⟩, a, ha, hZ⟩ :=
+    (isEffectiveCartier_iff_exists_isOpenImmersion _).mp hW y
+  exact ⟨Z, inferInstance, ψ ≫ φ, inferInstance, ⟨z, rfl⟩, a, ha, by rw [comap_comp, hZ]⟩
 
 /-- Pullback along a flat morphism preserves effective Cartier divisors on arbitrary
 schemes. The pulled-back ideal defines the usual fibre-product closed subscheme. -/

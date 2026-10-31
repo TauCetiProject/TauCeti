@@ -10,14 +10,17 @@ public import Mathlib.RingTheory.Extension.Basic
 /-!
 # Cotangent spaces of ideals and kernels
 
-Elements of an ideal `I` of `A` whose images span the cotangent space `I ⧸ I ^ 2` over `A`
-generate `I` modulo `I ^ 2`. For a surjective `R`-algebra homomorphism `f : A →ₐ[R] S` onto a
-module-finite `R`-algebra, if the kernel of `f` is finitely generated over `A`, then its cotangent
-space is finite over `R`. The main case is an augmentation `f : A →ₐ[R] R`, whose kernel is the
-augmentation ideal.
+If elements `f₁, f₂, …` generate an ideal `I`, their classes span the conormal module `I ⧸ I²`
+over `R ⧸ I`. Conversely, elements of an ideal `I` of `A` whose images span the cotangent space
+`I ⧸ I ^ 2` over `A` generate `I` modulo `I ^ 2`. For a surjective `R`-algebra homomorphism
+`f : A →ₐ[R] S` onto a module-finite `R`-algebra, if the kernel of `f` is finitely generated over
+`A`, then its cotangent space is finite over `R`. The main case is an augmentation
+`f : A →ₐ[R] R`, whose kernel is the augmentation ideal.
 
 ## Main declarations
 
+* `Ideal.span_range_toCotangent_eq_top`: the classes of generators of `I` span `I ⧸ I²` over
+  `R ⧸ I`.
 * `Ideal.le_span_sup_sq_of_span_toCotangent_eq_top`: elements whose images span the cotangent
   space generate the ideal modulo its square.
 * `AlgHom.finite_cotangent_ker_of_fg`: finite generation of the kernel gives finiteness of its
@@ -33,6 +36,25 @@ augmentation ideal.
 public section
 
 namespace Ideal
+
+section
+
+variable {R : Type*} [CommRing R] {I : Ideal R} {ι : Type*}
+
+/-- If the elements `f i` generate `I`, their classes span the conormal module `I ⧸ I²` over
+`R ⧸ I`. -/
+theorem span_range_toCotangent_eq_top {f : ι → I}
+    (hf : Ideal.span (Set.range fun i ↦ (f i : R)) = I) :
+    Submodule.span (R ⧸ I) (Set.range fun i ↦ I.toCotangent (f i)) = ⊤ := by
+  have hspan : Submodule.span R (Set.range f) = ⊤ :=
+    (Submodule.span_range_subtype_eq_top_iff I fun i ↦ (f i).2).mpr hf
+  refine Submodule.span_eq_top_of_span_eq_top (S := R ⧸ I) R _ ?_
+  rw [Set.range_comp' I.toCotangent f, ← Submodule.map_span, hspan, Submodule.map_top,
+    I.toCotangent_range]
+
+end
+
+section
 
 variable {A : Type*} [CommRing A]
 
@@ -53,6 +75,8 @@ theorem le_span_sup_sq_of_span_toCotangent_eq_top (I : Ideal A) {ι : Type*} {f 
   rw [toCotangent_eq] at hz
   rw [← sub_sub_cancel (z : A) y]
   exact J.sub_mem hzJ (mem_sup_right hz)
+
+end
 
 end Ideal
 
