@@ -113,7 +113,11 @@ variable (hP : P ≤ isProjective C)
 
 /-- A finite resolution by projective objects in an abelian category is a projective resolution
 in Mathlib's sense: its complex is the spliced complex of the resolution, which vanishes beyond
-the length, and the quasi-isomorphism to `X` is the augmentation. -/
+the length, and the quasi-isomorphism to `X` is the augmentation.
+
+The proof that the augmentation is a quasi-isomorphism follows that of Mathlib's
+`CategoryTheory.ProjectiveResolution.of` in `Mathlib/CategoryTheory/Abelian/Projective/Resolution`
+(by Markus Himmel, Kim Morrison, Jakob von Raumer and Joël Riou). -/
 noncomputable def toProjectiveResolution {X : C}
     (r : (ExactStructure.abelian C).FiniteResolution P X) : ProjectiveResolution X where
   complex := r.toChainComplex
