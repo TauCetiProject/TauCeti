@@ -9,8 +9,8 @@ public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.ElementaryDivisors
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.UpperTriCosets
 public import TauCeti.NumberTheory.HeckeRing.GLn.CoprimeMul
 import Mathlib.Data.Nat.Prime.Int
-import Mathlib.Data.ZMod.Units
 import TauCeti.Data.ZMod.Units
+import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.CoprimeCosets
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Adjugate
 
 /-!
@@ -72,24 +72,6 @@ namespace HeckeRing.GL2
 
 variable {N : ℕ}
 
-/-- The integral matrix of `diag(1, n)`, for `0 < n`. -/
-private lemma coe_natDiagGL_one_eq_map {n : ℕ} (hn : 0 < n) :
-    (↑(natDiagGL 2 ![1, n]) : Matrix (Fin 2) (Fin 2) ℚ) =
-      (!![1, 0; 0, (n : ℤ)]).map (Int.cast : ℤ → ℚ) := by
-  rw [coe_natDiagGL_one hn]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-
-/-- Scaling the inverse of an integral matrix by its determinant gives the adjugate. -/
-private lemma natCast_smul_coe_inv {g : GL (Fin 2) ℚ} {G : Matrix (Fin 2) (Fin 2) ℤ} {k : ℕ}
-    (hG : (↑g : Matrix (Fin 2) (Fin 2) ℚ) = G.map (Int.cast : ℤ → ℚ))
-    (hdet : (↑g : Matrix (Fin 2) (Fin 2) ℚ).det = k) :
-    (k : ℚ) • (↑g⁻¹ : Matrix (Fin 2) (Fin 2) ℚ) = G.adjugate.map (Int.cast : ℤ → ℚ) := by
-  rw [← hdet, Matrix.coe_units_inv,
-    ← Matrix.adjugate_eq_det_smul_inv (Matrix.GeneralLinearGroup.det_ne_zero g).isUnit, hG]
-  simpa only [RingHom.mapMatrix_apply, Int.coe_castRingHom] using
-    (RingHom.map_adjugate (Int.castRingHom ℚ) G).symm
-
 /-- **The elements of `Dₙ` are `!![1, *; 0, *]` modulo `N`.** Every element of
 `Γ₁(N) · diag(1, n) · Γ₁(N)` is represented by an integral matrix whose upper-left entry is `1`
 and whose lower-left entry is `0` modulo `N`. -/
@@ -110,29 +92,6 @@ theorem exists_intMatrix_of_mem_doubleCoset_natDiagGL {n : ℕ} (hn : 0 < n) {x 
     push_cast
     simp [h₁10, h₂00, h₂10]
 
-/-- **A diamond label moves across `diag(1, n)` at every index.** For every `n > 0` and every
-integer `t` coprime to `n N` there are `A, A' ∈ SL₂(ℤ)` with lower rows `(N, t)` and `(n N, t)`
-and `diag(1, n) · A = A' · diag(1, n)`: take `A = !![α, -β n; N, t]` and `A' = !![α, -β; n N, t]`
-for a Bézout relation `α t + β n N = 1`. This is the construction of
-`HeckeRing.GL2.exists_natDiagGL_mul_mapGL_eq`, which assumes `n` coprime to `N`; here the
-lower-right entry is supplied by the caller, so that every index is covered. -/
-private lemma exists_natDiagGL_mul_mapGL_eq_of_isCoprime {n : ℕ} (hn : 0 < n) {t : ℤ}
-    (ht : IsCoprime t ((n * N : ℕ) : ℤ)) :
-    ∃ A A' : SL(2, ℤ), A 1 0 = N ∧ A 1 1 = t ∧ A' 1 0 = n * N ∧ A' 1 1 = t ∧
-      natDiagGL 2 ![1, n] * mapGL ℚ A = mapGL ℚ A' * natDiagGL 2 ![1, n] := by
-  obtain ⟨α, β, hαβ⟩ := ht
-  push_cast at hαβ
-  let A : SL(2, ℤ) :=
-    ⟨!![α, -(β * n); (N : ℤ), t], by rw [det_fin_two_of]; linear_combination hαβ⟩
-  let A' : SL(2, ℤ) :=
-    ⟨!![α, -β; n * (N : ℤ), t], by rw [det_fin_two_of]; linear_combination hαβ⟩
-  refine ⟨A, A', rfl, rfl, rfl, rfl, Units.ext ?_⟩
-  rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one hn, coe_mapGL_int_rat_fin_two,
-    coe_mapGL_int_rat_fin_two, mul_fin_two, mul_fin_two]
-  simp only [A, A', of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',
-    cons_val_fin_one]
-  congrm !![?_, ?_; ?_, ?_] <;> push_cast <;> ring
-
 /-- **Descent from `Γ₀(N)` to `Γ₁(N)`.** An element of `Γ₀(N) · diag(1, n) · Γ₀(N)` whose
 integral matrix has upper-left entry `≡ 1 (mod N)` lies in `Γ₁(N) · diag(1, n) · Γ₁(N)`. No
 condition relating `n` to `N` is needed.
@@ -141,7 +100,7 @@ Writing the element as `g₁ · diag(1, n) · g₂` with `gᵢ ∈ Γ₀(N)`, th
 diamond labels of `g₁` and `g₂` are inverse to each other, and a matrix `A ∈ Γ₀(N)` with
 upper-right entry divisible by `n` and the label of `g₁` moves across `diag(1, n)` to correct
 both factors at once. -/
-theorem mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 [NeZero N] {n : ℕ} (hn : 0 < n)
+theorem mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 {n : ℕ} (hn : 0 < n)
     {x : GL (Fin 2) ℚ} {X : Matrix (Fin 2) (Fin 2) ℤ}
     (hX : (↑x : Matrix (Fin 2) (Fin 2) ℚ) = X.map (Int.cast : ℤ → ℚ))
     (hX00 : ((X 0 0 : ℤ) : ZMod N) = 1)
@@ -162,19 +121,13 @@ theorem mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 [NeZero N] {n : ℕ} (h
     simpa [Gamma0_mem.mp hg₂] using hX00
   have h₂₁ : ((g₂ 0 0 : ℤ) : ZMod N) = ((g₁ 1 1 : ℤ) : ZMod N) := by
     linear_combination (g₁ 1 1 : ZMod N) * h₀₀ - (g₂ 0 0 : ZMod N) * h₁
-  -- an integer `t ≡ g₁₁₁ (mod N)` coprime to `n N`, lifted through the units of `ZMod (n N)`
+  -- an integer `t ≡ g₁₁₁ (mod N)` coprime to `n N`
   have : NeZero n := ⟨hn.ne'⟩
   let u : (ZMod N)ˣ := ⟨g₁ 1 1, g₁ 0 0, by rw [mul_comm]; exact h₁, h₁⟩
-  obtain ⟨e, he⟩ := ZMod.unitsMap_surjective (Dvd.intro_left n rfl : N ∣ n * N) u
-  have ht : (((e : ZMod (n * N)).val : ℤ) : ZMod N) = ((g₁ 1 1 : ℤ) : ZMod N) := by
-    have := congrArg Units.val he
-    rw [ZMod.unitsMap_def, Units.coe_map, MonoidHom.coe_ofClass, ZMod.castHom_apply,
-      ZMod.cast_eq_val] at this
-    rw [Int.cast_natCast]
-    exact this
+  obtain ⟨t, htc, htu⟩ := ZMod.exists_isCoprime_mul_intCast_eq n u
+  have ht : ((t : ℤ) : ZMod N) = ((g₁ 1 1 : ℤ) : ZMod N) := htu
   obtain ⟨A, A', hA10, hA11, hA'10, hA'11, hcomm⟩ :=
-    exists_natDiagGL_mul_mapGL_eq_of_isCoprime hn
-      (Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime e))
+    exists_natDiagGL_mul_mapGL_eq_of_isCoprime hn htc
   refine mem_doubleCoset.mpr ⟨mapGL ℚ (g₁ * A'⁻¹), Subgroup.mem_map_of_mem _ ?_,
     mapGL ℚ (A * g₂), Subgroup.mem_map_of_mem _ ?_, ?_⟩
   · -- `g₁` and `A'` have the same lower row modulo `N`
@@ -352,12 +305,14 @@ theorem op_smul_eq_of_op_mul_smul_eq {m n : ℕ} (hm : 0 < m) (hn : 0 < n)
   have hYn : (n : ℚ) • (↑Y : Matrix (Fin 2) (Fin 2) ℚ) =
       (B' * B.adjugate).map (Int.cast : ℤ → ℚ) := by
     rw [hYdef, Units.val_mul, ← Matrix.mul_smul,
-      natCast_smul_coe_inv hB (det_of_mem_doubleCoset_natDiagGL hn hb), hB', Matrix.map_mul_intCast]
+      Matrix.GeneralLinearGroup.natCast_smul_coe_inv hB (det_of_mem_doubleCoset_natDiagGL hn hb),
+      hB', Matrix.map_mul_intCast]
   have hYm : (m : ℚ) • (↑Y : Matrix (Fin 2) (Fin 2) ℚ) =
       (A'.adjugate * H * A).map (Int.cast : ℤ → ℚ) := by
     have hY : Y = a'⁻¹ * mapGL ℚ σh * a := by rw [hσh, hYdef]; group
     rw [hY, Units.val_mul, Units.val_mul, ← Matrix.smul_mul, ← Matrix.smul_mul,
-      natCast_smul_coe_inv hA' (det_of_mem_doubleCoset_natDiagGL hm ha'), hA, hH,
+      Matrix.GeneralLinearGroup.natCast_smul_coe_inv hA' (det_of_mem_doubleCoset_natDiagGL hm ha'),
+      hA, hH,
       Matrix.map_mul_intCast, Matrix.map_mul_intCast]
   have hYdet : (↑Y : Matrix (Fin 2) (Fin 2) ℚ).det = 1 := by
     rw [hYdef, Units.val_mul, Matrix.det_mul, Matrix.coe_units_inv, Matrix.det_nonsing_inv,

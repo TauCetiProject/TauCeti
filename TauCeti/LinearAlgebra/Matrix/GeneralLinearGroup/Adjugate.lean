@@ -36,6 +36,8 @@ which is proved where those objects live, not here.
 * `TauCeti.adjugateGL_adjugateGL`: in size two, `adj` is an involution.
 * `Matrix.adjugate_eq_det_smul_inv`: `adj(A) = det A • A⁻¹` for `A` of unit determinant, at
   any finite size.
+* `Matrix.GeneralLinearGroup.natCast_smul_coe_inv`: for `g` the image of an integer matrix `G`
+  of determinant `k`, `k • g⁻¹` is the image of `adj G`.
 * `Matrix.GeneralLinearGroup.adjugateGL_eq_scalar_mul_inv`: `adj(g) = (det g · I) * g⁻¹`.
 
 ## References
@@ -113,6 +115,18 @@ determinant is a unit. `Matrix.inv_def` read backwards, at any finite size. -/
 theorem _root_.Matrix.adjugate_eq_det_smul_inv {n R : Type*} [DecidableEq n] [Fintype n]
     [CommRing R] {A : Matrix n n R} (hA : IsUnit A.det) : adjugate A = A.det • A⁻¹ := by
   rw [Matrix.inv_def, smul_smul, Ring.mul_inverse_cancel _ hA, one_smul]
+
+/-- **Clearing the denominators of an inverse.** If `g` is the image of an integer matrix `G`
+and has determinant `k`, then `k • g⁻¹` is the image of the integer matrix `adj G`. This is
+`Matrix.adjugate_eq_det_smul_inv` transported along `Int.cast`. -/
+theorem natCast_smul_coe_inv {n R : Type*} [DecidableEq n] [Fintype n] [CommRing R]
+    {g : GL n R} {G : Matrix n n ℤ} {k : ℕ} (hG : (g : Matrix n n R) = G.map (Int.cast : ℤ → R))
+    (hdet : (g : Matrix n n R).det = k) :
+    (k : R) • ((g⁻¹ : GL n R) : Matrix n n R) = G.adjugate.map (Int.cast : ℤ → R) := by
+  rw [← hdet, Matrix.coe_units_inv,
+    ← Matrix.adjugate_eq_det_smul_inv (Matrix.isUnit_det_of_invertible _), hG]
+  simpa only [RingHom.mapMatrix_apply, Int.coe_castRingHom] using
+    (RingHom.map_adjugate (Int.castRingHom R) G).symm
 
 /-- **The adjugate of an invertible matrix is its inverse rescaled by the determinant**:
 `adj g = (det g · I) * g⁻¹`, in `GL n R`. Writing it as a product with a scalar matrix is what
