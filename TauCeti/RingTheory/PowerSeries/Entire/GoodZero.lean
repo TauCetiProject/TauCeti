@@ -177,17 +177,6 @@ theorem IsGoodZero.mul (hf : f.IsEntire) (hg : g.IsEntire) (hfa : f.IsGoodZero a
   rw [mul_mul_mul_comm, ← pow_add, (hf₁.mul hg₁).isGoodZero_X_sub_C_pow_mul_iff, hf₁.evalAt_mul hg₁]
   exact hf₁a.mul hg₁a
 
-/-- If the Hasse derivatives of order less than `k` of an entire series `f` vanish at `a`, then
-the Hasse derivative of order `k` of `f * g` at `a` is that of `f` times `g(a)`. -/
-theorem IsEntire.evalAt_hasseDeriv_mul_of_forall_lt (hf : f.IsEntire) (hg : g.IsEntire)
-    (hk : ∀ j < k, (PowerSeries.hasseDeriv j f).evalAt a = 0) :
-    (PowerSeries.hasseDeriv k (f * g)).evalAt a =
-      (PowerSeries.hasseDeriv k f).evalAt a * g.evalAt a := by
-  obtain ⟨f₁, hf₁, rfl⟩ := hf.exists_eq_X_sub_C_pow_mul hk
-  rw [mul_assoc, (hf₁.mul hg).evalAt_hasseDeriv_X_sub_C_pow_mul,
-    hf₁.evalAt_hasseDeriv_X_sub_C_pow_mul]
-  simp [hf₁.evalAt_mul hg]
-
 /-- **Cancelling a unit factor.** If `g(a)` is a unit, then `f * g` has a good zero of order `h`
 at `a` exactly when `f` does. -/
 theorem IsEntire.isGoodZero_mul_iff_of_isUnit (hf : f.IsEntire) (hg : g.IsEntire)
