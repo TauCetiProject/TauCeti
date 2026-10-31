@@ -77,12 +77,23 @@ theorem tilted_mul_eval_inter_preimage_of_horizon_le (hW : IsFilteredPreBrownian
       (fun ω ↦ ENNReal.ofReal (exponentialMartingale θ W T ω)) = fun ω ↦ f ω * g ω := by
     ext ω
     by_cases ha : ω ∈ A <;> by_cases hb : ω ∈ (W t - W s) ⁻¹' B <;> simp [f, g, ha, hb]
-  rw [hW.tilted_mul_eval_eq_withDensity, withDensity_apply _ (hA'.inter (hB.preimage hD)),
-    withDensity_apply _ hA', ← lintegral_indicator (hA'.inter (hB.preimage hD)), hfg,
-    lintegral_mul_eq_lintegral_mul_lintegral_of_independent_measurableSpace (ℱ.le s)
-      hD.comap_le (hW.indep_sub hst).symm hf hg,
-    lintegral_indicator hA', lintegral_indicator_one (hB.preimage hD), ← hlaw.map_eq,
-    Measure.map_apply hD hB]
+  have hAB : MeasurableSet (A ∩ (W t - W s) ⁻¹' B) := hA'.inter (hB.preimage hD)
+  rw [hW.tilted_mul_eval_eq_withDensity]
+  calc P.withDensity (fun ω ↦ ENNReal.ofReal (exponentialMartingale θ W T ω))
+        (A ∩ (W t - W s) ⁻¹' B)
+      = ∫⁻ ω, f ω * g ω ∂P := by
+        rw [withDensity_apply _ hAB, ← lintegral_indicator hAB, hfg]
+    -- `f` is `ℱ s`-measurable and `g` is a function of the increment, independent of `ℱ s`
+    _ = (∫⁻ ω, f ω ∂P) * ∫⁻ ω, g ω ∂P :=
+        lintegral_mul_eq_lintegral_mul_lintegral_of_independent_measurableSpace (ℱ.le s)
+          hD.comap_le (hW.indep_sub hst).symm hf hg
+    _ = P.withDensity (fun ω ↦ ENNReal.ofReal (exponentialMartingale θ W T ω)) A *
+          P ((W t - W s) ⁻¹' B) := by
+        rw [withDensity_apply _ hA', lintegral_indicator hA',
+          lintegral_indicator_one (hB.preimage hD)]
+    _ = P.withDensity (fun ω ↦ ENNReal.ofReal (exponentialMartingale θ W T ω)) A *
+          gaussianReal 0 (t - s) B := by
+        rw [← hlaw.map_eq, Measure.map_apply hD hB]
 
 /-- An increment of `W` starting at or after the tilting horizon keeps its centered Gaussian law
 under the tilted measure. -/
