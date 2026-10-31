@@ -39,8 +39,8 @@ whose first map enlarges the support and whose second map is restriction to `W �
 
 For opens `W' ≤ W`, the inclusion of pairs `(W', W' ∖ S) ⟶ (W, W ∖ S)` induces restriction maps
 `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)`, which make `W ↦ H_Sⁿ(W, F)` a presheaf; sheafifying it gives the local
-cohomology sheaves of `F` with supports in `S` (`TauCeti.Topology.Sheaves.LocalCohomology`). On an
-open `W` disjoint from `S` the inclusion `W ∖ S ⟶ W` is an isomorphism, so `H_Sⁿ(W, F) = 0`.
+cohomology sheaves of `F` with supports in `S` (`TauCeti.Topology.Sheaves.LocalCohomology.Basic`).
+On an open `W` disjoint from `S` the inclusion `W ∖ S ⟶ W` is an isomorphism, so `H_Sⁿ(W, F) = 0`.
 *Excision* says that cohomology with supports in `S` only depends on a neighbourhood of `S`: if
 `S ∩ W ⊆ W'`, restriction is an isomorphism `H_Sⁿ(W, F) ≃+ H_Sⁿ(W', F)`. The proof shows that the
 map of relative free sheaves `ℤ_{W', W' ∖ S} ⟶ ℤ_{W, W ∖ S}` is already an isomorphism, by the
