@@ -210,8 +210,8 @@ theorem unitsPowCharacter_apply (k : ℕ) (u : ℤ_[p]ˣ) :
     unitsPowCharacter p k u = (u : ℤ_[p]) ^ k :=
   (rfl)
 
-/-- For `k > 0` the power character `u ↦ u ^ k` of `ℤ_pˣ` is nontrivial: it does not fix the unit
-`1 + p`. -/
+/-- For `k > 0` the power character `u ↦ u ^ k` of `ℤ_pˣ` is nontrivial: it does not send the
+unit `1 + p` to `1`. -/
 theorem unitsPowCharacter_ne_one {k : ℕ} (hk : 0 < k) : unitsPowCharacter p k ≠ 1 := by
   intro h
   obtain ⟨a, ha⟩ := isUnit_one_add_of_dvd (dvd_refl (p : ℤ_[p]))

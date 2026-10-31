@@ -155,20 +155,17 @@ pseudo-measures. -/
 @[simp]
 theorem unitCharacterEval_integral (hκ : κ ≠ 1) (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
     κ.unitCharacterEval hκ (integral (diracHom (R := ℤ_[p])) _ μ) = (μ κ : ℚ_[p]) := by
-  obtain ⟨g, hg⟩ := exists_apply_ne_one hκ
-  refine mul_left_cancel₀ (coe_apply_sub_one_ne_zero κ hg) ?_
-  rw [unitCharacterEval_spec, numerator_integral, ← toPadicRingHom_apply, map_mul,
-    toPadicRingHom_dirac_sub_one, toPadicRingHom_apply]
+  let := (toPadicRingHom κ).toAlgebra
+  rw [← toPadicRingHom_apply]
+  exact evalAt_integral (A := ℚ_[p]) _ _ μ
 
 /-- The evaluation at `κ` is compatible with the action of measures on pseudo-measures:
 `E_κ(μ z) = μ(κ) E_κ(z)`. -/
 theorem unitCharacterEval_smul (hκ : κ ≠ 1) (μ : D(ℤ_[p]ˣ, ℤ_[p])) (z : unitsPseudomeasures p) :
     κ.unitCharacterEval hκ (μ • z) = (μ κ : ℚ_[p]) * κ.unitCharacterEval hκ z := by
-  obtain ⟨g, hg⟩ := exists_apply_ne_one hκ
-  refine mul_left_cancel₀ (coe_apply_sub_one_ne_zero κ hg) ?_
-  rw [unitCharacterEval_spec, map_smul, smul_eq_mul, ← toPadicRingHom_apply, map_mul,
-    toPadicRingHom_apply, toPadicRingHom_apply, ← unitCharacterEval_spec κ hκ g]
-  ring
+  let := (toPadicRingHom κ).toAlgebra
+  rw [← toPadicRingHom_apply, ← RingHom.algebraMap_toAlgebra (toPadicRingHom κ), ← Algebra.smul_def]
+  exact map_smul (evalAt (diracHom (R := ℤ_[p])) _ ℚ_[p] _ _) μ z
 
 /-- Uniqueness of the evaluation at `κ`: an additive map on pseudo-measures which extends the
 character integral `μ ↦ μ κ` and is compatible with the action of measures is `E_κ`. -/
@@ -176,13 +173,16 @@ theorem unitCharacterEval_unique (hκ : κ ≠ 1) (L : unitsPseudomeasures p →
     (hsmul : ∀ (μ : D(ℤ_[p]ˣ, ℤ_[p])) z, L (μ • z) = (μ κ : ℚ_[p]) * L z)
     (hint : ∀ μ : D(ℤ_[p]ˣ, ℤ_[p]), L (integral (diracHom (R := ℤ_[p])) _ μ) = (μ κ : ℚ_[p])) :
     L = κ.unitCharacterEval hκ := by
-  obtain ⟨g, hg⟩ := exists_apply_ne_one hκ
+  let := (toPadicRingHom κ).toAlgebra
+  -- `L` is `D(ℤ_pˣ, ℤ_p)`-linear for the algebra structure given by `μ ↦ μ κ`.
+  let L' : unitsPseudomeasures p →ₗ[D(ℤ_[p]ˣ, ℤ_[p])] ℚ_[p] :=
+    { L with
+      map_smul' := fun μ z => by
+        change L (μ • z) = μ • L z
+        rw [hsmul, Algebra.smul_def, RingHom.algebraMap_toAlgebra, toPadicRingHom_apply] }
   ext z
-  refine mul_left_cancel₀ (coe_apply_sub_one_ne_zero κ hg) ?_
-  have h := hsmul (diracHom g - 1) z
-  rw [sub_one_smul_eq_integral_numerator, hint, ← toPadicRingHom_apply κ (diracHom g - 1),
-    toPadicRingHom_dirac_sub_one] at h
-  rw [unitCharacterEval_spec, ← h]
+  exact LinearMap.congr_fun (evalAt_unique _ _ L' fun μ => (hint μ).trans
+    (toPadicRingHom_apply κ μ).symm) z
 
 /-- Continuity of the evaluation away from the trivial character: for a continuous family of
 characters `κ : S → (ℤ_pˣ →ₜ* ℤ_p)` (for the compact-open topology, which is the topology of uniform
