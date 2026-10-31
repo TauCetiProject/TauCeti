@@ -10,9 +10,9 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Algebra.Lie.Basic
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
-import Mathlib.Algebra.Lie.TraceForm
 import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
 import TauCeti.Algebra.Lie.Killing.Perfect
+import TauCeti.Algebra.Lie.TraceForm
 import TauCeti.Algebra.Lie.Weights.Central
 
 /-!
@@ -24,8 +24,8 @@ membership in `L`, following the key step of Humphreys' proof that `L` contains 
 parts of its elements.
 
 Every element of `L` preserves each `L`-submodule `W ⊆ V` (`LieSubalgebra.apply_mem_of_mem`), and
-has trace zero on it because `L` is perfect; this trace statement holds for any perfect Lie
-subalgebra of `𝔤𝔩(V)`. Conversely, over an algebraically closed field of characteristic zero, an
+has trace zero on it because `L` is perfect (`LieSubalgebra.trace_restrict_eq_zero_of_mem`).
+Conversely, over an algebraically closed field of characteristic zero, an
 endomorphism `y` of `V` lies in `L` as soon as it normalizes `L`, preserves every `L`-submodule of
 `V` and has trace zero on each of them. By Weyl's theorem `L` has an `L`-stable complement `Q` in
 `𝔤𝔩(V)`; write `y = a + q` with `a ∈ L` and `q ∈ Q`. The bracket of `q` with `L` lies in
@@ -35,8 +35,6 @@ submodules, again by Weyl's theorem, `q = 0`.
 
 ## Main results
 
-* `LieSubalgebra.trace_restrict_eq_zero_of_mem`: an element of a perfect Lie subalgebra of `𝔤𝔩(V)`
-  has trace zero on each of its submodules.
 * `LieSubalgebra.eq_zero_of_forall_commute`: an endomorphism commuting with `L` and having trace
   zero on every `L`-submodule vanishes.
 * `LieSubalgebra.mem_of_forall_lie_mem`: an endomorphism normalizing `L`, preserving every
@@ -57,20 +55,6 @@ namespace LieSubalgebra
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   (L : LieSubalgebra K (Module.End K V))
-
-/-- Every element of a perfect Lie subalgebra `L` of `𝔤𝔩(V)` has trace zero on each `L`-submodule
-of `V`. This applies in particular when `L` has nondegenerate Killing form, by
-`TauCeti.derivedSeries_one_eq_top_of_isKilling`. -/
-theorem trace_restrict_eq_zero_of_mem (hL : derivedSeries K L 1 = ⊤)
-    {z : Module.End K V} (hz : z ∈ L) (W : LieSubmodule K L V) :
-    LinearMap.trace K W (z.restrict (L.apply_mem_of_mem hz W)) = 0 := by
-  -- The restriction of `z` to `W` is, by definition, the action of `z` on the Lie module `W`.
-  have hzW : z.restrict (L.apply_mem_of_mem hz W) = toEnd K L W ⟨z, hz⟩ := rfl
-  rw [hzW]
-  refine trace_toEnd_eq_zero_of_mem_lcs K L W le_rfl
-    (derivedSeries_le_lowerCentralSeries K L 1 ?_)
-  rw [hL]
-  exact LieSubmodule.mem_top _
 
 variable [FiniteDimensional K V] [CharZero K] [IsAlgClosed K] [IsKilling K L]
 
