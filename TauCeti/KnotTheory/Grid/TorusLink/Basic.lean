@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.KnotTheory.Grid.Unknot.Basic
+import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.Cycle.Power
 
 /-!
@@ -42,6 +43,9 @@ that lane runs, the classical names are labels for these diagrams, not theorems 
 
 ## Main results
 
+* `TauCeti.GridDiagram.torusLink_X_val_of_le` and `TauCeti.GridDiagram.torusLink_X_val_of_lt`:
+  the `X` marking in column `c` sits in row `c + (q + 1)` for `c ≤ p` and in row `c - (p + 1)`
+  for `c > p`.
 * `TauCeti.GridDiagram.torusLink_zero_right`: with `q = 0` this is the standard unknot grid.
 * `TauCeti.GridDiagram.componentPerm_torusLink`: the component permutation is the inverse of the
   `(q + 1)`-st power of the cyclic shift.
@@ -135,6 +139,29 @@ diagonal. -/
 theorem torusLink_X_apply (c : Fin (p + 1 + (q + 1))) :
     (torusLink p q).X c = (finRotate (p + 1 + (q + 1)) ^ (q + 1)) c :=
   (rfl)
+
+/-- The row of the `X`-marking of a torus link grid in a column `c`, as a natural number: the
+column index shifted by `q + 1` modulo the grid number. -/
+theorem torusLink_X_val (c : Fin (p + 1 + (q + 1))) :
+    ((torusLink p q).X c : ℕ) = (c + (q + 1)) % (p + 1 + (q + 1)) := by
+  rw [torusLink_X_apply, Fin.coe_finRotate_pow]
+
+/-- In the first `p + 1` columns of a torus link grid the `X`-marking sits `q + 1` rows above the
+diagonal. -/
+theorem torusLink_X_val_of_le {c : Fin (p + 1 + (q + 1))} (hc : (c : ℕ) ≤ p) :
+    ((torusLink p q).X c : ℕ) = c + (q + 1) := by
+  rw [torusLink_X_val, Nat.mod_eq_of_lt]
+  omega
+
+/-- In the last `q + 1` columns of a torus link grid the `X`-marking sits `p + 1` rows below the
+diagonal. -/
+theorem torusLink_X_val_of_lt {c : Fin (p + 1 + (q + 1))} (hc : p < c) :
+    ((torusLink p q).X c : ℕ) = c - (p + 1) := by
+  rw [torusLink_X_val]
+  have h : (c : ℕ) + (q + 1) = (c - (p + 1)) + (p + 1 + (q + 1)) := by omega
+  rw [h, Nat.add_mod_right, Nat.mod_eq_of_lt]
+  have := c.isLt
+  omega
 
 /-- With `q = 0` the standard torus link grid is the standard unknot grid: the `(p + 1, 1)` torus
 link is the unknot. -/

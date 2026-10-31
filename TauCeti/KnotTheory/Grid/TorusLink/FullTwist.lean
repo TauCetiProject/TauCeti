@@ -8,7 +8,8 @@ module
 public import TauCeti.KnotTheory.Grid.CrossingChange.UnknottingNumber
 public import TauCeti.KnotTheory.Grid.Move.Stabilization
 public import TauCeti.KnotTheory.Grid.TorusLink.Basic
-import TauCeti.KnotTheory.Grid.TorusLink.Alexander
+import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.Perm.Fin
 
 /-!
 # Removing a full twist from a torus link grid
@@ -138,25 +139,6 @@ private theorem twistGrid_top :
 private def cycleVal (i c : ℕ) : ℕ :=
   if c < i then c + 1 else if c = i then 0 else c
 
-/-- The value of the cycle `(0 1 ⋯ i)` at `c`. -/
-private theorem val_cycleRange {n : ℕ} (i c : Fin n) :
-    (Fin.cycleRange i c : ℕ) = cycleVal i c := by
-  unfold cycleVal
-  rcases le_or_gt c i with h | h
-  · rw [Fin.coe_cycleRange_of_le h]
-    have h' : (c : ℕ) ≤ i := h
-    simp only [Fin.ext_iff]
-    split_ifs <;> omega
-  · rw [Fin.cycleRange_of_gt h]
-    have h' : (i : ℕ) < c := h
-    split_ifs <;> omega
-
-private theorem finRotate_eq_of_lt {n : ℕ} (i : Fin n) (hi : (i : ℕ) + 1 < n) :
-    finRotate n i = ⟨i + 1, hi⟩ := by
-  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
-  ext
-  rw [coe_finRotate_of_ne_last (Fin.ne_of_val_ne (by rw [Fin.val_last]; omega))]
-
 /-- The intermediate grid with its first column moved to position `i`. -/
 private noncomputable def twistSlide {n m : ℕ} (hm : m ≤ p + 1) (hn : n = p + 1 + (q + 1) + m)
     (i : Fin n) : GridDiagram n :=
@@ -168,29 +150,25 @@ variable {p q} {n m : ℕ} (hm : m ≤ p + 1) (hn : n = p + 1 + (q + 1) + m)
 
 private theorem twistSlide_O_val (i c : Fin n) :
     ((twistSlide p q hm hn i).O c : ℕ) = cycleVal i c := by
-  rw [twistSlide, relabelColumns_O_apply, Equiv.symm_symm, twistGrid_O_apply, val_cycleRange]
+  rw [twistSlide, relabelColumns_O_apply, Equiv.symm_symm, twistGrid_O_apply,
+    Fin.coe_cycleRange, cycleVal]
 
 private theorem twistSlide_X_val (i c : Fin n) :
     ((twistSlide p q hm hn i).X c : ℕ) =
       twistXRow p q m (cycleVal i c) := by
-  rw [twistSlide, relabelColumns_X_apply, Equiv.symm_symm, twistGrid_X_val, val_cycleRange]
+  rw [twistSlide, relabelColumns_X_apply, Equiv.symm_symm, twistGrid_X_val,
+    Fin.coe_cycleRange, cycleVal]
 
 private theorem twistSlide_zero (h0 : 0 < n) :
     twistSlide p q hm hn ⟨0, h0⟩ = twistGrid p q m hm hn := by
-  refine GridDiagram.ext (GridState.ext fun c ↦ Fin.ext ?_) (GridState.ext fun c ↦ Fin.ext ?_)
-  · rw [twistSlide_O_val, twistGrid_O_apply]
-    simp only [cycleVal]
-    split_ifs <;> omega
-  · rw [twistSlide_X_val, twistGrid_X_val]
-    simp only [cycleVal]
-    congr 1
-    split_ifs <;> omega
+  rw [twistSlide, Fin.cycleRange_mk_zero h0]
+  exact relabelColumns_refl _
 
 /-- Moving the first column one step further right is exchanging two adjacent columns. -/
 private theorem twistSlide_succ (i : Fin n) (hi : (i : ℕ) + 1 < n) :
     twistSlide p q hm hn ⟨i + 1, hi⟩ =
       (twistSlide p q hm hn i).swapColumns i (finRotate n i) := by
-  rw [finRotate_eq_of_lt i hi]
+  rw [(Fin.ext (Fin.coe_finRotate_of_add_one_lt hi) : finRotate n i = ⟨i + 1, hi⟩)]
   refine GridDiagram.ext (GridState.ext fun c ↦ Fin.ext ?_) (GridState.ext fun c ↦ Fin.ext ?_)
   · rw [swapColumns_O, GridState.swapColumns_apply, twistSlide_O_val, twistSlide_O_val,
       Equiv.swap_apply_def]
@@ -204,7 +182,8 @@ private theorem twistSlide_succ (i : Fin n) (hi : (i : ℕ) + 1 < n) :
 /-- While the moving column passes a column `j < m`, the exchange is a cross-commutation. -/
 private theorem columnsInterleaving_twistSlide (i : Fin n) (hi : (i : ℕ) + 1 < m) :
     (twistSlide p q hm hn i).ColumnsInterleaving i (finRotate n i) := by
-  rw [finRotate_eq_of_lt i (by omega), columnsInterleaving_iff]
+  rw [(Fin.ext (Fin.coe_finRotate_of_add_one_lt (by omega)) : finRotate n i = ⟨i + 1, by omega⟩),
+    columnsInterleaving_iff]
   right
   simp only [mem_columnArc, Grid.mem_cIoo, ne_eq, Fin.ext_iff, twistSlide_O_val, twistSlide_X_val,
     twistXRow, cycleVal]
@@ -214,7 +193,8 @@ private theorem columnsInterleaving_twistSlide (i : Fin n) (hi : (i : ℕ) + 1 <
 private theorem columnsNoninterleaving_twistSlide (h0 : 0 < m) (i : Fin n)
     (hi₁ : m ≤ (i : ℕ) + 1) (hi₂ : (i : ℕ) + 1 ≤ p) :
     (twistSlide p q hm hn i).ColumnsNoninterleaving i (finRotate n i) := by
-  rw [finRotate_eq_of_lt i (by omega), ColumnsNoninterleaving, Grid.noninterleaving_iff]
+  rw [(Fin.ext (Fin.coe_finRotate_of_add_one_lt (by omega)) : finRotate n i = ⟨i + 1, by omega⟩),
+    ColumnsNoninterleaving, Grid.noninterleaving_iff]
   refine ⟨⟨fun h ↦ ?_, fun h ↦ ?_⟩, ⟨fun h ↦ ?_, fun h ↦ ?_⟩⟩ <;>
     simp only [Grid.mem_cIoo, ne_eq, Fin.ext_iff, twistSlide_O_val, twistSlide_X_val, twistXRow,
       cycleVal] at h ⊢ <;>
