@@ -37,6 +37,8 @@ No boundedness or boundary regularity of `Ω` is assumed.
 * `TauCeti.Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn`: if the weak derivatives of
   `u ∈ Lᵖ(Ω)` along an orthonormal basis lie in `W^{k,p}(Ω)`, then `u ∈ W^{k+1,p}(Ω)`.
 * `TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`: the two combined.
+* `TauCeti.Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn`: the reverse direction for a
+  function representative, with weak derivatives in every direction.
 * `TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`: the second-order case in the
   form a difference-quotient argument supplies, with `Lᵖ` weak derivatives of the components
   `⟪∇u, eⱼ⟫` of the weak gradient.
@@ -289,6 +291,31 @@ theorem Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn (k : ℕ)
   refine ⟨fun ⟨w, hw⟩ v => hw ▸ Wkp.exists_hasWeakLineDerivOn_value k w v, fun h => ?_⟩
   exact Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn (stdOrthonormalBasis ℝ E) u k
     fun i => h _
+
+/-- A function `w` in `Lᵖ(Ω)` whose weak derivative on `Ω` in every direction `v` is the value of
+an element `d v` of `W^{k,p}(Ω)` agrees almost everywhere on `Ω` with the value of an element of
+`W^{k+1,p}(Ω)`. This is `TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn` for a
+function representative rather than an element of `Lᵖ`. -/
+theorem Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn (k : ℕ) {w : E → ℝ}
+    (hw : MemLp w p (mu.restrict Omega)) (d : E → Wkp mu Omega p k)
+    (hd : ∀ v, HasWeakLineDerivOn mu Omega w (Wkp.value k (d v)) v) :
+    ∃ W : Wkp mu Omega p (k + 1), Wkp.value (k + 1) W =ᵐ[mu.restrict Omega] w := by
+  obtain ⟨W, hW⟩ := (Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn k
+    (hw.toLp w)).2 fun v => ⟨d v, (hd v).congr_ae hw.coeFn_toLp.symm⟩
+  exact ⟨W, hW ▸ hw.coeFn_toLp⟩
+
+/-- The first-order case of `TauCeti.Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn`: a
+function `w` in `Lᵖ(Ω)` whose weak derivative on `Ω` in every direction `v` is a function `w' v`
+in `Lᵖ(Ω)` agrees almost everywhere on `Ω` with the value of an element of `W^{1,p}(Ω)`. -/
+theorem Wkp.exists_value_one_ae_eq_of_forall_hasWeakLineDerivOn {w : E → ℝ}
+    (hw : MemLp w p (mu.restrict Omega)) (w' : E → E → ℝ)
+    (hw' : ∀ v, MemLp (w' v) p (mu.restrict Omega))
+    (h : ∀ v, HasWeakLineDerivOn mu Omega w (w' v) v) :
+    ∃ W : Wkp mu Omega p 1, Wkp.value 1 W =ᵐ[mu.restrict Omega] w :=
+  Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn 0 hw (fun v => (hw' v).toLp (w' v))
+    fun v => by
+      rw [Wkp.value_zero]
+      exact (h v).congr_ae_deriv (hw' v).coeFn_toLp.symm
 
 /-! ### Second order from the components of the gradient -/
 

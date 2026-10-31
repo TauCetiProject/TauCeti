@@ -81,36 +81,6 @@ private theorem ae_restrict_top :
       Set (WithLp 2 (ℝ × E)))) = ae volume := by
   simp
 
-/-- An `Lᵖ` function on the whole space whose weak derivative in every direction is the value of
-a `W^{k,p}` function is the value of a `W^{k+1,p}` function. -/
-private theorem exists_wkp_succ_value_ae_eq (k : ℕ) {w : WithLp 2 (ℝ × E) → ℝ}
-    (hw : MemLp w p volume)
-    (d : WithLp 2 (ℝ × E) → Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p k)
-    (hd : ∀ v, HasWeakLineDerivOn volume ⊤ w (Wkp.value k (d v)) v) :
-    ∃ W : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p (k + 1),
-      Wkp.value (k + 1) W =ᵐ[volume] w := by
-  have hw' := hw.mono_measure (Measure.restrict_le_self (s := ((⊤ : Opens (WithLp 2 (ℝ × E))) :
-    Set (WithLp 2 (ℝ × E)))))
-  obtain ⟨W, hW⟩ := (Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn k
-    (hw'.toLp w)).2 fun v => ⟨d v, (hd v).congr_ae hw'.coeFn_toLp.symm⟩
-  refine ⟨W, ?_⟩
-  have h := hw'.coeFn_toLp
-  rw [ae_restrict_top] at h
-  rw [hW]
-  exact h
-
-/-- The first-order case of `exists_wkp_succ_value_ae_eq`, with the directional derivatives given
-as `Lᵖ` functions. -/
-private theorem exists_wkp_one_value_ae_eq {w : WithLp 2 (ℝ × E) → ℝ} (hw : MemLp w p volume)
-    (w' : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) → ℝ) (hw' : ∀ v, MemLp (w' v) p volume)
-    (h : ∀ v, HasWeakLineDerivOn volume ⊤ w (w' v) v) :
-    ∃ W : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 1, Wkp.value 1 W =ᵐ[volume] w :=
-  exists_wkp_succ_value_ae_eq 0 hw (fun v => ((hw' v).mono_measure
-    (Measure.restrict_le_self (s := ((⊤ : Opens (WithLp 2 (ℝ × E))) :
-      Set (WithLp 2 (ℝ × E)))))).toLp (w' v)) fun v => by
-    rw [Wkp.value_zero]
-    exact (h v).congr_ae_deriv ((hw' v).mono_measure Measure.restrict_le_self).coeFn_toLp.symm
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Splitting a direction `v` into its normal and tangential parts, the pairing of `w - R w'`
 with `v` is `v.fst (⟪w, ν⟫ + ⟪w', ν⟫) + (⟪w, τ⟫ - ⟪w', τ⟫)`, where `ν = (1, 0)` and
@@ -209,22 +179,32 @@ private theorem exists_wkp_two_sub_comp_normalReflection {a : ℝ}
     simpa only [innerSL_apply_apply] using h₁.comm (h4.hasWeakLineDerivOn (τ y)) h₂
   -- the components of the gradient are first-order Sobolev functions
   obtain ⟨N, hN⟩ : ∃ N : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 1,
-      Wkp.value 1 N =ᵐ[volume] fun x => ⟪G x, ν⟫_ℝ + ⟪G (ρ x), ν⟫_ℝ :=
-    exists_wkp_one_value_ae_eq ((hGc ν).add (hρGc ν))
-      (fun v x => ⟪D x ν + R (D (ρ x) ν), v⟫_ℝ) (fun v => hplus ν v) fun v => by
+      Wkp.value 1 N =ᵐ[volume] fun x => ⟪G x, ν⟫_ℝ + ⟪G (ρ x), ν⟫_ℝ := by
+    have h := Wkp.exists_value_one_ae_eq_of_forall_hasWeakLineDerivOn
+      (w := fun x => ⟪G x, ν⟫_ℝ + ⟪G (ρ x), ν⟫_ℝ) (((hGc ν).add (hρGc ν)).restrict _)
+      (fun v x => ⟪D x ν + R (D (ρ x) ν), v⟫_ℝ)
+      (fun v => (hplus ν v).restrict _) fun v => by
         simpa only [innerSL_apply_apply] using h4.hasWeakLineDerivOn v
+    rw [ae_restrict_top] at h
+    exact h
   have hT (y : E) : ∃ T : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 1,
       Wkp.value 1 T =ᵐ[volume] fun x => ⟪G x, τ y⟫_ℝ - ⟪G (ρ x), τ y⟫_ℝ := by
-    refine exists_wkp_one_value_ae_eq ((hGc (τ y)).sub (hρGc (τ y)))
+    have h := Wkp.exists_value_one_ae_eq_of_forall_hasWeakLineDerivOn
+      (w := fun x => ⟪G x, τ y⟫_ℝ - ⟪G (ρ x), τ y⟫_ℝ)
+      (((hGc (τ y)).sub (hρGc (τ y))).restrict _)
       (fun v x => v.fst * ⟪D x ν + R (D (ρ x) ν), τ y⟫_ℝ +
         ⟪D x (τ y) - R (D (ρ x) (τ y)), τ v.snd⟫_ℝ)
-      (fun v => ((hplus ν (τ y)).const_mul v.fst).add (hminus (τ y) (τ v.snd))) fun v => ?_
-    have h := ((h6 y).smul_direction v.fst).add_direction (h5 y v.snd)
-    rw [hsplit v] at h
+      (fun v => (((hplus ν (τ y)).const_mul v.fst).add (hminus (τ y) (τ v.snd))).restrict _)
+      fun v => by
+        have h := ((h6 y).smul_direction v.fst).add_direction (h5 y v.snd)
+        rw [hsplit v] at h
+        exact h
+    rw [ae_restrict_top] at h
     exact h
   choose T hT using hT
   -- the odd reflection is a second-order Sobolev function
-  obtain ⟨W, hW⟩ := exists_wkp_succ_value_ae_eq 1 (hf.sub (hf.comp_measurePreserving hρ))
+  obtain ⟨W, hW⟩ := Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn 1
+    ((hf.sub (hf.comp_measurePreserving hρ)).restrict _)
     (fun v => v.fst • N + T v.snd) fun v => by
       refine (h2.hasWeakLineDerivOn v).congr_ae_deriv ?_
       rw [ae_restrict_top]
@@ -234,6 +214,7 @@ private theorem exists_wkp_two_sub_comp_normalReflection {a : ℝ}
       filter_upwards [hN, hT v.snd, hadd, hsmul] with x h1 h2 h3 h4
       rw [Wkp.value_add, Wkp.value_smul, h3, Pi.add_apply, h4, Pi.smul_apply, h1, h2,
         innerSL_apply_apply, inner_sub_normalLinearReflection_eq, smul_eq_mul]
+  rw [ae_restrict_top] at hW
   refine ⟨W, hW, ?_⟩
   -- the weak gradient of `W` is `G - R (G ∘ ρ)`
   have hg : ∀ᵐ x ∂volume,
@@ -365,11 +346,7 @@ theorem Wkp.exists_value_ae_eq_sub_comp_normalReflection {a : ℝ}
     (fun x hx => indicator_of_notMem hx _) (fun x hx => indicator_of_notMem hx _) hfG
     (fun c => ?_) (fun v c => ?_)
   · -- the entries of the extended Hessian are in `Lᵖ`
-    refine hDl.of_le_mul (c := ‖c‖)
-      ((continuous_id.clm_apply continuous_const).comp_aestronglyMeasurable
-        hDl.aestronglyMeasurable) (Eventually.of_forall fun x => ?_)
-    rw [mul_comm]
-    exact ContinuousLinearMap.le_opNorm _ c
+    exact (ContinuousLinearMap.apply ℝ (WithLp 2 (ℝ × E)) c).comp_memLp' hDl
   · -- `x ↦ D²u x c` is the weak gradient of `⟪∇u, c⟫` on the half-space, by symmetry of `D²u`
     rw [hasWeakFDerivOn_iff]
     intro d
