@@ -130,21 +130,21 @@ theorem iteratedFDeriv_heatKernel_convolution (ht : 0 < t) (hg : AEStronglyMeasu
   rw [iteratedFDeriv_convolution_left_of_dominated (lsmul ℝ ℝ) (N := ⊤) (contDiff_heatKernel t)
     (fun k _ => exists_integrable_norm_iteratedFDeriv_heatKernel_add_le ht k 1) hg hM le_top,
     convolution_def]
-  congr 1 with z
+  refine integral_congr_ae (ae_of_all _ fun z => ?_)
+  ext v
+  simp only [flip_apply, coe_comp, Function.comp_apply, lsmul_flip_apply,
+    compContinuousMultilinearMapL_apply, ContinuousMultilinearMap.smulRight_apply,
+    ContinuousLinearMap.compContinuousMultilinearMap_coe, toSpanSingleton_apply]
 
 /-- The integrand `z ↦ D^m K_t(z) ⊗ g(x - z)` of `TauCeti.iteratedFDeriv_heatKernel_convolution`
 is integrable. -/
 private theorem integrable_smulRight_iteratedFDeriv_heatKernel (ht : 0 < t)
     (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) (m : ℕ) (x : E) :
     Integrable fun z => (iteratedFDeriv ℝ m (heatKernel t) z).smulRight (g (x - z)) := by
-  have hqmp := quasiMeasurePreserving_sub_left_of_right_invariant (volume : Measure E) x
-  refine ((integrable_iteratedFDeriv_heatKernel ht m).norm.mul_const M).mono' ?_ ?_
-  · exact (ContinuousMultilinearMap.smulRightL ℝ (fun _ : Fin m => E) F).aestronglyMeasurable_comp₂
-      ((contDiff_heatKernel t).continuous_iteratedFDeriv le_top).aestronglyMeasurable
-      (hg.comp_quasiMeasurePreserving hqmp)
-  · filter_upwards [hqmp.ae hM] with z hz
-    rw [ContinuousMultilinearMap.norm_smulRight]
-    exact mul_le_mul_of_nonneg_left hz (norm_nonneg _)
+  simpa only [ConvolutionExistsAt, ContinuousMultilinearMap.smulRightL_apply] using
+    convolutionExists_of_integrable_of_ae_norm_le
+      (ContinuousMultilinearMap.smulRightL ℝ (fun _ : Fin m => E) F)
+      (integrable_iteratedFDeriv_heatKernel ht m) hg hM x
 
 /-- **Bounds on the derivatives of a heat convolution.** If `‖g‖ ≤ M` almost everywhere, then
 `‖D^m (K_t ⋆ g)(x)‖ ≤ ‖D^m K_t‖_{L¹} M` for `t > 0`. -/
