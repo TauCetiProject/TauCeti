@@ -119,6 +119,17 @@ theorem cartanProjection_map_incl (h : U H) :
     cartanProjection b (UniversalEnvelopingAlgebra.map K H.incl h) = h := by
   simpa using cartanProjection_mul_mul b 1 h 1
 
+/-- **The Cartan projection fixes the scalars.** -/
+@[simp]
+theorem cartanProjection_algebraMap (r : K) :
+    cartanProjection b (algebraMap K (U L) r) = algebraMap K (U H) r := by
+  rw [← AlgHom.commutes (UniversalEnvelopingAlgebra.map K H.incl) r, cartanProjection_map_incl]
+
+/-- **The Cartan projection sends `1` to `1`.** -/
+@[simp]
+theorem cartanProjection_one : cartanProjection b (1 : U L) = 1 := by
+  simpa using cartanProjection_algebraMap b 1
+
 /-! ### Evaluation at a weight -/
 
 variable (lam : Dual K H)
