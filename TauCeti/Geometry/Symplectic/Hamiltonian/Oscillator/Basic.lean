@@ -18,6 +18,11 @@ standard symplectic plane. It is smooth jointly in time and initial point, satis
 law, is inverted by reversing time, and preserves the standard symplectic form. Its velocity
 is `(p, -q)`, the Hamiltonian vector field of the oscillator energy.
 
+More generally, `TauCeti.oscillatorHamiltonian m ν` is the energy `p² / (2m) + m ν² q² / 2` of a
+harmonic oscillator of mass `m` and angular frequency `ν`, and
+`TauCeti.stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian` states its Hamilton's
+equations `q' = p / m`, `p' = -m ν² q`.
+
 ## References
 
 * V. I. Arnold, *Mathematical Methods of Classical Mechanics*, second edition, §§15 and 40.
@@ -101,5 +106,30 @@ theorem stdSymplecticForm_oscillatorEvolution (t : ℝ) (u v : ℝ × ℝ) :
   simp only [stdSymplecticForm_apply, oscillatorEvolution_apply, RCLike.inner_apply,
     RCLike.conj_to_real]
   linear_combination (u.1 * v.2 - u.2 * v.1) * Real.sin_sq_add_cos_sq t
+
+/-! ### Mass and frequency: the Hamiltonian and Hamilton's equations -/
+
+/-- The energy `H(q, p) = p² / (2m) + m ν² q² / 2` of a harmonic oscillator of mass `m` and angular
+frequency `ν`, on the phase space `ℝ × ℝ` of positions and momenta. -/
+def oscillatorHamiltonian (m ν : ℝ) (x : ℝ × ℝ) : ℝ :=
+  x.2 ^ 2 / (2 * m) + m * ν ^ 2 * x.1 ^ 2 / 2
+
+theorem oscillatorHamiltonian_apply (m ν : ℝ) (x : ℝ × ℝ) :
+    oscillatorHamiltonian m ν x = x.2 ^ 2 / (2 * m) + m * ν ^ 2 * x.1 ^ 2 / 2 :=
+  (rfl)
+
+/-- **Hamilton's equations** of the harmonic oscillator: `q' = p / m`, `p' = -m ν² q`. -/
+theorem stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian (m ν : ℝ) (x : ℝ × ℝ) :
+    (stdSymplecticForm (V := ℝ)).hamiltonianVectorField (oscillatorHamiltonian m ν) x =
+      (x.2 / m, -(m * ν ^ 2 * x.1)) := by
+  have hH : oscillatorHamiltonian m ν =
+      fun y ↦ y.2 ^ 2 * (2 * m)⁻¹ + m * ν ^ 2 * y.1 ^ 2 * 2⁻¹ := by
+    ext y
+    simp [oscillatorHamiltonian_apply, div_eq_mul_inv]
+  have h := (((hasFDerivAt_snd (𝕜 := ℝ) (p := x)).pow 2).mul_const (2 * m)⁻¹).add
+    ((((hasFDerivAt_fst (𝕜 := ℝ) (p := x)).pow 2).const_mul (m * ν ^ 2)).mul_const 2⁻¹)
+  rw [hH]
+  refine stdSymplecticForm_hamiltonianVectorField (h.congr_fderiv ?_)
+  ext <;> simp [RCLike.inner_apply] <;> ring
 
 end TauCeti

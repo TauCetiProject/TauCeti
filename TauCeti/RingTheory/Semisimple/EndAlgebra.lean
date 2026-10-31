@@ -17,8 +17,8 @@ public import Mathlib.RingTheory.SimpleRing.Defs
 -- power, the dimension of a matrix algebra, the simplicity of the endomorphism ring of an isotypic
 -- module, and the isotypic decomposition over a simple Artinian algebra are all internal to the
 -- arguments below. The matrix algebras and opposites in the statement of
--- `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end` are already in scope through the
--- public imports above.
+-- `IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end` are already in scope through the public
+-- imports above.
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.RingTheory.Semisimple.IsotypicEnd
@@ -59,11 +59,11 @@ theorem in `TauCeti/Algebra/CentralSimple/Centralizer/Basic.lean`.
 
 ## Main results
 
-* `TauCeti.IsSimpleRing.finrank_end_mul_finrank_eq_sq`: the dimension identity
+* `IsSimpleRing.finrank_end_mul_finrank_eq_sq`: the dimension identity
   `finrank K (End_R M) * finrank K R = (finrank K M)²`.
-* `TauCeti.IsSimpleRing.moduleEnd`: `End_R M` is a simple ring, for `M` a nonzero module finite
+* `IsSimpleRing.moduleEnd`: `End_R M` is a simple ring, for `M` a nonzero module finite
   over a simple Artinian ring `R`.
-* `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end`: the matrix comparison
+* `IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end`: the matrix comparison
   `Mₐ(R) ≃ₐ[K] M_b((End_R M)ᵐᵒᵖ)`.
 
 ## Implementation notes
@@ -80,15 +80,11 @@ is `1 * 2 = 2` while `(finrank K M)² = 1`.
 
 ## References
 
-This supplies the module-theoretic engine of the Layer 5 centralizer theorem of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12, and T. Y. Lam, *A First Course in
 Noncommutative Rings*, GTM 131, Chapter 1.
 -/
 
 public section
-
-namespace TauCeti
 
 open Module
 
@@ -108,7 +104,7 @@ simple Artinian and `M` is finite over `R`.  That is the only use made of simpli
 this is the specialization of `IsIsotypic.isSimpleRing_moduleEnd` along
 `IsSimpleRing.isIsotypic`. -/
 theorem moduleEnd [Nontrivial M] : IsSimpleRing (Module.End R M) :=
-  (_root_.IsSimpleRing.isIsotypic R M).isSimpleRing_moduleEnd
+  (isIsotypic R M).isSimpleRing_moduleEnd
 
 end Simplicity
 
@@ -129,10 +125,9 @@ private theorem exists_algEquiv_matrix_end :
       Nonempty (Module.End R M ≃ₐ[K] Matrix (Fin k) (Fin k) (Module.End R S)) := by
   have : IsArtinianRing R := IsArtinianRing.of_finite K R
   have : Module.Finite R M := Module.Finite.of_restrictScalars_finite K R M
-  obtain ⟨k, ⟨e⟩⟩ := (IsIsotypicOfType.of_isSimpleRing R (↥S) M).linearEquiv_fun
+  obtain ⟨k, ⟨e⟩⟩ := (TauCeti.IsIsotypicOfType.of_isSimpleRing R (↥S) M).linearEquiv_fun
   refine ⟨k, ?_, ⟨(e.conjAlgEquiv K).trans (endVecAlgEquivMatrixEnd (Fin k) K R (↥S))⟩⟩
-  rw [(e.restrictScalars K).finrank_eq, Module.finrank_pi_fintype, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, smul_eq_mul]
+  simp [(e.restrictScalars K).finrank_eq, Module.finrank_pi_fintype]
 
 end Aux
 
@@ -190,13 +185,10 @@ theorem nonempty_algEquiv_matrix_mulOpposite_end :
     Nonempty (Matrix (Fin (finrank K M)) (Fin (finrank K M)) R ≃ₐ[K]
       Matrix (Fin (finrank K R)) (Fin (finrank K R)) (Module.End R M)ᵐᵒᵖ) := by
   have hdim : finrank K (Fin (finrank K R) → M) = finrank K (Fin (finrank K M) → R) := by
-    simp only [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-      smul_eq_mul, mul_comm]
-  obtain ⟨e⟩ := nonempty_linearEquiv_of_finrank_eq (R := R) K hdim
+    simp [Module.finrank_pi_fintype, mul_comm]
+  obtain ⟨e⟩ := TauCeti.IsSimpleRing.nonempty_linearEquiv_of_finrank_eq (R := R) K hdim
   exact ⟨(matrixAlgEquivEndVecMulOpposite K).trans <|
     (AlgEquiv.op (e.symm.conjAlgEquiv K)).trans <|
       (AlgEquiv.op (endVecAlgEquivMatrixEnd _ K R M)).trans AlgEquiv.mopMatrix.symm⟩
 
 end IsSimpleRing
-
-end TauCeti

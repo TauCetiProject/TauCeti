@@ -135,6 +135,17 @@ theorem isSeifertLoop_iff {p : ℕ × ℕ} :
       ∀ k < p.2, p.1 < k → w.levelAt k ≠ w.levelAt p.1 :=
   Iff.rfl
 
+/-- A loop is determined by its first band. -/
+theorem IsSeifertLoop.eq_of_fst_eq {w : BraidWord n} {p q : ℕ × ℕ} (hp : w.IsSeifertLoop p)
+    (hq : w.IsSeifertLoop q) (h : p.1 = q.1) : p = q := by
+  obtain ⟨hp12, -, hpl, hp⟩ := hp
+  obtain ⟨hq12, -, hql, hq⟩ := hq
+  refine Prod.ext h ?_
+  by_contra hne
+  rcases Nat.lt_or_gt_of_ne hne with hlt | hlt
+  · exact hq p.2 hlt (h ▸ hp12) (by rw [hpl, h])
+  · exact hp q.2 hlt (h ▸ hq12) (by rw [hql, h])
+
 instance : DecidablePred w.IsSeifertLoop := fun _ ↦ decidable_of_iff _ w.isSeifertLoop_iff.symm
 
 /-- The labels of the basis loops of the first homology of the canonical Seifert surface of the
@@ -381,17 +392,6 @@ loop by minus the sum of all the others on its level, as cyclic rotation of the 
 section Telescope
 
 variable {w : BraidWord n}
-
-/-- A loop is determined by its first band. -/
-private theorem IsSeifertLoop.eq_of_fst_eq {p q : ℕ × ℕ} (hp : w.IsSeifertLoop p)
-    (hq : w.IsSeifertLoop q) (h : p.1 = q.1) : p = q := by
-  obtain ⟨hp12, -, hpl, hp⟩ := hp
-  obtain ⟨hq12, -, hql, hq⟩ := hq
-  refine Prod.ext h ?_
-  by_contra hne
-  rcases Nat.lt_or_gt_of_ne hne with hlt | hlt
-  · exact hq p.2 hlt (h ▸ hp12) (by rw [hpl, h])
-  · exact hp q.2 hlt (h ▸ hq12) (by rw [hql, h])
 
 /-- A loop is determined by its second band. -/
 private theorem IsSeifertLoop.eq_of_snd_eq {p q : ℕ × ℕ} (hp : w.IsSeifertLoop p)
