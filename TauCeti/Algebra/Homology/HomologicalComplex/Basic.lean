@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 public import Mathlib.Algebra.Homology.ShortComplex.Preadditive
@@ -42,6 +43,8 @@ is the vanishing of the homology of the short complex `sc'` there
 Homology of complexes commutes with an additive functor preserving homology
 (`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
 Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`.
+Every morphism between acyclic complexes is a quasi-isomorphism
+(`HomologicalComplex.quasiIso_of_acyclic`).
 -/
 
 public section
@@ -335,6 +338,13 @@ lemma homologyMap_comp_eqToHom (ψ : L ⟶ L') (hM : M = L) (hM' : M' = L')
   simp
 
 end HomologyTransport
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*} {c : ComplexShape ι}
+
+/-- A morphism between acyclic homological complexes is a quasi-isomorphism. -/
+lemma quasiIso_of_acyclic {K L : HomologicalComplex C c} (f : K ⟶ L) [∀ i, K.HasHomology i]
+    [∀ i, L.HasHomology i] (hK : K.Acyclic) (hL : L.Acyclic) : QuasiIso f :=
+  (quasiIso_iff f).2 fun i ↦ (quasiIsoAt_iff_exactAt f i (hK i)).2 (hL i)
 
 end HomologicalComplex
 
