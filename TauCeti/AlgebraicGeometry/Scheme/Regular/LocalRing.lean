@@ -110,8 +110,7 @@ ring of `Y` at `f x` is regular exactly when the local ring of `X` at `x` is. -/
 theorem isRegularLocalRing_stalk_iff_of_etale :
     IsRegularLocalRing (Y.presheaf.stalk (f x)) ↔ IsRegularLocalRing (X.presheaf.stalk x) := by
   let := (f.stalkMap x).hom.toAlgebra
-  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
-    inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
+  have := isLocalHom_stalkMap_toAlgebra f x
   have : Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := Flat.stalkMap f x
   have h := map_maximalIdeal_stalkMap_of_formallyUnramified f x
   refine ⟨fun hy ↦ ?_, fun hx ↦ ?_⟩

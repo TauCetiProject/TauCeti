@@ -78,6 +78,22 @@ theorem IsRegularOfDim.iSup_ringKrullDim_stalk_eq (h : IsRegularOfDim X d) (U : 
     (hU : (U : Set X).Nonempty) : ⨆ x : U, ringKrullDim (X.presheaf.stalk x) = d := by
   rw [← topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk, h.topologicalKrullDim_eq U hU]
 
+/-- If `f : X ⟶ Y` is étale and the open `V` of `Y` is the image of an open `U` of `X` whose local
+rings are Noetherian, then the local rings at the points of `U` and of `V` have the same
+supremum of dimensions. -/
+private theorem iSup_ringKrullDim_stalk_eq_of_etale (f : X ⟶ Y) [Etale f] (U : X.Opens)
+    (V : Y.Opens) (hUV : f '' U = V) (hU : ∀ x : U, IsNoetherianRing (X.presheaf.stalk x)) :
+    ⨆ x : U, ringKrullDim (X.presheaf.stalk x) = ⨆ y : V, ringKrullDim (Y.presheaf.stalk y) := by
+  refine le_antisymm (iSup_le fun x ↦ ?_) (iSup_le fun y ↦ ?_)
+  · have := (isNoetherianRing_stalk_iff_of_etale f x).mpr (hU x)
+    rw [← ringKrullDim_stalk_eq_of_etale f x]
+    exact le_iSup (fun y : V ↦ ringKrullDim (Y.presheaf.stalk y))
+      ⟨f x, by rw [← SetLike.mem_coe, ← hUV]; exact ⟨x, x.2, rfl⟩⟩
+  · obtain ⟨x, hx, hxy⟩ : (y : Y) ∈ f '' U := by rw [hUV]; exact y.2
+    have := (isNoetherianRing_stalk_iff_of_etale f x).mpr (hU ⟨x, hx⟩)
+    rw [← hxy, ringKrullDim_stalk_eq_of_etale f x]
+    exact le_iSup (fun x : U ↦ ringKrullDim (X.presheaf.stalk x)) ⟨x, hx⟩
+
 /-- **Regularity of dimension `d` ascends along étale morphisms.** If `f : X ⟶ Y` is étale, `X`
 is nonempty and `Y` is regular of dimension `d`, then `X` is regular of dimension `d`. -/
 theorem IsRegularOfDim.of_etale (f : X ⟶ Y) [Etale f] [Nonempty X] (h : IsRegularOfDim Y d) :
@@ -87,17 +103,11 @@ theorem IsRegularOfDim.of_etale (f : X ⟶ Y) [Etale f] [Nonempty X] (h : IsRegu
     (isRegularLocalRing_stalk_iff_of_etale f x).mp (h.isRegularLocalRing_stalk (f x))
   topologicalKrullDim_eq U hU := by
     -- the image of `U` is a nonempty open of `Y` with the same local dimensions as `U`
-    let V : Y.Opens := ⟨f '' U, f.isOpenMap _ U.isOpen⟩
     rw [topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk,
-      ← h.iSup_ringKrullDim_stalk_eq V (hU.image _)]
-    refine le_antisymm (iSup_le fun x ↦ ?_) (iSup_le fun y ↦ ?_)
+      iSup_ringKrullDim_stalk_eq_of_etale f U ⟨f '' U, f.isOpenMap _ U.isOpen⟩ rfl fun x ↦ ?_]
+    · exact h.iSup_ringKrullDim_stalk_eq _ (hU.image _)
     · have := h.isRegularLocalRing_stalk (f x)
-      rw [← ringKrullDim_stalk_eq_of_etale f x]
-      exact le_iSup (fun y : V ↦ ringKrullDim (Y.presheaf.stalk y)) ⟨f x, x, x.2, rfl⟩
-    · obtain ⟨x, hx, hxy⟩ := y.2
-      have := h.isRegularLocalRing_stalk (f x)
-      rw [← hxy, ringKrullDim_stalk_eq_of_etale f x]
-      exact le_iSup (fun x : U ↦ ringKrullDim (X.presheaf.stalk x)) ⟨x, hx⟩
+      exact (isNoetherianRing_stalk_iff_of_etale f x).mp inferInstance
 
 /-- **Regularity of dimension `d` descends along étale surjective morphisms.** If `f : X ⟶ Y` is
 étale and surjective and `X` is regular of dimension `d`, then `Y` is regular of dimension `d`. -/
@@ -114,20 +124,9 @@ theorem IsRegularOfDim.of_etale_of_surjective (f : X ⟶ Y) [Etale f] [Surjectiv
       obtain ⟨x, rfl⟩ := f.surjective y
       exact ⟨x, hy⟩
     rw [topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk,
-      ← h.iSup_ringKrullDim_stalk_eq _ hV']
-    refine le_antisymm (iSup_le fun y ↦ ?_) (iSup_le fun x ↦ ?_)
-    · obtain ⟨x, hx⟩ := f.surjective y
-      have := h.isRegularLocalRing_stalk x
-      have : IsNoetherianRing (Y.presheaf.stalk (f x)) :=
-        (isNoetherianRing_stalk_iff_of_etale f x).mpr inferInstance
-      rw [← hx, ringKrullDim_stalk_eq_of_etale f x]
-      exact le_iSup (fun x : (f ⁻¹ᵁ V : X.Opens) ↦ ringKrullDim (X.presheaf.stalk x))
-        ⟨x, by simp [hx]⟩
-    · have := h.isRegularLocalRing_stalk x
-      have : IsNoetherianRing (Y.presheaf.stalk (f x)) :=
-        (isNoetherianRing_stalk_iff_of_etale f x).mpr inferInstance
-      rw [← ringKrullDim_stalk_eq_of_etale f x]
-      exact le_iSup (fun y : V ↦ ringKrullDim (Y.presheaf.stalk y)) ⟨f x, x.2⟩
+      ← iSup_ringKrullDim_stalk_eq_of_etale f (f ⁻¹ᵁ V) V (Set.image_preimage_eq _ f.surjective)
+        fun x ↦ have := h.isRegularLocalRing_stalk x; inferInstance]
+    exact h.iSup_ringKrullDim_stalk_eq _ hV'
 
 /-- **Regularity of dimension `d` is invariant under étale surjective morphisms**: if
 `f : X ⟶ Y` is étale and surjective, then `X` is regular of dimension `d` exactly when `Y` is. -/

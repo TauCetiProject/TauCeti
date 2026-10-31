@@ -42,31 +42,14 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
 
 variable [Etale f]
 
-/-- The stalk map of an étale morphism, as an algebra, is local, flat and essentially of finite
-type, and the maximal ideal of its source generates the maximal ideal of its target. -/
-private theorem stalkMap_properties_of_etale :
-    letI := (f.stalkMap x).hom.toAlgebra
-    IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) ∧
-      Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) ∧
-      Algebra.EssFiniteType (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) ∧
-      (maximalIdeal (Y.presheaf.stalk (f x))).map
-          (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) =
-        maximalIdeal (X.presheaf.stalk x) := by
-  algebraize [(f.stalkMap x).hom]
-  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
-    inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
-  have : Algebra.EssFiniteType (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
-    rw [← RingHom.essFiniteType_algebraMap, RingHom.algebraMap_toAlgebra]
-    exact LocallyOfFiniteType.stalkMap f x
-  exact ⟨inferInstance, Flat.stalkMap f x, inferInstance,
-    map_maximalIdeal_stalkMap_of_formallyUnramified f x⟩
-
 /-- An étale morphism `f : X ⟶ Y` preserves and reflects Noetherian local rings: the local ring of
 `Y` at `f x` is Noetherian exactly when the local ring of `X` at `x` is. -/
 theorem isNoetherianRing_stalk_iff_of_etale :
     IsNoetherianRing (Y.presheaf.stalk (f x)) ↔ IsNoetherianRing (X.presheaf.stalk x) := by
   let := (f.stalkMap x).hom.toAlgebra
-  obtain ⟨_, _, _, -⟩ := stalkMap_properties_of_etale f x
+  have := isLocalHom_stalkMap_toAlgebra f x
+  have : Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := Flat.stalkMap f x
+  have := essFiniteType_stalkMap_toAlgebra f x
   refine ⟨fun _ ↦
     Algebra.EssFiniteType.isNoetherianRing (Y.presheaf.stalk (f x)) (X.presheaf.stalk x),
     fun _ ↦ ?_⟩
@@ -83,9 +66,11 @@ local rings of `Y` at `f x` and of `X` at `x` have the same dimension. -/
 theorem ringKrullDim_stalk_eq_of_etale [IsNoetherianRing (Y.presheaf.stalk (f x))] :
     ringKrullDim (Y.presheaf.stalk (f x)) = ringKrullDim (X.presheaf.stalk x) := by
   let := (f.stalkMap x).hom.toAlgebra
-  obtain ⟨_, _, _, h⟩ := stalkMap_properties_of_etale f x
+  have := isLocalHom_stalkMap_toAlgebra f x
+  have : Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := Flat.stalkMap f x
   have := (isNoetherianRing_stalk_iff_of_etale f x).mp ‹_›
-  exact (TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq h).symm
+  exact (TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq
+    (map_maximalIdeal_stalkMap_of_formallyUnramified f x)).symm
 
 end AlgebraicGeometry
 
