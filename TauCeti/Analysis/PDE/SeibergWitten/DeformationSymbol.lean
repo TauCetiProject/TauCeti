@@ -136,6 +136,7 @@ theorem deformationSymbol_injective {ξ : V} (hξ : ξ ≠ 0) :
   simpa using this
 
 /-- At `ξ` itself the symbol is `σ_ξ(ξ) = (‖ξ‖², 0)`. -/
+@[simp]
 theorem deformationSymbol_self (ξ : V) : deformationSymbol o hkl ξ ξ = (‖ξ‖ ^ 2, 0) := by
   have h : ιMulti ℝ 2 ![ξ, ξ] = 0 :=
     (ιMulti ℝ 2).map_eq_zero_of_eq ![ξ, ξ] (i := 0) (j := 1) rfl zero_ne_one
@@ -189,12 +190,6 @@ section Frame
 variable {o} {e : OrthonormalBasis (Fin 4) ℝ V} (he : e.toBasis.orientation = o)
   {J : AlmostComplexStructure V} (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
 
-omit [Fact (finrank ℝ V = 4)] in
-/-- `(√2 / 2)² = 1 / 2`. -/
-private theorem sqrt_two_div_two_mul_self : √2 / 2 * (√2 / 2) = 2⁻¹ := by
-  rw [div_mul_div_comm, Real.mul_self_sqrt zero_le_two]
-  norm_num
-
 include he h₀ h₂
 
 /-- `J′` preserves `ℝ ⊕ Λ⁺`: its two-form component is self-dual on self-dual input. -/
@@ -226,11 +221,11 @@ theorem deformationComplexStructure_deformationComplexStructure {p : ℝ × ⋀[
   refine Prod.ext ?_ ?_
   · simp only [deformationComplexStructure_apply_fst, deformationComplexStructure_apply_snd,
       inner_add_right, real_inner_smul_right, hω, hωD, Prod.fst_neg]
-    linear_combination (-2 * p.1) * sqrt_two_div_two_mul_self
+    linear_combination (-p.1 / 2) * Real.mul_self_sqrt zero_le_two
   · simp only [deformationComplexStructure_apply_fst, deformationComplexStructure_apply_snd,
       map_add, map_smul, hDω, hDD, smul_zero, zero_add, Prod.snd_neg]
     linear_combination (norm := module)
-      -(sqrt_two_div_two_mul_self • (⟪J.kahlerForm, p.2⟫ • J.kahlerForm))
+      -(Real.mul_self_sqrt zero_le_two • (((4⁻¹ : ℝ) * ⟪J.kahlerForm, p.2⟫) • J.kahlerForm))
 
 /-- **The principal symbol of `δ₀` is complex linear**: `σ_ξ (J a) = J′ (σ_ξ a)` for every `ξ`,
 that is, `σ_ξ ∘ J = J′ ∘ σ_ξ`. -/
@@ -250,7 +245,7 @@ theorem deformationSymbol_comp_toLinearMap (ξ : V) :
     simp only [LinearEquiv.coe_coe] at hs
     rw [← hs, hω, AlmostComplexStructure.inner_kahlerForm_ιMulti hJ,
       AlmostComplexStructure.inner_apply_left hJ]
-    linear_combination (-2 * ⟪ξ, J a⟫) * sqrt_two_div_two_mul_self
+    linear_combination (-⟪ξ, J a⟫ / 2) * Real.mul_self_sqrt zero_le_two
   · simp only [deformationSymbol_apply_snd, deformationComplexStructure_apply_snd,
       deformationSymbol_apply_fst, map_smul, map_add,
       ← o.hodgeStar_exteriorSquareDerivation hkl (AlmostComplexStructure.inner_apply_left hJ),

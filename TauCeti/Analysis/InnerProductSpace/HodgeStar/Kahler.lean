@@ -91,6 +91,7 @@ theorem inner_apply_left (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
   J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
 
 /-- **The Kähler two-vector represents the Kähler form**: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`. -/
+@[simp]
 theorem inner_kahlerForm_ιMulti (u w : V) :
     ⟪J.kahlerForm, ιMulti ℝ 2 ![u, w]⟫ = ⟪J u, w⟫ := by
   -- Expanding in the orthonormal basis `b`, each sum is `±⟪J u, w⟫`.
@@ -115,6 +116,7 @@ theorem inner_kahlerForm_self : ⟪J.kahlerForm, J.kahlerForm⟫ = finrank ℝ V
   simp [inner_sum, real_inner_smul_right, inner_kahlerForm_ιMulti hJ, hn, div_eq_inv_mul]
 
 /-- The derivation action of `J` on two-forms kills the Kähler form: `D_J ω = 0`. -/
+@[simp]
 theorem exteriorSquareDerivation_kahlerForm :
     J.toLinearMap.exteriorSquareDerivation J.kahlerForm = 0 := by
   refine ext_inner_ιMulti fun v ↦ ?_
