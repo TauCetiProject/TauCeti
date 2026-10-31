@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.Algebra.Lie.Killing
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
+import TauCeti.Algebra.Lie.AdjointAction.Prod
 import TauCeti.Algebra.Lie.Killing.Basic
-import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
 # The Killing form of a product of Lie algebras
@@ -26,6 +27,8 @@ what the trace of a product endomorphism needs.
 
 * `LieAlgebra.killingForm_prod_apply`: the Killing form of `L × L'` is the sum of the Killing
   forms of `L` and `L'`.
+* `LieAlgebra.killingForm_prod`: the Killing form of `L × L'` is the product bilinear form of the
+  Killing forms of `L` and `L'`.
 * `LieAlgebra.IsKilling.instProd`: a product of Killing Lie algebras is Killing.
 
 ## References
@@ -47,16 +50,18 @@ factors. -/
 @[simp]
 theorem killingForm_prod_apply (x y : L × L') :
     killingForm R (L × L') x y = killingForm R L x.1 y.1 + killingForm R L' x.2 y.2 := by
-  have had (z : L × L') : ad R (L × L') z = (ad R L z.1).prodMap (ad R L' z.2) := by
-    ext <;> rfl
-  rw [killingForm_apply_apply, had, had, prodMap_comp, trace_prodMap', killingForm_apply_apply,
-    killingForm_apply_apply]
+  rw [killingForm_apply_apply, ad_prod, ad_prod, prodMap_comp, trace_prodMap',
+    killingForm_apply_apply, killingForm_apply_apply]
+
+/-- The Killing form of a product of Lie algebras is the product bilinear form of the Killing
+forms of the factors. -/
+theorem killingForm_prod :
+    killingForm R (L × L') = (killingForm R L).prod (killingForm R L') :=
+  LinearMap.ext₂ fun x y ↦ by simp
 
 /-- A product of two Killing Lie algebras is Killing. -/
-instance IsKilling.instProd [IsKilling R L] [IsKilling R L'] : IsKilling R (L × L') := by
-  have h : killingForm R (L × L') = (killingForm R L).prod (killingForm R L') :=
-    LinearMap.ext₂ fun x y ↦ by simp
-  exact TauCeti.isKilling_of_killingForm_nondegenerate R (L × L') <| h ▸
+instance IsKilling.instProd [IsKilling R L] [IsKilling R L'] : IsKilling R (L × L') :=
+  TauCeti.isKilling_of_killingForm_nondegenerate R (L × L') <| killingForm_prod R L L' ▸
     BilinForm.nondegenerate_prod_iff.2
       ⟨IsKilling.killingForm_nondegenerate R L, IsKilling.killingForm_nondegenerate R L'⟩
 

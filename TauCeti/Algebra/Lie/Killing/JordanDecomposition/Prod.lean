@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Killing.JordanDecomposition.Canonical
 public import TauCeti.Algebra.Lie.Killing.Prod
+import TauCeti.Algebra.Lie.AdjointAction.Prod
 import TauCeti.LinearAlgebra.End.Prod
 
 /-!
@@ -46,13 +47,11 @@ theorem jordanDecomposition_prod (x : L × L') :
     jordanDecomposition K x =
       ((nilpotentPart K x.1, nilpotentPart K x.2),
         (semisimplePart K x.1, semisimplePart K x.2)) := by
-  have had (z : L × L') : ad K (L × L') z = (ad K L z.1).prodMap (ad K L' z.2) := by
-    ext <;> rfl
   symm
   refine (eq_jordanDecomposition_iff K x _ _).2 ⟨?_, ?_, ?_, ?_⟩
-  · rw [had]
+  · rw [ad_prod]
     exact (isNilpotent_ad_nilpotentPart K x.1).prodMap (isNilpotent_ad_nilpotentPart K x.2)
-  · rw [had]
+  · rw [ad_prod]
     exact (isSemisimple_ad_semisimplePart K x.1).prodMap (isSemisimple_ad_semisimplePart K x.2)
   · simp
   · ext <;> simp
