@@ -72,16 +72,8 @@ theorem exists_diffeotopy_final_eqOn_of_isPreconnected
       ih (hf.mono hs) (hg.mono hs) (hfU.mono_left hs) (hgU.mono_left hs)
     let P : Set M := g '' (s : Set ι)
     have hP : P.Finite := s.finite_toSet.image g
-    have hfaU : Φ.final (f a) ∈ U := by
-      -- An injective map fixing the complement of K preserves K and hence U.
-      have hfix : EqOn Φ.final id Uᶜ := by
-        intro z hz
-        simpa only [Diffeotopy.final_apply] using hΦK 1 (fun hzK => hz (hKU hzK))
-      have hmaps := (surjOn_id Uᶜ).congr hfix.symm
-      have hmaps' : MapsTo Φ.final U U := by
-        simpa only [compl_compl] using hmaps.mapsTo_compl Φ.final.injective
-      have hfa : f a ∈ U := hfU (by simp)
-      exact hmaps' hfa
+    have hfaU : Φ.final (f a) ∈ U :=
+      Φ.mapsTo_final_of_eqOn_compl hKU hΦK (hfU (by simp))
     have hfaP : Φ.final (f a) ∉ P := by
       rintro ⟨i, hi, heq⟩
       have hai := hf (by simp) (hs hi) (Φ.final.injective (heq.symm.trans (hΦ hi).symm))

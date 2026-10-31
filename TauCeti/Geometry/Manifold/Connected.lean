@@ -96,8 +96,7 @@ theorem isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank
     (hs.preimage (continuous_subtype_val : Continuous (Subtype.val : V → X)))
     (hd.preimage continuous_subtype_val.continuousOn Subtype.val_injective)
   have himage : Subtype.val '' (Subtype.val ⁻¹' s : Set V)ᶜ = U \ s := by
-    rw [image_compl_preimage, Subtype.range_val]
-    rfl
+    rw [image_compl_preimage, Subtype.range_val, TopologicalSpace.Opens.coe_mk]
   rw [← himage]
   exact hc.image _ continuous_subtype_val.continuousOn
 
