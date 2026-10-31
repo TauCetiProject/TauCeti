@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
-public import TauCeti.Analysis.InnerProductSpace.Polar.Finite
+public import TauCeti.Analysis.InnerProductSpace.Polar.Isometry
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import TauCeti.Geometry.Symplectic.Transport
@@ -51,7 +51,8 @@ weight decomposition of the isotropy representation of a compact torus at a fixe
 * `TauCeti.SymplecticForm.apply_polarComplexStructure`: its compatible metric is `⟪|A| ·, ·⟫`.
 * `TauCeti.SymplecticForm.polarComplexStructure_eq_of_apply_eq_inner`: polar normalization fixes
   a compatible structure whose metric is the inner product.
-* `TauCeti.SymplecticForm.polarComplexStructure_transport`,
+* `TauCeti.SymplecticForm.innerOperator_transport`,
+  `TauCeti.SymplecticForm.polarComplexStructure_transport`,
   `TauCeti.SymplecticForm.IsSymplectomorphism.polarComplexStructure_apply`: naturality under
   linear isometric equivalences.
 * `TauCeti.SymplecticForm.exists_compatible_forall_isComplexLinearMap`: a symplectic continuous
@@ -122,9 +123,9 @@ theorem innerOperator_injective (ω : SymplecticForm V) : Function.Injective ω.
 /-! ### Polar normalization
 
 Write `A` for the operator of `ω`, `P = |A|` for its modulus and `U` for its polar factor, so
-that `U P = A`. Since `A` is skew-adjoint, `P² = A† A = -A²`. The modulus commutes with `A` and is
-invertible, and cancelling it from `P U P = P A = A P = U P P` and from `U U P P = U A P = A A`
-gives `P U = U P` and `U² = -1`. -/
+that `U P = A`. Since `A` is skew-adjoint and injective, `P² = A† A = -A²` is invertible, `U`
+commutes with `P` and with `A`, and `U² = -1`
+(`LinearMap.polarFactor_mul_self_of_adjoint_eq_neg`). -/
 
 section Polar
 
@@ -135,62 +136,11 @@ private theorem adjoint_comp_innerOperator :
       -(ω.innerOperator * ω.innerOperator) := by
   rw [adjoint_innerOperator, LinearMap.neg_comp, Module.End.mul_eq_comp]
 
-private theorem operatorAbs_mul_self :
-    ω.innerOperator.operatorAbs * ω.innerOperator.operatorAbs =
-      -(ω.innerOperator * ω.innerOperator) := by
-  rw [Module.End.mul_eq_comp, LinearMap.operatorAbs_sq, adjoint_comp_innerOperator]
-
 private theorem commute_innerOperator_operatorAbs :
     Commute ω.innerOperator ω.innerOperator.operatorAbs :=
   LinearMap.commute_operatorAbs_of_commute <| by
     rw [adjoint_comp_innerOperator]
     exact ((Commute.refl _).mul_right (Commute.refl _)).neg_right
-
-private theorem isUnit_operatorAbs : IsUnit ω.innerOperator.operatorAbs := by
-  rw [LinearMap.isUnit_iff_ker_eq_bot, LinearMap.ker_eq_bot]
-  exact LinearMap.operatorAbs_injective_iff.mpr ω.innerOperator_injective
-
-private theorem polarFactor_mul_operatorAbs :
-    ω.innerOperator.polarFactor * ω.innerOperator.operatorAbs = ω.innerOperator := by
-  rw [Module.End.mul_eq_comp, LinearMap.polarFactor_comp_operatorAbs]
-
-private theorem commute_polarFactor_operatorAbs :
-    Commute ω.innerOperator.polarFactor ω.innerOperator.operatorAbs := by
-  have h : ω.innerOperator.polarFactor * ω.innerOperator.operatorAbs * ω.innerOperator.operatorAbs =
-      ω.innerOperator.operatorAbs * ω.innerOperator.polarFactor * ω.innerOperator.operatorAbs := by
-    rw [polarFactor_mul_operatorAbs, mul_assoc, polarFactor_mul_operatorAbs]
-    exact ω.commute_innerOperator_operatorAbs.eq
-  exact ω.isUnit_operatorAbs.mul_left_inj.mp h
-
-private theorem polarFactor_mul_self :
-    ω.innerOperator.polarFactor * ω.innerOperator.polarFactor = -1 := by
-  have hP := ω.isUnit_operatorAbs
-  have hUP := ω.polarFactor_mul_operatorAbs
-  have hc := ω.commute_polarFactor_operatorAbs.eq
-  have hPP := ω.operatorAbs_mul_self
-  -- The remaining argument is ring arithmetic in `U`, `P` and `A = U P`.
-  generalize ω.innerOperator.polarFactor = U at *
-  generalize ω.innerOperator.operatorAbs = P at *
-  rw [← hUP] at hPP
-  have h : U * U * (P * P) = -1 * (P * P) :=
-    calc U * U * (P * P) = U * (U * P) * P := by simp only [mul_assoc]
-      _ = U * P * (U * P) := by
-        conv_lhs => rw [hc]
-        simp only [mul_assoc]
-      _ = -1 * (P * P) := by rw [hPP, neg_one_mul, neg_neg]
-  exact (hP.mul hP).mul_left_inj.mp h
-
-private theorem commute_polarFactor_innerOperator :
-    Commute ω.innerOperator.polarFactor ω.innerOperator := by
-  have h := (Commute.refl _).mul_right ω.commute_polarFactor_operatorAbs
-  rwa [polarFactor_mul_operatorAbs] at h
-
-private theorem inner_polarFactor_apply_apply (u v : V) :
-    ⟪ω.innerOperator.polarFactor u, ω.innerOperator.polarFactor v⟫ = ⟪u, v⟫ := by
-  obtain ⟨U, hU⟩ :=
-    LinearMap.exists_linearIsometryEquiv_eq_polarFactor ω.innerOperator_injective rfl
-  rw [← hU]
-  exact U.inner_map_map u v
 
 end Polar
 
@@ -202,7 +152,8 @@ product. It depends on the inner product of `V`, naturally under linear isometri
 noncomputable def polarComplexStructure (ω : SymplecticForm V) : AlmostComplexStructure V where
   toLinearMap := ω.innerOperator.polarFactor
   square_neg := by
-    rw [← Module.End.mul_eq_comp, polarFactor_mul_self, Module.End.one_eq_id]
+    rw [← Module.End.mul_eq_comp, LinearMap.polarFactor_mul_self_of_adjoint_eq_neg
+      ω.innerOperator_injective ω.adjoint_innerOperator, Module.End.one_eq_id]
 
 /-- The polar normalization of `ω` is the polar factor of the operator of `ω`. -/
 theorem polarComplexStructure_toLinearMap (ω : SymplecticForm V) :
@@ -218,13 +169,16 @@ theorem polarComplexStructure_apply_operatorAbs (ω : SymplecticForm V) (v : V) 
 /-- The polar normalization of `ω` commutes with the operator of `ω`. -/
 theorem polarComplexStructure_apply_innerOperator (ω : SymplecticForm V) (v : V) :
     ω.polarComplexStructure (ω.innerOperator v) = ω.innerOperator (ω.polarComplexStructure v) :=
-  LinearMap.congr_fun ω.commute_polarFactor_innerOperator.eq v
+  LinearMap.congr_fun
+    (LinearMap.commute_polarFactor_of_commute ω.commute_innerOperator_operatorAbs).eq v
 
 /-- The polar normalization is orthogonal: `⟪J u, J v⟫ = ⟪u, v⟫`. -/
 @[simp]
 theorem inner_polarComplexStructure_apply_apply (ω : SymplecticForm V) (u v : V) :
-    ⟪ω.polarComplexStructure u, ω.polarComplexStructure v⟫ = ⟪u, v⟫ :=
-  ω.inner_polarFactor_apply_apply u v
+    ⟪ω.polarComplexStructure u, ω.polarComplexStructure v⟫ = ⟪u, v⟫ := by
+  rw [polarComplexStructure_toLinearMap,
+    ← LinearMap.coe_polarIsometry _ ω.innerOperator_injective]
+  exact (ω.innerOperator.polarIsometry ω.innerOperator_injective).inner_map_map u v
 
 /-- The compatible metric of the polar normalization is the modulus of the operator of `ω`:
 `ω(u, J v) = ⟪|A| u, v⟫`. -/
@@ -267,45 +221,27 @@ theorem polarComplexStructure_eq_of_apply_eq_inner (ω : SymplecticForm V)
   rw [polarComplexStructure_toLinearMap, hA]
   calc ω.innerOperator.polarFactor = ω.innerOperator.polarFactor * ω.innerOperator.operatorAbs := by
         rw [hP, mul_one]
-    _ = ω.innerOperator := ω.polarFactor_mul_operatorAbs
+    _ = ω.innerOperator := ω.innerOperator.polarFactor_comp_operatorAbs
 
 /-! ### Naturality -/
+
+/-- The operator of a symplectic form transported along a linear isometric equivalence `e` is
+the conjugate by `e` of the operator of the form. -/
+theorem innerOperator_transport (ω : SymplecticForm V) (e : V ≃ₗᵢ[ℝ] W) :
+    (ω.transport e.toLinearEquiv).innerOperator = e.toLinearEquiv.conj ω.innerOperator := by
+  refine (((ω.transport e.toLinearEquiv).eq_innerOperator_iff).mpr fun w w' ↦ ?_).symm
+  rw [LinearEquiv.conj_apply_apply, LinearIsometryEquiv.coe_toLinearEquiv,
+    LinearIsometryEquiv.coe_symm_toLinearEquiv, LinearIsometryEquiv.inner_map_eq_flip,
+    inner_innerOperator_apply, ω.transport_apply, LinearIsometryEquiv.coe_symm_toLinearEquiv]
 
 /-- **Naturality of polar normalization.** Transporting a symplectic form along a linear
 isometric equivalence transports its polar normalization. -/
 theorem polarComplexStructure_transport (ω : SymplecticForm V) (e : V ≃ₗᵢ[ℝ] W) :
     (ω.transport e.toLinearEquiv).polarComplexStructure =
       ω.polarComplexStructure.transport e.toLinearEquiv := by
-  set ω' := ω.transport e.toLinearEquiv
-  set A := ω.innerOperator
-  -- Conjugation by `e`, on endomorphisms.
-  let c : (V →ₗ[ℝ] V) → (W →ₗ[ℝ] W) := fun T ↦ e.toLinearEquiv.conj T
-  have hc : ∀ T w, c T w = e (T (e.symm w)) := fun _ _ ↦ rfl
-  have hcmul : ∀ T T', c (T * T') = c T * c T' := fun T T' ↦ LinearMap.ext fun w ↦ by
-    simp [hc]
-  -- The operator of the transported form is the conjugate of the operator of `ω`.
-  have hA' : ω'.innerOperator = c A := by
-    refine ((ω'.eq_innerOperator_iff).mpr fun w w' ↦ ?_).symm
-    rw [hc, LinearIsometryEquiv.inner_map_eq_flip, inner_innerOperator_apply, ω.transport_apply]
-    rfl
-  -- So is its modulus, being a positive square root of `-(c A)² = c (|A|²)`.
-  have hP' : ω'.innerOperator.operatorAbs = c A.operatorAbs := by
-    have hP := A.isPositive_operatorAbs
-    refine (LinearMap.IsPositive.eq_operatorAbs ⟨fun x y ↦ ?_, fun x ↦ ?_⟩ ?_).symm
-    · rw [hc, hc, LinearIsometryEquiv.inner_map_eq_flip, hP.isSymmetric,
-        e.symm.inner_map_eq_flip, LinearIsometryEquiv.symm_symm]
-    · rw [hc, LinearIsometryEquiv.inner_map_eq_flip]
-      exact hP.re_inner_nonneg_left _
-    · rw [adjoint_comp_innerOperator, hA', ← Module.End.mul_eq_comp, ← hcmul, ← hcmul,
-        operatorAbs_mul_self]
-      exact LinearMap.ext fun w ↦ by simp [hc, A]
-  -- Cancelling the invertible modulus identifies the polar factors.
-  have hU : ω'.innerOperator.polarFactor = c A.polarFactor := by
-    refine (ω'.isUnit_operatorAbs.mul_left_inj).mp ?_
-    rw [polarFactor_mul_operatorAbs, hP', ← hcmul, polarFactor_mul_operatorAbs, hA']
   refine AlmostComplexStructure.toLinearMap_injective ?_
-  rw [polarComplexStructure_toLinearMap, hU, AlmostComplexStructure.transport_toLinearMap,
-    polarComplexStructure_toLinearMap]
+  rw [polarComplexStructure_toLinearMap, innerOperator_transport, LinearMap.polarFactor_conj,
+    AlmostComplexStructure.transport_toLinearMap, polarComplexStructure_toLinearMap]
 
 /-- **Naturality of polar normalization**, pointwise: a linear isometric equivalence which is
 a symplectomorphism intertwines the polar normalizations, `J₂ (e v) = e (J₁ v)`. -/
@@ -320,18 +256,16 @@ theorem IsSymplectomorphism.polarComplexStructure_apply {ω₁ : SymplecticForm 
 
 /-- **Invariant compatible complex structures.** A continuous linear representation `π` of a
 compact group on a finite-dimensional real normed space preserving a symplectic form `ω`
-preserves some compatible almost complex structure: every `π g` is complex linear for it.
-
-Choose a linear isomorphism `k` with a Euclidean space for which Weyl's unitarian trick makes the
-transported representation `ρ = k π k⁻¹` unitary. Then `ρ` preserves the transported symplectic
-form, hence its polar normalization, which transports back along `k` to the desired
-structure. -/
+preserves some compatible almost complex structure: every `π g` is complex linear for it. -/
 theorem exists_compatible_forall_isComplexLinearMap {E G : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [FiniteDimensional ℝ E] [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] [CompactSpace G] (ω : SymplecticForm E) (π : ContRepresentation ℝ G E)
     (hπ : Continuous π) (hω : ∀ g u v, ω (π g u) (π g v) = ω u v) :
     ∃ J : AlmostComplexStructure E, ω.Compatible J ∧
       ∀ g, IsComplexLinearMap J J (π g : E →ₗ[ℝ] E) := by
+  -- Choose a linear isomorphism `k` with a Euclidean space for which Weyl's unitarian trick makes
+  -- the transported representation `ρ = k π k⁻¹` unitary. Then `ρ` preserves the transported
+  -- symplectic form, hence its polar normalization, which transports back along `k`.
   borelize G
   let F := EuclideanSpace ℝ (Fin (Module.finrank ℝ E))
   let f : E ≃L[ℝ] F := (LinearEquiv.ofFinrankEq E F (by simp [F])).toContinuousLinearEquiv
