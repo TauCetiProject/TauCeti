@@ -20,7 +20,8 @@ In dimension `d ≥ 2`, each coordinate `Xᵢ` of a uniform unit vector satisfie
 `(Xᵢ + 1) / 2 ∼ Beta ((d - 1) / 2) ((d - 1) / 2)`. The measure identity gives its
 cdf and quantile through the incomplete Beta function and its inverse.
 The law of any real linear observable is obtained by scaling this centered Beta law by the
-norm of its representing vector; this includes the constant-zero observable.
+norm of its representing vector; this includes the constant-zero observable. Its square is a
+Beta `(1 / 2, (d - 1) / 2)` variable scaled by the squared norm.
 
 The squared-coordinate law `map_sq_eval_uniformSphereMeasure` determines the signed law
 because the uniform sphere law is invariant under the antipodal map. The identification
@@ -181,6 +182,30 @@ theorem map_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v : E)
         Measure.map_map (by fun_prop) (by fun_prop)]
       simp only [Fintype.card_fin, Function.comp_def, d]
 
+/-- The square of a real linear observable of a uniform sphere point in dimension at least two
+is a Beta `(1 / 2, (d - 1) / 2)` variable scaled by the squared norm of its representing vector.
+The formula includes the zero observable. -/
+theorem map_sq_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v : E) :
+    (uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫ ^ 2) =
+      (betaMeasure (1 / 2) (((Module.finrank ℝ E : ℝ) - 1) / 2)).map
+        (fun x ↦ ‖v‖ ^ 2 * x) := by
+  have ha : 0 < ((Module.finrank ℝ E : ℝ) - 1) / 2 :=
+    div_pos (sub_pos.mpr (by exact_mod_cast (lt_of_lt_of_le (by norm_num : 1 < 2) hd))) two_pos
+  calc
+    _ = ((uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫)).map
+        (fun y ↦ y ^ 2) := by
+      rw [Measure.map_map (by fun_prop) (by fun_prop), Function.comp_def]
+    _ = ((betaMeasure (((Module.finrank ℝ E : ℝ) - 1) / 2)
+          (((Module.finrank ℝ E : ℝ) - 1) / 2)).map (fun x ↦ (-1 + 2 * x) ^ 2)).map
+        (fun x ↦ ‖v‖ ^ 2 * x) := by
+      rw [map_inner_uniformSphereMeasure hd v, Measure.map_map (by fun_prop) (by fun_prop),
+        Measure.map_map (by fun_prop) (by fun_prop)]
+      congr 1
+      ext x
+      simp only [Function.comp_apply]
+      ring
+    _ = _ := by rw [betaMeasure_map_centered_sq ha]
+
 /-- Quantiles of any real linear observable of a uniform sphere point scale with the
 norm of its representing vector, including the zero observable. -/
 theorem quantile_map_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v : E)
@@ -232,5 +257,14 @@ theorem HasLaw.inner_uniformSphereMeasure (hV : HasLaw V (uniformSphereMeasure E
       ((betaMeasure (((Module.finrank ℝ E : ℝ) - 1) / 2)
         (((Module.finrank ℝ E : ℝ) - 1) / 2)).map (fun x ↦ ‖v‖ * (-1 + 2 * x))) P :=
   (HasLaw.mk (by fun_prop) (map_inner_uniformSphereMeasure hd v)).fun_comp hV
+
+/-- The square of a real linear observable of a uniform random unit vector is a scaled
+Beta `(1 / 2, (d - 1) / 2)` variable. -/
+theorem HasLaw.sq_inner_uniformSphereMeasure (hV : HasLaw V (uniformSphereMeasure E) P)
+    (hd : 2 ≤ Module.finrank ℝ E) (v : E) :
+    HasLaw (fun ω ↦ ⟪v, (V ω : E)⟫ ^ 2)
+      ((betaMeasure (1 / 2) (((Module.finrank ℝ E : ℝ) - 1) / 2)).map
+        (fun x ↦ ‖v‖ ^ 2 * x)) P :=
+  (HasLaw.mk (by fun_prop) (map_sq_inner_uniformSphereMeasure hd v)).fun_comp hV
 
 end ProbabilityTheory
