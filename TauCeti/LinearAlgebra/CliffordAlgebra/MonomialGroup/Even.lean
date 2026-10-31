@@ -21,11 +21,13 @@ import Mathlib.Tactic.LinearCombination
 
 The grade involution of a Clifford algebra restricts to an automorphism
 `CliffordAlgebra.monomialGroupInvolute` of the group of signed monomials
-`CliffordAlgebra.monomialGroup Q v`. Every signed monomial is homogeneous, so the involution fixes
-or negates it; the fixed ones form the subgroup `CliffordAlgebra.monomialGroupEven Q v` of even
-signed monomials. For an orthogonal basis `b` whose generators square to `±1` these are the
-`±e_s` with `#s` even: a subgroup of index two, of order `2 ^ n`, spanning the even Clifford
-subalgebra.
+`CliffordAlgebra.monomialGroup Q v`. Every signed monomial is homogeneous
+(`CliffordAlgebra.involute_eq_or_eq_neg_of_mem_monomialGroup`), so the involution fixes or negates
+it; the fixed ones form the subgroup `CliffordAlgebra.monomialGroupEven Q v` of even signed
+monomials. Let `b` be an orthogonal basis whose generators square to `±1`, over a nontrivial ring
+in which `2` is invertible. Then these are the `±e_s` with `#s` even, and they span the even
+Clifford subalgebra. When `b` is moreover finite and nonempty, with `n` elements, they form a
+subgroup of index two and of order `2 ^ n`; for the empty basis every signed monomial is even.
 
 ## Main definitions
 
@@ -34,12 +36,13 @@ subalgebra.
 
 ## Main results
 
-* `CliffordAlgebra.involute_eq_or_eq_neg_of_mem_monomialGroup`: signed monomials are homogeneous.
 * `CliffordAlgebra.mem_monomialGroupEven_iff_mem_even` and
   `CliffordAlgebra.monomialGroupEquiv_mem_monomialGroupEven_iff`: the even signed monomials are
   those in the even Clifford subalgebra, the `±e_s` with `#s` even.
-* `CliffordAlgebra.index_monomialGroupEven` and `CliffordAlgebra.natCard_monomialGroupEven`: they
-  form a subgroup of index two, of order `2 ^ n`.
+* `CliffordAlgebra.index_monomialGroupEven` and `CliffordAlgebra.natCard_monomialGroupEven`: over
+  a nontrivial ring in which `2` is invertible, they form a subgroup of index two as soon as one
+  generator squares to a unit, and of order `2 ^ n` for a nonempty finite orthogonal basis of `n`
+  generators squaring to `±1`.
 * `CliffordAlgebra.span_monomialGroupEven_eq_even`: they span the even Clifford subalgebra.
 
 ## References
@@ -54,28 +57,6 @@ namespace CliffordAlgebra
 variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M] {Q : QuadraticForm R M}
 
 variable {v : I → M}
-
-/-- **A signed monomial is homogeneous**: the grade involution fixes it or negates it. -/
-theorem involute_eq_or_eq_neg_of_mem_monomialGroup {u : (CliffordAlgebra Q)ˣ}
-    (hu : u ∈ monomialGroup Q v) :
-    involute (u : CliffordAlgebra Q) = u ∨ involute (u : CliffordAlgebra Q) = -u := by
-  rw [monomialGroup_def] at hu
-  induction hu using Subgroup.closure_induction with
-  | mem u hu =>
-    rcases hu with hu | ⟨i, hu⟩
-    · exact Or.inl (by simp [hu])
-    · exact Or.inr (by simp [hu])
-  | one => exact Or.inl (by simp)
-  | mul u w _ _ hu hw => rcases hu with hu | hu <;> rcases hw with hw | hw <;> simp [hu, hw]
-  | inv u _ hu =>
-    have h : involute ((u⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
-        involute (u : CliffordAlgebra Q) = 1 := by
-      rw [← map_mul, Units.inv_mul, map_one]
-    rcases hu with hu | hu
-    · rw [hu] at h
-      exact Or.inl (Units.eq_inv_of_mul_eq_one_right h)
-    · rw [hu, mul_neg, ← neg_mul] at h
-      exact Or.inr (neg_eq_iff_eq_neg.mp (Units.eq_inv_of_mul_eq_one_right h))
 
 variable (Q) in
 /-- **The even signed monomials**: the subgroup of the group of signed monomials fixed by the grade
