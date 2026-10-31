@@ -140,8 +140,12 @@ private lemma integral_one_sub_pow_four_rpow_eq_integral_sin :
     rw [cos_sq']
     ring
   rw [abs_of_pos hc, smul_eq_mul, hfac, mul_rpow (sq_nonneg _) (by positivity), neg_div,
-    rpow_neg (sq_nonneg _), ← sqrt_eq_rpow, sqrt_sq hc.le, ← mul_assoc, mul_inv_cancel₀ hc.ne',
-    one_mul]
+    rpow_neg (sq_nonneg _), ← sqrt_eq_rpow, sqrt_sq hc.le]
+  field_simp
+
+/-- The square of the modulus `1/√2`. -/
+private lemma one_div_sqrt_two_sq : (1 / √2 : ℝ) ^ 2 = 1 / 2 := by
+  simp
 
 /-- The lemniscate constant is `√2` times the complete elliptic integral of the first kind at the
 modulus `1/√2`: `ϖ = √2 K(1/√2)`. -/
@@ -156,10 +160,10 @@ theorem lemniscateConstant_eq_sqrt_two_mul_legendreK :
     rw [← h, legendreK_def, legendreF_def, ← intervalIntegral.integral_const_mul]
     congr 1 with θ
     have hθ : 1 + cos θ ^ 2 = 2 * (1 - (1 / √2) ^ 2 * sin θ ^ 2) := by
-      rw [div_pow, one_pow, sq_sqrt zero_le_two, cos_sq']
+      rw [one_div_sqrt_two_sq, cos_sq']
       ring
     have hpos : 0 ≤ 1 - (1 / √2) ^ 2 * sin θ ^ 2 := by
-      rw [div_pow, one_pow, sq_sqrt zero_le_two]
+      rw [one_div_sqrt_two_sq]
       nlinarith [sin_sq_le_one θ]
     rw [hθ, mul_rpow zero_le_two hpos, neg_div, rpow_neg zero_le_two, ← sqrt_eq_rpow]
   rw [lemniscateConstant_def, integral_one_sub_pow_four_rpow_eq_integral_sin, hrefl, ← mul_assoc,
@@ -183,12 +187,11 @@ theorem lemniscateConstant_eq_pi_div_agm :
   have h2 : 0 < √2 := by positivity
   set s : NNReal := (√(1 - (1 / √2) ^ 2)).toNNReal with hs_def
   have hs : (s : ℝ) = (√2)⁻¹ := by
-    rw [hs_def, coe_toNNReal _ (sqrt_nonneg _), div_pow, one_pow, sq_sqrt zero_le_two,
+    rw [hs_def, coe_toNNReal _ (sqrt_nonneg _), one_div_sqrt_two_sq,
       show (1 : ℝ) - 1 / 2 = 2⁻¹ by norm_num, sqrt_inv]
   have h1 : s * NNReal.sqrt 2 = 1 := by
     ext
-    rw [NNReal.coe_mul, hs, Real.coe_sqrt, NNReal.coe_ofNat, inv_mul_cancel₀ h2.ne',
-      NNReal.coe_one]
+    simp [hs, h2.ne']
   -- homogeneity of the AGM: `M(1, 1/√2) = M(√2, 1) / √2`
   have hagm : NNReal.agm 1 s = s * NNReal.agm 1 (NNReal.sqrt 2) := by
     calc NNReal.agm 1 s = NNReal.agm (s * NNReal.sqrt 2) (s * 1) := by rw [h1, mul_one]
@@ -197,7 +200,7 @@ theorem lemniscateConstant_eq_pi_div_agm :
   have hM : (0 : ℝ) < NNReal.agm 1 (NNReal.sqrt 2) :=
     NNReal.coe_pos.mpr (NNReal.agm_pos one_pos (NNReal.sqrt_pos.mpr two_pos))
   rw [lemniscateConstant_eq_sqrt_two_mul_legendreK,
-    legendreK_eq_pi_div_two_div_agm (by rw [div_pow, one_pow, sq_sqrt zero_le_two]; norm_num),
+    legendreK_eq_pi_div_two_div_agm (by rw [one_div_sqrt_two_sq]; norm_num),
     ← hs_def, hagm, NNReal.coe_mul, hs]
   field_simp
   exact sq_sqrt zero_le_two
