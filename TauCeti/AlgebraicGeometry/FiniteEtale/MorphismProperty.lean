@@ -51,14 +51,63 @@ noncomputable def pullbackCompEquivOver (f : T ⟶ S) :
   -- Compare the two functors in `Over T`, where Mathlib's pullback comparison applies.
   apply Functor.fullyFaithfulCancelRight
     (MorphismProperty.Over.forget (@IsFinite ⊓ @Etale) ⊤ T)
-  rw [Functor.assoc (pullback f)]
-  simp only [Equivalence.symm_functor,
-    MorphismProperty.overEquivFullSubcategory_inverse_comp_forget, pullback_comp_ι]
-  simpa only [← Functor.assoc, Equivalence.symm_functor,
-    MorphismProperty.overEquivFullSubcategory_inverse_comp_forget] using
+  refine eqToIso ?_ ≪≫
     (Functor.isoWhiskerLeft (equivOver S).functor
       (MorphismProperty.Over.pullbackCompForgetIso
-        (P := @IsFinite ⊓ @Etale) (Q := ⊤) f)).symm
+        (P := @IsFinite ⊓ @Etale) (Q := ⊤) f)).symm ≪≫
+    (Functor.associator _ _ _).symm
+  calc
+    _ = pullback f ⋙ (finiteEtaleSchemeProperty T).ι := by
+      rw [Functor.assoc]
+      simp
+    _ = (finiteEtaleSchemeProperty S).ι ⋙ Over.pullback f := pullback_comp_ι f
+    _ = _ := by rw [← Functor.assoc]; simp
+
+/-- The forward base-change comparison is the identity on the pullback scheme.
+The `eqToHom` identifies the propositionally equal carrier presentations. -/
+@[simp]
+theorem pullbackCompEquivOver_hom_app_left (f : T ⟶ S) (X : FiniteEtaleScheme S) :
+    ((pullbackCompEquivOver f).hom.app X).left = eqToHom (by
+      have hS : ((equivOver S).functor.obj X).toComma = X.obj :=
+        MorphismProperty.overEquivFullSubcategory_inverse_obj_toComma _ _ _ _ X
+      have hT : ((equivOver T).functor.obj ((pullback f).obj X)).toComma =
+          ((pullback f).obj X).obj :=
+        MorphismProperty.overEquivFullSubcategory_inverse_obj_toComma _ _ _ _ _
+      exact congrArg (fun Y : Over T ↦ Y.left)
+        (hT.trans (congrArg (Over.pullback f).obj hS).symm)) := by
+  -- View the scheme map through the forgetful functor to apply `Functor.map_preimage`.
+  change ((MorphismProperty.Over.forget (@IsFinite ⊓ @Etale) ⊤ T).map
+    ((pullbackCompEquivOver f).hom.app X)).left = _
+  simp only [pullbackCompEquivOver, Functor.fullyFaithfulCancelRight_hom_app,
+    Functor.map_preimage]
+  simp only [Iso.trans_hom, Iso.symm_hom, eqToIso.hom, NatTrans.comp_app,
+    eqToHom_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app,
+    MorphismProperty.Over.pullbackCompForgetIso_inv_app_left, Functor.associator_inv_app,
+    Over.comp_left, Over.eqToHom_left, Category.comp_id]
+  exact Category.comp_id _
+
+/-- The inverse base-change comparison is the identity on the pullback scheme.
+The `eqToHom` identifies the propositionally equal carrier presentations. -/
+@[simp]
+theorem pullbackCompEquivOver_inv_app_left (f : T ⟶ S) (X : FiniteEtaleScheme S) :
+    ((pullbackCompEquivOver f).inv.app X).left = eqToHom (by
+      have hS : ((equivOver S).functor.obj X).toComma = X.obj :=
+        MorphismProperty.overEquivFullSubcategory_inverse_obj_toComma _ _ _ _ X
+      have hT : ((equivOver T).functor.obj ((pullback f).obj X)).toComma =
+          ((pullback f).obj X).obj :=
+        MorphismProperty.overEquivFullSubcategory_inverse_obj_toComma _ _ _ _ _
+      exact congrArg (fun Y : Over T ↦ Y.left)
+        ((congrArg (Over.pullback f).obj hS).trans hT.symm)) := by
+  -- View the scheme map through the forgetful functor to apply `Functor.map_preimage`.
+  change ((MorphismProperty.Over.forget (@IsFinite ⊓ @Etale) ⊤ T).map
+    ((pullbackCompEquivOver f).inv.app X)).left = _
+  simp only [pullbackCompEquivOver, Functor.fullyFaithfulCancelRight_inv_app,
+    Functor.map_preimage]
+  simp only [Iso.trans_inv, Iso.symm_inv, eqToIso.inv, NatTrans.comp_app,
+    eqToHom_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+    MorphismProperty.Over.pullbackCompForgetIso_hom_app_left, Functor.associator_hom_app,
+    Over.comp_left, Over.eqToHom_left, Category.id_comp]
+  exact Category.id_comp _
 
 /-- Pullback of finite étale schemes along a dominant morphism is faithful, without any
 reducedness assumption on the base. -/
