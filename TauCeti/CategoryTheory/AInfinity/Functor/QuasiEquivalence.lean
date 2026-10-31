@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Iso
 public import TauCeti.Algebra.Homology.SquareZero
 public import TauCeti.CategoryTheory.AInfinity.Functor.Comp
 public import TauCeti.CategoryTheory.AInfinity.Functor.HomotopyCategory
@@ -58,6 +59,9 @@ of `TauCeti/CategoryTheory/DG/QuasiEquivalence.lean`.
 * `TauCeti.AInfinityFunctor.isQuasiFullyFaithful_iff_isQuasiIso_toAInfinityHom`: quasi-full
   faithfulness is the quasi-isomorphism property of the underlying `A∞` morphism of total
   algebras.
+* `TauCeti.AInfinityFunctor.isQuasiFullyFaithful_ofAInfinityHom_iff`: along a bijective map of
+  objects, the functor of a path-compatible `A∞` morphism of total algebras is quasi-fully faithful
+  exactly when the morphism is a quasi-isomorphism.
 * `TauCeti.AInfinityFunctor.IsQuasiFullyFaithful.homClassMap_bijective`: a quasi-fully faithful
   functor induces bijections on the Hom classes of closed degree-zero morphisms.
 * `TauCeti.AInfinityFunctor.IsQuasiFullyFaithful.isUnital`: a quasi-fully faithful functor is
@@ -70,6 +74,8 @@ of `TauCeti/CategoryTheory/DG/QuasiEquivalence.lean`.
   faithful.
 * `TauCeti.AInfinityFunctor.IsQuasiFullyFaithful.isQuasiEquivalence_iff_essSurj`: a quasi-fully
   faithful functor is a quasi-equivalence exactly when `H⁰(ℱ)` is essentially surjective.
+* `TauCeti.AInfinityFunctor.IsQuasiFullyFaithful.isQuasiEquivalence_of_surjective`: a quasi-fully
+  faithful functor which is surjective on objects is a quasi-equivalence.
 * `TauCeti.AInfinityFunctor.IsQuasiEquivalence.isEquivalence_mapHomotopyCategory`: a
   quasi-equivalence induces an equivalence `H⁰(ℬ) ≌ H⁰(𝒞)`.
 * `TauCeti.AInfinityFunctor.isQuasiFullyFaithful_id`,
@@ -221,6 +227,23 @@ theorem isQuasiFullyFaithful_iff_isQuasiIso_toAInfinityHom :
       rw [map_neg, ← AInfinityCategory.homDifferential_induced 𝒞 ℱ.obj ⟨X⟩ ⟨Y⟩,
         ← AInfinityCategory.homProjection_differential, hw, map_sub, homProjection_linearPart,
         homProjection_homInclusion, neg_sub]
+
+/-- Along a bijective map of objects `F`, the `A∞` functor of an `A∞` morphism `f` of total
+algebras which is path-compatible along `F` is quasi-fully faithful exactly when `f` is a
+quasi-isomorphism: the inclusion of the total algebra of `𝒞.induced F` is then an isomorphism of
+`A∞` algebras. -/
+theorem isQuasiFullyFaithful_ofAInfinityHom_iff {F : C → D}
+    (f : AInfinityHom ℬ.toAInfinityAlgebra 𝒞.toAInfinityAlgebra) (hF : Function.Bijective F)
+    (hf : IsWordPathCompatible F f.taylor) :
+    (ofAInfinityHom f hF.1 hf).IsQuasiFullyFaithful ↔ f.IsQuasiIso := by
+  have hs : (𝒞.inducedInclusion hF.1).toAInfinityHom.IsQuasiIso := by
+    refine AInfinityHom.IsIso.isQuasiIso ((AInfinityHom.isIso_iff_linearPart_bijective _).2 ?_)
+    rw [AInfinityStrictHom.linearPart_toAInfinityHom,
+      AInfinityCategory.inducedInclusion_toLinearMap]
+    exact ⟨InducedQuiver.totalHomMap_injective hF.1, InducedQuiver.totalHomMap_surjective hF.2⟩
+  have e := congrArg AInfinityHom.IsQuasiIso (inducedInclusion_comp_ofAInfinityHom f hF.1 hf)
+  rw [isQuasiFullyFaithful_iff_isQuasiIso_toAInfinityHom]
+  exact ⟨fun h ↦ e.mp (hs.comp h), fun h ↦ hs.of_postcomp (e.mpr h)⟩
 
 namespace IsQuasiFullyFaithful
 
@@ -419,6 +442,13 @@ theorem IsQuasiFullyFaithful.isQuasiEquivalence_iff_essSurj (hℱ : ℱ.IsQuasiF
   · obtain ⟨X, ⟨i⟩⟩ := h.mem_essImage (.of Y)
     rw [mapHomotopyCategory_obj] at i
     exact ⟨X.obj, ⟨i⟩⟩
+
+/-- A quasi-fully faithful `A∞` functor which is surjective on objects is a quasi-equivalence. -/
+theorem IsQuasiFullyFaithful.isQuasiEquivalence_of_surjective (hℱ : ℱ.IsQuasiFullyFaithful)
+    (h : Function.Surjective ℱ.obj) : ℱ.IsQuasiEquivalence h𝒞 := by
+  refine isQuasiEquivalence_iff.mpr ⟨hℱ, fun Y ↦ ?_⟩
+  obtain ⟨X, rfl⟩ := h Y
+  exact ⟨X, ⟨Iso.refl _⟩⟩
 
 /-- **A quasi-equivalence of `A∞` categories induces an equivalence of homotopy categories.** -/
 theorem IsQuasiEquivalence.isEquivalence_mapHomotopyCategory (hℱ : ℱ.IsQuasiEquivalence h𝒞)
