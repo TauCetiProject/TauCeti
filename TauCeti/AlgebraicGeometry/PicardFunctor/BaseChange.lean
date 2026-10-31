@@ -93,18 +93,6 @@ private lemma relativePicardBaseChangeMulEquiv_mk (T : Over S')
   (QuotientGroup.congr_mk _ _ _ _ a).trans
     (congrArg QuotientGroup.mk (LineBundleClass.pullbackHom_apply _ a))
 
-/-- The identification `T ×_S X ≅ T ×_{S'} (S' ×_S X)` commutes with the morphisms induced by a
-morphism `φ : T ⟶ T'` of schemes over `S'`. -/
-private lemma pullbackRightPullbackFstIso_inv_comp_pullback_map {T T' : Over S'} (φ : T ⟶ T') :
-    (pullbackRightPullbackFstIso g f T.hom).inv ≫ ((Over.pullback (pullback.fst g f)).map φ).left =
-      ((Over.pullback f).map ((Over.map g).map φ)).left ≫
-        (pullbackRightPullbackFstIso g f T'.hom).inv := by
-  apply pullback.hom_ext
-  · simp
-  · apply pullback.hom_ext
-    · simp
-    · simp
-
 /-- Pullback along `T ×_S X ≅ T ×_{S'} (S' ×_S X)` commutes with the pullbacks along morphisms
 `T ⟶ T'` of schemes over `S'`. -/
 private lemma relativePicardBaseChangeMulEquiv_naturality {T T' : (Over S')ᵒᵖ} (φ : T ⟶ T')
@@ -117,7 +105,7 @@ private lemma relativePicardBaseChangeMulEquiv_naturality {T T' : (Over S')ᵒ�
     relativePicardBaseChangeMulEquiv_mk, relativePicardPresheaf_map_mk,
     LineBundleClass.pullback_comp, LineBundleClass.pullback_comp]
   congr 2
-  exact pullbackRightPullbackFstIso_inv_comp_pullback_map f g φ.unop
+  exact Over.pullbackRightPullbackFstIso_inv_comp_pullback_map f g φ.unop
 
 /-- **Base change of the relative Picard presheaf.** For `f : X ⟶ S` and `g : S' ⟶ S`, the
 relative Picard presheaf `T ↦ Pic(T ×_{S'} X') / Pic(T)` of the base change
@@ -162,25 +150,6 @@ def rigidifiedPicardFunctorBaseChangeIso :
   rigidifiedPicardFunctorIso _ _ _ ≪≫ relativePicardPresheafBaseChangeIso f g ≪≫
     Functor.isoWhiskerLeft (Over.map g).op (rigidifiedPicardFunctorIso f x₀ hx₀).symm
 
-/-- The base-changed sections are compatible with `T ×_S X ≅ T ×_{S'} (S' ×_S X)`. -/
-@[reassoc]
-lemma baseChangeSection_comp_pullbackRightPullbackFstIso_inv (T : Over S') :
-    baseChangeSection f x₀ hx₀ ((Over.map g).obj T) ≫ (pullbackRightPullbackFstIso g f T.hom).inv =
-      𝟙 T.left ≫ baseChangeSection (pullback.fst g f) (baseChangeSection f x₀ hx₀ (Over.mk g))
-        (baseChangeSection_fst f x₀ hx₀ (Over.mk g)) T := by
-  -- The lemmas for the base-changed sections are stated for `T.hom`, which `simp` does not match
-  -- against `((Over.map g).obj T).hom = T.hom ≫ g` and `(Over.mk g).hom = g`.
-  have h₁ := baseChangeSection_fst f x₀ hx₀ ((Over.map g).obj T)
-  have h₂ := baseChangeSection_snd f x₀ hx₀ ((Over.map g).obj T)
-  have h₃ := baseChangeSection_fst f x₀ hx₀ (Over.mk g)
-  have h₄ := baseChangeSection_snd f x₀ hx₀ (Over.mk g)
-  simp only [Over.map_obj_hom, Over.mk_hom] at h₁ h₂ h₃ h₄
-  apply pullback.hom_ext
-  · simpa using h₁
-  · apply pullback.hom_ext
-    · simp [reassoc_of% h₁, h₃]
-    · simp [h₂, h₄]
-
 /-- Under the comparison with the relative Picard presheaf, the base change isomorphism of the
 rigidified Picard functors is pullback of underlying line bundles. -/
 private lemma rigidifiedPicardFunctorIso_hom_app_baseChangeIso_hom_app (T : (Over S')ᵒᵖ)
@@ -212,7 +181,7 @@ lemma rigidifiedPicardFunctorBaseChangeIso_hom_app_apply (T : (Over S')ᵒᵖ)
         T.unop)) :
     (rigidifiedPicardFunctorBaseChangeIso f g x₀ hx₀).hom.app T a =
       RigidifiedLineBundleClass.pullback
-        (baseChangeSection_comp_pullbackRightPullbackFstIso_inv f g x₀ hx₀ T.unop) a := by
+        (baseChangeSection_comp_pullbackRightPullbackFstIso_inv f x₀ hx₀ g T.unop) a := by
   apply (Iso.commGroupIsoToMulEquiv
     ((rigidifiedPicardFunctorIso f x₀ hx₀).app (Opposite.op ((Over.map g).obj T.unop)))).injective
   refine (rigidifiedPicardFunctorIso_hom_app_baseChangeIso_hom_app f g x₀ hx₀ T a).trans ?_
