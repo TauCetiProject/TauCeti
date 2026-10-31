@@ -23,7 +23,7 @@ The proof follows Stacks. The integral closure `B` of `A` in `L` is finite étal
 (`TauCeti.Algebra.isUnramifiedWRT_iff_etale`), so `B' = A' ⊗[A] B` is finite étale over `A'`, and
 `K' ⊗[A'] B'` maps onto `L'` because every element of `L` is an element of `B` divided by an
 element of `A`. The integral closure of `A'` in a field quotient of the generic fibre of a finite
-étale `A'`-algebra is étale over `A'` (`TauCeti.Algebra.etale_integralClosure_of_surjective`), so
+étale `A'`-algebra is étale over `A'` (`AlgHom.etale_integralClosure_of_surjective`), so
 `L'` is unramified with respect to `A'`.
 
 The extension `A → A'` need not be local here: only the compatibility of the fraction fields is
@@ -31,7 +31,7 @@ used.
 
 ## Main results
 
-* `TauCeti.Algebra.isUnramifiedWRT_of_surjective`: over a discrete valuation ring `R`, every field
+* `AlgHom.isUnramifiedWRT_of_surjective`: over a discrete valuation ring `R`, every field
   quotient of the generic fibre of a finite étale `R`-algebra is unramified with respect to `R`.
 * `TauCeti.Algebra.IsUnramifiedWRT.baseChange`: every factor of `K' ⊗[K] L` is unramified with
   respect to `A'` when `L` is unramified with respect to `A`.
@@ -45,9 +45,9 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.Algebra
+namespace AlgHom
 
-section FiniteEtale
+open TauCeti.Algebra
 
 variable {R K S L : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] [Field K]
   [Algebra R K] [IsFractionRing R K] [CommRing S] [Algebra R S] [Algebra.Etale R S]
@@ -65,7 +65,9 @@ theorem isUnramifiedWRT_of_surjective (χ : K ⊗[R] S →ₐ[K] L) (hχ : Funct
   have : Algebra.IsSeparable K L := (Algebra.FormallyUnramified.iff_isSeparable K L).mp ‹_›
   exact (isUnramifiedWRT_iff_etale R K L).mpr ‹_›
 
-end FiniteEtale
+end AlgHom
+
+namespace TauCeti.Algebra
 
 section BaseChange
 
@@ -89,21 +91,28 @@ theorem IsUnramifiedWRT.baseChange (h : IsUnramifiedWRT A L) (φ : K' ⊗[K] L �
   let B' := A' ⊗[A] B
   let : Algebra A L' := ((algebraMap A' L').comp (algebraMap A A')).toAlgebra
   have : IsScalarTower A A' L' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower A K' L' := .of_algebraMap_eq fun a ↦ by
+    simp [RingHom.algebraMap_toAlgebra, IsScalarTower.algebraMap_apply A A' K',
+      ← IsScalarTower.algebraMap_apply A' K' L']
   -- The map `B → L'` through `L` and `K' ⊗[K] L`.
   let g₀ : B →+* L' := φ.toRingHom.comp
     ((Algebra.TensorProduct.includeRight : L →ₐ[K] K' ⊗[K] L).toRingHom.comp
       (integralClosure A L).val.toRingHom)
+  -- In `K' ⊗[K] L`, the scalar `1 ⊗ a` from `L` is the scalar `a ⊗ 1` from `K'`.
+  have htmul (a : A) : (1 : K') ⊗ₜ[K] algebraMap A L a =
+      algebraMap K' (K' ⊗[K] L) (algebraMap A K' a) := by
+    simp [IsScalarTower.algebraMap_apply A K L, IsScalarTower.algebraMap_apply A K K',
+      Algebra.TensorProduct.algebraMap_apply, ← Algebra.TensorProduct.tmul_one_eq_one_tmul]
   have hg₀ (a : A) : g₀ (algebraMap A B a) = algebraMap A L' a := by
     simp only [g₀, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      Subalgebra.coe_val, Subalgebra.coe_algebraMap]
-    rw [IsScalarTower.algebraMap_apply A A' L', IsScalarTower.algebraMap_apply A K L,
-      AlgHom.commutes, IsScalarTower.algebraMap_apply K K' (K' ⊗[K] L), AlgHom.commutes,
-      ← IsScalarTower.algebraMap_apply A K K', IsScalarTower.algebraMap_apply A A' K',
-      ← IsScalarTower.algebraMap_apply A' K' L']
+      Subalgebra.coe_val, Subalgebra.coe_algebraMap, Algebra.TensorProduct.includeRight_apply]
+    rw [htmul, AlgHom.commutes, ← IsScalarTower.algebraMap_apply]
   let g : B →ₐ[A] L' := { g₀ with commutes' := hg₀ }
   have hg (b : B) : g b = φ ((1 : K') ⊗ₜ[K] (b : L)) := by
     simp [g, g₀]
   let ψ : B' →ₐ[A'] L' := Algebra.TensorProduct.lift (Algebra.ofId A' L') g fun _ _ ↦ .all _ _
+  have hψ (b : B) : ψ (1 ⊗ₜ b) = φ ((1 : K') ⊗ₜ[K] (b : L)) := by
+    rw [Algebra.TensorProduct.lift_tmul, map_one, one_mul, hg]
   let χ : K' ⊗[A'] B' →ₐ[K'] L' :=
     Algebra.TensorProduct.lift (Algebra.ofId K' L') ψ fun _ _ ↦ .all _ _
   -- `χ` is surjective: every element of `L` is an element of `B` divided by an element of `A`.
@@ -126,15 +135,18 @@ theorem IsUnramifiedWRT.baseChange (h : IsUnramifiedWRT A L) (φ : K' ⊗[K] L �
       let b : B := ⟨a • l, hint⟩
       have hbl : (b : L) = algebraMap A K a • l := (algebraMap_smul K a l).symm
       have hb : (1 : K') ⊗ₜ[K] (b : L) = algebraMap A K' a • ((1 : K') ⊗ₜ[K] l) := by
-        rw [hbl, TensorProduct.tmul_smul, TensorProduct.smul_tmul', TensorProduct.smul_tmul',
-          Algebra.smul_def, mul_one, IsScalarTower.algebraMap_apply A K K', smul_eq_mul, mul_one]
-      have hk : k ⊗ₜ[K] l = k • ((1 : K') ⊗ₜ[K] l) := by
-        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+        rw [hbl, TensorProduct.tmul_smul, TensorProduct.smul_tmul', IsScalarTower.algebraMap_smul]
+        simp [Algebra.smul_def, IsScalarTower.algebraMap_apply A K K']
+      have hφb : φ (1 ⊗ₜ b) = algebraMap K' L' (algebraMap A K' a) * φ (1 ⊗ₜ l) := by
+        rw [hb, map_smul, Algebra.smul_def]
+      have hφk : φ (k ⊗ₜ l) = algebraMap K' L' k * φ (1 ⊗ₜ l) := by
+        rw [← Algebra.smul_def, ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
       refine ⟨(k * (algebraMap A K' a)⁻¹) ⊗ₜ (1 ⊗ₜ b), ?_⟩
-      rw [Algebra.TensorProduct.lift_tmul, Algebra.TensorProduct.lift_tmul, map_one, one_mul, hg,
-        Algebra.ofId_apply, hb, hk, map_smul, map_smul, Algebra.smul_def, Algebra.smul_def,
-        ← mul_assoc, ← map_mul, inv_mul_cancel_right₀ ha']
-  exact isUnramifiedWRT_of_surjective χ hχ
+      simp only [χ, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply, hψ, hφb, hφk, map_mul,
+        map_inv₀]
+      have := (map_ne_zero (algebraMap K' L')).mpr ha'
+      field_simp
+  exact χ.isUnramifiedWRT_of_surjective hχ
 
 end BaseChange
 
