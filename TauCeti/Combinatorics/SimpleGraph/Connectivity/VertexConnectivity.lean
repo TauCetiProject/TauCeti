@@ -17,7 +17,7 @@ when they remain reachable after deleting any set of fewer than `k` vertices oth
 graph is `k`-vertex-connected, `G.IsVertexConnected k`, when it has at least `k + 1` vertices (more
 than `k` for finite `k`, infinitely many for `k = ⊤`) and any two vertices are
 `k`-vertex-reachable. Thus a single vertex is `0`- but not `1`-vertex-connected,
-and the complete graph on `n` vertices is `(n - 1)`- but not `n`-vertex-connected. The numerical
+and the complete graph on `n ≥ 1` vertices is `(n - 1)`- but not `n`-vertex-connected. The numerical
 vertex connectivity `G.vertexConnectivity` is the supremum in `ℕ∞` of the natural thresholds at
 which `G` is vertex-connected; it is `0` on the empty vertex type and finite on a finite one.
 
@@ -265,6 +265,7 @@ theorem vertexConnectivity_le_card : G.vertexConnectivity ≤ ENat.card V :=
   iSup₂_le fun _ hk ↦ le_self_add.trans hk.1
 
 /-- The vertex connectivity of a graph on a finite vertex type is finite. -/
+@[simp]
 theorem vertexConnectivity_ne_top [Finite V] : G.vertexConnectivity ≠ ⊤ :=
   ne_top_of_le_ne_top ENat.card_lt_top_of_finite.ne vertexConnectivity_le_card
 
@@ -280,6 +281,7 @@ theorem vertexConnectivity_add_one_le_card [Nonempty V] :
     exact le_top
 
 /-- The complete graph on `V` has vertex connectivity `ENat.card V - 1`. -/
+@[simp]
 theorem vertexConnectivity_top : (⊤ : SimpleGraph V).vertexConnectivity = ENat.card V - 1 := by
   cases isEmpty_or_nonempty V
   · simp [(ENat.card_eq_zero_iff_empty V).2 ‹_›]
