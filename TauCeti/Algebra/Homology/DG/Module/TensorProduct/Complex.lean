@@ -77,7 +77,7 @@ theorem isHomogeneous_leibnizDifferential
       (InternalGrading.ofDecomposition 𝒩)
       (by simpa only [InternalGrading.ofDecomposition_piece] using hMd.map_mem hm)
       (by simpa only [InternalGrading.ofDecomposition_piece] using hn)
-    simpa only [show q + 1 + p = q + p + 1 by omega] using hmem
+    simpa only [add_right_comm] using hmem
   · have hmem := tmul_mem_grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
       (InternalGrading.ofDecomposition 𝒩)
       (by simpa only [InternalGrading.ofDecomposition_piece] using hm)
