@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.Instances.Quotient
 public import Mathlib.Geometry.Manifold.LocalInvariantProperties
 public import TauCeti.Topology.Algebra.ConstMulAction
 public import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
 # (G, X)-manifolds
@@ -69,6 +70,8 @@ here.
   `smulGroupoid G X` is `C^n` on its source.
 * `TauCeti.isManifold_of_hasGroupoid_smulGroupoid`: a (G, X)-manifold is a `C^n` manifold when `G`
   acts by `C^n` maps on the `C^n` manifold `X`.
+* `TauCeti.contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid`: each `X`-valued chart of such a
+  manifold is then `C^n` on its source.
 * `TauCeti.hasGroupoid_smulGroupoid_quotient`: the orbit space of a free, properly discontinuous
   action of `Γ` on `X` is a (Γ, X)-manifold.
 
@@ -218,6 +221,29 @@ theorem isManifold_of_hasGroupoid_smulGroupoid [IsManifold I n X] (M : Type*)
     contMDiffOn_of_mem_smulGroupoid ((smulGroupoid G X).symm he)⟩
 
 end Smooth
+
+section ChartSmooth
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
+  {G X : Type*} [Group G] [TopologicalSpace X] [ChartedSpace H X] [MulAction G X]
+  [ContinuousConstSMul G X] [ContMDiffConstSMul I n G X]
+
+variable (G) in
+/-- In a (G, X)-manifold, for an action of `G` by `C^n` maps, every `X`-valued chart is `C^n` on
+its source for the composite charts `ChartedSpace.comp H X M`. -/
+theorem contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid {M : Type*} [TopologicalSpace M]
+    [ChartedSpace X M] [HasGroupoid M (smulGroupoid G X)] {e : OpenPartialHomeomorph M X}
+    (he : e ∈ atlas X M) :
+    letI := ChartedSpace.comp H X M
+    ContMDiffOn I I n e e.source := fun y hy ↦ by
+  let := ChartedSpace.comp H X M
+  -- Near `y`, the chart `e` is the preferred chart at `y` followed by the action of some `g`.
+  obtain ⟨g, hg⟩ := exists_smul_eventuallyEq_chartAt (G := G) he hy
+  exact (((contMDiff_const_smul g).contMDiffAt.comp y
+    (contMDiffAt_chartAt_comp y)).congr_of_eventuallyEq hg).contMDiffWithinAt
+
+end ChartSmooth
 
 /-! ### Quotients and deck transformations -/
 

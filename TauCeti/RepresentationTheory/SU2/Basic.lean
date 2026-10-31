@@ -9,11 +9,11 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Algebra.Field.Basic
 import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 public import TauCeti.LinearAlgebra.UnitaryGroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
-import TauCeti.Topology.Circle.Basic
 
 /-!
 # `SU(2)` and its maximal torus
@@ -291,10 +291,10 @@ private theorem circleI_sq_ne_one : (circleI : ℂ) ^ 2 ≠ 1 := by
 /-- **An element of `SU(2)` commuting with a single torus element `diag (z, z⁻¹)` with `z² ≠ 1`
 already lies in the maximal torus.** Reading off the off-diagonal entries of
 `diag (z, z⁻¹) g = g diag (z, z⁻¹)` gives `g₀₁ (z - z⁻¹) = 0` and `g₁₀ (z⁻¹ - z) = 0`, and
-`z² ≠ 1` gives `z ≠ z⁻¹` (`TauCeti.circle_sub_inv_ne_zero`). -/
+`z² ≠ 1` gives `z ≠ z⁻¹` (`TauCeti.sub_inv_eq_zero_iff`). -/
 theorem mem_torus_of_commute_torusHom {z : Circle} (hz : (z : ℂ) ^ 2 ≠ 1) {g : SU2}
     (h : torusHom z * g = g * torusHom z) : g ∈ torus := by
-  have hsub : (z : ℂ) - ((z : ℂ))⁻¹ ≠ 0 := circle_sub_inv_ne_zero hz
+  have hsub : (z : ℂ) - ((z : ℂ))⁻¹ ≠ 0 := (sub_inv_eq_zero_iff z.coe_ne_zero).not.mpr hz
   have hmat : torusMatrix z * (g : Matrix (Fin 2) (Fin 2) ℂ)
       = (g : Matrix (Fin 2) (Fin 2) ℂ) * torusMatrix z := by
     have hval := congrArg Subtype.val h

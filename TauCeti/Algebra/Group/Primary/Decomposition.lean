@@ -13,7 +13,9 @@ public import Mathlib.GroupTheory.Torsion
 
 This file packages the canonical decomposition of a finite abelian group as the product of its
 prime-primary components. The equivalence sends a tuple of primary elements to their sum in the
-ambient group. It also defines the part of an additive subgroup lying in one primary component.
+ambient group. It also defines the part of an additive subgroup lying in one primary component,
+and records that in a group killed by `p ^ N * m`, with `p ∤ m`, the `p`-primary component is
+killed by `p ^ N`.
 
 The proof follows the cardinality argument used by Mathlib's `Sylow.directProductOfNormal`:
 primary components for distinct primes have coprime cardinalities, and the product of those
@@ -28,6 +30,8 @@ and uses Mathlib's canonical `AddCommGroup.primaryComponent` subgroups.
   the product of its prime-primary components.
 * `TauCeti.AddCommGroup.primaryDecomposition_apply`: the equivalence is the sum of the component
   inclusions.
+* `TauCeti.AddCommGroup.pow_nsmul_eq_zero_of_mem_primaryComponent`: in a group killed by
+  `p ^ N * m` with `p ∤ m`, the `p`-primary component is killed by `p ^ N`.
 
 ## References
 
@@ -61,6 +65,18 @@ namespace TauCeti
 universe u
 
 namespace AddCommGroup
+
+/-- A `p`-primary element of a group killed by `p ^ N * m`, with `p ∤ m`, is killed by
+`p ^ N`. -/
+theorem pow_nsmul_eq_zero_of_mem_primaryComponent {p : ℕ} [hp : Fact p.Prime] {A : Type*}
+    [AddCommGroup A] {N m : ℕ} (hm : ¬p ∣ m) (hA : ∀ x : A, (p ^ N * m) • x = 0) {x : A}
+    (hx : x ∈ AddCommGroup.primaryComponent A p) : p ^ N • x = 0 := by
+  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp hx
+  have hcop : (addOrderOf x).Coprime m :=
+    Nat.Coprime.coprime_dvd_left (addOrderOf_dvd_of_nsmul_eq_zero hk)
+      (((Nat.Prime.coprime_iff_not_dvd hp.out).mpr hm).pow_left k)
+  exact addOrderOf_dvd_iff_nsmul_eq_zero.mp
+    (hcop.dvd_of_dvd_mul_right (addOrderOf_dvd_of_nsmul_eq_zero (hA x)))
 
 variable (A : Type u) [AddCommGroup A] [Finite A]
 

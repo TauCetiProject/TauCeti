@@ -47,6 +47,8 @@ associativity assumes that tensoring with any object preserves cokernels, as in 
   bilinear map `Hₚ(G; k) → H_q(G; k) → Hₙ(G; k)`, with its associativity
   (`TopCat.pontryaginMul_assoc`), graded commutativity (`TopCat.pontryaginMul_comm`) and naturality
   (`TopCat.singularHomologyFunctor_map_pontryaginMul`).
+* `TopCat.pontryaginMul_map_map`: the Pontryagin product of classes pushed forward along
+  `f : A ⟶ G` and `g : B ⟶ G` is the image of their cross product under `(x, y) ↦ f x * g y`.
 
 ## References
 
@@ -346,5 +348,23 @@ theorem singularHomologyFunctor_map_pontryaginMul {G' : TopCat.{w}} [MonObj G'] 
         (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).map f b) :=
   (congrArg (fun g ↦ g (a ⊗ₜ b))
     (pontryaginProduct_naturality f (𝟙_ (ModuleCat.{w} k)) p q n h)).symm
+
+/-- **The Pontryagin product of pushed-forward classes**: for maps `f : A ⟶ G` and `g : B ⟶ G`
+into a monoid object `G`, `f_* a · g_* b` is the image of the cross product `a × b` under the map
+`A × B ⟶ G`, `(x, y) ↦ f x * g y`. -/
+theorem pontryaginMul_map_map {A B : TopCat.{w}} (f : A ⟶ G) (g : B ⟶ G) (p q n : ℕ)
+    (h : p + q = n) (a : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).obj A)
+    (b : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj B) :
+    pontryaginMul k G p q n h (((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).map f a)
+        (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).map g b) =
+      ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ _)).map ((f ⊗ₘ g) ≫ μ[G])
+        (((singularHomologyFunctor (ModuleCat.{w} k) n).map (λ_ (𝟙_ _)).hom).app (A ⊗ B)
+          (singularHomologyCross A B (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) p q n h (a ⊗ₜ b))) := by
+  rw [pontryaginMul_apply, ← ModuleCat.MonoidalCategory.tensorHom_tmul,
+    ← CategoryTheory.comp_apply, pontryaginProduct_def, singularHomologyCross_naturality_assoc,
+    NatTrans.naturality_assoc, ← Functor.map_comp, CategoryTheory.comp_apply,
+    CategoryTheory.comp_apply]
+  -- the multiplication of the unit `𝟙_ (ModuleCat k)` is its left unitor
+  rfl
 
 end TopCat

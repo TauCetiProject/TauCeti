@@ -25,8 +25,8 @@ Using the description of the sections of `𝒪(n)` over standard opens as fracti
 `Γ(D₊(f), 𝒪(n)) → Γ(D₊(fg), 𝒪(n))` is the localization at `a`. Quasi-coherence then follows from
 the affine-local criterion `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_isLocalizedModule`.
 
-Quasi-coherence is what allows the twisting sheaves of the charts of a relative `Proj` to be glued
-and pulled back.
+Since quasi-coherence is local, this is the input needed to show that the twisting sheaves `𝒪(n)`
+of a relative `Proj`, which restrict to the twisting sheaves of its charts, are quasi-coherent.
 
 ## Main results
 

@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Exchange
-public import TauCeti.GroupTheory.TitsSystem.Comap
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
 
 /-!
@@ -33,13 +32,6 @@ For nonempty `S` this says exactly that the Coxeter graph of `(W, S)` is connect
 * `TauCeti.TitsSystem.IsIrreducible`: every set of simple reflections commuting elementwise with
   its complement is empty or everything.
 
-## Main results
-
-* `TauCeti.TitsSystem.IsIrreducible.of_mulEquiv`: irreducibility transfers along an isomorphism
-  of Weyl groups matching the simple reflections.
-* `TauCeti.TitsSystem.isIrreducible_comap_iff`: irreducibility is unchanged by pulling a Tits
-  system back along a homomorphism.
-
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter IV, §2, no. 4,
@@ -51,7 +43,7 @@ public section
 
 namespace TauCeti.TitsSystem
 
-universe u
+universe u v
 
 variable {G : Type u} [Group G] (T : TitsSystem G)
 
@@ -94,29 +86,27 @@ theorem isIrreducible_iff : T.IsIrreducible ↔
       J = ∅ ∨ J = Set.univ :=
   Iff.rfl
 
-/-- Irreducibility transfers along an isomorphism of Weyl groups matching the simple
+/-- Irreducibility transfers along an isomorphism of Weyl groups identifying the simple
 reflections. -/
-theorem IsIrreducible.of_mulEquiv {G' : Type*} [Group G'] {T' : TitsSystem G'}
-    (φ : T.WeylGroup ≃* T'.WeylGroup) (hφ : ∀ w, φ w ∈ T'.simple ↔ w ∈ T.simple)
-    (h : T.IsIrreducible) : T'.IsIrreducible := by
-  intro J hJ
-  let e : T.simple ≃ T'.simple := φ.toEquiv.subtypeEquiv fun w ↦ (hφ w).symm
-  have he : (e ⁻¹' J = ∅ ∨ e ⁻¹' J = Set.univ) :=
-    h _ fun s hs t ht ↦ φ.injective (by rw [map_mul, map_mul]; exact hJ (e s) hs (e t) ht)
-  rcases he with he | he
-  · exact Or.inl (e.surjective.preimage_injective (he.trans Set.preimage_empty.symm))
-  · exact Or.inr (e.surjective.preimage_injective (he.trans Set.preimage_univ.symm))
-
-/-- A pulled-back Tits system has an irreducible Weyl group exactly when the original one does,
-since the two Weyl groups and their simple reflections are identified. -/
-@[simp]
-theorem isIrreducible_comap_iff {H : Type*} [Group H] (f : H →* G)
-    (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g) :
-    (T.comap f hf).IsIrreducible ↔ T.IsIrreducible :=
-  ⟨IsIrreducible.of_mulEquiv _ (T.comapWeylGroupMulEquiv f hf) fun w ↦ by
-      rw [comap_simple, Set.mem_preimage],
-    IsIrreducible.of_mulEquiv _ (T.comapWeylGroupMulEquiv f hf).symm fun w ↦ by
-      rw [comap_simple, Set.mem_preimage, MulEquiv.apply_symm_apply]⟩
+theorem IsIrreducible.of_mulEquiv {T : TitsSystem G} (hirr : T.IsIrreducible) {H : Type v}
+    [Group H] {T' : TitsSystem H} (e : T'.WeylGroup ≃* T.WeylGroup)
+    (he : e ⁻¹' T.simple = T'.simple) : T'.IsIrreducible := by
+  have hmem : ∀ w, w ∈ T'.simple ↔ e w ∈ T.simple := fun w ↦ by rw [← he, Set.mem_preimage]
+  refine T'.isIrreducible_iff.mpr fun J hJ ↦ ?_
+  -- Transport `J` to the simple reflections of `T`, where irreducibility applies.
+  let J₀ : Set T.simple := {s | ∃ t ∈ J, e t = s}
+  have hJ₀ : ∀ s ∈ J₀, ∀ t ∉ J₀, (s : T.WeylGroup) * t = t * s := by
+    rintro s ⟨s', hs', hs⟩ t ht
+    have ht' : (⟨e.symm t, (hmem _).mpr (by simp)⟩ : T'.simple) ∉ J :=
+      fun h ↦ ht ⟨_, h, by simp⟩
+    simpa [hs] using congrArg e (hJ s' hs' _ ht')
+  have hmemJ₀ : ∀ s : T'.simple, s ∈ J ↔ (⟨e s, (hmem _).mp s.2⟩ : T.simple) ∈ J₀ := by
+    refine fun s ↦ ⟨fun hs ↦ ⟨s, hs, rfl⟩, ?_⟩
+    rintro ⟨t, ht, hts⟩
+    rwa [← Subtype.ext (e.injective hts)]
+  rcases T.isIrreducible_iff.mp hirr J₀ hJ₀ with h | h
+  · exact Or.inl (Set.eq_empty_of_forall_notMem fun s hs ↦ by simpa [h] using (hmemJ₀ s).mp hs)
+  · exact Or.inr (Set.eq_univ_of_forall fun s ↦ (hmemJ₀ s).mpr (by simp [h]))
 
 /-- The canonical map from the Coxeter presentation to the Weyl quotient. -/
 private def coxeterPresentationHom : T.coxeterMatrix.Group →* T.WeylGroup :=

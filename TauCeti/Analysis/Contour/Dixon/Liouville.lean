@@ -26,8 +26,8 @@ collapses the `h₁`/`h₂` identity — combined with the `L¹` decay of `dixon
   closed null-homologous curve in `U` with `f` differentiable on the open set `U`.
 
 This pointwise vanishing is the hinge of Dixon's proof of the homology form of Cauchy's theorem
-(`homologyCauchyTheorem`, `TauCetiRoadmap/ContourIntegration/Suggested.lean`): applying it to
-`(· - w₀) * f` yields the Cauchy integral formula and thence `∮_γ f = 0`.
+for null-homologous curves: applying it to `(· - w₀) * f` yields the Cauchy integral formula and
+thence `∮_γ f = 0`.
 
 ## Provenance
 
@@ -52,31 +52,30 @@ variable {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {P : Set
 derivative and image in `U`, every `w` far from the origin lies off the curve with winding number
 `0` (`windingNumber_eventually_zero_cocompact`). There `dixonFunction = dixonH2`: off `U` by
 definition, and on `U` because the vanishing winding number collapses the `h₁`/`h₂` identity. -/
-private theorem dixonFunction_eventually_eq_dixonH2 (hf : DifferentiableOn ℂ f U)
+private theorem dixonFunction_eventually_eq_dixonH2 (hf : ContinuousOn f U)
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) (hclosed : γ a = γ b)
     (hP : P.Countable) (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t) :
-    ∀ᶠ w in cocompact ℂ, dixonFunction f U γ a b w = dixonH2 f γ a b w := by
+    dixonFunction f U γ a b =ᶠ[cocompact ℂ] dixonH2 f γ a b := by
   filter_upwards [windingNumber_eventually_zero_cocompact hclosed hP hγ_cont hγ_diff hderiv_int]
     with w ⟨hoff, hwn⟩
   exact dixonFunction_eq_dixonH2_of_windingNumber_zero hγ_cont hderiv_int
-    (cauchy_integrand_intervalIntegrable hf.continuousOn hγ_cont hγU hderiv_int hoff) hoff hwn
+    (cauchy_integrand_intervalIntegrable hf hγ_cont hγU hderiv_int hoff) hoff hwn
 
 /-- **The Dixon function tends to `0` along `cocompact ℂ`.** It eventually agrees with `dixonH2`,
 which tends to `0` by the `L¹` decay bound: the image of the compact interval `uIcc a b` is bounded
 (`IsCompact.exists_bound_of_continuousOn`), and the weight `f (γ ·) * deriv γ` is
 interval-integrable (continuous `f ∘ γ` times the interval-integrable derivative). -/
-private theorem dixonFunction_tendsto_zero (hf : DifferentiableOn ℂ f U)
+private theorem dixonFunction_tendsto_zero (hf : ContinuousOn f U)
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) (hclosed : γ a = γ b)
     (hP : P.Countable) (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t) :
-    Tendsto (dixonFunction f U γ a b) (cocompact ℂ) (nhds 0) := by
+    Tendsto (dixonFunction f U γ a b) (cocompact ℂ) (𝓝 0) := by
   obtain ⟨R, hR⟩ := isCompact_uIcc.exists_bound_of_continuousOn hγ_cont
   have hg : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b :=
-    hderiv_int.continuousOn_mul (hf.continuousOn.comp hγ_cont hγU)
+    hderiv_int.continuousOn_mul (hf.comp hγ_cont hγU)
   exact (dixonH2_tendsto_zero_of_integrable (fun t ht ↦ hR t (uIoc_subset_uIcc ht)) hg).congr'
-    (Filter.EventuallyEq.symm
-      (dixonFunction_eventually_eq_dixonH2 hf hγ_cont hγU hderiv_int hclosed hP hγ_diff))
+    (dixonFunction_eventually_eq_dixonH2 hf hγ_cont hγU hderiv_int hclosed hP hγ_diff).symm
 
 /-- **The Dixon function is identically zero (Liouville).** For a closed curve `γ`, null-homologous
 in an open set `U` (continuous on `uIcc a b`, differentiable off a countable set, with
@@ -90,7 +89,7 @@ theorem dixonFunction_eq_zero (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (h_null : IsNullHomologous γ a b U) (w : ℂ) : dixonFunction f U γ a b w = 0 := by
   have h_entire :=
     differentiable_dixonFunction hU hf hγ_cont hγU hderiv_int hclosed hP hγ_diff h_null
-  exact Differentiable.apply_eq_of_tendsto_cocompact h_entire w
-    (dixonFunction_tendsto_zero hf hγ_cont hγU hderiv_int hclosed hP hγ_diff)
+  exact h_entire.apply_eq_of_tendsto_cocompact w
+    (dixonFunction_tendsto_zero hf.continuousOn hγ_cont hγU hderiv_int hclosed hP hγ_diff)
 
 end TauCeti.Contour

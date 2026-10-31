@@ -24,7 +24,9 @@ Smoothness of the lift is the smoothness of pulling covectors back along a map,
 `TauCeti.CotangentBundle.contMDiff_mk_comp_mfderiv`.
 
 The construction is functorial: cotangent lifts preserve identity maps, inverses and composition
-(`Diffeomorph.cotangent_refl`, `Diffeomorph.cotangent_symm`, `Diffeomorph.cotangent_trans`).
+(`Diffeomorph.cotangent_refl`, `Diffeomorph.cotangent_symm`, `Diffeomorph.cotangent_trans`),
+and a diffeomorphism is determined by its lift (`Diffeomorph.cotangent_injective`,
+`Diffeomorph.cotangent_inj`).
 It is the cotangent counterpart of the tangent lift `Diffeomorph.tangent`. The cotangent lift of
 a diffeomorphism preserves the Liouville form and the canonical symplectic form of the cotangent
 bundle; see `TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift`.
@@ -149,6 +151,13 @@ theorem cotangent_snd_apply_mfderiv (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBun
   (cotangent_snd_apply h z _).trans
     (congrArg z.2 (h.mfderiv_symm_apply_mfderiv_apply (by simp) z.proj v))
 
+/-- The cotangent lift of `h` sends the zero covector at `x` to the zero covector at `h x`. -/
+@[simp]
+theorem cotangent_zeroSection (h : M ≃ₘ⟮I, J⟯ N) (x : M) :
+    h.cotangent (zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x) =
+      zeroSection (F →L[𝕜] 𝕜) (fun y : N ↦ TangentSpace J y →L[𝕜] 𝕜) (h x) :=
+  CotangentBundle.ext rfl fun _ ↦ rfl
+
 /-- The inverse of a cotangent lift is the cotangent lift of the inverse diffeomorphism. -/
 @[simp]
 theorem cotangent_symm (h : M ≃ₘ⟮I, J⟯ N) :
@@ -177,6 +186,16 @@ theorem cotangent_trans (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P) :
   rw [g.symm_apply_apply] at hcomp
   exact ((cotangent_snd_apply _ z v).trans (congrArg z.2 hcomp)).trans
     ((cotangent_snd_apply h z _).symm.trans (cotangent_snd_apply g _ v).symm)
+
+/-- A smooth diffeomorphism is determined by its cotangent lift, which covers it. -/
+theorem cotangent_injective :
+    Function.Injective (Diffeomorph.cotangent : (M ≃ₘ⟮I, J⟯ N) → _) := fun _ _ hh ↦
+  Diffeomorph.ext fun x ↦ congrArg TotalSpace.proj (DFunLike.congr_fun hh (zeroSection _ _ x))
+
+/-- Two smooth diffeomorphisms have the same cotangent lift exactly when they are equal. -/
+@[simp]
+theorem cotangent_inj {h h' : M ≃ₘ⟮I, J⟯ N} : h.cotangent = h'.cotangent ↔ h = h' :=
+  cotangent_injective.eq_iff
 
 end Diffeomorph
 

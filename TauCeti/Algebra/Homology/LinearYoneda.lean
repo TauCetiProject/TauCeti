@@ -22,7 +22,8 @@ chain homotopy to a cochain homotopy, and shows that it takes a short exact sequ
 complexes which is split in each degree to a short exact sequence of cochain complexes.  It also
 records elementwise descriptions of the differential, cocycles, coboundaries and cohomology classes
 of `Hom(X, Y)`, and of the maps between them induced by chain maps. Postcomposition
-with coefficient morphisms is provided by `ChainComplex.linearYonedaObjMap`.
+with coefficient morphisms is provided by `ChainComplex.linearYonedaObjMap`; it commutes with the
+maps induced by chain maps (`ChainComplex.linearYonedaObjMap_comp_linearYonedaFunctor_map`).
 
 It also sends coproducts of chain complexes to products of cochain complexes, with smallness
 measured in the universe of morphisms of the coefficient category. This uses Mathlib's
@@ -221,6 +222,20 @@ lemma _root_.ChainComplex.linearYonedaObjMap_comp (X : ChainComplex C α)
   simp only [ChainComplex.linearYonedaObjMap, Functor.map_comp, NatTrans.rightOp_comp,
     NatTrans.mapHomologicalComplex_comp, NatTrans.comp_app, op_comp]
   rfl
+
+/-- Coefficient maps commute with the maps induced by chain maps: postcomposing with `g : Y ⟶ Z`
+and precomposing with `β : X ⟶ X'` can be done in either order. -/
+@[reassoc]
+lemma _root_.ChainComplex.linearYonedaObjMap_comp_linearYonedaFunctor_map {X X' : ChainComplex C α}
+    (β : X ⟶ X') {Y Z : C} (g : Y ⟶ Z) :
+    X'.linearYonedaObjMap k g ≫ (linearYonedaFunctor k Z).map β.op =
+      (linearYonedaFunctor k Y).map β.op ≫ X.linearYonedaObjMap k g := by
+  ext i (a : X'.X i ⟶ Y)
+  -- Both components send `a` to `β ≫ a ≫ g`. They are precomposition and postcomposition by
+  -- definition (`linearYonedaFunctor_map_f_hom_apply`, `linearYonedaObjMap_f_hom_apply`), but
+  -- `simp` cannot split the composite: its components live in `X.linearYonedaObj k Z` and in
+  -- `(linearYonedaFunctor k Z).obj (op X)`, which agree only by unfolding.
+  exact (Category.assoc (β.f i) a g).symm
 
 /-- The coefficient map sends the class of a cocycle to the class of its image. -/
 @[simp]

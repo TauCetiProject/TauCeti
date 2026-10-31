@@ -26,6 +26,9 @@ The squared norm of `‖x‖ • y - ‖x‖⁻¹ • x` also has the polynomial
 `‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1` when `‖x‖ ≠ 0`. This normalized reflection identity is used in
 spherical inversion.
 
+Along a line `t ↦ x + t • ξ`, the squared distance to a point `y` is the quadratic polynomial
+`‖x - y‖² + 2 ⟪ξ, x - y⟫ t + ‖ξ‖² t²` in `t`.
+
 ## Main declarations
 
 * `TauCeti.mul_norm_sq_add_mul_norm_sub_sq`: the completed-square identity above.
@@ -36,6 +39,7 @@ spherical inversion.
   distances.
 * `TauCeti.norm_sq_norm_smul_sub_inv_norm_smul`: the squared norm of the normalized reflection
   vector as a polynomial.
+* `TauCeti.norm_add_smul_sub_sq`: the squared distance along a line as a quadratic polynomial.
 * `Finset.sum_mul_norm_sub_sq_eq` and `Finset.sum_mul_edist_sq_eq`: for finitely many points
   `x i` and weights `w i` summing to `1`, the weighted sum of the squared distances from `y` is
   the squared distance from `y` to the weighted mean `m = ∑ i, w i • x i` plus the weighted sum
@@ -61,6 +65,14 @@ theorem norm_sq_norm_smul_sub_inv_norm_smul {x : F} (hx : ‖x‖ ≠ 0) (y : F)
   rw [norm_sub_sq_real, real_inner_smul_left, real_inner_smul_right, real_inner_comm x y]
   simp only [norm_smul, Real.norm_eq_abs, abs_norm, abs_inv, mul_pow, inv_pow]
   field_simp
+
+/-- Along the line `t ↦ x + t • ξ`, the squared distance to `y` is the quadratic polynomial
+`‖x - y‖ ^ 2 + 2 * ⟪ξ, x - y⟫ * t + ‖ξ‖ ^ 2 * t ^ 2` in `t`. -/
+theorem norm_add_smul_sub_sq (x ξ y : F) (t : ℝ) :
+    ‖x + t • ξ - y‖ ^ 2 = ‖x - y‖ ^ 2 + 2 * ⟪ξ, x - y⟫ * t + ‖ξ‖ ^ 2 * t ^ 2 := by
+  rw [add_sub_right_comm, norm_add_sq_real, real_inner_smul_right, real_inner_comm, norm_smul,
+    mul_pow, Real.norm_eq_abs, sq_abs]
+  ring
 
 /-- **Completing the square** for a weighted sum of squared distances: if `a + b ≠ 0`, then
 `a ‖y‖² + b ‖x - y‖² = (a + b) ‖y - (b / (a + b)) • x‖² + (a b / (a + b)) ‖x‖²`. -/

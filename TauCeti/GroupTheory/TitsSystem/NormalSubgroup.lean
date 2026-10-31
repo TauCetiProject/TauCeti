@@ -8,9 +8,7 @@ module
 public import TauCeti.GroupTheory.TitsSystem.Parabolic.Classification
 public import TauCeti.GroupTheory.TitsSystem.Coxeter
 public import Mathlib.GroupTheory.IsPerfect
-public import TauCeti.GroupTheory.DerivedCentralQuotient
 import Mathlib.Algebra.Group.Subgroup.Pointwise
-import TauCeti.Algebra.Group.Subgroup.Normalizer
 import TauCeti.GroupTheory.Solvable
 
 /-!
@@ -30,16 +28,6 @@ criterion behind the simplicity of the finite groups of Lie type.
 Irreducibility is `TauCeti.TitsSystem.IsIrreducible`, defined with the Coxeter system of a Tits
 system.
 
-An ambient group carrying a BN-pair need not be perfect (for instance `GL_n` over a field with
-more than two elements), so the criterion must also apply to a normal subgroup cut out inside it.
-For a *split* BN-pair, with a solvable subgroup `U` normalized by `B` and `B ≤ U ⊔ (B ∩ N)`, let
-`H⁺` be the normal closure of `U`. Unless `H⁺ ≤ Z`, Tits's theorem gives `H⁺ B = G`, hence
-`G = H⁺ (B ∩ N)`, so the Tits system pulls back to `H⁺` (`TauCeti.TitsSystem.comap`) and the
-theorems above apply to it. If `H⁺` is perfect, every normal subgroup of `H⁺` lies in `Z` or is
-`H⁺`. If moreover `Z ∩ U = 1`, then `Z` centralizes `H⁺`, so `Z ∩ H⁺` is the centre of `H⁺`, and
-`H⁺` modulo its centre is simple once `U ≠ 1`. When `H⁺` is the derived subgroup, this is the
-simplicity of `TauCeti.DerivedCentralQuotient G`.
-
 ## Main results
 
 * `TauCeti.TitsSystem.simple_mul_comm_of_bruhatCell_subset_sup`: if `H` is normal, a simple
@@ -51,21 +39,11 @@ simplicity of `TauCeti.DerivedCentralQuotient G`.
 * `TauCeti.TitsSystem.le_normalCore_or_eq_top_of_normal`: Tits's simplicity theorem for normal
   subgroups.
 * `TauCeti.TitsSystem.isSimpleGroup_quotient_normalCore`: the quotient `G / Z` is simple.
-* `TauCeti.TitsSystem.le_subgroupOf_normalCore_or_eq_top_of_normal`: for a split BN-pair, every
-  normal subgroup of the normal closure `H⁺` of `U` lies in `Z` or is `H⁺`.
-* `TauCeti.TitsSystem.center_normalClosure_eq_subgroupOf_normalCore`: the centre of `H⁺` is
-  `Z ∩ H⁺`.
-* `TauCeti.TitsSystem.isSimpleGroup_normalClosure_quotient_center`: `H⁺` modulo its centre is
-  simple.
-* `TauCeti.TitsSystem.isSimpleGroup_derivedCentralQuotient`: if `H⁺ = [G, G]`, then
-  `[G, G] / Z([G, G])` is simple.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter IV, §2, no. 7.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Section 29.5.
-* B. Conrad, *Tits systems and simplicity*, handout for Math 249B (Stanford, 2016), Theorem 2.4,
-  https://math.stanford.edu/~conrad/249BW16Page/handouts/titssystem.pdf
 -/
 
 public section
@@ -168,124 +146,5 @@ theorem isSimpleGroup_quotient_normalCore (hS : T.simple.Nonempty) (hirr : T.IsI
     exact (QuotientGroup.eq_one_iff g).mpr (h hx)
   · rw [← Subgroup.map_comap_eq_self_of_surjective hπ K, h, Subgroup.map_top_of_surjective _ hπ]
     exact Or.inr rfl
-
-/-! ### The normal closure of `U` in a split BN-pair -/
-
-variable {U : Subgroup G}
-
-/-- If `H⁺ ⊔ B = G` for the normal closure `H⁺` of `U` and `B ≤ U ⊔ (B ∩ N)`, then every element of
-`G` is `x t` with `x ∈ H⁺` and `t ∈ B ∩ N`, so the Tits system pulls back to `H⁺`. -/
-private theorem exists_mul_eq_of_sup_eq_top
-    (hsplit : T.subgroupB ≤ U ⊔ T.subgroupB ⊓ T.subgroupN)
-    (htop : Subgroup.normalClosure (U : Set G) ⊔ T.subgroupB = ⊤) (g : G) :
-    ∃ x : Subgroup.normalClosure (U : Set G), ∃ t ∈ T.subgroupB ⊓ T.subgroupN,
-      (Subgroup.normalClosure (U : Set G)).subtype x * t = g := by
-  have hle : Subgroup.normalClosure (U : Set G) ⊔ T.subgroupB ≤
-      Subgroup.normalClosure (U : Set G) ⊔ T.subgroupB ⊓ T.subgroupN :=
-    sup_le le_sup_left (hsplit.trans (sup_le_sup_right Subgroup.le_normalClosure _))
-  obtain ⟨x, hx, t, ht, rfl⟩ : g ∈ (Subgroup.normalClosure (U : Set G) : Set G) *
-      (T.subgroupB ⊓ T.subgroupN : Subgroup G) := by
-    rw [← Subgroup.normal_mul]
-    exact hle (htop ▸ Subgroup.mem_top g)
-  exact ⟨⟨x, hx⟩, t, ht, rfl⟩
-
-/-- The pulled-back `B` normalizes `U`, read inside its normal closure. -/
-private theorem comap_subgroupB_le_normalizer (hBU : T.subgroupB ≤ Subgroup.normalizer (U : Set G))
-    (hf : ∀ g : G, ∃ x : Subgroup.normalClosure (U : Set G), ∃ t ∈ T.subgroupB ⊓ T.subgroupN,
-      (Subgroup.normalClosure (U : Set G)).subtype x * t = g) :
-    (T.comap _ hf).subgroupB ≤
-      Subgroup.normalizer (U.subgroupOf (Subgroup.normalClosure (U : Set G)) : Set _) := by
-  rw [← Subgroup.subgroupOf_normalizer_eq Subgroup.le_normalClosure, comap_subgroupB]
-  exact Subgroup.comap_mono hBU
-
-/-- **Tits's theorem for the normal closure of `U`.** Suppose the Weyl group is irreducible, `U` is
-a solvable subgroup normalized by `B` with `B ≤ U ⊔ (B ∩ N)` (as for a split BN-pair
-`B = U ⋊ (B ∩ N)`), and the normal closure `H⁺` of `U` is perfect. Then every normal subgroup of
-`H⁺` lies in the normal core `Z = ⋂ g B g⁻¹` of `B`, or is `H⁺`. -/
-theorem le_subgroupOf_normalCore_or_eq_top_of_normal (hirr : T.IsIrreducible)
-    (hBU : T.subgroupB ≤ Subgroup.normalizer (U : Set G))
-    (hsplit : T.subgroupB ≤ U ⊔ T.subgroupB ⊓ T.subgroupN) [Group.IsSolvable U]
-    [Group.IsPerfect (Subgroup.normalClosure (U : Set G))]
-    (K : Subgroup (Subgroup.normalClosure (U : Set G))) [K.Normal] :
-    K ≤ T.subgroupB.normalCore.subgroupOf (Subgroup.normalClosure (U : Set G)) ∨ K = ⊤ := by
-  -- Either `H⁺ ≤ Z`, or `H⁺ B = G`; then `G = H⁺ (B ∩ N)`, and the theorem for normal subgroups
-  -- applies to the Tits system pulled back to `H⁺`, whose normal core of `B` is `Z ∩ H⁺`.
-  rcases T.le_normalCore_or_sup_eq_top_of_normal hirr (Subgroup.normalClosure (U : Set G))
-    with h | htop
-  · exact Or.inl fun x _ ↦ h x.2
-  have hf := T.exists_mul_eq_of_sup_eq_top hsplit htop
-  have : Group.IsSolvable (U.subgroupOf (Subgroup.normalClosure (U : Set G))) :=
-    (Subgroup.subgroupOfEquivOfLe Subgroup.le_normalClosure).isSolvable_congr.mpr ‹_›
-  exact ((T.comap _ hf).le_normalCore_or_eq_top_of_normal
-    ((T.isIrreducible_comap_iff _ hf).mpr hirr) (T.comap_subgroupB_le_normalizer hBU hf)
-    (Subgroup.normalClosure_subgroupOf_normalClosure_eq_top
-      (eq_top_iff.mpr (htop.ge.trans (sup_le_sup_left hBU _)))) K).imp_left
-    fun h ↦ h.trans (T.normalCore_comap_subgroupB _ hf).le
-
-/-- **The centre of the normal closure of `U`.** Under the hypotheses of
-`TauCeti.TitsSystem.le_subgroupOf_normalCore_or_eq_top_of_normal`, if moreover the normal core
-`Z = ⋂ g B g⁻¹` of `B` meets `U` trivially, then the centre of the normal closure `H⁺` of `U` is
-`Z ∩ H⁺`. -/
-theorem center_normalClosure_eq_subgroupOf_normalCore (hirr : T.IsIrreducible)
-    (hBU : T.subgroupB ≤ Subgroup.normalizer (U : Set G))
-    (hsplit : T.subgroupB ≤ U ⊔ T.subgroupB ⊓ T.subgroupN)
-    (hZU : Disjoint T.subgroupB.normalCore U) [Group.IsSolvable U]
-    [Group.IsPerfect (Subgroup.normalClosure (U : Set G))] :
-    Subgroup.center (Subgroup.normalClosure (U : Set G)) =
-      T.subgroupB.normalCore.subgroupOf (Subgroup.normalClosure (U : Set G)) := by
-  -- The centre is normal, so it lies in `Z` unless `H⁺` is commutative, hence trivial. Conversely
-  -- `Z` normalizes `U` and meets it trivially, so it centralizes `H⁺`.
-  refine le_antisymm ?_ fun x hx ↦ Subgroup.mem_center_iff.mpr fun y ↦ Subtype.ext ?_
-  · refine (T.le_subgroupOf_normalCore_or_eq_top_of_normal hirr hBU hsplit _).elim id fun h ↦ ?_
-    have := Subgroup.center_eq_top_iff.mp h
-    exact fun x _ ↦ Subsingleton.elim (1 : Subgroup.normalClosure (U : Set G)) x ▸ one_mem _
-  · exact (Subgroup.mem_centralizer_iff.mp (Subgroup.normalClosure_le_centralizer_of_le_normalizer
-      ((Subgroup.normalCore_le _).trans hBU) hZU y.2) x hx).symm
-
-/-- **Tits's simplicity theorem for the normal closure of `U`.** Suppose the Weyl group is
-irreducible, `U ≠ 1` is a solvable subgroup normalized by `B` with `B ≤ U ⊔ (B ∩ N)`, the normal
-core `⋂ g B g⁻¹` of `B` meets `U` trivially, and the normal closure `H⁺` of `U` is perfect. Then
-`H⁺` modulo its centre is simple. -/
-theorem isSimpleGroup_normalClosure_quotient_center (hirr : T.IsIrreducible)
-    (hBU : T.subgroupB ≤ Subgroup.normalizer (U : Set G))
-    (hsplit : T.subgroupB ≤ U ⊔ T.subgroupB ⊓ T.subgroupN)
-    (hZU : Disjoint T.subgroupB.normalCore U) (hU : U ≠ ⊥) [Group.IsSolvable U]
-    [Group.IsPerfect (Subgroup.normalClosure (U : Set G))] :
-    IsSimpleGroup (Subgroup.normalClosure (U : Set G) ⧸
-      Subgroup.center (Subgroup.normalClosure (U : Set G))) := by
-  -- Apply Tits's simplicity theorem to the Tits system pulled back to `H⁺`; its normal core of `B`
-  -- is `Z ∩ H⁺`, the centre of `H⁺`.
-  have hUZ : ¬ Subgroup.normalClosure (U : Set G) ≤ T.subgroupB.normalCore :=
-    fun h ↦ hU (hZU.symm.eq_bot_of_le (Subgroup.le_normalClosure.trans h))
-  have htop := (T.le_normalCore_or_sup_eq_top_of_normal hirr _).resolve_left hUZ
-  have hf := T.exists_mul_eq_of_sup_eq_top hsplit htop
-  have hS : (T.comap _ hf).simple.Nonempty := by
-    obtain ⟨s, hs⟩ := Set.nonempty_iff_ne_empty.mpr fun h ↦ hUZ (by
-      rw [T.subgroupB_eq_top_iff.mpr h, Subgroup.normalCore_eq_self]
-      exact le_top)
-    exact ⟨(T.comapWeylGroupMulEquiv _ hf).symm s, by simpa using hs⟩
-  have : Group.IsSolvable (U.subgroupOf (Subgroup.normalClosure (U : Set G))) :=
-    (Subgroup.subgroupOfEquivOfLe Subgroup.le_normalClosure).isSolvable_congr.mpr ‹_›
-  have := (T.comap _ hf).isSimpleGroup_quotient_normalCore hS
-    ((T.isIrreducible_comap_iff _ hf).mpr hirr) (T.comap_subgroupB_le_normalizer hBU hf)
-    (Subgroup.normalClosure_subgroupOf_normalClosure_eq_top
-      (eq_top_iff.mpr (htop.ge.trans (sup_le_sup_left hBU _))))
-  exact (QuotientGroup.quotientMulEquivOfEq
-    ((T.center_normalClosure_eq_subgroupOf_normalCore hirr hBU hsplit hZU).trans
-      (T.normalCore_comap_subgroupB _ hf).symm)).isSimpleGroup
-
-/-- **Simplicity of the derived central quotient.** If, under the hypotheses of
-`TauCeti.TitsSystem.isSimpleGroup_normalClosure_quotient_center`, the normal closure of `U` is the
-derived subgroup `[G, G]`, then `[G, G] / Z([G, G])` is simple. -/
-theorem isSimpleGroup_derivedCentralQuotient (hirr : T.IsIrreducible)
-    (hBU : T.subgroupB ≤ Subgroup.normalizer (U : Set G))
-    (hsplit : T.subgroupB ≤ U ⊔ T.subgroupB ⊓ T.subgroupN)
-    (hZU : Disjoint T.subgroupB.normalCore U) (hU : U ≠ ⊥) [Group.IsSolvable U]
-    (hcomm : Subgroup.normalClosure (U : Set G) = commutator G)
-    [Group.IsPerfect (commutator G)] :
-    IsSimpleGroup (DerivedCentralQuotient G) := by
-  have : Group.IsPerfect (Subgroup.normalClosure (U : Set G)) := hcomm ▸ ‹_›
-  have := T.isSimpleGroup_normalClosure_quotient_center hirr hBU hsplit hZU hU
-  rwa [hcomm] at this
 
 end TauCeti.TitsSystem

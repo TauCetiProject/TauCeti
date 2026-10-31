@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.TitsSystem.Bruhat.Basic
+public import TauCeti.GroupTheory.TitsSystem.Coxeter
 import TauCeti.GroupTheory.QuotientGroup.Map
 import Mathlib.Tactic.Group
 
@@ -38,6 +38,8 @@ from `f⁻¹(B)`, with the leftover element of `T` moved past `f w`, which norma
   identification.
 * `TauCeti.TitsSystem.normalCore_comap_subgroupB`: the normal core of `f⁻¹(B)` is the preimage of
   the normal core of `B`.
+* `TauCeti.TitsSystem.isIrreducible_comap_iff`: the pulled-back Tits system is irreducible
+  exactly when the original one is.
 
 ## References
 
@@ -287,5 +289,14 @@ theorem normalCore_comap_subgroupB :
     group
   rw [hconj]
   exact mul_mem (mul_mem (inv_mem ht.1) (hx y⁻¹)) (inv_mem (inv_mem ht.1))
+
+/-- **A pulled-back Tits system is irreducible exactly when the original one is**, since the two
+Weyl groups are identified together with their simple reflections. -/
+@[simp]
+theorem isIrreducible_comap_iff : (T.comap f hf).IsIrreducible ↔ T.IsIrreducible := by
+  refine ⟨fun h ↦ h.of_mulEquiv (T.comapWeylGroupMulEquiv f hf).symm ?_,
+    fun h ↦ h.of_mulEquiv (T.comapWeylGroupMulEquiv f hf) (T.comap_simple f hf).symm⟩
+  ext w
+  simp
 
 end TauCeti.TitsSystem

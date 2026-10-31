@@ -28,7 +28,9 @@ At positive rates the cdf is continuous and strictly increasing, and the support
 **Boundary.** Both rates must be positive. For `l ≤ 0` or `r ≤ 0` the measure and both densities
 are *defined* to vanish (`asymmetricLaplaceMeasure_of_nonpos_left`,
 `asymmetricLaplaceMeasure_of_nonpos_right`); formulas describing the probability law carry
-`0 < l` and `0 < r` as hypotheses.
+`0 < l` and `0 < r` as hypotheses. Mathlib's `expMeasure` also vanishes at a nonpositive rate, so
+the exponential construction (`asymmetricLaplaceMeasure_eq_map`,
+`ProbabilityTheory.IndepFun.hasLaw_asymmetricLaplaceMeasure`) holds at every parameter.
 
 ## Main definitions
 
@@ -298,12 +300,18 @@ def asymmetricLaplaceMeasure (m l r : ℝ) : Measure ℝ :=
     ((expMeasure r).prod (expMeasure l)).map fun z => m + z.1 - z.2
   else 0
 
-/-- For positive rates the asymmetric Laplace law is the pushforward of a product of exponential
-laws under `(x, y) ↦ m + x - y`. -/
-theorem asymmetricLaplaceMeasure_of_pos (hl : 0 < l) (hr : 0 < r) (m : ℝ) :
+/-- The asymmetric Laplace law is the pushforward of a product of exponential laws under
+`(x, y) ↦ m + x - y`. This holds at every parameter: for a nonpositive rate both sides are the zero
+measure. -/
+theorem asymmetricLaplaceMeasure_eq_map (m l r : ℝ) :
     asymmetricLaplaceMeasure m l r =
       ((expMeasure r).prod (expMeasure l)).map fun z => m + z.1 - z.2 := by
-  rw [asymmetricLaplaceMeasure, ite_eq_left ⟨hl, hr⟩]
+  rw [asymmetricLaplaceMeasure]
+  split_ifs with h
+  · rfl
+  obtain hl | hr := not_and_or.1 h
+  · rw [expMeasure_of_nonpos (not_lt.1 hl), Measure.prod_zero, Measure.map_zero]
+  · rw [expMeasure_of_nonpos (not_lt.1 hr), Measure.zero_prod, Measure.map_zero]
 
 /-- For a nonpositive left rate the asymmetric Laplace law is the zero measure. -/
 @[simp]
@@ -322,7 +330,7 @@ theorem isProbabilityMeasure_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) 
     IsProbabilityMeasure (asymmetricLaplaceMeasure m l r) := by
   have := isProbabilityMeasure_expMeasure hl
   have := isProbabilityMeasure_expMeasure hr
-  rw [asymmetricLaplaceMeasure_of_pos hl hr]
+  rw [asymmetricLaplaceMeasure_eq_map]
   infer_instance
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
@@ -345,7 +353,7 @@ theorem charFun_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m t : ℝ) :
     rw [← Complex.exp_add, ← Complex.exp_add]
     push_cast
     ring_nf
-  rw [asymmetricLaplaceMeasure_of_pos hl hr, charFun_apply_real,
+  rw [asymmetricLaplaceMeasure_eq_map, charFun_apply_real,
     integral_map (by fun_prop) (by fun_prop), funext hfactor, integral_const_mul,
     integral_prod_mul (fun x : ℝ => Complex.exp (t * x * Complex.I))
       (fun y : ℝ => Complex.exp (↑(-t) * y * Complex.I)),
@@ -569,7 +577,7 @@ theorem memLp_id_asymmetricLaplaceMeasure (m l r : ℝ) :
   · simp [asymmetricLaplaceMeasure_of_nonpos_right hr]
   have := isProbabilityMeasure_expMeasure hl
   have := isProbabilityMeasure_expMeasure hr
-  rw [asymmetricLaplaceMeasure_of_pos hl hr, memLp_map_measure_iff (by fun_prop) (by fun_prop)]
+  rw [asymmetricLaplaceMeasure_eq_map, memLp_map_measure_iff (by fun_prop) (by fun_prop)]
   exact ((memLp_const m).add ((memLp_id_expMeasure hr).comp_measurePreserving
     measurePreserving_fst)).sub
     ((memLp_id_expMeasure hl).comp_measurePreserving measurePreserving_snd)
@@ -593,7 +601,7 @@ theorem integral_id_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m : ℝ)
     ((memLp_id_expMeasure hr).integrable one_le_two).comp_fst _
   have hsnd : Integrable (fun z : ℝ × ℝ => z.2) ((expMeasure r).prod (expMeasure l)) :=
     ((memLp_id_expMeasure hl).integrable one_le_two).comp_snd _
-  rw [asymmetricLaplaceMeasure_of_pos hl hr, integral_map (by fun_prop) (by fun_prop),
+  rw [asymmetricLaplaceMeasure_eq_map, integral_map (by fun_prop) (by fun_prop),
     integral_sub (f := fun z : ℝ × ℝ => m + z.1) ((integrable_const m).add hfst) hsnd,
     integral_add (f := fun _ : ℝ × ℝ => m) (integrable_const m) hfst,
     integral_const]
@@ -617,7 +625,7 @@ theorem variance_id_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m : ℝ)
     ((memLp_id_expMeasure hl).comp_measurePreserving measurePreserving_snd).neg
   have hindep : (fun z : ℝ × ℝ => z.1) ⟂ᵢ[(expMeasure r).prod (expMeasure l)] fun z => -z.2 :=
     indepFun_prod measurable_id measurable_neg
-  rw [asymmetricLaplaceMeasure_of_pos hl hr, variance_map aemeasurable_id (by fun_prop)]
+  rw [asymmetricLaplaceMeasure_eq_map, variance_map aemeasurable_id (by fun_prop)]
   have hcomp : (id ∘ fun z : ℝ × ℝ => m + z.1 - z.2) = fun z => m + (z.1 + -z.2) := by
     funext z
     simp only [Function.comp_apply, id_eq]
@@ -692,14 +700,19 @@ open TauCeti.Probability
 `Y` of rate `l`, the variable `m + X - Y` has the asymmetric Laplace law with left rate `l` and
 right rate `r`. -/
 theorem hasLaw_asymmetricLaplaceMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {X Y : Ω → ℝ} {l r : ℝ} (hindep : IndepFun X Y P) (hl : 0 < l) (hr : 0 < r)
+    {X Y : Ω → ℝ} {l r : ℝ} (hindep : IndepFun X Y P)
     (hX : HasLaw X (expMeasure r) P) (hY : HasLaw Y (expMeasure l) P) (m : ℝ) :
     HasLaw (fun ω => m + X ω - Y ω) (asymmetricLaplaceMeasure m l r) P := by
-  have := isProbabilityMeasure_expMeasure hr
-  have := hX.isProbabilityMeasure
+  have : IsFiniteMeasure (expMeasure r) := by
+    rcases le_or_gt r 0 with hr | hr
+    · rw [expMeasure_of_nonpos hr]
+      infer_instance
+    · have := isProbabilityMeasure_expMeasure hr
+      infer_instance
+  have := hX.isFiniteMeasure
   have hXY : HasLaw (fun ω => (X ω, Y ω)) ((expMeasure r).prod (expMeasure l)) P :=
     (indepFun_iff_hasLaw_prodMk_prod hX hY).1 hindep
-  rw [asymmetricLaplaceMeasure_of_pos hl hr]
+  rw [asymmetricLaplaceMeasure_eq_map]
   exact (hasLaw_map (X := fun z : ℝ × ℝ => m + z.1 - z.2) (by fun_prop)).fun_comp hXY
 
 end ProbabilityTheory.IndepFun
