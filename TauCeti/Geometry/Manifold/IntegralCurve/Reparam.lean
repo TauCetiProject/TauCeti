@@ -7,13 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Topology.Homeomorph.Defs
-import Mathlib.Analysis.Calculus.Deriv.Inverse
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Instances.Sign
-import Mathlib.Topology.Order.MonotoneContinuity
+import TauCeti.Analysis.Calculus.IntervalIntegral.Periodic
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -60,41 +56,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {γ : ℝ → M} {X Y : (x : M) → TangentSpace I x} {T : ℝ} {h : ℝ → ℝ}
 
-/-- The time change for a positive factor `h` of positive period `T`: the inverse `ψ` of
-`θ t = ∫₀ᵗ 1 / h` is a homeomorphism of `ℝ` fixing `0`, which shifts by `T` along the period
-`θ T` of the new time and has derivative `h ∘ ψ`. -/
-private theorem exists_homeomorph_hasDerivAt_of_pos (hT : 0 < T) (hh : Continuous h)
-    (hpos : ∀ t, 0 < h t) (hhT : Periodic h T) :
-    ∃ ψ : ℝ ≃ₜ ℝ, ψ 0 = 0 ∧ (∃ T', T' ≠ 0 ∧ ∀ s, ψ (s + T') = ψ s + T) ∧
-      ∀ s, HasDerivAt ψ (h (ψ s)) s := by
-  set k : ℝ → ℝ := fun t ↦ (h t)⁻¹
-  have hk : Continuous k := hh.inv₀ fun t ↦ (hpos t).ne'
-  have hkpos : ∀ t, 0 < k t := fun t ↦ inv_pos.2 (hpos t)
-  have hkT : Periodic k T := fun t ↦ by simp only [k, hhT t]
-  set θ : ℝ → ℝ := fun t ↦ ∫ u in (0 : ℝ)..t, k u
-  have hθd : ∀ t, HasDerivAt θ (k t) t := fun t ↦ (hk.integral_hasStrictDerivAt 0 t).hasDerivAt
-  have hθc : Continuous θ := continuous_iff_continuousAt.2 fun t ↦ (hθd t).continuousAt
-  have hθmono : StrictMono θ := strictMono_of_hasDerivAt_pos hθd hkpos
-  have hθ0 : θ 0 = 0 := intervalIntegral.integral_same
-  -- `θ` is additive along the period, because `1 / h` is periodic, and it is onto.
-  have hθT : ∀ t, θ (t + T) = θ t + θ T := fun t ↦ by
-    simpa only [θ, zero_add] using
-      hkT.intervalIntegral_add_eq_add 0 t fun _ _ ↦ hk.intervalIntegrable _ _
-  have hθsurj : Surjective θ := hθc.surjective
-    (hkT.tendsto_atTop_intervalIntegral_of_pos' (hk.intervalIntegrable 0 T) hkpos hT)
-    (hkT.tendsto_atBot_intervalIntegral_of_pos' (hk.intervalIntegrable 0 T) hkpos hT)
-  set ψ : ℝ ≃ₜ ℝ := (hθmono.orderIsoOfSurjective θ hθsurj).symm.toHomeomorph
-  have hθψ : ∀ s, θ (ψ s) = s := fun s ↦ (hθmono.orderIsoOfSurjective θ hθsurj).apply_symm_apply s
-  have hψθ : ∀ t, ψ (θ t) = t := fun t ↦ (hθmono.orderIsoOfSurjective θ hθsurj).symm_apply_apply t
-  refine ⟨ψ, by simpa [hθ0] using hψθ 0, ⟨θ T, (hθ0.symm.trans_lt (hθmono hT)).ne',
-    fun s ↦ by rw [← hθψ s, hψθ, ← hθT, hψθ]⟩, fun s ↦ ?_⟩
-  simpa [k] using (hθd (ψ s)).of_local_left_inverse ψ.continuous.continuousAt (hkpos _).ne'
-    (Filter.Eventually.of_forall hθψ)
-
 namespace IsMIntegralCurve
 
 /-- The reparametrization for a positive factor `h`, by the time change
-`exists_homeomorph_hasDerivAt_of_pos`. -/
+`Function.Periodic.exists_homeomorph_hasDerivAt_of_pos`. -/
 private theorem exists_homeomorph_isMIntegralCurve_comp_of_pos (hγ : IsMIntegralCurve γ X)
     (hT : T ≠ 0) (hper : Periodic γ T) (hh : Continuous h) (hpos : ∀ t, 0 < h t)
     (hhT : Periodic h T) (hY : ∀ t, Y (γ t) = h t • X (γ t)) :
@@ -104,7 +69,7 @@ private theorem exists_homeomorph_isMIntegralCurve_comp_of_pos (hγ : IsMIntegra
   obtain ⟨T₀, hT₀, hper₀, hhT₀⟩ : ∃ T₀, 0 < T₀ ∧ Periodic γ T₀ ∧ Periodic h T₀ := by
     rcases hT.lt_or_gt with hT | hT
     exacts [⟨-T, neg_pos.2 hT, hper.neg, hhT.neg⟩, ⟨T, hT, hper, hhT⟩]
-  obtain ⟨ψ, hψ0, ⟨T', hT', hψT'⟩, hψd⟩ := exists_homeomorph_hasDerivAt_of_pos hT₀ hh hpos hhT₀
+  obtain ⟨ψ, hψ0, ⟨T', hT', hψT'⟩, hψd⟩ := hhT₀.exists_homeomorph_hasDerivAt_of_pos hT₀ hh hpos
   refine ⟨ψ, hψ0, T', hT', fun s ↦ by simp only [comp_apply, hψT', hper₀ (ψ s)], fun s ↦ ?_⟩
   have hcomp := (hγ (ψ s)).comp s (hψd s).hasFDerivAt.hasMFDerivAt
   have heq : (1 : ℝ →L[ℝ] ℝ).smulRight (Y ((γ ∘ ψ) s)) =
