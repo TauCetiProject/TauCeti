@@ -247,6 +247,13 @@ abbrev ofObj (X : C) : DGTwistedObject R C where
   twist := 0
   dgDifferential_twist := by simp
 
+/-- A twisted object with zero twist is its underlying object with the zero twist. -/
+theorem eq_ofObj_of_twist_eq_zero {X : DGTwistedObject R C} (h : X.twist = 0) :
+    X = ofObj R X.obj := by
+  obtain ⟨obj, twist, _⟩ := X
+  rw [DGTwistedObject.mk.injEq]
+  exact ⟨rfl, heq_of_eq h⟩
+
 /-- The action of the embedding on morphisms of degree `n`: a degree-`n` morphism `X ⟶ Y` of `C`
 is a degree-`n` morphism `(X, 0) ⟶ (Y, 0)` of twisted objects. -/
 noncomputable def embeddingHomEquiv (X Y : C) (n : ℤ) :
