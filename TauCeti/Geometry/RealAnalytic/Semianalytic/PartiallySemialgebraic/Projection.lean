@@ -78,6 +78,20 @@ private theorem IsAnalyticCoeffBooleanCombination.exists_eq_setOf_sumElim_mem {U
     simp [Q, hfP, eval₂_eq, eval_rename, eval_monomial, Finsupp.prod]
   simp only [mem_ofPred_eq, hQ]
 
+/-- Forgetting the coordinates `h p` of the set of points `p` with `(c (g p), h p) ∈ S`, where
+`p ↦ (g p, h p)` is surjective, leaves the set of points `q` with `c q ∈ (· ∘ Sum.inl) '' S`. -/
+private theorem image_setOf_sumElim_mem {P Q A : Type*} {g : P → Q} {h : P → κ → ℝ}
+    (hgh : ∀ q z, ∃ p, g p = q ∧ h p = z) (c : Q → A → ℝ) (S : Set (A ⊕ κ → ℝ)) :
+    g '' {p | Sum.elim (c (g p)) (h p) ∈ S} = c ⁻¹' ((fun z => z ∘ Sum.inl) '' S) := by
+  ext q
+  constructor
+  · rintro ⟨p, hp, rfl⟩
+    exact ⟨_, hp, Sum.elim_comp_inl _ _⟩
+  · rintro ⟨z, hz, hzc⟩
+    obtain ⟨p, rfl, hp⟩ := hgh q (z ∘ Sum.inr)
+    refine ⟨p, ?_, rfl⟩
+    rwa [mem_ofPred_eq, hp, ← hzc, Sum.elim_comp_inl_inr]
+
 /-- **Projection along the fibre.** If `t ⊆ E × (ι ⊕ κ → ℝ)` is a Boolean combination of
 analytic-coefficient polynomial sign conditions on `U`, then so is its projection to
 `E × (ι → ℝ)` forgetting the finitely many fibre coordinates `κ`. -/
@@ -87,24 +101,19 @@ theorem IsAnalyticCoeffBooleanCombination.image_prodMap_comp_inl [Finite κ] {U 
   obtain ⟨m, c, hc, S, hS, rfl⟩ := ht.exists_eq_setOf_sumElim_mem
   -- Regroup the coordinates `A ⊕ (ι ⊕ κ)` of `S` as `(A ⊕ ι) ⊕ κ`, and forget `κ`.
   have hS' := (hS.preimage_comp (Equiv.sumAssoc _ ι κ).symm).image_comp_inl
-  convert hS'.isAnalyticCoeffBooleanCombination_preimage_sumElim hc using 1
-  ext ⟨u, y⟩
-  simp only [mem_image, mem_ofPred_eq, mem_preimage, Prod.exists, Prod.map_apply, id_eq,
-    Prod.mk.injEq]
-  constructor
-  · rintro ⟨u', x, hx, hu, rfl⟩
-    rw [hu] at hx
-    refine ⟨Sum.elim (Sum.elim (c u) (x ∘ Sum.inl)) (x ∘ Sum.inr), ?_, rfl⟩
-    convert hx using 1
-    ext (a | i | k) <;> rfl
-  · rintro ⟨v, hv, hvy⟩
-    refine ⟨u, fun j => v ((Equiv.sumAssoc _ ι κ).symm (Sum.inr j)), ?_, rfl, ?_⟩
-    · convert hv using 1
-      ext (a | j)
-      · exact (congrFun hvy (Sum.inl a)).symm
-      · rfl
-    · ext i
-      exact congrFun hvy (Sum.inr i)
+  have h : {p : E × (ι ⊕ κ → ℝ) | Sum.elim (c p.1) p.2 ∈ S} =
+      {p | Sum.elim (Sum.elim (c p.1) (p.2 ∘ Sum.inl)) (p.2 ∘ Sum.inr) ∈
+        (fun z => z ∘ (Equiv.sumAssoc _ ι κ).symm) ⁻¹' S} := by
+    ext p
+    simp only [mem_ofPred_eq, mem_preimage]
+    congr! 1
+    ext (a | i | k) <;> simp
+  have h' := image_setOf_sumElim_mem (g := Prod.map id fun x : ι ⊕ κ → ℝ => x ∘ Sum.inl)
+    (h := fun p => p.2 ∘ Sum.inr) (fun q z => ⟨(q.1, Sum.elim q.2 z), by simp⟩)
+    (fun q => Sum.elim (c q.1) q.2) ((fun z => z ∘ (Equiv.sumAssoc _ ι κ).symm) ⁻¹' S)
+  simp only [Prod.map_fst, Prod.map_snd, id_eq] at h'
+  rw [h, h']
+  exact hS'.isAnalyticCoeffBooleanCombination_preimage_sumElim hc
 
 /-- **Projection along the fibre.** If `s ⊆ E × (ι ⊕ κ → ℝ)` is partially semialgebraic over `u`,
 then so is its projection to `E × (ι → ℝ)` forgetting the finitely many fibre coordinates `κ`. -/
@@ -137,20 +146,8 @@ theorem PartiallySemialgebraicAt.semianalyticAt_image_fst [Finite κ] {s : Set (
   obtain ⟨m, c, hc, S, hS, rfl⟩ := ht.exists_eq_setOf_sumElim_mem
   refine semianalyticAt_def.2
     ⟨U, hU, _, hS.image_comp_inl.isAnalyticBooleanCombination_preimage hc, ?_⟩
-  have h : Prod.fst '' {p : E × (κ → ℝ) | Sum.elim (c p.1) p.2 ∈ S} =
-      c ⁻¹' ((fun z => z ∘ Sum.inl) '' S) := by
-    ext v
-    simp only [mem_image, mem_ofPred_eq, mem_preimage, Prod.exists, exists_and_right,
-      exists_eq_right]
-    constructor
-    · rintro ⟨x, hx⟩
-      exact ⟨_, hx, rfl⟩
-    · rintro ⟨z, hz, hzc⟩
-      refine ⟨z ∘ Sum.inr, ?_⟩
-      convert hz using 1
-      ext (a | k)
-      · exact (congrFun hzc a).symm
-      · rfl
+  have h := image_setOf_sumElim_mem (g := (Prod.fst : E × (κ → ℝ) → E)) (h := Prod.snd)
+    (fun q z => ⟨(q, z), rfl, rfl⟩) c S
   rw [← h, ← image_inter_preimage, hst, image_inter_preimage]
 
 /-- **Projection to the base.** The projection `Prod.fst '' s` to the base of a partially
