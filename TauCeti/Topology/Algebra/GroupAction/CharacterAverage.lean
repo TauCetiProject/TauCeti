@@ -74,12 +74,13 @@ theorem characterAverage_def (χ : T →* Circle) (f : X → ℂ) (x : X) :
   (rfl)
 
 /-- The character average transforms by the character: `F (g • x) = χ g * F x`. -/
+@[simp]
 theorem characterAverage_smul (χ : T →* Circle) (f : X → ℂ) (g : T) (x : X) :
     characterAverage χ f (g • x) = χ g * characterAverage χ f x := by
   rw [characterAverage_def, characterAverage_def, ← integral_const_mul,
     ← integral_mul_right_eq_self (fun t ↦ (χ g : ℂ) * ((χ t⁻¹ : ℂ) * f (t • x))) g]
   congr 1 with t
-  rw [mul_smul, ← mul_assoc, ← Circle.coe_mul, ← map_mul, mul_inv_rev, mul_inv_cancel_left]
+  simp [mul_smul, ← mul_assoc]
 
 /-- The character average of `f` is `1` at a point on whose orbit `f` restricts to the
 character. -/
@@ -160,7 +161,7 @@ theorem exists_continuousOn_smul_eq_mul_of_stabilizer_eq_bot [NormalSpace X] [T2
     have hc : Continuous fun x : {x | F j x ≠ 0} ↦ (⟨F j x / ‖F j x‖, hmem _ x.2⟩ : Circle) :=
       Continuous.subtype_mk (((hF j).comp continuous_subtype_val).div (by fun_prop)
         fun x ↦ Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 x.2)) _
-    exact hc.congr fun x ↦ by simp [v, domRestrict, show F j x ≠ 0 from x.2]
+    exact hc.congr fun x ↦ by simp [v, domRestrict, x.2.out]
   let V : Set X := {x | ∀ j, F j x ≠ 0}
   have hV : V = ⋂ j, {x | F j x ≠ 0} := by ext; simp [V]
   have hVsmul (g : T) (x : X) (hx : x ∈ V) : g • x ∈ V := fun j ↦ by

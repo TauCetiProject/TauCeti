@@ -104,6 +104,7 @@ theorem orbitTrivialization_baseSet : (orbitTrivialization W hW u hu hu_smul).ba
   (rfl)
 
 /-- The inverse of `orbitTrivialization` sends `(π x, g)` to `(g * (u x)⁻¹) • x`. -/
+@[simp]
 theorem orbitTrivialization_symm_apply_mk {x : X} (hx : Quotient.mk (orbitRel G X) x ∈ W)
     (g : G) :
     (orbitTrivialization W hW u hu hu_smul).toOpenPartialHomeomorph.symm
