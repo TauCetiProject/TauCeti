@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Green.AbsolutelyContinuous
 public import TauCeti.Analysis.Green.WindingWeight.Basic
 public import TauCeti.Analysis.Contour.Winding.Number.Circle
-public import TauCeti.Analysis.Contour.Curve.Circle
+public import TauCeti.Analysis.Contour.Curve.Circle.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 

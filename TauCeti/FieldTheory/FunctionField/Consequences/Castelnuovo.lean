@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.Nonspecial
 public import TauCeti.FieldTheory.FunctionField.Consequences.RiemannInequality
+public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.AlmostEverywhere
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Kummer
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Basic
@@ -28,9 +29,12 @@ subfields of `F` containing `k`, of genera `g₁`, `g₂`, over which `F` is fin
 
 This file proves it first whenever `F₁` has a place `P₁` that splits completely in `F` into places
 whose restrictions to `F₂` are pairwise distinct and rational, and `F₂` has at least `g₂` further
-rational places. Over a perfect constant field, with `F / F₁` separable and `F = F₁ F₂`, the
-inequality then holds unconditionally. Write a primitive element `y` of `F / F₁` as `∑ cᵢ zᵢ` with
-`cᵢ ∈ F₁` and `zᵢ ∈ F₂`, and take a place `P₁` of `F₁` at which the minimal polynomial of `y` has
+rational places. Over a perfect constant field, with `F = F₁ F₂`, the inequality then holds
+unconditionally. At least one of `F / F₁` and `F / F₂` is separable: otherwise the universal
+`k`-differential vanishes on both subfields, hence on `F`, contradicting `dim_F Ω[F⁄k] = 1`.
+After interchanging the subfields if necessary, write a primitive element `y` of `F / F₁` as
+`∑ cᵢ zᵢ` with `cᵢ ∈ F₁` and `zᵢ ∈ F₂`, and take a place `P₁` of `F₁` at which the minimal
+polynomial of `y` has
 separable reduction, the `cᵢ` are regular, and the `zᵢ` are regular at every place above. Pass to
 a finite constant field extension `F · k'`, over which `F · k'`, `F₁ · k'` and `F₂ · k'` have the
 genera of `F`, `F₁` and `F₂`, and `[F · k' : Fᵢ · k'] = [F : Fᵢ]`. There every place above `P₁` is
@@ -62,7 +66,7 @@ elements of `F₂`. The hypothesis enters the general theorem only through the p
   **Castelnuovo's inequality** `g ≤ n₁ g₁ + n₂ g₂ + (n₁ - 1) (n₂ - 1)`, from a place of `F₁`
   splitting completely in `F` with distinct rational restrictions to `F₂`.
 * `TauCeti.genus_le_finrank_mul_genus_add_finrank_mul_genus_add`: **Castelnuovo's inequality**
-  over a perfect field, for `F = F₁ F₂` with `F / F₁` separable.
+  over a perfect field, for `F = F₁ F₂`, without a separability hypothesis on either subextension.
 
 ## References
 
@@ -271,10 +275,7 @@ private theorem genus_le_of_forall_degree_eq_one (hF : IsFunctionField k F)
   obtain ⟨s, hs, hsP⟩ := Place.exists_finset_card_eq_forall_exists_restrict_eq_valuation_sub_lt_one
     (k' := k) hF₁ P₁ hP₁ y hmin hsep hsplit
   have hsdeg : s.card = Module.finrank F₁ F := by
-    rw [hs, ← _root_.Polynomial.natDegree_map_eq_of_injective
-      (IsFractionRing.injective P₁.integers F₁), hmin,
-      ← IntermediateField.adjoin.finrank (IsIntegral.of_finite F₁ y), hy,
-      IntermediateField.finrank_top']
+    rw [hs, Place.natDegree_eq_finrank_of_map_eq_minpoly hy hmin]
   have : Nonempty (Place k F) := (Place.infinite hF).nonempty
   choose! R hR hRv using hsP
   -- The places over `P₁` restrict to rational places of `F₂`.
@@ -508,7 +509,7 @@ over a perfect field `k`, with exact constant field `k`, and let `F₁`, `F₂` 
 containing `k` with `F = F₁ F₂`, `F` finite over both, and `F / F₁` separable. Then
 
 `g(F) ≤ [F : F₁] g(F₁) + [F : F₂] g(F₂) + ([F : F₁] - 1) ([F : F₂] - 1)`. -/
-theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add [PerfectField k]
+private theorem genus_le_of_isSeparable [PerfectField k]
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) [Algebra.IsSeparable F₁ F]
     (htop : IntermediateField.adjoin F₁ (Set.range (algebraMap F₂ F)) = ⊤) :
     genus k F ≤ Module.finrank F₁ F * genus k F₁ + Module.finrank F₂ F * genus k F₂ +
@@ -555,5 +556,30 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add [PerfectField k]
       ((Finset.dvd_prod_of_mem _ (hSR.mem_toFinset.mpr hR)).mul_right _) hsplit) hTQ
     (fun Q hQ ↦ nonempty_algHom_of_minpoly_dvd (hβ Q) (hβint Q) hf0
       ((Finset.dvd_prod_of_mem _ hQ).mul_left _) hsplit)
+
+/-- **Castelnuovo's inequality** (Stichtenoth, Theorem 3.11.3). Over a perfect constant field,
+if `F = F₁ F₂` is finite over both subfields and has exact constants, then
+`g(F) ≤ [F : F₁] g(F₁) + [F : F₂] g(F₂) + ([F : F₁] - 1) ([F : F₂] - 1)`.
+Neither subextension is assumed separable. -/
+theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add [PerfectField k]
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (htop : IntermediateField.adjoin F₁ (Set.range (algebraMap F₂ F)) = ⊤) :
+    genus k F ≤ Module.finrank F₁ F * genus k F₁ + Module.finrank F₂ F * genus k F₂ +
+      (Module.finrank F₁ F - 1) * (Module.finrank F₂ F - 1) := by
+  obtain ⟨x, hx, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
+  have := hsep
+  have hdim := finrank_kaehlerDifferential_eq_one_of_separating hx
+  have : Algebra.EssFiniteType k F := hF.essFiniteType
+  have : Algebra.EssFiniteType F₁ F := .of_comp k F₁ F
+  have : Algebra.EssFiniteType F₂ F := .of_comp k F₂ F
+  rcases isSeparable_left_or_right_of_adjoin_eq_top hdim htop with h₁ | h₂
+  · have := h₁
+    exact genus_le_of_isSeparable hF hex htop
+  · have := h₂
+    have htop' : IntermediateField.adjoin F₂ (Set.range (algebraMap F₁ F)) = ⊤ := by
+      apply IntermediateField.toSubfield_injective
+      simpa only [IntermediateField.adjoin_toSubfield, IntermediateField.top_toSubfield,
+        Set.union_comm] using congrArg IntermediateField.toSubfield htop
+    simpa [add_comm, mul_comm] using genus_le_of_isSeparable hF hex htop'
 
 end TauCeti

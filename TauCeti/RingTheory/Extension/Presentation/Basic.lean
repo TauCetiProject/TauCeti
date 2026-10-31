@@ -25,11 +25,13 @@ homomorphism `S →ₐ[R] T`.
 * `Algebra.Presentation.lift_val`: `P.lift x hx` sends the `i`-th generator to `x i`.
 * `Algebra.Generators.algHom_ext`: two `R`-algebra homomorphisms out of `S` agreeing on a family
   of generators are equal.
+* `Algebra.Generators.algebraMap_baseChange_map`: the base change of a family of generators along
+  `R → T` is compatible with the original family.
 -/
 
 public section
 
-open MvPolynomial
+open MvPolynomial TensorProduct
 
 namespace Algebra
 
@@ -39,6 +41,15 @@ variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 theorem Generators.algHom_ext {ι : Type*} (P : Generators R S ι) {T : Type*} [Semiring T]
     [Algebra R T] {f g : S →ₐ[R] T} (h : ∀ i, f (P.val i) = g (P.val i)) : f = g :=
   (AlgHom.cancel_right P.aeval_val_surjective).1 <| MvPolynomial.algHom_ext fun i ↦ by simp [h]
+
+/-- The base change `T[ι] → T ⊗[R] S` of generators `P` of `S` extends `R[ι] → S`: on
+polynomials with coefficients in `R`, it is `R[ι] → S` followed by `S → T ⊗[R] S`. -/
+theorem Generators.algebraMap_baseChange_map {ι : Type*} (P : Generators R S ι) (T : Type*)
+    [CommRing T] [Algebra R T] (x : P.Ring) :
+    algebraMap (P.baseChange T).Ring (T ⊗[R] S) (map (algebraMap R T) x) =
+      Algebra.TensorProduct.includeRight (algebraMap P.Ring S x) := by
+  rw [algebraMap_apply, algebraMap_apply, aeval_map_algebraMap, comp_aeval_apply]
+  congr 1
 
 namespace Presentation
 

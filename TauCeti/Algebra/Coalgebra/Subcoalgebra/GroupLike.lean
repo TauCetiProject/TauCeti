@@ -21,8 +21,9 @@ singleton span, a finite-generation theorem for finite sets of group-like elemen
 
 The subcoalgebra spanned by all group-like elements is the full subcoalgebra exactly when the
 group-like elements span the carrier as a module, a condition invariant under coalgebra
-equivalence. Over a domain the group-like elements are linearly independent, so they then form a
-basis, `groupLikeBasis`.
+equivalence and preserved by surjective coalgebra morphisms
+(`CoalgHom.groupLikeSetSpan_eq_top_of_surjective`). Over a domain the group-like elements are
+linearly independent, so they then form a basis, `groupLikeBasis`.
 
 ## References
 
@@ -143,11 +144,10 @@ theorem groupLikeSetSpan_eq_top_iff_of_coalgEquiv {D : Type w} [AddCommMonoid D]
     ext d
     constructor
     · rintro ⟨_, ⟨g, rfl⟩, rfl⟩
-      exact ⟨TauCeti.GroupLike.equivOfCoalgEquiv e g,
-        TauCeti.GroupLike.val_equivOfCoalgEquiv e g⟩
+      exact ⟨e.mapGroupLike g, e.val_mapGroupLike g⟩
     · rintro ⟨g, rfl⟩
-      obtain ⟨x, rfl⟩ := (TauCeti.GroupLike.equivOfCoalgEquiv e).surjective g
-      exact ⟨x.val, ⟨x, rfl⟩, (TauCeti.GroupLike.val_equivOfCoalgEquiv e x).symm⟩
+      obtain ⟨x, rfl⟩ := e.mapGroupLike.surjective g
+      exact ⟨x.val, ⟨x, rfl⟩, (e.val_mapGroupLike x).symm⟩
   rw [← hgroupLike, Submodule.span_image_linearEquiv, Submodule.map_eq_top_iff]
 
 /-- The subcoalgebra spanned by a group-like element. -/
@@ -218,3 +218,22 @@ end Domain
 end Subcoalgebra
 
 end TauCeti
+
+namespace CoalgHom
+
+variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [AddCommMonoid B] [Module R A]
+  [Module R B] [Coalgebra R A] [Coalgebra R B]
+
+/-- A surjective coalgebra morphism preserves spanning by group-like elements. -/
+theorem groupLikeSetSpan_eq_top_of_surjective (f : A →ₗc[R] B) (hf : Function.Surjective f)
+    (hA : TauCeti.Subcoalgebra.groupLikeSetSpan (R := R) (C := A) Set.univ = ⊤) :
+    TauCeti.Subcoalgebra.groupLikeSetSpan (R := R) (C := B) Set.univ = ⊤ := by
+  rw [TauCeti.Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top] at hA ⊢
+  refine top_unique ?_
+  rw [← LinearMap.range_eq_top_of_surjective (f : A →ₗ[R] B) hf, LinearMap.range_eq_map,
+    ← hA, Submodule.map_span]
+  refine Submodule.span_mono ?_
+  rintro _ ⟨_, ⟨g, rfl⟩, rfl⟩
+  exact ⟨⟨f g, g.isGroupLikeElem_val.map f⟩, rfl⟩
+
+end CoalgHom

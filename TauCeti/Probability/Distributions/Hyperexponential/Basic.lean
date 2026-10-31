@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Categorical
 public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.MeasureTheory.Measure.Support
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Distributions.Exponential.Measurability
 import TauCeti.MeasureTheory.Measure.WithDensity
 
@@ -99,9 +100,8 @@ theorem isProbabilityMeasure_hyperexponentialMeasure_iff :
       ∀ i, 0 < p.weights i → 0 < r i := by
   refine ⟨fun h ↦ ?_, isProbabilityMeasure_hyperexponentialMeasure⟩
   by_contra hr
-  let _ := h
-  exact (IsProbabilityMeasure.ne_zero (hyperexponentialMeasure p r))
-    (hyperexponentialMeasure_of_not_pos hr)
+  rw [hyperexponentialMeasure_of_not_pos hr] at h
+  exact not_isProbabilityMeasure_zero h
 
 /-- The real density of a hyperexponential law, with value zero off the positive half-line
 and outside the valid parameter range. -/
@@ -361,15 +361,7 @@ theorem hyperexponentialMeasure_const (p : StdSimplex ℝ≥0 ι) (a : ℝ) :
   · rw [hyperexponentialMeasure_of_pos (fun _ _ ↦ ha), ← Finset.sum_smul]
     have hw : ∑ i, (p.weights i : ℝ≥0∞) = 1 := by exact_mod_cast p.total_of_fintype
     rw [hw, one_smul]
-  · have hpdf : exponentialPDF a = 0 := by
-      funext x
-      rw [exponentialPDF_eq, Pi.zero_apply, ENNReal.ofReal_eq_zero]
-      split_ifs
-      · exact mul_nonpos_of_nonpos_of_nonneg (le_of_not_gt ha) (exp_nonneg _)
-      · exact le_rfl
-    have hmeasure : expMeasure a = 0 := by
-      rw [expMeasure_eq_withDensity, hpdf, withDensity_zero]
-    simp [hyperexponentialMeasure, hmeasure]
+  · simp [hyperexponentialMeasure, expMeasure_of_nonpos (le_of_not_gt ha)]
 
 section Integration
 

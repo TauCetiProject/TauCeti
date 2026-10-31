@@ -11,17 +11,17 @@ public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 /-!
 # Basic results on fundamental groupoids and fundamental groups
 
-This file records a basic connectedness result for fundamental groupoids and when a map induced
-on fundamental groups is trivial: a characterization of trivial range loop by loop, and the basic
-consequences of triviality of the *source* fundamental group.
+This file records a basic connectedness result for fundamental groupoids, the general
+transport facts about the basepoint-adjusted induced map `FundamentalGroup.mapOfEq`, and when a
+map induced on fundamental groups is trivial: a characterization of trivial range loop by loop,
+and the basic consequences of triviality of the *source* fundamental group.
 
 `TauCeti.FundamentalGroup.map_range_eq_bot_iff` was extracted from the proof of
 `semilocallySimplyConnectedAt_iff_range_eq_bot` in
 `TauCeti/AlgebraicTopology/SemilocallySimplyConnected/On.lean`, which is adapted from the Mathlib
 drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 [#31576](https://github.com/leanprover-community/mathlib4/pull/31576), and
-[#38292](https://github.com/leanprover-community/mathlib4/pull/38292) by Kim Morrison, for
-Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap.
+[#38292](https://github.com/leanprover-community/mathlib4/pull/38292) by Kim Morrison.
 
 ## Main declarations
 
@@ -29,6 +29,15 @@ Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap.
 * `FundamentalGroup.map_comp`: induced maps preserve composition.
 * `FundamentalGroup.fromPath_mk_out`: every element of the fundamental group is the class of a
   chosen representative loop.
+* `FundamentalGroup.mapOfEq_comp`: the induced map of a composite is the composite of the
+  induced maps.
+* `FundamentalGroup.mapOfEq_rfl`: along the reflexivity proof, `mapOfEq` is `map`.
+* `FundamentalGroup.mapOfEq_id`: the identity map induces the identity under `mapOfEq`.
+* `FundamentalGroup.mapOfEq_congr`: `mapOfEq` depends only on the underlying continuous map.
+* `FundamentalGroup.mapOfEq_fromPath_eq_one_iff`: the induced map kills the class of a loop
+  exactly when the image of the loop is nullhomotopic.
+* `FundamentalGroup.mapOfEq_mapOfEq_of_comp_eq_id`: the induced map of a map whose composite
+  with `f` is the identity undoes the induced map of `f`.
 * `FundamentalGroupoid.nonempty_hom`: the fundamental groupoid of a path-connected
   space is connected.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_iff`: the induced map has trivial range exactly
@@ -59,6 +68,9 @@ end FundamentalGroupoid
 
 namespace FundamentalGroup
 
+variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+variable {x : X} {y : Y} {z : Z}
+
 /-- The identity map induces the identity homomorphism on fundamental groups. -/
 @[simp]
 theorem map_id {X : Type*} [TopologicalSpace X] (x : X) :
@@ -80,6 +92,75 @@ theorem map_comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topo
 theorem fromPath_mk_out {X : Type*} [TopologicalSpace X] {x : X} (g : FundamentalGroup X x) :
     fromPath (Path.Homotopic.Quotient.mk (Quotient.out (toPath g))) = g :=
   congrArg End.of (Quotient.out_eq _)
+
+/-- The maps induced on fundamental groups by two continuous maps compose to the map induced by
+their composite: `mapOfEq g hg (mapOfEq f hf p) = mapOfEq (g.comp f) _ p`. -/
+theorem mapOfEq_comp (g : C(Y, Z)) (f : C(X, Y)) (hf : f x = y) (hg : g y = z)
+    (p : FundamentalGroup X x) :
+    FundamentalGroup.mapOfEq g hg (FundamentalGroup.mapOfEq f hf p) =
+      -- `mapOfEq` takes the basepoint equality as an explicit parameter, so the `show` must
+      -- spell out the composite equality `(g.comp f) x = z`, which `hf` and `hg` state only
+      -- after routing through the intermediate basepoint `y`.
+      FundamentalGroup.mapOfEq (g.comp f)
+        (show (g.comp f) x = z by rw [ContinuousMap.comp_apply, hf, hg]) p := by
+  simp only [FundamentalGroup.mapOfEq_apply]
+  rw [Path.Homotopic.Quotient.map_cast, Path.Homotopic.Quotient.cast_cast,
+    ← Path.Homotopic.Quotient.map_comp]
+
+/-- Transporting the target basepoint along the reflexivity proof does nothing: `mapOfEq f rfl`
+is Mathlib's `FundamentalGroup.map f x`.
+
+This is the comparison needed whenever a statement phrased with a general basepoint equation
+`f x = y` is applied to a lifting criterion phrased at the basepoint `f x` itself. -/
+@[simp]
+theorem mapOfEq_rfl (f : C(X, Y)) :
+    FundamentalGroup.mapOfEq f (rfl : f x = f x) = FundamentalGroup.map f x := by
+  ext γ
+  rw [FundamentalGroup.mapOfEq_apply]
+  exact Path.Homotopic.Quotient.cast_rfl_rfl _
+
+/-- The map induced on fundamental groups by the identity continuous map is the identity. -/
+@[simp]
+theorem mapOfEq_id (h : (ContinuousMap.id X) x = x) (p : FundamentalGroup X x) :
+    FundamentalGroup.mapOfEq (ContinuousMap.id X) h p = p := by
+  have h1 : FundamentalGroup.mapOfEq (ContinuousMap.id X) h p =
+      FundamentalGroup.mapOfEq (ContinuousMap.id X)
+        (rfl : (ContinuousMap.id X) x = (ContinuousMap.id X) x) p := by
+    rfl
+  have h2 : FundamentalGroup.mapOfEq (ContinuousMap.id X)
+      (rfl : (ContinuousMap.id X) x = (ContinuousMap.id X) x) p = p := by
+    rw [mapOfEq_rfl (f := ContinuousMap.id X), map_id]
+    rfl
+  exact h1.trans h2
+
+/-- The induced map `mapOfEq` depends only on the underlying continuous map, not on the chosen
+proof of the basepoint equation: two equal continuous maps induce the same map. -/
+theorem mapOfEq_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x = y) (h₂ : f₂ x = y)
+    (p : FundamentalGroup X x) :
+    FundamentalGroup.mapOfEq f₁ h₁ p = FundamentalGroup.mapOfEq f₂ h₂ p := by
+  subst hfe
+  rfl
+
+/-- **A loop is killed exactly when its image is nullhomotopic.** The induced map `mapOfEq f h`
+sends the class of a loop `q` to `1` if and only if the image of `q` under `f` is homotopic,
+relative to its endpoints, to the constant path. -/
+theorem mapOfEq_fromPath_eq_one_iff (f : C(X, Y)) (h : f x = y) (q : Path x x) :
+    FundamentalGroup.mapOfEq f h
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk q)) = 1 ↔
+      (q.map f.continuous).Homotopic (Path.refl (f x)) := by
+  subst h
+  rw [FundamentalGroup.mapOfEq_apply, Path.Homotopic.Quotient.cast_rfl_rfl,
+    FundamentalGroup.one_def, ← Path.Homotopic.Quotient.mk_map]
+  exact ⟨fun h => Quotient.exact (congrArg CategoryTheory.End.asHom h),
+    fun h => congrArg CategoryTheory.End.of (Quotient.sound h)⟩
+
+/-- If `g ∘ f` is the identity, then the induced map of `g` undoes the induced map of `f`. -/
+theorem mapOfEq_mapOfEq_of_comp_eq_id (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g y = x)
+    (hgf : g.comp f = ContinuousMap.id X) (p : FundamentalGroup X x) :
+    FundamentalGroup.mapOfEq g hg (FundamentalGroup.mapOfEq f hf p) = p := by
+  rw [mapOfEq_comp g f hf hg]
+  exact (mapOfEq_congr hgf _ rfl p).trans (mapOfEq_id rfl p)
+
 
 end FundamentalGroup
 

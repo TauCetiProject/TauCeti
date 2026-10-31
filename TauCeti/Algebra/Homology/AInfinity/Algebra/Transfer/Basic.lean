@@ -350,7 +350,7 @@ noncomputable def transferInclusion : AInfinityHom (𝒜.transfer c hh hincl hpr
   barDifferential_comp_barMap := by
     rw [barDifferential_transfer, barDifferential_eq_unary_add_higher,
       unaryBarDifferential_eq_gradedCoderiv]
-    exact LinearSpecialContraction.dM_comp_incl _
+    exact LinearContraction.dM_comp_incl _
 
 /-- The bar map of the extending morphism is the perturbed inclusion `i - K X i`. -/
 theorem barMap_transferInclusion :
@@ -691,7 +691,7 @@ noncomputable def transferProjection : AInfinityHom 𝒜 (𝒜.transfer c hh hin
   barDifferential_comp_barMap := by
     rw [barDifferential_transfer, barDifferential_eq_unary_add_higher,
       unaryBarDifferential_eq_gradedCoderiv]
-    exact (LinearSpecialContraction.proj_comp_dM _).symm
+    exact (LinearContraction.proj_comp_dM _).symm
 
 /-- The bar map of the projection morphism is the perturbed projection `p - p X K`. -/
 theorem barMap_transferProjection :
@@ -735,7 +735,7 @@ theorem transferProjection_comp_transferInclusion :
       AInfinityHom.id (𝒜.transfer c hh hincl hproj) :=
   AInfinityHom.barMap_injective <| by
     rw [AInfinityHom.barMap_comp, AInfinityHom.barMap_id]
-    exact LinearSpecialContraction.proj_comp_incl _
+    exact LinearContraction.proj_comp_incl _
 
 /-- The projection morphism is a quasi-isomorphism, by two out of three: composed with the
 extending quasi-isomorphism it is the identity. -/

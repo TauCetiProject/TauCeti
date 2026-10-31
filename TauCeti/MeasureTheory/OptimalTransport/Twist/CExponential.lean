@@ -64,7 +64,10 @@ respect to the target for the swapped cost `fun z ↦ c z.swap`.
   `c`-segments of a `c`-convex set stay in it, with linearly interpolated momenta;
 * `TauCeti.cExp_norm_sub_sq_div_two`, `TauCeti.cSegment_norm_sub_sq_div_two` and
   `TauCeti.isCConvexSet_norm_sub_sq_div_two_iff` — for the quadratic cost, the `c`-exponential
-  is `x + p`, `c`-segments are segments, and `c`-convexity is convexity.
+  is `x + p`, `c`-segments are segments, and `c`-convexity is convexity;
+* `TauCeti.cExp_sqrt_one_add_norm_sub_sq` — for the cost `√(1 + ‖x - y‖ ^ 2)`, the
+  `c`-exponential of a momentum `q` with `‖q‖ < 1` is `x + q / √(1 - ‖q‖ ^ 2)` whenever that
+  point lies in `V`.
 
 ## References
 
@@ -296,7 +299,7 @@ theorem cExp_norm_sub_sq_div_two [CompleteSpace F] (x : F) (p : StrongDual ℝ F
   have hp : -fderiv ℝ (fun x' ↦ ‖x' - (x + (InnerProductSpace.toDual ℝ F).symm p)‖ ^ 2 / 2) x
       = p := by
     ext v
-    simp [fderiv_norm_sub_sq_div_two, InnerProductSpace.toDual_symm_apply]
+    simp [fderiv_norm_sub_sq_div_two]
   exact (cExp_eq_iff (fderiv_norm_sub_sq_div_two_injective x).injOn (mem_univ _)
     ⟨_, mem_univ _, hp⟩).2 hp
 
@@ -333,5 +336,28 @@ theorem isCConvexSet_norm_sub_sq_div_two_iff {U V : Set F} (hU : U.Nonempty) :
   simpa only [preimage_image_eq _ (hAinj x)] using (h x hx).affine_preimage (A x)
 
 end Quadratic
+
+/-! ### The cost `√(1 + ‖x - y‖ ^ 2)` -/
+
+section SqrtOneAddNormSubSq
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- **The `c`-exponential of `√(1 + ‖x - y‖ ^ 2)`.** A momentum `q` with `‖q‖ < 1` is the
+momentum at `x` of `x + q / √(1 - ‖q‖ ^ 2)`, where `q` is identified with a vector by the Riesz
+isomorphism; when this point lies in `V`, it is the `c`-exponential of `q` with respect to `V`. -/
+theorem cExp_sqrt_one_add_norm_sub_sq {V : Set F} {x : F} {q : StrongDual ℝ F} (hq : ‖q‖ < 1)
+    (hV : x + OpenPartialHomeomorph.univUnitBall.symm ((InnerProductSpace.toDual ℝ F).symm q) ∈ V) :
+    cExp (fun z : F × F ↦ √(1 + ‖z.1 - z.2‖ ^ 2)) V x q =
+      x + OpenPartialHomeomorph.univUnitBall.symm ((InnerProductSpace.toDual ℝ F).symm q) := by
+  have hmom : -fderiv ℝ (fun x' ↦ √(1 + ‖x' - (x + OpenPartialHomeomorph.univUnitBall.symm
+      ((InnerProductSpace.toDual ℝ F).symm q))‖ ^ 2)) x = q := by
+    apply (InnerProductSpace.toDual ℝ F).symm.injective
+    rw [toDual_symm_neg_fderiv_sqrt_one_add_norm_sub_sq, add_sub_cancel_left,
+      OpenPartialHomeomorph.univUnitBall.right_inv
+        (by simpa [OpenPartialHomeomorph.univUnitBall_target] using hq)]
+  exact (cExp_eq_iff (fderiv_sqrt_one_add_norm_sub_sq_injective x).injOn hV ⟨_, hV, hmom⟩).2 hmom
+
+end SqrtOneAddNormSubSq
 
 end TauCeti

@@ -82,8 +82,8 @@ private theorem toTarget_stageMap (φ : Ω →ₐ[R] Ψ) (B : Neighbourhood R Ω
     (b : B.obj.left) :
     toTarget S Ψ (stageMap φ B b) = φ (toTarget R Ω (stage R Ω B b)) := by
   dsimp only [stageMap, AlgHom.comp_apply, AlgHom.restrictScalars_apply]
-  rw [toTarget_stage_apply]
-  simp [baseChange, Algebra.TensorProduct.includeRight_apply]
+  rw [toTarget_stage_apply, Neighbourhood.point_apply]
+  simp [baseChange, Algebra.TensorProduct.includeRight_apply, Neighbourhood.point_apply]
 
 private noncomputable def mapAlgHom (φ : Ω →ₐ[R] Ψ) :
     algebra R Ω →ₐ[R] algebra S Ψ :=

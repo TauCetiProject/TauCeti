@@ -21,10 +21,16 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.eq_of_integral_eq_sub`: if the increments of `F` are the interval
   integrals of a function vanishing outside `[-r, r]` with total integral zero, then `F` is
   constant outside `[-r, r]`.
+* `TauCeti.intervalIntegral.integral_re_mul_im_sub_im_mul_re_eq`: a polarization identity
+  expressing `∫ (x v - y u)` for `f = x + i y` and `g = u + i v` through the integrals of
+  `‖g‖²`, `‖f‖²` and `‖g - i k f‖²`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
   with interval integrals, with no integrability assumption.
+* `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
+  on `[c, ∞)`, then its constant extension `x ↦ f (max x c)` is interval integrable on every
+  interval.
 -/
 
 public section
@@ -69,6 +75,36 @@ theorem eq_of_integral_eq_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     refine setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ hf t (lt_abs.mpr (.inr ?_))
     linarith [ht.2]
 
+/-- A polarization identity for complex functions `f = x + i y` and `g = u + i v`, square
+integrable on `uIoc a b`: for real `k ≠ 0`,
+`∫ₐᵇ (x v - y u) = (∫ₐᵇ ‖g‖² + k² ∫ₐᵇ ‖f‖² - ∫ₐᵇ ‖g - i k f‖²) / (2k)`.
+For a curve `f` with velocity `g`, the left side is twice the signed area of `f`. -/
+theorem integral_re_mul_im_sub_im_mul_re_eq {a b : ℝ} {k : ℝ} (hk : k ≠ 0)
+    {f g : ℝ → ℂ} (hf : MemLp f 2 (volume.restrict (uIoc a b)))
+    (hg : MemLp g 2 (volume.restrict (uIoc a b))) :
+    (∫ t in a..b, ((f t).re * (g t).im - (f t).im * (g t).re)) =
+      ((∫ t in a..b, ‖g t‖ ^ 2) + k ^ 2 * (∫ t in a..b, ‖f t‖ ^ 2) -
+        ∫ t in a..b, ‖g t - (k * Complex.I) * f t‖ ^ 2) / (2 * k) := by
+  have hint {h : ℝ → ℂ} (hh : MemLp h 2 (volume.restrict (uIoc a b))) :
+      IntervalIntegrable (fun t ↦ ‖h t‖ ^ 2) volume a b :=
+    intervalIntegrable_iff.2 (hh.integrable_norm_pow two_ne_zero)
+  have hG := hint hg
+  have hF := hint hf
+  have hH := hint (h := fun t ↦ g t - (k * Complex.I) * f t) (hg.sub (hf.const_mul _))
+  -- Pointwise, `‖g - i k f‖² = ‖g‖² + k² ‖f‖² - 2 k (x v - y u)`.
+  have hpt (t : ℝ) : (f t).re * (g t).im - (f t).im * (g t).re =
+      (‖g t‖ ^ 2 + k ^ 2 * ‖f t‖ ^ 2 - ‖g t - (k * Complex.I) * f t‖ ^ 2) / (2 * k) := by
+    field_simp
+    simp only [Complex.sq_norm, Complex.normSq_apply, Complex.sub_re, Complex.sub_im,
+      Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+      Complex.I_im]
+    ring
+  simp_rw [hpt]
+  rw [_root_.intervalIntegral.integral_div,
+    _root_.intervalIntegral.integral_sub (hG.add (hF.const_mul _)) hH,
+    _root_.intervalIntegral.integral_add hG (hF.const_mul _),
+    _root_.intervalIntegral.integral_const_mul]
+
 end intervalIntegral
 
 end TauCeti
@@ -90,3 +126,20 @@ theorem ContinuousLinearEquiv.intervalIntegral_comp_comm {𝕜 E F : Type*} [RCL
     (L : E ≃L[𝕜] F) (f : ℝ → E) :
     ∫ x in a..b, L (f x) ∂μ = L (∫ x in a..b, f x ∂μ) := by
   simp_rw [intervalIntegral, L.integral_comp_comm, map_sub]
+
+/-- If `f` is locally integrable on `[c, ∞)` for a locally finite measure, then its constant
+extension `x ↦ f (max x c)` to all of `ℝ` is interval integrable between any two points. -/
+theorem MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max {E : Type*}
+    [NormedAddCommGroup E] {f : ℝ → E} {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] {c : ℝ}
+    (hf : LocallyIntegrableOn f (Ici c) μ) (a b : ℝ) :
+    IntervalIntegrable (fun x ↦ f (max x c)) μ a b := by
+  suffices h : ∀ x, IntervalIntegrable (fun x ↦ f (max x c)) μ c x from (h a).symm.trans (h b)
+  intro x
+  rcases le_total c x with hx | hx
+  · refine IntegrableOn.intervalIntegrable ?_
+    rw [uIcc_of_le hx]
+    exact (hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).congr_fun
+      (fun y hy ↦ by rw [max_eq_left hy.1]) measurableSet_Icc
+  · refine (intervalIntegrable_const (c := f c)).congr fun y hy ↦ ?_
+    rw [uIoc_of_ge hx] at hy
+    simp only [max_eq_right hy.2]

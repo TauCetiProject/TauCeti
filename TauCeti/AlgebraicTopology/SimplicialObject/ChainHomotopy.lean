@@ -51,4 +51,17 @@ lemma toChainHomotopy_hom_comm (H : Homotopy f g) (H' : Homotopy f' g') (u : X �
     rw [ToChainHomotopy.hom_eq_zero _ _ _ h, ToChainHomotopy.hom_eq_zero _ _ _ h]
     simp
 
+/-- If every simplicial prism term vanishes between two morphisms, so does the induced chain
+homotopy component. The morphisms need only exist in these degrees, so the target may be a
+relative quotient without a simplicial structure. -/
+lemma comp_toChainHomotopy_hom_comp_eq_zero (H : Homotopy f g) (n : ℕ) {A B : C}
+    (a : A ⟶ X.obj (op ⦋n⦌)) (b : Y.obj (op ⦋n + 1⦌) ⟶ B)
+    (h : ∀ i : Fin (n + 1), a ≫ H.h i ≫ b = 0) :
+    a ≫ H.toChainHomotopy.hom n (n + 1) ≫ b = 0 := by
+  dsimp only [toChainHomotopy]
+  rw [ToChainHomotopy.hom_eq]
+  simp only [Preadditive.comp_neg, Preadditive.neg_comp, Preadditive.comp_sum,
+    Preadditive.sum_comp, Preadditive.comp_zsmul, Preadditive.zsmul_comp, h, smul_zero,
+    Finset.sum_const_zero, neg_zero]
+
 end CategoryTheory.SimplicialObject.Homotopy

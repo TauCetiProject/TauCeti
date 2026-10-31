@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.RingTheory.FittingIdeal.Generators
+import Mathlib.RingTheory.Etale.Kaehler
 
 /-!
 # Base change of Fitting ideals
@@ -36,6 +37,7 @@ prime `p`, this identifies the zero locus of `Fitt_k(M)`: `Fitt_k(M) ⊆ p` exac
 The Kähler differentials of a base change are the base change of the Kähler differentials, so
 their Fitting ideals, which cut out the singular locus of a relative curve, are compatible with
 base change of the ground ring: if `B = S ⊗[R] A`, then `Fitt_k(Ω[B⁄S]) = Fitt_k(Ω[A⁄R]) B`.
+They are also carried to each other by an isomorphism of `R`-algebras.
 
 ## Main results
 
@@ -54,6 +56,8 @@ base change of the ground ring: if `B = S ⊗[R] A`, then `Fitt_k(Ω[B⁄S]) = F
   `TauCeti.fittingIdeal_zero_map_eq_top_iff`: `Fitt₀(M) S = S` exactly when `S ⊗[R] M = 0`.
 * `TauCeti.fittingIdeal_kaehlerDifferential_eq_map`: `Fitt_k(Ω[B⁄S]) = Fitt_k(Ω[A⁄R]) B` for
   `B = S ⊗[R] A`.
+* `TauCeti.fittingIdeal_kaehlerDifferential_eq_map_algEquiv`: `Fitt_k(Ω[B⁄R]) = e (Fitt_k(Ω[A⁄R]))`
+  for an `R`-algebra isomorphism `e : A ≃ₐ[R] B`.
 
 ## References
 
@@ -236,5 +240,23 @@ theorem fittingIdeal_kaehlerDifferential_eq_map (k : ℕ) :
     fittingIdeal_baseChange]
 
 end Kaehler
+
+section KaehlerEquiv
+
+variable {R A B : Type*} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+  [Module.Finite A Ω[A⁄R]] [Module.Finite B Ω[B⁄R]]
+
+/-- **Fitting ideals of Kähler differentials are invariant under isomorphism**: an `R`-algebra
+isomorphism `e : A ≃ₐ[R] B` carries `Fitt_k(Ω[A⁄R])` to `Fitt_k(Ω[B⁄R])`. -/
+theorem fittingIdeal_kaehlerDifferential_eq_map_algEquiv (e : A ≃ₐ[R] B) (k : ℕ) :
+    fittingIdeal B Ω[B⁄R] k = (fittingIdeal A Ω[A⁄R] k).map e := by
+  -- Along `e`, which is étale, `Ω[B⁄R]` is the base change of `Ω[A⁄R]`.
+  let : Algebra A B := e.toRingHom.toAlgebra
+  have : IsScalarTower R A B := .of_algebraMap_eq fun r ↦ (e.commutes r).symm
+  have : Algebra.FormallyEtale A B :=
+    .of_equiv (AlgEquiv.ofRingEquiv (f := e.toRingEquiv) fun _ ↦ rfl : A ≃ₐ[A] B)
+  exact (KaehlerDifferential.isBaseChange_of_formallyEtale R A B).fittingIdeal_eq_map k
+
+end KaehlerEquiv
 
 end TauCeti

@@ -10,6 +10,7 @@ import Mathlib.Data.Fin.VecNotation
 import Mathlib.Tactic.FinCases
 import TauCeti.Combinatorics.Network.Acyclic
 import TauCeti.Combinatorics.Network.Coefficients
+import TauCeti.Combinatorics.Network.CycleAdjustment
 
 /-!
 # Examples of bounded assignments and flows
@@ -25,6 +26,13 @@ unit flows along `s → a → b → t` and `s → b → a → t` add up to an `s
 these two paths decompose without any cycle, although its arrows of positive value contain the
 cycle `a → b → a`. The unit flows along `s → a → t` and `s → b → t` add up to an acyclic flow of
 the same value below it.
+
+Take two vertices `false` and `true` again, now with two parallel arrows `false` and `true` for
+each ordered pair, bounds `0` and `1`, and the unit assignments `f` and `g` on the two parallel
+arrows from `false` to `true`. They have the same excess, and the residual cycle adjustments of
+their residual difference lead from `f` to `g` through feasible assignments of that excess. The
+residual difference from `f` to zero is a residual assignment of nonzero excess, computed directly
+at both vertices, which cancels the excess of `f`.
 -/
 
 namespace TauCeti
@@ -117,5 +125,49 @@ example :
     induction hxy with
     | single h => exact step _ _ h
     | tail _ h ih => exact ih.trans (step _ _ h)
+
+-- Two feasible assignments of the same excess, connected by residual cycle adjustments.
+example :
+    let lo : Assignment (fun _ _ : Bool ↦ Bool) ℤ := 0
+    let hi : Assignment (fun _ _ : Bool ↦ Bool) ℤ := fun _ _ _ ↦ 1
+    let f : Assignment (fun _ _ : Bool ↦ Bool) ℤ :=
+      Assignment.single (x := false) (y := true) false 1
+    let g : Assignment (fun _ _ : Bool ↦ Bool) ℤ :=
+      Assignment.single (x := false) (y := true) true 1
+    f ≠ g ∧ ∃ D : PathCycleDecomposition (residualDifference f g), D.cycles ≠ [] ∧
+      (∀ k, D.cycleUpdate f k ∈ Set.Icc lo hi ∧
+        ∀ v, excessAt (D.cycleUpdate f k) v = excessAt f v) ∧
+      D.cycleUpdate f D.cycles.length = g := by
+  intro lo hi f g
+  have hfg : ∀ v, excessAt f v = excessAt g v := by simp [f, g]
+  have hf : f ∈ Set.Icc lo hi := by
+    constructor <;> intro v w e <;> simp only [f, lo, hi, Assignment.single_apply] <;>
+      split_ifs <;> simp
+  have hg : g ∈ Set.Icc lo hi := by
+    constructor <;> intro v w e <;> simp only [g, lo, hi, Assignment.single_apply] <;>
+      split_ifs <;> simp
+  have hne : f ≠ g := fun h ↦ by
+    have := congrArg (fun h : Assignment (fun _ _ : Bool ↦ Bool) ℤ ↦
+      h (x := false) (y := true) false) h
+    simp [f, g, Assignment.single_apply] at this
+  obtain ⟨D⟩ := nonempty_pathCycleDecomposition (residualDifference_nonneg f g)
+  have hend := D.cycleUpdate_length_residualDifference hfg
+  refine ⟨hne, D, fun h ↦ hne ?_, fun k ↦
+    ⟨D.cycleUpdate_mem_Icc (residualDifference_mem_Icc hf hg).2 k, D.excessAt_cycleUpdate f k⟩,
+    hend⟩
+  -- Without cycles the adjustment would end where it starts.
+  rwa [h, List.length_nil, PathCycleDecomposition.cycleUpdate_zero] at hend
+
+-- A residual assignment of nonzero excess: the excess `-1` at `true` and `1` at `false` of the
+-- residual difference from `f` to zero cancels the excess of `f`, and the update returns zero.
+example :
+    let f : Assignment (fun _ _ : Bool ↦ Bool) ℤ :=
+      Assignment.single (x := false) (y := true) false 1
+    let r := residualDifference f 0
+    excessAt f true = 1 ∧ excessAt f false = -1 ∧ excessAt r true = -1 ∧ excessAt r false = 1 ∧
+      residualUpdate f r = 0 := by
+  intro f r
+  refine ⟨by simp [f], by simp [f], ?_, ?_, residualUpdate_residualDifference f 0⟩ <;>
+    simp [r, f, excessAt_def, Fintype.sum_sum_type, Assignment.single_apply]
 
 end TauCeti

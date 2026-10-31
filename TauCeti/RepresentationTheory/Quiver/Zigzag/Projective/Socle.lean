@@ -46,10 +46,7 @@ theorem zigzagProjectiveVolume_mem_grade_two (i : V) :
     zigzagProjectiveVolume k G i ∈ (zigzagGradedProjective k G i).grading.piece 2 := by
   rw [zigzagGradedProjective_piece, mem_zigzagProjectiveGrade_iff,
     coe_zigzagProjectiveVolume]
-  have h2 : zigzagIntegerGrade k G (2 : ℤ) = zigzagGrade k G 2 :=
-    zigzagIntegerGrade_ofNat k G 2
-  rw [h2, zigzagGrade_two_eq_span_range_zigzagVolume]
-  exact Submodule.subset_span (Set.mem_range_self i)
+  exact zigzagVolume_mem_zigzagIntegerGrade_two k G i
 
 include hns in
 /-- The intersection `Z e_i ∩ J²` is a homogeneous left ideal. -/
@@ -123,9 +120,7 @@ theorem zigzagGradedSocleVolume_mem_grade_two (i : V) :
     zigzagGradedSocleVolume k G hns i ∈
       (zigzagGradedProjectiveSocle k G hns i).grading.piece 2 := by
   rw [mem_zigzagGradedProjectiveSocle_piece_iff, coe_zigzagGradedSocleVolume]
-  have hv := (mem_zigzagProjectiveGrade_iff k G).1 <|
-    (zigzagGradedProjective_piece k G i 2) ▸ zigzagProjectiveVolume_mem_grade_two k G i
-  rwa [coe_zigzagProjectiveVolume] at hv
+  exact zigzagVolume_mem_zigzagIntegerGrade_two k G i
 
 private theorem positiveIdeal_smul_socleVolume (i : V) :
     ∀ y ∈ gradedPositiveMulIdeal (zigzagIntegerGrade k G) (zigzagVertexIdempotent k G i),
@@ -141,9 +136,7 @@ private theorem positiveIdeal_smul_socleVolume (i : V) :
     simp only [f, LinearMap.toSpanSingleton_apply, Submodule.coe_smul, smul_eq_mul,
       coe_zigzagGradedSocleVolume, Submodule.coe_zero]
     rw [mul_assoc, zigzagMk_vertexIdempotent_mul_zigzagVolume]
-    have hv := (mem_zigzagGradedProjectiveSocle_piece_iff k G hns i 2 _).1
-      (zigzagGradedSocleVolume_mem_grade_two k G hns i)
-    rw [coe_zigzagGradedSocleVolume] at hv
+    have hv := zigzagVolume_mem_zigzagIntegerGrade_two k G i
     have hm := mul_mem_zigzagIntegerGrade k G hx hv
     have hp2 : 0 ≤ p + 2 := by omega
     obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le hp2
