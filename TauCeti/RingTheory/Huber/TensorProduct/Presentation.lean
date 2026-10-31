@@ -91,6 +91,13 @@ noncomputable def baseChangePresentation (hσ : Continuous σ) :
   (map (RingHom.id A) σ (RingHom.id B) hσA (RingHom.id_comp _) hσ continuous_id).comp
     (weightedRestrictedEquiv B hT).symm.toRingHom
 
+/-- The base change of a presentation is `σ ⊗ id` after `B⟨X⟩_{λ(T)} ≅ A⟨X⟩_T ⊗̂_A B`. -/
+private theorem coe_baseChangePresentation (hσ : Continuous σ) :
+    ⇑(baseChangePresentation B hσA hσ) =
+      ⇑(map (RingHom.id A) σ (RingHom.id B) hσA (RingHom.id_comp _) hσ continuous_id) ∘
+        ⇑(weightedRestrictedEquiv B hT).symm :=
+  rfl
+
 /-- The base change of a presentation sends `λ'(f)` to `σ(f) ⊗ 1`. -/
 @[simp] theorem baseChangePresentation_weightedMapCompletion (hσ : Continuous σ)
     (f : Completion (weightedRestrictedSubring T hT)) :
@@ -98,9 +105,8 @@ noncomputable def baseChangePresentation (hσ : Continuous σ) :
         (weightedMapCompletion hAB.continuous hT (hAB.isWeightFamily_image hT)
           (fun _ ↦ subset_rfl) f) =
       inl A C B (σ f) := by
-  rw [baseChangePresentation, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, ← weightedRestrictedEquiv_inl B hT, RingEquiv.symm_apply_apply,
-    map_inl]
+  rw [coe_baseChangePresentation, Function.comp_apply, ← weightedRestrictedEquiv_inl B hT,
+    RingEquiv.symm_apply_apply, map_inl]
 
 /-- The base change of a presentation sends the constant `b` to `1 ⊗ b`. -/
 @[simp] theorem baseChangePresentation_weightedC (hσ : Continuous σ) (b : B) :
@@ -109,14 +115,13 @@ noncomputable def baseChangePresentation (hσ : Continuous σ) :
           weightedRestrictedSubring (fun i ↦ algebraMap A B '' T i)
             (hAB.isWeightFamily_image hT)) =
       inr A C B b := by
-  rw [baseChangePresentation, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, weightedRestrictedEquiv_symm_weightedC, map_inr, RingHom.id_apply]
+  rw [coe_baseChangePresentation, Function.comp_apply, weightedRestrictedEquiv_symm_weightedC,
+    map_inr, RingHom.id_apply]
 
 /-- The base change of a presentation is continuous. -/
 @[fun_prop] theorem continuous_baseChangePresentation (hσ : Continuous σ) :
     Continuous (baseChangePresentation B hσA hσ) := by
-  rw [baseChangePresentation, RingHom.coe_comp, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom]
+  rw [coe_baseChangePresentation]
   exact (continuous_map (RingHom.id A) σ (RingHom.id B) hσA (RingHom.id_comp _) hσ
     continuous_id).comp (continuous_weightedRestrictedEquiv_symm B hT)
 
@@ -124,8 +129,7 @@ noncomputable def baseChangePresentation (hσ : Continuous σ) :
 `B⟨X⟩_{λ(T)} → C ⊗̂_A B`. -/
 theorem isOpenQuotientMap_baseChangePresentation (hσ : IsOpenQuotientMap σ) :
     IsOpenQuotientMap (baseChangePresentation B hσA hσ.continuous) := by
-  rw [baseChangePresentation, RingHom.coe_comp, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom]
+  rw [coe_baseChangePresentation]
   exact (isOpenQuotientMap_map hσA (RingHom.id_comp _) hσ .id).comp
     (isHomeomorph_weightedRestrictedEquiv_symm B hT).isOpenQuotientMap
 
@@ -144,11 +148,15 @@ theorem ker_baseChangePresentation (hσ : IsOpenQuotientMap σ) :
       (inl A (Completion (weightedRestrictedSubring T hT)) B) =
       weightedMapCompletion hAB.continuous hT (hAB.isWeightFamily_image hT) fun _ ↦ subset_rfl :=
     RingHom.ext fun f ↦ weightedRestrictedEquiv_inl B hT f
+  have hcomap : RingHom.ker (baseChangePresentation B hσA hσ.continuous) =
+      (RingHom.ker (map (RingHom.id A) σ (RingHom.id B) hσA (RingHom.id_comp _) hσ.continuous
+        continuous_id)).comap (weightedRestrictedEquiv B hT).symm :=
+    Ideal.ext fun x ↦ by rw [RingHom.mem_ker, Ideal.mem_comap, RingHom.mem_ker,
+      coe_baseChangePresentation, Function.comp_apply]
   have he := isHomeomorph_weightedRestrictedEquiv_symm B hT
   apply SetLike.coe_injective
-  rw [baseChangePresentation, ← RingHom.comap_ker, hker, ← hinl, ← Ideal.map_map]
-  simp only [RingEquiv.toRingHom_eq_coe, Ideal.map_comap_of_equiv, Ideal.coe_comap,
-    Ideal.coe_closure, RingEquiv.coe_toRingHom]
+  rw [hcomap, hker, ← hinl, ← Ideal.map_map, RingEquiv.toRingHom_eq_coe, Ideal.map_comap_of_equiv]
+  simp only [Ideal.coe_comap, Ideal.coe_closure]
   exact he.isOpenMap.preimage_closure_eq_closure_preimage he.continuous _
 
 /-- **Noetherian type removes the closure.** If `B` is of noetherian type and the weights are
