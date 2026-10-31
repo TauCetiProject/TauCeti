@@ -43,6 +43,8 @@ seminorm is a norm.
 
 ## Main statements
 
+* `TauCeti.CStarAction.CovariantRepresentation.norm_integratedStarAlgHom_le_norm`: the integrated
+  form of a covariant representation in any universe is bounded by the L¹ norm.
 * `TauCeti.CStarAction.ConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm`: every
   integrated form is bounded by the full seminorm.
 * `TauCeti.CStarAction.ConvolutionAlgebra.fullSeminorm_le_iff`: the full seminorm is the least
@@ -68,7 +70,7 @@ noncomputable section
 
 open MeasureTheory
 
-namespace TauCeti.CStarAction.ConvolutionAlgebra
+namespace TauCeti.CStarAction
 
 universe u v
 
@@ -76,55 +78,36 @@ variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G] [IsTopological
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
   {α : CStarAction G A} {μ : Measure G} [μ.IsHaarMeasure]
 
-/-- The norms at `f` of the integrated forms of covariant representations on Hilbert spaces in the
-universe `max u v`. -/
-private def integratedNorms (f : ConvolutionAlgebra α μ) : Set ℝ :=
-  {r | ∃ (H : Type (max u v)) (_ : NormedAddCommGroup H) (_ : InnerProductSpace ℂ H)
-    (_ : CompleteSpace H) (P : CovariantRepresentation α H), ‖P.integratedStarAlgHom μ f‖ = r}
+/-- The integrated ⋆-homomorphism of a covariant representation, on a Hilbert space in any
+universe, is bounded by the L¹ norm. -/
+theorem CovariantRepresentation.norm_integratedStarAlgHom_le_norm {H : Type*}
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    (P : CovariantRepresentation α H) (f : ConvolutionAlgebra α μ) :
+    ‖P.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
+  simpa [ConvolutionAlgebra.norm_eq_integral_norm] using P.norm_integratedOperator_le μ f.ofConv
 
-/-- Every integrated form is bounded by the L¹ norm. -/
-private theorem norm_integratedStarAlgHom_le_norm {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] (P : CovariantRepresentation α H)
-    (f : ConvolutionAlgebra α μ) : ‖P.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
-  simpa [norm_eq_integral_norm] using P.norm_integratedOperator_le μ f.ofConv
+namespace ConvolutionAlgebra
 
-private theorem le_sSup_integratedNorms {H : Type (max u v)} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] (P : CovariantRepresentation α H)
-    (f : ConvolutionAlgebra α μ) : ‖P.integratedStarAlgHom μ f‖ ≤ sSup (integratedNorms f) := by
-  refine le_csSup ⟨‖f‖, ?_⟩ ⟨H, _, _, _, P, rfl⟩
-  rintro _ ⟨H, _, _, _, P, rfl⟩
-  exact norm_integratedStarAlgHom_le_norm P f
+variable (α μ) in
+/-- The seminorms `f ↦ ‖(π ⋊ U)(f)‖` of the integrated forms of covariant representations on
+Hilbert spaces in the universe `max u v`. -/
+private def integratedSeminorms : Set (Seminorm ℂ (ConvolutionAlgebra α μ)) :=
+  {p | ∃ (H : Type (max u v)) (_ : NormedAddCommGroup H) (_ : InnerProductSpace ℂ H)
+    (_ : CompleteSpace H) (P : CovariantRepresentation α H),
+      p = (normSeminorm ℂ (H →L[ℂ] H)).comp
+        (P.integratedStarAlgHom μ : ConvolutionAlgebra α μ →ₗ[ℂ] (H →L[ℂ] H))}
 
-private theorem sSup_integratedNorms_nonneg (f : ConvolutionAlgebra α μ) :
-    0 ≤ sSup (integratedNorms f) :=
-  Real.sSup_nonneg fun _ ⟨_, _, _, _, _, h⟩ => h ▸ norm_nonneg _
-
-private theorem sSup_integratedNorms_le {f : ConvolutionAlgebra α μ} {c : ℝ} (hc : 0 ≤ c)
-    (h : ∀ (H : Type (max u v)) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-      (P : CovariantRepresentation α H), ‖P.integratedStarAlgHom μ f‖ ≤ c) :
-    sSup (integratedNorms f) ≤ c := by
-  refine Real.sSup_le ?_ hc
-  rintro _ ⟨H, _, _, _, P, rfl⟩
-  exact h H P
+private theorem bddAbove_integratedSeminorms : BddAbove (integratedSeminorms α μ) :=
+  ⟨normSeminorm ℂ _, by
+    rintro _ ⟨H, _, _, _, P, rfl⟩ f
+    exact P.norm_integratedStarAlgHom_le_norm f⟩
 
 variable (α μ) in
 /-- The full C⋆-seminorm `‖f‖ᵤ = sup ‖(π ⋊ U)(f)‖` on the twisted convolution algebra: the supremum
 of the norms of the integrated forms of all covariant representations of `α` on Hilbert spaces in
 the universe `max u v`. Its completion is the full crossed product `A ⋊_α G`. -/
 def fullSeminorm : Seminorm ℂ (ConvolutionAlgebra α μ) :=
-  .ofSMulLE (fun f => sSup (integratedNorms f))
-    (le_antisymm (sSup_integratedNorms_le le_rfl fun _ _ _ _ P => by simp)
-      (sSup_integratedNorms_nonneg 0))
-    (fun f g => sSup_integratedNorms_le
-      (add_nonneg (sSup_integratedNorms_nonneg f) (sSup_integratedNorms_nonneg g))
-      fun _ _ _ _ P => by
-        rw [map_add]
-        exact (norm_add_le _ _).trans
-          (add_le_add (le_sSup_integratedNorms P f) (le_sSup_integratedNorms P g)))
-    (fun c f => sSup_integratedNorms_le
-      (mul_nonneg (norm_nonneg c) (sSup_integratedNorms_nonneg f)) fun _ _ _ _ P => by
-        rw [map_smul, norm_smul]
-        exact mul_le_mul_of_nonneg_left (le_sSup_integratedNorms P f) (norm_nonneg c))
+  sSup (integratedSeminorms α μ)
 
 /-- The full seminorm at `f` is the supremum of the norms at `f` of the integrated forms of
 covariant representations on Hilbert spaces in the universe `max u v`. -/
@@ -132,15 +115,18 @@ theorem fullSeminorm_apply (f : ConvolutionAlgebra α μ) :
     fullSeminorm α μ f =
       sSup {r | ∃ (H : Type (max u v)) (_ : NormedAddCommGroup H) (_ : InnerProductSpace ℂ H)
         (_ : CompleteSpace H) (P : CovariantRepresentation α H),
-          ‖P.integratedStarAlgHom μ f‖ = r} :=
-  (rfl)
+          ‖P.integratedStarAlgHom μ f‖ = r} := by
+  rw [fullSeminorm, Seminorm.sSup_apply bddAbove_integratedSeminorms, iSup]
+  congr 1
+  ext r
+  simp [integratedSeminorms]
 
 /-- The integrated form of every covariant representation on a Hilbert space in the universe
 `max u v` is bounded by the full seminorm. -/
 theorem norm_integratedStarAlgHom_le_fullSeminorm {H : Type (max u v)} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H] (P : CovariantRepresentation α H)
     (f : ConvolutionAlgebra α μ) : ‖P.integratedStarAlgHom μ f‖ ≤ fullSeminorm α μ f :=
-  le_sSup_integratedNorms P f
+  le_csSup bddAbove_integratedSeminorms ⟨H, _, _, _, P, rfl⟩ f
 
 /-- The full seminorm is the least nonnegative bound for the integrated forms of covariant
 representations on Hilbert spaces in the universe `max u v`. -/
@@ -149,11 +135,13 @@ theorem fullSeminorm_le_iff {f : ConvolutionAlgebra α μ} {c : ℝ} (hc : 0 ≤
       ∀ (H : Type (max u v)) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
         (P : CovariantRepresentation α H), ‖P.integratedStarAlgHom μ f‖ ≤ c :=
   ⟨fun h _ _ _ _ P => (norm_integratedStarAlgHom_le_fullSeminorm P f).trans h,
-    sSup_integratedNorms_le hc⟩
+    fun h => by
+      rw [fullSeminorm, Seminorm.sSup_apply bddAbove_integratedSeminorms]
+      exact Real.iSup_le (fun ⟨_, H, _, _, _, P, hp⟩ => hp ▸ h H P) hc⟩
 
 /-- The full seminorm is bounded by the L¹ norm. -/
 theorem fullSeminorm_le_norm (f : ConvolutionAlgebra α μ) : fullSeminorm α μ f ≤ ‖f‖ :=
-  (fullSeminorm_le_iff (norm_nonneg f)).2 fun _ _ _ _ P => norm_integratedStarAlgHom_le_norm P f
+  (fullSeminorm_le_iff (norm_nonneg f)).2 fun _ _ _ _ P => P.norm_integratedStarAlgHom_le_norm f
 
 /-- The full seminorm is submultiplicative for twisted convolution. -/
 theorem fullSeminorm_mul_le (f g : ConvolutionAlgebra α μ) :
@@ -202,4 +190,6 @@ theorem fullSeminorm_eq_zero_iff [μ.InnerRegularCompactLTTop] {H : Type v} [Nor
     ← norm_le_zero_iff, ← hf]
   exact norm_integratedStarAlgHom_le_fullSeminorm (CovariantRepresentation.regular α ρ μ) f
 
-end TauCeti.CStarAction.ConvolutionAlgebra
+end ConvolutionAlgebra
+
+end TauCeti.CStarAction
