@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.ModularForm
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
 
 /-!
 # The Weierstrass Hopf algebroid
@@ -37,13 +37,12 @@ index `1` marks the left factor (the first arrow) and `2` the right factor (`cop
 `coproduct_r`, `coproduct_s`, `coproduct_t`). The **conjugation** `c : Γ → Γ` classifies the
 inverse `C⁻¹ : C • W → W`.
 
-The general construction is the ring `ChangeRing B = B[u, u⁻¹, r, s, t]` over an arbitrary
-commutative ring `B`, the coordinate ring of `Spec B × G` for the group scheme `G` of changes of
-variables. Its homomorphisms classify pairs of a homomorphism out of `B` and a change of
-variables (`ChangeRing.lift`); for `B = ℤ[a₁, ⋯, a₆]` it is `Γ`, and for `B = Γ` it is
-`Γ ⊗_A Γ`, and the triple tensor product `Γ ⊗_A Γ ⊗_A Γ` is the case `B = Γ ⊗_A Γ`. For
-`B = ℤ` it is the coordinate algebra `ℤ[u, r, s, t][u⁻¹]` of
-`TauCeti.WeierstrassChange.Universal.CoordinateRing`.
+The general construction is the ring `TauCeti.WeierstrassChange.ChangeRing B =
+B[u, u⁻¹, r, s, t]` over an arbitrary commutative ring `B` from
+`TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/Representable.lean`. Its homomorphisms
+classify pairs of a homomorphism out of `B` and a change of variables (`ChangeRing.lift`); for
+`B = ℤ[a₁, ⋯, a₆]` it is `Γ`, and for `B = Γ` it is `Γ ⊗_A Γ`, and the triple tensor product
+`Γ ⊗_A Γ ⊗_A Γ` is the case `B = Γ ⊗_A Γ`.
 
 Every equation is proved by comparing classified data: a ring homomorphism out of
 `B[u, u⁻¹, r, s, t]` is determined by its restriction to `B` and by the change of variables it
@@ -54,11 +53,6 @@ formal group laws in `TauCeti/RingTheory/FormalGroup/CoordinateChange/HopfAlgebr
 
 ## Main definitions
 
-* `TauCeti.WeierstrassHopfAlgebroid.ChangeRing B`: the ring `B[u, u⁻¹, r, s, t]`, with its
-  universal change of variables `ChangeRing.universalChange B` and the classification
-  `ChangeRing.lift`.
-* `TauCeti.WeierstrassHopfAlgebroid.ChangeRing.pushoutLift`: the universal property of
-  `B'[u, u⁻¹, r, s, t] = B' ⊗_B B[u, u⁻¹, r, s, t]` as a pushout.
 * `TauCeti.WeierstrassHopfAlgebroid.ArrowRing`: the ring `Γ = ℤ[a₁, ⋯, a₆][u, u⁻¹, r, s, t]`.
 * `TauCeti.WeierstrassHopfAlgebroid.rightUnit`, `counit`, `coproduct`, `conjugation`: the
   structure maps `η_R`, `ε`, `Δ` and `c`.
@@ -95,182 +89,11 @@ noncomputable section
 
 namespace TauCeti.WeierstrassHopfAlgebroid
 
-open MvPolynomial WeierstrassCurve
+open MvPolynomial WeierstrassCurve TauCeti.WeierstrassChange TauCeti.WeierstrassChange.ChangeRing
 
-variable {B B' R : Type*} [CommRing B] [CommRing B'] [CommRing R]
-
-/-! ### The ring `B[u, u⁻¹, r, s, t]` -/
-
-variable (B) in
-/-- The ring `B[u, u⁻¹, r, s, t]`, the localization of `B[u, r, s, t]` away from `u`, with indices
-`0, 1, 2, 3` for `u, r, s, t`. It is the coordinate ring of `Spec B × G`, for the group scheme `G`
-of admissible changes of variables of Weierstrass curves. -/
-abbrev ChangeRing : Type _ := Localization.Away (X 0 : MvPolynomial (Fin 4) B)
-
-namespace ChangeRing
-
-variable (B) in
-/-- The universal change of variables `(u, r, s, t)` over `B[u, u⁻¹, r, s, t]`. -/
-def universalChange : VariableChange (ChangeRing B) :=
-  ⟨(IsLocalization.Away.algebraMap_isUnit (X 0 : MvPolynomial (Fin 4) B)).unit,
-    algebraMap (MvPolynomial (Fin 4) B) _ (X 1), algebraMap (MvPolynomial (Fin 4) B) _ (X 2),
-    algebraMap (MvPolynomial (Fin 4) B) _ (X 3)⟩
-
-variable (B) in
-@[simp]
-theorem universalChange_u :
-    ((universalChange B).u : ChangeRing B) = algebraMap (MvPolynomial (Fin 4) B) _ (X 0) :=
-  IsUnit.unit_spec _
-
-variable (B) in
-@[simp]
-theorem universalChange_r :
-    (universalChange B).r = algebraMap (MvPolynomial (Fin 4) B) _ (X 1) :=
-  (rfl)
-
-variable (B) in
-@[simp]
-theorem universalChange_s :
-    (universalChange B).s = algebraMap (MvPolynomial (Fin 4) B) _ (X 2) :=
-  (rfl)
-
-variable (B) in
-@[simp]
-theorem universalChange_t :
-    (universalChange B).t = algebraMap (MvPolynomial (Fin 4) B) _ (X 3) :=
-  (rfl)
-
-/-- The homomorphism `B[u, r, s, t] →+* R` extending `f` and sending `u, r, s, t` to the
-coefficients of `C`. -/
-private def evalHom (f : B →+* R) (C : VariableChange R) : MvPolynomial (Fin 4) B →+* R :=
-  eval₂Hom f ![(C.u : R), C.r, C.s, C.t]
-
-private theorem isUnit_evalHom_X (f : B →+* R) (C : VariableChange R) :
-    IsUnit (evalHom f C (X 0)) := by
-  simp [evalHom]
-
-/-- **Ring homomorphisms out of `B[u, u⁻¹, r, s, t]`** classify pairs of a ring homomorphism out
-of `B` and a change of variables: a homomorphism `k` corresponds to its restriction to `B` and
-to the base change of `universalChange B` along `k`. -/
-def lift : (B →+* R) × VariableChange R ≃ (ChangeRing B →+* R) where
-  toFun p := IsLocalization.Away.lift (X 0) (isUnit_evalHom_X p.1 p.2)
-  invFun k := (k.comp (algebraMap B _), (universalChange B).map k)
-  left_inv p := by
-    refine Prod.ext (RingHom.ext fun b ↦ ?_) ?_
-    · simp [IsScalarTower.algebraMap_apply B (MvPolynomial (Fin 4) B) (ChangeRing B),
-        evalHom]
-    · ext <;> simp [evalHom]
-  right_inv k := by
-    refine IsLocalization.ringHom_ext (.powers (X 0 : MvPolynomial (Fin 4) B)) ?_
-    refine MvPolynomial.ringHom_ext (fun b ↦ ?_) fun i ↦ ?_
-    · simp [evalHom,
-        IsScalarTower.algebraMap_apply B (MvPolynomial (Fin 4) B) (ChangeRing B)]
-    · fin_cases i <;> simp [evalHom]
-
-/-- `lift p` restricts to `p.1` on `B`. -/
-@[simp]
-theorem lift_comp_algebraMap (p : (B →+* R) × VariableChange R) :
-    (lift p).comp (algebraMap B _) = p.1 :=
-  congrArg Prod.fst (lift.left_inv p)
-
-/-- `lift p` agrees with `p.1` on `B`. -/
-@[simp]
-theorem lift_algebraMap (p : (B →+* R) × VariableChange R) (b : B) :
-    lift p (algebraMap B _ b) = p.1 b :=
-  RingHom.congr_fun (lift_comp_algebraMap p) b
-
-/-- `lift p` carries the universal change of variables to `p.2`. -/
-@[simp]
-theorem map_lift (p : (B →+* R) × VariableChange R) :
-    (universalChange B).map (lift p) = p.2 :=
-  congrArg Prod.snd (lift.left_inv p)
-
-@[simp]
-theorem lift_symm_apply (k : ChangeRing B →+* R) :
-    lift.symm k = (k.comp (algebraMap B _), (universalChange B).map k) :=
-  (rfl)
-
-/-- A ring homomorphism out of `B[u, u⁻¹, r, s, t]` is determined by its restriction to `B` and
-the change of variables it classifies. -/
-theorem ringHom_ext {k k' : ChangeRing B →+* R}
-    (h₁ : k.comp (algebraMap B _) = k'.comp (algebraMap B _))
-    (h₂ : (universalChange B).map k = (universalChange B).map k') : k = k' :=
-  lift.symm.injective (Prod.ext h₁ h₂)
-
-/-! ### Coefficient extension and the pushout `B' ⊗_B B[u, u⁻¹, r, s, t]` -/
-
-/-- The coefficient extension `B[u, u⁻¹, r, s, t] →+* B'[u, u⁻¹, r, s, t]` of `f : B →+* B'`. -/
-def map (f : B →+* B') : ChangeRing B →+* ChangeRing B' :=
-  lift ((algebraMap B' _).comp f, universalChange B')
-
-@[simp]
-theorem map_comp_algebraMap (f : B →+* B') :
-    (map f).comp (algebraMap B _) = (algebraMap B' _).comp f :=
-  lift_comp_algebraMap _
-
-@[simp]
-theorem map_algebraMap (f : B →+* B') (b : B) :
-    map f (algebraMap B _ b) = algebraMap B' _ (f b) :=
-  lift_algebraMap _ b
-
-@[simp]
-theorem universalChange_map_map (f : B →+* B') :
-    (universalChange B).map (map f) = universalChange B' :=
-  map_lift _
-
-/-- **The universal property of `B'[u, u⁻¹, r, s, t]` as the pushout `B' ⊗_B B[u, u⁻¹, r, s, t]`**
-of `f : B →+* B'` and the inclusion `algebraMap`: ring homomorphisms out of it correspond to
-pairs `(g, h)` of ring homomorphisms out of `B'` and out of `B[u, u⁻¹, r, s, t]` with
-`g ∘ f = h ∘ algebraMap`, by restriction along `algebraMap` and along `map f`. -/
-def pushoutLift (f : B →+* B') :
-    {p : (B' →+* R) × (ChangeRing B →+* R) // p.1.comp f = p.2.comp (algebraMap B _)} ≃
-      (ChangeRing B' →+* R) where
-  toFun p := lift (p.1.1, (universalChange B).map p.1.2)
-  invFun k := ⟨(k.comp (algebraMap B' _), k.comp (map f)), by
-    rw [RingHom.comp_assoc, RingHom.comp_assoc, map_comp_algebraMap]⟩
-  left_inv p := by
-    refine Subtype.ext (Prod.ext (lift_comp_algebraMap _) (ringHom_ext ?_ ?_))
-    · rw [RingHom.comp_assoc, map_comp_algebraMap, ← RingHom.comp_assoc, lift_comp_algebraMap,
-        p.2]
-    · rw [← VariableChange.map_map, universalChange_map_map, map_lift]
-  right_inv k := ringHom_ext (lift_comp_algebraMap _) (by
-    rw [map_lift]
-    dsimp only
-    rw [← VariableChange.map_map, universalChange_map_map])
-
-variable (f : B →+* B')
-  (p : {p : (B' →+* R) × (ChangeRing B →+* R) // p.1.comp f = p.2.comp (algebraMap B _)})
-
-/-- `pushoutLift f (g, h)` restricts to `g` along `algebraMap`. -/
-@[simp]
-theorem pushoutLift_comp_algebraMap : (pushoutLift f p).comp (algebraMap B' _) = p.1.1 :=
-  congrArg (fun q ↦ q.1.1) ((pushoutLift f).left_inv p)
-
-/-- `pushoutLift f (g, h)` restricts to `h` along `map f`. -/
-@[simp]
-theorem pushoutLift_comp_map : (pushoutLift f p).comp (map f) = p.1.2 :=
-  congrArg (fun q ↦ q.1.2) ((pushoutLift f).left_inv p)
-
-@[simp]
-theorem pushoutLift_algebraMap (b : B') : pushoutLift f p (algebraMap B' _ b) = p.1.1 b :=
-  RingHom.congr_fun (pushoutLift_comp_algebraMap f p) b
-
-@[simp]
-theorem pushoutLift_map (x : ChangeRing B) : pushoutLift f p (map f x) = p.1.2 x :=
-  RingHom.congr_fun (pushoutLift_comp_map f p) x
-
-/-- `pushoutLift f (g, h)` carries the universal change of variables over `B'` to the change
-classified by `h`. -/
-@[simp]
-theorem universalChange_map_pushoutLift :
-    (universalChange B').map (pushoutLift f p) = (universalChange B).map p.1.2 :=
-  map_lift _
-
-end ChangeRing
+variable {R : Type*} [CommRing R]
 
 /-! ### The arrows of the Weierstrass Hopf algebroid -/
-
-open ChangeRing
 
 /-- The ring `Γ = ℤ[a₁, a₂, a₃, a₄, a₆][u, u⁻¹, r, s, t]` of arrows of the Weierstrass Hopf
 algebroid. Its homomorphisms to `R` classify a Weierstrass curve `W` over `R`, the source, with
@@ -354,6 +177,17 @@ theorem universalChange_map_counit : (universalChange (MvPolynomial Coeff ℤ)).
 theorem counit_comp_rightUnit : counit.comp rightUnit = RingHom.id _ :=
   Universal.map_curve_injective (by simp [map_comp_rightUnit])
 
+/-- The counit is a left inverse of the left unit. -/
+@[simp]
+theorem counit_algebraMap (a : MvPolynomial Coeff ℤ) :
+    counit (algebraMap (MvPolynomial Coeff ℤ) ArrowRing a) = a :=
+  RingHom.congr_fun counit_comp_algebraMap a
+
+/-- The counit is a left inverse of the right unit. -/
+@[simp]
+theorem counit_rightUnit (a : MvPolynomial Coeff ℤ) : counit (rightUnit a) = a :=
+  RingHom.congr_fun counit_comp_rightUnit a
+
 /-! ### The coproduct -/
 
 /-- The **coproduct** `Δ : Γ →+* Γ ⊗_A Γ = Γ[u, u⁻¹, r, s, t]`, classifying the composite
@@ -385,12 +219,7 @@ theorem universalChange_map_coproduct :
 theorem coproduct_comp_rightUnit :
     coproduct.comp rightUnit = (ChangeRing.map rightUnit).comp rightUnit := by
   refine Universal.map_curve_injective ?_
-  -- Beta-reduce the goal produced by `Function.Injective`.
-  dsimp only
-  rw [map_comp_rightUnit, map_comp_rightUnit, universalChange_map_coproduct,
-    coproduct_comp_algebraMap, universalChange_map_map, map_comp_algebraMap,
-    ← WeierstrassCurve.map_map _ rightUnit, map_rightUnit, ← map_variableChange,
-    WeierstrassCurve.map_map, mul_smul]
+  simp [map_comp_rightUnit, mul_smul]
 
 /-- The coproduct agrees with the left factor on `ℤ[a₁, ⋯, a₆]`. -/
 @[simp]
@@ -470,9 +299,7 @@ theorem universalChange_map_comp_coproduct (k : ChangeRing ArrowRing →+* R) :
     (universalChange (MvPolynomial Coeff ℤ)).map (k.comp coproduct) =
       (universalChange (MvPolynomial Coeff ℤ)).map (k.comp (ChangeRing.map rightUnit)) *
         (universalChange (MvPolynomial Coeff ℤ)).map (k.comp (algebraMap ArrowRing _)) := by
-  rw [← VariableChange.map_map, universalChange_map_coproduct, VariableChange.map_mul,
-    VariableChange.map_map, ← VariableChange.map_map _ (ChangeRing.map rightUnit),
-    universalChange_map_map]
+  simp [← VariableChange.map_map]
 
 /-- The source of the composite classified by `k ∘ Δ` is the source classified by the left
 factor of `k`. -/
@@ -489,11 +316,9 @@ theorem pushoutLift_counit_id_comp_coproduct :
           rw [RingHom.comp_assoc, counit_comp_rightUnit, RingHom.comp_id, RingHom.id_comp]⟩).comp
           coproduct =
       RingHom.id ArrowRing := by
-  refine ChangeRing.ringHom_ext ?_ ?_
-  · rw [comp_coproduct_comp_algebraMap, pushoutLift_comp_algebraMap, RingHom.comp_assoc,
-      counit_comp_algebraMap, RingHom.comp_id, RingHom.id_comp]
-  · rw [universalChange_map_comp_coproduct, pushoutLift_comp_map, pushoutLift_comp_algebraMap,
-      ← VariableChange.map_map, universalChange_map_counit, VariableChange.map_one, mul_one]
+  refine ChangeRing.ringHom_ext (RingHom.ext fun a ↦ by simp) ?_
+  rw [universalChange_map_comp_coproduct]
+  simp [← VariableChange.map_map]
 
 /-- **The right counit law** `(id ⊗ ε) Δ = id`: composing with an identity on the right does
 nothing. Here `id ⊗ ε` is `pushoutLift (id, η_R ε)`. -/
@@ -503,10 +328,9 @@ theorem pushoutLift_id_counit_comp_coproduct :
           rw [RingHom.comp_assoc, counit_comp_algebraMap, RingHom.comp_id, RingHom.id_comp]⟩).comp
           coproduct =
       RingHom.id ArrowRing := by
-  refine ChangeRing.ringHom_ext ?_ ?_
-  · rw [comp_coproduct_comp_algebraMap, pushoutLift_comp_algebraMap, RingHom.id_comp]
-  · rw [universalChange_map_comp_coproduct, pushoutLift_comp_map, pushoutLift_comp_algebraMap,
-      ← VariableChange.map_map, universalChange_map_counit, VariableChange.map_one, one_mul]
+  refine ChangeRing.ringHom_ext (RingHom.ext fun a ↦ by simp) ?_
+  rw [universalChange_map_comp_coproduct]
+  simp [← VariableChange.map_map]
 
 /-- **Coassociativity** `(Δ ⊗ id) Δ = (id ⊗ Δ) Δ` of the coproduct: composition of changes of
 variables is associative. Both sides take values in the triple tensor product
@@ -581,11 +405,8 @@ theorem conjugation_rightUnit (a : MvPolynomial Coeff ℤ) :
 /-- `c c = id`: the inverse of the inverse is the original arrow. -/
 @[simp]
 theorem conjugation_comp_conjugation : conjugation.comp conjugation = RingHom.id ArrowRing := by
-  refine ChangeRing.ringHom_ext ?_ ?_
-  · rw [RingHom.comp_assoc, conjugation_comp_algebraMap, conjugation_comp_rightUnit,
-      RingHom.id_comp]
-  · rw [← VariableChange.map_map, universalChange_map_conjugation, VariableChange.map_inv,
-      universalChange_map_conjugation, inv_inv, VariableChange.map_id]
+  refine ChangeRing.ringHom_ext (RingHom.ext fun a ↦ by simp) ?_
+  simp [← VariableChange.map_map]
 
 /-- The conjugation is an involution. -/
 @[simp]
@@ -595,11 +416,8 @@ theorem conjugation_conjugation (x : ArrowRing) : conjugation (conjugation x) = 
 /-- `ε c = ε`: the inverse of an identity arrow is an identity arrow. -/
 @[simp]
 theorem counit_comp_conjugation : counit.comp conjugation = counit := by
-  refine ChangeRing.ringHom_ext ?_ ?_
-  · rw [RingHom.comp_assoc, conjugation_comp_algebraMap, counit_comp_rightUnit,
-      counit_comp_algebraMap]
-  · rw [← VariableChange.map_map, universalChange_map_conjugation, VariableChange.map_inv,
-      universalChange_map_counit, inv_one]
+  refine ChangeRing.ringHom_ext (RingHom.ext fun a ↦ by simp) ?_
+  simp [← VariableChange.map_map]
 
 /-- The counit is invariant under the conjugation. -/
 @[simp]
@@ -612,12 +430,9 @@ theorem pushoutLift_conjugation_id_comp_coproduct :
     (pushoutLift rightUnit ⟨(conjugation, RingHom.id ArrowRing), by
         rw [conjugation_comp_rightUnit, RingHom.id_comp]⟩).comp coproduct =
       rightUnit.comp counit := by
-  refine ChangeRing.ringHom_ext ?_ ?_
-  · rw [comp_coproduct_comp_algebraMap, pushoutLift_comp_algebraMap, conjugation_comp_algebraMap,
-      RingHom.comp_assoc, counit_comp_algebraMap, RingHom.comp_id]
-  · rw [universalChange_map_comp_coproduct, pushoutLift_comp_map, pushoutLift_comp_algebraMap,
-      universalChange_map_conjugation, VariableChange.map_id, mul_inv_cancel,
-      ← VariableChange.map_map, universalChange_map_counit, VariableChange.map_one]
+  refine ChangeRing.ringHom_ext (RingHom.ext fun a ↦ by simp) ?_
+  rw [universalChange_map_comp_coproduct]
+  simp [← VariableChange.map_map]
 
 /-- **The right antipode equation** `μ (id ⊗ c) Δ = η_L ε`: composing an arrow with its inverse
 gives the identity of its source. Here `μ (id ⊗ c)` is `pushoutLift (id, c)`. -/
@@ -625,12 +440,9 @@ theorem pushoutLift_id_conjugation_comp_coproduct :
     (pushoutLift rightUnit ⟨(RingHom.id ArrowRing, conjugation), by
         rw [conjugation_comp_algebraMap, RingHom.id_comp]⟩).comp coproduct =
       (algebraMap (MvPolynomial Coeff ℤ) ArrowRing).comp counit := by
-  refine ChangeRing.ringHom_ext ?_ ?_
-  · rw [comp_coproduct_comp_algebraMap, pushoutLift_comp_algebraMap, RingHom.id_comp,
-      RingHom.comp_assoc, counit_comp_algebraMap, RingHom.comp_id]
-  · rw [universalChange_map_comp_coproduct, pushoutLift_comp_map, pushoutLift_comp_algebraMap,
-      universalChange_map_conjugation, VariableChange.map_id, inv_mul_cancel,
-      ← VariableChange.map_map, universalChange_map_counit, VariableChange.map_one]
+  refine ChangeRing.ringHom_ext (RingHom.ext fun a ↦ by simp) ?_
+  rw [universalChange_map_comp_coproduct]
+  simp [← VariableChange.map_map]
 
 end TauCeti.WeierstrassHopfAlgebroid
 
@@ -638,7 +450,7 @@ end TauCeti.WeierstrassHopfAlgebroid
 
 namespace WeierstrassCurve
 
-open TauCeti.WeierstrassHopfAlgebroid ChangeRing
+open TauCeti.WeierstrassHopfAlgebroid TauCeti.WeierstrassChange.ChangeRing
 
 /-- **Integral modular forms are the invariants of the Weierstrass Hopf algebroid**: `f` is an
 integral modular form of weight `k` exactly when `η_R f = u⁻ᵏ η_L f` in `Γ`. -/
