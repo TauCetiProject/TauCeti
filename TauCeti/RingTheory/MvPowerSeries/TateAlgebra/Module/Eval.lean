@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.Normed.Ring.Finsupp
 import TauCeti.Data.Finsupp.Weight
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Data.Fintype.Option
@@ -34,9 +35,9 @@ ultrametric, and `E` carries a jointly injective family of continuous `K`-linear
 into complete normed field extensions `Lⱼ` of `K`. If `a(x) = 0` for every `x` in a product of
 infinite subsets `Sᵢ` of the discs `‖xᵢ‖ ≤ cᵢ`, then `a = 0`. In one variable, each `φⱼ ∘ a` is the
 coefficient sequence of an `Lⱼ`-valued restricted series vanishing on an infinite subset of a closed
-disc, which is zero by Strassmann's theorem. Several variables are handled by splitting off one
-variable at a time: the coefficients of the remaining variables, evaluated at fixed points, form a
-one-variable restricted family.
+disc, which is zero by Strassmann's theorem (`TauCeti.PowerSeries.eq_zero_of_hasSum_pow_smul`).
+Several variables are handled by splitting off one variable at a time: the coefficients of the
+remaining variables, evaluated at fixed points, form a one-variable restricted family.
 
 The functionals are a hypothesis: a general Banach space over `ℚ_p` need not admit such a family
 into fields. The family exists, for instance, when `E` is itself a complete normed field extension
@@ -84,8 +85,8 @@ section Eval
 variable [NormedField K] [NormedAddCommGroup E] [NormedSpace K E] {c : σ → ℝ}
 
 /-- The value `∑ₜ xᵗ • a t` at a point `x : σ → K` of the power series with coefficient family
-`a`, where `xᵗ = ∏ᵢ xᵢ ^ tᵢ`. It is zero when the series is not summable; for a family restricted
-at `c` it converges at every `x` with `‖xᵢ‖ ≤ cᵢ`
+`a`, where `xᵗ = ∏ᵢ xᵢ ^ tᵢ`. It is zero when the series is not summable. When `E` is complete
+and ultrametric, the series of a family restricted at `c` converges at every `x` with `‖xᵢ‖ ≤ cᵢ`
 (`TauCeti.MvPowerSeries.IsRestrictedFamily.hasSum_familyEval`). -/
 noncomputable def familyEval (x : σ → K) (a : (σ →₀ ℕ) → E) : E :=
   ∑' t, t.prod (x · ^ ·) • a t
@@ -111,24 +112,15 @@ theorem familyEval_comp_equivMapDomain {τ : Type*} (e : σ ≃ τ) (x : τ → 
   rw [familyEval_def, familyEval_def, ← (Finsupp.equivCongrLeft e).tsum_eq]
   simp [Finsupp.prod_equivMapDomain]
 
-/-- On the closed polydisc of polyradius `c`, a term `xᵗ • a t` is bounded by `‖a t‖ cᵗ`. -/
-private theorem norm_prod_pow_smul_le {x : σ → K} (hx : ∀ i, ‖x i‖ ≤ c i)
-    (a : (σ →₀ ℕ) → E) (t : σ →₀ ℕ) :
-    ‖t.prod (x · ^ ·) • a t‖ ≤ ‖a t‖ * t.prod (c · ^ ·) := by
-  rw [norm_smul, mul_comm, Finsupp.prod, Finsupp.prod, norm_prod]
-  refine mul_le_mul_of_nonneg_left (Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun i _ ↦ ?_)
-    (norm_nonneg _)
-  rw [norm_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) (hx i) _
-
 variable [IsUltrametricDist E]
 
 /-- On the closed polydisc of polyradius `c`, the value of a family is bounded by every bound of
 its weighted coefficient norms `‖a t‖ cᵗ`. -/
 theorem norm_familyEval_le {a : (σ →₀ ℕ) → E} {x : σ → K} (hx : ∀ i, ‖x i‖ ≤ c i) {C : ℝ}
     (hC : 0 ≤ C) (h : ∀ t, ‖a t‖ * t.prod (c · ^ ·) ≤ C) : ‖familyEval x a‖ ≤ C :=
-  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hC fun t ↦
-    (norm_prod_pow_smul_le hx a t).trans (h t)
+  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hC fun t ↦ by
+    rw [norm_smul, mul_comm]
+    exact (mul_le_mul_of_nonneg_left (t.norm_prod_pow_le hx) (norm_nonneg _)).trans (h t)
 
 variable [CompleteSpace E]
 
@@ -138,8 +130,10 @@ theorem IsRestrictedFamily.hasSum_familyEval {a : (σ →₀ ℕ) → E} (ha : I
     {x : σ → K} (hx : ∀ i, ‖x i‖ ≤ c i) :
     HasSum (fun t ↦ t.prod (x · ^ ·) • a t) (familyEval x a) := by
   rw [familyEval_def]
-  exact (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    (squeeze_zero_norm (norm_prod_pow_smul_le hx a) (isRestrictedFamily_iff.mp ha))).hasSum
+  refine (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+    (squeeze_zero_norm (fun t ↦ ?_) (isRestrictedFamily_iff.mp ha))).hasSum
+  rw [norm_smul, mul_comm]
+  exact mul_le_mul_of_nonneg_left (t.norm_prod_pow_le hx) (norm_nonneg _)
 
 /-- On the closed polydisc, evaluation of restricted families is additive. -/
 theorem IsRestrictedFamily.familyEval_add {a b : (σ →₀ ℕ) → E} (ha : IsRestrictedFamily c a)
@@ -175,42 +169,6 @@ section Injective
 variable [NontriviallyNormedField K] [IsUltrametricDist K] [NormedAddCommGroup E] [NormedSpace K E]
   [IsUltrametricDist E] [CompleteSpace E] {ι : Type*} {L : ι → Type*}
   [∀ j, NormedField (L j)] [∀ j, NormedAlgebra K (L j)] [∀ j, CompleteSpace (L j)]
-
-omit [IsUltrametricDist E] [CompleteSpace E] in
-/-- The one-variable case: a sequence `β` in `E` with `‖β k‖ rᵏ → 0`, whose power series
-`∑ₖ xᵏ • β k` vanishes at every point of an infinite subset of the disc of radius `r`, is zero.
-Each functional `φⱼ` turns `β` into the coefficients of a restricted series over `Lⱼ`, which is zero
-by Strassmann's theorem. -/
-private theorem eq_zero_of_hasSum_pow_smul (φ : ∀ j, E →L[K] L j)
-    (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {r : ℝ} {β : ℕ → E}
-    (hβ : Tendsto (fun k ↦ ‖β k‖ * r ^ k) atTop (𝓝 0)) {S : Set K} (hS : S.Infinite)
-    (hSr : ∀ x ∈ S, ‖x‖ ≤ r) (h : ∀ x ∈ S, HasSum (fun k ↦ x ^ k • β k) 0) : β = 0 := by
-  have hr := hS.nontrivial.pos_of_forall_norm_le hSr
-  funext k
-  refine hφ _ fun j ↦ ?_
-  have : IsUltrametricDist (L j) := .of_normedAlgebra K
-  set f : PowerSeries (L j) := PowerSeries.mk fun k ↦ φ j (β k) with hf_def
-  have hf : f.IsRestricted r := by
-    rw [PowerSeries.isRestricted_iff']
-    refine squeeze_zero (fun k ↦ by positivity) (fun k ↦ ?_)
-      (by simpa using hβ.const_mul ‖φ j‖)
-    rw [hf_def, PowerSeries.coeff_mk, ← mul_assoc]
-    exact mul_le_mul_of_nonneg_right ((φ j).le_opNorm _) (by positivity)
-  have hzero : f = 0 := by
-    refine hf.eq_zero_of_infinite_of_evalAt_eq_zero hr
-      (hS.image (algebraMap K (L j)).injective.injOn) ?_ ?_
-    · rintro _ ⟨x, hx, rfl⟩
-      rw [norm_algebraMap']
-      exact hSr x hx
-    · rintro _ ⟨x, hx, rfl⟩
-      have hterm (n : ℕ) :
-          PowerSeries.coeff n f • algebraMap K (L j) x ^ n = φ j (x ^ n • β n) := by
-        rw [hf_def, PowerSeries.coeff_mk, map_smul, smul_eq_mul, Algebra.smul_def, map_pow,
-          mul_comm]
-      rw [PowerSeries.evalAt_def, tsum_congr hterm]
-      simpa only [Function.comp_def, map_zero] using
-        ((h x hx).map (φ j) (φ j).continuous).tsum_eq
-  simpa [hf_def] using congrArg (PowerSeries.coeff k) hzero
 
 /-- The statement proved by induction on the variables, for a fixed coefficient space. -/
 private def VanishingPrinciple (E : Type*) [NormedAddCommGroup E] [NormedSpace K E]
@@ -296,7 +254,7 @@ private theorem vanishingPrinciple_option (φ : ∀ j, E →L[K] L j)
     refine h (c ∘ some) (a' k) (S ∘ some) (hslice k) (fun i ↦ hS (some i))
       (fun i ↦ hSc (some i)) fun y hy ↦ ?_
     have hy' : ∀ i, y i ∈ S (some i) := fun i ↦ hy i (Set.mem_univ _)
-    exact congrFun (eq_zero_of_hasSum_pow_smul φ hφ
+    exact congrFun (TauCeti.PowerSeries.eq_zero_of_hasSum_pow_smul φ hφ
       (hrestr y fun i ↦ hSc (some i) _ (hy' i)) (hS none) (hSc none) (hsum y hy')) k
   funext t
   rw [Pi.zero_apply, ← Finsupp.optionElim_some t]
