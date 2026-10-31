@@ -11,8 +11,6 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- `TauCeti.permutationGL` occurs in the permutation-conjugation statement below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
--- `Equiv.reindexGL` occurs in the relabelling statement below.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 -- `MonoidHom.noncommCoprod` packages products of commuting one-parameter subgroups.
 public import Mathlib.GroupTheory.NoncommCoprod
 -- Non-public: the diagonal-matrix-unit product law is used only in a proof below.
