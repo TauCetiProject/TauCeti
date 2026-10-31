@@ -11,10 +11,11 @@ public import Mathlib.Topology.Baire.BaireMeasurable
 # The Kuratowski–Ulam theorem
 
 The Kuratowski–Ulam theorem is the analogue of Fubini's theorem for Baire category: a set `s` with
-the Baire property in a product `X × Y` of second countable spaces is comeagre if and only if,
+the Baire property in a product `X × Y` with `Y` second countable is comeagre if and only if,
 for comeagrely many `x`, its section `{y | (x, y) ∈ s}` is comeagre. Equivalently, `s` is meagre
-if and only if comeagrely many of its sections are meagre. No Baire hypothesis on the factors is
-needed.
+if and only if comeagrely many of its sections are meagre. No Baire hypothesis on the factors and
+no countability hypothesis on `X` is needed; exchanging the order of the two quantifiers uses
+second countability of both factors.
 
 The sections of `s : Set (X × Y)` are written `(x, ·) ⁻¹' s` and `(·, y) ⁻¹' s`. The curried
 filter `(residual X).curry (residual Y)` is the filter of sets with comeagrely many comeagre
@@ -154,9 +155,11 @@ theorem baireMeasurableSet_curry_right [SecondCountableTopology X] {s : Set (X �
     (hs : BaireMeasurableSet s) : ∀ᵇ y : Y, BaireMeasurableSet ((·, y) ⁻¹' s) :=
   (hs.preimage continuous_swap (Homeomorph.prodComm Y X).isOpenMap).baireMeasurableSet_curry_left
 
-variable [SecondCountableTopology X] [SecondCountableTopology Y] {s : Set (X × Y)}
+section Left
 
-/-- A non-meagre set `s` with the Baire property in a product of second countable spaces is
+variable [SecondCountableTopology Y] {s : Set (X × Y)}
+
+/-- If `Y` is second countable, a non-meagre set `s` with the Baire property in `X × Y` is
 frequently met along the curried residual filter: the set of `x` whose section `(x, ·) ⁻¹' s` is
 non-meagre is itself non-meagre. -/
 theorem frequently_curry_of_not_isMeagre (hs : BaireMeasurableSet s) (hn : ¬ IsMeagre s) :
@@ -164,23 +167,25 @@ theorem frequently_curry_of_not_isMeagre (hs : BaireMeasurableSet s) (hn : ¬ Is
   obtain ⟨u, hu, hsu⟩ := hs.residualEq_isOpen
   have hun : ¬ IsMeagre u := fun h ↦
     hn (Eventually.congr h (hsu.compl.mem_iff.mono fun _ h ↦ h.symm))
-  -- `u` is a countable union of basic boxes, one of which is non-meagre.
-  have hB := (isBasis_countableBasis X).prod (isBasis_countableBasis Y)
-  obtain ⟨S, hSB, hSu⟩ := hB.open_eq_sUnion hu
-  rw [hSu, sUnion_eq_biUnion] at hun
-  obtain ⟨b, hbS, hb⟩ := exists_of_not_isMeagre_biUnion
-    (((countable_countableBasis X).image2 (countable_countableBasis Y) _).mono hSB) hun
-  obtain ⟨v, -, w, -, rfl⟩ := hSB hbS
-  have hvw : ∃ᶠ p in (residual X).curry (residual Y), p ∈ v ×ˢ w :=
+  -- `u` is covered by the countably many boxes `{x | {x} ×ˢ t ⊆ u} ×ˢ t` over basic open sets
+  -- `t` of `Y`, one of which is non-meagre.
+  have hU : u ⊆ ⋃ t ∈ countableBasis Y, {x | ∀ y ∈ t, (x, y) ∈ u} ×ˢ t := by
+    rintro ⟨x, y⟩ hxy
+    obtain ⟨t, ht, hyt, htu⟩ :=
+      (isBasis_countableBasis Y).isOpen_iff.1 (hu.preimage (by fun_prop)) y hxy
+    exact mem_biUnion ht ⟨fun _ hy ↦ htu hy, hyt⟩
+  obtain ⟨t, -, hb⟩ :=
+    exists_of_not_isMeagre_biUnion (countable_countableBasis Y) fun h ↦ hun (h.mono hU)
+  have hvw : ∃ᶠ p in (residual X).curry (residual Y), p ∈ {x | ∀ y ∈ t, (x, y) ∈ u} ×ˢ t :=
     frequently_curry_prod_iff.2
-      ⟨fun h ↦ hb (IsMeagre.prod_left h w), fun h ↦ hb (IsMeagre.prod_right h v)⟩
+      ⟨fun h ↦ hb (IsMeagre.prod_left h t), fun h ↦ hb (IsMeagre.prod_right h _)⟩
   refine (hvw.and_eventually (TauCeti.curry_le_residual hsu.mem_iff)).mono ?_
-  rintro p ⟨hp, hpsu⟩
-  exact hpsu.2 (hSu ▸ subset_sUnion_of_mem hbS hp)
+  rintro ⟨x, y⟩ ⟨⟨hx, hy⟩, hpsu⟩
+  exact hpsu.2 (hx y hy)
 
-/-- **The Kuratowski–Ulam theorem.** A set `s` with the Baire property in a product of second
-countable spaces is comeagre if and only if it belongs to the curried residual filter, that is,
-if and only if comeagrely many sections `(x, ·) ⁻¹' s` are comeagre. -/
+/-- **The Kuratowski–Ulam theorem.** If `Y` is second countable, a set `s` with the Baire property
+in `X × Y` is comeagre if and only if it belongs to the curried residual filter, that is, if and
+only if comeagrely many sections `(x, ·) ⁻¹' s` are comeagre. -/
 theorem mem_curry_iff_mem_residual (hs : BaireMeasurableSet s) :
     s ∈ (residual X).curry (residual Y) ↔ s ∈ residual (X × Y) := by
   refine ⟨fun h ↦ ?_, fun h ↦ TauCeti.curry_le_residual h⟩
@@ -188,32 +193,36 @@ theorem mem_curry_iff_mem_residual (hs : BaireMeasurableSet s) :
   have hn : ¬ IsMeagre sᶜ := by rwa [IsMeagre, compl_compl]
   exact hs.compl.frequently_curry_of_not_isMeagre hn (mem_of_superset h fun _ hp hpc ↦ hpc hp)
 
-/-- **The Kuratowski–Ulam theorem**, right-hand form. A set `s` with the Baire property in a
-product of second countable spaces is comeagre if and only if comeagrely many sections
-`(·, y) ⁻¹' s` are comeagre. -/
-theorem eventually_eventually_right_iff_mem_residual (hs : BaireMeasurableSet s) :
+/-- **The Kuratowski–Ulam theorem**, meagre form. If `Y` is second countable, a set `s` with the
+Baire property in `X × Y` is meagre if and only if comeagrely many sections `(x, ·) ⁻¹' s` are
+meagre. -/
+theorem eventually_isMeagre_curry_left_iff_isMeagre (hs : BaireMeasurableSet s) :
+    (∀ᵇ x : X, IsMeagre ((x, ·) ⁻¹' s)) ↔ IsMeagre s :=
+  hs.compl.mem_curry_iff_mem_residual
+
+/-- If `Y` is second countable, a set with the Baire property in `X × Y` all of whose sections
+`(x, ·) ⁻¹' s` are meagre is meagre. -/
+theorem isMeagre_of_forall_isMeagre_curry_left (hs : BaireMeasurableSet s)
+    (h : ∀ x, IsMeagre ((x, ·) ⁻¹' s)) : IsMeagre s :=
+  hs.eventually_isMeagre_curry_left_iff_isMeagre.1 (Eventually.of_forall h)
+
+end Left
+
+/-- **The Kuratowski–Ulam theorem**, right-hand form. If `X` is second countable, a set `s` with
+the Baire property in `X × Y` is comeagre if and only if comeagrely many sections `(·, y) ⁻¹' s`
+are comeagre. -/
+theorem eventually_eventually_right_iff_mem_residual [SecondCountableTopology X]
+    {s : Set (X × Y)} (hs : BaireMeasurableSet s) :
     (∀ᵇ y : Y, ∀ᵇ x : X, (x, y) ∈ s) ↔ s ∈ residual (X × Y) := by
   rw [← (Homeomorph.prodComm Y X).residual_map_eq]
   exact (hs.preimage continuous_swap (Homeomorph.prodComm Y X).isOpenMap).mem_curry_iff_mem_residual
 
 /-- For a set with the Baire property in a product of second countable spaces, the two orders of
 the category quantifiers agree. -/
-theorem eventually_eventually_swap (hs : BaireMeasurableSet s) :
+theorem eventually_eventually_swap [SecondCountableTopology X] [SecondCountableTopology Y]
+    {s : Set (X × Y)} (hs : BaireMeasurableSet s) :
     (∀ᵇ x : X, ∀ᵇ y : Y, (x, y) ∈ s) ↔ ∀ᵇ y : Y, ∀ᵇ x : X, (x, y) ∈ s :=
   hs.mem_curry_iff_mem_residual.trans
     hs.eventually_eventually_right_iff_mem_residual.symm
-
-/-- **The Kuratowski–Ulam theorem**, meagre form. A set `s` with the Baire property in a product of
-second countable spaces is meagre if and only if comeagrely many sections `(x, ·) ⁻¹' s` are
-meagre. -/
-theorem eventually_isMeagre_curry_left_iff_isMeagre (hs : BaireMeasurableSet s) :
-    (∀ᵇ x : X, IsMeagre ((x, ·) ⁻¹' s)) ↔ IsMeagre s :=
-  hs.compl.mem_curry_iff_mem_residual
-
-/-- A set with the Baire property in a product of second countable spaces all of whose sections
-`(x, ·) ⁻¹' s` are meagre is meagre. -/
-theorem isMeagre_of_forall_isMeagre_curry_left (hs : BaireMeasurableSet s)
-    (h : ∀ x, IsMeagre ((x, ·) ⁻¹' s)) : IsMeagre s :=
-  hs.eventually_isMeagre_curry_left_iff_isMeagre.1 (Eventually.of_forall h)
 
 end BaireMeasurableSet
