@@ -1,0 +1,134 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: AIs@home (Qwen3.8 27B)
+-/
+module
+
+public import Mathlib.Probability.Kernel.Irreducible
+
+/-!
+# Reachability and communication for kernels
+
+For a kernel `κ` on a measurable space, a state `y` is *reachable* from `x` if some power of `κ`
+(including the zeroth) assigns positive mass to `y`, and two states *communicate* if they are
+mutually reachable. Reachability is reflexive; when the singletons are measurable it is
+transitive, communication is an equivalence relation, and Mathlib's `Kernel.IsIrreducible`
+with respect to the counting measure is equivalent to every state reaching every other state,
+equivalently to every pair of states communicating.
+-/
+
+public section
+
+open MeasureTheory
+
+namespace ProbabilityTheory.Kernel
+
+variable {S : Type*} [MeasurableSpace S] {κ : Kernel S S}
+
+/-- A state `y` is reachable from `x` for the kernel `κ` if some power of `κ`, including the
+zeroth, assigns positive mass to `y`. -/
+def Reaches (κ : Kernel S S) (x y : S) : Prop :=
+    ∃ n : ℕ, 0 < (κ ^ n) x {y}
+
+/-- Two states `x` and `y` communicate for the kernel `κ` if each is reachable from the other. -/
+def Communicates (κ : Kernel S S) (x y : S) : Prop :=
+    κ.Reaches x y ∧ κ.Reaches y x
+
+/-- `Communicates` unfolds to mutual reachability of the two states. -/
+theorem communicates_def (x y : S) : κ.Communicates x y ↔ κ.Reaches x y ∧ κ.Reaches y x :=
+    Iff.rfl
+
+/-- `Reaches` unfolds to the existence of a power of the kernel assigning positive mass to the
+target state. -/
+theorem reaches_def (x y : S) :
+    κ.Reaches x y ↔ ∃ n : ℕ, 0 < (κ ^ n) x {y} := Iff.rfl
+
+/-- Every state reaches itself. -/
+@[simp] theorem Reaches.refl (x : S) : κ.Reaches x x := by
+  use 0
+  -- the zeroth power of a kernel is the identity kernel, hence the Dirac mass at the state;
+  -- `rw [pow_zero]` would leave the numeral `1`, which simp does not unfold to `Kernel.id`
+  rw [show (κ ^ 0 : Kernel S S) = Kernel.id from rfl,
+    Kernel.id_apply, Measure.dirac_apply_of_mem (Set.mem_singleton_iff.2 rfl)]
+  simp
+
+/-- A positive one-step transition mass implies reachability. -/
+theorem reaches_of_pos {x y : S} (h : 0 < κ x {y}) : κ.Reaches x y := by
+  use 1
+  simpa [pow_one] using h
+
+/-- Reachability is transitive. -/
+theorem Reaches.trans [MeasurableSingletonClass S] {x y z : S}
+    (hxy : κ.Reaches x y) (hyz : κ.Reaches y z) : κ.Reaches x z := by
+  obtain ⟨n, hn⟩ := hxy
+  obtain ⟨m, hm⟩ := hyz
+  use n + m
+  -- Chapman-Kolmogorov: (κ ^ (n + m)) x {z} = ∫⁻ b, (κ ^ m) b {z} ∂((κ ^ n) x); bound the
+  -- resulting integral below by its restriction to the single intermediate state y
+  have hyz_y : 0 < (κ ^ m) y {z} * (κ ^ n) x {y} := by
+    rw [ENNReal.mul_pos_iff]
+    exact ⟨hm, hn⟩
+  have hsum : 0 < ∫⁻ b in {y}, (κ ^ m) b {z} ∂((κ ^ n) x) := by
+    rw [lintegral_singleton (f := fun b => (κ ^ m) b {z}) y]
+    exact hyz_y
+  rw [Kernel.pow_add_apply_eq_lintegral _ n m _ (measurableSet_singleton z)]
+  have hsum' : 0 < ∫⁻ b in Set.univ, (κ ^ m) b {z} ∂((κ ^ n) x) :=
+    lt_of_lt_of_le hsum (lintegral_mono_set (Set.subset_univ {y}))
+  exact (Measure.restrict_univ : ((κ ^ n) x).restrict Set.univ = (κ ^ n) x) ▸ hsum'
+
+/-- Every state communicates with itself. -/
+@[simp] theorem Communicates.refl (x : S) : κ.Communicates x x :=
+    ⟨Reaches.refl x, Reaches.refl x⟩
+
+/-- Communication is symmetric. -/
+theorem Communicates.symm {x y : S} (h : κ.Communicates x y) : κ.Communicates y x :=
+  ⟨h.2, h.1⟩
+
+/-- Communication is transitive. -/
+theorem Communicates.trans [MeasurableSingletonClass S] {x y z : S}
+    (hxy : κ.Communicates x y) (hyz : κ.Communicates y z) : κ.Communicates x z :=
+  ⟨hxy.1.trans hyz.1, hyz.2.trans hxy.2⟩
+
+/-- Communication is commutative: two states communicate in one order if and only if they
+communicate in the other. -/
+theorem communicates_comm (x y : S) : κ.Communicates x y ↔ κ.Communicates y x :=
+  ⟨fun h => h.symm, fun h => h.symm⟩
+
+/-- Communication is an equivalence relation on the state space. -/
+theorem communicates_equivalence [MeasurableSingletonClass S] :
+    Equivalence κ.Communicates := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro x
+    exact Communicates.refl x
+  · intro x y h
+    exact h.symm
+  · intro x y z hxy hyz
+    exact hxy.trans hyz
+
+/-- A kernel is irreducible with respect to the counting measure if and only if every state
+reaches every state. -/
+theorem isIrreducible_count_iff_forall_reaches [MeasurableSingletonClass S] :
+    IsIrreducible Measure.count κ ↔ ∀ x y : S, κ.Reaches x y := by
+  constructor
+  · intro h x y
+    have hpos : Measure.count {y} > 0 := by
+      rw [Measure.count_singleton y]
+      exact one_pos
+    exact h.irreducible (measurableSet_singleton y) hpos x
+  · intro h
+    refine ⟨?_⟩
+    intro s hs hA x
+    obtain ⟨y, hy⟩ := Measure.count_ne_zero_iff.mp (Ne.symm (ne_of_lt hA))
+    obtain ⟨n, hn⟩ := h x y
+    use n
+    exact lt_of_lt_of_le hn (measure_mono (Set.singleton_subset_iff.mpr hy))
+
+/-- A kernel is irreducible with respect to the counting measure if and only if every pair of
+states communicates. -/
+theorem isIrreducible_count_iff_forall_communicates [MeasurableSingletonClass S] :
+    IsIrreducible Measure.count κ ↔ ∀ x y : S, κ.Communicates x y := by
+  rw [isIrreducible_count_iff_forall_reaches]
+  exact ⟨fun h x y => ⟨h x y, h y x⟩, fun h x y => (h x y).1⟩
+
+end ProbabilityTheory.Kernel

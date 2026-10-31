@@ -100,7 +100,7 @@ private lemma simplexMap_liftSimplex (σ : (TopCat.toSSet.obj B).obj n)
 /-- The coefficients at the initial sheet of `τ` in the twisted summand of `p ∘ τ` are the
 coefficients at the sheet `e` in the twisted summand of `σ`, whenever `p ∘ τ = σ` and `τ` passes
 through `e`. -/
-private lemma single_initialSheet_ιTwistedChainComplex {k : ℕ} {τ : (TopCat.toSSet.obj E) _⦋k⦌}
+lemma single_initialSheet_ιTwistedChainComplex {k : ℕ} {τ : (TopCat.toSSet.obj E) _⦋k⦌}
     {σ : (TopCat.toSSet.obj B) _⦋k⦌} (h : (TopCat.toSSet.map p).app _ τ = σ)
     {e : p ⁻¹' {(initialVertex σ).as}}
     (he : simplexMap τ (SimplexCategory.toTopInitialVertex _) = e) :

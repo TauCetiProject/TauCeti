@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Algebra.RegularFunctions
+public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Basic
 
 /-!
@@ -29,11 +30,18 @@ relative spectra over `Y` and over `X` are related under base change, is natural
   algebras `q_* 𝒪_W ⟶ p_* 𝒪_V` induced by `g : V ⟶ W` with `h : g ≫ q = p`;
 * `AlgebraicGeometry.Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply`: on
   sections over `U`, it is the map `Γ(W, q⁻¹ U) ⟶ Γ(V, p⁻¹ U)` induced by `g`;
+* `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_sectionsAlgHom`:
+  on global sections, it is `g.appTop : Γ(W, ⊤) ⟶ Γ(V, ⊤)`;
+* `AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv_comp`: the description of module maps
+  from a free sheaf to `q_* 𝒪_W` as families of global functions on `W` is natural in `W`;
 * `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_id` and
   `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_comp`: functoriality;
 * `AlgebraicGeometry.Scheme.Hom.pullbackPushforwardAdjunction_homEquiv_pullback_map`: under the
   pullback-pushforward adjunction, pulling back a linear functional `q^* M ⟶ 𝒪_W` along `g`
   corresponds to composing its transpose `M ⟶ q_* 𝒪_W` with pullback of regular functions;
+* `AlgebraicGeometry.Scheme.Hom.globalSectionsSmul_pushforwardStructureAlgebraMap`: it is linear
+  over global functions, multiplication by `c` on `q_* 𝒪_W` matching multiplication by `g^♯ c` on
+  `p_* 𝒪_V`;
 * `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_hom_naturality`: the
   comparison `f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T` of function algebras is natural in `T`;
 * `TauCeti.AlgebraicGeometry.overFunctions X`: the function-algebra functor `q ↦ q_* 𝒪_T` on all
@@ -102,6 +110,38 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.sectionsAlgHom_pushforwardStructureAlg
   -- `unitToPushforwardObjUnit` is `g.app (q⁻¹ U)`; their composite is `appLE` by definition.
   rfl
 
+/-- On global sections, the morphism of function algebras induced by `g : V ⟶ W` over `X` is the
+pullback `Γ(W, ⊤) ⟶ Γ(V, ⊤)` of global functions along `g`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_sectionsAlgHom
+    (g : V ⟶ W) (h : g ≫ q = p) (x : Γ(q.pushforwardStructureAlgebra.X, ⊤)) :
+    p.pushforwardStructureAlgebraΓRingEquiv.symm
+        (CommMon.sectionsAlgHom (Scheme.Hom.pushforwardStructureAlgebraMap g h) ⊤ x) =
+      g.appTop (q.pushforwardStructureAlgebraΓRingEquiv.symm x) := by
+  subst h
+  rw [Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply,
+    Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply,
+    Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply, RingEquiv.apply_symm_apply,
+    ← CommRingCat.comp_apply, Scheme.Hom.appLE_map, Scheme.Hom.appLE, CommRingCat.comp_apply]
+  exact (ConcreteCategory.congr_hom
+    (g.naturality (homOfLE (by simp : (⊤ : W.Opens) ≤ q ⁻¹ᵁ ⊤)).op) _).symm
+
+/-- The bijection `Scheme.Hom.freeHomPushforwardEquiv` is natural in the scheme over `X`:
+composing a module map with pullback of regular functions along `g : V ⟶ W` pulls back its family
+of global functions along `g`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv_comp (g : V ⟶ W)
+    (h : g ≫ q = p) (I : Type u) (φ : SheafOfModules.free (R := X.ringCatSheaf) I ⟶
+      (Scheme.Modules.pushforward q).obj (𝟙_ W.Modules)) :
+    p.freeHomPushforwardEquiv I (φ ≫ (Scheme.Hom.pushforwardStructureAlgebraMap g h).hom.hom) =
+      g.appTop ∘ q.freeHomPushforwardEquiv I φ :=
+  -- By `SheafOfModules.freeHomEquiv_comp_apply`, the global section of `φ ≫ ψ` at a basis
+  -- element is the image under `ψ` of that of `φ`.
+  funext fun i ↦ (p.freeHomPushforwardEquiv_apply I _ i).trans <|
+    ((congrArg (Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv p).symm
+      (CommMon.sectionsAlgHom_apply (Scheme.Hom.pushforwardStructureAlgebraMap g h) ⊤
+        ((SheafOfModules.freeHomEquiv _ φ i).val (Opposite.op ⊤))).symm).trans
+      (Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_sectionsAlgHom g h _)).trans
+    (congrArg g.appTop (q.freeHomPushforwardEquiv_apply I φ i).symm)
+
 /-- The identity of a scheme over `X` induces the identity of its function algebra. -/
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_id :
@@ -159,6 +199,39 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_comp (g
   simp only [CommMon.sectionsAlgHom_comp, AlgHom.comp_apply,
     Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply, RingEquiv.apply_symm_apply]
   rw [← CommRingCat.comp_apply, Scheme.Hom.appLE_comp_appLE]
+
+/-- Pullback of regular functions along `g : V ⟶ W` over `X` is linear over the global functions
+of `W`: multiplying a function on `W` by `c` and then pulling back is pulling back and then
+multiplying by `g^♯ c`. -/
+@[reassoc]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.globalSectionsSmul_pushforwardStructureAlgebraMap
+    (g : V ⟶ W) (h : g ≫ q = p) (c : Γ(W, ⊤)) :
+    (Scheme.Modules.pushforward q).map (Scheme.Modules.globalSectionsSmul (𝟙_ W.Modules) c) ≫
+        (Scheme.Hom.pushforwardStructureAlgebraMap g h).hom.hom =
+      (Scheme.Hom.pushforwardStructureAlgebraMap g h).hom.hom ≫
+        (Scheme.Modules.pushforward p).map
+          (Scheme.Modules.globalSectionsSmul (𝟙_ V.Modules) (g.appTop c)) := by
+  -- `g^♯ : 𝒪_W ⟶ g_* 𝒪_V` is linear over `Γ(W, ⊤)`, where `c` acts on `g_* 𝒪_V` through
+  -- `g^♯ c`; `u` types `g^♯` in `W.Modules`, whose unit `𝟙_` is `SheafOfModules.unit`, so that
+  -- the composites below are formed there rather than in the category of sheaves of modules
+  let u : 𝟙_ W.Modules ⟶ (Scheme.Modules.pushforward g).obj (𝟙_ V.Modules) :=
+    SheafOfModules.unitToPushforwardObjUnit g.toRingCatSheafHom
+  have h₁ : (Scheme.Modules.pushforward q).map
+        (Scheme.Modules.globalSectionsSmul (𝟙_ W.Modules) c) ≫
+          (Scheme.Modules.pushforward q).map u =
+      (Scheme.Modules.pushforward q).map u ≫
+        (Scheme.Modules.pushforward q).map ((Scheme.Modules.pushforward g).map
+          (Scheme.Modules.globalSectionsSmul (𝟙_ V.Modules) (g.appTop c))) := by
+    rw [← Functor.map_comp, ← Functor.map_comp, Scheme.Modules.pushforward_map_globalSectionsSmul,
+      Scheme.Modules.globalSectionsSmul_naturality]
+  -- then `q_* g_* ≅ (g ≫ q)_* = p_*` is natural
+  have h₂ := (Scheme.Modules.pushforwardComp g q).hom.naturality
+    (Scheme.Modules.globalSectionsSmul (𝟙_ V.Modules) (g.appTop c))
+  have h₃ := (Scheme.Modules.pushforwardCongr h).hom.naturality
+    (Scheme.Modules.globalSectionsSmul (𝟙_ V.Modules) (g.appTop c))
+  rw [Scheme.Hom.pushforwardStructureAlgebraMap_hom]
+  exact ((reassoc_of% h₁) _).trans (congrArg (_ ≫ ·) (((reassoc_of% h₂) _).trans
+    (congrArg (_ ≫ ·) h₃)))
 
 variable {Y T T' : Scheme.{u}}
 

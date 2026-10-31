@@ -6,16 +6,17 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.Basic
-public import TauCeti.GroupTheory.DoubleCoset.Basic
+public import TauCeti.GroupTheory.GroupAction.ConjAct
 
 /-!
 # Moving the base point of a decomposition quotient
 
 `DoubleCoset.DecompQuotient Γ₁ Γ₂ g` is `Γ₁ ⧸ (gΓ₂g⁻¹).subgroupOf Γ₁`, so it depends on `g`
 only through the conjugate `gΓ₂g⁻¹`. The conjugation facts themselves are general subgroup
-theory and live in `TauCeti.GroupTheory.DoubleCoset.Basic`
-(`conjAct_smul_mul_right_of_mem_normalizer` and the two `subgroupOf_…` lemmas); this file turns
-them into equivalences of the quotients:
+theory and live in `TauCeti.GroupTheory.GroupAction.ConjAct`
+(`Subgroup.conjAct_smul_mul_right_of_mem_normalizer` and
+`Subgroup.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer`); this file turns them into
+equivalences of the quotients:
 
 * moving the base point on the **left** by anything normalizing `Γ₁` conjugates the stabilizer,
   hence gives `Γ₁/Stab(hg) ≃ Γ₁/Stab(g)`;
@@ -47,13 +48,13 @@ variable {G : Type*} [Group G]
 /-- Moving the base point on the left by anything normalizing `Γ₁` is an equivalence of
 decomposition quotients, `Γ₁/Stab(hg) ≃ Γ₁/Stab(g)`, induced by `σ ↦ h⁻¹σh`.
 
-Well-definedness is `subgroupOf_conjAct_smul_mul_left_of_mem_normalizer`: the two stabilizers
-differ by that conjugation, so it carries one coset relation to the other. -/
+Well-definedness is `Subgroup.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer`: the two
+stabilizers differ by that conjugation, so it carries one coset relation to the other. -/
 noncomputable def decompQuotientEquivMulLeft (Γ₁ Γ₂ : Subgroup G) (g : G)
     (h : Subgroup.normalizer (Γ₁ : Set G)) :
     DecompQuotient Γ₁ Γ₂ ((h : G) * g) ≃ DecompQuotient Γ₁ Γ₂ g :=
   (Subgroup.quotientEquivOfEq
-      (subgroupOf_conjAct_smul_mul_left_of_mem_normalizer Γ₁ Γ₂ g h)).trans <|
+      (Γ₁.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer Γ₂ g h)).trans <|
     Quotient.congr (Γ₁.normalizerMonoidHom h).symm.toEquiv fun a b ↦ by
       simp only [QuotientGroup.leftRel_apply, Subgroup.mem_map_equiv,
         MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, ← map_inv, ← map_mul]
@@ -75,7 +76,7 @@ lemma decompQuotientEquivMulLeft_mk (Γ₁ Γ₂ : Subgroup G) (g : G)
 
 /-- Moving the base point on both sides — on the left by anything normalizing `Γ₁`, on the
 right by anything normalizing `Γ₂` — is again an equivalence of decomposition quotients. Right
-multiplication contributes nothing (`subgroupOf_conjAct_smul_mul_right_of_mem_normalizer`), so
+multiplication contributes nothing (`Subgroup.conjAct_smul_mul_right_of_mem_normalizer`), so
 this is `decompQuotientEquivMulLeft` after re-associating. -/
 noncomputable def decompQuotientEquivMulLeftRight (Γ₁ Γ₂ : Subgroup G) (g : G)
     (h : Subgroup.normalizer (Γ₁ : Set G)) {k : G} (hk : k ∈ Subgroup.normalizer Γ₂) :
@@ -83,7 +84,7 @@ noncomputable def decompQuotientEquivMulLeftRight (Γ₁ Γ₂ : Subgroup G) (g 
   (Subgroup.quotientEquivOfEq (by rw [mul_assoc])).trans
     ((decompQuotientEquivMulLeft Γ₁ Γ₂ (g * k) h).trans
       (Subgroup.quotientEquivOfEq
-        (subgroupOf_conjAct_smul_mul_right_of_mem_normalizer Γ₁ Γ₂ g hk)))
+        (by rw [Γ₂.conjAct_smul_mul_right_of_mem_normalizer g hk])))
 
 /-- What `decompQuotientEquivMulLeftRight` does to a representative. Not `@[simp]`, for the
 same reason as `decompQuotientEquivMulLeft_mk`. -/

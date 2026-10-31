@@ -174,10 +174,10 @@ theorem cellularClassifyingSpaceFundamentalGroupMulEquiv_mapOfEq_wedgeCircles
     (PresentationComplex.basepoint R)
   -- The equivalence is the inclusion of the wedge into the presentation complex followed by the
   -- inclusion `i` of the presentation complex into the cellular classifying space.
-  rw [TauCeti.FundamentalGroup.mapOfEq_congr (f₂ := i.hom.comp (PresentationComplex.incl R))
+  rw [mapOfEq_congr (f₂ := i.hom.comp (PresentationComplex.incl R))
       (ContinuousMap.ext (wedgeCirclesHomotopyEquivCellularClassifyingSpace_apply S)) _ rfl,
-    ← TauCeti.FundamentalGroup.mapOfEq_comp _ _ rfl rfl, TauCeti.FundamentalGroup.mapOfEq_rfl,
-    TauCeti.FundamentalGroup.mapOfEq_rfl,
+    ← mapOfEq_comp _ _ rfl rfl, mapOfEq_rfl,
+    mapOfEq_rfl,
     cellularClassifyingSpaceFundamentalGroupMulEquiv_map_killHomotopyGroupsIncl,
     PresentationComplex.fundamentalGroupMulEquiv_map_incl]
 
