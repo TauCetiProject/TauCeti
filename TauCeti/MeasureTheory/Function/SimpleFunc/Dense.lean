@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
 # Uniform approximation by simple functions
@@ -124,18 +125,13 @@ theorem denseRange_toLpTop : DenseRange (toLpTop μ ℝ : SimpleFunc α ℝ →�
   set C := ‖φ‖
   -- A measurable representative of `φ`, truncated to `[-C, C]` where it exceeds the bound.
   have hφ := Lp.aestronglyMeasurable φ
-  set f : α → ℝ := fun x => max (-C) (min (hφ.mk φ x) C) with hf_def
+  set f : α → ℝ := fun x => max (-C) (min C (hφ.mk φ x)) with hf_def
   have hf : Measurable f :=
-    measurable_const.max (hφ.stronglyMeasurable_mk.measurable.min measurable_const)
+    measurable_const.max (measurable_const.min hφ.stronglyMeasurable_mk.measurable)
   have hfC (x : α) : f x ∈ Metric.closedBall (0 : ℝ) C := by
-    have : 0 ≤ C := norm_nonneg φ
-    simp only [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs, abs_le, hf_def]
-    constructor <;> [exact le_max_left _ _; exact max_le (by linarith) (min_le_right _ _)]
-  have hφf : φ =ᵐ[μ] f := by
-    filter_upwards [hφ.ae_eq_mk, Lp.ae_norm_le_norm_top φ] with x h hx
-    rw [Real.norm_eq_abs, abs_le] at hx
-    simp only [hf_def]
-    rw [← h, min_eq_left hx.2, max_eq_right hx.1]
+    rw [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs]
+    exact (TauCeti.abs_max_min_le C _).trans_eq (abs_norm φ)
+  have hφf : φ =ᵐ[μ] f := hφ.ae_eq_mk.trans (Lp.ae_eq_max_min_norm_top hφ.ae_eq_mk)
   -- The simple approximants of `f` converge to it uniformly.
   have h₀ : (0 : ℝ) ∈ Metric.closedBall 0 C := Metric.mem_closedBall_self (norm_nonneg φ)
   have hunif := tendstoUniformly_approxOn hf h₀ (isCompact_closedBall (0 : ℝ) C).totallyBounded

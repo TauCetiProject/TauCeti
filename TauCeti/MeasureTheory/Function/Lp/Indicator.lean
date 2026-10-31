@@ -30,6 +30,8 @@ sets, and equals the constant one at `univ`.
 * `TauCeti.linftyIndicator μ s hs`: the class in `L∞(μ)` of the indicator of a measurable set.
 * `MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero`: the class of a simple function
   `c • 1_s` is `c • linftyIndicator μ s hs`.
+* `LinearMap.ext_linftyIndicator`: a continuous linear map out of real `L∞` is determined by its
+  values at the classes `linftyIndicator μ s hs`.
 -/
 
 public section
@@ -131,5 +133,27 @@ theorem linftyIndicator_of_measure_eq_zero (hs : MeasurableSet s) (h : μ s = 0)
   rw [hx, h0, Set.indicator_of_notMem hxs, Pi.zero_apply]
 
 end TauCeti
+
+namespace LinearMap
+
+open MeasureTheory TauCeti
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
+
+/-- A continuous linear map out of real `L∞` is determined by its values at the indicators of
+measurable sets. -/
+theorem ext_linftyIndicator {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [T2Space E] {f g : Lp ℝ ∞ μ →ₗ[ℝ] E} (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ s (hs : MeasurableSet s), f (linftyIndicator μ s hs) = g (linftyIndicator μ s hs)) :
+    f = g := by
+  have hsimple : f ∘ₗ SimpleFunc.toLpTop μ ℝ = g ∘ₗ SimpleFunc.toLpTop μ ℝ := by
+    ext φ
+    induction φ using SimpleFunc.induction with
+    | const c hs => simp [h]
+    | add _ hφ hψ => simp_all
+  exact LinearMap.coe_injective <|
+    SimpleFunc.denseRange_toLpTop.equalizer hf hg (congrArg DFunLike.coe hsimple)
+
+end LinearMap
 
 end

@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Integral.AddContent
 public import TauCeti.MeasureTheory.SetAlgebra
+import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
 # Functionals on `L∞` and finitely additive set functions on measurable sets
@@ -50,6 +51,8 @@ simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicato
 * `LinearMap.toAddContentLpTop`: the content `s ↦ M [1_s]` of a linear functional on `L∞`.
 * `PositiveLinearMap.ofAddContentLpTop`: integration against a nonnegative content vanishing on
   null sets, as a positive linear functional on `L∞`.
+* `PositiveLinearMap.addContentLpTopEquiv`: the two constructions as an equivalence onto the
+  contents that also vanish on nonmeasurable sets.
 
 ## Main results
 
@@ -57,6 +60,8 @@ simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicato
   values at indicators.
 * `PositiveLinearMap.ofAddContentLpTop_linftyIndicator` and
   `PositiveLinearMap.ofAddContentLpTop_toAddContentLpTop`: the two constructions are inverse.
+* `PositiveLinearMap.ofAddContentLpTop_congr`: contents agreeing on measurable sets give the same
+  functional.
 * `PositiveLinearMap.forall_apply_leftTranslation_eq_iff`: invariance of a functional under left
   translation is invariance of its content.
 
@@ -81,20 +86,6 @@ open MeasureTheory TauCeti
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
-/-- A continuous linear map out of real `L∞` is determined by its values at the indicators of
-measurable sets. -/
-theorem ext_linftyIndicator {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
-    [T2Space E] {f g : Lp ℝ ∞ μ →ₗ[ℝ] E} (hf : Continuous f) (hg : Continuous g)
-    (h : ∀ s (hs : MeasurableSet s), f (linftyIndicator μ s hs) = g (linftyIndicator μ s hs)) :
-    f = g := by
-  have hsimple : f ∘ₗ SimpleFunc.toLpTop μ ℝ = g ∘ₗ SimpleFunc.toLpTop μ ℝ := by
-    ext φ
-    induction φ using SimpleFunc.induction with
-    | const c hs => simp [h]
-    | add _ hφ hψ => simp_all
-  exact LinearMap.coe_injective <|
-    SimpleFunc.denseRange_toLpTop.equalizer hf hg (congrArg DFunLike.coe hsimple)
-
 open Classical in
 /-- The real content `s ↦ m [1_s]` of a linear functional `m` on `L∞(μ)`, on the measurable sets.
 Its value at a nonmeasurable set is zero. -/
@@ -107,6 +98,7 @@ def toAddContentLpTop (m : Lp ℝ ∞ μ →ₗ[ℝ] ℝ) : AddContent ℝ {s : 
         linftyIndicator_union hs ht hst, map_add]
 
 /-- On a measurable set `s`, the content of `m` is its value at the indicator of `s`. -/
+@[simp 900] -- Prefer normalization at the whole space to expanding the content.
 theorem toAddContentLpTop_apply (m : Lp ℝ ∞ μ →ₗ[ℝ] ℝ) {s : Set α} (hs : MeasurableSet s) :
     m.toAddContentLpTop s = m (linftyIndicator μ s hs) := by
   unfold toAddContentLpTop
@@ -193,19 +185,11 @@ include hν₀ hνμ
 private theorem norm_integralSimple_le (g : SimpleFunc α ℝ) :
     ‖ν.integralSimple isSetRing_measurableSet (fun _ hs => hs) g‖ ≤
       ν univ * ‖SimpleFunc.toLpTop μ ℝ g‖ := by
-  set C := ‖SimpleFunc.toLpTop μ ℝ g‖ with hC
+  set C := ‖SimpleFunc.toLpTop μ ℝ g‖
   -- Truncating `g` at its essential supremum changes it only on a null set.
-  set g' := g.map fun y => max (-C) (min y C)
-  have hgg' : g =ᵐ[μ] g' := by
-    filter_upwards [SimpleFunc.coeFn_toLpTop (μ := μ) (𝕜 := ℝ) g,
-      Lp.ae_norm_le_norm_top (SimpleFunc.toLpTop μ ℝ g)] with x h hx
-    rw [h, Real.norm_eq_abs, abs_le, ← hC] at hx
-    simp only [g', SimpleFunc.map_apply]
-    rw [min_eq_left hx.2, max_eq_right hx.1]
-  have h x : |g' x| ≤ C := by
-    have : 0 ≤ C := norm_nonneg _
-    simp only [g', SimpleFunc.map_apply, abs_le]
-    exact ⟨le_max_left _ _, max_le (by linarith) (min_le_right _ _)⟩
+  set g' := g.map fun y => max (-C) (min C y)
+  have hgg' : g =ᵐ[μ] g' := Lp.ae_eq_max_min_norm_top (SimpleFunc.coeFn_toLpTop g)
+  have h x : |g' x| ≤ C := (TauCeti.abs_max_min_le C (g x)).trans_eq (abs_norm _)
   rw [AddContent.integralSimple_congr_ae _ _ hνμ hgg', Real.norm_eq_abs, mul_comm]
   exact AddContent.abs_integralSimple_le _ _ hν₀ h
 
@@ -227,9 +211,7 @@ private theorem integral_linftyIndicator {s : Set α} (hs : MeasurableSet s) :
 
 /-- The integral against a nonnegative content vanishing on null sets is positive. -/
 private theorem integral_nonneg {φ : Lp ℝ ∞ μ} (hφ : 0 ≤ φ) : 0 ≤ integral μ ν φ := by
-  -- For `0 ≤ φ`, the class `‖φ‖ • 1 - φ` has norm at most `‖φ‖`, so applying the bound
-  -- `|integral ψ| ≤ ν univ * ‖ψ‖` to it gives `‖φ‖ * ν univ - integral φ ≤ ‖φ‖ * ν univ`.
-  have hbound := norm_integral_apply_le hν₀ hνμ (‖φ‖ • linftyOne - φ)
+  -- For `0 ≤ φ`, the class `‖φ‖ • 1 - φ` has norm at most `‖φ‖`.
   have hnorm : ‖‖φ‖ • (linftyOne : Lp ℝ ∞ μ) - φ‖ ≤ ‖φ‖ := by
     refine Lp.norm_top_le_of_ae_bound (norm_nonneg φ) ?_
     filter_upwards [Lp.coeFn_sub (‖φ‖ • (linftyOne : Lp ℝ ∞ μ)) φ,
@@ -242,9 +224,10 @@ private theorem integral_nonneg {φ : Lp ℝ ∞ μ} (hφ : 0 ≤ φ) : 0 ≤ in
     constructor <;> linarith
   have h₁ : integral μ ν linftyOne = ν univ := by
     simpa using integral_linftyIndicator hν₀ hνμ MeasurableSet.univ
-  rw [map_sub, map_smul, h₁, smul_eq_mul, Real.norm_eq_abs] at hbound
-  have := (le_abs_self _).trans hbound
-  nlinarith [mul_le_mul_of_nonneg_left hnorm (hν₀ univ MeasurableSet.univ)]
+  refine (integral μ ν).toLinearMap.apply_nonneg_of_abs_apply_le_mul_norm (fun ψ => ?_) hnorm
+  change |integral μ ν ψ| ≤ integral μ ν linftyOne * ‖ψ‖
+  rw [h₁, ← Real.norm_eq_abs]
+  exact norm_integral_apply_le hν₀ hνμ ψ
 
 variable (ν) in
 /-- Integration against a nonnegative real content `ν` on the measurable sets which vanishes on
@@ -279,6 +262,52 @@ theorem ofAddContentLpTop_toAddContentLpTop (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) 
       (fun _ hs h => M.toLinearMap.toAddContentLpTop_of_measure_eq_zero hs h) = M :=
   ext_linftyIndicator fun s hs => by
     rw [ofAddContentLpTop_linftyIndicator, LinearMap.toAddContentLpTop_apply _ hs, coe_toLinearMap]
+
+/-- Contents agreeing on measurable sets give the same functional on `L∞`: values of a content on
+nonmeasurable sets play no role. -/
+theorem ofAddContentLpTop_congr {ν ν' : AddContent ℝ {s : Set α | MeasurableSet s}}
+    (hν₀ : ∀ s, MeasurableSet s → 0 ≤ ν s) (hνμ : ∀ s, MeasurableSet s → μ s = 0 → ν s = 0)
+    (hν₀' : ∀ s, MeasurableSet s → 0 ≤ ν' s) (hνμ' : ∀ s, MeasurableSet s → μ s = 0 → ν' s = 0)
+    (h : ∀ s, MeasurableSet s → ν s = ν' s) :
+    ofAddContentLpTop ν hν₀ hνμ = ofAddContentLpTop ν' hν₀' hνμ' :=
+  ext_linftyIndicator fun s hs => by
+    rw [ofAddContentLpTop_linftyIndicator, ofAddContentLpTop_linftyIndicator, h s hs]
+
+variable (μ) in
+/-- Positive linear functionals on `L∞(μ)` correspond to nonnegative real contents on the
+measurable sets that vanish on `μ`-null sets and, by the convention of
+`LinearMap.toAddContentLpTop`, on nonmeasurable sets. The forward map evaluates at indicators;
+the inverse is `PositiveLinearMap.ofAddContentLpTop`. -/
+def addContentLpTopEquiv :
+    (Lp ℝ ∞ μ →ₚ[ℝ] ℝ) ≃ {ν : AddContent ℝ {s : Set α | MeasurableSet s} //
+      (∀ s, 0 ≤ ν s) ∧ (∀ s, MeasurableSet s → μ s = 0 → ν s = 0) ∧
+        ∀ s, ¬MeasurableSet s → ν s = 0} where
+  toFun M := ⟨M.toLinearMap.toAddContentLpTop, M.toAddContentLpTop_nonneg,
+    fun _ hs h => M.toLinearMap.toAddContentLpTop_of_measure_eq_zero hs h,
+    fun _ hs => M.toLinearMap.toAddContentLpTop_of_not_measurableSet hs⟩
+  invFun ν := ofAddContentLpTop ν.1 (fun s _ => ν.2.1 s) ν.2.2.1
+  left_inv := ofAddContentLpTop_toAddContentLpTop
+  right_inv ν := by
+    ext s
+    by_cases hs : MeasurableSet s
+    · exact toAddContentLpTop_ofAddContentLpTop_apply _ _ hs
+    · rw [LinearMap.toAddContentLpTop_of_not_measurableSet _ hs, ν.2.2.2 s hs]
+
+/-- The content of `M` under `addContentLpTopEquiv` is `M.toLinearMap.toAddContentLpTop`. -/
+@[simp]
+theorem coe_addContentLpTopEquiv_apply (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) :
+    (addContentLpTopEquiv μ M : AddContent ℝ {s : Set α | MeasurableSet s}) =
+      M.toLinearMap.toAddContentLpTop :=
+  (rfl)
+
+/-- The functional of a content under `addContentLpTopEquiv` is `ofAddContentLpTop`. -/
+@[simp]
+theorem addContentLpTopEquiv_symm_apply
+    (ν : {ν : AddContent ℝ {s : Set α | MeasurableSet s} //
+      (∀ s, 0 ≤ ν s) ∧ (∀ s, MeasurableSet s → μ s = 0 → ν s = 0) ∧
+        ∀ s, ¬MeasurableSet s → ν s = 0}) :
+    (addContentLpTopEquiv μ).symm ν = ofAddContentLpTop ν.1 (fun s _ => ν.2.1 s) ν.2.2.1 :=
+  (rfl)
 
 section Group
 

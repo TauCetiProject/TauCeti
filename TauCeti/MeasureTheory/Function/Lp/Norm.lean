@@ -27,6 +27,8 @@ bounds.
 * `MeasureTheory.Lp.ae_norm_le_norm_top` and `MeasureTheory.Lp.norm_top_le_of_ae_bound`: an `L∞`
   function is bounded almost everywhere by its norm, and an almost everywhere bound bounds the
   norm, for any measure.
+* `MeasureTheory.Lp.ae_eq_max_min_norm_top`: a representative of a real `L∞` class agrees almost
+  everywhere with its truncation to `[-‖f‖, ‖f‖]`.
 * `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
   exceeded on a set of nonzero measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
@@ -96,6 +98,15 @@ theorem Lp.norm_top_le_of_ae_bound {alpha F : Type*} [MeasurableSpace alpha]
     (h : ∀ᵐ x ∂m, ‖f x‖ ≤ c) : ‖f‖ ≤ c := by
   rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
   exact ENNReal.toReal_le_of_le_ofReal hc (eLpNormEssSup_le_of_ae_bound h)
+
+/-- A representative `g` of a real `L∞` class `f` agrees almost everywhere with its truncation to
+`[-‖f‖, ‖f‖]`. The truncation is bounded everywhere by `‖f‖` (`TauCeti.abs_max_min_le`). -/
+theorem Lp.ae_eq_max_min_norm_top {alpha : Type*} [MeasurableSpace alpha] {m : Measure alpha}
+    {f : Lp ℝ ∞ m} {g : alpha → ℝ} (hg : f =ᵐ[m] g) :
+    g =ᵐ[m] fun x => max (-‖f‖) (min ‖f‖ (g x)) := by
+  filter_upwards [hg, Lp.ae_norm_le_norm_top f] with x h hx
+  rw [h, Real.norm_eq_abs, abs_le] at hx
+  rw [min_eq_right hx.2, max_eq_right hx.1]
 
 /-- Every nonnegative level strictly below the `L∞` norm of `f` is exceeded by `‖f‖` on a set
 of nonzero measure. -/

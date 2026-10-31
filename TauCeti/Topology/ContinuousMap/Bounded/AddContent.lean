@@ -173,9 +173,7 @@ private theorem integral_indicator (s : Set X) :
 
 /-- The integral against a nonnegative content is positive. -/
 private theorem integral_nonneg {f : X →ᵇ ℝ} (hf : 0 ≤ f) : 0 ≤ integral ν f := by
-  -- For `0 ≤ f`, the function `‖f‖ - f` has norm at most `‖f‖`, so applying the bound
-  -- `|integral g| ≤ ν univ * ‖g‖` to it gives `‖f‖ * ν univ - integral f ≤ ‖f‖ * ν univ`.
-  have hbound := norm_integral_apply_le hν (‖f‖ • 1 - f)
+  -- For `0 ≤ f`, the function `‖f‖ - f` has norm at most `‖f‖`.
   have hnorm : ‖‖f‖ • (1 : X →ᵇ ℝ) - f‖ ≤ ‖f‖ :=
     (BoundedContinuousFunction.norm_le (norm_nonneg f)).2 fun x => by
       have h₁ := f.apply_le_norm x
@@ -187,9 +185,10 @@ private theorem integral_nonneg {f : X →ᵇ ℝ} (hf : 0 ≤ f) : 0 ≤ integr
       linarith
   have h₁ : integral ν 1 = ν univ := by
     simpa using integral_indicator hν univ
-  rw [map_sub, map_smul, h₁, smul_eq_mul, Real.norm_eq_abs] at hbound
-  have := (le_abs_self _).trans hbound
-  nlinarith [mul_le_mul_of_nonneg_left hnorm (hν univ)]
+  refine (integral ν).toLinearMap.apply_nonneg_of_abs_apply_le_mul_norm (fun g => ?_) hnorm
+  change |integral ν g| ≤ integral ν 1 * ‖g‖
+  rw [h₁, ← Real.norm_eq_abs]
+  exact norm_integral_apply_le hν g
 
 omit hν in
 /-- A positive functional on bounded functions integrates finite-valued functions against its
