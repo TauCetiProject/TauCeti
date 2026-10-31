@@ -37,6 +37,11 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
 * `TauCeti.norm_tsum_le_norm_mul`: a one-sided series `∑_{n ≥ 1} f(qⁿ w)` whose terms are bounded
   by their arguments has norm at most `‖q w‖`; `TauCeti.norm_tsum_sub_tsum_le_norm_mul`: if the
   terms are `1`-Lipschitz, two such series differ by at most `‖q (w - w')‖`.
+* `TauCeti.norm_div_one_sub_sq_sub_div_one_sub_sq_le`,
+  `TauCeti.norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le`,
+  `TauCeti.norm_neg_div_one_sub_cube_sub_neg_div_one_sub_cube_le`: the maps `t ↦ t / (1 - t)²`,
+  `t ↦ t² / (1 - t)³` and `t ↦ -t / (1 - t)³` are `1`-Lipschitz on the open unit ball of an
+  ultrametric field.
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
@@ -150,6 +155,59 @@ theorem norm_tsum_sub_tsum_le_norm_mul {R E : Type*} [SeminormedRing R]
     ((norm_pow_succ_mul_le hq w' n).trans_lt hw')).trans ?_
   rw [← mul_sub]
   exact norm_pow_succ_mul_le hq _ n
+
+section Field
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
+
+/-- A difference of the form `(t - t') P / ((1 - t)ᵏ (1 - t')ᵏ)` with `‖t‖, ‖t'‖ < 1` and
+`‖P‖ ≤ 1` has norm at most `‖t - t'‖`. -/
+private theorem norm_sub_le_of_eq_mul_div {t t' a a' P : K} (ht : ‖t‖ < 1) (ht' : ‖t'‖ < 1)
+    {k : ℕ} (h : a - a' = (t - t') * P / ((1 - t) ^ k * (1 - t') ^ k)) (hP : ‖P‖ ≤ 1) :
+    ‖a - a'‖ ≤ ‖t - t'‖ := by
+  rw [h, norm_div, norm_mul, norm_mul, norm_pow, norm_pow, norm_one_sub_of_norm_lt_one ht,
+    norm_one_sub_of_norm_lt_one ht', one_pow, mul_one, div_one]
+  exact mul_le_of_le_one_right (norm_nonneg _) hP
+
+/-- The map `t ↦ t / (1 - t)²` is `1`-Lipschitz on the open unit ball of an ultrametric
+field. -/
+theorem norm_div_one_sub_sq_sub_div_one_sub_sq_le {t t' : K} (ht : ‖t‖ < 1) (ht' : ‖t'‖ < 1) :
+    ‖t / (1 - t) ^ 2 - t' / (1 - t') ^ 2‖ ≤ ‖t - t'‖ := by
+  have h₁ : 1 - t ≠ 0 := norm_ne_zero_iff.mp (by simp [ht])
+  have h₂ : 1 - t' ≠ 0 := norm_ne_zero_iff.mp (by simp [ht'])
+  refine norm_sub_le_of_eq_mul_div ht ht' (P := 1 - t * t') (k := 2) (by field_simp; ring)
+    (Subring.mem_unitClosedBall.mp ?_)
+  have h₃ : t ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht.le
+  have h₄ : t' ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht'.le
+  apply_rules [sub_mem, mul_mem, one_mem]
+
+/-- The map `t ↦ t² / (1 - t)³` is `1`-Lipschitz on the open unit ball of an ultrametric
+field. -/
+theorem norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le {t t' : K} (ht : ‖t‖ < 1)
+    (ht' : ‖t'‖ < 1) : ‖t ^ 2 / (1 - t) ^ 3 - t' ^ 2 / (1 - t') ^ 3‖ ≤ ‖t - t'‖ := by
+  have h₁ : 1 - t ≠ 0 := norm_ne_zero_iff.mp (by simp [ht])
+  have h₂ : 1 - t' ≠ 0 := norm_ne_zero_iff.mp (by simp [ht'])
+  refine norm_sub_le_of_eq_mul_div ht ht'
+    (P := t + t' - t * t' - t * t' - t * t' + t ^ 2 * t' ^ 2) (k := 3) (by field_simp; ring)
+    (Subring.mem_unitClosedBall.mp ?_)
+  have h₃ : t ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht.le
+  have h₄ : t' ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht'.le
+  apply_rules [add_mem, sub_mem, mul_mem, pow_mem]
+
+/-- The map `t ↦ -t / (1 - t)³` is `1`-Lipschitz on the open unit ball of an ultrametric
+field. -/
+theorem norm_neg_div_one_sub_cube_sub_neg_div_one_sub_cube_le {t t' : K} (ht : ‖t‖ < 1)
+    (ht' : ‖t'‖ < 1) : ‖-t / (1 - t) ^ 3 - -t' / (1 - t') ^ 3‖ ≤ ‖t - t'‖ := by
+  have h₁ : 1 - t ≠ 0 := norm_ne_zero_iff.mp (by simp [ht])
+  have h₂ : 1 - t' ≠ 0 := norm_ne_zero_iff.mp (by simp [ht'])
+  refine norm_sub_le_of_eq_mul_div ht ht'
+    (P := -(1 - t * t' - t * t' - t * t' + t * t' * (t + t'))) (k := 3) (by field_simp; ring)
+    (Subring.mem_unitClosedBall.mp ?_)
+  have h₃ : t ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht.le
+  have h₄ : t' ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht'.le
+  apply_rules [neg_mem, add_mem, sub_mem, mul_mem, one_mem]
+
+end Field
 
 /-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
 `a * b`. -/

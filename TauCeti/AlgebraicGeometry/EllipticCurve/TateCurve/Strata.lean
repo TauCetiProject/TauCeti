@@ -170,12 +170,6 @@ theorem norm_tateUniformizationX_of_norm_one_sub_lt_one (q u : Kˣ) (hq : ‖(q 
       (one_le_inv₀ (by positivity)).mpr (pow_le_one₀ hd.le h.le)
     _ = _ := hmain.symm
 
-/-- **Points with nonsingular reduction: the first coordinate is integral.** -/
-theorem norm_tateUniformizationX_le_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) : ‖tateUniformizationX q u‖ ≤ 1 :=
-  IsUltrametricDist.norm_le_of_norm_sub_le (by rw [norm_div, norm_pow, hu, h, one_pow, div_one])
-    ((norm_tateUniformizationX_sub_le_of_norm_eq_one q u hq hu).trans hq.le)
-
 /-- **Points with nonsingular reduction: the second coordinate is integral.** -/
 theorem norm_tateUniformizationY_le_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) : ‖tateUniformizationY q u‖ ≤ 1 :=
@@ -253,7 +247,7 @@ theorem one_lt_norm_tateQuotientCoordinates_fst_iff (q : Kˣ) (hq : ‖(q : K)�
         (max_le hlt.le ((div_le_one (norm_pos_iff.mpr r.ne_zero)).mpr hr₁.le))
     · have h1 : ‖1 - (r : K)‖ = 1 :=
         le_antisymm (by simpa [heq] using IsUltrametricDist.norm_sub_le_max (1 : K) r) hge
-      exact norm_tateUniformizationX_le_one q r hq heq h1
+      exact (norm_tateUniformizationX_eq_one q r hq heq h1).le
   · rintro ⟨u, rfl, hu⟩
     have hu1 : (u : K) ≠ 1 := fun h ↦ hx (by rw [Units.val_eq_one.mp h, QuotientGroup.mk_one])
     rw [tateQuotientCoordinates_mk,
