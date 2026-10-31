@@ -82,15 +82,11 @@ theorem exists_forall_finitePlace_apply_add_le_one (S : Finset (FinitePlace K))
     RestrictedProduct.mk_apply (i := w) ..
   obtain ⟨x, hx⟩ := FiniteAdeleRing.exists_forall_sub_algebraMap_mem_adicCompletionIntegers a
   refine ⟨x, fun v hv ↦ ?_, fun v hv ↦ ?_⟩
+  -- Negating `a v - x ∈ 𝒪_v` gives `x - a v ∈ 𝒪_v`, which reads `x` outside `S` and
+  -- `x + γ v` on `S`.
   all_goals
-    rw [← FinitePlace.mk_maximalIdeal v] at hv ⊢
-    have h := hx v.maximalIdeal
-  · rw [ha, ite_eq_right hv, zero_sub, neg_mem_iff,
-      ← FinitePlace.mk_apply_le_one_iff_algebraMap_mem] at h
-    exact h
-  · rw [ha, ite_eq_left hv, ← map_sub, ← FinitePlace.mk_apply_le_one_iff_algebraMap_mem,
-      neg_sub_left, map_neg_eq_map] at h
-    exact h
+    rw [← FinitePlace.mk_maximalIdeal v, FinitePlace.mk_apply_le_one_iff_algebraMap_mem]
+    simpa [ha, hv] using neg_mem (hx v.maximalIdeal)
 
 open scoped Classical in
 /-- **Approximation at the infinite places by an algebraic integer.** For targets `γ v ∈ K` at

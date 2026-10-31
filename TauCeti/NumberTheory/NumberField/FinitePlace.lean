@@ -77,9 +77,8 @@ theorem mk_apply_le_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
 the completion: its image lies in the ring of integers of the adic completion. -/
 theorem mk_apply_le_one_iff_algebraMap_mem (v : HeightOneSpectrum (𝓞 K)) (x : K) :
     mk v x ≤ 1 ↔ algebraMap K (v.adicCompletion K) x ∈ v.adicCompletionIntegers K := by
-  rw [mk_apply_le_one_iff, HeightOneSpectrum.mem_adicCompletionIntegers,
-    HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self,
-    RingHom.id_apply, HeightOneSpectrum.valuedAdicCompletion_eq_valuation']
+  rw [mk_apply_le_one_iff, HeightOneSpectrum.mem_adicCompletionIntegers]
+  simp [HeightOneSpectrum.algebraMap_adicCompletion]
 
 /-- An element has valuation one at a prime iff its finite-place absolute value is one. -/
 theorem mk_apply_eq_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
