@@ -22,13 +22,21 @@ the cone `CategoryTheory.SimplicialObject.matchingCone`, and the matching map is
 its composites with the projections of that cone (`matchingMap_π` and `cosk_obj_hom_ext`).
 Surjectivity conditions on matching maps define hypercovers.
 
-## Main definitions
+In degree `1` the boundary of `⦋1⦌` is two points, so the matching object is
+`X _⦋0⦌ ⨯ X _⦋0⦌` (`CategoryTheory.SimplicialObject.matchingObjectZeroIso`). The matching map
+becomes the pair of vertex maps `(δ 1, δ 0)` (`matchingMap_zero_comp_matchingObjectZeroIso_hom`).
+
+## Main declarations
 
 * `CategoryTheory.SimplicialObject.matchingMap`: the matching map
   `X _⦋n + 1⦌ ⟶ ((cosk n).obj X) _⦋n + 1⦌`.
 * `CategoryTheory.SimplicialObject.matchingCone`: the cone over the faces of dimension at most `n`
   of `⦋n + 1⦌` with vertex the matching object.
 * `CategoryTheory.SimplicialObject.isLimitMatchingCone`: it is a limit cone.
+* `CategoryTheory.SimplicialObject.matchingObjectZeroIso`: the matching object in degree `1` is
+  `X _⦋0⦌ ⨯ X _⦋0⦌`.
+* `CategoryTheory.SimplicialObject.epi_matchingMap_zero_iff`: the matching map in degree `1` is an
+  epimorphism if and only if `(δ 1, δ 0) : X _⦋1⦌ ⟶ X _⦋0⦌ ⨯ X _⦋0⦌` is.
 
 ## References
 
@@ -38,7 +46,7 @@ Surjectivity conditions on matching maps define hypercovers.
 
 public section
 
-open CategoryTheory Limits Opposite Functor
+open CategoryTheory Limits Opposite Functor SimplexCategory.Truncated
 
 open scoped Simplicial
 
@@ -109,6 +117,123 @@ variable {X n} in
 theorem cosk_obj_hom_ext {Z : C} {g h : Z ⟶ ((cosk n).obj X) _⦋n + 1⦌}
     (w : ∀ f, g ≫ (X.matchingCone n).π.app f = h ≫ (X.matchingCone n).π.app f) : g = h :=
   (X.isLimitMatchingCone n).hom_ext w
+
+end
+
+section
+
+variable (X : SimplicialObject C) [HasBinaryProduct (X _⦋0⦌) (X _⦋0⦌)]
+
+/-- The vertex `i` of `⦋1⦌`, as an object of the indexing category of the matching cone in
+degree `1`. -/
+private abbrev vertex (i : Fin 2) :
+    StructuredArrow (op ⦋1⦌) (SimplexCategory.Truncated.inclusion 0).op :=
+  .mk (Y := op ⦋0⦌₀) (SimplexCategory.const ⦋0⦌ ⦋1⦌ i).op
+
+/-- A face `⦋k⦌ ⟶ ⦋1⦌` with `k ≤ 0` takes the same value on every vertex of `⦋k⦌`. -/
+private theorem toOrderHom_hom_unop_eq
+    (f : StructuredArrow (op ⦋1⦌) (SimplexCategory.Truncated.inclusion 0).op)
+    (x : Fin (f.right.unop.obj.len + 1)) :
+    f.hom.unop.toOrderHom x = f.hom.unop.toOrderHom 0 := by
+  have hf := f.right.unop.property
+  obtain rfl : x = 0 := by
+    ext
+    have hx := x.isLt
+    simp at hf hx ⊢
+    omega
+  rfl
+
+/-- The cone over the faces of dimension `0` of `⦋1⦌` with vertex `X _⦋0⦌ ⨯ X _⦋0⦌`: the face at
+the vertex `0` is the first projection and the face at the vertex `1` the second. -/
+private noncomputable abbrev prodCone :
+    Cone (StructuredArrow.proj (op ⦋1⦌) (SimplexCategory.Truncated.inclusion 0).op ⋙
+      (truncation 0).obj X) where
+  pt := X _⦋0⦌ ⨯ X _⦋0⦌
+  π :=
+    { app f := (if f.hom.unop.toOrderHom 0 = 0 then prod.fst else prod.snd) ≫
+        X.map (SimplexCategory.const _ ⦋0⦌ 0).op
+      naturality f f' φ := by
+        have h : f'.hom.unop.toOrderHom 0 = f.hom.unop.toOrderHom 0 := by
+          rw [← StructuredArrow.w φ]
+          simp only [unop_comp, SimplexCategory.comp_toOrderHom, OrderHom.comp_coe,
+            Function.comp_apply]
+          exact toOrderHom_hom_unop_eq f _
+        dsimp [truncation]
+        rw [h, Category.id_comp, Category.assoc, ← X.map_comp]
+        -- Both sides act by morphisms `(unop f'.right).obj ⟶ ⦋0⦌`, which are unique.
+        congr 2 }
+
+private theorem prodCone_π_app_vertex_zero :
+    (prodCone X).π.app (vertex 0) = prod.fst := by
+  simp [prodCone, (SimplexCategory.eq_const_to_zero (𝟙 ⦋0⦌)).symm]
+
+private theorem prodCone_π_app_vertex_one :
+    (prodCone X).π.app (vertex 1) = prod.snd := by
+  simp [prodCone, (SimplexCategory.eq_const_to_zero (𝟙 ⦋0⦌)).symm]
+
+/-- The morphism from the vertex `f.hom.unop.toOrderHom 0` to a face `f` of dimension `0`. -/
+private def toFace (f : StructuredArrow (op ⦋1⦌) (SimplexCategory.Truncated.inclusion 0).op) :
+    vertex (f.hom.unop.toOrderHom 0) ⟶ f :=
+  StructuredArrow.homMk (.op (SimplexCategory.Truncated.Hom.tr
+    (SimplexCategory.const _ ⦋0⦌ 0) f.right.unop.property (by simp))) (by
+      apply Quiver.Hom.unop_inj
+      ext x : 3
+      exact (toOrderHom_hom_unop_eq f x).symm)
+
+/-- The cone `prodCone X` is a limit cone. -/
+private noncomputable def isLimitProdCone : IsLimit (prodCone X) where
+  lift s := prod.lift (s.π.app (vertex 0)) (s.π.app (vertex 1))
+  fac s f := by
+    rw [← s.w (toFace f), ← (prodCone X).w (toFace f), ← Category.assoc]
+    congr 1
+    generalize f.hom.unop.toOrderHom 0 = i
+    fin_cases i <;> simp
+  uniq s m hm := by
+    apply prod.hom_ext
+    · rw [prod.lift_fst, ← hm (vertex 0), prodCone_π_app_vertex_zero]
+    · rw [prod.lift_snd, ← hm (vertex 1), prodCone_π_app_vertex_one]
+
+variable [∀ (F : (SimplexCategory.Truncated 0)ᵒᵖ ⥤ C),
+    (SimplexCategory.Truncated.inclusion 0).op.HasPointwiseRightKanExtension F]
+
+/-- The matching object of `X` in degree `1` is `X _⦋0⦌ ⨯ X _⦋0⦌`: the boundary of `⦋1⦌` consists
+of its two vertices. -/
+noncomputable def matchingObjectZeroIso : ((cosk 0).obj X) _⦋1⦌ ≅ X _⦋0⦌ ⨯ X _⦋0⦌ :=
+  (X.isLimitMatchingCone 0).conePointUniqueUpToIso (isLimitProdCone X)
+
+/-- The first projection of `matchingObjectZeroIso` is the face at the vertex `0` of `⦋1⦌`. -/
+@[reassoc (attr := simp)]
+theorem matchingObjectZeroIso_hom_fst :
+    X.matchingObjectZeroIso.hom ≫ prod.fst = (X.matchingCone 0).π.app
+      (.mk (Y := op ⦋0⦌₀) (SimplexCategory.const ⦋0⦌ ⦋1⦌ 0).op) := by
+  rw [← prodCone_π_app_vertex_zero]
+  exact (X.isLimitMatchingCone 0).conePointUniqueUpToIso_hom_comp (isLimitProdCone X) _
+
+/-- The second projection of `matchingObjectZeroIso` is the face at the vertex `1` of `⦋1⦌`. -/
+@[reassoc (attr := simp)]
+theorem matchingObjectZeroIso_hom_snd :
+    X.matchingObjectZeroIso.hom ≫ prod.snd = (X.matchingCone 0).π.app
+      (.mk (Y := op ⦋0⦌₀) (SimplexCategory.const ⦋0⦌ ⦋1⦌ 1).op) := by
+  rw [← prodCone_π_app_vertex_one]
+  exact (X.isLimitMatchingCone 0).conePointUniqueUpToIso_hom_comp (isLimitProdCone X) _
+
+/-- Under `matchingObjectZeroIso`, the matching map in degree `1` sends an edge to its pair of
+vertices `(δ 1, δ 0)`. -/
+@[reassoc (attr := simp)]
+theorem matchingMap_zero_comp_matchingObjectZeroIso_hom :
+    X.matchingMap 0 ≫ X.matchingObjectZeroIso.hom = prod.lift (X.δ (n := 0) 1) (X.δ 0) := by
+  apply prod.hom_ext
+  · rw [Category.assoc, matchingObjectZeroIso_hom_fst, matchingMap_π]
+    simp [δ, SimplexCategory.δ_one_eq_const]
+  · rw [Category.assoc, matchingObjectZeroIso_hom_snd, matchingMap_π]
+    simp [δ, SimplexCategory.δ_zero_eq_const]
+
+/-- The matching map of `X` in degree `1` is an epimorphism if and only if the pair of vertex maps
+`(δ 1, δ 0) : X _⦋1⦌ ⟶ X _⦋0⦌ ⨯ X _⦋0⦌` is. -/
+theorem epi_matchingMap_zero_iff :
+    Epi (X.matchingMap 0) ↔ Epi (prod.lift (X.δ (n := 0) 1) (X.δ 0)) := by
+  rw [← matchingMap_zero_comp_matchingObjectZeroIso_hom]
+  exact (epi_comp_iff_of_isIso _ _).symm
 
 end
 

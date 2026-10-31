@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-import TauCeti.GroupTheory.GroupAction.Stabilizer
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.RepresentationTheory.OfMulAction
 

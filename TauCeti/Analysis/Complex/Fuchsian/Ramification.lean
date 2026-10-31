@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.CoarseQuotient
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # Ramification of the orbit projection of a Fuchsian group

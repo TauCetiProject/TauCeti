@@ -18,13 +18,17 @@ direction, Bessel's inequality makes the analysis map of an orthonormal family a
 The orthogonal projection onto the span of a finite orthonormal family is `x ↦ ∑ᵢ ⟪vᵢ, x⟫ vᵢ`,
 synthesis after analysis, that is, the frame operator of the family. So Bessel's inequality
 becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
+
+Combining an orthonormal family with the rows of a matrix `A` gives an orthonormal family exactly
+when `A * Aᴴ = 1` (`Orthonormal.orthonormal_sum_smul_iff`); for square matrices this
+identifies the changes of orthonormal frame with the unitary group.
 -/
 
 public section
 
 noncomputable section
 
-open scoped InnerProductSpace
+open scoped InnerProductSpace Matrix
 
 namespace Orthonormal
 
@@ -121,6 +125,18 @@ theorem norm_starProjection_sq_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule �
   have h : U.starProjection x = hv.synthesisMapIsometry (TauCeti.analysisMap 𝕜 v x) := by
     simp [hv.starProjection_apply_eq_sum hU, TauCeti.analysisMap_apply]
   rw [h, LinearIsometry.norm_map, TauCeti.norm_analysisMap_sq]
+
+/-- Taking combinations of an orthonormal family with the rows of a matrix `A` produces an
+orthonormal family exactly when `A` has orthonormal rows, that is, `A * Aᴴ = 1`. For a square
+matrix this says that `A` is unitary. -/
+theorem orthonormal_sum_smul_iff {κ : Type*} [DecidableEq κ] (hv : Orthonormal 𝕜 v)
+    (A : Matrix κ ι 𝕜) :
+    Orthonormal 𝕜 (fun j ↦ ∑ i, A j i • v i) ↔ A * Aᴴ = 1 := by
+  classical
+  rw [orthonormal_iff_ite, ← Matrix.ext_iff, forall_comm]
+  refine forall_congr' fun j ↦ forall_congr' fun k ↦ ?_
+  simp only [hv.inner_sum, Matrix.mul_apply, Matrix.one_apply, Matrix.conjTranspose_apply,
+    RCLike.star_def, mul_comm, eq_comm (a := k)]
 
 end Orthonormal
 

@@ -45,6 +45,9 @@ they are its `crossingCoveredSquares`.
   `TauCeti.GridDiagram.crossingChangeHexagonRectangleWeight` and
   `TauCeti.GridDiagram.crossingChangeRectangleHexagonWeight`: the composite domains counted by
   `∂ ∘ H` and `H ∘ ∂`.
+* `TauCeti.GridDiagram.crossingChangeHexagonCompositeDecompositions` and
+  `TauCeti.GridDiagram.crossingChangeHexagonCompositeWeight`: the counted composites of both
+  orders, as one family of `TauCeti.GridHexagonCompositeDecomposition`, and their weights.
 
 ## Main results
 
@@ -180,6 +183,15 @@ theorem crossingChangeCommutationHexagonWeight_eq_monomial {x y : GridState n}
   | inl P => exact G.crossingChangeHexagonWeight_eq_monomial R P
   | inr P => exact G.crossingChangeInitialHexagonWeight_eq_monomial R P
 
+/-- The weight of a crossing-change hexagon of either shape is the product of the variables of the
+columns of the `O`-markings in the squares it covers as a hexagon of a crossing change. -/
+theorem crossingChangeCommutationHexagonWeight_eq_prod_crossingCoveredSquares {x y : GridState n}
+    (P : GridCommutationHexagonBetween a C.turnRow t x y) :
+    G.crossingChangeCommutationHexagonWeight C t R P =
+      ∏ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, MvPolynomial.X c := by
+  rw [crossingChangeCommutationHexagonWeight_eq_monomial, monomial_sum_one]
+  simp only [← X_pow_eq_monomial, pow_one]
+
 /-- The matrix coefficient of the crossing change homotopy is the sum of the weights of the
 counted hexagons of both shapes. -/
 theorem crossingChangeHexagonCoefficient_eq_sum_weight (x y : GridState n) :
@@ -254,6 +266,84 @@ theorem crossingChangeRectangleHexagonWeight_def {x z : GridState n}
     G.crossingChangeRectangleHexagonWeight C t R D =
       G.OMonomial R D.rectangle.toGridRectangle *
         G.crossingChangeCommutationHexagonWeight C t R D.hexagon := (rfl)
+
+/-! ### The counted composites of both orders -/
+
+/-- The counted composites from `x` to `z`: the counted hexagon--rectangle and rectangle--hexagon
+decompositions of the crossing change homotopy equation. -/
+noncomputable def crossingChangeHexagonCompositeDecompositions (x z : GridState n) :
+    Finset (GridHexagonCompositeDecomposition a C.turnRow t x z) :=
+  (G.crossingChangeHexagonRectangleDecompositions C t x z).disjSum
+    (G.crossingChangeRectangleHexagonDecompositions C t x z)
+
+/-- The counted composites are the disjoint union of the counted hexagon--rectangle and
+rectangle--hexagon decompositions. -/
+theorem crossingChangeHexagonCompositeDecompositions_def (x z : GridState n) :
+    G.crossingChangeHexagonCompositeDecompositions C t x z =
+      (G.crossingChangeHexagonRectangleDecompositions C t x z).disjSum
+        (G.crossingChangeRectangleHexagonDecompositions C t x z) := (rfl)
+
+/-- A hexagon followed by a rectangle is a counted composite exactly when it is counted as a
+hexagon--rectangle decomposition. -/
+@[simp]
+theorem inl_mem_crossingChangeHexagonCompositeDecompositions {x z : GridState n}
+    (D : GridHexagonRectangleDecomposition a C.turnRow t x z) :
+    Sum.inl D ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ↔
+      D ∈ G.crossingChangeHexagonRectangleDecompositions C t x z :=
+  Finset.inl_mem_disjSum
+
+/-- A rectangle followed by a hexagon is a counted composite exactly when it is counted as a
+rectangle--hexagon decomposition. -/
+@[simp]
+theorem inr_mem_crossingChangeHexagonCompositeDecompositions {x z : GridState n}
+    (D : GridRectangleHexagonDecomposition a C.turnRow t x z) :
+    Sum.inr D ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ↔
+      D ∈ G.crossingChangeRectangleHexagonDecompositions C t x z :=
+  Finset.inr_mem_disjSum
+
+/-- The weight of a composite of the crossing change homotopy equation: that of its
+hexagon--rectangle or rectangle--hexagon decomposition. -/
+noncomputable def crossingChangeHexagonCompositeWeight {x z : GridState n}
+    (D : GridHexagonCompositeDecomposition a C.turnRow t x z) : MvPolynomial (Fin n) R :=
+  D.elim (G.crossingChangeHexagonRectangleWeight C t R)
+    (G.crossingChangeRectangleHexagonWeight C t R)
+
+/-- The weight of a hexagon followed by a rectangle. -/
+@[simp]
+theorem crossingChangeHexagonCompositeWeight_inl {x z : GridState n}
+    (D : GridHexagonRectangleDecomposition a C.turnRow t x z) :
+    G.crossingChangeHexagonCompositeWeight C t R (Sum.inl D) =
+      G.crossingChangeHexagonRectangleWeight C t R D := (rfl)
+
+/-- The weight of a rectangle followed by a hexagon. -/
+@[simp]
+theorem crossingChangeHexagonCompositeWeight_inr {x z : GridState n}
+    (D : GridRectangleHexagonDecomposition a C.turnRow t x z) :
+    G.crossingChangeHexagonCompositeWeight C t R (Sum.inr D) =
+      G.crossingChangeRectangleHexagonWeight C t R D := (rfl)
+
+variable {G C t}
+
+/-- Both rectangles under a counted composite are empty. -/
+theorem isEmpty_of_mem_crossingChangeHexagonCompositeDecompositions {x z : GridState n}
+    {D : GridHexagonCompositeDecomposition a C.turnRow t x z}
+    (hD : D ∈ G.crossingChangeHexagonCompositeDecompositions C t x z) :
+    D.toRectangleDecomposition.first.IsEmpty ∧ D.toRectangleDecomposition.second.IsEmpty := by
+  cases D with
+  | inl D =>
+    obtain ⟨hP, hr⟩ := (G.mem_crossingChangeHexagonRectangleDecompositions C t D).mp
+      ((G.inl_mem_crossingChangeHexagonCompositeDecompositions C t D).mp hD)
+    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
+    exact ⟨((G.mem_crossingChangeCommutationHexagons C t _).mp hP).1,
+      G.isEmpty_of_mem_unblockedRectangles hr⟩
+  | inr D =>
+    obtain ⟨hr, hP⟩ := (G.mem_crossingChangeRectangleHexagonDecompositions C t D).mp
+      ((G.inr_mem_crossingChangeHexagonCompositeDecompositions C t D).mp hD)
+    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
+    exact ⟨G.isEmpty_of_mem_unblockedRectangles hr,
+      ((G.mem_crossingChangeCommutationHexagons C t _).mp hP).1⟩
+
+variable (G C t)
 
 /-- The hexagon--rectangle matrix product of the crossing change homotopy is the sum of the
 weights of the counted composite domains. -/

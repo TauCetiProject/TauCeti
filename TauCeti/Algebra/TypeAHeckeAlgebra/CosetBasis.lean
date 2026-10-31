@@ -31,27 +31,21 @@ the decomposition `Hₙ₊₂ = Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁`
 (`TauCeti.InfiniteTypeAHeckeAlgebra.toSubmodule_stage_add_two`). These coordinates are the ones in
 which Jones computes the Ocneanu trace recursively, one strand at a time.
 
-Applying the reversal anti-automorphism `TauCeti.InfiniteTypeAHeckeAlgebra.reverse` to this
-decomposition makes `Hₙ₊₁` a free right `Hₙ`-module of rank `n + 1` with basis the ascending
-products
-
-`rightCosetRep q n m = T m * T (m + 1) * ⋯ * T (n - 1)`, for `m = 0, …, n`.
-
-Every element of `Hₙ₊₁` is uniquely a sum `∑ m, rightCosetRep q n m * a m` with coefficients
-`a m` in `Hₙ` (`TauCeti.InfiniteTypeAHeckeAlgebra.rightCosetEquiv`), and the coefficients depend
-`Hₙ`-linearly on the element for right multiplication
-(`TauCeti.InfiniteTypeAHeckeAlgebra.rightCosetEquiv_symm_mul`). These are the elements `T_w` for
-the minimal-length representatives `w = s m ⋯ s (n - 1)` of the left cosets `w Sₙ` of the
-symmetric group `Sₙ` on `n` letters in the symmetric group on `n + 1` letters.
+The reversal anti-automorphism `TauCeti.InfiniteTypeAHeckeAlgebra.reverse`, which fixes every
+generator and reverses products, carries this left basis to a right one: `Hₙ₊₁` is also a free
+right `Hₙ`-module of rank `n + 1`, with basis the ascending products
+`reverse q (cosetRep q n m) = T m * ⋯ * T (n - 1)`
+(`TauCeti.InfiniteTypeAHeckeAlgebra.reverse_cosetRep`,
+`TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquivRight`). This is the form in which `Hₙ₊₁` is a right
+`Hₙ`-module for induction `Hₙ₊₁ ⊗[Hₙ] M`.
 
 ## Main definitions
 
 * `TauCeti.InfiniteTypeAHeckeAlgebra.cosetRep`: the descending product `T (n - 1) * ⋯ * T m`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquiv`: the `R`-linear isomorphism from
   `Fin (n + 1) → Hₙ` to `Hₙ₊₁` sending `a` to `∑ m, a m * cosetRep q n m`.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.rightCosetRep`: the ascending product `T m * ⋯ * T (n - 1)`.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.rightCosetEquiv`: the `R`-linear isomorphism from
-  `Fin (n + 1) → Hₙ` to `Hₙ₊₁` sending `a` to `∑ m, rightCosetRep q n m * a m`.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquivRight`: the `R`-linear isomorphism from
+  `Fin (n + 1) → Hₙ` to `Hₙ₊₁` sending `a` to `∑ m, reverse q (cosetRep q n m) * a m`.
 
 ## Main results
 
@@ -62,17 +56,11 @@ symmetric group `Sₙ` on `n` letters in the symmetric group on `n + 1` letters.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquiv_symm_inclusion`: an element `b` of `Hₙ` has
   coordinate `b` at the representative `cosetRep q n n = 1`, and coordinate zero at every other
   index.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.reverse_cosetRep`: reversal exchanges the descending and
-  ascending coset representatives.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.coe_rightCosetEquiv_apply`: the formula for
-  `rightCosetEquiv`.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.rightCosetEquiv_op_smul` and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.rightCosetEquiv_symm_mul`: `rightCosetEquiv` is `Hₙ`-linear
-  for right multiplication, so the ascending representatives form a basis of `Hₙ₊₁` as a right
-  `Hₙ`-module.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.rightCosetEquiv_symm_inclusion`: an element `b` of `Hₙ` has
-  coordinate `b` at the representative `rightCosetRep q n n = 1`, and coordinate zero at every
-  other index.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquivRight_op_smul` and
+  `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquivRight_symm_mul`: `cosetEquivRight` is `Hₙ`-linear
+  for right multiplication, so the reversed representatives form a basis of `Hₙ₊₁` as a right
+  `Hₙ`-module; `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquivRight_symm_inclusion` is the
+  counterpart of `cosetEquiv_symm_inclusion`.
 
 ## References
 
@@ -295,106 +283,66 @@ theorem cosetEquiv_symm_inclusion {n : ℕ} (b : stage R q n) :
 
 end CosetEquiv
 
-section RightCosetRep
+section CosetEquivRight
 
-variable (q) in
-/-- The ascending product `T m * T (m + 1) * ⋯ * T (n - 1)` of the generators from `T m` up to
-`T (n - 1)`, which is `1` when `n ≤ m`. It is the reversal of `cosetRep q n m`; for `m ≤ n` it is
-the element `T_w` of the minimal-length representative `w = s m ⋯ s (n - 1)` of the left coset
-`w Sₙ` of the symmetric group `Sₙ` on `n` letters in the symmetric group on `n + 1` letters. -/
-def rightCosetRep (n m : ℕ) : InfiniteTypeAHeckeAlgebra R q :=
-  ((List.Ico m n).map (T q)).prod
-
-/-- The ascending product from `T m` up to `T (n - 1)` is empty when `n ≤ m`. -/
-theorem rightCosetRep_of_le {n m : ℕ} (h : n ≤ m) : rightCosetRep q n m = 1 := by
-  rw [rightCosetRep, List.Ico.eq_nil_of_le h, List.map_nil, List.prod_nil]
-
-/-- The trivial ascending representative is `1`. -/
-@[simp]
-theorem rightCosetRep_self (n : ℕ) : rightCosetRep q n n = 1 :=
-  rightCosetRep_of_le le_rfl
-
-/-- Raising the top of the ascending product adds a generator on the right. -/
-theorem rightCosetRep_succ {n m : ℕ} (h : m ≤ n) :
-    rightCosetRep q (n + 1) m = rightCosetRep q n m * T q n := by
-  simp only [rightCosetRep, List.Ico.succ_top h, List.map_append, List.prod_append,
-    List.map_singleton, List.prod_singleton]
-
-/-- Reversal turns the descending coset representatives into the ascending ones. -/
-@[simp]
-theorem reverse_cosetRep (n m : ℕ) : reverse (cosetRep q n m) = rightCosetRep q n m := by
-  rw [cosetRep, reverse_prod_map_T, List.map_reverse, List.reverse_reverse, rightCosetRep]
-
-/-- Reversal turns the ascending coset representatives into the descending ones. -/
-@[simp]
-theorem reverse_rightCosetRep (n m : ℕ) : reverse (rightCosetRep q n m) = cosetRep q n m := by
-  rw [← reverse_cosetRep, reverse_reverse]
-
-/-- Lowering the bottom of the ascending product adds a generator on the left. -/
-theorem T_mul_rightCosetRep_succ {n m : ℕ} (h : m < n) :
-    T q m * rightCosetRep q n (m + 1) = rightCosetRep q n m := by
-  rw [← reverse_cosetRep n m, ← cosetRep_succ_mul_T h, reverse_mul, reverse_T, reverse_cosetRep]
-
-/-- The ascending product up to `T (n - 1)` lies in the stage of the first `n + 1` strands. -/
-theorem rightCosetRep_mem_stage (n m : ℕ) : rightCosetRep q n m ∈ stage R q (n + 1) := by
-  rw [← reverse_cosetRep]
-  exact reverse_mem_stage (cosetRep_mem_stage n m)
-
-end RightCosetRep
-
-section RightCosetEquiv
+/-! The right coset basis is the image of the left one under the reversal anti-automorphism
+`reverse`, which fixes the generators, reverses products and preserves the stages. -/
 
 open MulOpposite
 
+/-- The reversal of the descending product `T (n - 1) * ⋯ * T m` is the ascending product
+`T m * ⋯ * T (n - 1)`. -/
+theorem reverse_cosetRep (n m : ℕ) :
+    reverse q (cosetRep q n m) = ((List.Ico m n).map (T q)).prod := by
+  simp [cosetRep, reverse_list_prod, List.map_reverse, Function.comp_def]
+
 variable (R q) in
 /-- **The right coset basis.** The stage of the first `n + 1` strands is a free right module over
-the stage of the first `n` strands with basis the ascending products `rightCosetRep q n m`,
-`m = 0, …, n`: the `R`-linear map sending coefficients `a : Fin (n + 1) → Hₙ` to
-`∑ m, rightCosetRep q n m * a m` is an isomorphism onto `Hₙ₊₁`. It is the reversal of the left
-coset basis `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquiv`. -/
-noncomputable def rightCosetEquiv (n : ℕ) :
-    (Fin (n + 1) → stage R q n) ≃ₗ[R] stage R q (n + 1) :=
-  (LinearEquiv.piCongrRight fun _ ↦ stageReverse R q n) ≪≫ₗ cosetEquiv R q n ≪≫ₗ
-    stageReverse R q (n + 1)
+the stage of the first `n` strands with basis the ascending products
+`reverse q (cosetRep q n m) = T m * ⋯ * T (n - 1)`, `m = 0, …, n`: the `R`-linear map sending
+coefficients `a : Fin (n + 1) → Hₙ` to `∑ m, reverse q (cosetRep q n m) * a m` is an isomorphism
+onto `Hₙ₊₁`. -/
+noncomputable def cosetEquivRight (n : ℕ) : (Fin (n + 1) → stage R q n) ≃ₗ[R] stage R q (n + 1) :=
+  LinearEquiv.piCongrRight (fun _ ↦ stageReverse q n) ≪≫ₗ cosetEquiv R q n ≪≫ₗ
+    stageReverse q (n + 1)
 
-/-- The right coset isomorphism sends coefficients `a` to `∑ m, rightCosetRep q n m * a m`. -/
+/-- The right coset isomorphism sends coefficients `a` to
+`∑ m, reverse q (cosetRep q n m) * a m`. -/
 @[simp]
-theorem coe_rightCosetEquiv_apply {n : ℕ} (a : Fin (n + 1) → stage R q n) :
-    (rightCosetEquiv R q n a : InfiniteTypeAHeckeAlgebra R q) =
-      ∑ m : Fin (n + 1), rightCosetRep q n m * (a m : InfiniteTypeAHeckeAlgebra R q) := by
-  simp [rightCosetEquiv, map_sum]
+theorem coe_cosetEquivRight_apply {n : ℕ} (a : Fin (n + 1) → stage R q n) :
+    (cosetEquivRight R q n a : InfiniteTypeAHeckeAlgebra R q) =
+      ∑ m : Fin (n + 1), reverse q (cosetRep q n m) * (a m : InfiniteTypeAHeckeAlgebra R q) := by
+  simp [cosetEquivRight, map_sum]
 
 /-- The right coset isomorphism is linear for right multiplication by the stage of the first `n`
-strands, which acts on the coefficients through the opposite ring. -/
-theorem rightCosetEquiv_op_smul {n : ℕ} (b : stage R q n) (a : Fin (n + 1) → stage R q n) :
-    rightCosetEquiv R q n (op b • a) =
-      rightCosetEquiv R q n a * Subalgebra.inclusion (stage_mono n.le_succ) b :=
+strands. -/
+theorem cosetEquivRight_op_smul {n : ℕ} (b : stage R q n) (a : Fin (n + 1) → stage R q n) :
+    cosetEquivRight R q n (op b • a) =
+      cosetEquivRight R q n a * Subalgebra.inclusion (stage_mono n.le_succ) b :=
   Subtype.ext <| by
-    simp only [coe_rightCosetEquiv_apply, Pi.smul_apply, op_smul_eq_mul, Subalgebra.coe_mul,
+    simp only [coe_cosetEquivRight_apply, Pi.smul_apply, op_smul_eq_mul, Subalgebra.coe_mul,
       Subalgebra.coe_inclusion, Finset.sum_mul, mul_assoc]
 
 /-- The coefficients of an element of the stage `n + 1` along the representatives
-`rightCosetRep q n m` are linear for right multiplication by the stage `n`. -/
-theorem rightCosetEquiv_symm_mul {n : ℕ} (b : stage R q n) (x : stage R q (n + 1)) :
-    (rightCosetEquiv R q n).symm (x * Subalgebra.inclusion (stage_mono n.le_succ) b) =
-      op b • (rightCosetEquiv R q n).symm x := by
-  rw [LinearEquiv.symm_apply_eq, rightCosetEquiv_op_smul, LinearEquiv.apply_symm_apply]
+`reverse q (cosetRep q n m)` are linear for right multiplication by the stage `n`. -/
+theorem cosetEquivRight_symm_mul {n : ℕ} (x : stage R q (n + 1)) (b : stage R q n) :
+    (cosetEquivRight R q n).symm (x * Subalgebra.inclusion (stage_mono n.le_succ) b) =
+      op b • (cosetEquivRight R q n).symm x := by
+  rw [LinearEquiv.symm_apply_eq, cosetEquivRight_op_smul, LinearEquiv.apply_symm_apply]
 
 /-- An element of the stage `n` is its own coefficient at the trivial representative
-`rightCosetRep q n n = 1`, and has no other coefficients. -/
+`reverse q (cosetRep q n n) = 1`, and has no other coefficients. -/
 @[simp]
-theorem rightCosetEquiv_symm_inclusion {n : ℕ} (b : stage R q n) :
-    (rightCosetEquiv R q n).symm (Subalgebra.inclusion (stage_mono n.le_succ) b) =
+theorem cosetEquivRight_symm_inclusion {n : ℕ} (b : stage R q n) :
+    (cosetEquivRight R q n).symm (Subalgebra.inclusion (stage_mono n.le_succ) b) =
       Pi.single (Fin.last n) b := by
   rw [LinearEquiv.symm_apply_eq]
   refine Subtype.ext ?_
-  rw [coe_rightCosetEquiv_apply, Finset.sum_eq_single (Fin.last n)]
-  · simp
-  · intro m _ hm
-    simp [Pi.single_eq_of_ne hm]
-  · simp
+  rw [coe_cosetEquivRight_apply, Finset.sum_eq_single (Fin.last n) (fun m _ hm ↦ by simp [hm])
+    (by simp)]
+  simp
 
-end RightCosetEquiv
+end CosetEquivRight
 
 end InfiniteTypeAHeckeAlgebra
 
