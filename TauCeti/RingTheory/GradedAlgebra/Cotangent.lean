@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.KrullDimension.Field
-public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.KrullDimension.Polynomial
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Nakayama
