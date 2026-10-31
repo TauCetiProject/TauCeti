@@ -118,8 +118,7 @@ theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
 `LSeries f` therefore continues meromorphically to `Re s > r` with at most a simple pole, at
 `s = 1`, of residue `κ`.
 
-This generalizes the argument first given for the Dedekind zeta function in
-`TauCeti.exists_differentiableOn_eq_dedekindZeta_sub`, which is now derived from it. -/
+`TauCeti.exists_differentiableOn_eq_dedekindZeta_sub` is the Dedekind-zeta instance. -/
 theorem exists_differentiableOn_eq_LSeries_sub_div_of_isBigO (f : ℕ → ℂ) (κ : ℂ) {r : ℝ}
     (hr₀ : 0 ≤ r) (hr₁ : r ≤ 1)
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, f k - κ * n) =O[atTop] fun n ↦ (n : ℝ) ^ r)
