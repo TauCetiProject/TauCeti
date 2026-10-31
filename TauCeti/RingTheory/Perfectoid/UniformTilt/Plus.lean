@@ -97,6 +97,7 @@ theorem mem_plusSubring_iff {h : IsRingOfIntegralElements Bplus} {x : uniformTil
     x ∈ plusSubring p h ↔ ∀ n, coeff p B n x ∈ Bplus := Iff.rfl
 
 /-- An element lies in the integral tilt iff its zeroth coordinate `x⁽⁰⁾` lies in `B⁺`. -/
+@[simp]
 theorem mem_plusSubring_iff_coeff_zero {h : IsRingOfIntegralElements Bplus}
     {x : uniformTilt p B} : x ∈ plusSubring p h ↔ coeff p B 0 x ∈ Bplus := by
   refine ⟨fun hx ↦ hx 0, fun hx n ↦ h.mem_of_pow_mem (pow_pos hp.out.pos n) ?_⟩
