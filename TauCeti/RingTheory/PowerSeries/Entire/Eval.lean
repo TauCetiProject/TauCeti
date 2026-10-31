@@ -79,13 +79,8 @@ variable {R A : Type*} [NormedRing R] [SeminormedRing A] [SMulZeroClass R A] [Is
 
 /-- For an entire series `f = ∑ aₙ Xⁿ`, the terms `aₙ • bⁿ` are absolutely summable. -/
 theorem IsEntire.summable_norm_smul_pow (hf : f.IsEntire) (b : A) :
-    Summable fun n ↦ ‖coeff n f • b ^ n‖ := by
-  -- `‖bⁿ‖ ≤ ‖b‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is set aside
-  rw [← summable_nat_add_iff 1]
-  refine ((summable_nat_add_iff 1).mpr (hf.summable_norm_coeff_mul_pow ‖b‖)).of_nonneg_of_le
-    (fun _ ↦ norm_nonneg _) fun n ↦ ?_
-  exact (norm_smul_le _ _).trans
-    (mul_le_mul_of_nonneg_left (norm_pow_le' b n.succ_pos) (norm_nonneg _))
+    Summable fun n ↦ ‖coeff n f • b ^ n‖ :=
+  summable_norm_smul_pow_of_summable_norm_mul_pow (hf.summable_norm_coeff_mul_pow ‖b‖)
 
 /-- For an entire series `f = ∑ aₙ Xⁿ`, the terms `aₙ • bⁿ` are summable in a complete
 seminormed ring with a bounded scalar action. -/
@@ -133,9 +128,8 @@ variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBounde
 
 /-- Evaluation is additive on entire series. -/
 theorem IsEntire.evalAt_add (hf : f.IsEntire) (hg : g.IsEntire) (b : A) :
-    (f + g).evalAt b = f.evalAt b + g.evalAt b := by
-  rw [evalAt_def]
-  exact HasSum.tsum_eq (by simpa [add_smul] using (hf.hasSum_evalAt b).add (hg.hasSum_evalAt b))
+    (f + g).evalAt b = f.evalAt b + g.evalAt b :=
+  evalAt_add_of_summable_norm (hf.summable_norm_smul_pow b) (hg.summable_norm_smul_pow b)
 
 /-- Evaluation commutes with subtraction of entire series. -/
 theorem IsEntire.evalAt_sub (hf : f.IsEntire) (hg : g.IsEntire) (b : A) :
@@ -163,14 +157,8 @@ theorem IsEntire.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
 /-- Evaluation is multiplicative on entire series: this is the Cauchy product formula for the
 absolutely convergent series `∑ aₙ • bⁿ` and `∑ cₙ • bⁿ`. -/
 theorem IsEntire.evalAt_mul (hf : f.IsEntire) (hg : g.IsEntire) (b : A) :
-    (f * g).evalAt b = f.evalAt b * g.evalAt b := by
-  rw [evalAt_def, evalAt_def, evalAt_def,
-    tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm (hf.summable_norm_smul_pow b)
-      (hg.summable_norm_smul_pow b)]
-  refine tsum_congr fun n ↦ ?_
-  rw [coeff_mul, Finset.sum_smul]
-  refine Finset.sum_congr rfl fun p hp ↦ ?_
-  rw [← Finset.mem_antidiagonal.mp hp, pow_add, smul_mul_smul_comm]
+    (f * g).evalAt b = f.evalAt b * g.evalAt b :=
+  evalAt_mul_of_summable_norm (hf.summable_norm_smul_pow b) (hg.summable_norm_smul_pow b)
 
 variable (R) in
 /-- **Evaluation of entire series at `b`** as a ring homomorphism from the subring of entire

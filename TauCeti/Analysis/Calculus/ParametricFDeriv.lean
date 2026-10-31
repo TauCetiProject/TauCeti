@@ -91,27 +91,33 @@ private theorem HasFDerivAt.clm_apply_const {c : E → F' →L[𝕜] G}
 
 end
 
-/-- The spatial Jacobian of a parametric map at `x`, as a function of the parameter. If `F` is not
-differentiable at `(t, x)`, its value at `t` is the junk value `0`. -/
-def spatialFDeriv (F : 𝕜 × E → F') (x : E) (t : 𝕜) : E →L[𝕜] F' :=
-  (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 𝕜 E)
+section Spatial
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+
+/-- The spatial Jacobian of a parametric map at `x`, as a function of a normed-space
+parameter. If `F` is not differentiable at `(t, x)`, its value at `t` is the junk value `0`. -/
+def spatialFDeriv (F : P × E → F') (x : E) (t : P) : E →L[𝕜] F' :=
+  (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 P E)
 
 /-- The spatial derivative as the restriction of the full derivative to the spatial factor. -/
-theorem spatialFDeriv_def (F : 𝕜 × E → F') (x : E) (t : 𝕜) :
-    spatialFDeriv F x t =
-      (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 𝕜 E) :=
+theorem spatialFDeriv_def (F : P × E → F') (x : E) (t : P) :
+    spatialFDeriv (𝕜 := 𝕜) F x t =
+      (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 P E) :=
   (rfl)
 
 /-- The spatial derivative, as a function of the parameter. -/
-theorem spatialFDeriv_eq (F : 𝕜 × E → F') (x : E) :
-    spatialFDeriv F x = fun t =>
-      (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 𝕜 E) :=
+theorem spatialFDeriv_eq (F : P × E → F') (x : E) :
+    spatialFDeriv (𝕜 := 𝕜) F x = fun t =>
+      (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 P E) :=
   (rfl)
 
 @[simp]
-theorem spatialFDeriv_apply (F : 𝕜 × E → F') (x : E) (t : 𝕜) (w : E) :
-    spatialFDeriv F x t w = fderiv 𝕜 F (t, x) (0, w) :=
+theorem spatialFDeriv_apply (F : P × E → F') (x : E) (t : P) (w : E) :
+    spatialFDeriv (𝕜 := 𝕜) F x t w = fderiv 𝕜 F (t, x) (0, w) :=
   (rfl)
+
+end Spatial
 
 /-- The parameter velocity of a parametric map at `(t, x)`. If `F` is not differentiable there,
 this is the junk value `0`. -/
@@ -136,16 +142,18 @@ theorem hasDerivAt_parameterCurve {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     hF.hasFDerivAt.comp_hasDerivAt t (hasFDerivAt_prodMk_left t x).hasDerivAt
 
 /-- The spatial Jacobian is the derivative of the fixed-parameter slice `fun y ↦ F (t, y)`. -/
-theorem hasFDerivAt_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
+theorem hasFDerivAt_timeSlice {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {F : P × E → F'} {t : P} {x : E}
     (hF : DifferentiableAt 𝕜 F (t, x)) :
-    HasFDerivAt (fun y => F (t, y)) (spatialFDeriv F x t) x := by
+    HasFDerivAt (fun y => F (t, y)) (spatialFDeriv (𝕜 := 𝕜) F x t) x := by
   rw [spatialFDeriv_def]
   exact hF.hasFDerivAt.comp x (hasFDerivAt_prodMk_right t x)
 
 /-- The derivative of the fixed-parameter slice `fun y ↦ F (t, y)` is its spatial Jacobian. -/
-theorem fderiv_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
+theorem fderiv_timeSlice {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {F : P × E → F'} {t : P} {x : E}
     (hF : DifferentiableAt 𝕜 F (t, x)) :
-    fderiv 𝕜 (fun y => F (t, y)) x = spatialFDeriv F x t :=
+    fderiv 𝕜 (fun y => F (t, y)) x = spatialFDeriv (𝕜 := 𝕜) F x t :=
   TauCeti.fderiv_slice_right hF
 
 namespace TauCeti
@@ -155,7 +163,8 @@ namespace TauCeti
 Jacobian applied to `v`. -/
 theorem hasDerivAt_comp_prodMk {F : 𝕜 × E → F'} {γ : 𝕜 → E} {v : E} {t : 𝕜}
     (hF : DifferentiableAt 𝕜 F (t, γ t)) (hγ : HasDerivAt γ v t) :
-    HasDerivAt (fun s ↦ F (s, γ s)) (timeFDeriv F t (γ t) + spatialFDeriv F (γ t) t v) t := by
+    HasDerivAt (fun s ↦ F (s, γ s))
+      (timeFDeriv F t (γ t) + spatialFDeriv (𝕜 := 𝕜) F (γ t) t v) t := by
   refine (hF.hasFDerivAt.comp_hasDerivAt t ((hasDerivAt_id t).prodMk hγ)).congr_deriv ?_
   rw [timeFDeriv_apply, spatialFDeriv_apply, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
 
@@ -305,7 +314,7 @@ end ContDiffAt
 /-- At `t`, the spatial Jacobian has derivative the spatial derivative of the parameter velocity. -/
 theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (t, x)) :
-    HasDerivAt (spatialFDeriv F x) (fderiv 𝕜 (timeFDeriv F t) x) t := by
+    HasDerivAt (spatialFDeriv (𝕜 := 𝕜) F x) (fderiv 𝕜 (timeFDeriv F t) x) t := by
   have hSlice := (TauCeti.hasFDerivAt_spatialFDeriv hF).hasDerivAt
   have hcurve := (hF.of_le (le_trans (by norm_num) le_minSmoothness))
     |>.deriv_parameterCurve_eventuallyEq_timeFDeriv
@@ -317,7 +326,7 @@ theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
   have hnear : ∀ᶠ z in 𝓝 (t, x), DifferentiableAt 𝕜 F z :=
     ((hF.of_le (le_trans (by norm_num) le_minSmoothness)).eventually (by simp)).mono fun _ hz ↦
         hz.differentiableAt one_ne_zero
-  have hSpatial := hSlice.congr_of_eventuallyEq (f₁ := spatialFDeriv F x) (by
+  have hSpatial := hSlice.congr_of_eventuallyEq (f₁ := spatialFDeriv (𝕜 := 𝕜) F x) (by
     filter_upwards [(continuousAt_id.prodMk continuousAt_const).eventually hnear] with s hs
     exact (fderiv_timeSlice hs).symm)
   simpa only [flip_apply, hTime.fderiv] using hSpatial
@@ -326,7 +335,7 @@ theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
 applied to `w`, is the spatial derivative of its parameter-velocity field applied to `w`. -/
 theorem deriv_spatialFDeriv_apply {F : 𝕜 × E → F'} {t : 𝕜} {x w : E}
     (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (t, x)) :
-    _root_.deriv (fun s => spatialFDeriv F x s w) t =
+    _root_.deriv (fun s => spatialFDeriv (𝕜 := 𝕜) F x s w) t =
       fderiv 𝕜 (timeFDeriv F t) x w := by
   exact ((hasDerivAt_spatialFDeriv hF).clm_apply_const w).deriv
 
@@ -345,7 +354,7 @@ theorem deriv_deriv_comm {g : 𝕜 × 𝕜 → F'} {t x : 𝕜}
   have hfst : ∀ᶠ s in 𝓝 t, DifferentiableAt 𝕜 g (s, x) :=
     (continuous_id.prodMk continuous_const).continuousAt.eventually hdiff
   have h₁ : (fun s => _root_.deriv (fun r => g (s, r)) x) =ᶠ[𝓝 t]
-      fun s => spatialFDeriv g x s 1 := by
+      fun s => spatialFDeriv (𝕜 := 𝕜) g x s 1 := by
     filter_upwards [hfst] with s hs
     rw [← fderiv_timeSlice hs, fderiv_apply_one_eq_deriv]
   have h₂ := (hg.of_le (le_trans (by norm_num) le_minSmoothness))

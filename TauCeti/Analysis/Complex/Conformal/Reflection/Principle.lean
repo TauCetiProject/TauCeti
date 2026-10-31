@@ -15,8 +15,7 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 /-!
 # The Schwarz reflection principle across the real axis
 
-This file proves the summit of the conformal-mapping roadmap's Schwarz-reflection layer (L4 in
-`ConformalMapping/README.md`, the `sorry`-goal stated in `ConformalMapping/Suggested.lean`): on a
+This file proves the Schwarz reflection principle across the real axis: on a
 conjugation-symmetric open set `Ω`, a function that is continuous on the closed upper part,
 holomorphic on the open upper part, and real on `Ω ∩ ℝ` extends *holomorphically* across the real
 axis. The extension is the explicit witness `schwarzReflection f` from `Reflection/Basic.lean`,
@@ -41,11 +40,6 @@ the real axis, holomorphic above it and vanishing on it vanishes identically,
 `TauCeti.eqOn_zero_im_preimage_uIcc_of_zero_on_real_axis`, for strips on either side of the
 axis, determines a bounded holomorphic function on a strip by its values on one edge, as for
 the KMS functions of C⋆-algebra dynamics.
-
-As with the rest of the L0–L3/L4 conformal-mapping material, this is coordinated with the upstream
-Mathlib Riemann-mapping effort leanprover-community/mathlib4#33505; L4 (reflection) is not part of
-that draft, so this is genuinely new Lean formalization, but any shared foundational API should be
-refactored to Mathlib's once it lands.
 -/
 
 public section
@@ -75,11 +69,11 @@ theorem differentiableOn_schwarzReflection_of_symmetric {Ω : Set ℂ}
     (continuousOn_schwarzReflection_of_symmetric hΩ hcont hreal)
     (differentiableOn_schwarzReflection_inter_im_ne_zero_of_symmetric hΩ hholo)
 
-/-- **Schwarz reflection principle**, packaged existential form (the L4 milestone of
-`ConformalMapping/Suggested.lean`). On a conjugation-symmetric open `Ω`, a function continuous on
-the closed upper part, holomorphic on the open upper part, and real on the real axis extends to a
-function holomorphic on all of `Ω` that agrees with `f` on the closed upper part and satisfies the
-reflection symmetry `F (conj z) = conj (F z)`. The explicit witness is `schwarzReflection f`. -/
+/-- **Schwarz reflection principle**, packaged existential form. On a conjugation-symmetric open
+`Ω`, a function continuous on the closed upper part, holomorphic on the open upper part, and real
+on the real axis extends to a function holomorphic on all of `Ω` that agrees with `f` on the closed
+upper part and satisfies the reflection symmetry `F (conj z) = conj (F z)`. The explicit witness is
+`schwarzReflection f`. -/
 theorem exists_differentiableOn_eqOn_conj_of_symmetric {Ω : Set ℂ}
     (hΩopen : IsOpen Ω) (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
     (hcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))

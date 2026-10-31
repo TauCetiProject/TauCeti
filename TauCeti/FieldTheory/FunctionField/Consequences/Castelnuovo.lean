@@ -275,10 +275,7 @@ private theorem genus_le_of_forall_degree_eq_one (hF : IsFunctionField k F)
   obtain ⟨s, hs, hsP⟩ := Place.exists_finset_card_eq_forall_exists_restrict_eq_valuation_sub_lt_one
     (k' := k) hF₁ P₁ hP₁ y hmin hsep hsplit
   have hsdeg : s.card = Module.finrank F₁ F := by
-    rw [hs, ← _root_.Polynomial.natDegree_map_eq_of_injective
-      (IsFractionRing.injective P₁.integers F₁), hmin,
-      ← IntermediateField.adjoin.finrank (IsIntegral.of_finite F₁ y), hy,
-      IntermediateField.finrank_top']
+    rw [hs, Place.natDegree_eq_finrank_of_map_eq_minpoly hy hmin]
   have : Nonempty (Place k F) := (Place.infinite hF).nonempty
   choose! R hR hRv using hsP
   -- The places over `P₁` restrict to rational places of `F₂`.
