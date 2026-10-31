@@ -167,9 +167,8 @@ instance subsingleton_H'_succ_of_projective [HasExt.{w'} (Sheaf J AddCommGrpCat.
     Subsingleton (F.H' (n + 1) X) :=
   -- Mathlib's `H'` is `Ext` out of the sheafified free abelian presheaf on `yoneda.obj X`,
   -- which is definitionally the free abelian sheaf on the representable sheaf `J.yoneda.obj X`.
-  subsingleton_of_forall_eq 0 fun x ↦
-    Abelian.Ext.eq_zero_of_projective (P := (composeAndSheafify J AddCommGrpCat.free).obj
-      (J.yoneda.obj X)) x
+  Abelian.Ext.subsingleton_of_projective
+    ((composeAndSheafify J AddCommGrpCat.free).obj (J.yoneda.obj X)) F n
 
 end AddCommGrp
 
