@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Code
+public import Mathlib.Algebra.Notation.Indicator
 
 /-!
 # Bounded evaluation of oracle programs, with use
@@ -30,6 +31,7 @@ the program relative to every oracle extending those answers.
 * `TauCeti.Oracle.Single.Code.Halt`: the output and use of a successful run.
 * `TauCeti.Oracle.Single.Code.evaln`: bounded evaluation against oracle answers.
 * `TauCeti.Oracle.Single.Code.stageUse`: the use of a run, or `0` when it fails.
+* `TauCeti.Oracle.Single.Code.setAnswers`: the answers of the characteristic function of a set.
 
 ## Main results
 
@@ -330,6 +332,21 @@ theorem stageUse_le {c : Code} : stageUse σ k c n ≤ k := by
   cases h : evaln σ k c n with
   | none => simp [stageUse_eq_zero_of_evaln_eq_none h]
   | some d => exact (stageUse_eq_of_evaln_eq_some h).trans_le (evaln_use_le h)
+
+/-- The oracle answers of a set `A`: the values of its characteristic function, supplied at every
+address. -/
+noncomputable def setAnswers (A : Set ℕ) : ℕ → Option ℕ :=
+  fun z => some (A.indicator 1 z)
+
+@[simp]
+theorem setAnswers_apply (A : Set ℕ) (z : ℕ) : setAnswers A z = some (A.indicator 1 z) := by
+  simp [setAnswers]
+
+/-- The answers of two sets agree on `S` exactly when the sets have the same members in `S`. -/
+theorem eqOn_setAnswers_iff {A B S : Set ℕ} :
+    Set.EqOn (setAnswers A) (setAnswers B) S ↔ ∀ z ∈ S, (z ∈ A ↔ z ∈ B) := by
+  refine forall₂_congr fun z _ => ?_
+  by_cases hA : z ∈ A <;> by_cases hB : z ∈ B <;> simp [hA, hB]
 
 /-- **The use principle.** A successful run against the answers `σ` succeeds with the same output
 and use against any answers `τ` agreeing with `σ` below its use. -/

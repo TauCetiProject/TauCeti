@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Evaln
-public import TauCeti.Computability.Priority.Injury.Basic
-public import Mathlib.Algebra.Notation.Indicator
 
 /-!
 # Length of agreement and its restraint
@@ -67,10 +65,6 @@ computation at a larger argument.
   `TauCeti.Oracle.Single.Code.agreementLength_le_of_forall_Ico`,
   `TauCeti.Oracle.Single.Code.agreementRestraint_le_of_forall_Ico`: the same along an interval of
   stages.
-* `TauCeti.Oracle.Single.Code.evaln_succ_eq_some_of_injuriesAt_eq_empty`,
-  `TauCeti.Oracle.Single.Code.agreesAt_succ_of_injuriesAt_eq_empty`: for a stage enumeration, a
-  transition that does not injure the agreement restraint preserves the computations up to and
-  including the length of agreement, and the agreements where the target bit does not change.
 
 ## References
 
@@ -153,7 +147,7 @@ def agreementRestraint (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (g : ℕ �
 length of agreement is. -/
 theorem agreementRestraint_le_iff {b : ℕ} :
     agreementRestraint σ k c g ≤ b ↔ ∀ x ≤ agreementLength σ k c g, stageUse σ k c x ≤ b := by
-  simp [agreementRestraint]
+  simp [agreementRestraint, Nat.lt_succ_iff]
 
 /-- Every stage use up to and including the length of agreement is at most the agreement
 restraint. -/
@@ -267,59 +261,5 @@ theorem evaln_eq_some_of_forall_Ico (hst : s ≤ t)
       (hx.trans (agreementLength_le_of_forall_Ico hst h')) (ih h')
 
 end Interval
-
-/-! ### Stage enumerations and injury -/
-
-section Stage
-
-open TauCeti.Priority
-
-variable {A C : ℕ → Finset ℕ} {r : ℕ → ℕ → Option ℕ} {e s b : ℕ}
-
-/-- If nothing injures requirement `e`, with active restraint `b`, in the transition to stage
-`s + 1`, and `A s ⊆ A (s + 1)`, then the oracle answers of `A s` and `A (s + 1)` agree at and
-below `b`. -/
-theorem eqOn_indicator_of_injuriesAt_eq_empty (hA : A s ⊆ A (s + 1)) (hr : r e s = some b)
-    (hI : injuriesAt A r e s = ∅) :
-    EqOn (fun z => some ((A s : Set ℕ).indicator (1 : ℕ → ℕ) z))
-      (fun z => some ((A (s + 1) : Set ℕ).indicator 1 z)) (Iic b) := fun z hz => by
-  -- an entry at `z ≤ b` would injure `e`
-  have hmem : z ∈ A s ↔ z ∈ A (s + 1) := ⟨@hA z, fun hzs => by
-    by_contra hzn
-    simpa [hI] using mem_injuriesAt.2 ⟨hzs, hzn, b, hr, hz⟩⟩
-  simp only [indicator_apply, Finset.mem_coe, hmem]
-
-/-- **One-step preservation of computations.** Let requirement `e` hold, at stage `s`, the
-agreement restraint of `c` against the answers of `A s` with fuel `s` and the target `C s`. If no
-number injures `e` in the transition to stage `s + 1`, and `A s ⊆ A (s + 1)`, then every successful
-stage-`s` run at an argument up to and including the length of agreement is a successful
-stage-`s + 1` run, with the same output and use. The target `C` may change. -/
-theorem evaln_succ_eq_some_of_injuriesAt_eq_empty (hA : A s ⊆ A (s + 1))
-    (hr : r e s = some (agreementRestraint (fun z => some ((A s : Set ℕ).indicator 1 z)) s c
-      ((C s : Set ℕ).indicator 1)))
-    (hI : injuriesAt A r e s = ∅)
-    (hx : x ≤ agreementLength (fun z => some ((A s : Set ℕ).indicator 1 z)) s c
-      ((C s : Set ℕ).indicator 1))
-    (hd : evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) s c x = some d) :
-    evaln (fun z => some ((A (s + 1) : Set ℕ).indicator 1 z)) (s + 1) c x = some d :=
-  evaln_eq_some_of_eqOn_agreementRestraint s.le_succ
-    (eqOn_indicator_of_injuriesAt_eq_empty hA hr hI) hx hd
-
-/-- **One-step preservation of agreement.** Under the hypotheses of
-`evaln_succ_eq_some_of_injuriesAt_eq_empty`, agreement at an argument below the length of agreement
-persists to stage `s + 1` when membership of that argument in `C` does not change. -/
-theorem agreesAt_succ_of_injuriesAt_eq_empty (hA : A s ⊆ A (s + 1))
-    (hr : r e s = some (agreementRestraint (fun z => some ((A s : Set ℕ).indicator 1 z)) s c
-      ((C s : Set ℕ).indicator 1)))
-    (hI : injuriesAt A r e s = ∅)
-    (hx : x < agreementLength (fun z => some ((A s : Set ℕ).indicator 1 z)) s c
-      ((C s : Set ℕ).indicator 1))
-    (hC : x ∈ C (s + 1) ↔ x ∈ C s) :
-    AgreesAt (fun z => some ((A (s + 1) : Set ℕ).indicator 1 z)) (s + 1) c
-      ((C (s + 1) : Set ℕ).indicator 1) x :=
-  agreesAt_of_eqOn_agreementRestraint s.le_succ (eqOn_indicator_of_injuriesAt_eq_empty hA hr hI)
-    hx (by simp [indicator_apply, hC])
-
-end Stage
 
 end TauCeti.Oracle.Single.Code
