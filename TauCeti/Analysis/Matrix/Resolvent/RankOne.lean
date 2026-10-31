@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
-public import TauCeti.LinearAlgebra.Matrix.RankOne
+public import TauCeti.LinearAlgebra.Matrix.SchurComplement
 
 /-!
 # Rank-one updates of Hermitian resolvents
@@ -50,11 +50,11 @@ theorem one_add_mul_dotProduct_inv_sub_smul_one_ne_zero (c : ℝ) (u : n → �
     simp [IsHermitian, conjTranspose_vecMulVec]
   have hB : (A + (c : 𝕜) • vecMulVec u (star u)).IsHermitian :=
     hA.add (hu.smul (by simp [IsSelfAdjoint]))
-  have hu := (isUnit_add_vecMulVec_iff (A - z • 1)
+  have hden := (isUnit_add_vecMulVec_iff (A - z • 1)
     (hA.isUnit_sub_smul_one_of_im_ne_zero hz) ((c : 𝕜) • u) (star u)).1
     (by simpa [smul_vecMulVec, add_sub_right_comm] using
       hB.isUnit_sub_smul_one_of_im_ne_zero hz)
-  simpa only [mulVec_smul, dotProduct_smul, smul_eq_mul] using hu.ne_zero
+  simpa only [mulVec_smul, dotProduct_smul, smul_eq_mul] using hden.ne_zero
 
 /-- **Rank-one resolvent identity.** A real rank-one perturbation changes the resolvent by an
 explicit outer product. Both shifted matrices are automatically invertible at non-real `z`. -/
@@ -63,13 +63,20 @@ theorem inv_add_smul_vecMulVec_sub_smul_one (c : ℝ) (u : n → 𝕜) {z : 𝕜
     (A + (c : 𝕜) • vecMulVec u (star u) - z • 1)⁻¹ = (A - z • 1)⁻¹ -
       ((c : 𝕜) / (1 + (c : 𝕜) * (star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u)))) •
         vecMulVec ((A - z • 1)⁻¹ *ᵥ u) (star u ᵥ* (A - z • 1)⁻¹) := by
+  have hden : 1 + star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ ((c : 𝕜) • u)) =
+      1 + (c : 𝕜) * (star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u)) := by
+    simp only [mulVec_smul, dotProduct_smul, smul_eq_mul]
   have hd : IsUnit (1 + star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ ((c : 𝕜) • u))) := by
-    simpa only [mulVec_smul, dotProduct_smul, smul_eq_mul] using
-      isUnit_iff_ne_zero.mpr (hA.one_add_mul_dotProduct_inv_sub_smul_one_ne_zero c u hz)
+    rw [hden]
+    exact isUnit_iff_ne_zero.mpr
+      (hA.one_add_mul_dotProduct_inv_sub_smul_one_ne_zero c u hz)
   have h := inv_add_vecMulVec (A - z • 1)
     (hA.isUnit_sub_smul_one_of_im_ne_zero hz) ((c : 𝕜) • u) (star u) hd
-  simpa only [smul_vecMulVec, add_sub_right_comm, mulVec_smul, dotProduct_smul,
-    smul_eq_mul, Ring.inverse_eq_inv', smul_smul, div_eq_mul_inv, mul_comm] using h
+  rw [hden, smul_vecMulVec, mulVec_smul, smul_vecMulVec,
+    Ring.inverse_eq_inv', smul_smul] at h
+  rw [add_sub_right_comm, h, div_eq_mul_inv]
+  congr 2
+  exact mul_comm _ _
 
 /-- Entrywise form of the real rank-one resolvent update. -/
 theorem inv_add_smul_vecMulVec_sub_smul_one_apply (c : ℝ) (u : n → 𝕜) {z : 𝕜}
