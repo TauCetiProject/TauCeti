@@ -32,8 +32,6 @@ transformations act on `ℂℙⁿ` by biholomorphisms.
 
 ## Main declarations
 
-* `Projectivization.affineChart_map_affineChart_symm`: the local expression of
-  `Projectivization.map f` in standard affine charts.
 * `Projectivization.contMDiff_map`: the map induced by an injective linear map is `C^r` for every
   `r`.
 * `Projectivization.mapDiffeomorph`: the `C^r` diffeomorphism induced by a linear equivalence.
@@ -53,33 +51,6 @@ open scoped ContDiff Manifold LinearAlgebra.Projectivization MatrixGroups
 namespace Projectivization
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {m n : ℕ}
-
-/-! ### The local expression in affine charts -/
-
-section Chart
-
-variable (f : (Fin (m + 1) → 𝕜) →ₗ[𝕜] Fin (n + 1) → 𝕜) (hf : Function.Injective f)
-
-/-- The map of projective spaces induced by an injective linear map `f`, read in the standard
-affine charts at `i` and `j`: it sends `z` to the homogeneous ratios of `f w` with respect to its
-`j`-th coordinate, where `w = Fin.insertNth i 1 z`. Outside the domain of the chart at `j` both
-sides are `0`. -/
-theorem affineChart_map_affineChart_symm (i : Fin (m + 1)) (j : Fin (n + 1)) (z : Fin m → 𝕜) :
-    affineChart j (map f hf ((affineChart i).symm z)) = fun k ↦
-      f (Fin.insertNth (α := fun _ ↦ 𝕜) i 1 z) (j.succAbove k) /
-        f (Fin.insertNth (α := fun _ ↦ 𝕜) i 1 z) j := by
-  simp [map_mk]
-
-/-- The image of the point `[Fin.insertNth i 1 z]` under the map of projective spaces induced by
-`f` lies in the standard affine open at `j` exactly when the `j`-th coordinate of
-`f (Fin.insertNth i 1 z)` is nonzero. -/
-theorem map_affineChart_symm_mem_affineOpen_iff (i : Fin (m + 1)) (j : Fin (n + 1))
-    (z : Fin m → 𝕜) :
-    map f hf ((affineChart i).symm z) ∈ affineOpen j ↔
-      f (Fin.insertNth (α := fun _ ↦ 𝕜) i 1 z) j ≠ 0 := by
-  simp [map_mk, mk_mem_affineOpen_iff]
-
-end Chart
 
 /-! ### Analyticity -/
 
