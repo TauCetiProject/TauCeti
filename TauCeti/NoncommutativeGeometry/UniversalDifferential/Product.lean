@@ -446,6 +446,11 @@ instance gRing : DirectSum.GRing (UniversalForms k A) where
   intCast_negSucc_ofNat n := by
     simp only [Int.cast_negSucc, word_def, TensorProduct.neg_tmul]
 
+/-- The graded semiring structure of `TauCeti.UniversalForms.gRing`. Instance search assembles the
+addition of `⨁ n, Ωⁿ` from the additive monoids of the tensor products `Ωⁿ`, and it does not
+recover this structure from `gRing` compatibly with that addition, so it is registered directly. -/
+instance gSemiring : DirectSum.GSemiring (UniversalForms k A) := DirectSum.GRing.toGSemiring
+
 /-- Left multiplication by the zero-form `r • 1` is the scalar action of `r`, up to reindexing
 the degree `0 + n = n`. -/
 theorem cast_smul_one_mul {n : ℕ} (r : k) (ω : UniversalForms k A n) :
