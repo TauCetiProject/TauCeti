@@ -34,6 +34,7 @@ transforms on `Lᵖ([0, 1])`.
 ## Main definitions and statements
 
 * `TauCeti.burkholderPhi p x y`: the function `Φ_p(x, y)`.
+* `TauCeti.burkholderPhi_mul_mul`: positive homogeneity of degree `p`.
 * `TauCeti.mul_burkholderPhi_le`: the majorization estimate.
 * `TauCeti.convexOn_burkholderPhi_abs_add`: convexity of `t ↦ Φ_p(|x + t|, |y + ε t|)`.
 * `TauCeti.two_mul_burkholderPhi_abs_le`: the midpoint inequality.
@@ -61,7 +62,22 @@ noncomputable def burkholderPhi (p x y : ℝ) : ℝ := (x + y) ^ (p - 1) * ((p -
 theorem burkholderPhi_def (p x y : ℝ) :
     burkholderPhi p x y = (x + y) ^ (p - 1) * ((p - 1) * x - y) := (rfl)
 
+/-- Burkholder's function vanishes at the origin, for every exponent `p`. -/
+@[simp]
+theorem burkholderPhi_zero_zero (p : ℝ) : burkholderPhi p 0 0 = 0 := by
+  simp [burkholderPhi_def]
+
 variable {p : ℝ}
+
+/-- Burkholder's function is positively homogeneous of degree `p`:
+`Φ_p(c x, c y) = c ^ p Φ_p(x, y)` for `c ≥ 0` and `x + y ≥ 0`. -/
+theorem burkholderPhi_mul_mul (hp : p ≠ 0) {c x y : ℝ} (hc : 0 ≤ c) (hxy : 0 ≤ x + y) :
+    burkholderPhi p (c * x) (c * y) = c ^ p * burkholderPhi p x y := by
+  have hpow : c ^ p = c ^ (p - 1) * c := by
+    rw [← Real.rpow_add_one' hc (by simpa using hp)]
+    ring_nf
+  rw [burkholderPhi_def, burkholderPhi_def, ← mul_add, Real.mul_rpow hc hxy, hpow]
+  ring
 
 /-! ### The majorization estimate -/
 
