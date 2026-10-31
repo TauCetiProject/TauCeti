@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Content
 public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+public import TauCeti.MeasureTheory.Measure.ContentOfOpens
 import Mathlib.MeasureTheory.Function.Floor
 
 /-!
@@ -31,9 +31,9 @@ these `Distribution.massMeasure` is the zero measure by convention.
 The construction follows the proof of the Riesz representation theorem. The local mass is
 countably subadditive on open sets, by a smooth partition of unity, and additive on disjoint
 sets, by changing the signs of the tests. Its outer regularization on compact sets is therefore a
-`MeasureTheory.Content`, whose induced measure is `‖T‖`. The domination is obtained by cutting the
-support of `φ` into the level sets of `‖φ‖` and covering them by open sets of almost the same
-measure.
+`MeasureTheory.Content` (`TauCeti.contentOfOpens`), whose induced measure is `‖T‖`. The
+domination is obtained by cutting the support of `φ` into the level sets of `‖φ‖` and covering
+them by open sets of almost the same measure.
 
 ## Main declarations
 
@@ -60,7 +60,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory TopologicalSpace Filter Set Function
+open MeasureTheory TopologicalSpace Filter Set Function TauCeti
 open scoped BoundedContinuousFunction ENNReal NNReal Distributions Topology
 
 namespace Distribution
@@ -115,78 +115,20 @@ end LocalMass
 
 section Content
 
-/-- The outer regularization of the local mass: the infimum of the local masses on the open sets
-containing `A`. -/
-private def outerLocalMass (f : 𝓓^{n}(Ω, F) → ℝ) (A : Set E) : ℝ≥0∞ :=
-  ⨅ U : {U : Set E // IsOpen U ∧ A ⊆ U}, localMass f U
-
-omit [FiniteDimensional ℝ E] in
-private theorem outerLocalMass_le (f : 𝓓^{n}(Ω, F) → ℝ) {A U : Set E} (hU : IsOpen U)
-    (hAU : A ⊆ U) : outerLocalMass f A ≤ localMass f U :=
-  iInf_le_of_le ⟨U, hU, hAU⟩ le_rfl
-
-omit [FiniteDimensional ℝ E] in
-private theorem le_outerLocalMass (f : 𝓓^{n}(Ω, F) → ℝ) {A : Set E} {c : ℝ≥0∞}
-    (h : ∀ U, IsOpen U → A ⊆ U → c ≤ localMass f U) : c ≤ outerLocalMass f A :=
-  le_iInf fun U => h U U.2.1 U.2.2
-
-omit [FiniteDimensional ℝ E] in
-private theorem outerLocalMass_mono (f : 𝓓^{n}(Ω, F) → ℝ) {A B : Set E} (hAB : A ⊆ B) :
-    outerLocalMass f A ≤ outerLocalMass f B :=
-  le_outerLocalMass f fun _ hU hBU => outerLocalMass_le f hU (hAB.trans hBU)
-
-/-- A compact subset of `Ω` has finite outer local mass. -/
-private theorem outerLocalMass_ne_top {T : 𝓕} (hT : HasLocallyFiniteMass T) {K : Set E}
-    (hK : IsCompact K) (hKΩ : K ⊆ Ω) : outerLocalMass T K ≠ ⊤ := by
+/-- A compact subset of `Ω` has an open neighbourhood of finite local mass. -/
+private theorem exists_localMass_ne_top {T : 𝓕} (hT : HasLocallyFiniteMass T) {K : Set E}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ U : Opens E, K ⊆ (U : Set E) ∧ localMass T U ≠ ⊤ := by
   obtain ⟨U, hU, hKU, hclΩ, hcl⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
-  exact ne_top_of_le_ne_top ((hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT _ hcl hclΩ)
-    ((outerLocalMass_le T hU hKU).trans (localMass_mono subset_closure))
+  exact ⟨⟨U, hU⟩, hKU, ne_top_of_le_ne_top
+    ((hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT _ hcl hclΩ) (localMass_mono subset_closure)⟩
 
-private theorem outerLocalMass_union_le (T : 𝓕) (A B : Set E) :
-    outerLocalMass T (A ∪ B) ≤ outerLocalMass T A + outerLocalMass T B :=
-  ENNReal.le_iInf_add_iInf fun U U' => (outerLocalMass_le T (U.2.1.union U'.2.1)
-    (union_subset_union U.2.2 U'.2.2)).trans (localMass_union_le T U.2.1 U'.2.1)
-
-private theorem outerLocalMass_union_of_isCompact (T : 𝓕) {K K' : Set E} (hK : IsCompact K)
-    (hK' : IsCompact K') (h : Disjoint K K') :
-    outerLocalMass T (K ∪ K') = outerLocalMass T K + outerLocalMass T K' := by
-  refine le_antisymm (outerLocalMass_union_le T K K') (le_outerLocalMass T fun U hU hKU => ?_)
-  -- Separate `K` and `K'` by disjoint open sets and cut `U` along them.
-  obtain ⟨W, W', hW, hW', hKW, hKW', hWW'⟩ := SeparatedNhds.of_isCompact_isCompact hK hK' h
-  calc outerLocalMass T K + outerLocalMass T K'
-      ≤ localMass T (U ∩ W) + localMass T (U ∩ W') :=
-        add_le_add (outerLocalMass_le T (hU.inter hW) (subset_inter (subset_union_left.trans hKU)
-          hKW)) (outerLocalMass_le T (hU.inter hW') (subset_inter
-            (subset_union_right.trans hKU) hKW'))
-    _ ≤ localMass T (U ∩ W ∪ U ∩ W') :=
-        localMass_add_localMass_le T (hWW'.mono inter_subset_right inter_subset_right)
-    _ ≤ localMass T U := localMass_mono (union_subset inter_subset_left inter_subset_left)
-
-private theorem outerLocalMass_image_ne_top {T : 𝓕} (hT : HasLocallyFiniteMass T)
-    (K : Compacts Ω) : outerLocalMass T ((↑) '' (K : Set Ω)) ≠ ⊤ :=
-  outerLocalMass_ne_top hT (K.isCompact.image continuous_subtype_val)
-    (Subtype.coe_image_subset _ _)
-
-/-- The content on the compact subsets of `Ω` whose induced measure is the mass measure. -/
-private def massContent {T : 𝓕} (hT : HasLocallyFiniteMass T) : Content Ω where
-  toFun K := (outerLocalMass T ((↑) '' (K : Set Ω))).toNNReal
-  mono' K K' h := ENNReal.toNNReal_mono (outerLocalMass_image_ne_top hT K')
-    (outerLocalMass_mono T (image_mono h))
-  sup_disjoint' K K' h _ _ := by
-    rw [Compacts.coe_sup, image_union, outerLocalMass_union_of_isCompact T
-      (K.isCompact.image continuous_subtype_val) (K'.isCompact.image continuous_subtype_val)
-      ((disjoint_image_iff Subtype.val_injective).2 h),
-      ENNReal.toNNReal_add (outerLocalMass_image_ne_top hT K) (outerLocalMass_image_ne_top hT K')]
-  sup_le' K K' := by
-    rw [Compacts.coe_sup, image_union,
-      ← ENNReal.toNNReal_add (outerLocalMass_image_ne_top hT K) (outerLocalMass_image_ne_top hT K')]
-    exact ENNReal.toNNReal_mono (ENNReal.add_ne_top.2
-      ⟨outerLocalMass_image_ne_top hT K, outerLocalMass_image_ne_top hT K'⟩)
-      (outerLocalMass_union_le T _ _)
-
-private theorem massContent_apply {T : 𝓕} (hT : HasLocallyFiniteMass T) (K : Compacts Ω) :
-    massContent hT K = outerLocalMass T ((↑) '' (K : Set Ω)) :=
-  ENNReal.coe_toNNReal (outerLocalMass_image_ne_top hT K)
+/-- The content on the compact subsets of `Ω` whose induced measure is the mass measure: the
+outer regularization of the local mass. -/
+private def massContent {T : 𝓕} (hT : HasLocallyFiniteMass T) : Content Ω :=
+  contentOfOpens (m := fun U => localMass T U) (fun _ _ h => localMass_mono h)
+    (fun U V _ _ => localMass_union_le T U.isOpen V.isOpen)
+    (fun _ _ _ _ h => localMass_add_localMass_le T (Opens.coe_disjoint.2 h))
+    fun _ hK hKΩ => exists_localMass_ne_top hT hK hKΩ
 
 end Content
 
@@ -265,21 +207,17 @@ instance : (massMeasure T).Regular := by
 the local mass of `T` on `U`. -/
 theorem massMeasure_preimage_coe (hT : HasLocallyFiniteMass T) {U : Set E} (hU : IsOpen U) :
     massMeasure T ((↑) ⁻¹' U) = localMass T U := by
-  have hU' : IsOpen ((↑) ⁻¹' U : Set Ω) := hU.preimage continuous_subtype_val
-  rw [massMeasure_eq hT, Content.measure_apply _ hU'.measurableSet,
-    Content.outerMeasure_of_isOpen _ _ hU', Content.innerContent]
-  refine le_antisymm (iSup₂_le fun K hK => ?_) (localMass_le_iff.2 fun φ hφU hφ => ?_)
-  · rw [massContent_apply]
-    exact outerLocalMass_le T hU ((image_mono hK).trans (image_preimage_subset _ _))
+  rw [massMeasure_eq hT]
+  refine contentOfOpens_measure_preimage_coe (U := ⟨U, hU⟩) _ _ _ _
+    (localMass_le_iff.2 fun φ hφU hφ => ?_)
   -- The support of `φ` is a compact subset of `Ω ∩ U`.
   have hK : ((↑) '' ((↑) ⁻¹' tsupport φ : Set Ω) : Set E) = tsupport φ := by
     refine image_preimage_eq_of_subset ?_
     simpa using φ.tsupport_subset
   let K : Compacts Ω := ⟨(↑) ⁻¹' tsupport φ, Subtype.isCompact_iff.2 <| by
     rw [hK]; exact φ.hasCompactSupport.isCompact⟩
-  refine le_iSup₂_of_le K (preimage_mono hφU) ?_
-  rw [massContent_apply]
-  exact le_outerLocalMass T fun V _ hφV => enorm_le_localMass (hK.symm.subset.trans hφV) hφ
+  exact le_iSup₂_of_le K (preimage_mono hφU)
+    (le_opensInf fun V hφV _ => enorm_le_localMass (hK.symm.subset.trans hφV) hφ)
 
 /-- The total mass of the mass measure is the mass. -/
 theorem massMeasure_univ (hT : HasLocallyFiniteMass T) : massMeasure T univ = mass T := by
