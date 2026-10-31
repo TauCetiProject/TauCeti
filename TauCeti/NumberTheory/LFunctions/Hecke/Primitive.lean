@@ -280,12 +280,11 @@ theorem LSeries_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) {s : �
       LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction) s *
         χ.eulerCorrection 𝔫 s := by
   have hsum := summable_idealTerm_of_unitary_of_one_lt_re χ.toUnitaryIdealWeight hs
-  rw [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val] at hsum
-  rw [toUnitaryIdealWeight_induced, UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
-    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrictAway,
-    χ.toUnitaryIdealWeight.1.LSeries_restrictAway 𝔫.support hsum,
-    eulerCorrection_eq_prod_support, val_toUnitaryIdealWeight]
-  simp only [div_eq_mul_inv, Complex.cpow_neg]
+  -- Pass from unitary weights to the underlying multiplicative weight of `χ`.
+  simp only [toUnitaryIdealWeight_induced, UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
+    UnitaryIdealWeight.val_restrictAway, val_toUnitaryIdealWeight] at hsum ⊢
+  rw [χ.toMultiplicativeIdealWeight.LSeries_restrictAway 𝔫.support hsum]
+  simp only [eulerCorrection_eq_prod_support, div_eq_mul_inv, Complex.cpow_neg]
 
 /-- **Presented and primitive series.** On `Re s > 1`, the `L`-series of a ray class character is
 the `L`-series of its primitive character times the Euler factors at the primes dividing the
