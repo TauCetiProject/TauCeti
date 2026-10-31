@@ -334,13 +334,21 @@ variable (A L) in
 factor, `g • (a ⊗ x) = a ⊗ g • x`, by `A`-algebra automorphisms. This is not an instance: a group
 acting on both factors, such as the automorphism group of `L` on `L ⊗[K] L`, would otherwise act
 in two different ways. -/
-noncomputable abbrev rightMulSemiringAction (G : Type*) [Group G] [MulSemiringAction G L]
+@[instance_reducible]
+noncomputable def rightMulSemiringAction (G : Type*) [Group G] [MulSemiringAction G L]
     [SMulCommClass G K L] : MulSemiringAction G (A ⊗[K] L) :=
   MulSemiringAction.compHom _ ((baseChangeAutHom A L).comp (MulSemiringAction.toAlgAut G K L))
 
 variable {G : Type*} [Group G] [MulSemiringAction G L] [SMulCommClass G K L]
 
+/-- The right-factor action is the base change of the action of `g` on `L`. -/
+theorem rightMulSemiringAction_smul_def (g : G) (x : A ⊗[K] L) :
+    letI := rightMulSemiringAction (K := K) A L G
+    g • x = baseChangeAutHom A L (MulSemiringAction.toAlgAut G K L g) x :=
+  (rfl)
+
 /-- The right-factor action on a pure tensor. -/
+@[simp]
 theorem rightMulSemiringAction_smul_tmul (g : G) (a : A) (x : L) :
     letI := rightMulSemiringAction (K := K) A L G
     g • (a ⊗ₜ[K] x) = a ⊗ₜ (g • x) :=
@@ -352,7 +360,9 @@ theorem smulCommClass_rightMulSemiringAction :
     letI := rightMulSemiringAction (K := K) A L G
     SMulCommClass G A (A ⊗[K] L) :=
   letI := rightMulSemiringAction (K := K) A L G
-  ⟨fun g a x ↦ map_smul (baseChangeAutHom A L (MulSemiringAction.toAlgAut G K L g)) a x⟩
+  ⟨fun g a x ↦ by
+    simp only [rightMulSemiringAction_smul_def]
+    exact map_smul (baseChangeAutHom A L (MulSemiringAction.toAlgAut G K L g)) a x⟩
 
 end AutHom
 
