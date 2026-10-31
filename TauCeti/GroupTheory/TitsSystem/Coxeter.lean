@@ -109,6 +109,7 @@ theorem IsIrreducible.of_mulEquiv {G' : Type*} [Group G'] {T' : TitsSystem G'}
 
 /-- A pulled-back Tits system has an irreducible Weyl group exactly when the original one does,
 since the two Weyl groups and their simple reflections are identified. -/
+@[simp]
 theorem isIrreducible_comap_iff {H : Type*} [Group H] (f : H →* G)
     (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g) :
     (T.comap f hf).IsIrreducible ↔ T.IsIrreducible :=
