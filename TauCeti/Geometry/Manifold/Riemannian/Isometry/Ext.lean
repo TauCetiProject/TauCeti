@@ -14,7 +14,8 @@ import TauCeti.Topology.FiberBundle.Separation
 # Isometries are determined by their first-order data
 
 Two Riemannian isometries agreeing in value and differential at a point agree on a
-neighbourhood of that point. On a connected source they agree everywhere. Neither
+neighbourhood of that point and on its whole connected component. On a connected source
+they agree everywhere. Neither
 completeness nor compactness is needed.
 
 This uniqueness theorem allows an isometry of a homogeneous space to be identified with
@@ -61,10 +62,11 @@ theorem eventuallyEq_of_mfderiv_eq (Φ Ψ : RiemannianIsometry I J M N) {p : M}
   obtain ⟨v, -, rfl⟩ := hq
   rw [← Φ.riemannianExp_mfderiv, ← Ψ.riemannianExp_mfderiv, hp, hd]
 
-/-- Riemannian isometries of a connected manifold are determined by their value and
-differential at a single point. -/
-theorem ext_of_mfderiv_eq [PreconnectedSpace M] (Φ Ψ : RiemannianIsometry I J M N)
-    {p : M} (hp : Φ p = Ψ p) (hd : mfderiv I J Φ p = mfderiv I J Ψ p) : Φ = Ψ := by
+/-- Isometries with the same value and differential at a point agree on its connected
+component, even when the source manifold is disconnected. -/
+theorem eqOn_connectedComponent_of_mfderiv_eq (Φ Ψ : RiemannianIsometry I J M N)
+    {p : M} (hp : Φ p = Ψ p) (hd : mfderiv I J Φ p = mfderiv I J Ψ p) :
+    EqOn Φ Ψ (connectedComponent p) := by
   classical
   let S : Set M := {x | ∀ v : TangentSpace I x,
     tangentMap I J Φ ⟨x, v⟩ = tangentMap I J Ψ ⟨x, v⟩}
@@ -101,7 +103,16 @@ theorem ext_of_mfderiv_eq [PreconnectedSpace M] (Φ Ψ : RiemannianIsometry I J 
     -- function is the identity. Here the endpoints agree by `hlocal.eq_of_nhds`.
     ext v
     exact DFunLike.congr_fun (hlocal.mfderiv_eq (I := I) (I' := J)) v
-  have hS : S = univ := IsClopen.eq_univ ⟨hclosed, hopen⟩ ⟨p, hmem p hp hd⟩
-  exact ext fun x => (hdata x (hS.symm ▸ mem_univ x)).1
+  have hS : connectedComponent p ⊆ S :=
+    IsClopen.connectedComponent_subset ⟨hclosed, hopen⟩ (hmem p hp hd)
+  exact fun x hx => (hdata x (hS hx)).1
+
+/-- Riemannian isometries of a connected manifold are determined by their value and
+differential at a single point. -/
+theorem ext_of_mfderiv_eq [PreconnectedSpace M] (Φ Ψ : RiemannianIsometry I J M N)
+    {p : M} (hp : Φ p = Ψ p) (hd : mfderiv I J Φ p = mfderiv I J Ψ p) : Φ = Ψ := by
+  apply DFunLike.coe_injective
+  simpa only [PreconnectedSpace.connectedComponent_eq_univ, eqOn_univ] using
+    Φ.eqOn_connectedComponent_of_mfderiv_eq Ψ hp hd
 
 end TauCeti.RiemannianIsometry
