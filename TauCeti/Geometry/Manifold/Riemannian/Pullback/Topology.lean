@@ -55,7 +55,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- The pullback metric read in the chart at `x'` is the chart metric of `g` at `x`, evaluated at
 the image under the transition map `τ = (extChartAt J x) ∘ f ∘ (extChartAt I x').symm` and pulled
-back along the derivative of `τ` within the model range. -/
+back along the derivative of `τ` within the model range.
+
+The metric `g` is smooth because `TauCeti.Manifold.ContMDiffNondegenerateMetric.chartMetric`,
+like the chart C² topology built from it, is only defined for smooth metrics; `pullback` then
+requires `f` to be smooth as well. The charts are arbitrary and need not be centred at
+corresponding points. -/
 theorem chartMetric_pullback
     (g : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)) {f : M → N}
     (hf : ContMDiff I J (∞ + 1) f) (hinj : ∀ x, Function.Injective (mfderiv I J f x))
