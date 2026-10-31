@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Height.NumberField
 
 import TauCeti.Algebra.BigOperators.Finprod
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # The fundamental inequality

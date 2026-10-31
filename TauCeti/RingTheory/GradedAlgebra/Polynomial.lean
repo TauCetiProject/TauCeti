@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Coeff
-public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import Mathlib.RingTheory.PowerSeries.Basic
 
 /-!
@@ -32,6 +32,8 @@ becomes the family `a_d X^(w d)`: the grading is the action of a polynomial vari
   degree `n`.
 * `TauCeti.GradedAlgebra.toPolynomial_eq_monomial_iff`: `a` is sent to `a Xⁿ` exactly when `a` is
   homogeneous of degree `n`.
+* `RingHom.map_toPolynomial_eq_iff`: a ring homomorphism preserves the grading exactly when it
+  intertwines these polynomial-valued maps.
 * `PowerSeries.map_toPolynomial_eq_mk_iff`: a power series has its coefficient of `Yⁿ` in degree
   `n - 1` exactly when its base change along `a ↦ ∑ₙ aₙ Xⁿ` is `∑ₙ Xⁿ⁻¹ aₙ Yⁿ`.
 -/
@@ -93,6 +95,49 @@ theorem toPolynomial_eq_monomial_iff {a : A} {n : ℕ} :
   exact this ▸ SetLike.coe_mem _
 
 end TauCeti.GradedAlgebra
+
+namespace GradedRingHom
+
+open TauCeti.GradedAlgebra
+
+variable {A B σ τ : Type*} [Semiring A] [Semiring B]
+  [SetLike σ A] [AddSubmonoidClass σ A] [SetLike τ B] [AddSubmonoidClass τ B]
+  {𝒜 : ℕ → σ} {ℬ : ℕ → τ} [GradedRing 𝒜] [GradedRing ℬ]
+
+/-- A graded ring homomorphism commutes with recording homogeneous components as polynomial
+coefficients. -/
+@[simp]
+theorem map_toPolynomial (f : 𝒜 →+*ᵍ ℬ) (a : A) :
+    Polynomial.map f.toRingHom (toPolynomial 𝒜 a) = toPolynomial ℬ (f a) := by
+  ext n
+  simpa only [Polynomial.coeff_map, coeff_toPolynomial, GradedRingHom.coe_toRingHom] using
+    (f.map_directSumDecompose (x := a) (i := n))
+
+end GradedRingHom
+
+namespace RingHom
+
+open TauCeti.GradedAlgebra
+
+variable {A B σ τ : Type*} [Semiring A] [Semiring B]
+  [SetLike σ A] [AddSubmonoidClass σ A] [SetLike τ B] [AddSubmonoidClass τ B]
+  {𝒜 : ℕ → σ} {ℬ : ℕ → τ} [GradedRing 𝒜] [GradedRing ℬ]
+
+/-- A ring homomorphism preserves the grading exactly when it intertwines the universal scalar
+actions recorded by `toPolynomial`. The scalar is an indeterminate, not just an element of the
+coefficient ring. -/
+theorem map_toPolynomial_eq_iff (f : A →+* B) :
+    (∀ a, Polynomial.map f (toPolynomial 𝒜 a) = toPolynomial ℬ (f a)) ↔
+      ∀ (n : ℕ) (a : A), a ∈ 𝒜 n → f a ∈ ℬ n := by
+  constructor
+  · intro h n a ha
+    apply toPolynomial_eq_monomial_iff.mp
+    rw [← h, toPolynomial_of_mem ha, Polynomial.map_monomial]
+  · intro h
+    let g : 𝒜 →+*ᵍ ℬ := { __ := f, map_mem := fun ha ↦ h _ _ ha }
+    exact g.map_toPolynomial
+
+end RingHom
 
 namespace PowerSeries
 
