@@ -179,7 +179,7 @@ private theorem energy_drop_of_le_norm_gradient {C δ ε η : ℝ}
     exact ((hcontg.mono hIcc).norm).pow 2
   have heq : ∫ s in t..(t + δ), ‖∇ f (γ s)‖ ^ 2 = f (γ t) - f (γ (t + δ)) :=
     integral_norm_gradient_sq_eq_sub hγ (huIcc ▸ hIcc)
-      (fun s hs ↦ hdiff _ (hmaps (hIcc (huIcc ▸ hs)))) hint
+      (fun s hs ↦ hdiff _ (hmaps (hIcc (huIcc ▸ hs))))
   rw [← heq]
   have hmono : ∫ _s in t..(t + δ), (ε / 2) ^ 2 ≤ ∫ s in t..(t + δ), ‖∇ f (γ s)‖ ^ 2 :=
     intervalIntegral.integral_mono_on htδ intervalIntegrable_const hint fun s hs ↦

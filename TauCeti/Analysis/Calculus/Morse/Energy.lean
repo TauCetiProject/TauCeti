@@ -63,22 +63,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 namespace IsIntegralCurveOn
 
-/-- The squared gradient along a negative gradient trajectory is integrable on every compact
-time interval, assuming only differentiability of the defining function along that interval. -/
-theorem intervalIntegrable_norm_gradient_sq
-    (a b : ℝ) (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (uIcc a b))
-    (hf : ∀ t ∈ uIcc a b, DifferentiableAt ℝ f (γ t)) :
-    IntervalIntegrable (fun t ↦ ‖∇ f (γ t)‖ ^ 2) volume a b := by
-  have hd : ∀ t ∈ uIcc a b,
-      HasDerivWithinAt (fun t ↦ -f (γ t)) (‖∇ f (γ t)‖ ^ 2) (uIcc a b) t := by
-    intro t ht
-    simpa only [neg_neg, Function.comp_def] using
-      (hasDerivWithinAt_comp_neg_gradient hγ ht (hf t ht)).fun_neg
-  exact intervalIntegral.intervalIntegrable_deriv_of_nonneg
-    (fun t ht ↦ (hd t ht).continuousWithinAt)
-    (fun t ht ↦ (hd t ⟨ht.1.le, ht.2.le⟩).hasDerivAt (Icc_mem_nhds ht.1 ht.2))
-    (fun t _ ↦ sq_nonneg _)
-
 /-- A finite forward limiting value implies finite energy on every forward half-line. -/
 theorem integrableOn_Ioi_norm_gradient_sq
     (a : ℝ) (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici a))
@@ -135,8 +119,7 @@ theorem integrableOn_Iic_norm_gradient_sq
     exact (IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub
       hγ
       (by rw [uIcc_of_le ht]; exact Icc_subset_Iic_self)
-      (fun s hs ↦ hf s (by rw [uIcc_of_le ht] at hs; exact hs.2))
-      (hinterval t ht)).symm
+      (fun s hs ↦ hf s (by rw [uIcc_of_le ht] at hs; exact hs.2))).symm
 
 /-- The energy before time `a` is the drop from the backward limiting value to the value at `a`. -/
 theorem integral_Iic_norm_gradient_sq_eq_sub

@@ -150,7 +150,7 @@ private theorem norm_sub_add_one_le
   have hcurve : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici T) :=
     fun s hs ↦ (hderiv s hs).hasDerivWithinAt
   have step4 : (∫ s in t..(t + 1), ‖∇ f (γ s)‖ ^ 2) = f (γ t) - f (γ (t + 1)) :=
-    integral_norm_gradient_sq_eq_sub hcurve hsub (fun s hs ↦ hdiff s (hsub hs)) hint2
+    integral_norm_gradient_sq_eq_sub hcurve hsub (fun s hs ↦ hdiff s (hsub hs))
   have hge1 : f p ≤ f (γ (t + 1)) := hge (t + 1) (le_trans ht htt)
   have hfinal : α * (f (γ t) - f (γ (t + 1))) ≤ α * (f (γ t) - f p) :=
     mul_le_mul_of_nonneg_left (by linarith) hα.le
