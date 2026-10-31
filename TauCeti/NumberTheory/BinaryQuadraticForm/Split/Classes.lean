@@ -6,6 +6,8 @@ Authors: Wentao Li
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Split.Basic
+public import Mathlib.SetTheory.Cardinal.Finite
+import TauCeti.GroupTheory.GroupAction.Stabilizer
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
@@ -18,7 +20,8 @@ of explicit integer lattices inside the existing product algebra. Proper equival
 representatives with the same nonzero `s` is exactly congruence of `c` modulo `s`. Every form
 of discriminant `s²`, primitive or not, is properly equivalent to `sxy + cy²` with `0 ≤ c < |s|`.
 A proper equivalence between two representatives fixes the line `y = 0`, so the only
-automorphisms of `sxy + cy²` are `±1`.
+automorphisms of `sxy + cy²` are `±1`, and every form of nonzero square discriminant has a
+stabiliser of order `2`.
 
 This is the elementary form-side classification for the separate split branch. Composition
 is constructed from these classes and the actual product-order lattices in subsequent results.
@@ -206,6 +209,23 @@ theorem exists_smul_eq_splitTriangularForm_of_discrim_eq_sq (f : BinaryQuadratic
   obtain ⟨τ, hτ⟩ := (exists_smul_splitTriangularForm_eq_iff s c (c % s) hs).mpr
     Int.dvd_self_sub_emod
   exact ⟨τ * γ, c % s, Int.emod_nonneg c hs, Int.emod_lt_abs c hs, by rw [mul_smul, hγ, hτ]⟩
+
+/-- The triangular form `s x y + c y²` with `s ≠ 0` has exactly the two automorphisms `±1`. -/
+theorem card_stabilizer_splitTriangularForm {s : ℤ} (hs : s ≠ 0) (c : ℤ) :
+    Nat.card (MulAction.stabilizer SL(2, ℤ) (splitTriangularForm s c)) = 2 := by
+  have h : (MulAction.stabilizer SL(2, ℤ) (splitTriangularForm s c) : Set SL(2, ℤ)) =
+      ↑({1, -1} : Finset SL(2, ℤ)) := by
+    ext γ
+    simp [MulAction.mem_stabilizer_iff, smul_splitTriangularForm_eq_self_iff hs]
+  rw [← SetLike.coe_sort_coe, h, Nat.card_coe_set_eq, Set.ncard_coe_finset]
+  decide
+
+/-- **Forms of nonzero square discriminant have only the automorphisms `±1`**: if
+`f.discrim = s²` with `s ≠ 0`, the stabiliser of `f` in `SL(2, ℤ)` has order `2`. -/
+theorem card_stabilizer_of_discrim_eq_sq {f : BinaryQuadraticForm ℤ} {s : ℤ} (hs : s ≠ 0)
+    (hf : f.discrim = s ^ 2) : Nat.card (MulAction.stabilizer SL(2, ℤ) f) = 2 := by
+  obtain ⟨γ, c, -, -, hγ⟩ := exists_smul_eq_splitTriangularForm_of_discrim_eq_sq f hs hf
+  rw [← card_stabilizer_smul γ f, hγ, card_stabilizer_splitTriangularForm hs]
 
 /-- Equality in the existing proper-class quotient is the same congruence criterion. -/
 @[simp] theorem properClass_splitTriangularForm_eq_iff (s c d : ℤ) (hs : s ≠ 0) :

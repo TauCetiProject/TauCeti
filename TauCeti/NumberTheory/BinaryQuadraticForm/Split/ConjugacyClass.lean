@@ -30,7 +30,9 @@ classification of forms of square discriminant by triangular representatives
   exactly `|d - a|` conjugacy classes;
 * the centraliser of each such matrix in `SL(2, ℤ)` is `{±1}`, of order `2`, because the
   automorphisms of a triangular form are `±1`
-  (`TauCeti.BinaryQuadraticForm.smul_splitTriangularForm_eq_self_iff`).
+  (`TauCeti.BinaryQuadraticForm.smul_splitTriangularForm_eq_self_iff`), so every form of
+  nonzero square discriminant has stabiliser of order `2`
+  (`TauCeti.BinaryQuadraticForm.card_stabilizer_of_discrim_eq_sq`).
 
 So each class has Popa and Zagier's automorphism weight `2 / |Z_SL(M)| = 1`. This is the split
 counterpart of `TauCeti.BinaryQuadraticForm.orbitRelQuotientTraceDetFiberEquiv`, which treats the
@@ -44,8 +46,6 @@ elliptic classes.
 
 ## Main results
 
-* `TauCeti.BinaryQuadraticForm.card_stabilizer_of_discrim_eq_sq`: a form of nonzero square
-  discriminant has exactly the two automorphisms `±1`.
 * `TauCeti.BinaryQuadraticForm.exists_smul_eq_upperTriangular`: every matrix of trace `a + d` and
   determinant `a d` is conjugate to some `!![a, b; 0, d]` with `0 ≤ b < |d - a|`.
 * `TauCeti.BinaryQuadraticForm.exists_smul_upperTriangular_eq_iff`: `!![a, b; 0, d]` and
@@ -70,23 +70,6 @@ open scoped MatrixGroups
 namespace TauCeti
 
 namespace BinaryQuadraticForm
-
-/-- The triangular form `s x y + c y²` with `s ≠ 0` has exactly the two automorphisms `±1`. -/
-theorem card_stabilizer_splitTriangularForm {s : ℤ} (hs : s ≠ 0) (c : ℤ) :
-    Nat.card (stabilizer SL(2, ℤ) (splitTriangularForm s c)) = 2 := by
-  have h : (stabilizer SL(2, ℤ) (splitTriangularForm s c) : Set SL(2, ℤ)) =
-      ↑({1, -1} : Finset SL(2, ℤ)) := by
-    ext γ
-    simp [mem_stabilizer_iff, smul_splitTriangularForm_eq_self_iff hs]
-  rw [← SetLike.coe_sort_coe, h, Nat.card_coe_set_eq, Set.ncard_coe_finset]
-  decide
-
-/-- **Forms of nonzero square discriminant have only the automorphisms `±1`**: if
-`f.discrim = s²` with `s ≠ 0`, the stabiliser of `f` in `SL(2, ℤ)` has order `2`. -/
-theorem card_stabilizer_of_discrim_eq_sq {f : BinaryQuadraticForm ℤ} {s : ℤ} (hs : s ≠ 0)
-    (hf : f.discrim = s ^ 2) : Nat.card (stabilizer SL(2, ℤ) f) = 2 := by
-  obtain ⟨γ, c, -, -, hγ⟩ := exists_smul_eq_splitTriangularForm_of_discrim_eq_sq f hs hf
-  rw [← card_stabilizer_smul γ f, hγ, card_stabilizer_splitTriangularForm hs]
 
 variable {a d : ℤ}
 
