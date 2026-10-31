@@ -28,6 +28,8 @@ and it shows that nearby projections have isomorphic ranges.
 
 * `ContinuousLinearMap.IsIdempotentElem.apply_coe_range`: an idempotent continuous linear map
   fixes every vector of its range.
+* `ContinuousLinearMap.IsIdempotentElem.mul_self_add_one_sub_mul_one_sub`: the operator
+  `p * p + (1 - p) * (1 - p)` intertwining an idempotent `p` with itself is the identity.
 
 ## References
 
@@ -51,6 +53,18 @@ theorem apply_coe_range (hp : IsIdempotentElem p) (w : p.range) : p w = w :=
     (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.2
 
 variable [IsTopologicalAddGroup M]
+
+/-- The operator `p * p + (1 - p) * (1 - p)`, which intertwines an idempotent `p` with itself, is
+the identity. -/
+theorem mul_self_add_one_sub_mul_one_sub (hp : IsIdempotentElem p) :
+    p * p + (1 - p) * (1 - p) = 1 := by
+  rw [hp.eq, hp.one_sub.eq, add_sub_cancel]
+
+/-- The operator `p * p + (1 - p) * (1 - p)` is invertible for an idempotent `p`. -/
+theorem isUnit_mul_self_add_one_sub_mul_one_sub (hp : IsIdempotentElem p) :
+    IsUnit (p * p + (1 - p) * (1 - p)) := by
+  rw [mul_self_add_one_sub_mul_one_sub hp]
+  exact isUnit_one
 
 /-- The operator `q * p + (1 - q) * (1 - p)`, which intertwines `p` with `q`. -/
 private def intertwiner (p q : M →L[R] M) : M →L[R] M :=

@@ -23,6 +23,9 @@ No compactness, separation or finite-dimensionality is assumed of the base or th
 
 ## Main results
 
+* `TauCeti.isOpen_setOf_isUnit_intertwiner`: the intertwining operator of a continuous family is
+  invertible on an open set, and `TauCeti.continuousOn_inverse_intertwiner`: its inverse is
+  continuous there.
 * `TauCeti.eventually_nonempty_continuousLinearEquiv_range`: the ranges of nearby projections in
   a continuous family are isomorphic.
 * `TauCeti.isLocallyConstant_finrank_range`: the rank of a continuous family of projections is
@@ -36,22 +39,41 @@ No compactness, separation or finite-dimensionality is assumed of the base or th
 public section
 
 open Topology Filter
+open scoped Ring
 
 namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : Type*} [TopologicalSpace B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F] {p : B → F →L[𝕜] F}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {p : B → F →L[𝕜] F}
+
+/-- The intertwining operator `p x * p x₀ + (1 - p x) * (1 - p x₀)` of a continuous family of
+operators depends continuously on `x`. -/
+theorem continuous_intertwiner (hp : Continuous p) (x₀ : B) :
+    Continuous fun x ↦ p x * p x₀ + (1 - p x) * (1 - p x₀) :=
+  (hp.mul continuous_const).add ((continuous_const.sub hp).mul continuous_const)
+
+variable [CompleteSpace F]
+
+/-- The points at which the intertwining operator `p x * p x₀ + (1 - p x) * (1 - p x₀)` of a
+continuous family of operators is invertible form an open set. -/
+theorem isOpen_setOf_isUnit_intertwiner (hp : Continuous p) (x₀ : B) :
+    IsOpen {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} :=
+  Units.isOpen.preimage (continuous_intertwiner hp x₀)
+
+/-- The inverse of the intertwining operator `p x * p x₀ + (1 - p x) * (1 - p x₀)` of a
+continuous family of operators depends continuously on `x` where that operator is invertible. -/
+theorem continuousOn_inverse_intertwiner (hp : Continuous p) (x₀ : B) :
+    ContinuousOn (fun x ↦ (p x * p x₀ + (1 - p x) * (1 - p x₀))⁻¹ʳ)
+      {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} :=
+  fun _ hx ↦ ((NormedRing.inverse_continuousAt hx.unit).comp_of_eq
+    (continuous_intertwiner hp x₀).continuousAt hx.unit_spec.symm).continuousWithinAt
 
 /-- The ranges of nearby projections in a continuous family are isomorphic. -/
 theorem eventually_nonempty_continuousLinearEquiv_range (hp : Continuous p)
     (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B) :
     ∀ᶠ x in 𝓝 x₀, Nonempty ((p x₀).range ≃L[𝕜] (p x).range) := by
-  have hU : Continuous fun x ↦ p x * p x₀ + (1 - p x) * (1 - p x₀) :=
-    (hp.mul continuous_const).add ((continuous_const.sub hp).mul continuous_const)
-  have h₀ : IsUnit (p x₀ * p x₀ + (1 - p x₀) * (1 - p x₀)) := by
-    rw [(hidem x₀).eq, (hidem x₀).one_sub.eq, add_sub_cancel]
-    exact isUnit_one
-  filter_upwards [(Units.isOpen.preimage hU).mem_nhds h₀]
+  filter_upwards [(isOpen_setOf_isUnit_intertwiner hp x₀).mem_nhds
+    (ContinuousLinearMap.IsIdempotentElem.isUnit_mul_self_add_one_sub_mul_one_sub (hidem x₀))]
     with x (hx : IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)))
   exact ⟨ContinuousLinearMap.IsIdempotentElem.rangeEquiv (hidem x₀) (hidem x) hx⟩
 

@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Basic
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
+public import TauCeti.Analysis.Normed.Operator.IdempotentRange
 
 /-!
 # The image bundle of a continuous family of projections
@@ -67,7 +66,8 @@ public section
 open Bundle Set Topology
 open scoped Ring
 open ContinuousLinearMap.IsIdempotentElem (apply_coe_range coe_rangeEquiv_apply
-  coe_rangeEquiv_symm_apply)
+  coe_rangeEquiv_symm_apply isUnit_mul_self_add_one_sub_mul_one_sub
+  mul_self_add_one_sub_mul_one_sub)
 
 namespace TauCeti
 
@@ -100,37 +100,7 @@ end Topology
 
 section Trivialization
 
-variable {p : B → F →L[𝕜] F}
-
-private theorem continuous_intertwiner (hp : Continuous p) (x₀ : B) :
-    Continuous fun x ↦ p x * p x₀ + (1 - p x) * (1 - p x₀) :=
-  (hp.mul continuous_const).add ((continuous_const.sub hp).mul continuous_const)
-
-omit [TopologicalSpace B] in
-/-- At the base point, the intertwiner is the identity. -/
-private theorem intertwiner_self (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B) :
-    p x₀ * p x₀ + (1 - p x₀) * (1 - p x₀) = 1 := by
-  rw [(hidem x₀).eq, (hidem x₀).one_sub.eq, add_sub_cancel]
-
-omit [TopologicalSpace B] in
-private theorem isUnit_intertwiner_self (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B) :
-    IsUnit (p x₀ * p x₀ + (1 - p x₀) * (1 - p x₀)) := by
-  rw [intertwiner_self hidem x₀]
-  exact isUnit_one
-
-variable [CompleteSpace F]
-
-/-- The base set of the trivialization at `x₀`: the points at which the intertwiner is
-invertible. -/
-private theorem isOpen_setOf_isUnit_intertwiner (hp : Continuous p) (x₀ : B) :
-    IsOpen {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} :=
-  Units.isOpen.preimage (continuous_intertwiner hp x₀)
-
-private theorem continuousOn_inverse_intertwiner (hp : Continuous p) (x₀ : B) :
-    ContinuousOn (fun x ↦ (p x * p x₀ + (1 - p x) * (1 - p x₀))⁻¹ʳ)
-      {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} :=
-  fun _ hx ↦ ((NormedRing.inverse_continuousAt hx.unit).comp_of_eq
-    (continuous_intertwiner hp x₀).continuousAt hx.unit_spec.symm).continuousWithinAt
+variable [CompleteSpace F] {p : B → F →L[𝕜] F}
 
 variable (hp : Continuous p) (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B)
   (φ : F' ≃L[𝕜] (p x₀).range)
@@ -186,7 +156,7 @@ noncomputable def rangeTrivialization :
 /-- The trivialization at `x₀` is defined over a neighbourhood of `x₀`. -/
 theorem mem_baseSet_rangeTrivialization :
     x₀ ∈ (rangeTrivialization hp hidem x₀ φ).baseSet :=
-  isUnit_intertwiner_self hidem x₀
+  isUnit_mul_self_add_one_sub_mul_one_sub (hidem x₀)
 
 /-- A point lies in the base set of the trivialization at `x₀` exactly when the intertwiner
 `p x * p x₀ + (1 - p x) * (1 - p x₀)` is invertible. -/
@@ -217,14 +187,14 @@ theorem rangeTrivialization_symm_apply (x : B) (v : F') :
 theorem rangeTrivialization_apply_self (w : (p x₀).range) :
     rangeTrivialization hp hidem x₀ φ ⟨x₀, w⟩ = (x₀, φ.symm w) := by
   refine Prod.ext rfl (congrArg φ.symm (Subtype.ext ?_))
-  simp [intertwiner_self hidem x₀, apply_coe_range (hidem x₀)]
+  simp [mul_self_add_one_sub_mul_one_sub (hidem x₀), apply_coe_range (hidem x₀)]
 
 /-- At the base point `x₀`, the inverse of the trivialization is `φ`. -/
 @[simp]
 theorem rangeTrivialization_symm_apply_self (v : F') :
     (rangeTrivialization hp hidem x₀ φ).toOpenPartialHomeomorph.symm (x₀, v) = ⟨x₀, φ v⟩ := by
   refine congrArg (TotalSpace.mk x₀) (Subtype.ext ?_)
-  simp [intertwiner_self hidem x₀, apply_coe_range (hidem x₀)]
+  simp [mul_self_add_one_sub_mul_one_sub (hidem x₀), apply_coe_range (hidem x₀)]
 
 /-- The trivialization at `x₀` is linear on every fibre. -/
 instance isLinear_rangeTrivialization : (rangeTrivialization hp hidem x₀ φ).IsLinear 𝕜 where
