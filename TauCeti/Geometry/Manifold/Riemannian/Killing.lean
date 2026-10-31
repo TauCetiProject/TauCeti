@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Met
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -131,21 +132,6 @@ variable [FiniteDimensional ℝ E]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
 
-/-- For a metric-compatible torsion-free connection, the Lie derivative of the metric along `X`
-is `(𝓛_X g)(Y, Z) = ⟪∇_Y X, Z⟫ + ⟪Y, ∇_Z X⟫`. -/
-private theorem mvfderiv_inner_sub_inner_mlieBracket
-    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
-    (ht : cov.torsion = 0) {Y Z : Π x : M, TangentSpace I x} {x : M}
-    (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
-    mvfderiv I (fun y ↦ inner ℝ (Y y) (Z y)) x (X x) -
-        inner ℝ (mlieBracket I X Y x) (Z x) - inner ℝ (Y x) (mlieBracket I X Z x) =
-      inner ℝ (cov X x (Y x)) (Z x) + inner ℝ (Y x) (cov X x (Z x)) := by
-  have hmetric := hcov.mvfderiv_inner_eq X hY hZ
-  beta_reduce at hmetric
-  rw [hmetric, ← (torsion_eq_zero_iff cov).1 ht hX hY, ← (torsion_eq_zero_iff cov).1 ht hX hZ,
-    inner_sub_left, inner_sub_right]
-  ring
-
 variable [T2Space M]
 
 /-- **The Killing equation.** For a metric-compatible torsion-free connection `∇`, such as the
@@ -159,12 +145,12 @@ theorem _root_.CovariantDerivative.IsMetricCompatible.isKillingField_iff
   refine ⟨fun h ↦ ⟨h.contMDiff, fun x u v ↦ ?_⟩, fun ⟨hX, h⟩ ↦ ⟨hX, fun Y Z hY hZ x ↦ ?_⟩⟩
   · obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
     obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-    have hLie := mvfderiv_inner_sub_inner_mlieBracket hcov ht
+    have hLie := hcov.mvfderiv_inner_sub_inner_mlieBracket ht
       (h.contMDiff.mdifferentiable (by simp) x) (hY.mdifferentiable (by simp) x)
       (hZ.mdifferentiable (by simp) x)
     rw [h.mvfderiv_inner hY hZ x] at hLie
     linarith
-  · have hLie := mvfderiv_inner_sub_inner_mlieBracket hcov ht
+  · have hLie := hcov.mvfderiv_inner_sub_inner_mlieBracket ht
       (hX.mdifferentiable (by simp) x) (hY.mdifferentiable (by simp) x)
       (hZ.mdifferentiable (by simp) x)
     rw [h x (Y x) (Z x)] at hLie
