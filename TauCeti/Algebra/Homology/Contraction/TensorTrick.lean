@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Contraction.Linear
+public import TauCeti.Algebra.Homology.Contraction.Linear.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 

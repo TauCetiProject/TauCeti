@@ -467,15 +467,13 @@ theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
     (isCompact_Icc.image Circle.exp.continuous).image hgc
   have hSpre : IsPreconnected S :=
     (isPreconnected_Icc.image _ Circle.exp.continuous.continuousOn).image _ hgc.continuousOn
-  have hab : θ₀ + η ≤ θ₀ - η + 2 * π := by linarith [Real.pi_pos]
-  have hlt : (θ₀ - η + 2 * π) - (θ₀ + η) < 2 * π := by linarith
   refine ⟨S, hSC, hScompact, hSpre, ?_, ?_⟩
   · rintro ⟨u, huK, hu⟩
     have : u = Circle.exp θ₀ := hginj (hu.trans hga.symm)
     subst this
     obtain ⟨θ, hθ, hθeq⟩ := huK
     have hnot : Circle.exp θ₀ ∈ (Circle.exp '' Icc (θ₀ + η) (θ₀ - η + 2 * π))ᶜ := by
-      rw [compl_circleExp_image_Icc hab hlt]
+      rw [compl_circleExp_image_Icc]
       refine ⟨θ₀ + 2 * π, ⟨by linarith, by linarith⟩, ?_⟩
       rw [Circle.exp_add, Circle.exp_two_pi, mul_one]
     exact hnot ⟨θ, hθ, hθeq⟩
@@ -485,7 +483,7 @@ theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
     have huK : u ∉ K := fun h => hzS ⟨u, h, rfl⟩
     have hu : u ∈ Circle.exp '' Ioo (θ₀ - η + 2 * π) (θ₀ + η + 2 * π) := by
       have huK' : u ∈ (Circle.exp '' Icc (θ₀ + η) (θ₀ - η + 2 * π))ᶜ := huK
-      rwa [compl_circleExp_image_Icc hab hlt] at huK'
+      rwa [compl_circleExp_image_Icc] at huK'
     obtain ⟨θ, hθ, rfl⟩ := hu
     have hshift : Circle.exp θ = Circle.exp (θ - 2 * π) := by
       have hθ2 : θ = (θ - 2 * π) + 2 * π := by ring

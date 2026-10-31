@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Combinatorics.Network.Decomposition
 public import TauCeti.Combinatorics.Network.SetFlow
+import Mathlib.Tactic.Linarith
 
 /-!
 # Menger's theorem for arrow-disjoint directed paths
@@ -42,6 +44,9 @@ the original path (`TauCeti.ArrowWalk.exists_isPath_interior_notMem`).
 
 ## Main results
 
+* `TauCeti.natCard_sub_one_le_card_of_completeCut`: a finite set of arrows containing every
+  arrow across a nontrivial complete directed cut has at least one fewer member than the number
+  of vertices.
 * `TauCeti.card_le_card_of_not_reachableWithout`: **weak duality**, an arrow-disjoint family of
   `s`–`t` walks has at most as many members as any set of arrows separating `t` from `s`.
 * `TauCeti.exists_paths_arrowSeparator_card_eq`: **Menger's theorem** for arrow-disjoint directed
@@ -74,6 +79,28 @@ open Finset
 universe u v
 
 variable {V : Type u} {Q : V → V → Type v} {s t : V}
+
+/-- If every vertex of `C` has an arrow to every vertex outside `C`, then any finite set containing
+all arrows leaving `C` has at least `Nat.card V - 1` members, provided `C` and its complement are
+nonempty. -/
+theorem natCard_sub_one_le_card_of_completeCut [Finite V] {C : Set V} (hs : s ∈ C) (ht : t ∉ C)
+    (hC : ∀ u ∈ C, ∀ w ∉ C, Nonempty (Q u w)) {F : Finset (Σ x y, Q x y)}
+    (hF : ∀ ⦃v w : V⦄ (e : Q v w), v ∈ C → w ∉ C → ⟨v, w, e⟩ ∈ F) :
+    Nat.card V - 1 ≤ #F := by
+  classical
+  let _ := Fintype.ofFinite V
+  set D : Finset V := {v | v ∈ C}
+  have hsub : D ×ˢ Dᶜ ⊆ ({a ∈ F | a.1 ∈ C ∧ a.2.1 ∉ C}).image fun a ↦ (a.1, a.2.1) := by
+    rintro ⟨v, w⟩ hvw
+    simp only [D, mem_product, mem_compl, mem_filter, mem_univ, true_and] at hvw
+    obtain ⟨e⟩ := hC v hvw.1 w hvw.2
+    exact mem_image.2 ⟨⟨v, w, e⟩, mem_filter.2 ⟨hF e hvw.1 hvw.2, hvw.1, hvw.2⟩, rfl⟩
+  have hcard := (card_le_card hsub).trans (card_image_le.trans (card_filter_le _ _))
+  rw [card_product] at hcard
+  have hD : 1 ≤ #D := card_pos.2 ⟨s, by simpa [D] using hs⟩
+  have hDc : 1 ≤ #Dᶜ := card_pos.2 ⟨t, by simpa [D] using ht⟩
+  rw [Nat.sub_le_iff_le_add, Nat.card_eq_fintype_card, ← card_add_card_compl D]
+  nlinarith
 
 /-- **Weak duality for arrow-disjoint set-to-set walks.** A family of walks, each from a vertex of
 `A` to a vertex of `B`, of which no two traverse a common arrow, has at most as many members as any

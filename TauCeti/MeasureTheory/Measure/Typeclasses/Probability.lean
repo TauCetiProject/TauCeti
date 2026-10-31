@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
-/-! # Measurability-free complement bound for probability measures
+/-! # Probability measure support lemmas
 
 For a probability measure, `1 - μ sᶜ ≤ μ s` for an **arbitrary** set `s`.
 
@@ -18,19 +18,35 @@ measures.  This is the form in which high-probability events are consumed when
 converting vanishing failure probabilities into convergence statements, where
 the event sets are often not (easily) measurable.
 
-## Main result
+The zero measure is not a probability measure. The simp lemma for this fact also
+simplifies totalized distribution laws that reduce to zero outside their parameter range.
+
+## Main results
 
 * `MeasureTheory.Measure.one_sub_measure_compl_le`
+* `MeasureTheory.not_isProbabilityMeasure_zero`
 
 ## Source
 
-Adapted from the Davis--Kahan/DKPS formalization,
+The complement bound is adapted from the Davis--Kahan/DKPS formalization,
 `ForMathlib/MeasureTheory/Measure/Typeclasses/Probability.lean` at `fc38eb4`,
 by Claude Fable 5 (Kitware, Inc., Apache-2.0); the public theorem is
 exposed in `MeasureTheory.Measure`.
 -/
 
 public section
+
+namespace MeasureTheory
+
+/-- The zero measure is not a probability measure. It is a simp lemma so that simp, after
+rewriting a law to `0` off its parameter range, can still decide `IsProbabilityMeasure` of that
+law. -/
+@[simp]
+theorem not_isProbabilityMeasure_zero {α : Type*} [MeasurableSpace α] :
+    ¬ IsProbabilityMeasure (0 : Measure α) :=
+  fun _ ↦ IsProbabilityMeasure.ne_zero (0 : Measure α) rfl
+
+end MeasureTheory
 
 namespace MeasureTheory.Measure
 

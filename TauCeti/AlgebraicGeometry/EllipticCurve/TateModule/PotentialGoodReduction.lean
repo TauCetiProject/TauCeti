@@ -223,7 +223,7 @@ theorem HasPotentialGoodReduction.exists_tateModuleGaloisRepresentation_eq_one
   let : Algebra S 𝒪[L] := ((algebraMap S L).codRestrict 𝒪[L]
     (valuation_algebraMap_le_one_of_isLocalHom hS)).toAlgebra
   have hgood' : (C • W⁄L).HasGoodReduction 𝒪[L] := by
-    have h := HasGoodReduction.baseChange S 𝒪[L] (L := L) (RingHom.ext fun _ ↦ rfl) hgood
+    have h := HasGoodReduction.baseChange S 𝒪[L] (L := L) (by ext; rfl) hgood
     rwa [baseChange, Algebra.algebraMap_self, map_id] at h
   have := hgood'.toIsMinimal
   have : (integralModel 𝒪[L] (C • W⁄L)).IsElliptic :=

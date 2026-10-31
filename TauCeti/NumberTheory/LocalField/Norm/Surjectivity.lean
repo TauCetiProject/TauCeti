@@ -34,6 +34,8 @@ inverse Herbrand function are transitive.
 * `TauCeti.map_normUnits_unitFiltration_after_break`: surjectivity above a prime-degree break.
 * `TauCeti.map_normUnits_unitFiltration_psiNat_eq_of_upperRamificationGroup_eq_bot`:
   `N(U(L, ψℕ(v))) = U(K,v)` for every finite Galois extension with `G^v = 1`.
+* `TauCeti.unitFiltration_le_normGroup_of_upperRamificationGroup_eq_bot`: hence
+  `U(K,v) ⊆ N_{L/K}(Lˣ)` whenever `G^v = 1`.
 
 ## References
 
@@ -222,5 +224,15 @@ theorem map_normUnits_unitFiltration_psiNat_eq_of_upperRamificationGroup_eq_bot 
     (hv : upperRamificationGroup K L ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩ = ⊥) :
     (unitFiltration L (psiNat K L v)).map (Algebra.normUnits K) = unitFiltration K v :=
   normSurj_of_forall_finrank_lt (fun F _ _ _ _ _ _ _ _ _ ↦ normSurj_of_finrank_le _ F le_rfl) v hv
+
+/-- **Units above every upper break are norms.** For a finite Galois extension `L/K` of
+nonarchimedean local fields whose upper ramification group `G^v` is trivial at a natural number
+`v`, every element of `U(K,v)` is a norm from `L`. -/
+theorem unitFiltration_le_normGroup_of_upperRamificationGroup_eq_bot {v : ℕ}
+    (hv : upperRamificationGroup K L ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩ = ⊥) :
+    unitFiltration K v ≤ normGroup K L := by
+  rw [← map_normUnits_unitFiltration_psiNat_eq_of_upperRamificationGroup_eq_bot hv]
+  rintro _ ⟨y, -, rfl⟩
+  exact normUnits_mem_normGroup K L y
 
 end TauCeti

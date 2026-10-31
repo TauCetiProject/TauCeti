@@ -13,7 +13,8 @@ import Mathlib.Analysis.SpecialFunctions.Arcosh
 
 The sine of `π / x` is positive for real `x > 1`. The sine of `π * x` is nonzero for nonzero
 `x ∈ (-1, 1)`, a criterion used to detect nonflat Schwarz–Christoffel turns. The sine is
-nonpositive on `[π, 2π]`.
+nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, and
+`1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`.
 
 For angles `α, β > 0` and `γ ≥ 0` with
 `α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than `1`; by the
@@ -32,6 +33,21 @@ namespace TauCeti
 theorem sin_nonpos_of_pi_le_of_le_two_pi {x : ℝ} (hpx : π ≤ x) (hxp : x ≤ 2 * π) : sin x ≤ 0 := by
   rw [← sin_sub_two_pi]
   exact sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)
+
+/-- The quantity `1 - a sin² θ` is positive when `a < 1`. -/
+theorem one_sub_mul_sin_sq_pos {a : ℝ} (ha : a < 1) (θ : ℝ) : 0 < 1 - a * sin θ ^ 2 := by
+  have h₀ := sq_nonneg (sin θ)
+  have h₁ := sin_sq_le_one θ
+  rcases le_or_gt a 0 with h | h <;> nlinarith
+
+/-- For every real `k`, `1 - k² ≤ 1 - k² sin² θ`. -/
+theorem one_sub_sq_le_one_sub_sq_mul_sin_sq (k θ : ℝ) :
+    1 - k ^ 2 ≤ 1 - k ^ 2 * sin θ ^ 2 := by
+  nlinarith [sin_sq_le_one θ, sq_nonneg k]
+
+/-- For every real `k`, `1 - k² sin² θ ≤ 1`. -/
+theorem one_sub_sq_mul_sin_sq_le_one (k θ : ℝ) : 1 - k ^ 2 * sin θ ^ 2 ≤ 1 := by
+  nlinarith [sq_nonneg (sin θ), sq_nonneg k]
 
 /-- If `x` is nonzero and strictly between `-1` and `1`, then `sin (π * x)` is nonzero. -/
 theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
