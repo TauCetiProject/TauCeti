@@ -35,7 +35,9 @@ changes between two frames are continuous.
 
 Over a general nontrivially normed field a finite-dimensional subspace of the model space need
 not be complemented, which is why the scalars are `ℝ` or `ℂ` (`IsRCLikeNormedField 𝕜`); the model
-fibre `F` is an arbitrary normed space and the base an arbitrary topological space.
+fibre `F` is an arbitrary normed space and the base an arbitrary topological space. The subspace
+topology and the algebraic API of frames (`TauCeti.IsSubbundleFrameOn.basis`) only need a semiring
+of scalars.
 
 The model fibre `F` of `E` cannot be recovered from `V`, so the subspace topology is not an
 instance; install it with `letI := TauCeti.subbundleTopology F V`.
@@ -74,9 +76,12 @@ open Set Filter Function Module Bundle Topology
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : Type*} [TopologicalSpace B]
-  (F : Type*) {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ x, AddCommMonoid (E x)]
-  [∀ x, Module 𝕜 (E x)] {ι : Type*}
+variable {𝕜 : Type*} {B : Type*} [TopologicalSpace B] (F : Type*) {E : B → Type*}
+  [TopologicalSpace (TotalSpace F E)] {ι : Type*}
+
+section Semiring
+
+variable [Semiring 𝕜] [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
 
 section Topology
 
@@ -150,7 +155,8 @@ theorem apply_mem (hX : IsSubbundleFrameOn F V X U) (i : ι) {x : B} (hx : x ∈
   hX.span_eq hx ▸ Submodule.subset_span (mem_range_self i)
 
 /-- The subspaces of a family with a local frame indexed by `ι` have dimension `card ι`. -/
-theorem finrank_eq [Fintype ι] (hX : IsSubbundleFrameOn F V X U) {x : B} (hx : x ∈ U) :
+theorem finrank_eq [StrongRankCondition 𝕜] [Fintype ι] (hX : IsSubbundleFrameOn F V X U) {x : B}
+    (hx : x ∈ U) :
     finrank 𝕜 (V x) = Fintype.card ι := by
   rw [← hX.span_eq hx]
   exact finrank_span_eq_card (hX.linearIndependent hx)
@@ -199,8 +205,21 @@ private theorem coe_vec [Fintype ι] (hX : IsSubbundleFrameOn F V X U) {y : B} (
   simp only [vec_of_mem hX hy, Basis.equivFun_symm_apply, Submodule.coe_sum, Submodule.coe_smul,
     coe_basis]
 
-variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
+end IsSubbundleFrameOn
+
+end Frame
+
+end Semiring
+
+section Normed
+
+variable [NontriviallyNormedField 𝕜] [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
   [VectorBundle 𝕜 F E]
+
+namespace IsSubbundleFrameOn
+
+variable {F} {V : Π x, Submodule 𝕜 (E x)} {X : ι → Π x, E x} {U : Set B}
 
 section TrivOperator
 
@@ -427,6 +446,6 @@ end Trivialization
 
 end IsSubbundleFrameOn
 
-end Frame
+end Normed
 
 end TauCeti
