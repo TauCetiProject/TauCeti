@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 public import TauCeti.Algebra.Homology.LinearYoneda
-import Mathlib.Algebra.Homology.HomologySequenceLemmas
 import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 
 /-!
