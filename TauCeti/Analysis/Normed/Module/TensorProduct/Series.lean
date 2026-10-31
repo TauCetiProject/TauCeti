@@ -30,8 +30,6 @@ This representation underlies the series description `T x = ∑ n, f n x • y n
 
 * `TauCeti.CompletedProjectiveTensor.exists_hasSum_tmul_of_norm_lt`: if `‖u‖ < c`, then
   `u = ∑ n, x n ⊗ₜ y n` for some `x : ℕ → E` and `y : ℕ → F` with `∑ n, ‖x n‖ * ‖y n‖ < c`.
-* `TauCeti.CompletedProjectiveTensor.norm_coe_tmul_le`: the completed norm of a pure tensor is at
-  most the product of the norms of its factors.
 * `TauCeti.CompletedProjectiveTensor.norm_le_tsum_of_hasSum_tmul`: the norm of the sum of a series
   of pure tensors is at most its cost.
 * `TauCeti.CompletedProjectiveTensor.norm_lt_iff_exists_hasSum_tmul`: the combined
@@ -52,13 +50,6 @@ namespace TauCeti.CompletedProjectiveTensor
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
   [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- The completed projective norm of a pure tensor is at most the product of the norms of its
-factors. -/
-theorem norm_coe_tmul_le (x : E) (y : F) :
-    ‖((⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F) : CompletedProjectiveTensor 𝕜 E F)‖ ≤ ‖x‖ * ‖y‖ := by
-  simpa [Completion.norm_coe, ProjectiveTensor.norm_def] using
-    TensorProduct.projectiveSeminorm_tmul_le (𝕜 := 𝕜) x y
 
 /-- The norm of the sum of a series of pure tensors in the completed projective tensor product is
 at most its cost `∑ i, ‖x i‖ * ‖y i‖`. -/
