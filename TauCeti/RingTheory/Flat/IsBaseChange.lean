@@ -39,6 +39,8 @@ is a base change for every `R`-algebra `S`. This is the form in which the kernel
 ## Main results
 
 * `LinearMap.liftBaseChange_injective_of_isBaseChange`: injectivity of `S ⊗[R] M₁ → N₁`.
+* `IsBaseChange.of_left_exact_of_lTensor`: the five-lemma criterion for an arbitrary `R`-algebra
+  `S`, assuming that tensoring the top row with `S` keeps it left exact.
 * `IsBaseChange.of_left_exact_of_injective`: the variant of `IsBaseChange.of_left_exact` with an
   injective right base-change map.
 * `IsBaseChange.of_left_exact_of_surjective`: the variant for an arbitrary `R`-algebra `S`, when
@@ -70,10 +72,14 @@ theorem LinearMap.liftBaseChange_injective_of_isBaseChange [Module.Flat R S]
     LinearMap.coe_comp, LinearMap.baseChange_eq_lTensor]
   exact isb₂.liftBaseChange_injective.comp (Module.Flat.lTensor_preserves_injective_linearMap f inj)
 
-/-- The five-lemma step shared by the variants below: if tensoring the top row with `S` keeps it
-left exact, `h₂` is a base change and the map `S ⊗[R] M₃ → N₃` is injective, then `h₁` is a base
-change. -/
-private theorem IsBaseChange.of_left_exact_of_lTensor
+/-- **Kernels commute with base change when tensoring keeps the top row left exact.** Let `S` be
+any `R`-algebra, and consider a commutative diagram with rows `M₁ → M₂ → M₃` of `R`-modules and a
+left exact row `0 → N₁ → N₂ → N₃` of `S`-modules. If the tensored row
+`0 → S ⊗[R] M₁ → S ⊗[R] M₂ → S ⊗[R] M₃` is left exact, `h₂ : M₂ → N₂` is a base change and the map
+`S ⊗[R] M₃ → N₃` induced by `h₃` is injective, then `h₁ : M₁ → N₁` is a base change. The variants
+`IsBaseChange.of_left_exact_of_injective` and `IsBaseChange.of_left_exact_of_surjective` supply
+the exactness of the tensored row from flatness of `S` or of `M₃`. -/
+theorem IsBaseChange.of_left_exact_of_lTensor
     (comm₁ : h₂.comp f = (f'.restrictScalars R).comp h₁)
     (comm₂ : h₃.comp g = (g'.restrictScalars R).comp h₂)
     (isb₂ : IsBaseChange S h₂) (inj₃ : Function.Injective (h₃.liftBaseChange S))

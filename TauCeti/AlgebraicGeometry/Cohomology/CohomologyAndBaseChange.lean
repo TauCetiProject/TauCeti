@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
-import TauCeti.RingTheory.Flat.Extensions
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
@@ -21,13 +20,15 @@ intersection is affine, and let `M` be a quasi-coherent sheaf on `X`. For every 
 `R' ⊗_R H⁰(X, M) ⟶ H⁰(Y, g^* M)`
 
 is bijective. No flatness of `R → R'` is assumed. If moreover `Γ(M, U)` and `Γ(M, V)` are flat
-over `R`, then `H⁰(X, M)` is a flat `R`-module, and the vanishing of `H¹` itself persists after
-every base change. This is the degree-zero case of cohomology and base change when the cohomology
-above it vanishes: for a family `X → Spec R` with such a cover, coefficients with flat sections and
-vanishing `H¹` have a flat module of global sections, whose formation commutes with every base
-change. Flatness of the sections over an open `W` is stated for the `R`-module
-`((sectionsBasePresheafFunctor R).obj M).obj (op W)`, whose carrier is `Γ(M, W)` with `R` acting
-through `Scheme.baseRingToStructurePresheaf`.
+over `R`, then `H⁰(X, M)` is a flat `R`-module
+(`TauCeti.AlgebraicGeometry.flat_cohomology_zero_of_subsingleton_cohomology_one`), and the
+vanishing of `H¹` itself persists after every base change
+(`TauCeti.AlgebraicGeometry.subsingleton_cohomology_one_pullback`). This is the degree-zero case
+of cohomology and base change when the cohomology above it vanishes: for a family `X → Spec R`
+with such a cover, coefficients with flat sections and vanishing `H¹` have a flat module of global
+sections, whose formation commutes with every base change. Flatness of the sections over an open
+`W` is stated for the `R`-module `((sectionsBasePresheafFunctor R).obj M).obj (op W)`, whose
+carrier is `Γ(M, W)` with `R` acting through `Scheme.baseRingToStructurePresheaf`.
 
 The proof uses the Mayer–Vietoris sequence of the cover. Since `H¹(X, M) = 0`, it gives a short
 exact sequence of `R`-modules
@@ -39,18 +40,13 @@ and over `Y` a left exact sequence `0 → H⁰(Y, g^* M) → Γ(g^* M, g⁻¹ U)
 `M` (`AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSections`), with no flatness hypothesis.
 Since `Γ(M, U ∩ V)` is flat, tensoring the first sequence with `R'` keeps it exact, and the five
 lemma identifies `R' ⊗_R H⁰(X, M)` with `H⁰(Y, g^* M)`
-(`IsBaseChange.of_left_exact_of_surjective`). Flatness of `H⁰(X, M)` is flatness of the kernel of
-a surjection between flat modules (`Function.Exact.flat_left_of_injective_of_surjective`).
+(`IsBaseChange.of_left_exact_of_surjective`).
 
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.bijective_cohomologyBaseChange_zero_of_subsingleton_cohomology_one`:
   the base change map on `H⁰` is bijective along every ring map when `H¹(X, M) = 0` and
   `Γ(M, U ∩ V)` is flat.
-* `TauCeti.AlgebraicGeometry.flat_cohomology_zero_of_subsingleton_cohomology_one`: `H⁰(X, M)` is
-  flat when `H¹(X, M) = 0` and the sections over `U`, `V` and `U ∩ V` are flat.
-* `TauCeti.AlgebraicGeometry.subsingleton_cohomology_one_pullback`: `H¹(X, M) = 0` implies
-  `H¹(Y, g^* M) = 0` for every base change.
 
 ## References
 
@@ -71,74 +67,12 @@ namespace TauCeti.AlgebraicGeometry
 
 variable {R : Type u} [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
 
-section TwoOpens
-
-variable (M : X.Modules) {U V : X.Opens}
-
-/-- On a two-open cover `X = U ∪ V`, global sections, through `H⁰(X, M) ≅ Γ(M, ⊤)`, are the pairs
-of sections over `U` and `V` that agree on `U ∩ V`. -/
-private lemma exact_restriction_comp_cohomologyZeroLinearEquiv (hUV : U ⊔ V = ⊤) :
-    Function.Exact ((mayerVietorisSectionsRestrictionLinear M U V).comp
-        (cohomologyZeroLinearEquiv M).toLinearMap)
-      (mayerVietorisSectionsDifferenceLinear M U V) := fun y ↦
-  (exact_mayerVietorisSectionsRestrictionLinear M U V hUV y).trans
-    ⟨fun ⟨s, hs⟩ ↦ ⟨(cohomologyZeroLinearEquiv M).symm s, by simpa using hs⟩,
-      fun ⟨x, hx⟩ ↦ ⟨_, hx⟩⟩
-
-/-- On a two-open cover, a degree-zero class is determined by its restrictions to the members. -/
-private lemma injective_restriction_comp_cohomologyZeroLinearEquiv (hUV : U ⊔ V = ⊤) :
-    Function.Injective ((mayerVietorisSectionsRestrictionLinear M U V).comp
-        (cohomologyZeroLinearEquiv M).toLinearMap) :=
-  (mayerVietorisSectionsRestrictionLinear_injective M U V hUV).comp
-    (cohomologyZeroLinearEquiv M).injective
-
-/-- **Flatness of `H⁰` when `H¹` vanishes.** Let `X` be a scheme over `R` covered by two opens `U`
-and `V` such that the sections of `M` over `U`, `V` and `U ∩ V` are flat `R`-modules. If
-`H¹(X, M) = 0`, then `H⁰(X, M)` is a flat `R`-module: it is the kernel of the surjective
-difference of restrictions `Γ(M, U) × Γ(M, V) → Γ(M, U ∩ V)`. -/
-theorem flat_cohomology_zero_of_subsingleton_cohomology_one (hUV : U ⊔ V = ⊤)
-    [Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op U))]
-    [Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op V))]
-    [Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op (U ⊓ V)))]
-    [Subsingleton (Cohomology M 1)] :
-    Module.Flat R (Cohomology M 0) := by
-  let : ∀ W : X.Opens, Algebra R Γ(X, W) := fun W ↦
-    ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
-  let : ∀ W : X.Opens, Module R Γ(M, W) := fun W ↦ sectionsBaseModule R M W
-  have : ∀ W : X.Opens, IsScalarTower R Γ(X, ⊤) Γ(M, W) := isScalarTower_sections R M
-  have := isScalarTower_cohomology R X M 0
-  have : Module.Flat R Γ(M, U) := ‹Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj _)›
-  have : Module.Flat R Γ(M, V) := ‹Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj _)›
-  have : Module.Flat R Γ(M, U ⊓ V) :=
-    ‹Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op (U ⊓ V)))›
-  exact Function.Exact.flat_left_of_injective_of_surjective
-    (f := ((mayerVietorisSectionsRestrictionLinear M U V).comp
-      (cohomologyZeroLinearEquiv M).toLinearMap).restrictScalars R)
-    (g := (mayerVietorisSectionsDifferenceLinear M U V).restrictScalars R)
-    (exact_restriction_comp_cohomologyZeroLinearEquiv M hUV)
-    (injective_restriction_comp_cohomologyZeroLinearEquiv M hUV)
-    (mayerVietorisSectionsDifferenceLinear_surjective M U V hUV)
-
-end TwoOpens
-
 section BaseChange
 
 variable {R' : Type u} [CommRing R'] [Algebra R R'] {Y : Scheme.{u}} [Y.Over (Spec (.of R'))]
   {g : Y ⟶ X}
   (H : IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
     (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
-
-include H in
-/-- **Vanishing of `H¹` persists under base change.** Let `X` be a scheme over `R` covered by
-affine opens `U` and `V` with affine intersection, and let `Y = X ×_R R'` be its base change along
-any ring map. If a quasi-coherent sheaf `M` on `X` has `H¹(X, M) = 0`, then
-`H¹(Y, g^* M) = 0`. -/
-theorem subsingleton_cohomology_one_pullback (M : X.Modules) [M.IsQuasicoherent] {U V : X.Opens}
-    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hInter : IsAffineOpen (U ⊓ V))
-    (hUV : U ⊔ V = ⊤) [Subsingleton (Cohomology M 1)] :
-    Subsingleton (Cohomology ((Scheme.Modules.pullback g).obj M) 1) := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback H M hU hV hInter hUV
-  exact e.symm.toEquiv.subsingleton
 
 include H in
 /-- **Cohomology and base change in degree zero.** Let `X` be a scheme over `R` covered by affine
@@ -225,21 +159,22 @@ theorem bijective_cohomologyBaseChange_zero_of_subsingleton_cohomology_one (M : 
     LinearMap.ext fun ⟨s, t⟩ ↦
       (congrArg σUV (mayerVietorisSectionsDifferenceLinear_apply M U V s t)).trans <|
       (g.pullbackSectionsBaseLinear_apply M (U ⊓ V) H.toCommSq _).trans <|
-      (pullbackSections_mayerVietorisSectionsDifference g M U V s t).trans <|
+      (g.pullbackSections_mayerVietorisSectionsDifference M U V s t).trans <|
       (congrArg (mayerVietorisSectionsDifference _ _ _)
         (Prod.ext (g.pullbackSectionsBaseLinear_apply M U H.toCommSq s).symm
           (g.pullbackSectionsBaseLinear_apply M V H.toCommSq t).symm)).trans
       (mayerVietorisSectionsDifferenceLinear_apply _ _ _ _ _).symm
   rw [← hlift]
-  exact (IsBaseChange.of_left_exact_of_surjective R' comm₁ comm₂
+  apply IsBaseChange.liftBaseChange_bijective
+  exact IsBaseChange.of_left_exact_of_surjective R' comm₁ comm₂
     (IsBaseChange.prodMap (S := R') σU σV (g.isBaseChange_pullbackSections M U H hU)
       (g.isBaseChange_pullbackSections M V H hV))
     hσUV.liftBaseChange_injective
-    (exact_restriction_comp_cohomologyZeroLinearEquiv M hUV)
-    (injective_restriction_comp_cohomologyZeroLinearEquiv M hUV)
+    (exact_mayerVietorisSectionsRestrictionLinear_comp_cohomologyZeroLinearEquiv M U V hUV)
+    (mayerVietorisSectionsRestrictionLinear_comp_cohomologyZeroLinearEquiv_injective M U V hUV)
     (mayerVietorisSectionsDifferenceLinear_surjective M U V hUV)
-    (exact_restriction_comp_cohomologyZeroLinearEquiv _ hUV')
-    (injective_restriction_comp_cohomologyZeroLinearEquiv _ hUV')).liftBaseChange_bijective
+    (exact_mayerVietorisSectionsRestrictionLinear_comp_cohomologyZeroLinearEquiv _ _ _ hUV')
+    (mayerVietorisSectionsRestrictionLinear_comp_cohomologyZeroLinearEquiv_injective _ _ _ hUV')
 
 end BaseChange
 
