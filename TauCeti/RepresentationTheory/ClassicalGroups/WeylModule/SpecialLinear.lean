@@ -340,6 +340,7 @@ variable {n : ℕ} {W : Type*} [AddCommGroup W] [Module ℂ W]
   {ρ : Representation ℂ (Matrix.SpecialLinearGroup (Fin n) ℂ) W}
 
 /-- The Weyl module of a shape is a rational representation of `SL n ℂ`. -/
+@[simp]
 theorem isRationalSLRep_weylSLRepOfShape (n : ℕ) (μ : YoungDiagram) :
     IsRationalSLRep (weylSLRepOfShape ℂ n μ) :=
   (isPolynomialRep_weylRepOfShape n μ).isRationalRep.comp_toGL

@@ -74,7 +74,8 @@ contribute, and for those `c ^ a * c⁻¹ ^ k` is an integer power of `det g`
   the determinant-one scalar matrices act through `ζ ↦ ζ ^ a` extends uniquely to `GL` with scalar
   matrices acting through `z ↦ z ^ a`.
 * `TauCeti.IsRationalSLRep`: rational representations of `SL n ℂ`, with
-  `TauCeti.IsRationalRep.comp_toGL` restricting rational representations of `GL n ℂ`.
+  `TauCeti.IsRationalRep.comp_toGL` restricting rational representations of `GL n ℂ`, and
+  `TauCeti.isRationalSLRep_iff_forall_exists_eval` checking rationality against any basis.
 * `TauCeti.IsRationalRep.of_comp_toGL`: a representation of `GL n ℂ` with rational restriction to
   `SL n ℂ` and scalar matrices acting through `z ↦ z ^ a` is rational.
 
@@ -259,16 +260,18 @@ private theorem pow_smul_apply_eq_of_toGL_mul_scalar_eq
       scalar ι ((z' : K) * (z⁻¹ : Kˣ)) := by
     have h' : SpecialLinearGroup.toGL (s'⁻¹ * s) =
         GeneralLinearGroup.scalar ι (z' * z⁻¹) := by
-      rw [map_mul, map_inv, map_mul, inv_mul_eq_iff_eq_mul, ← mul_assoc, ← h, mul_assoc,
-        ← map_mul, mul_inv_cancel, map_one, mul_one]
+      simp only [map_mul, map_inv]
+      rw [inv_mul_eq_iff_eq_mul, ← mul_assoc, ← h]
+      group
     have := congrArg Units.val h'
     rwa [SpecialLinearGroup.coe_GL_coe_matrix, GeneralLinearGroup.coe_scalar, Units.val_mul] at this
   have hs : ρ s = ((z' : K) * (z⁻¹ : Kˣ)) ^ a • ρ s' := by
     calc ρ s = ρ (s' * (s'⁻¹ * s)) := by rw [mul_inv_cancel_left]
       _ = ρ s' * ρ (s'⁻¹ * s) := map_mul ..
       _ = _ := by rw [H _ _ ht, mul_smul_comm, mul_one]
-  rw [hs, smul_smul, ← mul_pow, ← mul_assoc, mul_comm (z : K), mul_assoc, Units.mul_inv,
-    mul_one]
+  rw [hs, smul_smul, ← mul_pow]
+  congr 2
+  simp [mul_left_comm (z : K)]
 
 variable [IsAlgClosed K]
 
@@ -401,6 +404,39 @@ theorem IsRationalSLRep.finite {ρ : Representation ℂ (SpecialLinearGroup (Fin
   obtain ⟨b, -⟩ := h
   exact Module.Finite.of_basis b
 
+/-- **Rationality on `SL n ℂ` is basis independent.** A representation of `SL n ℂ` is rational
+exactly when, against *any* chosen basis, each matrix entry is a polynomial function of the entries
+of `s`. -/
+theorem isRationalSLRep_iff_forall_exists_eval
+    {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W}
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℂ W) :
+    IsRationalSLRep ρ ↔ ∀ i j, ∃ P : MvPolynomial (Fin n × Fin n) ℂ,
+      ∀ s : SpecialLinearGroup (Fin n) ℂ,
+        LinearMap.toMatrix b b (ρ s) i j =
+          eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P := by
+  let x (p : Fin n × Fin n) (s : SpecialLinearGroup (Fin n) ℂ) : ℂ :=
+    (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2
+  -- The polynomial functions on `SL n ℂ`, as a subalgebra of all functions.
+  let A : Subalgebra ℂ (SpecialLinearGroup (Fin n) ℂ → ℂ) := (aeval x).range
+  have hA {f : SpecialLinearGroup (Fin n) ℂ → ℂ} : f ∈ A ↔ ∃ P : MvPolynomial (Fin n × Fin n) ℂ,
+      ∀ s, f s = eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P := by
+    have heval (P : MvPolynomial (Fin n × Fin n) ℂ) (s : SpecialLinearGroup (Fin n) ℂ) :
+        aeval x P s = eval (fun p => x p s) P := by
+      simpa [aeval_eq_eval] using comp_aeval_apply x (Pi.evalAlgHom ℂ (fun _ => ℂ) s) P
+    refine ⟨fun ⟨P, hP⟩ => ⟨P, fun s => hP ▸ heval P s⟩, fun ⟨P, hP⟩ => ⟨P, funext fun s => ?_⟩⟩
+    exact (heval P s).trans (hP s).symm
+  constructor
+  · rintro ⟨b₀, P, hP⟩ i j
+    exact hA.mp (Representation.toMatrix_mem_of_toMatrix_mem A b₀ b ρ
+      (fun p l => hA.mpr ⟨P p l, fun s => hP s p l⟩) i j)
+  · intro h
+    let e : ι ≃ Fin (Module.finrank ℂ W) :=
+      Fintype.equivFinOfCardEq (Module.finrank_eq_card_basis b).symm
+    choose P hP using fun q : Fin (Module.finrank ℂ W) × Fin (Module.finrank ℂ W) =>
+      hA.mp (Representation.toMatrix_mem_of_toMatrix_mem A b (b.reindex e) ρ
+        (fun i j => hA.mpr (h i j)) q.1 q.2)
+    exact ⟨b.reindex e, fun i j => P (i, j), fun s i j => hP (i, j) s⟩
+
 /-- **The restriction of a rational representation of `GL n ℂ` to `SL n ℂ` is rational**: the
 determinant in the denominator of each matrix entry is `1` on `SL n ℂ`. -/
 theorem IsRationalRep.comp_toGL {ρ : Representation ℂ (GL (Fin n) ℂ) W} (h : IsRationalRep ρ) :
@@ -453,16 +489,17 @@ private theorem eval_eq_sum_homogeneousComponent_of_apply_scalar [NeZero n]
       funext p
       rw [SpecialLinearGroup.coe_mul]
       simp [t, x, scalar_apply]
-    rw [← hts, ← hP (t * s), ← hP s, map_mul, map_mul, ht, ha, smul_mul_assoc, one_mul, map_smul,
-      Matrix.smul_apply, smul_eq_mul, Units.val_mk0]
+    rw [← hts, ← hP (t * s), ← hP s, map_mul, map_mul, ht, ha]
+    simp
   have hsum (y : Fin n × Fin n → ℂ) : eval y P =
       ∑ k ∈ Finset.range (P.totalDegree + 1), eval y (homogeneousComponent k P) := by
     conv_lhs => rw [← sum_homogeneousComponent P]
     rw [map_sum]
   -- Average the transformation law over the powers of `ζ`, using `ζ ^ ((n - 1) * a) = ζ⁻¹ ^ a`.
+  have hexp : (n - 1) * a + a = n * a := by rw [← add_one_mul, Nat.sub_add_cancel NeZero.one_le]
   have hterm (m : ℕ) : (ζ ^ m) ^ ((n - 1) * a) * eval ((ζ ^ m) • x) P = eval x P := by
-    rw [hscal, ← mul_assoc, ← pow_add, ← Nat.succ_mul, Nat.succ_eq_add_one,
-      Nat.sub_add_cancel NeZero.one_le, pow_mul, hpow, one_pow, one_mul]
+    rw [hscal, ← mul_assoc, ← pow_add, hexp, pow_mul, hpow]
+    simp
   have hmean : ∑ m : Fin n, (ζ ^ (m : ℕ)) ^ ((n - 1) * a) * eval ((ζ ^ (m : ℕ)) • x) P =
       n * eval x P := by
     simp [hterm]
@@ -477,6 +514,59 @@ private theorem eval_eq_sum_homogeneousComponent_of_apply_scalar [NeZero n]
   rw [← hmean, Finset.sum_congr rfl fun (m : Fin n) _ => hexpand m, Finset.sum_comm]
   simp_rw [← Finset.sum_mul, hζ.sum_pow_pow_eq, Finset.sum_filter, Finset.mul_sum, ite_mul,
     zero_mul, mul_ite, mul_zero]
+
+/-- On `GL n ℂ`, a matrix coefficient of a representation on which the scalar matrices act through
+`z ↦ z ^ a`, and whose restriction to `SL n ℂ` is given by a polynomial `P` in the matrix entries,
+is a sum of integer powers of `det g` times homogeneous components of `P`. Write `g = c • s` with
+`c ^ n = det g` and `s` of determinant one; then `ρ g = c ^ a • ρ s`, only the components of degree
+`k ≡ a` modulo `n` contribute, and for those `c ^ a * c⁻¹ ^ k = det g ^ ((a - k) / n)`. -/
+private theorem toMatrix_apply_eq_sum_det_zpow_mul_eval [NeZero n]
+    {ρ : Representation ℂ (GL (Fin n) ℂ) W} {a : ℕ}
+    (ha : ∀ z : ℂˣ, ρ (GeneralLinearGroup.scalar (Fin n) z) = ((z : ℂ) ^ a) • 1)
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℂ W) {i j : ι}
+    {P : MvPolynomial (Fin n × Fin n) ℂ}
+    (hP : ∀ s : SpecialLinearGroup (Fin n) ℂ,
+      LinearMap.toMatrix b b (ρ (SpecialLinearGroup.toGL s)) i j =
+        eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P)
+    (g : GL (Fin n) ℂ) :
+    LinearMap.toMatrix b b (ρ g) i j =
+      ∑ k ∈ (Finset.range (P.totalDegree + 1)).filter (fun k => n ∣ k + (n - 1) * a),
+        ((Matrix.GeneralLinearGroup.det g ^ (((a : ℤ) - k) / n) : ℂˣ) : ℂ) *
+          eval (fun p => (g : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (homogeneousComponent k P) := by
+  have hn : n ≠ 0 := NeZero.ne n
+  obtain ⟨c, hc⟩ := IsAlgClosed.exists_pow_nat_eq ((g : Matrix (Fin n) (Fin n) ℂ).det)
+    (Nat.pos_of_ne_zero hn)
+  have hc0 : c ≠ 0 := by
+    rintro rfl
+    exact Matrix.GeneralLinearGroup.det_ne_zero g (by rw [← hc, zero_pow hn])
+  let s : SpecialLinearGroup (Fin n) ℂ := ⟨c⁻¹ • (g : Matrix (Fin n) (Fin n) ℂ), by
+    rw [Matrix.det_smul, Fintype.card_fin, ← hc, inv_pow, inv_mul_cancel₀ (pow_ne_zero _ hc0)]⟩
+  have hg : SpecialLinearGroup.toGL s * GeneralLinearGroup.scalar (Fin n) (Units.mk0 c hc0) = g :=
+    Units.ext <| by
+      simp only [Units.val_mul, SpecialLinearGroup.coe_GL_coe_matrix, GeneralLinearGroup.coe_scalar]
+      ext
+      simp [s, scalar_apply, mul_right_comm _ _ c, hc0]
+  have hρg : ρ g = (c ^ a) • ρ (SpecialLinearGroup.toGL s) := by
+    rw [← hg, map_mul, ha, mul_smul_comm, mul_one, Units.val_mk0]
+  rw [hρg, map_smul, Matrix.smul_apply, smul_eq_mul, hP,
+    eval_eq_sum_homogeneousComponent_of_apply_scalar ha b hP s, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  have hdvd : (n : ℤ) ∣ (a : ℤ) - k := by
+    have hsub : (a : ℤ) - k = n * a - ((k + (n - 1) * a : ℕ) : ℤ) := by
+      push_cast [Nat.cast_sub NeZero.one_le]
+      ring
+    rw [hsub]
+    exact dvd_sub (dvd_mul_right _ _) (Int.natCast_dvd_natCast.mpr (Finset.mem_filter.mp hk).2)
+  have hentries : (fun p : Fin n × Fin n => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) =
+      c⁻¹ • fun p => (g : Matrix (Fin n) (Fin n) ℂ) p.1 p.2 := by
+    funext p
+    rw [Pi.smul_apply, SpecialLinearGroup.coe_mk, Matrix.smul_apply]
+  have hpow :
+      c ^ a * c⁻¹ ^ k = ((Matrix.GeneralLinearGroup.det g ^ (((a : ℤ) - k) / n) : ℂˣ) : ℂ) := by
+    rw [Units.val_zpow_eq_zpow_val, Matrix.GeneralLinearGroup.val_det_apply, ← hc,
+      ← zpow_natCast c n, ← zpow_mul, Int.mul_ediv_cancel' hdvd, zpow_sub₀ hc0]
+    simp [div_eq_mul_inv]
+  rw [hentries, (homogeneousComponent_isHomogeneous k P).eval_smul, smul_eq_mul, ← mul_assoc, hpow]
 
 /-- **A representation of `GL n ℂ` is rational once its restriction to `SL n ℂ` is rational and
 the scalar matrices act through a power `z ↦ z ^ a` of the scalar.** Writing `g = c • s` with
@@ -501,54 +591,15 @@ theorem IsRationalRep.of_comp_toGL {ρ : Representation ℂ (GL (Fin n) ℂ) W}
     rw [hconst]
     exact Subalgebra.algebraMap_mem _ _
   have : NeZero n := ⟨hn.ne'⟩
-  let D := (P i j).totalDegree + 1
-  let S := (Finset.range D).filter fun k => n ∣ k + (n - 1) * a
-  -- On `SL n ℂ` only the components of degree `≡ a` modulo `n` contribute.
-  have hSL (s : SpecialLinearGroup (Fin n) ℂ) :
-      LinearMap.toMatrix b b (ρ (SpecialLinearGroup.toGL s)) i j =
-        ∑ k ∈ S, eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2)
-          (homogeneousComponent k (P i j)) :=
-    (hP s i j).trans (eval_eq_sum_homogeneousComponent_of_apply_scalar ha b (fun t => hP t i j) s)
-  -- The integer exponent of the determinant attached to a contributing degree.
-  let q (k : ℕ) : ℤ := ((a : ℤ) - k) / n
   have hfun : (fun g : GL (Fin n) ℂ => LinearMap.toMatrix b b (ρ g) i j) =
-      ∑ k ∈ S, (fun g : GL (Fin n) ℂ =>
-        ((Matrix.GeneralLinearGroup.det g ^ q k : ℂˣ) : ℂ)) *
+      ∑ k ∈ (Finset.range ((P i j).totalDegree + 1)).filter (fun k => n ∣ k + (n - 1) * a),
+        (fun g : GL (Fin n) ℂ =>
+          ((Matrix.GeneralLinearGroup.det g ^ (((a : ℤ) - k) / n) : ℂˣ) : ℂ)) *
           fun g : GL (Fin n) ℂ => eval (fun p => (g : Matrix (Fin n) (Fin n) ℂ) p.1 p.2)
             (homogeneousComponent k (P i j)) := by
     funext g
-    obtain ⟨c, hc⟩ := IsAlgClosed.exists_pow_nat_eq ((g : Matrix (Fin n) (Fin n) ℂ).det) hn
-    have hc0 : c ≠ 0 := by
-      rintro rfl
-      exact Matrix.GeneralLinearGroup.det_ne_zero g (by rw [← hc, zero_pow hn.ne'])
-    let s : SpecialLinearGroup (Fin n) ℂ := ⟨c⁻¹ • (g : Matrix (Fin n) (Fin n) ℂ), by
-      rw [Matrix.det_smul, Fintype.card_fin, ← hc, inv_pow, inv_mul_cancel₀ (pow_ne_zero _ hc0)]⟩
-    have hg : SpecialLinearGroup.toGL s * GeneralLinearGroup.scalar (Fin n) (Units.mk0 c hc0) =
-        g := by
-      refine Units.ext ?_
-      rw [Units.val_mul, SpecialLinearGroup.coe_GL_coe_matrix, GeneralLinearGroup.coe_scalar,
-        Units.val_mk0, scalar_apply, ← smul_eq_mul_diagonal, SpecialLinearGroup.coe_mk, smul_smul,
-        mul_inv_cancel₀ hc0, one_smul]
-    have hρg : ρ g = (c ^ a) • ρ (SpecialLinearGroup.toGL s) := by
-      rw [← hg, map_mul, ha, mul_smul_comm, mul_one, Units.val_mk0]
-    rw [hρg, map_smul, Matrix.smul_apply, smul_eq_mul, hSL, Finset.mul_sum, Finset.sum_apply]
-    refine Finset.sum_congr rfl fun k hk => ?_
-    have hdvd : (n : ℤ) ∣ (a : ℤ) - k := by
-      have hsub : (a : ℤ) - k = n * a - ((k + (n - 1) * a : ℕ) : ℤ) := by
-        push_cast [Nat.cast_sub NeZero.one_le]
-        ring
-      rw [hsub]
-      exact dvd_sub (dvd_mul_right _ _) (Int.natCast_dvd_natCast.mpr (Finset.mem_filter.mp hk).2)
-    have hentries : (fun p : Fin n × Fin n => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) =
-        c⁻¹ • fun p => (g : Matrix (Fin n) (Fin n) ℂ) p.1 p.2 := by
-      funext p
-      rw [Pi.smul_apply, SpecialLinearGroup.coe_mk, Matrix.smul_apply]
-    have hpow : c ^ a * c⁻¹ ^ k = ((Matrix.GeneralLinearGroup.det g ^ q k : ℂˣ) : ℂ) := by
-      rw [Units.val_zpow_eq_zpow_val, Matrix.GeneralLinearGroup.val_det_apply, ← hc,
-        ← zpow_natCast c n, ← zpow_mul, Int.mul_ediv_cancel' hdvd, zpow_sub₀ hc0, zpow_natCast,
-        zpow_natCast, div_eq_mul_inv, inv_pow]
-    rw [hentries, (homogeneousComponent_isHomogeneous k (P i j)).eval_smul, smul_eq_mul,
-      Pi.mul_apply, ← mul_assoc, hpow]
+    rw [toMatrix_apply_eq_sum_det_zpow_mul_eval ha b (fun s => hP s i j) g, Finset.sum_apply]
+    rfl
   rw [hfun]
   refine Subalgebra.sum_mem _ fun k _ => Subalgebra.mul_mem _ (det_zpow_mem_rationalFunctions _)
     (polynomialFunctions_le_rationalFunctions (mem_polynomialFunctions.mpr ⟨_, fun _ => rfl⟩))
