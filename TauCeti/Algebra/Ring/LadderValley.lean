@@ -269,7 +269,7 @@ theorem pow_d_mul_u_eq_zero (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
 
 section Commutator
 
-variable (k : Type*) [Ring k] [Module k A]
+variable (k : Type*) [Semiring k] [Module k A]
 
 /-- **Closed valley words are sums of commutators.** If the turns at every rung cancel, including
 the single turn `d 0 * u 0` at the bottom rung, then the valley word descending `s > 0` rungs to
@@ -292,7 +292,7 @@ theorem ladderValley_mem_commutatorSubmodule (hud₀ : d 0 * u 0 = 0)
         rcases neg_one_pow_eq_or A (s * s) with h | h
         · rwa [h, one_mul]
         · rw [h, neg_one_mul]
-          exact neg_mem hlow
+          exact neg_mem_commutatorSubmodule hlow
     simpa using add_mem hcomm hrot
 
 end Commutator

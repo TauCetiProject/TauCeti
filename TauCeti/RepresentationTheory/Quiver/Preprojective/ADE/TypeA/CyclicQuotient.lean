@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeA.Basic
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Grading
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Augmentation
 
 /-!
