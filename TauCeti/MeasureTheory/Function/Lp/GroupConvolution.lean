@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
-import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import TauCeti.MeasureTheory.Function.Lp.Order
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
@@ -27,9 +26,9 @@ an `Lᵖ`-valued Bochner integral of left translates of `f`. This is the operato
 classical convolution `(h ⋆ f)(x) = ∫ y, h(y) • f(y⁻¹ * x) dμ(y)`; identifying the two almost
 everywhere needs a Fubini argument and is not done here. The group need not be abelian,
 and neither σ-finiteness of `μ` nor second countability of `G` is assumed. The integrand is
-almost everywhere strongly measurable because `y ↦ L_y f` is continuous, by Mathlib's continuity
-of the `DomMulAct` action on `Lᵖ`, and an integrable `h` lives on a σ-finite set
-(`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`).
+almost everywhere strongly measurable because `y ↦ L_y f` is continuous
+(`MeasureTheory.Lp.continuous_leftTranslation_apply`), and an integrable `h` lives on a
+σ-finite set (`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`).
 
 Since the definition never evaluates `h ⋆ f` at a point, its algebraic properties need no Fubini
 theorem. Left translation passes through the integral, and a left translation of the variable
@@ -87,13 +86,8 @@ variable {G E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Me
 `h ⋆ f`. -/
 theorem integrable_smul_leftTranslation (hp : p ≠ ∞) {h : G → ℝ} (hh : Integrable h μ)
     (f : Lp E p μ) : Integrable (fun y ↦ h y • leftTranslation μ p ℝ y f) μ := by
-  have : Fact (p ≠ ∞) := ⟨hp⟩
-  -- `y ↦ L_y f = DomMulAct.mk y⁻¹ • f` is continuous by Mathlib's `ContinuousSMul` instance.
-  have hcont : Continuous fun y ↦ leftTranslation μ p ℝ y f := by
-    simp_rw [leftTranslation_apply]
-    exact (DomMulAct.continuous_mk.comp continuous_inv).smul continuous_const
-  refine (hh.norm.mul_const ‖f‖).mono'
-    (hh.aefinStronglyMeasurable.aestronglyMeasurable_smul hcont) (.of_forall fun y ↦ ?_)
+  refine (hh.norm.mul_const ‖f‖).mono' (hh.aefinStronglyMeasurable.aestronglyMeasurable_smul
+    (continuous_leftTranslation_apply hp f)) (.of_forall fun y ↦ ?_)
   rw [norm_smul, LinearIsometryEquiv.norm_map]
 
 omit [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] in
