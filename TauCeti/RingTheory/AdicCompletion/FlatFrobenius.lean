@@ -9,7 +9,7 @@ public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.RingTheory.AdicCompletion.LocalRing
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 public import Mathlib.RingTheory.RingHom.Flat
-import Mathlib.Algebra.CharP.Algebra
+public import TauCeti.RingTheory.AdicCompletion.Algebra
 import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 import TauCeti.Algebra.CharP.Frobenius.Basic
 import TauCeti.RingTheory.AdicCompletion.Noetherian
@@ -29,14 +29,12 @@ No finiteness of Frobenius is needed. This is the step that lets Kunz's characte
 regular rings by flatness of Frobenius be checked on complete local rings, where Cohen's structure
 theorem applies.
 
-The completion of a ring that is Hausdorff for the `I`-adic topology contains the ring, so it has
-the same exponential characteristic (`AdicCompletion.expChar`). This applies to the completion of a
-Noetherian local ring at its maximal ideal, by Krull's intersection theorem.
+The completion of a Noetherian local ring is of characteristic `p` by `AdicCompletion.expChar`,
+since the ring is Hausdorff for the adic topology of its maximal ideal by Krull's intersection
+theorem.
 
 ## Main results
 
-* `AdicCompletion.expChar`: the `I`-adic completion of an `I`-adically Hausdorff ring has the
-  exponential characteristic of the ring.
 * `TauCeti.AdicCompletion.flat_frobenius`: if Frobenius of a Noetherian local ring is flat, so is
   Frobenius of its completion.
 
@@ -50,16 +48,6 @@ Noetherian local ring at its maximal ideal, by Krull's intersection theorem.
 public section
 
 open IsLocalRing
-
-namespace AdicCompletion
-
-/-- The completion of an `I`-adically Hausdorff ring has the exponential characteristic of the
-ring, since the ring embeds into it. -/
-instance expChar {R : Type*} [CommRing R] (I : Ideal R) [IsHausdorff I R] (p : ℕ) [ExpChar R p] :
-    ExpChar (AdicCompletion I R) p :=
-  expChar_of_injective_algebraMap (of_injective I R) p
-
-end AdicCompletion
 
 namespace TauCeti.AdicCompletion
 

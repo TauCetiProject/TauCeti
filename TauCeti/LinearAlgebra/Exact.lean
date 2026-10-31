@@ -14,10 +14,11 @@ public import Mathlib.LinearAlgebra.Prod
 
 This file records elementary constructions and consequences for exact pairs of linear maps,
 including the left exactness of `Hom` over a noncommutative ring
-(`Function.Exact.lcomp_of_surjective`), the horseshoe step `TauCeti.exists_surjective_ker_exact`
-and the short exact sequence of kernels `TauCeti.exact_ker_comp` attached to a surjection and a
-further map, the isomorphisms on kernels and cokernels induced by a map of two-term complexes
-whose cone `K₀ → C₀ × K₁ → C₁` is short exact
+(`Function.Exact.lcomp_of_surjective`), the horseshoe step `TauCeti.exists_surjective_ker_exact`,
+the short exact sequence of kernels `TauCeti.exact_ker_comp` attached to a surjection and a
+further map, the exact sequence `G ⊓ P → G → G ⧸ (G ⊓ P)` for submodules `G` and `P`
+(`Submodule.exists_exact_codRestrict_mkQ`), the isomorphisms on kernels and cokernels induced by
+a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
 (`Function.Exact.bijective_restrict_ker_of_prod_coprod`,
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the dimension of the homology of a
 complex of finite-dimensional vector spaces in terms of the two cokernels
@@ -182,6 +183,19 @@ theorem exact_ker_comp {P : Type*} [AddCommGroup P] [Module R P] {π : P →ₗ[
   · obtain ⟨y, hy⟩ := y
     obtain ⟨x, rfl⟩ := hπ y
     exact ⟨⟨x, by simpa using hy⟩, rfl⟩
+
+/-- For submodules `G` and `P` of `M`, the map `G → G ⧸ (G ⊓ P)`, realised as `G → P.mkQ '' G`, is
+surjective, and exact after any map `f` whose range in `G` is `G ⊓ P`. -/
+theorem _root_.Submodule.exists_exact_codRestrict_mkQ {X : Type*} [AddCommGroup X] [Module R X]
+    (G P : Submodule R M) {f : X →ₗ[R] G} (hf : ∀ g : G, g ∈ range f ↔ (g : M) ∈ P) :
+    ∃ q : G →ₗ[R] G.map P.mkQ, Function.Surjective q ∧ Function.Exact f q ∧
+      (G.map P.mkQ).subtype ∘ₗ q = P.mkQ ∘ₗ G.subtype := by
+  refine ⟨(P.mkQ ∘ₗ G.subtype).codRestrict _ fun g ↦ Submodule.mem_map_of_mem g.2, ?_,
+    exact_iff.mpr <| Submodule.ext fun g ↦ ?_, subtype_comp_codRestrict _ _ _⟩
+  · rintro ⟨_, g, hg, rfl⟩
+    exact ⟨⟨g, hg⟩, by ext; simp⟩
+  · rw [hf, mem_ker, ← Subtype.coe_inj]
+    simp [Submodule.Quotient.mk_eq_zero]
 
 end ShortExact
 

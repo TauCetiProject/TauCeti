@@ -125,19 +125,11 @@ theorem _root_.LinearMap.range_rTensor_inclusion_smul_le (I : Ideal R) (J : Subm
     LinearMap.range ((inclusion (Submodule.smul_le_right : I • J ≤ J)).rTensor M) ≤
       (I • ⊤ : Submodule R (J ⊗[R] M)) := by
   rintro _ ⟨u, rfl⟩
-  induction u using TensorProduct.inductionOn with
-  | add u v hu hv => rw [map_add]; exact add_mem hu hv
-  | tmul y m =>
-    -- In `J`, the element `y` of `I • J` lies in `I • ⊤`, since `I • J` is the image of `I • ⊤`.
-    have hy : (y : N) ∈ (I • ⊤ : Submodule R J).map J.subtype := by
-      rw [map_smul'', map_top, range_subtype]
-      exact y.2
-    obtain ⟨z, hz, hzy⟩ := hy
-    have hz' : inclusion Submodule.smul_le_right y = z := Subtype.ext hzy.symm
-    rw [LinearMap.rTensor_tmul, hz']
-    have := mem_map_of_mem (f := (TensorProduct.mk R J M).flip m) hz
-    rw [map_smul''] at this
-    exact smul_mono le_rfl le_top this
+  -- Transport the left-hand statement along the symmetry of the tensor product.
+  have h := mem_map_of_mem (f := ((TensorProduct.comm R J M).symm : M ⊗[R] J →ₗ[R] J ⊗[R] M))
+    (LinearMap.range_lTensor_inclusion_smul_le I J ⟨TensorProduct.comm R _ M u, rfl⟩)
+  rwa [map_smul'', map_top, LinearEquiv.range, LinearMap.lTensor_comm, LinearEquiv.coe_coe,
+    LinearEquiv.symm_apply_apply] at h
 
 end Inclusion
 
