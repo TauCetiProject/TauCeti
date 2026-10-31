@@ -17,7 +17,8 @@ import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealSubfield
 
 Let `K` be an imaginary quadratic field: a quadratic extension of `ℚ` with no real embedding. It is
 a CM field (its Galois group over `ℚ` is abelian), and its maximal real subfield is a proper
-subfield of a field of degree two over `ℚ`, hence `ℚ` itself. So under any complex embedding
+subfield of a field of degree two over `ℚ`, hence `ℚ` itself (the case `F = ℚ` of the general
+statement for CM extensions `K / F`). So under any complex embedding
 `φ : K →+* ℂ`, `φ(K) ∩ ℝ = φ(ℚ)`: an element of `K` with a real image is rational, and an algebraic
 integer of `K` with a real image is a rational integer.
 
@@ -59,21 +60,19 @@ variable {K : Type*} [Field K] [NumberField K] [Algebra.IsQuadraticExtension ℚ
 
 variable (K) in
 /-- **The maximal real subfield of an imaginary quadratic field is `ℚ`.** Since `K / ℚ` is a
-CM extension, this is Mathlib's `NumberField.CMExtension.equivMaximalRealSubfield`. -/
+CM extension, this is the case `F = ℚ` of
+`NumberField.CMExtension.maximalRealSubfield_eq_fieldRange`. -/
 @[simp]
 theorem maximalRealSubfield_eq_fieldRange :
-    maximalRealSubfield K = (algebraMap ℚ K).fieldRange := by
-  refine le_antisymm (fun x hx ↦ ⟨_,
-    CMExtension.algebraMap_equivMaximalRealSubfield_symm_apply ℚ K ⟨x, hx⟩⟩) ?_
-  rintro _ ⟨q, rfl⟩
-  simp
+    maximalRealSubfield K = (algebraMap ℚ K).fieldRange :=
+  CMExtension.maximalRealSubfield_eq_fieldRange ℚ K
 
 /-- **Real elements of an imaginary quadratic field are rational.** Under any complex embedding,
-an element of an imaginary quadratic field has a real image exactly when it is rational. -/
+an element of an imaginary quadratic field has a real image exactly when it is rational. This is
+the case `F = ℚ` of `NumberField.CMExtension.mem_range_algebraMap_iff_star_eq`. -/
 theorem mem_range_algebraMap_iff_star_eq (φ : K →+* ℂ) (x : K) :
-    x ∈ Set.range (algebraMap ℚ K) ↔ star (φ x) = φ x := by
-  rw [← IsCMField.mem_maximalRealSubfield_iff_star_eq, maximalRealSubfield_eq_fieldRange,
-    RingHom.mem_fieldRange, Set.mem_range]
+    x ∈ Set.range (algebraMap ℚ K) ↔ star (φ x) = φ x :=
+  CMExtension.mem_range_algebraMap_iff_star_eq ℚ φ x
 
 /-- **Real algebraic integers of an imaginary quadratic field are rational integers.** Under any
 complex embedding, an algebraic integer of an imaginary quadratic field has a real image exactly
