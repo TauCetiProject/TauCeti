@@ -50,6 +50,12 @@ vanishes on the vectors of type `(1,0)`.
 * `TauCeti.AlmostComplexStructure.baseChange_holomorphicPart` and
   `TauCeti.AlmostComplexStructure.baseChange_antiholomorphicPart`: the complexified complex
   structure commutes with taking the `(1,0)`- and `(0,1)`-parts.
+* `TauCeti.AlmostComplexStructure.one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff` and
+  `TauCeti.AlmostComplexStructure.one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff`: the
+  vector `1 ⊗ v + I ⊗ w` has type `(1,0)` exactly when `w = -J v`, and type `(0,1)` exactly when
+  `w = J v`.
+* `TauCeti.AlmostComplexStructure.eigenspace_neg_baseChange_I`: the vectors of type `(1,0)` for
+  `-J` are the vectors of type `(0,1)` for `J`.
 * `TauCeti.AlmostComplexStructure.tmulConj_holomorphicPart` and
   `TauCeti.AlmostComplexStructure.tmulConj_antiholomorphicPart`: conjugation of the
   complexification exchanges the `(1,0)`- and `(0,1)`-parts.
@@ -162,6 +168,47 @@ theorem antiholomorphicPart_mem_eigenspace_baseChange_neg_I (v : V) :
     J.antiholomorphicPart v ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
   rw [Module.End.mem_eigenspace_iff, baseChange_antiholomorphicPart,
     antiholomorphicPart_apply_apply]
+
+/-! ## Vectors of type `(1,0)` and `(0,1)` in real coordinates -/
+
+/-- `I • (1 ⊗ v + I ⊗ w) = 1 ⊗ (-w) + I ⊗ v` in the complexification. -/
+private lemma I_smul_one_tmul_add_I_tmul (v w : V) :
+    Complex.I • ((1 : ℂ) ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w) =
+      (1 : ℂ) ⊗ₜ[ℝ] (-w) + Complex.I ⊗ₜ[ℝ] v := by
+  rw [smul_add, TensorProduct.smul_tmul', TensorProduct.smul_tmul', smul_eq_mul, smul_eq_mul,
+    mul_one, Complex.I_mul_I, TensorProduct.tmul_neg, TensorProduct.neg_tmul, add_comm]
+
+/-- The vector `1 ⊗ v + I ⊗ w` of the complexification has type `(1,0)`, that is, lies in the
+`i`-eigenspace of the complexified complex structure, exactly when `w = -J v`. -/
+theorem one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff (v w : V) :
+    (1 : ℂ) ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w ∈
+        Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I ↔ w = -J v := by
+  rw [Module.End.mem_eigenspace_iff, I_smul_one_tmul_add_I_tmul, map_add,
+    LinearMap.baseChange_tmul, LinearMap.baseChange_tmul, one_tmul_add_I_tmul_inj]
+  refine ⟨fun h ↦ by rw [← neg_neg w, ← h.1], ?_⟩
+  rintro rfl
+  exact ⟨(neg_neg _).symm, by simp⟩
+
+/-- The vector `1 ⊗ v + I ⊗ w` of the complexification has type `(0,1)`, that is, lies in the
+`-i`-eigenspace of the complexified complex structure, exactly when `w = J v`. -/
+theorem one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff (v w : V) :
+    (1 : ℂ) ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w ∈
+        Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) ↔ w = J v := by
+  rw [Module.End.mem_eigenspace_iff, neg_smul, I_smul_one_tmul_add_I_tmul, neg_add,
+    ← TensorProduct.tmul_neg, ← TensorProduct.tmul_neg, neg_neg, map_add,
+    LinearMap.baseChange_tmul, LinearMap.baseChange_tmul, one_tmul_add_I_tmul_inj]
+  refine ⟨fun h ↦ h.1.symm, ?_⟩
+  rintro rfl
+  exact ⟨rfl, by simp⟩
+
+/-- The vectors of type `(1,0)` for `-J` are the vectors of type `(0,1)` for `J`. -/
+theorem eigenspace_neg_baseChange_I :
+    Module.End.eigenspace ((-J).toLinearMap.baseChange ℂ) Complex.I =
+      Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
+  ext u
+  rw [← one_tmul_realPart_add_I_tmul_imaginaryPart _ u,
+    one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff,
+    one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff, neg_apply, neg_neg]
 
 /-! ## Conjugation of the `(1,0)` and `(0,1)` parts -/
 

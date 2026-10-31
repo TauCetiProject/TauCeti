@@ -44,7 +44,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `TauCeti.realPointsLift`: the canonical `ℂ`-linear map `ℂ ⊗[ℝ] realPoints K →ₗ[ℂ] V`.
 * `TauCeti.realPointsEquiv`: that map as a `ℂ`-linear isomorphism, for involutive `K`.
 * `TauCeti.tmulConj`: the conjugation `c ⊗ₜ w ↦ conj c ⊗ₜ w` of a complexification `ℂ ⊗[ℝ] W`.
-* `TauCeti.realPart`: the real-linear retraction from a complexification to its real module.
+* `TauCeti.realPart` and `TauCeti.imaginaryPart`: the two real coordinates of a vector of a
+  complexification; `TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart` reassembles it.
 
 ## Main statements
 
@@ -388,6 +389,33 @@ theorem realPart_tmul (c : ℂ) (w : W) : realPart W (c ⊗ₜ[ℝ] w) = c.re �
 /-- The real part of a real vector embedded in its complexification is that vector. -/
 theorem realPart_one_tmul (w : W) : realPart W (1 ⊗ₜ[ℝ] w) = w := by
   simp
+
+/-- The real-linear map `c ⊗ₜ w ↦ (im c) • w`, reading off the coefficient of `I` in the splitting
+`ℂ ⊗[ℝ] W ≅ W ⊕ I · W`. -/
+noncomputable def imaginaryPart (W : Type*) [AddCommGroup W] [Module ℝ W] :
+    ℂ ⊗[ℝ] W →ₗ[ℝ] W :=
+  TensorProduct.lid ℝ W ∘ₗ Complex.imLm.rTensor W
+
+/-- The imaginary part of a pure tensor is its imaginary scalar part acting on the vector. -/
+@[simp]
+theorem imaginaryPart_tmul (c : ℂ) (w : W) : imaginaryPart W (c ⊗ₜ[ℝ] w) = c.im • w := by
+  simp [imaginaryPart]
+
+/-- **Every element of `ℂ ⊗[ℝ] W` is `1 ⊗ₜ realPart W u + I ⊗ₜ imaginaryPart W u`.** -/
+@[simp]
+theorem one_tmul_realPart_add_I_tmul_imaginaryPart (u : ℂ ⊗[ℝ] W) :
+    1 ⊗ₜ[ℝ] realPart W u + Complex.I ⊗ₜ[ℝ] imaginaryPart W u = u := by
+  obtain ⟨w₁, w₂, rfl⟩ := exists_one_tmul_add_I_tmul u
+  simp
+
+/-- The two real coordinates of `1 ⊗ₜ w₁ + I ⊗ₜ w₂` are `w₁` and `w₂`. -/
+theorem one_tmul_add_I_tmul_inj {w₁ w₂ w₁' w₂' : W} :
+    1 ⊗ₜ[ℝ] w₁ + Complex.I ⊗ₜ[ℝ] w₂ = 1 ⊗ₜ[ℝ] w₁' + Complex.I ⊗ₜ[ℝ] w₂' ↔
+      w₁ = w₁' ∧ w₂ = w₂' := by
+  refine ⟨fun h ↦ ⟨by simpa using congrArg (realPart W) h,
+    by simpa using congrArg (imaginaryPart W) h⟩, ?_⟩
+  rintro ⟨rfl, rfl⟩
+  rfl
 
 end Complexification
 
