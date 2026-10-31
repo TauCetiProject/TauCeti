@@ -108,21 +108,9 @@ variable (D : TensorDatum A B C) (hφ : IsOpenQuotientMap φ) (hψ : IsOpenQuoti
 theorem ringOfDefinition_map :
     (D.map hφA hψA hφ hψ).ringOfDefinition =
       D.ringOfDefinition.map (mapRingHom (RingHom.id A) φ ψ hφA hψA) := by
-  refine le_antisymm ((D.map hφA hψA hφ hψ).ringOfDefinition_le_iff.mpr fun b hb c hc ↦ ?_)
-    (Subring.map_le_iff_le_comap.mpr (D.ringOfDefinition_le_iff.mpr fun b hb c hc ↦ ?_))
-  · rw [map_left, PairOfDefinition.map_ringOfDefinition] at hb
-    rw [map_right, PairOfDefinition.map_ringOfDefinition] at hc
-    obtain ⟨b₀, hb₀, rfl⟩ := Subring.mem_map.mp hb
-    obtain ⟨c₀, hc₀, rfl⟩ := Subring.mem_map.mp hc
-    exact Subring.mem_map.mpr ⟨_, D.tmul_mem_ringOfDefinition hb₀ hc₀, mapRingHom_tmul ..⟩
-  · have hb' : φ b ∈ (D.map hφA hψA hφ hψ).left.ringOfDefinition := by
-      rw [map_left, PairOfDefinition.map_ringOfDefinition]
-      exact Subring.mem_map.mpr ⟨b, hb, rfl⟩
-    have hc' : ψ c ∈ (D.map hφA hψA hφ hψ).right.ringOfDefinition := by
-      rw [map_right, PairOfDefinition.map_ringOfDefinition]
-      exact Subring.mem_map.mpr ⟨c, hc, rfl⟩
-    rw [Subring.mem_comap, mapRingHom_tmul]
-    exact (D.map hφA hψA hφ hψ).tmul_mem_ringOfDefinition hb' hc'
+  simp only [ringOfDefinition_eq_sup, map_left, map_right, PairOfDefinition.map_ringOfDefinition,
+    Subring.map_sup, Subring.map_map, mapRingHom_comp_includeLeftRingHom,
+    mapRingHom_comp_includeRight]
 
 /-- **The neighbourhoods of zero of the image datum are the images of those of the original
 datum**: `φ ⊗ ψ` carries the image of `Jⁿ` onto the image of `J'ⁿ`, for the ideals of definition
