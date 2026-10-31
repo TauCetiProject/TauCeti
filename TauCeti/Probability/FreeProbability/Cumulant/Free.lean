@@ -36,6 +36,8 @@ to every subword of a word; the cumulants `κ_n` are the case `s = Finset.univ :
 * `TauCeti.IsFreelyIndependentElements.freeCumulant_sum`,
   `TauCeti.IsFreelyIndependentElements.freeCumulant_add` — the cumulants `κ_n` of a sum of free
   elements are the sums of their cumulants, which is the additivity underlying free convolution.
+* `TauCeti.IsFreelyIndependentElements.apply_sum_pow_eq_sum_prod_sum_freeCumulant` — the moments
+  of a sum of free elements, by the moment–cumulant formula with the summed cumulants.
 
 ## References
 
@@ -296,5 +298,21 @@ theorem IsFreelyIndependentElements.freeCumulant_add {c : ι → A}
   (isFreelyIndependentElements_iff.1 h).freeCumulant_add hφ hij
     (fun _ _ => Algebra.self_mem_adjoin_singleton R (c i))
     (fun _ _ => Algebra.self_mem_adjoin_singleton R (c j)) hs
+
+/-- *Moments of a sum of free elements*: if the elements `c k` are freely independent for a
+normalised `φ`, then the moments of their sum over `T` are given by the moment–cumulant formula
+with the summed cumulants of the individual elements,
+`φ ((∑ k ∈ T, c k) ^ n) = ∑_{π ∈ NC(n)} ∏_{B ∈ π} ∑ k ∈ T, κ_B(c k)`, where `κ_B(c k)` is the
+free cumulant of the constant word `(c k, …, c k)` along the part `B`. -/
+theorem IsFreelyIndependentElements.apply_sum_pow_eq_sum_prod_sum_freeCumulant {c : ι → A}
+    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) (T : Finset ι) (n : ℕ) :
+    φ ((∑ k ∈ T, c k) ^ n) =
+      ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
+        ∏ B ∈ π.1.parts, ∑ k ∈ T, freeCumulant φ (fun _ => c k) B := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [pow_zero, hφ, Fintype.sum_unique, Finpartition.parts_eq_empty_iff.2 (by simp), prod_empty]
+  rw [← List.prod_replicate, ← List.ofFn_const, apply_prod_ofFn_eq_sum_prod_freeCumulant φ hn]
+  exact sum_congr rfl fun π _ => prod_congr rfl fun B hB =>
+    h.freeCumulant_sum hφ T (π.1.nonempty_of_mem_parts hB)
 
 end TauCeti
