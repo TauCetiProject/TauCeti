@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.Face
+public import TauCeti.Data.ENat.Map
 public import TauCeti.NumberTheory.NewtonPolygon.Basic
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.DiscreteValuationRing
 
@@ -14,9 +15,11 @@ public import TauCeti.RingTheory.PowerSeries.Weierstrass.DiscreteValuationRing
 
 Let `O` be a discrete valuation ring with normalised additive valuation `addVal O`, and let
 `f ∈ O⟦X⟧`. Its μ-invariant `PowerSeries.muInvariant f` is the least valuation of a coefficient
-and its λ-invariant `PowerSeries.lambdaInvariant f` is the first index attaining it. These are
-the invariants of the factorisation `f = π ^ μ(f) · u · P` with `P` distinguished of degree
-`λ(f)`, by `PowerSeries.exists_pow_mul_distinguished_mul_unit`.
+and its λ-invariant `PowerSeries.lambdaInvariant f` is the first index attaining it. When `O` is
+complete for its maximal ideal and `f ≠ 0`, these are the invariants of the factorisation
+`f = π ^ μ(f) · u · P` with `P` distinguished of degree `λ(f)`, by
+`PowerSeries.exists_pow_mul_distinguished_mul_unit`. The polygon results below need neither
+hypothesis.
 
 Embed the coefficients along a ring homomorphism `φ : O →+* S`, for example into the fraction
 field, and fix a real additive valuation `v` on `S` extending `addVal O`, so that
@@ -59,16 +62,6 @@ namespace PowerSeries
 variable {O S : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] [Ring S]
   {φ : O →+* S} {v : AddValuation S (WithTop ℝ)}
 
-/-- Comparison of a natural number with an element of `ℕ∞`, both read in `WithTop ℝ`. -/
-private theorem natCast_le_map_iff {m : ℕ} {k : ℕ∞} :
-    ((m : ℝ) : WithTop ℝ) ≤ k.map ((↑) : ℕ → ℝ) ↔ (m : ℕ∞) ≤ k := by
-  induction k using ENat.recTopCoe <;> simp
-
-/-- Equality of a natural number with an element of `ℕ∞`, both read in `WithTop ℝ`. -/
-private theorem natCast_eq_map_iff {m : ℕ} {k : ℕ∞} :
-    ((m : ℝ) : WithTop ℝ) = k.map ((↑) : ℕ → ℝ) ↔ (m : ℕ∞) = k := by
-  induction k using ENat.recTopCoe <;> simp
-
 variable (hv : ∀ x, v (φ x) = (addVal O x).map ((↑) : ℕ → ℝ))
 include hv
 
@@ -77,14 +70,15 @@ admissible. -/
 private theorem isAdmissible_addValuation_coeff_map (f : O⟦X⟧) :
     IsAdmissible fun n => v (coeff n (f.map φ)) :=
   isAdmissible_iff.mpr ⟨0, 0, fun n => by
-    rw [coeff_map, hv, zero_mul, add_zero, ← Nat.cast_zero, natCast_le_map_iff, Nat.cast_zero]
+    rw [coeff_map, hv, zero_mul, add_zero, ← Nat.cast_zero, ENat.coe_le_map_iff Nat.strictMono_cast,
+      Nat.cast_zero]
     exact zero_le⟩
 
 /-- The horizontal line at a finite μ-invariant supports the coefficient heights. -/
 private theorem isSupportingLine_addValuation_coeff_map {f : O⟦X⟧} {m : ℕ}
     (hμ : f.muInvariant = m) : IsSupportingLine (fun k => v (coeff k (f.map φ))) 0 m :=
   isSupportingLine_iff_forall.mpr fun k => by
-    rw [coeff_map, hv, zero_mul, add_zero, natCast_le_map_iff, ← hμ]
+    rw [coeff_map, hv, zero_mul, add_zero, ENat.coe_le_map_iff Nat.strictMono_cast, ← hμ]
     exact f.muInvariant_le_addVal_coeff k
 
 /-- Every height of the Newton polygon of `f` is at least the μ-invariant of `f`. -/
@@ -130,8 +124,8 @@ theorem isLeast_setOf_newtonPolygon_map_eq (f : O⟦X⟧) :
     obtain ⟨k, hkn, hk⟩ := (isLowerConvexEnvelope_newtonPolygon
       (isAdmissible_addValuation_coeff_map hv f)).exists_le_mem_supportingFace
       (isSupportingLine_addValuation_coeff_map hv hμ) hface
-    rw [mem_supportingFace, zero_mul, add_zero, coeff_map, hv, eq_comm, natCast_eq_map_iff,
-      ← hμ, eq_comm] at hk
+    rw [mem_supportingFace, zero_mul, add_zero, coeff_map, hv, eq_comm,
+      ENat.coe_eq_map_iff Nat.cast_injective, ← hμ, eq_comm] at hk
     exact (lambdaInvariant_le hk).trans hkn
 
 end PowerSeries
