@@ -15,6 +15,7 @@ public import TauCeti.Probability.GeneratingFunction
 public import TauCeti.Probability.Quantile.Discrete
 public import TauCeti.Probability.Distributions.Zipf.Basic
 public import TauCeti.Probability.ConditionalProbability
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Cdf
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.NumberTheory.LSeries.Dirichlet

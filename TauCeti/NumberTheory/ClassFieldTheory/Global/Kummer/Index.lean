@@ -49,6 +49,8 @@ fundamental inequality.
   ideles in `E_{S,T}` are those of the `(S ∪ T)`-units that are `p`-th powers.
 * `TauCeti.ClassFieldTheory.index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card`:
   `[C_K : E_{S,T} Kˣ / Kˣ] · p ^ #T = p ^ (#S + r₁ + r₂)`.
+* `TauCeti.ClassFieldTheory.exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank`: an
+  auxiliary subgroup of index `[L : K]` contained in the norm group for `L ⊆ K(U_S^{1/p})`.
 * `TauCeti.ClassFieldTheory.index_range_ideleClassNormMap_le_of_finrank_prime`: the Kummer case
   of the second fundamental inequality, `[C_K : N_{L/K}(C_L)] ≤ p`.
 
@@ -196,6 +198,40 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card
   rw [mul_assoc, ← pow_add, ← pow_add]
   convert h using 2 <;> ring
 
+/-- **An auxiliary Kummer subgroup of index `[L : K]` contained in the norm group.**
+Here `L` is any intermediate field of `K(U_S^{1/p})`, with `S` containing the places above
+`p` and generating the ideal class group. -/
+theorem exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank
+    {E : Type} [Field E] [Algebra K E]
+    {p : ℕ} (hp : p.Prime) (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hcl : Subgroup.closure
+      (HeightOneSpectrum.classGroupMk '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤)
+    (hpS : ∀ v : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ v.asIdeal → v ∈ S)
+    {ζ : 𝓞 K} (hζ : IsPrimitiveRoot ζ p)
+    (hroots : ∀ a ∈ (S : Set (HeightOneSpectrum (𝓞 K))).unit K,
+      ∃ x : E, x ^ p = algebraMap K E (a : K))
+    (L : IntermediateField K
+      (kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K))) [NumberField L] :
+    ∃ T : Finset (HeightOneSpectrum (𝓞 K)), Disjoint S T ∧
+      (auxiliaryKummerIdeleClassSubgroup S T p).index = Module.finrank K L ∧
+      auxiliaryKummerIdeleClassSubgroup S T p ≤
+        (GlobalNumberFields.ideleClassNormMap K L).range := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  have hζK : IsPrimitiveRoot (algebraMap (𝓞 K) K ζ) p :=
+    hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
+  have : HasEnoughRootsOfUnity K p := .of_card_le hζK.card_rootsOfUnity.ge
+  obtain ⟨T, hST, hcard, hsurj, hnorm⟩ :=
+    exists_auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap hp S hpS hζ hroots L
+  have hindex := index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card hp hST hcl hpS hsurj
+  have hdegree : Module.finrank K
+      (kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) =
+      p ^ (S.card + Fintype.card (InfinitePlace K)) := by
+    rw [finrank_kummerField hroots, relIndex_range_powMonoidHom_sUnits_numberField,
+      Nat.card_coe_set_eq, Set.ncard_coe_finset, Nat.add_comm]
+  refine ⟨T, Finset.disjoint_coe.1 hST, ?_, hnorm⟩
+  apply Nat.eq_of_mul_eq_mul_right (pow_pos hp.pos T.card)
+  rw [hindex, hcard, Module.finrank_mul_finrank, hdegree]
+
 /-! ### The Kummer case of the second fundamental inequality -/
 
 /-- **The Kummer case of the second fundamental inequality.** Let `L/K` be a Galois extension of
@@ -258,24 +294,12 @@ theorem index_range_ideleClassNormMap_le_of_finrank_prime
       ∃ x : SeparableClosure K, x ^ p = algebraMap K (SeparableClosure K) (a : K) := by
     intro a _
     exact IsSepClosed.exists_pow_nat_eq _ p
-  obtain ⟨T, hST, hcard, hsurj, hnorm⟩ :=
-    exists_auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap
-      (E := SeparableClosure K) (Fact.out : p.Prime) S hpS hζ.toInteger_isPrimitiveRoot
+  obtain ⟨T, _, hauxIndex, hnorm⟩ :=
+    exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank
+      (E := SeparableClosure K) (Fact.out : p.Prime) S hS hpS hζ.toInteger_isPrimitiveRoot
       hroots F'
-  have haux := index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card
-    (K := K) (Fact.out : p.Prime) hST hS hpS hsurj
-  have hMfin : Module.finrank K M =
-      p ^ (Fintype.card (InfinitePlace K) + S.card) := by
-    rw [finrank_kummerField hroots, relIndex_range_powMonoidHom_sUnits_numberField,
-      Nat.card_coe_set_eq, Set.ncard_coe_finset]
-  let _ : Module.Free F' M := Module.Free.of_divisionRing F' M
-  let _ : Module.Finite F' M := Module.Finite.of_restrictScalars_finite K F' M
-  have hauxIndex : (auxiliaryKummerIdeleClassSubgroup (K := K) S T p).index = p := by
-    apply Nat.eq_of_mul_eq_mul_right (pow_pos (Fact.out : p.Prime).pos T.card)
-    rw [haux, add_comm S.card, ← hMfin, ← Module.finrank_mul_finrank K F' M,
-      hF'fin, ← hcard]
   have hdvd : (GlobalNumberFields.ideleClassNormMap K F').range.index ∣ p := by
-    rw [← hauxIndex]
+    rw [← hF'fin, ← hauxIndex]
     exact Subgroup.index_dvd_of_le hnorm
   have hFle : (GlobalNumberFields.ideleClassNormMap K F).range.index ≤ p :=
     (congrArg Subgroup.index

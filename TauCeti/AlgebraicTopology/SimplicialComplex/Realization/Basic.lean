@@ -393,6 +393,11 @@ theorem Realization.le_one (K : AbstractSimplicialComplex ι) (x : Realization K
   Convexity.StdSimplex.weights_apply_le_one
     ⟨x.1, Realization.nonneg K x, Realization.sum_eq_one K x⟩ v
 
+/-- The barycentric coordinates of a realization point are positive on its support. -/
+theorem Realization.pos_of_mem_support (K : AbstractSimplicialComplex ι) (x : Realization K)
+    {v : ι} (hv : v ∈ x.1.support) : 0 < x.1 v :=
+  (Realization.nonneg K x v).lt_of_ne' (Finsupp.mem_support_iff.mp hv)
+
 /-- The carrier is contained in every finite vertex set whose closed simplex contains the point. -/
 theorem carrier_minimal (K : AbstractSimplicialComplex ι) (x : Realization K) {σ : Finset ι}
     (hx : x.1 ∈ convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ))) :

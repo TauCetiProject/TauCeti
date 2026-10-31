@@ -273,6 +273,13 @@ theorem negativeBinomialMeasure_singleton_zero_eq_one_iff {r p : ℝ} (hr : 0 �
     exact (rpow_lt_one hp.le (lt_of_le_of_ne hp1 hne.2) (lt_of_le_of_ne hr hne.1.symm)).ne h
   · rintro (rfl | rfl) <;> simp
 
+/-- A negative-binomial law of positive shape and success probability below one is not the point
+mass at zero. -/
+theorem negativeBinomialMeasure_singleton_zero_ne_one (hr : 0 < r) (hp : 0 < p)
+    (hp1 : p < 1) : negativeBinomialMeasure r p {0} ≠ 1 := by
+  rw [Ne, negativeBinomialMeasure_singleton_zero_eq_one_iff hr.le hp hp1.le]
+  exact fun h => h.elim hr.ne' hp1.ne
+
 /-- For nonzero success probability, the geometric law is the negative-binomial law of shape
 one. -/
 theorem geometricMeasure_eq_negativeBinomialMeasure_one (p : unitInterval) (hp : p ≠ 0) :

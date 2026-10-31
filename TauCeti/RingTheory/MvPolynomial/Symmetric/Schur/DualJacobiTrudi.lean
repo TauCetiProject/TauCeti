@@ -49,7 +49,8 @@ The route is Macdonald's (I.2.9).  Let `μ` fit in the box with `m` rows and `n`
   columns, the transpose of the Jacobi--Trudi matrix `(h_{μᵢ - i + j})`, and the bottom-right
   `n × n` block of the permuted `E` is `((-1)^{μ'ⱼ - j + k} e_{μ'ⱼ - j + k})`, whose determinant
   is `(-1)^{|μ|} det (e_{μ'ⱼ - j + k})`.  Jacobi's complementary-minor identity
-  `Matrix.det_mul_det_toBlocks₂₂_of_mul_eq_one` relates the two blocks, and the signs cancel.
+  `Matrix.det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl` relates the two
+  blocks, and the signs cancel.
 
 ## Main results
 
@@ -163,7 +164,12 @@ theorem det_hsymmInt_eq_det_esymmInt (μ : YoungDiagram) {m n : ℕ} (hm : μ.co
     rw [← hcard, ← prod_pow_eq_pow_sum, ← prod_mul_distrib]
     refine prod_congr rfl fun j _ ↦ ?_
     rw [← pow_add, add_assoc, ← two_mul, neg_one_pow_add_two_mul]
-  have key := Matrix.det_mul_det_toBlocks₂₂_of_mul_eq_one hMN
+  -- Jacobi's complementary-minor identity relates the two blocks.
+  have key : M.det * N.toBlocks₂₂.det = M.toBlocks₁₁.det := by
+    have := Matrix.det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl M N hMN
+      (Equiv.sumComm (Fin n) (Fin m)) 1 1
+    simpa [Matrix.toBlocks₁₁, Matrix.toBlocks₂₂, Matrix.submatrix, Function.comp_def] using
+      this.symm
   rw [hM, hN, h₁₁, Matrix.det_transpose, Matrix.det_submatrix_equiv_self,
     neg_one_pow_mul_neg_one_pow_mul] at key
   exact key.symm

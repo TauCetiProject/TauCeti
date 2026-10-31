@@ -44,6 +44,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   the mean.
 * `TauCeti.Probability.cdf_gaussianReal_pos`, `TauCeti.Probability.cdf_gaussianReal_lt_one` — for
   a nonzero variance the cdf takes values strictly between `0` and `1`.
+* `TauCeti.Probability.strictMono_cdf_gaussianReal` — for a nonzero variance the cdf is strictly
+  increasing.
 * `TauCeti.Probability.hasDerivAt_cdf_gaussianReal` — the cdf has the Gaussian density as its
   derivative.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal` — the upper tail, in terms of
@@ -200,6 +202,13 @@ theorem cdf_gaussianReal_lt_one (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ)
     cdf (gaussianReal m v) x < 1 := by
   rw [cdf_gaussianReal_eq m hv]
   linarith [Real.erf_lt_one ((x - m) / √(2 * (v : ℝ)))]
+
+/-- The cumulative distribution function of a Gaussian law with nonzero variance is strictly
+increasing. -/
+theorem strictMono_cdf_gaussianReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) :
+    StrictMono (cdf (gaussianReal m v)) :=
+  strictMono_cdf_of_eq_withDensity (by rw [gaussianReal_of_var_ne_zero m hv, gaussianPDF_def])
+    (measurable_gaussianPDFReal m v).aemeasurable fun t ↦ gaussianPDFReal_pos m v t hv
 
 /-- The cumulative distribution function of a Gaussian law with nonzero variance has the Gaussian
 density as its derivative. -/

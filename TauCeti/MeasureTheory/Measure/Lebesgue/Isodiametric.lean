@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.Ball
 public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
 -- Proof-only: equality in Brunn–Minkowski for convex bodies forces a translate.
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Homothety
@@ -23,7 +24,8 @@ The constant is sharp: in a nontrivial space a closed ball of radius `r` has dia
 No measurability is assumed: the outer volume of `s` is bounded through its closure,
 which has the same diameter. Brunn–Minkowski for the closure and its reflection,
 each scaled by `1 / 2`, shows that half the difference body has at least the volume
-of the closure, and half the difference body lies in the closed ball of radius `d / 2`.
+of the closure, and half the difference body lies in the closed ball of radius `d / 2`
+(`TauCeti.half_smul_add_neg_half_smul_subset_closedBall_diam_div_two`).
 
 We give the bound against a closed ball of any center, the normalized form
 with `ω_n`, a hypothesis-free extended form using `Metric.ediam`, and a real-valued form.
@@ -66,13 +68,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Half the difference of two points at distance at most `d` has norm at most `d / 2`. -/
-private lemma norm_half_smul_sub_le {a b : E} {d : ℝ} (h : ‖a - b‖ ≤ d) :
-    ‖(1 / 2 : ℝ) • (a - b)‖ ≤ d / 2 := by
-  rw [norm_smul, Real.norm_of_nonneg (by norm_num)]
-  linarith
-
 /-- **Isodiametric inequality**: a bounded set has at most the volume of a closed ball whose
 radius is half its diameter. The set need not be measurable; its outer volume is bounded. -/
 theorem volume_le_volume_closedBall_diam_div_two {s : Set E} (hs : Bornology.IsBounded s)
@@ -96,14 +91,7 @@ theorem volume_le_volume_closedBall_diam_div_two {s : Set E} (hs : Bornology.IsB
     ← ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _), hhalf, ENNReal.ofReal_one,
     one_mul] at hBM
   -- Half the difference body lies in the closed ball of radius `diam s / 2`.
-  have hsub : (1 / 2 : ℝ) • closure s + (-(1 / 2) : ℝ) • closure s ⊆
-      closedBall 0 (diam s / 2) := by
-    rintro _ ⟨_, ⟨a, ha, rfl⟩, _, ⟨b, hb, rfl⟩, rfl⟩
-    have hab := dist_le_diam_of_mem hs.closure ha hb
-    rw [diam_closure, dist_eq_norm] at hab
-    dsimp only
-    rw [mem_closedBall_zero_iff, neg_smul, ← sub_eq_add_neg, ← smul_sub]
-    exact norm_half_smul_sub_le hab
+  have hsub := half_smul_add_neg_half_smul_subset_closedBall_diam_div_two hs.closure
   have hroot : volume s ^ (Module.finrank ℝ E : ℝ)⁻¹ ≤
       volume (closedBall x (diam s / 2)) ^ (Module.finrank ℝ E : ℝ)⁻¹ :=
     calc
@@ -111,7 +99,7 @@ theorem volume_le_volume_closedBall_diam_div_two {s : Set E} (hs : Bornology.IsB
         ENNReal.rpow_le_rpow (measure_mono subset_closure) hp.le
       _ ≤ _ := hBM
       _ ≤ volume (closedBall (0 : E) (diam s / 2)) ^ (Module.finrank ℝ E : ℝ)⁻¹ :=
-        ENNReal.rpow_le_rpow (measure_mono hsub) hp.le
+        ENNReal.rpow_le_rpow (measure_mono (diam_closure (s := s) ▸ hsub)) hp.le
       _ = _ := by rw [Measure.addHaar_closedBall_center volume x]
   exact (ENNReal.rpow_le_rpow_iff hp).1 hroot
 
@@ -157,6 +145,20 @@ theorem volume_real_le_diam_div_two_pow_mul_volume_real_ball {s : Set E}
   simpa only [measureReal_def, ENNReal.toReal_mul, ENNReal.toReal_ofReal hd] using
     ENNReal.toReal_mono hfin h
 
+/-- A null set with at least the volume of a closed ball of radius half its diameter has diameter
+zero, so it lies in a closed ball of radius `diam s / 2 = 0`. -/
+private lemma exists_subset_closedBall_diam_div_two_of_volume_eq_zero {s : Set E}
+    (hs : Bornology.IsBounded s) {x : E} (hvol : volume (closedBall x (diam s / 2)) ≤ volume s)
+    (h0 : volume s = 0) : ∃ c, s ⊆ closedBall c (diam s / 2) := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨a, ha⟩
+  · exact ⟨x, empty_subset _⟩
+  have hd : diam s = 0 := by
+    refine le_antisymm (not_lt.1 fun hpos ↦ ?_) diam_nonneg
+    exact (measure_closedBall_pos volume x (half_pos hpos)).ne' (le_zero_iff.1 (h0 ▸ hvol))
+  refine ⟨a, fun y hy ↦ ?_⟩
+  rw [mem_closedBall, hd, zero_div]
+  exact hd ▸ dist_le_diam_of_mem hs hy ha
+
 /-- **Isodiametric equality forces a ball, containment form.** If a bounded set `s` has outer volume
 at least that of a closed ball of radius `diam s / 2`, then `s` is contained in some closed ball of
 radius `diam s / 2`. No measurability is assumed. -/
@@ -164,15 +166,7 @@ theorem exists_subset_closedBall_diam_div_two_of_volume_ge {s : Set E}
     (hs : Bornology.IsBounded s) {x : E} (hvol : volume (closedBall x (diam s / 2)) ≤ volume s) :
     ∃ c, s ⊆ closedBall c (diam s / 2) := by
   rcases eq_or_ne (volume s) 0 with h0 | h0
-  · -- A null extremal set has diameter zero, so it lies in a ball of radius zero.
-    rcases s.eq_empty_or_nonempty with rfl | ⟨a, ha⟩
-    · exact ⟨x, empty_subset _⟩
-    have hd : diam s = 0 := by
-      refine le_antisymm (not_lt.1 fun hpos ↦ ?_) diam_nonneg
-      exact (measure_closedBall_pos volume x (half_pos hpos)).ne' (le_zero_iff.1 (h0 ▸ hvol))
-    refine ⟨a, fun y hy ↦ ?_⟩
-    rw [mem_closedBall, hd, zero_div]
-    exact hd ▸ dist_le_diam_of_mem hs hy ha
+  · exact exists_subset_closedBall_diam_div_two_of_volume_eq_zero hs hvol h0
   -- Pass to the closed convex hull `H`, which has the same diameter and the same volume.
   set H := closure (convexHull ℝ s) with hH
   have hHc : IsCompact H := (isBounded_convexHull.2 hs).isCompact_closure
@@ -188,13 +182,9 @@ theorem exists_subset_closedBall_diam_div_two_of_volume_ge {s : Set E}
   -- Half the difference body lies in the ball of radius `diam s / 2`, so Brunn–Minkowski for
   -- `H` and `-H` with weight `1 / 2` is an equality, and `-H` is a translate of `H`.
   have hsub : (1 - 1 / 2 : ℝ) • H + (1 / 2 : ℝ) • (-H) ⊆ closedBall 0 (diam s / 2) := by
-    rintro _ ⟨_, ⟨a, ha, rfl⟩, _, ⟨b, hb, rfl⟩, rfl⟩
-    have hab := dist_le_diam_of_mem hHc.isBounded ha (Set.mem_neg.1 hb)
-    rw [hHd, dist_eq_norm] at hab
-    have : (1 - 1 / 2 : ℝ) • a + (1 / 2 : ℝ) • b = (1 / 2 : ℝ) • (a - -b) := by module
-    dsimp only
-    rw [mem_closedBall_zero_iff, this]
-    exact norm_half_smul_sub_le hab
+    have hhalf : (1 - 1 / 2 : ℝ) = 1 / 2 := by norm_num
+    rw [smul_set_neg, ← neg_smul_set, hhalf, ← hHd]
+    exact half_smul_add_neg_half_smul_subset_closedBall_diam_div_two hHc.isBounded
   have hneg : volume (-H) = volume H := Measure.measure_neg volume H
   obtain ⟨v, hv⟩ := hHconv.exists_eq_vadd_of_volume_le hHc hH0 hHconv.neg
     hHc.neg (hneg ▸ hH0) (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num) (by
@@ -202,14 +192,7 @@ theorem exists_subset_closedBall_diam_div_two_of_volume_ge {s : Set E}
         ENNReal.rpow_one, hHvol]
       exact measure_mono hsub)
   -- Hence `H` is symmetric about `-(1 / 2) • v` and lies in the ball of radius `diam s / 2`.
-  refine ⟨-((1 / 2 : ℝ) • v), hsH.trans fun y hy ↦ ?_⟩
-  have hy' : -v + -y ∈ H := (mem_vadd_set_iff_neg_vadd_mem).1 (hv ▸ Set.neg_mem_neg.2 hy)
-  have hyz := dist_le_diam_of_mem hHc.isBounded hy hy'
-  rw [hHd, dist_eq_norm] at hyz
-  rw [mem_closedBall, dist_eq_norm, sub_neg_eq_add]
-  have : y + (1 / 2 : ℝ) • v = (1 / 2 : ℝ) • (y - (-v + -y)) := by module
-  rw [this]
-  exact norm_half_smul_sub_le hyz
+  exact ⟨_, hsH.trans (hHd ▸ subset_closedBall_diam_div_two_of_neg_eq_vadd hHc.isBounded hv)⟩
 
 /-- **Equality in the isodiametric inequality, a.e. form.** A bounded Lebesgue-measurable set `s`
 has the volume of a closed ball of radius `diam s / 2` exactly when it agrees a.e. with such a

@@ -45,7 +45,7 @@ private theorem mgf_id_asymmetricLaplaceMeasure_eq_mul (hl : 0 < l) (hr : 0 < r)
     rw [← exp_add, ← exp_add]
     congr 1
     ring
-  rw [asymmetricLaplaceMeasure_of_pos hl hr, mgf_id_map (by fun_prop), mgf]
+  rw [asymmetricLaplaceMeasure_eq_map, mgf_id_map (by fun_prop), mgf]
   simp_rw [hfactor]
   rw [integral_const_mul, integral_prod_mul (fun x : ℝ ↦ exp (t * x))
     (fun y : ℝ ↦ exp (-t * y))]
