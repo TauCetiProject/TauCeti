@@ -95,12 +95,19 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
     ((NormedSpace.fromTangentSpace x).symm v)
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
-  -- `erw` identifies the model-space tangent normed instances when differentiating the graph.
+  -- Both `erw` steps unfold `TangentSpace` to match the product-model instances:
+  -- `TangentSpace (𝓘(𝕜, F).prod I) (x, u x)` and
+  -- `TangentSpace 𝓘(𝕜, F) x × TangentSpace I (u x)` both reduce to `F × E`.
   erw [mfderiv_prodMk mdifferentiableAt_id hu, mfderiv_id] at hc
   erw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_prod_eq_add_apply hf,
     mfderiv_eq_fderiv] at hc
-  -- The remaining model tangent identifications and product evaluations preserve the
-  -- underlying vectors definitionally.
+  -- For `exact`, `ContinuousLinearMap.prod` evaluates componentwise and its identity
+  -- component returns the input, so the two projections are `v` and `mfderiv u x v`.
+  -- `ContinuousLinearMap.comp` evaluates by composition, and `fromTangentSpace` and
+  -- its inverse are identities on vectors, removing the source `F` and target `F'`
+  -- tangent conversions introduced by `mfderiv_eq_fderiv`. Finally, `Function.uncurry`
+  -- and composition reduce to the displayed functions; the second partial derivative
+  -- is definitionally the evaluation of `mvfderiv I (f x)`.
   exact hc
 
 /-- The derivative of a vector-valued function, read in the target space, commutes with
