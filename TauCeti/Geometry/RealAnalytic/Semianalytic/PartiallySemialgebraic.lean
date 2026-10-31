@@ -493,9 +493,11 @@ semialgebraic set. -/
 theorem PartiallySemialgebraicAt.isSemialgebraic_preimage_prodMk
     (hs : PartiallySemialgebraicAt s u) : IsSemialgebraic (Prod.mk u ⁻¹' s) := by
   obtain ⟨U, hU, t, ht, hst⟩ := hs
+  have hU' : Prod.mk u ⁻¹' (Prod.fst ⁻¹' U) = (univ : Set (ι → ℝ)) := by
+    ext x
+    simp [mem_of_mem_nhds hU]
   have h := congrArg (Prod.mk u ⁻¹' ·) hst
-  simp only [preimage_inter, show Prod.mk u ⁻¹' (Prod.fst ⁻¹' U) = (univ : Set (ι → ℝ)) from
-    preimage_const_of_mem (mem_of_mem_nhds hU), inter_univ] at h
+  simp only [preimage_inter, hU', inter_univ] at h
   exact h ▸ ht.isSemialgebraic_preimage_prodMk u
 
 /-- A set partially semialgebraic over `u` is semianalytic at every point `(u, x)` over `u`. -/
