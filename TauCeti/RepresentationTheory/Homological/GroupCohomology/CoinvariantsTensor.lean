@@ -80,6 +80,17 @@ theorem coinvariantsHomLinearEquiv_apply_hom_apply {X : Rep.{u} k G}
     (coinvariantsHomLinearEquiv N X f).hom x = f (Representation.Coinvariants.mk X.ρ x) :=
   (rfl)
 
+/-- The map out of the coinvariants corresponding to `φ : X ⟶ N` sends the class of `x` to
+`φ x`. -/
+-- Match before simplification changes the presentation of the coinvariants carrier.
+@[simp↓]
+theorem coinvariantsHomLinearEquiv_symm_apply_mk {X : Rep.{u} k G} (φ : X ⟶ Rep.trivial k G N)
+    (x : X) :
+    (coinvariantsHomLinearEquiv N X).symm φ (Representation.Coinvariants.mk X.ρ x) = φ.hom x := by
+  have h := coinvariantsHomLinearEquiv_apply_hom_apply N ((coinvariantsHomLinearEquiv N X).symm φ) x
+  rw [LinearEquiv.apply_symm_apply] at h
+  exact h.symm
+
 /-- **Maps out of tensor coinvariants are morphisms into the internal hom**: for representations
 `A` and `X` of `G` and a `k`-module `N`, the `k`-linear maps `(A ⊗ X)_G ⟶ N` correspond
 `k`-linearly to the morphisms of representations `X ⟶ Homₖ(A, N)`, where `N` carries the trivial
@@ -119,8 +130,13 @@ theorem coinvariantsTensorHomLinearEquiv_symm_apply_coinvariantsTensorMk {X : Re
 theorem coinvariantsTensorHomLinearEquiv_comp {X X' : Rep.{u} k G} (g : X ⟶ X')
     (f : ((coinvariantsTensor k G).obj A).obj X' ⟶ ModuleCat.of k N) :
     coinvariantsTensorHomLinearEquiv A N X (((coinvariantsTensor k G).obj A).map g ≫ f) =
-      g ≫ coinvariantsTensorHomLinearEquiv A N X' f :=
-  (rfl)
+      g ≫ coinvariantsTensorHomLinearEquiv A N X' f := by
+  -- `(A ⊗ -)_G` sends `g` to the map of coinvariants induced by `A ◁ g`, so this is the
+  -- naturality of the hom-equivalences of the coinvariants and internal-hom adjunctions.
+  change (ihom.adjunction A).homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _
+    ((coinvariantsFunctor k G).map ((tensorLeft A).map g) ≫ f)) =
+      g ≫ (ihom.adjunction A).homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _ f)
+  rw [Adjunction.homEquiv_naturality_left, Adjunction.homEquiv_naturality_left]
 
 end Rep
 
