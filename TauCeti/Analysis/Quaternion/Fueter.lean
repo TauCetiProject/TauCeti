@@ -18,7 +18,7 @@ import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 Write a quaternion as `q = t + i x + j y + k z`. For a function `f : ℍ → ℍ`, the left and right
 Cauchy–Riemann–Fueter operators are
 ```text
-∂̄ₗ f = ∂ₜf + i * ∂ₓf + j * ∂ᵧf + k * ∂_zf,      ∂̄ᵣ f = ∂ₜf + ∂ₓf * i + ∂ᵧf * j + ∂_zf * k,
+Fₗ f = ∂ₜf + i * ∂ₓf + j * ∂ᵧf + k * ∂_zf,      Fᵣ f = ∂ₜf + ∂ₓf * i + ∂ᵧf * j + ∂_zf * k,
 ```
 and `f` is *left* (respectively *right*) *Fueter regular* where the corresponding operator
 vanishes. Since `ℍ` is not commutative these are different conditions, and the order of every
@@ -73,7 +73,7 @@ namespace TauCeti
 
 /-- The left Fueter operator on a real-linear map `D : ℍ →L[ℝ] ℍ`:
 `D 1 + i * D i + j * D j + k * D k`. Applied to the real derivative of `f` at `q`, it is
-`∂̄ₗ f (q) = ∂ₜf + i * ∂ₓf + j * ∂ᵧf + k * ∂_zf`. -/
+`Fₗ f (q) = ∂ₜf + i * ∂ₓf + j * ∂ᵧf + k * ∂_zf`. -/
 noncomputable def fueterLeft : (ℍ →L[ℝ] ℍ) →ₗ[ℝ] ℍ where
   toFun D := D 1 + ⟨0, 1, 0, 0⟩ * D ⟨0, 1, 0, 0⟩ + ⟨0, 0, 1, 0⟩ * D ⟨0, 0, 1, 0⟩ +
     ⟨0, 0, 0, 1⟩ * D ⟨0, 0, 0, 1⟩
@@ -83,7 +83,7 @@ noncomputable def fueterLeft : (ℍ →L[ℝ] ℍ) →ₗ[ℝ] ℍ where
 
 /-- The right Fueter operator on a real-linear map `D : ℍ →L[ℝ] ℍ`:
 `D 1 + D i * i + D j * j + D k * k`. Applied to the real derivative of `f` at `q`, it is
-`∂̄ᵣ f (q) = ∂ₜf + ∂ₓf * i + ∂ᵧf * j + ∂_zf * k`. -/
+`Fᵣ f (q) = ∂ₜf + ∂ₓf * i + ∂ᵧf * j + ∂_zf * k`. -/
 noncomputable def fueterRight : (ℍ →L[ℝ] ℍ) →ₗ[ℝ] ℍ where
   toFun D := D 1 + D ⟨0, 1, 0, 0⟩ * ⟨0, 1, 0, 0⟩ + D ⟨0, 0, 1, 0⟩ * ⟨0, 0, 1, 0⟩ +
     D ⟨0, 0, 0, 1⟩ * ⟨0, 0, 0, 1⟩
