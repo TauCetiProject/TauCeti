@@ -875,6 +875,7 @@ theorem finite_monomialGroup [Finite I] [Nontrivial R]
 
 /-- **The even signed monomials are the `±e_s` with `#s` even**, for an orthogonal basis whose
 generators square to `±1` over a nontrivial ring in which `2` is invertible. -/
+@[simp]
 theorem monomialGroupEquiv_mem_monomialGroupEven_iff [Nontrivial R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     (p : Finset I × ℤˣ) :
