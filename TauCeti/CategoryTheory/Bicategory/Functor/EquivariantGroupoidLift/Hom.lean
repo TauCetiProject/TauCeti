@@ -213,7 +213,10 @@ lemma Hom₂.comp_joint {φ ψ χ : L.Hom L'} (Θ : φ ⟶ ψ) (Ξ : ψ ⟶ χ) 
 
 /-- An invertible modification of joint strong transformations, compatible with the fiber
 isomorphisms, is an isomorphism of morphisms of lifts. -/
-def isoMk {φ ψ : L.Hom L'} (e : φ.joint ≅ ψ.joint)
+-- The body is exposed so that the joint modifications of the associator and unitors of the
+-- bicategory of lifts, built with `isoMk`, are definitionally those of strong transformations,
+-- which the coherence fields of that bicategory require.
+@[expose] def isoMk {φ ψ : L.Hom L'} (e : φ.joint ≅ ψ.joint)
     (comm : ∀ (p : Γ) (a : LocallyDiscrete (SingleObj H)),
       e.hom.as.app ((Prod.sectR p (SingleObj H)).toPseudofunctor.obj a) ▷
           (L'.comparison p).app a ≫ (ψ.fiberIso p).hom.as.app a =

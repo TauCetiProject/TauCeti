@@ -42,6 +42,10 @@ the bicategory of pseudofunctors.
 * Niles Johnson and Donald Yau, [2-Dimensional Categories](https://arxiv.org/abs/2002.06055),
   Oxford University Press (2021): the bicategory of pseudofunctors, strong transformations and
   modifications.
+* Mathlib's bicategory of pseudofunctors,
+  `Mathlib/CategoryTheory/Bicategory/FunctorBicategory/Pseudo.lean`: its scoped bicategory of
+  pseudofunctors and strong transformations supplies the whiskerings, associators and unitors of
+  the joint transformations, together with the coherence laws inherited here.
 * Mathlib's bicategory of adjunctions, `Mathlib/CategoryTheory/Bicategory/Adjunction/Adj.lean`:
   the pattern of 2-morphisms carrying a compatibility condition, with a bicategory structure
   whose axioms are checked on the underlying 2-morphisms.
@@ -86,39 +90,24 @@ def whiskerRight {φ φ' : L.Hom L'} (Θ : φ ⟶ φ') (ψ : L'.Hom L'') : φ.co
 /-- The associator of morphisms of lifts, whose joint modification is the associator of strong
 transformations. -/
 noncomputable def associator (φ : L.Hom L') (ψ : L'.Hom L'') (χ : L''.Hom L''') :
-    (φ.comp ψ).comp χ ≅ φ.comp (ψ.comp χ) where
-  hom := ⟨(α_ φ.joint ψ.joint χ.joint).hom, fun p a => by
+    (φ.comp ψ).comp χ ≅ φ.comp (ψ.comp χ) :=
+  isoMk (α_ φ.joint ψ.joint χ.joint) fun p a => by
     simp only [comp_fiberIso_hom_as_app, associator_hom_as_app]
-    bicategory⟩
-  inv := ⟨(α_ φ.joint ψ.joint χ.joint).inv, fun p a => by
-    simp only [comp_fiberIso_hom_as_app, associator_inv_as_app]
-    bicategory⟩
-  hom_inv_id := hom₂_ext (α_ φ.joint ψ.joint χ.joint).hom_inv_id
-  inv_hom_id := hom₂_ext (α_ φ.joint ψ.joint χ.joint).inv_hom_id
+    bicategory
 
 /-- The left unitor of a morphism of lifts, whose joint modification is the left unitor of strong
 transformations. -/
-noncomputable def leftUnitor (φ : L.Hom L') : (id L).comp φ ≅ φ where
-  hom := ⟨(λ_ φ.joint).hom, fun p a => by
+noncomputable def leftUnitor (φ : L.Hom L') : (id L).comp φ ≅ φ :=
+  isoMk (λ_ φ.joint) fun p a => by
     simp only [comp_fiberIso_hom_as_app, id_fiberIso_hom_as_app, leftUnitor_hom_as_app]
-    bicategory⟩
-  inv := ⟨(λ_ φ.joint).inv, fun p a => by
-    simp only [comp_fiberIso_hom_as_app, id_fiberIso_hom_as_app, leftUnitor_inv_as_app]
-    bicategory⟩
-  hom_inv_id := hom₂_ext (λ_ φ.joint).hom_inv_id
-  inv_hom_id := hom₂_ext (λ_ φ.joint).inv_hom_id
+    bicategory
 
 /-- The right unitor of a morphism of lifts, whose joint modification is the right unitor of
 strong transformations. -/
-noncomputable def rightUnitor (φ : L.Hom L') : φ.comp (id L') ≅ φ where
-  hom := ⟨(ρ_ φ.joint).hom, fun p a => by
+noncomputable def rightUnitor (φ : L.Hom L') : φ.comp (id L') ≅ φ :=
+  isoMk (ρ_ φ.joint) fun p a => by
     simp only [comp_fiberIso_hom_as_app, id_fiberIso_hom_as_app, rightUnitor_hom_as_app]
-    bicategory⟩
-  inv := ⟨(ρ_ φ.joint).inv, fun p a => by
-    simp only [comp_fiberIso_hom_as_app, id_fiberIso_hom_as_app, rightUnitor_inv_as_app]
-    bicategory⟩
-  hom_inv_id := hom₂_ext (ρ_ φ.joint).hom_inv_id
-  inv_hom_id := hom₂_ext (ρ_ φ.joint).inv_hom_id
+    bicategory
 
 end Hom
 
