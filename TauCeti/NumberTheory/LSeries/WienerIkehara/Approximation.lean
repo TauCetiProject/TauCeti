@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SumIntegralComparisons
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
-import TauCeti.Analysis.Asymptotics.SumWindow
+import TauCeti.Analysis.Asymptotics.Sum.Window
 
 /-!
 # Approximating the test function in the smoothed Wiener--Ikehara asymptotic

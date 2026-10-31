@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.BoundaryGrowth
-import TauCeti.Analysis.Asymptotics.SumWindow
+import TauCeti.Analysis.Asymptotics.Sum.Window
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.NonnegTestFunction
 import TauCeti.NumberTheory.LSeries.Positivity
