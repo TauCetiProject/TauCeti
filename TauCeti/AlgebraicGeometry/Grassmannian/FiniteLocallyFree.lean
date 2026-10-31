@@ -313,6 +313,7 @@ instance locallyOfFinitePresentation_schemeHopfIdealLocusFamilyHom :
 
 /-- The universal family over the Hopf-ideal locus has constant rank `k` over the closed subscheme
 of Hopf ideals. -/
+@[simp]
 theorem finrank_schemeHopfIdealLocusFamilyHom (x : (schemeHopfIdealLocus R H k).subscheme) :
     Scheme.Hom.finrank (schemeHopfIdealLocusFamilyHom R H k) x = k := by
   obtain ⟨C, g, -, y, rfl⟩ := Scheme.exists_Spec_apply_eq x
