@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Basic
 public import TauCeti.NumberTheory.HurwitzClassNumber
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.QuadraticDiscriminant
 import TauCeti.NumberTheory.BinaryQuadraticForm.OfMatrix
