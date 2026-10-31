@@ -165,15 +165,24 @@ theorem nonempty_equiv_tprod_rationalWeylRep (l m : DominantWeight n) :
   refine IsRationalRep.nonempty_equiv_of_forall_character_diagGL_eq
     ((isRationalRep_rationalWeylRep n l).tprod (isRationalRep_rationalWeylRep n m))
     (IsRationalRep.directSum fun p => isRationalRep_rationalWeylRep n _) fun t => ?_
+  -- As in the polynomial form, `Representation.char_tensor` is stated for the additive group of
+  -- the tensor product given above, which `rw` does not match syntactically, so it is applied up
+  -- to unfolding.
   refine (congrFun (Representation.char_tensor
     (V := (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule)
     (W := (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule) (rationalWeylRep ℂ n l)
     (rationalWeylRep ℂ n m)) (diagGL t)).trans ?_
+  -- The character of `V_λ ⊗ V_μ` on the torus is `(∏ᵢ tᵢ) ^ (a + b) · (s_{λ₀} s_{μ₀})(t)`: the two
+  -- determinant twists combine into one.
   rw [Pi.mul_apply, char_rationalWeylRep_diagonal_eq_eval_diagramSchurPoly,
     char_rationalWeylRep_diagonal_eq_eval_diagramSchurPoly, mul_mul_mul_comm, ← eval_mul,
-    diagramSchurPoly_mul_diagramSchurPoly, ← Units.val_mul, ← zpow_add, map_sum, mul_sum,
-    Representation.char_directSum, Fintype.sum_sigma,
-    ← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ n]
+    ← Units.val_mul, ← zpow_add]
+  -- Expand `s_{λ₀} s_{μ₀}` by the Littlewood–Richardson rule for Schur polynomials, and the
+  -- character of the direct sum as a sum over partitions and then over tableaux.
+  rw [diagramSchurPoly_mul_diagramSchurPoly, map_sum, mul_sum, Representation.char_directSum,
+    Fintype.sum_sigma]
+  -- Split the sum over partitions according to whether they have at most `n` rows.
+  rw [← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ n]
   -- The partitions with more than `n` rows contribute nothing: their Schur polynomials vanish.
   rw [Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ n} => _) fun ν => by
       rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.2), smul_zero, map_zero, mul_zero],
