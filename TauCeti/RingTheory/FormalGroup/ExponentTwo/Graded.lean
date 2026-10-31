@@ -84,7 +84,9 @@ theorem forall_coeff_exponentTwoLog_mem_iff (F : FormalGroup A) [F.IsComm]
   have hT := subst_rescale_toPowerSeries_of_smul_eq_rescale (F.map Polynomial.C) (gₛ := gₜ)
     Polynomial.isRegular_X.left (by ext (_ | n) <;> simp [gₜ, g, pow_succ', mul_assoc])
     (subst_map_toPowerSeries_map F Polynomial.C (F.subst_toPowerSeries_exponentTwoLog hF))
-  rw [← PowerSeries.map_toPolynomial_eq_mk_iff, ← map_toPolynomial_eq_rescale_iff]
+  have hgrading := F.map_toPolynomial_eq_rescale_iff (𝒜 := 𝒜) 1
+  simp only [pow_one, one_mul] at hgrading
+  rw [← PowerSeries.map_toPolynomial_eq_mk_iff, ← hgrading]
   constructor
   · -- Both formal group laws make the coordinate `g.map (toPolynomial 𝒜)` additive, so they
     -- agree.
