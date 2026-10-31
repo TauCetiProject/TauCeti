@@ -57,7 +57,7 @@ noncomputable def f4ChevalleyRootVector :
 /-- The chosen F₄ root vectors form a Chevalley system for the pinned involution. -/
 theorem f4ChevalleyRootVector_isChevalleySystem :
     IsChevalleySystem (F4.chevalleyInvolution valid_F4) f4ChevalleyRootVector :=
-  Classical.choose_spec (F4.exists_isChevalleySystem valid_F4)
+  (Classical.choose_spec (F4.exists_isChevalleySystem valid_F4)).1
 
 /-- The rational root-system equivalence carries a pinned root to its Killing root. -/
 theorem f4KillingRoot_weightEquiv (i : Fin 48) :

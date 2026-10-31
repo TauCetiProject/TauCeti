@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Weights.Basic
 public import TauCeti.Algebra.Lie.Sl2.CompleteReducibility
 import Mathlib.Algebra.Lie.BaseChange
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
@@ -56,6 +57,8 @@ itself need not generate the ambient `L`.
   `n k : ℕ`.
 * `TauCeti.eigenspace_toEnd_eq_bot_of_forall_ne_intCast`: the eigenspaces at non-integer scalars
   vanish.
+* `IsSl2Triple.exists_int_weight_apply`: the weights of a nilpotent subalgebra containing `h` on a
+  finite-dimensional module take integer values at `h`.
 * `TauCeti.iSup_eigenspace_toEnd_eq_top`: **diagonalizability.** Over any field of characteristic
   zero, the eigenspaces of the Cartan element of an `sl₂` triple span the module.
 * `TauCeti.iSup_eigenspace_toEnd_intCast_eq_top` and
@@ -379,3 +382,19 @@ theorem isInternal_eigenspace_toEnd_intCast_slFinTwo :
 end SlFinTwo
 
 end TauCeti
+
+namespace IsSl2Triple
+
+open LieModule
+
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+
+/-- **The weights take integer values at a neutral element.** If the neutral element `h` of an
+`sl₂` triple lies in a nilpotent subalgebra `H`, then every weight of `H` on a finite-dimensional
+`L`-module takes an integer value at `h`: that value is an eigenvalue of `h`. -/
+theorem exists_int_weight_apply {H : LieSubalgebra K L} [LieRing.IsNilpotent H] {M : Type*}
+    [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
+    {h : H} {e f : L} (t : IsSl2Triple (h : L) e f) (α : Weight K H M) : ∃ z : ℤ, α h = z :=
+  TauCeti.exists_int_of_hasEigenvalue (M := M) t (α.hasEigenvalueAt h)
+
+end IsSl2Triple

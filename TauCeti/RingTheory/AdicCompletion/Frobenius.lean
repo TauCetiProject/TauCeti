@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.AdicCompletion.Noetherian
 public import Mathlib.RingTheory.RingHom.Flat
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
+import TauCeti.Algebra.CharP.Frobenius.Basic
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Flat.LocalCriterion
 
@@ -69,8 +70,6 @@ Noetherian local ring `R` is flat, so is the Frobenius endomorphism of its compl
 maximal ideal. -/
 theorem flat_frobenius (h : (frobenius R p).Flat) :
     (frobenius (AdicCompletion (maximalIdeal R) R) p).Flat := by
-  have : IsLocalHom (frobenius (AdicCompletion (maximalIdeal R) R) p) :=
-    ⟨fun _ ha ↦ (isUnit_pow_iff (expChar_pos R p).ne').mp ha⟩
   refine RingHom.Flat.of_comp_of_map_maximalIdeal_eq (algebraMap R _) _ ?_
     AdicCompletion.maximalIdeal_eq_map.symm
   -- Frobenius commutes with `R → R̂`, which is flat.
