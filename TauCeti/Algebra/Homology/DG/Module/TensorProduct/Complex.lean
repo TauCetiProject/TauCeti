@@ -84,6 +84,27 @@ theorem isHomogeneous_leibnizDifferential
       (by simpa only [InternalGrading.ofDecomposition_piece] using hNd.map_mem hn)
     simpa only [add_assoc] using hmem
 
+omit [IsScalarTower R Aᵐᵒᵖ M] [IsScalarTower R A N] in
+/-- Tensoring homogeneous equivariant maps adds their degrees for the total grading of the
+balanced tensor product. -/
+theorem isHomogeneous_map_grading {M' N' : Type*}
+    [AddCommGroup M'] [Module R M'] [Module Aᵐᵒᵖ M'] [AddCommGroup N'] [Module R N'] [Module A N']
+    {ℳ' : ℤ → Submodule R M'} {𝒩' : ℤ → Submodule R N'}
+    [DirectSum.Decomposition ℳ'] [DirectSum.Decomposition 𝒩']
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ']
+    [SetLike.GradedSMul 𝒜 𝒩'] (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+    (hf : ∀ (a : A) m, f (MulOpposite.op a • m) = MulOpposite.op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n) {r s : ℤ}
+    (hf₀ : LinearMap.IsHomogeneous f ℳ ℳ' r) (hg₀ : LinearMap.IsHomogeneous g 𝒩 𝒩' s) :
+    LinearMap.IsHomogeneous (map f g hf hg)
+      (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+        (InternalGrading.ofDecomposition 𝒩)).piece
+      (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ')
+        (InternalGrading.ofDecomposition 𝒩')).piece (r + s) := by
+  refine isHomogeneous_map (𝒜 := 𝒜) _ _ _ _ f g hf hg ?_ ?_
+  · simpa only [InternalGrading.ofDecomposition_piece] using hf₀
+  · simpa only [InternalGrading.ofDecomposition_piece] using hg₀
+
 /-- The differential of the balanced tensor product has cohomological degree one. -/
 theorem isHomogeneous_differential (hM : IsDGRightModule hA ℳ dM)
     (hN : IsDGLeftModule hA 𝒩 dN) :

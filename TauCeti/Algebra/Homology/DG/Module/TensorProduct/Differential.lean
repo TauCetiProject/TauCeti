@@ -26,7 +26,8 @@ vanishes there because the curvature actions cancel across the tensor sign
 (`TauCeti.BalancedTensorProduct.curvedDifferential_comp_self`).
 
 This file constructs that endomorphism over an arbitrary commutative ground ring and proves
-compatibility with tensoring DG module morphisms and with the regular-module unit
+compatibility with tensoring module maps and homotopies, also from the Leibniz rules alone, and
+with tensoring DG module morphisms and with the regular-module unit
 identifications. It supplies the differential on the underlying balanced module; a grading
 on the quotient and outer bimodule actions are separate constructions.
 
@@ -41,6 +42,10 @@ on the quotient and outer bimodule actions are separate constructions.
 * `TauCeti.BalancedTensorProduct.leibnizDifferential_leibnizDifferential_tmul`: the square of
   the tensor differential is `dM² ⊗ 1 + 1 ⊗ dN²`.
 * `TauCeti.BalancedTensorProduct.differential_comp_self`: for DG modules it squares to zero.
+* `TauCeti.BalancedTensorProduct.leibnizDifferential_naturality`: tensoring maps commuting with
+  the differentials commutes with the tensor differential.
+* `TauCeti.BalancedTensorProduct.map_eq_leibnizDifferential_comp_map_add_map_comp_add`: a
+  homotopy `k` in the first factor gives the homotopy `k ⊗ g` of tensored maps.
 
 ## References
 
@@ -178,6 +183,75 @@ theorem leibnizDifferential_leibnizDifferential_tmul (hMd : LinearMap.IsHomogene
   simpa only [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.flip_apply, mk_apply]
     using LinearMap.congr_fun key m
 
+section Map
+
+variable {M' N' : Type*}
+  [AddCommGroup M'] [Module R M'] [Module Aᵐᵒᵖ M']
+  [AddCommGroup N'] [Module R N'] [Module A N']
+  {ℳ' : ℤ → Submodule R M'} {ℳN' : ℤ → Submodule R N'}
+  [DirectSum.Decomposition ℳ'] [DirectSum.Decomposition ℳN']
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ']
+  [SetLike.GradedSMul 𝒜 ℳN'] {dM' : M' →ₗ[R] M'} {dN' : N' →ₗ[R] N'}
+  (hM' : ∀ {q : ℤ} {x : M'}, x ∈ ℳ' q → ∀ a : A,
+    dM' (op a • x) = op a • dM' x + q.negOnePow • (op (dA a) • x))
+  (hN' : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ x : N',
+    dN' (a • x) = dA a • x + p.negOnePow • (a • dN' x))
+  {g : N →ₗ[R] N'} (hg : ∀ (a : A) n, g (a • n) = a • g n)
+
+/-- Tensoring equivariant maps commuting with the differentials, the first of degree zero,
+commutes with the tensor differential. -/
+theorem leibnizDifferential_naturality (f : M →ₗ[R] M')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hf₀ : LinearMap.IsHomogeneous f ℳ ℳ' 0)
+    (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
+    leibnizDifferential hM' hN' ∘ₗ map f g hf hg = map f g hf hg ∘ₗ leibnizDifferential hM hN := by
+  apply hom_ext
+  intro m n
+  have key :
+      ((leibnizDifferential hM' hN' ∘ₗ map f g hf hg) ∘ₗ (mk R A).flip n :
+        M →ₗ[R] BalancedTensorProduct R A M' N') =
+      (map f g hf hg ∘ₗ leibnizDifferential hM hN) ∘ₗ (mk R A).flip n := by
+    apply (InternalGrading.ofDecomposition ℳ).linearMap_ext
+    intro q x hx
+    rw [InternalGrading.ofDecomposition_piece] at hx
+    have hfx : f x ∈ ℳ' q := by simpa only [add_zero] using hf₀.map_mem hx
+    simp only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply, map_tmul]
+    rw [leibnizDifferential_tmul_of_mem hM' hN' hfx, leibnizDifferential_tmul_of_mem hM hN hx,
+      map_add, map_smul, map_tmul, map_tmul]
+    simp only [← LinearMap.comp_apply, hfd, hgd]
+  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key m
+
+/-- **Homotopies in the first factor.** If equivariant maps satisfy
+`f₁ = dM' ∘ k + k ∘ dM + f₂` for an equivariant map `k` of degree `-1`, and `g` commutes with the
+differentials, then tensoring with `g` gives `f₁ ⊗ g = d ∘ (k ⊗ g) + (k ⊗ g) ∘ d + f₂ ⊗ g`. No
+Koszul sign enters `k ⊗ g`, because `k` acts on the first factor. -/
+theorem map_eq_leibnizDifferential_comp_map_add_map_comp_add
+    {f₁ f₂ k : M →ₗ[R] M'} (hf₁ : ∀ (a : A) m, f₁ (op a • m) = op a • f₁ m)
+    (hf₂ : ∀ (a : A) m, f₂ (op a • m) = op a • f₂ m)
+    (hk : ∀ (a : A) m, k (op a • m) = op a • k m) (hk₁ : LinearMap.IsHomogeneous k ℳ ℳ' (-1))
+    (hfk : f₁ = dM' ∘ₗ k + k ∘ₗ dM + f₂) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
+    map f₁ g hf₁ hg = leibnizDifferential hM' hN' ∘ₗ map k g hk hg +
+      map k g hk hg ∘ₗ leibnizDifferential hM hN + map f₂ g hf₂ hg := by
+  apply hom_ext
+  intro m n
+  have key :
+      (map f₁ g hf₁ hg ∘ₗ (mk R A).flip n : M →ₗ[R] BalancedTensorProduct R A M' N') =
+      (leibnizDifferential hM' hN' ∘ₗ map k g hk hg +
+        map k g hk hg ∘ₗ leibnizDifferential hM hN + map f₂ g hf₂ hg) ∘ₗ (mk R A).flip n := by
+    apply (InternalGrading.ofDecomposition ℳ).linearMap_ext
+    intro q x hx
+    rw [InternalGrading.ofDecomposition_piece] at hx
+    simp only [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.flip_apply, mk_apply,
+      map_tmul]
+    rw [leibnizDifferential_tmul_of_mem hM' hN' (hk₁.map_mem hx),
+      leibnizDifferential_tmul_of_mem hM hN hx, map_add, map_smul, map_tmul, map_tmul, hfk]
+    simp only [← LinearMap.comp_apply, hgd, LinearMap.add_apply, add_tmul,
+      Int.negOnePow_add, Int.negOnePow_neg, Int.negOnePow_one, mul_neg, mul_one, Units.val_neg,
+      Int.cast_neg, neg_smul]
+    abel
+  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key m
+
+end Map
+
 end Leibniz
 
 /-- The signed tensor differential on the ordinary balanced tensor product of a right and a
@@ -243,22 +317,8 @@ theorem differential_naturality (hM : IsDGRightModule hA ℳ dM) (hN : IsDGLeftM
     (hg : ∀ (a : A) n, g (a • n) = a • g n)
     (hf₀ : LinearMap.IsHomogeneous f ℳ ℳ' 0)
     (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
-    differential hM' hN' ∘ₗ map f g hf hg = map f g hf hg ∘ₗ differential hM hN := by
-  apply hom_ext
-  intro m n
-  have key :
-      ((differential hM' hN' ∘ₗ map f g hf hg) ∘ₗ (mk R A).flip n :
-        M →ₗ[R] BalancedTensorProduct R A M' N') =
-      (map f g hf hg ∘ₗ differential hM hN) ∘ₗ (mk R A).flip n := by
-    apply (InternalGrading.ofDecomposition ℳ).linearMap_ext
-    intro q x hx
-    rw [InternalGrading.ofDecomposition_piece] at hx
-    have hfx : f x ∈ ℳ' q := by simpa only [add_zero] using hf₀.map_mem hx
-    simp only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply, map_tmul]
-    rw [differential_tmul_of_mem hM' hN' hfx,
-      differential_tmul_of_mem hM hN hx, map_add, map_smul, map_tmul, map_tmul]
-    simp only [← LinearMap.comp_apply, hfd, hgd]
-  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key m
+    differential hM' hN' ∘ₗ map f g hf hg = map f g hf hg ∘ₗ differential hM hN :=
+  leibnizDifferential_naturality hM.leibniz hN.leibniz hM'.leibniz hN'.leibniz hg f hf hf₀ hfd hgd
 
 end Naturality
 

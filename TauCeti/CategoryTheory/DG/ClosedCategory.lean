@@ -17,7 +17,8 @@ unit to a Hom object.  For a DG category, such a map is exactly a closed morphis
 This file makes the comparison explicit and sends a closed morphism to its class in `H⁰`.
 Precomposition with that quotient functor is fully faithful: natural transformations between
 functors out of `H⁰` are determined by their components on closed objects, and naturality can
-be checked on closed representatives.
+be checked on closed representatives. A functor out of the closed category which identifies
+closed morphisms with the same class descends to `H⁰` (`TauCeti.DGHomotopyCategory.lift`).
 
 The underlying category is used rather than introducing a second category of cocycles.  This
 allows Mathlib's enriched functors and natural transformations to act on closed morphisms without
@@ -28,8 +29,8 @@ copying their definitions.
 * B. Keller, *Deriving DG categories*, Section 1.
 * David Wärn and the Mathlib contributors, `Mathlib.CategoryTheory.Quotient`, especially
   `Quotient.natTransLift`, `Quotient.full_whiskeringLeft_functor`, and
-  `Quotient.faithful_whiskeringLeft_functor`. The descent proofs below adapt their lifting
-  argument to `dgClosedToHomotopy`.
+  `Quotient.faithful_whiskeringLeft_functor`, and `Quotient.lift`. The descent proofs below
+  adapt their lifting arguments to `dgClosedToHomotopy`.
 -/
 
 public section
@@ -346,6 +347,55 @@ instance faithful_whiskeringLeft_dgClosedToHomotopy :
     ext X
     exact congrArg (fun τ ↦ τ.app (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ)
       (DGHomotopyCategory.underlying R X))) hαβ
+
+namespace DGHomotopyCategory
+
+variable {E}
+
+/-- A functor out of the closed degree-zero category which identifies closed morphisms with the
+same class in `H⁰` descends to the DG homotopy category. Its object map is exposed: it is the
+identity on underlying DG objects, which the statements below rely on. -/
+@[expose]
+noncomputable def lift (F : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C ⥤ E)
+    (hF : ∀ ⦃X Y⦄ (f g : X ⟶ Y),
+      (dgClosedToHomotopy R).map f = (dgClosedToHomotopy R).map g → F.map f = F.map g) :
+    DGHomotopyCategory R C ⥤ E where
+  obj X := F.obj (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (underlying R X))
+  map {X Y} φ := F.map ((dgClosedToHomotopy R).preimage
+    (X := ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (underlying R X))
+    (Y := ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (underlying R Y)) φ)
+  map_id X := by
+    rw [← F.map_id]
+    exact hF _ _ (by rw [Functor.map_preimage, CategoryTheory.Functor.map_id]; rfl)
+  map_comp φ ψ := by
+    rw [← F.map_comp]
+    exact hF _ _ (by rw [Functor.map_comp, Functor.map_preimage, Functor.map_preimage,
+      Functor.map_preimage])
+
+variable (F : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C ⥤ E)
+  (hF : ∀ ⦃X Y⦄ (f g : X ⟶ Y),
+    (dgClosedToHomotopy R).map f = (dgClosedToHomotopy R).map g → F.map f = F.map g)
+
+/-- The descended functor agrees with `F` on objects. -/
+@[simp]
+theorem lift_obj_of (X : C) :
+    (lift R F hF).obj (of R X) =
+      F.obj (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X) :=
+  (rfl)
+
+/-- The descended functor sends the class of a closed morphism to its image under `F`. -/
+theorem lift_map_dgClosedToHomotopy_map
+    {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
+    (lift R F hF).map ((dgClosedToHomotopy R).map f) = F.map f :=
+  hF _ _ (Functor.map_preimage _ _)
+
+/-- The descended functor restricts to `F` along the quotient functor. -/
+noncomputable def dgClosedToHomotopyCompLiftIso : dgClosedToHomotopy R ⋙ lift R F hF ≅ F :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
+    simp only [Functor.comp_map, lift_map_dgClosedToHomotopy_map, Iso.refl_hom]
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+end DGHomotopyCategory
 
 end Descent
 

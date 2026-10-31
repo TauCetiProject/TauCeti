@@ -97,14 +97,7 @@ private theorem map_mem_piece {p : ℤ} {z : BalancedTensorProduct R A M N}
       (InternalGrading.ofDecomposition 𝒩)).piece p) :
     map f g hf hg z ∈ (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ')
       (InternalGrading.ofDecomposition 𝒩')).piece p := by
-  have hf' : LinearMap.IsHomogeneous f (InternalGrading.ofDecomposition ℳ).piece
-      (InternalGrading.ofDecomposition ℳ').piece 0 := by
-    simpa only [InternalGrading.ofDecomposition_piece] using hf₀
-  have hg' : LinearMap.IsHomogeneous g (InternalGrading.ofDecomposition 𝒩).piece
-      (InternalGrading.ofDecomposition 𝒩').piece 0 := by
-    simpa only [InternalGrading.ofDecomposition_piece] using hg₀
-  simpa only [add_zero] using
-    (isHomogeneous_map (𝒜 := 𝒜) _ _ _ _ f g hf hg hf' hg').map_mem hz
+  simpa only [add_zero] using (isHomogeneous_map_grading f g hf hg hf₀ hg₀).map_mem hz
 
 /-- Equivariant degree-zero chain maps induce a map of ordinary balanced tensor complexes. -/
 noncomputable def cochainComplexMap : cochainComplex hM hN ⟶ cochainComplex hM' hN' := by

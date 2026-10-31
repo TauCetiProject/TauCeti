@@ -36,12 +36,21 @@ modules. At curvature zero, for DG modules regarded as curved modules, it is the
 differential (`TauCeti.BalancedTensorProduct.curvedDifferential_eq_differential`). The
 construction is underived and needs no flatness hypothesis.
 
+Closed maps of curved modules, that is equivariant degree-zero maps commuting with the
+differentials, induce maps of balanced tensor complexes, functorially. An odd homotopy `k` in the
+right factor, an equivariant map of degree `-1` with `f₁ - f₂ = dM' ∘ k + k ∘ dM`, gives the chain
+homotopy `k ⊗ g`; no Koszul sign is needed because `k` acts on the left tensor factor.
+
 ## Main definitions
 
 * `TauCeti.BalancedTensorProduct.curvedDifferential`: the tensor differential of a curved right
   and a curved left module over one curved DG algebra.
 * `TauCeti.BalancedTensorProduct.curvedCochainComplex`: their balanced tensor product, as a
   cochain complex of ground-ring modules.
+* `TauCeti.BalancedTensorProduct.curvedCochainComplexMap`: the map of balanced tensor complexes
+  induced by closed maps in both factors.
+* `TauCeti.BalancedTensorProduct.curvedCochainComplexMapHomotopy`: the chain homotopy induced by
+  an odd homotopy in the right factor.
 
 ## Main results
 
@@ -49,6 +58,8 @@ construction is underived and needs no flatness hypothesis.
   tensor differential squares to zero.
 * `TauCeti.BalancedTensorProduct.curvedDifferential_eq_differential`: at curvature zero
   it is the tensor differential of DG modules.
+* `TauCeti.BalancedTensorProduct.curvedCochainComplexMap_id`,
+  `TauCeti.BalancedTensorProduct.curvedCochainComplexMap_comp`: functoriality of the induced maps.
 
 ## References
 
@@ -190,5 +201,155 @@ theorem curvedCochainComplex_d_apply (hM : IsCurvedDGRightModule h ℳ dM)
       BalancedTensorProduct R A M N) = curvedDifferential hM hN z := by
   unfold curvedCochainComplex
   rw [gradedCochainComplex_d_apply]
+
+end TauCeti.BalancedTensorProduct
+
+/-! ### Maps and homotopies of balanced tensor complexes -/
+
+namespace TauCeti.BalancedTensorProduct
+
+open MulOpposite
+
+universe uR uA u
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {dA : A →ₗ[R] A} {w : A}
+  {h : IsCurvedDGAlgebra 𝒜 dA w}
+  {M N M' N' : Type u}
+  [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
+  [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+  [AddCommGroup M'] [Module R M'] [Module Aᵐᵒᵖ M'] [IsScalarTower R Aᵐᵒᵖ M']
+  [AddCommGroup N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
+  {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N}
+  {ℳ' : ℤ → Submodule R M'} {𝒩' : ℤ → Submodule R N'}
+  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+  [DirectSum.Decomposition ℳ'] [DirectSum.Decomposition 𝒩']
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+  [SetLike.GradedSMul 𝒜 𝒩]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ']
+  [SetLike.GradedSMul 𝒜 𝒩']
+  {dM : M →ₗ[R] M} {dN : N →ₗ[R] N} {dM' : M' →ₗ[R] M'} {dN' : N' →ₗ[R] N'}
+  (hM : IsCurvedDGRightModule h ℳ dM) (hN : IsCurvedDGLeftModule h 𝒩 dN)
+  (hM' : IsCurvedDGRightModule h ℳ' dM') (hN' : IsCurvedDGLeftModule h 𝒩' dN')
+
+attribute [local instance] tensorGradedRight tensorGradedLeft
+
+/-- Tensoring equivariant maps commuting with the differentials, the first of degree zero,
+commutes with the curved tensor differential. -/
+theorem curvedDifferential_naturality (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hg : ∀ (a : A) n, g (a • n) = a • g n)
+    (hf₀ : LinearMap.IsHomogeneous f ℳ ℳ' 0)
+    (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
+    curvedDifferential hM' hN' ∘ₗ map f g hf hg = map f g hf hg ∘ₗ curvedDifferential hM hN :=
+  leibnizDifferential_naturality hM.leibniz hN.leibniz hM'.leibniz hN'.leibniz hg f hf hf₀ hfd hgd
+
+/-- Equivariant degree-zero maps of curved modules commuting with the differentials induce a map
+of balanced tensor complexes, sending `m ⊗ n` to `f m ⊗ g n`. -/
+noncomputable def curvedCochainComplexMap (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hg : ∀ (a : A) n, g (a • n) = a • g n)
+    (hf₀ : LinearMap.IsHomogeneous f ℳ ℳ' 0) (hg₀ : LinearMap.IsHomogeneous g 𝒩 𝒩' 0)
+    (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
+    curvedCochainComplex hM hN ⟶ curvedCochainComplex hM' hN' :=
+  gradedCochainComplexHom (map f g hf hg) (isHomogeneous_map_grading f g hf hg hf₀ hg₀)
+    (curvedDifferential_naturality hM hN hM' hN' f g hf hg hf₀ hfd hgd)
+
+variable (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+  (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hg : ∀ (a : A) n, g (a • n) = a • g n)
+  (hf₀ : LinearMap.IsHomogeneous f ℳ ℳ' 0) (hg₀ : LinearMap.IsHomogeneous g 𝒩 𝒩' 0)
+  (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN)
+
+/-- In the canonical identifications of the complex terms with their degree pieces, the induced
+map acts by the balanced tensor map. -/
+@[simp]
+theorem curvedCochainComplexMap_f_apply (p : ℤ)
+    (z : (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+      (InternalGrading.ofDecomposition 𝒩)).piece p) :
+    (eqToHom (curvedCochainComplex_X hM' hN' p)
+      ((curvedCochainComplexMap hM hN hM' hN' f g hf hg hf₀ hg₀ hfd hgd).f p
+        ((eqToHom (curvedCochainComplex_X hM hN p).symm) z)) :
+      BalancedTensorProduct R A M' N') = map f g hf hg z := by
+  unfold curvedCochainComplexMap curvedCochainComplex
+  exact gradedCochainComplexHom_f_apply _ _ _ p z
+
+/-- The induced map depends only on the two underlying linear maps. -/
+theorem curvedCochainComplexMap_congr {f' : M →ₗ[R] M'} {g' : N →ₗ[R] N'}
+    {hf' : ∀ (a : A) m, f' (op a • m) = op a • f' m} {hg' : ∀ (a : A) n, g' (a • n) = a • g' n}
+    {hf₀' : LinearMap.IsHomogeneous f' ℳ ℳ' 0} {hg₀' : LinearMap.IsHomogeneous g' 𝒩 𝒩' 0}
+    {hfd' : dM' ∘ₗ f' = f' ∘ₗ dM} {hgd' : dN' ∘ₗ g' = g' ∘ₗ dN} (hff' : f = f') (hgg' : g = g') :
+    curvedCochainComplexMap hM hN hM' hN' f g hf hg hf₀ hg₀ hfd hgd =
+      curvedCochainComplexMap hM hN hM' hN' f' g' hf' hg' hf₀' hg₀' hfd' hgd' := by
+  subst hff' hgg'
+  rfl
+
+/-- Tensoring the identity maps gives the identity map of the balanced tensor complex. -/
+@[simp]
+theorem curvedCochainComplexMap_id :
+    curvedCochainComplexMap hM hN hM hN LinearMap.id LinearMap.id (fun _ _ ↦ rfl)
+      (fun _ _ ↦ rfl) (LinearMap.isHomogeneous_id ℳ) (LinearMap.isHomogeneous_id 𝒩) rfl rfl =
+        𝟙 (curvedCochainComplex hM hN) := by
+  unfold curvedCochainComplexMap curvedCochainComplex
+  rw [← gradedCochainComplexHom_id]
+  congr 1
+  exact map_id
+
+section Composition
+
+variable {M'' N'' : Type u}
+  [AddCommGroup M''] [Module R M''] [Module Aᵐᵒᵖ M''] [IsScalarTower R Aᵐᵒᵖ M'']
+  [AddCommGroup N''] [Module R N''] [Module A N''] [IsScalarTower R A N'']
+  {ℳ'' : ℤ → Submodule R M''} {𝒩'' : ℤ → Submodule R N''}
+  [DirectSum.Decomposition ℳ''] [DirectSum.Decomposition 𝒩'']
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ'']
+  [SetLike.GradedSMul 𝒜 𝒩'']
+  {dM'' : M'' →ₗ[R] M''} {dN'' : N'' →ₗ[R] N''}
+  (hM'' : IsCurvedDGRightModule h ℳ'' dM'') (hN'' : IsCurvedDGLeftModule h 𝒩'' dN'')
+  (f' : M' →ₗ[R] M'') (g' : N' →ₗ[R] N'')
+  (hf' : ∀ (a : A) m, f' (op a • m) = op a • f' m)
+  (hg' : ∀ (a : A) n, g' (a • n) = a • g' n)
+  (hf'₀ : LinearMap.IsHomogeneous f' ℳ' ℳ'' 0)
+  (hg'₀ : LinearMap.IsHomogeneous g' 𝒩' 𝒩'' 0)
+  (hf'd : dM'' ∘ₗ f' = f' ∘ₗ dM') (hg'd : dN'' ∘ₗ g' = g' ∘ₗ dN')
+
+/-- Tensoring preserves composition of equivariant degree-zero maps commuting with the
+differentials.
+
+The simp rule combines induced maps, so the intermediate curved-module data can be inferred
+from the composition. -/
+@[simp ←]
+theorem curvedCochainComplexMap_comp :
+    curvedCochainComplexMap hM hN hM'' hN'' (f' ∘ₗ f) (g' ∘ₗ g)
+      (fun a m ↦ by simp only [LinearMap.comp_apply, hf, hf'])
+      (fun a n ↦ by simp only [LinearMap.comp_apply, hg, hg'])
+      (by simpa only [add_zero] using hf'₀.comp hf₀)
+      (by simpa only [add_zero] using hg'₀.comp hg₀)
+      (by rw [← LinearMap.comp_assoc, hf'd, LinearMap.comp_assoc, hfd, LinearMap.comp_assoc])
+      (by rw [← LinearMap.comp_assoc, hg'd, LinearMap.comp_assoc, hgd, LinearMap.comp_assoc]) =
+      curvedCochainComplexMap hM hN hM' hN' f g hf hg hf₀ hg₀ hfd hgd ≫
+        curvedCochainComplexMap hM' hN' hM'' hN'' f' g' hf' hg' hf'₀ hg'₀ hf'd hg'd := by
+  unfold curvedCochainComplexMap curvedCochainComplex
+  rw [← gradedCochainComplexHom_comp]
+  congr 1
+  exact map_comp f g f' g' hf hg hf' hg'
+
+end Composition
+
+/-- **Homotopy invariance in the right factor.** If closed maps `f₁, f₂` of curved right modules
+satisfy `f₁ = dM' ∘ k + k ∘ dM + f₂` for an equivariant map `k` of degree `-1`, then tensoring
+with a closed map `g` of curved left modules gives homotopic maps of balanced tensor complexes;
+the homotopy is `k ⊗ g`. -/
+noncomputable def curvedCochainComplexMapHomotopy {f₁ f₂ k : M →ₗ[R] M'}
+    (hf₁ : ∀ (a : A) m, f₁ (op a • m) = op a • f₁ m)
+    (hf₂ : ∀ (a : A) m, f₂ (op a • m) = op a • f₂ m)
+    (hk : ∀ (a : A) m, k (op a • m) = op a • k m)
+    (hf₁₀ : LinearMap.IsHomogeneous f₁ ℳ ℳ' 0) (hf₂₀ : LinearMap.IsHomogeneous f₂ ℳ ℳ' 0)
+    (hk₁ : LinearMap.IsHomogeneous k ℳ ℳ' (-1))
+    (hf₁d : dM' ∘ₗ f₁ = f₁ ∘ₗ dM) (hf₂d : dM' ∘ₗ f₂ = f₂ ∘ₗ dM)
+    (hfk : f₁ = dM' ∘ₗ k + k ∘ₗ dM + f₂) :
+    Homotopy (curvedCochainComplexMap hM hN hM' hN' f₁ g hf₁ hg hf₁₀ hg₀ hf₁d hgd)
+      (curvedCochainComplexMap hM hN hM' hN' f₂ g hf₂ hg hf₂₀ hg₀ hf₂d hgd) :=
+  gradedCochainComplexHomotopy _ _ _ _ (map k g hk hg)
+    (by simpa only [add_zero] using isHomogeneous_map_grading k g hk hg hk₁ hg₀)
+    (map_eq_leibnizDifferential_comp_map_add_map_comp_add hM.leibniz
+      hN.leibniz hM'.leibniz hN'.leibniz hg hf₁ hf₂ hk hk₁ hfk hgd)
 
 end TauCeti.BalancedTensorProduct
