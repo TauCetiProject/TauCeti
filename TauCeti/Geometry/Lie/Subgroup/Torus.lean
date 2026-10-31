@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Classification
-public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Kronecker
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
+public import TauCeti.Topology.Algebra.Group.Subgroup
+import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Kronecker
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Subgroup.Differential
 import Mathlib.GroupTheory.NoncommCoprod
@@ -239,7 +240,7 @@ each dimension of its Lie algebra. The ambient Lie group need not be compact. -/
 theorem IsTorus.nonempty_continuousMulEquiv_pi_circle {T : Subgroup G} (hT : IsTorus T) :
     Nonempty (T ≃ₜ* (Fin (Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) T)) → Circle)) :=
   hT.elim (I := I) fun d => by
-    intro _ _ _ _ _ _ _
+    intros
     exact TauCeti.nonempty_continuousMulEquiv_pi_circle
       (I := 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) T).toSubmodule))
 
@@ -253,16 +254,14 @@ torus. -/
 theorem IsTorus.exists_closedZpowers_eq [IsTopologicalGroup G] {T : Subgroup G}
     (hT : IsTorus T) : ∃ t ∈ T, closedZpowers t = T :=
   hT.elim (I := I) fun d => by
-    intro _ _ _ _ _ _ _
+    intros
     obtain ⟨t, ht⟩ :=
       exists_closedZpowers_eq_top 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) (G := T)
     refine ⟨t, t.2, ?_⟩
     -- The closed cyclic subgroup of `t` in `T`, which is compact, pushes forward to the closed
     -- cyclic subgroup of `t` in `G`.
-    rw [closedZpowers_def, ← T.coe_subtype, ← MonoidHom.map_zpowers,
-      ← T.subtype.map_topologicalClosure continuous_subtype_val _
-        (Subgroup.isClosed_topologicalClosure _).isCompact,
-      ← closedZpowers_def, ht, ← MonoidHom.range_eq_map, Subgroup.range_subtype]
+    rw [← T.coe_subtype, ← T.subtype.map_closedZpowers continuous_subtype_val
+      (isClosed_closedZpowers t).isCompact, ht, ← MonoidHom.range_eq_map, Subgroup.range_subtype]
 
 end Generator
 

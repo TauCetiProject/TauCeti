@@ -186,6 +186,13 @@ theorem dense_iff_forall_dual_eq_zero {H : AddSubgroup E} :
     obtain ⟨f, hf, hfG⟩ := exists_dual_ne_zero_of_isClosed H.isClosed_topologicalClosure hne
     exact hf (h f fun x hx ↦ hfG x (H.le_topologicalClosure hx))
 
+/-- The complement of a level set of a nonzero functional is open and dense. -/
+private theorem isOpen_and_dense_preimage_compl_singleton {f : Dual ℝ E} (hf : f ≠ 0) (a : ℝ) :
+    IsOpen (f ⁻¹' {a}ᶜ) ∧ Dense (f ⁻¹' {a}ᶜ) :=
+  ⟨(isClosed_singleton.preimage (LinearMap.continuous_of_finiteDimensional f)).isOpen_compl,
+    (dense_compl_singleton _).preimage
+      (f.isOpenMap_of_finiteDimensional (LinearMap.surjective_iff_ne_zero.mpr hf))⟩
+
 /-- **Generic vectors are dense**: for an additive subgroup `H` spanning `E`, the vectors `x` such
 that `H + ℤ x` is dense form a dense set. -/
 theorem dense_setOfPred_dense_sup {H : AddSubgroup E} (hH : span ℝ (H : Set E) = ⊤) :
@@ -203,19 +210,14 @@ theorem dense_setOfPred_dense_sup {H : AddSubgroup E} (hH : span ℝ (H : Set E)
     choose c hc using hk
     exact ⟨c, b.ext fun i => by rw [Basis.constr_basis, hc]⟩
   let U : (_ → ℤ) × ℤ → Set E := fun p => {x | F p.1 ≠ 0 → F p.1 x ≠ p.2}
-  have hopen : ∀ p, IsOpen (U p) := fun p => by
-    by_cases hc : F p.1 = 0
-    · simp [U, hc]
-    · simp only [U, hc, ne_eq, not_false_eq_true, forall_const]
-      exact isOpen_ne_fun (LinearMap.continuous_of_finiteDimensional _) continuous_const
-  have hdense : ∀ p, Dense (U p) := fun p => by
+  -- Each `U p` is everything or the complement of an affine hyperplane: open and dense.
+  have hU : ∀ p, IsOpen (U p) ∧ Dense (U p) := fun p => by
     by_cases hc : F p.1 = 0
     · simp [U, hc]
     · have : U p = F p.1 ⁻¹' {(p.2 : ℝ)}ᶜ := by ext x; simp [U, hc]
       rw [this]
-      exact (dense_compl_singleton _).preimage
-        ((F p.1).isOpenMap_of_finiteDimensional (LinearMap.surjective_iff_ne_zero.mpr hc))
-  refine (dense_iInter_of_isOpen hopen hdense).mono fun x hx => ?_
+      exact isOpen_and_dense_preimage_compl_singleton hc _
+  refine (dense_iInter_of_isOpen (fun p => (hU p).1) (fun p => (hU p).2)).mono fun x hx => ?_
   rw [Set.mem_iInter] at hx
   refine dense_iff_forall_dual_eq_zero.mpr fun f hf => ?_
   obtain ⟨c, rfl⟩ := hF f fun y hy => hf y (mem_sup_left hy)

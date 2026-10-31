@@ -76,7 +76,7 @@ theorem IsTorus.span_setOf_lieExp_eq_one {T : Subgroup G} (hT : IsTorus T) :
   -- Through the closed-subgroup theorem, `T` is a compact commutative Lie group modelled on
   -- `Lie(T)`, and the differential of its inclusion identifies its Lie algebra with `Lie(T)`.
   refine hT.elim (I := I) fun d => ?_
-  intro _ _ _ _ _ _ _
+  intros
   let F := (lieSubalgebraOfSubgroup (I := I) T).toSubmodule
   refine le_antisymm (Submodule.span_le.mpr fun X hX => hX.1) ?_
   have hrange := d.range_lieMapSubtypeVal_eq

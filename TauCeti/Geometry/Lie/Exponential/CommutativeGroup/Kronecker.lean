@@ -60,25 +60,22 @@ omit [IsTopologicalGroup G] in
 `Λ + ℤ X`. -/
 private theorem preimage_lieExp_zpowers_lieExp (X : LeftInvariantDerivation I G) :
     lieExp (I := I) ⁻¹' (Subgroup.zpowers (lieExp (I := I) X) : Set G) =
-      ((lieExpAddMonoidHom (I := I) (G := G)).ker ⊔ AddSubgroup.zmultiples X : AddSubgroup _) := by
-  -- Through `Additive.ofMul`, this is the preimage under the exponential homomorphism `f` of the
-  -- image of `ℤ X`, which is `ℤ X + ker f`.
-  have hf : lieExp (I := I) (G := G) = Additive.toMul ∘ lieExpAddMonoidHom (I := I) (G := G) := by
-    funext Y
-    simp
-  -- The cyclic subgroup of `lieExp X`, read in `Additive G`, is the image of `ℤ X` under `f`.
-  have himage : Additive.toMul ⁻¹' (Subgroup.zpowers (lieExp (I := I) X) : Set G) =
-      ((AddSubgroup.zmultiples X).map (lieExpAddMonoidHom (I := I) (G := G)) :
-        Set (Additive G)) := by
-    rw [← Additive.ofMul_symm_eq, ← Equiv.image_eq_preimage_symm,
-      ofMul_image_zpowers_eq_zmultiples_ofMul, AddMonoidHom.map_zmultiples,
-      lieExpAddMonoidHom_apply]
-  -- The preimage of the image of a subgroup under a homomorphism is the subgroup plus the kernel.
-  have hpre : lieExp (I := I) ⁻¹' (Subgroup.zpowers (lieExp (I := I) X) : Set G) =
-      (Additive.toMul ∘ lieExpAddMonoidHom (I := I) (G := G)) ⁻¹'
-        (Subgroup.zpowers (lieExp (I := I) X) : Set G) := by
-    rw [← hf]
-  rw [hpre, Set.preimage_comp, himage, ← AddSubgroup.coe_comap, AddSubgroup.comap_map_eq, sup_comm]
+      ((lieExpAddMonoidHom (I := I) (G := G)).ker ⊔ AddSubgroup.zmultiples X : AddSubgroup _) :=
+  calc lieExp (I := I) ⁻¹' (Subgroup.zpowers (lieExp (I := I) X) : Set G)
+      -- The exponential is the exponential homomorphism `f` followed by `Additive.toMul`.
+      _ = lieExpAddMonoidHom (I := I) (G := G) ⁻¹'
+          (Additive.ofMul '' (Subgroup.zpowers (lieExp (I := I) X) : Set G)) := by
+        rw [coe_lieExpAddMonoidHom, Set.preimage_comp, Equiv.preimage_image]
+      -- The cyclic subgroup of `lieExp X`, read in `Additive G`, is the image of `ℤ X` under `f`.
+      _ = lieExpAddMonoidHom (I := I) (G := G) ⁻¹'
+          ((AddSubgroup.zmultiples X).map (lieExpAddMonoidHom (I := I) (G := G)) :
+            Set (Additive G)) := by
+        rw [ofMul_image_zpowers_eq_zmultiples_ofMul, ← lieExpAddMonoidHom_apply,
+          AddMonoidHom.map_zmultiples]
+      -- The preimage of the image of a subgroup under a homomorphism is the subgroup plus the
+      -- kernel.
+      _ = _ := by
+        rw [← AddSubgroup.coe_comap, AddSubgroup.comap_map_eq, sup_comm]
 
 section Preconnected
 
