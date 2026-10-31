@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -22,6 +23,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
   for `a, b ∈ (-1, 1)`.
+* `TauCeti.integral_pow_add_two_mul_sqrt_one_sub_sq`: the moments
+  `Jₙ = ∫ x in -1..1, xⁿ √(1 - x²)` satisfy `(n + 4) Jₙ₊₂ = (n + 1) Jₙ`.
 * `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
   `c ≠ 0`, the real counterpart of Mathlib's `integral_exp_mul_complex`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
@@ -67,6 +70,50 @@ theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} (ha : a ∈ Set.Ioo (-1) 1)
     · intro x hx
       have hx' := hIcc hx
       exact (Real.sqrt_pos.2 (by nlinarith [hx'.1, hx'.2])).ne'
+
+open MeasureTheory Real Set intervalIntegral in
+/-- Integration by parts against `(1 - x ^ 2) ^ (3 / 2)`: the moments
+`Jₙ = ∫ x in -1..1, x ^ n * √(1 - x ^ 2)` of the semicircle height satisfy
+`(n + 4) Jₙ₊₂ = (n + 1) Jₙ`. -/
+theorem integral_pow_add_two_mul_sqrt_one_sub_sq (n : ℕ) :
+    (n + 4 : ℝ) * ∫ x in -1..1, x ^ (n + 2) * √(1 - x ^ 2) =
+      (n + 1) * ∫ x in -1..1, x ^ n * √(1 - x ^ 2) := by
+  have hu (x : ℝ) (_ : x ∈ uIcc (-1 : ℝ) 1) :
+      HasDerivAt (fun y : ℝ ↦ y ^ (n + 1)) ((n + 1 : ℝ) * x ^ n) x := by
+    simpa using hasDerivAt_pow (n + 1) x
+  have hv (x : ℝ) (_ : x ∈ uIcc (-1 : ℝ) 1) :
+      HasDerivAt (fun y : ℝ ↦ (1 - y ^ 2) ^ (3 / 2 : ℝ)) (-3 * x * √(1 - x ^ 2)) x := by
+    convert ((hasDerivAt_pow 2 x).const_sub 1).rpow_const (p := 3 / 2)
+      (Or.inr (by norm_num)) using 1
+    have hexp : (3 / 2 : ℝ) - 1 = 1 / 2 := by norm_num
+    rw [sqrt_eq_rpow, hexp]
+    simp only [Nat.cast_ofNat, Nat.reduceSub, pow_one]
+    ring
+  have hibp := integral_mul_deriv_eq_deriv_mul hu hv
+    ((by fun_prop : Continuous fun x : ℝ ↦ (n + 1 : ℝ) * x ^ n).intervalIntegrable _ _)
+    ((by fun_prop : Continuous fun x : ℝ ↦ -3 * x * √(1 - x ^ 2)).intervalIntegrable _ _)
+  have hlhs : ∫ x in -1..1, x ^ (n + 1) * (-3 * x * √(1 - x ^ 2)) =
+      -3 * ∫ x in -1..1, x ^ (n + 2) * √(1 - x ^ 2) := by
+    rw [← intervalIntegral.integral_const_mul]
+    exact intervalIntegral.integral_congr fun x _ ↦ by ring
+  have hrhs : ∫ x in -1..1, (n + 1 : ℝ) * x ^ n * (1 - x ^ 2) ^ (3 / 2 : ℝ) =
+      (n + 1) * ((∫ x in -1..1, x ^ n * √(1 - x ^ 2)) -
+        ∫ x in -1..1, x ^ (n + 2) * √(1 - x ^ 2)) := by
+    have hint (k : ℕ) : IntervalIntegrable (fun x : ℝ ↦ x ^ k * √(1 - x ^ 2)) volume (-1) 1 :=
+      (by fun_prop : Continuous fun x : ℝ ↦ x ^ k * √(1 - x ^ 2)).intervalIntegrable _ _
+    rw [← intervalIntegral.integral_sub (hint n) (hint (n + 2)),
+      ← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr fun x hx ↦ ?_
+    have h0 : 0 ≤ 1 - x ^ 2 := by
+      rw [uIcc_of_le (by norm_num), mem_Icc] at hx
+      nlinarith [hx.1, hx.2]
+    have hexp : (3 / 2 : ℝ) = 1 + 1 / 2 := by norm_num
+    rw [hexp, rpow_add' h0 (by norm_num), rpow_one, ← sqrt_eq_rpow]
+    ring
+  -- The boundary terms vanish because `(1 - x ^ 2) ^ (3 / 2)` is zero at `x = ±1`.
+  rw [hlhs, hrhs] at hibp
+  norm_num at hibp
+  linarith
 
 /-- The integral of `x ↦ exp (c x)` for a nonzero real `c`: an antiderivative is
 `x ↦ exp (c x) / c`. The real counterpart of `integral_exp_mul_complex`. -/

@@ -60,6 +60,11 @@ polynomials invariant under the dot action of the Weyl group.
 
 * `TauCeti.cartanProjection_mul_mul`: the projection of an ordered product `f h e` is
   `ε(f) ε(e) h`.
+* `TauCeti.cartanProjection_ι_mul_of_mem_negativeNilradical`,
+  `TauCeti.cartanProjection_mul_ι_of_mem_positiveNilradical` and
+  `TauCeti.cartanProjection_ι_coe_mul`: multiplying by a generator. A generator from `n⁻` on the
+  left or one from `n⁺` on the right is killed by the projection, and a generator `h` of `H` on the
+  left passes through it, because `ad h` preserves the augmentation ideal of `U(n⁻)`.
 * `TauCeti.vermaCentralCharacter_eq_lift_cartanProjection`: the central character of a weight `λ`
   is evaluation at `λ` of the Cartan projection.
 * `TauCeti.lift_hcProjection`: the same formula for `hcProjection`.
@@ -118,6 +123,157 @@ theorem cartanProjection_mul_mul (f : U (negativeNilradical H b)) (h : U H)
 theorem cartanProjection_map_incl (h : U H) :
     cartanProjection b (UniversalEnvelopingAlgebra.map K H.incl h) = h := by
   simpa using cartanProjection_mul_mul b 1 h 1
+
+/-- **The Cartan projection fixes the scalars.** -/
+@[simp]
+theorem cartanProjection_algebraMap (r : K) :
+    cartanProjection b (algebraMap K (U L) r) = algebraMap K (U H) r := by
+  rw [← AlgHom.commutes (UniversalEnvelopingAlgebra.map K H.incl) r, cartanProjection_map_incl]
+
+/-- **The Cartan projection sends `1` to `1`.** -/
+@[simp]
+theorem cartanProjection_one : cartanProjection b (1 : U L) = 1 := by
+  simpa using cartanProjection_algebraMap b 1
+
+/-! ### Multiplying by a generator -/
+
+/-- **A generator from `n⁻` on the left is killed by the Cartan projection**: the augmentation of
+`U(n⁻)` vanishes on its generators. -/
+-- `simp`-normal form is `cartanProjection_ι_mul_of_mem_negativeNilradical'`, since `simp` unfolds
+-- `ι` through `ι_apply`.
+theorem cartanProjection_ι_mul_of_mem_negativeNilradical {x : L}
+    (hx : x ∈ negativeNilradical H b) (u : U L) :
+    cartanProjection b (_root_.UniversalEnvelopingAlgebra.ι K x * u) = 0 := by
+  have hι : _root_.UniversalEnvelopingAlgebra.ι K x =
+      UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl
+        (_root_.UniversalEnvelopingAlgebra.ι K (⟨x, hx⟩ : negativeNilradical H b)) := by
+    rw [UniversalEnvelopingAlgebra.map_ι, LieSubalgebra.coe_incl]
+  have key : cartanProjection b ∘ₗ LinearMap.mulLeft K (_root_.UniversalEnvelopingAlgebra.ι K x) =
+      0 := by
+    refine UniversalEnvelopingAlgebra.linearMap_ext_triangular b fun f h e ↦ ?_
+    -- `ι x * (f h e) = (ι x * f) h e` is again an ordered product
+    rw [LinearMap.comp_apply, LinearMap.mulLeft_apply, ← mul_assoc, ← mul_assoc, hι, ← map_mul,
+      cartanProjection_mul_mul]
+    simp
+  simpa using LinearMap.congr_fun key u
+
+/-- The `simp`-normal form of `cartanProjection_ι_mul_of_mem_negativeNilradical`, stated for the
+canonical generators as `simp` writes them. -/
+@[simp]
+theorem cartanProjection_ι_mul_of_mem_negativeNilradical' {x : L}
+    (hx : x ∈ negativeNilradical H b) (u : U L) :
+    cartanProjection b
+      (_root_.UniversalEnvelopingAlgebra.mkAlgHom K L (TensorAlgebra.ι K x) * u) = 0 :=
+  cartanProjection_ι_mul_of_mem_negativeNilradical b hx u
+
+/-- **A generator from `n⁺` on the right is killed by the Cartan projection**: the augmentation of
+`U(n⁺)` vanishes on its generators. -/
+-- `simp`-normal form is `cartanProjection_mul_ι_of_mem_positiveNilradical'`, since `simp` unfolds
+-- `ι` through `ι_apply`.
+theorem cartanProjection_mul_ι_of_mem_positiveNilradical {x : L}
+    (hx : x ∈ positiveNilradical H b) (u : U L) :
+    cartanProjection b (u * _root_.UniversalEnvelopingAlgebra.ι K x) = 0 := by
+  have hι : _root_.UniversalEnvelopingAlgebra.ι K x =
+      UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl
+        (_root_.UniversalEnvelopingAlgebra.ι K (⟨x, hx⟩ : positiveNilradical H b)) := by
+    rw [UniversalEnvelopingAlgebra.map_ι, LieSubalgebra.coe_incl]
+  have key : cartanProjection b ∘ₗ LinearMap.mulRight K (_root_.UniversalEnvelopingAlgebra.ι K x) =
+      0 := by
+    refine UniversalEnvelopingAlgebra.linearMap_ext_triangular b fun f h e ↦ ?_
+    -- `(f h e) * ι x = f h (e * ι x)` is again an ordered product
+    rw [LinearMap.comp_apply, LinearMap.mulRight_apply, mul_assoc, hι, ← map_mul,
+      cartanProjection_mul_mul]
+    simp
+  simpa using LinearMap.congr_fun key u
+
+/-- The `simp`-normal form of `cartanProjection_mul_ι_of_mem_positiveNilradical`, stated for the
+canonical generators as `simp` writes them. -/
+@[simp]
+theorem cartanProjection_mul_ι_of_mem_positiveNilradical' {x : L}
+    (hx : x ∈ positiveNilradical H b) (u : U L) :
+    cartanProjection b
+      (u * _root_.UniversalEnvelopingAlgebra.mkAlgHom K L (TensorAlgebra.ι K x)) = 0 :=
+  cartanProjection_mul_ι_of_mem_positiveNilradical b hx u
+
+/-- Bracketing with a generator `h` of `H` preserves the augmentation ideal of `U(n⁻)`: moving `ι h`
+past an element `f` of `U(n⁻)` costs an element of `U(n⁻)` with augmentation zero. -/
+private theorem exists_counit_eq_zero_ι_mul_eq (h : H) (f : U (negativeNilradical H b)) :
+    ∃ g : U (negativeNilradical H b), Coalgebra.counit (R := K) g = 0 ∧
+      _root_.UniversalEnvelopingAlgebra.ι K (h : L) *
+          UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f =
+        UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
+            _root_.UniversalEnvelopingAlgebra.ι K (h : L) +
+          UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl g := by
+  induction f using UniversalEnvelopingAlgebra.induction_ι with
+  | ι y =>
+    -- the negative nilradical is a sum of root spaces, so it is stable under `ad h`
+    have hy : ⁅(h : L), (y : L)⁆ ∈ negativeNilradical H b :=
+      (mem_negativeNilradical H b _).mpr <| LieSubmodule.lie_mem _ (x := h)
+        ((mem_negativeNilradical H b _).mp y.2)
+    refine ⟨_root_.UniversalEnvelopingAlgebra.ι K (⟨_, hy⟩ : negativeNilradical H b),
+      UniversalEnvelopingAlgebra.counit_ι K _ _, ?_⟩
+    rw [UniversalEnvelopingAlgebra.map_ι, UniversalEnvelopingAlgebra.map_ι]
+    simp only [LieSubalgebra.coe_incl, LieHom.map_lie, Ring.lie_def]
+    abel
+  | algebraMap r => exact ⟨0, map_zero _, by simp [Algebra.commutes]⟩
+  | add f f' hf hf' =>
+    obtain ⟨g, hg, hfg⟩ := hf
+    obtain ⟨g', hg', hfg'⟩ := hf'
+    refine ⟨g + g', by simp [hg, hg'], ?_⟩
+    simp only [map_add, mul_add, add_mul, hfg, hfg']
+    abel
+  | mul f f' hf hf' =>
+    obtain ⟨g, hg, hfg⟩ := hf
+    obtain ⟨g', hg', hfg'⟩ := hf'
+    refine ⟨g * f' + f * g', by simp [hg, hg'], ?_⟩
+    -- move `ι h` past `f`, then past `f'`
+    rw [map_mul, ← mul_assoc, hfg, add_mul, mul_assoc, hfg']
+    simp only [map_add, map_mul]
+    noncomm_ring
+
+/-- **A generator from `H` on the left passes through the Cartan projection**:
+`cartanProjection b (ι h * u) = ι h * cartanProjection b u` for `h` in `H`. -/
+-- `simp`-normal form is `cartanProjection_ι_coe_mul'`, since `simp` unfolds `ι` through
+-- `ι_apply`.
+theorem cartanProjection_ι_coe_mul (h : H) (u : U L) :
+    cartanProjection b (_root_.UniversalEnvelopingAlgebra.ι K (h : L) * u) =
+      _root_.UniversalEnvelopingAlgebra.ι K h * cartanProjection b u := by
+  have hι : _root_.UniversalEnvelopingAlgebra.ι K (h : L) =
+      UniversalEnvelopingAlgebra.map K H.incl (_root_.UniversalEnvelopingAlgebra.ι K h) := by
+    rw [UniversalEnvelopingAlgebra.map_ι, LieSubalgebra.coe_incl]
+  have key : cartanProjection b ∘ₗ
+        LinearMap.mulLeft K (_root_.UniversalEnvelopingAlgebra.ι K (h : L)) =
+      LinearMap.mulLeft K (_root_.UniversalEnvelopingAlgebra.ι K h) ∘ₗ cartanProjection b := by
+    refine UniversalEnvelopingAlgebra.linearMap_ext_triangular b fun f k e ↦ ?_
+    obtain ⟨g, hg, hfg⟩ := exists_counit_eq_zero_ι_mul_eq b h f
+    -- `ι h * (f k e) = f (ι h * k) e + g k e`, a sum of two ordered products
+    have hmul : _root_.UniversalEnvelopingAlgebra.ι K (h : L) *
+          (UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
+            UniversalEnvelopingAlgebra.map K H.incl k *
+              UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e) =
+        UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
+            UniversalEnvelopingAlgebra.map K H.incl
+              (_root_.UniversalEnvelopingAlgebra.ι K h * k) *
+              UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e +
+          UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl g *
+            UniversalEnvelopingAlgebra.map K H.incl k *
+              UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e := by
+      rw [← mul_assoc, ← mul_assoc, hfg, add_mul, add_mul,
+        mul_assoc _ (_root_.UniversalEnvelopingAlgebra.ι K _), hι, ← map_mul]
+    rw [LinearMap.comp_apply, LinearMap.mulLeft_apply, hmul, map_add, cartanProjection_mul_mul,
+      cartanProjection_mul_mul]
+    simp [hg]
+  simpa using LinearMap.congr_fun key u
+
+/-- The `simp`-normal form of `cartanProjection_ι_coe_mul`, stated for the canonical generators as
+`simp` writes them. -/
+@[simp]
+theorem cartanProjection_ι_coe_mul' (h : H) (u : U L) :
+    cartanProjection b
+        (_root_.UniversalEnvelopingAlgebra.mkAlgHom K L (TensorAlgebra.ι K (h : L)) * u) =
+      _root_.UniversalEnvelopingAlgebra.mkAlgHom K H (TensorAlgebra.ι K h) *
+        cartanProjection b u :=
+  cartanProjection_ι_coe_mul b h u
 
 /-! ### Evaluation at a weight -/
 

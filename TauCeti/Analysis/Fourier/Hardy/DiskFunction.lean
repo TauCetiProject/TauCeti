@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Normed.Group.Tannery
 public import TauCeti.Analysis.Fourier.Hardy.Basic
+public import TauCeti.MeasureTheory.Integral.Circle.Haar
+public import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The holomorphic disk function of a Hardy function
@@ -27,6 +29,8 @@ they are bounded by `‖x‖`, so the series converges on the whole disk.
   `‖F_x w‖ ≤ ‖x‖ / √(1 - ‖w‖ ^ 2)`, from the Cauchy–Schwarz inequality in `ℓ²`.
 * `TauCeti.HardySpace.tendsto_eLpNorm_diskFunction_sub`: the circle restrictions
   `t ↦ F_x (r * e (t))` converge to `x` in `L²` as `r → 1⁻`.
+* `TauCeti.HardySpace.tendsto_circleAverage_norm_sq_diskFunction`: the squared circle means
+  of `F_x` converge to the squared boundary norm as `r → 1⁻`.
 
 ## References
 
@@ -310,6 +314,27 @@ theorem tendsto_eLpNorm_diskFunction_sub :
   filter_upwards [Lp.coeFn_sub (x.radial r : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) x,
     x.coe_radial_ae_eq hr] with t ht hrad
   rw [Submodule.coe_sub, ht, Pi.sub_apply, hrad]
+
+/-- The squared circle means of the disk function converge to the squared boundary Hardy norm
+as the radius tends to one from below. -/
+theorem tendsto_circleAverage_norm_sq_diskFunction :
+    Tendsto (fun r : ℝ ↦ Real.circleAverage (fun w ↦ ‖x.diskFunction w‖ ^ 2) 0 r)
+      (𝓝[<] 1) (𝓝 (‖x‖ ^ 2)) := by
+  refine (x.tendsto_radial.norm.pow 2).congr' ?_
+  have hev : ∀ᶠ r : ℝ in 𝓝[<] 1, |r| < 1 :=
+    eventually_of_mem (Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1))
+      fun _ hr ↦ abs_lt.mpr hr
+  filter_upwards [hev] with r hr
+  rw [← Submodule.norm_coe, ← Lp.integral_norm_sq_eq_norm_sq]
+  calc
+    (∫ t, ‖(x.radial r : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) t‖ ^ 2
+        ∂AddCircle.haarAddCircle) =
+        ∫ t : UnitAddCircle, ‖x.diskFunction (r * AddCircle.toCircle t)‖ ^ 2
+          ∂AddCircle.haarAddCircle :=
+      integral_congr_ae ((x.coe_radial_ae_eq hr).fun_comp (fun z : ℂ ↦ ‖z‖ ^ 2))
+    _ = Real.circleAverage (fun w ↦ ‖x.diskFunction w‖ ^ 2) 0 r := by
+      simpa only [add_zero] using AddCircle.integral_haarAddCircle_comp_toCircle
+        (T := 1) (fun w ↦ ‖x.diskFunction w‖ ^ 2) 0 r
 
 end Radial
 

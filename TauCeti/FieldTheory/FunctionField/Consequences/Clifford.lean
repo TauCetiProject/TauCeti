@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Union
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 
 /-!
 # Clifford's theorem for divisors of a function field

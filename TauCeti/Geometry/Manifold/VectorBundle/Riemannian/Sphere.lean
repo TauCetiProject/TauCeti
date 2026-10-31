@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -147,8 +147,8 @@ def sphereBundleChartedSpace {r : B → ℝ} (hr : ContMDiff I 𝓘(ℝ) n r)
   let : IsContMDiffRiemannianBundle I 1 F V := .of_le hn
   let hreg := isRegularValue_sphereBundleEquation (F := F) (V := V)
     (hr.of_le hn) (fun b => (hrpos b).ne')
-  let := scalarRegularLevelChartedSpace
-    (fun p _ => (contMDiff_sphereBundleEquation hr p).of_le hn) hreg
+  let := regularLevelChartedSpace (n := Module.finrank ℝ (E × F) - 1)
+    (fun p _ => (contMDiff_sphereBundleEquation hr p).of_le hn) hreg (by rw [Module.finrank_self])
   let e : {p : TotalSpace F V // ‖p.2‖ = r p.proj} ≃ₜ
       {p : TotalSpace F V // sphereBundleEquation r p = 0} :=
     Homeomorph.setCongr
@@ -168,8 +168,9 @@ theorem isManifold_sphereBundle {r : B → ℝ} (hr : ContMDiff I 𝓘(ℝ) n r)
     (hr.of_le hn) (fun b => (hrpos b).ne')
   let hfm := fun (p : TotalSpace F V) (_ : sphereBundleEquation r p = 0) =>
     contMDiff_sphereBundleEquation hr p
-  let := scalarRegularLevelChartedSpace (fun p hp => (hfm p hp).of_le hn) hreg
-  have := isManifold_scalarRegularLevel hn hfm hreg
+  let := regularLevelChartedSpace (n := Module.finrank ℝ (E × F) - 1)
+    (fun p hp => (hfm p hp).of_le hn) hreg (by rw [Module.finrank_self])
+  have := isManifold_regularLevel hn hfm hreg (by rw [Module.finrank_self])
   exact (Homeomorph.setCongr
     (s := {p : TotalSpace F V | ‖p.2‖ = r p.proj})
     (t := {p : TotalSpace F V | sphereBundleEquation r p = 0}) (Set.ext fun p =>
@@ -188,8 +189,9 @@ theorem isSmoothEmbedding_coe_sphereBundle {r : B → ℝ} (hr : ContMDiff I �
     (hr.of_le hn) (fun b => (hrpos b).ne')
   let hfm := fun (p : TotalSpace F V) (_ : sphereBundleEquation r p = 0) =>
     contMDiff_sphereBundleEquation hr p
-  let := scalarRegularLevelChartedSpace (fun p hp => (hfm p hp).of_le hn) hreg
-  have := isManifold_scalarRegularLevel hn hfm hreg
+  let := regularLevelChartedSpace (n := Module.finrank ℝ (E × F) - 1)
+    (fun p hp => (hfm p hp).of_le hn) hreg (by rw [Module.finrank_self])
+  have := isManifold_regularLevel hn hfm hreg (by rw [Module.finrank_self])
   let e : {p : TotalSpace F V // ‖p.2‖ = r p.proj} ≃ₜ
       {p : TotalSpace F V // sphereBundleEquation r p = 0} :=
     Homeomorph.setCongr
@@ -201,7 +203,7 @@ theorem isSmoothEmbedding_coe_sphereBundle {r : B → ℝ} (hr : ContMDiff I �
   have h := isSmoothEmbedding_comp_diffeomorph
     (I := 𝓘(ℝ, Fin (Module.finrank ℝ (E × F) - 1) → ℝ))
     (e.pullbackDiffeomorph 𝓘(ℝ, Fin (Module.finrank ℝ (E × F) - 1) → ℝ) n)
-    (isSmoothEmbedding_coe_scalarRegularLevel hn hfm hreg)
+    (isSmoothEmbedding_coe_regularLevel hn hfm hreg (by rw [Module.finrank_self]))
   have hcoe : Subtype.val ∘ e.pullbackDiffeomorph
       𝓘(ℝ, Fin (Module.finrank ℝ (E × F) - 1) → ℝ) n =
       (Subtype.val : {p : TotalSpace F V // ‖p.2‖ = r p.proj} → TotalSpace F V) := by

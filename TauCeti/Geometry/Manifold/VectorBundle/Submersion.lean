@@ -118,6 +118,22 @@ theorem mfderiv_proj_comp_mfderivWithin_extChartAt_symm [IsManifold IB 1 B]
     rw [ModelWithCorners.range_prod] at hy'
     exact hy'.1
 
+/-- **The derivative of the bundle projection is the first projection.** Tangent vectors at a
+point `p` of the total space are read in the preferred chart at `p`, as pairs of a base and a fibre
+coordinate, and tangent vectors of the base in the chart at `p.proj`; in these coordinates the
+derivative of the projection keeps the base coordinate. -/
+theorem mfderiv_proj [IsManifold IB 1 B] [IsManifold (IB.prod 𝓘(𝕜, F)) 1 (TotalSpace F V)]
+    (p : TotalSpace F V) :
+    mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) p = ContinuousLinearMap.fst 𝕜 EB F := by
+  have h := mfderiv_proj_comp_mfderivWithin_extChartAt_symm (IB := IB) p
+    (mem_extChartAt_target (I := IB.prod 𝓘(𝕜, F)) p)
+  -- Both chart derivatives are taken at the centres of their charts, where they are the identity.
+  have h1 : (extChartAt (IB.prod 𝓘(𝕜, F)) p p).1 = extChartAt IB p.proj p.proj := by
+    simp [FiberBundle.chartedSpace_chartAt]
+  rw [extChartAt_to_inv, mfderivWithin_range_extChartAt_symm, h1,
+    mfderivWithin_range_extChartAt_symm] at h
+  exact ContinuousLinearMap.ext fun u ↦ DFunLike.congr_fun h u
+
 /-- The derivative of the projection of a fibre bundle is surjective at every point of the total
 space: every tangent vector of the base lifts to a tangent vector of the total space. -/
 theorem mfderiv_proj_surjective [IsManifold IB 1 B]

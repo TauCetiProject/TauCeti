@@ -25,7 +25,8 @@ coefficients.
 ## Main results
 
 * `Polynomial.l1Norm_add_le` and `Polynomial.l1Norm_mul_le`: the triangle and product bounds.
-* `Polynomial.norm_eval_le_l1Norm_mul`: the evaluation bound.
+* `Polynomial.norm_eval_le_l1Norm_mul`: the evaluation bound, and
+  `Polynomial.norm_eval_le_add_one_mul_supNorm_mul`: its form in terms of the sup norm.
 * `Polynomial.l1Norm_comp_le` and `Polynomial.l1Norm_comp_X_add_C_le`: the composition and
   translation bounds.
 * `Polynomial.l1Norm_hasseDeriv_le` and `Polynomial.l1Norm_hasseDeriv_le_pow`: Hasse derivative
@@ -226,6 +227,17 @@ theorem norm_eval_le_l1Norm_mul [NormOneClass R] (P : R[X]) (z : R) :
       P.sum_support_norm_coeff_mul_le _ fun i hi ↦
         (pow_le_pow_left₀ (norm_nonneg z) (le_max_right 1 ‖z‖) i).trans
           (pow_le_pow_right₀ (le_max_left 1 ‖z‖) (le_natDegree_of_mem_supp i hi))
+
+/-- Evaluation is controlled by the coefficient sup norm: for `P` of degree at most `n`,
+`‖P(z)‖ ≤ (n + 1) ‖P‖_∞ max(1, ‖z‖) ^ n`. -/
+theorem norm_eval_le_add_one_mul_supNorm_mul [NormOneClass R] {P : R[X]} {n : ℕ}
+    (hP : P.natDegree ≤ n) (z : R) :
+    ‖P.eval z‖ ≤ (n + 1) * P.supNorm * max 1 ‖z‖ ^ n := by
+  refine (norm_eval_le_l1Norm_mul P z).trans ?_
+  have := P.supNorm_nonneg
+  gcongr
+  · exact P.l1Norm_le_natDegree_add_one_mul_supNorm.trans (by gcongr)
+  · exact le_max_left _ _
 
 /-- Taking a power raises the coefficient l¹-norm by at most the same power. -/
 theorem l1Norm_pow_le [NormOneClass R] (P : R[X]) (n : ℕ) :

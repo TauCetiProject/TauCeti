@@ -30,6 +30,9 @@ the two bounds identify `max_{i < d} f aᵢ ^ (1 / (d - i))` with the largest va
 roots of a split monic polynomial. This adapts the second half of the proof of Mathlib's
 `max_norm_root_eq_spectralValue` ([BGR] §3.1.2, Proposition 1(2)) to ring seminorms.
 
+Bounds of the form `f aᵢ ≤ M ^ (d - i)` are also stable under products and powers of
+polynomials, since each coefficient of a product is a sum of products of coefficients.
+
 ## Main results
 
 * `Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero`: some `i < d` satisfies
@@ -39,6 +42,9 @@ roots of a split monic polynomial. This adapts the second half of the proof of M
 * `Multiset.apply_esymm_le_pow`: `f (s.esymm k) ≤ M ^ k` when `f a ≤ M` on `s` and `k ≤ card s`.
 * `Polynomial.Monic.apply_coeff_le_pow_of_card_roots`: `f aᵢ ≤ M ^ (d - i)` when `p` has `d` roots,
   all with `f`-value at most `M`.
+* `Polynomial.apply_coeff_mul_le_pow`, `Polynomial.apply_coeff_prod_le_pow`,
+  `Polynomial.apply_coeff_pow_le_pow`: the bounds `f aᵢ ≤ M ^ (d - i)` pass to products and
+  powers.
 
 ## References
 
@@ -153,3 +159,81 @@ theorem Polynomial.Monic.apply_coeff_le_pow_of_card_roots [IsDomain R] {p : R[X]
     exact zero_le_one
 
 end Roots
+
+section Products
+
+open Polynomial
+
+namespace Polynomial
+
+variable {R F : Type*} [FunLike F R ℝ] {f : F} {M : ℝ}
+
+section Ring
+
+variable [Ring R] [RingSeminormClass F R ℝ]
+
+/-- **Coefficient bounds multiply.** If `f (p.coeff i) ≤ M ^ (d - i)` for a polynomial `p` of
+degree at most `d`, and `f (q.coeff i) ≤ M ^ (e - i)` for `q` of degree at most `e`, then
+`f ((p * q).coeff k) ≤ M ^ (d + e - k)`, for every nonarchimedean ring seminorm `f`. -/
+theorem apply_coeff_mul_le_pow (hf_na : IsNonarchimedean f) (hM : 0 ≤ M) {p q : R[X]}
+    {d e : ℕ} (hpd : p.natDegree ≤ d) (hqe : q.natDegree ≤ e)
+    (hp : ∀ i, f (p.coeff i) ≤ M ^ (d - i)) (hq : ∀ i, f (q.coeff i) ≤ M ^ (e - i)) (k : ℕ) :
+    f ((p * q).coeff k) ≤ M ^ (d + e - k) := by
+  -- The coefficient is a sum over `i + j = k`, dominated by one of its terms.
+  rw [coeff_mul]
+  obtain ⟨⟨i, j⟩, hij, hle⟩ := hf_na.finset_image_add_of_nonempty
+    (fun x : ℕ × ℕ ↦ p.coeff x.1 * q.coeff x.2) (s := Finset.antidiagonal k)
+    ⟨(k, 0), Finset.mem_antidiagonal.mpr (add_zero k)⟩
+  rw [Finset.mem_antidiagonal] at hij
+  refine hle.trans ((map_mul_le_mul f _ _).trans ?_)
+  rcases le_or_gt i d with hi | hi
+  · rcases le_or_gt j e with hj | hj
+    · calc f (p.coeff i) * f (q.coeff j) ≤ M ^ (d - i) * M ^ (e - j) :=
+            mul_le_mul (hp i) (hq j) (apply_nonneg f _) (pow_nonneg hM _)
+        _ = M ^ (d + e - k) := by rw [← pow_add]; congr 1; omega
+    · rw [coeff_eq_zero_of_natDegree_lt (hqe.trans_lt hj), map_zero, mul_zero]
+      exact pow_nonneg hM _
+  · rw [coeff_eq_zero_of_natDegree_lt (hpd.trans_lt hi), map_zero, zero_mul]
+    exact pow_nonneg hM _
+
+/-- Coefficient bounds `f (p.coeff i) ≤ M ^ (p.natDegree - i)` pass to powers, for every
+nonarchimedean ring seminorm `f` with `f 1 ≤ 1`. -/
+theorem apply_coeff_pow_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f) (hM : 0 ≤ M)
+    {p : R[X]} (hp : ∀ i, f (p.coeff i) ≤ M ^ (p.natDegree - i)) (n k : ℕ) :
+    f ((p ^ n).coeff k) ≤ M ^ (n * p.natDegree - k) := by
+  induction n generalizing k with
+  | zero =>
+    rw [pow_zero, coeff_one]
+    split_ifs
+    · simpa using hf1
+    · simp
+  | succ n ih =>
+    rw [pow_succ, Nat.succ_mul]
+    exact apply_coeff_mul_le_pow hf_na hM natDegree_pow_le le_rfl ih hp k
+
+end Ring
+
+variable [CommRing R] [RingSeminormClass F R ℝ]
+
+/-- Coefficient bounds `f (p.coeff i) ≤ M ^ (p.natDegree - i)` pass to finite products, for
+every nonarchimedean ring seminorm `f` with `f 1 ≤ 1`. -/
+theorem apply_coeff_prod_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f) (hM : 0 ≤ M)
+    {ι : Type*} (s : Finset ι) (p : ι → R[X])
+    (hp : ∀ a ∈ s, ∀ i, f ((p a).coeff i) ≤ M ^ ((p a).natDegree - i)) (k : ℕ) :
+    f ((∏ a ∈ s, p a).coeff k) ≤ M ^ (∑ a ∈ s, (p a).natDegree - k) := by
+  classical
+  induction s using Finset.induction_on generalizing k with
+  | empty =>
+    rw [Finset.prod_empty, Finset.sum_empty, coeff_one]
+    split_ifs
+    · simpa using hf1
+    · simp
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.sum_insert ha]
+    exact apply_coeff_mul_le_pow hf_na hM le_rfl (natDegree_prod_le _ _)
+      (hp a (Finset.mem_insert_self a s))
+      (ih fun b hb ↦ hp b (Finset.mem_insert_of_mem hb)) k
+
+end Polynomial
+
+end Products

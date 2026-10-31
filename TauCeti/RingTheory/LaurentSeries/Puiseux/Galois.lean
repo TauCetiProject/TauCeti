@@ -37,7 +37,9 @@ automorphisms fixing level `n` are those whose coordinate lies in `n ℤ̂`.
 When `K` is moreover algebraically closed, the Puiseux field is an algebraic closure of `K⸨X⸩`
 (`TauCeti.puiseuxField.instIsAlgClosure`), so this identifies the absolute Galois group of
 `K⸨X⸩` with `lim_n μₙ(K)`, and with `ℤ̂` once a compatible family of primitive roots of unity is
-chosen.
+chosen. A different compatible family `ζ'` differs from `ζ` by the unit `u` of the ring `ℤ̂` with
+`ζ' = ζ ^ u` (`TauCeti.PrimeToPTateModule.zHatUnit`), and replacing `ζ` by `ζ'` divides every
+coordinate by `u`.
 
 ## Main definitions
 
@@ -65,6 +67,11 @@ chosen.
   coordinate `a` acts on level `n` through `ζₙ ^ (a mod n)`.
 * `TauCeti.puiseuxField.mem_fixingSubgroup_level_iff_toZMod_eq_zero`: an automorphism fixes level
   `n` exactly when its coordinate reduces to zero modulo `n`.
+* `TauCeti.puiseuxField.galEquivZHat_apply_eq_zpowHat`,
+  `TauCeti.puiseuxField.galEquivZHat_symm_apply_eq_symm_zpowHat`: changing the compatible family
+  from `ζ` to `ζ'` multiplies the coordinate of every automorphism by `(zHatUnit hζ hζ')⁻¹`.
+* `TauCeti.puiseuxField.galEquivZHat_kummer`: the coordinate of `σ_ζ'` relative to `ζ` is the unit
+  `zHatUnit hζ hζ'`.
 -/
 
 public section
@@ -325,6 +332,44 @@ theorem mem_fixingSubgroup_level_iff_toZMod_eq_zero {σ : Gal(puiseuxField K/K�
     (hζ ⟨n, n.ne_zero, Nat.coprime_one_right _⟩).pow_eq_one_iff_dvd, galEquivZHat,
     ContinuousMulEquiv.trans_apply, ← ZMod.val_eq_zero]
   exact ⟨fun h ↦ Nat.eq_zero_of_dvd_of_lt h (ZMod.val_lt _), fun h ↦ by rw [h]; exact dvd_zero _⟩
+
+/-! ### Changing the compatible family of primitive roots of unity -/
+
+section Change
+
+open scoped zHat
+
+variable {ζ' : PrimeToPTateModule 1 K}
+  (hζ' : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ' : Kˣ) m)
+
+/-- **Changing the compatible family of primitive roots of unity.** If `ζ' = ζ ^ᶻ u` for the unit
+`u = zHatUnit hζ hζ'` of `ℤ̂`, the coordinate of a Galois automorphism relative to `ζ'` is its
+coordinate relative to `ζ` multiplied by `u⁻¹`. -/
+theorem galEquivZHat_apply_eq_zpowHat (σ : Gal(puiseuxField K/K⸨X⸩)) :
+    galEquivZHat.{u} K ζ' hζ' σ =
+      galEquivZHat.{u} K ζ hζ σ ^ᶻ ((zHatUnit.{u} hζ hζ')⁻¹ : (Additive zHat.{u})ˣ) := by
+  have := hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj hζ
+  simp only [galEquivZHat, ContinuousMulEquiv.trans_apply]
+  exact continuousMulEquivZHat_apply_eq_zpowHat hζ hζ' _
+
+/-- **The inverse formula.** The automorphism with coordinate `a` relative to `ζ'` is the
+automorphism with coordinate `a ^ᶻ u` relative to `ζ`, where `u = zHatUnit hζ hζ'`. -/
+theorem galEquivZHat_symm_apply_eq_symm_zpowHat (a : zHat.{u}) :
+    (galEquivZHat K ζ' hζ').symm a =
+      (galEquivZHat K ζ hζ).symm (a ^ᶻ (zHatUnit.{u} hζ hζ' : Additive zHat.{u})) := by
+  rw [ContinuousMulEquiv.symm_apply_eq, galEquivZHat_apply_eq_zpowHat hζ hζ',
+    ContinuousMulEquiv.apply_symm_apply, ← zpowHat_mul, Units.mul_inv, zpowHat_one]
+
+/-- **The coordinate of another generator.** The Kummer automorphism `σ_ζ'`, which multiplies
+`t ^ (1 / n)` by `ζ'ₙ`, has coordinate `zHatUnit hζ hζ'` relative to `ζ`. -/
+@[simp]
+theorem galEquivZHat_kummer :
+    galEquivZHat.{u} K ζ hζ (kummer K ζ') =
+      Additive.toMul (zHatUnit.{u} hζ hζ' : Additive zHat.{u}) := by
+  rw [galEquivZHat_apply_eq_zpowHat hζ' hζ, galEquivZHat_kummer_self, inv_zHatUnit,
+    ← zHat.toMul_one, toMul_zpowHat, one_mul]
+
+end Change
 
 end ZHat
 

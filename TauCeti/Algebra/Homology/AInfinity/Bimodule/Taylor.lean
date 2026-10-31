@@ -242,16 +242,8 @@ theorem isHomogeneous_gradedCoderiv (G : InternalGrading R M)
       ((leftGrading AA G).shift 1).piece 1 := by
     rw [shift_one_leftGrading, hX]
     rw [hX] at hF
-    have hδ : LinearMap.IsHomogeneous (Comodule.leftCoactRTensor (TensorWords R B)
-        (Comodule.leftCofreeCoact R (TensorWords R A) M)) (Y.tensorProduct V).piece
-        (W.tensorProduct (Y.tensorProduct V)).piece 0 := by
-      rw [Comodule.leftCoactRTensor_def, Comodule.leftCofreeCoact_def, LinearMap.rTensor_def,
-        LinearMap.rTensor_def, comul_eq_deconcatenation]
-      simpa only [add_zero] using (InternalGrading.isHomogeneous_assoc W Y V).comp
-        ((((InternalGrading.isHomogeneous_assoc W W (G.shift 1)).comp
-          ((isHomogeneous_deconcatenation (AA.grading.shift 1)).tensorProduct
-            (LinearMap.isHomogeneous_id (G.shift 1).piece))).tensorProduct
-              (LinearMap.isHomogeneous_id V.piece)))
+    have hδ := isHomogeneous_leftCoact AA BB G
+    rw [hX] at hδ
     have hτ : LinearMap.IsHomogeneous (TensorWords.map ((AA.grading.shift 1).koszulTwist 1))
         W.piece W.piece 0 := by
       rw [← koszulTwist_grading]

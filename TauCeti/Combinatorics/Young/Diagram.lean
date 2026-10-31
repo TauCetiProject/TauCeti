@@ -19,7 +19,10 @@ public import Mathlib.Data.Multiset.Sort
 Mathlib's `YoungDiagram.rowLens` records the lengths of the rows of a Young diagram.  This file
 counts the cells of a diagram row by row: the first `k` row lengths sum to the number of cells
 lying in the first `k` rows, whether those lengths are summed as
-`∑ i ∈ Finset.range k, μ.rowLen i` or as `(μ.rowLens.take k).sum`.  Since
+`∑ i ∈ Finset.range k, μ.rowLen i` or as `(μ.rowLens.take k).sum`.  Read as a multiset, the row
+lengths are the lengths of the rows `i < μ.colLen 0` (`YoungDiagram.coe_rowLens`), so sums and
+counts over them are sums and counts over rows (`YoungDiagram.sum_map_coe_rowLens`,
+`YoungDiagram.card_filter_coe_rowLens`).  Since
 the rows exhaust the cells, the row lengths also determine the diagram
 (`YoungDiagram.rowLen_injective`).  Cutting the same count column by column,
 `YoungDiagram.card_filter_fst_lt_filter_snd_eq` counts the cells of the first `k` rows
@@ -119,6 +122,25 @@ theorem sort_coe_rowLens (μ : YoungDiagram) :
     (↑μ.rowLens : Multiset ℕ).sort (· ≥ ·) = μ.rowLens := by
   rw [Multiset.coe_sort]
   exact mergeSort_rowLens μ
+
+/-- The row lengths of a Young diagram, as a multiset, are the lengths of the rows above the
+end of its first column. -/
+theorem coe_rowLens (μ : YoungDiagram) :
+    (μ.rowLens : Multiset ℕ) = (Finset.range (μ.colLen 0)).val.map μ.rowLen := by
+  rw [rowLens, ← Multiset.map_coe, Finset.range_val, Multiset.coe_range]
+
+/-- A sum over the row lengths of a Young diagram, as a multiset, is a sum over its rows. -/
+theorem sum_map_coe_rowLens {M : Type*} [AddCommMonoid M] (μ : YoungDiagram) (g : ℕ → M) :
+    ((μ.rowLens : Multiset ℕ).map g).sum = ∑ i ∈ Finset.range (μ.colLen 0), g (μ.rowLen i) := by
+  rw [coe_rowLens, Multiset.map_map, Finset.sum_eq_multiset_sum, Function.comp_def]
+
+/-- The row lengths of a Young diagram satisfying a predicate are counted by the rows whose
+length satisfies it. -/
+theorem card_filter_coe_rowLens (μ : YoungDiagram) (p : ℕ → Prop) [DecidablePred p] :
+    ((μ.rowLens : Multiset ℕ).filter p).card =
+      ((Finset.range (μ.colLen 0)).filter fun i => p (μ.rowLen i)).card := by
+  rw [coe_rowLens, Multiset.filter_map, Multiset.card_map, ← Finset.filter_val, Finset.card_val]
+  rfl
 
 /-- The first `k` row lengths of a Young diagram count its cells in the first `k` rows. -/
 theorem sum_range_rowLen_eq_card_filter_fst (μ : YoungDiagram) (k : ℕ) :
