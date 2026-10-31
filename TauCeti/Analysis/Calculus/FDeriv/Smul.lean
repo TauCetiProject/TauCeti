@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # Directional derivative estimates for scalar multiplication
@@ -23,7 +24,6 @@ instance, to a norm, which is Lipschitz but need not be differentiable.
 ## Main results
 
 * `TauCeti.cutoff_sq_mul_norm_fderiv_sq_le`: the two-direction cutoff derivative estimate.
-* `TauCeti.continuousAt_of_isBigO_sub`: the difference estimate implies continuity.
 * `TauCeti.hasStrictFDerivAt_smul_of_isBigO_sub`: a product of two Lipschitz factors vanishing
   at a point is strictly differentiable there, with derivative zero.
 -/
@@ -65,18 +65,6 @@ open Asymptotics Filter Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- A map satisfying the difference estimate of a strictly differentiable map near `x` is
-continuous at `x`. -/
-theorem continuousAt_of_isBigO_sub {G : Type*} [NormedAddCommGroup G] {u : E → G} {x : E}
-    (hu : (fun p : E × E ↦ u p.1 - u p.2) =O[𝓝 (x, x)] fun p ↦ p.1 - p.2) :
-    ContinuousAt u x := by
-  have hpair : Tendsto (fun y : E ↦ (y, x)) (𝓝 x) (𝓝 (x, x)) :=
-    tendsto_id.prodMk_nhds tendsto_const_nhds
-  have hsub : Tendsto (fun y : E ↦ y - x) (𝓝 x) (𝓝 0) := by
-    simpa using (tendsto_id (x := 𝓝 x)).sub_const x
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  simpa using ((hu.comp_tendsto hpair).trans_tendsto hsub).norm
 
 /-- A product `c • f` of two factors that vanish at `x` and satisfy the difference estimate of a
 strictly differentiable map near `x` is strictly differentiable at `x`, with derivative zero.
