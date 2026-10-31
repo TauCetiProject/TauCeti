@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Setoid.Basic
 public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.ModelTheory.Scott.Formula
@@ -117,12 +118,10 @@ theorem modelsOf_scottSentenceAtLevel_eq_iff {c d : RelationalConfiguration L V}
     {α : Ordinal.{o}} (hα : α < ω₁) :
     modelsOf (V := V) (c.scottSentenceAtLevel α) = modelsOf (d.scottSentenceAtLevel α) ↔
       bfEquivSetoid L V α c d := by
-  rw [modelsOf_scottSentenceAtLevel c hα, modelsOf_scottSentenceAtLevel d hα]
-  refine ⟨fun h => ?_, fun h => Set.ext fun e => ⟨fun hce => ?_, fun hde => ?_⟩⟩
-  · have hd : d ∈ {e | bfEquivSetoid L V α d e} := (bfEquivSetoid L V α).refl d
-    rw [← h] at hd
-    exact hd
-  · exact (bfEquivSetoid L V α).trans ((bfEquivSetoid L V α).symm h) hce
-  · exact (bfEquivSetoid L V α).trans h hde
+  have hclass (x : RelationalConfiguration L V) :
+      {e | bfEquivSetoid L V α x e} = {e | bfEquivSetoid L V α e x} :=
+    Set.ext fun _ => Setoid.comm' _
+  rw [modelsOf_scottSentenceAtLevel c hα, modelsOf_scottSentenceAtLevel d hα, hclass, hclass]
+  exact Setoid.ofPred_rel_eq_iff
 
 end TauCeti.RelationalConfiguration
