@@ -83,7 +83,8 @@ theorem hasCondSubgaussianMGF_of_bounded [StandardBorelSpace Ω] [IsProbabilityM
       (hX.aemeasurable) hω hzero
     have hparam : ((‖b - -b‖₊ / 2) ^ 2 : ℝ≥0) = ⟨b ^ 2, sq_nonneg b⟩ := by
       apply Subtype.ext
-      simp
+      simp only [sub_neg_eq_add, NNReal.val_eq_coe, NNReal.coe_pow, NNReal.coe_div, coe_nnnorm,
+        norm_eq_abs, NNReal.coe_ofNat]
       rw [abs_of_nonneg (by positivity : 0 ≤ b + b)]
       ring
     rw [hparam] at hsub
@@ -107,8 +108,10 @@ theorem measureReal_sum_range_ge_le_of_bounded_martingale_differences
   have hparam (i : ℕ) :
       ((‖(b i : ℝ) - -(b i : ℝ)‖₊ / 2) ^ 2 : ℝ≥0) = c i := by
     apply Subtype.ext
-    simp [c]
+    simp only [sub_neg_eq_add, NNReal.val_eq_coe, NNReal.coe_pow, NNReal.coe_div, coe_nnnorm,
+      norm_eq_abs, NNReal.coe_ofNat]
     rw [abs_of_nonneg (by positivity : 0 ≤ (b i : ℝ) + (b i : ℝ))]
+    simp only [c, NNReal.coe_pow]
     ring
   have hparam_sq (i : ℕ) :
       (⟨(b i : ℝ) ^ 2, sq_nonneg (b i : ℝ)⟩ : ℝ≥0) = c i := by
