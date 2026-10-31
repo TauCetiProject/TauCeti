@@ -7,6 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Pow
 
 /-!
 # Haar measure under dilations and affine maps
@@ -30,6 +33,10 @@ For an invertible real square matrix `A` and nonnegative bounds `a i`, the regio
 `2 ^ n * (∏ i, a i) / |det A|`, where `n` is the size of `A`
 (`Matrix.volume_setOf_forall_abs_mulVec_le`). It is the preimage of a coordinate box under `A`;
 this is the volume computation behind Minkowski's linear forms theorem.
+
+The additive Haar measure of the ball of radius `ρ` about a point grows like `ρ ^ n` in dimension
+`n`, so as a function of `ρ` it has derivative `n μ(ball 0 1) r ^ (n - 1)` at every `r > 0`
+(`MeasureTheory.Measure.hasDerivAt_measureReal_ball`).
 
 We also bound the additive Haar measure of the closure of a set in a finite-dimensional real
 normed space by the measure of the unit ball times the dimension power of its diameter. This is
@@ -119,6 +126,24 @@ theorem addHaar_closure_le_mul_ediam_pow (μ : Measure E) [μ.IsAddHaarMeasure] 
         ENNReal.ofReal_pow Metric.diam_nonneg, Metric.diam, ENNReal.ofReal_toReal hs]
 
 end Diameter
+
+section Ball
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- The additive Haar measure of the ball of radius `ρ` about `x`, as a function of `ρ`, has
+derivative `n μ(ball 0 1) r ^ (n - 1)` at every `r > 0`, where `n` is the dimension. -/
+theorem hasDerivAt_measureReal_ball (x : E) {r : ℝ} (hr : 0 < r) :
+    HasDerivAt (fun ρ => μ.real (Metric.ball x ρ))
+      (Module.finrank ℝ E * r ^ (Module.finrank ℝ E - 1) * μ.real (Metric.ball 0 1)) r := by
+  refine ((hasDerivAt_pow (Module.finrank ℝ E) r).mul_const
+    (μ.real (Metric.ball 0 1))).congr_of_eventuallyEq ?_
+  filter_upwards [Ioi_mem_nhds hr] with ρ hρ
+  rw [measureReal_def, addHaar_ball_of_pos μ x hρ, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (pow_nonneg (le_of_lt hρ) _), measureReal_def]
+
+end Ball
 
 section FiniteOrder
 

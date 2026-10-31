@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -35,6 +36,10 @@ The radial profile is a primitive of a normalized bump function on `ℝ` support
 smaller interval than `(r, R)`. Its slope is bounded by the reciprocal of the length of the
 interval on which the bump equals one (`ContDiffBump.normed_le_div_measure_closedBall_rIn`), and
 that length can be taken as close to `R - r` as desired.
+
+The derivative of any cutoff with values in `[0, 1]`, equal to one on `closedBall x₀ r` and
+vanishing off `ball x₀ R`, is supported in the shell `ball x₀ R \ ball x₀ r`
+(`TauCeti.support_fderiv_subset_ball_sdiff_ball`), so its gradient terms only see that shell.
 -/
 
 public section
@@ -128,5 +133,24 @@ theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ} (
     refine LipschitzWith.of_dist_le_mul fun x y => ?_
     rw [dist_sub_left]
     simpa only [comp_apply, dist_eq_norm] using h.dist_le_mul x y
+
+/-- The derivative of a function with values in `[0, 1]`, equal to one on `closedBall x₀ r` and
+vanishing off `ball x₀ R`, is supported in the shell `ball x₀ R \ ball x₀ r`: elsewhere the
+function attains its maximum or its minimum. -/
+theorem support_fderiv_subset_ball_sdiff_ball {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {ψ : F → ℝ} {x₀ : F} {r R : ℝ} (hψ01 : range ψ ⊆ Icc 0 1) (hψ1 : EqOn ψ 1 (closedBall x₀ r))
+    (hψR : support ψ ⊆ ball x₀ R) :
+    support (fderiv ℝ ψ) ⊆ ball x₀ R \ ball x₀ r := by
+  intro x hx
+  by_contra hxA
+  refine hx ?_
+  rw [Set.mem_sdiff, not_and_or, not_not] at hxA
+  rcases hxA with hxA | hxA
+  · refine IsLocalMin.fderiv_eq_zero (Filter.Eventually.of_forall fun y => ?_)
+    rw [notMem_support.1 fun h => hxA (hψR h)]
+    exact (hψ01 (mem_range_self y)).1
+  · refine IsLocalMax.fderiv_eq_zero (Filter.Eventually.of_forall fun y => ?_)
+    rw [hψ1 (ball_subset_closedBall hxA), Pi.one_apply]
+    exact (hψ01 (mem_range_self y)).2
 
 end TauCeti
