@@ -36,7 +36,7 @@ The universal property is the point-free one of `TauCeti.RationalFraction.exists
 (`φ g` is a unit and every `φ fᵢ / φ g` is power-bounded), translated by two pointwise criteria on
 `B`: an element is a unit exactly when it vanishes at no classical point
 (`TauCeti.IsAffinoidAlgebra.isUnit_iff_forall_pointNorm_ne_zero`), and `b / c` is power-bounded
-exactly when `|b(y)| ≤ |c(y)|` at every classical point `y`
+exactly when `|b(y)| ≤ |c(y)|` at every classical point `y`, for a unit `c`
 (`TauCeti.IsAffinoidAlgebra.isPowerBounded_mul_inverse_iff`), by the supremum-seminorm description
 of power-bounded elements.
 
@@ -51,8 +51,6 @@ point and the lift followed by `A ⧸ x → A⟨f/g⟩ ⧸ x'` agree on `A`, hen
 
 ## Main results
 
-* `TauCeti.IsAffinoidAlgebra.isPowerBounded_mul_inverse_iff`: for a unit `c` of a completely
-  normed affinoid algebra, `b c⁻¹` is power-bounded if and only if `|b(y)| ≤ |c(y)|` everywhere.
 * `TauCeti.IsAffinoidAlgebra.range_maximalSpectrumComap_subset_rationalDomain_iff`: `Sp B → Sp A`
   lands in `R(f/g)` if and only if `φ g` is a unit and every `φ fᵢ · (φ g)⁻¹` is power-bounded.
 * `TauCeti.RationalFraction.existsUnique_algHom_iff_range_subset`: the universal property of
@@ -101,18 +99,6 @@ namespace IsAffinoidAlgebra
 
 variable {A : Type*} [CommRing A] [Algebra K A] {m : ℕ}
   {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B]
-
-/-- **Power-bounded ratios.** In an affinoid algebra with a complete ultrametric algebra norm, for
-a unit `c` the ratio `b c⁻¹` is power-bounded if and only if `|b(y)| ≤ |c(y)|` at every classical
-point `y`. -/
-theorem isPowerBounded_mul_inverse_iff (hB : IsAffinoidAlgebra K B) {b c : B} (hc : IsUnit c) :
-    Huber.IsPowerBounded (b * Ring.inverse c) ↔
-      ∀ y : MaximalSpectrum B, pointNorm K y b ≤ pointNorm K y c := by
-  rw [hB.isPowerBounded_iff_supSeminorm_le_one, hB.supSeminorm_le_iff zero_le_one]
-  refine forall_congr' fun y ↦ ?_
-  have hpos : 0 < pointNorm K y c :=
-    (pointNorm_nonneg c).lt_of_ne' (hB.isUnit_iff_forall_pointNorm_ne_zero.mp hc y)
-  rw [hB.pointNorm_mul, hB.pointNorm_inverse y hc, ← div_eq_mul_inv, div_le_one hpos]
 
 /-- **Maps landing in a rational domain.** For a `K`-algebra map `φ : A → B` into an affinoid
 algebra with a complete ultrametric algebra norm, the induced map `Sp B → Sp A` takes values in
@@ -227,8 +213,8 @@ private theorem asIdeal_eq_ker (h : Ideal.span (insert g (Set.range f)) = ⊤)
   have hρj : ρ = j.comp ψ := by
     refine algHom_ext (B := IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) ⧸ P) hA
       (hT.quotient P) h fun a ↦ ?_
-    rw [AlgHom.comp_apply, hψ, ← Ideal.Quotient.mkₐ_eq_mk K, ← AlgHom.comp_apply,
-      Ideal.Quotient.liftₐ_comp, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom']
+    simp only [AlgHom.comp_apply, hψ, j, Ideal.Quotient.liftₐ_apply]
+    exact (Ideal.Quotient.lift_mk x.asIdeal _ hj).symm
   let := Ideal.Quotient.field x.asIdeal
   have : Nontrivial (_ ⧸ P) := Ideal.Quotient.nontrivial_iff.mpr hP.ne_top
   rw [← hρ, hρj]
