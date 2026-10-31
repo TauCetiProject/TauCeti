@@ -26,8 +26,6 @@ when choosing a topological decomposition.
 
 ## Main results
 
-* `FiniteHolomorphicMap.ncard_preimage_add_finsum_localMultiplicity_sub_one`: the count over
-  an arbitrary finite set of values.
 * `FiniteHolomorphicMap.ncard_preimage_add_ramificationDegree`: the count over a finite set
   containing every branch value.
 * `FiniteHolomorphicMap.ncard_preimage_branchValues_add_ramificationDegree`: the count over
@@ -52,35 +50,6 @@ variable {X Y : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
   [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace X] [PreconnectedSpace Y]
-
-/-- Above a finite set of values, the number of distinct points plus the sum of the
-ramification orders is the degree times the number of values. -/
-theorem ncard_preimage_add_finsum_localMultiplicity_sub_one
-    (f : FiniteHolomorphicMap X Y) {S : Set Y} (hS : S.Finite) :
-    (f ⁻¹' S).ncard + ∑ᶠ x ∈ f ⁻¹' S, (localMultiplicity f x - 1) =
-      degree f * S.ncard := by
-  classical
-  have hT : (f ⁻¹' S).Finite := hS.preimage' fun y _ ↦ f.finite_fiber y
-  have hmap : ∀ x ∈ hT.toFinset, f x ∈ hS.toFinset := by simp
-  have hfiber (y : Y) (hy : y ∈ hS.toFinset) :
-      hT.toFinset.filter (fun x ↦ f x = y) = (f.finite_fiber y).toFinset := by
-    ext x
-    have hyS : y ∈ S := hS.mem_toFinset.mp hy
-    simp only [Finset.mem_filter, Set.Finite.mem_toFinset, mem_preimage, mem_singleton_iff]
-    exact ⟨And.right, fun h ↦ ⟨h.symm ▸ hyS, h⟩⟩
-  rw [Set.ncard_eq_toFinset_card _ hT, finsum_mem_eq_finite_toFinset_sum _ hT,
-    Finset.card_eq_sum_card_fiberwise hmap,
-    ← Finset.sum_fiberwise_of_maps_to hmap (fun x ↦ localMultiplicity f x - 1),
-    ← Finset.sum_add_distrib]
-  calc
-    ∑ y ∈ hS.toFinset, ((hT.toFinset.filter (fun x ↦ f x = y)).card +
-        ∑ x ∈ hT.toFinset.filter (fun x ↦ f x = y), (localMultiplicity f x - 1)) =
-        ∑ _y ∈ hS.toFinset, degree f := by
-      apply Finset.sum_congr rfl
-      intro y hy
-      rw [hfiber y hy]
-      exact card_fiber_add_sum_localMultiplicity_sub_one f y
-    _ = degree f * S.ncard := by simp [Set.ncard_eq_toFinset_card _ hS, mul_comm]
 
 /-- Above a finite set containing all branch values, the defect in the number of distinct
 points is exactly the total ramification degree. Extra unramified values do not change the
