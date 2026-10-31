@@ -160,7 +160,8 @@ theorem sum_hexagonCompositeWeight_overlap_eq_sum_unpaired {x z : GridState n} (
         G.hexagonCompositeWeight C R D =
       ∑ D ∈ G.unpairedHexagonComposites C x z, G.hexagonCompositeWeight C R D := by
   rw [GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut
-    _ _ _ hzx (fun _ hD => G.isEmpty_of_mem_hexagonCompositeDecompositions C hD)
+    _ _ _ CharTwo.add_self_eq_zero hzx
+    (fun _ hD => G.isEmpty_of_mem_hexagonCompositeDecompositions C hD)
     (G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z)
     (fun _ hD _ hE h => G.hexagonCompositeWeight_eq_of_isRepartition C R hD hE h)]
   refine Finset.sum_congr ?_ fun _ _ => rfl

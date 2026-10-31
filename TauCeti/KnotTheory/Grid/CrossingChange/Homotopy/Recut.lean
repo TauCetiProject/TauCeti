@@ -470,7 +470,8 @@ theorem sum_crossingChangeHexagonCompositeWeight_overlap_eq_sum_unpaired
       ∑ D ∈ G.crossingChangeUnpairedHexagonComposites C t x z,
         G.crossingChangeHexagonCompositeWeight C t R D := by
   rw [GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut
-    _ _ _ hzx (fun _ hD => isEmpty_of_mem_crossingChangeHexagonCompositeDecompositions hD)
+    _ _ _ CharTwo.add_self_eq_zero hzx
+    (fun _ hD => isEmpty_of_mem_crossingChangeHexagonCompositeDecompositions hD)
     (injOn_toRectangleDecomposition_crossingChangeHexagonCompositeDecompositions hX x z)
     (fun _ hD _ hE h => crossingChangeHexagonCompositeWeight_eq_of_isRepartition R hX hD hE h)]
   refine Finset.sum_congr ?_ fun _ _ => rfl

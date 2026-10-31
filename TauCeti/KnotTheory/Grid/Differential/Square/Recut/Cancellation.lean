@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
-import Mathlib.Algebra.CharP.Two
 
 /-!
 # Cancelling recut partners in a family of two-step domains
@@ -21,9 +20,9 @@ Let `S` be a finite family of domains from `x` to `z ≠ x`, each with an underl
 two empty rectangles, such that a member is determined by its decomposition and members
 repartitioning the same squares have the same weight. A member whose rectangles share a side
 column and whose recut is again the decomposition of a member has a unique such partner, which
-has the member as its own partner, and the two weights agree. In characteristic two these pairs
-cancel, so the members whose rectangles share a side column have the total weight of the unpaired
-ones.
+has the member as its own partner, and the two weights agree. If the weights lie in an additive
+monoid in which every element is its own negative, as in characteristic two, these pairs cancel,
+so the members whose rectangles share a side column have the total weight of the unpaired ones.
 
 ## Main results
 
@@ -42,16 +41,16 @@ namespace TauCeti
 
 namespace GridRectangleDecomposition
 
-variable {n : ℕ} {x z : GridState n} {α M : Type*} [Semiring M] [CharP M 2]
+variable {n : ℕ} {x z : GridState n} {α M : Type*} [AddCommMonoid M]
 
 open scoped Classical in
 /-- **Recut cancellation.** Let `S` be a finite family of domains from `x` to `z ≠ x`, with
 underlying decompositions `f D` by two empty rectangles, such that `f` is injective on `S` and the
-weight `w` agrees on members whose decompositions repartition the same squares. In characteristic
-two, the members whose rectangles share a side column have the total weight of those among them
-whose recut is the decomposition of no member. -/
+weight `w` agrees on members whose decompositions repartition the same squares. If `m + m = 0` for
+every weight `m`, as in characteristic two, the members whose rectangles share a side column have
+the total weight of those among them whose recut is the decomposition of no member. -/
 theorem sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut (S : Finset α)
-    (f : α → GridRectangleDecomposition x z) (w : α → M) (hzx : z ≠ x)
+    (f : α → GridRectangleDecomposition x z) (w : α → M) (hM : ∀ m : M, m + m = 0) (hzx : z ≠ x)
     (hempty : ∀ D ∈ S, (f D).first.IsEmpty ∧ (f D).second.IsEmpty) (hinj : Set.InjOn f S)
     (hw : ∀ D ∈ S, ∀ E ∈ S, (f D).IsRepartition (f E) → w D = w E) :
     ∑ D ∈ S.filter (fun D => ¬(f D).HasDisjointSides), w D =
@@ -92,7 +91,7 @@ theorem sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut (S : Fi
     · intro D hD
       obtain ⟨hE, h⟩ := (hpartner D hD).choose_spec
       rw [(partner D (Finset.mem_filter.mp hD).1 _ hE h).2.2.1]
-      exact CharTwo.add_self_eq_zero _
+      exact hM _
     · intro D hD _
       obtain ⟨hE, h⟩ := (hpartner D hD).choose_spec
       exact (partner D (Finset.mem_filter.mp hD).1 _ hE h).2.2.2
