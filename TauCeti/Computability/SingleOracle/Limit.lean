@@ -45,8 +45,8 @@ consequences, for requirements that are not injured, are in
   the stage computations against the finite stages.
 * `TauCeti.Oracle.Single.Code.evaln_indicator_eq_some_of_forall_notMem_fresh`,
   `TauCeti.Oracle.Single.Code.evaln_indicator_stageLimit_eq_some_of_forall_notMem_fresh`:
-  **preservation**, a stage computation below whose use nothing enters persists at every later
-  stage and against the limit set.
+  **preservation**, a stage computation below whose use nothing enters persists at a later stage
+  when nothing enters up to that stage, and against the limit set when nothing ever enters.
 
 ## References
 
@@ -114,17 +114,21 @@ theorem exists_eventually_evaln_indicator_eq_some_of_mem_eval (hA : Monotone A) 
 variable {s : ℕ}
 
 /-- **Preservation at later stages.** Under monotone stages, if a run against the set oracle of
-`A s` succeeds and no number below its use enters after stage `s`, then it succeeds with the same
-output and use against the set oracle of every later stage. -/
+`A s` succeeds and no number below its use enters from stage `s` up to a later stage `t`, then it
+succeeds with the same output and use against the set oracle of `A t`. -/
 theorem evaln_indicator_eq_some_of_forall_notMem_fresh (hA : Monotone A)
-    (h : evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) k c n = some d)
-    (hfresh : ∀ t, s ≤ t → ∀ z, z < d.use → z ∉ fresh A t) {t : ℕ} (hst : s ≤ t) :
+    (h : evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) k c n = some d) {t : ℕ}
+    (hst : s ≤ t) (hfresh : ∀ t', s ≤ t' → t' < t → ∀ z, z < d.use → z ∉ fresh A t') :
     evaln (fun z => some ((A t : Set ℕ).indicator 1 z)) k c n = some d :=
   evaln_eq_some_of_eqOn h fun z hz => by
-    -- below the use, `A s ⊆ A t ⊆ stageLimit A` and the outer two agree
-    have hlim := limit_agrees_of_no_fresh_below hA hfresh z hz
-    exact congrArg some <| Set.indicator_eq_indicator
-      ⟨fun hzs => hA hst hzs, fun hzt => hlim.2 (subset_stageLimit A t hzt)⟩ rfl
+    refine congrArg some <| Set.indicator_eq_indicator ⟨fun hzs => hA hst hzs, fun hzt => ?_⟩ rfl
+    -- below the use, nothing enters between stages `s` and `t`
+    induction t, hst using Nat.le_induction with
+    | base => exact hzt
+    | succ t hst ih =>
+      by_contra hzs
+      exact hfresh t hst t.lt_succ_self z hz <| mem_fresh.2 ⟨hzt, fun hzt' =>
+        hzs <| ih (fun t' h₁ h₂ => hfresh t' h₁ (h₂.trans t.lt_succ_self)) hzt'⟩
 
 /-- **Preservation in the limit.** Under monotone stages, if a run against the set oracle of `A s`
 succeeds and no number below its use enters after stage `s`, then it succeeds with the same output
