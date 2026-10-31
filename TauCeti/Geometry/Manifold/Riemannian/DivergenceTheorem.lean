@@ -316,8 +316,7 @@ theorem integral_mul_laplaceBeltrami_right_eq_left {f g : M → ℝ} (hf : ContM
   have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
   -- The gradient of `f` vanishes off the support of `f`, so it is compactly supported.
   have hgradc : HasCompactSupport (β := E) (mgradient I f) :=
-    hfc.mono' fun x hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
-      (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
+    hfc.mono' fun x hx ↦ by_contra fun h ↦ hx (mgradient_eq_zero_of_notMem_tsupport h)
   simp_rw [mul_comm (laplaceBeltrami I f _), laplaceBeltrami_def]
   rw [integral_mul_divergence (hf.of_le (by norm_num)) hfc
       (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])),

@@ -108,6 +108,12 @@ theorem mvfderiv_apply_mgradient :
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
 
+/-- The gradient vanishes off the topological support of a function, since the function is zero
+near such a point. No regularity of the function is needed. -/
+theorem mgradient_eq_zero_of_notMem_tsupport (hx : x ∉ tsupport f) : mgradient I f x = 0 :=
+  mgradient_eq_zero_iff.2 <|
+    (notMem_tsupport_iff_eventuallyEq.1 hx).mvfderiv_eq.trans mvfderiv_zero
+
 /-- The gradient has the same length as the differential it represents: the Riesz equivalence is
 an isometry. -/
 theorem norm_mgradient_eq_norm_mvfderiv (f : M → ℝ) (x : M) :

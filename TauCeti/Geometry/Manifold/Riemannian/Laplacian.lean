@@ -414,6 +414,18 @@ theorem laplaceBeltrami_const (c : ℝ) (x : M) :
 theorem laplaceBeltrami_zero (x : M) : laplaceBeltrami I (0 : M → ℝ) x = 0 :=
   laplaceBeltrami_const I 0 x
 
+/-- The Laplace–Beltrami operator vanishes off the topological support of a function, since the
+function is zero near such a point. No regularity of the function is needed. -/
+theorem laplaceBeltrami_eq_zero_of_notMem_tsupport {f : M → ℝ} {x : M} (hx : x ∉ tsupport f) :
+    laplaceBeltrami I f x = 0 := by
+  rw [laplaceBeltrami_def]
+  refine divergence_eq_zero_of_notMem_tsupport I fun h ↦ hx ?_
+  -- The gradient vanishes on the open complement of the support of `f`.
+  refine closure_minimal (s := Function.support fun y ↦ (mgradient I f y : E)) (fun y hy ↦ ?_)
+    (isClosed_tsupport f) h
+  by_contra hyf
+  exact hy (mgradient_eq_zero_of_notMem_tsupport hyf)
+
 /-- The Laplace–Beltrami operator is additive on `C²` functions. -/
 theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
