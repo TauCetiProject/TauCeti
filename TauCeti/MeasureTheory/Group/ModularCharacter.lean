@@ -59,6 +59,8 @@ none of this assumes σ-finiteness.
 * `MeasureTheory.Measure.quasiMeasurePreserving_mul_right_of_regular` and
   `MeasureTheory.Measure.quasiMeasurePreserving_inv_of_regular`: right translation and inversion
   preserve null sets of a regular Haar measure.
+* `MeasureTheory.Measure.tendsto_measure_preimage_mul_right_symmDiff_of_regular`: right translates
+  of a measurable set of finite measure converge to it in measure.
 * `TauCeti.integral_mul_right_eq_modularCharacter_smul_of_regular`,
   `TauCeti.integral_inv_eq_integral_modularCharacter_smul_of_regular` and their lower Lebesgue
   versions `TauCeti.lintegral_mul_right_eq_modularCharacter_mul_of_regular` and
@@ -74,7 +76,7 @@ none of this assumes σ-finiteness.
 public section
 
 open MeasureTheory
-open scoped NNReal ENNReal
+open scoped NNReal ENNReal symmDiff
 
 namespace TauCeti
 
@@ -346,6 +348,47 @@ theorem quasiMeasurePreserving_mul_right_of_regular (g : G) :
   ⟨measurable_mul_const g, by
     rw [map_right_mul_eq_modularCharacter_smul_of_regular]
     exact smul_absolutelyContinuous⟩
+
+open Filter Topology in
+/-- The right translates `{x | x * g ∈ s}` of a measurable set of finite measure converge to `s`
+in measure as `g → 1`. The proof sandwiches `s` between a compact and an open set, following
+Mathlib's `MeasureTheory.tendsto_measure_symmDiff_preimage_nhds_zero` by Yury Kudryashov, with the
+invariance of the measure replaced by the scaling `μ {x | x * g ∈ t} = c(g) μ t`. -/
+theorem tendsto_measure_preimage_mul_right_symmDiff_of_regular {s : Set G} (hs : MeasurableSet s)
+    (hμs : μ s ≠ ∞) : Tendsto (fun g => μ (((· * g) ⁻¹' s) ∆ s)) (𝓝 1) (𝓝 0) := by
+  -- Sandwich `s` between a compact `K` and an open `U` with `μ (U \ K) ≤ 2 δ`. For `g` near `1`,
+  -- the sets `K g` and `K g⁻¹` lie in `U`, so the symmetric difference of `{x | x * g ∈ s}` and
+  -- `s` lies in `{x | x * g ∈ U \ K} ∪ (U \ K)`, of measure at most `(c(g) + 1) μ (U \ K)`.
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
+  set δ := ε / 6
+  have hδ : δ ≠ 0 := (ENNReal.div_pos hε.ne' ENNReal.ofNat_ne_top).ne'
+  obtain ⟨U, hsU, hUo, -, hUs⟩ := hs.exists_isOpen_sdiff_lt hμs hδ
+  obtain ⟨K, hKs, hKc, -, hsK⟩ := hs.exists_isCompact_isClosed_sdiff_lt hμs hδ
+  have hUK : μ (U \ K) ≤ 2 * δ :=
+    calc μ (U \ K) ≤ μ (U \ s ∪ s \ K) := measure_mono fun x hx => by
+          by_cases h : x ∈ s <;> simp_all
+      _ ≤ δ + δ := (measure_union_le _ _).trans (add_le_add hUs.le hsK.le)
+      _ = 2 * δ := (two_mul δ).symm
+  obtain ⟨V, hV, hKV⟩ := compact_open_separated_mul_right hKc hUo (hKs.trans hsU)
+  have hc : Tendsto (fun g : G => (modularCharacter g : ℝ≥0∞)) (𝓝 1) (𝓝 1) := by
+    simpa [Function.comp_def] using
+      (ENNReal.continuous_coe.comp TauCeti.continuous_modularCharacter).tendsto (1 : G)
+  filter_upwards [hV, inv_mem_nhds_one G hV, hc.eventually (gt_mem_nhds ENNReal.one_lt_two)]
+    with g hg hg' hcg
+  have hsub : ((· * g) ⁻¹' s) ∆ s ⊆ (· * g) ⁻¹' (U \ K) ∪ U \ K := by
+    intro x hx
+    have h₁ : x * g ∈ K → x ∈ U := fun h => by simpa using hKV (Set.mul_mem_mul h hg')
+    have h₂ : x ∈ K → x * g ∈ U := fun h => hKV (Set.mul_mem_mul h hg)
+    simp only [Set.mem_symmDiff, Set.mem_preimage] at hx
+    simp only [Set.mem_union, Set.mem_preimage, Set.mem_sdiff]
+    grind
+  calc μ (((· * g) ⁻¹' s) ∆ s)
+      ≤ μ ((· * g) ⁻¹' (U \ K)) + μ (U \ K) := (measure_mono hsub).trans (measure_union_le _ _)
+    _ = modularCharacter g * μ (U \ K) + μ (U \ K) := by
+      rw [measure_preimage_mul_right_eq_modularCharacter_mul_of_regular]
+    _ ≤ 2 * (2 * δ) + 2 * δ := by gcongr
+    _ = 6 * (ε / 6) := by ring
+    _ ≤ ε := ENNReal.mul_div_le
 
 /-- Weighting a regular Haar measure by the modular character gives a right invariant
 measure. -/

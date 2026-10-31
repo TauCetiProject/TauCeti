@@ -29,8 +29,8 @@ For `1 ≤ p < ∞` right translation is strongly continuous: `g ↦ R_g f` is c
 `f`, and in particular `‖f (· * g) - f‖_p → 0` as `g → 1`. Left translation is continuous by
 Mathlib's `DomMulAct` theory, which needs an invariant measure; right translation does not
 preserve `μ`, so the argument is redone here. First, the right translates
-`{x | x * g ∈ s}` of a measurable set of finite measure converge to `s` in measure: sandwich `s`
-between a compact and an open set and use the scaling `μ {x | x * g ∈ t} = c(g) μ t`. This gives
+`{x | x * g ∈ s}` of a measurable set of finite measure converge to `s` in measure
+(`MeasureTheory.Measure.tendsto_measure_preimage_mul_right_symmDiff_of_regular`). This gives
 continuity on indicators, hence on simple functions, and simple functions are dense in `Lᵖ`.
 Since `c` is continuous with `c(1) = 1`, the operator norm of `R_g` is less than `2` near `1`,
 which passes convergence from simple functions to all of `Lᵖ`. No σ-finiteness of `μ`, no
@@ -48,8 +48,6 @@ Continuity of right translation is the input for approximate identities on the r
 ## Main results
 
 * `MeasureTheory.eLpNorm_comp_mul_right_of_regular`: `‖f (· * g)‖_p = c(g) ^ (1 / p) ‖f‖_p`.
-* `MeasureTheory.tendsto_measure_preimage_mul_right_symmDiff_of_regular`: right translates of a
-  measurable set of finite measure converge to it in measure.
 * `MeasureTheory.Lp.coeFn_rightTranslation`: `R_g f` is almost everywhere `x ↦ f (x * g)`.
 * `MeasureTheory.Lp.norm_rightTranslation_apply`: `‖R_g f‖ = c(g) ^ (1 / p) ‖f‖`.
 * `MeasureTheory.Lp.rightTranslation_leftTranslation`: right and left translations commute.
@@ -62,10 +60,9 @@ Continuity of right translation is the input for approximate identities on the r
 
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, Chapter 2, for continuity of left and
   right translations in `Lᵖ` of a locally compact group.
-* The density argument follows Mathlib's `MeasureTheory.Lp.compMeasurePreserving_continuous`,
-  and the compact and open sandwich follows Mathlib's
-  `MeasureTheory.tendsto_measure_symmDiff_preimage_nhds_zero`, both by Yury Kudryashov, with the
-  invariance of the measure replaced by the scaling by the modular character.
+* The density argument follows Mathlib's `MeasureTheory.Lp.compMeasurePreserving_continuous`
+  by Yury Kudryashov, with the invariance of the measure replaced by the scaling by the modular
+  character.
 -/
 
 public section
@@ -83,6 +80,7 @@ variable {G E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- Right translation scales the `Lᵖ` seminorm by `c(g) ^ (1 / p)`, where `c` is the modular
 character, for every function and every exponent. -/
+@[simp]
 theorem eLpNorm_comp_mul_right_of_regular (f : G → E) (g : G) (p : ℝ≥0∞) :
     eLpNorm (fun x => f (x * g)) p μ =
       (Measure.modularCharacter g ^ p.toReal⁻¹ : ℝ≥0) * eLpNorm f p μ := by
@@ -105,44 +103,6 @@ theorem memLp_comp_mul_right_iff_of_regular {f : G → E} (g : G) :
     MemLp (fun x => f (x * g)) p μ ↔ MemLp f p μ :=
   ⟨fun h => by simpa [mul_assoc] using h.comp_mul_right_of_regular g⁻¹,
     fun h => h.comp_mul_right_of_regular g⟩
-
-/-- The right translates `{x | x * g ∈ s}` of a measurable set of finite measure converge to `s`
-in measure as `g → 1`. -/
-theorem tendsto_measure_preimage_mul_right_symmDiff_of_regular {s : Set G} (hs : MeasurableSet s)
-    (hμs : μ s ≠ ∞) : Tendsto (fun g => μ (((· * g) ⁻¹' s) ∆ s)) (𝓝 1) (𝓝 0) := by
-  -- Sandwich `s` between a compact `K` and an open `U` with `μ (U \ K) ≤ 2 δ`. For `g` near `1`,
-  -- the sets `K g` and `K g⁻¹` lie in `U`, so the symmetric difference of `{x | x * g ∈ s}` and
-  -- `s` lies in `{x | x * g ∈ U \ K} ∪ (U \ K)`, of measure at most `(c(g) + 1) μ (U \ K)`.
-  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
-  set δ := ε / 6
-  have hδ : δ ≠ 0 := (ENNReal.div_pos hε.ne' ENNReal.ofNat_ne_top).ne'
-  obtain ⟨U, hsU, hUo, -, hUs⟩ := hs.exists_isOpen_sdiff_lt hμs hδ
-  obtain ⟨K, hKs, hKc, -, hsK⟩ := hs.exists_isCompact_isClosed_sdiff_lt hμs hδ
-  have hUK : μ (U \ K) ≤ 2 * δ :=
-    calc μ (U \ K) ≤ μ (U \ s ∪ s \ K) := measure_mono fun x hx => by
-          by_cases h : x ∈ s <;> simp_all
-      _ ≤ δ + δ := (measure_union_le _ _).trans (add_le_add hUs.le hsK.le)
-      _ = 2 * δ := (two_mul δ).symm
-  obtain ⟨V, hV, hKV⟩ := compact_open_separated_mul_right hKc hUo (hKs.trans hsU)
-  have hc : Tendsto (fun g : G => (Measure.modularCharacter g : ℝ≥0∞)) (𝓝 1) (𝓝 1) := by
-    simpa [Function.comp_def] using
-      (ENNReal.continuous_coe.comp TauCeti.continuous_modularCharacter).tendsto (1 : G)
-  filter_upwards [hV, inv_mem_nhds_one G hV, hc.eventually (gt_mem_nhds ENNReal.one_lt_two)]
-    with g hg hg' hcg
-  have hsub : ((· * g) ⁻¹' s) ∆ s ⊆ (· * g) ⁻¹' (U \ K) ∪ U \ K := by
-    intro x hx
-    have h₁ : x * g ∈ K → x ∈ U := fun h => by simpa using hKV (Set.mul_mem_mul h hg')
-    have h₂ : x ∈ K → x * g ∈ U := fun h => hKV (Set.mul_mem_mul h hg)
-    simp only [Set.mem_symmDiff, Set.mem_preimage] at hx
-    simp only [Set.mem_union, Set.mem_preimage, Set.mem_sdiff]
-    grind
-  calc μ (((· * g) ⁻¹' s) ∆ s)
-      ≤ μ ((· * g) ⁻¹' (U \ K)) + μ (U \ K) := (measure_mono hsub).trans (measure_union_le _ _)
-    _ = Measure.modularCharacter g * μ (U \ K) + μ (U \ K) := by
-      rw [Measure.measure_preimage_mul_right_eq_modularCharacter_mul_of_regular]
-    _ ≤ 2 * (2 * δ) + 2 * δ := by gcongr
-    _ = 6 * (ε / 6) := by ring
-    _ ≤ ε := ENNReal.mul_div_le
 
 namespace Lp
 
@@ -194,7 +154,7 @@ private theorem tendsto_rightTranslationAddHom_apply_one [Fact (1 ≤ p)] (hp : 
       simp only [simpleFunc.coe_indicatorConst,
         rightTranslationAddHom_indicatorConstLp hs hμs.ne c _ (hμs' _)]
       exact tendsto_indicatorConstLp_set hp
-        (tendsto_measure_preimage_mul_right_symmDiff_of_regular hs hμs.ne)
+        (Measure.tendsto_measure_preimage_mul_right_symmDiff_of_regular μ hs hμs.ne)
     | add hf hg _ ihf ihg =>
       simpa only [AddSubgroup.coe_add, map_add] using ihf.add ihg
   -- In general, approximate `f` within `ε / 4` by a simple function `F`. Near `1` the norm of
@@ -279,6 +239,7 @@ theorem rightTranslation_indicatorConstLp {s : Set G} (hs : MeasurableSet s) (h�
 
 /-- Right translation by `g` multiplies `Lᵖ` norms by `c(g) ^ (1 / p)`, where `c` is the modular
 character. -/
+@[simp]
 theorem norm_rightTranslation_apply (g : G) (f : Lp E p μ) :
     ‖rightTranslation μ p 𝕜 g f‖ = (Measure.modularCharacter g : ℝ) ^ p.toReal⁻¹ * ‖f‖ :=
   norm_rightTranslationAddHom_apply g f
