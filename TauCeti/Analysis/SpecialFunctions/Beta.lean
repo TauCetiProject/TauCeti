@@ -561,10 +561,10 @@ theorem integral_rpow_mul_div_sq_add_sq_sub_inv (hs : 0 < s) (hs2 : s < 2) (t : 
         Real.rpow_sub ht', Real.rpow_two]
       field_simp
 
-/-- For `0 < s < 2` with `s ≠ 1`,
+/-- For `-1 < s < 3` with `s ≠ 1`,
 `∫ y in Ioi 0, y ^ s * (t / (y ^ 2 + t ^ 2) - t / (1 + y ^ 2)) =
   (t * |t| ^ (s - 1) - t) * π / (2 * cos (π * s / 2))`. -/
-theorem integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq (hs : 0 < s) (hs2 : s < 2)
+theorem integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq (hs : -1 < s) (hs3 : s < 3)
     (hs1 : s ≠ 1) (t : ℝ) :
     ∫ y in Ioi (0 : ℝ), y ^ s * (t / (y ^ 2 + t ^ 2) - t / (1 + y ^ 2)) =
       (t * |t| ^ (s - 1) - t) * (Real.pi / (2 * Real.cos (Real.pi * s / 2))) := by

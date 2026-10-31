@@ -79,7 +79,8 @@ private lemma integral_rpow_smul_laplace {α : ℝ} (hα : 0 < α) (hα2 : α < 
       Complex.ofReal_im, Complex.add_re, Complex.add_im, Complex.I_re, Complex.I_im,
       Complex.mul_im, mul_zero, sub_zero, zero_mul, add_zero, mul_one, zero_add]
     rcases lt_trichotomy α 1 with h1 | rfl | h1
-    · rw [integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq hα hα2 h1.ne t,
+    · rw [integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq (by linarith)
+        (by linarith) h1.ne t,
         stableCharacteristicExponent_im_of_ne_one h1.ne, one_mul, tan_eq_sin_div_cos]
       have hcos : cos (π * α / 2) ≠ 0 :=
         (cos_pos_of_mem_Ioo ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩).ne'
@@ -92,7 +93,8 @@ private lemma integral_rpow_smul_laplace {α : ℝ} (hα : 0 < α) (hα2 : α < 
         Complex.ofReal_re, Complex.I_im, Complex.I_re]
       field_simp
       ring
-    · rw [integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq hα hα2 h1.ne' t,
+    · rw [integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq (by linarith)
+        (by linarith) h1.ne' t,
         stableCharacteristicExponent_im_of_ne_one h1.ne', one_mul, tan_eq_sin_div_cos]
       have hcos : cos (π * α / 2) ≠ 0 :=
         (cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [pi_pos]) (by nlinarith [pi_pos])).ne
