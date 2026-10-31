@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # Elementary interval integrals
@@ -19,6 +20,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
   for `a, b ∈ (-1, 1)`.
+* `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
+  `c ≠ 0`, the real counterpart of Mathlib's `integral_exp_mul_complex`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
@@ -27,6 +30,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, with the rising factorial `(1/2)ₙ`.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
+* `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
+  from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
 -/
 
 public section
@@ -47,6 +52,13 @@ theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} (ha : a ∈ Set.Ioo (-1) 1)
     · intro x hx
       have hx' := hIcc hx
       exact (Real.sqrt_pos.2 (by nlinarith [hx'.1, hx'.2])).ne'
+
+/-- The integral of `x ↦ exp (c x)` for a nonzero real `c`: an antiderivative is
+`x ↦ exp (c x) / c`. The real counterpart of `integral_exp_mul_complex`. -/
+theorem integral_exp_mul {a b c : ℝ} (hc : c ≠ 0) :
+    ∫ x in a..b, Real.exp (c * x) = (Real.exp (c * b) - Real.exp (c * a)) / c := by
+  rw [intervalIntegral.integral_comp_mul_left (f := Real.exp) hc, integral_exp, smul_eq_mul,
+    inv_mul_eq_div]
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/
@@ -135,6 +147,62 @@ theorem integral_sin_pow_even_eq_ascPochhammer (n : ℕ) :
     (hint (Real.pi / 2) Real.pi)
   rw [hsymm, integral_sin_pow_even, hprod] at hadd
   linarith
+
+/-! ### Integrands depending only on `sin² θ`
+
+A function of the form `θ ↦ G (sin θ ^ 2)` is even and `π`-periodic, which gives oddness and
+quasi-periodicity of its integral from `0`. -/
+
+/-- The integral from `0` of an integrand depending only on `sin² θ` is odd in its upper limit. -/
+theorem integral_comp_sin_sq_neg (G : ℝ → ℝ) (x : ℝ) :
+    ∫ θ in (0 : ℝ)..-x, G (Real.sin θ ^ 2) = -∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2) := by
+  have h := intervalIntegral.integral_comp_neg (a := 0) (b := x) fun θ ↦ G (Real.sin θ ^ 2)
+  simp only [Real.sin_neg, neg_sq, neg_zero] at h
+  rw [h, intervalIntegral.integral_symm]
+
+/-- The integral of a continuous integrand depending only on `sin² θ` over a half-period
+`[-π/2, π/2]` is twice its integral over `[0, π/2]`. -/
+theorem integral_comp_sin_sq_neg_pi_div_two (G : ℝ → ℝ)
+    (hG : Continuous fun θ ↦ G (Real.sin θ ^ 2)) :
+    ∫ θ in -(Real.pi / 2)..Real.pi / 2, G (Real.sin θ ^ 2) =
+      2 * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hG.intervalIntegrable _ _)
+    (hG.intervalIntegrable _ _), intervalIntegral.integral_symm 0 (-(Real.pi / 2)),
+    integral_comp_sin_sq_neg G, neg_neg]
+  ring
+
+/-- **Quasi-periodicity** of the integral from `0` of a continuous integrand depending only on
+`sin² θ`: adding `n` half-turns to the upper limit adds `2 n` times the integral over
+`[0, π/2]`. -/
+theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
+    (hG : Continuous fun θ ↦ G (Real.sin θ ^ 2)) (x : ℝ) (n : ℤ) :
+    ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2) =
+      (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+        2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+  have hper : Function.Periodic (fun θ ↦ G (Real.sin θ ^ 2)) Real.pi := fun θ ↦ by
+    simp only [Real.sin_add_pi, neg_sq]
+  have hint : ∀ a b : ℝ, IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) MeasureTheory.volume a b :=
+    fun a b ↦ hG.intervalIntegrable a b
+  -- Split off `[x, x + n π]`, which consists of `n` periods; each period integral equals the
+  -- one over the half-period `[-π/2, π/2]`, which is twice the integral over `[0, π/2]`.
+  calc ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2)
+      = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+          ∫ θ in x..x + n * Real.pi, G (Real.sin θ ^ 2) :=
+        (intervalIntegral.integral_add_adjacent_intervals (hint 0 x) (hint x _)).symm
+    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+          n * ∫ θ in x..x + Real.pi, G (Real.sin θ ^ 2) := by
+        simpa only [zsmul_eq_mul] using
+          congrArg (_ + ·) (hper.intervalIntegral_add_zsmul_eq n x hint)
+    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+          n * ∫ θ in -(Real.pi / 2)..-(Real.pi / 2) + Real.pi, G (Real.sin θ ^ 2) := by
+        rw [hper.intervalIntegral_add_eq x (-(Real.pi / 2))]
+    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+          n * ∫ θ in -(Real.pi / 2)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+        ring_nf
+    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+          2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+        rw [integral_comp_sin_sq_neg_pi_div_two G hG]
+        ring
 
 end TauCeti
 

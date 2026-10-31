@@ -48,6 +48,8 @@ root system is reduced and irreducible, and in particular show it does not depen
   the simple roots are all positive.
 * `RootPairing.Base.pairingIn_highestRoot_nonneg`: the highest root is dominant.
 * `RootPairing.Base.rootLength_le_rootLength_highestRoot`: the highest root is long.
+* `RootPairing.root'_le_root'_highestRoot`: at a point of the coweight space where every simple
+  root is nonnegative, the highest root takes the largest value of all roots.
 
 Two general facts about a positive root `α` to which no simple root can be added lie behind
 these: such a root is dominant
@@ -263,6 +265,17 @@ theorem height_lt_height_highestRoot {j : ι} (hj : j ≠ b.highestRoot) :
   refine (sub_eq_zero.mp (TauCeti.eq_zero_of_mem_posRootCone_of_heightLinearMap_eq_zero P b
     (b.root_highestRoot_sub_mem_posRootCone j) ?_)).symm
   simp [h]
+
+variable {b} in
+/-- **The highest root takes the largest value of all roots** at a point where every simple root
+is nonnegative, since `θ - α` is a nonnegative combination of the simple roots for every root
+`α`. -/
+theorem _root_.RootPairing.root'_le_root'_highestRoot [Preorder R] [IsOrderedAddMonoid R]
+    {x : N} (hx : ∀ i ∈ b.support, 0 ≤ P.root' i x) (j : ι) :
+    P.root' j x ≤ P.root' b.highestRoot x := by
+  have h := RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone hx
+    (b.root_highestRoot_sub_mem_posRootCone j)
+  rwa [map_sub, LinearMap.sub_apply, sub_nonneg] at h
 
 /-- **The highest root is long**: for every root-positive form, no root is longer than the
 highest root. -/

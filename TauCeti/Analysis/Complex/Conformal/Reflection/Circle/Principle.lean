@@ -17,13 +17,11 @@ source circle by conjugating it with the two circle inversions. The extension is
 wherever the reflected branch avoids the target centre.
 
 The analytic gluing step is Painlevé removability for a circle, supplied by
-`Conformal/Removability/Circle.lean`. This is the Möbius-reduction route specified by layer L4 of
-the conformal-mapping roadmap.
+`Conformal/Removability/Circle.lean`.
 
 The construction follows Ahlfors, *Complex Analysis*, Chapters 4--6. It reuses Mathlib's
 topological piecewise API and Euclidean inversion, together with Tau Ceti's line-removability and
-circle-reflection conjugation theorems. Layer L4 is absent from the upstream Mathlib
-Riemann-mapping draft mathlib4#33505.
+circle-reflection conjugation theorems.
 -/
 
 public section
