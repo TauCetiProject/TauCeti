@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
 public import TauCeti.NumberTheory.NumberField.ResidueUnits
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
+import TauCeti.NumberTheory.RamificationInertia.Inert
+import TauCeti.NumberTheory.RamificationInertia.Splitting
 
 /-!
 # Residue units of a quadratic field modulo a rational integer
@@ -71,23 +73,6 @@ private theorem card_units_quotient_span_mul_pow_eq (hK : finrank ℚ K = 2) {p 
   push_cast [Nat.cast_sub h1] at this
   exact this
 
-/-- In a quadratic field, a prime `𝔭` above `p` has `e(𝔭) f(𝔭)` plus the sum of `e f` over the
-other primes above `p` equal to `2`, and each summand is at least `1`. -/
-private theorem ramificationIdx_mul_inertiaDeg_add_sum_erase (hK : finrank ℚ K = 2) {p : ℕ}
-    [Fact p.Prime] (𝔭 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)) :
-    𝔭.1.ramificationIdx ℤ * 𝔭.1.inertiaDeg ℤ +
-        ∑ 𝔮 ∈ Finset.univ.erase 𝔭, 𝔮.1.ramificationIdx ℤ * 𝔮.1.inertiaDeg ℤ = 2 ∧
-      (Finset.univ.erase 𝔭).card ≤
-        ∑ 𝔮 ∈ Finset.univ.erase 𝔭, 𝔮.1.ramificationIdx ℤ * 𝔮.1.inertiaDeg ℤ := by
-  refine ⟨?_, ?_⟩
-  · rw [Finset.add_sum_erase _ (fun 𝔮 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) ↦
-      𝔮.1.ramificationIdx ℤ * 𝔮.1.inertiaDeg ℤ) (Finset.mem_univ 𝔭),
-      Ideal.sum_ramification_inertia_eq_finrank,
-      NumberField.RingOfIntegers.rank, hK]
-  · simpa only [smul_eq_mul, mul_one] using Finset.card_nsmul_le_sum (Finset.univ.erase 𝔭) _ 1
-      fun (𝔮 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)) _ ↦
-        Nat.mul_le_mul (Ideal.ramificationIdx_pos ℤ 𝔮.1) (Ideal.inertiaDeg_pos 𝔮.1 ℤ)
-
 /-- **Residue units modulo a rational prime in a quadratic field.** For a quadratic field `K`
 with discriminant `D` and a rational prime `p`, `#(𝓞 K ⧸ p 𝓞 K)ˣ = (p - 1) (p - χ_D(p))`: this is
 `(p - 1)²`, `p² - 1` or `p (p - 1)` according as `p` splits, is inert or ramifies. -/
@@ -98,10 +83,6 @@ theorem card_units_quotient_span_natCast_of_prime (hK : finrank ℚ K = 2) (p : 
         (p - fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK)
           p) := by
   have hp0 : (p : ℤ) ≠ 0 := by exact_mod_cast hp.out.ne_zero
-  have hcard {g : ℕ} (hg : ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)).ncard = g)
-      (𝔭 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)) : (Finset.univ.erase 𝔭).card = g - 1 := by
-    rw [Finset.card_erase_of_mem (Finset.mem_univ 𝔭), Finset.card_univ, ← Nat.card_eq_fintype_card,
-      Nat.card_coe_set_eq, hg]
   rcases fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) p with h | h | h
   · -- `p` ramifies: one prime above `p`, of norm `p`.
     have hmem := (Multiquadratic.fundamentalDiscriminantChar_discr_eq_zero_iff hK p).mp h
@@ -119,13 +100,10 @@ theorem card_units_quotient_span_natCast_of_prime (hK : finrank ℚ K = 2) (p : 
       refine mul_right_cancel₀ (pow_ne_zero (1 * 2) hp0) ?_
       push_cast
       linear_combination key
-    obtain ⟨hsum, hle⟩ := ramificationIdx_mul_inertiaDeg_add_sum_erase hK 𝔭
-    rw [hcard hg 𝔭] at hle
-    have he := Ideal.ramificationIdx_pos ℤ 𝔭.1
-    have hf := Ideal.inertiaDeg_pos 𝔭.1 ℤ
-    have hef : 𝔭.1.inertiaDeg ℤ ≤ 𝔭.1.ramificationIdx ℤ * 𝔭.1.inertiaDeg ℤ :=
-      Nat.le_mul_of_pos_left _ he
-    rw [← Ideal.pow_inertiaDeg p 𝔭.1, show 𝔭.1.inertiaDeg ℤ = 1 by omega]
+    open RamificationInertia in
+    rw [← Ideal.pow_inertiaDeg p 𝔭.1,
+      (ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank _ 𝔭.1
+        (by rw [hg, NumberField.RingOfIntegers.rank, hK])).2]
   · -- `p` is inert: one unramified prime above `p`, of residue degree `2`, hence of norm `p²`.
     obtain ⟨hram, hg⟩ := (Multiquadratic.fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h
     have hunr : Algebra.IsUnramifiedIn (𝓞 K) (span {(p : ℤ)}) := by
@@ -136,10 +114,10 @@ theorem card_units_quotient_span_natCast_of_prime (hK : finrank ℚ K = 2) (p : 
       refine mul_right_cancel₀ (pow_ne_zero (2 * 1) hp0) ?_
       push_cast
       linear_combination key
-    obtain ⟨hsum, -⟩ := ramificationIdx_mul_inertiaDeg_add_sum_erase hK 𝔭
-    rw [Finset.card_eq_zero.mp (hcard hg 𝔭), Finset.sum_empty,
-      Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp hunr 𝔭.1 inferInstance] at hsum
-    rw [← Ideal.pow_inertiaDeg p 𝔭.1, show 𝔭.1.inertiaDeg ℤ = 2 by omega]
+    rw [← Ideal.pow_inertiaDeg p 𝔭.1,
+      RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one _ 𝔭.1 hg
+        (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp hunr 𝔭.1 inferInstance),
+      NumberField.RingOfIntegers.rank, hK]
 
 /-- **Residue units modulo `f` in a quadratic field.** For a quadratic field `K` with
 discriminant `D` and a positive integer `f`,
