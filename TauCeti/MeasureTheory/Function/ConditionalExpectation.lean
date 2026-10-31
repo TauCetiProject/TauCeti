@@ -37,6 +37,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   integrability hypothesis.
 - `lintegral_ofReal_posPart_condExp_sub_le`: the positive part of `μ[f | m] - a` integrates to at
   most `‖f‖₁ + ‖a‖ₑ · μ univ`, uniformly in the σ-algebra `m`.
+- `condExpLp`: for a finite measure and `1 ≤ p ≤ ∞`, conditional expectation as a contractive
+  continuous linear operator on `Lᵖ`.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -54,7 +56,7 @@ noncomputable section
 
 open MeasureTheory Filter
 
-open scoped Topology
+open scoped ENNReal Topology
 
 namespace TauCeti
 
@@ -290,6 +292,46 @@ theorem lintegral_ofReal_posPart_condExp_sub_le {Ω : Type*} {m m₀ : Measurabl
           eLpNorm_one_eq_lintegral_enorm integrable_condExp.aestronglyMeasurable]
     _ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
         grw [eLpNorm_condExp_le_eLpNorm f le_rfl]
+
+section Lp
+
+variable (𝕜 : Type*) [RCLike 𝕜] {Ω E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedSpace 𝕜 E] [CompleteSpace E] (m : MeasurableSpace Ω) {m₀ : MeasurableSpace Ω}
+  (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : Measure Ω) [IsFiniteMeasure μ]
+
+/-- **Conditional expectation on `Lᵖ`.** For a finite measure `μ` and `1 ≤ p ≤ ∞`, conditional
+expectation with respect to `m` is a continuous linear operator on `Lᵖ(μ)`. Its values are a.e.
+the conditional expectations (`condExpLp_ae_eq`), and it is a contraction by Jensen's inequality
+(`norm_condExpLp_le`). -/
+noncomputable def condExpLp : Lp E p μ →L[𝕜] Lp E p μ :=
+  LinearMap.mkContinuous
+    { toFun f := ((Lp.memLp f).condExp (m := m) Fact.out).toLp _
+      map_add' f g := by
+        rw [← MemLp.toLp_add]
+        refine MemLp.toLp_congr _ _ ((condExp_congr_ae (Lp.coeFn_add f g)).trans ?_)
+        exact condExp_add ((Lp.memLp f).integrable Fact.out)
+          ((Lp.memLp g).integrable Fact.out) m
+      map_smul' c f := by
+        rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
+        exact MemLp.toLp_congr _ _
+          ((condExp_congr_ae (Lp.coeFn_smul c f)).trans (condExp_smul c _ m)) }
+    1 fun f => by
+      rw [one_mul, LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp, Lp.norm_def]
+      exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top f)
+        (eLpNorm_condExp_le_eLpNorm _ Fact.out)
+
+variable {𝕜 m p μ}
+
+/-- The values of `condExpLp` are a.e. the conditional expectations. -/
+theorem condExpLp_ae_eq (f : Lp E p μ) : condExpLp 𝕜 m p μ f =ᵐ[μ] μ[f | m] :=
+  MemLp.coeFn_toLp ((Lp.memLp f).condExp Fact.out)
+
+variable (𝕜 m p μ) in
+/-- Conditional expectation is a contraction on `Lᵖ`. -/
+theorem norm_condExpLp_le : ‖(condExpLp 𝕜 m p μ : Lp E p μ →L[𝕜] Lp E p μ)‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+end Lp
 
 end MeasureTheory
 
