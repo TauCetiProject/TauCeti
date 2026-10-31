@@ -66,6 +66,8 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
 * `Representation.map_subtype_invariants_symmetricAlgebraHomogeneous` and
   `Representation.finrank_invariants_symmetricAlgebraHomogeneous`: the invariants of `Symⁿ M` are
   the degree-`n` part of the invariant subalgebra.
+* `Representation.faithfulSMul_symmetricAlgebraMulSemiringAction_iff`: the bundled action is
+  faithful exactly when `ρ` is.
 * `Representation.symmetricAlgebraInvariants_eq_fixedPoints` and
   `Representation.isInvariant_symmetricAlgebraInvariants`: it is the fixed subalgebra of the
   bundled action, and `Sym M` is an invariant extension of it in the sense of
@@ -192,6 +194,17 @@ theorem smulCommClass_symmetricAlgebraMulSemiringAction :
     SMulCommClass G R (SymmetricAlgebra R M) :=
   letI := ρ.symmetricAlgebraMulSemiringAction
   ⟨fun g r p ↦ map_smul (ρ.symmetricAlgebra g) r p⟩
+
+/-- The action of `G` on `Sym M` induced by `ρ` is faithful exactly when `ρ` is: an element of `G`
+is determined by its action on the degree-one elements `ι m`. -/
+theorem faithfulSMul_symmetricAlgebraMulSemiringAction_iff :
+    letI := ρ.symmetricAlgebraMulSemiringAction
+    FaithfulSMul G (SymmetricAlgebra R M) ↔ Function.Injective ρ := by
+  let := ρ.symmetricAlgebraMulSemiringAction
+  refine ⟨fun h g₁ g₂ hg ↦ h.eq_of_smul_eq_smul fun p ↦ ?_,
+    fun hρ ↦ ⟨fun h ↦ hρ <| LinearMap.ext fun m ↦ ι_injective R M ?_⟩⟩
+  · simp [symmetricAlgebraMulSemiringAction_smul, hg]
+  · simpa [symmetricAlgebraMulSemiringAction_smul] using h (SymmetricAlgebra.ι R M m)
 
 /-- The invariant subalgebra `Sym(M)^G`: the elements of `Sym M` fixed by the induced action of
 every element of `G`, that is, the fixed subalgebra `FixedPoints.subalgebra` of the bundled

@@ -14,7 +14,8 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 
 Let `ρ` be a faithful representation of a group `G` on a module `M`, acting on the symmetric
 algebra `Sym M` through `Representation.symmetricAlgebraMulSemiringAction`. The induced action on
-`Sym M` is again faithful, since `Sym M` contains `M` in degree one, and its fixed subalgebra is
+`Sym M` is again faithful, since `Sym M` contains `M` in degree one
+(`Representation.faithfulSMul_symmetricAlgebraMulSemiringAction_iff`), and its fixed subalgebra is
 the invariant subalgebra `Sym(M)^G` by definition. So `G` is a Galois group of `Sym M` over
 `Sym(M)^G` in the sense of Mathlib's `IsGaloisGroup`, and Mathlib's Galois theory for
 `IsGaloisGroup` applies to it.
@@ -35,8 +36,6 @@ A faithful action on `V` gives a faithful contragredient action on `V*` by
 
 ## Main results
 
-* `Representation.faithfulSMul_symmetricAlgebraMulSemiringAction_iff`: the induced action on
-  `Sym M` is faithful exactly when `ρ` is.
 * `Representation.isGaloisGroup_symmetricAlgebraInvariants`: for faithful `ρ`, `G` is a Galois
   group of `Sym M` over `Sym(M)^G`.
 * `Representation.isGaloisGroup_fractionRing_symmetricAlgebraInvariants`: for finite `G`, it is
@@ -59,24 +58,6 @@ public section
 open TauCeti.SymmetricAlgebra
 
 namespace Representation
-
-section Monoid
-
-variable {R G M : Type*} [CommSemiring R] [Monoid G] [AddCommMonoid M] [Module R M]
-variable (ρ : Representation R G M)
-
-/-- The action of `G` on `Sym M` induced by `ρ` is faithful exactly when `ρ` is: an element of `G`
-is determined by its action on the degree-one elements `ι m`. -/
-theorem faithfulSMul_symmetricAlgebraMulSemiringAction_iff :
-    letI := ρ.symmetricAlgebraMulSemiringAction
-    FaithfulSMul G (SymmetricAlgebra R M) ↔ Function.Injective ρ := by
-  let := ρ.symmetricAlgebraMulSemiringAction
-  refine ⟨fun h g₁ g₂ hg ↦ h.eq_of_smul_eq_smul fun p ↦ ?_,
-    fun hρ ↦ ⟨fun h ↦ hρ <| LinearMap.ext fun m ↦ ι_injective R M ?_⟩⟩
-  · simp [symmetricAlgebraMulSemiringAction_smul, hg]
-  · simpa [symmetricAlgebraMulSemiringAction_smul] using h (SymmetricAlgebra.ι R M m)
-
-end Monoid
 
 section Group
 
