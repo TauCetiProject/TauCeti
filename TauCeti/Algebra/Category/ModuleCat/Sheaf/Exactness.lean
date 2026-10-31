@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Limits
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Adjunction.FullyFaithfulLimits
+public import Mathlib.CategoryTheory.Sites.Abelian
+public import Mathlib.CategoryTheory.Sites.EpiMono
+public import TauCeti.CategoryTheory.Sites.Limits
 
 /-!
 # Forgetting the module structure of a sheaf of modules is exact
@@ -27,6 +32,10 @@ sheaves of modules to short exact sequences of abelian sheaves.
   finite colimits;
 * `TauCeti.SheafOfModules.shortExact_map_toSheaf`: a short exact sequence of sheaves of modules
   stays short exact after forgetting the module structures.
+* `CategoryTheory.Sheaf.preservesEpimorphisms_sheafCompose_forget₂_moduleCat` and
+  `CategoryTheory.Sheaf.shortExact_map_sheafCompose_forget₂_moduleCat`: the same statement for
+  sheaves with values in `ModuleCat R` over a fixed ring `R`, whose underlying abelian sheaf is
+  obtained by applying `forget₂ (ModuleCat R) AddCommGrpCat` sectionwise.
 
 ## Implementation notes
 
@@ -35,6 +44,11 @@ composing it with `SheafOfModules.toSheaf` gives `PresheafOfModules.toPresheaf �
 which preserves colimits because colimits of presheaves of modules are computed sectionwise and
 `presheafToSheaf` is a left adjoint. `Adjunction.preservesColimitsOfShape_iff` transfers this
 to `SheafOfModules.toSheaf`.
+
+For sheaves with values in `ModuleCat R`, forgetting the module structure sectionwise is
+`sheafCompose J (forget₂ (ModuleCat R) AddCommGrpCat)`. It preserves the limits that compute
+kernels and monomorphisms, and it preserves epimorphisms because a morphism of sheaves is an
+epimorphism exactly when it is locally surjective, a condition on underlying sets of sections.
 
 Exactness of `SheafOfModules.toSheaf` is what makes the cohomology of a sheaf of modules, which
 is defined through the underlying abelian sheaf, fit into a long exact sequence.
@@ -47,6 +61,8 @@ open CategoryTheory Limits
 universe w w' v v' u u'
 
 noncomputable section
+
+section SheafOfModules
 
 variable {C : Type u'} [Category.{v'} C] {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
   [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
@@ -86,5 +102,37 @@ theorem shortExact_map_toSheaf [HasSheafify J AddCommGrpCat.{v}]
 end SheafOfModules
 
 end TauCeti
+
+end SheafOfModules
+
+namespace CategoryTheory.Sheaf
+
+variable {C : Type v} [Category.{v} C] {J : GrothendieckTopology C} {R : Type v} [Ring R]
+
+/-- Forgetting the module structures of sheaves of `R`-modules sectionwise preserves
+epimorphisms: both epimorphisms of sheaves of modules and of abelian sheaves are the locally
+surjective morphisms. -/
+instance preservesEpimorphisms_sheafCompose_forget₂_moduleCat :
+    (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).PreservesEpimorphisms where
+  preserves g _ := by
+    have : IsLocallySurjective g := (isLocallySurjective_iff_epi' (φ := g)).2 inferInstance
+    -- the sections and the maps on sections are the same before and after forgetting
+    have : IsLocallySurjective
+        ((sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).map g) :=
+      ⟨fun s ↦ Presheaf.imageSieve_mem J g.hom s⟩
+    infer_instance
+
+/-- Forgetting the module structures of a short exact sequence of sheaves of `R`-modules
+sectionwise leaves a short exact sequence of abelian sheaves. -/
+theorem shortExact_map_sheafCompose_forget₂_moduleCat
+    {S : ShortComplex (Sheaf J (ModuleCat.{v} R))} (hS : S.ShortExact) :
+    (S.map (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v}))).ShortExact :=
+  have := hS.mono_f
+  have := hS.epi_g
+  { exact := hS.exact.map_of_mono_of_preservesKernel _ hS.mono_f inferInstance
+    mono_f := inferInstanceAs (Mono ((sheafCompose J _).map S.f))
+    epi_g := inferInstanceAs (Epi ((sheafCompose J _).map S.g)) }
+
+end CategoryTheory.Sheaf
 
 end

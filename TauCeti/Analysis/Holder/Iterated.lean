@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Holder.One
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+import Mathlib.Analysis.Calculus.ContDiff.Comp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # Bounded `C^{k,α}` maps of every order
@@ -41,6 +43,10 @@ conditions are closed under uniform convergence, which gives completeness.
   regularity of an element; `TauCeti.CkHolderSpace.ofContDiff` is the converse constructor.
 * `TauCeti.CkHolderSpace.norm_eq`: the norm is the sum of the supremum norms of the derivatives
   through order `k` and the `α`-Hölder seminorm of the `k`-th derivative.
+* `TauCeti.CkHolderSpace.norm_fderiv_le_iteratedFDeriv_one`,
+  `TauCeti.CkHolderSpace.norm_fderiv_fderiv_le_iteratedFDeriv_two` and
+  `TauCeti.CkHolderSpace.holderWith_fderiv_fderiv`: bounds on the curried derivatives `Df` and
+  `D(Df)` by the derivative fields, and the Hölder bound on `D(Df)` for `k = 2`.
 * `TauCeti.CkHolderSpace.iteratedFDerivL` and `TauCeti.CkHolderSpace.iteratedFDerivHolderL`: the
   derivative fields as continuous linear maps; the second has operator norm at most one.
 * `TauCeti.CkHolderSpace.instCompleteSpace`: completeness when the codomain is complete.
@@ -365,6 +371,47 @@ theorem nnHolderNorm_iteratedFDeriv_le (f : CkHolderSpace k α E F) :
     (nnHolderNorm α (_root_.iteratedFDeriv ℝ k f) : ℝ) ≤ ‖f‖ := by
   rw [norm_eq]
   exact le_add_of_nonneg_left (Finset.sum_nonneg fun j _ ↦ norm_nonneg _)
+
+/-- The values of a bounded `C^{k,α}` map are controlled by the supremum norm of its order-zero
+field. -/
+theorem norm_apply_le_iteratedFDeriv_zero (f : CkHolderSpace k α E F) (x : E) :
+    ‖f x‖ ≤ ‖f.iteratedFDeriv 0‖ := by
+  calc ‖f x‖ = ‖f.iteratedFDeriv 0 x‖ := by
+        rw [← iteratedFDeriv_eq, Fin.val_zero, norm_iteratedFDeriv_zero]
+    _ ≤ _ := (f.iteratedFDeriv 0).norm_coe_le_norm x
+
+/-- The first derivative of a bounded `C^{k+1,α}` map is controlled by the supremum norm of its
+first derivative field. -/
+theorem norm_fderiv_le_iteratedFDeriv_one (f : CkHolderSpace (k + 1) α E F) (x : E) :
+    ‖fderiv ℝ f x‖ ≤ ‖f.iteratedFDeriv 1‖ := by
+  calc ‖fderiv ℝ f x‖ = ‖f.iteratedFDeriv 1 x‖ := by
+        rw [← iteratedFDeriv_eq, Fin.val_one, norm_iteratedFDeriv_one]
+    _ ≤ _ := (f.iteratedFDeriv 1).norm_coe_le_norm x
+
+/-- The curried second derivative of a bounded `C^{k+2,α}` map is controlled by the supremum norm
+of its second derivative field. -/
+theorem norm_fderiv_fderiv_le_iteratedFDeriv_two (f : CkHolderSpace (k + 2) α E F) (x : E) :
+    ‖fderiv ℝ (fderiv ℝ f) x‖ ≤ ‖f.iteratedFDeriv 2‖ := by
+  calc ‖fderiv ℝ (fderiv ℝ f) x‖ = ‖f.iteratedFDeriv 2 x‖ := by
+        rw [← iteratedFDeriv_eq, Fin.val_two, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+    _ ≤ _ := (f.iteratedFDeriv 2).norm_coe_le_norm x
+
+/-- The derivative of a bounded `C^{k+1,α}` map is `k` times continuously differentiable. -/
+theorem contDiff_fderiv (f : CkHolderSpace (k + 1) α E F) : ContDiff ℝ k (fderiv ℝ f) :=
+  f.contDiff.fderiv_right (by norm_cast)
+
+/-- The curried second derivative of a bounded `C^{2,α}` map is `α`-Hölder with the Hölder
+seminorm of `D²f`. -/
+theorem holderWith_fderiv_fderiv (f : CkHolderSpace 2 α E F) :
+    HolderWith (nnHolderNorm α (_root_.iteratedFDeriv ℝ 2 f)) α (fderiv ℝ (fderiv ℝ f)) := by
+  have he : (fun x ↦ continuousMultilinearCurryFin2 ℝ E F (_root_.iteratedFDeriv ℝ 2 f x)) =
+      fderiv ℝ (fderiv ℝ f) := by
+    funext x
+    ext v w
+    simp [_root_.iteratedFDeriv_two_apply]
+  simpa [Function.comp_def, he] using
+    (continuousMultilinearCurryFin2 ℝ E F).isometry.lipschitzWith.holderWith.comp
+      f.memHolder_iteratedFDeriv.holderWith
 
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields. It is
 bounded by the `C^{k,α}` norm pointwise, by `CkHolderSpace.norm_iteratedFDeriv_le`. -/

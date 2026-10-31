@@ -59,6 +59,7 @@ is required for the induced cohomology maps.
 * `TauCeti.trivialF2_ρ_apply_apply`: every monoid element acts trivially.
 * `TauCeti.trivialF2_two_nsmul_eq_zero`, `TauCeti.cohomF2.two_nsmul_eq_zero`: the coefficients,
   and hence every cohomology class, are killed by `2`.
+* `TauCeti.trivialF2_add_self`: every coefficient is its own additive inverse.
 * `TauCeti.trivialF2Pairing`: multiplication in `𝔽₂` as a biadditive pairing on the lifted
   carrier, with `TauCeti.trivialF2Pairing_smul_smul` its equivariance.
 * `TauCeti.ofDiscreteModule_trivialF2`: the coefficient dictionary recovers `trivialF2`, with
@@ -202,6 +203,10 @@ theorem trivialF2Pairing_smul_smul (g : G) (x y : (trivialF2 G).V) :
 /-- Every element of the trivial `𝔽₂` coefficient object is killed by `2`. -/
 theorem trivialF2_two_nsmul_eq_zero (x : (trivialF2 G).V) : 2 • x = 0 :=
   (trivialF2Equiv G).injective (by rw [map_nsmul, map_zero, two_nsmul, CharTwo.add_self_eq_zero])
+
+/-- Every element of the trivial `𝔽₂` coefficient object is its own additive inverse. -/
+theorem trivialF2_add_self (x : (trivialF2 G).V) : x + x = 0 := by
+  simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero G x
 
 variable [TopologicalSpace G]
 

@@ -56,9 +56,10 @@ none of this assumes σ-finiteness.
   `map (· * g) μ = c(g) • μ` for a regular Haar measure `μ`.
 * `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter_of_regular`:
   `μ.inv = μ.withDensity c` for a regular Haar measure `μ`.
-* `MeasureTheory.Measure.quasiMeasurePreserving_mul_right_of_regular` and
-  `MeasureTheory.Measure.quasiMeasurePreserving_inv_of_regular`: right translation and inversion
-  preserve null sets of a regular Haar measure.
+* `MeasureTheory.Measure.quasiMeasurePreserving_mul_right_of_regular`,
+  `MeasureTheory.Measure.quasiMeasurePreserving_inv_of_regular` and
+  `MeasureTheory.Measure.quasiMeasurePreserving_inv_mul_of_regular`: right translation, inversion
+  and `y ↦ y⁻¹ * x` preserve null sets of a regular Haar measure.
 * `TauCeti.integral_mul_right_eq_modularCharacter_smul_of_regular`,
   `TauCeti.integral_inv_eq_integral_modularCharacter_smul_of_regular` and their lower Lebesgue
   versions `TauCeti.lintegral_mul_right_eq_modularCharacter_mul_of_regular` and
@@ -415,6 +416,13 @@ theorem measure_inv_null_of_regular {s : Set G} : μ s⁻¹ = 0 ↔ μ s = 0 := 
 @[fun_prop]
 theorem quasiMeasurePreserving_inv_of_regular : QuasiMeasurePreserving Inv.inv μ μ :=
   ⟨measurable_inv, inv_absolutelyContinuous_of_regular μ⟩
+
+/-- For a regular Haar measure, `y ↦ y⁻¹ * x` is quasi-measure-preserving: it is inversion
+followed by right translation by `x`. -/
+@[fun_prop]
+theorem quasiMeasurePreserving_inv_mul_of_regular (x : G) :
+    QuasiMeasurePreserving (fun y => y⁻¹ * x) μ μ :=
+  (quasiMeasurePreserving_mul_right_of_regular μ x).comp (quasiMeasurePreserving_inv_of_regular μ)
 
 end Regular
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import TauCeti.Data.Finsupp.Weight
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
 
 /-!
 # Iteration of Gauss-normed restricted series in one variable
@@ -52,6 +53,10 @@ first reindexes by an equivalence `e : ι ≃ Option σ`, so that the chosen var
   univariate variable, and the remaining variables to constants.
 * `MvPowerSeries.norm_restrictedOptionEquiv` and `MvPowerSeries.isometry_restrictedOptionEquiv`:
   it preserves the Gauss norms.
+* `MvPowerSeries.coe_restrictedOptionEquiv_restrictedMap`: it commutes with bounded coefficient
+  maps, acting on the coefficient ring of restricted series in the remaining variables, and
+  `MvPowerSeries.restrictedMap_restrictedOptionEquiv_symm_polynomialToRestricted` describes the
+  coefficient map on polynomials in the separated variable.
 * `MvPowerSeries.isRestricted_of_map_subtype_eq_optionEquivLeft`: transporting restriction from
   constant radius `r` to an iterated series with coefficient radius `ρ ≤ r`.
 
@@ -90,13 +95,9 @@ the separated variable needs to be positive. -/
 theorem isRestricted_coeff_optionEquivLeft (hc : 0 < c none) {f : MvPowerSeries (Option σ) R}
     (hf : IsRestricted c f) (n : ℕ) :
     IsRestricted (fun i ↦ c (some i)) (PowerSeries.coeff n (optionEquivLeft σ R f)) := by
-  have hi : Function.Injective (fun t : σ →₀ ℕ ↦ t.optionElim n) := fun t u h ↦ by
-    simpa using congrArg Finsupp.some h
-  have h := (hf.comp hi.tendsto_cofinite).const_mul (c none ^ n)⁻¹
-  rw [mul_zero] at h
-  refine h.congr fun t ↦ ?_
-  rw [Function.comp_apply, ← norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow]
-  field_simp [(pow_pos hc n).ne']
+  rw [← isRestrictedFamily_coeff_iff]
+  simpa only [coeff_coeff_optionEquivLeft] using
+    ((isRestrictedFamily_coeff_iff f).mpr hf).comp_optionElim hc n
 
 variable [IsUltrametricDist R] [∀ i, Fact (0 < c i)]
 
@@ -343,6 +344,35 @@ theorem norm_restrictedOptionEquiv (f : Flat) : ‖restrictedOptionEquiv f‖ = 
 theorem isometry_restrictedOptionEquiv :
     Isometry (restrictedOptionEquiv (σ := σ) (R := R) (c := c)) :=
   AddMonoidHomClass.isometry_iff_norm _ |>.mpr norm_restrictedOptionEquiv
+
+/-- The comparison commutes with bounded coefficient maps: the iterated series of the
+coefficientwise image of `f` under `φ : R →+* S` is the image of the iterated series of `f` under
+the coefficientwise map `R{Y/(c ∘ some)} →+* S{Y/(c ∘ some)}` induced by `φ`. -/
+theorem coe_restrictedOptionEquiv_restrictedMap {S : Type*} [NormedCommRing S]
+    [IsUltrametricDist S] (φ : R →+* S) {C : ℝ} (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖) (f : Flat) :
+    (restrictedOptionEquiv (TauCeti.MvPowerSeries.restrictedMap φ hφ f) :
+        PowerSeries (IsRestricted.subring (R := S) (fun i : σ ↦ c (some i)))) =
+      PowerSeries.map (TauCeti.MvPowerSeries.restrictedMap φ hφ)
+        (restrictedOptionEquiv f : PowerSeries Inner) := by
+  ext n : 1
+  refine Subtype.ext (MvPowerSeries.ext fun t ↦ ?_)
+  simp [coeff_coeff_optionEquivLeft, TauCeti.MvPowerSeries.coeff_restrictedMap]
+
+/-- The coefficient map sends a polynomial `ω` in the separated variable, with coefficients
+restricted in the remaining variables, to its coefficientwise image under the induced map of
+coefficient rings. -/
+@[simp]
+theorem restrictedMap_restrictedOptionEquiv_symm_polynomialToRestricted {S : Type*}
+    [NormedCommRing S] [IsUltrametricDist S] (φ : R →+* S) {C : ℝ} (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖)
+    (ω : Polynomial Inner) :
+    TauCeti.MvPowerSeries.restrictedMap φ hφ
+        (restrictedOptionEquiv.symm (TauCeti.PowerSeries.polynomialToRestricted (c none) ω)) =
+      restrictedOptionEquiv.symm (TauCeti.PowerSeries.polynomialToRestricted (c none)
+        (ω.map (TauCeti.MvPowerSeries.restrictedMap φ hφ))) := by
+  refine restrictedOptionEquiv.injective (Subtype.ext ?_)
+  rw [coe_restrictedOptionEquiv_restrictedMap, AlgEquiv.apply_symm_apply,
+    AlgEquiv.apply_symm_apply, TauCeti.PowerSeries.coe_polynomialToRestricted,
+    TauCeti.PowerSeries.coe_polynomialToRestricted, Polynomial.polynomial_map_coe]
 
 section Split
 

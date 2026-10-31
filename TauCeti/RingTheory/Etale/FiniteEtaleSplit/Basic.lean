@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Etale.Finite
 public import Mathlib.RingTheory.TotallySplit
 public import TauCeti.RingTheory.Etale.AdjoinRoot
 public import TauCeti.RingTheory.Etale.Idempotent
+public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 public import TauCeti.RingTheory.Idempotents.Refinement
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Unramified.Section.Idempotent
@@ -55,6 +56,10 @@ there only through sections of faithfully flat covers and roots of separable pol
 * `TauCeti.isFiniteEtaleSplit_iff_isSepClosed`: a field has no nonsplit finite étale covers if
   and only if it is separably closed.
 * `TauCeti.IsFiniteEtaleSplit.of_isSepClosed`: the instance for separably closed fields.
+* `TauCeti.Algebra.IsTotallySplit.isFiniteSplit`,
+  `Algebra.IsFiniteSplit.of_isFiniteEtaleSplit`: over a ring with preconnected spectrum, a totally
+  split algebra, and so every finite étale algebra over a ring without nonsplit finite étale
+  covers, is `R`-isomorphic to `Fin n → R`.
 * `TauCeti.Algebra.IsTotallySplit.baseChange`: total splitting is stable under base change.
 * `TauCeti.IsFiniteEtaleSplit.nonempty_algHom`: a faithfully flat finite étale `R`-algebra maps to
   every `R`-algebra without nonsplit finite étale covers.
@@ -241,6 +246,28 @@ theorem finite (h : IsTotallySplit R T) : Module.Finite R T := by
   obtain ⟨m, e, -, ⟨φ⟩⟩ := h
   exact .equiv φ.symm.toLinearEquiv
 
+/-- Over a ring with preconnected prime spectrum, for example a local ring, a totally split
+algebra has constant split rank: every idempotent `e_j` is `0` or `1`, so each factor
+`R ⧸ (1 - e_j)` is a copy of `R` or the zero ring. -/
+theorem isFiniteSplit [PreconnectedSpace (PrimeSpectrum R)] (h : IsTotallySplit R T) :
+    Algebra.IsFiniteSplit R T := by
+  classical
+  obtain ⟨m, e, he, ⟨φ⟩⟩ := h
+  let Q : Fin m → Type _ := fun j ↦ R ⧸ Ideal.span {1 - e j}
+  -- The factors with `e j ≠ 1` have `e j = 0`, so they are zero rings.
+  have (j : {j // ¬e j = 1}) : Subsingleton (Q j) :=
+    Ideal.Quotient.subsingleton_iff.mpr <| by
+      simp [(he j).eq_zero_or_eq_one_of_preconnectedSpace.resolve_right j.2]
+  let : Unique ((j : {j // ¬e j = 1}) → Q j) := uniqueOfSubsingleton 0
+  -- The factors with `e j = 1` are copies of `R`.
+  let ψ (j : {j // e j = 1}) : Q j ≃ₐ[R] R :=
+    (Ideal.quotientEquivAlgOfEq R (by simp [j.2])).trans (AlgEquiv.quotientBot R R)
+  -- Split the product along `e j = 1`; `algebraMap` into a product is componentwise, so the
+  -- splitting `RingEquiv` commutes with it by `rfl`.
+  exact .of_algEquiv <| (φ.trans <|
+    (AlgEquiv.ofRingEquiv (f := RingEquiv.piEquivPiSubtypeProd (fun j ↦ e j = 1) Q)
+      fun _ ↦ rfl).trans <| AlgEquiv.prodUnique.trans (AlgEquiv.piCongrRight ψ)).symm
+
 open TensorProduct in
 /-- Total splitting is stable under base change: if `T ≃ₐ[R] ∏ R ⧸ (1 - e_j)`, then
 `S ⊗[R] T ≃ₐ[S] ∏ S ⧸ (1 - e_j)`, with the images of the same idempotents. -/
@@ -365,6 +392,13 @@ theorem Algebra.IsTotallySplit.of_isFiniteEtaleSplit [IsFiniteEtaleSplit R] (T :
   have : Small.{u} T := Module.Finite.small R T
   have : Algebra.Etale R (Shrink.{u} T) := .of_equiv (Shrink.algEquiv R T).symm
   exact (IsFiniteEtaleSplit.isTotallySplit (Shrink.{u} T)).of_algEquiv (Shrink.algEquiv R T)
+
+/-- Over a ring with preconnected prime spectrum and without nonsplit finite étale covers, every
+finite étale algebra has constant split rank: it is `R`-isomorphic to `Fin n → R` for some `n`. -/
+theorem _root_.Algebra.IsFiniteSplit.of_isFiniteEtaleSplit [IsFiniteEtaleSplit R]
+    [PreconnectedSpace (PrimeSpectrum R)] (T : Type*) [CommRing T] [Algebra R T]
+    [Algebra.Etale R T] [Module.Finite R T] : Algebra.IsFiniteSplit R T :=
+  (Algebra.IsTotallySplit.of_isFiniteEtaleSplit T).isFiniteSplit
 
 open TensorProduct in
 /-- A faithfully flat finite étale `R`-algebra `T` admits an `R`-algebra map to every

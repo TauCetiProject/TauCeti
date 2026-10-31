@@ -28,11 +28,15 @@ The resultant with `1 - t X` at a degree bound `n` for `f` is the value at `t` o
 arbitrary valid degree bounds, the bounds adding. These are the identities behind Coleman's
 spectral transform, whose rank is a specified degree bound rather than an actual degree.
 
-Finally, resultants taken at the actual degrees commute with any coefficient map preserving both
+Resultants taken at the actual degrees commute with any coefficient map preserving both
 degrees, the form of base change used when comparing a resultant with its specializations.
+Finally, the entries of the Sylvester matrix are written out explicitly, column by column, for
+expanding its determinant term by term.
 
 ## Main results
 
+* `Polynomial.sylvester_apply_of_lt`, `Polynomial.sylvester_apply_of_le`: the entries of the
+  Sylvester matrix in its first `n` and its last `m` columns.
 * `Polynomial.resultant_C_sub_X_right`
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
@@ -53,6 +57,34 @@ it is a Mathlib-bound prerequisite of the explicit `2`-descent.
 public section
 
 namespace Polynomial
+
+section Sylvester
+
+variable {S : Type*} [Semiring S]
+
+/-- An entry of the Sylvester matrix in one of the first `n` columns, which carry the
+coefficients of the second polynomial. -/
+theorem sylvester_apply_of_lt (f g : S[X]) {n m : ℕ} (i x : Fin (n + m))
+    (hx : (x : ℕ) < n) :
+    sylvester f g n m i x =
+      if (x : ℕ) ≤ i ∧ (i : ℕ) ≤ x + m then g.coeff (i - x) else 0 := by
+  obtain ⟨x, rfl⟩ : ∃ y : Fin n, Fin.castAdd m y = x := ⟨⟨x, hx⟩, rfl⟩
+  simp [sylvester]
+
+/-- An entry of the Sylvester matrix in one of the last `m` columns, which carry the
+coefficients of the first polynomial. -/
+theorem sylvester_apply_of_le (f g : S[X]) {n m : ℕ} (i x : Fin (n + m))
+    (hx : n ≤ (x : ℕ)) :
+    sylvester f g n m i x =
+      if (x : ℕ) ≤ i + n ∧ (i : ℕ) ≤ x then f.coeff (i + n - x) else 0 := by
+  obtain ⟨x, rfl⟩ : ∃ y : Fin m, Fin.natAdd n y = x :=
+    ⟨⟨x - n, by omega⟩, Fin.ext (by simp; omega)⟩
+  simp only [sylvester, Matrix.of_apply, Fin.addCases_right, Set.mem_Icc, Fin.val_natAdd]
+  congr 1
+  · exact propext (by omega)
+  · congr 1; omega
+
+end Sylvester
 
 variable {R : Type*} [CommRing R]
 
