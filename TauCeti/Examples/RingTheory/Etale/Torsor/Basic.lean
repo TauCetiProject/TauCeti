@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Etale.Torsor
+import TauCeti.RingTheory.Etale.Torsor.Basic
 
 /-!
 # Tests for finite étale torsors
