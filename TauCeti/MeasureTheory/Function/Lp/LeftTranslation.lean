@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
+public import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
 # Left translation on `Lᵖ` of a group
@@ -40,6 +41,8 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
 * `MeasureTheory.Lp.leftTranslation_le_leftTranslation_iff`: left translation is an order
   automorphism of real `Lᵖ`.
 * `MeasureTheory.Lp.leftTranslation_linftyOne`: it fixes the constant class one in `L∞`.
+* `MeasureTheory.Lp.leftTranslation_linftyIndicator`: it takes the indicator class of `s` in
+  `L∞` to that of `g • s`.
 * `MeasureTheory.Lp.integral_leftTranslation`: left translation preserves integrals.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
   function commutes with left translation.
@@ -136,5 +139,26 @@ theorem leftTranslation_toLpTop [TopologicalSpace G] [IsTopologicalGroup G] [Bor
     (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae
       (BoundedContinuousFunction.coeFn_toLpTop μ (𝕜 := 𝕜) f)] with x hx hc hf
   simp [hx, hc, hf]
+
+end MeasureTheory.Lp
+
+namespace MeasureTheory.Lp
+
+open TauCeti
+open scoped Pointwise
+
+/-- Left translation by `g` of the indicator of `s` in `L∞` is the indicator of `g • s`. -/
+@[simp]
+theorem leftTranslation_linftyIndicator {G : Type*} [Group G]
+    [MeasurableSpace G] [MeasurableMul G] {ν : Measure G} [ν.IsMulLeftInvariant] (g : G)
+    {s : Set G} (hs : MeasurableSet s) :
+    Lp.leftTranslation ν ∞ ℝ g (linftyIndicator ν s hs) =
+      linftyIndicator ν (g • s) (hs.const_smul g) := by
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_leftTranslation (𝕜 := ℝ) g (linftyIndicator ν s hs),
+    (measurePreserving_mul_left ν g⁻¹).quasiMeasurePreserving.ae (coeFn_linftyIndicator hs),
+    coeFn_linftyIndicator (μ := ν) (hs.const_smul g)] with x h h' hg
+  rw [h, h', hg]
+  by_cases hx : g⁻¹ * x ∈ s <;> simp [hx, Set.mem_smul_set_iff_inv_smul_mem]
 
 end MeasureTheory.Lp
