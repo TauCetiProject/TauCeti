@@ -29,6 +29,8 @@ compatible with: the total-degree grading of the underlying tensor product of gr
   whose images satisfy the Koszul commutation rule.
 * `TauCeti.gradedTensorIncludeLeft` and `TauCeti.gradedTensorIncludeRight`: the inclusions
   `a ↦ a ᵍ⊗ₜ 1` and `b ↦ 1 ᵍ⊗ₜ b` of the two factors, as homomorphisms of graded algebras.
+* `TauCeti.gradedTensorHomOfMemZero`: the homomorphism `E ⊗ F → 𝒜 ᵍ⊗ ℬ`, `a ⊗ b ↦ ρ₁(a) ⊗ ρ₂(b)`,
+  induced by two homomorphisms of nonunital algebras into degree zero.
 
 ## Main results
 
@@ -272,6 +274,56 @@ noncomputable def gradedTensorIncludeRight : ℬ →ₐᵍ[R] gradedTensorGradin
 @[simp]
 theorem gradedTensorIncludeRight_apply (b : B) :
     gradedTensorIncludeRight 𝒜 ℬ b = (1 : A) ᵍ⊗ₜ[R] b := (rfl)
+
+/-! ### The tensor product of two homomorphisms into degree zero -/
+
+section HomOfMemZero
+
+variable {𝒜 ℬ} {E F : Type*} [NonUnitalSemiring E] [Module R E] [SMulCommClass R E E]
+  [IsScalarTower R E E] [NonUnitalSemiring F] [Module R F] [SMulCommClass R F F]
+  [IsScalarTower R F F]
+
+variable (ρ₁ : E →ₙₐ[R] A) (ρ₂ : F →ₙₐ[R] B)
+
+/-- The homomorphism `a ⊗ b ↦ ρ₁(a) ⊗ ρ₂(b)` from `E ⊗ F` to the graded tensor product, for two
+homomorphisms of nonunital algebras with values in degree zero, where the Koszul sign is
+trivial. -/
+noncomputable def gradedTensorHomOfMemZero (hρ₁ : ∀ a, ρ₁ a ∈ 𝒜 0) (hρ₂ : ∀ b, ρ₂ b ∈ ℬ 0) :
+    E ⊗[R] F →ₙₐ[R] 𝒜 ᵍ⊗[R] ℬ where
+  toFun := (GradedTensorProduct.of R 𝒜 ℬ).toLinearMap ∘ₗ
+    TensorProduct.map (ρ₁ : E →ₗ[R] A) (ρ₂ : F →ₗ[R] B)
+  map_smul' := map_smul _
+  map_zero' := map_zero _
+  map_add' := map_add _
+  map_mul' x y := by
+    induction x using TensorProduct.inductionOn with
+    | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']
+    | tmul a b =>
+      induction y using TensorProduct.inductionOn with
+      | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
+      | tmul a' b' =>
+        simp only [LinearMap.comp_apply, Algebra.TensorProduct.tmul_mul_tmul,
+          TensorProduct.map_tmul, LinearEquiv.coe_coe, LinearMap.coe_ofClass, map_mul]
+        exact (GradedTensorProduct.tmul_zero_coe_mul_coe_tmul 𝒜 ℬ (ρ₁ a) ⟨ρ₂ b, hρ₂ b⟩
+          ⟨ρ₁ a', hρ₁ a'⟩ (ρ₂ b')).symm
+
+variable {ρ₁ ρ₂} (hρ₁ : ∀ a, ρ₁ a ∈ 𝒜 0) (hρ₂ : ∀ b, ρ₂ b ∈ ℬ 0)
+
+/-- The homomorphism induced by two homomorphisms into degree zero, on a pure tensor. -/
+@[simp]
+theorem gradedTensorHomOfMemZero_tmul (a : E) (b : F) :
+    gradedTensorHomOfMemZero ρ₁ ρ₂ hρ₁ hρ₂ (a ⊗ₜ b) = ρ₁ a ᵍ⊗ₜ[R] ρ₂ b :=
+  (rfl)
+
+/-- The homomorphism `a ⊗ b ↦ ρ₁(a) ⊗ ρ₂(b)` lands in degree zero. -/
+theorem gradedTensorHomOfMemZero_mem (x : E ⊗[R] F) :
+    gradedTensorHomOfMemZero ρ₁ ρ₂ hρ₁ hρ₂ x ∈ gradedTensorGrading 𝒜 ℬ 0 := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add]; exact add_mem hx hy
+  | tmul a b =>
+    simpa using tmul_mem_gradedTensorGrading 𝒜 ℬ (hρ₁ a) (hρ₂ b)
+
+end HomOfMemZero
 
 /-- Two graded algebra morphisms from the graded tensor product agree if their compositions with
 the left and right factor inclusions agree. -/
