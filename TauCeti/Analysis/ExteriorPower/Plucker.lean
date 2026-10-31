@@ -31,19 +31,20 @@ open Set
 
 namespace TauCeti
 
-/-- The squared Euclidean norm of a complex Plücker vector is bounded by the
+/-- The squared Euclidean norm of a real or complex Plücker vector is bounded by the
 product of the squared Euclidean row norms, including empty and dependent families. -/
-theorem sum_norm_plucker_sq_le {ι : Type*} [LinearOrder ι] [Fintype ι] {p : ℕ}
-    (x : Fin p → ι → ℂ) :
+theorem sum_norm_plucker_sq_le {𝕜 ι : Type*} [RCLike 𝕜] [LinearOrder ι] [Fintype ι] {p : ℕ}
+    (x : Fin p → ι → 𝕜) :
     ∑ s, ‖plucker x s‖ ^ 2 ≤ ∏ i, ∑ j, ‖x i j‖ ^ 2 := by
-  let v : Fin p → EuclideanSpace ℂ ι := fun i ↦ WithLp.toLp 2 (x i)
-  have hgram : Matrix.gram ℂ v = (Matrix.of x * (Matrix.of x).conjTranspose).transpose := by
+  let v : Fin p → EuclideanSpace 𝕜 ι := fun i ↦ WithLp.toLp 2 (x i)
+  have hgram : Matrix.gram 𝕜 v = (Matrix.of x * (Matrix.of x).conjTranspose).transpose := by
     ext i j
-    simp [Matrix.gram_apply, v, Matrix.mul_apply, inner]
-  have h := Matrix.re_det_gram_le_prod_norm_sq (𝕜 := ℂ) v
+    simp [Matrix.gram_apply, v, Matrix.mul_apply, EuclideanSpace.inner_toLp_toLp,
+      dotProduct]
+  have h := Matrix.re_det_gram_le_prod_norm_sq (𝕜 := 𝕜) v
   rw [hgram, Matrix.det_transpose, det_mul_conjTranspose_eq_sum_plucker_mul_star] at h
-  simpa [map_sum, Complex.mul_conj, Complex.normSq_eq_norm_sq, ← Complex.ofReal_pow,
-    EuclideanSpace.norm_sq_eq, v] using h
+  simpa only [map_sum, RCLike.star_def, RCLike.mul_conj, RCLike.re_ofReal_pow,
+    EuclideanSpace.norm_sq_eq, v, WithLp.ofLp_toLp] using h
 
 end TauCeti
 

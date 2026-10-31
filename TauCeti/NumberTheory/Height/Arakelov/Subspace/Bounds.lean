@@ -42,6 +42,7 @@ of the relative Arakelov heights of the vectors, even for dependent families. -/
 theorem arakelovMulHeight_plucker_le_prod (x : Fin p → ι → K) :
     arakelovMulHeight (plucker x) ≤ ∏ i, arakelovMulHeight (x i) := by
   classical
+  -- Match the coordinate Fintype chosen internally by `arakelovMulHeight_eq`.
   let _ := Fintype.ofFinite ι
   by_cases hx : LinearIndependent K x
   · have hp : plucker x ≠ 0 := (plucker_ne_zero_iff x).2 hx
@@ -61,6 +62,8 @@ theorem arakelovMulHeight_plucker_le_prod (x : Fin p → ι → K) :
     have hfin (v : FinitePlace K) :
         (⨆ s, v (plucker x s)) ≤ ∏ i, ⨆ j, v (x i j) := by
       exact ciSup_le fun s ↦ v.val.plucker_le_prod_iSup (FinitePlace.add_le v) x s
+    -- The height formula chooses `Fintype.ofFinite` for the Plücker coordinates;
+    -- align it with the powerset-cardinality instance used in the local bound.
     rw [arakelovMulHeight_eq hp,
       Subsingleton.elim (Fintype.ofFinite (powersetCard ι p))
         (powersetCard.instFintypeElemFinset ι p)]
