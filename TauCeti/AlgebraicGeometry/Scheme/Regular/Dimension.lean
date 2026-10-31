@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import Mathlib.Topology.KrullDimension
 import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Stalk
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 
 /-!

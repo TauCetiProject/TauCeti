@@ -120,6 +120,16 @@ def IsRegularOfDim (d : ℕ) : Prop :=
     DQ.HasProperty @Etale → DQ.HasProperty @Surjective →
       AlgebraicGeometry.IsRegularOfDim (D.rep U).left d
 
+/-- The defining condition of `IsRegularOfDim`: for every moduli problem `δ` represented by an
+object `U` of `Ell/B` and relatively representable, étale and surjective over `Ell/B`, the scheme
+`𝕄(𝒫, δ) = 𝒫_U` is regular of dimension `d`. -/
+theorem isRegularOfDim_def :
+    D.IsRegularOfDim d ↔
+      ∀ ⦃Q : ModuliProblem B⦄ ⦃U : EllObj B⦄ (_ : Q.RepresentableBy U) (DQ : Q.RelRepData),
+        DQ.HasProperty @Etale → DQ.HasProperty @Surjective →
+          AlgebraicGeometry.IsRegularOfDim (D.rep U).left d :=
+  (Iff.rfl)
+
 /-- **Regularity is detected by a single rigidifier.** If `δ` is represented by `U` and is
 relatively representable, étale and surjective over `Ell/B`, then `𝒫` is regular of dimension `d`
 exactly when `𝕄(𝒫, δ) = 𝒫_U` is regular of dimension `d`. -/
