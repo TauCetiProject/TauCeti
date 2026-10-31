@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Limits.Creates
 public import Mathlib.CategoryTheory.Limits.Preserves.Finite
 public import Mathlib.CategoryTheory.Monoidal.Center
+public import TauCeti.CategoryTheory.Monoidal.Limits
 
 /-!
 # Limits and colimits in the Drinfeld centre
@@ -86,29 +87,28 @@ theorem ofIsLimitβ_hom_whiskerLeft_π (U : C) (j : J) :
     (ofIsLimitβ b hb hc U).hom ≫ U ◁ c.π.app j = c.π.app j ▷ U ≫ ((b j).β U).hom :=
   IsLimit.conePointsIsoOfNatIso_hom_comp _ _ _ j
 
-omit [∀ U : C, PreservesLimit F (tensorRight U)] in
-include hc in
-/-- Two morphisms into `U ⊗ c.pt` agree if they agree after each leg `U ◁ c.π.app j`. -/
-private theorem hom_ext_whiskerLeft {U Z : C} {f g : Z ⟶ U ⊗ c.pt}
-    (h : ∀ j, f ≫ U ◁ c.π.app j = g ≫ U ◁ c.π.app j) : f = g :=
-  (isLimitOfPreserves (tensorLeft U) hc).hom_ext h
-
 /-- The half-braiding on a limit `c.pt` of objects `F.obj j` carrying half-braidings `b j`
 compatible with the morphisms of the diagram, when tensoring on either side preserves the limit.
 Each leg `c.π.app j` intertwines it with `b j`. -/
 noncomputable def ofIsLimit : HalfBraiding c.pt where
   β := ofIsLimitβ b hb hc
   -- After each leg, both sides become the monoidal axiom of `b j`: the leg is moved past the
-  -- associators and the two half-braiding components using `ofIsLimitβ_hom_whiskerLeft_π`.
-  monoidal U U' := hom_ext_whiskerLeft hc fun j ↦ by
-    rw [ofIsLimitβ_hom_whiskerLeft_π, HalfBraiding.monoidal]
-    simp only [Category.assoc, ← associator_inv_naturality_right]
-    rw [← whiskerLeft_comp_assoc U, ofIsLimitβ_hom_whiskerLeft_π, whiskerLeft_comp_assoc,
-      ← associator_naturality_middle_assoc, ← comp_whiskerRight_assoc, ofIsLimitβ_hom_whiskerLeft_π,
-      comp_whiskerRight_assoc, ← associator_inv_naturality_left_assoc]
-  naturality {U U'} f := hom_ext_whiskerLeft hc fun j ↦ by
-    rw [Category.assoc, ofIsLimitβ_hom_whiskerLeft_π, Category.assoc, ← whisker_exchange,
-      ofIsLimitβ_hom_whiskerLeft_π_assoc, whisker_exchange_assoc, HalfBraiding.naturality]
+  -- two half-braiding components using `ofIsLimitβ_hom_whiskerLeft_π`, and `monoidal` handles
+  -- the associators and whiskerings in between.
+  monoidal U U' := hc.hom_ext_whiskerLeft fun j ↦ by
+    have h := ofIsLimitβ_hom_whiskerLeft_π b hb hc
+    rw [h, HalfBraiding.monoidal]
+    calc _ = (α_ _ _ _).inv ≫ (c.π.app j ▷ U ≫ ((b j).β U).hom) ▷ U' ≫ (α_ _ _ _).hom ≫
+          U ◁ ((b j).β U').hom ≫ (α_ _ _ _).inv := by monoidal
+      _ = (α_ _ _ _).inv ≫ (ofIsLimitβ b hb hc U).hom ▷ U' ≫ (α_ _ _ _).hom ≫
+          U ◁ (c.π.app j ▷ U' ≫ ((b j).β U').hom) ≫ (α_ _ _ _).inv := by rw [← h]; monoidal
+      _ = _ := by rw [← h]; monoidal
+  -- After each leg, both sides become `c.π.app j ▷ U ≫ ((b j).β U).hom ≫ f ▷ F.obj j`, by
+  -- exchanging the whiskerings and using naturality of `b j`.
+  naturality {U U'} f := hc.hom_ext_whiskerLeft fun j ↦ by
+    simp only [Category.assoc, ← whisker_exchange]
+    simp only [ofIsLimitβ_hom_whiskerLeft_π, ofIsLimitβ_hom_whiskerLeft_π_assoc,
+      whisker_exchange_assoc, HalfBraiding.naturality]
 
 /-- Composed with the leg at `j`, the half-braiding of the limit is `b j`. -/
 @[reassoc (attr := simp)]
@@ -121,9 +121,8 @@ half-braidings `b j` intertwines `bs` with the half-braiding of the limit. -/
 theorem lift_whiskerRight_ofIsLimit_β_hom (s : Cone F) (bs : HalfBraiding s.pt)
     (hs : ∀ j U, s.π.app j ▷ U ≫ ((b j).β U).hom = (bs.β U).hom ≫ U ◁ s.π.app j) (U : C) :
     hc.lift s ▷ U ≫ ((ofIsLimit b hb hc).β U).hom = (bs.β U).hom ≫ U ◁ hc.lift s :=
-  hom_ext_whiskerLeft hc fun j ↦ by
-    rw [Category.assoc, ofIsLimit_β_hom_whiskerLeft_π, ← comp_whiskerRight_assoc, hc.fac, hs,
-      Category.assoc, ← whiskerLeft_comp, hc.fac]
+  hc.hom_ext_whiskerLeft fun j ↦ by
+    simp [← comp_whiskerRight_assoc, ← whiskerLeft_comp, hs]
 
 end Limit
 
@@ -151,38 +150,30 @@ theorem ι_whiskerRight_ofIsColimitβ_hom (U : C) (j : J) :
   IsColimit.comp_coconePointsIsoOfNatIso_hom (isColimitOfPreserves (tensorRight U) hc)
     (isColimitOfPreserves (tensorLeft U) hc) _ j
 
-omit [∀ U : C, PreservesColimit F (tensorLeft U)] in
-include hc in
-/-- Two morphisms out of `c.pt ⊗ U` agree if they agree after each leg `c.ι.app j ▷ U`. -/
-private theorem hom_ext_whiskerRight {U Z : C} {f g : c.pt ⊗ U ⟶ Z}
-    (h : ∀ j, c.ι.app j ▷ U ≫ f = c.ι.app j ▷ U ≫ g) : f = g :=
-  (isColimitOfPreserves (tensorRight U) hc).hom_ext h
-
 /-- The half-braiding on a colimit `c.pt` of objects `F.obj j` carrying half-braidings `b j`
 compatible with the morphisms of the diagram, when tensoring on either side preserves the
 colimit. Each leg `c.ι.app j` intertwines `b j` with it. -/
 noncomputable def ofIsColimit : HalfBraiding c.pt where
   β := ofIsColimitβ b hb hc
-  -- The legs `c.ι.app j` land in `((Functor.const J).obj c.pt).obj j`; the `dsimp only` steps
-  -- restore `c.pt` in the objects of the rewritten composites, which the associator naturality
-  -- lemmas need in order to match.
-  monoidal U U' := hom_ext_whiskerRight hc fun j ↦ by
-    rw [ι_whiskerRight_ofIsColimitβ_hom, HalfBraiding.monoidal]
-    simp only [Category.assoc]
+  -- Before each leg, both sides become the monoidal axiom of `b j`: the leg is moved past the
+  -- two half-braiding components using `ι_whiskerRight_ofIsColimitβ_hom`, and `monoidal`
+  -- handles the associators and whiskerings in between.
+  monoidal U U' := hc.hom_ext_whiskerRight fun j ↦ by
+    have h := ι_whiskerRight_ofIsColimitβ_hom b hb hc
+    rw [h, HalfBraiding.monoidal]
+    calc _ = (α_ _ _ _).inv ≫ ((b j).β U).hom ▷ U' ≫ (α_ _ _ _).hom ≫
+          U ◁ (((b j).β U').hom ≫ U' ◁ c.ι.app j) ≫ (α_ _ _ _).inv := by monoidal
+      _ = (α_ _ _ _).inv ≫ (((b j).β U).hom ≫ U ◁ c.ι.app j) ▷ U' ≫ (α_ _ _ _).hom ≫
+          U ◁ (ofIsColimitβ b hb hc U').hom ≫ (α_ _ _ _).inv := by rw [← h]; monoidal
+      _ = _ := by rw [← h]; monoidal
+  -- Before each leg, both sides become `((b j).β U).hom ≫ U ◁ c.ι.app j ≫ f ▷ _`, by exchanging
+  -- the whiskerings and using naturality of `b j`. The leg `c.ι.app j` lands in
+  -- `((Functor.const J).obj c.pt).obj j`, so the two sides agree only up to `rfl`.
+  naturality {U U'} f := hc.hom_ext_whiskerRight fun j ↦ by
     dsimp only [Functor.const_obj_obj]
-    rw [associator_inv_naturality_left_assoc, ← comp_whiskerRight_assoc,
-      ι_whiskerRight_ofIsColimitβ_hom, comp_whiskerRight_assoc]
-    dsimp only [Functor.const_obj_obj]
-    rw [associator_naturality_middle_assoc, ← whiskerLeft_comp_assoc,
-      ι_whiskerRight_ofIsColimitβ_hom, whiskerLeft_comp_assoc]
-    dsimp only [Functor.const_obj_obj]
-    rw [associator_inv_naturality_right]
-  naturality {U U'} f := hom_ext_whiskerRight hc fun j ↦ by
-    dsimp only [Functor.const_obj_obj]
-    rw [← whisker_exchange_assoc, ι_whiskerRight_ofIsColimitβ_hom_assoc,
-      ι_whiskerRight_ofIsColimitβ_hom, HalfBraiding.naturality_assoc]
-    dsimp only [Functor.const_obj_obj]
-    rw [whisker_exchange]
+    simp only [← whisker_exchange, ← whisker_exchange_assoc, ι_whiskerRight_ofIsColimitβ_hom,
+      ι_whiskerRight_ofIsColimitβ_hom_assoc, HalfBraiding.naturality_assoc]
+    rfl
 
 /-- Precomposed with the leg at `j`, the half-braiding of the colimit is `b j`. -/
 @[reassoc (attr := simp)]
@@ -195,9 +186,8 @@ half-braiding `bs` on `s.pt` intertwines the half-braiding of the colimit with `
 theorem desc_whiskerRight_β_hom (s : Cocone F) (bs : HalfBraiding s.pt)
     (hs : ∀ j U, s.ι.app j ▷ U ≫ (bs.β U).hom = ((b j).β U).hom ≫ U ◁ s.ι.app j) (U : C) :
     hc.desc s ▷ U ≫ (bs.β U).hom = ((ofIsColimit b hb hc).β U).hom ≫ U ◁ hc.desc s :=
-  hom_ext_whiskerRight hc fun j ↦ by
-    rw [← comp_whiskerRight_assoc, hc.fac, hs, ι_whiskerRight_ofIsColimit_β_hom_assoc,
-      ← whiskerLeft_comp, hc.fac]
+  hc.hom_ext_whiskerRight fun j ↦ by
+    simp [← comp_whiskerRight_assoc, ← whiskerLeft_comp, hs]
 
 end Colimit
 

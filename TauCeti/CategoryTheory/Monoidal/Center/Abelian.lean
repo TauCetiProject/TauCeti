@@ -34,6 +34,10 @@ centre of a fusion category.
   computed in `C` by `CategoryTheory.Center.preservesFiniteLimits_forget` and
   `CategoryTheory.Center.preservesFiniteColimits_forget`.
 
+The proof follows Sophie Morel's abelian instance on `FGModuleCat` in Mathlib
+(`Mathlib/Algebra/Category/FGModuleCat/Abelian.lean`): a functor preserving kernels and cokernels
+and reflecting isomorphisms transfers the coimage-image criterion.
+
 ## References
 
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §7.13
