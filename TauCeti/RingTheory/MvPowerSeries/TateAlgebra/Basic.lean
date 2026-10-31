@@ -132,6 +132,42 @@ variable [IsUltrametricDist R] {c : σ → ℝ} [hc : ∀ i, Fact (0 < c i)]
 theorem prod_pow_pos (t : σ →₀ ℕ) : 0 < t.prod (c · ^ ·) :=
   Finset.prod_pos fun i _ ↦ pow_pos (hc i).out _
 
+/-- A coefficientwise Cauchy sequence of restricted families that is uniformly Cauchy in the
+weighted coefficient norms has a restricted limit, with uniform weighted error estimates.
+This is the common limit construction for scalar and module-valued Gauss completeness. -/
+theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : Type*}
+    [SeminormedAddCommGroup E] [CompleteSpace E] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    (A : ℕ → (σ →₀ ℕ) → E)
+    (hcoeff : ∀ t, CauchySeq fun k ↦ A k t)
+    (hres : ∀ k, Tendsto (fun t ↦ ‖A k t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0))
+    (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t,
+      ‖A k t - A l t‖ * t.prod (c · ^ ·) < ε) :
+    ∃ a : (σ →₀ ℕ) → E,
+      Tendsto (fun t ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) ∧
+      ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
+  choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
+  -- Pass the Cauchy estimates to the coefficientwise limit uniformly in the exponent.
+  have hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t,
+      ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
+    intro ε hε
+    obtain ⟨N, hN⟩ := hC ε hε
+    exact ⟨N, fun k hk t ↦ le_of_tendsto
+      (((tendsto_const_nhds.sub (ha t)).norm).mul_const (t.prod (c · ^ ·)))
+      (eventually_atTop.mpr ⟨N, fun l hl ↦ (hN k hk l hl t).le⟩)⟩
+  refine ⟨a, ?_, hunif⟩
+  -- A uniform weighted limit again vanishes at infinity.
+  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
+    hb.trans_le (mul_nonneg (norm_nonneg _) (prod_pow_pos t).le), fun ε hε ↦ ?_⟩
+  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
+  filter_upwards [(hres N).eventually (gt_mem_nhds (half_pos hε))] with t ht
+  calc
+    ‖a t‖ * t.prod (c · ^ ·) ≤ ‖A N t‖ * t.prod (c · ^ ·) +
+        ‖A N t - a t‖ * t.prod (c · ^ ·) := by
+      rw [← add_mul]
+      exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (prod_pow_pos t).le
+    _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
+    _ = ε := add_halves ε
+
 omit hc in
 /-- The weights of exponents are multiplicative. -/
 theorem prod_pow_add (s t : σ →₀ ℕ) :
@@ -345,34 +381,15 @@ instance [CompleteSpace R] : CompleteSpace
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
   have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ coeff t (F k : MvPowerSeries σ R) :=
     (uniformContinuous_coeff_isRestrictedSubring t).comp_cauchySeq hF
-  -- Multivariate power series are coefficient functions; `a` is their coefficientwise limit.
-  choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
-  have hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t,
-      ‖coeff t (F k : MvPowerSeries σ R) - a t‖ * t.prod (c · ^ ·) ≤ ε := by
-    intro ε hε
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
-    refine ⟨N, fun k hk t ↦ le_of_tendsto
-      (((tendsto_const_nhds.sub (ha t)).norm).mul_const (t.prod (c · ^ ·)))
-      (eventually_atTop.mpr ⟨N, fun l hl ↦ ?_⟩)⟩
-    have h := norm_coeff_mul_prod_le (F k - F l) t
-    rw [AddSubgroupClass.coe_sub, map_sub] at h
-    exact h.trans ((dist_eq_norm _ _).symm.trans_le (hN k hk l hl).le)
-  have hg : IsRestricted c (a : MvPowerSeries σ R) := by
-    refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
-      hb.trans_le (mul_nonneg (norm_nonneg _) (prod_pow_pos t).le), fun ε hε ↦ ?_⟩
-    obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-    filter_upwards [((F N).2).eventually (gt_mem_nhds (half_pos hε))] with t ht
-    calc ‖coeff t (a : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
-        ≤ ‖coeff t (F N : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) +
-          ‖coeff t (F N : MvPowerSeries σ R) - a t‖ * t.prod (c · ^ ·) := by
-            rw [← add_mul]
-            exact mul_le_mul_of_nonneg_right
-              (by
-                rw [coeff_apply (a : MvPowerSeries σ R) t]
-                exact norm_le_norm_add_norm_sub
-                  (coeff t (F N : MvPowerSeries σ R)) (a t)) (prod_pow_pos t).le
-      _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
-      _ = ε := add_halves ε
+  obtain ⟨a, hg, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_coefficient_limit
+    (fun k t ↦ coeff t (F k : MvPowerSeries σ R)) hcoeff (fun k ↦ (F k).2)
+    (by
+      intro ε hε
+      obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
+      refine ⟨N, fun k hk l hl t ↦ ?_⟩
+      have h := norm_coeff_mul_prod_le (F k - F l) t
+      rw [AddSubgroupClass.coe_sub, map_sub] at h
+      exact h.trans_lt ((dist_eq_norm _ _).symm.trans_lt (hN k hk l hl)))
   refine ⟨⟨a, hg⟩, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
   refine ⟨N, fun k hk ↦ (?_ : _ ≤ ε / 2).trans_lt (half_lt_self hε)⟩
