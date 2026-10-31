@@ -218,6 +218,17 @@ structure InfiniteSlopeData (Γ : Type*) [Preorder Γ] where
 
 namespace InfiniteSlopeData
 
+/-- Infinite slope data is determined by its anchor and its unit slopes. -/
+@[ext]
+theorem ext {d e : InfiniteSlopeData Γ} (hs : d.start = e.start)
+    (hy : d.initialHeight = e.initialHeight) (hm : d.slope = e.slope) : d = e := by
+  cases d
+  cases e
+  cases hs
+  cases hy
+  cases hm
+  rfl
+
 section AddCommMonoid
 
 variable [AddCommMonoid Γ] [AddCommMonoid Γ'] (d : InfiniteSlopeData Γ)
