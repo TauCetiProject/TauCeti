@@ -21,7 +21,8 @@ of `A`, so every prime of height at most one in its support is minimal over the 
 `M`. Hence there are only finitely many such primes
 (`Module.IsTorsion.finite_setOf_mem_support_height_le_one`). Over a noetherian normal domain these
 are the height-one primes at which the characteristic divisor of `M` is supported, and the
-finiteness is what makes prime avoidance available for them.
+finiteness is what makes prime avoidance available for them
+(`Module.IsTorsion.exists_mem_forall_notMem_of_forall_not_le`).
 -/
 
 public section
@@ -59,5 +60,21 @@ theorem finite_setOf_mem_support_height_le_one [IsNoetherianRing A] [Module.Fini
     omega
   exact hM.notMem_support_of_mem_minimalPrimes (𝔭 := ⟨𝔮, h𝔮⟩) (Ideal.height_eq_zero_iff.mp h0)
     (Module.mem_support_iff_of_finite.mpr hann)
+
+/-- Prime avoidance for the primes of height at most one in the support of a finitely generated
+torsion module over a noetherian ring: an ideal contained in none of them has an element lying in
+none of them. -/
+theorem exists_mem_forall_notMem_of_forall_not_le [IsNoetherianRing A] [Module.Finite A M]
+    (hM : Module.IsTorsion A M) {I : Ideal A}
+    (hI : ∀ 𝔭 ∈ Module.support A M, 𝔭.asIdeal.height ≤ 1 → ¬ I ≤ 𝔭.asIdeal) :
+    ∃ a ∈ I, ∀ 𝔭 ∈ Module.support A M, 𝔭.asIdeal.height ≤ 1 → a ∉ 𝔭.asIdeal := by
+  by_contra! h
+  obtain ⟨_, ⟨𝔭, ⟨hmem, hht⟩, rfl⟩, hle⟩ :=
+    (Ideal.subset_union_prime_finite (f := id)
+      (hM.finite_setOf_mem_support_height_le_one.image PrimeSpectrum.asIdeal) ⊥ ⊥
+      fun _ ⟨𝔭, _, h⟩ _ _ ↦ h ▸ 𝔭.isPrime).mp fun x hx ↦ by
+        obtain ⟨𝔭, hmem, hht, hx𝔭⟩ := h x hx
+        exact Set.mem_biUnion (Set.mem_image_of_mem _ ⟨hmem, hht⟩) hx𝔭
+  exact hI 𝔭 hmem hht hle
 
 end Module.IsTorsion

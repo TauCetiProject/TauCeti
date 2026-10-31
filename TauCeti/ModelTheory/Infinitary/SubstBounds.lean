@@ -39,6 +39,8 @@ and more generally instantiates the `n` bound positions of a formula at a tuple 
   `FirstOrder.Language.BoundedFormulaInf.substBounds_substBounds`: identity and composition.
 * `FirstOrder.Language.BoundedFormulaInf.mapBound_eq_substBounds`: relabelling is substitution of
   bound positions for bound positions.
+* `FirstOrder.Language.BoundedFormulaInf.IsAtomic.substBounds`: bound substitution keeps atomic
+  formulas atomic.
 * `FirstOrder.Language.LHom.onBoundedFormulaInf_substBounds`: language maps commute with bound
   substitution.
 * `FirstOrder.Language.BoundedFormulaInf.relationsIn_substBounds`,
@@ -305,6 +307,13 @@ theorem realize_inst {M : Type w} [L.Structure M] (φ : L.BoundedFormulaInf ι �
     (t : L.Term (α ⊕ Fin 0)) (v : α → M) :
     (φ.inst t).Realize v ↔ φ.Realize v fun _ => t.realize (Sum.elim v default) :=
   (FormulaInf.realize_def _ v).trans (realize_substBounds _ φ v default)
+
+/-- Bound substitution sends atomic formulas to atomic formulas. -/
+theorem IsAtomic.substBounds {m k : ℕ} {φ : L.BoundedFormulaInf ι α m} (h : φ.IsAtomic)
+    (σ : Fin m → L.Term (α ⊕ Fin k)) : (BoundedFormulaInf.substBounds σ φ).IsAtomic := by
+  cases h with
+  | equal t₁ t₂ => exact .equal _ _
+  | rel R ts => exact .rel _ _
 
 /-! ### Occurring symbols -/
 

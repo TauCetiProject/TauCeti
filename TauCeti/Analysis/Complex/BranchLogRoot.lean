@@ -34,7 +34,7 @@ agrees with `L` because continuity of `L` confines `L z - w₀` to the strip `|i
 branch inverts `Complex.exp`. So no new analysis is involved — only the observation that a
 continuous logarithm of a holomorphic nonvanishing function is automatically holomorphic.
 
-## Attribution and upstream coordination
+## Attribution
 
 The mathematics here is an upgrade of prior Mathlib work, not a first proof. The logarithm and
 zero-free root branches rest on two efforts of Yury Kudryashov's; the germ statement rests in
@@ -60,17 +60,6 @@ assembly of those with the root branch above.
 (© Yury Kudryashov), whose `Complex.exists_mapsTo_unitBall_injOn_deriv_ne_zero` performs the same
 square-root step that the sibling file `DiscInjection.lean` re-derives on top of this API; see its
 docstring for why that lemma cannot be named by an importer.
-
-The Riemann mapping theorem is being formalized upstream at
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), which proves
-holomorphic log / `n`-th-root statements (`exists_branch_log`, `exists_branch_nthRoot`)
-**internally, as private lemmas**, alongside the argument principle, Hurwitz and Montel. The
-`ConformalMapping` roadmap's stated contribution at these layers is therefore *named, reusable API*
-rather than first proof. Accordingly the two branch declarations here are a **temporary shim**: when
-the human-curated Mathlib versions land, those should be deleted and every downstream consumer
-refactored onto them. That does not extend to `TauCeti.exists_eventuallyEq_pow_iff_dvd`: the
-upstream statements are zero-free, like the ones they replace, so they do not subsume a germ that
-vanishes.
 
 ## Roots of a germ that vanishes
 

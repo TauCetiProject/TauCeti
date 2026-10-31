@@ -16,7 +16,8 @@ For a measure `π` on `α × β` with measurable singletons, the mass that the f
 `π.map Prod.fst` gives to a point `x` is the sum of the masses of the points `(x, y)` of the row
 over `x`, when `β` is finite, and symmetrically for the second marginal. Mathlib records this for
 the extended masses (`MeasureTheory.measure_preimage_fst_singleton_eq_sum`); this file states it
-for the real masses `Measure.real`.
+for the real masses `Measure.real`. A set of zero first-marginal mass carries no mass in any
+rectangle over it (`MeasureTheory.Measure.measure_prod_eq_zero_of_fst_eq_zero`).
 
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
@@ -32,6 +33,14 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- A set of zero first-marginal mass carries no mass in any rectangle over it: if
+`σ.fst t = 0`, then `σ (t ×ˢ s) = 0` for every `s`. Neither set needs to be measurable. -/
+theorem measure_prod_eq_zero_of_fst_eq_zero {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] (σ : Measure (α × β)) {t : Set α} (ht : σ.fst t = 0) (s : Set β) :
+    σ (t ×ˢ s) = 0 :=
+  measure_mono_null (Set.prod_subset_preimage_fst t s)
+    (preimage_null_of_map_null measurable_fst.aemeasurable ht)
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [MeasurableSpace β]
   [MeasurableSingletonClass β] {π : Measure (α × β)}

@@ -31,6 +31,9 @@ The version with `m ≤` the order in place of equality, and no condition on `u`
 `AnalyticAt.eventually_natCast_le_analyticOrderAt_iff`. It rests on Hadamard's lemma in a
 distinguished variable (`AnalyticAt.exists_eventuallyEq_sub_smul`): a function analytic at
 `(x₀, y₀)` that vanishes on `y = y₀` near `x₀` is `(y - y₀) • H` near `(x₀, y₀)` with `H` analytic.
+Applied in both variables, it shows that a function of two variables vanishing on two crossing
+lines is divisible by the product of their equations
+(`AnalyticAt.exists_eventuallyEq_mul_smul`).
 
 ## References
 
@@ -125,6 +128,35 @@ theorem AnalyticAt.exists_eventuallyEq_sub_smul {G : E × 𝕜 → F} {x₀ : E}
   congr 1
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   simp [hLapply, RCLike.real_smul_eq_coe_mul]
+
+/-- **Functions vanishing on two crossing lines.** A function of two scalar variables which is
+analytic at `(a, b)` and vanishes near `(a, b)` on the lines `y = b` and `x = a` is
+`(x - a) (y - b)` times a function analytic at `(a, b)`. -/
+theorem AnalyticAt.exists_eventuallyEq_mul_smul {G : 𝕜 × 𝕜 → F} {a b : 𝕜}
+    (hG : AnalyticAt 𝕜 G (a, b)) (h₁ : ∀ᶠ x in 𝓝 a, G (x, b) = 0)
+    (h₂ : ∀ᶠ y in 𝓝 b, G (a, y) = 0) :
+    ∃ K : 𝕜 × 𝕜 → F, AnalyticAt 𝕜 K (a, b) ∧
+      ∀ᶠ p in 𝓝 (a, b), G p = ((p.1 - a) * (p.2 - b)) • K p := by
+  -- Divide by `y - b`: `G (x, y) = (y - b) • g (x, y)`.
+  obtain ⟨g, hg, hGg⟩ := hG.exists_eventuallyEq_sub_smul h₁
+  have hla : Tendsto (fun y : 𝕜 ↦ (a, y)) (𝓝 b) (𝓝 (a, b)) :=
+    (Continuous.prodMk_right a).tendsto' b (a, b) rfl
+  -- The quotient `g` vanishes on `x = a`: off `y = b` because `G` does, then by continuity.
+  have hga : ∀ᶠ y in 𝓝 b, g (a, y) = 0 := by
+    refine ((hg.continuousAt.comp hla).eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
+      (g := fun _ ↦ 0) continuousAt_const).1 ?_
+    filter_upwards [nhdsWithin_le_nhds (hla.eventually hGg), nhdsWithin_le_nhds h₂,
+      self_mem_nhdsWithin] with y hy hy₂ hne
+    rw [hy₂, eq_comm, smul_eq_zero] at hy
+    exact hy.resolve_left (sub_ne_zero.2 hne)
+  -- Divide `g` by `x - a`: `g (x, y) = (x - a) • k (y, x)`.
+  have hswap : AnalyticAt 𝕜 Prod.swap (a, b) := analyticAt_snd.prod analyticAt_fst
+  obtain ⟨k, hk, hgk⟩ := (hg.comp (f := Prod.swap) (x := (b, a))
+    (analyticAt_snd.prod analyticAt_fst)).exists_eventuallyEq_sub_smul (h0 := hga)
+  refine ⟨k ∘ Prod.swap, hk.comp (f := Prod.swap) (x := (a, b)) hswap, ?_⟩
+  filter_upwards [hGg, (continuous_swap.tendsto (a, b)).eventually hgk] with p hp hpk
+  rw [Function.comp_apply, Prod.swap_swap, Prod.snd_swap] at hpk
+  rw [hp, hpk, smul_smul, mul_comm (p.2 - b), Function.comp_apply]
 
 /-- **Order in a distinguished variable**, lower bound: a function `G` analytic at `(x₀, y₀)`
 vanishes to order at least `m` in `y` at `y₀` along every slice `x = const` near `x₀` if and only
