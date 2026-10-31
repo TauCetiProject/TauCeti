@@ -37,10 +37,12 @@ form. That comparison with the Killing form is not made in this file.
 
 The proof is the classical one. The highest root is long
 (`RootPairing.Base.rootLength_le_rootLength_highestRoot`), so `⟨α, θ^∨⟩ ∈ {-1, 0, 1}` for every
-root `α ≠ ±θ`. It is also the root of greatest height, so `⟨α, θ^∨⟩ ≥ 0` for every positive root
-`α`: otherwise `α + θ` would be a higher root. Hence `⟨α, θ^∨⟩² = ⟨α, θ^∨⟩` for the positive roots
-`α ≠ θ`, while `⟨θ, θ^∨⟩² = 4`, and summing over the positive roots gives `2 + ⟨2ρ, θ^∨⟩`. The
-negative roots contribute the same amount, and `⟨2ρ, θ^∨⟩ = 2 ht(θ^∨) = 2 (h^∨ - 1)`.
+root `α ≠ ±θ` (`RootPairing.Base.pairingIn_highestRoot_right_mem`). It is also the root of
+greatest height, so `⟨α, θ^∨⟩ ≥ 0` for every positive root `α`: otherwise `α + θ` would be a
+higher root (`RootPairing.Base.pairingIn_highestRoot_right_nonneg`). Hence
+`⟨α, θ^∨⟩² = ⟨α, θ^∨⟩` for the positive roots `α ≠ θ`, while `⟨θ, θ^∨⟩² = 4`, and summing over the
+positive roots gives `2 + ⟨2ρ, θ^∨⟩`. The negative roots contribute the same amount, and
+`⟨2ρ, θ^∨⟩ = 2 ht(θ^∨) = 2 (h^∨ - 1)`.
 
 ## Main definitions
 
@@ -48,10 +50,6 @@ negative roots contribute the same amount, and `⟨2ρ, θ^∨⟩ = 2 ht(θ^∨)
 
 ## Main results
 
-* `RootPairing.Base.pairingIn_highestRoot_right_nonneg`: a positive root pairs nonnegatively with
-  `θ^∨`.
-* `RootPairing.Base.pairingIn_highestRoot_right_mem`: a root other than `±θ` pairs with `θ^∨` to
-  `-1`, `0` or `1`.
 * `RootPairing.Base.coroot'_highestRoot_twoWeylVector` and
   `RootPairing.Base.coroot'_highestRoot_weylVector`: `⟨2ρ, θ^∨⟩ = 2 (h^∨ - 1)` and
   `⟨ρ, θ^∨⟩ = h^∨ - 1`, with `RootPairing.Base.sum_pairingIn_highestRoot_right_posRootsFinset`
@@ -77,8 +75,6 @@ since the Weyl group acts transitively on bases, is not proved here. The identit
 
 public section
 
-open Set
-
 namespace RootPairing.Base
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
@@ -93,26 +89,7 @@ noncomputable def dualCoxeterNumber : ℤ :=
 theorem dualCoxeterNumber_def : b.dualCoxeterNumber = b.flip.height b.highestRoot + 1 :=
   (rfl)
 
-/-- A positive root is not the negative of the highest root. -/
-private theorem root_ne_neg_root_highestRoot {j : ι} (hj : b.IsPos j) :
-    P.root j ≠ -P.root b.highestRoot := fun h ↦ by
-  have hj' : j = P.reflectionPerm b.highestRoot b.highestRoot :=
-    P.root.injective (by rw [h, root_reflectionPerm, reflection_apply_self])
-  have h := (TauCeti.isPos_reflectionPerm_self_iff_mem_negRoots P b b.highestRoot).mp (hj' ▸ hj)
-  exact (TauCeti.mem_negRoots P b _).mp h b.isPos_highestRoot
-
 variable [P.IsCrystallographic] [IsDomain R]
-
-/-- **A positive root pairs nonnegatively with the coroot of the highest root**,
-`0 ≤ ⟨α, θ^∨⟩`: if the pairing were negative, `α + θ` would be a root higher than `θ`. -/
-theorem pairingIn_highestRoot_right_nonneg {j : ι} (hj : b.IsPos j) :
-    0 ≤ P.pairingIn ℤ j b.highestRoot := by
-  by_contra! hneg
-  obtain ⟨k, hk⟩ := P.root_add_root_mem_of_pairingIn_neg hneg (b.root_ne_neg_root_highestRoot hj)
-  have h := b.height_le_height_highestRoot k
-  rw [b.height_add hk] at h
-  rw [isPos_iff] at hj
-  omega
 
 variable [P.IsReduced]
 
@@ -144,51 +121,26 @@ theorem coroot'_highestRoot_weylVector [Invertible (2 : R)] :
   push_cast
   ring
 
-/-- **The dual Coxeter number is at least `2`**: in the sum `∑_{α > 0} ⟨α, θ^∨⟩ = 2 (h^∨ - 1)` the
-term of `θ` is `2` and the others are nonnegative. -/
+/-- **The dual Coxeter number is at least `2`**: the coroot of the highest root is positive, so
+its height is at least `1`. -/
 theorem two_le_dualCoxeterNumber : 2 ≤ b.dualCoxeterNumber := by
-  classical
-  have hmem : b.highestRoot ∈ TauCeti.posRootsFinset P b :=
-    (TauCeti.mem_posRootsFinset P b _).mpr ((TauCeti.mem_posRoots P b _).mpr b.isPos_highestRoot)
-  have h := b.sum_pairingIn_highestRoot_right_posRootsFinset
-  rw [← Finset.add_sum_erase _ _ hmem, pairingIn_same] at h
-  have hrest : 0 ≤ ∑ j ∈ (TauCeti.posRootsFinset P b).erase b.highestRoot,
-      P.pairingIn ℤ j b.highestRoot :=
-    Finset.sum_nonneg fun j hj ↦ b.pairingIn_highestRoot_right_nonneg
-      ((TauCeti.mem_posRoots P b j).mp
-        ((TauCeti.mem_posRootsFinset P b j).mp (Finset.mem_of_mem_erase hj)))
+  -- the weight and coweight modules are reflexive, so the coroots form a reduced system too
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
+  have h := (isPos_flip_iff P b _).mpr b.isPos_highestRoot
+  rw [isPos_iff] at h
+  rw [dualCoxeterNumber_def]
   omega
 
 variable [P.IsIrreducible]
-
-/-- **A root other than `±θ` pairs with the coroot of the highest root to `-1`, `0` or `1`**,
-because the highest root is long. -/
-theorem pairingIn_highestRoot_right_mem {j : ι} (h : P.root j ≠ P.root b.highestRoot)
-    (h' : P.root j ≠ -P.root b.highestRoot) :
-    P.pairingIn ℤ j b.highestRoot ∈ ({-1, 0, 1} : Set ℤ) := by
-  have := Fintype.ofFinite ι
-  by_contra hmem
-  exact ((P.posRootForm ℤ).rootLength_lt_of_pairingIn_notMem h h' hmem).not_ge
-    (b.rootLength_le_rootLength_highestRoot (P.posRootForm ℤ) j)
-
-/-- **A positive root other than `θ` pairs with the coroot of the highest root to `0` or `1`.** -/
-theorem pairingIn_highestRoot_right_eq_zero_or_eq_one {j : ι} (hj : b.IsPos j)
-    (hne : j ≠ b.highestRoot) :
-    P.pairingIn ℤ j b.highestRoot = 0 ∨ P.pairingIn ℤ j b.highestRoot = 1 := by
-  have h0 := b.pairingIn_highestRoot_right_nonneg hj
-  have h1 := b.pairingIn_highestRoot_right_mem (P.root.injective.ne hne)
-    (b.root_ne_neg_root_highestRoot hj)
-  simp only [mem_insert_iff, mem_singleton_iff] at h1
-  omega
 
 /-- **The squares of the pairings of the roots with the coroot of the highest root sum to
 `4 h^∨`**, `∑_α ⟨α, θ^∨⟩² = 4 h^∨`. -/
 theorem sum_pairingIn_highestRoot_right_sq [Fintype ι] :
     ∑ j, P.pairingIn ℤ j b.highestRoot ^ 2 = 4 * b.dualCoxeterNumber := by
   classical
-  have hpos : Finset.univ.filter b.IsPos = TauCeti.posRootsFinset P b := by
-    ext j
-    simp [TauCeti.mem_posRootsFinset, TauCeti.mem_posRoots]
+  have hpos : Finset.univ.filter b.IsPos = TauCeti.posRootsFinset P b :=
+    (TauCeti.posRootsFinset_eq_filter P b).symm
   -- Over the positive roots `⟨α, θ^∨⟩² - ⟨α, θ^∨⟩` vanishes except at `θ`, where it is `4 - 2`.
   have hsq : ∑ j ∈ Finset.univ.filter b.IsPos,
       (P.pairingIn ℤ j b.highestRoot ^ 2 - P.pairingIn ℤ j b.highestRoot) = 2 := by
