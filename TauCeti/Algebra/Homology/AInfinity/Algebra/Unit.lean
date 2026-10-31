@@ -77,6 +77,11 @@ theorem m_eq_zero_of_eq_unit (h : 𝒜.StrictUnit e) {n : ℕ} (hn : n ≠ 2)
     (x : Fin n → A) {i : Fin n} (hi : x i = e) : 𝒜.m n x = 0 := by
   exact h.higher n hn x ⟨i, hi⟩
 
+/-- A strict unit has degree `-1` in the suspended grading. -/
+theorem mem_shift_one_piece (h : 𝒜.StrictUnit e) : e ∈ (𝒜.grading.shift 1).piece (-1) := by
+  rw [InternalGrading.shift_piece, neg_add_cancel]
+  exact h.degree_zero
+
 /-! ### The suspended Taylor map on words containing the unit -/
 
 /-- The suspended Taylor map vanishes on a word of length other than two containing the strict

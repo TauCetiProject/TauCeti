@@ -36,6 +36,8 @@ block.
 * `TauCeti.ReducedTensorWords.splice_smul`: a spliced word is linear in the letter spliced in.
 * `TauCeti.ReducedTensorWords.exists_splice_eq_of_tprod`: a letter outside the collapsed block
   survives in the spliced word.
+* `TauCeti.ReducedTensorWords.splice_two_succ_eq_splice_two_pred`: deleting an interior letter by
+  collapsing it with either neighbour gives the same word.
 * `TauCeti.ReducedTensorWords.map_splice`: mapping a spliced word maps each of its letters.
 * `TauCeti.ReducedTensorWords.deconcatenation_splice`: reduced deconcatenation of a spliced word.
 * `TauCeti.ReducedTensorWords.prepend_splice`: prepending the first letter of a tuple commutes with
@@ -197,6 +199,68 @@ theorem exists_splice_eq_of_tprod {n : ℕ} (x : Fin n → M) {p d : ℕ} (hd : 
   · refine ⟨⟨i.1 + 1 - d, by omega⟩, ?_⟩
     simp only [show ¬i.1 + 1 - d < p by omega, show i.1 + 1 - d ≠ p by omega, dite_false]
     exact congrArg x (Fin.ext (by simp; omega))
+
+/-- Collapsing all letters but the first of a tuple leaves a two-letter word. -/
+theorem splice_collapse_tail_eq {n : ℕ} (hn : 0 < n) (x : Fin (n + 1) → M) (y : M) :
+    splice R x 0 (n + 1) 1 n y = of R M (2 : ℕ+) (PiTensorProduct.tprod R ![x 0, y]) := by
+  rw [splice_eq_of_tprod R x y (a := 0) (b := n + 1) (p := 1) hn (by omega) (by omega)]
+  exact of_tprod_congr R M _ (by omega : n + 1 + 1 - n = 2) fun i ↦ by
+    match i with
+    | ⟨0, _⟩ => simp
+    | ⟨1, _⟩ => simp
+    | ⟨k + 2, hk⟩ => exact absurd hk (by omega)
+
+/-- Collapsing all letters but the last of a tuple leaves a two-letter word. -/
+theorem splice_collapse_init_eq {n : ℕ} (hn : 0 < n) (x : Fin (n + 1) → M) (y : M) :
+    splice R x 0 (n + 1) 0 n y =
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![y, x (Fin.last n)]) := by
+  rw [splice_eq_of_tprod R x y (a := 0) (b := n + 1) (p := 0) hn (by omega) (by omega)]
+  exact of_tprod_congr R M _ (by omega : n + 1 + 1 - n = 2) fun i ↦ by
+    match i with
+    | ⟨0, _⟩ => simp
+    | ⟨1, _⟩ => exact congrArg x (Fin.ext (by simp))
+    | ⟨k + 2, hk⟩ => exact absurd hk (by omega)
+
+/-- Collapsing the two letters at positions `p` and `p + 1` to the second deletes position `p`;
+for `p = 0` this leaves the last `n` letters. -/
+theorem splice_two_succ_eq_subword {n p : ℕ} (hn : 0 < n) (hp : p = 0)
+    (x : Fin (n + 1) → M) :
+    splice R x 0 (n + 1) p 2 (x ⟨p + 1, by omega⟩) = subword R x 1 n := by
+  subst hp
+  rw [splice_eq_of_tprod R x _ two_pos (by omega) (by omega),
+    subword_eq_of_tprod R x hn (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun i ↦ ?_
+  simp only [not_lt_zero, dite_false, Fin.val_cast]
+  split_ifs <;> exact congrArg x (Fin.ext (by simp; omega))
+
+/-- Collapsing the two letters at positions `p - 1` and `p` to the first deletes position `p`;
+for `p = n` this leaves the first `n` letters. -/
+theorem splice_two_pred_eq_subword {n p : ℕ} (hn : 0 < n) (hp : p + 1 = n)
+    (x : Fin (n + 1) → M) :
+    splice R x 0 (n + 1) p 2 (x ⟨p, by omega⟩) = subword R x 0 n := by
+  rw [splice_eq_of_tprod R x _ two_pos (by omega) (by omega),
+    subword_eq_of_tprod R x hn (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun i ↦ ?_
+  simp only [Fin.val_cast]
+  split_ifs <;> first
+    | omega
+    | exact congrArg x rfl
+    | exact congrArg x (Fin.ext (by dsimp only; omega))
+
+/-- Deleting the letter at an interior position `p` by collapsing it with its right neighbour or
+with its left neighbour gives the same word. -/
+theorem splice_two_succ_eq_splice_two_pred {n p : ℕ} (hp₀ : 0 < p) (hpn : p < n)
+    (x : Fin (n + 1) → M) :
+    splice R x 0 (n + 1) p 2 (x ⟨p + 1, by omega⟩) =
+      splice R x 0 (n + 1) (p - 1) 2 (x ⟨p - 1, by omega⟩) := by
+  rw [splice_eq_of_tprod R x _ two_pos (by omega) (by omega),
+    splice_eq_of_tprod R x _ two_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ rfl fun i ↦ ?_
+  simp only [Fin.val_cast]
+  split_ifs <;> first
+    | omega
+    | exact congrArg x rfl
+    | exact congrArg x (Fin.ext (by dsimp only; omega))
 
 /-- Mapping a spliced tensor word applies the map to the untouched letters and the replacement
 letter. -/

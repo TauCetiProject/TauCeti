@@ -69,90 +69,7 @@ universe uR uA
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
   {𝒜 : AInfinityAlgebra R A} {e : A}
 
-/-! ### Words cut out of a tuple -/
-
-section Words
-
-/-- Collapsing all letters but the first of a tuple leaves a two-letter word. -/
-private theorem splice_one_eq {n : ℕ} (hn : 0 < n) (x : Fin (n + 1) → A) (y : A) :
-    splice R x 0 (n + 1) 1 n y = of R A (2 : ℕ+) (PiTensorProduct.tprod R ![x 0, y]) := by
-  rw [splice_eq_of_tprod R x y (a := 0) (b := n + 1) (p := 1) hn (by omega) (by omega)]
-  exact of_tprod_congr R A _ (by omega : n + 1 + 1 - n = 2) fun i ↦ by
-    match i with
-    | ⟨0, _⟩ => simp
-    | ⟨1, _⟩ => simp
-    | ⟨k + 2, hk⟩ => exact absurd hk (by omega)
-
-/-- Collapsing all letters but the last of a tuple leaves a two-letter word. -/
-private theorem splice_zero_eq {n : ℕ} (hn : 0 < n) (x : Fin (n + 1) → A) (y : A) :
-    splice R x 0 (n + 1) 0 n y =
-      of R A (2 : ℕ+) (PiTensorProduct.tprod R ![y, x (Fin.last n)]) := by
-  rw [splice_eq_of_tprod R x y (a := 0) (b := n + 1) (p := 0) hn (by omega) (by omega)]
-  exact of_tprod_congr R A _ (by omega : n + 1 + 1 - n = 2) fun i ↦ by
-    match i with
-    | ⟨0, _⟩ => simp
-    | ⟨1, _⟩ => exact congrArg x (Fin.ext (by simp))
-    | ⟨k + 2, hk⟩ => exact absurd hk (by omega)
-
-/-- A block of length two is a two-letter word. -/
-private theorem subword_two_eq {N : ℕ} (x : Fin N → A) {p : ℕ} (hp : p + 2 ≤ N) :
-    subword R x p 2 =
-      of R A (2 : ℕ+) (PiTensorProduct.tprod R ![x ⟨p, by omega⟩, x ⟨p + 1, by omega⟩]) := by
-  rw [subword_eq_of_tprod R x two_pos hp]
-  exact of_tprod_congr R A _ rfl fun i ↦ by
-    match i with
-    | ⟨0, _⟩ => simp
-    | ⟨1, _⟩ => simp
-
-/-- Collapsing the two letters at positions `p` and `p + 1` to the second deletes position `p`;
-for `p = 0` this leaves the last `n` letters. -/
-private theorem splice_two_succ_eq_subword {n p : ℕ} (hn : 0 < n) (hp : p = 0)
-    (x : Fin (n + 1) → A) :
-    splice R x 0 (n + 1) p 2 (x ⟨p + 1, by omega⟩) = subword R x 1 n := by
-  subst hp
-  rw [splice_eq_of_tprod R x _ two_pos (by omega) (by omega),
-    subword_eq_of_tprod R x hn (by omega)]
-  refine of_tprod_congr R A _ (by omega) fun i ↦ ?_
-  simp only [not_lt_zero, dite_false, Fin.val_cast]
-  split_ifs <;> exact congrArg x (Fin.ext (by simp; omega))
-
-/-- Collapsing the two letters at positions `p - 1` and `p` to the first deletes position `p`;
-for `p = n` this leaves the first `n` letters. -/
-private theorem splice_two_pred_eq_subword {n p : ℕ} (hn : 0 < n) (hp : p + 1 = n)
-    (x : Fin (n + 1) → A) :
-    splice R x 0 (n + 1) p 2 (x ⟨p, by omega⟩) = subword R x 0 n := by
-  rw [splice_eq_of_tprod R x _ two_pos (by omega) (by omega),
-    subword_eq_of_tprod R x hn (by omega)]
-  refine of_tprod_congr R A _ (by omega) fun i ↦ ?_
-  simp only [Fin.val_cast]
-  split_ifs <;> first
-    | omega
-    | exact congrArg x rfl
-    | exact congrArg x (Fin.ext (by dsimp only; omega))
-
-/-- Deleting the letter at an interior position `p` by collapsing it with its right neighbour or
-with its left neighbour gives the same word. -/
-private theorem splice_two_succ_eq_splice_two_pred {n p : ℕ} (hp₀ : 0 < p) (hpn : p < n)
-    (x : Fin (n + 1) → A) :
-    splice R x 0 (n + 1) p 2 (x ⟨p + 1, by omega⟩) =
-      splice R x 0 (n + 1) (p - 1) 2 (x ⟨p - 1, by omega⟩) := by
-  rw [splice_eq_of_tprod R x _ two_pos (by omega) (by omega),
-    splice_eq_of_tprod R x _ two_pos (by omega) (by omega)]
-  refine of_tprod_congr R A _ rfl fun i ↦ ?_
-  simp only [Fin.val_cast]
-  split_ifs <;> first
-    | omega
-    | exact congrArg x rfl
-    | exact congrArg x (Fin.ext (by dsimp only; omega))
-
-end Words
-
 namespace StrictUnit
-
-/-- A strict unit has degree `-1` in the suspended grading. -/
-theorem mem_shift_one_piece (h : 𝒜.StrictUnit e) : e ∈ (𝒜.grading.shift 1).piece (-1) := by
-  rw [InternalGrading.shift_piece, neg_add_cancel]
-  exact h.degree_zero
 
 /-! ### The Hochschild differential of a normalized cochain -/
 
@@ -184,32 +101,33 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
     rw [Finset.mem_range] at hp hd
     by_cases hfit : 0 < d ∧ p + d ≤ n + 1
     swap
-    · rw [splice_eq_zero_of_not_fits R _ _ hfit, map_zero, smul_zero, ite_eq_right (by omega),
-        ite_eq_right (by omega), add_zero]
+    · simp (disch := omega) only [splice_eq_zero_of_not_fits R _ _ hfit, map_zero, smul_zero,
+        ite_eq_right, add_zero]
     by_cases hblock : p ≤ j.1 ∧ j.1 < p + d
     · -- The collapsed block contains the unit, so `F` kills it.
-      rw [hFe (subword_mem_degenerateWords x hfit.2 ⟨j, hblock.1, hblock.2, hj⟩), splice_zero,
-        map_zero, smul_zero, ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
+      simp (disch := omega) only [LinearMap.mem_ker.mp (hFe (subword_mem_degenerateWords x hfit.2
+        ⟨j, hblock.1, hblock.2, hj⟩)), splice_zero, map_zero, smul_zero, ite_eq_right, add_zero]
     obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.1 hfit.2
       (F (subword R x p d)) hblock
     by_cases hlen : n + 1 + 1 - d = 2
     swap
     · -- The spliced word contains the unit and does not have two letters.
-      rw [hy, h.taylor_of_tprod_eq_zero ⟨n + 1 + 1 - d, by omega⟩ hlen y ⟨k, hk.trans hj⟩,
-        smul_zero, ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
+      simp (disch := omega) only [hy,
+        h.taylor_of_tprod_eq_zero ⟨n + 1 + 1 - d, by omega⟩ hlen y ⟨k, hk.trans hj⟩, smul_zero,
+        ite_eq_right, add_zero]
     obtain rfl : n = d := by omega
     rcases Nat.lt_or_ge p 1 with hp0 | hp1
     · -- Everything but a final unit collapses.
       obtain rfl : p = 0 := by omega
       have hjn' : j = Fin.last n := Fin.ext (by rw [Fin.val_last]; omega)
-      rw [ite_eq_right (by omega), ite_eq_left ⟨rfl, rfl, by omega, by omega⟩, zero_add,
-        splice_zero_eq hfit.1, ← hjn', hj, h.taylor_of_two_unit_right]
+      simp (disch := omega) only [true_and, ite_eq_right, ite_eq_left, zero_add]
+      rw [splice_collapse_init_eq R hfit.1, ← hjn', hj, h.taylor_of_two_unit_right]
       simp
     · -- Everything but an initial unit collapses.
       obtain rfl : p = 1 := by omega
       have hj0 : j = 0 := Fin.ext (by rw [Fin.val_zero]; omega)
-      rw [ite_eq_left ⟨rfl, rfl, by omega, hfit.1⟩, ite_eq_right (by omega), add_zero,
-        splice_one_eq hfit.1, ← hj0, hj, h.taylor_of_two_unit_left]
+      simp (disch := omega) only [true_and, ite_eq_right, ite_eq_left, add_zero]
+      rw [splice_collapse_tail_eq R hfit.1, ← hj0, hj, h.taylor_of_two_unit_left]
       congr 1
       rw [Finset.sum_range_one, dite_eq_left (by omega), ← negOnePowCast_eq_intCast]
       have h𝒟0 : 𝒟 ⟨0, by omega⟩ = -1 := by rw [← h𝒟j, hj0]; rfl
@@ -256,16 +174,17 @@ private theorem apply_barDifferential_of_tprod (h : 𝒜.StrictUnit e)
     rw [Finset.mem_range] at hp hd
     by_cases hfit : 0 < d ∧ p + d ≤ n + 1
     swap
-    · rw [splice_eq_zero_of_not_fits R _ _ hfit, map_zero, smul_zero, ite_eq_right (by omega),
-        ite_eq_right (by omega), add_zero]
+    · simp (disch := omega) only [splice_eq_zero_of_not_fits R _ _ hfit, map_zero, smul_zero,
+        ite_eq_right, add_zero]
     by_cases hblock : p ≤ j.1 ∧ j.1 < p + d
     swap
     · -- The unit survives in the spliced word, which `F` kills.
       obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.1 hfit.2
         (𝒜.taylor (subword R x p d)) hblock
-      rw [hy, hFe (of_tprod_mem_degenerateWords ⟨n + 1 + 1 - d, by omega⟩ y ⟨k, hk.trans hj⟩),
-        smul_zero,
-        ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
+      simp (disch := omega) only [hy,
+        LinearMap.mem_ker.mp
+          (hFe (of_tprod_mem_degenerateWords ⟨n + 1 + 1 - d, by omega⟩ y ⟨k, hk.trans hj⟩)),
+        smul_zero, ite_eq_right, add_zero]
     by_cases hd2 : d = 2
     swap
     · -- The collapsed block contains the unit and does not have two letters.
@@ -274,14 +193,13 @@ private theorem apply_barDifferential_of_tprod (h : 𝒜.StrictUnit e)
         exact h.taylor_of_tprod_eq_zero ⟨d, hfit.1⟩ hd2 _
           ⟨⟨j.1 - p, by dsimp only; omega⟩, by
             rw [← hj]; exact congrArg x (Fin.ext (by simp; omega))⟩
-      rw [hzero, splice_zero, map_zero, smul_zero, ite_eq_right (by omega), ite_eq_right (by omega),
-        add_zero]
+      simp (disch := omega) only [hzero, splice_zero, map_zero, smul_zero, ite_eq_right, add_zero]
     subst hd2
     rcases Nat.lt_or_ge p j.1 with hpj | hpj
     · -- The block `[a, e]` collapses to the Koszul twist of `a`.
       obtain rfl : p = j.1 - 1 := by omega
-      rw [ite_eq_right (by omega), ite_eq_left ⟨rfl, rfl, by omega⟩, zero_add,
-        subword_two_eq x hfit.2]
+      simp (disch := omega) only [true_and, ite_eq_right, ite_eq_left, zero_add]
+      rw [subword_two_eq R x hfit.2]
       have hj' : (⟨j.1 - 1 + 1, by omega⟩ : Fin (n + 1)) = j := Fin.ext (by simp; omega)
       rw [hj', hj, h.taylor_of_two_unit_right,
         𝒜.grading.koszulTwist_one_apply_of_mem
@@ -290,9 +208,9 @@ private theorem apply_barDifferential_of_tprod (h : 𝒜.StrictUnit e)
       simp only [negOnePowCast_eq_intCast]
     · -- The block `[e, a]` collapses to `a`.
       obtain rfl : p = j.1 := by omega
-      rw [ite_eq_left ⟨rfl, rfl, by omega⟩, ite_eq_right (by omega), add_zero,
-        subword_two_eq x hfit.2, Fin.eta, hj, h.taylor_of_two_unit_left, negOnePowCast_eq_intCast,
-        dite_eq_left (by omega)]
+      simp (disch := omega) only [true_and, ite_eq_right, ite_eq_left, add_zero]
+      rw [subword_two_eq R x hfit.2, Fin.eta, hj, h.taylor_of_two_unit_left,
+        negOnePowCast_eq_intCast, dite_eq_left (by omega)]
   rw [Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun d hd ↦ hterm p hp d hd]
   -- Each of the two families of terms is supported at a single pair `(p, d)`.
   simp only [Finset.sum_add_distrib, ite_and, Finset.sum_ite_irrel, Finset.sum_const_zero,
@@ -325,18 +243,17 @@ private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
     have hW : splice R x 0 (n + 1) j.1 2 (if h : j.1 + 1 < n + 1 then x ⟨j.1 + 1, h⟩ else 0) =
         subword R x 1 n := by
       rw [dite_eq_left (by omega)]
-      exact splice_two_succ_eq_subword hn hj0 x
-    rw [ite_eq_left ⟨hj0, hn⟩, ite_eq_right (by omega), add_zero, ite_eq_left (by omega),
-      ite_eq_right (by omega), add_zero, hW, hj0, Finset.sum_range_zero, negOnePowCast_zero,
-      one_smul, sub_self]
+      exact splice_two_succ_eq_subword R hn hj0 x
+    simp (disch := omega) only [ite_eq_right, ite_eq_left, add_zero]
+    rw [hW, hj0, Finset.sum_range_zero, negOnePowCast_zero, one_smul, sub_self]
   rcases Nat.lt_or_ge j.1 n with hjlt | hjge
   · -- An interior unit: the collapses of `[a, e]` and `[e, a]` cancel.
     have hW : splice R x 0 (n + 1) j.1 2 (if h : j.1 + 1 < n + 1 then x ⟨j.1 + 1, h⟩ else 0) =
         splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩) := by
       rw [dite_eq_left (by omega)]
-      exact splice_two_succ_eq_splice_two_pred hj0 hjlt x
-    rw [ite_eq_right (by omega), ite_eq_right (by omega), add_zero, ite_eq_left (by omega),
-      ite_eq_left (by omega), hW, smul_smul, ← negOnePowCast_add, ← add_smul]
+      exact splice_two_succ_eq_splice_two_pred R hj0 hjlt x
+    simp (disch := omega) only [ite_eq_right, ite_eq_left, add_zero]
+    rw [hW, smul_smul, ← negOnePowCast_add, ← add_smul]
     have hsign : negOnePowCast R (S j.1) +
         negOnePowCast R (S (j.1 - 1) + (𝒟 ⟨j.1 - 1, by omega⟩ + 1)) = 0 := by
       have := hSsucc (j.1 - 1) (by omega)
@@ -348,15 +265,14 @@ private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
   · -- A unit in the last position: the collapse `m₂(F(⋯), e)` cancels that of `[a, e]`.
     obtain hjn' : j.1 = n := by omega
     have hW : splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩) = subword R x 0 n :=
-      splice_two_pred_eq_subword hn (by omega) x
+      splice_two_pred_eq_subword R hn (by omega) x
     -- The value of `F` on the first `n` letters has degree `S n + q` after suspension.
     have hdeg : F (subword R x 0 n) ∈ 𝒜.grading.piece (S n + q + 1) := by
       have hsub := subword_mem_gradedPiece x (fun i ↦ if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0)
         (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n (by omega)
       simpa [InternalGrading.shift_piece, hS] using hF.map_mem hsub
-    rw [ite_eq_right (by omega), ite_eq_left ⟨hjn', hn⟩, zero_add, ite_eq_right (by omega),
-      ite_eq_left (by omega), zero_add, hW, smul_smul, ← negOnePowCast_add,
-      𝒜.grading.koszulTwist_one_apply_of_mem hdeg,
+    simp (disch := omega) only [ite_eq_right, ite_eq_left, zero_add]
+    rw [hW, smul_smul, ← negOnePowCast_add, 𝒜.grading.koszulTwist_one_apply_of_mem hdeg,
       ← negOnePowCast_eq_intCast, smul_smul, ← negOnePowCast_add, ← sub_smul]
     have hSn : S n = S (j.1 - 1) + 𝒟 ⟨j.1 - 1, by omega⟩ := by
       rw [← hSsucc]
