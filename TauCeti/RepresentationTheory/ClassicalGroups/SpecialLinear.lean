@@ -75,7 +75,9 @@ contribute, and for those `c ^ a * c⁻¹ ^ k` is an integer power of `det g`
   matrices acting through `z ↦ z ^ a`.
 * `TauCeti.IsRationalSLRep`: rational representations of `SL n ℂ`, with
   `TauCeti.IsRationalRep.comp_toGL` restricting rational representations of `GL n ℂ`, and
-  `TauCeti.isRationalSLRep_iff_forall_exists_eval` checking rationality against any basis.
+  `TauCeti.isRationalSLRep_iff_forall_exists_eval` checking rationality against any basis, and
+  `TauCeti.IsRationalSLRep.of_surjective` and `Representation.Equiv.isRationalSLRep_iff`
+  transporting it to quotients and along equivalences.
 * `TauCeti.IsRationalRep.of_comp_toGL`: a representation of `GL n ℂ` with rational restriction to
   `SL n ℂ` and scalar matrices acting through `z ↦ z ^ a` is rational.
 
@@ -436,6 +438,43 @@ theorem isRationalSLRep_iff_forall_exists_eval
       hA.mp (Representation.toMatrix_mem_of_toMatrix_mem A b (b.reindex e) ρ
         (fun i j => hA.mpr (h i j)) q.1 q.2)
     exact ⟨b.reindex e, fun i j => P (i, j), fun s i j => hP (i, j) s⟩
+
+/-- **A quotient of a rational representation of `SL n ℂ` is rational.** -/
+theorem IsRationalSLRep.of_surjective {V : Type*} [AddCommMonoid V] [Module ℂ V]
+    {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W}
+    {σ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) V} (h : IsRationalSLRep ρ)
+    (f : Representation.IntertwiningMap ρ σ) (hf : Function.Surjective f) :
+    IsRationalSLRep σ := by
+  -- `Module.finBasis` needs an additive group; over the field `ℂ` one is recovered from the module
+  -- structure, with negation `(-1) • ·`, extending the given `AddCommMonoid`.
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup ℂ
+  obtain ⟨b, P, hP⟩ := h
+  have : Module.Finite ℂ W := Module.Finite.of_basis b
+  have : Module.Finite ℂ V := Module.Finite.of_surjective f.toLinearMap hf
+  let A : Subalgebra ℂ (SpecialLinearGroup (Fin n) ℂ → ℂ) :=
+    (aeval fun (p : Fin n × Fin n) (s : SpecialLinearGroup (Fin n) ℂ) =>
+      (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2).range
+  have hA (Q : MvPolynomial (Fin n × Fin n) ℂ) :
+      (fun s : SpecialLinearGroup (Fin n) ℂ =>
+        eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) Q) ∈ A :=
+    ⟨Q, funext fun s => by
+      simpa [aeval_eq_eval] using comp_aeval_apply _ (Pi.evalAlgHom ℂ (fun _ => ℂ) s) Q⟩
+  refine (isRationalSLRep_iff_forall_exists_eval (Module.finBasis ℂ V)).mpr fun i j => ?_
+  obtain ⟨Q, hQ⟩ := Representation.toMatrix_mem_of_toMatrix_mem_of_surjective A b
+    (Module.finBasis ℂ V) f hf (fun p l => (funext fun s => hP s p l) ▸ hA (P p l)) i j
+  refine ⟨Q, fun s => ?_⟩
+  rw [← congrFun hQ s]
+  simpa [aeval_eq_eval] using comp_aeval_apply
+    (fun (p : Fin n × Fin n) (s : SpecialLinearGroup (Fin n) ℂ) =>
+      (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (Pi.evalAlgHom ℂ (fun _ => ℂ) s) Q
+
+/-- **Rationality of a representation of `SL n ℂ` is invariant under equivalence.** -/
+theorem _root_.Representation.Equiv.isRationalSLRep_iff {V : Type*} [AddCommMonoid V]
+    [Module ℂ V] {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W}
+    {σ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) V} (e : ρ.Equiv σ) :
+    IsRationalSLRep ρ ↔ IsRationalSLRep σ :=
+  ⟨fun h => h.of_surjective e.toIntertwiningMap e.toLinearEquiv.surjective,
+    fun h => h.of_surjective e.symm.toIntertwiningMap e.symm.toLinearEquiv.surjective⟩
 
 /-- **The restriction of a rational representation of `GL n ℂ` to `SL n ℂ` is rational**: the
 determinant in the denominator of each matrix entry is `1` on `SL n ℂ`. -/
