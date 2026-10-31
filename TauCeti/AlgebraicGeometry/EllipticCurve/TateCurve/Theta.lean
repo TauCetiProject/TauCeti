@@ -41,6 +41,7 @@ through products of translates `θ(u / a)`, whose zeros are located by the zero 
 
 ## Main results
 
+* `TauCeti.summable_norm_tateTheta`: the series converges absolutely for `‖q‖ < 1`.
 * `TauCeti.hasSum_tateTheta`: the series converges for `‖q‖ < 1` in a complete normed field.
 * `TauCeti.tateTheta_zpow_mul`, `TauCeti.tateTheta_self_mul`: the transformation law under
   `u ↦ qᵏ u`.
@@ -94,19 +95,19 @@ private theorem thetaTerm_add_one (q u : Kˣ) (n : ℤ) :
   simp only [zpow_one, sub_self, mul_zero, Int.zero_ediv, zpow_zero, mul_one]
   ring
 
-private theorem summable_thetaTerm [CompleteSpace K] (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    Summable (thetaTerm q u) := by
-  have hne (n : ℤ) : thetaTerm q u n ≠ 0 :=
-    mul_ne_zero (mul_ne_zero (zpow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
-      (zpow_ne_zero _ q.ne_zero)) (zpow_ne_zero _ u.ne_zero)
+private theorem summable_norm_thetaTerm (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    Summable (fun n ↦ ‖thetaTerm q u n‖) := by
+  have hne (n : ℤ) : ‖thetaTerm q u n‖ ≠ 0 :=
+    norm_ne_zero_iff.mpr (mul_ne_zero (mul_ne_zero (zpow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
+      (zpow_ne_zero _ q.ne_zero)) (zpow_ne_zero _ u.ne_zero))
   -- The ratio of consecutive norms is `‖q‖ⁿ C` in both directions, which tends to zero.
   have ht (C : ℝ) : Tendsto (fun n : ℕ ↦ ‖(q : K)‖ ^ n * C) atTop (𝓝 0) := by
     simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) hq).mul_const C
   refine Summable.of_nat_of_neg_add_one ?_ ?_
   · refine summable_of_ratio_test_tendsto_lt_one zero_lt_one (.of_forall fun n ↦ hne n)
       ((ht ‖(u : K)‖).congr fun n ↦ ?_)
-    rw [Nat.cast_succ, thetaTerm_add_one, norm_mul, norm_neg, norm_mul, norm_zpow, zpow_natCast,
-      mul_div_cancel_right₀ _ (norm_ne_zero_iff.mpr (hne n))]
+    rw [norm_norm, norm_norm, Nat.cast_succ, thetaTerm_add_one, norm_mul, norm_neg, norm_mul,
+      norm_zpow, zpow_natCast, mul_div_cancel_right₀ _ (hne n)]
   · refine summable_of_ratio_test_tendsto_lt_one zero_lt_one (.of_forall fun n ↦ hne _)
       ((ht (‖(q : K)‖ ^ 2 / ‖(u : K)‖)).congr fun n ↦ ?_)
     -- Apply the step law at index `-(n + 2)`. Both indices are then written with the natural
@@ -116,12 +117,21 @@ private theorem summable_thetaTerm [CompleteSpace K] (q u : Kˣ) (hq : ‖(q : K
     have hidx : -(((n + 1 : ℕ) : ℤ) + 1) = -(((n + 2 : ℕ) : ℤ)) := by push_cast; ring
     have h := congrArg norm (thetaTerm_add_one q u (-((n : ℤ) + 2)))
     rw [hstep, norm_mul, norm_neg, norm_mul, norm_zpow, zpow_neg, hcast, zpow_natCast] at h
-    rw [hidx, h]
+    rw [norm_norm, norm_norm, hidx, h]
     have hq₀ : ‖(q : K)‖ ≠ 0 := norm_ne_zero_iff.mpr q.ne_zero
     have hu₀ : ‖(u : K)‖ ≠ 0 := norm_ne_zero_iff.mpr u.ne_zero
-    have h₀ : ‖thetaTerm q u (-((n + 2 : ℕ) : ℤ))‖ ≠ 0 := norm_ne_zero_iff.mpr (hne _)
+    have h₀ : ‖thetaTerm q u (-((n + 2 : ℕ) : ℤ))‖ ≠ 0 := hne _
     field_simp
     ring
+
+/-- **The theta series converges absolutely** for `‖q‖ < 1` in any normed field. -/
+theorem summable_norm_tateTheta (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    Summable (fun n : ℤ ↦ ‖(-1) ^ n * (q : K) ^ (n * (n - 1) / 2) * (u : K) ^ n‖) :=
+  summable_norm_thetaTerm q u hq
+
+private theorem summable_thetaTerm [CompleteSpace K] (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    Summable (thetaTerm q u) :=
+  (summable_norm_thetaTerm q u hq).of_norm
 
 /-- **The theta series converges** for `‖q‖ < 1` in a complete normed field. -/
 theorem hasSum_tateTheta [CompleteSpace K] (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :

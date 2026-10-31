@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Completion
 import Mathlib.Algebra.Algebra.Bilinear
+import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
@@ -48,9 +50,10 @@ The summation API parallels Mathlib's nonarchimedean ring results
 fiberwise-summation interfaces.
 
 For bilateral Laurent series `∑ₙ f(n) uⁿ` over a field, shifting the coefficients by `k` places
-multiplies the sum by `uᵏ`; over a complete ultrametric normed field, the Cauchy product
-`∑' m, f(m) g(n - m)` of the coefficients sums to the product of the two series. In such a field,
-multipliers of norm at most one preserve summability.
+multiplies the sum by `uᵏ`. The Cauchy product `∑' m, f(m) g(n - m)` of the coefficients
+sums to the product of the two series over a complete normed field when both series converge
+absolutely, and over a complete ultrametric normed field whenever both series converge. In such
+an ultrametric field, multipliers of norm at most one preserve summability.
 -/
 
 public section
@@ -352,6 +355,28 @@ theorem hasSum_laurent_shift {K : Type*} [Field K] [TopologicalSpace K] [IsTopol
   convert hf.mul_left (u ^ k) using 1
   funext n
   simp only [Function.comp_apply, Equiv.coe_addRight, add_sub_cancel_right, zpow_add₀ hu]
+  ring
+
+/-- The Cauchy product of two absolutely convergent Laurent series over a complete normed
+field. -/
+theorem hasSum_laurent_mul_of_summable_norm {K : Type*} [NormedField K] [CompleteSpace K]
+    {f g : ℤ → K} {u : K} (hu : u ≠ 0) (hf : Summable fun n ↦ ‖f n * u ^ n‖)
+    (hg : Summable fun n ↦ ‖g n * u ^ n‖) :
+    HasSum (fun n ↦ (∑' m, f m * g (n - m)) * u ^ n)
+      ((∑' n, f n * u ^ n) * ∑' n, g n * u ^ n) := by
+  let e : ℤ × ℤ ≃ ℤ × ℤ :=
+    { toFun := fun p ↦ (p.2, p.1 - p.2)
+      invFun := fun p ↦ (p.1 + p.2, p.1)
+      left_inv := fun p ↦ by simp
+      right_inv := fun p ↦ by simp }
+  have h := e.hasSum_iff.mpr
+    ((Summable.of_norm hf).hasSum.mul (Summable.of_norm hg).hasSum
+      (summable_mul_of_summable_norm hf hg))
+  convert h.prod_fiberwise fun n ↦ (h.summable.prod_factor n).hasSum using 2 with n
+  rw [← tsum_mul_right]
+  congr 1 with m
+  simp only [Function.comp_apply, e, Equiv.coe_fn_mk]
+  rw [show u ^ n = u ^ m * u ^ (n - m) by rw [← zpow_add₀ hu, add_sub_cancel]]
   ring
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]

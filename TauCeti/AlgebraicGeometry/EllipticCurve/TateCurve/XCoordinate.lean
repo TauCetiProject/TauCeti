@@ -46,7 +46,7 @@ fundamental annulus `‖q‖ < ‖u‖ ≤ 1` includes the unit circle, where th
 ## Main results
 
 * `TauCeti.exists_hasSum_tateTheta_mul_tateTheta`: the Laurent coefficients of
-  `θ(a u) θ(a⁻¹ u)` are quasi-periodic of degree two.
+  `θ(a u) θ(a⁻¹ u)` are quasi-periodic of degree two, over every complete normed field.
 * `TauCeti.exists_hasSum_tateTheta_sq_mul_tateUniformizationX`: the Laurent coefficients of
   `θ(u)² (X(u) + 2 s₁(q))` are quasi-periodic of degree two.
 * `TauCeti.exists_tateTheta_mul_tateTheta_eq`: `θ(a u) θ(a⁻¹ u) = α θ(u)² (X(u) - X(a))`.
@@ -137,22 +137,25 @@ private theorem thetaProdCoeff_one_eq (q : Kˣ) (n : ℤ) :
     thetaProdCoeff q 1 n = ∑' m, thetaCoeff q m * thetaCoeff q (n - m) := by
   simp [thetaProdCoeff]
 
-variable [IsUltrametricDist K] [CompleteSpace K]
+/-- The term of index `n` of the theta series at `b u`, written with the coefficient
+`thetaCoeff q n * bⁿ`. -/
+private theorem thetaCoeff_mul_zpow_mul_zpow (q b u : Kˣ) (n : ℤ) :
+    thetaCoeff q n * (b : K) ^ n * (u : K) ^ n =
+      (-1) ^ n * (q : K) ^ (n * (n - 1) / 2) * ((b * u : Kˣ) : K) ^ n := by
+  rw [Units.val_mul, mul_zpow, mul_assoc, thetaCoeff]
+
+variable [CompleteSpace K]
 
 private theorem hasSum_thetaProdCoeff (q a u : Kˣ) (hq : ‖(q : K)‖ < 1) :
     HasSum (fun n ↦ thetaProdCoeff q a n * (u : K) ^ n)
       (tateTheta q (a * u) * tateTheta q (a⁻¹ * u)) := by
-  have hf : HasSum (fun n ↦ thetaCoeff q n * (a : K) ^ n * (u : K) ^ n)
-      (tateTheta q (a * u)) := by
-    convert hasSum_tateTheta q (a * u) hq using 2 with n
-    rw [Units.val_mul, mul_zpow, mul_assoc, thetaCoeff]
-  have hg : HasSum (fun n ↦ thetaCoeff q n * ((a⁻¹ : Kˣ) : K) ^ n * (u : K) ^ n)
-      (tateTheta q (a⁻¹ * u)) := by
-    convert hasSum_tateTheta q (a⁻¹ * u) hq using 2 with n
-    rw [Units.val_mul, mul_zpow, mul_assoc, thetaCoeff]
-  unfold thetaProdCoeff
-  exact hasSum_laurent_mul (f := fun n ↦ thetaCoeff q n * (a : K) ^ n)
-    (g := fun n ↦ thetaCoeff q n * ((a⁻¹ : Kˣ) : K) ^ n) u.ne_zero hf hg
+  -- Both theta series converge absolutely, so their Cauchy product converges to the product.
+  have h := hasSum_laurent_mul_of_summable_norm (f := fun n ↦ thetaCoeff q n * (a : K) ^ n)
+    (g := fun n ↦ thetaCoeff q n * ((a⁻¹ : Kˣ) : K) ^ n) u.ne_zero
+    (by simpa only [thetaCoeff_mul_zpow_mul_zpow] using summable_norm_tateTheta q (a * u) hq)
+    (by simpa only [thetaCoeff_mul_zpow_mul_zpow] using summable_norm_tateTheta q (a⁻¹ * u) hq)
+  simp only [thetaCoeff_mul_zpow_mul_zpow, (hasSum_tateTheta q _ hq).tsum_eq] at h
+  exact h
 
 private theorem hasSum_thetaProdCoeff_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
     HasSum (fun n ↦ thetaProdCoeff q 1 n * (u : K) ^ n) (tateTheta q u ^ 2) := by
@@ -161,6 +164,16 @@ private theorem hasSum_thetaProdCoeff_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
 private theorem hasSum_thetaProdCoeff_one_one (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     HasSum (thetaProdCoeff q 1) 0 := by
   simpa using hasSum_thetaProdCoeff_one q 1 hq
+
+/-- **The Laurent expansion of `θ(a u) θ(a⁻¹ u)`.** Its coefficients are quasi-periodic of
+degree two, and the Laurent series converges at every unit. This holds over every complete
+normed field, archimedean or not. -/
+theorem exists_hasSum_tateTheta_mul_tateTheta (q : Kˣ) (hq : ‖(q : K)‖ < 1) (a : Kˣ) :
+    ∃ b ∈ tateThetaCoefficients q 1 2, ∀ u : Kˣ,
+      HasSum (fun n ↦ b n * (u : K) ^ n) (tateTheta q (a * u) * tateTheta q (a⁻¹ * u)) :=
+  ⟨_, thetaProdCoeff_mem q a, fun u ↦ hasSum_thetaProdCoeff q a u hq⟩
+
+variable [IsUltrametricDist K]
 
 /-- The first moment `∑ n t(n)` of the coefficients of `θ²` vanishes: it is twice the product
 of the first moment of the coefficients of `θ` with `θ(1) = 0`. -/
@@ -486,13 +499,6 @@ theorem exists_hasSum_tateTheta_sq_mul_tateUniformizationX (q : Kˣ) (hq : ‖(q
       HasSum (fun n ↦ a n * (u : K) ^ n)
         (tateTheta q u ^ 2 * (tateUniformizationX q u + 2 * divisorSumAt 1 (q : K))) :=
   ⟨_, tateXCoeff_mem q hq, fun _ hu ↦ hasSum_tateXCoeff q hq hu⟩
-
-/-- **The Laurent expansion of `θ(a u) θ(a⁻¹ u)`.** Its coefficients are quasi-periodic of
-degree two, and the Laurent series converges at every unit. -/
-theorem exists_hasSum_tateTheta_mul_tateTheta (q : Kˣ) (hq : ‖(q : K)‖ < 1) (a : Kˣ) :
-    ∃ b ∈ tateThetaCoefficients q 1 2, ∀ u : Kˣ,
-      HasSum (fun n ↦ b n * (u : K) ^ n) (tateTheta q (a * u) * tateTheta q (a⁻¹ * u)) :=
-  ⟨_, thetaProdCoeff_mem q a, fun u ↦ hasSum_thetaProdCoeff q a u hq⟩
 
 /-- On the unit circle `‖X(u) + 2 s₁(q)‖ = ‖1 - u‖⁻²`: the term `u / (1 - u)²` dominates. -/
 private theorem norm_tateUniformizationX_add (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
