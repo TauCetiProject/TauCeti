@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover.SectionSign
-public import Mathlib.Algebra.Lie.Basic
 public import Mathlib.LinearAlgebra.Basis.SMul
-public import Mathlib.LinearAlgebra.Prod
 
 /-!
 # The action of compatible sign-cover lifts on the signed shell Lie algebra
@@ -29,9 +27,10 @@ This file constructs the linear equivalence `Matrix.ShellLieAlgebra.coverEquiv �
 `H_h ↦ H_(g h)`,  `x_a ↦ s_φ(a) x_(g a)`,
 
 from `ShellLieAlgebra B` to `ShellLieAlgebra B'`, and shows that for such a compatible pair
-`(φ, g)` it preserves the bracket (`Matrix.ShellLieAlgebra.coverEquiv_lie`), so that it is an
-isomorphism of the signed Lie rings (`Matrix.ShellLieAlgebra.coverLieEquiv`). No symmetry or
-definiteness of `B` is needed for the bracket identity, since the sign identity is supplied by `φ`.
+`(φ, g)` it preserves the bracket (`Matrix.ShellLieAlgebra.coverEquiv_lie`). When `B` and `B'`
+are positive definite with even diagonal, so that the signed Lie rings are defined, it is therefore
+an isomorphism of them (`Matrix.ShellLieAlgebra.coverLieEquiv`). No symmetry or definiteness of `B`
+is needed for the bracket identity, since the sign identity is supplied by `φ`.
 The action is functorial: the identity pair acts by the identity, and a composite pair acts by the
 composite (`Matrix.ShellLieAlgebra.coverEquiv_id`, `Matrix.ShellLieAlgebra.coverEquiv_trans`). It
 is faithful when the norm-two shell spans the lattice: the Cartan vectors detect `g`, the root

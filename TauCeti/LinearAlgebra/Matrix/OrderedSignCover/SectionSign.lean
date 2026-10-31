@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover.Reindex
 public import Mathlib.Algebra.Module.Equiv.Basic
 
