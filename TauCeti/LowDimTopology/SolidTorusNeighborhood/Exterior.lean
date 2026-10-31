@@ -338,7 +338,7 @@ private theorem isOpen_knotExterior_halve_sdiff_range [T2Space X]
     IsOpen (knotExterior (Φ := Φ ∘ SolidTorus.halve) \
       range (Φ ∘ SolidTorus.halve ∘ SolidTorus.boundaryInclusion)) := by
   rw [← Function.comp_assoc, knotExterior_sdiff_range]
-  exact (isCompact_range (h.comp_halve.isEmbedding.continuous)).isClosed.isOpen_compl
+  exact (_root_.isCompact_range (h.comp_halve.isEmbedding.continuous)).isClosed.isOpen_compl
 
 variable [T2Space X] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) X]
 

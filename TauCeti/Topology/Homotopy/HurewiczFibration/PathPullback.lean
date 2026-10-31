@@ -103,6 +103,15 @@ noncomputable def toFiber (hp : IsHurewiczFibration.{u} p) (a : I) :
         (congrArg α (contractionLift_one_projection hp a x))⟩,
     by fun_prop⟩
 
+/-- The homotopy inverse of the fibre inclusion is the end of a lift, starting at the identity,
+of the contraction of the interval to `a`. -/
+theorem exists_toFiber_eq_lift (hp : IsHurewiczFibration.{u} p) (a : I) :
+    ∃ G : C(I × PathPullback p α, PathPullback p α), (∀ x, G (0, x) = x) ∧
+      (∀ s x, projection (G (s, x)) = Set.Icc.convexComb (projection x) a s) ∧
+      ∀ x, (toFiber hp a x : E) = (G (1, x)).val.2 :=
+  ⟨contractionLift hp a, contractionLift_zero hp a,
+    fun s x ↦ projection_contractionLift hp a (s, x), fun _ ↦ rfl⟩
+
 private theorem inclusion_toFiber (hp : IsHurewiczFibration.{u} p) (a : I)
     (x : PathPullback p α) : inclusion a (toFiber hp a x) = contractionLift hp a (1, x) := by
   exact Subtype.ext (Prod.ext (contractionLift_one_projection hp a x).symm rfl)
