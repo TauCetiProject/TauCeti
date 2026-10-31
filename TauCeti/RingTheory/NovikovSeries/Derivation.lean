@@ -31,10 +31,12 @@ positive periods follows from the identity between their degree derivatives.
 ## Main definitions
 
 * `TauCeti.NovikovSeries.degreeDerivation ℓ`: the degree derivation along `ℓ : H →+ R`.
+* `TauCeti.NovikovSeries.nonnegDegreeDerivation ℓ`: its restriction to the nonnegative subring.
 
 ## Main results
 
-* `TauCeti.NovikovSeries.continuous_degreeDerivation`: degree derivations are continuous.
+* `TauCeti.NovikovSeries.continuous_degreeDerivation`,
+  `TauCeti.NovikovSeries.continuous_nonnegDegreeDerivation`: degree derivations are continuous.
 * `TauCeti.NovikovSeries.degreeDerivation_algebraMap_addSubgroup`: compatibility with the inclusion
   of Novikov series on a subgroup.
 * `TauCeti.NovikovSeries.comap_degreeDerivation`: compatibility with restriction.
@@ -74,11 +76,15 @@ def degreeDerivation (ℓ : H →+ R) :
   map_smul' r a := ext fun h => mul_left_comm _ _ _
   map_one_eq_zero' := ext fun h => by
     classical
+    -- `coeff_degreeDerivation` is not available inside the definition, so unfold `toFun` by
+    -- definition: the coefficient at `h` of the image of `1` is `ℓ h * coeff 1 h`.
     change ℓ h * (1 : NovikovSeries R H N).coeff h = 0
     rw [coeff_one]
     split_ifs with hh <;> simp [hh]
   leibniz' a b := ext fun h => by
     classical
+    -- Unfold `toFun` the same way on all three images; the scalar actions `a • D b` and
+    -- `b • D a` of the Leibniz rule are multiplication in the Novikov ring by definition.
     change ℓ h * (a * b).coeff h = (a * _).coeff h + (b * _).coeff h
     set s := (finite_setOf_add_eq a b h).toFinset
     have hs : ∀ p ∈ s, p.1 + p.2 = h := fun p hp => ((Set.Finite.mem_toFinset _).1 hp).1
@@ -138,6 +144,26 @@ theorem degreeDerivation_mem_nonnegSubring (ha : a ∈ nonnegSubring R N) :
     degreeDerivation ℓ a ∈ nonnegSubring R N :=
   mem_nonnegSubring.2 fun h hh => by
     rw [coeff_degreeDerivation, mem_nonnegSubring.1 ha h hh, mul_zero]
+
+/-- The degree derivation along `ℓ`, restricted to the nonnegative subring. -/
+def nonnegDegreeDerivation : Derivation ℤ (nonnegSubring R N) (nonnegSubring R N) :=
+  Derivation.mk'
+    { toFun a := ⟨degreeDerivation ℓ a, degreeDerivation_mem_nonnegSubring ℓ a.2⟩
+      map_add' a b := Subtype.ext (map_add (degreeDerivation ℓ) _ _)
+      map_smul' n a := Subtype.ext (by simp) }
+    fun a b => Subtype.ext (by simp [Derivation.leibniz, smul_eq_mul])
+
+/-- The restricted degree derivation agrees with the degree derivation on Novikov series. -/
+@[simp]
+theorem coe_nonnegDegreeDerivation (a : nonnegSubring R N) :
+    (nonnegDegreeDerivation ℓ a : NovikovSeries R H N) = degreeDerivation ℓ a :=
+  (rfl)
+
+/-- The restricted degree derivation is continuous for the subspace topology. -/
+@[fun_prop]
+theorem continuous_nonnegDegreeDerivation :
+    Continuous (nonnegDegreeDerivation (N := N) ℓ) :=
+  ((continuous_degreeDerivation ℓ).comp continuous_subtype_val).subtype_mk _
 
 end Ring
 

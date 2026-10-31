@@ -225,6 +225,8 @@ theorem mul_derivation_log {R : Type*} [CommSemiring R] [Algebra R S] (D : Deriv
   have := IsLinearTopology.nonarchimedeanAddGroup S (M := S)
   have hgeom := hu.neg.summable_pow
   rw [hlog.unique (hgeom.hasSum.mul_right _), ← mul_assoc]
+  -- Write the remaining factor `u` as `1 - q` with `q = -(u - 1)`, so that the geometric series
+  -- identity `(1 - q) * ∑ qⁿ = 1` applies.
   nth_rw 1 [show u = 1 - -(u - 1) by ring]
   rw [hgeom.one_sub_mul_tsum_pow, one_mul, map_sub, Derivation.map_one_eq_zero, sub_zero]
 

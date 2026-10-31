@@ -182,42 +182,6 @@ theorem normNonnegSubring_one_add_sub_one_mem_posIdeal {a : nonnegSubring R N}
   apply exists_pos_mem_periodFiltration_iff.1
   exact ⟨C, hC, by simpa using algebraNorm_one_add_sub_one_mem_periodFiltration K hC.le haC⟩
 
-/-! ### The logarithm of the norm -/
-
-section Log
-
-variable {H' : Type*} [AddCommMonoid H'] {N' : H' →+ ℝ}
-
-/-- The degree derivation along `ℓ`, restricted to the nonnegative subring. -/
-private def nonnegDegreeDerivation (ℓ : H' →+ R) :
-    Derivation ℤ (nonnegSubring R N') (nonnegSubring R N') :=
-  Derivation.mk'
-    { toFun a := ⟨degreeDerivation ℓ a, degreeDerivation_mem_nonnegSubring ℓ a.2⟩
-      map_add' a b := Subtype.ext (map_add (degreeDerivation ℓ) _ _)
-      map_smul' n a := Subtype.ext (by simp) }
-    fun a b => Subtype.ext (by simp [Derivation.leibniz, smul_eq_mul])
-
-private theorem coe_nonnegDegreeDerivation (ℓ : H' →+ R) (a : nonnegSubring R N') :
-    (nonnegDegreeDerivation ℓ a : NovikovSeries R H' N') = degreeDerivation ℓ a :=
-  rfl
-
-private theorem continuous_nonnegDegreeDerivation (ℓ : H' →+ R) :
-    Continuous (nonnegDegreeDerivation (N' := N') ℓ) :=
-  ((continuous_degreeDerivation ℓ).comp continuous_subtype_val).subtype_mk _
-
-/-- A degree derivation differentiates the logarithm of a principal unit of the nonnegative
-subring logarithmically: `u * D (log u) = D u`, read in the Novikov series. -/
-private theorem mul_degreeDerivation_log [Algebra ℚ R] (ℓ : H' →+ R) {u : nonnegSubring R N'}
-    (hu : u - 1 ∈ posIdeal R N') :
-    (u : NovikovSeries R H' N') * degreeDerivation ℓ (NormedSpace.log u : nonnegSubring R N') =
-      degreeDerivation ℓ (u : NovikovSeries R H' N') := by
-  have := congrArg Subtype.val
-    ((isTopologicallyNilpotent_of_mem_posIdeal' hu).mul_derivation_log
-      (nonnegDegreeDerivation ℓ) (continuous_nonnegDegreeDerivation ℓ))
-  simpa only [Subring.coe_mul, coe_nonnegDegreeDerivation] using this
-
-end Log
-
 /-- **The logarithm of the norm is the trace of the logarithm.** Over a `ℚ`-algebra, for a
 principal unit `u` of the nonnegative subring of `Nov(R, H, N)`, the logarithm of its norm over
 the Novikov series on a finite-index subgroup `K` is the trace of its logarithm:
