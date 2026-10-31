@@ -39,6 +39,9 @@ Frobenius and tame inertia.
 A homomorphism into a commutative monoid has finite order exactly when its values have a common
 positive exponent equal to one; the source only needs a multiplication and identity.
 
+The order of the image of `g` in a quotient group `G ⧸ K` divides `n` exactly when `g ^ n` lies
+in `K`; for a finite quotient, this is how the iterates of `g` that land in `K` are counted.
+
 ## Main results
 
 * `MonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one`: the common-exponent characterization
@@ -46,6 +49,8 @@ positive exponent equal to one; the source only needs a multiplication and ident
 
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
+* `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
+  image of `g` in a quotient `G ⧸ K` divides `n` exactly when `g ^ n ∈ K`.
 * `TauCeti.natCast_natCard_sub_one_eq_neg_one`: in a finite additive group with one of
   cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
 * `TauCeti.pow_pow_totient_eq_self`: `x ^ q ^ φ(n) = x` whenever `x ^ n = 1` and `q` is prime to
@@ -98,6 +103,14 @@ theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
   rw [Nat.dvd_gcd_iff, and_iff_right (Nat.pow_factorization_sub_factorization_add_one_dvd hf hp)]
 
 end IsOfFinOrder
+
+/-- The order of the image of `g` in `G ⧸ K` divides `n` exactly when `g ^ n` lies in `K`. -/
+@[to_additive
+/-- The additive order of the image of `g` in `G ⧸ K` divides `n` exactly when `n • g` lies in
+`K`. -/]
+theorem QuotientGroup.orderOf_mk_dvd_iff_pow_mem {G : Type*} [Group G] (K : Subgroup G)
+    [K.Normal] (g : G) (n : ℕ) : orderOf (g : G ⧸ K) ∣ n ↔ g ^ n ∈ K := by
+  rw [orderOf_dvd_iff_pow_eq_one, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
 
 namespace TauCeti
 

@@ -37,7 +37,9 @@ of a principal unit into the trace of its logarithm
 
 `log (Norm u) = Tr (log u)`.
 
-This is the identity that compares the dynamical zeta functions of the two coverings. The proof
+Equivalently, `Norm (exp a) = exp (Tr a)` for `a` in the positive ideal
+(`TauCeti.NovikovSeries.algebraNorm_exp`). This is the identity that compares the dynamical zeta
+functions of the two coverings. The proof
 differentiates both sides along the degree derivations `f ∘ N` of
 `TauCeti/RingTheory/NovikovSeries/Derivation.lean`. The logarithmic derivative of the norm is the
 trace of the logarithmic derivative (`Derivation.leibniz_norm`), and a continuous derivation
@@ -230,5 +232,23 @@ theorem log_normNonnegSubring [Algebra ℚ R] {u : nonnegSubring R N}
     coe_normNonnegSubring, ← hU, Derivation.leibniz_norm (degreeDerivation (ℓ.comp K.subtype))
       (degreeDerivation ℓ) (degreeDerivation_algebraMap_addSubgroup ℓ), htrace,
     hU, ← mul_degreeDerivation_log ℓ hu, ← hU, ← mul_assoc, Units.inv_mul, one_mul, sub_self]
+
+/-- **The norm of the exponential is the exponential of the trace.** Over a `ℚ`-algebra, for a
+series `a` of the positive ideal of `Nov(R, H, N)`, the norm over the Novikov series on a
+finite-index subgroup `K` satisfies `Norm (exp a) = exp (Tr a)`. -/
+theorem algebraNorm_exp [Algebra ℚ R] {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) :
+    Algebra.norm (NovikovSeries R K (N.comp K.subtype)) (NormedSpace.exp (a : NovikovSeries R H N))
+      = NormedSpace.exp
+        (Algebra.trace (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) a) := by
+  have hnil := isTopologicallyNilpotent_of_mem_posIdeal' ha
+  -- `u = exp a` is a principal unit with `log u = a`, so its norm `v` has `log v = Tr a`.
+  have hu : NormedSpace.exp a - 1 ∈ posIdeal R N := hnil.exp_sub_one_mem ha
+  have hv := normNonnegSubring_one_add_sub_one_mem_posIdeal K hu
+  rw [add_sub_cancel] at hv
+  have hlog := log_normNonnegSubring K hu
+  rw [hnil.log_exp] at hlog
+  have hvnil := isTopologicallyNilpotent_of_mem_posIdeal' hv
+  rw [← coe_exp_of_mem_posIdeal ha, ← coe_normNonnegSubring, ← hvnil.exp_log, ← hlog,
+    coe_exp_of_mem_posIdeal (hvnil.log_mem hv)]
 
 end TauCeti.NovikovSeries
