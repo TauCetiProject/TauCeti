@@ -39,15 +39,21 @@ universe u
 variable {X Y : Scheme.{u}}
 
 /-- If `f` is finite between integral schemes with `Y` normal, and `f` is an isomorphism on
-sections over a nonempty open `W` of an affine open `V` whose preimage is nonempty, then `f` is
-bijective on sections over `V`. Restricting to `f ⁻¹ W ≅ W` and taking germs at the generic point
-embeds `Γ(X, f ⁻¹ V)` into `k(Y)`, the fraction field of `Γ(Y, V)`, as an integral extension of
-the integrally closed domain `Γ(Y, V)`. -/
+sections over a nonempty open `W` of an affine open `V`, then `f` is bijective on sections over
+`V`. Restricting to `f ⁻¹ W ≅ W` and taking germs at the generic point embeds `Γ(X, f ⁻¹ V)` into
+`k(Y)`, the fraction field of `Γ(Y, V)`, as an integral extension of the integrally closed domain
+`Γ(Y, V)`. -/
 theorem Scheme.Hom.bijective_app_of_isFinite_of_isIso_app [IsIntegral X] [IsIntegral Y]
     [IsNormalScheme Y] (f : X ⟶ Y) [IsFinite f] {V W : Y.Opens} (hV : IsAffineOpen V)
-    (hWV : W ≤ V) [Nonempty W] [Nonempty (f ⁻¹ᵁ W)] [IsIso (f.app W)] :
+    (hWV : W ≤ V) [Nonempty W] [IsIso (f.app W)] :
     Function.Bijective (f.app V) := by
   have : Nonempty V := ⟨⟨_, hWV (Classical.choice ‹Nonempty W›).2⟩⟩
+  -- An empty preimage would make `f.app W` identify the nonzero ring `Γ(Y, W)` with zero.
+  have : Nonempty (f ⁻¹ᵁ W) := by
+    by_contra h
+    have : Subsingleton Γ(X, f ⁻¹ᵁ W) := CommRingCat.subsingleton_of_isTerminal
+      (X.sheaf.isTerminalOfEqEmpty (SetLike.ext' (Set.not_nonempty_iff_eq_empty'.mp h)))
+    exact not_subsingleton Γ(Y, W) (ConcreteCategory.bijective_of_isIso (f.app W)).1.subsingleton
   have : Nonempty (f ⁻¹ᵁ V) :=
     ⟨⟨_, f.preimage_mono hWV (Classical.choice ‹Nonempty (f ⁻¹ᵁ W)›).2⟩⟩
   have := functionField_isFractionRing_of_isAffineOpen Y V hV

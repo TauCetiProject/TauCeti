@@ -70,9 +70,6 @@ theorem isIso_of_isFinite [IsReduced X] [IsIntegral Y] [IsNormalScheme Y] (f : X
   have : IsIso (f.app (Y.basicOpen g)) :=
     (isIso_morphismRestrict_iff_isIso_app f (hV.basicOpen g)).mp ‹_›
   have : Nonempty (Y.basicOpen g) := ⟨⟨y, hyg⟩⟩
-  have : Nonempty (f ⁻¹ᵁ Y.basicOpen g) := by
-    obtain ⟨x, -⟩ := (f ∣_ Y.basicOpen g).surjective ⟨y, hyg⟩
-    exact ⟨x⟩
   rw [isIso_morphismRestrict_iff_isIso_app f hV, ConcreteCategory.isIso_iff_bijective]
   exact f.bijective_app_of_isFinite_of_isIso_app hV (Y.basicOpen_le g)
 
