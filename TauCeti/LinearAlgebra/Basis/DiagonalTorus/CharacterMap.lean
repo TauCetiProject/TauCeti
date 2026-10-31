@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Divisible
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
+public import TauCeti.LinearAlgebra.End.Basic
 -- Baer's criterion for divisible groups, used only in `torusPointMap_surjective_of_injective`.
 import Mathlib.Algebra.Category.Grp.Injective
 
@@ -88,11 +89,6 @@ variable {ι κ ν R : Type*} [CommRing R]
 
 /-! ## The map on torus points dual to a map of character lattices -/
 
-/-- A basic vector of the character lattice with entry `z` is `z` times the basic character. -/
-private theorem single_eq_zsmul_single_one [DecidableEq ι] (i : ι) (z : ℤ) :
-    (Pi.single i z : ι → ℤ) = z • Pi.single i 1 := by
-  rw [← Pi.single_smul', smul_eq_mul, mul_one]
-
 section TorusPointMap
 
 variable [Fintype κ] [DecidableEq ι]
@@ -115,10 +111,10 @@ image of `s` is the value of `φ χ` at `s`. -/
 @[simp]
 theorem torusCharacter_torusPointMap [Fintype ι] (φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)) (s : κ → Rˣ)
     (χ : ι → ℤ) : torusCharacter (torusPointMap φ s) χ = torusCharacter s (φ χ) := by
-  conv_rhs => rw [← Finset.univ_sum_single χ, map_sum, torusCharacter_sum]
+  conv_rhs => rw [pi_eq_sum_univ' χ, map_sum, torusCharacter_sum]
   rw [torusCharacter_def]
   refine Finset.prod_congr rfl fun i _ => ?_
-  rw [single_eq_zsmul_single_one, map_zsmul, torusCharacter_zsmul, torusPointMap_apply]
+  rw [map_zsmul, torusCharacter_zsmul, torusPointMap_apply]
 
 /-- The identity of the character lattice gives the identity of the torus. -/
 @[simp]
@@ -168,11 +164,10 @@ hypothesis is needed: over `𝔽₂` the torus has a single point. -/
 theorem torusPointMap_injective [Finite ι] {K : Type*} [Field K] [Infinite K] :
     Function.Injective (torusPointMap (R := K) (ι := ι) (κ := κ)) := by
   intro φ ψ h
-  refine LinearMap.pi_ext fun i z => ?_
-  have hi : φ (Pi.single i 1) = ψ (Pi.single i 1) :=
-    weightChar_injective <| MonoidHom.ext fun s => by
-      simpa only [weightChar_apply, torusPointMap_apply] using congrFun (DFunLike.congr_fun h s) i
-  rw [single_eq_zsmul_single_one, map_zsmul, map_zsmul, hi]
+  refine LinearMap.pi_ext' fun i => LinearMap.ext_ring ?_
+  exact weightChar_injective (K := K) <| MonoidHom.ext fun s => by
+    simpa only [weightChar_apply, torusPointMap_apply, LinearMap.comp_apply, LinearMap.coe_single]
+      using congrFun (DFunLike.congr_fun h s) i
 
 /-- **The dual of an injective lattice map is surjective on torus points when the units are
 divisible**, for instance over an algebraically closed field. The units form a divisible, hence
@@ -199,10 +194,10 @@ theorem torusPointMap_surjective_of_injective [Finite ι] [RootableBy Rˣ ℕ]
   -- The extension `h` is the evaluation of characters at the point `u` it determines.
   let u : κ → Rˣ := fun j => (h (Pi.single j 1)).toMul
   have hu (μ : κ → ℤ) : torusCharacter u μ = (h μ).toMul := by
-    conv_rhs => rw [← Finset.univ_sum_single μ, map_sum, toMul_sum]
+    conv_rhs => rw [pi_eq_sum_univ' μ, map_sum, toMul_sum]
     rw [torusCharacter_def]
     refine Finset.prod_congr rfl fun j _ => ?_
-    rw [single_eq_zsmul_single_one, map_zsmul, toMul_zsmul]
+    rw [map_zsmul, toMul_zsmul]
   refine ⟨u, funext fun i => ?_⟩
   have hi := congrArg Additive.toMul (DFunLike.congr_fun hh (Pi.single i 1))
   rw [torusPointMap_apply, hu]
@@ -299,23 +294,5 @@ theorem IsCharacterMap.exists_eq_mul_inv [RootableBy Rˣ ℕ] (h : IsCharacterMa
 end Group
 
 end IsCharacterMap
-
-/-- **`1 - φ` is injective when a power of `φ` is a scalar other than one**, for an endomorphism
-of a torsion-free module over a domain. If `φ v = v` then `m • v = φ ^ n v = v`, so
-`(1 - m) • v = 0` and `v = 0`. For the character map `φ` of a Steinberg endomorphism some power of
-`φ` is `q • 1` with `q` a power of the characteristic. The hypothesis `m ≠ 1` cannot be dropped:
-`φ = 1` satisfies `φ ^ 1 = 1 • 1`. -/
-theorem injective_one_sub_of_pow_eq_smul_one {A M : Type*} [CommRing A] [IsDomain A]
-    [AddCommGroup M] [Module A M] [Module.IsTorsionFree A M] {φ : Module.End A M} {n : ℕ} {m : A}
-    (h : φ ^ n = m • 1) (hm : m ≠ 1) : Function.Injective ⇑(1 - φ) := by
-  rw [injective_iff_map_eq_zero]
-  intro v hv
-  -- `1 - φ ^ n = (∑ i < n, φ ^ i) * (1 - φ)` kills `v`, and it is multiplication by `1 - m`.
-  have hn : (1 - φ ^ n) v = 0 := by
-    rw [← geom_sum_mul_neg, Module.End.mul_apply, hv, map_zero]
-  have hmv : (1 - m) • v = 0 := by
-    rw [sub_smul, one_smul]
-    simpa [h] using hn
-  exact (smul_eq_zero.mp hmv).resolve_left (sub_ne_zero.mpr hm.symm)
 
 end TauCeti
