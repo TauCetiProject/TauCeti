@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Disjoint
-public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
-import Mathlib.Algebra.CharP.Two
+public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Cancellation
 
 /-!
 # Recut pairing of hexagon--rectangle terms in the commutation homotopy equation
@@ -149,95 +148,25 @@ theorem existsUnique_unpairedHexagonComposite_of_toRectangleDecomposition_eq
   exact G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
     ((G.mem_unpairedHexagonComposites C F').mp hF'.1).1 hF (hF'.2.1.trans hFD.symm)
 
-/-- Off the diagonal, a recut partner of a counted overlapping composite is again overlapping,
-has the original composite as its own recut partner, has the same weight, and is different from
-it. -/
-private theorem recut_partner {x z : GridState n} (hzx : z ≠ x)
-    {D E : GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z}
-    (hD : D ∈ G.hexagonCompositeDecompositions C x z)
-    (hdisj : ¬D.toRectangleDecomposition.HasDisjointSides)
-    (hE : E ∈ G.hexagonCompositeDecompositions C x z)
-    (h : D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) :
-    E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition ∧
-      ¬E.toRectangleDecomposition.HasDisjointSides ∧
-        G.hexagonCompositeWeight C R E = G.hexagonCompositeWeight C R D ∧ E ≠ D := by
-  have hone := (D.toRectangleDecomposition.hasDisjointSides_or_hasOneCommonSide_of_ne
-    hzx).resolve_left hdisj
-  obtain ⟨hfirst, hsecond⟩ := G.isEmpty_of_mem_hexagonCompositeDecompositions C hD
-  have hsymm := h.symm hone hfirst hsecond
-  refine ⟨hsymm, ?_, ?_, fun hED => h.middle_ne (by rw [hED])⟩
-  · exact E.toRectangleDecomposition.not_hasDisjointSides_of_hasOneCommonSide
-      (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hsymm hzx)
-  · exact G.hexagonCompositeWeight_eq_of_isRepartition C R hE hD hsymm.isRepartition
-
-/-- Off the diagonal, a counted overlapping composite has at most one recut partner among the
-counted composites. -/
-private theorem eq_of_isRecut_of_isRecut {x z : GridState n} (hzx : z ≠ x)
-    {D E E' : GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z}
-    (hD : D ∈ G.hexagonCompositeDecompositions C x z)
-    (hdisj : ¬D.toRectangleDecomposition.HasDisjointSides)
-    (hE : E ∈ G.hexagonCompositeDecompositions C x z)
-    (hE' : E' ∈ G.hexagonCompositeDecompositions C x z)
-    (h : D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition)
-    (h' : D.toRectangleDecomposition.IsRecut E'.toRectangleDecomposition) : E = E' := by
-  have hone := (D.toRectangleDecomposition.hasDisjointSides_or_hasOneCommonSide_of_ne
-    hzx).resolve_left hdisj
-  obtain ⟨hfirst, hsecond⟩ := G.isEmpty_of_mem_hexagonCompositeDecompositions C hD
-  exact G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z hE hE'
-    ((D.toRectangleDecomposition.existsUnique_isRecut hone hfirst hsecond).unique h h')
-
 variable [CharP R 2]
 
 open scoped Classical in
 /-- Off the diagonal and in characteristic two, the counted composites whose rectangles share a
-side column have the total weight of the unpaired ones: recut partners cancel in pairs. -/
+side column have the total weight of the unpaired ones: recut partners cancel in pairs
+(`GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut`). -/
 theorem sum_hexagonCompositeWeight_overlap_eq_sum_unpaired {x z : GridState n} (hzx : z ≠ x) :
     ∑ D ∈ (G.hexagonCompositeDecompositions C x z).filter
         (fun D => ¬D.toRectangleDecomposition.HasDisjointSides),
         G.hexagonCompositeWeight C R D =
       ∑ D ∈ G.unpairedHexagonComposites C x z, G.hexagonCompositeWeight C R D := by
-  set S := (G.hexagonCompositeDecompositions C x z).filter
-    (fun D => ¬D.toRectangleDecomposition.HasDisjointSides)
-  have hunpaired : S.filter (fun D => ¬∃ E ∈ G.hexagonCompositeDecompositions C x z,
-      D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) =
-        G.unpairedHexagonComposites C x z := by
-    ext D
-    simp only [S, Finset.mem_filter, mem_unpairedHexagonComposites, not_exists, not_and,
-      and_assoc]
-  -- The paired composites cancel under the involution sending each to its recut partner.
-  have hpartner : ∀ D ∈ S.filter (fun D => ∃ E ∈ G.hexagonCompositeDecompositions C x z,
-      D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition),
-      ∃ E ∈ G.hexagonCompositeDecompositions C x z,
-        D ∈ G.hexagonCompositeDecompositions C x z ∧
-          ¬D.toRectangleDecomposition.HasDisjointSides ∧
-            D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition := fun D hD => by
-    obtain ⟨hDS, E, hE, hrecut⟩ := Finset.mem_filter.mp hD
-    exact ⟨E, hE, (Finset.mem_filter.mp hDS).1, (Finset.mem_filter.mp hDS).2, hrecut⟩
-  have hpaired : ∑ D ∈ S.filter (fun D => ∃ E ∈ G.hexagonCompositeDecompositions C x z,
-      D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition),
-      G.hexagonCompositeWeight C R D = 0 := by
-    have hmem : ∀ D hD, (hpartner D hD).choose ∈ S.filter
-        (fun D => ∃ E ∈ G.hexagonCompositeDecompositions C x z,
-          D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) := fun D hD => by
-      obtain ⟨hE, hD, hdisj, hrecut⟩ := (hpartner D hD).choose_spec
-      obtain ⟨hsymm, hEdisj, -, -⟩ := G.recut_partner C R hzx hD hdisj hE hrecut
-      exact Finset.mem_filter.mpr ⟨Finset.mem_filter.mpr ⟨hE, hEdisj⟩, _, hD, hsymm⟩
-    refine Finset.sum_involution (fun D hD => (hpartner D hD).choose) ?_ ?_ hmem ?_
-    · intro D hD
-      obtain ⟨hE, hD, hdisj, hrecut⟩ := (hpartner D hD).choose_spec
-      rw [(G.recut_partner C R hzx hD hdisj hE hrecut).2.2.1]
-      exact CharTwo.add_self_eq_zero _
-    · intro D hD _
-      obtain ⟨hE, hD, hdisj, hrecut⟩ := (hpartner D hD).choose_spec
-      exact (G.recut_partner C R hzx hD hdisj hE hrecut).2.2.2
-    · intro D hD
-      obtain ⟨hE, hD', hdisj, hrecut⟩ := (hpartner D hD).choose_spec
-      obtain ⟨hsymm, hEdisj, -, -⟩ := G.recut_partner C R hzx hD' hdisj hE hrecut
-      obtain ⟨hF, -, -, hFrecut⟩ := (hpartner _ (hmem D hD)).choose_spec
-      exact G.eq_of_isRecut_of_isRecut C hzx hE hEdisj hF hD' hFrecut hsymm
-  rw [← Finset.sum_filter_add_sum_filter_not S (fun D => ∃ E ∈ G.hexagonCompositeDecompositions
-    C x z, D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition), hpaired, zero_add,
-    hunpaired]
+  rw [GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut
+    _ _ _ CharTwo.add_self_eq_zero hzx
+    (fun _ hD => G.isEmpty_of_mem_hexagonCompositeDecompositions C hD)
+    (G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z)
+    (fun _ hD _ hE h => G.hexagonCompositeWeight_eq_of_isRepartition C R hD hE h)]
+  refine Finset.sum_congr ?_ fun _ _ => rfl
+  ext D
+  simp only [Finset.mem_filter, mem_unpairedHexagonComposites]
 
 open scoped Classical in
 /-- In characteristic two, the commutation homotopy equation is equivalent to its diagonal

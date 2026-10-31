@@ -45,6 +45,8 @@ If a subring `S` of `B` is integrally closed in `B`, then its preimage under a r
 * `IsIntegrallyClosedIn.of_isLocalization_away`: the case of the localization `R[1/x]`.
 * `Subring.isIntegrallyClosedIn_comap`: the preimage of an integrally closed subring is integrally
   closed.
+* `Subring.mem_of_pow_mem_of_isIntegrallyClosedIn`: a subring integrally closed in `A` contains
+  every element some positive power of which it contains.
 -/
 
 public section
@@ -164,5 +166,13 @@ instance isIntegrallyClosedIn_comap (f : A →+* B) (S : Subring B) [IsIntegrall
     IsIntegrallyClosedIn (S.comap f) A :=
   Subring.isIntegrallyClosedIn_iff.mpr fun _ hx ↦ (Subring.isIntegrallyClosedIn_iff (S := S)).mp
     inferInstance (hx.map_of_comp_eq (f.restrict _ S fun _ hy ↦ hy) f rfl)
+
+/-- A subring `S` integrally closed in `A` contains every element `a` some positive power of which
+lies in `S`, as `a` is then integral over `S`. -/
+theorem mem_of_pow_mem_of_isIntegrallyClosedIn {S : Subring A} [IsIntegrallyClosedIn S A] {a : A}
+    {n : ℕ} (hn : 0 < n) (ha : a ^ n ∈ S) : a ∈ S := by
+  have hpow : IsIntegral S (a ^ n) := isIntegral_algebraMap (R := S) (x := (⟨a ^ n, ha⟩ : S))
+  obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow hn hpow
+  exact hy ▸ y.2
 
 end Subring

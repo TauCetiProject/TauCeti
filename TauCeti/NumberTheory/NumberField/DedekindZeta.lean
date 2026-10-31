@@ -9,9 +9,6 @@ public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 import Mathlib.Analysis.Complex.RemovableSingularity
-import Mathlib.NumberTheory.Harmonic.ZetaAsymp
-import Mathlib.NumberTheory.LSeries.Dirichlet
-import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
@@ -128,11 +125,10 @@ theorem isBigO_card_idealsLE_sub :
   simp_rw [heq]
   exact IsBigO.fun_sum fun c _ ↦ isBigO_rayClassIdealCountingFunction_sub (Modulus.one K) c
 
--- The Dirichlet coefficients of `ζ_K` minus `ρ` times those of the Riemann zeta function have
--- partial sums `O(n ^ (1 - 1 / [K : ℚ]))`.
+-- The partial sums of the Dirichlet coefficients of `ζ_K` are `ρ n + O(n ^ (1 - 1 / [K : ℚ]))`.
 private theorem isBigO_sum_Icc_dedekindZetaCoeff_sub :
-    (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n, ((fun k ↦ (dedekindZetaCoeff K k : ℂ)) -
-        (dedekindZeta_residue K : ℂ) • (1 : ℕ → ℂ)) k) =O[atTop]
+    (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n, (dedekindZetaCoeff K k : ℂ) -
+        (dedekindZeta_residue K : ℂ) * n) =O[atTop]
       fun n : ℕ ↦ (n : ℝ) ^ (1 - 1 / (Module.finrank ℚ K : ℝ)) := by
   -- The partial sums of the coefficients of `ζ_K` count the ideals of norm at most `n`.
   have hcount (n : ℕ) : ∑ k ∈ Finset.Icc 1 n, (dedekindZetaCoeff K k : ℂ) =
@@ -143,10 +139,10 @@ private theorem isBigO_sum_Icc_dedekindZetaCoeff_sub :
     rw [h]
     refine Finset.sum_congr rfl fun k hk ↦ ?_
     rw [normCoeff_one_apply, ite_eq_right (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hk).1)]
-  have hsum (n : ℕ) : ∑ k ∈ Finset.Icc 1 n, ((fun k ↦ (dedekindZetaCoeff K k : ℂ)) -
-      (dedekindZeta_residue K : ℂ) • (1 : ℕ → ℂ)) k =
+  have hsum (n : ℕ) : ∑ k ∈ Finset.Icc 1 n, (dedekindZetaCoeff K k : ℂ) -
+      (dedekindZeta_residue K : ℂ) * n =
       (((idealsLE K n).card : ℝ) - dedekindZeta_residue K * n : ℝ) := by
-    simp [Finset.sum_sub_distrib, hcount, mul_comm]
+    simp [hcount]
   simp_rw [hsum, one_div]
   exact Complex.isBigO_ofReal_left.mpr
     ((isBigO_card_idealsLE_sub K).comp_tendsto tendsto_natCast_atTop_atTop)
@@ -158,28 +154,12 @@ single pole, simple with residue `ρ`, at `s = 1`. -/
 theorem exists_differentiableOn_eq_dedekindZeta_sub : ∃ G : ℂ → ℂ,
     DifferentiableOn ℂ G {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} ∧
       ∀ s : ℂ, 1 < s.re → G s = dedekindZeta K s - dedekindZeta_residue K / (s - 1) := by
-  have hO := isBigO_sum_Icc_dedekindZetaCoeff_sub K
-  generalize hf : (fun k ↦ (dedekindZetaCoeff K k : ℂ)) -
-    (dedekindZeta_residue K : ℂ) • (1 : ℕ → ℂ) = f at hO
-  -- The partial-summation integral of `f` continues `LSeries f`; add `ρ (ζ(s) - 1 / (s - 1))`.
-  refine ⟨fun s ↦ s * (∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Finset.Icc 1 ⌊t⌋₊, f k) *
-      (t : ℂ) ^ (-(s + 1))) + dedekindZeta_residue K * riemannZeta₀ s,
-    (TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO f hO).fun_add
-      (differentiable_riemannZeta₀.const_mul _).differentiableOn, fun s hs ↦ ?_⟩
   have hr : 0 ≤ 1 - 1 / (Module.finrank ℚ K : ℝ) :=
     sub_nonneg.mpr (div_le_one_of_le₀ (Nat.one_le_cast.mpr Module.finrank_pos) (Nat.cast_nonneg _))
-  have hsζ : LSeriesSummable (fun k ↦ (dedekindZetaCoeff K k : ℂ)) s :=
-    (LSeriesSummable_dedekindZetaCoeff_iff K).mpr hs
-  have hs1 : LSeriesSummable ((dedekindZeta_residue K : ℂ) • (1 : ℕ → ℂ)) s :=
-    LSeriesSummable.smul _ (LSeriesSummable_one_iff.mpr hs)
-  have hs0 : s ≠ 1 := fun h ↦ by simp [h] at hs
-  have hrs : 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re :=
-    setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hs.le
-  dsimp only
-  rw [← LSeries_eq_mul_integral f hr hrs (hf ▸ hsζ.sub hs1) hO, ← hf, LSeries_sub hsζ hs1,
-    LSeries_smul, LSeries_one_eq_riemannZeta hs, riemannZeta_eq_inv_sub_add hs0,
-    dedekindZeta_eq_LSeries_dedekindZetaCoeff]
-  ring
+  obtain ⟨G, hG, hGζ⟩ := TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO _ _
+    hr (sub_le_self _ (by positivity)) (isBigO_sum_Icc_dedekindZetaCoeff_sub K)
+    fun s hs ↦ (LSeriesSummable_dedekindZetaCoeff_iff K).mpr hs
+  exact ⟨G, hG, fun s hs ↦ by rw [hGζ s hs, dedekindZeta_eq_LSeries_dedekindZetaCoeff]⟩
 
 /-- **The Dedekind zeta function with finitely many Euler factors deleted, across `Re s = 1`.**
 For a finite set `S` of primes of `𝓞 K`, there is a function holomorphic on the half-plane

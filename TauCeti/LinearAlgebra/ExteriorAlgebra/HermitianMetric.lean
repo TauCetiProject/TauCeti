@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Bilinear
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+public import TauCeti.LinearAlgebra.ExteriorAlgebra.DegreeScaling
 public import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
@@ -32,7 +33,10 @@ and not on the orthonormal basis used to build it.
 These are the identities behind the creation and annihilation operators of a Fock space: in the
 spinor module `⋀ W` of a complex structure, the Clifford action of a vector is a sum of a
 creation and an annihilation operator, and their adjointness makes Clifford multiplication by a
-real vector skew-Hermitian.
+real vector skew-Hermitian. The degree scaling `T_r`, which multiplies the `p`-th exterior power
+by `r ^ p`, has adjoint `T_{star r}` for `H`, so pulling `H` back along `T_r` multiplies it by
+`(star r * r) ^ p` on the `p`-th exterior power. This is how the metrics of differently
+normalized Fock actions compare.
 
 ## Main results
 
@@ -41,6 +45,9 @@ real vector skew-Hermitian.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_apply_one_one`: `H 1 1 = 1`.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq`: two bases with the same
   Hermitian form on `M` give the same Hermitian form on `⋀ M`.
+* `ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_left`: `H (T_r s) t = H s (T_{star r} t)`.
+* `ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_degreeScaling_of_mem_exteriorPower`:
+  `H (T_r s) (T_r t) = (star r * r) ^ p * H s t` for `s` in the `p`-th exterior power.
 
 ## References
 
@@ -154,5 +161,43 @@ theorem toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq {I' : Type*} [Fintype
   | ι_mul s m hs =>
     refine LinearMap.ext fun t ↦ ?_
     rw [toLinearMapₛₗ₂_ι_mul_left, toLinearMapₛₗ₂_ι_mul_left, hs, h]
+
+/-- **The adjoint of the degree scaling by `r` is the degree scaling by `star r`**: for the form `H`
+making the wedge basis orthonormal, `H (T_r s) t = H s (T_{star r} t)`. -/
+theorem toLinearMapₛₗ₂_degreeScaling_left (r : Rˣ) (s t : _root_.ExteriorAlgebra R M) :
+    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) (degreeScaling r s) t =
+      toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) s (degreeScaling (star r) t) := by
+  set H := toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+    (1 : Matrix (Finset I) (Finset I) R)
+  have key : H.comp (degreeScaling r).toLinearMap =
+      H.compl₂ (degreeScaling (star r)).toLinearMap := by
+    refine LinearMap.ext_basis b.ExteriorAlgebra b.ExteriorAlgebra fun S T ↦ ?_
+    simp only [H, LinearMap.comp_apply, LinearMap.compl₂_apply, AlgEquiv.toLinearMap_apply,
+      degreeScaling_basis, map_smulₛₗ, LinearMap.smul_apply, toLinearMapₛₗ₂_apply_basis,
+      one_apply, Units.coe_star, smul_eq_mul, starRingEnd_apply, star_pow, RingHom.id_apply]
+    split_ifs with hST
+    · rw [hST]
+    · simp only [mul_zero]
+  exact LinearMap.congr_fun₂ key s t
+
+/-- **The degree scaling rescales the metric on each exterior power**: for the form `H` making the
+wedge basis orthonormal and `s` in the `p`-th exterior power, `H (T_r s) (T_r t)` is
+`(star r * r) ^ p` times `H s t`. -/
+theorem toLinearMapₛₗ₂_degreeScaling_degreeScaling_of_mem_exteriorPower (r : Rˣ) {p : ℕ}
+    {s : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M) (t : _root_.ExteriorAlgebra R M) :
+    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) (degreeScaling r s) (degreeScaling r t) =
+      (star (r : R) * r) ^ p * toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) s t := by
+  -- Move the right-hand scaling across as `T_{star r}`, which also acts on `s` by a scalar.
+  have h := toLinearMapₛₗ₂_degreeScaling_left b (star r) s t
+  rw [star_star] at h
+  rw [degreeScaling_of_mem_exteriorPower r hs, map_smulₛₗ, LinearMap.smul_apply, ← h,
+    degreeScaling_of_mem_exteriorPower _ hs, map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul,
+    smul_eq_mul]
+  simp only [Units.coe_star, starRingEnd_apply, star_pow, star_star]
+  ring
 
 end ExteriorAlgebra
