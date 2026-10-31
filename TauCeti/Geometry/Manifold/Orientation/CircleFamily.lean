@@ -72,9 +72,8 @@ private theorem orientation_eq_orientationAt_orientation_iff_eval₂ {z : Circle
     (b : Module.Basis (Fin 2) ℝ (TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) z)) :
     b.orientation = CircleFamily.orientation.orientationAt z ↔
       0 < SmoothBundleForm.eval₂ totalForm z (b 0) (b 1) := by
-  have hb : (⇑b : Fin 2 → TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) z) = ![b 0, b 1] := by
-    ext i
-    fin_cases i <;> rfl
+  have hb : (⇑b : Fin 2 → TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) z) = ![b 0, b 1] :=
+    (FinVec.etaExpand_eq _).symm
   rw [orientation_eq_orientationAt_orientation_iff, SmoothBundleForm.eval₂_apply, ← hb]
 
 /-- **Base followed by fiber.** At a point `x` of the circle of period `p`, a tangent basis whose

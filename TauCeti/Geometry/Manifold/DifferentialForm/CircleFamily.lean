@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Leibniz
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 public import TauCeti.Geometry.Manifold.Instances.CircleFamily
 
@@ -172,7 +173,7 @@ theorem not_isClosed_timeForm : ¬ timeForm.IsClosed := by
     g.contMDiff.mdifferentiable (by simp)
   have h0 := congrArg (mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) g)
     (((SmoothForm.isClosed_def _).mp h).symm.trans mextDeriv_timeForm)
-  have hp : (fun z : CircleFamily ↦ (z.period : ℝ)) ∘ g = Subtype.val ∘ Prod.fst := by
+  have hp : (fun z : CircleFamily ↦ (z.period : ℝ)) ∘ g = fun w ↦ (w.1 : ℝ) := by
     funext w
     simp [g]
   have hangle : angle ∘ g = Prod.snd :=
@@ -187,22 +188,13 @@ theorem not_isClosed_timeForm : ¬ timeForm.IsClosed := by
   have h1 := DFunLike.congr_fun (congrFun h0 w) ![e₁, e₂]
   -- `erw`: the degree `0 + 1` of `dp` is `1` only up to reduction.
   erw [RoughForm.wedge_apply_one_one] at h1
-  have hfst (v : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) w) :
-      mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ) (Subtype.val ∘ Prod.fst) w v = v.1 := by
-    rw [mfderiv_comp w (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
-      mdifferentiableAt_fst, ContinuousLinearMap.comp_apply, Manifold.mfderiv_subtype_val,
-      ContinuousLinearEquiv.coe_coe, Manifold.tangentSpaceOpenEquiv_apply, mfderiv_fst]
-    -- Tangent vectors of `ℝ_{>0} × AddCircle 1` are pairs of real numbers.
-    rfl
   have hsnd (v : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) w) :
       mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ) (Prod.snd : PositivePeriod × AddCircle (1 : ℝ) → _) w v =
         v.2 := by
     rw [mfderiv_snd]
     -- Tangent vectors of `ℝ_{>0} × AddCircle 1` are pairs of real numbers.
     rfl
-  simp only [mpullback_apply, mextDeriv_ofFunction,
-    ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply, hfst,
-    hsnd] at h1
+  simp only [mpullback_apply, mextDeriv_ofFunction_coe_fst_apply, hsnd] at h1
   -- The time form of the circle sends each tangent vector to itself; `erw` because the
   -- tangent vectors here are read as real numbers.
   erw [AddCircle.timeForm_apply, AddCircle.timeForm_apply] at h1
@@ -233,6 +225,23 @@ theorem mpullback_representative_angleForm :
       (contMDiff_normalizedTime (n := ∞).mdifferentiable (by simp)) mdifferentiable_id]
   rfl
 
+/-- On the real cover, the product rule for `t = p * (t / p)` expresses `dt` through `dp` and
+`d(t / p)`. -/
+private theorem mextDeriv_ofFunction_snd_eq_mul (z : PositivePeriod × ℝ) :
+    mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ)) fun z : PositivePeriod × ℝ ↦ z.2) z =
+      (z.1 : ℝ) • mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+          fun z : PositivePeriod × ℝ ↦ z.2 / (z.1 : ℝ)) z +
+        (z.2 / (z.1 : ℝ)) • mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+          fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) z := by
+  have ht : (fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) * (fun z ↦ z.2 / (z.1 : ℝ)) =
+      fun z ↦ z.2 := by
+    funext z
+    simp [mul_div_cancel₀ _ z.1.property.ne']
+  rw [← ht]
+  exact mextDeriv_ofFunction_mul
+    ((contMDiff_subtype_val.comp contMDiff_fst (n := ∞)).mdifferentiable (by simp) z)
+    (contMDiff_normalizedTime (n := ∞).mdifferentiable (by simp) z)
+
 /-- On the real cover `Q(p, t) = (p, [t]_p)`, the time form is `dt - (t / p) • dp`. -/
 theorem mpullback_representative_timeForm :
     mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) representative timeForm.1 =
@@ -242,20 +251,10 @@ theorem mpullback_representative_timeForm :
             fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) z := by
   funext z
   have hβ := congrFun mpullback_representative_angleForm z
-  -- The product rule for `t = p * (t / p)`.
-  have hprod := mextDeriv_ofFunction_mul (x := z)
-    (f := fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) (g := fun z ↦ z.2 / (z.1 : ℝ))
-    ((contMDiff_subtype_val.comp contMDiff_fst (n := ∞)).mdifferentiable (by simp) z)
-    (contMDiff_normalizedTime (n := ∞).mdifferentiable (by simp) z)
-  have ht : (fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) * (fun z ↦ z.2 / (z.1 : ℝ)) =
-      fun z ↦ z.2 := by
-    funext z
-    simp [mul_div_cancel₀ _ z.1.property.ne']
-  rw [ht] at hprod
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   have hv := DFunLike.congr_fun hβ v
   simp only [mpullback_apply] at hv ⊢
-  rw [timeForm_apply, hv, Pi.sub_apply, hprod]
+  rw [timeForm_apply, hv, Pi.sub_apply, mextDeriv_ofFunction_snd_eq_mul]
   simp
 
 /-- The period of a real representative is its first coordinate. -/
@@ -298,21 +297,9 @@ theorem mpullback_representative_mextDeriv_timeForm :
     period_comp_representative]
   funext z
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  -- The product rule for `t = p * (t / p)` expresses `dt` through `dp` and `d(t / p)`.
-  have hprod := mextDeriv_ofFunction_mul (x := z)
-    (f := fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) (g := fun z ↦ z.2 / (z.1 : ℝ))
-    ((contMDiff_subtype_val.comp contMDiff_fst (n := ∞)).mdifferentiable (by simp) z)
-    (contMDiff_normalizedTime (n := ∞).mdifferentiable (by simp) z)
-  have ht : (fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) * (fun z ↦ z.2 / (z.1 : ℝ)) =
-      fun z ↦ z.2 := by
-    funext z
-    simp [mul_div_cancel₀ _ z.1.property.ne']
-  rw [ht] at hprod
-  have hv : v = ![v 0, v 1] := by
-    ext i
-    fin_cases i <;> rfl
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv, ContinuousAlternatingMap.smul_apply, RoughForm.wedge_apply_one_one,
-    RoughForm.wedge_apply_one_one, hprod]
+    RoughForm.wedge_apply_one_one, mextDeriv_ofFunction_snd_eq_mul]
   have hp : (z.1 : ℝ) ≠ 0 := z.1.property.ne'
   simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   field_simp
@@ -353,39 +340,11 @@ theorem mpullback_representative_totalForm :
     period_comp_representative]
   funext z
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  have hv : v = ![v 0, v 1] := by
-    ext i
-    fin_cases i <;> rfl
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv, RoughForm.wedge_apply_one_one, RoughForm.wedge_apply_one_one]
   simp only [Pi.sub_apply, ContinuousAlternatingMap.sub_apply, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul]
   ring
-
-/-- On the real cover, the differential of the period reads the period coordinate of a tangent
-vector. -/
-private theorem mextDeriv_ofFunction_fst_apply (z : PositivePeriod × ℝ)
-    (v : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) z) :
-    mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
-      fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) z ![v] = v.1 := by
-  have h : (fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) = Subtype.val ∘ Prod.fst := rfl
-  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
-    mvfderiv_apply_eq_mfderiv_apply, h, mfderiv_comp z
-      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) mdifferentiableAt_fst,
-    ContinuousLinearMap.comp_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
-    Manifold.tangentSpaceOpenEquiv_apply, mfderiv_fst]
-  -- Tangent vectors of `ℝ_{>0} × ℝ` are pairs of real numbers.
-  rfl
-
-/-- On the real cover, the differential of the time coordinate reads the time coordinate of a
-tangent vector. -/
-private theorem mextDeriv_ofFunction_snd_apply (z : PositivePeriod × ℝ)
-    (v : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) z) :
-    mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
-      fun z : PositivePeriod × ℝ ↦ z.2) z ![v] = v.2 := by
-  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
-    mvfderiv_apply_eq_mfderiv_apply, mfderiv_snd]
-  -- Tangent vectors of `ℝ_{>0} × ℝ` are pairs of real numbers.
-  rfl
 
 /-- Read through the real cover `Q(p, t) = (p, [t]_p)`, the total form is the coordinate area form
 `dp ∧ dt`: it pairs the images of tangent vectors `v` and `w` of `ℝ_{>0} × ℝ` to
@@ -397,13 +356,11 @@ theorem eval₂_totalForm_mfderiv_representative (y : PositivePeriod × ℝ)
         (mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) representative y w) =
       v.1 * w.2 - w.1 * v.2 := by
   have h := DFunLike.congr_fun (congrFun mpullback_representative_totalForm y) ![v, w]
-  rw [mpullback_apply, RoughForm.wedge_apply_one_one, mextDeriv_ofFunction_fst_apply,
-    mextDeriv_ofFunction_fst_apply, mextDeriv_ofFunction_snd_apply,
+  rw [mpullback_apply, RoughForm.wedge_apply_one_one, mextDeriv_ofFunction_coe_fst_apply,
+    mextDeriv_ofFunction_coe_fst_apply, mextDeriv_ofFunction_snd_apply,
     mextDeriv_ofFunction_snd_apply] at h
-  rw [SmoothBundleForm.eval₂_apply, ← h]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
+  rw [SmoothBundleForm.eval₂_apply]
+  exact (congrArg (totalForm.1 (representative y)) (FinVec.etaExpand_eq _)).trans h
 
 /-- The total form `dp ∧ η` vanishes nowhere. -/
 theorem totalForm_apply_ne_zero (z : CircleFamily) : totalForm.1 z ≠ 0 := by
@@ -429,10 +386,8 @@ theorem eval₂_totalForm_mfderiv_mk (p : PositivePeriod) (x : AddCircle (p : �
   have hη := DFunLike.congr_fun (congrFun (congrArg Subtype.val (mpullback_mk_timeForm p)) x) ![w]
   rw [SmoothForm.coe_mpullback, mpullback_apply] at hη
   have hw : (fun i ↦ mfderiv 𝓘(ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (mk p) x (![w] i)) =
-      ![mfderiv 𝓘(ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (mk p) x w] := by
-    ext i
-    fin_cases i
-    rfl
+      ![mfderiv 𝓘(ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (mk p) x w] :=
+    (FinVec.etaExpand_eq _).symm
   rw [hw] at hη
   -- The period is constant on the fiber, so `dp` vanishes on fiber directions.
   have hp : mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
