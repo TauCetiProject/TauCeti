@@ -73,6 +73,19 @@ abbrev IsLink.toBidirectedHom {e : β} {x y : α} (h : G.IsLink e x y) :
     G.BidirectedHom ⟨x, h.left_mem⟩ ⟨y, h.right_mem⟩ :=
   ⟨e, h⟩
 
+/-- The map from bidirected arrows crossing a vertex set in the outward direction to their
+underlying edges is injective. -/
+theorem bidirectedHom_edge_injOn_cut (S : Set V(G)) :
+    Set.InjOn (fun a : Σ x y, G.BidirectedHom x y ↦ a.2.2.1)
+      {a | a.1 ∈ S ∧ a.2.1 ∉ S} := by
+  rintro ⟨x, y, e, hxy⟩ ⟨hx, hy⟩ ⟨x', y', e', hxy'⟩ ⟨hx', hy'⟩ (rfl : e = e')
+  rcases hxy.eq_and_eq_or_eq_and_eq hxy' with ⟨h₁, h₂⟩ | ⟨h₁, -⟩
+  · obtain rfl : x = x' := Subtype.ext h₁
+    obtain rfl : y = y' := Subtype.ext h₂
+    rfl
+  · obtain rfl : x = y' := Subtype.ext h₁
+    exact absurd hx hy'
+
 namespace Walk
 
 /-- A walk of `G` from an actual vertex, as a directed walk of the bidirected arrow family that

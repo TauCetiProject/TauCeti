@@ -210,8 +210,7 @@ theorem scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian
   have hux := hu_pos x
   -- `u = (u ^ p) ^ p⁻¹` is smooth because the conformal factor `u ^ p` is.
   have hu : ContMDiff I 𝓘(ℝ) ∞ u :=
-    (hf.rpow_const_of_ne (fun y ↦ (hf_pos y).ne') _).congr fun y ↦
-      (Real.rpow_rpow_inv (hu_pos y).le (div_ne_zero four_ne_zero hn')).symm
+    hf.of_rpow_const (div_ne_zero four_ne_zero hn') hu_pos
   -- Write `u ^ p = e^(2φ)` with `φ = (2 / (n - 2)) log u` and apply the conformal scalar formula.
   have hlog : ContMDiff I 𝓘(ℝ) 2 fun y ↦ Real.log (u y) :=
     (hu.of_le (by simp)).log fun y ↦ (hu_pos y).ne'
@@ -278,8 +277,7 @@ theorem conformalLaplacian_rescale
   have hux := hu_pos x
   -- `u = (u ^ p) ^ p⁻¹` is smooth because the conformal factor `u ^ p` is.
   have hu : ContMDiff I 𝓘(ℝ) ∞ u :=
-    (hf.rpow_const_of_ne (fun y ↦ (hf_pos y).ne') _).congr fun y ↦
-      (Real.rpow_rpow_inv (hu_pos y).le (div_ne_zero four_ne_zero hn')).symm
+    hf.of_rpow_const (div_ne_zero four_ne_zero hn') hu_pos
   have hu₂ : ContMDiff I 𝓘(ℝ) 2 u := hu.of_le (by simp)
   -- The gradient of the conformal factor: `grad (u ^ p) = p u ^ (p - 1) grad u`.
   have hgrad : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;

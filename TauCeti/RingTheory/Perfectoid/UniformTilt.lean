@@ -10,6 +10,8 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.Huber.Uniform
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.LinearAlgebra.SModEq.Pow
+import Mathlib.Topology.Algebra.IsUniformGroup.Basic
+import Mathlib.Topology.UniformSpace.UniformApproximation
 
 /-!
 # The tilt of a complete uniform Tate ring
@@ -20,7 +22,10 @@ topologically nilpotent; `B` is not assumed perfectoid. Its *tilt* is the multip
 `Perfection B p`), with coordinatewise multiplication and the *limit addition*
 `(x + y)⁽ⁱ⁾ = lim_{m → ∞} (x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m`.
 This file constructs that addition and shows that it makes `B♭` a perfect commutative ring of
-characteristic `p` (when `B ≠ 0`), functorial in continuous ring homomorphisms `g : B → C`.
+characteristic `p` (when `B ≠ 0`), functorial in continuous ring homomorphisms `g : B → C`. With
+the inverse-limit topology, induced by the coordinates from the product topology on `ℕ → B`, and
+the uniform structure of its additive group, `B♭` is a complete Hausdorff topological ring, and
+the coordinates and the maps `g♭` are continuous.
 Coordinatewise addition is not the ring structure, as it does not in general preserve compatible
 systems; when `p = 0` in `B` the two additions agree.
 
@@ -45,6 +50,13 @@ because `p` is topologically nilpotent, and its limit is congruent to `x⁽ⁱ�
 `p • W(c, i)`. The ring axioms follow from this congruence: two sequences congruent modulo `p` in
 this sense have the same limit.
 
+The same estimates are uniform: the error `(x + y)⁽ⁱ⁾ - (x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m` lies in
+`p ^ (m + 1) c⁻¹ B°` for all `x, y` whose zeroth coordinates are moved into `B°` by `c`, which is an
+open condition. So each coordinate of `x + y` is a locally uniform limit of continuous functions,
+and addition is continuous. Similarly the coordinates are uniformly continuous on such sets for
+the additive uniformity, which contain a member of every Cauchy filter; the limits of the
+coordinates of a Cauchy filter then form a compatible system, its limit in `B♭`.
+
 ## Main definitions
 
 * `TauCeti.Perfectoid.uniformTilt p B`: the tilt `B♭`, a type synonym for `Perfection B p`.
@@ -54,6 +66,8 @@ this sense have the same limit.
 * `TauCeti.Perfectoid.uniformTilt.mk`: the element with a given compatible system of coordinates.
 * `TauCeti.Perfectoid.uniformTilt.map g hg : uniformTilt p B →+* uniformTilt p C`: the ring
   homomorphism `g♭`, `(x⁽ⁿ⁾)ₙ ↦ (g x⁽ⁿ⁾)ₙ`, induced by a continuous ring homomorphism `g : B → C`.
+* `TauCeti.Perfectoid.uniformTilt.instTopologicalSpace`: the inverse-limit topology, and
+  `TauCeti.Perfectoid.uniformTilt.instUniformSpace`: the uniform structure of the additive group.
 
 ## Main results
 
@@ -68,6 +82,15 @@ this sense have the same limit.
   is perfect, and of characteristic `p` when `B` is nonzero.
 * `TauCeti.Perfectoid.uniformTilt.coeff_map`, `TauCeti.Perfectoid.uniformTilt.map_id` and
   `TauCeti.Perfectoid.uniformTilt.map_comp`: `g♭` acts coordinatewise, and tilting is a functor.
+* `TauCeti.Perfectoid.uniformTilt.isEmbedding_coeff`: the coordinates embed the tilt into
+  `ℕ → B`.
+* `TauCeti.Perfectoid.uniformTilt.tendsto_nhds_iff` and
+  `TauCeti.Perfectoid.uniformTilt.continuous_iff`: convergence and continuity are coordinatewise.
+* `TauCeti.Perfectoid.uniformTilt.instIsTopologicalRing`,
+  `TauCeti.Perfectoid.uniformTilt.instCompleteSpace` and
+  `TauCeti.Perfectoid.uniformTilt.instT2Space`: the tilt is a complete Hausdorff topological ring.
+* `TauCeti.Perfectoid.uniformTilt.continuous_coeff` and
+  `TauCeti.Perfectoid.uniformTilt.continuous_map`: the coordinates and `g♭` are continuous.
 
 ## References
 
@@ -316,17 +339,32 @@ private theorem isClosed_boundSubgroup (N : ℕ) : IsClosed (boundSubgroup p c N
   ((powerBoundedSubring B).toAddSubgroup.isClosed_of_isOpen
     (isOpen_powerBoundedSubring B)).preimage (continuous_const.mul (continuous_pow _))
 
+omit hp in
+/-- For a unit `c ∈ B°`, the set `c⁻¹ B° = {z | c * z ∈ B°}` is bounded: every neighbourhood `U`
+of zero contains `V * c⁻¹ B°` for some neighbourhood `V` of zero, and `V` contains `p ^ (m + 1)`
+for large `m` since `p` is topologically nilpotent. -/
+private theorem exists_mem_nhds_mul_mem [IsUniform B]
+    [hpn : Fact (IsTopologicallyNilpotent (p : B))] (hc : IsUnit (c : B)) {U : Set B}
+    (hU : U ∈ 𝓝 0) : ∃ V ∈ 𝓝 (0 : B),
+      (∀ v ∈ V, ∀ z, (c : B) * z ∈ powerBoundedSubring B → v * z ∈ U) ∧
+        ∀ᶠ m in atTop, (p : B) ^ (m + 1) ∈ V := by
+  obtain ⟨V, hV, hVU⟩ := isBounded_iff.mp ((isBounded_singleton ((hc.unit⁻¹ : Bˣ) : B)).mul
+    IsUniform.isBounded_powerBoundedSubring) U hU
+  exact ⟨V, hV, fun v hv z hz ↦
+    hVU (Set.mul_mem_mul hv (Set.mem_mul.mpr ⟨_, rfl, _, hz, hc.unit.inv_mul_cancel_left z⟩)),
+    (tendsto_add_atTop_iff_nat 1).mpr hpn.out hV⟩
+
 /-- For a unit `c ∈ B°` and `γ m ∈ W(c, 0)`, the multiples `p ^ m * γ m` tend to zero: `W(c, 0)`
 is contained in the bounded set `c⁻¹ B°` and `p` is topologically nilpotent. -/
 private theorem tendsto_pow_mul [IsUniform B] [hpn : Fact (IsTopologicallyNilpotent (p : B))]
     (hc : IsUnit (c : B)) {γ : ℕ → B}
     (hγ : ∀ m, γ m ∈ boundSubgroup p c 0) :
-    Tendsto (fun m ↦ (p : B) ^ m * γ m) atTop (𝓝 0) := by
-  refine (((isBounded_singleton ((hc.unit⁻¹ : Bˣ) : B)).mul
-    IsUniform.isBounded_powerBoundedSubring)).tendsto_mul hpn.out (Eventually.of_forall fun m ↦ ?_)
+    Tendsto (fun m ↦ (p : B) ^ m * γ m) atTop (𝓝 0) := fun U hU ↦ mem_map.mpr <| by
+  obtain ⟨V, hV, hVU, -⟩ := exists_mem_nhds_mul_mem (p := p) hc hU
+  filter_upwards [hpn.out.eventually_mem hV] with m hm
   have h := hγ m
   rw [mem_boundSubgroup, pow_zero, pow_one] at h
-  exact Set.mem_mul.mpr ⟨_, rfl, _, h, hc.unit.inv_mul_cancel_left (γ m)⟩
+  exact hVU _ hm _ h
 
 end Huber
 
@@ -450,6 +488,26 @@ private theorem mul_zero' (x : Perfection B p) : x * zero' = zero' :=
   Subtype.ext <| funext fun _ ↦ mul_zero _
 
 end Zero
+
+section Topology
+
+variable [TopologicalSpace B]
+
+/-- The *inverse-limit topology* of the tilt: the topology induced by the coordinates
+`x ↦ (x⁽ⁿ⁾)ₙ` from the product topology on `ℕ → B`, so that `x` is close to `y` when finitely many
+coordinates are. Since each coordinate determines the earlier ones, this is the topology of
+`lim_{x ↦ x ^ p} B`. -/
+instance instTopologicalSpace : TopologicalSpace (uniformTilt p B) :=
+  .induced (fun x ↦ (x : Perfection B p).1) inferInstance
+
+private theorem isEmbedding_val : IsEmbedding fun x : uniformTilt p B ↦ (x : Perfection B p).1 :=
+  ⟨⟨rfl⟩, Subtype.val_injective⟩
+
+/-- The tilt of a Hausdorff ring is Hausdorff. -/
+instance instT2Space [T2Space B] : T2Space (uniformTilt p B) :=
+  isEmbedding_val.t2Space
+
+end Topology
 
 variable [hp : Fact p.Prime] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
   [IsTateRing B] [CompleteSpace B] [T2Space B] [IsUniform B]
@@ -747,6 +805,193 @@ instance charP [Nontrivial B] : CharP (uniformTilt p B) p := by
   exact tendsto_nhds_unique (tendsto_tiltLim isUnit_one hconst N)
     (hpn.out.comp (tendsto_atTop_mono (fun m ↦ (Nat.lt_pow_self hp.out.one_lt).le) tendsto_id))
 
+section Topology
+
+/-- The coordinates `x ↦ (x⁽ⁿ⁾)ₙ` embed the tilt, with its inverse-limit topology, into the
+product `ℕ → B`. -/
+theorem isEmbedding_coeff : IsEmbedding fun (x : uniformTilt p B) n ↦ coeff p B n x :=
+  isEmbedding_val
+
+/-- A sequence converges in the tilt exactly when each of its coordinates converges. -/
+theorem tendsto_nhds_iff {ι : Type*} {l : Filter ι} {f : ι → uniformTilt p B}
+    {x : uniformTilt p B} :
+    Tendsto f l (𝓝 x) ↔ ∀ n, Tendsto (fun i ↦ coeff p B n (f i)) l (𝓝 (coeff p B n x)) :=
+  isEmbedding_coeff.isInducing.tendsto_nhds_iff.trans tendsto_pi_nhds
+
+/-- A map into the tilt is continuous exactly when each of its coordinates is. -/
+theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → uniformTilt p B} :
+    Continuous f ↔ ∀ n, Continuous fun a ↦ coeff p B n (f a) :=
+  isEmbedding_coeff.isInducing.continuous_iff.trans continuous_pi_iff
+
+/-- Each coordinate `x ↦ x⁽ⁿ⁾` of the tilt is continuous; for `n = 0` this is continuity of the
+sharp map `x ↦ x♯`. -/
+@[fun_prop, continuity]
+theorem continuous_coeff (n : ℕ) : Continuous (coeff p B n) :=
+  continuous_iff.mp continuous_id n
+
+/-- The defining sequence `(x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m` of `(x + y)⁽ⁱ⁾` approximates it modulo
+`p ^ (m + 1) c⁻¹ B°`, uniformly over the `x, y` whose zeroth coordinates are moved into `B°` by
+the unit `c ∈ B°`. -/
+private theorem coeff_add_sub_pow_mem {c : powerBoundedSubring B} (hc : IsUnit (c : B))
+    {x y : uniformTilt p B} (hx : (c : B) * coeff p B 0 x ∈ powerBoundedSubring B)
+    (hy : (c : B) * coeff p B 0 y ∈ powerBoundedSubring B) (i m : ℕ) :
+    ∃ δ, (c : B) * δ ∈ powerBoundedSubring B ∧
+      (coeff p B (i + m) x + coeff p B (i + m) y) ^ p ^ m - coeff p B i (x + y) =
+        (p : B) ^ (m + 1) * δ := by
+  rw [coeff_apply] at hx hy
+  have hσ := (isQuasiCompatible_val _ hx).add (isQuasiCompatible_val _ hy)
+  -- `(x + y)⁽ⁱ⁺ᵐ⁾ = x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾ + p δ`, and raising to the power `p ^ m` multiplies the error
+  -- by `p ^ m`
+  obtain ⟨δ, hδ, he⟩ := mem_scaledSubgroup.mp (tiltLim_sub_mem hc hσ (i + m))
+  obtain ⟨γ, hγ, he'⟩ := mem_scaledSubgroup.mp
+    (add_pow_mul_pow_pow_sub_pow_pow_mem one_ne_zero m i (hσ (i + m)).1 hδ)
+  have hγ0 := antitone_boundSubgroup (Nat.zero_le i) hγ
+  rw [mem_boundSubgroup, pow_zero, pow_one] at hγ0
+  refine ⟨-γ, by rw [mul_neg]; exact neg_mem hγ0, ?_⟩
+  have ht : coeff p B (i + m) (x + y) = (x.1 + y.1) (i + m) + (p : B) ^ 1 * δ := by
+    rw [coeff_add_eq]
+    linear_combination -he
+  rw [← coeff_pow_p_pow (x + y) i m, ht]
+  simp only [Pi.add_apply, coeff_apply] at he' ⊢
+  linear_combination he'
+
+/-- **Addition on the tilt is continuous**: each coordinate `(x + y)⁽ⁱ⁾` is the locally uniform
+limit of the continuous functions `(x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m`. Multiplication is coordinatewise,
+so `uniformTilt.instIsTopologicalRing` needs only this. -/
+private theorem continuous_add' :
+    Continuous fun q : uniformTilt p B × uniformTilt p B ↦ q.1 + q.2 := by
+  refine continuous_iff.mpr fun i ↦ TendstoLocallyUniformly.continuous (p := atTop)
+    (F := fun m q ↦ (coeff p B (i + m) q.1 + coeff p B (i + m) q.2) ^ p ^ m) ?_
+    (Frequently.of_forall fun m ↦ by fun_prop)
+  refine (IsTopologicalAddGroup.tendstoLocallyUniformly_iff _ _ _
+    IsUniformAddGroup.rightUniformSpace_eq).mpr fun U hU q₀ ↦ ?_
+  -- a unit `c ∈ B°` bounds the zeroth coordinates near `q₀`, and the errors then lie in
+  -- `p ^ (m + 1) c⁻¹ B°`, which is eventually inside `U`
+  obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
+    (s := {coeff p B 0 q₀.1, coeff p B 0 q₀.2}) (Set.toFinite _)
+  have hopen (f : uniformTilt p B × uniformTilt p B → uniformTilt p B) (hf : Continuous f) :
+      IsOpen {q | (c : B) * coeff p B 0 (f q) ∈ powerBoundedSubring B} :=
+    (isOpen_powerBoundedSubring B).preimage (by fun_prop)
+  obtain ⟨V, -, hVU, hpV⟩ := exists_mem_nhds_mul_mem (p := p) hc hU
+  refine ⟨_, ((hopen _ continuous_fst).inter (hopen _ continuous_snd)).mem_nhds
+    ⟨h _ (by simp), h _ (by simp)⟩, ?_⟩
+  filter_upwards [hpV] with m hm q hq
+  obtain ⟨δ, hδ, he⟩ := coeff_add_sub_pow_mem hc hq.1 hq.2 i m
+  rw [he]
+  exact hVU _ hm _ hδ
+
+/-- **The tilt is a topological ring** for the inverse-limit topology (Kedlaya, *Arizona Winter
+School notes*, Lemma 2.7.1(a)). -/
+instance instIsTopologicalRing : IsTopologicalRing (uniformTilt p B) :=
+  have hmul : Continuous fun q : uniformTilt p B × uniformTilt p B ↦ q.1 * q.2 :=
+    continuous_iff.mpr fun n ↦ by simp only [map_mul]; fun_prop
+  { continuous_add := continuous_add'
+    continuous_mul := hmul
+    continuous_neg :=
+      (hmul.comp ((continuous_const (y := (-1 : uniformTilt p B))).prodMk continuous_id)).congr
+        neg_one_mul }
+
+/-- Adding an element of the neighbourhood `{d | d⁽⁰⁾ ∈ B°}` of zero preserves the bound `c` on
+the zeroth coordinate. -/
+private theorem mul_coeff_zero_add_mem {c : powerBoundedSubring B} (hc : IsUnit (c : B))
+    {x d : uniformTilt p B} (hx : (c : B) * coeff p B 0 x ∈ powerBoundedSubring B)
+    (hd : coeff p B 0 d ∈ powerBoundedSubring B) :
+    (c : B) * coeff p B 0 (x + d) ∈ powerBoundedSubring B := by
+  have hd' : (c : B) * coeff p B 0 d ∈ powerBoundedSubring B := mul_mem c.2 hd
+  obtain ⟨δ, hδ, he⟩ := coeff_add_sub_pow_mem hc hx hd' 0 0
+  simp only [add_zero, pow_zero, pow_one, zero_add] at he
+  have h : (c : B) * coeff p B 0 (x + d) =
+      (c : B) * coeff p B 0 x + (c : B) * coeff p B 0 d - p * ((c : B) * δ) := by
+    linear_combination (-(c : B)) * he
+  rw [h]
+  exact sub_mem (add_mem hx hd') (mul_mem (natCast_mem _ p) hδ)
+
+/-- Each coordinate of the tilt is uniformly continuous on the set `{x | c * x⁽⁰⁾ ∈ B°}`, for the
+uniform structure of the additive group of the tilt. -/
+private theorem exists_coeff_add_sub_mem {c : powerBoundedSubring B} (hc : IsUnit (c : B))
+    (n : ℕ) {U : Set B} (hU : U ∈ 𝓝 0) : ∃ W ∈ 𝓝 (0 : uniformTilt p B), ∀ x d,
+      (c : B) * coeff p B 0 x ∈ powerBoundedSubring B → d ∈ W →
+        coeff p B n (x + d) - coeff p B n x ∈ U := by
+  obtain ⟨U₁, hU₁⟩ := NonarchimedeanAddGroup.is_nonarchimedean U hU
+  obtain ⟨V, hV, hS, hpV⟩ := exists_mem_nhds_mul_mem (p := p) hc (U₁.isOpen.mem_nhds U₁.zero_mem)
+  obtain ⟨m, hm⟩ := hpV.exists
+  have hB : (powerBoundedSubring B : Set B) ∈ 𝓝 0 :=
+    (isOpen_powerBoundedSubring B).mem_nhds (zero_mem _)
+  have hnhds (k : ℕ) {T : Set B} (hT : T ∈ 𝓝 0) : {d | coeff p B k d ∈ T} ∈ 𝓝 0 :=
+    (continuous_coeff k).continuousAt.preimage_mem_nhds (by rwa [coeff_zero])
+  refine ⟨_, inter_mem (hnhds 0 hB) (hnhds (n + m) (inter_mem hV hB)), fun x d hx hd ↦ hU₁ ?_⟩
+  obtain ⟨hd0, hdV, hdB⟩ := hd
+  -- with `α = x⁽ⁿ⁺ᵐ⁾` and `δ = d⁽ⁿ⁺ᵐ⁾`, the difference is `(α + δ) ^ p ^ m - α ^ p ^ m` up to an
+  -- error in `p ^ (m + 1) c⁻¹ B°`, and every binomial term contains a factor `δ ∈ V`
+  obtain ⟨ε, hε, he⟩ := coeff_add_sub_pow_mem hc hx (mul_mem c.2 hd0) n m
+  set α := coeff p B (n + m) x
+  set δ := coeff p B (n + m) d
+  have hbin : (α + δ) ^ p ^ m - α ^ p ^ m =
+      ∑ j ∈ Finset.range (p ^ m), α ^ j * δ ^ (p ^ m - j) * (p ^ m).choose j := by
+    rw [add_pow, Finset.sum_range_succ]
+    simp
+  have h : coeff p B n (x + d) - coeff p B n x =
+      (∑ j ∈ Finset.range (p ^ m), α ^ j * δ ^ (p ^ m - j) * (p ^ m).choose j) -
+        (p : B) ^ (m + 1) * ε := by
+    rw [← hbin, ← coeff_pow_p_pow x n m]
+    linear_combination (-1 : B) * he
+  rw [h]
+  refine sub_mem (sum_mem fun j hj ↦ ?_) (hS _ hm ε hε)
+  have hj := Finset.mem_range.mp hj
+  obtain ⟨k, hk⟩ : ∃ k, p ^ m - j = k + 1 := ⟨p ^ m - j - 1, by omega⟩
+  have hα : (c : B) * α ^ j ∈ powerBoundedSubring B := by
+    have hx' : (c : B) * α ^ p ^ (n + m) ∈ powerBoundedSubring B := by
+      have h0 := coeff_pow_p_pow x 0 (n + m)
+      rw [zero_add] at h0
+      rwa [← h0] at hx
+    simpa using mul_pow_mul_pow_mem_powerBoundedSubring (b := 0)
+      ((hj.le.trans (Nat.pow_le_pow_right hp.out.pos (Nat.le_add_left m n))).trans (by simp))
+      c.2 hx' hx'
+  rw [hk, pow_succ', show α ^ j * (δ * δ ^ k) * ((p ^ m).choose j : B) =
+    δ * (α ^ j * δ ^ k * (p ^ m).choose j) by ring]
+  refine hS _ hdV _ ?_
+  rw [show (c : B) * (α ^ j * δ ^ k * (p ^ m).choose j) =
+    (c : B) * α ^ j * δ ^ k * (p ^ m).choose j by ring]
+  exact mul_mem (mul_mem hα (pow_mem hdB k)) (natCast_mem _ _)
+
+/-- The uniform structure of the tilt: that of its additive topological group. -/
+noncomputable instance instUniformSpace : UniformSpace (uniformTilt p B) :=
+  IsTopologicalAddGroup.rightUniformSpace (uniformTilt p B)
+
+/-- The tilt is a uniform additive group for `uniformTilt.instUniformSpace`. -/
+instance instIsUniformAddGroup : IsUniformAddGroup (uniformTilt p B) :=
+  isUniformAddGroup_of_addCommGroup
+
+/-- **The tilt is complete** for the uniform structure of its additive group (Kedlaya, *Arizona
+Winter School notes*, Lemma 2.7.1(a)). -/
+instance instCompleteSpace : CompleteSpace (uniformTilt p B) := by
+  refine ⟨fun {F} hF ↦ ?_⟩
+  have hFne := hF.1
+  have hcauchy (n : ℕ) : Cauchy (map (coeff p B n) F) := by
+    refine (IsUniformAddGroup.cauchy_map_iff_tendsto F _).mpr ⟨hFne, fun U hU ↦ ?_⟩
+    have hF' := ((IsUniformAddGroup.cauchy_iff_tendsto F).mp hF).2
+    -- a set `A ∈ F` of differences in `{d | d⁽⁰⁾ ∈ B°}` has a common bound `c` on zeroth
+    -- coordinates
+    obtain ⟨A, hA, hAA⟩ := mem_prod_self_iff.mp (hF' ((continuous_coeff 0).continuousAt
+      |>.preimage_mem_nhds (by rw [coeff_zero]; exact
+        (isOpen_powerBoundedSubring B).mem_nhds (zero_mem _))))
+    obtain ⟨a₀, ha₀⟩ := hFne.nonempty_of_mem hA
+    obtain ⟨c, hc, hc₀⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
+      (s := {coeff p B 0 a₀}) (Set.toFinite _)
+    have hbound : ∀ a ∈ A, (c : B) * coeff p B 0 a ∈ powerBoundedSubring B := fun a ha ↦ by
+      simpa using mul_coeff_zero_add_mem hc (hc₀ _ rfl) (hAA (Set.mk_mem_prod ha ha₀))
+    obtain ⟨W, hW, hWU⟩ := exists_coeff_add_sub_mem (p := p) hc n hU
+    refine mem_map.mpr ?_
+    filter_upwards [mem_map.mp (hF' hW), prod_mem_prod hA hA] with q hq hqA
+    simpa using hWU q.2 (q.1 - q.2) (hbound _ hqA.2) hq
+  choose L hL using fun n ↦ CompleteSpace.complete (hcauchy n)
+  replace hL : ∀ n, Tendsto (coeff p B n) F (𝓝 (L n)) := hL
+  have hpow (n : ℕ) : L (n + 1) ^ p = L n :=
+    tendsto_nhds_unique (((hL (n + 1)).pow p).congr fun x ↦ coeff_pow_p x n) (hL n)
+  exact ⟨mk L hpow, (tendsto_nhds_iff (f := id)).mpr fun n ↦ by simpa using hL n⟩
+
+end Topology
+
 section Map
 
 variable {C D : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
@@ -793,6 +1038,11 @@ theorem map_comp (g₁ : B →+* C) (hg₁ : Continuous g₁) (g₂ : C →+* D)
 theorem map_map (g₁ : B →+* C) (hg₁ : Continuous g₁) (g₂ : C →+* D) (hg₂ : Continuous g₂)
     (x : uniformTilt p B) : map g₂ hg₂ (map g₁ hg₁ x) = map (g₂.comp g₁) (hg₂.comp hg₁) x :=
   ext fun _ ↦ by simp
+
+/-- The ring homomorphism `g♭` induced by a continuous `g` is continuous. -/
+@[fun_prop, continuity]
+theorem continuous_map (g : B →+* C) (hg : Continuous g) : Continuous (map (p := p) g hg) :=
+  continuous_iff.mpr fun n ↦ by simp only [coeff_map]; fun_prop
 
 end Map
 
