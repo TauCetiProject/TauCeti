@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.RepresentationTheory.Continuous.StableLattice
 
 /-!
@@ -33,9 +32,9 @@ This file develops the elementary theory of integral models.
 * The units of `E` act on integral models by homothety, and integral models are ordered by
   inclusion, with sums and, over a principal ideal domain with fraction field `E` and
   finite-dimensional `V`, intersections.
-* A representation of a compact group over a field with a valuative topology, such as a
-  nonarchimedean local field, has an integral model over the valuation ring
-  (`TauCeti.GaloisLattice.IntegralModel.nonempty`), by the stable-lattice theorem.
+* A representation of a compact group on a finite-dimensional vector space over a field with a
+  valuative topology, such as a nonarchimedean local field, has an integral model over the
+  valuation ring (`TauCeti.GaloisLattice.IntegralModel.nonempty`), by the stable-lattice theorem.
 * Over a discrete valuation ring with fraction field `E`, any two integral models are
   commensurable: `𝔪ᵃ Λ ⊆ Λ'` and `𝔪ᵃ Λ' ⊆ Λ` for some `a`
   (`TauCeti.GaloisLattice.IntegralModel.exists_pow_le`).
