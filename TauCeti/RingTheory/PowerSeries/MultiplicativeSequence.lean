@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Substitution
 
 import Mathlib.Data.Multiset.Fintype
 
@@ -21,8 +21,9 @@ Hirzebruch's *multiplicative sequence* belonging to `Q`.
 
 In characteristic class theory the `xᵢ` are the formal roots of a vector bundle and the `eᵢ` its
 Chern classes: for `Q(t) = t / (1 - e⁻ᵗ)` the value `Kₖ(c₁, …, cₙ)` is the degree-`2k` part of
-the Todd class of a complex bundle of rank `n`. The `L` and `Â` classes arise in the same way
-from even series, with the `eᵢ` the elementary symmetric polynomials in the squares `xᵢ²`, that
+the Todd class of a complex bundle of rank `n`. The `L` and `Â` classes come from even series
+`Q(z)`: one first writes `Q(z) = P(z²)` and then applies the construction to `P`, whose roots are
+the squares `xᵢ²`, so that the `eᵢ` are the elementary symmetric polynomials in the `xᵢ²`, that
 is, the Pontryagin classes. This file develops the algebra that such definitions rest on: the
 root description of `Kₖ` in any commutative `R`-algebra, the Whitney (product) formula for roots,
 the normalization on a single root, and stability under adjoining a zero root.
@@ -124,8 +125,9 @@ theorem eq_multiplicativeSequence_iff {p : MvPolynomial (Fin n) R} :
       MvPolynomial.aeval (fun j : Fin n => MvPolynomial.esymm (Fin n) R (j + 1)) p =
         coeff k (∏ i : Fin n, rescale (MvPolynomial.X i) (Q.map (algebraMap R _))) := by
   refine ⟨fun h => h ▸ aeval_esymm_multiplicativeSequence Q n k, fun h => ?_⟩
-  exact MvPolynomial.aeval_esymm_injective (Fintype.card_fin n).ge
-    (h.trans (aeval_esymm_multiplicativeSequence Q n k).symm)
+  refine MvPolynomial.esymmAlgHom_injective R (Fintype.card_fin n).ge (Subtype.ext ?_)
+  rw [MvPolynomial.esymmAlgHom_apply, MvPolynomial.esymmAlgHom_apply,
+    aeval_esymm_multiplicativeSequence, h]
 
 section Roots
 
@@ -211,7 +213,8 @@ private theorem aeval_snoc_X_zero_multiplicativeSequence :
     MvPolynomial.aeval (Fin.snoc MvPolynomial.X 0 : Fin (n + 1) → MvPolynomial (Fin n) R)
         (Q.multiplicativeSequence (n + 1) k) =
       MvPolynomial.C (constantCoeff Q) * Q.multiplicativeSequence n k := by
-  refine MvPolynomial.aeval_esymm_injective (Fintype.card_fin n).ge ?_
+  refine MvPolynomial.esymmAlgHom_injective R (Fintype.card_fin n).ge (Subtype.ext ?_)
+  -- The elementary symmetric polynomials of `x₁, …, xₙ, 0` are those of `x₁, …, xₙ`, then `0`.
   have h : (fun j : Fin (n + 1) => MvPolynomial.aeval
       (fun j : Fin n => MvPolynomial.esymm (Fin n) R (j + 1))
       (Fin.snoc (α := fun _ => MvPolynomial (Fin n) R) MvPolynomial.X 0 j)) =
@@ -219,16 +222,15 @@ private theorem aeval_snoc_X_zero_multiplicativeSequence :
         (0 ::ₘ univ.val.map (MvPolynomial.X : Fin n → MvPolynomial (Fin n) R)).esymm (j + 1) := by
     funext j
     refine Fin.lastCases ?_ (fun i => ?_) j
-    · rw [Fin.snoc_last, map_zero, Fin.val_last, Multiset.esymm_cons, zero_mul, add_zero,
-        Multiset.esymm_of_card_lt (by simp)]
-    · rw [Fin.snoc_castSucc, MvPolynomial.aeval_X, Fin.val_castSucc, Multiset.esymm_cons,
-        zero_mul, add_zero, MvPolynomial.esymm_eq_multiset_esymm]
-  rw [MvPolynomial.comp_aeval_apply, h,
-    aeval_multiset_esymm_multiplicativeSequence Q (n + 1) k _ (by simp), Multiset.map_cons,
-    Multiset.prod_cons, rescale_zero_apply, ← coeff_zero_eq_constantCoeff_apply, coeff_map,
-    coeff_C_mul, map_mul, MvPolynomial.aeval_C, aeval_esymm_multiplicativeSequence,
-    Finset.prod_eq_multiset_prod, Multiset.map_map, Function.comp_def,
-    coeff_zero_eq_constantCoeff_apply, MvPolynomial.algebraMap_eq]
+    · simp [Multiset.esymm_cons, Multiset.esymm_of_card_lt, -Fin.univ_val_map]
+    · simp [Multiset.esymm_cons, MvPolynomial.esymm_eq_multiset_esymm, -Fin.univ_val_map]
+  -- Both sides are now coefficients of `∏ᵢ Q(xᵢ t)`, with an extra factor `Q(0 t)` on the left.
+  rw [MvPolynomial.esymmAlgHom_apply, MvPolynomial.esymmAlgHom_apply,
+    MvPolynomial.comp_aeval_apply, h,
+    aeval_multiset_esymm_multiplicativeSequence Q (n + 1) k _ (by simp), map_mul,
+    MvPolynomial.aeval_C, aeval_esymm_multiplicativeSequence]
+  simp [← coeff_zero_eq_constantCoeff_apply, MvPolynomial.algebraMap_eq, -Fin.univ_val_map,
+    -coeff_zero_eq_constantCoeff]
 
 variable {S : Type*} [CommSemiring S] [Algebra R S]
 

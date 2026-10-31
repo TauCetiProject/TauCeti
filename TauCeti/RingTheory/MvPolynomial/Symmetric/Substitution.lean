@@ -21,9 +21,6 @@ symmetric polynomials.
 
 * `MvPolynomial.IsSymmetric.exists_aeval_esymm`: the fundamental theorem of symmetric polynomials,
   unbundled: a symmetric polynomial is a polynomial in the elementary symmetric polynomials.
-* `MvPolynomial.aeval_esymm_injective`: the uniqueness half of the fundamental theorem, unbundled:
-  substituting the first `n` elementary symmetric polynomials is injective when there are at
-  least `n` variables.
 * `MvPolynomial.IsSymmetric.bind₁_aeval_X`: uniform univariate substitution preserves
   symmetry.
 * `MvPolynomial.IsSymmetric.exists_aeval_esymm_eq_bind₁_aeval_X`: the substituted
@@ -77,16 +74,6 @@ theorem _root_.MvPolynomial.IsSymmetric.exists_aeval_esymm
   refine ⟨W, ?_⟩
   rw [← MvPolynomial.esymmAlgHom_apply]
   exact congrArg Subtype.val hW
-
-/-- The uniqueness half of **the fundamental theorem of symmetric polynomials**, unbundled: over a
-commutative ring, substituting the first `n` elementary symmetric polynomials of at least `n`
-variables is injective. -/
-theorem _root_.MvPolynomial.aeval_esymm_injective
-    {σ R : Type*} [Fintype σ] [CommRing R] {n : ℕ} (hn : n ≤ Fintype.card σ) :
-    Function.Injective
-      (MvPolynomial.aeval (R := R) fun j : Fin n => MvPolynomial.esymm σ R ((j : ℕ) + 1)) :=
-  fun p q h => MvPolynomial.esymmAlgHom_injective R hn
-    (Subtype.ext (by rw [MvPolynomial.esymmAlgHom_apply, MvPolynomial.esymmAlgHom_apply, h]))
 
 /-- Over a commutative ring, uniformly substituting a univariate polynomial into a symmetric
 polynomial in `n` variables yields a polynomial in the first `n` elementary symmetric
