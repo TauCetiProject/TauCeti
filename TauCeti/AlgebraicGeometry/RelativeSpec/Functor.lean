@@ -173,9 +173,26 @@ def QuasicoherentAlgebra.forget : QuasicoherentAlgebra X ⥤ QuasicoherentSheaf 
   ObjectProperty.lift _ (ObjectProperty.ι _ ⋙ CommMon.forget X.Modules) fun A ↦ A.property
 
 /-- The underlying module of `(QuasicoherentAlgebra.forget X).obj A` is that of `A`. -/
+@[simp]
+theorem QuasicoherentAlgebra.forget_obj_obj (A : QuasicoherentAlgebra X) :
+    ((QuasicoherentAlgebra.forget X).obj A).obj = A.obj.X :=
+  (rfl)
+
+/-- The underlying module of `(QuasicoherentAlgebra.forget X).obj A` is that of `A`, as an
+isomorphism. -/
 def QuasicoherentAlgebra.forgetObjIso (A : QuasicoherentAlgebra X) :
     ((QuasicoherentAlgebra.forget X).obj A).obj ≅ A.obj.X :=
-  Iso.refl _
+  eqToIso (forget_obj_obj A)
+
+@[simp]
+theorem QuasicoherentAlgebra.forgetObjIso_hom (A : QuasicoherentAlgebra X) :
+    (forgetObjIso A).hom = eqToHom (forget_obj_obj A) :=
+  (rfl)
+
+@[simp]
+theorem QuasicoherentAlgebra.forgetObjIso_inv (A : QuasicoherentAlgebra X) :
+    (forgetObjIso A).inv = eqToHom (forget_obj_obj A).symm :=
+  (rfl)
 
 /-- Under the identifications `QuasicoherentAlgebra.forgetObjIso`, the forgetful functor sends an
 algebra morphism to its underlying module morphism. -/
