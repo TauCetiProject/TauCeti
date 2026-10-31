@@ -148,6 +148,7 @@ theorem affineEquiv_symm_apply (A : T ≃+ T) (t y : T) :
   simp [affineEquiv, sub_eq_add_neg]
 
 /-- An affine equivalence determines its linear part and its translation part. -/
+@[simp]
 theorem affineEquiv_inj {A B : T ≃+ T} {t s : T} :
     affineEquiv A t = affineEquiv B s ↔ A = B ∧ t = s := by
   refine ⟨fun h ↦ ?_, fun ⟨hAB, hts⟩ ↦ hAB ▸ hts ▸ rfl⟩
