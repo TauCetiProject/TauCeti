@@ -188,6 +188,13 @@ theorem gaugeFixedOperator_smul (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
   · simp [-gaugeAdjoint_def, gaugeAdjoint_smul x y t z]
   all_goals simp [hL]
 
+/-- `L_x` sends the zero variation to zero. -/
+@[simp]
+theorem gaugeFixedOperator_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperator x 0 = 0 := by
+  funext z
+  simpa using gaugeFixedOperator_smul x 0 0 z
+
 /-- `L_x*` preserves addition of arguments differentiable at the point. -/
 theorem gaugeFixedAdjoint_add (x : ℂ → EuclideanSpace ℝ (Fin 4))
     {η ν : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hη : DifferentiableAt ℝ η z)

@@ -104,8 +104,6 @@ theorem eq_zero_of_memLp_of_gaugeFixedAdjoint_eq_zero
     (hsol : ∀ z, equation x z = 0) (hker : gaugeFixedAdjoint x η = 0) : η = 0 := by
   refine eq_zero_of_memLp_of_gaugeFixedOperator_gaugeFixedAdjoint_eq_zero hx hη hη₂ hsol
     fun z ↦ ?_
-  rw [hker]
-  ext i
-  fin_cases i <;> simp [linearizedEquation_zero]
+  simp [hker]
 
 end TauCeti.Vortex
