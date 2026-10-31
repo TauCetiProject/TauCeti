@@ -42,26 +42,7 @@ namespace TauCeti.puiseuxField
 
 open PrimeToPTateModule
 
-variable {K : Type*} [Field K]
-
-/-- The level-`n` parameter `t ^ (1 / n)` is an `n`-th root of `t`. -/
-private theorem coe_levelParameter_pow (n : ℕ+) :
-    (levelParameter K n : puiseuxField K) ^ (n : ℕ) =
-      algebraMap K⸨X⸩ (puiseuxField K) (HahnSeries.single 1 1) := by
-  rw [← SubmonoidClass.coe_pow, levelParameter_pow]
-  rfl
-
-/-- A Galois automorphism `σ` multiplies the level-`n` parameter `t ^ (1 / n)` by the level-`n`
-component of its image in the Tate module. -/
-private theorem apply_coe_levelParameter [∀ n : ℕ+, HasEnoughRootsOfUnity K n]
-    (σ : Gal(puiseuxField K/K⸨X⸩)) (n : ℕ+) :
-    σ (levelParameter K n) = algebraMap K (puiseuxField K)
-      ((proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ (galEquivTateModule K σ) : Kˣ) : K) *
-        levelParameter K n := by
-  rw [apply_coe_level, levelKummer_levelParameter, MulMemClass.coe_mul,
-    IntermediateField.coe_algebraMap_apply, ← IsScalarTower.algebraMap_apply]
-
-variable [IsAlgClosed K] [CharZero K]
+variable {K : Type*} [Field K] [IsAlgClosed K] [CharZero K]
 
 /-- **The characters `θₙ` are independent of the uniformizer and of the root.** Let `π` be a
 uniformizer of `K⸨X⸩`, that is, a Laurent series of order one, and `α` an `n`-th root of `π` in

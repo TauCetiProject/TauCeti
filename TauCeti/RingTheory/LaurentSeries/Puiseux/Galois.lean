@@ -213,6 +213,15 @@ theorem apply_coe_level (σ : Gal(puiseuxField K/K⸨X⸩)) {n : ℕ+} (x : leve
       (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ (galEquivTateModule K σ)) x := by
   rw [galEquivTateModule_apply, proj_toTateModule, apply_coe_level_eq_levelKummer]
 
+/-- A Galois automorphism `σ` multiplies the level-`n` parameter `t ^ (1 / n)` by the level-`n`
+component of its image in the Tate module. -/
+theorem apply_coe_levelParameter (σ : Gal(puiseuxField K/K⸨X⸩)) (n : ℕ+) :
+    σ (levelParameter K n) = algebraMap K (puiseuxField K)
+      ((proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ (galEquivTateModule K σ) : Kˣ) : K) *
+        levelParameter K n := by
+  rw [apply_coe_level, levelKummer_levelParameter, MulMemClass.coe_mul,
+    IntermediateField.coe_algebraMap_apply, ← IsScalarTower.algebraMap_apply]
+
 /-- **The finite-level stabilizers.** A Galois automorphism fixes level `n` exactly when the
 level-`n` component of its image in the Tate module is trivial. -/
 theorem mem_fixingSubgroup_level_iff {σ : Gal(puiseuxField K/K⸨X⸩)} {n : ℕ+} :
