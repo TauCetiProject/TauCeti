@@ -11,7 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
-public import TauCeti.Analysis.Normed.Module.Trace
+public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient

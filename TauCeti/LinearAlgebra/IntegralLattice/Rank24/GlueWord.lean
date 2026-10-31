@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Labels
+public import Mathlib.Data.List.GetD
 import Mathlib.Data.List.OfFn
 
 /-!
@@ -30,6 +31,11 @@ For a word given by its labels `List.ofFn d`, validity is the range condition on
 (`decodeGlueWord_ofFn_comp`): permuting the labels and the components together reindexes the
 decoded word through `Equiv.piCongrLeft`, the reindexing along which the glue-word isometry is
 natural.
+
+For a constant type-`A` family, `typeAGlueWordOfDigits` reads digits modulo the alphabet size.
+`encodeGlueWord_typeA_eq` gives the encoder's residue formula, and
+`decoded_typeA_eq_image_ofDigits` identifies a set of checked decoded words with the image of
+this reader when the lists have the correct length and canonical digits.
 
 Reference: Conway and Sloane, *Sphere Packings, Lattices and Groups*, Chapter 16 §1.
 -/
@@ -185,5 +191,62 @@ theorem decodeGlueWord_ofFn_comp {m : ℕ} (σ : Fin m ≃ Fin n) (d : Fin n →
       hd (σ.forall_congr_right.mp h)
     rw [(decodeGlueWord_eq_none_iff _ _ _).mpr (by simpa using hdσ),
       (decodeGlueWord_eq_none_iff _ _ _).mpr (by simpa using hd), Option.map_none]
+
+/-! ### Constant type-`A` families -/
+
+/-- Read a digit list as a word in `m` copies of the type-`Aₙ` glue alphabet, reducing its
+entries modulo `n + 1` and using zero for any missing entries. Unlike `decodeGlueWord`, this
+construction does not check the digit ranges or the length. -/
+def typeAGlueWordOfDigits (n m : ℕ) (l : List ℕ) :
+    Fin m → (DynkinType.A n).glueAlphabet (DynkinType.isSimplyLaced_A n) :=
+  fun i ↦ ((l.getD i 0 : ℕ) : ZMod (n + 1))
+
+/-- Each coordinate of a type-`A` digit word is the corresponding digit reduced modulo the
+alphabet size. -/
+@[simp] theorem typeAGlueWordOfDigits_apply (n m : ℕ) (l : List ℕ) (i : Fin m) :
+    typeAGlueWordOfDigits n m l i = ((l.getD i 0 : ℕ) : ZMod (n + 1)) :=
+  (rfl)
+
+/-- Encoding a word in a constant type-`A` family lists its least nonnegative residues. -/
+theorem encodeGlueWord_typeA_eq (n m : ℕ)
+    (w : Fin m → (DynkinType.A n).glueAlphabet (DynkinType.isSimplyLaced_A n)) :
+    encodeGlueWord (fun _ : Fin m ↦ DynkinType.A n)
+      (fun _ ↦ DynkinType.isSimplyLaced_A n) w =
+      List.ofFn fun i ↦ ZMod.val (n := n + 1) (w i) := by
+  rw [encodeGlueWord_def (fun _ : Fin m ↦ DynkinType.A n)
+    (fun _ ↦ DynkinType.isSimplyLaced_A n) w]
+  congr 1
+  funext i
+  exact congrArg Fin.val (DynkinType.glueLabelEquiv_A_symm_apply n
+    (DynkinType.isSimplyLaced_A n) (w i))
+
+/-- Reading the encoded digits of a type-`A` word recovers the word. -/
+@[simp] theorem typeAGlueWordOfDigits_encodeGlueWord (n m : ℕ)
+    (w : Fin m → (DynkinType.A n).glueAlphabet (DynkinType.isSimplyLaced_A n)) :
+    typeAGlueWordOfDigits n m (encodeGlueWord (fun _ : Fin m ↦ DynkinType.A n)
+      (fun _ ↦ DynkinType.isSimplyLaced_A n) w) = w := by
+  funext i
+  rw [encodeGlueWord_typeA_eq n m w, typeAGlueWordOfDigits_apply,
+    List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn]
+  exact ZMod.natCast_zmod_val (n := n + 1) (w i)
+
+/-- On a set of correctly sized lists of canonical type-`A` digits, checked decoding gives
+exactly the image of the digit-word construction. The hypothesis can be verified by finite
+computation for an explicit table of glue generators. -/
+theorem decoded_typeA_eq_image_ofDigits (n m : ℕ) (s : Set (List ℕ))
+    (hs : ∀ l ∈ s,
+      List.ofFn (fun i : Fin m ↦ (((l.getD i 0 : ℕ) : ZMod (n + 1))).val) = l) :
+    {w | ∃ l ∈ s, decodeGlueWord (fun _ : Fin m ↦ DynkinType.A n)
+        (fun _ ↦ DynkinType.isSimplyLaced_A n) l = some w} =
+      typeAGlueWordOfDigits n m '' s := by
+  ext w
+  simp only [Set.mem_ofPred_eq, decodeGlueWord_eq_some_iff, Set.mem_image]
+  constructor
+  · rintro ⟨l, hl, rfl⟩
+    exact ⟨_, hl, typeAGlueWordOfDigits_encodeGlueWord n m w⟩
+  · rintro ⟨l, hl, rfl⟩
+    refine ⟨l, hl, ?_⟩
+    rw [encodeGlueWord_typeA_eq n m (typeAGlueWordOfDigits n m l)]
+    simpa only [typeAGlueWordOfDigits_apply] using (hs l hl).symm
 
 end TauCeti

@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Analysis.Calculus.FDeriv.Integral
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
 
 /-!
@@ -30,7 +30,9 @@ manifolds. No orientation is used: the measure is the orientation-free `TauCeti.
 ## Main results
 
 * `TauCeti.Manifold.integral_divergence_eq_zero`: the divergence theorem `∫ div X dV = 0`.
-* `TauCeti.Manifold.integral_mul_divergence`: `∫ f div X dV = -∫ df(X) dV`.
+* `TauCeti.Manifold.integral_mul_divergence`,
+  `TauCeti.Manifold.integral_mul_divergence_of_hasCompactSupport_right`:
+  `∫ f div X dV = -∫ df(X) dV` when `f` or `X` has compact support.
 * `TauCeti.Manifold.integral_mul_laplaceBeltrami`: Green's first identity
   `∫ f Δg dV = -∫ ⟪grad f, grad g⟫ dV`.
 * `TauCeti.Manifold.integral_mul_laplaceBeltrami_right_eq_left`: Green's second identity
@@ -95,32 +97,12 @@ private theorem chartFlux_eq_zero (k : Fin (Module.finrank ℝ E)) {z : E}
     simp only [chartFlux, indicator_of_mem ht, hX, map_zero, mul_zero]
   · exact indicator_of_notMem ht _
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- The coordinate image of a compact support inside the chart source is compact. -/
-private theorem isCompact_image_tsupport (hK : IsCompact (tsupport (α := E) X))
-    (hKs : tsupport (α := E) X ⊆ (chartAt H α).source) :
-    IsCompact (extChartAt I α '' tsupport (α := E) X) :=
-  hK.image_of_continuousOn ((continuousOn_extChartAt α).mono (by rwa [extChartAt_source]))
-
 omit [I.Boundaryless] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
 /-- The fluxes vanish near every point off the compact coordinate image of the support of `X`. -/
-private theorem chartFlux_eventuallyEq_zero (hK : IsCompact (tsupport (α := E) X))
-    (hKs : tsupport (α := E) X ⊆ (chartAt H α).source) (k : Fin (Module.finrank ℝ E)) {z : E}
+private theorem chartFlux_eventuallyEq_zero (hK : IsCompact (extChartAt I α '' tsupport (α := E) X))
+    (k : Fin (Module.finrank ℝ E)) {z : E}
     (hz : z ∉ extChartAt I α '' tsupport (α := E) X) : chartFlux α X k =ᶠ[𝓝 z] 0 :=
-  Filter.eventually_of_mem ((isCompact_image_tsupport hK hKs).isClosed.isOpen_compl.mem_nhds hz)
-    fun _ h ↦ chartFlux_eq_zero k h
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- A point outside the chart target lies outside the coordinate image of a support contained in
-the chart source. -/
-private theorem notMem_image_tsupport (hKs : tsupport (α := E) X ⊆ (chartAt H α).source) {z : E}
-    (hz : z ∉ (extChartAt I α).target) : z ∉ extChartAt I α '' tsupport (α := E) X := by
-  rintro ⟨y, hy, rfl⟩
-  exact hz ((extChartAt I α).map_source (by rw [extChartAt_source]; exact hKs hy))
+  Filter.eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hz) fun _ h ↦ chartFlux_eq_zero k h
 
 omit [I.Boundaryless] in
 /-- The product of the chart volume density and a frame coefficient of a `C¹` field is `C¹` on the
@@ -138,10 +120,12 @@ private theorem contMDiffOn_chartVolumeDensity_mul_localFrameCoeff
   rw [hs] at h1 h2
   exact h1.mul h2
 
-/-- The fluxes of a `C¹` field with compact support in the chart are `C¹` on the model space. -/
+/-- The fluxes of a `C¹` field whose support has compact coordinate image inside the chart target
+are `C¹` on the model space. -/
 private theorem contDiff_chartFlux (hX : ContMDiff I I.tangent 1 (T% X))
-    (hK : IsCompact (tsupport (α := E) X))
-    (hKs : tsupport (α := E) X ⊆ (chartAt H α).source) (k : Fin (Module.finrank ℝ E)) :
+    (hKc : IsCompact (extChartAt I α '' tsupport (α := E) X))
+    (himage : extChartAt I α '' tsupport (α := E) X ⊆ (extChartAt I α).target)
+    (k : Fin (Module.finrank ℝ E)) :
     ContDiff ℝ 1 (chartFlux α X k) := by
   have hon : ContDiffOn ℝ 1 (chartFlux α X k) (extChartAt I α).target := by
     have h := (contMDiffOn_chartVolumeDensity_mul_localFrameCoeff hX k).comp
@@ -153,7 +137,7 @@ private theorem contDiff_chartFlux (hX : ContMDiff I I.tangent 1 (T% X))
   by_cases hz : z ∈ (extChartAt I α).target
   · exact hon.contDiffAt ((isOpen_extChartAt_target α).mem_nhds hz)
   · exact contDiffAt_const.congr_of_eventuallyEq
-      (chartFlux_eventuallyEq_zero hK hKs k (notMem_image_tsupport hKs hz))
+      (chartFlux_eventuallyEq_zero hKc k fun h ↦ hz (himage h))
 
 /-- On the chart target, the coordinate divergence of the fluxes is `ρ div X` read in the chart.
 This is the coordinate formula `ρ div X = ∑ₖ ∂ₖ (ρ Xᵏ)` written in coordinates. -/
@@ -197,24 +181,17 @@ private theorem integral_divergence_eq_zero_of_tsupport_subset
     (hX : ContMDiff I I.tangent 1 (T% X)) (hK : IsCompact (tsupport (α := E) X))
     (hKs : tsupport (α := E) X ⊆ (chartAt H α).source) :
     ∫ x, divergence I X x ∂riemannianVolume I M = 0 := by
-  have hflux (k : Fin (Module.finrank ℝ E)) := contDiff_chartFlux hX hK hKs k
+  have hKs' : tsupport (α := E) X ⊆ (extChartAt I α).source := by rwa [extChartAt_source]
+  have hKc := hK.image_of_continuousOn ((continuousOn_extChartAt α).mono hKs')
+  have himage := ((extChartAt I α).mapsTo.mono_left hKs').image_subset
+  have hflux (k : Fin (Module.finrank ℝ E)) := contDiff_chartFlux hX hKc himage k
   have hfluxc (k : Fin (Module.finrank ℝ E)) : HasCompactSupport (chartFlux α X k) :=
-    HasCompactSupport.intro (isCompact_image_tsupport hK hKs) fun _ hz ↦ chartFlux_eq_zero k hz
+    HasCompactSupport.intro hKc fun _ hz ↦ chartFlux_eq_zero k hz
   have hint (k : Fin (Module.finrank ℝ E)) :
       Integrable (fun z ↦ fderiv ℝ (chartFlux α X k) z (Module.finBasis ℝ E k))
         (Module.finBasis ℝ E).addHaar :=
     ((hflux k).continuous_fderiv one_ne_zero).clm_apply continuous_const
       |>.integrable_of_hasCompactSupport ((hfluxc k).fderiv_apply ℝ _)
-  -- Each partial derivative of a compactly supported `C¹` function integrates to zero.
-  have hzero (k : Fin (Module.finrank ℝ E)) :
-      ∫ z, fderiv ℝ (chartFlux α X k) z (Module.finBasis ℝ E k) ∂(Module.finBasis ℝ E).addHaar
-        = 0 := by
-    simpa using integral_smul_fderiv_eq_neg_fderiv_smul_of_integrable
-      (f := fun _ : E ↦ (1 : ℝ)) (g := chartFlux α X k) (v := Module.finBasis ℝ E k)
-      (by simp) (by simpa using hint k)
-      (by simpa using (hflux k).continuous.integrable_of_hasCompactSupport (hfluxc k))
-      (fun _ _ ↦ differentiableAt_const _)
-      (fun z _ ↦ (hflux k).differentiable one_ne_zero z)
   -- Move the integral to the chart target, where the integrand is the coordinate divergence of
   -- the fluxes, and then to the whole model space, off whose target the fluxes vanish nearby.
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := (chartAt H α).source) fun x hx ↦
@@ -225,10 +202,13 @@ private theorem integral_divergence_eq_zero_of_tsupport_subset
   rw [setIntegral_congr_fun (isOpen_extChartAt_target α).measurableSet fun z hz ↦
       (sum_fderiv_chartFlux hX hz).symm,
     setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ Finset.sum_eq_zero fun k _ ↦ by
-      rw [(chartFlux_eventuallyEq_zero hK hKs k (notMem_image_tsupport hKs hz)).fderiv_eq]
+      rw [(chartFlux_eventuallyEq_zero hKc k fun h ↦ hz (himage h)).fderiv_eq]
       simp,
     integral_finsetSum _ fun k _ ↦ hint k]
-  exact Finset.sum_eq_zero fun k _ ↦ hzero k
+  -- Each partial derivative of a compactly supported `C¹` function integrates to zero.
+  exact Finset.sum_eq_zero fun k _ ↦ integral_apply_eq_zero_of_hasFDerivAt_off_countable
+    countable_empty (hflux k).continuous (hfluxc k)
+    (fun z _ ↦ ((hflux k).differentiable one_ne_zero z).hasFDerivAt) _ (hint k)
 
 end Chart
 
@@ -271,28 +251,51 @@ theorem integral_divergence_eq_zero (hX : ContMDiff I I.tangent 1 (T% X))
   exact Finset.sum_eq_zero fun i _ ↦ integral_divergence_eq_zero_of_tsupport_subset (hY i)
     (hK i) ((tsupport_smul_subset_left _ _).trans (hρ i))
 
-/-- **Integration by parts for the divergence**: for a compactly supported `C¹` function `f` and a
-`C¹` vector field `X` on a manifold without boundary, `∫ f div X dV = -∫ df(X) dV`. -/
-theorem integral_mul_divergence {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 1 f)
-    (hfc : HasCompactSupport f) (hX : ContMDiff I I.tangent 1 (T% X)) :
+/-- Integration by parts for the divergence, assuming that `f X` has compact support and that
+`f div X` is integrable. -/
+private theorem integral_mul_divergence_of_integrable {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    (hX : ContMDiff I I.tangent 1 (T% X))
+    (hfXc : HasCompactSupport (β := E) (fun x ↦ f x • X x))
+    (hint : Integrable (fun x ↦ f x * divergence I X x) (riemannianVolume I M)) :
     ∫ x, f x * divergence I X x ∂riemannianVolume I M =
       -∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M := by
   have hfX : ContMDiff I I.tangent 1 (T% (fun x ↦ f x • X x)) := hf.smul_section hX
-  have hfXc : HasCompactSupport (β := E) (fun x ↦ f x • X x) :=
-    hfc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _)
   have hpt (x : M) : divergence I (fun x ↦ f x • X x) x =
       f x * divergence I X x + mvfderiv I f x (X x) :=
     divergence_smul_function I f X x ((hf x).mdifferentiableAt one_ne_zero)
       ((hX x).mdifferentiableAt one_ne_zero)
-  have hint : Integrable (fun x ↦ f x * divergence I X x) (riemannianVolume I M) :=
-    (hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
-      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport hfc.mul_right
   have hint' : Integrable (fun x ↦ mvfderiv I f x (X x)) (riemannianVolume I M) :=
     ((integrable_divergence hfX hfXc).sub hint).congr
       (Filter.Eventually.of_forall fun x ↦ by simp only [Pi.sub_apply, hpt]; ring)
   have h := integral_divergence_eq_zero hfX hfXc
   rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_add hint hint'] at h
   exact eq_neg_of_add_eq_zero_left h
+
+/-- **Integration by parts for the divergence**: for a compactly supported `C¹` function `f` and a
+`C¹` vector field `X` on a manifold without boundary, `∫ f div X dV = -∫ df(X) dV`. -/
+theorem integral_mul_divergence {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    (hfc : HasCompactSupport f) (hX : ContMDiff I I.tangent 1 (T% X)) :
+    ∫ x, f x * divergence I X x ∂riemannianVolume I M =
+      -∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M :=
+  integral_mul_divergence_of_integrable hf hX
+    (hfc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _))
+    ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
+      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport hfc.mul_right)
+
+/-- **Integration by parts for the divergence**, for a compactly supported field: for a `C¹`
+function `f` and a compactly supported `C¹` vector field `X` on a manifold without boundary,
+`∫ f div X dV = -∫ df(X) dV`. -/
+theorem integral_mul_divergence_of_hasCompactSupport_right {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) 1 f) (hX : ContMDiff I I.tangent 1 (T% X))
+    (hXc : HasCompactSupport (β := E) X) :
+    ∫ x, f x * divergence I X x ∂riemannianVolume I M =
+      -∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M :=
+  integral_mul_divergence_of_integrable hf hX
+    (hXc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _))
+    ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
+      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport
+      (HasCompactSupport.mul_left (hXc.mono' fun x hx ↦
+        by_contra fun h ↦ hx (divergence_eq_zero_of_notMem_tsupport I h))))
 
 /-- **Green's first identity** on a manifold without boundary: for a compactly supported `C¹`
 function `f` and a `C²` function `g`, `∫ f Δg dV = -∫ ⟪grad f, grad g⟫ dV`. -/
@@ -304,15 +307,24 @@ theorem integral_mul_laplaceBeltrami {f g : M → ℝ} (hf : ContMDiff I 𝓘(�
   simp only [laplaceBeltrami_def, inner_mgradient]
   exact integral_mul_divergence hf hfc (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two]))
 
-/-- **Green's second identity** on a manifold without boundary: for compactly supported `C²`
-functions `f` and `g`, `∫ f Δg dV = ∫ (Δf) g dV`. -/
+/-- **Green's second identity** on a manifold without boundary: for a compactly supported `C²`
+function `f` and a `C²` function `g`, `∫ f Δg dV = ∫ (Δf) g dV`. -/
 theorem integral_mul_laplaceBeltrami_right_eq_left {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
-    (hfc : HasCompactSupport f) (hg : ContMDiff I 𝓘(ℝ) 2 g) (hgc : HasCompactSupport g) :
+    (hfc : HasCompactSupport f) (hg : ContMDiff I 𝓘(ℝ) 2 g) :
     ∫ x, f x * laplaceBeltrami I g x ∂riemannianVolume I M =
       ∫ x, laplaceBeltrami I f x * g x ∂riemannianVolume I M := by
-  simp_rw [mul_comm (laplaceBeltrami I f _)]
-  rw [integral_mul_laplaceBeltrami (hf.of_le (by norm_num)) hfc hg,
-    integral_mul_laplaceBeltrami (hg.of_le (by norm_num)) hgc hf]
-  simp_rw [real_inner_comm]
+  have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
+  -- The gradient of `f` vanishes off the support of `f`, so it is compactly supported.
+  have hgradc : HasCompactSupport (β := E) (mgradient I f) :=
+    hfc.mono' fun x hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
+      (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
+  simp_rw [mul_comm (laplaceBeltrami I f _), laplaceBeltrami_def]
+  rw [integral_mul_divergence (hf.of_le (by norm_num)) hfc
+      (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])),
+    integral_mul_divergence_of_hasCompactSupport_right (hg.of_le (by norm_num))
+      (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])) hgradc]
+  congr 1
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
+  exact (inner_mgradient_right _).symm.trans (inner_mgradient _)
 
 end TauCeti.Manifold
