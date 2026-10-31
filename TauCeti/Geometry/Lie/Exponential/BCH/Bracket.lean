@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Exponential.BCH.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Calculus.SecondOrderExpansion
 import TauCeti.Analysis.Normed.Algebra.Basic

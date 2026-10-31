@@ -15,6 +15,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
@@ -313,16 +314,6 @@ theorem iteratedDeriv_two_comp {f : E → F} {γ : 𝕜 → E} {t : 𝕜}
   have h := fderiv_fderiv_comp_apply hf hγ 1 1
   rw [fderiv_fderiv_apply_eq_smul_iteratedDeriv, fderiv_fderiv_apply_eq_smul_iteratedDeriv] at h
   simpa [fderiv_apply_one_eq_deriv] using h
-
-/-- The derivative of the affine line `t ↦ a + t • b` is constantly `b`. -/
-theorem deriv_const_add_smul (a b : F) : deriv (fun t : 𝕜 ↦ a + t • b) = fun _ ↦ b :=
-  funext fun t ↦ by simpa using (((hasDerivAt_id t).smul_const b).const_add a).deriv
-
-/-- The second derivative of the affine line `t ↦ a + t • b` vanishes. -/
-theorem iteratedDeriv_two_const_add_smul (a b : F) :
-    iteratedDeriv 2 (fun t : 𝕜 ↦ a + t • b) = 0 := by
-  simp only [iteratedDeriv_succ, iteratedDeriv_zero, deriv_const_add_smul, deriv_const',
-    Pi.zero_def]
 
 /-- **A line along which a map is affine is isotropic for its second derivative.** If `f` is `C²`
 at `x` and `f (x + t • v) = f x + t • z` for all `t` near `0`, then `D²f(x)(v, v) = 0`. -/
