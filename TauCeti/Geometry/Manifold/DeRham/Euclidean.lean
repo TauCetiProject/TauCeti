@@ -27,7 +27,7 @@ so this does not follow from the vanishing of `H^k_dR(E)` in positive degrees.
 The proof transfers to an inner product space and runs through the complement of a large closed
 ball. Let `ω` be a compactly supported closed `k`-form with `0 < k < n`, supported in the closed
 ball of radius `r`. By the Poincaré lemma `ω = dη` for a smooth `(k - 1)`-form `η`, which is closed
-on the complement `E \ B̄(0, r)`. That complement deformation retracts onto the sphere `Sⁿ⁻¹`
+on the complement `E \ closedBall 0 r`. That complement deformation retracts onto the sphere `Sⁿ⁻¹`
 (`TauCeti.deRhamCohomology.closedBallComplEquivSphere`), whose cohomology vanishes in degrees
 strictly between `0` and `n - 1`, and it is connected for `n ≥ 2`. So `η` is exact on it when
 `k ≥ 2`, and constant on it when `k = 1`. A cut-off at infinity then turns `η` into a compactly

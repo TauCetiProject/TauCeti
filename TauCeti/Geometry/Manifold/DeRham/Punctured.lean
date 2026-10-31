@@ -27,8 +27,8 @@ This is the input the Mayer–Vietoris computation of the cohomology of spheres 
 cover of `Sⁿ⁺¹` by the complements of the two poles, stereographic projection identifies the
 intersection with the punctured space `ℝⁿ⁺¹ \ {0}`, whose cohomology is that of `Sⁿ`.
 
-More generally, for `r ≥ 0` the complement `E \ B̄(0, r)` of a closed ball deformation retracts
-onto the sphere of radius `r + 1`, so `H^k_dR(E \ B̄(0, r)) ≃ H^k_dR(Sⁿ)` as well
+More generally, for `r ≥ 0` the complement `E \ closedBall 0 r` of a closed ball deformation
+retracts onto the sphere of radius `r + 1`, so `H^k_dR(E \ closedBall 0 r) ≃ H^k_dR(Sⁿ)` as well
 (`TauCeti.deRhamCohomology.closedBallComplEquivSphere`). This is the region near infinity on which
 the primitive of a compactly supported closed form on `E` is examined.
 
@@ -39,7 +39,7 @@ the primitive of a compactly supported closed form on `E` is examined.
   inverse pullback along the radial projection `NormedSpace.normalize`.
 * `TauCeti.deRhamCohomology.closedBallComplEquivSphere`: pullback along the scaling
   `x ↦ (r + 1) • x` of the unit sphere is a linear equivalence from the de Rham cohomology of
-  `E \ B̄(0, r)` to that of the unit sphere.
+  `E \ closedBall 0 r` to that of the unit sphere.
 
 ## References
 
@@ -127,7 +127,7 @@ theorem puncturedSpaceEquivSphere_symm_apply (k : ℕ)
 
 /-! ### The complement of a closed ball
 
-For `r ≥ 0`, the complement `E \ B̄(0, r)` of the closed ball of radius `r` also deformation
+For `r ≥ 0`, the complement `E \ closedBall 0 r` of the closed ball of radius `r` also deformation
 retracts onto a sphere, through the radial projection onto the sphere of radius `r + 1`: the
 straight-line homotopy `(x, t) ↦ ((1 - t) (r + 1)) • (x / ‖x‖) + t • x` has norm
 `(1 - t) (r + 1) + t ‖x‖ > r`. -/
@@ -152,8 +152,9 @@ private theorem homotopy_mem_compl_closedBall {x : E} (hx : r < ‖x‖) (hr : 0
   · nlinarith [mul_nonneg ht₀ (sub_nonneg.2 hx.le)]
   · linarith
 
-/-- The straight-line homotopy `(x, t) ↦ ((1 - t) (r + 1)) • (x / ‖x‖) + t • x` in `E \ B̄(0, r)`
-from the radial projection onto the sphere of radius `r + 1` to the identity. -/
+/-- The straight-line homotopy `(x, t) ↦ ((1 - t) (r + 1)) • (x / ‖x‖) + t • x` in
+`E \ closedBall 0 r` from the radial projection onto the sphere of radius `r + 1` to the
+identity. -/
 private def closedBallComplHomotopy (hr : 0 ≤ r)
     (p : (⟨(closedBall (0 : E) r)ᶜ, isClosed_closedBall.isOpen_compl⟩ : Opens E) ×
       Icc (0 : ℝ) 1) :
@@ -180,8 +181,8 @@ private theorem contMDiff_closedBallComplHomotopy (hr : 0 ≤ r) :
 variable (E n) in
 /-- **The de Rham cohomology of the complement of a closed ball is that of the sphere.** For a
 real inner product space `E` of dimension `n + 1` and `r ≥ 0`, pullback along the scaling
-`x ↦ (r + 1) • x` of the unit sphere `Sⁿ` into `E \ B̄(0, r)` is a linear equivalence
-`H^k_dR(E \ B̄(0, r)) ≃ H^k_dR(Sⁿ)` in every degree `k`
+`x ↦ (r + 1) • x` of the unit sphere `Sⁿ` into `E \ closedBall 0 r` is a linear equivalence
+`H^k_dR(E \ closedBall 0 r) ≃ H^k_dR(Sⁿ)` in every degree `k`
 (`TauCeti.deRhamCohomology.closedBallComplEquivSphere_apply`); its inverse is pullback along the
 radial projection `x ↦ x / ‖x‖`
 (`TauCeti.deRhamCohomology.closedBallComplEquivSphere_symm_apply`). -/
