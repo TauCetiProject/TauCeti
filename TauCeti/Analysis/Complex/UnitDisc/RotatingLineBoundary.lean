@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Eval.SMul
 public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import TauCeti.Algebra.Polynomial.ConjReciprocal
+public import TauCeti.Algebra.Polynomial.Eval.OnSet
 public import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 
 /-!
@@ -226,28 +226,12 @@ theorem mem_unitDiscCauchyRiemannKernel_iff_exists_eval :
     exact ⟨fun z => p.eval z, p.differentiable.diffContOnCl,
       fun w hw => eval_eq_zpow_mul_conj_eval hp (by simpa using hw), rfl⟩
 
-/-- Evaluation of complex polynomials at the points of the closed unit disc, as a real-linear
-map. -/
-private noncomputable def evalClosedDisc : ℂ[X] →ₗ[ℝ] (closedBall (0 : ℂ) 1 → ℂ) :=
-  LinearMap.pi fun z : closedBall (0 : ℂ) 1 => (leval (z : ℂ)).restrictScalars ℝ
-
-@[simp]
-private theorem evalClosedDisc_apply (q : ℂ[X]) (z : closedBall (0 : ℂ) 1) :
-    evalClosedDisc q z = q.eval (z : ℂ) :=
-  rfl
-
-private theorem evalClosedDisc_injective : Function.Injective evalClosedDisc := by
-  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-  intro q hq
-  refine eq_zero_of_infinite_isRoot q
-    ((infinite_of_mem_nhds (0 : ℂ) (closedBall_mem_nhds 0 one_pos)).mono fun z hz => ?_)
-  simpa using congrFun hq ⟨z, hz⟩
-
 private theorem unitDiscCauchyRiemannKernel_eq_map :
-    unitDiscCauchyRiemannKernel k = (conjReciprocalPolynomials k).map evalClosedDisc := by
+    unitDiscCauchyRiemannKernel k =
+      (conjReciprocalPolynomials k).map ((evalOn (closedBall (0 : ℂ) 1)).restrictScalars ℝ) := by
   ext g
   simp only [Submodule.mem_map, mem_unitDiscCauchyRiemannKernel_iff_exists_eval, funext_iff,
-    evalClosedDisc_apply]
+    LinearMap.coe_restrictScalars, evalOn_apply]
 
 /-- For a boundary condition of negative Maslov index, the only solution is zero. -/
 theorem unitDiscCauchyRiemannKernel_eq_bot (hk : k < 0) : unitDiscCauchyRiemannKernel k = ⊥ := by
@@ -266,6 +250,8 @@ instance finiteDimensional_unitDiscCauchyRiemannKernel (k : ℤ) :
 theorem finrank_unitDiscCauchyRiemannKernel (k : ℤ) :
     finrank ℝ (unitDiscCauchyRiemannKernel k) = (k + 1).toNat := by
   rw [unitDiscCauchyRiemannKernel_eq_map, ← finrank_conjReciprocalPolynomials k]
-  exact (Submodule.equivMapOfInjective _ evalClosedDisc_injective _).finrank_eq.symm
+  have hinj : Function.Injective (evalOn (closedBall (0 : ℂ) 1)) :=
+    evalOn_injective (infinite_of_mem_nhds 0 (closedBall_mem_nhds 0 one_pos))
+  exact (Submodule.equivMapOfInjective ((evalOn _).restrictScalars ℝ) hinj _).finrank_eq.symm
 
 end TauCeti
