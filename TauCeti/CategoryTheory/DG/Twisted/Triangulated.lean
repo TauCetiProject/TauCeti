@@ -14,8 +14,8 @@ public import Mathlib.CategoryTheory.Triangulated.Triangulated
 Let `C` be a differential graded category and let `H⁰` be the homotopy category of the twisted
 objects of the additive closure of the shift closure of `C`, with the pretriangulated structure of
 `TauCeti/CategoryTheory/DG/Twisted/Pretriangulated.lean`, whose distinguished triangles are the
-cone triangles `P ⟶ Q ⟶ cone u ⟶ P⟦1⟧`.  This file proves the octahedral axiom, so that `H⁰` is a
-triangulated category.
+triangles isomorphic to cone triangles `P ⟶ Q ⟶ cone u ⟶ P⟦1⟧`.  This file proves the octahedral
+axiom, so that `H⁰` is a triangulated category.
 
 Let `u : P ⟶ Q` and `v : Q ⟶ S` be closed degree-zero morphisms with composite `w = u ≫ v`.  The
 strictly commutative squares `(𝟙 P, v)` from `u` to `w` and `(u, 𝟙 S)` from `w` to `v` induce
@@ -156,6 +156,31 @@ noncomputable def coneCompInv :
     (dgComp R ((shiftFunctor R 1).dgMap 0 (extensionFst R (dgDifferential_coneMorphism hu)))
       (extensionInr R (dgDifferential_coneMorphism hv)) (add_zero 0)) (add_zero 0)
 
+theorem coneCompHom_def :
+    coneCompHom hu hv hw huv =
+      dgComp R (extensionFst R (dgDifferential_coneMorphism hv))
+          (dgComp R (extensionInl R (dgDifferential_coneMorphism hw))
+            (extensionInl R (dgDifferential_coneMorphism
+              (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv))) (add_zero 0))
+          (add_zero 0) +
+        dgComp R (extensionSnd R (dgDifferential_coneMorphism hv))
+          (dgComp R ((shiftFunctor R 1).dgMap 0 (extensionInl R (dgDifferential_coneMorphism hu)))
+            (extensionInr R (dgDifferential_coneMorphism
+              (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv))) (add_zero 0))
+          (add_zero 0) :=
+  (rfl)
+
+theorem coneCompInv_def :
+    coneCompInv hu hv hw huv =
+      dgComp R (extensionFst R (dgDifferential_coneMorphism
+          (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv)))
+        (coneHomOfHomotopy hw hv u (dgId R S) 0) (add_zero 0) +
+      dgComp R (extensionSnd R (dgDifferential_coneMorphism
+          (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv)))
+        (dgComp R ((shiftFunctor R 1).dgMap 0 (extensionFst R (dgDifferential_coneMorphism hu)))
+          (extensionInr R (dgDifferential_coneMorphism hv)) (add_zero 0)) (add_zero 0) :=
+  (rfl)
+
 /-- The comparison morphism `cone v ⟶ cone (cone u ⟶ cone w)` is closed. -/
 theorem dgDifferential_coneCompHom : dgDifferential R 0 (coneCompHom hu hv hw huv) = 0 := by
   -- Both terms are `cone v ⟶ Q⟦1⟧ ⟶ Q ⟶ S ⟶ cone w ⟶ cone (cone u ⟶ cone w)`, with opposite
@@ -246,6 +271,58 @@ theorem dgComp_coneCompHom_extensionSnd :
     dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
     dgComp_extensionInl_extensionSnd, dgComp_extensionInr_extensionSnd, dgComp_zero, dgComp_dgId,
     zero_add]
+
+/-- The inclusion of `(cone u)⟦1⟧` into `cone (cone u ⟶ cone w)` followed by the comparison
+morphism `cone (cone u ⟶ cone w) ⟶ cone v` is the shift of the projection of `cone u` onto `Q`
+followed by the inclusion of `Q⟦1⟧` into `cone v`. -/
+@[simp↓]
+theorem dgComp_extensionInr_coneCompInv :
+    dgComp R (extensionInr R (dgDifferential_coneMorphism
+        (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv))) (coneCompInv hu hv hw huv)
+        (add_zero 0) =
+      dgComp R ((shiftFunctor R 1).dgMap 0 (extensionFst R (dgDifferential_coneMorphism hu)))
+        (extensionInr R (dgDifferential_coneMorphism hv)) (add_zero 0) := by
+  simp -proj only [coneCompInv, dgComp_add, dgComp_extensionInr_extensionFst_assoc,
+    dgComp_extensionInr_extensionSnd_assoc, zero_add]
+
+/-- The inclusion of `S` into `cone v` followed by the comparison morphism
+`cone v ⟶ cone (cone u ⟶ cone w)` is the inclusion of `S` into `cone w` followed by the inclusion
+of `cone w`. -/
+@[simp↓]
+theorem dgComp_extensionInl_coneCompHom :
+    dgComp R (extensionInl R (dgDifferential_coneMorphism hv)) (coneCompHom hu hv hw huv)
+        (add_zero 0) =
+      dgComp R (extensionInl R (dgDifferential_coneMorphism hw))
+        (extensionInl R (dgDifferential_coneMorphism
+          (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv))) (add_zero 0) := by
+  simp -proj only [coneCompHom, dgComp_add, dgComp_extensionInl_extensionFst_assoc,
+    dgComp_extensionInl_extensionSnd_assoc, add_zero]
+
+/-- The inclusion of `Q⟦1⟧` into `cone v` followed by the comparison morphism
+`cone v ⟶ cone (cone u ⟶ cone w)` is the shift of the inclusion of `Q` into `cone u` followed by
+the inclusion of `(cone u)⟦1⟧`. -/
+@[simp↓]
+theorem dgComp_extensionInr_coneCompHom :
+    dgComp R (extensionInr R (dgDifferential_coneMorphism hv)) (coneCompHom hu hv hw huv)
+        (add_zero 0) =
+      dgComp R ((shiftFunctor R 1).dgMap 0 (extensionInl R (dgDifferential_coneMorphism hu)))
+        (extensionInr R (dgDifferential_coneMorphism
+          (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv))) (add_zero 0) := by
+  simp -proj only [coneCompHom, dgComp_add, dgComp_extensionInr_extensionFst_assoc,
+    dgComp_extensionInr_extensionSnd_assoc, zero_add]
+
+/-- The comparison morphism `cone v ⟶ cone (cone u ⟶ cone w)` followed by the projection onto
+`cone w` is the projection of `cone v` onto `S` followed by the inclusion of `S` into `cone w`. -/
+@[simp↓]
+theorem dgComp_coneCompHom_extensionFst :
+    dgComp R (coneCompHom hu hv hw huv) (extensionFst R (dgDifferential_coneMorphism
+        (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv))) (add_zero 0) =
+      dgComp R (extensionFst R (dgDifferential_coneMorphism hv))
+        (extensionInl R (dgDifferential_coneMorphism hw)) (add_zero 0) := by
+  simp -proj only [coneCompHom, add_dgComp,
+    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionFst, dgComp_extensionInr_extensionFst, dgComp_zero, dgComp_dgId,
+    add_zero]
 
 /-- The homotopy between the identity of `cone (cone u ⟶ cone w)` and the comparison morphism to
 `cone v` followed by its inverse: the projection onto `cone w`, then onto `P⟦1⟧`, the comparison
