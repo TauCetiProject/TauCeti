@@ -27,11 +27,11 @@ inverse, the square root `CFC.sqrt H`, carries `h`-orthonormal frames back.
 
 Unlike the eigenbasis construction of `TauCeti.exists_continuousLinearEquiv_inner_map_map`, this
 transport involves no choice. It is characterized as the unique positive operator `S` with
-`S * H * S = 1`, and it is natural: pulling `h` back along a linear isometry `e` conjugates the
-transport by `e`. When `E` is finite-dimensional, every other isometry from `(E, ⟪·, ·⟫)` to
-`(E, h)` is the transport composed with a unique orthogonal automorphism of `E`. In particular,
-composing the transports of two successive changes of inner product need not give the transport
-of the composite change, but it differs from it only by an orthogonal automorphism.
+`S * H * S = 1`, and it is natural: pulling `h` back along a linear isometry equivalence `e`
+conjugates the transport by `e`. When `E` is finite-dimensional, every other isometry from
+`(E, ⟪·, ·⟫)` to `(E, h)` is the transport composed with a unique orthogonal automorphism of `E`.
+In particular, composing the transports of two successive changes of inner product need not give
+the transport of the composite change, but it differs from it only by an orthogonal automorphism.
 
 ## Main declarations
 
@@ -46,7 +46,8 @@ of the composite change, but it differs from it only by an orthogonal automorphi
   version.
 * `ContinuousLinearMap.inner_sqrt_apply_sqrt_apply`, `ContinuousLinearMap.orthonormal_sqrt_apply`:
   the inverse transport `CFC.sqrt H` is an isometry from `h` back to `⟪·, ·⟫`.
-* `ContinuousLinearMap.metricChangeTransport_bilinearComp`: naturality under linear isometries.
+* `ContinuousLinearMap.metricChangeTransport_bilinearComp`: naturality under linear isometry
+  equivalences.
 * `ContinuousLinearMap.forall_apply_apply_eq_inner_iff_exists_linearIsometryEquiv`: in finite
   dimension, the isometries from `⟪·, ·⟫` to `h` are exactly the transport composed with
   orthogonal automorphisms.
@@ -172,7 +173,7 @@ theorem metricChangeTransport_innerSL :
   rw [metricChangeTransport_def, this, CFC.one_rpow]
 
 /-- **Naturality of the metric change transport.** Pulling an inner product `k` on `F` back along
-a linear isometry `e : E ≃ₗᵢ[ℝ] F` conjugates its metric change transport by `e`. -/
+a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates its metric change transport by `e`. -/
 theorem metricChangeTransport_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[ℝ] F →L[ℝ] ℝ}
     (hK : IsStrictlyPositive k♯) (x : E) :
     (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F)).metricChangeTransport x =
