@@ -17,7 +17,8 @@ extends to the larger polydisc. No finiteness of the variable set or completenes
 coefficient ring is required.
 
 The restriction maps compose and commute with bounded coefficient maps and variable
-renaming. For commutative coefficients they are coefficient-algebra homomorphisms.
+renaming. For commutative coefficients they are coefficient-algebra homomorphisms and, at
+positive polyradii, continuous linear maps.
 These maps compare algebras of functions on nested closed polydiscs.
 
 ## References
@@ -175,5 +176,25 @@ theorem restrictedRadiusHom_renameAlgEquiv {τ : Type*} (e : τ ≃ σ)
   simp only [coe_restrictedRadiusHom, IsRestricted.coe_renameAlgEquiv]
 
 end Algebra
+
+section ContinuousLinearMap
+
+variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {r s : σ → ℝ}
+  [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)]
+
+/-- Radius restriction as a continuous linear map over the coefficient ring. It is contractive
+for the Gauss norms (`TauCeti.MvPowerSeries.norm_restrictedRadiusHom_le`). -/
+noncomputable def restrictedRadiusCLM (hrs : r ≤ s) :
+    IsRestricted.subring (R := R) s →L[R] IsRestricted.subring (R := R) r where
+  toLinearMap := (restrictedRadiusAlgHom (fun i ↦ (Fact.out : 0 < r i).le) hrs).toLinearMap
+  cont := continuous_restrictedRadiusHom (fun i ↦ (Fact.out : 0 < r i).le) hrs
+
+/-- The continuous linear form of radius restriction agrees with its ring form. -/
+@[simp]
+theorem restrictedRadiusCLM_apply (hrs : r ≤ s) (f : IsRestricted.subring (R := R) s) :
+    restrictedRadiusCLM hrs f = restrictedRadiusHom (fun i ↦ (Fact.out : 0 < r i).le) hrs f :=
+  (rfl)
+
+end ContinuousLinearMap
 
 end TauCeti.MvPowerSeries

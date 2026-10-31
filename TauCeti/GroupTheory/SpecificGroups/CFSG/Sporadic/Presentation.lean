@@ -37,8 +37,8 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Thompson
 This file assembles the twenty-six independently transcribed sporadic-group presentations into the
 total function `TauCeti.SporadicName.presentation`. Each branch is the explicit, cited
 `TauCeti.GroupPresentation` defined in its group-specific module. The theorem
-`TauCeti.presentation_matchesMetadata` combines the individual generator- and
-relator-count checks, while `TauCeti.SporadicName.Group` is the concrete group defined by the
+`TauCeti.presentation_matchesMetadata` combines the individual relator-count checks, while
+`TauCeti.SporadicName.Group` is the concrete group defined by the
 selected presentation.
 
 This is milestone S1 of `TauCetiRoadmap/CFSGStatement/README.md`. The dispatcher and its interface
@@ -54,7 +54,7 @@ imported module.
 ## Main results
 
 * `TauCeti.presentation_matchesMetadata`: every selected presentation has the stated
-  number of generators and relators.
+  number of relators.
 -/
 
 public section
@@ -91,11 +91,11 @@ def SporadicName.presentation : SporadicName → GroupPresentation
   | .B => Sporadic.BabyMonster.presentation
   | .M => Sporadic.Monster.presentation
 
-/-- Every sporadic presentation has the generator and relator counts stated in its metadata.
+/-- Every sporadic presentation has the relator count stated in its metadata.
 
 This is deliberately not `@[simp]`: `GroupPresentation.matchesMetadata_iff` is itself a `simp`
-lemma, so the left-hand side `s.presentation.matchesMetadata` simplifies to the pair of count
-equations and is not in simp normal form, which the `simpNF` linter rejects. Apply the theorem
+lemma, so the left-hand side `s.presentation.matchesMetadata` simplifies to the count
+equation and is not in simp normal form, which the `simpNF` linter rejects. Apply the theorem
 directly, or pass it to `simp` as an argument. -/
 theorem presentation_matchesMetadata (s : SporadicName) :
     s.presentation.matchesMetadata := by

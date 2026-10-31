@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.Kaehler.Hypersurface
 public import TauCeti.RingTheory.LocalRing.Hessian
 public import TauCeti.RingTheory.LocalRing.Module
 public import TauCeti.RingTheory.LocalRing.Quotient
+public import Mathlib.RingTheory.Etale.Basic
+import TauCeti.RingTheory.Kaehler.Conormal
 
 /-!
 # Local coordinates and minimal presentations
@@ -24,6 +26,11 @@ Over a ring `K`, say that `x` is a coordinate system of the local `K`-algebra `Q
 coordinate functions of this basis. This is the setting of
 `TauCeti.mem_maximalIdeal_sq_and_isUnit_det_hessian_of_formallyUnramified`, for instance the local
 ring at a closed point of a smooth variety with separable residue field.
+
+Coordinate systems exist whenever `Ω[Q⁄K]` is free of finite rank, `𝔪` is finitely generated and
+the residue field is formally étale over `K`, for instance finite separable over a field `K`: by
+the conormal sequence, `𝔪 / 𝔪²` is then the fibre of `Ω[Q⁄K]` at the closed point, and lifts to
+`𝔪` of the basis of this fibre are coordinates.
 
 For a local quotient `A = Q ⧸ (g₁, …, g_m)` with `e = dim_κ 𝔪_A / 𝔪_A²`, some `n - e` of the
 relations `g_s` together with `e` further elements generate `𝔪`. Dividing out by those `n - e`
@@ -41,6 +48,8 @@ as for the local ring at a point of a complete intersection curve in affine `n`-
   `𝔪` modulo `𝔪²` have gradients spanning `κⁿ`.
 * `TauCeti.linearIndependent_residue_apply_sum_elim`: completing elements with independent
   gradients by elements independent modulo them and `𝔪²` keeps the gradients independent.
+* `TauCeti.exists_coordinates`: a coordinate system exists when `Ω[Q⁄K]` has a finite basis, `𝔪`
+  is finitely generated and the residue field is formally étale over `K`.
 * `TauCeti.exists_minimal_presentation`: the minimal presentation of a quotient of `Q`.
 * `TauCeti.exists_hypersurface_presentation`: a quotient of `Q` by `n - e + 1` relations is a
   hypersurface in a local ring with `e` coordinates.
@@ -48,6 +57,8 @@ as for the local ring at a point of a complete intersection curve in affine `n`-
 ## References
 
 * [Stacks Project, Tag 00RU](https://stacks.math.columbia.edu/tag/00RU): the conormal sequence.
+* [Stacks Project, Tag 031I](https://stacks.math.columbia.edu/tag/031I): the conormal sequence of a
+  formally smooth quotient is split exact on the left.
 * [Stacks Project, Section 53.19, Tag 0C46](https://stacks.math.columbia.edu/tag/0C46): nodes of
   curves, plane curve singularities defined by a nondegenerate quadratic form.
 -/
@@ -56,7 +67,7 @@ public section
 
 noncomputable section
 
-open IsLocalRing KaehlerDifferential Module
+open IsLocalRing KaehlerDifferential Module TensorProduct
 
 namespace TauCeti
 
@@ -199,6 +210,67 @@ theorem linearIndependent_residue_apply_sum_elim {κ' : Type*} [Finite ι] [Fini
   simp [key c hvw]
 
 end Gradient
+
+section Existence
+
+variable {K Q ι : Type*} [CommRing K] [CommRing Q] [Algebra K Q] [IsLocalRing Q] [Finite ι]
+
+/-- **Existence of coordinates.** Let `Q` be a local `K`-algebra whose maximal ideal `𝔪` is finitely
+generated, whose differentials `Ω[Q⁄K]` have a basis indexed by `ι`, and whose residue field is
+formally étale over `K`. Then there are `x : ι → Q` generating `𝔪` whose differentials `dxᵢ` form a
+basis of `Ω[Q⁄K]`. -/
+theorem exists_coordinates [Algebra.FormallyEtale K (ResidueField Q)]
+    (hfg : (maximalIdeal Q).FG) (b : Basis ι Q Ω[Q⁄K]) :
+    ∃ (x : ι → Q) (b' : Basis ι Q Ω[Q⁄K]),
+      maximalIdeal Q = Ideal.span (Set.range x) ∧ ∀ i, b' i = D K Q (x i) := by
+  classical
+  have := Fintype.ofFinite ι
+  have hker : RingHom.ker (algebraMap Q (ResidueField Q)) = maximalIdeal Q := by
+    rw [ResidueField.algebraMap_eq, ker_residue]
+  -- The conormal map `𝔪/𝔪² → κ ⊗[Q] Ω[Q⁄K]` is bijective.
+  have hbij := kerCotangentToTensor_bijective_of_formallyEtale (R := K) (P := Q)
+    (S := ResidueField Q) residue_surjective
+  let bκ := Algebra.TensorProduct.basis (ResidueField Q) b
+  have hrepr (ω : Ω[Q⁄K]) (i : ι) :
+      bκ.repr ((1 : ResidueField Q) ⊗ₜ ω) i = residue Q (b.repr ω i) := by
+    simp [bκ, ResidueField.algebraMap_eq]
+  -- Lift the basis of the fibre `κ ⊗[Q] Ω[Q⁄K]` to elements of `𝔪`.
+  have hlift (i : ι) : ∃ x ∈ maximalIdeal Q, (1 : ResidueField Q) ⊗ₜ D K Q x = bκ i := by
+    obtain ⟨c, hc⟩ := hbij.2 (bκ i)
+    obtain ⟨m, rfl⟩ := Ideal.toCotangent_surjective _ c
+    exact ⟨m, hker ▸ m.2, by rwa [kerCotangentToTensor_toCotangent] at hc⟩
+  choose x hx𝔪 hxb using hlift
+  have hδ (k i : ι) : residue Q (b.repr (D K Q (x k)) i) = if k = i then 1 else 0 := by
+    rw [← hrepr, hxb, bκ.repr_self, Finsupp.single_apply]
+  -- The differentials `dxᵢ` reduce to the basis of the fibre, so they form a basis.
+  obtain ⟨b', hb'⟩ := IsLocalRing.exists_basis_of_linearIndependent_residue_coord b rfl
+    (v := fun k ↦ D K Q (x k)) <| by
+      convert (Pi.basisFun (ResidueField Q) ι).linearIndependent with k i
+      simp only [Basis.coord_apply, hδ, Pi.basisFun_apply, Pi.single_apply, eq_comm]
+  refine ⟨x, b', le_antisymm ?_ (Ideal.span_le.2 (Set.range_subset_iff.2 hx𝔪)), hb'⟩
+  -- Every `a ∈ 𝔪` agrees with a combination of the `xᵢ` modulo `𝔪²`, by injectivity of the
+  -- conormal map; Nakayama's lemma concludes.
+  refine Submodule.le_of_le_smul_of_le_jacobson_bot hfg (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge
+    fun a ha ↦ ?_
+  choose c hc using fun i ↦ residue_surjective (bκ.repr (1 ⊗ₜ D K Q a) i)
+  have hmem : a - ∑ i, c i * x i ∈ RingHom.ker (algebraMap Q (ResidueField Q)) :=
+    hker ▸ sub_mem ha (Ideal.sum_mem _ fun i _ ↦ Ideal.mul_mem_left _ _ (hx𝔪 i))
+  have hzero : (RingHom.ker (algebraMap Q (ResidueField Q))).toCotangent ⟨_, hmem⟩ = 0 := by
+    refine hbij.1 ?_
+    rw [kerCotangentToTensor_toCotangent, map_zero]
+    refine bκ.repr.injective (Finsupp.ext fun i ↦ ?_)
+    rw [hrepr, map_zero, Finsupp.coe_zero, Pi.zero_apply, map_sub, map_sub, Finsupp.sub_apply,
+      map_sub]
+    simp [Derivation.leibniz, (residue_eq_zero_iff _).2 (hx𝔪 _), hδ, hc, hrepr]
+  replace hzero : a - ∑ i, c i * x i ∈ maximalIdeal Q ^ 2 := by
+    rw [← hker]
+    exact (Ideal.toCotangent_eq_zero _ _).1 hzero
+  rw [smul_eq_mul, ← sq]
+  have : ∑ i, c i * x i ∈ Ideal.span (Set.range x) :=
+    Ideal.sum_mem _ fun i _ ↦ Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨i, rfl⟩)
+  simpa using Submodule.add_mem_sup this hzero
+
+end Existence
 
 section Presentation
 
