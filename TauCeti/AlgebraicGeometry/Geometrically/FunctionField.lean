@@ -55,8 +55,8 @@ which supplies the integrality of the base change `X ×_k Spec L`.
   the base change of `X` to an algebraic extension `K / k` is the compositum `k(X) · K`.
 
 The chart arguments use `TauCeti.AlgebraicGeometry.exists_affineOpen_isFractionRing` and
-`TauCeti.AlgebraicGeometry.nonempty_functionField_algEquiv_of_isOpenImmersion` (the function field
-of an integral scheme is the fraction field of any affine chart), from
+`AlgebraicGeometry.Scheme.Hom.nonempty_functionField_algEquiv_of_isOpenImmersion` (the function
+field of an integral scheme is the fraction field of any affine chart), from
 `TauCeti/AlgebraicGeometry/Scheme/BaseAlgebra.lean`, and
 `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback` (the base change of
 an affine chart is an affine chart of the base change), from
@@ -131,7 +131,7 @@ theorem nonempty_functionField_algEquiv_of_isPullback {K : Type u} [Field K] [Al
     isFractionRing_tensorProduct_of_constantCompositum_eq_top h
   have : IsScalarTower K (Γ(X, U) ⊗[k] K) F' := .of_algebraMap_eq fun c ↦ by
     simp [RingHom.algebraMap_toAlgebra]
-  exact nonempty_functionField_algEquiv_of_isOpenImmersion ι hι F'
+  exact ι.nonempty_functionField_algEquiv_of_isOpenImmersion hι F'
 
 end AlgebraicGeometry
 

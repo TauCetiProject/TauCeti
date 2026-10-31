@@ -40,7 +40,7 @@ fraction field of `A ⊗[k] k'` for a nonempty affine open `U = Spec A` of `X`.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.genus_eq_genus_functionField_of_smooth`: the genus
+* `AlgebraicGeometry.Scheme.genus_eq_genus_functionField_of_smooth`: the genus
   `dim H¹(X, 𝒪_X)` of a smooth proper geometrically integral curve is the genus of its function
   field.
 * `TauCeti.AlgebraicGeometry.genus_functionField_eq_of_isPullback`: the function field of the
@@ -70,9 +70,9 @@ variable {k : Type u} [Field k]
 /-- **The genus of a smooth curve is the genus of its function field.** For a smooth proper
 geometrically integral curve `X` over `k`, the genus `dim_k H¹(X, 𝒪_X)` is the genus of the
 function field `k(X)` defined through Riemann's theorem. -/
-theorem genus_eq_genus_functionField_of_smooth (X : Scheme.{u}) [X.Over (Spec (.of k))]
-    [IsIntegral X] [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
-    [GeometricallyIntegral (X ↘ Spec (.of k))] :
+theorem _root_.AlgebraicGeometry.Scheme.genus_eq_genus_functionField_of_smooth (X : Scheme.{u})
+    [X.Over (Spec (.of k))] [IsIntegral X] [IsProper (X ↘ Spec (.of k))]
+    [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))] [GeometricallyIntegral (X ↘ Spec (.of k))] :
     haveI := finiteDimensional_cohomology_one_trivial_of_smooth k X
     X.genus k = genus k X.functionField := by
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
@@ -109,7 +109,8 @@ theorem genus_functionField_eq_of_isPullback [IsIntegral X] [IsProper (X ↘ Spe
     MorphismProperty.of_isPullback (P := @SmoothOfRelativeDimension 1) H inferInstance
   have : GeometricallyIntegral (Y ↘ Spec (.of K)) :=
     MorphismProperty.of_isPullback (P := @GeometricallyIntegral) H inferInstance
-  rw [← genus_eq_genus_functionField_of_smooth, ← genus_eq_genus_functionField_of_smooth]
+  rw [← Scheme.genus_eq_genus_functionField_of_smooth,
+    ← Scheme.genus_eq_genus_functionField_of_smooth]
   exact genus_eq_of_isPullback_of_smooth H
 
 omit [Algebra k K] [Y.Over (Spec (.of K))] in

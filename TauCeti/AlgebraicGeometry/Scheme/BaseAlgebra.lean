@@ -38,9 +38,9 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   is the one used by Mathlib's `Scheme.Hom.residueDegree_eq_finrank`.
 * `Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion`: an affine open immersion over `Spec k`
   identifies the residue fields of `X` with those of the chart as `k`-algebras.
-* `TauCeti.AlgebraicGeometry.nonempty_functionField_algEquiv_of_isOpenImmersion`: the function
-  field of an integral scheme over `Spec k` is, as a `k`-algebra, the fraction field of any affine
-  chart over `Spec k`.
+* `Scheme.Hom.nonempty_functionField_algEquiv_of_isOpenImmersion`: the function field of an
+  integral scheme over `Spec k` is, as a `k`-algebra, the fraction field of any affine chart over
+  `Spec k`.
 * `TauCeti.AlgebraicGeometry.exists_affineOpen_isFractionRing`: an integral scheme over `Spec k`
   has a nonempty affine open `U` whose sections are a `k`-algebra with fraction field the function
   field, compatibly with the structure morphism.
@@ -312,9 +312,9 @@ section FunctionFieldChart
 /-- **The function field of an integral scheme is the fraction field of an affine chart.** If
 `ι : Spec R ⟶ Y` is an open immersion over `Spec k` into an integral scheme `Y`, then the function
 field of `Y` is, as a `k`-algebra, every fraction field `L` of `R`. -/
-theorem nonempty_functionField_algEquiv_of_isOpenImmersion {k R : Type u} [CommRing k]
-    [CommRing R] [Algebra k R] {Y : Scheme.{u}} [Y.Over (Spec (.of k))] [IsIntegral Y]
-    (ι : Spec (.of R) ⟶ Y) [IsOpenImmersion ι]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_functionField_algEquiv_of_isOpenImmersion
+    {k R : Type u} [CommRing k] [CommRing R] [Algebra k R] {Y : Scheme.{u}} [Y.Over (Spec (.of k))]
+    [IsIntegral Y] (ι : Spec (.of R) ⟶ Y) [IsOpenImmersion ι]
     (hι : ι ≫ (Y ↘ Spec (.of k)) = Spec.map (CommRingCat.ofHom (algebraMap k R)))
     (L : Type*) [Field L] [Algebra k L] [Algebra R L] [IsScalarTower k R L] [IsFractionRing R L] :
     Nonempty (Y.functionField ≃ₐ[k] L) := by
