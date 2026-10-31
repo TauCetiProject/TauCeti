@@ -23,11 +23,17 @@ injective modulo `I` in degree `n`, with free target, then it is injective modul
 the contraction by the coordinate `bᵢ*`, whence every `α(ιᵢ z) ∈ I F`, every `ιᵢ z ∈ I ⋀ⁿ M`,
 and finally `z ∈ I ⋀ⁿ⁺¹ M` by `Module.Basis.mem_smul_top_iff_forall_koszulDifferential_coord_mem`.
 
+Iterating the step, a chain map from the Koszul complex into a complex of free modules whose
+differentials land in `I` times their targets is injective modulo `I` in every degree as soon as
+it is so in degree `0`.
+
 ## Main results
 
 * `Module.Basis.comap_smul_top_le_of_comp_koszulDifferential`: a map compatible with the Koszul
   differential and a differential landing in `I` times its target is injective modulo `I` in
   degree `n + 1` if it is so in degree `n`.
+* `Module.Basis.comap_smul_top_le_of_hom_koszulComplex`: a chain map from the Koszul complex into
+  such a complex of free modules is injective modulo `I` in every degree if it is so in degree `0`.
 
 ## References
 
@@ -74,5 +80,26 @@ theorem comap_smul_top_le_of_comp_koszulDifferential [Finite ι] (b : Module.Bas
   simp only [map_smul] at hd'
   refine (b.mem_smul_top_iff_forall_koszulDifferential_coord_mem I z).mpr fun i ↦ hα ?_
   exact I.mem_smul_top_of_sum_smul_mem_sq_smul_top hli hd' i
+
+/-- **Comparison of a Koszul complex with a minimal complex** (Stacks 00OA). Let `φ(bᵢ) ∈ I` be
+linearly independent in `I/I²`, and let `α : K(φ) → F` be a chain map into a complex of free
+modules whose differentials land in `I` times their targets. If `α` is injective modulo `I` in
+degree `0`, then it is injective modulo `I` in every degree: `α(z) ∈ I Fₙ` forces
+`z ∈ I ⋀ⁿ M`. -/
+theorem comap_smul_top_le_of_hom_koszulComplex [Finite ι] (b : Module.Basis ι R M)
+    (φ : Module.Dual R M) {I : Ideal R} (hφ : ∀ i, φ (b i) ∈ I)
+    (hli : LinearIndependent (R ⧸ I) fun i ↦ I.toCotangent ⟨φ (b i), hφ i⟩)
+    {F : ChainComplex (ModuleCat.{max u v} R) ℕ} [∀ k, Module.Free R (F.X k)]
+    (hF : ∀ k, LinearMap.range (F.d (k + 1) k).hom ≤ I • ⊤) (α : koszulComplex φ ⟶ F)
+    (hα : (I • ⊤ : Submodule R (F.X 0)).comap (α.f 0).hom ≤ I • ⊤) (n : ℕ) :
+    (I • ⊤ : Submodule R (F.X n)).comap (α.f n).hom ≤ I • ⊤ := by
+  induction n with
+  | zero => exact hα
+  | succ k ih =>
+    refine b.comap_smul_top_le_of_comp_koszulDifferential φ hφ hli (hF k)
+      (LinearMap.ext fun z ↦ ?_) ih
+    -- The square `α ∘ d_K = d_F ∘ α` of the chain map, with `d_K` the Koszul differential.
+    exact congr(($(α.comm (k + 1) k)).hom z).trans
+      (congrArg (α.f k).hom (koszulComplex_d_apply φ k z))
 
 end Module.Basis
