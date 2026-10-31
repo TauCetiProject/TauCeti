@@ -11,7 +11,8 @@ public import Mathlib.LinearAlgebra.LinearDisjoint
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.LinearAlgebra.TensorProduct.Submodule
 public import Mathlib.RingTheory.Flat.Basic
-public import TauCeti.RingTheory.Ideal.Flat
+
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Basic setups for almost mathematics
