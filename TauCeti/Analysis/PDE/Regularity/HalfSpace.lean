@@ -81,37 +81,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam c : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι}
 
-omit [Fintype ι] [DecidableEq ι] in
-/-- Splitting a gradient along `ν` and the hyperplane orthogonal to it:
-`B(g, w) = ⟪g, ν⟫ ∑ⱼ B(ν', eⱼ) ⟪w, eⱼ⟫ + ∑ᵢ ∑ⱼ ⟪g, P eᵢ⟫ B(eᵢ, eⱼ) ⟪w, eⱼ⟫`, where
-`ν' = ν / ‖ν‖²` and `P z = z - (⟪z, ν⟫ / ‖ν‖²) ν`. -/
-private theorem bilin_eq_inner_mul_sum_add_sum_sum [Fintype ι]
-    (B : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) (g w : EuclideanSpace ℝ ι) :
-    B g w = ⟪g, ν⟫_ℝ * ∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (EuclideanSpace.basisFun ι ℝ j) *
-        ⟪w, EuclideanSpace.basisFun ι ℝ j⟫_ℝ +
-      ∑ i, ∑ j, ⟪g, EuclideanSpace.basisFun ι ℝ i -
-          (⟪EuclideanSpace.basisFun ι ℝ i, ν⟫_ℝ / ‖ν‖ ^ 2) • ν⟫_ℝ *
-        (B (EuclideanSpace.basisFun ι ℝ i) (EuclideanSpace.basisFun ι ℝ j) *
-          ⟪w, EuclideanSpace.basisFun ι ℝ j⟫_ℝ) := by
-  set b := EuclideanSpace.basisFun ι ℝ
-  have hw : ∀ p, B p w = ∑ j, B p (b j) * ⟪w, b j⟫_ℝ := fun p => by
-    conv_lhs => rw [← b.sum_repr' w]
-    simp only [map_sum, map_smul, smul_eq_mul, real_inner_comm, mul_comm]
-  have hν : ∑ i, (⟪b i, ν⟫_ℝ / ‖ν‖ ^ 2 * ⟪g, ν⟫_ℝ) • b i = (⟪g, ν⟫_ℝ / ‖ν‖ ^ 2) • ν := by
-    have h := congrArg (fun z => (⟪g, ν⟫_ℝ / ‖ν‖ ^ 2) • z) (b.sum_repr' ν)
-    simp only [Finset.smul_sum, smul_smul] at h
-    rw [← h]
-    exact Finset.sum_congr rfl fun i _ => by congr 1; ring
-  have hg : ⟪g, ν⟫_ℝ • (‖ν‖ ^ 2)⁻¹ • ν +
-      ∑ i, ⟪g, b i - (⟪b i, ν⟫_ℝ / ‖ν‖ ^ 2) • ν⟫_ℝ • b i = g := by
-    have hsum : ∑ i, ⟪g, b i⟫_ℝ • b i = g := by
-      simpa only [real_inner_comm] using b.sum_repr' g
-    simp only [inner_sub_right, real_inner_smul_right, sub_smul, Finset.sum_sub_distrib, hν]
-    rw [hsum, smul_smul, div_eq_mul_inv]
-    abel
-  conv_lhs => rw [← hg]
-  simp [hw, Finset.mul_sum, mul_assoc]
-
 omit [DecidableEq ι] in
 /-- **The equation gives a normal derivative.** Let `u ∈ H¹(Ω)` satisfy `a(u, φ) = ∫_Ω f φ` for
 every test function `φ`, where `a` is the energy form of a coefficient field continuous on `Ω`.
@@ -173,7 +142,7 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
       refine integral_congr_ae ?_
       filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
       rw [W1p.gradient_ofTestFunctionₗ, hx,
-        bilin_eq_inner_mul_sum_add_sum_sum (ν := ν) (matrixBilinearForm (a x))]
+        bilin_eq_inner_mul_sum_add_sum_sum b (matrixBilinearForm (a x)) ν]
       simp only [inner_gradient_left, (hφ x).lineDeriv_eq_fderiv, smul_eq_mul, Finset.mul_sum,
         ν', P, b]
     rw [← hU φ, energyFormH1_zero_zero_eq_setIntegral, hpt,
@@ -209,32 +178,6 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
   rw [hR, ← heq]
   simp only [htan, Finset.sum_neg_distrib]
   ring
-
-omit [DecidableEq ι] in
-/-- **The normal part of the equation's leading term.** Subtracting the tangential parts
-`∑ⱼ B(ν', eⱼ) ⟪g, P eⱼ⟫` from `∑ⱼ B(ν', eⱼ) ⟪g, eⱼ⟫` leaves `B(ν', ν') ⟪g, ν⟫`, where
-`ν' = ν / ‖ν‖²` and `P z = z - (⟪z, ν⟫ / ‖ν‖²) ν`. -/
-private theorem sum_smul_inner_sub_sum_smul_inner_proj
-    (B : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) (g : EuclideanSpace ℝ ι) :
-    (∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (EuclideanSpace.basisFun ι ℝ j) •
-        ⟪g, EuclideanSpace.basisFun ι ℝ j⟫_ℝ) -
-      ∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (EuclideanSpace.basisFun ι ℝ j) •
-        ⟪g, EuclideanSpace.basisFun ι ℝ j -
-          (⟪EuclideanSpace.basisFun ι ℝ j, ν⟫_ℝ / ‖ν‖ ^ 2) • ν⟫_ℝ =
-      B ((‖ν‖ ^ 2)⁻¹ • ν) ((‖ν‖ ^ 2)⁻¹ • ν) * ⟪g, ν⟫_ℝ := by
-  set b := EuclideanSpace.basisFun ι ℝ
-  set ν' : EuclideanSpace ℝ ι := (‖ν‖ ^ 2)⁻¹ • ν
-  have hν'sum : ∑ j, (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) • b j = ν' := by
-    simp only [ν', div_eq_inv_mul, ← smul_smul, ← Finset.smul_sum, b.sum_repr']
-  have hν' : ∑ j, B ν' (b j) * (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) = B ν' ν' := by
-    calc ∑ j, B ν' (b j) * (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2)
-        = B ν' (∑ j, (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) • b j) := by
-          simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
-      _ = B ν' ν' := by rw [hν'sum]
-  simp only [inner_sub_right, real_inner_smul_right, smul_eq_mul, mul_sub, Finset.sum_sub_distrib]
-  rw [← hν', Finset.sum_mul]
-  simp only [sub_sub_cancel]
-  exact Finset.sum_congr rfl fun j _ => by ring
 
 /-- **The normal second derivative.** Let `ν ≠ 0`, let `a` be uniformly elliptic and bounded on
 `Ω`, with `x ↦ a(x)` Lipschitz on `Ω` as a bilinear form, and let `u ∈ H¹(Ω)` satisfy
@@ -288,7 +231,7 @@ private theorem exists_hasWeakLineDerivOn_inner_gradient_normal (hν : ν ≠ 0)
   have hRc : ∀ x, (∑ j, β ν' (b j) x • ⟪W1p.gradient U x, b j⟫_ℝ) -
       ∑ j, β ν' (b j) x • ⟪W1p.gradient U x, P (b j)⟫_ℝ =
         β ν' ν' x * ⟪W1p.gradient U x, ν⟫_ℝ := fun x =>
-    sum_smul_inner_sub_sum_smul_inner_proj (matrixBilinearForm (a x)) (W1p.gradient U x)
+    sum_smul_inner_sub_sum_smul_inner_proj b (matrixBilinearForm (a x)) ν (W1p.gradient U x)
   -- Ellipticity: `⟪ν', a ν'⟫ ≥ λ ‖ν'‖² > 0` on `Ω`, so its reciprocal is bounded and Lipschitz.
   set m : ℝ := lam * ‖ν'‖ ^ 2
   have hm : 0 < m := mul_pos ha.pos (pow_pos (norm_pos_iff.2 (smul_ne_zero
