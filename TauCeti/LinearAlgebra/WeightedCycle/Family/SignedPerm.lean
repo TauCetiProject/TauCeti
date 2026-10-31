@@ -72,10 +72,6 @@ variable {ι V J : Type*} [Finite ι] [AddCommGroup V] (b : Module.Basis ι ℤ 
   (π : Equiv.Perm ι) (s : ι → ℤˣ) (f : V →ₗ[ℤ] V) (h : ∀ i, f (b i) = s i • b (π i))
   (rep : J → ι) (hrep : ∀ x, ∃! j, π.SameCycle (rep j) x)
 
-include hrep in
-private theorem finite_of_existsUnique_sameCycle : Finite J :=
-  _root_.Finite.of_injective rep (π.injective_of_existsUnique_sameCycle rep hrep)
-
 /-- The signs of `f` along the enumeration of the basis by the cycles of `π`. -/
 private noncomputable def cycleSign (j : J) (i : Fin (minimalPeriod π (rep j) - 1 + 1)) : ℤ :=
   s (π.sigmaCycleEquiv rep hrep ⟨j, i⟩)
@@ -104,7 +100,7 @@ by the cycles of monodromy `1`: its vectors are the signed orbit sums
 coefficients on the representatives (`Module.Basis.fixedBasisSignedPerm_repr`). -/
 noncomputable def fixedBasisSignedPerm :
     Module.Basis {j // π.monodromy s (rep j) = 1} ℤ f.fixedSubmodule :=
-  haveI := finite_of_existsUnique_sameCycle π rep hrep
+  haveI := π.finite_of_existsUnique_sameCycle rep hrep
   (b.fixedBasisSignedFamily (n := fun j ↦ minimalPeriod π (rep j) - 1)
     (π.sigmaCycleEquiv rep hrep) (cycleSign π s rep hrep)
     (cycleSign_eq_one_or π s rep hrep) f (apply_sigmaCycleEquiv b π s f h rep hrep)).reindex
@@ -117,7 +113,7 @@ theorem fixedBasisSignedPerm_apply (j : {j // π.monodromy s (rep j) = 1}) :
     (b.fixedBasisSignedPerm π s f h rep hrep j : V) =
       ∑ r ∈ Finset.range (minimalPeriod π (rep j)),
         π.cycleCoeff s (rep j) r • b ((π ^ r) (rep j)) := by
-  have := finite_of_existsUnique_sameCycle π rep hrep
+  have := π.finite_of_existsUnique_sameCycle rep hrep
   rw [fixedBasisSignedPerm, Module.Basis.reindex_apply, fixedBasisSignedFamily_apply,
     Equiv.subtypeEquivRight_symm_apply_coe, ← π.sum_fin_eq_sum_range_minimalPeriod]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -131,7 +127,7 @@ representative of the cycle. -/
 theorem fixedBasisSignedPerm_repr (v : f.fixedSubmodule)
     (j : {j // π.monodromy s (rep j) = 1}) :
     (b.fixedBasisSignedPerm π s f h rep hrep).repr v j = b.repr v (rep j) := by
-  have := finite_of_existsUnique_sameCycle π rep hrep
+  have := π.finite_of_existsUnique_sameCycle rep hrep
   rw [fixedBasisSignedPerm, Module.Basis.repr_reindex_apply, fixedBasisSignedFamily_repr,
     Equiv.subtypeEquivRight_symm_apply_coe, Equiv.Perm.sigmaCycleEquiv_apply, Fin.val_zero,
     pow_zero, Equiv.Perm.one_apply]

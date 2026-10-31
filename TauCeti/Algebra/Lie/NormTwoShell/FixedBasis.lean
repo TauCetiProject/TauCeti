@@ -62,6 +62,9 @@ signed-cycle statement.
   over the cycle, so it does not depend on the representative.
 * `Matrix.ShellLieAlgebra.reindex_pow_root`: the `r`-th iterate of the pinned action sends `x_a` to
   `c_r x_(γ^r a)`.
+* `Matrix.ShellLieAlgebra.reindex_basis`, `Matrix.ShellLieAlgebra.existsUnique_sameCycle_basis`: the
+  pinned action is the signed permutation `Equiv.Perm.sumCongr σ γ` of the integral basis, whose
+  cycles are represented by the vertex orbits and the root cycles.
 * `Matrix.ShellLieAlgebra.fixedBasis_inl`, `Matrix.ShellLieAlgebra.fixedBasis_inr`: the basis
   vectors are the Cartan orbit sums and the signed orbit sums of the root cycles of monodromy `1`.
 
@@ -153,7 +156,7 @@ theorem orbitRoot_def (C : Quotient (Equiv.Perm.SameCycle.setoid (normTwoShellCo
 
 /-- The pinned action permutes the integral basis `I ⊕ Φ` by `Equiv.Perm.sumCongr σ γ`, with sign
 `1` on Cartan vectors and the inversion sign on root vectors. -/
-private theorem reindex_basis (i : I ⊕ B.normTwoShell) :
+theorem reindex_basis (i : I ⊕ B.normTwoShell) :
     (reindex σ hσ).toLinearMap (basis B i) =
       Sum.elim (1 : I → ℤˣ) (fun a : B.normTwoShell ↦ inversionSign B σ a) i •
         basis B (Equiv.Perm.sumCongr σ (normTwoShellCongr hσ) i) := by
@@ -164,7 +167,7 @@ private theorem reindex_basis (i : I ⊕ B.normTwoShell) :
 omit [LinearOrder I] in
 /-- The representatives of the vertex orbits and of the root cycles represent the cycles of the
 pinned action on the integral basis. -/
-private theorem existsUnique_sameCycle_basis (x : I ⊕ B.normTwoShell) :
+theorem existsUnique_sameCycle_basis (x : I ⊕ B.normTwoShell) :
     ∃! j : Quotient (Equiv.Perm.SameCycle.setoid σ) ⊕
         Quotient (Equiv.Perm.SameCycle.setoid (normTwoShellCongr hσ)),
       (Equiv.Perm.sumCongr σ (normTwoShellCongr hσ)).SameCycle

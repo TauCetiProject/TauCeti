@@ -42,6 +42,8 @@ which `σ` is `finRotate`.
 
 * `Equiv.Perm.existsUnique_sameCycle_out`: the representatives `Quotient.out` of the cycle quotient
   pick exactly one point on every cycle.
+* `Equiv.Perm.finite_of_existsUnique_sameCycle`: a choice of one point on every cycle of a
+  permutation of a finite type is indexed by a finite type.
 * `Equiv.Perm.sigmaCycleEquiv_finRotate`: `σ` acts as the cyclic shift on every cycle.
 * `Equiv.Perm.sigmaCycleEquiv_symm_fst`: a point lies in the enumerated cycle it belongs to.
 * `Equiv.Perm.prod_range_minimalPeriod`: a product over the iterates of a point below the length
@@ -87,6 +89,12 @@ theorem injective_of_existsUnique_sameCycle : Injective rep := fun j k h ↦
   (hrep (rep k)).unique (h ▸ SameCycle.refl σ (rep j)) (SameCycle.refl σ (rep k))
 
 variable [Finite α]
+
+include hrep in
+/-- A choice of one point on every cycle of a permutation of a finite type is indexed by a finite
+type. -/
+theorem finite_of_existsUnique_sameCycle : Finite J :=
+  Finite.of_injective rep (σ.injective_of_existsUnique_sameCycle rep hrep)
 
 /-- Every point of a finite type has positive period under a permutation, so its period is the
 successor of its predecessor. -/
