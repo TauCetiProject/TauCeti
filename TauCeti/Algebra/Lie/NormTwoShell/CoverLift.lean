@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.NormTwoShell.Reindex
+public import TauCeti.Algebra.Lie.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover.SectionSign
 public import Mathlib.Algebra.Lie.Basic
 public import Mathlib.LinearAlgebra.Basis.SMul
 public import Mathlib.LinearAlgebra.Prod
-import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # The action of compatible sign-cover lifts on the signed shell Lie algebra
@@ -56,8 +55,6 @@ character of the lattice that determines `φ` (`Matrix.ShellLieAlgebra.coverEqui
   functoriality.
 * `Matrix.ShellLieAlgebra.coverEquiv_eq_refl_iff`: the action is faithful when the norm-two shell
   spans the lattice.
-* `Matrix.ShellLieAlgebra.reindex_eq_coverEquiv`: the relabelling
-  `Matrix.ShellLieAlgebra.reindex` is the action of the relabelled sign cover.
 
 ## References
 
@@ -270,27 +267,5 @@ theorem coverLieEquiv_apply (hB : B.PosDef) (hdiag : ∀ i, Even (B i i)) (hB' :
     (hright : ∀ x, (φ x).right = .ofAdd (g x.right.toAdd)) (x : ShellLieAlgebra B) :
     coverLieEquiv g hg hB hdiag hB' hdiag' hinl hright x = coverEquiv φ g hg x :=
   (rfl)
-
-/-- **Relabelling is the action of the relabelled sign cover.** For a symmetric `B` and a
-relabelling `e : I ≃ J` of its vertices with `B.reindex e e = B'`, the relabelling
-`Matrix.ShellLieAlgebra.reindex e he` is the action of the compatible pair formed by the relabelling
-`Matrix.SignCover.reindex` of the ordered sign covers and the isometry `a ↦ a ∘ e.symm`. -/
-theorem reindex_eq_coverEquiv (e : I ≃ J) (he : B.reindex e e = B') (hB : B.IsSymm) :
-    reindex e he = coverEquiv (SignCover.reindex e hB he).toMonoidHom
-      (LinearEquiv.funCongrLeft ℤ ℤ e.symm)
-      (fun a b => by subst he; exact funCongrLeft_symm_dotProduct_reindex_mulVec e B a b) := by
-  refine (basis B).ext' fun k => ?_
-  rcases k with i | a
-  · classical
-    rw [basis_inl, reindex_cartan, coverEquiv_cartan]
-    exact congrArg (cartan B') (funext fun j => by simp [LinearMap.funLeft_apply])
-  · have hs : SignCover.sectionSign (SignCover.reindex e hB he).toMonoidHom a =
-        inversionSign B e a := by
-      simp [SignCover.sectionSign_def]
-    have hr : normTwoShellEquivOfIsometry (LinearEquiv.funCongrLeft ℤ ℤ e.symm)
-        (fun a b => by subst he; exact funCongrLeft_symm_dotProduct_reindex_mulVec e B a b) a =
-          normTwoShellCongr he a :=
-      Subtype.ext (funext fun j => by simp [LinearMap.funLeft_apply])
-    rw [basis_inr, reindex_root, coverEquiv_root, hs, hr]
 
 end Matrix.ShellLieAlgebra

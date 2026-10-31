@@ -111,13 +111,10 @@ theorem negOnePow_orderedSignForm_mul_sectionSign_add (φ : SignCover B →* Sig
     (orderedSignForm B a b).negOnePow * sectionSign φ (a + b) =
       (orderedSignForm B' (g a) (g b)).negOnePow * (sectionSign φ a * sectionSign φ b) := by
   -- In the cover, `(1, a) (1, b) = ε(a, b) (1, a + b)`; compare the signs of the images under `φ`.
-  have hprod : (signFactorSet B).canonicalSection (.ofAdd a) *
-      (signFactorSet B).canonicalSection (.ofAdd b) =
-        FactorSet.inl (signFactorSet B) (orderedSignForm B a b).negOnePow *
-          (signFactorSet B).canonicalSection (.ofAdd (a + b)) := by
-    ext <;> simp
-  have key := congrArg FactorSet.Extension.left (congrArg φ hprod)
-  rw [map_mul, map_mul, hinl, FactorSet.Extension.mul_left, FactorSet.Extension.mul_left] at key
+  have key := congrArg FactorSet.Extension.left
+    (congrArg φ ((signFactorSet B).canonicalSection_mul (.ofAdd a) (.ofAdd b)))
+  rw [map_mul, map_mul, hinl, FactorSet.Extension.mul_left, FactorSet.Extension.mul_left,
+    ← ofAdd_add] at key
   simp only [FactorSet.inl_right, trivialMulDistribMulAction_smul, signFactorSet_apply,
     orderedSign_apply, toAdd_one, map_zero, LinearMap.zero_apply, Int.negOnePow_zero, mul_one,
     FactorSet.inl_left, hright, FactorSet.canonicalSection_apply, toAdd_ofAdd] at key
@@ -144,7 +141,7 @@ theorem sectionSign_add_of_right_eq {φ : SignCover B →* SignCover B}
     (hright : ∀ x, (φ x).right = x.right) (a b : I → ℤ) :
     sectionSign φ (a + b) = sectionSign φ a * sectionSign φ b := by
   have key := negOnePow_orderedSignForm_mul_sectionSign_add φ (g := LinearMap.id) hinl
-    (fun x => by rw [hright]; rfl) a b
+    (fun x => by rw [hright, LinearMap.id_apply, ofAdd_toAdd]) a b
   rwa [LinearMap.id_apply, LinearMap.id_apply, mul_right_inj] at key
 
 /-- **Trivial section signs on a spanning set force the identity.** If an endomorphism `φ` of an
@@ -167,8 +164,8 @@ theorem eq_id_of_sectionSign_eq_one {φ : SignCover B →* SignCover B}
   have hone (a : I → ℤ) : sectionSign φ a = 1 := by
     simpa [χ] using congr($hχ a)
   refine MonoidHom.ext fun x => ?_
-  have h := apply_canonicalSection φ (g := LinearMap.id) (fun y => by rw [hright]; rfl)
-    x.right.toAdd
+  have h := apply_canonicalSection φ (g := LinearMap.id)
+    (fun y => by rw [hright, LinearMap.id_apply, ofAdd_toAdd]) x.right.toAdd
   rw [ofAdd_toAdd, hone, map_one, one_mul, LinearMap.id_apply, ofAdd_toAdd] at h
   rw [← FactorSet.inl_mul_canonicalSection (signFactorSet B) x, map_mul, hinl, h,
     MonoidHom.id_apply]
