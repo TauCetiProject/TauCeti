@@ -313,30 +313,27 @@ section Pairing
 variable {ρ} (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 include hρ
 
-/-- **The `ω`-component of `q`**: `⟪q(ψ), ω⟫ = (‖P_α ψ‖² - ‖P_β ψ‖²) / 2`. With `ψ = α u₀ + β` this
-is `(|α|² - ‖β‖²) / 2`, the term of the curvature equation along `ω`. -/
+omit hω₂ hρ in
+/-- **The `ω`-component of `q`**: `⟪q(ψ), ω⟫ = (‖P_α ψ‖² - ‖P_β ψ‖²) / 2` for every self-dual `ω`.
+With `ψ = α u₀ + β` and `‖ω‖² = 2` this is `(|α|² - ‖β‖²) / 2`, the term of the curvature equation
+along `ω`. -/
 theorem inner_quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
     ⟪(quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V), ω⟫ =
       (‖cliffordProjection o ρ ω ψ‖ ^ 2 - ‖cliffordProjection o ρ (-ω) ψ‖ ^ 2) / 2 := by
-  have hP := isStarProjection_cliffordProjection o hQ hkl hω hω₂ hρ
-  have hP' := isStarProjection_cliffordProjection o hQ hkl (ω := -ω) (by rw [map_neg, hω])
-    (by rwa [norm_neg]) hρ
-  -- `C(iω) = 2 (P_α - P_β)`, and `⟪ψ, P ψ⟫ = ‖P ψ‖²` for an orthogonal projection `P`.
-  have hC : cliffordRestriction o ρ ω =
-      (2 : ℂ) • (cliffordProjection o ρ ω - cliffordProjection o ρ (-ω)) := by
-    rw [cliffordProjection_neg, cliffordRestriction_eq_cliffordProjection]
+  -- `P(±ω) ψ = ψ / 2 ± C(iω) ψ / 4`, and `‖a + b‖² - ‖a - b‖² = 4 Re⟪a, b⟫`.
+  have hP : cliffordProjection o ρ ω ψ =
+      (2⁻¹ : ℂ) • ψ + (4⁻¹ : ℂ) • cliffordRestriction o ρ ω ψ := by
+    rw [cliffordProjection_eq_smul]
+    simp only [smul_apply, add_apply, one_apply_eq_self, smul_add, smul_smul]
+    norm_num
+  have hP' : cliffordProjection o ρ (-ω) ψ =
+      (2⁻¹ : ℂ) • ψ - (4⁻¹ : ℂ) • cliffordRestriction o ρ ω ψ := by
+    rw [cliffordProjection_neg_apply, hP]
     module
-  have hnorm (P : positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ)
-      (hP : IsStarProjection P) : ⟪ψ, P ψ⟫_ℂ = ((‖P ψ‖ ^ 2 : ℝ) : ℂ) := by
-    have hPP : (P * P) ψ = P ψ := by rw [hP.isIdempotentElem.eq]
-    calc ⟪ψ, P ψ⟫_ℂ = ⟪ψ, (P * P) ψ⟫_ℂ := by rw [hPP]
-      _ = ⟪P ψ, P ψ⟫_ℂ := (hP.isSelfAdjoint.isSymmetric ψ (P ψ)).symm
-      _ = ((‖P ψ‖ ^ 2 : ℝ) : ℂ) := by exact_mod_cast inner_self_eq_norm_sq_to_K (P ψ)
-  rw [inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl hω, hC, smul_apply,
-    sub_apply, inner_smul_right, inner_sub_right, hnorm _ hP, hnorm _ hP']
-  simp only [Complex.mul_re, Complex.sub_re, Complex.ofReal_re, Complex.sub_im,
-    Complex.ofReal_im]
-  norm_num
+  rw [inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl hω, hP, hP', @norm_add_sq ℂ,
+    @norm_sub_sq ℂ, inner_smul_left, inner_smul_right]
+  simp only [RCLike.re_to_complex, map_inv₀, map_ofNat, ← mul_assoc]
+  norm_num [Complex.mul_re]
   ring
 
 omit hω₂ in
