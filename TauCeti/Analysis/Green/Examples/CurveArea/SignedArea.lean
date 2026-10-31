@@ -103,10 +103,4 @@ theorem signedArea_circleMap (c : ℂ) (R θ : ℝ) :
   simp
   ring
 
-/-- A circle of radius `R` about the origin, traversed once counterclockwise, has signed area
-`π R²`. -/
-@[simp]
-theorem signedArea_circleMap_zero (R : ℝ) : signedArea (circleMap 0 R) 0 (2 * π) = π * R ^ 2 := by
-  simpa using signedArea_circleMap 0 R 0
-
 end TauCeti

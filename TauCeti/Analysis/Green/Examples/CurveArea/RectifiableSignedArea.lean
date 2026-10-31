@@ -158,11 +158,4 @@ theorem rectifiableSignedArea_circleMap (c : ℂ) (R θ : ℝ) :
     |>.rectifiableSignedArea_eq_signedArea (le_add_of_nonneg_right Real.two_pi_pos.le),
     signedArea_circleMap]
 
-/-- A circle of radius `R` about the origin, traversed once counterclockwise, has geometric
-signed area `π R²`. -/
-@[simp]
-theorem rectifiableSignedArea_circleMap_zero (R : ℝ) :
-    rectifiableSignedArea (circleMap 0 R) 0 (2 * π) = π * R ^ 2 := by
-  simpa using rectifiableSignedArea_circleMap 0 R 0
-
 end TauCeti

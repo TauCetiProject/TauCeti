@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Curve.Circle.Basic
 import TauCeti.MeasureTheory.Function.AreaFormula.Circle
-import TauCeti.Topology.EMetricSpace.CurveLength
 
 /-!
 # Circular traces in the rectifiable isoperimetric equality case
@@ -49,8 +48,6 @@ In the `BoundedVariationOn` namespace:
 
 In the `ContinuousOn` namespace:
 
-* `eVariationOn_eq_of_image_eq_sphere`: a simple parametrization of a circle of radius `r` has
-  length `2 π r`.
 * `rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere`: a simple closed parametrization of a
   circle of radius `r` has geometric signed area `π r²` or `-π r²`.
 * `eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_of_image_eq_sphere`: simple
@@ -67,84 +64,6 @@ open scoped Real Interval Pointwise
 namespace ContinuousOn
 
 variable {γ : ℝ → ℂ} {a b : ℝ} {c : ℂ} {r : ℝ}
-
-/-- An angle function `θ`, continuous on `[a, b]`, of a simple closed curve `circleMap c r ∘ θ`
-increases or decreases by exactly one full turn. -/
-private theorem monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi {θ : ℝ → ℝ}
-    (hr : r ≠ 0) (hab : a < b) (hθ : ContinuousOn θ (Icc a b))
-    (hinj : InjOn (circleMap c r ∘ θ) (Ico a b))
-    (hclosed : circleMap c r (θ a) = circleMap c r (θ b)) :
-    (MonotoneOn θ (Icc a b) ∧ θ b = θ a + 2 * π) ∨
-      (AntitoneOn θ (Icc a b) ∧ θ a = θ b + 2 * π) := by
-  have ha : a ∈ Ico a b := ⟨le_rfl, hab⟩
-  have hθinj : InjOn θ (Ico a b) := fun s hs t ht h ↦ hinj hs ht (by simp [h])
-  -- A parameter `t ∈ [a, b)` whose angle differs from that of `a` by a full turn is `a`.
-  have hturn (t : ℝ) (ht : t ∈ Ico a b) (h : θ t = θ a + 2 * π ∨ θ a = θ t + 2 * π) :
-      False := by
-    have hta : t = a := hinj ht ha (by
-      rcases h with h | h
-      · simp [h, periodic_circleMap c r (θ a)]
-      · simp [h, periodic_circleMap c r (θ t)])
-    subst hta
-    rcases h with h | h <;> linarith [Real.pi_pos]
-  -- The angles at the endpoints differ: otherwise the angle at the midpoint would be taken
-  -- twice by the intermediate value theorem.
-  have hne : θ a ≠ θ b := by
-    intro hab'
-    set m := (a + b) / 2 with hm_def
-    have hm : m ∈ Ioo a b := ⟨by linarith, by linarith⟩
-    have hθm : θ m ≠ θ a := fun h ↦ hm.1.ne' (hθinj ⟨hm.1.le, hm.2⟩ ha h)
-    set v := (θ a + θ m) / 2 with hv_def
-    have hva : v ≠ θ a := fun h ↦ hθm (by linarith)
-    have hvm : v ≠ θ m := fun h ↦ hθm (by linarith)
-    have hv : v ∈ [[θ a, θ m]] := mem_uIcc.2 (by
-      rcases le_total (θ a) (θ m) with h | h <;> [left; right] <;> constructor <;> linarith)
-    obtain ⟨s, hs, hsv⟩ := intermediate_value_uIcc
-      (hθ.mono (by rw [uIcc_of_le hm.1.le]; exact Icc_subset_Icc le_rfl hm.2.le)) hv
-    obtain ⟨t, ht, htv⟩ := intermediate_value_uIcc
-      (hθ.mono (by rw [uIcc_of_le hm.2.le]; exact Icc_subset_Icc hm.1.le le_rfl))
-      (show v ∈ [[θ m, θ b]] by rwa [← hab', uIcc_comm])
-    rw [uIcc_of_le hm.1.le] at hs
-    rw [uIcc_of_le hm.2.le] at ht
-    have htb : t ≠ b := by rintro rfl; exact hva (htv.symm.trans hab'.symm)
-    have hst : s = t := hθinj ⟨hs.1, hs.2.trans_lt hm.2⟩ ⟨hm.1.le.trans ht.1, ht.2.lt_of_ne htb⟩
-      (hsv.trans htv.symm)
-    have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
-    exact hvm (hsv.symm.trans (congrArg θ hsm))
-  have hθinj' : InjOn θ (Icc a b) := by
-    rw [← Ico_insert_right hab.le, injOn_insert fun h : b ∈ Ico a b ↦ h.2.false]
-    refine ⟨hθinj, ?_⟩
-    rintro ⟨t, ht, htb⟩
-    exact hne ((congrArg θ (hinj ht ha (by simp [htb, hclosed]))).symm.trans htb)
-  -- An injective continuous angle is strictly monotone; a turn of more than `2π` would repeat the
-  -- initial point, and a turn of less than `2π` could not close up.
-  rcases hθ.strictMonoOn_of_injOn_Icc' hab.le hθinj' with hmono | hanti
-  · refine Or.inl ⟨hmono.monotoneOn, ?_⟩
-    have hlt := hmono (left_mem_Icc.2 hab.le) (right_mem_Icc.2 hab.le) hab
-    rcases lt_trichotomy (θ b) (θ a + 2 * π) with h | h | h
-    · exact (hne (eq_of_circleMap_eq hr (by rw [abs_lt]; constructor <;> linarith) hclosed)).elim
-    · exact h
-    · obtain ⟨t, ht, htv⟩ := intermediate_value_Icc hab.le hθ
-        (show θ a + 2 * π ∈ Icc (θ a) (θ b) by constructor <;> linarith [Real.pi_pos])
-      have htb : t ≠ b := by rintro rfl; linarith
-      exact (hturn t ⟨ht.1, ht.2.lt_of_ne htb⟩ (Or.inl htv)).elim
-  · refine Or.inr ⟨hanti.antitoneOn, ?_⟩
-    have hlt := hanti (left_mem_Icc.2 hab.le) (right_mem_Icc.2 hab.le) hab
-    rcases lt_trichotomy (θ a) (θ b + 2 * π) with h | h | h
-    · exact (hne (eq_of_circleMap_eq hr (by rw [abs_lt]; constructor <;> linarith) hclosed)).elim
-    · exact h
-    · obtain ⟨t, ht, htv⟩ := intermediate_value_Icc' hab.le hθ
-        (show θ a - 2 * π ∈ Icc (θ b) (θ a) by constructor <;> linarith [Real.pi_pos])
-      have htb : t ≠ b := by rintro rfl; linarith
-      exact (hturn t ⟨ht.1, ht.2.lt_of_ne htb⟩ (Or.inr (by linarith))).elim
-
-/-- A continuous curve on `[a, b]` that is injective on `(a, b)` and traces the circle
-`sphere c r` has length `2 π r`. In particular such a parametrization is rectifiable. -/
-theorem eVariationOn_eq_of_image_eq_sphere (hcont : ContinuousOn γ (Icc a b))
-    (hinj : InjOn γ (Ioo a b)) (himage : γ '' Icc a b = sphere c r) (hr : 0 ≤ r) :
-    eVariationOn γ (Icc a b) = ENNReal.ofReal (2 * π * r) := by
-  rw [hcont.eVariationOn_eq_euclideanHausdorffMeasure_image hinj, himage,
-    Complex.euclideanHausdorffMeasure_sphere c hr]
 
 /-- A simple closed curve that traces the circle `sphere c r` of positive radius has geometric
 signed area `π r²` or `-π r²`, according to its orientation. The parametrization need not be
@@ -172,7 +91,7 @@ theorem rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere (hcont : Continuou
     (hγθ (left_mem_Icc.2 hab.le)).trans (hclosed.trans (hγθ (right_mem_Icc.2 hab.le)).symm)
   have hcirc (s : Set ℝ) : ContinuousOn (circleMap c r) s := (continuous_circleMap c r).continuousOn
   rw [← rectifiableSignedArea_congr hγθ]
-  rcases monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi hr.ne' hab hθ hinj'
+  rcases hθ.monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi hr.ne' hab hinj'
     hclosed' with ⟨hmono, hb⟩ | ⟨hanti, ha⟩
   · left
     rw [rectifiableSignedArea_comp_of_monotoneOn (hcirc _) hab.le hθ hmono rfl rfl, hb,

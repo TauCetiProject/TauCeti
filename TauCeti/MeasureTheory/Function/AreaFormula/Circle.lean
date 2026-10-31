@@ -29,6 +29,8 @@ case of the measure `n ω_n r ^ (n - 1)` of spheres.
   fibers of `circleMap c R` on `[0, 4π]` have exactly two points.
 * `Complex.euclideanHausdorffMeasure_sphere`: a circle of radius `r` has one-dimensional
   Hausdorff measure `2 π r`.
+* `ContinuousOn.eVariationOn_eq_of_image_eq_sphere`: a simple parametrization of a circle of
+  radius `r` has length `2 π r`.
 * `TauCeti.eVariationOn_circleMap_Icc_zero_two_pi`: the single traversal has length
   `μHE[1] (sphere c |R|)`.
 * `TauCeti.eVariationOn_circleMap_Icc_zero_four_pi`: the double traversal has length
@@ -92,6 +94,15 @@ theorem _root_.Complex.euclideanHausdorffMeasure_sphere (c : ℂ) {r : ℝ} (hr 
   rw [h, Complex.volume_ball, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul zero_le_two,
     ← ENNReal.ofReal_coe_nnreal, NNReal.coe_real_pi]
   simp
+
+/-- A continuous curve on `[a, b]` that is injective on `(a, b)` and traces the circle
+`sphere c r` has length `2 π r`. In particular such a parametrization is rectifiable. -/
+theorem _root_.ContinuousOn.eVariationOn_eq_of_image_eq_sphere {γ : ℝ → ℂ} {a b : ℝ} {c : ℂ}
+    {r : ℝ} (hcont : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b))
+    (himage : γ '' Icc a b = sphere c r) (hr : 0 ≤ r) :
+    eVariationOn γ (Icc a b) = ENNReal.ofReal (2 * π * r) := by
+  rw [hcont.eVariationOn_eq_euclideanHausdorffMeasure_image hinj, himage,
+    _root_.Complex.euclideanHausdorffMeasure_sphere c hr]
 
 /-- The parametrization of a circle of radius zero is constant, so it has zero variation. -/
 private theorem eVariationOn_circleMap_zero (c : ℂ) (s : Set ℝ) :
