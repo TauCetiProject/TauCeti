@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.RingTheory.MvPolynomial.DualNumber
 
 /-!
 # Jacobian matrices of polynomial families at a point
@@ -30,9 +31,16 @@ column in terms of the others, so the chart Jacobian at the coordinate ratios ha
 and rank as the cone Jacobian at the homogeneous coordinates. In particular full rank can be
 tested in any standard chart containing the point, and the answer is independent of the chart.
 
+The Jacobian matrix is also the infinitesimal part of evaluation at a dual-number point: evaluating
+`p` at `v + ε w` with `ε² = 0` gives `p(v) + ε J_p(v) w`. This turns the computation of a
+Jacobian into a computation of values, which is convenient when `p` is built from matrix
+products, as the multiplicativity of evaluation then replaces the Leibniz rule.
+
 ## Main results
 
 * `TauCeti.jacobiMatrixAt_mulVec_self`: Euler's identity `J_p(v) v = (d_i p_i(v))_i`.
+* `TauCeti.jacobiMatrixAt_mulVec_apply_eq_snd_aeval`: `p(v + ε w) = p(v) + ε J_p(v) w` over
+  the dual numbers, from `MvPolynomial.aeval_inl_add_inr`.
 * `TauCeti.jacobiMatrixAt_smul`: `J_p(t • v) = diag(t ^ (d_i - 1)) J_p(v)`.
 * `TauCeti.rank_jacobiMatrixAt_eq_of_mk_eq_mk`,
   `TauCeti.mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk`: the rank, and so whether it is
@@ -119,6 +127,16 @@ theorem jacobiMatrixAt_dehomogenize {n : ℕ} (i : Fin (n + 1))
       (jacobiMatrixAt p (i.insertNth 1 a)).submatrix id i.succAbove := by
   ext k j
   simp
+
+/-- **The Jacobian matrix as the infinitesimal part of a dual-number evaluation.** The Jacobian
+matrix of `p` at `v`, applied to `w`, is the `ε`-coefficient of `p(v + ε w)`. -/
+theorem jacobiMatrixAt_mulVec_apply_eq_snd_aeval [Fintype σ] (p : ι → MvPolynomial σ R)
+    (v w : σ → R) (i : ι) :
+    (jacobiMatrixAt p v *ᵥ w) i =
+      (aeval (fun j ↦ TrivSqZeroExt.inl (v j) + TrivSqZeroExt.inr (w j) :
+        σ → TrivSqZeroExt R R) (p i)).snd := by
+  rw [aeval_inl_add_inr]
+  simp [mulVec, dotProduct, mul_comm]
 
 end CommSemiring
 

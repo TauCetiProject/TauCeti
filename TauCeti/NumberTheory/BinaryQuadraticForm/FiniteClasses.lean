@@ -79,10 +79,19 @@ theorem finite_orbitRel_quotient_of_forall_discrim_eq {D : ℤ} (hD : D ≠ 0)
   exact ⟨⟨γ • f, hγ⟩, Quotient.sound' ⟨γ, rfl⟩⟩
 
 /-- There are finitely many proper equivalence classes of primitive integral binary quadratic
-forms of a nonzero discriminant `D`, square or not, positive or negative. -/
-instance finite_orbitRel_quotient_primitiveForms {D : ℤ} [NeZero D] :
-    Finite (orbitRel.Quotient SL(2, ℤ) (primitiveForms D)) :=
-  finite_orbitRel_quotient_of_forall_discrim_eq (NeZero.ne D) _ fun f hf ↦
-    ((mem_primitiveForms D f).1 hf).1
+forms of every discriminant `D`, square or not, positive, negative or zero. For `D = 0` every class
+contains `y²` or `-y²`. -/
+instance finite_orbitRel_quotient_primitiveForms {D : ℤ} :
+    Finite (orbitRel.Quotient SL(2, ℤ) (primitiveForms D)) := by
+  obtain rfl | hD := eq_or_ne D 0
+  · -- a primitive form of discriminant `0 = 0²` is properly equivalent to `c y²` with `c` a unit
+    refine .of_surjective (fun u : ℤˣ ↦
+      Quotient.mk'' (⟨splitTriangularForm 0 u, by simp [isCoprime_zero_left]⟩ : primitiveForms 0))
+      (Quotient.ind' fun f ↦ ?_)
+    obtain ⟨hd, hp⟩ := (mem_primitiveForms 0 f.1).1 f.2
+    obtain ⟨γ, c, hγ, hc⟩ := exists_smul_eq_splitTriangularForm f.1 0 (by simpa using hd) hp
+    exact ⟨(isCoprime_zero_left.mp hc).unit, Quotient.sound' ⟨γ, Subtype.ext hγ⟩⟩
+  · exact finite_orbitRel_quotient_of_forall_discrim_eq hD _ fun f hf ↦
+      ((mem_primitiveForms D f).1 hf).1
 
 end TauCeti.BinaryQuadraticForm

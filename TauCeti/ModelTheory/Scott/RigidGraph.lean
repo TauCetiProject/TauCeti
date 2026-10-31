@@ -100,15 +100,10 @@ theorem rigidSixGraph_iso_eq_refl
     e = SimpleGraph.Iso.refl := by
   apply RelIso.ext
   intro v
-  have he : e.toLanguageEquiv ∘ (fun _ : Fin 1 => v) = fun _ => e v := by
-    funext i
-    exact e.toLanguageEquiv_apply v
-  have hb : BFEquiv (L := Language.graph) (2 : Ordinal.{0}) 1 (fun _ => v)
-      (e.toLanguageEquiv ∘ fun _ => v) :=
-    e.toLanguageEquiv.bfEquiv (2 : Ordinal.{0}) (fun _ : Fin 1 => v)
-  rw [he] at hb
-  have h := (bfEquiv_two_rigidSixGraph_iff v (e v)).mp hb
-  exact h.symm
+  have hb := e.toLanguageEquiv.bfEquiv (2 : Ordinal.{0}) (fun _ : Fin 1 => v)
+  apply Eq.symm
+  apply (bfEquiv_two_rigidSixGraph_iff v (e v)).mp
+  simpa only [Function.comp_def, SimpleGraph.Iso.toLanguageEquiv_apply] using hb
 
 /-- Every tuple of `rigidSixGraph` is orbit-stable at level two. -/
 private theorem two_mem_orbitStable_rigidSixGraph {n : ℕ} (a : Fin n → Fin 6) :
@@ -117,10 +112,8 @@ private theorem two_mem_orbitStable_rigidSixGraph {n : ℕ} (a : Fin n → Fin 6
   intro b h β
   have hab : a = b := by
     funext i
-    have ha : a ∘ (fun _ : Fin 1 => i) = fun _ => a i := (rfl)
-    have hb : b ∘ (fun _ : Fin 1 => i) = fun _ => b i := (rfl)
     exact (bfEquiv_two_rigidSixGraph_iff (a i) (b i)).mp
-      (by simpa only [ha, hb] using h.comp (fun _ : Fin 1 => i))
+      (h.comp (fun _ : Fin 1 => i))
   subst b
   exact BFEquiv.refl β a
 
@@ -132,12 +125,9 @@ theorem orbitRank_rigidSixGraph (v : Fin 6) :
   rw [← one_add_one_eq_two, Order.add_one_le_iff, lt_iff_not_ge, orbitRank_le_iff,
     mem_orbitStable_iff]
   intro h
-  obtain ⟨w, hw⟩ : ∃ w : Fin 6, v ≠ w := by
-    by_cases hv : v = 0
-    · exact ⟨1, hv.trans_ne (by decide)⟩
-    · exact ⟨0, hv⟩
+  obtain ⟨w, hw⟩ := exists_ne v
   exact hw ((bfEquiv_two_rigidSixGraph_iff v w).mp
-    (h (fun _ : Fin 1 => w) (bfEquiv_one_rigidSixGraph v w) 2))
+    (h (fun _ : Fin 1 => w) (bfEquiv_one_rigidSixGraph v w) 2)).symm
 
 /-- The internal Scott rank of `rigidSixGraph` is three. -/
 theorem internalScottRank_rigidSixGraph :

@@ -52,7 +52,7 @@ measurable (`TauCeti.measurable_perimeter_setOf_lt`). It is lower semicontinuous
 ## Main declarations
 
 * `TauCeti.integral_divergenceCLM_mul_eq_integral_integral_indicator`: the layer-cake formula for
-  the pairing of `u` with `div φ`.
+  the pairing of `u` with `div φ`, in any finite-dimensional real normed space.
 * `TauCeti.totalVariationOn_le_lintegral_perimeter`: the coarea inequality.
 * `LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fderiv`: for locally Lipschitz
   `u`, `∫_ℝ P({u > t}; Ω) dt = ∫_Ω ‖Du‖`.
@@ -79,9 +79,12 @@ namespace TauCeti
 
 /-! ### The layer-cake formula and the coarea inequality -/
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
-  {u : E → ℝ}
+variable {E : Type*} [NormedAddCommGroup E]
+
+section NormedSpace
+
+variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E} {u : E → ℝ}
 
 /-- **The layer-cake formula for the distributional pairing.** For `u` locally integrable on `Ω`
 and a test vector field `φ` on `Ω`, the pairing of `u` with `div φ` is the integral over all
@@ -139,6 +142,11 @@ theorem integral_divergenceCLM_mul_eq_integral_integral_indicator
         · simp [indicator_apply]
         · simpa [indicator_apply] using hA
         · exact hf_int.mul_const _
+
+end NormedSpace
+
+variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E} {u : E → ℝ}
 
 /-- **The coarea inequality.** For `u` locally integrable on `Ω`, against an additive Haar
 measure, the total variation of `u` is at most the integral of the perimeters of its superlevel
@@ -267,11 +275,11 @@ private theorem perimeter_setOf_lt_congr_ae {v : E → ℝ} (h : u =ᵐ[μ.restr
   filter_upwards [h] with x hx
   simp only [hx]
 
-omit [μ.IsAddHaarMeasure] in
+omit [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- For a measurable `u`, the perimeter of `{u > t}` in `Ω` is lower semicontinuous in `t` at every
 level `t` whose level set `{u = t}` is null in `Ω`. -/
-private theorem lowerSemicontinuousAt_perimeter_setOf_lt [IsLocallyFiniteMeasure μ]
-    (hu : Measurable u) {t : ℝ}
+private theorem lowerSemicontinuousAt_perimeter_setOf_lt [OpensMeasurableSpace E]
+    [IsLocallyFiniteMeasure μ] (hu : Measurable u) {t : ℝ}
     (ht : μ.restrict Ω {x | u x = t} = 0) :
     LowerSemicontinuousAt (fun s => perimeter μ Ω {x | s < u x}) t := by
   intro y hy
@@ -299,10 +307,10 @@ private theorem lowerSemicontinuousAt_perimeter_setOf_lt [IsLocallyFiniteMeasure
   rcases hx with ⟨hx₁, hx₂⟩ | ⟨hx₁, hx₂⟩ <;> simp only [mem_ofPred_eq, not_lt] at hx₁ hx₂ <;>
     exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
-omit [μ.IsAddHaarMeasure] in
+omit [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- **Measurability in the level.** For `u` almost everywhere measurable on `Ω`, the perimeter of
 the superlevel set `{u > t}` in `Ω` is a measurable function of the level `t`. -/
-theorem measurable_perimeter_setOf_lt [IsLocallyFiniteMeasure μ]
+theorem measurable_perimeter_setOf_lt [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ]
     (hu : AEMeasurable u (μ.restrict Ω)) : Measurable fun t => perimeter μ Ω {x | t < u x} := by
   simp_rw [perimeter_setOf_lt_congr_ae hu.ae_eq_mk]
   -- Lower semicontinuity can only fail at the countably many levels of positive measure.

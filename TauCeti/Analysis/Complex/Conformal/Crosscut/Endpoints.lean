@@ -63,15 +63,9 @@ with its closure; they do not assert the continuous boundary extension itself.
 The half-width `arccos (ρ / (2 * r))` is read off the cosine criterion of
 `TauCeti/Topology/Circle/Metric.lean` through `Real.lt_cos_iff_mem_Ioo` and
 `Real.le_cos_iff_mem_Icc`, the arccosine description of the angles at which the cosine exceeds a
-threshold, in `TauCeti/Analysis/SpecialFunctions/Trigonometric/Arccos.lean`.
-
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort. Mathlib supplies `circleMap`, its periodicity and
-injectivity on one period, inverse trigonometric functions, and the generic fact that two circles in
-the plane meet in at most two points; none of the crosscut descriptions below is present there.
+threshold, in `TauCeti/Analysis/SpecialFunctions/Trigonometric/Arccos.lean`. The remaining inputs
+are Mathlib's: `circleMap` with its periodicity and injectivity on one period, the inverse
+trigonometric functions, and the fact that two circles in the plane meet in at most two points.
 
 ## References
 

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Average
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
-import TauCeti.Analysis.Convolution
+import TauCeti.Analysis.Convolution.Basic
 
 /-!
 # Smooth approximate identities in `Lᵖ`

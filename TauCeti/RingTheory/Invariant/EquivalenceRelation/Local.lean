@@ -6,44 +6,58 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import Mathlib.RingTheory.Finiteness.Descent
+public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 public import TauCeti.Algebra.Module.Submodule.Union
+public import TauCeti.RingTheory.Invariant.EquivalenceRelation.BaseChange
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Basis
+public import TauCeti.RingTheory.IsTensorProduct.EqLocus
+public import TauCeti.RingTheory.LocalRing.InfiniteResidueField
 
 /-!
 # Equivalence relations with a local ring of invariants
 
 Let `s = algebraMap A B` and `t : A →+* B` define an equivalence relation `Spec B ⇉ Spec A`
 (`RingHom.IsSpecEquivRel`) with `B` finite free over `A` through `s`, and suppose that its ring of
-invariants `C = {a : s a = t a}` is a local ring with infinite residue field. This file proves that
-there are elements `aᵢ ∈ A` whose images `t aᵢ` form a basis of `B` over `A`
-(`RingHom.IsSpecEquivRel.exists_basis_eq_apply`). By `RingHom.IsSpecEquivRel.basis` and
-`RingHom.IsSpecEquivRel.tensorProductEquiv`, the `aᵢ` then form a basis of `A` over `C`, and
-`A ⊗[C] A ≅ B`: the quotient map `Spec A ⟶ Spec C` is finite free, and the relation is its
-kernel pair. This is the local case of the quotient of an affine scheme by a finite locally free
-equivalence relation (SGA 3, Exposé V, Théorème 4.1), for local rings of invariants with infinite
-residue field.
+invariants `C = {a : s a = t a}` is a local ring. This file proves that there are elements `aᵢ ∈ A`
+whose images `t aᵢ` form a basis of `B` over `A` (`RingHom.IsSpecEquivRel.exists_basis_eq_apply`).
+By `RingHom.IsSpecEquivRel.basis` and `RingHom.IsSpecEquivRel.tensorProductEquiv`, the `aᵢ` then
+form a basis of `A` over `C`, and `A ⊗[C] A ≅ B`: the quotient map `Spec A ⟶ Spec C` is finite
+free, and the relation is its kernel pair. This is the local case of the quotient of an affine
+scheme by a finite locally free equivalence relation (SGA 3, Exposé V, Théorème 4.1), for relations
+which are finite free over `Spec A`.
 
-The elements are found by general position. Since `A` is integral over `C` and the points of
-`Spec C` are the orbits of the relation, the maximal ideals of `A` form a single orbit, which is
-finite because `B` is finite over `A` (`RingHom.IsSpecEquivRel.finite_maximalSpectrum`). Fix a
-basis of `B` over `A`. For each maximal ideal `q` of `A`, reducing coordinates modulo `q` gives a
-map from `B` to `κ(q)ⁿ`, and the images of the `t a` span `κ(q)ⁿ`, because `t(A)` spans `B`
-(`RingHom.IsSpecEquivRel.span_range_eq_top`). The `aᵢ` are chosen one at a time: the elements `a`
-for which the image of `t a` lies in the span of the images of the earlier `t aⱼ` form a proper
-`C`-submodule of `A` for each `q`, and a module over a local ring with infinite residue field is
-not a finite union of proper submodules
+When the residue field of `C` is infinite, the elements are found by general position. Since `A`
+is integral over `C` and the points of `Spec C` are the orbits of the relation, the maximal ideals
+of `A` form a single orbit, which is finite because `B` is finite over `A`
+(`RingHom.IsSpecEquivRel.finite_maximalSpectrum`). Fix a basis of `B` over `A`. For each maximal
+ideal `q` of `A`, reducing coordinates modulo `q` gives a map from `B` to `κ(q)ⁿ`, and the images of
+the `t a` span `κ(q)ⁿ`, because `t(A)` spans `B` (`RingHom.IsSpecEquivRel.span_range_eq_top`). The
+`aᵢ` are chosen one at a time: the elements `a` for which the image of `t a` lies in the span of
+the images of the earlier `t aⱼ` form a proper `C`-submodule of `A` for each `q`, and a module over
+a local ring with infinite residue field is not a finite union of proper submodules
 (`Submodule.exists_forall_notMem_of_forall_ne_top_of_isLocalRing`). The resulting matrix of
 coordinates has a determinant that lies in no maximal ideal of `A`, so it is a unit.
+
+In general, base change along a faithfully flat local map `C → C'` with infinite residue field
+(`IsLocalRing.exists_faithfullyFlat_infinite_residueField`) gives the relation
+`Spec (A' ⊗[A] B) ⇉ Spec A'` with `A' = C' ⊗[C] A`, which is again finite free, and whose ring of
+invariants is `C'` because invariants commute with flat base change
+(`RingHom.eqLocus_eq_range_of_isPushout`). By the first case `A'` is finite free over `C'` of rank
+`rank_A B`, so `A` is finite and flat over `C` by faithfully flat descent, hence free of the same
+rank over the local ring `C`. Then the images `t aᵢ` of a basis `aᵢ` of `A` over `C` span `B` over
+`A`, and so form a basis because there are `rank_A B` of them.
 
 ## Main results
 
 * `RingHom.IsSpecEquivRel.finite_maximalSpectrum`: if the ring of invariants is local, `A` has
   finitely many maximal ideals.
-* `RingHom.IsSpecEquivRel.exists_basis_eq_apply`: if the ring of invariants is local with infinite
-  residue field, some basis of `B` over `A` consists of elements `t aᵢ`.
+* `RingHom.IsSpecEquivRel.exists_basis_eq_apply`: if the ring of invariants is local, some basis of
+  `B` over `A` consists of elements `t aᵢ`.
 * `RingHom.IsSpecEquivRel.free_of_isLocalRing`, `RingHom.IsSpecEquivRel.finite_of_isLocalRing` and
   `RingHom.IsSpecEquivRel.exists_tensorProductEquiv_of_isLocalRing`: then `A` is finite free over
   the ring of invariants `C`, and `A ⊗[C] A ≅ B`.
@@ -53,7 +67,6 @@ coordinates has a determinant that lies in no maximal ideal of `A`, so it is a u
 * M. Demazure and A. Grothendieck, *Schémas en groupes (SGA 3)*, Exposé V, §4.
 * The Stacks Project, Chapter *Groupoid Schemes*, Section *Finite flat groupoids, affine case*.
 -/
-
 public section
 
 universe u
@@ -151,11 +164,9 @@ private theorem exists_linearIndependent_coordMod [Fintype ι]
     ext j : 1
     cases j using Fin.cases <;> simp
 
-/-- **A basis of `B` from the base, over a local ring of invariants.** Let `Spec B ⇉ Spec A` be an
-equivalence relation with `B` finite free over `A` through `s`, whose ring of invariants
-`C = {a : s a = t a}` is a local ring with infinite residue field. Then some basis of `B` over `A`
-consists of images `t aᵢ` of elements `aᵢ ∈ A`. -/
-theorem exists_basis_eq_apply [Module.Finite A B] [Module.Free A B]
+-- general position: if the ring of invariants is local with infinite residue field, some basis of
+-- `B` over `A` consists of elements `t aᵢ`
+private theorem exists_basis_eq_apply_of_infinite [Module.Finite A B] [Module.Free A B]
     [IsLocalRing ((algebraMap A B).eqLocus t)]
     [Infinite (ResidueField ((algebraMap A B).eqLocus t))] :
     ∃ (b : Module.Basis (Fin (Module.finrank A B)) A B) (a : Fin (Module.finrank A B) → A),
@@ -198,24 +209,99 @@ theorem exists_basis_eq_apply [Module.Finite A B] [Module.Free A B]
   obtain ⟨hli, hsp⟩ := (b₀.is_basis_iff_det).mpr hdet
   exact ⟨.mk hli hsp.ge, a, fun i ↦ by simp⟩
 
+attribute [local instance] Algebra.TensorProduct.rightAlgebra in
+-- base change along a faithfully flat local `C → C'` with infinite residue field: then
+-- `A' = C' ⊗ A` is finite free over the invariants `C'` of `B' = A' ⊗ B ⇉ A'`, and this descends
+-- to `A` over `C`
+private theorem free_finite_finrank_of_isLocalRing [Module.Finite A B] [Module.Free A B]
+    [IsLocalRing ((algebraMap A B).eqLocus t)] :
+    Module.Free ((algebraMap A B).eqLocus t) A ∧ Module.Finite ((algebraMap A B).eqLocus t) A ∧
+      Module.finrank ((algebraMap A B).eqLocus t) A = Module.finrank A B := by
+  set C := (algebraMap A B).eqLocus t
+  obtain ⟨C', _, _, _, _, _⟩ := exists_faithfullyFlat_infinite_residueField C
+  let A' := C' ⊗[C] A
+  let B' := A' ⊗[A] B
+  -- the base change `t' : A' → B'` of `t`
+  have hct : ((algebraMap B B').comp t).comp (algebraMap C A) =
+      ((algebraMap A' B').comp (algebraMap C' A')).comp (algebraMap C C') := by
+    ext c
+    have hc : t (algebraMap C A c) = algebraMap A B (algebraMap C A c) := (mem_eqLocus.mp c.2).symm
+    simp only [RingHom.comp_apply, hc]
+    rw [← IsScalarTower.algebraMap_apply A B B', IsScalarTower.algebraMap_apply A A' B',
+      ← IsScalarTower.algebraMap_apply C A A', IsScalarTower.algebraMap_apply C C' A']
+  let t' : A' →+* B' := Algebra.IsPushout.liftRingHom A' _ _ hct
+  have ht₁ : t'.comp (algebraMap A A') = (algebraMap B B').comp t := by
+    ext; simp [t']
+  have ht₂ : t'.comp (algebraMap C' A') = (algebraMap A' B').comp (algebraMap C' A') := by
+    ext; simp [t']
+  have h' : (algebraMap A' B').IsSpecEquivRel t' := h.of_isPushout C ht₁ ht₂
+  have hR' := eqLocus_eq_range_of_isPushout (R := C) (R' := C') (A := A) (B := B) (A' := A')
+    (B' := B') C.range_subtype.symm ht₁ ht₂
+  -- the invariants of `A'` are a copy of `C'`
+  have hinj : Function.Injective (algebraMap C' A') :=
+    Algebra.TensorProduct.includeLeft_injective (S := C') Subtype.val_injective
+  let e : C' ≃+* (algebraMap A' B').eqLocus t' :=
+    (RingEquiv.ofBijective (algebraMap C' A').rangeRestrict ⟨fun x y hxy ↦
+      hinj (congrArg Subtype.val hxy), (algebraMap C' A').rangeRestrict_surjective⟩).trans
+      (RingEquiv.subringCongr hR'.symm)
+  have : IsLocalRing ((algebraMap A' B').eqLocus t') := by
+    have : Nontrivial ((algebraMap A' B').eqLocus t') := e.symm.toEquiv.nontrivial
+    exact .of_surjective' e.toRingHom e.surjective
+  have : Infinite (ResidueField ((algebraMap A' B').eqLocus t')) :=
+    .of_injective _ (ResidueField.mapEquiv e).injective
+  obtain ⟨b', a', hb'⟩ := h'.exists_basis_eq_apply_of_infinite
+  -- `e` is the corestriction of `algebraMap C' A'` to its range
+  have he (y : C') : (e y : A') = algebraMap C' A' y := rfl
+  let bA' : Module.Basis _ C' A' := (h'.basis b' hb').mapCoeffs e.symm fun c x ↦ by
+    rw [Algebra.smul_def, Subring.smul_def, smul_eq_mul, ← he, e.apply_symm_apply]
+  have : Module.Free C' A' := .of_basis bA'
+  have : Module.Finite C' A' := .of_basis bA'
+  have : Module.Flat C A := .of_flat_tensorProduct C A C'
+  have : Module.Finite C A := .of_finite_tensorProduct_of_faithfullyFlat C'
+  have : Module.Free C A := Module.free_of_flat_of_isLocalRing
+  refine ⟨inferInstance, inferInstance, ?_⟩
+  rw [← Module.finrank_baseChange (R := C'), Module.finrank_eq_card_basis bA', Fintype.card_fin]
+  have : Nontrivial A' := hinj.nontrivial
+  have : Nontrivial A := (Subtype.val_injective : Function.Injective ((↑) : C → A)).nontrivial
+  exact Module.finrank_baseChange
+
+/-- **A basis of `B` from the base, over a local ring of invariants.** Let `Spec B ⇉ Spec A` be an
+equivalence relation with `B` finite free over `A` through `s`, whose ring of invariants
+`C = {a : s a = t a}` is a local ring. Then some basis of `B` over `A` consists of images `t aᵢ` of
+elements `aᵢ ∈ A`: any basis `aᵢ` of `A` over `C` will do. -/
+theorem exists_basis_eq_apply [Module.Finite A B] [Module.Free A B]
+    [IsLocalRing ((algebraMap A B).eqLocus t)] :
+    ∃ (b : Module.Basis (Fin (Module.finrank A B)) A B) (a : Fin (Module.finrank A B) → A),
+      ∀ i, b i = t (a i) := by
+  obtain ⟨_, _, hrank⟩ := h.free_finite_finrank_of_isLocalRing
+  let c := (Module.finBasis ((algebraMap A B).eqLocus t) A).reindex (finCongr hrank)
+  -- `t(A)` spans `B`, and `t x = ∑ s(cᵢ(x)) t(aᵢ)` because the coordinates `cᵢ(x)` are invariants
+  have hspan : ⊤ ≤ Submodule.span A (Set.range (t ∘ c)) := by
+    rw [← h.span_range_eq_top, Submodule.span_le]
+    rintro _ ⟨x, rfl⟩
+    rw [← c.sum_repr x, map_sum]
+    refine Submodule.sum_mem _ fun i _ ↦ ?_
+    rw [Subring.smul_def, smul_eq_mul, map_mul, ← mem_eqLocus.mp (c.repr x i).2, ← Algebra.smul_def]
+    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+  exact ⟨basisOfTopLeSpanOfCardEqFinrank _ hspan (Fintype.card_fin _), c, fun i ↦ by simp⟩
+
 variable [Module.Finite A B] [Module.Free A B] [IsLocalRing ((algebraMap A B).eqLocus t)]
-  [Infinite (ResidueField ((algebraMap A B).eqLocus t))]
 
 /-- **The quotient map is free.** If `B` is finite free over `A` and the ring of invariants `C` is
-local with infinite residue field, then `A` is a free `C`-module. -/
+local, then `A` is a free `C`-module. -/
 theorem free_of_isLocalRing : Module.Free ((algebraMap A B).eqLocus t) A :=
   have ⟨b, _, hb⟩ := h.exists_basis_eq_apply
   .of_basis (h.basis b hb)
 
 /-- **The quotient map is finite.** If `B` is finite free over `A` and the ring of invariants `C`
-is local with infinite residue field, then `A` is a finite `C`-module. -/
+is local, then `A` is a finite `C`-module. -/
 theorem finite_of_isLocalRing : Module.Finite ((algebraMap A B).eqLocus t) A :=
   have ⟨b, _, hb⟩ := h.exists_basis_eq_apply
   .of_basis (h.basis b hb)
 
 /-- **The relation is the kernel pair of the quotient map.** If `B` is finite free over `A` and
-the ring of invariants `C` is local with infinite residue field, then `x ⊗ y ↦ s x * t y` is an
-isomorphism of `A`-algebras `A ⊗[C] A ≃ₐ[A] B`. -/
+the ring of invariants `C` is local, then `x ⊗ y ↦ s x * t y` is an isomorphism of `A`-algebras
+`A ⊗[C] A ≃ₐ[A] B`. -/
 theorem exists_tensorProductEquiv_of_isLocalRing :
     ∃ e : A ⊗[(algebraMap A B).eqLocus t] A ≃ₐ[A] B,
       ∀ x y, e (x ⊗ₜ y) = algebraMap A B x * t y :=

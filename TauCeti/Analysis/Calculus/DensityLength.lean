@@ -39,8 +39,9 @@ the density for `TauCeti.densityLength_nonneg`, differentiability of the path fo
 substitution rules, which differentiate the composite, and integrability of the two integrands for
 the comparison `TauCeti.densityLength_le_densityLength`, without which two comparable integrands
 need not have comparable integrals. The pointwise hypotheses are asked at the *interior*
-parameters only, the two endpoints forming a null set, and the displacement bound asks its
-comparison there only almost everywhere.
+parameters only, the two endpoints forming a null set, and the two comparisons of speeds, in
+`TauCeti.densityLength_le_densityLength` and in the displacement bound, only almost everywhere
+there.
 
 The one estimate that leaves the pair `(ρ, γ)` is `TauCeti.norm_sub_le_densityLength`, and it too
 is a statement about the parameter side: a function of the parameter whose speed is dominated by
@@ -88,7 +89,7 @@ ordering of the parameter interval.
 * `TauCeti.densityLength_nonneg` — a nonnegative density gives a nonnegative length.
 * `TauCeti.densityLength_congr_of_eqOn` and `TauCeti.densityLength_le_densityLength` — two paths
   whose density-weighted speeds agree inside the parameter interval have equal lengths, and two
-  whose integrable speeds compare there have comparable lengths.
+  whose integrable speeds compare almost everywhere there have comparable lengths.
 * `TauCeti.norm_sub_le_densityLength` — **displacement is at most the length**: a function of the
   parameter whose speed is dominated by the density-weighted speed of the path moves, across the
   parameter interval, by no more than the length of the path over it.
@@ -201,11 +202,12 @@ theorem densityLength_nonneg (hρ : ∀ t ∈ uIoo a b, 0 ≤ ρ (γ t)) : 0 ≤
   rw [densityLength_eq_setIntegral_uIoo]
   exact setIntegral_nonneg measurableSet_Ioo fun t ht => mul_nonneg (hρ t ht) (norm_nonneg _)
 
-/-- **Comparing density-weighted speeds compares the lengths.** If at every interior parameter the
-density-weighted speed of `δ` is at most that of `γ`, and both speeds are integrable over the
-parameter interval, then `δ` is no longer than `γ` over it, whichever way round its endpoints are.
+/-- **Comparing density-weighted speeds compares the lengths.** If at almost every interior
+parameter the density-weighted speed of `δ` is at most that of `γ`, and both speeds are integrable
+over the parameter interval, then `δ` is no longer than `γ` over it, whichever way round its
+endpoints are.
 
-Nothing relates the two paths, or the two densities, beyond that pointwise comparison — not even
+Nothing relates the two paths, or the two densities, beyond that comparison — not even
 the space they run in, the hypotheses comparing only their real-valued weighted speeds — which is
 the form in which a contraction property of a map post-composed with a path — a Schwarz--Pick
 estimate, say — arrives: the chain rule turns the density-weighted speed of the composite into a
@@ -213,34 +215,25 @@ factor bounded by the density at the point times the speed of the path. The comp
 inequality counterpart of `TauCeti.densityLength_congr_of_eqOn`, which needs no integrability
 because equal integrands have equal integrals whether or not they are integrable. As there, the
 comparison is between the integrands that define the two lengths, and is asked at the interior
-parameters only, the two endpoints forming a null set; a path with an explicit derivative is read
-through `HasDerivAt.deriv`. Integrability, unlike that comparison, is a genuinely additional
-hypothesis: the density being arbitrary here, regularity of the path alone does not supply it, and
-it is the `C¹` path *together with* a density continuous along it that does — as in the hyperbolic
-application, where the path stays in the open disc on which the Poincaré density is continuous. -/
+parameters only; as in `TauCeti.norm_sub_le_densityLength`, it is asked there only almost
+everywhere, a comparison holding at every interior parameter being read through
+`Filter.Eventually.of_forall`, and a path with an explicit derivative through `HasDerivAt.deriv`.
+Integrability, unlike that comparison, is a genuinely additional hypothesis: the density being
+arbitrary here, regularity of the path alone does not supply it, and it is the `C¹` path
+*together with* a density continuous along it that does — as in the hyperbolic application, where
+the path stays in the open disc on which the Poincaré density is continuous. -/
 theorem densityLength_le_densityLength {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {ρ' : G → ℝ} {δ : ℝ → G}
     (hδint : IntervalIntegrable (fun t => ρ' (δ t) * ‖deriv δ t‖) volume a b)
     (hγint : IntervalIntegrable (fun t => ρ (γ t) * ‖deriv γ t‖) volume a b)
-    (h : ∀ t ∈ uIoo a b, ρ' (δ t) * ‖deriv δ t‖ ≤ ρ (γ t) * ‖deriv γ t‖) :
+    (h : ∀ᵐ t, t ∈ uIoo a b → ρ' (δ t) * ‖deriv δ t‖ ≤ ρ (γ t) * ‖deriv γ t‖) :
     densityLength ρ' δ a b ≤ densityLength ρ γ a b := by
   have hsub : uIoo a b ⊆ uIoc a b := by
     rw [uIoo_eq_union, uIoc_eq_union]
     exact union_subset_union Ioo_subset_Ioc_self Ioo_subset_Ioc_self
   rw [densityLength_eq_setIntegral_uIoo, densityLength_eq_setIntegral_uIoo]
-  exact setIntegral_mono_on ((intervalIntegrable_iff.mp hδint).mono_set hsub)
+  exact setIntegral_mono_on_ae ((intervalIntegrable_iff.mp hδint).mono_set hsub)
     ((intervalIntegrable_iff.mp hγint).mono_set hsub) measurableSet_Ioo h
-
-/-- The displacement bound over an ordered parameter interval; the general case follows by
-symmetry. -/
-private theorem norm_sub_le_densityLength_of_le {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {u : ℝ → G} (hab : a ≤ b) (hu : ContinuousOn u (Icc a b))
-    (hdiff : DifferentiableOn ℝ u (Ioo a b))
-    (hbound : ∀ᵐ t, t ∈ Ioo a b → ‖deriv u t‖ ≤ ρ (γ t) * ‖deriv γ t‖)
-    (hint : IntervalIntegrable (fun t => ρ (γ t) * ‖deriv γ t‖) volume a b) :
-    ‖u b - u a‖ ≤ densityLength ρ γ a b := by
-  rw [densityLength_eq_intervalIntegral ρ γ hab]
-  exact norm_sub_le_integral_of_norm_deriv_le_of_le hab hu hdiff hbound hint
 
 /-- **Displacement is at most the length.** If a function `u` of the parameter is continuous on the
 parameter interval, differentiable inside it, and its speed there is almost everywhere at most the
@@ -266,65 +259,64 @@ theorem norm_sub_le_densityLength {G : Type*} [NormedAddCommGroup G] [NormedSpac
     (hbound : ∀ᵐ t, t ∈ uIoo a b → ‖deriv u t‖ ≤ ρ (γ t) * ‖deriv γ t‖)
     (hint : IntervalIntegrable (fun t => ρ (γ t) * ‖deriv γ t‖) volume a b) :
     ‖u b - u a‖ ≤ densityLength ρ γ a b := by
-  rcases le_total a b with hab | hab
-  · rw [uIcc_of_le hab] at hu
-    rw [uIoo_of_le hab] at hdiff hbound
-    exact norm_sub_le_densityLength_of_le hab hu hdiff hbound hint
-  · rw [uIcc_comm, uIcc_of_le hab] at hu
-    rw [uIoo_comm, uIoo_of_le hab] at hdiff hbound
-    rw [← densityLength_symm ρ γ a b, ← norm_neg, neg_sub]
-    exact norm_sub_le_densityLength_of_le hab hu hdiff hbound hint.symm
-
-/-- The congruence over an ordered parameter interval; the general case follows by symmetry. -/
-private theorem densityLength_congr_of_le (hab : a ≤ b) (hδ : EqOn δ γ (Ioo a b)) :
-    densityLength ρ δ a b = densityLength ρ γ a b := by
+  wlog hab : a ≤ b generalizing a b
+  · rw [uIcc_comm] at hu
+    rw [uIoo_comm] at hdiff hbound
+    rw [← densityLength_symm, ← norm_neg, neg_sub]
+    exact this hu hdiff hbound hint.symm (le_of_not_ge hab)
+  rw [uIcc_of_le hab] at hu
+  rw [uIoo_of_le hab] at hdiff hbound
   rw [densityLength_eq_intervalIntegral ρ γ hab]
-  refine densityLength_eq_intervalIntegral_of_eqOn hab fun t ht => ?_
-  have hnhds : δ =ᶠ[nhds t] γ := Filter.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds ht) hδ
-  simp only [hnhds.deriv_eq, hδ ht]
+  exact norm_sub_le_integral_of_norm_deriv_le_of_le hab hu hdiff hbound hint
 
 /-- **The length of a path depends only on its parameter interval.** Two paths that agree inside
 the interval with endpoints `a` and `b` have the same length over it: at an interior parameter they
 have the same germ, hence the same derivative, and the two endpoints form a null set. -/
 theorem densityLength_congr (hδ : EqOn δ γ (uIoo a b)) :
-    densityLength ρ δ a b = densityLength ρ γ a b := by
-  rcases le_total a b with hab | hab
-  · rw [uIoo_of_le hab] at hδ
-    exact densityLength_congr_of_le hab hδ
-  · rw [uIoo_comm, uIoo_of_le hab] at hδ
-    rw [densityLength_symm ρ δ b a, densityLength_symm ρ γ b a]
-    exact densityLength_congr_of_le hab hδ
+    densityLength ρ δ a b = densityLength ρ γ a b :=
+  densityLength_congr_of_eqOn fun t ht => by
+    have hnhds : δ =ᶠ[nhds t] γ := Filter.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds ht) hδ
+    simp only [hnhds.deriv_eq, hδ ht]
 
-/-- **The length is additive along the parameter interval**: the lengths of the two halves of a
-path add up to the length of the whole, as soon as the density-weighted speed is integrable over
-the whole. For a `C¹` path and a continuous density that hypothesis holds by continuity. -/
-theorem densityLength_add {a b c : ℝ} (hab : a ≤ b) (hbc : b ≤ c)
+/-- **The length is additive along the parameter interval**: for a parameter `b` between `a` and
+`c`, the lengths of the two pieces of a path add up to the length of the whole, as soon as the
+density-weighted speed is integrable over the whole. For a `C¹` path and a continuous density that
+hypothesis holds by continuity. -/
+theorem densityLength_add {a b c : ℝ} (hb : b ∈ uIcc a c)
     (hint : IntervalIntegrable (fun t => ρ (γ t) * ‖deriv γ t‖) volume a c) :
     densityLength ρ γ a b + densityLength ρ γ b c = densityLength ρ γ a c := by
-  have hac : a ≤ c := hab.trans hbc
-  rw [densityLength_eq_intervalIntegral ρ γ hab, densityLength_eq_intervalIntegral ρ γ hbc,
+  wlog hac : a ≤ c generalizing a c
+  · rw [densityLength_symm ρ γ b a, densityLength_symm ρ γ c b, densityLength_symm ρ γ c a,
+      add_comm]
+    exact this (uIcc_comm a c ▸ hb) hint.symm (le_of_not_ge hac)
+  rw [uIcc_of_le hac] at hb
+  rw [densityLength_eq_intervalIntegral ρ γ hb.1, densityLength_eq_intervalIntegral ρ γ hb.2,
     densityLength_eq_intervalIntegral ρ γ hac]
-  refine intervalIntegral.integral_add_adjacent_intervals (hint.mono_set ?_) (hint.mono_set ?_)
-  · rw [uIcc_of_le hab, uIcc_of_le hac]
-    exact Icc_subset_Icc le_rfl hbc
-  · rw [uIcc_of_le hbc, uIcc_of_le hac]
-    exact Icc_subset_Icc hab le_rfl
+  exact intervalIntegral.integral_add_adjacent_intervals
+    (hint.mono_set (uIcc_subset_uIcc_left (uIcc_of_le hac ▸ hb)))
+    (hint.mono_set (uIcc_subset_uIcc_right (uIcc_of_le hac ▸ hb)))
 
-/-- The affine reparametrisation invariance over an ordered parameter interval; the general case
-follows by symmetry. -/
-private theorem densityLength_comp_mul_add_of_le (ρ : F → ℝ) (γ : ℝ → F) {s : ℝ} (hs : s ≠ 0)
-    (d : ℝ) (hab : a ≤ b) :
+/-- **The length is invariant under affine reparametrisation.** Replacing the parameter `t` by
+`s * t + d`, an orientation-preserving reparametrisation for `0 < s` and an orientation-reversing
+one for `s < 0`, transports the parameter interval and leaves the length unchanged; for `s = 0`
+both sides vanish, the path being constant and the transported interval degenerate. Being a change
+of variables in the parameter alone, it asks nothing of the path, unlike the reparametrisations by
+a general monotone or antitone map below (`TauCeti.densityLength_comp_of_deriv_nonneg`,
+`TauCeti.densityLength_comp_of_deriv_nonpos`), which need the path to be differentiable to
+differentiate the composite. -/
+theorem densityLength_comp_mul_add (ρ : F → ℝ) (γ : ℝ → F) (s d a b : ℝ) :
     densityLength ρ (fun t => γ (s * t + d)) a b = densityLength ρ γ (s * a + d) (s * b + d) := by
-  have hderiv : ∀ t : ℝ, deriv (fun u : ℝ => γ (s * u + d)) t = s • deriv γ (s * t + d) := by
-    intro t
-    have h := deriv_comp_mul_left s (fun u : ℝ => γ (u + d)) t
-    rw [deriv_comp_add_const] at h
-    simpa using h
+  rcases eq_or_ne s 0 with rfl | hs
+  · simp
+  wlog hab : a ≤ b generalizing a b
+  · rw [densityLength_symm, this b a (le_of_not_ge hab), densityLength_symm]
   have hLHS : densityLength ρ (fun t => γ (s * t + d)) a b
       = |s| * ∫ t in a..b, ρ (γ (s * t + d)) * ‖deriv γ (s * t + d)‖ := by
     rw [densityLength_eq_intervalIntegral _ _ hab, ← intervalIntegral.integral_const_mul]
     refine intervalIntegral.integral_congr fun t _ => ?_
-    rw [hderiv t, norm_smul, Real.norm_eq_abs]
+    have hderiv := deriv_comp_mul_left s (fun u : ℝ => γ (u + d)) t
+    rw [deriv_comp_add_const] at hderiv
+    simp only [hderiv, norm_smul, Real.norm_eq_abs]
     ring
   rw [hLHS, intervalIntegral.integral_comp_mul_add
     (fun u => ρ (γ u) * ‖deriv γ u‖) hs d, smul_eq_mul]
@@ -337,51 +329,6 @@ private theorem densityLength_comp_mul_add_of_le (ρ : F → ℝ) (γ : ℝ → 
     rw [densityLength_eq_intervalIntegral _ _ hle, abs_of_pos hpos]
     field_simp
 
-/-- **The length is invariant under affine reparametrisation.** Replacing the parameter `t` by
-`s * t + d` for `s ≠ 0`, an orientation-preserving reparametrisation for `0 < s` and an
-orientation-reversing one for `s < 0`, transports the parameter interval and leaves the length
-unchanged. Being a change of variables in the parameter alone, it asks nothing of the path, unlike
-the reparametrisations by a general monotone or antitone map below
-(`TauCeti.densityLength_comp_of_deriv_nonneg`, `TauCeti.densityLength_comp_of_deriv_nonpos`),
-which need the path to be differentiable to differentiate the composite. -/
-theorem densityLength_comp_mul_add (ρ : F → ℝ) (γ : ℝ → F) {s : ℝ} (hs : s ≠ 0) (d a b : ℝ) :
-    densityLength ρ (fun t => γ (s * t + d)) a b = densityLength ρ γ (s * a + d) (s * b + d) := by
-  rcases le_total a b with hab | hab
-  · exact densityLength_comp_mul_add_of_le ρ γ hs d hab
-  · rw [densityLength_symm ρ (fun t => γ (s * t + d)) b a,
-      densityLength_symm ρ γ (s * b + d) (s * a + d)]
-    exact densityLength_comp_mul_add_of_le ρ γ hs d hab
-
-/-- The monotone reparametrisation invariance over an ordered parameter interval; the general case
-follows by symmetry. -/
-private theorem densityLength_comp_of_deriv_nonneg_of_le {φ φ' : ℝ → ℝ} (hab : a ≤ b)
-    (hφ : ContinuousOn φ (Icc a b)) (hderiv : ∀ t ∈ Ioo a b, HasDerivAt φ (φ' t) t)
-    (hsign : ∀ t ∈ Ioo a b, 0 ≤ φ' t) (hγ : ∀ t ∈ Ioo a b, DifferentiableAt ℝ γ (φ t)) :
-    densityLength ρ (γ ∘ φ) a b = densityLength ρ γ (φ a) (φ b) := by
-  have hIoo : Ioo (min a b) (max a b) = Ioo a b := by rw [min_eq_left hab, max_eq_right hab]
-  -- inside the parameter interval the density-weighted speed of `γ ∘ φ` is `φ'` times that of
-  -- `γ` read at `φ`, written as a composition to meet the change of variables below
-  have hEq : EqOn (fun t => ρ ((γ ∘ φ) t) * ‖deriv (γ ∘ φ) t‖)
-      (fun t => φ' t • ((fun u => ρ (γ u) * ‖deriv γ u‖) ∘ φ) t) (Ioo a b) := by
-    intro t ht
-    have hchain : deriv (γ ∘ φ) t = φ' t • deriv γ (φ t) :=
-      ((hγ t ht).hasDerivAt.scomp t (hderiv t ht)).deriv
-    simp only [Function.comp_apply, hchain, norm_smul, Real.norm_eq_abs,
-      abs_of_nonneg (hsign t ht), smul_eq_mul]
-    ring
-  have hmono : MonotoneOn φ (Icc a b) := by
-    refine monotoneOn_of_deriv_nonneg (convex_Icc a b) hφ (fun t ht => ?_) fun t ht => ?_
-    · rw [interior_Icc] at ht
-      exact (hderiv t ht).differentiableAt.differentiableWithinAt
-    · rw [interior_Icc] at ht
-      rw [(hderiv t ht).deriv]
-      exact hsign t ht
-  have hφab : φ a ≤ φ b := hmono (left_mem_Icc.2 hab) (right_mem_Icc.2 hab) hab
-  rw [densityLength_eq_intervalIntegral_of_eqOn hab hEq,
-    intervalIntegral.integral_deriv_smul_comp_of_deriv_nonneg (by rwa [uIcc_of_le hab])
-      (by rwa [hIoo]) (by rwa [hIoo]),
-    ← densityLength_eq_intervalIntegral ρ γ hφab]
-
 /-- **The length is invariant under monotone reparametrisation.** Precomposing a path with a map
 `φ` that is continuous on the parameter interval and has a nonnegative derivative inside it — so
 that `φ` is monotone there — reparametrises the path and transports the parameter interval,
@@ -393,44 +340,30 @@ theorem densityLength_comp_of_deriv_nonneg {φ φ' : ℝ → ℝ} (hφ : Continu
     (hderiv : ∀ t ∈ uIoo a b, HasDerivAt φ (φ' t) t) (hsign : ∀ t ∈ uIoo a b, 0 ≤ φ' t)
     (hγ : ∀ t ∈ uIoo a b, DifferentiableAt ℝ γ (φ t)) :
     densityLength ρ (γ ∘ φ) a b = densityLength ρ γ (φ a) (φ b) := by
-  rcases le_total a b with hab | hab
-  · rw [uIcc_of_le hab] at hφ
-    rw [uIoo_of_le hab] at hderiv hsign hγ
-    exact densityLength_comp_of_deriv_nonneg_of_le hab hφ hderiv hsign hγ
-  · rw [uIcc_comm, uIcc_of_le hab] at hφ
-    rw [uIoo_comm, uIoo_of_le hab] at hderiv hsign hγ
-    rw [densityLength_symm ρ (γ ∘ φ) b a, densityLength_symm ρ γ (φ b) (φ a)]
-    exact densityLength_comp_of_deriv_nonneg_of_le hab hφ hderiv hsign hγ
-
-/-- The antitone reparametrisation invariance over an ordered parameter interval; the general case
-follows by symmetry. -/
-private theorem densityLength_comp_of_deriv_nonpos_of_le {φ φ' : ℝ → ℝ} (hab : a ≤ b)
-    (hφ : ContinuousOn φ (Icc a b)) (hderiv : ∀ t ∈ Ioo a b, HasDerivAt φ (φ' t) t)
-    (hsign : ∀ t ∈ Ioo a b, φ' t ≤ 0) (hγ : ∀ t ∈ Ioo a b, DifferentiableAt ℝ γ (φ t)) :
-    densityLength ρ (γ ∘ φ) a b = densityLength ρ γ (φ a) (φ b) := by
+  wlog hab : a ≤ b generalizing a b
+  · rw [uIcc_comm] at hφ
+    rw [uIoo_comm] at hderiv hsign hγ
+    rw [densityLength_symm, this hφ hderiv hsign hγ (le_of_not_ge hab), densityLength_symm]
+  rw [uIcc_of_le hab] at hφ
+  rw [uIoo_of_le hab] at hderiv hsign hγ
   have hIoo : Ioo (min a b) (max a b) = Ioo a b := by rw [min_eq_left hab, max_eq_right hab]
-  -- as in the monotone case, save that `φ'` is now nonpositive, so that the speed of `γ ∘ φ`
-  -- is *minus* `φ'` times the speed of `γ` read at `φ`
+  -- inside the parameter interval the density-weighted speed of `γ ∘ φ` is `φ'` times that of
+  -- `γ` read at `φ`, written as a composition to meet the change of variables below
   have hEq : EqOn (fun t => ρ ((γ ∘ φ) t) * ‖deriv (γ ∘ φ) t‖)
-      (fun t => -(φ' t • ((fun u => ρ (γ u) * ‖deriv γ u‖) ∘ φ) t)) (Ioo a b) := by
+      (fun t => φ' t • ((fun u => ρ (γ u) * ‖deriv γ u‖) ∘ φ) t) (Ioo a b) := by
     intro t ht
     have hchain : deriv (γ ∘ φ) t = φ' t • deriv γ (φ t) :=
       ((hγ t ht).hasDerivAt.scomp t (hderiv t ht)).deriv
     simp only [Function.comp_apply, hchain, norm_smul, Real.norm_eq_abs,
-      abs_of_nonpos (hsign t ht), smul_eq_mul]
+      abs_of_nonneg (hsign t ht), smul_eq_mul]
     ring
-  have hanti : AntitoneOn φ (Icc a b) := by
-    refine antitoneOn_of_deriv_nonpos (convex_Icc a b) hφ (fun t ht => ?_) fun t ht => ?_
-    · rw [interior_Icc] at ht
-      exact (hderiv t ht).differentiableAt.differentiableWithinAt
-    · rw [interior_Icc] at ht
-      rw [(hderiv t ht).deriv]
-      exact hsign t ht
-  have hφab : φ b ≤ φ a := hanti (left_mem_Icc.2 hab) (right_mem_Icc.2 hab) hab
-  rw [densityLength_eq_intervalIntegral_of_eqOn hab hEq, intervalIntegral.integral_neg,
-    intervalIntegral.integral_deriv_smul_comp_of_deriv_nonpos (by rwa [uIcc_of_le hab])
+  have hφab : φ a ≤ φ b := by
+    refine monotoneOn_of_hasDerivWithinAt_nonneg (f' := φ') (convex_Icc a b) hφ ?_ ?_
+      (left_mem_Icc.2 hab) (right_mem_Icc.2 hab) hab <;> rw [interior_Icc]
+    exacts [fun t ht => (hderiv t ht).hasDerivWithinAt, hsign]
+  rw [densityLength_eq_intervalIntegral_of_eqOn hab hEq,
+    intervalIntegral.integral_deriv_smul_comp_of_deriv_nonneg (by rwa [uIcc_of_le hab])
       (by rwa [hIoo]) (by rwa [hIoo]),
-    ← intervalIntegral.integral_symm, densityLength_symm ρ γ (φ b) (φ a),
     ← densityLength_eq_intervalIntegral ρ γ hφab]
 
 /-- **The length is invariant under antitone reparametrisation.** The orientation-reversing
@@ -443,13 +376,12 @@ theorem densityLength_comp_of_deriv_nonpos {φ φ' : ℝ → ℝ} (hφ : Continu
     (hderiv : ∀ t ∈ uIoo a b, HasDerivAt φ (φ' t) t) (hsign : ∀ t ∈ uIoo a b, φ' t ≤ 0)
     (hγ : ∀ t ∈ uIoo a b, DifferentiableAt ℝ γ (φ t)) :
     densityLength ρ (γ ∘ φ) a b = densityLength ρ γ (φ a) (φ b) := by
-  rcases le_total a b with hab | hab
-  · rw [uIcc_of_le hab] at hφ
-    rw [uIoo_of_le hab] at hderiv hsign hγ
-    exact densityLength_comp_of_deriv_nonpos_of_le hab hφ hderiv hsign hγ
-  · rw [uIcc_comm, uIcc_of_le hab] at hφ
-    rw [uIoo_comm, uIoo_of_le hab] at hderiv hsign hγ
-    rw [densityLength_symm ρ (γ ∘ φ) b a, densityLength_symm ρ γ (φ b) (φ a)]
-    exact densityLength_comp_of_deriv_nonpos_of_le hab hφ hderiv hsign hγ
+  -- `γ ∘ φ` is the path `t ↦ γ (-t)` reparametrised by the monotone map `-φ`
+  have h := densityLength_comp_of_deriv_nonneg (ρ := ρ) (γ := fun u => γ (-1 * u + 0))
+    (φ := -φ) (φ' := -φ') hφ.neg (fun t ht => (hderiv t ht).neg)
+    (fun t ht => neg_nonneg.2 (hsign t ht)) fun t ht => ?_
+  · rw [densityLength_comp_mul_add] at h
+    simpa [Function.comp_def] using h
+  · simpa [differentiableAt_comp_neg] using hγ t ht
 
 end TauCeti
