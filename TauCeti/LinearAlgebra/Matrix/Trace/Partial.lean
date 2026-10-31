@@ -96,25 +96,24 @@ variable [Semiring R] [Fintype m] [DecidableEq n]
 theorem partialTraceRight_kronecker_one_mul (A : Matrix m m R) (Y : Matrix (m × n) (m × n) R) :
     partialTraceRight ((A ⊗ₖ (1 : Matrix n n R)) * Y) = A * partialTraceRight Y := by
   ext i j
-  simp only [partialTraceRight_apply, mul_apply, kronecker_apply, one_apply, Fintype.sum_prod_type,
-    mul_ite, mul_one, mul_zero, ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ite_true,
-    Finset.mul_sum]
-  exact Finset.sum_comm
+  simp only [partialTraceRight_apply, mul_apply, Fintype.sum_prod_type]
+  rw [Finset.sum_comm]
+  simp [one_apply, Finset.mul_sum]
 
 /-- The partial trace is right linear over the first factor:
 `Tr₂ (Y * (B ⊗ₖ 1)) = Tr₂ Y * B`. -/
 theorem partialTraceRight_mul_kronecker_one (Y : Matrix (m × n) (m × n) R) (B : Matrix m m R) :
     partialTraceRight (Y * (B ⊗ₖ (1 : Matrix n n R))) = partialTraceRight Y * B := by
   ext i j
-  simp only [partialTraceRight_apply, mul_apply, kronecker_apply, one_apply, Fintype.sum_prod_type,
-    mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, Finset.sum_mul]
-  exact Finset.sum_comm
+  simp only [partialTraceRight_apply, mul_apply, Fintype.sum_prod_type]
+  rw [Finset.sum_comm]
+  simp [one_apply, Finset.sum_mul]
 
 end Semiring
 
 /-- The partial trace of a positive semidefinite matrix is positive semidefinite: it is the sum of
 the compressions of `Y` to the diagonal blocks. -/
-theorem PosSemidef.partialTraceRight [CommRing R] [PartialOrder R] [StarRing R]
+theorem PosSemidef.partialTraceRight [Ring R] [PartialOrder R] [StarRing R]
     [AddLeftMono R] {Y : Matrix (m × n) (m × n) R} (hY : Y.PosSemidef) :
     Y.partialTraceRight.PosSemidef := by
   have hblock (k : n) : blockDiag Y k = Y.submatrix (·, k) (·, k) := by

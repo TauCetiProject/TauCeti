@@ -16,8 +16,8 @@ A quantum spin system has a set `L` of sites, each carrying a copy of the matrix
 `M_d`. We label the basis states of a single site by a finite type `S` (for instance `Fin d`), so
 a *configuration* of a finite region `Λ ⊆ L` is a function `Λ → S`. The *local algebra* of `Λ` is
 `A_Λ = ⊗_{x ∈ Λ} M_d`; in the basis of configurations it is the matrix algebra
-`Matrix (Λ → S) (Λ → S) R`. Throughout, the coefficients `R` form a commutative semiring, and a
-star ring where adjoints appear; the physical case is `R = ℂ`.
+`Matrix (Λ → S) (Λ → S) R`. The inclusions need coefficients `R` forming a commutative semiring
+with a star operation, while the partial trace needs only addition; the physical case is `R = ℂ`.
 
 For `Λ ⊆ Λ'` a configuration of `Λ'` splits into its restriction to `Λ` and its values on the
 sites of `Λ'` outside `Λ`, `QuantumSpin.configurationEquiv`. Under this splitting
@@ -30,9 +30,11 @@ injective when there is at least one basis state, and compatible:
 
 The *partial trace* `QuantumSpin.partialTrace : A_Λ' → A_Λ` traces out the sites of `Λ' \ Λ`.
 It preserves the trace, commutes with adjoints and preserves positive semidefiniteness, sends
-`ι x` to a multiple of `x`, and is a bimodule map over `A_Λ`. Over a semifield, the normalized
+`ι x` to a multiple of `x`, and is a bimodule map over `A_Λ`. Partial traces compose: tracing out
+`Λ'' \ Λ'` and then `Λ' \ Λ` traces out `Λ'' \ Λ`. Over a semifield, the normalized
 partial trace `QuantumSpin.expectation` divides by the number of configurations of `Λ' \ Λ`. It
-is a bimodule map, `E (ι a * X * ι b) = a * E X * b`, it rescales the trace so as to preserve the
+composes in the same way, commutes with adjoints, preserves positive semidefiniteness, and is a
+bimodule map, `E (ι a * X * ι b) = a * E X * b`. It rescales the trace so as to preserve the
 normalized traces, and in characteristic zero it is a left inverse of the inclusion,
 `E (ι x) = x`. Composition with `E` is the operation that extends a state of `A_Λ` to `A_Λ'` by
 the normalized trace on the sites of `Λ' \ Λ`, as needed for finite-volume states of spin
@@ -75,14 +77,40 @@ theorem configurationEquiv_apply_snd (h : Λ ⊆ Λ') (σ : Λ' → S) (i : {i :
 
 theorem configurationEquiv_symm_apply_of_mem (h : Λ ⊆ Λ') (p : (Λ → S) × _) {i : Λ'}
     (hi : (i : L) ∈ Λ) : (configurationEquiv h).symm p i = p.1 ⟨i, hi⟩ := by
-  simp only [configurationEquiv, Equiv.symm_trans_apply, Equiv.prodCongr_symm,
-    Equiv.prodCongr_apply, Equiv.arrowCongr_symm, Equiv.arrowCongr_apply, Equiv.symm_symm,
-    Equiv.piEquivPiSubtypeProd_symm_apply, hi, ↓reduceDIte, Function.comp_apply, Prod.map_fst]
-  exact congrArg p.1 (Subtype.ext (Equiv.subtypeSubtypeEquivSubtype_apply_coe _ _))
+  have hsub : Equiv.subtypeSubtypeEquivSubtype (fun hj => h hj) ⟨i, hi⟩ = ⟨i, hi⟩ := rfl
+  simp [configurationEquiv, hi, hsub]
 
 theorem configurationEquiv_symm_apply_of_notMem (h : Λ ⊆ Λ') (p : (Λ → S) × _) {i : Λ'}
     (hi : (i : L) ∉ Λ) : (configurationEquiv h).symm p i = p.2 ⟨i, hi⟩ := by
   simp [configurationEquiv, hi]
+
+/-- For regions `Λ ⊆ Λ' ⊆ Λ''`, a configuration of the sites of `Λ''` outside `Λ` is a
+configuration of the sites of `Λ'` outside `Λ` together with one of the sites of `Λ''` outside
+`Λ'`. -/
+private def complementEquiv (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'') :
+    ({i : Λ' // (i : L) ∉ Λ} → S) × ({i : Λ'' // (i : L) ∉ Λ'} → S) ≃
+      ({i : Λ'' // (i : L) ∉ Λ} → S) where
+  toFun ζ i := if hi : (i : L) ∈ Λ' then ζ.1 ⟨⟨i, hi⟩, i.2⟩ else ζ.2 ⟨i, hi⟩
+  invFun ζ := (fun i => ζ ⟨⟨i, h₂ i.1.2⟩, i.2⟩, fun i => ζ ⟨i, fun hi => i.2 (h₁ hi)⟩)
+  left_inv ζ := by
+    ext i
+    · simp [i.1.2]
+    · simp [i.2]
+  right_inv ζ := by
+    ext i
+    by_cases hi : (i : L) ∈ Λ' <;> simp [hi]
+
+private theorem configurationEquiv_symm_symm (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'') (σ₀ : Λ → S)
+    (ζ : ({i : Λ' // (i : L) ∉ Λ} → S) × ({i : Λ'' // (i : L) ∉ Λ'} → S)) :
+    (configurationEquiv h₂).symm ((configurationEquiv h₁).symm (σ₀, ζ.1), ζ.2) =
+      (configurationEquiv (h₁.trans h₂)).symm (σ₀, complementEquiv h₁ h₂ ζ) := by
+  ext i
+  by_cases hi : (i : L) ∈ Λ
+  · simp [configurationEquiv_symm_apply_of_mem, hi, h₁ hi]
+  by_cases hi' : (i : L) ∈ Λ'
+  · simp [configurationEquiv_symm_apply_of_mem, configurationEquiv_symm_apply_of_notMem,
+      complementEquiv, hi, hi']
+  · simp [configurationEquiv_symm_apply_of_notMem, complementEquiv, hi, hi']
 
 end Configuration
 
@@ -126,12 +154,10 @@ theorem inclusion_apply (h : Λ ⊆ Λ') (x : Matrix (Λ → S) (Λ → S) R) (�
   have hagree : (configurationEquiv h σ).2 = (configurationEquiv h τ).2 ↔
       ∀ i : Λ', (i : L) ∉ Λ → σ i = τ i := by
     simp [funext_iff]
-  simp only [inclusion, StarAlgHom.coe_mk', AlgHom.coe_mk, RingHom.coe_mk, MonoidHom.coe_mk,
-    OneHom.coe_mk, submatrix_apply, kroneckerMap_apply, one_apply, hagree,
-    configurationEquiv_apply_fst, mul_ite, mul_one, mul_zero]
+  simp [inclusion, one_apply, hagree]
 
 @[simp]
-theorem inclusion_refl : inclusion (subset_refl Λ) = StarAlgHom.id R (Matrix (Λ → S) _ R) := by
+theorem inclusion_self : inclusion (subset_refl Λ) = StarAlgHom.id R (Matrix (Λ → S) _ R) := by
   ext x σ τ
   simp [inclusion_apply, Finset.restrict₂_def]
 
@@ -222,7 +248,7 @@ end Inclusion
 
 section PartialTrace
 
-variable [CommSemiring R]
+variable [AddCommMonoid R]
 
 /-- The **partial trace** `A_Λ' → A_Λ` over the sites of `Λ'` outside `Λ`, for regions `Λ ⊆ Λ'`:
 `Matrix.partialTraceRight` in the splitting `configurationEquiv` of configurations of `Λ'`. -/
@@ -247,7 +273,8 @@ theorem partialTrace_add (h : Λ ⊆ Λ') (X Y : Matrix (Λ' → S) (Λ' → S) 
   simp only [partialTrace, submatrix_add, Pi.add_apply, partialTraceRight_add]
 
 @[simp]
-theorem partialTrace_smul (h : Λ ⊆ Λ') (c : R) (X : Matrix (Λ' → S) (Λ' → S) R) :
+theorem partialTrace_smul {α : Type*} [DistribSMul α R] (h : Λ ⊆ Λ') (c : α)
+    (X : Matrix (Λ' → S) (Λ' → S) R) :
     partialTrace h (c • X) = c • partialTrace h X := by
   simp only [partialTrace, submatrix_smul, Pi.smul_apply, partialTraceRight_smul]
 
@@ -259,17 +286,41 @@ theorem trace_partialTrace (h : Λ ⊆ Λ') (X : Matrix (Λ' → S) (Λ' → S) 
   exact Equiv.sum_comp (configurationEquiv h).symm fun ρ => X ρ ρ
 
 /-- The partial trace commutes with conjugate transposition. -/
-theorem conjTranspose_partialTrace [StarRing R] (h : Λ ⊆ Λ') (X : Matrix (Λ' → S) (Λ' → S) R) :
+theorem conjTranspose_partialTrace [StarAddMonoid R] (h : Λ ⊆ Λ')
+    (X : Matrix (Λ' → S) (Λ' → S) R) :
     (partialTrace h X)ᴴ = partialTrace h Xᴴ := by
   simp [partialTrace, conjTranspose_partialTraceRight]
 
 /-- The partial trace of a positive semidefinite matrix is positive semidefinite. -/
-theorem posSemidef_partialTrace {R : Type*} [CommRing R] [PartialOrder R] [StarRing R]
+theorem posSemidef_partialTrace {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
     [AddLeftMono R] (h : Λ ⊆ Λ') {X : Matrix (Λ' → S) (Λ' → S) R} (hX : X.PosSemidef) :
     (partialTrace h X).PosSemidef :=
   (hX.submatrix _).partialTraceRight
 
-variable [DecidableEq S] [StarRing R]
+/-- Tracing out no sites is the identity. -/
+@[simp]
+theorem partialTrace_self (X : Matrix (Λ → S) (Λ → S) R) : partialTrace (subset_refl Λ) X = X := by
+  have : IsEmpty {i : Λ // (i : L) ∉ Λ} := ⟨fun i => i.2 i.1.2⟩
+  have hσ (σ : Λ → S) ζ : (configurationEquiv (subset_refl Λ)).symm (σ, ζ) = σ :=
+    funext fun i => configurationEquiv_symm_apply_of_mem _ _ i.2
+  ext σ τ
+  simp [partialTrace_apply, hσ]
+
+/-- Partial traces compose: tracing out the sites of `Λ''` outside `Λ'` and then those of `Λ'`
+outside `Λ` traces out the sites of `Λ''` outside `Λ`. -/
+@[simp]
+theorem partialTrace_partialTrace (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'') (X : Matrix (Λ'' → S) (Λ'' → S) R) :
+    partialTrace h₁ (partialTrace h₂ X) = partialTrace (h₁.trans h₂) X := by
+  ext σ₀ τ₀
+  simp only [partialTrace_apply]
+  rw [← Fintype.sum_prod_type', ← (complementEquiv h₁ h₂).sum_comp]
+  simp only [configurationEquiv_symm_symm]
+
+end PartialTrace
+
+section PartialTraceInclusion
+
+variable [CommSemiring R] [DecidableEq S] [StarRing R]
 
 /-- Tracing out the sites of `Λ'` outside `Λ` from `ι x = x ⊗ 1` multiplies `x` by the number of
 configurations of those sites. -/
@@ -287,7 +338,7 @@ theorem partialTrace_inclusion_mul_mul_inclusion (h : Λ ⊆ Λ') (a b : Matrix 
   simp only [partialTrace, ← submatrix_mul_equiv _ _ _ (configurationEquiv h).symm,
     submatrix_inclusion, partialTraceRight_mul_kronecker_one, partialTraceRight_kronecker_one_mul]
 
-end PartialTrace
+end PartialTraceInclusion
 
 section Expectation
 
@@ -310,6 +361,49 @@ of `Λ'` outside `Λ`, so it preserves the normalized traces `Tr / card (Λ → 
 theorem trace_expectation (h : Λ ⊆ Λ') (X : Matrix (Λ' → S) (Λ' → S) R) :
     trace (expectation h X) = (Fintype.card ({i : Λ' // (i : L) ∉ Λ} → S) : R)⁻¹ * trace X := by
   rw [expectation_apply, trace_smul, trace_partialTrace, smul_eq_mul]
+
+/-- The normalized partial trace over no sites is the identity. -/
+@[simp]
+theorem expectation_self (X : Matrix (Λ → S) (Λ → S) R) : expectation (subset_refl Λ) X = X := by
+  have : IsEmpty {i : Λ // (i : L) ∉ Λ} := ⟨fun i => i.2 i.1.2⟩
+  simp [expectation_apply]
+
+/-- Normalized partial traces compose. -/
+@[simp]
+theorem expectation_expectation (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'')
+    (X : Matrix (Λ'' → S) (Λ'' → S) R) :
+    expectation h₁ (expectation h₂ X) = expectation (h₁.trans h₂) X := by
+  have hcard : (Fintype.card ({i : Λ'' // (i : L) ∉ Λ} → S) : R) =
+      Fintype.card ({i : Λ' // (i : L) ∉ Λ} → S) *
+        Fintype.card ({i : Λ'' // (i : L) ∉ Λ'} → S) := by
+    rw [← Fintype.card_congr (complementEquiv h₁ h₂), Fintype.card_prod, Nat.cast_mul]
+  simp only [expectation_apply]
+  rw [partialTrace_smul, partialTrace_partialTrace, smul_smul, hcard, mul_inv]
+
+/-- Normalized partial traces compose, as linear maps. -/
+theorem expectation_comp_expectation (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'') :
+    (expectation h₁).comp (expectation h₂) =
+      (expectation (h₁.trans h₂) : Matrix (Λ'' → S) _ R →ₗ[R] _) :=
+  LinearMap.ext (expectation_expectation h₁ h₂)
+
+/-- The normalized partial trace commutes with conjugate transposition. -/
+theorem conjTranspose_expectation [StarRing R] (h : Λ ⊆ Λ') (X : Matrix (Λ' → S) (Λ' → S) R) :
+    (expectation h X)ᴴ = expectation h Xᴴ := by
+  simp [expectation_apply, conjTranspose_partialTrace]
+
+/-- The normalized partial trace of a positive semidefinite matrix is positive semidefinite. -/
+theorem posSemidef_expectation {R : Type*} [Field R] [PartialOrder R] [StarRing R]
+    [StarOrderedRing R] [IsOrderedRing R] (h : Λ ⊆ Λ') {X : Matrix (Λ' → S) (Λ' → S) R}
+    (hX : X.PosSemidef) : (expectation h X).PosSemidef := by
+  set c : R := (Fintype.card ({i : Λ' // (i : L) ∉ Λ} → S) : R)
+  -- `c⁻¹` is nonnegative as the conjugate `star c⁻¹ * c * c⁻¹` of the nonnegative `c`.
+  have hc : 0 ≤ c⁻¹ := by
+    obtain hc | hc := eq_or_ne c 0
+    · simp [hc]
+    · have hcc : c⁻¹ = star c⁻¹ * c * c⁻¹ := by
+        rw [star_inv₀, star_natCast, inv_mul_cancel₀ hc, one_mul]
+      exact hcc ▸ star_left_conjugate_nonneg (Nat.cast_nonneg _) _
+  exact (posSemidef_partialTrace h hX).smul hc
 
 variable [DecidableEq S] [StarRing R]
 
