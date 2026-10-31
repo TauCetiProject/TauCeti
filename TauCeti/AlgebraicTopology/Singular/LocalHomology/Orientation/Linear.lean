@@ -36,8 +36,6 @@ on the identification used.
 
 ## Main definitions
 
-* `ContinuousLinearEquiv.complZeroPairIso`: the isomorphism of pairs
-  `(E, E ∖ {0}) ≅ (F, F ∖ {0})` induced by a continuous linear equivalence.
 * `Orientation.localOrientation`: the local orientation at the origin selected by an orientation.
 
 ## Main results
@@ -64,71 +62,6 @@ noncomputable section
 open CategoryTheory Module TauCeti
 
 universe w
-
-namespace ContinuousLinearEquiv
-
-variable {R : Type*} [Semiring R] {E F G : Type w}
-  [TopologicalSpace E] [AddCommMonoid E] [Module R E]
-  [TopologicalSpace F] [AddCommMonoid F] [Module R F]
-  [TopologicalSpace G] [AddCommMonoid G] [Module R G]
-
-/-- A continuous linear equivalence sends nonzero vectors to nonzero vectors. -/
-theorem mapsTo_compl_zero (f : E ≃L[R] F) : Set.MapsTo f ({0}ᶜ : Set E) {0}ᶜ := fun _ hx ↦ by
-  rw [Set.mem_compl_singleton_iff] at hx ⊢
-  exact f.map_ne_zero_iff.2 hx
-
-/-- The isomorphism of pairs `(E, E ∖ {0}) ≅ (F, F ∖ {0})` induced by a continuous linear
-equivalence `f : E ≃L[R] F`. -/
-def complZeroPairIso (f : E ≃L[R] F) :
-    TopPair.ofSubset ({0}ᶜ : Set (TopCat.of E)) ≅ TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F)) :=
-  TopPair.ofSubsetIso (X := TopCat.of E) (Y := TopCat.of F) f.toHomeomorph fun _ ↦ by
-    rw [Set.mem_compl_singleton_iff, Set.mem_compl_singleton_iff, coe_toHomeomorph]
-    exact f.map_ne_zero_iff.symm
-
-/-- The map of pairs underlying `ContinuousLinearEquiv.complZeroPairIso f` is the map induced by
-`f` as a continuous map. -/
-theorem complZeroPairIso_hom (f : E ≃L[R] F) :
-    f.complZeroPairIso.hom =
-      TopPair.ofSubsetMap (TopCat.ofHom (f : C(E, F))) f.mapsTo_compl_zero := by
-  rw [complZeroPairIso, TopPair.ofSubsetIso_hom]
-  -- `f.toHomeomorph` and `f` have the same underlying continuous map.
-  rfl
-
-/-- The inverse map of pairs underlying `ContinuousLinearEquiv.complZeroPairIso f` is the map
-induced by `f.symm` as a continuous map. -/
-theorem complZeroPairIso_inv (f : E ≃L[R] F) :
-    f.complZeroPairIso.inv =
-      TopPair.ofSubsetMap (TopCat.ofHom (f.symm : C(F, E))) f.symm.mapsTo_compl_zero := by
-  rw [complZeroPairIso, TopPair.ofSubsetIso_inv]
-  -- `f.toHomeomorph.symm` and `f.symm` have the same underlying continuous map.
-  rfl
-
-@[simp]
-theorem complZeroPairIso_hom_fst_apply (f : E ≃L[R] F) (x : E) :
-    TopPair.Hom.fst f.complZeroPairIso.hom x = f x := by
-  rw [complZeroPairIso_hom]
-  exact TopPair.ofSubsetMap_fst_apply _ _ _
-
-@[simp]
-theorem complZeroPairIso_inv_fst_apply (f : E ≃L[R] F) (y : F) :
-    TopPair.Hom.fst f.complZeroPairIso.inv y = f.symm y := by
-  rw [complZeroPairIso_inv]
-  exact TopPair.ofSubsetMap_fst_apply _ _ _
-
-/-- The pair isomorphism of a composite is the composite of the pair isomorphisms. -/
-theorem complZeroPairIso_trans (f : E ≃L[R] F) (g : F ≃L[R] G) :
-    (f.trans g).complZeroPairIso = f.complZeroPairIso ≪≫ g.complZeroPairIso := by
-  ext : 1
-  rw [Iso.trans_hom, complZeroPairIso_hom, complZeroPairIso_hom, complZeroPairIso_hom]
-  exact (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by ext; simp)).symm
-
-/-- The pair isomorphism of the inverse is the inverse of the pair isomorphism. -/
-theorem complZeroPairIso_symm (f : E ≃L[R] F) :
-    f.symm.complZeroPairIso = f.complZeroPairIso.symm := by
-  ext : 1
-  rw [complZeroPairIso_hom, Iso.symm_hom, complZeroPairIso_inv]
-
-end ContinuousLinearEquiv
 
 namespace Orientation
 
@@ -160,15 +93,9 @@ private theorem singularHomologyMap_modelLocalOrientation (g : (Model.{w} n) ≃
       (modelLocalOrientation (ω.map _ g.toLinearEquiv)).val := by
   have hcard : Fintype.card (Fin (n + 1)) = finrank ℝ (Model.{w} n) := by
     rw [Fintype.card_fin, finrank_euclideanSpace_ulift_fin]
-  have hpair : g.complZeroPairIso.hom = TopPair.ofSubsetMap
-      (TopCat.ofHom ((g : Model.{w} n →L[ℝ] Model.{w} n) : C(Model.{w} n, Model.{w} n)))
-      g.mapsTo_compl_zero := by
-    rw [g.complZeroPairIso_hom]
-    -- `g` and `g` as a continuous linear map have the same underlying continuous map.
-    rfl
   have hsign := singularHomologyMap_continuousLinearMap_compl_zero
     (ModuleCat.of ℤ (ULift.{w} ℤ)) (g : Model.{w} n →L[ℝ] Model.{w} n) g.mapsTo_compl_zero (n + 1)
-  rw [hpair, hsign]
+  rw [g.complZeroPairIso_hom, hsign]
   -- The determinant of `g` is nonzero, and the orientation and the local orientation change by
   -- its sign.
   have hdet : LinearMap.det (g.toLinearEquiv : (Model.{w} n) →ₗ[ℝ] (Model.{w} n)) ≠ 0 :=
@@ -250,16 +177,14 @@ theorem localOrientation_euclideanSpace
       (by rw [OpenPartialHomeomorph.refl_source]; exact Set.mem_univ _) ω hE := by
   rw [localOrientation_eq_localOrientationVia ω hE (ContinuousLinearEquiv.refl ℝ _)]
   apply Subtype.ext
-  have hpair : (ContinuousLinearEquiv.refl ℝ (Model.{w} n)).complZeroPairIso.inv = 𝟙 _ := by
-    rw [ContinuousLinearEquiv.complZeroPairIso_inv]
-    exact TopPair.ofSubsetMap_id _
   have hω : ω.map _ (ContinuousLinearEquiv.refl ℝ (Model.{w} n)).toLinearEquiv = ω := by
     have hrefl : (ContinuousLinearEquiv.refl ℝ (Model.{w} n)).toLinearEquiv =
         LinearEquiv.refl ℝ _ := by
       ext x
       simp
     rw [hrefl, Orientation.map_refl, Equiv.refl_apply]
-  simp only [localOrientationVia, hpair, TopPair.singularHomologyMap_id, ModuleCat.id_apply, hω]
+  simp only [localOrientationVia, ContinuousLinearEquiv.complZeroPairIso_refl, Iso.refl_inv,
+    TopPair.singularHomologyMap_id, ModuleCat.id_apply, hω]
   -- Both sides are the oriented-chart generator of the identity chart.
   rfl
 

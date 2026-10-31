@@ -27,14 +27,13 @@ statements include dimension zero and retain both orientation signs there.
 
 An orientation `ω` of a real normed space `F` of dimension `n + 1` selects a local orientation of
 `F` at the origin (`Orientation.localOrientation`), and so an integral generator of
-`Hᵈ(F, F ∖ {0}; ℤ)`, `d = dim F` (`Orientation.localCohomologyClass`). The opposite orientation
-selects the opposite generator, and a continuous linear automorphism `f` of `F` pulls the generator
-selected by `ω.map f` back to the generator selected by `ω`
+`Hⁿ⁺¹(F, F ∖ {0}; ℤ)` (`Orientation.localCohomologyClass`), indexed in the same degree. The
+opposite orientation selects the opposite generator, and a continuous linear equivalence
+`f : F ≃L[ℝ] G` pulls the generator selected by `ω.map f` back to the generator selected by `ω`
 (`Orientation.singularCohomologyMap_localCohomologyClass`), so an orientation-preserving
 automorphism fixes it. These are the normalized fibre values of the integral Thom class of an
 oriented real vector bundle, read in local trivializations: on the overlap of two trivializations,
-the fibre transition is such an automorphism. The naturality is stated for automorphisms, since
-the cohomology of `(F, F ∖ {0})` is indexed by `finrank ℝ F`.
+the fibre transition is such an automorphism.
 
 ## References
 
@@ -216,82 +215,91 @@ namespace Orientation
 
 open TauCeti
 
-section Cast
+variable {F G : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] {n : ℕ}
 
-variable {F : Type w} [TopologicalSpace F] [Zero F]
+/-- The integral class dual to a local orientation of `F` at the origin, in a degree `d` equal to
+`finrank ℝ F`. -/
+private def dualClass [FiniteDimensional ℝ F] {d : ℕ} (hd : finrank ℝ F = d)
+    (o : LocalOrientation F 0 d) :
+    (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularCohomology
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) d := by
+  subst hd
+  exact o.cohomologyClass (OpenPartialHomeomorph.refl F)
+    (by rw [OpenPartialHomeomorph.refl_source]; exact Set.mem_univ _)
 
-/-- Transporting a local orientation along an equality of degrees commutes with the maps that
-local homology induces. -/
-private theorem singularHomologyMap_cast {d d' : ℕ} (h : d' = d)
-    (g : TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F)) ⟶ TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F)))
-    (x y : LocalOrientation F 0 d)
-    (hxy : (TopPair.singularHomologyMap g (ModuleCat.of ℤ (ULift.{w} ℤ)) d).hom x.val = y.val) :
-    (TopPair.singularHomologyMap g (ModuleCat.of ℤ (ULift.{w} ℤ)) d').hom
-        (h ▸ x : LocalOrientation F 0 d').val = (h ▸ y : LocalOrientation F 0 d').val := by
-  subst h
-  exact hxy
+private theorem eq_dualClass_iff [FiniteDimensional ℝ F] {d : ℕ} (hd : finrank ℝ F = d)
+    (o : LocalOrientation F 0 d)
+    (α : (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularCohomology
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) d) :
+    α = dualClass hd o ↔
+      ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ d α).hom o.val = 1 := by
+  subst hd
+  exact LocalOrientation.eq_cohomologyClass_iff _ _ _ α
 
-/-- Transporting a local orientation along an equality of degrees commutes with reversal. -/
-private theorem cast_neg {d d' : ℕ} (h : d' = d) (x : LocalOrientation F 0 d) :
-    (h ▸ (-x) : LocalOrientation F 0 d') = -(h ▸ x : LocalOrientation F 0 d') := by
-  subst h
-  rfl
-
-end Cast
-
-variable {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
+private theorem span_dualClass [FiniteDimensional ℝ F] {d : ℕ} (hd : finrank ℝ F = d)
+    (o : LocalOrientation F 0 d) : Submodule.span ℤ {dualClass hd o} = ⊤ := by
+  subst hd
+  exact LocalOrientation.span_cohomologyClass _ _ _
 
 /-- **The local cohomology generator selected by an orientation.** An orientation `ω` of a real
-normed space `F` of dimension `n + 1` selects the integral class of `Hᵈ(F, F ∖ {0}; ℤ)`,
-`d = finrank ℝ F`, whose Kronecker pairing with the local orientation `ω.localOrientation hF` is
-one. It generates `Hᵈ(F, F ∖ {0}; ℤ)` (`Orientation.span_localCohomologyClass`). -/
+normed space `F` of dimension `n + 1` selects the integral class of `Hⁿ⁺¹(F, F ∖ {0}; ℤ)` whose
+Kronecker pairing with the local orientation `ω.localOrientation hF` is one. It generates
+`Hⁿ⁺¹(F, F ∖ {0}; ℤ)` (`Orientation.span_localCohomologyClass`). -/
 def localCohomologyClass (ω : Orientation ℝ F (Fin (n + 1))) (hF : finrank ℝ F = n + 1) :
     (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularCohomology
-      (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) (finrank ℝ F) :=
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1) :=
   haveI := FiniteDimensional.of_finrank_eq_succ hF
-  LocalOrientation.cohomologyClass (hF ▸ ω.localOrientation hF : LocalOrientation F 0 (finrank ℝ F))
-    (OpenPartialHomeomorph.refl F) (by rw [OpenPartialHomeomorph.refl_source]; exact Set.mem_univ _)
+  dualClass hF (ω.localOrientation hF)
+
+/-- The generator selected by `ω` is the unique class whose pairing with the local orientation
+selected by `ω` is one. -/
+theorem eq_localCohomologyClass_iff (ω : Orientation ℝ F (Fin (n + 1)))
+    (hF : finrank ℝ F = n + 1)
+    (α : (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularCohomology
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1)) :
+    α = ω.localCohomologyClass hF ↔
+      ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ (n + 1) α).hom
+        (ω.localOrientation hF).val = 1 :=
+  haveI := FiniteDimensional.of_finrank_eq_succ hF
+  eq_dualClass_iff hF _ α
 
 /-- The generator selected by `ω` evaluates to one on the local orientation selected by `ω`. -/
 @[simp]
 theorem kronecker_localCohomologyClass (ω : Orientation ℝ F (Fin (n + 1)))
     (hF : finrank ℝ F = n + 1) :
-    ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ (finrank ℝ F)
-      (ω.localCohomologyClass hF)).hom
-        (hF ▸ ω.localOrientation hF : LocalOrientation F 0 (finrank ℝ F)).val = 1 := by
-  have := FiniteDimensional.of_finrank_eq_succ hF
-  exact LocalOrientation.kronecker_cohomologyClass _ _ _
+    ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ (n + 1)
+      (ω.localCohomologyClass hF)).hom (ω.localOrientation hF).val = 1 :=
+  (ω.eq_localCohomologyClass_iff hF _).1 rfl
 
 /-- The generator selected by an orientation generates integral local cohomology. -/
 theorem span_localCohomologyClass (ω : Orientation ℝ F (Fin (n + 1)))
     (hF : finrank ℝ F = n + 1) :
-    Submodule.span ℤ {ω.localCohomologyClass hF} = ⊤ := by
-  have := FiniteDimensional.of_finrank_eq_succ hF
-  exact LocalOrientation.span_cohomologyClass _ _ _
+    Submodule.span ℤ {ω.localCohomologyClass hF} = ⊤ :=
+  haveI := FiniteDimensional.of_finrank_eq_succ hF
+  span_dualClass hF _
 
 /-- Reversing an orientation negates the local cohomology generator it selects. -/
 @[simp]
 theorem localCohomologyClass_neg (ω : Orientation ℝ F (Fin (n + 1)))
     (hF : finrank ℝ F = n + 1) :
     (-ω).localCohomologyClass hF = -ω.localCohomologyClass hF := by
-  have := FiniteDimensional.of_finrank_eq_succ hF
-  rw [localCohomologyClass, localCohomologyClass, ← LocalOrientation.cohomologyClass_neg]
-  congr 1
-  rw [localOrientation_neg]
-  exact cast_neg hF _
+  symm
+  rw [eq_localCohomologyClass_iff, localOrientation_neg]
+  simp only [map_neg, ModuleCat.hom_neg, LinearMap.neg_apply, LocalOrientation.coe_neg, neg_neg]
+  exact ω.kronecker_localCohomologyClass hF
 
-/-- **Naturality of the selected generators under linear automorphisms.** A continuous linear
-automorphism `f` of `F` pulls the local cohomology generator selected by the transported
-orientation `ω.map f` back to the generator selected by `ω`. In particular an
-orientation-preserving automorphism fixes the generator, and an orientation-reversing one
-negates it. -/
-theorem singularCohomologyMap_localCohomologyClass (f : F ≃L[ℝ] F)
-    (ω : Orientation ℝ F (Fin (n + 1))) (hF : finrank ℝ F = n + 1) :
-    TopPair.singularCohomologyMap f.complZeroPairIso.hom (finrank ℝ F)
-        ((ω.map _ f.toLinearEquiv).localCohomologyClass hF) =
+/-- **Naturality of the selected generators.** A continuous linear equivalence `f : F ≃L[ℝ] G`
+pulls the local cohomology generator selected by the transported orientation `ω.map f` back to the
+generator selected by `ω`. In particular an orientation-preserving automorphism of `F` fixes the
+generator, and an orientation-reversing one negates it. -/
+theorem singularCohomologyMap_localCohomologyClass (f : F ≃L[ℝ] G)
+    (ω : Orientation ℝ F (Fin (n + 1))) (hF : finrank ℝ F = n + 1) (hG : finrank ℝ G = n + 1) :
+    TopPair.singularCohomologyMap f.complZeroPairIso.hom (n + 1)
+        ((ω.map _ f.toLinearEquiv).localCohomologyClass hG) =
       ω.localCohomologyClass hF := by
-  have := FiniteDimensional.of_finrank_eq_succ hF
-  exact LocalOrientation.singularCohomologyMap_cohomologyClass _ _ _ _ _ _ _
-    (singularHomologyMap_cast hF _ _ _ (localOrientation_map f ω hF hF).symm)
+  rw [eq_localCohomologyClass_iff, TopPair.singularKronecker_naturality, ModuleCat.hom_comp,
+    LinearMap.comp_apply, ← localOrientation_map f ω hF hG]
+  exact (ω.map _ f.toLinearEquiv).kronecker_localCohomologyClass hG
 
 end Orientation

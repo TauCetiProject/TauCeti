@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 public import TauCeti.Analysis.Normed.Operator.PositiveDeterminant
+public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
 
 /-!
 # Linear maps act on local homology by the sign of their determinant
@@ -132,15 +133,12 @@ private lemma singularHomologyMap_complZeroMap_of_conj {F : Type w} [NormedAddCo
     (s : ℤ) (k : ℕ)
     (h : TopPair.singularHomologyMap (complZeroMap _ hf') R k = s • 𝟙 _) :
     TopPair.singularHomologyMap (complZeroMap f hf) R k = s • 𝟙 _ := by
-  let ε := TopPair.ofSubsetMap (TopCat.ofHom (e : C(E, F))) (B := ({0}ᶜ : Set E))
-    (B' := ({0}ᶜ : Set F)) fun _ hx ↦ e.map_ne_zero_iff.2 hx
-  let ε' := TopPair.ofSubsetMap (TopCat.ofHom (e.symm : C(F, E))) (B := ({0}ᶜ : Set F))
-    (B' := ({0}ᶜ : Set E)) fun _ hx ↦ e.symm.map_ne_zero_iff.2 hx
-  have hinv : ε ≫ ε' = 𝟙 _ :=
-    (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq (g'' := 𝟙 (TopCat.of E)) _ _
-      (fun _ hx ↦ hx) (by ext x; simp)).trans (TopPair.ofSubsetMap_id _)
-  have hsq : complZeroMap f hf ≫ ε = ε ≫ complZeroMap _ hf' :=
-    TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ (by ext x; simp)
+  let ε := e.complZeroPairIso.hom
+  let ε' := e.complZeroPairIso.inv
+  have hinv : ε ≫ ε' = 𝟙 _ := e.complZeroPairIso.hom_inv_id
+  have hsq : complZeroMap f hf ≫ ε = ε ≫ complZeroMap _ hf' := by
+    rw [show ε = _ from e.complZeroPairIso_hom]
+    exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ (by ext x; simp)
   calc TopPair.singularHomologyMap (complZeroMap f hf) R k
       = TopPair.singularHomologyMap (complZeroMap f hf ≫ ε ≫ ε') R k := by
         rw [hinv, Category.comp_id]
