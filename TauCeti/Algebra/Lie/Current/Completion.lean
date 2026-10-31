@@ -45,8 +45,6 @@ and every `N` there is `M` such that `I_M x` lies in the kernel of the projectio
 
 ## Main results
 
-* `TauCeti.CurrentAlgebra.iInf_orderLeftIdeal_natCast`: the left ideals of natural orders have the
-  same intersection as all of them.
 * `TauCeti.CurrentAlgebra.ker_toLimQuotients_orderLeftIdeal`: the kernel of `U → Û` is the
   intersection of the `I_N`.
 * `TauCeti.CurrentAlgebra.exists_forall_limπ_smul_eq_zero`: the orbit maps of the action of `U` on
@@ -71,11 +69,6 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 local notation "UK" => CentralQuotient R (centralElement Φ hΦ hΦs) a
 
-/-- The left ideals `I_n` of natural orders `n` decrease as `n` grows. -/
-theorem orderLeftIdeal_natCast_antitone :
-    Antitone fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n :=
-  (orderLeftIdeal_antitone Φ hΦ hΦs a).comp_monotone Nat.mono_cast
-
 /-- The tower `U / I_0 ← U / I_1 ← U / I_2 ← ⋯` of the quotients of `U(ĝ) / (ι K - a)` by the left
 ideals of high-order currents, with the quotient maps as transitions. -/
 abbrev orderQuotientTower : ModuleTower UK :=
@@ -86,13 +79,6 @@ abbrev orderQuotientTower : ModuleTower UK :=
 ideals of high-order currents, with the inverse limit topology. -/
 abbrev CompletedEnveloping : Type _ :=
   (orderQuotientTower Φ hΦ hΦs a).lim
-
-/-- The left ideals `I_n` of natural orders `n` have the same intersection as all the left ideals
-`I_N`, since the natural numbers are cofinal among the orders. -/
-theorem iInf_orderLeftIdeal_natCast :
-    ⨅ n : ℕ, orderLeftIdeal Φ hΦ hΦs a n = ⨅ N : ℤ, orderLeftIdeal Φ hΦ hΦs a N := by
-  refine le_antisymm (le_iInf fun N ↦ ?_) (le_iInf fun n ↦ iInf_le _ _)
-  exact (iInf_le _ N.toNat).trans (orderLeftIdeal_antitone Φ hΦ hΦs a (Int.self_le_toNat N))
 
 /-- **The kernel of the canonical map** `U → Û` is the intersection of all the left ideals `I_N`.
 In particular `U` embeds in its completion exactly when the `I_N` intersect to zero. -/

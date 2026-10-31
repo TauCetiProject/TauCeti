@@ -90,6 +90,7 @@ theorem quotientsπ_surjective (n : ℕ) : Function.Surjective (quotientsπ J hJ
 theorem ker_quotientsπ (n : ℕ) : LinearMap.ker (quotientsπ J hJ n) = J n :=
   Submodule.ker_mkQ _
 
+@[simp]
 theorem quotientsπ_eq_zero_iff {n : ℕ} {x : M} : quotientsπ J hJ n x = 0 ↔ x ∈ J n := by
   rw [← LinearMap.mem_ker, ker_quotientsπ]
 
@@ -118,9 +119,8 @@ theorem transition_quotientsπ (n : ℕ) (x : M) :
 /-- The transitions of the tower of quotients are surjective. -/
 theorem transition_quotients_surjective (n : ℕ) :
     Function.Surjective ((quotients J hJ).transition n) := by
-  refine Function.Surjective.of_comp (g := quotientsπ J hJ (n + 1)) ?_
-  rw [← LinearMap.coe_comp, transition_comp_quotientsπ]
-  exact quotientsπ_surjective J hJ n
+  rw [transition_def]
+  exact Submodule.factor_surjective (hJ (Nat.le_succ n))
 
 /-- The projections `lim M ⧸ Jₖ → M ⧸ Jₙ` of the limit of the tower of quotients are
 surjective. -/
@@ -151,11 +151,7 @@ theorem comap_toLimQuotients_ker_limπ (n : ℕ) :
 /-- The kernel of the canonical map `M → lim M ⧸ Jₙ` is the intersection of the `Jₙ`. -/
 @[simp]
 theorem ker_toLimQuotients : LinearMap.ker (toLimQuotients J hJ) = ⨅ n, J n := by
-  ext x
-  simp only [LinearMap.mem_ker, Submodule.mem_iInf, ← quotientsπ_eq_zero_iff J hJ,
-    ← coe_toLimQuotients_apply]
-  exact ⟨fun h n ↦ by rw [h, ZeroMemClass.coe_zero, Pi.zero_apply],
-    fun h ↦ Subtype.ext <| funext fun n ↦ by simpa using h n⟩
+  simp only [toLimQuotients, ker_limLift, ker_quotientsπ]
 
 /-- The canonical map `M → lim M ⧸ Jₙ` is injective exactly when the `Jₙ` intersect to zero. -/
 theorem toLimQuotients_injective_iff :

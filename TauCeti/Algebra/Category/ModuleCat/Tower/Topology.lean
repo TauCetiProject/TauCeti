@@ -59,11 +59,6 @@ universe v u
 
 variable {R : Type u} [Ring R] (F : ModuleTower.{v} R)
 
-/-- The kernels of the projections `lim A → Aₙ` decrease as `n` grows. -/
-theorem ker_limπ_antitone : Antitone fun n ↦ LinearMap.ker (F.limπ n) := fun n k h x hx ↦ by
-  rw [LinearMap.mem_ker] at hx ⊢
-  rw [← F.transitionOfLE_comp_limπ h, LinearMap.comp_apply, hx, map_zero]
-
 /-- The kernels of the projections `lim A → Aₙ`, as a filter basis of the additive group
 `lim A`. -/
 @[instance_reducible]
