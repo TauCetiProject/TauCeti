@@ -30,6 +30,15 @@ pairwise sharing no vertex other than their ends. On a finite graph with more th
 `k`-vertex-connectivity is the existence of `k` such paths between every two distinct vertices,
 adjacent ones included.
 
+Whitney's inequality compares the two connectivity notions: deleting fewer than `k` edges can
+be simulated by deleting fewer than `k` vertices, one end of each deleted edge, so a
+`k`-vertex-connected graph is `k`-edge-connected and `G.vertexConnectivity ≤ G.edgeConnectivity`.
+Together with `SimpleGraph.edgeConnectivity_le_minDegree`, this bounds vertex connectivity by
+edge connectivity and edge connectivity by minimum degree on a finite graph with at least two
+vertices. The inequality is due to H. Whitney, *Congruent
+graphs and the connectivity of graphs*, Amer. J. Math. 54 (1932), 150–168; the proof follows
+R. Diestel, *Graph Theory*, Proposition 1.4.2, made local to a pair of vertices.
+
 The definitions follow the proposal
 [mathlib4#33355](https://github.com/leanprover-community/mathlib4/pull/33355), and their shape
 and API follow Mathlib's `SimpleGraph.IsEdgeReachable` and `SimpleGraph.IsEdgeConnected`. The
@@ -72,15 +81,6 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
   existence of `k` distinct internally disjoint paths between every two distinct vertices.
 
 ## Implementation notes
-
-For Whitney's inequality, let `F` be a set of fewer than `k` edges and `u, v` two vertices. Pick
-an end other than `u` and `v` of every edge of `F` other than `s(u, v)`; a walk from `u` to `v`
-avoiding the set `S` of picked vertices uses no edge of `F` except possibly `s(u, v)`. If
-`s(u, v)` is an edge in `F`, then `S` has fewer than `k - 1` vertices, so some vertex `w` lies
-outside `S ∪ {u, v}`, and the walks from `u` to `w` avoiding `S ∪ {v}` and from `w` to `v` avoiding
-`S ∪ {u}` do not use `s(u, v)`. The inequality is due to H. Whitney, *Congruent graphs and the
-connectivity of graphs*, Amer. J. Math. 54 (1932), 150–168; the argument is that of R. Diestel,
-*Graph Theory*, Proposition 1.4.2, made local to a pair of vertices.
 
 The Menger statements are derived from the witness forms in
 `TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger`. For adjacent vertices `s` and `t` of a
@@ -433,6 +433,8 @@ private theorem reachable_deleteEdges_of_walk {F : Set (Sym2 V)} {S : Set V} {a 
 `k`-edge-connected. -/
 theorem IsVertexConnected.isEdgeConnected (h : G.IsVertexConnected k) : G.IsEdgeConnected k := by
   intro u v F hF
+  -- Pick an end other than `u` and `v` of every edge of `F` other than `s(u, v)`; a walk from `u`
+  -- to `v` avoiding the set `S` of picked vertices uses no edge of `F` except possibly `s(u, v)`.
   obtain ⟨S, hu, hv, hSF, hS⟩ := exists_endpoints_of_edges (G := G) F u v
   by_cases huv : s(u, v) ∈ F ∧ G.Adj u v
   · -- The edge `s(u, v)` is deleted, so `S` has fewer than `k - 1` vertices. Route through a
