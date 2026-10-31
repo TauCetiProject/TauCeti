@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.Liouville
 public import TauCeti.Geometry.Symplectic.Cotangent.StrongDual
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
-public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 /-!
 # Moment maps of cotangent-lifted linear actions
@@ -22,17 +21,19 @@ A linear map `A` of a real normed space `V` acts on the linear cotangent space
 the pairing of the covector `p` with the vector `A q` generated at the base point `q`. This file
 proves the moment map identities at the level of the linear group `GL(V)` and of its Lie algebra.
 
-For a continuous linear equivalence `g : V ≃L[ℝ] W` the cotangent lift is
-`(q, p) ↦ (g q, p ∘ g⁻¹)` (`ContinuousLinearEquiv.cotangent`). It is a symplectomorphism, it
-preserves the Liouville forms `λ_(q, p)(δq, δp) = p(δq)`, and it is compatible with identities,
-composition and inverses. The moment map is coadjoint equivariant: `μ(g · x)(A) = μ(x)(g⁻¹ A g)`
-(`ContinuousLinearEquiv.cotangentMomentMap_cotangent`).
+For a continuous linear equivalence `g : V ≃L[ℝ] W`, the cotangent lift
+`(q, p) ↦ (g q, p ∘ g⁻¹)` (`ContinuousLinearEquiv.cotangent`) is a symplectomorphism preserving
+the Liouville forms. The moment map is coadjoint equivariant along it:
+`μ(g · x)(A) = μ(x)(g⁻¹ A g)` (`ContinuousLinearEquiv.cotangentMomentMap_cotangent`).
 
 For finite-dimensional `V`, the infinitesimal cotangent lift `(q, p) ↦ (A q, -(p ∘ A))` is a Lie
 algebra homomorphism from `Module.End ℝ V` to the endomorphisms of `V × StrongDual ℝ V`
 (`TauCeti.cotangentLiftLieHom`). It defines an infinitesimal action of `gl(V)` by linear vector
 fields (`TauCeti.InfinitesimalAction.cotangentLinear`). Then:
 
+* the infinitesimal cotangent lift takes values in `sp(V × StrongDual ℝ V)`
+  (`TauCeti.cotangentLiftLieHom_mem_skewAdjointLieSubalgebra`), and `μ_A(x) = ½ ω(A_{T*V} x, x)`
+  is the linear symplectic moment map along it;
 * `μ` is a moment map of this action (`TauCeti.isMomentMap_cotangentMomentMap`), and it is the
   contraction of the Liouville form with the generating vector fields,
   `⟨μ, A⟩ = λ(A_{T*V})` (`TauCeti.cotangentLiouvilleForm_cotangentLiftLieHom`);
@@ -49,7 +50,6 @@ this is the angular momentum.
 ## Main declarations
 
 * `TauCeti.cotangentMomentMap`: the moment map `⟨μ(q, p), A⟩ = p(A q)`.
-* `ContinuousLinearEquiv.cotangent`: the cotangent lift `(q, p) ↦ (g q, p ∘ g⁻¹)`.
 * `TauCeti.cotangentLiftLieHom`: the infinitesimal cotangent lift `(q, p) ↦ (A q, -(p ∘ A))`.
 * `TauCeti.InfinitesimalAction.cotangentLinear`: the cotangent-lifted linear action of `gl(V)`.
 * `TauCeti.isMomentMap_cotangentMomentMap`: `μ` is a moment map of this action.
@@ -88,61 +88,8 @@ namespace ContinuousLinearEquiv
 
 open TauCeti
 
-variable {V W X : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
-  [NormedSpace ℝ W] [NormedAddCommGroup X] [NormedSpace ℝ X]
-
-/-- The **cotangent lift** `(q, p) ↦ (g q, p ∘ g⁻¹)` of a continuous linear equivalence
-`g : V ≃L[ℝ] W`, as a continuous linear equivalence of the linear cotangent spaces
-`V × StrongDual ℝ V` and `W × StrongDual ℝ W`. -/
-def cotangent (g : V ≃L[ℝ] W) : (V × StrongDual ℝ V) ≃L[ℝ] (W × StrongDual ℝ W) :=
-  g.prodCongr (g.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ))
-
-@[simp]
-theorem cotangent_apply_fst (g : V ≃L[ℝ] W) (x : V × StrongDual ℝ V) :
-    (g.cotangent x).1 = g x.1 :=
-  (rfl)
-
-@[simp]
-theorem cotangent_apply_snd_apply (g : V ≃L[ℝ] W) (x : V × StrongDual ℝ V) (w : W) :
-    (g.cotangent x).2 w = x.2 (g.symm w) :=
-  (rfl)
-
-/-- The cotangent lift of the identity is the identity. -/
-@[simp]
-theorem cotangent_refl :
-    (ContinuousLinearEquiv.refl ℝ V).cotangent = ContinuousLinearEquiv.refl ℝ _ :=
-  (rfl)
-
-/-- The cotangent lift of a composite is the composite of the cotangent lifts. -/
-theorem cotangent_trans (g : V ≃L[ℝ] W) (h : W ≃L[ℝ] X) :
-    (g.trans h).cotangent = g.cotangent.trans h.cotangent :=
-  (rfl)
-
-/-- The cotangent lift of the inverse is the inverse of the cotangent lift. -/
-theorem cotangent_symm (g : V ≃L[ℝ] W) : g.symm.cotangent = g.cotangent.symm :=
-  (rfl)
-
-/-- The cotangent lift of a continuous linear equivalence preserves the canonical symplectic
-forms. -/
-theorem strongDualCotangentSymplecticForm_cotangent (g : V ≃L[ℝ] W) (x y : V × StrongDual ℝ V) :
-    strongDualCotangentSymplecticForm (g.cotangent x) (g.cotangent y) =
-      strongDualCotangentSymplecticForm x y := by
-  simp
-
-/-- The cotangent lift of a continuous linear equivalence is a symplectomorphism of the linear
-cotangent spaces. -/
-theorem isSymplectomorphism_cotangent (g : V ≃L[ℝ] W) :
-    SymplecticForm.IsSymplectomorphism strongDualCotangentSymplecticForm
-      strongDualCotangentSymplecticForm g.cotangent.toLinearEquiv :=
-  SymplecticForm.isSymplectomorphism_iff.2 g.strongDualCotangentSymplecticForm_cotangent
-
-/-- The cotangent lift of a continuous linear equivalence preserves the Liouville forms:
-`λ_(g · x)(g · v) = λ_x(v)`. -/
-theorem cotangentLiouvilleForm_cotangent (g : V ≃L[ℝ] W) (x : V × StrongDual ℝ V)
-    (v : Fin 1 → V × StrongDual ℝ V) :
-    cotangentLiouvilleForm (g.cotangent x) (fun i ↦ g.cotangent (v i)) =
-      cotangentLiouvilleForm x v := by
-  simp
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W]
 
 /-- **Coadjoint equivariance of the cotangent moment map.** For a continuous linear equivalence
 `g : V ≃L[ℝ] W`, `μ(g · x)(A) = μ(x)(g⁻¹ A g)`. For `W = V` this says `μ(g · x) = Ad*_g μ(x)` for
@@ -190,13 +137,15 @@ theorem cotangentLiftLieHom_apply_snd_apply (A : Module.End ℝ V) (x : V × Str
     (v : V) : (cotangentLiftLieHom V A x).2 v = -x.2 (A v) :=
   (rfl)
 
-/-- The infinitesimal moment map identity in linear form: `ω(A_{T*V}(x), v) = dμ_A(x)(v)`, where
-`A_{T*V}` is the infinitesimal cotangent lift of `A`. -/
-theorem strongDualCotangentSymplecticForm_cotangentLiftLieHom (A : Module.End ℝ V)
-    (x v : V × StrongDual ℝ V) :
-    strongDualCotangentSymplecticForm (cotangentLiftLieHom V A x) v =
-      v.2 (A x.1) + x.2 (A v.1) := by
-  simp [sub_eq_add_neg]
+/-- The infinitesimal cotangent lift of an endomorphism is skew-adjoint for the canonical
+symplectic form: it lies in `sp(V × StrongDual ℝ V)`. -/
+theorem cotangentLiftLieHom_mem_skewAdjointLieSubalgebra (A : Module.End ℝ V) :
+    cotangentLiftLieHom V A ∈
+      skewAdjointLieSubalgebra (strongDualCotangentSymplecticForm (V := V)).toBilinForm := by
+  change _ ∈ LinearMap.skewAdjointSubmodule _
+  rw [LinearMap.mem_skewAdjointSubmodule]
+  intro x y
+  simp
 
 /-- The cotangent moment map is the contraction of the Liouville form with the generating vector
 fields of the cotangent lift: `⟨μ(x), A⟩ = λ_x(A_{T*V}(x))`. -/
@@ -218,32 +167,50 @@ theorem InfinitesimalAction.cotangentLinear_apply (A : Module.End ℝ V) (x : V 
   rw [InfinitesimalAction.cotangentLinear, InfinitesimalAction.comp_apply,
     InfinitesimalAction.linear_apply]
 
-/-- The derivative of the moment map component `μ_A(q, p) = p(A q)` is
-`(δq, δp) ↦ δp(A q) + p(A δq)`. -/
-theorem fderiv_cotangentMomentMap_apply (A : Module.End ℝ V) (x v : V × StrongDual ℝ V) :
-    fderiv ℝ (fun y ↦ cotangentMomentMap y A) x v = v.2 (A x.1) + x.2 (A v.1) := by
-  let A' := LinearMap.toContinuousLinearMap A
-  have hd : HasFDerivAt (fun y : V × StrongDual ℝ V ↦ cotangentMomentMap y A)
-      (x.2.comp (A'.comp (ContinuousLinearMap.fst ℝ V (StrongDual ℝ V))) +
-        (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V)).flip (A' x.1)) x :=
-    (hasFDerivAt_snd (p := x)).clm_apply (A'.hasFDerivAt.comp x hasFDerivAt_fst)
-  rw [hd.fderiv]
-  simp [A', add_comm]
+/-- The infinitesimal cotangent lift as a Lie algebra homomorphism into
+`sp(V × StrongDual ℝ V)`. -/
+private def cotangentLiftSpLieHom :
+    Module.End ℝ V →ₗ⁅ℝ⁆
+      skewAdjointLieSubalgebra (strongDualCotangentSymplecticForm (V := V)).toBilinForm where
+  toFun A := ⟨cotangentLiftLieHom V A, cotangentLiftLieHom_mem_skewAdjointLieSubalgebra A⟩
+  map_add' A B := Subtype.ext <| map_add _ A B
+  map_smul' c A := Subtype.ext <| map_smul _ c A
+  map_lie' {A B} := Subtype.ext <| LieHom.map_lie _ A B
+
+@[simp]
+private theorem coe_cotangentLiftSpLieHom (A : Module.End ℝ V) :
+    (cotangentLiftSpLieHom A : Module.End ℝ (V × StrongDual ℝ V)) = cotangentLiftLieHom V A :=
+  (rfl)
+
+/-- The cotangent moment map is the linear symplectic moment map `½ ω(Ã x, x)` of the cotangent
+lift `Ã` of `A`. -/
+private theorem cotangentMomentMap_apply_eq_linearMomentMap (x : V × StrongDual ℝ V)
+    (A : Module.End ℝ V) :
+    cotangentMomentMap x A =
+      strongDualCotangentSymplecticForm.linearMomentMap x (cotangentLiftSpLieHom A) := by
+  simp
 
 /-- **The moment map of the cotangent-lifted linear action.** On the linear cotangent space of a
 finite-dimensional space `V`, `⟨μ(q, p), A⟩ = p(A q)` is a moment map of the action of `gl(V)` by
 the cotangent-lifted linear vector fields `(q, p) ↦ (A q, -(p ∘ A))`. -/
 theorem isMomentMap_cotangentMomentMap :
     (strongDualCotangentSymplecticForm (V := V)).constSmooth.IsMomentMap
-      (InfinitesimalAction.cotangentLinear V) cotangentMomentMap where
-  contMDiff A := contMDiff_iff_contDiff.2 <|
-    contDiff_snd.clm_apply ((LinearMap.toContinuousLinearMap A).contDiff.comp contDiff_fst)
-  isHamiltonianVectorField A := SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x v ↦ by
-    rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, fderiv_cotangentMomentMap_apply,
-      SymplecticForm.fromTangentSpace_constSmooth_apply, InfinitesimalAction.cotangentLinear_apply,
-      ContinuousLinearEquiv.coe_coe,
-      NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) x (cotangentLiftLieHom V A x),
-      strongDualCotangentSymplecticForm_cotangentLiftLieHom]
+      (InfinitesimalAction.cotangentLinear V) cotangentMomentMap := by
+  have hμ : cotangentMomentMap = fun x : V × StrongDual ℝ V ↦
+      (strongDualCotangentSymplecticForm.linearMomentMap x).comp
+        (cotangentLiftSpLieHom (V := V)).toLinearMap :=
+    funext fun x ↦ LinearMap.ext fun A ↦ cotangentMomentMap_apply_eq_linearMomentMap x A
+  have ha : InfinitesimalAction.cotangentLinear V =
+      ((InfinitesimalAction.linear _).comp (skewAdjointLieSubalgebra _).incl).comp
+        cotangentLiftSpLieHom :=
+    InfinitesimalAction.ext fun A ↦ funext fun x ↦ by
+      rw [InfinitesimalAction.cotangentLinear_apply, InfinitesimalAction.comp_apply,
+        InfinitesimalAction.comp_apply, InfinitesimalAction.linear_apply]
+      -- The inclusion of `cotangentLiftSpLieHom A` is `cotangentLiftLieHom V A` by definition.
+      rfl
+  rw [hμ, ha]
+  exact (strongDualCotangentSymplecticForm (V := V)).isMomentMap_linearMomentMap.comp
+    cotangentLiftSpLieHom
 
 /-- **The cotangent moment map is infinitesimally equivariant**: it intertwines the commutator
 bracket of `gl(V)` with the Poisson bracket, `{μ_A, μ_B} = μ_{⁅A, B⁆}`. -/
@@ -251,13 +218,8 @@ theorem poissonBracket_cotangentMomentMap (A B : Module.End ℝ V) (x : V × Str
     (strongDualCotangentSymplecticForm (V := V)).constSmooth.poissonBracket
       (fun y ↦ cotangentMomentMap y A) (fun y ↦ cotangentMomentMap y B) x =
       cotangentMomentMap x ⁅A, B⁆ := by
-  rw [isMomentMap_cotangentMomentMap.poissonBracket_eq_eval₂
-    (SymplecticForm.isNondegenerate_constSmooth _)]
-  simp only [InfinitesimalAction.cotangentLinear_apply, SymplecticForm.constSmooth_apply,
-    strongDualCotangentSymplecticForm_apply, cotangentLiftLieHom_apply_fst,
-    cotangentLiftLieHom_apply_snd_apply, cotangentMomentMap_apply,
-    LieRing.of_associative_ring_bracket, Module.End.mul_apply, map_sub]
-  ring
+  simp only [cotangentMomentMap_apply_eq_linearMomentMap,
+    SymplecticForm.poissonBracket_linearMomentMap, LieHom.map_lie]
 
 end FiniteDimensional
 
