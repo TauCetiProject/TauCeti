@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
-public import TauCeti.RepresentationTheory.Spin.Polarization.Fock
+public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Basic
 public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 
 /-!
@@ -71,11 +71,6 @@ open TauCeti.ExteriorAlgebra
 open scoped TensorProduct
 
 namespace TauCeti.AlmostComplexStructure
-
-private theorem inv_sqrt_two : (Real.sqrt 2 : ℂ)⁻¹ = Real.sqrt 2 * 2⁻¹ := by
-  have h : (Real.sqrt 2 : ℂ) * Real.sqrt 2 = 2 := by
-    rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
-  exact inv_eq_of_mul_eq_one_right (by rw [← mul_assoc, h, mul_inv_cancel₀ two_ne_zero])
 
 section Metric
 
@@ -175,7 +170,8 @@ private theorem toLinearMapₛₗ₂_fockAction_ι_coe_W_left (x : (J.spinPolari
         (J.spinPolarizationData hQJ hQ).W') : ℂ ⊗[ℝ] V) := (rfl)
   rw [conjStar_ι, map_neg, hx, fockAction_ι_coe_W', fockAction_ι_coe_W]
   simp only [LinearMap.smul_apply, LinearMap.neg_apply, LinearMap.map_smulₛₗ, map_smul, map_neg,
-    J.toLinearMapₛₗ₂_wedge_left hQJ hQ b hb, Complex.conj_ofReal, smul_eq_mul, inv_sqrt_two]
+    J.toLinearMapₛₗ₂_wedge_left hQJ hQ b hb, Complex.conj_ofReal, smul_eq_mul,
+    ← Complex.ofReal_inv, ← Real.sqrt_div_self, Complex.ofReal_div, Complex.ofReal_ofNat]
   ring
 
 /-- The `*`-representation property for a vector of `W'`. -/
@@ -194,8 +190,8 @@ private theorem toLinearMapₛₗ₂_fockAction_ι_coe_W'_left (y : (J.spinPolar
         (J.spinPolarizationData hQJ hQ).W) : ℂ ⊗[ℝ] V) := (rfl)
   rw [conjStar_ι, map_neg, hy, fockAction_ι_coe_W', fockAction_ι_coe_W]
   simp only [LinearMap.smul_apply, LinearMap.neg_apply, LinearMap.map_smulₛₗ, map_smul, map_neg,
-    J.toLinearMapₛₗ₂_contract_left hQJ hQ b hb, inv_sqrt_two, map_mul, Complex.conj_ofReal,
-    map_inv₀, map_ofNat, smul_eq_mul]
+    J.toLinearMapₛₗ₂_contract_left hQJ hQ b hb, ← Complex.ofReal_inv, ← Real.sqrt_div_self,
+    Complex.ofReal_div, Complex.ofReal_ofNat, map_div₀, Complex.conj_ofReal, map_ofNat, smul_eq_mul]
   ring
 
 /-- **The normalized Fock action is a `*`-representation**: for an orthonormal basis `b` of `W`
