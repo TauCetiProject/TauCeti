@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import TauCeti.RingTheory.Jacobson.NonUnital
 
 import TauCeti.Analysis.Normed.Algebra.Jacobson
+import TauCeti.Analysis.Normed.Algebra.Unitization
 import TauCeti.RingTheory.Jacobson.Spectrum
 
 /-!
@@ -34,8 +35,6 @@ Banach algebras are automatically continuous.
 
 * `NonUnitalAlgHom.norm_apply_le_self`, `NonUnitalAlgHom.instContinuousLinearMapClass`: nonunital
   characters of Banach algebras are contractive, hence continuous.
-* `WithLp.instUnitizationNormedCommRing`: the ℓ¹ unitization of a commutative normed algebra is a
-  commutative normed ring.
 * `TauCeti.Ring.mem_jacobson_iff_forall_algHom_apply_eq_zero`,
   `TauCeti.ker_gelfandTransform`: in a commutative unital complex Banach algebra the radical is
   the common kernel of the characters, which is the kernel of the Gelfand transform.
@@ -70,26 +69,9 @@ instance (priority := 100) instContinuousLinearMapClass : ContinuousLinearMapCla
 
 end NonUnitalAlgHom
 
-namespace WithLp
-
-variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedCommRing A] [NormedSpace 𝕜 A]
-  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
-
-/-- The ℓ¹ unitization of a commutative normed algebra is a commutative normed ring. -/
-noncomputable instance instUnitizationNormedCommRing :
-    NormedCommRing (WithLp 1 (Unitization 𝕜 A)) where
-  mul_comm x y := (unitizationAlgEquiv 𝕜).injective <| by simp [mul_comm]
-
-end WithLp
-
 namespace TauCeti
 
 namespace Ring
-
-/-- Every character of an algebra over a field kills the Jacobson radical. -/
-theorem algHom_apply_eq_zero_of_mem_jacobson {𝕜 A : Type*} [Field 𝕜] [Ring A] [Algebra 𝕜 A]
-    (φ : A →ₐ[𝕜] 𝕜) {a : A} (ha : a ∈ Ring.jacobson A) : φ a = 0 :=
-  spectrum_subset_singleton_zero_of_mem_jacobson ha (AlgHom.apply_mem_spectrum φ a)
 
 variable {A : Type*} [NormedCommRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 
@@ -97,7 +79,7 @@ variable {A : Type*} [NormedCommRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 exactly when every character kills it. -/
 theorem mem_jacobson_iff_forall_algHom_apply_eq_zero {a : A} :
     a ∈ Ring.jacobson A ↔ ∀ φ : A →ₐ[ℂ] ℂ, φ a = 0 := by
-  refine ⟨fun ha φ => algHom_apply_eq_zero_of_mem_jacobson φ ha, fun h => ?_⟩
+  refine ⟨fun ha φ => φ.apply_eq_zero_of_mem_jacobson ha, fun h => ?_⟩
   -- Every point of the spectrum of a left multiple `b * a` is a character value `φ b * φ a`.
   refine (mem_jacobson_iff_forall_spectrum_mul_subset_singleton_zero (𝕜 := ℂ)).mpr
     fun b z hz => ?_
@@ -119,14 +101,6 @@ theorem ker_gelfandTransform :
     WeakDual.CharacterSpace.equivAlgHom.forall_congr_right.symm]
   simp [ContinuousMap.ext_iff]
 
-/-- Every nonunital character of a nonunital algebra over a field kills its Jacobson radical. -/
-theorem nonUnitalAlgHom_apply_eq_zero_of_mem_nonUnitalJacobson {𝕜 A : Type*} [Field 𝕜]
-    [NonUnitalRing A] [Module 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
-    (φ : A →ₙₐ[𝕜] 𝕜) {a : A} (ha : a ∈ nonUnitalJacobson 𝕜 A) : φ a = 0 := by
-  have h := (mem_nonUnitalJacobson_iff_forall_quasispectrum_mul_subset_singleton_zero.mp ha a)
-    (NonUnitalAlgHom.apply_mem_quasispectrum φ (a * a))
-  simpa using h
-
 variable {B : Type*} [NonUnitalNormedCommRing B] [NormedSpace ℂ B] [IsScalarTower ℂ B B]
   [SMulCommClass ℂ B B] [CompleteSpace B]
 
@@ -134,7 +108,7 @@ variable {B : Type*} [NonUnitalNormedCommRing B] [NormedSpace ℂ B] [IsScalarTo
 Jacobson radical exactly when every nonunital character kills it. -/
 theorem mem_nonUnitalJacobson_iff_forall_nonUnitalAlgHom_apply_eq_zero {b : B} :
     b ∈ nonUnitalJacobson ℂ B ↔ ∀ φ : B →ₙₐ[ℂ] ℂ, φ b = 0 := by
-  refine ⟨fun hb φ => nonUnitalAlgHom_apply_eq_zero_of_mem_nonUnitalJacobson φ hb, fun h => ?_⟩
+  refine ⟨fun hb φ => φ.apply_eq_zero_of_mem_nonUnitalJacobson hb, fun h => ?_⟩
   -- A character `φ` of the ℓ¹ unitization restricts to the nonunital character `φ ∘ inr`.
   rw [mem_nonUnitalJacobson_iff_toLp_mem_jacobson ℂ B,
     Ring.mem_jacobson_iff_forall_algHom_apply_eq_zero]
