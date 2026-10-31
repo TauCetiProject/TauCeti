@@ -23,6 +23,8 @@ subgroup is the orthogonal group: these are the matrices whose transpose is a tw
   membership of the underlying matrix in `Matrix.unitaryGroup`.
 * `TauCeti.coe_inv_eq_star_of_mem_unitarySubgroup`: a unitary invertible matrix is inverted by its
   star.
+* `TauCeti.toGL_mem_unitarySubgroup_iff`: a determinant-one matrix is unitary exactly when it is
+  special unitary, so the unitary subgroup cuts out `SO(n)` in `SL n ℝ`.
 * `TauCeti.mem_unitarySubgroup_GL_iff`: over a ring with trivial star, `g` is unitary exactly when
   `g gᵀ = 1`.
 * `TauCeti.coe_inv_eq_transpose_of_mem_unitarySubgroup` and
@@ -50,6 +52,15 @@ theorem coe_inv_eq_star_of_mem_unitarySubgroup (hg : g ∈ unitarySubgroup (GL n
     ((g⁻¹ : GL n R) : Matrix n n R) = star (g : Matrix n n R) :=
   (Units.eq_inv_of_mul_eq_one_left
     ((mem_unitaryGroup_iff.1 (mem_unitarySubgroup_GL_iff_mem_unitaryGroup.1 hg)))).symm
+
+/-- A determinant-one matrix lies in the unitary subgroup of `GL n R` exactly when it lies in
+Mathlib's special unitary group; over `ℝ` this is the special orthogonal group
+`Matrix.specialOrthogonalGroup n ℝ`. -/
+theorem toGL_mem_unitarySubgroup_iff {g : SpecialLinearGroup n R} :
+    SpecialLinearGroup.toGL g ∈ unitarySubgroup (GL n R) ↔
+      (g : Matrix n n R) ∈ specialUnitaryGroup n R := by
+  rw [mem_unitarySubgroup_GL_iff_mem_unitaryGroup, SpecialLinearGroup.coe_GL_coe_matrix,
+    mem_specialUnitaryGroup_iff, and_iff_left g.2]
 
 variable [TrivialStar R]
 
