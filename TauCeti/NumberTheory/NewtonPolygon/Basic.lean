@@ -62,6 +62,8 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
 * `Polynomial.ncard_finiteEdges_newtonPolygon`: if only zero has infinite valuation, a
   polynomial of degree `d` and order `a` of vanishing at zero has `d - a` finite unit edges,
   and by `Polynomial.finiteEdges_newtonPolygon_monomial` a monomial has none.
+* `PowerSeries.newtonPolygon_neg` and `Polynomial.newtonPolygon_neg`: negation preserves the
+  Newton polygon.
 * `PowerSeries.newtonPolygon_smul`, `PowerSeries.newtonPolygon_X_pow_mul`,
   `PowerSeries.newtonPolygon_rescale` and `PowerSeries.newtonPolygon_map`: multiplication by
   a scalar translates the heights, multiplication by `X ^ k` shifts the polygon `k` places,
@@ -151,6 +153,11 @@ theorem newtonPolygon_eq_of_order_eq {n : ℕ} (hf : IsAdmissible fun n => v (co
     rw [coeff_of_lt_order i (hn ▸ by exact_mod_cast hi), AddValuation.map_zero]
 
 variable (f)
+
+/-- Negation does not change the Newton polygon. -/
+@[simp]
+theorem newtonPolygon_neg : (-f).newtonPolygon v = f.newtonPolygon v := by
+  simp only [newtonPolygon_def, map_neg, AddValuation.map_neg]
 
 /-- Multiplying by a scalar translates the Newton polygon by the valuation of the scalar. -/
 theorem newtonPolygon_smul (c : R) :
@@ -261,6 +268,11 @@ theorem newtonPolygon_eq_top_iff : f.newtonPolygon v = ⊤ ↔ ∀ n, v (f.coeff
   exact lowerConvexEnvelope_top
 
 /-! ### Elementary operations -/
+
+/-- Negation does not change the Newton polygon. -/
+@[simp]
+theorem newtonPolygon_neg : (-f).newtonPolygon v = f.newtonPolygon v := by
+  simp only [newtonPolygon_def, coeff_neg, AddValuation.map_neg]
 
 /-- Multiplying by a scalar translates the Newton polygon by the valuation of the scalar. -/
 theorem newtonPolygon_smul (c : R) :

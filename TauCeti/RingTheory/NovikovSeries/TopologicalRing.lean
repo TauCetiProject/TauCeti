@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
 public import Mathlib.Topology.Algebra.LinearTopology
+public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 
 /-!
 # Novikov series form a topological ring, and geometric series
@@ -55,6 +56,10 @@ ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients 
   supported in periods `> 0`.
 * `TauCeti.NovikovSeries.unitsOneSub`: for `a` in the positive ideal, `1 - a` as a unit of the
   nonnegative subring, with inverse the geometric series `∑ aⁿ`.
+* `TauCeti.NovikovSeries.unitsOneSubSingle`: for `N g > 0`, the unit `1 - r e^g` of the
+  nonnegative subring, with inverse the geometric series `∑ₖ rᵏ e^(k • g)`.
+* `TauCeti.NovikovSeries.periodIdeal`: the series of the nonnegative subring lying in `U_C`, an
+  ideal of it.
 
 ## Main results
 
@@ -78,6 +83,11 @@ ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients 
 * `TauCeti.NovikovSeries.one_sub_single_mul_tsum` and
   `TauCeti.NovikovSeries.tsum_mul_one_sub_single`: the two inverse identities of the monomial
   geometric series `∑ₖ rᵏ e^(k • g)` for `N g > 0`.
+* `TauCeti.NovikovSeries.unitsOneSubSingle_mem_principalUnitGroup_posIdeal` and
+  `TauCeti.NovikovSeries.unitsOneSubSingle_mem_principalUnitGroup_periodIdeal`: `1 - r e^g` is a
+  principal unit for the positive ideal and for the ideal of series above the period `N g`.
+* `TauCeti.NovikovSeries.coe_zpow_unitsOneSubSingle_sub_one_mem_periodFiltration`: every integer
+  power of `1 - r e^g` is congruent to `1` above the period `N g`.
 * The instances `CompleteSpace`, `IsLinearTopology` and `Algebra` on the nonnegative subring.
 
 ## References
@@ -323,6 +333,39 @@ theorem isUnit_one_sub_of_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posId
     IsUnit (1 - a) :=
   (unitsOneSub ha).isUnit
 
+/-- A monomial of positive period lies in the positive ideal. -/
+theorem single_mem_posIdeal {g : H} (hg : 0 < N g) (r : R) :
+    (⟨single g r, single_mem_nonnegSubring hg.le r⟩ : nonnegSubring R N) ∈ posIdeal R N :=
+  mem_posIdeal.2 fun h hh => coeff_single_of_ne (fun hgh => by subst hgh; linarith) r
+
+/-- For `N g > 0`, the factor `1 - r e^g` as a unit of the nonnegative subring. Its inverse is the
+geometric series `∑ₖ rᵏ e^(k • g)` (`TauCeti.NovikovSeries.coe_inv_unitsOneSubSingle`). -/
+def unitsOneSubSingle {g : H} (hg : 0 < N g) (r : R) : (nonnegSubring R N)ˣ :=
+  unitsOneSub (single_mem_posIdeal hg r)
+
+/-- The unit `1 - r e^g` is `1 - a` for the monomial `a = r e^g` of the nonnegative subring. -/
+theorem val_unitsOneSubSingle {g : H} (hg : 0 < N g) (r : R) :
+    (unitsOneSubSingle hg r : nonnegSubring R N) =
+      1 - ⟨single g r, single_mem_nonnegSubring hg.le r⟩ :=
+  val_unitsOneSub _
+
+@[simp]
+theorem coe_unitsOneSubSingle {g : H} (hg : 0 < N g) (r : R) :
+    ((unitsOneSubSingle hg r : nonnegSubring R N) : NovikovSeries R H N) = 1 - single g r := by
+  simp [val_unitsOneSubSingle]
+
+@[simp]
+theorem coe_inv_unitsOneSubSingle {g : H} (hg : 0 < N g) (r : R) :
+    ((↑(unitsOneSubSingle hg r)⁻¹ : nonnegSubring R N) : NovikovSeries R H N) =
+      ∑' k : ℕ, single (k • g) (r ^ k) := by
+  simp [unitsOneSubSingle]
+
+/-- The unit `1 - r e^g` is a principal unit for the positive ideal. -/
+theorem unitsOneSubSingle_mem_principalUnitGroup_posIdeal {g : H} (hg : 0 < N g) (r : R) :
+    unitsOneSubSingle hg r ∈ (posIdeal R N).principalUnitGroup := by
+  rw [Ideal.mem_principalUnitGroup, val_unitsOneSubSingle, sub_sub_cancel_left]
+  exact neg_mem (single_mem_posIdeal hg r)
+
 /-! ### The nonnegative subring as a complete linearly topologized algebra -/
 
 /-- The nonnegative subring is complete, being closed in the complete ring of Novikov series. -/
@@ -337,19 +380,41 @@ theorem hasBasis_nhds_zero_nonnegSubring :
   rw [nhds_subtype]
   exact hasBasis_nhds_zero.comap _
 
-/-- The nonnegative subring is linearly topologized: the traces of the subgroups `U_C` are
-ideals of it, since multiplying by a series of nonnegative periods does not lower periods. This
-is what makes power series evaluable at its topologically nilpotent elements
-(`PowerSeries.aeval`). -/
+variable (R N) in
+/-- The ideal of the nonnegative subring formed by the series in `U_C`: multiplying by a series of
+nonnegative periods does not lower periods. These ideals form a basis of neighbourhoods of `0`
+(`TauCeti.NovikovSeries.hasBasis_nhds_zero_nonnegSubring`). -/
+def periodIdeal (C : ℝ) : Ideal (nonnegSubring R N) where
+  carrier := {a | (a : NovikovSeries R H N) ∈ periodFiltration R N C}
+  add_mem' := fun ha hb => add_mem ha hb
+  zero_mem' := zero_mem (periodFiltration R N C)
+  smul_mem' := fun c a ha => by
+    simpa using
+      mul_mem_periodFiltration (mem_periodFiltration.2 (mem_nonnegSubring.1 c.2)) ha
+
+@[simp]
+theorem mem_periodIdeal {a : nonnegSubring R N} :
+    a ∈ periodIdeal R N C ↔ (a : NovikovSeries R H N) ∈ periodFiltration R N C :=
+  Iff.rfl
+
+/-- The unit `1 - r e^g` is a principal unit for the ideal `periodIdeal R N (N g)`. -/
+theorem unitsOneSubSingle_mem_principalUnitGroup_periodIdeal {g : H} (hg : 0 < N g) (r : R) :
+    unitsOneSubSingle hg r ∈ (periodIdeal R N (N g)).principalUnitGroup := by
+  simpa using neg_mem (single_mem_periodFiltration (R := R) (N := N) g r)
+
+/-- Every integer power of `1 - r e^g` is congruent to `1` above the period `N g`. -/
+theorem coe_zpow_unitsOneSubSingle_sub_one_mem_periodFiltration {g : H} (hg : 0 < N g) (r : R)
+    (m : ℤ) :
+    ((↑(unitsOneSubSingle hg r ^ m) : nonnegSubring R N) : NovikovSeries R H N) - 1 ∈
+      periodFiltration R N (N g) := by
+  simpa using Ideal.mem_principalUnitGroup.1
+    (zpow_mem (unitsOneSubSingle_mem_principalUnitGroup_periodIdeal hg r) m)
+
+/-- The nonnegative subring is linearly topologized: the ideals `periodIdeal R N C` form a basis
+of neighbourhoods of `0`. This is what makes power series evaluable at its topologically nilpotent
+elements (`PowerSeries.aeval`). -/
 instance : IsLinearTopology (nonnegSubring R N) (nonnegSubring R N) :=
-  .mk_of_hasBasis' (nonnegSubring R N) (S := Ideal (nonnegSubring R N))
-    (s := fun C => {
-      carrier := {a | (a : NovikovSeries R H N) ∈ periodFiltration R N C}
-      add_mem' := fun ha hb => add_mem ha hb
-      zero_mem' := zero_mem (periodFiltration R N C)
-      smul_mem' := fun c a ha => by
-        simpa using
-          mul_mem_periodFiltration (mem_periodFiltration.2 (mem_nonnegSubring.1 c.2)) ha })
+  .mk_of_hasBasis' (nonnegSubring R N) (S := Ideal (nonnegSubring R N)) (s := periodIdeal R N)
     hasBasis_nhds_zero_nonnegSubring fun I r _ => I.smul_mem r
 
 /-- A series of the positive ideal is topologically nilpotent in the nonnegative subring. -/

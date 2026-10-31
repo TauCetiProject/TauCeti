@@ -96,25 +96,26 @@ theorem exists_forall_inner_eq_cylinder_of_joinedIn [CompactSpace M]
   -- instances on each factor: otherwise instance search for the additive structure and scalar
   -- multiplication of the product runs through the normed-group instances and exhausts its
   -- heartbeats.
-  let iG (q : M × Fin 3) :
+  let iG (q : M × {m : ℕ // (m : ℕ∞) ≤ 2}) :
       AddCommGroup C((extChartAt I q.1).target, E [×q.2]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) :=
     inferInstance
-  let (q : M × Fin 3) :
+  let (q : M × {m : ℕ // (m : ℕ∞) ≤ 2}) :
       AddCommMonoid C((extChartAt I q.1).target, E [×q.2]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) :=
     (iG q).toAddCommMonoid
-  let (q : M × Fin 3) :
+  let (q : M × {m : ℕ // (m : ℕ∞) ≤ 2}) :
       SMul ℝ C((extChartAt I q.1).target, E [×q.2]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) :=
     inferInstance
-  let (q : M × Fin 3) :
+  let (q : M × {m : ℕ // (m : ℕ∞) ≤ 2}) :
       Module ℝ C((extChartAt I q.1).target, E [×q.2]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) :=
     inferInstance
-  let (q : M × Fin 3) :
+  let (q : M × {m : ℕ // (m : ℕ∞) ≤ 2}) :
       LocallyConvexSpace ℝ C((extChartAt I q.1).target, E [×q.2]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) :=
     ContinuousMap.instLocallyConvexSpace
   let Φ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) →
-      ((q : M × Fin 3) → C((extChartAt I q.1).target, E [×q.2]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ))) :=
+      ((q : M × {m : ℕ // (m : ℕ∞) ≤ 2}) →
+        C((extChartAt I q.1).target, E [×q.2]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ))) :=
     fun g q ↦ g.chartMetricDerivative q.1 q.2
-  have hΦ : IsInducing Φ := isInducing_chartMetricDerivative
+  have hΦ : IsInducing Φ := isInducing_chartMetricDerivative 2
   obtain ⟨U, hU, hUS⟩ := hΦ.isOpen_iff.1 isOpen_setOf_hasPositiveScalarCurvature_chartC2
   have hγU (t : unitInterval) : Φ (γ t) ∈ U := mem_preimage.1 (hUS ▸ hγ t)
   -- Approximate the path by finite convex combinations of its values, with smooth weights.
