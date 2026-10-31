@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Galois.Basic
-public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.FieldTheory.Normal.Closure
 
 /-!

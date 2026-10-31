@@ -24,9 +24,9 @@ When `F⟮x⟯` is already all of `E`, this says that `E` itself is a splitting 
 
 For an arbitrary ambient field, the embedding images of an extension into its normal closure
 generate that whole normal closure. This allows properties preserved under composita to be
-proved by working with the embedding images. For the same reason every endomorphism of the
-ambient field maps the normal closure into itself, so automorphisms of the ambient field restrict
-to it even when the ambient field is not normal.
+proved by working with the embedding images. For the same reason every homomorphism between
+ambient fields maps one normal closure into the other; in particular automorphisms of the ambient
+field restrict to the normal closure even when the ambient field is not normal.
 
 The normal closure of `F(S)` for a set `S` of separable elements whose minimal polynomials split in
 the ambient field is Galois. Hence a finite such set lies in a finite Galois subextension; in
@@ -164,13 +164,15 @@ theorem exists_isGalois_superset_of_isAlgClosed [PerfectField F] [IsAlgClosed E]
 
 end TauCeti
 
-/-- **The normal closure is stable under endomorphisms of the ambient field.** An `F`-algebra
-endomorphism `σ` of `L` carries the image of each embedding `f : K →ₐ[F] L` onto the image of
-`σ.comp f`, so it maps `normalClosure F K L` into itself. Nothing is asked of `L / F`; when
-`L / F` is normal this is also a consequence of the normality of the normal closure. -/
-theorem AlgHom.map_normalClosure_le {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K]
-    [Algebra F L] (σ : L →ₐ[F] L) :
-    (IntermediateField.normalClosure F K L).map σ ≤ IntermediateField.normalClosure F K L := by
+/-- **Homomorphisms of ambient fields map normal closures into normal closures.** An
+`F`-algebra homomorphism `σ : L →ₐ[F] L'` carries the image of each embedding `f : K →ₐ[F] L` onto
+the image of `σ.comp f`, so it maps `normalClosure F K L` into `normalClosure F K L'`. Taking
+`L' = L`, every endomorphism of `L` maps `normalClosure F K L` into itself. Nothing is asked of
+`L / F`; when `L / F` is normal the endomorphism case is also a consequence of the normality of
+the normal closure. -/
+theorem AlgHom.map_normalClosure_le {F K L L' : Type*} [Field F] [Field K] [Field L] [Field L']
+    [Algebra F K] [Algebra F L] [Algebra F L'] (σ : L →ₐ[F] L') :
+    (IntermediateField.normalClosure F K L).map σ ≤ IntermediateField.normalClosure F K L' := by
   rw [normalClosure_def, IntermediateField.map_iSup]
   exact iSup_le fun f ↦
     (AlgHom.map_fieldRange f σ).trans_le (σ.comp f).fieldRange_le_normalClosure
