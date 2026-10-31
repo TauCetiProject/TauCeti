@@ -78,8 +78,6 @@ theorem IsRemainder.exists_finset_comparisons {f : MvPolynomial σ R}
   refine ⟨C, fun p hp ↦ (Finset.mem_filter.1 hp).2, fun n hn ↦ ?_⟩
   have hcomp (a) (ha : a ∈ F) (b) (hb : b ∈ F) (hab : a ≺[m] b) : a ≺[n] b :=
     hn (a, b) (Finset.mem_filter.2 ⟨Finset.mem_product.2 ⟨ha, hb⟩, hab⟩)
-  have hle : MonotoneOn (n.toSyn ∘ m.toSyn.symm) (m.toSyn.symm ⁻¹' (↑F : Set _)) :=
-    StrictMonoOn.monotoneOn fun a ha b hb hab ↦ hcomp _ ha _ hb (by simpa using hab)
   have hd (p : MvPolynomial σ R) (hp : insert (m.degree p) p.support ⊆ F) :
       n.degree p = m.degree p :=
     m.degree_eq_of_forall_mem_lt n p hcomp (fun _ ha ↦ hp (Finset.mem_insert_of_mem ha))
@@ -104,10 +102,10 @@ theorem IsRemainder.exists_finset_comparisons {f : MvPolynomial σ R}
   have hbound' : m.degree (b : MvPolynomial σ R) + m.degree (q b) ≼[m] m.degree f := by
     simpa only [map_add] using
       (toWithBotSyn_withBotDegree_add_le_iff hb0 hqb0 hf0).1 (hbound b)
-  simpa only [Function.comp_apply, AddEquiv.symm_apply_apply] using
-    hle (a := m.toSyn _) (b := m.toSyn _) (by
-      simpa using hbF b (Finset.mem_union_right _ (Finset.mem_singleton_self _))) (by
-      simpa using hfF (Finset.mem_insert_self _ _)) hbound'
+  rcases eq_or_lt_of_le hbound' with heq | hlt
+  · exact le_of_eq (congrArg n.toSyn (m.toSyn.injective heq))
+  · exact (hcomp _ (hbF b (Finset.mem_union_right _ (Finset.mem_singleton_self _))) _
+      (hfF (Finset.mem_insert_self _ _)) hlt).le
 
 end CommSemiring
 
