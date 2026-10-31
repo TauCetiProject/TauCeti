@@ -13,8 +13,9 @@ public import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 
 In a real or complex seminormed space, a set is norm bounded if and only if every
 continuous linear functional has bounded image on it. Equivalently, its image in
-`WeakSpace` is von Neumann bounded. In particular, weakly compact sets and weakly
-convergent sequences are norm bounded. No completeness or separability assumption
+`WeakSpace` is von Neumann bounded. In particular, weakly compact sets, weakly
+convergent sequences, and sets in which every sequence has a weakly convergent subsequence
+are norm bounded. No completeness or separability assumption
 on the original space is needed.
 
 The proof applies Mathlib's `banach_steinhaus` to the evaluation functionals on the
@@ -89,3 +90,23 @@ theorem Filter.Tendsto.isBounded_range_of_toWeakSpace {u : ℕ → E} {x : E}
     Bornology.IsBounded (range u) := by
   rw [← TauCeti.NormedSpace.isVonNBounded_toWeakSpace_iff 𝕜, ← range_comp]
   exact hu.isVonNBounded_range 𝕜
+
+/-- A set with weakly convergent subsequences for all its sequences is norm bounded.
+Subsequential limits need not belong to the set. -/
+theorem TauCeti.isBounded_of_forall_tendsto_subseq_toWeakSpace {K : Set E}
+    (hK : ∀ u : ℕ → E, (∀ n, u n ∈ K) → ∃ x : E, ∃ σ : ℕ → ℕ,
+      StrictMono σ ∧
+        Tendsto (fun n ↦ toWeakSpace 𝕜 E (u (σ n))) atTop (𝓝 (toWeakSpace 𝕜 E x))) :
+    Bornology.IsBounded K := by
+  classical
+  by_contra h
+  rw [isBounded_iff_forall_norm_le] at h
+  push Not at h
+  choose u hu hnorm using fun n : ℕ ↦ h n
+  obtain ⟨x, σ, hσ, hlim⟩ := hK u hu
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hlim.isBounded_range_of_toWeakSpace
+  obtain ⟨n, hn⟩ := exists_nat_gt C
+  have h₁ := hnorm (σ n)
+  have h₂ := hC _ (mem_range_self n)
+  have h₃ : (n : ℝ) ≤ σ n := by exact_mod_cast hσ.id_le n
+  linarith

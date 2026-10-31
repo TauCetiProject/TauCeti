@@ -602,7 +602,7 @@ theorem not_forall_map_spinRep_spinMinus_le_of_isIrreducible (hirr : (spinRep Q 
     ((isCompl_spinPlus_spinMinus P).disjoint.ne_top_of_ne_bot
       (Submodule.nontrivial_iff_ne_bot.1 (nontrivial_spinPlus P)))
 
-variable [NeZero (2 : K)] [FiniteDimensional K V]
+variable [NeZero (2 : K)]
 
 /-- **The spin representation is irreducible in odd dimension** when anisotropic pairs admit the
 square normalization needed to span the even Clifford algebra.
@@ -615,6 +615,7 @@ argument. -/
 theorem isIrreducible_spinRep_of_isSquare
     (hsq : ∀ v w, Q v ≠ 0 → Q w ≠ 0 → IsSquare ((Q v)⁻¹ * (Q w)⁻¹))
     (hodd : Odd (finrank K V)) : (spinRep Q P).IsIrreducible := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos hodd.pos
   have _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   exact isIrreducible_spinRep_of_span_of_surjective P
     (CliffordAlgebra.span_spinGroup_eq_even_of_isSquare Q

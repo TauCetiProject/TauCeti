@@ -637,8 +637,8 @@ private theorem trace_obstruction_ofArrow (c : (Fin 4 → G.Dart) →₀ k)
       rw [zigzagLoopAInfinityAlgebra_grading_piece]
       exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _)]
     fin_cases i <;> norm_num
-  rw [htw, MultilinearMap.map_smul_univ, zigzagLoopAInfinityAlgebra_m_four_ofArrow,
-    Fin.prod_univ_four]
+  rw [htw, MultilinearMap.map_smul_univ,
+    zigzagLoopAInfinityAlgebra_m_ofArrow (n := 4) _ _ (by norm_num), Fin.prod_univ_four]
   simp
 
 /-- **The backtrack pairing of a quartic loop operation.** On the obstruction of the loop

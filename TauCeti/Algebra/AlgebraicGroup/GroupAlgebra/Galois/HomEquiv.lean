@@ -45,7 +45,7 @@ private noncomputable def invariantsCharacterAddHom
     (F : groupAlgebraInvariants rho →ₐc[k] groupAlgebraInvariants tau) : M →+ N :=
   AddMonoidHom.mk' (fun m ↦
     (groupAlgebraInvariantsCharacterEquiv tau
-      (TauCeti.GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id L L) F)
+      (BialgHom.mapGroupLike (Bialgebra.TensorProduct.map (BialgHom.id L L) F)
         ((groupAlgebraInvariantsCharacterEquiv rho).symm (Multiplicative.ofAdd m)))).toAdd)
     (by intro x y; simp)
 
@@ -62,7 +62,7 @@ noncomputable def groupAlgebraInvariantsCharacterMap
     have h := smul_groupAlgebraInvariantsCharacterEquiv_symm_apply rho sigma
       (Multiplicative.ofAdd m)
     simp only [toAdd_ofAdd] at h
-    rw [← h, ScalarAut.groupLikeMap_smul, groupAlgebraInvariantsCharacterEquiv_smul]
+    rw [← h, BialgHom.mapGroupLike_baseChangeMap_smul, groupAlgebraInvariantsCharacterEquiv_smul]
     rfl
 
 /-- Evaluation of the recovered map in terms of the canonical character comparisons. -/
@@ -71,7 +71,7 @@ theorem groupAlgebraInvariantsCharacterMap_apply
     (F : groupAlgebraInvariants rho →ₐc[k] groupAlgebraInvariants tau) (m : M) :
     F.groupAlgebraInvariantsCharacterMap m =
       (groupAlgebraInvariantsCharacterEquiv tau
-        (TauCeti.GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id L L) F)
+        (BialgHom.mapGroupLike (Bialgebra.TensorProduct.map (BialgHom.id L L) F)
           ((groupAlgebraInvariantsCharacterEquiv rho).symm (Multiplicative.ofAdd m)))).toAdd :=
   (rfl)
 
@@ -91,10 +91,10 @@ theorem groupAlgebraInvariantsCharacterEquiv_map
     (f : Representation.IntertwiningMap rho tau)
     (x : GroupLike L (L ⊗[k] groupAlgebraInvariants rho)) :
     groupAlgebraInvariantsCharacterEquiv tau
-        (TauCeti.GroupLike.map
+        (BialgHom.mapGroupLike
           (Bialgebra.TensorProduct.map (BialgHom.id L L) f.groupAlgebraInvariantsBialgHom) x) =
       Multiplicative.ofAdd (f (groupAlgebraInvariantsCharacterEquiv rho x).toAdd) := by
-  rw [groupAlgebraInvariantsCharacterEquiv_apply_eq_iff, TauCeti.GroupLike.val_map]
+  rw [groupAlgebraInvariantsCharacterEquiv_apply_eq_iff, BialgHom.val_mapGroupLike]
   have h := DFunLike.congr_fun (groupAlgebraInvariantsBaseChangeBialgEquiv_naturality f) x.val
   simp only [BialgHom.comp_apply, BialgEquiv.coe_toBialgHom] at h
   rw [h, (groupAlgebraInvariantsCharacterEquiv_apply_eq_iff rho x _).mp rfl]
@@ -131,10 +131,10 @@ private theorem splitInvariantsMap_single
       MonoidAlgebra.single (Multiplicative.ofAdd (F.groupAlgebraInvariantsCharacterMap m.toAdd))
         1 := by
   have h := (groupAlgebraInvariantsCharacterEquiv_apply_eq_iff tau
-    (TauCeti.GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id L L) F)
+    (BialgHom.mapGroupLike (Bialgebra.TensorProduct.map (BialgHom.id L L) F)
       ((groupAlgebraInvariantsCharacterEquiv rho).symm m)) _).mp rfl
   simpa only [splitInvariantsMap, BialgHom.comp_apply, BialgEquiv.toBialgHom_eq_coe,
-    BialgEquiv.coe_toBialgHom, TauCeti.GroupLike.val_map,
+    BialgEquiv.coe_toBialgHom, BialgHom.val_mapGroupLike,
     groupAlgebraInvariantsCharacterEquiv_symm_apply_val,
     groupAlgebraInvariantsCharacterMap_apply, ofAdd_toAdd] using h
 

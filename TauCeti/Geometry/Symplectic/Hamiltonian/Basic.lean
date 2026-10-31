@@ -22,6 +22,10 @@ The characteristic contraction equation determines the field uniquely. Its linea
 is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
 identity used to show that Hamiltonian flows preserve the symplectic form.
 
+For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
+the bilinear form `g = ω(·, J ·)`
+(`TauCeti.SymplecticForm.Invariant.associatedBilinForm_hamiltonianVectorField`).
+
 Along a family of Hamiltonians whose derivatives vary continuously, for instance a jointly `C¹`
 family evaluated along a continuous map, the Hamiltonian vector fields vary continuously.
 
@@ -74,6 +78,13 @@ theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → �
     fderiv ℝ H x (ω.hamiltonianVectorField H x) = 0 := by
   rw [← ω.apply_hamiltonianVectorField H x, ω.self_eq_zero]
 
+/-- For a `J`-invariant symplectic form, `J X_H(x)` is the gradient of `H` at `x` for the
+bilinear form `g = ω(·, J ·)`: `g(J X_H(x), w) = dH(x) w`. -/
+theorem Invariant.associatedBilinForm_hamiltonianVectorField {ω : SymplecticForm V}
+    {J : AlmostComplexStructure V} (hJ : ω.Invariant J) (H : V → ℝ) (x w : V) :
+    ω.associatedBilinForm J (J (ω.hamiltonianVectorField H x)) w = fderiv ℝ H x w := by
+  rw [associatedBilinForm_apply, (ω.invariant_iff J).mp hJ, apply_hamiltonianVectorField]
+
 /-- A `C^(n+1)` Hamiltonian has a `C^n` Hamiltonian vector field. -/
 theorem contDiff_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
     {n : WithTop ℕ∞} (hH : ContDiff ℝ (n + 1) H) :
@@ -112,6 +123,17 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   funext x
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
+
+/-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
+`X_{aF + bG} = a X_F + b X_G`. -/
+theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {F G : V → ℝ}
+    {x : V} (hF : DifferentiableAt ℝ F x) (hG : DifferentiableAt ℝ G x) (a b : ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ a * F y + b * G y) x =
+      a • ω.hamiltonianVectorField F x + b • ω.hamiltonianVectorField G x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  rw [fderiv_fun_add (hF.const_mul a) (hG.const_mul b), fderiv_const_mul hF, fderiv_const_mul hG]
+  simp [map_add, map_smul]
 
 section Continuity
 
