@@ -70,6 +70,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   `NormedAlgebra` over `K`.
 * `TauCeti.MvPowerSeries.polynomialToRestricted`: the inclusion of polynomials as an algebra
   homomorphism into restricted series.
+* `TauCeti.MvPowerSeries.denseRange_polynomialToRestricted`: at positive polyradii the polynomials
+  are dense in the restricted series.
 
 ## References
 
@@ -682,6 +684,15 @@ theorem polynomialToRestricted_X (i : σ) :
     polynomialToRestricted c (MvPolynomial.X i) =
       ⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :=
   Subtype.ext (MvPolynomial.coe_X i)
+
+/-- **The polynomials are dense** in the restricted series at positive polyradii. -/
+theorem denseRange_polynomialToRestricted [∀ i, Fact (0 < c i)] :
+    DenseRange (polynomialToRestricted (R := R) c) := by
+  refine (dense_closure_monomial (c := c) dense_univ).mono <|
+    (AddSubgroup.closure_le (polynomialToRestricted (R := R) c).toRingHom.range.toAddSubgroup).mpr
+      ?_
+  rintro _ ⟨⟨n, a⟩, _, rfl⟩
+  exact ⟨MvPolynomial.monomial n a, Subtype.ext (by simp [MvPolynomial.coe_monomial])⟩
 
 end Algebra
 
