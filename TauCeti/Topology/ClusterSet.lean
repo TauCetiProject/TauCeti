@@ -75,6 +75,11 @@ criterion adds is the production of the pointwise limits that theorem asks for.
   compact set, with subsingleton boundary cluster sets, extends continuously to `closure U`;
   `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` is the proper-metric form, where the
   compact set is the closure of the bounded image.
+* `TauCeti.exists_tendsto_of_forall_exists` and
+  `TauCeti.exists_continuousOn_closure_eqOn_of_forall_exists` — **the Cauchy criterion**: in a
+  complete metric codomain, an oscillation of `f` near `w` that tends to zero gives a limit along
+  `𝓝[U] w`, with no compactness assumed, and at every boundary point a continuous extension to
+  `closure U`.
 * `TauCeti.isPreconnected_clusterSetOn` and `TauCeti.isConnected_clusterSetOn` — **the cluster set
   is a continuum** once the approach regions `U ∩ t` are preconnected along a neighbourhood basis
   of `w`; `TauCeti.isCompact_clusterSetOn_of_isBounded` and
@@ -371,6 +376,32 @@ theorem subsingleton_clusterSetOn_of_forall_exists
 
 end MetricSpace
 
+section CompleteSpace
+
+variable {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] [CompleteSpace Y] {U : Set X}
+  {f : X → Y} {w : X}
+
+/-- **A uniformly small oscillation on the approach regions gives a limit in a complete space.**
+If, for every `ε > 0`, the values of `f` on `U ∩ ball w δ` are within `ε` of one another for some
+`δ > 0`, and the codomain is complete, then `f` has a limit at `w` along `U`.
+
+This is the Cauchy criterion: the hypothesis says that `f` maps `𝓝[U] w` to a Cauchy filter. Unlike
+`TauCeti.exists_tendsto_of_clusterSetOn_subsingleton`, no compact set containing the values of `f`
+is needed, and `w` need not lie in `closure U`, the filter `𝓝[U] w` being trivial otherwise. -/
+theorem exists_tendsto_of_forall_exists
+    (h : ∀ ε > 0, ∃ δ > 0, ∀ x ∈ U ∩ Metric.ball w δ, ∀ y ∈ U ∩ Metric.ball w δ,
+      dist (f x) (f y) ≤ ε) :
+    ∃ v, Tendsto f (𝓝[U] w) (𝓝 v) := by
+  rcases (𝓝[U] w).eq_or_neBot with hbot | hne
+  · exact ⟨f w, hbot ▸ tendsto_bot⟩
+  refine cauchy_map_iff_exists_tendsto.mp (Metric.cauchy_iff.mpr ⟨hne.map f, fun ε hε => ?_⟩)
+  obtain ⟨δ, hδ, hosc⟩ := h (ε / 2) (by positivity)
+  refine ⟨f '' (U ∩ ball w δ), image_mem_map (inter_mem_nhdsWithin _ (ball_mem_nhds w hδ)), ?_⟩
+  rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+  linarith [hosc x hx y hy]
+
+end CompleteSpace
+
 /-! ## The extension criterion -/
 
 section Extension
@@ -427,6 +458,31 @@ theorem exists_continuousOn_closure_eqOn_of_isBounded (hUo : IsOpen U) (hfc : Co
     (fun z hz => subset_closure ⟨z, hz, rfl⟩) hsub
 
 end ProperExtension
+
+section CompleteExtension
+
+variable {X Y : Type*} [PseudoMetricSpace X] [MetricSpace Y] [CompleteSpace Y] {U : Set X}
+  {f : X → Y}
+
+/-- **The extension criterion for a complete metric codomain.** A continuous function on `U` whose
+oscillation on the approach regions `U ∩ ball w δ` tends to zero at every boundary point `w`
+extends continuously to `closure U`.
+
+The limits at the boundary points come from the Cauchy criterion
+`TauCeti.exists_tendsto_of_forall_exists`, so, unlike `TauCeti.exists_continuousOn_closure_eqOn`,
+no compact set containing the values of `f` is needed. Nor is `U` assumed open: a point of
+`closure U` outside `U` lies in `frontier U`. -/
+theorem exists_continuousOn_closure_eqOn_of_forall_exists (hfc : ContinuousOn f U)
+    (h : ∀ w ∈ frontier U, ∀ ε > 0, ∃ δ > 0, ∀ x ∈ U ∩ Metric.ball w δ,
+      ∀ y ∈ U ∩ Metric.ball w δ, dist (f x) (f y) ≤ ε) :
+    ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U := by
+  refine ⟨extendFrom U f, continuousOn_extendFrom subset_rfl fun w hw => ?_,
+    extendFrom_extends hfc⟩
+  by_cases hwU : w ∈ U
+  · exact ⟨f w, hfc w hwU⟩
+  · exact exists_tendsto_of_forall_exists (h w ⟨hw, fun hwi => hwU (interior_subset hwi)⟩)
+
+end CompleteExtension
 
 /-! ## The cluster set as a continuum -/
 

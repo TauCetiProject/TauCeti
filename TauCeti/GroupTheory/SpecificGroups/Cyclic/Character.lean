@@ -29,11 +29,19 @@ specializations of this one.
 
 ## Main results
 
+* `AddChar.zmod_pow_eq_one`: every additive character on `ZMod n` takes values in the `n`-th
+  roots of unity.
 * `MulEquiv.zmodCoordChar_injective`: the character attached to a *primitive* `m`-th root of unity
   is faithful.
 -/
 
 public section
+
+/-- An additive character on `ZMod n` takes values in the `n`-th roots of unity. -/
+theorem AddChar.zmod_pow_eq_one {n : ℕ} {M : Type*} [Monoid M]
+    (ψ : AddChar (ZMod n) M) (j : ZMod n) : ψ j ^ n = 1 := by
+  rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul,
+    AddChar.map_zero_eq_one]
 
 namespace MulEquiv
 

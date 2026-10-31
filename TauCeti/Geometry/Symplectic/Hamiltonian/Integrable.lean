@@ -10,8 +10,10 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
 public import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 
+import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.RegularValue.Factorization
 
 /-!
 # First integrals and completely integrable systems
@@ -36,6 +38,12 @@ is Lagrangian (`TauCeti.SmoothTwoForm.IsIntegrableSystem.isLagrangian_ker_mfderi
 `f` Poisson-commutes at `x` with every `F_i` exactly when its differential vanishes on this
 kernel (`TauCeti.SmoothTwoForm.IsIntegrableSystem.ker_mfderiv_le_ker_iff`): a Hamiltonian belongs
 to the system exactly when, at regular points, its differential is a combination of the `dF_i`.
+Such a function is then locally a function of the integrals: near a regular point `x`, a `C^n`
+function `f` Poisson-commuting with every `F_i` is `ψ ∘ F` with `ψ` of class `C^n` at `F x`
+(`TauCeti.SmoothTwoForm.IsIntegrableSystem.exists_eventuallyEq_comp`). On an open set of regular
+points whose fibres under `F` are connected, it is a single such function of `F`
+(`TauCeti.SmoothTwoForm.IsIntegrableSystem.exists_eqOn_comp`); on disconnected fibres it may take
+different values on different components.
 
 Integrability does not depend on coordinates: it is preserved by pulling back along a local
 diffeomorphism which pulls the form back to the form, such as a symplectomorphism
@@ -62,7 +70,7 @@ single critical point (`TauCeti.isIntegrableSystem_harmonicOscillator`).
 public section
 
 open Function Module
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -214,6 +222,42 @@ theorem ker_mfderiv_le_ker_of_isFirstIntegral (hx : IsRegularPoint I 𝓘(ℝ, �
     (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker ≤ (mvfderiv I f x).ker :=
   (h.ker_mfderiv_le_ker_iff hσ hx f).2 fun i ↦ hf i x
 
+section Boundaryless
+
+variable [I.Boundaryless] {n : ℕ∞ω}
+
+/-- **Functions in involution with an integrable system are locally functions of its
+integrals.** On a boundaryless manifold, let `x` be a regular point of an integrable system `F`,
+and let `f` be `C^n` at `x`, with `0 < n ≤ ∞`. If near `x` the function `f` Poisson-commutes with
+every integral `F_i`, then near `x` it is `ψ ∘ F` for a function `ψ` of the values of the
+integrals which is `C^n` at `F x`. -/
+theorem exists_eventuallyEq_comp (hx : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x) (hn : n ≠ 0)
+    (hn' : n ≤ ∞) (hf : ContMDiffAt I 𝓘(ℝ) n f x)
+    (hfF : ∀ᶠ y in 𝓝 x, ∀ i, σ.poissonBracket (F · i) f y = 0) :
+    ∃ ψ : (ι → ℝ) → ℝ, ContDiffAt ℝ n ψ (F x) ∧ f =ᶠ[𝓝 x] ψ ∘ F := by
+  refine hx.exists_eventuallyEq_comp_of_ker_mfderiv_le ((h.contMDiff x).of_le hn') hf hn ?_
+  filter_upwards [h.isOpen_setOf_isRegularPoint.mem_nhds hx, hfF] with y hy hyf
+  intro v hv
+  exact (mvfderiv_apply_eq_mfderiv_apply f y v).symm.trans
+    (LinearMap.mem_ker.1 ((h.ker_mfderiv_le_ker_iff hσ hy f).2 hyf hv))
+
+/-- **Functions in involution with an integrable system are functions of its integrals on sets
+with connected fibres.** On a boundaryless manifold, let `U` be an open set of regular points of
+an integrable system `F` such that each fibre `U ∩ F ⁻¹' {c}` is preconnected, and let `f` be
+`C^n` on `U`, with `0 < n ≤ ∞`. If `f` Poisson-commutes on `U` with every integral `F_i`, then on
+`U` it is `ψ ∘ F` for a single function `ψ` which is `C^n` at every value of `F` on `U`. -/
+theorem exists_eqOn_comp {U : Set M} (hU : IsOpen U)
+    (hreg : ∀ y ∈ U, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y) (hn : n ≠ 0) (hn' : n ≤ ∞)
+    (hf : ContMDiffOn I 𝓘(ℝ) n f U)
+    (hfF : ∀ y ∈ U, ∀ i, σ.poissonBracket (F · i) f y = 0)
+    (hconn : ∀ c, IsPreconnected (U ∩ F ⁻¹' {c})) :
+    ∃ ψ : (ι → ℝ) → ℝ, Set.EqOn f (ψ ∘ F) U ∧ ∀ y ∈ U, ContDiffAt ℝ n ψ (F y) :=
+  exists_eqOn_comp_of_ker_mfderiv_le hU hreg ((h.contMDiff.of_le hn').contMDiffOn) hf hn
+    (fun y hy v hv ↦ (mvfderiv_apply_eq_mfderiv_apply f y v).symm.trans
+      (LinearMap.mem_ker.1 ((h.ker_mfderiv_le_ker_iff hσ (hreg y hy) f).2 (hfF y hy) hv))) hconn
+
+end Boundaryless
+
 end IsIntegrableSystem
 
 /-! ### Invariance of integrability -/
@@ -350,5 +394,21 @@ theorem isIntegrableSystem_harmonicOscillator :
     field_simp
     ring
   two_mul_card_eq_finrank := by simp
+
+/-- **The energy of the harmonic oscillator is proper.** The map `(q, p) ↦ (q² + p²) / 2` on the
+plane, the integrable system of `TauCeti.isIntegrableSystem_harmonicOscillator`, is a proper map:
+it grows like the square of the norm. -/
+theorem isProperMap_harmonicOscillator :
+    IsProperMap fun z : ℝ × ℝ ↦ fun _ : Fin 1 ↦ (z.1 ^ 2 + z.2 ^ 2) / 2 := by
+  refine isProperMap_iff_tendsto_cocompact.2 ⟨by fun_prop, ?_⟩
+  rw [← Metric.cobounded_eq_cocompact (α := Fin 1 → ℝ), ← tendsto_norm_atTop_iff_cobounded]
+  refine Filter.tendsto_atTop_mono (fun z ↦ ?_)
+    (((Filter.tendsto_pow_atTop two_ne_zero).comp tendsto_norm_cocompact_atTop).atTop_div_const
+      two_pos)
+  -- The sup norm satisfies `‖z‖² = max (q², p²) ≤ q² + p²`.
+  rw [Function.comp_apply, pi_norm_const, Real.norm_of_nonneg (by positivity), Prod.norm_def]
+  gcongr
+  rcases max_cases ‖z.1‖ ‖z.2‖ with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h, Real.norm_eq_abs, sq_abs] <;>
+    nlinarith [sq_nonneg z.1, sq_nonneg z.2]
 
 end TauCeti

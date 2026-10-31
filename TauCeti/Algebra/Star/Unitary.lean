@@ -9,15 +9,17 @@ public import Mathlib.Algebra.Star.Prod
 public import Mathlib.Algebra.Star.Unitary
 
 /-!
-# Unitary elements in a product
+# Unitary elements
 
 The unitary elements of a product of star monoids are the pairs of unitary elements. This file
-packages that identification as a multiplicative equivalence.
+packages that identification as a multiplicative equivalence. It also records that the adjoint
+of a unit with unitary underlying element is its inverse.
 
-## Main definition
+## Main definitions and results
 
 * `Unitary.prodEquiv`: `unitary (A × B)` is multiplicatively equivalent to
   `unitary A × unitary B`.
+* `Units.star_eq_inv_of_mem_unitary`: if `(u : R) ∈ unitary R`, then `star u = u⁻¹` in `R`.
 -/
 
 public section
@@ -60,5 +62,28 @@ theorem coe_prodEquiv_symm_apply (u : unitary A × unitary B) :
   rfl
 
 end Unitary
+
+namespace Units
+
+section Monoid
+
+variable {R : Type*} [Monoid R] [StarMul R] {u : Rˣ}
+
+/-- The adjoint of a unit whose underlying element is unitary is its inverse. -/
+theorem star_eq_inv_of_mem_unitary (h : (u : R) ∈ unitary R) : star (u : R) = ↑u⁻¹ :=
+  (u.inv_eq_of_mul_eq_one_left (Unitary.star_mul_self_of_mem h)).symm
+
+/-- The adjoint of the inverse of a unit whose underlying element is unitary is the unit. -/
+theorem star_inv_eq_of_mem_unitary (h : (u : R) ∈ unitary R) : star (↑u⁻¹ : R) = u := by
+  rw [← star_eq_inv_of_mem_unitary h, star_star]
+
+end Monoid
+
+/-- For a unit `u` whose underlying element is unitary, `u - u⁻¹` is skew-adjoint. -/
+theorem star_sub_inv_of_mem_unitary {R : Type*} [Ring R] [StarRing R] {u : Rˣ}
+    (h : (u : R) ∈ unitary R) : star ((u : R) - ↑u⁻¹) = ↑u⁻¹ - u := by
+  rw [star_sub, star_eq_inv_of_mem_unitary h, star_inv_eq_of_mem_unitary h]
+
+end Units
 
 end

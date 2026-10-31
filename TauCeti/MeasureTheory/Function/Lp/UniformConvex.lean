@@ -101,12 +101,12 @@ theorem uniformConvexSpace [Fact (1 ≤ p)] (hp : 2 ≤ p) (hp_top : p ≠ ∞) 
     _ ≤ (2 ^ q - e ^ q) ^ q⁻¹ :=
       Real.rpow_le_rpow (by positivity) hadd (inv_nonneg.2 hq0.le)
 
-/-- **`Lᵖ` is reflexive for `2 ≤ p < ∞`** when `E` is a real Banach space whose norm satisfies
-the parallelogram identity, such as a real or complex Hilbert space. This is the Milman–Pettis
+/-- **`Lᵖ` is reflexive for `2 ≤ p < ∞`** when `E` is a real or complex Banach space whose
+norm satisfies the parallelogram identity, such as a Hilbert space. This is the Milman–Pettis
 theorem applied to `MeasureTheory.Lp.uniformConvexSpace`. -/
-theorem surjective_inclusionInDoubleDual [Fact (1 ≤ p)] [NormedSpace ℝ E] [CompleteSpace E]
-    (hp : 2 ≤ p) (hp_top : p ≠ ∞) :
-    Function.Surjective (NormedSpace.inclusionInDoubleDual ℝ (Lp E p μ)) :=
+theorem surjective_inclusionInDoubleDual {𝕜 : Type*} [RCLike 𝕜] [Fact (1 ≤ p)]
+    [NormedSpace 𝕜 E] [CompleteSpace E] (hp : 2 ≤ p) (hp_top : p ≠ ∞) :
+    Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 (Lp E p μ)) :=
   have := uniformConvexSpace (E := E) (μ := μ) hp hp_top
   TauCeti.surjective_inclusionInDoubleDual_of_uniformConvexSpace
 

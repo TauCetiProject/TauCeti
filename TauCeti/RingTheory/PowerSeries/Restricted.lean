@@ -28,7 +28,8 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   restricted at every radius.
 * `TauCeti.PowerSeries.isRestricted_of_abs_le`: restrictedness passes to smaller radii, and
   `TauCeti.PowerSeries.isRestrictedSubring_le_of_abs_le` is the resulting containment of subrings.
-* `TauCeti.PowerSeries.isRestricted_polynomial`: every polynomial is restricted.
+* `TauCeti.PowerSeries.isRestricted_polynomial`: every polynomial is restricted, in particular
+  `X - a` (`TauCeti.PowerSeries.isRestricted_X_sub_C`).
 * `PowerSeries.IsRestricted.summable_norm_coeff_mul_pow`: weighted coefficient norms are
   summable strictly inside the radius of restrictedness.
 * `PowerSeries.IsRestricted.mul_of_abs_lt`: over any normed ring, a product of series restricted
@@ -81,6 +82,13 @@ theorem isRestricted_polynomial (p : Polynomial R) : (p : PowerSeries R).IsRestr
   isRestricted_of_forall_coeff_eq_zero (n := p.natDegree + 1) fun m hm ↦ by
     rw [Polynomial.coeff_coe]
     exact Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
+
+/-- The linear polynomial `X - a` is restricted at every radius. -/
+theorem isRestricted_X_sub_C (a : R) :
+    (PowerSeries.X - PowerSeries.C a : PowerSeries R).IsRestricted c := by
+  have h := (isRestricted_polynomial (c := c) (Polynomial.X : Polynomial R)).sub
+    (PowerSeries.isRestricted_C c a)
+  rwa [Polynomial.coe_X] at h
 
 /-- **Rescaling changes the radius.** If `f(X)` is restricted at the radius `‖a‖ * c`, then
 `f(aX)` is restricted at the radius `c`. No multiplicativity of the norm is needed: the weighted

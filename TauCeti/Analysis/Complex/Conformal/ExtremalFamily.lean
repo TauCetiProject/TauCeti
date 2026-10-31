@@ -44,14 +44,6 @@ defining property:
   A boundary value would make `‖g‖` attain an interior maximum, so the maximum modulus principle
   would force `‖g‖ ≡ 1` on `Ω`, contradicting `g z₀ = 0`.
 
-## Attribution and upstream coordination
-
-The Riemann mapping theorem is being formalized upstream at
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), which proves the
-L0–L3 prerequisites internally as private lemmas. The declarations here are an explicitly
-**temporary shim**: delete them and refactor downstream consumers onto the exported Mathlib
-versions once those land.
-
 ## Main statements
 
 * `TauCeti.IsPointedDiscInjectionOn` — membership in the competing family.

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.Morse.Index
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -36,6 +37,8 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.criticalHessian_apply_eq_of_mem_maximalAtlas`: at a critical point the critical Hessian
   is the Hessian in an arbitrary chart of the maximal atlas, composed with the chart derivative.
 * `TauCeti.criticalHessian_apply_swap`: the critical Hessian of a `C²` function is symmetric.
+* `TauCeti.criticalHessian_apply_eq_mvfderiv`: at a critical point, differentiating `df(Y)`
+  computes the Hessian against the value of the vector field `Y`.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_iff_criticalHessian`: an intrinsic
   characterization of nondegenerate critical points.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas` and
@@ -430,6 +433,46 @@ theorem IsManifoldNondegenerateCriticalPoint.contMDiffAt
 theorem IsManifoldNondegenerateCriticalPoint.mvfderiv_eq_zero
     (h : IsManifoldNondegenerateCriticalPoint I f x) : mvfderiv I f x = 0 :=
   (isManifoldNondegenerateCriticalPoint_iff_criticalHessian.mp h).2.1
+
+/-- At a critical point, differentiating `df(Y)` in a tangent direction computes the critical
+Hessian against `Y x`. The derivative of the vector field contributes nothing because `df = 0`.
+In particular this expression depends only on the value of `Y` at the point. -/
+theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hcrit : mvfderiv I f x = 0)
+    {Y : (y : M) → TangentSpace I y}
+    (hY : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) x)
+    (v : TangentSpace I x) :
+    criticalHessian I f x v (Y x) = mvfderiv I (fun y ↦ mvfderiv I f y (Y y)) x v := by
+  -- In the preferred chart, the field is a differentiable map into the model vector space.
+  let ψ := extChartAt I x
+  let g := f ∘ ψ.symm
+  let V : E → E := VectorField.mpullbackWithin 𝓘(ℝ, E) I ψ.symm Y (range I)
+  have hg : ContDiffAt ℝ 2 g (ψ x) := hf.contDiffAt_comp_extChartAt_symm
+  have hDg : DifferentiableAt ℝ (fderiv ℝ g) (ψ x) :=
+    (hg.fderiv_right (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
+  have hV : DifferentiableAt ℝ V (ψ x) := by
+    have h := MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm
+      (hY.mdifferentiableWithinAt (s := univ))
+    have h' : DifferentiableWithinAt ℝ V univ (ψ x) := by
+      simpa only [V, preimage_univ, univ_inter,
+        ModelWithCorners.Boundaryless.range_eq_univ] using h
+    exact h'.differentiableAt univ_mem
+  -- The first-order chain rule identifies the coordinate directional derivative with `df(Y)`.
+  have heq : (fun z ↦ fderiv ℝ g z (V z)) =ᶠ[𝓝 (ψ x)]
+      (fun y ↦ mvfderiv I f y (Y y)) ∘ ψ.symm := by
+    simpa only [g, V, ψ, ModelWithCorners.Boundaryless.range_eq_univ, nhdsWithin_univ,
+      fderivWithin_univ] using
+      eventuallyEq_fderivWithin_chart_apply_mpullbackWithin (U := Y) hf (by norm_num)
+  -- Differentiating once more leaves only `D²g`: the term involving `DV` is multiplied by `Dg=0`.
+  have hmd : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I f y (Y y)) x :=
+    ((hf.contMDiffAt_mvfderiv_apply (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero).comp x hY
+  have hzero : fderiv ℝ g (ψ x) = 0 := by
+    rwa [← (hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
+  rw [criticalHessian_def, hmd.mvfderiv_eq_fderiv_comp_extChartAt_symm, ← heq.fderiv_eq,
+    fderiv_clm_apply hDg hV]
+  have hVx : V (ψ x) = Y x := VectorField.mpullbackWithin_extChartAt_symm_self Y x
+  simp only [hzero, ContinuousLinearMap.zero_comp, zero_add, hVx]
+  exact (ContinuousLinearMap.flip_apply (fderiv ℝ (fderiv ℝ g) (ψ x)) v (Y x)).symm
 
 section Chart
 

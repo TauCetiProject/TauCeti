@@ -31,7 +31,8 @@ provide.
 The orbit space `AddAction.orbitRel.Quotient p M` of translation by a submodule, the standard
 carrier for quotients such as complex tori, is second countable when `M` is
 (`Submodule.instSecondCountableTopologyOrbitRelQuotient`), by Mathlib's
-`ContinuousConstVAdd.secondCountableTopology`.
+`ContinuousConstVAdd.secondCountableTopology`. The map of orbit spaces induced by a continuous
+semilinear map is continuous (`Submodule.continuous_orbitRelQuotientMap`).
 -/
 
 public section
@@ -71,6 +72,16 @@ theorem Submodule.isClosed_orbitRelQuotient_mk_image {R M : Type*} [Ring R] [Add
   convert hS using 1
   refine Set.Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (Set.subset_preimage_image _ _)
   simpa using S.sub_mem hy (hpS (p.orbitRel_apply_iff_sub_mem.1 (_root_.Quotient.exact hyx)))
+
+/-- The map of orbit spaces induced by a continuous semilinear map `f` carrying `p` into `q` is
+continuous. -/
+theorem Submodule.continuous_orbitRelQuotientMap {R M R₂ M₂ : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] [Ring R₂] [AddCommGroup M₂] [Module R₂ M₂]
+    [TopologicalSpace M₂] (p : Submodule R M) (q : Submodule R₂ M₂) {τ₁₂ : R →+* R₂}
+    {f : M →ₛₗ[τ₁₂] M₂} (h : p ≤ q.comap f) (hf : Continuous f) :
+    Continuous (p.orbitRelQuotientMap q f h) :=
+  isQuotientMap_quotient_mk'.continuous_iff.2 <|
+    (continuous_quotient_mk'.comp hf).congr fun x ↦ (p.orbitRelQuotientMap_mk q f h x).symm
 
 namespace ContinuousLinearEquiv
 
