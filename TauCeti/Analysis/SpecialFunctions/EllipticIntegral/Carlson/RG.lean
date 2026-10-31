@@ -239,9 +239,9 @@ theorem carlsonRG_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRG x x x = x ^ 
   have hlim : Tendsto (fun t : ℝ => -6 * x * ((t : ℂ) + x) ^ (-((1 / 2 : ℝ) : ℂ)) +
       2 * x ^ 2 * ((t : ℂ) + x) ^ (-((3 / 2 : ℝ) : ℂ))) atTop (𝓝 0) := by
     simpa using
-      ((TauCeti.tendsto_ofReal_add_cpow_neg x (by norm_num : (0 : ℝ) < 1 / 2)).const_mul
+      ((Complex.tendsto_ofReal_add_cpow_neg x (by norm_num : (0 : ℝ) < 1 / 2)).const_mul
         (-6 * x)).add
-      ((TauCeti.tendsto_ofReal_add_cpow_neg x (by norm_num : (0 : ℝ) < 3 / 2)).const_mul
+      ((Complex.tendsto_ofReal_add_cpow_neg x (by norm_num : (0 : ℝ) < 3 / 2)).const_mul
         (2 * x ^ 2))
   rw [carlsonRG_def, integral_Ioi_of_hasDerivAt_of_tendsto' hderiv
     (integrableOn_carlsonRGIntegrand (Or.inl hx) hx hx) hlim]
