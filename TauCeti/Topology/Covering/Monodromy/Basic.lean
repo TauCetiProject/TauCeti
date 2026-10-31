@@ -39,10 +39,8 @@ fundamental-groupoid actions.
 
 ## References
 
-This is the functor-construction step in Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`. It reuses Mathlib's object-level
-`IsCoveringMap.monodromyFunctor` and Tau Ceti's functoriality of monodromy under maps of covering
-spaces.
+This file reuses Mathlib's object-level `IsCoveringMap.monodromyFunctor` and Tau Ceti's
+functoriality of monodromy under maps of covering spaces.
 -/
 
 public section

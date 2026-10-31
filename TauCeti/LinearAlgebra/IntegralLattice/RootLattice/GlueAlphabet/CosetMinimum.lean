@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Field
+public import Mathlib.InformationTheory.Hamming
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.CosetMinimum
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Labels
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.OrthogonalSum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.CosetMinimum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.CosetMinimum
@@ -41,14 +43,18 @@ for even `n`, and `2`, `1`, `3` in `ℤ/4` for odd `n`, name `v`, `s` and `c`.
 Two consequences hold uniformly, read off from attainment: half the shortest norm is the quadratic
 value of the label (`quadratic_glueAlphabet_eq_glueMinimum_div_two`), so a label is isotropic
 exactly when its shortest norm is an even integer, and only the zero label has shortest norm
-zero (`glueMinimum_eq_zero_iff`).
+zero (`glueMinimum_eq_zero_iff`).  As a function of the printed Conway--Sloane label rather than
+of its class, the shortest norm is the computable `glueLabelMinimum`
+(`glueMinimum_glueLabelEquiv`).
 
 For a glue word `w = (w_i)` of a finite family `t` of components, the coset of the orthogonal sum
 `⊥ i, (t i).rootLattice` named by `w` through `TauCeti.DynkinType.glueWordIsometry` has least norm
 `μ(w) = ∑ i, μ_(t i)(w_i)`, again attained (`TauCeti.DynkinType.isLeast_sum_glueMinimum`): a
 shortest vector of the word's coset is a family of shortest vectors of the label cosets, by
 `TauCeti.IntegralLattice.isLeast_form_self_pi`.  The two label-level consequences pass to words:
-half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero word.
+half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero word.  For words
+over the `A₂` alphabet `ℤ/3`, every nonzero label has shortest norm `2/3`, so `μ(w)` is two
+thirds of the Hamming weight of `w` (`sum_glueMinimum_A_two_eq_two_div_three_mul_hammingNorm`).
 
 ## Main declarations
 
@@ -57,12 +63,17 @@ half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero
   coset `t.glueAlphabetIsometry hv ht a`, and it is attained.
 * `TauCeti.DynkinType.quadratic_glueAlphabet_eq_glueMinimum_div_two`: `q(a) = μ_t(a) / 2 mod ℤ`.
 * `TauCeti.DynkinType.glueMinimum_eq_zero_iff`: `μ_t(a) = 0` exactly when `a = 0`.
+* `TauCeti.DynkinType.glueLabelMinimum`: the shortest norm of a printed label.
 * `TauCeti.DynkinType.isLeast_sum_glueMinimum`: `μ(w) = ∑ i, μ_(t i)(w_i)` is the least norm of a
   dual vector of the orthogonal sum of root lattices in the coset named by the glue word `w`, and
   it is attained.
 * `TauCeti.DynkinType.quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two`:
   `q(w) = μ(w) / 2 mod ℤ`.
 * `TauCeti.DynkinType.sum_glueMinimum_eq_zero_iff`: `μ(w) = 0` exactly when `w = 0`.
+* `TauCeti.DynkinType.sum_glueMinimum_A_two_eq_two_div_three_mul_hammingNorm`: over `A₂`, `μ(w)`
+  is two thirds of the Hamming weight of `w`.
+* `TauCeti.DynkinType.sum_glueMinimum_A_one_eq_hammingNorm_div_two`: for a word in copies of the
+  `A₁` glue alphabet, `μ(w)` is half its Hamming weight.
 
 ## References
 
@@ -124,6 +135,20 @@ theorem glueMinimum_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (hn : Odd n)
     (D n).glueMinimum ht a = if b = 0 then 0 else if b = 2 then 1 else (n : ℚ) / 4 := by
   subst hb
   simp only [glueMinimum, dite_eq_right (Nat.not_even_iff_odd.mpr hn)]
+
+/-- Every nonzero label of `D₄` has shortest norm `1`: the vector class has norm `1`, and the two
+spinor classes have norm `4/4`. -/
+theorem glueMinimum_D_four_of_ne_zero {a : (D 4).glueAlphabet (isSimplyLaced_D 4)} (ha : a ≠ 0) :
+    (D 4).glueMinimum (isSimplyLaced_D 4) a = 1 := by
+  obtain ⟨b, hb⟩ : ∃ b : ZMod 2 × ZMod 2,
+      FiniteQuadraticModule.Isometry.ofEq
+        (glueAlphabet_D_of_even 4 (isSimplyLaced_D 4) (by decide)) a = b := ⟨_, rfl⟩
+  rw [glueMinimum_D_of_even 4 _ (by decide) a b hb]
+  have hb0 : b ≠ 0 := by
+    rintro rfl
+    exact ha ((FiniteQuadraticModule.Isometry.ofEq _).injective (hb.trans (map_zero _).symm))
+  simp only [hb0, ↓reduceIte]
+  split_ifs <;> norm_num
 
 /-- The nonzero labels of `E₆` have shortest norm `4/3`. -/
 @[simp]
@@ -257,6 +282,77 @@ theorem glueMinimum_eq_zero_iff (t : DynkinType) (hv : t.Valid) (ht : t.IsSimply
   · rintro rfl
     exact t.glueMinimum_zero ht
 
+/-! ## Shortest norms of printed labels -/
+
+/-- **The shortest norm of the Conway--Sloane label** `a` of a simply-laced Dynkin type, read off
+the printed label: `a (n + 1 - a) / (n + 1)` for `Aₙ`; `0`, `n/4`, `1`, `n/4` for the labels `0`,
+spinor, vector, cospinor of `Dₙ`; and `4/3`, `3/2` for the nonzero labels of `E₆`, `E₇`.  It is
+`glueMinimum` of the class labelled `a` (`glueMinimum_glueLabelEquiv`), as a function of the label
+rather than of the class, so that finite checks on printed glue words evaluate by `decide`. -/
+@[expose] def glueLabelMinimum : DynkinType → ℕ → ℚ
+  | A n, a => (a : ℚ) * (n + 1 - a) / (n + 1)
+  | D n, a => if a = 0 then 0 else if a = 2 then 1 else (n : ℚ) / 4
+  | E6, a => if a = 0 then 0 else 4 / 3
+  | E7, a => if a = 0 then 0 else 3 / 2
+  | _, _ => 0
+
+/-- The label `a` of `Aₙ` has shortest norm `a (n + 1 - a) / (n + 1)`. -/
+@[simp]
+theorem glueLabelMinimum_A (n a : ℕ) :
+    (A n).glueLabelMinimum a = (a : ℚ) * (n + 1 - a) / (n + 1) :=
+  (rfl)
+
+/-- The vector label `2` of `Dₙ` has shortest norm `1`, and the spinor labels `n / 4`. -/
+@[simp]
+theorem glueLabelMinimum_D (n a : ℕ) :
+    (D n).glueLabelMinimum a = if a = 0 then 0 else if a = 2 then 1 else (n : ℚ) / 4 :=
+  (rfl)
+
+/-- The nonzero labels of `E₆` have shortest norm `4/3`. -/
+@[simp]
+theorem glueLabelMinimum_E6 (a : ℕ) : E6.glueLabelMinimum a = if a = 0 then 0 else 4 / 3 :=
+  (rfl)
+
+/-- The nonzero label of `E₇` has shortest norm `3/2`. -/
+@[simp]
+theorem glueLabelMinimum_E7 (a : ℕ) : E7.glueLabelMinimum a = if a = 0 then 0 else 3 / 2 :=
+  (rfl)
+
+/-- The only label of `E₈` has shortest norm `0`. -/
+@[simp]
+theorem glueLabelMinimum_E8 (a : ℕ) : E8.glueLabelMinimum a = 0 :=
+  (rfl)
+
+/-- **The shortest norm of the class of a label is the shortest norm of the printed label.** -/
+@[simp]
+theorem glueMinimum_glueLabelEquiv (t : DynkinType) (ht : t.IsSimplyLaced)
+    (a : Fin t.glueLabelCount) :
+    t.glueMinimum ht (t.glueLabelEquiv ht a) = t.glueLabelMinimum a := by
+  obtain ⟨a, ha⟩ := a
+  cases t with
+  | A n =>
+    rw [glueLabelEquiv_A, glueMinimum_A, ZMod.val_natCast_of_lt ha, glueLabelMinimum]
+  | D n =>
+    simp only [glueLabelCount] at ha
+    rcases Nat.even_or_odd n with hn | hn
+    · rw [glueMinimum_D_of_even n ht hn _ _ (glueLabelEquiv_D_of_even n ht hn _)]
+      interval_cases a <;> simp +decide [glueLabelMinimum]
+    · rw [glueMinimum_D_of_odd n ht hn _ _ (glueLabelEquiv_D_of_odd n ht hn _)]
+      interval_cases a <;> simp +decide [glueLabelMinimum]
+  | E6 =>
+    rw [glueLabelEquiv_E6, glueMinimum_E6]
+    simp only [glueLabelCount] at ha
+    interval_cases a <;> simp +decide [glueLabelMinimum]
+  | E7 =>
+    rw [glueLabelEquiv_E7, glueMinimum_E7]
+    simp only [glueLabelCount] at ha
+    interval_cases a <;> simp +decide [glueLabelMinimum]
+  | E8 => rfl
+  | B n => exact absurd ht (not_isSimplyLaced_B n)
+  | C n => exact absurd ht (not_isSimplyLaced_C n)
+  | F4 => exact absurd ht not_isSimplyLaced_F4
+  | G2 => exact absurd ht not_isSimplyLaced_G2
+
 /-! ## Glue words -/
 
 section GlueWord
@@ -302,6 +398,36 @@ theorem sum_glueMinimum_eq_zero_iff {w : ∀ i, (t i).glueAlphabet (ht i)} :
   rw [Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ (t i).glueMinimum_nonneg (ht i) (w i), funext_iff]
   simp only [Finset.mem_univ, true_imp_iff, glueMinimum_eq_zero_iff _ (hv _), Pi.zero_apply]
 
+/-- **The shortest norm of an `A₂` glue word is two thirds of its Hamming weight**: the coset of
+a nonzero label of the `A₂` alphabet `ℤ/3` has shortest norm `2/3`. -/
+theorem sum_glueMinimum_A_two_eq_two_div_three_mul_hammingNorm (ht : (A 2).IsSimplyLaced)
+    (w : ι → ZMod 3) :
+    ∑ i, (A 2).glueMinimum ht (w i) = 2 / 3 * hammingNorm w := by
+  have h (a : ZMod 3) : (A 2).glueMinimum ht a = if a = 0 then 0 else 2 / 3 := by
+    rw [glueMinimum_A]
+    by_cases ha : a = 0
+    · simp [ha]
+    · have hlt : a.val < 3 := ZMod.val_lt a
+      have hne : a.val ≠ 0 := (ZMod.val_eq_zero a).not.mpr ha
+      obtain h | h : a.val = 1 ∨ a.val = 2 := by omega
+      all_goals simp only [ha, h, ↓reduceIte]; norm_num
+  simp only [h, hammingNorm, Finset.sum_ite, Finset.sum_const_zero, Finset.sum_const,
+    nsmul_eq_mul, zero_add, mul_comm]
+
 end GlueWord
+
+/-- **The shortest norm of a word in copies of the `A₁` glue alphabet is half its Hamming
+weight**: the nonzero label of `A₁` has shortest norm `1/2`. -/
+theorem sum_glueMinimum_A_one_eq_hammingNorm_div_two {ι : Type*} [Fintype ι]
+    (w : ι → (A 1).glueAlphabet (isSimplyLaced_A 1)) :
+    ∑ j, (A 1).glueMinimum (isSimplyLaced_A 1) (w j) =
+      hammingNorm (fun j ↦ typeA1GlueAlphabetZModStandardIsometry (w j)) / 2 := by
+  have h (x : ZMod 2) :
+      (x.val : ℚ) * (1 + 1 - x.val) / (1 + 1) = ((if x ≠ 0 then 1 else 0 : ℕ) : ℚ) / 2 := by
+    rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) x with rfl | rfl <;> norm_num [ZMod.val_one]
+  rw [hammingNorm, Finset.card_filter, Nat.cast_sum, Finset.sum_div]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [typeA1GlueAlphabetZModStandardIsometry_apply]
+  exact (glueMinimum_A 1 _ (w j)).trans (h (w j))
 
 end TauCeti.DynkinType

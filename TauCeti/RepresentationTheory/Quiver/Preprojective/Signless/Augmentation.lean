@@ -122,6 +122,21 @@ theorem signlessPreprojectiveAugmentation_ofArrow {i j : R} (b : i ⟶ j) :
     signlessPreprojectiveAugmentation k (π (ofArrow b)) = 0 := by
   rw [signlessPreprojectiveAugmentation_mk, trivialCoeff_ofArrow]
 
+/-- A closed path of positive length which is a scalar multiple of its vertex idempotent vanishes,
+since its augmentation does. -/
+theorem signlessPreprojectiveMk_ofPath_eq_zero_of_eq_algebraMap_mul {v : R} (p : Path v v)
+    (hp : 0 < p.length) {r : k}
+    (h : π (ofPath ⟨_, _, p⟩) = algebraMap k Π r * π (vertexIdempotent k v)) :
+    π (ofPath ⟨_, _, p⟩) = 0 := by
+  classical
+  -- The path has augmentation zero, while the right side has augmentation `r`.
+  have haug := signlessPreprojectiveAugmentation_mk k (ofPath ⟨_, _, p⟩)
+  rw [trivialCoeff_ofPath_of_length_pos hp, h] at haug
+  have hr : r = 0 := by
+    simpa [signlessPreprojectiveAugmentation_mk, trivialCoeff_vertexIdempotent] using
+      congrFun haug v
+  rw [h, hr, map_zero, zero_mul]
+
 /-- Every family of vertex coefficients occurs in the signless preprojective algebra. -/
 theorem signlessPreprojectiveAugmentation_surjective :
     Function.Surjective (signlessPreprojectiveAugmentation (R := R) k) :=

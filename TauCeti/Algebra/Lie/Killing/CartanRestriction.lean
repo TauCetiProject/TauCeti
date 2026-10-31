@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Killing.SymmetricAlgebra
+public import TauCeti.Algebra.Lie.Weights.Borel
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 public import TauCeti.Algebra.Lie.Weights.Projection
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
@@ -29,8 +30,9 @@ functions from `L` to `H` is then the algebra map `S(L) → S(H)` induced by `π
 `TauCeti.lieCartanRestriction H : S(L) →ₐ[K] S(H)`.
 
 This is the map that Chevalley's restriction theorem is about: restricted to the invariants
-`S(L)^L`, it is an isomorphism onto the Weyl invariants `S(H)^W` (not proved here), and through
-the PBW symbols of central elements it is compared with the Harish-Chandra projection.
+`S(L)^L`, it is an isomorphism onto the Weyl invariants `S(H)^W`
+(`LieSubalgebra.lieChevalleyRestrictionIso`), and through the PBW symbols of central elements it
+is compared with the Harish-Chandra projection.
 
 Read on the dual side, with `S(L)` as the polynomial functions on `L*` and `S(H)` as the polynomial
 functions on the weights `H*`, the restriction evaluates a polynomial on `L*` at the extension
@@ -47,6 +49,9 @@ functions on the weights `H*`, the restriction evaluates a polynomial on `L*` at
 * `TauCeti.killingCartanProjection_coe` and
   `TauCeti.killingCartanProjection_eq_zero_of_mem_rootSpace`: the projection is the identity on `H`
   and vanishes on the root spaces of nonzero roots.
+* `TauCeti.killingCartanProjection_eq_zero_of_mem_negativeNilradical` and
+  `TauCeti.killingCartanProjection_eq_zero_of_mem_positiveNilradical`: for a base `b` of the root
+  system, the projection vanishes on both nilradicals.
 * `TauCeti.lieCartanRestriction_ι_cartan` and `TauCeti.lieCartanRestriction_ι_root`: the same for
   the restriction map on generators.
 * `TauCeti.coe_killingCartanProjection`: the projection is the projection
@@ -158,6 +163,36 @@ theorem coe_killingCartanProjection [IsTriangularizable K H L] [Nontrivial H] (x
   refine (eq_killingCartanProjection_iff H).mpr fun h ↦ ?_
   rw [killingForm_genWeightSpaceProjection, genWeightSpaceProjection_apply_of_mem]
   simp
+
+/-! ### The projection on the nilradicals -/
+
+section Nilradical
+
+variable [CharZero K] [IsTriangularizable K H L]
+
+variable {H} in
+/-- The Killing-orthogonal projection onto `H` vanishes on the span of any set of root spaces. -/
+theorem killingCartanProjection_eq_zero_of_mem_rootSpaceSpan {S : Set H.root} {x : L}
+    (hx : x ∈ rootSpaceSpan H S) : killingCartanProjection H x = 0 := by
+  have hle : (rootSpaceSpan H S : Submodule K L) ≤ LinearMap.ker (killingCartanProjection H) := by
+    rw [rootSpaceSpan_eq_iSup, LieSubmodule.iSup_toSubmodule]
+    exact iSup_le fun α _ hy ↦ killingCartanProjection_eq_zero_of_mem_rootSpace
+      (Finset.mem_filter.mp (α : H.root).2).2 hy
+  exact hle hx
+
+variable {H} (b : (IsKilling.rootSystem H).Base)
+
+/-- The Killing-orthogonal projection onto `H` vanishes on the negative nilradical. -/
+theorem killingCartanProjection_eq_zero_of_mem_negativeNilradical {x : L}
+    (hx : x ∈ negativeNilradical H b) : killingCartanProjection H x = 0 :=
+  killingCartanProjection_eq_zero_of_mem_rootSpaceSpan ((mem_negativeNilradical H b x).mp hx)
+
+/-- The Killing-orthogonal projection onto `H` vanishes on the positive nilradical. -/
+theorem killingCartanProjection_eq_zero_of_mem_positiveNilradical {x : L}
+    (hx : x ∈ positiveNilradical H b) : killingCartanProjection H x = 0 :=
+  killingCartanProjection_eq_zero_of_mem_rootSpaceSpan ((mem_positiveNilradical H b x).mp hx)
+
+end Nilradical
 
 /-! ### Restriction of polynomial functions -/
 

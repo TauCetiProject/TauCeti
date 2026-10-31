@@ -20,6 +20,8 @@ infinity of `k(X)`.
 
 ## Main results
 
+* `TauCeti.constantCompositum_eq_top_of_X_mem`: a compositum `F · k'` inside `k'(X)` containing
+  `X` is all of `k'(X)`.
 * `TauCeti.constantCompositum_ratFunc_eq_top`: `k'(X)` is the compositum of `k(X)` and `k'`.
 * `TauCeti.Place.restrict_ratFunc_eq_infty_iff`: a place of `k'(X)` lies over the place at
   infinity of `k(X)` exactly when it is the place at infinity of `k'(X)`.
@@ -31,21 +33,27 @@ namespace TauCeti
 
 variable {k k' : Type*} [Field k] [Field k']
 
-/-- **`k'(X)` is the compositum of `k(X)` with the constants `k'`**, for any `k(X)`-algebra
-structure on `k'(X)` sending `X` to `X`. -/
-theorem constantCompositum_ratFunc_eq_top [Algebra (RatFunc k) (RatFunc k')]
-    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) :
-    constantCompositum (RatFunc k) k' (RatFunc k') = ⊤ := by
-  set K := constantCompositum (RatFunc k) k' (RatFunc k')
+/-- **A compositum with `k'` containing `X` is all of `k'(X)`**: for any field `F` inside `k'(X)`,
+if `X` lies in `F · k'`, then `F · k' = k'(X)`. -/
+theorem constantCompositum_eq_top_of_X_mem {F : Type*} [Field F] [Algebra F (RatFunc k')]
+    (hX : (RatFunc.X : RatFunc k') ∈ constantCompositum F k' (RatFunc k')) :
+    constantCompositum F k' (RatFunc k') = ⊤ := by
+  set K := constantCompositum F k' (RatFunc k')
   -- `K` contains the constants `k'`, so it is an intermediate field of `k'(X) / k'`; it contains
   -- `X`, which generates `k'(X)` over `k'`.
   let E : IntermediateField k' (RatFunc k') :=
     { K.toSubfield with
-      algebraMap_mem' := algebraMap_mem_constantCompositum (RatFunc k) k' (RatFunc k') }
-  have hXE : (RatFunc.X : RatFunc k') ∈ E := hX ▸ K.algebraMap_mem RatFunc.X
+      algebraMap_mem' := algebraMap_mem_constantCompositum F k' (RatFunc k') }
   have hE : E = ⊤ := eq_top_iff.mpr <|
-    RatFunc.adjoin_X.symm.le.trans (IntermediateField.adjoin_simple_le_iff.mpr hXE)
+    RatFunc.adjoin_X.symm.le.trans (IntermediateField.adjoin_simple_le_iff.mpr hX)
   exact eq_top_iff.mpr fun f _ ↦ (hE ▸ IntermediateField.mem_top : f ∈ E)
+
+/-- **`k'(X)` is the compositum of `k(X)` with the constants `k'`**, for any `k(X)`-algebra
+structure on `k'(X)` sending `X` to `X`. -/
+theorem constantCompositum_ratFunc_eq_top [Algebra (RatFunc k) (RatFunc k')]
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) :
+    constantCompositum (RatFunc k) k' (RatFunc k') = ⊤ :=
+  constantCompositum_eq_top_of_X_mem (hX ▸ IntermediateField.algebraMap_mem _ RatFunc.X)
 
 namespace Place
 

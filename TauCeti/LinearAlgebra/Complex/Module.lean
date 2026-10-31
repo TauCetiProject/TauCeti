@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
+import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -19,6 +20,13 @@ This decomposition applies to any real module structure compatible with the comp
 For a real-linear map `L` into a complex module, its defect from complex linearity
 `e ↦ L e + I • L (I * e)` is conjugate-linear and is therefore determined by its value at `1`.
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
+
+A real-linear map between complex modules that commutes with multiplication by `I` is complex
+linear (`LinearMap.complexOfMapISmul`).
+
+Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
+conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
+at `I` (`Units.conj_complexAlgHom_apply`).
 -/
 
 public section
@@ -72,3 +80,50 @@ lemma re_smul_add_im_smul {V : Type*} [AddCommGroup V] [Module ℝ V] [Module �
       ((LinearMap.toSpanSingleton ℂ V v).restrictScalars ℝ) z).symm
 
 end Complex
+
+section ComplexOfMapISmul
+
+variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V]
+  [AddCommGroup W] [Module ℝ W] [Module ℂ W] [IsScalarTower ℝ ℂ W]
+
+namespace LinearMap
+
+/-- A real-linear map between complex modules that commutes with multiplication by `I`, as a
+complex-linear map. -/
+def complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+    V →ₗ[ℂ] W where
+  toFun := u
+  map_add' := u.map_add
+  map_smul' c v := by
+    -- Split `c • v` into real multiples of `v` and `I • v`.
+    rw [← Complex.re_smul_add_im_smul c v, map_add, map_smul, map_smul, h, RingHom.id_apply,
+      Complex.re_smul_add_im_smul]
+
+@[simp]
+theorem coe_complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+    ⇑(u.complexOfMapISmul h) = u :=
+  funext fun _ ↦ rfl
+
+@[simp]
+theorem restrictScalars_complexOfMapISmul (u : V →ₗ[ℝ] W)
+    (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+    (u.complexOfMapISmul h).restrictScalars ℝ = u :=
+  LinearMap.ext fun _ ↦ rfl
+
+end LinearMap
+
+end ComplexOfMapISmul
+
+namespace Units
+
+/-- **Conjugation of an `ℝ`-algebra map out of `ℂ` is detected on `Complex.I`.** If `g` agrees with
+the `w`-conjugate of `f` at `i` then it agrees with it everywhere: conjugation by `w` is an
+`ℝ`-algebra automorphism, and `ℝ`-algebra maps out of `ℂ` are determined by their value at `i`. -/
+theorem conj_complexAlgHom_apply {A : Type*} [Semiring A] [Algebra ℝ A] (w : Aˣ)
+    (f g : ℂ →ₐ[ℝ] A) (h : g Complex.I = (w : A) * f Complex.I * ((w⁻¹ : Aˣ) : A)) (z : ℂ) :
+    g z = (w : A) * f z * ((w⁻¹ : Aˣ) : A) := by
+  have hfg : g = (MulSemiringAction.toAlgHom ℝ A (ConjAct.toConjAct w)).comp f :=
+    Complex.algHom_ext (by simpa [ConjAct.units_smul_def] using h)
+  simpa [ConjAct.units_smul_def] using DFunLike.congr_fun hfg z
+
+end Units

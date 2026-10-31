@@ -11,12 +11,14 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
 # The isometry group of a bilinear form
@@ -79,6 +81,8 @@ Two statements are worth singling out.
   membership of a matrix in `Matrix.isometryMatrices` of the Gram matrix.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
+* `TauCeti.BilinForm.IsIsometry.det_eq_one`: an isometry of a nondegenerate alternating form on a
+  finite-dimensional vector space has determinant `1`.
 * `LinearMap.BilinForm.Isometry.injective`: an isometric embedding of a left-separating form is
   injective.
 * `TauCeti.BilinForm.IsIsometry.bijective`: over an integral domain, an isometry of a
@@ -93,7 +97,9 @@ Mathlib, the group, transport along a linear equivalence, the Gram-matrix criter
 change need only a `CommSemiring` and additive monoids, which is where every Mathlib ingredient
 they consume is stated; injectivity needs subtraction in `M`; the determinant results need `M` to
 be an additive group over a `CommRing`; the automatic invertibility of an isometry of a
-left-separating form needs an integral domain and a finite free module.
+left-separating form needs an integral domain and a finite free module; determinant one for an
+isometry of a nondegenerate alternating form needs a field, over which such a form has a symplectic
+basis.
 
 This is the bilinear-form counterpart of `TauCeti.QuadraticMap.orthogonalGroup` in
 `TauCeti/LinearAlgebra/QuadraticForm/OrthogonalGroup/Basic.lean`, whose API it follows; for a
@@ -383,6 +389,15 @@ theorem isUnit_det (b : Basis ι R M)
     (hf : IsIsometry B f) : IsUnit (LinearMap.det f) :=
   IsUnit.of_mul_eq_one _ (by rw [← sq]; exact hf.det_sq_eq_one b hG)
 
+/-- An isometry of a form whose matrix in some basis is the standard symplectic matrix
+`Matrix.J` has determinant `1`: its matrix in that basis is symplectic. -/
+theorem det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
+    (b : Basis (l ⊕ l) R M) (hb : LinearMap.BilinForm.toMatrix b B = Matrix.J l R)
+    (hf : IsIsometry B f) : LinearMap.det f = 1 := by
+  have h := (isIsometry_iff_toMatrix b).mp hf
+  rw [hb, ← SymplecticGroup.mem_iff'] at h
+  rw [← LinearMap.det_toMatrix b, SymplecticGroup.det_eq_one h]
+
 end IsIsometry
 
 end Matrix
@@ -458,6 +473,21 @@ end IsIsometry
 end SeparatingLeft
 
 end CommRing
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  {B : BilinForm K V} {f : V →ₗ[K] V}
+
+/-- **Isometries of a nondegenerate alternating form have determinant one.** On a
+finite-dimensional space the form has a symplectic basis, in which the matrix of an isometry is
+symplectic. -/
+theorem IsIsometry.det_eq_one (hB : B.IsAlt) (hnd : B.Nondegenerate) (hf : IsIsometry B f) :
+    LinearMap.det f = 1 := by
+  obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd
+  exact hf.det_eq_one_of_toMatrix_eq_J b hb
+
+end Field
 
 end BilinForm
 

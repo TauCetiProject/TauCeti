@@ -58,7 +58,7 @@ theorem germKernel_quotientKerToPermHom_eq_bot [I.Boundaryless] [CompleteSpace E
     (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) (hG : IsMulTorsion G) (x : M) :
     TauCeti.MulAction.germKernel (G ⧸ (toPermHom G M).ker) x = ⊥ := by
   rw [germKernel_eq_ker (contMDiff_quotientKerToPermHom_smul hsmooth)
-    (hG.of_surjective (QuotientGroup.mk'_surjective _))]
+    fun _ ↦ (hG.of_surjective (QuotientGroup.mk'_surjective _)).subgroup _]
   exact MulAction.ker_toPermHom_eq_bot _ _
 
 /-- The faithful quotient of a finite group acting by `C¹` maps on a preconnected Hausdorff

@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 
 /-!
-# Compact operators and bounded sequences
+# Compact operators on quotients and bounded sequences
 
 This file records sequential consequences of compactness for bounded sequences in seminormed
 spaces. These give the subsequence and separation arguments used in Riesz theory for compact
-perturbations of the identity.
+perturbations of the identity. It also shows that a compact operator descends to a compact
+operator on the quotient by a submodule of its kernel.
 
 ## Main declarations
 
@@ -20,6 +22,8 @@ perturbations of the identity.
   to a sequence with a convergent subsequence.
 * `IsCompactOperator.exists_dist_lt_of_norm_le`: a compact operator cannot keep the
   images of a bounded sequence pairwise separated.
+* `IsCompactOperator.liftQL`: the operator induced by a compact operator on a quotient by a
+  submodule of its kernel is compact.
 -/
 
 public section
@@ -52,6 +56,26 @@ theorem exists_dist_lt_of_norm_le (hK : IsCompactOperator K) (hu : ∀ n, ‖u n
   rw [Metric.cauchySeq_iff'] at hcauchy
   obtain ⟨N, hN⟩ := hcauchy ε hε
   exact ⟨ψ (N + 1), ψ N, by simp [hψ.injective.eq_iff], hN (N + 1) (Nat.le_succ N)⟩
+
+section Quotient
+
+variable {R₁ R₂ M N : Type*} [Ring R₁] [Ring R₂] {σ : R₁ →+* R₂} [AddCommGroup M] [Module R₁ M]
+  [TopologicalSpace M] [IsTopologicalAddGroup M] [AddCommGroup N] [Module R₂ N]
+  [TopologicalSpace N]
+
+/-- A compact operator descends to a compact operator on the quotient by a submodule of its
+kernel. -/
+theorem liftQL {S : Submodule R₁ M} {f : M →SL[σ] N} (hf : IsCompactOperator f)
+    (h : S ≤ f.ker) : IsCompactOperator (S.liftQL f h) := by
+  -- The quotient map is open, so it carries a neighbourhood of `0` that `f` maps into a compact
+  -- set `C` to a neighbourhood of `0` that the induced map sends into `C`.
+  obtain ⟨C, hC, hfC⟩ := hf
+  refine ⟨C, hC, Filter.mem_of_superset (x := S.mkQ '' (f ⁻¹' C)) ?_ ?_⟩
+  · simpa using S.isOpenMap_mkQ.image_mem_nhds hfC
+  · rintro _ ⟨m, hm, rfl⟩
+    simpa using hm
+
+end Quotient
 
 end IsCompactOperator
 

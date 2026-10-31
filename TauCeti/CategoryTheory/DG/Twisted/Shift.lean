@@ -93,7 +93,9 @@ degree-zero morphism `u : P ⟶ Q` of twisted objects, along the closed degree-o
   `shiftCommHom P b a` are inverse, and
   `TauCeti.DGTwistedObject.shiftCommHom_eq_dgComp_shiftAddInv` expresses `shiftCommHom` through
   the comparisons of iterated shifts.
-* `TauCeti.DGTwistedObject.dgMap_fromShift`: the shift of a comparison morphism.
+* `TauCeti.DGTwistedObject.dgMap_fromShift`: the shift of a comparison morphism, and
+  `TauCeti.DGTwistedObject.dgMap_fromShift_self` its form for the shift by its own degree, where
+  `TauCeti.DGTwistedObject.shiftCommHom_self` makes the comparison of shifts the identity.
 
 ## References
 
@@ -565,6 +567,19 @@ theorem dgMap_fromShift (a b : ℤ) :
   congr 1
   simp -proj only [shiftCommHom_def, dgComp_assoc_eq_castDeg, dgComp_castDeg_eq_castDeg,
     castDeg_castDeg, dgComp_toShift_fromShift', dgComp_dgId_eq_castDeg]
+
+/-- The comparison `P⟦a⟧⟦a⟧ ⟶ P⟦a⟧⟦a⟧` exchanging two equal shifts is the identity. -/
+@[simp↓]
+theorem shiftCommHom_self (a : ℤ) : shiftCommHom P a a = dgId R _ := by
+  simp -proj only [shiftCommHom_def, dgComp_fromShift_toShift_assoc', dgComp_castDeg_eq_castDeg,
+    castDeg_castDeg, dgComp_fromShift_toShift', castDeg_self]
+
+/-- **The shift of a comparison morphism by its own degree**: the shift by `a` of the comparison
+morphism `P⟦a⟧ ⟶ P` is `(-1)^(a * a)` times the comparison morphism `P⟦a⟧⟦a⟧ ⟶ P⟦a⟧`. -/
+theorem dgMap_fromShift_self (a : ℤ) :
+    (shiftFunctor R a).dgMap a (fromShift P a) =
+      (a * a).negOnePow • fromShift ((shiftFunctor R a).obj P) a := by
+  rw [dgMap_fromShift, shiftCommHom_self, dgId_dgComp]
 
 end commutation
 

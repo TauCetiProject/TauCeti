@@ -97,25 +97,16 @@ theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord
 theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin (h : IsJacobiFieldOn I γ V s) :
     ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r)
-        (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s := by
-  let : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : IsManifold I (1 + 1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : ContMDiffVectorBundle (1 + 1) E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  exact CovariantDerivative.contMDiffOn_alongCurveWithin (n := 1)
-    (leviCivitaConnection I M) γ V
-    (fun x ↦ contMDiffCovariantDerivativeOn_leviCivitaConnection
-      (m := ∞) (k := ∞) (trivializationAt E (TangentSpace I) x).open_baseSet
-      (by simp) (by simp)) h.uniqueDiffOn h.contMDiffOn
+        (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s :=
+  contMDiffOn_alongCurveWithin_leviCivitaConnection h.uniqueDiffOn h.contMDiffOn
 
 /-- The covariant derivative has differentiable coordinate readings within the parameter set. -/
 theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord_alongCurveWithin
     (h : IsJacobiFieldOn I γ V s) (ht : t ∈ s) :
     DifferentiableWithinAt ℝ
       (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
-  TauCeti.Manifold.differentiableWithinAt_sectionCoord γ _
-    ((h.contMDiffOn_alongCurveWithin t ht).mdifferentiableWithinAt one_ne_zero)
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
+  differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
+    h.uniqueDiffOn h.contMDiffOn ht
 
 /-- The Jacobi equation solved for the second covariant derivative. -/
 theorem IsJacobiFieldOn.alongCurveWithin_alongCurveWithin_eq
@@ -189,6 +180,17 @@ theorem IsJacobiFieldOn.add (hV : IsJacobiFieldOn I γ V s)
     have hw := hW.equation r hr
     simpa only [add_add_add_comm, add_zero] using congrArg₂ (· + ·) hv hw
 
+/-- The covariant derivative of a Jacobi field within a smaller parameter set agrees with the one
+within the original set, at points where the smaller set has unique derivatives. -/
+theorem IsJacobiFieldOn.alongCurveWithin_subset (h : IsJacobiFieldOn I γ V s)
+    (hu : UniqueDiffWithinAt ℝ u t) (hus : u ⊆ s) (ht : t ∈ u) :
+    alongCurveWithin (leviCivitaConnection I M) γ V u t =
+      alongCurveWithin (leviCivitaConnection I M) γ V s t :=
+  CovariantDerivative.alongCurveWithin_subset _ γ V hus hu
+    (h.differentiableWithinAt_sectionCoord (hus ht))
+    (by simpa [writtenInExtChartAt] using
+      (h.isGeodesicCurveOn.mdifferentiableOn t (hus ht)).differentiableWithinAt_writtenInExtChartAt)
+
 /-- Restricting the parameter set preserves a Jacobi field, provided derivatives on the
 smaller set are unique. Values outside the parameter set play no role. -/
 theorem IsJacobiFieldOn.mono (h : IsJacobiFieldOn I γ V s)
@@ -198,14 +200,12 @@ theorem IsJacobiFieldOn.mono (h : IsJacobiFieldOn I γ V s)
     by simpa [writtenInExtChartAt] using
       (h.isGeodesicCurveOn.mdifferentiableOn r hr).differentiableWithinAt_writtenInExtChartAt
   have hfirst : ∀ r ∈ u, alongCurveWithin (leviCivitaConnection I M) γ V u r =
-      alongCurveWithin (leviCivitaConnection I M) γ V s r := by
-    intro r hr
-    exact alongCurveWithin_subset _ γ V hus (hu r hr)
-      (h.differentiableWithinAt_sectionCoord (hus hr)) (hcurve r (hus hr))
+      alongCurveWithin (leviCivitaConnection I M) γ V s r :=
+    fun r hr ↦ h.alongCurveWithin_subset (hu r hr) hus hr
   refine ⟨h.isGeodesicCurveOn.mono hu hus, h.contMDiffOn.mono hus, fun r hr ↦ ?_⟩
   rw [alongCurveWithin_congr _ γ _
     (Filter.mem_of_superset self_mem_nhdsWithin (hfirst ·)) (hfirst r hr),
-    alongCurveWithin_subset _ γ _ hus (hu r hr)
+    CovariantDerivative.alongCurveWithin_subset _ γ _ hus (hu r hr)
       (h.differentiableWithinAt_sectionCoord_alongCurveWithin (hus hr)) (hcurve r (hus hr))]
   have hvel : curveVelocityWithin I γ u r = curveVelocityWithin I γ s r :=
     curveVelocityWithin_subset hus (hu r hr)

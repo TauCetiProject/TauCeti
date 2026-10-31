@@ -7,7 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Spectra.SmashPow
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Module
-public import TauCeti.CategoryTheory.Monoidal.Mod.Bimodule
+public import TauCeti.CategoryTheory.Monoidal.Mod.InternalHom
+public import TauCeti.CategoryTheory.Monoidal.Mod.Symmetric
 
 /-!
 # The sphere symmetric sequence and symmetric spectra
@@ -28,9 +29,27 @@ spheres. These iterated structure maps and their laws are developed in
 `TauCeti.CategoryTheory.Monoidal.DayConvolution.Module`, through the generic
 `CategoryTheory.Mod.dayStructureMap` API.
 
+As the sphere monoid is commutative and Day convolution is closed, symmetric spectra have internal
+function spectra `Hom_S(X, Y) = (Mod.internalHom X).obj Y`: the equalizer of the two maps
+`Hom(X, Y) ⇉ Hom(S ⊗ X, Y)` of internal homs of symmetric sequences given by the actions on `X`
+and on `Y`, with the sphere acting through `X`. Spectrum maps `X ⊗ K ⟶ Y` out of the Day
+convolution of `X` with a symmetric sequence `K` are the maps of symmetric sequences
+`K ⟶ Hom_S(X, Y)` (`Mod.ihomAdjunction`).
+
 The commutative sphere action also gives a native sphere bimodule via
 `CategoryTheory.Mod.toBimod`: the right action is obtained by swapping the sphere and
 spectrum factors before applying the left action. This adapter is fully faithful.
+
+Through this adapter, symmetric spectra carry the smash product `X ∧ Y`, the balanced tensor
+product over the sphere: the coequalizer of the two actions of `S` on the Day convolution `X ⊗ Y`,
+with `S` acting through `X`. This is the generic monoidal structure
+`CategoryTheory.Mod.monoidalCategory` on modules over a commutative monoid object, with quotient
+map `CategoryTheory.Mod.tensorπ : X ⊗ Y ⟶ X ∧ Y`. Its unit is the sphere spectrum
+`Mod.regular SymmetricSequence.sphere`. As symmetric sequences form a symmetric monoidal category,
+the smash product is symmetric monoidal (`CategoryTheory.Mod.symmetricCategory`), with the twist
+`X ∧ Y ≅ Y ∧ X` induced by the symmetry of the Day convolution; commutative monoids for it are
+commutative symmetric ring spectra. This is the point-set smash product; deriving it requires
+a model structure.
 
 ## Main definitions
 
@@ -69,6 +88,24 @@ noncomputable example : IsCommMonObj SymmetricSequence.sphere := inferInstance
 `X` with an action `S ⊗ X ⟶ X` for the Day convolution product, satisfying the unit and
 associativity laws. -/
 abbrev SymmetricSpectrum := Mod SymmetricSequence.{0} SymmetricSequence.sphere
+
+/- The function spectrum `Hom_S(X, Y)` of symmetric spectra, through `Mod.internalHom`. -/
+noncomputable example (X Y : SymmetricSpectrum) : SymmetricSpectrum := (Mod.internalHom X).obj Y
+
+/- Spectrum maps `X ⊗ K ⟶ Y` are the maps of symmetric sequences `K ⟶ Hom_S(X, Y)`. -/
+noncomputable example (X : SymmetricSpectrum) : Mod.tensorLeft X ⊣ Mod.ihom X :=
+  Mod.ihomAdjunction X
+
+/- Symmetric spectra form a monoidal category under the smash product over the sphere. Day
+convolution of symmetric sequences preserves colimits on both sides, so the balanced coequalizer
+exists and is preserved by smashing. -/
+noncomputable example : MonoidalCategory SymmetricSpectrum := inferInstance
+
+/- The unit of the smash product is the sphere spectrum. -/
+example : 𝟙_ SymmetricSpectrum = Mod.regular SymmetricSequence.sphere := rfl
+
+/- The smash product of symmetric spectra is symmetric monoidal. -/
+noncomputable example : SymmetricCategory SymmetricSpectrum := inferInstance
 
 /- The native bimodule adapter applies to the actual sphere-module carrier. -/
 noncomputable example :

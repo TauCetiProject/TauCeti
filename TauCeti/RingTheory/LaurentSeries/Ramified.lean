@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.RingTheory.HahnSeries.EmbDomain
+public import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
 # Ramified levels of Laurent series
@@ -44,6 +45,8 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 * `LaurentSeries.mem_range_expand_iff`: a Laurent series is in the image of `X ↦ X ^ d` exactly
   when all its exponents are divisible by `d`.
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
+* `LaurentSeries.valuation_expand`: over a field, expansion `X ↦ X ^ d` raises the valuation to
+  the `d`-th power.
 * `FiniteField.LaurentSeries.expand_card`: over a finite field with `q` elements, the expansion
   `X ↦ X ^ q` of a Laurent series is its `q`-th power.
 * `LaurentSeries.sum_single_mul_expand_contract`: reconstruction from congruence components.
@@ -186,6 +189,20 @@ theorem expand_coe {R : Type*} [CommRing R] (d : ℕ+) (f : R⟦X⟧) :
     rw [PowerSeries.coeff_expand_of_not_dvd]
     rintro ⟨c, hc⟩
     exact hk ⟨c, by omega⟩
+
+/-- Expansion `X ↦ X ^ d` raises the `X`-adic valuation of a Laurent series to the `d`-th power:
+it multiplies the order by `d`. -/
+@[simp]
+theorem valuation_expand {K : Type*} [Field K] (d : ℕ+) (f : K⸨X⸩) :
+    Valued.v (expand K d f) = Valued.v f ^ (d : ℕ) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hf' : expand K d f ≠ 0 := (map_ne_zero_iff _ (expand_injective d)).mpr hf
+  have h := orderTop_expand d f
+  rw [← HahnSeries.order_eq_orderTop_of_ne_zero hf, ← HahnSeries.order_eq_orderTop_of_ne_zero hf',
+    ← WithTop.coe_nsmul, WithTop.coe_eq_coe] at h
+  rw [TauCeti.LaurentSeries.valuation_eq_exp_neg_order hf,
+    TauCeti.LaurentSeries.valuation_eq_exp_neg_order hf', h, ← WithZero.exp_nsmul, smul_neg]
 
 /-- Over a finite field with `q` elements, the expansion `X ↦ X ^ q` of a Laurent series is its
 `q`-th power. The modulus is given as a positive natural number `d` with `d = q`. -/
@@ -341,6 +358,13 @@ component, where it contracts back to `g`. -/
 theorem contract_expand {A : Type*} [CommSemiring A] (d : ℕ+) (g : A⸨X⸩) (r : Fin d) :
     contract d (expand A d g) r = if r = 0 then g else 0 := by
   simpa using contract_expand_mul d g 1 r
+
+/-- Multiplication by `X ^ r`, for `r < d`, moves the residue-zero component to component `r`. -/
+@[simp]
+theorem contract_single_mul_self {A : Type*} [Semiring A] (d : ℕ+) (f : A⸨X⸩) (r : Fin d) :
+    contract d (single (r : ℤ) 1 * f) r = contract d f 0 := by
+  ext k
+  simp [coeff_single_mul]
 
 /-! ### Ramified levels in rational exponents -/
 

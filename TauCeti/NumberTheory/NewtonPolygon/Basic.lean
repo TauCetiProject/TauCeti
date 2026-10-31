@@ -51,14 +51,21 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
 * `Polynomial.newtonPolygon_ne_top_iff`: if only zero has infinite valuation (for example
   over a division ring), a nonzero polynomial has a polygon whose finite domain is the
   interval from its order of vanishing at zero to its degree; in particular the polygon is
-  nonempty by `Polynomial.newtonPolygon_ne_top_of_ne_zero`.
+  nonempty by `Polynomial.newtonPolygon_ne_top_of_ne_zero`. More generally, by
+  `Polynomial.newtonPolygon_ne_top_iff_of_ne_top` and
+  `Polynomial.finiteEdges_newtonPolygon_of_ne_top`, the same holds for any valuation as soon as
+  the trailing and leading coefficients have finite valuation.
 * `Polynomial.Monic.newtonPolygon_ne_top`: a monic polynomial has a nonempty Newton polygon,
   whatever the valuation.
 * `Polynomial.newtonPolygon_natTrailingDegree` and `Polynomial.newtonPolygon_natDegree`:
-  the polygon begins at the trailing coefficient and ends at the leading coefficient.
+  the polygon begins at the trailing coefficient and ends at the leading coefficient;
+  `Polynomial.newtonPolygon_apply_zero` and `Polynomial.newtonPolygon_eq_of_natDegree_le` read
+  its heights at index zero and at any index from the degree on.
 * `Polynomial.ncard_finiteEdges_newtonPolygon`: if only zero has infinite valuation, a
   polynomial of degree `d` and order `a` of vanishing at zero has `d - a` finite unit edges,
   and by `Polynomial.finiteEdges_newtonPolygon_monomial` a monomial has none.
+* `PowerSeries.newtonPolygon_neg` and `Polynomial.newtonPolygon_neg`: negation preserves the
+  Newton polygon.
 * `PowerSeries.newtonPolygon_smul`, `PowerSeries.newtonPolygon_X_pow_mul`,
   `PowerSeries.newtonPolygon_rescale` and `PowerSeries.newtonPolygon_map`: multiplication by
   a scalar translates the heights, multiplication by `X ^ k` shifts the polygon `k` places,
@@ -148,6 +155,11 @@ theorem newtonPolygon_eq_of_order_eq {n : ℕ} (hf : IsAdmissible fun n => v (co
     rw [coeff_of_lt_order i (hn ▸ by exact_mod_cast hi), AddValuation.map_zero]
 
 variable (f)
+
+/-- Negation does not change the Newton polygon. -/
+@[simp]
+theorem newtonPolygon_neg : (-f).newtonPolygon v = f.newtonPolygon v := by
+  simp only [newtonPolygon_def, map_neg, AddValuation.map_neg]
 
 /-- Multiplying by a scalar translates the Newton polygon by the valuation of the scalar. -/
 theorem newtonPolygon_smul (c : R) :
@@ -259,6 +271,11 @@ theorem newtonPolygon_eq_top_iff : f.newtonPolygon v = ⊤ ↔ ∀ n, v (f.coeff
 
 /-! ### Elementary operations -/
 
+/-- Negation does not change the Newton polygon. -/
+@[simp]
+theorem newtonPolygon_neg : (-f).newtonPolygon v = f.newtonPolygon v := by
+  simp only [newtonPolygon_def, coeff_neg, AddValuation.map_neg]
+
 /-- Multiplying by a scalar translates the Newton polygon by the valuation of the scalar. -/
 theorem newtonPolygon_smul (c : R) :
     (c • f).newtonPolygon v = fun n => v c + f.newtonPolygon v n := by
@@ -335,24 +352,43 @@ theorem newtonPolygon_natTrailingDegree :
   lowerConvexEnvelope_eq_of_forall_lt (isAdmissible_addValuation_coeff f v) fun i hi => by
     rw [coeff_eq_zero_of_lt_natTrailingDegree hi, AddValuation.map_zero]
 
+/-- At any index `n` at least the degree, the Newton polygon is the height of the coefficient
+of `X ^ n`: the leading coefficient when `n` is the degree, and `⊤` beyond it. -/
+theorem newtonPolygon_eq_of_natDegree_le {n : ℕ} (hn : f.natDegree ≤ n) :
+    f.newtonPolygon v n = v (f.coeff n) :=
+  lowerConvexEnvelope_eq_of_forall_gt fun k hk => by
+    rw [coeff_eq_zero_of_natDegree_lt (hn.trans_lt hk), AddValuation.map_zero]
+
 /-- The Newton polygon ends at the leading coefficient. -/
 @[simp]
 theorem newtonPolygon_natDegree : f.newtonPolygon v f.natDegree = v f.leadingCoeff :=
-  lowerConvexEnvelope_eq_of_forall_gt fun k hk => by
-    rw [coeff_eq_zero_of_natDegree_lt hk, AddValuation.map_zero]
+  newtonPolygon_eq_of_natDegree_le f v le_rfl
+
+/-- At index zero the Newton polygon is the height of the constant coefficient, which may be
+infinite. -/
+@[simp]
+theorem newtonPolygon_apply_zero : f.newtonPolygon v 0 = v (f.coeff 0) :=
+  lowerConvexEnvelope_eq_of_forall_lt (isAdmissible_addValuation_coeff f v) fun _ h =>
+    absurd h (Nat.not_lt_zero _)
+
+/-- If the trailing and leading coefficients of `f` have finite valuation, the finite domain of
+the Newton polygon of `f` runs from its order of vanishing at zero to its degree. -/
+theorem newtonPolygon_ne_top_iff_of_ne_top {f : R[X]} (htr : v f.trailingCoeff ≠ ⊤)
+    (hld : v f.leadingCoeff ≠ ⊤) {n : ℕ} :
+    f.newtonPolygon v n ≠ ⊤ ↔ f.natTrailingDegree ≤ n ∧ n ≤ f.natDegree := by
+  rw [newtonPolygon_def, lowerConvexEnvelope_ne_top_iff (isAdmissible_addValuation_coeff f v)]
+  exact ⟨fun ⟨i, hin, k, hnk, hi, hk⟩ =>
+    ⟨(natTrailingDegree_le_of_ne_zero fun h => hi (h ▸ v.map_zero)).trans hin,
+      hnk.trans (le_natDegree_of_ne_zero fun h => hk (h ▸ v.map_zero))⟩,
+    fun ⟨hn, hn'⟩ => ⟨_, hn, _, hn', htr, hld⟩⟩
 
 /-- If only zero has infinite valuation, the finite domain of the Newton polygon of a nonzero
 polynomial runs from its order of vanishing at zero to its degree. Over a division ring the
 hypothesis on `v` is `AddValuation.top_iff`. -/
 theorem newtonPolygon_ne_top_iff (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (hf : f ≠ 0) {n : ℕ} :
-    f.newtonPolygon v n ≠ ⊤ ↔ f.natTrailingDegree ≤ n ∧ n ≤ f.natDegree := by
-  rw [newtonPolygon_def, lowerConvexEnvelope_ne_top_iff (isAdmissible_addValuation_coeff f v)]
-  refine ⟨fun ⟨i, hin, k, hnk, hi, hk⟩ =>
-    ⟨(natTrailingDegree_le_of_ne_zero fun h => hi (h ▸ v.map_zero)).trans hin,
-      hnk.trans (le_natDegree_of_ne_zero fun h => hk (h ▸ v.map_zero))⟩,
-    fun ⟨hn, hn'⟩ => ⟨_, hn, _, hn', ?_, ?_⟩⟩
-  · exact mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf)
-  · exact mt (hv _) (leadingCoeff_ne_zero.mpr hf)
+    f.newtonPolygon v n ≠ ⊤ ↔ f.natTrailingDegree ≤ n ∧ n ≤ f.natDegree :=
+  newtonPolygon_ne_top_iff_of_ne_top v (mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf))
+    (mt (hv _) (leadingCoeff_ne_zero.mpr hf))
 
 variable {f v} in
 /-- If only zero has infinite valuation, a nonzero polynomial has a nonempty Newton polygon.
@@ -367,6 +403,15 @@ zero. -/
 theorem Monic.newtonPolygon_ne_top (hf : f.Monic) : f.newtonPolygon v ≠ ⊤ := fun h => by
   simpa [hf.leadingCoeff] using (newtonPolygon_eq_top_iff f v).mp h f.natDegree
 
+/-- If the trailing and leading coefficients of `f` have finite valuation, the finite unit edges
+of the Newton polygon of `f` are those between its order of vanishing at zero and its degree. -/
+theorem finiteEdges_newtonPolygon_of_ne_top (htr : v f.trailingCoeff ≠ ⊤)
+    (hld : v f.leadingCoeff ≠ ⊤) :
+    finiteEdges (f.newtonPolygon v) = Set.Ico f.natTrailingDegree f.natDegree := by
+  ext n
+  simp only [mem_finiteEdges, newtonPolygon_ne_top_iff_of_ne_top v htr hld, Set.mem_Ico]
+  omega
+
 /-- If only zero has infinite valuation, the finite unit edges of the Newton polygon of a
 polynomial are those between its order of vanishing at zero and its degree. -/
 theorem finiteEdges_newtonPolygon (hv : ∀ x, v x = ⊤ → x = 0) :
@@ -374,9 +419,8 @@ theorem finiteEdges_newtonPolygon (hv : ∀ x, v x = ⊤ → x = 0) :
   rcases eq_or_ne f 0 with rfl | hf
   · ext n
     simp
-  ext n
-  simp only [mem_finiteEdges, newtonPolygon_ne_top_iff v hv hf, Set.mem_Ico]
-  omega
+  exact finiteEdges_newtonPolygon_of_ne_top f v
+    (mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf)) (mt (hv _) (leadingCoeff_ne_zero.mpr hf))
 
 /-- If only zero has infinite valuation, a polynomial of degree `d` and order of vanishing `a`
 at zero has exactly `d - a` finite unit edges. -/

@@ -13,6 +13,11 @@ public import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import Mathlib.RingTheory.Flat.Localization
+import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
+import TauCeti.Data.ENat.Basic
+import TauCeti.RingTheory.Localization.Module
 
 /-!
 # Basic depth of modules
@@ -43,10 +48,23 @@ The regular-sequence transfer lemmas for linear maps live in
   `ModuleCat.depth_min_snd_fst_sub_one_le_trd_right` and
   `ModuleCat.depth_min_fst_trd_le_snd_right`, transported through
   `ModuleCat.shortComplexOfConj_shortExact`.
+* `ModuleCat.depth_trd_add_one_le_fst_of_comp_mk₀_eq_zero`: for a short exact sequence
+  `0 → X₁ → X₂ → X₃ → 0` whose first map induces zero on `Ext N - n` for every `n`, the depth
+  of `X₁` is at least one more than that of `X₃`. This sharpens Mathlib's
+  `ModuleCat.depth_min_snd_trd_add_one_le_fst_right`.
+* `IsLocalRing.depth_prod` and `IsLocalRing.depth_eq_depth_self_of_free`: the depth of a product
+  is the minimum of the depths, so a nonzero finite free module has the depth of the ring.
+* `IsLocalRing.depth_add_one_le_depth_ker`: for a free presentation `0 → K → F → M → 0` with
+  `K` finite free and `K ⊆ 𝔪 F`, `depth M + 1 ≤ depth K`.
 * `IsLocalRing.depth_quotSMulTop_succ_eq_depth`: dividing a finite module by an `M`-regular element
   of the maximal ideal lowers the depth by exactly one.
+* `IsLocalRing.depth_quotSMulTop_eq_of_surjective` and
+  `IsLocalRing.depth_eq_add_one_of_surjective`: the same statements for a module `Q` presented as
+  the target of a surjection with kernel `x M`.
 * `IsLocalRing.depth_add_length_eq_depth_of_isRegular`: dividing a finite module by an `M`-regular
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
+* `IsLocalRing.depth_eq_depth_of_surjective`: along a surjective homomorphism of local rings
+  `R → T`, a finite `T`-module has the same depth over `R` as over `T`.
 * `RingEquiv.depth_self_eq`: isomorphic Noetherian local rings have the same depth over
   themselves.
 * `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target
@@ -65,6 +83,8 @@ The regular-sequence transfer lemmas for linear maps live in
   combines the depth-zero criterion with
   `TauCeti.maximalIdeal_mem_associatedPrimes_localizedModule_iff` from
   `TauCeti.RingTheory.Ideal.AssociatedPrime.Localization`.
+* `TauCeti.depth_localizedModule_quotSMulTop_add_one`: dividing a finite module by an `M`-regular
+  element of a prime `p` lowers the depth of the localization at `p` by exactly one.
 
 The two quotient-depth results, together with Mathlib's
 `Module.supportDim_add_length_eq_supportDim_of_isRegular`, make Cohen–Macaulayness stable under
@@ -97,6 +117,36 @@ theorem RingTheory.Sequence.IsRegular.length_le_supportDim {R : Type*} [CommRing
     (Module.supportDim_ne_bot_of_nontrivial R (M ⧸ Ideal.ofList rs • (⊤ : Submodule R M)))
   rw [← Module.supportDim_add_length_eq_supportDim_of_isRegular rs reg, ← he]
   exact_mod_cast le_add_self
+
+namespace ModuleCat
+
+open CategoryTheory Abelian
+
+variable {R : Type u} [CommRing R] [Small.{v} R]
+
+/-- In a short exact sequence `0 → X₁ → X₂ → X₃ → 0` whose first map induces the zero map
+`Ext N X₁ n → Ext N X₂ n` for every `n`, the depth of `X₁` with respect to `N` is at least one
+more than that of `X₃`: the connecting maps `Ext N X₃ n → Ext N X₁ (n + 1)` are surjective. -/
+theorem depth_trd_add_one_le_fst_of_comp_mk₀_eq_zero (N : ModuleCat.{v} R)
+    {S : ShortComplex (ModuleCat.{v} R)} (hS : S.ShortExact)
+    (h : ∀ (n : ℕ) (x : Ext N S.X₁ n), x.comp (Ext.mk₀ S.f) (add_zero n) = 0) :
+    N.depth S.X₃ + 1 ≤ N.depth S.X₁ := by
+  apply le_sSup
+  intro i hi
+  match i with
+  | 0 =>
+    -- `Hom (N, X₁) → Hom (N, X₂)` is injective, and zero by assumption.
+    exact ⟨fun x y ↦ Ext.postcomp_mk₀_injective_of_mono N S.f (hf := hS.mono_f)
+      ((h 0 x).trans (h 0 y).symm)⟩
+  | i + 1 =>
+    have hi' : (i : ℕ∞) < N.depth S.X₃ := by simpa using hi
+    have := subsingleton_ext_of_lt_depth hi'
+    refine ⟨fun x y ↦ ?_⟩
+    obtain ⟨x₃, rfl⟩ := Ext.covariant_sequence_exact₁ N hS x (h _ x) rfl
+    obtain ⟨y₃, rfl⟩ := Ext.covariant_sequence_exact₁ N hS y (h _ y) rfl
+    rw [Subsingleton.elim x₃ y₃]
+
+end ModuleCat
 
 namespace Ideal
 
@@ -225,6 +275,61 @@ theorem depth_min_fst_trd_le_snd_of_exact (first : M →ₗ[R] N) (second : N �
 
 end Exact
 
+section Free
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
+
+/-- The depth of a product of two modules over a local ring is the minimum of their depths. -/
+@[simp]
+theorem depth_prod (M N : Type v) [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] :
+    depth (ModuleCat.of R (M × N)) = depth (ModuleCat.of R M) ⊓ depth (ModuleCat.of R N) := by
+  have hM := depth_min_snd_trd_add_one_le_fst_of_exact (LinearMap.inl R M N)
+    (LinearMap.snd R M N) Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective
+  have hN := depth_min_snd_trd_add_one_le_fst_of_exact (LinearMap.inr R M N)
+    (LinearMap.fst R M N) Function.Exact.inr_fst LinearMap.inr_injective LinearMap.fst_surjective
+  exact le_antisymm (le_inf (ENat.le_of_inf_le_of_inf_le hM hN) (ENat.le_of_inf_le_of_inf_le hN hM))
+    (depth_min_fst_trd_le_snd_of_exact (LinearMap.inl R M N) (LinearMap.snd R M N)
+      Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective)
+
+/-- A nonzero finite free module over a local ring has the same depth as the ring. -/
+theorem depth_eq_depth_self_of_free (M : Type v) [AddCommGroup M] [Module R M] [Module.Free R M]
+    [Module.Finite R M] [Nontrivial M] :
+    depth (ModuleCat.of R M) = depth (ModuleCat.of R R) := by
+  have key (k : ℕ) (hk : 0 < k) :
+      depth (ModuleCat.of R (Fin k → R)) = depth (ModuleCat.of R R) := by
+    induction k, hk using Nat.le_induction with
+    | base => exact depth_eq_of_linearEquiv (LinearEquiv.funUnique (Fin 1) R R)
+    | succ k hk ih =>
+      rw [← depth_eq_of_linearEquiv (Fin.consLinearEquiv R fun _ : Fin (k + 1) ↦ R), depth_prod,
+        ih, inf_idem]
+  let b := Module.Free.chooseBasis R M
+  have := b.index_nonempty
+  rw [depth_eq_of_linearEquiv (b.equivFun.trans
+    (LinearEquiv.funCongrLeft R R (Fintype.equivFin _).symm)), key _ Fintype.card_pos]
+
+open CategoryTheory Abelian in
+/-- If `0 → K → F → M → 0` is a free presentation with `K` finite free and `K ⊆ 𝔪 F`, then
+`depth M + 1 ≤ depth K`. -/
+theorem depth_add_one_le_depth_ker {F M : Type v} [AddCommGroup F] [Module R F]
+    [AddCommGroup M] [Module R M] {g : F →ₗ[R] M} (hg : Function.Surjective g)
+    [Module.Free R (LinearMap.ker g)] [Module.Finite R (LinearMap.ker g)]
+    (hker : LinearMap.ker g ≤ maximalIdeal R • ⊤) :
+    depth (ModuleCat.of R M) + 1 ≤ depth (ModuleCat.of R (LinearMap.ker g)) := by
+  have hI : maximalIdeal R ≤ Module.annihilator R (Shrink.{v} (R ⧸ maximalIdeal R)) := by
+    rw [(Shrink.linearEquiv R _).annihilator_eq, Ideal.annihilator_quotient]
+  have hrange : LinearMap.range (LinearMap.ker g).subtype ≤ maximalIdeal R • ⊤ := by
+    rwa [Submodule.range_subtype]
+  have key (n : ℕ) (x : Ext (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R)))
+      (ModuleCat.of R (LinearMap.ker g)) n) :
+      x.comp (Ext.mk₀ (ModuleCat.ofHom (LinearMap.ker g).subtype)) (add_zero n) = 0 :=
+    Ext.comp_mk₀_eq_zero_of_range_le_smul_top hI _ hrange x
+  have h := ModuleCat.depth_trd_add_one_le_fst_of_comp_mk₀_eq_zero
+    (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) (LinearMap.shortExact_shortComplexKer hg) key
+  unfold IsLocalRing.depth Ideal.depth
+  exact h
+
+end Free
+
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
   {M : Type v} [AddCommGroup M] [Module R M]
 
@@ -268,6 +373,24 @@ theorem depth_quotSMulTop_succ_eq_depth [IsNoetherianRing R] [Module.Finite R M]
   · exact ⟨_, [], IsRegular.nil R _, by simp, rfl⟩
   · rintro _ ⟨rs, reg', mem, rfl⟩
     exact le_sSup ⟨x :: rs, reg'.cons reg, List.forall_mem_cons.2 ⟨hx, mem⟩, by simp⟩
+
+/-- If `g : M → Q` is a surjective linear map with kernel `x M`, then `M ⧸ x M` and `Q` have the
+same depth. -/
+theorem depth_quotSMulTop_eq_of_surjective {Q : Type v} [AddCommGroup Q] [Module R Q] {x : R}
+    (g : M →ₗ[R] Q) (hg : Function.Surjective g) (hker : LinearMap.ker g = x • ⊤) :
+    depth (ModuleCat.of R (QuotSMulTop x M)) = depth (ModuleCat.of R Q) :=
+  depth_eq_of_linearEquiv <| (Submodule.quotEquivOfEq _ _ hker.symm).trans
+    (g.quotKerEquivOfSurjective hg)
+
+/-- Over a Noetherian local ring, let `x` in the maximal ideal be regular on a finite module `M`
+and let `g : M → Q` be a surjective linear map with kernel `x M`. Then the depth of `M` is one
+more than the depth of `Q`. This is `IsLocalRing.depth_quotSMulTop_succ_eq_depth` with the
+quotient replaced by an isomorphic module. -/
+theorem depth_eq_add_one_of_surjective [IsNoetherianRing R] [Module.Finite R M] {Q : Type v}
+    [AddCommGroup Q] [Module R Q] {x : R} (hx : x ∈ maximalIdeal R) (reg : IsSMulRegular M x)
+    (g : M →ₗ[R] Q) (hg : Function.Surjective g) (hker : LinearMap.ker g = x • ⊤) :
+    depth (ModuleCat.of R M) = depth (ModuleCat.of R Q) + 1 := by
+  rw [← depth_quotSMulTop_eq_of_surjective g hg hker, depth_quotSMulTop_succ_eq_depth reg hx]
 
 /-- Dividing a finite module `M` over a Noetherian local ring by an `M`-regular sequence
 `r₁, …, rₙ` lowers the depth by exactly `n`. -/
@@ -392,6 +515,44 @@ theorem depth_hom_ge {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing
     exact le_sSup ⟨scalars.take (predecessor + 1), homRegular, prefixMembership,
       by simp [List.length_take, Nat.min_eq_left length]⟩
 
+/-- Depth is unchanged under restriction of scalars along a surjective homomorphism of local rings
+`R → T`: a finite `T`-module `M` has the same depth over `R` as over `T`. The `M`-regular
+sequences in the maximal ideal of `T` are exactly the images of those in the maximal ideal of
+`R`. -/
+theorem depth_eq_depth_of_surjective [IsNoetherianRing R] {T : Type*} [CommRing T]
+    [IsLocalRing T] [Algebra R T] [Small.{v} T] [Module T M] [IsScalarTower R T M]
+    [Module.Finite T M] (hsurj : Function.Surjective (algebraMap R T)) :
+    depth (ModuleCat.of R M) = depth (ModuleCat.of T M) := by
+  have : IsLocalHom (algebraMap R T) := .of_surjective _ hsurj
+  have : IsNoetherianRing T := isNoetherianRing_of_surjective R T (algebraMap R T) hsurj
+  have : Module.Finite R T := .of_surjective (Algebra.linearMap R T) hsurj
+  have : Module.Finite R M := .trans T M
+  cases subsingleton_or_nontrivial M
+  · rw [depth_eq_top_of_subsingleton, depth_eq_top_of_subsingleton]
+  -- A sequence in `R` is `M`-regular in `𝔪_R` exactly when its image is `M`-regular in `𝔪_T`.
+  have key (rs : List R) : (IsRegular M (rs.map (algebraMap R T)) ∧
+      ∀ t ∈ rs.map (algebraMap R T), t ∈ maximalIdeal T) ↔
+      (IsRegular M rs ∧ ∀ r ∈ rs, r ∈ maximalIdeal R) := by
+    have hmem : (∀ t ∈ rs.map (algebraMap R T), t ∈ maximalIdeal T) ↔
+        ∀ r ∈ rs, r ∈ maximalIdeal R := by
+      simp only [List.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+      exact forall₂_congr fun r _ ↦ by rw [← Ideal.mem_comap, maximalIdeal_comap]
+    rw [hmem, and_congr_left_iff]
+    intro hm
+    rw [isRegular_iff_isWeaklyRegular_of_subset_maximalIdeal hm,
+      isRegular_iff_isWeaklyRegular_of_subset_maximalIdeal (hmem.2 hm),
+      isWeaklyRegular_map_algebraMap_iff]
+  rw [depth_eq_sSup_length_isRegular, depth_eq_sSup_length_isRegular]
+  congr 1
+  ext n
+  refine ⟨fun ⟨rs, h, hm, hn⟩ ↦ ?_, fun ⟨ts, h, hm, hn⟩ ↦ ?_⟩
+  · obtain ⟨h, hm⟩ := (key rs).2 ⟨h, hm⟩
+    exact ⟨_, h, hm, by rw [List.length_map, hn]⟩
+  · obtain ⟨rs, rfl⟩ : ∃ rs : List R, rs.map (algebraMap R T) = ts :=
+      ⟨ts.map (Function.surjInv hsurj), by simp⟩
+    obtain ⟨h, hm⟩ := (key rs).1 ⟨h, hm⟩
+    exact ⟨rs, h, hm, by rw [← hn, List.length_map]⟩
+
 /-- In a Noetherian local ring `R` of depth at least two, the maximal ideal is not an associated
 prime of `R ⧸ (b)` for a nonzerodivisor `b`: if `𝔪 c ⊆ (b)`, then `c ∈ (b)`. -/
 theorem mem_span_singleton_of_forall_mul_mem_of_two_le_depth {R : Type u} [CommRing R]
@@ -471,5 +632,21 @@ theorem one_le_depth_localizedModule_iff {p : Ideal R} [p.IsPrime] :
     1 ≤ depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) ↔
       p ∉ associatedPrimes R M := by
   rw [Order.one_le_iff_ne_zero, Ne, depth_localizedModule_eq_zero_iff]
+
+
+/-- Let `M` be a finite module over a Noetherian ring and `a` an `M`-regular element of a prime
+`p`. Dividing by `a` lowers the depth of the localization at `p` by exactly one:
+`depth (M ⧸ a M)_p + 1 = depth M_p`. -/
+theorem depth_localizedModule_quotSMulTop_add_one [Module.Finite R M] {a : R}
+    (reg : IsSMulRegular M a) (p : Ideal R) [p.IsPrime] (ha : a ∈ p) :
+    depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl (QuotSMulTop a M))) +
+      1 = depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) := by
+  let Rₚ := Localization.AtPrime p
+  have hmax : algebraMap R Rₚ a ∈ maximalIdeal Rₚ :=
+    (IsLocalization.AtPrime.to_map_mem_maximal_iff Rₚ p a).2 ha
+  -- Localization commutes with the quotient by `a`.
+  rw [IsLocalRing.depth_eq_of_linearEquiv (localizedQuotSMulTopEquiv M a p.primeCompl)]
+  exact depth_quotSMulTop_succ_eq_depth (reg.of_isLocalizedModule (S := Rₚ) p.primeCompl
+    (LocalizedModule.mkLinearMap p.primeCompl M)) hmax
 
 end TauCeti

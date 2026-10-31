@@ -138,33 +138,6 @@ theorem algebraicApproximationExponent_zero (ξ : ℝ) : algebraicApproximationE
 
 /-! ### Comparison with Mahler's exponent -/
 
-/-- The coefficients of `P` in degrees `0, 1, …, n`, split into the constant term and the
-coefficients of `X, X ^ 2, …, X ^ n`. -/
-private def coeffVec (n : ℕ) (P : ℤ[X]) : ℤ × (Fin n → ℤ) :=
-  (P.coeff 0, fun j ↦ P.coeff (j.val + 1))
-
-/-- For `P` of degree at most `n`, the linear form of `coeffVec n P` at the powers of `z` is
-`P(z)`. -/
-private theorem coeffVec_linearForm {A : Type*} [CommRing A] {n : ℕ} {P : ℤ[X]}
-    (hP : P.natDegree ≤ n) (z : A) :
-    ((coeffVec n P).1 : A) + ∑ j, ((coeffVec n P).2 j : A) * z ^ (j.val + 1) = aeval z P := by
-  simp only [coeffVec]
-  rw [aeval_eq_sum_range' (Nat.lt_succ_of_le hP), Finset.sum_range_succ',
-    Fin.sum_univ_eq_sum_range (fun j ↦ (P.coeff (j + 1) : A) * z ^ (j + 1)) n]
-  simp [zsmul_eq_mul, add_comm]
-
-/-- The sup norm of `coeffVec n P` is at most the coefficient sup norm of `P`. -/
-private theorem norm_coeffVec_le (n : ℕ) (P : ℤ[X]) : ‖coeffVec n P‖ ≤ P.supNorm :=
-  max_le (P.le_supNorm 0) ((pi_norm_le_iff_of_nonneg P.supNorm_nonneg).2 fun _ ↦ P.le_supNorm _)
-
-/-- Polynomials of degree at most `n` are determined by `coeffVec n`. -/
-private theorem coeffVec_injOn (n : ℕ) : Set.InjOn (coeffVec n) {P | P.natDegree ≤ n} := by
-  intro P hP Q hQ h
-  refine (ext_iff_natDegree_le hP hQ).2 fun i hi ↦ ?_
-  rcases i with _ | i
-  · exact congrArg Prod.fst h
-  · exact congrFun (congrArg Prod.snd h) ⟨i, by omega⟩
-
 /-- If infinitely many algebraic numbers of degree at most `n` approximate `ξ` with exponent `w`,
 then for every `0 ≤ w' < w` infinitely many integer polynomials `P` of degree at most `n` satisfy
 `0 < |P(ξ)| ≤ H(P) ^ (-w')`: the primitive minimal polynomials of all but finitely many of the

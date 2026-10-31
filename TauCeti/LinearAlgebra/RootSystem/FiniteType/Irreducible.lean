@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.SimpleGraph.Connected
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.InvariantSubmodule
@@ -107,19 +107,18 @@ theorem connected_diagramGraph_cartanMatrix {t : DynkinType} (ht : t.Valid) :
   | D n =>
       have hn := valid_D.mp ht
       have hconn : (diagramGraph (CartanMatrix.D n)).Connected := by
-        refine SimpleGraph.connected_fin_of_exists_adj_lt (by omega) fun i hi ↦ ?_
+        refine SimpleGraph.connected_of_exists_adj_lt ⟨0, by omega⟩ fun i hi ↦ ?_
+        replace hi : (i : ℕ) ≠ 0 := fun h ↦ hi (Fin.ext h)
         by_cases hlast : (i : ℕ) = n - 1
         · let j : Fin n := ⟨n - 3, by omega⟩
           have hji : j = ⟨n - 3, by omega⟩ := rfl
-          refine ⟨j, ?_, hji ▸ adj_fork_D hn i hlast⟩
-          simp only [j]
-          omega
+          exact ⟨j, Fin.mk_lt_of_lt_val (by omega), hji ▸ adj_fork_D hn i hlast⟩
         · let j : Fin n := ⟨(i : ℕ) - 1, by omega⟩
           have hji : (⟨(j : ℕ) + 1, by simp [j]; omega⟩ : Fin n) = i := by
             apply Fin.ext
             simp [j]
             omega
-          exact ⟨j, by simp [j]; omega, hji ▸ adj_succ_D hn j (by simp [j]; omega)⟩
+          exact ⟨j, Fin.mk_lt_of_lt_val (by omega), hji ▸ adj_succ_D hn j (by simp [j]; omega)⟩
       simpa only [rank_D, cartanMatrix_D] using hconn
   | E6 => simpa only [rank_E6, cartanMatrix_E6] using
       (SimpleGraph.connected_iff_exists_forall_reachable
@@ -131,10 +130,10 @@ theorem connected_diagramGraph_cartanMatrix {t : DynkinType} (ht : t.Valid) :
       (SimpleGraph.connected_iff_exists_forall_reachable
         (diagramGraph (CartanMatrix.E 8))).2 ⟨3, by decide⟩
   | F4 => simpa only [rank_F4, cartanMatrix_F4] using
-      (SimpleGraph.connected_fin_of_exists_adj_lt (by decide) (by decide) :
+      (SimpleGraph.connected_of_exists_adj_lt 0 (by decide) :
         (diagramGraph CartanMatrix.F₄).Connected)
   | G2 => simpa only [rank_G2, cartanMatrix_G2] using
-      (SimpleGraph.connected_fin_of_exists_adj_lt (by decide) (by decide) :
+      (SimpleGraph.connected_of_exists_adj_lt 0 (by decide) :
         (diagramGraph CartanMatrix.G₂.transpose).Connected)
 
 end DynkinType

@@ -22,6 +22,9 @@ the map `(r, b) ↦ r • 1 + b` identifies its external ℓ¹ unitization with 
 subalgebra `Algebra.adjoin 𝕜 (B : Set A) = B + 𝕜 1` inside `A`. The identification and its
 inverse are bounded; the inherited norm need not equal the ℓ¹ norm.
 
+The ℓ¹ unitization of a commutative normed algebra is moreover a commutative normed ring
+(`WithLp.instUnitizationNormedCommRing`).
+
 No normalization of the norm of the identity is assumed. The forward map is bounded by
 `max ‖(1 : A)‖ 1`, so the results apply to any complete nontrivially normed scalar field.
 
@@ -142,3 +145,15 @@ theorem unitizationContinuousAlgEquiv_symm_apply (hB : IsClosed (B : Set A))
 end NontriviallyNormedField
 
 end NonUnitalSubalgebra
+
+namespace WithLp
+
+variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedCommRing A] [NormedSpace 𝕜 A]
+  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+
+/-- The ℓ¹ unitization of a commutative normed algebra is a commutative normed ring. -/
+noncomputable instance instUnitizationNormedCommRing :
+    NormedCommRing (WithLp 1 (Unitization 𝕜 A)) where
+  mul_comm x y := (unitizationAlgEquiv 𝕜).injective <| by simp [mul_comm]
+
+end WithLp

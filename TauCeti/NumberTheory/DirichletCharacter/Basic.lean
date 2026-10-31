@@ -236,6 +236,24 @@ theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n :
     (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
 
+/-- The product character at the least common multiple of the levels is the pointwise product
+on natural numbers, including the nonunits. -/
+@[simp] theorem mul_natCast {R : Type*} [CommMonoidWithZero R] {M N : ℕ}
+    (χ : DirichletCharacter R M) (ψ : DirichletCharacter R N) (n : ℕ) :
+    χ.mul ψ n = χ n * ψ n := by
+  by_cases hn : n.Coprime (Nat.lcm M N)
+  · rw [DirichletCharacter.mul, MulChar.mul_apply,
+      changeLevel_natCast_of_coprime _ _ hn, changeLevel_natCast_of_coprime _ _ hn]
+  · have hzero : χ.mul ψ n = 0 :=
+      (χ.mul ψ).map_nonunit (by rwa [ZMod.isUnit_iff_coprime])
+    rw [hzero]
+    have hbad : ¬ n.Coprime M ∨ ¬ n.Coprime N := by
+      by_contra! h
+      exact hn ((h.1.mul_right h.2).of_dvd_right (Nat.lcm_dvd_mul M N))
+    rcases hbad with h | h
+    · rw [χ.map_nonunit (by rwa [ZMod.isUnit_iff_coprime]), zero_mul]
+    · rw [ψ.map_nonunit (by rwa [ZMod.isUnit_iff_coprime]), mul_zero]
+
 /-- **A character is trivial modulo a multiple of its conductor.** If the conductor of `χ`
 divides `d`, then `χ a = 1` for every integer `a` prime to the level with `a ≡ 1 (mod d)`. The
 divisor `d` need not divide the level. -/

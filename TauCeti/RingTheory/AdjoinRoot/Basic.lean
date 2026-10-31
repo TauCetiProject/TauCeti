@@ -30,6 +30,8 @@ polynomial ring `R[X]/(X ^ n)`.
   evaluation of `p` at the image of the root.
 * `AdjoinRoot.root_X_pow_sub_one_pow`: the class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of
   unity.
+* `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
+  of `a`, over any commutative ring. Mathlib states this only over a field.
 * `AdjoinRoot.mk_modByMonic`: for any relator, a polynomial and its remainder have the same
   class.
 * `AdjoinRoot.exists_degree_lt_mk_eq`, `AdjoinRoot.mk_eq_mk_iff_of_degree_lt`: for a monic
@@ -122,6 +124,12 @@ theorem algHom_mk {g : R[X]} {B F : Type*} [Semiring B] [Algebra R B] [FunLike F
 @[simp]
 theorem root_X_pow_sub_one_pow (n : ℕ) : root (X ^ n - 1 : R[X]) ^ n = 1 := by
   rw [← sub_eq_zero, ← mk_X, ← map_pow, ← map_one (mk _), ← map_sub, mk_self]
+
+/-- The class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root of `a`. Mathlib's
+`root_X_pow_sub_C_pow` is the same statement over a field. -/
+@[simp]
+theorem root_X_pow_sub_C_pow (n : ℕ) (a : R) : root (X ^ n - C a) ^ n = of _ a := by
+  rw [← sub_eq_zero, ← eval₂_root, eval₂_sub, eval₂_C, eval₂_pow, eval₂_X]
 
 /-- For any relator `g`, the remainder `p %ₘ g` has the same class as `p` in
 `AdjoinRoot g`. -/

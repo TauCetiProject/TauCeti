@@ -9,6 +9,7 @@ public import Mathlib.Order.Closure
 public import Mathlib.RingTheory.Nullstellensatz
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.Algebra.MvPolynomial.Monad
+import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.LinearAlgebra.Pi
 import Mathlib.RingTheory.Finiteness.Cardinality
 
@@ -31,7 +32,17 @@ A box `∏ᵢ sᵢ` whose sides are infinite subsets of `K` is Zariski dense, si
 polynomial vanishes on it; for instance the closed half-line `[0, ∞)` is Zariski dense in `ℝ`.
 Polynomial maps send the closure of a set into the closure of its image, and over finitely many
 coordinates an invertible `K`-linear change of coordinates commutes with the closure and
-preserves closedness.
+preserves closedness. Extension by zero along an injective map of coordinate types, such as the
+zero-padding of coefficient vectors when a degree bound is raised, also commutes with the closure
+and preserves and reflects closedness, for any number of coordinates; the padding coordinates
+vanish on the closure.
+
+Over an infinite field, a point that is the limit at `t = 0` of a family `x + t • v` lying in `S`
+for `t ≠ 0` is in the Zariski closure of `S`: a polynomial vanishing on `S` restricts to a
+one-variable polynomial with infinitely many roots, so it also vanishes at `t = 0`. This is the
+algebraic form of a degeneration argument. The analogue for the usual closure needs a topological
+field in which `0` is not isolated: then `x` is the limit of the points `x + t • v` as `t → 0` with
+`t ≠ 0`, by continuity of `t ↦ x + t • v`. Over a discrete field, for instance, it fails.
 
 ## Main definitions and results
 
@@ -42,6 +53,10 @@ preserves closedness.
 * `MvPolynomial.image_zariskiClosure_subset_zariskiClosure_image`: polynomial maps are
   continuous for the Zariski closure.
 * `MvPolynomial.zariskiClosure_image_linearEquiv`: invariance under linear coordinate changes.
+* `MvPolynomial.zariskiClosure_image_extendByZero`: invariance under extension by zero along an
+  injective map of coordinate types.
+* `MvPolynomial.mem_zeroLocus_vanishingIdeal_of_forall_add_smul_mem`: the Zariski closure of a set
+  containing a punctured line contains the missing point.
 -/
 
 public section
@@ -169,5 +184,96 @@ theorem zariskiClosure_isClosed_image_linearEquiv_iff [Finite σ]
     (zariskiClosure K).IsClosed (e '' S) ↔ (zariskiClosure K).IsClosed S := by
   rw [ClosureOperator.isClosed_iff_closure_le, ClosureOperator.isClosed_iff_closure_le,
     zariskiClosure_image_linearEquiv, Set.image_subset_image_iff e.injective]
+
+section ExtendByZero
+
+variable (s : σ → τ)
+
+/-- Every point in the Zariski closure of a set extended by zero along `s : σ → τ` vanishes at
+the coordinates outside the range of `s`. -/
+theorem apply_eq_zero_of_mem_zariskiClosure_image_extendByZero {S : Set (σ → K)} {x : τ → K}
+    (hx : x ∈ zariskiClosure k (Function.ExtendByZero.linearMap K K s '' S)) {t : τ}
+    (ht : t ∉ Set.range s) : x t = 0 := by
+  have h := mem_zariskiClosure_iff.1 hx (X t) <| by
+    rintro _ ⟨y, -, rfl⟩
+    simpa using Function.extend_apply' y (0 : τ → K) t ht
+  simpa using h
+
+/-- For injective `s : σ → τ`, extension by zero along `s` commutes with the Zariski closure. No
+finiteness of the coordinates is needed. -/
+theorem zariskiClosure_image_extendByZero {s : σ → τ} (hs : Function.Injective s)
+    (S : Set (σ → K)) :
+    zariskiClosure k (Function.ExtendByZero.linearMap K K s '' S) =
+      Function.ExtendByZero.linearMap K K s '' zariskiClosure k S := by
+  apply subset_antisymm
+  · intro x hx
+    refine ⟨x ∘ s, ?_, ?_⟩
+    · -- Restricting to the coordinates in the range of `s` is a polynomial map inverting the
+      -- extension by zero.
+      have h := image_zariskiClosure_subset_zariskiClosure_image (k := k) (X ∘ s)
+        (Function.ExtendByZero.linearMap K K s '' S) ⟨x, hx, rfl⟩
+      simpa [Set.image_image, Function.comp_def, hs.extend_apply] using h
+    · ext t
+      by_cases ht : t ∈ Set.range s
+      · obtain ⟨i, rfl⟩ := ht
+        simp [hs.extend_apply]
+      · simp [Function.extend_apply' _ _ t (by simpa using ht),
+          apply_eq_zero_of_mem_zariskiClosure_image_extendByZero s hx ht]
+  · -- Extension by zero is the polynomial map with coordinates `X i` and `0`.
+    have h := image_zariskiClosure_subset_zariskiClosure_image (k := k)
+      (Function.extend s X 0) S
+    have he : (fun (x : σ → K) t => aeval x (Function.extend s (X (R := k)) 0 t)) =
+        Function.ExtendByZero.linearMap K K s := by
+      funext x t
+      rw [Function.apply_extend (aeval x), Function.ExtendByZero.linearMap_apply]
+      congr 1
+      funext i
+      simp
+    rwa [he] at h
+
+/-- For injective `s : σ → τ`, extension by zero along `s` preserves and reflects Zariski
+closedness. -/
+theorem zariskiClosure_isClosed_image_extendByZero_iff {s : σ → τ} (hs : Function.Injective s)
+    {S : Set (σ → K)} :
+    (zariskiClosure k).IsClosed (Function.ExtendByZero.linearMap K K s '' S) ↔
+      (zariskiClosure k).IsClosed S := by
+  rw [ClosureOperator.isClosed_iff_closure_le, ClosureOperator.isClosed_iff_closure_le,
+    zariskiClosure_image_extendByZero hs, Set.image_subset_image_iff]
+  exact Function.extend_injective hs (0 : τ → K)
+
+end ExtendByZero
+
+section PuncturedLine
+
+open Polynomial
+
+variable [Infinite K]
+
+/-- Over an infinite field, a point `x` lies in the Zariski closure of any set `S` containing the
+points `x + t • v` for all `t ≠ 0`. -/
+theorem mem_zeroLocus_vanishingIdeal_of_forall_add_smul_mem {S : Set (σ → K)} {x v : σ → K}
+    (h : ∀ t : K, t ≠ 0 → x + t • v ∈ S) : x ∈ zeroLocus K (vanishingIdeal k S) := by
+  refine mem_zeroLocus_iff.2 fun p hp => ?_
+  -- The restriction of `p` to the line through `x` in direction `v`, as a polynomial in `t`.
+  set Q : K[X] := aeval (fun s => Polynomial.C (x s) + Polynomial.C (v s) * Polynomial.X) p
+  have hQ (t : K) : Q.eval t = aeval (x + t • v) p := by
+    have := congrArg (· p) (comp_aeval (R := k)
+      (fun s => Polynomial.C (x s) + Polynomial.C (v s) * Polynomial.X)
+      ((Polynomial.aeval t).restrictScalars k))
+    simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply] at this
+    rw [Polynomial.coe_aeval_eq_eval] at this
+    rw [this]
+    congr 2
+    funext s
+    simp only [Polynomial.eval_add, Polynomial.eval_mul, Polynomial.eval_C, Polynomial.eval_X,
+      Pi.add_apply, Pi.smul_apply, smul_eq_mul, mul_comm]
+  have hQ0 : Q = 0 := by
+    refine Polynomial.eq_zero_of_infinite_isRoot Q
+      ((Set.finite_singleton (0 : K)).infinite_compl.mono fun t ht => ?_)
+    rw [Set.mem_ofPred_eq, IsRoot, hQ]
+    exact mem_vanishingIdeal_iff.1 hp _ (h t ht)
+  simpa [hQ0] using (hQ 0).symm
+
+end PuncturedLine
 
 end MvPolynomial
