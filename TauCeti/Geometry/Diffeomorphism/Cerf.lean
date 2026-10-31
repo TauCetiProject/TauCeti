@@ -30,7 +30,7 @@ injective in every dimension (`TauCeti.joined_orthogonalToDiffSphere_iff`): two 
 transformations of `ℝⁿ⁺¹` are isotopic as diffeomorphisms of `Sⁿ` exactly when they have the same
 determinant. A path of diffeomorphisms is a homotopy of maps, because evaluation is continuous for
 the weak Whitney topology, and an orthogonal transformation acts on the reduced homology
-`H̃ₙ(Sⁿ; ℤ) ≅ ℤ` by the sign of its determinant; conversely matrices of equal determinant are
+`Hₙ(Sⁿ; ℤ) ≅ ℤ` by the sign of its determinant; conversely matrices of equal determinant are
 joined in the orthogonal group (`TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq`). So `Diff(Sⁿ)`
 is never path-connected (`TauCeti.not_pathConnectedSpace_diff_sphere`), and Cerf's theorem is
 equivalent to `Diff(S³)` having exactly two path components
@@ -102,12 +102,12 @@ theorem det_eq_of_joined_orthogonalToDiffSphere {A B : Matrix.orthogonalGroup (F
       continuous_toFun := continuous_eval.comp (γ.continuous.prodMap continuous_id)
       map_zero_left := fun x ↦ Subtype.ext (by simp [eA])
       map_one_left := fun x ↦ Subtype.ext (by simp [eB]) }
-  -- The two maps act on `H̃ₙ(Sⁿ; ℤ)` by the signs of the determinants.
+  -- The two maps act on reduced homology `Hₙ(Sⁿ; ℤ)` by the signs of the determinants.
   have hH := reducedSingularHomologyFunctor_map_eq_of_homotopy (ModuleCat.of ℤ ℤ) H n
   rw [reducedSingularHomologyFunctor_map_unitSphereMap _ finrank_euclideanSpace_fin eA,
     reducedSingularHomologyFunctor_map_unitSphereMap _ finrank_euclideanSpace_fin eB,
     det_orthogonalGroupToLinearIsometryEquiv, det_orthogonalGroupToLinearIsometryEquiv] at hH
-  -- Read both sides through the isomorphism `H̃ₙ(Sⁿ; ℤ) ≅ ℤ` and evaluate at `1`.
+  -- Read both sides through the reduced-homology isomorphism `Hₙ(Sⁿ; ℤ) ≅ ℤ` and evaluate at `1`.
   let e := reducedSingularHomologySphereIso (ModuleCat.of ℤ ℤ)
     (EuclideanSpace.basisFun (Fin (n + 1)) ℝ)
   have hsign := congrArg (fun φ ↦ (e.inv ≫ φ ≫ e.hom).hom (1 : ℤ)) hH
