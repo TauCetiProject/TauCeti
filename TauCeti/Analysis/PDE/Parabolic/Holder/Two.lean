@@ -403,6 +403,12 @@ theorem norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
   linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f),
     norm_nonneg (spatialSecondFDerivL f)]
 
+/-- The time-derivative projection has operator norm at most one. -/
+theorem norm_timeDerivL_le_one :
+    ‖timeDerivL (α := α) (E := E) (F := F) (hab := hab)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa using norm_timeDerivL_le f
+
 /-- The Hessian field gives the native second iterated Fréchet derivative of each slice. -/
 theorem iteratedFDeriv_two_apply (f : ParabolicC2HolderSpace α E F hab)
     (t : Icc a b) (x : E) (v : Fin 2 → E) :

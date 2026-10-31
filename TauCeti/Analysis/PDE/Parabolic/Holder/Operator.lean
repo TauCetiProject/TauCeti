@@ -159,11 +159,8 @@ theorem norm_spatialOperatorL_le :
 `‖P‖ ≤ 1 + ‖A‖ + 24 (‖B‖ + ‖C‖)`, uniformly over the spaces and the slab. -/
 theorem norm_parabolicOperatorL_le :
     ‖parabolicOperatorL (ht := ht) hα A B C‖ ≤ 1 + ‖A‖ + 24 * (‖B‖ + ‖C‖) := by
-  have ht' : ‖timeDerivL (α := α) (E := E) (F := F) (hab := ht)‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
-      simpa using norm_timeDerivL_le u
   rw [parabolicOperatorL_def, add_assoc]
-  exact (norm_sub_le _ _).trans (add_le_add ht' (norm_spatialOperatorL_le hα))
+  exact (norm_sub_le _ _).trans (add_le_add norm_timeDerivL_le_one (norm_spatialOperatorL_le hα))
 
 /-- **Lipschitz dependence on the coefficients.** In operator norm,
 `‖P_{A,B,C} - P_{A',B',C'}‖ ≤ ‖A - A'‖ + 24 (‖B - B'‖ + ‖C - C'‖)`. -/
@@ -209,6 +206,17 @@ def euclideanParabolicOperatorL (hα : α ≤ 1)
 variable (hα : α ≤ 1) {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
   {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
   {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+
+theorem euclideanParabolicOperatorL_def :
+    euclideanParabolicOperatorL (ht := ht) hα a b c =
+      parabolicOperatorL hα
+        (∑ i, ∑ j, (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ (a i j)
+          (HolderSpace.const ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j 1)).comp
+            (ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)))))
+        (∑ i, (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ (b i)
+          (HolderSpace.const (ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i 1))))
+        ((ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ c
+          (HolderSpace.const (ContinuousLinearMap.id ℝ ℝ))) := (rfl)
 
 @[simp]
 theorem euclideanParabolicOperatorL_apply
