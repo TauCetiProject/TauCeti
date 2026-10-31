@@ -169,6 +169,11 @@ velocities in `S`, changing velocity at each break. -/
 def HasDistinguished : Prop :=
   ∃ p : List (𝕜 × V), IsDistinguished S p ∧ ofSegments 𝕜 (p.map Prod.snd) = π
 
+theorem hasDistinguished_iff :
+    HasDistinguished S π ↔ ∃ p : List (𝕜 × V), IsDistinguished S p ∧
+      ofSegments 𝕜 (p.map Prod.snd) = π :=
+  Iff.rfl
+
 theorem IsDistinguished.hasDistinguished (hp : IsDistinguished S p) :
     HasDistinguished S (ofSegments 𝕜 (p.map Prod.snd)) :=
   ⟨p, hp, rfl⟩
