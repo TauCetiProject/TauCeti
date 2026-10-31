@@ -64,6 +64,8 @@ extensions of nonarchimedean local fields, the valuation-theoretic counterparts 
   to `A` iff the integral closure of `A` in `L` is unramified over `A` at every prime.
 * `TauCeti.Algebra.isUnramifiedWRT_iff_etale`: `L` is unramified with respect to `A` iff the
   integral closure of `A` in `L` is étale over `A`.
+* `TauCeti.Algebra.isUnramifiedWRT_of_isFractionRing`: the fraction field of `A` is unramified
+  with respect to `A`.
 * `TauCeti.Algebra.isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank`: `L` is totally
   ramified with respect to `A` iff some maximal ideal of the integral closure has ramification
   index `[L : K]`.
@@ -472,5 +474,14 @@ theorem IsUnramifiedWRT.tower_bot (h : IsUnramifiedWRT A L) : IsUnramifiedWRT A 
 end TowerBot
 
 end Tower
+
+/-- The fraction field of a discrete valuation ring `A` is unramified with respect to `A`: the
+integral closure of `A` in it is `A` itself. -/
+theorem isUnramifiedWRT_of_isFractionRing (A L : Type*) [CommRing A] [IsDomain A]
+    [IsDiscreteValuationRing A] [Field L] [Algebra A L] [IsFractionRing A L] :
+    IsUnramifiedWRT A L := by
+  rw [isUnramifiedWRT_iff_etale A L L]
+  exact .of_equiv ((Algebra.botEquivOfInjective (IsFractionRing.injective A L)).symm.trans
+    (Subalgebra.equivOfEq _ _ (IsIntegrallyClosed.integralClosure_eq_bot A L).symm))
 
 end TauCeti.Algebra

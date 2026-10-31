@@ -13,6 +13,7 @@ import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Euler's beta integrals, in real-valued form
@@ -47,6 +48,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `TauCeti.hasDerivAt_rpow_mul_one_sub_rpow` — the derivative of `t ^ a * (1 - t) ^ b`;
 * `TauCeti.integral_rpow_mul_one_sub_rpow_add_one_right` — raising the second parameter by one
   splits the integral as a difference;
+* `TauCeti.intervalIntegrable_one_sub_rpow_rpow` and `TauCeti.integral_one_sub_rpow_rpow` — the
+  power-substituted form `∫ t in 0..1, (1 - t ^ p) ^ (b - 1) = Β(p⁻¹, b) / p` of the beta
+  integral, obtained by substituting `u = t ^ p`;
 * `TauCeti.integrableOn_rpow_mul_one_add_rpow_iff` and
   `TauCeti.integral_rpow_mul_one_add_rpow` — Euler's second beta integral and its sharp
   integrability criterion,
@@ -79,6 +83,9 @@ the right half from the left one by the reflection `t ↦ 1 - t`. The proof of
 `TauCeti.integral_rpow_mul_one_sub_rpow` adapts the normalization argument for
 `ProbabilityTheory.betaMeasure` in Mathlib, `ProbabilityTheory.lintegral_betaPDF_eq_one`:
 descend from `Complex.betaIntegral` by taking real parts.
+
+The substitution `u = t ^ p` carries the open unit interval onto itself and is run through
+`MeasureTheory.integral_image_eq_integral_abs_deriv_smul`, like the changes of variables below.
 
 Both changes of variables for the second integral are one-dimensional, run through
 `MeasureTheory.integral_image_eq_integral_abs_deriv_smul` and its integrability companion. The
@@ -236,6 +243,66 @@ theorem integral_rpow_mul_one_sub_rpow_add_one_right (ha : 0 < a) (hb : 0 < b)
   · have h1t : (0 : ℝ) < 1 - t := by linarith
     rw [Real.rpow_sub_one ht0.ne' a, Real.rpow_sub_one h1t.ne' b]
     field_simp
+
+/-! ### The power substitution `u = t ^ p` -/
+
+section PowerSubstitution
+
+variable {p : ℝ}
+
+/-- On the open unit interval, the power map `t ↦ t ^ p` has derivative `p * t ^ (p - 1)`. -/
+private lemma hasDerivWithinAt_rpow_Ioo {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) 1) :
+    HasDerivWithinAt (fun t : ℝ => t ^ p) (p * t ^ (p - 1)) (Ioo 0 1) t :=
+  (Real.hasDerivAt_rpow_const (Or.inl ht.1.ne')).hasDerivWithinAt
+
+/-- A nonzero real power is injective on the open unit interval. -/
+private lemma injOn_rpow_Ioo (hp : 0 < p) : InjOn (fun t : ℝ => t ^ p) (Ioo 0 1) :=
+  (Real.rpow_left_injOn hp.ne').mono fun _ ht => ht.1.le
+
+/-- Under the substitution `u = t ^ p` the beta integrand with first parameter `p⁻¹` becomes
+`p * (1 - t ^ p) ^ (b - 1)`. -/
+private lemma abs_deriv_rpow_smul (hp : 0 < p) (b : ℝ) {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) 1) :
+    |p * t ^ (p - 1)| • ((t ^ p) ^ (p⁻¹ - 1) * (1 - t ^ p) ^ (b - 1)) =
+      p * (1 - t ^ p) ^ (b - 1) := by
+  have ht0 : 0 < t := ht.1
+  rw [smul_eq_mul, abs_of_nonneg (by positivity), ← Real.rpow_mul ht0.le, mul_sub,
+    mul_inv_cancel₀ hp.ne', mul_one]
+  have hcancel : t ^ (p - 1) * t ^ (1 - p) = 1 := by
+    rw [← Real.rpow_add ht0, sub_add_sub_cancel', sub_self, Real.rpow_zero]
+  linear_combination p * (1 - t ^ p) ^ (b - 1) * hcancel
+
+/-- The integrand `(1 - t ^ p) ^ (b - 1)` is interval integrable on `[0, 1]` for positive `p`
+and `b`: the substitution `u = t ^ p` turns it into a multiple of the beta integrand with
+parameters `p⁻¹` and `b`. -/
+theorem intervalIntegrable_one_sub_rpow_rpow (hp : 0 < p) (hb : 0 < b) :
+    IntervalIntegrable (fun t : ℝ => (1 - t ^ p) ^ (b - 1)) volume 0 1 := by
+  have h := (integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo
+    (fun _ ht => hasDerivWithinAt_rpow_Ioo ht) (injOn_rpow_Ioo hp)
+    (fun u : ℝ => u ^ (p⁻¹ - 1) * (1 - u) ^ (b - 1))).1 (by
+      rw [Real.image_rpow_Ioo_zero_one hp]
+      exact integrableOn_rpow_mul_one_sub_rpow_iff.2 ⟨inv_pos.2 hp, hb⟩)
+  have h' : IntegrableOn (fun t : ℝ => p⁻¹ * (p * (1 - t ^ p) ^ (b - 1))) (Ioo 0 1) :=
+    (h.congr_fun (fun _ ht => abs_deriv_rpow_smul hp b ht) measurableSet_Ioo).const_mul p⁻¹
+  refine (intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).2
+    (h'.congr_fun (fun _ _ => ?_) measurableSet_Ioo)
+  field_simp
+
+/-- **Euler's beta integral after the substitution `u = t ^ p`**: for positive `p` and `b`,
+`∫ t in 0..1, (1 - t ^ p) ^ (b - 1) = Β(p⁻¹, b) / p`. -/
+theorem integral_one_sub_rpow_rpow (hp : 0 < p) (hb : 0 < b) :
+    ∫ t in (0 : ℝ)..1, (1 - t ^ p) ^ (b - 1) = beta p⁻¹ b / p := by
+  have h := integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo
+    (fun _ ht => hasDerivWithinAt_rpow_Ioo ht) (injOn_rpow_Ioo hp)
+    (fun u : ℝ => u ^ (p⁻¹ - 1) * (1 - u) ^ (b - 1))
+  rw [Real.image_rpow_Ioo_zero_one hp,
+    setIntegral_congr_fun measurableSet_Ioo (fun _ ht => abs_deriv_rpow_smul hp b ht),
+    integral_const_mul, setIntegral_congr_set Ioo_ae_eq_Ioc,
+    setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
+    ← intervalIntegral.integral_of_le zero_le_one,
+    integral_rpow_mul_one_sub_rpow (inv_pos.2 hp) hb] at h
+  rw [h, mul_div_cancel_left₀ _ hp.ne']
+
+end PowerSubstitution
 
 /-! ### Euler's second beta integral -/
 
