@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Action.End
 public import Mathlib.CategoryTheory.Bicategory.Functor.Cat.ObjectProperty
 public import TauCeti.Algebra.Category.ModuleCat.CentralCharacter.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Twist
@@ -22,13 +23,15 @@ than acting on a single one, and they assemble into a family of categories over 
 category `G ⋉ X` (Mathlib's `CategoryTheory.ActionCategory G X`), whose arrows `x ⟶ g • x` are
 labelled by `g`. When `G` is a group, `G ⋉ X` is the action groupoid.
 
-The ambient family is `TauCeti.actionCategoryTwist X a`, the twisting action of `G` on all of
-`ModuleCat A` as a pseudofunctor out of `G ⋉ X`, sending an arrow labelled `g` to restriction of
+The ambient family is `TauCeti.actionCategoryTwist X a'` for the action
+`a' = (MulSemiringAction.toRingAut (A ≃ₐ[R] A) A).comp a` of `G` by the underlying ring
+automorphisms: the twisting action of `G` on all of `ModuleCat A` as a pseudofunctor out of
+`G ⋉ X`, sending an arrow labelled `g` to restriction of
 scalars along `(a g)⁻¹`, with unit and composition comparisons `ModuleCat.restrictScalarsId'App`
 and `ModuleCat.restrictScalarsComp'App`. This file restricts it to the character fibers.
 
 * `TauCeti.discreteCentralCharacterObjectProperty X a χ` is the property of objects of
-  `actionCategoryTwist X a` cutting out the strict discrete character fiber
+  `actionCategoryTwist X a'` cutting out the strict discrete character fiber
   `discreteCentralCharacterModules (χ x)` over each `x`. It is closed under the transport
   functors (`TauCeti.isClosedUnderMapObj_discreteCentralCharacterObjectProperty`).
 * `TauCeti.discreteCentralCharacterFamily X a ha χ hχ` is the family of strict discrete
@@ -37,7 +40,7 @@ and `ModuleCat.restrictScalarsComp'App`. This file restricts it to the character
   transport functors are `R`-linear.
 * `TauCeti.discreteCentralCharacterFamilyι X a ha χ hχ` is the inclusion of the fibers into all
   modules, Mathlib's `Pseudofunctor.ObjectProperty.ι`: a strong transformation to
-  `actionCategoryTwist X a` with identity naturality isomorphisms. It expresses that the
+  `actionCategoryTwist X a'` with identity naturality isomorphisms. It expresses that the
   inclusions of the fibers are equivariant for the twists moving the characters.
 
 For instance `X` may be a space of parameters `p` of central characters `χ p`, with a group
@@ -80,8 +83,11 @@ variable (X a)
 
 omit [TopologicalSpace A] in
 /-- The strict discrete character fibers `x ↦ discreteCentralCharacterModules (χ x)`, as a
-property of objects of the twisting family `actionCategoryTwist X a`. -/
-def discreteCentralCharacterObjectProperty : (actionCategoryTwist.{v} X a).ObjectProperty where
+property of objects of the twisting family `actionCategoryTwist` of the underlying ring
+automorphisms. -/
+def discreteCentralCharacterObjectProperty :
+    Pseudofunctor.ObjectProperty
+      (actionCategoryTwist.{v} X ((MulSemiringAction.toRingAut (A ≃ₐ[R] A) A).comp a)) where
   prop x := discreteCentralCharacterModules.{v} (χ x.as.back)
 
 include ha hχ in
@@ -96,7 +102,7 @@ theorem isClosedUnderMapObj_discreteCentralCharacterObjectProperty :
 
 /-- The strict discrete character fibers `x ↦ discreteCentralCharacterModules (χ x)` over the
 action category `G ⋉ X`, with the twists along `(a g)⁻¹` as transport functors. It is the
-restriction of `actionCategoryTwist X a` to these fibers, so its unit and composition comparisons
+restriction of `actionCategoryTwist` to these fibers, so its unit and composition comparisons
 are restrictions of those of `ModuleCat.restrictScalars`. -/
 noncomputable def discreteCentralCharacterFamily :
     LocallyDiscrete (ActionCategory G X) ⥤ᵖ Cat.{v, max u (v + 1)} :=
@@ -110,7 +116,7 @@ components are the inclusions and whose naturality isomorphisms are identities
 `discreteCentralCharacterFamilyι_naturality_inv_app`). -/
 noncomputable def discreteCentralCharacterFamilyι :
     Pseudofunctor.StrongTrans (discreteCentralCharacterFamily.{v} X a ha χ hχ)
-      (actionCategoryTwist.{v} X a) :=
+      (actionCategoryTwist.{v} X ((MulSemiringAction.toRingAut (A ≃ₐ[R] A) A).comp a)) :=
   haveI := isClosedUnderMapObj_discreteCentralCharacterObjectProperty X a ha χ hχ
   (discreteCentralCharacterObjectProperty.{v} X a χ).ι
 

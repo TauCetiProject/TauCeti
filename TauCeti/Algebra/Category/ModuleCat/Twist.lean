@@ -42,7 +42,7 @@ sense of Mathlib's `MonoidalLeftAction`, that is, a coherent categorical action 
 
 Through `MonoidalLeftAction.pseudofunctor`, the action is a pseudofunctor out of the one-object
 bicategory of `H` whose unit and composition comparisons are those of restriction of scalars.
-For a monoid `G` acting on `A` by `R`-algebra automorphisms and on a type `X`,
+For a monoid `G` acting on `A` by ring automorphisms and on a type `X`,
 `TauCeti.actionCategoryTwist X a` is this pseudofunctor composed with the label functor
 `ActionCategory.π` of the action category `G ⋉ X`, so that an arrow labelled `g` acts by
 restricting scalars along `(a g)⁻¹`.
@@ -248,9 +248,8 @@ namespace TauCeti
 
 open Bicategory
 
-variable {G : Type*} [Monoid G] (X : Type*) [MulAction G X]
-  {R : Type*} [CommRing R] {A : Type u} [Ring A] [Algebra R A]
-  (a : G →* (A ≃ₐ[R] A))
+variable {G : Type*} [Monoid G] (X : Type*) [MulAction G X] {A : Type u} [Ring A]
+  (a : G →* RingAut A)
 
 /-- The twisting action of `G` on `ModuleCat A`, as a pseudofunctor out of the action category
 `G ⋉ X` (an action groupoid when `G` is a group): an arrow labelled `g` acts by restricting
@@ -263,8 +262,7 @@ scalars along `(a g)⁻¹`. It is the classifying pseudofunctor of
 @[expose]
 noncomputable def actionCategoryTwist :
     LocallyDiscrete (ActionCategory G X) ⥤ᵖ Cat.{v, max u (v + 1)} :=
-  letI := MonoidHom.restrictScalarsMonoidalLeftAction.{v}
-    ((MulSemiringAction.toRingEquiv (A ≃ₐ[R] A) A).comp a)
+  letI := a.restrictScalarsMonoidalLeftAction.{v}
   (ActionCategory.π G X).toPseudofunctor.comp
     (MonoidalLeftAction.pseudofunctor G (ModuleCat.{v} A))
 
@@ -280,15 +278,15 @@ of scalars along `(a g)⁻¹`. -/
 lemma actionCategoryTwist_map_toFunctor {x y : LocallyDiscrete (ActionCategory G X)}
     (f : x ⟶ y) :
     ((actionCategoryTwist.{v} X a).map f).toFunctor =
-      ModuleCat.restrictScalars (a f.as.hom).symm.toRingHom :=
+      ModuleCat.restrictScalars ((a f.as.hom).symm : A →+* A) :=
   rfl
 
 /-- The unit comparison of `actionCategoryTwist X a` is `ModuleCat.restrictScalarsId'App`. -/
 lemma actionCategoryTwist_mapId_app (x : LocallyDiscrete (ActionCategory G X))
     (M : ModuleCat.{v} A) :
     (Cat.Hom.toNatIso ((actionCategoryTwist.{v} X a).mapId x)).app M =
-      ModuleCat.restrictScalarsId'App (a 1).symm.toRingHom
-        (by ext; simp [← AlgEquiv.aut_inv]) M :=
+      ModuleCat.restrictScalarsId'App ((a 1).symm : A →+* A)
+        (by ext; simp [RingAut.one_eq_refl]) M :=
   Iso.ext rfl
 
 /-- The composition comparison of `actionCategoryTwist X a` at `f ≫ g`, an arrow labelled by the
@@ -297,11 +295,10 @@ product `g.hom * f.hom`, is `ModuleCat.restrictScalarsComp'App` for the factoriz
 lemma actionCategoryTwist_mapComp_app {x y z : LocallyDiscrete (ActionCategory G X)}
     (f : x ⟶ y) (g : y ⟶ z) (M : ModuleCat.{v} A) :
     (Cat.Hom.toNatIso ((actionCategoryTwist.{v} X a).mapComp f g)).app M =
-      ModuleCat.restrictScalarsComp'App (a g.as.hom).symm.toRingHom (a f.as.hom).symm.toRingHom
-        (a (g.as.hom * f.as.hom)).symm.toRingHom
-        (by ext; simp [← AlgEquiv.aut_inv, mul_inv_rev]) M :=
-  letI := MonoidHom.restrictScalarsMonoidalLeftAction.{v}
-    ((MulSemiringAction.toRingEquiv (A ≃ₐ[R] A) A).comp a)
+      ModuleCat.restrictScalarsComp'App ((a g.as.hom).symm : A →+* A)
+        ((a f.as.hom).symm : A →+* A) ((a (g.as.hom * f.as.hom)).symm : A →+* A)
+        (by ext; simp [← RingAut.inv_apply, mul_inv_rev, RingAut.mul_apply]) M :=
+  letI := a.restrictScalarsMonoidalLeftAction.{v}
   -- The composition comparison of the composite pseudofunctor is that of the classifying
   -- pseudofunctor, preceded by the image of an identity `2`-morphism of `SingleObj G`.
   Iso.ext <| (Category.id_comp _).trans
