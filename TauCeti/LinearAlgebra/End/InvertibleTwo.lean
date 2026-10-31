@@ -81,19 +81,15 @@ automatically `R`-linear: no compatibility between the `R`- and `S`-actions is n
 @[instance_reducible]
 noncomputable def invertibleTwoModuleEnd (S : Type*) [Semiring S] [Module S N]
     [Invertible (2 : S)] : Invertible (2 : Module.End R N) :=
-  -- Halving by `⅟(2 : S)` undoes the additive doubling `x ↦ x + x`.
-  have half_double (x : N) : ⅟(2 : S) • (x + x) = x := by
-    rw [smul_add, invOf_two_smul_add_invOf_two_smul]
-  { invOf :=
-      { toFun x := ⅟(2 : S) • x
-        map_add' := smul_add _
-        -- `R`-linearity needs no `SMulCommClass R S N`: writing `x = y + y` with
-        -- `y = ⅟(2 : S) • x`, both sides equal `r • y`, using only additivity of the actions.
-        map_smul' r x := by
-          conv_lhs => rw [← invOf_two_smul_add_invOf_two_smul S x, smul_add, half_double]
-          rfl }
-    invOf_mul_self := by ext x; simp [two_smul, half_double]
-    mul_invOf_self := by ext x; simp [two_smul] }
+  -- Halving by `⅟(2 : S)` is a two-sided inverse of the `R`-linear doubling, so
+  -- `LinearMap.inverse` makes it `R`-linear; no `SMulCommClass R S N` is needed.
+  have half_double (x : N) : ⅟(2 : S) • (2 : Module.End R N) x = x := by
+    rw [Module.End.ofNat_apply, two_nsmul, smul_add, invOf_two_smul_add_invOf_two_smul]
+  have double_half (x : N) : (2 : Module.End R N) (⅟(2 : S) • x) = x := by
+    rw [Module.End.ofNat_apply, two_nsmul, invOf_two_smul_add_invOf_two_smul]
+  { invOf := LinearMap.inverse 2 (⅟(2 : S) • ·) half_double double_half
+    invOf_mul_self := LinearMap.ext half_double
+    mul_invOf_self := LinearMap.ext double_half }
 
 /-- **The inverse of doubling is halving by the scalar**, for whichever
 `Invertible (2 : Module.End R N)` instance is in scope. -/
