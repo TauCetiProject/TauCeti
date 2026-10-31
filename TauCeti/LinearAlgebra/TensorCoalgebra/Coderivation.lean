@@ -214,28 +214,6 @@ theorem coderiv_subword (F : ReducedTensorWords R M →ₗ[R] M) {n : ℕ} (x : 
 
 /-! ### Tensor-length bounds -/
 
-/-- A block of `b` letters with a subblock of `d` letters collapsed to one letter has length at most
-`b + 1 - d`. -/
-theorem splice_mem_filtration {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e : M) :
-    splice R x a b p d e ∈ filtration R M (b + 1 - d) := by
-  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
-  · rw [splice_eq_of_tprod R x e h.1 h.2.1 h.2.2]
-    exact of_mem_filtration R M (k := ⟨b + 1 - d, by omega⟩) le_rfl _
-  · rw [splice_eq_zero R x e h]
-    exact zero_mem _
-
-/-- A summand of a Taylor expansion of a word of length at most `n + j`, by a map `F` vanishing on
-the words of length at most `j`, has length at most `n`: either its collapsed block has at most `j`
-letters and `F` kills it, or it collapses more than `j` letters to one. -/
-theorem splice_apply_subword_mem_filtration (F : ReducedTensorWords R M →ₗ[R] M) {j n : ℕ}
-    (hF : ∀ z ∈ filtration R M j, F z = 0) {m : ℕ} (y : Fin m → M) {b : ℕ} (hb : b ≤ n + j)
-    {l : ℕ} (x : Fin l → M) (a c p d : ℕ) :
-    splice R y a b p d (F (subword R x c d)) ∈ filtration R M n := by
-  by_cases hdj : d ≤ j
-  · rw [hF _ (subword_mem_filtration R M x c hdj), splice_zero]
-    exact zero_mem _
-  · exact filtration_monotone R M (by omega) (splice_mem_filtration R y a b p d _)
-
 /-- A coderivation whose Taylor map vanishes on the words of length at most `j` lowers tensor
 length by at least `j`: each of its summands collapses a block of more than `j` letters to a single
 letter. -/
@@ -446,6 +424,12 @@ theorem letter_comp_coderiv (F : ReducedTensorWords R M →ₗ[R] M) :
     refine (Finset.sum_eq_single_of_mem n.1 (Finset.mem_range.2 (by omega)) ?_).trans ?_
     · exact fun d _ hd ↦ letter_splice_eq_zero R x _ (by omega)
     · rw [letter_splice_self R x _ hn (by omega), Nat.zero_add]
+
+/-- The single-letter component of `coderiv F y` is `F y`. -/
+@[simp]
+theorem letter_coderiv_apply (F : ReducedTensorWords R M →ₗ[R] M) (y : ReducedTensorWords R M) :
+    letter R M (coderiv R F y) = F y :=
+  LinearMap.congr_fun (letter_comp_coderiv R F) y
 
 
 variable (M)

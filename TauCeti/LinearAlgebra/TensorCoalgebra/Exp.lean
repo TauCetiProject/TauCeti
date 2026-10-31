@@ -32,8 +32,8 @@ is therefore a finite sum on each word.  Since `D` satisfies the co-Leibniz rule
 endomorphism commuting with `D`.
 
 This is the exponential gauge of `A∞` structures over a `ℚ`-algebra: when `φ` is a Hochschild
-cocycle of an `A∞` algebra, `D` commutes with the bar differential and `exp D` is an `A∞`
-automorphism.
+cocycle of an `A∞` algebra that is homogeneous of degree zero for the shifted grading, `D` commutes
+with the bar differential and `exp D` is an `A∞` automorphism.
 
 ## Main definitions
 

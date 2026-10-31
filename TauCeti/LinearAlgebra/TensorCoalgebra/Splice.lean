@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Graded.Insertion
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
 
 /-!
@@ -42,6 +43,8 @@ block.
 * `TauCeti.ReducedTensorWords.deconcatenation_splice`: reduced deconcatenation of a spliced word.
 * `TauCeti.ReducedTensorWords.prepend_splice`: prepending the first letter of a tuple commutes with
   splicing a block of the rest.
+* `TauCeti.ReducedTensorWords.splice_mem_filtration`: a block of `b` letters with `d` of them
+  collapsed to one letter has length at most `b + 1 - d`.
 
 ## References
 
@@ -501,6 +504,30 @@ theorem letter_splice_self {n : ℕ} (x : Fin n → M) {a b : ℕ} (e : M) (hb :
     TensorPower.cast_tprod, TauCeti.TensorPower.oneEquiv_tprod]
   simp only [Function.comp_apply]
   rw [dite_eq_right (by simp), dite_eq_left (by simp)]
+
+/-! ### Tensor-length bounds -/
+
+/-- A block of `b` letters with a subblock of `d` letters collapsed to one letter has length at most
+`b + 1 - d`. -/
+theorem splice_mem_filtration {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e : M) :
+    splice R x a b p d e ∈ filtration R M (b + 1 - d) := by
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · rw [splice_eq_of_tprod R x e h.1 h.2.1 h.2.2]
+    exact of_mem_filtration R M (k := ⟨b + 1 - d, by omega⟩) le_rfl _
+  · rw [splice_eq_zero R x e h]
+    exact zero_mem _
+
+/-- A summand of a Taylor expansion of a word of length at most `n + j`, by a map `F` vanishing on
+the words of length at most `j`, has length at most `n`: either its collapsed block has at most `j`
+letters and `F` kills it, or it collapses more than `j` letters to one. -/
+theorem splice_apply_subword_mem_filtration (F : ReducedTensorWords R M →ₗ[R] M) {j n : ℕ}
+    (hF : ∀ z ∈ filtration R M j, F z = 0) {m : ℕ} (y : Fin m → M) {b : ℕ} (hb : b ≤ n + j)
+    {l : ℕ} (x : Fin l → M) (a c p d : ℕ) :
+    splice R y a b p d (F (subword R x c d)) ∈ filtration R M n := by
+  by_cases hdj : d ≤ j
+  · rw [hF _ (subword_mem_filtration R M x c hdj), splice_zero]
+    exact zero_mem _
+  · exact filtration_monotone R M (by omega) (splice_mem_filtration R y a b p d _)
 
 end ReducedTensorWords
 

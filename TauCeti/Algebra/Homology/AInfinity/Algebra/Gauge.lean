@@ -484,10 +484,7 @@ degree-zero cochain `φ`, the commutator of the bar differential with the coderi
 the coderivation of `δφ = [m, φ]`. -/
 theorem commute_barDifferential_coderiv : Commute 𝒜.barDifferential (coderiv R φ) := by
   have h := 𝒜.gradedCoderiv_hochschildDifferential hφ
-  have h0 :
-      gradedCoderiv (𝒜.grading.shift 1) (0 : ReducedTensorWords R A →ₗ[R] A) (1 + 0) = 0 := by
-    simpa only [zero_smul] using gradedCoderiv_smul (𝒜.grading.shift 1) (0 : R) 0 (1 + 0)
-  rw [hδ, h0, gradedCoderiv_zero, negOnePowCast_zero, one_smul, eq_comm] at h
+  rw [hδ, gradedCoderiv_zero_left, gradedCoderiv_zero, negOnePowCast_zero, one_smul, eq_comm] at h
   exact sub_eq_zero.1 h
 
 /-- **The exponential of a Hochschild cocycle**: over a `ℚ`-algebra, the `A∞` endomorphism of `𝒜`

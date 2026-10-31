@@ -470,11 +470,10 @@ private theorem exists_taylor_apply_eq_letter_succ (hℋ : ℋ.IsMinimal)
   have hφz : φ₀ z = ψ z := by
     have h₀ := hψφ₀ z hz
     rwa [LinearMap.sub_apply, sub_eq_zero, eq_comm] at h₀
-  have hl : ∀ (F : ReducedTensorWords R A →ₗ[R] A) y, letter R A (coderiv R F y) = F y :=
-    fun F y ↦ by rw [← LinearMap.comp_apply (letter R A), letter_comp_coderiv]
-  rw [AInfinityHom.taylor_comp, AInfinityHom.taylor_def, barMap_expHom, LinearMap.comp_apply,
-    LinearMap.comp_apply, hFz, expCoderiv_apply_of_mem_filtration he hχe hw, map_add, map_add, hl,
-    hl, hχdef, LinearMap.smul_apply, map_add, hφ₀e _ hD, hφz]
+  simp only [AInfinityHom.taylor_def, AInfinityHom.barMap_comp, barMap_expHom,
+    LinearMap.comp_apply, hFz]
+  rw [expCoderiv_apply_of_mem_filtration he hχe hw]
+  simp only [map_add, letter_coderiv_apply, hχdef, LinearMap.smul_apply, hφ₀e _ hD, hφz]
   module
 
 /-- The first obstruction is a coboundary for an `A∞` morphism with linear part the identity, over
