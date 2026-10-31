@@ -99,9 +99,8 @@ lemma shiftFunctorComm_hom_app_add {M : Type*} [AddCommMonoid M] [HasShift C M] 
     (shiftFunctorComm C (a + b) n).hom.app X =
       ((shiftFunctorAdd C a b).hom.app X)⟦n⟧' ≫ (shiftFunctorComm C b n).hom.app (X⟦a⟧) ≫
         ((shiftFunctorComm C a n).hom.app X)⟦b⟧' ≫ (shiftFunctorAdd C a b).inv.app (X⟦n⟧) := by
-  rw [← shiftFunctorComm_symm C n (a + b), ← shiftFunctorComm_symm C n a,
-    ← shiftFunctorComm_symm C n b, Iso.symm_hom, Iso.symm_hom, Iso.symm_hom,
-    ← cancel_epi ((shiftFunctorComm C n (a + b)).hom.app X), Iso.hom_inv_id_app,
+  simp only [← shiftFunctorComm_symm C n, Iso.symm_hom]
+  rw [← cancel_epi ((shiftFunctorComm C n (a + b)).hom.app X), Iso.hom_inv_id_app,
     shiftFunctorComm_hom_app_comp_shift_shiftFunctorAdd_hom_app_assoc]
   simp [← Functor.map_comp_assoc]
 
@@ -115,9 +114,9 @@ noncomputable def shiftFunctorCommShift (n : ℤ) : (shiftFunctor C n).CommShift
   commShiftIso a := (a * n).negOnePow • shiftFunctorComm C a n
   commShiftIso_zero := by
     ext X
-    rw [Functor.CommShift.isoZero_hom_app, Preadditive.smul_iso_hom, NatTrans.app_units_zsmul,
-      zero_mul, Int.negOnePow_zero, one_smul, ← shiftFunctorComm_symm C n 0, Iso.symm_hom,
-      ← cancel_epi ((shiftFunctorComm C n 0).hom.app X), Iso.hom_inv_id_app,
+    simp only [Functor.CommShift.isoZero_hom_app, Preadditive.smul_iso_hom, zero_mul,
+      Int.negOnePow_zero, one_smul, ← shiftFunctorComm_symm C n 0, Iso.symm_hom]
+    rw [← cancel_epi ((shiftFunctorComm C n 0).hom.app X), Iso.hom_inv_id_app,
       shiftFunctorComm_zero_hom_app]
     simp [← Functor.map_comp_assoc]
   commShiftIso_add a b := by

@@ -28,8 +28,8 @@ These are general facts about Mathlib's Hom complex, independent of any particul
 * `TauCeti.ofHom_comp_diff`: a morphism of cochain complexes commutes with the differential
   cochains.
 * `TauCeti.diff_comp_diff`: the differential cochain squares to zero.
-* `TauCeti.XIsoOfEq_hom_comp_v`: precomposing a component of a cochain with an
-  `XIsoOfEq` identification of its source.
+* `CochainComplex.HomComplex.Cochain.XIsoOfEq_hom_comp_v`: precomposing a component of a
+  cochain with an `XIsoOfEq` identification of its source.
 -/
 
 public section
@@ -75,6 +75,12 @@ theorem diff_comp_diff :
       p (p + 1) q (by lia) (by lia),
     Cochain.diff_v, Cochain.diff_v, Cochain.zero_v, HomologicalComplex.d_comp_d]
 
+end TauCeti
+
+namespace CochainComplex.HomComplex.Cochain
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {F G : CochainComplex C ℤ}
+
 /-- Precomposing a component of a cochain with an identification `K.X p₁ ≅ K.X p₂` along an
 equality `p₁ = p₂` gives the component at `p₁`. -/
 @[reassoc]
@@ -84,4 +90,4 @@ lemma XIsoOfEq_hom_comp_v {n : ℤ} (z : Cochain F G n) {p₁ p₂ q : ℤ} (h :
   subst h
   simp
 
-end TauCeti
+end CochainComplex.HomComplex.Cochain

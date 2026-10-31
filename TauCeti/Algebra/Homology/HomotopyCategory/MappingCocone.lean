@@ -239,7 +239,7 @@ lemma shiftFunctor_map_shiftIso_inv_comp_fst (φ : K ⟶ L) (a : ℤ) :
   -- The mapping cocone is `(mappingCone φ)⟦-1⟧` only up to unfolding, so the components of the
   -- first projections are rewritten up to that unfolding.
   erw [h₁, h₂]
-  simp [shiftFunctorComm_hom_app_f, TauCeti.XIsoOfEq_hom_comp_v, smul_smul,
+  simp [shiftFunctorComm_hom_app_f, HomComplex.Cochain.XIsoOfEq_hom_comp_v, smul_smul,
     Linear.units_smul_comp, Linear.comp_units_smul]
 
 end CochainComplex.mappingCocone
@@ -257,21 +257,25 @@ complexes, as the functor `X ↦ mappingCocone (τ.app X) = (mappingCone (τ.app
 noncomputable def mappingCoconeFunctor : D ⥤ CochainComplex C ℤ :=
   mappingConeFunctor τ ⋙ CategoryTheory.shiftFunctor _ (-1)
 
+@[simp]
 theorem mappingCoconeFunctor_obj (X : D) :
     (mappingCoconeFunctor τ).obj X = mappingCocone (τ.app X) :=
   (rfl)
 
+@[simp]
 theorem mappingCoconeFunctor_map {X Y : D} (f : X ⟶ Y) :
     (mappingCoconeFunctor τ).map f = (mappingCone.map _ _ (F.map f) (G.map f)
       (τ.naturality f).symm)⟦(-1 : ℤ)⟧' :=
   (rfl)
 
 /-- The first projections `mappingCocone (τ.app X) ⟶ F.obj X`, as a natural transformation. -/
+@[expose]
 noncomputable def mappingCoconeFunctorFst : mappingCoconeFunctor τ ⟶ F where
   app X := mappingCocone.fst (τ.app X)
   naturality _ _ f :=
     mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ (τ.naturality f).symm
 
+@[simp]
 theorem mappingCoconeFunctorFst_app (X : D) :
     (mappingCoconeFunctorFst τ).app X = mappingCocone.fst (τ.app X) :=
   (rfl)

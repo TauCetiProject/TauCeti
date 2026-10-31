@@ -181,9 +181,8 @@ lemma shiftIso_hom_f_snd_v (n p : ℤ) :
 lemma shiftIso_inv_f_fst_v (n p q : ℤ) (hpq : p + 1 = q) :
     (shiftIso f n).inv.f p ≫ (fst f).1.v (p + n) (q + n) (by lia) =
       n.negOnePow • (fst (f⟦n⟧')).1.v p q hpq := by
-  rw [← cancel_epi ((shiftIso f n).hom.f p), ← HomologicalComplex.comp_f_assoc,
-    Iso.hom_inv_id, HomologicalComplex.id_f, Category.id_comp, Linear.comp_units_smul,
-    shiftIso_hom_f_fst_v, smul_smul, Int.units_mul_self, one_smul]
+  rw [← cancel_epi ((shiftIso f n).hom.f p)]
+  simp [← HomologicalComplex.comp_f_assoc, smul_smul]
 
 /-- `shiftIso` is natural in commutative squares. -/
 @[reassoc]
@@ -204,7 +203,7 @@ lemma shiftFunctorZero_inv_app_shiftIso_hom :
   ext p
   rw [ext_to_iff _ p (p + 1) rfl]
   constructor <;> apply ext_from f (p + 1) p rfl <;>
-    simp [shiftFunctorZero_inv_app_f, TauCeti.XIsoOfEq_hom_comp_v, inl_v_snd_v', inr_f_snd_v',
+    simp [shiftFunctorZero_inv_app_f, Cochain.XIsoOfEq_hom_comp_v, inl_v_snd_v', inr_f_snd_v',
       inl_v_fst_v']
 
 /-- `shiftIso` for the shift by `a + b` is obtained from those for `a` and `b`, through
@@ -218,7 +217,7 @@ lemma shiftFunctorAdd_inv_app_shiftIso_hom (a b : ℤ) :
   ext p
   rw [ext_to_iff _ p (p + 1) rfl]
   constructor <;> apply ext_from f (p + b + a + 1) (p + b + a) rfl <;>
-    simp [shiftFunctorAdd_inv_app_f, TauCeti.XIsoOfEq_hom_comp_v, inl_v_snd_v', inr_f_snd_v',
+    simp [shiftFunctorAdd_inv_app_f, Cochain.XIsoOfEq_hom_comp_v, inl_v_snd_v', inr_f_snd_v',
       inl_v_fst_v', inl_v_fst_v'_assoc, Int.negOnePow_add, smul_smul, mul_comm]
 
 end Shift
@@ -239,11 +238,11 @@ noncomputable def mappingConeFunctor : D ⥤ CochainComplex C ℤ where
   obj X := mappingCone (τ.app X)
   map f := map _ _ (F.map f) (G.map f) (τ.naturality f).symm
   map_id X := by
-    ext p
-    apply ext_from (τ.app X) (p + 1) p rfl <;> simp
+    rw [← map_id (τ.app X)]
+    congr 1 <;> simp
   map_comp f g := by
-    ext p
-    apply ext_from _ (p + 1) p rfl <;> simp
+    rw [← map_comp]
+    congr 1 <;> simp
 
 variable [HasShift D ℤ] [F.CommShift ℤ] [G.CommShift ℤ] [NatTrans.CommShift τ ℤ]
 
@@ -276,9 +275,9 @@ lemma mappingConeFunctorShiftIso_hom_naturality (a : ℤ) {X Y : D} (f : X ⟶ Y
         (mappingConeFunctorShiftIso τ a Y).hom =
       (mappingConeFunctorShiftIso τ a X).hom ≫
         (map _ _ (F.map f) (G.map f) (τ.naturality f).symm)⟦a⟧' := by
-  rw [← cancel_mono (shiftIso (τ.app Y) a).hom, Category.assoc, Category.assoc,
-    mappingConeFunctorShiftIso_hom_comp_shiftIso_hom, shiftIso_hom_naturality,
-    mappingConeFunctorShiftIso_hom_comp_shiftIso_hom_assoc, ← map_comp, ← map_comp]
+  rw [← cancel_mono (shiftIso (τ.app Y) a).hom]
+  simp only [Category.assoc, mappingConeFunctorShiftIso_hom_comp_shiftIso_hom,
+    shiftIso_hom_naturality, mappingConeFunctorShiftIso_hom_comp_shiftIso_hom_assoc, ← map_comp]
   congr 1 <;> simp
 
 private lemma mappingConeFunctorShiftIso_zero (X : D) :
@@ -286,9 +285,9 @@ private lemma mappingConeFunctorShiftIso_zero (X : D) :
       map (τ.app (X⟦0⟧)) (τ.app X) (F.map ((shiftFunctorZero D ℤ).hom.app X))
         (G.map ((shiftFunctorZero D ℤ).hom.app X)) (τ.naturality _).symm ≫
           (shiftFunctorZero _ ℤ).inv.app (mappingCone (τ.app X)) := by
-  rw [← cancel_mono (shiftIso (τ.app X) 0).hom, Category.assoc,
-    mappingConeFunctorShiftIso_hom_comp_shiftIso_hom, shiftFunctorZero_inv_app_shiftIso_hom,
-    ← map_comp]
+  rw [← cancel_mono (shiftIso (τ.app X) 0).hom]
+  simp only [Category.assoc, mappingConeFunctorShiftIso_hom_comp_shiftIso_hom,
+    shiftFunctorZero_inv_app_shiftIso_hom, ← map_comp]
   congr 1 <;> simp [Functor.commShiftIso_zero]
 
 private lemma mappingConeFunctorShiftIso_add (a b : ℤ) (X : D) :
@@ -298,11 +297,11 @@ private lemma mappingConeFunctorShiftIso_add (a b : ℤ) (X : D) :
           (mappingConeFunctorShiftIso τ b (X⟦a⟧)).hom ≫
             (mappingConeFunctorShiftIso τ a X).hom⟦b⟧' ≫
               (shiftFunctorAdd _ a b).inv.app (mappingCone (τ.app X)) := by
-  rw [← cancel_mono (shiftIso (τ.app X) (a + b)).hom, Category.assoc, Category.assoc,
-    Category.assoc, mappingConeFunctorShiftIso_hom_comp_shiftIso_hom,
+  rw [← cancel_mono (shiftIso (τ.app X) (a + b)).hom]
+  simp only [Category.assoc, mappingConeFunctorShiftIso_hom_comp_shiftIso_hom,
     shiftFunctorAdd_inv_app_shiftIso_hom, ← Functor.map_comp_assoc,
-    mappingConeFunctorShiftIso_hom_comp_shiftIso_hom, shiftIso_hom_naturality_assoc,
-    mappingConeFunctorShiftIso_hom_comp_shiftIso_hom_assoc, ← map_comp, ← map_comp, ← map_comp]
+    shiftIso_hom_naturality_assoc, mappingConeFunctorShiftIso_hom_comp_shiftIso_hom_assoc,
+    ← map_comp]
   congr 1 <;> simp [Functor.commShiftIso_add]
 
 /-- The mapping cone of a natural transformation compatible with the shifts commutes with the
