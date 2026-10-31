@@ -265,7 +265,7 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 /-- The singular simplices of `X` lying in `U` or in `V` compute the cohomology of `U ∪ V`, by the
 small-chain theorem for the cover of `U ∪ V` by `U` and `V`, which only needs to be open in
 `U ∪ V`. -/
-private lemma quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion (U V : Set X)
+lemma quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion (U V : Set X)
     (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) :
     QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
       (smallSingularSubcomplexToUnion U V)) := by
@@ -357,7 +357,7 @@ lemma inr_singularCohomologyPairMayerVietorisFromBiprod (n : ℕ) :
 
 /-- The cohomology of `TopCat.smallSingularPair hCA hDB` is identified with that of
 `(A ∪ B, C ∪ D)` by `TopCat.smallSingularPairToUnion`. -/
-private lemma isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion
+lemma isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion
     (hA : IsOpen ((↑) ⁻¹' A : Set ↥(A ∪ B))) (hB : IsOpen ((↑) ⁻¹' B : Set ↥(A ∪ B)))
     (hC : IsOpen ((↑) ⁻¹' C : Set ↥(C ∪ D))) (hD : IsOpen ((↑) ⁻¹' D : Set ↥(C ∪ D))) (n : ℕ) :
     IsIso (HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (R := R) (k := k) (M := M)

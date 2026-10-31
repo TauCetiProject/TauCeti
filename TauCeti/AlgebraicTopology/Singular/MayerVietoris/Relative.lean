@@ -294,7 +294,7 @@ private lemma toSmallPair_comp_smallPairToUnion {A : Set X} {i : Fin 2} (h : A �
 /-- The singular simplices of `X` lying in `U` or in `V` compute the homology of `U ∪ V`, by the
 small-chain theorem for the cover of `U ∪ V` by `U` and `V`, which only needs to be open in
 `U ∪ V`. -/
-private lemma quasiIso_chainComplexMap_smallSingularSubcomplexToUnion
+lemma quasiIso_chainComplexMap_smallSingularSubcomplexToUnion
     (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) :
     QuasiIso (SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R) := by
   obtain ⟨e, he⟩ := exists_iso_comp_smallSingularSubcomplexToUnion U V
@@ -741,7 +741,9 @@ variable (hA : IsOpen ((↑) ⁻¹' A : Set ↥(A ∪ B)))
   (hD : IsOpen ((↑) ⁻¹' D : Set ↥(C ∪ D)))
 
 include hA hB hC hD in
-private lemma isIso_homologyMap_smallSingularPairToUnion (n : ℕ) :
+/-- The relative homology of `TopCat.smallSingularPair hCA hDB` is identified with that of
+`(A ∪ B, C ∪ D)` by `TopCat.smallSingularPairToUnion`. -/
+lemma isIso_homologyMap_smallSingularPairToUnion (n : ℕ) :
     IsIso (SSetPair.homologyMap (smallSingularPairToUnion hCA hDB) R n) := by
   have : QuasiIso (SSet.chainComplexMap (smallSingularPairToUnion hCA hDB).left R) :=
     quasiIso_chainComplexMap_smallSingularSubcomplexToUnion R C D hC hD
