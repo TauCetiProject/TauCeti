@@ -557,7 +557,7 @@ theorem exists_hasseDeriv_eval_ne_zero {P : MvPolynomial σ R} {r : σ → ℕ}
   obtain ⟨d, hd, hbd⟩ := exists_weightedIndex_eq_weight (r := r)
     (mt (weightedIndex_eq_top_of_taylor_eq_zero r) hb)
   rw [hasseDeriv_map] at hd
-  refine ⟨d, hd, ?_, fun i ↦ (degreeOf_hasseDeriv_le d P i).trans ((Nat.sub_le _ _).trans (hdeg i)),
+  refine ⟨d, hd, ?_, degreeOf_hasseDeriv_le_of_le hdeg d,
     abv_coeff_hasseDeriv_le_two_pow_mul abv hdeg hB d⟩
   rw [hbd, tsub_le_iff_right, ← hasseDeriv_map]
   exact weightedIndex_le_weightedIndex_hasseDeriv_add r a d _

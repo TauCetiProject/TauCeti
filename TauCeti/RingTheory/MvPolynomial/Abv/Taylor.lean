@@ -9,6 +9,8 @@ public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 public import TauCeti.RingTheory.MvPolynomial.Abv.Eval
 public import TauCeti.RingTheory.MvPolynomial.WeightedIndex
 
+import TauCeti.Algebra.MvPolynomial.Degrees
+
 /-!
 # The value of a polynomial at one absolute value
 
@@ -17,7 +19,9 @@ and coefficients of absolute value at most `B` under an absolute value `v : Abso
 This file bounds `v(P(x))` at a point `x`, in two ways.
 
 * **Trivially.** `P(x)` is a sum of at most `∏ i, (L i + 1)` terms, each at most
-  `B ∏ i, max(v(x_i), 1) ^ L i`. At a nonarchimedean `v` the count disappears.
+  `B ∏ i, max(v(x_i), 1) ^ L i`. At a nonarchimedean `v` the count disappears. These bounds,
+  `AbsoluteValue.apply_eval_le` and `IsNonarchimedean.apply_eval_le`, are in
+  `TauCeti.RingTheory.MvPolynomial.Abv.Eval`; here they give the trivial bound for the jets.
 * **Through the Taylor expansion at a point `a` where `P` has weighted index at least `t`** with
   respect to the weights `L`. Then `P(x) = ∑_d (∂^d P)(a) (x - a)^d` involves only multi-indices
   `d ≤ L` of weight `∑ i, d i / L i ≥ t`. If every such `d` has `∏ i, v(x_i - a_i) ^ d i ≤ E`,
@@ -38,7 +42,6 @@ that the targets `a` need not lie in `K`.
 
 ## Main results
 
-* `AbsoluteValue.apply_eval_le`, `IsNonarchimedean.apply_eval_le`: the trivial bounds.
 * `AbsoluteValue.apply_eval_hasseDeriv_le`: the trivial bound for the jets `(∂^d P)(a)`, whose
   coefficients carry an extra factor `2 ^ ∑ i, L i`.
 * `AbsoluteValue.apply_eval_le_of_le_weightedIndex`,
@@ -83,20 +86,6 @@ variable [Nontrivial R]
 
 namespace AbsoluteValue
 
-/-- **The trivial bound for the value of a polynomial.** If `P` has partial degrees
-`degreeOf i P ≤ L i` and coefficients of absolute value at most `B`, then
-`v(P(x)) ≤ B ∏ i, (L i + 1) ∏ i, max(v(x_i), 1) ^ L i`. -/
-theorem apply_eval_le (v : AbsoluteValue R ℝ) {P : MvPolynomial ι R} {L : ι → ℕ}
-    (hL : ∀ i, P.degreeOf i ≤ L i) {B : ℝ} (hB : ∀ s, v (P.coeff s) ≤ B) (x : ι → R) :
-    v (eval x P) ≤ B * (∏ i, ((L i : ℝ) + 1)) * ∏ i, max (v (x i)) 1 ^ L i := by
-  have hB0 : 0 ≤ B := (v.nonneg _).trans (hB 0)
-  have hle (s) (hs : s ∈ P.support) (i : ι) : s i ≤ L i := (monomial_le_degreeOf i hs).trans (hL i)
-  rw [eval_eq']
-  refine (v.sum_le _ _).trans <| (Finsupp.sum_le_prod_mul_of_forall_le hle
-    (C := B * ∏ i, max (v (x i)) 1 ^ L i) (fun s hs ↦ ?_) (by positivity)).trans_eq (by ring)
-  rw [v.map_mul]
-  exact mul_le_mul (hB s) (v.apply_prod_pow_le (hle s hs) x) (v.nonneg _) hB0
-
 /-- **The jets of a polynomial.** If `P` has partial degrees `degreeOf i P ≤ L i` and
 coefficients of absolute value at most `B`, then every Hasse derivative of `P` satisfies
 `v((∂^d P)(a)) ≤ B ∏ i, (L i + 1) ∏ i, (2 max(v(a_i), 1)) ^ L i`. -/
@@ -105,8 +94,8 @@ theorem apply_eval_hasseDeriv_le (v : AbsoluteValue R ℝ) {P : MvPolynomial ι 
     (a : ι → R) (d : ι →₀ ℕ) :
     v (eval a (hasseDeriv d P)) ≤
       B * (∏ i, ((L i : ℝ) + 1)) * ∏ i, (2 * max (v (a i)) 1) ^ L i := by
-  refine (v.apply_eval_le (fun i ↦ (degreeOf_hasseDeriv_le d P i).trans ((Nat.sub_le _ _).trans
-    (hL i))) (abv_coeff_hasseDeriv_le_two_pow_mul v hL hB d) a).trans_eq ?_
+  refine (v.apply_eval_le (degreeOf_hasseDeriv_le_of_le hL d)
+    (abv_coeff_hasseDeriv_le_two_pow_mul v hL hB d) a).trans_eq ?_
   simp only [mul_pow, prod_mul_distrib, prod_pow_eq_pow_sum]
   ring
 
@@ -134,6 +123,22 @@ theorem apply_eval_le_of_le_weightedIndex (v : AbsoluteValue R ℝ) {P : MvPolyn
   exact mul_le_mul (v.apply_eval_hasseDeriv_le hL hB a d) (hE d (hT d hd).1 (hT d hd).2)
     (by positivity) (by positivity)
 
+omit [Fintype ι] in
+/-- Along an absolute value `w` of `F` lying over `v`, the value `v(P(x))` of a polynomial over
+`K` is the `w`-value of its image over `F` at the image of `x`, and that image keeps the partial
+degree bounds and coefficient bounds of `P`. -/
+private theorem LiesOver.apply_eval_eq_map {K F : Type*} [CommRing K] [CommRing F]
+    [Algebra K F] [FaithfulSMul K F] (w : AbsoluteValue F ℝ)
+    (v : AbsoluteValue K ℝ) [w.LiesOver v] {P : MvPolynomial ι K} {L : ι → ℕ}
+    (hL : ∀ i, P.degreeOf i ≤ L i) {B : ℝ} (hB : ∀ s, v (P.coeff s) ≤ B) (x : ι → K) :
+    v (eval x P) = w (eval (algebraMap K F ∘ x) (P.map (algebraMap K F))) ∧
+      (∀ i, (P.map (algebraMap K F)).degreeOf i ≤ L i) ∧
+      ∀ s, w ((P.map (algebraMap K F)).coeff s) ≤ B := by
+  refine ⟨?_, fun i ↦ (degreeOf_map_le _ P i).trans (hL i), fun s ↦ ?_⟩
+  · rw [← LiesOver.apply_algebraMap (w := w) v, eval₂_comp, ← eval_map]
+  · rw [coeff_map, LiesOver.apply_algebraMap v]
+    exact hB s
+
 /-- **The value of a polynomial over `K` near a point over an extension `F`.** Let `w` be an
 absolute value of `F` lying over the absolute value `v` of `K`, and let `P` over `K` have partial
 degrees `degreeOf i P ≤ L i` and coefficients with `v`-value at most `B`. If the image of `P` in
@@ -150,32 +155,13 @@ theorem LiesOver.apply_eval_le_of_le_weightedIndex {K F : Type*} [CommRing K] [C
       ∏ i, w (algebraMap K F (x i) - a i) ^ d i ≤ E) :
     v (eval x P) ≤
       B * (∏ i, ((L i : ℝ) + 1)) ^ 2 * (∏ i, (2 * max (w (a i)) 1) ^ L i) * E := by
-  rw [← LiesOver.apply_algebraMap (w := w) v, eval₂_comp, ← eval_map]
-  refine w.apply_eval_le_of_le_weightedIndex (fun i ↦ ?_) (fun s ↦ ?_) ht _ hE0 hE
-  · exact (degreeOf_le_iff.2 fun s hs ↦ (monomial_le_degreeOf i
-      (support_map_subset _ _ hs)).trans (hL i))
-  · rw [coeff_map, LiesOver.apply_algebraMap v]
-    exact hB s
+  obtain ⟨heval, hL', hB'⟩ := LiesOver.apply_eval_eq_map w v hL hB x
+  rw [heval]
+  exact w.apply_eval_le_of_le_weightedIndex hL' hB' ht _ hE0 hE
 
 end AbsoluteValue
 
 namespace IsNonarchimedean
-
-/-- **The trivial bound at a nonarchimedean absolute value.** If `P` has partial degrees
-`degreeOf i P ≤ L i` and coefficients of absolute value at most `B`, then
-`v(P(x)) ≤ B ∏ i, max(v(x_i), 1) ^ L i`. -/
-theorem apply_eval_le {v : AbsoluteValue R ℝ} (hv : IsNonarchimedean v) {P : MvPolynomial ι R}
-    {L : ι → ℕ} (hL : ∀ i, P.degreeOf i ≤ L i) {B : ℝ} (hB : ∀ s, v (P.coeff s) ≤ B)
-    (x : ι → R) : v (eval x P) ≤ B * ∏ i, max (v (x i)) 1 ^ L i := by
-  have hB0 : 0 ≤ B := (v.nonneg _).trans (hB 0)
-  rcases P.support.eq_empty_or_nonempty with hP | hP
-  · rw [support_eq_empty.mp hP, map_zero, v.map_zero]
-    positivity
-  rw [eval_eq']
-  refine (hv.apply_sum_le_sup hP).trans <| sup'_le _ _ fun s hs ↦ ?_
-  rw [v.map_mul]
-  exact mul_le_mul (hB s) (v.apply_prod_pow_le (fun i ↦ (monomial_le_degreeOf i hs).trans (hL i))
-    x) (v.nonneg _) hB0
 
 /-- **The value of a polynomial near a point of high index, at a nonarchimedean absolute value.**
 Let `P` have partial degrees `degreeOf i P ≤ L i`, coefficients of absolute value at most `B`,
@@ -199,8 +185,8 @@ theorem apply_eval_le_of_le_weightedIndex {v : AbsoluteValue R ℝ} (hv : IsNona
   rw [v.map_mul, map_prod]
   simp only [v.map_pow]
   refine mul_le_mul ?_ (hE d (hT d hd).1 (hT d hd).2) (by positivity) (by positivity)
-  exact hv.apply_eval_le (fun i ↦ (degreeOf_hasseDeriv_le d P i).trans ((Nat.sub_le _ _).trans
-    (hL i))) (fun s ↦ (abv_coeff_hasseDeriv_le_of_isNonarchimedean hv d s P).trans (hB _)) a
+  exact hv.apply_eval_le (degreeOf_hasseDeriv_le_of_le hL d)
+    (fun s ↦ (abv_coeff_hasseDeriv_le_of_isNonarchimedean hv d s P).trans (hB _)) a
 
 end IsNonarchimedean
 
@@ -221,11 +207,8 @@ theorem LiesOver.apply_eval_le_of_le_weightedIndex_of_isNonarchimedean {K F : Ty
     (hE : ∀ d : ι →₀ ℕ, (∀ i, d i ≤ L i) → t ≤ ∑ i, (d i : ℝ) / L i →
       ∏ i, w (algebraMap K F (x i) - a i) ^ d i ≤ E) :
     v (eval x P) ≤ B * (∏ i, max (w (a i)) 1 ^ L i) * E := by
-  rw [← LiesOver.apply_algebraMap (w := w) v, eval₂_comp, ← eval_map]
-  refine hw.apply_eval_le_of_le_weightedIndex (fun i ↦ ?_) (fun s ↦ ?_) ht _ hE0 hE
-  · exact (degreeOf_le_iff.2 fun s hs ↦ (monomial_le_degreeOf i
-      (support_map_subset _ _ hs)).trans (hL i))
-  · rw [coeff_map, LiesOver.apply_algebraMap v]
-    exact hB s
+  obtain ⟨heval, hL', hB'⟩ := LiesOver.apply_eval_eq_map w v hL hB x
+  rw [heval]
+  exact hw.apply_eval_le_of_le_weightedIndex hL' hB' ht _ hE0 hE
 
 end AbsoluteValue
