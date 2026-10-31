@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Contractible
-public import Mathlib.Topology.Covering.Quotient
 public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.Algebra.Module.ZLattice.Family.Fiber
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
