@@ -30,6 +30,8 @@ This representation underlies the series description `T x = ∑ n, f n x • y n
 
 * `TauCeti.CompletedProjectiveTensor.exists_hasSum_tmul_of_norm_lt`: if `‖u‖ < c`, then
   `u = ∑ n, x n ⊗ₜ y n` for some `x : ℕ → E` and `y : ℕ → F` with `∑ n, ‖x n‖ * ‖y n‖ < c`.
+* `TauCeti.CompletedProjectiveTensor.norm_coe_tmul_le`: the completed norm of a pure tensor is at
+  most the product of the norms of its factors.
 * `TauCeti.CompletedProjectiveTensor.norm_le_tsum_of_hasSum_tmul`: the norm of the sum of a series
   of pure tensors is at most its cost.
 * `TauCeti.CompletedProjectiveTensor.norm_lt_iff_exists_hasSum_tmul`: the combined
@@ -51,17 +53,22 @@ namespace TauCeti.CompletedProjectiveTensor
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
   [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- The completed projective norm of a pure tensor is at most the product of the norms of its
+factors. -/
+theorem norm_coe_tmul_le (x : E) (y : F) :
+    ‖((⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F) : CompletedProjectiveTensor 𝕜 E F)‖ ≤ ‖x‖ * ‖y‖ := by
+  simpa [Completion.norm_coe, ProjectiveTensor.norm_def] using
+    TensorProduct.projectiveSeminorm_tmul_le (𝕜 := 𝕜) x y
+
 /-- The norm of the sum of a series of pure tensors in the completed projective tensor product is
-at most its cost `∑ n, ‖x n‖ * ‖y n‖`. -/
-theorem norm_le_tsum_of_hasSum_tmul {u : CompletedProjectiveTensor 𝕜 E F} {x : ℕ → E}
-    {y : ℕ → F}
-    (hu : HasSum (fun n ↦ ((⟨x n ⊗ₜ y n⟩ : ProjectiveTensor 𝕜 E F) :
+at most its cost `∑ i, ‖x i‖ * ‖y i‖`. -/
+theorem norm_le_tsum_of_hasSum_tmul {ι : Type*} {u : CompletedProjectiveTensor 𝕜 E F}
+    {x : ι → E} {y : ι → F}
+    (hu : HasSum (fun i ↦ ((⟨x i ⊗ₜ y i⟩ : ProjectiveTensor 𝕜 E F) :
       CompletedProjectiveTensor 𝕜 E F)) u)
-    (hxy : Summable fun n ↦ ‖x n‖ * ‖y n‖) :
-    ‖u‖ ≤ ∑' n, ‖x n‖ * ‖y n‖ :=
-  hu.norm_le_of_bounded hxy.hasSum fun n ↦ by
-    simpa [Completion.norm_coe, ProjectiveTensor.norm_def] using
-      TensorProduct.projectiveSeminorm_tmul_le (𝕜 := 𝕜) (x n) (y n)
+    (hxy : Summable fun i ↦ ‖x i‖ * ‖y i‖) :
+    ‖u‖ ≤ ∑' i, ‖x i‖ * ‖y i‖ :=
+  hu.norm_le_of_bounded hxy.hasSum fun i ↦ norm_coe_tmul_le (x i) (y i)
 
 /-- A finite decomposition of an algebraic tensor, padded by zeros to a sequence: if
 `‖w‖ < c`, then `w` is the sum of the pure tensors `x i ⊗ₜ y i` for `i < n`, these
@@ -77,13 +84,11 @@ private theorem exists_tmul_padded_of_norm_lt {w : ProjectiveTensor 𝕜 E F} {c
       (c := c) (by rwa [← ProjectiveTensor.norm_def])
   refine ⟨n, fun i ↦ if h : i < n then x ⟨i, h⟩ else 0, fun i ↦ if h : i < n then y ⟨i, h⟩ else 0,
     fun i hi ↦ by simp [not_lt.2 hi], ?_, ?_⟩
-  · rw [← Fin.sum_univ_eq_sum_range (fun i ↦ (⟨(if h : i < n then x ⟨i, h⟩ else 0) ⊗ₜ
-      (if h : i < n then y ⟨i, h⟩ else 0)⟩ : ProjectiveTensor 𝕜 E F))]
+  · rw [Finset.sum_range]
     apply ProjectiveTensor.ext
     rw [← hsum, ← ProjectiveTensor.linearEquiv_apply, map_sum]
     simp
-  · rw [← Fin.sum_univ_eq_sum_range (fun i ↦ ‖if h : i < n then x ⟨i, h⟩ else 0‖ *
-      ‖if h : i < n then y ⟨i, h⟩ else 0‖)]
+  · rw [Finset.sum_range]
     simpa using hcost
 
 /-- **Series representation of completed projective tensors.** Every element `u` of the
@@ -131,9 +136,8 @@ theorem exists_hasSum_tmul_of_norm_lt (u : CompletedProjectiveTensor 𝕜 E F) {
     (summable_prod_of_nonneg ha_nonneg).2
       ⟨fun k ↦ (hrow_a k).summable, by simpa only [(hrow_a _).tsum_eq] using hrows⟩
   have hz : HasSum z u := by
-    have hzs : Summable z := Summable.of_norm_bounded ha fun p ↦ by
-      simpa [hz_def, ha_def, Completion.norm_coe, ProjectiveTensor.norm_def] using
-        TensorProduct.projectiveSeminorm_tmul_le (𝕜 := 𝕜) (X p.1 p.2) (Y p.1 p.2)
+    have hzs : Summable z :=
+      Summable.of_norm_bounded ha fun p ↦ norm_coe_tmul_le (X p.1 p.2) (Y p.1 p.2)
     rw [hwu.unique (hzs.hasSum.prod_fiberwise hrow_z)]
     exact hzs.hasSum
   have ha_le : ∑' p, a p < c :=
