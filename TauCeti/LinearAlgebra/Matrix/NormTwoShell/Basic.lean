@@ -369,6 +369,15 @@ theorem coe_normTwoShellEquivOfIsometry_symm_apply (g : (I → ℤ) ≃ₗ[ℤ] 
     ((normTwoShellEquivOfIsometry g hg).symm b : I → ℤ) = g.symm b :=
   (rfl)
 
+/-- The isometry `a ↦ a ∘ e.symm` induced by a relabelling `e` restricts on the norm-two shells to
+the relabelling bijection `Matrix.normTwoShellCongr`. -/
+theorem normTwoShellEquivOfIsometry_funCongrLeft {e : I ≃ J} (he : B.reindex e e = B')
+    (hg : ∀ a b, LinearEquiv.funCongrLeft ℤ ℤ e.symm a ⬝ᵥ B' *ᵥ
+      LinearEquiv.funCongrLeft ℤ ℤ e.symm b = a ⬝ᵥ B *ᵥ b) (a : B.normTwoShell) :
+    normTwoShellEquivOfIsometry (LinearEquiv.funCongrLeft ℤ ℤ e.symm) hg a =
+      normTwoShellCongr he a :=
+  Subtype.ext (funext fun j => by simp [LinearMap.funLeft_apply])
+
 end Isometry
 
 end Matrix

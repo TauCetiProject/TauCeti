@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.NormTwoShell.CoverLift
-public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover.Reindex
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
@@ -120,41 +119,13 @@ theorem reindex_root_neg_single [DecidableEq I] [DecidableEq J] (i : I)
   exact Subtype.ext <| by
     rw [coe_normTwoShellCongr_apply, Pi.neg_comp, Pi.single_comp_equiv, Equiv.symm_symm]
 
-/-- The relabelled sign cover fixes the kernel `ℤˣ`. -/
-private theorem reindex_toMonoidHom_inl (hB : B.IsSymm) (u : ℤˣ) :
-    (SignCover.reindex e hB he).toMonoidHom (FactorSet.inl (signFactorSet B) u) =
-      FactorSet.inl (signFactorSet B') u := by
-  rw [MulEquiv.coe_toMonoidHom, SignCover.reindex_inl]
-
-/-- The relabelled sign cover lies over the isometry `a ↦ a ∘ e.symm`. -/
-private theorem reindex_toMonoidHom_right (hB : B.IsSymm) (x : SignCover B) :
-    ((SignCover.reindex e hB he).toMonoidHom x).right =
-      .ofAdd (LinearEquiv.funCongrLeft ℤ ℤ e.symm x.right.toAdd) := by
-  rw [MulEquiv.coe_toMonoidHom, SignCover.reindex_right, LinearEquiv.funCongrLeft_apply]
-  exact congrArg Multiplicative.ofAdd
-    (funext fun j => by rw [LinearMap.funLeft_apply, Function.comp_apply])
-
-/-- The section signs of the relabelled sign cover are the inversion signs. -/
-private theorem sectionSign_reindex (hB : B.IsSymm) (a : I → ℤ) :
-    SignCover.sectionSign (SignCover.reindex e hB he).toMonoidHom a = inversionSign B e a := by
-  simp [SignCover.sectionSign_def]
-
-omit [LinearOrder I] [LinearOrder J] in
-/-- The isometry `a ↦ a ∘ e.symm` relabels the norm-two shells. -/
-private theorem normTwoShellEquivOfIsometry_funCongrLeft
-    (hg : ∀ a b, LinearEquiv.funCongrLeft ℤ ℤ e.symm a ⬝ᵥ B' *ᵥ
-      LinearEquiv.funCongrLeft ℤ ℤ e.symm b = a ⬝ᵥ B *ᵥ b) (a : B.normTwoShell) :
-    normTwoShellEquivOfIsometry (LinearEquiv.funCongrLeft ℤ ℤ e.symm) hg a =
-      normTwoShellCongr he a :=
-  Subtype.ext (funext fun j => by simp [LinearMap.funLeft_apply])
-
 /-- **Relabelling is the action of the relabelled sign cover.** For a symmetric `B` and a
 relabelling `e : I ≃ J` of its vertices with `B.reindex e e = B'`, the relabelling
 `Matrix.ShellLieAlgebra.reindex e he` is the action `Matrix.ShellLieAlgebra.coverEquiv` of the
 compatible pair formed by the relabelling `Matrix.SignCover.reindex` of the ordered sign covers and
 the isometry `a ↦ a ∘ e.symm`. -/
 theorem reindex_eq_coverEquiv (hB : B.IsSymm) :
-    reindex e he = coverEquiv (SignCover.reindex e hB he).toMonoidHom
+    reindex e he = coverEquiv (SignCover.reindex e hB he : SignCover B →* SignCover B')
       (LinearEquiv.funCongrLeft ℤ ℤ e.symm)
       (fun a b => by subst he; exact comp_equiv_symm_dotProduct_reindex_mulVec e B a b) := by
   refine (basis B).ext' fun k => ?_
@@ -162,8 +133,8 @@ theorem reindex_eq_coverEquiv (hB : B.IsSymm) :
   · classical
     rw [basis_inl, reindex_cartan, coverEquiv_cartan]
     exact congrArg (cartan B') (funext fun j => by simp [LinearMap.funLeft_apply])
-  · rw [basis_inr, reindex_root, coverEquiv_root, sectionSign_reindex,
-      normTwoShellEquivOfIsometry_funCongrLeft]
+  · rw [basis_inr, reindex_root, coverEquiv_root, SignCover.sectionSign_reindex,
+      normTwoShellEquivOfIsometry_funCongrLeft he]
 
 /-- **The relabelling of a root bracket**, for symmetric `B`: the ordered signs of the two
 labellings differ by the coboundary of the inversion sign `σ`, so
@@ -173,17 +144,17 @@ theorem reindex_rootBracket (hB : B.IsSymm) (a b : B.normTwoShell) :
       (inversionSign B e a * inversionSign B e b) •
         rootBracket B' (normTwoShellCongr he a) (normTwoShellCongr he b) := by
   rw [reindex_eq_coverEquiv e he hB,
-    coverEquiv_rootBracket _ _ (reindex_toMonoidHom_inl e he hB)
-      (reindex_toMonoidHom_right e he hB),
-    sectionSign_reindex, sectionSign_reindex, normTwoShellEquivOfIsometry_funCongrLeft,
-    normTwoShellEquivOfIsometry_funCongrLeft]
+    coverEquiv_rootBracket _ _ (SignCover.coe_monoidHom_reindex_inl e hB he)
+      (SignCover.coe_monoidHom_reindex_right e hB he),
+    SignCover.sectionSign_reindex, SignCover.sectionSign_reindex,
+    normTwoShellEquivOfIsometry_funCongrLeft he, normTwoShellEquivOfIsometry_funCongrLeft he]
 
 /-- **The relabelling preserves the bracket**, for symmetric `B`. -/
 theorem reindex_lie (hB : B.IsSymm) (x y : ShellLieAlgebra B) :
     reindex e he ⁅x, y⁆ = ⁅reindex e he x, reindex e he y⁆ := by
   rw [reindex_eq_coverEquiv e he hB]
-  exact coverEquiv_lie _ _ (reindex_toMonoidHom_inl e he hB) (reindex_toMonoidHom_right e he hB)
-    x y
+  exact coverEquiv_lie _ _ (SignCover.coe_monoidHom_reindex_inl e hB he)
+    (SignCover.coe_monoidHom_reindex_right e hB he) x y
 
 /-- **The identity relabels the signed shell Lie algebra by the identity.** -/
 @[simp]

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover
-public import Mathlib.Algebra.Module.LinearMap.Defs
+public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover.Reindex
+public import Mathlib.Algebra.Module.Equiv.Basic
 
 /-!
 # Section signs of homomorphisms of ordered sign covers
@@ -48,6 +49,9 @@ such a `φ` is the identity as soon as `s_φ` is trivial on a spanning set
   character of the lattice.
 * `Matrix.SignCover.eq_id_of_sectionSign_eq_one`: over the identity, section sign `1` on a
   spanning set forces `φ` to be the identity.
+* `Matrix.SignCover.coe_monoidHom_reindex_inl`, `Matrix.SignCover.coe_monoidHom_reindex_right`,
+  `Matrix.SignCover.sectionSign_reindex`: the relabelling of the ordered sign cover is compatible
+  with the isometry `a ↦ a ∘ e.symm`, with the inversion signs as section signs.
 
 ## References
 
@@ -169,5 +173,31 @@ theorem eq_id_of_sectionSign_eq_one {φ : SignCover B →* SignCover B}
   rw [ofAdd_toAdd, hone, map_one, one_mul, LinearMap.id_apply, ofAdd_toAdd] at h
   rw [← FactorSet.inl_mul_canonicalSection (signFactorSet B) x, map_mul, hinl, h,
     MonoidHom.id_apply]
+
+section Reindex
+
+variable (e : I ≃ J) (hB : B.IsSymm) (he : B.reindex e e = B')
+
+/-- The relabelled sign cover fixes the kernel `ℤˣ`. -/
+theorem coe_monoidHom_reindex_inl (u : ℤˣ) :
+    (reindex e hB he : SignCover B →* SignCover B') (FactorSet.inl (signFactorSet B) u) =
+      FactorSet.inl (signFactorSet B') u := by
+  rw [MonoidHom.coe_ofClass, reindex_inl]
+
+/-- The relabelled sign cover lies over the isometry `a ↦ a ∘ e.symm`. -/
+theorem coe_monoidHom_reindex_right (x : SignCover B) :
+    ((reindex e hB he : SignCover B →* SignCover B') x).right =
+      .ofAdd (LinearEquiv.funCongrLeft ℤ ℤ e.symm x.right.toAdd) := by
+  rw [MonoidHom.coe_ofClass, reindex_right, LinearEquiv.funCongrLeft_apply]
+  exact congrArg Multiplicative.ofAdd
+    (funext fun j => by rw [LinearMap.funLeft_apply, Function.comp_apply])
+
+/-- The section signs of the relabelled sign cover are the inversion signs. -/
+@[simp]
+theorem sectionSign_reindex (a : I → ℤ) :
+    sectionSign (reindex e hB he : SignCover B →* SignCover B') a = inversionSign B e a := by
+  simp [sectionSign_def]
+
+end Reindex
 
 end Matrix.SignCover
