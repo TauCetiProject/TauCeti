@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 
@@ -23,7 +25,8 @@ sets, the integral of `φ` against `ν` is bounded by the sup norm:
 `‖∫ φ dν‖ ≤ ν(K) ‖φ‖_∞`.
 
 This is the estimate showing that integration against such a measure is a distribution of order
-zero.
+zero. Through a continuous bilinear map, a test function also pairs integrably with every
+function that is locally integrable for a measure on `Ω`.
 
 Every nonempty open subset of the domain also contains a nonnegative integral-one test, for any
 locally finite measure positive on nonempty open sets. The construction normalizes Mathlib's
@@ -45,6 +48,9 @@ zero, by Mathlib's integration by parts against the constant function `1`.
 
 * `TestFunction.norm_integral_le_measureReal_mul_norm`: `‖∫ φ dν‖ ≤ ν(K) ‖φ‖_∞` for a test
   function `φ` supported in a compact `K ⊆ Ω`.
+
+* `TestFunction.integrable_bilin_subtype`: `x ↦ B (φ x) (g x)` is integrable for `g` locally
+  integrable for a measure on `Ω`.
 
 * `TestFunction.integral_lineDeriv_eq_zero`: `∫ ∂_w φ dμ = 0` for an additive Haar measure `μ`.
 -/
@@ -107,6 +113,23 @@ theorem norm_integral_le_measureReal_mul_norm (φ : 𝓓(Ω, F)) {K : Set E} (hK
     mul_comm]
   exact norm_setIntegral_le_of_norm_le_const hK'.measure_lt_top fun x _ => by
     simpa using (φ : E →ᵇ F).norm_coe_le_norm x
+
+/-- A test function on `Ω` pairs integrably, through a continuous bilinear map `B`, with every
+function `g` that is locally integrable for a measure on the subspace `Ω`. -/
+theorem integrable_bilin_subtype [OpensMeasurableSpace E] {F₂ F₃ : Type*} [NormedAddCommGroup F₂]
+    [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃] (B : F →L[ℝ] F₂ →L[ℝ] F₃)
+    {ν : Measure Ω} {g : Ω → F₂} (hg : LocallyIntegrable g ν) (φ : 𝓓^{n}(Ω, F)) :
+    Integrable (fun x : Ω => B (φ x) (g x)) ν := by
+  set f := φ.toCompactlySupportedContinuousMap
+  have hf : (f : Ω → F) = fun x : Ω => φ x := funext (toCompactlySupportedContinuousMap_apply φ)
+  have hK : IsCompact (tsupport f) := f.hasCompactSupport
+  have hon : IntegrableOn (fun x => B (f x) (g x)) (tsupport f) ν := by
+    rw [IntegrableOn, ← memLp_one_iff_integrable]
+    exact B.memLp_of_bilin 1 (f.continuous.memLp_top_of_hasCompactSupport f.hasCompactSupport _)
+      (memLp_one_iff_integrable.2 (hg.integrableOn_isCompact hK))
+  rw [hf] at hon
+  refine (integrableOn_iff_integrable_of_support_subset fun x hx => ?_).1 hon
+  exact subset_tsupport _ fun hφx => hx (by simp [(congrFun hf x).symm.trans hφx])
 
 section IntegralOne
 

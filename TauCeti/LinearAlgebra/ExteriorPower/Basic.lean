@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 
@@ -12,7 +13,8 @@ public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 # Further results on exterior powers
 
 This file records that the `d`th exterior power of a finite free module over a commutative ring
-vanishes as soon as `d` exceeds the rank of the module.
+vanishes as soon as `d` exceeds the rank of the module, and that exterior powers of projective
+modules are projective.
 
 It then builds the surjection `exteriorPower.fromTensorPower : ⨂[R]^n M →ₗ[R] ⋀[R]^n M` that is
 left inverse, up to the factor `n!`, to Mathlib's antisymmetrization
@@ -34,6 +36,7 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
 
 * `exteriorPower.eq_zero_of_finrank_lt` states that every element of `⋀[R]^d M` is zero when
   `Module.finrank R M < d`.
+* `exteriorPower.instProjective`: exterior powers of projective modules are projective.
 * `exteriorPower.fromTensorPower_comp_toTensorPower`: antisymmetrizing and projecting back is
   multiplication by `n!`, whence `exteriorPower.toTensorPower_injective`.
 * `exteriorPower.ιMulti_ne_zero_iff`: over a field, an exterior product of vectors is nonzero
@@ -119,6 +122,21 @@ theorem toTensorPower_injective_of_free [Module.Free R M] {n : ℕ} :
   simp only [ιMultiDual, ιMulti_family, pairingDual_ιMulti_apply, h]
 
 end Free
+
+/-! ### Projectivity -/
+
+section Projective
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Exterior powers of a projective module are projective: `⋀[R]^n M` is a direct summand of the
+exterior power of the free module `M →₀ R`. -/
+instance instProjective [Module.Projective R M] (n : ℕ) : Module.Projective R (⋀[R]^n M) := by
+  obtain ⟨s, hs⟩ := Module.projective_def'.mp ‹Module.Projective R M›
+  refine .of_split (map n s) (map n (Finsupp.linearCombination R id)) ?_
+  rw [← map_comp, hs, map_id]
+
+end Projective
 
 /-! ### The exterior power as a quotient of the tensor power -/
 

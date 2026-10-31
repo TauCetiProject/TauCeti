@@ -341,8 +341,8 @@ theorem atkinLehnerOperatorGamma1_heckeTNat (hQ : 0 < Q) (hQN : Q ∣ N)
   -- every Atkin–Lehner matrix for `Q` is `γ W₀` with `γ ∈ Γ₀(N)`, and `⟨d_γ⟩` commutes with `Tₙ`
   obtain ⟨γ, hγ, rfl⟩ := h₀.exists_mem_Gamma0_eq_mul_left hQ.ne' hQN h
   have hc := fun g ↦ DFunLike.congr_fun
-    (commute_heckeTNat_diamondOp k hn ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩)).eq g
-  have hc' := DFunLike.congr_fun (commute_heckeTNat_diamondOp k hn u).eq
+    (commute_heckeTNat_diamondOp k n ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩)).eq g
+  have hc' := DFunLike.congr_fun (commute_heckeTNat_diamondOp k n u).eq
   simp only [Module.End.mul_apply] at hc hc'
   rw [atkinLehnerOperatorGamma1_mul_left hQ hQN h₀ k hγ, LinearMap.comp_apply,
     LinearMap.comp_apply, ← hc, ← hc', ← hAu]
@@ -404,7 +404,7 @@ theorem atkinLehnerOperatorGamma1_heckeTNat_of_mem_modFormCharSpace (hQ : 0 < Q)
       (ψ (ZMod.unitOfCoprime n (hn.coprime_dvd_right hQN)) : ℂ) •
         heckeTNat k n (atkinLehnerOperatorGamma1 hQ hQN h k f) := by
   obtain ⟨u, hu, hu', hψ⟩ := exists_unit_charSpace_eq ψ φ (h.isExactDivisor hQ.ne' hQN) hn
-  have hc := DFunLike.congr_fun (commute_heckeTNat_diamondOp k hn u).eq
+  have hc := DFunLike.congr_fun (commute_heckeTNat_diamondOp k n u).eq
     (atkinLehnerOperatorGamma1 hQ hQN h k f)
   simp only [Module.End.mul_apply] at hc
   rw [atkinLehnerOperatorGamma1_heckeTNat hQ hQN h hn hu hu', ← hc,
@@ -423,7 +423,7 @@ theorem atkinLehnerOperatorGamma1Cusp_heckeTCuspNat_of_mem_cuspFormCharSpace (hQ
       (ψ (ZMod.unitOfCoprime n (hn.coprime_dvd_right hQN)) : ℂ) •
         heckeTCuspNat k n (atkinLehnerOperatorGamma1Cusp hQ hQN h k f) := by
   obtain ⟨u, hu, hu', hψ⟩ := exists_unit_charSpace_eq ψ φ (h.isExactDivisor hQ.ne' hQN) hn
-  have hc := DFunLike.congr_fun (commute_heckeTCuspNat_diamondOpCusp k hn u).eq
+  have hc := DFunLike.congr_fun (commute_heckeTCuspNat_diamondOpCusp k n u).eq
     (atkinLehnerOperatorGamma1Cusp hQ hQN h k f)
   simp only [Module.End.mul_apply] at hc
   rw [atkinLehnerOperatorGamma1Cusp_heckeTCuspNat hQ hQN h hn hu hu', ← hc,

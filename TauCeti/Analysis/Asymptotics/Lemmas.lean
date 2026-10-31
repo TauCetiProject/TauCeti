@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Asymptotics.Lemmas
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -23,6 +24,10 @@ the ratio formulation also supports order arguments.
 In a seminormed group the norm is at most one on a neighbourhood of the origin, so there a higher
 power of the norm is dominated by any lower one. This is the comparison that lets a Taylor
 remainder of one order be read as a remainder of a smaller order.
+
+A bound `F = O(x ^ r)` at infinity survives the dilation `x ↦ c x` for `c > 0`. This is how
+rapid decay at infinity, `O(x ^ r)` for every `r`, passes to rescaled functions such as the
+theta kernels of a lattice at a level.
 
 An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` as soon as the
 dominated function is bounded on compact intervals and the dominating one is bounded away from
@@ -46,6 +51,8 @@ evaluations of elliptic integrals.
   `f / g → a`, for an eventually nonzero `g`.
 * `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`: `‖x‖ ^ m = O(‖x‖ ^ n)` at the origin
   whenever `n ≤ m`.
+* `Asymptotics.IsBigO.comp_const_mul_rpow`: `F = O(x ^ r)` at infinity implies
+  `F (c x) = O(x ^ r)` for `c > 0`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
@@ -84,6 +91,16 @@ theorem isBigO_norm_pow_norm_pow_nhds_zero_of_le {E : Type*} [SeminormedAddCommG
   filter_upwards [Metric.closedBall_mem_nhds (0 : E) one_pos] with x hx
   simp only [one_mul, norm_pow, norm_norm]
   exact pow_le_pow_of_le_one (norm_nonneg x) (by simpa [Metric.mem_closedBall] using hx) h
+
+/-- **A power bound at infinity survives a dilation.** If `F = O(x ^ r)` as `x → ∞`, then
+`F (c x) = O(x ^ r)` for every `c > 0`. -/
+theorem IsBigO.comp_const_mul_rpow {E : Type*} [Norm E] {F : ℝ → E} {r c : ℝ}
+    (hF : F =O[atTop] (· ^ r)) (hc : 0 < c) :
+    (fun x ↦ F (c * x)) =O[atTop] (· ^ r) := by
+  refine (hF.comp_tendsto (tendsto_id.const_mul_atTop hc)).trans ?_
+  refine ((isBigO_refl (fun x : ℝ ↦ x ^ r) atTop).const_mul_left (c ^ r)).congr' ?_ .rfl
+  filter_upwards [eventually_ge_atTop 0] with x hx
+  simp [Real.mul_rpow hc.le hx]
 
 /-- **An eventual big-O bound holds on a whole half-line.** If `f = O(g)` at `atTop`, `f` is
 bounded on every interval `[a, b]`, and `‖g‖` is bounded below by a positive constant on

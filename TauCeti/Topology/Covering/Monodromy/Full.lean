@@ -21,11 +21,6 @@ packaged in `TauCeti.Topology.Covering.Monodromy.Connected`.
 
 * `TauCeti.CoveringSpace.monodromyFunctor_full`: over a locally path-connected base, the
   monodromy functor on covering spaces is full.
-
-## References
-
-This packages the fullness step in the alternative monodromy-functor classification requested by
-Stage 2, item 8 of `TauCetiRoadmap/UniversalCovers/README.md`.
 -/
 
 public section
