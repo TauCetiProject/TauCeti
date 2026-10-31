@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.InvariantForm
 public import Mathlib.Geometry.Manifold.GroupLieAlgebra
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
+public import TauCeti.Algebra.Lie.InvariantForm
 public import TauCeti.Geometry.Lie.Basic
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
@@ -109,13 +109,15 @@ private theorem inner_lie_left
     inner ℝ ⁅x, y⁆ z = -inner ℝ y ⁅x, z⁆ := by
   simpa only [innerₗ_apply_apply] using had x y z
 
-/-- For an ad-invariant inner product at the identity, `⟪⁅b, c⁆, a⟫ = ⟪⁅a, b⁆, c⟫`. -/
+/-- For an ad-invariant inner product at the identity, `⟪⁅b, c⁆, a⟫ = ⟪⁅a, b⁆, c⟫`: the `inner`
+form of `LinearMap.BilinForm.lieInvariant.apply_lie_cyclic`. -/
 private theorem inner_lie_cyclic
     (had : LinearMap.BilinForm.lieInvariant (TangentSpace I (1 : G))
       (innerₗ (TangentSpace I (1 : G))))
     (a b c : TangentSpace I (1 : G)) :
     inner ℝ ⁅b, c⁆ a = inner ℝ ⁅a, b⁆ c := by
-  rw [inner_lie_left had, ← lie_skew a b, inner_neg_left, real_inner_comm]
+  simpa only [innerₗ_apply_apply] using
+    had.apply_lie_cyclic ⟨fun x y ↦ real_inner_comm y x⟩ a b c
 
 variable [IsContMDiffRiemannianBundle I 1 E (fun g : G ↦ TangentSpace I g)]
   {cov : CovariantDerivative I E (fun g : G ↦ TangentSpace I g)}
