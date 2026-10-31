@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 
 import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
-import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!
 # Unramified and tamely ramified covers in codimension one

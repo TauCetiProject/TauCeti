@@ -20,11 +20,13 @@ at the prime `𝔮` lying under the maximal ideal of `𝒪_{X,x}`, and `𝔮` is
 `𝒪_{X,y}` only when `x = y`. On an affine open `Spec R` containing `y` these are the facts that
 `R_q` is the localization of `R_p` at `q R_p` for primes `q ⊆ p`, and that `q R_p` determines `q`.
 
-When `𝒪_{X,y}` has dimension at most one and `x ≠ y`, the prime `𝔮` is therefore zero: the
-residue field `κ(x)` is the fraction field of `𝒪_{X,y}`. For a point `y` of codimension one with
-`𝒪_{X,y}` a discrete valuation ring this identifies the field `K_y` of Stacks, Section 58.31,
-with the residue field at the generic point of `Spec 𝒪_{X,y}`, which is how ramification along
-`y` of a cover defined over a neighbourhood of that generic point is read off.
+When every nonzero prime of `𝒪_{X,y}` is maximal (`Ring.DimensionLEOne`) and `x ≠ y`, the prime
+`𝔮` is therefore zero: the residue field `κ(x)` is the fraction field of `𝒪_{X,y}`. Without a
+domain assumption this is stronger than Krull dimension at most one. For a point `y` of
+codimension one with `𝒪_{X,y}` a discrete valuation ring this identifies the field `K_y` of
+Stacks, Section 58.31, with the residue field at the generic point of `Spec 𝒪_{X,y}`, which is
+how ramification along `y` of a cover defined over a neighbourhood of that generic point is read
+off.
 
 ## Main results
 
@@ -32,8 +34,9 @@ with the residue field at the generic point of `Spec 𝒪_{X,y}`, which is how r
   localization of `𝒪_{X,y}` at the prime under its maximal ideal.
 * `TauCeti.AlgebraicGeometry.Scheme.comap_stalkSpecializes_maximalIdeal_eq_iff`: that prime is
   the maximal ideal of `𝒪_{X,y}` iff `x = y`.
-* `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_residueField_of_specializes`: if `𝒪_{X,y}`
-  has dimension at most one and `x ≠ y`, then `κ(x)` is a fraction field of `𝒪_{X,y}`.
+* `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_residueField_of_specializes`: if every
+  nonzero prime of `𝒪_{X,y}` is maximal and `x ≠ y`, then `κ(x)` is a fraction field of
+  `𝒪_{X,y}`.
 
 ## References
 
@@ -102,6 +105,7 @@ theorem isLocalization_stalkSpecializes (h : x ⤳ y) :
 
 /-- For a specialization `x ⤳ y`, the prime of `𝒪_{X,y}` lying under the maximal ideal of
 `𝒪_{X,x}` is the maximal ideal of `𝒪_{X,y}` exactly when `x = y`. -/
+@[simp]
 theorem comap_stalkSpecializes_maximalIdeal_eq_iff (h : x ⤳ y) :
     (maximalIdeal (X.presheaf.stalk x)).comap (X.presheaf.stalkSpecializes h).hom =
       maximalIdeal (X.presheaf.stalk y) ↔ x = y := by
@@ -130,9 +134,10 @@ theorem comap_stalkSpecializes_maximalIdeal_eq_iff (h : x ⤳ y) :
   simpa using (hU.fromSpec_primeIdealOf ⟨x, hxU⟩).symm.trans
     (hprime ▸ hU.fromSpec_primeIdealOf ⟨y, hyU⟩)
 
-/-- If `x` is a proper generization of `y` and `𝒪_{X,y}` has dimension at most one, then the
-residue field `κ(x)` is a fraction field of `𝒪_{X,y}`, via the specialization map. In
-particular `𝒪_{X,y}` is a domain. -/
+/-- If `x` is a proper generization of `y` and every nonzero prime of `𝒪_{X,y}` is maximal
+(`Ring.DimensionLEOne`, which without a domain assumption is stronger than Krull dimension at
+most one), then the residue field `κ(x)` is a fraction field of `𝒪_{X,y}`, via the
+specialization map. In particular `𝒪_{X,y}` is a domain. -/
 theorem isFractionRing_residueField_of_specializes [Ring.DimensionLEOne (X.presheaf.stalk y)]
     (h : x ⤳ y) (hxy : x ≠ y) :
     letI := (X.presheaf.stalkSpecializes h ≫ X.residue x).hom.toAlgebra
