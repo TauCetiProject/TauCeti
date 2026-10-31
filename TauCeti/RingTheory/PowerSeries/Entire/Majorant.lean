@@ -62,6 +62,8 @@ transform `D(B, F)`, which is therefore entire.
 * `PowerSeries.monotoneOn_colemanMajorant` and `PowerSeries.colemanMajorant_le_div_mul`:
   monotonicity, and the linear bound near `0`.
 * `PowerSeries.tendsto_colemanMajorant`: `β_B(ρᵢ) → 0` whenever `ρᵢ → 0` with `ρᵢ ≥ 0`.
+* `PowerSeries.tendsto_colemanMajorant_sub_trunc`: the majorants `β_(B - trunc L B)(r)` of the
+  tails of a series restricted at `r` tend to zero as `L → ∞`.
 
 ## References
 
@@ -262,6 +264,27 @@ theorem colemanMajorant_trunc_le {r : ℝ} (hB : B.IsRestricted r) (hr : 0 ≤ r
   split_ifs
   · exact norm_coeff_succ_mul_pow_le_colemanMajorant hB m
   · simpa using colemanMajorant_nonneg B hr
+
+/-- **Decay of the tail majorants.** If `B` is restricted at the radius `r`, the Coleman majorants
+of its tails `B - trunc L B`, the suprema `sup_{m ≥ max L 1} ‖bₘ‖ rᵐ`, tend to zero as
+`L → ∞`. -/
+theorem tendsto_colemanMajorant_sub_trunc {r : ℝ} (hB : B.IsRestricted r) :
+    Tendsto (fun L ↦ colemanMajorant (B - (trunc L B : R⟦X⟧)) r) atTop (𝓝 0) := by
+  refine tendsto_order.2 ⟨fun ε hε ↦ Eventually.of_forall fun L ↦ ?_, fun ε hε ↦ ?_⟩
+  · -- the majorant of the restricted tail is at least its weighted coefficient of degree two
+    have htail : (B - (trunc L B : R⟦X⟧)).IsRestricted r :=
+      hB.sub (TauCeti.PowerSeries.isRestricted_polynomial _)
+    refine hε.trans_le (le_trans ?_ (norm_coeff_succ_mul_pow_le_colemanMajorant htail 1))
+    exact mul_nonneg (norm_nonneg _) (by simpa using sq_nonneg r)
+  · obtain ⟨J, hJ⟩ := eventually_atTop.1
+      (((isRestricted_iff' _ _).1 hB).eventually (gt_mem_nhds (half_pos hε)))
+    filter_upwards [eventually_ge_atTop J] with L hL
+    refine (colemanMajorant_le fun m ↦ ?_).trans_lt (half_lt_self hε)
+    rw [map_sub, Polynomial.coeff_coe, coeff_trunc]
+    split_ifs with hm
+    · simpa using (half_pos hε).le
+    · rw [sub_zero]
+      exact (hJ _ (by omega)).le
 
 /-- The Coleman majorant at the radius `0` vanishes. -/
 @[simp]
