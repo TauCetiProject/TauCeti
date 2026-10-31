@@ -348,9 +348,9 @@ lemma supportedModuleHExcisionEquiv_apply (S : Closeds X) {W' W : Opens X} (h : 
     (hW : W ≤ W' ⊔ S.compl) {n : ℕ} (x : F.supportedModuleH S W n) :
     F.supportedModuleHExcisionEquiv S h hW n x =
       (F.supportedModuleHPresheaf S n).map (homOfLE h).op x := by
-  rw [supportedModuleHPresheaf_map_apply, supportedModuleHExcisionEquiv,
-    TauCeti.extLinearEquivOfIso_apply, Iso.symm_inv, asIso_hom, Iso.refl_hom, Ext.comp_mk₀_id,
-    Quiver.Hom.unop_op]
+  -- Keep the map `Q_S(W') ⟶ Q_S(W)` folded, so that `asIso_hom` applies.
+  simp [supportedModuleHExcisionEquiv, supportedModuleHPresheaf_map_apply,
+    -Closeds.supportedFreeModuleSheafFunctor_map]
 
 end CategoryTheory.Sheaf
 
@@ -467,9 +467,9 @@ lemma supportedModuleHPresheafMap_app_supportedModuleHPresheafMap_app {T : Close
     (hZS : Z ≤ S) (hST : S ≤ T) (n : ℕ) (W : (Opens X)ᵒᵖ) (x : F.supportedModuleH Z W.unop n) :
     (F.supportedModuleHPresheafMap hST n).app W ((F.supportedModuleHPresheafMap hZS n).app W x) =
       (F.supportedModuleHPresheafMap (hZS.trans hST) n).app W x := by
-  rw [supportedModuleHPresheafMap_app_apply, supportedModuleHPresheafMap_app_apply,
-    supportedModuleHPresheafMap_app_apply, ← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀,
-    ← NatTrans.comp_app, Closeds.supportedFreeModuleSheafFunctorMap_comp]
+  simp only [supportedModuleHPresheafMap_app_apply]
+  rw [← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀, ← NatTrans.comp_app,
+    Closeds.supportedFreeModuleSheafFunctorMap_comp]
 
 @[simp]
 lemma supportedModuleHPresheafMap_refl (Z : Closeds X) (n : ℕ) :
