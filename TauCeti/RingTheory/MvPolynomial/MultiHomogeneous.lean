@@ -115,12 +115,14 @@ theorem IsMultiHomogeneous.degreeOf_le (hP : IsMultiHomogeneous d P) (h : κ) (i
   exact Finsupp.le_weight _ (by simp) n
 
 /-- A multihomogeneous polynomial of multidegree `d` is homogeneous of total degree `∑ h, d h`. -/
-theorem IsMultiHomogeneous.isHomogeneous [Fintype κ] [Finite ι] (hP : IsMultiHomogeneous d P) :
+theorem IsMultiHomogeneous.isHomogeneous [Fintype κ] (hP : IsMultiHomogeneous d P) :
     P.IsHomogeneous (∑ h, d h) := by
-  have := Fintype.ofFinite ι
   intro n hn
-  rw [Pi.one_def, ← Finsupp.degree_eq_weight_one, Finsupp.degree_eq_sum, Fintype.sum_prod_type]
-  exact sum_congr rfl fun h _ ↦ isMultiHomogeneous_iff.mp hP n hn h
+  rw [← sum_congr rfl fun h _ ↦ hP h hn]
+  simp only [Finsupp.weight_apply, Finsupp.sum, smul_eq_mul, mul_ite, mul_one, mul_zero,
+    Pi.one_apply]
+  rw [sum_comm]
+  simp
 
 theorem isMultiHomogeneous_zero (d : κ → ℕ) : IsMultiHomogeneous d (0 : MvPolynomial (κ × ι) R) :=
   fun _ ↦ isWeightedHomogeneous_zero _ _ _
@@ -214,23 +216,12 @@ section multiMons
 
 variable [Fintype κ] [Fintype ι] [DecidableEq ι]
 
-omit [DecidableEq κ] [DecidableEq ι] in
-/-- The exponent vector on `κ × ι` assembled from one exponent vector on `ι` for each block. -/
-private noncomputable def blockExponent : (κ → ι →₀ ℕ) ↪ (κ × ι →₀ ℕ) where
-  toFun f := Finsupp.equivFunOnFinite.symm fun p ↦ f p.1 p.2
-  inj' f g hfg := funext fun h ↦ Finsupp.ext fun i ↦ by
-    simpa using DFunLike.congr_fun hfg (h, i)
-
-omit [DecidableEq κ] [DecidableEq ι] in
-private theorem blockExponent_apply (f : κ → ι →₀ ℕ) (p : κ × ι) :
-    blockExponent f p = f p.1 p.2 :=
-  rfl
-
 variable (ι) in
 /-- The exponent vectors of multidegree `d`: those of degree `d h` in block `h`, for every `h`.
 These index the monomials of a multihomogeneous polynomial of multidegree `d`. -/
 noncomputable def multiMons (d : κ → ℕ) : Finset (κ × ι →₀ ℕ) :=
-  (Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)).map blockExponent
+  (Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)).map
+    (Finsupp.equivFunOnFinite.symm.trans Finsupp.curryEquiv.symm).toEmbedding
 
 @[simp]
 theorem mem_multiMons {n : κ × ι →₀ ℕ} : n ∈ multiMons ι d ↔ ∀ h, ∑ i, n (h, i) = d h := by
@@ -238,12 +229,9 @@ theorem mem_multiMons {n : κ × ι →₀ ℕ} : n ∈ multiMons ι d ↔ ∀ h
     and_true]
   constructor
   · rintro ⟨f, hf, rfl⟩ h
-    simpa [blockExponent_apply] using hf h
+    simpa [Finsupp.uncurry_apply] using hf h
   · intro hn
-    refine ⟨fun h ↦ Finsupp.equivFunOnFinite.symm fun i ↦ n (h, i), fun h ↦ ?_, ?_⟩
-    · simpa using hn h
-    · ext p
-      simp [blockExponent_apply]
+    exact ⟨n.curry, hn, by simp⟩
 
 /-- There are `∏ h, (card ι + d h - 1).choose (d h)` exponent vectors of multidegree `d`: a
 monomial of degree `d h` in the `card ι` variables of each block `h`. When `ι` is nonempty the
