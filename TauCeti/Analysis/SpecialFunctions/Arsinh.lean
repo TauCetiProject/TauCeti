@@ -84,6 +84,7 @@ theorem normalizedArsinh_neg (s : ℝ) : normalizedArsinh (-s) = -normalizedArsi
   simp [normalizedArsinh_apply]
 
 /-- `β` maps the open interval `(-1, 1)` onto itself, and its complement onto its complement. -/
+@[simp]
 theorem abs_normalizedArsinh_lt_one_iff {s : ℝ} : |normalizedArsinh s| < 1 ↔ |s| < 1 := by
   conv_lhs => rw [← normalizedArsinh_one]
   rw [abs_lt, abs_lt, ← normalizedArsinh_neg, normalizedArsinh_lt_normalizedArsinh,
