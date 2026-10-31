@@ -43,10 +43,10 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 
 * `OnePoint.smul_some_eq_infty_iff`: `g • (k : OnePoint K) = ∞` exactly when the denominator
   `g 1 0 * k + g 1 1` vanishes.
-* `TauCeti.scalar_smul_onePoint_eq_self` and `TauCeti.mem_center_of_forall_smul_onePoint_eq_self`:
-  a matrix fixes every point of the projective line exactly when it is scalar, whence
-  `TauCeti.ker_toPermHom_onePoint_eq_center`, the kernel of the permutation representation of
-  `GL₂(F)` on the projective line.
+* `TauCeti.scalar_smul_onePoint_eq_self` and `TauCeti.mem_center_of_smul_zero_one_infty_eq_self`:
+  a scalar matrix fixes every point of the projective line, and a matrix fixing `0`, `1` and `∞`
+  is scalar, whence `TauCeti.ker_toPermHom_onePoint_eq_center`, the kernel of the permutation
+  representation of `GL₂(F)` on the projective line.
 * `OnePoint.instMulActionPGL`: the action of `PGL(2, K)` on `OnePoint K`, with `pglMk_smul` and its
   faithfulness.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
@@ -117,24 +117,24 @@ theorem scalar_smul_onePoint_eq_self (u : Fˣ) (x : OnePoint F) :
   | infty => exact OnePoint.smul_infty_eq_self_iff.mpr (by simp [Matrix.scalar_apply])
   | coe k => rw [OnePoint.smul_some_eq_ite]; simp [Matrix.scalar_apply]
 
-/-- **A matrix fixing every point of the projective line is central.** Fixing `∞` kills the lower
-left entry, fixing `0` then kills the upper right one, and fixing `1` makes the two diagonal
-entries agree; so the matrix is scalar, and the scalar matrices are the centre. -/
-theorem mem_center_of_forall_smul_onePoint_eq_self {g : GL (Fin 2) F}
-    (hg : ∀ x : OnePoint F, g • x = x) : g ∈ Subgroup.center (GL (Fin 2) F) := by
-  have h10 : g 1 0 = 0 := OnePoint.smul_infty_eq_self_iff.mp (hg ∞)
+/-- **A matrix fixing `0`, `1` and `∞` is central.** Fixing `∞` kills the lower left entry,
+fixing `0` then kills the upper right one, and fixing `1` makes the two diagonal entries agree; so
+the matrix is scalar, and the scalar matrices are the centre. In particular such a matrix fixes
+every point of the projective line (`TauCeti.scalar_smul_onePoint_eq_self`). -/
+theorem mem_center_of_smul_zero_one_infty_eq_self {g : GL (Fin 2) F}
+    (h0 : g • ((0 : F) : OnePoint F) = (0 : F)) (h1 : g • ((1 : F) : OnePoint F) = (1 : F))
+    (hinf : g • (∞ : OnePoint F) = ∞) : g ∈ Subgroup.center (GL (Fin 2) F) := by
+  have h10 : g 1 0 = 0 := OnePoint.smul_infty_eq_self_iff.mp hinf
   have h11 : g 1 1 ≠ 0 := by
     have hdet := g.det_ne_zero
     rw [Matrix.det_fin_two] at hdet
     exact (mul_ne_zero_iff.mp (by simpa [h10] using hdet)).2
   have h01 : g 0 1 = 0 := by
-    have h := hg ((0 : F) : OnePoint F)
-    rw [OnePoint.smul_some_eq_ite] at h
-    simpa [h10, h11, div_eq_zero_iff] using h
+    rw [OnePoint.smul_some_eq_ite] at h0
+    simpa [h10, h11, div_eq_zero_iff] using h0
   have h00 : g 0 0 = g 1 1 := by
-    have h := hg ((1 : F) : OnePoint F)
-    rw [OnePoint.smul_some_eq_ite] at h
-    simpa [h10, h01, h11, div_eq_one_iff_eq h11] using h
+    rw [OnePoint.smul_some_eq_ite] at h1
+    simpa [h10, h01, h11, div_eq_one_iff_eq h11] using h1
   rw [Matrix.GeneralLinearGroup.center_eq_range_scalar, MonoidHom.mem_range]
   refine ⟨Units.mk0 (g 1 1) h11, Units.ext ?_⟩
   rw [Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
@@ -146,9 +146,10 @@ representation of `GL₂(F)` on `OnePoint F` is the centre of `GL₂(F)`. -/
 @[simp]
 theorem ker_toPermHom_onePoint_eq_center :
     (MulAction.toPermHom (GL (Fin 2) F) (OnePoint F)).ker = Subgroup.center (GL (Fin 2) F) := by
-  refine le_antisymm (fun g hg => mem_center_of_forall_smul_onePoint_eq_self fun x => ?_)
-    (fun g hg => ?_)
-  · simpa using congrArg (fun p : Equiv.Perm (OnePoint F) => p x) (MonoidHom.mem_ker.mp hg)
+  refine le_antisymm (fun g hg => ?_) (fun g hg => ?_)
+  · have hfix (x : OnePoint F) : g • x = x := by
+      simpa using congrArg (fun p : Equiv.Perm (OnePoint F) => p x) (MonoidHom.mem_ker.mp hg)
+    exact mem_center_of_smul_zero_one_infty_eq_self (hfix _) (hfix _) (hfix _)
   · rw [Matrix.GeneralLinearGroup.center_eq_range_scalar, MonoidHom.mem_range] at hg
     obtain ⟨u, rfl⟩ := hg
     exact MonoidHom.mem_ker.mpr (Equiv.ext fun x => by simp)
@@ -181,7 +182,7 @@ instance : FaithfulSMul PGL(2, K) (OnePoint K) where
     obtain ⟨g', rfl⟩ := Matrix.ProjGenLinGroup.mk_surjective y
     have hfix : ∀ c : OnePoint K, (g'⁻¹ * g) • c = c := fun c ↦ by
       rw [mul_smul, (by simpa using h c : g • c = g' • c), ← mul_smul, inv_mul_cancel, one_smul]
-    have hcentre := TauCeti.mem_center_of_forall_smul_onePoint_eq_self hfix
+    have hcentre := TauCeti.mem_center_of_smul_zero_one_infty_eq_self (hfix _) (hfix _) (hfix _)
     have hone : Matrix.ProjGenLinGroup.mk (g'⁻¹ * g) = 1 :=
       Matrix.ProjGenLinGroup.mk_eq_one.mpr hcentre
     rw [map_mul, map_inv, inv_mul_eq_one] at hone
