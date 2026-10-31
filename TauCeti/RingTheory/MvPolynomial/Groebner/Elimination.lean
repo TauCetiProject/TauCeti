@@ -22,8 +22,8 @@ Suppose the monomial order `m` on `σ` is an *elimination order* for `τ`: every
 monomial in the variables `e τ` is again a monomial in those variables. If `G` is a Gröbner basis
 of `I` for `m`, then the members of `G` which only involve the variables `e τ` form a Gröbner
 basis of the elimination ideal, for any monomial order `m'` on `τ` which `e` carries to `m`. In
-particular, when their leading coefficients are units, they generate the elimination ideal, so a
-single Gröbner basis of `I` computes the elimination ideal.
+particular they generate the elimination ideal, so a single Gröbner basis of `I` computes the
+elimination ideal.
 
 The lexicographic order is an elimination order for every upper set of variables: with the
 antitone variable convention, the variables of an upper set are the smallest ones. The transport
@@ -104,19 +104,14 @@ theorem IsGroebnerBasis.comap_rename (h : m.IsGroebnerBasis G I)
   have := hkill (Ideal.mem_map_of_mem _ hmem)
   rwa [leadingTerm_rename hm, killCompl_rename_app] at this
 
-/-- In the elimination theorem, if the nonzero members of the Gröbner basis in the variables `e τ`
-have unit leading coefficients (for instance over a field), then they generate the elimination
-ideal. The members involving other variables are unconstrained. -/
+/-- In the elimination theorem, the members of the Gröbner basis in the variables `e τ` generate
+the elimination ideal. -/
 theorem IsGroebnerBasis.comap_rename_eq_span {R : Type*} [CommRing R] {G : Set (MvPolynomial σ R)}
     {I : Ideal (MvPolynomial σ R)} (h : m.IsGroebnerBasis G I)
-    (hG : ∀ g ∈ G, g ∈ Set.range (rename e) → g ≠ 0 → IsUnit (m.leadingCoeff g))
     (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e)
     (helim : ∀ a b : σ →₀ ℕ, a ≼[m] b → ↑b.support ⊆ Set.range e → ↑a.support ⊆ Set.range e) :
-    I.comap (rename e) = Ideal.span (rename e ⁻¹' G) := by
-  refine (h.comap_rename hm helim).ideal_eq_span fun g hg hg0 ↦ ?_
-  rw [← leadingCoeff_rename hm]
-  exact hG _ hg ⟨g, rfl⟩ <| by
-    rwa [Ne, map_eq_zero_iff _ (rename_injective _ (injective_of_forall_toSyn_le_iff hm))]
+    I.comap (rename e) = Ideal.span (rename e ⁻¹' G) :=
+  (h.comap_rename hm helim).ideal_eq_span
 
 end Elimination
 
