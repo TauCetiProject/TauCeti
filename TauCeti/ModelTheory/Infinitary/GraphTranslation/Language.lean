@@ -170,6 +170,20 @@ theorem graphRelSym_mem_relSym {F : Set (Σ n, L.Functions n)} {R : Set (Σ n, L
   rintro ⟨r, -, h⟩
   exact baseRelSym_ne_graphRelSym r f h
 
+/-- `baseRelSym_mem_relSym` for the raw pair, the simp normal form of `baseRelSym ⟨n, r⟩`. -/
+@[simp]
+theorem mk_base_mem_relSym {F : Set (Σ n, L.Functions n)} {R : Set (Σ n, L.Relations n)}
+    {n : ℕ} {r : L.Relations n} :
+    (⟨n, GraphRelation.base r⟩ : Σ n, L.GraphRelation n) ∈ relSym F R ↔ ⟨n, r⟩ ∈ R :=
+  baseRelSym_mem_relSym (r := ⟨n, r⟩)
+
+/-- `graphRelSym_mem_relSym` for the raw pair, the simp normal form of `graphRelSym ⟨n, f⟩`. -/
+@[simp]
+theorem mk_graph_mem_relSym {F : Set (Σ n, L.Functions n)} {R : Set (Σ n, L.Relations n)}
+    {n : ℕ} {f : L.Functions n} :
+    (⟨n + 1, GraphRelation.graph f⟩ : Σ n, L.GraphRelation n) ∈ relSym F R ↔ ⟨n, f⟩ ∈ F :=
+  graphRelSym_mem_relSym (f := ⟨n, f⟩)
+
 @[simp]
 theorem relSym_empty :
     relSym (∅ : Set (Σ n, L.Functions n)) (∅ : Set (Σ n, L.Relations n)) = ∅ := by
