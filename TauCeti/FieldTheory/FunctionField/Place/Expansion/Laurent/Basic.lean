@@ -34,6 +34,9 @@ expansion of `t ^ (n + 1) * z` whenever this product is integral.
   identifies the valuation of `P` with the `T`-adic valuation.
 * `TauCeti.Place.coeff_laurentSeriesExpansion_eq_of_sub_sum_mem_filtration`: uniqueness of
   finite Laurent expansions.
+* `TauCeti.Place.mem_filtration_iff_forall_laurentCoeff_eq_zero`: a function vanishes to order at
+  least `m` exactly when its Laurent coefficients below `m` vanish; in particular the coefficient
+  in the degree of the order is nonzero (`TauCeti.Place.laurentCoeff_ord_ne_zero`).
 * `TauCeti.Place.residue_eq_coeff_powerSeriesExpansion`: the residue as a power-series
   coefficient.
 
@@ -174,6 +177,37 @@ theorem laurentCoeff_ext_iff {x y : F} :
     intro n
     simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
       completionLaurentCoeff_completionEmbedding] using h n
+
+/-- A constant `c` expands as itself: its only nonzero Laurent coefficient is `c`, in degree
+zero. -/
+-- Not `@[simp]`: `laurentCoeff_apply` already simplifies the left-hand side.
+theorem laurentCoeff_algebraMap (n : ℤ) (c : k) :
+    P.laurentCoeff hP ht n (algebraMap k F c) = if n = 0 then c else 0 := by
+  rw [laurentCoeff_apply, AlgHom.commutes, ← mul_one (algebraMap k (LaurentSeries k) c),
+    TauCeti.LaurentSeries.coeff_algebraMap_mul, HahnSeries.coeff_one]
+  split_ifs <;> simp
+
+/-- A function vanishes to order at least `m` at the place exactly when its Laurent coefficients
+below `m` vanish. -/
+theorem mem_filtration_iff_forall_laurentCoeff_eq_zero {m : ℤ} {z : F} :
+    z ∈ P.filtration m ↔ ∀ n < m, P.laurentCoeff hP ht n z = 0 := by
+  rw [mem_filtration_iff, ← P.valuation_laurentSeriesExpansion hP ht,
+    LaurentSeries.valuation_le_iff_coeff_lt_eq_zero]
+  simp only [laurentCoeff_apply]
+
+/-- The leading Laurent coefficient of a nonzero function, the one in the degree of its order,
+is nonzero. -/
+theorem laurentCoeff_ord_ne_zero {z : F} (hz : z ≠ 0) :
+    P.laurentCoeff hP ht (P.ord z) z ≠ 0 := by
+  intro h
+  have hmem : z ∈ P.filtration (P.ord z + 1) :=
+    (P.mem_filtration_iff_forall_laurentCoeff_eq_zero hP ht).mpr fun n hn ↦ by
+      rcases (Int.lt_add_one_iff.mp hn).lt_or_eq with hn | rfl
+      · exact (P.mem_filtration_iff_forall_laurentCoeff_eq_zero hP ht).mp
+          (P.mem_filtration_ord z) n hn
+      · exact h
+  have := (P.mem_filtration_iff_le_ord hz).mp hmem
+  omega
 
 /-! ### Residues -/
 
