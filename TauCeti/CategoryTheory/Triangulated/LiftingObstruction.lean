@@ -19,10 +19,10 @@ epimorphism exactly when the connecting morphism `T.mor₃` vanishes
 
 A triangulated functor `F` carries the obstruction of `s` to the obstruction of `F.map s` for the
 image triangle `F.mapTriangle.obj T`, up to the isomorphism expressing that `F` commutes with the
-shift (`CategoryTheory.Functor.map_comp_mapTriangle_obj_mor₃`). Consequently, if `F` is injective
-on `M ⟶ A⟦1⟧`, then `s` lifts as soon as `F.map s` lifts
-(`CategoryTheory.Functor.exists_comp_map_mor₂_eq_iff_of_injective`), and `B ⟶ Q` splits as soon
-as its image does (`CategoryTheory.Functor.isSplitEpi_map_mor₂_iff_of_injective`). This is how
+shift. Consequently, if `F` is injective on `M ⟶ A⟦1⟧`, then `s` lifts as soon as `F.map s` lifts
+(`CategoryTheory.Functor.exists_comp_map_mor₂_eq_iff_of_injective`), and if `F` is injective on
+`Q ⟶ A⟦1⟧`, then `B ⟶ Q` splits as soon as its image does
+(`CategoryTheory.Functor.isSplitEpi_map_mor₂_iff_of_injective`). This is how
 a splitting is certified by computing in a target category in which obstructions are easier to
 control, as in Bhatt's proof of the derived direct summand conjecture. The injectivity hypothesis
 cannot be dropped: a functor may kill a nonzero obstruction, and then the image triangle splits
@@ -41,16 +41,6 @@ namespace CategoryTheory
 open Category Limits Preadditive Pretriangulated
 
 variable {C D : Type*} [Category* C] [Category* D] [HasShift C ℤ] [HasShift D ℤ]
-
-/-- A functor commuting with the shift carries the obstruction `s ≫ T.mor₃` to lifting `s`
-along `T.mor₂` to the obstruction to lifting `F.map s` along the second morphism of the image
-triangle, up to the isomorphism `F.obj (T.obj₁⟦1⟧) ≅ (F.obj T.obj₁)⟦1⟧`. -/
-@[reassoc]
-theorem Functor.map_comp_mapTriangle_obj_mor₃ (F : C ⥤ D) [F.CommShift ℤ] (T : Triangle C)
-    {M : C} (s : M ⟶ T.obj₃) :
-    F.map s ≫ (F.mapTriangle.obj T).mor₃ =
-      F.map (s ≫ T.mor₃) ≫ (F.commShiftIso (1 : ℤ)).hom.app T.obj₁ := by
-  simp
 
 variable [HasZeroObject C] [HasZeroObject D] [Preadditive C] [Preadditive D]
   [∀ n : ℤ, (CategoryTheory.shiftFunctor C n).Additive]
@@ -94,7 +84,8 @@ theorem exists_comp_map_mor₂_eq_iff_of_injective {M : C} (s : M ⟶ T.obj₃)
       ∃ g : M ⟶ T.obj₂, g ≫ T.mor₂ = s := by
   rw [Triangle.exists_comp_mor₂_eq_iff hT]
   refine (Triangle.exists_comp_mor₂_eq_iff (F.map_distinguished T hT) (F.map s)).trans ?_
-  rw [map_comp_mapTriangle_obj_mor₃, IsIso.comp_right_eq_zero, ← F.map_zero, hF.eq_iff]
+  dsimp only [mapTriangle_obj, Triangle.mk_mor₃]
+  rw [← F.map_comp_assoc, IsIso.comp_right_eq_zero, ← F.map_zero, hF.eq_iff]
 
 /-- Let `F` be a triangulated functor and `T` a distinguished triangle. If `F` is injective on
 morphisms `T.obj₃ ⟶ T.obj₁⟦1⟧`, then `T.mor₂` is a split epimorphism exactly when
