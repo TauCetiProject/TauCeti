@@ -144,8 +144,7 @@ theorem fiberStalkMap_injective (F : X.Sheaf C) {f : X ⟶ Y} (hf : IsClosedMap 
   congr 1
   refine section_ext F ((Opens.map f).obj N) _ _ fun z hz ↦ ?_
   obtain ⟨x, hzx⟩ := Opens.mem_iSup.mp (hV' _ hz.2 z rfl)
-  rw [pushforward_obj_map, pushforward_obj_map, germ_res_apply, germ_res_apply,
-    ← F.presheaf.germ_res_apply (iU x) z hzx, ← F.presheaf.germ_res_apply (iV x) z hzx, heq x]
+  simpa using congrArg (F.presheaf.germ (W x) z hzx) (heq x)
 
 /-- For a closed map `f` from a Hausdorff space, every family of germs of a sheaf at the finitely
 many points of a fiber over `y` is the image of a germ of the direct image at `y`. -/
@@ -177,8 +176,8 @@ theorem fiberStalkMap_surjective [T2Space X] (F : X.Sheaf C) {f : X ⟶ Y} (hf :
   refine ⟨(f _* F.presheaf).germ ⟨V, hVo⟩ y hyV (F.presheaf.map (homOfLE hVO).op s), ?_⟩
   refine (Concrete.productEquiv _).injective (funext fun x ↦ ?_)
   rw [Concrete.productEquiv_apply_apply, Concrete.productEquiv_apply_apply, ← ht x,
-    germ_fiberStalkMap_π_apply, germ_res_apply, ← F.presheaf.germ_res_apply (Opens.leSupr O x) x.1
-      (hxO x), hs x, germ_res_apply]
+    germ_fiberStalkMap_π_apply, germ_res_apply]
+  simpa [t'] using congrArg (F.presheaf.germ (O x) x.1 (hxO x)) (hs x)
 
 include instCC in
 /-- For a closed map `f` from a Hausdorff space with finite fiber over `y`, the canonical map from
