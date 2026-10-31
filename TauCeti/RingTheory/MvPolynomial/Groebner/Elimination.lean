@@ -20,9 +20,9 @@ eliminated.
 Suppose the monomial order `m` on `σ` is an *elimination order* for `τ`: every monomial below a
 monomial in the variables `e τ` is again a monomial in those variables. If `G` is a Gröbner basis
 of `I` for `m`, then the members of `G` which only involve the variables `e τ` form a Gröbner
-basis of the elimination ideal, for any monomial order `m'` on `τ` which `e` carries to `m`. In
-particular they generate the elimination ideal, so a single Gröbner basis of `I` computes the
-elimination ideal.
+basis of the elimination ideal, for any monomial order `m'` on `τ` which `e` carries to `m`. When
+the coefficients form a commutative ring, they in particular generate the elimination ideal, so a
+single Gröbner basis of `I` computes the elimination ideal.
 
 The lexicographic order is an elimination order for every upper set of variables: with the
 antitone variable convention, the variables of an upper set are the smallest ones. The transport
@@ -34,7 +34,8 @@ order are in `TauCeti.RingTheory.MvPolynomial.MonomialOrder`.
 
 * `MonomialOrder.IsGroebnerBasis.comap_rename`: **the elimination theorem**, the members of a
   Gröbner basis in the variables `e τ` form a Gröbner basis of the elimination ideal.
-* `MonomialOrder.IsGroebnerBasis.comap_rename_eq_span`: they generate the elimination ideal.
+* `MonomialOrder.IsGroebnerBasis.comap_rename_eq_span`: over a commutative ring, they generate the
+  elimination ideal.
 * `MonomialOrder.IsGroebnerBasis.comap_rename_lex`: the elimination theorem for the
   lexicographic order and a strictly monotone embedding onto an upper set of variables.
 
@@ -93,8 +94,8 @@ theorem IsGroebnerBasis.comap_rename (h : m.IsGroebnerBasis G I)
   have := hkill (Ideal.mem_map_of_mem _ hmem)
   rwa [leadingTerm_rename hm, killCompl_rename_app] at this
 
-/-- In the elimination theorem, the members of the Gröbner basis in the variables `e τ` generate
-the elimination ideal. -/
+/-- In the elimination theorem over a commutative ring, the members of the Gröbner basis in the
+variables `e τ` generate the elimination ideal. -/
 theorem IsGroebnerBasis.comap_rename_eq_span {R : Type*} [CommRing R] {G : Set (MvPolynomial σ R)}
     {I : Ideal (MvPolynomial σ R)} (h : m.IsGroebnerBasis G I)
     (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e)
