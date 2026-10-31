@@ -15,7 +15,8 @@ Adding a base-ring constant to a transcendental element preserves transcendence,
 arbitrary commutative ring and in an arbitrary ring algebra. So does applying an injective algebra
 homomorphism, the transcendental counterpart of Mathlib's `isAlgebraic_algHom_iff`.
 An algebraic extension of scalars without zero divisors also preserves transcendence
-under an injective algebra map into a common overring.
+under an injective algebra map into a common overring, and so does a nonconstant polynomial
+with coefficients in a field, mapped into a nontrivial algebra (`Transcendental.aeval_map`).
 Dually, every root in `A` of a polynomial over `R` is algebraic over `R`
 (`isAlgebraic_of_mem_aroots`).
 The kernel of an algebra map into a field algebraic over the base field is a maximal ideal
@@ -71,5 +72,15 @@ theorem algebraMap_of_isAlgebraic {R S A B : Type*}
     [FaithfulSMul A B] {x : A} (hx : Transcendental R x) :
     Transcendental S (algebraMap A B x) :=
   ((transcendental_algebraMap_iff (FaithfulSMul.algebraMap_injective A B)).2 hx).extendScalars S
+
+/-- A nonconstant polynomial with coefficients in a field `K`, mapped into a nontrivial
+`K`-algebra `R`, carries an element transcendental over `R` to a transcendental element. -/
+theorem aeval_map [Nontrivial R] {K : Type*} [Field K] [Algebra K R] (hx : Transcendental R x)
+    {q : K[X]} (hq : 0 < q.natDegree) :
+    Transcendental R (Polynomial.aeval x (q.map (algebraMap K R))) :=
+  hx.aeval _ (by rw [natDegree_map]; exact hq.ne') (by
+    rw [leadingCoeff_map]
+    exact IsUnit.mem_nonZeroDivisors <|
+      (leadingCoeff_ne_zero.mpr (ne_zero_of_natDegree_gt hq)).isUnit.map _)
 
 end Transcendental

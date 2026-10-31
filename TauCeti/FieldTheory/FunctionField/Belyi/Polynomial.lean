@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Polynomial.Belyi
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 import TauCeti.FieldTheory.FunctionField.AffineModel.Place
-import TauCeti.FieldTheory.FunctionField.Belyi.Radical
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -142,11 +141,7 @@ theorem ramificationIdx_eq_one_of_aeval_eq (hx : k⟮x⟯ = ⊤)
   -- `t` is regular at `P'`, and so is `x`, which is integral over the valuation ring of `P'`.
   set a := algebraMap (RatFunc k) F RatFunc.X
   have ha : a ∈ P'.integers := (mem_integers_restrict_iff k (RatFunc k) P' _).mp hX
-  have hxO : x ∈ P'.integers := by
-    refine P'.mem_integers_of_isIntegral (R := P'.integers) (fun r ↦ r.2)
-      ⟨_, monic_monicEquation hdeg (⟨a, ha⟩ : P'.integers), ?_⟩
-    rw [← aeval_def, aeval_monicEquation, ValuationSubring.algebraMap_apply]
-    simp [← hq]
+  have hxO : x ∈ P'.integers := P'.mem_integers_of_aeval_mem_integers hdeg.ne' (hq ▸ ha)
   -- The derivative criterion reduces the claim to `q′(x)` being a unit at `P'`.
   suffices hval : P'.valuation (aeval x (derivative q)) = 1 by
     have h0 := differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k (RatFunc k)
@@ -198,13 +193,7 @@ theorem of_criticalValues_subset (hx : k⟮x⟯ = ⊤)
       (fun h ↦ (natDegree_pos_of_aeval_eq hq).ne' (derivative_eq_zero.mp h)) (r := X * (X - 1))
       (fun L _ _ c hc ↦ ?_) (fun h ↦ hP (h ▸ Place.infty_mem_zeroOneInfty)) ?_
     · rcases hcrit L hc with rfl | rfl <;> simp
-    · have he : aeval (RatFunc.X : RatFunc k) (X * (X - 1) : k[X]) =
-          algebraMap k (RatFunc k) 1 * RatFunc.X ^ (1 : ℤ) * (RatFunc.X - 1) ^ (1 : ℤ) := by
-        simp
-      rw [he, Place.valuation_eq_exp_neg_ord _
-        (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero one_ne_zero 1 1),
-        Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP one_ne_zero,
-        neg_zero, WithZero.exp_zero]
+    · simpa using Place.valuation_X_mul_X_sub_one_of_notMem_zeroOneInfty hP
 
 /-- **The Belyi polynomials are Belyi maps**: if `F = k(x)` over `k(t)`, where
 `t = B_{m,n}(x)` for the Belyi polynomial `B_{m,n}`, then `F` is an algebraic Belyi pair. -/
