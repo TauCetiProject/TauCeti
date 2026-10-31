@@ -25,8 +25,8 @@ scheme-theoretic centralizer `C_GL(X)` and of the adjoint orbit of `X` from `λ`
 Reading off the two largest values of the orbit dimension identifies the regular and subregular
 nilpotent orbits by their Jordan types: the orbit has the maximal dimension `n² - n` exactly for
 the one-row partition `(n)`; every other nilpotent orbit has dimension at most `n² - n - 2`, with
-equality exactly for the partition `(n - 1, 1)`. So the subregular orbit has codimension two in
-the regular one. These are the group-level counterparts of the tangent-space calculations for
+equality exactly for the partition `(n - 1, 1)`. So the subregular orbit has dimension two less
+than the regular one. These are the group-level counterparts of the tangent-space calculations for
 `sl n` in `TauCeti.Algebra.Lie.GeneralLinear.NilpotentOrbit`.
 
 All statements are written additively, so no truncated subtraction occurs. The Jordan partition
@@ -71,10 +71,14 @@ theorem finrank_range_ad_add_sum_sq_conjugate_parts
         ((End.jordanPartition (toLinAlgEquiv' (cotangentDualMatrixEquiv x)) hx).conjugate.parts.map
           (· ^ 2)).sum =
       n * n := by
-  rw [← finrank_centralizer_eq_sum_sq_conjugate_jordanPartition, ← Subalgebra.finrank_toSubmodule,
-    ← map_cotangentDualMatrixEquiv_ker_ad, LinearEquiv.finrank_map_eq,
-    LinearMap.finrank_range_add_finrank_ker, cotangentDualMatrixEquiv.finrank_eq,
-    finrank_matrix, Fintype.card_fin, finrank_self, mul_one]
+  -- The kernel of `ad x` is carried onto the centralizer of the matrix of `x`.
+  have hker : finrank k (LinearMap.ker (LieAlgebra.ad k _ x)) =
+      finrank k (Subalgebra.centralizer k {cotangentDualMatrixEquiv x}) := by
+    rw [← Subalgebra.finrank_toSubmodule, ← map_cotangentDualMatrixEquiv_ker_ad,
+      LinearEquiv.finrank_map_eq]
+  rw [← finrank_centralizer_eq_sum_sq_conjugate_jordanPartition, ← hker,
+    LinearMap.finrank_range_add_finrank_ker, cotangentDualMatrixEquiv.finrank_eq]
+  simp [finrank_matrix]
 
 section CharZero
 
