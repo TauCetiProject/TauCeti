@@ -30,7 +30,7 @@ Over a field `k`, for a finite group and finite-dimensional `M`, the invariant a
 dimension `dim M` (`Representation.ringKrullDim_symmetricAlgebraInvariants`). A surjection onto it
 from a polynomial ring in at most `dim M` variables is then injective, since a nonzero kernel
 element would lower the dimension
-(`TauCeti.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial`). So if at most
+(`RingHom.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial`). So if at most
 `dim M` homogeneous invariants of positive degree span `A₊ ⧸ A₊²`, they are algebraically
 independent (`Representation.algebraicIndependent_of_le_span_sup_sq`) and there are exactly
 `dim M` of them (`Representation.natCard_eq_finrank_of_le_span_sup_sq`): `A` is a polynomial
@@ -83,22 +83,11 @@ theorem adjoin_range_eq_top_of_le_span_sup_sq (f : ι → ρ.symmetricAlgebraInv
     Algebra.adjoin R (Set.range f) = ⊤ := by
   let := Subalgebra.gradedAlgebra ρ.isHomogeneous_symmetricAlgebraInvariants
   set 𝒜 := ρ.symmetricAlgebraInvariants.grading (homogeneousSubmodule R M)
-  -- The irrelevant ideal of the induced grading consists of the invariants with zero constant
-  -- term.
-  have hirr : (HomogeneousIdeal.irrelevant 𝒜).toIdeal =
-      (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal.under
-        ρ.symmetricAlgebraInvariants := by
-    ext p
-    rw [HomogeneousIdeal.mem_iff, HomogeneousIdeal.mem_irrelevant_iff, GradedRing.proj_apply,
-      Ideal.under, Ideal.mem_comap, HomogeneousIdeal.mem_iff,
-      HomogeneousIdeal.mem_irrelevant_iff, GradedRing.proj_apply, Subalgebra.algebraMap_apply,
-      ← Subalgebra.coe_decompose_grading]
-    simp only [ZeroMemClass.coe_eq_zero, 𝒜]
   have h := TauCeti.GradedAlgebra.adjoin_eq_top_of_irrelevant_le 𝒜 (s := Set.range f)
     (by
       rintro _ ⟨i, rfl⟩
       exact ⟨d i, hd i, (Subalgebra.mem_grading_iff _ _).2 (hf i)⟩)
-    (hirr ▸ hspan)
+    (ρ.symmetricAlgebraInvariants.toIdeal_irrelevant_grading (homogeneousSubmodule R M) ▸ hspan)
   -- An invariant of degree zero is a scalar, so generation over `𝒜 0` is generation over `R`.
   rw [eq_top_iff]
   rintro p -
@@ -152,7 +141,7 @@ theorem algebraicIndependent_of_le_span_sup_sq [Finite ι] (f : ι → ρ.symmet
           ρ.symmetricAlgebraInvariants) ^ 2)
     (hcard : Nat.card ι ≤ Module.finrank k M) :
     AlgebraicIndependent k f :=
-  TauCeti.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial
+  RingHom.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial
     (MvPolynomial.aeval f).toRingHom (ρ.surjective_aeval_of_le_span_sup_sq f d hd hf hspan) <| by
       rw [ringKrullDim_symmetricAlgebraInvariants, ringKrullDim_eq_finrank]
       exact_mod_cast hcard

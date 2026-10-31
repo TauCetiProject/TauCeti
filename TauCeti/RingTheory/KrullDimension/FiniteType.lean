@@ -72,7 +72,7 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
 
 * `TauCeti.ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial`: an injective integral map
   `k[X₁, …, Xₛ] → A` forces `dim A = s`, the number of variables.
-* `TauCeti.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial`: a surjection
+* `RingHom.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial`: a surjection
   `k[X₁, …, Xₛ] → A` with `s ≤ dim A` is injective.
 * `TauCeti.finiteRingKrullDim_of_finiteType`: a nontrivial finitely generated algebra over a field
   has finite Krull dimension.
@@ -140,9 +140,10 @@ theorem ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial {ι A : Type*} [
 
 /-- A surjection from a polynomial ring `k[Xᵢ | i ∈ ι]` in finitely many variables onto a ring
 whose Krull dimension is at least the number of variables is injective. -/
-theorem injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial {ι A : Type*} [Finite ι]
-    [CommRing A] (g : MvPolynomial ι k →+* A) (hsurj : Function.Surjective g)
-    (hdim : Nat.card ι ≤ ringKrullDim A) : Function.Injective g := by
+theorem _root_.RingHom.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial
+    {ι A : Type*} [Finite ι] [CommRing A] (g : MvPolynomial ι k →+* A)
+    (hsurj : Function.Surjective g) (hdim : Nat.card ι ≤ ringKrullDim A) :
+    Function.Injective g := by
   refine (injective_iff_map_eq_zero g).2 fun r hr ↦ by_contra fun hr0 ↦ ?_
   -- A nonzero element of the kernel is a nonzerodivisor, so it lowers the dimension.
   have h := (add_le_add_left hdim 1).trans
