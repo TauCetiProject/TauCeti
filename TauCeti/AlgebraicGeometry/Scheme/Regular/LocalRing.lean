@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.RingTheory.RegularLocalRing.Defs
+import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
+import TauCeti.RingTheory.RegularLocalRing.Flat
 
 /-!
 # Regular local rings of schemes
@@ -16,6 +19,14 @@ regularity of the local rings at every point of the open. In particular, a Noeth
 regular exactly when the local rings of its spectrum are regular. Open immersions identify local
 rings, so they preserve and reflect their regularity.
 
+More generally, an étale morphism `f : X ⟶ Y` induces at each point `x` a flat local
+homomorphism `𝒪_{Y, f x} ⟶ 𝒪_{X, x}` under which the maximal ideal of the source generates the
+maximal ideal of the target, and which preserves and reflects Noetherianity
+(`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_formallyUnramified`,
+`TauCeti.AlgebraicGeometry.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`). Between
+Noetherian local rings such a homomorphism both preserves and reflects regularity
+(`TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq`).
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_of_isRegularRing`
@@ -23,6 +34,7 @@ rings, so they preserve and reflect their regularity.
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec`
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk_Spec`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_isOpenImmersion`
+* `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_etale`
 -/
 
 public section
@@ -87,6 +99,26 @@ theorem isRegularLocalRing_stalk_iff_of_isOpenImmersion {X Y : Scheme.{u}} (f : 
     IsRegularLocalRing (Y.presheaf.stalk (f x)) ↔ IsRegularLocalRing (X.presheaf.stalk x) :=
   let e := (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv
   ⟨fun _ ↦ .of_ringEquiv e, fun _ ↦ .of_ringEquiv e.symm⟩
+
+section Etale
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Etale f] (x : X)
+
+/-- An étale morphism `f : X ⟶ Y` preserves and reflects regularity of local rings: the local
+ring of `Y` at `f x` is regular exactly when the local ring of `X` at `x` is. -/
+theorem isRegularLocalRing_stalk_iff_of_etale :
+    IsRegularLocalRing (Y.presheaf.stalk (f x)) ↔ IsRegularLocalRing (X.presheaf.stalk x) := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have := isLocalHom_stalkMap_toAlgebra f x
+  have : Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := Flat.stalkMap f x
+  have h := map_maximalIdeal_stalkMap_of_formallyUnramified f x
+  refine ⟨fun hy ↦ ?_, fun hx ↦ ?_⟩
+  · have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mp inferInstance
+    exact (TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq h).mpr hy
+  · have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mpr inferInstance
+    exact (TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq h).mp hx
+
+end Etale
 
 end AlgebraicGeometry
 

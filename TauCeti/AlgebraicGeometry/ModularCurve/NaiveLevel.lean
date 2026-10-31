@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import TauCeti.AlgebraicGeometry.ModularCurve.HomLevel
-public import TauCeti.AlgebraicGeometry.Morphisms.Etale
+public import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite

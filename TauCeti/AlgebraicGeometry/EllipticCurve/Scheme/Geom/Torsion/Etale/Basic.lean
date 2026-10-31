@@ -12,7 +12,7 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
-import TauCeti.AlgebraicGeometry.Morphisms.Etale
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 
 /-!
 # The `n`-torsion of an elliptic curve over a field is étale when `n` is invertible
