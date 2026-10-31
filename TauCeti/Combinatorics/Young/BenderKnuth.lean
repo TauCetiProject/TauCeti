@@ -126,6 +126,16 @@ theorem rowCountLt_succ_le (T : SemistandardYoungTableau μ) (i x : ℕ) :
   exact ⟨lt_of_lt_of_le hj.1 (μ.rowLen_anti i (i + 1) (Nat.le_succ i)),
     lt_of_lt_of_le (T.col_strict (Nat.lt_succ_self i) hcell) (Nat.lt_succ_iff.mp hj.2)⟩
 
+/-- A letter at least `i` in a row above row `k` lies in a column at least the number of letters
+at most `i` in row `k`: by column strictness, the letter below it is larger than `i`. -/
+theorem rowCountLt_le_of_lt (T : SemistandardYoungTableau μ) {r k c i : ℕ} (hr : r < k)
+    (hi : i ≤ T r c) : rowCountLt T k (i + 1) ≤ c := by
+  refine not_lt.mp fun hlt => ?_
+  have hck := hlt.trans_le (T.rowCountLt_le_rowLen k (i + 1))
+  have := T.col_strict_of_lt_rowLen hr hck
+  have := (T.lt_rowCountLt_iff hck).mp hlt
+  omega
+
 /-- A row past the height of the shape has no entries at all. -/
 theorem rowCountLt_eq_zero_of_colLen_le (T : SemistandardYoungTableau μ) {i : ℕ}
     (hi : μ.colLen 0 ≤ i) (x : ℕ) : rowCountLt T i x = 0 :=
