@@ -74,16 +74,6 @@ is the unit disc rather than a general disc because `PoincareDisc` is the unit d
 hyperbolic metric of a domain biholomorphic to it is a separate transport question and is not
 touched here.
 
-## Coordination with upstream Mathlib
-
-Mathlib has no Poincaré metric on the disc — its hyperbolic material lives on `UpperHalfPlane` —
-so it has no metric form of Schwarz–Pick either, and this file is new Lean formalization rather
-than a temporary shim. Its scalar inputs are the L2 material of `Conformal/Hyperbolic/Distance.lean`
-and `Conformal/SchwarzPick/Rigidity.lean`, which are coordinated with the in-progress
-human-curated Riemann-mapping effort
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505); should a
-human-curated Poincaré metric land upstream, this file is to be refactored onto it.
-
 ## References
 
 * L. V. Ahlfors, *Conformal Invariants: Topics in Geometric Function Theory*, Ch. 1.

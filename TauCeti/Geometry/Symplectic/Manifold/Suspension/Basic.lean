@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
-public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
+public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus.ClosedOrbit
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.DeRham.Wedge
 
@@ -35,6 +35,18 @@ On the mapping torus itself the fiber form `σ_v` of a nondegenerate `σ` is deg
 one direction: its kernel at every point is the line spanned by the vector field `T = ∂_t`
 (`TauCeti.SmoothMappingTorus.ker_bilinFormAt_fiberForm`).
 
+A point `x` of period `d` of `φ` gives a closed orbit `γ : ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`, of the
+suspension flow, and with it the orbit torus
+
+`u : (ℝ / ℤ) × (ℝ / dℤ) → X_φ`, `(s, θ) ↦ (s, γ θ)`
+
+(`TauCeti.SmoothMappingTorus.orbitTorus φ h`). Its image is the product of the `s`-circle with the
+image of `γ`, and it is a smooth embedding exactly when `d` is the least period of `x`. The fiber
+form `σ_v` vanishes on it, so `u` pulls `Ω` back to the product `ds ∧ dt_d` of the time forms of
+the two circles. The period `d` need not be the least period: for a multiple of it the orbit torus
+has the same image, which it traverses several times, and the formula for the pullback of `Ω`
+holds with that `d`.
+
 ## Main definitions
 
 * `TauCeti.SmoothMappingTorus.suspensionForm φ σ hσ`: the two-form `Ω = ds ∧ dt + σ_v` on
@@ -56,6 +68,9 @@ one direction: its kernel at every point is the line spanned by the vector field
   `TauCeti.SmoothMappingTorus.isNondegenerate_suspensionForm_iff`,
   `TauCeti.SmoothMappingTorus.isSymplectic_suspensionForm_iff`: `Ω` is closed, nondegenerate or
   symplectic exactly when `σ` is.
+* `TauCeti.SmoothMappingTorus.mpullback_orbitTorus_mpullback_snd_fiberForm`,
+  `TauCeti.SmoothMappingTorus.mpullback_orbitTorus_suspensionForm`: the orbit torus pulls `σ_v`
+  back to zero and `Ω` back to `ds ∧ dt_d`.
 
 ## References
 
@@ -67,7 +82,7 @@ public section
 
 noncomputable section
 
-open Function
+open Set Function
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -327,6 +342,43 @@ theorem mpullback_prodMap_map_suspensionForm {E' : Type*} [NormedAddCommGroup E'
   refine congrArg (· + _) ((SmoothForm.mpullback_wedge (k := 1) (l := 1)
     (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm) _ _).trans ?_)
   rw [hcircle, htorus, mpullback_map_timeForm φ ψ h hg]
+
+/-! ### Orbit tori -/
+
+section OrbitTorus
+
+variable {d : ℕ} {x : M} (h : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
+
+/-- The orbit torus pulls the form `Ω = ds ∧ dt + σ_v` back to `ds ∧ dt_d`, the wedge of the time
+forms of the circles `ℝ / ℤ` and `ℝ / dℤ`: the fiber form `σ_v` vanishes on it. -/
+@[simp]
+theorem mpullback_orbitTorus_suspensionForm :
+    SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h) (suspensionForm φ σ hσ) =
+      SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ))) := by
+  have hfst : Prod.fst ∘ orbitTorus φ h = Prod.fst :=
+    funext fun p ↦ congrArg Prod.fst (orbitTorus_apply h p)
+  have hsnd : Prod.snd ∘ orbitTorus φ h = closedOrbit φ h ∘ Prod.snd :=
+    funext fun p ↦ congrArg Prod.snd (orbitTorus_apply h p)
+  have hds : SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
+      (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1)) =
+        SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1) := by
+    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
+    simp only [hfst]
+  have hdt : SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm φ)) =
+        SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ)) := by
+    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
+    simp only [hsnd]
+    rw [SmoothForm.mpullback_comp _ _ contMDiff_snd (contMDiff_closedOrbit h),
+      LinearMap.comp_apply, mpullback_closedOrbit_timeForm]
+  rw [suspensionForm_def, map_add, mpullback_orbitTorus_mpullback_snd_fiberForm h two_ne_zero,
+    add_zero]
+  -- `Ω` has degree `2`, while the wedge of two one-forms has degree `1 + 1`.
+  exact (SmoothForm.mpullback_wedge (k := 1) (l := 1) _ (contMDiff_orbitTorus h) _ _).trans
+    (by rw [hds, hdt])
+
+end OrbitTorus
 
 end SmoothMappingTorus
 

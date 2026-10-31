@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Primitive
 public import TauCeti.NumberTheory.ModularForms.CuspComplementDescent
+import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Span
 
 /-!
 # The weight-two cusp–Eisenstein decomposition for congruence subgroups
@@ -35,6 +36,8 @@ the residues of coprime pairs, so it preserves both conditions on `W`, and the s
 * `TauCeti.EisensteinSeries.gammaSlashₗ_weightedG2MF`: slashing `G₂^W` by `γ ∈ SL(2, ℤ)`.
 * `TauCeti.EisensteinSeries.gammaSlashₗ_mem_primitiveG2Subspace`: the primitive weight-two
   Eisenstein subspace of `M₂(Γ(N))` is stable under slashing by `SL(2, ℤ)`.
+* `TauCeti.EisensteinSeries.mem_congruenceG2Subspace_of_coe_eq_weightedG2`: a form that is a
+  weighted weight-two series of a level dividing `N` lies in the weight-two Eisenstein subspace.
 * `TauCeti.EisensteinSeries.isCompl_congruenceG2Subspace_cuspFormSubmodule`: the weight-two
   cusp–Eisenstein decomposition of `M₂(Γ)` for `Γ ⊇ Γ(N)`.
 * `TauCeti.EisensteinSeries.isCompl_congruenceG2Subspace_charSpace_range_cuspToModFormCharSpace`:
@@ -94,6 +97,20 @@ theorem mem_congruenceG2Subspace_iff (hΓ : Gamma N ≤ Γ) (f : ModularForm (Γ
     f ∈ congruenceG2Subspace hΓ ↔
       ModularForm.restrict (Subgroup.map_mono hΓ) f ∈ primitiveG2Subspace N := by
   rw [congruenceG2Subspace_def, Submodule.mem_comap, ModularForm.restrictₗ_apply]
+
+/-- A form on `Γ ⊇ Γ(N)` that is, as a function, the weighted weight-two series `G₂^W` of a weight
+`W` modulo a divisor `M` of `N` lies in the weight-two Eisenstein subspace of `M₂(Γ)`. -/
+theorem mem_congruenceG2Subspace_of_coe_eq_weightedG2 {M : ℕ} [NeZero M]
+    (hMN : M ∣ N) (hΓ : Gamma N ≤ Γ) {f : ModularForm (Γ.map (mapGL ℝ)) 2}
+    {W : (Fin 2 → ZMod M) → ℂ} (hf : ⇑f = weightedG2 W) :
+    f ∈ congruenceG2Subspace hΓ := by
+  rw [mem_congruenceG2Subspace_iff]
+  have h : ModularForm.restrict (Subgroup.map_mono hΓ) f =
+      weightedG2MF fun c : Fin 2 → ZMod N ↦ W (ZMod.castHom hMN (ZMod M) ∘ c) := by
+    apply DFunLike.coe_injective
+    rw [ModularForm.coe_restrict, coe_weightedG2MF, weightedG2_comp_castHom, hf]
+  rw [h]
+  exact weightedG2MF_mem_primitiveG2Subspace _
 
 /-- **The weight-two cusp–Eisenstein decomposition on a congruence subgroup**: for a subgroup
 `Γ` of `SL(2, ℤ)` containing `Γ(N)`, the weight-two Eisenstein subspace is a complement of the
