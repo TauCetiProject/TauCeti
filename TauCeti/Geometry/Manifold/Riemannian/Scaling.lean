@@ -309,7 +309,8 @@ theorem sectionalCurvature_leviCivitaConnection_rescale_const (x : M) (u v : Tan
     inner_riemannianBundle, rescale_inner,
     curvatureTensor_leviCivitaConnection_rescale_const g hc x]
   rw [show ∀ a b d : ℝ, c * a * (c * b) - (c * d) ^ 2 = c ^ 2 * (a * b - d ^ 2) by
-      intros; ring, mul_div_mul_comm, sq, div_mul_cancel_left₀ hc.ne']
+      intros; ring]
+  field_simp
 
 /-- Multiplying a smooth metric by a positive constant `c` turns sectional curvature `c * k` at a
 point into sectional curvature `k`. -/
@@ -347,9 +348,7 @@ theorem isConstantCurvatureTensor_rescale_const_iff (κ : ℝ) :
       g.IsConstantCurvatureTensor (c * κ) := by
   simp only [isConstantCurvatureTensor_iff, inner_riemannianBundle, rescale_inner,
     curvatureTensor_leviCivitaConnection_rescale_const g hc]
-  refine forall₄_congr fun x w u v ↦ ?_
-  rw [smul_sub, smul_sub, smul_smul, smul_smul, smul_smul, smul_smul, mul_comm c κ,
-    mul_assoc κ c, mul_assoc κ c]
+  exact forall₄_congr fun x w u v ↦ Eq.congr_right (by module)
 
 end Curvature
 
