@@ -169,28 +169,6 @@ theorem perturbationCocycle_zero_left : α.perturbationCocycle 0 = 1 := by
 
 /-! ### The perturbed dynamics -/
 
-/-- The inclusion of `A` into its multiplier algebra, as a real linear isometry. -/
-private def coeIsometry : A →ₗᵢ[ℝ] 𝓜(ℂ, A) where
-  toFun a := a
-  map_add' := map_add (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A))
-  map_smul' r a := by
-    simp only [RCLike.real_smul_eq_coe_smul (K := ℂ) r, RingHom.id_apply]
-    exact map_smul (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A)) (r : ℂ) a
-  norm_map' := DoubleCentralizer.norm_coe
-
-private theorem hasDerivAt_coe {f : ℝ → A} {d : A} {x : ℝ} (h : HasDerivAt f d x) :
-    HasDerivAt (fun t => (f t : 𝓜(ℂ, A))) (d : 𝓜(ℂ, A)) x :=
-  (coeIsometry (A := A)).toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt x h
-
-/-- A path in `A` is differentiable once it is differentiable in `𝓜(ℂ, A)` with a derivative
-in `A`, since the inclusion is isometric. -/
-private theorem hasDerivAt_of_hasDerivAt_coe {f : ℝ → A} {d : A} {x : ℝ}
-    (h : HasDerivAt (fun t => (f t : 𝓜(ℂ, A))) (d : 𝓜(ℂ, A)) x) : HasDerivAt f d x := by
-  rw [hasDerivAt_iff_isLittleO] at h ⊢
-  refine Asymptotics.isLittleO_norm_left.mp (h.norm_left.congr_left fun y => ?_)
-  rw [← (coeIsometry (A := A)).norm_map, map_sub, map_sub, map_smul]
-  rfl
-
 variable {P}
 
 /-- The perturbation of a real C⋆-dynamics `α` by a self-adjoint `P`, acting at time `t` by
@@ -253,9 +231,10 @@ private theorem hasDerivAt_perturb_zero (hP : IsSelfAdjoint P) (a : α.generator
     HasDerivAt (fun t : ℝ => α.perturb hP (Multiplicative.ofAdd t) (a : A))
       (α.generator a + I • (P * a - a * P)) 0 := by
   have hΓ := α.hasDerivAt_perturbationCocycle_zero (P := P)
-  refine hasDerivAt_of_hasDerivAt_coe ?_
+  refine DoubleCentralizer.hasDerivAt_coe_iff.mp ?_
   simp only [coe_perturb_apply]
-  convert (hΓ.mul (hasDerivAt_coe (α.hasDerivAt_zero a))).mul hΓ.star using 1
+  convert (hΓ.mul (DoubleCentralizer.hasDerivAt_coe_iff.mpr (α.hasDerivAt_zero a))).mul hΓ.star
+    using 1
   rw [star_I_smul_coe hP]
   simp only [Pi.mul_apply, perturbationCocycle_zero, ofAdd_zero, one_apply, star_one, mul_one,
     one_mul]
@@ -271,10 +250,11 @@ theorem mem_generator_perturb_domain_iff (hP : IsSelfAdjoint P) (a : A) :
   · -- Undo the unitary conjugation: `α_t(a) = Γ t⋆ (Γ t α_t(a) Γ t⋆) Γ t`.
     rw [mem_generator_domain_iff_differentiableAt]
     have hΓ := α.hasDerivAt_perturbationCocycle_zero (P := P)
-    have hb := hasDerivAt_coe ((α.perturb hP).hasDerivAt_zero ⟨a, ha⟩)
+    have hb := DoubleCentralizer.hasDerivAt_coe_iff.mpr
+      ((α.perturb hP).hasDerivAt_zero ⟨a, ha⟩)
     have h := (hΓ.star.mul hb).mul hΓ
-    refine (hasDerivAt_of_hasDerivAt_coe (d := (α.perturb hP).generator ⟨a, ha⟩ -
-      I • (P * a - a * P)) ?_).differentiableAt
+    refine (DoubleCentralizer.hasDerivAt_coe_iff (d := (α.perturb hP).generator ⟨a, ha⟩ -
+      I • (P * a - a * P))).mp ?_ |>.differentiableAt
     convert h using 1
     · funext t
       have hu := α.perturbationCocycle_mem_unitary hP t
