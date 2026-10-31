@@ -122,12 +122,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 specifies the curve, but no choice of optimizer is built into the relation. Completeness and
 strict convexity of the norm are not needed for this construction. -/
 theorem isDisplacementInterpolation_of_map_smul_add_smul
-    (hπ : IsCoupling π (μ 0 : Measure E) (μ 1 : Measure E))
     (hopt : eLpNorm (fun z : E × E ↦ edist z.1 z.2) p π =
       wassersteinEDist p (μ 0 : Measure E) (μ 1 : Measure E))
     (hmarg : ∀ t : I, (μ t : Measure E) =
       π.map fun z ↦ (1 - (t : ℝ)) • z.1 + (t : ℝ) • z.2) :
     IsDisplacementInterpolation p μ := by
+  have hπ : IsCoupling π (μ 0 : Measure E) (μ 1 : Measure E) := by
+    constructor
+    · rw [hmarg 0]
+      simp [Measure.fst]
+    · rw [hmarg 1]
+      simp [Measure.snd]
   have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
   apply isDisplacementInterpolation_iff.2
   refine ⟨π.map segmentPath, inferInstance, π.ae_mem_geodesicPaths_map_segmentPath,
@@ -143,7 +148,7 @@ theorem _root_.ProbabilityTheory.HasLaw.isDisplacementInterpolation_smul_add_smu
     (hmarg : ∀ t : I, (μ t : Measure E) =
       (μ 0 : Measure E).map fun x ↦ (1 - (t : ℝ)) • x + (t : ℝ) • T x) :
     IsDisplacementInterpolation p μ := by
-  refine isDisplacementInterpolation_of_map_smul_add_smul (isCoupling_graphPlan hT) hopt ?_
+  refine isDisplacementInterpolation_of_map_smul_add_smul hopt ?_
   intro t
   rw [hmarg, map_graphPlan hT.aemeasurable (by fun_prop)]
 
