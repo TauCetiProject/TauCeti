@@ -102,8 +102,7 @@ theorem isInduction_orbitRelQuotientMap
     have hzs : Quotient.mk (orbitRel G X) (ℓ z) = Quotient.mk (orbitRel G X) (s : X) := by
       rw [← S.orbitRelQuotientMap_mk, hs]
       exact hℓp hzv
-    obtain ⟨g, hg⟩ := orbitRel_apply.mp (Quotient.exact hzs)
-    replace hg : g • (s : X) = ℓ z := hg
+    obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hzs))
     -- The plot `g⁻¹ • ℓ` passes through `s`, so it lies in the open set `S` near `z`.
     have hℓ' : IsPlotOn v (fun y ↦ g⁻¹ • ℓ y) := hℓ.dSmooth_comp (hsmooth g⁻¹)
     have hℓ'z : g⁻¹ • ℓ z = s := by rw [← hg, inv_smul_smul]

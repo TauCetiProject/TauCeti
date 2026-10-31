@@ -959,8 +959,7 @@ theorem orbitRelQuotientMap_injective
     (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈ S → g ∈ H) :
     Function.Injective S.orbitRelQuotientMap := by
   rintro ⟨s⟩ ⟨t⟩ h
-  obtain ⟨g, hg⟩ := orbitRel_apply.mp (Quotient.exact h)
-  replace hg : g • (t : X) = s := hg
+  obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact h))
   have hgS : g ∈ H := hS g t t.2 (hg ▸ s.2)
   exact Quotient.sound (orbitRel_apply.mpr
     (mem_orbit_subMul_iff.mpr ⟨⟨g, hgS⟩, hg⟩))

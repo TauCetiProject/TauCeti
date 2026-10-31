@@ -223,8 +223,9 @@ structure IsInduction (f : Y → X) : Prop where
 induced by it. -/
 theorem isInduction_iff_eq_inducedDiffeology {f : Y → X} :
     IsInduction f ↔ Injective f ∧ ‹DiffeologicalSpace Y› = inducedDiffeology f :=
-  ⟨fun hf ↦ ⟨hf.injective, by ext; exact hf.isPlot_iff⟩,
-    fun ⟨hf, h⟩ ↦ ⟨hf, fun {_ _} ↦ by rw [h]; rfl⟩⟩
+  ⟨fun hf ↦ ⟨hf.injective, by
+      ext; exact hf.isPlot_iff.trans (isPlot_inducedDiffeology_iff f).symm⟩,
+    fun ⟨hf, h⟩ ↦ ⟨hf, fun {_ _} ↦ by rw [h]; exact isPlot_inducedDiffeology_iff f⟩⟩
 
 /-- An induction is smooth. -/
 theorem IsInduction.dSmooth {f : Y → X} (hf : IsInduction f) : _root_.Diffeology.DSmooth f :=
@@ -243,7 +244,7 @@ theorem IsInduction.comp {f : Y → X} {g : Z → Y} (hf : IsInduction f) (hg : 
 
 /-- The inclusion of a subtype with its subspace diffeology is an induction. -/
 theorem isInduction_subtype_val {P : X → Prop} : IsInduction (Subtype.val : Subtype P → X) :=
-  ⟨Subtype.val_injective, Iff.rfl⟩
+  ⟨Subtype.val_injective, isPlot_subtype_iff⟩
 
 /-- An induction is smooth as a map onto its image with the subspace diffeology. -/
 theorem IsInduction.dSmooth_ofInjective {f : Y → X} (hf : IsInduction f) :
