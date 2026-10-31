@@ -77,6 +77,8 @@ subgroup is the root rather than a difference `εᵢ - εⱼ` of coordinates.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantTorusPoints`: naturality in the value ring.
 * `TauCeti.UniversalEnvelopingAlgebra.mapScalarExtensionAutomorphisms_kostantTorusPoints`:
   scalar extension of a torus point is the torus point with mapped parameter.
+* `TauCeti.UniversalEnvelopingAlgebra.mapScalarExtensionAutomorphisms_kostantCoordinateCocharacter`:
+  the same for a coroot value.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_conj_kostantRootSubgroupParam`: the
   pinning equation `t(s) xᵢ(u) t(s)⁻¹ = xᵢ(α(s) u)`.
 * `TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_coe_kostantRootOperator`: the root
@@ -475,6 +477,21 @@ theorem mapScalarExtensionAutomorphisms_kostantTorusPoints (φ : A ⟶ B) (s : �
     GeneralLinear.scalarExtensionMap_tmul, map_mul]
   simp only [map_one, mul_one]
   exact congrArg (· ⊗ₜ[ℤ] (b x : M)) hchar
+
+/-- **Scalar extension of a coroot value.** Extending the scalars of the value at `u` of the
+cocharacter supported at `c` along a morphism of value rings gives its value at the image of
+`u`. -/
+theorem mapScalarExtensionAutomorphisms_kostantCoordinateCocharacter [DecidableEq κ] (φ : A ⟶ B)
+    (c : κ) (u : Aˣ) :
+    GeneralLinear.mapScalarExtensionAutomorphisms (V := M) φ
+        (kostantCoordinateCocharacter M b wt A c u) =
+      kostantCoordinateCocharacter M b wt B c (Units.map φ.hom.toRingHom.toMonoidHom u) := by
+  rw [kostantCoordinateCocharacter_apply, kostantCoordinateCocharacter_apply,
+    mapScalarExtensionAutomorphisms_kostantTorusPoints]
+  congr 1
+  funext k
+  exact Pi.apply_mulSingle (fun _ => Units.map φ.hom.toRingHom.toMonoidHom) (fun _ => map_one _)
+    c u k
 
 end CommAlgCatNaturality
 

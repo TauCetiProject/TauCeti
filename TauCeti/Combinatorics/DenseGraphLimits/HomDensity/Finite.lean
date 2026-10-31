@@ -64,6 +64,17 @@ lemmas downstream modules should use.
 * `homDensityFin_nonneg`, `homDensityFin_le_one`, `injHomDensity_nonneg`, `injHomDensity_le_one` —
   both densities lie in `[0, 1]`, unconditionally. The degenerate cases are included: when the host
   is empty and the pattern is not, numerator and denominator both vanish and `x / 0 = 0` gives `0`.
+* `homDensityFin_bot_left`, `injHomDensity_top_right` — the two normalizations are exact: the
+  edgeless pattern has homomorphism density `1` in every nonempty host, and every pattern has
+  injective density `1` in a complete host with enough vertices.
+* `injHomDensity_top_left_eq_card_hom_div` — the injective density of a complete pattern in terms
+  of all its homomorphisms, since every homomorphism out of a complete graph is injective;
+* `homDensityFin_top_left`, `injHomDensity_top_left` — the densities of a complete pattern on `k`
+  vertices count the `k`-cliques of the host: `t(Kₖ, G) = k! · #cliques / n ^ k` and
+  `t₀(Kₖ, G) = #cliques / (n choose k)`.
+* `homDensityFin_top_fin_two`, `injHomDensity_top_fin_two`, `homDensityFin_top_fin_three`,
+  `injHomDensity_top_fin_three` — the edge and triangle densities in terms of the edges and
+  triangles of the host.
 
 ## References
 
@@ -71,6 +82,8 @@ lemmas downstream modules should use.
 -/
 
 public section
+
+open Finset SimpleGraph
 
 namespace TauCeti
 
@@ -147,6 +160,93 @@ theorem injHomDensity_le_one : injHomDensity F G ≤ 1 := by
   have h := F.card_injective_hom_le G
   simp only [Nat.card_eq_fintype_card] at h
   exact_mod_cast h
+
+/-! ### Exact normalizations -/
+
+/-- The homomorphism density of an edgeless pattern in a nonempty host is `1`: every vertex map is
+a homomorphism, and the power `|V(G)| ^ |V(F)|` counts them. -/
+@[simp]
+theorem homDensityFin_bot_left [Nonempty W] : homDensityFin (⊥ : SimpleGraph V) G = 1 := by
+  rw [homDensityFin_def, G.card_bot_hom, Nat.cast_pow]
+  exact div_self (pow_ne_zero _ (Nat.cast_ne_zero.2 Fintype.card_ne_zero))
+
+/-- The injective homomorphism density in a complete host with at least `|V(F)|` vertices is `1`:
+every vertex embedding is a homomorphism, and the falling factorial `(|V(G)|)_{|V(F)|}` counts
+them. -/
+@[simp]
+theorem injHomDensity_top_right (h : Fintype.card V ≤ Fintype.card W) :
+    injHomDensity F (⊤ : SimpleGraph W) = 1 := by
+  rw [injHomDensity_def, F.card_injective_hom_top]
+  exact div_self (Nat.cast_ne_zero.2 (Nat.descFactorial_eq_zero_iff_lt.not.2 h.not_gt))
+
+/-! ### Complete patterns: cliques, edges and triangles -/
+
+/-- The injective homomorphism density of the complete graph on `V` in terms of all homomorphisms:
+every homomorphism out of a complete graph is injective, and the falling factorial
+`(|V(G)|)_{|V|}` splits as `|V|!` times the binomial coefficient. -/
+theorem injHomDensity_top_left_eq_card_hom_div :
+    injHomDensity (⊤ : SimpleGraph V) G =
+      (Nat.card ((⊤ : SimpleGraph V) →g G) : ℝ) /
+        ((Fintype.card V).factorial * (Fintype.card W).choose (Fintype.card V) : ℝ) := by
+  rw [injHomDensity_def, G.card_injective_top_hom, Nat.descFactorial_eq_factorial_mul_choose,
+    Nat.cast_mul]
+
+section Clique
+
+variable [DecidableEq W] [DecidableRel G.Adj]
+
+/-- The homomorphism density of the complete graph on `V`: each `|V|`-clique of the host has
+`|V|!` orderings, out of `|V(G)| ^ |V|` vertex maps. -/
+theorem homDensityFin_top_left :
+    homDensityFin (⊤ : SimpleGraph V) G =
+      (Fintype.card V).factorial * #(G.cliqueFinset (Fintype.card V)) /
+        (Fintype.card W ^ Fintype.card V : ℝ) := by
+  rw [homDensityFin_def, G.card_top_hom, Nat.cast_mul]
+
+/-- The injective homomorphism density of the complete graph on `V` is the proportion of the
+`|V|`-subsets of the host that are cliques: the falling factorial `(|V(G)|)_{|V|}` is `|V|!` times
+the binomial coefficient, and each clique has `|V|!` orderings. -/
+theorem injHomDensity_top_left :
+    injHomDensity (⊤ : SimpleGraph V) G =
+      #(G.cliqueFinset (Fintype.card V)) / ((Fintype.card W).choose (Fintype.card V) : ℝ) := by
+  rw [injHomDensity_top_left_eq_card_hom_div, G.card_top_hom, Nat.cast_mul]
+  exact mul_div_mul_left _ _ (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _))
+
+/-- The triangle density `t(K₃, G)`: six times the number of triangles of `G`, over `|V(G)| ^ 3`. -/
+theorem homDensityFin_top_fin_three :
+    homDensityFin (⊤ : SimpleGraph (Fin 3)) G =
+      6 * #(G.cliqueFinset 3) / (Fintype.card W ^ 3 : ℝ) := by
+  rw [homDensityFin_top_left, Fintype.card_fin]
+  norm_num [Nat.factorial]
+
+/-- The injective triangle density `t₀(K₃, G)`: the proportion of the `3`-subsets of the host that
+are triangles. -/
+theorem injHomDensity_top_fin_three :
+    injHomDensity (⊤ : SimpleGraph (Fin 3)) G =
+      #(G.cliqueFinset 3) / ((Fintype.card W).choose 3 : ℝ) := by
+  rw [injHomDensity_top_left, Fintype.card_fin]
+
+end Clique
+
+section Edge
+
+variable [DecidableRel G.Adj]
+
+/-- The edge density `t(K₂, G)`: twice the number of edges of `G`, over `|V(G)| ^ 2`. -/
+theorem homDensityFin_top_fin_two :
+    homDensityFin (⊤ : SimpleGraph (Fin 2)) G = 2 * #G.edgeFinset / (Fintype.card W ^ 2 : ℝ) := by
+  rw [homDensityFin_def, G.card_top_fin_two_hom, Fintype.card_fin, Nat.cast_mul, Nat.cast_ofNat]
+
+/-- The injective edge density `t₀(K₂, G)`: the proportion of the pairs of distinct host vertices
+that are edges. -/
+theorem injHomDensity_top_fin_two :
+    injHomDensity (⊤ : SimpleGraph (Fin 2)) G =
+      #G.edgeFinset / ((Fintype.card W).choose 2 : ℝ) := by
+  rw [injHomDensity_top_left_eq_card_hom_div, G.card_top_fin_two_hom, Fintype.card_fin,
+    Nat.factorial_two, Nat.cast_mul, Nat.cast_ofNat]
+  exact mul_div_mul_left _ _ two_ne_zero
+
+end Edge
 
 end DenseGraphLimits
 

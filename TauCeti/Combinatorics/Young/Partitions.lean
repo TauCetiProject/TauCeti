@@ -17,8 +17,8 @@ Mathlib relates partitions of `n` and Young diagrams with `n` cells by
 parts of a partition, and `YoungDiagram.toPartition`, which reads the row lengths of a sized
 diagram back as a partition; these are inverse to each other (`YoungDiagram.equivPartition`).
 
-This file adds the individual row lengths and the first-column length of
-`YoungDiagram.ofPartition`, row- and column-length bounds for the special shapes
+This file adds the individual row and column lengths of `YoungDiagram.ofPartition` (column `j`
+has one cell for each part larger than `j`), row- and column-length bounds for the special shapes
 `Nat.Partition.ones`, `Nat.Partition.indiscrete` and `Nat.Partition.singletonSecondRow`, the parts
 of `YoungDiagram.toPartition`, the injectivity of `YoungDiagram.ofPartition`, and the
 **shape partition** `TauCeti.shapePartition` of a Young diagram, a partition of `μ.card` itself
@@ -50,11 +50,26 @@ theorem rowLen_ofPartition {n : ℕ} (ν : n.Partition) (i : ℕ) :
   rw [← getD_rowLens, rowLens_ofPartition_eq_sort_parts]
 
 /-- **The Young diagram of a partition has one row per part**: its rows are the parts, so the
-length of its first column counts them. -/
-@[simp]
+length of its first column counts them.  This is not a `simp` lemma: `simp` reaches the same
+normal form through `YoungDiagram.colLen_ofPartition` and `Nat.Partition.filter_pos_parts`. -/
 theorem colLen_zero_ofPartition {n : ℕ} (ν : n.Partition) :
     (ofPartition ν).colLen 0 = ν.parts.card := by
   rw [← length_rowLens, rowLens_ofPartition_eq_sort_parts, Multiset.length_sort]
+
+/-- **The columns of the Young diagram of a partition**: column `j` has one cell for each part
+larger than `j`. -/
+@[simp]
+theorem colLen_ofPartition {n : ℕ} (ν : n.Partition) (j : ℕ) :
+    (ofPartition ν).colLen j = (ν.parts.filter (j < ·)).card := by
+  set μ := ofPartition ν
+  -- The rows longer than `j` are exactly the rows meeting column `j`.
+  have hrange : (Finset.range (μ.colLen 0)).filter (fun i => j < μ.rowLen i) =
+      Finset.range (μ.colLen j) := by
+    ext i
+    simp only [Finset.mem_filter, Finset.mem_range, ← mem_iff_lt_rowLen, ← mem_iff_lt_colLen]
+    exact ⟨And.right, fun h => ⟨μ.up_left_mem le_rfl j.zero_le h, h⟩⟩
+  rw [← Multiset.sort_eq ν.parts (· ≥ ·), ← rowLens_ofPartition_eq_sort_parts,
+    card_filter_coe_rowLens, hrange, Finset.card_range]
 
 /-- The Young diagram construction is injective on partitions of a fixed size. -/
 theorem ofPartition_injective {n : ℕ} : Function.Injective (ofPartition (n := n)) :=

@@ -17,7 +17,9 @@ For a finite extension of fields, `TauCeti.Place.localData` records the pair con
 ramification index and the relative residue degree at each place above a fixed place. For an
 algebraic function field, repeating each index by its residue degree gives a partition of the
 extension degree. If all residue degrees are one, its parts are the unweighted ramification
-indices; this applies in particular over algebraically closed constants.
+indices; this applies in particular over algebraically closed constants. The local data depend
+only on the fibre with its ramification indices and relative degrees, so a bijection of fibres
+preserving both identifies them (`TauCeti.Place.localData_eq_of_equiv`).
 
 The finite fibre and the sum of products are supplied by
 `TauCeti.Place.finite_setOf_restrict_eq` and
@@ -72,6 +74,34 @@ theorem card_localData (P : Place k F) :
       {P' : Place k' F' | P'.restrict k F = P}.ncard := by
   rw [localData_def, Multiset.card_map, Finset.card_val,
     Set.ncard_eq_toFinset_card _ (finite_setOf_restrict_eq k F P)]
+
+section Transport
+
+variable {k F} {l : Type*} {l' : Type*} {L : Type*} {L' : Type*} [Field l] [Field l'] [Field L]
+  [Field L'] [Algebra l l'] [Algebra l L] [Algebra l' L'] [Algebra L L'] [Algebra l L']
+  [IsScalarTower l l' L'] [IsScalarTower l L L'] [FiniteDimensional L L']
+
+/-- **Local data are invariant under a matching of fibres**: a bijection between the places of
+`F'` and those of `L'` carrying the places above `P` onto the places above `Q`, with the same
+ramification indices and relative degrees, identifies the local data at `Q` with those at `P`.
+Transport along an isomorphism of extensions, or along a substitution of the base field, provides
+such a bijection. -/
+theorem localData_eq_of_equiv (P : Place k F) (Q : Place l L) (Φ : Place k' F' ≃ Place l' L')
+    (hΦ : ∀ P', (Φ P').restrict l L = Q ↔ P'.restrict k F = P)
+    (he : ∀ P', P'.restrict k F = P → ramificationIdx L (Φ P') = ramificationIdx F P')
+    (hf : ∀ P', P'.restrict k F = P → relativeDegree l L (Φ P') = relativeDegree k F P') :
+    localData (k' := l') (F' := L') l L Q = localData (k' := k') (F' := F') k F P := by
+  have hs : (finite_setOf_restrict_eq (k' := l') (F' := L') l L Q).toFinset =
+      (finite_setOf_restrict_eq (k' := k') (F' := F') k F P).toFinset.map Φ.toEmbedding := by
+    ext Q'
+    simp only [Finset.mem_map_equiv, Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
+    rw [← hΦ, Equiv.apply_symm_apply]
+  rw [localData_def, localData_def, hs, Finset.map_val, Multiset.map_map]
+  refine Multiset.map_congr rfl fun P' hP' ↦ ?_
+  have hP' : P'.restrict k F = P := by simpa using hP'
+  simp [he P' hP', hf P' hP']
+
+end Transport
 
 variable [Algebra.IsIntegral k k']
 

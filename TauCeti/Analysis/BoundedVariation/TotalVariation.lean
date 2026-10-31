@@ -134,13 +134,7 @@ theorem totalVariationOn_zero : totalVariationOn μ Ω 0 = 0 := by
 /-- **Locality.** The total variation on `Ω` only depends on `u` almost everywhere on `Ω`. -/
 theorem totalVariationOn_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
     totalVariationOn μ Ω u = totalVariationOn μ Ω v := by
-  simp_rw [totalVariationOn_def]
-  refine iSup_congr fun φ => iSup_congr fun _ => congrArg ENNReal.ofReal ?_
-  have hu := setIntegral_smul_eq_integral_smul (μ := μ) (w := u) (divergenceCLM φ)
-  have hv := setIntegral_smul_eq_integral_smul (μ := μ) (w := v) (divergenceCLM φ)
-  simp only [smul_eq_mul] at hu hv
-  rw [← hu, ← hv]
-  exact integral_congr_ae (h.mono fun x hx => by simp only [hx])
+  simp_rw [totalVariationOn_def, integral_divergenceCLM_mul_congr_ae h]
 
 /-- An admissible test vector field on `Ω` whose support lies in another open set `Ω'` is
 admissible on `Ω'`, so its pairing is bounded by the total variation on `Ω'`. -/
@@ -343,6 +337,14 @@ theorem totalVariationOn_add_const (c : ℝ) :
   · rw [integral_add hu hc, hc0, add_zero]
   · rw [integral_undef hu, integral_undef fun h => hu <| by
       simpa only [Pi.sub_def, add_sub_cancel_right] using h.sub hc]
+
+/-- Against an additive Haar measure, `c - u` has the same total variation as `u`. No
+integrability of `u` is needed. -/
+@[simp]
+theorem totalVariationOn_const_sub (c : ℝ) :
+    totalVariationOn μ Ω (fun x => c - u x) = totalVariationOn μ Ω u := by
+  rw [← totalVariationOn_neg (u := u), ← totalVariationOn_add_const (u := -u) c]
+  simp only [Pi.neg_apply, neg_add_eq_sub]
 
 /-- Against an additive Haar measure, a constant function has total variation zero. -/
 @[simp]

@@ -64,6 +64,7 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
   commutes with the grade involution, and with reversion for a symmetric form.
 * `CliffordAlgebra.equivExterior_involute` and `CliffordAlgebra.equivExterior_reverse`: the same
   for the isomorphism with the exterior algebra.
+* `CliffordAlgebra.equivExterior_mem_evenOdd_iff`: that isomorphism preserves the `ℤ/2`-grading.
 * `CliffordAlgebra.equivExterior_ι_mul` and `CliffordAlgebra.equivExterior_mul_ι`: that
   isomorphism on left and right vector factors.
 * `CliffordAlgebra.equivExterior_prod_map_ι_of_pairwise_isOrtho`: that isomorphism sends a product
@@ -282,6 +283,16 @@ Not a `simp` lemma: `simp` unfolds `CliffordAlgebra.equivExterior` to the underl
 theorem equivExterior_involute (x : CliffordAlgebra Q) :
     equivExterior Q (involute x) = involute (equivExterior Q x) :=
   changeForm_involute changeForm.associated_neg_proof x
+
+/-- **`CliffordAlgebra.equivExterior` preserves the `ℤ/2`-grading**: a Clifford element has
+parity `i` exactly when its image in the exterior algebra has parity `i`. -/
+theorem equivExterior_mem_evenOdd_iff {i : ZMod 2} {x : CliffordAlgebra Q} :
+    equivExterior Q x ∈ evenOdd (0 : QuadraticForm R M) i ↔ x ∈ evenOdd Q i := by
+  obtain rfl | rfl : i = 0 ∨ i = 1 := by revert i; decide
+  · rw [← involute_eq_self_iff, ← involute_eq_self_iff, ← equivExterior_involute,
+      (equivExterior Q).injective.eq_iff]
+  · rw [← involute_eq_neg_iff, ← involute_eq_neg_iff, ← equivExterior_involute, ← map_neg,
+      (equivExterior Q).injective.eq_iff]
 
 /-- `CliffordAlgebra.equivExterior` intertwines reversion, because the bilinear form
 `QuadraticMap.associated (-Q)` it changes the form by is symmetric.

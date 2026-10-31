@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.LinearAlgebra.Matrix.Block
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # Supports, splittings, determinants and coordinate separation for dependent products
@@ -18,7 +19,8 @@ supports meet in `⊥`. This file also records the linear splitting of a depende
 predicate on the indices, the linear splittings of a `Fin (n + 1)`-indexed product into its initial
 segment and its last coordinate and of a `Fin (m + n)`-indexed product into its two blocks, and the
 determinant of a coordinatewise endomorphism of a finite dependent product, which is used in
-finite-product norm calculations.
+finite-product norm calculations, and rank–nullity for a surjection onto a finite dependent
+product.
 
 Finally, distinct sums and differences of standard coordinate vectors can be separated at a
 coordinate where their difference is regular. In two of these separations the critical case is
@@ -48,6 +50,9 @@ weights.
   finite dependent product is the product of the determinants of its components.
 * `TauCeti.finrank_linearMap_pi_eq_sum`: the finite rank of maps between finite dependent
   products is the sum of the ranks of the finite free component hom spaces.
+* `LinearMap.sum_finrank_add_finrank_ker_of_surjective`: rank–nullity for a surjection from a
+  finite-dimensional space onto a finite dependent product, whose factors are then finite
+  (`LinearMap.finite_of_surjective_pi`).
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -200,6 +205,28 @@ public theorem det_piMap {R ι : Type*} [CommRing R] [Fintype ι] {M : ι → Ty
   let b (i : ι) := Module.Free.chooseBasis R (M i)
   rw [← det_toMatrix (Pi.basis b), toMatrix_piMap b b, Matrix.det_blockDiagonal']
   exact Finset.prod_congr rfl fun i _ ↦ det_toMatrix (b i) (f i)
+
+/-- Every factor of a product that is the image of a finite module under a linear map is finite:
+it is the image of that module under the composite with the projection. -/
+public theorem finite_of_surjective_pi {R M ι : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Module.Finite R M] {Q : ι → Type*} [∀ i, AddCommMonoid (Q i)]
+    [∀ i, Module R (Q i)] (Φ : M →ₗ[R] (i : ι) → Q i) (hΦ : Function.Surjective Φ) (i : ι) :
+    Module.Finite R (Q i) := by
+  classical
+  exact Module.Finite.of_surjective ((proj i).comp Φ) fun y ↦
+    (hΦ (Pi.single i y)).imp fun z hz ↦ by simp [hz]
+
+/-- **Rank–nullity onto a finite product**: for a surjective linear map `Φ` from a
+finite-dimensional space onto a finite product, the dimensions of the factors add up, with the
+dimension of the kernel of `Φ`, to the dimension of the source. -/
+public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [DivisionRing K]
+    [Fintype ι] [AddCommGroup M] [Module K M] [FiniteDimensional K M] {Q : ι → Type*}
+    [∀ i, AddCommGroup (Q i)] [∀ i, Module K (Q i)] (Φ : M →ₗ[K] (i : ι) → Q i)
+    (hΦ : Function.Surjective Φ) :
+    ∑ i, Module.finrank K (Q i) + Module.finrank K (ker Φ) = Module.finrank K M := by
+  have := finite_of_surjective_pi Φ hΦ
+  rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
+  exact finrank_range_add_finrank_ker Φ
 
 end LinearMap
 

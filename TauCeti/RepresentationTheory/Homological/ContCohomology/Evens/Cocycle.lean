@@ -19,7 +19,9 @@ an ambient cohomology class by taking its diagonal tensor in the tensor-induced 
 This file supplies that construction directly on Mathlib's homogeneous cochains. Its value
 depends only on the input cohomology class, including when that class is zero, and not on the
 transversal used to tensor-induce. Multiplication identifies the tensor-induced coefficients with
-the ambient trivial coefficients.
+the ambient trivial coefficients. In degree zero the norm is the identity of `𝔽₂ = H⁰`: a cocycle
+with value `a` has norm the degree-zero class of `a ^ |G ⧸ U| = a`
+(`OpenSubgroup.tensorNormCocycleClass_eq_degreeZeroClass`).
 
 The construction uses `TauCeti.smoothTensorInducedDiagonalClass` and its change-of-coboundary
 theorem. These operate on the total graded resolution; `TopRep.cochainToGradedResolution`
@@ -162,5 +164,33 @@ theorem tensorNormCocycleClass_eq_zero_of_cochainClass_eq_zero {n : ℕ}
   rw [← tensorNormCocycleClass_zero U t n]
   apply tensorNormCocycleClass_eq_of_cochainClass_eq U t z 0 hz (map_zero _)
   simpa only [TopRep.cochainClass_zero] using h
+
+/-- **The tensor norm in degree zero is the identity of `𝔽₂`**: a degree-zero cocycle, the
+constant function with value `a ∈ 𝔽₂`, has tensor norm the degree-zero class of `a` in
+`H⁰(G, 𝔽₂) = 𝔽₂`. The diagonal tensor `a ⊗ ⋯ ⊗ a` has one factor for each coset in `G ⧸ U`, so
+it multiplies out to `a ^ |G ⧸ U| = a` in `𝔽₂`. -/
+theorem tensorNormCocycleClass_eq_degreeZeroClass
+    (z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X 0)
+    (hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d 0 (0 + 1)).hom z = 0) :
+    tensorNormCocycleClass U t z hz =
+      ContinuousCohomology.degreeZeroClass (trivialF2 G)
+        ((trivialF2Equiv G).symm (trivialF2Equiv U.toSubgroup (z.1 1)))
+        (fun g ↦ trivialF2_ρ_apply_apply G g _) := by
+  have ha : (trivialF2 U.toSubgroup).gradedResolutionProjection
+      ((trivialF2 U.toSubgroup).cochainToGradedResolution 0 z) = z.1 1 := by
+    rw [TopRep.cochainToGradedResolution_apply, TopRep.gradedResolutionProjection_lof_zero]
+  rw [tensorNormCocycleClass_def, Subgroup.smoothTensorInducedDiagonalClass_eq_degreeZeroClass,
+    ContinuousCohomology.coeffMap_def]
+  refine (ContinuousCohomology.map_degreeZeroClass (ContinuousMonoidHom.id G) _ _ _).trans ?_
+  congr 1
+  apply (trivialF2Equiv G).injective
+  rw [AddEquiv.apply_symm_apply]
+  refine (smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod G U.toSubgroup
+    U.isOpen' t _).trans ?_
+  rw [Finset.prod_const, ha]
+  have hb : ∀ b : ZMod 2, IsIdempotentElem b := by
+    unfold IsIdempotentElem
+    decide
+  exact (hb _).pow_eq (by simp)
 
 end OpenSubgroup

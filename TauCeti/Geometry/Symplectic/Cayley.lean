@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import TauCeti.Geometry.Symplectic.TameMetric
 
 /-!
-# The Cayley transform of tame complex structures
+# The Cayley transform of tame and compatible complex structures
 
 Let `ω` be a symplectic form on a finite-dimensional real vector space `V` and let `J₀` be an
 `ω`-compatible complex structure, with metric `g₀ = ω(·, J₀ ·)`. Every complex structure `J`
@@ -32,12 +32,27 @@ in the ball give explicit families of tame structures: two tame structures are j
 inverse transforms of the points of the segment between their Cayley transforms. This is the
 linear algebra behind the contractibility of the space of tame almost complex structures.
 
+The same chart handles compatible structures. Since `g₀(v, A w) = ω(v, J w)`, the form `ω` is
+`J`-invariant exactly when `A` is self-adjoint for `g₀`, and then so is its Cayley transform `C`.
+So the Cayley transform identifies the `ω`-compatible structures with the *compatible Cayley ball*
+`TauCeti.SymplecticForm.compatibleCayleyBall ω J₀`, the `g₀`-self-adjoint elements of the Cayley
+ball. This is the intersection of the Cayley ball with a linear subspace, so it is again convex
+and contains `0`. Segments and rays in it (for instance `t • C` for `0 ≤ t ≤ 1`, by
+`Convex.smul_mem_of_zero_mem`) give explicit families of compatible structures. Such families
+interpolate between prescribed compatible structures, as needed for domain-dependent compatible
+structures that agree with given ones on the cylindrical ends of a punctured Riemann surface.
+
 ## Main definitions
 
 * `TauCeti.SymplecticForm.cayleyBall`: the `J₀`-antilinear strict contractions for
   `v ↦ ω(v, J₀ v)`.
 * `TauCeti.SymplecticForm.Compatible.cayleyEquiv`: for `ω`-compatible `J₀`, the Cayley transform
   as a bijection from the `ω`-tame complex structures onto the Cayley ball.
+* `TauCeti.SymplecticForm.compatibleCayleyBall`: the elements of the Cayley ball that are
+  self-adjoint for `g₀ = ω(·, J₀ ·)`.
+* `TauCeti.SymplecticForm.Compatible.compatibleCayleyEquiv`: for `ω`-compatible `J₀`, the Cayley
+  transform as a bijection from the `ω`-compatible complex structures onto the compatible Cayley
+  ball.
 
 ## Main results
 
@@ -52,6 +67,12 @@ linear algebra behind the contractibility of the space of tame almost complex st
 * `TauCeti.SymplecticForm.Compatible.cayleyEquiv_symm_apply_toLinearMap`: the inverse transform
   is `C ↦ J₀ (1 + C)(1 - C)⁻¹`.
 * `TauCeti.SymplecticForm.Compatible.cayleyEquiv_self`: the transform sends `J₀` to `0`.
+* `TauCeti.SymplecticForm.Tames.convex_compatibleCayleyBall`: the compatible Cayley ball is
+  convex.
+* `TauCeti.SymplecticForm.Compatible.isSelfAdjoint_cayley_iff`: the Cayley transform of a tame
+  structure `J` is `g₀`-self-adjoint exactly when `ω` is `J`-invariant.
+* `TauCeti.SymplecticForm.Compatible.cayley_mem_compatibleCayleyBall_iff`: the Cayley transform of
+  a tame structure lies in the compatible Cayley ball exactly when the structure is compatible.
 
 ## References
 
@@ -121,6 +142,35 @@ theorem Tames.convex_cayleyBall (h₀ : ω.Tames J₀) : Convex ℝ (ω.cayleyBa
     have hDm := mul_le_mul_of_nonneg_left (le_max_right _ _ : ω (D v) (J₀ (D v)) ≤ m) hb
     have habm : a * m + b * m = m := by rw [← add_mul, hab, one_mul]
     nlinarith [mul_nonneg (mul_nonneg ha hb) hnonneg]
+
+variable (ω J₀) in
+/-- The **compatible Cayley ball** of `ω` at `J₀`: the elements of the Cayley ball that are
+self-adjoint for the bilinear form `g₀ = ω(·, J₀ ·)`. For `ω`-compatible `J₀` it is the image of
+the `ω`-compatible complex structures under the Cayley transform. -/
+def compatibleCayleyBall : Set (Module.End ℝ V) :=
+  ω.cayleyBall J₀ ∩ (ω.associatedBilinForm J₀).selfAdjointSubmodule
+
+/-- Membership in the compatible Cayley ball: membership in the Cayley ball together with
+`ω(C v, J₀ w) = ω(v, J₀ (C w))` for all `v` and `w`. -/
+@[simp]
+lemma mem_compatibleCayleyBall {C : Module.End ℝ V} :
+    C ∈ ω.compatibleCayleyBall J₀ ↔
+      C ∈ ω.cayleyBall J₀ ∧ ∀ v w, ω (C v) (J₀ w) = ω v (J₀ (C w)) := Iff.rfl
+
+/-- The compatible Cayley ball lies in the Cayley ball. -/
+lemma compatibleCayleyBall_subset_cayleyBall : ω.compatibleCayleyBall J₀ ⊆ ω.cayleyBall J₀ :=
+  Set.inter_subset_left
+
+/-- The Cayley transform of `J₀` itself, `0`, lies in the compatible Cayley ball when `ω` tames
+`J₀`. -/
+lemma Tames.zero_mem_compatibleCayleyBall (h₀ : ω.Tames J₀) : 0 ∈ ω.compatibleCayleyBall J₀ :=
+  ⟨h₀.zero_mem_cayleyBall, Submodule.zero_mem _⟩
+
+/-- The compatible Cayley ball of `J₀` is convex when `ω` tames `J₀`: it is the intersection of
+the convex Cayley ball with a linear subspace. -/
+theorem Tames.convex_compatibleCayleyBall (h₀ : ω.Tames J₀) :
+    Convex ℝ (ω.compatibleCayleyBall J₀) :=
+  h₀.convex_cayleyBall.inter (Submodule.convex _)
 
 /-- For two structures tamed by `ω`, the endomorphism `1 - J₀ J` is invertible, since
 `ω(v, J₀ (v - J₀ J v)) = ω(v, J₀ v) + ω(v, J v)` is positive for `v ≠ 0`. -/
@@ -341,6 +391,102 @@ lemma Compatible.cayleyEquiv_symm_apply_toLinearMap (h₀ : ω.Compatible J₀)
 @[simp]
 lemma Compatible.cayleyEquiv_self (h₀ : ω.Compatible J₀) :
     h₀.cayleyEquiv ⟨J₀, h₀.tames⟩ = ⟨0, h₀.tames.zero_mem_cayleyBall⟩ :=
+  Subtype.ext (by simp)
+
+/-- The defect of self-adjointness of the Cayley transform `C` of `J`, evaluated on `P a` and
+`P b` with `P = 1 - J₀ J`, is twice the defect of symmetry of `ω(·, J ·)` on `a` and `b`. -/
+private lemma Compatible.cayley_selfAdjoint_defect (h₀ : ω.Compatible J₀) (h : ω.Tames J)
+    (a b : V) :
+    ω (J₀.cayley J ((1 - J₀.toLinearMap * J.toLinearMap) a))
+        (J₀ ((1 - J₀.toLinearMap * J.toLinearMap) b)) -
+      ω ((1 - J₀.toLinearMap * J.toLinearMap) a)
+        (J₀ (J₀.cayley J ((1 - J₀.toLinearMap * J.toLinearMap) b))) =
+      2 * (ω b (J a) - ω a (J b)) := by
+  have hCP := h₀.tames.cayley_mul_one_sub_mul h
+  have hCa := congrArg (fun f : Module.End ℝ V => f a) hCP
+  have hCb := congrArg (fun f : Module.End ℝ V => f b) hCP
+  simp only [Module.End.mul_apply] at hCa hCb
+  rw [hCa, hCb]
+  -- Expanding `C P = -(1 + J₀ J)`, only `J₀`-invariance of `ω` and skew-symmetry are needed.
+  have h₁ := h₀.invariant_apply (J a) b
+  have h₂ := h₀.invariant_apply (J a) (J₀ (J b))
+  have h₃ := ω.neg_eq (J a) b
+  simp only [LinearMap.neg_apply, LinearMap.add_apply, LinearMap.sub_apply, Module.End.one_apply,
+    Module.End.mul_apply, map_neg, map_add, map_sub, AlmostComplexStructure.apply_apply] at h₂ ⊢
+  linarith
+
+/-- For an `ω`-compatible `J₀` and a structure `J` tamed by `ω`, the Cayley transform of `J` is
+self-adjoint for `g₀ = ω(·, J₀ ·)` exactly when `ω` is `J`-invariant, that is, when `J` is
+`ω`-compatible. -/
+theorem Compatible.isSelfAdjoint_cayley_iff (h₀ : ω.Compatible J₀) (h : ω.Tames J) :
+    (ω.associatedBilinForm J₀).IsSelfAdjoint (J₀.cayley J) ↔ ω.Invariant J := by
+  have hP : IsUnit (1 - J₀.toLinearMap * J.toLinearMap) := h₀.tames.isUnit_one_sub_mul h
+  have hPs : Function.Surjective ⇑(1 - J₀.toLinearMap * J.toLinearMap) :=
+    (Module.End.isUnit_iff _).mp hP |>.surjective
+  constructor
+  · intro hC
+    -- Self-adjointness of `C` gives the symmetry `ω(a, J b) = ω(b, J a)`.
+    have hswap : ∀ a b, ω a (J b) = ω b (J a) := fun a b => by
+      have h₁ := h₀.cayley_selfAdjoint_defect h a b
+      have h₂ := hC ((1 - J₀.toLinearMap * J.toLinearMap) a)
+        ((1 - J₀.toLinearMap * J.toLinearMap) b)
+      simp only [associatedBilinForm_apply] at h₂
+      beta_reduce at h₁ h₂ ⊢
+      linarith
+    refine (ω.invariant_iff J).mpr fun v w => ?_
+    rw [hswap, AlmostComplexStructure.apply_apply]
+    beta_reduce
+    rw [map_neg]
+    exact ω.neg_eq w v
+  · intro hJ x y
+    obtain ⟨a, rfl⟩ := hPs x
+    obtain ⟨b, rfl⟩ := hPs y
+    have h₁ := h₀.cayley_selfAdjoint_defect h a b
+    have h₂ := hJ.associatedBilinForm_apply_swap b a
+    simp only [associatedBilinForm_apply]
+    beta_reduce at h₁ h₂ ⊢
+    linarith
+
+/-- The Cayley transform of a structure tamed by `ω` lies in the compatible Cayley ball of an
+`ω`-compatible `J₀` exactly when the structure is `ω`-compatible. -/
+theorem Compatible.cayley_mem_compatibleCayleyBall_iff (h₀ : ω.Compatible J₀) (h : ω.Tames J) :
+    J₀.cayley J ∈ ω.compatibleCayleyBall J₀ ↔ ω.Compatible J := by
+  rw [compatibleCayleyBall, Set.mem_inter_iff, SetLike.mem_coe,
+    LinearMap.mem_selfAdjointSubmodule, h₀.isSelfAdjoint_cayley_iff h, compatible_iff]
+  exact ⟨fun hC => ⟨hC.2, h⟩, fun hJ => ⟨h₀.cayley_mem_cayleyBall h, hJ.1⟩⟩
+
+/-- For an `ω`-compatible `J₀`, the Cayley transform `J ↦ -(1 + J₀ J)(1 - J₀ J)⁻¹` is a bijection
+from the `ω`-compatible complex structures onto the compatible Cayley ball of `J₀`. Its inverse is
+`C ↦ J₀ (1 + C)(1 - C)⁻¹`. Since the compatible Cayley ball is convex and contains `0`, the
+transform of `J₀`, this exhibits the compatible structures as a convex set in a linear chart. -/
+def Compatible.compatibleCayleyEquiv (h₀ : ω.Compatible J₀) :
+    {J : AlmostComplexStructure V // ω.Compatible J} ≃ ω.compatibleCayleyBall J₀ where
+  toFun J := ⟨J₀.cayley J, (h₀.cayley_mem_compatibleCayleyBall_iff J.2.tames).mpr J.2⟩
+  invFun C := ⟨inverseCayley C.2.1,
+    (h₀.cayley_mem_compatibleCayleyBall_iff (h₀.tames_inverseCayley C.2.1)).mp
+      (by rw [h₀.cayley_inverseCayley]; exact C.2)⟩
+  left_inv J := Subtype.ext <| AlmostComplexStructure.toLinearMap_injective <|
+    h₀.inverseCayley_cayley J.2.tames
+  right_inv C := Subtype.ext <| h₀.cayley_inverseCayley C.2.1
+
+/-- The compatible Cayley equivalence is the Cayley transform. -/
+@[simp]
+lemma Compatible.compatibleCayleyEquiv_apply_coe (h₀ : ω.Compatible J₀)
+    (J : {J : AlmostComplexStructure V // ω.Compatible J}) :
+    (h₀.compatibleCayleyEquiv J : Module.End ℝ V) = J₀.cayley J := (rfl)
+
+/-- The inverse of the compatible Cayley equivalence is `C ↦ J₀ (1 + C)(1 - C)⁻¹`. -/
+@[simp]
+lemma Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap (h₀ : ω.Compatible J₀)
+    (C : ω.compatibleCayleyBall J₀) :
+    (h₀.compatibleCayleyEquiv.symm C : AlmostComplexStructure V).toLinearMap =
+      J₀.toLinearMap * (1 + (C : Module.End ℝ V)) * Ring.inverse (1 - (C : Module.End ℝ V)) :=
+    (rfl)
+
+/-- The compatible Cayley equivalence sends `J₀` to `0`. -/
+@[simp]
+lemma Compatible.compatibleCayleyEquiv_self (h₀ : ω.Compatible J₀) :
+    h₀.compatibleCayleyEquiv ⟨J₀, h₀⟩ = ⟨0, h₀.tames.zero_mem_compatibleCayleyBall⟩ :=
   Subtype.ext (by simp)
 
 end SymplecticForm
