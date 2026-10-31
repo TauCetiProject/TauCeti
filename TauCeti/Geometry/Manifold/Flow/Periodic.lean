@@ -21,18 +21,19 @@ count is the subject of the Arnold conjecture, and which generate the Hamiltonia
 The time-dependent flow `TauCeti.timeDependentFlowOf X s t` of a jointly `C¹` field is only defined
 on the open set `TauCeti.timeDependentFlowDomain X`, and this file works on that domain, with no
 completeness assumption. Translating both times by a period of the field preserves the domain and
-the flow (`TauCeti.timeDependentFlowOf_add_period_of_mem`). So a point `x` which returns to itself
-after one period, `timeDependentFlowOf X s (s + T) x = x`, can be flowed on period after period in
-both directions: its trajectory is defined for all time
-(`TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`) and is a `T`-periodic solution. For `T ≠ 0`
-evaluation at the initial time `s` is therefore an equivalence between `T`-periodic solutions and
-the fixed points of the **return map** `timeDependentFlowOf X s (s + T)` in its domain
+the flow (`TauCeti.timeDependentFlowOf_add_period_of_mem`). So for `T ≠ 0` a point `x` which
+returns to itself after one period, `timeDependentFlowOf X s (s + T) x = x`, can be flowed on period
+after period in both directions: its trajectory is defined for all time
+(`TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`) and is a `T`-periodic solution. Evaluation at
+the initial time `s` is therefore an equivalence between `T`-periodic solutions and the fixed points
+of the **return map** `timeDependentFlowOf X s (s + T)` in its domain
 (`TauCeti.periodicSolutionsEquivFixedPoints`).
 
-On a compact manifold the return map is defined and `C¹` everywhere. If every periodic solution is
-nondegenerate, meaning that its initial point is a nondegenerate fixed point of the return map
-(`TauCeti.IsNondegenerateFixedPt`), the fixed points are isolated, so there are only finitely many
-periodic solutions (`TauCeti.finite_periodicSolutions`).
+On a compact boundaryless manifold modelled on a finite-dimensional space the return map is defined
+and `C¹` everywhere. If every periodic solution is nondegenerate, meaning that its initial point is
+a nondegenerate fixed point of the return map (`TauCeti.IsNondegenerateFixedPt`), the fixed points
+are isolated, so there are only finitely many periodic solutions
+(`TauCeti.finite_periodicSolutions`).
 
 This is the manifold counterpart of `TauCeti.periodicSolutionEquivFixedPoints` in
 `TauCeti.Dynamics.Flow.Periodic`, which treats globally Lipschitz fields on Banach spaces.
@@ -45,14 +46,12 @@ This is the manifold counterpart of `TauCeti.periodicSolutionEquivFixedPoints` i
 
 ## Main results
 
-* `TauCeti.timeDependentFlowOf_symm_of_mem`: flowing back from time `t` to time `s` undoes the flow
-  from `s` to `t`.
 * `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
   preserves the domain and the flow.
-* `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: the trajectory of a fixed point of the
-  return map is defined for all time.
-* `TauCeti.finite_periodicSolutions`: on a compact manifold, a field whose periodic solutions are
-  all nondegenerate has finitely many of them.
+* `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
+  of the return map is defined for all time.
+* `TauCeti.finite_periodicSolutions`: on a compact boundaryless finite-dimensional manifold, a
+  field whose periodic solutions are all nondegenerate has finitely many of them.
 
 ## References
 
@@ -90,42 +89,12 @@ theorem mem_periodicSolutions {γ : ℝ → M} :
         ∀ t, γ (t + T) = γ t :=
   Iff.rfl
 
-/-- The times at which the flow from `(s, x)` is defined form an interval. -/
-theorem ordConnected_setOf_mem_timeDependentFlowDomain (s : ℝ) (x : M) :
-    {u | ((s, u), x) ∈ timeDependentFlowDomain X}.OrdConnected := by
-  refine ⟨fun p hp q hq u hu ↦ ?_⟩
-  simp only [mem_ofPred_eq, mem_timeDependentFlowDomain, mem_flowDomain] at hp hq ⊢
-  exact ordConnected_maximalIntegralCurveInterval.out hp hq
-    ⟨by linarith [hu.1], by linarith [hu.2]⟩
-
-/-- Two times at which the flow from `(s, x)` is defined, `s` and `t`, lie in a common open
-interval of times at which it is defined. -/
-private theorem exists_Ioo_of_mem (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
-    ∃ a b, s ∈ Ioo a b ∧ t ∈ Ioo a b ∧
-      ∀ u ∈ Ioo a b, ((s, u), x) ∈ timeDependentFlowDomain X := by
-  rw [mem_timeDependentFlowDomain, mem_flowDomain] at h
-  obtain ⟨γ, a, b, hγ, hγ0, h0, ht, -⟩ := exists_isMIntegralCurveOn_maximalIntegralCurve_eq h
-  refine ⟨a + s, b + s, ⟨by linarith [h0.1], by linarith [h0.2]⟩,
-    ⟨by linarith [ht.1], by linarith [ht.2]⟩, fun u hu ↦ ?_⟩
-  rw [mem_timeDependentFlowDomain, mem_flowDomain]
-  exact hγ.subset_maximalIntegralCurveInterval h0 hγ0 ⟨by linarith [hu.1], by linarith [hu.2]⟩
-
 section Flow
 
 variable [CompleteSpace E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
   (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
     (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
 include hX
-
-/-- **Flowing back undoes the flow.** If the flow from time `s` to time `t` is defined at `x`, then
-the flow from `t` back to `s` is defined at its endpoint and returns it to `x`. -/
-theorem timeDependentFlowOf_symm_of_mem (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
-    ((t, s), timeDependentFlowOf X s t x) ∈ timeDependentFlowDomain X ∧
-      timeDependentFlowOf X t s (timeDependentFlowOf X s t x) = x := by
-  obtain ⟨a, b, hs, ht, hab⟩ := exists_Ioo_of_mem h
-  have hγ (u : ℝ) (hu : u ∈ Ioo a b) := hasMFDerivAt_timeDependentFlowOf hX (hab u hu)
-  refine ⟨mem_timeDependentFlowDomain_of_hasMFDerivAt hγ ht hs, ?_⟩
-  rw [timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ ht hs, timeDependentFlowOf_self hX]
 
 /-- **The flow of a time-periodic field is invariant under translation of time by a period.** If
 `X (t + T) = X t` for all `t` and the flow from `s` to `t` is defined at `x`, then so is the flow
@@ -134,7 +103,7 @@ theorem timeDependentFlowOf_add_period_of_mem (hT : Periodic X T)
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     ((s + T, t + T), x) ∈ timeDependentFlowDomain X ∧
       timeDependentFlowOf X (s + T) (t + T) x = timeDependentFlowOf X s t x := by
-  obtain ⟨a, b, hs, ht, hab⟩ := exists_Ioo_of_mem h
+  obtain ⟨a, b, hs, ht, hab⟩ := exists_Ioo_of_mem_timeDependentFlowDomain h
   -- The trajectory delayed by `T` solves the equation, since the field is `T`-periodic.
   have hγ (u : ℝ) (hu : u ∈ Ioo (a + T) (b + T)) :
       HasMFDerivAt 𝓘(ℝ, ℝ) I (fun r ↦ timeDependentFlowOf X s (r - T) x) u

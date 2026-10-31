@@ -23,12 +23,15 @@ transversally at `(x, x)`. For the time-one map of a
 time-dependent Hamiltonian this is the nondegeneracy of a 1-periodic orbit, the hypothesis under
 which the orbits generate the Hamiltonian Floer complex.
 
-A nondegenerate fixed point is isolated among the fixed points
+When `M` is modelled on a finite-dimensional space over a complete field, a nondegenerate fixed
+point is isolated among the fixed points
 (`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`): in a chart at `x` the coordinate
 expression `g` of `f` has `g - id` with injective derivative at `x`, so `g z ≠ z` for `z ≠ x` close
-to `x`. The argument is carried out within the range of the model with corners, so it also applies
-at boundary points. Consequently a continuous self-map of a compact manifold all of whose fixed
-points are nondegenerate has only finitely many fixed points
+to `x`, because an injective linear map of a finite-dimensional space is bounded below. Without
+finite dimensionality, injectivity of `df_x - 1` does not imply isolation. The argument is carried
+out within the range of the model with corners, so it also applies at boundary points.
+Consequently a continuous self-map of such a compact manifold all of whose fixed points are
+nondegenerate has only finitely many fixed points
 (`TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`): its fixed-point set is closed, hence
 compact, and discrete.
 
@@ -39,10 +42,11 @@ compact, and discrete.
 
 ## Main results
 
-* `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: nondegenerate fixed points are
-  isolated.
-* `TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`: on a compact manifold, a continuous
-  map whose fixed points are all nondegenerate has finitely many fixed points.
+* `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: on a manifold modelled on a
+  finite-dimensional space over a complete field, nondegenerate fixed points are isolated.
+* `TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`: on a compact manifold modelled on a
+  finite-dimensional space over a complete field, a continuous map whose fixed points are all
+  nondegenerate has finitely many fixed points.
 
 ## References
 
@@ -94,8 +98,9 @@ theorem eq_zero_of_mfderiv_apply_eq (h : IsNondegenerateFixedPt I f x) {v : Tang
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
 
-/-- **Nondegenerate fixed points are isolated.** If `x` is a nondegenerate fixed point of `f`,
-then no point `y ≠ x` close to `x` is fixed by `f`. The manifold may have boundary or corners. -/
+/-- **Nondegenerate fixed points are isolated.** On a manifold modelled on a finite-dimensional
+space over a complete field, if `x` is a nondegenerate fixed point of `f`, then no point `y ≠ x`
+close to `x` is fixed by `f`. The manifold may have boundary or corners. -/
 theorem eventually_not_isFixedPt (h : IsNondegenerateFixedPt I f x) :
     ∀ᶠ y in 𝓝[≠] x, ¬IsFixedPt f y := by
   have hf := h.mdifferentiableAt
