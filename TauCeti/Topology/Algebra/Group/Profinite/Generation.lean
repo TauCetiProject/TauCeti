@@ -536,6 +536,19 @@ private structure ConvergingGenData (G : Type*) [Group G] [TopologicalSpace G]
   finite : ∀ V : Subgroup G, IsOpen (V : Set G) → K ≤ V →
     (((↑) : G → G ⧸ K) '' (S \ V)).Finite
 
+omit [TopologicalSpace G] [IsTopologicalGroup G] in
+/-- Finiteness of a coarse coset image passes to a finer quotient if coarse congruence on the
+set already implies fine congruence. No normality or topological hypothesis is needed. -/
+private theorem finite_image_mk_of_le {K L : Subgroup G} (hLK : L ≤ K) {s : Set G}
+    (hfin : (((↑) : G → G ⧸ K) '' s).Finite)
+    (hcong : ∀ x ∈ s, ∀ y ∈ s, x⁻¹ * y ∈ K → x⁻¹ * y ∈ L) :
+    (((↑) : G → G ⧸ L) '' s).Finite := by
+  refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE hLK) ?_ ?_
+  · simpa only [Set.image_image, Subgroup.quotientMapOfLE_apply_mk] using hfin
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ h
+    simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
+    exact hcong x hx y hy h
+
 namespace ConvergingGenData
 
 /-- Refinement of partial solutions: `b` refines `a`. -/
@@ -675,13 +688,10 @@ private def limit {c : Set (ConvergingGenData G)} (hc : IsChain Le c) (hne : c.N
   finite V hV hKV := by
     obtain ⟨a, haV⟩ := exists_K_subset hc hne hV fun x hx ↦ hKV (Subgroup.mem_iInf.mpr hx)
     have hle : (⨅ b : c, b.1.K) ≤ a.1.K := iInf_le _ a
-    refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE hle) ?_ ?_
-    · rw [Set.image_image]
-      refine (a.1.finite V hV haV).subset ?_
-      rintro _ ⟨x, hx, rfl⟩
-      exact ⟨x, ⟨Set.mem_iInter.mp hx.1 a, hx.2⟩, rfl⟩
-    · rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ h
-      simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
+    refine finite_image_mk_of_le hle ?_ ?_
+    · exact (a.1.finite V hV haV).subset
+        (Set.image_mono fun x hx ↦ ⟨Set.mem_iInter.mp hx.1 a, hx.2⟩)
+    · intro x hx x' hx' h
       exact Subgroup.mem_iInf.mpr <| mem_K_of_mem_iInter hc a.2 (Set.mem_iInter.mp hx.1)
         (Set.mem_iInter.mp hx'.1) (fun h' ↦ hx.2 (haV h')) h
 
@@ -822,20 +832,12 @@ private theorem finite_refineSet (a : ConvergingGenData G) (U : OpenNormalSubgro
     exact V.mul_mem (hN hmN) (hLV (Subgroup.mem_inf.mpr ⟨hk, hkU⟩))
   have hA : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' a.K).Finite := by
     have := Subgroup.quotient_finite_of_isOpen U.toSubgroup U.isOpen
-    refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE inf_le_right)
-      (Set.toFinite _) ?_
-    rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ h
-    simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
-    exact Subgroup.mem_inf.mpr ⟨a.K.mul_mem (a.K.inv_mem hx) hx', h⟩
+    exact finite_image_mk_of_le inf_le_right (Set.toFinite _)
+      fun x hx x' hx' h ↦ ⟨a.K.mul_mem (a.K.inv_mem hx) hx', h⟩
   have hB : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' ((a.S ∩ U.toSubgroup) \ V)).Finite := by
-    refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE inf_le_left) ?_ ?_
-    · rw [Set.image_image]
-      refine (a.finite W hWopen le_sup_right).subset ?_
-      rintro _ ⟨x, hx, rfl⟩
-      exact ⟨x, hUW hx, rfl⟩
-    · rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ h
-      simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
-      exact Subgroup.mem_inf.mpr ⟨h, U.toSubgroup.mul_mem (U.toSubgroup.inv_mem hx.1.2) hx'.1.2⟩
+    exact finite_image_mk_of_le inf_le_left
+      ((a.finite W hWopen le_sup_right).subset (Set.image_mono hUW))
+      fun x hx x' hx' h ↦ ⟨h, U.toSubgroup.mul_mem (U.toSubgroup.inv_mem hx.1.2) hx'.1.2⟩
   have hC : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' a.reps U).Finite := by
     refine ((a.finite _ (Subgroup.isOpen_mono le_sup_right U.isOpen) le_sup_left).image
       fun q ↦ ((q.out : G) : G ⧸ (a.K ⊓ U.toSubgroup))).subset ?_
