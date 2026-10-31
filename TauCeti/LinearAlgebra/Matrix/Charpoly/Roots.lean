@@ -48,11 +48,10 @@ section RectangularProducts
 variable {m n K : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
   [CommRing K] [IsDomain K]
 
-noncomputable local instance : DecidableEq K := Classical.decEq K
-
 /-- Rectangular products `A * B` and `B * A` have the same nonzero characteristic roots,
 counted with algebraic multiplicity. -/
 theorem charpoly_roots_filter_ne_zero_mul_eq (A : Matrix m n K) (B : Matrix n m K) :
+    letI : DecidableEq K := Classical.decEq K
     Multiset.filter (fun z : K => z ≠ 0) (A * B).charpoly.roots =
       Multiset.filter (fun z : K => z ≠ 0) (B * A).charpoly.roots := by
   classical
