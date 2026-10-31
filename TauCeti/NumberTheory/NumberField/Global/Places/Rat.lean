@@ -68,6 +68,14 @@ theorem val_eq_padic (v : FinitePlace ℚ) :
   rw [hvp, Rat.AbsoluteValue.padic_eq_padicNorm, padicNorm.padicNorm_p_of_prime]
   simp only [Rat.cast_inv, Rat.cast_natCast]
 
+/-- A finite place of `ℚ`, evaluated at a rational number, is `padicNorm` at its canonical
+prime under `Rat.HeightOneSpectrum.primesEquiv`. -/
+theorem apply_eq_padicNorm (v : FinitePlace ℚ) (x : ℚ) :
+    v x = (padicNorm (primesEquiv v.maximalIdeal) x : ℝ) := by
+  let : Fact (primesEquiv v.maximalIdeal : ℕ).Prime :=
+    ⟨(primesEquiv v.maximalIdeal).property⟩
+  rw [coe_apply, v.val_eq_padic, Rat.AbsoluteValue.padic_eq_padicNorm]
+
 end NumberField.FinitePlace
 
 namespace Nat.Primes
@@ -80,6 +88,12 @@ theorem finitePlace_mk_val_eq_padic (p : Nat.Primes) :
   simpa only [FinitePlace.maximalIdeal_mk, Equiv.apply_symm_apply] using
     (FinitePlace.mk ((primesEquiv (R := 𝓞 ℚ)).symm p)).val_eq_padic
 
+/-- The finite place constructed from a prime evaluates to the usual `padicNorm`. -/
+theorem finitePlace_mk_apply (p : Nat.Primes) (x : ℚ) :
+    FinitePlace.mk ((primesEquiv (R := 𝓞 ℚ)).symm p) x = (padicNorm p x : ℝ) := by
+  simpa only [FinitePlace.maximalIdeal_mk, Equiv.apply_symm_apply] using
+    (FinitePlace.mk ((primesEquiv (R := 𝓞 ℚ)).symm p)).apply_eq_padicNorm x
+
 end Nat.Primes
 
 /-- At the prime `2`, the finite place takes the values `1/2` at `2` and `2` at `1/2`.
@@ -87,12 +101,11 @@ In particular, the dictionary uses neither the reciprocal normalization nor anot
 example : ∃ v : FinitePlace ℚ, v (2 : ℚ) = 1 / 2 ∧ v ((2 : ℚ)⁻¹) = 2 := by
   let p : Nat.Primes := ⟨2, Nat.prime_two⟩
   let v := FinitePlace.mk ((primesEquiv (R := 𝓞 ℚ)).symm p)
-  have hv : v.1 = Rat.AbsoluteValue.padic 2 := p.finitePlace_mk_val_eq_padic
-  have htwo : v.1 (2 : ℚ) = 1 / 2 := by
-    rw [hv, Rat.AbsoluteValue.padic_eq_padicNorm]
+  have htwo : v (2 : ℚ) = 1 / 2 := by
+    rw [Nat.Primes.finitePlace_mk_apply]
     have h := congrArg ((↑) : ℚ → ℝ) (padicNorm.padicNorm_p_of_prime (p := 2))
     norm_num at h ⊢
     exact h
   refine ⟨v, htwo, ?_⟩
-  rw [FinitePlace.coe_apply, map_inv₀, htwo]
+  rw [map_inv₀, htwo]
   norm_num
