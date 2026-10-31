@@ -230,8 +230,9 @@ private theorem subword_four_three_one (x : Fin 4 → nonisolatedZigzagQuotient 
 /-- The Taylor map of the strict zigzag algebra on a word of two letters is the product, with the
 Koszul twist of the first letter. -/
 private theorem taylor_of_tprod_two (x : Fin 2 → nonisolatedZigzagQuotient k G) :
-    (𝒵).taylor (of k _ ⟨2, two_pos⟩ (PiTensorProduct.tprod k x)) =
+    (𝒵).taylor (of k _ (2 : ℕ+) (PiTensorProduct.tprod k x)) =
       (𝒵).grading.koszulTwist 1 (x 0) * x 1 := by
+  change (𝒵).taylor (of k _ ⟨2, two_pos⟩ (PiTensorProduct.tprod k x)) = _
   rw [AInfinityAlgebra.taylor_of_tprod, zigzagStrictAInfinityAlgebra_m_two_apply]
   norm_num
 

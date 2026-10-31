@@ -301,7 +301,27 @@ theorem splice_two_eq_of_tprod_insertNth {n : ℕ} (x : Fin (n + 2) → M) (p : 
 theorem splice_neg (R : Type uR) {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
     {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e : M) :
     splice R x a b p d (-e) = -splice R x a b p d e := by
-  rw [← neg_one_smul R e, splice_smul, neg_one_smul]
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · obtain ⟨hd, hpd, hab⟩ := h
+    rw [splice_eq_of_tprod R x _ hd hpd hab, splice_eq_of_tprod R x _ hd hpd hab, ← map_neg]
+    congr 1
+    -- The letters of a spliced word are those of `x` with `e` at position `p`.
+    set g : Fin (b + 1 - d) → M := fun j ↦
+      if _ : (j : ℕ) < p then x ⟨a + j, by omega⟩
+      else if _ : (j : ℕ) = p then e else x ⟨a + (j + d - 1), by omega⟩
+    have hupd (z : M) : (fun j : Fin (b + 1 - d) ↦
+        if _ : (j : ℕ) < p then x ⟨a + j, by omega⟩
+        else if _ : (j : ℕ) = p then z else x ⟨a + (j + d - 1), by omega⟩) =
+          Function.update g ⟨p, by omega⟩ z := by
+      funext j
+      by_cases hj : (j : ℕ) = p
+      · rw [show j = ⟨p, by omega⟩ from Fin.ext hj]
+        simp
+      · rw [Function.update_of_ne (fun h ↦ hj (by rw [h]))]
+        simp [g, hj]
+    rw [hupd, (PiTensorProduct.tprod R).map_update_neg, show e = g ⟨p, by omega⟩ by simp [g],
+      Function.update_eq_self]
+  · rw [splice_eq_zero R x _ h, splice_eq_zero R x _ h, neg_zero]
 
 /-- Mapping a spliced tensor word applies the map to the untouched letters and the replacement
 letter. -/
