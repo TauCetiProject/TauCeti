@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Finite generation and projectivity under restriction of scalars
@@ -23,6 +24,8 @@ finiteness properties defining `K₀(proj R)` and `G₀(mod R)` survive it.
 * Along a ring homomorphism making `S` a **finitely generated** `R`-module, finite generation is
   preserved, so restriction of scalars is a functor between the categories of finitely generated
   modules.
+* Along a ring homomorphism making `S` a **projective** `R`-module, projectivity is preserved: a
+  projective `S`-module is a direct summand of a free `S`-module, which is projective over `R`.
 * Along a ring **isomorphism**, projectivity is preserved and reflected: the identity of the
   module is then a semilinear equivalence between the two module structures.
 
@@ -46,6 +49,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   is invariant under restriction of scalars along a surjective ring homomorphism.
 * `RingHom.isFG_restrictScalars_of_finite`: finite generation is preserved by restriction of
   scalars along a ring homomorphism `f : R →+* S` making `S` a finitely generated `R`-module.
+* `RingHom.projective_restrictScalars_of_projective`: projectivity is preserved by restriction of
+  scalars along a ring homomorphism `f : R →+* S` making `S` a projective `R`-module.
 * `RingEquiv.projective_restrictScalars_iff`: projectivity is invariant under restriction of
   scalars along a ring isomorphism.
 -/
@@ -105,6 +110,23 @@ theorem isFG_restrictScalars_of_finite (f : R →+* S)
   have : IsScalarTower R S M := ⟨fun r s m ↦ mul_smul (f r) s m⟩
   have hRM : Module.Finite R M := Module.Finite.trans S M
   exact (ModuleCat.isFG_iff _).mpr hRM
+
+/-- **Projectivity along a projective ring homomorphism.** If `S` is a projective `R`-module
+through `f : R →+* S`, then restriction of scalars along `f` sends every projective `S`-module to
+a projective `R`-module. -/
+theorem projective_restrictScalars_of_projective (f : R →+* S)
+    (hf : letI := f.toModule; Module.Projective R S)
+    (M : ModuleCat.{v} S) [Module.Projective S M] :
+    Module.Projective R ((ModuleCat.restrictScalars f).obj M) := by
+  let : Module R S := f.toModule
+  let : Module R M := Module.compHom M f
+  have : Module.Projective R S := hf
+  have : IsScalarTower R S S := ⟨fun r s s' ↦ mul_assoc (f r) s s'⟩
+  have : IsScalarTower R S M := ⟨fun r s m ↦ mul_smul (f r) s m⟩
+  -- Elaborated before being matched against the goal, so that the `R`-module structure of `M`
+  -- is the local one carrying the scalar tower; the goal's is defeq but not syntactically equal.
+  have hRM : Module.Projective R M := Module.Projective.trans (S := S)
+  exact hRM
 
 /-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
 `f : R →+* S` making `S` a finitely generated `R`-module induces a functor from the finitely

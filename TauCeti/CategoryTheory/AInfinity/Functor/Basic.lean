@@ -52,6 +52,8 @@ particular every `A∞` category has an identity `A∞` functor.
   path-compatible along its map of objects.
 * `TauCeti.AInfinityFunctor.homInclusion_map`: the map on a Hom module is the linear part of the
   `A∞` morphism of total algebras.
+* `TauCeti.AInfinityFunctor.homProjection_linearPart`: each component of the linear part of the
+  `A∞` morphism of total algebras is the map on the corresponding Hom module.
 * `TauCeti.AInfinityFunctor.map_mem`: the map on a Hom module preserves degrees.
 * `TauCeti.AInfinityFunctor.map_homDifferential`: the map on a Hom module is a chain map.
 * `TauCeti.AInfinityStrictFunctor.toAInfinityFunctor_map`: the map on Hom modules of a strict
@@ -201,6 +203,24 @@ theorem homInclusion_map (X Y : C) (f : homModule (R := R) X Y) :
       ℱ.toAInfinityHom.linearPart (homInclusion X Y f) :=
   homInclusion_homProjection_of_mem_range (ℱ.linearPart_homInclusion_mem_range X Y f)
 
+/-- The component between `ℱ X` and `ℱ Y` of the linear part of the `A∞` morphism of total algebras
+underlying `ℱ` is the map of `ℱ` on the component between `X` and `Y`. -/
+theorem homProjection_linearPart (X Y : C) (x : TotalHom R C) :
+    homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩
+        (ℱ.toAInfinityHom.linearPart x) =
+      ℱ.map X Y (homProjection X Y x) := by
+  induction x using totalHom_induction with
+  | zero => simp
+  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
+  | homInclusion X' Y' f =>
+    rw [← homInclusion_map]
+    by_cases h : (X', Y') = (X, Y)
+    · obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 h
+      simp only [homProjection_homInclusion]
+    · have h' : ((⟨X'⟩ : InducedQuiver D ℱ.obj), (⟨Y'⟩ : InducedQuiver D ℱ.obj)) ≠ (⟨X⟩, ⟨Y⟩) :=
+        fun e ↦ h (by simpa using e)
+      rw [homProjection_homInclusion_of_ne h', homProjection_homInclusion_of_ne h, map_zero]
+
 /-- The map of an `A∞` functor on a Hom module preserves degrees. -/
 @[grind =>]
 theorem map_mem (X Y : C) {p : ℤ} {f : homModule (R := R) X Y}
@@ -210,6 +230,16 @@ theorem map_mem (X Y : C) {p : ℤ} {f : homModule (R := R) X Y}
     (by rwa [ℬ.grading_eq, homInclusion_mem_totalGrading_piece_iff])
   rwa [(𝒞.induced ℱ.obj).grading_eq, ← homInclusion_map,
     homInclusion_mem_totalGrading_piece_iff] at h
+
+/-- The map of an `A∞` functor on a Hom module commutes with taking homogeneous components. -/
+theorem map_decompose (X Y : C) (p : ℤ) (f : homModule (R := R) X Y) :
+    ℱ.map X Y (DirectSum.decompose (grading (R := R) X Y).piece f p) =
+      (DirectSum.decompose (grading (R := R) (ℱ.obj X) (ℱ.obj Y)).piece (ℱ.map X Y f) p :
+        homModule (R := R) (ℱ.obj X) (ℱ.obj Y)) := by
+  have h := LinearMap.IsHomogeneous.map_decompose (ℳ := (grading (R := R) X Y).piece)
+    (𝓝 := (grading (R := R) (ℱ.obj X) (ℱ.obj Y)).piece) (r := 0)
+    (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by simpa using ℱ.map_mem X Y hx) p f
+  rwa [add_zero] at h
 
 /-- **The map of an `A∞` functor on a Hom module is a chain map** for the differentials `m₁`: this
 is the arity-one `A∞` functor equation. -/
@@ -223,6 +253,17 @@ theorem map_homDifferential (X Y : C) (f : homModule (R := R) X Y) :
     AInfinityCategory.homInclusion_homDifferential, homInclusion_map,
     AInfinityAlgebra.differential_apply, AInfinityAlgebra.differential_apply,
     AInfinityHom.linearPart_m_one]
+
+/-- The map of an `A∞` functor on a Hom module is a chain map, as an equation of linear maps. -/
+theorem map_comp_homDifferential (X Y : C) :
+    ℱ.map X Y ∘ₗ ℬ.homDifferential X Y = 𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y) ∘ₗ ℱ.map X Y :=
+  LinearMap.ext (ℱ.map_homDifferential X Y)
+
+/-- The map of an `A∞` functor on a Hom module sends closed morphisms to closed morphisms. -/
+theorem homDifferential_map_eq_zero {X Y : C} {f : homModule (R := R) X Y}
+    (hf : ℬ.homDifferential X Y f = 0) :
+    𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y) (ℱ.map X Y f) = 0 := by
+  rw [← map_homDifferential, hf, map_zero]
 
 end AInfinityFunctor
 

@@ -16,7 +16,9 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 For a function `u` on a finite type with values in a preorder, we compare the numbers of indices
 `l` at which `u l` lies in a lower set, as `u` grows pointwise, and split the number of values at
-most `i` into the numbers of values equal to each `j ≤ i`.
+most `i` into the numbers of values equal to each `j ≤ i`. Adding to a weakly decreasing integer
+function on a finite linear order the number of indices above each index makes it strictly
+decreasing.
 
 ## Main results
 
@@ -27,6 +29,8 @@ most `i` into the numbers of values equal to each `j ≤ i`.
 * `TauCeti.card_filter_le_eq_sum_card_filter_eq`: for a function with values in a finite set
   `σ`, the number of values at most `i` is the sum over `j ≤ i` in `σ` of the number of values
   equal to `j`.
+* `TauCeti.strictAnti_add_card_filter_lt`: `i ↦ μ i + #{j | i < j}` is strictly decreasing for
+  a weakly decreasing integer function `μ`.
 -/
 
 public section
@@ -69,5 +73,18 @@ theorem card_filter_le_eq_sum_card_filter_eq [Preorder ι] [DecidableEq ι] [Dec
   ext l
   simp only [mem_filter, mem_univ, true_and] at hj ⊢
   exact ⟨fun h => congrArg Subtype.val h.2, fun h => ⟨h ▸ hj, Subtype.ext h⟩⟩
+
+/-- Adding the number of larger indices to a weakly decreasing integer function makes it strictly
+decreasing. -/
+theorem strictAnti_add_card_filter_lt [LinearOrder α] {μ : α → ℤ} (hμ : Antitone μ) :
+    StrictAnti fun i => μ i + (#{j | i < j} : ℤ) := by
+  intro i i' hii'
+  have hsub : filter (fun j => i' < j) univ ⊂ filter (fun j => i < j) univ :=
+    (ssubset_iff_of_subset fun j hj => by simp_all [hii'.trans]).mpr
+      ⟨i', by simp [hii'], by simp⟩
+  have := card_lt_card hsub
+  have := hμ hii'.le
+  dsimp only
+  omega
 
 end TauCeti

@@ -26,7 +26,7 @@ direction, the orbit space `X / Γ` carries the `(Isom X, X)`-atlas pushed forwa
 (`TauCeti.hasGroupoid_smulGroupoid_quotient_subgroup`), so a space with a geometric structure is an
 `(Isom X, X)`-manifold (`TauCeti.HasGeometricStructure.exists_hasGroupoid`). In particular it is a
 smooth manifold and inherits a Riemannian metric from `X`
-(`TauCeti.Geometry.Manifold.Riemannian.SMulGroupoid`).
+(`TauCeti.Geometry.Manifold.Riemannian.SMulGroupoid.Basic`).
 
 The structure is defined for a topological space `M`, up to homeomorphism. For 3-manifolds this
 agrees with the smooth notion, since by Moise's theorem every topological 3-manifold has a smooth
