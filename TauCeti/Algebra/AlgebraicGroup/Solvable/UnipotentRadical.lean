@@ -15,11 +15,10 @@ import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 import TauCeti.Algebra.AlgebraicGroup.Reductive.Solvable
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Character
-import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.NoCharacters
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Solvable.FaithfullyFlat
 import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Reduced
+import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Character
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Semisimple
 
 /-!
@@ -41,12 +40,12 @@ point of `G` maps to a unipotent point of this torus, which is also semisimple a
 so it lies in the kernel `R_u(G)` of the quotient map. Conversely, points of the smooth unipotent
 group `R_u(G)` are unipotent.
 
-Over any field, the characters of `G` are trivial on `R_u(G)`, since the smooth unipotent group
-`R_u(G)` has no nontrivial characters. In the other direction, the coordinate ring of the torus
-`G ⧸ R_u(G)` is spanned by its characters, which are characters of `G`; hence every point on which
-all characters of `G` are trivial is killed by the quotient map, over every commutative value
-algebra. This gives the equality of Hopf ideals, without a reducedness assumption on the common
-kernel of characters.
+Over any field, the characters of `G` are trivial on `R_u(G)`
+(`TauCeti.FiniteTypeCommHopfAlgCat.characterKernelIdeal_le_unipotentRadicalDefiningIdeal`). In
+the other direction, the coordinate ring of the torus `G ⧸ R_u(G)` is spanned by its characters,
+which are characters of `G`; hence every point on which all characters of `G` are trivial is
+killed by the quotient map, over every commutative value algebra. This gives the equality of Hopf
+ideals, without a reducedness assumption on the common kernel of characters.
 
 For commutative `G` see
 `TauCeti.HopfAlgebra.Point.mem_quotientPointsSubgroup_unipotentRadical_iff`. The weaker statement
@@ -59,8 +58,6 @@ that the common kernel of characters has only unipotent points is
   torus.
 * `TauCeti.FiniteTypeCommHopfAlgCat.groupLikeSpannedProperty_coinvariants_unipotentRadical`:
   `G ⧸ R_u(G)` is spanned by its characters.
-* `TauCeti.FiniteTypeCommHopfAlgCat.characterKernelIdeal_le_unipotentRadicalDefiningIdeal`: the
-  characters of any `G` are trivial on `R_u(G)`.
 * `TauCeti.FiniteTypeCommHopfAlgCat.mem_quotientPointsSubgroup_unipotentRadical_iff`: a rational
   point lies in `R_u(G)` exactly when it is unipotent.
 * `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_characterKernelIdeal`:
@@ -83,34 +80,6 @@ universe u
 
 variable {k : Type u} [Field k]
 variable (G : FiniteTypeCommHopfAlgCat.{u, u} k)
-
-/-- Every rational point of the unipotent radical `R_u(G)` is unipotent. -/
-theorem isUnipotentPoint_of_mem_quotientPointsSubgroup_unipotentRadical
-    {g : WithConv (G →ₐ[k] k)}
-    (hg : g ∈ CommHopfAlgCat.quotientPointsSubgroup G.obj (unipotentRadicalDefiningIdeal G)
-      (CommAlgCat.of k k)) :
-    HopfAlgebra.IsUnipotentPoint g := by
-  obtain ⟨q, rfl⟩ := hg
-  exact ((isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal G).smoothUnipotent
-    |>.isUnipotentPoint q).mapDomain
-    (CommHopfAlgCat.mkQuotient G.obj (unipotentRadicalDefiningIdeal G)).hom
-
-/-- The characters of `G` are trivial on its unipotent radical, scheme-theoretically. -/
-theorem characterKernelIdeal_le_unipotentRadicalDefiningIdeal :
-    _root_.CommHopfAlgCat.characterKernelIdeal G.obj ≤ unipotentRadicalDefiningIdeal G := by
-  -- The smooth unipotent group `R_u(G)` has no nontrivial characters.
-  let J := unipotentRadicalDefiningIdeal G
-  have hJ := (smoothUnipotentCommHopfAlgProperty_iff k _).mp
-    (isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal G).smoothUnipotent
-  let _ : Algebra.Smooth k (FiniteTypeCommHopfAlgCat.quotient G J) := hJ.1
-  let _ : IsReduced (CommHopfAlgCat.quotient G.obj J) := isReduced_of_smooth k _
-  let φ := (CommHopfAlgCat.mkQuotient G.obj J).hom.toAlgHom
-  have hφ : ∀ x : GroupLike k G, φ x = 1 := fun x ↦
-    congrArg GroupLike.val (groupLike_eq_one_of_forall_isUnipotentPoint hJ.2
-      ⟨φ x, x.isGroupLikeElem_val.map (CommHopfAlgCat.mkQuotient G.obj J).hom⟩)
-  rw [← HopfIdeal.toIdeal_le_toIdeal, ← CommHopfAlgCat.mkQuotient_ker G.obj J]
-  exact (_root_.CommHopfAlgCat.characterKernelIdeal_toIdeal_le_ker_iff G.obj φ).mpr hφ
-
 variable [IsAlgClosed k]
 variable [IsReduced G] [ConnectedSpace (PrimeSpectrum G)]
 variable [Group.IsSolvable (WithConv (G →ₐ[k] k))]
