@@ -236,10 +236,10 @@ theorem card_pic_intAddMulOrder_eq_one_iff [IsTotallyComplex K] (hK : finrank �
     suffices (Nat.card (Pic (intAddMulOrder K f)) : ℤ) = 1 by exact_mod_cast this
     rcases hcase with rfl | ⟨rfl, h8⟩ | ⟨h3, rfl | rfl⟩ | ⟨h4, rfl⟩
     · simpa using key
-    · have : ¬ 2 ∣ NumberField.discr K := by omega
-      have : NumberField.discr K ≠ -4 := by omega
-      have : NumberField.discr K ≠ -3 := by omega
-      simpa [prod_pow_mul_sub_prime Nat.prime_two, hc2, h8, *] using key
+    · have h21 : c 2 = 1 := by rw [hc2, ite_eq_right (by omega), ite_eq_left (Or.inl h8)]
+      have h4 : NumberField.discr K ≠ -4 := by omega
+      have h3 : NumberField.discr K ≠ -3 := by omega
+      simpa [prod_pow_mul_sub_prime Nat.prime_two, h21, h4, h3] using key
     · simpa [prod_pow_mul_sub_prime Nat.prime_two, hc2, h3] using key
     · have h30 : legendreSym 3 (-3) = 0 := (legendreSym.eq_zero_iff _ _).mpr (by decide)
       simpa [prod_pow_mul_sub_prime Nat.prime_three, hc3, h3, h30] using key
