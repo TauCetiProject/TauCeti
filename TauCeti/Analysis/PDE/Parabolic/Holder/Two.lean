@@ -219,6 +219,11 @@ theorem add_apply (f g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a
   simpa only [valueL_apply, BoundedContinuousFunction.add_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_add f g)
 
+theorem sub_apply (f g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
+    (f - g) p = f p - g p := by
+  simpa only [valueL_apply, BoundedContinuousFunction.sub_apply] using
+    congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_sub f g)
+
 theorem smul_apply (c : ℝ) (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
     (c • f) p = c • f p := by
   simpa only [valueL_apply, BoundedContinuousFunction.smul_apply] using

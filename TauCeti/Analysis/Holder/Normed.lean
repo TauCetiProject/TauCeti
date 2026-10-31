@@ -158,6 +158,12 @@ theorem zero_apply (x : X) : (0 : HolderSpace α X Y) x = 0 := (rfl)
 theorem add_apply (f g : HolderSpace α X Y) (x : X) : (f + g) x = f x + g x := (rfl)
 
 @[simp]
+theorem neg_apply (f : HolderSpace α X Y) (x : X) : (-f) x = -f x := (rfl)
+
+@[simp]
+theorem sub_apply (f g : HolderSpace α X Y) (x : X) : (f - g) x = f x - g x := (rfl)
+
+@[simp]
 theorem smul_apply (c : ℝ) (f : HolderSpace α X Y) (x : X) : (c • f) x = c • f x := (rfl)
 
 /-- The underlying bounded continuous function determines a Hölder-space element. -/
@@ -267,10 +273,20 @@ theorem evalCLM_def (x : X) : evalCLM (α := α) (Y := Y) x =
 theorem evalCLM_apply (x : X) (f : HolderSpace α X Y) : evalCLM x f = f x := by
   simp [evalCLM_def]
 
+@[simp]
+theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → HolderSpace α X Y) (x : X) :
+    (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
+  simpa only [evalCLM_apply] using map_sum (evalCLM (α := α) (Y := Y) x) f s
+
 /-- Evaluation has operator norm at most one. -/
 theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 := by
   apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
   intro f
+  simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
+    f.norm_toBoundedContinuousFunction_le
+
+/-- Every value is bounded by the supremum-plus-Hölder norm. -/
+theorem norm_apply_le (f : HolderSpace α X Y) (x : X) : ‖f x‖ ≤ ‖f‖ := by
   simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
     f.norm_toBoundedContinuousFunction_le
 
