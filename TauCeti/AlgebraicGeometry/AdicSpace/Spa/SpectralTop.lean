@@ -108,10 +108,6 @@ theorem comap_preimage_cont :
     comap (toSpectralTop A : A →+* SpectralTop A) ⁻¹' cont A = cont (SpectralTop A) :=
   Set.ext fun v ↦ by rw [Set.mem_preimage, mem_cont_iff, mem_cont_iff, isContinuous_iff]
 
-/-- `toSpectralTop A` is continuous, as a ring homomorphism. -/
-private theorem continuous_toRingHom : Continuous (toSpectralTop A : A →+* SpectralTop A) :=
-  continuous_toSpectralTop
-
 /-- **`Spa(A_sp, A⁺) = Spa(A, A⁺)`.** For every subring `A⁺` of `A`, pulling back along
 `toSpectralTop A` identifies the adic spectrum of `A` with that of `SpectralTop A` for the image
 of `A⁺`. -/
@@ -121,7 +117,7 @@ theorem comap_preimage_spa (Aplus : Subring A) :
   ext v
   rw [Set.mem_preimage]
   by_cases hv : v.IsContinuous
-  · exact (mem_spa_map_iff continuous_toRingHom Aplus hv).symm
+  · exact (mem_spa_map_iff continuous_toSpectralTop Aplus hv).symm
   · rw [mem_spa_iff, mem_spa_iff, ← isContinuous_iff]
     simp [hv, -isContinuous_def]
 
@@ -156,7 +152,9 @@ theorem isHomeomorph_spaComap (Aplus : Subring A) :
     rw [← comap_preimage_spa, Set.mem_preimage, comap_comap_symm]
     exact hv
   refine Homeomorph.isHomeomorph
-    { toFun := spaComap _ continuous_toRingHom Aplus _
+    { toFun := spaComap _
+        (show Continuous (toSpectralTop A : A →+* SpectralTop A) from continuous_toSpectralTop)
+        Aplus _
         fun _ ha ↦ Subring.mem_map.mpr ⟨_, ha, rfl⟩
       invFun v := ⟨comap e v.1, he v.1 v.2⟩
       left_inv v := Subtype.ext ?_
@@ -177,7 +175,8 @@ theorem comap_preimage_rationalSubset (Aplus : Subring A) (T : Finset A) (s : A)
     comap (toSpectralTop A : A →+* SpectralTop A) ⁻¹' rationalSubset Aplus T s =
       rationalSubset (Aplus.map (toSpectralTop A : A →+* SpectralTop A))
         (T.image (toSpectralTop A)) (toSpectralTop A s) := by
-  have h := comap_preimage_rationalSubset_inter_spa _ continuous_toRingHom
+  have h := comap_preimage_rationalSubset_inter_spa _
+    (show Continuous (toSpectralTop A : A →+* SpectralTop A) from continuous_toSpectralTop)
     (Aplus := Aplus) (fun _ ha ↦ Subring.mem_map.mpr ⟨_, ha, rfl⟩) T s
   rw [← comap_preimage_spa, ← Set.preimage_inter,
     Set.inter_eq_left.mpr (rationalSubset_subset_spa Aplus T s)] at h
