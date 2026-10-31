@@ -493,6 +493,7 @@ lemma ιTwistedChainComplex_twistedChainComplexCoeff (ρ : (TopCat.toSSet.obj X)
   simp [twistedChainComplexCoeff]
 
 /-- The coefficient on `ρ` of a chain supported on a different simplex vanishes. -/
+@[reassoc (attr := simp)]
 lemma ιTwistedChainComplex_twistedChainComplexCoeff_of_ne {σ ρ : (TopCat.toSSet.obj X) _⦋k⦌}
     (h : σ ≠ ρ) : ιTwistedChainComplex L k σ ≫ twistedChainComplexCoeff L ρ = 0 := by
   simp [twistedChainComplexCoeff, h]
@@ -505,6 +506,7 @@ lemma twistedChainComplexCoeff_ιTwistedChainComplex_apply (ρ : (TopCat.toSSet.
   congrArg (fun f ↦ f.hom x) (ιTwistedChainComplex_twistedChainComplexCoeff L ρ)
 
 /-- The coefficient on `ρ` of a chain supported on a different simplex vanishes. -/
+@[simp]
 lemma twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne
     {σ ρ : (TopCat.toSSet.obj X) _⦋k⦌} (h : σ ≠ ρ) (x : L.obj (initialVertex σ)) :
     (twistedChainComplexCoeff L ρ).hom ((ιTwistedChainComplex L k σ).hom x) = 0 :=
