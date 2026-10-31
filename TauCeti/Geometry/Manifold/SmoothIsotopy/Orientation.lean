@@ -38,6 +38,8 @@ finishes. This is what makes a connected sum independent of its balls.
 * `TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_isOrientationPreservingAt`: on a connected
   manifold, two orientation-preserving embeddings agree on any compact set after an ambient
   compactly supported diffeotopy.
+* `TauCeti.SmoothEmbedding.exists_diffeomorph_comp_eventuallyEq`: on a connected manifold, two
+  orientation-preserving embeddings agree near the origin after a diffeomorphism.
 
 ## References
 
@@ -47,7 +49,7 @@ finishes. This is what makes a connected sum independent of its balls.
 
 public noncomputable section
 
-open Set
+open Set Metric Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothEmbedding
@@ -120,8 +122,18 @@ theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt [T2Space M] [SigmaCo
     (det_mul_pos_of_isOrientationPreservingAt f' g hcentre o oM hf' hg) hA
   refine ⟨Ψ.trans Θ, L ∪ K, hL.union hK, fun t y hy => ?_, fun x hx => ?_⟩
   · rw [mem_union, not_or] at hy
-    rw [Diffeotopy.trans_apply, hΨL t hy.1, id_eq, hΘK t y hy.2]
-  · rw [Function.comp_apply, Diffeotopy.final_trans, Diffeomorph.coe_trans, Function.comp_apply,
-      ← hΘ hx, Function.comp_apply, transDiffeomorph_apply]
+    simp [hΨL t hy.1, hΘK t y hy.2]
+  · simpa [f'] using hΘ hx
+
+/-- On a connected oriented manifold, two smooth embeddings of `E` which preserve the orientations
+`o` of `E` and `oM` of `M` at the origin agree near the origin after a diffeomorphism of `M`. -/
+theorem exists_diffeomorph_comp_eventuallyEq [T2Space M] [SigmaCompactSpace M]
+    [PreconnectedSpace M] (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M)
+    (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
+    (hf : o.IsOrientationPreservingAt oM f 0) (hg : o.IsOrientationPreservingAt oM g 0) :
+    ∃ φ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M, φ ∘ f =ᶠ[𝓝 0] g := by
+  obtain ⟨Φ, -, -, -, hΦ⟩ := f.exists_diffeotopy_eqOn_of_isOrientationPreservingAt g o oM hf hg
+    (isCompact_closedBall (0 : E) 1)
+  exact ⟨Φ.final, hΦ.eventuallyEq_of_mem (closedBall_mem_nhds 0 one_pos)⟩
 
 end TauCeti.SmoothEmbedding

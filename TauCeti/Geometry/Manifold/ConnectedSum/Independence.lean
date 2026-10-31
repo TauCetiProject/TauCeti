@@ -23,10 +23,11 @@ to the connected sum along `e₁'` and `e₂'`
 balls are arbitrary.
 
 By the ambient disc theorem on a connected oriented manifold
-(`TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_isOrientationPreservingAt`), `e₁'` is `e₁`
-followed by a diffeomorphism of `M` on the closed unit ball, hence near `0`, and likewise for
-`e₂'` and `e₂`. A connected sum depends on its balls only through their germs at the centres, up
-to diffeomorphisms of the summands (`TauCeti.ConnectedSum.nonempty_diffeomorph_of_eventuallyEq`).
+(`TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_isOrientationPreservingAt`, in the form
+`TauCeti.SmoothEmbedding.exists_diffeomorph_comp_eventuallyEq`), `e₁'` is `e₁` followed by a
+diffeomorphism of `M` near `0`, and likewise for `e₂'` and `e₂`. A connected sum depends on its
+balls only through their germs at the centres, up to diffeomorphisms of the summands
+(`TauCeti.ConnectedSum.nonempty_diffeomorph_of_eventuallyEq`).
 
 For the oriented connected sum one ball preserves and the other reverses the orientations, that
 is, `e₂` preserves the orientation of `E` and the opposite of the orientation of `N`; this is the
@@ -61,26 +62,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) ∞ N]
   {ι : Type*} [Fintype ι]
 
-/-- Two coordinate balls of a connected manifold which preserve the same orientations at their
-centres are carried into one another near `0` by a diffeomorphism of the manifold. -/
-private theorem exists_diffeomorph_comp_eventuallyEq {e e' : E → M} (h : IsOpenEmbedding e)
-    (h' : IsOpenEmbedding e') (d : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ e)
-    (d' : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ e') (o : Manifold.Orientation 𝓘(ℝ, E) E ι)
-    (oM : Manifold.Orientation 𝓘(ℝ, E) M ι) (hf : o.IsOrientationPreservingAt oM e 0)
-    (hf' : o.IsOrientationPreservingAt oM e' 0) :
-    ∃ φ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M, φ ∘ e =ᶠ[𝓝 0] e' := by
-  -- The balls as bundled smooth embeddings.
-  let f := SmoothEmbedding.id.compLocalDiffeomorph e d h.isEmbedding
-  let f' := SmoothEmbedding.id.compLocalDiffeomorph e' d' h'.isEmbedding
-  have hfe : ⇑f = e := by
-    rw [SmoothEmbedding.coe_compLocalDiffeomorph, SmoothEmbedding.coe_id, Function.id_comp]
-  have hfe' : ⇑f' = e' := by
-    rw [SmoothEmbedding.coe_compLocalDiffeomorph, SmoothEmbedding.coe_id, Function.id_comp]
-  obtain ⟨Φ, -, -, -, hΦ⟩ := f.exists_diffeotopy_eqOn_of_isOrientationPreservingAt f' o oM
-    (hfe ▸ hf) (hfe' ▸ hf') (isCompact_closedBall (0 : E) 1)
-  rw [hfe, hfe'] at hΦ
-  exact ⟨Φ.final, hΦ.eventuallyEq_of_mem (closedBall_mem_nhds 0 one_pos)⟩
-
 /-- **The connected sum does not depend on its balls.** Let `M` and `N` be connected, Hausdorff,
 σ-compact smooth manifolds without boundary modelled on a finite-dimensional real inner product
 space `E`, with orientations `oM` and `oN`. Let `e₁, e₁' : E → M` be coordinate balls which
@@ -101,8 +82,16 @@ theorem nonempty_diffeomorph_of_isOrientationPreservingAt {e₁ e₁' : E → M}
     letI := chartedSpace (H := E) h₁ h₂
     letI := chartedSpace (H := E) h₁' h₂'
     Nonempty (ConnectedSum e₁ e₂ ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ ConnectedSum e₁' e₂') := by
-  obtain ⟨φ, hφ⟩ := exists_diffeomorph_comp_eventuallyEq h₁ h₁' d₁ d₁' o₁ oM hf₁ hf₁'
-  obtain ⟨ψ, hψ⟩ := exists_diffeomorph_comp_eventuallyEq h₂ h₂' d₂ d₂' o₂ oN hf₂ hf₂'
-  exact nonempty_diffeomorph_of_eventuallyEq φ ψ hφ hψ h₁ h₂ h₁' h₂' d₁ d₂ d₁' d₂'
+  -- The balls as bundled smooth embeddings agree near `0` after diffeomorphisms of the summands.
+  obtain ⟨φ, hφ⟩ := SmoothEmbedding.exists_diffeomorph_comp_eventuallyEq
+    (SmoothEmbedding.id.compLocalDiffeomorph e₁ d₁ h₁.isEmbedding)
+    (SmoothEmbedding.id.compLocalDiffeomorph e₁' d₁' h₁'.isEmbedding) o₁ oM (by simpa using hf₁)
+    (by simpa using hf₁')
+  obtain ⟨ψ, hψ⟩ := SmoothEmbedding.exists_diffeomorph_comp_eventuallyEq
+    (SmoothEmbedding.id.compLocalDiffeomorph e₂ d₂ h₂.isEmbedding)
+    (SmoothEmbedding.id.compLocalDiffeomorph e₂' d₂' h₂'.isEmbedding) o₂ oN (by simpa using hf₂)
+    (by simpa using hf₂')
+  exact nonempty_diffeomorph_of_eventuallyEq φ ψ (by simpa using hφ) (by simpa using hψ)
+    h₁ h₂ h₁' h₂' d₁ d₂ d₁' d₂'
 
 end TauCeti.ConnectedSum
