@@ -53,6 +53,9 @@ The two inclusions are proved as follows.
 
 ## Main results
 
+* `TauCeti.UniversalEnvelopingAlgebra.centerPBWFiltration_mono` and
+  `TauCeti.UniversalEnvelopingAlgebra.iSup_centerPBWFiltration_eq_top`: the restricted filtration
+  is monotone and exhaustive.
 * `TauCeti.UniversalEnvelopingAlgebra.centerPBWGradedToPBWGraded_injective`: the PBW symbol of
   the centre is injective.
 * `TauCeti.UniversalEnvelopingAlgebra.mem_lieInvariants_of_pbwHomogeneousComponentMap_eq_mk`:
@@ -117,6 +120,22 @@ theorem coe_mem_wordFiltration_of_mem_centerPBWFiltration {n : ℕ} {z : Subalge
     (hz : z ∈ centerPBWFiltration R L n) : (z : U) ∈ wordFiltration (ι).toLinearMap n := by
   rw [← pbwFiltration_def]
   exact mem_centerPBWFiltration.mp hz
+
+/-- The PBW filtration of the centre is monotone. -/
+theorem centerPBWFiltration_mono : Monotone (centerPBWFiltration R L) :=
+  fun _ _ h ↦ Submodule.comap_mono (pbwFiltration_mono R L h)
+
+/-- Every central element has finite PBW degree: it lies in some step of the PBW filtration of
+the centre. -/
+theorem exists_mem_centerPBWFiltration (z : Subalgebra.center R U) :
+    ∃ n, z ∈ centerPBWFiltration R L n :=
+  exists_mem_pbwFiltration R L (z : U)
+
+/-- The PBW filtration of the centre is exhaustive. -/
+theorem iSup_centerPBWFiltration_eq_top : ⨆ n, centerPBWFiltration R L n = ⊤ :=
+  eq_top_iff.mpr fun z _ ↦
+    let ⟨n, hn⟩ := exists_mem_centerPBWFiltration R L z
+    Submodule.mem_iSup_of_mem n hn
 
 /-- The step of the centre preceding degree zero is trivial. -/
 @[simp]
