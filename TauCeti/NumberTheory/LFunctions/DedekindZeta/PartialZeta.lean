@@ -15,7 +15,6 @@ import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
 import TauCeti.NumberTheory.LSeries.SumCoeff
-import TauCeti.NumberTheory.NumberField.DedekindZeta
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Count.Asymptotic
 
 /-!
@@ -245,23 +244,16 @@ theorem ofReal_rayClassIdealMainTerm (𝔪 : Modulus K) :
 
 /-! ### The Dirichlet series of a ray class -/
 
-/-- The ideal-indexed Dirichlet series of a ray class converges absolutely on `Re s > 1`, by
-comparison with the Dedekind zeta function. -/
-theorem summable_idealTerm_rayClassCoeff (𝔪 : Modulus K) (c : RayClassGroup 𝔪) {s : ℂ}
-    (hs : 1 < s.re) : Summable (idealTerm K (rayClassCoeff 𝔪 c) s) := by
-  refine Summable.of_norm_bounded (summable_idealTerm_one_iff.mpr hs).norm fun I ↦ ?_
-  rw [norm_idealTerm, norm_idealTerm, Pi.one_apply, norm_one]
-  gcongr
-  exact norm_rayClassCoeff_le_one 𝔪 c I
-
 /-- The norm-regrouped Dirichlet series of a ray class converges absolutely on `Re s > 1`. -/
 theorem LSeriesSummable_rayClassCoeff (𝔪 : Modulus K) (c : RayClassGroup 𝔪) {s : ℂ}
     (hs : 1 < s.re) : LSeriesSummable (normCoeff K (rayClassCoeff 𝔪 c)) s :=
-  LSeriesSummable_normCoeff K (summable_idealTerm_rayClassCoeff 𝔪 c hs)
+  LSeriesSummable_normCoeff K
+    (summable_idealTerm_of_bounded_of_one_lt_re (norm_rayClassCoeff_le_one 𝔪 c) hs)
 
-/-- **The sum over the ray classes is not `ζ_K`.** On `Re s > 1` the Dirichlet series of the ray
-classes of `𝔪` sum to `ζ_K(s) * finiteEulerCorrection 𝔪 s`: the Dedekind zeta function with the
-Euler factors at the primes dividing the finite part of `𝔪` deleted. -/
+/-- **The sum over the ray classes.** On `Re s > 1` the Dirichlet series of the ray classes of `𝔪`
+sum to `ζ_K(s) * finiteEulerCorrection 𝔪 s`: the Dedekind zeta function with the Euler factors at
+the primes dividing the finite part of `𝔪` deleted. At a real `s > 1` the correction factor is `1`
+exactly when `𝔪.support` is empty (`finiteEulerCorrection_eq_one_iff`). -/
 theorem sum_LSeries_rayClassCoeff (𝔪 : Modulus K) [Fintype (RayClassGroup 𝔪)] {s : ℂ}
     (hs : 1 < s.re) :
     ∑ c : RayClassGroup 𝔪, LSeries (normCoeff K (rayClassCoeff 𝔪 c)) s =
