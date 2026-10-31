@@ -17,20 +17,20 @@ are exactly `(N + card A).choose (card A)` of them. Adding one coordinate for th
 `N - ∑ a, c a` identifies them with the tuples on `Option A` that sum to exactly `N`, which
 Mathlib counts as `Finset.card_finsuppAntidiag_nat_eq_choose`.
 
-These tuples label the cells of side `1 / N` of the unit cube that meet the standard simplex, which
-is how the count enters Mahler's reduction in Diophantine approximation.
+For `0 < N`, these tuples label the cells of side `1 / N` of the unit cube that meet the standard
+simplex, which is how the count enters Mahler's reduction in Diophantine approximation.
 
 ## Main results
 
-* `Set.finite_setOf_sum_le`: the tuples with `∑ a, c a ≤ N` form a finite set.
-* `Set.ncard_setOf_sum_le`: there are `(N + card A).choose (card A)` of them.
+* `TauCeti.finite_setOf_sum_le`: the tuples with `∑ a, c a ≤ N` form a finite set.
+* `TauCeti.ncard_setOf_sum_le`: there are `(N + card A).choose (card A)` of them.
 -/
 
 public section
 
 open Finset
 
-namespace Set
+namespace TauCeti
 
 /-- The tuples `c : A → ℕ` with `∑ a, c a ≤ N` form a finite set. -/
 theorem finite_setOf_sum_le (A : Type*) [Fintype A] (N : ℕ) :
@@ -60,8 +60,10 @@ theorem ncard_setOf_sum_le (A : Type*) [Fintype A] (N : ℕ) :
       ext (_ | a)
       · simp [← hF']
       · simp
-  rw [ncard_eq_toFinset_card _ hfin, hbij, card_finsuppAntidiag_nat_eq_choose, Finset.card_univ,
-    Fintype.card_option, show Fintype.card A + 1 + N - 1 = N + Fintype.card A by omega,
-    Nat.choose_symm_add]
+  have hcount : #((Finset.univ : Finset (Option A)).finsuppAntidiag N) =
+      (Fintype.card A + 1 + N - 1).choose N := by
+    simp [card_finsuppAntidiag_nat_eq_choose]
+  have harith : Fintype.card A + 1 + N - 1 = N + Fintype.card A := by omega
+  rw [Set.ncard_eq_toFinset_card _ hfin, hbij, hcount, harith, Nat.choose_symm_add]
 
-end Set
+end TauCeti

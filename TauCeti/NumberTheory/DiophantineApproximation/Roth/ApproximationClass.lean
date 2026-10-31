@@ -15,17 +15,21 @@ public import TauCeti.Algebra.Order.Antidiag.FinsuppEquiv
 Mahler's reduction sorts the solutions of a Diophantine inequality by where they are well
 approximated, so that the solutions in one class behave alike at every place. Nothing in it is
 about places, heights or number fields: a family of maps `φ a : X → ℝ` with nonnegative values
-summing to at most `1` sends each point of `X` to a point of the standard simplex, the unit cube
-is cut into half-open cells of side `1 / N`, and two points lie in the same class when they land
-in the same cell.
+summing to at most `1` sends each point of `X` to a point of the standard simplex, for `0 < N`
+the unit cube is cut into half-open cells of side `1 / N`, and two points lie in the same class
+when they land in the same cell.
 
-A cell is labelled by its scaled south-west corner `cellIndex N y a = ⌊N * y a⌋₊`, a tuple of
-natural numbers. Three facts come out of this.
+For `0 < N` and a point with nonnegative coordinates, a cell is labelled by its scaled south-west
+corner `cellIndex N y a = ⌊N * y a⌋₊`, a tuple of natural numbers. The definition makes sense for
+every `y : A → ℝ` and `N : ℕ`, but outside this range it loses its geometric meaning: negative
+coordinates are truncated to `0`, and `N = 0` gives the constant label `0`. Three facts come out
+of this.
 
 * The classes are finitely many. The label of a point of the simplex satisfies
   `∑ a, c a ≤ N`, and there are `(N + card A).choose (card A)` such labels
-  (`Set.ncard_setOf_sum_le`). Without the simplex condition the labels are the `(N + 1) ^ card A`
-  cells of the cube; the rejection test at the end of the file shows the difference.
+  (`TauCeti.ncard_setOf_sum_le`). Without the simplex condition the labels are the
+  `(N + 1) ^ card A` cells of the cube; the rejection test at the end of the file shows the
+  difference.
 * An infinite set has an infinite class, by the pigeonhole principle.
 * A class pins every coordinate at once. For `f : A → ℝ` with values in `(0, 1]` and product
   `Λ = ∏ b, f b < 1`, the profile `logProfile f a = log (f a) / log Λ` is a point of the simplex
@@ -35,9 +39,10 @@ natural numbers. Three facts come out of this.
 
 ## Main results
 
-* `TauCeti.cellIndex`: the label of the cell of side `1 / N` containing a point.
+* `TauCeti.cellIndex`: the label of the cell of side `1 / N` containing a point with nonnegative
+  coordinates, for `0 < N`.
 * `TauCeti.sum_cellIndex_le`: a point of the simplex has a label with `∑ a, c a ≤ N`.
-* `Set.ncard_image_cellIndex_le`: at most `(N + card A).choose (card A)` classes are nonempty.
+* `TauCeti.ncard_image_cellIndex_le`: at most `(N + card A).choose (card A)` classes are nonempty.
 * `Set.Infinite.exists_cellIndex_eq`: an infinite set has an infinite class.
 * `TauCeti.logProfile`, with `TauCeti.logProfile_nonneg` and `TauCeti.sum_logProfile`.
 * `TauCeti.le_rpow_cellIndex_div` and `TauCeti.rpow_cellIndex_add_one_div_lt`: the two halves of
@@ -61,8 +66,10 @@ namespace TauCeti
 
 variable {A : Type*}
 
-/-- The label of the half-open cell of side `1 / N` containing `y : A → ℝ`: its south-west corner
-scaled by `N`, that is `⌊N * y a⌋₊` in each coordinate. -/
+/-- The tuple `⌊N * y a⌋₊` of natural numbers. For `0 < N` and `y : A → ℝ` with nonnegative
+coordinates, it labels the half-open cell of side `1 / N` containing `y` by its south-west corner
+scaled by `N`. Negative coordinates are truncated to `0`, and for `N = 0` the label is constantly
+`0`. -/
 noncomputable def cellIndex (N : ℕ) (y : A → ℝ) (a : A) : ℕ := ⌊(N : ℝ) * y a⌋₊
 
 theorem cellIndex_apply (N : ℕ) (y : A → ℝ) (a : A) : cellIndex N y a = ⌊(N : ℝ) * y a⌋₊ :=
@@ -110,35 +117,41 @@ variable [Fintype A]
 
 /-- The logarithmic profile of `f : A → ℝ`, the tuple `log (f a) / log (∏ b, f b)`. For `f` with
 values in `(0, 1]` and product less than `1` it is a point of the standard simplex lying on the
-hyperplane `∑ a, y a = 1`. -/
+hyperplane `∑ a, y a = 1`. When the product is `1` the profile is `0`. -/
 noncomputable def logProfile (f : A → ℝ) (a : A) : ℝ := log (f a) / log (∏ b, f b)
 
 theorem logProfile_apply (f : A → ℝ) (a : A) : logProfile f a = log (f a) / log (∏ b, f b) :=
   (rfl)
 
-/-- The logarithmic profile of a family in `(0, 1]` with product less than `1` is nonnegative. -/
-theorem logProfile_nonneg {f : A → ℝ} (hpos : ∀ a, 0 < f a) (hf : ∀ a, f a ≤ 1)
-    (hprod : ∏ b, f b < 1) (a : A) : 0 ≤ logProfile f a :=
+/-- The logarithmic profile of a family in `(0, 1]` is nonnegative. -/
+theorem logProfile_nonneg {f : A → ℝ} (hpos : ∀ a, 0 < f a) (hf : ∀ a, f a ≤ 1) (a : A) :
+    0 ≤ logProfile f a :=
   div_nonneg_of_nonpos (log_nonpos (hpos a).le (hf a))
-    (log_neg (prod_pos fun b _ ↦ hpos b) hprod).le
+    (log_nonpos (prod_nonneg fun b _ ↦ (hpos b).le) (prod_le_one₀ (fun b _ ↦ (hpos b).le)
+      fun b _ ↦ hf b))
 
-/-- The logarithmic profile of a positive family with product less than `1` sums to `1`. -/
-theorem sum_logProfile {f : A → ℝ} (hpos : ∀ a, 0 < f a) (hprod : ∏ b, f b < 1) :
+/-- The logarithmic profile of a positive family with product different from `1` sums to `1`. -/
+@[simp]
+theorem sum_logProfile {f : A → ℝ} (hpos : ∀ a, 0 < f a) (hprod : ∏ b, f b ≠ 1) :
     ∑ a, logProfile f a = 1 := by
   have hlog : log (∏ b, f b) = ∑ a, log (f a) := log_prod fun a _ ↦ (hpos a).ne'
   simp_rw [logProfile_apply, ← Finset.sum_div, ← hlog]
-  exact div_self (log_neg (prod_pos fun b _ ↦ hpos b) hprod).ne
+  exact div_self (log_ne_zero_of_pos_of_ne_one (prod_pos fun b _ ↦ hpos b) hprod)
 
 /-- **The upper half of Bombieri–Gubler (6.9).** For `f` with values in `(0, 1]` and product
-`Λ < 1`, each `f a` is at most `Λ ^ (c a / N)`, where `c` labels the cell of the logarithmic
+`Λ`, each `f a` is at most `Λ ^ (c a / N)`, where `c` labels the cell of the logarithmic
 profile of `f`. -/
 theorem le_rpow_cellIndex_div (N : ℕ) {f : A → ℝ} (hpos : ∀ a, 0 < f a)
-    (hf : ∀ a, f a ≤ 1) (hprod : ∏ b, f b < 1) (a : A) :
+    (hf : ∀ a, f a ≤ 1) (a : A) :
     f a ≤ (∏ b, f b) ^ ((cellIndex N (logProfile f) a : ℝ) / N) := by
   have hprod₀ : 0 < ∏ b, f b := prod_pos fun b _ ↦ hpos b
+  rcases (prod_le_one₀ (fun b _ ↦ (hpos b).le) fun b _ ↦ hf b).lt_or_eq with hprod | hprod
+  swap
+  · rw [hprod, one_rpow]
+    exact hf a
   rw [← log_le_log_iff (hpos a) (rpow_pos_of_pos hprod₀ _), log_rpow hprod₀,
     ← le_div_iff_of_neg (log_neg hprod₀ hprod), ← logProfile_apply]
-  exact cellIndex_div_le N (logProfile_nonneg hpos hf hprod a)
+  exact cellIndex_div_le N (logProfile_nonneg hpos hf a)
 
 /-- **The lower half of Bombieri–Gubler (6.9).** For a positive family `f` with product `Λ < 1`,
 each `f a` exceeds `Λ ^ ((c a + 1) / N)`, where `c` labels the cell of the logarithmic profile
@@ -151,26 +164,26 @@ theorem rpow_cellIndex_add_one_div_lt {N : ℕ} (hN : 0 < N) {f : A → ℝ} (hp
     ← div_lt_iff_of_neg (log_neg hprod₀ hprod), ← logProfile_apply]
   exact lt_cellIndex_add_one_div hN _ a
 
+/-- The classes of a family of maps into the standard simplex, which for `0 < N` are the cells of
+side `1 / N`: at most `(N + card A).choose (card A)` labels occur. -/
+theorem ncard_image_cellIndex_le {ι : Type*} {X : Set ι} (φ : A → ι → ℝ)
+    (hφ₀ : ∀ a, ∀ x ∈ X, 0 ≤ φ a x) (hφ₁ : ∀ x ∈ X, ∑ a, φ a x ≤ 1) (N : ℕ) :
+    ((fun x ↦ cellIndex N fun a ↦ φ a x) '' X).ncard ≤
+      (N + Fintype.card A).choose (Fintype.card A) := by
+  rw [← ncard_setOf_sum_le A N]
+  refine Set.ncard_le_ncard ?_ (finite_setOf_sum_le A N)
+  rintro _ ⟨x, hx, rfl⟩
+  exact sum_cellIndex_le N (fun a ↦ hφ₀ a x hx) (hφ₁ x hx)
+
 end TauCeti
 
 namespace Set
 
 open TauCeti
 
-/-- The classes of side `1 / N` of a family of maps into the standard simplex: at most
-`(N + card A).choose (card A)` labels occur. -/
-theorem ncard_image_cellIndex_le {ι A : Type*} [Fintype A] {X : Set ι} (φ : A → ι → ℝ)
-    (hφ₀ : ∀ a, ∀ x ∈ X, 0 ≤ φ a x) (hφ₁ : ∀ x ∈ X, ∑ a, φ a x ≤ 1) (N : ℕ) :
-    ((fun x ↦ cellIndex N fun a ↦ φ a x) '' X).ncard ≤
-      (N + Fintype.card A).choose (Fintype.card A) := by
-  rw [← ncard_setOf_sum_le A N]
-  refine ncard_le_ncard ?_ (finite_setOf_sum_le A N)
-  rintro _ ⟨x, hx, rfl⟩
-  exact sum_cellIndex_le N (fun a ↦ hφ₀ a x hx) (hφ₁ x hx)
-
 /-- **An infinite set has an infinite approximation class.** For a family of maps from an infinite
-set `X` into the standard simplex and every `N`, some label `c` with `∑ a, c a ≤ N` is the label of
-the cell of side `1 / N` of infinitely many points of `X`. -/
+set `X` into the standard simplex and every `N`, some label `c` with `∑ a, c a ≤ N` is shared by
+infinitely many points of `X`; for `0 < N` it labels a cell of side `1 / N`. -/
 theorem Infinite.exists_cellIndex_eq {ι A : Type*} [Fintype A] {X : Set ι} (hX : X.Infinite)
     (φ : A → ι → ℝ) (hφ₀ : ∀ a, ∀ x ∈ X, 0 ≤ φ a x) (hφ₁ : ∀ x ∈ X, ∑ a, φ a x ≤ 1) (N : ℕ) :
     ∃ c : A → ℕ, ∑ a, c a ≤ N ∧ {x ∈ X | cellIndex N (fun a ↦ φ a x) = c}.Infinite := by
@@ -190,7 +203,7 @@ example : ¬ ∑ a, TauCeti.cellIndex 1 (fun _ : Fin 2 ↦ (1 : ℝ)) a ≤ 1 :=
 
 /-- The count of labels at `N = 1` and `card A = 2`. -/
 example : {c : Fin 2 → ℕ | ∑ a, c a ≤ 1}.ncard = 3 := by
-  rw [Set.ncard_setOf_sum_le]
+  rw [TauCeti.ncard_setOf_sum_le]
   decide
 
 /-- The upper half of (6.9) is attained, so its exponent is not off by one: for the single value
