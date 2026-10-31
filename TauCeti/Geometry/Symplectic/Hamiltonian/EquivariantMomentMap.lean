@@ -97,18 +97,19 @@ namespace TauCeti
 
 section Defect
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [LieGroup I 1 G] {M : Type*} [MulAction G M] {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [LieGroup I 1 G] {M : Type*} [MulAction G M] {μ : M → Module.Dual 𝕜 (GroupLieAlgebra I G)}
 
 /-- The **defect** `θ(g, x) = μ (g • x) - Ad*_g (μ x)` of a map `μ : M → 𝔤*` from equivariance for
 the coadjoint action. It vanishes identically exactly when `μ` is coadjoint-equivariant. -/
-def momentDefect (μ : M → Module.Dual ℝ (GroupLieAlgebra I G)) (g : G) (x : M) :
-    Module.Dual ℝ (GroupLieAlgebra I G) :=
-  μ (g • x) - Lie.coadjointRepresentation ℝ I G g (μ x)
+def momentDefect (μ : M → Module.Dual 𝕜 (GroupLieAlgebra I G)) (g : G) (x : M) :
+    Module.Dual 𝕜 (GroupLieAlgebra I G) :=
+  μ (g • x) - Lie.coadjointRepresentation 𝕜 I G g (μ x)
 
 theorem momentDefect_def (g : G) (x : M) :
-    momentDefect μ g x = μ (g • x) - Lie.coadjointRepresentation ℝ I G g (μ x) :=
+    momentDefect μ g x = μ (g • x) - Lie.coadjointRepresentation 𝕜 I G g (μ x) :=
   (rfl)
 
 /-- The defect of the identity element vanishes. -/
@@ -118,20 +119,20 @@ theorem momentDefect_one (x : M) : momentDefect μ 1 x = 0 := by
 
 /-- The defect vanishes at `(g, x)` exactly when `μ (g • x) = Ad*_g (μ x)`. -/
 theorem momentDefect_eq_zero_iff {g : G} {x : M} :
-    momentDefect μ g x = 0 ↔ μ (g • x) = Lie.coadjointRepresentation ℝ I G g (μ x) :=
+    momentDefect μ g x = 0 ↔ μ (g • x) = Lie.coadjointRepresentation 𝕜 I G g (μ x) :=
   sub_eq_zero
 
 /-- **The cocycle identity of the defect**: `θ(g h, x) = θ(g, h • x) + Ad*_g θ(h, x)`. -/
 theorem momentDefect_mul (g h : G) (x : M) :
     momentDefect μ (g * h) x =
-      momentDefect μ g (h • x) + Lie.coadjointRepresentation ℝ I G g (momentDefect μ h x) := by
+      momentDefect μ g (h • x) + Lie.coadjointRepresentation 𝕜 I G g (momentDefect μ h x) := by
   simp only [momentDefect_def, map_sub, map_mul, Module.End.mul_apply, mul_smul]
   abel
 
 /-- Shifting `μ` by a constant `ν ∈ 𝔤*` changes its defect by the coboundary `ν - Ad*_g ν`. -/
-theorem momentDefect_add_const (ν : Module.Dual ℝ (GroupLieAlgebra I G)) (g : G) (x : M) :
+theorem momentDefect_add_const (ν : Module.Dual 𝕜 (GroupLieAlgebra I G)) (g : G) (x : M) :
     momentDefect (fun y ↦ μ y + ν) g x =
-      momentDefect μ g x + (ν - Lie.coadjointRepresentation ℝ I G g ν) := by
+      momentDefect μ g x + (ν - Lie.coadjointRepresentation 𝕜 I G g ν) := by
   simp only [momentDefect_def, map_add]
   abel
 
@@ -310,23 +311,13 @@ namespace IsMomentMap
 
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
-/-- For a fixed functional `ν`, the function `g ↦ ν (Ad_{g⁻¹} ξ)` is smooth. -/
-private theorem contMDiff_apply_tangentAd_inv (ν : Module.Dual ℝ (GroupLieAlgebra I G))
-    (ξ : GroupLieAlgebra I G) :
-    ContMDiff I 𝓘(ℝ) ∞ fun g : G ↦ ν (Lie.tangentAd (I := I) g⁻¹ ξ) :=
-  -- `GroupLieAlgebra I G` is the model space `E`, on which the functional `ν` is continuous.
-  (LinearMap.toContinuousLinearMap (show E →ₗ[ℝ] ℝ from ν)).contDiff.comp_contMDiff
-    ((Lie.contMDiff_tangentAd_apply_const (I := I) (G := G) (show E from ξ)).comp
-      (contMDiff_inv I ∞))
-
 /-- Each component `g ↦ θ(g, x)(ξ)` of the defect of a moment map is smooth. -/
 private theorem contMDiff_momentDefect_apply
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (x : M)
     (ξ : GroupLieAlgebra I G) : ContMDiff I 𝓘(ℝ) ∞ fun g : G ↦ momentDefect μ g x ξ := by
-  simp only [momentDefect_def, LinearMap.sub_apply, Lie.coadjointRepresentation_apply,
-    ← Lie.tangentAd_apply]
+  simp only [momentDefect_def, LinearMap.sub_apply]
   exact ((h.contMDiff ξ).comp (ContMDiffSMul.contMDiff_smul_const x)).sub
-    (contMDiff_apply_tangentAd_inv (μ x) ξ)
+    (Lie.contMDiff_coadjointRepresentation_apply (μ x) ξ)
 
 /-- **The derivative of the defect is the moment cocycle.** For a moment map `μ` of the action by
 fundamental vector fields, the derivative at the identity of `g ↦ θ(g, x)(ξ)` in the direction `η`
@@ -368,7 +359,10 @@ theorem mvfderiv_momentDefect_one (h : σ.IsMomentMap (InfinitesimalAction.funda
     (h.mdifferentiableAt ξ x).comp_of_eq (1 : G) horbit (one_smul G x)
   simp only [momentDefect_def, LinearMap.sub_apply, Lie.coadjointRepresentation_apply,
     ← Lie.tangentAd_apply]
-  rw [mvfderiv_fun_sub hd₁ ((contMDiff_apply_tangentAd_inv (μ x) ξ).mdifferentiableAt (by simp)),
+  have hd₂ : MDifferentiableAt I 𝓘(ℝ) (fun g : G ↦ μ x (Lie.tangentAd (I := I) g⁻¹ ξ)) 1 := by
+    simpa only [Lie.coadjointRepresentation_apply, ← Lie.tangentAd_apply] using
+      (Lie.contMDiff_coadjointRepresentation_apply (μ x) ξ).mdifferentiableAt (by simp)
+  rw [mvfderiv_fun_sub hd₁ hd₂,
     sub_apply, h₁, h₂, momentCocycle_apply, LinearEquiv.apply_symm_apply,
     InfinitesimalAction.fundamental_apply, InfinitesimalAction.fundamental_apply]
 
@@ -394,14 +388,8 @@ theorem isEquivariantMomentMap_of_momentCocycle_eq_zero [PreconnectedSpace G]
   at `1` vanishes because the cocycle does. Every tangent vector at `g` is a left translate. -/
   have hL : MDifferentiableAt I I (fun k : G ↦ g * k) 1 :=
     contMDiff_mul_left.mdifferentiableAt one_ne_zero
-  have hL' : MDifferentiableAt I I (fun k : G ↦ g⁻¹ * k) g :=
-    contMDiff_mul_left.mdifferentiableAt one_ne_zero
-  have hw : mfderiv I I (fun k : G ↦ g * k) 1 (mfderiv I I (fun k : G ↦ g⁻¹ * k) g w) = w := by
-    rw [← mfderiv_comp_apply_of_eq g hL hL' (inv_mul_cancel g)]
-    have hid : ((fun k : G ↦ g * k) ∘ fun k : G ↦ g⁻¹ * k) = id := by
-      funext k
-      simp
-    rw [hid, mfderiv_id, ContinuousLinearMap.id_apply]
+  have hw : mfderiv I I (fun k : G ↦ g * k) 1 (mfderiv I I (fun k : G ↦ g⁻¹ * k) g w) = w :=
+    mulInvariantVectorField_mfderiv_inv_mul (I := I) w
   have htrans : (fun k : G ↦ momentDefect μ (g * k) x₀ ξ) = fun k ↦
       momentDefect μ g x₀ ξ +
         momentDefect μ k x₀ (Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ) := by
