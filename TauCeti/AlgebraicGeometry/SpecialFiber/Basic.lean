@@ -20,11 +20,12 @@ including its projection identities.
 The comparison lets statements about the special fibre be transported between its base-change
 presentation and the fibre over the closed point, while preserving both projections.
 
-A local domain of Krull dimension at most one, such as a discrete valuation ring, has only its
-generic point and its closed point (`TauCeti.eq_genericPoint_or_eq_closedPoint`). Combined with the
-generic-point comparison of `TauCeti.AlgebraicGeometry.Fibers`, a property of morphisms invariant
-under isomorphism therefore holds on every fibre of a scheme over such a ring exactly when it holds
-on the generic and the special fibre (`TauCeti.forall_fiberToSpecResidueField_iff`). This turns
+Every point of the spectrum of a local domain of Krull dimension at most one, such as a discrete
+valuation ring, is its generic point or its closed point, which coincide when the ring is a field
+(`IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top`). Combined with the generic-point comparison of
+`TauCeti.AlgebraicGeometry.Fibers`, a property of morphisms invariant under isomorphism therefore
+holds on every fibre of a scheme over such a ring exactly when it holds on the generic and the
+special fibre (`TauCeti.forall_fiberToSpecResidueField_iff`). This turns
 fibrewise criteria, such as the one for nodal curves, into conditions on these two fibres.
 -/
 
@@ -169,19 +170,9 @@ end ClosedPoint
 
 section DimensionLEOne
 
-variable (R : CommRingCat.{u}) [IsLocalRing R] [IsDomain R] [Ring.DimensionLEOne R]
+variable {R : CommRingCat.{u}} [IsLocalRing R] [IsDomain R] [Ring.DimensionLEOne R]
 variable (K : Type u) [CommRing K] [Algebra R K] [IsFractionRing R K]
-
-/-- A local domain of Krull dimension at most one, such as a discrete valuation ring, has exactly
-two kinds of points: the generic point and the closed point. -/
-theorem eq_genericPoint_or_eq_closedPoint (y : Spec R) :
-    y = genericPoint (Spec R) ∨ y = closedPoint R := by
-  rw [genericPoint_eq_bot_of_affine]
-  by_cases hy : y.asIdeal = ⊥
-  · exact .inl (PrimeSpectrum.ext hy)
-  · exact .inr (PrimeSpectrum.ext (IsLocalRing.eq_maximalIdeal (y.isPrime.isMaximal hy)))
-
-variable {R} {X : Scheme.{u}} (toBase : X ⟶ Spec R)
+variable {X : Scheme.{u}} (toBase : X ⟶ Spec R)
 
 /-- **Fibrewise properties over a local domain of dimension at most one.** A property of
 morphisms invariant under isomorphism holds for every fibre `X_y ⟶ Spec κ(y)` of a scheme over
@@ -203,8 +194,8 @@ theorem forall_fiberToSpecResidueField_iff (P : MorphismProperty Scheme.{u}) [P.
       specialFiberIsoFiberClosedPoint_hom_fiberToSpecResidueField,
       MorphismProperty.cancel_right_of_respectsIso P]
   refine ⟨fun h ↦ ⟨hη.mp (h _), hs.mp (h _)⟩, fun ⟨hg, hc⟩ y ↦ ?_⟩
-  obtain rfl | rfl := eq_genericPoint_or_eq_closedPoint R y
-  exacts [hη.mpr hg, hs.mpr hc]
+  obtain rfl | rfl := IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top y
+  exacts [genericPoint_eq_bot_of_affine R ▸ hη.mpr hg, hs.mpr hc]
 
 end DimensionLEOne
 
