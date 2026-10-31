@@ -283,6 +283,7 @@ theorem timeDerivL_timeReverseLIE (f : ParabolicC2HolderSpace α E F hab)
     HolderSpace.compLipschitzL_apply]
 
 /-- The inverse of time reversal is time reversal in the opposite direction. -/
+@[simp]
 theorem timeReverseLIE_symm :
     (timeReverseLIE T ha hb (α := α) (E := E) (F := F) (hab := hab)).symm =
       timeReverseLIE T (by rw [hb, sub_sub_cancel]) (by rw [ha, sub_sub_cancel]) := by
