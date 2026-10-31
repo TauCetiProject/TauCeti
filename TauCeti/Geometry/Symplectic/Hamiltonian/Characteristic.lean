@@ -25,8 +25,8 @@ at `x` is `ker df_x` (`TauCeti.range_mfderiv_coe_scalarRegularLevel`). The restr
   `df(X_f) = 0` this is also the characteristic line
   (`TauCeti.SmoothTwoForm.IsNondegenerate.ker_mfderiv_inf_orthogonal_eq_span_singleton`);
 * at a regular point `X_f(x) ≠ 0`, so the line is indeed a line;
-* if `S` is also a level `g⁻¹(c')` of a second function, then `ker dg = ker df` at the regular
-  points of `g` on `S` (`TauCeti.ker_mfderiv_eq_of_forall_eq_iff`), and `X_g` is a nonzero
+* if `S` lies in a level `g⁻¹(c')` of a second function, then `ker dg = ker df` at the regular
+  points of `g` on `S` (`TauCeti.ker_mfderiv_eq_of_forall_eq_imp`), and `X_g` is a nonzero
   multiple of `X_f` there
   (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_hamiltonianVectorField_eq_smul`).
 
@@ -115,16 +115,16 @@ theorem hamiltonianVectorField_ne_zero (hx : IsRegularPoint I 𝓘(ℝ) f x) :
 /-! ### Two defining functions of one hypersurface -/
 
 /-- **Two defining functions have proportional Hamiltonian vector fields.** If the regular level
-`f⁻¹(c)` of a function `C¹` near the level is also the level `g⁻¹(c')` of a second function, then
+`f⁻¹(c)` of a function `C¹` near the level lies in the level `g⁻¹(c')` of a second function, then
 at each of its points `x` which is a regular point of `g`, `X_g(x)` is a nonzero multiple of
 `X_f(x)`: both span the characteristic line. -/
 theorem exists_hamiltonianVectorField_eq_smul [I.Boundaryless]
     (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hfc : IsRegularValue I 𝓘(ℝ) f c)
-    (hfg : ∀ x, f x = c ↔ g x = c') (hx : f x = c) (hgx : IsRegularPoint I 𝓘(ℝ) g x) :
+    (hfg : ∀ x, f x = c → g x = c') (hx : f x = c) (hgx : IsRegularPoint I 𝓘(ℝ) g x) :
     ∃ a : ℝ, a ≠ 0 ∧ σ.hamiltonianVectorField g x = a • σ.hamiltonianVectorField f x := by
   have hmem : σ.hamiltonianVectorField g x ∈ ℝ ∙ σ.hamiltonianVectorField f x := by
     rw [← hσ.orthogonal_ker_mfderiv_eq_span_singleton,
-      ← ker_mfderiv_eq_of_forall_eq_iff hf hfc hfg hx hgx,
+      ← ker_mfderiv_eq_of_forall_eq_imp hf hfc hfg hx hgx,
       hσ.orthogonal_ker_mfderiv_eq_span_singleton]
     exact Submodule.mem_span_singleton_self _
   obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.1 hmem
@@ -134,14 +134,14 @@ theorem exists_hamiltonianVectorField_eq_smul [I.Boundaryless]
 
 /-! ### Closed characteristics -/
 
-/-- **Closed characteristics do not depend on the defining Hamiltonian.** Let the regular levels
-`f⁻¹(c)` and `g⁻¹(c')` of two `C¹` functions be the same hypersurface `S`. A periodic orbit `γ`, of
-nonzero period, of the Hamiltonian vector field of `f` starting on `S` is, after a change of time
-by a homeomorphism `ψ` of `ℝ` fixing `0`, a periodic orbit of nonzero period of the Hamiltonian
-vector field of `g`. -/
+/-- **Closed characteristics do not depend on the defining Hamiltonian.** Let the regular level
+`S = f⁻¹(c)` of a `C¹` function lie in the regular level `g⁻¹(c')` of a second `C¹` function, for
+instance as the same hypersurface. A periodic orbit `γ`, of nonzero period, of the Hamiltonian
+vector field of `f` starting on `S` is, after a change of time by a homeomorphism `ψ` of `ℝ` fixing
+`0`, a periodic orbit of nonzero period of the Hamiltonian vector field of `g`. -/
 theorem exists_homeomorph_isMIntegralCurve_comp [I.Boundaryless]
     (hf : ContMDiff I 𝓘(ℝ) 1 f) (hg : ContMDiff I 𝓘(ℝ) 1 g) (hfc : IsRegularValue I 𝓘(ℝ) f c)
-    (hgc : IsRegularValue I 𝓘(ℝ) g c') (hfg : ∀ x, f x = c ↔ g x = c') {γ : ℝ → M}
+    (hgc : IsRegularValue I 𝓘(ℝ) g c') (hfg : ∀ x, f x = c → g x = c') {γ : ℝ → M}
     (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField f)) (hγ₀ : f (γ 0) = c) {T : ℝ}
     (hT : T ≠ 0) (hper : Periodic γ T) :
     ∃ ψ : ℝ ≃ₜ ℝ, ψ 0 = 0 ∧ ∃ T', T' ≠ 0 ∧ Periodic (γ ∘ ψ) T' ∧
@@ -157,7 +157,7 @@ theorem exists_homeomorph_isMIntegralCurve_comp [I.Boundaryless]
     (fun t ↦ (hcont f hf).continuousAt) (fun t ↦ (hcont g hg).continuousAt)
     (fun t ↦ hσ.hamiltonianVectorField_ne_zero (hfc.isRegularPoint (hγS t)))
     fun t ↦ hσ.exists_hamiltonianVectorField_eq_smul (fun x _ ↦ hf.contMDiffAt) hfc hfg
-      (hγS t) (hgc.isRegularPoint ((hfg _).1 (hγS t)))
+      (hγS t) (hgc.isRegularPoint (hfg _ (hγS t)))
 
 end IsNondegenerate
 
