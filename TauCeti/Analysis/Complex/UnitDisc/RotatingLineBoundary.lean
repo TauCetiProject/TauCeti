@@ -33,7 +33,7 @@ Fourier coefficients vanish by Cauchy's theorem. The boundary condition turns in
 `aₙ = conj a_{k-n}` for every integer `n`, with `aₙ = 0` for `n < 0`. Hence `u` agrees on the
 closed disc with a polynomial of degree at most `k` whose coefficients satisfy `aᵢ = conj aⱼ`
 whenever `i + j = k`, a *conjugate-reciprocal* polynomial
-(`TauCeti.exists_mem_conjReciprocalPolynomials_eqOn`). Conversely every such polynomial is a
+(`DiffContOnCl.exists_mem_conjReciprocalPolynomials_eqOn`). Conversely every such polynomial is a
 solution.
 These polynomials form a real vector space of dimension `k + 1` for `k ≥ -1` and `0` for `k < 0`
 (`TauCeti.finrank_conjReciprocalPolynomials`), so the space of solutions, as functions on the
@@ -55,8 +55,8 @@ coefficients with Fourier coefficients of boundary values in
 
 ## Main results
 
-* `TauCeti.exists_mem_conjReciprocalPolynomials_eqOn`: a function `u : ℂ → ℂ` solving the problem
-  agrees on the closed disc with a conjugate-reciprocal polynomial of degree at most `k`.
+* `DiffContOnCl.exists_mem_conjReciprocalPolynomials_eqOn`: a function `u : ℂ → ℂ` solving the
+  problem agrees on the closed disc with a conjugate-reciprocal polynomial of degree at most `k`.
 * `TauCeti.mem_unitDiscCauchyRiemannKernel_iff_exists_eval`: the solutions on the closed disc are
   exactly the conjugate-reciprocal polynomials of degree at most `k`.
 * `TauCeti.unitDiscCauchyRiemannKernel_eq_bot`: for `k < 0` the only solution is zero.
@@ -131,8 +131,8 @@ private theorem integral_zpow_mul_eq_conj
 /-- A function holomorphic on the open unit disc, continuous on its closure, and satisfying
 `u w = w ^ k * conj (u w)` on the unit circle agrees on the closed disc with a
 conjugate-reciprocal polynomial of degree at most `k`, namely its Taylor polynomial. -/
-theorem exists_mem_conjReciprocalPolynomials_eqOn (hu : DiffContOnCl ℂ u (ball 0 1))
-    (hb : ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w)) :
+theorem _root_.DiffContOnCl.exists_mem_conjReciprocalPolynomials_eqOn
+    (hu : DiffContOnCl ℂ u (ball 0 1)) (hb : ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w)) :
     ∃ p ∈ conjReciprocalPolynomials k, EqOn u (fun z => p.eval z) (closedBall 0 1) := by
   -- The Taylor coefficients `aₙ` satisfy `aₙ = conj a_{k-n}`, with `aₙ = 0` for `n > k`.
   have ha : ∀ n : ℕ, (cauchyPowerSeries u 0 1).coeff n = (2 * π : ℂ)⁻¹ *
@@ -220,7 +220,7 @@ theorem mem_unitDiscCauchyRiemannKernel_iff_exists_eval :
       ∃ p ∈ conjReciprocalPolynomials k, (fun z : closedBall (0 : ℂ) 1 => p.eval (z : ℂ)) = g := by
   refine ⟨?_, ?_⟩
   · rintro ⟨u, hu, hb, rfl⟩
-    obtain ⟨p, hp, h⟩ := exists_mem_conjReciprocalPolynomials_eqOn hu hb
+    obtain ⟨p, hp, h⟩ := hu.exists_mem_conjReciprocalPolynomials_eqOn hb
     exact ⟨p, hp, funext fun z => (h z.2).symm⟩
   · rintro ⟨p, hp, rfl⟩
     exact ⟨fun z => p.eval z, p.differentiable.diffContOnCl,
