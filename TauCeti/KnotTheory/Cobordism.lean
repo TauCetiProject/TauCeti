@@ -18,7 +18,6 @@ public import TauCeti.KnotTheory.SmoothCircle
 import Mathlib.Topology.LocalAtTarget
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.Torus.Exterior
-import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
@@ -116,6 +115,10 @@ common collar, and is not proved here.
 * `TauCeti.KnotCobordism.genus_transConcordance`,
   `TauCeti.SmoothEmbedding.Concordance.genus_transKnotCobordism`: composing with a concordance keeps
   the genus.
+* `TauCeti.KnotCobordism.exists_range_toFun_transConcordance`,
+  `TauCeti.SmoothEmbedding.Concordance.exists_range_toFun_transKnotCobordism`: the embedded surface
+  of the composite is that of the cobordism away from a collar, and the rescaled annulus of the
+  concordance on it.
 * `TauCeti.cobordismDistance_congr_concordant`: the cobordism distance is a concordance invariant
   in each argument.
 
@@ -500,6 +503,19 @@ private theorem glueFun_of_le_snd (hc : 0 < c)
     exact (rescale_apply_of_le C hc (collarParam S x).1 (t := (collarParam S x).2) h).symm
   · rfl
 
+/-- On the cylinder over `K₁` above height `1 - 2 c`, the glued map is the rescaled
+concordance. -/
+private theorem glueFun_of_eq (hc : 0 < c)
+    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
+      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) {x : S.carrier} {z : Circle} {t : ℝ}
+    (hx : S.toFun x = (K₁ z, t)) (ht : 1 - 2 * c ≤ t) :
+    glueFun C S hc x =
+      ((C (z, (t - (1 - c)) / c)).1, 1 - c + c * (C (z, (t - (1 - c)) / c)).2) := by
+  have hcp : collarParam S x = (z, t) := by
+    rw [collarParam, hx]
+    exact Prod.ext (Function.leftInverse_invFun K₁.isEmbedding.injective z) rfl
+  rw [glueFun_of_le_snd C hc hS (by rw [hx]; exact ht), hcp, rescale_apply]
+
 /-- Gluing in the concordance keeps the heights above `1 - c` above `1 - c`, and those below it
 below it. -/
 private theorem lt_snd_glueFun_iff (hc : 0 < c)
@@ -675,21 +691,36 @@ private def transConcordanceOfWidth (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
       ring
 
 variable (S) in
+/-- The width of the collar of `S` used to compose it with a concordance. -/
+private def width : ℝ :=
+  min S.exists_pos_range_inter_le_snd.choose 1 / 2
+
+private theorem width_pos : 0 < width S :=
+  half_pos (lt_min S.exists_pos_range_inter_le_snd.choose_spec.1 one_pos)
+
+private theorem width_le : width S ≤ 1 / 2 := by
+  have := min_le_right S.exists_pos_range_inter_le_snd.choose 1
+  rw [width]
+  linarith
+
+/-- From height `1 - 2 * width S` on, `S` is the cylinder over `K₁`. -/
+private theorem mem_range_toFun_iff_of_width (p : sphere (0 : E) 1 × ℝ)
+    (hp : 1 - 2 * width S ≤ p.2) : p ∈ range S.toFun ↔ p.1 ∈ range K₁ := by
+  have hε := S.exists_pos_range_inter_le_snd.choose_spec
+  have hε₁ := min_le_left S.exists_pos_range_inter_le_snd.choose 1
+  have h := Set.ext_iff.1 hε.2 p
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Ici] at h
+  have hp' : 1 - S.exists_pos_range_inter_le_snd.choose ≤ p.2 := by rw [width] at hp; linarith
+  exact ⟨fun hr ↦ (h.1 ⟨hr, hp'⟩).1, fun hK ↦ (h.2 ⟨hK, hp'⟩).1⟩
+
+variable (S) in
 /-- **Composing a knot cobordism with a concordance**: a knot cobordism `S` from `K₀` to `K₁`
 followed by a concordance `C` from `K₁` to `K₂` is a knot cobordism from `K₀` to `K₂` on the same
 surface. Up to a height `1 - c` close to `1` the surface is embedded as by `S`; above it, where `S`
 is the cylinder over `K₁`, that cylinder is replaced by the annulus of `C`, run during the time
 interval `[1 - c, 1]`. -/
 def transConcordance : KnotCobordism K₀ K₂ :=
-  have hε := S.exists_pos_range_inter_le_snd.choose_spec
-  have hε₁ := min_le_left S.exists_pos_range_inter_le_snd.choose 1
-  have hε₂ := min_le_right S.exists_pos_range_inter_le_snd.choose 1
-  transConcordanceOfWidth C (c := min S.exists_pos_range_inter_le_snd.choose 1 / 2)
-    (half_pos (lt_min hε.1 one_pos)) (by linarith) fun p hp ↦ by
-      have h := Set.ext_iff.1 hε.2 p
-      simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Ici] at h
-      have hp' : 1 - S.exists_pos_range_inter_le_snd.choose ≤ p.2 := by linarith
-      exact ⟨fun hr ↦ (h.1 ⟨hr, hp'⟩).1, fun hK ↦ (h.2 ⟨hK, hp'⟩).1⟩
+  transConcordanceOfWidth C (width_pos (S := S)) width_le mem_range_toFun_iff_of_width
 
 variable (S) in
 /-- Composing a knot cobordism with a concordance keeps its surface. -/
@@ -701,6 +732,38 @@ variable (S) in
 @[simp]
 theorem genus_transConcordance : (S.transConcordance C).genus = S.genus :=
   (rfl)
+
+variable (S) in
+/-- **The embedded surface of the composite of `S` and `C`**: for some width `c ∈ (0, 1/2]`, it is
+the part of the surface of `S` up to height `1 - c`, together with the part of the annulus of `C`
+over the times `s > 0`, its heights `h` rescaled to `1 - c + c * h`. -/
+theorem exists_range_toFun_transConcordance :
+    ∃ c, 0 < c ∧ c ≤ 1 / 2 ∧ range (S.transConcordance C).toFun =
+      range S.toFun ∩ {p | p.2 ≤ 1 - c} ∪
+        (fun q : Circle × ℝ ↦ ((C q).1, 1 - c + c * (C q).2)) '' (univ ×ˢ Ioi 0) := by
+  refine ⟨width S, width_pos, width_le, ?_⟩
+  have hc := width_pos (S := S)
+  change range (glueFun C S width_pos) = _
+  ext p
+  constructor
+  · rintro ⟨x, rfl⟩
+    by_cases hx : (S.toFun x).2 ≤ 1 - width S
+    · rw [glueFun_of_le C width_pos hx]
+      exact Or.inl ⟨mem_range_self x, hx⟩
+    · obtain ⟨z, hz⟩ := fst_mem_range_of_le mem_range_toFun_iff_of_width
+        (x := x) (by linarith)
+      have hS : S.toFun x = (K₁ z, (S.toFun x).2) := Prod.ext hz.symm rfl
+      rw [glueFun_of_eq C width_pos mem_range_toFun_iff_of_width hS (by linarith)]
+      exact Or.inr ⟨(z, ((S.toFun x).2 - (1 - width S)) / width S),
+        ⟨mem_univ _, div_pos (by linarith) hc⟩, rfl⟩
+  · rintro (⟨⟨x, rfl⟩, hx⟩ | ⟨⟨z, s⟩, ⟨-, hs⟩, rfl⟩)
+    · exact ⟨x, glueFun_of_le C width_pos hx⟩
+    · have hs : (0 : ℝ) < s := hs
+      obtain ⟨x, hx⟩ := (mem_range_toFun_iff_of_width (S := S) (K₁ z, 1 - width S + width S * s)
+        (by dsimp only; nlinarith)).2 (mem_range_self z)
+      refine ⟨x, ?_⟩
+      have ht : (1 - width S + width S * s - (1 - width S)) / width S = s := by field_simp; ring
+      rw [glueFun_of_eq C width_pos mem_range_toFun_iff_of_width hx (by nlinarith), ht]
 
 end Concordance
 
@@ -727,6 +790,42 @@ theorem carrier_transKnotCobordism (C : SmoothEmbedding.Concordance K₀' K₀)
 theorem genus_transKnotCobordism (C : SmoothEmbedding.Concordance K₀' K₀)
     (S : KnotCobordism K₀ K₁) : (C.transKnotCobordism S).genus = S.genus :=
   (rfl)
+
+/-- **The embedded surface of the composite of `C` and `S`**: for some width `c ∈ (0, 1/2]`, it is
+the part of the surface of `S` from height `c` on, together with the part of the annulus of `C`
+over the times `s < 1`, its heights `h` rescaled to `c * h`. -/
+theorem exists_range_toFun_transKnotCobordism (C : SmoothEmbedding.Concordance K₀' K₀)
+    (S : KnotCobordism K₀ K₁) :
+    ∃ c, 0 < c ∧ c ≤ 1 / 2 ∧ range (C.transKnotCobordism S).toFun =
+      range S.toFun ∩ {p | c ≤ p.2} ∪
+        (fun q : Circle × ℝ ↦ ((C q).1, c * (C q).2)) '' (univ ×ˢ Iio 1) := by
+  obtain ⟨c, hc, hc₂, h⟩ := S.symm.exists_range_toFun_transConcordance C.symm
+  refine ⟨c, hc, hc₂, ?_⟩
+  -- The reflection of the heights is an involution.
+  have hrr : Function.LeftInverse (fun p : sphere (0 : E) 1 × ℝ ↦ (p.1, 1 - p.2))
+      (fun p ↦ (p.1, 1 - p.2)) := fun p ↦ Prod.ext rfl (sub_sub_cancel _ _)
+  have hr (A : Set (sphere (0 : E) 1 × ℝ)) : (fun p ↦ (p.1, 1 - p.2)) '' A =
+      (fun p : sphere (0 : E) 1 × ℝ ↦ (p.1, 1 - p.2)) ⁻¹' A :=
+    congrFun (image_eq_preimage_of_inverse hrr hrr) A
+  change range (S.symm.transConcordance C.symm).symm.toFun = _
+  rw [KnotCobordism.range_toFun_symm, h, KnotCobordism.range_toFun_symm, hr, hr]
+  ext p
+  simp only [mem_preimage, mem_union, mem_inter_iff, mem_ofPred_eq, sub_sub_cancel,
+    sub_le_sub_iff_left]
+  refine or_congr Iff.rfl ⟨?_, ?_⟩
+  · rintro ⟨⟨z, s⟩, ⟨-, hs⟩, he⟩
+    have hs : (0 : ℝ) < s := hs
+    dsimp only at he
+    rw [symm_apply, Prod.ext_iff] at he
+    refine ⟨(z, 1 - s), ⟨mem_univ _, show 1 - s < 1 by linarith⟩, Prod.ext he.1 ?_⟩
+    dsimp only at he ⊢
+    linarith [he.2]
+  · rintro ⟨⟨z, u⟩, ⟨-, hu⟩, rfl⟩
+    have hu : u < 1 := hu
+    refine ⟨(z, 1 - u), ⟨mem_univ _, show (0 : ℝ) < 1 - u by linarith⟩, ?_⟩
+    dsimp only
+    rw [symm_apply, sub_sub_cancel]
+    exact Prod.ext rfl (by dsimp only; ring)
 
 end SmoothEmbedding.Concordance
 
