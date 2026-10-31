@@ -118,12 +118,12 @@ private theorem hochschildDifferential_comp_lengthProj_three (hℋ : ℋ.IsMinim
       lengthProj R A ⟨4, by norm_num⟩ =
         ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨3, by norm_num⟩) :=
     hochschildDifferential_comp_lengthProj hcomp₂ 0 (n := 2)
-      (LinearMap.ext fun z ↦ by simp only [LinearMap.comp_apply, lengthProj_lengthProj])
+      (comp_lengthProj_comp_lengthProj R A _ _)
   have hδ₂ : ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨2, two_pos⟩) ∘ₗ
       lengthProj R A ⟨3, by norm_num⟩ =
         ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨2, two_pos⟩) :=
     hochschildDifferential_comp_lengthProj hcomp₂ 0 (n := 1)
-      (LinearMap.ext fun z ↦ by simp only [LinearMap.comp_apply, lengthProj_lengthProj])
+      (comp_lengthProj_comp_lengthProj R A _ _)
   -- Both sides are concentrated on the words of length four.
   refine LinearMap.ext fun z ↦ ?_
   rw [← hδ₃, ← obstruction_comp_lengthProj, LinearMap.comp_apply, LinearMap.comp_apply]
@@ -252,10 +252,10 @@ private theorem exists_hochschildDifferential_eq_obstruction_four_of_linearPart_
   have ht : f.taylor = letter R A + ψ := by rw [hψdef, add_sub_cancel]
   have hψ : LinearMap.IsHomogeneous ψ (gradedPiece G) G.piece 0 :=
     isHomogeneous_taylor_sub_letter hG f
-  have hψ₁ : ∀ z ∈ filtration R A 1, ψ z = 0 := apply_eq_zero_of_mem_filtration_one R A <|
-    LinearMap.ext fun a ↦ by
-      rw [LinearMap.comp_apply, hψdef, LinearMap.sub_apply, ← AInfinityHom.linearPart_apply, hf,
-        LinearMap.id_apply, letter_ofLetter, sub_self, LinearMap.zero_apply]
+  have hf₁ : ∀ z ∈ filtration R A 1, f.taylor z = letter R A z :=
+    AInfinityHom.taylor_apply_eq_letter_of_linearPart_eq_id hf
+  have hψ₁ : ∀ z ∈ filtration R A 1, ψ z = 0 := fun z hz ↦ by
+    rw [hψdef, LinearMap.sub_apply, hf₁ z hz, sub_self]
   -- The morphism equation, written as for a gauge transformation: `m_𝒜 = m_ℋ ∘ F - ψ{m_𝒜}`.
   have key : 𝒜.taylor = ℋ.taylor ∘ₗ coalgHom R (letter R A + ψ) - brace G ψ 𝒜.taylor 1 :=
     f.taylor_eq_taylor_comp_coalgHom_sub_brace hG ht
@@ -263,11 +263,8 @@ private theorem exists_hochschildDifferential_eq_obstruction_four_of_linearPart_
   have hb : ∀ z ∈ filtration R A 4, brace G ψ 𝒜.taylor 1 z = brace G ψ ℋ.taylor 1 z :=
     fun z hz ↦ brace_taylor_apply_eq_of_mem_filtration (k := 3) hψ₁ h hz
   -- On the words of length at most three, `δψ = 0`.
-  have hδψ : ∀ z ∈ filtration R A 3, ℋ.hochschildDifferential 0 ψ z = 0 := fun z hz ↦ by
-    have hf₁ : ∀ w ∈ filtration R A 1, f.taylor w = letter R A w := fun w hw ↦ by
-      simpa only [hψdef, LinearMap.sub_apply, sub_eq_zero] using hψ₁ w hw
-    exact hochschildDifferential_taylor_sub_letter_apply_eq_zero hG f (e := 1) (by norm_num) hf₁ h
-      hz
+  have hδψ : ∀ z ∈ filtration R A 3, ℋ.hochschildDifferential 0 ψ z = 0 := fun z hz ↦
+    hochschildDifferential_taylor_sub_letter_apply_eq_zero hG f (e := 1) (by norm_num) hf₁ h hz
   -- On the words of length at most four, the quadratic part of `F` gives
   -- `2 (m_𝒜 - m_ℋ) = 2 δψ - δ(ψ{ψ})`.
   have hquad : ∀ z ∈ filtration R A 4, (2 : R) • (𝒜.taylor z - ℋ.taylor z) =
@@ -295,7 +292,7 @@ private theorem exists_hochschildDifferential_eq_obstruction_four_of_linearPart_
       simpa only [add_zero] using isHomogeneous_brace hψ hψ
     simpa only [add_zero] using
       (hψ.add (hbr.smul _)).comp (isHomogeneous_lengthProj G ⟨3, by norm_num⟩)
-  · exact LinearMap.ext fun z ↦ by simp only [LinearMap.comp_apply, lengthProj_lengthProj]
+  · exact comp_lengthProj_comp_lengthProj R A _ _
 
 /-- A minimal `A∞` structure `𝒜` with the grading and the binary operation of the graded algebra
 `ℋ` and with `m₃ = ⋯ = mₙ₊₁ = 0` agrees with `ℋ` on the words of length at most `n + 1`. -/
@@ -402,7 +399,7 @@ private theorem hochschildDifferential_comp_lengthProj_eq_obstruction (hℋ : �
       𝒜.obstruction ℋ ⟨n + 2, by omega⟩ := by
   set φ := χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩
   have hφ : φ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ = φ :=
-    LinearMap.ext fun z ↦ by simp only [φ, LinearMap.comp_apply, lengthProj_lengthProj]
+    comp_lengthProj_comp_lengthProj R A χ _
   have hd : ∀ z ∈ filtration R A (n + 1), (χ - φ) z = 0 := fun z hz ↦ by
     rw [LinearMap.sub_apply, LinearMap.comp_apply, apply_lengthProj_of_mem_filtration R A hχ₀ hz,
       sub_self]
@@ -507,12 +504,8 @@ private theorem exists_hochschildDifferential_eq_obstruction_of_linearPart_eq_id
           (ℋ.grading.shift 1).piece 0 ∧
         φ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ = φ ∧
         ℋ.hochschildDifferential 0 φ = 𝒜.obstruction ℋ ⟨n + 2, by omega⟩ by
-    have h₁ : (f.taylor - letter R A) ∘ₗ ofLetter R A = 0 := LinearMap.ext fun a ↦ by
-      rw [LinearMap.comp_apply, LinearMap.sub_apply, ← AInfinityHom.linearPart_apply, hf,
-        LinearMap.id_apply, letter_ofLetter, sub_self, LinearMap.zero_apply]
-    refine H (n - 1) 1 le_rfl (by omega) f fun z hz ↦ ?_
-    have hz₁ := apply_eq_zero_of_mem_filtration_one R A h₁ z hz
-    rwa [LinearMap.sub_apply, sub_eq_zero] at hz₁
+    exact H (n - 1) 1 le_rfl (by omega) f
+      (AInfinityHom.taylor_apply_eq_letter_of_linearPart_eq_id hf)
   intro k
   induction k with
   | zero =>
@@ -528,7 +521,7 @@ private theorem exists_hochschildDifferential_eq_obstruction_of_linearPart_eq_id
       refine ⟨ψ ∘ₗ lengthProj R A ⟨e + 1, e.succ_pos⟩, ?_, ?_,
         hochschildDifferential_comp_lengthProj_eq_obstruction hℋ hm h hψe fun z hz ↦ ?_⟩
       · simpa only [add_zero] using hψ.comp (isHomogeneous_lengthProj _ _)
-      · exact LinearMap.ext fun z ↦ by simp only [LinearMap.comp_apply, lengthProj_lengthProj]
+      · exact comp_lengthProj_comp_lengthProj R A _ _
       · rw [hψdef]
         exact taylor_sub_taylor_apply_eq_hochschildDifferential hG g (by omega) (by omega) hg h hz
   | succ k ih =>

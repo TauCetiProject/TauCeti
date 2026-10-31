@@ -277,6 +277,12 @@ theorem lengthProj_lengthProj (n : {n : ℕ // 0 < n}) (z : ReducedTensorWords R
     lengthProj R M n (lengthProj R M n z) = lengthProj R M n z := by
   rw [lengthProj_apply R M n z, lengthProj_of_self]
 
+/-- Precomposing with the same length projection twice is precomposing with it once. -/
+theorem comp_lengthProj_comp_lengthProj {N : Type*} [AddCommMonoid N] [Module R N]
+    (f : ReducedTensorWords R M →ₗ[R] N) (n : {n : ℕ // 0 < n}) :
+    (f ∘ₗ lengthProj R M n) ∘ₗ lengthProj R M n = f ∘ₗ lengthProj R M n :=
+  LinearMap.ext fun z ↦ by simp only [LinearMap.comp_apply, lengthProj_lengthProj]
+
 /-- Projections onto two different lengths are orthogonal. -/
 theorem lengthProj_lengthProj_of_ne {m n : {n : ℕ // 0 < n}} (h : m ≠ n)
     (z : ReducedTensorWords R M) : lengthProj R M n (lengthProj R M m z) = 0 := by
