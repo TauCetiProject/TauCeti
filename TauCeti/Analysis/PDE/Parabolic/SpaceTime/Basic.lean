@@ -33,6 +33,8 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.slab`: the closed time slab `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.slabTimeReverse`: reversal of time about `T`, an isometry from the
   slab `E × [T - b, T - a]` onto `E × [a, b]`.
+* `TauCeti.ParabolicSpaceTime.slabSpaceMap`: a spatial map `f` acting on a slab by
+  `(x, t) ↦ (f x, t)`, Lipschitz for the parabolic distance when `f` is.
 
 ## References
 
@@ -138,6 +140,29 @@ theorem inclusion_slabMk {a b a' b' : ℝ} (h : slab (E := E) a' b' ⊆ slab a b
     inclusion h (slabMk x t) = slabMk x ⟨t, by simpa using h (slabMk x t).2⟩ :=
   (rfl)
 
+/-- A spatial map `f` acting on the slab `E × [a, b]`, by `(x, t) ↦ (f x, t)`. -/
+def slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    slab (E := E') a b :=
+  slabMk (f (p : ParabolicSpaceTime E).space) (slabTime p)
+
+@[simp]
+theorem slabSpaceMap_slabMk {E' : Type*} {a b : ℝ} (f : E → E') (x : E) (t : Icc a b) :
+    slabSpaceMap f (slabMk x t) = slabMk (f x) t :=
+  (rfl)
+
+@[simp]
+theorem slabSpaceMap_id {a b : ℝ} : slabSpaceMap (a := a) (b := b) (id : E → E) = id :=
+  (rfl)
+
+theorem slabSpaceMap_comp {E' E'' : Type*} {a b : ℝ} (f : E' → E'') (g : E → E') :
+    slabSpaceMap (a := a) (b := b) (f ∘ g) = slabSpaceMap f ∘ slabSpaceMap g :=
+  (rfl)
+
+@[simp]
+theorem slabSpaceMap_slabSpaceMap {E' E'' : Type*} {a b : ℝ} (f : E' → E'') (g : E → E')
+    (p : slab (E := E) a b) : slabSpaceMap f (slabSpaceMap g p) = slabSpaceMap (f ∘ g) p :=
+  (rfl)
+
 section PseudoEMetricSpace
 
 variable [PseudoEMetricSpace E]
@@ -175,6 +200,18 @@ theorem edist_time_rpow_le (p q : ParabolicSpaceTime E) :
     edist p.time q.time ^ (1 / 2 : ℝ) ≤ edist p q := by
   rw [edist_eq]
   exact le_add_self
+
+/-- A `K`-Lipschitz spatial map acts on a slab as a `max K 1`-Lipschitz map for the parabolic
+distance. -/
+theorem lipschitzWith_slabSpaceMap {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ} {K : ℝ≥0}
+    {f : E → E'} (hf : LipschitzWith K f) :
+    LipschitzWith (max K 1) (slabSpaceMap (a := a) (b := b) f) := by
+  intro p q
+  rw [← slabMk_space_slabTime p, ← slabMk_space_slabTime q, slabSpaceMap_slabMk,
+    slabSpaceMap_slabMk, edist_slabMk, edist_slabMk, mul_add]
+  gcongr
+  · exact (hf _ _).trans (mul_le_mul_left (by exact_mod_cast le_max_left K 1) _)
+  · exact le_mul_of_one_le_left (by positivity) (by exact_mod_cast le_max_right K 1)
 
 end PseudoEMetricSpace
 
