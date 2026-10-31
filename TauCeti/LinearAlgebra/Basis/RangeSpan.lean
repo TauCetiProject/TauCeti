@@ -70,14 +70,8 @@ theorem span_range_symm_inr_eq_ker {R M M₁ M₂ ι : Type*} [Semiring R]
     rw [← Submodule.span_eq (LinearMap.range _), LinearMap.coe_range,
       span_range_eq_span_range_basis b]
     rfl
-  rw [hspan]
-  ext u
-  simp only [LinearMap.mem_range, LinearMap.mem_ker, LinearMap.coe_comp, LinearEquiv.coe_coe,
-    Function.comp_apply, LinearMap.inr_apply, LinearMap.fst_apply]
-  constructor
-  · rintro ⟨y, rfl⟩
-    simp
-  · intro hu
-    exact ⟨(L u).2, L.symm_apply_eq.mpr (Prod.ext hu.symm rfl)⟩
+  -- The range of `L.symm ∘ inr` is the image under `L.symm` of `{0} × M₂ = ker (fst)`.
+  rw [hspan, LinearMap.range_comp, LinearMap.range_inr, LinearMap.ker_comp,
+    Submodule.map_equiv_eq_comap_symm, L.symm_symm]
 
 end Module.Basis
