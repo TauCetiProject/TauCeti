@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Metric
 public import TauCeti.KnotTheory.Grid.CrossingChange.Basic
-public import TauCeti.KnotTheory.Grid.Move.Unknot
+public import TauCeti.KnotTheory.Grid.Move.Transpose
 
 /-!
 # Crossing changes and the unknotting number of grid links
@@ -48,6 +48,8 @@ The unknotting numbers of specific torus links are bounded in
   is a knot.
 * `TauCeti.GridDiagram.unknottingNumber_toGridLink_le_swapColumns_add_one`: exchanging two
   adjacent interleaving columns changes the unknotting number by at most one.
+* `TauCeti.GridLink.unknottingNumber_transpose`: the diagonal reflection of grid links, which
+  exchanges row and column cross-commutations, preserves the unknotting number.
 
 ## References
 
@@ -168,6 +170,39 @@ theorem isKnot_of_unknottingNumber_ne_top {L : GridLink} (h : L.unknottingNumber
   rw [isKnot_def, componentCount_eq_of_reachable (SimpleGraph.reachable_of_edist_ne_top h).symm,
     ← isKnot_def]
   exact isKnot_unknot
+
+/-- The diagonal reflection carries a crossing change to a crossing change: it exchanges row and
+column cross-commutations. -/
+theorem IsCrossingChange.transpose {L L' : GridLink} (h : IsCrossingChange L L') :
+    IsCrossingChange L.transpose L'.transpose := by
+  obtain ⟨n, G, G', h, rfl, rfl⟩ := h
+  rw [transpose_toGridLink, transpose_toGridLink]
+  exact ((GridDiagram.isCrossCommutation_transpose G G').mpr h).isCrossingChange
+
+/-- The diagonal reflection preserves the crossing change relation. -/
+@[simp]
+theorem isCrossingChange_transpose {L L' : GridLink} :
+    IsCrossingChange L.transpose L'.transpose ↔ IsCrossingChange L L' :=
+  ⟨fun h => by simpa only [transpose_transpose] using h.transpose, IsCrossingChange.transpose⟩
+
+/-- The diagonal reflection as an automorphism of the crossing change graph. -/
+def crossingChangeGraphTransposeIso : crossingChangeGraph ≃g crossingChangeGraph where
+  toEquiv := transpose_involutive.toPerm _
+  map_rel_iff' := by simp
+
+/-- The automorphism of the crossing change graph given by the diagonal reflection acts by the
+reflection. -/
+@[simp]
+theorem crossingChangeGraphTransposeIso_apply (L : GridLink) :
+    crossingChangeGraphTransposeIso L = L.transpose :=
+  (rfl)
+
+/-- **The diagonal reflection preserves the unknotting number.** It is an automorphism of the
+crossing change graph fixing the unknot. -/
+@[simp]
+theorem unknottingNumber_transpose (L : GridLink) :
+    L.transpose.unknottingNumber = L.unknottingNumber := by
+  simpa [unknottingNumber_def] using crossingChangeGraphTransposeIso.edist_eq L unknot
 
 end GridLink
 

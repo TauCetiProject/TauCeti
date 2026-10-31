@@ -52,6 +52,9 @@ types, and `GridDiagram.IsDestabilization` reverses the relation.
 * `TauCeti.GridDiagram.rotate_stabilizeX_succ`: reversing both coordinates exchanges the two
   corner types of `X`-stabilization, whose new `O`-marking is the north-east or the south-west
   corner of the new block.
+* `TauCeti.GridDiagram.transpose_stabilizeO`, `TauCeti.GridDiagram.transpose_stabilizeX` and
+  `TauCeti.GridDiagram.isStabilization_transpose`: the diagonal reflection of a stabilization is a
+  stabilization splitting a marking of the same type, with the new row and column exchanged.
 * `TauCeti.GridDiagram.stabilizeX_last_relabelRows`,
   `TauCeti.GridDiagram.stabilizeX_last_relabelColumns` and
   `TauCeti.GridDiagram.stabilizeO_last_relabelColumns`: a cyclic permutation moves a new last row
@@ -236,6 +239,16 @@ theorem insertPoint_succ_swapColumns (x : GridState n) (s : Fin n) (newRow : Fin
 theorem transpose_insertPoint (x : GridState n) (newColumn newRow : Fin (n + 1)) :
     (x.insertPoint newColumn newRow).transpose = x.transpose.insertPoint newRow newColumn :=
   GridState.ext fun r ↦ by simp [insertPoint, transpose, Equiv.optionCongr_symm]
+
+/-- Reflecting in the diagonal exchanges the roles of the inserted row and column of a split
+point, and the split column becomes the row of the split point. -/
+theorem transpose_splitPoint (x : GridState n) (newColumn newRow : Fin (n + 1))
+    (splitColumn : Fin n) :
+    (x.splitPoint newColumn newRow splitColumn).transpose =
+      x.transpose.splitPoint newRow newColumn (x splitColumn) := by
+  rw [splitPoint, splitPoint, swapColumns_transpose, transpose_insertPoint,
+    swapColumns_eq_swapRows (newRow : Fin (n + 1)), insertPoint_apply_newColumn,
+    insertPoint_apply_succAbove, transpose_apply_apply]
 
 /-- Reversing both coordinates of a grid state with an inserted point reverses the coordinates of
 the inserted point. -/
@@ -461,6 +474,24 @@ theorem rotate_stabilizeX_succ (s : Fin n) :
       G.rotate.stabilizeX s.rev.castSucc (G.rotate.X s.rev).castSucc s.rev := by
   rw [rotate_stabilizeX, Fin.rev_succ, Fin.rev_succ, rotate_X, GridState.rotate_apply, Fin.rev_rev]
 
+/-- Reflecting an `O`-stabilization in the diagonal exchanges the inserted row and column, and
+the split column becomes the row of the split `O`-marking. -/
+theorem transpose_stabilizeO (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
+    (G.stabilizeO newColumn newRow splitColumn).transpose =
+      G.transpose.stabilizeO newRow newColumn (G.O splitColumn) := by
+  ext1
+  · rw [transpose_O, stabilizeO_O, stabilizeO_O, transpose_O, GridState.transpose_splitPoint]
+  · rw [transpose_X, stabilizeO_X, stabilizeO_X, transpose_X, GridState.transpose_insertPoint]
+
+/-- Reflecting an `X`-stabilization in the diagonal exchanges the inserted row and column, and
+the split column becomes the row of the split `X`-marking. -/
+theorem transpose_stabilizeX (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
+    (G.stabilizeX newColumn newRow splitColumn).transpose =
+      G.transpose.stabilizeX newRow newColumn (G.X splitColumn) := by
+  ext1
+  · rw [transpose_O, stabilizeX_O, stabilizeX_O, transpose_O, GridState.transpose_insertPoint]
+  · rw [transpose_X, stabilizeX_X, stabilizeX_X, transpose_X, GridState.transpose_splitPoint]
+
 /-- Exchanging the marking types turns an `O`-stabilization into an `X`-stabilization. -/
 @[simp]
 theorem stabilizeO_swapMarkings (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
@@ -666,6 +697,36 @@ theorem isXStabilization_swapMarkings (G : GridDiagram n) (G' : GridDiagram (n +
   simpa only [swapMarkings_swapMarkings] using
     (isOStabilization_swapMarkings G.swapMarkings G'.swapMarkings).symm
 
+/-- The diagonal reflection of an elementary `O`-stabilization is an elementary
+`O`-stabilization: the adjacency conditions on the new row and on the new column are exchanged. -/
+theorem IsOStabilization.transpose {G : GridDiagram n} {G' : GridDiagram (n + 1)}
+    (h : IsOStabilization G G') : IsOStabilization G.transpose G'.transpose := by
+  obtain ⟨newColumn, newRow, splitColumn, hColumn, hRow, rfl⟩ := h
+  refine ⟨newRow, newColumn, G.O splitColumn, hRow, ?_,
+    G.transpose_stabilizeO newColumn newRow splitColumn⟩
+  rwa [transpose_O, GridState.transpose_apply_apply]
+
+/-- The diagonal reflection of an elementary `X`-stabilization is an elementary
+`X`-stabilization: the adjacency conditions on the new row and on the new column are exchanged. -/
+theorem IsXStabilization.transpose {G : GridDiagram n} {G' : GridDiagram (n + 1)}
+    (h : IsXStabilization G G') : IsXStabilization G.transpose G'.transpose := by
+  obtain ⟨newColumn, newRow, splitColumn, hColumn, hRow, rfl⟩ := h
+  refine ⟨newRow, newColumn, G.X splitColumn, hRow, ?_,
+    G.transpose_stabilizeX newColumn newRow splitColumn⟩
+  rwa [transpose_X, GridState.transpose_apply_apply]
+
+/-- The diagonal reflection preserves the elementary `O`-stabilization relation. -/
+@[simp]
+theorem isOStabilization_transpose (G : GridDiagram n) (G' : GridDiagram (n + 1)) :
+    IsOStabilization G.transpose G'.transpose ↔ IsOStabilization G G' :=
+  ⟨fun h => by simpa only [transpose_transpose] using h.transpose, IsOStabilization.transpose⟩
+
+/-- The diagonal reflection preserves the elementary `X`-stabilization relation. -/
+@[simp]
+theorem isXStabilization_transpose (G : GridDiagram n) (G' : GridDiagram (n + 1)) :
+    IsXStabilization G.transpose G'.transpose ↔ IsXStabilization G G' :=
+  ⟨fun h => by simpa only [transpose_transpose] using h.transpose, IsXStabilization.transpose⟩
+
 /-- One elementary grid stabilization, splitting either an `O`- or an `X`-marking. -/
 def IsStabilization (G : GridDiagram n) (G' : GridDiagram (n + 1)) : Prop :=
   IsOStabilization G G' ∨ IsXStabilization G G'
@@ -682,6 +743,12 @@ theorem isStabilization_swapMarkings (G : GridDiagram n) (G' : GridDiagram (n + 
   simp only [IsStabilization, isOStabilization_swapMarkings,
     isXStabilization_swapMarkings, or_comm]
 
+/-- The diagonal reflection preserves the elementary stabilization relation. -/
+@[simp]
+theorem isStabilization_transpose (G : GridDiagram n) (G' : GridDiagram (n + 1)) :
+    IsStabilization G.transpose G'.transpose ↔ IsStabilization G G' := by
+  simp only [IsStabilization, isOStabilization_transpose, isXStabilization_transpose]
+
 /-- One elementary grid destabilization, oriented from the larger diagram to the smaller one. -/
 def IsDestabilization (G' : GridDiagram (n + 1)) (G : GridDiagram n) : Prop :=
   IsStabilization G G'
@@ -697,6 +764,12 @@ theorem isDestabilization_iff_isStabilization (G' : GridDiagram (n + 1)) (G : Gr
 theorem isDestabilization_swapMarkings (G' : GridDiagram (n + 1)) (G : GridDiagram n) :
     IsDestabilization G'.swapMarkings G.swapMarkings ↔ IsDestabilization G' G := by
   simpa only [IsDestabilization] using isStabilization_swapMarkings G G'
+
+/-- The diagonal reflection preserves the elementary destabilization relation. -/
+@[simp]
+theorem isDestabilization_transpose (G' : GridDiagram (n + 1)) (G : GridDiagram n) :
+    IsDestabilization G'.transpose G.transpose ↔ IsDestabilization G' G :=
+  isStabilization_transpose G G'
 
 end GridDiagram
 
