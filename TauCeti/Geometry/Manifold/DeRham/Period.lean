@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.PathIntegral
 public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
-public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.Topology.Homotopy.Lifting
 
