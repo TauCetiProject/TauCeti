@@ -7,6 +7,8 @@ module
 
 public import TauCeti.GroupTheory.TitsSystem.Coxeter
 
+import TauCeti.GroupTheory.DoubleCoset.TwoCell
+
 /-!
 # Tits systems of rank one
 
@@ -52,38 +54,6 @@ universe u
 
 variable {G : Type u} [Group G] (B N : Subgroup G) [(B.subgroupOf N).Normal] (n : N)
 
-omit [(B.subgroupOf N).Normal] in
-/-- In the presence of a two-cell decomposition `G = B ∪ B n B`, left multiplication of a cell
-`B w B` by `B n B` produces at most `B (n w) B` and `B w B`. -/
-private theorem doubleCoset_mul_doubleCoset_subset_of_rankOne (hn : (n : G) * n ∈ B)
-    (hN : ∀ x ∈ N, x ∈ B ∨ (n : G)⁻¹ * x ∈ B)
-    (hbruhat : ∀ g : G, g ∈ B ∨ g ∈ DoubleCoset.doubleCoset (n : G) B B) (w : N) :
-    DoubleCoset.doubleCoset (n : G) B B * DoubleCoset.doubleCoset (w : G) B B ⊆
-      DoubleCoset.doubleCoset ((n * w : N) : G) B B ∪ DoubleCoset.doubleCoset (w : G) B B := by
-  rintro _ ⟨x, hx, y, hy, rfl⟩
-  obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hx
-  obtain ⟨b₃, hb₃, b₄, hb₄, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hy
-  rcases hN w w.2 with hw | hw
-  · -- If `w ∈ B`, the product is `b₁ (n w) (w⁻¹ b₂ b₃ w b₄)`.
-    refine Or.inl (DoubleCoset.mem_doubleCoset.mpr ⟨b₁, hb₁, (w : G)⁻¹ * (b₂ * b₃ * w * b₄),
-      mul_mem (inv_mem hw) (mul_mem (mul_mem (mul_mem hb₂ hb₃) hw) hb₄), ?_⟩)
-    simp only [Subgroup.coe_mul]
-    group
-  · -- If `w ∈ n B`, then `n w ∈ B`, and the two cells of `G` are `B (n w) B` and `B w B`.
-    have hnw : (n : G) * w ∈ B := by
-      simpa only [mul_assoc, mul_inv_cancel_left] using mul_mem hn hw
-    rcases hbruhat (b₁ * n * b₂ * (b₃ * w * b₄)) with hz | hz
-    · refine Or.inl (DoubleCoset.mem_doubleCoset.mpr
-        ⟨_, mul_mem hz (inv_mem hnw), 1, one_mem _, ?_⟩)
-      simp only [Subgroup.coe_mul]
-      group
-    · obtain ⟨c₁, hc₁, c₂, hc₂, hc⟩ := DoubleCoset.mem_doubleCoset.mp hz
-      refine Or.inr (DoubleCoset.mem_doubleCoset.mpr ⟨c₁, hc₁, ((n : G)⁻¹ * w)⁻¹ * c₂,
-        mul_mem (inv_mem hw) hc₂, ?_⟩)
-      dsimp only
-      rw [hc]
-      group
-
 /-- **The Tits system of a two-cell Bruhat decomposition.** If `B ∩ N` is normal in `N`, every
 element of `N` lies in `B` or in `n B`, `n² ∈ B`, `n B n⁻¹ ≠ B`, and every element of `G` lies in
 `B` or in `B n B`, then `B` and `N` form a Tits system whose only simple reflection is the class
@@ -112,8 +82,8 @@ def ofRankOne (hn : (n : G) * n ∈ B) (hN : ∀ x ∈ N, x ∈ B ∨ (n : G)⁻
         (Subgroup.mem_subgroupOf.mpr (by simpa using hx))]
       exact Subgroup.subset_closure rfl
   exists_simpleRep_sq_mem s hs := ⟨n, hs.symm, Subgroup.mem_subgroupOf.mpr hn⟩
-  mul_doubleCoset_subset s hs :=
-    ⟨n, hs.symm, doubleCoset_mul_doubleCoset_subset_of_rankOne B N n hn hN hbruhat⟩
+  mul_doubleCoset_subset s hs := ⟨n, hs.symm, fun w ↦
+    DoubleCoset.doubleCoset_mul_doubleCoset_subset_union B hn (hN w w.2) hbruhat⟩
   exists_conj_not_mem s hs := by
     obtain ⟨b, hb, hnb⟩ := hconj
     exact ⟨n, hs.symm, ⟨b, hb⟩, hnb⟩
