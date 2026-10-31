@@ -162,16 +162,6 @@ theorem enorm_le_integralENorm (B : E →L[𝕜] F →L[𝕜] 𝕜) : ‖B‖ₑ
     _ ≤ B.integralENorm.toReal * (‖x‖ * ‖y‖) := by gcongr; exact injectiveSeminorm_tmul_le x y
     _ = _ := (mul_assoc _ _ _).symm
 
-/-- The functional induced by `B` composed with `a` and `b` is the functional induced by `B`,
-evaluated on the image of the tensor under `a ⊗ b`. -/
-private theorem lift_bilinearComp (B : E →L[𝕜] F →L[𝕜] 𝕜) (a : E' →L[𝕜] E) (b : F' →L[𝕜] F)
-    (u : E' ⊗[𝕜] F') :
-    lift (B.bilinearComp a b).toLinearMap₁₂ u =
-      lift B.toLinearMap₁₂ (map a.toLinearMap b.toLinearMap u) := by
-  induction u with
-  | tmul x y => simp
-  | add u v hu hv => simp [hu, hv]
-
 /-- Composing a bilinear form with bounded operators `a` and `b` in its two variables multiplies
 the integral norm by at most `‖a‖ ‖b‖`. -/
 theorem integralENorm_bilinearComp_le (B : E →L[𝕜] F →L[𝕜] 𝕜) (a : E' →L[𝕜] E)
@@ -200,14 +190,6 @@ theorem integralENorm_bilinearComp_le (B : E →L[𝕜] F →L[𝕜] 𝕜) (a : 
       _ ≤ B.integralENorm.toReal * (‖a‖ * ‖b‖ * injectiveSeminorm 𝕜 E' F' u) := by
         gcongr; exact injectiveSeminorm_map_le a b u
       _ = _ := by ring
-
-/-- The functional induced by the rank-one form `(x, y) ↦ f x * g y` evaluates `g` on the
-operator induced by the tensor on the dual of `E`, at `f`. -/
-private theorem lift_smulRight (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F) (u : E ⊗[𝕜] F) :
-    lift (f.smulRight g).toLinearMap₁₂ u = g (contractStrongDual 𝕜 E F u f) := by
-  induction u with
-  | tmul x y => simp
-  | add u v hu hv => simp [hu, hv]
 
 /-- The rank-one form `(x, y) ↦ f x * g y` has integral norm `‖f‖ ‖g‖`. -/
 @[simp]
