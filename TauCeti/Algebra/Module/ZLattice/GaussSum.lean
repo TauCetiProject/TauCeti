@@ -248,37 +248,6 @@ section OrthSum
 
 variable {M : Submodule ℤ F} (hM : IsEven M) (a : ℤ) (c : ℕ)
 
-variable (L M) in
-/-- The quotient `(L ⊕ M) / c (L ⊕ M)` is `(L / cL) × (M / cM)`: the class of a vector of `L ⊕ M`
-corresponds to the pair of classes of its components. -/
-private noncomputable def quotientSmulOrthSumEquiv :
-    (orthSum L M ⧸ ((c : ℝ) • orthSum L M).submoduleOf (orthSum L M)) ≃ₗ[ℤ]
-      (L ⧸ ((c : ℝ) • L).submoduleOf L) × (M ⧸ ((c : ℝ) • M).submoduleOf M) :=
-  let f := ((((c : ℝ) • L).submoduleOf L).mkQ.prodMap (((c : ℝ) • M).submoduleOf M).mkQ) ∘ₗ
-    (orthSumEquivProd L M).toLinearMap
-  have hf : Function.Surjective f :=
-    (Function.Surjective.prodMap (Submodule.mkQ_surjective _) (Submodule.mkQ_surjective _)).comp
-      (orthSumEquivProd L M).surjective
-  have hker : LinearMap.ker f = ((c : ℝ) • orthSum L M).submoduleOf (orthSum L M) := by
-    ext x
-    rw [LinearMap.ker_comp, LinearMap.ker_prodMap, Submodule.ker_mkQ, Submodule.ker_mkQ,
-      Submodule.mem_comap, Submodule.mem_prod, LinearEquiv.coe_coe, mem_smul_submoduleOf_iff,
-      mem_smul_submoduleOf_iff, mem_smul_submoduleOf_iff]
-    constructor
-    · rintro ⟨⟨w₁, hw₁⟩, ⟨w₂, hw₂⟩⟩
-      refine ⟨(orthSumEquivProd L M).symm (w₁, w₂), (orthSumEquivProd L M).injective ?_⟩
-      rw [map_nsmul, LinearEquiv.apply_symm_apply, Prod.smul_mk, hw₁, hw₂]
-    · rintro ⟨w, rfl⟩
-      rw [map_nsmul, Prod.smul_fst, Prod.smul_snd]
-      exact ⟨⟨_, rfl⟩, ⟨_, rfl⟩⟩
-  (Submodule.quotEquivOfEq _ _ hker.symm).trans (f.quotKerEquivOfSurjective hf)
-
-private theorem quotientSmulOrthSumEquiv_mk (x : orthSum L M) :
-    quotientSmulOrthSumEquiv L M c (Submodule.Quotient.mk x) =
-      (Submodule.Quotient.mk (orthSumEquivProd L M x).1,
-        Submodule.Quotient.mk (orthSumEquivProd L M x).2) :=
-  (rfl)
-
 variable [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)] [Fintype (M ⧸ ((c : ℝ) • M).submoduleOf M)]
   [Fintype (orthSum L M ⧸ ((c : ℝ) • orthSum L M).submoduleOf (orthSum L M))]
 
@@ -292,11 +261,12 @@ theorem gaussSumTwisted_orthSum {m : dual (orthSum L M)} {m₁ : dual L} {m₂ :
     ← Fintype.sum_prod_type']
   refine Fintype.sum_equiv (quotientSmulOrthSumEquiv L M c).toEquiv _ _ fun y => ?_
   induction y using Submodule.Quotient.induction_on with | H x
-  rw [LinearEquiv.coe_toEquiv, quotientSmulOrthSumEquiv_mk, gaussTerm_mk, gaussTerm_mk,
-    gaussTerm_mk, ← exp_add, ← mul_add, ← ofReal_add, coe_orthSumEquivProd_apply_fst,
-    coe_orthSumEquivProd_apply_snd, hm, WithLp.prod_norm_sq_eq_of_L2, WithLp.prod_inner_apply]
-  simp only [WithLp.ofLp_fst, WithLp.ofLp_snd]
-  congr 3
+  simp only [LinearEquiv.coe_toEquiv, quotientSmulOrthSumEquiv_mk, gaussTerm_mk,
+    coe_orthSumEquivProd_apply_fst, coe_orthSumEquivProd_apply_snd, hm,
+    WithLp.prod_norm_sq_eq_of_L2, WithLp.prod_inner_apply, WithLp.ofLp_fst, WithLp.ofLp_snd]
+  rw [← exp_add]
+  congr 1
+  push_cast
   ring
 
 /-- The Gauss sums are multiplicative under orthogonal direct sums:
