@@ -9,11 +9,13 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Order.LiminfLimsup
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
-import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.Topology.Instances.ENNReal.Lemmas
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Geometry.Euclidean.Volume.Density
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.Geometry.MeasureTheory.Rectifiable.Bilipschitz
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
+import TauCeti.MeasureTheory.Function.Jacobian.Decomposition
 
 /-!
 # The density theorem for rectifiable sets
@@ -36,13 +38,6 @@ measure with Hausdorff measure on the reduced boundary.
 
 ## Main results
 
-* `LipschitzOnWith.limsup_euclideanHausdorffMeasure_image_inter_closedBall_div_le` and
-  `LipschitzOnWith.le_liminf_euclideanHausdorffMeasure_image_inter_closedBall_div`: a map that is
-  `b`-Lipschitz on `G` with `a`-Lipschitz inverse moves a point of density one of `G` to a point
-  of `ψ '' G` whose upper and lower densities lie between `(a b) ^ (-k)` and `(a b) ^ k`.
-* `Isometry.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`: Lebesgue's density theorem
-  for subsets of an isometric copy of `k`-dimensional Euclidean space, in the normalization of
-  `μHE[k]`.
 * `TauCeti.CountablyRectifiable.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`: the
   density theorem.
 
@@ -53,9 +48,12 @@ within a relative error `δ` of an injective linear map `A`
 (`LipschitzWith.exists_linear_approximation_cover`). On each piece, the parametrization is
 `(1 + δ)`-Lipschitz with `(1 - δ)⁻¹`-Lipschitz inverse when read from the image of the piece under
 the approximating injective linear map `A`. This image lies in the `k`-plane `range A`, where
-Lebesgue's density theorem gives density one almost everywhere. The distortion estimates then
-bound the upper and lower densities of `E` by `((1 + δ) / (1 - δ)) ^ (±k)` almost everywhere on
-each piece, since the part of `E` outside the piece has density zero at almost every point of the
+Lebesgue's density theorem gives density one almost everywhere
+(`Isometry.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`). The distortion estimates
+(`LipschitzOnWith.limsup_euclideanHausdorffMeasure_image_inter_closedBall_div_le` and
+`LipschitzOnWith.le_liminf_euclideanHausdorffMeasure_image_inter_closedBall_div`) then bound the
+upper and lower densities of `E` by `((1 + δ) / (1 - δ)) ^ (±k)` almost everywhere on each piece,
+since the part of `E` outside the piece has density zero at almost every point of the
 piece (`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`). Letting `δ → 0`
 gives density one.
 
@@ -71,168 +69,6 @@ public section
 
 open Filter Function Metric MeasureTheory Measure Set Module
 open scoped ENNReal NNReal Topology
-
-namespace TauCeti
-
-/-- Scaling the radius of a closed ball in `EuclideanSpace ℝ (Fin k)` by `c ≥ 0` scales its volume
-by `c ^ k`. -/
-private lemma volume_closedBall_mul (k : ℕ) {c r : ℝ} (hc : 0 ≤ c) (hr : 0 ≤ r) :
-    volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) (c * r)) =
-      ENNReal.ofReal c ^ k * volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) := by
-  rw [addHaar_closedBall_mul volume 0 hc hr, finrank_euclideanSpace_fin, ENNReal.ofReal_pow hc]
-
-/-- Rescaling the radius in a `k`-dimensional density quotient. -/
-private lemma div_volume_closedBall_eq_mul (k : ℕ) (m : ℝ≥0∞) {c : ℝ≥0} (hc : 0 < c) {r : ℝ}
-    (hr : 0 ≤ r) :
-    m / volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) =
-      (c : ℝ≥0∞) ^ k * (m / volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) (c * r))) := by
-  rw [volume_closedBall_mul k c.coe_nonneg hr, ENNReal.ofReal_coe_nnreal, ← mul_div_assoc,
-    ENNReal.mul_div_mul_left _ _ (pow_ne_zero _ (ENNReal.coe_ne_zero.2 hc.ne'))
-      (ENNReal.pow_ne_top ENNReal.coe_ne_top)]
-
-/-- Multiplication by a positive constant preserves the filter of right neighbourhoods of `0`. -/
-private lemma tendsto_const_mul_nhdsGT_zero {c : ℝ} (hc : 0 < c) :
-    Tendsto (fun r => c * r) (𝓝[>] 0) (𝓝[>] 0) :=
-  tendsto_nhdsWithin_iff.2
-    ⟨((continuous_const.mul continuous_id).tendsto' 0 0 (mul_zero c)).mono_left nhdsWithin_le_nhds,
-      eventually_mem_nhdsWithin.mono fun _ hr => mul_pos hc hr⟩
-
-end TauCeti
-
-namespace LipschitzOnWith
-
-variable {X Y : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
-  [MetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
-  {ψ : X → Y} {G : Set X} {a b : ℝ≥0} {k : ℕ} {x : X}
-
-/-- **Upper density under a bi-Lipschitz map.** Let `ψ` be `b`-Lipschitz on `G` with
-`a`-Lipschitz inverse. If `G` has `k`-dimensional density one at `x ∈ G`, then the upper
-`k`-dimensional density of `ψ '' G` at `ψ x` is at most `(a b) ^ k`. -/
-theorem limsup_euclideanHausdorffMeasure_image_inter_closedBall_div_le
-    (hψ : LipschitzOnWith b ψ G) (hψ' : AntilipschitzWith a (G.domRestrict ψ)) (ha : 0 < a)
-    (hx : x ∈ G)
-    (hG : Tendsto (fun r => μHE[k] (G ∩ closedBall x r) /
-      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 1)) :
-    limsup (fun r => μHE[k] (ψ '' G ∩ closedBall (ψ x) r) /
-      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) ≤
-        ((a * b : ℝ≥0) : ℝ≥0∞) ^ k := by
-  have hlim : Tendsto (fun r => ((a * b : ℝ≥0) : ℝ≥0∞) ^ k *
-      (μHE[k] (G ∩ closedBall x (a * r)) /
-        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) (a * r)))) (𝓝[>] 0)
-      (𝓝 (((a * b : ℝ≥0) : ℝ≥0∞) ^ k)) := by
-    have := ENNReal.Tendsto.const_mul
-      (hG.comp (TauCeti.tendsto_const_mul_nhdsGT_zero (NNReal.coe_pos.2 ha)))
-      (Or.inr (ENNReal.pow_ne_top (ENNReal.coe_ne_top (r := a * b)) (n := k)))
-    rwa [mul_one] at this
-  rw [← hlim.limsup_eq]
-  refine limsup_le_limsup (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) => ?_)
-  -- A point of `ψ '' G` within `r` of `ψ x` is the image of a point of `G` within `a r` of `x`.
-  have hsub : ψ '' G ∩ closedBall (ψ x) r ⊆ ψ '' (G ∩ closedBall x (a * r)) := by
-    rintro _ ⟨⟨x', hx', rfl⟩, hd⟩
-    refine ⟨x', ⟨hx', ?_⟩, rfl⟩
-    have h := hψ'.le_mul_dist ⟨x', hx'⟩ ⟨x, hx⟩
-    rw [Subtype.dist_eq] at h
-    rw [mem_closedBall] at hd ⊢
-    exact h.trans (by gcongr; exact hd)
-  calc μHE[k] (ψ '' G ∩ closedBall (ψ x) r) /
-        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)
-      ≤ (b : ℝ≥0∞) ^ k * μHE[k] (G ∩ closedBall x (a * r)) /
-        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) := by
-        gcongr
-        exact (measure_mono hsub).trans
-          ((hψ.mono inter_subset_left).euclideanHausdorffMeasure_image_le k)
-    _ = _ := by
-        rw [mul_div_assoc, TauCeti.div_volume_closedBall_eq_mul k _ ha hr.le, ← mul_assoc,
-          ← mul_pow, ← ENNReal.coe_mul, mul_comm b a]
-
-/-- **Lower density under a bi-Lipschitz map.** Let `ψ` be `b`-Lipschitz on `G` with
-`a`-Lipschitz inverse. If `G` has `k`-dimensional density one at `x ∈ G`, then the lower
-`k`-dimensional density of `ψ '' G` at `ψ x` is at least `(a b) ^ (-k)`. -/
-theorem le_liminf_euclideanHausdorffMeasure_image_inter_closedBall_div
-    (hψ : LipschitzOnWith b ψ G) (hψ' : AntilipschitzWith a (G.domRestrict ψ)) (ha : 0 < a)
-    (hb : 0 < b) (hx : x ∈ G)
-    (hG : Tendsto (fun r => μHE[k] (G ∩ closedBall x r) /
-      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 1)) :
-    (((a * b : ℝ≥0) : ℝ≥0∞) ^ k)⁻¹ ≤ liminf (fun r => μHE[k] (ψ '' G ∩ closedBall (ψ x) r) /
-      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) := by
-  have hab : ((a * b : ℝ≥0) : ℝ≥0∞) ^ k ≠ ∞ := ENNReal.pow_ne_top ENNReal.coe_ne_top
-  rw [ENNReal.inv_le_iff_le_mul (fun _ => pow_ne_zero _ (ENNReal.coe_ne_zero.2 (mul_pos ha hb).ne'))
-      (fun h => absurd h hab),
-    ← ENNReal.liminf_const_mul_of_ne_top hab]
-  -- The inverse of `ψ` on `ψ '' G` is `a`-Lipschitz.
-  classical
-  have : Nonempty X := ⟨x⟩
-  have hinj : InjOn ψ G := injOn_iff_injective.2 hψ'.injective
-  have hφ : LipschitzOnWith a (invFunOn ψ G) (ψ '' G) :=
-    lipschitzOnWith_iff_restrict.2 (hψ'.to_rightInvOn' (fun _ hy => invFunOn_mem hy)
-      fun _ hy => invFunOn_eq hy)
-  have hlim := hG.comp (TauCeti.tendsto_const_mul_nhdsGT_zero (NNReal.coe_pos.2 (inv_pos.2 hb)))
-  rw [← hlim.liminf_eq]
-  refine liminf_le_liminf (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) => ?_)
-  -- Points of `G` within `r / b` of `x` are mapped within `r` of `ψ x`.
-  have hr' : (b : ℝ) * ((b⁻¹ : ℝ≥0) * r) = r := by
-    rw [NNReal.coe_inv, mul_inv_cancel_left₀ (NNReal.coe_pos.2 hb).ne']
-  set S := G ∩ closedBall x ((b⁻¹ : ℝ≥0) * r)
-  have hS : ψ '' S ⊆ ψ '' G ∩ closedBall (ψ x) r := by
-    rintro _ ⟨x', ⟨hx', hd⟩, rfl⟩
-    refine ⟨mem_image_of_mem _ hx', ?_⟩
-    rw [mem_closedBall] at hd ⊢
-    calc dist (ψ x') (ψ x) ≤ b * dist x' x := hψ.dist_le_mul x' hx' x hx
-      _ ≤ b * ((b⁻¹ : ℝ≥0) * r) := by gcongr
-      _ = r := hr'
-  have hmeas : μHE[k] S ≤ (a : ℝ≥0∞) ^ k * μHE[k] (ψ '' G ∩ closedBall (ψ x) r) :=
-    calc μHE[k] S = μHE[k] (invFunOn ψ G '' (ψ '' S)) := by
-          rw [hinj.leftInvOn_invFunOn.image_image' inter_subset_left]
-      _ ≤ (a : ℝ≥0∞) ^ k * μHE[k] (ψ '' S) :=
-          (hφ.mono (image_mono inter_subset_left)).euclideanHausdorffMeasure_image_le k
-      _ ≤ _ := by gcongr
-  dsimp only [comp_apply]
-  rw [TauCeti.div_volume_closedBall_eq_mul k _ hb (by positivity), hr', ENNReal.coe_mul, mul_pow,
-    mul_comm ((a : ℝ≥0∞) ^ k), mul_assoc]
-  gcongr
-  rw [← mul_div_assoc]
-  gcongr
-
-end LipschitzOnWith
-
-namespace Isometry
-
-variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X] {k : ℕ}
-
-/-- **Lebesgue's density theorem in a `k`-plane.** Let `ι` be an isometry from `k`-dimensional
-Euclidean space into `X`. Every subset `S` of its range has `k`-dimensional density one at
-`μHE[k]`-almost every point of `S`. No measurability of `S` is needed. -/
-theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div
-    {ι : EuclideanSpace ℝ (Fin k) → X} (hι : Isometry ι) {S : Set X} (hS : S ⊆ range ι) :
-    ∀ᵐ x ∂μHE[k], x ∈ S → Tendsto (fun r => μHE[k] (S ∩ closedBall x r) /
-      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 1) := by
-  set T := ι ⁻¹' S
-  -- Balls about points of the range of `ι` meet `S` in isometric images of balls meeting `T`.
-  have key (z : EuclideanSpace ℝ (Fin k)) (r : ℝ) :
-      μHE[k] (S ∩ closedBall (ι z) r) = volume (T ∩ closedBall z r) := by
-    have : S ∩ closedBall (ι z) r = ι '' (T ∩ closedBall z r) := by
-      ext y
-      constructor
-      · rintro ⟨hy, hyr⟩
-        obtain ⟨w, rfl⟩ := hS hy
-        exact ⟨w, ⟨hy, by rwa [mem_closedBall, ← hι.dist_eq]⟩, rfl⟩
-      · rintro ⟨w, ⟨hw, hwr⟩, rfl⟩
-        exact ⟨hw, by rwa [mem_closedBall, hι.dist_eq]⟩
-    rw [this, hι.euclideanHausdorffMeasure_image,
-      EuclideanSpace.euclideanHausdorffMeasure_eq_volume]
-  have hT := ae_iff.1 (Besicovitch.ae_tendsto_measure_inter_div volume T)
-  have hN := nonpos_iff_eq_zero.1 ((le_restrict_apply T _).trans_eq hT)
-  rw [ae_iff]
-  have himg (N : Set (EuclideanSpace ℝ (Fin k))) (h : volume N = 0) : μHE[k] (ι '' N) = 0 := by
-    rwa [hι.euclideanHausdorffMeasure_image, EuclideanSpace.euclideanHausdorffMeasure_eq_volume]
-  refine measure_mono_null ?_ (himg _ hN)
-  intro y hy
-  replace hy := not_imp.1 hy
-  obtain ⟨z, rfl⟩ := hS hy.1
-  refine ⟨z, ⟨fun h => hy.2 (h.congr fun r => ?_), hy.1⟩, rfl⟩
-  rw [key, addHaar_closedBall_center volume z r]
-
-end Isometry
 
 namespace TauCeti
 
@@ -287,16 +123,6 @@ section Approximation
 variable {U V : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U] [NormedAddCommGroup V]
   [NormedSpace ℝ V] {f : U → V} {P : Set U} {A : U →L[ℝ] V} {ε : ℝ≥0}
 
-/-- A map within relative error `ε` of `A` on `P` has `‖f x - f y‖ ≥ (1 - ε) ‖A x - A y‖` there. -/
-private lemma mul_norm_sub_le_of_approx
-    (happ : ∀ x ∈ P, ∀ y ∈ P, ‖f x - f y - A (x - y)‖ ≤ ε * ‖A (x - y)‖) {x y : U} (hx : x ∈ P)
-    (hy : y ∈ P) : (1 - ε : ℝ) * ‖A x - A y‖ ≤ ‖f x - f y‖ := by
-  have h := happ x hx y hy
-  rw [map_sub] at h
-  have := norm_sub_norm_le (A x - A y) (f x - f y)
-  rw [norm_sub_rev (A x - A y)] at this
-  linarith
-
 /-- A map within relative error `ε < 1` of an injective linear map `A` on `P`, read through `A`,
 is `(1 + ε)`-Lipschitz on `A '' P` with `(1 - ε)⁻¹`-Lipschitz inverse. -/
 private lemma lipschitzOnWith_and_antilipschitzWith_of_approx (hA : Injective A) (hε : ε < 1)
@@ -316,13 +142,13 @@ private lemma lipschitzOnWith_and_antilipschitzWith_of_approx (hA : Injective A)
   · rintro ⟨_, x, hx, rfl⟩ ⟨_, y, hy, rfl⟩
     simp only [Subtype.dist_eq, domRestrict_apply, comp_apply, hinv, dist_eq_norm, NNReal.coe_inv]
     rw [le_inv_mul_iff₀ hε', NNReal.coe_sub hε.le, NNReal.coe_one]
-    exact mul_norm_sub_le_of_approx happ hx hy
+    exact one_sub_mul_norm_sub_le_norm_sub happ hx hy
 
 /-- A map within relative error `ε < 1` of an injective linear map on `P` is injective on `P`. -/
 private lemma injOn_of_approx (hA : Injective A) (hε : ε < 1)
     (happ : ∀ x ∈ P, ∀ y ∈ P, ‖f x - f y - A (x - y)‖ ≤ ε * ‖A (x - y)‖) : InjOn f P := by
   intro x hx y hy hxy
-  have h := mul_norm_sub_le_of_approx happ hx hy
+  have h := one_sub_mul_norm_sub_le_norm_sub happ hx hy
   rw [hxy, sub_self, norm_zero] at h
   have hε' : (0 : ℝ) < 1 - ε := sub_pos.2 (by exact_mod_cast hε)
   exact hA (sub_eq_zero.1 (norm_eq_zero.1 (le_antisymm
@@ -332,22 +158,6 @@ end Approximation
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] {k : ℕ} {E : Set V}
-
-omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
-/-- The range of an injective linear map from `k`-dimensional Euclidean space is the range of an
-isometry from that space. -/
-private lemma exists_isometry_range_eq (A : EuclideanSpace ℝ (Fin k) →L[ℝ] V) (hA : Injective A) :
-    ∃ ι : EuclideanSpace ℝ (Fin k) → V, Isometry ι ∧ range ι = range A := by
-  set L := LinearMap.range (A : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] V)
-  have hL : finrank ℝ L = k := by
-    rw [LinearMap.finrank_range_of_inj hA, finrank_euclideanSpace_fin]
-  let e := ((stdOrthonormalBasis ℝ L).reindex (finCongr hL)).repr.symm
-  refine ⟨L.subtypeₗᵢ ∘ e, L.subtypeₗᵢ.isometry.comp e.isometry, Subset.antisymm ?_ ?_⟩
-  · rintro _ ⟨z, rfl⟩
-    obtain ⟨x, hx⟩ := LinearMap.mem_range.1 (e z).2
-    exact ⟨x, hx⟩
-  · rintro _ ⟨x, rfl⟩
-    exact ⟨e.symm ⟨A x, x, rfl⟩, by simp⟩
 
 omit [FiniteDimensional ℝ V] in
 /-- On a piece `f '' P` where the Lipschitz map `f` is within relative error `ε < 1` of an injective
@@ -372,12 +182,12 @@ private theorem ae_density_bounds_of_approx (hEm : NullMeasurableSet E μHE[k])
   · exact ae_of_all _ fun y hy => by simp at hy
   replace hA := hA hP
   obtain ⟨hlip, hanti⟩ := lipschitzOnWith_and_antilipschitzWith_of_approx hA hε happ
-  obtain ⟨ι, hι, hιA⟩ := exists_isometry_range_eq A hA
+  obtain ⟨ι, hιA⟩ := (A : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] V).exists_linearIsometry_range_eq hA
   -- Read through `A`, the piece is a bi-Lipschitz image of the subset `A '' P` of a `k`-plane.
   have himage : (f ∘ invFun A) '' (A '' P) = f '' P := by
     rw [image_image]
     exact image_congr fun x _ => by rw [comp_apply, leftInverse_invFun hA x]
-  have hdens := ae_limsup_le_and_le_liminf hι (hιA ▸ image_subset_range _ _) hlip hanti
+  have hdens := ae_limsup_le_and_le_liminf ι.isometry (hιA ▸ image_subset_range _ _) hlip hanti
     (inv_pos.2 (tsub_pos_of_lt hε)) (add_pos_of_pos_of_nonneg one_pos (by positivity))
     (T := E ∩ f '' P) (himage ▸ inter_subset_right)
   -- The part of `E` off the piece has density zero at almost every point of the piece.
@@ -413,7 +223,7 @@ private theorem CountablyRectifiable.ae_tendsto_of_ne_top (hE : CountablyRectifi
       ((tendsto_const_nhds.sub hεlim).inv₀ (by simp)).mul (tendsto_const_nhds.add hεlim)
     have := ((ENNReal.continuous_pow k).tendsto _).comp ((ENNReal.continuous_coe.tendsto _).comp h)
     rwa [tsub_zero, inv_one, add_zero, mul_one, ENNReal.coe_one, one_pow] at this
-  choose P A hPm hAinj happ hPcover using fun n m =>
+  choose P A hPm _ hAinj happ hPcover using fun n m =>
     (hKF m).exists_linear_approximation_cover (NNReal.coe_pos.2 (hε0 n))
   -- On each piece `F m '' P n m j`, the densities of `E` are controlled almost everywhere.
   have hpiece (n m j : ℕ) := ae_density_bounds_of_approx hEm hfin (hKF m) (hPm n m j)

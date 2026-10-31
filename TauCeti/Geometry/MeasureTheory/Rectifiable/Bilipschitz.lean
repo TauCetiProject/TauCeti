@@ -16,12 +16,12 @@ coverage, up to normalized Hausdorff measure zero, by countably many bi-Lipschit
 with Borel domains. No measurability or local finiteness of the rectifiable set is assumed.
 The patches may extend beyond the set, as in `CountablyRectifiable` itself.
 
-Equivalently, the patches may be taken to be Lipschitz maps defined on all of
-`EuclideanSpace ℝ (Fin k)` (`TauCeti.CountablyRectifiable.exists_lipschitzWith_cover`).
+Countably rectifiable sets are also covered, up to a null set, by the ranges of countably many
+Lipschitz maps defined on all of `EuclideanSpace ℝ (Fin k)`
+(`TauCeti.CountablyRectifiable.exists_lipschitzWith_cover`); these need not be bi-Lipschitz.
 Bi-Lipschitz patches have Lipschitz inverse coordinates, allowing measure and density estimates
 to be transferred between a rectifiable set and its parameter domains. A Lipschitz map is
-decomposed on its regular points using
-`TauCeti.exists_partition_lipschitz_antilipschitz_of_hasFDerivWithinAt`.
+decomposed on its regular points using `LipschitzWith.exists_bilipschitz_cover`.
 The discarded image is null by
 `LipschitzWith.euclideanHausdorffMeasure_image_compl_setOf_regular`, which combines Rademacher's
 theorem and the zero-Jacobian image theorem.
