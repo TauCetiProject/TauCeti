@@ -38,6 +38,11 @@ under refinement. By Cauchy–Schwarz, an energy gap of at most `ε` bounds the 
 deviation by `√ε` (`UniformHypergraph.sum_abs_boxDensity_part_sub_le`). Neither statement needs
 equitability or regularity.
 
+The conditional-expectation argument adapts `TauCeti.Colored3Graph.sum_relativeDensity_ofTriple_mul`
+and the defect identity follows the tuple form of `TauCeti.Colored3Graph.polyadDensityDeviation_sq`,
+both in `TauCeti.Combinatorics.Hypergraph.Polyad.Energy`, from polyads of a colored `3`-graph to
+boxes of parts of a uniform hypergraph.
+
 ## Main definitions
 
 * `TauCeti.UniformHypergraph.boxEdges`: the ordered tuples of a box forming an edge.
