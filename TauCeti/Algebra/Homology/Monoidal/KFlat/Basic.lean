@@ -129,12 +129,12 @@ section ZeroDifferential
 
 variable [HasColimitsOfShape (Discrete ℤ) C] [HasExactColimitsOfShape (Discrete ℤ) C]
   [∀ X : C, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)]
-  [∀ M : C, PreservesFiniteColimits (tensorLeft M)]
 
 /-- A cochain complex with zero differentials and flat terms is K-flat, when countable
 coproducts in `C` are exact and commute with tensoring by each object. -/
 theorem isKFlat_of_d_eq_zero (K : CochainComplex C ℤ) (hK : ∀ i j, K.d i j = 0)
-    [∀ i, PreservesFiniteLimits (tensorLeft (K.X i))] : K.IsKFlat := by
+    [∀ i, PreservesFiniteLimits (tensorLeft (K.X i))]
+    [∀ i, PreservesFiniteColimits (tensorLeft (K.X i))] : K.IsKFlat := by
   have (n : Discrete ℤ) :
       IsKFlat ((Discrete.functor fun n ↦ (single C (.up ℤ) n).obj (K.X n)).obj n) :=
     isKFlat_single_of_flat _ n.as

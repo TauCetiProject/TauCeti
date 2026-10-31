@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.Basic
+public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 public import Mathlib.CategoryTheory.Functor.OfSequence
 import Mathlib.CategoryTheory.Abelian.Refinements
@@ -54,40 +55,6 @@ variable {C : Type*} [Category* C] [Abelian C]
 
 namespace kFlatResolution
 
-/-- The cochain complex with terms `E n` and zero differentials. -/
-abbrev graded (E : ℤ → C) : CochainComplex C ℤ where
-  X := E
-  d _ _ := 0
-
-/-- The morphism from a term of `graded E` to its cycles. -/
-abbrev toGradedCycles (E : ℤ → C) (n : ℤ) : E n ⟶ (graded E).cycles n :=
-  (graded E).liftCycles (𝟙 (E n)) (n + 1) (by simp) (comp_zero ..)
-
-section Start
-
-variable (K : CochainComplex C ℤ) {E : ℤ → C} (e : ∀ n, E n ⟶ K.cycles n)
-
-/-- The morphism from the complex with zero differentials through the cycles of `K`. -/
-abbrev fromGraded (K : CochainComplex C ℤ) {E : ℤ → C} (e : ∀ n, E n ⟶ K.cycles n) :
-    graded E ⟶ K where
-  f n := e n ≫ K.iCycles n
-  comm' _ _ _ := by simp
-
-lemma toGradedCycles_cyclesMap_fromGraded (n : ℤ) :
-    toGradedCycles E n ≫ cyclesMap (fromGraded K e) n = e n := by
-  simp [← cancel_mono (K.iCycles n)]
-
-/-- If every `e n` is an epimorphism, then `fromGraded K e` is surjective on cohomology. -/
-lemma epi_homologyMap_fromGraded [∀ n, Epi (e n)] (n : ℤ) :
-    Epi (homologyMap (fromGraded K e) n) := by
-  have : Epi ((toGradedCycles E n ≫ (graded E).homologyπ n) ≫
-      homologyMap (fromGraded K e) n) := by
-    rw [Category.assoc, homologyπ_naturality, reassoc_of% toGradedCycles_cyclesMap_fromGraded]
-    infer_instance
-  exact epi_of_epi (toGradedCycles E n ≫ (graded E).homologyπ n) _
-
-end Start
-
 section Step
 
 variable {P K : CochainComplex C ℤ} (f : P ⟶ K)
@@ -101,7 +68,7 @@ variable {E : ℤ → C} (e : ∀ n, E n ⟶ boundaryPairs f n)
 
 /-- The cells attached to `P`: the cycle components of the pairs parametrized by `E`. -/
 abbrev attachingMap {P K : CochainComplex C ℤ} (f : P ⟶ K) {E : ℤ → C}
-    (e : ∀ n, E n ⟶ boundaryPairs f n) : graded E ⟶ P where
+    (e : ∀ n, E n ⟶ boundaryPairs f n) : graded (.up ℤ) E ⟶ P where
   f n := e n ≫ pullback.fst _ _ ≫ P.iCycles n
   comm' _ _ _ := by simp
 
@@ -113,7 +80,7 @@ lemma toGradedCycles_cyclesMap_attachingMap (n : ℤ) :
 /-- The boundary components of the pairs parametrized by `E`, a null-homotopy of
 `attachingMap f e ≫ f`. -/
 abbrev boundaryPrimitive {P K : CochainComplex C ℤ} (f : P ⟶ K) {E : ℤ → C}
-    (e : ∀ n, E n ⟶ boundaryPairs f n) : Cochain (graded E) K (-1) :=
+    (e : ∀ n, E n ⟶ boundaryPairs f n) : Cochain (graded (.up ℤ) E) K (-1) :=
   Cochain.mk fun p q hpq ↦ e p ≫ pullback.snd _ _ ≫ (K.XIsoOfEq (by lia)).hom
 
 lemma δ_boundaryPrimitive :
@@ -172,7 +139,7 @@ variable (E : C → C) (p : ∀ X, E X ⟶ X) (K : CochainComplex C ℤ)
 of the cycles of `K`, then repeatedly the complex obtained by attaching cells along all pairs of
 a cycle and a primitive of its image. -/
 def stage : ℕ → Σ P : CochainComplex C ℤ, P ⟶ K
-  | 0 => ⟨graded fun n ↦ E (K.cycles n), fromGraded K fun n ↦ p (K.cycles n)⟩
+  | 0 => ⟨graded (.up ℤ) fun n ↦ E (K.cycles n), K.fromGraded fun n ↦ p (K.cycles n)⟩
   | k + 1 => ⟨mappingCone (attachingMap (stage k).2 fun n ↦ p (boundaryPairs (stage k).2 n)),
       attachDesc (stage k).2 fun n ↦ p (boundaryPairs (stage k).2 n)⟩
 
@@ -208,7 +175,7 @@ lemma quasiIso_colimit_desc [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape 
     rw [← homologyMap_comp, colimit.ι_desc]
     rfl
   have : Epi (homologyMap (colimit.desc (sequence E p K) (Cocone.mk K (toComplex E p K))) n) := by
-    have h0 : Epi (homologyMap (stage E p K 0).2 n) := epi_homologyMap_fromGraded K _ n
+    have h0 : Epi (homologyMap (stage E p K 0).2 n) := K.epi_homologyMap_fromGraded _ n
     exact epi_of_epi_fac (h := homologyMap (stage E p K 0).2 n) (hι 0)
   have : Mono (homologyMap (colimit.desc (sequence E p K) (Cocone.mk K (toComplex E p K))) n) :=
     hH.mono_of_comp_map_succ_eq_zero _ fun k X g hg ↦ by
@@ -226,13 +193,13 @@ variable [MonoidalCategory C] [MonoidalPreadditive C]
   [∀ K L : CochainComplex C ℤ, HasTensor K L]
   [HasColimitsOfShape (Discrete ℤ) C] [HasExactColimitsOfShape (Discrete ℤ) C]
   [∀ X : C, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)]
-  [∀ M : C, PreservesFiniteColimits (tensorLeft M)]
 
 /-- Every stage of the resolution is K-flat. -/
 lemma isKFlat_stage (E : C → C) (p : ∀ X, E X ⟶ X)
-    [∀ X, PreservesFiniteLimits (tensorLeft (E X))] (K : CochainComplex C ℤ) :
+    [∀ X, PreservesFiniteLimits (tensorLeft (E X))]
+    [∀ X, PreservesFiniteColimits (tensorLeft (E X))] (K : CochainComplex C ℤ) :
     ∀ k, (stage E p K k).1.IsKFlat
-  | 0 => isKFlat_of_d_eq_zero (graded fun n ↦ E (K.cycles n)) fun _ _ ↦ rfl
+  | 0 => isKFlat_of_d_eq_zero (graded (.up ℤ) fun n ↦ E (K.cycles n)) fun _ _ ↦ rfl
   | k + 1 => by
     let φ := attachingMap (stage E p K k).2 fun n ↦ p (boundaryPairs (stage E p K k).2 n)
     -- the mapping cone is an extension of the shifted cells by the previous stage, split in
@@ -245,6 +212,9 @@ lemma isKFlat_stage (E : C → C) (p : ∀ X, E X ⟶ X)
     have : ∀ i, PreservesFiniteLimits
         (tensorLeft ((mappingCone.triangleRotateShortComplex φ).X₃.X i)) := fun i ↦
       inferInstanceAs (PreservesFiniteLimits (tensorLeft (E _)))
+    have : ∀ i, PreservesFiniteColimits
+        (tensorLeft ((mappingCone.triangleRotateShortComplex φ).X₃.X i)) := fun i ↦
+      inferInstanceAs (PreservesFiniteColimits (tensorLeft (E _)))
     have : (mappingCone.triangleRotateShortComplex φ).X₃.IsKFlat :=
       isKFlat_of_d_eq_zero _ fun i j ↦ (shiftFunctor_obj_d' _ 1 i j).trans (smul_zero _)
     have : (mappingCone.triangleRotateShortComplex φ).X₁.IsKFlat := isKFlat_stage E p K k
@@ -264,11 +234,11 @@ public theorem exists_quasiIso_isKFlat [MonoidalCategory C] [MonoidalPreadditive
     [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape ℕ C]
     [∀ X : C, PreservesColimitsOfShape ℕ (tensorRight X)]
     [HasColimitsOfShape (Discrete ℤ) C] [HasExactColimitsOfShape (Discrete ℤ) C]
-    [∀ X : C, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)]
-    [∀ M : C, PreservesFiniteColimits (tensorLeft M)] (K : CochainComplex C ℤ)
-    (hC : ∀ X : C, ∃ (E : C) (p : E ⟶ X), Epi p ∧ PreservesFiniteLimits (tensorLeft E)) :
+    [∀ X : C, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)] (K : CochainComplex C ℤ)
+    (hC : ∀ X : C, ∃ (E : C) (p : E ⟶ X), Epi p ∧ PreservesFiniteLimits (tensorLeft E) ∧
+      PreservesFiniteColimits (tensorLeft E)) :
     ∃ (P : CochainComplex C ℤ) (π : P ⟶ K), QuasiIso π ∧ P.IsKFlat := by
-  choose E p hp hflat using hC
+  choose E p hp hflat hflat' using hC
   have : ∀ k, ((sequence E p K).obj k).IsKFlat := isKFlat_stage E p K
   exact ⟨_, _, quasiIso_colimit_desc E p K, isKFlat_of_isColimit (colimit.isColimit _)⟩
 

@@ -41,7 +41,7 @@ theorem exists_quasiIso_isKFlat_moduleCat (K : CochainComplex (ModuleCat.{u} R) 
   -- sequential colimits of modules are exact, also for the small index category `ℕ`
   have : AB5OfSize.{0, 0} (ModuleCat.{u} R) := AB5OfSize_of_univLE.{0, 0, u, u} _
   refine K.exists_quasiIso_isKFlat fun X ↦ ⟨ModuleCat.of R (X →₀ R),
-    ModuleCat.ofHom (Finsupp.linearCombination R id), ?_, inferInstance⟩
+    ModuleCat.ofHom (Finsupp.linearCombination R id), ?_, inferInstance, inferInstance⟩
   rw [ModuleCat.epi_iff_surjective]
   exact Finsupp.linearCombination_id_surjective R X
 
