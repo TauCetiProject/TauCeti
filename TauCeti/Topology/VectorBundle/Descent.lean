@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Hom
+public import Mathlib.Algebra.Group.TransferInstance
+public import Mathlib.Topology.ContinuousMap.Algebra
 
 /-!
 # Descent of vector-bundle maps from coordinates
@@ -32,6 +34,8 @@ the continuous fibrewise linear maps of total spaces, by `TauCeti.continuous_hom
 `CoordinateHom.comp` composes coordinate morphisms; in charts it multiplies the chart
 operators through any intermediate chart (`CoordinateHom.operator_comp`), and it is
 associative and unital for `CoordinateHom.id`.
+Coordinate morphisms form an abelian group under pointwise addition of chart operators,
+and composition is additive in both arguments.
 
 The construction uses Mathlib's `VectorBundleCore`, its local trivializations and the
 trivializations `Bundle.Trivialization.continuousLinearMap` of the Hom bundle.
@@ -285,6 +289,66 @@ theorem comp_assoc {μ : Type*} {K : Type*} [NormedAddCommGroup K] [NormedSpace 
     (a : CoordinateHom Z W) : (c.comp b).comp a = c.comp (b.comp a) :=
   fiberMap_injective <| funext fun x ↦ by
     simp only [fiberMap_comp, ContinuousLinearMap.comp_assoc]
+
+/-! The additive structure is inherited from the chart operators. Compatibility is a linear
+condition, so compatible families form an additive subgroup of all chart operators. -/
+
+/-- Coordinate morphisms form an abelian group under pointwise addition of chart operators. -/
+instance : AddCommGroup (CoordinateHom Z W) :=
+  let S : AddSubgroup (∀ i j, C(↥(Z.baseSet i ∩ W.baseSet j), F →L[𝕜] G)) :=
+    { carrier := {A | ∀ i i' j j' (x : B) (hi : x ∈ Z.baseSet i) (hi' : x ∈ Z.baseSet i')
+        (hj : x ∈ W.baseSet j) (hj' : x ∈ W.baseSet j') (v : F),
+        W.coordChange j j' x (A i j ⟨x, hi, hj⟩ v) =
+          A i' j' ⟨x, hi', hj'⟩ (Z.coordChange i i' x v)}
+      zero_mem' := by
+        intro i i' j j' x hi hi' hj hj' v
+        simp only [Pi.zero_apply, ContinuousMap.zero_apply, zero_apply, map_zero]
+      add_mem' := by
+        intro a b ha hb i i' j j' x hi hi' hj hj' v
+        simp only [Pi.add_apply, ContinuousMap.add_apply, add_apply, map_add]
+        rw [ha i i' j j' x hi hi' hj hj', hb i i' j j' x hi hi' hj hj']
+      neg_mem' := by
+        intro a ha i i' j j' x hi hi' hj hj' v
+        simp only [Pi.neg_apply, ContinuousMap.neg_apply, neg_apply, map_neg]
+        rw [ha i i' j j' x hi hi' hj hj'] }
+  let e : CoordinateHom Z W ≃ S :=
+    { toFun a := ⟨a.operator, a.compatible⟩
+      invFun a := ⟨a.1, a.2⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  e.addCommGroup
+
+@[simp] theorem operator_zero (i : ι) (j : κ) :
+    (0 : CoordinateHom Z W).operator i j = 0 := (rfl)
+
+@[simp] theorem operator_add (a b : CoordinateHom Z W) (i : ι) (j : κ) :
+    (a + b).operator i j = a.operator i j + b.operator i j := (rfl)
+
+@[simp] theorem operator_neg (a : CoordinateHom Z W) (i : ι) (j : κ) :
+    (-a).operator i j = -a.operator i j := (rfl)
+
+@[simp] theorem fiberMap_zero (x : B) :
+    (0 : CoordinateHom Z W).fiberMap x = 0 := (rfl)
+
+@[simp] theorem fiberMap_add (a b : CoordinateHom Z W) (x : B) :
+    (a + b).fiberMap x = a.fiberMap x + b.fiberMap x := (rfl)
+
+@[simp] theorem fiberMap_neg (a : CoordinateHom Z W) (x : B) :
+    (-a).fiberMap x = -a.fiberMap x := (rfl)
+
+/-- Composition of coordinate morphisms is additive in its first argument. -/
+theorem add_comp (b c : CoordinateHom W V) (a : CoordinateHom Z W) :
+    (b + c).comp a = b.comp a + c.comp a := by
+  apply fiberMap_injective
+  funext x
+  simp only [fiberMap_comp, fiberMap_add, ContinuousLinearMap.add_comp]
+
+/-- Composition of coordinate morphisms is additive in its second argument. -/
+theorem comp_add (b : CoordinateHom W V) (a c : CoordinateHom Z W) :
+    b.comp (a + c) = b.comp a + b.comp c := by
+  apply fiberMap_injective
+  funext x
+  simp only [fiberMap_comp, fiberMap_add, ContinuousLinearMap.comp_add]
 
 end CoordinateHom
 end VectorBundleCore
