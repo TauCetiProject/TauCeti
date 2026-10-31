@@ -54,24 +54,6 @@ open scoped NNReal
 
 namespace TauCeti.Probability
 
-/-- Integration against the unit-radius semicircle law, as an interval integral against the
-semicircle height. -/
-private lemma integral_semicircleMeasure_eq_intervalIntegral (f : ℝ → ℝ) :
-    ∫ x, f x ∂semicircleMeasure = 2 / π * ∫ x in -1..1, f x * √(1 - x ^ 2) := by
-  rw [semicircleMeasure_eq_withDensity, integral_withDensity_eq_integral_toReal_smul
-    measurable_semicirclePDF (.of_forall fun _ ↦ by simp),
-    intervalIntegral.integral_of_le (by norm_num), ← MeasureTheory.integral_const_mul,
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioc (-1) 1)]
-  · refine setIntegral_congr_fun measurableSet_Ioc fun x _ ↦ ?_
-    rw [semicirclePDF_apply, ENNReal.toReal_ofReal (semicirclePDFReal_nonneg x),
-      semicirclePDFReal_apply, smul_eq_mul]
-    ring
-  · intro x hx
-    have hx' : 1 - x ^ 2 ≤ 0 := by
-      simp only [mem_Ioc, not_and_or, not_lt, not_le] at hx
-      rcases hx with hx | hx <;> nlinarith
-    simp [semicirclePDFReal_apply, sqrt_eq_zero_of_nonpos hx']
-
 /-- The moments `Jₙ = ∫ x in -1..1, x ^ n * √(1 - x ^ 2)` of the semicircle height satisfy
 `(n + 4) Jₙ₊₂ = (n + 1) Jₙ`. -/
 private lemma intervalIntegral_pow_add_two_mul_sqrt (n : ℕ) :
@@ -142,7 +124,7 @@ theorem integral_pow_two_mul_semicircleMeasure (n : ℕ) :
     have h := integral_pow_add_two_semicircleMeasure (2 * n)
     rw [ih, show 2 * n + 2 = 2 * (n + 1) by ring] at h
     have hcat : ((n + 2 : ℕ) : ℝ) * catalan (n + 1) = 2 * (2 * n + 1) * catalan n := by
-      exact_mod_cast add_two_mul_catalan_succ n
+      exact_mod_cast Nat.add_two_mul_catalan_succ n
     have hpos : (0 : ℝ) < 2 * n + 4 := by positivity
     apply mul_left_cancel₀ hpos.ne'
     push_cast at h hcat ⊢

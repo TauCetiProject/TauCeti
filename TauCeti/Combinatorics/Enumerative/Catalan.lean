@@ -20,6 +20,8 @@ semicircle law.
 
 public section
 
+namespace Nat
+
 /-- The first-order recurrence `(n + 2) Cₙ₊₁ = 2 (2n + 1) Cₙ` of the Catalan numbers. -/
 theorem add_two_mul_catalan_succ (n : ℕ) :
     (n + 2) * catalan (n + 1) = 2 * (2 * n + 1) * catalan n := by
@@ -31,3 +33,5 @@ theorem add_two_mul_catalan_succ (n : ℕ) :
     _ = (n + 1) * (2 * (2 * n + 1) * catalan n) := by
       rw [← succ_mul_catalan_eq_centralBinom]
       ring
+
+end Nat
