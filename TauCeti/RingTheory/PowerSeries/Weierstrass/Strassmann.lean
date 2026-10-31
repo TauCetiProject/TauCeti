@@ -124,12 +124,13 @@ variable {K E : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Normed
 nontrivially normed field `K`, with a jointly injective family of continuous linear maps
 `φⱼ : E → Lⱼ` into complete normed field extensions of `K`. A sequence `β` in `E` with
 `‖β k‖ rᵏ → 0`, whose series `∑ₖ xᵏ • β k` sums to zero at every point of an infinite subset of
-the disc of radius `r`, is zero. Each `φⱼ` turns `β` into the coefficients of a restricted series
-over `Lⱼ`, which is zero by Strassmann's theorem. -/
+the disc of radius `r`, is zero. -/
 theorem eq_zero_of_hasSum_pow_smul (φ : ∀ j, E →L[K] L j)
     (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {r : ℝ} {β : ℕ → E}
     (hβ : Tendsto (fun k ↦ ‖β k‖ * r ^ k) atTop (𝓝 0)) {S : Set K} (hS : S.Infinite)
     (hSr : ∀ x ∈ S, ‖x‖ ≤ r) (h : ∀ x ∈ S, HasSum (fun k ↦ x ^ k • β k) 0) : β = 0 := by
+  -- Each `φⱼ` turns `β` into the coefficients of a restricted series over `Lⱼ`, which is zero
+  -- by Strassmann's theorem.
   have hr := hS.nontrivial.pos_of_forall_norm_le hSr
   funext k
   refine hφ _ fun j ↦ ?_

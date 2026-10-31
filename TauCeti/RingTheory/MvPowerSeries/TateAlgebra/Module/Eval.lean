@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.Analysis.Normed.Ring.Finsupp
 import TauCeti.Data.Finsupp.Weight
 import Mathlib.Analysis.Normed.Group.Ultra
@@ -27,6 +28,7 @@ a(x) = ∑ₜ xᵗ • a t,      xᵗ = ∏ᵢ xᵢ ^ tᵢ,
 
 satisfy `‖xᵗ • a t‖ ≤ ‖a t‖ cᵗ → 0`, so the sum converges. This is the value at `x` of the
 `E`-valued analytic function with coefficients `a`. It is additive and `K`-linear in `a`,
+takes the convolution action `f • a` of a restricted scalar series `f` to `f(x) • a(x)`,
 commutes with continuous linear maps applied coefficientwise, and is invariant under renaming the
 variables.
 
@@ -59,6 +61,8 @@ the finite set `𝔽_p`.
   coefficient norms.
 * `TauCeti.MvPowerSeries.IsRestrictedFamily.map_familyEval`: evaluation commutes with continuous
   linear maps.
+* `TauCeti.MvPowerSeries.IsRestrictedFamily.familyEval_convSMul`: evaluation takes the action of
+  restricted scalar series by convolution to multiplication by their values.
 * `TauCeti.MvPowerSeries.IsRestrictedFamily.eq_zero_of_familyEval_eq_zero`: a restricted family
   vanishing on a product of infinite subsets of the closed polydisc is zero, given a jointly
   injective family of functionals into complete field extensions.
@@ -161,6 +165,25 @@ theorem IsRestrictedFamily.map_familyEval [NormedAddCommGroup F] [NormedSpace K 
   rw [familyEval_def (a := φ ∘ a)]
   refine (HasSum.tsum_eq ?_).symm
   simpa only [Function.comp_def, map_smul] using (ha.hasSum_familyEval hx).map φ φ.continuous
+
+/-- On the closed polydisc, evaluation turns the convolution action of a restricted scalar series
+`f` into multiplication by the value of `f`: `(f • a)(x) = f(x) • a(x)`. -/
+theorem IsRestrictedFamily.familyEval_convSMul [IsUltrametricDist K] [CompleteSpace K]
+    {f : MvPowerSeries σ K} (hf : MvPowerSeries.IsRestricted c f) {a : (σ →₀ ℕ) → E}
+    (ha : IsRestrictedFamily c a) {x : σ → K} (hx : ∀ i, ‖x i‖ ≤ c i) :
+    familyEval x (MvPowerSeries.convSMul f a) =
+      familyEval x (fun t ↦ MvPowerSeries.coeff t f) • familyEval x a := by
+  classical
+  rw [familyEval_def (a := MvPowerSeries.convSMul f a)]
+  refine HasSum.tsum_eq ?_
+  convert ((((MvPowerSeries.isRestrictedFamily_coeff_iff f).mpr hf).hasSum_familyEval
+    hx).sum_smul_antidiagonal_of_nonarchimedean (ha.hasSum_familyEval hx)) using 1
+  funext t
+  rw [MvPowerSeries.convSMul_apply, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun p hp ↦ ?_
+  rw [← Finset.mem_antidiagonal.mp hp,
+    Finsupp.prod_add_index' (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _]
+  simp only [smul_eq_mul, mul_smul, smul_comm (p.2.prod (x · ^ ·))]
 
 end Eval
 
