@@ -36,6 +36,8 @@ is the integrability condition of the Newlander–Nirenberg theorem.
 
 * `TauCeti.complexMlieBracket_one_tmul_add_I_tmul`: the complex Lie bracket of `X + i Y` and
   `X' + i Y'` is `([X, X'] - [Y, Y']) + i ([X, Y'] + [Y, X'])`.
+* `TauCeti.realPart_complexMlieBracket` and `TauCeti.imaginaryPart_complexMlieBracket`: the
+  real and imaginary parts of the complex Lie bracket of arbitrary complex vector fields.
 * `TauCeti.complexMlieBracket_one_tmul`: on real vector fields it is the Lie bracket.
 * `TauCeti.complexMlieBracket_swap`: it is antisymmetric.
 * `TauCeti.complexMlieBracket_add_left` and `TauCeti.complexMlieBracket_const_smul_left`, with
@@ -87,6 +89,27 @@ def complexMlieBracket (Z W : Π x : M, ℂ ⊗[ℝ] TangentSpace I x) (x : M) :
           (fun y ↦ imaginaryPart (TangentSpace I y) (W y)) x +
         mlieBracket I (fun y ↦ imaginaryPart (TangentSpace I y) (Z y))
           (fun y ↦ realPart (TangentSpace I y) (W y)) x)
+
+/-- The real part of the complex Lie bracket of `X + i Y` and `X' + i Y'` is `[X, X'] - [Y, Y']`. -/
+@[simp]
+theorem realPart_complexMlieBracket (Z W : Π x : M, ℂ ⊗[ℝ] TangentSpace I x) (x : M) :
+    realPart (TangentSpace I x) (complexMlieBracket I Z W x) =
+      mlieBracket I (fun y ↦ realPart (TangentSpace I y) (Z y))
+          (fun y ↦ realPart (TangentSpace I y) (W y)) x -
+        mlieBracket I (fun y ↦ imaginaryPart (TangentSpace I y) (Z y))
+          (fun y ↦ imaginaryPart (TangentSpace I y) (W y)) x := by
+  simp [complexMlieBracket]
+
+/-- The imaginary part of the complex Lie bracket of `X + i Y` and `X' + i Y'` is
+`[X, Y'] + [Y, X']`. -/
+@[simp]
+theorem imaginaryPart_complexMlieBracket (Z W : Π x : M, ℂ ⊗[ℝ] TangentSpace I x) (x : M) :
+    imaginaryPart (TangentSpace I x) (complexMlieBracket I Z W x) =
+      mlieBracket I (fun y ↦ realPart (TangentSpace I y) (Z y))
+          (fun y ↦ imaginaryPart (TangentSpace I y) (W y)) x +
+        mlieBracket I (fun y ↦ imaginaryPart (TangentSpace I y) (Z y))
+          (fun y ↦ realPart (TangentSpace I y) (W y)) x := by
+  simp [complexMlieBracket]
 
 /-- **The complex Lie bracket in real coordinates.** The complex Lie bracket of `X + i Y` and
 `X' + i Y'` is `([X, X'] - [Y, Y']) + i ([X, Y'] + [Y, X'])`. -/

@@ -409,6 +409,7 @@ theorem one_tmul_realPart_add_I_tmul_imaginaryPart (u : ℂ ⊗[ℝ] W) :
   simp
 
 /-- The two real coordinates of `1 ⊗ₜ w₁ + I ⊗ₜ w₂` are `w₁` and `w₂`. -/
+@[simp]
 theorem one_tmul_add_I_tmul_inj {w₁ w₂ w₁' w₂' : W} :
     1 ⊗ₜ[ℝ] w₁ + Complex.I ⊗ₜ[ℝ] w₂ = 1 ⊗ₜ[ℝ] w₁' + Complex.I ⊗ₜ[ℝ] w₂' ↔
       w₁ = w₁' ∧ w₂ = w₂' := by
