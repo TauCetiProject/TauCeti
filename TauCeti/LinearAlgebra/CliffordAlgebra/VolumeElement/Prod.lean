@@ -9,8 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
-import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
 # Chirality of the graded tensor product of Clifford modules
@@ -106,28 +106,6 @@ private theorem equivOfIsometry_complexWithLpProd_ι_inr (w : W) :
       map (QuadraticMap.Isometry.inr (Q₁.baseChange ℂ) (Q₂.baseChange ℂ))
         (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) := by
   simp [equivOfIsometry_apply, complexWithLpProd_one_tmul]
-
-include hQ in
-/-- Concatenating `Q₁`- and `Q₂`-orthogonal bases gives a `Q`-orthogonal basis of `V ⊕ W`: the
-`WithLp` form of `QuadraticMap.isOrthoᵢ_associated_prod`. -/
-private theorem isOrthoᵢ_associated_prod {n m : ℕ} (b₁ : OrthonormalBasis (Fin n) ℝ V)
-    (hQb₁ : (QuadraticMap.associated Q₁).IsOrthoᵢ b₁.toBasis) (b₂ : OrthonormalBasis (Fin m) ℝ W)
-    (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis) :
-    (QuadraticMap.associated Q).IsOrthoᵢ ((b₁.prod b₂).reindex finSumFinEquiv).toBasis := by
-  have hcomp : Q = (Q₁.prod Q₂).comp (WithLp.linearEquiv 2 ℝ (V × W)).toLinearMap :=
-    QuadraticMap.ext fun x ↦ by simp [hQ]
-  have h := QuadraticMap.isOrthoᵢ_associated_prod hQb₁ hQb₂
-  rw [LinearMap.isOrthoᵢ_def] at h ⊢
-  intro i j hij
-  have hij' := h _ _ (finSumFinEquiv.symm.injective.ne hij)
-  simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.reindex_apply, hcomp,
-    QuadraticMap.associated_comp, LinearMap.compl₁₂_apply]
-  generalize finSumFinEquiv.symm i = p, finSumFinEquiv.symm j = q at hij'
-  rcases p with p | p <;> rcases q with q | q
-  · simpa using hij'
-  · simp
-  · simp
-  · simpa using hij'
 
 variable [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o₁ : Orientation ℝ V (Fin n))
   (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hn : Even n)
@@ -228,9 +206,14 @@ private theorem complexProdTensor_complexVolume_eq_map (b₁ : OrthonormalBasis 
             (ι (Q₂.baseChange ℂ))).prod := by
     simp [equivOfIsometry_apply, complexWithLpProd_one_tmul, map_list_prod, List.map_map,
       Function.comp_def]
+  have hQb :
+      (QuadraticMap.associated Q).IsOrthoᵢ ((b₁.prod b₂).reindex finSumFinEquiv).toBasis := by
+    have h := OrthonormalBasis.isOrthoᵢ_associated_prod hQ hQb₁ hQb₂
+    rw [LinearMap.isOrthoᵢ_def] at h ⊢
+    intro i j hij
+    simpa [OrthonormalBasis.reindex_apply] using h _ _ (finSumFinEquiv.symm.injective.ne hij)
   -- Split the frame product of `V ⊕ W` into its `V` block and its `W` block.
-  rw [complexVolume_eq o _ ho (isOrthoᵢ_associated_prod hQ b₁ hQb₁ b₂ hQb₂), hl,
-    List.map_append, List.prod_append]
+  rw [complexVolume_eq o _ ho hQb, hl, List.map_append, List.prod_append]
   -- Move each block into its summand, where the two Clifford algebras act.
   rw [map_smul, complexProdTensor_apply, map_mul, h₁, h₂]
   simp only [map_mul, AlgHom.cliffordProdTensor_map_inl, AlgHom.cliffordProdTensor_map_inr_prod,
