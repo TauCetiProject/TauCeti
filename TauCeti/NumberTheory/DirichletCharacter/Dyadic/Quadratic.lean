@@ -64,6 +64,15 @@ theorem IsPrimitive.factorization_two_le_three_of_sq_eq_one {χ : DirichletChara
   rw [hχ] at hlt
   exact (lt_irrefl _ hlt)
 
+/-- The only dyadic exponents of a primitive character of order dividing two are zero,
+two and three. At level zero this uses the zero convention for `Nat.factorization`. -/
+theorem IsPrimitive.factorization_two_eq_zero_or_two_or_three_of_sq_eq_one
+    {χ : DirichletCharacter R N} (hχ : χ.IsPrimitive) (hsq : χ ^ 2 = 1) :
+    N.factorization 2 = 0 ∨ N.factorization 2 = 2 ∨ N.factorization 2 = 3 := by
+  have := hχ.factorization_two_le_three_of_sq_eq_one hsq
+  have := hχ.factorization_two_ne_one
+  omega
+
 /-- A primitive quadratic character has dyadic exponent at most three. -/
 theorem IsPrimitive.factorization_two_le_three {S : Type*} [CommRing S]
     {χ : DirichletCharacter S N} (hχ : χ.IsPrimitive) (hquad : χ.IsQuadratic) :
@@ -73,9 +82,7 @@ theorem IsPrimitive.factorization_two_le_three {S : Type*} [CommRing S]
 /-- The only dyadic exponents of a primitive quadratic character are zero, two and three. -/
 theorem IsPrimitive.factorization_two_eq_zero_or_two_or_three {S : Type*} [CommRing S]
     {χ : DirichletCharacter S N} (hχ : χ.IsPrimitive) (hquad : χ.IsQuadratic) :
-    N.factorization 2 = 0 ∨ N.factorization 2 = 2 ∨ N.factorization 2 = 3 := by
-  have := hχ.factorization_two_le_three hquad
-  have := hχ.factorization_two_ne_one
-  omega
+    N.factorization 2 = 0 ∨ N.factorization 2 = 2 ∨ N.factorization 2 = 3 :=
+  hχ.factorization_two_eq_zero_or_two_or_three_of_sq_eq_one hquad.sq_eq_one
 
 end DirichletCharacter

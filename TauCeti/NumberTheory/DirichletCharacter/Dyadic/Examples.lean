@@ -69,36 +69,38 @@ example : ¬IsSquare (5 : ZMod 8) := by decide
 
 -- The Conrey pairing at the unit 5 detects the cyclic factor of order four.
 example : ∃ χ : DirichletCharacter ℂ 16, χ.IsPrimitive ∧ orderOf χ = 4 := by
+  -- The concrete levels coincide: 2 ^ 4 = 2 ^ (2 + 2) = 16, by numeral reduction.
   let f := Circle.toUnits.comp (TauCeti.conreyLocal 2 4 (TauCeti.ZMod.unitsTwoPowFive 2))
   let χ : DirichletCharacter ℂ 16 := MulChar.ofUnitHom f
-  have h9 : χ (9 : ℤ) = -1 := by
+  have h9 : χ (9 : ZMod 16) = -1 := by
     have h := TauCeti.conreyLocal_two_apply (e := 2)
       (m := TauCeti.ZMod.unitsTwoPowFive 2)
       (n := ZMod.unitOfCoprime 9 (by decide)) (x := 0) (y := 0) (a := 1) (b := 2)
       (by simp) (by decide)
-    have hc : χ (9 : ℤ) =
+    have hc : χ (9 : ZMod 16) =
         (TauCeti.conreyLocal 2 4 (TauCeti.ZMod.unitsTwoPowFive 2)
           (ZMod.unitOfCoprime 9 (by decide)) : ℂ) := by
-      have hv : ((9 : ℤ) : ZMod 16) =
+      have hv : (9 : ZMod 16) =
           (ZMod.unitOfCoprime 9 (by decide) : (ZMod 16)ˣ) := by decide
       calc
-        χ (9 : ℤ) = χ (ZMod.unitOfCoprime 9 (by decide) : (ZMod 16)ˣ) := congrArg χ hv
+        χ (9 : ZMod 16) = χ (ZMod.unitOfCoprime 9 (by decide) : (ZMod 16)ˣ) :=
+          congrArg χ hv
         _ = _ := MulChar.ofUnitHom_coe f (ZMod.unitOfCoprime 9 (by decide))
+    -- The nontrivial factor is exp(πi) = -1.
+    have hexp : 2 * Real.pi * Complex.I * 2 / 2 ^ 2 = Real.pi * Complex.I := by ring
     rw [hc, h]
-    norm_num
-    convert Complex.exp_pi_mul_I using 1
-    congr 1
-    ring
+    simp only [Nat.cast_zero, Nat.cast_one, Nat.cast_ofNat, mul_zero, zero_div,
+      Complex.exp_zero, one_mul, hexp, Complex.exp_pi_mul_I]
   have hp : χ.IsPrimitive :=
     conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply (p := 2) (k := 4)
       (a := 1) (b := 9) Nat.prime_two χ
-      isCoprime_one_left ⟨-7, 4, by norm_num⟩ (by norm_num) (by rw [h9]; norm_num)
+      isCoprime_one_left ⟨-7, 4, by norm_num⟩ (by norm_num)
+      (by norm_num [Int.cast_ofNat, h9])
   have hnot : χ ^ 2 ≠ 1 := by
     intro hs
     have hh := congrArg (fun ψ : DirichletCharacter ℂ 16 ↦ ψ (5 : ZMod 16)) hs
     have hsq : (5 : ZMod 16) ^ 2 = 9 := by decide
-    have h9' : χ (9 : ZMod 16) = -1 := h9
-    rw [MulChar.pow_apply' χ two_ne_zero, ← map_pow, hsq, h9',
+    rw [MulChar.pow_apply' χ two_ne_zero, ← map_pow, hsq, h9,
       MulChar.one_apply (by decide : IsUnit (5 : ZMod 16))] at hh
     norm_num at hh
   have hfour : χ ^ 4 = 1 := by
