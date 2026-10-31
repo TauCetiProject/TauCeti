@@ -38,8 +38,8 @@ A faithful action on `V` gives a faithful contragredient action on `V*` by
 
 * `Representation.isGaloisGroup_symmetricAlgebraInvariants`: for faithful `ρ`, `G` is a Galois
   group of `Sym M` over `Sym(M)^G`.
-* `Representation.isGaloisGroup_fractionRing_symmetricAlgebraInvariants`: for finite `G`, it is
-  the Galois group of the extension of fraction fields.
+* `Representation.isGaloisGroup_fractionRing_symmetricAlgebraInvariants`: for finite `G` and
+  `Sym M` a domain, it is the Galois group of the extension of fraction fields.
 * `Representation.fixingSubgroup_symmetricAlgebraInvariants_comp_subtype`: the subgroup of `G`
   fixing the invariants of a subgroup `H` is `H`.
 * `Representation.finrank_symmetricAlgebraInvariants`: `Sym M` has rank `|G|` over `Sym(M)^G`.
@@ -90,6 +90,24 @@ variable {R G M : Type*} [CommRing R] [Group G] [AddCommMonoid M] [Module R M]
 variable (ρ : Representation R G M) [Finite G] [IsDomain (SymmetricAlgebra R M)]
 
 attribute [local instance] FractionRing.liftAlgebra in
+/-- For a faithful representation `ρ` of a finite group `G` with `Sym M` a domain, the fraction
+field of `Sym M` is Galois over the fraction field of `Sym(M)^G` with Galois group `G`. This
+applies to free modules over a domain, where `Sym M` is a domain. For `M = V*` this is the
+extension `K(V) / K(V)^G` of rational functions on `V`. -/
+theorem isGaloisGroup_fractionRing_symmetricAlgebraInvariants (hρ : Function.Injective ρ) :
+    letI := ρ.symmetricAlgebraMulSemiringAction
+    letI := IsFractionRing.mulSemiringAction G (SymmetricAlgebra R M)
+      (FractionRing (SymmetricAlgebra R M))
+    IsGaloisGroup G (FractionRing ρ.symmetricAlgebraInvariants)
+      (FractionRing (SymmetricAlgebra R M)) :=
+  letI := ρ.symmetricAlgebraMulSemiringAction
+  letI := IsFractionRing.mulSemiringAction G (SymmetricAlgebra R M)
+    (FractionRing (SymmetricAlgebra R M))
+  haveI := ρ.isGaloisGroup_symmetricAlgebraInvariants hρ
+  IsGaloisGroup.to_isFractionRing G ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M)
+    (FractionRing ρ.symmetricAlgebraInvariants) (FractionRing (SymmetricAlgebra R M))
+
+attribute [local instance] FractionRing.liftAlgebra in
 /-- For a representation of a finite group with `Sym M` a domain, the field of rational functions
 `Frac(Sym M)` is a Galois extension of the field `Frac(Sym(M)^G)` of invariant rational functions.
 No faithfulness is needed: `ρ` factors through a faithful representation of `G ⧸ ker ρ` with the
@@ -109,9 +127,7 @@ theorem isGalois_fractionRing_symmetricAlgebraInvariants :
   let := ρ'.symmetricAlgebraMulSemiringAction
   let := IsFractionRing.mulSemiringAction Q (SymmetricAlgebra R M)
     (FractionRing (SymmetricAlgebra R M))
-  have := ρ'.isGaloisGroup_symmetricAlgebraInvariants hρ'
-  have := IsGaloisGroup.to_isFractionRing Q ρ'.symmetricAlgebraInvariants (SymmetricAlgebra R M)
-    (FractionRing ρ'.symmetricAlgebraInvariants) (FractionRing (SymmetricAlgebra R M))
+  have := ρ'.isGaloisGroup_fractionRing_symmetricAlgebraInvariants hρ'
   exact IsGaloisGroup.isGalois Q _ _
 
 attribute [local instance] FractionRing.liftAlgebra in
@@ -124,9 +140,7 @@ theorem finrank_fractionRing_symmetricAlgebraInvariants (hρ : Function.Injectiv
   let := ρ.symmetricAlgebraMulSemiringAction
   let := IsFractionRing.mulSemiringAction G (SymmetricAlgebra R M)
     (FractionRing (SymmetricAlgebra R M))
-  have := ρ.isGaloisGroup_symmetricAlgebraInvariants hρ
-  have := IsGaloisGroup.to_isFractionRing G ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M)
-    (FractionRing ρ.symmetricAlgebraInvariants) (FractionRing (SymmetricAlgebra R M))
+  have := ρ.isGaloisGroup_fractionRing_symmetricAlgebraInvariants hρ
   exact (IsGaloisGroup.card_eq_finrank G _ _).symm
 
 /-- For a faithful representation of a finite group with `Sym M` a domain and a normal subgroup
@@ -171,24 +185,6 @@ section Domain
 variable {R G M : Type*} [CommRing R] [IsDomain R] [Group G] [AddCommGroup M] [Module R M]
   [Module.Free R M]
 variable (ρ : Representation R G M)
-
-attribute [local instance] FractionRing.liftAlgebra in
-/-- For a faithful representation `ρ` of a finite group `G` on a free module over a domain, the
-fraction field of `Sym M` is Galois over the fraction field of `Sym(M)^G` with Galois group `G`.
-For `M = V*` this is the extension `K(V) / K(V)^G` of rational functions on `V`. -/
-theorem isGaloisGroup_fractionRing_symmetricAlgebraInvariants [Finite G]
-    (hρ : Function.Injective ρ) :
-    letI := ρ.symmetricAlgebraMulSemiringAction
-    letI := IsFractionRing.mulSemiringAction G (SymmetricAlgebra R M)
-      (FractionRing (SymmetricAlgebra R M))
-    IsGaloisGroup G (FractionRing ρ.symmetricAlgebraInvariants)
-      (FractionRing (SymmetricAlgebra R M)) :=
-  letI := ρ.symmetricAlgebraMulSemiringAction
-  letI := IsFractionRing.mulSemiringAction G (SymmetricAlgebra R M)
-    (FractionRing (SymmetricAlgebra R M))
-  haveI := ρ.isGaloisGroup_symmetricAlgebraInvariants hρ
-  IsGaloisGroup.to_isFractionRing G ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M)
-    (FractionRing ρ.symmetricAlgebraInvariants) (FractionRing (SymmetricAlgebra R M))
 
 /-- For a faithful representation `ρ` of a finite group `G` on a free module over a domain, the
 elements of `G` fixing every polynomial invariant of a subgroup `H` are exactly the elements of
