@@ -19,15 +19,12 @@ uses firm modules as a model, with small Hom-types, of the category of almost `V
 `M ↦ m~ ⊗[V] M` lands in firm modules, is right adjoint to the inclusion of firm modules, and kills
 exactly the almost zero modules.
 
-The basic input is that `m~` is an idempotent `V`-module: the map `m~ ⊗[V] m → m~`,
-`t ⊗ z ↦ z • t`, is bijective, so `m~` is itself firm. This uses the flatness of `m~`; along the way
-we see that `x ⊗ y = y ⊗ x` in `m~` (Gabber–Ramero, Claim 2.1.10).
+The basic input is that `m~` is an idempotent `V`-module
+(`TauCeti.Almost.BasicSetup.tildeTensorIdealEquiv`), so `m~` is itself firm.
 
 ## Main definitions
 
 * `TauCeti.Almost.BasicSetup.tildeAct`: the action map `m~ ⊗[V] M → M`.
-* `TauCeti.Almost.BasicSetup.tildeTensorIdealEquiv`: the linear equivalence `m~ ⊗[V] m ≃ m~`,
-  `t ⊗ z ↦ z • t`.
 * `TauCeti.Almost.BasicSetup.IsFirm`: a module whose action map is bijective, and the
   corresponding object property `TauCeti.Almost.BasicSetup.isFirm` of `ModuleCat V`.
 * `TauCeti.Almost.BasicSetup.Firm`: the full subcategory of firm `V`-modules.
@@ -35,7 +32,6 @@ we see that `x ⊗ y = y ⊗ x` in `m~` (Gabber–Ramero, Claim 2.1.10).
 
 ## Main results
 
-* `TauCeti.Almost.BasicSetup.tmul_comm`: `x ⊗ y = y ⊗ x` in `m~`.
 * `TauCeti.Almost.BasicSetup.isFirm_tilde` and `TauCeti.Almost.BasicSetup.isFirm_tilde_tensor`:
   `m~` and every module `m~ ⊗[V] M` are firm.
 * `TauCeti.Almost.BasicSetup.isFirm_classical`, `TauCeti.Almost.BasicSetup.isFirm_zero_iff` and
@@ -52,7 +48,6 @@ we see that `x ⊗ y = y ⊗ x` in `m~` (Gabber–Ramero, Claim 2.1.10).
 
 * B. Bhatt, *Lecture notes for a class on perfectoid spaces*, §4.1, Construction 4.1.5 and
   Warning 4.1.6.
-* O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.1, Claim 2.1.10.
 -/
 
 public section
@@ -87,33 +82,8 @@ theorem tildeAct_comp_lTensor (f : M →ₗ[V] N) :
 
 /-- The image of the action map is `m • M`. -/
 theorem range_tildeAct : LinearMap.range (S.tildeAct M) = S.ideal • ⊤ := by
-  refine le_antisymm ?_ (Submodule.smul_le.mpr fun r hr x _ ↦ ?_)
-  · rw [LinearMap.range_le_iff_comap, eq_top_iff, ← TensorProduct.span_tmul_eq_top,
-      Submodule.span_le]
-    rintro _ ⟨t, x, rfl⟩
-    rw [SetLike.mem_coe, Submodule.mem_comap, tildeAct_tmul]
-    refine Submodule.smul_mem_smul ?_ trivial
-    rw [← coe_tildeToIdeal]
-    exact (S.tildeToIdeal t).2
-  · obtain ⟨t, ht⟩ := S.tildeToIdeal_surjective ⟨r, hr⟩
-    refine ⟨t ⊗ₜ x, ?_⟩
-    rw [tildeAct_tmul, ← coe_tildeToIdeal, ht]
-
-/-- The two ways of letting `m~` act on itself agree: `(s₁ * s₂) • t = (t₁ * t₂) • s` for
-`s = s₁ ⊗ s₂` and `t = t₁ ⊗ t₂` in `m~`. -/
-theorem tildeMul_smul_comm (s t : S.tilde) : S.tildeMul s • t = S.tildeMul t • s := by
-  induction s using TensorProduct.inductionOn with
-  | add s s' hs hs' => rw [map_add, add_smul, hs, hs', smul_add]
-  | tmul c d =>
-    induction t using TensorProduct.inductionOn with
-    | add t t' ht ht' => rw [smul_add, ht, ht', map_add, add_smul]
-    | tmul a b =>
-      -- Both sides equal `c ⊗ (d * a * b)`.
-      have h₁ : ((c : V) * d) • a = ((d : V) * a) • c :=
-        Subtype.ext <| by simp only [Submodule.coe_smul, smul_eq_mul]; ring
-      have h₂ : ((d : V) * a) • b = ((a : V) * b) • d :=
-        Subtype.ext <| by simp only [Submodule.coe_smul, smul_eq_mul]; ring
-      rw [tildeMul_tmul, tildeMul_tmul, smul_tmul', h₁, smul_tmul, h₂, tmul_smul]
+  rw [tildeAct, LinearMap.range_comp, LinearMap.rTensor_range, range_tildeMul]
+  exact Submodule.map_range_rTensor_subtype_lid
 
 /-- Letting `m~` act on the first factor of `m~ ⊗[V] M` or through `M` gives the same map
 `m~ ⊗[V] (m~ ⊗[V] M) → m~ ⊗[V] M`. -/
@@ -127,68 +97,6 @@ theorem lTensor_tildeAct :
       smul_tmul', tildeMul_smul_comm]
 
 end tildeAct
-
-/-! ### `m~` is an idempotent module -/
-
-/-- The map `m~ ⊗[V] m → m~`, `t ⊗ z ↦ z • t`, is injective because `m~` is flat and surjective
-because `m * m = m`. -/
-private theorem bijective_rid_comp_lTensor_subtype :
-    Function.Bijective
-      ((TensorProduct.rid V S.tilde).toLinearMap ∘ₗ S.ideal.subtype.lTensor S.tilde) := by
-  refine ⟨(TensorProduct.rid V S.tilde).injective.comp
-    (Module.Flat.lTensor_preserves_injective_linearMap _ S.ideal.injective_subtype), ?_⟩
-  rw [← LinearMap.range_eq_top, eq_top_iff, ← TensorProduct.span_tmul_eq_top, Submodule.span_le]
-  rintro _ ⟨a, b, rfl⟩
-  obtain ⟨u, rfl⟩ := S.tildeToIdeal_surjective a
-  induction u using TensorProduct.inductionOn with
-  | add u u' hu hu' => rw [map_add, add_tmul]; exact add_mem hu hu'
-  | tmul x y =>
-    refine ⟨(x ⊗ₜ b) ⊗ₜ y, ?_⟩
-    have hxy : (y : V) • x = S.tildeToIdeal (x ⊗ₜ y) :=
-      Subtype.ext (by simp [mul_comm])
-    simp [smul_tmul', hxy]
-
-/-- The linear equivalence `m~ ⊗[V] m ≃ m~`, `t ⊗ z ↦ z • t`: `m~` is an idempotent module. -/
-noncomputable def tildeTensorIdealEquiv : S.tilde ⊗[V] S.ideal ≃ₗ[V] S.tilde :=
-  LinearEquiv.ofBijective _ S.bijective_rid_comp_lTensor_subtype
-
-@[simp]
-theorem tildeTensorIdealEquiv_tmul (t : S.tilde) (z : S.ideal) :
-    S.tildeTensorIdealEquiv (t ⊗ₜ z) = (z : V) • t := by
-  rw [tildeTensorIdealEquiv, LinearEquiv.ofBijective_apply]
-  simp
-
-/-- The map `m ⊗[V] m~ → m~`, `z ⊗ t ↦ z • t`, is injective because `m~` is flat. -/
-private theorem injective_lid_comp_rTensor_subtype :
-    Function.Injective
-      ((TensorProduct.lid V S.tilde).toLinearMap ∘ₗ S.ideal.subtype.rTensor S.tilde) :=
-  (TensorProduct.lid V S.tilde).injective.comp
-    (Module.Flat.rTensor_preserves_injective_linearMap _ S.ideal.injective_subtype)
-
-/-- The tensor factors of `m~ = m ⊗[V] m` commute: `x ⊗ y = y ⊗ x` (Gabber–Ramero, Claim 2.1.10).
--/
-theorem tmul_comm (x y : S.ideal) : (x ⊗ₜ[V] y : S.tilde) = y ⊗ₜ x := by
-  -- First, `x ⊗ (y ⊗ z) = y ⊗ (x ⊗ z)` in `m ⊗[V] m~`, as both have image `(x * y) ⊗ z` in `m~`.
-  have h₁ (x y z : S.ideal) : x ⊗ₜ[V] (y ⊗ₜ[V] z) = y ⊗ₜ[V] (x ⊗ₜ[V] z) := by
-    refine S.injective_lid_comp_rTensor_subtype ?_
-    have hxy : (x : V) • y = (y : V) • x := Subtype.ext (by simp [mul_comm])
-    simp [smul_tmul', hxy]
-  -- Hence swapping the factors of `m~` is the identity on `m~ ⊗[V] m`, and so on `m~`, since
-  -- `m~ ⊗[V] m → m~` is surjective.
-  have h₂ : (TensorProduct.comm V S.ideal S.ideal).toLinearMap.rTensor S.ideal = LinearMap.id :=
-    TensorProduct.ext_threefold fun x y z ↦
-      (TensorProduct.assoc V S.ideal S.ideal S.ideal).injective (by simpa using h₁ y x z)
-  have h₃ (w : S.tilde ⊗[V] S.ideal) :
-      TensorProduct.comm V S.ideal S.ideal (S.tildeTensorIdealEquiv w) =
-        S.tildeTensorIdealEquiv ((TensorProduct.comm V S.ideal S.ideal).toLinearMap.rTensor
-          S.ideal w) := by
-    induction w using TensorProduct.inductionOn with
-    | add w w' hw hw' => simp only [map_add, hw, hw']
-    | tmul t z => simp
-  obtain ⟨w, hw⟩ := S.tildeTensorIdealEquiv.surjective (x ⊗ₜ y)
-  have h₄ := h₃ w
-  rw [h₂, LinearMap.id_apply, hw, TensorProduct.comm_tmul] at h₄
-  exact h₄.symm
 
 /-! ### Firm modules -/
 
