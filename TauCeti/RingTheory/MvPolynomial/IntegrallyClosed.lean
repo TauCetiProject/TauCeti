@@ -21,7 +21,7 @@ hence in `R`.
 
 ## Main results
 
-* `MvPolynomial.isIntegrallyClosed`: `MvPolynomial σ R` is integrally closed when `R` is an
+* `TauCeti.MvPolynomial.isIntegrallyClosed`: `MvPolynomial σ R` is integrally closed when `R` is an
   integrally closed domain.
 
 ## References
@@ -31,7 +31,9 @@ hence in `R`.
 
 public section
 
-namespace MvPolynomial
+namespace TauCeti.MvPolynomial
+
+open _root_.MvPolynomial
 
 attribute [local instance] algebraMvPolynomial in
 /-- A polynomial ring, in any set of variables, over an integrally closed domain is integrally
@@ -49,4 +51,4 @@ instance isIntegrallyClosed {σ R : Type*} [CommRing R] [IsDomain R] [IsIntegral
   obtain ⟨n, -, rfl⟩ := mem_coeffs_iff.mp hc
   exact IsIntegrallyClosed.isIntegral_iff.mp (isIntegral_iff_isIntegral_coeff.mp hf n)
 
-end MvPolynomial
+end TauCeti.MvPolynomial

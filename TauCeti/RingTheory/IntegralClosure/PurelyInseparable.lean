@@ -14,13 +14,14 @@ public import TauCeti.RingTheory.Japanese
 -- closed domain they are integrally closed.
 import Mathlib.RingTheory.Polynomial.Basic
 import TauCeti.RingTheory.MvPolynomial.IntegrallyClosed
--- Proof-only: the five Tau Ceti prerequisites — the `expand`/`map` ring maps on polynomial
--- rings, root adjunction, the purely inseparable embedding criterion, and integral-closure
--- transfer. No statement below mentions them, so none is re-exported.
+-- Proof-only: the six Tau Ceti prerequisites — the `expand`/`map` ring maps on polynomial
+-- rings, root adjunction, the purely inseparable embedding criterion, denominator-cleared bases,
+-- and integral-closure transfer. No statement below mentions them, so none is re-exported.
 import TauCeti.RingTheory.MvPolynomial.Basic
 import TauCeti.RingTheory.MvPolynomial.Expand
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Roots
 import TauCeti.FieldTheory.PurelyInseparable.Embedding
+import TauCeti.FieldTheory.PurelyInseparable.Exponent
 import TauCeti.RingTheory.IntegralClosure.Transfer
 
 /-!
@@ -123,30 +124,6 @@ readable. Its `Algebra`/`IsScalarTower` plumbing is deliberately *not* split out
 instances away from their use site creates diamonds against
 `OreLocalization.instSMulOfIsScalarTower`. -/
 
-/-- A `K`-basis of `M` whose vectors have `p ^ n`-th powers in the image of `A`, together with
-those preimages. Start from any basis and multiply each vector by the denominator of its
-`p ^ n`-th power, which lies in `K`. -/
-private theorem exists_basis_iterateFrobenius_eq_algebraMap (A K M : Type*) [CommRing A]
-    [IsDomain A] [Field K] [Algebra A K] [IsFractionRing A K] [Field M] [Algebra K M]
-    [FiniteDimensional K M]
-    [IsPurelyInseparable.HasExponent K M] (p : ℕ) [ExpChar K p] {n : ℕ}
-    (hn : IsPurelyInseparable.exponent K M ≤ n) :
-    ∃ (m : ℕ) (b : Module.Basis (Fin m) K M) (g : Fin m → A), ∀ j,
-      algebraMap A K (g j) = IsPurelyInseparable.iterateFrobenius K M p hn (b j) := by
-  let b₀ := Module.finBasis K M
-  choose a s hs has using fun j ↦ IsFractionRing.div_surjective (A := A)
-    (IsPurelyInseparable.iterateFrobenius K M p hn (b₀ j))
-  have hs0 (j) : algebraMap A K (s j) ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (hs j)
-  refine ⟨_, b₀.unitsSMul fun j ↦ Units.mk0 _ (hs0 j), fun j ↦ s j ^ (p ^ n - 1) * a j,
-    fun j ↦ ?_⟩
-  rw [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0, Algebra.smul_def,
-    map_mul (IsPurelyInseparable.iterateFrobenius K M p hn),
-    IsPurelyInseparable.iterateFrobenius_algebraMap, ← has j, map_mul, map_pow, mul_div_assoc',
-    eq_div_iff (hs0 j)]
-  conv_rhs => rw [← Nat.sub_add_cancel (pow_pos (expChar_pos K p) n), pow_succ]
-  ring
-
 /-- A finite integrally closed extension `R'` of a Japanese domain `R` in which every coefficient
 of each of the finitely many polynomials `g j` has an `m`-th root. Take a finite extension `F'`
 of the fraction field `F` of `R` containing `m`-th roots of these coefficients
@@ -210,7 +187,8 @@ theorem IsIntegralClosure.finite_mvPolynomial_of_isPurelyInseparable (R : Type*)
   set n := IsPurelyInseparable.exponent K M
   -- a `K`-basis of `M`, and (D1) preimages in `P` of the `p ^ n`-th powers of its vectors
   obtain ⟨m, b, g, hgg⟩ :=
-    exists_basis_iterateFrobenius_eq_algebraMap (MvPolynomial σ R) K M p (le_refl n)
+    IsPurelyInseparable.exists_basis_iterateFrobenius_eq_algebraMap (MvPolynomial σ R) K M p
+      (le_refl n)
   -- B1: a finite integrally closed extension of `R` holding `p ^ n`-th roots of the coefficients
   -- of the `g j`
   obtain ⟨R', _, _, _, hR'fin, _, hR'inj, hR'root⟩ :=
@@ -240,8 +218,8 @@ theorem IsIntegralClosure.finite_mvPolynomial_of_isPurelyInseparable (R : Type*)
   let _ : Algebra K (FractionRing (MvPolynomial σ R')) := (IsFractionRing.lift hPK').toAlgebra
   have : IsScalarTower (MvPolynomial σ R) K (FractionRing (MvPolynomial σ R')) :=
     IsScalarTower.of_algebraMap_eq fun x ↦ (IsFractionRing.lift_algebraMap hPK' x).symm
-  -- `P'` is integrally closed (`MvPolynomial.isIntegrallyClosed`) and finite over `P`, so it is
-  -- the integral closure of `P` in `K'`
+  -- `P'` is integrally closed (`TauCeti.MvPolynomial.isIntegrallyClosed`) and finite over `P`,
+  -- so it is the integral closure of `P` in `K'`
   refine IsIntegralClosure.finite_of_forall_exists_pow_eq (MvPolynomial σ R) K M C
     (MvPolynomial σ R') (FractionRing (MvPolynomial σ R')) p (le_refl n)
     (s := Set.range b) ?_ ?_
