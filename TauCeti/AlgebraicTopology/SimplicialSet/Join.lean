@@ -45,6 +45,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
 
 * `SSet.join.homEquiv`: maps `X ⟶ K ⋆ L` correspond to join data on `X`, naturally in `X`
   (`SSet.join.homEquiv_comp`); this is the representability `SSet.join.representableBy`.
+* `SSet.join.edge_mem_joinFiber_zero`: an edge of `K ⋆ L` ending over the vertex `0` lies over
+  `0`.
 * `SSet.join.isoOfIsTerminal`: the join of two terminal simplicial sets, such as
   `Δ[0] ⋆ Δ[0]`, is `Δ[1]`.
 * `SSet.join.quasicategory`: the join of two quasicategories is a quasicategory (Joyal).
@@ -665,9 +667,26 @@ def edgeMk (x : K _⦋0⦌) (y : L _⦋0⦌) : (join K L).Edge ((inl K L).app _ 
         exact congrArg (fun f ↦ L.map f y) (Subsingleton.elim _ _)))
 
 /-- The join data of the edge `edgeMk x y` on `Δ[1]`. -/
+@[simp]
 lemma objEquiv_edgeMk_edge (x : K _⦋0⦌) (y : L _⦋0⦌) :
     objEquiv (edgeMk x y).edge = ⟨𝟙 Δ[1], const x, const y⟩ :=
   (rfl)
+
+/-- An edge of the join `K ⋆ L` whose target lies over the vertex `0` lies over `0`, since the
+projection to `Δ[1]` is monotone along the edge. -/
+lemma edge_mem_joinFiber_zero {v w : (join K L) _⦋0⦌} (e : (join K L).Edge v w)
+    (hw : w ∈ (joinFiber (univ K L).p 0).obj _) :
+    e.edge ∈ (joinFiber (univ K L).p 0).obj _ := by
+  rw [univ_p, mem_joinFiber_iff] at hw ⊢
+  have h1 : (π K L).app (op ⦋1⦌) e.edge 1 = 0 := by
+    -- The target of the edge is its face opposite to the vertex `0`.
+    refine Eq.trans ?_ ((congrArg (fun t ↦ (π K L).app (op ⦋0⦌) t 0) e.tgt_eq).trans (hw 0))
+    have hnat := ConcreteCategory.congr_hom
+      (SimplicialObject.δ_naturality (π K L) (0 : Fin 2)) e.edge
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hnat
+    rw [hnat, stdSimplex.δ_apply]
+    rfl
+  exact fun j ↦ le_antisymm (h1 ▸ stdSimplex.monotone_apply _ (Fin.le_last j)) (Fin.zero_le _)
 
 end join
 

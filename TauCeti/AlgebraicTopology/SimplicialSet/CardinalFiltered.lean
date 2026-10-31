@@ -121,22 +121,6 @@ section Preorder
 
 variable {P : Type u} [Preorder P] {Y : SSet.{u}}
 
-/-- An edge of the cone `Y ⋆ Δ[0]` whose target lies in `Y` lies in `Y`, since the projection to
-`Δ[1]` is monotone along the edge. -/
-private lemma edge_mem_joinFiber_zero {v w : (join Y Δ[0]) _⦋0⦌} (e : (join Y Δ[0]).Edge v w)
-    (hw : w ∈ (joinFiber (join.univ Y Δ[0]).p 0).obj _) :
-    e.edge ∈ (joinFiber (join.univ Y Δ[0]).p 0).obj _ := by
-  rw [join.univ_p, mem_joinFiber_iff] at hw ⊢
-  have h1 : (join.π Y Δ[0]).app (op ⦋1⦌) e.edge 1 = 0 := by
-    -- The target of the edge is its face opposite to the vertex `0`.
-    refine Eq.trans ?_ ((congrArg (fun t ↦ (join.π Y Δ[0]).app (op ⦋0⦌) t 0) e.tgt_eq).trans (hw 0))
-    have hnat := ConcreteCategory.congr_hom
-      (SimplicialObject.δ_naturality (join.π Y Δ[0]) (0 : Fin 2)) e.edge
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hnat
-    rw [hnat, stdSimplex.δ_apply]
-    rfl
-  exact fun j ↦ le_antisymm (h1 ▸ stdSimplex.monotone_apply _ (Fin.le_last j)) (Fin.zero_le _)
-
 open Classical in
 /-- The vertex map of the extension of `f : Y ⟶ nerve P` to the cone `Y ⋆ Δ[0]` which sends the cone
 point to `b`. -/
@@ -162,7 +146,7 @@ private lemma coneVertex_le (f : Y ⟶ nerve P) {b : P}
     coneVertex f b v ≤ coneVertex f b w := by
   by_cases hw : w ∈ (joinFiber (join.univ Y Δ[0]).p 0).obj _
   · -- The edge lies in `Y`, where it is sent to an edge of `nerve P` by `f`.
-    have he := edge_mem_joinFiber_zero e hw
+    have he := join.edge_mem_joinFiber_zero e hw
     have hv : v ∈ (joinFiber (join.univ Y Δ[0]).p 0).obj _ := by
       rw [← e.src_eq]
       exact (joinFiber (join.univ Y Δ[0]).p 0).map (SimplexCategory.δ 1).op he

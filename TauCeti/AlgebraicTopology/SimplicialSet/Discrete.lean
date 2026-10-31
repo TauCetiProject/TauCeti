@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.NonDegenerateSimplices
+public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 
 /-!
 # Discrete simplicial sets
@@ -38,25 +39,11 @@ variable (ι : Type u) {X : SSet.{u}}
 
 /-- Maps from the discrete simplicial set on `ι` to `X` are families of vertices of `X` indexed by
 `ι`; the map attached to a family sends `i` in every dimension to the degenerate simplex on the
-vertex at `i`. -/
-def constHomEquiv : ((Functor.const SimplexCategoryᵒᵖ).obj ι ⟶ X) ≃ (ι → X _⦋0⦌) where
-  toFun f i := f.app _ i
-  invFun x :=
-    { app n := ↾fun i ↦ X.map (n.unop.const ⦋0⦌ 0).op (x i)
-      naturality _ _ _ := by
-        ext
-        dsimp
-        rw [← Functor.map_comp_apply]
-        rfl }
-  left_inv f := by
-    ext n i
-    -- The simplex `i` of the discrete simplicial set is the degeneracy of the vertex `i`.
-    exact (f.naturality_apply (n.unop.const ⦋0⦌ 0).op i).symm
-  right_inv x := by
-    funext i
-    dsimp
-    rw [Subsingleton.elim (SimplexCategory.const ⦋0⦌ ⦋0⦌ 0) (𝟙 _), op_id]
-    simp
+vertex at `i`. This is the adjunction between constant presheaves and evaluation at the terminal
+object `⦋0⦌` of `SimplexCategory`. -/
+noncomputable def constHomEquiv : ((Functor.const SimplexCategoryᵒᵖ).obj ι ⟶ X) ≃ (ι → X _⦋0⦌) :=
+  ((constantPresheafAdj (Type u) SimplexCategory.isTerminalZero).homEquiv ι X).trans
+    TypeCat.homEquiv
 
 @[simp]
 lemma constHomEquiv_apply (f : (Functor.const SimplexCategoryᵒᵖ).obj ι ⟶ X) (i : ι) :
@@ -64,12 +51,15 @@ lemma constHomEquiv_apply (f : (Functor.const SimplexCategoryᵒᵖ).obj ι ⟶ 
   (rfl)
 
 /-- The map from the discrete simplicial set given by a family of vertices sends the vertex `i`
-to the vertex at `i`. -/
+to the vertex at `i`. The source of the component is stated as `ι`, its simp-normal form. -/
+@[simp]
 lemma constHomEquiv_symm_app_zero (x : ι → X _⦋0⦌) (i : ι) :
-    ((constHomEquiv ι).symm x).app (op ⦋0⦌) i = x i :=
+    ConcreteCategory.hom (X := ι) (Y := X _⦋0⦌) (((constHomEquiv ι).symm x).app (op ⦋0⦌)) i =
+      x i :=
   congrFun ((constHomEquiv ι).apply_symm_apply x) i
 
 /-- Every simplex of positive dimension of a discrete simplicial set is degenerate. -/
+@[simp]
 lemma const_degenerate_succ (n : ℕ) :
     SSet.degenerate ((Functor.const SimplexCategoryᵒᵖ).obj ι) (n + 1) = Set.univ :=
   -- Faces and degeneracies of a discrete simplicial set are identities, so `i = σ₀ i`.
