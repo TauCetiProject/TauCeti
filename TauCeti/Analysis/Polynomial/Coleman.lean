@@ -145,7 +145,24 @@ private theorem coeff_prod_sylvester_colemanDBounded (hB₀ : B.coeff 0 = 0)
 
 end Sylvester
 
-variable {R : Type*} [SeminormedCommRing R] [NormOneClass R] {B P : R[X]} {n m : ℕ}
+variable {R : Type*} [SeminormedCommRing R] {B P : R[X]} {n m : ℕ}
+
+/-- A bound `b` on a weighted coefficient `‖coeff l B‖ * r ^ l` at a radius `r ≥ 0` is
+nonnegative. -/
+private theorem nonneg_of_norm_coeff_mul_pow_le {r b : ℝ} {l : ℕ} (hr : 0 ≤ r)
+    (h : ‖B.coeff l‖ * r ^ l ≤ b) : 0 ≤ b :=
+  (mul_nonneg (norm_nonneg _) (pow_nonneg hr _)).trans h
+
+/-- A bound `β t` on the weighted coefficients of positive degree of `B` bounds the weighted
+coefficient picked by a forward move from `i` to `k > i`. -/
+private theorem norm_coeff_sub_mul_pow_le {ρ β : ℕ → ℝ}
+    (hβ : ∀ t j, ‖B.coeff (j + 1)‖ * ρ t ^ (j + 1) ≤ β t) {i k : ℕ} (h : i < k) (t : ℕ) :
+    ‖B.coeff (k - i)‖ * ρ t ^ (k - i) ≤ β t := by
+  obtain ⟨j, hj⟩ : ∃ j, k - i = j + 1 := ⟨k - i - 1, by omega⟩
+  rw [hj]
+  exact hβ t j
+
+variable [NormOneClass R]
 
 /-- The norm of a band term of the Leibniz expansion of Coleman's transform. By the crossing
 estimate, the coefficients `aⱼ` it picks are absorbed into powers of `ρ` at the ranks of its
@@ -206,10 +223,8 @@ private theorem norm_prod_colemanDBounded_term_le_sum {ρ β γ : ℕ → ℝ} {
       ∑ r ∈ range #{x : Fin (n + m) | (x : ℕ) < σ x},
         γ r * ∏ t ∈ (range #{x : Fin (n + m) | (x : ℕ) < σ x}).erase r, β t := by
   set S : Finset (Fin (n + m)) := {x : Fin (n + m) | (x : ℕ) < σ x} with hS
-  have hβ₀ (t : ℕ) : 0 ≤ β t :=
-    (mul_nonneg (norm_nonneg _) (pow_nonneg (hρ₀ t) _)).trans (hβ t 0)
-  have hγ₀ (t : ℕ) : 0 ≤ γ t :=
-    (mul_nonneg (norm_nonneg _) (pow_nonneg (hρ₀ t) _)).trans (hγ t (L + 1) (by omega))
+  have hβ₀ (t : ℕ) : 0 ≤ β t := nonneg_of_norm_coeff_mul_pow_le (hρ₀ t) (hβ t 0)
+  have hγ₀ (t : ℕ) : 0 ≤ γ t := nonneg_of_norm_coeff_mul_pow_le (hρ₀ t) (hγ t (L + 1) (by omega))
   have hx₀S : x₀ ∈ S := mem_filter.2 ⟨mem_univ _, hx₀⟩
   have hr : σ.upRank x₀ ∈ range #S := by
     rw [← Perm.image_upRank σ (fun x hx ↦ (mem_filter.1 hx).2) fun x _ y hy _ ↦ by simpa using hy]
@@ -225,10 +240,7 @@ private theorem norm_prod_colemanDBounded_term_le_sum {ρ β γ : ℕ → ℝ} {
           exact hγ _ _ hL
         · rw [Function.update_of_ne fun h ↦ hxx₀ (σ.upRank_injOn
             (by simpa [hS] using hx) (by simpa [hS] using hx₀S) h)]
-          obtain ⟨j, hj⟩ : ∃ j, (σ x : ℕ) - x = j + 1 :=
-            ⟨σ x - x - 1, by have := (mem_filter.1 hx).2; omega⟩
-          rw [hj]
-          exact hβ _ j
+          exact norm_coeff_sub_mul_pow_le hβ (mem_filter.1 hx).2 _
     _ = γ (σ.upRank x₀) * ∏ t ∈ (range #S).erase (σ.upRank x₀), β t := by
         rw [hS, Perm.prod_upRank, ← hS, prod_update_of_mem hr, sdiff_singleton_eq_erase]
     _ ≤ ∑ r ∈ range #S, γ r * ∏ t ∈ (range #S).erase r, β t :=
@@ -247,8 +259,7 @@ theorem norm_coeff_colemanDBounded_le {ρ β : ℕ → ℝ}
     (hP : ∀ j ≤ n, ‖P.coeff j‖ ≤ ∏ i ∈ range j, ρ i)
     (hβ : ∀ t j, ‖B.coeff (j + 1)‖ * ρ t ^ (j + 1) ≤ β t) (k : ℕ) :
     ‖(colemanDBounded B P n m).coeff k‖ ≤ ∏ t ∈ range k, β t := by
-  have hβ₀ (t : ℕ) : 0 ≤ β t :=
-    (mul_nonneg (norm_nonneg _) (pow_nonneg (hρ₀ t) _)).trans (hβ t 0)
+  have hβ₀ (t : ℕ) : 0 ≤ β t := nonneg_of_norm_coeff_mul_pow_le (hρ₀ t) (hβ t 0)
   have hprod : 0 ≤ ∏ t ∈ range k, β t := prod_nonneg fun t _ ↦ hβ₀ t
   rw [colemanDBounded_def, resultant, Matrix.det_apply, finsetSum_coeff]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hprod fun σ _ ↦ ?_
@@ -262,10 +273,7 @@ theorem norm_coeff_colemanDBounded_le {ρ β : ℕ → ℝ}
   rw [← Perm.prod_upRank]
   refine prod_le_prod₀ (fun x _ ↦ mul_nonneg (norm_nonneg _) (pow_nonneg (hρ₀ _) _))
     fun x hx ↦ ?_
-  obtain ⟨j, hj⟩ : ∃ j, (σ x : ℕ) - x = j + 1 :=
-    ⟨σ x - x - 1, by have := (mem_filter.1 hx).2; omega⟩
-  rw [hj]
-  exact hβ _ j
+  exact norm_coeff_sub_mul_pow_le hβ (mem_filter.1 hx).2 _
 
 /-- **Continuity of Coleman's transform.** Let `(B, P)` and `(B', P')` be two pairs of polynomials
 over an ultrametric seminormed ring with `‖1‖ = 1`, both obeying the hypotheses of
@@ -286,10 +294,8 @@ theorem norm_coeff_colemanDBounded_sub_le {B' P' : R[X]} {L k : ℕ} {ρ β γ :
     ‖(colemanDBounded B P n m).coeff k - (colemanDBounded B' P' n m).coeff k‖ ≤
       ∑ r ∈ range k, γ r * ∏ t ∈ (range k).erase r, β t := by
   have hB₀' : B'.coeff 0 = 0 := (hBB' 0 (Nat.zero_le _)).symm.trans hB₀
-  have hβ₀ (t : ℕ) : 0 ≤ β t :=
-    (mul_nonneg (norm_nonneg _) (pow_nonneg (hρ₀ t) _)).trans (hβ t 0)
-  have hγ₀ (t : ℕ) : 0 ≤ γ t :=
-    (mul_nonneg (norm_nonneg _) (pow_nonneg (hρ₀ t) _)).trans (hγ t (L + 1) (by omega))
+  have hβ₀ (t : ℕ) : 0 ≤ β t := nonneg_of_norm_coeff_mul_pow_le (hρ₀ t) (hβ t 0)
+  have hγ₀ (t : ℕ) : 0 ≤ γ t := nonneg_of_norm_coeff_mul_pow_le (hρ₀ t) (hγ t (L + 1) (by omega))
   have hsum₀ : 0 ≤ ∑ r ∈ range k, γ r * ∏ t ∈ (range k).erase r, β t :=
     sum_nonneg fun r _ ↦ mul_nonneg (hγ₀ r) (prod_nonneg fun t _ ↦ hβ₀ t)
   simp only [colemanDBounded_def, resultant, Matrix.det_apply, finsetSum_coeff, ← sum_sub_distrib]
@@ -343,7 +349,28 @@ namespace PowerSeries
 open Filter Finset
 open scoped Topology
 
-variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+variable {R : Type*} [NormedCommRing R]
+
+/-- Truncation preserves a Newton majorant: `‖coeff j (trunc b F)‖ ≤ ∏ i < j, ρ i` whenever
+`‖coeff j F‖ ≤ ∏ i < j, ρ i` for all `j` and `ρ` is nonnegative. -/
+private theorem norm_coeff_trunc_le_prod {F : R⟦X⟧} {ρ : ℕ → ℝ} (hρ₀ : ∀ i, 0 ≤ ρ i)
+    (hF : ∀ j, ‖coeff j F‖ ≤ ∏ i ∈ range j, ρ i) (b j : ℕ) :
+    ‖(trunc b F).coeff j‖ ≤ ∏ i ∈ range j, ρ i := by
+  rw [coeff_trunc]
+  split_ifs
+  · exact hF j
+  · simpa using prod_nonneg fun i _ ↦ hρ₀ i
+
+/-- The weighted coefficients of positive degree of a truncation of `B` are bounded by the
+Coleman majorant of `B` at any nonnegative radius where `B` is restricted. -/
+private theorem norm_coeff_trunc_succ_mul_pow_le_colemanMajorant {B : R⟦X⟧} {r : ℝ}
+    (hB : B.IsRestricted r) (hr : 0 ≤ r) (a j : ℕ) :
+    ‖(trunc a B).coeff (j + 1)‖ * r ^ (j + 1) ≤ colemanMajorant B r := by
+  simpa [Polynomial.coeff_coe] using (norm_coeff_succ_mul_pow_le_colemanMajorant
+    (TauCeti.PowerSeries.isRestricted_polynomial (trunc a B)) j).trans
+    (colemanMajorant_trunc_le hB hr a)
+
+variable [NormOneClass R] [IsUltrametricDist R]
 
 /-- **Coleman's bound for truncations.** Let `ρ` be a nonnegative antitone Newton majorant of a
 power series `F`, `‖coeff j F‖ ≤ ∏ i < j, ρ i`, and let `B` be restricted at every radius `ρ i`
@@ -356,16 +383,9 @@ theorem norm_coeff_colemanDBounded_trunc_le {F B : R⟦X⟧} {ρ : ℕ → ℝ} 
     (hB : ∀ i, B.IsRestricted (ρ i)) (hB₀ : coeff 0 B = 0) (n m a b k : ℕ) :
     ‖(Polynomial.colemanDBounded (trunc a B) (trunc b F) n m).coeff k‖ ≤
       ∏ i ∈ range k, colemanMajorant B (ρ i) := by
-  refine Polynomial.norm_coeff_colemanDBounded_le (by simp [coeff_trunc, hB₀]) hρ₀ hρ
-    (fun j _ ↦ ?_) (fun t j ↦ ?_) k
-  · rw [coeff_trunc]
-    split_ifs
-    · exact hF j
-    · simpa using prod_nonneg fun i _ ↦ hρ₀ i
-  · rw [coeff_trunc]
-    split_ifs
-    · exact norm_coeff_succ_mul_pow_le_colemanMajorant (hB t) j
-    · simpa using colemanMajorant_nonneg B (hρ₀ t)
+  exact Polynomial.norm_coeff_colemanDBounded_le (by simp [coeff_trunc, hB₀]) hρ₀ hρ
+    (fun j _ ↦ norm_coeff_trunc_le_prod hρ₀ hF b j)
+    (fun t j ↦ norm_coeff_trunc_succ_mul_pow_le_colemanMajorant (hB t) (hρ₀ t) a j) k
 
 /-- **Continuity of Coleman's transform in the truncations.** Let `ρ` be a nonnegative antitone
 Newton majorant of a power series `F`, and let `B` be restricted at every radius `ρ i` with
@@ -382,17 +402,6 @@ theorem norm_coeff_colemanDBounded_trunc_sub_le {F B : R⟦X⟧} {ρ : ℕ → �
         (Polynomial.colemanDBounded (trunc a' B) (trunc b' F) n m).coeff k‖ ≤
       ∑ r ∈ range k, colemanMajorant (B - (trunc (L + 1) B : R⟦X⟧)) (ρ r) *
         ∏ t ∈ (range k).erase r, colemanMajorant B (ρ t) := by
-  have hP {b : ℕ} (j : ℕ) : ‖(trunc b F).coeff j‖ ≤ ∏ i ∈ range j, ρ i := by
-    rw [coeff_trunc]
-    split_ifs
-    · exact hF j
-    · simpa using prod_nonneg fun i _ ↦ hρ₀ i
-  have hβ {a : ℕ} (t j : ℕ) :
-      ‖(trunc a B).coeff (j + 1)‖ * ρ t ^ (j + 1) ≤ colemanMajorant B (ρ t) := by
-    rw [coeff_trunc]
-    split_ifs
-    · exact norm_coeff_succ_mul_pow_le_colemanMajorant (hB t) j
-    · simpa using colemanMajorant_nonneg B (hρ₀ t)
   -- the tail of `B` beyond degree `L` is restricted at every `ρ t`
   have htail (t : ℕ) : (B - trunc (L + 1) B : R⟦X⟧).IsRestricted (ρ t) :=
     (hB t).sub (TauCeti.PowerSeries.isRestricted_polynomial _)
@@ -405,7 +414,9 @@ theorem norm_coeff_colemanDBounded_trunc_sub_le {F B : R⟦X⟧} {ρ : ℕ → �
       simpa [coeff_trunc, hj] using norm_coeff_succ_mul_pow_le_colemanMajorant (htail t) j
     · simpa using colemanMajorant_nonneg _ (hρ₀ t)
   exact Polynomial.norm_coeff_colemanDBounded_sub_le (by simp [coeff_trunc, hB₀]) hρ₀ hρ
-    (fun j _ ↦ hP j) (fun j _ ↦ hP j) hβ hβ hγ hγ
+    (fun j _ ↦ norm_coeff_trunc_le_prod hρ₀ hF b j) (fun j _ ↦ norm_coeff_trunc_le_prod hρ₀ hF b' j)
+    (fun t j ↦ norm_coeff_trunc_succ_mul_pow_le_colemanMajorant (hB t) (hρ₀ t) a j)
+    (fun t j ↦ norm_coeff_trunc_succ_mul_pow_le_colemanMajorant (hB t) (hρ₀ t) a' j) hγ hγ
     (fun l hl ↦ by simp [coeff_trunc, show l < a by omega, show l < a' by omega])
     (fun j hj ↦ by simp [coeff_trunc, show j < b by omega, show j < b' by omega])
 
