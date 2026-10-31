@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Hypergraph.Basic
-public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Clique
 public import Mathlib.Data.Finset.Slice
 public import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Tactic.Positivity
@@ -260,31 +260,28 @@ section SimpleGraph
 variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
 
 /-- The edges of a simple graph on a finite vertex type as a `2`-uniform hypergraph: the
-two-element finsets of pairwise adjacent vertices. -/
+`2`-cliques `G.cliqueFinset 2` of `G`. -/
 def _root_.SimpleGraph.toUniformHypergraph : UniformHypergraph 2 V where
-  edges := univ.filter fun e ↦ #e = 2 ∧ ∀ u ∈ e, ∀ v ∈ e, u ≠ v → G.Adj u v
-  edge_card _ he := (Finset.mem_filter.1 he).2.1
+  edges := G.cliqueFinset 2
+  edge_card _ he := (G.mem_cliqueFinset_iff.1 he).card_eq
 
 variable {G}
 
-/-- The edges of `G.toUniformHypergraph` are the two-element finsets of pairwise adjacent
-vertices. -/
+/-- The edges of `G.toUniformHypergraph` are the `2`-cliques of `G`. -/
 theorem _root_.SimpleGraph.mem_toUniformHypergraph_edges {e : Finset V} :
-    e ∈ G.toUniformHypergraph.edges ↔ #e = 2 ∧ ∀ u ∈ e, ∀ v ∈ e, u ≠ v → G.Adj u v := by
-  simp [SimpleGraph.toUniformHypergraph]
+    e ∈ G.toUniformHypergraph.edges ↔ G.IsNClique 2 e :=
+  G.mem_cliqueFinset_iff
 
 /-- A pair `{u, v}` is an edge of `G.toUniformHypergraph` exactly when `u` and `v` are adjacent
 in `G`. -/
 @[simp]
 theorem _root_.SimpleGraph.insert_mem_toUniformHypergraph_edges {u v : V} :
     {u, v} ∈ G.toUniformHypergraph.edges ↔ G.Adj u v := by
-  rw [SimpleGraph.mem_toUniformHypergraph_edges]
-  refine ⟨fun ⟨hcard, hadj⟩ ↦ hadj u (by simp) v (by simp) ?_, fun h ↦ ⟨card_pair h.ne, ?_⟩⟩
-  · rintro rfl
-    simp at hcard
-  · simp only [Finset.mem_insert, Finset.mem_singleton]
-    rintro a (rfl | rfl) b (rfl | rfl) hab
-    exacts [absurd rfl hab, h, h.symm, absurd rfl hab]
+  rw [SimpleGraph.mem_toUniformHypergraph_edges, SimpleGraph.isNClique_iff, coe_pair,
+    SimpleGraph.isClique_pair]
+  refine ⟨fun ⟨hadj, hcard⟩ ↦ hadj ?_, fun h ↦ ⟨fun _ ↦ h, card_pair h.ne⟩⟩
+  rintro rfl
+  simp at hcard
 
 end SimpleGraph
 

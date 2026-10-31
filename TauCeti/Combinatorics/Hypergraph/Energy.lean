@@ -29,7 +29,7 @@ summed over all `r`-tuples `A` of parts of `P`, repeated parts included. It is t
 the box-average step function `x ↦ d_H(P.part ∘ x)` over all `nʳ` ordered tuples
 (`UniformHypergraph.weightedEnergy_eq_sum_part`). This is the `r`-uniform analogue of the
 size-weighted graph energy `SimpleGraph.weightedEnergy`, and for `r = 2` the two agree
-(`UniformHypergraph.weightedEnergy_toUniformHypergraph`).
+(`SimpleGraph.weightedEnergy_toUniformHypergraph`).
 
 Box densities are conditional expectations of the edge indicator of ordered tuples. Consequently,
 for a refinement `Q ≤ P`, the mean square deviation of the fine box densities from the coarse ones
@@ -55,7 +55,7 @@ equitability or regularity.
   decrease the energy.
 * `TauCeti.UniformHypergraph.sum_abs_boxDensity_part_sub_le`: the absolute-deviation bound from
   an energy gap.
-* `TauCeti.UniformHypergraph.weightedEnergy_toUniformHypergraph`: for the `2`-uniform hypergraph of
+* `SimpleGraph.weightedEnergy_toUniformHypergraph`: for the `2`-uniform hypergraph of
   a simple graph, the energy is the graph's size-weighted energy.
 
 ## References
@@ -134,13 +134,6 @@ theorem weightedEnergy_def (P : Finpartition (univ : Finset V)) :
       (∏ i, (#(A i : Finset V) : ℝ)) / (Fintype.card V : ℝ) ^ r * (H.boxDensity (A ·) : ℝ) ^ 2 :=
   (rfl)
 
-/-- A tuple `y` lies in the box of parts through `x` exactly when its entries lie in the same
-parts as those of `x`. -/
-private theorem mem_piFinset_part_iff (P : Finpartition (univ : Finset V)) {x y : Fin r → V} :
-    y ∈ Fintype.piFinset (P.part ∘ x) ↔ P.part ∘ y = P.part ∘ x := by
-  simp only [Fintype.mem_piFinset, Function.comp_apply, funext_iff]
-  exact forall_congr' fun i ↦ (P.part_eq_iff_mem (P.part_mem.2 (mem_univ _))).symm
-
 /-- The energy is the mean square of the box-average step function `x ↦ d_H(P.part ∘ x)` over
 all ordered `r`-tuples of vertices, repeated entries included. -/
 theorem weightedEnergy_eq_sum_part (P : Finpartition (univ : Finset V)) :
@@ -179,10 +172,10 @@ private theorem sum_boxDensity_part_mul (P : Finpartition (univ : Finset V))
       φ x / #(Fintype.piFinset (P.part ∘ x)) = φ y := by
     intro y
     have hpos : (#(Fintype.piFinset (P.part ∘ y)) : ℝ) ≠ 0 :=
-      Nat.cast_ne_zero.2 (card_pos.2 ⟨y, (mem_piFinset_part_iff P).2 rfl⟩).ne'
+      Nat.cast_ne_zero.2 (card_pos.2 ⟨y, (P.mem_piFinset_part_iff fun _ ↦ mem_univ _).2 rfl⟩).ne'
     have heq : ∀ x ∈ Fintype.piFinset (P.part ∘ y), φ x / #(Fintype.piFinset (P.part ∘ x)) =
         φ y / #(Fintype.piFinset (P.part ∘ y)) := fun x hx ↦ by
-      have hxy := (mem_piFinset_part_iff P).1 hx
+      have hxy : P.part ∘ x = P.part ∘ y := (P.mem_piFinset_part_iff fun _ ↦ mem_univ _).1 hx
       rw [hxy, hφ x y hxy]
     rw [sum_congr rfl heq, sum_const, nsmul_eq_mul, mul_div_cancel₀ _ hpos]
   -- Expand each density as a count over the box, then exchange the two sums.
@@ -204,7 +197,8 @@ private theorem sum_boxDensity_part_mul (P : Finpartition (univ : Finset V))
         refine sum_congr rfl fun y _ ↦ ?_
         rw [← sum_filter]
         refine sum_congr (Finset.ext fun x ↦ ?_) fun _ _ ↦ rfl
-        simp only [mem_filter, mem_univ, true_and, mem_piFinset_part_iff, eq_comm]
+        simp only [mem_filter, mem_univ, true_and, Function.comp_def,
+          P.mem_piFinset_part_iff fun _ ↦ mem_univ _, eq_comm]
     _ = _ := sum_congr rfl fun y _ ↦ key y
 
 /-! ### Refinement -/
@@ -221,8 +215,9 @@ private theorem sum_boxDensity_mul_boxDensity (h : Q ≤ P) :
   -- A fine box of parts determines the coarse one.
   have hQP : ∀ x y : Fin r → V, Q.part ∘ x = Q.part ∘ y → P.part ∘ x = P.part ∘ y := by
     intro x y hxy
-    have hx : x ∈ Fintype.piFinset (Q.part ∘ y) := (mem_piFinset_part_iff Q).2 hxy
-    refine (mem_piFinset_part_iff P).1 (Fintype.mem_piFinset.2 fun i ↦ ?_)
+    have hx : x ∈ Fintype.piFinset (Q.part ∘ y) :=
+      (Q.mem_piFinset_part_iff fun _ ↦ mem_univ _).2 hxy
+    refine (P.mem_piFinset_part_iff fun _ ↦ mem_univ _).1 (Fintype.mem_piFinset.2 fun i ↦ ?_)
     exact Finpartition.part_mono h (y i) (Fintype.mem_piFinset.1 hx i)
   simp_rw [sq]
   rw [H.sum_boxDensity_part_mul Q _ fun x y hxy ↦ by rw [hQP x y hxy],
@@ -287,7 +282,7 @@ variable (G : SimpleGraph V) [DecidableRel G.Adj]
 /-- The box density of a simple graph's `2`-uniform hypergraph in a box `A 0 × A 1` is the edge
 density of `G` between `A 0` and `A 1`. -/
 @[simp]
-theorem boxDensity_toUniformHypergraph (A : Fin 2 → Finset V) :
+theorem _root_.SimpleGraph.boxDensity_toUniformHypergraph (A : Fin 2 → Finset V) :
     G.toUniformHypergraph.boxDensity A = G.edgeDensity (A 0) (A 1) := by
   have hcard : #(G.toUniformHypergraph.boxEdges A) = #(G.interedges (A 0) (A 1)) := by
     refine card_equiv (piFinTwoEquiv fun _ ↦ V) fun x ↦ ?_
@@ -302,7 +297,7 @@ theorem boxDensity_toUniformHypergraph (A : Fin 2 → Finset V) :
 /-- **Comparison with graphs.** The energy of a simple graph's `2`-uniform hypergraph is the
 size-weighted energy `SimpleGraph.weightedEnergy` of the graph. -/
 @[simp]
-theorem weightedEnergy_toUniformHypergraph (P : Finpartition (univ : Finset V)) :
+theorem _root_.SimpleGraph.weightedEnergy_toUniformHypergraph (P : Finpartition (univ : Finset V)) :
     G.toUniformHypergraph.weightedEnergy P = G.weightedEnergy P := by
   rw [weightedEnergy_eq_sum_part, SimpleGraph.weightedEnergy_eq_sum_part,
     ← (piFinTwoEquiv fun _ ↦ V).symm.sum_comp, Fintype.sum_prod_type]
