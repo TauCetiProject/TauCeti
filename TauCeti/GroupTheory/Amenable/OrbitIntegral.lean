@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.GroupTheory.Amenable.Basic
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
+public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
+public import TauCeti.MeasureTheory.Group.Convolution.UCB
 
 /-!
 # Integrals of translation orbits in `UCB` and invariant means
@@ -51,6 +53,8 @@ orbit map has separable image on each of them
   `x ↦ ∫ y, h y * f (y⁻¹ * x) ∂μ`.
 * `TauCeti.UCB.norm_integral_smul_leftTranslation_le`: its norm is at most `(∫ ‖h‖) * ‖f‖`.
 * `TauCeti.UCB.integral_smul_leftTranslation_nonneg`: it is nonnegative when `h` and `f` are.
+* `MeasureTheory.Lp.convolutionUCB_toLpTop`: smoothing the `L∞` class of a `UCB` function agrees
+  with its translation-orbit integral.
 * `TauCeti.Mean.apply_integral_smul_leftTranslation`: a mean commutes with the orbit integral.
 * `TauCeti.Mean.IsLeftInvariant.apply_integral_smul_leftTranslation`: a left-invariant mean takes
   the value `(∫ h) * m f` at the orbit integral.
@@ -140,3 +144,23 @@ theorem integral_smul_leftTranslation_nonneg (hh : Integrable h μ) (hh₀ : 0 �
 end UCB
 
 end TauCeti
+
+namespace MeasureTheory.Lp
+
+open TauCeti
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
+  [μ.IsHaarMeasure] [μ.Regular]
+
+/-- Smoothing the almost-everywhere class of a `UCB` function agrees with its Bochner integral
+of left translates. -/
+theorem convolutionUCB_toLpTop (h : Lp ℝ 1 μ) (f : UCB G) :
+    convolutionUCB h (BoundedContinuousFunction.toLpTop μ ℝ (f : G →ᵇ ℝ)) =
+      ∫ y, h y • UCB.leftTranslation y f ∂μ := by
+  refine UCB.ext fun x => ?_
+  rw [convolutionUCB_apply_of_ae_eq (ae_eq_refl _)
+    (BoundedContinuousFunction.coeFn_toLpTop μ (f : G →ᵇ ℝ)),
+    UCB.integral_smul_leftTranslation_apply (L1.integrable_coeFn h)]
+
+end MeasureTheory.Lp
