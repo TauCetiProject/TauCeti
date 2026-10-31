@@ -13,8 +13,10 @@ import Mathlib.NumberTheory.LegendreSymbol.Complex
 import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.NumberTheory.JacobiSum.Basic
+import TauCeti.NumberTheory.LegendreSymbol.Complex
 import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.RingTheory.IntegralClosure.Map
 
 /-!
 # The Gauss sum power `Φ(P) = g(P)^m`
@@ -263,30 +265,6 @@ theorem map_stickelbergerPhi (A : Ideal (𝓞 K)) (σ : 𝓞 K ≃+* 𝓞 L) :
 
 end Galois
 
-/-- Gauss sums of characters of `𝓞 K ⧸ P` can be read in the ring of algebraic integers of `ℂ`:
-the complex embedding `σ` of `K` restricts to an embedding of `𝓞 K` into it, and `𝓞 K ⧸ P` has a
-primitive additive character with values in it. -/
-private theorem exists_ringHom_addChar_integralClosure (P : Ideal (𝓞 K)) [P.IsMaximal]
-    (σ : K →+* ℂ) :
-    ∃ (f : 𝓞 K →+* integralClosure ℤ ℂ) (ψ : AddChar (𝓞 K ⧸ P) (integralClosure ℤ ℂ)),
-      Function.Injective f ∧ (∀ x, (f x : ℂ) = σ x) ∧ ψ.IsPrimitive := by
-  let _ := Ideal.Quotient.field P
-  let _ := Fintype.ofFinite (𝓞 K ⧸ P)
-  let ψ₀ := AddChar.FiniteField.primitiveChar_to_Complex (𝓞 K ⧸ P)
-  let f : 𝓞 K →+* integralClosure ℤ ℂ := (σ.comp (algebraMap (𝓞 K) K)).codRestrict
-    (integralClosure ℤ ℂ).toSubring fun x => (x.isIntegral_coe.map σ.toIntAlgHom :)
-  -- The values of `ψ₀` are roots of unity, hence algebraic integers.
-  let ψ : AddChar (𝓞 K ⧸ P) (integralClosure ℤ ℂ) :=
-    { toFun t := ⟨ψ₀ t, IsIntegral.of_pow (Fintype.card_pos (α := 𝓞 K ⧸ P)) <| by
-        rw [← AddChar.map_nsmul_eq_pow, card_nsmul_eq_zero, AddChar.map_zero_eq_one]
-        exact isIntegral_one⟩
-      map_zero_eq_one' := Subtype.ext ψ₀.map_zero_eq_one
-      map_add_eq_mul' a b := Subtype.ext (ψ₀.map_add_eq_mul a b) }
-  refine ⟨f, ψ, fun x y h => ?_, fun _ => rfl, fun a ha h => ?_⟩
-  · exact (σ.injective.comp (FaithfulSMul.algebraMap_injective _ _)) (congrArg Subtype.val h)
-  · exact AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive _ ha <|
-      DFunLike.ext _ _ fun t => congrArg Subtype.val (DFunLike.congr_fun h t)
-
 /-- **`Φ(P)` is `-1` modulo `m`.** If `m` is prime and `P` is a maximal ideal whose norm is prime
 to `m`, then `Φ(P) ≡ -1` modulo `m 𝓞 K`. -/
 theorem stickelbergerPhi_modEq [Fact m.Prime] (P : Ideal (𝓞 K)) [P.IsMaximal]
@@ -298,7 +276,10 @@ theorem stickelbergerPhi_modEq [Fact m.Prime] (P : Ideal (𝓞 K)) [P.IsMaximal]
   -- We read `Φ(P)` as a Gauss sum power in the ring of algebraic integers of `ℂ`, through an
   -- embedding `f` of `𝓞 K` and a primitive additive character `ψ` with values there.
   let σ : K →+* ℂ := Classical.arbitrary _
-  obtain ⟨f, ψ, hf, hfσ, hψ⟩ := exists_ringHom_addChar_integralClosure P σ
+  let f : 𝓞 K →+* integralClosure ℤ ℂ := σ.toIntAlgHom.mapIntegralClosure.toRingHom
+  have hf : Function.Injective f :=
+    AlgHom.mapIntegralClosure_injective (f := σ.toIntAlgHom) σ.injective
+  obtain ⟨ψ, hψ⟩ := TauCeti.exists_primitive_addChar_integralClosure (𝓞 K ⧸ P)
   -- `m` is invertible in the residue field, since it does not divide `N P`.
   have hmF : (m : 𝓞 K ⧸ P) ≠ 0 := by
     rw [← map_natCast (Quotient.mk P), Ne, Quotient.eq_zero_iff_mem]
@@ -317,6 +298,8 @@ theorem stickelbergerPhi_modEq [Fact m.Prime] (P : Ideal (𝓞 K)) [P.IsMaximal]
   -- Hence `(Φ(P) + 1) / m ∈ K` maps to the algebraic integer `y`, so it lies in `𝓞 K`.
   have hz : σ (((stickelbergerPhi P m + 1 : 𝓞 K) : K) / m) = y := by
     rw [map_div₀, map_natCast, div_eq_iff (Nat.cast_ne_zero.mpr hm.ne_zero)]
+    -- `f` is the restriction of `σ`, so its values are those of `σ`.
+    have hfσ (x : 𝓞 K) : (f x : ℂ) = σ x := rfl
     simpa [hfσ] using (congrArg Subtype.val hy).symm
   obtain ⟨z, hz'⟩ := IsIntegralClosure.isIntegral_iff (A := 𝓞 K) |>.mp <|
     (isIntegral_algHom_iff σ.toIntAlgHom σ.injective).mp (hz ▸ y.2)
@@ -437,8 +420,12 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_isMaximal (P P' : Ideal (
       powerResidueSymbol P m (Quotient.mk P (absNorm P' : 𝓞 K)) := by
   -- Work in the ring of algebraic integers of `ℂ`, which is integral over `𝓞 K` through `f`, and
   -- in a prime of it over `P'`.
-  obtain ⟨f, ψ, hf, -, hψ⟩ :=
-    exists_ringHom_addChar_integralClosure P (Classical.arbitrary (K →+* ℂ))
+  let _ := Ideal.Quotient.field P
+  let f : 𝓞 K →+* integralClosure ℤ ℂ :=
+    (Classical.arbitrary (K →+* ℂ)).toIntAlgHom.mapIntegralClosure.toRingHom
+  have hf : Function.Injective f := AlgHom.mapIntegralClosure_injective
+    (f := (Classical.arbitrary (K →+* ℂ)).toIntAlgHom) (RingHom.injective _)
+  obtain ⟨ψ, hψ⟩ := TauCeti.exists_primitive_addChar_integralClosure (𝓞 K ⧸ P)
   let _ := f.toAlgebra
   have : IsScalarTower ℤ (𝓞 K) (integralClosure ℤ ℂ) :=
     IsScalarTower.of_algebraMap_eq' (RingHom.ext_int _ _)
