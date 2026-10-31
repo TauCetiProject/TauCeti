@@ -63,6 +63,8 @@ chosen representatives.
   with the boost undone on the parameter circle.
 * `TauCeti.SmoothCircleEmbedding.boostConcordance ι a K`: the concordance from `K` to its boost,
   boosting the sphere and the circle simultaneously.
+* `TauCeti.SmoothEmbedding.Concordance.boost ι a F`: a concordance boosted by rapidity `a` toward
+  `ι i`, with the boost undone on the parameter circle.
 
 ## Main results
 
@@ -70,9 +72,6 @@ chosen representatives.
 * `TauCeti.SmoothCircleEmbedding.sphereBoostDiffeotopy_greatCircle_circleBoostDiffeotopy`,
   `TauCeti.SmoothCircleEmbedding.boost_greatCircle`: along the great circle the boosts of the
   sphere and of the circle cancel, so boosting preserves the great circle.
-* `TauCeti.SmoothCircleEmbedding.eventually_forall_im_pos_of_circleBoostDiffeotopy_final_notMem`:
-  a large boost of the circle toward `i` carries the complement of a neighbourhood of `-i` into the
-  open upper half.
 * `TauCeti.SmoothCircleEmbedding.exists_isConnectedSumPosition_boost`,
   `TauCeti.SmoothCircleEmbedding.exists_concordant_isConnectedSumPosition`: a knot standard near
   the bottom point of the circle is concordant to a knot in connected-sum position.
@@ -108,19 +107,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 /-- The **boosted knot**: `K` moved by the boost of rapidity `a` toward `ι i` in the ambient
 sphere, and reparametrized by the boost of rapidity `-a` toward `i` of the circle, which undoes
 the ambient boost along the great circle `ι`. -/
-@[expose]
 def boost (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ) (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
     SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) :=
   (K.transDiffeomorph (sphereBoostDiffeotopy ι.norm_map_I a).final).compDiffeomorph
     (circleBoostDiffeotopy (-a)).final
-
-/-- The boosted knot is `K` moved by the final boost of the sphere and reparametrized by the final
-boost of the circle. -/
-theorem boost_def (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ) (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
-    boost ι a K =
-      (K.transDiffeomorph (sphereBoostDiffeotopy ι.norm_map_I a).final).compDiffeomorph
-        (circleBoostDiffeotopy (-a)).final :=
-  (rfl)
 
 /-- The boosted knot boosts `K` after undoing the boost on the parameter circle. -/
 theorem coe_boost_apply (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
@@ -142,6 +132,7 @@ def boostConcordance (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
 
 /-- The boost concordance at `(w, t)`: the boosts of the sphere and of the circle at the time
 `SmoothEmbedding.Concordance.collaredSmoothTransitionUnit t`, applied around `K`. -/
+@[simp]
 theorem boostConcordance_apply (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
     (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) (p : Circle × ℝ) :
     boostConcordance ι a K p =
@@ -159,6 +150,7 @@ theorem concordant_boost (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
 
 /-- Along the great circle `ι`, the boost diffeotopy of the sphere toward `ι i` of rapidity `a`
 undoes, at every time `s`, the boost diffeotopy of the circle toward `i` of rapidity `-a`. -/
+@[simp]
 theorem sphereBoostDiffeotopy_greatCircle_circleBoostDiffeotopy (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
     (s : unitInterval) (w : Circle) :
     sphereBoostDiffeotopy (n := n) (m := ∞) ι.norm_map_I a
@@ -175,7 +167,7 @@ private theorem boost_apply_eq_greatCircle (a : ℝ)
     (hw : K ((circleBoostDiffeotopy (m := ∞) (-a)).final w) =
       greatCircle (n := n) ι ((circleBoostDiffeotopy (m := ∞) (-a)).final w)) :
     boost (n := n) ι a K w = greatCircle (n := n) ι w := by
-  rw [boost_def, SmoothEmbedding.compDiffeomorph_apply, SmoothEmbedding.transDiffeomorph_apply, hw,
+  rw [boost, SmoothEmbedding.compDiffeomorph_apply, SmoothEmbedding.transDiffeomorph_apply, hw,
     Diffeotopy.final_apply, Diffeotopy.final_apply,
     sphereBoostDiffeotopy_greatCircle_circleBoostDiffeotopy]
 
@@ -184,22 +176,6 @@ private theorem boost_apply_eq_greatCircle (a : ℝ)
 theorem boost_greatCircle (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ) :
     boost ι a (greatCircle (n := n) ι) = greatCircle ι :=
   SmoothEmbedding.ext fun _ => boost_apply_eq_greatCircle a rfl
-
-/-- **Boosting the circle away from a neighbourhood of `-i`.** For a neighbourhood `U` of the bottom
-point `-i` of the circle, once the rapidity `a` is large enough every parameter `w` whose boost
-back by rapidity `-a` lies outside `U` is in the open upper half of the circle. -/
-theorem eventually_forall_im_pos_of_circleBoostDiffeotopy_final_notMem {m : ℕ∞ω} {z₀ : Circle}
-    {U : Set Circle} (hU : U ∈ 𝓝 z₀) (hz₀ : (z₀ : ℂ) = -Complex.I) :
-    ∀ᶠ a in atTop, ∀ w : Circle, (circleBoostDiffeotopy (m := m) (-a)).final w ∉ U →
-      0 < (w : ℂ).im := by
-  obtain ⟨V, hVU, hVo, hz₀V⟩ := _root_.mem_nhds_iff.1 hU
-  have h := (hVo.isClosed_compl.isCompact.image continuous_subtype_val
-    ).eventually_forall_inner_sphereBoost_pos (v := Complex.I) (by simp)
-      (by rintro _ ⟨z, -, rfl⟩; exact Circle.norm_coe z) fun ⟨z, hz, hz'⟩ =>
-        hz ((Subtype.ext (hz'.trans hz₀.symm) : z = z₀) ▸ hz₀V)
-  filter_upwards [h] with a ha w hw
-  have hpos := ha _ ⟨_, fun h => hw (hVU h), rfl⟩
-  rwa [sphereBoost_circleBoostDiffeotopy_final_neg, Complex.real_inner_I_right] at hpos
 
 /-- **Boosting into connected-sum position.** A knot that agrees with the great circle `ι` near
 the bottom point `-i` of the circle is in connected-sum position for `ι` once boosted far enough
@@ -277,5 +253,32 @@ theorem exists_concordant_isConnectedSumPosition_of_two_le (hn : 2 ≤ n) (ι : 
   exact ⟨K', (hK₁.concordant le_rfl).trans hK', hpos⟩
 
 end SmoothCircleEmbedding
+
+namespace SmoothEmbedding.Concordance
+
+attribute [local instance] finrank_real_complex_fact'
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)] {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
+
+/-- The **boosted concordance**: a concordance `F` from `K` to `K'` moved by the boost of rapidity
+`a` toward `ι i` in the sphere factor, and reparametrized by the boost of rapidity `-a` toward `i`
+of the circle. It is a concordance between the boosted knots
+`TauCeti.SmoothCircleEmbedding.boost ι a K` and `boost ι a K'`. -/
+def boost (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ) (F : Concordance K K') :
+    Concordance (K.boost ι a) (K'.boost ι a) :=
+  (F.transDiffeomorph (sphereBoostDiffeotopy ι.norm_map_I a).final).compDiffeomorph
+    (circleBoostDiffeotopy (-a)).final
+
+/-- The boosted concordance boosts `F` after undoing the boost on the parameter circle. -/
+@[simp]
+theorem boost_apply (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ) (F : Concordance K K') (p : Circle × ℝ) :
+    F.boost ι a p =
+      ((sphereBoostDiffeotopy (n := n) (m := ∞) ι.norm_map_I a).final
+          (F ((circleBoostDiffeotopy (m := ∞) (-a)).final p.1, p.2)).1,
+        (F ((circleBoostDiffeotopy (m := ∞) (-a)).final p.1, p.2)).2) :=
+  (compDiffeomorph_apply _ _ p).trans (transDiffeomorph_apply _ _ _)
+
+end SmoothEmbedding.Concordance
 
 end TauCeti

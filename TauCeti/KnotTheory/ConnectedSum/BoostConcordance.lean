@@ -58,12 +58,9 @@ replaced by one which is the standard strip near the arc `{-i} × ℝ`. In `Sⁿ
 moves the image of that arc onto the straight line `{-v} × ℝ` and the tangent direction of the
 annulus along it onto that of the strip, by isotopy extension.
 
-## Main definitions
-
-* `TauCeti.SmoothCircleEmbedding.boostConcordance ι a K`: the concordance from `K` to its boost,
-  boosting the sphere and the circle simultaneously.
-* `TauCeti.SmoothEmbedding.Concordance.boost ι a F`: a concordance boosted by rapidity `a` toward
-  `ι i`, with the boost undone on the parameter circle.
+Both concordances used here, `TauCeti.SmoothEmbedding.Concordance.boost` and
+`TauCeti.SmoothCircleEmbedding.boostConcordance`, are defined in
+`TauCeti.KnotTheory.ConnectedSum.Position`, next to the boosted knot.
 
 ## Main results
 
@@ -102,6 +99,30 @@ attribute [local instance] finrank_real_complex_fact'
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] {ι : ℂ →ₗᵢ[ℝ] E}
 
+namespace SmoothEmbedding.Concordance
+
+/-- A criterion for connected-sum position, through a continuous map `g` to the parameter circle
+and an open set `U` of parameters: the concordance `G` is the standard strip at every `q` with
+`g q ∈ U`, `g` maps the closed lower half of the circle into `U`, and elsewhere over the open upper
+half `G` lies over the open upper hemisphere. -/
+private theorem isConnectedSumPosition_of_mem_imp_eq
+    {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)} {G : Concordance K K'}
+    {g : Circle × ℝ → Circle} (hg : Continuous g) {U : Set Circle} (hU : IsOpen U)
+    (hstrip : ∀ q, g q ∈ U → G q = (SmoothCircleEmbedding.greatCircle (n := n) ι q.1, q.2))
+    (hlow : ∀ q : Circle × ℝ, (q.1 : ℂ).im ≤ 0 → g q ∈ U)
+    (hpos : ∀ p : Circle × ℝ, 0 < (p.1 : ℂ).im → g p ∉ U → 0 < ⟪((G p).1 : E), ι Complex.I⟫) :
+    G.IsConnectedSumPosition ι := by
+  refine ⟨fun {p} hp => ?_, fun {p} hp => ?_⟩
+  · filter_upwards [(hU.preimage hg).mem_nhds (hlow p hp)] with q hq
+    exact hstrip q hq
+  · by_cases hgp : g p ∈ U
+    · rw [hstrip p hgp, SmoothCircleEmbedding.coe_greatCircle_apply, ι.inner_map_map,
+        Complex.real_inner_I_right]
+      exact hp
+    · exact hpos p hp hgp
+
+end SmoothEmbedding.Concordance
+
 namespace SmoothCircleEmbedding
 
 /-- **The boost concordance of a knot in connected-sum position is in connected-sum position**, for
@@ -136,22 +157,17 @@ theorem IsConnectedSumPosition.boostConcordance
   have hstrip (q : Circle × ℝ) (hq : g q ∈ U) :
       SmoothCircleEmbedding.boostConcordance ι a K q = (greatCircle (n := n) ι q.1, q.2) := by
     rw [happly, hKU hq, sphereBoostDiffeotopy_greatCircle_circleBoostDiffeotopy]
-  refine ⟨fun {p} hp => ?_, fun {p} hp => ?_⟩
-  · filter_upwards [(hUo.preimage hg).mem_nhds (hK.eventuallyEq_greatCircle (him p hp))]
-      with q hq
-    exact hstrip q hq
-  · by_cases hgp : g p ∈ U
-    · rw [hstrip p hgp, coe_greatCircle_apply, ι.inner_map_map, Complex.real_inner_I_right]
-      exact hp
-    · -- Off `U` the parameter `g p` lies in the open upper half, where the knot is over the upper
-      -- hemisphere, which boosting toward `ι i` keeps.
-      have hpos : 0 < ⟪(K (g p) : E), ι Complex.I⟫ :=
-        hK.inner_pos (not_le.1 fun h => hgp (hK.eventuallyEq_greatCircle h))
-      have h := monotone_inner_sphereBoost ι.norm_map_I (norm_eq_of_mem_sphere (K (g p)))
-        (mul_nonneg ha (τ p.2).2.1 : (0 : ℝ) ≤ a * (τ p.2 : ℝ))
-      simp only [sphereBoost_zero, id] at h
-      rw [happly, coe_sphereBoostDiffeotopy_apply]
-      exact hpos.trans_le h
+  refine SmoothEmbedding.Concordance.isConnectedSumPosition_of_mem_imp_eq hg hUo hstrip
+    (fun q hq => hK.eventuallyEq_greatCircle (him q hq)) fun p _ hgp => ?_
+  -- Off `U` the parameter `g p` lies in the open upper half, where the knot is over the upper
+  -- hemisphere, which boosting toward `ι i` keeps.
+  have hpos : 0 < ⟪(K (g p) : E), ι Complex.I⟫ :=
+    hK.inner_pos (not_le.1 fun h => hgp (hK.eventuallyEq_greatCircle h))
+  have h := monotone_inner_sphereBoost ι.norm_map_I (norm_eq_of_mem_sphere (K (g p)))
+    (mul_nonneg ha (τ p.2).2.1 : (0 : ℝ) ≤ a * (τ p.2 : ℝ))
+  simp only [sphereBoost_zero, id] at h
+  rw [happly, coe_sphereBoostDiffeotopy_apply]
+  exact hpos.trans_le h
 
 end SmoothCircleEmbedding
 
@@ -164,23 +180,6 @@ open SmoothCircleEmbedding
 variable {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
 
 /-! ### Boosting a concordance -/
-
-/-- The **boosted concordance**: a concordance `F` from `K` to `K'` moved by the boost of rapidity
-`a` toward `ι i` in the sphere factor, and reparametrized by the boost of rapidity `-a` toward `i`
-of the circle. It is a concordance between the boosted knots
-`TauCeti.SmoothCircleEmbedding.boost ι a K` and `boost ι a K'`. -/
-def boost (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ) (F : Concordance K K') :
-    Concordance (K.boost ι a) (K'.boost ι a) :=
-  (F.transDiffeomorph (sphereBoostDiffeotopy ι.norm_map_I a).final).compDiffeomorph
-    (circleBoostDiffeotopy (-a)).final
-
-/-- The boosted concordance boosts `F` after undoing the boost on the parameter circle. -/
-theorem boost_apply (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ) (F : Concordance K K') (p : Circle × ℝ) :
-    F.boost ι a p =
-      ((sphereBoostDiffeotopy (n := n) (m := ∞) ι.norm_map_I a).final
-          (F ((circleBoostDiffeotopy (m := ∞) (-a)).final p.1, p.2)).1,
-        (F ((circleBoostDiffeotopy (m := ∞) (-a)).final p.1, p.2)).2) :=
-  (compDiffeomorph_apply _ _ p).trans (transDiffeomorph_apply _ _ _)
 
 /-- **Boosting a concordance into connected-sum position.** A concordance which is the standard
 strip `(z, t) ↦ (ι z, t)` for all times `t` and all parameters `z` near the bottom point `-i` of
@@ -223,17 +222,11 @@ theorem eventually_isConnectedSumPosition_boost {F : Concordance K K'} {z₀ : C
       F.boost ι a q = (greatCircle (n := n) ι q.1, q.2) := by
     rw [boost_apply, hU _ hq, Diffeotopy.final_apply, Diffeotopy.final_apply,
       sphereBoostDiffeotopy_greatCircle_circleBoostDiffeotopy]
-  refine ⟨fun {p} hp => ?_, fun {p} hp => ?_⟩
-  · have hmU : (fun q : Circle × ℝ => m q.1) ⁻¹' U ∈ 𝓝 p :=
-      (hUo.preimage (m.continuous.comp continuous_fst)).mem_nhds
-        (not_not.1 fun h => (not_le.2 (him p.1 h)) hp)
-    filter_upwards [hmU] with q hq
-    exact hstrip q hq
-  · by_cases hmp : m p.1 ∈ U
-    · rw [hstrip p hmp, coe_greatCircle_apply, ι.inner_map_map, Complex.real_inner_I_right]
-      exact hp
-    · rw [boost_apply, coe_sphereBoostDiffeotopy_final_apply]
-      exact ha₁ _ (hmemC hmp p.2)
+  refine isConnectedSumPosition_of_mem_imp_eq (g := fun q => m q.1)
+    (m.continuous.comp continuous_fst) hUo hstrip
+    (fun q hq => not_not.1 fun h => (not_le.2 (him q.1 h)) hq) fun p _ hmp => ?_
+  rw [boost_apply, coe_sphereBoostDiffeotopy_final_apply]
+  exact ha₁ _ (hmemC hmp p.2)
 
 end Concordance
 

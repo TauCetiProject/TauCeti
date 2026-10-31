@@ -358,11 +358,13 @@ theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
 theorem continuous_collaredSmoothTransitionUnit : Continuous collaredSmoothTransitionUnit :=
   (Real.smoothTransition.continuous.comp (by fun_prop)).subtype_mk _
 
-private theorem collaredSmoothTransitionUnit_eq_zero_of_le {t : ℝ} (ht : t ≤ 1 / 4) :
+/-- The collared smooth transition is `0` up to time `1 / 4`. -/
+theorem collaredSmoothTransitionUnit_eq_zero_of_le {t : ℝ} (ht : t ≤ 1 / 4) :
     collaredSmoothTransitionUnit t = 0 :=
   Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
 
-private theorem collaredSmoothTransitionUnit_eq_one_of_ge {t : ℝ} (ht : 3 / 4 ≤ t) :
+/-- The collared smooth transition is `1` from time `3 / 4` on. -/
+theorem collaredSmoothTransitionUnit_eq_one_of_ge {t : ℝ} (ht : 3 / 4 ≤ t) :
     collaredSmoothTransitionUnit t = 1 :=
   Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
 
@@ -421,10 +423,8 @@ def ofDiffeotopy (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (f : SmoothEmbedding I
 theorem ofDiffeotopy_apply (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (f : SmoothEmbedding I J n M N)
     (p : M × ℝ) :
     ofDiffeotopy hn Φ f p =
-      (Φ (⟨Real.smoothTransition (2 * p.2 - 1 / 2), Real.smoothTransition.nonneg _,
-        Real.smoothTransition.le_one _⟩, f p.1), p.2) := by
-  simp [← coe_toSmoothEmbedding, ofDiffeotopy, collaredSmoothTransitionUnit,
-    smoothTransitionUnit]
+      (Φ (collaredSmoothTransitionUnit p.2, f p.1), p.2) := by
+  simp [← coe_toSmoothEmbedding, ofDiffeotopy]
 
 private theorem isSmoothEmbedding_collaredTrace [FiniteDimensional ℝ E']
     [I.Boundaryless] [J.Boundaryless] [CompactSpace M] [T2Space N]
@@ -483,11 +483,9 @@ theorem ofSmoothIsotopy_apply [FiniteDimensional ℝ E']
     (F : SmoothIsotopy f.toContMDiffMap g.toContMDiffMap) (hn : 1 ≤ n) (hn' : n ≤ ∞)
     (p : M × ℝ) :
     ofSmoothIsotopy F hn hn' p =
-      (F (⟨Real.smoothTransition (2 * p.2 - 1 / 2), Real.smoothTransition.nonneg _,
-        Real.smoothTransition.le_one _⟩, p.1), p.2) := by
+      (F (collaredSmoothTransitionUnit p.2, p.1), p.2) := by
   rw [← coe_toSmoothEmbedding]
-  simp only [ofSmoothIsotopy, ofIsSmoothEmbedding_apply,
-    collaredSmoothTransitionUnit, smoothTransitionUnit]
+  simp only [ofSmoothIsotopy, ofIsSmoothEmbedding_apply]
 
 /-- The **trace of a source diffeotopy** `Ψ` of `M`: the concordance `(x, t) ↦ (f (Ψ (ρ t, x)), t)`
 from `f` to its reparametrization by the final diffeomorphism of `Ψ`, where
@@ -514,10 +512,8 @@ reparametrized time `Real.smoothTransition (2 * t - 1 / 2)`. -/
 theorem ofSourceDiffeotopy_apply (hn : n ≤ ∞) (Ψ : Diffeotopy I n M)
     (f : SmoothEmbedding I J n M N) (p : M × ℝ) :
     ofSourceDiffeotopy hn Ψ f p =
-      (f (Ψ (⟨Real.smoothTransition (2 * p.2 - 1 / 2), Real.smoothTransition.nonneg _,
-        Real.smoothTransition.le_one _⟩, p.1)), p.2) := by
-  simp [← coe_toSmoothEmbedding, ofSourceDiffeotopy, collaredSmoothTransitionUnit,
-    smoothTransitionUnit]
+      (f (Ψ (collaredSmoothTransitionUnit p.2, p.1)), p.2) := by
+  simp [← coe_toSmoothEmbedding, ofSourceDiffeotopy]
 
 /-- The **trace of an ambient and a source diffeotopy run together**: for diffeotopies `Φ` of `N`
 and `Ψ` of `M`, the concordance `(x, t) ↦ (Φ (ρ t, f (Ψ (ρ t, x))), t)` from `f` to
