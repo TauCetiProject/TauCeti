@@ -102,8 +102,8 @@ theorem invOneAddSq_add_apply_apply (y : X) (h₁ : A.invOneAddSq y ∈ A.domain
   have hu : A u = I • (u : X) - y := apply_resolvent hp y
   have hv : A v = -I • (v : X) - u := apply_resolvent hm (u : X)
   have hAv : (⟨A v, h₂⟩ : A.domain) = -I • v - u := Subtype.ext (by simp [hv])
-  rw [hAv, map_sub, map_smul, hu, hv, smul_sub, smul_smul, neg_mul_neg, I_mul_I, neg_one_smul,
-    neg_smul]
+  rw [hAv, map_sub, map_smul, hu, hv]
+  simp only [smul_sub, neg_smul, smul_neg, smul_smul, neg_mul, I_mul_I, neg_neg, one_smul]
   abel
 
 /-- `(1 + A²)⁻¹` is a left inverse of `1 + A²` on `D(A²)`: `(1 + A²)⁻¹ (x + A (A x)) = x`. -/
@@ -111,15 +111,15 @@ theorem invOneAddSq_apply_add_apply (x : A.domain) (hx : A x ∈ A.domain) :
     A.invOneAddSq (x + A ⟨A x, hx⟩) = x := by
   set w : A.domain := I • x - ⟨A x, hx⟩
   have hw : (x : X) + A ⟨A x, hx⟩ = -I • (w : X) - A w := by
-    simp only [w, map_sub, map_smul, Submodule.coe_sub, Submodule.coe_smul]
-    rw [smul_sub, smul_smul, neg_mul, I_mul_I, neg_neg, one_smul, neg_smul]
+    simp only [w, map_sub, map_smul, Submodule.coe_sub, Submodule.coe_smul, smul_sub, smul_smul,
+      neg_mul, I_mul_I, neg_neg, one_smul, neg_smul]
     abel
   rw [invOneAddSq_eq_resolvent_I_comp hp hm, ContinuousLinearMap.comp_apply, hw,
     resolvent_smul_sub_apply hm w]
   exact resolvent_smul_sub_apply hp x
 
 /-- `(1 + A²)⁻¹` is injective. -/
-theorem injective_invOneAddSq : Function.Injective A.invOneAddSq := by
+theorem invOneAddSq_injective : Function.Injective A.invOneAddSq := by
   refine (injective_iff_map_eq_zero _).mpr fun y hy => ?_
   have hd := invOneAddSq_mem_domainPow_two hp hm y
   obtain ⟨h₁, h₂⟩ := mem_domainPow_succ.mp hd

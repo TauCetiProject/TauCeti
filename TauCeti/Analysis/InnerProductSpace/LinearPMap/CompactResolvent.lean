@@ -21,9 +21,11 @@ which is the usual normalization for the Dirac operator of a spectral triple.
 On a complex Hilbert space the bounded inverse `K = (1 + D²)⁻¹` of `LinearPMap.invOneAddSq` is
 `R(i)* R(i)`, a positive injective operator, and it is compact when `D` has compact resolvent.
 Mathlib's spectral theorem for compact self-adjoint operators then applies to `K`: its eigenspaces
-for nonzero eigenvalues are finite-dimensional (`ContinuousLinearMap.finite_dimensional_eigenspace`)
-and, since `ker K = 0`, they span a dense subspace of the Hilbert space. Each of them lies in every
-iterated domain `D(Dⁿ)` and is invariant under `D`
+for nonzero eigenvalues are finite-dimensional
+(`LinearPMap.HasCompactResolvent.finiteDimensional_eigenspace_invOneAddSq`, from
+`ContinuousLinearMap.finite_dimensional_eigenspace`) and, since `ker K = 0`, they span a dense
+subspace of the Hilbert space. Each of them lies in every iterated domain `D(Dⁿ)` and is
+invariant under `D`
 (`LinearPMap.eigenspace_invOneAddSq_le_domainPow`, `LinearPMap.apply_mem_eigenspace_invOneAddSq`).
 These are the ingredients for an orthonormal eigenbasis of `D`, obtained by diagonalizing `D` on
 each of these finite-dimensional invariant subspaces.
@@ -36,6 +38,8 @@ each of these finite-dimensional invariant subspaces.
   inverse `(D - z)⁻¹`.
 * `IsSelfAdjoint.invOneAddSq_eq_adjoint_comp`: `(1 + D²)⁻¹ = R(i)* R(i)`.
 * `IsSelfAdjoint.isPositive_invOneAddSq`: `(1 + D²)⁻¹` is a positive operator.
+* `LinearPMap.HasCompactResolvent.finiteDimensional_eigenspace_invOneAddSq`: for compact
+  resolvent, the eigenspaces of `(1 + D²)⁻¹` for nonzero eigenvalues are finite-dimensional.
 * `IsSelfAdjoint.orthogonalComplement_iSup_eigenspaces_invOneAddSq_eq_bot`: for compact
   resolvent, the eigenspaces of `(1 + D²)⁻¹` for nonzero eigenvalues span a dense subspace.
 
@@ -86,14 +90,12 @@ open Complex
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {A : H →ₗ.[ℂ] H}
 
-/-- `i` lies in the resolvent set of a self-adjoint operator. -/
-theorem _root_.IsSelfAdjoint.I_mem_resolventSet (hA : IsSelfAdjoint A) : I ∈ A.resolventSet :=
-  hA.mem_resolventSet_of_im_ne_zero (by simp)
-
-/-- `-i` lies in the resolvent set of a self-adjoint operator. -/
-theorem _root_.IsSelfAdjoint.neg_I_mem_resolventSet (hA : IsSelfAdjoint A) :
-    -I ∈ A.resolventSet :=
-  hA.mem_resolventSet_of_im_ne_zero (by simp)
+/-- For an operator with compact resolvent, the eigenspaces of the compact operator
+`(1 + A²)⁻¹` for nonzero eigenvalues are finite-dimensional. -/
+theorem _root_.LinearPMap.HasCompactResolvent.finiteDimensional_eigenspace_invOneAddSq
+    (hp : I ∈ A.resolventSet) (h : A.HasCompactResolvent) {μ : ℂ} (hμ : μ ≠ 0) :
+    FiniteDimensional ℂ (eigenspace (A.invOneAddSq : End ℂ H) μ) :=
+  ContinuousLinearMap.finite_dimensional_eigenspace (h.isCompactOperator_invOneAddSq hp) μ hμ
 
 /-- For a self-adjoint operator, `(1 + A²)⁻¹ = R(i)* R(i)`. -/
 theorem _root_.IsSelfAdjoint.invOneAddSq_eq_adjoint_comp (hA : IsSelfAdjoint A) :
@@ -114,15 +116,10 @@ theorem _root_.IsSelfAdjoint.orthogonalComplement_iSup_eigenspaces_invOneAddSq_e
     (⨆ (μ : ℂ) (_ : μ ≠ 0), eigenspace (A.invOneAddSq : End ℂ H) μ)ᗮ = ⊥ := by
   have h0 : eigenspace (A.invOneAddSq : End ℂ H) 0 = ⊥ := by
     rw [eigenspace_zero, LinearMap.ker_eq_bot, ContinuousLinearMap.coe_coe]
-    exact injective_invOneAddSq hA.I_mem_resolventSet hA.neg_I_mem_resolventSet
-  have hsup : ⨆ (μ : ℂ) (_ : μ ≠ 0), eigenspace (A.invOneAddSq : End ℂ H) μ =
-      ⨆ μ : ℂ, eigenspace (A.invOneAddSq : End ℂ H) μ := by
-    refine le_antisymm (iSup₂_le fun μ _ => le_iSup (fun μ => eigenspace _ μ) μ)
-      (iSup_le fun μ => ?_)
-    rcases eq_or_ne μ 0 with rfl | hμ
-    · simp [h0]
-    · exact le_iSup₂_of_le μ hμ le_rfl
-  rw [hsup]
+    exact invOneAddSq_injective hA.I_mem_resolventSet hA.neg_I_mem_resolventSet
+  have hsup := iSup_split_single (fun μ => eigenspace (A.invOneAddSq : End ℂ H) μ) 0
+  rw [h0, bot_sup_eq] at hsup
+  rw [← hsup]
   exact ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot
     (h.isCompactOperator_invOneAddSq hA.I_mem_resolventSet)
     hA.isPositive_invOneAddSq.isSymmetric

@@ -23,9 +23,10 @@ The inverse `(A - lambda)⁻¹` of the opposite shift is the resolvent of `-A` a
 exactly when `A` does, and the convention `(A - lambda)⁻¹` defines the same class of operators as
 `(lambda - A)⁻¹`.
 
-Operators with compact resolvent are the unbounded operators with purely discrete spectrum,
-such as Dirac and Laplace-type operators on closed manifolds and the Dirac operators of spectral
-triples.
+An operator with compact resolvent has discrete spectrum made of eigenvalues of finite
+multiplicity; for self-adjoint operators on a Hilbert space the converse also holds (Reed–Simon
+XIII.64). Examples include Dirac and Laplace-type operators on closed manifolds and the Dirac
+operators of spectral triples.
 
 ## Main definitions
 
