@@ -45,8 +45,7 @@ theorem quantile_map_re_dotProduct_properComplexGaussianMeasure (m q : ι → �
         (gaussianReal 0 1).quantile u := by
   rw [map_re_dotProduct_properComplexGaussianMeasure m q hC,
     quantile_gaussianReal_eq_add_mul _ _ hu]
-  have hnonneg : 0 ≤ (star q ⬝ᵥ C *ᵥ q).re := hC.re_dotProduct_nonneg q
-  simp [Real.toNNReal_div' (by norm_num : (0 : ℝ) ≤ 2), hnonneg]
+  simp only [← RCLike.re_to_complex, hC.coe_toNNReal_re_dotProduct_div_two q]
 
 /-- As the level tends to zero from above, the quantile function of a real projection
 tends to `Re (qᴴ m)` when `Re (qᴴ C q) = 0`, and to minus infinity otherwise. -/
@@ -57,8 +56,7 @@ theorem tendsto_quantile_map_re_dotProduct_properComplexGaussianMeasure_nhdsGT_z
       (𝓝[>] 0)
       (𝓝 (if (star q ⬝ᵥ C *ᵥ q).re = 0 then ((star q ⬝ᵥ m).re : EReal) else ⊥)) := by
   rw [map_re_dotProduct_properComplexGaussianMeasure m q hC]
-  have hnonneg : 0 ≤ (star q ⬝ᵥ C *ᵥ q).re := hC.re_dotProduct_nonneg q
-  simpa [Real.toNNReal_div' (by norm_num : (0 : ℝ) ≤ 2), hnonneg.ge_iff_eq'] using
+  simpa only [← RCLike.re_to_complex, hC.toNNReal_re_dotProduct_div_two_eq_zero_iff q] using
     tendsto_quantile_gaussianReal_nhdsGT_zero
       (star q ⬝ᵥ m).re ((star q ⬝ᵥ C *ᵥ q).re / 2).toNNReal
 
@@ -71,8 +69,7 @@ theorem tendsto_quantile_map_re_dotProduct_properComplexGaussianMeasure_nhdsLT_o
       (𝓝[<] 1)
       (𝓝 (if (star q ⬝ᵥ C *ᵥ q).re = 0 then ((star q ⬝ᵥ m).re : EReal) else ⊤)) := by
   rw [map_re_dotProduct_properComplexGaussianMeasure m q hC]
-  have hnonneg : 0 ≤ (star q ⬝ᵥ C *ᵥ q).re := hC.re_dotProduct_nonneg q
-  simpa [Real.toNNReal_div' (by norm_num : (0 : ℝ) ≤ 2), hnonneg.ge_iff_eq'] using
+  simpa only [← RCLike.re_to_complex, hC.toNNReal_re_dotProduct_div_two_eq_zero_iff q] using
     tendsto_quantile_gaussianReal_nhdsLT_one
       (star q ⬝ᵥ m).re ((star q ⬝ᵥ C *ᵥ q).re / 2).toNNReal
 

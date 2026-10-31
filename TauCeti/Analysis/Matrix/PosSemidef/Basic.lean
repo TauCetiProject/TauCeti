@@ -53,6 +53,23 @@ variable {α : Type v}
 
 variable {𝕜 : Type u} [RCLike 𝕜]
 
+/-- Half the real quadratic form of a positive-semidefinite matrix is unchanged by conversion
+to a nonnegative real and back. -/
+theorem coe_toNNReal_re_dotProduct_div_two [Fintype α] {A : Matrix α α 𝕜}
+    (hA : A.PosSemidef) (x : α → 𝕜) :
+    ((RCLike.re (star x ⬝ᵥ A *ᵥ x) / 2).toNNReal : ℝ) =
+      RCLike.re (star x ⬝ᵥ A *ᵥ x) / 2 :=
+  Real.coe_toNNReal _ (div_nonneg (hA.re_dotProduct_nonneg x) (by norm_num))
+
+/-- Half a positive-semidefinite quadratic form vanishes as a nonnegative real exactly when
+its real part vanishes. -/
+theorem toNNReal_re_dotProduct_div_two_eq_zero_iff [Fintype α] {A : Matrix α α 𝕜}
+    (hA : A.PosSemidef) (x : α → 𝕜) :
+    (RCLike.re (star x ⬝ᵥ A *ᵥ x) / 2).toNNReal = 0 ↔
+      RCLike.re (star x ⬝ᵥ A *ᵥ x) = 0 := by
+  rw [← NNReal.coe_eq_zero, hA.coe_toNNReal_re_dotProduct_div_two]
+  simp
+
 /-- The `2 × 2` principal submatrix at two indices is positive semidefinite. -/
 private theorem finTwo_posSemidef {K : α → α → 𝕜}
     (hK : Matrix.PosSemidef K) (a b : α) :

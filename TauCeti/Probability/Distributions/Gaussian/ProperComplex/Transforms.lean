@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Transforms
+public import TauCeti.Analysis.Matrix.PosSemidef.Basic
 
 /-!
 # Real projections of proper complex Gaussian laws
@@ -87,8 +88,8 @@ theorem mgf_re_dotProduct_properComplexGaussianMeasure (m q : ι → ℂ)
       Real.exp (t * (star q ⬝ᵥ m).re + t ^ 2 / 4 * (star q ⬝ᵥ C *ᵥ q).re) := by
   rw [← mgf_id_map (by fun_prop), map_re_dotProduct_properComplexGaussianMeasure m q hC,
     mgf_id_gaussianReal]
-  have hnonneg : 0 ≤ (star q ⬝ᵥ C *ᵥ q).re := hC.re_dotProduct_nonneg q
-  simp [Real.toNNReal_div' (by norm_num : (0 : ℝ) ≤ 2), hnonneg]
+  simp only [← RCLike.re_to_complex, hC.coe_toNNReal_re_dotProduct_div_two q]
+  congr 1
   ring
 
 /-- The cumulant-generating function of a real projection is a quadratic polynomial. -/
@@ -106,8 +107,8 @@ theorem charFun_map_re_dotProduct_properComplexGaussianMeasure (m q : ι → ℂ
       Complex.exp (t * (star q ⬝ᵥ m).re * Complex.I -
         t ^ 2 / 4 * (star q ⬝ᵥ C *ᵥ q).re) := by
   rw [map_re_dotProduct_properComplexGaussianMeasure m q hC, charFun_gaussianReal]
-  have hnonneg : 0 ≤ (star q ⬝ᵥ C *ᵥ q).re := hC.re_dotProduct_nonneg q
-  simp [Real.toNNReal_div' (by norm_num : (0 : ℝ) ≤ 2), hnonneg]
+  simp only [← RCLike.re_to_complex, hC.coe_toNNReal_re_dotProduct_div_two q]
+  push_cast
   congr 1
   ring
 
