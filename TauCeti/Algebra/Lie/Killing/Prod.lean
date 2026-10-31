@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.Algebra.Lie.Killing
 import TauCeti.Algebra.Lie.Killing.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
 # The Killing form of a product of Lie algebras
@@ -53,17 +54,10 @@ theorem killingForm_prod_apply (x y : L × L') :
 
 /-- A product of two Killing Lie algebras is Killing. -/
 instance IsKilling.instProd [IsKilling R L] [IsKilling R L'] : IsKilling R (L × L') := by
-  refine TauCeti.isKilling_of_ker_killingForm_eq_bot R (L × L') <|
-    (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_
-  have hx' (y : L × L') : killingForm R (L × L') x y = 0 := by
-    simpa using LinearMap.congr_fun (mem_ker.1 hx) y
-  have h₁ : x.1 ∈ ker (killingForm R L) :=
-    mem_ker.2 <| LinearMap.ext fun y ↦ by
-      simpa using hx' (y, 0)
-  have h₂ : x.2 ∈ ker (killingForm R L') :=
-    mem_ker.2 <| LinearMap.ext fun y ↦ by
-      simpa using hx' (0, y)
-  rw [IsKilling.ker_killingForm_eq_bot, Submodule.mem_bot] at h₁ h₂
-  exact Prod.ext h₁ h₂
+  have h : killingForm R (L × L') = (killingForm R L).prod (killingForm R L') :=
+    LinearMap.ext₂ fun x y ↦ by simp
+  exact TauCeti.isKilling_of_killingForm_nondegenerate R (L × L') <| h ▸
+    BilinForm.nondegenerate_prod_iff.2
+      ⟨IsKilling.killingForm_nondegenerate R L, IsKilling.killingForm_nondegenerate R L'⟩
 
 end LieAlgebra
