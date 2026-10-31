@@ -512,72 +512,6 @@ private theorem genus_le_of_constantCompositum_eq_top {k' F' : Type*} [Field k']
     hrat
   rwa [hg, hg₁, hg₂, hn₁, hn₂] at key
 
-/-- A field `K` generated over `k` by an integral element `x` embeds into every extension `k'` of
-`k` over which some nonzero multiple of the minimal polynomial of `x` splits. -/
-private theorem nonempty_algHom_of_minpoly_dvd {K k' : Type*} [Field K] [Field k'] [Algebra k K]
-    [Algebra k k'] {x : K} (hx : k⟮x⟯ = ⊤) (hint : IsIntegral k x) {f : k[X]} (hf0 : f ≠ 0)
-    (hdvd : minpoly k x ∣ f) (hsplit : (f.map (algebraMap k k')).Splits) :
-    Nonempty (K →ₐ[k] k') := by
-  refine IntermediateField.nonempty_algHom_of_adjoin_splits (S := {x}) (fun s hs ↦ ?_) hx
-  rw [Set.mem_singleton_iff.mp hs]
-  exact ⟨hint, hsplit.of_dvd (Polynomial.map_ne_zero hf0) (Polynomial.map_dvd _ hdvd)⟩
-
-omit [Algebra F₂ F] [IsScalarTower k F₂ F] [FiniteDimensional F₂ F] in
-/-- The residue fields of finitely many places of `F` and of `F₂`, all separable over `k`, embed
-into one finite Galois extension `k'` of `k`, realised as a constant field extension `F · k'`. -/
-private theorem exists_constantCompositum_eq_top_nonempty_algHom (hF : IsFunctionField k F)
-    (hF₂ : IsFunctionField k F₂) (s : Finset (Place k F)) (t : Finset (Place k F₂))
-    (hs : ∀ R ∈ s, Algebra.IsSeparable k R.ResidueField)
-    (ht : ∀ Q ∈ t, Algebra.IsSeparable k Q.ResidueField) :
-    ∃ (F' : IntermediateField F (AlgebraicClosure F)) (k' : IntermediateField k F'),
-      FiniteDimensional k k' ∧ Normal k k' ∧ Algebra.IsSeparable k k' ∧
-        constantCompositum F k' F' = ⊤ ∧ (∀ R ∈ s, Nonempty (R.ResidueField →ₐ[k] k')) ∧
-          ∀ Q ∈ t, Nonempty (Q.ResidueField →ₐ[k] k') := by
-  classical
-  /- Each residue field is generated over `k` by one separable element, and `f` is the product of
-  the distinct minimal polynomials of these generators, a separable polynomial. -/
-  choose α hα using fun R : s ↦
-    letI := (R : Place k F).finiteDimensional_residueField hF
-    letI := hs R R.2
-    Field.exists_primitive_element k (R : Place k F).ResidueField
-  choose β hβ using fun Q : t ↦
-    letI := (Q : Place k F₂).finiteDimensional_residueField hF₂
-    letI := ht Q Q.2
-    Field.exists_primitive_element k (Q : Place k F₂).ResidueField
-  have hαsep (R : s) : IsSeparable k (α R) := by
-    have := hs R R.2
-    exact Algebra.IsSeparable.isSeparable k (α R)
-  have hβsep (Q : t) : IsSeparable k (β Q) := by
-    have := ht Q Q.2
-    exact Algebra.IsSeparable.isSeparable k (β Q)
-  set T : Finset k[X] := Finset.univ.image (fun R ↦ minpoly k (α R)) ∪
-    Finset.univ.image (fun Q ↦ minpoly k (β Q))
-  have hT (g : k[X]) (hg : g ∈ T) : g.Monic ∧ Irreducible g ∧ g.Separable := by
-    simp only [T, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and] at hg
-    rcases hg with ⟨R, rfl⟩ | ⟨Q, rfl⟩
-    · exact ⟨minpoly.monic (hαsep R).isIntegral, minpoly.irreducible (hαsep R).isIntegral,
-        hαsep R⟩
-    · exact ⟨minpoly.monic (hβsep Q).isIntegral, minpoly.irreducible (hβsep Q).isIntegral,
-        hβsep Q⟩
-  set f : k[X] := ∏ g ∈ T, g
-  have hfsep : f.Separable := by
-    refine Polynomial.separable_prod' (fun g hg h hh hne ↦ ?_) fun g hg ↦ (hT g hg).2.2
-    -- Distinct monic irreducible polynomials are coprime.
-    refine ((hT g hg).2.1.coprime_iff_not_dvd).mpr fun hdvd ↦ hne ?_
-    exact Polynomial.eq_of_monic_of_associated (hT g hg).1 (hT h hh).1
-      ((hT g hg).2.1.associated_of_dvd (hT h hh).2.1 hdvd)
-  obtain ⟨F', k', _, _, hsplit, _, h⟩ :=
-    exists_finiteDimensional_normal_splits_constantCompositum_eq_top F f
-  -- The residue fields embed into `k'`, since `f` splits in `k'`.
-  refine ⟨F', k', inferInstance, inferInstance,
-    Algebra.isSeparable_of_separable_splitting_field k k' hfsep, h, fun R hR ↦ ?_, fun Q hQ ↦ ?_⟩
-  · exact nonempty_algHom_of_minpoly_dvd (hα ⟨R, hR⟩) (hαsep ⟨R, hR⟩).isIntegral hfsep.ne_zero
-      (Finset.dvd_prod_of_mem _ (Finset.mem_union_left _
-        (Finset.mem_image_of_mem _ (Finset.mem_univ _)))) hsplit
-  · exact nonempty_algHom_of_minpoly_dvd (hβ ⟨Q, hQ⟩) (hβsep ⟨Q, hQ⟩).isIntegral hfsep.ne_zero
-      (Finset.dvd_prod_of_mem _ (Finset.mem_union_right _
-        (Finset.mem_image_of_mem _ (Finset.mem_univ _)))) hsplit
-
 /-- Castelnuovo's inequality when `F / F₁` is separable. Let `F / k` have exact constants and a
 separating element, and let `F₁`, `F₂` be subfields of `F` containing `k` with `F = F₁ F₂`, `F`
 finite over both, and `F / F₁` separable. Then
@@ -616,9 +550,9 @@ private theorem genus_le_of_isSeparable (hF : IsFunctionField k F) (hex : IsInte
   have hSR := Place.finite_setOf_restrict_eq (k' := k) (F' := F) k F₁ P₁
   obtain ⟨TQ, hTQsep, hTQ⟩ := (Place.infinite_setOf_isSeparable_residueField_of_finiteDimensional
     (E := F₂) hF hx).exists_subset_card_eq (genus k F₂ + Module.finrank F₁ F)
-  obtain ⟨F', k', _, _, _, h, hembR, hembQ⟩ := exists_constantCompositum_eq_top_nonempty_algHom hF
-    hF.of_isAlgebraic_top hSR.toFinset TQ (fun R hR ↦ hsepR R (hSR.mem_toFinset.mp hR))
-    fun Q hQ ↦ hTQsep hQ
+  obtain ⟨F', k', _, _, _, h, hembR, hembQ⟩ :=
+    Place.exists_constantCompositum_eq_top_nonempty_algHom hF hF.of_isAlgebraic_top hSR.toFinset
+      TQ (fun R hR ↦ hsepR R (hSR.mem_toFinset.mp hR)) fun Q hQ ↦ hTQsep hQ
   exact genus_le_of_constantCompositum_eq_top hF hex h hy hmin hsep c z hyz hc hz'
     (fun R hR ↦ hembR R (hSR.mem_toFinset.mpr hR)) hTQ hembQ
 
