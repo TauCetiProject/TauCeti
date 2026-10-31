@@ -20,51 +20,53 @@ space does not apply to it as it stands. This file fixes the Euclidean structure
 
 in which a complex coordinate counts once. It is the inner product of Mathlib's Euclidean model
 `NumberField.mixedEmbedding.euclidean.mixedSpace K`, carried to the mixed space by the continuous
-linear equivalence `euclidean.toMixed` (`TauCeti.LFunctions.mixedInner_toMixed`). That
-equivalence also carries `volume` to `volume` (Mathlib's `euclidean.volumePreserving_toMixed`),
-so every Euclidean notion can be read on the mixed space:
+linear equivalence `euclidean.toMixed` (`mixedInner_toMixed`). That equivalence also carries
+`volume` to `volume` (Mathlib's `euclidean.volumePreserving_toMixed`), so every Euclidean notion
+can be read on the mixed space:
 
 * the Fourier transform `mixedFourier K f w = ∫ x, 𝐞 (-mixedInner K x w) • f x`, with Mathlib's
   additive character `Real.fourierChar`, Mathlib's sign convention and the measure `volume`, is
-  Mathlib's `𝓕` read through `euclidean.toMixed` (`TauCeti.LFunctions.mixedFourier_toMixed`);
+  Mathlib's `𝓕` read through `euclidean.toMixed` (`mixedFourier_toMixed`);
 * the dual `mixedDual K L` of a `ℤ`-submodule `L` of the mixed space, the points pairing
   integrally with every point of `L` under `mixedInner`, is the dual lattice `ZLattice.dual` of
-  the pulled-back lattice (`TauCeti.LFunctions.comap_mixedDual`). Hence the dual of a full lattice
-  is a full lattice, the dual of the dual is the lattice, and the covolume of the dual is the
-  inverse covolume.
+  the pulled-back lattice (`comap_mixedDual`). Hence the dual of a full lattice is a full
+  lattice, the dual of the dual is the lattice, and the covolume of the dual is the inverse
+  covolume.
 
 Poisson summation for a full lattice of a Euclidean space (`SchwartzMap.tsum_eq_tsum_dual_fourier`)
 then reads, for a full lattice `L` of the mixed space, a Schwartz function `f` and `v` in the mixed
-space (`TauCeti.LFunctions.tsum_eq_tsum_mixedDual_mixedFourier`),
+space (`tsum_eq_tsum_mixedDual_mixedFourier`),
 
 `∑' ℓ : L, f (v + ℓ) = (covolume L)⁻¹ * ∑' m : L^∨, mixedFourier K f m * exp (2πi ⟨v, m⟩)`,
 
 where `L^∨ = mixedDual K L` and `⟨v, m⟩ = mixedInner K v m`. Its instance at the lattice
 `σ(I) = mixedEmbedding.idealLattice K I` of a fractional ideal `I` is the form of Poisson summation
 behind the theta transformation of Hecke's proof of the functional equation of the Dedekind zeta
-function (`TauCeti.LFunctions.tsum_idealLattice_eq_tsum_mixedDual_mixedFourier`); the covolume of
-`σ(I)` is evaluated by Mathlib's `NumberField.mixedEmbedding.covolume_idealLattice`.
+function (`tsum_idealLattice_eq_tsum_mixedDual_mixedFourier`); the covolume of `σ(I)` is
+evaluated by Mathlib's `NumberField.mixedEmbedding.covolume_idealLattice`.
 
 The Euclidean pairing rather than the trace form is used because the trace form is not positive
 at a complex place (`Tr (i * i) = -2` over `ℚ(i)`), so it carries no Gaussian.
 
 ## Main definitions
 
-* `TauCeti.LFunctions.mixedInner`: the Euclidean pairing of the mixed space.
-* `TauCeti.LFunctions.mixedInnerBilin`: the same pairing as a bilinear form.
-* `TauCeti.LFunctions.mixedFourier`: the Fourier transform of the mixed space.
-* `TauCeti.LFunctions.mixedDual`: the dual of a `ℤ`-submodule of the mixed space.
+* `TauCeti.NumberField.mixedEmbedding.mixedInner`: the Euclidean pairing of the mixed space.
+* `TauCeti.NumberField.mixedEmbedding.mixedInnerBilin`: the same pairing as a bilinear form.
+* `TauCeti.NumberField.mixedEmbedding.mixedFourier`: the Fourier transform of the mixed space.
+* `TauCeti.NumberField.mixedEmbedding.mixedDual`: the dual of a `ℤ`-submodule of the mixed space.
 
 ## Main statements
 
-* `TauCeti.LFunctions.mixedInner_toMixed`: `euclidean.toMixed` carries the inner product to
-  `mixedInner`.
-* `TauCeti.LFunctions.mixedFourier_toMixed`: `mixedFourier` is Mathlib's `𝓕` in the Euclidean
-  model.
-* `TauCeti.LFunctions.mixedDual_mixedDual`, `TauCeti.LFunctions.covolume_mixedDual`: biduality and
-  the covolume of the dual of a full lattice.
-* `TauCeti.LFunctions.tsum_eq_tsum_mixedDual_mixedFourier`: Poisson summation over a full lattice
-  of the mixed space.
+* `TauCeti.NumberField.mixedEmbedding.mixedInner_def`: the coordinate formula for `mixedInner`.
+* `TauCeti.NumberField.mixedEmbedding.mixedInner_toMixed`: `euclidean.toMixed` carries the inner
+  product to `mixedInner`.
+* `TauCeti.NumberField.mixedEmbedding.mixedFourier_toMixed`: `mixedFourier` is Mathlib's `𝓕` in
+  the Euclidean model.
+* `TauCeti.NumberField.mixedEmbedding.mixedDual_mixedDual`,
+  `TauCeti.NumberField.mixedEmbedding.covolume_mixedDual`: biduality and the covolume of the dual
+  of a full lattice.
+* `TauCeti.NumberField.mixedEmbedding.tsum_eq_tsum_mixedDual_mixedFourier`: Poisson summation
+  over a full lattice of the mixed space.
 
 ## References
 
@@ -77,7 +79,7 @@ open Complex MeasureTheory NumberField NumberField.mixedEmbedding
 open LinearMap (BilinForm)
 open scoped Real RealInnerProductSpace SchwartzMap FourierTransform nonZeroDivisors
 
-namespace TauCeti.LFunctions
+namespace TauCeti.NumberField.mixedEmbedding
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -91,6 +93,14 @@ once. It is the inner product of Mathlib's Euclidean model of the mixed space
 noncomputable def mixedInner (x y : mixedSpace K) : ℝ :=
   ∑ w : {w : InfinitePlace K // w.IsReal}, x.1 w * y.1 w +
     ∑ w : {w : InfinitePlace K // w.IsComplex}, (x.2 w * (starRingEnd ℂ) (y.2 w)).re
+
+open scoped Classical in
+/-- The coordinate formula for the Euclidean pairing: the sum of the products of the real
+coordinates plus the sum of the real parts `Re (x_w * conj y_w)` over the complex coordinates. -/
+theorem mixedInner_def (x y : mixedSpace K) :
+    mixedInner K x y = ∑ w : {w : InfinitePlace K // w.IsReal}, x.1 w * y.1 w +
+      ∑ w : {w : InfinitePlace K // w.IsComplex}, (x.2 w * (starRingEnd ℂ) (y.2 w)).re := by
+  rw [mixedInner]
 
 /-- The Euclidean pairing is symmetric. -/
 theorem mixedInner_comm (x y : mixedSpace K) : mixedInner K x y = mixedInner K y x := by
@@ -274,4 +284,4 @@ theorem tsum_idealLattice_eq_tsum_mixedDual_mixedFourier (I : (FractionalIdeal (
       ∑' m : mixedDual K (idealLattice K I), mixedFourier K f m := by
   simpa [← mixedInnerBilin_apply] using tsum_eq_tsum_mixedDual_mixedFourier K (idealLattice K I) f 0
 
-end TauCeti.LFunctions
+end TauCeti.NumberField.mixedEmbedding
