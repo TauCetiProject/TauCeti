@@ -103,6 +103,16 @@ private theorem lastT_braid_assoc (n : ℕ) (y : stage R q (n + 3)) :
       incl q (n + 2) (lastT q n) * (lastT q (n + 1) * (incl q (n + 2) (lastT q n) * y)) := by
   simp only [← mul_assoc, lastT_braid]
 
+/-- `T * (c * T' * d) * T = (c * T') * T * (T' * d)` for `c`, `d` in the stage `n + 1`, where `T'`
+and `T` are the last two generators, by the braid relation. -/
+private theorem lastT_mul_incl_mul_lastT {n : ℕ} (c d : stage R q (n + 1)) :
+    lastT q (n + 1) * incl q (n + 2) (incl q (n + 1) c * lastT q n * incl q (n + 1) d) *
+        lastT q (n + 1) =
+      incl q (n + 2) (incl q (n + 1) c * lastT q n) * lastT q (n + 1) *
+        incl q (n + 2) (lastT q n * incl q (n + 1) d) := by
+  simp only [map_mul, mul_assoc]
+  rw [(commute_lastT c).left_comm, ← (commute_lastT d).eq, lastT_braid_assoc]
+
 private theorem lastT_mul_rep {n m : ℕ} (h : m ≤ n) :
     lastT q n * incl q (n + 1) (rep q n m) = rep q (n + 1) m :=
   Subtype.ext (cosetRep_succ h).symm
@@ -203,16 +213,11 @@ private theorem extend_extend_lastT_mul_incl_mul_lastT (hφ : ∀ x y, φ (x * y
     rw [(commute_lastT c).eq, extend_incl_mul_lastT_mul_lastT z hφ']
   · simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.mulLeft_apply,
       AlgHom.toLinearMap_apply, LinearMap.smul_apply, smul_eq_mul]
-    -- `T * (c * T' * d) * T = (c * T') * T * (T' * d)`, by the braid relation.
-    have h₁ : lastT q (m + 1) * incl q (m + 2) (incl q (m + 1) c * lastT q m * incl q (m + 1) d) *
-        lastT q (m + 1) = incl q (m + 2) (incl q (m + 1) c * lastT q m) * lastT q (m + 1) *
-          incl q (m + 2) (lastT q m * incl q (m + 1) d) := by
-      simp only [map_mul, mul_assoc]
-      rw [(commute_lastT c).left_comm, ← (commute_lastT d).eq, lastT_braid_assoc]
     have h₂ : lastT q m * incl q (m + 1) d * (incl q (m + 1) c * lastT q m) =
         lastT q m * incl q (m + 1) (d * c) * lastT q m := by
       simp only [map_mul, mul_assoc]
-    rw [h₁, extend_incl_mul_lastT_mul_incl z hφ', h₂, hφ', extend_lastT_mul_lastT_mul_incl z hφ,
+    rw [lastT_mul_incl_mul_lastT, extend_incl_mul_lastT_mul_incl z hφ', h₂, hφ',
+      extend_lastT_mul_lastT_mul_incl z hφ,
       extend_incl_mul_lastT_mul_incl z hφ]
     ring
 
@@ -231,8 +236,9 @@ private theorem extend_extend_mul_lastT_mul_mul_lastT
       lastT q (m + 1) =
       incl q (m + 2) (incl q (m + 1) c' * lastT q m * incl q (m + 1) (d' * c) * lastT q m) *
         lastT q (m + 1) * incl q (m + 2) (lastT q m * incl q (m + 1) d) := by
+    rw [mul_assoc (incl q (m + 2) _) (lastT q (m + 1)), mul_assoc (incl q (m + 2) _),
+      lastT_mul_incl_mul_lastT]
     simp only [map_mul, mul_assoc]
-    rw [(commute_lastT c).left_comm, ← (commute_lastT d).eq, lastT_braid_assoc]
   have h₂ : lastT q m * incl q (m + 1) d *
       (incl q (m + 1) c' * lastT q m * incl q (m + 1) (d' * c) * lastT q m) =
       lastT q m * (incl q (m + 1) (d * c') * lastT q m * incl q (m + 1) (d' * c)) *
@@ -358,6 +364,9 @@ private noncomputable def stageTrace : (n : ℕ) → stage R q (n + 1) →ₗ[R]
   | 0 => ((indexCharacter R q).comp (stage R q 1).val).toLinearMap
   | n + 1 => extend z (stageTrace n)
 
+private theorem stageTrace_zero {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ stage R q 1) :
+    stageTrace q z 0 ⟨x, hx⟩ = indexCharacter R q x := rfl
+
 private theorem stageTrace_succ (n : ℕ) :
     stageTrace q z (n + 1) = extend z (stageTrace q z n) := rfl
 
@@ -420,8 +429,7 @@ private theorem ocneanuTrace_eq_stageTrace (z : R) {n : ℕ} {x : InfiniteTypeAH
 `z`. -/
 theorem isMarkovTrace_ocneanuTrace (z : R) : IsMarkovTrace z (ocneanuTrace R q z) where
   map_one := by
-    rw [ocneanuTrace_eq_stageTrace z (n := 0) (one_mem _)]
-    exact map_one (indexCharacter R q)
+    rw [ocneanuTrace_eq_stageTrace z (n := 0) (one_mem _), stageTrace_zero, map_one]
   map_mul_comm x y := by
     obtain ⟨n, hx, hy⟩ := exists_mem_stage_and_mem_stage x y
     rw [ocneanuTrace_eq_stageTrace z (mul_mem hx hy), ocneanuTrace_eq_stageTrace z (mul_mem hy hx)]
