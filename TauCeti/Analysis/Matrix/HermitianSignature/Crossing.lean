@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Analysis.Normed.Module.QuadraticMap
+public import TauCeti.Topology.Algebra.Module.BilinearForm
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
@@ -23,20 +23,21 @@ when the crossing form is nondegenerate.
 At a regular crossing the negative index of `V t` jumps by an amount read off from the crossing
 form alone: just after the crossing it is the negative index of `V t₀` plus the negative index of
 the crossing form, and just before it is the negative index of `V t₀` plus the positive index of
-the crossing form. On both sides `V t` is nondegenerate, so regular crossings are isolated, and the
-negative index drops across the crossing by the signature of the crossing form. This is the local
-computation behind the formula of Robbin and Salamon expressing the spectral flow of a path of
-symmetric operators as the sum of the signatures of its crossing forms, which in turn computes the
-Fredholm index of `d/ds + A(s)` and of linear Cauchy--Riemann operators with Lagrangian boundary
-conditions as a Maslov index. The summation of these local jumps over the crossings of a path on a
-compact interval is not carried out here.
+the crossing form. The negative index therefore drops across the crossing by the signature of the
+crossing form. If moreover `V t` is symmetric for all `t` near `t₀`, then `V t` is nondegenerate
+on both sides, so regular crossings are isolated. This is the local computation behind the
+formula of Robbin and Salamon expressing the spectral flow of a path of symmetric operators as the
+sum of the signatures of its crossing forms, which in turn computes the Fredholm index of
+`d/ds + A(s)` and of linear Cauchy--Riemann operators with Lagrangian boundary conditions as a
+Maslov index. The summation of these local jumps over the crossings of a path on a compact interval
+is not carried out here.
 
 The proof compares indices by dimension counting. A subspace on which `V t₀` is negative definite,
 plus a subspace of the kernel on which the crossing form is negative definite, is a subspace on
 which `V t` is negative definite for `t > t₀` close to `t₀`; the same holds for positive definite
 subspaces. These two lower bounds already add up to the dimension of the space, so both are
-equalities and `V t` has trivial radical. One-sided derivatives suffice for the one-sided
-statements.
+equalities and the quadratic form of `V t` has trivial radical. One-sided derivatives suffice for
+the one-sided statements.
 
 ## Main definitions
 
@@ -50,8 +51,8 @@ statements.
 * `ContinuousLinearMap.eventually_sigNeg_eq_add_sigPos_crossingForm`: just before a regular
   crossing, the negative index of `V t` is that of `V t₀` plus the positive index of the crossing
   form.
-* `ContinuousLinearMap.eventually_nondegenerate_of_crossingForm_nondegenerate`: a path of
-  symmetric forms is nondegenerate near a regular crossing, except at the crossing itself.
+* `ContinuousLinearMap.eventually_nondegenerate_of_crossingForm_nondegenerate`: a path of forms
+  symmetric near a regular crossing is nondegenerate near it, except at the crossing itself.
 * `ContinuousLinearMap.eventually_sigNeg_sub_sigNeg_eq_sigPos_sub_sigNeg_crossingForm`: across a
   regular crossing the negative index drops by the signature of the crossing form.
 
@@ -93,14 +94,6 @@ theorem crossingForm_neg (B V' : E →L[ℝ] E →L[ℝ] ℝ) :
   ext v
   simp
 
-/-- The radical of the quadratic form of a symmetric continuous bilinear form is its kernel. -/
-private theorem radical_toQuadraticMap_eq_ker {B : E →L[ℝ] E →L[ℝ] ℝ}
-    (hB : B.toBilinForm.IsSymm) :
-    B.toBilinForm.toQuadraticMap.radical = B.ker := by
-  rw [QuadraticMap.radical_eq_ker_associated, QuadraticMap.associated_left_inverse (S := ℝ) hB.eq]
-  ext x
-  simp [LinearMap.ext_iff, ContinuousLinearMap.ext_iff]
-
 /-- A subspace of the kernel of `B` on which the crossing form of `B` and `D` is negative definite
 gives a subspace of `E` of the same dimension, inside the kernel, on which `D` is negative
 definite. -/
@@ -116,15 +109,6 @@ private theorem exists_le_ker_of_posDef_neg_crossingForm (B D : E →L[ℝ] E �
       intro h
       exact hy0 (by simpa using congrArg (fun z : M' ↦ ((z : B.ker) : E)) h)
     simpa using hM' ⟨y, hy⟩ hy0'
-
-/-- A subspace on which `B` is negative definite meets the kernel of `B` trivially. -/
-private theorem inf_eq_bot_of_le_ker {B : E →L[ℝ] E →L[ℝ] ℝ} {N M : Submodule ℝ E}
-    (hN : ∀ x ∈ N, x ≠ 0 → B x x < 0) (hMK : M ≤ B.ker) : N ⊓ M = ⊥ := by
-  refine eq_bot_iff.2 fun x hx ↦ ?_
-  by_contra hx0
-  have h₁ := hN x hx.1 hx0
-  have h₂ : B x = 0 := hMK hx.2
-  simp [h₂] at h₁
 
 variable {V : ℝ → E →L[ℝ] E →L[ℝ] ℝ} {t₀ : ℝ}
 
@@ -154,28 +138,6 @@ private theorem tendsto_sub_nhdsLT_and_isLittleO {V' : E →L[ℝ] E →L[ℝ] �
 
 variable [FiniteDimensional ℝ E]
 
-/-- A continuous bilinear form that is negative on the nonzero vectors of a subspace of a
-finite-dimensional space is uniformly negative there. -/
-private theorem exists_pos_forall_le_neg_mul_sq (B : E →L[ℝ] E →L[ℝ] ℝ) (N : Submodule ℝ E)
-    (hN : ∀ x ∈ N, x ≠ 0 → B x x < 0) : ∃ c > 0, ∀ x ∈ N, B x x ≤ -(c * ‖x‖ ^ 2) := by
-  set Q := B.toBilinForm.toQuadraticMap.restrict N
-  have hQ : Q.Anisotropic := fun x hx ↦ by
-    by_contra hx0
-    have h := hN x x.2 (by simpa using hx0)
-    simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-      toBilinForm_apply] at hx
-    linarith
-  have hcont : Continuous Q :=
-    (B.continuous.comp continuous_subtype_val).clm_apply continuous_subtype_val
-  obtain ⟨c, hc, hle⟩ := hQ.exists_pos_mul_norm_sq_le hcont
-  refine ⟨c, hc, fun x hx ↦ ?_⟩
-  rcases eq_or_ne x 0 with rfl | hx0
-  · simp
-  have h := hle ⟨x, hx⟩
-  simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-    toBilinForm_apply, Real.norm_eq_abs, abs_of_neg (hN x hx hx0), ← Submodule.norm_coe] at h
-  linarith
-
 /-- The scalar inequality behind the key estimate: a term bounded by `-c₁ a²`, plus `h` times a
 term bounded by `C a² + 2 C a b - c₂ b²`, plus an error bounded by `c₂ h (2 a² + 2 b²) / 8`, is
 negative once `0 < h < c₁ / (2 (K₀ + 1))` for `K₀ = C + 2 C² / c₂ + c₂ / 4`, provided `a` or `b`
@@ -190,12 +152,11 @@ private theorem add_mul_add_lt_zero {a b c₁ c₂ C h q d r : ℝ} (hc₁ : 0 <
   have hK₀ : 0 ≤ K₀ := by positivity
   -- Absorb the cross term `2 C a b` into the two squares.
   have hcross : 2 * C * a * b ≤ c₂ / 2 * b ^ 2 + 2 * C ^ 2 / c₂ * a ^ 2 := by
-    have : 0 ≤ (c₂ / 2 * b - C * a) ^ 2 / (c₂ / 2) := by positivity
-    have hexp : (c₂ / 2 * b - C * a) ^ 2 / (c₂ / 2) =
-        c₂ / 2 * b ^ 2 + 2 * C ^ 2 / c₂ * a ^ 2 - 2 * C * a * b := by
-      field_simp
-      ring
-    linarith
+    have h := two_mul_le_add_mul_sq (a := b) (b := C * a) (half_pos hc₂)
+    rw [inv_div] at h
+    calc 2 * C * a * b = 2 * b * (C * a) := by ring
+      _ ≤ c₂ / 2 * b ^ 2 + 2 / c₂ * (C * a) ^ 2 := h
+      _ = c₂ / 2 * b ^ 2 + 2 * C ^ 2 / c₂ * a ^ 2 := by ring
   -- The coefficient of `a²` stays below `-c₁ / 2`, that of `b²` is `-c₂ h / 4`.
   have hK : h * K₀ * a ^ 2 ≤ c₁ / 2 * a ^ 2 := by
     refine mul_le_mul_of_nonneg_right ?_ (sq_nonneg a)
@@ -284,7 +245,7 @@ private theorem eventually_add_sigNeg_le {l : Filter ℝ} {h : ℝ → ℝ} {D :
     simpa using hN ⟨x, hx⟩ (by simpa using hx0)
   filter_upwards [eventually_forall_lt_zero hsymm hh hpos hrem hN' hMK hM] with t ht
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq N M
-  rw [inf_eq_bot_of_le_ker hN' hMK, finrank_bot, add_zero] at hdim
+  rw [inf_eq_bot_of_le_ker (fun x hx hx0 ↦ (hN' x hx hx0).ne) hMK, finrank_bot, add_zero] at hdim
   rw [← hNr, ← hM'r, ← hMr, ← hdim]
   exact le_sigNeg_of_negDef _ fun x hx0 ↦ by simpa using ht x x.2 (by simpa using hx0)
 
@@ -313,7 +274,7 @@ private theorem eventually_add_sigPos_le {l : Filter ℝ} {h : ℝ → ℝ} {D :
   filter_upwards [eventually_forall_lt_zero (V := fun t ↦ -V t) hsymm' hh hpos hrem' hN' hMK'
     hM] with t ht
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq N M
-  rw [inf_eq_bot_of_le_ker hN' hMK', finrank_bot, add_zero] at hdim
+  rw [inf_eq_bot_of_le_ker (fun x hx hx0 ↦ (hN' x hx hx0).ne) hMK', finrank_bot, add_zero] at hdim
   rw [← hNr, ← hM'r, ← hMr, ← hdim]
   exact le_sigPos_of_posDef _ fun x hx0 ↦ by simpa using ht x x.2 (by simpa using hx0)
 
@@ -331,7 +292,7 @@ private theorem eventually_sigNeg_eq_and_radical_eq_bot {l : Filter ℝ} {h : �
     eventually_add_sigPos_le hsymm hh hpos hrem] with t hneg hpos
   have h₁ := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := (V t).toBilinForm.toQuadraticMap)
   have h₀ := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := (V t₀).toBilinForm.toQuadraticMap)
-  rw [radical_toQuadraticMap_eq_ker hsymm] at h₀
+  rw [LinearMap.BilinForm.radical_toQuadraticMap _ hsymm, ker_toBilinForm] at h₀
   have hΓ := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _ hreg
   have hrad : Module.finrank ℝ (V t).toBilinForm.toQuadraticMap.radical = 0 := by omega
   exact ⟨by omega, Submodule.finrank_eq_zero.1 hrad⟩
