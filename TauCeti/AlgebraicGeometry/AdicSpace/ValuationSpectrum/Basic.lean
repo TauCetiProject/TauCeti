@@ -30,7 +30,8 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
   `φ : A →+* B`.
 * `TauCeti.ValuationSpectrum.supp v` : The support ideal `{a ∈ A | v(a) = 0}`.
 * `TauCeti.ValuationSpectrum.ofValuation_valuationSubring_valuation`,
-  `TauCeti.ValuationSpectrum.ofValuation_comap_valuation` and
+  `TauCeti.ValuationSpectrum.ofValuation_comap_valuation`,
+  `TauCeti.ValuationSpectrum.comap_ofValuation_valuation` and
   `TauCeti.ValuationSpectrum.valuationSubring_valuation_comap` : over a field, a point is the
   point of its valuation subring, compatibly with pullback.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_inter` : **Wedhorn's step (i)** in the proof of
@@ -443,6 +444,13 @@ theorem ofValuation_comap_valuation (g : K →+* L) (W : ValuationSubring L) :
   rw [Valuation.isEquiv_iff_valuationSubring, ValuationSubring.valuationSubring_valuation]
   ext x
   simp [Valuation.mem_valuationSubring_iff, ValuationSubring.valuation_le_one_iff]
+
+/-- Pulling back the point of a valuation subring along a field homomorphism gives the point of
+the pulled-back valuation subring. Not `@[simp]`: `comap_ofValuation` and
+`ofValuation_comap_valuation` rewrite the left side to the right side. -/
+theorem comap_ofValuation_valuation (g : K →+* L) (W : ValuationSubring L) :
+    comap g (ofValuation W.valuation) = ofValuation (W.comap g).valuation := by
+  rw [comap_ofValuation, ofValuation_comap_valuation]
 
 /-- The valuation subring of a pulled-back point of the valuation spectrum of a field is the
 pullback of its valuation subring. -/

@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 import Mathlib.RingTheory.Flat.Stability
-import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 import Mathlib.RingTheory.Valuation.LocalSubring
 import TauCeti.RingTheory.Flat.NonZeroDivisors
@@ -35,6 +34,9 @@ the image of `Q` dominates the images of `V₁` and `V₂`, so it restricts to t
 
 ## Main results
 
+* `ValuationSubring.exists_residueField_of_ringHom`: two embeddings into a field `L` agreeing on
+  `K₀` factor through a residue field of `K₁ ⊗[K₀] K₂`, which carries the pullback of any
+  valuation subring of `L`.
 * `ValuationSubring.exists_comap_eq_of_comap_eq`: the amalgamation of valuation subrings.
 
 ## References
@@ -63,9 +65,8 @@ variable {K₀ K₁ K₂ : Type*} [Field K₀] [Field K₁] [Field K₂] [Algebr
 /-- Two embeddings of `K₁` and `K₂` into a field `L`, agreeing on `K₀`, factor through a residue
 field of `K₁ ⊗[K₀] K₂`; a valuation subring of `L` therefore pulls back to one of that residue field
 with the same restrictions to `K₁` and `K₂`. -/
-private theorem exists_residueField_of_ringHom {L : Type*} [Field L] (g₁ : K₁ →+* L)
-    (g₂ : K₂ →+* L) (hg : g₁.comp (algebraMap K₀ K₁) = g₂.comp (algebraMap K₀ K₂))
-    (W : ValuationSubring L) :
+theorem exists_residueField_of_ringHom {L : Type*} [Field L] (W : ValuationSubring L)
+    (g₁ : K₁ →+* L) (g₂ : K₂ →+* L) (hg : g₁.comp (algebraMap K₀ K₁) = g₂.comp (algebraMap K₀ K₂)) :
     ∃ (P : Ideal (K₁ ⊗[K₀] K₂)) (_ : P.IsPrime) (W' : ValuationSubring P.ResidueField),
       W'.comap ((algebraMap _ P.ResidueField).comp
           (includeLeftRingHom : K₁ →+* K₁ ⊗[K₀] K₂)) = W.comap g₁ ∧
@@ -87,18 +88,6 @@ private theorem exists_residueField_of_ringHom {L : Type*} [Field L] (g₁ : K�
     ext x
     rw [RingHom.comp_apply, RingHom.comp_apply, hΦ]
     simp [Φ, G₁, G₂]
-
-/-- Let `ψ : S →+* L` map into a valuation subring `W` of the field `L`, sending an ideal `Q` into
-the nonunits of `W`. If a valuation subring `V` of `K` maps to `S` with its maximal ideal in `Q`,
-compatibly with `g : K →+* L`, then `W` dominates the image of `V`, so `W` pulls back to `V`. -/
-private theorem comap_eq_of_map_maximalIdeal_le {K L S : Type*} [Field K] [Field L] [CommRing S]
-    {V : ValuationSubring K} {W : ValuationSubring L} (ι : V →+* S) (ψ : S →+* L) {Q : Ideal S}
-    (hQ : (maximalIdeal V).map ι ≤ Q) (hmem : ∀ s, ψ s ∈ W) (hnon : ∀ s ∈ Q, ψ s ∈ W.nonunits)
-    (g : K →+* L) (hg : ∀ v : V, g v = ψ (ι v)) : W.comap g = V := by
-  refine (eq_of_le_of_nonunits_le (fun x hx ↦ ?_) fun x hx ↦ ?_).symm
-  · simpa only [mem_comap, hg ⟨x, hx⟩] using hmem (ι ⟨x, hx⟩)
-  · simpa only [mem_nonunits_comap, hg ⟨x, nonunits_subset hx⟩] using
-      hnon _ (hQ (Ideal.mem_map_of_mem _ (coe_mem_nonunits_iff.mp hx)))
 
 /-- **Amalgamation of valuation rings.** Let `K₁` and `K₂` be field extensions of `K₀`, with
 valuation subrings `V₁ ⊆ K₁` and `V₂ ⊆ K₂` cutting out the same valuation subring of `K₀`. Then
@@ -167,7 +156,7 @@ theorem exists_comap_eq_of_comap_eq (V₁ : ValuationSubring K₁) (V₂ : Valua
   have hmem (x) : ψ x ∈ W := hrange ⟨x, rfl⟩
   have hnon' (x) (hx : x ∈ Q) : ψ x ∈ W.nonunits :=
     hnon ⟨ψ.rangeRestrict x, Ideal.mem_map_of_mem _ hx, rfl⟩
-  obtain ⟨P, _, W', h₁, h₂⟩ := exists_residueField_of_ringHom g₁ g₂ hg W
+  obtain ⟨P, _, W', h₁, h₂⟩ := W.exists_residueField_of_ringHom g₁ g₂ hg
   exact ⟨P, inferInstance, W',
     h₁.trans (comap_eq_of_map_maximalIdeal_le _ ψ (le_sup_left.trans hJQ) hmem hnon' g₁
       (IsFractionRing.lift_algebraMap inj₁)),

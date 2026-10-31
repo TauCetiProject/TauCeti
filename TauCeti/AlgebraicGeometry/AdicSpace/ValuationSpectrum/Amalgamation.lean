@@ -20,12 +20,13 @@ two copies of `L`, and both factors carry an amalgam of the `p`-adic valuation w
 the statement behind the description of the points of a fibre product of adic spaces.
 
 The proof passes to residue fields. Points of `Spv` of a field are its valuation subrings
-(`ofValuation_valuationSubring_valuation`, `ofValuation_comap_valuation`). The points `y` and `x`
-are the residue-field valuations on `κ(y)` and `κ(x)` pulled back to `B` and `C`, and these
-restrict to the residue-field valuation of their common pullback `z` on `κ(z)`, because pulling
-back along `A → κ(z)` is injective (`comap_algebraMap_residueField_injective`). The amalgamation of
-valuation subrings (`ValuationSubring.exists_comap_eq_of_comap_eq`) on `κ(y) ⊗[κ(z)] κ(x)` then
-gives the amalgam, pulled back along `B ⊗[A] C → κ(y) ⊗[κ(z)] κ(x)`.
+(`ofValuation_valuationSubring_valuation`, `ofValuation_comap_valuation`,
+`comap_ofValuation_valuation`). The points `y` and `x` are the residue-field valuations on
+`κ(y)` and `κ(x)` pulled back to `B` and `C`, and these restrict to the residue-field valuation of
+their common pullback `z` on `κ(z)`, because pulling back along `A → κ(z)` is injective
+(`comap_algebraMap_residueField_injective`). The amalgamation of valuation subrings
+(`ValuationSubring.exists_comap_eq_of_comap_eq`) on `κ(y) ⊗[κ(z)] κ(x)` then gives the amalgam,
+pulled back along `B ⊗[A] C → κ(y) ⊗[κ(z)] κ(x)`.
 
 ## Main results
 
@@ -90,17 +91,22 @@ theorem exists_amalgamation (y : Spv B) (x : Spv C)
   simp only [valuationSubring_valuation_comap] at hV
   -- amalgamate the valuation subrings on a residue field of `κ(y) ⊗[κ(z)] κ(x)`
   obtain ⟨P, _, W, hW₁, hW₂⟩ := ValuationSubring.exists_comap_eq_of_comap_eq _ _ hV
+  -- the point `w` of `W` on `κ(y) ⊗[κ(z)] κ(x)` restricts to `y'` and `x'`
+  set w := comap (algebraMap (y.supp.ResidueField ⊗[z.supp.ResidueField] x.supp.ResidueField)
+    P.ResidueField) (ofValuation W.valuation)
+  have hw₁ : comap includeLeftRingHom w = y' := by
+    simp only [w, comap_comap, comap_ofValuation_valuation]
+    rw [hW₁, ofValuation_valuationSubring_valuation]
+  have hw₂ : comap (includeRight (R := z.supp.ResidueField)).toRingHom w = x' := by
+    simp only [w, comap_comap, comap_ofValuation_valuation]
+    rw [hW₂, ofValuation_valuationSubring_valuation]
+  -- pull `w` back along `B ⊗[A] C → κ(y) ⊗[κ(z)] κ(x)`
   refine ⟨comap (mapRingHom (algebraMap A z.supp.ResidueField) (algebraMap B y.supp.ResidueField)
-    (algebraMap C x.supp.ResidueField) hB hC)
-      (comap (algebraMap _ P.ResidueField) (ofValuation W.valuation)), ?_, ?_⟩
-  · rw [comap_comap, comap_comap, mapRingHom_comp_includeLeftRingHom,
-      ← RingHom.comp_assoc, ← comap_comap, comap_ofValuation, ofValuation_comap_valuation, hW₁,
-      ofValuation_valuationSubring_valuation]
+    (algebraMap C x.supp.ResidueField) hB hC) w, ?_, ?_⟩
+  · rw [comap_comap, mapRingHom_comp_includeLeftRingHom, ← comap_comap, hw₁]
     simp [y']
-  · rw [comap_comap, comap_comap, AlgHom.toRingHom_eq_coe,
-      mapRingHom_comp_includeRight, ← RingHom.comp_assoc, ← comap_comap, comap_ofValuation,
-      ofValuation_comap_valuation, ← AlgHom.toRingHom_eq_coe, hW₂,
-      ofValuation_valuationSubring_valuation]
+  · rw [comap_comap, AlgHom.toRingHom_eq_coe, mapRingHom_comp_includeRight, ← comap_comap,
+      ← AlgHom.toRingHom_eq_coe, hw₂]
     simp [x']
 
 end TensorProduct
