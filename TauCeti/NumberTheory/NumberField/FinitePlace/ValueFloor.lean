@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
+public import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 public import Mathlib.Data.Int.Log
 
 /-!
@@ -32,24 +32,6 @@ namespace NumberField.FinitePlace
 open IsDedekindDomain
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- Every nonzero finite-place value is an integer power of the norm of its prime. -/
-theorem apply_eq_absNorm_zpow (v : FinitePlace K) {x : K} (hx : x ≠ 0) :
-    v x = (v.maximalIdeal.asIdeal.absNorm : ℝ) ^
-      WithZero.log (v.maximalIdeal.valuation K x) := by
-  rw [← norm_embedding_eq, norm_embedding, HeightOneSpectrum.adicAbv_def,
-    WithZeroMulInt.toNNReal_neg_apply _ ((v.maximalIdeal.valuation K).ne_zero_iff.mpr hx),
-    NNReal.coe_zpow, NNReal.coe_natCast]
-
-/-- Every integer power of the prime norm occurs as a nonzero finite-place value. -/
-theorem exists_ne_zero_apply_eq_absNorm_zpow (v : FinitePlace K) (n : ℤ) :
-    ∃ x : K, x ≠ 0 ∧ v x = (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ n := by
-  obtain ⟨x, hx⟩ := v.maximalIdeal.valuation_surjective K (WithZero.exp n)
-  have hx0 : x ≠ 0 := (v.maximalIdeal.valuation K).ne_zero_iff.mp (by
-    rw [hx]
-    exact WithZero.exp_ne_zero)
-  refine ⟨x, hx0, ?_⟩
-  rw [v.apply_eq_absNorm_zpow hx0, hx, WithZero.log_exp]
 
 /-- The largest finite-place value below a positive real bound. It is zero at nonpositive
 bounds. -/
