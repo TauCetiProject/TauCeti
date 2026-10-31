@@ -16,12 +16,21 @@ Equip `CStarAction.ConvolutionAlgebra α μ` with the seminorm `∫ s, ‖f s‖
 the norm of the Bochner `L¹` space. For a left-invariant measure the convolution estimate makes
 this a nonunital seminormed ring. If every nonempty open set has positive measure, as for Haar
 measure, it is a nonunital normed ring: continuous functions that agree almost everywhere agree
-everywhere. The scalar action makes it a complex normed space.
+everywhere. The scalar action makes it a complex normed space. For a left-invariant measure the
+twisted involution is an L¹ isometry, `‖f*‖₁ = ‖f‖₁`, because the modular weight in
+`f*(s) = c(s) • α s (star (f s⁻¹))` is the density of the inverted Haar measure.
 
 These structures give the compact-support convolution algebra its L¹ topology, used for extending
 bounded integrated representations and completing the algebra. The map `toL1` records its
 realization in the ordinary coefficient-valued Bochner space; `toL1LI` is its linear isometric
 version. Multiplication in that Bochner space is not the pointwise product.
+
+The completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach
+⋆-algebra, Williams's `L¹(G, A)`. The instances of `TauCeti.Analysis.Normed.Ring.Completion`,
+`TauCeti.Topology.Algebra.UniformRing` and `TauCeti.Analysis.CStarAlgebra.Completion` make it a
+complete nonunital normed ring and ⋆-ring with isometric star. The canonical map from the compactly
+supported functions has dense image; it is an embedding when every nonempty open set has positive
+measure, so that the L¹ seminorm is a norm.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
 -/
@@ -122,5 +131,37 @@ instance : NonUnitalNormedRing (ConvolutionAlgebra α μ) where
   __ : NormedAddCommGroup (ConvolutionAlgebra α μ) := inferInstance
 
 end FullSupport
+
+section Star
+
+variable [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsMulLeftInvariant]
+
+/-- For a left-invariant measure the twisted involution is an isometry for the L¹ seminorm,
+`‖f*‖₁ = ‖f‖₁`: the modular weight in `f*(s) = c(s) • α s (star (f s⁻¹))` is exactly the density
+of the inverted Haar measure. -/
+theorem norm_star (f : ConvolutionAlgebra α μ) : ‖star f‖ = ‖f‖ := by
+  simp only [norm_eq_integral_norm, ofConv_star, norm_twistedInvolution_apply]
+  -- On compactly supported continuous integrands `μ` is a multiple of a Haar measure, for which
+  -- this is the inversion formula.
+  have hc : Continuous fun s => (Measure.modularCharacter s : ℝ) * ‖f.ofConv s⁻¹‖ :=
+    (NNReal.continuous_coe.comp continuous_modularCharacter).mul
+      (f.ofConv.continuous.comp continuous_inv).norm
+  have hcs : HasCompactSupport fun s => (Measure.modularCharacter s : ℝ) * ‖f.ofConv s⁻¹‖ :=
+    (f.ofConv.hasCompactSupport.comp_homeomorph (Homeomorph.inv G)).norm.mul_left
+  rw [Measure.integral_isMulLeftInvariant_eq_smul_of_hasCompactSupport μ Measure.haar hc hcs,
+    Measure.integral_isMulLeftInvariant_eq_smul_of_hasCompactSupport (f := fun s => ‖f.ofConv s‖)
+      μ Measure.haar f.ofConv.continuous.norm f.ofConv.hasCompactSupport.norm,
+    integral_smul_nnreal_measure, integral_smul_nnreal_measure]
+  simpa only [smul_eq_mul] using congrArg _ (integral_modularCharacter_smul_inv_eq_self
+    (μ := Measure.haar) (f := fun s => ‖f.ofConv s‖) f.ofConv.continuous.norm
+    f.ofConv.hasCompactSupport.norm)
+
+/-- For a left-invariant measure the twisted convolution algebra is a seminormed ⋆-algebra. Its
+completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach
+⋆-algebra. -/
+instance : NormedStarGroup (ConvolutionAlgebra α μ) :=
+  ⟨fun f => (norm_star f).le⟩
+
+end Star
 
 end TauCeti.CStarAction.ConvolutionAlgebra
