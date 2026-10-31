@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import Mathlib.Data.Fin.Tuple.Take
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
@@ -48,6 +49,8 @@ Borel measurable structure on the scalar field.
   a copy in `EuclideanSpace 𝕜 ι` with the same norms and mutual inner products.
 * `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
   `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
+* `EuclideanSpace.take`: the first `m` coordinates of a point of `𝕜ⁿ`, a left inverse of the
+  zero extension `LinearIsometry.piLpExtendByZero` along `Fin.castLEEmb`.
 -/
 
 public section
@@ -128,6 +131,58 @@ theorem abs_sub_sum_mul_basisFun_le_sqrt {x : EuclideanSpace ℝ ι} (hx0 : ∀ 
       exact Finset.sum_congr rfl fun i _ ↦ by ring
     _ ≤ K * √(1 - ‖x‖ ^ 2) :=
       mul_le_mul_of_nonneg_left (sum_mul_dist_basisFun_le_sqrt hx0 hx1) K.coe_nonneg
+
+section take
+
+variable {m n : ℕ}
+
+/-- The first `m` coordinates of a point of `𝕜ⁿ`, for `m ≤ n`: `Fin.take` on Euclidean space. -/
+def take (hm : m ≤ n) (x : EuclideanSpace 𝕜 (Fin n)) : EuclideanSpace 𝕜 (Fin m) :=
+  WithLp.toLp 2 (Fin.take m hm x.ofLp)
+
+@[simp]
+theorem take_apply (hm : m ≤ n) (x : EuclideanSpace 𝕜 (Fin n)) (i : Fin m) :
+    take hm x i = x (Fin.castLE hm i) :=
+  (rfl)
+
+variable [RCLike 𝕜]
+
+theorem continuous_take (hm : m ≤ n) : Continuous (take (𝕜 := 𝕜) hm) := by
+  refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_)
+  simp only [Fin.take_apply]
+  fun_prop
+
+/-- The zero extension of `w : 𝕜ᵐ` to `𝕜ⁿ` along `Fin.castLE` keeps the first `m` coordinates. -/
+theorem piLpExtendByZero_castLEEmb_apply_castLE (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
+    (i : Fin m) :
+    LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb hm) w (Fin.castLE hm i) = w i :=
+  (Fin.castLE_injective hm).extend_apply w.ofLp 0 i
+
+/-- The zero extension of `w : 𝕜ᵐ` to `𝕜ⁿ` along `Fin.castLE` vanishes beyond the first `m`
+coordinates. -/
+theorem piLpExtendByZero_castLEEmb_apply_of_le (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
+    {j : Fin n} (hj : m ≤ j.val) :
+    LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb hm) w j = 0 :=
+  LinearIsometry.piLpExtendByZero_apply_eq_zero (by rintro ⟨i, rfl⟩; simp at hj; omega) w
+
+/-- Taking the first `m` coordinates undoes the zero extension along `Fin.castLE`. -/
+@[simp]
+theorem take_piLpExtendByZero_castLEEmb (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m)) :
+    take hm (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb hm) w) = w := by
+  ext i
+  exact piLpExtendByZero_castLEEmb_apply_castLE hm w i
+
+/-- A point of `𝕜ⁿ` whose coordinates vanish beyond the first `m` is the zero extension of its
+first `m` coordinates. -/
+theorem piLpExtendByZero_castLEEmb_take (hm : m ≤ n) {x : EuclideanSpace 𝕜 (Fin n)}
+    (hx : ∀ j : Fin n, m ≤ j.val → x j = 0) :
+    LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb hm) (take hm x) = x := by
+  ext j
+  by_cases hj : j.val < m
+  · simpa using piLpExtendByZero_castLEEmb_apply_castLE hm (take hm x) ⟨j, hj⟩
+  · rw [piLpExtendByZero_castLEEmb_apply_of_le hm _ (not_lt.1 hj), hx j (not_lt.1 hj)]
+
+end take
 
 variable [RCLike 𝕜]
 
