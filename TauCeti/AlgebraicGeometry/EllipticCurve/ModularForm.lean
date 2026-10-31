@@ -117,15 +117,24 @@ lemma pow (hf : IsIntegralModularForm k f) (n : ℕ) : IsIntegralModularForm (k 
 end IsIntegralModularForm
 
 variable (k) in
+@[simp]
 lemma isIntegralModularForm_zero : IsIntegralModularForm k 0 := fun R _ W C ↦ by
   rw [map_zero, map_zero, mul_zero]
 
-/-- Every integer constant is an integral modular form of weight `0`. -/
-lemma isIntegralModularForm_C (n : ℤ) : IsIntegralModularForm 0 (C n) := fun R _ W _ ↦ by
-  rw [eq_intCast C, map_intCast, map_intCast, pow_zero, one_mul]
+/-- Every integer is an integral modular form of weight `0`. This is the simp normal form of
+`isIntegralModularForm_C`. -/
+@[simp]
+lemma isIntegralModularForm_intCast (n : ℤ) :
+    IsIntegralModularForm 0 (n : MvPolynomial Coeff ℤ) := fun R _ W _ ↦ by
+  rw [map_intCast, map_intCast, pow_zero, one_mul]
 
+/-- Every integer constant is an integral modular form of weight `0`. -/
+lemma isIntegralModularForm_C (n : ℤ) : IsIntegralModularForm 0 (C n) := by
+  simp
+
+@[simp]
 lemma isIntegralModularForm_one : IsIntegralModularForm 0 1 := by
-  simpa using isIntegralModularForm_C 1
+  simpa using isIntegralModularForm_intCast 1
 
 /-- The invariant `c₄` of the universal curve is an integral modular form of weight `4`. -/
 theorem isIntegralModularForm_c₄ : IsIntegralModularForm 4 Universal.curve.c₄ :=
