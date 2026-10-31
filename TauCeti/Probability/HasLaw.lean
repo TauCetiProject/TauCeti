@@ -24,6 +24,9 @@ For singleton atoms this needs no condition on the target measurable space, sinc
 already explicit. This file records both forms of the constraint and their consequences for
 transporting Dirac measures and for laws that are null on singletons.
 
+Adjoining a coordinate with an s-finite measure to a random variable gives the pair the product
+measure.
+
 ## Main results
 
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
@@ -33,6 +36,8 @@ transporting Dirac measures and for laws that are null on singletons.
   mass the source gives `{x}`, with `ProbabilityTheory.HasLaw.measure_singleton_eq_zero` and
   `TauCeti.Probability.not_hasLaw_of_measure_singleton_ne_zero` its reading for a law that is
   null on singletons;
+* `ProbabilityTheory.HasLaw.prod_extension` — adjoining a coordinate with an s-finite measure to
+  a random variable gives the pair the product measure, while preserving the old variable's law;
 * `AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom` — the image of a finite positive
   measurable atom under an a.e.-measurable map to a standard Borel space is a point mass;
 * `ProbabilityTheory.HasLaw.exists_measure_atom_le_measure_singleton` — a law receiving such an
@@ -111,6 +116,22 @@ theorem _root_.ProbabilityTheory.HasLaw.measure_singleton_le (h : HasLaw T ν μ
 theorem _root_.ProbabilityTheory.HasLaw.measure_singleton_eq_zero [NullSingletonClass ν]
     (h : HasLaw T ν μ) (x : X) : μ {x} = 0 :=
   nonpos_iff_eq_zero.1 ((h.measure_singleton_le x).trans_eq (measure_singleton _))
+
+/-- Adjoining a coordinate with an s-finite measure `ν` to a random variable with law `μ` gives
+the pair the product measure. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension {Ω α E : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace E] {X : Ω → α}
+    {μ : Measure α} {P : Measure Ω} {ν : Measure E} [SFinite ν]
+    (hX : HasLaw X μ P) :
+    HasLaw (fun z : Ω × E => (X z.1, z.2)) (μ.prod ν) (P.prod ν) := by
+  refine ⟨hX.aemeasurable.prodMap measurable_id.aemeasurable, ?_⟩
+  -- The product-map measure identity is stated for `Prod.map`.
+  have hpair : (fun z : Ω × E => (X z.1, z.2)) = Prod.map X id := by
+    funext z
+    rfl
+  rw [hpair, ← Measure.map_prod_map_of_aemeasurable P ν hX.aemeasurable
+    measurable_id.aemeasurable]
+  rw [hX.map_eq, Measure.map_id]
 
 /-- **A nonzero source singleton has no transport onto a law that is null on singletons.** This
 is the basic infeasibility of the Monge problem: no map can push such a source measure onto such
