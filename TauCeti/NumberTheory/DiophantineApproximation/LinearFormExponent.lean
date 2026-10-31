@@ -478,12 +478,23 @@ def coeffVec (n : ℕ) (P : ℤ[X]) : ℤ × (Fin n → ℤ) :=
 noncomputable def linearFormPoly {n : ℕ} (x : ℤ × (Fin n → ℤ)) : ℤ[X] :=
   C x.1 + ∑ j, C (x.2 j) * X ^ (j.val + 1)
 
+/-- The first component of `coeffVec n P` is the constant coefficient of `P`. -/
+@[simp]
+theorem coeffVec_fst (n : ℕ) (P : ℤ[X]) : (coeffVec n P).1 = P.coeff 0 := by
+  simp only [coeffVec]
+
+/-- The `j`-th entry of the second component of `coeffVec n P` is the coefficient of
+`X ^ (j + 1)` in `P`. -/
+@[simp]
+theorem coeffVec_snd (n : ℕ) (P : ℤ[X]) (j : Fin n) : (coeffVec n P).2 j = P.coeff (j.val + 1) := by
+  simp only [coeffVec]
+
 /-- For `P` of degree at most `n`, the linear form of `coeffVec n P` at the powers of `z` is
 `P(z)`. -/
 theorem coeffVec_linearForm {A : Type*} [CommRing A] {n : ℕ} {P : ℤ[X]}
     (hP : P.natDegree ≤ n) (z : A) :
     ((coeffVec n P).1 : A) + ∑ j, ((coeffVec n P).2 j : A) * z ^ (j.val + 1) = aeval z P := by
-  simp only [coeffVec]
+  simp only [coeffVec_fst, coeffVec_snd]
   rw [aeval_eq_sum_range' (Nat.lt_succ_of_le hP), Finset.sum_range_succ',
     Fin.sum_univ_eq_sum_range (fun j ↦ (P.coeff (j + 1) : A) * z ^ (j + 1)) n]
   simp [zsmul_eq_mul, add_comm]
@@ -510,9 +521,31 @@ theorem natDegree_linearFormPoly_le {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
 @[simp]
 theorem coeffVec_linearFormPoly {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
     coeffVec n (linearFormPoly x) = x := by
-  refine Prod.ext (by simp [coeffVec, linearFormPoly]) (funext fun k ↦ ?_)
-  simp only [coeffVec, linearFormPoly, coeff_add, coeff_C, finsetSum_coeff, coeff_C_mul_X_pow]
+  refine Prod.ext (by simp [linearFormPoly]) (funext fun k ↦ ?_)
+  simp only [coeffVec_snd, linearFormPoly, coeff_add, coeff_C, finsetSum_coeff, coeff_C_mul_X_pow]
   simp [Fin.val_inj]
+
+/-- On polynomials of degree at most `n`, `linearFormPoly` inverts `coeffVec n`. -/
+theorem linearFormPoly_coeffVec {n : ℕ} {P : ℤ[X]} (hP : P.natDegree ≤ n) :
+    linearFormPoly (coeffVec n P) = P :=
+  coeffVec_injOn n (natDegree_linearFormPoly_le _) hP (coeffVec_linearFormPoly _)
+
+/-- The constant coefficient of `linearFormPoly x` is `x₀`. -/
+@[simp]
+theorem coeff_linearFormPoly_zero {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
+    (linearFormPoly x).coeff 0 = x.1 := by
+  rw [← coeffVec_fst n, coeffVec_linearFormPoly]
+
+/-- The coefficient of `X ^ (j + 1)` in `linearFormPoly x` is `xⱼ`. -/
+@[simp]
+theorem coeff_linearFormPoly_succ {n : ℕ} (x : ℤ × (Fin n → ℤ)) (j : Fin n) :
+    (linearFormPoly x).coeff (j.val + 1) = x.2 j := by
+  rw [← coeffVec_snd n, coeffVec_linearFormPoly]
+
+/-- The coefficients of `linearFormPoly x` vanish above degree `n`. -/
+theorem coeff_linearFormPoly_of_lt {n : ℕ} (x : ℤ × (Fin n → ℤ)) {i : ℕ} (hi : n < i) :
+    (linearFormPoly x).coeff i = 0 :=
+  coeff_eq_zero_of_natDegree_lt ((natDegree_linearFormPoly_le x).trans_lt hi)
 
 /-- The value of `linearFormPoly x` at `z` is the linear form of `x` at the powers of `z`. -/
 theorem aeval_linearFormPoly {A : Type*} [CommRing A] {n : ℕ} (x : ℤ × (Fin n → ℤ)) (z : A) :

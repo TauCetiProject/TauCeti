@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.DiophantineApproximation.LinearFormExponent
 import Mathlib.FieldTheory.PrimitiveElement
 import Mathlib.NumberTheory.NumberField.House
 import TauCeti.Analysis.Polynomial.L1Norm
+import TauCeti.Analysis.Polynomial.SupNorm.Basic
 import TauCeti.FieldTheory.Minpoly.Primitive
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
@@ -34,8 +35,8 @@ above in terms of `H(P)`.
   of an integer polynomial**, `c ≤ |P(ξ)| H(P) ^ (D - 1)` for complex algebraic `ξ` and
   `P ∈ ℤ[X]` of degree at most `n` with `P(ξ) ≠ 0`.
 * `IsAlgebraic.mahlerExponent_le`: for real algebraic `ξ` of degree `D`, `wₙ(ξ) ≤ D - 1`.
-* `IsAlgebraic.mahlerExponent_eq_of_natDegree_minpoly_eq`: for real algebraic `ξ` of degree
-  `n + 1`, `wₙ(ξ) = n`, so the bound is attained.
+* `TauCeti.mahlerExponent_eq_of_natDegree_minpoly_eq`: for real `ξ` algebraic of degree `n + 1`,
+  `wₙ(ξ) = n`, so the bound is attained.
 * `TauCeti.mahlerExponent_ratCast`: rational numbers have Mahler exponent `0` in every degree.
 
 ## References
@@ -122,9 +123,7 @@ theorem IsAlgebraic.exists_pos_le_norm_aeval_mul_supNorm_pow {ξ : ℂ} (hξ : I
     calc (s : ℝ) ^ d * ‖aeval (σ g) P‖
         ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * max 1 ‖σ g‖ ^ n) := by
           gcongr
-          have hmap : (P.map (Int.castRingHom ℂ)).supNorm = P.supNorm := by
-            simp [supNorm_eq_iSup, Int.norm_eq_abs]
-          rw [aeval_def, algebraMap_int_eq, ← eval_map, ← hmap]
+          rw [aeval_def, algebraMap_int_eq, ← eval_map, ← P.supNorm_map (Int.castRingHom ℂ)]
           exact norm_eval_le_add_one_mul_supNorm_mul (natDegree_map_le.trans hP) _
       _ ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * R ^ n) := by
           gcongr
@@ -164,8 +163,7 @@ theorem IsAlgebraic.mahlerExponent_le {ξ : ℝ} (hξ : IsAlgebraic ℚ ξ) (n :
   set L : ℝ := x.1 + ∑ j, x.2 j * ξ ^ (j.val + 1)
   have hL : ‖aeval (ξ : ℂ) (linearFormPoly x)‖ = |L| := by
     rw [aeval_linearFormPoly, ← Real.norm_eq_abs, ← Complex.norm_real]
-    push_cast [L]
-    rfl
+    simp [L]
   have hx0 : 0 < ‖x‖ := norm_pos_iff.2 fun h ↦ by simp [L, h] at hx
   have hc' : c ≤ ‖x‖ ^ ((e : ℝ) - w) := by
     calc c ≤ |L| * (linearFormPoly x).supNorm ^ e := by
@@ -185,15 +183,17 @@ theorem IsAlgebraic.mahlerExponent_le {ξ : ℝ} (hξ : IsAlgebraic ℚ ξ) (n :
         (Real.rpow_rpow_inv hx0.le (by linarith)).symm
     _ ≤ c ^ ((e : ℝ) - w)⁻¹ := Real.rpow_le_rpow_of_nonpos hc hc' (inv_nonpos.2 (by linarith))
 
+namespace TauCeti
+
 /-- For a real algebraic number `ξ` of degree `n + 1` over `ℚ`, Mahler's exponent in degree `n` is
 exactly `n`, so Liouville's bound `wₙ(ξ) ≤ D - 1` is attained for `D = n + 1`. For instance,
 `w₁(ξ) = 1` for every real quadratic irrational `ξ`. -/
-theorem IsAlgebraic.mahlerExponent_eq_of_natDegree_minpoly_eq {ξ : ℝ} (hξ : IsAlgebraic ℚ ξ)
-    {n : ℕ} (hn : (minpoly ℚ ξ).natDegree = n + 1) : mahlerExponent n ξ = n := by
+theorem mahlerExponent_eq_of_natDegree_minpoly_eq {ξ : ℝ} {n : ℕ}
+    (hn : (minpoly ℚ ξ).natDegree = n + 1) : mahlerExponent n ξ = n := by
+  have hξ : IsAlgebraic ℚ ξ :=
+    (by_contra fun h ↦ by simp [minpoly.eq_zero h] at hn : IsIntegral ℚ ξ).isAlgebraic
   refine le_antisymm ?_ (natCast_le_mahlerExponent fun h ↦ by omega)
   simpa [hn] using hξ.mahlerExponent_le n
-
-namespace TauCeti
 
 /-- Rational numbers have Mahler exponent `0` in every degree. -/
 @[simp]
