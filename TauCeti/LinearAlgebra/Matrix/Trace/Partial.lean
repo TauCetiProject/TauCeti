@@ -73,8 +73,9 @@ theorem trace_partialTraceRight [Fintype m] (Y : Matrix (m × n) (m × n) R) :
   simp [trace, Fintype.sum_prod_type]
 
 /-- The partial trace commutes with conjugate transposition. -/
-theorem conjTranspose_partialTraceRight [StarAddMonoid R] (Y : Matrix (m × n) (m × n) R) :
-    (partialTraceRight Y)ᴴ = partialTraceRight Yᴴ := by
+@[simp]
+theorem partialTraceRight_conjTranspose [StarAddMonoid R] (Y : Matrix (m × n) (m × n) R) :
+    partialTraceRight Yᴴ = (partialTraceRight Y)ᴴ := by
   ext
   simp [star_sum]
 
