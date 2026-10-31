@@ -49,7 +49,7 @@ with `‖φ‖ ≤ 1`, which is at most `∫_U ‖τ_T‖ d‖T‖`, so `‖τ_T
 ## References
 
 * H. Federer, *Geometric Measure Theory*, §4.1.5 (currents representable by integration,
-  `T = ‖T‖ ∧ T⃗`).
+  `T = ‖T‖ ∧ τ_T`, with `τ_T` the orienting field).
 * L. Simon, *Introduction to Geometric Measure Theory*, Chapter 1, Theorem 4.14 (the Riesz
   representation theorem for functionals on vector-valued functions), and Chapter 6, §2.
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
