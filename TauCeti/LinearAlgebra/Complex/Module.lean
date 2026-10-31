@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -19,6 +20,9 @@ This decomposition applies to any real module structure compatible with the comp
 For a real-linear map `L` into a complex module, its defect from complex linearity
 `e ↦ L e + I • L (I * e)` is conjugate-linear and is therefore determined by its value at `1`.
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
+
+A real-linear map between complex modules that commutes with multiplication by `I` is complex
+linear (`LinearMap.complexOfMapISmul`, `ContinuousLinearMap.complexOfMapISmul`).
 -/
 
 public section
@@ -72,3 +76,59 @@ lemma re_smul_add_im_smul {V : Type*} [AddCommGroup V] [Module ℝ V] [Module �
       ((LinearMap.toSpanSingleton ℂ V v).restrictScalars ℝ) z).symm
 
 end Complex
+
+section ComplexOfMapISmul
+
+variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V]
+  [AddCommGroup W] [Module ℝ W] [Module ℂ W] [IsScalarTower ℝ ℂ W]
+
+namespace LinearMap
+
+/-- A real-linear map between complex modules that commutes with multiplication by `I`, as a
+complex-linear map. -/
+@[expose] def complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+    V →ₗ[ℂ] W where
+  toFun := u
+  map_add' := u.map_add
+  map_smul' c v := by
+    -- Split `c • v` into real multiples of `v` and `I • v`.
+    rw [← Complex.re_smul_add_im_smul c v, map_add, map_smul, map_smul, h, RingHom.id_apply,
+      Complex.re_smul_add_im_smul]
+
+@[simp]
+theorem coe_complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+    ⇑(u.complexOfMapISmul h) = u :=
+  rfl
+
+@[simp]
+theorem restrictScalars_complexOfMapISmul (u : V →ₗ[ℝ] W)
+    (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+    (u.complexOfMapISmul h).restrictScalars ℝ = u :=
+  rfl
+
+end LinearMap
+
+namespace ContinuousLinearMap
+
+variable [TopologicalSpace V] [TopologicalSpace W]
+
+/-- A continuous real-linear map between complex modules that commutes with multiplication by
+`I`, as a continuous complex-linear map. -/
+@[expose] def complexOfMapISmul (u : V →L[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+    V →L[ℂ] W :=
+  ⟨u.toLinearMap.complexOfMapISmul h, u.cont⟩
+
+@[simp]
+theorem coe_complexOfMapISmul (u : V →L[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+    ⇑(u.complexOfMapISmul h) = u :=
+  rfl
+
+@[simp]
+theorem restrictScalars_complexOfMapISmul (u : V →L[ℝ] W)
+    (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+    (u.complexOfMapISmul h).restrictScalars ℝ = u :=
+  rfl
+
+end ContinuousLinearMap
+
+end ComplexOfMapISmul

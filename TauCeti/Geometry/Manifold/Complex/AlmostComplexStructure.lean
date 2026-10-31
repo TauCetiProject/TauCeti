@@ -144,14 +144,7 @@ theorem isPseudoholomorphicWithinAt_ofComplexManifold_iff :
       have h := hJ' w
       rwa [ofComplexManifold_apply (E := E) x w,
         ofComplexManifold_apply (E := E') (f x) (u w)] at h
-    let L : E →L[ℂ] E' :=
-      { toFun := u₀
-        map_add' := u₀.map_add
-        map_smul' := fun c w ↦ by
-          rw [← Complex.re_smul_add_im_smul c w, map_add, map_smul, map_smul, hI,
-            RingHom.id_apply, Complex.re_smul_add_im_smul]
-        cont := u₀.cont }
-    exact HasMFDerivWithinAt.mdifferentiableWithinAt (f' := L)
+    exact HasMFDerivWithinAt.mdifferentiableWithinAt (f' := u₀.complexOfMapISmul hI)
       ⟨hu.1, hu.2.of_restrictScalars ℝ rfl⟩
   · intro h
     -- The complex derivative, regarded as a real linear map between the real tangent spaces.
