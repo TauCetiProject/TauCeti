@@ -11,42 +11,56 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Cech.Linear
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 public import TauCeti.CategoryTheory.Limits.Lattice
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
+public import TauCeti.RingTheory.Flat.Pi
 
 /-!
-# Flat base change for the cohomology of quasi-coherent sheaves
+# Base change for the Čech cohomology of quasi-coherent sheaves
 
-Let `X` be a scheme over a commutative ring `R`, let `R → R'` be a flat ring map and let
+Let `X` be a scheme over a commutative ring `R`, let `R → R'` be a ring map and let
 `Y = X ×_R R'` be the base change, given as a pullback square `H` with projection `g : Y ⟶ X`.
-For a quasi-coherent sheaf `M` on `X`, this file proves `Hⁿ(Y, g^* M) ≅ R' ⊗_R Hⁿ(X, M)` in every
-degree `n`, when `X` is covered by finitely many opens whose nonempty finite intersections are
-affine; for instance when `X` is quasi-compact with affine diagonal.
+Let `M` be a quasi-coherent sheaf on `X` and `U` a finite family of opens covering `X` whose
+nonempty finite intersections are affine; for instance an affine open cover of a quasi-compact
+scheme with affine diagonal. This file shows that the Čech complex `Č(U, M)` of `R`-modules of
+sections computes the cohomology of every base change: `Hⁿ(Y, g^* M)` is the `n`-th cohomology of
+`R' ⊗_R Č(U, M)`, with no flatness of `R → R'`. When the sections of `M` over the finite
+intersections of `U` are flat `R`-modules, for instance when its sections over affine opens are,
+every term of `Č(U, M)` is flat. Together these are the first step of the theory of
+cohomology and base change: the cohomology of all the base changes of `M`, in particular of all its
+fibres `X ×_R κ(p)`, is computed by a single complex of flat `R`-modules.
 
-The proof computes both sides by Čech complexes. Let `U` be such a cover of `X`; the inverse images
-`g⁻¹ U` form such a cover of `Y`, because `g` is affine. By Leray's theorem, `Hⁿ(X, M)` is the
-cohomology of the Čech complex `Č(U, M)` of `R`-modules of sections, and likewise on `Y`
-(`AlgebraicGeometry.Scheme.Modules.homologyCechComplexLinearEquiv`). On an affine open `W` of `X`,
-the sections of `g^* M` over `g⁻¹ W` are the base change of the sections of `M` over `W`
-(`AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSections`), with no flatness hypothesis. As
-the finite intersections of `U` are affine, `R' ⊗_R Č(U, M)` is therefore the Čech complex of
-`g^* M` for `g⁻¹ U`. Finally, extension of scalars along the flat map `R → R'` is exact, so it
-commutes with taking cohomology.
+When `R → R'` is flat, extension of scalars commutes with taking cohomology, which gives flat base
+change `Hⁿ(Y, g^* M) ≅ R' ⊗_R Hⁿ(X, M)` in every degree `n`.
 
-The isomorphism is stated as a `Nonempty` linear equivalence: its construction depends on the
+The proof computes both sides by Čech complexes. The inverse images `g⁻¹ U` form a cover of `Y` of
+the same kind, because `g` is affine. By Leray's theorem, `Hⁿ(X, M)` is the cohomology of
+`Č(U, M)`, and likewise on `Y` (`AlgebraicGeometry.Scheme.Modules.homologyCechComplexLinearEquiv`).
+On an affine open `W` of `X`, the sections of `g^* M` over `g⁻¹ W` are the base change of the
+sections of `M` over `W` (`AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSections`), with no
+flatness hypothesis. As the finite intersections of `U` are affine, `R' ⊗_R Č(U, M)` is therefore
+the Čech complex of `g^* M` for `g⁻¹ U`.
+
+The isomorphisms are stated as `Nonempty` linear equivalences: their construction depends on the
 chosen cover, and no naturality is claimed. For a quasi-compact scheme with affine diagonal, the
-canonical map `R' ⊗_R Hⁿ(X, M) ⟶ Hⁿ(Y, g^* M)` induced by pullback is an isomorphism
-(`TauCeti.AlgebraicGeometry.bijective_cohomologyBaseChange`); its proof uses the statement here
-to see that `g^*` preserves the vanishing of higher cohomology. Flat base change in degrees zero
-and one on a two-affine cover, along any base-ring map in degree one, is in
+canonical map `R' ⊗_R Hⁿ(X, M) ⟶ Hⁿ(Y, g^* M)` induced by pullback is an isomorphism when `R → R'`
+is flat (`TauCeti.AlgebraicGeometry.bijective_cohomologyBaseChange`); its proof uses flat base
+change here to see that `g^*` preserves the vanishing of higher cohomology. Flat base change in
+degrees zero and one on a two-affine cover, along any base-ring map in degree one, is in
 `TauCeti.AlgebraicGeometry.Cohomology.BaseChange`.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_homology_cechComplex_cohomology_pullback`:
+  `Hⁿ(Y, g^* M)` is the cohomology of `R' ⊗_R Č(U, M)`, along any ring map `R → R'`.
+* `TauCeti.AlgebraicGeometry.flat_cechComplexFunctor_obj_X`: the terms of `Č(U, M)` are flat
+  `R`-modules when the sections of `M` over the finite intersections of `U` are.
 * `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top`:
   flat base change for a finite cover with affine intersections.
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, Proposition III.9.3 (flat base change).
+* R. Hartshorne, *Algebraic Geometry*, Proposition III.9.3 (flat base change), and the Čech
+  complex in the proof of Proposition III.12.2 (cohomology of all base changes).
+* D. Mumford, *Abelian Varieties*, Section 5 (the Čech complex in the proof of the main lemma).
 * [The Stacks Project, Lemma 30.5.2](https://stacks.math.columbia.edu/tag/02KH), flat base change.
 -/
 
@@ -175,6 +189,85 @@ private lemma isIso_sectionsPullbackExtend_app (M : X.Modules) [M.IsQuasicoheren
   rw [e]
   exact h
 
+section CechComplex
+
+variable {ι : Type u}
+
+/-- On the finite intersections of `U`, which are affine, sections of `g^* M` are the base change
+of sections of `M`, so the map of Čech complexes induced by `sectionsPullbackExtend` is an
+isomorphism. -/
+private lemma isIso_cechComplexFunctor_map_sectionsPullbackExtend (U : ι → X.Opens)
+    (M : X.Modules) [M.IsQuasicoherent]
+    (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) :
+    IsIso ((cechComplexFunctor U).map (sectionsPullbackExtend H M)) := by
+  classical
+  have (k : ℕ) : IsIso (((cechComplexFunctor U).map (sectionsPullbackExtend H M)).f k) := by
+    have (a : Fin (k + 1) → ι) :
+        IsIso ((sectionsPullbackExtend H M).app (op (∏ᶜ fun j ↦ U (a j)))) :=
+      isIso_sectionsPullbackExtend_app H M
+        (CompleteLattice.finite_product_eq_finset_image_inf U a ▸
+          hU _ (Finset.univ_nonempty.image a))
+    -- In each degree the map of Čech complexes is the product of the components.
+    change IsIso (Limits.Pi.map fun a : Fin (k + 1) → ι ↦
+      (sectionsPullbackExtend H M).app (op (∏ᶜ fun j ↦ U (a j))))
+    infer_instance
+  exact HomologicalComplex.Hom.isIso_of_components _
+
+/-- The inverse images under `g` of the finite intersections of `U` are the finite intersections
+of the inverse images, so `cechComplexCompIso` applies to `g⁻¹`. -/
+private lemma nonempty_pi_preimage_hom_preimage_pi (U : ι → X.Opens) (k : ℕ) (a : Fin (k + 1) → ι) :
+    Nonempty ((∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)) ⟶ g ⁻¹ᵁ ∏ᶜ fun j ↦ U (a j)) := by
+  classical
+  refine ⟨homOfLE (le_of_eq ?_)⟩
+  rw [CompleteLattice.finite_product_eq_finset_image_inf (fun i ↦ g ⁻¹ᵁ U i) a,
+    CompleteLattice.finite_product_eq_finset_image_inf U a]
+  exact (Finset.apply_inf_eq_inf_comp (g ⁻¹ᵁ ·) (fun _ _ ↦ rfl) rfl).symm
+
+include H in
+/-- The nonempty finite intersections of the inverse images `g⁻¹ U` are affine, because `g` is
+affine. -/
+private lemma isAffineOpen_finset_inf_preimage (U : ι → X.Opens)
+    (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) (s : Finset ι) (hs : s.Nonempty) :
+    IsAffineOpen (s.inf fun i ↦ g ⁻¹ᵁ U i) := by
+  have : IsAffineHom g := MorphismProperty.of_isPullback H.flip inferInstance
+  have hinf : (s.inf fun i ↦ g ⁻¹ᵁ U i) = g ⁻¹ᵁ s.inf U :=
+    (Finset.apply_inf_eq_inf_comp (g ⁻¹ᵁ ·) (fun _ _ ↦ rfl) rfl).symm
+  exact hinf ▸ (hU s hs).preimage g
+
+/-- **The Čech complex commutes with base change.** Extending scalars from `R` to `R'` in the
+Čech complex of the sections of `M` for `U` gives the Čech complex of the sections of `g^* M` for
+`g⁻¹ U`. No flatness of `R → R'` is needed, as `U` has affine finite intersections. -/
+private def cechComplexBaseChangeIso [Finite ι] (U : ι → X.Opens) (M : X.Modules)
+    [M.IsQuasicoherent]
+    (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) :
+    ((ModuleCat.extendScalars.{u, u, u} (algebraMap R R')).mapHomologicalComplex _).obj
+        ((cechComplexFunctor U).obj ((sectionsBasePresheafFunctor R).obj M)) ≅
+      (cechComplexFunctor fun i ↦ g ⁻¹ᵁ U i).obj
+        ((sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)) :=
+  haveI := isIso_cechComplexFunctor_map_sectionsPullbackExtend H U M hU
+  (cechComplexFunctorMapIso U _).app _ ≪≫
+    asIso ((cechComplexFunctor U).map (sectionsPullbackExtend H M)) ≪≫
+    (cechComplexCompIso (Opens.map g.base) U _
+      (nonempty_pi_preimage_hom_preimage_pi (g := g) U)).symm
+
+include H in
+/-- **The Čech complex computes the cohomology of every base change.** Let `X` be a scheme over
+`R`, let `R → R'` be any ring map and let `Y = X ×_R R'`, given as a pullback square. Let `M` be a
+quasi-coherent sheaf on `X` and `U` a finite family of opens covering `X` whose nonempty finite
+intersections are affine. Then `Hⁿ(Y, g^* M)` is the `n`-th cohomology of the complex
+`R' ⊗_R Č(U, M)` obtained by extending scalars in the Čech complex of the sections of `M`. -/
+theorem nonempty_linearEquiv_homology_cechComplex_cohomology_pullback (M : X.Modules)
+    [M.IsQuasicoherent] [Finite ι] (U : ι → X.Opens)
+    (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) (hcover : ⨆ i, U i = ⊤) (n : ℕ) :
+    Nonempty ((((ModuleCat.extendScalars.{u, u, u} (algebraMap R R')).mapHomologicalComplex
+        _).obj ((cechComplexFunctor U).obj ((sectionsBasePresheafFunctor R).obj M))).homology n
+          ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
+  have hcoverV : ⨆ i, g ⁻¹ᵁ U i = ⊤ := by
+    rw [← Scheme.Hom.preimage_iSup, hcover, Scheme.Hom.preimage_top]
+  exact ⟨(HomologicalComplex.homologyMapIso (cechComplexBaseChangeIso H U M hU) n
+      |>.toLinearEquiv) ≪≫ₗ
+    homologyCechComplexLinearEquiv _ (isAffineOpen_finset_inf_preimage H U hU) hcoverV _ n⟩
+
 include H in
 /-- **Flat base change for the cohomology of quasi-coherent sheaves**, for a finite cover with
 affine intersections. Let `X` be a scheme over `R`, let `R → R'` be a flat ring map and let
@@ -182,62 +275,47 @@ affine intersections. Let `X` be a scheme over `R`, let `R → R'` be a flat rin
 quasi-coherent sheaf on `X` and suppose that `X` is covered by finitely many opens whose nonempty
 finite intersections are affine. Then `Hⁿ(Y, g^* M) ≅ R' ⊗_R Hⁿ(X, M)` for every `n`. -/
 theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top [Module.Flat R R']
-    (M : X.Modules) [M.IsQuasicoherent]
-    {ι : Type u} [Finite ι] (U : ι → X.Opens)
+    (M : X.Modules) [M.IsQuasicoherent] [Finite ι] (U : ι → X.Opens)
     (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) (hcover : ⨆ i, U i = ⊤) (n : ℕ) :
     Nonempty (R' ⊗[R] Cohomology M n ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
-  classical
-  have : IsAffineHom g := MorphismProperty.of_isPullback H.flip inferInstance
-  -- The cover of `Y` by the inverse images of the members of `U`.
-  let V : ι → Y.Opens := fun i ↦ (Opens.map g.base).obj (U i)
-  have hinf (s : Finset ι) : s.inf V = g ⁻¹ᵁ s.inf U :=
-    (Finset.apply_inf_eq_inf_comp (g ⁻¹ᵁ ·) (fun _ _ ↦ rfl) rfl).symm
-  have hV (s : Finset ι) (hs : s.Nonempty) : IsAffineOpen (s.inf V) :=
-    hinf s ▸ (hU s hs).preimage g
-  have hcoverV : ⨆ i, V i = ⊤ := by
-    rw [← Scheme.Hom.preimage_iSup, hcover, Scheme.Hom.preimage_top]
-  -- Extension of scalars along the flat map `R → R'` is exact.
+  -- Extension of scalars along the flat map `R → R'` is exact, so it commutes with homology.
   let E := ModuleCat.extendScalars.{u, u, u} (algebraMap R R')
-  have := (ModuleCat.extendRestrictScalarsAdj.{u, u, u}
-    (algebraMap R R')).leftAdjoint_preservesColimits.{u, u}
   have := ModuleCat.preservesFiniteLimits_extendScalars_of_flat
     (RingHom.flat_algebraMap_iff.mpr ‹Module.Flat R R'›)
   have : E.PreservesHomology := Functor.preservesHomology_of_preservesEpis_and_kernels E
-  -- On the finite intersections of `U`, which are affine, sections of `g^* M` are the base
-  -- change of sections of `M`.
-  have : IsIso ((cechComplexFunctor U).map (sectionsPullbackExtend H M)) := by
-    have (k : ℕ) : IsIso (((cechComplexFunctor U).map (sectionsPullbackExtend H M)).f k) := by
-      have (a : Fin (k + 1) → ι) :
-          IsIso ((sectionsPullbackExtend H M).app (op (∏ᶜ fun j ↦ U (a j)))) :=
-        isIso_sectionsPullbackExtend_app H M
-          (CompleteLattice.finite_product_eq_finset_image_inf U a ▸
-            hU _ (Finset.univ_nonempty.image a))
-      -- In each degree the map of Čech complexes is the product of the components.
-      change IsIso (Limits.Pi.map fun a : Fin (k + 1) → ι ↦
-        (sectionsPullbackExtend H M).app (op (∏ᶜ fun j ↦ U (a j))))
-      infer_instance
-    exact HomologicalComplex.Hom.isIso_of_components _
-  have hG (k : ℕ) (a : Fin (k + 1) → ι) : Nonempty ((∏ᶜ fun j ↦ (Opens.map g.base).obj (U (a j))) ⟶
-      (Opens.map g.base).obj (∏ᶜ fun j ↦ U (a j))) := by
-    have hV : (∏ᶜ fun j ↦ V (a j)) = (Finset.univ.image a).inf V :=
-      CompleteLattice.finite_product_eq_finset_image_inf V a
-    have hU : (∏ᶜ fun j ↦ U (a j)) = (Finset.univ.image a).inf U :=
-      CompleteLattice.finite_product_eq_finset_image_inf U a
-    refine ⟨homOfLE ?_⟩
-    rw [hV, hU, hinf]
   let C := (cechComplexFunctor U).obj ((sectionsBasePresheafFunctor R).obj M)
-  -- `R' ⊗[R] Hⁿ(Č(U, M)) ≅ Hⁿ(R' ⊗[R] Č(U, M)) ≅ Hⁿ(Č(U, R' ⊗[R] M)) ≅ Hⁿ(Č(g⁻¹ U, g^* M))`.
-  let e : E.obj (C.homology n) ≅ ((cechComplexFunctor V).obj
-      ((sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M))).homology n :=
-    ((C.sc n).mapHomologyIso E).symm ≪≫
-      HomologicalComplex.homologyMapIso ((cechComplexFunctorMapIso U E).app _) n ≪≫
-      HomologicalComplex.homologyMapIso (asIso ((cechComplexFunctor U).map
-        (sectionsPullbackExtend H M))) n ≪≫
-      HomologicalComplex.homologyMapIso (cechComplexCompIso (Opens.map g.base) U _ hG).symm n
+  obtain ⟨e⟩ := nonempty_linearEquiv_homology_cechComplex_cohomology_pullback H M U hU hcover n
+  -- `R' ⊗[R] Hⁿ(X, M) ≅ R' ⊗[R] Hⁿ(Č(U, M)) ≅ Hⁿ(R' ⊗[R] Č(U, M)) ≅ Hⁿ(Y, g^* M)`.
   exact ⟨LinearEquiv.baseChange R R' _ _ (homologyCechComplexLinearEquiv U hU hcover M n).symm ≪≫ₗ
-    (ModuleCat.extendScalarsAlgebraMapIso _).symm.toLinearEquiv ≪≫ₗ e.toLinearEquiv ≪≫ₗ
-    homologyCechComplexLinearEquiv V hV hcoverV _ n⟩
+    (ModuleCat.extendScalarsAlgebraMapIso _).symm.toLinearEquiv ≪≫ₗ
+    ((C.sc n).mapHomologyIso E).symm.toLinearEquiv ≪≫ₗ e⟩
+
+end CechComplex
 
 end FlatBaseChange
+
+section Flat
+
+variable {R : Type u} [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
+
+/-- **The Čech complex of a sheaf with flat sections consists of flat modules.** Let `X` be a
+scheme over `R`, `M` a sheaf of modules on `X` and `U` a finite family of opens such that the
+sections of `M` over every nonempty finite intersection of `U` are a flat `R`-module; for instance,
+`U` has affine finite intersections and the sections of `M` over affine opens are flat. Then every
+term of the Čech complex of the sections of `M` for `U` is a flat `R`-module. -/
+theorem flat_cechComplexFunctor_obj_X (M : X.Modules) {ι : Type u} [Finite ι] (U : ι → X.Opens)
+    (hM : ∀ s : Finset ι, s.Nonempty →
+      Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op (s.inf U)))) (n : ℕ) :
+    Module.Flat R (((cechComplexFunctor U).obj ((sectionsBasePresheafFunctor R).obj M)).X n) := by
+  classical
+  have (a : Fin (n + 1) → ι) : Module.Flat R
+      (((sectionsBasePresheafFunctor R).obj M).obj (op (∏ᶜ fun j ↦ U (a j)))) :=
+    CompleteLattice.finite_product_eq_finset_image_inf U a ▸
+      hM _ (Finset.univ_nonempty.image a)
+  -- The degree `n` term is the product of the sections over the `(n + 1)`-fold intersections.
+  exact Module.Flat.of_linearEquiv (ModuleCat.piIsoPi fun a : Fin (n + 1) → ι ↦
+    ((sectionsBasePresheafFunctor R).obj M).obj (op (∏ᶜ fun j ↦ U (a j)))).toLinearEquiv
+
+end Flat
 
 end TauCeti.AlgebraicGeometry
