@@ -128,6 +128,7 @@ theorem indK0_of_trivial_eq_relIndex_nsmul [Finite G] {C D : Subgroup G} (h : D 
     ← exactK0_ofMulAction_quotient_eq_index_nsmul p (D.subgroupOf C) hpow',
     indK0_of_ofMulAction_quotient k C h, indK0_of_trivial, permK0_def]
 
+omit [Fact p.Prime] in
 /-- A finite cyclic subgroup `C` has a subgroup `D` of order prime to `p` such that inducing the
 trivial line from `D` gives the `p`-part of `|C|` times the class induced from `C`. -/
 theorem exists_coprimePart_indK0_of_trivial_eq_nsmul [Finite G] (C : Subgroup G) [IsCyclic C] :
@@ -140,11 +141,17 @@ theorem exists_coprimePart_indK0_of_trivial_eq_nsmul [Finite G] (C : Subgroup G)
       indK0 k D (ExactK0.of (FGModuleCat.of k[D] (Representation.trivial k D k).asModule)) =
         (p ^ (Nat.card C).factorization p) • indK0 k C
           (ExactK0.of (FGModuleCat.of k[C] (Representation.trivial k C k).asModule))) := by
-  obtain ⟨D, hDC, hDn, hDp, hpow, hindex⟩ :=
-    exists_coprimePart_of_isCyclic (Fact.out : p.Prime) (C := C)
-  let := hDn
-  refine ⟨D, hDC, hDp, hindex, ?_⟩
-  rw [← hindex]
-  exact indK0_of_trivial_eq_relIndex_nsmul (k := k) p hDC hpow
+  rcases CharP.char_is_prime_or_zero k p with hp | rfl
+  · have : Fact p.Prime := ⟨hp⟩
+    obtain ⟨D, hDC, hDn, hDp, hpow, hindex⟩ :=
+      exists_coprimePart_of_isCyclic (Fact.out : p.Prime) (C := C)
+    let := hDn
+    refine ⟨D, hDC, hDp, hindex, ?_⟩
+    rw [← hindex]
+    exact indK0_of_trivial_eq_relIndex_nsmul (k := k) p hDC hpow
+  · refine ⟨C, le_rfl, ?_, ?_, ?_⟩
+    · simpa using (Nat.card_pos (α := C)).ne'
+    · simp
+    · simp
 
 end TauCeti
