@@ -64,6 +64,8 @@ For this atlas the level is an embedded submanifold: the inclusion `{x // f x = 
   complement `F` and a smooth embedding.
 * `TauCeti.range_mfderiv_coe_regularLevel`: the tangent space of the level at `x` is the kernel of
   the differential of `f` at `x`.
+* `TauCeti.ker_mfderiv_eq_of_forall_eq_imp`: two defining maps of a regular level have the same
+  tangent kernels along it.
 
 ## References
 
@@ -503,20 +505,20 @@ theorem range_mfderiv_coe_regularLevel [IsManifold I 1 M] (x : {x : M // f x = c
   rw [finrank_fin_fun]
   omega
 
-/-- **Two defining functions of a regular level have the same tangent kernels.** If the regular
-level `f⁻¹(c)` of a function which is `C¹` near the level is contained in the level `g⁻¹(c')` of a
-second function, then `ker dg_x = ker df_x` at each of its points `x` which is a regular point of
-`g`. -/
+/-- **Two defining maps of a regular level have the same tangent kernels.** If the regular level
+`f⁻¹(c)` of a map which is `C¹` near the level is contained in the level `g⁻¹(c')` of a second map
+into the same space, then `ker dg_x = ker df_x` at each of its points `x` which is a regular point
+of `g`. -/
 theorem ker_mfderiv_eq_of_forall_eq_imp [IsManifold I 1 M]
-    (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ) f c)
-    {g : M → ℝ} {c' : ℝ} (hfg : ∀ x, f x = c → g x = c') {x : M} (hx : f x = c)
-    (hgx : IsRegularPoint I 𝓘(ℝ) g x) :
-    (mfderiv I 𝓘(ℝ) g x).ker = (mfderiv I 𝓘(ℝ) f x).ker := by
-  let := scalarRegularLevelChartedSpace hf hreg
+    (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ, F) f c)
+    {g : M → F} {c' : F} (hfg : ∀ x, f x = c → g x = c') {x : M} (hx : f x = c)
+    (hgx : IsRegularPoint I 𝓘(ℝ, F) g x) :
+    (mfderiv I 𝓘(ℝ, F) g x).ker = (mfderiv I 𝓘(ℝ, F) f x).ker := by
+  let := regularLevelChartedSpace (n := finrank ℝ E - finrank ℝ F) hf hreg rfl
   -- The tangent space of the level, the range of the differential of its inclusion, is `ker df`
   -- and lies in `ker dg`, since `g` is constant on the level.
-  have hle : (mfderiv I 𝓘(ℝ) f x).ker ≤ (mfderiv I 𝓘(ℝ) g x).ker := by
-    rw [← range_mfderiv_coe_scalarRegularLevel hf hreg (⟨x, hx⟩ : {x : M // f x = c})]
+  have hle : (mfderiv I 𝓘(ℝ, F) f x).ker ≤ (mfderiv I 𝓘(ℝ, F) g x).ker := by
+    rw [← range_mfderiv_coe_regularLevel hf hreg rfl (⟨x, hx⟩ : {x : M // f x = c})]
     exact range_mfderiv_le_ker_mfderiv_of_eventually_eq
       (.of_forall fun y : {x : M // f x = c} ↦ hfg y y.2)
   refine (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
