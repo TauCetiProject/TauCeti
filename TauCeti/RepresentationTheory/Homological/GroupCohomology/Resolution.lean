@@ -5,7 +5,8 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Basic
+public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+public import TauCeti.Algebra.Homology.LinearYoneda
 import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 
 /-!
@@ -23,10 +24,18 @@ cochains. This is how an explicit comparison map computes a cohomology isomorphi
 constructs abstractly, such as Shapiro's isomorphism or the periodicity isomorphism of a finite
 cyclic group.
 
+The explicit form also shows that `groupCohomologyIso A n P` is natural in the coefficients `A`:
+it carries Mathlib's map `groupCohomology.map (MonoidHom.id G) φ n` induced by `φ : A ⟶ B` to the
+map on the cohomology of `Hom(P, -)` given by postcomposition with `φ`.
+
 ## Main results
 
 * `TauCeti.Rep.groupCohomologyIso_inv_eq_homologyMap`: the inverse of `groupCohomologyIso A n P` is
   the map on cohomology induced by a comparison map from the bar resolution to `P`.
+* `TauCeti.Rep.inhomogeneousCochainsIso_inv_naturality`: the identification of `Hom(bar, A)` with
+  the inhomogeneous cochains is natural in `A`.
+* `TauCeti.Rep.groupCohomologyIso_hom_naturality`, `TauCeti.Rep.groupCohomologyIso_inv_naturality`:
+  `groupCohomologyIso A n P` is natural in `A`.
 
 ## References
 
@@ -76,5 +85,76 @@ theorem groupCohomologyIso_inv_eq_homologyMap (P : ProjectiveResolution (Rep.tri
   exact ((Category.assoc _ _ _).symm.trans
     (congrArg (· ≫ _) ((Iso.inv_comp_eq _).2 hext.symm))).trans
       (HomologicalComplex.homologyMap_comp _ _ n).symm
+
+variable {A} in
+/-- The identification of the inhomogeneous cochains with `Hom(bar, -)` is natural in the
+coefficients: postcomposing a cochain on the bar resolution with `φ : A ⟶ B` corresponds to
+applying `φ` to the values of an inhomogeneous cochain, Mathlib's
+`groupCohomology.cochainsMap (MonoidHom.id G) φ`. -/
+@[reassoc]
+theorem inhomogeneousCochainsIso_inv_naturality {B : Rep.{u} k G} (φ : A ⟶ B) :
+    (groupCohomology.inhomogeneousCochainsIso A).inv ≫
+        groupCohomology.cochainsMap (MonoidHom.id G) φ =
+      (Rep.barComplex k G).linearYonedaObjMap k φ ≫
+        (groupCohomology.inhomogeneousCochainsIso B).inv := by
+  ext i (g : (Rep.barComplex k G).X i ⟶ A) x
+  -- The inverse of `inhomogeneousCochainsIso` is `Rep.freeLiftLEquiv`, evaluation on basis
+  -- elements, and Mathlib's `cochainsMap` applies `φ` to values, so both sides evaluate `g ≫ φ`
+  -- on the basis element of `x`; the left side does so by definition. The isomorphism is built by
+  -- `isoOfComponents` between complexes whose shapes `up ℕ` and `(down ℕ).symm` agree only by
+  -- unfolding, so its simp lemmas do not fire on these components.
+  exact congrArg (fun c ↦ ((groupCohomology.inhomogeneousCochainsIso B).inv.f i).hom c x)
+    ((Rep.barComplex k G).linearYonedaObjMap_f_hom_apply k φ i g).symm
+
+variable {A} in
+/-- **Group cohomology from a projective resolution is natural in the coefficients**, inverse
+form: for a morphism `φ : A ⟶ B` of representations and a projective resolution `P` of the trivial
+representation `k`, the inverses of the identifications `groupCohomologyIso` carry the map on the
+cohomology of `Hom(P, -)` given by postcomposition with `φ` to Mathlib's map
+`groupCohomology.map (MonoidHom.id G) φ n`. -/
+@[reassoc]
+theorem groupCohomologyIso_inv_naturality {B : Rep.{u} k G} (φ : A ⟶ B)
+    (P : ProjectiveResolution (Rep.trivial k G k)) (n : ℕ) :
+    HomologicalComplex.homologyMap (P.complex.linearYonedaObjMap k φ) n ≫
+        (groupCohomologyIso B n P).inv =
+      (groupCohomologyIso A n P).inv ≫ groupCohomology.map (MonoidHom.id G) φ n := by
+  have hβ := (ProjectiveResolution.lift_commutes_zero (𝟙 _) (Rep.barResolution k G) P).trans
+    (Category.comp_id _)
+  -- On cochains, postcomposition with `φ` commutes with precomposition with the comparison map
+  -- from the bar resolution to `P`, and then with the identification of `Hom(bar, -)` with the
+  -- inhomogeneous cochains.
+  have key : P.complex.linearYonedaObjMap k φ ≫
+      (TauCeti.ChainComplex.linearYonedaFunctor k B).map
+        (ProjectiveResolution.lift (𝟙 _) (Rep.barResolution k G) P).op ≫
+      (groupCohomology.inhomogeneousCochainsIso B).inv =
+    ((TauCeti.ChainComplex.linearYonedaFunctor k A).map
+        (ProjectiveResolution.lift (𝟙 _) (Rep.barResolution k G) P).op ≫
+      (groupCohomology.inhomogeneousCochainsIso A).inv) ≫
+      groupCohomology.cochainsMap (MonoidHom.id G) φ :=
+    (ChainComplex.linearYonedaObjMap_comp_linearYonedaFunctor_map_assoc k
+      (ProjectiveResolution.lift (𝟙 _) (Rep.barResolution k G) P) φ
+      (groupCohomology.inhomogeneousCochainsIso B).inv).trans <|
+    (congrArg (_ ≫ ·) (inhomogeneousCochainsIso_inv_naturality φ).symm).trans
+      (Category.assoc _ _ _).symm
+  rw [groupCohomologyIso_inv_eq_homologyMap A P _ hβ,
+    groupCohomologyIso_inv_eq_homologyMap B P _ hβ]
+  exact (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
+    ((congrArg (HomologicalComplex.homologyMap · n) key).trans
+      (HomologicalComplex.homologyMap_comp _ _ n))
+
+variable {A} in
+/-- **Group cohomology from a projective resolution is natural in the coefficients**: for a
+morphism `φ : A ⟶ B` of representations and a projective resolution `P` of the trivial
+representation `k`, the identifications `groupCohomologyIso` carry Mathlib's map
+`groupCohomology.map (MonoidHom.id G) φ n : Hⁿ(G, A) ⟶ Hⁿ(G, B)` to the map on the cohomology of
+`Hom(P, -)` given by postcomposition with `φ`. -/
+@[reassoc]
+theorem groupCohomologyIso_hom_naturality {B : Rep.{u} k G} (φ : A ⟶ B)
+    (P : ProjectiveResolution (Rep.trivial k G k)) (n : ℕ) :
+    groupCohomology.map (MonoidHom.id G) φ n ≫ (groupCohomologyIso B n P).hom =
+      (groupCohomologyIso A n P).hom ≫
+        HomologicalComplex.homologyMap (P.complex.linearYonedaObjMap k φ) n := by
+  rw [← Iso.inv_comp_eq, ← Category.assoc, ← Iso.eq_comp_inv,
+    groupCohomologyIso_inv_naturality]
 
 end TauCeti.Rep

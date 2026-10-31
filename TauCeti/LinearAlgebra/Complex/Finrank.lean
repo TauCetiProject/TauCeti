@@ -28,14 +28,6 @@ lemma fixes the real structure to be the one induced by restricting scalars
 via `IsScalarTower ℝ ℂ V` (the situation produced by an almost complex structure). -/
 theorem finrank_real_eq_two_mul_finrank_complex [Module ℂ V] [IsScalarTower ℝ ℂ V] :
     Module.finrank ℝ V = 2 * Module.finrank ℂ V := by
-  -- The ambient `Module ℝ V` agrees with the restrict-scalars structure `Module.complexToReal V`,
-  -- so the identity follows from Mathlib's `finrank_real_of_complex` for the latter.
-  have h : Module.complexToReal V = (inferInstance : Module ℝ V) := by
-    apply Module.ext
-    funext r v
-    exact IsScalarTower.algebraMap_smul ℂ r v
-  have hV := finrank_real_of_complex (E := V)
-  rw [h] at hV
-  exact hV
+  rw [← Module.finrank_mul_finrank ℝ ℂ V, Complex.finrank_real_complex]
 
 end TauCeti
