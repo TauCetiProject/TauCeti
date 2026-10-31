@@ -109,21 +109,6 @@ def gridIndices (δ : ℝ) (K : Set ℂ) : Set (ℤ × ℤ) :=
 theorem mem_gridIndices : p ∈ gridIndices δ K ↔ (gridSquare δ p ∩ K).Nonempty :=
   Iff.rfl
 
-/-- A grid interval of side `δ` that meets `[-R, R]` has its index in an explicit finite range. -/
-private theorem mem_Icc_ceil_floor_of_mem_Icc (hδ : 0 < δ) {R x : ℝ} {m : ℤ}
-    (hx : x ∈ Icc (δ * m) (δ * (m + 1))) (hxR : |x| ≤ R) :
-    m ∈ Icc (⌈-R / δ⌉ - 1) ⌊R / δ⌋ := by
-  obtain ⟨hxR₁, hxR₂⟩ := abs_le.1 hxR
-  constructor
-  · have : ⌈-R / δ⌉ ≤ m + 1 := Int.ceil_le.2 <| by
-      rw [div_le_iff₀ hδ]
-      push_cast
-      linarith [hx.2]
-    omega
-  · refine Int.le_floor.2 ?_
-    rw [le_div_iff₀ hδ]
-    linarith [hx.1]
-
 /-- For `δ > 0`, a bounded set meets only finitely many grid squares of side `δ`. -/
 theorem finite_gridIndices (hδ : 0 < δ) (hK : Bornology.IsBounded K) :
     (gridIndices δ K).Finite := by
