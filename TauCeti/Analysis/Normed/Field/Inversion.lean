@@ -28,6 +28,8 @@ into an open set.
 ## Main results
 
 * `TauCeti.bijOn_add_inv_image_inv_sub`: `w ↦ q + w⁻¹` inverts the inversion about `q`.
+* `TauCeti.image_inv_sub_eq_preimage_add_inv`: the inversion about `q` maps a set onto its
+  preimage under `w ↦ q + w⁻¹`.
 * `TauCeti.isClosed_setOf_ne_zero_and_add_inv_mem`: the inversion of a closed bounded set about
   any centre, with the centre removed, is closed.
 * `TauCeti.isBounded_image_inv_sub`: the inversion of a set about a point outside its closure is
@@ -62,7 +64,7 @@ theorem bijOn_add_inv_image_inv_sub (S : Set 𝕜) :
 
 /-- The inversion `z ↦ (z - q)⁻¹` is a bijection of `𝕜` (sending `q` to `0⁻¹ = 0`) with inverse
 `w ↦ q + w⁻¹`, so it maps any set onto the preimage of that set under `w ↦ q + w⁻¹`. -/
-private theorem image_inv_sub_eq_preimage_add_inv (S : Set 𝕜) :
+theorem image_inv_sub_eq_preimage_add_inv (S : Set 𝕜) :
     (fun z : 𝕜 => (z - q)⁻¹) '' S = (fun w : 𝕜 => q + w⁻¹) ⁻¹' S :=
   congrFun (image_eq_preimage_of_inverse (f := fun z : 𝕜 => (z - q)⁻¹)
     (g := fun w : 𝕜 => q + w⁻¹) (fun _ => by simp) fun _ => by simp) S
@@ -150,7 +152,7 @@ theorem isOpen_insert_zero_image_inv_sub (hUo : IsOpen U) (hUc : IsBounded Uᶜ)
     refine Filter.mem_of_superset (ball_mem_nhds 0 (inv_pos.mpr hR)) fun w hw => ?_
     rcases eq_or_ne w 0 with rfl | hw0
     · exact mem_insert _ _
-    refine mem_insert_of_mem _ (show q + w⁻¹ ∈ U from not_not.mp fun h => ?_)
+    refine mem_insert_of_mem _ (mem_preimage.mpr (not_not.mp fun h => ?_))
     have hRw : R < ‖w‖⁻¹ :=
       (lt_inv_comm₀ hR (norm_pos_iff.mpr hw0)).mpr (by simpa using hw)
     have hin := hRU h
