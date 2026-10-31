@@ -38,6 +38,9 @@ section over `U` is determined by its restriction to `U ∩ D(a)`.
   injective when `D(a) ⊆ U` for an `M`-regular `a`.
 * `TauCeti.AlgebraicGeometry.StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular`: `M → M~(U)` is
   bijective when `D(a), D(b) ⊆ U` for a weakly `M`-regular sequence `a, b`.
+* `TauCeti.AlgebraicGeometry.exists_isWeaklyRegular_basicOpen_le_of_two_le_depth`: for a finite
+  module over a Noetherian ring with `depth M_p ≥ 2` at every prime `p ∉ U`, there is a weakly
+  `M`-regular sequence `a, b` with `D(a), D(b) ⊆ U`.
 * `TauCeti.AlgebraicGeometry.tilde_toOpen_bijective_of_two_le_depth`: for a finite module over a
   Noetherian ring, `M → M~(U)` is bijective when `depth M_p ≥ 2` at every prime `p ∉ U`.
 
@@ -170,17 +173,14 @@ end StructureSheaf
 
 variable {R : CommRingCat.{u}}
 
-/-- **Hartogs principle for `M~` on `Spec R`.** Let `M` be a finite module over a Noetherian ring
-`R` and `U` an open subset of `Spec R` such that `depth M_p ≥ 2` for every prime `p ∉ U`. Then
-`M → M~(U)` is bijective: every section of `M~` over `U` comes from a unique element of `M`.
-Stacks, Lemma 31.5.11 (0E9I), for the affine scheme `Spec R` and `M~`, with `M_p` the stalk
-of `M~` at `p`. -/
-@[stacks 0E9I "affine case"]
-theorem tilde_toOpen_bijective_of_two_le_depth [IsNoetherianRing R] (M : ModuleCat.{u} R)
-    [Module.Finite R M] (U : (Spec R).Opens)
+/-- Let `M` be a finite module over a Noetherian ring `R` and `U` an open subset of `Spec R` such
+that `depth M_p ≥ 2` for every prime `p ∉ U`. Then there is a weakly `M`-regular sequence `a, b`
+with `D(a), D(b) ⊆ U`, taken from the vanishing ideal of the complement of `U`. -/
+theorem exists_isWeaklyRegular_basicOpen_le_of_two_le_depth [IsNoetherianRing R] (M : Type*)
+    [AddCommGroup M] [Module R M] [Module.Finite R M] (U : (Spec R).Opens)
     (h : ∀ p : PrimeSpectrum R, p ∉ U → 2 ≤ depth (ModuleCat.of (Localization.AtPrime p.asIdeal)
       (LocalizedModule p.asIdeal.primeCompl M))) :
-    Function.Bijective (tilde.toOpen M U).hom := by
+    ∃ a b : R, IsWeaklyRegular M [a, b] ∧ basicOpen a ≤ U ∧ basicOpen b ≤ U := by
   -- The vanishing ideal of the closed set `Spec R ∖ U` contains a weakly `M`-regular pair.
   let I := PrimeSpectrum.vanishingIdeal (U : Set (Spec R))ᶜ
   obtain ⟨rs, hlen, hmem, hreg⟩ := exists_isWeaklyRegular_of_le_depth_localizedModule I 2
@@ -192,9 +192,23 @@ theorem tilde_toOpen_bijective_of_two_le_depth [IsNoetherianRing R] (M : ModuleC
   have hD (r : R) (hr : r ∈ [a, b]) : basicOpen r ≤ U := fun q hq ↦ by
     by_contra hqU
     exact hq ((PrimeSpectrum.mem_vanishingIdeal _ _).1 (hmem r hr) q hqU)
+  exact ⟨a, b, hreg, hD a (by simp), hD b (by simp)⟩
+
+/-- **Hartogs principle for `M~` on `Spec R`.** Let `M` be a finite module over a Noetherian ring
+`R` and `U` an open subset of `Spec R` such that `depth M_p ≥ 2` for every prime `p ∉ U`. Then
+`M → M~(U)` is bijective: every section of `M~` over `U` comes from a unique element of `M`.
+Stacks, Lemma 31.5.11 (0E9I), for the affine scheme `Spec R` and `M~`, with `M_p` the stalk
+of `M~` at `p`. -/
+@[stacks 0E9I "affine case"]
+theorem tilde_toOpen_bijective_of_two_le_depth [IsNoetherianRing R] (M : ModuleCat.{u} R)
+    [Module.Finite R M] (U : (Spec R).Opens)
+    (h : ∀ p : PrimeSpectrum R, p ∉ U → 2 ≤ depth (ModuleCat.of (Localization.AtPrime p.asIdeal)
+      (LocalizedModule p.asIdeal.primeCompl M))) :
+    Function.Bijective (tilde.toOpen M U).hom := by
+  obtain ⟨a, b, hreg, ha, hb⟩ := exists_isWeaklyRegular_basicOpen_le_of_two_le_depth M U h
   -- By definition, `tilde.toOpen M U` is `toOpenₗ R M U` followed by an isomorphism of modules of
   -- sections; the composite is unfolded by `exact`, as Mathlib states no lemma for it.
   exact ((tilde.modulesSpecToSheafIso M).app _).symm.toLinearEquiv.bijective.comp
-    (StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular hreg (hD a (by simp)) (hD b (by simp)))
+    (StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular hreg ha hb)
 
 end TauCeti.AlgebraicGeometry
