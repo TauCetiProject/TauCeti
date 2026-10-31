@@ -52,15 +52,6 @@ open Topology
 
 namespace TauCeti.PointTopology
 
-/-- The value of a point of a localization away from `f` at a fraction `a / fⁿ`. -/
-private theorem apply_eq_mul_inv_pow {k A B R : Type*} [CommSemiring k] [CommSemiring A]
-    [CommSemiring B] [Algebra A B] [Algebra k B] [Semiring R] [Algebra k R] {f : A}
-    (x : B →ₐ[k] R) {b : B} {n : ℕ} {a : A} (hb : b * algebraMap A B f ^ n = algebraMap A B a)
-    (u : Rˣ) (hu : (u : R) = x (algebraMap A B f)) :
-    x b = x (algebraMap A B a) * (↑u⁻¹ : R) ^ n := by
-  rw [← hb, map_mul, map_pow, ← hu, mul_assoc, ← Units.val_pow_eq_pow_val,
-    ← Units.val_pow_eq_pow_val, inv_pow, Units.mul_inv, mul_one]
-
 section Sufficiency
 
 variable {k A B R : Type*} [CommSemiring k] [CommSemiring A] [Algebra k A]
@@ -88,7 +79,9 @@ theorem isEmbedding_localization [Semiring R] [Algebra k R] [TopologicalSpace R]
     ((continuous_eval (a b)).comp continuous_subtype_val).mul (hinv.pow (n b))
   have hgr : g ∘ r = fun x : B →ₐ[k] R ↦ (x : B → R) := by
     funext x b
-    exact (apply_eq_mul_inv_pow x (ha b) _ (IsUnit.unit_spec _)).symm
+    dsimp only [Function.comp_apply, g]
+    rw [← Units.val_pow_eq_pow_val, inv_pow, Units.mul_inv_eq_iff_eq_mul]
+    simp [r, ← ha b]
   exact IsEmbedding.subtypeVal.comp (.of_comp hr hg (hgr ▸ isEmbedding_coeFn))
 
 /-- If the units of `R` are open and inversion is continuous on them, restriction to `A` is an
@@ -130,14 +123,16 @@ theorem isEmbedding_localization_X_iff :
   have hcont : Continuous e := by
     refine continuous_iff.2 fun b ↦ ?_
     obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj (S := L) (X : k[X]) b
-    simp only [apply_eq_mul_inv_pow _ ha _ (hval _), he]
+    have hb (u : Rˣ) : e u b = aeval (u : R) a * (↑u⁻¹ : R) ^ n := by
+      rw [← Units.val_pow_eq_pow_val, inv_pow, Units.eq_mul_inv_iff_mul_eq, ← he, ← ha]
+      simp [← hval]
+    simp only [hb]
     exact ((Polynomial.continuous_aeval a).comp Units.continuous_val).mul
       (Units.continuous_coe_inv.pow n)
   -- The values of `e u` at `X` and `1 / X` recover `u` and `u⁻¹`, so `e` is an embedding.
   have hinvSelf (u : Rˣ) : e u (IsLocalization.Away.invSelf (X : k[X])) = ↑u⁻¹ := by
-    rw [apply_eq_mul_inv_pow _ (n := 1) (a := 1) (by
-      rw [pow_one, mul_comm, IsLocalization.Away.mul_invSelf, map_one]) _ (hval u)]
-    simp
+    refine Units.eq_inv_of_mul_eq_one_left ?_
+    rw [hval u, ← map_mul, IsLocalization.Away.mul_invSelf, map_one]
   have hemb : IsEmbedding e := by
     refine .of_comp hcont ((continuous_eval (algebraMap k[X] L X)).prodMk
       (MulOpposite.continuous_op.comp
