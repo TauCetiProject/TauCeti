@@ -19,14 +19,17 @@ import TauCeti.Data.Fintype.BigOperators
 import TauCeti.Order.Partition.Finpartition
 
 /-!
-# Labelled induced three-vertex counts and their coarse prediction
+# Coarse induced-count predictions and labelled three-vertex counts
 
 For a graph `J` on `Fin 3` and a finite graph `G`, `J.inducedGraphCount3 G` counts the labelled
 induced copies of `J` in `G`: the injective maps `g : Fin 3 → V` with
 `J.Adj i j ↔ G.Adj (g i) (g j)` for all `i, j`. Nonedges of `J` must go to nonedges of `G`, and
 there is no division by automorphisms of `J`. This is the number of graph embeddings `J ↪g G`.
 
-Given a partition `P` of the vertices, `J.coarseInducedGraphEstimate3 G P` predicts this count from
+The coarse prediction is defined for every finite linearly ordered vertex type of `J`.
+The counting estimates below specialize to three vertices.
+
+Given a partition `P` of the vertices, `J.coarseInducedGraphEstimate G P` predicts this count from
 the edge densities between parts. Each assignment `φ` of the three vertices of `J` to three
 distinct parts contributes the volume `∏ i, #(φ i)` times, for each pair `i < j`, the edge density
 `d(φ i, φ j)` if `J.Adj i j` and the nonedge density `1 - d(φ i, φ j)` otherwise. Assignments with
@@ -47,7 +50,7 @@ Mathlib's `Finpartition.IsEquipartition.sum_nonUniforms_lt` bounds the total vol
 ## Main definitions
 
 * `SimpleGraph.inducedGraphCount3 J G`: the number of labelled induced copies of `J` in `G`.
-* `SimpleGraph.coarseInducedGraphEstimate3 J G P`: its prediction from the densities of `P`.
+* `SimpleGraph.coarseInducedGraphEstimate J G P`: its prediction from the densities of `P`.
 
 ## Main results
 
@@ -58,11 +61,11 @@ Mathlib's `Finpartition.IsEquipartition.sum_nonUniforms_lt` bounds the total vol
 * `SimpleGraph.sum_card_induced_le_inducedGraphCount3` and
   `SimpleGraph.inducedGraphCount3_le_sum_card_induced_add`: the induced copies with vertices in
   three distinct parts account for all but at most `3 * m * (card V) ^ 2` induced copies.
-* `SimpleGraph.abs_sum_card_induced_sub_coarseInducedGraphEstimate3_le`: for a `τ`-uniform
+* `SimpleGraph.abs_sum_card_induced_sub_coarseInducedGraphEstimate_le`: for a `τ`-uniform
   equipartition, the coarse prediction counts the induced copies with vertices in three distinct
   parts up to an error of `15 τ (card V) ^ 3`.
-* `SimpleGraph.inducedGraphCount3_le_coarseInducedGraphEstimate3_add` and
-  `SimpleGraph.coarseInducedGraphEstimate3_sub_le_inducedGraphCount3`: the induced counting lemma
+* `SimpleGraph.inducedGraphCount3_le_coarseInducedGraphEstimate_add` and
+  `SimpleGraph.coarseInducedGraphEstimate_sub_le_inducedGraphCount3`: the induced counting lemma
   for a `τ`-uniform equipartition whose parts have at most `m` vertices.
 
 ## References
@@ -80,6 +83,35 @@ open Finset
 open Function (Injective)
 
 namespace SimpleGraph
+
+section CoarseEstimate
+
+variable {ι V : Type*} [Fintype ι] [LinearOrder ι] [Fintype V] [DecidableEq V]
+  (J : SimpleGraph ι) [DecidableRel J.Adj] (G : SimpleGraph V) [DecidableRel G.Adj]
+
+/-- The coarse prediction of the labelled induced count of `J` in `G` from a partition `P`
+of the vertices. Each
+assignment `φ` of the vertices of `J` to distinct parts of `P` contributes the volume
+`∏ i, #(φ i)` times, for each pair `i < j`, the edge density `d(φ i, φ j)` if `J.Adj i j` and the
+nonedge density `1 - d(φ i, φ j)` otherwise (`SimpleGraph.patternDensity`). -/
+noncomputable def coarseInducedGraphEstimate (P : Finpartition (univ : Finset V)) : ℝ :=
+  ∑ φ : ι → P.parts with Injective φ, (∏ i, (#(φ i : Finset V) : ℝ)) *
+    ∏ p : {p : ι × ι // p.1 < p.2}, G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2)
+
+theorem coarseInducedGraphEstimate_def (P : Finpartition (univ : Finset V)) :
+    J.coarseInducedGraphEstimate G P =
+      ∑ φ : ι → P.parts with Injective φ, (∏ i, (#(φ i : Finset V) : ℝ)) *
+        ∏ p : {p : ι × ι // p.1 < p.2},
+          G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2) := (rfl)
+
+/-- The coarse prediction is nonnegative: edge and nonedge densities lie in `[0, 1]`. -/
+theorem coarseInducedGraphEstimate_nonneg (P : Finpartition (univ : Finset V)) :
+    0 ≤ J.coarseInducedGraphEstimate G P := by
+  rw [coarseInducedGraphEstimate_def]
+  exact sum_nonneg fun φ _ ↦ mul_nonneg (by positivity)
+    (prod_nonneg fun p _ ↦ G.patternDensity_nonneg _ _ _)
+
+end CoarseEstimate
 
 variable {V : Type*} [Fintype V] [DecidableEq V] (J : SimpleGraph (Fin 3)) [DecidableRel J.Adj]
   (G : SimpleGraph V) [DecidableRel G.Adj]
@@ -152,27 +184,6 @@ theorem inducedGraphCount3_le_sum_card_induced_add (P : Finpartition (univ : Fin
         sum_le_sum fun φ _ ↦ (card_filter_le _ _).trans_eq (Fintype.card_piFinset _)
     _ ≤ 3 * m * Fintype.card V ^ 2 := by
         simpa using P.sum_prod_card_of_not_injective_le_of_card_le (ι := Fin 3) hm
-
-/-- The coarse prediction of `J.inducedGraphCount3 G` from a partition `P` of the vertices. Each
-assignment `φ` of the vertices of `J` to three distinct parts of `P` contributes the volume
-`∏ i, #(φ i)` times, for each pair `i < j`, the edge density `d(φ i, φ j)` if `J.Adj i j` and the
-nonedge density `1 - d(φ i, φ j)` otherwise (`SimpleGraph.patternDensity`). -/
-noncomputable def coarseInducedGraphEstimate3 (P : Finpartition (univ : Finset V)) : ℝ :=
-  ∑ φ : Fin 3 → P.parts with Injective φ, (∏ i, (#(φ i : Finset V) : ℝ)) *
-    ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2}, G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2)
-
-theorem coarseInducedGraphEstimate3_def (P : Finpartition (univ : Finset V)) :
-    J.coarseInducedGraphEstimate3 G P =
-      ∑ φ : Fin 3 → P.parts with Injective φ, (∏ i, (#(φ i : Finset V) : ℝ)) *
-        ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-          G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2) := (rfl)
-
-/-- The coarse prediction is nonnegative: edge and nonedge densities lie in `[0, 1]`. -/
-theorem coarseInducedGraphEstimate3_nonneg (P : Finpartition (univ : Finset V)) :
-    0 ≤ J.coarseInducedGraphEstimate3 G P := by
-  rw [coarseInducedGraphEstimate3_def]
-  exact sum_nonneg fun φ _ ↦ mul_nonneg (by positivity)
-    (prod_nonneg fun p _ ↦ G.patternDensity_nonneg _ _ _)
 
 /-- For an assignment `φ` of the vertices of `J` to parts of `P`, the induced copies of `J` in the
 box of `φ` number at most the volume `∏ i, #(φ i)` of the box. -/
@@ -285,13 +296,13 @@ private lemma sum_prod_card_nonUniforms_le {Q : Finpartition (univ : Finset V)}
 /-- **Induced counting lemma for a uniform equipartition, transversal part.** If `Q` is a
 `τ`-uniform equipartition with `τ > 0`, then summing, over the assignments `φ` of the vertices of
 `J` to three distinct parts of `Q`, the induced copies of `J` in the box of `φ` gives the coarse
-prediction `J.coarseInducedGraphEstimate3 G Q` up to an error of at most `15 τ (card V) ^ 3`. -/
-theorem abs_sum_card_induced_sub_coarseInducedGraphEstimate3_le
+prediction `J.coarseInducedGraphEstimate G Q` up to an error of at most `15 τ (card V) ^ 3`. -/
+theorem abs_sum_card_induced_sub_coarseInducedGraphEstimate_le
     {Q : Finpartition (univ : Finset V)} (hQ : Q.IsEquipartition) {τ : ℝ} (hτ : 0 < τ)
     (hQG : Q.IsUniform G τ) :
     |(∑ φ : Fin 3 → Q.parts with Injective φ,
         #{g ∈ Fintype.piFinset (fun i ↦ (φ i : Finset V)) |
-          ∀ i j, J.Adj i j ↔ G.Adj (g i) (g j)} : ℝ) - J.coarseInducedGraphEstimate3 G Q| ≤
+          ∀ i j, J.Adj i j ↔ G.Adj (g i) (g j)} : ℝ) - J.coarseInducedGraphEstimate G Q| ≤
       15 * τ * Fintype.card V ^ 3 := by
   -- The volumes of all assignments add up to `(card V) ^ 3`.
   have hvol : ∑ φ : Fin 3 → Q.parts, ∏ i, (#(φ i : Finset V) : ℝ) = Fintype.card V ^ 3 := by
@@ -309,7 +320,7 @@ theorem abs_sum_card_induced_sub_coarseInducedGraphEstimate3_le
     refine (sum_le_sum fun p _ ↦ sum_prod_card_nonUniforms_le G hQ hτ hQG p).trans_eq ?_
     rw [sum_const, card_univ, hpairs, nsmul_eq_mul]
     ring
-  rw [coarseInducedGraphEstimate3_def, ← sum_sub_distrib]
+  rw [coarseInducedGraphEstimate_def, ← sum_sub_distrib]
   refine (abs_sum_le_sum_abs _ _).trans <| (sum_le_sum fun φ hφ ↦
     abs_card_induced_sub_le J G hτ.le (mem_filter.1 hφ).2).trans <|
     (sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun φ _ _ ↦ add_nonneg (by positivity)
@@ -320,27 +331,27 @@ theorem abs_sum_card_induced_sub_coarseInducedGraphEstimate3_le
 /-- **Induced counting lemma for a uniform equipartition, upper bound.** If `Q` is a `τ`-uniform
 equipartition with `τ > 0` whose parts have at most `m` vertices, then `J.inducedGraphCount3 G`
 exceeds the coarse prediction from `Q` by at most `15 τ (card V) ^ 3 + 3 m (card V) ^ 2`. -/
-theorem inducedGraphCount3_le_coarseInducedGraphEstimate3_add
+theorem inducedGraphCount3_le_coarseInducedGraphEstimate_add
     {Q : Finpartition (univ : Finset V)} (hQ : Q.IsEquipartition) {τ : ℝ} (hτ : 0 < τ)
     (hQG : Q.IsUniform G τ) {m : ℕ} (hm : ∀ A ∈ Q.parts, #A ≤ m) :
-    (J.inducedGraphCount3 G : ℝ) ≤ J.coarseInducedGraphEstimate3 G Q +
+    (J.inducedGraphCount3 G : ℝ) ≤ J.coarseInducedGraphEstimate G Q +
       15 * τ * Fintype.card V ^ 3 + 3 * m * Fintype.card V ^ 2 := by
   have h₁ : (J.inducedGraphCount3 G : ℝ) ≤ _ := Nat.cast_le.2
     (J.inducedGraphCount3_le_sum_card_induced_add G Q hm)
-  have h₂ := (abs_le.1 (J.abs_sum_card_induced_sub_coarseInducedGraphEstimate3_le G hQ hτ hQG)).2
+  have h₂ := (abs_le.1 (J.abs_sum_card_induced_sub_coarseInducedGraphEstimate_le G hQ hτ hQG)).2
   push_cast at h₁
   linarith
 
 /-- **Induced counting lemma for a uniform equipartition, lower bound.** If `Q` is a `τ`-uniform
 equipartition with `τ > 0`, then `J.inducedGraphCount3 G` falls short of the coarse prediction
 from `Q` by at most `15 τ (card V) ^ 3`. -/
-theorem coarseInducedGraphEstimate3_sub_le_inducedGraphCount3
+theorem coarseInducedGraphEstimate_sub_le_inducedGraphCount3
     {Q : Finpartition (univ : Finset V)} (hQ : Q.IsEquipartition) {τ : ℝ} (hτ : 0 < τ)
     (hQG : Q.IsUniform G τ) :
-    J.coarseInducedGraphEstimate3 G Q - 15 * τ * Fintype.card V ^ 3 ≤ J.inducedGraphCount3 G := by
+    J.coarseInducedGraphEstimate G Q - 15 * τ * Fintype.card V ^ 3 ≤ J.inducedGraphCount3 G := by
   have h₁ : _ ≤ (J.inducedGraphCount3 G : ℝ) := Nat.cast_le.2
     (J.sum_card_induced_le_inducedGraphCount3 G Q)
-  have h₂ := (abs_le.1 (J.abs_sum_card_induced_sub_coarseInducedGraphEstimate3_le G hQ hτ hQG)).1
+  have h₂ := (abs_le.1 (J.abs_sum_card_induced_sub_coarseInducedGraphEstimate_le G hQ hτ hQG)).1
   push_cast at h₁
   linarith
 

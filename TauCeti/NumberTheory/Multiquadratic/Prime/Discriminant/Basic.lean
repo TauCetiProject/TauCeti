@@ -12,16 +12,17 @@ public import Mathlib.RingTheory.Int.Basic
 /-!
 # Odd prime discriminants
 
-The genus-field layer of the multiquadratic roadmap uses **prime discriminants** rather than
-bare squarefree radicands. For an odd prime `p`, the associated prime discriminant is
+For an odd prime `p`, the associated prime discriminant `p*` is
 
 * `p` when `p ≡ 1 (mod 4)`;
 * `-p` when `p ≡ 3 (mod 4)`.
 
-This file records that elementary normalization as a small arithmetic API. The even prime
-discriminants `-4`, `8`, and `-8` are deliberately left to the later quadratic-discriminant
-packaging; the odd-prime case is the reusable piece needed to turn the roadmap's odd ramified
-primes into radicands `p*` satisfying `p* ≡ 1 (mod 4)`.
+It is the sign normalization of `p` that satisfies `p* ≡ 1 (mod 4)`, so `p*` is the
+discriminant of the quadratic field `ℚ(√p*)`, the unique quadratic field in which `p` is the
+only ramified rational prime. This file records that normalization as a small arithmetic API.
+The even prime discriminants `-4`, `8`, and `-8` are treated in
+`TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Even`, and the two cases are combined
+in `TauCeti.NumberTheory.Multiquadratic.Prime.Discriminants`.
 
 ## Main definitions and results
 

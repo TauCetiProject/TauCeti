@@ -8,6 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.RingTheory.Invariant.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Equalizer
+import Mathlib.RingTheory.RingHom.Injective
+import TauCeti.AlgebraicGeometry.Morphisms.Epi
+import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.UniversalProperty
 import TauCeti.RingTheory.Invariant.Localization
 
 /-!
@@ -38,8 +41,17 @@ projection is asserted: for actions which are not free it can fail.
 
 The construction needs no hypothesis on `X`, and in particular the quotient of a scheme affine
 over a non-affine base is obtained without choosing a global invariant affine cover: the
-preimages of the affine opens of `X` form one. The universal property of the quotient and the
-étaleness of the projection for free actions are not proved in this file.
+preimages of the affine opens of `X` form one.
+
+The projection is a categorical quotient in the category of all schemes: every `G`-invariant
+morphism `f : Spec_X(A) ⟶ Z` to an arbitrary scheme `Z` factors uniquely through it
+(`CommMon.existsUnique_relativeSpecπ_comp_eq`). Over each affine open `U` of `X`, the base change of
+`f` descends by the universal property of the affine invariant quotient,
+`TauCeti.AffineInvariantQuotient.existsUnique_desc_of_finite`. The stalk maps of the projection are
+injective, because they are on each affine chart, so the projection stays an epimorphism after base
+change to every open subscheme of `Spec_X(A)/G`; hence the local descents agree on overlaps and glue
+(`AlgebraicGeometry.Scheme.Hom.exists_comp_eq_of_openCover`). The étaleness of the projection for
+free actions is not proved in this file.
 
 The localization statement is a case of `TauCeti.FixedPoints.isLocalization_of_mem_range_iff`,
 which also gives `TauCeti.FixedPoints.isLocalization`, and the gluing is the relative spectrum of
@@ -58,6 +70,8 @@ a presheaf of subalgebras, which also gives the relative spectrum of an equalize
 * `CommMon.invariantSubalgebraPresheaf ρ`: the presheaf of invariant subalgebras, whose relative
   spectrum is the relative invariant quotient `Spec_X(A)/G` and whose `relativeSpecπ` is the
   quotient projection.
+* `CommMon.invariantQuotientDesc f hf`: the morphism `Spec_X(A)/G ⟶ Z` induced by a `G`-invariant
+  morphism `f : Spec_X(A) ⟶ Z`.
 
 ## Main results
 
@@ -70,11 +84,17 @@ a presheaf of subalgebras, which also gives the relative spectrum of an equalize
 * The projection is integral and surjective, and
   `CommMon.isFinite_invariantSubalgebraPresheaf_relativeSpecπ`: it is finite when `Spec_X(A)` is
   locally of finite type over `X`.
+* `CommMon.stalkMap_invariantSubalgebraPresheaf_relativeSpecπ_injective`: the stalk maps of the
+  projection are injective, so the projection is an epimorphism of schemes.
+* `CommMon.existsUnique_relativeSpecπ_comp_eq`: the universal property of the quotient for
+  arbitrary target schemes.
 
 ## References
 
 * M. Demazure and A. Grothendieck, *Schémas en groupes (SGA 3)*, Exposé V, §1 (quotients of
   affine schemes by finite groups).
+* D. Mumford, *Abelian Varieties*, §7, Theorem 1 (quotients by finite groups as categorical
+  quotients).
 * The Stacks Project, [Tag 01LL](https://stacks.math.columbia.edu/tag/01LL) (relative spectrum
   via gluing).
 -/
@@ -147,6 +167,34 @@ lemma invariantSections_eq_fixedPoints (U : X.Opens) :
   have := smulCommClass_sectionsMulSemiringAction ρ U
   ext x
   simp [FixedPoints.mem_subalgebra]
+
+open TauCeti.AffineInvariantQuotient in
+/-- The spectrum of the invariant sections over `U` is the affine invariant quotient of the
+sections, through the identification of the invariant sections with the fixed subalgebra. -/
+private def chartIso (U : X.Opens) :
+    letI := sectionsMulSemiringAction ρ U
+    quotient Γ(A.X, U) G ≅ Spec (CommRingCat.of (invariantSections ρ U)) :=
+  letI := sectionsMulSemiringAction ρ U
+  haveI := smulCommClass_sectionsMulSemiringAction ρ U
+  Scheme.Spec.mapIso
+    (Subalgebra.equivOfEq _ _
+      (invariantSections_eq_fixedPoints ρ U)).toRingEquiv.toCommRingCatIso.op
+
+variable {ρ} in
+open TauCeti.AffineInvariantQuotient in
+/-- `Spec` of the inclusion of the invariant sections over `U` is the affine invariant quotient
+projection of the sections over `U`, up to `chartIso`. -/
+private lemma specMap_invariantSections (U : X.Opens) :
+    letI := sectionsMulSemiringAction ρ U
+    Spec.map (CommRingCat.ofHom (algebraMap (invariantSections ρ U) Γ(A.X, U))) =
+      projection Γ(A.X, U) G ≫ (chartIso ρ U).hom := by
+  let := sectionsMulSemiringAction ρ U
+  have := smulCommClass_sectionsMulSemiringAction ρ U
+  rw [projection_def]
+  exact Spec.map_comp
+    (Subalgebra.equivOfEq _ _
+      (invariantSections_eq_fixedPoints ρ U)).toRingEquiv.toCommRingCatIso.hom
+    (CommRingCat.ofHom (algebraMap (FixedPoints.subalgebra Γ(X, U) Γ(A.X, U) G) Γ(A.X, U)))
 
 /-- Restriction of sections preserves invariant sections. -/
 lemma restrictSections_mem_invariantSections {U V : X.Opens} (i : V ⟶ U) {x : Γ(A.X, U)}
@@ -245,6 +293,134 @@ instance isFinite_invariantSubalgebraPresheaf_relativeSpecπ
   exact (IsFinite.iff_isIntegralHom_and_locallyOfFiniteType _).mpr
     ⟨inferInstance,
       locallyOfFiniteType_of_comp _ (invariantSubalgebraPresheaf ρ).relativeSpecToBase⟩
+
+/-! ### The universal property of the quotient -/
+
+section UniversalProperty
+
+variable {ρ}
+
+open TauCeti.AffineInvariantQuotient in
+/-- Over an affine open `U` of `X`, the quotient projection is the affine invariant quotient
+projection of the sections over `U`. -/
+private lemma isPullback_projection (U : X.AffineZariskiSite) :
+    letI := sectionsMulSemiringAction ρ U.toOpens
+    IsPullback (projection Γ(A.X, U.toOpens) G ≫ (chartIso ρ U.toOpens).hom)
+      (A.relativeSpecCover.f U) ((invariantSubalgebraPresheaf ρ).relativeSpecCover.f U)
+      (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
+  have h := (invariantSubalgebraPresheaf ρ).isPullback_relativeSpecπ U
+  rw [SubalgebraPresheaf.sectionsPresheafι_app_eq_algebraMap] at h
+  rw [← specMap_invariantSections]
+  exact h
+
+omit [Finite G] in
+open TauCeti.AffineInvariantQuotient in
+/-- On an affine chart, the action of `g` on `Spec_X(A)` is the action on the spectrum of the
+sections. -/
+private lemma specComap_relativeSpecCover_f (U : X.AffineZariskiSite) (g : G) :
+    letI := sectionsMulSemiringAction ρ U.toOpens
+    specComap Γ(A.X, U.toOpens) G g ≫ A.relativeSpecCover.f U =
+      A.relativeSpecCover.f U ≫ relativeSpecMap (ρ g).asIso.hom := by
+  let := sectionsMulSemiringAction ρ U.toOpens
+  rw [relativeSpecCover_f_relativeSpecMap, specComap_def]
+  congr 2
+  ext x
+  exact sectionsMulSemiringAction_smul ρ U.toOpens g x
+
+/-- The stalk maps of the quotient projection `Spec_X(A) ⟶ Spec_X(A)/G` are injective. -/
+theorem stalkMap_invariantSubalgebraPresheaf_relativeSpecπ_injective (x : A.relativeSpec) :
+    Function.Injective ((invariantSubalgebraPresheaf ρ).relativeSpecπ.stalkMap x) := by
+  have hP := RingHom.injective_respectsIso
+  have := stalkwiseIsZariskiLocalAtTarget_of_respectsIso hP
+  have := stalkwise_respectsIso hP
+  refine ((invariantSubalgebraPresheaf ρ).relativeSpecπ_iff
+    (stalkwise fun f ↦ Function.Injective f)).mpr (fun U ↦ ?_) x
+  let := sectionsMulSemiringAction ρ U.toOpens
+  have := smulCommClass_sectionsMulSemiringAction ρ U.toOpens
+  rw [invariantSubalgebraPresheaf_sections, specMap_invariantSections]
+  exact MorphismProperty.RespectsIso.postcomp _ _ _
+    (TauCeti.AffineInvariantQuotient.stalkMap_projection_injective _ G)
+
+/-- The quotient projection `Spec_X(A) ⟶ Spec_X(A)/G` is an epimorphism of schemes. -/
+instance : Epi (invariantSubalgebraPresheaf ρ).relativeSpecπ :=
+  Scheme.Hom.epi_of_surjective_of_stalkMap_injective _
+    stalkMap_invariantSubalgebraPresheaf_relativeSpecπ_injective
+
+open TauCeti.AffineInvariantQuotient in
+/-- The universal property for arbitrary target schemes, as an existence statement. -/
+private theorem exists_relativeSpecπ_comp_eq {Z : Scheme.{u}} (f : A.relativeSpec ⟶ Z)
+    (hf : ∀ g : G, relativeSpecMap (ρ g).asIso.hom ≫ f = f) :
+    ∃ h, (invariantSubalgebraPresheaf ρ).relativeSpecπ ≫ h = f := by
+  -- Over each affine chart, `f` descends by the universal property of the affine quotient.
+  have hloc (U : X.AffineZariskiSite) :
+      ∃ u : (invariantSubalgebraPresheaf ρ).relativeSpecCover.X U ⟶ Z,
+        pullback.fst (invariantSubalgebraPresheaf ρ).relativeSpecπ
+            ((invariantSubalgebraPresheaf ρ).relativeSpecCover.f U) ≫ f =
+          pullback.snd _ _ ≫ u := by
+    let := sectionsMulSemiringAction ρ U.toOpens
+    have := smulCommClass_sectionsMulSemiringAction ρ U.toOpens
+    have hpb := (isPullback_projection (ρ := ρ) U).flip
+    have hfU (g : G) : specComap Γ(A.X, U.toOpens) G g ≫ A.relativeSpecCover.f U ≫ f =
+        A.relativeSpecCover.f U ≫ f :=
+      (Category.assoc _ _ _).symm.trans <|
+        (congrArg (· ≫ f) (specComap_relativeSpecCover_f (ρ := ρ) U g)).trans <|
+          (Category.assoc _ _ _).trans (congrArg _ (hf g))
+    refine ⟨(chartIso ρ U.toOpens).inv ≫ descOfFinite _ hfU, ?_⟩
+    refine (cancel_epi hpb.isoPullback.hom).mp ?_
+    have e1 := congrArg (· ≫ f) hpb.isoPullback_hom_fst
+    have e2 := congrArg (· ≫ (chartIso ρ U.toOpens).inv ≫ descOfFinite _ hfU)
+      hpb.isoPullback_hom_snd
+    simp only [Category.assoc, Iso.hom_inv_id_assoc] at e1 e2
+    exact e1.trans ((projection_descOfFinite _ hfU).symm.trans e2.symm)
+  choose u hu using hloc
+  -- The local descents glue, since the projection stays an epimorphism over open subschemes.
+  exact Scheme.Hom.exists_comp_eq_of_openCover _
+    (fun _ g _ ↦ Scheme.Hom.epi_pullback_snd_of_isOpenImmersion _ g
+      stalkMap_invariantSubalgebraPresheaf_relativeSpecπ_injective)
+    (invariantSubalgebraPresheaf ρ).relativeSpecCover f u hu
+
+/-- The morphism `Spec_X(A)/G ⟶ Z` induced by a `G`-invariant morphism `Spec_X(A) ⟶ Z` to an
+arbitrary scheme. -/
+def invariantQuotientDesc {Z : Scheme.{u}} (f : A.relativeSpec ⟶ Z)
+    (hf : ∀ g : G, relativeSpecMap (ρ g).asIso.hom ≫ f = f) :
+    (invariantSubalgebraPresheaf ρ).relativeSpec ⟶ Z :=
+  (exists_relativeSpecπ_comp_eq f hf).choose
+
+/-- The induced morphism factors the given invariant morphism through the quotient projection. -/
+@[reassoc (attr := simp)]
+lemma relativeSpecπ_invariantQuotientDesc {Z : Scheme.{u}} (f : A.relativeSpec ⟶ Z)
+    (hf : ∀ g : G, relativeSpecMap (ρ g).asIso.hom ≫ f = f) :
+    (invariantSubalgebraPresheaf ρ).relativeSpecπ ≫ invariantQuotientDesc f hf = f :=
+  (exists_relativeSpecπ_comp_eq f hf).choose_spec
+
+/-- Morphisms from the quotient `Spec_X(A)/G` to an arbitrary scheme are determined by their
+composition with the quotient projection. -/
+@[ext]
+lemma invariantQuotient_hom_ext {Z : Scheme.{u}}
+    {h₁ h₂ : (invariantSubalgebraPresheaf ρ).relativeSpec ⟶ Z}
+    (e : (invariantSubalgebraPresheaf ρ).relativeSpecπ ≫ h₁ =
+      (invariantSubalgebraPresheaf ρ).relativeSpecπ ≫ h₂) : h₁ = h₂ :=
+  (cancel_epi _).mp e
+
+/-- **The universal property of the relative invariant quotient by a finite group.** Every
+`G`-invariant morphism from `Spec_X(A)` to an arbitrary scheme factors uniquely through the
+quotient projection `Spec_X(A) ⟶ Spec_X(A)/G`. -/
+theorem existsUnique_relativeSpecπ_comp_eq {Z : Scheme.{u}} (f : A.relativeSpec ⟶ Z)
+    (hf : ∀ g : G, relativeSpecMap (ρ g).asIso.hom ≫ f = f) :
+    ∃! h, (invariantSubalgebraPresheaf ρ).relativeSpecπ ≫ h = f :=
+  ⟨invariantQuotientDesc f hf, relativeSpecπ_invariantQuotientDesc f hf, fun _ hh ↦
+    invariantQuotient_hom_ext (hh.trans (relativeSpecπ_invariantQuotientDesc f hf).symm)⟩
+
+/-- Descending the composite of the quotient projection with a morphism to an arbitrary scheme
+recovers that morphism. -/
+@[simp]
+lemma invariantQuotientDesc_relativeSpecπ_comp {Z : Scheme.{u}}
+    (h : (invariantSubalgebraPresheaf ρ).relativeSpec ⟶ Z) :
+    invariantQuotientDesc ((invariantSubalgebraPresheaf ρ).relativeSpecπ ≫ h)
+      (fun g ↦ by simp) = h :=
+  invariantQuotient_hom_ext (relativeSpecπ_invariantQuotientDesc _ _)
+
+end UniversalProperty
 
 end
 
