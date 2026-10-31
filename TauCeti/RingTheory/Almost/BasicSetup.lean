@@ -146,7 +146,8 @@ theorem tildeToIdeal_bijective_of_flat [Module.Flat V S.ideal] :
     Function.Bijective S.tildeToIdeal := by
   have H : S.ideal.LinearDisjoint S.ideal :=
     .of_left_le_one_of_flat S.ideal S.ideal (le_top.trans Ideal.one_eq_top.ge)
-  exact ⟨fun s t hst ↦ H.injective (congrArg Subtype.val hst), S.tildeToIdeal_surjective⟩
+  refine ⟨fun s t hst ↦ H.injective ?_, S.tildeToIdeal_surjective⟩
+  simpa only [coe_tildeToIdeal, tildeMul] using congrArg Subtype.val hst
 
 /-! ### Almost zero modules -/
 
