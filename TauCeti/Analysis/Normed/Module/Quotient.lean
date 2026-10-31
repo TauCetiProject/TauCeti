@@ -16,7 +16,9 @@ import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 Descending a continuous semilinear map through a submodule contained in its kernel preserves its
 operator norm. Equivalently, precomposition with the quotient projection preserves operator
 norms. These facts apply to seminormed spaces and arbitrary submodules, and supply the metric
-part of the duality between a quotient and the annihilator of its defining submodule.
+part of the duality between a quotient and the annihilator of its defining submodule. The
+quotient projection maps each open ball onto the open ball of the same radius, so it is a metric
+quotient map.
 
 The quotient module also inherits a contractive action of a possibly noncommutative
 seminormed ring. In particular, this applies to quotients of a normed ring by left ideals.
@@ -73,6 +75,18 @@ theorem norm_liftQL (S : Submodule 𝕜 E) (f : E →SL[σ] F) (h : S ≤ f.ker)
     ‖S.liftQL f h‖ = ‖f‖ := by
   have heq : (S.liftQL f h).comp S.mkQL = f := by ext x; simp
   rw [← S.norm_comp_mkQL (S.liftQL f h), heq]
+
+/-- The quotient projection is a metric quotient map: it maps each open ball `ball 0 r` onto the
+open ball of the same radius. -/
+theorem image_mkQL_ball (S : Submodule 𝕜 E) (r : ℝ) :
+    S.mkQL '' Metric.ball 0 r = Metric.ball 0 r := by
+  refine subset_antisymm ?_ fun y hy ↦ ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    rw [mem_ball_zero_iff] at hx ⊢
+    exact (Quotient.norm_mk_le S x).trans_lt hx
+  · rw [mem_ball_zero_iff] at hy
+    obtain ⟨x, rfl, hx⟩ := Quotient.norm_mk_lt y (sub_pos.2 hy)
+    exact ⟨x, by simpa using hx, rfl⟩
 
 end Submodule
 
