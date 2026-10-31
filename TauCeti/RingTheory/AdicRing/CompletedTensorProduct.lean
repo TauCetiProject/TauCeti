@@ -83,6 +83,25 @@ def CompletedTensorProduct : Type _ :=
 
 namespace CompletedTensorProduct
 
+/-- The ideal `tensorIdeal A B C` is the supremum of the images of the chosen ideals of
+definition of `B` and `C` under `b ↦ b ⊗ 1` and `c ↦ 1 ⊗ c`. -/
+theorem tensorIdeal_def : tensorIdeal A B C =
+    (IsAdicRing.ideal B).map (Algebra.TensorProduct.includeLeft : B →ₐ[A] B ⊗[A] C) ⊔
+      (IsAdicRing.ideal C).map (Algebra.TensorProduct.includeRight : C →ₐ[A] B ⊗[A] C) :=
+  (rfl)
+
+variable {A B C} in
+/-- For `b` in the ideal of definition of `B`, the element `b ⊗ 1` lies in `tensorIdeal A B C`. -/
+theorem tmul_one_mem_tensorIdeal {b : B} (hb : b ∈ IsAdicRing.ideal B) :
+    b ⊗ₜ[A] (1 : C) ∈ tensorIdeal A B C :=
+  Ideal.mem_sup_left (Ideal.mem_map_of_mem _ hb)
+
+variable {A B C} in
+/-- For `c` in the ideal of definition of `C`, the element `1 ⊗ c` lies in `tensorIdeal A B C`. -/
+theorem one_tmul_mem_tensorIdeal {c : C} (hc : c ∈ IsAdicRing.ideal C) :
+    (1 : B) ⊗ₜ[A] c ∈ tensorIdeal A B C :=
+  Ideal.mem_sup_right (Ideal.mem_map_of_mem _ hc)
+
 /-- The ideal `I_B ⊗ 1 + 1 ⊗ I_C` is finitely generated. -/
 theorem tensorIdeal_fg : (tensorIdeal A B C).FG :=
   Submodule.FG.sup ((IsAdicRing.ideal_spec B).1.map _) ((IsAdicRing.ideal_spec C).1.map _)
@@ -186,16 +205,11 @@ theorem algHom_ext {D : Type*} [Semiring D] [Algebra A D] [TopologicalSpace D] [
     (hl : g₁.comp (inl A B C) = g₂.comp (inl A B C))
     (hr : g₁.comp (inr A B C) = g₂.comp (inr A B C)) :
     g₁ = g₂ := by
-  have htensor : ∀ x : B ⊗[A] C,
-      g₁ (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C) x) =
-        g₂ (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C) x) := by
-    intro x
-    induction x with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul b c =>
-      rw [algebraMap_tmul, map_mul, map_mul, ← AlgHom.comp_apply, hl, ← AlgHom.comp_apply g₁, hr,
-        AlgHom.comp_apply, AlgHom.comp_apply]
-  exact AlgHom.ext <| congrFun <| (denseRange_algebraMap A B C).equalizer hg₁ hg₂ (funext htensor)
+  have htensor : g₁.comp (IsScalarTower.toAlgHom A (B ⊗[A] C) _) =
+      g₂.comp (IsScalarTower.toAlgHom A (B ⊗[A] C) _) :=
+    Algebra.TensorProduct.ext hl hr
+  exact AlgHom.ext <| congrFun <| (denseRange_algebraMap A B C).equalizer hg₁ hg₂
+    congr(⇑$htensor)
 
 section Lift
 
