@@ -26,9 +26,6 @@ countable. Hence a scattered set meets at most `ℵ₁` isomorphism classes (the
 countably many exactly when the rank is bounded below `ω₁` on it. In particular, whether a rank is
 bounded on a scattered set does not depend on which isolating rank is used.
 
-Independently of scatteredness, a set meeting countably many isomorphism classes has a single
-countable level at which back-and-forth equivalence decides isomorphism within it.
-
 No definability or invariance of `K`, and no countability of the language, is assumed.
 
 ## Main definitions
@@ -50,8 +47,6 @@ No definability or invariance of `K`, and no countability of the language, is as
   isomorphism classes exactly when the rank is bounded below `ω₁` on it.
 * `TauCeti.IsIsolatingRank.exists_rank_bound_iff`: on a scattered set, any two isolating ranks are
   bounded together.
-* `TauCeti.IsIsolatingRank.exists_comap_isoSetoid_eq_bfEquivSetoid`: on a set meeting countably
-  many isomorphism classes, isomorphism is equivalence at one countable level.
 
 ## References
 
@@ -170,16 +165,6 @@ theorem exists_rank_bound_iff (hρ : IsIsolatingRank ρ) (hσ : IsIsolatingRank 
     (hK : BFScattered K) :
     (∃ β < ω₁, ∀ c ∈ K, ρ c < β) ↔ ∃ β < ω₁, ∀ c ∈ K, σ c < β :=
   (hρ.countable_isoClasses_iff_bounded hK).symm.trans (hσ.countable_isoClasses_iff_bounded hK)
-
-/-- On a set meeting countably many isomorphism classes, isomorphism is back-and-forth equivalence
-at a single countable level. The set itself may be uncountable. -/
-theorem exists_comap_isoSetoid_eq_bfEquivSetoid (h : IsIsolatingRank ρ)
-    (K : Set (RelationalConfiguration L ℕ))
-    [Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)))] :
-    ∃ γ : Ordinal.{0}, γ < ω₁ ∧ (isoSetoid L ℕ).comap (Subtype.val : K → _) =
-      (bfEquivSetoid L ℕ γ).comap (Subtype.val : K → _) := by
-  obtain ⟨γ, hγ, hb⟩ := exists_rank_bound_of_countable_isoClasses h.iso_invariant h.lt_omega_one K
-  exact ⟨γ, hγ, h.comap_isoSetoid_eq_bfEquivSetoid fun c hc => (hb c hc).le⟩
 
 end IsIsolatingRank
 

@@ -21,7 +21,8 @@ The classes of rank `α` inject into the back-and-forth classes of `K` at level 
 Consequently, if every countable level has at most `ℵ₁` classes, then `K` meets at most
 `ℵ₁` isomorphism classes. In particular this holds when all these levels are countable.
 No definability or invariance of `K`, and no countability of the language, is required.
-Countably many isomorphism classes also give a countable bound on every isolating rank.
+Countably many isomorphism classes also give a countable bound on every isolating rank, so
+isomorphism within `K` is then back-and-forth equivalence at a single countable level.
 
 ## References
 
@@ -160,5 +161,15 @@ theorem exists_rank_bound_of_countable_isoClasses
       (r := rankOnIsoClasses hinv K) (fun q _ => rankOnIsoClasses_lt_omega_one hinv hρ K q)
   refine ⟨β, hβ, fun c hc => ?_⟩
   simpa only [rankOnIsoClasses_mk] using hb (Quotient.mk _ ⟨c, hc⟩) (mem_univ _)
+
+/-- On a set meeting countably many isomorphism classes, isomorphism is back-and-forth equivalence
+at a single countable level. The set itself may be uncountable. -/
+theorem IsIsolatingRank.exists_comap_isoSetoid_eq_bfEquivSetoid (h : IsIsolatingRank ρ)
+    (K : Set (RelationalConfiguration L ℕ))
+    [Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)))] :
+    ∃ γ : Ordinal.{0}, γ < ω₁ ∧ (isoSetoid L ℕ).comap (Subtype.val : K → _) =
+      (bfEquivSetoid L ℕ γ).comap (Subtype.val : K → _) := by
+  obtain ⟨γ, hγ, hb⟩ := exists_rank_bound_of_countable_isoClasses h.iso_invariant h.lt_omega_one K
+  exact ⟨γ, hγ, h.comap_isoSetoid_eq_bfEquivSetoid fun c hc => (hb c hc).le⟩
 
 end TauCeti
