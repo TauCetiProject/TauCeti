@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger
 public import TauCeti.Data.ENat.Lattice
 
@@ -60,6 +61,10 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
   most the number of vertices, where `κ` is the vertex connectivity.
 * `SimpleGraph.vertexConnectivity_top`: the complete graph has vertex connectivity
   `ENat.card V - 1`.
+* `SimpleGraph.IsVertexConnected.isEdgeConnected`,
+  `SimpleGraph.vertexConnectivity_le_edgeConnectivity`: **Whitney's inequality**: a
+  `k`-vertex-connected graph is `k`-edge-connected, so vertex connectivity is at most edge
+  connectivity. No finiteness assumption is needed.
 * `SimpleGraph.isVertexReachable_iff_exists_paths`: **Menger's theorem**, predicate form, for
   nonadjacent vertices.
 * `SimpleGraph.isVertexConnected_iff_forall_exists_paths`: the **global form of Menger's
@@ -67,6 +72,15 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
   existence of `k` distinct internally disjoint paths between every two distinct vertices.
 
 ## Implementation notes
+
+For Whitney's inequality, let `F` be a set of fewer than `k` edges and `u, v` two vertices. Pick
+an end other than `u` and `v` of every edge of `F` other than `s(u, v)`; a walk from `u` to `v`
+avoiding the set `S` of picked vertices uses no edge of `F` except possibly `s(u, v)`. If
+`s(u, v)` is an edge in `F`, then `S` has fewer than `k - 1` vertices, so some vertex `w` lies
+outside `S ∪ {u, v}`, and the walks from `u` to `w` avoiding `S ∪ {v}` and from `w` to `v` avoiding
+`S ∪ {u}` do not use `s(u, v)`. The inequality is due to H. Whitney, *Congruent graphs and the
+connectivity of graphs*, Amer. J. Math. 54 (1932), 150–168; the argument is that of R. Diestel,
+*Graph Theory*, Proposition 1.4.2, made local to a pair of vertices.
 
 The Menger statements are derived from the witness forms in
 `TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger`. For adjacent vertices `s` and `t` of a
@@ -370,5 +384,85 @@ theorem isVertexConnected_iff_forall_exists_paths [Finite V] {k : ℕ} (hk : k <
     · exact .rfl
     · obtain ⟨P, -, -, hP⟩ := h s t hst
       exact isVertexReachable_of_pairwise_internallyDisjoint hP
+
+/-! ### Whitney's inequality -/
+
+/-- For a set `F` of edges and two vertices `u, v`, a set of at most `|F \ {s(u, v)}|` vertices,
+none of them `u` or `v`, contains an end of every edge of `G` in `F` other than `s(u, v)`. -/
+private theorem exists_endpoints_of_edges (F : Set (Sym2 V)) (u v : V) :
+    ∃ S : Set V, u ∉ S ∧ v ∉ S ∧ S.encard ≤ (F \ {s(u, v)}).encard ∧
+      ∀ ⦃x y⦄, G.Adj x y → s(x, y) ∈ F → s(x, y) ≠ s(u, v) → x ∈ S ∨ y ∈ S := by
+  classical
+  let pick : Sym2 V → V := fun e ↦ if h : ∃ z ∈ e, z ≠ u ∧ z ≠ v then h.choose else u
+  have hpick {e : Sym2 V} (h : ∃ z ∈ e, z ≠ u ∧ z ≠ v) : pick e ∈ e ∧ pick e ≠ u ∧ pick e ≠ v := by
+    simpa [pick, h] using h.choose_spec
+  refine ⟨pick '' {e ∈ F \ {s(u, v)} | ∃ z ∈ e, z ≠ u ∧ z ≠ v}, ?_, ?_,
+    (Set.encard_image_le _ _).trans (Set.encard_le_encard fun _ he ↦ he.1), ?_⟩
+  · rintro ⟨e, ⟨-, he⟩, hu⟩
+    exact (hpick he).2.1 hu
+  · rintro ⟨e, ⟨-, he⟩, hv⟩
+    exact (hpick he).2.2 hv
+  · intro x y hxy hF hne
+    -- An edge other than `s(u, v)` has an end other than `u` and `v`.
+    have he : ∃ z ∈ s(x, y), z ≠ u ∧ z ≠ v := by
+      by_contra! h
+      simp only [Sym2.mem_iff, forall_eq_or_imp, forall_eq] at h
+      refine hne (Sym2.eq_iff.2 ?_)
+      have := hxy.ne
+      by_cases hxu : x = u <;> by_cases hyu : y = u <;> grind
+    have hmem : pick s(x, y) ∈ pick '' {e ∈ F \ {s(u, v)} | ∃ z ∈ e, z ≠ u ∧ z ≠ v} :=
+      ⟨_, ⟨⟨hF, hne⟩, he⟩, rfl⟩
+    rcases Sym2.mem_iff.1 (hpick he).1 with h | h <;> rw [h] at hmem
+    exacts [.inl hmem, .inr hmem]
+
+/-- A walk avoiding a set `S` of vertices that contains an end of every edge of `G` in `F` other
+than `s(u, v)` survives the deletion of `F`, provided it does not use `s(u, v) ∈ F`. -/
+private theorem reachable_deleteEdges_of_walk {F : Set (Sym2 V)} {S : Set V} {a b : V}
+    (hS : ∀ ⦃x y⦄, G.Adj x y → s(x, y) ∈ F → s(x, y) ≠ s(u, v) → x ∈ S ∨ y ∈ S)
+    (p : G.Walk a b) (hp : ∀ x ∈ p.support, x ∉ S) (huv : s(u, v) ∈ p.edges → s(u, v) ∉ F) :
+    (G.deleteEdges F).Reachable a b := by
+  refine ⟨p.toDeleteEdges F fun e he heF ↦ ?_⟩
+  induction e with | h x y => ?_
+  by_cases hne : s(x, y) = s(u, v)
+  · exact huv (hne ▸ he) (hne ▸ heF)
+  · rcases hS (p.adj_of_mem_edges he) heF hne with hx | hy
+    · exact hp x (p.fst_mem_support_of_mem_edges he) hx
+    · exact hp y (p.snd_mem_support_of_mem_edges he) hy
+
+/-- **Whitney's inequality**, predicate form: a `k`-vertex-connected graph is
+`k`-edge-connected. -/
+theorem IsVertexConnected.isEdgeConnected (h : G.IsVertexConnected k) : G.IsEdgeConnected k := by
+  intro u v F hF
+  obtain ⟨S, hu, hv, hSF, hS⟩ := exists_endpoints_of_edges (G := G) F u v
+  by_cases huv : s(u, v) ∈ F ∧ G.Adj u v
+  · -- The edge `s(u, v)` is deleted, so `S` has fewer than `k - 1` vertices. Route through a
+    -- vertex `w` outside `S ∪ {u, v}`, avoiding `v` before `w` and `u` after it.
+    have hS1 : S.encard + 1 ≤ F.encard :=
+      (add_le_add hSF le_rfl).trans_eq (Set.encard_sdiff_singleton_add_one huv.1)
+    have hvS : (insert v S).encard < k := ((Set.encard_insert_le _ _).trans hS1).trans_lt hF
+    have huS : (insert u S).encard < k := ((Set.encard_insert_le _ _).trans hS1).trans_lt hF
+    obtain ⟨w, hw⟩ := (Set.ne_univ_iff_exists_notMem (insert u (insert v S))).1 fun heq ↦ by
+      have := (Set.encard_insert_le (insert v S) u).trans_lt
+        ((ENat.add_lt_add_iff_right ENat.one_ne_top).2 hvS)
+      rw [heq, Set.encard_univ] at this
+      exact this.not_ge h.add_one_le_card
+    simp only [Set.mem_insert_iff, not_or] at hw
+    obtain ⟨hwu, hwv, hwS⟩ := hw
+    obtain ⟨p, hp⟩ := isVertexReachable_iff_exists_walk.1 (h.2 u w) hvS
+      (by simp [huv.2.ne, hu]) (by simp [hwv, hwS])
+    obtain ⟨q, hq⟩ := isVertexReachable_iff_exists_walk.1 (h.2 w v) huS
+      (by simp [hwu, hwS]) (by simp [huv.2.ne', hv])
+    refine (reachable_deleteEdges_of_walk hS p (fun x hx hxS ↦ hp x hx (.inr hxS)) fun he _ ↦
+      hp v (p.snd_mem_support_of_mem_edges he) (.inl rfl)).trans
+      (reachable_deleteEdges_of_walk hS q (fun x hx hxS ↦ hq x hx (.inr hxS)) fun he _ ↦
+        hq u (q.fst_mem_support_of_mem_edges he) (.inl rfl))
+  · obtain ⟨p, hp⟩ := isVertexReachable_iff_exists_walk.1 (h.2 u v)
+      ((hSF.trans (Set.encard_le_encard Set.sdiff_subset)).trans_lt hF) hu hv
+    exact reachable_deleteEdges_of_walk hS p hp fun he hF ↦ huv ⟨hF, p.adj_of_mem_edges he⟩
+
+/-- **Whitney's inequality**: the vertex connectivity of a simple graph is at most its edge
+connectivity. -/
+theorem vertexConnectivity_le_edgeConnectivity : G.vertexConnectivity ≤ G.edgeConnectivity :=
+  iSup₂_le fun _ hk ↦ isEdgeConnected_iff_le_edgeConnectivity.1 hk.isEdgeConnected
 
 end SimpleGraph
