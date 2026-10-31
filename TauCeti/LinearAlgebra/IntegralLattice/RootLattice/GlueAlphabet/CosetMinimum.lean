@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.InformationTheory.Hamming
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.CosetMinimum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.OrthogonalSum
@@ -48,7 +49,9 @@ For a glue word `w = (w_i)` of a finite family `t` of components, the coset of t
 `μ(w) = ∑ i, μ_(t i)(w_i)`, again attained (`TauCeti.DynkinType.isLeast_sum_glueMinimum`): a
 shortest vector of the word's coset is a family of shortest vectors of the label cosets, by
 `TauCeti.IntegralLattice.isLeast_form_self_pi`.  The two label-level consequences pass to words:
-half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero word.
+half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero word.  For words
+over the `A₁` alphabet `ℤ/2`, the nonzero label has shortest norm `1/2`, so `μ(w)` is half the
+Hamming weight of `w` (`sum_glueMinimum_A_one`).
 
 ## Main declarations
 
@@ -63,6 +66,8 @@ half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero
 * `TauCeti.DynkinType.quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two`:
   `q(w) = μ(w) / 2 mod ℤ`.
 * `TauCeti.DynkinType.sum_glueMinimum_eq_zero_iff`: `μ(w) = 0` exactly when `w = 0`.
+* `TauCeti.DynkinType.sum_glueMinimum_A_one`: over `A₁`, `μ(w)` is half the Hamming weight of
+  `w`.
 
 ## References
 
@@ -106,6 +111,19 @@ noncomputable def glueMinimum :
 theorem glueMinimum_A (n : ℕ) (ht : (A n).IsSimplyLaced) (a : ZMod (n + 1)) :
     (A n).glueMinimum ht a = (a.val : ℚ) * (n + 1 - a.val) / (n + 1) :=
   (rfl)
+
+/-- **The shortest norm of an `A₁` glue word is half its Hamming weight**: the nonzero label of
+the `A₁` alphabet `ℤ/2` has shortest norm `1/2`. -/
+theorem sum_glueMinimum_A_one {ι : Type*} [Fintype ι] (ht : (A 1).IsSimplyLaced)
+    (w : ι → ZMod 2) : ∑ i, (A 1).glueMinimum ht (w i) = hammingNorm w / 2 := by
+  have h (a : ZMod 2) : (A 1).glueMinimum ht a = if a = 0 then 0 else 1 / 2 := by
+    rcases (by decide : ∀ b : ZMod 2, b = 0 ∨ b = 1) a with rfl | rfl
+    · simp
+    · rw [glueMinimum_A, ZMod.val_one_eq_one_mod]
+      norm_num
+  simp only [h, hammingNorm, Finset.sum_ite, Finset.sum_const_zero, Finset.sum_const,
+    nsmul_eq_mul, zero_add]
+  ring
 
 /-- For even `n`, the labels `0`, `(1, 0)`, `(0, 1)`, `(1, 1)` of `Dₙ` have shortest norms `0`,
 `1`, `n/4`, `n/4`. -/
