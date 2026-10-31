@@ -30,10 +30,11 @@ From equivariance alone each fibre is a `G`-torsor: the action is free
 (`TauCeti.PrincipalBundle.smul_eq_smul_iff`) and transitive
 (`TauCeti.PrincipalBundle.isPretransitive`). The *division map*
 `TauCeti.PrincipalBundle.division G p q` is the unique `g` with `p • g = q`; in any equivariant
-trivialization it reads `(e p).2⁻¹ * (e q).2`. Coordinate changes between equivariant
-trivializations are left multiplications, `e.coordChange e' b g = e.coordChange e' b 1 * g`
-(`Bundle.Trivialization.coordChange_eq_mul`), so the transition functions of a principal bundle
-are the `G`-valued functions `b ↦ e.coordChange e' b 1`. Continuity of the group operations is
+trivialization whose base set contains the base point it reads `(e p).2⁻¹ * (e q).2`. Coordinate
+changes between equivariant trivializations are left multiplications,
+`e.coordChange e' b g = e.coordChange e' b 1 * g` (`Bundle.Trivialization.coordChange_eq_mul`), so
+the transition functions of a principal bundle are the `G`-valued functions
+`b ↦ e.coordChange e' b 1`. Continuity of the group operations is
 not part of the structure: assuming `ContinuousMul G`, the right action is jointly continuous on
 the total space (`Continuous.totalSpaceMk_smul`), and assuming `IsTopologicalGroup G`, the division
 map is continuous on pairs of points in a common fibre (`Continuous.division`); both are stated
@@ -180,9 +181,10 @@ theorem smul_eq_self_iff {p : P b} {g : G} : op g • p = p ↔ g = 1 := by
 variable (G) in
 /-- The division map of a principal bundle: for points `p` and `q` of the fibre over `b`, the unique
 `g : G` with `p • g = q` (`TauCeti.PrincipalBundle.smul_division`,
-`TauCeti.PrincipalBundle.division_eq_iff`). In any equivariant trivialization it reads
-`(e p).2⁻¹ * (e q).2` (`TauCeti.PrincipalBundle.division_eq_of_mem_baseSet`). The group `G` is
-explicit, since the fibres alone do not determine it. -/
+`TauCeti.PrincipalBundle.division_eq_iff`). In any equivariant trivialization whose base set
+contains `b` it reads `(e p).2⁻¹ * (e q).2`
+(`TauCeti.PrincipalBundle.division_eq_of_mem_baseSet`). The group `G` is explicit, since the fibres
+alone do not determine it. -/
 noncomputable def division (p q : P b) : G :=
   (trivializationAt G P b ⟨b, p⟩).2⁻¹ * (trivializationAt G P b ⟨b, q⟩).2
 
