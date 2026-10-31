@@ -25,9 +25,9 @@ on `Fin n → ℝ` for `n = dim E - dim F`, and is a `C^m` manifold when `f` is 
 of the level, `m ≥ 1` (`TauCeti.isManifold_regularLevel`). No Hausdorff or second-countability
 hypothesis is used, and the level may be empty. When it is nonempty, regularity forces
 `dim F ≤ dim E`, so the natural-number subtraction is exact. The model dimension is a parameter
-`n` together with a proof of `dim E - dim F = n`, so that special cases such as scalar functions
-(`TauCeti.scalarRegularLevelChartedSpace`, with model `Fin (dim E - 1) → ℝ`) can fix a
-convenient expression for it.
+`n` together with a proof of `dim E - dim F = n`, so that special cases can fix a convenient
+expression for it: for scalar functions, `F = ℝ`, users take `n = dim E - 1`, with the proof
+`by rw [finrank_self]`.
 
 The atlas is the section-zero atlas `TauCeti.sectionZeroChartedSpace` of the section `f - c` of
 the trivial bundle with fibre `F` over the self-modelled copy `TauCeti.BoundarylessModel I M`,
