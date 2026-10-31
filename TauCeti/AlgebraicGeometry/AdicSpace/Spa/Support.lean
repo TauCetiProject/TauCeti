@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 public import TauCeti.RingTheory.Huber.UnitGroup
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 
+import TauCeti.RingTheory.RingHom.FaithfullyFlat
 import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
@@ -78,9 +79,9 @@ of the maximal ideal is all the argument uses.
   all of it.
 * `TauCeti.ValuationSpectrum.isUnit_iff_forall_mem_spa_notMem_supp` : **Wedhorn Proposition
   7.52(2)**, as a criterion.
-* `TauCeti.ValuationSpectrum.faithfullyFlat_iff_flat_and_forall_mem_spa` : over a complete
-  Hausdorff Huber pair, a ring map is faithfully flat exactly when it is flat and the support of
-  every point of `Spa (A, A⁺)` is contracted from the target.
+* `TauCeti.ValuationSpectrum.faithfullyFlat_iff_flat_and_forall_mem_spa_supp_mem_range_comap` :
+  over a complete Hausdorff Huber pair, a ring map is faithfully flat exactly when it is flat and
+  the support of every point of `Spa (A, A⁺)` is contracted from the target.
 * `TauCeti.Huber.Pair.Hom.faithfullyFlat_of_surjective_spaComap` : a flat morphism of Huber pairs
   out of a complete Hausdorff pair that is surjective on adic spectra is faithfully flat.
 
@@ -216,24 +217,17 @@ theorem isUnit_iff_forall_mem_spa_notMem_supp (Aplus : Subring A)
 every point of `Spa (A, A⁺)` is contracted from a prime of `B`. Compared with
 `RingHom.FaithfullyFlat.iff_flat_and_comap_surjective`, only the supports of points of the adic
 spectrum need to be hit; these include every maximal ideal (Wedhorn, Proposition 7.51). -/
-theorem faithfullyFlat_iff_flat_and_forall_mem_spa (Aplus : Subring A)
+theorem faithfullyFlat_iff_flat_and_forall_mem_spa_supp_mem_range_comap (Aplus : Subring A)
     (hplus : IsRingOfIntegralElements Aplus) {B : Type*} [CommRing B] (φ : A →+* B) :
     φ.FaithfullyFlat ↔
       φ.Flat ∧ ∀ v ∈ spa Aplus, suppFun v ∈ Set.range (PrimeSpectrum.comap φ) := by
   refine ⟨fun h ↦ ⟨h.flat, fun v _ ↦
     (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp h).2 _⟩, fun ⟨hflat, h⟩ ↦ ?_⟩
-  algebraize [φ]
-  rw [← RingHom.algebraMap_toAlgebra φ, RingHom.faithfullyFlat_algebraMap_iff]
-  refine ⟨fun m hm ↦ ?_⟩
-  -- the maximal ideal `m` is the support of a point, hence contracted from a prime `q` of `B`
+  refine RingHom.FaithfullyFlat.of_flat_of_forall_isMaximal_mem_range_comap hflat fun m hm ↦ ?_
+  -- the maximal ideal `m` is the support of a point, hence contracted from a prime of `B`
   obtain ⟨v, hv, hvm⟩ := exists_mem_spa_supp_eq_of_isMaximal Aplus hplus m
   obtain ⟨q, hq⟩ := h v hv
-  have hmq : m = q.asIdeal.comap (algebraMap A B) := by
-    rw [← hvm, ← suppFun_asIdeal, ← hq, PrimeSpectrum.comap_asIdeal, RingHom.algebraMap_toAlgebra]
-  -- so `m B ⊆ q ≠ B`, as in Mathlib's `Module.FaithfullyFlat.of_comap_surjective`
-  rw [Ideal.smul_top_eq_map, hmq]
-  exact (Submodule.restrictScalars_eq_top_iff _ _ _).ne.mpr
-    fun htop ↦ q.isPrime.ne_top <| top_le_iff.mp <| htop ▸ Ideal.map_comap_le
+  exact ⟨q, PrimeSpectrum.ext <| by rw [hq, suppFun_asIdeal, hvm]⟩
 
 end Complete
 
@@ -253,8 +247,8 @@ variable {A B : Type*} [CommRing A] [UniformSpace A] [T2Space A] [CompleteSpace 
 over `A` and `Spa(B, B⁺) → Spa(A, A⁺)` is surjective, then `B` is faithfully flat over `A`. -/
 theorem faithfullyFlat_of_surjective_spaComap {f : Hom S T} (hflat : f.toRingHom.Flat)
     (hf : Function.Surjective f.spaComap) : f.toRingHom.FaithfullyFlat := by
-  refine (faithfullyFlat_iff_flat_and_forall_mem_spa S.plus S.isRingOfIntegralElements _).mpr
-    ⟨hflat, fun v hv ↦ ?_⟩
+  refine (faithfullyFlat_iff_flat_and_forall_mem_spa_supp_mem_range_comap S.plus
+    S.isRingOfIntegralElements _).mpr ⟨hflat, fun v hv ↦ ?_⟩
   obtain ⟨w, hw⟩ := hf ⟨v, hv⟩
   exact ⟨suppFun w.1, by rw [← suppFun_comap, ← spaComap_val, hw]⟩
 
