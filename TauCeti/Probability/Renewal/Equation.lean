@@ -65,19 +65,6 @@ noncomputable section
 open MeasureTheory Filter Set Topology
 open scoped ENNReal NNReal
 
-namespace MeasureTheory.Measure
-
-/-- The convolution of two measures on `ℝ≥0` gives `[0, t]` at most the product of their masses
-of `[0, t]`, since `s + u ≤ t` forces `s ≤ t` and `u ≤ t`. -/
-theorem conv_Iic_le (μ ν : Measure ℝ≥0) [SFinite ν] (t : ℝ≥0) :
-    (μ ∗ ν) (Iic t) ≤ μ (Iic t) * ν (Iic t) := by
-  rw [conv, map_apply measurable_add measurableSet_Iic, ← prod_prod]
-  refine measure_mono fun p hp ↦ ?_
-  simp only [mem_preimage, mem_prod, mem_Iic] at hp ⊢
-  exact ⟨le_self_add.trans hp, le_add_self.trans hp⟩
-
-end MeasureTheory.Measure
-
 namespace TauCeti.Probability
 
 variable {h g : ℝ≥0 → ℝ} {μ ν : Measure ℝ≥0} {s t T : ℝ≥0} {C : ℝ}
@@ -153,6 +140,8 @@ theorem abs_renewalConv_le (hC : ∀ s ≤ T, |h s| ≤ C) (hμ : μ (Iic T) ≠
 
 /-! ### Linearity -/
 
+/-- The convolution is additive in the function at time `t`, provided both shifted functions
+`s ↦ h₁ (t - s)` and `s ↦ h₂ (t - s)` are integrable on `[0, t]`. -/
 theorem renewalConv_add {h₁ h₂ : ℝ≥0 → ℝ}
     (hi₁ : IntegrableOn (fun s ↦ h₁ (t - s)) (Iic t) μ)
     (hi₂ : IntegrableOn (fun s ↦ h₂ (t - s)) (Iic t) μ) :
@@ -160,6 +149,8 @@ theorem renewalConv_add {h₁ h₂ : ℝ≥0 → ℝ}
   simp only [renewalConv_def, Pi.add_apply]
   exact integral_add hi₁ hi₂
 
+/-- The convolution of a difference is the difference of the convolutions at time `t`, provided
+both shifted functions `s ↦ h₁ (t - s)` and `s ↦ h₂ (t - s)` are integrable on `[0, t]`. -/
 theorem renewalConv_sub {h₁ h₂ : ℝ≥0 → ℝ}
     (hi₁ : IntegrableOn (fun s ↦ h₁ (t - s)) (Iic t) μ)
     (hi₂ : IntegrableOn (fun s ↦ h₂ (t - s)) (Iic t) μ) :
@@ -167,6 +158,8 @@ theorem renewalConv_sub {h₁ h₂ : ℝ≥0 → ℝ}
   simp only [renewalConv_def, Pi.sub_apply]
   exact integral_sub hi₁ hi₂
 
+/-- The convolution commutes with scalar multiplication of the function. No integrability is
+needed, since the Bochner integral commutes with scalar multiplication unconditionally. -/
 @[simp]
 theorem renewalConv_smul (c : ℝ) (h : ℝ≥0 → ℝ) (μ : Measure ℝ≥0) :
     renewalConv (c • h) μ = c • renewalConv h μ := by
@@ -174,11 +167,14 @@ theorem renewalConv_smul (c : ℝ) (h : ℝ≥0 → ℝ) (μ : Measure ℝ≥0) 
   simp only [renewalConv_def, Pi.smul_apply]
   exact integral_smul c _
 
+/-- The convolution commutes with negation of the function, with no integrability assumption. -/
 @[simp]
 theorem renewalConv_neg (h : ℝ≥0 → ℝ) (μ : Measure ℝ≥0) :
     renewalConv (-h) μ = -renewalConv h μ := by
   simpa using renewalConv_smul (-1) h μ
 
+/-- The convolution is additive in the measure at time `t`, provided the shifted function
+`s ↦ h (t - s)` is integrable on `[0, t]` for both measures. -/
 theorem renewalConv_add_measure (hμ : IntegrableOn (fun s ↦ h (t - s)) (Iic t) μ)
     (hν : IntegrableOn (fun s ↦ h (t - s)) (Iic t) ν) :
     renewalConv h (μ + ν) t = renewalConv h μ t + renewalConv h ν t := by
@@ -218,31 +214,19 @@ theorem renewalConv_renewalConv [SFinite μ] [SFinite ν] (hh : Measurable h)
 
 section Series
 
-/-- Each convolution power gives `[0, T]` at most the mass of the renewal measure. -/
-private theorem convolutionPower_Iic_le_renewalMeasure (μ : Measure ℝ≥0) (n : ℕ) (T : ℝ≥0) :
-    μ.convolutionPower n (Iic T) ≤ μ.renewalMeasure (Iic T) := by
-  rw [Measure.renewalMeasure_apply _ measurableSet_Iic]
-  exact ENNReal.le_tsum (f := fun n ↦ μ.convolutionPower n (Iic T)) n
-
-/-- The masses of `[0, T]` under the convolution powers are summable when the renewal measure
-gives `[0, T]` finite mass. -/
-private theorem summable_convolutionPower_real (hU : μ.renewalMeasure (Iic T) ≠ ∞) :
-    Summable fun n ↦ (μ.convolutionPower n).real (Iic T) := by
-  refine ENNReal.summable_toReal ?_
-  rwa [← Measure.renewalMeasure_apply _ measurableSet_Iic]
-
 /-- The terms of `∑ n, h ∗ F^{∗n}` are dominated, uniformly on `[0, T]`, by a summable sequence. -/
 private theorem abs_renewalConv_convolutionPower_le (hC : ∀ s ≤ T, |h s| ≤ C)
     (hU : μ.renewalMeasure (Iic T) ≠ ∞) (n : ℕ) (ht : t ≤ T) :
     |renewalConv h (μ.convolutionPower n) t| ≤ C * (μ.convolutionPower n).real (Iic T) :=
-  abs_renewalConv_le hC (ne_top_of_le_ne_top hU (convolutionPower_Iic_le_renewalMeasure μ n T)) ht
+  abs_renewalConv_le hC
+    (ne_top_of_le_ne_top hU (Measure.convolutionPower_le_renewalMeasure μ n _)) ht
 
 /-- **Absolute convergence of `∑ n, (h ∗ F^{∗n}) t`** when `h` is bounded on `[0, T]`, the
 renewal measure of `F` is finite on `[0, T]`, and `t ≤ T`. -/
 theorem summable_abs_renewalConv_convolutionPower (hC : ∀ s ≤ T, |h s| ≤ C)
     (hU : μ.renewalMeasure (Iic T) ≠ ∞) (ht : t ≤ T) :
     Summable fun n ↦ |renewalConv h (μ.convolutionPower n) t| :=
-  ((summable_convolutionPower_real hU).mul_left C).of_nonneg_of_le (fun _ ↦ abs_nonneg _)
+  ((Measure.summable_convolutionPower_real hU).mul_left C).of_nonneg_of_le (fun _ ↦ abs_nonneg _)
     fun n ↦ abs_renewalConv_convolutionPower_le hC hU n ht
 
 /-- **Uniform convergence of `∑ n, h ∗ F^{∗n}` on bounded intervals**: if `h` is bounded on
@@ -252,7 +236,7 @@ theorem tendstoUniformlyOn_sum_renewalConv_convolutionPower (hC : ∀ s ≤ T, |
     (hU : μ.renewalMeasure (Iic T) ≠ ∞) :
     TendstoUniformlyOn (fun N t ↦ ∑ n ∈ Finset.range N, renewalConv h (μ.convolutionPower n) t)
       (fun t ↦ ∑' n, renewalConv h (μ.convolutionPower n) t) atTop (Iic T) :=
-  tendstoUniformlyOn_tsum_nat ((summable_convolutionPower_real hU).mul_left C)
+  tendstoUniformlyOn_tsum_nat ((Measure.summable_convolutionPower_real hU).mul_left C)
     fun n _ ht ↦ by
       rw [Real.norm_eq_abs]
       exact abs_renewalConv_convolutionPower_le hC hU n ht
@@ -281,9 +265,8 @@ private theorem renewalMeasure_Iic_ne_top (t : ℝ≥0) : μ.renewalMeasure (Iic
   rw [← Icc_bot]
   exact measure_Icc_lt_top.ne
 
-private theorem measure_Iic_ne_top [SFinite μ] (t : ℝ≥0) : μ (Iic t) ≠ ∞ := by
-  refine ne_top_of_le_ne_top (renewalMeasure_Iic_ne_top (μ := μ) t) ?_
-  simpa only [Measure.convolutionPower_one] using convolutionPower_Iic_le_renewalMeasure μ 1 t
+private theorem measure_Iic_ne_top [SFinite μ] (t : ℝ≥0) : μ (Iic t) ≠ ∞ :=
+  ne_top_of_le_ne_top (renewalMeasure_Iic_ne_top (μ := μ) t) (Measure.le_renewalMeasure μ _)
 
 /-- `h ∗ U` is bounded on each `[0, T]` when `h` is, for a locally finite renewal measure `U`. -/
 private theorem abs_renewalConv_renewalMeasure_le (hC : ∀ s ≤ T, |h s| ≤ C) :
@@ -322,13 +305,13 @@ theorem eq_zero_of_renewalConv_eq_self [SFinite μ] {d : ℝ≥0 → ℝ} (hd : 
       obtain ⟨C, hC⟩ := hdb t
       rw [Measure.convolutionPower_succ, ← renewalConv_renewalConv hd hC
         (ne_top_of_le_ne_top (renewalMeasure_Iic_ne_top t)
-          (convolutionPower_Iic_le_renewalMeasure μ n t)) (measure_Iic_ne_top t),
+          (Measure.convolutionPower_le_renewalMeasure μ n _)) (measure_Iic_ne_top t),
         funext ih, hfix]
   -- The masses `F^{∗n} [0, t]` are summable, hence tend to zero, so `d t = 0`.
   ext t
   obtain ⟨C, hC⟩ := hdb t
   have hlim : Tendsto (fun n ↦ C * (μ.convolutionPower n).real (Iic t)) atTop (𝓝 0) := by
-    simpa using ((summable_convolutionPower_real
+    simpa using ((Measure.summable_convolutionPower_real
       (renewalMeasure_Iic_ne_top t)).tendsto_atTop_zero).const_mul C
   have hle : ∀ n, |d t| ≤ C * (μ.convolutionPower n).real (Iic t) := fun n ↦ by
     rw [← hpow n t]
