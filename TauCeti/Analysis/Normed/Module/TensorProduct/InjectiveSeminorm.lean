@@ -46,6 +46,9 @@ scalar field; it is not the classical injective norm used here.
 * `TensorProduct.injectiveSeminorm_le_projectiveSeminorm`: `ε ≤ π`.
 * `TensorProduct.injectiveSeminorm_le_iff_forall_norm_le_one`: the classical
   description of the injective seminorm over `ℝ` and `ℂ`.
+* `TensorProduct.injectiveSeminorm_le_iff_forall_norm_contractStrongDual_le`: over `ℝ` and `ℂ`,
+  the injective seminorm is the supremum of `‖contractStrongDual 𝕜 E F u f‖` over the closed unit
+  ball of the dual of `E`.
 * `TensorProduct.injectiveSeminorm_tmul` and
   `TensorProduct.projectiveSeminorm_tmul`: both seminorms are cross norms.
 * `TensorProduct.contractStrongDual_injective`: over `ℝ` and `ℂ`, a tensor is determined by the
@@ -175,6 +178,20 @@ theorem injectiveSeminorm_le_iff_forall_norm_le_one {u : E ⊗[𝕜] F} {C : ℝ
         exact h f g hf.le hg.le
     refine NormedSpace.norm_le_dual_bound 𝕜 _ hC fun g ↦ ?_
     simpa only [NormedSpace.dual_def] using ContinuousLinearMap.le_of_opNorm_le _ hev g
+
+/-- The injective seminorm is at most `C` iff the operator induced on the dual of the left factor
+maps the closed unit ball into the closed ball of radius `C`. -/
+theorem injectiveSeminorm_le_iff_forall_norm_contractStrongDual_le {u : E ⊗[𝕜] F} {C : ℝ}
+    (hC : 0 ≤ C) :
+    injectiveSeminorm 𝕜 E F u ≤ C ↔
+      ∀ f : StrongDual 𝕜 E, ‖f‖ ≤ 1 → ‖contractStrongDual 𝕜 E F u f‖ ≤ C := by
+  refine ⟨fun h f hf ↦ ?_, fun h ↦ ?_⟩
+  · calc ‖contractStrongDual 𝕜 E F u f‖ ≤ injectiveSeminorm 𝕜 E F u * ‖f‖ :=
+          norm_contractStrongDual_apply_le u f
+      _ ≤ C * 1 := by gcongr
+      _ = C := mul_one C
+  · rw [injectiveSeminorm_apply]
+    exact ContinuousLinearMap.opNorm_le_of_unit_norm hC fun f hf ↦ h f hf.le
 
 /-- The injective seminorm is a cross norm: its value on `x ⊗ₜ y` is `‖x‖ * ‖y‖`. -/
 @[simp]
