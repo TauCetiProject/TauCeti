@@ -9,7 +9,13 @@ public import Mathlib.Algebra.Algebra.Operations
 import Mathlib.Tactic.Ring
 
 /-!
-# Powers of a sum of two submodules of an algebra
+# Powers of submodules of an algebra
+
+Two facts about the powers of a submodule of an algebra.
+
+Once the powers of a submodule `M` repeat once, `M ^ (n + 1) = M ^ n`, they are constant from `n`
+on. Only the recursion `M ^ (k + 1) = M ^ k * M` is used, so this holds in a noncommutative
+algebra and in particular for one-sided ideals of a noncommutative ring.
 
 For submodules `X` and `Y` of a commutative algebra, write `V = X ⊔ Y`. A product of `i + j + 1`
 elements of `V` is a sum of products with at least `i + 1` factors from `X` or at least `j + 1`
@@ -25,6 +31,7 @@ the computation of the cohomology of the twisting sheaves on the projective line
 
 ## Main results
 
+* `Submodule.pow_eq_pow_of_pow_succ_eq_pow`: `M ^ (n + 1) = M ^ n` propagates to all `k ≥ n`.
 * `Submodule.sup_pow_add_add_one_le`: `(X ⊔ Y) ^ (i + j + 1)` is contained in
   `X ^ (i + 1) * (X ⊔ Y) ^ j ⊔ Y ^ (j + 1) * (X ⊔ Y) ^ i`.
 -/
@@ -32,6 +39,21 @@ the computation of the cohomology of the twisting sheaves on the projective line
 public section
 
 namespace Submodule
+
+section Semiring
+
+variable {R A : Type*} [Semiring R] [Semiring A] [Module R A] [IsScalarTower R A A]
+
+/-- Once the powers of a submodule repeat once, they are constant from that point on. -/
+theorem pow_eq_pow_of_pow_succ_eq_pow {M : Submodule R A} {n : ℕ} (h : M ^ (n + 1) = M ^ n)
+    {k : ℕ} (hk : n ≤ k) : M ^ k = M ^ n := by
+  induction k, hk using Nat.le_induction with
+  | base => rfl
+  | succ m _ ih => rw [Submodule.pow_succ, ih, ← Submodule.pow_succ, h]
+
+end Semiring
+
+section CommSemiring
 
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
@@ -80,5 +102,7 @@ theorem sup_pow_add_add_one_le (X Y : Submodule R A) (i j : ℕ) :
               simp only [← add_eq_sup]; ring
           _ ≤ X ^ (i + 1 + 1) * (X ⊔ Y) ^ (j + 1) ⊔ Y ^ (j + 1 + 1) * (X ⊔ Y) ^ (i + 1) := by
               rw [pow_succ' _ j]; gcongr; exact le_sup_right
+
+end CommSemiring
 
 end Submodule

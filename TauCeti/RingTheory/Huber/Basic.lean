@@ -375,7 +375,7 @@ theorem isOpen_closure_zero_of_eventually_constant_powers [IsTopologicalRing A]
   obtain ⟨n, hsucc⟩ := hstable
   have hn : ∀ k, n ≤ k →
       P.idealOfDefinition ^ k = P.idealOfDefinition ^ n :=
-    fun k hk ↦ Ideal.pow_eq_pow_of_pow_succ_eq_pow hsucc hk
+    fun k hk ↦ Submodule.pow_eq_pow_of_pow_succ_eq_pow hsucc hk
   have hclosed : IsClosed (P.idealImage n : Set A) :=
     AddSubgroup.isClosed_of_isOpen _ (P.isOpen_idealImage n)
   have hclosure_le : (Ideal.closure (⊥ : Ideal A) : Set A) ⊆ P.idealImage n := by
