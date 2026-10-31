@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Center
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
+public import TauCeti.CategoryTheory.Monoidal.Center.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 
 /-!
@@ -34,8 +34,6 @@ category.
 
 ## Main declarations
 
-* `CategoryTheory.HalfBraiding.β_tensorUnit_hom`: a half-braiding at the unit is the composite of
-  the unitors;
 * `CategoryTheory.HalfBraiding.rightDualβHom`: the components of the half-braiding induced on a
   right dual, characterized by `CategoryTheory.HalfBraiding.rightDualβHom_whiskerRight_evaluation`
   and `CategoryTheory.HalfBraiding.coevaluation_whiskerRight_whiskerLeft_rightDualβHom`, and
@@ -69,39 +67,6 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
 namespace HalfBraiding
 
 variable {X : C} (b : HalfBraiding X)
-
-/-- A half-braiding at the unit object is the composite of the unitors. -/
-theorem β_tensorUnit_hom : (b.β (𝟙_ C)).hom = (ρ_ X).hom ≫ (λ_ X).inv := by
-  have h₁ := b.naturality (λ_ (𝟙_ C)).hom
-  rw [b.monoidal] at h₁
-  -- Cancel the invertible `(b.β (𝟙_ C)).hom` on the right of `h₁`.
-  have h₂ : X ◁ (λ_ (𝟙_ C)).hom =
-      (α_ _ _ _).inv ≫ (b.β (𝟙_ C)).hom ▷ 𝟙_ C ≫ (α_ _ _ _).hom ≫ (λ_ _).hom := by
-    rw [← cancel_mono (b.β (𝟙_ C)).hom, h₁]
-    simp only [Category.assoc]
-    monoidal
-  have h₃ : ((b.β (𝟙_ C)).hom ≫ (λ_ X).hom) ▷ 𝟙_ C = (ρ_ X).hom ▷ 𝟙_ C := by
-    rw [comp_whiskerRight, ← cancel_epi (α_ _ _ _).inv]
-    calc
-      _ = ((α_ _ _ _).inv ≫ (b.β (𝟙_ C)).hom ▷ 𝟙_ C ≫ (α_ _ _ _).hom ≫ (λ_ _).hom) ≫
-            (λ_ _).inv ≫ (α_ _ _ _).inv ≫ (λ_ X).hom ▷ 𝟙_ C := by monoidal
-      _ = _ := by rw [← h₂]; monoidal
-  rw [← cancel_mono (λ_ X).hom]
-  simpa [whiskerRight_id] using congrArg (fun f ↦ (ρ_ _).inv ≫ f ≫ (ρ_ _).hom) h₃
-
-/-- The inverse of a half-braiding at a tensor product, computed from the factors. -/
-theorem monoidal_inv (U U' : C) :
-    (b.β (U ⊗ U')).inv =
-      (α_ _ _ _).hom ≫ U ◁ (b.β U').inv ≫ (α_ _ _ _).inv ≫ (b.β U).inv ▷ U' ≫
-        (α_ _ _ _).hom := by
-  apply Iso.inv_ext
-  simp [b.monoidal]
-
-/-- Naturality of the inverse of a half-braiding. -/
-@[reassoc (attr := simp)]
-theorem naturality_inv {U U' : C} (f : U ⟶ U') :
-    f ▷ X ≫ (b.β U').inv = (b.β U).inv ≫ X ◁ f := by
-  rw [Iso.comp_inv_eq, Category.assoc, b.naturality, Iso.inv_hom_id_assoc]
 
 /-- Moving `X` from the right of `U` to its left and then contracting `U ⊗ V` against the unit
 is the same as contracting first. -/
@@ -245,11 +210,9 @@ private theorem evaluation_comm (U : C) :
       rw [rightDualβHom_whiskerRight_evaluation]; monoidal
     _ = _ := by rw [Iso.hom_inv_id]; monoidal
 
-variable [LeftRigidCategory C]
-
 /-- The half-braiding induced on a right dual `X'` of `X`, at the object `U`. Its inverse is the
 mate of the inverse half-braiding at the left dual `ᘁU`. -/
-def rightDualβ (U : C) : X' ⊗ U ≅ U ⊗ X' where
+def rightDualβ (U : C) [HasLeftDual U] : X' ⊗ U ≅ U ⊗ X' where
   hom := b.rightDualβHom X' U
   inv := ExactPairing.rightMate (ExactPairing.tensor (X₁ := ᘁU) (X₂ := X) (Y₁ := U) (Y₂ := X'))
     (ExactPairing.tensor (X₁ := X) (X₂ := ᘁU) (Y₁ := X') (Y₂ := U)) (b.β ᘁU).inv
@@ -260,25 +223,28 @@ def rightDualβ (U : C) : X' ⊗ U ≅ U ⊗ X' where
     rw [b.rightDualβHom_eq_rightMate X' (U := U) (V := ᘁU), ← ExactPairing.comp_rightMate,
       Iso.hom_inv_id, ExactPairing.rightMate_id]
 
-/-- The half-braiding on a right dual `X'` of an object `X` with a half-braiding `b`: its
-component at `U` is the mate `HalfBraiding.rightDualβHom` of `(b.β U).inv`. -/
-def rightDual : HalfBraiding X' where
-  β := b.rightDualβ X'
-  monoidal U U' := b.rightDualβHom_monoidal X' U U'
-  naturality f := b.rightDualβHom_naturality X' f
-
 /-- The half-braiding of a right dual is `rightDualβHom`. -/
 @[simp]
-theorem rightDualβ_hom (U : C) : (b.rightDualβ X' U).hom = b.rightDualβHom X' U :=
+theorem rightDualβ_hom (U : C) [HasLeftDual U] :
+    (b.rightDualβ X' U).hom = b.rightDualβHom X' U :=
   (rfl)
 
 /-- The inverse of the half-braiding of a right dual at `U` is the mate of the inverse
 half-braiding at `ᘁU`. -/
-theorem rightDualβ_inv (U : C) :
+theorem rightDualβ_inv (U : C) [HasLeftDual U] :
     (b.rightDualβ X' U).inv =
       ExactPairing.rightMate (ExactPairing.tensor (X₁ := ᘁU) (X₂ := X) (Y₁ := U) (Y₂ := X'))
         (ExactPairing.tensor (X₁ := X) (X₂ := ᘁU) (Y₁ := X') (Y₂ := U)) (b.β ᘁU).inv :=
   (rfl)
+
+variable [LeftRigidCategory C]
+
+/-- The half-braiding on a right dual `X'` of an object `X` with a half-braiding `b`: its
+component at `U` is the mate `HalfBraiding.rightDualβHom` of `(b.β U).inv`. -/
+def rightDual : HalfBraiding X' where
+  β U := b.rightDualβ X' U
+  monoidal U U' := b.rightDualβHom_monoidal X' U U'
+  naturality f := b.rightDualβHom_naturality X' f
 
 /-- The components of `HalfBraiding.rightDual` are the isomorphisms `rightDualβ`. -/
 @[simp]
