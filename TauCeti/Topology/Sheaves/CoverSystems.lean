@@ -164,11 +164,8 @@ instance : IsDirectedOrder (FiniteOpenCover X) where
   directed U V := by
     let W (i : ULift.{u} (Fin U.n) × ULift.{u} (Fin V.n)) := U.opens i.1 ⊓ V.opens i.2
     have hW : ⨆ i, W i = ⊤ := by
-      apply top_unique
-      intro x _
-      obtain ⟨i, hi⟩ := U.isOpenCover.exists_mem x
-      obtain ⟨j, hj⟩ := V.isOpenCover.exists_mem x
-      exact Opens.mem_iSup.mpr ⟨(i, j), hi, hj⟩
+      dsimp [W]
+      rw [← iSup_inf_iSup, U.isOpenCover.iSup_eq_top, V.isOpenCover.iSup_eq_top, inf_top_eq]
     obtain ⟨T, ⟨e⟩⟩ := exists_iso W hW
     exact ⟨T, ⟨e.hom ≫ ⟨Prod.fst, fun _ ↦ homOfLE inf_le_left⟩⟩,
       ⟨e.hom ≫ ⟨Prod.snd, fun _ ↦ homOfLE inf_le_right⟩⟩⟩
