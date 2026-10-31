@@ -111,9 +111,6 @@ theorem dgComp_v {K L M : CochainComplex C ℤ} {a b c : ℤ} (z₁ : DGHom R a 
 
 /-- **Evaluation** of degree-`p` cochains between complexes of `R`-modules at an element `x` of
 degree `n` of the source, as an `R`-linear map to the degree-`q` part of the target. -/
--- The body is exposed so that evaluating a cochain is definitionally applying its component, as
--- the Yoneda constructions on representable modules use when they unfold their components.
-@[expose]
 noncomputable def cochainEval {K L : CochainComplex (ModuleCat.{v} R) ℤ} {n : ℤ} (x : K.X n)
     (p q : ℤ) (h : n + p = q) : DGHom R p K L →ₗ[R] L.X q where
   toFun z := ((z : Cochain K L p).v n q h).hom x
@@ -125,7 +122,7 @@ noncomputable def cochainEval {K L : CochainComplex (ModuleCat.{v} R) ℤ} {n : 
 theorem cochainEval_apply {K L : CochainComplex (ModuleCat.{v} R) ℤ} {n : ℤ} (x : K.X n)
     (p q : ℤ) (h : n + p = q) (z : DGHom R p K L) :
     cochainEval R x p q h z = ((z : Cochain K L p).v n q h).hom x :=
-  rfl
+  (rfl)
 
 end TauCeti
 

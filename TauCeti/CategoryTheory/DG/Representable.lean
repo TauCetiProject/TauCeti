@@ -190,90 +190,14 @@ theorem dgRepresentable_dgMap (X : C) {Y Z : C} {n : ℤ} (f : DGHom R n Z Y) :
 
 /-! ### Postcomposition -/
 
-/-- Postcomposition with `u` on the Hom complexes `Hom(Y, X) ⟶ Hom(Y, X')`, before these are
-regarded as the values at `Y` of the representable modules. -/
-private noncomputable def postcompCochain (Y : C) {X X' : C} (n : ℤ) :
-    DGHom R n X X' →ₗ[R] Cochain (dgHomComplex R Y X) (dgHomComplex R Y X') n where
-  toFun u := Cochain.mk fun p q hpq ↦ ModuleCat.ofHom <|
-    LinearMap.mk₂ R (fun (u : DGHom R n X X') (g : DGHom R p Y X) ↦
-        (p * n).negOnePow • dgComp R g u hpq)
-      (fun _ _ _ ↦ by rw [dgComp_add, smul_add])
-      (fun _ _ _ ↦ by rw [dgComp_smul, smul_comm])
-      (fun _ _ _ ↦ by rw [add_dgComp, smul_add])
-      (fun _ _ _ ↦ by rw [smul_dgComp, smul_comm]) u
-  map_add' u u' := by
-    refine Cochain.ext _ _ fun p q hpq ↦ ?_
-    ext g
-    simp only [Cochain.mk_v, ModuleCat.hom_ofHom, Cochain.add_v, ModuleCat.hom_add,
-      LinearMap.add_apply, LinearMap.mk₂_apply, dgComp_add, smul_add]
-  map_smul' r u := by
-    refine Cochain.ext _ _ fun p q hpq ↦ ?_
-    ext g
-    simp only [Cochain.mk_v, ModuleCat.hom_ofHom, Cochain.smul_v, ModuleCat.hom_smul,
-      LinearMap.smul_apply, LinearMap.mk₂_apply, dgComp_smul, RingHom.id_apply, smul_comm r]
-
 /-- **Postcomposition** with a morphism `u : X ⟶ X'` of degree `n`, as a degree-`n` morphism
 `Hom(Y, X) ⟶ Hom(Y, X')` of the DG category of cochain complexes between the values at `Y` of the
-representable modules of `X` and `X'`, linear in `u`.  Its component on morphisms of degree `p`
-sends `g` to the Keller-ordered composite `u ∘ g = (-1) ^ (p * n) • (g ≫ u)`
-(`TauCeti.dgPostcomp_v`). -/
+representable modules of `X` and `X'`, linear in `u`.  It is precomposition with `u` in the
+opposite DG category, so its component on morphisms of degree `p` sends `g` to the Keller-ordered
+composite `u ∘ g = (-1) ^ (p * n) • (g ≫ u)` (`TauCeti.dgPostcomp_v`). -/
 noncomputable def dgPostcomp (Y : Cᵒᵖ) {X X' : C} (n : ℤ) :
     DGHom R n X X' →ₗ[R] DGHom R n ((dgRepresentable R X).obj Y) ((dgRepresentable R X').obj Y) :=
-  postcompCochain R Y.unop n
-
-private theorem postcompCochain_v (Y : C) {X X' : C} {n : ℤ} (u : DGHom R n X X') (p q : ℤ)
-    (hpq : p + n = q) (g : DGHom R p Y X) :
-    ((postcompCochain R Y n u).v p q hpq).hom g = (p * n).negOnePow • dgComp R g u hpq :=
-  (rfl)
-
-private theorem postcompCochain_dgDifferential (Y : C) {X X' : C} {n : ℤ} (u : DGHom R n X X') :
-    postcompCochain R Y (n + 1) (dgDifferential R n u) =
-      δ n (n + 1) (postcompCochain R Y n u) := by
-  refine Cochain.ext _ _ fun p q hpq ↦ ?_
-  obtain rfl : q = p + n + 1 := by omega
-  ext g
-  rw [δ_v n (n + 1) rfl _ p (p + n + 1) hpq (p + n) (p + 1) (by omega) rfl]
-  simp only [ModuleCat.hom_add, ModuleCat.hom_comp, ModuleCat.hom_smul, LinearMap.add_apply,
-    LinearMap.comp_apply, LinearMap.smul_apply, postcompCochain_v]
-  rw [dgDifferential_negOnePow_smul_dgComp]
-  simp only [Int.negOnePow_succ, Units.neg_smul, add_neg_cancel_right]
-
-private theorem postcompCochain_dgId (Y X : C) :
-    postcompCochain R Y 0 (dgId R X) = Cochain.ofHom (𝟙 (dgHomComplex R Y X)) := by
-  refine Cochain.ext _ _ fun p q hpq ↦ ?_
-  obtain rfl : q = p := by omega
-  ext g
-  rw [Cochain.ofHom_v, postcompCochain_v, dgComp_dgId, mul_zero, Int.negOnePow_zero, one_smul,
-    HomologicalComplex.id_f, ModuleCat.id_apply]
-
-private theorem postcompCochain_dgComp (Y : C) {X X' X'' : C} {p q n : ℤ} (u : DGHom R p X X')
-    (v : DGHom R q X' X'') (h : p + q = n) :
-    postcompCochain R Y n (dgComp R u v h) =
-      (p * q).negOnePow • (postcompCochain R Y p u).comp (postcompCochain R Y q v) h := by
-  refine Cochain.ext _ _ fun r s hrs ↦ ?_
-  ext g
-  rw [Cochain.units_smul_v, Cochain.comp_v _ _ h r (r + p) s rfl (by omega)]
-  simp only [ModuleCat.hom_smul, ModuleCat.hom_comp, LinearMap.smul_apply, LinearMap.comp_apply,
-    postcompCochain_v, units_smul_dgComp, smul_smul]
-  rw [dgComp_assoc R g u v rfl h (by omega)]
-  congr 1
-  rw [← Int.negOnePow_add, ← Int.negOnePow_add, Int.negOnePow_eq_iff]
-  exact ⟨-(p * q), by subst h; ring⟩
-
-private theorem dgPrecomp_comp_postcompCochain {X X' Y Z : C} {p n m : ℤ} (f : DGHom R p Z Y)
-    (u : DGHom R n X X') (h : p + n = m) (h' : n + p = m) :
-    (dgPrecomp R X p f).comp (postcompCochain R Z n u) h =
-      (p * n).negOnePow • (postcompCochain R Y n u).comp (dgPrecomp R X' p f) h' := by
-  refine Cochain.ext _ _ fun r s hrs ↦ ?_
-  ext g
-  rw [Cochain.units_smul_v, Cochain.comp_v _ _ h r (r + p) s rfl (by omega),
-    Cochain.comp_v _ _ h' r (r + n) s rfl (by omega)]
-  simp only [ModuleCat.hom_smul, ModuleCat.hom_comp, LinearMap.smul_apply, LinearMap.comp_apply,
-    dgPrecomp_v, postcompCochain_v, dgComp_units_smul, smul_smul]
-  rw [dgComp_assoc R f g u (by omega : p + r = r + p) rfl (by omega)]
-  congr 1
-  rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
-  exact ⟨0, by ring⟩
+  dgPrecomp (C := Cᵒᵖ) R Y (Y := op X) (Z := op X') n
 
 /-- The component of postcomposition with `u` on a morphism `g` of degree `p` is the
 Keller-ordered composite `(-1) ^ (p * n) • (g ≫ u)`. -/
@@ -283,14 +207,15 @@ theorem dgPostcomp_v (Y : C) {X X' : C} {n : ℤ} (u : DGHom R n X X') (p q : �
     ((dgPostcomp R (op Y) n u : Cochain ((dgRepresentable R X).obj (op Y))
       ((dgRepresentable R X').obj (op Y)) n).v p q hpq).hom g =
       (p * n).negOnePow • dgComp R g u hpq :=
-  (rfl)
+  (dgPrecomp_v (C := Cᵒᵖ) R (op Y) (Y := op X) (Z := op X') u p q hpq g).trans <| by
+    rw [dgComp_op, mul_comm]
 
 /-- **Postcomposition commutes with the differentials**: postcomposing with `d u` is the
 differential of postcomposing with `u`, by the Leibniz rule in Keller's order. -/
 @[simp]
 theorem dgPostcomp_dgDifferential (Y : Cᵒᵖ) {X X' : C} {n : ℤ} (u : DGHom R n X X') :
     dgPostcomp R Y (n + 1) (dgDifferential R n u) = dgDifferential R n (dgPostcomp R Y n u) :=
-  (postcompCochain_dgDifferential R Y.unop u).trans
+  (dgPrecomp_dgDifferential (C := Cᵒᵖ) R Y (Y := op X) (Z := op X') u).trans
     (dgDifferential_linearHomComplex R (F := (dgRepresentable R X).obj Y)
       (G := (dgRepresentable R X').obj Y) n (dgPostcomp R Y n u)).symm
 
@@ -298,18 +223,44 @@ theorem dgPostcomp_dgDifferential (Y : Cᵒᵖ) {X X' : C} {n : ℤ} (u : DGHom 
 @[simp]
 theorem dgPostcomp_dgId (Y : Cᵒᵖ) (X : C) :
     dgPostcomp R Y 0 (dgId R X) = dgId R ((dgRepresentable R X).obj Y) :=
-  (postcompCochain_dgId R Y.unop X).trans (dgId_linearHomComplex R _).symm
+  ((congrArg (dgPrecomp (C := Cᵒᵖ) R Y 0) (dgId_op R X).symm).trans
+    (dgPrecomp_dgId (C := Cᵒᵖ) R Y (op X))).trans (dgId_linearHomComplex R _).symm
 
 /-- **Postcomposition is functorial**: postcomposing with `u ≫ v` is postcomposing with `u` and
 then with `v`. -/
 @[simp]
 theorem dgPostcomp_dgComp (Y : Cᵒᵖ) {X X' X'' : C} {p q n : ℤ} (u : DGHom R p X X')
     (v : DGHom R q X' X'') (h : p + q = n) :
-    dgPostcomp R Y n (dgComp R u v h) = dgComp R (dgPostcomp R Y p u) (dgPostcomp R Y q v) h :=
-  (postcompCochain_dgComp R Y.unop u v h).trans
-    (dgComp_linearHomComplex R (F := (dgRepresentable R X).obj Y)
-      (G := (dgRepresentable R X').obj Y) (K := (dgRepresentable R X'').obj Y)
-      (dgPostcomp R Y p u) (dgPostcomp R Y q v) h).symm
+    dgPostcomp R Y n (dgComp R u v h) = dgComp R (dgPostcomp R Y p u) (dgPostcomp R Y q v) h := by
+  -- In the opposite category `u ≫ v` is `v` followed by `u`, up to the Koszul sign which is also
+  -- the sign of composition of cochains.
+  have e := dgPrecomp_dgComp (C := Cᵒᵖ) R Y (Y := op X) (Z := op X') (W := op X'') u v
+    (by omega : q + p = n)
+  rw [dgComp_op, map_zsmul_unit] at e
+  calc dgPostcomp R Y n (dgComp R u v h)
+      = (q * p).negOnePow • ((q * p).negOnePow • dgPostcomp R Y n (dgComp R u v h)) := by
+        rw [smul_smul, Int.units_mul_self, one_smul]
+    _ = _ := by
+        rw [dgComp_linearHomComplex, mul_comm p q]
+        exact congrArg ((q * p).negOnePow • ·) e
+
+/-- Postcomposition with `u`, that is precomposition with `u` in the opposite DG category,
+commutes with precomposition with `f` up to the Koszul sign of the degrees. -/
+private theorem dgPrecomp_comp_dgPrecomp_op {X X' Y Z : C} {p n m : ℤ} (f : DGHom R p Z Y)
+    (u : DGHom R n X X') (h : p + n = m) (h' : n + p = m) :
+    (dgPrecomp R X p f).comp (dgPrecomp (C := Cᵒᵖ) R (op Z) (Y := op X) (Z := op X') n u) h =
+      (p * n).negOnePow • (dgPrecomp (C := Cᵒᵖ) R (op Y) (Y := op X) (Z := op X') n u).comp
+        (dgPrecomp R X' p f) h' := by
+  refine Cochain.ext _ _ fun r s hrs ↦ ?_
+  ext g
+  rw [Cochain.units_smul_v, Cochain.comp_v _ _ h r (r + p) s rfl (by omega),
+    Cochain.comp_v _ _ h' r (r + n) s rfl (by omega)]
+  simp only [ModuleCat.hom_smul, ModuleCat.hom_comp, LinearMap.smul_apply, LinearMap.comp_apply,
+    dgPrecomp_v, dgComp_op, dgComp_units_smul, smul_smul]
+  rw [dgComp_assoc R f g u (by omega : p + r = r + p) rfl (by omega)]
+  congr 1
+  rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+  exact ⟨0, by ring⟩
 
 /-- **Postcomposition commutes with the module action** up to the Koszul sign `(-1) ^ (p * n)` of
 the degrees: acting on `Hom(-, X)` by `f : Y ⟶ Z` of degree `p` in `Cᵒᵖ` and then postcomposing
@@ -323,9 +274,9 @@ theorem dgComp_dgMap_dgPostcomp {X X' : C} {Y Z : Cᵒᵖ} {p n m : ℤ} (f : DG
   induction Y with | op Y => ?_
   induction Z with | op Z => ?_
   simp only [dgRepresentable_dgMap]
-  -- The remaining `rfl` unfolds `dgPostcomp` to the postcomposition on Hom complexes.
+  -- The remaining `rfl` unfolds `dgPostcomp` to precomposition in the opposite DG category.
   exact congrArg ((p * n).negOnePow • ·)
-    ((dgPrecomp_comp_postcompCochain R (C := C) (Y := Y) (Z := Z) f u h h').trans
+    ((dgPrecomp_comp_dgPrecomp_op R (C := C) (Y := Y) (Z := Z) f u h h').trans
       (by rw [mul_comm p n]; rfl))
 
 /-! ### The Yoneda lemma -/
@@ -387,13 +338,15 @@ private noncomputable def yonedaHom {x : (F.obj (op X)).X 0}
   comm' p q hpq := by
     obtain rfl : q = p + 1 := hpq.symm
     ext g
-    exact (dgMap_dgDifferential_v_apply X F hx g).symm
+    exact (congrArg ((F.obj Y).d p (p + 1)).hom (cochainEval_apply R x p p (zero_add p) _)).trans
+      ((dgMap_dgDifferential_v_apply X F hx g).symm.trans
+        (cochainEval_apply R x (p + 1) (p + 1) (zero_add _) _).symm)
 
 private theorem yonedaHom_f_apply {x : (F.obj (op X)).X 0}
     (hx : ((F.obj (op X)).d 0 1).hom x = 0) (Y : Cᵒᵖ) (p : ℤ) (g : DGHom R p (op X) Y) :
     ((yonedaHom X F hx Y).f p).hom g =
       ((F.dgMap p g : Cochain (F.obj (op X)) (F.obj Y) p).v 0 p (zero_add p)).hom x :=
-  (rfl)
+  cochainEval_apply R x p p (zero_add p) (F.dgMap p g)
 
 /-- The component at `Y` of the transformation given by a closed element of degree zero, as a
 closed degree-zero morphism of the DG category of cochain complexes. -/
@@ -425,7 +378,9 @@ private theorem yonedaApp_naturality {x : (F.obj (op X)).X 0}
   simp only [mul_zero, zero_mul, Int.negOnePow_zero, one_smul, yonedaApp_v,
     ModuleCat.hom_comp, LinearMap.comp_apply, dgRepresentable_dgMap]
   -- Unfolding the two components, both sides are `F(f)(F(g)(x))`.
-  exact dgMap_dgComp_v_apply X F f g _ x r s (zero_add r) (zero_add s)
+  exact (yonedaHom_f_apply X F hx _ s _).trans
+    ((dgMap_dgComp_v_apply X F f g _ x r s (zero_add r) (zero_add s)).trans
+      (congrArg _ (yonedaHom_f_apply X F hx _ r g).symm))
 
 /-- The DG natural transformation `Hom(-, X) ⟶ F` given by a closed element of degree zero. -/
 private noncomputable def yonedaNatTrans {x : (F.obj (op X)).X 0}

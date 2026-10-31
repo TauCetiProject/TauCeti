@@ -192,7 +192,8 @@ private theorem yonedaCochainAux_v {n : ℤ} (x : (F.obj (op X)).X n) (Y : C) (p
     ((yonedaCochainAux R X F x Y).v p q hpq).hom g =
       (p * n).negOnePow • ((F.dgMap p (X := op X) (Y := op Y) g :
         Cochain (F.obj (op X)) (F.obj (op Y)) p).v n q (by omega)).hom x :=
-  (rfl)
+  congrArg ((p * n).negOnePow • ·)
+    (cochainEval_apply R x p q (by omega) (F.dgMap p (X := op X) (Y := op Y) g))
 
 private theorem dgPrecomp_comp_yonedaCochainAux {n : ℤ} (x : (F.obj (op X)).X n) {Y Z : C}
     {q m : ℤ} (f : DGHom R q Z Y) (h : q + n = m) (h' : n + q = m) :
@@ -292,7 +293,11 @@ noncomputable def dgRepresentableHomEquiv (n : ℤ) :
     induction Y with | op Y => ?_
     refine Cochain.ext _ _ fun p q hpq ↦ ?_
     refine ModuleCat.hom_ext (LinearMap.ext fun (g : DGHom R p Y X) ↦ ?_)
-    exact (yonedaCochainAux_v R X F _ Y p q hpq g).trans (dgApp_v_apply R X F η g hpq).symm
+    refine (yonedaCochainAux_v R X F _ Y p q hpq g).trans
+      (Eq.trans ?_ (dgApp_v_apply R X F η g hpq).symm)
+    exact congrArg (fun y ↦ (p * n).negOnePow • ((F.dgMap p (X := op X) (Y := op Y) g :
+      Cochain (F.obj (op X)) (F.obj (op Y)) p).v n q (by omega)).hom y)
+        (cochainEval_apply R (K := (dgRepresentable R X).obj (op X)) (dgId R X) n n (zero_add n) _)
   right_inv x := by
     have hF : (F.dgMap 0 (X := op X) (Y := op X) (dgId R X) :
         Cochain (F.obj (op X)) (F.obj (op X)) 0) = Cochain.ofHom (𝟙 _) := by
@@ -301,6 +306,7 @@ noncomputable def dgRepresentableHomEquiv (n : ℤ) :
       (zero_add n)) (DGFunctor.dgApp_dgHomEquiv_symm_apply R (F := ⟨dgRepresentable R X⟩)
         (G := ⟨F⟩) ⟨yonedaCochain R X F x,
           DGFunctor.mem_natTransSubmodule.2 (isNatural_yonedaCochain R X F x)⟩ (op X))).trans ?_
+    refine (cochainEval_apply R (dgId R X) n n (zero_add n) _).trans ?_
     refine (yonedaCochainAux_v R X F x X 0 n (zero_add n) (dgId R X)).trans ?_
     rw [hF, zero_mul, Int.negOnePow_zero, one_smul, Cochain.ofHom_v, HomologicalComplex.id_f,
       ModuleCat.id_apply]
@@ -314,7 +320,7 @@ theorem dgRepresentableHomEquiv_apply {n : ℤ}
       ((DGFunctor.dgApp R n (op X) η :
         Cochain ((dgRepresentable R X).obj (op X)) (F.obj (op X)) n).v 0 n (zero_add n)).hom
         (dgId R X) :=
-  (rfl)
+  cochainEval_apply R (K := (dgRepresentable R X).obj (op X)) (dgId R X) n n (zero_add n) _
 
 /-- The morphism `Hom(-, X) ⟶ F` given by an element `x` of `F(X)` of degree `n` sends
 `g : Y ⟶ X` of degree `p` to `(-1) ^ (p * n) • F(g)(x)`. -/
@@ -338,12 +344,14 @@ theorem dgRepresentableHomEquiv_dgDifferential {n : ℤ}
       ⟨F⟩) :
     dgRepresentableHomEquiv R X F (n + 1) (dgDifferential R n η) =
       ((F.obj (op X)).d n (n + 1)).hom (dgRepresentableHomEquiv R X F n η) :=
-  (congrArg (fun z : Cochain ((dgRepresentable R X).obj (op X)) (F.obj (op X)) (n + 1) ↦
-    (z.v 0 (n + 1) (zero_add _)).hom (dgId R X))
-      ((DGFunctor.dgApp_dgDifferential R η (op X)).trans
-        (dgDifferential_linearHomComplex R n (DGFunctor.dgApp R n (op X) η)))).trans
-    (δ_v_apply_of_d_eq_zero rfl (DGFunctor.dgApp R n (op X) η) (zero_add n) (zero_add _)
-      (dgDifferential_dgId R X))
+  (dgRepresentableHomEquiv_apply R X F _).trans <|
+    ((congrArg (fun z : Cochain ((dgRepresentable R X).obj (op X)) (F.obj (op X)) (n + 1) ↦
+      (z.v 0 (n + 1) (zero_add _)).hom (dgId R X))
+        ((DGFunctor.dgApp_dgDifferential R η (op X)).trans
+          (dgDifferential_linearHomComplex R n (DGFunctor.dgApp R n (op X) η)))).trans
+      (δ_v_apply_of_d_eq_zero rfl (DGFunctor.dgApp R n (op X) η) (zero_add n) (zero_add _)
+        (dgDifferential_dgId R X))).trans
+      (congrArg ((F.obj (op X)).d n (n + 1)).hom (dgRepresentableHomEquiv_apply R X F η).symm)
 
 /-- **The DG Yoneda lemma**: evaluation at the identity of `X` is an isomorphism from the Hom
 complex of right DG modules `Hom(Hom(-, X), F)` to the complex `F(X)`. -/
@@ -384,8 +392,10 @@ variable {C : Type v} [DGCategory R C]
 /-- The value at the identity of postcomposition with `u` is `u`. -/
 theorem dgRepresentableHomEquiv_dgPostcompHom {X X' : C} {n : ℤ} (u : DGHom R n X X') :
     dgRepresentableHomEquiv R X (dgRepresentable R X') n (dgPostcompHom R X X' n u) = u :=
-  (congrArg (fun z : Cochain ((dgRepresentable R X).obj (op X)) ((dgRepresentable R X').obj (op X))
-    n ↦ (z.v 0 n (zero_add n)).hom (dgId R X)) (dgApp_dgPostcompHom R u (op X))).trans <|
+  (dgRepresentableHomEquiv_apply R X _ _).trans <|
+    (congrArg (fun z : Cochain ((dgRepresentable R X).obj (op X))
+      ((dgRepresentable R X').obj (op X)) n ↦ (z.v 0 n (zero_add n)).hom (dgId R X))
+        (dgApp_dgPostcompHom R u (op X))).trans <|
     (dgPostcomp_v R X u 0 n (zero_add n) (dgId R X)).trans <| by
       rw [zero_mul, Int.negOnePow_zero, one_smul, dgId_dgComp]
 
