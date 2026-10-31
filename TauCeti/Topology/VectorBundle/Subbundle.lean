@@ -228,7 +228,7 @@ variable [Fintype ι]
 variable (𝕜 F X) in
 /-- The frame `X` near `y`, read in the trivialization of `E` at `y₀`, as an operator from
 coordinates to the model fibre. -/
-def trivOperator (y₀ y : B) : (ι → 𝕜) →L[𝕜] F :=
+@[expose] def trivOperator (y₀ y : B) : (ι → 𝕜) →L[𝕜] F :=
   ∑ i, (ContinuousLinearMap.proj i).smulRight (trivializationAt F E y₀ ⟨y, X i y⟩).2
 
 /-- Over the base set of the trivialization at `y₀`, the operator `trivOperator 𝕜 F X y₀ y` sends
