@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Group.Affine
 public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Basic
 
 /-!
@@ -20,10 +21,13 @@ a morphism `T ⟶ Spec_{Spec R} (Sym M~)` over `Spec R` is a module map `M~ ⟶ 
 (`relativeSpecSymmetricAlgebraHomEquiv`), that is an `R`-linear map from `M` to the global sections
 of `q_* 𝒪_T`, by the adjunction between `M ↦ M~` and global sections (`tilde.adjunction`); this is
 `relativeSpecSymmetricAlgebraTildeHomEquiv`. A morphism `T ⟶ Spec (Sym_R M)` over `Spec R` is an
-`R`-algebra map `Sym_R M → Γ(T, ⊤)`, that is an `R`-linear map `M → Γ(T, ⊤)`. Both descriptions are
-natural in `T`, so the Yoneda lemma gives the isomorphism. It pulls back the coordinate function
-`m ∈ M ⊆ Sym_R M` along a point to the value at `m` of the linear map of the point
-(`appTop_relativeSpecSymmetricAlgebraTildeIso_hom_left_ι`).
+`R`-algebra map `Sym_R M → Γ(T, ⊤)` by Mathlib's `algΓAlgSpecAdjunction`, that is an `R`-linear
+map `M → Γ(T, ⊤)`. Both descriptions are natural in `T`, so the Yoneda lemma gives the isomorphism.
+It pulls back the coordinate function `m ∈ M ⊆ Sym_R M` along a point to the value at `m` of the
+linear map of the point (`appTop_comp_relativeSpecSymmetricAlgebraTildeIso_hom_left_ι`). This
+follows the proof of `relativeSpecSymmetricAlgebraFreeIso` in
+`TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.AffineSpace`, which compares
+`Spec_X (Sym 𝒪_X^I)` with affine space in the same way.
 
 For a finitely generated projective `R`-module `P`, the dual of the vector bundle `P~` is the sheaf
 associated with the dual module of `P`, so this computes the geometric total space of `P~` as
@@ -36,6 +40,8 @@ associated with the dual module of `P`, so this computes the geometric total spa
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraTildeHomEquiv`: morphisms
   `T ⟶ Spec_{Spec R} (Sym M~)` over `Spec R` are `R`-linear maps from `M` to the global sections
   of `q_* 𝒪_T`, naturally in `T` (`relativeSpecSymmetricAlgebraTildeHomEquiv_comp`);
+* `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv`: for `q : X ⟶ Spec R`,
+  the global sections of `q_* 𝒪_X` are the global functions on `X`, as `R`-modules;
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraTildeIso`: the isomorphism
   `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)` of affine schemes over `Spec R`.
 
@@ -99,34 +105,45 @@ lemma relativeSpecSymmetricAlgebraTildeHomEquiv_comp {T' T : Over (Spec R)} (g :
 
 /-! ### The comparison with global functions -/
 
-/-- For a scheme `q : T ⟶ Spec R`, the ring `Γ(T, ⊤)` of global functions is an `R`-algebra
-through `q`. -/
-private abbrev overAlgebra (T : Over (Spec R)) : Algebra R Γ(T.left, ⊤) :=
-  (T.hom.appTop.hom.comp (algebraMap R Γ(Spec R, ⊤))).toAlgebra
-
-attribute [local instance] overAlgebra
-
-/-- The global sections of `q_* 𝒪_T`, as an `R`-module, are the global functions on `T`. -/
-private def sectionsLinearEquiv (T : Over (Spec R)) :
-    moduleSpecΓFunctor.obj ((Scheme.Modules.pushforward T.hom).obj (𝟙_ T.left.Modules)) ≃ₗ[R]
-      Γ(T.left, ⊤) where
-  toFun x := T.hom.pushforwardStructureAlgebraΓRingEquiv.symm x
-  invFun y := T.hom.pushforwardStructureAlgebraΓRingEquiv y
-  map_add' := map_add T.hom.pushforwardStructureAlgebraΓRingEquiv.symm
+/-- For a scheme `q : X ⟶ Spec R`, the global sections of `q_* 𝒪_X`, as an `R`-module, are the
+global functions on `X`, as an `R`-algebra through `q` (`AlgebraicGeometry.algΓ`). The underlying
+map is the inverse of `pushforwardStructureAlgebraΓRingEquiv`. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv {X : Scheme.{u}}
+    (q : X ⟶ Spec R) :
+    moduleSpecΓFunctor.obj ((Scheme.Modules.pushforward q).obj (𝟙_ X.Modules)) ≃ₗ[R]
+      ((algΓ R).obj (Over.mk q)).unop where
+  toFun x := q.pushforwardStructureAlgebraΓRingEquiv.symm x
+  invFun y := q.pushforwardStructureAlgebraΓRingEquiv y
+  map_add' := map_add q.pushforwardStructureAlgebraΓRingEquiv.symm
   -- `R` acts on the global sections of a module on `Spec R` through
-  -- `algebraMap R Γ(Spec R, ⊤)`, by definition of `moduleSpecΓFunctor`.
-  map_smul' r x := (T.hom.pushforwardStructureAlgebraΓRingEquiv_symm_smul
-    (algebraMap R Γ(Spec R, ⊤) r) x).trans (Algebra.smul_def r _).symm
-  left_inv := T.hom.pushforwardStructureAlgebraΓRingEquiv.apply_symm_apply
-  right_inv := T.hom.pushforwardStructureAlgebraΓRingEquiv.symm_apply_apply
+  -- `algebraMap R Γ(Spec R, ⊤)`, by definition of `moduleSpecΓFunctor`, and on `Γ(X, ⊤)` through
+  -- its pullback along `q`, by definition of `algΓ`.
+  map_smul' r x := (q.pushforwardStructureAlgebraΓRingEquiv_symm_smul
+    (algebraMap R Γ(Spec R, ⊤) r) x).trans
+      (Algebra.smul_def (A := ((algΓ R).obj (Over.mk q)).unop) r _).symm
+  left_inv := q.pushforwardStructureAlgebraΓRingEquiv.apply_symm_apply
+  right_inv := q.pushforwardStructureAlgebraΓRingEquiv.symm_apply_apply
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv_apply
+    {X : Scheme.{u}} (q : X ⟶ Spec R)
+    (x : moduleSpecΓFunctor.obj ((Scheme.Modules.pushforward q).obj (𝟙_ X.Modules))) :
+    q.pushforwardStructureAlgebraΓLinearEquiv x = q.pushforwardStructureAlgebraΓRingEquiv.symm x :=
+  (rfl)
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv_symm_apply
+    {X : Scheme.{u}} (q : X ⟶ Spec R) (y : ((algΓ R).obj (Over.mk q)).unop) :
+    q.pushforwardStructureAlgebraΓLinearEquiv.symm y = q.pushforwardStructureAlgebraΓRingEquiv y :=
+  (rfl)
 
 /-- Points of `Spec_{Spec R} (Sym M~)` over `T` are `R`-linear maps `M → Γ(T, ⊤)`. -/
 private def relativeSpecLinearEquiv (T : Over (Spec R)) :
     (T ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj
         ((relativeSpec (Spec R)).obj (op ((symmetricAlgebra (Spec R)).obj
-          (tildeEquiv.functor.obj M))))) ≃ (M →ₗ[R] Γ(T.left, ⊤)) :=
-  (relativeSpecSymmetricAlgebraTildeHomEquiv M T).trans <|
-    ModuleCat.homEquiv.trans (LinearEquiv.congrRight (sectionsLinearEquiv T)).toEquiv
+          (tildeEquiv.functor.obj M))))) ≃ (M →ₗ[R] ((algΓ R).obj T).unop) :=
+  (relativeSpecSymmetricAlgebraTildeHomEquiv M T).trans <| ModuleCat.homEquiv.trans
+    (LinearEquiv.congrRight T.hom.pushforwardStructureAlgebraΓLinearEquiv).toEquiv
 
 private lemma relativeSpecLinearEquiv_apply (T : Over (Spec R))
     (t : T ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj
@@ -170,57 +187,19 @@ lemma specSymmetricAlgebraOver_hom :
     (specSymmetricAlgebraOver R M).hom = Spec.algebraMap R (SymmetricAlgebra R M) :=
   (rfl)
 
-/-- An `R`-algebra map `Sym_R M → Γ(T, ⊤)`, as a morphism of commutative rings into the ring of
-global functions of `T`. -/
-private def toΓHom (T : Over (Spec R)) (φ : SymmetricAlgebra R M →ₐ[R] Γ(T.left, ⊤)) :
-    CommRingCat.of (SymmetricAlgebra R M) ⟶ Γ(T.left, ⊤) :=
-  CommRingCat.ofHom φ.toRingHom
-
-/-- Points of `Spec (Sym_R M)` over `T` are `R`-algebra maps `Sym_R M → Γ(T, ⊤)`. -/
-private def specAlgHomEquiv (T : Over (Spec R)) :
-    (T ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj (specSymmetricAlgebraOver R M)) ≃
-      (SymmetricAlgebra R M →ₐ[R] Γ(T.left, ⊤)) where
-  toFun t :=
-    { toRingHom := ((Scheme.ΓSpecIso (CommRingCat.of (SymmetricAlgebra R M))).inv ≫
-        t.left.appTop).hom
-      commutes' r :=
-        -- `t` lies over `Spec R`, so pulling back along `t` the image of `r` in `Sym_R M` gives
-        -- the pullback of `r` along the structure morphism of `T`.
-        (congrArg t.left.appTop
-          (ConcreteCategory.congr_hom (Scheme.ΓSpecIso_inv_naturality _) r)).trans
-          (ConcreteCategory.congr_hom
-            ((Scheme.Hom.comp_appTop _ _).symm.trans (congrArg Scheme.Hom.appTop (Over.w t))) _) }
-  invFun φ := Over.homMk
-    (ΓSpec.adjunction.homEquiv T.left (op _) (toΓHom M T φ).op)
-    (ext_to_Spec (by
-      -- Both morphisms to `Spec R` pull back `r ∈ R` to the pullback of `r` along `T ⟶ Spec R`.
-      -- The statement is restated with the structure morphism of `specSymmetricAlgebraOver R M`
-      -- unfolded, since rewriting does not see through the affine over-category.
-      have h : CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R M)) ≫
-          toΓHom M T φ =
-            (Scheme.ΓSpecIso R).inv ≫ T.hom.appTop := by
-        ext r
-        exact φ.commutes r
-      have h' : (Scheme.ΓSpecIso R).inv ≫ Scheme.Γ.map
-          (ΓSpec.adjunction.homEquiv T.left (op _) (toΓHom M T φ).op ≫
-            Spec.algebraMap R (SymmetricAlgebra R M)).op =
-          (Scheme.ΓSpecIso R).inv ≫ Scheme.Γ.map T.hom.op := by
-        rw [Scheme.Γ_map_op, Scheme.Γ_map_op, Scheme.Hom.comp_appTop]
-        exact (Category.assoc _ _ _).symm.trans <|
-          (congrArg (· ≫ _) (Scheme.ΓSpecIso_inv_naturality _).symm).trans <|
-            (Category.assoc _ _ _).trans <|
-              (congrArg (_ ≫ ·) (ΓSpecIso_inv_ΓSpec_adjunction_homEquiv _)).trans h
-      exact h'))
-  left_inv t := Over.OverMorphism.ext (ext_to_Spec
-    (ΓSpecIso_inv_ΓSpec_adjunction_homEquiv ((Scheme.ΓSpecIso _).inv ≫ t.left.appTop)))
-  right_inv φ := AlgHom.ext fun x ↦
-    ConcreteCategory.congr_hom (ΓSpecIso_inv_ΓSpec_adjunction_homEquiv (toΓHom M T φ)) x
-
-/-- Points of `Spec (Sym_R M)` over `T` are `R`-linear maps `M → Γ(T, ⊤)`. -/
+/-- Points of `Spec (Sym_R M)` over `T` are `R`-linear maps `M → Γ(T, ⊤)`: by the adjunction
+`algΓAlgSpecAdjunction` between `Γ` and `Spec` over `Spec R`, they are `R`-algebra maps
+`Sym_R M → Γ(T, ⊤)`. -/
 private def specLinearEquiv (T : Over (Spec R)) :
     (T ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj (specSymmetricAlgebraOver R M)) ≃
-      (M →ₗ[R] Γ(T.left, ⊤)) :=
-  (specAlgHomEquiv M T).trans SymmetricAlgebra.lift.symm
+      (M →ₗ[R] ((algΓ R).obj T).unop) :=
+  -- `specSymmetricAlgebraOver R M` is by definition `algSpec R` applied to `Sym_R M`.
+  ((algΓAlgSpecAdjunction R).homEquiv T (op (CommAlgCat.of R (SymmetricAlgebra R M)))).symm.trans <|
+    (opEquiv _ _).trans
+      { toFun f := SymmetricAlgebra.lift.symm f.hom
+        invFun φ := CommAlgCat.ofHom (SymmetricAlgebra.lift φ)
+        left_inv f := CommAlgCat.hom_ext (SymmetricAlgebra.lift.apply_symm_apply f.hom)
+        right_inv := SymmetricAlgebra.lift.symm_apply_apply }
 
 private lemma specLinearEquiv_apply (T : Over (Spec R))
     (t : T ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj (specSymmetricAlgebraOver R M))
