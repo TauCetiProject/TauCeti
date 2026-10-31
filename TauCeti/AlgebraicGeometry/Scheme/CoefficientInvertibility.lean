@@ -42,6 +42,16 @@ variable (X : Scheme.{u}) (n : ℕ)
 def IsInvertibleOn : Prop :=
   ∀ x : X, IsUnit (n : X.presheaf.stalk x)
 
+/-- Invertibility of an order is equivalent to its being a unit in every stalk. -/
+theorem isInvertibleOn_iff_forall_isUnit_stalk :
+    X.IsInvertibleOn n ↔ ∀ x : X, IsUnit (n : X.presheaf.stalk x) :=
+  Iff.rfl
+
+/-- An invertible order is a unit in the stalk at every point. -/
+theorem IsInvertibleOn.isUnit_stalk {X : Scheme.{u}} {n : ℕ} (h : X.IsInvertibleOn n)
+    (x : X) : IsUnit (n : X.presheaf.stalk x) :=
+  (X.isInvertibleOn_iff_forall_isUnit_stalk n).mp h x
+
 /-- Invertibility of an order is equivalent to its being a unit in global sections. -/
 theorem isInvertibleOn_iff_isUnit : X.IsInvertibleOn n ↔ IsUnit (n : Γ(X, ⊤)) := by
   constructor
@@ -138,7 +148,7 @@ noncomputable def toSpecIntLocalization (h : X.IsInvertibleOn n) :
       (by simpa using (X.isInvertibleOn_iff_isUnit n).mp h))
 
 /-- There is at most one morphism to `Spec ℤ[1/n]`. -/
-instance subsingleton_hom_spec_intLocalization :
+instance subsingleton_hom_Spec_intLocalization :
     Subsingleton (X ⟶ Spec (.of (Localization.Away (n : ULift.{u} ℤ)))) := by
   refine ⟨fun f g ↦ ext_of_isAffine ?_⟩
   rw [← cancel_epi (ΓSpecIso (.of (Localization.Away (n : ULift.{u} ℤ)))).inv]
@@ -149,7 +159,7 @@ instance subsingleton_hom_spec_intLocalization :
 
 /-- An order is invertible exactly when the scheme admits its unique structure morphism
 to `Spec ℤ[1/n]`; its composite to `Spec ℤ` is necessarily the structure morphism. -/
-theorem isInvertibleOn_iff_nonempty_hom_spec_intLocalization :
+theorem isInvertibleOn_iff_nonempty_hom_Spec_intLocalization :
     X.IsInvertibleOn n ↔
       Nonempty (X ⟶ Spec (.of (Localization.Away (n : ULift.{u} ℤ)))) := by
   constructor
