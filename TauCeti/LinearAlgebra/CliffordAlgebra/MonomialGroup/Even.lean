@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
-public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup
+public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup.Basic
 -- Non-public: `CliffordAlgebra.neZeroTwo` gives `2 ≠ 0`, which shows an even signed monomial is
 -- not also odd.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
