@@ -79,12 +79,10 @@ theorem mem_closure_pair_iff_of_tetrahedral {G : Type*} [Group G] {τ σ g : G} 
     · interval_cases a
       · exact ⟨b, hb, 0, by norm_num, Or.inl (by rw [pow_zero, one_mul, ← mul_assoc, hσ2, one_mul])⟩
       · refine ⟨2, by norm_num, (b + 2) % 3, Nat.mod_lt _ (by norm_num), Or.inr ?_⟩
-        rw [← hmod, add_comm, pow_add, pow_one,
-          show σ * (τ * σ * τ ^ b) = σ * τ * σ * τ ^ b by simp only [mul_assoc], hrel]
+        rw [← hmod, add_comm, pow_add, pow_one, ← mul_assoc, ← mul_assoc, hrel]
         simp only [mul_assoc]
       · refine ⟨1, by norm_num, (b + 1) % 3, Nat.mod_lt _ (by norm_num), Or.inr ?_⟩
-        rw [← hmod, add_comm, pow_add, pow_one,
-          show σ * (τ ^ 2 * σ * τ ^ b) = σ * τ ^ 2 * σ * τ ^ b by simp only [mul_assoc], hrel']
+        rw [← hmod, add_comm, pow_add, pow_one, ← mul_assoc, ← mul_assoc, hrel']
         simp only [mul_assoc]
   constructor
   · intro hg

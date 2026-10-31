@@ -418,8 +418,7 @@ private theorem addTwoDivSubOneAlgHom_comp_addTwoDivSubOneAlgHom (h3 : IsUnit (3
   -- applying the substitution to `x (μ - 1) = μ + 2` gives `σ(x) (x - 1) = x + 2`
   have hσx : addTwoDivSubOneAlgHom h3 x * (x - 1) = x + 2 := by
     have h := congrArg (addTwoDivSubOneAlgHom h3) hx
-    rwa [map_mul, map_sub, map_add, map_one, map_ofNat,
-      show addTwoDivSubOneAlgHom h3 m = x from addTwoDivSubOneAlgHom_mu h3] at h
+    rwa [map_mul, map_sub, map_add, map_one, map_ofNat, addTwoDivSubOneAlgHom_mu] at h
   -- and `x - 1 = 3 / (μ - 1)` is a unit with `μ (x - 1) = x + 2`
   have h3' : IsUnit (3 : LevelThreeRing R) := by
     simpa [map_ofNat] using h3.map (algebraMap R (LevelThreeRing R))
@@ -610,8 +609,10 @@ private theorem rotationSum_add_mu_mul_add_mu_sq_mul_pow_two {A B C ν : LevelTh
     (hν : rotationAut ζ (pow_three_eq_one_of_sq_add_add_one_eq_zero hζ) ν = ν)
     (hμν : mu R ^ 3 = ν) :
     rotationSum hζ ((A + mu R * B + mu R ^ 2 * C) ^ 2) = 3 * (A ^ 2 + 2 * ν * B * C) := by
-  rw [show (A + mu R * B + mu R ^ 2 * C) ^ 2 = (A ^ 2 + 2 * ν * B * C) +
-      mu R * (2 * A * B + ν * C ^ 2) + mu R ^ 2 * (B ^ 2 + 2 * A * C) by rw [← hμν]; ring]
+  have hsq : (A + mu R * B + mu R ^ 2 * C) ^ 2 = (A ^ 2 + 2 * ν * B * C) +
+      mu R * (2 * A * B + ν * C ^ 2) + mu R ^ 2 * (B ^ 2 + 2 * A * C) := by
+    rw [← hμν]; ring
+  rw [hsq]
   exact rotationSum_add_mu_mul_add_mu_sq_mul hζ (by simp [hA, hB, hC, hν, map_ofNat])
     (by simp [hA, hB, hC, hν, map_ofNat]) (by simp [hA, hB, hC, map_ofNat])
 
@@ -624,10 +625,12 @@ private theorem rotationSum_add_mu_mul_add_mu_sq_mul_pow_three {A B C ν : Level
     (hμν : mu R ^ 3 = ν) :
     rotationSum hζ ((A + mu R * B + mu R ^ 2 * C) ^ 3) =
       3 * (A ^ 3 + ν * B ^ 3 + ν ^ 2 * C ^ 3 + 6 * ν * A * B * C) := by
-  rw [show (A + mu R * B + mu R ^ 2 * C) ^ 3 =
+  have hcube : (A + mu R * B + mu R ^ 2 * C) ^ 3 =
       (A ^ 3 + ν * B ^ 3 + ν ^ 2 * C ^ 3 + 6 * ν * A * B * C) +
       mu R * (3 * A ^ 2 * B + 3 * ν * B ^ 2 * C + 3 * ν * A * C ^ 2) +
-      mu R ^ 2 * (3 * A ^ 2 * C + 3 * A * B ^ 2 + 3 * ν * B * C ^ 2) by rw [← hμν]; ring]
+      mu R ^ 2 * (3 * A ^ 2 * C + 3 * A * B ^ 2 + 3 * ν * B * C ^ 2) := by
+    rw [← hμν]; ring
+  rw [hcube]
   exact rotationSum_add_mu_mul_add_mu_sq_mul hζ (by simp [hA, hB, hC, hν, map_ofNat])
     (by simp [hA, hB, hC, hν, map_ofNat]) (by simp [hA, hB, hC, hν, map_ofNat])
 
@@ -651,9 +654,11 @@ private theorem rotationSum_addTwoDivSubOneAut_mu_pow_three_pow_mul :
   set τ := rotationAut ζ (pow_three_eq_one_of_sq_add_add_one_eq_zero hζ)
   have hx : addTwoDivSubOneAut h3 m * (m - 1) = m + 2 := addTwoDivSubOneAut_mu_mul_mu_sub_one h3
   have hν : τ (m ^ 3) = m ^ 3 := rotationAut_mu_pow_three hζ
+  -- `μ³ - 1 = (μ - 1) (μ² + μ + 1)`, so `w (μ³ - 1)³ = (μ + 2)³ (μ² + μ + 1)³`
+  have hwm : w * (m ^ 3 - 1) ^ 3 =
+      (addTwoDivSubOneAut h3 m * (m - 1)) ^ 3 * (m ^ 2 + m + 1) ^ 3 := by ring
   have hwD : w * (m ^ 3 - 1) ^ 3 = A + m * B + m ^ 2 * C := by
-    rw [show w * (m ^ 3 - 1) ^ 3 =
-      (addTwoDivSubOneAut h3 m * (m - 1)) ^ 3 * (m ^ 2 + m + 1) ^ 3 by ring, hx]
+    rw [hwm, hx]
     ring
   -- the rotation fixes every polynomial in `μ³`
   have hA : τ A = A := by
@@ -664,13 +669,13 @@ private theorem rotationSum_addTwoDivSubOneAut_mu_pow_three_pow_mul :
     simp only [C]; generalize m ^ 3 = ν at hν ⊢; simp [hν, map_ofNat]
   have hDk (k : ℕ) : τ ((m ^ 3 - 1) ^ k) = (m ^ 3 - 1) ^ k := by
     generalize m ^ 3 = ν at hν ⊢; simp [hν]
+  have hw2 : w ^ 2 * (m ^ 3 - 1) ^ 6 = (w * (m ^ 3 - 1) ^ 3) ^ 2 := by ring
+  have hw3 : w ^ 3 * (m ^ 3 - 1) ^ 9 = (w * (m ^ 3 - 1) ^ 3) ^ 3 := by ring
   refine ⟨?_, ?_, ?_⟩
   · rw [← rotationSum_mul hζ (hDk 3), hwD, rotationSum_add_mu_mul_add_mu_sq_mul hζ hA hB hC]
-  · rw [← rotationSum_mul hζ (hDk 6),
-      show w ^ 2 * (m ^ 3 - 1) ^ 6 = (w * (m ^ 3 - 1) ^ 3) ^ 2 by ring, hwD,
+  · rw [← rotationSum_mul hζ (hDk 6), hw2, hwD,
       rotationSum_add_mu_mul_add_mu_sq_mul_pow_two hζ hA hB hC hν rfl]
-  · rw [← rotationSum_mul hζ (hDk 9),
-      show w ^ 3 * (m ^ 3 - 1) ^ 9 = (w * (m ^ 3 - 1) ^ 3) ^ 3 by ring, hwD,
+  · rw [← rotationSum_mul hζ (hDk 9), hw3, hwD,
       rotationSum_add_mu_mul_add_mu_sq_mul_pow_three hζ hA hB hC hν rfl]
 
 /-- **The power sums of the orbit of `μ³`.** With `w = σ(μ)³ = ((μ + 2) / (μ - 1))³`, the four
