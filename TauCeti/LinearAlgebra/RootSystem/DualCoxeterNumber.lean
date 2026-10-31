@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
-import Mathlib.LinearAlgebra.RootSystem.Finite.Lemmas
 
 /-!
 # The dual Coxeter number
