@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.Derivative
-public import TauCeti.RingTheory.Dagger.NoetherNormalization
 public import Mathlib.RingTheory.Kaehler.Basic
 
-import TauCeti.RingTheory.Derivation.Ideal
-import TauCeti.RingTheory.Ideal.KrullIntersection
+import TauCeti.RingTheory.Dagger.Noetherian
 
 /-!
 # Universally finite differentials of overconvergent algebras
@@ -31,7 +29,9 @@ a maximal ideal `m`, has a polynomial representative, so `D` maps `W` into `m ^ 
 `k`. Since the powers of the maximal ideals separate the finite module `M`, `D = 0`. The
 polynomial representatives come from Weierstrass division in one variable at a time: modulo an
 ideal of finite codimension each variable satisfies its minimal polynomial over `K`, a polynomial
-with constant coefficients and hence distinguished at the unit radius.
+with constant coefficients and hence distinguished at the unit radius. These inputs are
+`TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial` and
+`TauCeti.Dagger.washnitzerAlgebra.derivation_ext`.
 
 ## Main definitions
 
@@ -45,10 +45,6 @@ with constant coefficients and hence distinguished at the unit radius.
 ## Main results
 
 * `TauCeti.Dagger.Omega.existsUnique_lift`: the universal property of `Omega.d`.
-* `TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial`: polynomials surject onto
-  every quotient of `W` integral over `K`.
-* `TauCeti.Dagger.washnitzerAlgebra.derivation_ext`: derivations of `W` into finite modules are
-  determined by their values on the variables.
 * `TauCeti.Dagger.Omega.washnitzerBasis_repr_d`: the coordinates of `dg` are the partial
   derivatives of `g`.
 
@@ -80,7 +76,7 @@ noncomputable def Omega.finiteKer : Submodule A Ω[A⁄K] :=
 /-- The **universally finite module of differentials** `Ω¹_{A/K}`: the quotient of the Kähler
 differentials `Ω[A⁄K]` by the intersection of all submodules with finite quotient. For a dagger
 algebra this is Grosse-Klönne's module of differentials. -/
-@[expose] def Omega : Type _ :=
+def Omega : Type _ :=
   Ω[A⁄K] ⧸ Omega.finiteKer K A
 
 namespace Omega
@@ -170,165 +166,6 @@ theorem existsUnique_lift (D : Derivation K A M) :
 end Omega
 
 end Omega
-
-namespace washnitzerAlgebra
-
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-local notation "W" σ => washnitzerAlgebra σ K
-local notation "Tate" σ => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
-
-/-- The statement of `surjective_mkₐ_comp_ofMvPolynomial` for the variables `σ`. -/
-private abbrev PolynomialsSurject (σ : Type*) : Prop :=
-  ∀ (I : Ideal (W σ)) [Algebra.IsIntegral K ((W σ) ⧸ I)],
-    Function.Surjective ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial σ K))
-
-omit [CompleteSpace K] in
-private theorem polynomialsSurject_of_equiv {σ τ : Type*} (e : σ ≃ τ)
-    (h : PolynomialsSurject (K := K) σ) : PolynomialsSurject (K := K) τ := by
-  intro I _
-  let φ := renameEquiv (R := K) e
-  let J := I.comap φ.toAlgHom
-  have : Algebra.IsIntegral K ((W σ) ⧸ J) :=
-    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I φ.toAlgHom le_rfl)
-      Ideal.quotientMap_injective
-  intro x
-  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨p, hp⟩ := h J (Ideal.Quotient.mk J (φ.symm f))
-  refine ⟨MvPolynomial.rename e p, ?_⟩
-  simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, J,
-    Ideal.mem_comap] at hp
-  refine Ideal.Quotient.eq.mpr ?_
-  simpa [φ] using hp
-
-omit [CompleteSpace K] in
-private theorem polynomialsSurject_of_isEmpty {σ : Type*} [IsEmpty σ] :
-    PolynomialsSurject (K := K) σ := by
-  intro I _ x
-  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨r, rfl⟩ := algebraMap_surjective (R := K) f
-  exact ⟨algebraMap K _ r, by simp⟩
-
-omit [CompleteSpace K] in
-/-- A nonzero polynomial with coefficients in `K`, viewed in the separated variable `Y`, is
-distinguished at the unit radius, with a unit coefficient in its distinguished degree. -/
-private theorem exists_isDistinguished_polynomialToOption_map {σ : Type*} {Q : Polynomial K}
-    (hQ : Q ≠ 0) : ∃ s : ℕ,
-      PowerSeries.IsDistinguished 1 s (restrictedOptionEquiv
-        (toTate _ K (polynomialToOption (Q.map (algebraMap K (W σ))))) : PowerSeries (Tate σ)) ∧
-      IsUnit (PowerSeries.coeff s (restrictedOptionEquiv
-        (toTate _ K (polynomialToOption (Q.map (algebraMap K (W σ))))) :
-          PowerSeries (Tate σ))) := by
-  obtain ⟨s, hs⟩ := PowerSeries.exists_isDistinguished zero_lt_one
-    (PowerSeries.isRestricted_polynomial Q) (by simpa [Polynomial.coe_eq_zero_iff] using hQ)
-  have hmap : (restrictedOptionEquiv (toTate _ K (polynomialToOption
-      (Q.map (algebraMap K (W σ))))) : PowerSeries (Tate σ)) =
-      PowerSeries.map (algebraMap K (Tate σ)) (Q : PowerSeries K) := by
-    rw [restrictedOptionEquiv_toTate_polynomialToOption, Polynomial.map_map,
-      ← Polynomial.polynomial_map_coe]
-    congr 2
-    exact (toTate σ K).comp_algebraMap
-  rw [hmap]
-  refine ⟨s, hs.map _ (norm_algebraMap_isRestrictedSubring (c := fun _ : σ ↦ (1 : ℝ))), ?_⟩
-  rw [PowerSeries.coeff_map]
-  exact (isUnit_iff_ne_zero.mpr hs.coeff_ne_zero).map _
-
-/-- The inductive step: Weierstrass division by the minimal polynomial of `Y = X none`. -/
-private theorem polynomialsSurject_option {σ : Type*} (ih : PolynomialsSurject (K := K) σ) :
-    PolynomialsSurject (K := K) (Option σ) := by
-  intro I _
-  -- The minimal polynomial `Q` of `Y` modulo `I`, evaluated at `Y`, lies in `I`.
-  set Q := minpoly K (Ideal.Quotient.mk I (X (Option σ) K none))
-  have hQ0 : Q ≠ 0 := minpoly.ne_zero (Algebra.IsIntegral.isIntegral _)
-  set ω : Polynomial (W σ) := Q.map (algebraMap K (W σ))
-  have hωI : polynomialToOption ω ∈ I := by
-    have h : polynomialToOption ω = Polynomial.aeval (X (Option σ) K none) Q := by
-      have h' : polynomialToOption.comp (Polynomial.mapRingHom (algebraMap K (W σ))) =
-          (Polynomial.aeval (X (Option σ) K none) : Polynomial K →ₐ[K] W (Option σ)).toRingHom :=
-        Polynomial.ringHom_ext (fun a ↦ by simp) (by simp)
-      exact RingHom.congr_fun h' Q
-    rw [← Ideal.Quotient.eq_zero_iff_mem, h, ← Ideal.Quotient.mkₐ_eq_mk K,
-      ← Polynomial.aeval_algHom_apply, Ideal.Quotient.mkₐ_eq_mk, minpoly.aeval]
-  obtain ⟨s, hg, hu⟩ := exists_isDistinguished_polynomialToOption_map (σ := σ) hQ0
-  -- The coefficients of a remainder have polynomial representatives modulo `I ∩ W`.
-  let J : Ideal (W σ) := I.comap (optionC (σ := σ) (R := K))
-  have : Algebra.IsIntegral K ((W σ) ⧸ J) :=
-    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I optionC le_rfl)
-      Ideal.quotientMap_injective
-  let S := ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial (Option σ) K)).range
-  have hC (a : W σ) : Ideal.Quotient.mk I (optionC a) ∈ S := by
-    obtain ⟨p, hp⟩ := ih J (Ideal.Quotient.mk J a)
-    refine ⟨MvPolynomial.rename some p, ?_⟩
-    simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, J,
-      Ideal.mem_comap] at hp
-    refine Ideal.Quotient.eq.mpr ?_
-    rwa [map_sub, optionC_ofMvPolynomial] at hp
-  have hY : Ideal.Quotient.mk I (X (Option σ) K none) ∈ S := ⟨MvPolynomial.X none, by simp⟩
-  let ψ : Polynomial (W σ) →+* (W (Option σ)) ⧸ I :=
-    (Ideal.Quotient.mk I).comp polynomialToOption
-  have hr (r : Polynomial (W σ)) : ψ r ∈ S := by
-    induction r using Polynomial.induction_on' with
-    | add p q hp hq => rw [ψ.map_add]; exact S.add_mem hp hq
-    | monomial n a =>
-      rw [← Polynomial.C_mul_X_pow_eq_monomial, ψ.map_mul, ψ.map_pow]
-      simp only [ψ, RingHom.comp_apply, polynomialToOption_C, polynomialToOption_X]
-      exact S.mul_mem (hC a) (S.pow_mem hY n)
-  intro x
-  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨q, r, -, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
-  have hf : f = q * polynomialToOption ω + polynomialToOption r :=
-    optionSeries_injective (by
-      rw [map_add, map_mul, optionSeries_polynomialToOption r]
-      exact hqr.symm)
-  have hfr : Ideal.Quotient.mk I f = ψ r := by
-    rw [hf, (Ideal.Quotient.mk I).map_add, (Ideal.Quotient.mk I).map_mul,
-      Ideal.Quotient.eq_zero_iff_mem.mpr hωI, mul_zero, zero_add]
-    rfl
-  exact hfr ▸ (AlgHom.mem_range _).mp (hr r)
-
-/-- **Polynomials surject onto integral quotients.** If a quotient of the Monsky–Washnitzer
-algebra in finitely many variables is integral over `K`, for instance finite-dimensional, then
-every class has a polynomial representative. -/
-theorem surjective_mkₐ_comp_ofMvPolynomial {σ : Type*} [Finite σ] (I : Ideal (W σ))
-    [Algebra.IsIntegral K ((W σ) ⧸ I)] :
-    Function.Surjective ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial σ K)) :=
-  Finite.induction_empty_option (P := PolynomialsSurject (K := K))
-    polynomialsSurject_of_equiv polynomialsSurject_of_isEmpty polynomialsSurject_option σ I
-
-/-- **Derivations into finite modules are determined by the variables.** Two `K`-derivations of
-the Monsky–Washnitzer algebra in finitely many variables into a finite module are equal as soon as
-they agree on the variables. -/
-theorem derivation_ext {σ : Type*} [Finite σ] {M : Type*} [AddCommGroup M] [Module (W σ) M]
-    [Module K M] [Module.Finite (W σ) M]
-    {D₁ D₂ : Derivation K (W σ) M} (h : ∀ i, D₁ (X σ K i) = D₂ (X σ K i)) : D₁ = D₂ := by
-  rw [← sub_eq_zero]
-  set D := D₁ - D₂
-  have hX (i : σ) : D (X σ K i) = 0 := by simp [D, h]
-  have hpoly (p : MvPolynomial σ K) : D (ofMvPolynomial σ K p) = 0 := by
-    induction p using MvPolynomial.induction_on with
-    | C a => simp [← MvPolynomial.algebraMap_eq]
-    | add p q hp hq => simp [hp, hq]
-    | mul_X p i hp => simp [Derivation.leibniz, hp, hX]
-  ext g
-  -- `D g` lies in `m ^ n M` for every maximal ideal `m` and every `n`.
-  have hmem (m : Ideal (W σ)) (hm : m.IsMaximal) (n : ℕ) :
-      D g ∈ m ^ n • (⊤ : Submodule (W σ) M) := by
-    have : (m ^ (n + 1)).radical.IsMaximal := by
-      rwa [Ideal.radical_pow m n.succ_ne_zero, hm.isPrime.radical]
-    have : Module.Finite K ((W σ) ⧸ m ^ (n + 1)) :=
-      finite_quotient_of_isMaximal_radical (AlgHom.Finite.id K (W σ)) _
-    obtain ⟨p, hp⟩ := surjective_mkₐ_comp_ofMvPolynomial (m ^ (n + 1)) (Ideal.Quotient.mk _ g)
-    have hgp : g - ofMvPolynomial σ K p ∈ m ^ (n + 1) := Ideal.Quotient.eq.mp hp.symm
-    simpa [hpoly] using D.apply_mem_pow_smul_top_of_mem_pow_succ hgp
-  -- Powers of the maximal ideals separate the finite module `M`.
-  have hg : D g ∈ (⨅ (m : Ideal (W σ)) (_ : m.IsMaximal) (n : ℕ) (_ : 0 < n),
-      m ^ n • ⊤ : Submodule (W σ) M) := by
-    simp only [Submodule.mem_iInf]
-    exact fun m hm n _ ↦ hmem m hm n
-  rw [Ideal.iInf_isMaximal_pow_smul_eq_bot, Submodule.mem_bot] at hg
-  simpa using hg
-
-end washnitzerAlgebra
 
 namespace Omega
 
