@@ -54,8 +54,8 @@ noncomputable def geometricCharacterMap {H K : _root_.CommHopfAlgCat.{u} k} (f :
     geometricCharacterGroup H →* geometricCharacterGroup K :=
   (baseChangeMap (K := AlgebraicClosure k) f).hom.mapGroupLike
 
-/-- The geometric character map is the group-like map of the base-changed morphism. -/
-theorem geometricCharacterMap_eq_groupLikeMap {H K : _root_.CommHopfAlgCat.{u} k}
+/-- The geometric character map is `BialgHom.mapGroupLike` of the base-changed morphism. -/
+theorem geometricCharacterMap_eq_mapGroupLike {H K : _root_.CommHopfAlgCat.{u} k}
     (f : H ⟶ K) :
     geometricCharacterMap f =
       (baseChangeMap (K := AlgebraicClosure k) f).hom.mapGroupLike :=
@@ -76,7 +76,7 @@ theorem geometricCharacterMap_smul {H K : _root_.CommHopfAlgCat.{u} k} (f : H �
     (sigma : Field.absoluteGaloisGroup k) (x : geometricCharacterGroup H) :
     geometricCharacterMap f (sigma • x) = sigma • geometricCharacterMap f x :=
   -- Expose the algebra equivalence behind Mathlib's opaque absolute-Galois-group wrapper.
-  ScalarAut.groupLikeMap_smul f.hom
+  f.hom.mapGroupLike_baseChangeMap_smul
     (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from sigma) x
 
 /-- Mapping geometric characters along an identity morphism is the identity. -/
