@@ -88,6 +88,12 @@ degree zero is `1` and contributes nothing to a monomial. -/
 noncomputable def loweringMonomial (l : List (ι × ℕ)) : U :=
   (l.map fun p => dividedPower (p.2 + 1) (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.f p.1))).prod
 
+theorem loweringMonomial_def (l : List (ι × ℕ)) :
+    b.loweringMonomial l =
+      (l.map fun p => dividedPower (p.2 + 1)
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.f p.1))).prod :=
+  (rfl)
+
 @[simp]
 theorem loweringMonomial_nil : b.loweringMonomial [] = 1 := (rfl)
 
@@ -96,6 +102,11 @@ theorem loweringMonomial_cons (p : ι × ℕ) (l : List (ι × ℕ)) :
     b.loweringMonomial (p :: l) =
       dividedPower (p.2 + 1) (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.f p.1)) *
         b.loweringMonomial l := by
+  simp [loweringMonomial]
+
+@[simp]
+theorem loweringMonomial_append (l₁ l₂ : List (ι × ℕ)) :
+    b.loweringMonomial (l₁ ++ l₂) = b.loweringMonomial l₁ * b.loweringMonomial l₂ := by
   simp [loweringMonomial]
 
 /-- Every lowering monomial lies in the Kostant form of the basis. -/
