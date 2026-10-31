@@ -18,12 +18,6 @@ Let `A` be a perfect ring of exponential characteristic `p`, let `K` be a flat `
 `K → L` be a perfect closure of `K` in the sense of Mathlib's `IsPerfectClosure`, for instance
 Mathlib's colimit perfection `PerfectClosure K p`. Then `L` is flat over `A`.
 
-The proof uses the equational criterion for flatness. A relation `∑ fⱼ zⱼ = 0` in `L` becomes,
-after raising it to a power `p ^ N`, a relation `∑ fⱼ ^ p ^ N yⱼ = 0` in `K` with
-`zⱼ ^ p ^ N` the image of `yⱼ`, since the kernel of `K → L` consists of `p`-nilpotent elements.
-Flatness of `K` makes this relation trivial, and the `p ^ N`-th roots, which exist in `A` and in
-`L`, of the coefficients and generators of that trivialization trivialize the original relation.
-
 The main example is the perfect polynomial algebra `A[X_s ^ (1 / p ^ ∞) : s ∈ σ]`, the perfection
 `PerfectClosure (MvPolynomial σ A) p`, which is therefore flat over `A`. Every map of perfect
 rings `A → B` factors through the perfect polynomial algebra on the elements of `B`, followed by a
@@ -84,6 +78,11 @@ include p in
 exponential characteristic `p`, `K` is a flat `A`-algebra and `K → L` is a perfect closure of `K`,
 then `L` is a flat `A`-module. -/
 theorem of_isPerfectClosure [Module.Flat A K] : Module.Flat A L := by
+  -- We use the equational criterion for flatness. A relation `∑ fⱼ zⱼ = 0` in `L` becomes, after
+  -- raising it to a power `p ^ N`, a relation `∑ fⱼ ^ p ^ N yⱼ = 0` in `K` with `zⱼ ^ p ^ N` the
+  -- image of `yⱼ`, since the kernel of `K → L` consists of `p`-nilpotent elements. Flatness of
+  -- `K` makes this relation trivial, and the `p ^ N`-th roots, which exist in `A` and in `L`, of
+  -- the coefficients and generators of that trivialization trivialize the original relation.
   refine of_forall_isTrivialRelation fun {l f z} hfz ↦ ?_
   obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem_of_finite (algebraMap K L) p z
   -- The `p ^ n`-th power of the relation is the image of `∑ fⱼ ^ p ^ n • yⱼ`, which is therefore
