@@ -33,6 +33,8 @@ identifies it with `A`. This is the system of local coefficients of the bundle `
   fundamental groupoid of the base.
 * `IsQuotientCoveringMap.associatedLocalSystem`: the local coefficient system associated to a
   representation.
+* `IsQuotientCoveringMap.associatedLocalSystemMap`: the morphism of associated local systems
+  induced by a morphism of representations.
 
 ## References
 
@@ -148,5 +150,36 @@ theorem associatedLocalSystem_map_coinvariantsTensorMk {x y : FundamentalGroupoi
       Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k y.as)) a
         (Finsupp.lmapDomain k k (hG.isCoveringMap.monodromy γ) v) :=
   (rfl)
+
+variable {A} {A' A'' : Rep.{u} k G}
+
+/-- The morphism of associated local coefficient systems induced by a morphism of
+representations `f : A ⟶ A'`: on the fibre over `x` it is the map `(A ⊗ k[p⁻¹ x])_G ⟶
+(A' ⊗ k[p⁻¹ x])_G` induced by `f`. -/
+def associatedLocalSystemMap (f : A ⟶ A') :
+    hG.associatedLocalSystem k A ⟶ hG.associatedLocalSystem k A' :=
+  Functor.whiskerLeft (hG.permutationRepFunctor k) ((Rep.coinvariantsTensor k G).map f)
+
+/-- The morphism of associated local systems induced by `f` sends the class of `a ⊗ v` to the
+class of `f a ⊗ v`. -/
+-- Not a simp lemma: `simp` unfolds `Rep.coinvariantsTensorMk` on the left-hand side first.
+theorem associatedLocalSystemMap_app_coinvariantsTensorMk (f : A ⟶ A')
+    (x : FundamentalGroupoid B) (a : A) (v : p ⁻¹' {x.as} →₀ k) :
+    ((hG.associatedLocalSystemMap k f).app x).hom
+        (Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k x.as)) a v) =
+      Rep.coinvariantsTensorMk A' (Rep.of (hG.fiberRepresentation k x.as)) (f.hom a) v :=
+  (rfl)
+
+/-- The identity of a representation induces the identity of its associated local system. -/
+@[simp]
+theorem associatedLocalSystemMap_id : hG.associatedLocalSystemMap k (𝟙 A) = 𝟙 _ :=
+  NatTrans.ext <| funext fun _ ↦ NatTrans.congr_app ((Rep.coinvariantsTensor k G).map_id A) _
+
+/-- The morphism of associated local systems induced by a composite is the composite. -/
+@[simp, reassoc]
+theorem associatedLocalSystemMap_comp (f : A ⟶ A') (f' : A' ⟶ A'') :
+    hG.associatedLocalSystemMap k (f ≫ f') =
+      hG.associatedLocalSystemMap k f ≫ hG.associatedLocalSystemMap k f' :=
+  NatTrans.ext <| funext fun _ ↦ NatTrans.congr_app ((Rep.coinvariantsTensor k G).map_comp f f') _
 
 end IsQuotientCoveringMap

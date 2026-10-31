@@ -15,7 +15,8 @@ public import Mathlib.Topology.IsLocalHomeomorph
 For a continuous action of a topological group `G` on `X`, equip the objects and total arrows of
 Mathlib's native `CategoryTheory.ActionCategory G X` with the topologies transported from `X`
 and `G × X`. The arrow coordinates record the label and source, including labels acting
-trivially. Source, target, unit, inversion and composition are continuous with these topologies.
+trivially. Source, target, unit, inversion and composition are continuous with these topologies,
+and both spaces are Hausdorff and second countable when the labels and points are.
 
 The source-target map is proper precisely when the action is proper. For a discrete group,
 each fixed-label slice is an open bisection: source and target are local homeomorphisms. Thus
@@ -63,6 +64,15 @@ theorem objectHomeomorph_apply (x : ActionCategory G X) :
 theorem objectHomeomorph_symm_apply (x : X) :
     (objectHomeomorph G X).symm x = objEquiv G X x := (rfl)
 
+/-- The objects of the action category of a Hausdorff space are Hausdorff. -/
+instance instT2SpaceObjects [T2Space X] : T2Space (ActionCategory G X) :=
+  (objectHomeomorph G X).symm.t2Space
+
+/-- The objects of the action category of a second-countable space are second countable. -/
+instance instSecondCountableTopologyObjects [SecondCountableTopology X] :
+    SecondCountableTopology (ActionCategory G X) :=
+  (objectHomeomorph G X).isInducing.secondCountableTopology
+
 variable [TopologicalSpace G]
 
 /-- The total-arrow topology of the native action category, transported from label-source pairs. -/
@@ -83,6 +93,17 @@ theorem arrowHomeomorph_apply (f : Quiver.Total (ActionCategory G X)) :
 @[simp]
 theorem arrowHomeomorph_symm_apply (p : G × X) :
     (arrowHomeomorph G X).symm p = (totalEquiv G X).symm p := (rfl)
+
+/-- The total arrows of the action category are Hausdorff when the labels and points are. -/
+instance instT2SpaceArrows [T2Space G] [T2Space X] :
+    T2Space (Quiver.Total (ActionCategory G X)) :=
+  (arrowHomeomorph G X).symm.t2Space
+
+/-- The total arrows of the action category are second countable when the labels and points are;
+for a discrete monoid this means that it is countable. -/
+instance instSecondCountableTopologyArrows [SecondCountableTopology G]
+    [SecondCountableTopology X] : SecondCountableTopology (Quiver.Total (ActionCategory G X)) :=
+  (arrowHomeomorph G X).isInducing.secondCountableTopology
 
 /-- The source of the action groupoid is continuous. -/
 @[fun_prop]

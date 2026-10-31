@@ -152,7 +152,7 @@ theorem cosetBasis_apply (q : H ⧸ K) :
   classical
   simp only [cosetBasis, Module.Basis.coe_ofEquivFun, cosetEquiv_symm_apply]
   rw [finsum_eq_single _ q fun p hp => by rw [Pi.single_eq_of_ne hp, map_zero, mul_zero],
-    Pi.single_eq_same, map_one, mul_one]
+    Pi.single_eq_same, _root_.map_one, mul_one]
 
 /-- The coordinate of a series `a` at the coset `q` in `cosetBasis` has coefficient
 `a.coeff (s q + k)` at `k`. -/

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.Linearization
-public import TauCeti.Analysis.InnerProductSpace.Spectrum
+public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 -- Private: used only to turn the finite-dimensional algebraic splitting into a continuous
 -- projection; the public API exposes the resulting continuous linear map.
 import Mathlib.Analysis.Normed.Module.Complemented
@@ -44,6 +44,10 @@ remainder of the negative-gradient field, supplied by
 * `ContDiffAt.finrank_unstableLinearSubspace`: the unstable dimension is the Morse index.
 * `ContDiffAt.finrank_stableLinearSubspace_add_morseIndex`: the stable dimension plus the Morse
   index is the ambient dimension.
+* `ContDiffAt.unstableLinearSubspace_eq_pointSpectralSubspace`,
+  `ContDiffAt.stableLinearSubspace_eq_pointSpectralSubspace` and
+  `ContDiffAt.morseIndex_eq_finrank_pointSpectralSubspace`: the same subspaces and index read off
+  the point-spectral subspaces `Module.End.pointSpectralSubspace` of the Hessian.
 * `TauCeti.IsNondegenerateCriticalPoint.isCompl_unstableLinearSubspace_stableLinearSubspace` and
   `TauCeti.IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex`: the same two
   results stated for a nondegenerate critical point, which supplies the Hessian injectivity.
@@ -189,6 +193,36 @@ theorem finrank_unstableLinearSubspace (hf : ContDiffAt ℝ 2 f x) :
   rw [unstableLinearSubspace,
     hf.isSelfAdjoint_hessianOperator.isSymmetric.finrank_negativeSpectralSubspace,
     hf.morseIndex_eq_ncard_hessianOperator_eigenvalues_neg]
+
+/-- The unstable linear subspace is the point-spectral subspace of the Hessian for the negative
+eigenvalues. -/
+theorem unstableLinearSubspace_eq_pointSpectralSubspace (hf : ContDiffAt ℝ 2 f x) :
+    hf.unstableLinearSubspace =
+      Module.End.pointSpectralSubspace (hessianOperator f x : E →ₗ[ℝ] E) (Iio 0) := by
+  ext v
+  rw [mem_unstableLinearSubspace_iff,
+    hf.isSelfAdjoint_hessianOperator.isSymmetric.pointSpectralSubspace_eq_eigenvectorSpan rfl,
+    LinearMap.IsSymmetric.mem_eigenvectorSpan_iff]
+  simp only [mem_Iio, subset_def, Finset.mem_coe, mem_ofPred_eq]
+
+/-- The stable linear subspace is the point-spectral subspace of the Hessian for the positive
+eigenvalues. -/
+theorem stableLinearSubspace_eq_pointSpectralSubspace (hf : ContDiffAt ℝ 2 f x) :
+    hf.stableLinearSubspace =
+      Module.End.pointSpectralSubspace (hessianOperator f x : E →ₗ[ℝ] E) (Ioi 0) := by
+  ext v
+  rw [mem_stableLinearSubspace_iff,
+    hf.isSelfAdjoint_hessianOperator.isSymmetric.pointSpectralSubspace_eq_eigenvectorSpan rfl,
+    LinearMap.IsSymmetric.mem_eigenvectorSpan_iff]
+  simp only [mem_Ioi, subset_def, Finset.mem_coe, mem_ofPred_eq]
+
+/-- The Morse index at a `C²` point is the dimension of the point-spectral subspace of the
+Hessian for the negative eigenvalues. -/
+theorem morseIndex_eq_finrank_pointSpectralSubspace (hf : ContDiffAt ℝ 2 f x) :
+    morseIndex f x =
+      Module.finrank ℝ
+        (Module.End.pointSpectralSubspace (hessianOperator f x : E →ₗ[ℝ] E) (Iio 0)) := by
+  rw [← hf.unstableLinearSubspace_eq_pointSpectralSubspace, hf.finrank_unstableLinearSubspace]
 
 /-- When the Hessian is injective, the unstable and stable linear subspaces are complementary,
 so the tangent space is their direct sum. Injectivity excludes the zero eigenspace; at a

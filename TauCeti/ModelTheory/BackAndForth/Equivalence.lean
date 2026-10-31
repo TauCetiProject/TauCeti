@@ -26,11 +26,15 @@ compares all atomic formulas.
 The recursion follows Cameron Freer's `cameronfreer/infinitary-logic`,
 `InfinitaryLogic/Scott/BackAndForth.lean`. Here the ordinal universe is independent of the
 universes of the structures.
+
+For a family of structures `M i`, `i : ι`, `bfTupleSetoid L M α n` packages equivalence at depth
+`α` as an equivalence relation on the pointed tuples `⟨i, a⟩` with `a : Fin n → M i`, comparing
+tuples across all members of the family.
 -/
 
 public section
 
-universe u v w w' w'' o
+universe u v w w' w'' o x
 
 namespace TauCeti
 
@@ -196,6 +200,35 @@ theorem _root_.FirstOrder.Language.Equiv.bfEquiv (e : M ≃[L] N) (α : Ordinal.
     · simpa only [Fin.comp_snoc] using ih (snoc a x)
     · simpa only [Fin.comp_snoc, e.apply_symm_apply] using ih (snoc a (e.symm y))
   | limit α hα ih => exact (BFEquiv.limit hα a _).mpr fun β hβ => ih β hβ a
+
+/-! ## Equivalence of pointed tuples of a family -/
+
+section Family
+
+variable {ι : Type x} {M : ι → Type w} [∀ i, L.Structure (M i)]
+
+variable (L M) in
+/-- Back-and-forth equivalence at depth `α` of pointed `n`-tuples of the family `M`: the pointed
+tuples `⟨i, a⟩` and `⟨j, b⟩` are related when `a` in `M i` and `b` in `M j` are back-and-forth
+equivalent at depth `α`. -/
+def bfTupleSetoid (α : Ordinal.{o}) (n : ℕ) : Setoid (Σ i, Fin n → M i) where
+  r x y := BFEquiv (L := L) α n x.2 y.2
+  iseqv := ⟨fun x => BFEquiv.refl α x.2, BFEquiv.symm, BFEquiv.trans⟩
+
+variable {α : Ordinal.{o}} {n : ℕ}
+
+/-- Two pointed tuples are related at depth `α` exactly when their tuples are back-and-forth
+equivalent at depth `α`. -/
+@[simp]
+theorem bfTupleSetoid_apply {x y : Σ i, Fin n → M i} :
+    bfTupleSetoid L M α n x y ↔ BFEquiv (L := L) α n x.2 y.2 :=
+  Iff.rfl
+
+/-- The levels decrease as the depth grows. -/
+theorem bfTupleSetoid_anti (n : ℕ) : Antitone (bfTupleSetoid L M · n : Ordinal.{o} → _) :=
+  fun _ _ hαβ _ _ h => BFEquiv.mono h hαβ
+
+end Family
 
 /-! ## Empty-structure regression examples -/
 

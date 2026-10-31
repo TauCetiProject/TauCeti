@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
+public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
@@ -18,7 +19,8 @@ This file records how the coproduct inclusion associated to a simplex behaves un
 of coefficient objects, and how the degreewise components of the chain maps induced by maps of
 simplicial sets compose with each other and with changes of coefficients.  It also records that
 simplicial chain modules with semisimple coefficients are semisimple, and those with projective
-coefficients are projective.
+coefficients are projective, both as modules and, for coefficients in any preadditive category
+with coproducts, as objects of that category.
 -/
 
 public section
@@ -87,5 +89,20 @@ instance projective_chainComplex_X {k : Type*} [Ring k] (X : SSet.{w})
   classical
   -- `Cₙ(X; M)` is by definition the coproduct of copies of `M` indexed by the `n`-simplices.
   exact .of_equiv' (ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ M).toLinearEquiv.symm
+
+/-- The simplicial chains `Cₙ(X; R) = ∐ R` with coefficients in a projective object `R` of a
+preadditive category with coproducts are projective. -/
+instance projective_chainComplex_X_of_projective {C : Type u} [Category.{v} C]
+    [HasCoproducts.{w} C] [Preadditive C] (X : SSet.{w}) (R : C) [Projective R] (n : ℕ) :
+    Projective ((X.chainComplex R).X n) where
+  factors {E _} f e _ := by
+    let g : (X.chainComplex R).X n ⟶ E := Cofan.IsColimit.desc (X.isColimitChainComplexXCofan R n)
+      fun x ↦ Projective.factorThru (X.ιChainComplex x ≫ f) e
+    refine ⟨g, X.chainComplex_hom_ext fun x ↦ ?_⟩
+    -- The cofan defining the chains has the summand inclusions `X.ιChainComplex x` as its
+    -- injections, so `Cofan.IsColimit.fac` computes `g` on each summand.
+    have hg : X.ιChainComplex x ≫ g = Projective.factorThru (X.ιChainComplex x ≫ f) e :=
+      Cofan.IsColimit.fac _ _ x
+    rw [reassoc_of% hg, Projective.factorThru_comp]
 
 end SSet

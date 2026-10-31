@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Contractible
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Cohomology.GroupCohomology
 
 /-!
@@ -31,6 +32,12 @@ The isomorphism is natural in the coefficients: a linear map `f : M →ₗ[k] N`
 the two isomorphisms intertwine these maps
 (`TauCeti.classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality`).
 
+It is also natural in the group: for every `φ : G →* H`, the map `Hⁿ(BH; M) ⟶ Hⁿ(BG; M)` induced
+by the strictly functorial map `MonoidHom.classifyingSpaceMap φ` is Mathlib's change-of-group map
+`groupCohomology.map φ`, with the identity on the trivial coefficients `M`
+(`MonoidHom.classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality`). No hypothesis on
+`φ` is needed.
+
 ## Main definitions
 
 * `TauCeti.classifyingSpaceSingularCohomologyIsoGroupCohomology`: the isomorphism
@@ -40,10 +47,12 @@ the two isomorphisms intertwine these maps
 
 * `TauCeti.classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality`: the isomorphism is
   natural in the coefficients.
+* `MonoidHom.classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality`: the isomorphism
+  is natural in the group.
 
 ## References
 
-* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4.
+* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4 and Section III.8.
 * J. Milnor, *Construction of universal bundles, II*, Ann. of Math. 63 (1956), 430--436.
 -/
 
@@ -93,3 +102,37 @@ theorem classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality (f :
     (isQuotientCoveringMap_classifyingSpaceProj G) k M f n
 
 end TauCeti
+
+namespace MonoidHom
+
+open TauCeti
+
+universe u
+
+variable {G H : Type u} [Group G] [Group H]
+
+/-- **The singular cohomology of the classifying space is naturally group cohomology.** For every
+group homomorphism `φ : G →* H`, the identifications `Hⁿ(BH; M) ≅ Hⁿ(H, M)` and
+`Hⁿ(BG; M) ≅ Hⁿ(G, M)` carry the map on singular cohomology induced by
+`MonoidHom.classifyingSpaceMap φ` to Mathlib's change-of-group map `groupCohomology.map φ`, with
+the identity on the trivial coefficients `M`. -/
+@[reassoc]
+theorem classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality (φ : G →* H)
+    (k : Type u) [CommRing k] (M : Type u) [AddCommGroup M] [Module k M] (n : ℕ) :
+    TopCat.singularCohomologyMap (R := ModuleCat.of k k) (k := k) (M := ModuleCat.of k M)
+        (TopCat.ofHom φ.classifyingSpaceMap) n ≫
+        (classifyingSpaceSingularCohomologyIsoGroupCohomology k G M n).hom =
+      (classifyingSpaceSingularCohomologyIsoGroupCohomology k H M n).hom ≫
+        groupCohomology.map φ (A := Rep.trivial k H M) (B := Rep.trivial k G M)
+          (𝟙 (Rep.trivial k G M)) n :=
+  IsQuotientCoveringMap.singularCohomologyMap_comp_singularCohomologyIsoGroupCohomology_hom
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k M
+    (F := TopCat.of (universalGSpace H))
+    (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
+    (fun g x ↦ φ.universalGSpaceMap_smul g x) _
+    (ConcreteCategory.hom_ext _ _ fun x ↦ (φ.classifyingSpaceMap_proj x)) n
+
+end MonoidHom

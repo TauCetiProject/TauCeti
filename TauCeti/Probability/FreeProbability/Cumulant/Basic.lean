@@ -62,6 +62,9 @@ traciality are never assumed. For `s = ∅` the cumulant
   all noncrossing partitions.
 * `TauCeti.freeCumulant_eq_sum_mu_mul_partitionMoment` — the cumulant is the sum of the block
   moments weighted by `μ(π, 1_s)`.
+* `TauCeti.partitionCumulant_eq_of_orderIso` and `TauCeti.freeCumulant_eq_of_orderIso` — free
+  cumulants transport along order isomorphisms of noncrossing partition lattices that match block
+  moments.
 * `TauCeti.partitionCumulant_eq_prod_freeCumulant` — the cumulants are multiplicative,
   `κ_π(a) = ∏_{B ∈ π} κ_B(a)`; hence `TauCeti.apply_prod_eq_sum_prod_freeCumulant` and
   `TauCeti.apply_prod_ofFn_eq_sum_prod_freeCumulant` — a moment is the sum over all noncrossing
@@ -349,5 +352,30 @@ theorem freeCumulant_eq_zero_of_apply_eq_one (h1 : φ 1 = 1) {i : α} (hai : a i
   exact add_eq_left.1 h.symm
 
 end Cumulant
+
+section OrderIso
+
+variable [CommRing R] [Monoid A] (φ : A → R) {β : Type*} [LinearOrder β] {t : Finset β}
+  {a : α → A} {b : β → A}
+
+/-- Free cumulants transport along an order isomorphism `e : NC(s) ≃o NC(t)` that matches the
+block moments of two words: if `φ_π(a) = φ_{e π}(b)` for every `π`, then
+`κ_π(a) = κ_{e π}(b)`. -/
+theorem partitionCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o NoncrossingPartition t)
+    (h : ∀ π, partitionMoment φ a π.1 = partitionMoment φ b (e π).1)
+    (π : NoncrossingPartition s) : partitionCumulant φ a π = partitionCumulant φ b (e π) := by
+  refine (congrFun (eq_partitionCumulant_of_forall_sum_Iic φ a
+    (fun π => partitionCumulant φ b (e π)) fun π => ?_) π).symm
+  rw [h, ← sum_Iic_partitionCumulant φ b (e π)]
+  exact Finset.sum_equiv e.toEquiv (fun σ => by simp) fun _ _ => rfl
+
+/-- Free cumulants of two words agree when an order isomorphism `NC(s) ≃o NC(t)` matches their
+block moments. -/
+theorem freeCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o NoncrossingPartition t)
+    (h : ∀ π, partitionMoment φ a π.1 = partitionMoment φ b (e π).1) :
+    freeCumulant φ a s = freeCumulant φ b t := by
+  rw [freeCumulant_def, partitionCumulant_eq_of_orderIso φ e h, e.map_top, freeCumulant_def]
+
+end OrderIso
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.DedekindDomain.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
 public import Mathlib.RingTheory.RingHom.Unramified
 public import Mathlib.RingTheory.Unramified.LocalRing
@@ -30,6 +31,12 @@ says the same for generation as an algebra by a single element.
 
 Over a field, an unramified local algebra is a field. Hence a proper ideal of a local algebra
 essentially of finite type over a field, with formally unramified quotient, is the maximal ideal.
+More generally, over a local ring of dimension at most one, an unramified local algebra which is a
+domain but not a field contains the base: a nonzero kernel would be a nonzero prime, hence equal to
+the maximal ideal of the base, whose image generates the maximal ideal of the algebra; that image
+is zero, so the algebra would be a field. Over a discrete valuation ring this makes the algebra
+torsion-free, hence flat, which is what makes an unramified point over a regular point of
+codimension one étale.
 
 For an `R`-algebra `S` and primes `q` of `S` and `p = q ∩ R` of `R`, the local homomorphism
 `R_p → S_q` is formally unramified iff `S` is unramified over `R` at `q`. Stalk maps of morphisms of
@@ -45,6 +52,8 @@ affine schemes are such local homomorphisms, so this is how unramifiedness is re
 * `Ideal.eq_maximalIdeal_of_formallyUnramified_quotient`: over a field `K`, a proper ideal of a
   local `K`-algebra essentially of finite type, with quotient formally unramified over `K`, is the
   maximal ideal.
+* `Algebra.FormallyUnramified.faithfulSMul_of_not_isField`: an unramified local algebra which is a
+  domain but not a field, over a local ring of dimension at most one, is a faithful algebra.
 * `Localization.formallyUnramified_localRingHom_iff`: the local homomorphism `R_p → S_q` is formally
   unramified iff `S` is unramified over `R` at `q`.
 -/
@@ -112,6 +121,30 @@ theorem _root_.Ideal.eq_maximalIdeal_of_formallyUnramified_quotient {I : Ideal A
 end Field
 
 end TauCeti
+
+namespace Algebra.FormallyUnramified
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [IsLocalRing R] [IsLocalRing S]
+  [IsLocalHom (algebraMap R S)] [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S]
+
+/-- **An unramified local domain over a local ring of dimension at most one is faithful.** Let
+`R` be a local ring of dimension at most one and `S` a local `R`-algebra, essentially of finite
+type and formally unramified, with `R → S` local. If `S` is a domain but not a field, then
+`R → S` is injective. Over a Dedekind domain, for instance a discrete valuation ring, `S` is then
+torsion-free and hence flat over `R`. -/
+theorem faithfulSMul_of_not_isField [Ring.DimensionLEOne R] [IsDomain S] (hS : ¬IsField S) :
+    FaithfulSMul R S := by
+  refine (faithfulSMul_iff_algebraMap_injective R S).mpr <|
+    (RingHom.injective_iff_ker_eq_bot _).mpr ?_
+  -- A nonzero kernel is a nonzero prime, hence the maximal ideal of `R`. As `S` is unramified,
+  -- the maximal ideal of `R` generates that of `S`, which would then be zero.
+  by_contra hker
+  have hmax := Ring.DimensionLEOne.maximalOfPrime hker (RingHom.ker_isPrime (algebraMap R S))
+  refine hS (IsLocalRing.isField_iff_maximalIdeal_eq.mpr ?_)
+  rw [← map_maximalIdeal (R := R), ← IsLocalRing.eq_maximalIdeal hmax,
+    Ideal.map_eq_bot_iff_le_ker]
+
+end Algebra.FormallyUnramified
 
 namespace Localization
 

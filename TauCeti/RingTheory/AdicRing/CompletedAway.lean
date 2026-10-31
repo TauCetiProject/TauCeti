@@ -176,15 +176,11 @@ theorem algebraMap_mem_pow_iff (n : ℕ) {x : Localization.Away f} :
 
 /-- The image of `A_f` in the completed localisation `A_{f}` is dense. -/
 theorem denseRange_algebraMap :
-    DenseRange (algebraMap (Localization.Away f) (CompletedAway A f)) := by
-  refine fun x ↦ mem_closure_iff_nhds.mpr fun U hU ↦ ?_
-  obtain ⟨n, -, hn⟩ := ((isAdic A f).hasBasis_nhds x).mem_iff.mp hU
-  obtain ⟨y, hy⟩ : ∃ y, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
-      (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n := by
-    rw [map_algebraMap_eq, ← Ideal.map_pow]
-    exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) n x
-  refine ⟨_, hn ⟨_, neg_mem hy, ?_⟩, y, rfl⟩
-  simp only [neg_sub, add_sub_cancel]
+    DenseRange (algebraMap (Localization.Away f) (CompletedAway A f)) :=
+  letI : TopologicalSpace (AdicCompletion ((IsAdicRing.ideal A).map
+      (algebraMap A (Localization.Away f))) (Localization.Away f)) :=
+    inferInstanceAs (TopologicalSpace (CompletedAway A f))
+  AdicCompletion.denseRange_algebraMap (fg_map A f) (map_algebraMap_eq A f ▸ isAdic A f)
 
 /-- Two continuous ring homomorphisms out of the completed localisation `A_{f}` into a Hausdorff
 ring are equal as soon as they agree on the image of `A`. -/

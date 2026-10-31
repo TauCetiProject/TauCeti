@@ -8,7 +8,9 @@ module
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Convolution
 public import Mathlib.LinearAlgebra.Finsupp.Pi
+public import Mathlib.Data.Finsupp.Option
 import Mathlib.Algebra.Order.Antidiag.Tendsto
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Restricted series with coefficients in a normed module
@@ -28,7 +30,9 @@ such as analytic functions on a closed polydisc with values in a Banach module.
 The restricted families form an additive subgroup of the coefficient families, and an
 `R`-submodule when `E` is a module over a seminormed ring `R` with `‖r • e‖ ≤ ‖r‖ * ‖e‖`. This file
 gives their coefficient maps and extensionality, the inclusion of finitely supported families,
-and the maps induced coefficientwise by bounded linear maps `‖φ e‖ ≤ C * ‖e‖`. When `E` is
+the slices obtained by fixing the exponent of one variable
+(`TauCeti.MvPowerSeries.IsRestrictedFamily.comp_optionElim`), and the maps induced
+coefficientwise by bounded linear maps `‖φ e‖ ≤ C * ‖e‖`. When `E` is
 ultrametric, restricted series over `R` act on restricted families by convolution,
 
 ```text
@@ -148,6 +152,20 @@ theorem IsRestrictedFamily.neg {a : (σ →₀ ℕ) → E} (ha : IsRestrictedFam
 theorem IsRestrictedFamily.smul [SeminormedRing R] [Module R E] [IsBoundedSMul R E] (r : R)
     {a : (σ →₀ ℕ) → E} (ha : IsRestrictedFamily c a) : IsRestrictedFamily c (r • a) :=
   ha.of_norm_le fun t ↦ norm_smul_le r (a t)
+
+/-- Fixing the exponent `k` of the variable `none`, the slice `t ↦ a (t.optionElim k)` of a
+restricted family is restricted in the remaining variables. Only the radius of `none` needs to be
+positive. -/
+theorem IsRestrictedFamily.comp_optionElim {c : Option σ → ℝ} (hc : 0 < c none)
+    {a : (Option σ →₀ ℕ) → E} (ha : IsRestrictedFamily c a) (k : ℕ) :
+    IsRestrictedFamily (fun i ↦ c (some i)) (fun t ↦ a (t.optionElim k)) := by
+  have hi : Function.Injective (fun t : σ →₀ ℕ ↦ t.optionElim k) := fun t u h ↦ by
+    simpa using congrArg Finsupp.some h
+  have h := ((isRestrictedFamily_iff.mp ha).comp hi.tendsto_cofinite).const_mul (c none ^ k)⁻¹
+  rw [mul_zero] at h
+  refine isRestrictedFamily_iff.mpr (h.congr fun t ↦ ?_)
+  rw [Function.comp_apply, Finsupp.prod_pow_optionElim]
+  field_simp [(pow_pos hc k).ne']
 
 end Predicate
 

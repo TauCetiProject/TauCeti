@@ -68,6 +68,12 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   circle takes values of modulus one.
 * `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
+* `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
+  shifts its Fourier coefficients by `n`.
+* `TauCeti.fourierCoeff_star`: the Fourier coefficients of the complex conjugate of an `Lᵖ`
+  function are the conjugates of its reflected coefficients.
+* `TauCeti.fourierCoeff_fourierLp`: the Fourier coefficients of the `Lᵖ` monomial `e_n` are `1`
+  at `n` and `0` elsewhere.
 
 ## Tags
 
@@ -240,22 +246,48 @@ theorem fourierLp_smul_fourierLp_smul {p : ℝ≥0∞} (m n : ℤ)
     coeFn_fourierLp_smul n f, coeFn_fourierLp_smul (m + n) f] with x h₁ h₂ h₃
   rw [h₁, h₂, h₃, fourier_add, mul_assoc]
 
+/-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_n` shifts its Fourier
+coefficients by `n`. -/
+@[simp]
+theorem fourierCoeff_fourierLp_smul {p : ℝ≥0∞} (n : ℤ) (f : Lp ℂ p (haarAddCircle (T := T)))
+    (m : ℤ) :
+    fourierCoeff (fourierLp (T := T) ∞ n • f : Lp ℂ p (haarAddCircle (T := T))) m =
+      fourierCoeff f (m - n) := by
+  rw [fourierCoeff_congr_ae (coeFn_fourierLp_smul n f), fourierCoeff, fourierCoeff]
+  congr 1
+  funext x
+  rw [smul_eq_mul, smul_eq_mul, ← mul_assoc, ← fourier_add]
+  congr 3
+  ring
+
 /-- Multiplying an `L²` Fourier mode `e_m` by an essentially bounded function `a` shifts the
 Fourier coefficients of `a` by `m`. -/
 theorem fourierCoeff_smul_fourierBasis (a : Lp ℂ ∞ (haarAddCircle (T := T))) (m n : ℤ) :
     fourierCoeff (a • fourierBasis (T := T) m : Lp ℂ 2 (haarAddCircle (T := T))) n =
       fourierCoeff a (n - m) := by
   have hae : (a • fourierBasis (T := T) m : Lp ℂ 2 (haarAddCircle (T := T))) =ᵐ[haarAddCircle]
-      fun x ↦ fourier m x * a x := by
+      (fourierLp (T := T) ∞ m • a : Lp ℂ ∞ (haarAddCircle (T := T))) := by
     filter_upwards [Lp.coeFn_lpSMul (r := 2) a (fourierBasis (T := T) m),
-      coeFn_fourierLp (T := T) 2 m] with x hx hm
-    rw [hx, Pi.smul_apply', coe_fourierBasis, hm, smul_eq_mul, mul_comm]
-  rw [fourierCoeff_congr_ae hae, fourierCoeff, fourierCoeff]
+      coeFn_fourierLp (T := T) 2 m, coeFn_fourierLp_smul m a] with x hx hm hma
+    rw [hx, Pi.smul_apply', coe_fourierBasis, hm, hma, smul_eq_mul, mul_comm]
+  rw [fourierCoeff_congr_ae hae, fourierCoeff_fourierLp_smul]
+
+/-- The Fourier coefficients of the complex conjugate of an `Lᵖ` function are the conjugates of
+its reflected coefficients. -/
+@[simp]
+theorem fourierCoeff_star {p : ℝ≥0∞} (f : Lp ℂ p (haarAddCircle (T := T))) (n : ℤ) :
+    fourierCoeff (star f : Lp ℂ p (haarAddCircle (T := T))) n =
+      starRingEnd ℂ (fourierCoeff f (-n)) := by
+  rw [fourierCoeff_congr_ae (Lp.coeFn_star f), fourierCoeff, fourierCoeff, ← integral_conj]
   congr 1
   funext x
-  rw [smul_eq_mul, smul_eq_mul, ← mul_assoc, ← fourier_add]
-  congr 3
-  ring
+  rw [neg_neg, Pi.star_apply, smul_eq_mul, smul_eq_mul, map_mul, fourier_neg, RCLike.star_def]
+
+/-- The Fourier coefficients of the `Lᵖ` monomial `e_n` are those of the continuous monomial
+`e_n`: `1` at `n` and `0` elsewhere. -/
+theorem fourierCoeff_fourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (n k : ℤ) :
+    fourierCoeff (fourierLp (T := T) p n) k = if k = n then 1 else 0 := by
+  rw [fourierCoeff_congr_ae (coeFn_fourierLp p n), fourierCoeff_fourier, Pi.single_apply]
 
 end TauCeti
 

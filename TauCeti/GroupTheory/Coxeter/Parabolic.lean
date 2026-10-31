@@ -238,6 +238,10 @@ theorem exists_rightDescent_mem_of_mem_parabolic_of_ne_one {J : Set B} {v : W}
 has minimal length in its own left coset `u · cs.parabolic J`. -/
 def IsMinimalCosetRep (J : Set B) (u : W) : Prop := ∀ v ∈ cs.parabolic J, ℓ u ≤ ℓ (u * v)
 
+/-- The identity is the minimal coset representative of the parabolic subgroup itself. -/
+theorem isMinimalCosetRep_one (J : Set B) : cs.IsMinimalCosetRep J 1 := fun v _ ↦ by
+  simp
+
 /-- Every left coset of a standard parabolic subgroup contains a minimal coset representative. -/
 theorem exists_isMinimalCosetRep (J : Set B) (w : W) :
     ∃ v ∈ cs.parabolic J, cs.IsMinimalCosetRep J (w * v) := by

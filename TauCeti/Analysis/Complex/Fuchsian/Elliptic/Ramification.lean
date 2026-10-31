@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Basic
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # Ramification in elliptic charts of Fuchsian quotients

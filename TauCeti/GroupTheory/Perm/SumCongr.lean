@@ -26,9 +26,13 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   the cycle quotients of the two summands.
 * `Equiv.Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap`: splicing four
   adjoined fixed points into the orbits of a permutation leaves its number of orbits.
-* `Equiv.Perm.sumCongr_zpow`: powers are taken summandwise.
+* `Equiv.Perm.sumCongr_zpow`, `Equiv.Perm.sumCongr_pow`: powers are taken summandwise.
+* `Equiv.Perm.minimalPeriod_sumCongr_inl`, `Equiv.Perm.minimalPeriod_sumCongr_inr`: so are the
+  lengths of the cycles.
 * `Equiv.Perm.sameCycle_sumCongr_inl`, `Equiv.Perm.sameCycle_sumCongr_inr`: two points of one
   summand share a cycle exactly when they share a cycle of the permutation of that summand.
+* `Equiv.Perm.existsUnique_sameCycle_sumCongr`: representatives of the cycles of the two summands
+  together represent the cycles of the sum.
 * `Equiv.Perm.finSumPerm`: the same construction read on `Fin (m + n)` through
   `finSumFinEquiv`, with `Equiv.Perm.finSumPermHom` packaging it as a monoid homomorphism from
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
@@ -89,6 +93,28 @@ theorem sumCongr_zpow (σ : Perm α) (τ : Perm β) (k : ℤ) :
     Perm.sumCongr σ τ ^ k = Perm.sumCongr (σ ^ k) (τ ^ k) := by
   simpa using (map_zpow (Perm.sumCongrHom α β) (σ, τ) k).symm
 
+/-- The natural powers of a sum permutation are taken separately on the two summands. -/
+@[simp]
+theorem sumCongr_pow (σ : Perm α) (τ : Perm β) (k : ℕ) :
+    Perm.sumCongr σ τ ^ k = Perm.sumCongr (σ ^ k) (τ ^ k) := by
+  simpa using (map_pow (Perm.sumCongrHom α β) (σ, τ) k).symm
+
+/-- A point of the left summand has the same period under `Equiv.Perm.sumCongr σ τ` as under
+`σ`. -/
+@[simp]
+theorem minimalPeriod_sumCongr_inl (σ : Perm α) (τ : Perm β) (a : α) :
+    Function.minimalPeriod (Perm.sumCongr σ τ) (.inl a) = Function.minimalPeriod σ a :=
+  Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ by
+    simp [Function.IsPeriodicPt, Function.IsFixedPt, ← coe_pow]
+
+/-- A point of the right summand has the same period under `Equiv.Perm.sumCongr σ τ` as under
+`τ`. -/
+@[simp]
+theorem minimalPeriod_sumCongr_inr (σ : Perm α) (τ : Perm β) (b : β) :
+    Function.minimalPeriod (Perm.sumCongr σ τ) (.inr b) = Function.minimalPeriod τ b :=
+  Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ by
+    simp [Function.IsPeriodicPt, Function.IsFixedPt, ← coe_pow]
+
 /-- Two points of the left summand lie in one cycle of `Equiv.Perm.sumCongr σ τ` exactly when they
 lie in one cycle of `σ`. -/
 @[simp]
@@ -112,6 +138,23 @@ theorem sameCycle_sumCongr_inr {σ : Perm α} {τ : Perm β} {a b : β} :
   rintro ⟨k, hk⟩
   simp only [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inl,
     Sum.inl_ne_inr] at hk
+
+/-- Choices of one point on every cycle of `σ` and of `τ` together choose one point on every
+cycle of `Equiv.Perm.sumCongr σ τ`. -/
+theorem existsUnique_sameCycle_sumCongr {J K : Type*} {σ : Perm α} {τ : Perm β} {r : J → α}
+    {t : K → β} (hr : ∀ x, ∃! j, σ.SameCycle (r j) x) (ht : ∀ y, ∃! k, τ.SameCycle (t k) y) :
+    ∀ z, ∃! l, (Perm.sumCongr σ τ).SameCycle (Sum.map r t l) z := by
+  rintro (x | y)
+  · obtain ⟨j, hj, hu⟩ := hr x
+    refine ⟨.inl j, sameCycle_sumCongr_inl.mpr hj, ?_⟩
+    rintro (j' | k') h
+    · exact congrArg Sum.inl (hu j' (sameCycle_sumCongr_inl.mp h))
+    · exact (not_sameCycle_sumCongr_inl_inr σ τ x (t k') h.symm).elim
+  · obtain ⟨k, hk, hu⟩ := ht y
+    refine ⟨.inr k, sameCycle_sumCongr_inr.mpr hk, ?_⟩
+    rintro (j' | k') h
+    · exact (not_sameCycle_sumCongr_inl_inr σ τ (r j') y h).elim
+    · exact congrArg Sum.inr (hu k' (sameCycle_sumCongr_inr.mp h))
 
 /-- The cycle quotient of a sum permutation is the sum of its two cycle quotients. -/
 def sameCycleQuotientSumCongrEquiv (σ : Perm α) (τ : Perm β) :

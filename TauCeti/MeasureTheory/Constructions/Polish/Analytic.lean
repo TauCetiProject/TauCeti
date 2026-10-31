@@ -39,6 +39,9 @@ Borel, hence analytic.
   sets, and off-diagonals of analytic sets in a Hausdorff space, are analytic.
 * `MeasureTheory.AnalyticSet.relImage`, `MeasureTheory.AnalyticSet.relPreimage`: the image and
   preimage of an analytic set under an analytic relation are analytic.
+* `MeasureTheory.AnalyticSet.relImage_measurableSet`,
+  `MeasureTheory.AnalyticSet.relPreimage_measurableSet`: the image and preimage of a Borel set
+  under an analytic relation are analytic, with no separation axiom.
 * `MeasureTheory.AnalyticSet.preimage_image_quotientMk`: the saturation of an analytic set under an
   equivalence relation with analytic graph is analytic.
 
@@ -133,6 +136,24 @@ theorem AnalyticSet.relPreimage [T2Space β] {R : SetRel α β} (hR : AnalyticSe
     (ht : AnalyticSet t) : AnalyticSet (R.preimage t) := by
   rw [← SetRel.image_inv]
   exact hR.relInv.relImage ht
+
+/-- The preimage of a Borel set under an analytic relation is analytic. No separation axiom is
+needed: the preimage is the first projection of the intersection of the relation with a Borel
+set. -/
+theorem AnalyticSet.relPreimage_measurableSet [MeasurableSpace β] [BorelSpace β] {R : SetRel α β}
+    (hR : AnalyticSet R) {t : Set β} (ht : MeasurableSet t) : AnalyticSet (R.preimage t) := by
+  borelize (α × β)
+  have : R.preimage t = Prod.fst '' (R ∩ Prod.snd ⁻¹' t) := by
+    ext a
+    simp [and_comm]
+  rw [this]
+  exact (hR.inter_measurableSet (continuous_snd.measurable ht)).image_fst
+
+/-- The image of a Borel set under an analytic relation is analytic. -/
+theorem AnalyticSet.relImage_measurableSet [MeasurableSpace α] [BorelSpace α] {R : SetRel α β}
+    (hR : AnalyticSet R) {s : Set α} (hs : MeasurableSet s) : AnalyticSet (R.image s) := by
+  rw [← SetRel.preimage_inv]
+  exact hR.relInv.relPreimage_measurableSet hs
 
 /-- The saturation of an analytic set under an equivalence relation with analytic graph, in a
 Hausdorff space, is analytic. -/

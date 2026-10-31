@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.KInjective
+public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 import Mathlib.Algebra.Homology.Factorizations.CM5a
 import Mathlib.CategoryTheory.Functor.OfSequence
@@ -16,13 +17,17 @@ import Mathlib.CategoryTheory.Functor.OfSequence
 Every cochain complex of modules over an associative unital ring admits a quasi-isomorphism
 into a K-injective complex. No boundedness assumption is imposed. This existence result allows
 one to compute morphisms in the unbounded derived category using homotopy classes of chain maps.
-It does not choose replacements functorially on the category of complexes.
 
 The construction resolves the truncations `τ^{≥ -n} K` by bounded-below complexes of injectives,
 with degreewise split epimorphic transition maps. Their inverse limit is K-injective and the
 map from `K` to that limit is a quasi-isomorphism. We use Joël Riou's bounded-below factorization
 `CochainComplex.Plus.modelCategoryQuillen.cm5a` from Mathlib and the module tower limit and
 Milnor comparison in `TauCeti.Algebra.Category.ModuleCat.Tower.KInjective`.
+
+Hence module categories have K-injective resolutions (`TauCeti.HasKInjectiveResolutions`), so
+the replacement functor `TauCeti.kInjectiveReplacement` of
+`TauCeti.Algebra.Homology.DerivedCategory.KInjective` is defined on the unbounded derived
+category of modules, with values in the homotopy category.
 
 ## References
 
@@ -165,3 +170,14 @@ theorem exists_quasiIso_isKInjective :
   exact (injectiveTruncations K n).quasiIsoAt_ι j (by omega)
 
 end CochainComplex
+
+namespace TauCeti
+
+universe v u
+
+variable (R : Type u) [Ring R]
+
+instance : HasKInjectiveResolutions (ModuleCat.{max v u} R) :=
+  ⟨CochainComplex.exists_quasiIso_isKInjective⟩
+
+end TauCeti

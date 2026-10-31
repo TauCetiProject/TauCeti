@@ -12,9 +12,11 @@ public import Mathlib.Analysis.Matrix.Order
 
 This file supplements Mathlib's `Matrix.PosSemidef` API for matrices indexed by arbitrary types.
 It provides rank-one and constant matrices, finite Schur products, Schur powers,
-products of weights over unions of finite sets, and the quadratic-form characterization.
+products of weights over unions of finite sets, the quadratic-form characterization, and
+conversion of quadratic forms to nonnegative reals.
 It also gives block matrix-vector constraints over commutative star-ordered rings with a
 proper star: a null vector of a diagonal block is a null vector of the block above or below it.
+In particular, a zero lower-right diagonal block forces both off-diagonal blocks to vanish.
 
 The results apply in particular to positive-definite kernels, represented directly as matrices,
 but do not depend on Tau Ceti's positive-definite-function theory.
@@ -30,6 +32,9 @@ but do not depend on Tau Ceti's positive-definite-function theory.
   `[0, 1]`.
 * `Matrix.PosSemidef.toBlocks₁₂_mulVec_eq_zero` and
   `Matrix.PosSemidef.toBlocks₂₁_mulVec_eq_zero`: block null-vector constraints.
+* `Matrix.PosSemidef.toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero` and
+  `Matrix.PosSemidef.toBlocks₂₁_eq_zero_of_toBlocks₂₂_eq_zero`: zero off-diagonal blocks
+  when the lower-right diagonal block is zero.
 
 ## References
 
@@ -199,6 +204,25 @@ theorem Matrix.PosSemidef.hadamard_pow {α 𝕜 : Type*} [RCLike 𝕜] {K : α �
 
 namespace Matrix.PosSemidef
 
+variable {α 𝕜 : Type*} [RCLike 𝕜]
+
+/-- Half the real quadratic form of a positive-semidefinite matrix is unchanged by conversion
+to a nonnegative real and back. -/
+theorem coe_toNNReal_re_dotProduct_div_two [Fintype α] {A : Matrix α α 𝕜}
+    (hA : A.PosSemidef) (x : α → 𝕜) :
+    ((RCLike.re (star x ⬝ᵥ A *ᵥ x) / 2).toNNReal : ℝ) =
+      RCLike.re (star x ⬝ᵥ A *ᵥ x) / 2 :=
+  Real.coe_toNNReal _ (div_nonneg (hA.re_dotProduct_nonneg x) (by norm_num))
+
+/-- Half a positive-semidefinite quadratic form vanishes as a nonnegative real exactly when
+its real part vanishes. -/
+theorem toNNReal_re_dotProduct_div_two_eq_zero_iff [Fintype α] {A : Matrix α α 𝕜}
+    (hA : A.PosSemidef) (x : α → 𝕜) :
+    (RCLike.re (star x ⬝ᵥ A *ᵥ x) / 2).toNNReal = 0 ↔
+      RCLike.re (star x ⬝ᵥ A *ᵥ x) = 0 := by
+  rw [← NNReal.coe_eq_zero, hA.coe_toNNReal_re_dotProduct_div_two]
+  simp
+
 variable {R ι κ : Type*} [CommRing R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
   [IsProperStar R] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) R}
 
@@ -214,6 +238,25 @@ theorem toBlocks₁₂_mulVec_eq_zero [Finite ι] [Fintype κ] (hS : S.PosSemide
   have hz := hS.dotProduct_mulVec_zero_iff.mp hq
   rw [← fromBlocks_toBlocks S, fromBlocks_mulVec] at hz
   simpa using congrArg (fun v => v ∘ Sum.inl) hz
+
+/-- A zero lower-right block of a positive-semidefinite matrix forces the upper-right
+block to vanish. -/
+theorem toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero [Finite ι] [Finite κ]
+    (hS : S.PosSemidef) (h22 : S.toBlocks₂₂ = 0) : S.toBlocks₁₂ = 0 := by
+  let := Fintype.ofFinite κ
+  apply Matrix.ext_iff_mulVec.mpr
+  intro x
+  rw [Matrix.zero_mulVec]
+  exact hS.toBlocks₁₂_mulVec_eq_zero (by rw [h22, Matrix.zero_mulVec])
+
+/-- A zero lower-right block of a positive-semidefinite matrix also forces the lower-left
+block to vanish, by Hermitian symmetry. -/
+theorem toBlocks₂₁_eq_zero_of_toBlocks₂₂_eq_zero [Finite ι] [Finite κ]
+    (hS : S.PosSemidef) (h22 : S.toBlocks₂₂ = 0) : S.toBlocks₂₁ = 0 := by
+  have hB : S.toBlocks₁₂ᴴ = S.toBlocks₂₁ := by
+    ext i j
+    exact hS.isHermitian.apply _ _
+  rw [← hB, hS.toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero h22, conjTranspose_zero]
 
 /-- A null vector of the upper-left block of a positive-semidefinite matrix is also
 a null vector of its lower-left block. -/

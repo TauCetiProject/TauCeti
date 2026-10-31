@@ -8,12 +8,14 @@ module
 public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import Mathlib.RingTheory.DedekindDomain.Factorization
+import Mathlib.RingTheory.UniqueFactorizationDomain.Finite
 
 /-!
 # Complements on Dedekind-domain factorization
 
 Facts about `Associates.count` and `FractionalIdeal.count` that Mathlib does not carry, together
-with unit-level factorization of invertible fractional ideals.
+with unit-level factorization of invertible fractional ideals and the finiteness, up to units, of
+the divisors of a nonzero element.
 
 ## Main results
 
@@ -24,6 +26,9 @@ with unit-level factorization of invertible fractional ideals.
   multiplicity as divisibility of `Associates`; a consumer comparing two multiplicities across a
   ring extension wants a containment of *ideals*, and shows the two ideals contain the same prime
   powers.
+* `IsDedekindDomain.exists_finset_forall_dvd_exists_associated`: a nonzero element of a Dedekind
+  domain has finitely many divisors up to units, because its principal ideal has finitely many
+  ideal divisors.
 * `FractionalIdeal.count_div`: the multiplicity of `I / J` is the difference of the multiplicities
   of `I` and `J`. Mathlib's `count` API has `count_mul`, `count_inv`, `count_pow` and `count_zpow`
   but no division form, so every consumer that clears a denominator repeats the same rewrites.
@@ -111,6 +116,33 @@ theorem le_count_associates_iff_le_pow {A : Type*} [CommRing A] [IsDedekindDomai
     ← Associates.mk_pow, Associates.mk_le_mk_iff_dvd, Ideal.dvd_iff_le]
 
 end IsDedekindDomain.HeightOneSpectrum
+
+namespace IsDedekindDomain
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+
+/-- A nonzero element `n` of a Dedekind domain has only finitely many divisors up to units: there
+is a finite set `M` of divisors of `n` such that every divisor of `n` is associated to an element
+of `M`. -/
+theorem exists_finset_forall_dvd_exists_associated {n : R} (hn : n ≠ 0) :
+    ∃ M : Finset R, (∀ μ ∈ M, μ ∣ n) ∧ ∀ μ, μ ∣ n → ∃ μ₀ ∈ M, Associated μ₀ μ := by
+  classical
+  have hn' : Ideal.span {n} ≠ 0 := by
+    rwa [Ideal.zero_eq_bot, ne_eq, Ideal.span_singleton_eq_bot]
+  -- The principal ideals of the divisors of `n` divide `(n)`, and `(n)` has finitely many divisors.
+  have : Fintype {I : Ideal R // I ∣ Ideal.span {n}} :=
+    UniqueFactorizationMonoid.fintypeSubtypeDvd _ hn'
+  have hfin : ((fun μ : R ↦ Ideal.span {μ}) '' {μ | μ ∣ n}).Finite := by
+    refine (Set.toFinite {I : Ideal R | I ∣ Ideal.span {n}}).subset ?_
+    rintro _ ⟨μ, hμ, rfl⟩
+    exact Ideal.span_singleton_dvd_span_singleton_iff_dvd.mpr hμ
+  obtain ⟨u, hus, hbij⟩ := Set.exists_subset_bijOn {μ : R | μ ∣ n} fun μ ↦ Ideal.span {μ}
+  have hu : u.Finite := Set.Finite.of_finite_image (hbij.image_eq ▸ hfin) hbij.injOn
+  refine ⟨hu.toFinset, fun μ hμ ↦ hus (hu.mem_toFinset.mp hμ), fun μ hμ ↦ ?_⟩
+  obtain ⟨μ₀, hμ₀, he⟩ := hbij.surjOn ⟨μ, hμ, rfl⟩
+  exact ⟨μ₀, hu.mem_toFinset.mpr hμ₀, Ideal.span_singleton_eq_span_singleton.mp he⟩
+
+end IsDedekindDomain
 
 namespace Ideal
 

@@ -16,6 +16,7 @@ For Hermitian positive semidefinite `C`, the complex covariance of
 Both statements use centered coordinate products and include
 their integrability. Thus the factor one half and the signs of the off-diagonal blocks
 in the real covariance agree with the proper complex convention, including singular laws.
+The squared modulus of each centered coordinate is integrable and has mean its complex variance.
 
 The proofs use Mathlib's real Gaussian coordinate covariance and Fernique integrability.
 
@@ -162,5 +163,25 @@ theorem integral_mul_sub_properComplexGaussianMeasure (m : ι → ℂ)
     simp only [Complex.mul_im, Complex.sub_re, Complex.sub_im, Complex.zero_im]
     rw [integral_add hri_int hir_int, hri, hir]
     ring
+
+/-- The squared modulus of a centered complex Gaussian coordinate is integrable, including
+zero and invalid covariance parameters. -/
+theorem integrable_norm_sq_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
+    (C : Matrix ι ι ℂ) (i : ι) :
+    Integrable (fun z ↦ ‖z i - m i‖ ^ 2) (properComplexGaussianMeasure m C) := by
+  simpa only [RCLike.re_eq_complex_re, Complex.star_def, Complex.mul_conj,
+    Complex.ofReal_re, Complex.normSq_eq_norm_sq] using
+    (integrable_mul_conj_sub_properComplexGaussianMeasure m C i i).re
+
+/-- The mean squared modulus of a centered proper complex Gaussian coordinate is its
+complex variance. In particular, it is one for a standard coordinate. -/
+@[simp]
+theorem integral_norm_sq_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
+    {C : Matrix ι ι ℂ} (hC : C.PosSemidef) (i : ι) :
+    ∫ z, ‖z i - m i‖ ^ 2 ∂properComplexGaussianMeasure m C = (C i i).re := by
+  simpa only [RCLike.re_eq_complex_re, Complex.star_def, Complex.mul_conj,
+    Complex.ofReal_re, Complex.normSq_eq_norm_sq] using
+    (integral_re (integrable_mul_conj_sub_properComplexGaussianMeasure m C i i)).trans
+      (congrArg RCLike.re (integral_mul_conj_sub_properComplexGaussianMeasure m hC i i))
 
 end TauCeti.Probability

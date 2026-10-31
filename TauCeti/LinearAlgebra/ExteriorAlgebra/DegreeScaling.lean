@@ -27,7 +27,8 @@ creation–annihilation anticommutator.
 ## Main results
 
 * `TauCeti.ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`: the degree scaling acts on the
-  `n`-th exterior power by `r ^ n`.
+  `n`-th exterior power by `r ^ n`, and `TauCeti.ExteriorAlgebra.degreeScaling_basis`: on the
+  basis vector of `⋀ M` indexed by `s` it acts by `r ^ s.card`.
 * `TauCeti.ExteriorAlgebra.degreeScaling_ι`, `ExteriorAlgebra.degreeScaling_involute` and
   `ExteriorAlgebra.degreeScaling_contractLeft`: its interaction with the generators, the
   grade involution and contraction.
@@ -95,6 +96,16 @@ theorem degreeScaling_of_mem_exteriorPower (r : Rˣ) {n : ℕ} {x : ExteriorAlge
   | mem_mul m hm i x hx ih =>
     obtain ⟨v, rfl⟩ := hm
     rw [map_mul, ih, degreeScaling_ι, smul_mul_smul_comm, pow_succ']
+
+/-- **The degree scaling acts on an exterior-basis vector by `r` to the size of its index set.**
+The basis vector indexed by `s` lies in the `s.card`-th exterior power. -/
+@[simp]
+theorem degreeScaling_basis {I : Type*} [LinearOrder I] (b : Module.Basis I R M) (r : Rˣ)
+    (s : Finset I) :
+    degreeScaling r (b.ExteriorAlgebra s) = (r : R) ^ s.card • b.ExteriorAlgebra s :=
+  degreeScaling_of_mem_exteriorPower r <| by
+    rw [ExteriorAlgebra.basis_apply]
+    exact ExteriorAlgebra.ιMulti_range R _ ⟨_, rfl⟩
 
 end TauCeti.ExteriorAlgebra
 

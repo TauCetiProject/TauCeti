@@ -56,6 +56,8 @@ depends only on the isomorphism class of `G`.
   and `TauCeti.DerivedCentralQuotient.mulEquivSelf` then makes the construction idempotent.
 * `TauCeti.DerivedCentralQuotient.subsingleton_iff`: the output is trivial exactly when `[G, G]` is
   commutative.
+* `TauCeti.Group.IsPerfect.nontrivial_quotient_center`: a nontrivial perfect group modulo its
+  centre is nontrivial, so the output is nontrivial when `[G, G]` is perfect and nontrivial.
 
 ## References
 
@@ -90,6 +92,18 @@ theorem isPerfect_of_not_isMulCommutative [IsSimpleGroup G] (h : ¬ IsMulCommuta
   exact h (center_eq_top_iff.mp hb)
 
 end IsSimpleGroup
+
+namespace Group.IsPerfect
+
+/-- A nontrivial perfect group is not commutative, so its quotient by its centre is nontrivial.
+Applied to `[G, G]`, this makes the derived central quotient nontrivial whenever the derived
+subgroup is perfect and nontrivial. -/
+instance nontrivial_quotient_center [Group.IsPerfect G] [Nontrivial G] :
+    Nontrivial (G ⧸ center G) :=
+  QuotientGroup.nontrivial_iff.mpr fun h ↦
+    Group.IsPerfect.not_isMulCommutative G (center_eq_top_iff.mp h)
+
+end Group.IsPerfect
 
 /-! ## The derived subgroup modulo its centre -/
 

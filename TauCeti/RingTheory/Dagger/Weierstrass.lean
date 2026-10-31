@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Dagger.Distinguished
 public import TauCeti.RingTheory.Dagger.OptionSeries
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
+public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 import Mathlib.FieldTheory.Minpoly.Basic
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
@@ -32,8 +33,10 @@ Monsky–Washnitzer algebras.
 For a distinguished monic polynomial `ω ∈ K⟨X⟩†[Y]`, evaluated at `Y` by
 `washnitzerAlgebra.polynomialToOption`, uniqueness of division shows that divisibility by `ω` is
 the same in `K⟨X⟩†[Y]` and in `K⟨X, Y⟩†`, and existence shows that every series is congruent to
-a polynomial modulo `ω`. Hence irreducibility of `ω` descends from `K⟨X, Y⟩†` to `K⟨X⟩†[Y]`, and
-`ω` is prime in one ring iff it is prime in the other.
+a polynomial modulo `ω`. Together these identify `K⟨X⟩†[Y] ⧸ (ω)` with `K⟨X, Y⟩† ⧸ (ω)`
+(`washnitzerAlgebra.polynomialQuotientEquiv`), so that adjoining a root of a monic polynomial
+to `K⟨X⟩†` is presented by one more overconvergent variable. Hence also irreducibility of `ω`
+descends from `K⟨X, Y⟩†` to `K⟨X⟩†[Y]`, and `ω` is prime in one ring iff it is prime in the other.
 
 Dividing one variable at a time by its minimal polynomial over `K`, a polynomial with constant
 coefficients and hence distinguished at unit radius, shows that every quotient of `K⟨X⟩†` in
@@ -48,8 +51,9 @@ finitely many variables which is integral over `K` is spanned by the images of p
 
 The fixed-radius division is `TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq`;
 the radius selection is `TauCeti.Dagger.exists_isDistinguished_isUnit_of_isDistinguished_one`.
-The polynomial comparison follows its Tate-algebra counterpart
-`TauCeti.PowerSeries.IsDistinguished.polynomialToRestricted_dvd_iff`.
+The polynomial comparisons follow their Tate-algebra counterparts
+`TauCeti.PowerSeries.IsDistinguished.polynomialToRestricted_dvd_iff` and
+`TauCeti.PowerSeries.IsDistinguished.polynomialQuotientEquiv`.
 -/
 
 public section
@@ -237,6 +241,68 @@ theorem exists_mul_add_polynomialToOption_eq
       ← hm.natDegree_eq, hm.monic.coeff_natDegree]
   obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
   exact ⟨q, r, hr, optionSeries_injective (by simpa using hqr)⟩
+
+omit [CompleteSpace K] in
+/-- Evaluating a polynomial at `Y` and passing to a quotient of `K⟨X, Y⟩†` is evaluation at the
+class of `Y`, with coefficients mapped through `washnitzerAlgebra.optionC`. -/
+private theorem mk_polynomialToOption (I : Ideal W') (p : Polynomial W) :
+    Ideal.Quotient.mk I (polynomialToOption p) =
+      p.eval₂ ((Ideal.Quotient.mkₐ K I).comp optionC : W →ₐ[K] W' ⧸ I)
+        (Ideal.Quotient.mk I (X (Option σ) K none)) := by
+  have h : (Ideal.Quotient.mk I).comp polynomialToOption =
+      Polynomial.eval₂RingHom ((Ideal.Quotient.mkₐ K I).comp optionC : W →ₐ[K] W' ⧸ I).toRingHom
+        (Ideal.Quotient.mk I (X (Option σ) K none)) :=
+    Polynomial.ringHom_ext (fun a ↦ by simp) (by simp)
+  exact RingHom.congr_fun h p
+
+omit [CompleteSpace K] in
+variable (ω) in
+/-- Evaluation at the class of `Y`, from `K⟨X⟩†[Y] ⧸ (ω)` to `K⟨X, Y⟩† ⧸ (ω)`. -/
+private noncomputable def polynomialQuotientHom :
+    AdjoinRoot ω →ₐ[K] W' ⧸ Ideal.span {polynomialToOption ω} :=
+  AdjoinRoot.liftAlgHom ω ((Ideal.Quotient.mkₐ K _).comp optionC)
+    (Ideal.Quotient.mk _ (X (Option σ) K none)) (by
+      rw [← mk_polynomialToOption, Ideal.Quotient.eq_zero_iff_mem]
+      exact Ideal.subset_span rfl)
+
+omit [CompleteSpace K] in
+private theorem polynomialQuotientHom_mk (p : Polynomial W) :
+    polynomialQuotientHom ω (AdjoinRoot.mk ω p) =
+      Ideal.Quotient.mk _ (polynomialToOption p) := by
+  rw [polynomialQuotientHom, AdjoinRoot.liftAlgHom_mk, mk_polynomialToOption]
+
+/-- **Quotients by a distinguished monic polynomial.** Evaluation at `Y` identifies
+`K⟨X⟩†[Y] ⧸ (ω)` with `K⟨X, Y⟩† ⧸ (ω)` for a distinguished monic polynomial `ω`. Its inverse
+sends the class of a series to the class of its Weierstrass remainder. -/
+noncomputable def polynomialQuotientEquiv
+    (hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate))
+    (hm : ω.IsMonicOfDegree s) :
+    AdjoinRoot ω ≃ₐ[K] W' ⧸ Ideal.span {polynomialToOption ω} := by
+  refine AlgEquiv.ofBijective (polynomialQuotientHom ω)
+    ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · obtain ⟨p, rfl⟩ := AdjoinRoot.mk_surjective x
+    rw [polynomialQuotientHom_mk, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton,
+      polynomialToOption_dvd_iff hω hm] at hx
+    exact AdjoinRoot.mk_eq_zero.mpr hx
+  · -- Represent a class by the Weierstrass remainder of a series modulo `ω`.
+    obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+    obtain ⟨q, r, -, rfl⟩ := exists_mul_add_polynomialToOption_eq hω hm f
+    refine ⟨AdjoinRoot.mk ω r, ?_⟩
+    rw [polynomialQuotientHom_mk, Ideal.Quotient.eq]
+    exact Ideal.mem_span_singleton.mpr ⟨-q, by ring⟩
+
+/-- The quotient comparison sends the class of a polynomial to the class of its evaluation
+at `Y`. -/
+@[simp]
+theorem polynomialQuotientEquiv_mk
+    (hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate))
+    (hm : ω.IsMonicOfDegree s) (p : Polynomial W) :
+    polynomialQuotientEquiv hω hm (AdjoinRoot.mk ω p) =
+      Ideal.Quotient.mk _ (polynomialToOption p) := by
+  -- `rw [AlgEquiv.ofBijective_apply]` fails on the unfolded target, which is not type-correct
+  -- at the transparency `rw` uses for instances, so the lemma is applied by `exact`.
+  rw [polynomialQuotientEquiv]
+  exact (AlgEquiv.ofBijective_apply _ _ _).trans (polynomialQuotientHom_mk p)
 
 /-- A distinguished monic polynomial is prime in `K⟨X⟩†[Y]` iff it is prime in `K⟨X, Y⟩†`. -/
 theorem prime_polynomialToOption_iff

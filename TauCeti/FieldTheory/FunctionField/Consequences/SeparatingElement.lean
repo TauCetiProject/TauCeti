@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.Clifford
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 public import TauCeti.FieldTheory.FunctionField.Frobenius
 public import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 public import TauCeti.LinearAlgebra.LinearIndependent.Frobenius

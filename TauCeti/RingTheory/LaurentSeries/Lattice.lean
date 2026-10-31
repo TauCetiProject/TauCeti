@@ -8,6 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.LaurentSeries
+public import Mathlib.Topology.Algebra.FilterBasis
+public import Mathlib.Topology.Algebra.LinearTopology
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 
@@ -32,6 +35,13 @@ The same lattices and finite jets on `HahnModule ℤ R V` are obtained through t
 coefficient-preserving comparison `HahnModule.ofLinearEquiv`. This allows finite jets to be
 used together with the action of scalar Laurent series on module-valued Laurent series.
 
+The lattices also topologize `V((t)) = HahnModule ℤ R V`: its topology is the one for which the
+`U_a(V)` form a basis of neighbourhoods of zero. The coefficients carry no topology here, so this
+is the analogue for a discrete coefficient module of the valuation topology of a Laurent-series
+field. It is a Hausdorff linear topology, and the lattices are open. Finite sums of monomials
+are dense, so continuous linear maps out of `V((t))` are determined by their values on monomials,
+and a linear map to a discrete module is continuous exactly when it vanishes on some lattice.
+
 ## Main definitions
 
 * `TauCeti.LaurentSeries.lattice R V a`: the `R`-submodule `U_a(V)`.
@@ -41,6 +51,7 @@ used together with the action of scalar Laurent series on module-valued Laurent 
 * `TauCeti.HahnModule.lattice`, `TauCeti.HahnModule.latticeQuotient` and
   `TauCeti.HahnModule.latticeQuotientEquiv`:
   the corresponding lattice and finite-jet comparison on `HahnModule ℤ R V`.
+* The lattice topology on `HahnModule ℤ R V`, an instance.
 
 ## Main results
 
@@ -57,6 +68,12 @@ used together with the action of scalar Laurent series on module-valued Laurent 
 * `TauCeti.LaurentSeries.finrank_latticeQuotient`,
   `TauCeti.HahnModule.finrank_latticeQuotient`: finite jets have `finrank` equal to
   `(b - a).toNat * Module.finrank R V`.
+* `TauCeti.HahnModule.hasBasis_nhds_zero_lattice`: the lattices form a neighbourhood basis of
+  zero in `HahnModule ℤ R V`.
+* `TauCeti.HahnModule.dense_span_single`, `TauCeti.HahnModule.continuousLinearMap_ext_single`:
+  the monomials `v tⁿ` span a dense submodule, so they determine continuous linear maps.
+* `LinearMap.continuous_iff_exists_hahnModule_lattice_le_ker`: a linear map to a discrete module
+  is continuous exactly when it vanishes on some lattice.
 -/
 
 public section
@@ -331,6 +348,10 @@ theorem latticeEquiv_symm_apply (a : ℤ) (f : TauCeti.LaurentSeries.lattice R V
       LinearEquiv.ofSubmodule'_symm_apply _ _ _
     _ = _ := by rw [LinearEquiv.symm_symm, ofLinearEquiv_apply]
 
+/-- The Hahn-module lattices decrease as the exponent bound increases. -/
+theorem lattice_antitone : Antitone (lattice R V) :=
+  fun _ _ h ↦ Submodule.comap_mono (TauCeti.LaurentSeries.lattice_antitone h)
+
 end Lattice
 
 section Quotient
@@ -397,3 +418,151 @@ theorem finrank_latticeQuotient [StrongRankCondition R] [Module.Free R V]
 end Quotient
 
 end TauCeti.HahnModule
+
+namespace HahnModule
+
+open TauCeti.HahnModule
+
+variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
+
+/-- A series agrees with its finite truncation at the exponents `[ord f, a)` modulo `U_a(V)`. -/
+private theorem sub_sum_single_mem_lattice (f : HahnModule ℤ R V) (a : ℤ) :
+    f - ∑ n ∈ Finset.Ico ((of R).symm f).order a, of R (single n (((of R).symm f).coeff n)) ∈
+      lattice R V a := by
+  set F := (of R).symm f
+  have hsum : ∑ n ∈ Finset.Ico F.order a, of R (single n (F.coeff n)) =
+      of R (∑ n ∈ Finset.Ico F.order a, single n (F.coeff n)) := by
+    simp only [← ofLinearEquiv_apply, map_sum]
+  rw [hsum, mem_lattice_iff]
+  intro m hm
+  rw [of_symm_sub, Equiv.symm_apply_apply, coeff_sub, coeff_sum, sub_eq_zero,
+    Finset.sum_eq_single m (fun n _ hn ↦ coeff_single_of_ne hn.symm)]
+  · rw [coeff_single_same]
+  · intro hmem
+    rw [Finset.mem_Ico, not_and_or, not_le] at hmem
+    rw [coeff_eq_zero_of_lt_order (hmem.resolve_right (by omega)), single_eq_zero, coeff_zero]
+
+end HahnModule
+
+namespace TauCeti.HahnModule
+
+open _root_.HahnModule
+
+section Topology
+
+open Topology Pointwise
+
+variable (R V : Type*) [Ring R] [AddCommGroup V] [Module R V]
+
+/-- The lattices `U_a(V)`, as a filter basis of the additive group of `HahnModule ℤ R V`. -/
+@[instance_reducible]
+noncomputable def latticeFilterBasis : AddGroupFilterBasis (HahnModule ℤ R V) :=
+  addGroupFilterBasisOfComm (Set.range fun a ↦ (lattice R V a : Set (HahnModule ℤ R V)))
+    (Set.range_nonempty _)
+    (by
+      rintro _ _ ⟨a, rfl⟩ ⟨b, rfl⟩
+      exact ⟨_, ⟨max a b, rfl⟩, Set.subset_inter (lattice_antitone R V (le_max_left a b))
+        (lattice_antitone R V (le_max_right a b))⟩)
+    (by
+      rintro _ ⟨a, rfl⟩
+      exact zero_mem _)
+    (by
+      rintro _ ⟨a, rfl⟩
+      exact ⟨_, ⟨a, rfl⟩, Set.add_subset_iff.mpr fun _ hx _ hy ↦ add_mem hx hy⟩)
+    (by
+      rintro _ ⟨a, rfl⟩
+      exact ⟨_, ⟨a, rfl⟩, fun _ hx ↦ neg_mem hx⟩)
+
+/-- The lattice topology on module-valued Laurent series `V((t)) = HahnModule ℤ R V`: the
+lattices `U_a(V)` form a basis of neighbourhoods of zero (`hasBasis_nhds_zero_lattice`). The
+coefficient module carries no topology, as for the valuation topology of a Laurent-series
+field. -/
+noncomputable instance instTopologicalSpace : TopologicalSpace (HahnModule ℤ R V) :=
+  (latticeFilterBasis R V).topology
+
+instance : IsTopologicalAddGroup (HahnModule ℤ R V) :=
+  (latticeFilterBasis R V).isTopologicalAddGroup
+
+/-- The lattices `U_a(V)` form a basis of neighbourhoods of zero in `HahnModule ℤ R V`. -/
+theorem hasBasis_nhds_zero_lattice :
+    (𝓝 (0 : HahnModule ℤ R V)).HasBasis (fun _ : ℤ ↦ True)
+      (fun a ↦ (lattice R V a : Set (HahnModule ℤ R V))) := by
+  refine ((latticeFilterBasis R V).nhds_zero_hasBasis).to_hasBasis ?_ ?_
+  · rintro _ ⟨a, rfl⟩
+    exact ⟨a, trivial, subset_rfl⟩
+  · exact fun a _ ↦ ⟨_, ⟨a, rfl⟩, subset_rfl⟩
+
+/-- Every lattice `U_a(V)` is a neighbourhood of zero in `HahnModule ℤ R V`. -/
+theorem lattice_mem_nhds_zero (a : ℤ) :
+    (lattice R V a : Set (HahnModule ℤ R V)) ∈ 𝓝 0 :=
+  (hasBasis_nhds_zero_lattice R V).mem_of_mem trivial
+
+/-- Every lattice `U_a(V)` is open in `HahnModule ℤ R V`. -/
+theorem isOpen_lattice (a : ℤ) : IsOpen (lattice R V a : Set (HahnModule ℤ R V)) :=
+  (lattice R V a).toAddSubgroup.isOpen_of_mem_nhds (lattice_mem_nhds_zero R V a)
+
+/-- The lattice topology is Hausdorff: a series with a nonzero coefficient at `n` lies outside
+`U_(n + 1)(V)`. -/
+instance : T2Space (HahnModule ℤ R V) :=
+  IsTopologicalAddGroup.t2Space_of_zero_sep fun f hf ↦ by
+    obtain ⟨n, hn⟩ : ∃ n, ((of R).symm f).coeff n ≠ 0 := by
+      by_contra! h
+      exact hf (HahnModule.ext _ _ (funext fun n ↦ by simpa using h n))
+    exact ⟨_, lattice_mem_nhds_zero R V (n + 1),
+      fun hmem ↦ hn ((mem_lattice_iff R V).mp hmem n (Int.lt_succ n))⟩
+
+/-- The lattice topology is linear over the coefficient ring. -/
+instance : IsLinearTopology R (HahnModule ℤ R V) :=
+  IsLinearTopology.mk_of_hasBasis R (hasBasis_nhds_zero_lattice R V)
+
+/-- The monomials `v tⁿ` span a dense submodule of `HahnModule ℤ R V`. -/
+theorem dense_span_single :
+    Dense (Submodule.span R (Set.range fun p : ℤ × V ↦ of R (single p.1 p.2)) :
+      Set (HahnModule ℤ R V)) := by
+  refine fun f ↦ mem_closure_iff_nhds_zero.mpr fun U hU ↦ ?_
+  obtain ⟨a, -, ha⟩ := (hasBasis_nhds_zero_lattice R V).mem_iff.mp hU
+  refine ⟨∑ n ∈ Finset.Ico ((of R).symm f).order a, of R (single n (((of R).symm f).coeff n)),
+    Submodule.sum_mem _ fun n _ ↦ Submodule.subset_span ⟨(n, _), rfl⟩, ha ?_⟩
+  rw [SetLike.mem_coe, ← neg_sub]
+  exact neg_mem (f.sub_sum_single_mem_lattice a)
+
+variable {R V} in
+/-- Continuous linear maps from `HahnModule ℤ R V` to a Hausdorff module are determined by their
+values on the monomials `v tⁿ`. -/
+@[ext]
+theorem continuousLinearMap_ext_single {M : Type*} [AddCommMonoid M] [Module R M]
+    [TopologicalSpace M] [T2Space M] {ℓ m : HahnModule ℤ R V →L[R] M}
+    (h : ∀ (n : ℤ) (v : V), ℓ (of R (single n v)) = m (of R (single n v))) : ℓ = m :=
+  DFunLike.ext' <| ℓ.continuous.ext_on (dense_span_single R V) m.continuous <|
+    LinearMap.eqOn_span' (f := ℓ.toLinearMap) (g := m.toLinearMap) (by
+      rintro _ ⟨⟨n, v⟩, rfl⟩
+      exact h n v)
+
+end Topology
+
+end TauCeti.HahnModule
+
+namespace LinearMap
+
+open _root_.HahnModule TauCeti.HahnModule Topology
+
+variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
+
+/-- A linear map from `HahnModule ℤ R V` to a discrete module is continuous exactly when it
+vanishes on some lattice `U_a(V)`. -/
+theorem continuous_iff_exists_hahnModule_lattice_le_ker {M : Type*} [AddCommMonoid M]
+    [Module R M] [TopologicalSpace M] [DiscreteTopology M] (ℓ : HahnModule ℤ R V →ₗ[R] M) :
+    Continuous ℓ ↔ ∃ a : ℤ, lattice R V a ≤ LinearMap.ker ℓ := by
+  constructor
+  · intro hℓ
+    have hzero : ∀ᶠ f in 𝓝 (0 : HahnModule ℤ R V), ℓ f = 0 :=
+      hℓ.continuousAt.preimage_mem_nhds ((isOpen_discrete {0}).mem_nhds (by simp))
+    obtain ⟨a, -, ha⟩ := (hasBasis_nhds_zero_lattice R V).eventually_iff.mp hzero
+    exact ⟨a, fun f hf ↦ LinearMap.mem_ker.mpr (ha hf)⟩
+  · rintro ⟨a, ha⟩
+    apply continuous_of_continuousAt_zero ℓ
+    simp only [ContinuousAt, map_zero, nhds_discrete M, Filter.tendsto_pure]
+    exact (hasBasis_nhds_zero_lattice R V).eventually_iff.mpr
+      ⟨a, trivial, fun f hf ↦ LinearMap.mem_ker.mp (ha hf)⟩
+
+end LinearMap
