@@ -124,6 +124,17 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
 
+/-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
+`X_{aF + bG} = a X_F + b X_G`. -/
+theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {F G : V → ℝ}
+    {x : V} (hF : DifferentiableAt ℝ F x) (hG : DifferentiableAt ℝ G x) (a b : ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ a * F y + b * G y) x =
+      a • ω.hamiltonianVectorField F x + b • ω.hamiltonianVectorField G x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  rw [fderiv_fun_add (hF.const_mul a) (hG.const_mul b), fderiv_const_mul hF, fderiv_const_mul hG]
+  simp [map_add, map_smul]
+
 section Continuity
 
 variable {X : Type*} [TopologicalSpace X] {K : X → V → ℝ} {u : X → V} {s : Set X}

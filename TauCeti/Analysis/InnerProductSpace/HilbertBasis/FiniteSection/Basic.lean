@@ -96,6 +96,12 @@ theorem finiteProjection_apply (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) :
     b.finiteProjection n x = ∑ i : Fin (n + 1), b.repr x i • b i := by
   simp [finiteProjection, finiteInclusion_apply]
 
+/-- Including the restricted coordinates of a vector gives its finite-coordinate projection. -/
+@[simp]
+theorem finiteInclusion_coordinateCutoff (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) :
+    b.finiteInclusion n (b.coordinateCutoff n x) = b.finiteProjection n x := by
+  simp [finiteProjection]
+
 /-- Projection retains precisely the chosen coordinates. -/
 @[simp]
 theorem repr_finiteProjection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) (i : ℕ) :
@@ -109,7 +115,7 @@ theorem repr_finiteProjection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) (i
 theorem finiteProjection_comp_self (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     b.finiteProjection n ∘L b.finiteProjection n = b.finiteProjection n := by
   ext x
-  simp [finiteProjection]
+  simp [← finiteInclusion_coordinateCutoff]
 
 /-- Finite-coordinate projection is self-adjoint. -/
 @[simp]
@@ -154,6 +160,14 @@ noncomputable def finiteSection (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 
 theorem finiteSection_apply (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
     (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin (n + 1)) :
     T.finiteSection b n x i = b.repr (T (b.finiteInclusion n x)) i := by
+  simp [finiteSection]
+
+/-- A finite section applied to restricted coordinates restricts the operator applied to the
+finite-coordinate projection. -/
+theorem finiteSection_coordinateCutoff (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
+    (x : H) :
+    T.finiteSection b n (b.coordinateCutoff n x) =
+      b.coordinateCutoff n (T (b.finiteProjection n x)) := by
   simp [finiteSection]
 
 /-- The finite-section matrix entry is the corresponding Hilbert inner product. -/
@@ -217,6 +231,14 @@ theorem norm_finiteSection_le (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H)
 noncomputable def zeroExtendedFiniteSection (T : H →L[𝕜] H)
     (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) : H →L[𝕜] H :=
   (b.finiteInclusion n).toContinuousLinearMap ∘L T.finiteSection b n ∘L b.coordinateCutoff n
+
+/-- The zero extension applies the finite section to the restricted coordinates and includes the
+result. -/
+theorem zeroExtendedFiniteSection_apply (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
+    (x : H) :
+    T.zeroExtendedFiniteSection b n x =
+      b.finiteInclusion n (T.finiteSection b n (b.coordinateCutoff n x)) := by
+  simp [zeroExtendedFiniteSection]
 
 /-- Zero extension of finite sections preserves the zero operator. -/
 @[simp]

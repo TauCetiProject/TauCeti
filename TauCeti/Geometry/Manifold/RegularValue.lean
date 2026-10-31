@@ -40,6 +40,8 @@ to manifolds, including manifolds with boundary or corners.
   surjectivity of the Fréchet derivative.
 * `TauCeti.isRegularPoint_iff_injective_mfderiv`: between models of the same finite dimension,
   regularity is injectivity of the manifold derivative.
+* `TauCeti.isRegularPoint_iff_isInvertible_mfderiv`: between models of the same finite dimension
+  over a complete field, regularity is invertibility of the manifold derivative.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
 * `TauCeti.range_mfderiv_le_ker_mfderiv_of_eventually_eq`: a map into a level set `f ⁻¹' {y}`
@@ -167,6 +169,17 @@ theorem isRegularPoint_iff_injective_mfderiv [FiniteDimensional 𝕜 E] [FiniteD
   -- the `FiniteDimensional` instances apply to the tangent spaces.
   isRegularPoint_iff.trans (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
     (f := (mfderiv I J f x : TangentSpace I x →ₗ[𝕜] TangentSpace J (f x))) hdim).symm
+
+/-- Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
+field, a point is regular exactly when the manifold derivative there is invertible. -/
+theorem isRegularPoint_iff_isInvertible_mfderiv [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+    [FiniteDimensional 𝕜 E'] (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') :
+    IsRegularPoint I J f x ↔ (mfderiv I J f x).IsInvertible := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.surjective⟩
+  -- A bijective linear map out of a finite-dimensional space is a continuous linear equivalence.
+  exact ⟨(LinearEquiv.ofBijective (mfderiv I J f x : TangentSpace I x →ₗ[𝕜] TangentSpace J (f x))
+    ⟨(isRegularPoint_iff_injective_mfderiv hdim).1 h, h⟩).toContinuousLinearEquiv,
+    ContinuousLinearMap.ext fun _ ↦ rfl⟩
 
 /-- A regular point of a map into a normed space is a point of differentiability. Without
 differentiability the derivative is `0`, so the target is the zero space and the map is constant. -/

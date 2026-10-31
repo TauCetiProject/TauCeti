@@ -32,6 +32,8 @@ decreases along orbits, so the orbit cannot converge to `x`.
   flow, once a coordinate of negative weight has grown.
 * `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm`: the flow of an adapted pseudo-gradient is
   the linear flow while the linear orbit stays in the chart.
+* `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm_of_forall_mem_uIcc`: the same at time `t`,
+  when the linear orbit stays in the chart on the closed interval between `0` and `t`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm_of_forall_coord_eq_zero`: on the coordinate
   subspace of the positive weights, the flow is the contraction `z ↦ e^{-t} z`.
 * `TauCeti.IsAdaptedPseudoGradient.mem_stableSet_of_forall_coord_eq_zero`: near `x`, the points
@@ -233,6 +235,42 @@ theorem flow_toChart_symm (hX : IsAdaptedPseudoGradient f X) (φ : MorseChart E 
       φ.toChart.symm (φ.coord.symm (φ.linearFlow 0 z)) = φ.toChart.symm (φ.coord.symm z))
   rw [hX.flow_apply]
   exact heq ht
+
+/-- **In a Morse chart, the flow of an adapted pseudo-gradient is linear up to time `t`.** If `X`
+is the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`, and the linear orbit of `z` stays in
+the chart for all times between `0` and `t`, then at time `t` the flow of `X` from the point with
+coordinates `z` is the point with coordinates `(e^{-wᵢ t} zᵢ)ᵢ`. -/
+theorem flow_toChart_symm_of_forall_mem_uIcc (hX : IsAdaptedPseudoGradient f X)
+    (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {z : Fin (Module.finrank ℝ E) → ℝ} {t : ℝ}
+    (hz : ∀ s ∈ uIcc 0 t, φ.coord.symm (φ.linearFlow s z) ∈ φ.toChart.target) :
+    hX.flow t (φ.toChart.symm (φ.coord.symm z)) =
+      φ.toChart.symm (φ.coord.symm (φ.linearFlow t z)) := by
+  -- The times at which the linear orbit lies in the chart form an open set containing the
+  -- endpoints of `[min 0 t, max 0 t]`, so it contains an open interval around each endpoint, and
+  -- hence an open interval around the whole closed interval.
+  set U := {s : ℝ | φ.coord.symm (φ.linearFlow s z) ∈ φ.toChart.target}
+  have hU : IsOpen U :=
+    φ.toChart.open_target.preimage <|
+      φ.coord.symm.toLinearMap.continuous_of_finiteDimensional.comp <|
+        continuous_iff_continuousAt.2 fun s ↦ (φ.hasDerivAt_linearFlow z s).continuousAt
+  have hIcc : Icc (min 0 t) (max 0 t) ⊆ U := fun s hs ↦ hz s (by rwa [← Icc_min_max])
+  obtain ⟨a, b₁, ⟨ha, hb₁⟩, hab₁⟩ := mem_nhds_iff_exists_Ioo_subset.1 <|
+    hU.mem_nhds (hIcc ⟨le_rfl, min_le_max⟩)
+  obtain ⟨a₂, b, ⟨ha₂, hb⟩, hab₂⟩ := mem_nhds_iff_exists_Ioo_subset.1 <|
+    hU.mem_nhds (hIcc ⟨min_le_max, le_rfl⟩)
+  have hab : Ioo a b ⊆ U := fun s hs ↦ by
+    rcases lt_or_ge s (min 0 t) with hsm | hsm
+    · exact hab₁ ⟨hs.1, hsm.trans hb₁⟩
+    rcases le_or_gt s (max 0 t) with hsM | hsM
+    · exact hIcc ⟨hsm, hsM⟩
+    · exact hab₂ ⟨ha₂.trans hsM, hs.2⟩
+  have hmem {s : ℝ} (hs : s ∈ uIcc 0 t) : s ∈ Ioo a b := by
+    rw [← Icc_min_max] at hs
+    exact ⟨ha.trans_le hs.1, hs.2.trans_lt hb⟩
+  exact hX.flow_toChart_symm φ hφ (hmem left_mem_uIcc) hab (hmem right_mem_uIcc)
 
 /-- **On the stable subspace the flow contracts.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in
 the Morse chart `φ`, and let `z` be small coordinates vanishing in every direction of negative

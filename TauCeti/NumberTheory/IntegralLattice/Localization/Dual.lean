@@ -30,6 +30,8 @@ every `ℤ_p`-linear functional on the localized carrier.
 
 * `TauCeti.IntegralLattice.isBaseChange_localizationDualToCompletion`: the completed ambient
   space is the scalar extension of the localized dual carrier.
+* `TauCeti.IntegralLattice.localCarrierToDual`: the localized inclusion `L_p → ℤ_p ⊗[ℤ] Lᵛ`,
+  which is injective and compatible with the embeddings into the completed ambient space.
 * `TauCeti.IntegralLattice.localDualPairingEquiv`: the perfect pairing after localization.
 * `TauCeti.IntegralLattice.completedRationalForm_localizationDualToCompletion`: compatibility
   with the completed rational form.
@@ -95,6 +97,32 @@ theorem localizationDualToCompletion_injective :
   let : HasUniqueDiv V := .of_module_rat V
   exact (L.isBaseChange_localizationDualToCompletion p).injective_of_tensorProduct_mk_injective
     (Module.Flat.tensorProduct_mk_injective ℤ_[p] (L.LocalDualCarrier p) ℚ_[p])
+
+/-- The localization at `p` of the inclusion of the carrier of `L` in its dual carrier. -/
+noncomputable def localCarrierToDual : L.LocalCarrier p →ₗ[ℤ_[p]] L.LocalDualCarrier p :=
+  (Submodule.inclusion L.le_dualCarrier).baseChange ℤ_[p]
+
+/-- The localized inclusion on pure tensors. -/
+@[simp]
+theorem localCarrierToDual_tmul (a : ℤ_[p]) (x : L) :
+    L.localCarrierToDual p (a ⊗ₜ x) = a ⊗ₜ ⟨(x : V), L.le_dualCarrier x.property⟩ :=
+  (rfl)
+
+/-- In the completed rational space, the localized inclusion is the inclusion of `L_p` in the
+localized dual. -/
+@[simp]
+theorem localizationDualToCompletion_localCarrierToDual (x : L.LocalCarrier p) :
+    L.localizationDualToCompletion p (L.localCarrierToDual p x) =
+      L.localizationToCompletion p x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a x => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The localized inclusion of the carrier in the dual carrier is injective. -/
+theorem localCarrierToDual_injective : Function.Injective (L.localCarrierToDual p) := fun x y h ↦
+  L.localizationToCompletion_injective p <| by
+    rw [← localizationDualToCompletion_localCarrierToDual, h,
+      localizationDualToCompletion_localCarrierToDual]
 
 variable [L.IsNondegenerate]
 
