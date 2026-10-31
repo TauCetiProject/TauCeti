@@ -27,9 +27,10 @@ map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding o
 range contains the closed unit ball. These are the hypotheses under which `ℚ_[p]`-valued measures
 of norm at most `1` come from `ℤ_[p]`-valued measures.
 
-For a normed `ℚ_[p]`-algebra field `K`, the composite structure map
-`TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is an injective, continuous isometry, so it maps
-`ℤ_[p]` into the closed unit ball of `K`.
+For a normed `ℚ_[p]`-algebra `K`, the composite structure map
+`TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
+isometry, so it maps `ℤ_[p]` into the closed unit ball of `K`, and it is injective when `K` is
+nontrivial.
 -/
 
 public section
@@ -82,10 +83,10 @@ namespace TauCeti
 
 section Algebra
 
-variable (p : ℕ) [Fact (Nat.Prime p)] (K : Type*) [NormedField K] [NormedAlgebra ℚ_[p] K]
+variable (p : ℕ) [Fact (Nat.Prime p)] (K : Type*) [SeminormedRing K] [NormedAlgebra ℚ_[p] K]
 
 /-- The structure map `ℤ_p → K` of a normed `ℚ_p`-algebra `K`, through `ℚ_p`. It is an isometry
-onto its image (`TauCeti.norm_padicIntAlgebraMap`). -/
+onto its image when `‖1‖ = 1` in `K` (`TauCeti.norm_padicIntAlgebraMap`). -/
 def padicIntAlgebraMap : ℤ_[p] →+* K :=
   (algebraMap ℚ_[p] K).comp PadicInt.Coe.ringHom
 
@@ -96,13 +97,15 @@ theorem padicIntAlgebraMap_apply (a : ℤ_[p]) :
     padicIntAlgebraMap p K a = algebraMap ℚ_[p] K a :=
   (rfl)
 
-theorem norm_padicIntAlgebraMap (a : ℤ_[p]) : ‖padicIntAlgebraMap p K a‖ = ‖a‖ := by
+theorem norm_padicIntAlgebraMap [NormOneClass K] (a : ℤ_[p]) :
+    ‖padicIntAlgebraMap p K a‖ = ‖a‖ := by
   simp [norm_algebraMap']
 
-theorem norm_padicIntAlgebraMap_le_one (a : ℤ_[p]) : ‖padicIntAlgebraMap p K a‖ ≤ 1 :=
+theorem norm_padicIntAlgebraMap_le_one [NormOneClass K] (a : ℤ_[p]) :
+    ‖padicIntAlgebraMap p K a‖ ≤ 1 :=
   (norm_padicIntAlgebraMap a).trans_le a.norm_le_one
 
-theorem padicIntAlgebraMap_injective : Function.Injective (padicIntAlgebraMap p K) :=
+theorem padicIntAlgebraMap_injective [Nontrivial K] : Function.Injective (padicIntAlgebraMap p K) :=
   (algebraMap ℚ_[p] K).injective.comp PadicInt.isEmbedding_coe_ringHom.injective
 
 theorem continuous_padicIntAlgebraMap : Continuous (padicIntAlgebraMap p K) :=

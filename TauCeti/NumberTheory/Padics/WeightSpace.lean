@@ -45,7 +45,7 @@ division ring over `ℚ_p`, such as the field `ℂ_p`, this holds with no furthe
 * `TauCeti.WeightSpace.weightTest κ`: a weight `κ`, viewed as the scalar-valued continuous
   character `x ↦ (κ x : R)`.
 * `TauCeti.WeightSpace.inclusion K`: the weight `x ↦ x` with values in a normed `ℚ_p`-algebra
-  field `K`.
+  `K`.
 * `TauCeti.WeightSpace.finiteChar κ`: the finite part `κ ∘ ω : Δ →* Rˣ`.
 * `TauCeti.WeightSpace.principalChar κ`: the additive character `s ↦ κ(exp(q s))` of `ℤ_p`.
 * `TauCeti.WeightSpace.coord κ`: the coordinate `T_κ = κ(γ) - 1`.
@@ -201,7 +201,7 @@ theorem norm_coord_lt_one_of_normedAlgebra {K : Type*} [NormedDivisionRing K]
 
 section Inclusion
 
-variable (K : Type*) [NormedField K] [NormedAlgebra ℚ_[p] K]
+variable (K : Type*) [SeminormedRing K] [NormedAlgebra ℚ_[p] K]
 
 /-- The weight `x ↦ x` of `ℤ_pˣ` with values in a normed `ℚ_p`-algebra `K`. Its powers are the
 algebraic weights `x ↦ x ^ k`. -/
