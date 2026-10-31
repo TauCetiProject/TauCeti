@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.OfFn
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
 /-!
@@ -24,6 +25,8 @@ points of the conjugation `a ↦ conj ∘ a ∘ rev` of `Fin (k + 1) → ℂ`, s
 
 ## Main results
 
+* `TauCeti.finiteDimensional_conjReciprocalPolynomials`: the conjugate-reciprocal polynomials of
+  degree at most `k` form a finite-dimensional real vector space.
 * `TauCeti.finrank_conjReciprocalPolynomials`: the conjugate-reciprocal polynomials of degree at
   most `k` form a real vector space of dimension `(k + 1).toNat`.
 -/
@@ -95,6 +98,13 @@ private theorem conjReciprocalPolynomials_eq_map :
     ext
     simp only [Fin.val_rev]
     omega
+
+/-- The conjugate-reciprocal polynomials of degree at most `k` form a finite-dimensional real
+vector space. -/
+instance finiteDimensional_conjReciprocalPolynomials (k : ℤ) :
+    FiniteDimensional ℝ (conjReciprocalPolynomials k) := by
+  rw [conjReciprocalPolynomials_eq_map]
+  infer_instance
 
 /-- The conjugate-reciprocal polynomials of degree at most `k` form a real vector space of
 dimension `k + 1` when `k ≥ -1`, and `0` when `k < 0`. -/

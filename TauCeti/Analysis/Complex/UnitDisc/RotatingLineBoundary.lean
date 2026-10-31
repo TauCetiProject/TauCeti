@@ -62,6 +62,8 @@ coefficients with Fourier coefficients of boundary values in
 * `TauCeti.unitDiscCauchyRiemannKernel_eq_bot`: for `k < 0` the only solution is zero.
 * `TauCeti.eval_eq_zpow_mul_conj_eval`: a conjugate-reciprocal polynomial of degree at most `k`
   satisfies the boundary condition on the unit circle.
+* `TauCeti.finiteDimensional_unitDiscCauchyRiemannKernel`: the solutions form a
+  finite-dimensional real vector space.
 * `TauCeti.finrank_unitDiscCauchyRiemannKernel`: the solutions form a real vector space of
   dimension `(k + 1).toNat`.
 
@@ -239,25 +241,37 @@ theorem unitDiscCauchyRiemannKernel_eq_bot (hk : k < 0) : unitDiscCauchyRiemannK
   simp only [this, eval_zero]
   rfl
 
+/-- Evaluation of complex polynomials at the points of the closed unit disc, as a real-linear
+map. -/
+private noncomputable def evalClosedDisc : ℂ[X] →ₗ[ℝ] (closedBall (0 : ℂ) 1 → ℂ) :=
+  LinearMap.pi fun z : closedBall (0 : ℂ) 1 => (leval (z : ℂ)).restrictScalars ℝ
+
+private theorem evalClosedDisc_injective : Function.Injective evalClosedDisc := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro q hq
+  refine eq_zero_of_infinite_isRoot q
+    ((infinite_of_mem_nhds (0 : ℂ) (closedBall_mem_nhds 0 one_pos)).mono fun z hz => ?_)
+  simpa [evalClosedDisc] using congrFun hq ⟨z, hz⟩
+
+private theorem unitDiscCauchyRiemannKernel_eq_map :
+    unitDiscCauchyRiemannKernel k = (conjReciprocalPolynomials k).map evalClosedDisc := by
+  ext g
+  rw [Submodule.mem_map, mem_unitDiscCauchyRiemannKernel_iff_exists_eval]
+  rfl
+
+/-- The solutions of the Cauchy–Riemann equation on the unit disc with boundary values on the line
+`w ^ (k / 2) ℝ` form a finite-dimensional real vector space. -/
+instance finiteDimensional_unitDiscCauchyRiemannKernel (k : ℤ) :
+    FiniteDimensional ℝ (unitDiscCauchyRiemannKernel k) := by
+  rw [unitDiscCauchyRiemannKernel_eq_map]
+  infer_instance
+
 /-- The solutions of the Cauchy–Riemann equation on the unit disc with boundary values on the line
 `w ^ (k / 2) ℝ` form a real vector space of dimension `k + 1` when `k ≥ -1`, and `0` when
 `k < 0`. -/
 theorem finrank_unitDiscCauchyRiemannKernel (k : ℤ) :
     finrank ℝ (unitDiscCauchyRiemannKernel k) = (k + 1).toNat := by
-  -- Evaluation of polynomials on the closed disc, an injective real-linear map.
-  let ev : ℂ[X] →ₗ[ℝ] (closedBall (0 : ℂ) 1 → ℂ) :=
-    LinearMap.pi fun z : closedBall (0 : ℂ) 1 => (leval (z : ℂ)).restrictScalars ℝ
-  have hev : Function.Injective ev := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro q hq
-    refine eq_zero_of_infinite_isRoot q
-      ((infinite_of_mem_nhds (0 : ℂ) (closedBall_mem_nhds 0 one_pos)).mono fun z hz => ?_)
-    simpa [ev] using congrFun hq ⟨z, hz⟩
-  have hmap : unitDiscCauchyRiemannKernel k = (conjReciprocalPolynomials k).map ev := by
-    ext g
-    rw [Submodule.mem_map, mem_unitDiscCauchyRiemannKernel_iff_exists_eval]
-    rfl
-  rw [hmap, ← finrank_conjReciprocalPolynomials k]
-  exact (Submodule.equivMapOfInjective _ hev _).finrank_eq.symm
+  rw [unitDiscCauchyRiemannKernel_eq_map, ← finrank_conjReciprocalPolynomials k]
+  exact (Submodule.equivMapOfInjective _ evalClosedDisc_injective _).finrank_eq.symm
 
 end TauCeti
