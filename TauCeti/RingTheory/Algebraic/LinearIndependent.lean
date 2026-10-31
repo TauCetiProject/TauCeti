@@ -104,11 +104,8 @@ theorem _root_.IsAlgebraic.exists_card_le_of_linearIndependent_pow [IsDomain R] 
     have hle : e i ≤ N := Finset.le_sup (Finset.mem_univ i)
     rw [Subalgebra.mem_toSubmodule, ← Nat.sub_add_cancel hle, pow_add, mul_smul, ← smul_pow]
     exact Subalgebra.smul_mem _ (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton R _) _) _
-  refine LinearIndependent.fintype_card_le_finrank (b := fun i ↦ (⟨_, hmem i⟩ : M)) ?_
-  rw [Fintype.linearIndependent_iff] at he ⊢
-  intro g hg i
-  have hsum : ∑ i, (g i * c ^ N) • x ^ e i = 0 := by
-    simpa [mul_smul] using congrArg Subtype.val hg
-  exact (mul_eq_zero.mp (he _ hsum i)).resolve_right (pow_ne_zero _ hc)
+  have hreg : IsRightRegular (c ^ N) := (isRegular_iff_ne_zero.mpr (pow_ne_zero _ hc)).right
+  exact ((he.smul_of_isRightRegular (w := fun _ ↦ c ^ N) fun _ ↦ hreg).codRestrict M
+    hmem).fintype_card_le_finrank
 
 end TauCeti

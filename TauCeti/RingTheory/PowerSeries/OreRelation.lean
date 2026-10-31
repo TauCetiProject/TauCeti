@@ -18,13 +18,6 @@ Let `K` be a finite field with `q` elements and let `f ∈ K⟦X⟧` be algebrai
 satisfies an *Ore relation* `∑_{i ≤ m} aᵢ • f ^ q ^ i = 0` with polynomial coefficients
 `aᵢ ∈ K[X]` and `a₀ ≠ 0` (`PowerSeries.exists_ore_relation`).
 
-The powers `f ^ q ^ i` satisfy some nontrivial `K[X]`-linear relation because `f` is algebraic
-(`IsAlgebraic.exists_card_le_of_linearIndependent_pow`). If the least index `j` with `a_j ≠ 0`
-is positive, some Cartier operator `Λ_r = PowerSeries.cartier K q r` with `r < q` does not
-vanish on `a_j`, and since `Λ_r (aᵢ • f ^ q ^ i) = Λ_r aᵢ • f ^ q ^ (i - 1)` for `i ≥ 1`,
-applying `Λ_r` gives a relation whose least nonzero index is `j - 1`. Descending to `j = 0`
-gives the Ore relation.
-
 Dividing an Ore relation by `a₀` writes `f` in terms of its own iterated Frobenius powers; this
 is how Christol's theorem shows that the Cartier operators preserve a finite set containing `f`,
 so that the coefficient sequence of `f` is `q`-automatic.
@@ -80,7 +73,11 @@ theorem exists_ore_relation {f : K⟦X⟧} (hf : IsAlgebraic K[X] f) :
       ∑ i ∈ Finset.range (m + 1), a i • f ^ (Fintype.card K ^ i) = 0 := by
   classical
   set q := Fintype.card K
-  -- Lowering the least index with a nonzero coefficient, one Cartier operator at a time.
+  -- The powers `f ^ q ^ i` satisfy some nontrivial `K[X]`-linear relation because `f` is
+  -- algebraic. If the least index `j` with `a_j ≠ 0` is positive, some Cartier operator
+  -- `Λ_r = cartier K q r` with `r < q` does not vanish on `a_j`, and since
+  -- `Λ_r (aᵢ • f ^ q ^ i) = Λ_r aᵢ • f ^ q ^ (i - 1)` for `i ≥ 1`, applying `Λ_r` gives a relation
+  -- whose least nonzero index is `j - 1`. Descending to `j = 0` gives the Ore relation.
   suffices H : ∀ j n (a : ℕ → K[X]), (∀ i < j, a i = 0) → a j ≠ 0 → j ≤ n →
       ∑ i ∈ Finset.range (n + 1), a i • f ^ (q ^ i) = 0 →
       ∃ (m : ℕ) (a : ℕ → K[X]), a 0 ≠ 0 ∧ ∑ i ∈ Finset.range (m + 1), a i • f ^ (q ^ i) = 0 by
