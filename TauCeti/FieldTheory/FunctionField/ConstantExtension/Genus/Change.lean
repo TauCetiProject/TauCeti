@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.RiemannRoch
 public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
-import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # The genus drop under a constant field extension, place by place
@@ -55,9 +55,11 @@ theorem refines it: for a purely inseparable `k' / k` of degree `p`, the drop is
 
 ## Main results
 
+* `TauCeti.Place.constantSpanIntegers_le_iff`: `𝒪_P · k'` is the smallest `k'`-subspace of `F'`
+  containing the image of `𝒪_P`.
 * `TauCeti.Place.finiteDimensional_singularityQuotient`: `𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional.
-* `TauCeti.Place.singularityDegree_eq_zero_iff`: `δ_P = 0` exactly when `𝒪_P · k'` is integrally
-  closed in `F'`.
+* `TauCeti.Place.singularityDegree_eq_zero_iff`: when `𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional,
+  `δ_P = 0` exactly when `𝒪_P · k'` is integrally closed in `F'`.
 * `TauCeti.finite_setOf_singularityDegree_ne_zero`: `δ_P = 0` at all but finitely many places.
 * `TauCeti.genus_eq_genus_add_finsum_singularityDegree`: **`g(F / k) = g(F' / k') + ∑_P δ_P`.**
 * `TauCeti.genus_eq_genus_iff_forall_constantSpanIntegers_eq`: the genus is unchanged exactly
@@ -98,6 +100,24 @@ the fiber over `P` of the curve of `F / k` after extending the constants to `k'`
 noncomputable def constantSpanIntegers : Submodule k' F' :=
   Submodule.span k' (algebraMap F F' '' P.integers)
 
+omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
+theorem constantSpanIntegers_def :
+    constantSpanIntegers k' F' P = Submodule.span k' (algebraMap F F' '' P.integers) :=
+  (rfl)
+
+omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
+variable {P} in
+theorem algebraMap_mem_constantSpanIntegers {f : F} (hf : f ∈ P.integers) :
+    algebraMap F F' f ∈ constantSpanIntegers k' F' P :=
+  Submodule.subset_span ⟨f, hf, rfl⟩
+
+omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
+/-- `𝒪_P · k'` is the smallest `k'`-subspace of `F'` containing the image of `𝒪_P`. -/
+theorem constantSpanIntegers_le_iff {N : Submodule k' F'} :
+    constantSpanIntegers k' F' P ≤ N ↔ ∀ f ∈ P.integers, algebraMap F F' f ∈ N := by
+  rw [constantSpanIntegers_def, Submodule.span_le, Set.image_subset_iff]
+  rfl
+
 variable [Algebra.IsIntegral k k']
 
 /-- The integral closure `𝒪'_P` of the valuation ring of `P` in `F'`, as a `k'`-subspace of `F'`.
@@ -127,9 +147,8 @@ theorem mem_integralClosureSubmodule_iff_forall_restrict_eq [Algebra.IsIntegral 
 are integral over `𝒪_P`. -/
 theorem constantSpanIntegers_le_integralClosureSubmodule :
     constantSpanIntegers k' F' P ≤ integralClosureSubmodule k' F' P :=
-  Submodule.span_le.2 <| by
-    rintro _ ⟨f, hf, rfl⟩
-    exact isIntegral_algebraMap (x := (⟨f, hf⟩ : P.integers))
+  (constantSpanIntegers_le_iff k' F' P).2 fun f hf ↦
+    isIntegral_algebraMap (x := (⟨f, hf⟩ : P.integers))
 
 /-- The quotient `𝒪'_P ⧸ 𝒪_P · k'`, which measures how far `𝒪_P ⊗_k k'` is from being integrally
 closed in `F'`. -/
@@ -146,6 +165,22 @@ drops by the sum of the singularity degrees (`TauCeti.genus_eq_genus_add_finsum_
 noncomputable def singularityDegree : ℕ :=
   finrank k' (singularityQuotient k' F' P)
 
+theorem singularityDegree_def :
+    singularityDegree k' F' P = finrank k' (singularityQuotient k' F' P) :=
+  (rfl)
+
+/-- **A place has singularity degree zero exactly when `𝒪_P · k'` is integrally closed**: when
+`𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional, `δ_P = 0` if and only if `𝒪_P ⊗_k k'` is the integral
+closure of `𝒪_P` in `F'`. The finiteness holds at every place in the setting of the genus drop
+(`TauCeti.Place.finiteDimensional_singularityQuotient`). -/
+theorem singularityDegree_eq_zero_iff [FiniteDimensional k' (singularityQuotient k' F' P)] :
+    singularityDegree k' F' P = 0 ↔
+      constantSpanIntegers k' F' P = integralClosureSubmodule k' F' P := by
+  rw [singularityDegree_def, Module.finrank_zero_iff, Submodule.Quotient.subsingleton_iff,
+    Submodule.submoduleOf_eq_top]
+  exact ⟨fun hle ↦ le_antisymm (constantSpanIntegers_le_integralClosureSubmodule k' F' P) hle,
+    fun heq ↦ heq.ge⟩
+
 end Place
 
 /-! ### The local comparison -/
@@ -154,36 +189,13 @@ section Local
 
 variable [FiniteDimensional k k']
 
-/-- An `F`-basis of `F' = F · k'` made of the images of a `k`-basis of `k'`. -/
-private noncomputable def constBasis (h : constantCompositum F k' F' = ⊤)
-    (hn : finrank F F' = finrank k k') : Basis (Fin (finrank k k')) F F' :=
-  haveI := finiteDimensional_of_constantCompositum_eq_top (k := k) h
-  have hspan := (span_range_algebraMap_comp_of_constantCompositum_eq_top h (finBasis k k')).ge
-  Basis.mk (linearIndependent_of_top_le_span_of_card_eq_finrank hspan
-    (by rw [Fintype.card_fin, hn])) hspan
-
 variable (h : constantCompositum F k' F' = ⊤) (hn : finrank F F' = finrank k k')
-
-private theorem constBasis_apply (j : Fin (finrank k k')) :
-    constBasis h hn j = algebraMap k' F' (finBasis k k' j) := by
-  simp [constBasis]
-
-/-- The coordinates of a constant in the basis of constants are its coordinates over `k`. -/
-private theorem constBasis_repr_algebraMap (x : k') (j : Fin (finrank k k')) :
-    (constBasis h hn).repr (algebraMap k' F' x) j = algebraMap k F ((finBasis k k').repr x j) := by
-  have hx : algebraMap k' F' x = ∑ i, algebraMap k F ((finBasis k k').repr x i) • constBasis h hn i
-      := by
-    conv_lhs => rw [← (finBasis k k').sum_repr x]
-    rw [map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [constBasis_apply, Algebra.smul_def, Algebra.smul_def, map_mul,
-      ← IsScalarTower.algebraMap_apply k k' F', ← IsScalarTower.algebraMap_apply k F F']
-  rw [hx, Basis.repr_sum_self]
 
 /-- **`𝒪_P · k'` in coordinates**: an element of `F'` lies in `𝒪_P · k'` exactly when its
 coordinates in the basis of constants lie in `𝒪_P`. -/
 private theorem mem_constantSpanIntegers_iff (P : Place k F) {z : F'} :
-    z ∈ P.constantSpanIntegers k' F' ↔ ∀ j, (constBasis h hn).repr z j ∈ P.integers := by
+    z ∈ P.constantSpanIntegers k' F' ↔
+      ∀ j, (constantBasisOfFinrankEq h hn (finBasis k k')).repr z j ∈ P.integers := by
   constructor
   · intro hz
     induction hz using Submodule.span_induction with
@@ -191,37 +203,29 @@ private theorem mem_constantSpanIntegers_iff (P : Place k F) {z : F'} :
       obtain ⟨f, hf, rfl⟩ := hx
       intro j
       rw [Algebra.algebraMap_eq_smul_one, ← map_one (algebraMap k' F'), map_smul,
-        Finsupp.smul_apply, smul_eq_mul, constBasis_repr_algebraMap]
+        Finsupp.smul_apply, smul_eq_mul, constantBasisOfFinrankEq_repr_algebraMap]
       exact mul_mem hf (P.algebraMap_mem_integers _)
     | zero => simp
     | add x y _ _ hx hy => intro j; simpa using add_mem (hx j) (hy j)
     | smul c x _ hx =>
       intro j
-      have hcx : c • x = ∑ i, (constBasis h hn).repr x i •
+      have hcx : c • x = ∑ i, (constantBasisOfFinrankEq h hn (finBasis k k')).repr x i •
           algebraMap k' F' (c * finBasis k k' i) := by
-        conv_lhs => rw [← (constBasis h hn).sum_repr x]
+        conv_lhs => rw [← (constantBasisOfFinrankEq h hn (finBasis k k')).sum_repr x]
         rw [Finset.smul_sum]
         refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [constBasis_apply, map_mul, Algebra.smul_def, Algebra.smul_def, Algebra.smul_def]
+        rw [constantBasisOfFinrankEq_apply, map_mul, Algebra.smul_def, Algebra.smul_def,
+          Algebra.smul_def]
         ring
       rw [hcx, map_sum, Finsupp.finsetSum_apply]
       refine sum_mem fun i _ ↦ ?_
-      rw [map_smul, Finsupp.smul_apply, smul_eq_mul, constBasis_repr_algebraMap]
+      rw [map_smul, Finsupp.smul_apply, smul_eq_mul, constantBasisOfFinrankEq_repr_algebraMap]
       exact mul_mem (hx i) (P.algebraMap_mem_integers _)
   · intro hz
-    rw [← (constBasis h hn).sum_repr z]
+    rw [← (constantBasisOfFinrankEq h hn (finBasis k k')).sum_repr z]
     refine Submodule.sum_mem _ fun j _ ↦ ?_
-    rw [constBasis_apply, Algebra.smul_def, mul_comm, ← Algebra.smul_def]
+    rw [constantBasisOfFinrankEq_apply, Algebra.smul_def, mul_comm, ← Algebra.smul_def]
     exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, hz j, rfl⟩)
-
-/-- Multiplying by a function `s` of order `d` at `P` clears exactly the poles of order `d`. -/
-private theorem mul_mem_integers_iff {P : Place k F} {s x : F} {d : ℤ} (hs0 : s ≠ 0)
-    (hs : P.ord s = d) : s * x ∈ P.integers ↔ P.valuation x ≤ WithZero.exp d := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  rw [Place.mem_integers_iff_ord_nonneg, P.ord_mul hs0 hx, P.valuation_eq_exp_neg_ord hx,
-    WithZero.exp_le_exp, hs]
-  omega
 
 variable [FiniteDimensional F F']
 
@@ -283,7 +287,7 @@ private theorem pi_localMap_surjective
   classical
   intro y
   choose y' hy' using fun P : S ↦ Submodule.Quotient.mk_surjective _ (y P)
-  set c := constBasis h hn
+  set c := constantBasisOfFinrankEq h hn (finBasis k k')
   -- the coordinates of the targets, with the pole allowed by `D` restored, as repartitions of `F`
   let a : Fin (finrank k k') → Place k F → F := fun j P ↦
     if hP : P ∈ S then (s P)⁻¹ * c.repr (y' ⟨P, hP⟩ : F') j else 0
@@ -306,7 +310,7 @@ private theorem pi_localMap_surjective
       have := congrFun (hsum j) P
       rwa [← hg j, Pi.add_apply, Function.const_apply] at this
     have hint : s P * α j P ∈ P.integers :=
-      (mul_mem_integers_iff (hs0 P) (hs P)).2 ((mem_adeleFiltration_iff.1 (hα j)) P)
+      (Place.mul_mem_integers_iff (hs0 P) (hs P)).2 ((mem_adeleFiltration_iff.1 (hα j)) P)
     have hcoord : c.repr (s P • z - (if hP : P ∈ S then (y' ⟨P, hP⟩ : F') else 0)) j =
         -(s P * α j P) := by
       rw [map_sub, map_smul, Finsupp.sub_apply, Finsupp.smul_apply, smul_eq_mul, hzrepr]
@@ -349,7 +353,7 @@ private theorem span_le_ker_pi_localMap (S : Finset (Place k F)) :
     refine Submodule.span_le.2 ?_
     rintro _ ⟨f, hf, rfl⟩
     refine Submodule.subset_span ⟨s P * f, ?_, by simp⟩
-    exact (mul_mem_integers_iff (hs0 P) (hs P)).2 (mem_riemannRochSpace_iff.1 hf P)
+    exact (Place.mul_mem_integers_iff (hs0 P) (hs P)).2 (mem_riemannRochSpace_iff.1 hf P)
   simpa [Algebra.smul_def] using hspan hz
 
 include h hn in
@@ -362,7 +366,7 @@ private theorem ker_pi_localMap_le_span (S : Finset (Place k F))
         (riemannRochSpace (Divisor.conorm k' F' D)).subtype := by
   intro z hz
   rw [LinearMap.mem_ker] at hz
-  set c := constBasis h hn
+  set c := constantBasisOfFinrankEq h hn (finBasis k k')
   -- at every place, `s P • z` lies in `𝒪_P · k'`
   have hmem (P : Place k F) : s P • (z : F') ∈ P.constantSpanIntegers k' F' := by
     by_cases hP : P ∈ S
@@ -372,52 +376,15 @@ private theorem ker_pi_localMap_le_span (S : Finset (Place k F))
       exact (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.2 P
   -- so the coordinates of `z` lie in `L(D)`
   have hcoord (j) : c.repr z j ∈ riemannRochSpace D := by
-    refine mem_riemannRochSpace_iff.2 fun P ↦ (mul_mem_integers_iff (hs0 P) (hs P)).1 ?_
+    refine mem_riemannRochSpace_iff.2 fun P ↦ (Place.mul_mem_integers_iff (hs0 P) (hs P)).1 ?_
     have := (mem_constantSpanIntegers_iff h hn P).1 (hmem P) j
     rwa [map_smul, Finsupp.smul_apply, smul_eq_mul] at this
   rw [Submodule.mem_comap, Submodule.subtype_apply, ← c.sum_repr z]
   refine Submodule.sum_mem _ fun j _ ↦ ?_
-  rw [constBasis_apply, Algebra.smul_def, mul_comm, ← Algebra.smul_def]
+  rw [constantBasisOfFinrankEq_apply, Algebra.smul_def, mul_comm, ← Algebra.smul_def]
   exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, hcoord j, rfl⟩)
 
-omit [FiniteDimensional F F'] in
-include h hn in
-/-- `L(D) · k'` has `k'`-dimension `ℓ(D)`: a `k`-basis of `L(D)` stays linearly independent over
-`k'`, by linear disjointness of `F` and `k'`. -/
-private theorem finrank_span_riemannRochSpace (hF : IsFunctionField k F) (D : Divisor k F) :
-    finrank k' (Submodule.span k' (algebraMap F F' '' riemannRochSpace D)) = D.dim := by
-  have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
-  have H := linearDisjoint_fieldRange_of_finrank_constantCompositum_eq (F := F) (k' := k')
-    (F' := F') (by rw [h, IntermediateField.finrank_top', hn])
-  have := finiteDimensional_riemannRochSpace hF D
-  let b := finBasis k (riemannRochSpace D)
-  have hli : LinearIndependent k' fun i ↦ algebraMap F F' (b i) :=
-    H.linearIndependent_algebraMap_comp
-      (b.linearIndependent.map' (riemannRochSpace D).subtype (Submodule.ker_subtype _))
-  rw [span_image_riemannRochSpace_eq_span_range b, finrank_span_eq_card hli, Fintype.card_fin,
-    Divisor.dim_def]
-
 end Local
-
--- Stated for a subspace and a product of relative quotients, rather than for arbitrary modules,
--- so that its instances unify syntactically with those of the local maps.
-/-- Rank–nullity for a surjection from a subspace onto a finite product of relative quotients: the
-factors are finite-dimensional and their dimensions add up, with the kernel, to the dimension of the
-source. -/
-private theorem finrank_pi_add_finrank_ker_of_surjective {K M M' ι : Type*} [Field K]
-    [Fintype ι] [AddCommGroup M] [Module K M] [AddCommGroup M'] [Module K M']
-    {N : Submodule K M} [FiniteDimensional K N] {A B : ι → Submodule K M'}
-    (Φ : N →ₗ[K] (i : ι) → ↥(A i) ⧸ (B i).submoduleOf (A i)) (hΦ : Function.Surjective Φ) :
-    (∀ i, FiniteDimensional K (↥(A i) ⧸ (B i).submoduleOf (A i))) ∧
-      ∑ i, finrank K (↥(A i) ⧸ (B i).submoduleOf (A i)) + finrank K (LinearMap.ker Φ) =
-        finrank K N := by
-  classical
-  have hfin (i : ι) : FiniteDimensional K (↥(A i) ⧸ (B i).submoduleOf (A i)) :=
-    Module.Finite.of_surjective ((LinearMap.proj i).comp Φ) fun y ↦
-      (hΦ (Pi.single i y)).imp fun z hz ↦ by simp [hz]
-  refine ⟨hfin, ?_⟩
-  rw [← Module.finrank_pi_fintype, ← finrank_top K, ← LinearMap.range_eq_top.2 hΦ]
-  exact LinearMap.finrank_range_add_finrank_ker Φ
 
 /-! ### The genus drop -/
 
@@ -472,11 +439,11 @@ private theorem sum_singularityDegree_add_genus_le (S : Finset (Place k F)) :
     exact pi_localMap_surjective h hn hF' hs0 hs hEeq S
   have := finiteDimensional_riemannRochSpace hF' (Divisor.conorm k' F' E)
   -- rank–nullity for `Φ`, whose range is everything
-  obtain ⟨hfin, hrank⟩ :
-      (∀ P : S, FiniteDimensional k' ((P : Place k F).singularityQuotient k' F')) ∧
-      ∑ P : S, (P : Place k F).singularityDegree k' F' + finrank k' (LinearMap.ker Φ) =
-        finrank k' (riemannRochSpace (Divisor.conorm k' F' E)) :=
-    finrank_pi_add_finrank_ker_of_surjective Φ hsurj
+  have hfin (P : S) : FiniteDimensional k' ((P : Place k F).singularityQuotient k' F') :=
+    LinearMap.finite_of_surjective_pi Φ hsurj P
+  have hrank := LinearMap.sum_finrank_add_finrank_ker_of_surjective
+    (Q := fun P : S ↦ (P : Place k F).singularityQuotient k' F') Φ hsurj
+  simp only [← Place.singularityDegree_def] at hrank
   have hrank' : (∑ P ∈ S, (P.singularityDegree k' F' : ℤ)) + finrank k' (LinearMap.ker Φ) =
       finrank k' (riemannRochSpace (Divisor.conorm k' F' E)) := by
     rw [← Finset.sum_coe_sort S fun P ↦ (P.singularityDegree k' F' : ℤ)]
@@ -489,7 +456,9 @@ private theorem sum_singularityDegree_add_genus_le (S : Finset (Place k F)) :
     Submodule.span_le.2 fun _ ⟨f, hf, hfz⟩ ↦ hfz ▸ (mem_riemannRochSpace_conorm_iff hF' E f).2 hf
   have hW : finrank k' W = E.dim := by
     rw [(Submodule.comapSubtypeEquivOfLe hspan_le).finrank_eq,
-      finrank_span_riemannRochSpace h hn hF E]
+      finrank_span_image_riemannRochSpace_of_linearDisjoint hF
+        (linearDisjoint_fieldRange_of_finrank_constantCompositum_eq
+          (by rw [h, IntermediateField.finrank_top', hn])) E]
   have hWker : finrank k' W ≤ finrank k' (LinearMap.ker Φ) :=
     Submodule.finrank_mono (hΦ ▸ span_le_ker_pi_localMap hF' hs0 hs S)
   rw [Divisor.dim_def] at hdimE'
@@ -506,17 +475,6 @@ theorem Place.finiteDimensional_singularityQuotient (P : Place k F) :
     FiniteDimensional k' (P.singularityQuotient k' F') :=
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   (sum_singularityDegree_add_genus_le hF hex h hex' hn {P}).1 P (Finset.mem_singleton_self P)
-
-/-- **A place has singularity degree zero exactly when `𝒪_P · k'` is integrally closed**: `δ_P = 0`
-if and only if `𝒪_P ⊗_k k'` is the integral closure of `𝒪_P` in `F'`. -/
-theorem Place.singularityDegree_eq_zero_iff (P : Place k F) :
-    P.singularityDegree k' F' = 0 ↔
-      P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F' := by
-  have := P.finiteDimensional_singularityQuotient hF hex h hex' hn
-  rw [Place.singularityDegree, Module.finrank_zero_iff, Submodule.Quotient.subsingleton_iff,
-    Submodule.submoduleOf_eq_top]
-  exact ⟨fun hle ↦ le_antisymm (P.constantSpanIntegers_le_integralClosureSubmodule k' F') hle,
-    fun heq ↦ heq.ge⟩
 
 /-- **The singularity degree vanishes at almost every place**: only finitely many places `P` of
 `F / k` have `𝒪_P ⊗_k k'` not integrally closed in `F'`. -/
@@ -548,7 +506,8 @@ theorem genus_eq_genus_add_finsum_singularityDegree :
   have hfin := finite_setOf_singularityDegree_ne_zero hF hex h hex' hn
   have hreg (P : Place k F) (hP : P ∉ hfin.toFinset) :
       P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F' := by
-    rw [← P.singularityDegree_eq_zero_iff hF hex h hex' hn]
+    have := P.finiteDimensional_singularityQuotient hF hex h hex' hn
+    rw [← P.singularityDegree_eq_zero_iff k' F']
     simpa using hP
   have heq := (sum_singularityDegree_add_genus_le hF hex h hex' hn hfin.toFinset).2.2 hreg
   rw [finsum_eq_sum_of_support_subset _ (s := hfin.toFinset) (by simp [Function.support])]
@@ -564,7 +523,8 @@ theorem genus_eq_genus_iff_forall_constantSpanIntegers_eq :
     genus k' F' = genus k F ↔
       ∀ P : Place k F, P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F' := by
   have hfin := finite_setOf_singularityDegree_ne_zero hF hex h hex' hn
-  simp_rw [← Place.singularityDegree_eq_zero_iff hF hex h hex' hn]
+  have (P : Place k F) := P.finiteDimensional_singularityQuotient hF hex h hex' hn
+  simp_rw [← Place.singularityDegree_eq_zero_iff k' F']
   rw [genus_eq_genus_add_finsum_singularityDegree hF hex h hex' hn, left_eq_add,
     finsum_eq_sum_of_support_subset _ (s := hfin.toFinset) (by simp [Function.support]),
     Finset.sum_eq_zero_iff]
