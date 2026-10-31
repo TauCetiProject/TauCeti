@@ -35,25 +35,26 @@ integrals.
 
 The integral defining `R_F` converges absolutely when `x, y, z` lie in `Complex.slitPlane ∪ {0}`
 and at most one of them is `0`. Since `R_F` is symmetric, the convergence theorem
-`TauCeti.Complex.integrableOn_carlsonRF_integrand` is stated with the possibly vanishing argument
-in the first position. Outside this domain `carlsonRF` is a totalized value of a divergent
+`Complex.integrableOn_carlsonRF_integrand` is stated with the possibly vanishing argument
+in the first position. The behavior of `carlsonRF` outside this domain is not characterized here;
+where the integrand is not integrable, `carlsonRF` is the totalized value `0` of the Bochner
 integral and carries no meaning.
 
 ## Main results
 
-* `TauCeti.Complex.carlsonRF`, `TauCeti.Complex.carlsonRC` — the integrals `R_F` and `R_C`.
-* `TauCeti.Complex.integrableOn_carlsonRF_integrand` — absolute convergence of the defining
+* `Complex.carlsonRF`, `Complex.carlsonRC` — the integrals `R_F` and `R_C`.
+* `Complex.integrableOn_carlsonRF_integrand` — absolute convergence of the defining
   integral.
-* `TauCeti.Complex.carlsonRF_comm_left`, `TauCeti.Complex.carlsonRF_comm_right` — `R_F` is
+* `Complex.carlsonRF_comm_left`, `Complex.carlsonRF_comm_right` — `R_F` is
   symmetric in its three arguments.
-* `TauCeti.Complex.carlsonRF_ofReal_mul` — homogeneity of degree `-1/2` under positive real
+* `Complex.carlsonRF_ofReal_mul` — homogeneity of degree `-1/2` under positive real
   scaling.
-* `TauCeti.Complex.carlsonRF_self`, `TauCeti.Complex.carlsonRC_self` — the diagonal values
+* `Complex.carlsonRF_self`, `Complex.carlsonRC_self` — the diagonal values
   `R_F(x, x, x) = R_C(x, x) = x^(-1/2)`.
-* `TauCeti.Complex.carlsonRF_pos` — `R_F` is a positive real number at nonnegative real
+* `Complex.carlsonRF_pos` — `R_F` is a positive real number at nonnegative real
   arguments, at most one of them zero.
-* `TauCeti.Complex.carlsonRC_eq_integral` — the defining integral of `R_C` (DLMF 19.2.17).
-* `TauCeti.Complex.carlsonRC_ofReal_eq_arccos`, `TauCeti.Complex.carlsonRC_ofReal_eq_arcosh` — the
+* `Complex.carlsonRC_eq_integral` — the defining integral of `R_C` (DLMF 19.2.17).
+* `Complex.carlsonRC_ofReal_eq_arccos`, `Complex.carlsonRC_ofReal_eq_arcosh` — the
   elementary evaluation of `R_C` at real arguments (DLMF 19.2.19, 19.2.20):
   `R_C(x, y) = arccos √(x/y) / √(y - x)` for `0 ≤ x < y`, and
   `R_C(x, y) = arcosh √(x/y) / √(x - y)` for `0 < y < x`.
@@ -77,14 +78,15 @@ open MeasureTheory Set Filter Topology
 open Complex (slitPlane mem_slitPlane_iff ofReal_mem_slitPlane)
 open scoped ComplexOrder
 
-namespace TauCeti.Complex
+namespace Complex
 
 /-- **Carlson's symmetric elliptic integral of the first kind** (DLMF 19.16.1):
 `R_F(x, y, z) = ½ ∫₀^∞ (t + x)^(-1/2) (t + y)^(-1/2) (t + z)^(-1/2) dt`, with principal complex
 powers of each factor.
 
 The integral converges when `x, y, z ∈ slitPlane ∪ {0}` with at most one of them `0`
-(`integrableOn_carlsonRF_integrand`); elsewhere the value is a totalized junk value. -/
+(`integrableOn_carlsonRF_integrand`); its behavior outside this domain is not characterized here.
+Where the integrand is not integrable, the value is the totalized junk value `0`. -/
 noncomputable def carlsonRF (x y z : ℂ) : ℂ :=
   (1 / 2 : ℂ) * ∫ t in Ioi (0 : ℝ),
     ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) *
@@ -108,51 +110,40 @@ theorem carlsonRC_def (x y : ℂ) : carlsonRC x y = carlsonRF x y y :=
 
 /-! ### Bounds on the factors of the integrand -/
 
-/-- The norm of the principal power `w ^ (-1/2)` is `‖w‖ ^ (-1/2)`. -/
-private theorem norm_cpow_neg_half (w : ℂ) : ‖w ^ (-(1 / 2) : ℂ)‖ = ‖w‖ ^ (-(1 / 2) : ℝ) := by
-  simpa using Complex.norm_cpow_real w (-(1 / 2))
-
-/-- Adding a positive real number keeps a point of `slitPlane ∪ {0}` in the slit plane. -/
-private theorem ofReal_add_mem_slitPlane_of_mem_union {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {t : ℝ}
-    (ht : 0 < t) : (t : ℂ) + x ∈ slitPlane := by
-  rcases hx with hx | hx
-  · exact TauCeti.ofReal_add_mem_slitPlane hx ht.le
-  · rw [mem_singleton_iff.mp hx, add_zero]
-    exact ofReal_mem_slitPlane.mpr ht
-
 /-- For `x ∈ slitPlane ∪ {0}`, the factor `(t + x)^(-1/2)` is `O(t^(-1/2))` for `t > 0`. -/
 private theorem exists_norm_cpow_le_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
     ∃ C, ∀ t : ℝ, 0 < t → ‖((t : ℂ) + x) ^ (-(1 / 2) : ℂ)‖ ≤ C * t ^ (-(1 / 2) : ℝ) := by
+  simp only [show (-(1 / 2) : ℂ) = ((-(1 / 2) : ℝ) : ℂ) by norm_num, Complex.norm_cpow_real]
   rcases hx with hx | hx
-  · obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
+  · obtain ⟨c, hc, h⟩ := TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
     refine ⟨c ^ (-(1 / 2) : ℝ), fun t ht => ?_⟩
     have h1 : c * t ≤ ‖(t : ℂ) + x‖ := by
       have : c * (1 + t) ≤ ‖x + (t : ℂ)‖ := h x (Metric.mem_ball_self hc) ⟨t, ht.le⟩
       rw [add_comm]
       nlinarith
-    rw [norm_cpow_neg_half, ← Real.mul_rpow hc.le ht.le]
+    rw [← Real.mul_rpow hc.le ht.le]
     exact Real.rpow_le_rpow_of_nonpos (by positivity) h1 (by norm_num)
   · refine ⟨1, fun t ht => ?_⟩
-    rw [mem_singleton_iff.mp hx, add_zero, norm_cpow_neg_half, Complex.norm_real,
+    rw [mem_singleton_iff.mp hx, add_zero, Complex.norm_real,
       Real.norm_of_nonneg ht.le, one_mul]
 
 /-- For `y ∈ slitPlane`, the factor `(t + y)^(-1/2)` is bounded for `t ≥ 0`. -/
 private theorem exists_norm_cpow_le {y : ℂ} (hy : y ∈ slitPlane) :
     ∃ C, ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + y) ^ (-(1 / 2) : ℂ)‖ ≤ C := by
-  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hy
+  simp only [show (-(1 / 2) : ℂ) = ((-(1 / 2) : ℝ) : ℂ) by norm_num, Complex.norm_cpow_real]
+  obtain ⟨c, hc, h⟩ := TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add hy
   refine ⟨c ^ (-(1 / 2) : ℝ), fun t ht => ?_⟩
   have h1 : c ≤ ‖(t : ℂ) + y‖ := by
     have : c * (1 + t) ≤ ‖y + (t : ℂ)‖ := h y (Metric.mem_ball_self hc) ⟨t, ht⟩
     rw [add_comm]
     nlinarith
-  rw [norm_cpow_neg_half]
   exact Real.rpow_le_rpow_of_nonpos hc h1 (by norm_num)
 
 /-- For `x ∈ slitPlane ∪ {0}`, the factor `(t + x)^(-1/2)` is continuous for `t > 0`. -/
 private theorem continuousOn_cpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
     ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)) (Ioi 0) := fun _ ht =>
   ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
-    (ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
+    (TauCeti.ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
 
 /-! ### Convergence -/
 
@@ -256,14 +247,6 @@ theorem carlsonRF_ofReal_mul {l : ℝ} (hl : 0 < l) (x y z : ℂ) :
 
 /-! ### Diagonal values -/
 
-/-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
-private theorem cpow_neg_half_mul_self (w : ℂ) :
-    w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by
-  rcases eq_or_ne w 0 with rfl | hw
-  · simp
-  · rw [← Complex.cpow_add _ _ hw]
-    norm_num [Complex.cpow_neg_one]
-
 /-- **The integral form of `R_C`** (DLMF 19.2.17):
 `R_C(x, y) = ½ ∫₀^∞ (t + x)^(-1/2) (t + y)⁻¹ dt`. -/
 theorem carlsonRC_eq_integral (x y : ℂ) :
@@ -275,6 +258,7 @@ theorem carlsonRC_eq_integral (x y : ℂ) :
   rw [mul_assoc, cpow_neg_half_mul_self]
 
 /-- **The diagonal value of `R_F`**: `R_F(x, x, x) = x^(-1/2)` for `x` in the slit plane. -/
+@[simp]
 theorem carlsonRF_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRF x x x = x ^ (-(1 / 2) : ℂ) := by
   have hmem (t : ℝ) (ht : 0 ≤ t) : (t : ℂ) + x ∈ slitPlane :=
     TauCeti.ofReal_add_mem_slitPlane hx ht
@@ -304,17 +288,11 @@ theorem carlsonRF_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRF x x x = x ^ 
   ring
 
 /-- **The diagonal value of `R_C`**: `R_C(x, x) = x^(-1/2)` for `x` in the slit plane. -/
+@[simp]
 theorem carlsonRC_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRC x x = x ^ (-(1 / 2) : ℂ) :=
   carlsonRF_self hx
 
 /-! ### Real arguments -/
-
-/-- A nonnegative real number lies in `slitPlane ∪ {0}`. -/
-private theorem ofReal_mem_slitPlane_union_zero {x : ℝ} (hx : 0 ≤ x) :
-    (x : ℂ) ∈ slitPlane ∪ {0} := by
-  rcases hx.eq_or_lt with h | h
-  · exact Or.inr (by simp [← h])
-  · exact Or.inl (ofReal_mem_slitPlane.mpr h)
 
 /-- At a positive real base, the principal power `(t + w) ^ (-1/2)` is the real one. -/
 private theorem ofReal_add_cpow_neg_half {w t : ℝ} (hw : 0 ≤ w) (ht : 0 < t) :
@@ -335,7 +313,7 @@ theorem carlsonRF_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 < y) (hz : 0 < z) :
     simp only [hf, ofReal_add_cpow_neg_half hx ht, ofReal_add_cpow_neg_half hy.le ht,
       ofReal_add_cpow_neg_half hz.le ht, Complex.ofReal_mul]
   have hint : IntegrableOn f (Ioi 0) := by
-    have h := (integrableOn_carlsonRF_integrand (ofReal_mem_slitPlane_union_zero hx)
+    have h := (integrableOn_carlsonRF_integrand (TauCeti.ofReal_mem_slitPlane_union_zero hx)
       (ofReal_mem_slitPlane.mpr hy)
       (ofReal_mem_slitPlane.mpr hz)).congr_fun heq measurableSet_Ioi
     simpa using h.re
@@ -372,7 +350,7 @@ private theorem carlsonRC_ofReal_eq_of_hasDerivAt {x y : ℝ} (hx : 0 ≤ x) (hy
     push_cast
     rfl
   have hint : IntegrableOn (fun t : ℝ => (√(t + x))⁻¹ * (t + y)⁻¹) (Ioi 0) := by
-    have h := integrableOn_carlsonRF_integrand (ofReal_mem_slitPlane_union_zero hx)
+    have h := integrableOn_carlsonRF_integrand (TauCeti.ofReal_mem_slitPlane_union_zero hx)
       (ofReal_mem_slitPlane.mpr hy) (ofReal_mem_slitPlane.mpr hy)
     simp only [mul_assoc, cpow_neg_half_mul_self] at h
     simpa only [RCLike.re_to_complex, Complex.ofReal_re] using
@@ -484,4 +462,4 @@ theorem carlsonRC_ofReal_eq_arcosh {x y : ℝ} (hy : 0 < y) (hyx : y < x) :
       (-(2 / √(x - y)))
     simpa [Real.arcosh_zero] using h
 
-end TauCeti.Complex
+end Complex

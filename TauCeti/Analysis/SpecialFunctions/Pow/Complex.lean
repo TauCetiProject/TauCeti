@@ -41,6 +41,7 @@ a Schwarz--Christoffel map in the reciprocal coordinate at infinity.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
+* `Complex.cpow_neg_half_mul_self` -- two principal inverse square roots multiply to the inverse.
 -/
 
 public section
@@ -200,5 +201,16 @@ theorem tendsto_prod_one_sub_mul_cpow_sub_linear_div_sq {ι : Type*} [Fintype ι
   ring
 
 end TauCeti
+
+namespace Complex
+
+/-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
+theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  · rw [← cpow_add _ _ hw]
+    norm_num [cpow_neg_one]
+
+end Complex
 
 end
