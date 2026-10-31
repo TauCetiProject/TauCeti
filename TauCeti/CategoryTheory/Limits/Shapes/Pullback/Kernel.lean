@@ -26,7 +26,8 @@ open Limits ZeroObject
 
 variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
 
-/-- The kernel inclusion of `f : X ⟶ Y` is the base change of `f` along `0 ⟶ Y`. -/
+/-- The kernel of `f : X ⟶ Y` is the pullback of `f` along `0 ⟶ Y`: the square exhibits
+`kernel f ⟶ 0` as the base change of `f`, with `kernel.ι f` as its projection to `X`. -/
 lemma kernel_ι {X Y : C} (f : X ⟶ Y) [HasKernel f] :
     IsPullback (kernel.ι f) (0 : kernel f ⟶ 0) f (0 : 0 ⟶ Y) :=
   ⟨⟨by simp⟩, ⟨PullbackCone.IsLimit.mk _ (fun s ↦ kernel.lift f s.fst (by simp [s.condition]))
