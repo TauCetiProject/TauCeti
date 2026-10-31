@@ -61,7 +61,7 @@ theorem IsPrimitive.factorization_two_le_three_of_sq_eq_one {χ : DirichletChara
     exact (Nat.prime_two.pow_dvd_iff_le_factorization (k := 4) hN).mpr (by omega)
   have hlt := (factorsThrough_div_iff_factorization_conductor_lt Nat.prime_two
     ((by decide : 2 ∣ 16).trans h16) χ).mp (χ.factorsThrough_half_of_sq_eq_one hsq h16)
-  rw [hχ] at hlt
+  rw [(isPrimitive_def χ).mp hχ] at hlt
   exact (lt_irrefl _ hlt)
 
 /-- The only dyadic exponents of a primitive character of order dividing two are zero,

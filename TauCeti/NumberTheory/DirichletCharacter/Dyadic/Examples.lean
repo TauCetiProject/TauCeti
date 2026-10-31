@@ -46,7 +46,8 @@ example : conductor ZMod.χ₈' = 8 :=
 
 example : (8 : ℕ).factorization 2 ≤ 3 := by
   have hp : IsPrimitive ZMod.χ₈ :=
-    conductor_eq_eight_of_apply_one_ne_apply_five ZMod.χ₈ (by decide)
+    (isPrimitive_def _).mpr
+      (conductor_eq_eight_of_apply_one_ne_apply_five ZMod.χ₈ (by decide))
   exact hp.factorization_two_le_three ZMod.isQuadratic_χ₈
 
 -- The zero-level convention and the primitive level-one boundary are included.
@@ -91,11 +92,13 @@ example : ∃ χ : DirichletCharacter ℂ 16, χ.IsPrimitive ∧ orderOf χ = 4 
     rw [hc, h]
     simp only [Nat.cast_zero, Nat.cast_one, Nat.cast_ofNat, mul_zero, zero_div,
       Complex.exp_zero, one_mul, hexp, Complex.exp_pi_mul_I]
+  -- The prime-power criterion also uses the concrete level 2 ^ 4 = 16 by numeral reduction.
   have hp : χ.IsPrimitive :=
-    conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply (p := 2) (k := 4)
-      (a := 1) (b := 9) Nat.prime_two χ
-      isCoprime_one_left ⟨-7, 4, by norm_num⟩ (by norm_num)
-      (by norm_num [Int.cast_ofNat, h9])
+    (isPrimitive_def _).mpr
+      (conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply (p := 2) (k := 4)
+        (a := 1) (b := 9) Nat.prime_two χ
+        isCoprime_one_left ⟨-7, 4, by norm_num⟩ (by norm_num)
+        (by norm_num [Int.cast_ofNat, h9]))
   have hnot : χ ^ 2 ≠ 1 := by
     intro hs
     have hh := congrArg (fun ψ : DirichletCharacter ℂ 16 ↦ ψ (5 : ZMod 16)) hs
