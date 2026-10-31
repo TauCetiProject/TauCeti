@@ -210,6 +210,26 @@ shortest norms `TauCeti.DynkinType.glueLabelMinimum` of its labels
 @[expose] def glueWordMinimum (l : List ℕ) : ℚ :=
   ∑ i : Fin n, (t i).glueLabelMinimum (l.getD i 0)
 
+/-- A label-wise sum lists the sums of the corresponding labels. -/
+theorem glueWordAdd_def (l l' : List ℕ) :
+    glueWordAdd t l l' =
+      List.ofFn fun i : Fin n ↦ (t i).glueLabelAdd (l.getD i 0) (l'.getD i 0) :=
+  (rfl)
+
+/-- A label-wise sum has one label for each component. -/
+@[simp] theorem length_glueWordAdd (l l' : List ℕ) : (glueWordAdd t l l').length = n := by
+  simp [glueWordAdd]
+
+/-- Each label of a label-wise sum is the sum of the corresponding labels. -/
+@[simp] theorem getElem_glueWordAdd (l l' : List ℕ) (i : Fin n) :
+    (glueWordAdd t l l')[i.val]'(by simp) = (t i).glueLabelAdd (l.getD i 0) (l'.getD i 0) := by
+  simp [glueWordAdd]
+
+/-- The shortest norm of a digit word is the sum of the shortest norms of its labels. -/
+theorem glueWordMinimum_def (l : List ℕ) :
+    glueWordMinimum t l = ∑ i : Fin n, (t i).glueLabelMinimum (l.getD i 0) :=
+  (rfl)
+
 private theorem getD_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) (i : Fin n) :
     (encodeGlueWord t ht w).getD i 0 = (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
   rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]

@@ -274,6 +274,33 @@ rather than of the class, so that finite checks on printed glue words evaluate b
   | E7, a => if a = 0 then 0 else 3 / 2
   | _, _ => 0
 
+/-- The label `a` of `Aₙ` has shortest norm `a (n + 1 - a) / (n + 1)`. -/
+@[simp]
+theorem glueLabelMinimum_A (n a : ℕ) :
+    (A n).glueLabelMinimum a = (a : ℚ) * (n + 1 - a) / (n + 1) :=
+  (rfl)
+
+/-- The vector label `2` of `Dₙ` has shortest norm `1`, and the spinor labels `n / 4`. -/
+@[simp]
+theorem glueLabelMinimum_D (n a : ℕ) :
+    (D n).glueLabelMinimum a = if a = 0 then 0 else if a = 2 then 1 else (n : ℚ) / 4 :=
+  (rfl)
+
+/-- The nonzero labels of `E₆` have shortest norm `4/3`. -/
+@[simp]
+theorem glueLabelMinimum_E6 (a : ℕ) : E6.glueLabelMinimum a = if a = 0 then 0 else 4 / 3 :=
+  (rfl)
+
+/-- The nonzero label of `E₇` has shortest norm `3/2`. -/
+@[simp]
+theorem glueLabelMinimum_E7 (a : ℕ) : E7.glueLabelMinimum a = if a = 0 then 0 else 3 / 2 :=
+  (rfl)
+
+/-- The only label of `E₈` has shortest norm `0`. -/
+@[simp]
+theorem glueLabelMinimum_E8 (a : ℕ) : E8.glueLabelMinimum a = 0 :=
+  (rfl)
+
 /-- **The shortest norm of the class of a label is the shortest norm of the printed label.** -/
 @[simp]
 theorem glueMinimum_glueLabelEquiv (t : DynkinType) (ht : t.IsSimplyLaced)

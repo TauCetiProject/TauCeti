@@ -242,6 +242,32 @@ cospinor, so that spinor plus vector is cospinor.  It is `0` for the other types
   | E7, a, b => (a + b) % 2
   | _, _, _ => 0
 
+/-- Labels of `Aₙ` add modulo `n + 1`. -/
+@[simp]
+theorem glueLabelAdd_A (n a b : ℕ) : (A n).glueLabelAdd a b = (a + b) % (n + 1) :=
+  (rfl)
+
+/-- Labels of `Dₙ` add by bitwise exclusive or for even `n`, and modulo `4` for odd `n`. -/
+@[simp]
+theorem glueLabelAdd_D (n a b : ℕ) :
+    (D n).glueLabelAdd a b = if Even n then a ^^^ b else (a + b) % 4 :=
+  (rfl)
+
+/-- Labels of `E₆` add modulo `3`. -/
+@[simp]
+theorem glueLabelAdd_E6 (a b : ℕ) : E6.glueLabelAdd a b = (a + b) % 3 :=
+  (rfl)
+
+/-- Labels of `E₇` add modulo `2`. -/
+@[simp]
+theorem glueLabelAdd_E7 (a b : ℕ) : E7.glueLabelAdd a b = (a + b) % 2 :=
+  (rfl)
+
+/-- The only label of `E₈` is `0`. -/
+@[simp]
+theorem glueLabelAdd_E8 (a b : ℕ) : E8.glueLabelAdd a b = 0 :=
+  (rfl)
+
 /-- The sum of two labels is a label. -/
 theorem glueLabelAdd_lt (t : DynkinType) {a b : ℕ}
     (ha : a < t.glueLabelCount) (hb : b < t.glueLabelCount) :
