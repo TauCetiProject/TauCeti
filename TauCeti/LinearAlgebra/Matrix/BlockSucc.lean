@@ -40,6 +40,7 @@ the last basis vector.
   fixes the last one.
 * `Matrix.transpose_blockSucc`: extending a matrix commutes with transposing it, the last row and
   column of the identity matrix being exchanged with each other.
+* `Matrix.blockSucc_map`: extending a matrix commutes with maps of entries preserving `0` and `1`.
 * `Matrix.trace_blockSucc` and `Matrix.det_blockSucc`: the trace grows by one and the determinant
   is unchanged.
 -/
@@ -168,6 +169,21 @@ theorem blockSucc_mulVec (M : Matrix (Fin n) (Fin n) k) (v : Fin (n + 1) → k) 
   induction i using Fin.lastCases with
   | last => simp
   | cast i => simp [Matrix.mulVec, dotProduct, Fin.init]
+
+/-- Extending a matrix commutes with applying a map to its entries that preserves `0` and `1`, such
+as a ring homomorphism. -/
+theorem blockSucc_map {l : Type*} [Semiring l] (M : Matrix (Fin n) (Fin n) k) (f : k → l)
+    (h₀ : f 0 = 0) (h₁ : f 1 = 1) : (blockSucc M).map f = blockSucc (M.map f) := by
+  ext i j
+  induction i using Fin.lastCases with
+  | last =>
+    induction j using Fin.lastCases with
+    | last => simp [h₁]
+    | cast j => simp [h₀]
+  | cast i =>
+    induction j using Fin.lastCases with
+    | last => simp [h₀]
+    | cast j => simp
 
 /-- Extending a matrix adds `1` to its trace: the new diagonal entry is the last diagonal entry of
 the identity matrix. -/

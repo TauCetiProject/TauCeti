@@ -30,6 +30,8 @@ additional structures such as filtrations, bialgebras, or antipodes.
   detected on the canonical Lie generators alone.
 * `TauCeti.UniversalEnvelopingAlgebra.ad_ι_pow_apply_ι`: iterating the commutator with a Lie
   generator reproduces, on the Lie generators, the iterated adjoint action of `L`.
+* `TauCeti.UniversalEnvelopingAlgebra.map_lift_apply_of_map_apply`: an intertwiner of two
+  representations of `L` intertwines their extensions to `U(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι`: an algebra representation maps the bracket of
   canonical Lie generators to the bracket of their images.
 * `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι_eq_smul`: a Lie-bracket eigenvector remains one
@@ -232,6 +234,20 @@ theorem mul_eq_mul_add_zsmul_of_lie_eq
   simpa using
     (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
       (p := 1) (q := 1) (r := c) (n := 1) (by simpa using hab))
+
+/-- **An intertwiner of two representations of `L` intertwines their extensions to `U(L)`.** A
+linear map carrying the action of every `x ∈ L` on `V` to its action on `W` carries the action of
+every element of the enveloping algebra, since the canonical generators generate it. -/
+theorem map_lift_apply_of_map_apply {V W : Type*} [AddCommGroup V] [Module R V] [AddCommGroup W]
+    [Module R W] {a : L →ₗ⁅R⁆ Module.End R V} {b : L →ₗ⁅R⁆ Module.End R W} (f : V →ₗ[R] W)
+    (h : ∀ x v, f (a x v) = b x (f v)) (u : _root_.UniversalEnvelopingAlgebra R L) (v : V) :
+    f (_root_.UniversalEnvelopingAlgebra.lift R a u v) =
+      _root_.UniversalEnvelopingAlgebra.lift R b u (f v) := by
+  induction u using induction_ι R L generalizing v with
+  | ι x => simp only [_root_.UniversalEnvelopingAlgebra.lift_ι_apply, h]
+  | algebraMap r => simp only [AlgHom.commutes, Module.algebraMap_end_apply, map_smul]
+  | add u u' hu hu' => simp only [map_add, LinearMap.add_apply, hu, hu']
+  | mul u u' hu hu' => simp only [map_mul, Module.End.mul_apply, hu, hu']
 
 
 section Center

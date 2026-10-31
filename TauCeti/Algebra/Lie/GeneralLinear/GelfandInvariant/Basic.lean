@@ -55,6 +55,9 @@ Gelfand invariants are central there.
   embedding is the trace of a power of the corresponding submatrix of `𝔼`.
 * `TauCeti.commute_map_glEmbedding_gelfandInvariant`: images of Gelfand invariants along nested
   corner embeddings commute.
+* `TauCeti.map_glEmbedding_castSuccEmb_gelfandTsetlinGenerator`: the corner embedding of
+  `gl (Fin n)` in `gl (Fin (n + 1))` carries each Gelfand-Tsetlin generator to the generator of the
+  same level and degree.
 * `TauCeti.commute_gelfandTsetlinGenerator_map_glEmbedding`: a Gelfand-Tsetlin generator at level
   `k` commutes with the image of `U(gl (Fin k))`.
 * `TauCeti.commute_gelfandTsetlinGenerator`: the Gelfand-Tsetlin generators pairwise commute.
@@ -236,6 +239,18 @@ theorem gelfandTsetlinGenerator_eq_trace {k : ℕ} (hk : k ≤ n) (r : ℕ) :
 theorem gelfandTsetlinGenerator_self (r : ℕ) :
     gelfandTsetlinGenerator K le_rfl r = gelfandInvariant K (Fin n) r := by
   rw [gelfandTsetlinGenerator_eq_trace, gelfandInvariant_def, Fin.castLE_rfl, submatrix_id_id]
+
+/-- **The Gelfand-Tsetlin generators form a chain**: under the corner embedding of `gl (Fin n)` in
+`gl (Fin (n + 1))`, a Gelfand-Tsetlin generator of `U(gl (Fin n))` maps to the generator of
+`U(gl (Fin (n + 1)))` of the same level and degree. -/
+theorem map_glEmbedding_castSuccEmb_gelfandTsetlinGenerator {k : ℕ} (hk : k ≤ n) (r : ℕ) :
+    UniversalEnvelopingAlgebra.map K (glEmbedding K Fin.castSuccEmb)
+        (gelfandTsetlinGenerator K hk r) =
+      gelfandTsetlinGenerator K (hk.trans n.le_succ) r := by
+  have hemb : (Fin.castLEEmb hk).trans Fin.castSuccEmb = Fin.castLEEmb (hk.trans n.le_succ) := by
+    ext; simp
+  rw [gelfandTsetlinGenerator_def, gelfandTsetlinGenerator_def, ← AlgHom.comp_apply,
+    ← UniversalEnvelopingAlgebra.map_comp, ← glEmbedding_trans, hemb]
 
 /-- A Gelfand-Tsetlin generator at level `k` commutes with the image of `U(gl (Fin k))`. -/
 theorem commute_gelfandTsetlinGenerator_map_glEmbedding {k : ℕ} (hk : k ≤ n) (r : ℕ)
