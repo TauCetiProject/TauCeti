@@ -101,21 +101,6 @@ theorem isHomogeneous_resolutionEdgeMap (R : Type u) [CommRing R] :
   · rw [D.resolutionEdgeMap_eq_resolutionSplitMap hst hc h R (h.resolve_left hs)]
     exact D.isHomogeneous_resolutionSplitMap hst hc (h.resolve_left hs) R
 
-include hst hc h in
-/-- Along a saddle edge the circle count drops by one if two circles merge, and rises by one if a
-circle splits. -/
-private theorem card_resolvedCircle_of_saddle :
-    #(D.circlesAt s c) = 2 ∧
-        Fintype.card (D.ResolvedCircle s) = Fintype.card (D.ResolvedCircle t) + 1 ∨
-      #(D.circlesAt t c) = 2 ∧
-        Fintype.card (D.ResolvedCircle t) = Fintype.card (D.ResolvedCircle s) + 1 := by
-  refine h.imp (fun hs ↦ ⟨hs, ?_⟩) (fun ht ↦ ⟨ht, ?_⟩)
-  · exact D.card_resolvedCircle_source_eq_target_add_one hst
-      (D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hst hc hs) hs
-  · have hts : ∀ j, j ≠ c → t j = s j := fun j hj ↦ (hst j hj).symm
-    exact D.card_resolvedCircle_source_eq_target_add_one hts
-      (D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hts hc.symm ht) ht
-
 end Edge
 
 section Face
