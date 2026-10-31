@@ -10,6 +10,7 @@ public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Convex.PartitionOfUnity
 import TauCeti.Analysis.Matrix.Grothendieck
+import TauCeti.LinearAlgebra.BilinearMap.Sum
 
 /-!
 # Grothendieck's inequality for bilinear forms on spaces of continuous functions
@@ -26,11 +27,12 @@ matrix inequality and are not optimal.
 The proof reduces to Grothendieck's inequality for matrices. Choose finite partitions of unity
 `ρ k` on `K` and `σ l` on `L`, indexed by finitely many points, along which the families `f` and
 `g` are uniformly approximated by their values at these points
-(`ContinuousMap.exists_partitionOfUnity_dist_finsum_smul_le`). The matrix
+(`ContinuousMap.exists_partitionOfUnity_norm_sum_smul_sub_le`). The matrix
 `a k l = B (ρ k) (σ l)` has scalar bound `C`, because `∑ k, s k * ρ k` has uniform norm at most
-one whenever every `‖s k‖ ≤ 1`, and the approximating sum is
-`∑ k, ∑ l, a k l * ⟪u k, v l⟫` for the vectors `u k = (conj (f i k))ᵢ` and `v l = (g i l)ᵢ` of
-Euclidean norm at most one. Letting the approximation error tend to zero gives the result.
+one whenever every `‖s k‖ ≤ 1` (`PartitionOfUnity.norm_sum_smul_le_one`), and the approximating
+sum is `∑ k, ∑ l, a k l * ⟪u k, v l⟫` for the vectors `u k = (conj (f i k))ᵢ` and
+`v l = (g i l)ᵢ` of Euclidean norm at most one. Letting the approximation error tend to zero
+gives the result.
 
 ## Main declarations
 
@@ -47,56 +49,10 @@ public section
 
 open scoped InnerProductSpace
 
-/-- The coordinates of a family whose square function is bounded by one are bounded by one. -/
-private theorem norm_apply_le_one_of_sum_sq_le {X 𝕜 ι : Type*} [TopologicalSpace X] [RCLike 𝕜]
-    [Fintype ι] {h : ι → C(X, 𝕜)} (hh : ∀ x, ∑ i, ‖h i x‖ ^ 2 ≤ 1) (i : ι) (x : X) :
-    ‖h i x‖ ≤ 1 :=
-  (sq_le_one_iff₀ (norm_nonneg _)).1 <|
-    (Finset.single_le_sum (fun j _ ↦ sq_nonneg ‖h j x‖) (Finset.mem_univ i)).trans (hh x)
-
 namespace LinearMap
 
 variable {K L 𝕜 ι : Type*} [TopologicalSpace K] [CompactSpace K] [TopologicalSpace L]
   [CompactSpace L] [RCLike 𝕜]
-
-/-- A finite family in `C(K, 𝕜)` is uniformly within `δ > 0` of the combinations
-`∑ k, f i k • ρ k` of its values at the points of a finite set, for a partition of unity `ρ`
-indexed by those points. -/
-private theorem exists_partitionOfUnity_norm_sum_smul_sub_le [NormalSpace K] [Finite ι]
-    (f : ι → C(K, 𝕜)) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ (s : Finset K) (ρ : PartitionOfUnity s K), ∀ i,
-      ‖∑ k : s, f i k • (⟨fun x ↦ (ρ k x : 𝕜), by fun_prop⟩ : C(K, 𝕜)) - f i‖ ≤ δ := by
-  have := Fintype.ofFinite ι
-  obtain ⟨s, ρ, hρ⟩ := (ContinuousMap.pi f).exists_partitionOfUnity_dist_finsum_smul_le hδ
-  refine ⟨s, ρ, fun i ↦ (ContinuousMap.norm_le _ hδ.le).2 fun x ↦ ?_⟩
-  have hx := (norm_le_pi_norm (∑ᶠ k, ρ k x • ContinuousMap.pi f k - ContinuousMap.pi f x) i).trans
-    ((dist_eq_norm _ _).symm.trans_le (hρ x))
-  simpa only [ContinuousMap.sub_apply, ContinuousMap.coe_sum, ContinuousMap.coe_smul,
-    ContinuousMap.coe_mk, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, ContinuousMap.pi_eval,
-    finsum_eq_sum_of_fintype, Pi.sub_apply, RCLike.real_smul_eq_coe_mul, mul_comm] using hx
-
-/-- For a finite partition of unity `ρ` and scalars `c k` of norm at most one, the continuous
-function `∑ k, c k * ρ k` has uniform norm at most one. -/
-private theorem norm_sum_smul_le_one {κ : Type*} [Fintype κ] (ρ : PartitionOfUnity κ K)
-    {c : κ → 𝕜} (hc : ∀ k, ‖c k‖ ≤ 1) :
-    ‖∑ k, c k • (⟨fun x ↦ (ρ k x : 𝕜), by fun_prop⟩ : C(K, 𝕜))‖ ≤ 1 := by
-  refine (ContinuousMap.norm_le _ zero_le_one).2 fun x ↦ ?_
-  simp only [ContinuousMap.coe_sum, Finset.sum_apply, ContinuousMap.smul_apply,
-    ContinuousMap.coe_mk, smul_eq_mul]
-  calc ‖∑ k, c k * (ρ k x : 𝕜)‖ ≤ ∑ k, ‖c k * (ρ k x : 𝕜)‖ := norm_sum_le _ _
-    _ ≤ ∑ k, ρ k x := Finset.sum_le_sum fun k _ ↦ by
-        rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg (ρ.nonneg k x)]
-        exact mul_le_of_le_one_left (ρ.nonneg k x) (hc k)
-    _ ≤ 1 := by simpa only [finsum_eq_sum_of_fintype] using ρ.sum_le_one x
-
-/-- A bilinear map evaluated on finite linear combinations. -/
-private theorem apply_sum_smul_sum_smul {E F : Type*} [AddCommMonoid E] [AddCommMonoid F]
-    [Module 𝕜 E] [Module 𝕜 F] {κ κ' : Type*} [Fintype κ] [Fintype κ'] (B : E →ₗ[𝕜] F →ₗ[𝕜] 𝕜)
-    (φ : κ → E) (ψ : κ' → F) (c : κ → 𝕜) (d : κ' → 𝕜) :
-    B (∑ k, c k • φ k) (∑ l, d l • ψ l) = ∑ k, ∑ l, B (φ k) (ψ l) * c k * d l := by
-  simp only [map_sum, map_smul, sum_apply, smul_apply, smul_eq_mul, Finset.mul_sum]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦ by ring
 
 variable [Fintype ι]
 
@@ -113,18 +69,26 @@ private theorem exists_matrix_norm_sub_le [NormalSpace K] [NormalSpace L]
         ‖∑ k, ∑ l, a k l * σ k * τ l‖ ≤ C) ∧ (∀ k, ‖u k‖ ≤ 1) ∧ (∀ l, ‖v l‖ ≤ 1) ∧
       ‖∑ i, B (f i) (g i) - ∑ k, ∑ l, a k l * ⟪u k, v l⟫_𝕜‖ ≤ 2 * Fintype.card ι * C * δ := by
   -- Approximate both families along finite partitions of unity.
-  obtain ⟨s, ρ, hρ⟩ := exists_partitionOfUnity_norm_sum_smul_sub_le f hδ
-  obtain ⟨t, σ, hσ⟩ := exists_partitionOfUnity_norm_sum_smul_sub_le g hδ
+  obtain ⟨s, ρ, hρ⟩ := ContinuousMap.exists_partitionOfUnity_norm_sum_smul_sub_le f hδ
+  obtain ⟨t, σ, hσ⟩ := ContinuousMap.exists_partitionOfUnity_norm_sum_smul_sub_le g hδ
   have hB' {x : C(K, 𝕜)} {y : C(L, 𝕜)} {a b : ℝ} (hx : ‖x‖ ≤ a) (hy : ‖y‖ ≤ b) :
       ‖B x y‖ ≤ C * a * b :=
     (hB x y).trans <| mul_le_mul (mul_le_mul_of_nonneg_left hx hC) hy (norm_nonneg _)
       (mul_nonneg hC ((norm_nonneg _).trans hx))
+  -- The values of families with square function at most one have norm at most one.
+  have hcoord (w : ι → 𝕜) (hw : ∑ i, ‖w i‖ ^ 2 ≤ 1) (i : ι) : ‖w i‖ ≤ 1 :=
+    (sq_le_one_iff₀ (norm_nonneg _)).1 <|
+      (Finset.single_le_sum (fun j _ ↦ sq_nonneg ‖w j‖) (Finset.mem_univ i)).trans hw
   set φ : s → C(K, 𝕜) := fun k ↦ ⟨fun x ↦ (ρ k x : 𝕜), by fun_prop⟩
   set ψ : t → C(L, 𝕜) := fun l ↦ ⟨fun y ↦ (σ l y : 𝕜), by fun_prop⟩
   refine ⟨s, t, fun k l ↦ B (φ k) (ψ l), fun k ↦ WithLp.toLp 2 fun i ↦ star (f i k),
     fun l ↦ WithLp.toLp 2 fun i ↦ g i l, fun c d hc hd ↦ ?_, fun k ↦ ?_, fun l ↦ ?_, ?_⟩
-  · rw [← apply_sum_smul_sum_smul]
-    exact (hB' (norm_sum_smul_le_one ρ hc) (norm_sum_smul_le_one σ hd)).trans_eq (by ring)
+  · have h := hB' (ρ.norm_sum_smul_le_one hc) (σ.norm_sum_smul_le_one hd)
+    rw [apply_sum_smul_sum_smul, mul_one, mul_one] at h
+    refine h.trans_eq' <| congrArg norm <| Finset.sum_congr rfl fun k _ ↦
+      Finset.sum_congr rfl fun l _ ↦ ?_
+    simp only [smul_eq_mul]
+    ring
   · rw [EuclideanSpace.norm_eq, Real.sqrt_le_one]
     simpa using hf k
   · rw [EuclideanSpace.norm_eq, Real.sqrt_le_one]
@@ -134,14 +98,16 @@ private theorem exists_matrix_norm_sub_le [NormalSpace K] [NormalSpace L]
   set g' : ι → C(L, 𝕜) := fun i ↦ ∑ l : t, g i l • ψ l
   have hmat : ∑ k : s, ∑ l : t, B (φ k) (ψ l) * ⟪(WithLp.toLp 2 fun i ↦ star (f i k) :
       EuclideanSpace 𝕜 ι), WithLp.toLp 2 fun i ↦ g i l⟫_𝕜 = ∑ i, B (f' i) (g' i) := by
-    simp only [f', g', apply_sum_smul_sum_smul, EuclideanSpace.inner_toLp_toLp, dotProduct,
-      Pi.star_apply, star_star, Finset.mul_sum]
+    simp only [f', g', apply_sum_smul_sum_smul, smul_eq_mul, EuclideanSpace.inner_toLp_toLp,
+      dotProduct, Pi.star_apply, star_star, Finset.mul_sum]
     calc _ = ∑ k : s, ∑ l : t, ∑ i, B (φ k) (ψ l) * f i k * g i l :=
           Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦
             Finset.sum_congr rfl fun i _ ↦ by ring
       _ = ∑ k : s, ∑ i, ∑ l : t, B (φ k) (ψ l) * f i k * g i l :=
           Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm
-      _ = _ := Finset.sum_comm
+      _ = ∑ i, ∑ k : s, ∑ l : t, B (φ k) (ψ l) * f i k * g i l := Finset.sum_comm
+      _ = _ := Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
+          Finset.sum_congr rfl fun l _ ↦ by ring
   rw [hmat, ← Finset.sum_sub_distrib]
   have hterm (i : ι) : ‖B (f i) (g i) - B (f' i) (g' i)‖ ≤ 2 * C * δ := by
     have heq : B (f i) (g i) - B (f' i) (g' i) =
@@ -151,9 +117,9 @@ private theorem exists_matrix_norm_sub_le [NormalSpace K] [NormalSpace L]
     rw [heq]
     refine (norm_add_le _ _).trans ?_
     have h₁ := hB' ((norm_sub_rev _ _).trans_le (hρ i))
-      ((ContinuousMap.norm_le _ zero_le_one).2 (norm_apply_le_one_of_sum_sq_le hg i))
+      ((ContinuousMap.norm_le _ zero_le_one).2 fun y ↦ hcoord (fun j ↦ g j y) (hg y) i)
     have h₂ := hB'
-      (norm_sum_smul_le_one ρ fun k ↦ norm_apply_le_one_of_sum_sq_le hf i k)
+      (ρ.norm_sum_smul_le_one fun k ↦ hcoord (fun j ↦ f j k) (hf k) i)
       ((norm_sub_rev _ _).trans_le (hσ i))
     linarith
   refine (norm_sum_le _ _).trans <| (Finset.sum_le_sum fun i _ ↦ hterm i).trans_eq ?_
