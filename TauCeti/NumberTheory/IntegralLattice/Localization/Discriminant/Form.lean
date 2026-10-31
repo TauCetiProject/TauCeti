@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Genus
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
-import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
 import TauCeti.NumberTheory.Padics.RatCast
 
@@ -47,8 +46,6 @@ discriminant bilinear form replaces the quadratic one.
   an isometry of the `p`-primary components of the discriminant bilinear modules.
 * `TauCeti.IntegralLattice.primaryDiscriminantQuadraticIsometry`: for even lattices, it induces an
   isometry of the `p`-primary components of the discriminant quadratic modules.
-* `TauCeti.IntegralLattice.SameGenus.natCard_discriminantGroup_eq`: lattices in one genus have
-  discriminant groups of the same order.
 * `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantBilinearModule`: lattices in one
   genus have isometric discriminant bilinear modules.
 * `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantQuadraticModule`: even lattices
@@ -380,12 +377,6 @@ theorem primaryDiscriminantQuadraticIsometry_apply (hL : L.IsEven) (hM : M.IsEve
 /-! ### Discriminant forms are genus invariants -/
 
 namespace SameGenus
-
-/-- Lattices in one genus have discriminant groups of the same order. -/
-theorem natCard_discriminantGroup_eq (h : L.SameGenus M) :
-    Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup := by
-  rw [natCard_discriminantGroup, natCard_discriminantGroup, discriminant_def, discriminant_def,
-    h.determinant_eq]
 
 /-- **Lattices in one genus have isometric discriminant bilinear forms.** This is the easy half of
 Nikulin's Corollary 1.16.3: the genus of a nondegenerate lattice determines its discriminant
