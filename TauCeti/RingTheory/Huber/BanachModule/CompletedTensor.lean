@@ -193,7 +193,7 @@ noncomputable instance : Module A (CompletedTensor A V W) :=
 noncomputable instance : UniformSpace (CompletedTensor A V W) :=
   inferInstanceAs (UniformSpace (Completion (V ⊗[A] W)))
 
-instance : IsUniformAddGroup (CompletedTensor A V W) :=
+instance isUniformAddGroup : IsUniformAddGroup (CompletedTensor A V W) :=
   inferInstanceAs (IsUniformAddGroup (Completion (V ⊗[A] W)))
 
 instance : NonarchimedeanAddGroup (CompletedTensor A V W) :=
@@ -209,7 +209,7 @@ instance : UniformContinuousConstSMul A (CompletedTensor A V W) :=
   inferInstanceAs (UniformContinuousConstSMul A (Completion (V ⊗[A] W)))
 
 /-- The action of `A` on `V ⊗̂_A W` is continuous. -/
-instance [IsTopologicalRing A] : ContinuousSMul A (CompletedTensor A V W) :=
+instance continuousSMul [IsTopologicalRing A] : ContinuousSMul A (CompletedTensor A V W) :=
   inferInstanceAs (ContinuousSMul A (Completion (V ⊗[A] W)))
 
 /-- The canonical map `V ⊗[A] W → V ⊗̂_A W` into the completion. -/
@@ -308,7 +308,7 @@ sending `v ⊗ w` to `f v ⊗ g w` (`map_tmul`). -/
 noncomputable def map (f : V →L[A] V') (g : W →L[A] W') :
     CompletedTensor A V W →L[A] CompletedTensor A V' W' :=
   lift ((tmul A V' W').compl₁₂ f.toLinearMap g.toLinearMap)
-    (((continuous_tmul A V' W').comp (f.continuous.prodMap g.continuous)).congr fun _ ↦ rfl)
+    (((continuous_tmul A V' W').comp (f.continuous.prodMap g.continuous)).congr fun _ ↦ by simp)
 
 /-- `f ⊗̂ g` sends `v ⊗ w` to `f v ⊗ g w`. -/
 @[simp]

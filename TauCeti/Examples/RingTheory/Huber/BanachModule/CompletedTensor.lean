@@ -60,13 +60,13 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [Nonarc
 /-- Lifting the multiplication of a complete nonarchimedean ring sends `a ⊗ b - c ⊗ d` to
 `ab - cd`. -/
 example (a b c d : A) :
-    CompletedTensor.lift (LinearMap.mul A A) (continuous_mul.congr fun _ ↦ rfl)
+    CompletedTensor.lift (LinearMap.mul A A) (continuous_mul.congr fun _ ↦ by simp)
       (CompletedTensor.tmul A A A a b - CompletedTensor.tmul A A A c d) = a * b - c * d := by
   simp
 
 /-- The zero bilinear map lifts to the zero map on the whole completion. -/
 example :
-    CompletedTensor.lift (0 : A →ₗ[A] A →ₗ[A] A) (continuous_const.congr fun _ ↦ rfl) = 0 :=
+    CompletedTensor.lift (0 : A →ₗ[A] A →ₗ[A] A) (continuous_zero.congr fun _ ↦ by simp) = 0 :=
   CompletedTensor.ext fun v w ↦ by simp
 
 end Ring

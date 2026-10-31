@@ -26,13 +26,16 @@ continuity properties, and test continuity out of it against induced topologies.
 
 ## Main results
 
-* `nonarchimedeanGroup_induced`, `nonarchimedeanAddGroup_induced`: induced topologies.
-* `nonarchimedeanGroup_sInf`, `nonarchimedeanAddGroup_sInf`: infima.
+* `TauCeti.nonarchimedeanGroup_induced`, `TauCeti.nonarchimedeanAddGroup_induced`: induced
+  topologies.
+* `TauCeti.nonarchimedeanGroup_sInf`, `TauCeti.nonarchimedeanAddGroup_sInf`: infima.
 -/
 
 public section
 
 open Topology
+
+namespace TauCeti
 
 /-- **Pulling back a nonarchimedean group topology.** The topology on `G` induced by a
 homomorphism `f : G →* H` into a nonarchimedean group is nonarchimedean. -/
@@ -67,3 +70,5 @@ theorem nonarchimedeanGroup_sInf {G : Type*} [Group G] {ts : Set (TopologicalSpa
   exact ⟨⟨@OpenSubgroup.toSubgroup G _ t O₁,
     TopologicalSpace.le_def.mp (sInf_le t.2) _ (@OpenSubgroup.isOpen G _ t O₁)⟩ ⊓ O₂,
     Set.inter_subset_inter hO₁ hO₂⟩
+
+end TauCeti
