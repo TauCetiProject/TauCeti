@@ -12,12 +12,13 @@ public import TauCeti.Topology.Algebra.PointTopology.Basic
 # The topological group of points of an affine group scheme
 
 Let `H` be a Hopf algebra over `k` and `R` a commutative topological `k`-algebra. The points
-`WithConv (H →ₐ[k] R)` of the affine group scheme `Spec H` form a group under convolution, with
-`(f * g)(h) = ∑ f(h₍₁₎) * g(h₍₂₎)` and `f⁻¹ = f ∘ S` for the antipode `S`. With the point topology,
-the coarsest topology making every evaluation continuous, this group is a topological group. Each
-value of a product is a finite sum of products of values of the factors, so multiplication is
-continuous when `R` is a topological semiring; each value of an inverse is a value of the point
-itself, so inversion is continuous for every topology on `R`. No finiteness, commutativity or
+`WithConv (H →ₐ[k] R)` form a group under convolution, with `(f * g)(h) = ∑ f(h₍₁₎) * g(h₍₂₎)` and
+`f⁻¹ = f ∘ S` for the antipode `S`. When `H` is commutative, these are the `R`-points of the affine
+group scheme `Spec H`. With the point topology, the coarsest topology making every evaluation
+continuous, this group is a topological group. Each value of a product is a finite sum of products
+of values of the factors, so multiplication is continuous when `R` is a topological semiring; each
+value of an inverse is a value of the point itself, so inversion is continuous for every topology
+on `R`. The coefficients `R` must be commutative, but `H` need not be, and no finiteness or
 separation hypothesis on `H` or `R` is needed.
 
 This is the topology on rational points used for groups of points over local fields and adeles:
