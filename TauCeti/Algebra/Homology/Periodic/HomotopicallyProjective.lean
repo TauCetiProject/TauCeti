@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.Periodic.Derived
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
 
@@ -137,11 +138,9 @@ theorem isHomotopicallyProjective_of_homotopy {K : CochainComplex C (ZMod n)}
 
 /-- A periodic complex is contractible exactly when it is acyclic and homotopically projective. -/
 theorem isHomotopicallyProjective_and_acyclic_iff (K : CochainComplex C (ZMod n)) :
-    IsHomotopicallyProjective K ∧ K.Acyclic ↔ Nonempty (Homotopy (𝟙 K) 0) := by
-  refine ⟨fun ⟨hK, hac⟩ ↦ hK.nonempty_homotopy_zero (𝟙 K) hac, fun ⟨h⟩ ↦
-    ⟨isHomotopicallyProjective_of_homotopy h, ?_⟩⟩
-  rw [← quotient_obj_mem_subcategoryAcyclic_iff]
-  exact ObjectProperty.prop_of_isZero _ ((HomotopyCategory.isZero_quotient_obj_iff K).mpr ⟨h⟩)
+    IsHomotopicallyProjective K ∧ K.Acyclic ↔ Nonempty (Homotopy (𝟙 K) 0) :=
+  ⟨fun ⟨hK, hac⟩ ↦ hK.nonempty_homotopy_zero (𝟙 K) hac,
+    fun ⟨h⟩ ↦ ⟨isHomotopicallyProjective_of_homotopy h, h.acyclic⟩⟩
 
 /-- A periodic complex with projective terms and zero differential is homotopically projective. -/
 theorem isHomotopicallyProjective_of_d_eq_zero {K : CochainComplex C (ZMod n)}
