@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Connected
 public import TauCeti.Analysis.Normed.Module.Ball.Action
-public import TauCeti.Analysis.Quaternion
+public import TauCeti.Analysis.Quaternion.Basic
 public import TauCeti.Topology.Algebra.ProperAction.Basic
 
 /-!
