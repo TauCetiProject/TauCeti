@@ -8,8 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Geometry.Manifold.IsManifold.Basic
+public import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # Local equations for transverse fibre products
@@ -21,7 +20,7 @@ invertible coordinate derivative applied to `df u - dg v`.
 
 Consequently the equation is regular exactly when the two derivative ranges span the target
 tangent space. Its kernel is the space of pairs with equal images under the two derivatives,
-with dimension `dim X + dim Y - dim N` in finite dimension.
+with dimension `dim X + dim Y - dim N` in finite dimension at a transverse pair.
 These are the local equations and tangent spaces used in the regular-level construction of a
 transverse fibre product. The equal target tangent spaces are identified explicitly by
 `tangentSpaceCast`; no identification of tangent spaces at distinct points is used.
@@ -107,6 +106,7 @@ theorem mvfderiv_fiberProductEquation_apply
         mvfderiv IN φ (f p.1) (tangentSpaceCast IN (g p.2) (f p.1) w) := by
     rw [hfg]
     intro w
+    -- At equal base points, `tangentSpaceCast` unfolds to the identity map.
     rfl
   -- The equation is the pointwise subtraction of the two coordinate composites.
   have hEq : φ.fiberProductEquation f g =
@@ -142,15 +142,25 @@ theorem mem_ker_mvfderiv_fiberProductEquation_iff
 
 /-- Transversality is exactly regularity of the local fibre-product equation. The range of
 `dg` is transported to the equal tangent space at `f p.1` before taking the supremum. -/
-theorem surjective_mvfderiv_fiberProductEquation_iff
+theorem isRegularPoint_fiberProductEquation_iff
     (φ : PartialDiffeomorph IN 𝓘(𝕜, EN) N EN n) (hn : n ≠ 0)
     {f : X → N} {g : Y → N} {p : X × Y}
     (hf : MDifferentiableAt IX IN f p.1) (hg : MDifferentiableAt IY IN g p.2)
     (hfg : f p.1 = g p.2) (hx : f p.1 ∈ φ.source) :
-    Surjective (mvfderiv (IX.prod IY) (φ.fiberProductEquation f g) p) ↔
+    TauCeti.IsRegularPoint (IX.prod IY) 𝓘(𝕜, EN) (φ.fiberProductEquation f g) p ↔
       (mfderiv IX IN f p.1).range ⊔
         (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
           (mfderiv IY IN g p.2)).range = ⊤ := by
+  -- The canonical identification of the target tangent space preserves surjectivity.
+  have hreg : TauCeti.IsRegularPoint (IX.prod IY) 𝓘(𝕜, EN)
+      (φ.fiberProductEquation f g) p ↔
+      Surjective (mvfderiv (IX.prod IY) (φ.fiberProductEquation f g) p) := by
+    rw [TauCeti.isRegularPoint_iff]
+    symm
+    simpa only [mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe] using
+      EquivLike.comp_surjective (mfderiv (IX.prod IY) 𝓘(𝕜, EN) (φ.fiberProductEquation f g) p)
+        (NormedSpace.fromTangentSpace (φ.fiberProductEquation f g p))
+  rw [hreg]
   let Df := mfderiv IX IN f p.1
   let Dg := ((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
     (mfderiv IY IN g p.2)
@@ -175,7 +185,8 @@ theorem surjective_mvfderiv_fiberProductEquation_iff
     obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp (h ▸ (Submodule.mem_top : z ∈ ⊤))
     obtain ⟨u, rfl⟩ := ha
     obtain ⟨v, rfl⟩ := hb
-    have hab' : Df u + Dg v = z := hab
+    have hab' : Df u + Dg v = z := by
+      simpa only [ContinuousLinearMap.coe_coe] using hab
     refine ⟨(u, -v), ?_⟩
     exact (hD (u, -v)).trans (congrArg (mvfderiv IN φ (f p.1))
       (by simpa only [map_neg, sub_neg_eq_add] using hab'))
@@ -193,11 +204,14 @@ theorem finrank_ker_mvfderiv_fiberProductEquation
         (mfderiv IY IN g p.2)).range = ⊤) :
     Module.finrank 𝕜 (mvfderiv (IX.prod IY) (φ.fiberProductEquation f g) p).ker =
       Module.finrank 𝕜 EX + Module.finrank 𝕜 EY - Module.finrank 𝕜 EN := by
-  have hs := (φ.surjective_mvfderiv_fiberProductEquation_iff hn hf hg hfg hx).2 htrans
-  have hd := LinearMap.finrank_range_add_finrank_ker
-    (mvfderiv (IX.prod IY) (φ.fiberProductEquation f g) p).toLinearMap
-  rw [LinearMap.range_eq_top.2 hs, finrank_top, TauCeti.finrank_tangentSpace,
-    Module.finrank_prod] at hd
+  have hs := (φ.isRegularPoint_fiberProductEquation_iff hn hf hg hfg hx).2 htrans
+  have hd := hs.finrank_ker_mfderiv_add_finrank
+  rw [Module.finrank_prod] at hd
+  -- `mvfderiv` composes `mfderiv` with the canonical target tangent-space equivalence.
+  have hker : (mvfderiv (IX.prod IY) (φ.fiberProductEquation f g) p).ker =
+      (mfderiv (IX.prod IY) 𝓘(𝕜, EN) (φ.fiberProductEquation f g) p).ker :=
+    (NormedSpace.fromTangentSpace (φ.fiberProductEquation f g p)).toLinearEquiv.ker_comp _
+  rw [hker]
   omega
 
 end PartialDiffeomorph
