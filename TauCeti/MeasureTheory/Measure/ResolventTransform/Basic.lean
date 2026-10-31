@@ -16,7 +16,8 @@ For a finite measure on the real line, the imaginary part of its resolvent trans
 is the integral of the kernel `im z / ((x - re z)² + (im z)²)`.
 This kernel is positive in the upper half-plane, so the imaginary part of the transform
 is strictly positive there for every nonzero finite measure. We also give uniform bounds
-away from the real axis. No moment assumptions are needed.
+away from the real axis, and prove affine covariance under pushforward. No moment assumptions are
+needed.
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`.
@@ -92,5 +93,42 @@ theorem im_resolventTransform_pos (hμ : μ ≠ 0) {z : ℂ} (hz : 0 < z.im) :
   apply (integral_pos_iff_support_of_nonneg (fun x => (hp x).le) ?_).2
   · simpa [Function.support, ne_of_gt (hp _)] using (Measure.measure_univ_pos.mpr hμ)
   · simpa only [RCLike.im_eq_complex_im, Complex.im_resolvent_real] using hi.im
+
+omit [IsFiniteMeasure μ] in
+/-- The resolvent transform of the pushforward by a real affine map is obtained by the
+corresponding affine change of spectral parameter. The identity holds for arbitrary measures,
+without finiteness assumptions. -/
+theorem resolventTransform_map_affine (a b : ℝ) (hb : b ≠ 0) (z : ℂ) :
+    resolventTransform (μ.map (fun x : ℝ => a + b * x)) z =
+      (b : ℂ)⁻¹ * resolventTransform μ ((z - a) / b) := by
+  let e : ℝ ≃ᵐ ℝ :=
+    ((Homeomorph.mulLeft₀ b hb).trans (Homeomorph.addRight a)).toMeasurableEquiv
+  have he : (fun x : ℝ => a + b * x) = e := by
+    ext x
+    simp [e, Homeomorph.coe_mulLeft₀, add_comm]
+  have hkernel (x : ℝ) :
+      resolvent z (a + b * x) =
+        (b : ℂ)⁻¹ * resolvent ((z - a) / b) x := by
+    have hfactor :
+        (a : ℂ) + (b : ℂ) * x - z = (b : ℂ) * ((x : ℂ) - (z - a) / b) := by
+      field_simp [hb]
+      ring
+    simp only [resolvent, Ring.inverse_eq_inv']
+    push_cast
+    change ((a : ℂ) + (b : ℂ) * x - z)⁻¹ =
+      (b : ℂ)⁻¹ * ((x : ℂ) - (z - a) / b)⁻¹
+    rw [hfactor, mul_inv_rev]
+    ring
+  calc
+    resolventTransform (μ.map (fun x : ℝ => a + b * x)) z =
+        ∫ x, resolvent z (e x) ∂μ := by
+          rw [resolventTransform_apply, he, integral_map_equiv]
+    _ = ∫ x, resolvent z (a + b * x) ∂μ := by
+          apply integral_congr_ae
+          exact ae_of_all _ fun x => congrArg (resolvent z) (congrFun he x).symm
+    _ = ∫ x, (b : ℂ)⁻¹ * resolvent ((z - a) / b) x ∂μ := by
+          exact integral_congr_ae (ae_of_all _ hkernel)
+    _ = (b : ℂ)⁻¹ * resolventTransform μ ((z - a) / b) := by
+          rw [integral_const_mul, resolventTransform_apply]
 
 end MeasureTheory
