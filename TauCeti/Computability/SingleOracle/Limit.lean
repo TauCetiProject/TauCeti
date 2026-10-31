@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Evaln
-public import TauCeti.Computability.Approximation.Modulus
-public import TauCeti.Computability.Priority.Breach
-public import Mathlib.Algebra.Notation.Indicator
-import Mathlib.Order.Filter.IndicatorFunction
+public import TauCeti.Computability.Enumeration.Converges
 
 /-!
 # Oracle computations along approximations of the oracle
@@ -25,19 +22,15 @@ addresses below its use, and these are simultaneously correct from some stage on
 completeness of bounded evaluation, every value of a program relative to the limit oracle is
 eventually found by the stage computations with growing fuel. For a set enumerated in monotone
 finite stages, the set-oracle answers of the stages converge to those of the limit set, so this
-applies to the stage computations `Φ_{e,s}^{A_s}(x)`.
+applies to the stage computations `Φ_{e,s}^{A_s}(x)`
+(`TauCeti.Enumeration.converges_indicator_stageLimit`).
 
 **From the stages to the limit.** The converse fails without further information: a stage
 computation may read an address whose answer later changes. It holds when nothing enters the
 enumeration below the use after the stage of the computation. Then the computation persists, with
-the same output and use, at every later stage and against the limit set. In a priority
-construction this is the case when the requirement protecting the computation is not injured
-after that stage, provided its restraint covers the use at every later stage. The covering
-premise is needed because restraints can drop: once the protected interval no longer contains the
-use, an entry below the use is not an injury but still changes the computation. An address below
-the use is covered by an inclusive restraint `some b` when it is at most `b`; for use-prefix
-breaches, which only count entries strictly below the restraint, it must be less than `b`. A
-restraint equal to the use covers it in both senses.
+the same output and use, at every later stage and against the limit set. The priority-method
+consequences, for requirements that are not injured, are in
+`TauCeti.Computability.Priority.Preservation`.
 
 ## Main results
 
@@ -47,8 +40,6 @@ restraint equal to the use covers it in both senses.
 * `TauCeti.Oracle.Single.Code.exists_eventually_evaln_eq_some_of_mem_eval`: every value of a
   program relative to the limit oracle is eventually found by the stage computations, with fuel
   growing along any clock tending to infinity.
-* `TauCeti.Enumeration.converges_indicator_stageLimit`: under monotone stages, the indicator
-  functions of the stages converge to that of the limit.
 * `TauCeti.Oracle.Single.Code.exists_eventually_evaln_indicator_eq_some_of_mem_eval`: a
   convergent computation relative to the limit of a monotone enumeration is eventually found by
   the stage computations against the finite stages.
@@ -56,10 +47,6 @@ restraint equal to the use covers it in both senses.
   `TauCeti.Oracle.Single.Code.evaln_indicator_stageLimit_eq_some_of_forall_notMem_fresh`:
   **preservation**, a stage computation below whose use nothing enters persists at every later
   stage and against the limit set.
-* `TauCeti.Oracle.Single.Code.evaln_indicator_stageLimit_eq_some_of_injuriesAt_eq_empty`,
-  `TauCeti.Oracle.Single.Code.evaln_indicator_stageLimit_eq_some_of_usePrefixRestraint`:
-  preservation of a stage computation whose use stays covered by a restraint that is not
-  injured, respectively whose use prefix is not breached.
 
 ## References
 
@@ -68,21 +55,9 @@ restraint equal to the use covers it in both senses.
 
 public section
 
-open Filter TauCeti.Approximation TauCeti.Enumeration TauCeti.Priority
+open Filter TauCeti.Approximation TauCeti.Enumeration
 
 namespace TauCeti
-
-namespace Enumeration
-
-/-- Under monotone stages, the indicator functions of the stages converge to the indicator function
-of the limit. This is Mathlib's `Monotone.indicator_eventuallyEq_iUnion` for the stages. -/
-theorem converges_indicator_stageLimit {M : Type*} [Zero M] {A : ℕ → Finset ℕ} (hA : Monotone A)
-    (f : ℕ → M) : Converges (fun s => (A s : Set ℕ).indicator f) ((stageLimit A).indicator f) :=
-  converges_iff_eventually.2 fun z => by
-    rw [stageLimit_eq_iUnion]
-    exact Monotone.indicator_eventuallyEq_iUnion _ (fun _ _ h => Finset.coe_subset.2 (hA h)) f z
-
-end Enumeration
 
 namespace Oracle.Single.Code
 
@@ -101,7 +76,7 @@ theorem eventually_evaln_eq_some_of_converges (hσ : Converges σs σ)
 /-- **Eventual visibility with growing fuel.** If the answers `σs s` converge pointwise to `σ`, a
 successful run against `σ` is, from some stage on, a successful run with the same output and use
 against `σs s` with fuel `t s`, for any clock `t` tending to infinity. -/
-theorem eventually_evaln_comp_eq_some_of_converges (hσ : Converges σs σ) {t : ℕ → ℕ}
+theorem eventually_evaln_eq_some_of_converges_of_tendsto (hσ : Converges σs σ) {t : ℕ → ℕ}
     (ht : Tendsto t atTop atTop) (h : evaln σ k c n = some d) :
     ∀ᶠ s in atTop, evaln (σs s) (t s) c n = some d :=
   ((eventually_evaln_eq_some_of_converges hσ h).and (ht.eventually_ge_atTop k)).mono
@@ -116,7 +91,7 @@ theorem exists_eventually_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ}
     (ht : Tendsto t atTop atTop) {y : ℕ} (h : y ∈ eval O c n) :
     ∃ d : Halt, d.output = y ∧ ∀ᶠ s in atTop, evaln (σs s) (t s) c n = some d := by
   obtain ⟨k, d, hd, rfl⟩ := exists_evaln_eq_some_of_mem_eval hO h
-  exact ⟨d, rfl, eventually_evaln_comp_eq_some_of_converges hσ ht hd⟩
+  exact ⟨d, rfl, eventually_evaln_eq_some_of_converges_of_tendsto hσ ht hd⟩
 
 variable {A : ℕ → Finset ℕ}
 
@@ -160,36 +135,6 @@ theorem evaln_indicator_stageLimit_eq_some_of_forall_notMem_fresh (hA : Monotone
     evaln (fun z => some ((stageLimit A).indicator 1 z)) k c n = some d :=
   evaln_eq_some_of_eqOn h fun z hz => congrArg some <|
     Set.indicator_eq_indicator (limit_agrees_of_no_fresh_below hA hfresh z hz) rfl
-
-variable {r : ℕ → ℕ → Option ℕ} {e : ℕ}
-
-/-- **Preservation under a covering restraint without injury.** Under monotone stages, let a run
-against the set oracle of `A s` succeed. Suppose that at every later stage requirement `e` is not
-injured, and every address below the use of the run lies in its protected interval: the restraint
-is active, `some b`, with the address at most `b`. Then the run succeeds with the same output and
-use against the set oracle of the limit. -/
-theorem evaln_indicator_stageLimit_eq_some_of_injuriesAt_eq_empty (hA : Monotone A)
-    (h : evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) k c n = some d)
-    (hr : ∀ t, s ≤ t → ∀ z, z < d.use → ∃ b, r e t = some b ∧ z ≤ b)
-    (hI : ∀ t, s ≤ t → injuriesAt A r e t = ∅) :
-    evaln (fun z => some ((stageLimit A).indicator 1 z)) k c n = some d :=
-  evaln_indicator_stageLimit_eq_some_of_forall_notMem_fresh hA h fun t ht z hz =>
-    have ⟨_, hb, hzb⟩ := hr t ht z hz
-    notMem_fresh_of_injuriesAt_eq_empty (hI t ht) hb hzb
-
-/-- **Preservation under a covering restraint without use-prefix breach.** Under monotone stages,
-let a run against the set oracle of `A s` succeed. Suppose that at every later stage the use prefix
-of requirement `e` is not breached, and every address below the use of the run lies strictly below
-its restraint: the restraint is active, `some b`, with the address less than `b`. Then the run
-succeeds with the same output and use against the set oracle of the limit. -/
-theorem evaln_indicator_stageLimit_eq_some_of_usePrefixRestraint (hA : Monotone A)
-    (h : evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) k c n = some d)
-    (hr : ∀ t, s ≤ t → ∀ z, z < d.use → ∃ b, r e t = some b ∧ z < b)
-    (hI : ∀ t, s ≤ t → injuriesAt A (usePrefixRestraint r) e t = ∅) :
-    evaln (fun z => some ((stageLimit A).indicator 1 z)) k c n = some d :=
-  evaln_indicator_stageLimit_eq_some_of_forall_notMem_fresh hA h fun t ht z hz =>
-    have ⟨_, hb, hzb⟩ := hr t ht z hz
-    notMem_fresh_of_injuriesAt_usePrefixRestraint_eq_empty (hI t ht) hb hzb
 
 end Oracle.Single.Code
 
