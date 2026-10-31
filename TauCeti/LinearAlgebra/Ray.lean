@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Ray
 import Mathlib.Order.Preorder.Finite
 
 /-!
-# Sums of vectors in the same ray
+# Vectors in the same ray: sums, finite orbits, and durations of segments
 
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
 non-degeneracy needed to merge adjacent segments of a piecewise-linear path that point in the same
