@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.LinearFactor
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
@@ -219,7 +218,7 @@ theorem restrict_adicOfIrreducible_X_sub_C_algebraMap
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (c : k) :
     (adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c))).restrict k (RatFunc k) =
       adicOfIrreducible (irreducible_X_sub_C c) :=
-  (restrict_adicOfIrreducible_eq_iff hX _ _).mpr (map_X_sub_C _ c).symm.dvd
+  (restrict_adicOfIrreducible_eq_iff hX _ _).mpr (by simp)
 
 /-- **Over a rational finite place there is only one place**: for `c ∈ k`, the place of `X - c`
 in `k'(X)` is the only place over the place of `X - c` in `k(X)`. -/
@@ -231,11 +230,11 @@ theorem restrict_eq_adicOfIrreducible_X_sub_C_iff
   rw [restrict_eq_adicOfIrreducible_iff hX]
   constructor
   · rintro ⟨q', hq', hdvd, rfl⟩
-    rw [map_X_sub_C] at hdvd
+    rw [Polynomial.map_sub, map_X, map_C] at hdvd
     exact (adicOfIrreducible_eq_adicOfIrreducible_iff hq' (irreducible_X_sub_C _)).mpr
       (hq'.associated_of_dvd (irreducible_X_sub_C _) hdvd)
   · rintro rfl
-    exact ⟨_, irreducible_X_sub_C _, (map_X_sub_C _ c).symm.dvd, rfl⟩
+    exact ⟨_, irreducible_X_sub_C _, by simp, rfl⟩
 
 /-- **A rational finite place has ramification index one in `k'(X) / k(X)`**: for `c ∈ k`,
 `e = 1` at the place of `X - c` in `k'(X)`. -/
@@ -244,7 +243,7 @@ theorem ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap
     ramificationIdx (RatFunc k) (adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c))) =
       1 := by
   rw [ramificationIdx_adicOfIrreducible_eq_multiplicity hX (irreducible_X_sub_C _)
-    (irreducible_X_sub_C c) (map_X_sub_C _ c).symm.dvd, map_X_sub_C,
+    (irreducible_X_sub_C c) (by simp), Polynomial.map_sub, map_X, map_C,
     multiplicity_self (.of_not_isUnit (not_isUnit_X_sub_C _) (X_sub_C_ne_zero _))]
 
 /-- **The conorm of a rational finite place is a single place**: for `c ∈ k`, the conorm of the

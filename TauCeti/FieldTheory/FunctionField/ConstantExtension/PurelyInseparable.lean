@@ -78,10 +78,12 @@ variable [Algebra.IsIntegral (RatFunc k) (RatFunc K)]
 variable {p : ℕ} [Fact p.Prime] [CharP k p] {a : k} {α : K}
 
 /-- **A rational finite place of `k(t)` is not unramified in `K(t)`** when `K` contains a `p`-th
-root `α` of an element `a` that is not a `p`-th power in `k`: the residue extension at the place
-of `t - c` in `K(t)` is `K / k`, which is not separable. This holds for every embedding of `k(t)`
-in `K(t)`; when the embedding sends `t` to `t`, the ramification index there is moreover `e = 1`
-(`TauCeti.Place.ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap`). -/
+root `α` of an element `a` that is not a `p`-th power in `k`. This holds for every embedding of
+`k(t)` in `K(t)`: the place of `t - c` has degree one, so at any place above it the residue field
+contains the image of `α`, which is purely inseparable over the residue field `k` below, and the
+residue extension is not separable. When the embedding sends `t` to `t`, the only place above is
+the place of `t - c` in `K(t)`, its residue extension is `K / k`, and the ramification index
+there is `e = 1` (`TauCeti.Place.ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap`). -/
 theorem not_isUnramified_adicOfIrreducible_X_sub_C_of_pow_eq (c : k) (ha : ∀ c : k, c ^ p ≠ a)
     (hα : α ^ p = algebraMap k K a) :
     ¬ (adicOfIrreducible (irreducible_X_sub_C c)).IsUnramified (k' := K) (F' := RatFunc K) := by
