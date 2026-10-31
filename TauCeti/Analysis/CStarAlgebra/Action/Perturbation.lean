@@ -234,12 +234,12 @@ theorem perturbationCocycle_perturbed_neg (t : ℝ) :
 /-- Perturbing the perturbed dynamics `α^P` by `-P` recovers `α`. -/
 @[simp]
 theorem perturbed_perturbed_neg : (α.perturbed hP).perturbed hP.neg = α := by
-  have h : ∀ t, perturbationUnitary (α.perturbed hP) hP.neg t = star (perturbationUnitary α hP t) :=
-    fun t => Subtype.ext (α.perturbationCocycle_perturbed_neg hP t)
   ext t a
-  change (DoubleCentralizer.conjStarAlgAut (perturbationUnitary _ hP.neg t.toAdd) *
-    (DoubleCentralizer.conjStarAlgAut (perturbationUnitary α hP t.toAdd) * α t)) a = α t a
-  rw [h, ← mul_assoc, ← map_mul, Unitary.star_mul_self, map_one, one_mul]
+  apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
+  have hu := α.perturbationCocycle_mem_unitary hP t.toAdd
+  rw [coe_perturbed_apply, perturbationCocycle_perturbed_neg, coe_perturbed_apply, star_star]
+  simp only [← mul_assoc, Unitary.star_mul_self_of_mem hu, one_mul]
+  simp only [mul_assoc, Unitary.star_mul_self_of_mem hu, mul_one]
 
 /-- A bounded perturbation does not change the domain of the generator. -/
 theorem generator_perturbed_domain :

@@ -34,7 +34,8 @@ the unitary multipliers to the automorphisms of `A`. As the inclusion of `A` is 
 a real path in `A` has derivative `v` exactly when its image in `𝓜(ℂ, A)` has derivative `↑v`,
 `DoubleCentralizer.hasDerivAt_coe_iff`, so derivatives may be computed in the multiplier algebra.
 Consequently, conjugating a path in `A` by a path of multipliers `U` with `U 0 = 1` and
-`U' 0 = i Q` adds `i[Q, ·]` to its derivative at `0`, `DoubleCentralizer.hasDerivAt_conj_zero`.
+`U' 0 = i Q`, for self-adjoint `Q ∈ A`, adds `i[Q, ·]` to its derivative at `0`,
+`DoubleCentralizer.hasDerivAt_conj_zero`.
 
 ## References
 
@@ -62,6 +63,11 @@ theorem ext_fst_snd {m n : 𝓜(𝕜, A)} (h₁ : ∀ a, m.fst a = n.fst a)
     (h₂ : ∀ a, m.snd a = n.snd a) : m = n :=
   DoubleCentralizer.ext _ _ _ _ <|
     Prod.ext (ContinuousLinearMap.ext h₁) (ContinuousLinearMap.ext h₂)
+
+/-- The inclusion of `A` into its multiplier algebra sends `0` to `0`. -/
+@[simp, norm_cast]
+theorem coe_zero : ((0 : A) : 𝓜(𝕜, A)) = 0 :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
 
 /-- The inclusion of `A` into its multiplier algebra commutes with addition. -/
 @[simp, norm_cast]
@@ -335,7 +341,8 @@ theorem hasDerivAt_coe_iff {A : Type*} [NonUnitalCStarAlgebra A] {f : ℝ → A}
   simp only [key, norm_coe]
 
 /-- Conjugating a differentiable path in `A` by a path of multipliers `U` with `U 0 = 1` and
-`U' 0 = i Q` adds the commutator `i[Q, ·]` to its derivative at `0`. -/
+`U' 0 = i Q`, for self-adjoint `Q ∈ A`, adds the commutator `i[Q, ·]` to its derivative at
+`0`. -/
 theorem hasDerivAt_conj_zero {A : Type*} [NonUnitalCStarAlgebra A] {Q : A}
     (hQ : IsSelfAdjoint Q) {U : ℝ → 𝓜(ℂ, A)} (hU₀ : U 0 = 1)
     (hU : HasDerivAt U (Complex.I • (Q : 𝓜(ℂ, A))) 0) {f g : ℝ → A}
