@@ -210,9 +210,10 @@ theorem isMomentMap_cotangentMomentMap :
       ((InfinitesimalAction.linear _).comp (skewAdjointLieSubalgebra _).incl).comp
         cotangentLiftSpLieHom :=
     InfinitesimalAction.ext fun A ↦ funext fun x ↦ by
-      rw [InfinitesimalAction.cotangentLinear_apply, InfinitesimalAction.comp_apply,
-        InfinitesimalAction.comp_apply, InfinitesimalAction.linear_apply, LieSubalgebra.coe_incl,
-        coe_cotangentLiftSpLieHom]
+      simp
+      -- The two sides differ only in the additive structure on `V × StrongDual ℝ V`: the
+      -- symplectic Lie subalgebra uses the one coming from the normed product.
+      rfl
   rw [hμ, ha]
   exact (strongDualCotangentSymplecticForm (V := V)).isMomentMap_linearMomentMap.comp
     cotangentLiftSpLieHom
