@@ -90,7 +90,9 @@ theorem closedRegionBetween_convexHull {a b : E →ᵃ[ℝ] ℝ} {s : Set E}
     obtain ⟨hx, hax, hxb⟩ := mem_closedRegionBetween.1 hp
     have hgraph : ∀ f : E →ᵃ[ℝ] ℝ, s.graphOn f ⊆ s.graphOn a ∪ s.graphOn b →
         (x, f x) ∈ convexHull ℝ (s.graphOn a ∪ s.graphOn b) := fun f hf ↦
-      convexHull_mono hf (f.graphOn_convexHull s ▸ ⟨x, hx, rfl⟩)
+      convexHull_mono hf <| by
+        rw [← f.graphOn_convexHull]
+        exact mem_graphOn.2 ⟨hx, rfl⟩
     refine (convex_convexHull ℝ _).segment_subset (hgraph a subset_union_left)
       (hgraph b subset_union_right) ?_
     rw [← Prod.image_mk_segment_right, segment_eq_Icc (hax.trans hxb)]
@@ -128,7 +130,9 @@ private def graphShear : E × F ≃ᴬ[𝕜] E × F :=
 
 private theorem graphShear_apply (p : E × F) : graphShear f p = (p.1, p.2 + f p.1) := by
   have hf : f p.1 = (f : E →ᵃ[𝕜] F).linear p.1 + f 0 := congrFun (f : E →ᵃ[𝕜] F).decomp p.1
-  change ((0 : E), f 0) +ᵥ (_ : E × F) = _
+  -- `ContinuousAffineEquiv.constVAdd` has no `apply` lemma; go through its `AffineEquiv`
+  rw [graphShear, ContinuousAffineEquiv.trans_apply, ← ContinuousAffineEquiv.coe_coe,
+    ContinuousAffineEquiv.constVAdd_coe, AffineEquiv.constVAdd_apply]
   simp [ContinuousLinearEquiv.skewProd_apply, hf]
   abel
 
@@ -153,7 +157,9 @@ theorem intrinsicFrontier_graphOn [T1Space F] {s : Set E} (hs : IsClosed s) :
     rw [graphOn_eq_image_graphShear]
     exact (graphShear f).toHomeomorph.isClosedMap _ (hs.prod isClosed_singleton)
   rw [← hg.sdiff_intrinsicInterior, intrinsicInterior_graphOn, ← hs.sdiff_intrinsicInterior]
-  exact (image_sdiff (fun _ _ h ↦ congrArg Prod.fst h) _ _).symm
+  ext ⟨x, y⟩
+  simp only [Set.mem_sdiff, mem_graphOn]
+  tauto
 
 end ContinuousAffineMap
 
