@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
+public import TauCeti.LinearAlgebra.Projectivization.OnePoint
 
 /-!
 # The projective line `OnePoint 𝕜` is the projective space `ℙ 𝕜 (Fin 2 → 𝕜)`
@@ -57,26 +58,6 @@ open scoped ContDiff Manifold LinearAlgebra.Projectivization
 namespace OnePoint
 
 /-! ### The charts in homogeneous coordinates -/
-
-section DivisionRing
-
-variable {K : Type*} [DivisionRing K] [DecidableEq K]
-
-/-- The point `[t : 1]` or `[1 : 0]` corresponding to `x : OnePoint K` lies in the standard affine
-open of the coordinate `1` exactly when `x` is finite. -/
-@[simp]
-theorem equivProjectivization_mem_affineOpen_one_iff (x : OnePoint K) :
-    equivProjectivization K x ∈ Projectivization.affineOpen 1 ↔ x ≠ (∞ : OnePoint K) := by
-  induction x using OnePoint.rec <;> simp
-
-/-- The point `[t : 1]` or `[1 : 0]` corresponding to `x : OnePoint K` lies in the standard affine
-open of the coordinate `0` exactly when `x` is not `0`. -/
-@[simp]
-theorem equivProjectivization_mem_affineOpen_zero_iff (x : OnePoint K) :
-    equivProjectivization K x ∈ Projectivization.affineOpen 0 ↔ x ≠ ((0 : K) : OnePoint K) := by
-  induction x using OnePoint.rec <;> simp
-
-end DivisionRing
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜]
 
