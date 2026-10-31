@@ -103,13 +103,6 @@ private lemma singularHomologyMap_complZeroMap_of_det_pos [FiniteDimensional ℝ
     TopPair.singularHomologyMap_id] at h
   exact h.symm
 
-/-- The reduced connecting morphism of `(E, E ∖ {0})` is an isomorphism, since `E` is
-contractible. -/
-private lemma isIso_reducedSingularHomologyδ_compl_zero (k : ℕ) :
-    IsIso ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of E))).reducedSingularHomologyδ R k) :=
-  @TopPair.isIso_reducedSingularHomologyδ_of_contractibleSpace _ _ _ _ _ R
-    (inferInstanceAs (ContractibleSpace E)) k
-
 /-- A map of pairs `g : (E, E ∖ {0}) ⟶ (E, E ∖ {0})` acts on `Hₖ₊₁(E, E ∖ {0})` by an integer `s`
 exactly when its restriction to `E ∖ {0}` acts on the reduced homology `H~ₖ(E ∖ {0})` by `s`: the
 reduced connecting morphism of the pair is a natural isomorphism between the two. -/
@@ -118,7 +111,8 @@ private lemma singularHomologyMap_succ_eq_smul_iff
     (s : ℤ) (k : ℕ) :
     TopPair.singularHomologyMap g R (k + 1) = s • 𝟙 _ ↔
       (reducedSingularHomologyFunctor R k).map (TopPair.Hom.snd g) = s • 𝟙 _ := by
-  have := isIso_reducedSingularHomologyδ_compl_zero R (E := E) k
+  have := @TopPair.isIso_reducedSingularHomologyδ_of_contractibleSpace _ _ _ _
+    (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of E))) R (inferInstanceAs (ContractibleSpace E)) k
   have hδ := TopPair.reducedSingularHomologyδ_naturality R g k
   constructor
   · intro h
