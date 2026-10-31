@@ -121,12 +121,6 @@ theorem successiveMin_eq_of_crosspolytope_subset_of_subset_box (ha : ∀ j, 0 < 
   rw [finrank_span_eq_card hv, Fintype.card_fin, Basis.finrank_flag, Fin.val_castSucc] at hle
   omega
 
-/-- With nonnegative weights, the weighted cross-polytope lies in the weighted box, for any choice
-`c` of coordinates. -/
-private lemma crosspolytope_subset_box {ι F : Type*} [Fintype ι] {w : ι → ℝ} (hw : ∀ j, 0 ≤ w j)
-    (c : F → ι → ℝ) : {x | ∑ j, w j * |c x j| ≤ 1} ⊆ {x | ∀ j, w j * |c x j| ≤ 1} := fun _ hx j ↦
-  (Finset.single_le_sum (fun k _ ↦ mul_nonneg (hw k) (abs_nonneg _)) (Finset.mem_univ j)).trans hx
-
 /-- **The successive minima of a weighted box.** Let `b` be a basis of `E` and `a` positive
 nondecreasing weights. The successive minima of the lattice `span ℤ (range b)` with respect to the
 weighted box `K = {x | ∀ j, a j * |b.repr x j| ≤ 1}` are the weights `a i`. -/
@@ -134,7 +128,8 @@ theorem successiveMin_box (ha : ∀ j, 0 < a j) (hmono : Monotone a)
     (hK : (K : Set E) = {x | ∀ j, a j * |b.repr x j| ≤ 1}) (i : Fin (finrank ℝ E)) :
     successiveMin (span ℤ (Set.range b)) K i = a i :=
   successiveMin_eq_of_crosspolytope_subset_of_subset_box ha hmono
-    ((crosspolytope_subset_box (fun j ↦ (ha j).le) fun x ↦ b.repr x).trans hK.ge) hK.le i
+    ((TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (ha j).le) fun x ↦
+      b.repr x).trans hK.ge) hK.le i
 
 /-- **The successive minima of a weighted cross-polytope.** Let `b` be a basis of `E` and `a`
 positive nondecreasing weights. The successive minima of the lattice `span ℤ (range b)` with
@@ -144,7 +139,8 @@ theorem successiveMin_crosspolytope (ha : ∀ j, 0 < a j) (hmono : Monotone a)
     (hK : (K : Set E) = {x | ∑ j, a j * |b.repr x j| ≤ 1}) (i : Fin (finrank ℝ E)) :
     successiveMin (span ℤ (Set.range b)) K i = a i :=
   successiveMin_eq_of_crosspolytope_subset_of_subset_box ha hmono hK.ge
-    (hK.le.trans (crosspolytope_subset_box (fun j ↦ (ha j).le) fun x ↦ b.repr x)) i
+    (hK.le.trans (TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (ha j).le) fun x ↦
+      b.repr x)) i
 
 /-! ### The standard lattice `ℤⁿ ⊆ ℝⁿ`
 
@@ -185,7 +181,8 @@ theorem successiveMin_pi_box (hw : ∀ j, 0 < w j) (hmono : Monotone w)
     successiveMin (span ℤ (Set.range (Pi.basisFun ℝ (Fin n)))) C i =
       w (i.cast (finrank_fin_fun ℝ)) :=
   successiveMin_pi_eq_of_crosspolytope_subset_of_subset_box hw hmono
-    ((crosspolytope_subset_box (fun j ↦ (hw j).le) id).trans hC.ge) hC.le i
+    ((TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (hw j).le) id).trans hC.ge)
+    hC.le i
 
 /-- **The successive minima of `ℤⁿ` with respect to a weighted cross-polytope.** For positive
 nondecreasing weights `w`, the successive minima of the standard lattice `ℤⁿ` with respect to the
@@ -196,7 +193,8 @@ theorem successiveMin_pi_crosspolytope (hw : ∀ j, 0 < w j) (hmono : Monotone w
     successiveMin (span ℤ (Set.range (Pi.basisFun ℝ (Fin n)))) C i =
       w (i.cast (finrank_fin_fun ℝ)) :=
   successiveMin_pi_eq_of_crosspolytope_subset_of_subset_box hw hmono hC.ge
-    (hC.le.trans (crosspolytope_subset_box (fun j ↦ (hw j).le) id)) i
+    (hC.le.trans (TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (hw j).le) id))
+    i
 
 end Pi
 

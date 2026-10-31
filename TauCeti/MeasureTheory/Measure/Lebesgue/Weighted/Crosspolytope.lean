@@ -32,6 +32,10 @@ the preimage of the `ℓ¹` ball under a diagonal map, and applies Mathlib's
 formula is its special case `μ = volume`: by `ZSpan.measure_fundamentalDomain` and
 `OrthonormalBasis.volume_parallelepiped`, the fundamental domain of `b` has volume `|det_o b|`.
 
+With nonnegative weights the weighted cross-polytope lies in the weighted box
+`{x | ∀ i, a i * |c x i| ≤ 1}`, for any choice `c` of coordinates
+(`TauCeti.weighted_crosspolytope_subset_weighted_box`).
+
 ## References
 
 * J.-H. Evertse, *Geometry of Numbers*, §2.3, lower-bound proof of Theorem 2.9,
@@ -41,6 +45,17 @@ formula is its special case `μ = volume`: by `ZSpan.measure_fundamentalDomain` 
 public noncomputable section
 
 open MeasureTheory Module
+
+namespace TauCeti
+
+/-- With nonnegative weights `a`, the weighted cross-polytope `{x | ∑ i, a i * |c x i| ≤ 1}` lies
+in the weighted box `{x | ∀ i, a i * |c x i| ≤ 1}`, for any choice `c` of coordinates. -/
+theorem weighted_crosspolytope_subset_weighted_box {ι F : Type*} [Fintype ι] {a : ι → ℝ}
+    (ha : ∀ i, 0 ≤ a i) (c : F → ι → ℝ) :
+    {x | ∑ i, a i * |c x i| ≤ 1} ⊆ {x | ∀ i, a i * |c x i| ≤ 1} := fun _ hx i ↦
+  (Finset.single_le_sum (fun j _ ↦ mul_nonneg (ha j) (abs_nonneg _)) (Finset.mem_univ i)).trans hx
+
+end TauCeti
 
 namespace Module.Basis
 
