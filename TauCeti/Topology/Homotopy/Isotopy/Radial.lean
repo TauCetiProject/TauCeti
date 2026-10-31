@@ -172,20 +172,6 @@ private theorem continuous_radialMap (Ψ : AmbientIsotopy (sphere (0 : E) 1 × Z
     have := he.continuousAt_iff (g := radialMap Ψ) (x := (⟨p.1, hp⟩, p.2))
     exact this.mp hcont.continuousAt
 
-omit [NormedSpace ℝ E] in
-private theorem symm_apply_apply_slice (Φ : AmbientIsotopy (sphere (0 : E) 1 × Z)) (t : I)
-    (y : sphere (0 : E) 1 × Z) :
-    Φ.symm.toContinuousMap (t, Φ.toContinuousMap (t, y)) = y := by
-  rw [← homeomorph_apply Φ.symm t, homeomorph_symm, ← homeomorph_apply Φ t,
-    Homeomorph.symm_apply_apply]
-
-omit [NormedSpace ℝ E] in
-private theorem apply_symm_apply_slice (Φ : AmbientIsotopy (sphere (0 : E) 1 × Z)) (t : I)
-    (y : sphere (0 : E) 1 × Z) :
-    Φ.toContinuousMap (t, Φ.symm.toContinuousMap (t, y)) = y := by
-  rw [← homeomorph_apply Φ.symm t, homeomorph_symm, ← homeomorph_apply Φ t,
-    Homeomorph.apply_symm_apply]
-
 /-- The **radial extension** of an ambient isotopy `Φ` of `S × Z`, `S` the unit sphere of `E`:
 the homeomorphism `(r • u, z) ↦ (r • Φ_t (u, z).1, Φ_t (u, z).2)` of `E × Z`, for `u ∈ S` and
 `r > 0`, where the time `t = 2 r - 1` is clamped to `[0, 1]`. It fixes `{0} × Z`, is the identity
@@ -195,8 +181,8 @@ on `‖x‖ ≤ 1 / 2` (`radialHomeomorph_of_norm_le`), preserves `‖x‖`
 def radialHomeomorph (Φ : AmbientIsotopy (sphere (0 : E) 1 × Z)) : E × Z ≃ₜ E × Z where
   toFun := radialMap Φ
   invFun := radialMap Φ.symm
-  left_inv := radialMap_radialMap Φ Φ.symm (symm_apply_apply_slice Φ)
-  right_inv := radialMap_radialMap Φ.symm Φ (apply_symm_apply_slice Φ)
+  left_inv := radialMap_radialMap Φ Φ.symm Φ.symm_apply_apply_slice
+  right_inv := radialMap_radialMap Φ.symm Φ Φ.apply_symm_apply_slice
   continuous_toFun := continuous_radialMap Φ
   continuous_invFun := continuous_radialMap Φ.symm
 
@@ -213,7 +199,7 @@ theorem radialHomeomorph_smul (u : sphere (0 : E) 1) {r : ℝ} (hr : 0 < r) (z :
 /-- The inverse of the radial extension of `Φ` is the radial extension of the inverse isotopy. -/
 theorem symm_radialHomeomorph : Φ.radialHomeomorph.symm = Φ.symm.radialHomeomorph :=
   Homeomorph.ext fun p => Φ.radialHomeomorph.symm_apply_eq.mpr
-    (radialMap_radialMap Φ.symm Φ (apply_symm_apply_slice Φ) p).symm
+    (radialMap_radialMap Φ.symm Φ Φ.apply_symm_apply_slice p).symm
 
 /-- The radial extension preserves the norm of the first coordinate. -/
 @[simp]
