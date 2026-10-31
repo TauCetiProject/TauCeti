@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Cotton
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
@@ -39,8 +40,6 @@ identity `2 div Ric = d Scal` identifies with `d (tr_g P)`. The difference is `(
 * `CovariantDerivative.derivWeylTensor`: the covariant derivative of the Weyl tensor, with
   `CovariantDerivative.IsMetricCompatible.derivWeylTensor_eq_mvfderiv_sub` its Leibniz rule on
   smooth vector fields.
-* `CovariantDerivative.IsMetricCompatible.derivSchoutenTensor_eq`:
-  `∇P = (∇Ric - d Scal ⊗ g / (2 (n - 1))) / (n - 2)`.
 * `CovariantDerivative.IsMetricCompatible.sum_derivWeylTensor_self_eq_mul_cottonTensor`:
   `div W = (n - 3) C`.
 
@@ -179,43 +178,6 @@ theorem IsMetricCompatible.derivWeylTensor_eq_mvfderiv_sub
     innerₗ_apply_apply, hR]
   ring
 
-/-- For a metric-compatible connection in dimension `n`, the covariant derivative of the Schouten
-tensor is `(∇_w P)(u, v) = ((∇_w Ric)(u, v) - d Scal(w) ⟨u, v⟩ / (2 (n - 1))) / (n - 2)`. -/
-theorem IsMetricCompatible.derivSchoutenTensor_eq
-    (hcov : CovariantDerivative.IsMetricCompatible
-      (V := fun y : M ↦ TangentSpace I y) cov)
-    (x : M) (u v w : TangentSpace I x) :
-    cov.derivSchoutenTensor x u v w =
-      ((Module.finrank ℝ E : ℝ) - 2)⁻¹ *
-        (cov.derivRicciTensor x u v w - mvfderiv I cov.scalarCurvature x w /
-          (2 * ((Module.finrank ℝ E : ℝ) - 1)) * inner ℝ u v) := by
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨τ, hτ, rfl⟩ := exists_contMDiff_section_eq I E v
-  have hσx : MDiffAt (T% σ) x := hσ.mdifferentiableAt (by simp)
-  have hτx : MDiffAt (T% τ) x := hτ.mdifferentiableAt (by simp)
-  have hg := hcov.mvfderiv_inner_eq (extend E w) hσx hτx
-  simp only [extend_apply_self] at hg
-  have hS : MDiffAt cov.scalarCurvature x :=
-    cov.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
-  have hRic := cov.mdifferentiableAt_ricciTensor_apply hσx hτx
-  have hin := TauCeti.Manifold.mdifferentiableAt_inner hσx hτx
-  have hfun : (fun y ↦ cov.schoutenTensor y (σ y) (τ y)) =
-      (fun _ ↦ ((Module.finrank ℝ E : ℝ) - 2)⁻¹) *
-        ((fun y ↦ cov.ricciTensor y (σ y) (τ y)) -
-          (cov.scalarCurvature * fun _ ↦ (2 * ((Module.finrank ℝ E : ℝ) - 1))⁻¹) *
-            fun y ↦ inner ℝ (σ y) (τ y)) := by
-    funext y
-    simp only [schoutenTensor_apply, TauCeti.finrank_tangentSpace, div_eq_mul_inv, Pi.mul_apply,
-      Pi.sub_apply]
-  rw [cov.derivSchoutenTensor_apply hσx hτx, cov.derivRicciTensor_apply hσx hτx, hfun,
-    mvfderiv_mul mdifferentiableAt_const (hRic.sub ((hS.mul mdifferentiableAt_const).mul hin)),
-    mvfderiv_sub hRic ((hS.mul mdifferentiableAt_const).mul hin),
-    mvfderiv_mul (hS.mul mdifferentiableAt_const) hin, mvfderiv_mul hS mdifferentiableAt_const]
-  simp only [mvfderiv_const, _root_.add_apply, _root_.sub_apply,
-    _root_.smul_apply, smul_eq_mul, _root_.zero_apply, hg,
-    schoutenTensor_apply, TauCeti.finrank_tangentSpace, div_eq_mul_inv, Pi.mul_apply]
-  ring
-
 /-- **The divergence of the Weyl tensor.** For a metric-compatible torsion-free connection in
 dimension `n ≠ 2`, `∑ᵢ (∇_{eᵢ} W)(eᵢ, u, v, w) = (n - 3) C(u, v, w)` in any orthonormal basis,
 where `C` is the Cotton tensor. -/
@@ -229,22 +191,17 @@ theorem IsMetricCompatible.sum_derivWeylTensor_self_eq_mul_cottonTensor {ι : Ty
   have hn2 : (Module.finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
   -- The divergence of `Rm`, by the contracted second Bianchi identity.
   have hR := hcov.sum_inner_derivCurvatureTensor_self_eq_sub ht x b u v w
-  -- Contracting a covector against `⟨eᵢ, z⟩` evaluates it at `z`.
-  have hdir (L : TangentSpace I x →L[ℝ] ℝ) (z : TangentSpace I x) :
-      ∑ i, L (b i) * inner ℝ (b i) z = L z := by
-    conv_rhs => rw [← b.sum_repr' z]
-    simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
   -- The divergence of `P`.
   have hdivP (z : TangentSpace I x) : ∑ i, cov.derivSchoutenTensor x (b i) z (b i) =
       ((Module.finrank ℝ E : ℝ) - 2)⁻¹ * (∑ i, cov.derivRicciTensor x (b i) z (b i) -
         mvfderiv I cov.scalarCurvature x z / (2 * ((Module.finrank ℝ E : ℝ) - 1))) := by
     simp only [hcov.derivSchoutenTensor_eq, ← Finset.mul_sum, Finset.sum_sub_distrib,
-      div_mul_eq_mul_div, ← Finset.sum_div, hdir]
+      div_mul_eq_mul_div, ← Finset.sum_div, b.sum_apply_mul_inner]
   -- The twice contracted second Bianchi identity, for the divergence of `Ric`.
   have h₁ := hcov.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvature ht x b v
   have h₂ := hcov.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvature ht x b w
   simp only [derivWeylTensor_apply, Finset.sum_sub_distrib, Finset.sum_add_distrib,
-    ← Finset.sum_mul, hR, hdivP, hdir, cottonTensor_apply]
+    ← Finset.sum_mul, hR, hdivP, b.sum_apply_mul_inner, cottonTensor_apply]
   simp only [hcov.derivSchoutenTensor_eq]
   by_cases hn1 : (Module.finrank ℝ E : ℝ) - 1 = 0
   · -- In dimension one the scalar curvature vanishes identically.
