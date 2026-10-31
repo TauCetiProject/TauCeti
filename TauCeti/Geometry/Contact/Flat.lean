@@ -133,7 +133,7 @@ theorem contactFlat_apply_eq_iff {x : M} {v : TangentSpace I x} :
     LinearMap.smul_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply,
     degreeOneEquiv_coe_apply, LinearMap.zero_apply, smul_eq_mul] at h
   rw [ContinuousLinearMap.ext_iff]
-  simpa [degreeOneEquiv_apply_apply, ← Matrix.vec_single_eq_const] using h
+  simpa [-degreeOneEquiv_apply_apply, degreeOneEquiv_apply_apply_vec] using h
 
 /-- **The contact flat map of a contact form is invertible** at every point of a
 finite-dimensional manifold. -/

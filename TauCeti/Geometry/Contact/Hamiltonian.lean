@@ -48,8 +48,9 @@ constant `c` (`TauCeti.SmoothForm.IsContactForm.contactHamiltonianVectorField_co
 contact Hamiltonian vector field of a `C^(n+1)` function is a `C^n` vector field
 (`TauCeti.SmoothForm.IsContactForm.contMDiff_contactHamiltonianVectorField`).
 
-Unlike a symplectic Hamiltonian, a contact Hamiltonian is not conserved: along `X_f` it changes by
-`df(X_f) = (R_α f) f` (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mvfderiv_apply_self`).
+Unlike a symplectic Hamiltonian, a contact Hamiltonian need not be conserved: along `X_f` it
+changes by `df(X_f) = (R_α f) f`, so it is conserved exactly where `(R_α f) f = 0`
+(`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mvfderiv_apply_self`).
 Since `α(X) = f`, a contact Hamiltonian vector field `X` of `f` is tangent to `ξ` exactly where `f`
 vanishes (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mem_kerDistribution_iff`).
 
@@ -127,7 +128,7 @@ theorem mem_kerDistribution_iff (hX : α.IsContactHamiltonianVectorField f X) (x
     X x ∈ α.kerDistribution x ↔ f x = 0 := by
   rw [mem_kerDistribution, hX.apply_eq]
 
-/-- **A contact Hamiltonian is not conserved**: along its contact Hamiltonian vector field it
+/-- **A contact Hamiltonian need not be conserved**: along its contact Hamiltonian vector field it
 changes by `df(X) = (R_α f) f`. -/
 theorem mvfderiv_apply_self (hX : α.IsContactHamiltonianVectorField f X) (x : M) :
     mvfderiv I f x (X x) = mvfderiv I f x (α.reebVectorField x) * f x := by
@@ -238,22 +239,20 @@ sends it to the covector `(f + R_α f) α - df`. -/
 theorem isContactHamiltonianVectorField_iff_contactFlat :
     α.IsContactHamiltonianVectorField f X ↔ ∀ x, α.contactFlat x (X x) =
       (f x + mvfderiv I f x (α.reebVectorField x)) • degreeOneEquiv α x - mvfderiv I f x := by
-  have h1 : ∀ x (v : TangentSpace I x), degreeOneEquiv α x v = α.1 x ![v] := fun x v ↦ by
-    rw [degreeOneEquiv_apply_apply, ← Matrix.vec_single_eq_const]
   refine forall_congr' fun x ↦ ⟨fun ⟨hf, hd⟩ ↦ ?_, fun h ↦ ?_⟩
   · ext v
     simp only [contactFlat_apply, hf, hd, sub_apply,
-      smul_apply, h1, smul_eq_mul]
+      smul_apply, degreeOneEquiv_apply_apply_vec, smul_eq_mul]
     ring
   · -- Evaluating at the Reeb vector field recovers `α(X) = f`.
     have hR := DFunLike.congr_fun h (α.reebVectorField x)
     simp only [contactFlat_apply, hα.mextDeriv_reebVectorField_right, hα.apply_reebVectorField,
-      sub_apply, smul_apply, h1, smul_eq_mul] at hR
+      sub_apply, smul_apply, degreeOneEquiv_apply_apply_vec, smul_eq_mul] at hR
     have hf : α.1 x ![X x] = f x := by linarith
     refine ⟨hf, fun v ↦ ?_⟩
     have hv := DFunLike.congr_fun h v
     simp only [contactFlat_apply, hf, sub_apply,
-      smul_apply, h1, smul_eq_mul] at hv
+      smul_apply, degreeOneEquiv_apply_apply_vec, smul_eq_mul] at hv
     linarith
 
 /-- The contact flat map sends the contact Hamiltonian vector field of `f` to
