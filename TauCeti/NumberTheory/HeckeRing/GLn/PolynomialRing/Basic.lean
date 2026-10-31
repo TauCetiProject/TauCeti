@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Basic
-public import TauCeti.NumberTheory.HeckeRing.GL2.Recurrence
+public import TauCeti.NumberTheory.HeckeRing.GL2.Basic
 public import TauCeti.NumberTheory.HeckeRing.GLn.PrimeDecomposition
 
 /-!

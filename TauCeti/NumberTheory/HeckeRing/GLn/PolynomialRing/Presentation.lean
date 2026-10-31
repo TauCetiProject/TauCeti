@@ -99,7 +99,7 @@ private lemma IsTriangular.mul_diagElem {p : ℕ} (hp : p.Prime) {a f : Fin n �
     rw [← diagElem_def] at hDE
     obtain ⟨h, hh, rfl, hsum, hpart⟩ :=
       exists_primePowDiag_of_diagElem_mul_apply_ne_zero hp hg hf hDE
-    exact ⟨g, hg, rfl, hag, h, hh, rfl, hsum, hpart⟩
+    exact ⟨g, hg, rfl, hag, h, hh, rfl, dominates_def.2 ⟨hsum, hpart⟩⟩
   refine ⟨?_, fun E hE ↦ ?_⟩
   · rw [HeckeCosetModule.mul_def, HeckeCosetModule.mul_apply_eq_sum]
     have hmem : diagCoset (primePowDiag n p a) ∈ x.support := by
@@ -172,7 +172,8 @@ theorem exists_primePowDiag_of_prod_heckeGen_pow_apply_ne_zero {p : ℕ} (hp : p
       ∑ i, g i = ∑ i, leadingExponent e i ∧
       ∀ (k : ℕ) (hk : k ≤ n), ∑ j : Fin k, leadingExponent e (Fin.castLE hk j) ≤
         ∑ j : Fin k, g (Fin.castLE hk j) :=
-  (isTriangular_prod_heckeGen_pow_univ hp e).2 D h
+  let ⟨g, hg, hD, hdom⟩ := (isTriangular_prod_heckeGen_pow_univ hp e).2 D h
+  ⟨g, hg, hD, dominates_def.1 hdom⟩
 
 variable (n) in
 /-- **The generators are algebraically independent** (Shimura, Theorem 3.20): for `p` prime,

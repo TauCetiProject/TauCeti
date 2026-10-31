@@ -50,9 +50,15 @@ variable {M : Type*} {n : ℕ}
 /-- `a` dominates `g`: the two vectors have the same total and every leading partial sum of `a`
 is at most that of `g`. For monotone vectors of natural numbers, `a` is the more spread out of
 the two. -/
-@[expose] def Dominates [AddCommMonoid M] [LE M] (a g : Fin n → M) : Prop :=
+def Dominates [AddCommMonoid M] [LE M] (a g : Fin n → M) : Prop :=
   ∑ i, g i = ∑ i, a i ∧ ∀ (k : ℕ) (hk : k ≤ n),
     ∑ j : Fin k, a (Fin.castLE hk j) ≤ ∑ j : Fin k, g (Fin.castLE hk j)
+
+/-- The defining property of `TauCeti.Dominates`. -/
+theorem dominates_def [AddCommMonoid M] [LE M] {a g : Fin n → M} :
+    Dominates a g ↔ ∑ i, g i = ∑ i, a i ∧ ∀ (k : ℕ) (hk : k ≤ n),
+      ∑ j : Fin k, a (Fin.castLE hk j) ≤ ∑ j : Fin k, g (Fin.castLE hk j) :=
+  Iff.rfl
 
 namespace Dominates
 
@@ -96,6 +102,11 @@ induction along that order. -/
 def dominanceDefect (g : Fin n → ℕ) : ℕ :=
   ∑ k : Fin (n + 1), (∑ i, g i - ∑ j : Fin k, g (Fin.castLE (Nat.lt_succ_iff.1 k.isLt) j))
 
+/-- The defining equation of `TauCeti.dominanceDefect`. -/
+theorem dominanceDefect_def (g : Fin n → ℕ) : dominanceDefect g =
+    ∑ k : Fin (n + 1), (∑ i, g i - ∑ j : Fin k, g (Fin.castLE (Nat.lt_succ_iff.1 k.isLt) j)) :=
+  (rfl)
+
 /-- **The defect strictly decreases down the dominance order.** If `a` dominates `g` and
 `a ≠ g`, then `dominanceDefect g < dominanceDefect a`. -/
 theorem Dominates.dominanceDefect_lt {a g : Fin n → ℕ} (h : Dominates a g) (hne : a ≠ g) :
@@ -105,7 +116,7 @@ theorem Dominates.dominanceDefect_lt {a g : Fin n → ℕ} (h : Dominates a g) (
       ∑ j : Fin k, a (Fin.castLE hk j) ≤ ∑ j : Fin k, g (Fin.castLE hk j) ∧
         ∑ j : Fin k, g (Fin.castLE hk j) ≤ ∑ i, a i :=
     ⟨h.2 k hk, h.1 ▸ Fin.sum_castLE_le_sum hk g⟩
-  rw [dominanceDefect, dominanceDefect, h.1]
+  rw [dominanceDefect_def, dominanceDefect_def, h.1]
   refine sum_lt_sum (fun k _ ↦ Nat.sub_le_sub_left (key k _).1 _) ?_
   -- some partial sum is strict, since the partial sums determine the vector
   by_contra! hle
