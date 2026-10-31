@@ -124,18 +124,22 @@ theorem IsMultiHomogeneous.isHomogeneous [Fintype κ] (hP : IsMultiHomogeneous d
   rw [sum_comm]
   simp
 
+@[simp]
 theorem isMultiHomogeneous_zero (d : κ → ℕ) : IsMultiHomogeneous d (0 : MvPolynomial (κ × ι) R) :=
   fun _ ↦ isWeightedHomogeneous_zero _ _ _
 
 /-- A constant is multihomogeneous of multidegree `0`. -/
+@[simp]
 theorem isMultiHomogeneous_C (r : R) : IsMultiHomogeneous 0 (C r : MvPolynomial (κ × ι) R) :=
   fun _ ↦ isWeightedHomogeneous_C _ r
 
+@[simp]
 theorem isMultiHomogeneous_one : IsMultiHomogeneous 0 (1 : MvPolynomial (κ × ι) R) :=
   fun _ ↦ isWeightedHomogeneous_one R _
 
 /-- The variable `X (h, i)` is multihomogeneous of multidegree `Pi.single h 1`: degree one in its
 own block and zero in every other block. -/
+@[simp]
 theorem isMultiHomogeneous_X (h : κ) (i : ι) :
     IsMultiHomogeneous (Pi.single h 1) (X (h, i) : MvPolynomial (κ × ι) R) := by
   intro h'
