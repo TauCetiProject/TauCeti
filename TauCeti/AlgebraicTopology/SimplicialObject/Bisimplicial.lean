@@ -188,7 +188,7 @@ private lemma ιTot_D₁ (r s n : ℕ) (h : r + 1 + s = n + 1) :
       ∑ i : Fin (r + 2), (-1 : ℤ) ^ (i : ℕ) •
         ((X.δ i).app (op ⦋s⦌) ≫ ιTot X r s n (by omega)) := by
   have h₁ := ((doubleComplex C).obj X).ι_D₁ (ComplexShape.down ℕ) (n + 1) n (r + 1) s h
-  rw [HomologicalComplex₂.d₁_eq _ _ (show (ComplexShape.down ℕ).Rel (r + 1) r by simp) _ _
+  rw [HomologicalComplex₂.d₁_eq _ _ (ComplexShape.down_mk (r + 1) r rfl) _ _
     (by simp; omega), doubleComplex_obj_d_f] at h₁
   simp only [ComplexShape.ε₁_def, one_smul] at h₁
   -- the alternating sum is typed by the terms of `X`, the inclusion by those of the double
@@ -210,7 +210,7 @@ private lemma ιTot_D₂ (r s n : ℕ) (h : r + (s + 1) = n + 1) :
       (-1 : ℤ) ^ r • ∑ j : Fin (s + 2), (-1 : ℤ) ^ (j : ℕ) •
         ((X _⦋r⦌).δ j ≫ ιTot X r s n (by omega)) := by
   have h₁ := ((doubleComplex C).obj X).ι_D₂ (ComplexShape.down ℕ) (n + 1) n r (s + 1) h
-  rw [HomologicalComplex₂.d₂_eq _ _ _ (show (ComplexShape.down ℕ).Rel (s + 1) s by simp) _
+  rw [HomologicalComplex₂.d₂_eq _ _ _ (ComplexShape.down_mk (s + 1) s rfl) _
     (by simp; omega), doubleComplex_obj_X_d] at h₁
   simp only [ComplexShape.ε₂_def, ComplexShape.ε_down_ℕ, Units.smul_def, Units.val_pow_eq_pow_val,
     Units.val_neg, Units.val_one] at h₁
