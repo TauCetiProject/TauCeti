@@ -45,19 +45,19 @@ route to Morse homology.
 
 * `TauCeti.isIntegralCurve_const_neg_gradient_iff`: the constant curves are precisely those at
   critical points of `f`.
-* `TauCeti.IsIntegralCurveOn.hasDerivWithinAt_comp_neg_gradient`: derivative of `f` along a
+* `IsIntegralCurveOn.hasDerivWithinAt_comp_neg_gradient`: derivative of `f` along a
   negative gradient trajectory.
-* `TauCeti.IsIntegralCurveOn.antitoneOn_comp_neg_gradient` and
-  `TauCeti.IsIntegralCurveOn.strictAntiOn_comp_neg_gradient`: Lyapunov monotonicity and strict
+* `IsIntegralCurveOn.antitoneOn_comp_neg_gradient` and
+  `IsIntegralCurveOn.strictAntiOn_comp_neg_gradient`: Lyapunov monotonicity and strict
   descent away from critical points.
-* `TauCeti.IsIntegralCurveOn.intervalIntegrable_norm_gradient_sq`: finite energy on compact time
+* `IsIntegralCurveOn.intervalIntegrable_norm_gradient_sq`: finite energy on compact time
   intervals.
-* `TauCeti.IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` and
-  `TauCeti.IsIntegralCurve.integral_norm_gradient_sq_eq_sub`: the energy identity.
-* `TauCeti.IsIntegralCurve.gradient_eq_zero_of_eventually_const_value`: a trajectory on which
+* `IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` and
+  `IsIntegralCurve.integral_norm_gradient_sq_eq_sub`: the energy identity.
+* `IsIntegralCurve.gradient_eq_zero_of_eventually_const_value`: a trajectory on which
   `f` is eventually constant passes through critical points.
-* `TauCeti.IsIntegralCurve.gradient_eq_zero_of_periodic` and
-  `TauCeti.IsIntegralCurve.eq_of_periodic_neg_gradient`: a periodic negative gradient trajectory
+* `IsIntegralCurve.gradient_eq_zero_of_periodic` and
+  `IsIntegralCurve.eq_of_periodic_neg_gradient`: a periodic negative gradient trajectory
   consists entirely of critical points and is constant.
 * `Flow.IsNegativeGradient`: every orbit of a flow solves the negative gradient equation.
 * `Flow.isNegativeGradient_iff`: the introduction and elimination rule for that predicate.
@@ -77,10 +77,12 @@ public section
 open Filter Function InnerProductSpace MeasureTheory Set
 open scoped Gradient Interval Topology
 
-namespace TauCeti
+section
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f : E → ℝ} {γ : ℝ → E} {s : Set ℝ} {t a b : ℝ}
+
+namespace TauCeti
 
 /-- A constant curve is an integral curve of the negative gradient field exactly when its value
 is a critical point of `f`. -/
@@ -93,6 +95,8 @@ theorem isIntegralCurve_const_neg_gradient_iff {x : E} :
     simpa only [deriv_const, neg_eq_zero] using hderiv.symm
   · intro hx
     exact isIntegralCurve_const fun _ ↦ by simp [hx]
+
+end TauCeti
 
 namespace IsIntegralCurveOn
 
@@ -178,8 +182,8 @@ norm of its gradient. -/
 theorem hasDerivAt_comp_neg_gradient
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : DifferentiableAt ℝ f (γ t)) :
     HasDerivAt (f ∘ γ) (-‖∇ f (γ t)‖ ^ 2) t :=
-  (IsIntegralCurveOn.hasDerivWithinAt_comp_neg_gradient (hγ.isIntegralCurveOn univ)
-    (mem_univ t) hf).hasDerivAt univ_mem
+  ((hγ.isIntegralCurveOn univ).hasDerivWithinAt_comp_neg_gradient (mem_univ t) hf).hasDerivAt
+    univ_mem
 
 /-- The value of `f` is antitone along a global negative gradient trajectory. -/
 theorem antitone_comp_neg_gradient
@@ -202,8 +206,7 @@ times equals the integral of the squared norm of its gradient along the trajecto
 theorem integral_norm_gradient_sq_eq_sub
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t)) :
     ∫ t in a..b, ‖∇ f (γ t)‖ ^ 2 = f (γ a) - f (γ b) :=
-  IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub (hγ.isIntegralCurveOn univ)
-    (subset_univ _) fun t _ ↦ hf t
+  (hγ.isIntegralCurveOn univ).integral_norm_gradient_sq_eq_sub (subset_univ _) fun t _ ↦ hf t
 
 /-- If the value of `f` is eventually constant along a global negative gradient trajectory, then
 the gradient of `f` vanishes at the corresponding point. -/
@@ -242,7 +245,7 @@ theorem eq_of_periodic_neg_gradient
 
 end IsIntegralCurve
 
-end TauCeti
+end
 
 namespace Flow
 
@@ -271,6 +274,6 @@ theorem IsNegativeGradient.orbit_antitone (hφ : IsNegativeGradient φ f) (x : E
     (hf : ∀ t, DifferentiableAt ℝ f (φ t x)) :
     Antitone (fun t ↦ f (φ t x)) := by
   simpa only [Function.comp_def] using
-    TauCeti.IsIntegralCurve.antitone_comp_neg_gradient (hφ x) hf
+    (hφ x).antitone_comp_neg_gradient hf
 
 end Flow

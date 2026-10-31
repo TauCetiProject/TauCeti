@@ -52,7 +52,7 @@ That decay does not by itself bound `‖γ t - p‖`: an indefinite quadratic ap
 directions, so the energy difference does not uniformly control the squared distance to `p`. The
 distance is instead recovered from the *length* of the trajectory. On a time interval of length
 one the energy identity
-`TauCeti.IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` computes `∫ ‖∇ f (γ s)‖ ^ 2`, and the
+`IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` computes `∫ ‖∇ f (γ s)‖ ^ 2`, and the
 elementary bound `v ≤ (α * v ^ 2 + 1 / α) / 2`, optimized in `α`, converts it into a bound for
 `∫ ‖∇ f (γ s)‖ = ∫ ‖γ' s‖`, hence for `‖γ (t + 1) - γ t‖`, by the square root of the energy.
 Summing the resulting geometric series over the times `t, t + 1, t + 2, …` and passing to the limit
@@ -62,12 +62,12 @@ bounds `‖γ t - p‖` by a multiple of `sqrt (g t)`, which decays like `exp (-
 
 * `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_gradient_sq`: **the Morse form
   of Łojasiewicz's gradient inequality**, with exponent `1/2`.
-* `TauCeti.IsIntegralCurveOn.exists_sub_le_mul_exp_atTop`: the energy along a trajectory
+* `IsIntegralCurveOn.exists_sub_le_mul_exp_atTop`: the energy along a trajectory
   converging to a nondegenerate critical point decays exponentially.
-* `TauCeti.IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`: **the trajectory itself
+* `IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`: **the trajectory itself
   converges exponentially fast**.
-* `TauCeti.IsIntegralCurveOn.exists_norm_gradient_le_mul_exp_atTop` and
-  `TauCeti.IsIntegralCurveOn.exists_norm_deriv_le_mul_exp_atTop`: the gradient and velocity decay
+* `IsIntegralCurveOn.exists_norm_gradient_le_mul_exp_atTop` and
+  `IsIntegralCurveOn.exists_norm_deriv_le_mul_exp_atTop`: the gradient and velocity decay
   exponentially.
 * The corresponding `atBot` theorems give backward-time energy, position, gradient, and velocity
   decay by reversing time and negating the function.
@@ -81,10 +81,8 @@ bounds `‖γ t - p‖` by a multiple of `sqrt (g t)`, which decays like `exp (-
 
 public section
 
-open Filter InnerProductSpace MeasureTheory Metric Set
+open Filter InnerProductSpace MeasureTheory Metric Set TauCeti
 open scoped Gradient Interval Topology
-
-namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f : E → ℝ} {γ : ℝ → E} {p : E} {a : ℝ}
@@ -449,5 +447,3 @@ theorem exists_norm_deriv_le_mul_exp_atBot
   exact ht
 
 end IsIntegralCurveOn
-
-end TauCeti
