@@ -14,6 +14,7 @@ import Mathlib.Computability.Halting
 These examples exercise the approximation API from a downstream module, through public statements
 only:
 
+* the simplifier normalizes constant approximations and stage shifts;
 * a bit that changes once and then stays changed: the stages `s ↦ decide (x < s)` converge to
   `true`, and the moduli are exactly the functions with `x < m x`;
 * the increasing approximation to the halting problem at input `n` by step-bounded evaluation
@@ -23,6 +24,14 @@ only:
 -/
 
 open TauCeti.Approximation Nat.Partrec Code
+
+-- The simplifier discharges constant approximations and removes stage shifts.
+example (g : ℕ → ℕ) (m : ℕ → ℕ) : Converges (fun _ => g) g ∧ IsModulus (fun _ => g) g m := by
+  simp
+
+example (f : ℕ → ℕ → ℕ) (g : ℕ → ℕ) (k : ℕ) :
+    Converges (fun s => f (s + k)) g ↔ Converges f g := by
+  simp
 
 -- A bit that changes once, at stage `x + 1`, and then stays changed: the moduli are exactly the
 -- functions above the change.

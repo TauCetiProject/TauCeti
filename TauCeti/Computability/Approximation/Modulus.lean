@@ -98,6 +98,7 @@ theorem Converges.unique (h : Converges f g) (h' : Converges f g') : g = g' :=
   funext fun x => ((h x).and (h' x)).exists.elim fun _ hs => hs.1.symm.trans hs.2
 
 /-- A constant sequence converges to its value. -/
+@[simp]
 theorem converges_const (g : α → β) : Converges (fun _ => g) g :=
   fun _ => Eventually.of_forall fun _ => rfl
 
@@ -140,6 +141,7 @@ theorem IsModulus.mono (hm : IsModulus f g m) (h : m ≤ m') : IsModulus f g m' 
   fun x s hs => hm x s ((h x).trans hs)
 
 /-- Every function is a modulus of a constant sequence. -/
+@[simp]
 theorem isModulus_const (g : α → β) (m : α → ℕ) : IsModulus (fun _ => g) g m :=
   fun _ _ _ => rfl
 
@@ -165,6 +167,7 @@ theorem Converges.exists_monotone_isModulus [Preorder α] [LocallyFiniteOrderBot
 /-! ### Shifts and reindexing -/
 
 /-- **Stage shifts.** Dropping the first `k` stages does not change convergence or the limit. -/
+@[simp]
 theorem converges_shift_iff (k : ℕ) : Converges (fun s => f (s + k)) g ↔ Converges f g := by
   simp only [converges_iff_tendsto]
   exact forall_congr' fun x => tendsto_add_atTop_iff_nat (f := fun s => f s x) k
