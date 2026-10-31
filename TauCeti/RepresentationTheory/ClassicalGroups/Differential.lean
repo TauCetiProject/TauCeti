@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.RepresentationTheory.Submodule
 public import TauCeti.RepresentationTheory.ClassicalGroups.Rational
@@ -16,6 +17,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
+import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 import TauCeti.RingTheory.FiniteType.Tensor.PointSeparation
 
 /-!
@@ -63,6 +65,8 @@ to rational representations of the group, and conversely.
   `ρ` are the vectors killed by `dρ`.
 * `TauCeti.IsRationalRep.isIntertwiningMap_iff_forall_map_differential`: the intertwiners of two
   rational representations are the intertwiners of their differentials.
+* `TauCeti.IsRationalRep.map_lift_differential_apply`: they also intertwine the actions of the
+  universal enveloping algebra `U(𝔤𝔩ₙ)`.
 
 ## References
 
@@ -392,6 +396,21 @@ theorem isIntertwiningMap_iff_forall_map_differential (hρ : IsRationalRep ρ) (
   refine ⟨fun h X w ↦ h _ w, fun h d w ↦ ?_⟩
   have hd := h (tangentLieEquivMatrix n d) w
   rwa [differential_apply, differential_apply, LieEquiv.symm_apply_apply] at hd
+
+/-- **Intertwiners of rational representations intertwine the enveloping-algebra actions** of
+their differentials: a linear map commuting with the actions of `GL n ℂ` commutes with the action
+of every element of `U(𝔤𝔩ₙ)`. -/
+theorem map_lift_differential_apply (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    {f : W →ₗ[ℂ] V} (hf : Representation.IsIntertwiningMap ρ σ f)
+    (u : UniversalEnvelopingAlgebra ℂ (Matrix (Fin n) (Fin n) ℂ)) (w : W) :
+    f (UniversalEnvelopingAlgebra.lift ℂ hρ.differential u w) =
+      UniversalEnvelopingAlgebra.lift ℂ hσ.differential u (f w) := by
+  have hd := (hρ.isIntertwiningMap_iff_forall_map_differential hσ f).mp hf
+  induction u using UniversalEnvelopingAlgebra.induction_ι generalizing w with
+  | ι X => simpa only [UniversalEnvelopingAlgebra.lift_ι_apply] using hd X w
+  | algebraMap c => simp [Algebra.algebraMap_eq_smul_one]
+  | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
+  | mul a b ha hb => simp only [map_mul, Module.End.mul_apply, ha, hb]
 
 end Intertwining
 
