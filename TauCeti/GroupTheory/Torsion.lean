@@ -307,3 +307,26 @@ theorem exists_mem_primaryComponent_apply_eq {M N : Type*} [AddCommMonoid M] [Ad
   · simpa only [map_nsmul] using ha
 
 end TauCeti
+
+/-!
+# Elements of prime order in torsion groups
+
+* `IsMulTorsion.exists_prime_orderOf_mem`: a nontrivial subgroup of a torsion group contains an
+  element of prime order.
+-/
+
+section PrimeOrder
+
+variable {G : Type*} [Group G]
+
+/-- **Elements of prime order in a nontrivial subgroup.** A nontrivial subgroup of a torsion group
+contains an element of prime order: if `g ≠ 1` has order `n` and the prime `p` divides `n`, then
+`g ^ (n / p)` has order `p`. For a finite group this is a weak form of Cauchy's theorem. -/
+theorem IsMulTorsion.exists_prime_orderOf_mem (hG : IsMulTorsion G) {H : Subgroup G}
+    (hH : H ≠ ⊥) : ∃ g ∈ H, (orderOf g).Prime := by
+  obtain ⟨g, hgH, hg⟩ := H.bot_or_exists_ne_one.resolve_left hH
+  obtain ⟨p, hp, hpg⟩ := Nat.exists_prime_and_dvd (orderOf_eq_one_iff.not.mpr hg)
+  refine ⟨g ^ (orderOf g / p), H.pow_mem hgH _, ?_⟩
+  rwa [orderOf_pow_orderOf_div (hG g).orderOf_pos.ne' hpg]
+
+end PrimeOrder

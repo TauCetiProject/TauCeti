@@ -92,9 +92,8 @@ private theorem IsCohenMacaulay.localizedModule_of_depth_eq {p : Ideal R} [p.IsP
     -- `(M ⧸ x M)_p = M_p ⧸ x M_p` has depth `n`, so it is Cohen–Macaulay by induction.
     have hquot := ih ((isCohenMacaulay_quotSMulTop_iff reg (le_maximalIdeal_of_isPrime p hxp)).2 h)
       (by
-        have hsucc := depth_quotSMulTop_succ_eq_depth regₚ hx
+        have hsucc := TauCeti.depth_localizedModule_quotSMulTop_add_one reg p hxp
         rw [hn, Nat.cast_add_one] at hsucc
-        rw [depth_eq_of_linearEquiv e]
         exact WithTop.add_right_cancel ENat.one_ne_top hsucc)
     exact (isCohenMacaulay_quotSMulTop_iff regₚ hx).1 ((LinearEquiv.isCohenMacaulay_iff e).1 hquot)
 
