@@ -15,7 +15,6 @@ import TauCeti.NumberTheory.Height.House
 import TauCeti.NumberTheory.Height.NumberField
 import TauCeti.NumberTheory.Height.Rat
 import TauCeti.NumberTheory.NumberField.Units.Height
-import TauCeti.NumberTheory.NumberField.Units.House
 
 /-!
 # Thue equations via unit equations
@@ -156,79 +155,6 @@ section Height
 open Height
 open scoped Real
 
-/-- A unit `ζ ∏ j, u j ^ e j` with `ζ` a root of unity and every `|e j| ≤ B` has relative height
-at most `[K : ℚ] * B * ∑ j, log (house (u j))`. -/
-private theorem logHeight₁_mul_prod_zpow_le {u : Fin (rank K) → (𝓞 K)ˣ} {ζ : (𝓞 K)ˣ}
-    (hζ : ζ ∈ torsion K) {e : Fin (rank K) → ℤ} {B : ℝ} (he : ∀ j, |(e j : ℝ)| ≤ B) :
-    logHeight₁ ((ζ * ∏ j, u j ^ e j : (𝓞 K)ˣ) : K) ≤
-      finrank ℚ K * (B * ∑ j, Real.log (NumberField.house (u j : K))) := by
-  have hcoe : ((ζ * ∏ j, u j ^ e j : (𝓞 K)ˣ) : K) = (ζ : K) * ∏ j, (u j : K) ^ e j := by
-    rw [coe_mul]
-    congr 1
-    simp only [← coe_zpow]
-    exact map_prod ((Units.coeHom K).comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom)) _ _
-  have hζ0 : logHeight₁ (ζ : K) = 0 := (logHeight₁_eq_zero_iff ζ).mpr hζ
-  -- Each `u j` is an algebraic integer of house at least `1`.
-  have hu (j : Fin (rank K)) :
-      logHeight₁ (u j : K) ≤ finrank ℚ K * Real.log (NumberField.house (u j : K)) := by
-    have h := logHeight₁_le_finrank_mul_posLog_house (u j : 𝓞 K).isIntegral_coe
-    rwa [Real.posLog_eq_log (by
-      rw [abs_of_nonneg (NumberField.house_nonneg _)]
-      exact Units.one_le_house _)] at h
-  calc logHeight₁ ((ζ * ∏ j, u j ^ e j : (𝓞 K)ˣ) : K)
-      ≤ logHeight₁ (ζ : K) + ∑ j, logHeight₁ ((u j : K) ^ e j) := by
-        rw [hcoe]
-        exact (logHeight₁_mul_le _ _).trans (add_le_add le_rfl (logHeight₁_prod_le _ _))
-    _ = ∑ j, |(e j : ℝ)| * logHeight₁ (u j : K) := by
-        rw [hζ0, zero_add]
-        refine Finset.sum_congr rfl fun j _ ↦ ?_
-        rw [logHeight₁_zpow, Nat.cast_natAbs, Int.cast_abs]
-    _ ≤ ∑ j, B * (finrank ℚ K * Real.log (NumberField.house (u j : K))) :=
-        Finset.sum_le_sum fun j _ ↦ mul_le_mul (he j) (hu j) (zero_le_logHeight₁ _)
-          ((abs_nonneg _).trans (he j))
-    _ = finrank ℚ K * (B * ∑ j, Real.log (NumberField.house (u j : K))) := by
-        rw [← Finset.mul_sum, ← Finset.mul_sum]
-        ring
-
-open scoped Classical in
-/-- A divisor `μ` of a nonzero integer `m` in `boundedDivisors u m` has relative height at most
-`[K : ℚ] * (c₁ + log |m|)`, where `c₁ = rank K * ∑ j, ‖log u j‖`: its house is at most
-`exp c₁ * |N(m)| ^ (1 / [K : ℚ]) = exp c₁ * |m|`. -/
-private theorem logHeight₁_le_of_mem_boundedDivisors {u : Fin (rank K) → (𝓞 K)ˣ} {m : ℤ}
-    (hm : m ≠ 0) {μ : 𝓞 K} (hμ : μ ∈ boundedDivisors u (m : 𝓞 K)) :
-    logHeight₁ (μ : K) ≤ finrank ℚ K *
-      (rank K * ∑ j, ‖logEmbedding K (Additive.ofMul (u j))‖ + Real.log |(m : ℝ)|) := by
-  set c₁ : ℝ := rank K * ∑ j, ‖logEmbedding K (Additive.ofMul (u j))‖
-  have hc₁ : 0 ≤ c₁ := by positivity
-  have hm1 : 1 ≤ |(m : ℝ)| := by exact_mod_cast Int.one_le_abs hm
-  have hnorm : |(Algebra.norm ℚ ((m : 𝓞 K) : K) : ℝ)| ^ (1 / (finrank ℚ K : ℝ)) = |(m : ℝ)| := by
-    rw [show ((m : 𝓞 K) : K) = algebraMap ℚ K m by simp, Algebra.norm_algebraMap, Rat.cast_pow,
-      abs_pow, Rat.cast_intCast, one_div, Real.pow_rpow_inv_natCast (abs_nonneg _) finrank_pos.ne']
-  have hhouse := (mem_boundedDivisors.mp hμ).2
-  rw [hnorm] at hhouse
-  have h1 : 1 ≤ Real.exp c₁ * |(m : ℝ)| :=
-    one_le_mul_of_one_le_of_one_le (Real.one_le_exp hc₁) hm1
-  refine (logHeight₁_le_finrank_mul_posLog_house μ.isIntegral_coe).trans
-    (mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _))
-  rw [← Real.log_exp c₁, ← Real.log_mul (Real.exp_pos _).ne' (by positivity),
-    ← Real.posLog_eq_log (by rwa [abs_of_nonneg (by positivity)])]
-  exact Real.posLog_le_posLog (by linarith [NumberField.house_nonneg (μ : K)]) hhouse
-
-/-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂` and `y ≠ 0`, so that
-`x / y = (θ₀ - t θ₂) / (1 - t)`, then
-`h(x / y) ≤ 2 h(t) + h(θ₀) + h(θ₂) + 2 [K : ℚ] log 2` for the relative height `h` over `K`. -/
-private theorem logHeight₁_div_le_of_mul_sub_mul_eq {θ₀ θ₂ x y t : K} (hθ : θ₀ ≠ θ₂)
-    (hy : y ≠ 0) (ht : t * (x - θ₂ * y) = x - θ₀ * y) :
-    logHeight₁ (x / y) ≤ 2 * logHeight₁ t + logHeight₁ θ₀ + logHeight₁ θ₂ +
-      2 * (finrank ℚ K * Real.log 2) := by
-  have hw : ((totalWeight K : ℕ) : ℝ) = finrank ℚ K := by rw [totalWeight_eq_finrank]
-  have h1t := logHeight₁_sub_le (1 : K) t
-  have h0t := logHeight₁_sub_le θ₀ (t * θ₂)
-  rw [hw, logHeight₁_one] at h1t
-  rw [hw] at h0t
-  rw [div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq hθ hy ht]
-  linarith [logHeight₁_div_le (θ₀ - t * θ₂) (1 - t), logHeight₁_mul_le t θ₂]
-
 open scoped Classical in
 /-- **A height bound for the solutions of a Thue equation** (Evertse, Theorem 5.13). Let
 `g ∈ ℤ[X]` have roots `θ 0, θ 1, θ 2 ∈ 𝓞 K` with `θ 1 ≠ θ 0` and `θ 0 ≠ θ 2`, let
@@ -300,6 +226,7 @@ theorem logHeight₁_div_le_of_eval_homogenize_eq {g : ℤ[X]} {n : ℕ} (hn : g
     field_simp [coe_ne_zero (ε 2)]
   have hK := logHeight₁_div_le_of_mul_sub_mul_eq
     (fun h ↦ hθ₀₂ (RingOfIntegers.coe_injective h)) (Int.cast_ne_zero.mpr hy) ht
+  rw [totalWeight_eq_finrank] at hK
   -- Bound the heights over `K` of `t`, `θ 0` and `θ 2`.
   have hth : logHeight₁ t ≤ 2 * (D * (c₁ + Real.log |(m : ℝ)|)) + D * (B * L) := by
     linarith [logHeight₁_mul_le ((μ 0 : K) / μ 2) ((ε 0 / ε 2 : (𝓞 K)ˣ) : K),

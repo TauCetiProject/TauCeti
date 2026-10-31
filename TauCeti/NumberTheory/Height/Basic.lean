@@ -8,12 +8,15 @@ module
 public import Mathlib.NumberTheory.Height.Basic
 
 import all Mathlib.NumberTheory.Height.Basic
+import TauCeti.Algebra.Field.LinearFractional
 
 /-!
 # Height bounds for coordinate ratios and from local estimates
 
 The height of a ratio of two coordinates is bounded by the projective height of the tuple, and
-the height of a quotient by the sum of the heights of its numerator and denominator.
+the height of a quotient by the sum of the heights of its numerator and denominator. If
+`t (x - θ₂ y) = x - θ₀ y`, the formula `x / y = (θ₀ - t θ₂) / (1 - t)` bounds the height of
+`x / y` by those of `t`, `θ₀` and `θ₂`; this recovers a Thue solution from a unit equation.
 These bounds control the affine coordinates of a projective point after normalization.
 Both multiplicative and logarithmic heights are treated over any field with admissible
 absolute values and any finite coordinate type.
@@ -70,6 +73,19 @@ lemma logHeight₁_div_le_logHeight (x : ι → K) (i j : ι) :
 lemma logHeight₁_div_le (x y : K) : logHeight₁ (x / y) ≤ logHeight₁ x + logHeight₁ y := by
   rw [div_eq_mul_inv, ← logHeight₁_inv y]
   exact logHeight₁_mul_le x y⁻¹
+
+/-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂` and `y ≠ 0`, so that
+`x / y = (θ₀ - t θ₂) / (1 - t)`, then
+`h(x / y) ≤ 2 h(t) + h(θ₀) + h(θ₂) + 2 totalWeight K log 2`. -/
+lemma logHeight₁_div_le_of_mul_sub_mul_eq {θ₀ θ₂ x y t : K} (hθ : θ₀ ≠ θ₂) (hy : y ≠ 0)
+    (ht : t * (x - θ₂ * y) = x - θ₀ * y) :
+    logHeight₁ (x / y) ≤ 2 * logHeight₁ t + logHeight₁ θ₀ + logHeight₁ θ₂ +
+      2 * (totalWeight K * Real.log 2) := by
+  have h1t := logHeight₁_sub_le (1 : K) t
+  rw [logHeight₁_one] at h1t
+  rw [TauCeti.div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq hθ hy ht]
+  linarith [logHeight₁_div_le (θ₀ - t * θ₂) (1 - t), logHeight₁_sub_le θ₀ (t * θ₂),
+    logHeight₁_mul_le t θ₂]
 
 omit [Finite ι] in
 /-- The multiplicative height is unchanged by changing the signs of some coordinates. -/
