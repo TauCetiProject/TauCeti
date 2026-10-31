@@ -14,6 +14,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Fixed
 public import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 import TauCeti.RingTheory.FiniteType.Tensor.PointSeparation
@@ -63,6 +64,11 @@ to rational representations of the group, and conversely.
   `ρ` are the vectors killed by `dρ`.
 * `TauCeti.IsRationalRep.isIntertwiningMap_iff_forall_map_differential`: the intertwiners of two
   rational representations are the intertwiners of their differentials.
+* `TauCeti.IsRationalRep.differential_tprod`: the differential of a tensor product of rational
+  representations is the tensor product of their differentials, `dρ X ⊗ 1 + 1 ⊗ dσ X`.
+* `TauCeti.IsRationalRep.tprodLieModuleEquiv`: isomorphisms of `𝔤𝔩ₙ`-modules out of two
+  differentiated rational representations tensor to one out of their differentiated tensor
+  product.
 
 ## References
 
@@ -394,6 +400,95 @@ theorem isIntertwiningMap_iff_forall_map_differential (hρ : IsRationalRep ρ) (
   rwa [differential_apply, differential_apply, LieEquiv.symm_apply_apply] at hd
 
 end Intertwining
+
+section TensorProduct
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V] {σ : Representation ℂ (GL (Fin n) ℂ) V}
+
+/-- **The comodule of a tensor product of rational representations** is the diagonal tensor
+product (`TauCeti.Comodule.tensor`) of their comodules. -/
+theorem comodule_tprod (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ) :
+    (hρ.tprod hσ).comodule =
+      (letI := hρ.comodule; letI := hσ.comodule
+        Comodule.tensor ℂ (coordinateHopfAlgebra ℂ n) W V) := by
+  let _ := hρ.comodule
+  let _ := hσ.comodule
+  refine ((hρ.tprod hσ).eq_comodule (Comodule.tensor ℂ _ W V) fun g ↦
+    TensorProduct.ext' fun w v ↦ ?_).symm
+  rw [Comodule.basePointsRepresentation_tensor_tmul, basePointsRepresentation_comodule,
+    basePointsRepresentation_comodule, Representation.tprod_apply, TensorProduct.map_tmul]
+
+/-- **The differential of a tensor product of rational representations** acts by the Leibniz
+rule: `d(ρ ⊗ σ) X (w ⊗ v) = dρ X w ⊗ v + w ⊗ dσ X v`. -/
+theorem differential_tprod_tmul (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    (X : Matrix (Fin n) (Fin n) ℂ) (w : W) (v : V) :
+    (hρ.tprod hσ).differential X (w ⊗ₜ v) =
+      hρ.differential X w ⊗ₜ v + w ⊗ₜ hσ.differential X v := by
+  let _ := hρ.comodule
+  let _ := hσ.comodule
+  rw [differential_apply, differential_apply, differential_apply, comodule_tprod,
+    Comodule.differential_tensor_tmul]
+
+/-- **The differential of a tensor product of rational representations** is the tensor product
+of their differentials, `d(ρ ⊗ σ) X = dρ X ⊗ 1 + 1 ⊗ dσ X`: differentiating carries the tensor
+product of representations of `GL n ℂ` to the tensor product of representations of `𝔤𝔩ₙ(ℂ)`. -/
+theorem differential_tprod (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    (X : Matrix (Fin n) (Fin n) ℂ) :
+    (hρ.tprod hσ).differential X =
+      (hρ.differential X).rTensor V + (hσ.differential X).lTensor W :=
+  TensorProduct.ext' fun w v ↦ by
+    rw [differential_tprod_tmul, LinearMap.add_apply, LinearMap.rTensor_tmul,
+      LinearMap.lTensor_tmul]
+
+variable {M N : Type*} [AddCommGroup M] [Module ℂ M] [LieRingModule (Matrix (Fin n) (Fin n) ℂ) M]
+  [LieModule ℂ (Matrix (Fin n) (Fin n) ℂ) M] [AddCommGroup N] [Module ℂ N]
+  [LieRingModule (Matrix (Fin n) (Fin n) ℂ) N] [LieModule ℂ (Matrix (Fin n) (Fin n) ℂ) N]
+
+/-- **Differentiation preserves tensor products of `𝔤𝔩ₙ`-modules**: isomorphisms of `𝔤𝔩ₙ`-modules
+`e₁ : W ≅ M` and `e₂ : V ≅ N`, the sources carrying the differentials of rational
+representations `ρ` and `σ`, tensor to an isomorphism `W ⊗ V ≅ M ⊗ N` whose source carries the
+differential of `ρ ⊗ σ` and whose target carries the tensor product `𝔤𝔩ₙ`-module structure. -/
+noncomputable def tprodLieModuleEquiv (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    (e₁ : letI := LieRingModule.compLieHom W hρ.differential
+      W ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M)
+    (e₂ : letI := LieRingModule.compLieHom V hσ.differential
+      V ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ N) :
+    letI := LieRingModule.compLieHom (W ⊗[ℂ] V) (hρ.tprod hσ).differential
+    W ⊗[ℂ] V ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M ⊗[ℂ] N :=
+  letI := LieRingModule.compLieHom (W ⊗[ℂ] V) (hρ.tprod hσ).differential
+  -- The linear equivalences underlying `e₁` and `e₂` are extracted with the `𝔤𝔩ₙ`-module
+  -- structures of the factors in scope only locally, so that they never compete with the
+  -- structure on the tensor product.
+  let f₁ : W ≃ₗ[ℂ] M := letI := LieRingModule.compLieHom W hρ.differential; e₁.toLinearEquiv
+  let f₂ : V ≃ₗ[ℂ] N := letI := LieRingModule.compLieHom V hσ.differential; e₂.toLinearEquiv
+  have hf₁ (X : Matrix (Fin n) (Fin n) ℂ) (w : W) : f₁ (hρ.differential X w) = ⁅X, f₁ w⁆ :=
+    letI := LieRingModule.compLieHom W hρ.differential; e₁.map_lie X w
+  have hf₂ (X : Matrix (Fin n) (Fin n) ℂ) (v : V) : f₂ (hσ.differential X v) = ⁅X, f₂ v⁆ :=
+    letI := LieRingModule.compLieHom V hσ.differential; e₂.map_lie X v
+  { TensorProduct.congr f₁ f₂ with
+    map_lie' := fun {X t} ↦ by
+      induction t using TensorProduct.inductionOn with
+      | add t t' ht ht' =>
+        simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, lie_add, map_add] at ht ht' ⊢
+        rw [ht, ht']
+      | tmul w v =>
+        simp only [LieRingModule.compLieHom_apply, Module.End.lie_apply, AddHom.toFun_eq_coe,
+          LinearMap.coe_toAddHom, LinearEquiv.coe_coe, TensorProduct.congr_tmul,
+          LieModule.lie_tmul_right]
+        rw [differential_tprod_tmul hρ hσ, map_add, TensorProduct.congr_tmul,
+          TensorProduct.congr_tmul, hf₁, hf₂] }
+
+/-- `TauCeti.IsRationalRep.tprodLieModuleEquiv` acts on pure tensors factorwise. -/
+@[simp]
+theorem tprodLieModuleEquiv_tmul (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    (e₁ : letI := LieRingModule.compLieHom W hρ.differential
+      W ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M)
+    (e₂ : letI := LieRingModule.compLieHom V hσ.differential
+      V ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ N) (w : W) (v : V) :
+    tprodLieModuleEquiv hρ hσ e₁ e₂ (w ⊗ₜ v) = e₁ w ⊗ₜ e₂ v :=
+  (rfl)
+
+end TensorProduct
 
 end IsRationalRep
 
