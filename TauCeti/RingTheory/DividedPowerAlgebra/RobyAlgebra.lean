@@ -34,10 +34,14 @@ multiplicative law `x ↦ γ_d(x)`. In degree one, multiplicative laws are the a
 * `DividedPowerAlgebra.homogeneousMul`: the internal product of `Γ^d_R(A)`, as a bilinear map.
 * `DividedPowerAlgebra.homogeneousMul_baseChange_gamma`: after every scalar extension,
   `γ_d(u) γ_d(v) = γ_d(u v)`.
+* `DividedPowerAlgebra.homogeneousMul_assoc`, `DividedPowerAlgebra.homogeneousMul_one_left` and
+  `DividedPowerAlgebra.homogeneousMul_one_right`: the internal product is associative with unit
+  `γ_d(1)`.
 * `DividedPowerAlgebra.RobyAlgebra R A d`: the Roby algebra, with its `Semiring` and `Algebra R`
   instances; `DividedPowerAlgebra.RobyAlgebra.linearEquiv` identifies it with `Γ^d_R(A)` as an
   `R`-module, and `DividedPowerAlgebra.RobyAlgebra.linearEquiv_mul` computes its product.
 * `DividedPowerAlgebra.RobyAlgebra.gamma`: the universal multiplicative law `A → Γ^d_R(A)`, with
+  `DividedPowerAlgebra.RobyAlgebra.gamma_toFun`,
   `DividedPowerAlgebra.RobyAlgebra.isHomogeneousOfDegree_gamma` and
   `DividedPowerAlgebra.RobyAlgebra.isMultiplicative_gamma`.
 * `DividedPowerAlgebra.RobyAlgebra.algHomEquiv`: algebra maps `Γ^d_R(A) →ₐ[R] B` are equivalent
@@ -105,15 +109,6 @@ theorem homogeneousMul_dp_dp (d : ℕ) (x y : A) :
       ⟨dp R d (x * y), dp_mem_homogeneousSubmodule d (x * y)⟩ := by
   rw [homogeneousMul_apply, homogeneousTensorMap_dp_tmul_dp, mapHomogeneousSubmodule_dp,
     LinearMap.mul'_apply]
-
-/-- The degree-`d` component of a product of divided powers of total degree `d` is the product
-itself. -/
-private theorem decompose_prod_dp {M : Type*} [AddCommMonoid M] [Module R M] {τ : Type*}
-    [Fintype τ] {d : ℕ} (v : τ → M) (a : τ → ℕ) (ha : ∑ j, a j = d) :
-    DirectSum.decompose (homogeneousSubmodule (R := R) (M := M)) (∏ j, dp R (a j) (v j)) d =
-      ⟨∏ j, dp R (a j) (v j), prod_dp_mem_homogeneousSubmodule_of_sum_eq v a ha⟩ :=
-  Subtype.ext <|
-    DirectSum.decompose_of_mem_same _ (prod_dp_mem_homogeneousSubmodule_of_sum_eq v a ha)
 
 /-- The generic case of `homogeneousMul_baseChange_gamma`: two generic combinations in disjoint
 groups of variables. -/
@@ -227,9 +222,9 @@ private theorem homogeneousMul_assoc_prod_dp (d : ℕ) {p q r : ℕ} (m : Fin p 
         (homogeneousMul R A d ⟨_, prod_dp_mem_homogeneousSubmodule_of_sum_eq n b hb⟩
           ⟨_, prod_dp_mem_homogeneousSubmodule_of_sum_eq o c hc⟩) := by
   classical
-  have key := congrArg (fun z ↦ TensorProduct.lid R _
-      ((lcoeff R (Finsupp.sumElim (Finsupp.sumElim a b) c)).rTensor _ z))
-    (show BilinMap.baseChange (MvPolynomial ((Fin p ⊕ Fin q) ⊕ Fin r) R) (homogeneousMul R A d)
+  -- Associativity for generic combinations in three disjoint groups of variables.
+  have generic :
+      BilinMap.baseChange (MvPolynomial ((Fin p ⊕ Fin q) ⊕ Fin r) R) (homogeneousMul R A d)
         (BilinMap.baseChange _ (homogeneousMul R A d)
           ((gamma R A d).toFun _ (∑ i, X (Sum.inl (Sum.inl i)) ⊗ₜ[R] m i))
           ((gamma R A d).toFun _ (∑ j, X (Sum.inl (Sum.inr j)) ⊗ₜ[R] n j)))
@@ -238,8 +233,10 @@ private theorem homogeneousMul_assoc_prod_dp (d : ℕ) {p q r : ℕ} (m : Fin p 
         ((gamma R A d).toFun _ (∑ i, X (Sum.inl (Sum.inl i)) ⊗ₜ[R] m i))
         (BilinMap.baseChange _ (homogeneousMul R A d)
           ((gamma R A d).toFun _ (∑ j, X (Sum.inl (Sum.inr j)) ⊗ₜ[R] n j))
-          ((gamma R A d).toFun _ (∑ k, X (Sum.inr k) ⊗ₜ[R] o k))) by
-      simp only [homogeneousMul_baseChange_gamma, mul_assoc])
+          ((gamma R A d).toFun _ (∑ k, X (Sum.inr k) ⊗ₜ[R] o k))) := by
+    simp only [homogeneousMul_baseChange_gamma, mul_assoc]
+  have key := congrArg (fun z ↦ TensorProduct.lid R _
+      ((lcoeff R (Finsupp.sumElim (Finsupp.sumElim a b) c)).rTensor _ z)) generic
   -- The coefficient of `Xᵃ Yᵇ Zᶜ` at the exponent `(a, b, c)` singles out one term.
   have hcoeff (a' : Fin p →₀ ℕ) (b' : Fin q →₀ ℕ) (c' : Fin r →₀ ℕ) :
       ((∏ i, (X (Sum.inl (Sum.inl i)) : MvPolynomial ((Fin p ⊕ Fin q) ⊕ Fin r) R) ^ a' i) *
@@ -259,7 +256,7 @@ private theorem homogeneousMul_assoc_prod_dp (d : ℕ) {p q r : ℕ} (m : Fin p 
   rwa [decompose_prod_dp m a ha, decompose_prod_dp n b hb, decompose_prod_dp o c hc] at key
 
 /-- The internal product is associative. -/
-private theorem homogeneousMul_assoc (d : ℕ)
+theorem homogeneousMul_assoc (d : ℕ)
     (x y z : homogeneousSubmodule (R := R) (M := A) d) :
     homogeneousMul R A d (homogeneousMul R A d x y) z =
       homogeneousMul R A d x (homogeneousMul R A d y z) := by
@@ -285,13 +282,9 @@ private theorem homogeneousMul_assoc (d : ℕ)
   exact homogeneousMul_assoc_prod_dp d m n o (Finsupp.equivFunOnFinite.symm a)
     (Finsupp.equivFunOnFinite.symm b) (Finsupp.equivFunOnFinite.symm c) ha hb hc
 
-/-- After scalar extension, `γ_d(1) = 1 ⊗ γ_d(1)`. -/
-private theorem gamma_toFun_one (d : ℕ) (S : Type*) [CommSemiring S] [Algebra R S] :
-    (gamma R A d).toFun S 1 = 1 ⊗ₜ ⟨dp R d 1, dp_mem_homogeneousSubmodule d 1⟩ := by
-  rw [Algebra.TensorProduct.one_def, gamma_toFun_tmul, one_pow]
-
 /-- `γ_d(1)` is a left unit for the internal product. -/
-private theorem homogeneousMul_one_left (d : ℕ) (y : homogeneousSubmodule (R := R) (M := A) d) :
+@[simp]
+theorem homogeneousMul_one_left (d : ℕ) (y : homogeneousSubmodule (R := R) (M := A) d) :
     homogeneousMul R A d ⟨dp R d 1, dp_mem_homogeneousSubmodule d 1⟩ y = y := by
   suffices h : homogeneousMul R A d ⟨dp R d 1, dp_mem_homogeneousSubmodule d 1⟩ = LinearMap.id from
     LinearMap.congr_fun h y
@@ -303,7 +296,8 @@ private theorem homogeneousMul_one_left (d : ℕ) (y : homogeneousSubmodule (R :
     homogeneousMul_baseChange_gamma, one_mul]
 
 /-- `γ_d(1)` is a right unit for the internal product. -/
-private theorem homogeneousMul_one_right (d : ℕ) (x : homogeneousSubmodule (R := R) (M := A) d) :
+@[simp]
+theorem homogeneousMul_one_right (d : ℕ) (x : homogeneousSubmodule (R := R) (M := A) d) :
     homogeneousMul R A d x ⟨dp R d 1, dp_mem_homogeneousSubmodule d 1⟩ = x := by
   suffices h :
       (homogeneousMul R A d).flip ⟨dp R d 1, dp_mem_homogeneousSubmodule d 1⟩ = LinearMap.id from
@@ -314,38 +308,6 @@ private theorem homogeneousMul_one_right (d : ℕ) (x : homogeneousSubmodule (R 
     homogeneousLawMap_toFun, LinearMap.baseChange_id, LinearMap.id_apply]
   rw [← LinearMap.BilinMap.baseChange_tmul_one, ← gamma_toFun_one,
     homogeneousMul_baseChange_gamma, mul_one]
-
-/-- Bilinear maps on `Γ^d_R(M)` are determined by their scalar extensions evaluated at
-`γ_d(u)` and `γ_d(v)`, for generic combinations `u` and `v` in two disjoint groups of
-variables. -/
-private theorem bilinMap_ext_gamma {M P : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid P]
-    [Module R P] (d : ℕ) {β β' : BilinMap R (homogeneousSubmodule (R := R) (M := M) d) P}
-    (h : ∀ (p q : ℕ) (m : Fin p → M) (n : Fin q → M),
-      BilinMap.baseChange (MvPolynomial (Fin p ⊕ Fin q) R) β
-          ((gamma R M d).toFun _ (∑ i, X (Sum.inl i) ⊗ₜ[R] m i))
-          ((gamma R M d).toFun _ (∑ j, X (Sum.inr j) ⊗ₜ[R] n j)) =
-        BilinMap.baseChange (MvPolynomial (Fin p ⊕ Fin q) R) β'
-          ((gamma R M d).toFun _ (∑ i, X (Sum.inl i) ⊗ₜ[R] m i))
-          ((gamma R M d).toFun _ (∑ j, X (Sum.inr j) ⊗ₜ[R] n j))) :
-    β = β' := by
-  classical
-  refine homogeneousSubmodule_ext_prod_dp fun p m a ha ↦
-    homogeneousSubmodule_ext_prod_dp fun q n b hb ↦ ?_
-  have key := congrArg (fun z ↦ TensorProduct.lid R P ((lcoeff R (Finsupp.sumElim
-    (Finsupp.equivFunOnFinite.symm a) (Finsupp.equivFunOnFinite.symm b))).rTensor P z))
-    (h p q m n)
-  have hca (a' : Fin p →₀ ℕ) : (∀ i, a' i = (Finsupp.sumElim (Finsupp.equivFunOnFinite.symm a)
-      (Finsupp.equivFunOnFinite.symm b)) (Sum.inl i)) ↔ a' = Finsupp.equivFunOnFinite.symm a := by
-    simp [Finsupp.ext_iff]
-  have hcb (b' : Fin q →₀ ℕ) : (∀ j, b' j = (Finsupp.sumElim (Finsupp.equivFunOnFinite.symm a)
-      (Finsupp.equivFunOnFinite.symm b)) (Sum.inr j)) ↔ b' = Finsupp.equivFunOnFinite.symm b := by
-    simp [Finsupp.ext_iff]
-  simp only [gamma_toFun_sum_tmul, map_sum, LinearMap.sum_apply,
-    LinearMap.BilinMap.baseChange_tmul, LinearMap.rTensor_tmul, lcoeff_apply,
-    TensorProduct.lid_tmul, coeff_prod_X_pow_mul_prod_X_pow, hca, hcb, ite_and, ite_smul,
-    one_smul, zero_smul, Finset.sum_ite_eq', Finset.mem_finsuppAntidiag,
-    Finsupp.coe_equivFunOnFinite_symm, ha, hb, Finset.subset_univ, and_self, ite_true] at key
-  rwa [decompose_prod_dp m a ha, decompose_prod_dp n b hb] at key
 
 /-- The linear map representing a multiplicative homogeneous law of degree `d` is multiplicative
 for the internal product. -/
@@ -372,7 +334,7 @@ the degree-`d` homogeneous piece of the divided power algebra `Γ_R(A)`
 (`DividedPowerAlgebra.RobyAlgebra.linearEquiv`). Its multiplication is the internal product
 `Γ^d_R(A) ⊗ Γ^d_R(A) → Γ^d_R(A ⊗ A) → Γ^d_R(A)`, the tensor map followed by `Γ^d` of the
 multiplication of `A`, so that `γ_d(x) * γ_d(y) = γ_d(x * y)`, with unit `γ_d(1)`. This product
-is not the graded product of `Γ_R(A)`, and it is noncommutative when `A` is. The algebra maps
+is not the graded product of `Γ_R(A)`, and it is not necessarily commutative. The algebra maps
 from `Γ^d_R(A)` to an `R`-algebra `B` classify the multiplicative polynomial laws `A → B`
 homogeneous of degree `d` (`DividedPowerAlgebra.RobyAlgebra.algHomEquiv`). -/
 def RobyAlgebra (d : ℕ) : Type _ := homogeneousSubmodule (R := R) (M := A) d
@@ -449,6 +411,14 @@ theorem ground_gamma_apply (x : A) :
       (linearEquiv R A d).symm ⟨dp R d x, dp_mem_homogeneousSubmodule d x⟩ := by
   rw [gamma, ground_toPolynomialLaw_comp_gamma_apply, LinearEquiv.coe_coe]
 
+/-- After scalar extension to `S`, the universal multiplicative law is the base change of the
+identification with `Γ^d_R(A)` applied to the universal homogeneous law. -/
+theorem gamma_toFun {S : Type*} [CommSemiring S] [Algebra R S] (u : S ⊗[R] A) :
+    (gamma R A d).toFun S u =
+      (linearEquiv R A d).symm.toLinearMap.baseChange S
+        ((DividedPowerAlgebra.gamma R A d).toFun S u) := by
+  rw [gamma, PolynomialLaw.toFun_comp_apply, LinearMap.toPolynomialLaw_toFun]
+
 /-- The universal multiplicative law is homogeneous of degree `d`. -/
 theorem isHomogeneousOfDegree_gamma : (gamma R A d).IsHomogeneousOfDegree d := by
   rw [gamma]
@@ -477,21 +447,21 @@ private theorem baseChange_linearEquiv_symm_homogeneousMul {S : Type*} [CommSemi
 Roby algebra, after every scalar extension. -/
 theorem isMultiplicative_gamma : (gamma R A d).IsMultiplicative where
   toFun'_one S _ _ := by
-    rw [PolynomialLaw.toFun'_eq_toFun, gamma, PolynomialLaw.toFun_comp_apply,
-      LinearMap.toPolynomialLaw_toFun, gamma_toFun_one, LinearMap.baseChange_tmul,
+    rw [PolynomialLaw.toFun'_eq_toFun, gamma_toFun, gamma_toFun_one, LinearMap.baseChange_tmul,
       Algebra.TensorProduct.one_def, LinearEquiv.coe_coe, ← linearEquiv_one,
       LinearEquiv.symm_apply_apply]
   toFun'_mul x y := by
-    simp only [PolynomialLaw.toFun'_eq_toFun, gamma, PolynomialLaw.toFun_comp_apply,
-      LinearMap.toPolynomialLaw_toFun]
+    simp only [PolynomialLaw.toFun'_eq_toFun, gamma_toFun]
     rw [← homogeneousMul_baseChange_gamma, baseChange_linearEquiv_symm_homogeneousMul]
 
 /-- `γ_d(x * y) = γ_d(x) * γ_d(y)` in the Roby algebra. -/
+@[simp]
 theorem ground_gamma_mul (x y : A) :
     (gamma R A d).ground (x * y) = (gamma R A d).ground x * (gamma R A d).ground y :=
   isMultiplicative_gamma.ground_mul x y
 
 /-- The unit of the Roby algebra is `γ_d(1)`. -/
+@[simp]
 theorem ground_gamma_one : (gamma R A d).ground 1 = 1 :=
   isMultiplicative_gamma.ground_one
 
@@ -513,17 +483,30 @@ private def liftAlgHom (f : {f : A →ₚₗ[R] B // f.IsHomogeneousOfDegree d �
       exact homogeneousLawEquiv_symm_homogeneousMul d
         ⟨f.1, PolynomialLaw.mem_homogeneousSubmodule.mpr f.2.1⟩ f.2.2 _ _)
 
+/-- The linear map underlying `liftAlgHom f` is the linear map representing `f`. -/
+private theorem toLinearMap_liftAlgHom
+    (f : {f : A →ₚₗ[R] B // f.IsHomogeneousOfDegree d ∧ f.IsMultiplicative}) :
+    (liftAlgHom f).toLinearMap =
+      (homogeneousLawEquiv R A B d).symm ⟨f.1, PolynomialLaw.mem_homogeneousSubmodule.mpr f.2.1⟩ ∘ₗ
+        (linearEquiv R A d).toLinearMap :=
+  (rfl)
+
+/-- Composing a linear map out of the Roby algebra with the universal multiplicative law gives
+the law of the corresponding linear map on `Γ^d_R(A)`. -/
+private theorem toPolynomialLaw_comp_gamma (φ : RobyAlgebra R A d →ₗ[R] B) :
+    φ.toPolynomialLaw.comp (gamma R A d) =
+      (homogeneousLawMap R A B d (φ ∘ₗ (linearEquiv R A d).symm.toLinearMap) : A →ₚₗ[R] B) := by
+  rw [coe_homogeneousLawMap_apply, LinearMap.toPolynomialLaw_comp, gamma,
+    PolynomialLaw.comp_assoc]
+
 /-- The algebra map representing a multiplicative law `f` recovers `f` by composition with the
 universal multiplicative law. -/
 private theorem liftAlgHom_comp_gamma
     (f : {f : A →ₚₗ[R] B // f.IsHomogeneousOfDegree d ∧ f.IsMultiplicative}) :
     (liftAlgHom f).toLinearMap.toPolynomialLaw.comp (gamma R A d) = f := by
-  have h := congrArg Subtype.val ((homogeneousLawEquiv R A B d).apply_symm_apply
-    ⟨f.1, PolynomialLaw.mem_homogeneousSubmodule.mpr f.2.1⟩)
-  rw [homogeneousLawEquiv_apply, coe_homogeneousLawMap_apply] at h
-  rw [← h, liftAlgHom, AlgHom.toLinearMap_ofLinearMap, gamma, PolynomialLaw.comp_assoc,
-    ← LinearMap.toPolynomialLaw_comp, LinearMap.comp_assoc, LinearEquiv.comp_symm,
-    LinearMap.comp_id]
+  rw [toPolynomialLaw_comp_gamma, toLinearMap_liftAlgHom, LinearMap.comp_assoc,
+    LinearEquiv.comp_symm, LinearMap.comp_id, ← homogeneousLawEquiv_apply,
+    LinearEquiv.apply_symm_apply]
 
 /-- Algebra maps out of the Roby algebra agree if their compositions with the universal
 multiplicative law agree. -/
@@ -531,11 +514,10 @@ multiplicative law agree. -/
 theorem algHom_ext {φ ψ : RobyAlgebra R A d →ₐ[R] B}
     (h : φ.toLinearMap.toPolynomialLaw.comp (gamma R A d) =
       ψ.toLinearMap.toPolynomialLaw.comp (gamma R A d)) : φ = ψ := by
+  rw [toPolynomialLaw_comp_gamma, toPolynomialLaw_comp_gamma] at h
   have hrep : φ.toLinearMap ∘ₗ (linearEquiv R A d).symm.toLinearMap =
       ψ.toLinearMap ∘ₗ (linearEquiv R A d).symm.toLinearMap :=
-    homogeneousLawMap_injective d <| Subtype.ext <| by
-      simpa only [coe_homogeneousLawMap_apply, LinearMap.toPolynomialLaw_comp,
-        PolynomialLaw.comp_assoc, gamma] using h
+    homogeneousLawMap_injective d (Subtype.ext h)
   refine AlgHom.toLinearMap_injective ?_
   simpa only [LinearMap.comp_assoc, LinearEquiv.symm_comp, LinearMap.comp_id] using
     congrArg (· ∘ₗ (linearEquiv R A d).toLinearMap) hrep
@@ -568,9 +550,12 @@ theorem coe_algHomEquiv_apply (φ : RobyAlgebra R A d →ₐ[R] B) :
 theorem algHomEquiv_symm_apply_ground_gamma
     (f : {f : A →ₚₗ[R] B // f.IsHomogeneousOfDegree d ∧ f.IsMultiplicative}) (x : A) :
     (algHomEquiv R A d B).symm f ((gamma R A d).ground x) = (f : A →ₚₗ[R] B).ground x := by
-  rw [algHomEquiv, Equiv.coe_fn_symm_mk, liftAlgHom, AlgHom.ofLinearMap_apply,
-    LinearMap.comp_apply, LinearEquiv.coe_coe, ground_gamma_apply, LinearEquiv.apply_symm_apply,
-    homogeneousLawEquiv_symm_apply_dp]
+  have h : (algHomEquiv R A d B ((algHomEquiv R A d B).symm f) : A →ₚₗ[R] B).ground x =
+      (f : A →ₚₗ[R] B).ground x := by
+    rw [Equiv.apply_symm_apply]
+  simpa only [coe_algHomEquiv_apply, toPolynomialLaw_comp_gamma, coe_homogeneousLawMap_apply,
+    ground_toPolynomialLaw_comp_gamma_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    LinearEquiv.coe_coe, ground_gamma_apply] using h
 
 /-- The classification is natural in the target algebra: postcomposing an algebra map with
 `ψ : B →ₐ[R] C` postcomposes its law with the law of `ψ`. -/
