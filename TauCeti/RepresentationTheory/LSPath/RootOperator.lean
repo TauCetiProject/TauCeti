@@ -121,6 +121,7 @@ theorem listMinHeight_cons (v : V) (l : List V) :
   (rfl)
 
 /-- The vertex heights of a linear image are computed by the pulled-back form. -/
+@[simp]
 theorem listMinHeight_map {W : Type*} [AddCommMonoid W] [Module 𝕜 W]
     (g : V →ₗ[𝕜] W) (f' : Dual 𝕜 W) (l : List V) :
     listMinHeight f' (l.map g) = listMinHeight (f'.comp g) l := by
