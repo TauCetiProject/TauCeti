@@ -23,9 +23,10 @@ Let `σ` be a smooth two-form on a manifold `M` and `W ⊆ M`. A function `F : M
 * `F` is smooth, nonnegative, and its support is compact and contained in the interior of `W`
   and in the interior of the manifold `M`;
 * `F` vanishes on a nonempty open subset of `W` and attains its maximum on a nonempty open set;
-* the Hamiltonian vector field `X_F` (with `ι_{X_F} σ = dF`) has no **fast contractible** periodic
-  orbits: every integral curve `γ` of `X_F` that is `T`-periodic for some `0 < T ≤ 1`, and whose
-  loop `ℝ/Tℤ → W` is contractible in `W`, is constant.
+* the Hamiltonian vector field `X_F` (`TauCeti.SmoothTwoForm.hamiltonianVectorField`, which
+  satisfies `ι_{X_F} σ = dF` when `σ` is nondegenerate and `M` is finite-dimensional) has no
+  **fast contractible** periodic orbits: every integral curve `γ` of `X_F` that is `T`-periodic
+  for some `0 < T ≤ 1`, and whose loop `ℝ/Tℤ → W` is contractible in `W`, is constant.
 
 The **`π₁`-sensitive Hofer–Zehnder capacity** of `W` is
 
@@ -36,7 +37,8 @@ are excluded, so `c°_HZ(W)` is at least the Hofer–Zehnder capacity, in which 
 periodic orbit is excluded. A `T`-periodic orbit is also `kT`-periodic, so the condition
 concerns all iterates of period at most `1`.
 
-The capacity is conformal, `c°_HZ(W, cσ) = c · c°_HZ(W, σ)` for `c > 0`
+The definition makes sense for any two-form `σ`. When `σ` is nondegenerate and `M` is
+finite-dimensional, the capacity is conformal, `c°_HZ(W, cσ) = c · c°_HZ(W, σ)` for `c > 0`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.contractibleHZCapacity_smul`), and invariant under
 symplectomorphisms, `c°_HZ(ψ(W), σ₂) = c°_HZ(W, ψ^*σ₂)`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.contractibleHZCapacity_image`). The conformality rests on
@@ -125,6 +127,13 @@ two-form `σ`: the supremum, in `[0, ∞]`, of the maxima of the `HZ°`-admissib
 def contractibleHZCapacity : ℝ≥0∞ :=
   ⨆ (F : M → ℝ) (_ : σ.IsContractibleHZAdmissible W F), ENNReal.ofReal (⨆ x, F x)
 
+variable (σ W) in
+/-- The defining supremum of the `π₁`-sensitive Hofer–Zehnder capacity. -/
+theorem contractibleHZCapacity_def :
+    σ.contractibleHZCapacity W =
+      ⨆ (F : M → ℝ) (_ : σ.IsContractibleHZAdmissible W F), ENNReal.ofReal (⨆ x, F x) :=
+  (rfl)
+
 /-- The maximum of an admissible Hamiltonian is a lower bound for the capacity. -/
 theorem IsContractibleHZAdmissible.ofReal_iSup_le_contractibleHZCapacity
     (hF : σ.IsContractibleHZAdmissible W F) :
@@ -193,7 +202,7 @@ theorem IsNondegenerate.contractibleHZCapacity_smul (hσ : σ.IsNondegenerate) {
     gcongr
     exact ((hσ.isContractibleHZAdmissible_smul_smul_iff hc).1 hF
       ).ofReal_iSup_le_contractibleHZCapacity
-  · simp only [contractibleHZCapacity, ENNReal.mul_iSup]
+  · simp only [contractibleHZCapacity_def, ENNReal.mul_iSup]
     refine iSup₂_le fun F hF ↦ ?_
     rw [← hmax]
     exact ((hσ.isContractibleHZAdmissible_smul_smul_iff hc).2 hF
@@ -224,8 +233,8 @@ theorem IsContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
     have h := hσ.mfderiv_hamiltonianVectorField_comp hσ₂ ψ.contMDiff hψ
       (ψ.isInvertible_mfderiv (by simp) (x := x)).surjective (g := F ∘ ψ.symm)
       (((hF.contMDiff.comp ψ.symm.contMDiff) (ψ x)).mdifferentiableAt (by simp))
-    rwa [Function.comp_assoc, ← Diffeomorph.coe_trans, Diffeomorph.self_trans_symm,
-      Diffeomorph.coe_refl, Function.comp_id] at h
+    have hFψ : (F ∘ ψ.symm) ∘ ψ = F := funext fun x ↦ by simp
+    rwa [hFψ] at h
   have hsupp : tsupport (F ∘ ψ.symm) = ψ '' tsupport F := by
     rw [ψ.image_eq_preimage_symm, ← ψ.symm.coe_toHomeomorph,
       ← tsupport_comp_eq_preimage F ψ.symm.toHomeomorph]
@@ -276,8 +285,9 @@ theorem IsNondegenerate.contractibleHZCapacity_image (hσ₂ : σ₂.IsNondegene
     (contractibleHZCapacity_le_iff.2 fun F hF ↦ ?_)
   · have h := hF.comp_symm hσ ψ.symm
       (SmoothForm.mpullback_symm_eq_of_mpullback_eq hψ)
-    rw [← Diffeomorph.toEquiv_coe_symm ψ.symm, Diffeomorph.symm_toEquiv, Equiv.symm_symm,
-      Diffeomorph.coe_toEquiv, ψ.symm_image_image] at h
+    -- `Diffeomorph.symm` is involutive by definition.
+    have hψ' : ψ.symm.symm = ψ := rfl
+    rw [hψ', ψ.symm_image_image] at h
     have hsup : ⨆ x, (F ∘ ψ) x = ⨆ y, F y := ψ.surjective.iSup_comp F
     exact hsup ▸ h.ofReal_iSup_le_contractibleHZCapacity
   · have hsup : ⨆ y, (F ∘ ψ.symm) y = ⨆ x, F x := ψ.symm.surjective.iSup_comp F

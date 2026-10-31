@@ -269,9 +269,8 @@ theorem hamiltonianVectorField_smul {c : ℝ} (hc : c ≠ 0) (f : M → ℝ) :
     (c • σ).hamiltonianVectorField f = c⁻¹ • σ.hamiltonianVectorField f := by
   refine ((h.smul c hc).isHamiltonianVectorField_iff_eq.1 (isHamiltonianVectorField_iff.2
     fun x v ↦ ?_)).symm
-  rw [SmoothForm.eval₂_smul, Pi.smul_apply, ← SmoothForm.bilinFormAt_apply, map_smul,
-    LinearMap.smul_apply, SmoothForm.bilinFormAt_apply, h.eval₂_hamiltonianVectorField,
-    smul_smul, mul_inv_cancel₀ hc, one_smul]
+  rw [SmoothForm.eval₂_smul, Pi.smul_apply, SmoothBundleForm.eval₂_smul_left,
+    h.eval₂_hamiltonianVectorField, smul_inv_smul₀ hc]
 
 /-- Rescaling the form and the Hamiltonian by the same `c ≠ 0` leaves the Hamiltonian vector
 field unchanged: `X^{cσ}_{cf} = X^σ_f`. -/
@@ -279,7 +278,7 @@ theorem hamiltonianVectorField_smul_smul {c : ℝ} (hc : c ≠ 0) (f : M → ℝ
     (c • σ).hamiltonianVectorField (c • f) = σ.hamiltonianVectorField f := by
   funext x
   rw [hamiltonianVectorField_const_smul, h.hamiltonianVectorField_smul hc, Pi.smul_apply,
-    smul_smul, mul_inv_cancel₀ hc, one_smul]
+    smul_inv_smul₀ hc]
 
 end IsNondegenerate
 
