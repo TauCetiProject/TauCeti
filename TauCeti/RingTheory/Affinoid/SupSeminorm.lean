@@ -49,6 +49,8 @@ that affinoid algebras are Jacobson rings.
 * `TauCeti.IsAffinoidAlgebra.isPowMul_supSeminorm`: `|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_zero_iff`: `|f|sup = 0` if and only if `f` is
   nilpotent.
+* `TauCeti.IsAffinoidAlgebra.isReduced_iff_supSeminorm_eq_zero`: `|·|sup` separates points
+  exactly when `A` is reduced.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_le`: algebra homomorphisms contract `|·|sup`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_of_isIntegral`: integral injective algebra
   homomorphisms preserve `|·|sup`.
@@ -374,6 +376,11 @@ theorem supSeminorm_eq_zero_iff (hA : IsAffinoidAlgebra K A) {f : A} :
   rw [← Ideal.jacobson_bot, ← Ideal.radical_eq_jacobson, Ideal.mem_radical_iff] at hf
   obtain ⟨n, hn⟩ := hf
   exact ⟨n, Ideal.mem_bot.mp hn⟩
+
+/-- **The supremum seminorm is a norm exactly on reduced affinoid algebras.** -/
+theorem isReduced_iff_supSeminorm_eq_zero (hA : IsAffinoidAlgebra K A) :
+    IsReduced A ↔ ∀ f : A, supSeminorm K f = 0 → f = 0 := by
+  simp_rw [hA.supSeminorm_eq_zero_iff, isReduced_iff]
 
 /-- An algebra homomorphism of affinoid algebras does not increase supremum seminorms. -/
 theorem supSeminorm_map_le (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)

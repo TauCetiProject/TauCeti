@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Manifold.Suspension
+public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 

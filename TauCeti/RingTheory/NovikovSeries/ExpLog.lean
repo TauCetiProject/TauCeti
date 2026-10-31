@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.NovikovSeries.Derivation
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
 public import TauCeti.Topology.Algebra.IsUniformGroup.Subring
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.ExpLog
@@ -28,6 +29,10 @@ with inverse the logarithm (`TauCeti.NovikovSeries.expMulEquiv`). The dynamical 
 closed one-form is defined as the exponential of a rational logarithmic series of periodic orbits
 lying in the positive ideal; by this isomorphism it is a principal unit.
 
+The degree derivations of `TauCeti/RingTheory/NovikovSeries/Derivation.lean` are continuous, so
+they differentiate the logarithm of a principal unit logarithmically: `u * D (log u) = D u`
+(`TauCeti.NovikovSeries.mul_degreeDerivation_log`).
+
 ## Main definitions
 
 * `TauCeti.NovikovSeries.expMulEquiv`: the exponential, as an isomorphism from the additive group
@@ -38,6 +43,8 @@ lying in the positive ideal; by this isomorphism it is a principal unit.
 * `TauCeti.NovikovSeries.coe_exp_of_mem_posIdeal`: the exponential of a series of the positive
   ideal does not depend on whether it is computed in the nonnegative subring or in the Novikov
   ring.
+* `TauCeti.NovikovSeries.mul_degreeDerivation_log`: the logarithmic derivative of the logarithm
+  along a degree derivation.
 
 ## References
 
@@ -87,6 +94,17 @@ theorem coe_exp_of_mem_posIdeal {a : nonnegSubring K N} (ha : a ∈ posIdeal K N
   rw [NormedSpace.exp_eq_tsum_rat (𝔸 := NovikovSeries K H N)]
   refine (HasSum.tsum_eq ?_).symm
   simpa [Function.comp_def] using h
+
+/-- A degree derivation differentiates the logarithm of a principal unit of the nonnegative
+subring logarithmically: `u * D (log u) = D u`, read in the Novikov series. -/
+theorem mul_degreeDerivation_log (ℓ : H →+ K) {u : nonnegSubring K N}
+    (hu : u - 1 ∈ posIdeal K N) :
+    (u : NovikovSeries K H N) * degreeDerivation ℓ (NormedSpace.log u : nonnegSubring K N) =
+      degreeDerivation ℓ (u : NovikovSeries K H N) := by
+  have := congrArg Subtype.val
+    ((isTopologicallyNilpotent_of_mem_posIdeal' hu).mul_derivation_log
+      (nonnegDegreeDerivation ℓ) (continuous_nonnegDegreeDerivation ℓ))
+  simpa only [Subring.coe_mul, coe_nonnegDegreeDerivation] using this
 
 end NovikovSeries
 

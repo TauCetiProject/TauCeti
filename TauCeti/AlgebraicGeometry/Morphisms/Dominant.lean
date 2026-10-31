@@ -52,6 +52,8 @@ the generic point, and a dominant one by its pullback of rational functions.
   generic stalks with this property.
 * `AlgebraicGeometry.Scheme.Hom.germToFunctionField_functionFieldMap`: `f^*` sends the germ of a
   section `s` over an open `U` to the germ of its pullback `f^* s` over `f⁻¹ U`.
+* `AlgebraicGeometry.Scheme.Hom.appLE_injective_of_isDominant`: between integral schemes, the
+  pullback of sections `Γ(Y, U) ⟶ Γ(X, V)` along a dominant morphism is injective for nonempty `V`.
 * `AlgebraicGeometry.Scheme.Hom.functionFieldMap_id` and
   `AlgebraicGeometry.Scheme.Hom.functionFieldMap_comp`: functoriality.
 * `AlgebraicGeometry.isDominant_fromSpecStalk_genericPoint`: the canonical morphism `Spec K(X) ⟶ X`
@@ -180,6 +182,24 @@ theorem germToFunctionField_functionFieldMap (f : X ⟶ Y) [IsDominant f] (U : Y
     Y.germToFunctionField U ≫ f.functionFieldMap = f.app U ≫ X.germToFunctionField (f ⁻¹ᵁ U) := by
   rw [Scheme.germToFunctionField, Scheme.germToFunctionField, functionFieldMap,
     TopCat.Presheaf.germ_stalkSpecializes_assoc, germ_stalkMap]
+
+omit [IrreducibleSpace X] [IrreducibleSpace Y] in
+/-- For a dominant morphism `f : X ⟶ Y` of integral schemes, the pullback of sections
+`f.appLE U V e : Γ(Y, U) ⟶ Γ(X, V)` is injective as soon as `V` is nonempty: both rings of
+sections embed into the function fields, and `f^* : K(Y) ⟶ K(X)` is a homomorphism of fields. -/
+theorem appLE_injective_of_isDominant [IsIntegral X] [IsIntegral Y] (f : X ⟶ Y) [IsDominant f]
+    (U : Y.Opens) (V : X.Opens) [Nonempty V] (e : V ≤ f ⁻¹ᵁ U) :
+    Function.Injective (f.appLE U V e) := by
+  have : Nonempty U := ⟨⟨_, e (Classical.arbitrary V).2⟩⟩
+  have h : f.appLE U V e ≫ X.germToFunctionField V =
+      Y.germToFunctionField U ≫ f.functionFieldMap := by
+    rw [germToFunctionField_functionFieldMap, Scheme.germToFunctionField,
+      Scheme.germToFunctionField, Scheme.Hom.appLE, Category.assoc, TopCat.Presheaf.germ_res]
+  refine fun a b hab ↦ Y.germToFunctionField_injective U (f.functionFieldMap.hom.injective ?_)
+  have ha := congr(($h).hom a)
+  have hb := congr(($h).hom b)
+  simp only [CommRingCat.hom_comp, RingHom.comp_apply, hab] at ha hb
+  exact ha.symm.trans hb
 
 /-- The pullback of rational functions along the identity is the identity. -/
 @[simp]

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
+public import TauCeti.NumberTheory.NumberField.Ideal.RootsOfUnity
 public import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Invariants
 public import TauCeti.RingTheory.RootsOfUnity.Basic
@@ -40,7 +41,10 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
 * `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
 * `TauCeti.exists_ringHom_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
   fourth root of unity;
-* `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`.
+* `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`;
+* `TauCeti.absNorm_span_natCast_four`: the absolute norm of `q ℤ[i]` is `q²`;
+* `TauCeti.prime_natCast_of_mod_four_eq_three`: a rational prime `q ≡ 3 (mod 4)` stays prime in
+  `ℤ[i]`.
 
 The conjugation argument follows the cubic case in
 [TauCetiProject/TauCeti#21047](https://github.com/TauCetiProject/TauCeti/pull/21047).
@@ -180,5 +184,47 @@ theorem intCast_norm_eq_mul_of_four {σ : 𝓞 K →+* 𝓞 K} (hσ : ∀ x : �
   push_cast
   linear_combination (-((a : 𝓞 K) * b * hζ.toInteger) - (b : 𝓞 K) ^ 2 * (hζ.toInteger ^ 2 - 1)) *
     hsq
+
+end TauCeti
+
+namespace TauCeti
+
+open Ideal
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
+
+/-- The absolute norm of `q 𝓞 K` is `q²`, since `𝓞 K` has rank two. -/
+theorem absNorm_span_natCast_four (q : ℕ) : absNorm (span {(q : 𝓞 K)}) = q ^ 2 := by
+  rw [absNorm_span_natCast, RingOfIntegers.rank, IsCyclotomicExtension.finrank (n := 4) K
+    (cyclotomic.irreducible_rat (by norm_num)), show Nat.totient 4 = 2 by decide]
+
+/-- **Rational primes `q ≡ 3 (mod 4)` are inert in `𝓞 K = ℤ[i]`.** This is the analogue for the
+ring of integers of the fourth cyclotomic field of one direction of Mathlib's
+`GaussianInt.prime_iff_mod_four_eq_three_of_nat_prime`. -/
+theorem prime_natCast_of_mod_four_eq_three [HasEnoughRootsOfUnity (𝓞 K) 4] {q : ℕ}
+    (hq : q.Prime) (hq3 : q % 4 = 3) : Prime (q : 𝓞 K) := by
+  have hN := absNorm_span_natCast_four (K := K) q
+  have hne : span {(q : 𝓞 K)} ≠ ⊤ := by
+    rintro htop
+    rw [htop, absNorm_top] at hN
+    nlinarith [hq.two_le]
+  obtain ⟨P, hP, hle⟩ := exists_le_maximal _ hne
+  -- `N P ∣ q²`, and `N P ≠ q` since `4 ∣ N P - 1`, so `N P = q²` and `P = q 𝓞 K`.
+  have hPN : absNorm P = q ^ 2 := by
+    obtain ⟨k, hk, hPk⟩ := (Nat.dvd_prime_pow hq).mp (hN ▸ absNorm_dvd_absNorm_of_le hle)
+    interval_cases k
+    · exact absurd (absNorm_eq_one_iff.mp (by rw [hPk, pow_zero])) hP.ne_top
+    · rw [pow_one] at hPk
+      have h4 := NumberField.dvd_absNorm_sub_one (n := 4) (P := P) (by
+        rw [hPk, Nat.Coprime, Nat.gcd_comm, Nat.gcd_rec, hq3]
+        rfl)
+      omega
+    · exact hPk
+  obtain ⟨C, hC⟩ := dvd_iff_le.mpr hle
+  have hC1 : absNorm C = 1 := by
+    rw [hC, map_mul, hPN] at hN
+    exact (Nat.mul_eq_left (pow_ne_zero 2 hq.ne_zero)).mp hN
+  rw [absNorm_eq_one_iff.mp hC1, mul_top] at hC
+  exact (span_singleton_prime (by exact_mod_cast hq.ne_zero)).mp (hC ▸ hP.isPrime)
 
 end TauCeti

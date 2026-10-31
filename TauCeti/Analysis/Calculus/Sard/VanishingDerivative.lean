@@ -146,7 +146,8 @@ private theorem addHaar_image_eq_zero_of_fderiv_eq_zero_aux (n : ℕ) :
     rw [image_union, image_iUnion₂]
     refine measure_union_null ?_ ((measure_biUnion_null_iff (Set.to_countable _)).2 fun i hi ↦ ?_)
     · -- The innermost stratum: enough derivatives vanish for the flat-stratum estimate.
-      refine measure_image_null_of_locally_null fun a ha ↦ ?_
+      refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _)
+        fun a ha ↦ ?_
       obtain ⟨u, hu, hfu⟩ := (hf a ha.1).contDiffOn (m := ((n + 1 + 1 : ℕ) : ℕ∞ω))
         (mod_cast hkK) fun h ↦ absurd h (natCast_ne_infty _)
       have humem : interior u ∈ 𝓝 a := isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hu)
@@ -157,12 +158,13 @@ private theorem addHaar_image_eq_zero_of_fderiv_eq_zero_aux (n : ℕ) :
         _ < n + 2 := by omega
         _ ≤ (n + 1 + 1) * finrank ℝ F := Nat.le_mul_of_pos_right _ hF
     · -- An intermediate stratum: descend to the kernel of a linear functional.
-      refine measure_image_null_of_locally_null fun a ha ↦ ?_
+      refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _)
+        fun a ha ↦ ?_
       obtain ⟨has, hai, hai1⟩ := ha
-      have hfa : ContDiffAt ℝ ((n * n + 1 + i : ℕ)) f a :=
+      have hfa : ContDiffAt ℝ (((n * n + 1 : ℕ) : ℕ∞ω) + i) f a :=
         (hf a has).of_le (mod_cast show n * n + 1 + i ≤ k by have := hi.2; omega)
       obtain ⟨g, g', θ, -, -, -, -, -, hθ, -, hcover, hrank⟩ :=
-        exists_parametrization_iteratedFDeriv_eq_zero (r := n * n + 1) hfa (by positivity) hai hai1
+        exists_parametrization_iteratedFDeriv_eq_zero hfa (by simp) hai hai1
       obtain ⟨w, hw, hθw⟩ := hθ.contDiffOn (m := ((n * n + 1 : ℕ) : ℕ∞ω)) le_rfl
         fun h ↦ absurd h (natCast_ne_infty _)
       have hwmem : interior w ∈ 𝓝 (0 : ↥g'.ker) :=
