@@ -269,6 +269,13 @@ theorem commutationMovesTo_stabilizeX_castSucc (t t' : Fin (n + 1)) :
       fun k _ _ ↦ (G.isRowCommutation_stabilizeX_castSucc s k).commutationMovesTo
   exact (h₀ t).symm.trans (h₀ t')
 
+/-- An `X`-stabilization with the new column just before the split column moves back to the
+original diagram, wherever the new row is. -/
+theorem movesTo_stabilizeX_castSucc (t : Fin (n + 1)) : (G.stabilizeX s.castSucc t s).MovesTo G :=
+  (G.commutationMovesTo_stabilizeX_castSucc s t (G.X s).castSucc).movesTo.trans
+    (IsStabilization.movesTo ((isStabilization_iff _ _).mpr
+      (Or.inr (G.isXStabilization_stabilizeX_castSucc s)))).symm
+
 /-- Exchanging the two columns of the new block of the south-west `X`-stabilization is a column
 commutation, since its new column is a short vertical segment. -/
 theorem isColumnCommutation_stabilizeX_castSucc_X_castSucc :

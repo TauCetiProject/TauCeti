@@ -59,6 +59,8 @@ from these estimates in order to force the cluster set at `ζ` to degenerate to 
   `s`; for `ρ > 0`, measurable `s` and holomorphic `f` this is the arc length of `f ∘ circleMap ζ ρ`
   over the angles landing in `s`, a length along the parametrisation, counted with multiplicity,
   rather than a measure of the image set.
+* `TauCeti.edist_comp_le_lintegral_Ioc` — the chord bound along any `C¹` curve: the images of its
+  endpoints are at distance at most the length of its image under `f`.
 * `TauCeti.ofReal_dist_le_mul_lintegral_Ioc` — the chord bound in its primitive, set-free form:
   the images of the endpoints of an arc of angles are at distance at most `|ρ|` times the angular
   integral of `‖deriv f‖` over that arc, for a radius `ρ` of either sign.
@@ -275,6 +277,37 @@ theorem liminf_circleImageLength_nhdsGT_eq_zero (f : ℂ → ℂ) (hs : Measurab
 /-! ### The chord bound -/
 
 
+/-- **The chord bound along a `C¹` curve.** If `γ` is `C¹` on `Icc a b` and maps it into an open
+set on which `f` is holomorphic, the images under `f` of the endpoints of `γ` are at distance at
+most `∫⁻ t in Ioc a b, ‖deriv γ t‖ₑ * ‖deriv f (γ t)‖ₑ`, the length of the curve `f ∘ γ`. -/
+theorem edist_comp_le_lintegral_Ioc (hUo : IsOpen U) (hf : DifferentiableOn ℂ f U) {γ : ℝ → ℂ}
+    {a b : ℝ} (hγ : ContDiffOn ℝ 1 γ (Icc a b)) (hab : a ≤ b)
+    (hmemU : ∀ t ∈ Icc a b, γ t ∈ U) :
+    edist (f (γ a)) (f (γ b)) ≤ ∫⁻ t in Ioc a b, ‖deriv γ t‖ₑ * ‖deriv f (γ t)‖ₑ := by
+  -- Apply the fundamental theorem of calculus to `f ∘ γ`, which is `C¹` on `Icc a b` because `f`
+  -- is analytic on `U`. The chain rule identifies the derivative of the composite at the interior
+  -- parameters; the endpoints are null.
+  have hcd : ContDiffOn ℝ 1 (fun t => f (γ t)) (Icc a b) := fun t ht =>
+    ContDiffAt.comp_contDiffWithinAt t
+      ((hf.analyticAt (hUo.mem_nhds (hmemU t ht))).contDiffAt.restrict_scalars ℝ) (hγ t ht)
+  have hderiv : ∀ t ∈ Ioo a b,
+      ‖deriv (fun t => f (γ t)) t‖ₑ = ‖deriv γ t‖ₑ * ‖deriv f (γ t)‖ₑ := by
+    intro t ht
+    have hmem := hmemU t (Ioo_subset_Icc_self ht)
+    have hγt : HasDerivAt γ (deriv γ t) t :=
+      ((hγ.contDiffAt (Icc_mem_nhds ht.1 ht.2)).differentiableAt one_ne_zero).hasDerivAt
+    have h : HasDerivAt (fun t => f (γ t)) (deriv γ t • deriv f (γ t)) t :=
+      ((hf _ hmem).differentiableAt (hUo.mem_nhds hmem)).hasDerivAt.scomp t hγt
+    rw [h.deriv, smul_eq_mul, enorm_mul]
+  calc edist (f (γ a)) (f (γ b))
+      = ‖f (γ b) - f (γ a)‖ₑ := by rw [edist_comm, edist_eq_enorm_sub]
+    _ ≤ ∫⁻ t in Icc a b, ‖deriv (fun t => f (γ t)) t‖ₑ :=
+        enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hcd hab
+    _ = ∫⁻ t in Ioo a b, ‖deriv (fun t => f (γ t)) t‖ₑ := by rw [restrict_Ioo_eq_restrict_Icc]
+    _ = ∫⁻ t in Ioo a b, ‖deriv γ t‖ₑ * ‖deriv f (γ t)‖ₑ :=
+        setLIntegral_congr_fun measurableSet_Ioo hderiv
+    _ = ∫⁻ t in Ioc a b, ‖deriv γ t‖ₑ * ‖deriv f (γ t)‖ₑ := by rw [restrict_Ioo_eq_restrict_Ioc]
+
 /-- **The chord bound over a sub-arc.** For `f` holomorphic on an open `U` containing the piece of
 the circle of radius `ρ` about `ζ` cut out by the angles `Icc a b`, the distance between the images
 of the two endpoints of that arc is at most `|ρ|` times the angular integral of `‖deriv f‖` over it.
@@ -289,40 +322,18 @@ and which does need `0 < ρ`, since `TauCeti.circleImageLength` vanishes at a no
 the form here is what a *local* estimate near one end of the arc needs, since there the arc is
 shrunk rather than the radius.
 
-The analytic step is Mathlib's `MeasureTheory.enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc`,
-applied to `f ∘ circleMap ζ ρ`, which is `C¹` on the arc because `f` is analytic on `U` and
-`circleMap` is smooth. All that remains is the chain rule, which replaces the derivative of the
-composite by `deriv f (circleMap ζ ρ θ)` times the velocity `circleMap 0 ρ θ * I`, of norm `|ρ|`. -/
+It is `TauCeti.edist_comp_le_lintegral_Ioc` for the curve `circleMap ζ ρ`, whose velocity
+`circleMap 0 ρ θ * I` has norm `|ρ|`. -/
 theorem ofReal_dist_le_mul_lintegral_Ioc (hUo : IsOpen U) (hf : DifferentiableOn ℂ f U) (ζ : ℂ)
     {ρ : ℝ} {a b : ℝ} (hab : a ≤ b)
     (hmemU : ∀ θ ∈ Icc a b, circleMap ζ ρ θ ∈ U) :
     ENNReal.ofReal (dist (f (circleMap ζ ρ a)) (f (circleMap ζ ρ b))) ≤
       ENNReal.ofReal |ρ| * ∫⁻ θ in Ioc a b, ‖deriv f (circleMap ζ ρ θ)‖ₑ := by
-  have hcd : ContDiffOn ℝ 1 (fun θ => f (circleMap ζ ρ θ)) (Icc a b) := fun θ hθ =>
-    (((hf.analyticAt (hUo.mem_nhds (hmemU θ hθ))).contDiffAt.restrict_scalars ℝ).comp θ
-      (contDiff_circleMap ζ ρ).contDiffAt).contDiffWithinAt
-  have hderiv : ∀ θ ∈ Ioc a b, ‖deriv (fun θ => f (circleMap ζ ρ θ)) θ‖ₑ =
-      ENNReal.ofReal |ρ| * ‖deriv f (circleMap ζ ρ θ)‖ₑ := by
-    intro θ hθ
-    have hmem := hmemU θ (Set.Ioc_subset_Icc_self hθ)
-    have h : HasDerivAt (fun θ => f (circleMap ζ ρ θ))
-        ((circleMap 0 ρ θ * I) • deriv f (circleMap ζ ρ θ)) θ :=
-      ((hf _ hmem).differentiableAt (hUo.mem_nhds hmem)).hasDerivAt.scomp θ
-        (hasDerivAt_circleMap ζ ρ θ)
-    rw [h.deriv, smul_eq_mul, enorm_mul]
-    congr 1
-    rw [← ofReal_norm, norm_mul, norm_circleMap_zero, Complex.norm_I, mul_one]
-  calc ENNReal.ofReal (dist (f (circleMap ζ ρ a)) (f (circleMap ζ ρ b)))
-      = ‖f (circleMap ζ ρ b) - f (circleMap ζ ρ a)‖ₑ := by
-        rw [dist_comm, dist_eq_norm, ofReal_norm]
-    _ ≤ ∫⁻ θ in Icc a b, ‖deriv (fun θ => f (circleMap ζ ρ θ)) θ‖ₑ :=
-        enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hcd hab
-    _ = ∫⁻ θ in Ioc a b, ‖deriv (fun θ => f (circleMap ζ ρ θ)) θ‖ₑ := by
-        rw [← restrict_Ioc_eq_restrict_Icc]
-    _ = ∫⁻ θ in Ioc a b, ENNReal.ofReal |ρ| * ‖deriv f (circleMap ζ ρ θ)‖ₑ :=
-        setLIntegral_congr_fun measurableSet_Ioc hderiv
-    _ = ENNReal.ofReal |ρ| * ∫⁻ θ in Ioc a b, ‖deriv f (circleMap ζ ρ θ)‖ₑ :=
-        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+  have hspeed (θ : ℝ) : ‖deriv (circleMap ζ ρ) θ‖ₑ = ENNReal.ofReal |ρ| := by
+    simp [(hasDerivAt_circleMap ζ ρ θ).deriv, ← ofReal_norm, norm_circleMap_zero]
+  rw [← edist_dist, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  simpa only [hspeed] using
+    edist_comp_le_lintegral_Ioc hUo hf (contDiff_circleMap ζ ρ).contDiffOn hab hmemU
 
 /-- **The chord bound.** If the closed arc of angles `Icc a b` has angular width at most `2 * π`
 and the corresponding piece of the circle of radius `ρ` lies both in `s` and in an open set `U` on

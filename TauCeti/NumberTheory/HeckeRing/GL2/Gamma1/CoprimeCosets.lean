@@ -66,8 +66,11 @@ Disjointness of the last coset from the others uses only `1 < p` and integrality
 * `HeckeRing.GL2.exists_adjugateGL_natDiagGL_eq`: for an index coprime to the level, the
   adjugate of `diag(1, n)` factors on either side through `diag(1, n)`, a `Γ₁(N)` element,
   and a `Γ₀(N)` element whose diamond label is `n⁻¹`.
-* `HeckeRing.GL2.exists_natDiagGL_mul_mapGL_eq`: for an index coprime to the level, every
-  diamond label is carried by `Γ₀(N)` elements `A, A'` with `diag(1, n) · A = A' · diag(1, n)`.
+* `HeckeRing.GL2.exists_natDiagGL_mul_mapGL_eq_of_isCoprime`: for `t` coprime to `n N`, matrices
+  `A, A' ∈ SL₂(ℤ)` with lower rows `(N, t)` and `(n N, t)` and
+  `diag(1, n) · A = A' · diag(1, n)`.
+* `HeckeRing.GL2.exists_natDiagGL_mul_mapGL_eq`: at every nonzero index, every diamond label is
+  carried by `Γ₀(N)` elements `A, A'` with `diag(1, n) · A = A' · diag(1, n)`.
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_primeRep`: for prime `p`, every
   `diag(1, p) · γ` with `γ ∈ Γ₁(N)` lies in one of the `p + 1` right cosets.
 * `HeckeRing.GL2.op_primeRep_smul_injective`: the `p + 1` right cosets are pairwise distinct.
@@ -150,44 +153,45 @@ lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
   -- the diamond label of `A` is its lower-right entry `u`, and `u n ≡ 1 (mod N)`
   simpa [A, Gamma0Map_apply] using congrArg (Int.cast : ℤ → ZMod N) huv
 
-/-- **A diamond label can be carried across `diag(1, n)`.** For `n` coprime to `N` and every
+/-- **A lower-right entry coprime to `n N` moves across `diag(1, n)`.** For `n > 0` and every
+integer `t` coprime to `n N` there are `A, A' ∈ SL₂(ℤ)` with lower rows `(N, t)` and `(n N, t)`
+and `diag(1, n) · A = A' · diag(1, n)`: take `A = !![α, -β n; N, t]` and `A' = !![α, -β; n N, t]`
+for a Bézout relation `α t + β n N = 1`. -/
+lemma exists_natDiagGL_mul_mapGL_eq_of_isCoprime {n : ℕ} (hn : 0 < n) {t : ℤ}
+    (ht : IsCoprime t ((n * N : ℕ) : ℤ)) :
+    ∃ A A' : SL(2, ℤ), A 1 0 = N ∧ A 1 1 = t ∧ A' 1 0 = n * N ∧ A' 1 1 = t ∧
+      natDiagGL 2 ![1, n] * mapGL ℚ A = mapGL ℚ A' * natDiagGL 2 ![1, n] := by
+  obtain ⟨α, β, hαβ⟩ := ht
+  push_cast at hαβ
+  let A : SL(2, ℤ) :=
+    ⟨!![α, -(β * n); (N : ℤ), t], by rw [Matrix.det_fin_two_of]; linear_combination hαβ⟩
+  let A' : SL(2, ℤ) :=
+    ⟨!![α, -β; n * (N : ℤ), t], by rw [Matrix.det_fin_two_of]; linear_combination hαβ⟩
+  refine ⟨A, A', rfl, rfl, rfl, rfl, Units.ext ?_⟩
+  rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one hn, coe_mapGL_int_rat_fin_two,
+    coe_mapGL_int_rat_fin_two, Matrix.mul_fin_two, Matrix.mul_fin_two]
+  simp only [A, A', Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
+  congrm !![?_, ?_; ?_, ?_] <;> push_cast <;> ring
+
+/-- **A diamond label can be carried across `diag(1, n)`.** For every `n ≠ 0` and every
 `d ∈ (ZMod N)ˣ` there are `A, A' ∈ Γ₀(N)`, both with diamond label `d`, such that
-`diag(1, n) · A = A' · diag(1, n)` in `GL₂(ℝ)`. The matrix `A` is chosen with upper-right entry
-divisible by `n`, and `A'` is its conjugate by `diag(1, n)`. -/
-lemma exists_natDiagGL_mul_mapGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) (d : (ZMod N)ˣ) :
+`diag(1, n) · A = A' · diag(1, n)` in `GL₂(ℝ)`; no condition relating `n` to `N` is needed. The
+common lower-right entry is a lift of `d` coprime to `n N`
+(`ZMod.exists_isCoprime_mul_intCast_eq`), and the matrices are those of
+`exists_natDiagGL_mul_mapGL_eq_of_isCoprime`. -/
+lemma exists_natDiagGL_mul_mapGL_eq {n : ℕ} [NeZero n] (d : (ZMod N)ˣ) :
     ∃ A : SL(2, ℤ), ∃ hA : A ∈ Gamma0 N, (Gamma0Map N).toHomUnits ⟨A, hA⟩ = d ∧
       ∃ A' : SL(2, ℤ), ∃ hA' : A' ∈ Gamma0 N, (Gamma0Map N).toHomUnits ⟨A', hA'⟩ = d ∧
         φ (natDiagGL 2 ![1, n]) * mapGL ℝ A = mapGL ℝ A' * φ (natDiagGL 2 ![1, n]) := by
-  -- a lower-right entry `δ ≡ d (mod N)` with `δ ≡ 1 (mod n)`, hence coprime to `n N`
-  obtain ⟨u, v, huv⟩ := Nat.isCoprime_iff_coprime.mpr hn
-  obtain ⟨e, hed⟩ := ZMod.intCast_surjective (d : ZMod N)
-  have he : IsCoprime e N := Int.isCoprime_iff_gcd_eq_one.mpr
-    (Int.isUnit_intCast_iff_gcd_eq_one.mp (hed ▸ d.isUnit))
-  set δ : ℤ := e + (1 - e) * v * N
-  have hδn : IsCoprime δ n := ⟨1, (1 - e) * u, by linear_combination (1 - e) * huv⟩
-  have hδN : IsCoprime δ N := by
-    have : δ = e + N * ((1 - e) * v) := by ring
-    rw [this]
-    exact he.add_mul_left_left _
-  obtain ⟨α, β, hαβ⟩ := hδn.mul_right hδN
-  let A : SL(2, ℤ) :=
-    ⟨!![α, -(β * n); (N : ℤ), δ], by rw [Matrix.det_fin_two_of]; linear_combination hαβ⟩
-  let A' : SL(2, ℤ) :=
-    ⟨!![α, -β; n * (N : ℤ), δ], by rw [Matrix.det_fin_two_of]; linear_combination hαβ⟩
-  -- both diamond labels are the lower-right entry `δ`, which is `e = d` modulo `N`
-  have hlabel : ((δ : ℤ) : ZMod N) = d := by
-    simp [δ, hed]
-  refine ⟨A, mem_Gamma0_iff_dvd.mpr dvd_rfl, Units.ext ?_, A',
-    mem_Gamma0_iff_dvd.mpr (by simp [A']), Units.ext ?_,
-    Units.ext ?_⟩
-  · simpa [A, Gamma0Map_apply] using hlabel
-  · simpa [A', Gamma0Map_apply] using hlabel
-  · rw [Units.val_mul, Units.val_mul, Matrix.GeneralLinearGroup.val_map_apply,
-      coe_map_natDiagGL_one, coe_mapGL_fin_two, coe_mapGL_fin_two]
-    simp only [A, A', Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
-    rw [Matrix.mul_fin_two, Matrix.mul_fin_two]
-    congrm !![?_, ?_; ?_, ?_] <;> push_cast <;> ring
+  obtain ⟨t, ht, htd⟩ := ZMod.exists_isCoprime_mul_intCast_eq n d
+  obtain ⟨A, A', hA10, hA11, hA'10, hA'11, hcomm⟩ :=
+    exists_natDiagGL_mul_mapGL_eq_of_isCoprime (Nat.pos_of_neZero n) ht
+  refine ⟨A, mem_Gamma0_iff_dvd.mpr (by rw [hA10]), Units.ext ?_, A',
+    mem_Gamma0_iff_dvd.mpr (by rw [hA'10]; exact dvd_mul_left _ _), Units.ext ?_, ?_⟩
+  · simpa [Gamma0Map_apply, hA11] using htd
+  · simpa [Gamma0Map_apply, hA'11] using htd
+  · simpa only [map_mul, Matrix.SpecialLinearGroup.map_mapGL] using congrArg φ hcomm
 
 /-- **The family of `p + 1` matrices out of which the good-prime `Tₚ` is built.** The `p`
 upper-triangular matrices `!![1, b; 0, p]`, indexed by `some b`, together with the twisted
