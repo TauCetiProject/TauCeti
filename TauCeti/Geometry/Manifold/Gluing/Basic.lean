@@ -44,6 +44,9 @@ The gluing condition has the local-deck-transformation shape of
   diffeomorphism onto its image.
 * `TauCeti.contMDiff_iff_chartedSpaceOfIsOpenEmbedding`: a map out of `M` is `C^n` exactly when
   its composite with every embedding is.
+* `TauCeti.isLocalDiffeomorph_iff_forall_comp`: if every map of a jointly surjective family is a
+  local diffeomorphism, a map out of `M` is a local diffeomorphism exactly when its composite with
+  every map of the family is.
 * `TauCeti.isLocalDiffeomorph_iff_chartedSpaceOfIsOpenEmbedding`: a map out of `M` is a `C^n` local
   diffeomorphism exactly when its composite with every embedding is.
 * `TauCeti.maximalAtlas_eq_of_forall_isLocalDiffeomorph`: two `C^n` manifold structures making
@@ -303,6 +306,19 @@ theorem contMDiff_iff_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)
   filter_upwards [hrange] with w hw
   simp [(hφ j).toOpenPartialHomeomorph_right_inv _ hw]
 
+include hcover in
+/-- **Local diffeomorphisms out of a jointly surjective family.** If every map `φ j` of a jointly
+surjective family is a `C^n` local diffeomorphism, then a map out of `M` is a `C^n` local
+diffeomorphism exactly when its composite with every `φ j` is one. -/
+theorem isLocalDiffeomorph_iff_forall_comp [ChartedSpace H M]
+    (hφM : ∀ j, IsLocalDiffeomorph I I n (φ j)) {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {g : M → N} :
+    IsLocalDiffeomorph I I' n g ↔ ∀ j, IsLocalDiffeomorph I I' n (g ∘ φ j) := by
+  refine ⟨fun hg j y ↦ (hφM j y).isLocalDiffeomorphAt_comp_iff.2 (hg _), fun hg x ↦ ?_⟩
+  obtain ⟨j, y, rfl⟩ := hcover x
+  exact (hφM j y).isLocalDiffeomorphAt_comp_iff.1 (hg j y)
+
 include hdeck in
 /-- **Local diffeomorphisms out of a glued space.** A map out of `M` is a `C^n` local
 diffeomorphism exactly when its composite with the embedding of every piece is one. -/
@@ -311,12 +327,10 @@ theorem isLocalDiffeomorph_iff_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold 
     {I' : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
     {g : M → N} :
     letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
-    IsLocalDiffeomorph I I' n g ↔ ∀ j, IsLocalDiffeomorph I I' n (g ∘ φ j) := by
-  let := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
-  have hφj j y := isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck j y
-  refine ⟨fun hg j y ↦ (hφj j y).isLocalDiffeomorphAt_comp_iff.2 (hg _), fun hg x ↦ ?_⟩
-  obtain ⟨j, y, rfl⟩ := hcover x
-  exact (hφj j y).isLocalDiffeomorphAt_comp_iff.1 (hg j y)
+    IsLocalDiffeomorph I I' n g ↔ ∀ j, IsLocalDiffeomorph I I' n (g ∘ φ j) :=
+  letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
+  isLocalDiffeomorph_iff_forall_comp hcover
+    (isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck)
 
 include hcover in
 /-- **Uniqueness of glued atlases.** Two `C^n` manifold structures on `M` for which every map

@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+
 -- Access the constructor body to supply its missing public computation rule, and the body of
 -- `IsLocalDiffeomorphAt` to construct and destructure its witness.
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
@@ -245,17 +247,15 @@ theorem _root_.IsManifold.mem_maximalAtlas_iff_forall_isLocalDiffeomorphAt [IsMa
     e ∈ IsManifold.maximalAtlas I n M ↔ ∀ x ∈ e.source, IsLocalDiffeomorphAt I I n e x := by
   refine ⟨fun he _ hx ↦ e.isLocalDiffeomorphAt_of_mem_maximalAtlas he hx, fun h ↦ ?_⟩
   rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
-  refine ⟨fun x hx ↦ (h x hx).contMDiffAt.contMDiffWithinAt, fun z hz ↦ ?_⟩
-  obtain ⟨x, hx, rfl⟩ : ∃ x ∈ e.source, e x = z := ⟨e.symm z, e.map_target hz, e.right_inv hz⟩
-  have hl := h x hx
-  -- Near `e x`, the inverse of `e` is the local inverse of `e` at `x`.
-  have hsrc : hl.localInverse ⁻¹' e.source ∈ 𝓝 (e x) := by
-    refine hl.continuousAt_localInverse.preimage_mem_nhds (e.open_source.mem_nhds ?_)
-    rw [hl.localInverse_left_inv hl.localInverse_mem_target]
-    exact hx
-  refine (hl.contMDiffAt_localInverse.congr_of_eventuallyEq ?_).contMDiffWithinAt
-  filter_upwards [hl.localInverse_eventuallyEq_right, hsrc] with w hw hw'
-  simpa only [Function.comp_apply, id_eq, e.left_inv hw'] using congrArg e.symm hw.symm
+  refine ⟨fun x hx ↦ (h x hx).contMDiffAt.contMDiffWithinAt, ?_⟩
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact fun z _ ↦ isEmptyElim (e.symm z)
+  -- On the target, the inverse of `e` agrees with its inverse on the injective open source.
+  have hinv := IsLocalDiffeomorphOn.contMDiffOn_invFunOn (fun x ↦ h x x.2) e.open_source e.injOn
+  rw [e.image_source_eq_target] at hinv
+  refine hinv.congr fun z hz ↦ ?_
+  conv_rhs => rw [← e.right_inv hz]
+  exact (e.injOn.leftInvOn_invFunOn (e.map_target hz)).symm
 
 /-- A partial diffeomorphism `Φ : M → N'` followed by a chart `e` of the maximal `C^n` atlas of
 `N'` is a chart of the maximal `C^n` atlas of `M`. -/
