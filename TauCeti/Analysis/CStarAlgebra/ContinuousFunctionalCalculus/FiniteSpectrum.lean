@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
+public import Mathlib.LinearAlgebra.Lagrange
 
 /-!
 # The continuous functional calculus of an element with finite spectrum
@@ -26,12 +27,19 @@ spectrum is finite over every field of scalars acting compatibly
 (`ContinuousLinearMap.finite_spectrum`). There the eigenvector action identifies the continuous
 functional calculus with any spectral construction acting by `f μ` on the eigenvectors for `μ`.
 
+When the spectrum lies in a finite set `s`, the functional calculus is Lagrange interpolation on
+the nodes `s`: `cfc f a = ∑ μ ∈ s, f μ • ℓ_μ(a)`, where `ℓ_μ` is the Lagrange basis polynomial that
+is `1` at `μ` and `0` at the other nodes. The elements `ℓ_μ(a)` do not depend on `f`, so every
+`cfc f a` is a fixed linear combination of polynomials in `a`, with coefficients the values of `f`.
+
 ## Main results
 
 * `TauCeti.cfc_sub_algebraMap_eq_mul`: `cfc f a - f(μ) = cfc g a * (a - μ)` for the difference
   quotient `g` of `f` at `μ`.
 * `TauCeti.cfc_smul_of_smul_eq_algebraMap_smul`: if `a • m = μ • m`, then
   `cfc f a • m = f(μ) • m`.
+* `TauCeti.cfc_eq_sum_smul_aeval_lagrangeBasis`: if the spectrum of `a` lies in the finite set `s`,
+  then `cfc f a = ∑ μ ∈ s, f μ • ℓ_μ(a)` for the Lagrange basis polynomials `ℓ_μ` of `s`.
 -/
 
 public section
@@ -68,5 +76,16 @@ theorem cfc_smul_of_smul_eq_algebraMap_smul {M : Type*} [AddCommGroup M] [Module
     cfc f a • m = algebraMap R A (f μ) • m := by
   rw [← sub_eq_zero, ← sub_smul, cfc_sub_algebraMap_eq_mul f hfin μ ha, mul_smul, sub_smul, hm,
     sub_self, smul_zero]
+
+/-- **The functional calculus as Lagrange interpolation.** If the spectrum of `a` lies in the
+finite set `s`, then `cfc f a = ∑ μ ∈ s, f μ • ℓ_μ(a)`, where `ℓ_μ = Lagrange.basis s id μ` is
+the Lagrange basis polynomial of the nodes `s` that is `1` at `μ` and `0` at the other nodes. -/
+theorem cfc_eq_sum_smul_aeval_lagrangeBasis [DecidableEq R] (f : R → R) {a : A} {s : Finset R}
+    (hs : spectrum R a ⊆ s) (ha : p a := by cfc_tac) :
+    cfc f a = ∑ μ ∈ s, f μ • Polynomial.aeval a (Lagrange.basis s id μ) := by
+  rw [cfc_congr (g := (Lagrange.interpolate s id f).eval) fun x hx ↦
+      (Lagrange.eval_interpolate_at_node f (Set.injOn_id _) (hs hx)).symm,
+    cfc_polynomial _ a ha, Lagrange.interpolate_apply, map_sum]
+  simp [Algebra.smul_def]
 
 end TauCeti
