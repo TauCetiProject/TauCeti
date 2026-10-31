@@ -131,6 +131,23 @@ theorem thomPairOverUnivIso_hom_fst_apply (v : π F E ⁻¹' univ) :
     TopPair.Hom.fst (thomPairOverUnivIso F E).hom v = v.1 :=
   (rfl)
 
+@[simp]
+theorem thomPairOverUnivIso_hom_snd_apply (v : ↥(π F E ⁻¹' univ ∩ zeroSectionCompl F E)) :
+    TopPair.Hom.snd (thomPairOverUnivIso F E).hom v = ⟨v.1, v.2.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem thomPairOverUnivIso_inv_fst_apply (v : TotalSpace F E) :
+    TopPair.Hom.fst (thomPairOverUnivIso F E).inv v = ⟨v, trivial⟩ :=
+  Subtype.ext ((thomPairOverUnivIso_hom_fst_apply F E _).symm.trans
+    ((TopPair.proj₁.mapIso (thomPairOverUnivIso F E)).inv_hom_id_apply v))
+
+@[simp]
+theorem thomPairOverUnivIso_inv_snd_apply (v : zeroSectionCompl F E) :
+    TopPair.Hom.snd (thomPairOverUnivIso F E).inv v = ⟨v.1, trivial, v.2⟩ :=
+  Subtype.ext (congrArg Subtype.val ((TopPair.Hom.w_apply (thomPairOverUnivIso F E).inv v).trans
+    (thomPairOverUnivIso_inv_fst_apply F E v.1)) :)
+
 end Pair
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}

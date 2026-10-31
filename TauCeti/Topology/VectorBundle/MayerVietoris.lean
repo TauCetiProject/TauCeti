@@ -107,6 +107,23 @@ theorem thomPairOverIso_hom_fst_apply (v : π F E ⁻¹' W) :
     TopPair.Hom.fst (e.thomPairOverIso hW).hom v = (⟨v.1.proj, v.2⟩, (e v).2) :=
   e.preimageHomeomorph_apply hW v
 
+@[simp]
+theorem thomPairOverIso_hom_snd_apply (v : (thomPairOver F E W).snd) :
+    (TopPair.Hom.snd (e.thomPairOverIso hW).hom v).1 = (⟨v.1.proj, v.2.1⟩, (e v.1).2) :=
+  e.preimageHomeomorph_apply hW ⟨v.1, v.2.1⟩
+
+@[simp]
+theorem thomPairOverIso_inv_fst_apply (p : W × F) :
+    TopPair.Hom.fst (e.thomPairOverIso hW).inv p = (e.preimageHomeomorph hW).symm p :=
+  (e.preimageHomeomorph hW).eq_symm_apply.2
+    ((TopPair.proj₁.mapIso (e.thomPairOverIso hW)).inv_hom_id_apply p)
+
+@[simp]
+theorem thomPairOverIso_inv_snd_apply (p : (prodThomPair W F).snd) :
+    (TopPair.Hom.snd (e.thomPairOverIso hW).inv p).1 = (e.preimageHomeomorph hW).symm p.1 :=
+  (congrArg Subtype.val ((TopPair.Hom.w_apply (e.thomPairOverIso hW).inv p).trans
+    (e.thomPairOverIso_inv_fst_apply hW p.1)) :)
+
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   [FiniteDimensional ℝ F]
 
