@@ -23,6 +23,8 @@ indexed by.
   yields one presented as a family of `Opens`.
 * `TopologicalSpace.Opens.isClosed_setOf_not_exists` : the points with no open neighbourhood
   satisfying a given predicate form a closed set.
+* `TopologicalSpace.Opens.exists_le_preimage_coe_eq` : every open subset of an open set `Ω`,
+  viewed as a subspace, is the trace of an open set contained in `Ω`.
 -/
 
 public section
@@ -54,6 +56,13 @@ theorem isClosed_setOf_not_exists (P : Opens X → Prop) :
   intro x hx
   obtain ⟨U, hxU, hU⟩ := not_not.mp hx
   exact ⟨U, fun y hy ↦ not_not.mpr ⟨U, hy, hU⟩, U.isOpen, hxU⟩
+
+/-- Every open subset `W` of the subspace `Ω` is the trace on `Ω` of an open set `U ≤ Ω`, namely
+its image in `X`. -/
+theorem exists_le_preimage_coe_eq (Ω : Opens X) {W : Set Ω} (hW : IsOpen W) :
+    ∃ U : Opens X, U ≤ Ω ∧ ((↑) : Ω → X) ⁻¹' (U : Set X) = W :=
+  ⟨⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩, Subtype.coe_image_subset _ _,
+    Set.preimage_image_eq W Subtype.val_injective⟩
 
 end TopologicalSpace.Opens
 

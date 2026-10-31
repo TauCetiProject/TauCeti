@@ -45,6 +45,7 @@ unitary `Γ t` maps `A` to itself.
 * `TauCeti.CStarAction.perturbed`: the perturbed dynamics `τ^P`.
 * `TauCeti.CStarAction.generator_perturbed`: its generator is `δ + i[P, ·]`.
 * `TauCeti.CStarAction.perturbed_perturbed_neg`: perturbing `τ^P` by `-P` gives back `τ`.
+* `TauCeti.CStarAction.perturbed_zero`: perturbing by `0` gives back `τ`.
 
 ## References
 
@@ -160,6 +161,12 @@ theorem perturbationCocycle_neg {P : A} (hP : IsSelfAdjoint P) (t : ℝ) :
       mul_one]
   rw [ofAdd_neg, ← multiplier_symm_apply, ← h', StarAlgEquiv.symm_apply_apply]
 
+/-- The cocycle of the zero perturbation is the identity. -/
+@[simp]
+theorem perturbationCocycle_zero_left : α.perturbationCocycle 0 = 1 :=
+  (α.eq_perturbationCocycle 0 rfl fun t =>
+    (hasDerivAt_const t (1 : 𝓜(ℂ, A))).congr_deriv (by simp)).symm
+
 section Perturbed
 
 variable {P : A} (hP : IsSelfAdjoint P)
@@ -263,6 +270,13 @@ theorem generator_perturbed :
   rw [LinearPMap.vadd_apply, (α.perturbed hP).generator_eq_of_hasDerivAt ha
     (hasDerivAt_perturbed_zero α hP ⟨a, hb⟩)]
   simp [add_comm]
+
+/-- Perturbing by zero recovers the original dynamics. -/
+@[simp]
+theorem perturbed_zero : α.perturbed (IsSelfAdjoint.zero A) = α := by
+  ext t a
+  apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
+  simp
 
 end Perturbed
 

@@ -80,11 +80,9 @@ private theorem singularKronecker_prodThomPair_bijective {n : ℕ} (hn : n ≤ f
 /-- **The relative cohomology of the Thom pair of a product bundle vanishes below the rank**:
 `Hⁿ(B × F, B × (F ∖ {0}); R, M) = 0` for `n < dim F`. -/
 theorem isZero_singularCohomology_prodThomPair {n : ℕ} (hn : n < finrank ℝ F) :
-    IsZero ((prodThomPair B F).singularCohomology R k M n) := by
-  have : Subsingleton ((prodThomPair B F).singularHomology R n ⟶ M) :=
-    ⟨(isZero_singularHomology_prodThomPair R B F hn).eq_of_src⟩
-  have := (singularKronecker_prodThomPair_bijective R M B F hn.le).1.subsingleton
-  exact ModuleCat.isZero_of_subsingleton _
+    IsZero ((prodThomPair B F).singularCohomology R k M n) :=
+  (prodThomPair B F).isZero_singularCohomology_of_isZero_singularHomology R M n fun _ hj ↦
+    isZero_singularHomology_prodThomPair R B F (hj.trans_lt hn)
 
 /-- **The top relative cohomology of the Thom pair of a product bundle**: for `F` of dimension
 `r`, `Hʳ(B × F, B × (F ∖ {0}); R, M) ≃ₗ[k] (H₀(B; R) ⟶ M)`. A class goes to its evaluation on

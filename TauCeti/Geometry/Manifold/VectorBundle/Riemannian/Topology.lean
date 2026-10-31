@@ -11,22 +11,29 @@ public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Basic
 
 /-!
-# The chart C² topology on smooth Riemannian metrics
+# The chart Cᵏ topologies on smooth Riemannian metrics
 
-`Bundle.ContMDiffRiemannianMetric.chartC2Topology` equips the native smooth metric carrier
-with the initial topology of its coordinate derivatives of orders zero, one and two. Each
-derivative is a continuous map on an extended chart target, with its compact-open topology.
-Thus convergence means uniform convergence of all three derivatives on every compact subset
-of every chart target. Derivatives take values in continuous multilinear maps with the
-operator norm; no basis of the model space is chosen.
+`Bundle.ContMDiffRiemannianMetric.chartCkTopology k` equips the native smooth metric carrier
+with the initial topology of its coordinate derivatives of every order `m ≤ k`, for
+`k : ℕ∞`. Each derivative is a continuous map on an extended chart target, with its
+compact-open topology. Thus convergence means uniform convergence of all these derivatives on
+every compact subset of every chart target. Derivatives take values in continuous multilinear
+maps with the operator norm; no basis of the model space is chosen.
 
-The family criterion `continuous_chartC2_iff` expresses continuity by joint continuity of the
+The family criterion `continuous_chartCk_iff` expresses continuity by joint continuity of the
 coordinate derivatives in the parameter and chart variable; in particular each coordinate
 derivative is jointly continuous in the metric and the chart variable
 (`continuousAt_iteratedFDeriv_chartMetric`). Evaluation of the metric at a
-fixed point is continuous, and these evaluations separate metrics. The topology is selected
-by `open scoped TauCeti.MetricC2`, rather than a global instance, so it can coexist with
-topologies controlling higher derivatives.
+fixed point is continuous, and these evaluations separate metrics. The topologies decrease as
+`k` grows (`antitone_chartCkTopology`), so a quantity that is continuous in the chart C²
+topology, such as a second-order curvature expression, is continuous in every chart Cᵏ topology
+with `2 ≤ k`. Likewise a set of metrics compact in a chart Cˡ topology is compact in every chart
+Cᵏ topology with `k ≤ l` (`IsCompact.chartCk_of_le`).
+
+The chart C² topology `chartC2Topology` and the chart C∞ topology `chartCInftyTopology` are the
+cases `k = 2` and `k = ⊤`. They are selected by `open scoped TauCeti.MetricC2` and
+`open scoped TauCeti.MetricCInfty` respectively, rather than by global instances, so that they
+can coexist on the same carrier; the C∞ one is finer (`chartCInftyTopology_le_chartC2Topology`).
 
 This construction uses the compact-open derivative convention of M. Hirsch,
 *Differential Topology*, GTM 33, Chapter 2, §1, also used by
@@ -91,56 +98,78 @@ theorem chartMetricDerivative_apply
       E [×m]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ))) (g.chartMetricDerivative x m) z =
       iteratedFDeriv ℝ m (g.toNondegenerateMetric.chartMetric x) z := (rfl)
 
-/-- The topology of uniform convergence on compact chart sets of coordinate derivatives
-through order two on the native smooth Riemannian metric carrier. -/
+/-! ### The chart Cᵏ topologies -/
+
+section ChartCk
+
+/-- The topology of uniform convergence on compact chart sets of coordinate derivatives of order
+at most `k` on the native smooth Riemannian metric carrier. Orders `k = 2` and `k = ⊤` give the
+chart C² and C∞ topologies `chartC2Topology` and `chartCInftyTopology`. -/
 @[instance_reducible]
-def chartC2Topology :
+def chartCkTopology (k : ℕ∞) :
     TopologicalSpace (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :=
-  .induced (fun g ↦ fun (x : M) (m : Fin 3) ↦ g.chartMetricDerivative x m) inferInstance
+  .induced (fun g ↦ fun (x : M) (m : {m : ℕ // (m : ℕ∞) ≤ k}) ↦ g.chartMetricDerivative x m)
+    inferInstance
 
-attribute [local instance] chartC2Topology
+variable (k : ℕ∞)
 
-/-- A family is C²-continuous exactly when all chart derivatives through order two are
+/-- A family is Cᵏ-continuous exactly when all chart derivatives of order at most `k` are
 continuous as maps into compact-open continuous-map spaces. -/
-theorem continuous_chartC2_iff_continuous_chartMetricDerivative
+theorem continuous_chartCk_iff_continuous_chartMetricDerivative
     {P : Type*} [TopologicalSpace P]
     {g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} :
-    Continuous g ↔ ∀ (x : M) (m : Fin 3),
+    letI := chartCkTopology (I := I) (M := M) k
+    Continuous g ↔ ∀ (x : M) (m : ℕ), (m : ℕ∞) ≤ k →
       Continuous (fun p ↦ (g p).chartMetricDerivative x m) := by
-  simp only [continuous_induced_rng, continuous_pi_iff, Function.comp_def]
+  simp only [continuous_induced_rng, continuous_pi_iff, Function.comp_def, Subtype.forall]
 
-/-- Each coordinate derivative through order two varies continuously in the chart C² topology. -/
-theorem continuous_chartMetricDerivative (x : M) (m : Fin 3) :
+/-- Each coordinate derivative of order at most `k` varies continuously in the chart Cᵏ
+topology. -/
+theorem continuous_chartMetricDerivative (x : M) {m : ℕ} (hm : (m : ℕ∞) ≤ k) :
+    letI := chartCkTopology (I := I) (M := M) k
     Continuous (fun g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) ↦
       g.chartMetricDerivative x m) :=
-  (continuous_chartC2_iff_continuous_chartMetricDerivative (I := I) (M := M)).mp
-    continuous_id x m
+  let _ := chartCkTopology (I := I) (M := M) k
+  (continuous_chartCk_iff_continuous_chartMetricDerivative (I := I) (M := M) k).mp
+    continuous_id x m hm
 
-/-- A family is continuous in the chart C² topology exactly when its coordinate derivatives
-through order two depend jointly continuously on the parameter and chart variable. -/
-theorem continuous_chartC2_iff [LocallyCompactSpace E] {P : Type*} [TopologicalSpace P]
+/-- The chart Cᵏ topologies decrease as `k` grows: a topology controlling derivatives of higher
+order is finer. -/
+theorem antitone_chartCkTopology :
+    Antitone (chartCkTopology (I := I) (M := M)) := fun _ l hkl ↦
+  let _ := chartCkTopology (I := I) (M := M) l
+  continuous_iff_le_induced.1 (continuous_pi fun x ↦ continuous_pi fun m ↦
+    continuous_chartMetricDerivative l x (m.2.trans hkl))
+
+/-- A family is continuous in the chart Cᵏ topology exactly when its coordinate derivatives of
+order at most `k` depend jointly continuously on the parameter and chart variable. -/
+theorem continuous_chartCk_iff [LocallyCompactSpace E] {P : Type*} [TopologicalSpace P]
     {g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} :
     withMetricOperatorNorms E in
-    Continuous g ↔ ∀ (x : M) (m : Fin 3),
+    letI := chartCkTopology (I := I) (M := M) k
+    Continuous g ↔ ∀ (x : M) (m : ℕ), (m : ℕ∞) ≤ k →
       Continuous (fun q : P × (extChartAt I x).target ↦
         iteratedFDeriv ℝ m ((g q.1).toNondegenerateMetric.chartMetric x) q.2) := by
-  rw [continuous_chartC2_iff_continuous_chartMetricDerivative]
+  rw [continuous_chartCk_iff_continuous_chartMetricDerivative]
   constructor
-  · intro h x m
+  · intro h x m hm
     let _ := (isOpen_extChartAt_target (I := I) x).locallyCompactSpace
-    exact continuous_eval.comp ((h x m).prodMap continuous_id)
-  · intro h x m
-    exact ContinuousMap.continuous_of_continuous_uncurry _ (h x m)
+    exact continuous_eval.comp ((h x m hm).prodMap continuous_id)
+  · intro h x m hm
+    exact ContinuousMap.continuous_of_continuous_uncurry _ (h x m hm)
 
-/-- A coordinate derivative through order two, as a function of the metric and of a point of the
-model space, is continuous at every point of the chart target. Away from the chart target the
+/-- A coordinate derivative of order at most `k`, as a function of the metric and of a point of
+the model space, is continuous at every point of the chart target. Away from the chart target the
 iterated derivative is still defined, but carries no information about the metric. -/
-theorem continuousAt_iteratedFDeriv_chartMetric [LocallyCompactSpace E] (x : M) (m : Fin 3)
+theorem continuousAt_iteratedFDeriv_chartMetric [LocallyCompactSpace E] (x : M) {m : ℕ}
+    (hm : (m : ℕ∞) ≤ k)
     (g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {z₀ : E}
     (hz₀ : z₀ ∈ (extChartAt I x).target) : withMetricOperatorNorms E in
+    letI := chartCkTopology (I := I) (M := M) k
     ContinuousAt (fun q : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) × E ↦
       iteratedFDeriv ℝ m (q.1.toNondegenerateMetric.chartMetric x) q.2) (g₀, z₀) := by
-  have h := (continuous_chartC2_iff (I := I) (M := M) (g := id)).1 continuous_id x m
+  let _ := chartCkTopology (I := I) (M := M) k
+  have h := (continuous_chartCk_iff (I := I) (M := M) k (g := id)).1 continuous_id x m hm
   -- The chart target is open, so neighbourhoods of `z₀` in it are its neighbourhoods in `E`.
   have hmap : map (Prod.map id Subtype.val) (𝓝 (g₀, (⟨z₀, hz₀⟩ : (extChartAt I x).target))) =
       𝓝 (g₀, z₀) := by
@@ -149,14 +178,15 @@ theorem continuousAt_iteratedFDeriv_chartMetric [LocallyCompactSpace E] (x : M) 
   rw [ContinuousAt, ← hmap, tendsto_map'_iff]
   exact h.continuousAt
 
-/-- Convergence of metrics in the chart C² topology is uniform convergence on every compact
-chart set of each coordinate derivative of order at most two. -/
-theorem tendsto_chartC2_iff {P : Type*} {l : Filter P}
+/-- Convergence of metrics in the chart Cᵏ topology is uniform convergence on every compact
+chart set of each coordinate derivative of order at most `k`. -/
+theorem tendsto_chartCk_iff {P : Type*} {l : Filter P}
     {g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} :
     withMetricOperatorNorms E in
-    Tendsto g l (𝓝 g₀) ↔ ∀ (x : M) (m : Fin 3)
-      (K : Set (extChartAt I x).target), IsCompact K →
+    letI := chartCkTopology (I := I) (M := M) k
+    Tendsto g l (𝓝 g₀) ↔ ∀ (x : M) (m : ℕ), (m : ℕ∞) ≤ k →
+      ∀ (K : Set (extChartAt I x).target), IsCompact K →
         TendstoUniformlyOn
           (fun p (z : (extChartAt I x).target) ↦
             iteratedFDeriv ℝ m ((g p).toNondegenerateMetric.chartMetric x) z)
@@ -164,18 +194,24 @@ theorem tendsto_chartC2_iff {P : Type*} {l : Filter P}
             iteratedFDeriv ℝ m (g₀.toNondegenerateMetric.chartMetric x) z) l K := by
   simp only [nhds_induced, tendsto_comap_iff, tendsto_pi_nhds,
     Function.comp_def, ContinuousMap.tendsto_iff_forall_isCompact_tendstoUniformlyOn,
-    chartMetricDerivative]
+    Subtype.forall, chartMetricDerivative]
+  -- The coercions of the unfolded chart derivatives are taken on the spelled-out chart target
+  -- `I.target ∩ I.symm ⁻¹' (chartAt H x).target`, which is `(extChartAt I x).target` by
+  -- definition; `rfl` identifies the two forms, as the `change` in `continuous_inner_apply` does.
   rfl
 
-/-- Evaluation of a metric on two fixed tangent vectors is continuous in the chart C² topology. -/
+/-- Evaluation of a metric on two fixed tangent vectors is continuous in the chart Cᵏ
+topology. -/
 theorem continuous_inner_apply (x : M) (v w : TangentSpace I x) :
+    letI := chartCkTopology (I := I) (M := M) k
     Continuous (fun g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) ↦
       g.inner x v w) := by
+  let _ := chartCkTopology (I := I) (M := M) k
   let z : (extChartAt I x).target := ⟨extChartAt I x x, mem_extChartAt_target x⟩
   let e := (trivializationAt E (TangentSpace I) x).linearEquivAt ℝ x
     (mem_baseSet_trivializationAt E (TangentSpace I) x)
   have h := (continuous_eval_const z).comp
-    (continuous_chartMetricDerivative (I := I) x 0)
+    (continuous_chartMetricDerivative (I := I) k x (m := 0) (by simp))
   have heval : Continuous (fun g : ContMDiffRiemannianMetric I ∞ E
       (fun x : M ↦ TangentSpace I x) ↦ g.chartMetricDerivative x 0 z 0 (e v) (e w)) := by
     fun_prop
@@ -192,14 +228,47 @@ theorem continuous_inner_apply (x : M) (v w : TangentSpace I x) :
     simpa only [e, Trivialization.linearEquivAt_symm_apply] using e.symm_apply_apply u
   simp only [toNondegenerateMetric_apply, hinv]
 
-/-- The chart C² topology on smooth Riemannian metrics is Hausdorff. -/
-theorem t2Space_chartC2 :
-    T2Space (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :=
+/-- Each chart Cᵏ topology on smooth Riemannian metrics is Hausdorff: evaluation of the metric,
+already controlled in order zero, separates metrics. -/
+theorem t2Space_chartCk :
+    @T2Space (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+      (chartCkTopology k) :=
+  let _ := chartCkTopology (I := I) (M := M) k
   T2Space.of_injective_continuous
     (f := fun g ↦ fun x v w ↦ g.inner x v w)
     (fun _ _ heq ↦ ext fun x v w ↦ congrFun (congrFun (congrFun heq x) v) w)
     (continuous_pi fun x ↦ continuous_pi fun v ↦ continuous_pi fun w ↦
-      continuous_inner_apply x v w)
+      continuous_inner_apply k x v w)
+
+/-- The chart C² topology `chartCkTopology 2`, controlling coordinate derivatives through order
+two. It is selected by `open scoped TauCeti.MetricC2`. -/
+abbrev chartC2Topology :
+    TopologicalSpace (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :=
+  chartCkTopology 2
+
+/-- The chart C∞ topology `chartCkTopology ⊤`, controlling coordinate derivatives of every order.
+It is selected by `open scoped TauCeti.MetricCInfty`. -/
+abbrev chartCInftyTopology :
+    TopologicalSpace (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :=
+  chartCkTopology ⊤
+
+end ChartCk
+
+/-- The chart C∞ topology is finer than the chart C² topology. -/
+theorem chartCInftyTopology_le_chartC2Topology :
+    chartCInftyTopology (I := I) (M := M) ≤ chartC2Topology :=
+  antitone_chartCkTopology le_top
+
+/-- A set of metrics that is compact in a chart Cˡ topology is compact in every coarser chart Cᵏ
+topology, `k ≤ l`. The two topologies on the same carrier are given explicitly, since instance
+search would supply only one of them. -/
+theorem _root_.IsCompact.chartCk_of_le {k l : ℕ∞}
+    {K : Set (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))}
+    (hK : @IsCompact _ (chartCkTopology l) K) (hkl : k ≤ l) :
+    @IsCompact _ (chartCkTopology k) K := by
+  have h := @IsCompact.image _ _ (chartCkTopology l) (chartCkTopology k) K id hK
+    (continuous_id_of_le (antitone_chartCkTopology hkl))
+  rwa [image_id] at h
 
 end Bundle.ContMDiffRiemannianMetric
 
@@ -207,6 +276,12 @@ namespace TauCeti
 
 scoped[TauCeti.MetricC2] attribute [instance] Bundle.ContMDiffRiemannianMetric.chartC2Topology
 
-scoped[TauCeti.MetricC2] attribute [instance] Bundle.ContMDiffRiemannianMetric.t2Space_chartC2
+scoped[TauCeti.MetricC2] attribute [instance] Bundle.ContMDiffRiemannianMetric.t2Space_chartCk
+
+scoped[TauCeti.MetricCInfty] attribute [instance]
+  Bundle.ContMDiffRiemannianMetric.chartCInftyTopology
+
+scoped[TauCeti.MetricCInfty] attribute [instance]
+  Bundle.ContMDiffRiemannianMetric.t2Space_chartCk
 
 end TauCeti

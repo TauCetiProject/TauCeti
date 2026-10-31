@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Connected.Clopen
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Connected prime spectra and idempotents
@@ -22,6 +23,8 @@ coordinate rings of geometrically connected affine schemes.
   `Spec R` is preconnected.
 * `TauCeti.connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one`: `Spec R` is connected
   if and only if every idempotent of `R` is zero or one.
+* `TauCeti.connectedSpace_primeSpectrum_of_isLocalRing`: the prime spectrum of a local ring is
+  connected.
 
 Descent of connectedness along ring homomorphisms with nil kernel is general spectral topology and
 lives in `TauCeti.RingTheory.Spectrum.Prime.Topology`.
@@ -54,6 +57,13 @@ theorem connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one [Nontrivial R
   refine connectedSpace_iff_clopen.mpr ⟨inferInstance, fun s hs ↦ ?_⟩
   obtain ⟨e, he, rfl⟩ := PrimeSpectrum.isClopen_iff.mp hs
   rcases h e he with rfl | rfl <;> simp
+
+/-- **The prime spectrum of a local ring is connected**: the only idempotents of a local ring are
+zero and one. -/
+instance connectedSpace_primeSpectrum_of_isLocalRing [IsLocalRing R] :
+    ConnectedSpace (PrimeSpectrum R) :=
+  connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one.mpr fun _ he ↦
+    he.eq_zero_or_eq_one_of_isLocalRing
 
 end TauCeti
 

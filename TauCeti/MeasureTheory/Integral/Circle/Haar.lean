@@ -11,10 +11,11 @@ public import Mathlib.MeasureTheory.Integral.CircleAverage
 /-!
 # Haar integrals on the additive circle as circle averages
 
-Normalized Haar measure on `AddCircle (2 * π)` corresponds to normalized arc length on the unit
-circle in `ℂ` under `AddCircle.toCircle`. Since `Complex.arg` inverts this map on the unit circle,
-a Haar integral of `g` equals the circle average of `g ∘ Complex.arg` over the unit circle. This
-lets results about circle averages, such as the Poisson integral formula, be read as statements
+For any positive period, normalized Haar measure on `AddCircle T` corresponds to normalized
+arc length under `AddCircle.toCircle`. Parametrizing a circle with this map therefore turns its
+circle average into a Haar integral. For period `2 * π`, `Complex.arg` also gives the reverse
+transport: a Haar integral of `g` equals the circle average of `g ∘ Complex.arg` over the unit
+circle. These comparisons let results such as the Poisson integral formula be read as statements
 about integrals over the additive circle.
 -/
 
@@ -23,6 +24,28 @@ public section
 open Complex MeasureTheory Real
 
 namespace AddCircle
+
+/-- Normalized Haar integration on any positive-period additive circle agrees with the
+circle average after parametrizing a circle by `AddCircle.toCircle`. -/
+theorem integral_haarAddCircle_comp_toCircle {T : ℝ} [Fact (0 < T)]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : ℂ → E) (c : ℂ) (R : ℝ) :
+    (∫ t : AddCircle T, f (R * (toCircle t : ℂ) + c) ∂haarAddCircle) =
+      circleAverage f c R := by
+  have hT : T ≠ 0 := (Fact.out : 0 < T).ne'
+  have hπ : 2 * π ≠ 0 := two_pi_pos.ne'
+  rw [integral_haarAddCircle, ← AddCircle.intervalIntegral_preimage T 0, zero_add]
+  simp only [toCircle_apply_mk, Circle.coe_exp]
+  have hparam (t : ℝ) :
+      (R : ℂ) * Complex.exp (((2 * π / T * t : ℝ) : ℂ) * I) + c =
+        circleMap c R (2 * π / T * t) := by
+    simp [circleMap, mul_comm, add_comm]
+  simp_rw [hparam]
+  rw [intervalIntegral.integral_comp_mul_left (fun t ↦ f (circleMap c R t))
+    (div_ne_zero hπ hT)]
+  simp only [mul_zero, div_mul_cancel₀ _ hT, smul_smul, circleAverage_def]
+  congr 1
+  field_simp
 
 local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
