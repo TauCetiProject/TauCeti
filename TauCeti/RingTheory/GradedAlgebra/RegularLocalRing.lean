@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Eval
-public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.RingTheory.GradedAlgebra.Cotangent
 import Mathlib.Algebra.Module.SpanRankOperations
