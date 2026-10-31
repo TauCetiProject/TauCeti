@@ -23,8 +23,11 @@ bounded semianalytic sets with a nonsingular vertical direction are shown there 
 semialgebraic, through their local Weierstrass polynomial descriptions, and property (A) of the
 triangulating homeomorphism asks that its graph be partially semialgebraic with respect to the
 source coordinates. This file develops the closure properties that follow directly from the
-definition; closure under projection along the fibre needs quantifier elimination with
-parameters and is not proved here.
+definition. Closure under projection along the fibre needs quantifier elimination with
+parameters; it is proved in
+`TauCeti.Geometry.RealAnalytic.Semianalytic.PartiallySemialgebraic.Projection` from the
+substitution lemma `TauCeti.IsSemialgebraic.isAnalyticCoeffBooleanCombination_preimage_sumElim`
+below.
 
 ## Main declarations
 
@@ -52,6 +55,9 @@ parameters and is not proved here.
 * `TauCeti.IsPartiallySemialgebraic.isSemialgebraic_preimage_prodMk`: every fibre of a partially
   semialgebraic set is semialgebraic.
 * `TauCeti.IsPartiallySemialgebraic.isSemianalytic`: partially semialgebraic sets are semianalytic.
+* `TauCeti.IsSemialgebraic.isAnalyticCoeffBooleanCombination_preimage_sumElim`: substituting
+  analytic functions of the base for some of the coordinates of a semialgebraic set gives a Boolean
+  combination of analytic-coefficient polynomial sign conditions.
 
 ## References
 
@@ -163,7 +169,44 @@ theorem analyticOnNhd [Fintype ι] (hf : IsAnalyticCoeffPolynomialOn U f) :
   exact ((hP d p.1 hp).comp analyticAt_fst).mul
     (Finset.analyticAt_fun_prod _ fun i _ => (hcoord i).pow _)
 
+/-- The sum of two polynomials in the fibre with coefficients analytic on `U` is one. -/
+protected theorem add {g : E × (ι → ℝ) → ℝ} (hf : IsAnalyticCoeffPolynomialOn U f)
+    (hg : IsAnalyticCoeffPolynomialOn U g) : IsAnalyticCoeffPolynomialOn U fun p => f p + g p := by
+  obtain ⟨P, hP, hfP⟩ := hf
+  obtain ⟨Q, hQ, hgQ⟩ := hg
+  refine ⟨P + Q, fun m => ?_, fun p => by simp [hfP, hgQ]⟩
+  simpa only [AddMonoidAlgebra.coeff_add, Finsupp.add_apply] using (hP m).add (hQ m)
+
+/-- The product of two polynomials in the fibre with coefficients analytic on `U` is one. -/
+protected theorem mul {g : E × (ι → ℝ) → ℝ} (hf : IsAnalyticCoeffPolynomialOn U f)
+    (hg : IsAnalyticCoeffPolynomialOn U g) : IsAnalyticCoeffPolynomialOn U fun p => f p * g p := by
+  classical
+  obtain ⟨P, hP, hfP⟩ := hf
+  obtain ⟨Q, hQ, hgQ⟩ := hg
+  refine ⟨P * Q, fun m => ?_, fun p => by simp [hfP, hgQ]⟩
+  rw [coeff_mul]
+  exact Finset.analyticOnNhd_sum _ fun d _ => (hP d.1).mul (hQ d.2)
+
 end IsAnalyticCoeffPolynomialOn
+
+/-- Evaluating a real polynomial in the variables `A ⊕ ι` at the values `c u a` of functions
+analytic on `U` and at the fibre coordinates gives a polynomial in the fibre with coefficients
+analytic on `U`. -/
+theorem isAnalyticCoeffPolynomialOn_eval_sumElim {A : Type*} {U : Set E} {c : E → A → ℝ}
+    (hc : ∀ a, AnalyticOnNhd ℝ (c · a) U) (q : MvPolynomial (A ⊕ ι) ℝ) :
+    IsAnalyticCoeffPolynomialOn U fun p : E × (ι → ℝ) => eval (Sum.elim (c p.1) p.2) q := by
+  induction q using MvPolynomial.induction_on with
+  | C r =>
+    simp only [eval_C]
+    exact analyticOnNhd_const.isAnalyticCoeffPolynomialOn_comp_fst
+  | add q q' hq hq' =>
+    simp only [map_add]
+    exact hq.add hq'
+  | mul_X q a hq =>
+    simp only [map_mul, eval_X]
+    rcases a with a | i
+    · exact hq.mul (hc a).isAnalyticCoeffPolynomialOn_comp_fst
+    · simpa using hq.mul (isAnalyticCoeffPolynomialOn_eval_snd U (X i))
 
 /-! ### Finite Boolean combinations -/
 
@@ -351,6 +394,22 @@ theorem IsSemialgebraic.isAnalyticCoeffBooleanCombination_preimage_snd {t : Set 
     (fun q =>
       (isAnalyticCoeffPolynomialOn_eval_snd U q).isAnalyticCoeffBooleanCombination_setOf_pos)
     ht
+
+/-- **Substituting analytic coefficients.** For a semialgebraic set `S ⊆ A ⊕ ι → ℝ` and functions
+`c · a` analytic on `U`, the set of points `(u, x)` such that `(c u, x) ∈ S` is a Boolean
+combination of analytic-coefficient polynomial sign conditions on `U`. -/
+theorem IsSemialgebraic.isAnalyticCoeffBooleanCombination_preimage_sumElim {A : Type*}
+    {S : Set (A ⊕ ι → ℝ)} (hS : IsSemialgebraic S) {U : Set E} {c : E → A → ℝ}
+    (hc : ∀ a, AnalyticOnNhd ℝ (c · a) U) :
+    IsAnalyticCoeffBooleanCombination U {p : E × (ι → ℝ) | Sum.elim (c p.1) p.2 ∈ S} :=
+  setOf_isSemialgebraic_subset
+    ((isSetAlgebra_setOf_isAnalyticCoeffBooleanCombination ι U).preimage
+      fun p : E × (ι → ℝ) => Sum.elim (c p.1) p.2)
+    (fun q => IsAnalyticCoeffPolynomialOn.isAnalyticCoeffBooleanCombination_setOf_eq_zero
+      (isAnalyticCoeffPolynomialOn_eval_sumElim hc q))
+    (fun q => IsAnalyticCoeffPolynomialOn.isAnalyticCoeffBooleanCombination_setOf_pos
+      (isAnalyticCoeffPolynomialOn_eval_sumElim hc q))
+    hS
 
 /-! ### Partial semialgebraicity over a base point -/
 
