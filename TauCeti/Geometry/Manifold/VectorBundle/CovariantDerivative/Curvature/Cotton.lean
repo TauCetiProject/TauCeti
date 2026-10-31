@@ -34,7 +34,9 @@ The Cotton tensor is antisymmetric in its last two arguments by definition. For 
 metric-compatible torsion-free connection, `P` is symmetric, hence so is `∇P` in its first two
 arguments, and the cyclic sum of the Cotton tensor vanishes. If `P` is a constant multiple of the
 metric, metric compatibility gives `∇P = 0`, so the Cotton tensor vanishes; in particular it
-vanishes on every space of constant sectional curvature of dimension at least `3`.
+vanishes on every space of constant sectional curvature of dimension at least `3`. The Cotton
+tensor at a point also vanishes when the curvature vanishes near that point, since then `P`
+vanishes near it.
 
 ## Main declarations
 
@@ -47,6 +49,8 @@ vanishes on every space of constant sectional curvature of dimension at least `3
 * `CovariantDerivative.IsMetricCompatible.cottonTensor_cyclic_eq_zero`: the cyclic sum
   `C(X, Y, Z) + C(Y, Z, X) + C(Z, X, Y)` vanishes for a metric-compatible torsion-free
   connection.
+* `CovariantDerivative.cottonTensor_eq_zero_of_eventually_curvatureTensor_eq_zero`: the Cotton
+  tensor vanishes at a point near which the curvature vanishes.
 * `CovariantDerivative.IsMetricCompatible.cottonTensor_eq_zero_of_schoutenTensor_eq_smul_inner`:
   the Cotton tensor vanishes when `P` is a constant multiple of the metric.
 * `IsMetricCompatible.cottonTensor_eq_zero_of_curvatureTensor_eq_smul_inner_sub`, in the
@@ -63,8 +67,8 @@ vanishes on every space of constant sectional curvature of dimension at least `3
 
 public section
 
-open Bundle
-open scoped ContDiff Manifold
+open Bundle Filter
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -157,6 +161,27 @@ theorem cottonTensor_apply_of_mdifferentiableAt {σ τ ρ : Π x : M, TangentSpa
   rw [cottonTensor_apply, cov.derivSchoutenTensor_apply hσ hτ,
     cov.derivSchoutenTensor_apply hσ hρ]
   ring
+
+/-- The covariant derivative of the Schouten tensor vanishes at a point near which the curvature
+vanishes, since the Schouten tensor then vanishes near that point. -/
+theorem derivSchoutenTensor_eq_zero_of_eventually_curvatureTensor_eq_zero {x : M}
+    (h : ∀ᶠ y in 𝓝 x, curvature y = 0) : cov.derivSchoutenTensor x = 0 := by
+  have hP : ∀ᶠ y in 𝓝 x, cov.schoutenTensor y = 0 :=
+    h.mono fun y hy ↦ cov.schoutenTensor_eq_zero_of_curvatureTensor_eq_zero y hy
+  ext u v w
+  have hpair : (fun y ↦ cov.schoutenTensor y (FiberBundle.extend E u y)
+      (FiberBundle.extend E v y)) =ᶠ[𝓝 x] fun _ ↦ 0 :=
+    hP.mono fun y hy ↦ by simp [hy]
+  have hd := cov.derivSchoutenTensor_apply (FiberBundle.mdifferentiableAt_extend I E u)
+    (FiberBundle.mdifferentiableAt_extend I E v) w
+  rw [hpair.mvfderiv_eq, mvfderiv_const, hP.self_of_nhds] at hd
+  simpa using hd
+
+/-- The Cotton tensor vanishes at a point near which the curvature vanishes. -/
+theorem cottonTensor_eq_zero_of_eventually_curvatureTensor_eq_zero {x : M}
+    (h : ∀ᶠ y in 𝓝 x, curvature y = 0) : cov.cottonTensor x = 0 := by
+  ext u v w
+  simp [cov.derivSchoutenTensor_eq_zero_of_eventually_curvatureTensor_eq_zero h]
 
 end Smooth
 

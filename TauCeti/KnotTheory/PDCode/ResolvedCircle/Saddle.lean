@@ -18,6 +18,11 @@ circles are distinct, the correspondence is exactly a merge of two circles, and 
 circle count decreases by one. These facts identify the factors multiplied by a resolution
 saddle on indexed circle tensors.
 
+More generally, if only one circle of `t` passes through each crossing at which `s` and `t`
+differ, the circle of a half-edge in `s` determines its circle in `t`
+(`TauCeti.PDCode.coarseningResolvedCircleMap`). This compares states two crossings apart around a
+face of the cube of resolutions.
+
 ## References
 
 * M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), §2.
@@ -181,5 +186,38 @@ theorem card_resolvedCircle_source_eq_target_add_one (hs : #(D.circlesAt s c) = 
   have h := D.stateLoopCount_add_card_circlesAt hst
   rw [card_resolvedCircle, card_resolvedCircle]
   omega
+
+section Coarsening
+
+variable (h : ∀ j, s j ≠ t j → #(D.circlesAt t j) = 1)
+
+/-- **The circles of a coarser smoothing.** If only one circle of `t` passes through each
+crossing at which `s` and `t` differ, the circle of a half-edge in the smoothing `s` determines
+its circle in the smoothing `t`. Crossing-free circles retain their labels. For one changed
+crossing this is the saddle correspondence `TauCeti.PDCode.saddleResolvedCircleMap`. -/
+def coarseningResolvedCircleMap : D.ResolvedCircle s → D.ResolvedCircle t :=
+  Sum.map (Quotient.map' id fun _ _ ↦ D.eqvGen_circleStep_of_forall_card_circlesAt_eq_one h) id
+
+/-- The coarsening correspondence sends the circle of a half-edge to its circle in the target. -/
+@[simp]
+theorem coarseningResolvedCircleMap_inl_mk (x : Fin (4 * n)) :
+    D.coarseningResolvedCircleMap h (.inl ⟦x⟧) = .inl ⟦x⟧ := (rfl)
+
+/-- Crossing-free circles retain their labels under the coarsening correspondence. -/
+@[simp]
+theorem coarseningResolvedCircleMap_inr (i : Fin D.crossinglessComponentCount) :
+    D.coarseningResolvedCircleMap h (.inr i) = .inr i := (rfl)
+
+/-- For states differing at one crossing, the coarsening correspondence is the saddle
+correspondence. -/
+theorem saddleResolvedCircleMap_eq_coarseningResolvedCircleMap :
+    D.saddleResolvedCircleMap hst ht = D.coarseningResolvedCircleMap h := by
+  funext C
+  rcases C with C | i
+  · induction C using Quotient.ind
+    simp
+  · simp
+
+end Coarsening
 
 end TauCeti.PDCode

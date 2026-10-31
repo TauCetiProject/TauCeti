@@ -13,9 +13,9 @@ public import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
 
 For weight `k ≥ 3`, the positive Fourier coefficients of each normalized raised character
 Eisenstein series are bounded by `n^(k-1) ∑' d, d^(-(k-1))`. The constant is independent
-of the characters and the raising parameter, so the coefficients are `O(n^(k-1))`. At levels
-`N ∉ {1, 2, 4}` these series span the Eisenstein part of `M_k(Γ₁(N))`, so this is the Eisenstein
-half of the bound `aₙ = O(n^(k-1))` for all modular forms on `Γ₁(N)`
+of the characters and the raising parameter, so the coefficients are `O(n^(k-1))`. In weight
+`k ≥ 3` these series span the Eisenstein part of `M_k(Γ₁(N))`, so this is the Eisenstein half of
+the bound `aₙ = O(n^(k-1))` for all modular forms on `Γ₁(N)`
 (`TauCeti.ModularFormClass.qExpansion_isBigO_of_Gamma1_le`). We do not assert this power bound
 in weight two, where the untwisted divisor sum is not `O(n)`.
 

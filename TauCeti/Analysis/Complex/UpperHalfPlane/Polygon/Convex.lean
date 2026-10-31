@@ -332,6 +332,14 @@ theorem interiorAngle_eq_zero_iff (i : Fin n) :
   · obtain ⟨ξ, hξ⟩ := Sum.isRight_iff.1 h
     exact P.interiorAngle_eq_zero_of_vertex_eq_inr hξ
 
+/-- If the interior angle at a finite vertex is `π / m` for a natural number `m`, then `m ≠ 0`:
+the angle `π / 0 = 0` occurs only at ideal vertices. -/
+theorem ne_zero_of_interiorAngle_eq_pi_div {i : Fin n} (hi : (P.vertex i).isLeft) {m : ℕ}
+    (h : P.interiorAngle i = π / m) : m ≠ 0 := by
+  rintro rfl
+  rw [Nat.cast_zero, div_zero, interiorAngle_eq_zero_iff, ← Sum.not_isLeft, hi] at h
+  exact h rfl
+
 /-- Every interior angle of a convex polygon is less than `π`, including ideal vertices. -/
 theorem interiorAngle_lt_pi (i : Fin n) : P.interiorAngle i < π := by
   rcases hA : P.vertex i with A | ξ

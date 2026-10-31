@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Basic.Real.ENatENNReal
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 -- Proof-only: `Ψ₂Sq` is a cubic with leading coefficient `4`, so it is positive on a half-line.
@@ -24,6 +26,9 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 -- for `e ∈ ℂ`.
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.NormRpow
+-- Proof-only: the area formula with multiplicity, and the Jacobian of a map `ℝ → ℝ`.
+import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.MeasureTheory.Function.AreaFormula.Multiplicity
 
 /-!
 # The real period of a Weierstrass curve over `ℝ`
@@ -58,6 +63,14 @@ variables with `u = ±1`, which is the residual freedom between minimal Weierstr
 over `ℤ`. Taking the absolute value `|ω|` is what makes the period independent of the sign of
 `u`: the automorphism `[-1]` of the curve pulls `ω` back to `-ω`.
 
+More generally, a map of curves `W → W'` given in coordinates by `x' = r(x)` and
+`2y' + a₁'x' + a₃' = s(x) (2y + a₁x + a₃)`, and pulling `ω'` back to `c ω`, satisfies
+`Ψ₂Sq'(r(x)) = s(x)² Ψ₂Sq(x)` and `r'(x) = c s(x)`. This is the shape of an isogeny, whose
+`x`-coordinate is a rational function of `x`. Then `|c| dx / √Ψ₂Sq(x) = |r'(x)| dx / √Ψ₂Sq'(r(x))`,
+and the area formula turns the real period integral of `W`, scaled by `|c|`, into the integral of
+`dx' / √Ψ₂Sq'(x')` weighted by the number of `x` with `Ψ₂Sq(x) > 0` over each `x'`. When that
+number is a constant `n`, this reads `|c| Ω(W) = n Ω(W')`.
+
 ## Main definitions
 
 * `WeierstrassCurve.realPeriodLIntegral`: the integral `∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)` in `ℝ≥0∞`.
@@ -76,10 +89,17 @@ over `ℤ`. Taking the absolute value `|ω|` is what makes the period independen
   `WeierstrassCurve.realPeriod_variableChange`: `Ω(C • W) = |u| Ω(W)`.
 * `WeierstrassCurve.realPeriod_baseChange_variableChange`: the same scaling for the base change to
   `ℝ` of a curve over a ring such as `ℚ`.
+* `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard`: the real period
+  integral under a substitution `x' = r(x)`, with the fibres of `r` counted.
+* `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq` and
+  `WeierstrassCurve.abs_mul_realPeriod_eq_of_ae_encard_eq`: `|c| Ω(W) = n Ω(W')` when almost every
+  fibre has `n` elements.
 
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.1 and Appendix C, §16.
+* L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
+  §3.3 (the area formula).
 -/
 
 public section
@@ -313,5 +333,119 @@ theorem realPeriod_baseChange_variableChange {R : Type*} [CommRing R] [Algebra R
     (C : VariableChange R) (V : WeierstrassCurve R) :
     ((C • V).baseChange ℝ).realPeriod = |algebraMap R ℝ C.u| * (V.baseChange ℝ).realPeriod := by
   simp [baseChange, ← map_variableChange, realPeriod_variableChange]
+
+/-! ### Substitutions -/
+
+/-- **The real period integral under a substitution `x' = r(x)`, counting fibres.** Suppose that on
+the set where `Ψ₂Sq(x) > 0`, away from a countable set `Z`, the function `r` has derivative
+`r'(x) = c s(x)` with `c ≠ 0` and `s(x) ≠ 0`, and `Ψ₂Sq'(r(x)) = s(x)² Ψ₂Sq(x)`, where `Ψ₂Sq'` is
+that of a second curve `W'`. Then `|c|` times the real period integral of `W` is the integral over
+`Ψ₂Sq'(x') > 0` of `dx' / √Ψ₂Sq'(x')`, weighted by the number of `x` with `Ψ₂Sq(x) > 0` and
+`r(x) = x'`. The hypotheses are those of a map `(x, y) ↦ (r(x), …)` sending `2y + a₁x + a₃` to
+`s(x) (2y + a₁x + a₃)` and pulling the invariant differential back to `c ω`. -/
+theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard {W' : WeierstrassCurve ℝ}
+    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hc : c ≠ 0) (hZ : Z.Countable)
+    (hr : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → HasDerivAt r (c * s x) x)
+    (hs : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → s x ≠ 0)
+    (hΨ : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → W'.Ψ₂Sq.eval (r x) = s x ^ 2 * W.Ψ₂Sq.eval x) :
+    ENNReal.ofReal |c| * W.realPeriodLIntegral =
+      ∫⁻ y in {y | 0 < W'.Ψ₂Sq.eval y},
+        ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard * ENNReal.ofReal (√(W'.Ψ₂Sq.eval y))⁻¹ := by
+  classical
+  set U := {x | 0 < W.Ψ₂Sq.eval x}
+  set S := U \ Z
+  set g : ℝ → ℝ≥0∞ := fun y ↦ ENNReal.ofReal (√(W'.Ψ₂Sq.eval y))⁻¹ with g_def
+  have hSm : MeasurableSet S :=
+    (measurableSet_lt measurable_const W.Ψ₂Sq.continuous.measurable).diff hZ.measurableSet
+  have hd (x : ℝ) (hx : x ∈ S) : HasDerivAt r (c * s x) x := hr x hx.1 hx.2
+  -- `r` is continuous on `S`, so it agrees there with a measurable function
+  set r₀ := S.piecewise r 0
+  have hrc : ContinuousOn r S := fun x hx ↦ (hd x hx).continuousAt.continuousWithinAt
+  have hr₀ : Measurable r₀ := hrc.measurable_piecewise continuousOn_const hSm
+  have hr₀S (x : ℝ) (hx : x ∈ S) : r₀ x = r x := piecewise_eq_of_mem _ _ _ hx
+  have hg : Measurable g := (W'.Ψ₂Sq.continuous.measurable.sqrt.inv).ennreal_ofReal
+  have hnormDet (x : ℝ) (hx : x ∈ S) : (fderiv ℝ r x).normDet = |c * s x| := by
+    rw [(hd x hx).hasFDerivAt.fderiv, LinearMap.normDet_eq_norm_apply_one]
+    simp
+  -- on `S`, `|c| / √Ψ₂Sq(x) = |r'(x)| / √Ψ₂Sq'(r(x))`
+  have hpt (x : ℝ) (hx : x ∈ S) : ENNReal.ofReal |c| * ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ =
+      ENNReal.ofReal (fderiv ℝ r x).normDet * g (r₀ x) := by
+    have hsx : 0 < |s x| := abs_pos.mpr (hs x hx.1 hx.2)
+    have hΨx : 0 < √(W.Ψ₂Sq.eval x) := Real.sqrt_pos.mpr hx.1
+    rw [hnormDet x hx, hr₀S x hx, g_def]
+    dsimp only
+    rw [hΨ x hx.1 hx.2, ← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (abs_nonneg _),
+      Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs, abs_mul]
+    congr 1
+    field_simp
+  -- the area formula on `S`, where the derivative of `r` is injective
+  have harea := TauCeti.lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv
+    hSm (fun x hx ↦ (hd x hx).differentiableAt) (fun x hx ↦ ?_) (g := fun x ↦ g (r₀ x))
+    (hg.comp hr₀)
+  swap
+  · rw [(hd x hx).hasFDerivAt.fderiv]
+    intro a b hab
+    simpa [hc, hs x hx.1 hx.2] using hab
+  rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] at harea
+  -- the fibres over `S` and over `U` agree off the countable set `r '' Z`
+  have hfib : ∀ᵐ y, (S ∩ r ⁻¹' {y}).encard = (U ∩ r ⁻¹' {y}).encard := by
+    filter_upwards [measure_eq_zero_iff_ae_notMem.mp ((hZ.image r).measure_zero volume)] with y hy
+    congr 1
+    ext x
+    simp only [S, mem_inter_iff, mem_sdiff, mem_preimage, mem_singleton_iff]
+    exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, fun hxZ ↦ hy ⟨x, hxZ, h.2⟩⟩, h.2⟩⟩
+  have hsupp : (Function.support fun y ↦ ((U ∩ r ⁻¹' {y}).encard : ℝ≥0∞) * g y) ⊆
+      {y | 0 < W'.Ψ₂Sq.eval y} := by
+    intro y hy
+    by_contra h
+    simp only [mem_ofPred_eq, not_lt] at h
+    simp [g, Real.sqrt_eq_zero'.mpr h] at hy
+  calc ENNReal.ofReal |c| * W.realPeriodLIntegral
+      = ∫⁻ x in S, ENNReal.ofReal |c| * ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ := by
+        rw [realPeriodLIntegral_def, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+          setLIntegral_congr (sdiff_null_ae_eq_self (hZ.measure_zero _))]
+    _ = ∫⁻ x in S, ENNReal.ofReal (fderiv ℝ r x).normDet * g (r₀ x) :=
+        setLIntegral_congr_fun hSm hpt
+    _ = ∫⁻ y, ((S ∩ r ⁻¹' {y}).encard : ℝ≥0∞) * g y := by
+        rw [harea]
+        refine lintegral_congr fun y ↦ ?_
+        rw [← ENNReal.tsum_set_const]
+        exact tsum_congr fun x ↦ by rw [hr₀S x x.2.1, x.2.2]
+    _ = ∫⁻ y, ((U ∩ r ⁻¹' {y}).encard : ℝ≥0∞) * g y :=
+        lintegral_congr_ae (hfib.mono fun y hy ↦ by dsimp only; rw [hy])
+    _ = _ := (setLIntegral_eq_of_support_subset hsupp).symm
+
+/-- **The real period integral under a substitution with constant fibre count.** Under the
+hypotheses of `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard`, if
+almost every `x'` with `Ψ₂Sq'(x') > 0` is `r(x)` for exactly `n` values `x` with `Ψ₂Sq(x) > 0`,
+then `|c|` times the real period integral of `W` is `n` times that of `W'`. -/
+theorem ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq {W' : WeierstrassCurve ℝ}
+    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hc : c ≠ 0) (hZ : Z.Countable)
+    (hr : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → HasDerivAt r (c * s x) x)
+    (hs : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → s x ≠ 0)
+    (hΨ : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → W'.Ψ₂Sq.eval (r x) = s x ^ 2 * W.Ψ₂Sq.eval x)
+    {n : ℕ} (hn : ∀ᵐ y, 0 < W'.Ψ₂Sq.eval y → ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard = n) :
+    ENNReal.ofReal |c| * W.realPeriodLIntegral = n * W'.realPeriodLIntegral := by
+  rw [W.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard hc hZ hr hs hΨ,
+    realPeriodLIntegral_def, ← lintegral_const_mul' _ _ (ENNReal.natCast_ne_top n)]
+  refine setLIntegral_congr_fun_ae
+    (measurableSet_lt measurable_const W'.Ψ₂Sq.continuous.measurable) ?_
+  filter_upwards [hn] with y hy hy'
+  rw [hy hy', ENat.toENNReal_coe]
+
+/-- **The real period under a substitution with constant fibre count**: `|c| Ω(W) = n Ω(W')`, under
+the hypotheses of `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq`. -/
+theorem abs_mul_realPeriod_eq_of_ae_encard_eq {W' : WeierstrassCurve ℝ}
+    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hc : c ≠ 0) (hZ : Z.Countable)
+    (hr : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → HasDerivAt r (c * s x) x)
+    (hs : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → s x ≠ 0)
+    (hΨ : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → W'.Ψ₂Sq.eval (r x) = s x ^ 2 * W.Ψ₂Sq.eval x)
+    {n : ℕ} (hn : ∀ᵐ y, 0 < W'.Ψ₂Sq.eval y → ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard = n) :
+    |c| * W.realPeriod = n * W'.realPeriod := by
+  have h := congrArg ENNReal.toReal
+    (W.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq hc hZ hr hs hΨ hn)
+  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg c), ENNReal.toReal_mul,
+    ENNReal.toReal_natCast] at h
+  rw [realPeriod, realPeriod, mul_left_comm, h, mul_left_comm]
 
 end WeierstrassCurve

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.FiniteStability
 public import Mathlib.RingTheory.IsTensorProduct
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 import Mathlib.RingTheory.TensorProduct.Finite
 
@@ -17,8 +18,11 @@ import Mathlib.RingTheory.TensorProduct.Finite
 Let `S'` be the pushout of `R → S` along `R → R'`, as expressed by `Algebra.IsPushout R S R' S'`.
 Mathlib's `Algebra.pushoutDesc` describes the `R`-algebra homomorphisms out of `S'`. This file
 describes the `R'`-algebra homomorphisms out of `S'`: they are determined by their restrictions to
-`S`, and every `R`-algebra homomorphism out of `S` extends to one. It also records the naturality
-of `Algebra.IsPushout.cancelBaseChangeAlg` in the coefficient algebra.
+`S`, and every `R`-algebra homomorphism out of `S` extends to one. It also describes the ring
+homomorphisms out of `S'`, into a ring carrying no algebra structure: they are determined by their
+restrictions to `S` and `R'`, and every pair of ring homomorphisms out of `S` and `R'` which agree
+on `R` glues to one. It also records the naturality of `Algebra.IsPushout.cancelBaseChangeAlg` in
+the coefficient algebra.
 
 For an ideal of `R'`, its extension to the pushout `S'` is spanned over `S` by its image.
 This identifies extension of ideals with extension of the underlying submodule.
@@ -27,11 +31,15 @@ This identifies extension of ideals with extension of the underlying submodule.
 
 * `Algebra.IsPushout.lift f`: the `R'`-algebra homomorphism `S' →ₐ[R'] A` extending an
   `R`-algebra homomorphism `f : S →ₐ[R] A` along `S → S'`.
+* `Algebra.IsPushout.liftRingHom x y h`: the ring homomorphism `S' →+* T` restricting to ring
+  homomorphisms `x : S →+* T` and `y : R' →+* T` which agree on `R`.
 
 ## Main results
 
 * `Algebra.IsPushout.lift_algebraMap`: `lift f` restricts to `f` on `S`.
 * `Algebra.IsPushout.algHom_ext'`: `R'`-algebra homomorphisms out of `S'` agreeing on `S` are
+  equal.
+* `Algebra.IsPushout.ringHom_ext`: ring homomorphisms out of `S'` agreeing on `S` and on `R'` are
   equal.
 * `Ideal.restrictScalars_map_eq_span`: the extension to `S'` of an ideal `J` of `R'` is the
   `S`-span of the image of `J`.
@@ -79,6 +87,42 @@ theorem algHom_ext' {f g : S' →ₐ[R'] A}
   AlgHom.restrictScalars_injective R <| IsPushout.algHom_ext (R' := R') S' (by ext; simp) h
 
 end Lift
+
+section LiftRingHom
+
+include h in
+/-- Two ring homomorphisms out of the pushout `S'` that agree on `S` and on `R'` are equal. -/
+theorem ringHom_ext {T : Type*} [Semiring T] {f g : S' →+* T}
+    (hS : f.comp (algebraMap S S') = g.comp (algebraMap S S'))
+    (hR' : f.comp (algebraMap R' S') = g.comp (algebraMap R' S')) : f = g := by
+  ext x
+  induction x using h.out.inductionOn with
+  | tmul x => simpa using congr($hR' x)
+  | smul s x hx => rw [Algebra.smul_def, map_mul, map_mul, hx, ← f.comp_apply, hS, g.comp_apply]
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+
+variable {T : Type*} [CommSemiring T] (x : S →+* T) (y : R' →+* T)
+  (hxy : x.comp (algebraMap R S) = y.comp (algebraMap R R'))
+
+variable (S') in
+/-- The ring homomorphism out of the pushout `S' = S ⊗[R] R'` restricting to ring homomorphisms
+`x : S →+* T` and `y : R' →+* T` which agree on `R`. No algebra structure on `T` is involved. -/
+noncomputable def liftRingHom : S' →+* T :=
+  (Algebra.TensorProduct.liftRingHom x y hxy).comp (equiv R S R' S').symm.toRingEquiv.toRingHom
+
+/-- `liftRingHom S' x y hxy` restricts to `x` on `S`. -/
+@[simp]
+theorem liftRingHom_algebraMap_left (s : S) :
+    liftRingHom S' x y hxy (algebraMap S S' s) = x s := by
+  simp [liftRingHom]
+
+/-- `liftRingHom S' x y hxy` restricts to `y` on `R'`. -/
+@[simp]
+theorem liftRingHom_algebraMap_right (r : R') :
+    liftRingHom S' x y hxy (algebraMap R' S' r) = y r := by
+  simp [liftRingHom, equiv_symm_algebraMap_right]
+
+end LiftRingHom
 
 open Submodule in
 include h in

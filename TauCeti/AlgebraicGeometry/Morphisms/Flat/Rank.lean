@@ -39,6 +39,8 @@ rank is the `K`-dimension of `Γ(X, ⊤)` (`AlgebraicGeometry.Scheme.Hom.finrank
 ## Main results
 
 * `TauCeti.finrank_eq_of_nonempty_iso_over`: isomorphic schemes over `S` have the same rank.
+* `TauCeti.finiteLocallyFree_iff_of_iso`: being finite locally free of constant rank `k` over `S`
+  is invariant under isomorphism over `S`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_comp_right_of_isIso`: the rank of `f ≫ e` at `e y` is the
   rank of `f` at `y`, for an isomorphism `e`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_comp`: the rank of a composite whose first factor has
@@ -76,6 +78,18 @@ theorem finrank_eq_of_nonempty_iso_over {S : Scheme.{u}} {X Y : Over S}
     [Flat Y.hom] [IsFinite Y.hom] : X.hom.finrank = Y.hom.finrank := by
   obtain ⟨e⟩ := h
   rw [← e.hom.w, Scheme.Hom.finrank_comp_left_of_isIso]
+
+/-- Being finite locally free of constant rank `k` is invariant under isomorphism over the
+base. -/
+theorem finiteLocallyFree_iff_of_iso {S : Scheme.{u}} {X Y : Over S} (e : X ≅ Y) {k : ℕ} :
+    (IsFinite X.hom ∧ Flat X.hom ∧ LocallyOfFinitePresentation X.hom ∧
+        ∀ s, X.hom.finrank s = k) ↔
+      (IsFinite Y.hom ∧ Flat Y.hom ∧ LocallyOfFinitePresentation Y.hom ∧
+        ∀ s, Y.hom.finrank s = k) := by
+  rw [MorphismProperty.over_iso_iff @IsFinite e, MorphismProperty.over_iso_iff @Flat e,
+    MorphismProperty.over_iso_iff @LocallyOfFinitePresentation e]
+  exact and_congr_right fun _ ↦ and_congr_right fun _ ↦ and_congr_right fun _ ↦ by
+    rw [finrank_eq_of_nonempty_iso_over ⟨e⟩]
 
 end TauCeti
 

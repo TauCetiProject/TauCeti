@@ -23,6 +23,9 @@ disc uses Mathlib's `PolynomialModule`; its monomials are `w^j`, without extra p
 `p^h`. The evaluated functions form `locallyPolynomialSubmodule S k`, the image under
 analytic-stage evaluation. The coefficient model is kept distinct from this image:
 no injectivity of evaluation is assumed.
+
+Raising the analytic level preserves the degree bound on coefficients, so the evaluated
+polynomial submodules increase with the level as well as with the degree.
 -/
 
 public section
@@ -257,6 +260,30 @@ theorem discPolynomial_coeff (c : polynomialSubmodule (p := p) (h := h) (E := E)
 variable [IsBoundedSMul ℤ_[p] E] [IsUltrametricDist E] [CompleteSpace E]
   [SMulCommClass ℤ_[p] S E]
 
+/-- Subdividing the discs preserves the degree bound of polynomial coefficients. -/
+theorem transition_mem_polynomialSubmodule {c : AnalyticStage p h E}
+    (hc : c ∈ polynomialSubmodule S k) :
+    transition S c ∈ polynomialSubmodule S k := by
+  intro a j hj
+  rw [transition_apply]
+  trans ∑' _ : ℕ, (0 : E)
+  · apply tsum_congr
+    intro n
+    by_cases hnj : n < j
+    · simp [Nat.choose_eq_zero_of_lt hnj]
+    · simp [hc _ n (hj.trans_le (Nat.le_of_not_gt hnj))]
+  · exact tsum_zero
+
+/-- Re-expansion to any higher analytic level preserves the polynomial degree bound. -/
+theorem transitionLE_mem_polynomialSubmodule {l : ℕ} (hhl : h ≤ l)
+    {c : AnalyticStage p h E} (hc : c ∈ polynomialSubmodule S k) :
+    transitionLE S hhl c ∈ polynomialSubmodule S k := by
+  induction l, hhl using Nat.le_induction with
+  | base => simpa using hc
+  | succ l hhl ih =>
+    rw [transitionLE_succ S hhl, ContinuousLinearMap.comp_apply]
+    exact transition_mem_polynomialSubmodule S ih
+
 /-- A polynomial coefficient vector evaluates on each disc as a finite sum in the normalized
 disc coordinate. -/
 theorem eval_polynomial_natCast_val_add_mul
@@ -294,6 +321,14 @@ theorem mem_locallyPolynomialSubmodule (f : C(ℤ_[p], E)) :
     f ∈ locallyPolynomialSubmodule (p := p) (h := h) S k ↔
       ∃ c ∈ polynomialSubmodule (p := p) (h := h) (E := E) S k, eval S c = f :=
   Submodule.mem_map
+
+/-- A function polynomial on level-`h` discs is polynomial of the same degree on finer discs. -/
+theorem locallyPolynomialSubmodule_mono_level {l : ℕ} (hhl : h ≤ l) :
+    locallyPolynomialSubmodule (p := p) (h := h) (E := E) S k ≤
+      locallyPolynomialSubmodule (p := p) (h := l) (E := E) S k := by
+  rintro f ⟨c, hc, rfl⟩
+  exact ⟨transitionLE S hhl c, transitionLE_mem_polynomialSubmodule S hhl hc,
+    eval_transitionLE S hhl c⟩
 
 end Evaluation
 

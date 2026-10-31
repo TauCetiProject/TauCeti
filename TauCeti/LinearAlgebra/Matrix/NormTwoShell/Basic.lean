@@ -96,6 +96,14 @@ theorem mem_normTwoShell : a ∈ B.normTwoShell ↔ a ⬝ᵥ B *ᵥ a = 2 :=
 theorem neg_mem_normTwoShell : -a ∈ B.normTwoShell ↔ a ∈ B.normTwoShell := by
   simp [mem_normTwoShell, mulVec_neg]
 
+/-- The norm-two shell is stable under multiplication by a sign `ζ`, an integer with
+`ζ * ζ = 1`. -/
+theorem smul_mem_normTwoShell {ζ : ℤ} (hζ : ζ * ζ = 1) (ha : a ∈ B.normTwoShell) :
+    ζ • a ∈ B.normTwoShell := by
+  rw [mem_normTwoShell] at ha ⊢
+  simp only [mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, ← mul_assoc, hζ, one_mul,
+    ha]
+
 /-- A vector of the norm-two shell is nonzero. -/
 theorem ne_zero_of_mem_normTwoShell (ha : a ∈ B.normTwoShell) : a ≠ 0 := by
   rintro rfl

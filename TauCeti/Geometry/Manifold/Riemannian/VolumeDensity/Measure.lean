@@ -114,31 +114,6 @@ def chartRiemannianVolume
   (((Module.finBasis ℝ E).addHaar.withDensity (chartVolumeDensityData (I := I) α).toFun).comap
         ((extChartAt I α).source.domRestrict (extChartAt I α))).map Subtype.val
 
-/-- A chart volume measure evaluates a measurable set by integrating the chart density over its
-coordinate image inside the chart source. -/
-theorem chartRiemannianVolume_apply
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-    (α : M) {s : Set M} (hs : MeasurableSet s) :
-    chartRiemannianVolume (I := I) α s =
-      ∫⁻ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
-        ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y))
-          ∂(Module.finBasis ℝ E).addHaar := by
-  rw [chartRiemannianVolume, Measure.map_apply measurable_subtype_coe hs,
-    (measurableEmbedding_extChartAt_restrict (I := I) α).comap_apply]
-  have hset :
-      (extChartAt I α).source.domRestrict (extChartAt I α) '' Subtype.val ⁻¹' s =
-        (extChartAt I α) '' (s ∩ (extChartAt I α).source) :=
-    Set.image_domRestrict _ _ _
-  have himage : MeasurableSet ((extChartAt I α) '' (s ∩ (extChartAt I α).source)) := by
-    rw [← hset]
-    exact (measurableEmbedding_extChartAt_restrict (I := I) α).measurableSet_image.mpr
-      (hs.preimage measurable_subtype_coe)
-  rw [hset, withDensity_apply _ himage]
-  apply setLIntegral_congr_fun himage
-  intro y hy
-  exact (chartVolumeDensityData (I := I) α).eq_on_target
-    ((extChartAt I α).image_source_eq_target.subset (Set.image_mono inter_subset_right hy))
-
 /-- **Integration in coordinates** against a chart volume measure: the integral of `φ` over a
 measurable set `s` is the coordinate integral, over the image of the part of `s` in the chart
 source, of `φ` read in the chart times the chart density. No measurability of `φ` is needed. -/
@@ -176,6 +151,18 @@ theorem setLIntegral_chartRiemannianVolume
     rw [Pi.mul_apply, d.eq_on_target (htarget hy)]
   · rw [d.eq_on_target (htarget hy)]
     exact ENNReal.ofReal_lt_top
+
+/-- A chart volume measure evaluates a measurable set by integrating the chart density over its
+coordinate image inside the chart source. -/
+theorem chartRiemannianVolume_apply
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    (α : M) {s : Set M} (hs : MeasurableSet s) :
+    chartRiemannianVolume (I := I) α s =
+      ∫⁻ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
+        ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y))
+          ∂(Module.finBasis ℝ E).addHaar := by
+  simpa only [mul_one, setLIntegral_one] using
+    setLIntegral_chartRiemannianVolume (I := I) α hs (fun _ ↦ 1)
 
 /-- A nonempty open subset of a chart source has positive chart volume. -/
 theorem chartRiemannianVolume_pos_of_isOpen_subset_source

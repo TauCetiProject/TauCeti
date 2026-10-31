@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Order.Floor.Div
 public import Mathlib.Data.ENat.Monoid
+import Mathlib.Algebra.Order.Floor.BigOperators
 
 /-!
 # Ceiling division lemmas
@@ -20,6 +22,8 @@ in the extended natural numbers.
   using natural-number ceiling division.
 * `Nat.ceilDiv_mul_sub_of_lt` evaluates a ceiling division after subtracting a residue
   smaller than the divisor.
+* `Nat.sum_range_sub_ceilDiv` is Hermite's identity in ceiling-division form:
+  `∑ i ∈ Finset.range n, (r - i) ⌈/⌉ n = r`.
 -/
 
 public section
@@ -47,5 +51,21 @@ theorem ceilDiv_mul_sub_of_lt {e i : ℕ} (hi : i < e) (ρ : ℕ) : (e * ρ - i)
   · simp
   · rw [Nat.ceilDiv_eq_add_pred_div]
     refine Nat.div_eq_of_lt_le ?_ ?_ <;> rw [Nat.mul_comm] <;> grind
+
+/-- **Hermite's identity** in truncated ceiling-division form: for `0 < n`, the ceilings of
+`(r - i) / n` over a complete block `0 ≤ i < n` of shifts add up to `r`. The subtraction is
+truncated, so the terms with `r ≤ i` vanish. Compare the floor form `Int.sum_range_add_ediv`. -/
+theorem sum_range_sub_ceilDiv (r : ℕ) {n : ℕ} (hn : 0 < n) :
+    ∑ i ∈ Finset.range n, (r - i) ⌈/⌉ n = r := by
+  -- Each term is the floor `(r + (n - 1 - i)) / n`, also when the subtraction `r - i` truncates.
+  have h (i : ℕ) (hi : i < n) : (r - i) ⌈/⌉ n = (r + (n - 1 - i)) / n := by
+    rw [Nat.ceilDiv_eq_add_pred_div]
+    rcases le_or_gt i r with hir | hir
+    · congr 1
+      omega
+    · rw [Nat.div_eq_of_lt (by omega), Nat.div_eq_of_lt (by omega)]
+  rw [Finset.sum_congr rfl fun i hi ↦ h i (Finset.mem_range.1 hi),
+    Finset.sum_range_reflect (fun j ↦ (r + j) / n) n]
+  exact_mod_cast Int.sum_range_add_ediv r hn
 
 end Nat

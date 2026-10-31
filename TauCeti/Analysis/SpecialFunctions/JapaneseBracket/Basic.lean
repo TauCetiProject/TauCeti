@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.Analysis.SpecialFunctions.Beta
+public import Mathlib.NumberTheory.Harmonic.Defs
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Group.Integral
 
 /-!
 # The integral and the moments of the Japanese bracket
@@ -35,6 +37,11 @@ needed at infinity, and `p ≥ 0` excludes a singularity at the origin. The valu
 above is the case `p = 0`. These formulas are useful for rescaled Euclidean profiles, including
 the moments of the Yamabe bubbles.
 
+At the endpoint `p + d = r` the radial moment diverges logarithmically when `d > 0`. For the
+rescaled profile `y ↦ 2 t / (t² + ‖y - b‖²)` raised to a natural power `m` with `p + d = 2 m`, the
+file computes the moment truncated to a ball `B(b, R)` exactly, as an explicit logarithm minus a
+partial logarithmic series, and bounds its distance to the logarithm by a harmonic number.
+
 ## Main declarations
 
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
@@ -44,6 +51,12 @@ the moments of the Yamabe bubbles.
   radial moments of the Japanese bracket, for every additive Haar measure.
 * `TauCeti.sub_two_mul_integral_radial`: an identity between two radial moments of the rescaled
   bracket.
+* `TauCeti.integral_pow_mul_div_add_sq_pow`: the radial integral of the truncated logarithmic
+  moments.
+* `TauCeti.setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow`,
+  `TauCeti.abs_setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow_sub_mul_log_le`: the
+  truncated logarithmic moments of the powers of the rescaled profile, exactly and up to a
+  bounded error.
 * `TauCeti.integral_rpow_neg_one_add_norm_sq`: the value of the integral on a real inner
   product space, for its canonical Lebesgue measure.
 -/
@@ -200,6 +213,162 @@ theorem sub_two_mul_integral_radial {n : ℕ} (hn : 2 < n) {t : ℝ} (ht : 0 < t
     show F 0 = 0 by simp [F], sub_zero] at h
   push_cast at h ⊢
   linarith
+
+section TruncatedMoment
+
+variable [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-! ### Truncated moments at the logarithmic endpoint
+
+For `p + d = 2 m`, the moment `∫ ‖x‖ ^ p (2 t / (t² + ‖x‖²)) ^ m` of the `m`-th power of the
+rescaled bracket profile diverges logarithmically when `d > 0`, and the moments truncated to a ball
+are computed instead. In polar coordinates about the centre, the integrand is
+`r ^ (2 m - 1) (2 t / (t² + r²)) ^ m`. With `w = r² / (t² + r²)`, its antiderivative is
+`(2 t) ^ m / 2 (log (t² + r²) - ∑_{k < m - 1} w ^ (k + 1) / (k + 1))`: the derivative of the
+partial logarithmic series is a geometric sum in `w`. -/
+
+/-- The radial integral of the truncated profile moments:
+`∫_0^R r ^ (2 m + 1) (2 t / (t² + r²)) ^ (m + 1) dr =
+2 ^ m t ^ (m + 1) (log (1 + (R / t)²) - ∑_{k < m} w ^ (k + 1) / (k + 1))`, with
+`w = R² / (t² + R²)`. -/
+theorem integral_pow_mul_div_add_sq_pow {t : ℝ} (ht : t ≠ 0) (m : ℕ) (R : ℝ) :
+    ∫ r in (0)..R, r ^ (2 * m + 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 1) =
+      2 ^ m * t ^ (m + 1) * (log (1 + (R / t) ^ 2) -
+        ∑ k ∈ Finset.range m, (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1)) := by
+  set G : ℝ → ℝ := fun r ↦ r ^ (2 * m + 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 1) with hG
+  set Φ : ℝ → ℝ := fun r ↦ (2 * t) ^ (m + 1) / 2 * (log (t ^ 2 + r ^ 2) -
+      ∑ k ∈ Finset.range m, (r ^ 2 / (t ^ 2 + r ^ 2)) ^ (k + 1) / (k + 1)) with hΦ
+  have hderiv (r : ℝ) : HasDerivAt Φ (G r) r := by
+    have hpos : 0 < t ^ 2 + r ^ 2 := by positivity
+    have hq : HasDerivAt (fun r : ℝ ↦ t ^ 2 + r ^ 2) (2 * r) r := by
+      simpa using (hasDerivAt_pow 2 r).const_add (t ^ 2)
+    have hw : HasDerivAt (fun r : ℝ ↦ r ^ 2 / (t ^ 2 + r ^ 2))
+        (2 * r / (t ^ 2 + r ^ 2) * (1 - r ^ 2 / (t ^ 2 + r ^ 2))) r := by
+      convert (hasDerivAt_pow 2 r).div hq hpos.ne' using 1
+      field_simp
+      ring
+    have hsum := HasDerivAt.fun_sum (u := Finset.range m) (fun k _ ↦ (hw.pow (k + 1)).div_const
+      ((k : ℝ) + 1))
+    convert ((hq.log hpos.ne').sub hsum).const_mul ((2 * t) ^ (m + 1) / 2) using 1
+    set w := r ^ 2 / (t ^ 2 + r ^ 2) with hw_def
+    -- The derivative of the partial logarithmic series telescopes to a geometric sum.
+    have hgeom : ∑ k ∈ Finset.range m, (↑(k + 1) : ℝ) * w ^ (k + 1 - 1) *
+        (2 * r / (t ^ 2 + r ^ 2) * (1 - w)) / ((k : ℝ) + 1) =
+        2 * r / (t ^ 2 + r ^ 2) * (1 - w ^ m) := by
+      rw [← geom_sum_mul_neg, Finset.sum_mul, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      push_cast
+      field_simp
+    rw [hgeom, hw_def]
+    simp only [hG, div_pow, ← pow_mul]
+    field_simp
+    ring
+  have hcont : Continuous G := by
+    rw [hG]
+    exact (continuous_pow _).mul ((continuous_const.div (continuous_const.add (continuous_pow 2))
+      fun r ↦ (by positivity : (0 : ℝ) < t ^ 2 + r ^ 2).ne').pow _)
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun r _ ↦ hderiv r)
+    (hcont.intervalIntegrable _ _)]
+  have hlog : log (t ^ 2 + R ^ 2) - log (t ^ 2 + 0 ^ 2) = log (1 + (R / t) ^ 2) := by
+    rw [← Real.log_div (by positivity) (by positivity)]
+    congr 1
+    field_simp
+    ring
+  have h0 : ∑ k ∈ Finset.range m, ((0 : ℝ) ^ 2 / (t ^ 2 + 0 ^ 2)) ^ (k + 1) / (k + 1) = 0 :=
+    Finset.sum_eq_zero fun k _ ↦ by simp
+  simp only [hΦ, h0]
+  rw [← hlog]
+  ring
+
+/-- **Truncated moments at the logarithmic endpoint.** For an additive Haar measure on a space of
+dimension `n`, a natural number `m ≠ 0` and an order `p` with `p + n = 2 m`, the moment of order `p`
+of the `m`-th power of the bubble profile `y ↦ 2 t / (t² + ‖y - b‖²)` over the ball `B(b, R)` is
+`n |B(0, 1)| 2 ^ (m - 1) t ^ m (log (1 + (R / t)²) - ∑_{k < m - 1} w ^ (k + 1) / (k + 1))`,
+with `w = R² / (t² + R²)`. When `V` is nontrivial, the integral over the whole space diverges
+logarithmically. -/
+theorem setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow
+    (μ : Measure V) [μ.IsAddHaarMeasure] {m : ℕ} (hm : m ≠ 0) {p : ℝ}
+    (hp : p + finrank ℝ V = 2 * m) {t : ℝ} (ht : t ≠ 0) {R : ℝ} (hR : 0 ≤ R) (b : V) :
+    ∫ x in ball b R, ‖x - b‖ ^ p * (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ m ∂μ =
+      (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) * (2 ^ (m - 1) * t ^ m *
+        (log (1 + (R / t) ^ 2) -
+          ∑ k ∈ Finset.range (m - 1), (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1))) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hm
+  simp only [Nat.add_sub_cancel]
+  set F : ℝ → ℝ := fun r ↦ r ^ p * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 1) with hF
+  -- Translate the centre to the origin and pass to polar coordinates.
+  have hind : (ball (0 : V) R).indicator (fun y ↦ F ‖y‖) = fun y ↦ (Iio R).indicator F ‖y‖ := by
+    ext y
+    by_cases hy : ‖y‖ < R
+    · rw [indicator_of_mem (mem_ball_zero_iff.2 hy), indicator_of_mem (mem_Iio.2 hy)]
+    · rw [indicator_of_notMem (mt mem_ball_zero_iff.1 hy), indicator_of_notMem (mt mem_Iio.1 hy)]
+  rcases Nat.eq_zero_or_pos (finrank ℝ V) with hn | hn
+  · -- On the zero space the weight `‖x - b‖ ^ p` vanishes identically.
+    have : Subsingleton V := finrank_zero_iff.1 hn
+    have hp0 : p ≠ 0 := by rw [hn] at hp; push_cast at hp; linarith
+    simp [Subsingleton.elim _ (0 : V), Real.zero_rpow hp0, hn]
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) hn
+  rw [setIntegral_ball_eq_setIntegral_ball_zero_add]
+  simp only [add_sub_cancel_right]
+  rw [← integral_indicator measurableSet_ball, hind,
+    integral_fun_norm_addHaar μ ((Iio R).indicator F)]
+  -- The radial integral is an integral over `(0, R)` of an explicit rational function.
+  set G : ℝ → ℝ := fun r ↦ r ^ (2 * m + 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 1) with hG
+  have hrad : ∫ r in Ioi (0 : ℝ), r ^ (finrank ℝ V - 1) • (Iio R).indicator F r =
+      ∫ r in (0)..R, G r := by
+    have heq : EqOn (fun r ↦ r ^ (finrank ℝ V - 1) • (Iio R).indicator F r)
+        ((Ioo 0 R).indicator G) (Ioi 0) := by
+      intro r (hr : 0 < r)
+      dsimp only
+      by_cases hrR : r < R
+      · rw [indicator_of_mem (mem_Iio.2 hrR),
+          indicator_of_mem (show r ∈ Ioo 0 R from ⟨hr, hrR⟩), smul_eq_mul, hF, hG]
+        simp only
+        rw [← mul_assoc, ← Real.rpow_natCast r (finrank ℝ V - 1), ← Real.rpow_add hr,
+          ← Real.rpow_natCast r (2 * m + 1)]
+        congr 3
+        push_cast [Nat.cast_sub hn] at hp ⊢
+        linarith
+      · rw [indicator_of_notMem (mt mem_Iio.1 hrR),
+          indicator_of_notMem (show r ∉ Ioo 0 R from fun h ↦ hrR h.2), smul_zero]
+    rw [setIntegral_congr_fun measurableSet_Ioi heq, setIntegral_indicator measurableSet_Ioo,
+      inter_eq_right.mpr Ioo_subset_Ioi_self, intervalIntegral.integral_of_le hR,
+      integral_Ioc_eq_integral_Ioo]
+  rw [hrad, hG, integral_pow_mul_div_add_sq_pow ht]
+  simp only [nsmul_eq_mul, smul_eq_mul]
+  ring
+
+/-- **Truncated moments at the logarithmic endpoint, with remainder bound.** In the setting of
+`TauCeti.setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow`, the truncated moment
+differs from `n |B(0, 1)| 2 ^ (m - 1) t ^ m log (1 + (R / t)²)` by at most
+`n |B(0, 1)| 2 ^ (m - 1) t ^ m H_{m - 1}`, where `H_j` is the `j`-th harmonic number. -/
+theorem abs_setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow_sub_mul_log_le
+    (μ : Measure V) [μ.IsAddHaarMeasure] {m : ℕ} (hm : m ≠ 0) {p : ℝ}
+    (hp : p + finrank ℝ V = 2 * m) {t : ℝ} (ht : 0 < t) {R : ℝ} (hR : 0 ≤ R) (b : V) :
+    |∫ x in ball b R, ‖x - b‖ ^ p * (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ m ∂μ -
+        (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) * (2 ^ (m - 1) * t ^ m *
+          log (1 + (R / t) ^ 2))| ≤
+      (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) * (2 ^ (m - 1) * t ^ m * harmonic (m - 1)) := by
+  rw [setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ hm hp ht.ne' hR b]
+  set w := R ^ 2 / (t ^ 2 + R ^ 2)
+  have hw₀ : 0 ≤ w := by positivity
+  have hw₁ : w ≤ 1 := div_le_one_of_le₀ (by nlinarith) (by positivity)
+  set S := ∑ k ∈ Finset.range (m - 1), w ^ (k + 1) / ((k : ℝ) + 1)
+  have hS₀ : 0 ≤ S := Finset.sum_nonneg fun k _ ↦ by positivity
+  have hSH : S ≤ harmonic (m - 1) := by
+    rw [harmonic, Rat.cast_sum]
+    refine Finset.sum_le_sum fun k _ ↦ ?_
+    rw [div_eq_mul_inv]
+    push_cast
+    exact mul_le_of_le_one_left (by positivity) (pow_le_one₀ hw₀ hw₁)
+  set K := (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) * (2 ^ (m - 1) * t ^ m)
+  have hK : 0 ≤ K := by positivity
+  calc _ = |-(K * S)| := by congr 1; ring
+    _ = K * S := by rw [abs_neg, abs_of_nonneg (mul_nonneg hK hS₀)]
+    _ ≤ K * harmonic (m - 1) := mul_le_mul_of_nonneg_left hSH hK
+    _ = _ := by ring
+
+end TruncatedMoment
 
 variable [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 

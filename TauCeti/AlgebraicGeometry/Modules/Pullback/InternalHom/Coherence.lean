@@ -13,8 +13,12 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
 
 The canonical internal-Hom comparison respects the identity and composition isomorphisms
 of module pullback. These equations allow base change of internal Hom to be iterated without
-choosing new comparison maps. The source is quasicoherent and the target is arbitrary; neither
-flatness nor invertibility of the internal-Hom comparison is assumed.
+choosing new comparison maps. The source is quasicoherent and the target is arbitrary; these
+coherence equations assume neither flatness nor invertibility of the internal-Hom comparison.
+
+If the comparison along `f` is invertible, the composition criterion identifies invertibility
+along `f ≫ g` with invertibility of the pullback along `f` of the comparison along `g`. This
+allows invertibility to be checked on open covers.
 
 The equations use Mathlib's `Scheme.Modules.pullbackId` and `pullbackComp`, and the canonical
 tensor comparison of module pullback. For finite locally free sources they also describe the
@@ -104,6 +108,22 @@ theorem pullbackIhomComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
   rw [← pullbackComp_hom_app_comp_δ_assoc]
   simp only [IsIso.hom_inv_id_assoc]
   exact (Scheme.Modules.pullbackComp f g).hom.naturality ((ihom.ev M).app N)
+
+/-- If the internal-Hom comparison along `f` is invertible on the pullbacks of `M` and `N`,
+then invertibility along `f ≫ g` is equivalent to invertibility of the pullback along `f`
+of the comparison along `g`. This allows invertibility to be checked on open covers. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_comp_iff
+    (f : X ⟶ Y) (g : Y ⟶ Z) (M N : Z.Modules) [M.IsQuasicoherent]
+    [IsIso ((pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app
+      ((Scheme.Modules.pullback g).obj N))] :
+    IsIso ((pullbackIhomComparison M (f ≫ g)).app N) ↔
+      IsIso ((Scheme.Modules.pullback f).map ((pullbackIhomComparison M g).app N)) := by
+  have hpre := pre_isIso ((Scheme.Modules.pullbackComp f g).app M)
+  have : IsIso ((pre ((Scheme.Modules.pullbackComp f g).hom.app M)).app
+      ((Scheme.Modules.pullback (f ≫ g)).obj N)) :=
+    (NatTrans.isIso_iff_isIso_app _).mp hpre _
+  have h := congrArg IsIso (pullbackIhomComparison_comp f g M N)
+  simpa only [isIso_comp_left_iff, isIso_comp_right_iff] using (Iff.of_eq h).symm
 
 end
 

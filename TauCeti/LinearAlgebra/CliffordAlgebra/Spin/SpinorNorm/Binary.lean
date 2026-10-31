@@ -54,7 +54,7 @@ theorem range_spinorNorm_of_equivalent_binary (Q : QuadraticForm K V) (hQ : Q.No
     {a b : Kˣ} (h : Q.Equivalent (weightedSumSquares K ![(a : K), (b : K)])) :
     (spinorNorm Q hQ).range =
       ((quadraticNormSubgroup (-(a * b : K))).map squareClassHom :
-        Subgroup (Multiplicative (SquareClassGroup K))) := by
+        Subgroup ((Kˣ ⧸ Subgroup.square Kˣ))) := by
   rw [range_spinorNorm_eq_closure, h.unitValueSet_eq]
   apply le_antisymm
   · rw [Subgroup.closure_le]
@@ -84,7 +84,7 @@ theorem range_orthogonalSpinorNorm_of_equivalent_binary (Q : QuadraticForm K V)
     (h : Q.Equivalent (weightedSumSquares K ![(a : K), (b : K)])) :
     (orthogonalSpinorNorm Q hQ).range =
       ((quadraticNormSubgroup (-(a * b : K))).map squareClassHom ⊔
-        Subgroup.zpowers (squareClassHom a) : Subgroup (Multiplicative (SquareClassGroup K))) := by
+        Subgroup.zpowers (squareClassHom a) : Subgroup ((Kˣ ⧸ Subgroup.square Kˣ))) := by
   obtain ⟨e⟩ := h
   -- The vector corresponding to the first coordinate has norm `a`.
   have hv : Q (e.symm (Pi.single 0 1)) = a := by

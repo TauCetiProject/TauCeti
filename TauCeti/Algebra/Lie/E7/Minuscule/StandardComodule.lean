@@ -130,7 +130,7 @@ noncomputable def specializedPointsMulEquiv :
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso R)
       (CommAlgCat.of R R)).trans
     (pointsPresentation
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ R) (CommAlgCat.of R R))).mulEquiv
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ R) (CommAlgCat.of R R))).mulEquiv
 
 /-- Under the specialized point equivalence, the quotient point is represented by the carrier
 point's ambient general-linear matrix. -/

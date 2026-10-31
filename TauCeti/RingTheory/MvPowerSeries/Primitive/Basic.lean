@@ -34,6 +34,8 @@ derivative of `Xᵢ ^ p` vanishes.
 * `MvPowerSeries.coeff_primitive` and `MvPowerSeries.coeff_add_single_primitive`: its
   coefficients.
 * `MvPowerSeries.pderiv_primitive`: `∂/∂Xᵢ (∫ f dXᵢ) = f`.
+* `MvPowerSeries.pderiv_primitive_of_ne`: differentiation in another variable commutes with
+  termwise integration.
 * `MvPowerSeries.coeff_primitive_pderiv`: `∫ (∂f/∂Xᵢ) dXᵢ` is `f` with its terms free of `Xᵢ`
   removed.
 * `MvPowerSeries.eq_primitive_iff`: `g = ∫ f dXᵢ` iff `∂g/∂Xᵢ = f` and `g` has no terms free of
@@ -120,6 +122,20 @@ theorem pderiv_primitive (i : σ) (f : MvPowerSeries σ R) : pderiv i (primitive
   ext n
   rw [coeff_pderiv, coeff_add_single_primitive,
     TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one]
+
+/-- Differentiation in another variable commutes with termwise integration. -/
+@[simp]
+theorem pderiv_primitive_of_ne {i j : σ} (hij : i ≠ j) (f : MvPowerSeries σ R) :
+    pderiv j (primitive i f) = primitive i (pderiv j f) := by
+  classical
+  ext n
+  have hindex : n + single j 1 - single i 1 = n - single i 1 + single j 1 := by
+    ext k
+    by_cases hki : k = i <;> by_cases hkj : k = j <;>
+      simp_all [Finsupp.tsub_apply]
+  simp only [coeff_pderiv, coeff_primitive, hindex, Finsupp.add_apply,
+    single_eq_of_ne hij.symm, add_zero, Finsupp.tsub_apply, single_eq_of_ne hij, tsub_zero]
+  exact smul_mul_assoc _ _ _
 
 /-- **The primitive of a derivative**: `∫ (∂f/∂Xᵢ) dXᵢ` is `f` with its terms free of `Xᵢ`
 removed. -/

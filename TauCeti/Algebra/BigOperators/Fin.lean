@@ -15,7 +15,9 @@ import Mathlib.Data.Finset.Max
 
 Successive differences along a finite sequence sum to the difference of its endpoints,
 including the empty edge sequence. Reversing every difference reverses the endpoint difference.
-The equivalence omitting the last index also reindexes sums by the preceding indices.
+The equivalence omitting the last index also reindexes sums by the preceding indices, and a
+filtered product over `Fin (n + 1)` splits off its first index; when two such products agree and
+so do their first factors, the products over the remaining indices agree.
 
 Along a divisibility chain `d₀ ∣ d₁ ∣ ⋯`, the product of the first `k` entries divides the
 product of the entries at any `k` distinct positions. This is what makes the leading `k × k`
@@ -69,6 +71,29 @@ theorem prod_castLE_dvd_prod_of_injective {M : Type*} [CommMonoid M] {n : ℕ} {
     rw [Fin.prod_univ_castSucc, Fin.prod_univ_succAbove _ j₀, mul_comm (d (f j₀))]
     exact mul_dvd_mul (ih (by omega) (hf.comp Fin.succAbove_right_injective))
       (hd (Fin.le_def.mpr hge))
+
+/-- A product over the indices of `Fin (n + 1)` satisfying a predicate splits off the first
+index. -/
+@[to_additive /-- A sum over the indices of `Fin (n + 1)` satisfying a predicate splits off the
+first index. -/]
+theorem prod_filter_univ_succ {M : Type*} [CommMonoid M] {n : ℕ} (P : Fin (n + 1) → Prop)
+    [DecidablePred P] (f : Fin (n + 1) → M) :
+    ∏ i with P i, f i = (if P 0 then f 0 else 1) * ∏ i : Fin n with P i.succ, f i.succ := by
+  rw [Finset.prod_filter, prod_univ_succ, Finset.prod_filter]
+
+/-- If two filtered products over `Fin (n + 1)` agree, and their first factors are nonzero and
+equal whenever the first index is selected, then the filtered products over the remaining indices
+agree. -/
+theorem prod_filter_succ_eq_of_prod_filter_eq {M : Type*} [CommMonoidWithZero M]
+    [IsLeftCancelMulZero M] {n : ℕ}
+    (P : Fin (n + 1) → Prop) [DecidablePred P] {f g : Fin (n + 1) → M}
+    (h : ∏ i with P i, f i = ∏ i with P i, g i) (hf : P 0 → f 0 ≠ 0) (h0 : P 0 → f 0 = g 0) :
+    ∏ i : Fin n with P i.succ, f i.succ = ∏ i : Fin n with P i.succ, g i.succ := by
+  rw [prod_filter_univ_succ, prod_filter_univ_succ] at h
+  by_cases hP : P 0
+  · simp only [hP, ↓reduceIte, h0 hP] at h
+    exact mul_left_cancel₀ (h0 hP ▸ hf hP) h
+  · simpa only [hP, ↓reduceIte, one_mul] using h
 
 end Fin
 

@@ -79,7 +79,7 @@ theorem orthogonalSpinorNorm_eq_one_iff_isSquare_apply_of_finrank_eq_one (Q : Qu
     (v : V) [Invertible (Q v)] :
     orthogonalSpinorNorm Q hQ = 1 ↔ IsSquare (Q v) := by
   refine (MonoidHom.range_eq_bot_iff
-    (G := orthogonalGroup Q) (G' := Multiplicative (SquareClassGroup K))
+    (G := orthogonalGroup Q) (G' := (Kˣ ⧸ Subgroup.square Kˣ))
     (f := orthogonalSpinorNorm Q hQ)).symm.trans ?_
   rw [orthogonalSpinorNorm_range_eq_zpowers_of_finrank_eq_one Q hQ hV v, Subgroup.zpowers_eq_bot]
   simp [squareClassHom_apply, ← isSquare_units_val_iff]

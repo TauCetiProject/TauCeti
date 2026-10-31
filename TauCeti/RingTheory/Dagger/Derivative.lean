@@ -178,6 +178,28 @@ theorem hasseDeriv_comm (a b : σ →₀ ℕ) :
   LinearMap.ext fun f ↦ Subtype.ext
     (LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comm (R := R) a b) f.1)
 
+/-- Partial derivatives of overconvergent series commute. -/
+theorem pderiv_comm (i j : σ) (f : washnitzerAlgebra σ R) :
+    pderiv σ R i (pderiv σ R j f) = pderiv σ R j (pderiv σ R i f) := by
+  simpa only [LinearMap.comp_apply, hasseDeriv_single_one] using
+    LinearMap.congr_fun (hasseDeriv_comm (σ := σ) (R := R)
+      (Finsupp.single i 1) (Finsupp.single j 1)) f
+
+/-- Over a torsion-free coefficient ring, an overconvergent function has all partial derivatives
+zero exactly when it is a scalar. This also holds for an infinite variable type. -/
+theorem forall_pderiv_eq_zero_iff [HasUniqueDiv R] (g : washnitzerAlgebra σ R) :
+    (∀ i, pderiv σ R i g = 0) ↔ ∃ c : R, algebraMap R (washnitzerAlgebra σ R) c = g := by
+  constructor
+  · intro hg
+    refine ⟨constantCoeff g.1, Subtype.ext ?_⟩
+    apply MvPowerSeries.pderiv.ext
+    · intro i
+      simpa [MvPowerSeries.algebraMap_apply] using
+        (congrArg Subtype.val (hg i)).symm
+    · simp [MvPowerSeries.algebraMap_apply]
+  · rintro ⟨c, rfl⟩ i
+    exact (pderiv σ R i).map_algebraMap c
+
 /-- Hasse derivatives of polynomials in `W` are the polynomial Hasse derivatives. -/
 @[simp]
 theorem hasseDeriv_ofMvPolynomial (d : σ →₀ ℕ) (p : MvPolynomial σ R) :
@@ -229,6 +251,13 @@ variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CharZero K]
 theorem pderiv_primitive (i : σ) (f : washnitzerAlgebra σ K) :
     pderiv σ K i (primitive σ K i f) = f :=
   Subtype.ext (by simp)
+
+/-- Differentiation in another variable commutes with termwise integration in `W`. -/
+@[simp]
+theorem pderiv_primitive_of_ne {i j : σ} (hij : i ≠ j) (f : washnitzerAlgebra σ K) :
+    pderiv σ K j (primitive σ K i f) = primitive σ K i (pderiv σ K j f) := by
+  apply Subtype.ext
+  simpa only [coe_pderiv, coe_primitive] using MvPowerSeries.pderiv_primitive_of_ne hij f.1
 
 end Primitive
 

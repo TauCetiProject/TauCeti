@@ -156,6 +156,12 @@ theorem inner_realModelMap (x y : V) :
   rw [RealModelSpace.inner_def]
   simp [realModelMap_apply, Algebra.smul_def]
 
+/-- The squared norm in the real model is the rational lattice norm, cast to `ℝ`. -/
+@[simp]
+theorem norm_sq_realModelMap (x : V) :
+    ‖M.realModelMap hM x‖ ^ 2 = (M.norm x : ℝ) := by
+  rw [← real_inner_self_eq_norm_sq, inner_realModelMap, norm_apply]
+
 /-- The rational embedding into the real model space is injective. -/
 theorem realModelMap_injective : Function.Injective (M.realModelMap hM) := by
   refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_

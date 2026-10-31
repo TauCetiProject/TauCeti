@@ -477,7 +477,7 @@ theorem le_powerBoundedSubring [NonarchimedeanRing A] (P : PairOfDefinition A) :
 
 /-- The image of a pair of definition along an open quotient map `f : A →+* B`: its ring of
 definition is the image of `A₀` and its ideal of definition is the image of `I`. -/
-def map [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
     (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) : PairOfDefinition B := by
   let A₀ : Subring B := P.ringOfDefinition.map f
   let f₀ : P.ringOfDefinition →+* A₀ :=
@@ -498,29 +498,13 @@ def map [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B] [IsT
         exact hf.isOpenMap _ P.isOpen_ringOfDefinition
       idealOfDefinition := P.idealOfDefinition.map f₀
       fg_idealOfDefinition := P.fg_idealOfDefinition.map f₀
-      isAdic_idealOfDefinition := isAdic_iff.mpr ⟨?_, ?_⟩ }
-  · intro n
-    rw [← Ideal.map_pow]
-    have hset : ((P.idealOfDefinition ^ n).map f₀ : Set A₀) =
-        f₀ '' ((P.idealOfDefinition ^ n : Ideal P.ringOfDefinition) :
-          Set P.ringOfDefinition) := by
-      ext y
-      exact Ideal.mem_map_iff_of_surjective f₀ hf₀_surj
-    rw [hset]
-    exact hf₀_open _ ((isAdic_iff.mp P.isAdic_idealOfDefinition).1 n)
-  · intro s hs
-    obtain ⟨n, hn⟩ := (isAdic_iff.mp P.isAdic_idealOfDefinition).2
-      (f₀ ⁻¹' s) (hf₀_cont.continuousAt.preimage_mem_nhds (by simpa using hs))
-    refine ⟨n, ?_⟩
-    rw [← Ideal.map_pow]
-    rintro y hy
-    obtain ⟨x, hx, rfl⟩ := Ideal.mem_map_iff_of_surjective f₀ hf₀_surj |>.mp hy
-    exact hn hx
+      isAdic_idealOfDefinition :=
+        P.isAdic_idealOfDefinition.map_of_isOpenQuotientMap f₀ ⟨hf₀_surj, hf₀_cont, hf₀_open⟩ }
 
 /-- The ring of definition of the image of a pair of definition along an open quotient map is the
 image of the original one. -/
 @[simp]
-theorem map_ringOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
+theorem map_ringOfDefinition {B : Type*} [CommRing B] [TopologicalSpace B]
     [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) :
     (P.map f hf).ringOfDefinition = P.ringOfDefinition.map f :=
   (rfl)
@@ -528,7 +512,7 @@ theorem map_ringOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B] [Top
 /-- The ideal of definition of the image pair of definition is the image of the original one,
 under the map `A₀ → f(A₀)` induced by `f`. -/
 @[simp]
-theorem map_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
+theorem map_idealOfDefinition {B : Type*} [CommRing B]
     [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B)
     (hf : IsOpenQuotientMap f) :
     (P.map f hf).idealOfDefinition = P.idealOfDefinition.map
@@ -541,7 +525,7 @@ theorem map_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
 `B` of the `n`-th power of the ideal of definition of `P.map f hf` is the image of
 `P.idealImage n` under `f`. -/
 @[simp]
-theorem map_idealImage [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
+theorem map_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
     [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f)
     (n : ℕ) :
     (P.map f hf).idealImage n = (P.idealImage n).map (f : A →+ B) := by
@@ -864,6 +848,21 @@ theorem IsTateRing.exists_hasBasis_nhds_zero (A : Type*) [CommRing A] [Topologic
   obtain ⟨a, ha⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   exact ⟨a, P, ha, ha.hasBasis_nhds_zero P⟩
+
+/-- In a Tate ring, finitely many elements are moved into `A°` by a common unit `c ∈ A°`, which
+may be taken to be a power of a pseudouniformiser. -/
+theorem IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring [IsTateRing A] {s : Set A}
+    (hs : s.Finite) : ∃ c : powerBoundedSubring A,
+      IsUnit (c : A) ∧ ∀ b ∈ s, (c : A) * b ∈ powerBoundedSubring A := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  have hev : ∀ b ∈ s, ∀ᶠ k in atTop, ϖ ^ k * b ∈ powerBoundedSubring A := fun b _ ↦ by
+    have h := hϖ.isTopologicallyNilpotent.mul_const b
+    rw [zero_mul] at h
+    exact h.eventually_mem ((isOpen_powerBoundedSubring A).mem_nhds (zero_mem _))
+  obtain ⟨k, hk⟩ := ((Filter.eventually_all_finite hs).mpr hev).exists
+  exact ⟨⟨ϖ ^ k, pow_mem (mem_powerBoundedSubring.mpr
+    (IsPowerBounded.of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent)) k⟩,
+    hϖ.isUnit.pow k, hk⟩
 
 namespace PairOfDefinition
 

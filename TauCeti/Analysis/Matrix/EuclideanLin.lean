@@ -24,9 +24,15 @@ The rank of a matrix is the rank of the linear map it induces, in both the `ℕ`
 `Cardinal`-valued sense; this is what lets a matrix-rank statement be read off an operator-rank
 one.
 
+Normal square matrices induce normal operators on Euclidean space.
+The instance `Matrix.isStarNormal_toEuclideanLin` supplies this normality automatically
+from `IsStarNormal A`.
+
 An invertible square matrix induces not just a map but a continuous linear equivalence, whose
 inverse is the map of the inverse matrix. That is the form a substitution needs: it supplies the
 inverse substitution and, through `LinearMap.det_toLpLin`, the Jacobian.
+
+A square matrix is unitary exactly when its continuous linear map preserves the inner product.
 
 ## Main results
 
@@ -35,6 +41,8 @@ inverse substitution and, through `LinearMap.det_toLpLin`, the Jacobian.
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
   rank is the dimension of the range of the induced map, and the `LinearMap.rank` of the induced
   continuous linear map;
+* `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
+  Euclidean operator preserves the inner product;
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
   `apply`, `symm_apply`, coercion and determinant lemmas.
 -/
@@ -81,6 +89,18 @@ theorem rank_coe_toEuclideanCLM (A : Matrix ι ι 𝕜) :
 theorem toEuclideanCLM_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι) :
     toEuclideanCLM (𝕜 := 𝕜) A x = toEuclideanLin A x := by
   rw [← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
+
+/-- A square matrix is unitary exactly when its Euclidean operator preserves the inner product. -/
+theorem mem_unitaryGroup_iff_inner_toEuclideanCLM {M : Matrix ι ι 𝕜} :
+    M ∈ unitaryGroup ι 𝕜 ↔ ∀ x y : EuclideanSpace 𝕜 ι,
+      ⟪toEuclideanCLM (n := ι) (𝕜 := 𝕜) M x, toEuclideanCLM (n := ι) (𝕜 := 𝕜) M y⟫_𝕜 =
+        ⟪x, y⟫_𝕜 := by
+  refine ⟨fun hM ↦ ContinuousLinearMap.inner_map_map_of_mem_unitary
+    (Unitary.map_mem (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) hM), fun h ↦ ?_⟩
+  rw [mem_unitaryGroup_iff']
+  refine EquivLike.injective (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) ?_
+  rw [map_mul, map_star, map_one, ContinuousLinearMap.star_eq_adjoint]
+  exact (ContinuousLinearMap.inner_map_map_iff_adjoint_comp_self _).mp h
 
 /-- The determinant of a diagonal continuous linear map is the product of its diagonal entries. -/
 @[simp]
@@ -150,5 +170,15 @@ theorem inner_sum_smul_basisFun_mul_norm_sq {ι : Type*} [Fintype ι]
   simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The operator of a normal matrix on `EuclideanSpace 𝕜 n` is normal. -/
+instance isStarNormal_toEuclideanLin {𝕜 : Type*} [RCLike 𝕜] (A : Matrix n n 𝕜) [IsStarNormal A] :
+    IsStarNormal (toEuclideanLin A) where
+  star_comm_self := by
+    have h : Aᴴ * A = A * Aᴴ := star_comm_self' A
+    rw [commute_iff_eq, LinearMap.star_eq_adjoint, ← toEuclideanLin_conjTranspose_eq_adjoint,
+      Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← toLpLin_mul_same, ← toLpLin_mul_same, h]
 
 end Matrix

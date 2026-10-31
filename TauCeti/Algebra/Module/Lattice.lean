@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 import Mathlib.Algebra.Module.LocalizedModule.Int
+import Mathlib.LinearAlgebra.Charpoly.BaseChange
 
 /-!
 # Full submodule lattices
@@ -44,14 +45,14 @@ space over the fraction field.
   full submodules to their ambient `K`-vector spaces.
 * `Submodule.isBaseChange_subtype`: the inclusion of a free full lattice
   submodule into its ambient vector space over the fraction field is a base change.
+* `LinearMap.det_eq_algebraMap_det_of_isLattice`: an endomorphism of the ambient space which
+  restricts to an endomorphism of a free full lattice has the determinant of that restriction.
 * `Submodule.rationalizationEquiv`: the canonical equivalence from the scalar extension
   of a free full lattice submodule to its ambient vector space.
 * `Submodule.IsLattice.isLocalizedModule_subtype`: the inclusion of a free full lattice
   submodule is a localization at the nonzero divisors.
 * `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient
   vector lies in a free full lattice submodule.
-* `Submodule.IsLattice.exists_ne_zero_forall_smul_mem`: a single nonzero scalar multiplies a
-  finitely generated submodule into a free full lattice submodule.
 * `TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
   unit-tensor lattice returns the scalar extension one started from.
 
@@ -262,6 +263,19 @@ theorem rationalizationEquiv_symm_coe (S : Submodule R V') [Module.Free R S] [S.
     (x : S) : (rationalizationEquiv S).symm (x : V') = 1 ⊗ₜ[R] x :=
   (isBaseChange_subtype S).equiv_symm_apply x
 
+/-- A `K`-linear endomorphism of the ambient space which restricts to an endomorphism `g` of a
+free full lattice `S` has the determinant of `g`, read in `K`. -/
+theorem _root_.LinearMap.det_eq_algebraMap_det_of_isLattice {S : Submodule R V'}
+    [Module.Free R S] [S.IsLattice K] (f : V' →ₗ[K] V') (g : S →ₗ[R] S)
+    (h : ∀ x : S, f x = g x) : LinearMap.det f = algebraMap R K (LinearMap.det g) := by
+  -- Rationalization identifies `f` with the base change of `g`.
+  have hconj : f = (rationalizationEquiv S).toLinearMap ∘ₗ g.baseChange K ∘ₗ
+      (rationalizationEquiv S).symm.toLinearMap := by
+    rw [← LinearMap.comp_assoc, LinearEquiv.eq_comp_toLinearMap_symm]
+    ext x
+    simp [h]
+  rw [hconj, LinearMap.det_conj, LinearMap.det_baseChange]
+
 end Rationalization
 
 section Map
@@ -410,21 +424,5 @@ theorem exists_ne_zero_smul_mem (S : Submodule R V') [Module.Free R S] [S.IsLatt
   rw [Submonoid.smul_def] at hr
   rw [hr]
   exact x.2
-
-variable (K) in
-/-- A single nonzero scalar multiplies a whole finitely generated submodule into a free full
-lattice submodule. -/
-theorem exists_ne_zero_forall_smul_mem (S : Submodule R V') [Module.Free R S] [S.IsLattice K]
-    {N : Submodule R V'} (hN : N.FG) : ∃ r : R, r ≠ 0 ∧ ∀ v ∈ N, r • v ∈ S := by
-  obtain ⟨t, rfl⟩ := hN
-  have := isLocalizedModule_subtype K S
-  obtain ⟨b, hb⟩ := IsLocalizedModule.exist_integer_multiples_of_finset (nonZeroDivisors R)
-    S.subtype t
-  refine ⟨b, nonZeroDivisors.coe_ne_zero b, fun v hv ↦ ?_⟩
-  induction hv using Submodule.span_induction with
-  | mem x hx => simpa only [IsLocalizedModule.IsInteger, Submodule.range_subtype] using hb x hx
-  | zero => simp
-  | add x y _ _ hx hy => simpa only [smul_add] using add_mem hx hy
-  | smul a x _ hx => simpa only [smul_comm _ a x] using S.smul_mem a hx
 
 end Submodule.IsLattice

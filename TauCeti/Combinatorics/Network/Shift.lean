@@ -31,6 +31,8 @@ public section
 
 namespace TauCeti
 
+open Finset
+
 universe u v w
 
 variable {V : Type u} {Q : V → V → Type v} {K : Type w}
@@ -58,6 +60,25 @@ theorem mem_Icc (f : ExcessFlow lo hi b) : f.val ∈ Set.Icc lo hi := f.property
 theorem excessAt_eq (f : ExcessFlow lo hi b) (x : V) : excessAt f.val x = b x :=
   congrFun f.property.2 x
 
+/-- Prescribed excess of a feasible assignment has total zero. -/
+theorem sum_eq_zero (f : ExcessFlow lo hi b) : ∑ v, b v = 0 := by
+  simpa only [← f.property.2] using sum_excessAt f.val
+
+end ExcessFlow
+
+namespace ExcessFlow
+
+variable [Preorder K] [AddLeftMono K] [DecidableEq V]
+variable {lo hi : Assignment Q K} {b : V → K}
+
+/-- Every feasible prescribed-excess assignment satisfies the incoming cut inequality. -/
+theorem sum_add_arrowSum_le (f : ExcessFlow lo hi b) (S : Finset V) :
+    (∑ v ∈ S, b v) + arrowSum lo S Sᶜ ≤ arrowSum hi Sᶜ S := by
+  have hex : ∑ v ∈ S, b v = arrowSum f.val Sᶜ S - arrowSum f.val S Sᶜ := by
+    simpa only [← f.property.2] using sum_excessAt_eq_arrowSum_sub f.val S
+  rw [hex, sub_add_eq_add_sub, sub_le_iff_le_add]
+  exact add_le_add (arrowSum_mono f.mem_Icc.2 Sᶜ S) (arrowSum_mono f.mem_Icc.1 S Sᶜ)
+
 end ExcessFlow
 
 namespace ExcessIntervalFlow
@@ -70,6 +91,35 @@ theorem mem_Icc (f : ExcessIntervalFlow lo hi a b) : f.val ∈ Set.Icc lo hi := 
 /-- An interval-excess assignment respects its vertex bounds. -/
 theorem excessAt_mem_Icc (f : ExcessIntervalFlow lo hi a b) :
     excessAt f.val ∈ Set.Icc a b := f.property.2
+
+end ExcessIntervalFlow
+
+namespace ExcessIntervalFlow
+
+variable [PartialOrder K] [IsOrderedAddMonoid K]
+variable {lo hi : Assignment Q K} {a b : V → K}
+
+/-- On a vertex set that no arrow enters or leaves, such as a weakly connected component, the
+lower vertex bounds have nonpositive total. -/
+theorem sum_le_zero_of_forall_mem_iff (f : ExcessIntervalFlow lo hi a b) {S : Finset V}
+    (hS : ∀ ⦃x y⦄, Q x y → (x ∈ S ↔ y ∈ S)) : ∑ v ∈ S, a v ≤ 0 :=
+  (sum_le_sum fun v _ ↦ f.excessAt_mem_Icc.1 v).trans_eq
+    (sum_excessAt_eq_zero_of_forall_mem_iff f.val hS)
+
+/-- On a vertex set that no arrow enters or leaves, such as a weakly connected component, the
+upper vertex bounds have nonnegative total. -/
+theorem zero_le_sum_of_forall_mem_iff (f : ExcessIntervalFlow lo hi a b) {S : Finset V}
+    (hS : ∀ ⦃x y⦄, Q x y → (x ∈ S ↔ y ∈ S)) : 0 ≤ ∑ v ∈ S, b v :=
+  (sum_excessAt_eq_zero_of_forall_mem_iff f.val hS).symm.trans_le
+    (sum_le_sum fun v _ ↦ f.excessAt_mem_Icc.2 v)
+
+/-- The lower vertex bounds of a feasible problem have nonpositive total. -/
+theorem sum_le_zero (f : ExcessIntervalFlow lo hi a b) : ∑ v, a v ≤ 0 :=
+  f.sum_le_zero_of_forall_mem_iff fun _ _ _ ↦ by simp
+
+/-- The upper vertex bounds of a feasible problem have nonnegative total. -/
+theorem zero_le_sum (f : ExcessIntervalFlow lo hi a b) : 0 ≤ ∑ v, b v :=
+  f.zero_le_sum_of_forall_mem_iff fun _ _ _ ↦ by simp
 
 end ExcessIntervalFlow
 

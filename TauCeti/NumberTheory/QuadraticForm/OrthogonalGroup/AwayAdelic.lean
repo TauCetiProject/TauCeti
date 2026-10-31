@@ -36,6 +36,11 @@ groups away from `S` of `Q` and of `Q'`, compatible with the maps `Spin → SO �
 isometries are given at every prime, restricting away from `S` turns the finite adelic transport
 `TauCeti.restrictedProductCongrRight` into the transport away from `S`.
 
+When no finite prime is removed, the named empty-away equivalences identify all three point
+groups with their finite adelic groups. They specialize the canonical topological reindexing
+`TauCeti.awayEmptyContinuousMulEquiv`, preserve every prime coordinate, and have inverses given
+by `restrictAway ∅`.
+
 ## Main definitions
 
 * `TauCeti.QuadraticMap.OrthogonalCompactOpens.awayAdelicOrthogonal`,
@@ -48,6 +53,11 @@ isometries are given at every prime, restricting away from `S` turns the finite 
   `TauCeti.QuadraticMap.OrthogonalCompactOpens.awayAdelicSpecialOrthogonalCongr`,
   `TauCeti.QuadraticMap.OrthogonalCompactOpens.awayAdelicSpinCongr`: transport of points away from
   `S` along local isometries.
+
+* `OrthogonalCompactOpens.awayAdelicOrthogonalEmptyEquiv`,
+  `OrthogonalCompactOpens.awayAdelicSpecialOrthogonalEmptyEquiv`,
+  `OrthogonalCompactOpens.awayAdelicSpinEmptyEquiv`: the canonical empty-away topological
+  comparisons with finite adelic groups.
 
 ## Main results
 
@@ -64,6 +74,12 @@ isometries are given at every prime, restricting away from `S` turns the finite 
 * `OrthogonalCompactOpens.awayAdelicOrthogonalCongr_comp_restrictAway` and its special
   orthogonal and Spin versions: restriction away from `S` intertwines finite adelic transport with
   transport away from `S`.
+
+* The `awayAdelic*EmptyEquiv_apply` and `awayAdelic*EmptyEquiv_symm_apply` lemmas give the
+  coordinate and inverse formulas;
+  `OrthogonalCompactOpens.awayAdelicSpecialOrthogonalEmptyEquiv_spinToSpecialOrthogonal` and
+  `OrthogonalCompactOpens.awayAdelicOrthogonalEmptyEquiv_specialOrthogonalToOrthogonal` show
+  that the comparisons commute with `Spin → SO → O`.
 
 ## References
 
@@ -105,6 +121,71 @@ abbrev awayAdelicSpecialOrthogonal : Type _ :=
 primes outside `S` of the local Spin groups relative to the reference subgroups `U.spin p`. -/
 abbrev awayAdelicSpin : Type _ :=
   RestrictedProductGroupAway S U.spin
+
+/-! ### The comparison when only the archimedean place is removed -/
+
+/-- With no finite primes removed, the away adelic orthogonal group is canonically the
+finite adelic group. The comparison preserves every prime coordinate. -/
+def awayAdelicOrthogonalEmptyEquiv :
+    U.awayAdelicOrthogonal ∅ ≃ₜ* U.finiteAdelicOrthogonal :=
+  awayEmptyContinuousMulEquiv U.orthogonal
+
+/-- With no finite primes removed, the away adelic special orthogonal group is canonically the
+finite adelic group. The comparison preserves every prime coordinate. -/
+def awayAdelicSpecialOrthogonalEmptyEquiv :
+    U.awayAdelicSpecialOrthogonal ∅ ≃ₜ* U.finiteAdelicSpecialOrthogonal :=
+  awayEmptyContinuousMulEquiv U.specialOrthogonal
+
+/-- With no finite primes removed, the away adelic spin group is canonically the
+finite adelic group. The comparison preserves every prime coordinate. -/
+def awayAdelicSpinEmptyEquiv :
+    U.awayAdelicSpin ∅ ≃ₜ* U.finiteAdelicSpin :=
+  awayEmptyContinuousMulEquiv U.spin
+
+/-- The empty-away orthogonal comparison preserves each local coordinate. -/
+@[simp]
+theorem awayAdelicOrthogonalEmptyEquiv_apply (x : U.awayAdelicOrthogonal ∅)
+    (p : Nat.Primes) :
+    U.awayAdelicOrthogonalEmptyEquiv x p = x ⟨p, Set.notMem_empty p⟩ := by
+  simpa only [awayAdelicOrthogonalEmptyEquiv, awayEmptyContinuousMulEquiv_apply] using
+    awayEmptyEquiv_apply U.orthogonal x p
+
+/-- The empty-away special orthogonal comparison preserves each local coordinate. -/
+@[simp]
+theorem awayAdelicSpecialOrthogonalEmptyEquiv_apply (x : U.awayAdelicSpecialOrthogonal ∅)
+    (p : Nat.Primes) :
+    U.awayAdelicSpecialOrthogonalEmptyEquiv x p = x ⟨p, Set.notMem_empty p⟩ := by
+  simpa only [awayAdelicSpecialOrthogonalEmptyEquiv, awayEmptyContinuousMulEquiv_apply] using
+    awayEmptyEquiv_apply U.specialOrthogonal x p
+
+/-- The empty-away spin comparison preserves each local coordinate. -/
+@[simp]
+theorem awayAdelicSpinEmptyEquiv_apply (x : U.awayAdelicSpin ∅)
+    (p : Nat.Primes) :
+    U.awayAdelicSpinEmptyEquiv x p = x ⟨p, Set.notMem_empty p⟩ := by
+  simpa only [awayAdelicSpinEmptyEquiv, awayEmptyContinuousMulEquiv_apply] using
+    awayEmptyEquiv_apply U.spin x p
+
+/-- The inverse empty-away orthogonal comparison is restriction away from the empty set. -/
+@[simp]
+theorem awayAdelicOrthogonalEmptyEquiv_symm_apply (x : U.finiteAdelicOrthogonal) :
+    U.awayAdelicOrthogonalEmptyEquiv.symm x = restrictAway ∅ U.orthogonal x := by
+  simpa only [awayAdelicOrthogonalEmptyEquiv] using
+    awayEmptyContinuousMulEquiv_symm_apply U.orthogonal x
+
+/-- The inverse empty-away special orthogonal comparison is restriction away from the empty set. -/
+@[simp]
+theorem awayAdelicSpecialOrthogonalEmptyEquiv_symm_apply (x : U.finiteAdelicSpecialOrthogonal) :
+    U.awayAdelicSpecialOrthogonalEmptyEquiv.symm x = restrictAway ∅ U.specialOrthogonal x := by
+  simpa only [awayAdelicSpecialOrthogonalEmptyEquiv] using
+    awayEmptyContinuousMulEquiv_symm_apply U.specialOrthogonal x
+
+/-- The inverse empty-away Spin comparison is restriction away from the empty set. -/
+@[simp]
+theorem awayAdelicSpinEmptyEquiv_symm_apply (x : U.finiteAdelicSpin) :
+    U.awayAdelicSpinEmptyEquiv.symm x = restrictAway ∅ U.spin x := by
+  simpa only [awayAdelicSpinEmptyEquiv] using
+    awayEmptyContinuousMulEquiv_symm_apply U.spin x
 
 /-! ### Topology -/
 
@@ -177,6 +258,24 @@ theorem continuous_awayAdelicSpecialOrthogonalToOrthogonal :
     Continuous (U.awayAdelicSpecialOrthogonalToOrthogonal S) :=
   continuous_restrictedProductMapOfForall _ _ _ _ fun p : {p : Nat.Primes // p ∉ S} ↦
     continuous_specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p.1])
+
+/-- The empty-away comparison commutes with the projection from Spin to `SO`. -/
+@[simp]
+theorem awayAdelicSpecialOrthogonalEmptyEquiv_spinToSpecialOrthogonal
+    (x : U.awayAdelicSpin ∅) :
+    U.awayAdelicSpecialOrthogonalEmptyEquiv (U.awayAdelicSpinToSpecialOrthogonal ∅ x) =
+      U.finiteAdelicSpinToSpecialOrthogonal (U.awayAdelicSpinEmptyEquiv x) := by
+  ext p
+  simp
+
+/-- The empty-away comparison commutes with the inclusion from `SO` to `O`. -/
+@[simp]
+theorem awayAdelicOrthogonalEmptyEquiv_specialOrthogonalToOrthogonal
+    (x : U.awayAdelicSpecialOrthogonal ∅) :
+    U.awayAdelicOrthogonalEmptyEquiv (U.awayAdelicSpecialOrthogonalToOrthogonal ∅ x) =
+      U.finiteAdelicSpecialOrthogonalToOrthogonal (U.awayAdelicSpecialOrthogonalEmptyEquiv x) := by
+  ext p
+  simp
 
 /-! ### Compatibility with the restrictions from the finite adeles -/
 

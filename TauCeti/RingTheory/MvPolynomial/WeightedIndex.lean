@@ -18,9 +18,9 @@ public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 
 The index at a point with natural weights `r` is the infimum of `∑ j, d j / r j` over
 nonzero Hasse jets. Thus an index lower bound specifies exactly which jets must vanish.
-For a nonzero polynomial over a ring the infimum is attained, and positive weights make
-it finite. Every finite index is rational, even when some weights vanish. The reciprocal
-weights distinguish this index from a weighted total degree.
+For a nonzero polynomial over a commutative semiring the infimum is attained, and positive
+weights make it finite. Every finite index is rational, even when some weights vanish. The
+reciprocal weights distinguish this index from a weighted total degree.
 
 Division takes place in `ℝ≥0∞`: a positive exponent in a coordinate of weight zero has
 infinite cost. The constant jet has cost zero, even when some weights vanish.
@@ -198,11 +198,43 @@ theorem exists_weightedIndex_eq_weight {r : σ → ℕ} {a : σ → R}
   refine le_iInf fun e ↦ le_iInf fun he ↦ hmin e ?_
   simpa only [mem_support_iff, coeff_taylor] using he
 
-/-- A polynomial whose Taylor shift vanishes has infinite index. Over a ring this happens only
-for the zero polynomial. -/
+/-- A polynomial whose Taylor shift vanishes has infinite index. -/
 theorem weightedIndex_eq_top_of_taylor_eq_zero (r : σ → ℕ) {a : σ → R}
     {P : MvPolynomial σ R} (hP : taylor a P = 0) : weightedIndex r a P = ⊤ :=
   top_unique <| le_iInf₂ fun d hd ↦ (hd (by rw [← coeff_taylor, hP]; simp)).elim
+
+/-- Positive weights make the index of every nonzero polynomial finite. -/
+theorem weightedIndex_ne_top {r : σ → ℕ} (hr : ∀ j, r j ≠ 0) (a : σ → R)
+    {P : MvPolynomial σ R} (hP : P ≠ 0) : weightedIndex r a P ≠ ⊤ := by
+  obtain ⟨d, hd⟩ := ne_zero_iff.mp (taylor_eq_zero.not.mpr hP : taylor a P ≠ 0)
+  apply ne_top_of_le_ne_top _ (weightedIndex_le (r := r) (by simpa [coeff_taylor] using hd))
+  rw [Finsupp.weight_apply, Finsupp.sum]
+  exact ENNReal.sum_ne_top.mpr fun j _ ↦ by
+    simpa [nsmul_eq_mul, ← div_eq_mul_inv] using
+      ENNReal.div_ne_top (ENNReal.natCast_ne_top _) (by simpa using hr j)
+
+/-- With positive weights, infinite index characterizes the zero polynomial. -/
+@[simp]
+theorem weightedIndex_eq_top_iff {r : σ → ℕ} (hr : ∀ j, r j ≠ 0) (a : σ → R)
+    (P : MvPolynomial σ R) : weightedIndex r a P = ⊤ ↔ P = 0 := by
+  constructor
+  · exact fun h ↦ by_contra fun hP ↦ weightedIndex_ne_top hr a hP h
+  · rintro rfl
+    exact weightedIndex_zero r a
+
+/-- A nonzero polynomial's index is bounded by the sum of its partial degrees divided
+by the corresponding weights. -/
+theorem weightedIndex_le_sum_degreeOf [Fintype σ] (r : σ → ℕ) (a : σ → R)
+    {P : MvPolynomial σ R} (hP : P ≠ 0) :
+    weightedIndex r a P ≤ ∑ j, (P.degreeOf j : ℝ≥0∞) / (r j : ℝ≥0∞) := by
+  obtain ⟨d, hd, he⟩ := exists_weightedIndex_eq_weight (r := r) (taylor_eq_zero.not.mpr hP)
+  rw [he, Finsupp.weight_eq_sum]
+  refine Finset.sum_le_sum fun j _ ↦ ?_
+  have hj : d j ≤ P.degreeOf j :=
+    (monomial_le_degreeOf j (mem_support_iff.mpr (by simpa [coeff_taylor] using hd))).trans
+      (degreeOf_taylor_le a j P)
+  simpa [nsmul_eq_mul, ← div_eq_mul_inv] using
+    ENNReal.div_le_div_right (by exact_mod_cast hj) (r j)
 
 /-- Every finite index is a nonnegative rational number, even when some weights vanish. -/
 theorem exists_weightedIndex_eq_nnrat {r : σ → ℕ} {a : σ → R} {P : MvPolynomial σ R}
@@ -498,39 +530,6 @@ theorem weightedIndex_X_sub_C_pow [Nontrivial R] (r : σ → ℕ) (a : σ → R)
       (m : ℝ≥0∞) / (r i : ℝ≥0∞) := by
   simpa [Polynomial.rootMultiplicity_X_sub_C_pow] using
     weightedIndex_toMvPolynomial r a i ((Polynomial.monic_X_sub_C (a i)).pow m).ne_zero
-
-/-- Positive weights make the index of every nonzero polynomial finite. -/
-theorem weightedIndex_ne_top {r : σ → ℕ} (hr : ∀ j, r j ≠ 0) (a : σ → R)
-    {P : MvPolynomial σ R} (hP : P ≠ 0) : weightedIndex r a P ≠ ⊤ := by
-  obtain ⟨d, hd⟩ := ne_zero_iff.mp (taylor_eq_zero.not.mpr hP : taylor a P ≠ 0)
-  apply ne_top_of_le_ne_top _ (weightedIndex_le (r := r) (by simpa [coeff_taylor] using hd))
-  rw [Finsupp.weight_apply, Finsupp.sum]
-  exact ENNReal.sum_ne_top.mpr fun j _ ↦ by
-    simpa [nsmul_eq_mul, ← div_eq_mul_inv] using
-      ENNReal.div_ne_top (ENNReal.natCast_ne_top _) (by simpa using hr j)
-
-/-- With positive weights, infinite index characterizes the zero polynomial. -/
-@[simp]
-theorem weightedIndex_eq_top_iff {r : σ → ℕ} (hr : ∀ j, r j ≠ 0) (a : σ → R)
-    (P : MvPolynomial σ R) : weightedIndex r a P = ⊤ ↔ P = 0 := by
-  constructor
-  · exact fun h ↦ by_contra fun hP ↦ weightedIndex_ne_top hr a hP h
-  · rintro rfl
-    exact weightedIndex_zero r a
-
-/-- A nonzero polynomial's index is bounded by the sum of its partial degrees divided
-by the corresponding weights. -/
-theorem weightedIndex_le_sum_degreeOf [Fintype σ] (r : σ → ℕ) (a : σ → R)
-    {P : MvPolynomial σ R} (hP : P ≠ 0) :
-    weightedIndex r a P ≤ ∑ j, (P.degreeOf j : ℝ≥0∞) / (r j : ℝ≥0∞) := by
-  obtain ⟨d, hd, he⟩ := exists_weightedIndex_eq_weight (r := r) (taylor_eq_zero.not.mpr hP)
-  rw [he, Finsupp.weight_eq_sum]
-  refine Finset.sum_le_sum fun j _ ↦ ?_
-  have hj : d j ≤ P.degreeOf j :=
-    (monomial_le_degreeOf j (mem_support_iff.mpr (by simpa [coeff_taylor] using hd))).trans
-      (degreeOf_taylor_le a j P)
-  simpa [nsmul_eq_mul, ← div_eq_mul_inv] using
-    ENNReal.div_le_div_right (by exact_mod_cast hj) (r j)
 
 end Ring
 

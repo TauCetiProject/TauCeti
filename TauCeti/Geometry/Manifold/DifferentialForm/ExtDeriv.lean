@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Const
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -371,6 +372,18 @@ theorem mextDeriv_ofFunction (f : M → F) (x : M) :
   rw [← mextDerivWithin_univ, mextDerivWithin_ofFunction f (uniqueMDiffWithinAt_univ I),
     mvfderivWithin_univ]
 
+/-- A function which near `x` differs by a constant from a function `g` differentiable at `x` has
+the same exterior derivative at `x` as `g`. -/
+theorem mextDeriv_ofFunction_eq_of_eventuallyEq_add_const {f g : M → F} {x : M} {c : F}
+    (hg : MDifferentiableAt I 𝓘(ℝ, F) g x) (hfg : ∀ᶠ y in 𝓝 x, f y = g y + c) :
+    mextDeriv (RoughForm.ofFunction I f) x = mextDeriv (RoughForm.ofFunction I g) x := by
+  rw [mextDeriv_ofFunction, mextDeriv_ofFunction,
+    Filter.EventuallyEq.mvfderiv_eq (f₁ := f) (f := (fun z ↦ z + c) ∘ g) hfg]
+  congr 1
+  ext v
+  rw [mvfderiv_comp_apply_of_differentiableAt (by fun_prop) hg, fderiv_add_const, fderiv_fun_id,
+    ContinuousLinearMap.id_apply]
+
 /-- The exterior derivative of the `0`-form of a function vanishes at a point exactly when the
 manifold derivative of the function does. -/
 @[simp]
@@ -384,6 +397,13 @@ theorem mextDeriv_ofFunction_apply_eq_zero_iff {f : M → F} {x : M} :
   · intro h
     ext v
     simp [mvfderiv, h]
+
+/-- The exterior derivative of the `0`-form of the zero function vanishes. -/
+@[simp]
+theorem mextDeriv_ofFunction_zero : mextDeriv (RoughForm.ofFunction I (0 : M → F)) = 0 := by
+  funext x
+  ext v
+  simp [mextDeriv_ofFunction]
 
 /-- The `0`-form of a differentiable function is closed exactly when the function is locally
 constant. The manifold may have boundary or corners. -/

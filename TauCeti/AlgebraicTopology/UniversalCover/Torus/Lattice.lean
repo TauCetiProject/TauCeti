@@ -9,6 +9,7 @@ public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient.ActingGroup
 public import TauCeti.Topology.Covering.Quotient
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+import TauCeti.Topology.Homotopy.Monodromy.BasepointChange
 
 /-!
 # The universal cover and fundamental group of a lattice quotient
@@ -32,7 +33,9 @@ Consequently:
 The isomorphism `π₁(E / L, x) ≃* Multiplicative L` sends the class of a loop to its period
 displacement `Γ 1 - Γ 0`, for any lift `Γ : I → E` of the loop
 (`AddSubgroup.orbitRelQuotientFundamentalGroupEquiv_fromPath`). Since `L` is commutative, it does
-not depend on a choice of lift of the basepoint. It is natural: a continuous additive map
+not depend on a choice of lift of the basepoint, and it is compatible with changing the basepoint
+along a path (`AddSubgroup.orbitRelQuotientFundamentalGroupEquiv_fundamentalGroupMulEquivOfPath`).
+It is natural: a continuous additive map
 `f : E → E'` carrying `L` into `L'` acts on fundamental groups of the quotients, through any
 continuous map of quotients induced by `f`, as the restriction of `f` to the lattices
 (`AddSubgroup.orbitRelQuotientFundamentalGroupEquiv_map`).
@@ -48,6 +51,8 @@ cover, the deck group, and the fundamental group of a complex torus.
   group of `E / L` is `L`.
 * `AddSubgroup.orbitRelQuotientFundamentalGroupEquiv_apply_eq_iff`: a loop class corresponds to
   `l` exactly when its monodromy translates a lift of the basepoint by `l`.
+* `AddSubgroup.orbitRelQuotientFundamentalGroupEquiv_fundamentalGroupMulEquivOfPath`: independence
+  of the basepoint.
 * `AddSubgroup.orbitRelQuotientFundamentalGroupEquiv_fromPath`: the period displacement of a lift.
 * `AddSubgroup.orbitRelQuotientFundamentalGroupEquiv_map`: naturality in lattice-preserving maps.
 
@@ -113,6 +118,34 @@ theorem orbitRelQuotientFundamentalGroupEquiv_apply_eq_iff {x : AddAction.orbitR
   rw [orbitRelQuotientFundamentalGroupEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_eq,
     hq.fundamentalGroupEquiv_eq _ e]
   exact hq.fundamentalGroupToMulOpposite_apply_eq_iff.trans eq_comm
+
+/-- **Independence of the base point.** Changing the base point along a path `p`, which
+conjugates loops by `p`, does not change the element of `L` attached to a loop class. -/
+theorem orbitRelQuotientFundamentalGroupEquiv_fundamentalGroupMulEquivOfPath
+    {x x' : AddAction.orbitRel.Quotient L E} (p : Path x x')
+    (γ : FundamentalGroup (AddAction.orbitRel.Quotient L E) x) :
+    L.orbitRelQuotientFundamentalGroupEquiv x'
+        (FundamentalGroup.fundamentalGroupMulEquivOfPath p γ) =
+      L.orbitRelQuotientFundamentalGroupEquiv x γ := by
+  have hq := L.isAddQuotientCoveringMap_quotientMk
+  set l := L.orbitRelQuotientFundamentalGroupEquiv x γ
+  let e : _root_.Quotient.mk (AddAction.orbitRel L E) ⁻¹' {x} := ⟨x.out, x.out_eq⟩
+  have hl := (L.orbitRelQuotientFundamentalGroupEquiv_apply_eq_iff e γ l).1 rfl
+  refine (L.orbitRelQuotientFundamentalGroupEquiv_apply_eq_iff
+    (hq.isCoveringMap.monodromy (.mk p) e) _ l).2 ?_
+  -- The fibre action of `l` is translation by `l`, and monodromy commutes with it.
+  have hperm (y) (f : _root_.Quotient.mk (AddAction.orbitRel L E) ⁻¹' {y}) :
+      (hq.toMultiplicative.toPermFiber y l f : E) = (l.toAdd : E) + f := by
+    rw [IsQuotientCoveringMap.toPermFiber_apply_apply_coe, ← toAdd_vadd, AddSubgroup.vadd_def,
+      vadd_eq_add]
+  have he : hq.isCoveringMap.monodromy γ.toPath e = hq.toMultiplicative.toPermFiber x l e :=
+    Subtype.ext (hl.trans (hperm x e).symm)
+  -- Monodromy along the conjugate `p⁻¹ ⬝ γ ⬝ p`, applied to the endpoint of the lift of `p`, is
+  -- monodromy along `γ` followed by monodromy along `p`.
+  have h := hq.isCoveringMap.monodromy_fundamentalGroupMulEquivOfPath_symm_apply p
+    (FundamentalGroup.fundamentalGroupMulEquivOfPath p γ) e
+  rw [MulEquiv.symm_apply_apply, Equiv.eq_symm_apply, TauCeti.coveringFiberEquiv_apply] at h
+  rw [← h, he, hq.toMultiplicative.monodromy_toPermFiber, hperm]
 
 /-- **Period displacement.** The class of a loop `γ` in `E / L` corresponds to `Γ 1 - Γ 0`, for
 any continuous lift `Γ : I → E` of `γ`. -/

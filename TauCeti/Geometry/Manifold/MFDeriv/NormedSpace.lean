@@ -19,6 +19,8 @@ with `F`, so one vanishes exactly when the other does.
 
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
+* `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
+  the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
@@ -112,5 +114,18 @@ theorem mdifferentiableAt_of_mvfderiv_apply_ne_zero {g : M → F} {x : M} {v : T
 theorem mfderiv_neg_eq_zero_iff {g : M → F} {x : M} :
     mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0 := by
   rw [← mvfderiv_eq_zero_iff, mvfderiv_neg, neg_eq_zero, mvfderiv_eq_zero_iff]
+
+/-- The derivative of a component of a function into a finite product of normed spaces is the
+component of its derivative, at a point where the function is differentiable. This is the
+manifold version of `fderiv_apply`. -/
+theorem mvfderiv_apply {ι : Type*} [Fintype ι] {F'' : ι → Type*}
+    [∀ i, NormedAddCommGroup (F'' i)] [∀ i, NormedSpace 𝕜 (F'' i)] {Φ : M → (i : ι) → F'' i}
+    {x : M} (hΦ : MDifferentiableAt I 𝓘(𝕜, (i : ι) → F'' i) Φ x) (i : ι) :
+    mvfderiv I (fun y ↦ Φ y i) x = (ContinuousLinearMap.proj i).comp (mvfderiv I Φ x) := by
+  ext v
+  have := mvfderiv_comp_apply_of_differentiableAt
+    (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).differentiableAt hΦ v
+  -- The component `fun y ↦ Φ y i` is `proj i ∘ Φ` by definition of the projection.
+  rwa [ContinuousLinearMap.fderiv] at this
 
 end TauCeti

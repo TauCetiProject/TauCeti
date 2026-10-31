@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.Measure.Topology
 public import Mathlib.LinearAlgebra.Finsupp.Pi
+public import TauCeti.Topology.ContinuousMap.FiberIndicator
 
 import Mathlib.Topology.Separation.DisjointCover
 
@@ -27,41 +28,6 @@ public noncomputable section
 open ContinuousMap
 
 variable {X A B R : Type*} [TopologicalSpace X] [TopologicalSpace A] [TopologicalSpace B]
-
-namespace ContinuousMap
-
-variable [TopologicalSpace R] [Zero R] [One R]
-
-/-- The continuous characteristic function of a fibre of a map to a finite discrete space. -/
-def fiberIndicator [DiscreteTopology A] (q : C(X, A)) (a : A) : C(X, R) :=
-  by
-    classical
-    exact (ContinuousMap.equivFnOfDiscrete.symm (Pi.single a 1)).comp q
-
-@[simp]
-theorem fiberIndicator_apply [DiscreteTopology A] [DecidableEq A]
-    (q : C(X, A)) (a : A) (x : X) :
-    q.fiberIndicator (R := R) a x = if q x = a then 1 else 0 := by
-  classical
-  simp [fiberIndicator, Pi.single_apply]
-
-/-- The fibre indicators of `q` pull back to the fibre indicators of `q ∘ φ`. -/
-@[simp]
-theorem fiberIndicator_comp [DiscreteTopology A] (q : C(X, A)) (φ : C(B, X)) (a : A) :
-    (q.fiberIndicator (R := R) a).comp φ = (q.comp φ).fiberIndicator a := by
-  classical
-  ext x
-  simp
-
-/-- The indicator of an empty fibre vanishes. -/
-theorem fiberIndicator_eq_zero_of_notMem_range [DiscreteTopology A] {q : C(X, A)} {a : A}
-    (ha : a ∉ Set.range q) : q.fiberIndicator (R := R) a = 0 := by
-  classical
-  ext x
-  have hx : q x ≠ a := fun h ↦ ha ⟨x, h⟩
-  simp [fiberIndicator_apply, hx]
-
-end ContinuousMap
 
 namespace AbstractMeasure
 
@@ -94,7 +60,7 @@ theorem apply_comp_eq_sum_finiteProjection [Fintype A] [DiscreteTopology A]
   have hfun : (ContinuousMap.equivFnOfDiscrete.symm g).comp q =
       ∑ a, g a • fiberIndicator (R := R) q a := by
     ext x
-    simp [fiberIndicator, Pi.single_apply]
+    simp [fiberIndicator_apply]
   rw [hfun, map_sum]
   simp [finiteProjection_apply]
 

@@ -85,11 +85,20 @@ namespace IsPrimitiveRoot
 
 open TauCeti IsCyclotomicExtension.Rat
 
-variable {p : ℕ} [hp : Fact p.Prime] {K : Type*} [Field K] [NumberField K]
-  [IsCyclotomicExtension {p} ℚ K] {ζ : K} (hζ : IsPrimitiveRoot ζ p)
+variable {p : ℕ} {K : Type*} [Field K] {ζ : K} (hζ : IsPrimitiveRoot ζ p)
 
-omit hp in
-include hζ in
+/-- Being primary does not depend on the choice of the primitive `p`-th root of unity. -/
+theorem isEisensteinPrimary_toInteger_iff [NeZero p] {η : K} (hη : IsPrimitiveRoot η p)
+    {x : 𝓞 K} :
+    IsEisensteinPrimary hζ.toInteger x ↔ IsEisensteinPrimary hη.toInteger x := by
+  obtain ⟨u, hu⟩ : Associated (hζ.toInteger - 1) (hη.toInteger - 1) :=
+    associated_sub_one_of_isPrimitiveRoot p hζ hη
+  rw [isEisensteinPrimary_iff, isEisensteinPrimary_iff, ← hu,
+    isCoprime_mul_unit_right_right u.isUnit, mul_pow, ← Units.val_pow_eq_pow_val]
+  simp only [Units.mul_right_dvd]
+
+variable [NumberField K] [IsCyclotomicExtension {p} ℚ K]
+
 /-- For any primitive `p`-th root of unity `ζ`, every element of `𝓞 K = ℤ[ζ]` is congruent to
 `a + b (ζ - 1)` modulo `(ζ - 1) ^ 2` for some integers `a` and `b`. When `p` is prime, `ζ - 1`
 generates the prime above `p`, and `a`, `b` are the first two `(ζ - 1)`-adic digits. -/
@@ -114,7 +123,8 @@ theorem exists_toInteger_sub_one_sq_dvd_sub_intCast_add_intCast_mul [NeZero p] (
   simp only [map_add, map_mul, map_intCast, Polynomial.aeval_X, eq_intCast]
   ring
 
-include hζ in
+variable [hp : Fact p.Prime]
+
 /-- For an odd prime `p`, an integer is divisible by `(ζ - 1) ^ 2` in `ℤ[ζ_p]` if and only if it
 is divisible by `p`. -/
 theorem toInteger_sub_one_sq_dvd_intCast_iff (hp2 : p ≠ 2) {n : ℤ} :
@@ -131,7 +141,6 @@ theorem toInteger_sub_one_sq_dvd_intCast_iff (hp2 : p ≠ 2) {n : ℤ} :
       push_cast
       exact dvd_mul_right _ _
 
-include hζ in
 /-- For an odd prime `p` and integers `m` and `e`, `(ζ - 1) ^ 2` divides `m + e (ζ - 1)` in
 `ℤ[ζ_p]` if and only if `p` divides both `m` and `e`. In particular, the coordinates of
 `exists_toInteger_sub_one_sq_dvd_sub_intCast_add_intCast_mul` are unique modulo `p`. -/
@@ -154,7 +163,6 @@ theorem toInteger_sub_one_sq_dvd_intCast_add_intCast_mul_iff (hp2 : p ≠ 2) {m 
     rw [sq]
     exact mul_dvd_mul_right ((zeta_sub_one_dvd_intCast_iff' p hζ).2 he) _
 
-include hζ in
 /-- In `ℤ[ζ_p]`, an element is coprime to the prime `ζ - 1` if and only if `ζ - 1` does not
 divide it. -/
 theorem isCoprime_toInteger_sub_one_iff {x : 𝓞 K} :
@@ -163,25 +171,12 @@ theorem isCoprime_toInteger_sub_one_iff {x : 𝓞 K} :
   exact (isCoprime_of_not_zeta_sub_one_dvd p hζ h).symm.of_isCoprime_of_dvd_right
     hζ.toInteger_sub_one_dvd_prime'
 
-include hζ in
 /-- In `ℤ[ζ_p]`, an element is coprime to `ζ - 1` if and only if it is coprime to `p`. -/
 theorem isCoprime_toInteger_sub_one_iff_isCoprime_natCast {x : 𝓞 K} :
     IsCoprime x (hζ.toInteger - 1) ↔ IsCoprime x (p : 𝓞 K) := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.of_isCoprime_of_dvd_right hζ.toInteger_sub_one_dvd_prime'⟩
   exact (isCoprime_of_not_zeta_sub_one_dvd p hζ (hζ.isCoprime_toInteger_sub_one_iff.1 h)).symm
 
-omit hp [NumberField K] [IsCyclotomicExtension {p} ℚ K] in
-/-- Being primary does not depend on the choice of the primitive `p`-th root of unity. -/
-theorem isEisensteinPrimary_toInteger_iff [NeZero p] {η : K} (hη : IsPrimitiveRoot η p)
-    {x : 𝓞 K} :
-    IsEisensteinPrimary hζ.toInteger x ↔ IsEisensteinPrimary hη.toInteger x := by
-  obtain ⟨u, hu⟩ : Associated (hζ.toInteger - 1) (hη.toInteger - 1) :=
-    associated_sub_one_of_isPrimitiveRoot p hζ hη
-  rw [isEisensteinPrimary_iff, isEisensteinPrimary_iff, ← hu,
-    isCoprime_mul_unit_right_right u.isUnit, mul_pow, ← Units.val_pow_eq_pow_val]
-  simp only [Units.mul_right_dvd]
-
-include hζ in
 /-- In `ℤ[ζ_p]`, a rational integer is primary if and only if it is prime to `p`. -/
 @[simp]
 theorem isEisensteinPrimary_intCast_iff {a : ℤ} :
@@ -190,21 +185,18 @@ theorem isEisensteinPrimary_intCast_iff {a : ℤ} :
     zeta_sub_one_dvd_intCast_iff' p hζ]
   exact and_iff_left ⟨a, by simp⟩
 
-include hζ in
 /-- In `ℤ[ζ_p]`, a natural number is primary if and only if it is prime to `p`. -/
 @[simp]
 theorem isEisensteinPrimary_natCast_iff {n : ℕ} :
     IsEisensteinPrimary hζ.toInteger (n : 𝓞 K) ↔ ¬ p ∣ n := by
   rw [← Int.cast_natCast, hζ.isEisensteinPrimary_intCast_iff, Int.natCast_dvd_natCast]
 
-include hζ in
 /-- In `ℤ[ζ_p]`, a numeral is primary if and only if it is prime to `p`. -/
 @[simp]
 theorem isEisensteinPrimary_ofNat_iff {n : ℕ} [n.AtLeastTwo] :
     IsEisensteinPrimary hζ.toInteger (ofNat(n) : 𝓞 K) ↔ ¬ p ∣ ofNat(n) :=
   hζ.isEisensteinPrimary_natCast_iff
 
-include hζ in
 /-- For an odd prime `p`, the root of unity `ζ` is not primary in `ℤ[ζ_p]`. -/
 theorem not_isEisensteinPrimary_toInteger (hp2 : p ≠ 2) :
     ¬ IsEisensteinPrimary hζ.toInteger hζ.toInteger := by
@@ -216,14 +208,12 @@ theorem not_isEisensteinPrimary_toInteger (hp2 : p ≠ 2) :
   rw [h, hζ.toInteger_sub_one_sq_dvd_intCast_add_intCast_mul_iff hp2] at ha
   exact hp.out.one_lt.ne' (by exact_mod_cast Int.eq_one_of_dvd_one (by positivity) ha.2)
 
-include hζ in
 /-- The prime `1 - ζ` above `p` is not primary in `ℤ[ζ_p]`. -/
 theorem not_isEisensteinPrimary_one_sub_toInteger :
     ¬ IsEisensteinPrimary hζ.toInteger (1 - hζ.toInteger) := by
   rintro ⟨h, -⟩
   exact hζ.isCoprime_toInteger_sub_one_iff.1 h ⟨-1, by ring⟩
 
-include hζ in
 /-- **The primary multiples of an element of `ℤ[ζ_p]`.** Let `p` be an odd prime and `x` an
 element of `ℤ[ζ_p]` prime to `ζ - 1`, with `x ≡ a + b (ζ - 1)` modulo `(ζ - 1) ^ 2`. Then
 `ζ ^ c * x` is primary if and only if `p ∣ b + c a`. -/
@@ -263,7 +253,6 @@ theorem isEisensteinPrimary_toInteger_pow_mul_iff (hp2 : p ≠ 2) {x : 𝓞 K}
     push_cast
     ring
 
-include hζ in
 /-- **The unique primary multiple by a power of `ζ`.** Let `p` be an odd prime. For every element
 `x` of `ℤ[ζ_p]` prime to `ζ - 1` there is exactly one `c ∈ ℤ/p` such that `ζ ^ c * x` is
 primary. -/

@@ -110,6 +110,13 @@ theorem integral_mk (o : Manifold.Orientation I M (Fin n))
     integral o (mk I n φ) = integralTopForm o φ.1.1 :=
   LinearMap.equivOfSurjective_apply _ _
 
+/-- Reversing the orientation negates integration on compactly supported cohomology. -/
+@[simp]
+theorem integral_neg (o : Manifold.Orientation I M (Fin n)) : integral (-o) = -integral o := by
+  refine LinearMap.ext fun x ↦ ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective I n x
+  rw [LinearMap.neg_apply, integral_mk, integral_mk, integralTopForm_neg]
+
 end compactlySupportedDeRhamCohomology
 
 variable (I M) in
@@ -136,7 +143,7 @@ theorem poincarePairing_mk (o : Manifold.Orientation I M (Fin (k + l)))
     (φ : closedForms I M k) (ψ : compactlySupportedClosedForms I M l) :
     poincarePairing I M o (deRhamCohomology.mk I k φ)
         (compactlySupportedDeRhamCohomology.mk I l ψ) =
-      integralTopForm o ((φ.1 : RoughForm I M ℝ k).wedge ψ.1.1) := by
+      integralTopForm o (RoughForm.wedge (φ.1 : RoughForm I M ℝ k) ψ.1.1) := by
   rw [poincarePairing_apply, compactlySupportedDeRhamCohomology.wedge_mk,
     compactlySupportedDeRhamCohomology.integral_mk, SmoothForm.coe_wedge]
 

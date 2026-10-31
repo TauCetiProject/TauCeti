@@ -160,6 +160,12 @@ variable (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
 theorem det_pos : 0 < det L :=
   pow_pos (covolume_pos L volume) 2
 
+/-- The inverse covolume is the inverse square root of the determinant. This is the
+normalization in the finite Fourier sum of lattice theta series. -/
+theorem inv_covolume_eq_inv_sqrt_det :
+    (covolume L volume)⁻¹ = (Real.sqrt (det L))⁻¹ := by
+  rw [det_def, Real.sqrt_sq (covolume_pos L volume).le]
+
 /-- The determinant of a full lattice is the determinant of the Gram matrix of any of its
 `ℤ`-bases. -/
 theorem det_eq_det_gram {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℤ L) :
@@ -196,6 +202,12 @@ theorem IsIntegral.det_eq_relIndex (h : IsIntegral L) :
 theorem IsIntegral.det_eq_card_discriminantGroup (h : IsIntegral L) :
     det L = Nat.card (DiscriminantGroup L) := by
   rw [h.det_eq_relIndex, card_discriminantGroup]
+
+/-- For an integral lattice the inverse covolume is the inverse square root of the discriminant
+group's order. -/
+theorem IsIntegral.inv_covolume_eq_inv_sqrt_card_discriminantGroup (h : IsIntegral L) :
+    (covolume L volume)⁻¹ = (Real.sqrt (Nat.card (DiscriminantGroup L)))⁻¹ := by
+  rw [inv_covolume_eq_inv_sqrt_det, h.det_eq_card_discriminantGroup]
 
 /-- The discriminant group of an integral lattice is finite. -/
 theorem IsIntegral.finite_discriminantGroup (h : IsIntegral L) : Finite (DiscriminantGroup L) :=

@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Space
+import TauCeti.AlgebraicGeometry.IdealSheaf.Rank
 
 /-!
 # Intersection numbers of line bundles with curves
@@ -37,10 +38,23 @@ scheme-theoretic intersection: on a proper curve `C` over `k` with finite-dimens
 
 `(-D · C) = -dim_k Γ(D ∩ C, 𝒪_{D ∩ C})`.
 
-The degree is additive on a proper integral curve whose codimension-one local rings are discrete
-valuation rings, so on such a curve `L ↦ (L · C)` is additive and
-`(D · C) = dim_k Γ(D ∩ C, 𝒪_{D ∩ C}) ≥ 0`. For curves with singular points this additivity, and
-with it the bilinearity of the pairing, is not proved here.
+On such a curve, singular, reducible or nonreduced as it may be, twisting by `D` is additive:
+`(L(-D) · C) = (L · C) + (-D · C)` and `(L(D) · C) = (L · C) + (D · C)` for every line bundle `L`
+whose restriction to `C` has finite-dimensional `H⁰` and `H¹`, and
+`(D · C) = dim_k Γ(D ∩ C, 𝒪_{D ∩ C}) ≥ 0`. On a regular model, this computes the intersection
+numbers of a component `C` of the special fibre with the other components, which are effective
+Cartier divisors meeting `C` properly. Full additivity of `L ↦ (L · C)` holds on a proper integral
+curve whose codimension-one local rings are discrete valuation rings; for curves with singular
+points, additivity on all of `Pic X` is not proved here.
+
+Two effective Cartier divisors `D` and `E` on `X` which are proper curves over `k`, and which meet
+properly in the sense that each cuts out an effective Cartier divisor on the other, have
+`(-D · E) = (-E · D)`, both being `-dim_k Γ(D ∩ E, 𝒪_{D ∩ E})` for the same intersection
+`D ∩ E = D ×_X E`, and so also `(D · E) = (E · D)`. The structures of `D` and `E` as schemes over
+`k` need only agree on `D ∩ E`, as they do for curves in the special fibre of a scheme over a
+discrete valuation ring with residue field `k`. For two distinct components of the special fibre
+of a regular model, which are effective Cartier divisors meeting properly, these are the
+off-diagonal entries of the intersection matrix.
 
 ## Main declarations
 
@@ -54,11 +68,17 @@ with it the bilinearity of the pairing, is not proved here.
   `ι ≫ g`, so does every pullback along a morphism `g` contracting the curve;
 * `LineBundleClass.intersectionNumber_mk_toInvertibleSheaf`: `(-D · C) = -dim_k Γ(D ∩ C)` for an
   effective Cartier divisor `D` meeting a proper curve `C` properly;
+* `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf`: `(D · C) = dim_k Γ(D ∩ C)` for
+  an effective Cartier divisor `D` meeting a proper curve `C` properly;
+* `LineBundleClass.intersectionNumber_mk_mul_mk_toInvertibleSheaf` and
+  `LineBundleClass.intersectionNumber_mk_mul_inv_mk_toInvertibleSheaf`: additivity of twisting a
+  line bundle by an effective Cartier divisor meeting a proper curve properly;
 * `LineBundleClass.intersectionNumber_mul` and `LineBundleClass.intersectionNumber_inv`:
   additivity on a regular proper integral curve, bundled as
   `LineBundleClass.intersectionNumberHom k ι : Pic X →+ ℤ`;
-* `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf`: `(D · C) = dim_k Γ(D ∩ C)` on a
-  regular proper integral curve.
+* `LineBundleClass.intersectionNumber_mk_toInvertibleSheaf_comm` and
+  `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_comm`: `(-D · E) = (-E · D)` and
+  `(D · E) = (E · D)` for effective Cartier divisors `D` and `E` meeting properly.
 
 ## References
 
@@ -72,7 +92,7 @@ with it the bilinearity of the pairing, is not proved here.
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry
 open TauCeti.AlgebraicGeometry.Scheme.Modules
 
 namespace TauCeti.AlgebraicGeometry
@@ -138,10 +158,55 @@ theorem intersectionNumber_mk_toInvertibleSheaf {I : X.IdealSheafData}
     intersectionNumber k ι (mk hI.toInvertibleSheaf) =
       -(((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)).finrank s : ℤ) := by
   -- Over a field every effective Cartier divisor is relative, hence finite on a proper curve.
-  have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) :=
-    ((Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_isEffectiveCartier _ _).mpr hI').isFinite
+  have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) := hI'.isFinite_subschemeι_comp
   rw [intersectionNumber_def, hI.pullback_mk_toInvertibleSheaf hI', eulerDegree_mk]
   exact hI'.eulerDegree_toInvertibleSheaf k _ s
+
+/-- **Intersecting with `𝒪_X(D)`.** Let `D` be an effective Cartier divisor on `X` with ideal
+sheaf `I = 𝒪_X(-D)`, so that `𝒪_X(D)` has class the inverse of that of `I`. On a proper curve `C`
+over `k` with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)`, if `C` meets `D` properly then
+`(D · C) = dim_k Γ(D ∩ C, 𝒪_{D ∩ C})`. In particular `(D · C) ≥ 0`. The curve `C` may be
+singular, reducible or nonreduced. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf {I : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hI' : (I.comap ι).IsEffectiveCartier) (s : Spec (.of k)) :
+    intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ =
+      ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)).finrank s := by
+  have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) := hI'.isFinite_subschemeι_comp
+  rw [intersectionNumber_def, pullback_inv, hI.pullback_mk_toInvertibleSheaf hI']
+  exact hI'.eulerDegree_inv_mk_toInvertibleSheaf k _ s
+
+variable {I : X.IdealSheafData} (L : InvertibleSheaf X)
+  [FiniteDimensional k (Cohomology ((InvertibleSheaf.pullback ι).obj L).obj 0)]
+  [FiniteDimensional k (Cohomology ((InvertibleSheaf.pullback ι).obj L).obj 1)]
+
+/-- **Additivity along an effective Cartier divisor.** Let `D` be an effective Cartier divisor on
+`X` with ideal sheaf `I = 𝒪_X(-D)` meeting a proper curve `C` over `k` properly, where `C` has
+finite-dimensional `H⁰` and `H¹` of its structure sheaf. For a line bundle `L` on `X` whose
+restriction to `C` has finite-dimensional `H⁰` and `H¹`, `(L(-D) · C) = (L · C) + (-D · C)`. The
+curve `C` may be singular, reducible or nonreduced. -/
+theorem intersectionNumber_mk_mul_mk_toInvertibleSheaf (hI : I.IsEffectiveCartier)
+    (hI' : (I.comap ι).IsEffectiveCartier) :
+    intersectionNumber k ι (mk L * mk hI.toInvertibleSheaf) =
+      intersectionNumber k ι (mk L) + intersectionNumber k ι (mk hI.toInvertibleSheaf) := by
+  have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) := hI'.isFinite_subschemeι_comp
+  rw [intersectionNumber_def, pullback_mul, pullback_mk, hI.pullback_mk_toInvertibleSheaf hI',
+    hI'.eulerDegree_mk_mul_mk_toInvertibleSheaf k, intersectionNumber_mk, intersectionNumber_def,
+    hI.pullback_mk_toInvertibleSheaf hI', eulerDegree_mk]
+
+/-- **Additivity along the inverse of an effective Cartier divisor.** Let `D` be an effective
+Cartier divisor on `X` with ideal sheaf `I = 𝒪_X(-D)` meeting a proper curve `C` over `k`
+properly, where `C` has finite-dimensional `H⁰` and `H¹` of its structure sheaf. For a line
+bundle `L` on `X` whose restriction to `C` has finite-dimensional `H⁰` and `H¹`,
+`(L(D) · C) = (L · C) + (D · C)`. -/
+theorem intersectionNumber_mk_mul_inv_mk_toInvertibleSheaf (hI : I.IsEffectiveCartier)
+    (hI' : (I.comap ι).IsEffectiveCartier) :
+    intersectionNumber k ι (mk L * (mk hI.toInvertibleSheaf)⁻¹) =
+      intersectionNumber k ι (mk L) + intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ := by
+  have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) := hI'.isFinite_subschemeι_comp
+  rw [intersectionNumber_def, pullback_mul, pullback_mk, pullback_inv,
+    hI.pullback_mk_toInvertibleSheaf hI', hI'.eulerDegree_mk_mul_inv_mk_toInvertibleSheaf k,
+    hI'.eulerDegree_toInvertibleSheaf k _ default, intersectionNumber_mk,
+    intersectionNumber_inv_mk_toInvertibleSheaf k ι hI hI' default, sub_neg_eq_add]
 
 end Effective
 
@@ -191,19 +256,63 @@ lemma intersectionNumberHom_apply (a : Additive (LineBundleClass X)) :
   rw [intersectionNumberHom, AddMonoidHom.comp_apply, eulerDegreeHom_apply,
     MonoidHom.toAdditive_apply_apply, pullbackHom_apply, toMul_ofMul, intersectionNumber_def]
 
-/-- **Intersecting with an effective Cartier divisor on a regular curve.** Let `D` be an effective
-Cartier divisor on `X` with ideal sheaf `I = 𝒪_X(-D)`, so that `𝒪_X(D)` has class the inverse of
-that of `I`. On a proper integral curve `C` over `k` whose codimension-one local rings are discrete
-valuation rings, with `H¹(C, 𝒪_C)` finite-dimensional, if `C` meets `D` properly then
-`(D · C) = dim_k Γ(D ∩ C, 𝒪_{D ∩ C})`. In particular `(D · C) ≥ 0`. -/
-theorem intersectionNumber_inv_mk_toInvertibleSheaf {I : X.IdealSheafData}
-    (hI : I.IsEffectiveCartier) (hI' : (I.comap ι).IsEffectiveCartier) (s : Spec (.of k)) :
-    intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ =
-      ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)).finrank s := by
-  rw [intersectionNumber_def, pullback_inv, hI.pullback_mk_toInvertibleSheaf hI']
-  exact hI'.eulerDegree_inv_mk_toInvertibleSheaf k _ s
-
 end Regular
+
+section Symmetric
+
+variable {D E : X.IdealSheafData} [D.subscheme.Over (Spec (.of k))]
+  [E.subscheme.Over (Spec (.of k))]
+
+section Effective
+
+variable [IsProper (D.subscheme ↘ Spec (.of k))]
+  [RelativeDimensionLE 1 (D.subscheme ↘ Spec (.of k))]
+  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial D.subscheme).obj 0)]
+  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial D.subscheme).obj 1)]
+  [IsProper (E.subscheme ↘ Spec (.of k))]
+  [RelativeDimensionLE 1 (E.subscheme ↘ Spec (.of k))]
+  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial E.subscheme).obj 0)]
+  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial E.subscheme).obj 1)]
+
+/-- **Symmetry of the intersection pairing of effective Cartier divisors.** Let `D` and `E` be
+effective Cartier divisors on `X` which are proper curves over `k` with finite-dimensional `H⁰`
+and `H¹` of their structure sheaves, whose structure morphisms to `Spec k` agree on `D ×_X E`, and
+which meet properly: the inverse image of each on the other is an effective Cartier divisor. Then
+`(-D · E) = (-E · D)`, both sides being `-dim_k Γ(D ∩ E, 𝒪_{D ∩ E})`. -/
+theorem intersectionNumber_mk_toInvertibleSheaf_comm (hD : D.IsEffectiveCartier)
+    (hE : E.IsEffectiveCartier) (hDE : (D.comap E.subschemeι).IsEffectiveCartier)
+    (hED : (E.comap D.subschemeι).IsEffectiveCartier)
+    (w : pullback.fst E.subschemeι D.subschemeι ≫ E.subscheme ↘ Spec (.of k) =
+      pullback.snd E.subschemeι D.subschemeι ≫ D.subscheme ↘ Spec (.of k)) :
+    intersectionNumber k E.subschemeι (mk hD.toInvertibleSheaf) =
+      intersectionNumber k D.subschemeι (mk hE.toInvertibleSheaf) := by
+  -- Over a field every effective Cartier divisor is relative, hence finite on a proper curve.
+  have : IsFinite ((E.comap D.subschemeι).subschemeι ≫ D.subscheme ↘ Spec (.of k)) :=
+    hED.isFinite_subschemeι_comp
+  rw [intersectionNumber_mk_toInvertibleSheaf k _ hD hDE default,
+    intersectionNumber_mk_toInvertibleSheaf k _ hE hED default,
+    Scheme.IdealSheafData.finrank_comap_subschemeι_comm _ _ w]
+
+/-- **Symmetry of the intersection pairing on curves.** Let `D` and `E` be effective Cartier
+divisors on `X` which are proper curves over `k` with finite-dimensional `H⁰` and `H¹` of their
+structure sheaves, whose structure morphisms to `Spec k` agree on `D ×_X E`, and which meet
+properly. Then `(D · E) = (E · D)`, both sides being `dim_k Γ(D ∩ E, 𝒪_{D ∩ E})`. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf_comm (hD : D.IsEffectiveCartier)
+    (hE : E.IsEffectiveCartier) (hDE : (D.comap E.subschemeι).IsEffectiveCartier)
+    (hED : (E.comap D.subschemeι).IsEffectiveCartier)
+    (w : pullback.fst E.subschemeι D.subschemeι ≫ E.subscheme ↘ Spec (.of k) =
+      pullback.snd E.subschemeι D.subschemeι ≫ D.subscheme ↘ Spec (.of k)) :
+    intersectionNumber k E.subschemeι (mk hD.toInvertibleSheaf)⁻¹ =
+      intersectionNumber k D.subschemeι (mk hE.toInvertibleSheaf)⁻¹ := by
+  have : IsFinite ((E.comap D.subschemeι).subschemeι ≫ D.subscheme ↘ Spec (.of k)) :=
+    hED.isFinite_subschemeι_comp
+  rw [intersectionNumber_inv_mk_toInvertibleSheaf k _ hD hDE default,
+    intersectionNumber_inv_mk_toInvertibleSheaf k _ hE hED default,
+    Scheme.IdealSheafData.finrank_comap_subschemeι_comm _ _ w]
+
+end Effective
+
+end Symmetric
 
 end LineBundleClass
 

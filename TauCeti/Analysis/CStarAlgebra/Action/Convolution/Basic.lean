@@ -81,7 +81,8 @@ private theorem continuous_integrand :
   rw [uncurry_def]
   fun_prop
 
-private theorem integrable_integrand [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G)
+/-- The twisted convolution integrand is integrable against any measure finite on compact sets. -/
+theorem integrable_integrand [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G)
     [IsFiniteMeasureOnCompacts μ] (s : G) : Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ :=
   ((continuous_integrand α f g).comp (.prodMk_right s)).integrable_of_hasCompactSupport
     (f.hasCompactSupport.mono' fun _ hr => (mem_tsupport_of_integrand_ne_zero α f g hr).1)

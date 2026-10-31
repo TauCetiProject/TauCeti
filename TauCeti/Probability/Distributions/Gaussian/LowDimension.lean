@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.PosSemidef
+public import TauCeti.Analysis.Matrix.PosSemidef.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Conditional
 
 import TauCeti.MeasureTheory.Constructions.EuclideanSpace

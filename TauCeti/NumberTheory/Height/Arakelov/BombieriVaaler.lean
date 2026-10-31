@@ -54,6 +54,8 @@ generates the entire integral kernel. The bound includes `k = 0`, when both side
   points of `V` whose sup norms have product at most `H(V)`.
 * `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_norm_le`: Bombieri and Vaaler's
   Theorem 2 over `ℤ`, in the sup norm.
+* `Submodule.exists_basis_intPoints_prod_norm_le_subspaceHeight`: a `ℤ`-basis of the integral
+  points of `V` whose sup norms have product at most `k! / 2 ^ (k - 1) * H(V)`.
 * `Matrix.exists_basis_ker_mulVecLin_prod_norm_le`: a basis of the entire integral kernel
   with product bound `k! / 2 ^ (k - 1) * √det (A Aᵀ) / g`.
 
@@ -122,11 +124,34 @@ theorem exists_linearIndependent_intPoints_prod_norm_le (V : Submodule ℚ (ι �
     rw [Int.norm_eq_abs, hu, ← Real.norm_eq_abs]
     exact norm_le_pi_norm (WithLp.ofLp (a (e.symm l) : EuclideanSpace ℝ ι)) j
 
+/-- **A basis of the integral points of small sup norm.** For a subspace `V` of `ℚ^ι` of dimension
+`k`, the integral points `V ∩ ℤ^ι` have a `ℤ`-basis `b` with
+`∏ l, ‖b l‖ ≤ k! / 2 ^ (k - 1) * H(V)`, where `‖b l‖ = max_i |b l i|` is the sup norm and `H(V)`
+is the absolute Euclidean height of `V`. Unlike the independent points of
+`Submodule.exists_linearIndependent_intPoints_prod_norm_le`, these vectors span the whole of
+`V ∩ ℤ^ι`, not only a sublattice of finite index. -/
+theorem exists_basis_intPoints_prod_norm_le_subspaceHeight (V : Submodule ℚ (ι → ℚ)) :
+    ∃ b : Basis (Fin (finrank ℚ V)) ℤ V.intPoints,
+      ∏ l, ‖(b l : ι → ℤ)‖ ≤
+        (finrank ℚ V).factorial / 2 ^ (finrank ℚ V - 1) * V.subspaceHeight := by
+  -- Cassels' basis from the minima of the cube slice, whose product of minima Minkowski's second
+  -- theorem and Vaaler's cube slicing bound by the height.
+  obtain ⟨b, hb⟩ := V.exists_basis_intPoints_prod_norm_le_prod_successiveMin
+  have hmin := V.prod_successiveMin_intLattice_le_subspaceHeight coe_cubeSlice.ge
+    fun _ ↦ neg_mem_cubeSlice.2
+  have h : ∃ b : Basis (Fin (finrank ℝ V.realSpan)) ℤ V.intPoints,
+      ∏ l, ‖(b l : ι → ℤ)‖ ≤
+        (finrank ℝ V.realSpan).factorial / 2 ^ (finrank ℝ V.realSpan - 1) * V.subspaceHeight :=
+    ⟨b, hb.trans (mul_le_mul_of_nonneg_left hmin (by positivity))⟩
+  rwa [finrank_realSpan] at h
+
 end Submodule
 
 namespace Matrix
 
-variable {ι : Type*} [Fintype ι] [LinearOrder ι] {p : ℕ}
+open scoped Matrix
+
+variable {ι : Type*} [Fintype ι] {p : ℕ}
 
 /-- **Bombieri and Vaaler's Theorem 2 over `ℤ`, in the sup norm.** Let `A` be a `p × n` integer
 matrix with linearly independent rows, and let `g` be the greatest common divisor of its maximal
@@ -138,6 +163,8 @@ theorem exists_linearIndependent_mulVec_eq_zero_prod_norm_le {A : Matrix (Fin p)
     ∃ x : Fin (Fintype.card ι - p) → ι → ℤ, LinearIndependent ℤ x ∧ (∀ l, A *ᵥ x l = 0) ∧
       (∀ l, Finset.univ.gcd (x l) = 1) ∧
       ∏ l, ‖x l‖ ≤ √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
+  -- The height of a subspace of `ℚ^ι` is defined through an ordering of `ι`; any one will do.
+  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   set V := LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin
   obtain ⟨z, hz, hzV, hzg, hzle⟩ := V.exists_linearIndependent_intPoints_prod_norm_le
   have hfin : finrank ℚ V = Fintype.card ι - p := by
@@ -152,19 +179,10 @@ theorem exists_linearIndependent_mulVec_eq_zero_prod_norm_le {A : Matrix (Fin p)
     rw [← hheight, e.symm.prod_comp fun l ↦ ‖z l‖]
     exact hzle
 
-end Matrix
-
-namespace Matrix
-
-open scoped Matrix
-
-variable {ι : Type*} [Fintype ι] [LinearOrder ι]
-
-omit [LinearOrder ι] in
 /-- An integer matrix with independent rows has a basis of its entire integral kernel whose
 product of sup norms is at most `k! / 2 ^ (k - 1) * √det (A Aᵀ) / minorGcd A`, where `k` is
 the number of columns minus the number of rows. The conclusion also includes `k = 0`. -/
-theorem exists_basis_ker_mulVecLin_prod_norm_le {p : ℕ} {A : Matrix (Fin p) ι ℤ}
+theorem exists_basis_ker_mulVecLin_prod_norm_le {A : Matrix (Fin p) ι ℤ}
     (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
     ∃ b : Basis (Fin (Fintype.card ι - p)) ℤ (LinearMap.ker A.mulVecLin),
       ∏ l, ‖(b l : ι → ℤ)‖ ≤
@@ -172,14 +190,8 @@ theorem exists_basis_ker_mulVecLin_prod_norm_le {p : ℕ} {A : Matrix (Fin p) ι
           √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
   let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   let V := LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin
-  obtain ⟨b, hb⟩ := V.exists_basis_intPoints_prod_norm_le_prod_successiveMin
-  have hmin := V.prod_successiveMin_intLattice_le_subspaceHeight
-    Submodule.coe_cubeSlice.ge (fun _ ↦ Submodule.neg_mem_cubeSlice.2)
-  have hresult : ∃ b : Basis (Fin (finrank ℝ V.realSpan)) ℤ V.intPoints,
-      ∏ l, ‖(b l : ι → ℤ)‖ ≤
-        (finrank ℝ V.realSpan).factorial / 2 ^ (finrank ℝ V.realSpan - 1) * V.subspaceHeight :=
-    ⟨b, hb.trans (mul_le_mul_of_nonneg_left hmin (by positivity))⟩
-  rw [Submodule.finrank_realSpan, intPoints_ker_mulVecLin,
+  have hresult := V.exists_basis_intPoints_prod_norm_le_subspaceHeight
+  rw [intPoints_ker_mulVecLin,
     finrank_ker_mulVecLin_of_linearIndependent_rows hA, Fintype.card_fin,
     ← Submodule.covolume_intLattice, Matrix.covolume_intLattice_ker_mulVecLin hA] at hresult
   simpa only [mul_div_assoc] using hresult

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
+public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.RingTheory.Nilpotent.Log
 import TauCeti.RingTheory.Nilpotent.Exp
@@ -57,6 +58,9 @@ upper unitriangular matrices are of this form, with `𝔲` its Lie algebra.
 * `IsNilpotent.contractibleSpace_image_exp`, `IsNilpotent.simplyConnectedSpace_image_exp`: the
   exponential image of a nonempty star-convex set with a common nilpotency bound is contractible
   and simply connected.
+* `Subgroup.contractibleSpace_of_expSMulHom_log_mem`: a subgroup of unipotent units with
+  a common nilpotency bound is contractible if it contains all real scalar exponentials
+  of its logarithms.
 
 ## References
 
@@ -179,3 +183,59 @@ theorem analyticOn_log (n : ℕ) : AnalyticOn 𝕜 (log : A → A) {u | (u - 1) 
 end Normed
 
 end IsNilpotent
+
+namespace Subgroup
+
+open IsNilpotent TauCeti
+
+variable {A : Type*} [Ring A] [Algebra ℚ A] [Algebra ℝ A]
+  [TopologicalSpace A] [IsTopologicalRing A] [ContinuousSMul ℝ A]
+
+/-- A subgroup of unipotent units is contractible if the differences from one have a
+uniform nilpotency bound and every real scalar exponential of a logarithm stays in the
+group. The contraction is `g ↦ exp ((1 - t) • log g)` and fixes the identity. -/
+theorem contractibleSpace_of_expSMulHom_log_mem (G : Subgroup Aˣ) {n : ℕ}
+    (hn : ∀ g ∈ G, ((g : A) - 1) ^ n = 0)
+    (hcurve : ∀ (g : G) (t : ℝ),
+      expSMulHom ℝ (isNilpotent_log ⟨n, hn g g.property⟩) (Multiplicative.ofAdd t) ∈ G) :
+    ContractibleSpace G := by
+  have hlog : Continuous (fun g : G ↦ log ((g : Aˣ) : A)) :=
+    (continuousOn_log n).comp_continuous
+      (Units.continuous_val.comp continuous_subtype_val) (fun g ↦ hn g g.property)
+  have hscale : Continuous (fun p : unitInterval × G ↦
+      (1 - (p.1 : ℝ)) • log ((p.2 : Aˣ) : A)) :=
+    (continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul
+      (hlog.comp continuous_snd)
+  have hpow (t : ℝ) (g : G) : (t • log ((g : Aˣ) : A)) ^ n = 0 := by
+    rw [smul_pow, pow_log_eq_zero (hn g g.property), smul_zero]
+  -- The topology on units records both the value and the inverse. Their polynomial
+  -- formulas use the same nilpotency bound, with opposite scalar parameters.
+  let H : (ContinuousMap.id G).Homotopy (ContinuousMap.const G (1 : G)) :=
+    { toFun := fun p ↦ ⟨expSMulHom ℝ
+        (isNilpotent_log ⟨n, hn p.2 p.2.property⟩)
+        (Multiplicative.ofAdd (1 - (p.1 : ℝ))), hcurve p.2 _⟩
+      continuous_toFun := by
+        apply Continuous.subtype_mk
+        apply Units.continuous_iff.mpr
+        constructor
+        · simpa only [expSMulHom_apply, coe_nilpotentExpUnit, toAdd_ofAdd, Function.comp_def] using
+            (continuousOn_exp n).comp_continuous hscale (fun p ↦ hpow _ p.2)
+        · simpa only [expSMulHom_apply, coe_inv_nilpotentExpUnit, Pi.neg_apply,
+            toAdd_ofAdd, Function.comp_def] using
+            (continuousOn_exp n).comp_continuous hscale.neg
+              (fun p ↦ by
+                simpa only [Pi.neg_apply, Set.mem_ofPred_eq, neg_smul] using
+                  hpow (-(1 - (p.1 : ℝ))) p.2)
+      map_zero_left := by
+        intro g
+        apply Subtype.ext
+        apply Units.ext
+        simp [expSMulHom_apply, exp_log ⟨n, hn g g.property⟩]
+      map_one_left := by
+        intro g
+        apply Subtype.ext
+        apply Units.ext
+        simp [expSMulHom_apply] }
+  exact (contractible_iff_id_nullhomotopic G).mpr ⟨1, ⟨H⟩⟩
+
+end Subgroup

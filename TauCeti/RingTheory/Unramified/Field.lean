@@ -1,0 +1,68 @@
+/-
+Copyright (c) 2026 Taylor Dupuy, Thomas Tucker, Zhuoran Wang. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
+-/
+module
+
+public import Mathlib.RingTheory.Unramified.Field
+
+/-!
+# Base change of an unramified algebra to a field
+
+If `S` is a formally unramified `R`-algebra of essentially finite type and `K` is a field with an
+`R`-algebra structure, then `K ⊗[R] S` is a finite reduced `K`-algebra, in particular an Artinian
+reduced ring, and so is `S ⊗[R] K` via the commutativity isomorphism. For `K` the fraction field of
+a domain `R` this is the generic fibre of `S`.
+
+## Main results
+
+* `TauCeti.Algebra.FormallyUnramified.finite_field_tensorProduct`,
+  `isArtinianRing_field_tensorProduct` and `isReduced_field_tensorProduct`: `K ⊗[R] S` is finite
+  over `K`, Artinian and reduced.
+* `TauCeti.Algebra.FormallyUnramified.isArtinianRing_tensorProduct_field` and
+  `isReduced_tensorProduct_field`: `S ⊗[R] K` is Artinian and reduced.
+
+All are instances.
+
+## References
+
+* Ported from T. Dupuy, T. Tucker and Z. Wang,
+  [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
+  `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
+  `lean/Pcf/Stacks/Common/EtaleNormal.lean`: the instances for `S ⊗[R] K` generalize its
+  `Pcf.Stacks.isArtinianRing_isReduced_tensor_fractionRing_of_etale` from étale algebras and the
+  fraction field of a domain to unramified algebras and any field.
+-/
+
+public section
+
+open scoped TensorProduct
+
+namespace TauCeti.Algebra.FormallyUnramified
+
+variable {R S K : Type*} [CommRing R] [CommRing S] [Algebra R S] [Algebra.FormallyUnramified R S]
+  [Algebra.EssFiniteType R S] [Field K] [Algebra R K]
+
+/-- The base change `K ⊗[R] S` of an unramified algebra to a field is a finite `K`-algebra. -/
+instance finite_field_tensorProduct : Module.Finite K (K ⊗[R] S) :=
+  Algebra.FormallyUnramified.finite_of_free K _
+
+/-- The base change `K ⊗[R] S` of an unramified algebra to a field is an Artinian ring. -/
+instance isArtinianRing_field_tensorProduct : IsArtinianRing (K ⊗[R] S) :=
+  IsArtinianRing.of_finite K _
+
+/-- The base change `K ⊗[R] S` of an unramified algebra to a field is a reduced ring. -/
+instance isReduced_field_tensorProduct : IsReduced (K ⊗[R] S) :=
+  Algebra.FormallyUnramified.isReduced_of_field K _
+
+/-- The base change `S ⊗[R] K` of an unramified algebra to a field is an Artinian ring. -/
+instance isArtinianRing_tensorProduct_field : IsArtinianRing (S ⊗[R] K) :=
+  (Algebra.TensorProduct.comm R S K).toRingEquiv.symm.isArtinianRing
+
+/-- The base change `S ⊗[R] K` of an unramified algebra to a field is a reduced ring. -/
+instance isReduced_tensorProduct_field : IsReduced (S ⊗[R] K) := by
+  let e := (Algebra.TensorProduct.comm R S K).toRingEquiv
+  exact isReduced_of_injective e.toRingHom e.injective
+
+end TauCeti.Algebra.FormallyUnramified

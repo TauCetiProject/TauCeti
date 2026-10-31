@@ -17,13 +17,14 @@ set contains a box restricting only finitely many coordinates, with infinite sid
 No continuity of the ring operations is needed for density.
 
 Applied to the first nonzero homogeneous Taylor component, this lets one choose directions
-detecting ambient polynomial order inside any nonempty open set.
+detecting ambient polynomial order inside any nonempty open set. Applied to `p - C c`, it shows
+that a polynomial whose evaluation is constant near a point is a constant polynomial.
 The algebraic input is Mathlib's `MvPolynomial.funext_set`.
 -/
 
 public section
 
-open Set
+open Set Topology
 
 namespace MvPolynomial
 
@@ -53,5 +54,15 @@ theorem dense_setOf_eval_ne_zero (p : MvPolynomial σ R) (hp : p ≠ 0) :
     by_contra hne
     exact h ⟨x, hbox hx, hne⟩
   simpa using hzero
+
+/-- A polynomial whose evaluation equals `c` on a neighbourhood of some assignment is the constant
+polynomial `C c`, even with infinitely many variables. -/
+theorem eq_C_of_eventually_eval_eq {p : MvPolynomial σ R} {a : σ → R} {c : R}
+    (h : ∀ᶠ x in 𝓝 a, eval x p = c) : p = C c := by
+  by_contra hp
+  obtain ⟨x, hx, hxc⟩ :=
+    (dense_setOf_eval_ne_zero (p - C c) (sub_ne_zero.2 hp)).inter_nhds_nonempty h
+  simp only [mem_ofPred_eq, map_sub, eval_C, sub_ne_zero] at hx hxc
+  exact hx hxc
 
 end MvPolynomial

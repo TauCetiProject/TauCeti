@@ -122,7 +122,7 @@ theorem quadraticTwoForm_eq_symm_cliffordRestrictionEquiv
     quadraticTwoForm o ρ hkl ψ = (cliffordRestrictionEquiv o hQ hρ hkl h₂).symm
       ⟨quadraticEnd ψ, quadraticEnd_mem_traceFreeSelfAdjoint h₂ ψ⟩ := by
   rw [LinearEquiv.eq_symm_apply]
-  exact Subtype.ext ((coe_cliffordRestrictionEquiv_apply o ρ hQ hρ hkl h₂ _).trans
+  exact Subtype.ext ((coe_cliffordRestrictionEquiv_apply o hQ hρ hkl h₂ _).trans
     (cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂ ψ))
 
 include hQ in

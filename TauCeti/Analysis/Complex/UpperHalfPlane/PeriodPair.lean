@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 
 /-!
 # The period lattice of a point of the upper half-plane
@@ -36,7 +37,9 @@ For the Weierstrass `ζ` function `PeriodPair.weierstrassZeta` and its quasi-per
 laws `ζ(x / (c z + d); ℤ γz + ℤ) = (c z + d) ζ(x; ℤ z + ℤ)` and
 `η(l / (c z + d); ℤ γz + ℤ) = (c z + d) η(l; ℤ z + ℤ)`, the inputs for weight one. The lattice
 series of `ζ` at a division point `(b₀ z + b₁) / M` converges locally uniformly in `z`, so these
-division values are holomorphic on `ℍ`.
+division values are holomorphic on `ℍ`. Summed along the rows `y₀ = m`, the lattice series of `ζ`
+becomes a series of cotangents,
+`ζ(x; ℤ z + ℤ) = ∑_m (π cot (π (x - m z)) + π cot (π m z) + x P(m z))` for `x ∉ ℤ z + ℤ`.
 
 Finally, `ℂˣ` acts on period pairs by rescaling, `c • (ω₁, ω₂) = (c ω₁, c ω₂)`, with lattice `c Λ`;
 this multiplies the lattice sums `G n` by `c⁻ⁿ`, `℘(c z)` by `c⁻²` and `℘'(c z)` by `c⁻³`, and
@@ -61,9 +64,13 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 * `UpperHalfPlane.weierstrassZeta_periodPair_smul`,
   `UpperHalfPlane.quasiPeriod_periodPair_smul`: the modular transformation laws of `ζ` and of its
   quasi-periods.
-* `UpperHalfPlane.hasSum_weierstrassP_periodPair_rows`: the sum along rows.
+* `UpperHalfPlane.hasSum_weierstrassP_periodPair_rows`,
+  `UpperHalfPlane.hasSum_weierstrassZeta_periodPair_rows`: the sums along rows.
 * `TauCeti.UpperHalfPlane.norm_rowSum_le`, `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`:
   the exponential decay of the rows.
+* `TauCeti.UpperHalfPlane.tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty`,
+  `TauCeti.UpperHalfPlane.tendsto_pi_mul_cot_pi_mul_sub_pi_mul_I_atImInfty`: cotangents of points
+  whose imaginary part grows linearly in `Im z` tend to `∓ π i` at `i∞`.
 * `TauCeti.UpperHalfPlane.tendsto_rowSum_atImInfty`: rows whose imaginary part grows linearly in
   `Im z` vanish at `i∞`.
 * `TauCeti.UpperHalfPlane.rowSum_zero`: the row at `0` is `2 ζ(2)`.
@@ -241,15 +248,7 @@ theorem quasiPeriod_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (l : z.periodPai
     (γ • z).periodPair.quasiPeriod
         ⟨l / denom γ z, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.2⟩ =
       denom γ z * z.periodPair.quasiPeriod l := by
-  set x := z.periodPair.ω₁ / 2
-  have hx : x ∉ z.periodPair.lattice := z.periodPair.ω₁_div_two_notMem_lattice
-  have hx' : x / denom γ z ∉ (γ • z).periodPair.lattice :=
-    (div_denom_mem_lattice_periodPair_smul_iff γ z x).not.mpr hx
-  have h := (γ • z).periodPair.weierstrassZeta_add_coe hx'
-    ⟨l / denom γ z, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.2⟩
-  rw [← add_div, weierstrassZeta_periodPair_smul, weierstrassZeta_periodPair_smul,
-    z.periodPair.weierstrassZeta_add_coe hx, mul_add] at h
-  exact (add_left_cancel h).symm
+  rw [← weierstrassZeta_coe, ← weierstrassZeta_coe, weierstrassZeta_periodPair_smul]
 
 end UpperHalfPlane
 
@@ -357,6 +356,39 @@ theorem tendsto_rowSum_atImInfty {w : ℍ → ℂ} {c : ℝ} (hc : 0 < c)
     (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (by nlinarith [hw z, Real.pi_pos]))
       (div_nonneg (by positivity) (sq_nonneg _)))
 
+open Filter Topology in
+/-- **The cotangent tends to `-i` at `i∞`**: if the imaginary part of `w(z)` grows at least like
+`c Im z` for some `c > 0`, then `π cot (π w(z)) → -π i` as `Im z → ∞`. -/
+theorem tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty {w : ℍ → ℂ} {c : ℝ} (hc : 0 < c)
+    (hw : ∀ z, c * z.im ≤ (w z).im) :
+    Tendsto (fun z ↦ π * cot (π * w z) + π * Complex.I) atImInfty (𝓝 0) := by
+  have him : Tendsto (fun z : ℍ ↦ z.im) atImInfty atTop := tendsto_comap
+  set K : ℝ := 2 * π / (1 - Real.exp (-2 * π * c))
+  have hK : 0 ≤ K := div_nonneg (by positivity)
+    (sub_nonneg.mpr (Real.exp_le_one_iff.mpr (by nlinarith [Real.pi_pos])))
+  have hexp : Tendsto (fun z : ℍ ↦ K * Real.exp (-(2 * π * c * z.im))) atImInfty (𝓝 0) := by
+    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      (him.const_mul_atTop (by positivity : 0 < 2 * π * c))).const_mul K
+  refine squeeze_zero_norm' ?_ hexp
+  filter_upwards [him.eventually_ge_atTop 1] with z hz
+  refine (norm_pi_mul_cot_pi_mul_add_pi_mul_I_le hc (by nlinarith [hw z])).trans
+    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) hK)
+  nlinarith [hw z, Real.pi_pos]
+
+open Filter Topology in
+/-- **The cotangent tends to `i` at `i∞` in the lower half-plane**: if the imaginary part of
+`w(z)` decreases at least like `-c Im z` for some `c > 0`, then `π cot (π w(z)) → π i` as
+`Im z → ∞`. -/
+theorem tendsto_pi_mul_cot_pi_mul_sub_pi_mul_I_atImInfty {w : ℍ → ℂ} {c : ℝ} (hc : 0 < c)
+    (hw : ∀ z, c * z.im ≤ -(w z).im) :
+    Tendsto (fun z ↦ π * cot (π * w z) - π * Complex.I) atImInfty (𝓝 0) := by
+  have h := (tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty (w := fun z ↦ -w z) hc
+    (by simpa using hw)).neg
+  rw [neg_zero] at h
+  refine h.congr fun z ↦ ?_
+  simp only [mul_neg, cot_neg]
+  ring
+
 end TauCeti.UpperHalfPlane
 
 namespace UpperHalfPlane
@@ -375,6 +407,39 @@ theorem hasSum_weierstrassP_periodPair_rows (z : ℍ) (x : ℂ) :
     convert hasSum_rowSum (-(x - m * z)) using 2 with n
     ring
   simpa [Function.comp_def] using h₁.sub (hasSum_rowSum ((m : ℂ) * z))
+
+/-- **The Weierstrass `ζ` function of `ℤ z + ℤ` summed along rows**: for `x ∉ ℤ z + ℤ`,
+`ζ(x; ℤ z + ℤ) = ∑_m (π cot (π (x - m z)) + π cot (π m z) + x ∑_n (m z + n)⁻²)`. Each row of the
+lattice series is summed by the expansion of the cotangent over `ℤ`; the row `m = 0` is
+`π cot (π x) + x ∑_{n ≠ 0} n⁻²`, as `cot 0 = 0`. -/
+theorem hasSum_weierstrassZeta_periodPair_rows (z : ℍ) {x : ℂ} (hx : x ∉ z.periodPair.lattice) :
+    HasSum (fun m : ℤ ↦ π * cot (π * (x - m * z)) + π * cot (π * (m * z)) + x * rowSum (m * z))
+      (z.periodPair.weierstrassZeta x) := by
+  have h := hasSum_weierstrassZeta_periodPair z x
+  rw [← (finTwoArrowEquiv ℤ).symm.hasSum_iff] at h
+  refine h.prod_fiberwise fun m ↦ ?_
+  have h₁ : HasSum (fun n : ℤ ↦ 1 / (x - m * z - n) + 1 / (n : ℂ))
+      (π * cot (π * (x - m * z))) := by
+    refine TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast fun ⟨n, hn⟩ ↦ hx ?_
+    rw [show x = m * z + n by rw [hn]; ring]
+    exact intCast_mul_add_intCast_mem_lattice_periodPair z m n
+  have h₂ : HasSum (fun n : ℤ ↦ 1 / (-((m : ℂ) * z) - n) + 1 / (n : ℂ))
+      (π * cot (π * -((m : ℂ) * z))) := by
+    rcases eq_or_ne m 0 with rfl | hm
+    · simp
+    refine TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast fun ⟨n, hn⟩ ↦ hm ?_
+    have him := congrArg Complex.im hn
+    simp only [Complex.intCast_im, Complex.neg_im, Complex.mul_im, Complex.intCast_re,
+      UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, zero_mul, add_zero] at him
+    exact_mod_cast (mul_eq_zero.mp (neg_eq_zero.mp him.symm)).resolve_right z.im_ne_zero
+  convert (h₁.sub h₂).add ((hasSum_rowSum ((m : ℂ) * z)).mul_left x) using 1
+  · ext n
+    have hneg : -((m : ℂ) * z) - n = -(m * z + n) := by ring
+    simp only [Function.comp_apply, finTwoArrowEquiv_symm_apply, Matrix.cons_val_zero,
+      Matrix.cons_val_one, hneg, one_div_neg_eq_neg_one_div]
+    ring
+  · rw [mul_neg, cot_neg]
+    ring
 
 end UpperHalfPlane
 
@@ -430,7 +495,7 @@ theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) [NeZero
     rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
     have := mul_le_mul_of_nonneg_left hz' (abs_nonneg (b 0 : ℝ))
     linarith
-  refine (weierstrassZeta_bound hR hx (hy'.trans hl)).trans ?_
+  refine (weierstrassZeta_bound hx (hy'.trans hl)).trans ?_
   rw [mul_assoc (2 * R ^ 2), ← Real.mul_rpow hr₀.le (norm_nonneg _)]
   exact mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow_of_nonpos (by positivity) hl (by norm_num)) (by positivity)

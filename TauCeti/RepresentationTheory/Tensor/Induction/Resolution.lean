@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.GradedContraction
 public import TauCeti.RepresentationTheory.Tensor.Induction.Diagonal
 public import TauCeti.RepresentationTheory.Tensor.Induction.Smooth
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.CoboundaryShift
 
 /-!
 # Tensor induction of the total coinduced resolution
@@ -34,7 +35,11 @@ For a `U`-invariant cocycle `z` of degree `n` of the total resolution of `A`, th
 `z ⊗ ⋯ ⊗ z`, with one factor for each of the `l` cosets, is a `G`-invariant cocycle of degree
 `l * n`. Its class `TauCeti.smoothTensorInducedDiagonalClass` in `H^{l n}(G, Ind⊗ A)` is the norm
 of `z` in the sense of Evens; it does not depend on the order on the cosets used to contract the
-resolution.  That cohomologous cocycles have the same norm is not proved here.
+resolution.  It is invariant under chain endomorphisms of the total resolution over the identity
+of `A`, since their tensor inductions are chain maps over the identity of `Ind⊗ A`. The norm is not
+additive, but over a coefficient ring in which `2` generates a maximal ideal, such as `ℤ` for
+trivial `𝔽₂` coefficients, such an endomorphism moves a nonzero cocycle `z` to `z + d w` for any
+invariant `w`, so cohomologous cocycles have the same norm.
 
 ## Main definitions
 
@@ -59,6 +64,10 @@ resolution.  That cohomologous cocycles have the same norm is not proved here.
 * `TauCeti.slotSum_smoothTensorInducedGradedResolutionHomotopy_add`: the contraction identity.
 * `TauCeti.smoothTensorInducedDiagonalClass_eq`: the class of the diagonal tensor does not depend
   on the order on the cosets: it equals the class computed through the contraction for any order.
+* `TauCeti.smoothTensorInducedDiagonalClass_eq_of_hom_apply_eq`: the norm is invariant under
+  chain endomorphisms of the total resolution over the identity of the coefficients.
+* `TauCeti.smoothTensorInducedDiagonalClass_eq_of_sub_eq_d`: cohomologous cocycles have the same
+  norm, when `2` generates a maximal ideal of the coefficient ring.
 
 ## References
 
@@ -195,7 +204,7 @@ variable [Fintype (G ⧸ U)]
 homogeneous factors has the sum of their degrees. -/
 noncomputable abbrev smoothTensorInducedGradedResolutionPiece :
     ℤ → Submodule R ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V :=
-  PiTensorProduct.totalDegreePiece (G ⧸ U) A.obj.gradedResolutionPiece
+  PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionPiece)
 
 /-- The action of `G` on the tensor-induced total resolution preserves the total degree. -/
 theorem smoothTensorInducedGradedResolutionPiece_ρ_mem (n : ℤ) (g : G)
@@ -235,7 +244,7 @@ differential. -/
 theorem smoothTensorInducedGradedResolutionDifferential_apply [DecidableEq (G ⧸ U)]
     (z : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V) :
     (smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom z =
-      PiTensorProduct.slotSum (G ⧸ U) A.obj.gradedResolutionDifferential z := by
+      PiTensorProduct.slotSum (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionDifferential) z := by
   obtain rfl : ‹DecidableEq (G ⧸ U)› = Classical.decEq _ := Subsingleton.elim _ _
   let := Classical.decEq (G ⧸ U)
   have hf : ((ofSmoothDiscrete R U).map (smoothGradedResolutionDifferential A)).toLinearMap =
@@ -244,7 +253,7 @@ theorem smoothTensorInducedGradedResolutionDifferential_apply [DecidableEq (G �
       (LinearMap.ext (smoothGradedResolutionDifferential_hom_apply A))
   exact (toSmoothDiscrete_map_hom_hom_apply R G _ z).trans <|
     (LinearMap.congr_fun (Representation.IntertwiningMap.tensorInducedSlotSum_toLinearMap _ s)
-      z).trans (congrArg (fun φ ↦ PiTensorProduct.slotSum (G ⧸ U) φ z) hf)
+      z).trans (congrArg (fun φ ↦ PiTensorProduct.slotSum (G ⧸ U) (fun _ ↦ φ) z) hf)
 
 /-- The differential of the tensor-induced total resolution raises the total degree by one. -/
 theorem isHomogeneous_smoothTensorInducedGradedResolutionDifferential :
@@ -254,7 +263,7 @@ theorem isHomogeneous_smoothTensorInducedGradedResolutionDifferential :
       (smoothTensorInducedGradedResolutionPiece U hU s A) 1 := by
   classical
   have h := PiTensorProduct.isHomogeneous_slotSum (ι := G ⧸ U)
-    A.obj.isHomogeneous_gradedResolutionDifferential
+    (fun _ ↦ A.obj.isHomogeneous_gradedResolutionDifferential)
   exact LinearMap.isHomogeneous_def.2 fun n x hx ↦
     (congrArg (· ∈ smoothTensorInducedGradedResolutionPiece U hU s A (n + 1))
       (smoothTensorInducedGradedResolutionDifferential_apply U hU s A x)).mpr (h.map_mem hx)
@@ -269,10 +278,11 @@ theorem smoothTensorInducedGradedResolutionDifferential_sq (hA : ∀ a : A.obj.V
   classical
   ext z
   have h := LinearMap.congr_fun (PiTensorProduct.slotSum_comp_slotSum (ι := G ⧸ U) (R := R)
-    (A.obj.gradedResolutionModule_add_self_eq_zero hA) (f := A.obj.gradedResolutionDifferential)
-    (LinearMap.ext A.obj.gradedResolutionDifferential_sq)) z
+    (fun _ ↦ A.obj.gradedResolutionModule_add_self_eq_zero hA)
+    (f := fun _ ↦ A.obj.gradedResolutionDifferential)
+    (fun _ ↦ LinearMap.ext A.obj.gradedResolutionDifferential_sq)) z
   exact (smoothTensorInducedGradedResolutionDifferential_apply U hU s A _).trans <|
-    (congrArg (PiTensorProduct.slotSum (G ⧸ U) A.obj.gradedResolutionDifferential)
+    (congrArg (PiTensorProduct.slotSum (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionDifferential))
       (smoothTensorInducedGradedResolutionDifferential_apply U hU s A z)).trans h
 
 /-- The projection of the tensor-induced total resolution onto the tensor induction of the
@@ -342,8 +352,8 @@ omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] in
 one. -/
 theorem isHomogeneous_smoothTensorInducedGradedResolutionHomotopy :
     LinearMap.IsHomogeneous (smoothTensorInducedGradedResolutionHomotopy U A)
-      (PiTensorProduct.totalDegreePiece (G ⧸ U) A.obj.gradedResolutionPiece)
-      (PiTensorProduct.totalDegreePiece (G ⧸ U) A.obj.gradedResolutionPiece) (-1) := by
+      (PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionPiece))
+      (PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionPiece)) (-1) := by
   refine PiTensorProduct.isHomogeneous_slotHomotopy ?_
     A.obj.isHomogeneous_gradedResolutionHomotopy
   rw [LinearMap.isHomogeneous_def]
@@ -360,10 +370,10 @@ omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] in
 homotopy `h`, the tensor-induced augmentation `ι` and the projection `π`. -/
 theorem slotSum_smoothTensorInducedGradedResolutionHomotopy_add (hA : ∀ a : A.obj.V, a + a = 0)
     (v : ⨂[R] _ : G ⧸ U, A.obj.gradedResolutionModule) :
-    PiTensorProduct.slotSum (G ⧸ U) A.obj.gradedResolutionDifferential
+    PiTensorProduct.slotSum (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionDifferential)
           (smoothTensorInducedGradedResolutionHomotopy U A v) +
         smoothTensorInducedGradedResolutionHomotopy U A
-          (PiTensorProduct.slotSum (G ⧸ U) A.obj.gradedResolutionDifferential v) =
+          (PiTensorProduct.slotSum (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionDifferential) v) =
       v - PiTensorProduct.map (fun _ ↦ A.obj.gradedResolutionAugmentation)
         (smoothTensorInducedGradedResolutionProjection U A v) := by
   rw [smoothTensorInducedGradedResolutionProjection,
@@ -485,9 +495,9 @@ theorem tprod_const_mem_smoothTensorInducedGradedResolutionPiece {n : ℕ}
     {z : A.obj.gradedResolutionModule} (hz : z ∈ A.obj.gradedResolutionPiece n) :
     PiTensorProduct.tprod R (fun _ : G ⧸ U ↦ z) ∈
       smoothTensorInducedGradedResolutionPiece U hU s A (Fintype.card (G ⧸ U) * n : ℕ) := by
-  have h := PiTensorProduct.tprod_mem_totalDegreePiece (ι := G ⧸ U) (R := R)
-    (ℳ := A.obj.gradedResolutionPiece) (p := fun _ ↦ (n : ℤ)) (m := fun _ ↦ z) fun _ ↦ hz
-  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at h
+  have h := PiTensorProduct.tprod_mem_totalDegreePiece_const (ι := G ⧸ U) (R := R)
+    (ℳ := fun _ ↦ A.obj.gradedResolutionPiece) (n : ℤ) (m := fun _ ↦ z) (fun _ ↦ hz)
+  rw [nsmul_eq_mul] at h
   exact_mod_cast h
 
 omit [Fintype (G ⧸ U)] in
@@ -514,9 +524,8 @@ theorem smoothTensorInducedGradedResolutionDifferential_tprod_const_eq_zero
     (smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom
       (PiTensorProduct.tprod R (fun _ : G ⧸ U ↦ z)) = 0 := by
   classical
-  refine (smoothTensorInducedGradedResolutionDifferential_apply U hU s A _).trans <|
-    (PiTensorProduct.slotSum_tprod _ _).trans (Finset.sum_eq_zero fun i _ ↦ ?_)
-  exact (PiTensorProduct.tprod R).map_coord_zero i (by rw [Function.update_self, hdz])
+  exact (smoothTensorInducedGradedResolutionDifferential_apply U hU s A _).trans
+    (PiTensorProduct.slotSum_tprod_eq_zero _ _ (fun _ ↦ hdz))
 
 /-- **The Evens norm of a cocycle**: for a homogeneous cocycle `z` of degree `n` of the total
 coinduced resolution of `A`, fixed by `U`, the class in `H^{l n}(G, Ind⊗ A)` of its diagonal
@@ -557,6 +566,177 @@ theorem smoothTensorInducedDiagonalClass_eq [LinearOrder (G ⧸ U)]
   apply TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_ι_eq
   rw [smoothTensorInducedGradedResolutionContraction_ι,
     smoothTensorInducedGradedResolutionContraction_ι]
+
+section Endomorphism
+
+variable (Φ : A.obj.gradedResolutionTopRep ⟶ A.obj.gradedResolutionTopRep)
+
+/-- The tensor induction of an endomorphism of the total resolution of `A`. -/
+private noncomputable def tensorInducedEndo :
+    ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj ⟶
+      ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj :=
+  ((smoothTensorInductionFunctor R G U hU s).map
+    (ObjectProperty.homMk Φ : (smoothGradedResolutionFunctor (R := R)).obj A ⟶
+      smoothGradedResolutionFunctor.obj A)).hom
+
+omit [Fintype (G ⧸ U)] in
+private theorem tensorInducedEndo_apply (x : ⨂[R] _ : G ⧸ U, A.obj.gradedResolutionModule) :
+    (tensorInducedEndo U hU s A Φ).hom x =
+      PiTensorProduct.map (fun _ : G ⧸ U ↦
+        (Φ.hom.toLinearMap : Module.End R A.obj.gradedResolutionModule)) x :=
+  smoothTensorInductionFunctor_map_hom_hom_apply R G U hU s
+    (ObjectProperty.homMk Φ : (smoothGradedResolutionFunctor (R := R)).obj A ⟶
+      smoothGradedResolutionFunctor.obj A) x
+
+private theorem isHomogeneous_tensorInducedEndo
+    (hΦ : LinearMap.IsHomogeneous Φ.hom.toLinearMap A.obj.gradedResolutionPiece
+      A.obj.gradedResolutionPiece 0) :
+    LinearMap.IsHomogeneous (tensorInducedEndo U hU s A Φ).hom.toLinearMap
+      (smoothTensorInducedGradedResolutionPiece U hU s A)
+      (smoothTensorInducedGradedResolutionPiece U hU s A) 0 := by
+  have hΦ' : LinearMap.IsHomogeneous
+      (Φ.hom.toLinearMap : Module.End R A.obj.gradedResolutionModule)
+      A.obj.gradedResolutionPiece A.obj.gradedResolutionPiece 0 := hΦ
+  have h := PiTensorProduct.isHomogeneous_map (ι := G ⧸ U) fun _ ↦ hΦ'
+  rw [Finset.sum_const_zero] at h
+  exact LinearMap.isHomogeneous_def.2 fun p x hx ↦
+    (congrArg (· ∈ smoothTensorInducedGradedResolutionPiece U hU s A (p + 0))
+      (tensorInducedEndo_apply U hU s A Φ x)).mpr (h.map_mem hx)
+
+private theorem tensorInducedEndo_comm
+    (hΦd : A.obj.gradedResolutionTopRepDifferential ≫ Φ =
+      Φ ≫ A.obj.gradedResolutionTopRepDifferential) :
+    (smoothTensorInducedGradedResolutionDifferential U hU s A).hom ≫
+        tensorInducedEndo U hU s A Φ =
+      tensorInducedEndo U hU s A Φ ≫
+        (smoothTensorInducedGradedResolutionDifferential U hU s A).hom := by
+  classical
+  let Φ' : Module.End R A.obj.gradedResolutionModule := Φ.hom.toLinearMap
+  have hΦd' : A.obj.gradedResolutionDifferential ∘ₗ Φ' = Φ' ∘ₗ A.obj.gradedResolutionDifferential :=
+    LinearMap.ext fun v ↦ by
+      rw [LinearMap.comp_apply, LinearMap.comp_apply,
+        ← TopRep.gradedResolutionTopRepDifferential_apply,
+        ← TopRep.gradedResolutionTopRepDifferential_apply]
+      -- Composition of morphisms of `TopRep` evaluates by definition (`TopRep.comp_apply`).
+      exact (congrArg (fun f ↦ f.hom v) hΦd).symm
+  -- Both differentials are slot sums, and the slot sum is natural in factorwise maps.
+  have key (x : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V) :
+      (tensorInducedEndo U hU s A Φ).hom
+          ((smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom x) =
+        (smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom
+          ((tensorInducedEndo U hU s A Φ).hom x) :=
+    (congrArg (tensorInducedEndo U hU s A Φ).hom
+      (smoothTensorInducedGradedResolutionDifferential_apply U hU s A x)).trans <|
+        (tensorInducedEndo_apply U hU s A Φ _).trans <|
+          (LinearMap.congr_fun (PiTensorProduct.slotSum_comp_map
+            (fun _ : G ⧸ U ↦ Φ') fun _ ↦ hΦd') x).symm.trans <|
+              (congrArg (PiTensorProduct.slotSum (G ⧸ U)
+                (fun _ ↦ A.obj.gradedResolutionDifferential))
+                (tensorInducedEndo_apply U hU s A Φ x).symm).trans
+                  (smoothTensorInducedGradedResolutionDifferential_apply U hU s A
+                    ((tensorInducedEndo U hU s A Φ).hom x)).symm
+  apply TopRep.hom_ext
+  apply ContIntertwiningMap.ext
+  apply ContinuousLinearMap.ext
+  exact key
+
+omit [Fintype (G ⧸ U)] in
+private theorem tensorInducedEndo_augmentation
+    (hΦι : ∀ x, Φ.hom (A.obj.gradedResolutionAugmentation x) = A.obj.gradedResolutionAugmentation x)
+    (x : ⨂[R] _ : G ⧸ U, A.obj.V) :
+    (tensorInducedEndo U hU s A Φ).hom
+        (PiTensorProduct.map (fun _ ↦ A.obj.gradedResolutionAugmentation) x) =
+      PiTensorProduct.map (fun _ ↦ A.obj.gradedResolutionAugmentation) x := by
+  have hΦι' : (Φ.hom.toLinearMap : Module.End R A.obj.gradedResolutionModule) ∘ₗ
+      A.obj.gradedResolutionAugmentation = A.obj.gradedResolutionAugmentation :=
+    LinearMap.ext hΦι
+  rw [tensorInducedEndo_apply]
+  exact (LinearMap.congr_fun (PiTensorProduct.map_comp
+    (fun _ : G ⧸ U ↦ (Φ.hom.toLinearMap : Module.End R A.obj.gradedResolutionModule))
+      fun _ : G ⧸ U ↦ A.obj.gradedResolutionAugmentation) x).symm.trans
+        (congrArg (fun φ ↦ PiTensorProduct.map (fun _ : G ⧸ U ↦ φ) x) hΦι')
+
+end Endomorphism
+
+/-- **The norm of a cocycle is invariant under chain endomorphisms over the identity.** Let `Φ` be
+an endomorphism of the total resolution of `A` of degree zero, commuting with the differential and
+fixing the augmentation. Then a `U`-invariant cocycle `z` and its image `Φ z` have the same norm:
+the tensor induction of `Φ` carries the diagonal tensor of `z` to that of `Φ z` and is a chain map
+over the identity of the tensor-induced coefficients. -/
+theorem smoothTensorInducedDiagonalClass_eq_of_hom_apply_eq (hA : ∀ a : A.obj.V, a + a = 0)
+    {n : ℕ} {z z' : A.obj.gradedResolutionModule} (hz : z ∈ A.obj.gradedResolutionPiece n)
+    (hz' : z' ∈ A.obj.gradedResolutionPiece n) (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
+    (hinv' : ∀ u, A.obj.gradedResolutionTopRep.ρ u z' = z')
+    (hdz : A.obj.gradedResolutionDifferential z = 0)
+    (hdz' : A.obj.gradedResolutionDifferential z' = 0)
+    (Φ : A.obj.gradedResolutionTopRep ⟶ A.obj.gradedResolutionTopRep)
+    (hΦd : A.obj.gradedResolutionTopRepDifferential ≫ Φ =
+      Φ ≫ A.obj.gradedResolutionTopRepDifferential)
+    (hΦι : ∀ x, Φ.hom (A.obj.gradedResolutionAugmentation x) = A.obj.gradedResolutionAugmentation x)
+    (hΦ : LinearMap.IsHomogeneous Φ.hom.toLinearMap A.obj.gradedResolutionPiece
+      A.obj.gradedResolutionPiece 0)
+    (hΦz : Φ.hom z = z') :
+    smoothTensorInducedDiagonalClass.{u, v, w} U hU s A hA z' hz' hinv' hdz' =
+      smoothTensorInducedDiagonalClass.{u, v, w} U hU s A hA z hz hinv hdz := by
+  let : LinearOrder (G ⧸ U) := LinearOrder.lift' _ (Fintype.equivFin (G ⧸ U)).injective
+  have : LocallyCompactSpace G :=
+    (isCompact_iff_compactSpace.2 ‹CompactSpace U›).locallyCompactSpace_of_mem_nhds_of_group
+      (hU.mem_nhds U.one_mem)
+  rw [smoothTensorInducedDiagonalClass_eq, smoothTensorInducedDiagonalClass_eq]
+  refine Eq.trans ?_
+    ((smoothTensorInducedGradedResolutionContraction U hU s A hA).gradedCohomologyClass_map _
+      (tensorInducedEndo U hU s A Φ) (isHomogeneous_tensorInducedEndo U hU s A Φ hΦ)
+      (tensorInducedEndo_comm U hU s A Φ hΦd) (fun x ↦ by
+        rw [smoothTensorInducedGradedResolutionContraction_ι_apply]
+        exact tensorInducedEndo_augmentation U hU s A Φ hΦι x)
+      (tprod_const_mem_smoothTensorInducedGradedResolutionPiece U hU s A hz)
+      (smoothTensorInducedGradedResolutionFunctor_obj_ρ_tprod_const U hU s A hinv)
+      (smoothTensorInducedGradedResolutionDifferential_tprod_const_eq_zero U hU s A hdz))
+  congr 1
+  rw [tensorInducedEndo_apply]
+  exact ((PiTensorProduct.map_tprod _ _).trans
+    (congrArg (PiTensorProduct.tprod R) (funext fun _ ↦ hΦz))).symm
+
+/-- **Cohomologous cocycles have the same norm.** Let `R` be a commutative ring in which `2`
+generates a maximal ideal, such as `ℤ`, so that `A`, whose elements are their own additive
+inverses, is a vector space over the field `R ⧸ (2)`. If two `U`-invariant cocycles `z` and `z'` of
+the total resolution of `A` differ by the differential of a `U`-invariant element, their diagonal
+tensors have the same class in `H^{l (n + 1)}(G, Ind⊗ A)`. So the norm of a cocycle depends only
+on its class.
+
+Although the norm is not additive, the coboundary can be moved by a chain endomorphism of the total
+resolution over the identity of `A`
+(`TopRep.exists_gradedResolutionTopRep_hom_apply_eq_add_of_add_self_eq_zero`), under which the norm
+is invariant (`TauCeti.smoothTensorInducedDiagonalClass_eq_of_hom_apply_eq`). -/
+theorem smoothTensorInducedDiagonalClass_eq_of_sub_eq_d [(Ideal.span {(2 : R)}).IsMaximal]
+    (hA : ∀ a : A.obj.V, a + a = 0) {n : ℕ} {z z' : A.obj.gradedResolutionModule}
+    (hz : z ∈ A.obj.gradedResolutionPiece (n + 1 : ℕ))
+    (hz' : z' ∈ A.obj.gradedResolutionPiece (n + 1 : ℕ))
+    (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
+    (hinv' : ∀ u, A.obj.gradedResolutionTopRep.ρ u z' = z')
+    (hdz : A.obj.gradedResolutionDifferential z = 0)
+    (hdz' : A.obj.gradedResolutionDifferential z' = 0) {y : A.obj.gradedResolutionModule}
+    (hy : y ∈ A.obj.gradedResolutionPiece n) (hyinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u y = y)
+    (hzy : z - z' = A.obj.gradedResolutionDifferential y) :
+    smoothTensorInducedDiagonalClass.{u, v, w} U hU s A hA z hz hinv hdz =
+      smoothTensorInducedDiagonalClass.{u, v, w} U hU s A hA z' hz' hinv' hdz' := by
+  by_cases hz0 : z = 0
+  · by_cases hz'0 : z' = 0
+    · subst hz0 hz'0
+      rfl
+    -- Move `z'` to `z' + d y = z`.
+    obtain ⟨Φ, hΦd, hΦι, hΦ, hΦz⟩ :=
+      TopRep.exists_gradedResolutionTopRep_hom_apply_eq_add_of_add_self_eq_zero A.property hA hz'
+        hinv' hz'0 hy hyinv
+    exact smoothTensorInducedDiagonalClass_eq_of_hom_apply_eq U hU s A hA hz' hz hinv' hinv hdz'
+      hdz Φ hΦd hΦι hΦ (by rw [hΦz, ← hzy, add_sub_cancel])
+  -- Move `z` to `z + d (-y) = z'`.
+  obtain ⟨Φ, hΦd, hΦι, hΦ, hΦz⟩ :=
+    TopRep.exists_gradedResolutionTopRep_hom_apply_eq_add_of_add_self_eq_zero A.property hA hz
+      hinv hz0 (neg_mem hy) fun u ↦ (map_neg (A.obj.gradedResolutionTopRep.ρ u) y).trans
+        (congrArg Neg.neg (hyinv u))
+  exact (smoothTensorInducedDiagonalClass_eq_of_hom_apply_eq U hU s A hA hz hz' hinv hinv' hdz
+    hdz' Φ hΦd hΦι hΦ (by rw [hΦz, map_neg, ← hzy, ← sub_eq_add_neg, sub_sub_cancel])).symm
 
 end Contraction
 

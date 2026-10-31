@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import TauCeti.Algebra.GroupWithZero.Basic
+public import TauCeti.RingTheory.Perfection
 
 /-!
 # Roots of elements of perfect rings
@@ -57,10 +58,9 @@ theorem iterateFrobeniusEquiv_symm_succ_pow (x : R) (n : ℕ) :
 /-- Deeper roots of `x` divide shallower ones: the `p ^ n`-th root of `x` divides its
 `p ^ m`-th root when `m ≤ n`. -/
 theorem iterateFrobeniusEquiv_symm_dvd_of_le (x : R) {m n : ℕ} (h : m ≤ n) :
-    (iterateFrobeniusEquiv R p n).symm x ∣ (iterateFrobeniusEquiv R p m).symm x := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [← iterateFrobeniusEquiv_symm_add_pow x m k]
-  exact dvd_pow_self _ (pow_ne_zero _ (expChar_ne_zero R p))
+    (iterateFrobeniusEquiv R p n).symm x ∣ (iterateFrobeniusEquiv R p m).symm x :=
+  dvd_of_compatible_roots (r := fun n ↦ (iterateFrobeniusEquiv R p n).symm x)
+    (iterateFrobeniusEquiv_symm_succ_pow x) h
 
 variable (R p) in
 /-- A perfect ring of prime characteristic `p` is reduced. -/

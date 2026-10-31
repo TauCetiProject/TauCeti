@@ -59,6 +59,8 @@ families; every statement assumes the relevant boundedness. The disc norm `S_h` 
 
 * `TauCeti.amiceRadius_pow_le_norm_factorial`,
   `TauCeti.norm_factorial_le_mul_amiceRadius_succ_pow`: `r_hⁿ ≤ ‖⌊n / pʰ⌋!‖ ≤ p r_{h+1}ⁿ`.
+* `TauCeti.norm_factorial_pow_eq_mul_amiceRadius_pow`: along `n = p^(h + k)` the lower bound is
+  sharp up to the factor `p ^ (1 / (p - 1))`.
 * `TauCeti.gaussNorm_amiceRadius_le_amiceDualNorm`: `S_h(F) ≤ D_h(F)`.
 * `TauCeti.amiceDualNorm_le_mul_gaussNorm_amiceRadius_succ`: `D_h(F) ≤ p S_{h+1}(F)`.
 * `TauCeti.onOpenDisc_iff_forall_hasGaussNorm_amiceRadius` and
@@ -159,23 +161,14 @@ private theorem norm_natCast_eq_rpow {m : ℕ} (hm : m ≠ 0) :
 radius `r_h` is at most the weight of the dual stage norm at level `h`. -/
 theorem amiceRadius_pow_le_norm_factorial (h n : ℕ) :
     amiceRadius p h ^ n ≤ ‖((n / p ^ h)! : ℚ_[p])‖ := by
-  -- Legendre's formula gives `(p - 1) v_p(m!) ≤ m`, and `m pʰ ≤ n` for `m = ⌊n / pʰ⌋`.
-  rw [amiceRadius_pow, norm_natCast_eq_rpow (factorial_ne_zero _)]
-  refine Real.rpow_le_rpow_of_exponent_le one_lt_natCast.le (neg_le_neg ?_)
-  have hsub := sub_one_pos (p := p)
-  have := natCast_pos (p := p)
-  rw [le_div_iff₀ (by positivity)]
-  have hleg : (p - 1) * padicValNat p (n / p ^ h)! ≤ n / p ^ h := by
-    rw [sub_one_mul_padicValNat_factorial]
-    exact Nat.sub_le _ _
-  have hle : (p - 1) * padicValNat p (n / p ^ h)! * p ^ h ≤ n :=
-    (Nat.mul_le_mul_right _ hleg).trans (Nat.div_mul_le_self n _)
-  have hcast : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
-    rw [Nat.cast_sub hp.out.one_le, Nat.cast_one]
-  calc (padicValNat p (n / p ^ h)! : ℝ) * (((p : ℝ) - 1) * (p : ℝ) ^ h)
-      = (((p - 1) * padicValNat p (n / p ^ h)! * p ^ h : ℕ) : ℝ) := by
-        push_cast [hcast]; ring
-    _ ≤ n := by exact_mod_cast hle
+  rw [amiceRadius_pow]
+  refine le_trans (Real.rpow_le_rpow_of_exponent_le one_lt_natCast.le (neg_le_neg ?_))
+    (Padic.rpow_neg_div_le_norm_factorial (n / p ^ h))
+  have hdiv : ((n / p ^ h : ℕ) : ℝ) ≤ (n : ℝ) / (p : ℝ) ^ h := by
+    rw [le_div_iff₀ (pow_pos natCast_pos _)]
+    exact_mod_cast Nat.div_mul_le_self n (p ^ h)
+  simpa only [div_div, mul_comm] using
+    div_le_div_of_nonneg_right hdiv (sub_one_pos (p := p)).le
 
 /-- **Upper weight bound.** `‖⌊n / pʰ⌋!‖ ≤ p r_{h+1}ⁿ`: the weight of the dual stage norm at
 level `h` is at most `p` times the weight `r_{h+1}ⁿ` of the Gauss norm at the radius `r_{h+1}`. -/
@@ -205,6 +198,25 @@ theorem norm_factorial_le_mul_amiceRadius_succ_pow (h n : ℕ) :
         Real.rpow_le_rpow_of_exponent_le one_lt_natCast.le (by linarith)
     _ = p * (p : ℝ) ^ (-((n : ℝ) / (((p : ℝ) - 1) * (p : ℝ) ^ (h + 1)))) := by
         rw [Real.rpow_add hp0, Real.rpow_one]
+
+/-- **The lower weight bound is sharp up to a constant.** Along `n = p^(h + k)`, where
+`⌊n / pʰ⌋ = pᵏ`, the weight `‖(pᵏ)!‖` is `p ^ (1 / (p - 1)) r_hⁿ`. So `r_hⁿ / ‖⌊n / pʰ⌋!‖` does not
+tend to zero, and no bound `ρⁿ ≤ ‖⌊n / pʰ⌋!‖` holds for all `n` with `ρ > r_h`. -/
+theorem norm_factorial_pow_eq_mul_amiceRadius_pow (h k : ℕ) :
+    ‖((p ^ k)! : ℚ_[p])‖ = (p : ℝ) ^ (1 / ((p : ℝ) - 1)) * amiceRadius p h ^ p ^ (h + k) := by
+  have hsub := sub_one_pos (p := p)
+  have hp0 := natCast_pos (p := p)
+  have hv : (padicValNat p (p ^ k)! : ℝ) = ((p : ℝ) ^ k - 1) / ((p : ℝ) - 1) := by
+    have hc := congrArg (Nat.cast : ℕ → ℝ) (sub_one_mul_padicValNat_factorial_pow p k)
+    rw [Nat.cast_mul, Nat.cast_sub hp.out.one_le, Nat.cast_sub (Nat.one_le_pow _ _ hp.out.pos),
+      Nat.cast_pow, Nat.cast_one] at hc
+    rw [eq_div_iff hsub.ne', mul_comm, hc]
+  rw [norm_natCast_eq_rpow (factorial_ne_zero _), hv, amiceRadius_pow, ← Real.rpow_add hp0]
+  congr 1
+  push_cast
+  rw [pow_add]
+  field_simp
+  ring
 
 /-! ### The dual stage norm and its comparison with the disc norms -/
 

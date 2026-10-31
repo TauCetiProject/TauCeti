@@ -13,6 +13,8 @@ public import Mathlib.Analysis.Matrix.Order
 This file supplements Mathlib's `Matrix.PosSemidef` API for matrices indexed by arbitrary types.
 It provides rank-one and constant matrices, finite Schur products, Schur powers,
 products of weights over unions of finite sets, and the quadratic-form characterization.
+It also gives block matrix-vector constraints over commutative star-ordered rings with a
+proper star: a null vector of a diagonal block is a null vector of the block above or below it.
 
 The results apply in particular to positive-definite kernels, represented directly as matrices,
 but do not depend on Tau Ceti's positive-definite-function theory.
@@ -26,11 +28,15 @@ but do not depend on Tau Ceti's positive-definite-function theory.
   products and Schur powers.
 * `TauCeti.posSemidef_prod_union`: the matrix `(i, j) ↦ ∏_{a ∈ L i ∪ L j} w a` for weights in
   `[0, 1]`.
+* `Matrix.PosSemidef.toBlocks₁₂_mulVec_eq_zero` and
+  `Matrix.PosSemidef.toBlocks₂₁_mulVec_eq_zero`: block null-vector constraints.
 
 ## References
 
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984),
   Chapter 3.
+* T. W. Anderson, *An Introduction to Multivariate Statistical Analysis*, 3rd ed., 2003,
+  Chapter 2 (partitioned covariance matrices and conditional Gaussian distributions).
 -/
 
 public section
@@ -190,3 +196,32 @@ theorem Matrix.PosSemidef.hadamard_pow {α 𝕜 : Type*} [RCLike 𝕜] {K : α �
         ext
         rw [Matrix.hadamard_apply, Matrix.of_apply, Matrix.of_apply, pow_succ]
       exact heq ▸ ih.hadamard hK
+
+namespace Matrix.PosSemidef
+
+variable {R ι κ : Type*} [CommRing R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
+  [IsProperStar R] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) R}
+
+/-- A null vector of the lower-right block of a positive-semidefinite matrix is also
+a null vector of its upper-right block. -/
+theorem toBlocks₁₂_mulVec_eq_zero [Finite ι] [Fintype κ] (hS : S.PosSemidef)
+    {x : κ → R} (hx : S.toBlocks₂₂ *ᵥ x = 0) : S.toBlocks₁₂ *ᵥ x = 0 := by
+  let := Fintype.ofFinite ι
+  -- Extend the null vector by zero in the other block. Its quadratic form vanishes.
+  have hq : star (Sum.elim 0 x) ⬝ᵥ S *ᵥ Sum.elim 0 x = 0 := by
+    rw [← fromBlocks_toBlocks S, fromBlocks_mulVec, dotProduct_block]
+    simp [Function.star_sumElim, hx]
+  have hz := hS.dotProduct_mulVec_zero_iff.mp hq
+  rw [← fromBlocks_toBlocks S, fromBlocks_mulVec] at hz
+  simpa using congrArg (fun v => v ∘ Sum.inl) hz
+
+/-- A null vector of the upper-left block of a positive-semidefinite matrix is also
+a null vector of its lower-left block. -/
+theorem toBlocks₂₁_mulVec_eq_zero [Fintype ι] [Finite κ] (hS : S.PosSemidef)
+    {x : ι → R} (hx : S.toBlocks₁₁ *ᵥ x = 0) : S.toBlocks₂₁ *ᵥ x = 0 := by
+  have h := (hS.submatrix Sum.swap).toBlocks₁₂_mulVec_eq_zero (x := x)
+  rw [← fromBlocks_toBlocks S, fromBlocks_submatrix_sum_swap_sum_swap,
+    toBlocks_fromBlocks₂₂, toBlocks_fromBlocks₁₂] at h
+  exact h hx
+
+end Matrix.PosSemidef
