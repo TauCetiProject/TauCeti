@@ -22,6 +22,10 @@ kernel are Mathlib's lemmas about `Submodule.projectionOnto`, restated for the s
 The one fact that goes beyond a single projection is that over a finite index type the projections
 sum to the identity, `TauCeti.sum_coe_internalProjection`.
 
+For a single complementary pair `F₀`, `F₁`, the projection onto `F₁` also computes any linear map
+vanishing on `F₀` from its values on a basis of `F₁`
+(`Submodule.apply_eq_sum_repr_projectionOnto`).
+
 ## Main definitions
 
 * `TauCeti.internalProjection`: the projection of `M` onto the summand `Q i` of an internal direct
@@ -36,6 +40,8 @@ sum to the identity, `TauCeti.sum_coe_internalProjection`.
   sum to the identity.
 * `DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection`: the
   component supplied by the inverse direct-sum equivalence is the internal projection.
+* `Submodule.apply_eq_sum_repr_projectionOnto`: a linear map vanishing on `F₀` is determined by
+  its values on a basis of a complement of `F₀`.
 
 ## Implementation notes
 
@@ -150,3 +156,21 @@ theorem coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
         congrArg₂ (fun a b ↦ a + b) hx hy
 
 end DirectSum.IsInternal
+
+namespace Submodule
+
+variable {R : Type u} {V : Type v} {M : Type w} [Ring R] [AddCommGroup V] [Module R V]
+  [AddCommGroup M] [Module R M]
+
+/-- A linear map vanishing on `F₀` is computed from its values on a basis `b` of a complement
+`F₁` of `F₀`, through the coordinates of the projection onto `F₁`. -/
+theorem apply_eq_sum_repr_projectionOnto {ι : Type*} [Fintype ι] {F₀ F₁ : Submodule R V}
+    (hF : IsCompl F₀ F₁) (b : Module.Basis ι R F₁) (D : V →ₗ[R] M) (hD : ∀ φ : F₀, D φ = 0)
+    (v : V) :
+    D v = ∑ j, b.repr (F₁.projectionOnto F₀ hF.symm v) j • D (b j) := by
+  have hpq : ((F₀.projectionOnto F₁ hF v : F₀) : V) + (F₁.projectionOnto F₀ hF.symm v : V) = v := by
+    simpa using LinearMap.congr_fun (subtype_comp_projectionOnto_add_eq_id hF) v
+  conv_lhs => rw [← hpq, map_add, hD, zero_add, ← b.sum_repr (F₁.projectionOnto F₀ hF.symm v)]
+  simp only [coe_sum, coe_smul, map_sum, map_smul]
+
+end Submodule
