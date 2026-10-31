@@ -5,29 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.CrossingChange.UnknottingNumber
-public import TauCeti.KnotTheory.Grid.TorusLink.Basic
+public import TauCeti.KnotTheory.Grid.TorusLink.FullTwist
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Mk
-import TauCeti.KnotTheory.Grid.Move.Stabilization
-import TauCeti.KnotTheory.Grid.TorusLink.Alexander
 
 /-!
 # Unknotting numbers of torus link grids
 
 This file bounds the unknotting number (`GridLink.unknottingNumber`) of the grid links presented
-by the standard grids of torus links. The Hopf link has unknotting number `⊤`, since it has two
-components. The `(2, 2k + 1)` torus knot is unknotted by `k` crossing changes, and the `(3, 4)`
-torus knot, presented by its standard `7 × 7` grid, by three. These are the upper bounds
-`u(T_{p,q}) ≤ (p - 1) (q - 1) / 2` of the Milnor conjecture for these torus knots.
+by the standard torus link grids. The Hopf link has unknotting number `⊤`, since it has two
+components. Removing a full twist on `P` strands costs at most `P choose 2` crossing changes
+(`GridLink.crossingChangeGraph_edist_torusLink_add_le`), so the `(P, k P + 1)` torus knot is
+unknotted by `k (P choose 2) = (P - 1) ((k P + 1) - 1) / 2` crossing changes: the upper bound
+`u(T_{P,Q}) ≤ (P - 1) (Q - 1) / 2` of the Milnor conjecture for `Q ≡ 1 mod P`. This covers the
+`(3, 4)` torus knot, unknotted by three crossing changes.
 
-The two-strand family is handled by one crossing change in the standard grid of every size.
-Exchanging the first two columns of the standard grid of the `(2, q + 3)` torus link is a
+For two strands a full twist is one explicit crossing change in the standard grid of every
+size. Exchanging the first two columns of the standard grid of the `(2, q + 3)` torus link is a
 cross-commutation, and the resulting diagram is obtained from the standard grid of the
 `(2, q + 1)` torus link by two `X`-stabilizations, up to a cyclic permutation of the columns and
-row commutations. Induction on `k`, starting from the standard unknot grid, bounds the unknotting
-number of the `(2, 2k + 1)` torus knot by `k`. The `(3, 4)` bound comes from an explicit sequence
-of cross-commutations and commutations.
+row commutations. The `(2, 2k + 1)` torus knot has unknotting number at most `k`, the case `P = 2`
+of the general bound.
 
 The same upper bound holds for the transposed grids of the `(2 k + 1, 2)` torus knots: the knot
 presented by the standard grid `torusLink (2 * k) 1` has unknotting number at most `k`. This
@@ -50,6 +48,10 @@ unknotting number is `⊤`.
   number `⊤`.
 * `TauCeti.GridLink.isCrossingChange_toGridLink_torusLink_one_add_two`: the `(2, q + 3)` and
   `(2, q + 1)` torus links differ by one crossing change.
+* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_add_le`: removing a full twist from a
+  torus link grid lowers the unknotting number by at most `P choose 2`.
+* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_mul_le`: the `(P, k P + 1)` torus knot
+  has unknotting number at most `k (P choose 2)`.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_two_mul_le`: the `(2, 2k + 1)`
   torus knot has unknotting number at most `k`.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_two_three_le_three`: the `(3, 4)` torus
@@ -240,109 +242,49 @@ theorem isCrossingChange_toGridLink_torusLink_one_add_two (q : ℕ) :
       (GridDiagram.toGridLink_eq_iff_movesTo _).mpr
         (GridDiagram.movesTo_swapColumns_torusLink_one q)⟩
 
-/-- The `(2, 2k + 1)` torus knot, presented by its standard grid, has unknotting number at most
-`k`: this is the upper bound `u(T_{2, 2k+1}) ≤ (2 - 1) (2k + 1 - 1) / 2` of the Milnor
-conjecture. Each crossing change of `isCrossingChange_toGridLink_torusLink_one_add_two` lowers
-`k` by one, and the `(2, 1)` torus link grid is the standard unknot grid. -/
-theorem unknottingNumber_toGridLink_torusLink_one_two_mul_le (k : ℕ) :
-    (GridDiagram.torusLink 1 (2 * k)).toGridLink.unknottingNumber ≤ k := by
+/-- Removing a full twist: the unknotting number of the grid link of the standard
+`(p + 1, (q + (p + 1)) + 1)` torus link grid exceeds that of the `(p + 1, q + 1)` torus link grid
+by at most `(p + 1) choose 2`. -/
+theorem unknottingNumber_toGridLink_torusLink_add_le (p q : ℕ) :
+    (GridDiagram.torusLink p (q + (p + 1))).toGridLink.unknottingNumber ≤
+      (p + 1).choose 2 + (GridDiagram.torusLink p q).toGridLink.unknottingNumber := by
+  rw [unknottingNumber_def, unknottingNumber_def]
+  exact SimpleGraph.edist_triangle.trans
+    (by gcongr; exact crossingChangeGraph_edist_torusLink_add_le p q)
+
+/-- The `(p + 1, k (p + 1) + 1)` torus knot, presented by its standard grid, has unknotting number
+at most `k ((p + 1) choose 2)`. This is the upper bound `u(T_{P,Q}) ≤ (P - 1) (Q - 1) / 2` of the
+Milnor conjecture for `P = p + 1` and `Q = k P + 1`: each of the `k` full twists is removed by
+`P choose 2` crossing changes, and the `(p + 1, 1)` torus link grid is the standard unknot grid. -/
+theorem unknottingNumber_toGridLink_torusLink_mul_le (p k : ℕ) :
+    (GridDiagram.torusLink p (k * (p + 1))).toGridLink.unknottingNumber ≤ k * (p + 1).choose 2 := by
   induction k with
   | zero =>
-    rw [Nat.mul_zero, GridDiagram.torusLink_zero_right, GridDiagram.toGridLink_unknot,
-      unknottingNumber_unknot, Nat.cast_zero]
+    rw [Nat.zero_mul, GridDiagram.torusLink_zero_right, GridDiagram.toGridLink_unknot,
+      unknottingNumber_unknot]
+    exact zero_le
   | succ k ih =>
-    rw [Nat.mul_succ, Nat.cast_succ]
-    exact (isCrossingChange_toGridLink_torusLink_one_add_two _).unknottingNumber_le.trans
-      (by gcongr)
+    rw [Nat.succ_mul]
+    calc _ ≤ _ := unknottingNumber_toGridLink_torusLink_add_le p (k * (p + 1))
+      _ ≤ (p + 1).choose 2 + k * (p + 1).choose 2 := by gcongr
+      _ = (k + 1) * (p + 1).choose 2 := by ring
 
-/-- The standard `7 × 7` grid of the `(3, 4)` torus knot with its markings made explicit. -/
-private def torusTwoThreeGrid : GridDiagram 7 where
-  O := ⟨1⟩
-  X := ⟨finRotate 7 ^ 4⟩
-  disjoint := by decide
-
-private theorem torusLink_two_three_eq_torusTwoThreeGrid :
-    GridDiagram.torusLink 2 3 = torusTwoThreeGrid := by
-  ext c <;> simp [torusTwoThreeGrid]
-
-/-- The standard `7 × 7` unknot grid with its markings made explicit. -/
-private def unknotSevenGrid : GridDiagram 7 where
-  O := ⟨1⟩
-  X := ⟨finRotate 7⟩
-  disjoint := by decide
-
-private theorem unknot_five_eq_unknotSevenGrid : GridDiagram.unknot 5 = unknotSevenGrid := by
-  ext c <;> simp [unknotSevenGrid]
+/-- The `(2, 2k + 1)` torus knot, presented by its standard grid, has unknotting number at most
+`k`: this is the upper bound `u(T_{2, 2k+1}) ≤ (2 - 1) (2k + 1 - 1) / 2` of the Milnor
+conjecture, the case `P = 2` of `unknottingNumber_toGridLink_torusLink_mul_le`. -/
+theorem unknottingNumber_toGridLink_torusLink_one_two_mul_le (k : ℕ) :
+    (GridDiagram.torusLink 1 (2 * k)).toGridLink.unknottingNumber ≤ k := by
+  rw [Nat.mul_comm]
+  simpa using unknottingNumber_toGridLink_torusLink_mul_le 1 k
 
 /-- The `(3, 4)` torus knot, presented by its standard `7 × 7` grid, has unknotting number at most
-three. Three cross-commutations of adjacent columns, interspersed with nine commutations, turn
-it into the standard `7 × 7` unknot grid.
+three.
 
 This is the upper bound `u(T_{3,4}) ≤ (3 - 1) (4 - 1) / 2` of the Milnor conjecture for this torus
 knot. -/
 theorem unknottingNumber_toGridLink_torusLink_two_three_le_three :
     (GridDiagram.torusLink 2 3).toGridLink.unknottingNumber ≤ 3 := by
-  rw [torusLink_two_three_eq_torusTwoThreeGrid]
-  -- The diagrams `G₁`, `G₃` and `G₇` are reached by a cross-commutation (`h₁`, `h₃`, `h₇`), each
-  -- of the others by a commutation; the commutations are grouped into the move sequences `h₂`,
-  -- `h₆` and `h₁₂`, the last of which ends at the standard unknot grid.
-  set G₁ := torusTwoThreeGrid.swapColumns 0 (finRotate 7 0)
-  set G₂ := G₁.swapRows 0 (finRotate 7 0)
-  set G₃ := G₂.swapColumns 1 (finRotate 7 1)
-  set G₄ := G₃.swapRows 1 (finRotate 7 1)
-  set G₅ := G₄.swapRows 2 (finRotate 7 2)
-  set G₆ := G₅.swapColumns 2 (finRotate 7 2)
-  set G₇ := G₆.swapColumns 6 (finRotate 7 6)
-  set G₈ := G₇.swapRows 6 (finRotate 7 6)
-  set G₉ := G₈.swapRows 0 (finRotate 7 0)
-  set G₁₀ := G₉.swapColumns 0 (finRotate 7 0)
-  set G₁₁ := G₁₀.swapRows 5 (finRotate 7 5)
-  have h₁ : torusTwoThreeGrid.toGridLink.unknottingNumber ≤ G₁.toGridLink.unknottingNumber + 1 :=
-    torusTwoThreeGrid.unknottingNumber_toGridLink_le_swapColumns_add_one (a := 0) (by
-      simp only [GridDiagram.columnsInterleaving_iff, GridDiagram.columnArc, Grid.mem_cIoo]
-      decide)
-  have h₃ : G₂.toGridLink.unknottingNumber ≤ G₃.toGridLink.unknottingNumber + 1 :=
-    G₂.unknottingNumber_toGridLink_le_swapColumns_add_one (a := 1) (by
-      simp only [GridDiagram.columnsInterleaving_iff, GridDiagram.columnArc, Grid.mem_cIoo]
-      decide)
-  have h₇ : G₆.toGridLink.unknottingNumber ≤ G₇.toGridLink.unknottingNumber + 1 :=
-    G₆.unknottingNumber_toGridLink_le_swapColumns_add_one (a := 6) (by
-      simp only [GridDiagram.columnsInterleaving_iff, GridDiagram.columnArc, Grid.mem_cIoo]
-      decide)
-  have h₂ : G₁.MovesTo G₂ := G₁.movesTo_swapRows 0 (by
-    simp only [GridDiagram.RowsNoninterleaving, Grid.Noninterleaving, Grid.mem_cIoo]
-    decide)
-  have h₆ : G₃.MovesTo G₆ := by
-    refine (G₃.movesTo_swapRows 1 ?_).trans <|
-      (G₄.movesTo_swapRows 2 ?_).trans <| G₅.movesTo_swapColumns 2 ?_
-    all_goals
-      simp only [GridDiagram.RowsNoninterleaving, GridDiagram.ColumnsNoninterleaving,
-        Grid.Noninterleaving, Grid.mem_cIoo]
-      decide
-  have h₁₂ : G₇.MovesTo (GridDiagram.unknot 5) := by
-    have h : G₁₁.swapColumns 5 (finRotate 7 5) = GridDiagram.unknot 5 := by
-      rw [unknot_five_eq_unknotSevenGrid]
-      ext c
-      all_goals revert c; decide
-    rw [← h]
-    refine (G₇.movesTo_swapRows 6 ?_).trans <|
-      (G₈.movesTo_swapRows 0 ?_).trans <|
-      (G₉.movesTo_swapColumns 0 ?_).trans <|
-      (G₁₀.movesTo_swapRows 5 ?_).trans <| G₁₁.movesTo_swapColumns 5 ?_
-    all_goals
-      simp only [GridDiagram.RowsNoninterleaving, GridDiagram.ColumnsNoninterleaving,
-        Grid.Noninterleaving, Grid.mem_cIoo]
-      decide
-  calc torusTwoThreeGrid.toGridLink.unknottingNumber
-      ≤ G₁.toGridLink.unknottingNumber + 1 := h₁
-    _ = G₂.toGridLink.unknottingNumber + 1 := by rw [(G₁.toGridLink_eq_iff_movesTo).mpr h₂]
-    _ ≤ G₃.toGridLink.unknottingNumber + 1 + 1 := by gcongr
-    _ = G₆.toGridLink.unknottingNumber + 1 + 1 := by rw [(G₃.toGridLink_eq_iff_movesTo).mpr h₆]
-    _ ≤ G₇.toGridLink.unknottingNumber + 1 + 1 + 1 := by gcongr
-    _ = 3 := by
-      rw [(G₇.toGridLink_eq_iff_movesTo).mpr h₁₂, GridDiagram.toGridLink_unknot,
-        unknottingNumber_unknot]
-      norm_num
+  simpa using unknottingNumber_toGridLink_torusLink_mul_le 2 1
 
 end GridLink
 

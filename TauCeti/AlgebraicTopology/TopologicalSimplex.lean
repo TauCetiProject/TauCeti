@@ -147,6 +147,13 @@ lemma simplexMap_map (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     simplexMap ((TopCat.toSSet.obj X).map α σ) =
       (simplexMap σ).comp (SimplexCategory.toTop.map α.unop).hom := rfl
 
+/-- The image of a reindexed singular simplex, for instance of a face, lies in the image of the
+original simplex. -/
+lemma range_simplexMap_map_subset (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    Set.range (simplexMap ((TopCat.toSSet.obj X).map α σ)) ⊆ Set.range (simplexMap σ) := by
+  rw [simplexMap_map, ContinuousMap.coe_comp]
+  exact Set.range_comp_subset_range _ _
+
 /-- Pushing a singular simplex forward along a continuous map postcomposes the underlying
 continuous map with that map. -/
 @[simp]

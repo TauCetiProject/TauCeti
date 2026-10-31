@@ -45,6 +45,7 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
   antisymmetrization operator on the tensor power.
+* `exteriorPower.map_bijective`: a bijective linear map induces bijections of exterior powers.
 * `exteriorPower.toTensorPower_comp_map` and `exteriorPower.map_comp_fromTensorPower`: the
   antisymmetrization and the canonical surjection are natural in the module.
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
@@ -252,6 +253,20 @@ theorem ιMulti_ne_zero_iff {n : ℕ} (v : Fin n → V) :
     (Set.powersetCard.ofCard hs)
 
 end Field
+
+/-! ### Bijectivity of induced maps -/
+
+section Bijective
+
+variable [CommRing R] [AddCommGroup M] [Module R M] {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- A bijective linear map induces a bijective map on every exterior power. -/
+theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) :
+    Function.Bijective (map n f) :=
+  ⟨map_injective (LinearEquiv.ofBijective f hf).symm.toLinearMap (by ext; simp),
+    map_surjective hf.2⟩
+
+end Bijective
 
 end exteriorPower
 
