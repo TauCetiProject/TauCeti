@@ -285,16 +285,9 @@ section Prod
 /-- The center of a product of two algebras is the product of their centers. -/
 def centerProdAlgEquiv :
     Subalgebra.center R (A × B) ≃ₐ[R] Subalgebra.center R A × Subalgebra.center R B :=
-  have mem_iff : ∀ x : A × B, x ∈ Subalgebra.center R (A × B) ↔
-      x.1 ∈ Subalgebra.center R A ∧ x.2 ∈ Subalgebra.center R B := fun _ => by
-    rw [Subalgebra.center_prod, Subalgebra.mem_prod]
-  { toFun := fun x => (⟨x.1.1, ((mem_iff _).mp x.2).1⟩, ⟨x.1.2, ((mem_iff _).mp x.2).2⟩)
-    invFun := fun y => ⟨((y.1 : A), (y.2 : B)), (mem_iff _).mpr ⟨y.1.2, y.2.2⟩⟩
-    left_inv := fun _ => rfl
-    right_inv := fun _ => rfl
-    map_mul' := fun _ _ => rfl
-    map_add' := fun _ _ => rfl
-    commutes' := fun _ => rfl }
+  (Subalgebra.equivOfEq _ _ Subalgebra.center_prod).trans
+    (AlgEquiv.ofRingEquiv (f := Subsemiring.prodEquiv (Subalgebra.center R A).toSubsemiring
+      (Subalgebra.center R B).toSubsemiring) fun _ => rfl)
 
 -- As for `centerPiAlgEquiv`, these three lemmas are the defining equations of the unexposed
 -- `centerProdAlgEquiv`; `(rfl)` keeps the definitional step inside this module.
