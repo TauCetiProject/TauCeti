@@ -21,10 +21,6 @@ nontrivially. Dually, the preimage of a subspace `W` under a linear map out of a
 `m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors.
 
-Dimension counting also shows that a finite-dimensional subspace meets the members of a
-downward-directed family of subspaces of an arbitrary space eventually in the same subspace as
-their intersection.
-
 The rank of a product `V.prod W` of free submodules is the sum of their ranks over any
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
 `f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`. Conjugating an
@@ -85,22 +81,6 @@ theorem le_finrank_span_iff_exists_linearIndependent {s : Set E} [Module.Finite 
     exact ⟨f ∘ Fin.castLE h, hf.comp _ (Fin.castLE_injective h), fun i ↦ hfs _⟩
   · have := finrank_mono (span_mono (R := 𝕜) (Set.range_subset_iff.2 hvs))
     rwa [finrank_span_eq_card hv, Fintype.card_fin] at this
-
-/-- A finite-dimensional subspace `V` meets the members of a downward-directed family of
-subspaces of an arbitrary space eventually in the same subspace as their intersection: some member
-`B i` has `V ⊓ B i = V ⊓ ⨅ j, B j`. In particular, if `V` is disjoint from `⨅ j, B j`, it is
-disjoint from some `B i`. -/
-theorem exists_inf_eq_inf_iInf {ι : Type*} [Nonempty ι] {B : ι → Submodule 𝕜 E}
-    (hB : Directed (· ≥ ·) B) (V : Submodule 𝕜 E) [FiniteDimensional 𝕜 V] :
-    ∃ i, V ⊓ B i = V ⊓ ⨅ j, B j := by
-  -- A member minimizing the dimension of the intersection with `V` works.
-  let i := Function.argmin fun i ↦ finrank 𝕜 ↥(V ⊓ B i)
-  refine ⟨i, le_antisymm (le_inf inf_le_left (le_iInf fun j ↦ ?_))
-    (inf_le_inf_left _ (iInf_le _ i))⟩
-  obtain ⟨k, hik, hjk⟩ := hB i j
-  have hk : V ⊓ B k = V ⊓ B i := eq_of_le_of_finrank_le (inf_le_inf_left _ hik)
-    (Function.argmin_le (fun i ↦ finrank 𝕜 ↥(V ⊓ B i)) k)
-  exact hk ▸ inf_le_right.trans hjk
 
 end DivisionRing
 
