@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.PresentationLimit
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Analytic
 
@@ -32,7 +32,8 @@ pseudouniformiser of the sections `A⟨G/g⟩` over that chart.
 
 Every morphism of pre-adic spaces pulls analytic points back to analytic points, since its maps
 on sections are continuous and so preserve pseudouniformisers; the converse inclusion is what a
-morphism must satisfy to restrict to analytic loci.
+morphism must satisfy to restrict to analytic loci. Open immersions satisfy it: a point of the
+source of an open immersion is analytic exactly when its image is.
 
 The *analytic locus* `X_a` is the open subspace of `X` on its analytic points (Wedhorn,
 Remark 8.37), with its inclusion `analyticLocus.ι : X_a ⟶ X`, an open immersion. Every point of
@@ -65,6 +66,8 @@ constructions on Tate affinoids, such as completed tensor products, apply to non
   `Spa(A, A⁺)` are the points of its analytic locus `Spa(A, A⁺)ᵃ`.
 * `TauCeti.PreAdicSpace.preimage_analyticPoints_subset`: a point over an analytic point is
   analytic.
+* `TauCeti.PreAdicSpace.preimage_analyticPoints_of_isOpenImmersion`: a point of the source of an
+  open immersion is analytic exactly when its image is.
 * `TauCeti.PreAdicSpace.analyticPoints_analyticLocus`: every point of `X_a` is analytic.
 * `TauCeti.PreAdicSpace.isIso_analyticLocus_ι_iff`: `X_a ⟶ X` is an isomorphism exactly when
   every point of `X` is analytic.
@@ -149,6 +152,34 @@ theorem preimage_analyticPoints_eq_iff_mapsTo (f : Y ⟶ X) :
       Set.MapsTo f.base Y.analyticPoints X.analyticPoints :=
   ⟨fun h ↦ Set.mapsTo_iff_subset_preimage.mpr h.ge,
     fun h ↦ (preimage_analyticPoints_subset f).antisymm (Set.mapsTo_iff_subset_preimage.mp h)⟩
+
+/-- An isomorphism of pre-adic spaces sends analytic points to analytic points: its inverse pulls
+analytic points back to analytic points. -/
+private theorem preimage_analyticPoints_of_isIso (f : Y ⟶ X) [IsIso f] :
+    f.base ⁻¹' X.analyticPoints = Y.analyticPoints := by
+  refine (preimage_analyticPoints_subset f).antisymm fun y hy ↦
+    preimage_analyticPoints_subset (inv f) ?_
+  have h : (inv f).base (f.base y) = y := by
+    rw [← TopCat.comp_app, ← comp_base, IsIso.hom_inv_id]
+    rfl
+  rwa [Set.mem_preimage, h]
+
+/-- **An open immersion preserves analytic points**: the analytic points of the source of an
+open immersion `f` are the points that `f` sends to analytic points. This is
+`analyticPoints_restrict` read through the isomorphism of the source with the restriction of the
+target to the image of `f`. -/
+theorem preimage_analyticPoints_of_isOpenImmersion (f : Y ⟶ X) [IsOpenImmersion f] :
+    f.base ⁻¹' X.analyticPoints = Y.analyticPoints := by
+  rw [← preimage_analyticPoints_of_isIso (IsOpenImmersion.isoRestrict f).hom,
+    analyticPoints_restrict]
+  -- the preimage along `isoRestrict f ≫ ofRestrict` is the iterated preimage, by `comp_base`
+  exact (congrArg (fun g : Y ⟶ X ↦ g.base ⁻¹' X.analyticPoints)
+    (IsOpenImmersion.isoRestrict_hom_ofRestrict f)).symm
+
+/-- An open immersion sends analytic points to analytic points. -/
+theorem mapsTo_analyticPoints_of_isOpenImmersion (f : Y ⟶ X) [IsOpenImmersion f] :
+    Set.MapsTo f.base Y.analyticPoints X.analyticPoints :=
+  (preimage_analyticPoints_eq_iff_mapsTo f).mp (preimage_analyticPoints_of_isOpenImmersion f)
 
 end Morphisms
 

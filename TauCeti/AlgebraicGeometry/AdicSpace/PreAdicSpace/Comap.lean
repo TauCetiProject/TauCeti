@@ -43,6 +43,8 @@ spaces. This applies, for instance, to the Frobenius automorphism of `Spa(A_inf,
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap_base_apply_coe`: on points, the
+  morphism induced by `φ` is pullback of valuations along `φ`.
 * `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap_id`,
   `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap_comp`: the construction is
   contravariantly functorial.
@@ -548,6 +550,21 @@ theorem presentationLimitPreAdicSpaceComap_toHom
     (presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).toHom =
       presentationLimitPresheafedSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf := by
   rw [presentationLimitPreAdicSpaceComap]
+
+/-- The image of a point under the morphism induced by `φ` is the pullback of its valuation along
+`φ`. -/
+theorem presentationLimitPreAdicSpaceComap_base_apply_coe
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus)) (x : spa Bplus) :
+    ((presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).base x :
+      spa Aplus).1 = comap φ x.1 := by
+  rw [presentationLimitPreAdicSpaceComap_toHom, presentationLimitPresheafedSpaceComap_base]
+  exact spaComap_val φ hφ Aplus Bplus hplus x
 
 /-- **The stalk maps on rational germs.** Let `R(p)` be a rational open of `Spa(A, A⁺)` and `R(q)` a
 rational open of `Spa(B, B⁺)` inside its preimage. At a point `x` of `R(q)`, the stalk map of the

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.IntervalChart
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.PreAdicSpace
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic.Basic
 public import TauCeti.Analysis.SpecialFunctions.Pow.NNRat
 
 /-!
