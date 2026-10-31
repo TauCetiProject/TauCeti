@@ -15,7 +15,7 @@ public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.Limits.Shapes.SequentialProduct
 public import Mathlib.CategoryTheory.Limits.Types.Images
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
-public import TauCeti.CategoryTheory.Limits.Over
+public import TauCeti.CategoryTheory.Comma.Over
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Pi
 
 /-!
