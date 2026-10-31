@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Commutator.Basic
+public import Mathlib.GroupTheory.Exponent
 public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.Algebra.Group.CommuteOrNeg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
@@ -14,7 +16,13 @@ import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import TauCeti.Algebra.Group.ConjFinite
 import TauCeti.LinearAlgebra.Basis.Basic
 import Mathlib.Data.Fintype.Powerset
+-- Non-public: `Nat.card_zpowers` turns the order of `ε` into the order of the subgroup it
+-- generates, and `Subgroup.card_eq_card_quotient_mul_card_subgroup` divides it out.
+import Mathlib.Data.ZMod.QuotientGroup
+import Mathlib.GroupTheory.Coset.Card
 import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
+-- Non-public: `CliffordAlgebra.neZeroTwo` gives `2 ≠ 0`, which shows `ε = -1` is not `1`.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 /-!
 # The finite group of signed monomials of a Clifford algebra
@@ -31,6 +39,18 @@ where `e_s = ι Q (b i₁) * ⋯ * ι Q (b iₖ)` for `s = {i₁ < ⋯ < iₖ}` 
 `CliffordAlgebra.basis_mul_basis`: `e_s * e_t = ±e_{s ∆ t}`. Its element `ε = -1` is central.
 When the ring is nontrivial, `2` is invertible, and the finite index type has `n` elements,
 the group is finite of order `2 ^ (n + 1)`.
+
+That central element generates the **sign subgroup** `⟨ε⟩`, which is normal because it is central.
+Every counting claim about it below assumes that `2 ≠ 0` in the Clifford algebra, which holds over
+a nontrivial coefficient ring in which `2` is invertible; in characteristic two `ε = 1` and the sign
+subgroup is trivial. Under that hypothesis `⟨ε⟩ = {1, ε}` has order two. Quotienting by it forgets
+the sign of a signed monomial. The quotient is **commutative** for any family of pairwise
+orthogonal vectors, because two such signed monomials commute or anticommute, so their commutator
+is `1` or `ε`. When those pairwise orthogonal generators also square to `±1`, **every element of
+the quotient has order dividing two** as well, because the square of such a signed monomial is `±1`;
+for a finite orthogonal basis of `n` such generators over a ring as above the quotient has
+`2 ^ n` elements, one for each index set `s`. The characters of `G` that kill `ε` are exactly the
+characters of the quotient.
 
 The group is a model of the Clifford algebra: the `e_s` form a basis of `CliffordAlgebra Q` and
 multiply as the elements of `G` do, so the group algebra `R[G]` modulo the central element `ε + 1`
@@ -55,6 +75,11 @@ representations of `G`.
   and the units whose value is a generator `ι Q (v i)`, for any family `v` of vectors.
 * `CliffordAlgebra.monomialGroupEquiv`: the parametrization `(s, ε) ↦ ε • e_s` of the group by a
   finite index set and a sign.
+* `CliffordAlgebra.monomialGroupEpsilon`: the central element `ε = -1`, the name under which the
+  whole API below refers to it.
+* `CliffordAlgebra.monomialGroupSign`: the central subgroup `⟨ε⟩` it generates.
+* `CliffordAlgebra.monomialGroupSignCharEquiv`: the characters killing `ε` are the characters of
+  the quotient by `⟨ε⟩`.
 * `CliffordAlgebra.monomialGroupAlgHom Q v`: the algebra map from the group algebra of the group
   to the Clifford algebra, sending each group element to its value.
 * `CliffordAlgebra.monomialGroupAlgebraQuotientEquiv`: **the Clifford algebra as the group algebra
@@ -72,9 +97,20 @@ representations of `G`.
 * `CliffordAlgebra.monomialGroup_commuteOrNeg`: signed monomials commute or anticommute.
 * `CliffordAlgebra.monomialGroup_val_eq_or_neg_of_isConj`: conjugation changes a signed monomial by
   at most its central sign.
-* `CliffordAlgebra.neg_one_mem_center_monomialGroup`: `ε = -1` is central.
+* `CliffordAlgebra.monomialGroupEpsilon_mem_center`: `ε = -1` is central.
 * `CliffordAlgebra.natCard_monomialGroup`: **the order** is `2 ^ (n + 1)` over a nontrivial
-  ring in which `2` is invertible.
+  ring in which `2` is invertible, and `CliffordAlgebra.finite_monomialGroup` is the finiteness
+  that follows.
+* `CliffordAlgebra.mem_monomialGroupSign_iff`: the sign subgroup is `{1, ε}`, and
+  `CliffordAlgebra.natCard_monomialGroupSign`: it has order two whenever `2 ≠ 0` in the Clifford
+  algebra, which `CliffordAlgebra.monomialGroupEpsilon_ne_one` turns into `ε ≠ 1`.
+* `CliffordAlgebra.commutator_monomialGroup_le_monomialGroupSign` and
+  `CliffordAlgebra.isMulCommutative_quotient_monomialGroupSign`: for a family of pairwise
+  orthogonal vectors the quotient by the sign subgroup is commutative, and
+  `CliffordAlgebra.exponent_quotient_monomialGroupSign_dvd_two`: when those vectors also square
+  to `±1` its exponent divides two.
+* `CliffordAlgebra.natCard_quotient_monomialGroupSign`: that quotient has `2 ^ n` elements, again
+  over a nontrivial ring in which `2` is invertible.
 * `CliffordAlgebra.monomialGroupAlgHom_surjective`: the group algebra maps onto the Clifford
   algebra whenever the vectors span and their squares are units.
 * `CliffordAlgebra.ker_monomialGroupAlgHom`: for an orthogonal basis whose generators square to
@@ -124,6 +160,26 @@ theorem monomialGroup_def :
 theorem neg_one_mem_monomialGroup : -1 ∈ monomialGroup Q v :=
   Subgroup.subset_closure (Or.inl (by simp))
 
+variable (Q) in
+/-- **The central element `ε = -1`** of the group of signed monomials: the unit `-1`, viewed as an
+element of the group. This is the canonical spelling of that element: every statement about it
+below, up to the universal property `CliffordAlgebra.monomialGroupLift`, is phrased with this name
+rather than with the anonymous constructor `⟨-1, neg_one_mem_monomialGroup v⟩`. -/
+def monomialGroupEpsilon : monomialGroup Q v :=
+  ⟨-1, neg_one_mem_monomialGroup v⟩
+
+/-- The value of `ε` is the unit `-1`. -/
+@[simp]
+theorem coe_monomialGroupEpsilon :
+    (monomialGroupEpsilon Q v : (CliffordAlgebra Q)ˣ) = -1 :=
+  (rfl)
+
+/-- `ε` squares to `1`. -/
+@[simp]
+theorem monomialGroupEpsilon_mul_self :
+    monomialGroupEpsilon Q v * monomialGroupEpsilon Q v = 1 :=
+  Subtype.ext (by simp)
+
 /-- A unit whose value is a generator `ι Q (v i)` lies in the group of signed monomials. -/
 theorem mem_monomialGroup_of_val_eq_ι {u : (CliffordAlgebra Q)ˣ} {i : I}
     (h : (u : CliffordAlgebra Q) = ι Q (v i)) : u ∈ monomialGroup Q v :=
@@ -137,8 +193,8 @@ theorem exists_monomialGroup_val_eq_ι {i : I} (h : IsUnit (Q (v i))) :
   exact ⟨⟨w, mem_monomialGroup_of_val_eq_ι v hw⟩, hw⟩
 
 /-- **The element `ε = -1` is central** in the group of signed monomials. -/
-theorem neg_one_mem_center_monomialGroup :
-    (⟨-1, neg_one_mem_monomialGroup v⟩ : monomialGroup Q v) ∈ Subgroup.center (monomialGroup Q v) :=
+theorem monomialGroupEpsilon_mem_center :
+    monomialGroupEpsilon Q v ∈ Subgroup.center (monomialGroup Q v) :=
   Subgroup.mem_center_iff.mpr fun _ ↦ Subtype.ext (Units.ext (by simp))
 
 /-- The grade involution maps the group of signed monomials into itself: it fixes `-1` and sends
@@ -184,6 +240,253 @@ theorem monomialGroupInvolute_symm :
     (monomialGroupInvolute v).symm = monomialGroupInvolute (Q := Q) v :=
   (rfl)
 
+/-! ### The sign subgroup generated by `ε` -/
+
+variable (Q) in
+/-- **The sign subgroup `⟨ε⟩`** of the group of signed monomials: the central subgroup generated by
+`ε = -1`. Quotienting by it forgets the sign of a signed monomial. -/
+def monomialGroupSign : Subgroup (monomialGroup Q v) :=
+  Subgroup.zpowers (monomialGroupEpsilon Q v)
+
+/-- The sign subgroup is the subgroup generated by `ε`, which gives access to Mathlib's
+`Subgroup.zpowers` API. -/
+theorem monomialGroupSign_def :
+    monomialGroupSign Q v = Subgroup.zpowers (monomialGroupEpsilon Q v) :=
+  (rfl)
+
+/-- `ε` lies in the sign subgroup it generates. This is not a `simp` lemma: the `simp` form of its
+statement is `CliffordAlgebra.mem_monomialGroupSign_iff`, which already proves it. -/
+theorem monomialGroupEpsilon_mem_monomialGroupSign :
+    monomialGroupEpsilon Q v ∈ monomialGroupSign Q v :=
+  Subgroup.mem_zpowers _
+
+/-- **The sign subgroup is `{1, ε}`**: `ε` squares to `1`, so its powers are itself and the
+identity. -/
+@[simp]
+theorem mem_monomialGroupSign_iff {u : monomialGroup Q v} :
+    u ∈ monomialGroupSign Q v ↔ u = 1 ∨ u = monomialGroupEpsilon Q v := by
+  refine ⟨?_, ?_⟩
+  · rw [monomialGroupSign_def, Subgroup.mem_zpowers_iff]
+    rintro ⟨k, rfl⟩
+    rcases Int.even_or_odd k with ⟨m, rfl⟩ | ⟨m, rfl⟩
+    · exact Or.inl (by
+        rw [← two_mul, zpow_mul, zpow_two, monomialGroupEpsilon_mul_self, one_zpow])
+    · exact Or.inr (by
+        rw [zpow_add_one, zpow_mul, zpow_two, monomialGroupEpsilon_mul_self, one_zpow, one_mul])
+  · rintro (rfl | rfl)
+    · exact one_mem _
+    · exact monomialGroupEpsilon_mem_monomialGroupSign v
+
+instance monomialGroupSign_normal : (monomialGroupSign Q v).Normal :=
+  Subgroup.normal_of_le_center (Subgroup.zpowers_le.mpr (monomialGroupEpsilon_mem_center v))
+
+/-- **`ε` is not the identity** as soon as `2 ≠ 0` in the Clifford algebra: the value of `ε` is the
+unit `-1`, and `-1 = 1` says exactly that `2 = 0`. Over a nontrivial coefficient ring in which `2`
+is invertible the hypothesis is discharged by `two_ne_zero`, since the scalars of the Clifford
+algebra are a faithful copy of `R` (`CliffordAlgebra.neZeroTwo`). -/
+theorem monomialGroupEpsilon_ne_one (h2 : (2 : CliffordAlgebra Q) ≠ 0) :
+    monomialGroupEpsilon Q v ≠ 1 := by
+  intro h
+  have h1 : (-1 : CliffordAlgebra Q) = 1 := by
+    simpa using congrArg (fun g : monomialGroup Q v ↦
+      ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) h
+  exact h2 (by rw [← one_add_one_eq_two, ← sub_neg_eq_add, h1, sub_self])
+
+/-- **The sign subgroup has order two** whenever `2 ≠ 0` in the Clifford algebra: `ε` squares to
+`1` and, by `CliffordAlgebra.monomialGroupEpsilon_ne_one`, is not `1`. -/
+theorem natCard_monomialGroupSign (h2 : (2 : CliffordAlgebra Q) ≠ 0) :
+    Nat.card (monomialGroupSign Q v) = 2 := by
+  rw [monomialGroupSign_def, Nat.card_zpowers]
+  exact orderOf_eq_prime (by rw [pow_two, monomialGroupEpsilon_mul_self])
+    (monomialGroupEpsilon_ne_one v h2)
+
+/-! ### Commutation and conjugation of signed monomials -/
+
+/-- Any two signed monomials commute or anticommute, without a normalization assumption on their
+generator squares. -/
+lemma monomialGroup_commuteOrNeg
+    (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
+    (c u : monomialGroup Q v) :
+    TauCeti.CommuteOrNeg (c : (CliffordAlgebra Q)ˣ) u := by
+  let S : Set (CliffordAlgebra Q)ˣ := {x | (x : CliffordAlgebra Q) = -1 ∨
+    ∃ i, (x : CliffordAlgebra Q) = ι Q (v i)}
+  have hgen : ∀ x ∈ S, ∀ y ∈ S, TauCeti.CommuteOrNeg x y := by
+    intro x hx y hy
+    dsimp [S] at hx hy
+    rcases hx with hx | ⟨i, hx⟩ <;> rcases hy with hy | ⟨j, hy⟩
+    · apply TauCeti.CommuteOrNeg.of_commute
+      apply Units.ext
+      simp [hx, hy]
+    · apply TauCeti.CommuteOrNeg.of_commute
+      apply Units.ext
+      simp [hx, hy]
+    · apply TauCeti.CommuteOrNeg.of_commute
+      apply Units.ext
+      simp [hx, hy]
+    · by_cases hij : i = j
+      · subst j
+        apply TauCeti.CommuteOrNeg.of_commute
+        apply Units.ext
+        simp [hx, hy]
+      · apply TauCeti.CommuteOrNeg.of_semiconjBy
+        apply Units.ext
+        simpa [hx, hy] using ι_mul_ι_comm_of_isOrtho (hv i j hij)
+  have hmonomial : monomialGroup Q v = Subgroup.closure S := by
+    simpa only [S] using (monomialGroup_def (Q := Q) v)
+  have hc : (c : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := by
+    rw [← hmonomial]
+    exact c.property
+  have hu : (u : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := by
+    rw [← hmonomial]
+    exact u.property
+  exact TauCeti.CommuteOrNeg.of_mem_closure hgen hc hu
+
+/-- Every conjugate of a signed Clifford monomial is itself or its negative. -/
+lemma monomialGroup_val_eq_or_neg_of_isConj
+    (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
+    {u w : monomialGroup Q v} (h : IsConj u w) :
+  (w : (CliffordAlgebra Q)ˣ) = (u : (CliffordAlgebra Q)ˣ) ∨
+      (w : (CliffordAlgebra Q)ˣ) = -(u : (CliffordAlgebra Q)ˣ) := by
+  obtain ⟨c, hc⟩ := isConj_iff.mp h
+  have hmul := congrArg (fun z : monomialGroup Q v => (z : (CliffordAlgebra Q)ˣ) * c) hc
+  have hcv : (c : (CliffordAlgebra Q)ˣ) * u = (w : (CliffordAlgebra Q)ˣ) * c := by
+    simpa [mul_assoc] using hmul
+  have hcu := monomialGroup_commuteOrNeg v hv c u
+  rcases TauCeti.CommuteOrNeg.out hcu with hcu | hcu
+  · left
+    have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (u : (CliffordAlgebra Q)ˣ) * c :=
+      hcv.symm.trans hcu.eq
+    exact mul_right_cancel_iff.mp hcancel
+  · right
+    have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (-(u : (CliffordAlgebra Q)ˣ)) * c := by
+      calc
+        (w : (CliffordAlgebra Q)ˣ) * c = (c : (CliffordAlgebra Q)ˣ) * u := hcv.symm
+        _ = (-(u : (CliffordAlgebra Q)ˣ)) * c := hcu.eq
+    exact mul_right_cancel_iff.mp hcancel
+
+/-! ### The quotient by the sign subgroup -/
+
+/-- **The commutator of two signed monomials lies in the sign subgroup.** Signed monomials of
+pairwise orthogonal generators commute or anticommute, so their commutator is `1` or `ε`;
+`CliffordAlgebra.commutator_monomialGroup_le_monomialGroupSign` is the subgroup form. -/
+theorem inv_mul_mul_comm_mem_monomialGroupSign
+    (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j)) (c u : monomialGroup Q v) :
+    (c * u)⁻¹ * (u * c) ∈ monomialGroupSign Q v := by
+  rcases (monomialGroup_commuteOrNeg v hv c u).out with h | h
+  · refine (mem_monomialGroupSign_iff v).mpr (Or.inl ?_)
+    rw [inv_mul_eq_one]
+    exact Subtype.ext h.eq
+  · refine (mem_monomialGroupSign_iff v).mpr (Or.inr (Subtype.ext ?_))
+    have hcu : ((c * u : monomialGroup Q v) : (CliffordAlgebra Q)ˣ)
+        = -((u * c : monomialGroup Q v) : (CliffordAlgebra Q)ˣ) := by
+      simpa [neg_mul] using h.eq
+    push_cast [hcu]
+    simp
+
+/-- **The commutator subgroup of the group of signed monomials lies in the sign subgroup**, which
+is the subgroup form of `CliffordAlgebra.inv_mul_mul_comm_mem_monomialGroupSign`. -/
+theorem commutator_monomialGroup_le_monomialGroupSign
+    (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j)) :
+    commutator (monomialGroup Q v) ≤ monomialGroupSign Q v := by
+  rw [commutator_def, Subgroup.commutator_le]
+  intro c _ u _
+  have hcomm : c * u * c⁻¹ * u⁻¹ = (u⁻¹ * c⁻¹)⁻¹ * (c⁻¹ * u⁻¹) := by group
+  rw [commutatorElement_def, hcomm]
+  exact inv_mul_mul_comm_mem_monomialGroupSign v hv u⁻¹ c⁻¹
+
+/-- **The quotient of the group of signed monomials by its sign subgroup is commutative**, because
+the commutator subgroup lies in the sign subgroup. -/
+theorem isMulCommutative_quotient_monomialGroupSign
+    (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j)) :
+    IsMulCommutative (monomialGroup Q v ⧸ monomialGroupSign Q v) :=
+  Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
+    (commutator_monomialGroup_le_monomialGroupSign v hv)
+
+/-- **A signed monomial squares into the sign subgroup**: when pairwise orthogonal generators
+square to `±1`, the square of every signed monomial is `±1`. The generators square to `±1`, and
+since two signed monomials commute or anticommute, `(x * y) * (x * y) = ±(x * x) * (y * y)`. -/
+theorem mul_self_mem_monomialGroupSign (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
+    (hQ : ∀ i, Q (v i) = 1 ∨ Q (v i) = -1) (u : monomialGroup Q v) :
+    u * u ∈ monomialGroupSign Q v := by
+  have key {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ monomialGroup Q v) : x * x = 1 ∨ x * x = -1 := by
+    rw [monomialGroup_def] at hx
+    induction hx using Subgroup.closure_induction with
+    | mem x hx =>
+      rcases hx with hx | ⟨i, hx⟩
+      · exact Or.inl (Units.ext (by simp [hx]))
+      · rcases hQ i with h | h
+        · exact Or.inl (Units.ext (by simp [hx, ι_sq_scalar, h]))
+        · exact Or.inr (Units.ext (by simp [hx, ι_sq_scalar, h]))
+    | one => simp
+    | mul x y hx hy ihx ihy =>
+      have e : x * y * (x * y) = x * x * (y * y) ∨ x * y * (x * y) = -(x * x * (y * y)) := by
+        rcases (monomialGroup_commuteOrNeg v hv ⟨x, hx⟩ ⟨y, hy⟩).out with h | h
+        · have h' : y * x = x * y := h.eq.symm
+          left
+          rw [mul_assoc, ← mul_assoc y, h']
+          simp only [mul_assoc]
+        · have h' : y * x = -(x * y) := by
+            have h'' : x * y = -y * x := h.eq
+            rw [h'', neg_mul, neg_neg]
+          right
+          rw [mul_assoc, ← mul_assoc y, h']
+          simp only [neg_mul, mul_neg, mul_assoc]
+      rcases e with e | e <;> rcases ihx with h1 | h1 <;> rcases ihy with h2 | h2 <;>
+        simp [e, h1, h2]
+    | inv x hx ih =>
+      rw [← mul_inv_rev]
+      rcases ih with h | h <;> simp [h]
+  refine (mem_monomialGroupSign_iff v).mpr ?_
+  rcases key u.2 with h | h
+  · exact Or.inl (Subtype.ext h)
+  · exact Or.inr (Subtype.ext h)
+
+/-- **The quotient by the sign subgroup has exponent dividing two** when pairwise orthogonal
+generators square to `±1`. -/
+theorem exponent_quotient_monomialGroupSign_dvd_two
+    (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j)) (hQ : ∀ i, Q (v i) = 1 ∨ Q (v i) = -1) :
+    Monoid.exponent (monomialGroup Q v ⧸ monomialGroupSign Q v) ∣ 2 := by
+  refine Monoid.exponent_dvd_of_forall_pow_eq_one fun x ↦ ?_
+  induction x using QuotientGroup.induction_on with | H u =>
+  rw [pow_two, ← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff]
+  exact mul_self_mem_monomialGroupSign v hv hQ u
+
+/-- **The characters of the group of signed monomials that send `ε` to `1` are the characters of
+the quotient by the sign subgroup.** A character kills `ε` exactly when it kills the subgroup `ε`
+generates, so it factors through the quotient. The values are allowed in any group, so this covers
+the characters with values in the units of a ring as well as the sign characters. -/
+def monomialGroupSignCharEquiv {H : Type*} [Group H] :
+    {χ : monomialGroup Q v →* H // χ (monomialGroupEpsilon Q v) = 1} ≃
+      ((monomialGroup Q v ⧸ monomialGroupSign Q v) →* H) where
+  toFun χ := QuotientGroup.lift _ χ.1 fun u hu ↦ by
+    rcases (mem_monomialGroupSign_iff v).mp hu with rfl | rfl
+    · exact map_one _
+    · exact χ.2
+  invFun ψ := ⟨ψ.comp (QuotientGroup.mk' (monomialGroupSign Q v)), by
+    have hε := (QuotientGroup.eq_one_iff (N := monomialGroupSign Q v)
+      (monomialGroupEpsilon Q v)).mpr (monomialGroupEpsilon_mem_monomialGroupSign v)
+    simp [hε]⟩
+  left_inv _ := Subtype.ext (MonoidHom.ext fun _ ↦ rfl)
+  right_inv ψ := MonoidHom.ext fun x ↦ by
+    induction x using QuotientGroup.induction_on with | H u => rfl
+
+/-- `CliffordAlgebra.monomialGroupSignCharEquiv` sends a monoid map killing `ε` to the map of the
+quotient taking the class of a group element to its value. -/
+@[simp]
+theorem monomialGroupSignCharEquiv_apply_mk {H : Type*} [Group H]
+    (χ : {χ : monomialGroup Q v →* H // χ (monomialGroupEpsilon Q v) = 1})
+    (u : monomialGroup Q v) :
+    monomialGroupSignCharEquiv v χ (QuotientGroup.mk u) = χ.1 u :=
+  (rfl)
+
+/-- The inverse of `CliffordAlgebra.monomialGroupSignCharEquiv` sends a monoid map of the quotient
+to its composite with the quotient map. -/
+@[simp]
+theorem monomialGroupSignCharEquiv_symm_apply_coe {H : Type*} [Group H]
+    (ψ : (monomialGroup Q v ⧸ monomialGroupSign Q v) →* H) (u : monomialGroup Q v) :
+    ((monomialGroupSignCharEquiv v).symm ψ).1 u = ψ (QuotientGroup.mk u) :=
+  (rfl)
+
 /-! ### The group algebra of the group of signed monomials -/
 
 variable (Q) in
@@ -210,34 +513,34 @@ theorem monomialGroupAlgHom_single (g : monomialGroup Q v) (r : R) :
 
 /-- The element `ε + 1` of the group algebra, for `ε = -1` the central element of the group of
 signed monomials, lies in the kernel of `CliffordAlgebra.monomialGroupAlgHom`. -/
-theorem monomialGroupAlgHom_of_neg_one_add_one_eq_zero :
+theorem monomialGroupAlgHom_of_monomialGroupEpsilon_add_one_eq_zero :
     monomialGroupAlgHom Q v
-      (MonoidAlgebra.of R (monomialGroup Q v) ⟨-1, neg_one_mem_monomialGroup v⟩ + 1) = 0 := by
+      (MonoidAlgebra.of R (monomialGroup Q v) (monomialGroupEpsilon Q v) + 1) = 0 := by
   simp
 
 /-- The element `ε + 1` of the group algebra is central. -/
-private theorem of_neg_one_add_one_mem_center :
-    MonoidAlgebra.of R (monomialGroup Q v) ⟨-1, neg_one_mem_monomialGroup v⟩ + 1 ∈
+private theorem of_monomialGroupEpsilon_add_one_mem_center :
+    MonoidAlgebra.of R (monomialGroup Q v) (monomialGroupEpsilon Q v) + 1 ∈
       Set.center (MonoidAlgebra R (monomialGroup Q v)) :=
   Semigroup.mem_center_iff.mpr fun y ↦
     ((MonoidAlgebra.of_commute (fun g ↦
-      ((Subgroup.mem_center_iff.mp (neg_one_mem_center_monomialGroup v) g).symm)) y).add_left
+      ((Subgroup.mem_center_iff.mp (monomialGroupEpsilon_mem_center v) g).symm)) y).add_left
         (Commute.one_left y)).eq.symm
 
 /-- Multiplying a group element `g` by `ε + 1` gives `ε * g + g`. -/
-private theorem of_neg_one_mul_add_of (g : monomialGroup Q v) :
-    MonoidAlgebra.of R _ (⟨-1, neg_one_mem_monomialGroup v⟩ * g) + MonoidAlgebra.of R _ g =
+private theorem of_monomialGroupEpsilon_mul_add_of (g : monomialGroup Q v) :
+    MonoidAlgebra.of R _ (monomialGroupEpsilon Q v * g) + MonoidAlgebra.of R _ g =
       MonoidAlgebra.of R _ g *
-        (MonoidAlgebra.of R (monomialGroup Q v) ⟨-1, neg_one_mem_monomialGroup v⟩ + 1) := by
+        (MonoidAlgebra.of R (monomialGroup Q v) (monomialGroupEpsilon Q v) + 1) := by
   rw [mul_add, mul_one, ← map_mul,
-    Subgroup.mem_center_iff.mp (neg_one_mem_center_monomialGroup v) g]
+    Subgroup.mem_center_iff.mp (monomialGroupEpsilon_mem_center v) g]
 
 /-- The left ideal generated by the central element `ε + 1` of the group algebra is two-sided. -/
-instance isTwoSided_span_of_neg_one_add_one :
-    (Ideal.span {MonoidAlgebra.of R (monomialGroup Q v) ⟨-1, neg_one_mem_monomialGroup v⟩ +
+instance isTwoSided_span_of_monomialGroupEpsilon_add_one :
+    (Ideal.span {MonoidAlgebra.of R (monomialGroup Q v) (monomialGroupEpsilon Q v) +
       1}).IsTwoSided :=
   Ideal.isTwoSided_span_of_subset_center
-    (Set.singleton_subset_iff.mpr (of_neg_one_add_one_mem_center v))
+    (Set.singleton_subset_iff.mpr (of_monomialGroupEpsilon_add_one_mem_center v))
 
 /-- **The group algebra maps onto the Clifford algebra** when the vectors `v` span `M` and the
 generators `ι Q (v i)` are units, that is, when every `Q (v i)` is a unit. -/
@@ -341,7 +644,7 @@ private theorem exists_monomialGroup_val_eq_zsmul_basis
   obtain ⟨u, hu⟩ := exists_monomialGroup_val_eq_basis hb hQ p.1
   rcases Int.units_eq_one_or p.2 with h | h
   · exact ⟨u, by simp [h, hu]⟩
-  · exact ⟨⟨-1, neg_one_mem_monomialGroup b⟩ * u, by simp [h, hu]⟩
+  · exact ⟨monomialGroupEpsilon Q b * u, by simp [h, hu]⟩
 
 /-- **The signed monomials, parametrized by support and sign**: for an orthogonal basis whose
 generators square to `±1`, over a nontrivial ring in which `2` is invertible, `(s, ε) ↦ ε • e_s` is
@@ -440,6 +743,27 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
     · simpa only [Subgroup.coe_mul, Units.val_mul, hs, mul_neg, neg_mul] using
         congrArg Neg.neg (hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))
 
+/-- **The group of signed monomials of a finite orthogonal basis is finite.** -/
+theorem finite_monomialGroup [Finite I] [Nontrivial R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
+    Finite (monomialGroup Q b) := by
+  have : Fintype I := Fintype.ofFinite I
+  have h : Nat.card (monomialGroup Q b) ≠ 0 := by
+    rw [natCard_monomialGroup hb hQ]
+    positivity
+  exact (Nat.card_ne_zero.mp h).2
+
+/-! ### The quotient by the sign subgroup of an orthogonal basis -/
+
+/-- **The quotient by the sign subgroup has `2 ^ n` elements**, one for each of the `2 ^ n` index
+sets: the group of signed monomials has `2 ^ (n + 1)` elements and the sign subgroup has two. -/
+theorem natCard_quotient_monomialGroupSign [Fintype I] [Nontrivial R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
+    Nat.card (monomialGroup Q b ⧸ monomialGroupSign Q b) = 2 ^ Fintype.card I := by
+  have h := (monomialGroupSign Q b).card_eq_card_quotient_mul_card_subgroup
+  rw [natCard_monomialGroup hb hQ, natCard_monomialGroupSign b two_ne_zero, pow_succ] at h
+  exact (Nat.eq_of_mul_eq_mul_right two_pos h).symm
+
 /-! ### The Clifford algebra as a quotient of the group algebra -/
 
 /-- **The kernel of the group algebra map is generated by `ε + 1`**: for an orthogonal basis whose
@@ -449,10 +773,10 @@ theorem ker_monomialGroupAlgHom (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
     RingHom.ker (monomialGroupAlgHom Q b) =
       Ideal.span
-        {MonoidAlgebra.of R (monomialGroup Q b) ⟨-1, neg_one_mem_monomialGroup b⟩ + 1} := by
-  set x := MonoidAlgebra.of R (monomialGroup Q b) ⟨-1, neg_one_mem_monomialGroup b⟩ + 1 with hx
+        {MonoidAlgebra.of R (monomialGroup Q b) (monomialGroupEpsilon Q b) + 1} := by
+  set x := MonoidAlgebra.of R (monomialGroup Q b) (monomialGroupEpsilon Q b) + 1 with hx
   refine le_antisymm (fun y hy ↦ ?_) (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr
-    (monomialGroupAlgHom_of_neg_one_add_one_eq_zero b)))
+    (monomialGroupAlgHom_of_monomialGroupEpsilon_add_one_eq_zero b)))
   -- Every basis vector `e_s` is the value of a group element `u s`.
   choose u hu using exists_monomialGroup_val_eq_basis hb hQ
   -- Lifting `e_s` back to `u s` is a linear section of the group algebra map, modulo `ε + 1`.
@@ -467,13 +791,13 @@ theorem ker_monomialGroupAlgHom (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
         rw [monomialGroupAlgHom_of, hu, Module.Basis.constr_basis, sub_self]
         exact zero_mem _
       · -- Here `g = ε * u s`, and `of g + of (u s) = of (u s) * (ε + 1)`.
-        have hg : g = ⟨-1, neg_one_mem_monomialGroup b⟩ * u s :=
+        have hg : g = monomialGroupEpsilon Q b * u s :=
           Subtype.ext (Units.ext (by simp [hs, hu]))
         have hmem : MonoidAlgebra.of R _ (u s) * x ∈ Ideal.span {x} :=
           Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self x)
         convert hmem using 1
         rw [monomialGroupAlgHom_of, hs, map_neg, Module.Basis.constr_basis, sub_neg_eq_add, hg,
-          of_neg_one_mul_add_of]
+          of_monomialGroupEpsilon_mul_add_of]
     | add y z hy hz => simpa [add_sub_add_comm] using add_mem hy hz
     | smul r y hy => simpa [smul_sub] using Submodule.smul_of_tower_mem _ r hy
   simpa [RingHom.mem_ker.mp hy] using key y
@@ -484,7 +808,7 @@ maps to its value. -/
 noncomputable def monomialGroupAlgebraQuotientEquiv (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
     (MonoidAlgebra R (monomialGroup Q b) ⧸
-      Ideal.span {MonoidAlgebra.of R (monomialGroup Q b) ⟨-1, neg_one_mem_monomialGroup b⟩ + 1})
+      Ideal.span {MonoidAlgebra.of R (monomialGroup Q b) (monomialGroupEpsilon Q b) + 1})
       ≃ₐ[R] CliffordAlgebra Q :=
   (Ideal.quotientEquivAlgOfEq R (ker_monomialGroupAlgHom hb hQ).symm).trans
     (Ideal.quotientKerAlgEquivOfSurjective (monomialGroupAlgHom_surjective b b.span_eq
@@ -514,7 +838,7 @@ theorem monomialGroupAlgebraQuotientEquiv_symm_apply_coe
 monomials sending `ε` to `-1`; it is `CliffordAlgebra.monomialGroupLift`. -/
 private noncomputable def monomialGroupLiftAux (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {A : Type*} [Ring A] [Algebra R A]
-    (f : {f : monomialGroup Q b →* A // f ⟨-1, neg_one_mem_monomialGroup b⟩ = -1}) :
+    (f : {f : monomialGroup Q b →* A // f (monomialGroupEpsilon Q b) = -1}) :
     CliffordAlgebra Q →ₐ[R] A :=
   (Ideal.Quotient.liftₐ _ (MonoidAlgebra.lift R A _ f) fun _ hz ↦
       RingHom.mem_ker.mp ((Ideal.span_le.mpr (Set.singleton_subset_iff.mpr
@@ -524,7 +848,7 @@ private noncomputable def monomialGroupLiftAux (hb : (QuadraticMap.associated Q)
 /-- `CliffordAlgebra.monomialGroupLiftAux hb hQ f` sends the value of `g` to `f g`. -/
 private theorem monomialGroupLiftAux_apply_coe (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {A : Type*} [Ring A] [Algebra R A]
-    (f : {f : monomialGroup Q b →* A // f ⟨-1, neg_one_mem_monomialGroup b⟩ = -1})
+    (f : {f : monomialGroup Q b →* A // f (monomialGroupEpsilon Q b) = -1})
     (g : monomialGroup Q b) :
     monomialGroupLiftAux hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.1 g := by
   simp only [monomialGroupLiftAux, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
@@ -538,7 +862,7 @@ orthogonal basis whose generators square to `±1`, algebra maps from the Cliffor
 with the representations of the group on `W` in which `ε` acts by `-1`. -/
 noncomputable def monomialGroupLift (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {A : Type*} [Ring A] [Algebra R A] :
-    {f : monomialGroup Q b →* A // f ⟨-1, neg_one_mem_monomialGroup b⟩ = -1} ≃
+    {f : monomialGroup Q b →* A // f (monomialGroupEpsilon Q b) = -1} ≃
       (CliffordAlgebra Q →ₐ[R] A) where
   toFun := monomialGroupLiftAux hb hQ
   invFun F := ⟨(F : CliffordAlgebra Q →* A).comp
@@ -556,7 +880,7 @@ element `g` to `f g`. -/
 @[simp]
 theorem monomialGroupLift_apply_coe (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {A : Type*} [Ring A] [Algebra R A]
-    (f : {f : monomialGroup Q b →* A // f ⟨-1, neg_one_mem_monomialGroup b⟩ = -1})
+    (f : {f : monomialGroup Q b →* A // f (monomialGroupEpsilon Q b) = -1})
     (g : monomialGroup Q b) :
     monomialGroupLift hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.1 g :=
   monomialGroupLiftAux_apply_coe hb hQ f g
@@ -569,70 +893,6 @@ theorem monomialGroupLift_symm_apply_coe (hb : (QuadraticMap.associated Q).IsOrt
     (F : CliffordAlgebra Q →ₐ[R] A) (g : monomialGroup Q b) :
     ((monomialGroupLift hb hQ).symm F).1 g = F ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
   (rfl)
-
-omit [Invertible (2 : R)] [LinearOrder I] in
-/-- Any two signed monomials commute or anticommute, without a normalization assumption on their
-generator squares. -/
-lemma monomialGroup_commuteOrNeg
-    (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
-    (c u : monomialGroup Q v) :
-    TauCeti.CommuteOrNeg (c : (CliffordAlgebra Q)ˣ) u := by
-  let S : Set (CliffordAlgebra Q)ˣ := {x | (x : CliffordAlgebra Q) = -1 ∨
-    ∃ i, (x : CliffordAlgebra Q) = ι Q (v i)}
-  have hgen : ∀ x ∈ S, ∀ y ∈ S, TauCeti.CommuteOrNeg x y := by
-    intro x hx y hy
-    dsimp [S] at hx hy
-    rcases hx with hx | ⟨i, hx⟩ <;> rcases hy with hy | ⟨j, hy⟩
-    · apply TauCeti.CommuteOrNeg.of_commute
-      apply Units.ext
-      simp [hx, hy]
-    · apply TauCeti.CommuteOrNeg.of_commute
-      apply Units.ext
-      simp [hx, hy]
-    · apply TauCeti.CommuteOrNeg.of_commute
-      apply Units.ext
-      simp [hx, hy]
-    · by_cases hij : i = j
-      · subst j
-        apply TauCeti.CommuteOrNeg.of_commute
-        apply Units.ext
-        simp [hx, hy]
-      · apply TauCeti.CommuteOrNeg.of_semiconjBy
-        apply Units.ext
-        simpa [hx, hy] using ι_mul_ι_comm_of_isOrtho (hv i j hij)
-  have hmonomial : monomialGroup Q v = Subgroup.closure S := by
-    simpa only [S] using (monomialGroup_def (Q := Q) v)
-  have hc : (c : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := by
-    rw [← hmonomial]
-    exact c.property
-  have hu : (u : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := by
-    rw [← hmonomial]
-    exact u.property
-  exact TauCeti.CommuteOrNeg.of_mem_closure hgen hc hu
-
-omit [Invertible (2 : R)] [LinearOrder I] in
-/-- Every conjugate of a signed Clifford monomial is itself or its negative. -/
-lemma monomialGroup_val_eq_or_neg_of_isConj
-    (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
-    {u w : monomialGroup Q v} (h : IsConj u w) :
-  (w : (CliffordAlgebra Q)ˣ) = (u : (CliffordAlgebra Q)ˣ) ∨
-      (w : (CliffordAlgebra Q)ˣ) = -(u : (CliffordAlgebra Q)ˣ) := by
-  obtain ⟨c, hc⟩ := isConj_iff.mp h
-  have hmul := congrArg (fun z : monomialGroup Q v => (z : (CliffordAlgebra Q)ˣ) * c) hc
-  have hcv : (c : (CliffordAlgebra Q)ˣ) * u = (w : (CliffordAlgebra Q)ˣ) * c := by
-    simpa [mul_assoc] using hmul
-  have hcu := monomialGroup_commuteOrNeg v hv c u
-  rcases TauCeti.CommuteOrNeg.out hcu with hcu | hcu
-  · left
-    have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (u : (CliffordAlgebra Q)ˣ) * c :=
-      hcv.symm.trans hcu.eq
-    exact mul_right_cancel_iff.mp hcancel
-  · right
-    have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (-(u : (CliffordAlgebra Q)ˣ)) * c := by
-      calc
-        (w : (CliffordAlgebra Q)ˣ) * c = (c : (CliffordAlgebra Q)ˣ) * u := hcv.symm
-        _ = (-(u : (CliffordAlgebra Q)ˣ)) * c := hcu.eq
-    exact mul_right_cancel_iff.mp hcancel
 
 /-! ### Conjugacy classes -/
 
@@ -662,19 +922,19 @@ theorem natCard_carrier_monomialGroup_of_notMem_center
     (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
     {u : monomialGroup Q v} (hu : u ∉ Subgroup.center (monomialGroup Q v)) :
     Nat.card (ConjClasses.mk u).carrier = 2 := by
-  set ε : monomialGroup Q v := ⟨-1, neg_one_mem_monomialGroup v⟩
+  set ε : monomialGroup Q v := monomialGroupEpsilon Q v
   have hcarrier : (ConjClasses.mk u).carrier = {u, ε * u} := by
     ext w
     rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mk_eq_mk_iff_isConj, isConj_comm,
       monomialGroup_isConj_iff_of_notMem_center v hv hu, Set.mem_insert_iff,
       Set.mem_singleton_iff, Subtype.ext_iff, Subtype.ext_iff, Subgroup.coe_mul]
-    simp only [ε, neg_one_mul]
+    simp only [ε, coe_monomialGroupEpsilon, neg_one_mul]
   -- `u ≠ -u`: otherwise anticommuting with `u` would be commuting with it, so `u` would be central.
   have hne : u ≠ ε * u := by
     intro h
     have hneg : -(u : (CliffordAlgebra Q)ˣ) = u := by
       have h' := congrArg (fun g : monomialGroup Q v ↦ (g : (CliffordAlgebra Q)ˣ)) h
-      simp only [Subgroup.coe_mul, ε, neg_one_mul] at h'
+      simp only [Subgroup.coe_mul, ε, coe_monomialGroupEpsilon, neg_one_mul] at h'
       exact h'.symm
     refine hu (Subgroup.mem_center_iff.mpr fun g ↦ Subtype.ext ?_)
     rcases (monomialGroup_commuteOrNeg v hv g u).out with hc | hc

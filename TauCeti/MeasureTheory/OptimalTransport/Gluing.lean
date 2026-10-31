@@ -103,9 +103,11 @@ variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpac
 /-- The gluing of a measure `π` on `X × Y` with a kernel `κ : Kernel Y Z` along the middle
 coordinate: the measure on `X × Y × Z` which draws `(x, y)` from `π` and then `z` from `κ y`.
 
-Its `(X, Y)`-marginal is `π` (`TauCeti.Measure.map_prodMap_id_fst_glue`) and its `(Y, Z)`-marginal
+For an s-finite `π` and a Markov kernel `κ` its `(X, Y)`-marginal is `π`
+(`TauCeti.Measure.map_prodMap_id_fst_glue`), and for an s-finite kernel `κ` its `(Y, Z)`-marginal
 is `π.snd ⊗ₘ κ` (`TauCeti.Measure.snd_glue`), so choosing `κ` to be a conditional kernel of a
-second plan `σ` glues `π` and `σ`. -/
+second plan `σ` glues `π` and `σ`. The definition takes any kernel: for one that is not Markov
+the first marginal need not be `π`, and the zero kernel glues every `π` to `0`. -/
 def glue (π : Measure (X × Y)) (κ : Kernel Y Z) : Measure (X × Y × Z) :=
   (π ⊗ₘ Kernel.prodMkLeft X κ).map MeasurableEquiv.prodAssoc
 

@@ -32,7 +32,9 @@ preferred charts (`Manifold.IsImmersionAtOfComplement.of_writtenInExtChartAt`); 
 model the manifold derivative is the derivative of the map read in these charts. A
 parameter-preserving map `(p, x) ↦ (p, G (p, x))` is then an immersion at every point where its
 slice `x ↦ G (p, x)` is one in the sense of differentials, as for the space-time track of a moving
-embedded submanifold.
+embedded submanifold. Likewise, postcomposing an immersion with a diffeomorphism onto a manifold
+with a different finite-dimensional model gives an immersion (`Diffeomorph.isImmersion_comp`), for
+example after exchanging the factors of a product.
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 1, §3 (the local immersion
 theorem), and Chapter 8, §1 (its use in isotopy extension).
@@ -277,6 +279,20 @@ theorem ContMDiff.isImmersionAt_fst_prod {G : P × M → N} (hG : ContMDiff (IP.
     isOpen_univ (mem_univ q) hn ?_
   exact ((hG q).mdifferentiableAt hn0).hasLeftInverse_mfderiv_fst_prod_iff.mpr
     (isDiffImmersionAt_iff.mp hq)
+
+omit [CompleteSpace E] [CompleteSpace E'] [CompleteSpace EP] [J.Boundaryless] in
+/-- Postcomposing an immersion from a boundaryless manifold with a diffeomorphism of the target
+onto a boundaryless manifold gives an immersion, also when the new target has a different model,
+provided that model is finite dimensional. -/
+theorem Diffeomorph.isImmersion_comp [FiniteDimensional 𝕜 EP] (Φ : N ≃ₘ^n⟮J, IP⟯ P)
+    (hn : 1 ≤ n) (hf : IsImmersion I J n f) : IsImmersion I IP n (Φ ∘ f) := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  refine TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun x => ?_
+  refine ((Φ.contMDiff.comp hf.contMDiff).contMDiffOn.isImmersionAt_iff_injective_mfderiv
+    isOpen_univ (mem_univ x) hn).mpr ?_
+  rw [mfderiv_comp x (Φ.mdifferentiable hn0 _) (hf.contMDiff.mdifferentiableAt hn0),
+    ContinuousLinearMap.coe_comp, ← Φ.mfderivToContinuousLinearEquiv_coe hn0]
+  exact (Φ.mfderivToContinuousLinearEquiv hn0 (f x)).injective.comp (hf.mfderiv_injective hn0 x)
 
 end Manifold
 

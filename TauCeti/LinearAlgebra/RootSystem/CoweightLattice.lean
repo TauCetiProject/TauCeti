@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
+public import Mathlib.GroupTheory.Index
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
+public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import Mathlib.LinearAlgebra.RootSystem.IsValuedIn
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
 # The coweight lattice and the coroot lattice of a root datum
@@ -40,6 +44,19 @@ quotient being a torsion module (`Module.IsTorsion`); over `ℤ` with `M` finite
 torsion quotient is the same as a finite one. Only the perfectness of the pairing is used: no
 finiteness of the root system, reducedness or crystallographic condition is needed.
 
+For a root pairing with *finitely many* roots the spanning hypotheses can be dropped instead, as
+long as one only asks about the coroot lattice: the restriction map is injective on `Q∨`
+(`RootPairing.disjoint_corootSpan_ker_toDualRootSpan`, from the nondegeneracy of the canonical
+form `RootPairing.CorootForm` on `Q∨`), and over `ℤ` the coroot lattice still has finite index in
+`Hom_ℤ(Q, ℤ)` (`RootPairing.finite_quotient_corootSpan_map_of_finite`). This is a rank count: over a
+principal ideal domain the root lattice is free of finite rank (`RootPairing.free_rootSpan`), and
+`Q` and `Q∨` have equal rank (`RootPairing.finrank_corootSpan_eq'`).
+
+When the roots span `M`, the restriction map is an isomorphism of `N` onto the dual of the root
+span (`RootPairing.toDualRootSpan_bijective`); so then the coroot lattice has finite index in `N`
+itself (`RootPairing.finite_quotient_corootSpan`), and if the coroots also span `N`, as for a root
+system, it is the whole of the dual (`RootPairing.corootSpan_map_toDualRootSpan_eq_top`).
+
 ## Main definitions
 
 * `RootPairing.toDualRootSpan`: the restriction of the pairing to the root span, as a linear map
@@ -54,11 +71,24 @@ finiteness of the root system, reducedness or crystallographic condition is need
 * `RootPairing.finite_quotient_corootSpan_map`: for a root datum with finitely generated character
   lattice whose roots and coroots span finite-index sublattices, the coroot lattice has finite
   index in the coweight lattice.
+* `RootPairing.free_rootSpan`: over a principal ideal domain, the root lattice of a root pairing
+  with finitely many roots is free.
+* `RootPairing.disjoint_corootSpan_ker_toDualRootSpan`: with finitely many roots, the restriction
+  map is injective on the coroot lattice.
+* `RootPairing.finite_quotient_corootSpan_map_of_finite`: for a root datum with finitely many roots,
+  the coroot lattice has finite index in the coweight lattice, without spanning hypotheses.
+* `RootPairing.toDualRootSpan_bijective`: if the roots span, the restriction map is bijective.
+* `RootPairing.finite_quotient_corootSpan` and `RootPairing.finiteIndex_toAddSubgroup_corootSpan`:
+  for a root datum with finitely many roots spanning the character lattice, the coroot lattice has
+  finite index in the cocharacter lattice.
+* `RootPairing.corootSpan_map_toDualRootSpan_eq_top`: if the roots and the coroots both span, the
+  coroot lattice is the whole coweight lattice.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4–6*, Chapter VI, §1.9 and §2.2–2.3.
 * J. E. Humphreys, *Reflection Groups and Coxeter Groups*, §4.2–4.9.
+* M. Demazure, *SGA III, Exposé XXI, Données Radicielles*, 6.2.
 -/
 
 public section
@@ -151,5 +181,94 @@ theorem finite_quotient_corootSpan_map {M N : Type*} [AddCommGroup M] [AddCommGr
     (hM : IsTorsion ℤ (M ⧸ P.rootSpan ℤ)) (hN : IsTorsion ℤ (N ⧸ P.corootSpan ℤ)) :
     Finite (Dual ℤ (P.rootSpan ℤ) ⧸ (P.corootSpan ℤ).map P.toDualRootSpan) :=
   Module.finite_of_fg_torsion _ (P.isTorsion_quotient_corootSpan_map hM hN)
+
+/-! ### Spanning roots -/
+
+/-- **The restriction map is onto when the roots span**: by perfectness, every functional on
+`M = Q` is the pairing with a coweight. -/
+theorem toDualRootSpan_surjective (hP : P.rootSpan R = ⊤) :
+    Function.Surjective P.toDualRootSpan := by
+  intro f
+  obtain ⟨y, hy⟩ := (LinearMap.IsPerfPair.bijective_right P.toLinearMap).2
+    (f ∘ₗ (LinearEquiv.ofTop (P.rootSpan R) hP).symm.toLinearMap)
+  refine ⟨y, ?_⟩
+  ext x
+  have hx : (LinearEquiv.ofTop (P.rootSpan R) hP).symm (x : M) = x :=
+    Subtype.ext (LinearEquiv.coe_ofTop_symm_apply _ _)
+  simpa [hx] using congr($hy x)
+
+/-- **The restriction map is an isomorphism when the roots span**: the coweight space is then the
+dual of the root span. -/
+theorem toDualRootSpan_bijective (hP : P.rootSpan R = ⊤) :
+    Function.Bijective P.toDualRootSpan := by
+  refine ⟨P.toDualRootSpan_injective fun x ↦ ⟨1, ?_⟩, P.toDualRootSpan_surjective hP⟩
+  have : Subsingleton (M ⧸ P.rootSpan R) := Submodule.Quotient.subsingleton_iff.2 hP
+  exact Subsingleton.elim _ _
+
+/-- **The coroot lattice is the whole coweight lattice when the roots and the coroots both span**,
+as they do for a root system. -/
+theorem corootSpan_map_toDualRootSpan_eq_top (hP : P.rootSpan R = ⊤)
+    (hQ : P.corootSpan R = ⊤) : (P.corootSpan R).map P.toDualRootSpan = ⊤ := by
+  rw [hQ, Submodule.map_top, LinearMap.range_eq_top]
+  exact P.toDualRootSpan_surjective hP
+
+/-! ### Finitely many roots -/
+
+/-- The root span of a root pairing is torsion-free: it sits inside `M`, which the
+perfect pairing makes reflexive. -/
+theorem isTorsionFree_rootSpan : IsTorsionFree R (P.rootSpan R) :=
+  have : IsReflexive R M := .of_isPerfPair P.toLinearMap
+  (Submodule.injective_subtype _).moduleIsTorsionFree _ fun _ _ ↦ rfl
+
+/-- **The root lattice is free of finite rank** over a principal ideal domain: it is finitely
+generated because there are finitely many roots, and torsion-free because the pairing is
+perfect. -/
+theorem free_rootSpan [Finite ι] [IsDomain R] [IsPrincipalIdealRing R] :
+    Module.Free R (P.rootSpan R) :=
+  have := P.isTorsionFree_rootSpan
+  inferInstance
+
+/-- **The restriction map is injective on the coroot lattice**, for finitely many roots: a
+coroot-lattice element on which every root vanishes is in the kernel of the coroot form, whose
+kernel meets the coroot lattice trivially. -/
+theorem disjoint_corootSpan_ker_toDualRootSpan [Fintype ι] [IsDomain R] [P.IsAnisotropic] :
+    Disjoint (P.corootSpan R) (LinearMap.ker P.toDualRootSpan) := by
+  refine Submodule.disjoint_def.2 fun y hy hy0 ↦
+    Submodule.disjoint_def.1 P.disjoint_corootSpan_ker_corootForm y hy ?_
+  have hroot (i : ι) : P.root' i y = 0 := by
+    simpa using congr($(LinearMap.mem_ker.1 hy0) (P.rootSpanMem R i))
+  exact LinearMap.mem_ker.2 <| LinearMap.ext fun z ↦ by simp [P.corootForm_apply_apply, hroot]
+
+/-- **The coroot lattice has finite index in the coweight lattice of a root datum with finitely
+many roots**, with no spanning hypothesis: the image of `Q∨` in the free `ℤ`-module
+`Hom_ℤ(Q, ℤ)` has full rank, because `Q∨` embeds and has the rank of `Q`. -/
+theorem finite_quotient_corootSpan_map_of_finite {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+    [Finite ι] (P : RootPairing ι ℤ M N) :
+    Finite (Dual ℤ (P.rootSpan ℤ) ⧸ (P.corootSpan ℤ).map P.toDualRootSpan) := by
+  have := Fintype.ofFinite ι
+  have := P.free_rootSpan
+  have hinj : Function.Injective (P.toDualRootSpan ∘ₗ (P.corootSpan ℤ).subtype) := by
+    rw [← LinearMap.ker_eq_bot, LinearMap.ker_comp, ← Submodule.disjoint_iff_comap_eq_bot]
+    exact P.disjoint_corootSpan_ker_toDualRootSpan
+  refine Submodule.finiteQuotientOfFreeOfRankEq _ ?_
+  rw [← Submodule.range_subtype (P.corootSpan ℤ), ← LinearMap.range_comp,
+    LinearMap.finrank_range_of_inj hinj, P.finrank_corootSpan_eq']
+  exact (Module.finrank_linearMap_self ℤ ℤ _).symm
+
+/-- **The coroot lattice has finite index in the cocharacter lattice** of a root datum with
+finitely many roots spanning the character lattice: the restriction map identifies `N` with
+`Hom_ℤ(Q, ℤ)` (`RootPairing.toDualRootSpan_bijective`). -/
+theorem finite_quotient_corootSpan {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Finite ι]
+    (P : RootPairing ι ℤ M N) (hP : P.rootSpan ℤ = ⊤) : Finite (N ⧸ P.corootSpan ℤ) :=
+  have := P.finite_quotient_corootSpan_map_of_finite
+  .of_equiv _ (Submodule.Quotient.equiv (P.corootSpan ℤ) ((P.corootSpan ℤ).map P.toDualRootSpan)
+    (LinearEquiv.ofBijective _ (P.toDualRootSpan_bijective hP)) rfl).symm.toEquiv
+
+/-- The index form of `RootPairing.finite_quotient_corootSpan`. -/
+theorem finiteIndex_toAddSubgroup_corootSpan {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+    [Finite ι] (P : RootPairing ι ℤ M N) (hP : P.rootSpan ℤ = ⊤) :
+    (P.corootSpan ℤ).toAddSubgroup.FiniteIndex :=
+  have : Finite (N ⧸ (P.corootSpan ℤ).toAddSubgroup) := P.finite_quotient_corootSpan hP
+  AddSubgroup.finiteIndex_of_finite_quotient
 
 end RootPairing

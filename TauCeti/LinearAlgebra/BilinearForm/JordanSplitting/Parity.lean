@@ -24,7 +24,9 @@ the scale ideal.
 
 The condition on the `j`-th constituent is equivalent to an intrinsic condition on the form:
 every vector pairing into `π ^ j R` has self-pairing in `π ^ (j + 1) R`. It follows that this
-condition is independent of the Jordan splitting and is invariant under isometry. The
+condition is independent of the Jordan splitting and is invariant under isometry. When `2 ∣ π`,
+the same holds for the weaker condition that `2 π ^ j` divide the self-pairings of the `j`-th
+constituent, which at `π = 2` is again the type II condition. The
 divisibility statements hold over any commutative ring with a non-zero-divisor `π`. Over a local
 ring, a constituent that is even at its own scale has even rank, since its unimodular rescaling
 is then a perfect pairing with non-unit diagonal.
@@ -131,5 +133,28 @@ theorem IsJordanSplitting.isScaleEven_iff_of_equivalent
     intro y
     obtain ⟨y, rfl⟩ := e.surjective y
     simpa only [IsometryEquiv.coe_toLinearEquiv, e.map_app] using hx y
+
+/-- For a Jordan splitting with `2 ∣ π`, the constituent of index `j` is even at its own scale
+exactly when every vector pairing into `π ^ j R` has self-pairing divisible by `2 * π ^ j`. -/
+theorem IsJordanSplitting.forall_two_mul_pow_dvd_iff (h : B.IsJordanSplitting π N)
+    (hπ : π ∈ nonZeroDivisors R) (h2 : 2 ∣ π) {j : ℕ} :
+    (∀ w ∈ N j, 2 * π ^ j ∣ B w w) ↔ ∀ x : M, (∀ y, π ^ j ∣ B x y) → 2 * π ^ j ∣ B x x := by
+  refine ⟨fun heven x hx ↦ ?_, fun H w hw ↦ H w (h.pow_dvd_apply hw)⟩
+  obtain ⟨f, -, hf, -⟩ := h.exists_pow_succ_dvd_sub hπ j
+  have := ((mul_dvd_mul_right h2 _).trans (by rw [← pow_succ'])).trans (hf x x hx hx)
+  simpa using dvd_add this (heven _ (f x).2)
+
+/-- Parity of the constituent of index `j` at its own scale, in the sense of `2 * π ^ j`
+dividing the self-pairings, is an isometry invariant when `2 ∣ π`. -/
+theorem IsJordanSplitting.forall_two_mul_pow_dvd_of_equivalent
+    {M' : Type*} [AddCommGroup M'] [Module R M'] {B' : BilinForm R M'}
+    {N' : ℕ → Submodule R M'} (h : B.IsJordanSplitting π N) (h' : B'.IsJordanSplitting π N')
+    (hBB' : B.Equivalent B') (hπ : π ∈ nonZeroDivisors R) (h2 : 2 ∣ π) {j : ℕ}
+    (heven : ∀ w ∈ N j, 2 * π ^ j ∣ B w w) : ∀ w ∈ N' j, 2 * π ^ j ∣ B' w w := by
+  obtain ⟨ε⟩ := hBB'
+  refine (h'.forall_two_mul_pow_dvd_iff hπ h2).mpr fun x hx ↦ ?_
+  obtain ⟨x, rfl⟩ := ε.surjective x
+  simp only [IsometryEquiv.coe_toLinearEquiv, ε.map_app] at hx ⊢
+  exact (h.forall_two_mul_pow_dvd_iff hπ h2).mp heven x fun y ↦ by simpa using hx (ε y)
 
 end LinearMap.BilinForm

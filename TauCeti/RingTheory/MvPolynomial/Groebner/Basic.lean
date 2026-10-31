@@ -153,6 +153,12 @@ theorem isRemainder_zero_left_iff : m.IsRemainder 0 B r ↔ r = 0 := by
     zero_add] at hg
   exact hg.symm
 
+/-- A polynomial is a remainder of itself on division by `B` exactly when none of its monomials is
+divisible by the leading monomial of a nonzero element of `B`. -/
+theorem isRemainder_self_iff :
+    m.IsRemainder r B r ↔ ∀ c ∈ r.support, ∀ b ∈ B, b ≠ 0 → ¬ m.degree b ≤ c :=
+  ⟨And.right, fun h ↦ ⟨⟨0, by simp, by simp⟩, h⟩⟩
+
 /-- If `0` is a remainder of `f` on division by `B`, then the leading term of `f` lies in the ideal
 spanned by the leading terms of `B`. -/
 theorem leadingTerm_mem_span_leadingTerm_of_isRemainder_zero (h : m.IsRemainder f B 0) :
