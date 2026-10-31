@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.KrullDimension
-import TauCeti.RepresentationTheory.SymmetricAlgebra.HilbertIdeal
 import Mathlib.Algebra.Module.SpanRankOperations
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
