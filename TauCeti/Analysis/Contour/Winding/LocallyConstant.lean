@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import TauCeti.Analysis.Contour.Curve.Distance
 import TauCeti.Analysis.Contour.Winding.Continuity
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
@@ -30,7 +30,7 @@ point where the winding number vanishes, it vanishes on a whole ball that stays 
   constant on the complement of a closed curve.
 * `TauCeti.Contour.windingNumber_eq_of_mem_connectedComponentIn` — the winding number is constant
   on each connected component of the curve complement.
-* `TauCeti.Contour.IsPiecewiseC1On.windingNumber_eq_of_mem_connectedComponentIn` — the direct
+* `TauCeti.IsPiecewiseC1On.windingNumber_eq_of_mem_connectedComponentIn` — the direct
   piecewise-`C¹` form.
 * `TauCeti.Contour.exists_ball_windingNumber_zero` — around an off-curve point where the winding
   number vanishes, it vanishes on a whole ball that stays off the curve.
@@ -135,7 +135,7 @@ theorem windingNumber_eq_of_mem_connectedComponentIn {γ : ℝ → ℂ} {a b : �
 
 /-- **Piecewise-`C¹` form of componentwise constancy.** For a closed piecewise-`C¹` curve, two
 points in the same connected component of the curve complement have the same winding number. -/
-theorem IsPiecewiseC1On.windingNumber_eq_of_mem_connectedComponentIn
+theorem _root_.TauCeti.IsPiecewiseC1On.windingNumber_eq_of_mem_connectedComponentIn
     {γ : ℝ → ℂ} {a b : ℝ} (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
     {w₀ w₁ : ℂ} (hw₁ : w₁ ∈ connectedComponentIn ((γ '' uIcc a b)ᶜ) w₀) :
     windingNumber γ a b w₁ = windingNumber γ a b w₀ := by

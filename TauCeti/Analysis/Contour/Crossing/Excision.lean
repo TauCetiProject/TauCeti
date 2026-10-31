@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Analysis.Contour.Winding.Number.Reparam
@@ -58,7 +58,7 @@ once.
 ## Main results
 
 * `TauCeti.Contour.windingNumber_circleCap` — the cap has winding number `(θ' - θ) / 2π` about `s`.
-* `TauCeti.Contour.IsPiecewiseC1On.exciseCrossing` — the excised curve is piecewise `C¹`,
+* `TauCeti.IsPiecewiseC1On.exciseCrossing` — the excised curve is piecewise `C¹`,
   `TauCeti.Contour.exciseCrossing_closed` — it is closed if `γ` is, and
   `TauCeti.Contour.exciseCrossing_ne_center` — it avoids `s`.
 
@@ -245,8 +245,8 @@ theorem exciseCrossing_ne_center (hr : r ≠ 0) (θ θ' : ℝ)
 
 /-- **The excised curve is piecewise `C¹`.** The two window endpoints join a piecewise-`C¹` curve to
 a smooth arc, so they are the only new breakpoints. -/
-theorem IsPiecewiseC1On.exciseCrossing (hγ : IsPiecewiseC1On γ a b) (hal : a < l) (hlu : l < u)
-    (hub : u < b) (hθ : γ l = circleMap s r θ) (hθ' : γ u = circleMap s r θ') :
+theorem _root_.TauCeti.IsPiecewiseC1On.exciseCrossing (hγ : IsPiecewiseC1On γ a b) (hal : a < l)
+    (hlu : l < u) (hub : u < b) (hθ : γ l = circleMap s r θ) (hθ' : γ u = circleMap s r θ') :
     IsPiecewiseC1On (TauCeti.Contour.exciseCrossing γ s r l u θ θ') a b := by
   have hab : a ≤ b := by linarith
   have hIcc : uIcc a b = Icc a b := uIcc_of_le hab

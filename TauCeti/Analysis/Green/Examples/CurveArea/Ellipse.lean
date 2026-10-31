@@ -225,7 +225,7 @@ theorem windingNumber_ellipse_outside {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
     (convex_closedBall (0 : ℂ) 1).linear_image A.toLinearEquiv.toLinearMap
   have hzero : (0 : ℂ) ∈ A '' closedBall (0 : ℂ) 1 := ⟨0, by simp, map_zero A⟩
   apply Contour.windingNumber_eq_zero_of_starConvex (hconv.starConvex hzero)
-    (Contour.IsPiecewiseC1On.of_contDiffOn (contDiff_ellipse a b (n := 1)).contDiffOn)
+    (IsPiecewiseC1On.of_contDiffOn (contDiff_ellipse a b (n := 1)).contDiffOn)
     (ellipse_closed a b)
   · intro t ht
     have hm : ellipse a b t ∈ ellipse a b '' uIcc 0 (2 * Real.pi) := mem_image_of_mem _ ht

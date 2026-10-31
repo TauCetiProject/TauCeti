@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Analysis.Contour.RegularityConditions
 import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 import TauCeti.Analysis.Calculus.OneSidedDerivLimit
