@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory
-public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Homology commutes with functors preserving homology
@@ -14,12 +14,10 @@ public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 Let `F : C ⥤ D` be an additive functor which preserves homology, for instance an exact functor
 between abelian categories. Applying `F` to a homological complex and then taking homology in
 degree `i` is naturally isomorphic to taking homology first and then applying `F`
-(`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`). The same holds on the
-homotopy category (`CategoryTheory.Functor.mapHomotopyCategoryCompHomologyFunctorIso`), where both
-functors are induced from the homological-complex level.
-
-These are the complex-level forms of Mathlib's `CategoryTheory.Functor.homologyFunctorIso` for
-short complexes.
+(`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`). This file shows that the
+same holds on the homotopy category
+(`CategoryTheory.Functor.mapHomotopyCategoryCompHomologyFunctorIso`), where both functors are
+induced from the homological-complex level.
 -/
 
 public section
@@ -33,19 +31,6 @@ namespace CategoryTheory.Functor
 variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D]
   [Preadditive C] [Preadditive D] [CategoryWithHomology C] [CategoryWithHomology D]
   (F : C ⥤ D) [F.Additive] [F.PreservesHomology] {ι : Type*} (c : ComplexShape ι) (i : ι)
-
-/-- Homology of homological complexes commutes with a functor preserving homology. -/
-noncomputable def mapHomologicalComplexCompHomologyFunctorIso :
-    F.mapHomologicalComplex c ⋙ HomologicalComplex.homologyFunctor D c i ≅
-      HomologicalComplex.homologyFunctor C c i ⋙ F :=
-  -- the short complex of `F` applied to `K` in degree `i` is `F` applied to that of `K`
-  isoWhiskerLeft (HomologicalComplex.shortComplexFunctor C c i) (ShortComplex.homologyFunctorIso F)
-
-@[simp]
-lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app (K : HomologicalComplex C c) :
-    (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
-      ((K.sc i).mapHomologyIso F).hom :=
-  (rfl)
 
 /-- Homology on the homotopy category commutes with a functor preserving homology. -/
 noncomputable def mapHomotopyCategoryCompHomologyFunctorIso :
@@ -63,6 +48,7 @@ noncomputable def mapHomotopyCategoryCompHomologyFunctorIso :
 /-- On a complex, the comparison of `mapHomotopyCategoryCompHomologyFunctorIso` is the
 homological-complex comparison, up to the identifications of homology on the homotopy category
 with homology of complexes. -/
+@[simp]
 lemma mapHomotopyCategoryCompHomologyFunctorIso_hom_app (K : HomologicalComplex C c) :
     (F.mapHomotopyCategoryCompHomologyFunctorIso c i).hom.app
         ((HomotopyCategory.quotient C c).obj K) =

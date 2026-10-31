@@ -52,6 +52,7 @@ noncomputable def mapInjectiveResolution (F : C ⥤ D) [F.Additive]
 
 /-- In degree zero, the coaugmentation of `F.mapInjectiveResolution I` is `F` applied to that
 of `I`. -/
+@[simp]
 lemma mapInjectiveResolution_ι_f_zero (F : C ⥤ D) [F.Additive]
     [F.PreservesInjectiveObjects] [F.PreservesHomology] {Z : C} (I : InjectiveResolution Z) :
     (F.mapInjectiveResolution I).ι.f 0 = F.map (I.ι.f 0) := by
@@ -89,6 +90,7 @@ noncomputable def injectiveResolutionsCompIso :
 
 /-- The comparison `injectiveResolutionsCompIso` at `X` is the homotopy equivalence between `F`
 applied to the chosen resolution of `X` and the chosen resolution of `F.obj X`. -/
+@[simp]
 lemma injectiveResolutionsCompIso_hom_app (X : C) :
     (F.injectiveResolutionsCompIso).hom.app X =
       (F.mapInjectiveResolution (injectiveResolution X)).iso.inv :=

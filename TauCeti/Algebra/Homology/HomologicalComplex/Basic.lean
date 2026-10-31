@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 public import Mathlib.Algebra.Homology.ShortComplex.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
@@ -38,6 +39,9 @@ The isomorphisms `homologyIsoSc'`
 are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`), and exactness in a degree
 is the vanishing of the homology of the short complex `sc'` there
 (`HomologicalComplex.exactAt_iff_isZero_homology_sc'`).
+Homology of complexes commutes with an additive functor preserving homology
+(`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
+Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`.
 -/
 
 public section
@@ -333,3 +337,24 @@ lemma homologyMap_comp_eqToHom (ψ : L ⟶ L') (hM : M = L) (hM' : M' = L')
 end HomologyTransport
 
 end HomologicalComplex
+
+namespace CategoryTheory.Functor
+
+variable {C : Type*} [Category* C] {D : Type*} [Category* D]
+  [Preadditive C] [Preadditive D] [CategoryWithHomology C] [CategoryWithHomology D]
+  (F : C ⥤ D) [F.Additive] [F.PreservesHomology] {ι : Type*} (c : ComplexShape ι) (i : ι)
+
+/-- Homology of homological complexes commutes with a functor preserving homology. -/
+noncomputable def mapHomologicalComplexCompHomologyFunctorIso :
+    F.mapHomologicalComplex c ⋙ HomologicalComplex.homologyFunctor D c i ≅
+      HomologicalComplex.homologyFunctor C c i ⋙ F :=
+  -- the short complex of `F` applied to `K` in degree `i` is `F` applied to that of `K`
+  isoWhiskerLeft (HomologicalComplex.shortComplexFunctor C c i) (ShortComplex.homologyFunctorIso F)
+
+@[simp]
+lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app (K : HomologicalComplex C c) :
+    (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
+      ((K.sc i).mapHomologyIso F).hom :=
+  (rfl)
+
+end CategoryTheory.Functor
