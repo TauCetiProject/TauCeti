@@ -18,6 +18,8 @@ extension of the subgroup, compatibly with further scalar extension.
 ## Main declarations
 
 * `AddEquiv.invariantRestrict`: restriction to an invariant additive subgroup.
+* `AddEquiv.repr_invariantRestrict_basis_of_monomial`: the basis coordinates of a restriction
+  acting monomially on a basis.
 * `AddEquiv.baseChangeInvariantRestrictUnit`: the induced automorphism after
   scalar extension.
 * `AddEquiv.baseChange_invariantRestrict_map_baseChange_basis`: its action on a base-changed
@@ -82,6 +84,28 @@ theorem coe_invariantRestrict_pow_apply (θ : V ≃+ V) (M : S)
       rw [pow_succ, LinearEquiv.mul_apply, ih, pow_succ, LinearEquiv.mul_apply,
         coe_invariantRestrict_apply]
       simp only [AddEquiv.coe_toIntLinearEquiv]
+
+/-- **The coordinates of an invariant restriction acting monomially on a basis.** If `θ` sends each
+basis vector `b j` to `c j • b (τ j)`, the image of `b j` has coordinate `c j` at `τ j` and no
+other nonzero coordinate. -/
+theorem repr_invariantRestrict_basis_of_monomial {η : Type*} [DecidableEq η] (θ : V ≃+ V) (M : S)
+    (hθM : ∀ v, θ v ∈ M ↔ v ∈ M) (b : Module.Basis η ℤ M) (τ : η → η) (c : η → ℤ)
+    (hθb : ∀ i, θ (b i : V) = ((c i • b (τ i) : M) : V)) (i j : η) :
+    b.repr (invariantRestrict θ M hθM (b j)) i = if i = τ j then c j else 0 := by
+  have hsub : invariantRestrict θ M hθM (b j) = c j • b (τ j) :=
+    Subtype.ext ((coe_invariantRestrict_apply θ M hθM (b j)).trans (hθb j))
+  simp [hsub, Finsupp.single_apply, eq_comm]
+
+/-- An invariant restriction acting monomially on a basis, sending `b j` to a multiple of
+`b (τ j)`, has a nonzero coordinate of `b i` in the image of `b j` only when `i = τ j`. -/
+theorem eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial {η : Type*} (θ : V ≃+ V) (M : S)
+    (hθM : ∀ v, θ v ∈ M ↔ v ∈ M) (b : Module.Basis η ℤ M) (τ : η → η) (c : η → ℤ)
+    (hθb : ∀ i, θ (b i : V) = ((c i • b (τ i) : M) : V)) {i j : η}
+    (hij : b.repr (invariantRestrict θ M hθM (b j)) i ≠ 0) :
+    i = τ j := by
+  classical
+  rw [repr_invariantRestrict_basis_of_monomial θ M hθM b τ c hθb] at hij
+  exact (ite_ne_right_iff.mp hij).1
 
 /-! ## Base change -/
 

@@ -145,34 +145,16 @@ theorem a2TwelfthGlueSubgroup_def :
         decodeGlueWord (fun _ : Fin 12 ↦ A 2) (fun _ ↦ isSimplyLaced_A 2) l = some w} :=
   (rfl)
 
-/-- The glue word whose labels are the digits of a list, read modulo three. -/
-private def ofDigits (l : List ℕ) : a2TwelfthGlueModule :=
-  fun i ↦ ((l.getD i 0 : ℕ) : ZMod 3)
-
 /-- The ternary word obtained from a digit list by the coordinate change of the comparison. -/
 private def transportDigits (l : List ℕ) : Fin 12 → ZMod 3 :=
   fun j ↦ ((a2TwelfthSign j : ℤ) : ZMod 3) *
     ((l.getD (a2TwelfthDestinationToSource j) 0 : ℕ) : ZMod 3)
 
 private theorem a2TwelfthGolayIsometry_ofDigits (l : List ℕ) :
-    a2TwelfthGolayIsometry (ofDigits l) = transportDigits l := by
+    a2TwelfthGolayIsometry (typeAGlueWordOfDigits 2 12 l) = transportDigits l := by
   funext j
-  exact (a2TwelfthGolayIsometry_apply _ j).trans
-    ((Units.smul_def _ (_ : ZMod 3)).trans (zsmul_eq_mul _ _))
-
-private theorem encodeGlueWord_eq (w : a2TwelfthGlueModule) :
-    encodeGlueWord (fun _ : Fin 12 ↦ A 2) (fun _ ↦ isSimplyLaced_A 2) w =
-      List.ofFn fun i ↦ ZMod.val (n := 3) (w i) := by
-  refine List.ext_getElem (by simp) fun i hi _ ↦ ?_
-  simp only [List.getElem_ofFn]
-  exact (getElem_encodeGlueWord _ _ w ⟨i, by simpa using hi⟩).trans
-    (congrArg Fin.val (glueLabelEquiv_A_symm_apply 2 (isSimplyLaced_A 2) _))
-
-private theorem ofDigits_encodeGlueWord (w : a2TwelfthGlueModule) :
-    ofDigits (encodeGlueWord (fun _ : Fin 12 ↦ A 2) (fun _ ↦ isSimplyLaced_A 2) w) = w := by
-  funext i
-  rw [encodeGlueWord_eq, ofDigits, List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn]
-  exact ZMod.natCast_zmod_val (n := 3) (w i)
+  rw [a2TwelfthGolayIsometry_apply, typeAGlueWordOfDigits_apply]
+  exact (Units.smul_def _ (_ : ZMod 3)).trans (zsmul_eq_mul _ _)
 
 /-- Every expanded table word is a valid word over `ℤ/3` of length twelve. -/
 private theorem forall_mem_expand_ofFn_val_ofDigits :
@@ -180,21 +162,6 @@ private theorem forall_mem_expand_ofFn_val_ofDigits :
       List.ofFn (fun i : Fin 12 ↦ (((l.getD i 0 : ℕ) : ZMod 3)).val) = l := by
   rw [GluePattern.expand_cyclic]
   decide
-
-/-- The decoded table words are exactly the words read off from the expanded digit lists. -/
-private theorem decoded_eq_image_ofDigits :
-    {w | ∃ l ∈ (GluePattern.cyclic [2] [1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2] []).expand,
-        decodeGlueWord (fun _ : Fin 12 ↦ A 2) (fun _ ↦ isSimplyLaced_A 2) l = some w} =
-      ofDigits '' (GluePattern.cyclic [2] [1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2] []).expand := by
-  ext w
-  simp only [Set.mem_ofPred_eq, decodeGlueWord_eq_some_iff, Set.mem_image, Finset.mem_coe]
-  constructor
-  · rintro ⟨l, hl, rfl⟩
-    exact ⟨_, hl, ofDigits_encodeGlueWord w⟩
-  · rintro ⟨l, hl, rfl⟩
-    refine ⟨l, hl, ?_⟩
-    rw [encodeGlueWord_eq]
-    exact (forall_mem_expand_ofFn_val_ofDigits l hl).symm
 
 /-- Every transported table word satisfies the Golay parity checks. -/
 private theorem forall_mem_expand_transportDigits_mem_code :
@@ -235,12 +202,16 @@ theorem map_a2TwelfthGlueSubgroup_eq_ternaryGolay :
       TernaryGolay.code.toAddSubgroup := by
   have himage : ((a2TwelfthGolayIsometry.toAddEquiv :
         a2TwelfthGlueModule →+ (typeAStandardQuadraticModule 2).coordinatePower (Fin 12)) ''
-      (ofDigits '' (GluePattern.cyclic [2] [1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2] []).expand) :
+      (typeAGlueWordOfDigits 2 12 ''
+        (GluePattern.cyclic [2] [1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2] []).expand) :
         Set ((typeAStandardQuadraticModule 2).coordinatePower (Fin 12))) =
       transportDigits '' (GluePattern.cyclic [2] [1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2] []).expand := by
     rw [Set.image_image]
     exact Set.image_congr fun l _ ↦ a2TwelfthGolayIsometry_ofDigits l
-  rw [a2TwelfthGlueSubgroup_def, decoded_eq_image_ofDigits, AddMonoidHom.map_closure, himage]
+  have hdecoded := decoded_typeA_eq_image_ofDigits 2 12 _
+    forall_mem_expand_ofFn_val_ofDigits
+  simp only [Finset.mem_coe] at hdecoded
+  rw [a2TwelfthGlueSubgroup_def, hdecoded, AddMonoidHom.map_closure, himage]
   refine le_antisymm ((AddSubgroup.closure_le _).mpr ?_) fun x hx ↦ ?_
   · rintro _ ⟨l, hl, rfl⟩
     -- Membership in the coordinate-power carrier is membership in the Golay submodule.

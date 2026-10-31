@@ -39,6 +39,8 @@ at integer points.
 * `Polynomial.homogenize_multiset_prod_X_sub_C`: `homogenize (∏ (X - a)) (card s) = ∏ (X - a Y)`.
 * `Polynomial.eval_homogenize_natDegree_of_card_roots`: if `p` has `natDegree p` roots, then
   `F(x) = leadingCoeff p * ∏_{a ∈ roots p} (x 0 - a x 1)`.
+* `Polynomial.sub_mul_dvd_eval_homogenize`: for any root `a` of `p` and `n ≥ natDegree p`, the
+  linear form `x 0 - a x 1` divides the value at `x` of the homogenization of degree `n`.
 * `Polynomial.homogenize_eq_C_mul_X_pow_mul_prod`: if `p` has `natDegree p` roots and
   `natDegree p ≤ n`, then its homogenization of degree `n` is
   `leadingCoeff p * X₁ ^ (n - natDegree p) * ∏ (X₀ - a X₁)`.
@@ -110,6 +112,28 @@ theorem eval_homogenize_natDegree_of_card_roots [IsDomain R] {p : R[X]}
       p.leadingCoeff * (p.roots.map fun a ↦ x 0 - a * x 1).prod := by
   rw [homogenize_eq_C_mul_X_pow_mul_prod le_rfl hroots, Nat.sub_self, pow_zero, mul_one]
   simp [map_multiset_prod, Multiset.map_map]
+
+/-- If `a` is a root of `p` and `natDegree p ≤ n`, then at every point `x` the value of the
+linear form `x 0 - a x 1` divides the value of the homogenization of `p` of degree `n`. No
+splitting of `p` is needed, and `R` is an arbitrary commutative ring. -/
+theorem sub_mul_dvd_eval_homogenize {p : R[X]} {a : R} (ha : p.IsRoot a) {n : ℕ}
+    (hn : p.natDegree ≤ n) (x : Fin 2 → R) :
+    x 0 - a * x 1 ∣ MvPolynomial.eval x (p.homogenize n) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
+  have hpq := (mul_divByMonic_eq_iff_isRoot.2 ha).symm
+  set q := p /ₘ (X - C a)
+  have hq : q ≠ 0 := by
+    rintro h
+    rw [h, mul_zero] at hpq
+    exact hp hpq
+  have : Nontrivial R := nontrivial_iff.mp (nontrivial_of_ne p 0 hp)
+  have hdeg : p.natDegree = 1 + q.natDegree := by
+    rw [hpq, (monic_X_sub_C a).natDegree_mul' hq, natDegree_X_sub_C]
+  -- `p = (X - a) q` homogenizes to `(X₀ - a X₁) Q` with `Q` of degree `n - 1`.
+  obtain ⟨k, rfl⟩ : ∃ k, n = 1 + k := ⟨n - 1, by omega⟩
+  rw [hpq, homogenize_mul _ _ (natDegree_X_sub_C_le a) (by omega), map_mul]
+  exact dvd_mul_of_dvd_left (by simp [homogenize_X one_ne_zero]) _
 
 /-- If `X₁ ^ 2` does not divide the homogenization of `p` of degree `n ≥ natDegree p`, then
 `n ≤ natDegree p + 1`. -/

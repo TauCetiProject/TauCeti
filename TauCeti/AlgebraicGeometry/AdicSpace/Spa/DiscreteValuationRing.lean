@@ -13,6 +13,7 @@ import Mathlib.RingTheory.Filtration
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Points
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
+import TauCeti.RingTheory.Valuation.LtAddSubgroup
 import TauCeti.RingTheory.Valuation.ValuationRing
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 
@@ -111,9 +112,10 @@ theorem isContinuous_ofValuation_intValuation (hR : IsAdic (maximalIdeal R)) :
     rw [Ideal.iInf_pow_eq_bot_of_isLocalRing _ (maximalIdeal.isMaximal R).ne_top,
       Ideal.mem_bot] at hmem
     exact hb (by simp [hmem])
-  refine AddSubgroup.isOpen_mono (H₁ := (maximalIdeal R ^ n).toAddSubgroup)
-    (H₂ := w.ltAddSubgroup (Units.mk0 (w b) hb)) (fun a ha ↦ ?_) (hR.isOpen_pow n)
-  rw [Valuation.mem_ltAddSubgroup_iff, Units.val_mk0, ← not_le]
+  rw [← Valuation.coe_ltAddSubgroupOfNeZero hb]
+  refine AddSubgroup.isOpen_mono (H₁ := (maximalIdeal R ^ n).toAddSubgroup) (fun a ha ↦ ?_)
+    (hR.isOpen_pow n)
+  rw [Valuation.mem_ltAddSubgroupOfNeZero, ← not_le]
   intro hba
   rw [intValuation_le_intValuation_iff_dvd] at hba
   exact hn (Ideal.mem_of_dvd _ hba ha)

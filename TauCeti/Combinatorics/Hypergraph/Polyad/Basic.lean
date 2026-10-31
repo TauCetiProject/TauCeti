@@ -385,6 +385,13 @@ theorem ofTriple_eq_ofTriple_of_le {κ' : Type*} {T : PairSkeleton3 κ' V}
     (by simpa [hf] using congrArg (f ∘ color₀₁) h) (by simpa [hf] using congrArg (f ∘ color₀₂) h)
     (by simpa [hf] using congrArg (f ∘ color₁₂) h)
 
+/-- Relabeling the pair palette does not change which injective triples share a polyad. -/
+theorem ofTriple_relabel_eq_ofTriple_relabel_iff {κ' : Type*} (e : κ ≃ κ')
+    {x y : {x : Fin 3 → V // Function.Injective x}} :
+    ofTriple (S.relabel e) x = ofTriple (S.relabel e) y ↔ ofTriple S x = ofTriple S y :=
+  ⟨ofTriple_eq_ofTriple_of_le (S.relabel_vertexPart e).le e.symm fun p ↦ by simp,
+    ofTriple_eq_ofTriple_of_le (S.relabel_vertexPart e).ge e fun p ↦ by simp⟩
+
 open Function in
 /-- Distinct polyads over the same lower skeleton have disjoint supports. -/
 theorem pairwise_disjoint_support :

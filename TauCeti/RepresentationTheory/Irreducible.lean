@@ -59,6 +59,8 @@ irreducible by.
   algebra map exhausts the endomorphisms is irreducible.
 * `Representation.isIrreducible_of_finrank_intertwiningMap_self_eq_one`: a semisimple
   representation whose equivariant endomorphisms are the scalars is irreducible.
+* `Representation.IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one`: Schur's lemma for an
+  involutive equivariant endomorphism, over any field.
 * `Representation.asAlgebraHom_surjective_of_isIrreducible`: over an algebraically closed
   field, every finite-dimensional irreducible representation exhausts the endomorphisms.
 * `Representation.exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul`: consequently the
@@ -215,6 +217,18 @@ theorem isIrreducible_of_finrank_intertwiningMap_self_eq_one {ρ : Representatio
   rcases IsIdempotentElem.iff_eq_zero_or_one.mp hcc with rfl | rfl
   · exact Or.inl (by simp [hf'])
   · exact Or.inr (by simp [hf'])
+
+/-- **An involutive equivariant endomorphism of an irreducible representation is `±1`.** By Schur's
+lemma the equivariant endomorphisms of an irreducible representation form a division ring, in which
+`f * f = 1` forces `f = 1` or `f = -1`. No algebraic closure or finite dimension is needed. -/
+theorem IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one {ρ : Representation k G V}
+    (hρ : ρ.IsIrreducible) {f : IntertwiningMap ρ ρ} (hf : f * f = 1) : f = 1 ∨ f = -1 := by
+  classical
+  let := hρ
+  let e := IntertwiningMap.equivAlgEnd (ρ := ρ)
+  have he : e f * e f = 1 := by rw [← map_mul, hf, map_one]
+  exact (mul_self_eq_one_iff.mp he).imp
+    (fun h ↦ e.injective (by simpa using h)) fun h ↦ e.injective (by simpa using h)
 
 open scoped MonoidAlgebra in
 /-- **Burnside density theorem.** The monoid algebra of a finite-dimensional irreducible
