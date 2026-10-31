@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hypergraph.Colored.Basic
+public import TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy
+import TauCeti.Data.Fintype.EmbeddingFiber
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Rat.Cast.Lemmas
 
 /-!
 # Relative color densities over supports of injective triples
@@ -82,6 +84,52 @@ theorem abs_relDensityOn_sub_mul_card_le_card_filter_ne (H H' : Colored3Graph κ
       H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)
   · simp [h]
   · split_ifs <;> simp
+
+/-- The edited triples in any support are bounded by the global edit discrepancy times
+`|V|³`. This converts unordered edits to ordered injective triples, including empty hosts. -/
+theorem card_filter_ne_le_editDiscrepancy3 [Fintype V] (H H' : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    (#{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
+      H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℝ) ≤
+        (H.editDiscrepancy3 H' : ℝ) * (Fintype.card V : ℝ) ^ 3 := by
+  classical
+  let edits : Finset (Set.powersetCard V 3) := univ.filter fun t ↦ H.color t ≠ H'.color t
+  let triple (x : {x : Fin 3 → V // Function.Injective x}) :=
+    Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩
+  have hfiber (t : Set.powersetCard V 3) : #{x ∈ supp | triple x = t} ≤ 6 := by
+    let s : Set.powersetCard (Fin 3) 3 := ⟨univ, by simp⟩
+    have hm (f : Fin 3 ↪ V) : Set.powersetCard.map 3 f s =
+        Set.powersetCard.ofFinEmb 3 V f := Subtype.ext (by simp [s])
+    have hc : Nat.card {f : Fin 3 ↪ V // Set.powersetCard.ofFinEmb 3 V f = t} ≤ 6 := by
+      simpa only [Fintype.card_fin, hm, Nat.sub_self, pow_zero, mul_one,
+        Nat.factorial_succ, Nat.factorial_zero] using
+        (card_embedding_map_eq_le (s := s) (t := t))
+    have he := Fintype.card_congr (Equiv.subtypeEquiv
+      (p := fun x ↦ triple x = t) (q := fun f ↦ Set.powersetCard.ofFinEmb 3 V f = t)
+      (Equiv.subtypeInjectiveEquivEmbedding (Fin 3) V) (fun _ ↦ Iff.rfl))
+    have hle : #{x | triple x = t} ≤ 6 := by
+      simpa only [Nat.card_eq_fintype_card, ← he, Fintype.card_subtype,
+        Fintype.card_fin, Nat.sub_self, pow_zero, mul_one] using hc
+    exact (card_le_card (filter_subset_filter _ (subset_univ supp))).trans hle
+  have hcount : #{x ∈ supp | H.color (triple x) ≠ H'.color (triple x)} ≤
+      6 * {t | H.color t ≠ H'.color t}.ncard := by
+    rw [card_eq_sum_card_fiberwise (f := triple) (t := edits)
+      (by intro x hx; exact mem_filter.mpr ⟨mem_univ _, (mem_filter.mp hx).2⟩)]
+    calc
+      _ ≤ ∑ _t ∈ edits, 6 := sum_le_sum fun t _ ↦
+        (card_le_card (filter_subset_filter _ (filter_subset _ _))).trans (hfiber t)
+      _ = _ := by
+        simp [edits, ← Nat.card_coe_set_eq, Nat.card_eq_fintype_card,
+          Fintype.card_subtype, mul_comm]
+  by_cases hn : Fintype.card V = 0
+  · have : IsEmpty V := Fintype.card_eq_zero_iff.1 hn
+    simp
+  have hn' : (Fintype.card V : ℝ) ^ 3 ≠ 0 := by exact_mod_cast pow_ne_zero 3 hn
+  rw [editDiscrepancy3_def]
+  rw [Nat.card_eq_fintype_card]
+  push_cast
+  rw [div_mul_cancel₀ _ hn']
+  exact_mod_cast hcount
 
 /-- Relative densities are nonnegative. -/
 theorem relDensityOn_nonneg (H : Colored3Graph κ V) (c : κ)
