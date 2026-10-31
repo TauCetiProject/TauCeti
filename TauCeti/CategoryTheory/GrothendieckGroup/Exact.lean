@@ -61,6 +61,10 @@ biproduct, and degreewise-conflation formulas.
   functor towards an exact structure with more conflations, and its instance out of the split
   Grothendieck group; `TauCeti.ExactK0.ofLEEquiv` is the comparison isomorphism between exact
   structures with the same conflations.
+* `TauCeti.exactObjectRelations E`: the conflation relations as integral combinations of objects,
+  and `TauCeti.ExactK0.isoClassModelEquiv m`: the canonical isomorphism from `ExactK0 E` to the
+  group they present over a model `m` of the isomorphism classes of `C`
+  (`TauCeti.IsoClassModel`), such as a chosen skeleton.
 
 ## Main results
 
@@ -790,5 +794,69 @@ theorem map_comp_fromSplit (F : C ⥤ D) [F.Additive] (hF : E.IsConflationExact 
 end Comparison
 
 end ExactK0
+
+section IsoClassModel
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
+
+/-- The conflation relations `[X₂] - [X₁] - [X₃]` of an exact structure `E` as integral
+combinations of objects of `C`, before passing to isomorphism classes. Their codes are the
+relations `TauCeti.exactRelations E`, so they present exact `K₀` over every model of the
+isomorphism classes of `C`. -/
+def exactObjectRelations (E : ExactStructure C) : Set (FreeAbelianGroup C) :=
+  {r | ∃ S : ShortComplex C, E.Conflation S ∧ r = .of S.X₂ - .of S.X₁ - .of S.X₃}
+
+variable {E : ExactStructure C}
+
+/-- Membership in the family of object-level conflation relations. -/
+@[simp]
+lemma mem_exactObjectRelations_iff {r : FreeAbelianGroup C} :
+    r ∈ exactObjectRelations E ↔
+      ∃ S : ShortComplex C, E.Conflation S ∧ r = .of S.X₂ - .of S.X₁ - .of S.X₃ :=
+  (Iff.rfl)
+
+variable [EssentiallySmall.{w} C]
+
+/-- The codes of the object-level conflation relations are the conflation relations presenting
+exact `K₀`. -/
+lemma image_exactObjectRelations :
+    FreeAbelianGroup.map objectCode '' exactObjectRelations E = exactRelations E := by
+  ext r
+  simp [conflationRelation_def, freeOf_def, eq_comm]
+
+namespace ExactK0
+
+variable {I J : Type*}
+
+/-- Exact `K₀` presented over a model `m` of the isomorphism classes of `C`: the canonical
+isomorphism from `ExactK0 E` to the free abelian group on the index type of `m` modulo the codes
+of the conflation relations. It preserves the class of every object, so exact `K₀` does not
+depend on the skeleton used to build it. -/
+noncomputable def isoClassModelEquiv (m : IsoClassModel C I) :
+    ExactK0 E ≃+ m.K0 (exactObjectRelations E) :=
+  IsoClassModel.K0.presentedK0Equiv m image_exactObjectRelations
+
+@[simp]
+lemma isoClassModelEquiv_of (m : IsoClassModel C I) (X : C) :
+    isoClassModelEquiv m (of X : ExactK0 E) = IsoClassModel.K0.of X :=
+  IsoClassModel.K0.presentedK0Equiv_of _ X
+
+@[simp]
+lemma isoClassModelEquiv_symm_of (m : IsoClassModel C I) (X : C) :
+    (isoClassModelEquiv m).symm (IsoClassModel.K0.of X) = (of X : ExactK0 E) :=
+  IsoClassModel.K0.presentedK0Equiv_symm_of _ X
+
+/-- The presentations of exact `K₀` over two models differ by the canonical isomorphism
+`TauCeti.IsoClassModel.K0.equiv` between them. -/
+@[simp]
+lemma isoClassModelEquiv_trans_equiv (m : IsoClassModel C I) (m' : IsoClassModel C J) :
+    (isoClassModelEquiv (E := E) m).trans
+        (IsoClassModel.K0.equiv m m' (exactObjectRelations E)) =
+      isoClassModelEquiv m' :=
+  AddEquiv.toAddMonoidHom_injective (hom_ext fun X => by simp)
+
+end ExactK0
+
+end IsoClassModel
 
 end TauCeti
