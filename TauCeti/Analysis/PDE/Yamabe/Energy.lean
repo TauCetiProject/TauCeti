@@ -226,8 +226,7 @@ theorem integral_energy_rescale
   have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
   -- `u = (u ^ p) ^ p⁻¹` is smooth because the conformal factor `u ^ p` is.
   have hu : ContMDiff I 𝓘(ℝ) 2 u :=
-    ((hf.rpow_const_of_ne (fun y ↦ (hf_pos y).ne') _).congr fun y ↦
-      (Real.rpow_rpow_inv (hu_pos y).le (div_ne_zero four_ne_zero hn')).symm).of_le (by simp)
+    (hf.of_rpow_const (div_ne_zero four_ne_zero hn') hu_pos).of_le (by simp)
   rw [integral_energy_withMetric _ hv hvc, integral_energy_withMetric g (hu.mul hv) hvc.mul_left]
   exact integral_mul_conformalLaplacian_rescale g hn hu_pos hv
 
