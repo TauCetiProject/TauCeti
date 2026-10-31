@@ -28,8 +28,8 @@ placement and route, and bounds each part:
   (`Colored3Graph.sum_lowerRouteCountAt_not_isTopRegularRoute_le`), and the predictions add up to
   the exceptional predicted mass `H.exceptionalPredictedMass3 C F η r`;
 * at the nontransversal placements, the actual copies are embeddings putting two pattern
-  vertices in a common cell, and the predictions add up to
-  `H.nontransversalPredictedMass3 C F`.
+  vertices in a common cell (`Colored3Graph.sum_placedInducedCopyCount_of_not_transversal_le`),
+  and the predictions add up to `H.nontransversalPredictedMass3 C F`.
 
 The actual and predicted counts of the discarded parts are both nonnegative, so each of them is
 charged once. This is `Colored3Graph.abs_inducedCopyCount_sub_expectedInducedCount_le`.
@@ -73,26 +73,6 @@ variable {κ V : Type*} [Fintype V] [DecidableEq V] {C : TriadicComplex3 V}
 namespace Colored3Graph
 
 variable (H : Colored3Graph κ V)
-
-/-- The placed counts at the nontransversal placements add up to at most the number of
-embeddings putting two pattern vertices in a common cell. -/
-private theorem sum_placedInducedCopyCount_of_not_transversal_le
-    [DecidablePred fun φ : PatternPlacement3 C F ↦ φ.Transversal] :
-    ∑ φ : PatternPlacement3 C F with ¬φ.Transversal, ∑ ψ : PairColorPlacement3 φ,
-        H.placedInducedCopyCount φ ψ ≤
-      #{f : Fin F.k ↪ V | ∃ i j, i ≠ j ∧ ∃ A ∈ C.skeleton.vertexPart.parts, f i ∈ A ∧ f j ∈ A} := by
-  simp only [placedInducedCopyCount_def]
-  rw [sum_sigma', ← card_biUnion
-    ((H.pairwiseDisjoint_placedInducedCopies C F).subset (Set.subset_univ _))]
-  refine card_le_card fun f hf ↦ ?_
-  obtain ⟨⟨φ, ψ⟩, hσ, hf⟩ := mem_biUnion.1 hf
-  obtain ⟨-, hcell, -⟩ := mem_placedInducedCopies.1 hf
-  have hφ : ¬Injective φ.vertexCell :=
-    (φ.transversal_iff.not).1 (mem_filter.1 (mem_sigma.1 hσ).1).2
-  obtain ⟨i, j, hij, hne⟩ : ∃ i j, φ.vertexCell i = φ.vertexCell j ∧ i ≠ j := by
-    simpa [Injective] using hφ
-  exact mem_filter.2 ⟨mem_univ _, i, j, hne, φ.vertexCell i, φ.vertexCell_mem i, hcell i,
-    hij ▸ hcell j⟩
 
 variable [DecidableEq κ]
 
