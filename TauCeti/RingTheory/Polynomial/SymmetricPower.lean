@@ -413,7 +413,8 @@ theorem exists_map_eval_esymm_eq_eval (q : K[X]) :
       MvPolynomial.aeval (fun j : Fin n => esymm (Fin n) K ((j : ℕ) + 1)) W =
         MvPolynomial.bind₁ (fun i : Fin n => Polynomial.aeval (MvPolynomial.X i) q)
           (esymm (Fin n) K k) := fun k =>
-    (esymm_isSymmetric (Fin n) K k).exists_aeval_esymm_eq_bind₁_aeval_X q
+    ((esymm_isSymmetric (Fin n) K k).bind₁_aeval_X q).exists_aeval_esymm
+      (Fintype.card_fin n).le
   choose W hW using hftsf
   refine ⟨W, fun s k => ?_⟩
   obtain ⟨v, hv⟩ := ofFn_surjective s
