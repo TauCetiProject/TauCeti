@@ -27,22 +27,25 @@ computes the Levi-Civita connection on left-invariant fields from the Lie bracke
 `2 ⟪∇_{X_a} X_b, X_c⟫ = ⟪⁅a, b⁆, c⟫ - ⟪⁅b, c⁆, a⟫ + ⟪⁅c, a⁆, b⟫`.
 
 If moreover the inner product at the identity is invariant under the adjoint action of the Lie
-algebra, `⟪⁅a, b⁆, c⟫ = -⟪b, ⁅a, c⁆⟫` (Mathlib's `LinearMap.BilinForm.lieInvariant`), the metric is
-*bi-invariant* and the formula collapses to
+algebra, `⟪⁅a, b⁆, c⟫ = -⟪b, ⁅a, c⁆⟫` (Mathlib's `LinearMap.BilinForm.lieInvariant`), we call the
+metric *ad-invariant left-invariant*. Then the formula collapses to
 
 `∇_{X_a} X_b = ½ X_⁅a, b⁆`.
 
-Invariance of the inner product under the adjoint action of `G` implies this infinitesimal
-invariance by differentiation, and is equivalent to it on a connected group. With Lee's sign
-convention `R(X, Y)Z = ∇_X ∇_Y Z - ∇_Y ∇_X Z - ∇_[X, Y] Z`, the Jacobi identity then gives
+Every bi-invariant metric is ad-invariant left-invariant: invariance of the inner product under the
+adjoint action of `G` implies this infinitesimal invariance by differentiation. On a connected group
+the converse holds, so the two notions agree; on a disconnected group an ad-invariant left-invariant
+metric need not be bi-invariant. With Lee's sign convention
+`R(X, Y)Z = ∇_X ∇_Y Z - ∇_Y ∇_X Z - ∇_[X, Y] Z`, the Jacobi identity then gives
 
 `R(X_a, X_b) X_c = -¼ X_⁅⁅a, b⁆, c⁆`,
 
 so the curvature tensor at the identity is `R(a, b)c = -¼ ⁅⁅a, b⁆, c⁆` and the sectional numerator
-is `⟪R(a, b)b, a⟫ = ¼ ⟪⁅a, b⁆, ⁅a, b⁆⟫`. Hence a bi-invariant metric has nonnegative sectional
-curvature, and the numerator of the plane spanned by `a` and `b` vanishes exactly when `a` and `b`
-commute. These formulas are the curvature input for the geometry of compact Lie groups and, through
-Riemannian submersions, of their normal homogeneous spaces.
+is `⟪R(a, b)b, a⟫ = ¼ ⟪⁅a, b⁆, ⁅a, b⁆⟫`. Hence an ad-invariant left-invariant metric, in
+particular a bi-invariant metric, has nonnegative sectional curvature, and the numerator of the
+plane spanned by `a` and `b` vanishes exactly when `a` and `b` commute. These formulas are the
+curvature input for the geometry of compact Lie groups and, through Riemannian submersions, of
+their normal homogeneous spaces.
 
 The connection statements hold for every connection satisfying Mathlib's
 `CovariantDerivative.IsLeviCivitaConnection`, for a `C¹` metric on a `C³` Lie group. The statements
@@ -53,18 +56,18 @@ about the pointwise curvature tensor `CovariantDerivative.curvatureTensor` and s
 
 * `CovariantDerivative.IsLeviCivitaConnection.inner_apply_mulInvariantVectorField`: the Koszul
   formula on left-invariant fields of a left-invariant metric.
-* `CovariantDerivative.IsLeviCivitaConnection.apply_mulInvariantVectorField`: for a bi-invariant
-  metric, `∇_{X_a} X_b = ½ X_⁅a, b⁆`.
-* `CovariantDerivative.IsLeviCivitaConnection.curvatureOperator_mulInvariantVectorField`: for a
-  bi-invariant metric, `R(X_a, X_b) X_c = -¼ X_⁅⁅a, b⁆, c⁆`.
+* `CovariantDerivative.IsLeviCivitaConnection.apply_mulInvariantVectorField`: for an
+  ad-invariant left-invariant metric, `∇_{X_a} X_b = ½ X_⁅a, b⁆`.
+* `CovariantDerivative.IsLeviCivitaConnection.curvatureOperator_mulInvariantVectorField`: for an
+  ad-invariant left-invariant metric, `R(X_a, X_b) X_c = -¼ X_⁅⁅a, b⁆, c⁆`.
 * `CovariantDerivative.IsLeviCivitaConnection.curvatureTensor_mulInvariantVectorField` and
   `CovariantDerivative.IsLeviCivitaConnection.curvatureTensor_one`: the same for the pointwise
   curvature tensor, at any point and at the identity.
 * `CovariantDerivative.IsLeviCivitaConnection.inner_curvatureTensor_one`: the sectional numerator
   `⟪R(a, b)b, a⟫ = ¼ ⟪⁅a, b⁆, ⁅a, b⁆⟫`, with
   `CovariantDerivative.IsLeviCivitaConnection.inner_curvatureTensor_one_eq_zero_iff`.
-* `CovariantDerivative.IsLeviCivitaConnection.sectionalCurvature_nonneg`: a bi-invariant metric
-  has nonnegative sectional curvature.
+* `CovariantDerivative.IsLeviCivitaConnection.sectionalCurvature_nonneg`: an ad-invariant
+  left-invariant metric, in particular a bi-invariant metric, has nonnegative sectional curvature.
 
 ## Implementation notes
 
@@ -145,10 +148,10 @@ theorem inner_apply_mulInvariantVectorField (hcov : cov.IsLeviCivitaConnection)
     inner_neg_left, real_inner_comm c ⁅a, b⁆, real_inner_comm a ⁅b, c⁆, real_inner_comm b ⁅a, c⁆]
   ring
 
-/-- For a **bi-invariant metric** on a Lie group, the covariant derivative of a left-invariant
-field along another is half their bracket: `∇_{X_a} X_b = ½ X_⁅a, b⁆`. The metric is
-left-invariant, and its inner product at the identity is invariant under the adjoint action of
-the Lie algebra. -/
+/-- For an **ad-invariant left-invariant metric** on a Lie group, the covariant derivative of a
+left-invariant field along another is half their bracket: `∇_{X_a} X_b = ½ X_⁅a, b⁆`. The metric
+is left-invariant, and its inner product at the identity is invariant under the adjoint action of
+the Lie algebra; every bi-invariant metric is of this kind. -/
 theorem apply_mulInvariantVectorField (hcov : cov.IsLeviCivitaConnection)
     (hL : ∀ (g : G) (a b : TangentSpace I (1 : G)),
       inner ℝ (mulInvariantVectorField a g) (mulInvariantVectorField b g) = inner ℝ a b)
@@ -179,8 +182,8 @@ private theorem apply_mulInvariantVectorField_eq (hcov : cov.IsLeviCivitaConnect
       mulInvariantVectorField ((2 : ℝ)⁻¹ • ⁅a, b⁆) :=
   funext (hcov.apply_mulInvariantVectorField hL had a b)
 
-/-- For a bi-invariant metric, the curvature operator on left-invariant fields is
-`R(X_a, X_b) X_c = -¼ X_⁅⁅a, b⁆, c⁆`, with Lee's sign convention
+/-- For an ad-invariant left-invariant metric, the curvature operator on left-invariant fields
+is `R(X_a, X_b) X_c = -¼ X_⁅⁅a, b⁆, c⁆`, with Lee's sign convention
 `R(X, Y)Z = ∇_X ∇_Y Z - ∇_Y ∇_X Z - ∇_[X, Y] Z`. -/
 theorem curvatureOperator_mulInvariantVectorField (hcov : cov.IsLeviCivitaConnection)
     (hL : ∀ (g : G) (a b : TangentSpace I (1 : G)),
@@ -218,8 +221,8 @@ section C1
 
 variable [IsContMDiffRiemannianBundle I 1 E (fun g : G ↦ TangentSpace I g)]
 
-/-- For a bi-invariant metric on a smooth Lie group, the curvature tensor on values of
-left-invariant fields is `R(X_a g, X_b g) (X_c g) = -¼ X_⁅⁅a, b⁆, c⁆ g`. -/
+/-- For an ad-invariant left-invariant metric on a smooth Lie group, the curvature tensor on
+values of left-invariant fields is `R(X_a g, X_b g) (X_c g) = -¼ X_⁅⁅a, b⁆, c⁆ g`. -/
 theorem curvatureTensor_mulInvariantVectorField (hcov : cov.IsLeviCivitaConnection)
     (hL : ∀ (g : G) (a b : TangentSpace I (1 : G)),
       inner ℝ (mulInvariantVectorField a g) (mulInvariantVectorField b g) = inner ℝ a b)
@@ -233,8 +236,8 @@ theorem curvatureTensor_mulInvariantVectorField (hcov : cov.IsLeviCivitaConnecti
     (contMDiff_mulInvariantVectorField_infty b) (contMDiff_mulInvariantVectorField_infty c),
     hcov.curvatureOperator_mulInvariantVectorField hL had]
 
-/-- For a bi-invariant metric on a smooth Lie group, the curvature tensor at the identity is
-`R(a, b)c = -¼ ⁅⁅a, b⁆, c⁆`. -/
+/-- For an ad-invariant left-invariant metric on a smooth Lie group, the curvature tensor at
+the identity is `R(a, b)c = -¼ ⁅⁅a, b⁆, c⁆`. -/
 theorem curvatureTensor_one (hcov : cov.IsLeviCivitaConnection)
     (hL : ∀ (g : G) (a b : TangentSpace I (1 : G)),
       inner ℝ (mulInvariantVectorField a g) (mulInvariantVectorField b g) = inner ℝ a b)
@@ -246,8 +249,8 @@ theorem curvatureTensor_one (hcov : cov.IsLeviCivitaConnection)
   simp only [mulInvariantVectorField_one] at h
   exact h
 
-/-- For a bi-invariant metric on a smooth Lie group, the sectional numerator on values of
-left-invariant fields is `⟪R(X_a g, X_b g) (X_b g), X_a g⟫ = ¼ ⟪⁅a, b⁆, ⁅a, b⁆⟫`. -/
+/-- For an ad-invariant left-invariant metric on a smooth Lie group, the sectional numerator on
+values of left-invariant fields is `⟪R(X_a g, X_b g) (X_b g), X_a g⟫ = ¼ ⟪⁅a, b⁆, ⁅a, b⁆⟫`. -/
 theorem inner_curvatureTensor_mulInvariantVectorField (hcov : cov.IsLeviCivitaConnection)
     (hL : ∀ (g : G) (a b : TangentSpace I (1 : G)),
       inner ℝ (mulInvariantVectorField a g) (mulInvariantVectorField b g) = inner ℝ a b)
@@ -261,8 +264,8 @@ theorem inner_curvatureTensor_mulInvariantVectorField (hcov : cov.IsLeviCivitaCo
     ← lie_skew ⁅a, b⁆ b, inner_neg_left, inner_lie_left had, ← lie_skew a b, inner_neg_right]
   ring
 
-/-- For a bi-invariant metric on a smooth Lie group, the sectional numerator at the identity is
-`⟪R(a, b)b, a⟫ = ¼ ⟪⁅a, b⁆, ⁅a, b⁆⟫`. -/
+/-- For an ad-invariant left-invariant metric on a smooth Lie group, the sectional numerator at
+the identity is `⟪R(a, b)b, a⟫ = ¼ ⟪⁅a, b⁆, ⁅a, b⁆⟫`. -/
 theorem inner_curvatureTensor_one (hcov : cov.IsLeviCivitaConnection)
     (hL : ∀ (g : G) (a b : TangentSpace I (1 : G)),
       inner ℝ (mulInvariantVectorField a g) (mulInvariantVectorField b g) = inner ℝ a b)
@@ -274,8 +277,8 @@ theorem inner_curvatureTensor_one (hcov : cov.IsLeviCivitaConnection)
   simp only [mulInvariantVectorField_one] at h
   exact h
 
-/-- For a bi-invariant metric on a smooth Lie group, the sectional numerator `⟪R(a, b)b, a⟫` at
-the identity vanishes exactly when `a` and `b` commute. -/
+/-- For an ad-invariant left-invariant metric on a smooth Lie group, the sectional numerator
+`⟪R(a, b)b, a⟫` at the identity vanishes exactly when `a` and `b` commute. -/
 theorem inner_curvatureTensor_one_eq_zero_iff (hcov : cov.IsLeviCivitaConnection)
     (hL : ∀ (g : G) (a b : TangentSpace I (1 : G)),
       inner ℝ (mulInvariantVectorField a g) (mulInvariantVectorField b g) = inner ℝ a b)
@@ -288,7 +291,8 @@ theorem inner_curvatureTensor_one_eq_zero_iff (hcov : cov.IsLeviCivitaConnection
 
 end C1
 
-/-- A bi-invariant metric on a smooth Lie group has **nonnegative sectional curvature**. -/
+/-- An ad-invariant left-invariant metric on a smooth Lie group, in particular a bi-invariant
+metric, has **nonnegative sectional curvature**. -/
 theorem sectionalCurvature_nonneg
     [IsContMDiffRiemannianBundle I 2 E (fun g : G ↦ TangentSpace I g)]
     (hcov : cov.IsLeviCivitaConnection)
