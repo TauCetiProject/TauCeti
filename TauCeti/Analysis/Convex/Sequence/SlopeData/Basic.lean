@@ -80,6 +80,20 @@ structure FiniteSlopeData (Γ : Type*) [Preorder Γ] where
 
 namespace FiniteSlopeData
 
+/-- Finite slope data is determined by its anchor, length and pointwise unit slopes,
+transported along the equality of lengths. -/
+theorem ext_of_slope {d e : FiniteSlopeData Γ} (hs : d.start = e.start)
+    (hy : d.initialHeight = e.initialHeight) (hl : d.length = e.length)
+    (hm : ∀ i, d.slope i = e.slope (i.cast hl)) : d = e := by
+  cases d
+  cases e
+  cases hs
+  cases hy
+  cases hl
+  simp only [Fin.cast_refl] at hm
+  cases funext hm
+  rfl
+
 section AddCommMonoid
 
 variable [AddCommMonoid Γ] [AddCommMonoid Γ'] (d : FiniteSlopeData Γ)

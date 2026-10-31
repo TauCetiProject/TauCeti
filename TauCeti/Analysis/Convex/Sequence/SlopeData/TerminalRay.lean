@@ -116,19 +116,15 @@ theorem expand_injective : Function.Injective (expand : TerminalRaySlopeData Γ 
     have := hdom e.prefix.expand.length
     omega
   have hp : d.prefix.expand = e.prefix.expand := by
-    apply FiniteSlopeData.eq_of_slopeMultiset_eq
+    apply FiniteSlopeData.ext_of_slope (hl := hl)
     · simpa only [FiniteCompressedSlopeData.expand_start, expand_start] using
         congrArg InfiniteSlopeData.start h
     · simpa only [FiniteCompressedSlopeData.expand_initialHeight, expand_initialHeight] using
         congrArg InfiniteSlopeData.initialHeight h
-    · simp only [FiniteSlopeData.slopeMultiset_def]
-      congr 1
-      rw [List.ofFn_congr hl]
-      congr 1
-      funext i
-      have hi : (i : ℕ) < d.prefix.expand.length := by omega
-      exact (d.expand_slope_of_lt hi).symm.trans
-        ((congrArg (fun s => s.slope i) h).trans (e.expand_slope_of_lt i.isLt))
+    · intro i
+      exact (d.expand_slope_of_lt i.isLt).symm.trans
+        ((congrArg (fun s => s.slope i) h).trans
+          (e.expand_slope_of_lt (i.cast hl).isLt))
   have hp' := congrArg FiniteSlopeData.compress hp
   simp only [FiniteCompressedSlopeData.compress_expand] at hp'
   exact TerminalRaySlopeData.ext hp' hr
@@ -168,11 +164,12 @@ private theorem sum_range_expand_slope {k : ℕ} (hk : k ≤ d.prefix.expand.len
 /-- On the prefix interval, the heights agree with the finite compressed prefix. -/
 theorem heights_eq_prefix {k : ℕ} (hk : k ≤ d.prefix.expand.length) :
     d.heights (d.prefix.start + k) = d.prefix.heights (d.prefix.start + k) := by
-  rw [heights_def, ← expand_start, InfiniteSlopeData.heights_start_add,
-    FiniteCompressedSlopeData.heights_def, expand_start,
-    ← FiniteCompressedSlopeData.expand_start, FiniteSlopeData.heights_start_add _ hk,
-    FiniteCompressedSlopeData.expand_initialHeight, expand_initialHeight,
-    d.sum_range_expand_slope hk]
+  calc
+    _ = ((d.prefix.initialHeight + prefixSum k d.prefix.expand.slope : Γ) : WithTop Γ) := by
+      simpa [heights_def, d.sum_range_expand_slope hk] using d.expand.heights_start_add k
+    _ = _ := by
+      simpa [FiniteCompressedSlopeData.heights_def] using
+        (d.prefix.expand.heights_start_add hk).symm
 
 /-- Beyond the join, each further step adds the ray slope to the endpoint height
 of the finite prefix. The offset `k` is relative to the join, not the anchor. -/
@@ -180,16 +177,16 @@ theorem heights_ray (k : ℕ) :
     d.heights (d.prefix.start + d.prefix.expand.length + k) =
       d.prefix.heights (d.prefix.start + d.prefix.expand.length) +
         ((k • d.raySlope : Γ) : WithTop Γ) := by
-  rw [heights_def, Nat.add_assoc, ← expand_start, InfiniteSlopeData.heights_start_add,
-    Finset.sum_range_add, expand_start, FiniteCompressedSlopeData.heights_def,
-    ← FiniteCompressedSlopeData.expand_start, FiniteSlopeData.heights_start_add _ le_rfl,
-    FiniteCompressedSlopeData.expand_initialHeight, expand_initialHeight,
-    d.sum_range_expand_slope le_rfl, prefixSum_of_le le_rfl]
   have ht : (∑ i ∈ Finset.range k, d.expand.slope (d.prefix.expand.length + i)) =
       k • d.raySlope := by
     simp only [d.expand_slope_of_le (Nat.le_add_right _ _), Finset.sum_const,
       Finset.card_range]
-  simp only [ht, ← WithTop.coe_add, add_assoc]
+  have hsum := d.expand.heights_start_add (d.prefix.expand.length + k)
+  have hjoin := d.expand.heights_start_add d.prefix.expand.length
+  simp only [expand_start] at hsum hjoin
+  rw [← d.heights_eq_prefix le_rfl]
+  simpa only [heights_def, Nat.add_assoc, hjoin, Finset.sum_range_add, ht,
+    ← WithTop.coe_add, add_assoc] using hsum
 
 end AddCommMonoid
 
@@ -215,6 +212,79 @@ namespace InfiniteSlopeData
 
 variable {Γ : Type*} [LinearOrder Γ] (d : InfiniteSlopeData Γ)
 
+/-- The first index from which an eventually constant slope sequence stays constant. -/
+noncomputable def stabilizationIndex (hd : Filter.EventuallyConst d.slope Filter.atTop) : ℕ := by
+  classical
+  exact Nat.find (Filter.eventuallyConst_atTop.mp hd)
+
+/-- At and after the stabilization index, every slope equals the final slope. -/
+theorem slope_eq_of_stabilizationIndex_le
+    (hd : Filter.EventuallyConst d.slope Filter.atTop) {j : ℕ}
+    (hj : d.stabilizationIndex hd ≤ j) : d.slope j = d.slope (d.stabilizationIndex hd) := by
+  classical
+  exact Nat.find_spec (Filter.eventuallyConst_atTop.mp hd) j hj
+
+/-- Every slope before the first stabilization index is strictly below the final slope. -/
+theorem slope_lt_of_lt_stabilizationIndex
+    (hd : Filter.EventuallyConst d.slope Filter.atTop) {i : ℕ}
+    (hi : i < d.stabilizationIndex hd) : d.slope i < d.slope (d.stabilizationIndex hd) := by
+  classical
+  apply lt_of_le_of_ne (d.monotone hi.le)
+  intro heq
+  have hconst : ∀ j, i ≤ j → d.slope j = d.slope i := by
+    intro j hij
+    by_cases hj : j ≤ d.stabilizationIndex hd
+    · exact le_antisymm ((d.monotone hj).trans_eq heq.symm) (d.monotone hij)
+    · exact (d.slope_eq_of_stabilizationIndex_le hd (by omega)).trans heq.symm
+  exact (not_le_of_gt hi) (Nat.find_min' (Filter.eventuallyConst_atTop.mp hd) hconst)
+
+/-- Normalize an eventually constant infinite slope presentation by compressing the finite
+prefix strictly below its final slope and storing that slope as a separate ray. -/
+noncomputable def toTerminalRay (hd : Filter.EventuallyConst d.slope Filter.atTop) :
+    TerminalRaySlopeData Γ :=
+  let f : FiniteSlopeData Γ :=
+    ⟨d.start, d.initialHeight, d.stabilizationIndex hd, fun i => d.slope i,
+      fun _ _ h => d.monotone h⟩
+  { «prefix» := f.compress
+    raySlope := d.slope (d.stabilizationIndex hd)
+    lt_raySlope := by
+      intro m hm
+      have hm' : 0 < f.slopeMultiset.count m := by
+        simpa only [FiniteSlopeData.compress_lengths] using
+          Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hm)
+      obtain ⟨i, rfl⟩ := FiniteSlopeData.mem_slopeMultiset.mp (Multiset.count_pos.mp hm')
+      exact d.slope_lt_of_lt_stabilizationIndex hd i.isLt }
+
+/-- The normalized prefix compresses precisely the slopes before stabilization. -/
+theorem toTerminalRay_prefix (hd : Filter.EventuallyConst d.slope Filter.atTop) :
+    (d.toTerminalRay hd).prefix =
+      (⟨d.start, d.initialHeight, d.stabilizationIndex hd, fun i => d.slope i,
+        fun _ _ h => d.monotone h⟩ : FiniteSlopeData Γ).compress := (rfl)
+
+/-- The normalized ray has the slope at the first stabilization index. -/
+@[simp]
+theorem toTerminalRay_raySlope (hd : Filter.EventuallyConst d.slope Filter.atTop) :
+    (d.toTerminalRay hd).raySlope = d.slope (d.stabilizationIndex hd) := (rfl)
+
+/-- Expansion after normalization recovers the infinite unit-slope presentation. -/
+@[simp]
+theorem expand_toTerminalRay (hd : Filter.EventuallyConst d.slope Filter.atTop) :
+    (d.toTerminalRay hd).expand = d := by
+  have hp := d.toTerminalRay_prefix hd
+  have hlen : (d.toTerminalRay hd).prefix.expand.length = d.stabilizationIndex hd := by
+    simp [hp]
+  apply InfiniteSlopeData.ext (by simp [hp]) (by simp [hp])
+  funext i
+  by_cases hi : i < d.stabilizationIndex hd
+  · rw [TerminalRaySlopeData.expand_slope_of_lt _ (hlen ▸ hi)]
+    have hs : ∀ j : Fin (d.toTerminalRay hd).prefix.expand.length,
+        (d.toTerminalRay hd).prefix.expand.slope j = d.slope j := by
+      rw [hp, FiniteSlopeData.expand_compress]
+      exact fun _ => rfl
+    exact hs _
+  · rw [TerminalRaySlopeData.expand_slope_of_le _ (by omega), toTerminalRay_raySlope]
+    exact (d.slope_eq_of_stabilizationIndex_le hd (by omega)).symm
+
 /-- An infinite unit-slope presentation has normalized finite-prefix-and-ray data
 exactly when its slope sequence is eventually constant. -/
 theorem exists_terminalRay_expand_eq_iff :
@@ -224,56 +294,7 @@ theorem exists_terminalRay_expand_eq_iff :
   · rintro ⟨r, rfl⟩
     exact r.eventuallyConst_slope_expand
   · intro hd
-    let : DecidablePred (fun n => ∀ j, n ≤ j → d.slope j = d.slope n) :=
-      Classical.decPred _
-    have hex := Filter.eventuallyConst_atTop.mp hd
-    let n := Nat.find hex
-    have hn : ∀ j, n ≤ j → d.slope j = d.slope n := Nat.find_spec hex
-    have hlt (i : Fin n) : d.slope i < d.slope n := by
-      apply lt_of_le_of_ne (d.monotone i.isLt.le)
-      intro heq
-      have hi : ∀ j, (i : ℕ) ≤ j → d.slope j = d.slope i := by
-        intro j hij
-        by_cases hj : j ≤ n
-        · exact le_antisymm ((d.monotone hj).trans_eq heq.symm) (d.monotone hij)
-        · exact (hn j (by omega)).trans heq.symm
-      have := Nat.find_min' hex hi
-      omega
-    let f : FiniteSlopeData Γ :=
-      ⟨d.start, d.initialHeight, n, fun i => d.slope i, fun _ _ h => d.monotone h⟩
-    let r : TerminalRaySlopeData Γ :=
-      { «prefix» := f.compress
-        raySlope := d.slope n
-        lt_raySlope := by
-          intro m hm
-          have hm' : 0 < f.slopeMultiset.count m := by
-            simpa only [FiniteSlopeData.compress_lengths] using
-              Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hm)
-          obtain ⟨i, rfl⟩ := FiniteSlopeData.mem_slopeMultiset.mp (Multiset.count_pos.mp hm')
-          exact hlt i }
-    refine ⟨r, InfiniteSlopeData.ext (by simp [r, f]) (by simp [r, f]) ?_⟩
-    funext i
-    have hlen : r.prefix.expand.length = n := by simp [r, f]
-    by_cases hi : i < n
-    · rw [r.expand_slope_of_lt (hlen ▸ hi)]
-      have hp : r.prefix.expand = f := FiniteSlopeData.expand_compress f
-      have hs : ∀ j : Fin r.prefix.expand.length, r.prefix.expand.slope j = d.slope j := by
-        rw [hp]
-        exact fun _ => rfl
-      exact hs _
-    · rw [r.expand_slope_of_le (by omega)]
-      exact (hn i (by omega)).symm
-
-/-- Normalize an eventually constant infinite slope presentation by compressing the finite
-prefix strictly below its final slope and storing that slope as a separate ray. -/
-noncomputable def toTerminalRay (hd : Filter.EventuallyConst d.slope Filter.atTop) :
-    TerminalRaySlopeData Γ := (d.exists_terminalRay_expand_eq_iff.mpr hd).choose
-
-/-- Expansion after normalization recovers the infinite unit-slope presentation. -/
-@[simp]
-theorem expand_toTerminalRay (hd : Filter.EventuallyConst d.slope Filter.atTop) :
-    (d.toTerminalRay hd).expand = d :=
-  (d.exists_terminalRay_expand_eq_iff.mpr hd).choose_spec
+    exact ⟨d.toTerminalRay hd, d.expand_toTerminalRay hd⟩
 
 /-- Normalization preserves the represented heights. -/
 @[simp]
