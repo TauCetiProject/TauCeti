@@ -14,9 +14,12 @@ import TauCeti.RingTheory.FiniteType.Tensor.Product
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
-# Reduced tensor products over perfect fields
+# Reduced tensor products after separable field extensions
 
-Every reduced algebra over a perfect field is geometrically reduced.
+Extending the scalars of a reduced algebra by a separable algebraic field extension gives a reduced
+algebra, since the finite subextensions are étale. Consequently, if `F / E` is a separable algebraic
+extension of fields over `k` and `E ⊗[k] A` is reduced, then so is `F ⊗[k] A`.
+In particular, every reduced algebra over a perfect field is geometrically reduced.
 The tensor product of two reduced algebras over a perfect field is therefore reduced, with
 no finite-generation hypothesis on either factor.
 This supplies the reduced tensor square needed to form reductions of affine groups.
@@ -34,6 +37,36 @@ open scoped TensorProduct
 
 namespace TauCeti
 
+/-- Extending the scalars of a reduced algebra by a separable algebraic field extension gives a
+reduced algebra. Neither factor needs to be finite or finitely generated. -/
+theorem isReduced_tensorProduct_of_isSeparable (k : Type*) [Field k] (A L : Type*) [CommRing A]
+    [Algebra k A] [IsReduced A] [Field L] [Algebra k L] [Algebra.IsSeparable k L] :
+    IsReduced (A ⊗[k] L) := by
+  -- Finitely generated subalgebras of `L` are finite separable field extensions, hence étale,
+  -- so their scalar extensions preserve reducedness (`TauCeti.isReduced_of_smooth`).
+  apply IsReduced.tensorProduct_of_flat_of_forall_fg
+  intro B hB
+  let : Field B := (Subalgebra.isField_of_algebraic B).toField
+  have : Algebra.FiniteType k B := ⟨B.fg_top.mpr hB⟩
+  have : Algebra.IsSeparable k B := Algebra.IsSeparable.of_algHom (E' := L) (f := B.val)
+  have : Algebra.FormallyEtale k B := Algebra.FormallyEtale.of_isSeparable k B
+  have : Algebra.Etale k B := ⟨inferInstance,
+    Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
+  exact isReduced_of_smooth A (A ⊗[k] B)
+
+/-- Let `F / E` be a separable algebraic extension of fields over `k`. If `E ⊗[k] A` is reduced,
+then so is `F ⊗[k] A`. -/
+theorem isReduced_tensorProduct_of_isReduced_of_isSeparable (k : Type*) [Field k] {E F : Type*}
+    [Field E] [Field F] [Algebra k E] [Algebra E F] [Algebra k F] [IsScalarTower k E F]
+    [Algebra.IsSeparable E F] (A : Type*) [CommRing A] [Algebra k A] [hE : IsReduced (E ⊗[k] A)] :
+    IsReduced (F ⊗[k] A) := by
+  have := isReduced_tensorProduct_of_isSeparable E (E ⊗[k] A) F
+  -- `F ⊗[k] A = F ⊗[E] (E ⊗[k] A)`
+  let e : F ⊗[k] A ≃+* (E ⊗[k] A) ⊗[E] F :=
+    (Algebra.TensorProduct.cancelBaseChange k E F F A).symm.toRingEquiv.trans
+      (Algebra.TensorProduct.comm E F (E ⊗[k] A)).toRingEquiv
+  exact isReduced_of_injective e e.injective
+
 variable (k : Type*) [Field k] [PerfectField k]
 
 /-- A reduced algebra over a perfect field is geometrically reduced, without a
@@ -41,21 +74,8 @@ finite-generation hypothesis. -/
 instance instIsGeometricallyReducedOfPerfectField
     (A : Type*) [CommRing A] [Algebra k A] [IsReduced A] :
     Algebra.IsGeometricallyReduced k A := by
-  -- Finite subextensions of the algebraic closure are étale, so their scalar extensions
-  -- preserve reducedness. Use Mathlib's `IsReduced.tensorProduct_of_flat_of_forall_fg`
-  -- and `Algebra.FormallyEtale.of_isSeparable`, together with `TauCeti.isReduced_of_smooth`.
   rw [Algebra.isGeometricallyReduced_field_iff]
-  have : IsReduced (A ⊗[k] AlgebraicClosure k) := by
-    apply IsReduced.tensorProduct_of_flat_of_forall_fg
-    intro B hB
-    let : Field B := (Subalgebra.isField_of_algebraic B).toField
-    have : Algebra.FiniteType k B := ⟨B.fg_top.mpr hB⟩
-    have : Algebra.IsAlgebraic k B :=
-      Algebra.IsAlgebraic.of_injective B.val Subtype.val_injective
-    have : Algebra.FormallyEtale k B := Algebra.FormallyEtale.of_isSeparable k B
-    have : Algebra.Etale k B := ⟨inferInstance,
-      Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
-    exact isReduced_of_smooth A (A ⊗[k] B)
+  have := isReduced_tensorProduct_of_isSeparable k A (AlgebraicClosure k)
   exact isReduced_of_injective (Algebra.TensorProduct.comm k (AlgebraicClosure k) A)
     (Algebra.TensorProduct.comm k (AlgebraicClosure k) A).injective
 
