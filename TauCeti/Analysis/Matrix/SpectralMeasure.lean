@@ -73,7 +73,7 @@ public section
 noncomputable section
 
 open MeasureTheory Polynomial TauCeti.Probability
-open scoped ENNReal
+open scoped ComplexOrder ENNReal
 
 namespace Matrix
 
@@ -107,7 +107,7 @@ theorem spectralMeasure_apply (A : Matrix n n 𝕜) (hA : A.IsHermitian) {s : Se
 
 /-- The spectral measure of a positive-semidefinite matrix is concentrated on the nonnegative
 reals. -/
-theorem PosSemidef.ae_mem_Ici_spectralMeasure {A : Matrix n n ℝ} (hA : A.PosSemidef) :
+theorem PosSemidef.ae_mem_Ici_spectralMeasure {A : Matrix n n 𝕜} (hA : A.PosSemidef) :
     ∀ᵐ x ∂(A.spectralMeasure hA.isHermitian : Measure ℝ), x ∈ Set.Ici 0 := by
   rw [ae_iff]
   have hset : {x : ℝ | ¬ x ∈ Set.Ici 0} = Set.Iio 0 := by
