@@ -26,10 +26,12 @@ points of valuation spectra along primes lying over their supports
 (`TauCeti.ValuationSpectrum.exists_supp_eq_comap_eq`), it follows that
 `Spa(B, B⁺) → Spa(A, A⁺)` hits every point whose support is the contraction of a prime of `B`. In
 particular it is surjective when `B` is faithfully flat over `A`, which is the surjectivity clause
-of the Huber pair of a finite étale algebra. Over a complete Hausdorff Tate ring the converse holds
-as well, because every maximal ideal of `A` is the support of a point of `Spa(A, A⁺)`
-(`TauCeti.Huber.Pair.Hom.faithfullyFlat_of_surjective_spaComap`): a finite étale morphism of
-Huber pairs is surjective on adic spectra exactly when it is faithfully flat.
+of the Huber pair of a finite étale algebra. Over a complete Hausdorff Tate ring every maximal
+ideal of `A` is the support of a point of `Spa(A, A⁺)`
+(`TauCeti.ValuationSpectrum.exists_mem_spa_supp_eq_of_isMaximal`), so for a flat (for example
+finite étale) morphism, surjectivity on adic spectra forces faithful flatness
+(`TauCeti.Huber.Pair.Hom.faithfullyFlat_of_surjective_spaComap`). Hence a finite étale morphism of
+Huber pairs over such a base is surjective on adic spectra exactly when it is faithfully flat.
 
 The content is the continuity of `w` given that of its pullback. Fix a pseudouniformiser `ϖ` of
 `A`. The integers of the pullback of `w` form an open subring of `A`, so the integral closure `C`
