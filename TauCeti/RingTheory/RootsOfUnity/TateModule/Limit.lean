@@ -6,22 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Basic
-public import TauCeti.RingTheory.LaurentSeries.RamificationIndex
-import TauCeti.RingTheory.RootsOfUnity.Basic
+public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
 /-!
 # The profinite limit of the groups of roots of unity
 
-For positive integers ordered by divisibility, the maps `μ_m(R) → μ_n(R)` send `ζ` to
-`ζ ^ (m / n)`. Over a domain these are finite groups. We give each level a fresh carrier
-`DiscreteRootsOfUnity n R`, so its discrete topology is independent of any topology on `R`
-or its units.
+For nonzero natural numbers prime to `p`, ordered by divisibility, the maps `μ_m(R) → μ_n(R)`
+send `ζ` to `ζ ^ (m / n)`. Over a domain these are finite groups. Mathlib's functor
+`forget₂ FiniteGrp ProfiniteGrp` gives each level the discrete topology independently
+of any topology on `R` or its units.
 
 The resulting diagram in `ProfiniteGrp` has the existing Tate module
-`TauCeti.PrimeToPTateModule 1 R` as its limit. The limit cone and its universal property
+`TauCeti.PrimeToPTateModule p R` as its limit. The limit cone and its universal property
 identify the concrete group of compatible families with the categorical inverse limit.
-This is the roots-of-unity tower acting on ramified Laurent extensions by Kummer theory.
+For `p = 1` this is the full roots-of-unity tower acting on ramified Laurent extensions
+by Kummer theory.
 -/
 
 public section
@@ -30,229 +30,183 @@ noncomputable section
 
 open CategoryTheory CategoryTheory.Limits
 
-namespace TauCeti
+namespace TauCeti.PrimeToPTateModule
 
-/-- The `n`-th roots of unity on a fresh carrier with the discrete topology. -/
-def DiscreteRootsOfUnity (n : ℕ+) (R : Type*) [CommMonoid R] : Type _ := rootsOfUnity n R
-
-namespace DiscreteRootsOfUnity
-
-variable {R : Type*} [CommMonoid R] {n m l : ℕ+}
-
-instance : CommGroup (DiscreteRootsOfUnity n R) :=
-  inferInstanceAs (CommGroup (rootsOfUnity n R))
-
-/-- Forgetting the discrete carrier is a group equivalence. -/
-def equivRootsOfUnity : DiscreteRootsOfUnity n R ≃* rootsOfUnity n R := .refl _
-
-/-- Discrete roots of unity are determined by their underlying units. -/
+/-- Nonzero orders prime to `p`, ordered by divisibility. -/
 @[ext]
-theorem ext {ζ ξ : DiscreteRootsOfUnity n R}
-    (h : (equivRootsOfUnity ζ : Rˣ) = equivRootsOfUnity ξ) : ζ = ξ :=
-  equivRootsOfUnity.injective (Subtype.ext h)
+structure Index (p : ℕ) where
+  /-- The nonzero order, coprime to `p`, of a finite level. -/
+  order : {m : ℕ // m ≠ 0 ∧ m.Coprime p}
 
-instance : TopologicalSpace (DiscreteRootsOfUnity n R) := ⊥
+namespace Index
 
-instance : DiscreteTopology (DiscreteRootsOfUnity n R) := ⟨rfl⟩
+variable {p : ℕ}
 
-instance [Finite (rootsOfUnity n R)] : Finite (DiscreteRootsOfUnity n R) :=
-  Finite.of_equiv _ equivRootsOfUnity.symm.toEquiv
+instance : PartialOrder (Index p) where
+  le n m := (n.order : ℕ) ∣ m.order
+  le_refl n := dvd_refl _
+  le_trans _ _ _ := dvd_trans
+  le_antisymm _ _ hnm hmn := Index.ext (Subtype.ext (Nat.dvd_antisymm hnm hmn))
 
-/-- The transition from level `m` to level `n`, for `n ∣ m`, raises to `m / n`. -/
-def transition (h : n ∣ m) : DiscreteRootsOfUnity m R →ₜ* DiscreteRootsOfUnity n R where
-  toMonoidHom := equivRootsOfUnity.symm.toMonoidHom.comp
-    ((rootsOfUnityPowOfDvd (PNat.dvd_iff.mp h)).comp equivRootsOfUnity.toMonoidHom)
-  continuous_toFun := continuous_of_discreteTopology
-
-/-- On units the transition is the usual power map. -/
+/-- Comparison of level indices is divisibility of their orders. -/
 @[simp]
-theorem coe_transition (h : n ∣ m) (ζ : DiscreteRootsOfUnity m R) :
-    (equivRootsOfUnity (transition h ζ) : Rˣ) =
-      (equivRootsOfUnity ζ : Rˣ) ^ ((m : ℕ) / n) :=
-  coe_rootsOfUnityPowOfDvd_apply (PNat.dvd_iff.mp h) (equivRootsOfUnity ζ)
+theorem le_iff_dvd {n m : Index p} : n ≤ m ↔ (n.order : ℕ) ∣ m.order := Iff.rfl
 
-@[simp]
-theorem transition_refl (ζ : DiscreteRootsOfUnity n R) : transition (dvd_refl n) ζ = ζ := by
-  apply DiscreteRootsOfUnity.ext
-  simp
+instance (n : Index p) : NeZero (n.order : ℕ) := ⟨n.order.2.1⟩
 
-/-- The power transitions compose along divisibility. -/
-@[simp]
-theorem transition_transition (hnm : n ∣ m) (hml : m ∣ l) (ζ : DiscreteRootsOfUnity l R) :
-    transition hnm (transition hml ζ) = transition (hnm.trans hml) ζ := by
-  apply DiscreteRootsOfUnity.ext
-  simp only [coe_transition, ← pow_mul, Nat.div_mul_div (PNat.dvd_iff.mp hml)
-    (PNat.dvd_iff.mp hnm)]
+end Index
 
-end DiscreteRootsOfUnity
+variable (p : ℕ) (R : Type*) [CommRing R] [IsDomain R]
 
-namespace PrimeToPTateModule
-
-section Projections
-
-variable {R : Type*} [CommMonoid R]
-
-/-- The projection of the Tate module to a discrete root group. -/
-def discreteProj (n : ℕ+) : PrimeToPTateModule 1 R →ₜ* DiscreteRootsOfUnity n R where
-  toMonoidHom := DiscreteRootsOfUnity.equivRootsOfUnity.symm.toMonoidHom.comp
-    (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩)
-  continuous_toFun :=
-    ((isLocallyConstant_proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩).comp
-      DiscreteRootsOfUnity.equivRootsOfUnity.symm).continuous
-
-/-- Forgetting the discrete carrier recovers the original Tate-module projection. -/
-@[simp]
-theorem equivRootsOfUnity_discreteProj (n : ℕ+) (ζ : PrimeToPTateModule 1 R) :
-    DiscreteRootsOfUnity.equivRootsOfUnity (discreteProj n ζ) =
-      proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ := (rfl)
-
-/-- Tate-module projections are compatible with the discrete power transitions. -/
-@[simp]
-theorem transition_discreteProj {n m : ℕ+} (h : n ∣ m) (ζ : PrimeToPTateModule 1 R) :
-    DiscreteRootsOfUnity.transition h (discreteProj m ζ) = discreteProj n ζ := by
-  apply DiscreteRootsOfUnity.ext
-  simp only [DiscreteRootsOfUnity.coe_transition, equivRootsOfUnity_discreteProj]
-  exact proj_pow_div ζ
-    (m := ⟨m, m.ne_zero, Nat.coprime_one_right _⟩)
-    (n := ⟨n, n.ne_zero, Nat.coprime_one_right _⟩) (PNat.dvd_iff.mp h)
-
-end Projections
-
-variable (R : Type*) [CommRing R] [IsDomain R]
-
-/-- The inverse system of finite discrete groups of roots of unity, indexed by positive
-integers under divisibility. -/
+/-- The inverse system of finite groups of roots of unity of order prime to `p`. -/
 -- Expose the object assignment: morphism types depend on the actual finite-level carriers.
 @[expose]
-def rootsOfUnityDiagram : RamificationIndexᵒᵖ ⥤ ProfiniteGrp where
-  obj n := ProfiniteGrp.of (DiscreteRootsOfUnity n.unop.toPNat R)
-  map f := ProfiniteGrp.ofHom (DiscreteRootsOfUnity.transition f.unop.le)
+def finiteRootsOfUnityDiagram : (Index p)ᵒᵖ ⥤ FiniteGrp where
+  obj n := FiniteGrp.of (rootsOfUnity n.unop.order R)
+  map f := FiniteGrp.ofHom (rootsOfUnityPowOfDvd f.unop.le)
   map_id n := by
     apply ConcreteCategory.hom_ext
     intro ζ
-    exact DiscreteRootsOfUnity.transition_refl ζ
-  map_comp f g := by
+    -- Reduce the bundled carrier in the variable type so rewriting sees rootsOfUnity.
+    dsimp only [FiniteGrp.of] at ζ
+    apply Subtype.ext
+    -- FiniteGrp's induced-category morphisms use a different coercion from ofHom_apply.
+    -- Identify the underlying homomorphism before applying the power-map API.
+    change (rootsOfUnityPowOfDvd (M := R) (dvd_refl (n.unop.order : ℕ))
+      (ζ : rootsOfUnity n.unop.order R) : Rˣ) = (ζ : rootsOfUnity n.unop.order R).val
+    simp [Nat.div_self (Nat.pos_of_ne_zero n.unop.order.2.1)]
+  map_comp {n m l} f g := by
     apply ConcreteCategory.hom_ext
     intro ζ
-    exact (DiscreteRootsOfUnity.transition_transition g.unop.le f.unop.le ζ).symm
+    -- Reduce the bundled carrier in the variable type so rewriting sees rootsOfUnity.
+    dsimp only [FiniteGrp.of] at ζ
+    apply Subtype.ext
+    -- As above, expose only the induced-category coercions, keeping the power maps opaque.
+    change (rootsOfUnityPowOfDvd (M := R) (g.unop.le.trans f.unop.le)
+      (ζ : rootsOfUnity n.unop.order R) : Rˣ) =
+      (rootsOfUnityPowOfDvd (M := R) g.unop.le
+        (rootsOfUnityPowOfDvd (M := R) f.unop.le (ζ : rootsOfUnity n.unop.order R)) : Rˣ)
+    rw [coe_rootsOfUnityPowOfDvd_apply, coe_rootsOfUnityPowOfDvd_apply,
+      coe_rootsOfUnityPowOfDvd_apply, ← pow_mul, Nat.div_mul_div f.unop.le g.unop.le]
+
+/-- The inverse system of finite discrete root groups, with orders prime to `p`. -/
+-- Expose the finite-level carriers supplied by Mathlib's discrete-topology functor.
+@[expose]
+def rootsOfUnityDiagram : (Index p)ᵒᵖ ⥤ ProfiniteGrp :=
+  finiteRootsOfUnityDiagram p R ⋙ forget₂ FiniteGrp ProfiniteGrp
 
 /-- The object at `n` is the discrete group of `n`-th roots of unity. -/
 @[simp]
-theorem rootsOfUnityDiagram_obj (n : RamificationIndexᵒᵖ) :
-    (rootsOfUnityDiagram R).obj n = ProfiniteGrp.of (DiscreteRootsOfUnity n.unop.toPNat R) :=
-  (rfl)
+theorem rootsOfUnityDiagram_obj (n : (Index p)ᵒᵖ) :
+    (rootsOfUnityDiagram p R).obj n =
+      ProfiniteGrp.ofFiniteGrp (FiniteGrp.of (rootsOfUnity n.unop.order R)) := (rfl)
 
 /-- The arrows of the diagram are the power transitions. -/
 @[simp]
-theorem rootsOfUnityDiagram_map_hom {n m : RamificationIndexᵒᵖ} (f : n ⟶ m) :
-    ((rootsOfUnityDiagram R).map f).hom = DiscreteRootsOfUnity.transition f.unop.le := (rfl)
+theorem rootsOfUnityDiagram_map_hom {n m : (Index p)ᵒᵖ} (f : n ⟶ m) :
+    MonoidHom.ofClass ((rootsOfUnityDiagram p R).map f).hom =
+      rootsOfUnityPowOfDvd (M := R) f.unop.le := (rfl)
+
+/-- On underlying units the diagram maps are the usual power maps. -/
+@[simp]
+theorem rootsOfUnityDiagram_map_apply {n m : (Index p)ᵒᵖ} (f : n ⟶ m)
+    (ζ : (rootsOfUnityDiagram p R).obj n) :
+    (((rootsOfUnityDiagram p R).map f).hom ζ : rootsOfUnity m.unop.order R).val =
+      (ζ : rootsOfUnity n.unop.order R).val ^ ((n.unop.order : ℕ) / m.unop.order) :=
+  coe_rootsOfUnityPowOfDvd_apply f.unop.le ζ
 
 /-- The compatible projections from the Tate module form a cone in profinite groups. -/
 -- Expose the vertex so its projections have the existing Tate module as their source.
 @[expose]
-def rootsOfUnityCone : Cone (rootsOfUnityDiagram R) where
-  pt := ProfiniteGrp.of (PrimeToPTateModule 1 R)
+def rootsOfUnityCone : Cone (rootsOfUnityDiagram p R) where
+  pt := ProfiniteGrp.of (PrimeToPTateModule p R)
   π :=
-    { app := fun n ↦ ProfiniteGrp.ofHom (discreteProj n.unop.toPNat)
+    { app := fun n ↦ by
+        letI : TopologicalSpace (rootsOfUnity n.unop.order R) := ⊥
+        letI : DiscreteTopology (rootsOfUnity n.unop.order R) := ⟨rfl⟩
+        exact ConcreteCategory.ofHom
+          ({ toMonoidHom := proj n.unop.order
+             continuous_toFun := (isLocallyConstant_proj n.unop.order).continuous } :
+            PrimeToPTateModule p R →ₜ* (rootsOfUnityDiagram p R).obj n)
       naturality := fun {n m} f ↦ by
-        apply ConcreteCategory.hom_ext
+        apply ProfiniteGrp.hom_ext
+        apply ContinuousMonoidHom.ext
         intro ζ
-        exact (transition_discreteProj f.unop.le ζ).symm }
+        apply Subtype.ext
+        simp only [Functor.const_obj_map, ProfiniteGrp.hom_comp,
+          ConcreteCategory.hom_ofHom, ContinuousMonoidHom.coe_comp,
+          Function.comp_apply, rootsOfUnityDiagram_map_apply]
+        -- The cone legs are literal continuous-hom structures; their application does not
+        -- simplify through the finite functor's dependent carrier without this identification.
+        change (proj m.unop.order ζ : Rˣ) =
+          (proj n.unop.order ζ : Rˣ) ^ ((n.unop.order : ℕ) / m.unop.order)
+        exact (proj_pow_div ζ f.unop.le).symm }
 
 /-- The cone has the existing Tate module as its vertex. -/
 @[simp]
 theorem rootsOfUnityCone_pt :
-    (rootsOfUnityCone R).pt = ProfiniteGrp.of (PrimeToPTateModule 1 R) := (rfl)
+    (rootsOfUnityCone p R).pt = ProfiniteGrp.of (PrimeToPTateModule p R) := (rfl)
 
-/-- The cone maps are the discrete projections. -/
+/-- The cone maps are the Tate-module projections to the discrete levels. -/
 @[simp]
-theorem rootsOfUnityCone_π_app_hom (n : RamificationIndexᵒᵖ) :
-    ((rootsOfUnityCone R).π.app n).hom = discreteProj n.unop.toPNat := (rfl)
+theorem rootsOfUnityCone_π_app_hom (n : (Index p)ᵒᵖ) :
+    MonoidHom.ofClass ((rootsOfUnityCone p R).π.app n).hom =
+      proj (E := R) n.unop.order := (rfl)
 
-private def coneComponent (s : Cone (rootsOfUnityDiagram R)) (n : ℕ+) :
-    s.pt →ₜ* DiscreteRootsOfUnity n R :=
-  (s.π.app (Opposite.op ⟨n⟩)).hom
-
-private theorem coneComponent_transition (s : Cone (rootsOfUnityDiagram R))
-    {n m : ℕ+} (h : n ∣ m) (x : s.pt) :
-    DiscreteRootsOfUnity.transition h (coneComponent R s m x) = coneComponent R s n x :=
-  ConcreteCategory.congr_hom (s.w (homOfLE (x := (⟨n⟩ : RamificationIndex)) (y := ⟨m⟩) h).op) x
-
-private def coneLiftHom (s : Cone (rootsOfUnityDiagram R)) :
-    s.pt →* PrimeToPTateModule 1 R :=
-  lift
-    (fun m ↦ by
-      let n : ℕ+ := ⟨m, Nat.pos_of_ne_zero m.2.1⟩
-      exact (DiscreteRootsOfUnity.equivRootsOfUnity (R := R) (n := n)).toMonoidHom.comp
-        (coneComponent R s n).toMonoidHom)
+private def coneLiftHom (s : Cone (rootsOfUnityDiagram p R)) :
+    s.pt →* PrimeToPTateModule p R :=
+  lift (fun m ↦ (s.π.app (Opposite.op ⟨m⟩)).hom.toMonoidHom)
     (fun m n x h ↦ by
-      let m' : ℕ+ := ⟨m, Nat.pos_of_ne_zero m.2.1⟩
-      let n' : ℕ+ := ⟨n, Nat.pos_of_ne_zero n.2.1⟩
-      have h' : n' ∣ m' := PNat.dvd_iff.mpr h
-      calc
-        _ = (DiscreteRootsOfUnity.equivRootsOfUnity
-            (DiscreteRootsOfUnity.transition h' (coneComponent R s m' x)) : Rˣ) :=
-          (DiscreteRootsOfUnity.coe_transition h' (coneComponent R s m' x)).symm
-        _ = _ := congrArg (fun ζ ↦ (DiscreteRootsOfUnity.equivRootsOfUnity ζ : Rˣ))
-          (coneComponent_transition R s h' x))
+      have hw := congrArg (fun f ↦ f.hom x)
+        (s.w (homOfLE (x := (⟨n⟩ : Index p)) (y := ⟨m⟩) h).op)
+      have hv := congrArg (fun ζ : rootsOfUnity n R ↦ ζ.val) hw
+      simp only [ProfiniteGrp.hom_comp, ContinuousMonoidHom.coe_comp,
+        Function.comp_apply, rootsOfUnityDiagram_map_apply] at hv
+      exact hv)
 
-private theorem proj_coneLiftHom (s : Cone (rootsOfUnityDiagram R))
-    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) (x : s.pt) :
-    proj m (coneLiftHom R s x) = DiscreteRootsOfUnity.equivRootsOfUnity
-      (coneComponent R s ⟨m, Nat.pos_of_ne_zero m.2.1⟩ x) :=
+private theorem proj_coneLiftHom (s : Cone (rootsOfUnityDiagram p R))
+    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) (x : s.pt) :
+    proj m (coneLiftHom p R s x) = (s.π.app (Opposite.op ⟨m⟩)).hom x :=
   proj_lift _ _ m x
 
-private def coneLift (s : Cone (rootsOfUnityDiagram R)) :
-    s.pt →ₜ* PrimeToPTateModule 1 R :=
-  { coneLiftHom R s with
+private def coneLift (s : Cone (rootsOfUnityDiagram p R)) :
+    s.pt →ₜ* PrimeToPTateModule p R :=
+  { coneLiftHom p R s with
     continuous_toFun := continuous_iff.mpr fun m ↦ by
-      let n : ℕ+ := ⟨m, Nat.pos_of_ne_zero m.2.1⟩
-      have hc := ((IsLocallyConstant.iff_continuous _).mpr
-        (coneComponent R s n).continuous).comp
-          (DiscreteRootsOfUnity.equivRootsOfUnity (R := R) (n := n))
-      have heq : (fun x ↦ proj m (coneLiftHom R s x)) =
-          (fun x ↦ DiscreteRootsOfUnity.equivRootsOfUnity (coneComponent R s n x)) :=
-        funext (proj_coneLiftHom R s m)
+      let : DiscreteTopology ((rootsOfUnityDiagram p R).obj (Opposite.op ⟨m⟩)) := ⟨rfl⟩
+      have hc := (IsLocallyConstant.iff_continuous _).mpr
+        (s.π.app (Opposite.op ⟨m⟩)).hom.continuous
+      have heq := funext (proj_coneLiftHom p R s m)
       exact heq.symm ▸ hc }
 
-private theorem proj_coneLift (s : Cone (rootsOfUnityDiagram R))
-    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) (x : s.pt) :
-    proj m (coneLift R s x) = DiscreteRootsOfUnity.equivRootsOfUnity
-      (coneComponent R s ⟨m, Nat.pos_of_ne_zero m.2.1⟩ x) :=
-  proj_coneLiftHom R s m x
-
-/-- The Tate module is the inverse limit of the finite discrete groups of roots of unity
-in `ProfiniteGrp`: every compatible family of continuous homomorphisms factors uniquely
-through its projections. -/
-def rootsOfUnityConeIsLimit : IsLimit (rootsOfUnityCone R) where
-  lift s := ProfiniteGrp.ofHom (coneLift R s)
+/-- The prime-to-`p` Tate module is the inverse limit of the finite discrete groups of roots
+of unity of order prime to `p` in `ProfiniteGrp`: every compatible family of continuous
+homomorphisms factors uniquely through its projections. -/
+def rootsOfUnityConeIsLimit : IsLimit (rootsOfUnityCone p R) where
+  lift s := ProfiniteGrp.ofHom (coneLift p R s)
   fac s n := by
-    rcases n with ⟨⟨n⟩⟩
-    dsimp only [rootsOfUnityCone, rootsOfUnityDiagram]
+    -- The source of the cone leg is a dependent field. Reduce the cone to identify its
+    -- carrier and topology with the Tate module before applying homomorphism extensionality.
+    dsimp only [rootsOfUnityCone]
     apply ProfiniteGrp.hom_ext
     apply ContinuousMonoidHom.ext
     intro x
     simp only [ProfiniteGrp.hom_comp, ProfiniteGrp.hom_ofHom,
       ContinuousMonoidHom.coe_comp, Function.comp_apply]
-    apply DiscreteRootsOfUnity.equivRootsOfUnity.injective
-    rw [equivRootsOfUnity_discreteProj]
-    exact proj_coneLift R s ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ x
+    exact proj_coneLiftHom p R s n.unop.order x
   uniq s f hf := by
-    dsimp only [rootsOfUnityCone, rootsOfUnityDiagram] at f hf ⊢
+    -- The codomain in f's type must be the Tate module for its extensionality lemma;
+    -- rewriting the leg alone leaves the dependent carrier and topology hidden in f.
+    dsimp only [rootsOfUnityCone] at f hf ⊢
     apply ProfiniteGrp.hom_ext
     apply ContinuousMonoidHom.ext
     intro x
     apply ext
     intro m
-    rw [ProfiniteGrp.hom_ofHom, proj_coneLift]
-    let n : ℕ+ := ⟨m, Nat.pos_of_ne_zero m.2.1⟩
-    have h := congrArg (fun g ↦ (ProfiniteGrp.Hom.hom g) x) (hf (Opposite.op ⟨n⟩))
-    simp only [ProfiniteGrp.hom_comp, ProfiniteGrp.hom_ofHom,
+    rw [ProfiniteGrp.hom_ofHom]
+    have h := congrArg (fun g ↦ (ProfiniteGrp.Hom.hom g) x) (hf (Opposite.op ⟨m⟩))
+    simp only [ProfiniteGrp.hom_comp, ConcreteCategory.hom_ofHom,
       ContinuousMonoidHom.coe_comp, Function.comp_apply] at h
-    have h' := congrArg (DiscreteRootsOfUnity.equivRootsOfUnity (R := R) (n := n)) h
-    rw [equivRootsOfUnity_discreteProj] at h'
-    exact h'
+    exact h.trans (proj_coneLiftHom p R s m x).symm
 
-end PrimeToPTateModule
-
-end TauCeti
+end TauCeti.PrimeToPTateModule
