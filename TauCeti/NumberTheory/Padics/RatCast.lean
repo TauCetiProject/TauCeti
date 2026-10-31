@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.PadicNumbers
+public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Data.Nat.Prime.Basic
-import Mathlib.NumberTheory.Padics.PadicIntegers
+import TauCeti.Algebra.AddCircle
 
 /-!
 # Rational numbers at almost every prime
@@ -18,7 +19,8 @@ rational number is a `p`-adic unit at all but finitely many primes. These are th
 make a rational object, such as a rational basis or a rational isometry, integral in every
 completion outside a finite set of primes. Conversely, a rational number that is a `p`-adic integer
 at every prime is an integer, and so is a rational number whose denominator is a power of `p` and
-which is a `p`-adic integer.
+which is a `p`-adic integer. Consequently two rational numbers agree in `ℚ/ℤ` when their
+difference has `p`-power denominator and is a `p`-adic integer.
 
 ## Main results
 
@@ -31,6 +33,8 @@ which is a `p`-adic integer.
   is a `p`-adic integer at every prime.
 * `Padic.den_eq_one_of_norm_rat_le_one_of_pow_mul_eq`: a `p`-adic integer whose product with a
   power of `p` is an integer is an integer.
+* `Padic.coe_eq_coe_of_eq_add_algebraMap`: two rational numbers agree in `ℚ/ℤ` when their
+  difference has `p`-power denominator and lies in `ℤ_p`.
 -/
 
 public section
@@ -86,5 +90,17 @@ theorem den_eq_one_of_norm_rat_le_one_of_pow_mul_eq {p : ℕ} [Fact p.Prime] {q 
   have hp : (p : ℚ) ^ k ≠ 0 := pow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
   have hqm : q = m := mul_left_cancel₀ hp (by rw [hn]; push_cast; ring)
   rw [hqm, Rat.den_intCast]
+
+/-- Two rational numbers agree modulo `ℤ` when their difference has `p`-power denominator and
+lies in `ℤ_p`. -/
+theorem coe_eq_coe_of_eq_add_algebraMap {p : ℕ} [Fact p.Prime] {r s : ℚ} {k : ℕ} {n : ℤ}
+    (hn : (p : ℚ) ^ k * (r - s) = n) {z : ℤ_[p]}
+    (hz : (r : ℚ_[p]) = s + algebraMap ℤ_[p] ℚ_[p] z) :
+    (r : AddCircle (1 : ℚ)) = s := by
+  rw [← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff_mem_one]
+  have hden := den_eq_one_of_norm_rat_le_one_of_pow_mul_eq hn (by
+    rw [Rat.cast_sub, hz, add_sub_cancel_left, PadicInt.algebraMap_apply]
+    exact PadicInt.norm_le_one z)
+  exact Submodule.mem_one.mpr ⟨_, (eq_intCast _ _).trans ((Rat.den_eq_one_iff _).mp hden)⟩
 
 end Padic

@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Genus
-public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant
+public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
@@ -47,6 +47,8 @@ discriminant bilinear form replaces the quadratic one.
   an isometry of the `p`-primary components of the discriminant bilinear modules.
 * `TauCeti.IntegralLattice.primaryDiscriminantQuadraticIsometry`: for even lattices, it induces an
   isometry of the `p`-primary components of the discriminant quadratic modules.
+* `TauCeti.IntegralLattice.SameGenus.natCard_discriminantGroup_eq`: lattices in one genus have
+  discriminant groups of the same order.
 * `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantBilinearModule`: lattices in one
   genus have isometric discriminant bilinear modules.
 * `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantQuadraticModule`: even lattices
@@ -111,18 +113,6 @@ private theorem exists_pow_mul_form_self_div_two_eq_intCast (hL : L.IsEven) {x :
   simp only [Submodule.coe_smul_of_tower, map_nsmul, LinearMap.smul_apply, nsmul_eq_mul] at hn
   push_cast at hn ⊢
   linear_combination hn / 2
-
-/-- Two rational numbers agree modulo `ℤ` when their difference has `p`-power denominator and
-lies in `ℤ_p`. -/
-private theorem coe_eq_coe_of_eq_add_algebraMap {r s : ℚ} {k : ℕ} {n : ℤ}
-    (hn : (p : ℚ) ^ k * (r - s) = n) {z : ℤ_[p]}
-    (hz : (r : ℚ_[p]) = s + algebraMap ℤ_[p] ℚ_[p] z) :
-    (r : AddCircle (1 : ℚ)) = s := by
-  rw [← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff_mem_one]
-  have hden := Padic.den_eq_one_of_norm_rat_le_one_of_pow_mul_eq hn (by
-    rw [Rat.cast_sub, hz, add_sub_cancel_left, PadicInt.algebraMap_apply]
-    exact PadicInt.norm_le_one z)
-  exact Submodule.mem_one.mpr ⟨_, (eq_intCast _ _).trans ((Rat.den_eq_one_iff _).mp hden)⟩
 
 /-- The completed rational form on two dual vectors of `L`. -/
 private theorem completedRationalForm_localizationDualToCompletion_one_tmul (x y : L.dualCarrier) :
@@ -299,7 +289,7 @@ private theorem discriminantPairing_primaryComponentEquiv
     exists_pow_mul_form_eq_intCast (hx' ▸ (primaryComponentEquiv φ a).2) y'
   obtain ⟨z, hz⟩ := exists_form_eq_add_algebraMap φ hm hn
   rw [← hx, ← hy, ← hx', ← hy', discriminantPairing_mk, discriminantPairing_mk]
-  refine coe_eq_coe_of_eq_add_algebraMap (k := k + k') (n := p ^ k * c' - p ^ k' * c) ?_ hz
+  refine Padic.coe_eq_coe_of_eq_add_algebraMap (k := k + k') (n := p ^ k * c' - p ^ k' * c) ?_ hz
   push_cast
   linear_combination (p : ℚ) ^ k * hc' - (p : ℚ) ^ k' * hc
 
@@ -319,7 +309,7 @@ private theorem discriminantQuadraticMap_primaryComponentEquiv (hL : L.IsEven) (
     exists_pow_mul_form_self_div_two_eq_intCast hM (hx' ▸ (primaryComponentEquiv φ a).2)
   obtain ⟨z, hz⟩ := exists_form_self_div_two_eq_add_algebraMap hM φ hm
   rw [← hx, ← hx', discriminantQuadraticMap_mk, discriminantQuadraticMap_mk]
-  refine coe_eq_coe_of_eq_add_algebraMap (k := k + k') (n := p ^ k * c' - p ^ k' * c) ?_ hz
+  refine Padic.coe_eq_coe_of_eq_add_algebraMap (k := k + k') (n := p ^ k * c' - p ^ k' * c) ?_ hz
   push_cast
   linear_combination (p : ℚ) ^ k * hc' - (p : ℚ) ^ k' * hc
 
@@ -335,7 +325,12 @@ noncomputable def primaryDiscriminantBilinearIsometry
       (M.discriminantBilinearModule.restrict (primaryComponent M.discriminantBilinearModule p))
     where
   toAddEquiv := primaryComponentEquiv φ
-  map_pairing' := discriminantPairing_primaryComponentEquiv φ
+  map_pairing' a b :=
+    ((FiniteBilinearModule.restrict_pairing ..).trans <|
+        (discriminantBilinearModule_pairing ..).trans
+          (discriminantPairing_primaryComponentEquiv φ a b)).trans
+      ((FiniteBilinearModule.restrict_pairing ..).trans
+        (discriminantBilinearModule_pairing ..)).symm
 
 /-- The isometry induced by `φ` matches representatives: if `x ∈ Lᵛ` represents a `p`-primary
 class and `x' ∈ Mᵛ` represents its image, then `x'` and the image of `x` under the extension of
@@ -366,7 +361,12 @@ noncomputable def primaryDiscriminantQuadraticIsometry (hL : L.IsEven) (hM : M.I
       ((M.discriminantQuadraticModule hM).restrict
         (primaryComponent (M.discriminantQuadraticModule hM) p)) where
   toLinearEquiv := (primaryComponentEquiv φ).toIntLinearEquiv
-  map_app' := discriminantQuadraticMap_primaryComponentEquiv hL hM φ
+  map_app' a :=
+    ((FiniteQuadraticModule.restrict_quadratic ..).trans <|
+        (discriminantQuadraticModule_quadratic ..).trans
+          (discriminantQuadraticMap_primaryComponentEquiv hL hM φ a)).trans
+      ((FiniteQuadraticModule.restrict_quadratic ..).trans
+        (discriminantQuadraticModule_quadratic ..)).symm
 
 /-- The quadratic and the bilinear isometries induced by `φ` act in the same way. -/
 @[simp]
@@ -382,7 +382,7 @@ theorem primaryDiscriminantQuadraticIsometry_apply (hL : L.IsEven) (hM : M.IsEve
 namespace SameGenus
 
 /-- Lattices in one genus have discriminant groups of the same order. -/
-private theorem natCard_discriminantGroup_eq (h : L.SameGenus M) :
+theorem natCard_discriminantGroup_eq (h : L.SameGenus M) :
     Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup := by
   rw [natCard_discriminantGroup, natCard_discriminantGroup, discriminant_def, discriminant_def,
     h.determinant_eq]
