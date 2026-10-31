@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.UniversallyCatenary
-import Mathlib.RingTheory.RegularLocalRing.Polynomial
 import TauCeti.RingTheory.CohenMacaulay.Height
-import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
 # Cohen–Macaulay rings are catenary
@@ -34,11 +31,6 @@ be the maximal ideal, this says that every maximal chain of primes has length `d
 Lemma 10.103.9 (0AAE) proves this assuming only that `R` itself is Cohen–Macaulay; deducing that
 form from this one needs localization of Cohen–Macaulay modules (Stacks, Tag 0AAG).
 
-Regular rings are Cohen–Macaulay, so they are catenary. Since a polynomial ring in finitely many
-variables over a regular ring is again regular, regular rings are moreover universally catenary;
-in particular fields and `ℤ` are universally catenary, and every algebra of finite type over a field
-is catenary.
-
 ## Main results
 
 * `Module.IsCohenMacaulay.height_add_height_map_quotientMk`: if `R_q` is Cohen–Macaulay, then
@@ -47,8 +39,6 @@ is catenary.
   at all primes are Cohen–Macaulay is catenary.
 * `TauCeti.Excellence.length_eq_height_of_forall_isCohenMacaulay`: in such a ring, a saturated chain
   of primes from a minimal prime to `q` has length `ht q`.
-* `IsRegularRing.isCatenary` and `IsRegularRing.isUniversallyCatenary`: regular rings are catenary,
-  and even universally catenary.
 
 ## References
 
@@ -137,30 +127,3 @@ theorem length_eq_height_of_forall_isCohenMacaulay
     Ideal.height_eq_zero_iff.2 hs, zero_add]
 
 end TauCeti.Excellence
-
-open TauCeti.Excellence
-
-namespace IsRegularRing
-
-variable {R : Type u} [CommRing R] [IsRegularRing R]
-
-/-- A regular ring is catenary: its local rings are regular, hence Cohen–Macaulay. -/
-instance isCatenary : IsCatenary R :=
-  isCatenary_of_forall_isCohenMacaulay fun _ _ ↦ TauCeti.IsRegularLocalRing.isCohenMacaulay
-
-/-- **Regular rings are universally catenary.** A polynomial ring in finitely many variables over a
-regular ring is regular, hence catenary. This is the case of Stacks, Lemma 10.105.9 (00NM) for
-regular rings, which are Cohen–Macaulay. -/
-instance isUniversallyCatenary : IsUniversallyCatenary R :=
-  isUniversallyCatenary_iff_mvPolynomial.2 ⟨inferInstance, fun _ ↦ inferInstance⟩
-
-end IsRegularRing
-
-/-- Every field is universally catenary. -/
-example (k : Type u) [Field k] : IsUniversallyCatenary k := inferInstance
-
-/-- The integers are universally catenary. -/
-example : IsUniversallyCatenary ℤ := inferInstance
-
-/-- A polynomial ring in finitely many variables over a field is catenary. -/
-example (k : Type u) [Field k] (n : ℕ) : IsCatenary (MvPolynomial (Fin n) k) := inferInstance
