@@ -28,8 +28,6 @@ polygons is a horizontal half-line.
 
 ## Main results
 
-* `PowerSeries.exists_isSupportingLine_mem_supportingFace_of_isRestricted`: the coefficient
-  heights of a nonzero series restricted at `b ^ σ` touch a supporting line of slope `σ`.
 * `PowerSeries.supportingValue_newtonPolygon_mul_of_isRestricted`: supporting values of Newton
   polygons add under multiplication at every slope of a common restricted radius.
 * `PowerSeries.IsEntire.newtonPolygon_mul`: the Newton polygon of a product of entire series is
@@ -54,27 +52,6 @@ variable {K : Type*} [NormedDivisionRing K] (v : AddValuation K (WithTop ℝ)) {
 
 include hb hv
 
-/-- The coefficient heights of a nonzero series restricted at the radius `b ^ σ` touch a
-supporting line of slope `σ`. -/
-theorem exists_isSupportingLine_mem_supportingFace_of_isRestricted {σ : ℝ}
-    (hf : f.IsRestricted (b ^ σ)) (hf0 : f ≠ 0) :
-    ∃ (c : ℝ) (i : ℕ), IsSupportingLine (fun n => v (coeff n f)) σ c ∧
-      i ∈ supportingFace (fun n => v (coeff n f)) σ c := by
-  have hfn := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf
-  obtain ⟨s, hs⟩ := TauCeti.PowerSeries.exists_isDistinguished
-    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hf hf0
-  exact ⟨_, s, isSupportingLine_iff.mpr
-    (supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm f v hb hv hfn hf0).ge,
-    ((isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn hf0 s).mp hs).1⟩
-
-/-- A series restricted at the radius `b ^ σ` has a Newton polygon whose supporting value at `σ`
-is above `⊥`. -/
-private theorem supportingValue_newtonPolygon_ne_bot_of_isRestricted {σ : ℝ}
-    (hf : f.IsRestricted (b ^ σ)) : supportingValue (f.newtonPolygon v) σ ≠ ⊥ := by
-  have h := (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv σ).mp
-    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf)
-  rwa [supportingValue_newtonPolygon (isAdmissible_iff_exists_supportingValue_ne_bot.mpr ⟨σ, h⟩)]
-
 /-- If `f` and `g` are restricted at the radius `b ^ σ`, the supporting value at `σ` of the
 Newton polygon of `f * g` is the sum of those of the Newton polygons of `f` and `g`. The radius
 may lie on the boundary of convergence of either factor. -/
@@ -84,12 +61,14 @@ theorem supportingValue_newtonPolygon_mul_of_isRestricted {σ : ℝ}
       supportingValue (f.newtonPolygon v) σ + supportingValue (g.newtonPolygon v) σ := by
   rcases eq_or_ne f 0 with rfl | hf0
   · rw [zero_mul, newtonPolygon_zero, supportingValue_top, EReal.top_add_of_ne_bot
-      (supportingValue_newtonPolygon_ne_bot_of_isRestricted v hb hv hg)]
+      (supportingValue_newtonPolygon_ne_bot_of_isRestricted g v hb hv hg)]
   rcases eq_or_ne g 0 with rfl | hg0
   · rw [mul_zero, newtonPolygon_zero, supportingValue_top, EReal.add_top_of_ne_bot
-      (supportingValue_newtonPolygon_ne_bot_of_isRestricted v hb hv hf)]
-  obtain ⟨c, i, hc, hi⟩ := exists_isSupportingLine_mem_supportingFace_of_isRestricted v hb hv hf hf0
-  obtain ⟨d, j, hd, hj⟩ := exists_isSupportingLine_mem_supportingFace_of_isRestricted v hb hv hg hg0
+      (supportingValue_newtonPolygon_ne_bot_of_isRestricted f v hb hv hf)]
+  obtain ⟨c, i, hc, hi⟩ :=
+    exists_isSupportingLine_mem_supportingFace_of_isRestricted f v hb hv hf hf0
+  obtain ⟨d, j, hd, hj⟩ :=
+    exists_isSupportingLine_mem_supportingFace_of_isRestricted g v hb hv hg hg0
   exact supportingValue_newtonPolygon_mul v hc hi hd hj
 
 /-- The Newton polygon of a product of entire series is the Minkowski sum of the Newton polygons
@@ -101,9 +80,9 @@ theorem IsEntire.newtonPolygon_mul (hf : f.IsEntire) (hg : g.IsEntire) :
   rcases eq_or_ne g 0 with rfl | hg0
   · rw [mul_zero, newtonPolygon_zero, minkowskiSum_top]
   exact newtonPolygon_mul_of_forall_exists_mem_supportingFace v
-    (fun _ => exists_isSupportingLine_mem_supportingFace_of_isRestricted v hb hv
+    (fun _ => exists_isSupportingLine_mem_supportingFace_of_isRestricted f v hb hv
       (hf.isRestricted _) hf0)
-    (fun _ => exists_isSupportingLine_mem_supportingFace_of_isRestricted v hb hv
+    (fun _ => exists_isSupportingLine_mem_supportingFace_of_isRestricted g v hb hv
       (hg.isRestricted _) hg0)
 
 end PowerSeries
