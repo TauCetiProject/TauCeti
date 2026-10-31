@@ -74,6 +74,19 @@ zero, so then `S(ρ) = 0`. -/
 def vonNeumannEntropy (ρ : Matrix n n 𝕜) : ℝ :=
   RCLike.re (cfc Real.negMulLog ρ).trace
 
+/-- The defining equation of the von Neumann entropy, valid for every matrix `ρ`. -/
+theorem vonNeumannEntropy_def (ρ : Matrix n n 𝕜) :
+    ρ.vonNeumannEntropy = RCLike.re (cfc Real.negMulLog ρ).trace := by
+  rw [vonNeumannEntropy]
+
+@[simp]
+theorem vonNeumannEntropy_zero : (0 : Matrix n n 𝕜).vonNeumannEntropy = 0 := by
+  simp [vonNeumannEntropy_def, cfc_apply_zero]
+
+@[simp]
+theorem vonNeumannEntropy_one : (1 : Matrix n n 𝕜).vonNeumannEntropy = 0 := by
+  simp [vonNeumannEntropy_def, cfc_apply_one]
+
 variable {ρ σ : Matrix n n 𝕜}
 
 /-- The von Neumann entropy of a Hermitian matrix is `∑ᵢ -λᵢ log λᵢ` over its eigenvalues. -/
@@ -133,6 +146,11 @@ theorem relativeEntropy_eq_top_iff :
 @[simp]
 theorem relativeEntropy_self (ρ : Matrix n n 𝕜) : relativeEntropy ρ ρ = 0 := by
   simp [relativeEntropy_of_ker_le le_rfl]
+
+@[simp]
+theorem relativeEntropy_zero_left (σ : Matrix n n 𝕜) : relativeEntropy 0 σ = 0 := by
+  rw [relativeEntropy_of_ker_le fun v _ ↦ by simp]
+  simp
 
 /-- The relative entropy with respect to a positive definite reference is always finite: the
 support condition holds for every `ρ`. -/
