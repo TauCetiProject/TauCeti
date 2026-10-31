@@ -99,6 +99,22 @@ section
 
 open scoped Matrix.Norms.L2Operator
 
+/-- **Weyl's perturbation bound** for ordered eigenvalues of Hermitian matrices: corresponding
+eigenvalues differ by at most the Euclidean operator norm of the matrix difference. -/
+theorem _root_.Matrix.IsHermitian.abs_eigenvalues₀_sub_le_norm
+    (hA : A.IsHermitian) (hB : B.IsHermitian) (i : Fin (Fintype.card ι)) :
+    |hA.eigenvalues₀ i - hB.eigenvalues₀ i| ≤ ‖A - B‖ := by
+  simp only [Matrix.IsHermitian.eigenvalues₀]
+  simpa only [coe_toEuclideanCLM_eq_toEuclideanLin, ← map_sub,
+    l2_opNorm_toEuclideanCLM] using
+    LinearMap.IsSymmetric.abs_eigenvalue_sub_eigenvalue_le_norm
+      (T := toEuclideanCLM (𝕜 := 𝕜) A) (S := toEuclideanCLM (𝕜 := 𝕜) B)
+      (by simpa only [coe_toEuclideanCLM_eq_toEuclideanLin] using
+        isSymmetric_toEuclideanLin_iff.mpr hA)
+      (by simpa only [coe_toEuclideanCLM_eq_toEuclideanLin] using
+        isSymmetric_toEuclideanLin_iff.mpr hB)
+      finrank_euclideanSpace i
+
 /-- A Hermitian perturbation smaller than the distance of a sorted eigenvalue from `c`
 preserves whether that eigenvalue belongs to `[c, ∞)`. The norm is the Euclidean operator
 norm. -/
@@ -107,18 +123,7 @@ theorem _root_.Matrix.IsHermitian.le_eigenvalues₀_iff_of_norm_sub_lt
     {c : ℝ} (i : Fin (Fintype.card ι))
     (hgap : ‖A - B‖ < |hA.eigenvalues₀ i - c|) :
     c ≤ hB.eigenvalues₀ i ↔ c ≤ hA.eigenvalues₀ i := by
-  have hweyl : |hA.eigenvalues₀ i - hB.eigenvalues₀ i| ≤ ‖A - B‖ := by
-    -- The matrix enumeration is defined using the symmetric Euclidean operator.
-    simp only [Matrix.IsHermitian.eigenvalues₀]
-    simpa only [coe_toEuclideanCLM_eq_toEuclideanLin, ← map_sub,
-      l2_opNorm_toEuclideanCLM] using
-      LinearMap.IsSymmetric.abs_eigenvalue_sub_eigenvalue_le_norm
-        (T := toEuclideanCLM (𝕜 := 𝕜) A) (S := toEuclideanCLM (𝕜 := 𝕜) B)
-        (by simpa only [coe_toEuclideanCLM_eq_toEuclideanLin] using
-          isSymmetric_toEuclideanLin_iff.mpr hA)
-        (by simpa only [coe_toEuclideanCLM_eq_toEuclideanLin] using
-          isSymmetric_toEuclideanLin_iff.mpr hB)
-        finrank_euclideanSpace i
+  have hweyl := hA.abs_eigenvalues₀_sub_le_norm hB i
   obtain ⟨hlower, hupper⟩ := abs_le.mp hweyl
   by_cases hside : c ≤ hA.eigenvalues₀ i
   · rw [abs_of_nonneg (sub_nonneg.mpr hside)] at hgap
