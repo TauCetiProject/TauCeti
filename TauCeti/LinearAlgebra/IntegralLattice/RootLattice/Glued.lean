@@ -173,19 +173,21 @@ theorem gluedLattice_bot :
 /-! ## The discriminant form -/
 
 /-- The glued lattice is the lattice carried by the even intermediate carrier attached to
-the image of `H`. -/
+the image of `H`.  This is `IntegralLattice.ofIsotropicSubgroup_eq_toIntegralLattice` with the
+inverse-image carrier written out, the form that
+`IntegralLattice.discriminantOrthogonalQuotientIsometryOfSubgroup` uses. -/
 private theorem gluedLattice_eq_toIntegralLattice :
     gluedLattice t ht hv H hH =
       (((pi fun i ↦ (t i).rootLattice (ht i)).isEven_intermediateCarrierOfDiscriminantSubgroup_iff
         (isEven_pi_rootLattice t ht)
         (H.map (glueWordIsometry t ht hv).toAddEquiv.toAddMonoidHom)).mpr
         (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr
-          hH)).isIntegral.toIntegralLattice :=
-  IntegralLattice.ext
-    ((ofIsotropicSubgroup_carrier _ _ _ _).trans
-      (IntermediateCarrier.IsIntegral.toIntegralLattice_carrier _).symm)
-    ((ofIsotropicSubgroup_form _ _ _ _).trans
-      (IntermediateCarrier.IsIntegral.toIntegralLattice_form _).symm)
+          hH)).isIntegral.toIntegralLattice := by
+  refine (ofIsotropicSubgroup_eq_toIntegralLattice _ (isEven_pi_rootLattice t ht)
+    ⟨H.map (glueWordIsometry t ht hv).toAddEquiv.toAddMonoidHom,
+      ((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH⟩).trans ?_
+  congr 2
+  exact evenIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe _ _ _
 
 /-- Every dual vector of a glued lattice is a dual vector of the orthogonal sum of root
 lattices. -/
@@ -234,20 +236,20 @@ theorem glueWordIsometry_symm_mk_mem_orthogonalComplement
   have hmem := IntermediateCarrier.IsIntegral.dualClassHom_mem_orthogonalComplement _
     ((Isometry.ofEq (gluedLattice_eq_toIntegralLattice t ht hv H hH)).dualCarrierEquiv y)
   rw [discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup,
-    IntermediateCarrier.IsIntegral.dualClassHom_apply] at hmem
-  -- The pairing of the glue word with `w ∈ H` is the pairing of the class of `y` with the class
-  -- of `w`, which vanishes because the class of `y` is orthogonal to the image of `H`.
-  refine (FiniteBilinearModule.mem_orthogonalComplement_iff _ _ _).mpr fun w hw ↦ ?_
-  have hw' := (FiniteBilinearModule.mem_orthogonalComplement_iff _ _ _).mp hmem
-    (glueWordIsometry t ht hv w) ⟨w, hw, rfl⟩
-  refine ((glueWordIsometry t ht hv).toHom.map_pairing _ _).symm.trans (Eq.trans ?_ hw')
-  rw [FiniteQuadraticModule.Isometry.toHom_apply, FiniteQuadraticModule.Isometry.toHom_apply]
-  exact congrArg (fun a ↦ (pi fun i ↦ (t i).rootLattice (ht i)).discriminantBilinearModule.pairing
-    a (glueWordIsometry t ht hv w)) (((glueWordIsometry t ht hv).apply_symm_apply _).trans
-      (mk_dualCarrierEquiv_ofEq_gluedLattice t ht hv H hH y).symm)
+    IntermediateCarrier.IsIntegral.dualClassHom_apply,
+    mk_dualCarrierEquiv_ofEq_gluedLattice] at hmem
+  have h := ((FiniteBilinearModule.Isometry.orthogonalComplementEquiv _
+    (glueWordIsometry t ht hv).toFiniteBilinearModule H).symm
+      ⟨_, by rwa [FiniteQuadraticModule.Isometry.toFiniteBilinearModule_toAddEquiv]⟩).2
+  rw [FiniteBilinearModule.Isometry.coe_orthogonalComplementEquiv_symm_apply,
+    ← FiniteBilinearModule.Isometry.coe_toAddEquiv,
+    FiniteBilinearModule.Isometry.symm_toAddEquiv] at h
+  simp only [FiniteQuadraticModule.Isometry.toFiniteBilinearModule_toAddEquiv] at h
+  exact h
 
 /-- The discriminant isometry of a glued lattice sends the class of a dual vector `y` to
 the class in `H⊥ / H` of the glue word of `y`. -/
+@[simp]
 theorem gluedLatticeDiscriminantIsometry_mk
     (y : (gluedLattice t ht hv H hH).dualCarrier) :
     gluedLatticeDiscriminantIsometry t ht hv H hH (Submodule.Quotient.mk y) =
