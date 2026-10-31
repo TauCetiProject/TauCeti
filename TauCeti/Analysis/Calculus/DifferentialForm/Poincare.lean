@@ -55,6 +55,8 @@ term is split by the constant-coefficient Cartan formula
 * `TauCeti.poincareHomotopy`: the Poincaré homotopy operator with centre `x₀`.
 * `TauCeti.poincareHomotopy_pullback_apply`: it commutes with pullback along a continuous linear
   map, which moves the centre.
+* `StarConvex.compContinuousLinearMap_poincareHomotopy_eq`: centred at a fixed point of a linear
+  map, it preserves invariance of forms under that map.
 * `StarConvex.contDiffOn_poincareHomotopy`: it preserves `C^r` regularity on `s`.
 * `StarConvex.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv`: the homotopy formula.
 * `StarConvex.extDeriv_poincareHomotopy` and `StarConvex.exists_contDiffOn_forall_extDeriv_eq`: the
@@ -203,6 +205,22 @@ open TauCeti
 namespace StarConvex
 
 variable {x₀ : E} {s : Set E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
+
+/-- **The Poincaré homotopy operator preserves invariance.** Let `A` be a continuous linear map
+fixing `x₀` and mapping a set `s`, star-convex with respect to `x₀`, into itself. If a form `ω`,
+continuous on `s`, satisfies `A^* ω = ω` on `s`, then so does its Poincaré homotopy operator
+centred at `x₀`. -/
+theorem compContinuousLinearMap_poincareHomotopy_eq [CompleteSpace F] (hs : StarConvex ℝ x₀ s)
+    (hωc : ContinuousOn ω s) {A : E →L[ℝ] E} (hAx₀ : A x₀ = x₀) (hAs : MapsTo A s s)
+    (hω : ∀ y ∈ s, (ω (A y)).compContinuousLinearMap A = ω y) {x : E} (hx : x ∈ s) :
+    (poincareHomotopy x₀ ω (A x)).compContinuousLinearMap A = poincareHomotopy x₀ ω x := by
+  have hseg : segment ℝ (A x₀) (A x) ⊆ s := by rw [hAx₀]; exact hs.segment_subset (hAs hx)
+  calc (poincareHomotopy x₀ ω (A x)).compContinuousLinearMap A
+      = (poincareHomotopy (A x₀) ω (A x)).compContinuousLinearMap A := by rw [hAx₀]
+    _ = poincareHomotopy x₀ (fun y ↦ (ω (A y)).compContinuousLinearMap A) x :=
+        (poincareHomotopy_pullback_apply A (hωc.mono hseg)).symm
+    _ = poincareHomotopy x₀ ω x :=
+        poincareHomotopy_congr fun y hy ↦ hω y (hs.segment_subset hx hy)
 
 /-- The Poincaré homotopy operator of a `C^r` form on an open star-convex set is `C^r` there. -/
 theorem contDiffOn_poincareHomotopy (hs : StarConvex ℝ x₀ s) (hso : IsOpen s) {r : ℕ∞}

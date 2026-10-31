@@ -38,8 +38,6 @@ taken into account in the average.
 
 ## Main declarations
 
-* `StarConvex.compContinuousLinearMap_poincareHomotopy_eq`: the Poincaré homotopy operator centred
-  at a fixed point of a linear map preserves invariance of forms under that map.
 * `StarConvex.exists_invariant_contDiffOn_forall_extDeriv_eq`: the Poincaré lemma for invariant
   forms on an invariant open set star-convex with respect to a fixed point.
 * `Convex.exists_invariant_contDiffOn_forall_extDerivWithin_eq`: the Poincaré lemma for forms
@@ -66,24 +64,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 namespace StarConvex
 
 variable {x₀ : E} {s : Set E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
-
-/-- **The Poincaré homotopy operator preserves invariance.** Let `A` be a continuous linear map
-fixing `x₀` and mapping a set `s`, star-convex with respect to `x₀`, into itself. If a form `ω`,
-continuous on `s`, satisfies `A^* ω = ω` on `s`, then so does its Poincaré homotopy operator
-centred at `x₀`. -/
-theorem compContinuousLinearMap_poincareHomotopy_eq (hs : StarConvex ℝ x₀ s)
-    (hωc : ContinuousOn ω s) {A : E →L[ℝ] E} (hAx₀ : A x₀ = x₀) (hAs : MapsTo A s s)
-    (hω : ∀ y ∈ s, (ω (A y)).compContinuousLinearMap A = ω y) {x : E} (hx : x ∈ s) :
-    (poincareHomotopy x₀ ω (A x)).compContinuousLinearMap A = poincareHomotopy x₀ ω x := by
-  have hseg : segment ℝ (A x₀) (A x) ⊆ s := by rw [hAx₀]; exact hs.segment_subset (hAs hx)
-  calc (poincareHomotopy x₀ ω (A x)).compContinuousLinearMap A
-      = (poincareHomotopy (A x₀) ω (A x)).compContinuousLinearMap A := by rw [hAx₀]
-    _ = poincareHomotopy x₀ (fun y ↦ (ω (A y)).compContinuousLinearMap A) x :=
-        (poincareHomotopy_pullback_apply A (hωc.mono hseg)).symm
-    _ = poincareHomotopy x₀ ω x :=
-        poincareHomotopy_congr fun y hy ↦ hω y (hs.segment_subset hx hy)
-
-variable {G : Type*} [Monoid G] {ρ : ContRepresentation ℝ G E}
+  {G : Type*} [Monoid G] {ρ : ContRepresentation ℝ G E}
 
 /-- **The Poincaré lemma for invariant forms.** Let a monoid `G` act on `E` through a continuous
 representation `ρ`, fixing `x₀` and preserving an open set `s` star-convex with respect to `x₀`.
