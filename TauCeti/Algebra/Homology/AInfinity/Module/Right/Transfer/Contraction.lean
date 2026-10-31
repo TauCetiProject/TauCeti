@@ -61,12 +61,14 @@ theorem baseBarDifferential_tmul (G : InternalGrading R M) (d : Module.End R M)
 
 attribute [local instance] Comodule.cofree
 
-/-- The base differential obeys the signed co-Leibniz law over the full algebra bar
-differential, independently of the square-zero law for the module endomorphism. -/
-theorem isGradedCoderivationOver_baseBarDifferential (G : InternalGrading R M)
+/-- Extending the unary module endomorphism as a graded coderivation gives the base
+bar differential. -/
+theorem gradedCoderiv_counit_eq_baseBarDifferential (G : InternalGrading R M)
     (d : Module.End R M) :
-    Comodule.IsGradedCoderivationOver (barGrading AA G) 1 AA.coaugmentedBarDifferential
-      (baseBarDifferential AA G d) := by
+    gradedCoderiv AA G ((TensorProduct.rid R M).toLinearMap ∘ₗ
+      (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ
+      (Comodule.Hom.cofreeMap (C := TensorWords R A) d).toLinearMap) =
+        baseBarDifferential AA G d := by
   let f := Comodule.Hom.cofreeMap (C := TensorWords R A) d
   let F := (TensorProduct.rid R M).toLinearMap ∘ₗ
     (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ f.toLinearMap
@@ -78,11 +80,17 @@ theorem isGradedCoderivationOver_baseBarDifferential (G : InternalGrading R M)
     simpa only [F, f, Comodule.Hom.cofreeLift_toLinearMap, Comodule.cofree_coact,
       TensorWords.comul_eq_deconcatenation, LinearMap.comp_assoc,
       Comodule.Hom.cofreeMap_toLinearMap] using hf
-  have heq : gradedCoderiv AA G F = baseBarDifferential AA G d := by
-    rw [gradedCoderiv_def, hf', LinearMap.lTensor_comp_rTensor, LinearMap.rTensor_def,
-      baseBarDifferential]
-  rw [← heq]
-  exact isGradedCoderivationOver_gradedCoderiv G F
+  rw [gradedCoderiv_def, hf', LinearMap.lTensor_comp_rTensor, LinearMap.rTensor_def,
+    baseBarDifferential]
+
+/-- The base differential obeys the signed co-Leibniz law over the full algebra bar
+differential, independently of the square-zero law for the module endomorphism. -/
+theorem isGradedCoderivationOver_baseBarDifferential (G : InternalGrading R M)
+    (d : Module.End R M) :
+    Comodule.IsGradedCoderivationOver (barGrading AA G) 1 AA.coaugmentedBarDifferential
+      (baseBarDifferential AA G d) := by
+  rw [← gradedCoderiv_counit_eq_baseBarDifferential]
+  exact isGradedCoderivationOver_gradedCoderiv G _
 
 /-- The base bar differential squares to zero for any square-zero degree-one module
 endomorphism. No field or splitting hypothesis is needed. -/
@@ -96,9 +104,8 @@ theorem baseBarDifferential_sq (G : InternalGrading R M) (d : Module.End R M)
   have hx : d (d x) = 0 := LinearMap.congr_fun hsq x
   have hw : AA.coaugmentedBarDifferential (AA.coaugmentedBarDifferential w) = 0 :=
     LinearMap.congr_fun AA.coaugmentedBarDifferential_sq w
-  have he := hd'.koszulTwist_apply 1 x
-  simp only [one_mul, Int.negOnePow_one, Units.val_neg, Units.val_one,
-    Int.cast_neg, Int.cast_one, neg_one_smul] at he
+  have he : (G.shift 1).koszulTwist 1 (d x) = -d ((G.shift 1).koszulTwist 1 x) := by
+    simpa using LinearMap.congr_fun (hd'.koszulTwist_comp_eq_smul 1) x
   simp only [LinearMap.comp_apply, baseBarDifferential_tmul, map_add,
     LinearMap.zero_apply, hx, hw, he, TensorProduct.zero_tmul, TensorProduct.tmul_zero,
     add_zero, zero_add, TensorProduct.neg_tmul]
@@ -119,11 +126,7 @@ theorem isHomogeneous_baseBarDifferential (G : InternalGrading R M) (d : Module.
       (TensorWords.grading (AA.grading.shift 1)).piece
       (TensorWords.grading (AA.grading.shift 1)).piece 1 := by
     simpa only [TensorWords.grading_piece] using AA.isHomogeneous_coaugmentedBarDifferential
-  have hG : barGrading AA G =
-      (G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1)) := by
-    ext p
-    rw [barGrading_piece]
-  rw [hG]
+  rw [barGrading_eq_tensorProduct]
   simpa only [baseBarDifferential, add_zero, zero_add] using
     (hd'.tensorProduct (LinearMap.isHomogeneous_id (R := R)
       (TensorWords.grading (AA.grading.shift 1)).piece)).add (he.tensorProduct hb)
@@ -144,23 +147,38 @@ noncomputable def barContraction :
     (LinearMap.isHomogeneous_shift_piece_iff.2 hi)
     (LinearMap.isHomogeneous_shift_piece_iff.2 hp)
 
+/-- The underlying weak bar contraction is the tensor extension of the weak contraction. -/
 @[simp]
+theorem toLinearContraction_barContraction :
+    (MM.barContraction c hh hi hp).toLinearContraction = (by
+      rw [baseBarDifferential_def, baseBarDifferential_def]
+      exact c.toLinearContraction.tensorRight (MM.grading.shift 1) (G.shift 1)
+        AA.coaugmentedBarDifferential
+        (LinearMap.isHomogeneous_shift_piece_iff.2 hh)
+        (LinearMap.isHomogeneous_shift_piece_iff.2 hi)
+        (LinearMap.isHomogeneous_shift_piece_iff.2 hp)) := by
+  simp only [barContraction, LinearSpecialContraction.toLinearContraction_tensorRight,
+    eq_mpr_eq_cast, cast_cast]
+  exact eq_of_heq (cast_heq _ _).symm
+
+-- Simplify the maps before the underlying-contraction rewrite introduces transports.
+@[simp↓]
 theorem barContraction_incl :
     (MM.barContraction c hh hi hp).incl = c.incl.rTensor (TensorWords R A) := by
   simp [barContraction]
 
-@[simp]
+@[simp↓]
 theorem barContraction_proj :
     (MM.barContraction c hh hi hp).proj = c.proj.rTensor (TensorWords R A) := by
   simp [barContraction]
 
-@[simp]
+@[simp↓]
 theorem barContraction_homotopy :
     (MM.barContraction c hh hi hp).homotopy = c.homotopy.rTensor (TensorWords R A) := by
   simp [barContraction]
 
 /-- The source differential of the extended contraction is square-zero. -/
-theorem barContraction_source_sq :
+theorem baseBarDifferential_differential_sq :
     baseBarDifferential AA MM.grading MM.differential ∘ₗ
       baseBarDifferential AA MM.grading MM.differential = 0 :=
   baseBarDifferential_sq AA MM.grading MM.differential MM.isHomogeneous_differential
@@ -169,9 +187,9 @@ theorem barContraction_source_sq :
 include c hh hi hp in
 /-- The target differential of the extended contraction is square-zero, even if the
 caller did not separately supply a square-zero law for the retract. -/
-theorem barContraction_target_sq :
+theorem baseBarDifferential_sq_of_specialContraction :
     baseBarDifferential AA G dN ∘ₗ baseBarDifferential AA G dN = 0 :=
   (MM.barContraction c hh hi hp).toLinearContraction.dN_comp_dN_eq_zero
-    MM.barContraction_source_sq
+    MM.baseBarDifferential_differential_sq
 
 end TauCeti.AInfinityRightModule

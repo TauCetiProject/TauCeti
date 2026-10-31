@@ -58,22 +58,21 @@ noncomputable def tensorRight :
   dM_comp_incl := by
     apply TensorProduct.ext'
     intro x y
-    have h := hi.koszulTwist_apply 1 x
-    simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul] at h
+    have h : G.koszulTwist 1 (c.incl x) = c.incl (H.koszulTwist 1 x) := by
+      simpa using LinearMap.congr_fun (hi.koszulTwist_comp_eq_smul 1) x
     simp [h]
   proj_comp_dM := by
     apply TensorProduct.ext'
     intro x y
-    have h := hp.koszulTwist_apply 1 x
-    simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul] at h
+    have h : H.koszulTwist 1 (c.proj x) = c.proj (G.koszulTwist 1 x) := by
+      simpa using LinearMap.congr_fun (hp.koszulTwist_comp_eq_smul 1) x
     simp [h]
   proj_comp_incl := by ext x y; simp
   dM_comp_homotopy_add_homotopy_comp_dM := by
     apply TensorProduct.ext'
     intro x y
-    have h := hh.koszulTwist_apply 1 x
-    simp only [one_mul, Int.negOnePow_neg, Int.negOnePow_one, Units.val_neg,
-      Units.val_one, Int.cast_neg, Int.cast_one, neg_one_smul] at h
+    have h : G.koszulTwist 1 (c.homotopy x) = -c.homotopy (G.koszulTwist 1 x) := by
+      simpa using LinearMap.congr_fun (hh.koszulTwist_comp_eq_smul 1) x
     have hc := LinearMap.congr_fun c.dM_comp_homotopy_add_homotopy_comp_dM x
     simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply,
       LinearMap.id_apply] at hc
@@ -116,13 +115,20 @@ noncomputable def tensorRight :
   proj_comp_homotopy := by ext x y; simp
   homotopy_comp_homotopy := by ext x y; simp
 
+/-- Forgetting the side conditions commutes with tensoring a special contraction. -/
 @[simp]
+theorem toLinearContraction_tensorRight :
+    (c.tensorRight G H dP hh hi hp).toLinearContraction =
+      c.toLinearContraction.tensorRight G H dP hh hi hp := (rfl)
+
+-- Simplify the maps before rewriting the underlying contraction.
+@[simp↓]
 theorem tensorRight_incl : (c.tensorRight G H dP hh hi hp).incl = c.incl.rTensor P := (rfl)
 
-@[simp]
+@[simp↓]
 theorem tensorRight_proj : (c.tensorRight G H dP hh hi hp).proj = c.proj.rTensor P := (rfl)
 
-@[simp]
+@[simp↓]
 theorem tensorRight_homotopy :
     (c.tensorRight G H dP hh hi hp).homotopy = c.homotopy.rTensor P := (rfl)
 
