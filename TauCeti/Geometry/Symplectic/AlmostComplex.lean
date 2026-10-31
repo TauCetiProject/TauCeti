@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
+public import TauCeti.LinearAlgebra.Determinant.Prod
 
 import Mathlib.Tactic.Linarith
 
@@ -29,7 +30,9 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.IsComplexLinearMap`: a real-linear map intertwining two almost complex structures.
 * `TauCeti.SymplecticForm`: an alternating, nondegenerate real bilinear form.
 * `TauCeti.SymplecticForm.apply_smul_add_smul`: evaluation of a symplectic form on the plane
-  spanned by two vectors, and `TauCeti.SymplecticForm.exists_apply_eq_one`: existence of a
+  spanned by two vectors, `TauCeti.SymplecticForm.apply_smul_add_smul_det`: its coefficient
+  for the images of the coordinate directions under a linear map of `ℝ × ℝ` is the
+  determinant, and `TauCeti.SymplecticForm.exists_apply_eq_one`: existence of a
   hyperbolic partner for every nonzero vector.
 * `TauCeti.SymplecticForm.Tames`: the positivity condition `0 < ω v (J v)` for `v ≠ 0`.
 * `TauCeti.SymplecticForm.Compatible`: `J`-invariance plus positivity of `ω(·, J ·)`.
@@ -130,6 +133,22 @@ lemma map_eq_zero_iff (J : AlmostComplexStructure V) {v : V} :
 lemma map_ne_zero_iff (J : AlmostComplexStructure V) {v : V} :
     J v ≠ 0 ↔ v ≠ 0 :=
   not_congr J.map_eq_zero_iff
+
+/-- A nonzero vector `v` and its image `J v` are linearly independent, since `J` has no real
+eigenvalue. -/
+lemma linearIndependent_pair (J : AlmostComplexStructure V) {v : V} (hv : v ≠ 0) :
+    LinearIndependent ℝ ![v, J v] := by
+  refine LinearIndependent.pair_iff.2 fun s t hst ↦ ?_
+  -- Applying `J` to `s v + t J v = 0` gives `s J v - t v = 0`.
+  have hJ : s • J v - t • v = 0 := by
+    have h := congrArg J.toLinearMap hst
+    rw [map_add, map_smul, map_smul] at h
+    simpa [sub_eq_add_neg, add_comm] using h
+  have h : (s ^ 2 + t ^ 2) • v = 0 :=
+    calc (s ^ 2 + t ^ 2) • v = s • (s • v + t • J v) - t • (s • J v - t • v) := by module
+      _ = 0 := by rw [hst, hJ, smul_zero, smul_zero, sub_zero]
+  have hst' : s ^ 2 + t ^ 2 = 0 := (smul_eq_zero.1 h).resolve_right hv
+  constructor <;> nlinarith [sq_nonneg s, sq_nonneg t]
 
 /-- Two almost complex structures agreeing pointwise are equal. -/
 @[ext]
@@ -432,6 +451,13 @@ lemma apply_smul_add_smul (ω : SymplecticForm V) (x y : V) (a b c d : ℝ) :
   simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
     self_eq_zero, hyx]
   ring
+
+/-- The bilinear expansion `SymplecticForm.apply_smul_add_smul` with coefficients the images of
+the coordinate directions under a linear map `B` of the plane: the coefficient is `det B`. -/
+lemma apply_smul_add_smul_det (ω : SymplecticForm V) (B : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ) (x y : V) :
+    ω ((B (1, 0)).1 • x + (B (1, 0)).2 • y) ((B (0, 1)).1 • x + (B (0, 1)).2 • y) =
+      LinearMap.det B * ω x y := by
+  rw [ω.apply_smul_add_smul, LinearMap.det_finTwoProd]
 
 /-- The ordered area density `ω (F v) (F (J₀ v))` is unchanged when both arguments are
 precomposed by a source almost complex structure `J₀`: rotating the source by `J₀` sends the

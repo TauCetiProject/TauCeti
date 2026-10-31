@@ -18,8 +18,9 @@ component indices carrying a node. This permits loops and multiple edges.
 
 `mem_connectedComponent_mk_iff` identifies the component of every point of the quotient.
 `preconnectedSpace_gluedCurve_iff` and `connectedSpace_gluedCurve_iff` give the resulting
-connectivity criteria, including the nonemptiness condition in the latter. No finiteness,
-compactness or separation assumptions are needed for these statements.
+connectivity criteria, including the nonemptiness condition in the latter, and
+`reflTransGen_of_connectedSpace` restates connectivity as chains of nodes traversed in either
+direction. No finiteness, compactness or separation assumptions are needed for these statements.
 
 The construction uses the existing `GluedCurve` quotient and its lifting property. To separate
 different graph components, the component index descends to the discrete quotient of the
@@ -154,5 +155,16 @@ theorem connectedSpace_gluedCurve_iff :
     let : Nonempty ι := hi
     let : PreconnectedSpace (GluedCurve d) := (preconnectedSpace_gluedCurve_iff d).mpr h
     exact ⟨⟨Quotient.mk _ ⟨Classical.choice hi, Classical.arbitrary _⟩⟩⟩
+
+/-- In a connected glued curve with preconnected nonempty components, any two components are
+joined by a chain of nodes, each traversed in either direction. -/
+theorem reflTransGen_of_connectedSpace [ConnectedSpace (GluedCurve d)] (i j : ι) :
+    Relation.ReflTransGen
+      (fun i j ↦ ∃ f, (d.fst f = i ∧ d.snd f = j) ∨ (d.fst f = j ∧ d.snd f = i)) i j := by
+  have h := ((connectedSpace_gluedCurve_iff d).mp ‹_›).2 i j
+  rw [← Relation.EqvGen.reflTransGen_symmGen] at h
+  refine Relation.ReflTransGen.mono (fun a b hab ↦ ?_) _ _ h
+  rcases hab with ⟨f, ha, hb⟩ | ⟨f, hb, ha⟩
+  exacts [⟨f, Or.inl ⟨ha, hb⟩⟩, ⟨f, Or.inr ⟨hb, ha⟩⟩]
 
 end TauCeti.NodalGluing

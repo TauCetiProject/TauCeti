@@ -72,6 +72,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression in any chart of the `C¹` maximal atlas vanishes there.
 * `MDifferentiableAt.fderivWithin_comp_extChartAt_symm`: read a model-valued manifold
   derivative after an inverse chart, including derivatives within the model range.
+* `MDifferentiableAt.fderivWithin_extChartAt_comp_extChartAt_symm`: the same for a map between
+  manifolds read in arbitrary preferred charts of the source and the target.
 * `HasMFDerivAt.hasFDerivAt_extChartAt_comp`: read the coordinate derivative of a map from
   a normed source by composing its manifold derivative with the tangent chart.
 * `MDifferentiableAt.differentiableAt_chartAt_comp`: a differentiable map from a normed space
@@ -521,6 +523,35 @@ theorem _root_.HasMFDerivAt.hasFDerivAt_extChartAt_comp {Q : F → M} {z : F} {�
   exact he ▸ hd
 
 end NormedFieldCharts
+
+section ManifoldCharts
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
+
+/-- The coordinate expression of a map between manifolds in arbitrary preferred charts at `β`
+and `α` has, as its derivative within the model range, the manifold derivative composed with the
+tangent coordinate changes of the two charts. -/
+theorem _root_.MDifferentiableAt.fderivWithin_extChartAt_comp_extChartAt_symm {f : M → N}
+    {x : M} (hf : MDifferentiableAt I I' f x) {β : M} {α : N}
+    (hx : x ∈ (extChartAt I β).source) (hfx : f x ∈ (extChartAt I' α).source) :
+    fderivWithin 𝕜 (extChartAt I' α ∘ f ∘ (extChartAt I β).symm) (range I) (extChartAt I β x) =
+      (tangentCoordChange I' (f x) α (f x) ∘L mfderiv I I' f x ∘L
+        tangentCoordChange I β x x : E →L[𝕜] E') := by
+  have hfx' : f x ∈ (chartAt H' α).source := by simpa only [extChartAt_source] using hfx
+  have hα : MDifferentiableAt I' 𝓘(𝕜, E') (extChartAt I' α) (f x) :=
+    mdifferentiableAt_extChartAt hfx'
+  have h := (hα.comp x hf).fderivWithin_comp_extChartAt_symm β hx
+  rw [mfderiv_comp x hα hf, (hasMFDerivAt_extChartAt hfx').mfderiv,
+    mfderiv_chartAt_eq_tangentCoordChange hfx'] at h
+  exact h
+
+end ManifoldCharts
 
 section RCLikeCharts
 

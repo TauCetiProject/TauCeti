@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Algebra.SMul
-public import TauCeti.Geometry.Manifold.Riemannian.Pullback
+public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Mean
 
 /-!

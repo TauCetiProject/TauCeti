@@ -21,6 +21,9 @@ new bands form a tube on the old surface, so the Seifert matrix changes by an el
 up to unimodular congruence: a row enlargement for `σᵢ σᵢ⁻¹` and a column enlargement for
 `σᵢ⁻¹ σᵢ`. Hence the Alexander polynomial and the Tristram–Levine signatures of the Seifert matrix
 do not change under a free insertion or deletion that keeps the set of levels carrying a letter.
+When level `i` carries no letter, the two new bands join two components of the surface, and the
+Seifert matrix only gains a zero row and column, so the Tristram–Levine signatures do not change
+under any free insertion or deletion.
 
 The comparison is made in explicit bases. Write `p` for the insertion point, so that the new bands
 sit at positions `p` and `p + 1`. The loops after the insertion are the old loops with their bands
@@ -32,9 +35,9 @@ sum stands in for `γ`, the old loops keep their entries, the column of `β` van
 `±1` times the coordinate vector of one remaining new loop (for `ε = 1`; transposed for `ε = -1`).
 That is the shape recognised by `TauCeti.KnotTheory.exists_mul_mul_transpose_eq_enlargeRow`.
 
-The hypothesis that level `i` is already in use is needed. On two strands, the empty word has the
-`0 × 0` Seifert matrix while `σ₁ σ₁⁻¹` has the matrix `[0]`, because the canonical surface of the
-empty word is disconnected.
+For the Alexander polynomial the hypothesis that level `i` is already in use is needed. On two
+strands, the empty word has the `0 × 0` Seifert matrix while `σ₁ σ₁⁻¹` has the matrix `[0]`, because
+the canonical surface of the empty word is disconnected.
 
 ## Main results
 
@@ -43,12 +46,16 @@ empty word is disconnected.
   unimodular congruence.
 * `TauCeti.BraidWord.exists_seifertMatrix_insert_congr_enlargeColumn`: the same for `σᵢ⁻¹ σᵢ`,
   with a column enlargement.
-* `TauCeti.BraidWord.alexander_seifertMatrix_insert` and
-  `TauCeti.BraidWord.tristramLevineSignature_seifertMatrix_insert`: such an insertion keeps the
-  Alexander polynomial and the Tristram–Levine signatures of the Seifert matrix.
-* `TauCeti.BraidWord.FreeCancelStep.alexander_seifertMatrix_eq` and
-  `TauCeti.BraidWord.FreeCancelStep.tristramLevineSignature_seifertMatrix_eq`: the same for a free
-  insertion or deletion step that keeps the set of levels in use.
+* `TauCeti.BraidWord.exists_seifertMatrix_insert_eq_fromBlocks`: inserting an inverse pair on an
+  unused level adds a zero row and column to the Seifert matrix, up to relabelling.
+* `TauCeti.BraidWord.alexander_seifertMatrix_insert`: an insertion on a level in use keeps the
+  Alexander polynomial of the Seifert matrix.
+* `TauCeti.BraidWord.tristramLevineSignature_seifertMatrix_insert`: every insertion keeps the
+  Tristram–Levine signatures of the Seifert matrix.
+* `TauCeti.BraidWord.FreeCancelStep.alexander_seifertMatrix_eq`: a free insertion or deletion step
+  that keeps the set of levels in use keeps the Alexander polynomial.
+* `TauCeti.BraidWord.FreeCancelStep.tristramLevineSignature_seifertMatrix_eq`: every free insertion
+  or deletion step keeps the Tristram–Levine signatures.
 
 ## References
 
@@ -825,6 +832,76 @@ private theorem insertCongruence (h : ∃ x ∈ u ++ v, x.1 = i) : InsertCongrue
 
 end Assemble
 
+/-! ### Inserting on an unused level
+
+If no letter of `u ++ v` lies on level `i`, the discs `Dᵢ` and `Dᵢ₊₁` lie on different components
+of the canonical surface, and the two inserted bands join these components. The only new loop is
+`β = (p, p + 1)` through the two new bands; it meets no other loop, and its two bands have opposite
+twists, so the Seifert matrix gains one zero row and column. -/
+
+section Unused
+
+variable (u v : BraidWord n) (i : Fin (n - 1)) (ε : ℤˣ)
+
+private theorem levelAt_ne_of_not_exists (h : ¬∃ x ∈ u ++ v, x.1 = i) (k : ℕ) :
+    (u ++ v).levelAt k ≠ some (i : ℕ) := fun hk ↦
+  let ⟨hlt, hk⟩ := (levelAt_eq_some_iff _).1 hk
+  h ⟨_, List.getElem_mem hlt, Fin.ext hk⟩
+
+/-- The loops after inserting on an unused level: the moved loops of `u ++ v` and the loop
+between the two inserted bands. -/
+private def unusedInsertLoop (h : ¬∃ x ∈ u ++ v, x.1 = i) :
+    (u ++ v).seifertLoops ⊕ Unit → (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops
+  | .inl c => ⟨(insShift u.length c.1.1, insShift u.length c.1.2), (mem_seifertLoops _).2
+      ((isSeifertLoop_insert_insShift_iff u v i ε c.1).2 ⟨(mem_seifertLoops _).1 c.2,
+        fun hc ↦ levelAt_ne_of_not_exists u v i h _ hc.1⟩)⟩
+  | .inr _ => ⟨(u.length, u.length + 1), (mem_seifertLoops _).2 (isSeifertLoop_insert_mid u v i ε)⟩
+
+private theorem bijective_unusedInsertLoop (h : ¬∃ x ∈ u ++ v, x.1 = i) :
+    Function.Bijective (unusedInsertLoop u v i ε h) := by
+  refine ⟨?_, fun z ↦ ?_⟩
+  · rintro (c | _) (d | _) hcd <;>
+      simp only [unusedInsertLoop, Subtype.mk.injEq, Prod.mk.injEq, insShift_inj,
+        insShift_ne_self, false_and, self_ne_insShift] at hcd
+    · exact congrArg Sum.inl (Subtype.ext (Prod.ext hcd.1 hcd.2))
+    · rfl
+  have hz := (mem_seifertLoops _).1 z.2
+  rcases IsSeifertLoop.insert_cases u v i ε hz with hz' | ⟨t, ht, hz'⟩ | ⟨t, ht, hz'⟩ | ⟨c, hz'⟩
+  · exact ⟨.inr (), Subtype.ext hz'.symm⟩
+  · rw [hz', isSeifertLoop_insert_right_iff u v i ε ht] at hz
+    exact (levelAt_ne_of_not_exists u v i h t hz.2.1).elim
+  · rw [hz', isSeifertLoop_insert_left_iff u v i ε ht] at hz
+    exact (levelAt_ne_of_not_exists u v i h t hz.1).elim
+  · rw [hz'] at hz
+    exact ⟨.inl ⟨c, (mem_seifertLoops _).2 ((isSeifertLoop_insert_insShift_iff u v i ε c).1 hz).1⟩,
+      Subtype.ext hz'.symm⟩
+
+/-- **Inserting an inverse pair on an unused level adds a zero row and column.** If no letter of
+`u ++ v` lies on level `i`, inserting `σᵢ^ε σᵢ^(-ε)` changes the Seifert matrix of the closure,
+after relabelling the loops by `ι`, into the block sum of the Seifert matrix of `u ++ v` with the
+`1 × 1` zero matrix. -/
+theorem exists_seifertMatrix_insert_eq_fromBlocks (h : ¬∃ x ∈ u ++ v, x.1 = i) :
+    ∃ ι : (u ++ v).seifertLoops ⊕ Unit ≃ (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops,
+      (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.submatrix ι ι =
+        fromBlocks (u ++ v).seifertMatrix 0 0 0 := by
+  refine ⟨Equiv.ofBijective _ (bijective_unusedInsertLoop u v i ε h), ?_⟩
+  have hβ : (unusedInsertLoop u v i ε h (.inr ())).1 = (u.length, u.length + 1) := rfl
+  have hne : ∀ c, unusedInsertLoop u v i ε h (.inl c) ≠ unusedInsertLoop u v i ε h (.inr ()) :=
+    fun c hc ↦ insShift_ne_self u.length c.1.1 (congrArg (·.1.1) hc)
+  ext (c | _) (d | _)
+  · exact seifertMatrix_insert_moved u v i ε rfl rfl
+  · simp only [submatrix_apply, Equiv.ofBijective_apply, fromBlocks_apply₁₂, Matrix.zero_apply]
+    rw [seifertMatrix_insert_apply_mid u v i ε hβ (hne c)]
+    simp [unusedInsertLoop]
+  · simp only [submatrix_apply, Equiv.ofBijective_apply, fromBlocks_apply₂₁, Matrix.zero_apply]
+    rw [seifertMatrix_insert_mid_apply u v i ε hβ (hne d)]
+    simp [unusedInsertLoop]
+  · simp only [submatrix_apply, Equiv.ofBijective_apply, fromBlocks_apply₂₂, Matrix.zero_apply,
+      seifertMatrix_apply_self, hβ, signAt_insert_length, signAt_insert_length_succ]
+    rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
+
+end Unused
+
 /-! ### Free insertion is an S-equivalence -/
 
 section Main
@@ -885,12 +962,20 @@ theorem alexander_seifertMatrix_insert (ε : ℤˣ) (h : ∃ x ∈ u ++ v, x.1 =
       alexander_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP),
       Matrix.alexander_submatrix_equiv_self]
 
-/-- Inserting an inverse pair of letters on a level already in use keeps the Tristram–Levine
-signatures of the Seifert matrix. -/
-theorem tristramLevineSignature_seifertMatrix_insert (ε : ℤˣ) (h : ∃ x ∈ u ++ v, x.1 = i)
-    (ω : ℂ) :
+/-- **Inserting an inverse pair of letters keeps the Tristram–Levine signatures of the Seifert
+matrix.** On a level already in use the matrix changes by an elementary enlargement, and on an
+unused level by a zero row and column; neither changes the signatures. -/
+theorem tristramLevineSignature_seifertMatrix_insert (ε : ℤˣ) (ω : ℂ) :
     tristramLevineSignature ((u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.map ((↑) : ℤ → ℝ)) ω =
       tristramLevineSignature ((u ++ v).seifertMatrix.map ((↑) : ℤ → ℝ)) ω := by
+  by_cases h : ∃ x ∈ u ++ v, x.1 = i
+  swap
+  · obtain ⟨ι, hι⟩ := exists_seifertMatrix_insert_eq_fromBlocks u v i ε h
+    have := congrArg (fun M ↦ tristramLevineSignature (M.map ((↑) : ℤ → ℝ)) ω) hι
+    simp only [fromBlocks_map, Matrix.map_zero _ Int.cast_zero, ← submatrix_map,
+      tristramLevineSignature_fromBlocks_zero, tristramLevineSignature_zero_matrix,
+      add_zero] at this
+    rwa [← ι.symm_symm, tristramLevineSignature_submatrix_equiv_self] at this
   simp only [← Int.coe_castRingHom]
   rcases Int.units_eq_one_or ε with rfl | rfl
   · obtain ⟨ι, P, η, hP, hPV⟩ := exists_seifertMatrix_insert_congr_enlargeRow u v i h
@@ -930,21 +1015,18 @@ theorem alexander_seifertMatrix_eq (h : FreeCancelStep w w')
     rw [List.append_assoc, List.cons_append, List.cons_append, List.nil_append]
     exact alexander_seifertMatrix_insert u v i ε ((hlevel i).1 ⟨(i, ε), by simp, rfl⟩)
 
-/-- A free insertion or deletion of an inverse pair that does not change which levels carry a
-letter keeps the Tristram–Levine signatures of the Seifert matrix. -/
-theorem tristramLevineSignature_seifertMatrix_eq (h : FreeCancelStep w w')
-    (hlevel : ∀ l, (∃ x ∈ w, x.1 = l) ↔ ∃ x ∈ w', x.1 = l) (ω : ℂ) :
+/-- A free insertion or deletion of an inverse pair keeps the Tristram–Levine signatures of the
+Seifert matrix. -/
+theorem tristramLevineSignature_seifertMatrix_eq (h : FreeCancelStep w w') (ω : ℂ) :
     tristramLevineSignature (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω =
       tristramLevineSignature (w'.seifertMatrix.map ((↑) : ℤ → ℝ)) ω := by
   cases h with
   | insert u v i ε =>
     rw [List.append_assoc, List.cons_append, List.cons_append, List.nil_append]
-    exact (tristramLevineSignature_seifertMatrix_insert u v i ε
-      ((hlevel i).2 ⟨(i, ε), by simp, rfl⟩) ω).symm
+    exact (tristramLevineSignature_seifertMatrix_insert u v i ε ω).symm
   | delete u v i ε =>
     rw [List.append_assoc, List.cons_append, List.cons_append, List.nil_append]
-    exact tristramLevineSignature_seifertMatrix_insert u v i ε
-      ((hlevel i).1 ⟨(i, ε), by simp, rfl⟩) ω
+    exact tristramLevineSignature_seifertMatrix_insert u v i ε ω
 
 end FreeCancelStep
 
