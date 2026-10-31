@@ -59,8 +59,10 @@ none of this assumes σ-finiteness.
 * `MeasureTheory.Measure.quasiMeasurePreserving_mul_right_of_regular` and
   `MeasureTheory.Measure.quasiMeasurePreserving_inv_of_regular`: right translation and inversion
   preserve null sets of a regular Haar measure.
-* `TauCeti.integral_mul_right_eq_modularCharacter_smul_of_regular` and
-  `TauCeti.integral_inv_eq_integral_modularCharacter_smul_of_regular`: the change-of-variables
+* `TauCeti.integral_mul_right_eq_modularCharacter_smul_of_regular`,
+  `TauCeti.integral_inv_eq_integral_modularCharacter_smul_of_regular` and their lower Lebesgue
+  versions `TauCeti.lintegral_mul_right_eq_modularCharacter_mul_of_regular` and
+  `TauCeti.lintegral_inv_eq_lintegral_modularCharacter_mul_of_regular`: the change-of-variables
   formulas for every integrand, against a regular Haar measure.
 
 ## References
@@ -324,7 +326,7 @@ theorem map_right_mul_eq_modularCharacter_smul_of_regular (g : G) :
 
 /-- Right translation scales the measure of every set, measurable or not, by the modular
 character of a regular Haar measure. -/
-theorem measure_preimage_mul_right_of_regular (g : G) (s : Set G) :
+theorem measure_preimage_mul_right_eq_modularCharacter_mul_of_regular (g : G) (s : Set G) :
     μ ((· * g) ⁻¹' s) = modularCharacter g * μ s := by
   have h := (MeasurableEquiv.mulRight g).map_apply (μ := μ) s
   rw [MeasurableEquiv.coe_mulRight, map_right_mul_eq_modularCharacter_smul_of_regular,
@@ -335,7 +337,7 @@ theorem measure_preimage_mul_right_of_regular (g : G) (s : Set G) :
 theorem measure_mul_right_null_of_regular (g : G) {s : Set G} :
     μ ((· * g) ⁻¹' s) = 0 ↔ μ s = 0 := by
   have hg : modularCharacter g ≠ 0 := (modularCharacterFun_pos g).ne'
-  simp [measure_preimage_mul_right_of_regular, hg]
+  simp [measure_preimage_mul_right_eq_modularCharacter_mul_of_regular, hg]
 
 /-- Right translation is quasi-measure-preserving for a regular Haar measure. -/
 @[fun_prop]
@@ -432,6 +434,18 @@ theorem lintegral_mul_right_eq_modularCharacter_mul_of_regular (f : G → ℝ≥
   simp only [MeasurableEquiv.coe_mulRight,
     Measure.map_right_mul_eq_modularCharacter_smul_of_regular, lintegral_smul_measure,
     ENNReal.smul_def, smul_eq_mul] at h
+  exact h.symm
+
+/-- **The inversion formula** for a regular Haar measure: inverting the argument weights the
+lower Lebesgue integral by the modular character, for every integrand. -/
+theorem lintegral_inv_eq_lintegral_modularCharacter_mul_of_regular (f : G → ℝ≥0∞) :
+    ∫⁻ x, f x⁻¹ ∂μ = ∫⁻ x, Measure.modularCharacter x * f x ∂μ := by
+  have h := lintegral_map_equiv (μ := μ) f (MeasurableEquiv.inv G)
+  rw [MeasurableEquiv.inv_apply, ← Measure.inv,
+    Measure.inv_eq_withDensity_modularCharacter_of_regular,
+    lintegral_withDensity_eq_lintegral_mul_non_measurable _
+      continuous_modularCharacter.measurable.coe_nnreal_ennreal
+      (.of_forall fun _ => ENNReal.coe_lt_top)] at h
   exact h.symm
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
