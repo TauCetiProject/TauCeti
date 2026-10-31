@@ -67,16 +67,11 @@ theorem partitionMoment_star_comp_rev (hφ : ∀ x, φ (star x) = star (φ x)) (
   rw [partitionMoment_def, partitionMoment_def, NoncrossingPartition.prod_parts_reverse,
     star_prod]
   refine prod_congr rfl fun B _ => ?_
-  -- Along the reversed part, the letters are the adjoints of those along `B` in reversed order.
-  have hsort : (B.map Fin.revPerm.toEmbedding).sort = (B.sort.map Fin.rev).reverse := by
-    have h := StrictAntiOn.map_finsetSort (e := Fin.revPerm.toEmbedding) (s := B)
-      fun i _ j _ hij => by simpa using hij
-    rw [Equiv.coe_toEmbedding, show ⇑Fin.revPerm = @Fin.rev n from funext Fin.revPerm_apply] at h
-    rw [h, List.reverse_reverse]
   -- `star` is a monoid hom into the opposite monoid, so it reverses products.
   have hstar := unop_map_list_prod (starMulEquiv : A ≃* Aᵐᵒᵖ) (B.sort.map a)
   simp only [starMulEquiv_apply, MulOpposite.unop_op] at hstar
-  rw [← hφ, hsort, hstar]
+  -- Along the reversed part, the letters are the adjoints of those along `B` in reversed order.
+  rw [← hφ, sort_map_revPerm, hstar]
   simp [List.map_reverse, Function.comp_def]
 
 end Moment

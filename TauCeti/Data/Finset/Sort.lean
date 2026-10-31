@@ -27,7 +27,8 @@ Consecutive entries of the sorted list of `s` are the pairs of positions of `s` 
 pairs.
 
 Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
-sorted list of the image in reversed order.
+sorted list of the image in reversed order; in particular, sorting the points of a finset of
+`Fin n` moved along the reversal `Fin.rev` reverses the list of their images.
 
 Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
@@ -132,6 +133,15 @@ theorem _root_.StrictAntiOn.map_finsetSort {e : α ↪ β} (he : StrictAntiOn e 
       he ((mem_sort _).1 hx) ((mem_sort _).1 hy) hxy
   rw [List.SortedLT.eq_of_mem_iff (sortedLT_sort (s.map e)) hgt.reverse fun x => by simp,
     List.reverse_reverse]
+
+/-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
+images under `Fin.rev` of the sorted points of `B` in reversed order. -/
+theorem sort_map_revPerm {n : ℕ} (B : Finset (Fin n)) :
+    (B.map Fin.revPerm.toEmbedding).sort = (B.sort.map Fin.rev).reverse := by
+  have h := StrictAntiOn.map_finsetSort (e := Fin.revPerm.toEmbedding) (s := B)
+    fun i _ j _ hij => by simpa using hij
+  rw [Equiv.coe_toEmbedding, show ⇑Fin.revPerm = @Fin.rev n from funext Fin.revPerm_apply] at h
+  rw [h, List.reverse_reverse]
 
 /-- Sorting a finset `B` of `Fin n` and then moving its points along `finRotate n` gives a cyclic
 rotation of the sorted list of the moved points: the order is unchanged except that the last
