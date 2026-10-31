@@ -176,10 +176,16 @@ def oneSided :
       (DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C)))) :=
   fun X ↦ (underlying R X).IsOneSided
 
+/-- An object of the homotopy category is one-sided when its underlying twisted object is. -/
+theorem oneSided_iff
+    (X : DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C)))) :
+    oneSided R C X ↔ (underlying R X).IsOneSided :=
+  Iff.rfl
+
 @[simp]
 theorem oneSided_of_iff (P : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))) :
-    oneSided R C (of R P) ↔ P.IsOneSided :=
-  Iff.rfl
+    oneSided R C (of R P) ↔ P.IsOneSided := by
+  rw [oneSided_iff, underlying_of]
 
 /-- The one-sided twisted objects contain a zero object of the homotopy category: the twisted
 object with no summands. -/
@@ -191,9 +197,8 @@ instance : (oneSided R C).ContainsZero where
 /-- The one-sided twisted objects are stable under the shifts of the homotopy category. -/
 instance : (oneSided R C).IsStableUnderShift ℤ where
   isStableUnderShiftBy n := ⟨fun X hX ↦ by
-    obtain ⟨P, rfl⟩ := of_surjective R X
-    rw [ObjectProperty.prop_shift_iff, shiftFunctor_obj_of, oneSided_of_iff]
-    exact ((oneSided_of_iff P).mp hX).shift n⟩
+    rw [ObjectProperty.prop_shift_iff, ← of_underlying R X, shiftFunctor_obj_of, oneSided_of_iff]
+    exact ((oneSided_iff X).mp hX).shift n⟩
 
 /-- **The third object of a distinguished triangle whose first two objects are one-sided is
 isomorphic to a one-sided twisted object**: the triangle is isomorphic to the cone triangle of a
