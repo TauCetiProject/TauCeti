@@ -13,7 +13,9 @@ import TauCeti.RingTheory.Etale.Torsor
 A finite Galois extension is a torsor under its Galois group, and a field with a faithful action
 of a finite group is a torsor over its fixed field. Over the zero ring the zero algebra is a
 torsor under every finite group, which then does not act faithfully. Over a field the zero
-algebra has a bijective Galois map but is not a torsor, because it is not faithfully flat.
+algebra has a bijective Galois map but is not a torsor, because it is not faithfully flat. For a
+tower of finite Galois extensions `K ⊆ M ⊆ L`, the comparison of torsors along a surjection of
+groups recovers `L` as a torsor over `M` under the kernel of restriction `Gal(L/K) → Gal(M/K)`.
 -/
 
 namespace TauCeti.Algebra
@@ -55,5 +57,17 @@ example (G K B : Type*) [Group G] [Finite G] [Field K] [CommRing B] [Algebra K B
   refine ⟨⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun f ↦ ⟨0, Subsingleton.elim _ _⟩⟩, fun h ↦ ?_⟩
   obtain ⟨hB, -⟩ := (IsFiniteEtaleTorsor.iff_field K).mp h
   exact not_nontrivial B hB
+
+/-- In a tower `K ⊆ M ⊆ L` of finite Galois extensions of `K`, `L` is a torsor over `M` under the
+kernel of the restriction map `Gal(L/K) → Gal(M/K)`, which acts `M`-linearly by
+`smulCommClass_ker`. -/
+example (K M L : Type*) [Field K] [Field M] [Field L] [Algebra K M] [Algebra K L] [Algebra M L]
+    [IsScalarTower K M L] [IsGalois K M] [FiniteDimensional K M] [IsGalois K L]
+    [FiniteDimensional K L] :
+    haveI := smulCommClass_ker (π := AlgEquiv.restrictNormalHom (F := K) (K₁ := L) M)
+      fun g m ↦ (AlgEquiv.restrictNormal_commutes g M m).symm
+    IsFiniteEtaleTorsor (AlgEquiv.restrictNormalHom (F := K) (K₁ := L) M).ker M L :=
+  IsFiniteEtaleTorsor.of_surjective (A := K) (AlgEquiv.restrictNormalHom_surjective L)
+    fun g m ↦ (AlgEquiv.restrictNormal_commutes g M m).symm
 
 end TauCeti.Algebra
