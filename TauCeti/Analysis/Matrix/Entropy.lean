@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 public import Mathlib.Data.EReal.Basic
 public import TauCeti.Analysis.Matrix.FunctionalCalculus
+import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
 # Entropy and relative entropy of finite matrices
@@ -62,18 +64,6 @@ open scoped InnerProductSpace ComplexOrder
 namespace Matrix
 
 variable {𝕜 : Type*} [RCLike 𝕜] {n : Type*} [Fintype n] [DecidableEq n]
-
-namespace IsHermitian
-
-variable {A B : Matrix n n 𝕜}
-
-/-- The real part of the trace formula `Matrix.IsHermitian.trace_cfc_mul_cfc`. -/
-private theorem re_trace_cfc_mul_cfc (hA : A.IsHermitian) (hB : B.IsHermitian) (f g : ℝ → ℝ) :
-    RCLike.re (cfc f A * cfc g B).trace = ∑ i, ∑ j, f (hA.eigenvalues i) *
-      g (hB.eigenvalues j) * ‖⟪hA.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜‖ ^ 2 := by
-  simp only [hA.trace_cfc_mul_cfc hB, map_sum, RCLike.ofReal_re]
-
-end IsHermitian
 
 /-! ### Von Neumann entropy -/
 
@@ -160,33 +150,16 @@ theorem IsHermitian.relativeEntropy_eq_neg_vonNeumannEntropy_sub (hρ : ρ.IsHer
   rw [relativeEntropy_of_ker_le h, hρ.vonNeumannEntropy_eq_neg_re_trace_mul_cfc_log, mul_sub,
     trace_sub, map_sub, neg_neg]
 
-/-- Under the support condition, an eigenvector of `σ` with eigenvalue zero is orthogonal to every
-eigenvector of `ρ` with nonzero eigenvalue. -/
-private theorem IsHermitian.eigenvalues_eq_zero_of_inner_ne_zero (hρ : ρ.IsHermitian)
-    (hσ : σ.IsHermitian) (h : LinearMap.ker σ.mulVecLin ≤ LinearMap.ker ρ.mulVecLin) {i j : n}
-    (hij : ⟪hρ.eigenvectorBasis i, hσ.eigenvectorBasis j⟫_𝕜 ≠ 0) (hj : hσ.eigenvalues j = 0) :
-    hρ.eigenvalues i = 0 := by
-  have hker : ρ *ᵥ ⇑(hσ.eigenvectorBasis j) = 0 := by
-    have hv : σ *ᵥ ⇑(hσ.eigenvectorBasis j) = 0 := by
-      rw [hσ.mulVec_eigenvectorBasis, hj, zero_smul]
-    exact h hv
-  have hsymm := isSymmetric_toEuclideanLin_iff.mpr hρ (hρ.eigenvectorBasis i)
-    (hσ.eigenvectorBasis j)
-  simp only [toLpLin_apply, hρ.mulVec_eigenvectorBasis, hker, WithLp.toLp_zero, inner_zero_right,
-    RCLike.real_smul_eq_coe_smul (K := 𝕜), WithLp.toLp_smul, WithLp.toLp_ofLp, inner_smul_left,
-    RCLike.conj_ofReal, mul_eq_zero, RCLike.ofReal_eq_zero] at hsymm
-  exact hsymm.resolve_right hij
-
-/-- The scalar inequality behind the positivity of relative entropy:
-`a - b ≤ a log a - a log b` for `a, b ≥ 0`, provided `a = 0` whenever `b = 0`. -/
-private theorem sub_le_mul_log_sub_mul_log {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (hab : b = 0 → a = 0) : a - b ≤ a * Real.log a - a * Real.log b := by
-  rcases ha.eq_or_lt with rfl | ha
-  · simpa using hb
-  have hb : 0 < b := hb.lt_of_ne fun h ↦ ha.ne' (hab h.symm)
-  have hlog := mul_le_mul_of_nonneg_left (Real.log_le_sub_one_of_pos (div_pos hb ha)) ha.le
-  rw [Real.log_div hb.ne' ha.ne', mul_sub, mul_sub, mul_div_cancel₀ b ha.ne', mul_one] at hlog
-  linarith
+/-- The relative entropy with respect to a nonzero real multiple `c • 1` of the identity is
+`D(ρ ‖ c • 1) = -S(ρ) - log c · Tr ρ`. -/
+theorem IsHermitian.relativeEntropy_smul_one (hρ : ρ.IsHermitian) {c : ℝ} (hc : c ≠ 0) :
+    relativeEntropy ρ (c • 1 : Matrix n n 𝕜) =
+      ((-ρ.vonNeumannEntropy - Real.log c * RCLike.re ρ.trace : ℝ) : EReal) := by
+  have hker : LinearMap.ker (c • 1 : Matrix n n 𝕜).mulVecLin ≤ LinearMap.ker ρ.mulVecLin :=
+    fun v hv ↦ by simp_all
+  rw [hρ.relativeEntropy_eq_neg_vonNeumannEntropy_sub hker, ← Algebra.algebraMap_eq_smul_one,
+    cfc_algebraMap, Algebra.algebraMap_eq_smul_one]
+  simp [RCLike.smul_re]
 
 /-- **Klein's inequality for the relative entropy.** For positive semidefinite `ρ` and `σ`,
 `Tr ρ - Tr σ ≤ D(ρ ‖ σ)`. -/
@@ -224,7 +197,7 @@ theorem PosSemidef.re_trace_sub_trace_le_relativeEntropy (hρ : ρ.PosSemidef)
   -- Each term is a scalar inequality between eigenvalues, weighted by the overlap.
   by_cases hij : ⟪hρ.1.eigenvectorBasis i, hσ.1.eigenvectorBasis j⟫_𝕜 = 0
   · simp [hij]
-  have key := sub_le_mul_log_sub_mul_log (hρ.eigenvalues_nonneg i) (hσ.eigenvalues_nonneg j)
+  have key := Real.sub_le_mul_log_sub_mul_log (hρ.eigenvalues_nonneg i) (hσ.eigenvalues_nonneg j)
     (hρ.1.eigenvalues_eq_zero_of_inner_ne_zero hσ.1 h hij)
   have hw : 0 ≤ ‖⟪hρ.1.eigenvectorBasis i, hσ.1.eigenvectorBasis j⟫_𝕜‖ ^ 2 := by positivity
   nlinarith [mul_le_mul_of_nonneg_right key hw]
@@ -250,11 +223,8 @@ theorem PosSemidef.vonNeumannEntropy_le_log_card (hρ : ρ.PosSemidef) (htr : ρ
     rw [trace_smul, trace_one, RCLike.real_smul_eq_coe_mul, ← RCLike.ofReal_natCast,
       ← RCLike.ofReal_mul, inv_mul_cancel₀ hn.ne', RCLike.ofReal_one]
   have hnonneg := hρ.relativeEntropy_nonneg hσ.posSemidef (htr.trans hσtr.symm)
-  rw [hρ.1.relativeEntropy_eq_neg_vonNeumannEntropy_sub (by
-    rw [LinearMap.ker_eq_bot.mpr (by exact hσ.mulVec_injective)]; exact bot_le),
-    ← Algebra.algebraMap_eq_smul_one, cfc_algebraMap, Algebra.algebraMap_eq_smul_one,
-    mul_smul_comm, mul_one, trace_smul, htr, RCLike.smul_re, RCLike.one_re, mul_one,
-    ← EReal.coe_zero, EReal.coe_le_coe_iff, Real.log_inv] at hnonneg
+  rw [hρ.1.relativeEntropy_smul_one (inv_ne_zero hn.ne'), htr, RCLike.one_re, mul_one,
+    Real.log_inv, ← EReal.coe_zero, EReal.coe_le_coe_iff] at hnonneg
   linarith
 
 end Matrix

@@ -62,8 +62,9 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
 * `Matrix.IsHermitian.toEuclideanLin_cfc_indicator` — the Euclidean operator of
   `cfc (Ω.indicator 1) A` is the orthogonal projection onto the point-spectral subspace
   `Module.End.pointSpectralSubspace A.toEuclideanLin Ω`;
-* `Matrix.IsHermitian.trace_cfc` and `Matrix.IsHermitian.trace_cfc_mul_cfc` — the traces of
-  `cfc f A` and of `cfc f A * cfc g B` in terms of eigenvalues and eigenvector overlaps;
+* `Matrix.IsHermitian.trace_cfc`, `Matrix.IsHermitian.trace_cfc_mul_cfc` and
+  `Matrix.IsHermitian.re_trace_cfc_mul_cfc` — the traces of `cfc f A` and of `cfc f A * cfc g B`
+  in terms of eigenvalues and eigenvector overlaps;
 * `TauCeti.continuousOn_matrix_cfc` — for continuous `f`, `A ↦ cfc f A` is continuous on the
   Hermitian matrices;
 * `TauCeti.tendsto_matrix_cfc_fun` — pointwise convergence of functions gives convergence of
@@ -217,6 +218,14 @@ theorem IsHermitian.trace_cfc_mul_cfc {B : Matrix n n 𝕜} (hA : A.IsHermitian)
   push_cast
   rw [← RCLike.mul_conj]
   ring
+
+/-- The real part of the trace formula `Matrix.IsHermitian.trace_cfc_mul_cfc`:
+`re Tr (f(A) g(B)) = ∑ᵢ ∑ⱼ f(aᵢ) g(bⱼ) ‖⟪uᵢ, vⱼ⟫‖²`, as an identity of real numbers. -/
+theorem IsHermitian.re_trace_cfc_mul_cfc {B : Matrix n n 𝕜} (hA : A.IsHermitian)
+    (hB : B.IsHermitian) (f g : ℝ → ℝ) :
+    RCLike.re (cfc f A * cfc g B).trace = ∑ i, ∑ j, f (hA.eigenvalues i) *
+      g (hB.eigenvalues j) * ‖⟪hA.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜‖ ^ 2 := by
+  simp only [hA.trace_cfc_mul_cfc hB, map_sum, RCLike.ofReal_re]
 
 end Matrix
 

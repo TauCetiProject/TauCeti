@@ -39,7 +39,10 @@ whose value is a power of its determinant.
   `Matrix.IsHermitian.det_one_sub_smul` — `1 - c • B` is conjugate to a diagonal matrix, and its
   determinant is `∏ j, (1 - c * hB.eigenvalues j)`;
 * `Matrix.IsHermitian.trace_pow_eq_sum_eigenvalues_pow` — the trace of `B ^ k` is
-  `∑ j, hB.eigenvalues j ^ k` for every natural `k`.
+  `∑ j, hB.eigenvalues j ^ k` for every natural `k`;
+* `Matrix.IsHermitian.eigenvalues_eq_zero_of_inner_ne_zero` — if the kernel of `B` lies in the
+  kernel of a Hermitian `A`, an eigenvector of `B` with eigenvalue zero is orthogonal to every
+  eigenvector of `A` with nonzero eigenvalue.
 -/
 
 public section
@@ -138,5 +141,29 @@ theorem eventually_posDef_one_sub_smul (hB : B.IsHermitian) :
   exact Filter.eventually_all.2 fun j =>
     ((continuous_id.mul continuous_const).tendsto' 0 0 (zero_mul _)).eventually
       (gt_mem_nhds zero_lt_one)
+
+end Matrix.IsHermitian
+
+namespace Matrix.IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι] {A B : Matrix ι ι 𝕜}
+
+/-- If the kernel of `B` lies in the kernel of the Hermitian matrix `A`, then an eigenvector of `B`
+with eigenvalue zero is orthogonal to every eigenvector of `A` with nonzero eigenvalue: a nonzero
+overlap forces the eigenvalue of `A` to vanish. -/
+theorem eigenvalues_eq_zero_of_inner_ne_zero (hA : A.IsHermitian) (hB : B.IsHermitian)
+    (h : LinearMap.ker B.mulVecLin ≤ LinearMap.ker A.mulVecLin) {i j : ι}
+    (hij : ⟪hA.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜 ≠ 0) (hj : hB.eigenvalues j = 0) :
+    hA.eigenvalues i = 0 := by
+  have hker : A *ᵥ ⇑(hB.eigenvectorBasis j) = 0 := by
+    have hv : B *ᵥ ⇑(hB.eigenvectorBasis j) = 0 := by
+      rw [hB.mulVec_eigenvectorBasis, hj, zero_smul]
+    exact h hv
+  have hsymm := isSymmetric_toEuclideanLin_iff.mpr hA (hA.eigenvectorBasis i)
+    (hB.eigenvectorBasis j)
+  simp only [toLpLin_apply, hA.mulVec_eigenvectorBasis, hker, WithLp.toLp_zero, inner_zero_right,
+    RCLike.real_smul_eq_coe_smul (K := 𝕜), WithLp.toLp_smul, WithLp.toLp_ofLp, inner_smul_left,
+    RCLike.conj_ofReal, mul_eq_zero, RCLike.ofReal_eq_zero] at hsymm
+  exact hsymm.resolve_right hij
 
 end Matrix.IsHermitian
