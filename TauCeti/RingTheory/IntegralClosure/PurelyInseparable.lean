@@ -109,10 +109,12 @@ theorem IsIntegralClosure.finite_of_forall_exists_pow_eq (A K M C A' K' : Type*)
   -- (i) the root hypothesis embeds `M` into `K'` over `K` (leaf B2)
   obtain ⟨ι⟩ := IsPurelyInseparable.nonempty_algHom_of_forall_exists_pow_eq K M p hn K' hs
     fun x hx ↦ ((h x hx).elim fun y hy ↦ ⟨algebraMap A' K' y, hy⟩)
-  -- (ii) finiteness then descends along that embedding, `A'` being the integral closure of `A`
+  -- (ii) finiteness then descends along `C → M → K'`, `A'` being the integral closure of `A`
   -- in `K'` by hypothesis (leaf T2)
-  exact IsIntegralClosure.finite_of_injective (C' := A') (ι.restrictScalars A)
-    (ι.restrictScalars A).toRingHom.injective
+  have := IsIntegralClosure.isIntegral_algebra A (A := C) M
+  exact IsIntegralClosure.finite_of_injective (C' := A')
+    ((ι.restrictScalars A).comp (IsScalarTower.toAlgHom A C M))
+    (ι.toRingHom.injective.comp (IsIntegralClosure.algebraMap_injective C A M))
 
 /-! ### Steps of the polynomial-ring case
 
