@@ -11,8 +11,8 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.MeasureTheory.Measure.Regular
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.MeasureTheory.Integral.Bochner.Regular
 
 /-!
 # Pointwise bounds on a density from its pairings with test vector fields
@@ -33,8 +33,9 @@ derivative is shown to be absolutely continuous with respect to its variation, w
 norm at most one.
 
 The proof first tests against smooth cutoffs equal to one on a compact set `K` and supported in
-shrinking neighbourhoods of `K`, which gives `|∫_K h| ≤ ∫⁻_K k`. Inner regularity extends this to
-measurable subsets of a compact set, and the scalar case follows by comparing set integrals. The
+shrinking neighbourhoods of `K`, which gives `|∫_K h| ≤ ∫⁻_K k`. Inner regularity
+(`TauCeti.enorm_setIntegral_le_of_forall_isClosed_subset`) extends this to measurable subsets of a
+compact set, and the scalar case follows by comparing set integrals. The
 vector case tests the scalar components `⟪h, w⟫` for `w` in a countable dense subset of `F`.
 
 ## Main declarations
@@ -129,29 +130,6 @@ private theorem enorm_setIntegral_isCompact_le (hh : LocallyIntegrable h ρ)
   exact le_of_tendsto_of_tendsto' ((continuous_enorm.tendsto _).comp hlim) hlimk
     fun n => H _ (hψ0 n) (hψ1 n) _ (hWo n) (hψW n)
 
-/-- The bound on compact sets extends, by inner regularity, to measurable subsets of a compact
-set. -/
-private theorem enorm_setIntegral_le_of_subset_isCompact (hh : LocallyIntegrable h ρ)
-    (hK : ∀ K, IsCompact K → ‖∫ x in K, h x ∂ρ‖ₑ ≤ ∫⁻ x in K, k x ∂ρ) {L B : Set Ω}
-    (hL : IsCompact L) (hB : MeasurableSet B) (hBL : B ⊆ L) :
-    ‖∫ x in B, h x ∂ρ‖ₑ ≤ ∫⁻ x in B, k x ∂ρ := by
-  have hint : IntegrableOn h L ρ := hh.integrableOn_isCompact hL
-  -- A finite measure carrying the mass of `|h|` on `L`; it is weakly regular.
-  set ζ := (ρ.restrict L).withDensity fun x => ‖h x‖ₑ
-  have : IsFiniteMeasure ζ := isFiniteMeasure_withDensity hint.2.ne
-  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
-  obtain ⟨F, hFB, hFc, hF⟩ :=
-    hB.exists_isClosed_sdiff_lt (measure_ne_top ζ B) (ENNReal.coe_ne_zero.2 hε.ne')
-  rw [withDensity_apply _ (hB.diff hFc.measurableSet),
-    Measure.restrict_restrict (hB.diff hFc.measurableSet),
-    inter_eq_left.2 (sdiff_subset.trans hBL)] at hF
-  calc ‖∫ x in B, h x ∂ρ‖ₑ = ‖∫ x in F, h x ∂ρ + ∫ x in B \ F, h x ∂ρ‖ₑ := by
-        rw [setIntegral_sdiff hFc.measurableSet (hint.mono_set hBL) hFB, add_sub_cancel]
-    _ ≤ ‖∫ x in F, h x ∂ρ‖ₑ + ‖∫ x in B \ F, h x ∂ρ‖ₑ := enorm_add_le _ _
-    _ ≤ ∫⁻ x in B, k x ∂ρ + ε :=
-        add_le_add ((hK F (hL.of_isClosed_subset hFc (hFB.trans hBL))).trans
-          (lintegral_mono_set hFB)) ((enorm_integral_le_lintegral_enorm _).trans hF.le)
-
 /-- The scalar case: a bound on pairings with nonnegative test functions bounds `|h|`. -/
 private theorem ae_enorm_le_of_forall_nonneg (hh : LocallyIntegrable h ρ) (hkm : Measurable k)
     (hk : ∀ K, IsCompact K → ∫⁻ x in K, k x ∂ρ ≠ ∞)
@@ -160,8 +138,9 @@ private theorem ae_enorm_le_of_forall_nonneg (hh : LocallyIntegrable h ρ) (hkm 
     ∀ᵐ x ∂ρ, ‖h x‖ₑ ≤ k x := by
   have := Ω.isOpen.locallyCompactSpace
   have hB {L B : Set Ω} (hL : IsCompact L) (hBm : MeasurableSet B) (hBL : B ⊆ L) :=
-    enorm_setIntegral_le_of_subset_isCompact hh
-      (fun K hK => enorm_setIntegral_isCompact_le hh hk H hK) hL hBm hBL
+    enorm_setIntegral_le_of_forall_isClosed_subset ((hh.integrableOn_isCompact hL).mono_set hBL)
+      hBm fun F hFB hFc =>
+        enorm_setIntegral_isCompact_le hh hk H (hL.of_isClosed_subset hFc (hFB.trans hBL))
   -- It suffices to prove the bound on each compact set of an exhaustion of `Ω`.
   rw [← Measure.restrict_univ (μ := ρ), ← iUnion_compactCovering, ae_restrict_iUnion_iff]
   intro n
