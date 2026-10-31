@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.LinearAlgebra.LinearDisjoint
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.LinearAlgebra.TensorProduct.Submodule
-public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.Flat.EquationalCriterion
+public import Mathlib.RingTheory.TensorProduct.DirectLimitFG
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Basic setups for almost mathematics
@@ -58,13 +61,18 @@ pseudouniformiser.
   isomorphism.
 * `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.powersGenerate`: condition (A) implies
   condition (B).
+* `TauCeti.Almost.BasicSetup.flat_tilde_of_isFilteredPrincipal`: an idempotent ideal satisfying
+  condition (A) has flat `m~`, so it underlies a basic setup, with no regularity assumption on its
+  elements.
+* `TauCeti.Almost.BasicSetup.tildeToIdeal_bijective_of_flat`: if `m` is flat, the multiplication
+  map `m~ → m` is bijective.
 * `Submodule.mulMap_top_top_bijective`: the multiplication map `R ⊗[R] R → R` is bijective; it
   makes `(V, V)` a basic setup.
 
 ## References
 
 * O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.1:
-  (2.1.1), Example 2.1.2, (2.1.3), Remark 2.1.4 and (2.1.6).
+  (2.1.1), Example 2.1.2, (2.1.3), Remark 2.1.4, (2.1.6) and Proposition 2.1.7.
 * P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), §4.
 * B. Bhatt, *Lecture notes for a class on perfectoid spaces*, §4.1.
 -/
@@ -140,6 +148,15 @@ theorem tildeToIdeal_tmul (x y : S.ideal) :
 theorem tildeToIdeal_surjective : Function.Surjective S.tildeToIdeal := by
   rw [tildeToIdeal, LinearMap.coe_comp]
   exact (LinearEquiv.surjective _).comp (Submodule.mulMap'_surjective S.ideal S.ideal)
+
+/-- If the ideal `m` is a flat `V`-module, the multiplication map `m~ → m` is bijective, so that
+`m~` is just `m` (Gabber–Ramero (2.1.1)). -/
+theorem tildeToIdeal_bijective_of_flat [Module.Flat V S.ideal] :
+    Function.Bijective S.tildeToIdeal := by
+  refine ⟨fun s t hst ↦ ?_, S.tildeToIdeal_surjective⟩
+  have hdisj : S.ideal.LinearDisjoint S.ideal :=
+    .of_right_le_one_of_flat _ _ (le_top.trans_eq Ideal.one_eq_top.symm)
+  exact hdisj.injective (by simpa only [coe_tildeToIdeal, tildeMul] using congrArg Subtype.val hst)
 
 /-! ### Almost zero modules -/
 
@@ -402,15 +419,16 @@ theorem powersGenerate_iff :
       ∀ k : ℕ, 0 < k → Ideal.span ((fun x : V ↦ x ^ k) '' (S.ideal : Set V)) = S.ideal :=
   Iff.rfl
 
-/-- Under condition (A), every element of `m ^ k` is divisible by the `k`-th power of a single
-element of `m`. -/
-theorem IsFilteredPrincipal.exists_pow_dvd (h : S.IsFilteredPrincipal) :
-    ∀ k : ℕ, ∀ x ∈ S.ideal ^ k, ∃ z ∈ S.ideal, z ^ k ∣ x
-  | 0, x, _ => ⟨0, S.ideal.zero_mem, by simp⟩
+/-- If any two elements of an ideal `I` have a common divisor in `I`, as for the ideal of a basic
+setup satisfying condition (A), then every element of `I ^ k` is divisible by the `k`-th power of
+a single element of `I`. -/
+theorem exists_pow_dvd_of_mem_pow {I : Ideal V} (h : ∀ x ∈ I, ∀ y ∈ I, ∃ z ∈ I, z ∣ x ∧ z ∣ y) :
+    ∀ k : ℕ, ∀ x ∈ I ^ k, ∃ z ∈ I, z ^ k ∣ x
+  | 0, x, _ => ⟨0, I.zero_mem, by simp⟩
   | k + 1, x, hx => by
     rw [pow_succ'] at hx
     refine Submodule.mul_induction_on hx (fun a ha b hb ↦ ?_) fun x y hx hy ↦ ?_
-    · obtain ⟨z', hz', hz'b⟩ := h.exists_pow_dvd k b hb
+    · obtain ⟨z', hz', hz'b⟩ := exists_pow_dvd_of_mem_pow h k b hb
       obtain ⟨z, hz, hza, hzz'⟩ := h a ha z' hz'
       exact ⟨z, hz, pow_succ' z k ▸ mul_dvd_mul hza ((pow_dvd_pow_of_dvd hzz' k).trans hz'b)⟩
     · obtain ⟨z₁, hz₁, hz₁x⟩ := hx
@@ -427,8 +445,169 @@ theorem IsFilteredPrincipal.powersGenerate (h : S.IsFilteredPrincipal) : S.Power
   · rintro _ ⟨y, hy, rfl⟩
     exact S.ideal.pow_mem_of_mem hy k hk
   · rw [← S.isIdempotentElem.pow_eq hk.ne'] at hx
-    obtain ⟨z, hz, hzx⟩ := h.exists_pow_dvd k x hx
+    obtain ⟨z, hz, hzx⟩ := exists_pow_dvd_of_mem_pow (isFilteredPrincipal_iff.mp h) k x hx
     exact Ideal.mem_of_dvd _ hzx (Ideal.subset_span ⟨z, hz, rfl⟩)
+
+/-! ### Condition (A) and flatness of `m~` -/
+
+section FilteredPrincipal
+
+variable {I : Ideal V}
+
+/-- A divisibility in `V` between two elements of `I` is a membership in a cyclic submodule
+of `I`. -/
+private theorem mem_span_singleton_of_dvd {x z : I} (h : (z : V) ∣ x) : x ∈ V ∙ z := by
+  obtain ⟨c, hc⟩ := h
+  exact Submodule.mem_span_singleton.mpr ⟨c, Subtype.ext (by simp [hc, mul_comm])⟩
+
+variable (hI : ∀ x ∈ I, ∀ y ∈ I, ∃ z ∈ I, z ∣ x ∧ z ∣ y)
+include hI
+
+/-- Under condition (A), two elements of `I` lie in a common cyclic submodule of `I`. -/
+private theorem exists_mem_span_singleton (x y : I) : ∃ z : I, x ∈ V ∙ z ∧ y ∈ V ∙ z := by
+  obtain ⟨z, hz, hx, hy⟩ := hI x x.2 y y.2
+  exact ⟨⟨z, hz⟩, mem_span_singleton_of_dvd hx, mem_span_singleton_of_dvd hy⟩
+
+/-- Under condition (A), every finitely generated submodule of `I` lies in a cyclic one. -/
+private theorem exists_le_span_singleton {Q : Submodule V I} (hQ : Q.FG) :
+    ∃ z : I, Q ≤ V ∙ z := by
+  classical
+  obtain ⟨s, rfl⟩ := hQ
+  suffices ∃ z : I, ∀ x ∈ s, x ∈ V ∙ z from
+    this.imp fun z hz ↦ Submodule.span_le.mpr hz
+  induction s using Finset.induction_on with
+  | empty => exact ⟨0, by simp⟩
+  | insert a s _ ih =>
+    obtain ⟨z₁, hz₁⟩ := ih
+    obtain ⟨z, ha, h₁⟩ := exists_mem_span_singleton hI a z₁
+    refine ⟨z, fun x hx ↦ ?_⟩
+    rcases Finset.mem_insert.mp hx with rfl | hx
+    · exact ha
+    · exact Submodule.span_singleton_le_iff_mem _ _ |>.mpr h₁ (hz₁ x hx)
+
+/-- Under condition (A), a tensor that vanishes in `I ⊗[V] N` and comes from a finitely
+generated submodule of `I` already vanishes in `(V ∙ z) ⊗[V] N` for some `z ∈ I`. -/
+private theorem exists_rTensor_inclusion_eq_zero (N : Type*) [AddCommGroup N] [Module V N]
+    {P : Submodule V I} (hP : P.FG) {t : P ⊗[V] N} (ht : P.subtype.rTensor N t = 0) :
+    ∃ (z : I) (h : P ≤ V ∙ z), (Submodule.inclusion h).rTensor N t = 0 := by
+  obtain ⟨Q, hPQ, hQ, hQt⟩ := TensorProduct.eq_zero_of_fg_of_subtype_eq_zero hP ht
+  obtain ⟨z, hz⟩ := exists_le_span_singleton hI hQ
+  have : Submodule.inclusion (hPQ.trans hz) =
+      Submodule.inclusion hz ∘ₗ Submodule.inclusion hPQ := by
+    ext; simp
+  exact ⟨z, hPQ.trans hz, by rw [this, LinearMap.rTensor_comp_apply, hQt, map_zero]⟩
+
+omit hI in
+/-- The bilinear map `(V ∙ z) × (V ∙ z) → I`, `(c • z, t) ↦ c • t`, well defined because the
+annihilator of `z` kills `V ∙ z`. -/
+private noncomputable def spanSingletonMul (z : I) : (V ∙ z) →ₗ[V] (V ∙ z) →ₗ[V] I :=
+  (Ideal.torsionOf V I z).liftQ ((LinearMap.lsmul V I).compl₂ (V ∙ z).subtype)
+      (fun u hu ↦ LinearMap.mem_ker.mpr <| LinearMap.ext fun t ↦ by
+        obtain ⟨d, hd⟩ := Submodule.mem_span_singleton.mp t.2
+        rw [Ideal.mem_torsionOf_iff] at hu
+        simp [← hd, hu]) ∘ₗ
+    (Ideal.quotTorsionOfEquivSpanSingleton V I z).symm.toLinearMap
+
+omit hI in
+private theorem spanSingletonMul_apply {z : I} {c : V} {s : V ∙ z} (hs : (s : I) = c • z)
+    (t : V ∙ z) : spanSingletonMul z s t = c • (t : I) := by
+  have : (Ideal.quotTorsionOfEquivSpanSingleton V I z).symm s = Submodule.Quotient.mk c := by
+    rw [LinearEquiv.symm_apply_eq, Ideal.quotTorsionOfEquivSpanSingleton_apply_mk]
+    exact Subtype.ext (by simp [hs])
+  simp only [spanSingletonMul, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, this,
+    Submodule.liftQ_apply, LinearMap.compl₂_apply, LinearMap.lsmul_apply, Submodule.subtype_apply]
+
+/-- Under condition (A), if `a • (x ⊗ x) = 0` in `I ⊗[V] I` then `x = c • z` for some `z ∈ I`
+with `a * c * c * z = 0`: the vanishing already happens in `(V ∙ z) ⊗[V] (V ∙ z) ≅ V ∙ z`. -/
+private theorem exists_eq_smul_and_mul_eq_zero {x : I} {a : V}
+    (h : a • (x ⊗ₜ[V] x) = 0) : ∃ (z : I) (c : V), x = c • z ∧ a * c * c * z = 0 := by
+  let x₀ : V ∙ x := ⟨x, Submodule.mem_span_singleton_self x⟩
+  -- Make the left factor cyclic: the vanishing holds in `(V ∙ z₁) ⊗[V] I`.
+  obtain ⟨z₁, h₁, ht₁⟩ := exists_rTensor_inclusion_eq_zero hI I (Submodule.fg_span_singleton x)
+    (t := a • (x₀ ⊗ₜ x)) (by simpa [x₀] using h)
+  let x₁ : V ∙ z₁ := Submodule.inclusion h₁ x₀
+  -- Swap the factors and make the other factor cyclic as well, containing the first one.
+  obtain ⟨z, h, ht⟩ := exists_rTensor_inclusion_eq_zero hI (V ∙ z₁)
+    (Submodule.fg_span_singleton z₁) (t := a • (x₁ ⊗ₜ x₁)) (by
+      simpa [x₁] using congrArg (TensorProduct.comm V (V ∙ z₁) I) ht₁)
+  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp (h (h₁ x₀.2))
+  have hxz : c * (z : V) = x := by simpa [x₀] using congrArg Subtype.val hc
+  refine ⟨z, c, by simpa [x₀] using hc.symm, ?_⟩
+  -- Apply the identification `(V ∙ z) ⊗[V] (V ∙ z) ≅ V ∙ z`.
+  have := congrArg (TensorProduct.lift (spanSingletonMul z) ∘ₗ
+    (Submodule.inclusion h).lTensor (V ∙ z)) ht
+  simp only [map_smul, LinearMap.rTensor_tmul,
+    LinearMap.coe_comp, Function.comp_apply, LinearMap.lTensor_tmul, TensorProduct.lift.tmul,
+    map_zero] at this
+  rw [spanSingletonMul_apply (c := c) (by simp [x₁, x₀, hc])] at this
+  have := congrArg (Subtype.val : I → V) this
+  simp only [Submodule.coe_smul, Submodule.coe_inclusion, x₁, x₀, smul_eq_mul,
+    ZeroMemClass.coe_zero] at this
+  linear_combination this + a * c * hxz
+
+/-- Under condition (A), finitely many elements of `I ⊗[V] I` are multiples of a single
+`z ⊗ z` with `z ∈ I`. -/
+private theorem exists_forall_mem_span_tmul_self (s : Finset (I ⊗[V] I)) :
+    ∃ z : I, ∀ t ∈ s, t ∈ V ∙ (z ⊗ₜ[V] z) := by
+  classical
+  have hmono {z z' : I} (hz : z ∈ V ∙ z') : V ∙ (z ⊗ₜ[V] z) ≤ V ∙ (z' ⊗ₜ[V] z') := by
+    obtain ⟨d, rfl⟩ := Submodule.mem_span_singleton.mp hz
+    rw [Submodule.span_singleton_le_iff_mem, smul_tmul_smul]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+  have hone (t : I ⊗[V] I) : ∃ z : I, t ∈ V ∙ (z ⊗ₜ[V] z) := by
+    induction t using TensorProduct.inductionOn with
+    | tmul x y =>
+      obtain ⟨z, hx, hy⟩ := exists_mem_span_singleton hI x y
+      obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hx
+      obtain ⟨d, rfl⟩ := Submodule.mem_span_singleton.mp hy
+      rw [smul_tmul_smul]
+      exact ⟨z, Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)⟩
+    | add t t' ht ht' =>
+      obtain ⟨z₁, hz₁⟩ := ht
+      obtain ⟨z₂, hz₂⟩ := ht'
+      obtain ⟨z, h₁, h₂⟩ := exists_mem_span_singleton hI z₁ z₂
+      exact ⟨z, add_mem (hmono h₁ hz₁) (hmono h₂ hz₂)⟩
+  induction s using Finset.induction_on with
+  | empty => exact ⟨0, by simp⟩
+  | insert t s _ ih =>
+    obtain ⟨z₁, hz₁⟩ := ih
+    obtain ⟨z₂, hz₂⟩ := hone t
+    obtain ⟨z, h₁, h₂⟩ := exists_mem_span_singleton hI z₁ z₂
+    refine ⟨z, fun t' ht' ↦ ?_⟩
+    rcases Finset.mem_insert.mp ht' with rfl | ht'
+    · exact hmono h₂ hz₂
+    · exact hmono h₁ (hz₁ t' ht')
+
+/-- **Condition (A) makes `m~` flat** (Gabber–Ramero (2.1.6) and Proposition 2.1.7(i)): if `I` is
+an idempotent ideal any two of whose elements have a common divisor in `I`, so that `I` is the
+directed union of the principal ideals generated by its elements, then `I ⊗[V] I` is a flat
+`V`-module. No element of `I` needs to be a nonzerodivisor. -/
+theorem flat_tilde_of_isFilteredPrincipal (hIdem : IsIdempotentElem I) :
+    Module.Flat V (I ⊗[V] I) := by
+  classical
+  refine Module.Flat.of_forall_isTrivialRelation fun {l f t} hft ↦ ?_
+  -- All the `t i` are multiples `c i • (z ⊗ z)` of a single `z ⊗ z`.
+  obtain ⟨z, hz⟩ := exists_forall_mem_span_tmul_self hI (Finset.univ.image t)
+  choose c hc using fun i ↦ Submodule.mem_span_singleton.mp
+    (hz (t i) (Finset.mem_image_of_mem t (Finset.mem_univ i)))
+  have ha : (∑ i, f i * c i) • (z ⊗ₜ[V] z) = 0 := by
+    simpa [Finset.sum_smul, ← hc, smul_smul] using hft
+  -- Write `z = c' • w` with `a * c' * c' * w = 0`, and `w = y ^ 2 * d` with `y ∈ I`.
+  obtain ⟨w, c', hzw, hw⟩ := exists_eq_smul_and_mul_eq_zero hI ha
+  obtain ⟨y, hy, d, hd⟩ := exists_pow_dvd_of_mem_pow hI 2 w
+    (by rw [hIdem.pow_eq two_ne_zero]; exact w.2)
+  have hzy : z = (c' * y * d) • (⟨y, hy⟩ : I) := by
+    rw [hzw]
+    ext
+    simp only [Submodule.coe_smul, smul_eq_mul, hd]
+    ring
+  refine ⟨1, fun i _ ↦ c i * (c' * y * d) ^ 2, fun _ ↦ ⟨y, hy⟩ ⊗ₜ[V] ⟨y, hy⟩, fun i ↦ ?_,
+    fun _ ↦ ?_⟩
+  · rw [← hc i, hzy, smul_tmul_smul, Fin.sum_univ_one, smul_smul, sq]
+  · rw [Finset.sum_congr rfl fun i _ ↦ (mul_assoc (f i) (c i) _).symm, ← Finset.sum_mul]
+    linear_combination (d : V) * hw - (∑ i, f i * c i) * c' ^ 2 * d * hd
+
+end FilteredPrincipal
 
 end BasicSetup
 
