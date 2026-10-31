@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.ThetaProduct
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Theta.Product
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Uniformization
 import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.Analysis.SpecificLimits.Normed

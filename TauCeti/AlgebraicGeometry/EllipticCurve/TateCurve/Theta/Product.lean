@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Theta
-public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.ThetaCoefficients
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Theta.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Theta.Coefficients
 import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.Data.Int.MulPred
 
