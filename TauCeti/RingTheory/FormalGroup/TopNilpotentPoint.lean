@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import Mathlib.Topology.Algebra.Algebra
 public import TauCeti.RingTheory.FormalGroup.AddInv
+public import TauCeti.RingTheory.FormalGroup.Hom
 public import TauCeti.RingTheory.MvPowerSeries.Evaluation
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
@@ -37,6 +38,8 @@ which mention no topology on `R` either.
   map `F(A) → F(B)`.
 * `FormalGroup.pointEquivTopNilpotentPoint`: the group `F.Point σ` of power-series points is the
   group of points of `F` in `R⟦σ⟧`.
+* `FormalGroup.substPointHom`: substitution of a family of series into power-series points, as an
+  additive map `F.Point σ → F.Point τ`.
 
 ## Main results
 
@@ -45,6 +48,9 @@ which mention no topology on `R` either.
 * `FormalGroup.TopNilpotentPoint.hasSum_val_neg`: `-x` is the sum of the convergent series
   `∑ cₙ xⁿ`, where `i(X) = ∑ cₙ Xⁿ` is the formal inverse.
 * `FormalGroup.TopNilpotentPoint.map_id`, `FormalGroup.TopNilpotentPoint.map_comp`: functoriality.
+* `FormalGroup.substPointHom_X`, `FormalGroup.substPointHom_comp`,
+  `TauCeti.FormalGroupHom.applyPoint_substPointHom`: functoriality of power-series points along
+  substitutions, compatibly with homomorphisms of formal group laws.
 
 ## Implementation notes
 
@@ -290,4 +296,65 @@ theorem val_pointEquivTopNilpotentPoint_symm (x : F.TopNilpotentPoint (MvPowerSe
 
 end PowerSeries
 
+section Subst
+
+open scoped WithPiTopology
+
+variable {σ τ υ : Type*}
+
+/-- **Power-series points are functorial along substitutions.** Substituting a family `a` of
+series into the power-series points of `F` is additive. It is the map of points
+(`FormalGroup.TopNilpotentPoint.map`) induced by the continuous `R`-algebra map
+`subst a : R⟦σ⟧ → R⟦τ⟧`, read through `FormalGroup.pointEquivTopNilpotentPoint`; the product
+topology over discrete `R` is used only in this construction. -/
+noncomputable def substPointHom {a : σ → MvPowerSeries τ R} (ha : HasSubst a) :
+    F.Point σ →+ F.Point τ :=
+  letI : UniformSpace R := ⊥
+  (F.pointEquivTopNilpotentPoint τ).symm.toAddMonoidHom.comp <|
+    (TopNilpotentPoint.map F ⟨substAlgHom ha, by
+      -- the continuity field is stated for the underlying function of `substAlgHom ha`
+      change Continuous (substAlgHom ha : MvPowerSeries σ R → MvPowerSeries τ R)
+      rw [coe_substAlgHom]
+      exact continuous_subst (R := R) (S := R) ha⟩).comp
+      (F.pointEquivTopNilpotentPoint σ).toAddMonoidHom
+
+@[simp]
+theorem val_substPointHom {a : σ → MvPowerSeries τ R} (ha : HasSubst a) (x : F.Point σ) :
+    (F.substPointHom ha x).val = x.val.subst a := by
+  rw [← coe_substAlgHom ha]
+  rfl
+
+/-- Substituting the variables themselves is the identity on points. -/
+@[simp]
+theorem substPointHom_X :
+    F.substPointHom (HasSubst.X (σ := σ) (S := R)) = AddMonoidHom.id (F.Point σ) :=
+  AddMonoidHom.ext fun x ↦ Subtype.ext <| by
+    rw [val_substPointHom, subst_self, id, AddMonoidHom.id_apply]
+
+/-- Substituting `a` and then `b` into points is substituting the composite family. -/
+theorem substPointHom_comp {a : σ → MvPowerSeries τ R} {b : τ → MvPowerSeries υ R}
+    (ha : HasSubst a) (hb : HasSubst b) :
+    (F.substPointHom hb).comp (F.substPointHom ha) = F.substPointHom (ha.comp hb) :=
+  AddMonoidHom.ext fun x ↦ Subtype.ext <| by
+    simp only [AddMonoidHom.comp_apply, val_substPointHom, subst_comp_subst_apply ha hb,
+      coe_substAlgHom]
+
+end Subst
+
 end FormalGroup
+
+namespace TauCeti.FormalGroupHom
+
+open FormalGroup
+
+variable {R : Type*} [CommRing R] {F G : FormalGroup R} {σ τ : Type*}
+
+/-- Applying a homomorphism of formal group laws to points commutes with substitution. -/
+theorem applyPoint_substPointHom (f : FormalGroupHom F G) {a : σ → MvPowerSeries τ R}
+    (ha : HasSubst a) (x : F.Point σ) :
+    f.applyPoint (F.substPointHom ha x) = G.substPointHom ha (f.applyPoint x) :=
+  Subtype.ext <| by
+    rw [applyPoint_val, val_substPointHom, val_substPointHom, applyPoint_val]
+    exact (subst_powerSeriesSubst ha x.prop f.toPowerSeries).symm
+
+end TauCeti.FormalGroupHom

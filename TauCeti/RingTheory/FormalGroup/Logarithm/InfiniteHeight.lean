@@ -73,40 +73,36 @@ namespace FormalGroup
 
 variable {R : Type*} [CommRing R] (F : FormalGroup R)
 
-section AddError
+section HomDefect
 
-/-- The failure `g(F(X, Y)) - g(X) - g(Y)` of `g` to be additive along `F`. -/
-private noncomputable def addError (g : PowerSeries R) : MvPowerSeries (Fin 2) R :=
-  PowerSeries.subst F.toPowerSeries g - PowerSeries.subst (X 0) g - PowerSeries.subst (X 1) g
-
-private theorem addError_sub (g h : PowerSeries R) :
-    addError F (g - h) = addError F g - addError F h := by
+private theorem homDefect_𝔾ₐ_sub {g h : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
+    (hh : PowerSeries.constantCoeff h = 0) :
+    F.homDefect 𝔾ₐ (g - h) = F.homDefect 𝔾ₐ g - F.homDefect 𝔾ₐ h := by
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  simp only [addError, PowerSeries.subst_sub hF, PowerSeries.subst_sub (PowerSeries.HasSubst.X _)]
+  rw [F.homDefect_𝔾ₐ (by rw [map_sub, hg, hh, sub_zero]), F.homDefect_𝔾ₐ hg, F.homDefect_𝔾ₐ hh]
+  simp only [PowerSeries.subst_sub hF, PowerSeries.subst_sub (PowerSeries.HasSubst.X _)]
   ring
 
-private theorem addError_eq_zero_iff {g : PowerSeries R} :
-    addError F g = 0 ↔
-      PowerSeries.subst F.toPowerSeries g = PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g :=
-  by rw [addError, sub_sub, sub_eq_zero]
-
 /-- The additivity defect of `g` vanishes to the order of `g`. -/
-private theorem le_order_addError {g : PowerSeries R} {n : ℕ} (hg : n ≤ g.order) :
-    (n : ℕ∞) ≤ (addError F g).order := by
+private theorem le_order_homDefect_𝔾ₐ {g : PowerSeries R} (hg₀ : PowerSeries.constantCoeff g = 0)
+    {n : ℕ} (hg : n ≤ g.order) : (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order := by
   have h {x : MvPowerSeries (Fin 2) R} (hx : constantCoeff x = 0) :
       (n : ℕ∞) ≤ (PowerSeries.subst x g).order :=
     hg.trans (PowerSeries.le_order_subst_left hx)
+  rw [F.homDefect_𝔾ₐ hg₀]
   exact le_order_sub (le_order_sub (h F.zero_constantCoeff) (h (constantCoeff_X 0)))
     (h (constantCoeff_X 1))
 
-/-- The lowest-degree part of the additivity defect of `c Xⁿ` is `c ((X + Y)ⁿ - Xⁿ - Yⁿ)`. -/
-private theorem homogeneousComponent_addError_smul_X_pow (c : R) (n : ℕ) :
-    homogeneousComponent n (addError F (c • PowerSeries.X ^ n)) =
+/-- The lowest-degree part of the additivity defect of `c Xⁿ`, `n ≠ 0`, is
+`c ((X + Y)ⁿ - Xⁿ - Yⁿ)`. -/
+private theorem homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow (c : R) {n : ℕ} (hn : n ≠ 0) :
+    homogeneousComponent n (F.homDefect 𝔾ₐ (c • PowerSeries.X ^ n)) =
       ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
         MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) := by
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  simp only [addError, PowerSeries.subst_smul hF, PowerSeries.subst_smul (hX _),
+  rw [F.homDefect_𝔾ₐ (by simp [hn])]
+  simp only [PowerSeries.subst_smul hF, PowerSeries.subst_smul (hX _),
     PowerSeries.subst_pow hF, PowerSeries.subst_pow (hX _), PowerSeries.subst_X hF,
     PowerSeries.subst_X (hX _), map_sub, _root_.map_smul,
     homogeneousComponent_pow_of_constantCoeff_eq_zero F.zero_constantCoeff,
@@ -117,16 +113,7 @@ private theorem homogeneousComponent_addError_smul_X_pow (c : R) (n : ℕ) :
   simp only [map_mul, map_sub, map_pow, map_add, MvPolynomial.coeToMvPowerSeries.ringHom_apply,
     MvPolynomial.coe_X, MvPolynomial.coe_C, MvPowerSeries.smul_eq_C_mul, mul_sub]
 
-/-- The additivity defect of `g` is its homomorphism defect from `F` to the additive formal group
-law. -/
-private theorem addError_eq_homDefect {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0) :
-    addError F g = F.homDefect 𝔾ₐ g := by
-  have hE := HasSubst.toMvPowerSeries (σ := Fin 2) hg
-  rw [addError, homDefect_def, 𝔾ₐ_toPowerSeries, subst_add hE, subst_X hE, subst_X hE]
-  simp only [PowerSeries.toMvPowerSeries_eq_subst]
-  ring
-
-end AddError
+end HomDefect
 
 section PSeries
 
@@ -135,26 +122,24 @@ variable {F}
 /-- **The inductive step.** If `[p]_F = 0` and the additivity defect of `g` vanishes below degree
 `n ≥ 2`, subtracting a suitable multiple `c Xⁿ` makes it vanish below degree `n + 1`, and `c = 0`
 when `n` is a power of `p`. -/
-private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp : p.Prime)
+private theorem exists_le_order_homDefect_𝔾ₐ_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp : p.Prime)
     (hF : F.nsmulSeries p = 0) {n : ℕ} (hn₂ : 2 ≤ n) {g : PowerSeries R}
-    (hg : PowerSeries.constantCoeff g = 0) (hn : n ≤ (addError F g).order) :
-    ∃ c : R, ((n + 1 : ℕ) : ℕ∞) ≤ (addError F (g - c • PowerSeries.X ^ n)).order ∧
+    (hg : PowerSeries.constantCoeff g = 0) (hn : n ≤ (F.homDefect 𝔾ₐ g).order) :
+    ∃ c : R, ((n + 1 : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ (g - c • PowerSeries.X ^ n)).order ∧
       ∀ k, n = p ^ k → c = 0 := by
   have hpR : (p : R) = 0 := F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
-  have hn' : (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order := addError_eq_homDefect F hg ▸ hn
-  obtain ⟨r, hr⟩ := F.exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle hg (by omega) hn'
-  rw [← addError_eq_homDefect F hg] at hr
+  obtain ⟨r, hr⟩ := F.exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle hg (by omega) hn
   by_cases hpow : ∃ k, n = p ^ k
   · obtain ⟨k, rfl⟩ := hpow
     have hk : k ≠ 0 := by
       rintro rfl
       simp at hn₂
     -- the obstruction is the coefficient of `Xⁿ` in `[p]_{𝔾ₐ}(g(X)) - g([p]_F(X)) = 0`
-    have h0 := F.homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hk hn'
+    have h0 := F.homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hk hn
     have hp0 : (p : PowerSeries R) = 0 := by rw [← map_natCast PowerSeries.C, hpR, map_zero]
-    rw [nsmulSeries_𝔾ₐ, hF, hp0, zero_mul, PowerSeries.subst_zero,
+    simp only [nsmulSeries_𝔾ₐ, hF, hp0, zero_mul, PowerSeries.subst_zero,
       PowerSeries.subst_zero_of_constantCoeff_zero hg, sub_zero, map_zero, zero_smul,
-      MvPolynomial.coe_zero, ← addError_eq_homDefect F hg] at h0
+      MvPolynomial.coe_zero] at h0
     refine ⟨0, ?_, fun _ _ ↦ rfl⟩
     rw [zero_smul, sub_zero]
     exact succ_le_order_of_homogeneousComponent_eq_zero hn h0
@@ -166,7 +151,7 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp
       have : IsCoprime ((TauCeti.lazardGcd n : ℕ) : R) (p : R) := by
         simpa using (Nat.isCoprime_iff_coprime.mpr hcop).intCast (R := R)
       rwa [hpR, isCoprime_zero_right] at this
-    have hc : homogeneousComponent n (addError F g) = ↑((r * ↑hd.unit⁻¹) •
+    have hc : homogeneousComponent n (F.homDefect 𝔾ₐ g) = ↑((r * ↑hd.unit⁻¹) •
         ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
           MvPolynomial.X 1 ^ n : MvPolynomial (Fin 2) R)) := by
       rw [hr, ← TauCeti.lazardGcd_nsmul_lazardCocycle (by omega), ← Nat.cast_smul_eq_nsmul R,
@@ -175,11 +160,14 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp
     refine ⟨c, ?_, fun k hk ↦ (hpow ⟨k, hk⟩).elim⟩
     have hXn : (n : ℕ∞) ≤ (c • PowerSeries.X ^ n : PowerSeries R).order :=
       PowerSeries.nat_le_order _ _ fun i hi ↦ by simp [PowerSeries.coeff_X_pow, hi.ne]
-    have hn' : (n : ℕ∞) ≤ (addError F (g - c • PowerSeries.X ^ n)).order := by
-      rw [addError_sub]
-      exact le_order_sub hn (le_order_addError F hXn)
+    have hXn₀ : PowerSeries.constantCoeff (c • PowerSeries.X ^ n : PowerSeries R) = 0 := by
+      simp [show n ≠ 0 by omega]
+    have hn' : (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ (g - c • PowerSeries.X ^ n)).order := by
+      rw [homDefect_𝔾ₐ_sub F hg hXn₀]
+      exact le_order_sub hn (le_order_homDefect_𝔾ₐ F hXn₀ hXn)
     refine succ_le_order_of_homogeneousComponent_eq_zero hn' ?_
-    rw [addError_sub, map_sub, homogeneousComponent_addError_smul_X_pow, hc, sub_self]
+    rw [homDefect_𝔾ₐ_sub F hg hXn₀, map_sub,
+      homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow F c (by omega), hc, sub_self]
 
 end PSeries
 
@@ -219,19 +207,19 @@ private theorem coeff_approxLimit (c : ℕ → PowerSeries R → R) {m n : ℕ} 
 /-- **Existence of the normalised logarithm**, by passing to the limit of the approximations. -/
 private theorem exists_logarithm [F.IsComm] {p : ℕ} (hp : p.Prime) (hF : F.nsmulSeries p = 0) :
     ∃ g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧ PowerSeries.coeff 1 g = 1 ∧
-      (∀ k, 0 < k → PowerSeries.coeff (p ^ k) g = 0) ∧ addError F g = 0 := by
+      (∀ k, 0 < k → PowerSeries.coeff (p ^ k) g = 0) ∧ F.homDefect 𝔾ₐ g = 0 := by
   choose! c hc using fun (n : ℕ) (g : PowerSeries R) (hn₂ : 2 ≤ n)
-    (hg : PowerSeries.constantCoeff g = 0) (hn : (n : ℕ∞) ≤ (addError F g).order) ↦
-    exists_le_order_addError_sub_smul_X_pow hp hF hn₂ hg hn
+    (hg : PowerSeries.constantCoeff g = 0) (hn : (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order) ↦
+    exists_le_order_homDefect_𝔾ₐ_sub_smul_X_pow hp hF hn₂ hg hn
   -- `approx c n` is normalised and additive along `F` below degree `n + 2`
   have key (n : ℕ) : PowerSeries.constantCoeff (approx c n) = 0 ∧
-      ((n + 2 : ℕ) : ℕ∞) ≤ (addError F (approx c n)).order ∧
+      ((n + 2 : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ (approx c n)).order ∧
       ∀ k, 0 < k → PowerSeries.coeff (p ^ k) (approx c n) = 0 := by
     induction n with
     | zero =>
       have hF' := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
       refine ⟨PowerSeries.constantCoeff_X, ?_, fun k hk ↦ ?_⟩
-      · rw [approx, addError, PowerSeries.subst_X hF',
+      · rw [approx, F.homDefect_𝔾ₐ PowerSeries.constantCoeff_X, PowerSeries.subst_X hF',
           PowerSeries.subst_X (PowerSeries.HasSubst.X _),
           PowerSeries.subst_X (PowerSeries.HasSubst.X _), sub_sub]
         exact two_le_order_sub_X_add_X F.zero_constantCoeff F.lin_coeff_X F.lin_coeff_Y
@@ -244,9 +232,10 @@ private theorem exists_logarithm [F.IsComm] {p : ℕ} (hp : p.Prime) (hF : F.nsm
       split_ifs with h
       · simp [hc₀ k h.symm]
       · simp
-  refine ⟨approxLimit c, ?_, ?_, fun k hk ↦ ?_, ?_⟩
-  · rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_approxLimit c (n := 0) (by omega),
+  have h₀ : PowerSeries.constantCoeff (approxLimit c) = 0 := by
+    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_approxLimit c (n := 0) (by omega),
       PowerSeries.coeff_zero_eq_constantCoeff_apply, (key 0).1]
+  refine ⟨approxLimit c, h₀, ?_, fun k hk ↦ ?_, ?_⟩
   · rw [coeff_approxLimit c (n := 0) (by omega)]
     simp [approx]
   · rw [coeff_approxLimit c (n := p ^ k) (by omega), (key _).2.2 k hk]
@@ -254,8 +243,8 @@ private theorem exists_logarithm [F.IsComm] {p : ℕ} (hp : p.Prime) (hF : F.nsm
     refine order_eq_top_iff.mp (top_le_iff.mp (ENat.forall_natCast_le_iff_le.mp fun m _ ↦ ?_))
     have hlim : ((m + 2 : ℕ) : ℕ∞) ≤ (approxLimit c - approx c m).order :=
       PowerSeries.nat_le_order _ _ fun i hi ↦ by rw [map_sub, coeff_approxLimit c hi, sub_self]
-    have hdiff := le_order_addError F hlim
-    rw [addError_sub] at hdiff
+    have hdiff := le_order_homDefect_𝔾ₐ F (by rw [map_sub, h₀, (key m).1, sub_zero]) hlim
+    rw [homDefect_𝔾ₐ_sub F h₀ (key m).1] at hdiff
     have h := le_order_add (key m).2.1 hdiff
     rw [add_sub_cancel] at h
     exact (Nat.cast_le.mpr (by omega : m ≤ m + 2)).trans h
@@ -306,9 +295,10 @@ theorem existsUnique_logarithm_of_nsmulSeries_eq_zero [F.IsComm] {p : ℕ} (hp :
       PowerSeries.subst F.toPowerSeries g =
         PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g := by
   obtain ⟨g, h₀, h₁, hpow, hg⟩ := F.exists_logarithm hp hF
-  refine ⟨g, ⟨h₀, h₁, hpow, (addError_eq_zero_iff F).mp hg⟩, fun g' ⟨h₀', h₁', hpow', hg'⟩ ↦ ?_⟩
+  rw [F.homDefect_𝔾ₐ h₀, sub_sub, sub_eq_zero] at hg
+  refine ⟨g, ⟨h₀, h₁, hpow, hg⟩, fun g' ⟨h₀', h₁', hpow', hg'⟩ ↦ ?_⟩
   exact F.logarithm_unique_of_natCast_eq_zero hp (F.natCast_eq_zero_of_nsmulSeries_eq_zero hF)
-    h₀' h₁' hpow' hg' h₀ h₁ hpow ((addError_eq_zero_iff F).mp hg)
+    h₀' h₁' hpow' hg' h₀ h₁ hpow hg
 
 /-- **A formal group law of infinite height is additive.** If `p` is a prime and `F` is a
 commutative formal group law with `[p]_F = 0`, then `F` is strictly isomorphic to the additive

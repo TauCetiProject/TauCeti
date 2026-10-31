@@ -7,12 +7,13 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
--- Proof-only: the pure-power coefficients of a formal group law, the symmetric 2-cocycle lemma,
--- lowest-degree parts of substitutions, two-variable substitution identities, and the
+-- Proof-only: the order filtration on points, substitution into points, the symmetric 2-cocycle
+-- lemma, lowest-degree parts of substitutions, two-variable substitution identities, and the
 -- permutations of `Fin 2`.
 import TauCeti.Data.Fin.Basic
-import TauCeti.RingTheory.FormalGroup.LazardRing.Basic
+import TauCeti.RingTheory.FormalGroup.Point.Order
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
+import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
@@ -34,23 +35,25 @@ The argument takes place in the group `G.Point σ` of power-series points of `G`
 `δ(x, y) = f(x + y) - f(x) - f(y)`, computed there, satisfies the cocycle identity, the symmetry
 and the telescoping `f(p x) - p f(x) = ∑_{j < p} δ(j x, x)` exactly, as identities in an abelian
 group. The points vanishing to order `N ≥ 1` form a subgroup on which the degree-`N` part is
-additive (`FormalGroup.le_order_subst_sub_sub`: `G(w, v) = w + v` up to degree `N + 1` when `w`
-vanishes to order `N`), so these identities pass to the degree-`n` part of the defect, which is
-then a symmetric additive 2-cocycle, hence a multiple of `C_n` by the symmetric 2-cocycle lemma
-`TauCeti.exists_eq_smul_lazardCocycle`; its value in degree `pᵏ` comes from the identity
+additive (`FormalGroup.homogeneousComponent_val_sub`, from `FormalGroup.le_order_subst_sub_sub`:
+`G(w, v) = w + v` up to degree `N + 1` when `w` vanishes to order `N`), and the defect at any pair
+of points is obtained from the defect at the coordinate points by substitution
+(`FormalGroup.substPointHom`), so these identities pass to the degree-`n` part of the defect,
+which is then a symmetric additive 2-cocycle, hence a multiple of `C_n` by the symmetric 2-cocycle
+lemma `TauCeti.exists_eq_smul_lazardCocycle`; its value in degree `pᵏ` comes from the identity
 `∑_{j < p} C_{pᵏ}(j, 1) = -1` in characteristic `p`.
 
 ## Main definitions
 
 * `FormalGroup.homDefect`: the homomorphism defect `f(F(X, Y)) - G(f(X), f(Y))`.
-* `FormalGroup.substPointHom`: substitution into power-series points, as an additive map.
+* `TauCeti.FormalGroupHom.ofHomDefectEqZero`: a series without constant term whose homomorphism
+  defect vanishes, as a homomorphism of formal group laws.
 
 ## Main results
 
-* `FormalGroup.le_order_subst_sub_sub`: if `w` vanishes to order `N ≥ 1` and `v` has no constant
-  term, then `G(w, v) - w - v` vanishes to order `N + 1`.
-* `FormalGroup.homogeneousComponent_val_sub`: on points vanishing to order `N`, subtraction in
-  `G` agrees with ordinary subtraction in degree `N`.
+* `TauCeti.FormalGroupHom.homDefect_toPowerSeries`: homomorphisms have zero defect.
+* `FormalGroup.homDefect_𝔾ₐ`: the defect towards the additive formal group law is
+  `f(F(X, Y)) - f(X) - f(Y)`.
 * `FormalGroup.exists_homogeneousComponent_eq_smul_lazardCocycle`: the leading term of a symmetric
   series satisfying the 2-cocycle identity along a formal group law up to higher-order terms is a
   multiple of the Lazard cocycle.
@@ -73,195 +76,7 @@ open MvPowerSeries
 namespace FormalGroup
 variable {R : Type*} [CommRing R]
 
-section Order
-variable (G : FormalGroup R) {σ : Type*}
-
-/-- **A formal group law is additive to first order.** If `w` vanishes to order `N ≥ 1` and `v`
-has no constant term, then `G(w, v) - w - v` vanishes to order `N + 1`: the monomials of
-`G(X, Y) - X - Y` have degree at least two and are divisible by `X`, since `G(0, Y) = Y`. -/
-theorem le_order_subst_sub_sub {N : ℕ} (hN : N ≠ 0) {w v : MvPowerSeries σ R}
-    (hw : (N : ℕ∞) ≤ w.order) (hv : constantCoeff v = 0) :
-    ((N + 1 : ℕ) : ℕ∞) ≤ (G.toPowerSeries.subst ![w, v] - w - v).order := by
-  have hw₀ : constantCoeff w = 0 :=
-    order_ne_zero_iff_constCoeff_eq_zero.mp (by intro h; rw [h] at hw; simp_all)
-  have hwv : HasSubst ![w, v] := hasSubst_of_constantCoeff_zero fun i ↦ by
-    fin_cases i <;> simp [hw₀, hv]
-  have hD : G.toPowerSeries.subst ![w, v] - w - v =
-      (G.toPowerSeries - (X 0 + X 1)).subst ![w, v] := by
-    rw [subst_sub hwv, subst_add hwv, subst_X hwv, subst_X hwv]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
-    ring
-  rw [hD]
-  refine le_trans ?_ (le_weightedOrder_subst (fun _ ↦ 1) hwv _)
-  simp only [ne_eq, le_iInf_iff]
-  intro d hd
-  have hG := two_le_order_sub_X_add_X G.zero_constantCoeff G.lin_coeff_X G.lin_coeff_Y
-  -- the monomials of `G - X - Y` have degree at least two
-  have hdeg : 2 ≤ d.degree := by
-    by_contra h
-    exact hd (coeff_of_lt_order (lt_of_lt_of_le (by exact_mod_cast not_le.mp h) hG))
-  -- and are not pure powers of `Y`, since `G(0, Y) = Y`
-  have hd0 : d 0 ≠ 0 := by
-    intro h0
-    have hd' : d = Finsupp.single 1 (d 1) := by
-      ext i; fin_cases i <;> simp [h0]
-    have h1 : d 1 ≠ 1 := by
-      intro h1
-      rw [Finsupp.degree_eq_sum, Fin.sum_univ_two, h0, h1] at hdeg
-      omega
-    apply hd
-    rw [hd', map_sub, map_add, coeff_single_one, ite_eq_right_iff.mpr (fun h ↦ (h1 h).elim),
-      coeff_X, coeff_X]
-    simp [Finsupp.single_eq_single_iff, h1]
-  have hv' : (1 : ℕ∞) ≤ v.order :=
-    Order.one_le_iff_ne_zero.mpr (order_ne_zero_iff_constCoeff_eq_zero.mpr hv)
-  rw [Finsupp.weight_apply, Finsupp.sum_fintype _ _ (by simp), Fin.sum_univ_two]
-  simp only [Function.comp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, nsmul_eq_mul]
-  -- `order` is by definition `weightedOrder` for the weight `1`
-  change ((N + 1 : ℕ) : ℕ∞) ≤ (d 0 : ℕ∞) * w.order + (d 1 : ℕ∞) * v.order
-  have hdeg' : 2 ≤ d 0 + d 1 := by rwa [Finsupp.degree_eq_sum, Fin.sum_univ_two] at hdeg
-  have key : N + 1 ≤ d 0 * N + d 1 := by
-    rcases Nat.lt_or_ge (d 0) 2 with h | h
-    · have : d 0 = 1 := by omega
-      rw [this]; omega
-    · have := Nat.mul_le_mul_right N h
-      omega
-  calc ((N + 1 : ℕ) : ℕ∞) ≤ ((d 0 * N + d 1 : ℕ) : ℕ∞) := by exact_mod_cast key
-    _ = (d 0 : ℕ∞) * N + (d 1 : ℕ∞) * 1 := by push_cast; ring
-    _ ≤ _ := by gcongr
-
-/-- The points of `G` vanishing to order `N` are closed under addition. -/
-theorem le_order_val_add {N : ℕ∞} {x y : G.Point σ} (hx : N ≤ x.val.order)
-    (hy : N ≤ y.val.order) : N ≤ (x + y).val.order := by
-  rw [add_apply]
-  refine le_trans ?_ (le_order_subst (hasSubst_finTwo x.prop y.prop) _)
-  have hG : (1 : ℕ∞) ≤ G.toPowerSeries.order :=
-    Order.one_le_iff_ne_zero.mpr (order_ne_zero_iff_constCoeff_eq_zero.mpr G.zero_constantCoeff)
-  calc N = N * 1 := (mul_one N).symm
-    _ ≤ _ := mul_le_mul' (le_iInf fun i ↦ by fin_cases i <;> simpa) hG
-
-/-- The points of `G` vanishing to order `N` are closed under negation. -/
-theorem le_order_val_neg {N : ℕ∞} {x : G.Point σ} (hx : N ≤ x.val.order) :
-    N ≤ (-x).val.order := by
-  rw [neg_apply]
-  refine le_trans ?_ (PowerSeries.le_order_subst _ x.prop _)
-  have hi : (1 : ℕ∞) ≤ G.addInvX.order := by
-    rw [PowerSeries.order_eq_order]
-    exact Order.one_le_iff_ne_zero.mpr
-      (order_ne_zero_iff_constCoeff_eq_zero.mpr G.constantCoeff_addInvX)
-  calc N = N * 1 := (mul_one N).symm
-    _ ≤ _ := mul_le_mul' hx hi
-
-/-- The points of `G` vanishing to order `N` are closed under subtraction. -/
-theorem le_order_val_sub {N : ℕ∞} {x y : G.Point σ} (hx : N ≤ x.val.order)
-    (hy : N ≤ y.val.order) : N ≤ (x - y).val.order := by
-  rw [sub_eq_add_neg]
-  exact G.le_order_val_add hx (G.le_order_val_neg hy)
-
-/-- If `x - y` vanishes to order `N ≥ 1` in the points of `G` and `y` has no constant term, then
-subtraction in `G` agrees with ordinary subtraction up to degree `N + 1`. -/
-theorem le_order_val_sub_val_sub {N : ℕ} (hN : N ≠ 0) {x y : G.Point σ}
-    (hy : constantCoeff y.val = 0) (h : (N : ℕ∞) ≤ (x - y).val.order) :
-    ((N + 1 : ℕ) : ℕ∞) ≤ (x.val - y.val - (x - y).val).order := by
-  have hx : x.val = G.toPowerSeries.subst ![(x - y).val, y.val] := by
-    rw [← add_apply, sub_add_cancel]
-  have := G.le_order_subst_sub_sub hN h hy
-  rw [hx]
-  convert this using 2
-  ring
-
-/-- On points whose difference in `G` vanishes to order `N ≥ 1`, the degree-`N` part of the
-difference in `G` is the degree-`N` part of the ordinary difference. -/
-theorem homogeneousComponent_val_sub {N : ℕ} (hN : N ≠ 0) {x y : G.Point σ}
-    (hy : constantCoeff y.val = 0) (h : (N : ℕ∞) ≤ (x - y).val.order) :
-    homogeneousComponent N (x - y).val = homogeneousComponent N (x.val - y.val) := by
-  have h' := G.le_order_val_sub_val_sub hN hy h
-  rw [← sub_eq_zero, ← map_sub]
-  ext d
-  rw [coeff_homogeneousComponent, map_zero]
-  split_ifs with hd
-  · have hlt : (d.degree : ℕ∞) < ((N + 1 : ℕ) : ℕ∞) := by
-      rw [hd]; exact_mod_cast Nat.lt_succ_self N
-    exact coeff_of_lt_order (hlt.trans_le (by rwa [← neg_sub, order_neg]))
-  · rfl
-
-/-- If `x` and `y` have no constant term and `x - y` vanishes to order `N` as power series, then
-the difference `x - y` in the points of `G` vanishes to order `N` too. -/
-theorem le_order_val_sub_of_le_order_sub {N : ℕ} {x y : G.Point σ}
-    (hx : constantCoeff x.val = 0) (hy : constantCoeff y.val = 0)
-    (h : (N : ℕ∞) ≤ (x.val - y.val).order) : (N : ℕ∞) ≤ (x - y).val.order := by
-  have one_le {z : MvPowerSeries σ R} (hz : constantCoeff z = 0) : (1 : ℕ∞) ≤ z.order :=
-    Order.one_le_iff_ne_zero.mpr (order_ne_zero_iff_constCoeff_eq_zero.mpr hz)
-  induction N with
-  | zero => simp
-  | succ m ih =>
-    have ih := ih (le_trans (by exact_mod_cast Nat.le_succ m) h)
-    rcases Nat.eq_zero_or_pos m with rfl | hm
-    · exact G.le_order_val_sub (one_le hx) (one_le hy)
-    · have h' := G.le_order_val_sub_val_sub hm.ne' hy ih
-      have := le_order_sub h h'
-      rwa [sub_sub_cancel] at this
-
-/-- Sums of points without constant term have no constant term. -/
-private theorem constantCoeff_val_add {x y : G.Point σ}
-    (hx : constantCoeff x.val = 0) (hy : constantCoeff y.val = 0) :
-    constantCoeff (x + y).val = 0 := by
-  rw [add_apply, constantCoeff_subst_of_constantCoeff_zero (hasSubst_finTwo x.prop y.prop)
-    (fun i ↦ by fin_cases i <;> assumption), G.zero_constantCoeff, map_zero]
-
-end Order
-
-section Subst
-
-variable (G : FormalGroup R) {σ τ : Type*}
-
-/-- Substituting a family `a` of series into the power-series points of `G` is additive: the
-points of a formal group law are functorial along substitutions. -/
-noncomputable def substPointHom {a : σ → MvPowerSeries τ R} (ha : HasSubst a) :
-    G.Point σ →+ G.Point τ :=
-  AddMonoidHom.mk' (fun x ↦ ⟨x.val.subst a, IsNilpotent_subst ha x.prop⟩) fun x y ↦
-    Subtype.ext <| by
-      simp only [add_apply]
-      rw [subst_comp_subst_apply (hasSubst_finTwo x.prop y.prop) ha]
-      congr 1
-      funext i
-      fin_cases i <;> rfl
-
-@[simp]
-theorem val_substPointHom {a : σ → MvPowerSeries τ R} (ha : HasSubst a) (x : G.Point σ) :
-    (G.substPointHom ha x).val = x.val.subst a := (rfl)
-
-end Subst
-
 section Cocycle
-
-/-- The degree-`n` part of a two-variable series, as a polynomial. -/
-private noncomputable def leadingPoly (n : ℕ) (Φ : MvPowerSeries (Fin 2) R) :
-    MvPolynomial (Fin 2) R :=
-  MvPolynomial.homogeneousComponent n (truncTotal (n + 1) Φ)
-
-private theorem coe_leadingPoly (n : ℕ) (Φ : MvPowerSeries (Fin 2) R) :
-    (leadingPoly n Φ : MvPowerSeries (Fin 2) R) = homogeneousComponent n Φ := by
-  ext d
-  rw [MvPolynomial.coeff_coe, leadingPoly, MvPolynomial.coeff_homogeneousComponent,
-    coeff_homogeneousComponent]
-  split_ifs with hd
-  · exact coeff_truncTotal _ (by omega)
-  · rfl
-
-/-- If `Φ` vanishes below degree `n`, the degree-`n` part of `Φ(x)` for a family `x` of series
-without constant term is the degree-`n` part of `Φ` evaluated at the linear parts of `x`. -/
-private theorem homogeneousComponent_subst_eq_aeval {τ : Type*} {n : ℕ}
-    {Φ : MvPowerSeries (Fin 2) R} (hn : n ≤ Φ.order) {x : Fin 2 → MvPowerSeries τ R}
-    (hx : HasSubst x) (hx₀ : ∀ i, constantCoeff (x i) = 0) {l : Fin 2 → MvPolynomial τ R}
-    (hl : ∀ i, homogeneousComponent 1 (x i) = l i) :
-    homogeneousComponent n (Φ.subst x) =
-      (MvPolynomial.aeval l (leadingPoly n Φ) : MvPowerSeries τ R) := by
-  rw [homogeneousComponent_subst_of_le_order hn hx hx₀, ← coe_leadingPoly, subst_coe]
-  simp_rw [hl]
-  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
-    (leadingPoly n Φ) (f := l)).symm
 
 /-- **Leading terms of symmetric 2-cocycles.** Let `F` be a formal group law and let
 `Φ(X, Y)` be a symmetric series vanishing below degree `n ≠ 0` that satisfies the 2-cocycle
@@ -282,14 +97,14 @@ theorem exists_homogeneousComponent_eq_smul_lazardCocycle (F : FormalGroup R) {n
     rw [constantCoeff_subst_of_constantCoeff_zero (hasSubst_finTwo (hX i) (hX j))
       (fun s ↦ by fin_cases s <;> simp) F.toPowerSeries, F.zero_constantCoeff, map_zero]
   -- the leading polynomial is an additive 2-cocycle
-  have hcoc : (leadingPoly n Φ).IsAddCocycle₂ := by
+  have hcoc : (homogeneousComponentPolynomial n Φ).IsAddCocycle₂ := by
     have h := homogeneousComponent_of_lt_order_eq_zero
       (lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self n) hcocycle)
     rw [map_sub, map_sub, map_add,
-      homogeneousComponent_subst_eq_aeval hΦ (hasSubst_finTwo (hX 0) (hX 1))
+      homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX 0) (hX 1))
         (l := ![MvPolynomial.X 0, MvPolynomial.X 1]) (fun i ↦ by fin_cases i <;> simp)
         (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]),
-      homogeneousComponent_subst_eq_aeval hΦ
+      homogeneousComponent_subst_eq_coe_aeval hΦ
         (hasSubst_finTwo (F.hasSubst_subst_pair (hX 0) (hX 1)) (hX 2))
         (l := ![MvPolynomial.X 0 + MvPolynomial.X 1, MvPolynomial.X 2])
         (fun i ↦ by fin_cases i <;> simp [hF₀])
@@ -297,7 +112,7 @@ theorem exists_homogeneousComponent_eq_smul_lazardCocycle (F : FormalGroup R) {n
           fin_cases i <;>
             simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
               F.lin_coeff_Y (hX₀ 0) (hX₀ 1), homogeneousComponent_one_X]),
-      homogeneousComponent_subst_eq_aeval hΦ
+      homogeneousComponent_subst_eq_coe_aeval hΦ
         (hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2)))
         (l := ![MvPolynomial.X 0, MvPolynomial.X 1 + MvPolynomial.X 2])
         (fun i ↦ by fin_cases i <;> simp [hF₀])
@@ -305,7 +120,7 @@ theorem exists_homogeneousComponent_eq_smul_lazardCocycle (F : FormalGroup R) {n
           fin_cases i <;>
             simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
               F.lin_coeff_Y (hX₀ 1) (hX₀ 2), homogeneousComponent_one_X]),
-      homogeneousComponent_subst_eq_aeval hΦ (hasSubst_finTwo (hX 1) (hX 2))
+      homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX 1) (hX 2))
         (l := ![MvPolynomial.X 1, MvPolynomial.X 2]) (fun i ↦ by fin_cases i <;> simp)
         (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X])] at h
     rw [MvPolynomial.isAddCocycle₂_iff]
@@ -313,14 +128,15 @@ theorem exists_homogeneousComponent_eq_smul_lazardCocycle (F : FormalGroup R) {n
     rw [MvPolynomial.coe_add, MvPolynomial.coe_add]
     linear_combination h
   -- the leading polynomial is symmetric
-  have hsym : (leadingPoly n Φ).IsSymmetric := by
+  have hsym : (homogeneousComponentPolynomial n Φ).IsSymmetric := by
     have hX2 (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-    have h : MvPolynomial.aeval ![MvPolynomial.X 1, MvPolynomial.X 0] (leadingPoly n Φ) =
-        leadingPoly n Φ := by
+    have h : MvPolynomial.aeval ![MvPolynomial.X 1, MvPolynomial.X 0]
+        (homogeneousComponentPolynomial n Φ) = homogeneousComponentPolynomial n Φ := by
       refine MvPolynomial.coe_inj.mp ?_
-      rw [← homogeneousComponent_subst_eq_aeval hΦ (hasSubst_finTwo (hX2 1) (hX2 0))
+      rw [← homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX2 1) (hX2 0))
         (fun i ↦ by fin_cases i <;> simp)
-        (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]), hsymm, coe_leadingPoly]
+        (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]), hsymm,
+        coe_homogeneousComponentPolynomial]
     intro e
     rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
     · simp
@@ -331,8 +147,8 @@ theorem exists_homogeneousComponent_eq_smul_lazardCocycle (F : FormalGroup R) {n
       rw [MvPolynomial.rename_eq_aeval, hswap]
       exact h
   obtain ⟨c, hc⟩ := TauCeti.exists_eq_smul_lazardCocycle hn
-    (MvPolynomial.homogeneousComponent_isHomogeneous _ _) hsym hcoc
-  exact ⟨c, by rw [← coe_leadingPoly]; exact congrArg _ hc⟩
+    (isHomogeneous_homogeneousComponentPolynomial _ _) hsym hcoc
+  exact ⟨c, by rw [← coe_homogeneousComponentPolynomial]; exact congrArg _ hc⟩
 
 end Cocycle
 
@@ -358,6 +174,16 @@ theorem homDefect_eq_zero_iff {f : PowerSeries R} :
     F.homDefect G f = 0 ↔
       PowerSeries.subst F.toPowerSeries f = subst (fun i ↦ f.toMvPowerSeries i) G.toPowerSeries :=
   sub_eq_zero
+
+/-- The homomorphism defect towards the additive formal group law is the additivity defect
+`f(F(X, Y)) - f(X) - f(Y)`. -/
+theorem homDefect_𝔾ₐ {f : PowerSeries R} (hf : PowerSeries.constantCoeff f = 0) :
+    F.homDefect 𝔾ₐ f = PowerSeries.subst F.toPowerSeries f - PowerSeries.subst (X 0) f -
+      PowerSeries.subst (X 1) f := by
+  have hE := HasSubst.toMvPowerSeries (σ := Fin 2) hf
+  rw [homDefect_def, 𝔾ₐ_toPowerSeries, subst_add hE, subst_X hE, subst_X hE]
+  simp only [PowerSeries.toMvPowerSeries_eq_subst]
+  ring
 
 variable {F G} {f : PowerSeries R} {σ : Type*}
 
@@ -387,14 +213,16 @@ private noncomputable def coordDefect (F G : FormalGroup R)
 
 private theorem constantCoeff_evalPoint (hf : PowerSeries.constantCoeff f = 0) {x : F.Point σ}
     (hx : constantCoeff x.val = 0) : constantCoeff (evalPoint G hf x).val = 0 := by
-  change constantCoeff (PowerSeries.subst x.val f) = 0
-  rw [PowerSeries.subst, constantCoeff_subst_of_constantCoeff_zero x.prop.const (fun _ ↦ hx)]
+  rw [val_evalPoint, PowerSeries.subst,
+    constantCoeff_subst_of_constantCoeff_zero x.prop.const (fun _ ↦ hx)]
   exact (congrArg _ hf).trans (map_zero _)
 
 private theorem substPointHom_evalPoint (hf : PowerSeries.constantCoeff f = 0) {τ : Type*}
     {a : σ → MvPowerSeries τ R} (ha : HasSubst a) (x : F.Point σ) :
     G.substPointHom ha (evalPoint G hf x) = evalPoint G hf (F.substPointHom ha x) :=
-  Subtype.ext (subst_powerSeriesSubst ha x.prop f)
+  Subtype.ext <| by
+    rw [val_substPointHom, val_evalPoint, val_evalPoint, val_substPointHom]
+    exact subst_powerSeriesSubst ha x.prop f
 
 /-- The defect at any pair of points is obtained from the defect at the coordinate points by
 substitution. -/
@@ -403,9 +231,9 @@ private theorem defectPoint_eq_substPointHom (hf : PowerSeries.constantCoeff f =
     defectPoint G hf x y = G.substPointHom (hasSubst_finTwo x.prop y.prop)
       (coordDefect F G hf) := by
   have h0 : F.substPointHom (hasSubst_finTwo x.prop y.prop) (coordPoint F 0) = x :=
-    Subtype.ext (subst_X (hasSubst_finTwo x.prop y.prop) 0)
+    Subtype.ext ((val_substPointHom _ _ _).trans (subst_X (hasSubst_finTwo x.prop y.prop) 0))
   have h1 : F.substPointHom (hasSubst_finTwo x.prop y.prop) (coordPoint F 1) = y :=
-    Subtype.ext (subst_X (hasSubst_finTwo x.prop y.prop) 1)
+    Subtype.ext ((val_substPointHom _ _ _).trans (subst_X (hasSubst_finTwo x.prop y.prop) 1))
   simp only [coordDefect, defectPoint, map_sub, substPointHom_evalPoint, map_add, h0, h1]
 
 /-- The defect is a 2-cocycle, by associativity of `F`. -/
@@ -442,28 +270,6 @@ section Obstruction
 
 variable {F G : FormalGroup R} {f : PowerSeries R} {σ : Type*}
 
-private theorem homogeneousComponent_val_add {N : ℕ} (hN : N ≠ 0) {x y : G.Point σ}
-    (hx : (N : ℕ∞) ≤ x.val.order) (hy : constantCoeff y.val = 0) :
-    homogeneousComponent N (x + y).val =
-      homogeneousComponent N x.val + homogeneousComponent N y.val := by
-  have h := G.homogeneousComponent_val_sub hN hy (x := x + y) (by rwa [add_sub_cancel_right])
-  rw [add_sub_cancel_right, map_sub] at h
-  rw [h, sub_add_cancel]
-
-private theorem homogeneousComponent_val_sum [G.IsComm] {N : ℕ} (hN : N ≠ 0) (t : ℕ → G.Point σ)
-    (ht : ∀ j, (N : ℕ∞) ≤ (t j).val.order) (m : ℕ) :
-    homogeneousComponent N (∑ j ∈ Finset.range m, t j).val =
-        ∑ j ∈ Finset.range m, homogeneousComponent N (t j).val ∧
-      (N : ℕ∞) ≤ (∑ j ∈ Finset.range m, t j).val.order := by
-  induction m with
-  | zero => simp [zero_apply]
-  | succ m ih =>
-    have ht₀ : constantCoeff (t m).val = 0 := order_ne_zero_iff_constCoeff_eq_zero.mp
-      fun h ↦ hN (by simpa [h] using ht m)
-    rw [Finset.sum_range_succ, Finset.sum_range_succ,
-      homogeneousComponent_val_add hN ih.2 ht₀, ih.1]
-    exact ⟨rfl, G.le_order_val_add ih.2 (ht m)⟩
-
 private theorem val_coordPoint (i : σ) : (coordPoint F i).val = X i := (rfl)
 
 private theorem constantCoeff_coordPoint (i : σ) :
@@ -473,8 +279,8 @@ private theorem constantCoeff_coordPoint (i : σ) :
 private theorem coordDefect_eq (hf : PowerSeries.constantCoeff f = 0) :
     coordDefect F G hf = defectPoint G hf (coordPoint F 0) (coordPoint F 1) := (rfl)
 
-/-- The defect at the coordinate points is the homomorphism defect, up to terms of degree above
-its order. -/
+/-- The homomorphism defect `f(X +_F Y) - (f(X) +_G f(Y))` is the ordinary difference of the
+values at the coordinate points of the point `f(X +_F Y)` and the sum `f(X) +_G f(Y)` in `G`. -/
 private theorem homDefect_eq_val_sub (hf : PowerSeries.constantCoeff f = 0) :
     F.homDefect G f = (evalPoint G hf (coordPoint F (0 : Fin 2) + coordPoint F 1)).val -
       (evalPoint G hf (coordPoint F (0 : Fin 2)) + evalPoint G hf (coordPoint F 1)).val := by
@@ -501,10 +307,43 @@ private theorem le_order_defectPoint (hf : PowerSeries.constantCoeff f = 0) {n :
   refine le_trans ?_ (le_order_subst (hasSubst_finTwo x.prop y.prop) _)
   have h1 : (1 : ℕ∞) ≤ ⨅ i, (![x.val, y.val] i).order :=
     le_iInf fun i ↦ by
-      fin_cases i <;>
-        exact Order.one_le_iff_ne_zero.mpr (order_ne_zero_iff_constCoeff_eq_zero.mpr (by simpa))
+      fin_cases i <;> exact one_le_order_iff_constCoeff_eq_zero.mpr (by simpa)
   calc (n : ℕ∞) = 1 * n := (one_mul _).symm
     _ ≤ _ := mul_le_mul' h1 hΨ
+
+/-- If the degree-`n` part of the defect at the coordinate points is `c C_n`, then the degree-`n`
+part of the defect `f(j X + X) - f(j X) - f(X)` at multiples of the tautological point is
+`c C_n(j X, X)`, since the linear part of `[j]_F(X)` is `j X`. -/
+private theorem homogeneousComponent_defectPoint_nsmul (hf : PowerSeries.constantCoeff f = 0)
+    {n : ℕ} (hΨ : (n : ℕ∞) ≤ (coordDefect F G hf).val.order) {c : R}
+    (hc : homogeneousComponent n (coordDefect F G hf).val = ↑(c • TauCeti.lazardCocycle n R))
+    (j : ℕ) :
+    homogeneousComponent n
+        (defectPoint G hf (j • F.tautologicalPoint) F.tautologicalPoint).val =
+      MvPolynomial.coeToMvPowerSeries.ringHom (c • MvPolynomial.aeval
+        ![(j : MvPolynomial Unit R) * MvPolynomial.X (), MvPolynomial.X ()]
+        (TauCeti.lazardCocycle n R)) := by
+  set x := F.tautologicalPoint
+  have hx : constantCoeff x.val = 0 := by
+    rw [val_tautologicalPoint]; exact PowerSeries.constantCoeff_X
+  have hjx : (j • x).val = F.nsmulSeries j := by
+    rw [← subst_nsmulSeries, val_tautologicalPoint, PowerSeries.X_subst]
+  have hjx₀ : constantCoeff (j • x).val = 0 := by
+    rw [hjx]; exact F.constantCoeff_nsmulSeries j
+  rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, ← _root_.map_smul,
+    defectPoint_eq_substPointHom, val_substPointHom, homogeneousComponent_subst_of_le_order
+    hΨ (hasSubst_finTwo (j • x).prop x.prop)
+    (fun i ↦ by fin_cases i; exacts [hjx₀, hx]), hc, ← subst_coe_pair_eq_coe_aeval]
+  congr 1
+  funext i
+  fin_cases i
+  · -- the linear part of `[j]_F` is `j X`
+    have hj : ((j : MvPolynomial Unit R) : MvPowerSeries Unit R) = j :=
+      map_natCast MvPolynomial.coeToMvPowerSeries.ringHom j
+    simp [hjx, homogeneousComponent_one_eq_C_mul_X, ← PowerSeries.coeff_def, hj]
+  · simp only [Fin.mk_one, Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_fin_one, x,
+      val_tautologicalPoint, MvPolynomial.coe_X]
+    exact homogeneousComponent_one_X (R := R) ()
 
 variable [G.IsComm]
 
@@ -615,9 +454,11 @@ theorem homogeneousComponent_homDefect_eq_smul_lazardCocycle
     rw [← subst_nsmulSeries, val_tautologicalPoint, PowerSeries.X_subst]
   have hjx₀ (j : ℕ) : constantCoeff (j • x).val = 0 := by
     rw [hjx]; exact F.constantCoeff_nsmulSeries j
-  have ht (j : ℕ) := le_order_defectPoint hf hΨ (hjx₀ j) hx
-  have hsum := homogeneousComponent_val_sum hn (fun j ↦ defectPoint G hf (j • x) x) ht p
-  rw [← evalPoint_nsmul_sub_nsmul] at hsum
+  have ht (j : ℕ) (_ : j ∈ Finset.range p) := le_order_defectPoint hf hΨ (hjx₀ j) hx
+  have hsum := G.homogeneousComponent_val_sum hn (Finset.range p)
+    (fun j ↦ defectPoint G hf (j • x) x) ht
+  have hord := G.le_order_val_sum (Finset.range p) (fun j ↦ defectPoint G hf (j • x) x) ht
+  rw [← evalPoint_nsmul_sub_nsmul] at hsum hord
   -- the left side
   have hfx : (evalPoint G hf x).val = f := by rw [val_evalPoint, val_tautologicalPoint,
     PowerSeries.X_subst]
@@ -625,33 +466,15 @@ theorem homogeneousComponent_homDefect_eq_smul_lazardCocycle
     rw [← subst_nsmulSeries, hfx, PowerSeries.subst, constantCoeff_subst_of_constantCoeff_zero
       (PowerSeries.HasSubst.of_constantCoeff_zero' hf).const (fun _ ↦ hf)]
     exact (congrArg _ (G.constantCoeff_nsmulSeries p)).trans (map_zero _)
-  have hlhs := G.homogeneousComponent_val_sub hn hpx₀ hsum.2
+  have hlhs := G.homogeneousComponent_val_sub hn hpx₀ hord
   rw [val_evalPoint, hjx, ← subst_nsmulSeries, hfx] at hlhs
   -- the right side: the degree-`pᵏ` part of `f(j X + X) - f(j X) - f(X)` is `c C_n(j X, X)`
-  have hterm (j : ℕ) : homogeneousComponent (p ^ k) (defectPoint G hf (j • x) x).val =
-      MvPolynomial.coeToMvPowerSeries.ringHom (c • MvPolynomial.aeval
-        ![(j : MvPolynomial Unit R) * MvPolynomial.X (), MvPolynomial.X ()]
-        (TauCeti.lazardCocycle (p ^ k) R)) := by
-    rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, ← _root_.map_smul,
-      defectPoint_eq_substPointHom, val_substPointHom, homogeneousComponent_subst_of_le_order
-      hΨ (hasSubst_finTwo (j • x).prop x.prop)
-      (fun i ↦ by fin_cases i; exacts [hjx₀ j, hx]), hc, ← subst_coe_pair_eq_coe_aeval]
-    congr 1
-    funext i
-    fin_cases i
-    · -- the linear part of `[j]_F` is `j X`
-      have hj : ((j : MvPolynomial Unit R) : MvPowerSeries Unit R) = j :=
-        map_natCast MvPolynomial.coeToMvPowerSeries.ringHom j
-      simp [hjx, homogeneousComponent_one_eq_C_mul_X, ← PowerSeries.coeff_def, hj]
-    · simp only [Fin.mk_one, Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_fin_one, x,
-        val_tautologicalPoint, MvPolynomial.coe_X]
-      exact homogeneousComponent_one_X (R := R) ()
   have hpX : (p : MvPolynomial Unit R) = 0 := by
     rw [← map_natCast (MvPolynomial.C (σ := Unit)), hpR, map_zero]
-  have hs := hsum.1
-  rw [Finset.sum_congr rfl fun j _ ↦ hterm j, ← map_sum, ← Finset.smul_sum,
-    TauCeti.sum_aeval_natCast_mul_lazardCocycle hp hpX hk, hlhs] at hs
-  have hco := congrArg (coeff (Finsupp.single () (p ^ k))) hs
+  rw [Finset.sum_congr rfl fun j _ ↦ homogeneousComponent_defectPoint_nsmul hf hΨ hc j,
+    ← map_sum, ← Finset.smul_sum, TauCeti.sum_aeval_natCast_mul_lazardCocycle hp hpX hk,
+    hlhs] at hsum
+  have hco := congrArg (coeff (Finsupp.single () (p ^ k))) hsum
   simp only [coeff_homogeneousComponent, Finsupp.degree_single, ↓reduceIte,
     MvPolynomial.coeToMvPowerSeries.ringHom_apply, MvPolynomial.coeff_coe,
     MvPolynomial.coeff_smul, MvPolynomial.coeff_neg, MvPolynomial.coeff_X_pow] at hco
@@ -662,3 +485,29 @@ theorem homogeneousComponent_homDefect_eq_smul_lazardCocycle
 end Obstruction
 
 end FormalGroup
+
+namespace TauCeti.FormalGroupHom
+
+open FormalGroup
+
+variable {R : Type*} [CommRing R] {F G : FormalGroup R}
+
+/-- A homomorphism of formal group laws has zero homomorphism defect. -/
+@[simp]
+theorem homDefect_toPowerSeries (f : FormalGroupHom F G) : F.homDefect G f.toPowerSeries = 0 :=
+  (homDefect_eq_zero_iff F G).mpr f.hom
+
+/-- A power series without constant term whose homomorphism defect vanishes, as a homomorphism of
+formal group laws. -/
+def ofHomDefectEqZero {f : PowerSeries R} (hf : PowerSeries.constantCoeff f = 0)
+    (h : F.homDefect G f = 0) : FormalGroupHom F G where
+  toPowerSeries := f
+  zero_constantCoeff := hf
+  hom := (homDefect_eq_zero_iff F G).mp h
+
+@[simp]
+theorem ofHomDefectEqZero_toPowerSeries {f : PowerSeries R}
+    (hf : PowerSeries.constantCoeff f = 0) (h : F.homDefect G f = 0) :
+    (ofHomDefectEqZero hf h).toPowerSeries = f := (rfl)
+
+end TauCeti.FormalGroupHom
