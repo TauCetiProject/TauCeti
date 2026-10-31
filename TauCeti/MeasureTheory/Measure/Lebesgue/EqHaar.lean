@@ -36,6 +36,12 @@ normed space by the measure of the unit ball times the dimension power of its di
 the elementary estimate converting coverings by sets of small diameter into measure bounds.
 Combined with the diameter bound for Lipschitz images, it bounds the measure of the closure of
 the image of a set under a Lipschitz map.
+
+An element of finite order acting linearly on a finite-dimensional real space preserves every
+additive Haar measure, because its determinant has finite order and so absolute value one
+(`MeasureTheory.Measure.addHaar_preimage_smul_of_isOfFinOrder`). Hence a finite group acting
+linearly preserves every additive Haar measure
+(`MeasureTheory.Measure.smulInvariantMeasure_addHaar`).
 -/
 
 public section
@@ -113,6 +119,34 @@ theorem addHaar_closure_le_mul_ediam_pow (μ : Measure E) [μ.IsAddHaarMeasure] 
         ENNReal.ofReal_pow Metric.diam_nonneg, Metric.diam, ENNReal.ofReal_toReal hs]
 
 end Diameter
+
+section FiniteOrder
+
+variable {G E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- An element of finite order acting linearly on a finite-dimensional real space preserves
+every additive Haar measure. Its determinant has finite order in `ℝ`, hence absolute value
+one. -/
+theorem addHaar_preimage_smul_of_isOfFinOrder [Monoid G] [DistribMulAction G E]
+    [SMulCommClass G ℝ E] {g : G} (hg : IsOfFinOrder g) (s : Set E) :
+    μ ((g • ·) ⁻¹' s) = μ s := by
+  set L := DistribMulAction.toModuleEnd ℝ E g
+  have habs : |LinearMap.det L| = 1 :=
+    ((((absHom (α := ℝ)).toMonoidHom).comp
+      (LinearMap.det.comp (DistribMulAction.toModuleEnd ℝ E))).isOfFinOrder hg).eq_one
+      (abs_nonneg _)
+  have hdet : LinearMap.det L ≠ 0 := fun h => by simp [h] at habs
+  have h := addHaar_preimage_linearMap μ hdet s
+  rwa [abs_inv, habs, inv_one, ENNReal.ofReal_one, one_mul] at h
+
+/-- A finite group acting linearly on a finite-dimensional real space preserves every additive
+Haar measure. -/
+theorem smulInvariantMeasure_addHaar [Group G] [Finite G] [DistribMulAction G E]
+    [SMulCommClass G ℝ E] : SMulInvariantMeasure G E μ :=
+  ⟨fun g s _ => addHaar_preimage_smul_of_isOfFinOrder μ (isOfFinOrder_of_finite g) s⟩
+
+end FiniteOrder
 
 end MeasureTheory.Measure
 
