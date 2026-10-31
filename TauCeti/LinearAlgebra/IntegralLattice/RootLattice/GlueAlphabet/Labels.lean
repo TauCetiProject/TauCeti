@@ -69,6 +69,12 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
   simp only [glueLabelEquiv]
   exact (Fin.cast_val_eq_self i).symm
 
+/-- In a cyclic type-`A` alphabet the label of a class is its canonical residue. -/
+@[simp] theorem glueLabelEquiv_A_symm_apply (n : ℕ) (ht : (A n).IsSimplyLaced)
+    (x : ZMod (n + 1)) : ((A n).glueLabelEquiv ht).symm x = ⟨x.val, ZMod.val_lt x⟩ :=
+  ((A n).glueLabelEquiv ht).symm_apply_eq.mpr
+    ((glueLabelEquiv_A n ht _).trans (ZMod.natCast_zmod_val x)).symm
+
 /-- In even rank, the label is the binary pair with the vector bit first. -/
 @[simp] theorem glueLabelEquiv_D_of_even (n : ℕ) (ht : (D n).IsSimplyLaced) (hn : Even n)
     (i : Fin 4) :

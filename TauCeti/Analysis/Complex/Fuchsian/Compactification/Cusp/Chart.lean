@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Basic
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Quotient
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # The q-coordinate chart at a cusp of the compactified quotient
@@ -302,6 +303,13 @@ theorem cuspChart_ofQuotient_mk {z : ℍ} (hz : z ∈ horodisc D A) :
 @[simp]
 theorem cuspChart_symm_zero : (cuspChart D hA).symm 0 = ofCusp D.cuspOrbit :=
   cuspChartInv_zero D
+
+/-- The inverse of the cusp chart sends the punctured neighbourhoods of `0` to the punctured
+neighbourhoods of the cusp orbit. -/
+theorem tendsto_cuspChart_symm_nhdsNE :
+    Tendsto (cuspChart D hA).symm (𝓝[≠] 0) (𝓝[≠] ofCusp D.cuspOrbit) := by
+  have h := (cuspChart D hA).symm.tendsto_nhdsNE (x := 0) (by simpa using cuspRadius_pos D A)
+  rwa [cuspChart_symm_zero] at h
 
 /-- The inverse of the cusp chart sends the q-coordinate of a point of the horodisc to its orbit. -/
 @[simp]

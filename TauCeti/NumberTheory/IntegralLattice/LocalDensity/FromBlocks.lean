@@ -155,15 +155,10 @@ theorem localDensity_fromBlocks_smul (hp : p ≠ 2) {A : Matrix ι ι ℤ_[p]} {
   have hcBdet : (c • B).det ≠ 0 := by
     rw [det_smul]
     exact mul_ne_zero (pow_ne_zero _ hc) hBdet
-  have hsmul : (c • B).localDensity =
-      (p : ℚ) ^ (c.valuation * (Fintype.card κ + 1).choose 2) * B.localDensity :=
-    tendsto_nhds_unique (tendsto_localDensityCount_div_of_det_ne_zero hcB hcBdet)
-      (tendsto_localDensityCount_smul_div hc
-        (tendsto_localDensityCount_div_of_det_ne_zero hB hBdet))
   rw [localDensity_fromBlocks hp hA hdet hcB hcBdet fun i j => by
       rw [smul_apply, smul_eq_mul]
       exact dvd_mul_of_dvd_left hcp _,
-    hsmul]
+    localDensity_smul hc hB hBdet]
   ring
 
 end Matrix

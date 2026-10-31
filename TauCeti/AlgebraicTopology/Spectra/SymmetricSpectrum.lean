@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Spectra.SmashPow
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Module
+public import TauCeti.CategoryTheory.Monoidal.Mod.Bimodule
 
 /-!
 # The sphere symmetric sequence and symmetric spectra
@@ -26,6 +27,10 @@ maps `S^p ∧ X_q → X_(p+q)`, compatible with the unit `S⁰ ≅ S^0` and with
 spheres. These iterated structure maps and their laws are developed in
 `TauCeti.CategoryTheory.Monoidal.DayConvolution.Module`, through the generic
 `CategoryTheory.Mod.dayStructureMap` API.
+
+The commutative sphere action also gives a native sphere bimodule via
+`CategoryTheory.Mod.toBimod`: the right action is obtained by swapping the sphere and
+spectrum factors before applying the left action. This adapter is fully faithful.
 
 ## Main definitions
 
@@ -64,5 +69,10 @@ noncomputable example : IsCommMonObj SymmetricSequence.sphere := inferInstance
 `X` with an action `S ⊗ X ⟶ X` for the Day convolution product, satisfying the unit and
 associativity laws. -/
 abbrev SymmetricSpectrum := Mod SymmetricSequence.{0} SymmetricSequence.sphere
+
+/- The native bimodule adapter applies to the actual sphere-module carrier. -/
+noncomputable example :
+    (Mod.toBimod (C := SymmetricSequence.{0}) (A := SymmetricSequence.sphere)).FullyFaithful :=
+  Mod.fullyFaithfulToBimod
 
 end TauCeti
