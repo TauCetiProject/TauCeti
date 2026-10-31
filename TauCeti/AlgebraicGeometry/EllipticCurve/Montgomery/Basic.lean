@@ -21,13 +21,12 @@ equation
 with coefficients `(a₁, a₂, a₃, a₄, a₆) = (0, A B, 0, B², 0)`. This is
 `TauCeti.Montgomery.model A B`. Over a field, the native points of a Montgomery curve are the
 points of Mathlib's group `(Montgomery.model A B).toAffine.Point`; no second group law is
-introduced, and the `x`-only arithmetic of Montgomery's elliptic-curve method (doubling and
-differential addition on projective `x`-coordinates) computes `x`-coordinates of points of this
-group.
+introduced.
 
 The discriminant of the model is `16 B⁶ (A² - 4)` over every commutative ring, so over a field the
-model is elliptic exactly when `2`, `B` and `A² - 4` are nonzero. When `B ≠ 0`, the affine point
-`(0, 0)` lies on the model and is nonsingular, since the cubic `x'³ + A B x'² + B² x'` has
+model is elliptic exactly when `2`, `B` and `A² - 4` are nonzero. When `B² ≠ 0` (for instance
+when `B ≠ 0` over a ring without zero divisors), the affine point `(0, 0)` lies on the model and
+is nonsingular, since the cubic `x'³ + A B x'² + B² x'` has
 derivative `B²` at `x' = 0`. Over a field it has order `2`: this is the distinguished `2`-torsion
 point `T₀` of the Montgomery curve.
 No square root of `B` is needed to compare the two equations: when `B ≠ 0` (over a ring without
@@ -180,6 +179,19 @@ theorem twoTorsionPoint_def (hB : B ≠ 0) :
 @[simp]
 theorem twoTorsionPoint_ne_zero (hB : B ≠ 0) : twoTorsionPoint A hB ≠ 0 :=
   Affine.Point.some_ne_zero _
+
+/-- Over a ring without zero divisors, every native affine point of the monic Montgomery model
+with `x`-coordinate `0` is the distinguished `2`-torsion point: the model's equation reduces to
+`y² = 0` there, which forces `y = 0`. -/
+@[simp]
+theorem some_zero_eq_twoTorsionPoint (hB : B ≠ 0) {y : R}
+    (h : (model A B).toAffine.Nonsingular 0 y) :
+    Affine.Point.some 0 y h = twoTorsionPoint A hB := by
+  obtain rfl : y = 0 := by
+    have hy := h.1
+    rw [Affine.equation_iff] at hy
+    simpa using hy
+  rfl
 
 /-- The distinguished `2`-torsion point is its own negative. -/
 @[simp]
