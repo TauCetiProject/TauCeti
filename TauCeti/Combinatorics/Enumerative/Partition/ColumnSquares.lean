@@ -88,11 +88,6 @@ theorem sum_sq_conjugate_parts_eq_add_two_mul_sum_choose_two :
         rw [Multiset.map_congr rfl fun x _ => hsq x]
     _ = _ := by rw [Multiset.sum_map_add, Multiset.map_id', parts_sum]
 
-/-- The sum of the squares of the parts of a partition of `n` is at least `n`. -/
-theorem le_sum_sq_parts : n ≤ (μ.parts.map (· ^ 2)).sum :=
-  calc n = (μ.parts.map id).sum := by rw [Multiset.map_id, μ.parts_sum]
-    _ ≤ _ := Multiset.sum_map_le_sum_map _ _ fun x _ => Nat.le_self_pow two_ne_zero x
-
 /-- **The regular Jordan type.** The sum of the squares of the parts of the conjugate partition
 equals `n` exactly for the one-row partition `(n)`. -/
 theorem sum_sq_conjugate_parts_eq_self_iff :

@@ -203,9 +203,8 @@ theorem sum_map_conjugate_parts {M : Type*} [AddCommMonoid M] {n : ℕ} (μ : n.
     obtain ⟨i, hi⟩ := hpos
     rw [Multiset.mem_filter] at hi
     exact (hm i hi.1).not_gt hi.2
-  rw [conjugate_parts, YoungDiagram.rowLens, Multiset.map_coe, List.map_map, Multiset.sum_coe,
-    YoungDiagram.colLen_transpose, ← List.sum_toFinset _ List.nodup_range, List.toFinset_range]
-  simp only [Function.comp_apply, YoungDiagram.rowLen_transpose, ← YoungDiagram.colLen_ofPartition]
+  rw [conjugate_parts, YoungDiagram.sum_map_coe_rowLens, YoungDiagram.colLen_transpose]
+  simp only [YoungDiagram.rowLen_transpose, ← YoungDiagram.colLen_ofPartition]
   refine Finset.sum_subset (Finset.range_subset_range.mpr hrow) fun k _ hk => ?_
   rw [Finset.mem_range, ← hcol, not_lt, Nat.le_zero] at hk
   rw [hk, hg]
