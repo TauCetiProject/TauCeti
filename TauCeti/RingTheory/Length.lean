@@ -48,6 +48,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   length.
 * `TauCeti.isFiniteLength_of_tower`: finite length over `R` gives finite length over any `A`
   acting compatibly.
+* `TauCeti.surjective_of_injective_of_length_eq`: an injective map between modules of the same
+  finite length is surjective.
 * `TauCeti.map_lsmul_eq_smul` and `TauCeti.range_lsmul_eq_smul_top`: `aN` and `aM` as Mathlib's
   pointwise `a • N` and `a • ⊤`.
 * `TauCeti.comap_subtype_map_lsmul`: `aN` computed inside `N` agrees with `aN` computed in the
@@ -150,6 +152,23 @@ theorem isFiniteLength_of_tower (R : Type*) [Ring R] [SMul R A] [Module R M]
   obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp h
   exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
     ⟨isNoetherian_of_tower R inferInstance, isArtinian_of_tower R inferInstance⟩
+
+/-- An injective linear map between modules of the same finite length is surjective: its
+cokernel has length zero. -/
+theorem surjective_of_injective_of_length_eq {N : Type*} [AddCommGroup N] [Module A N]
+    {f : M →ₗ[A] N} (hf : Function.Injective f) (hM : Module.length A M ≠ ⊤)
+    (h : Module.length A M = Module.length A N) : Function.Surjective f := by
+  have hlen := Module.length_eq_add_of_exact _ _ hf (Submodule.mkQ_surjective _)
+    (LinearMap.exact_map_mkQ_range f)
+  rw [← h] at hlen
+  rw [← LinearMap.range_eq_top, ← Submodule.Quotient.subsingleton_iff,
+    ← Module.length_eq_zero_iff (R := A)]
+  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp hM
+  generalize Module.length A (N ⧸ LinearMap.range f) = c at hlen ⊢
+  rw [← hn] at hlen
+  induction c using ENat.recTopCoe with
+  | top => simp at hlen
+  | coe k => norm_cast at hlen ⊢; omega
 
 end Ring
 
