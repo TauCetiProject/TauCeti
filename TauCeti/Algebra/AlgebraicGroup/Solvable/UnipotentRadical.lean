@@ -83,8 +83,8 @@ variable [IsAlgClosed k]
 variable [IsReduced G] [ConnectedSpace (PrimeSpectrum G)]
 variable [Group.IsSolvable (WithConv (G →ₐ[k] k))]
 
-/-- **The quotient of a connected solvable group by its unipotent radical is a torus**, over an
-algebraically closed field and in every characteristic. -/
+/-- **The quotient of a reduced connected solvable group by its unipotent radical is a torus**,
+over an algebraically closed field and in every characteristic. -/
 theorem torus_coinvariants_unipotentRadical :
     let hR := isNormal_unipotentRadicalDefiningIdeal G
     letI := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
@@ -113,8 +113,8 @@ theorem torus_coinvariants_unipotentRadical :
       (CommHopfAlgCat.faithfullyFlat_coinvariantsι hR)
   exact (reductive_coinvariants_unipotentRadical G hconnected).torus_of_geometricallySolvable hQ
 
-/-- The torus `G ⧸ R_u(G)` of a connected solvable group is spanned by its characters, over an
-algebraically closed field. -/
+/-- The torus `G ⧸ R_u(G)` of a reduced connected solvable group is spanned by its characters,
+over an algebraically closed field. -/
 theorem groupLikeSpannedProperty_coinvariants_unipotentRadical :
     let hR := isNormal_unipotentRadicalDefiningIdeal G
     letI := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
@@ -124,8 +124,8 @@ theorem groupLikeSpannedProperty_coinvariants_unipotentRadical :
     DiagonalizableGroup.groupLikeSpannedProperty k Q :=
   (torusCommHopfAlgProperty.split k _ (torus_coinvariants_unipotentRadical G)).groupLikeSpanned k _
 
-/-- **The unipotent rational points of a connected solvable group are the rational points of its
-unipotent radical**, over an algebraically closed field and in every characteristic. In
+/-- **The unipotent rational points of a reduced connected solvable group are the rational points
+of its unipotent radical**, over an algebraically closed field and in every characteristic. In
 particular the unipotent rational points form a subgroup. -/
 @[simp]
 theorem mem_quotientPointsSubgroup_unipotentRadical_iff (g : WithConv (G →ₐ[k] k)) :
@@ -151,7 +151,7 @@ theorem mem_quotientPointsSubgroup_unipotentRadical_iff (g : WithConv (G →ₐ[
   have hmem := (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff ι (CommAlgCat.of k k) g).mp h1
   rwa [CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq hR] at hmem
 
-/-- **The unipotent radical of a connected solvable group is the common kernel of its
+/-- **The unipotent radical of a reduced connected solvable group is the common kernel of its
 characters**, scheme-theoretically, over an algebraically closed field and in every
 characteristic. -/
 theorem unipotentRadicalDefiningIdeal_eq_characterKernelIdeal :

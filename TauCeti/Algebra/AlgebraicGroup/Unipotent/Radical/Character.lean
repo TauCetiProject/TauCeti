@@ -22,8 +22,9 @@ characters. This file records both facts as statements about `G`:
 * the characters of `G` are trivial on `R_u(G)`, scheme-theoretically: the common kernel of the
   characters of `G` contains `R_u(G)`.
 
-For a connected solvable `G` over an algebraically closed field both inclusions are equalities;
-see `TauCeti.FiniteTypeCommHopfAlgCat.mem_quotientPointsSubgroup_unipotentRadical_iff` and
+For a reduced connected solvable `G` over an algebraically closed field both inclusions are
+equalities; see
+`TauCeti.FiniteTypeCommHopfAlgCat.mem_quotientPointsSubgroup_unipotentRadical_iff` and
 `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_characterKernelIdeal`.
 
 ## Main declarations
