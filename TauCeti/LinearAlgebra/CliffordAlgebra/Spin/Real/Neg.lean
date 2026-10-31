@@ -33,15 +33,14 @@ The same construction compares `Spin(n)` with the Spin group of a form `Q v = -�
 product space `V`, along an orthonormal basis `b` of `V`: the coordinate isometry is replaced by the
 coordinates `OrthonormalBasis.negRealCliffordFormIsometryEquiv b hQ` of `b`. This gives the frame
 comparison `OrthonormalBasis.realSpinGroupEquiv b hQ`, which on even parts is the even Clifford
-algebra equivalence `OrthonormalBasis.realEvenCliffordEquiv b hQ`. The comparison depends on the
+algebra equivalence `OrthonormalBasis.realEvenCliffordEquiv b hQ` of
+`TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OrthonormalBasis`. The comparison depends on the
 frame.
 
 ## Main definitions
 
 * `OrthonormalBasis.realSpinGroupEquiv b hQ`: the comparison of the compact Spin group
   `spinGroup (realCliffordForm n 0)` with `spinGroup Q` along `b`.
-* `OrthonormalBasis.realEvenCliffordEquiv b hQ`: the corresponding equivalence of the even
-  Clifford algebras.
 
 ## Main results
 
@@ -54,10 +53,8 @@ frame.
 * `CliffordAlgebra.realCliffordSpinGroupEquivNeg_negOne`: the central element `-1` goes to `-1`.
 * `OrthonormalBasis.spinVectorAction_realSpinGroupEquiv`: the frame comparison intertwines the
   vector actions through the coordinates of `b`.
-* `OrthonormalBasis.realEvenCliffordEquiv_ι`: the even frame comparison sends a bivector `eᵢ eⱼ` to
-  `-c(bᵢ) c(bⱼ)`.
 * `OrthonormalBasis.spinGroupToEven_realSpinGroupEquiv`: on even parts, the Spin frame comparison
-  is the even frame comparison.
+  is the even frame comparison `OrthonormalBasis.realEvenCliffordEquiv b hQ`.
 
 ## References
 
@@ -157,23 +154,6 @@ theorem spinVectorAction_realSpinGroupEquiv (s : spinGroup (realCliffordForm n 0
   exact (QuadraticMap.Isometry.spinGroupMap_spinVectorAction _ _ x).trans
     (congrArg _ (LinearEquiv.congr_fun (spinVectorAction_spinGroupEquivNeg _ s) x))
 
-/-- The comparison of the even Clifford algebras of the positive-definite coordinate form and of
-a form `Q v = -‖v‖²`, along the orthonormal basis `b`. It sends a bivector `eᵢ eⱼ` to
-`-c(bᵢ) c(bⱼ)` (`OrthonormalBasis.realEvenCliffordEquiv_ι`). -/
-noncomputable def realEvenCliffordEquiv : even (realCliffordForm n 0) ≃ₐ[ℝ] even Q :=
-  (evenEquivEvenNeg (realCliffordForm n 0)).trans
-    (evenEquivOfIsometry (b.negRealCliffordFormIsometryEquiv hQ))
-
-/-- `OrthonormalBasis.realEvenCliffordEquiv` sends a bivector `m n` to `-c(m') c(n')`, where `m'`
-and `n'` are the vectors with coordinates `m` and `n` in the basis `b`. -/
-@[simp]
-theorem realEvenCliffordEquiv_ι (x y : Fin (n + 0) → ℝ) :
-    b.realEvenCliffordEquiv hQ ((even.ι (realCliffordForm n 0)).bilin x y) =
-      -(even.ι Q).bilin (b.negRealCliffordFormIsometryEquiv hQ x)
-        (b.negRealCliffordFormIsometryEquiv hQ y) := by
-  rw [realEvenCliffordEquiv, AlgEquiv.trans_apply, evenEquivEvenNeg_apply, evenToNeg_ι, map_neg,
-    evenEquivOfIsometry_ι]
-
 /-- On even parts, the Spin comparison `OrthonormalBasis.realSpinGroupEquiv` is the even Clifford
 algebra comparison `OrthonormalBasis.realEvenCliffordEquiv`. -/
 @[simp]
@@ -183,7 +163,6 @@ theorem spinGroupToEven_realSpinGroupEquiv (s : spinGroup (realCliffordForm n 0)
   apply Subtype.ext
   rw [coe_spinGroupToEven_apply, realSpinGroupEquiv, MulEquiv.trans_apply,
     QuadraticMap.IsometryEquiv.spinGroupEquiv_apply, QuadraticMap.Isometry.coe_spinGroupMap_apply,
-    coe_spinGroupEquivNeg_apply, realEvenCliffordEquiv, AlgEquiv.trans_apply,
-    coe_evenEquivOfIsometry_apply, equivOfIsometry_apply]
+    coe_spinGroupEquivNeg_apply, coe_realEvenCliffordEquiv_apply]
 
 end OrthonormalBasis

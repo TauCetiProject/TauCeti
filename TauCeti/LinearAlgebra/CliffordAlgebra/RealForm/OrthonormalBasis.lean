@@ -23,6 +23,8 @@ compares the even Clifford algebra and the Spin group of the compact coordinate 
 
 * `OrthonormalBasis.negRealCliffordFormIsometryEquiv b hQ`: the coordinates of an orthonormal
   basis `b`, as an isometry from `-realCliffordForm n 0` to a form `Q v = -‖v‖²`.
+* `OrthonormalBasis.realEvenCliffordEquiv b hQ`: the comparison of the even Clifford algebras of
+  the positive-definite coordinate form and of `Q` along `b`.
 
 ## Main results
 
@@ -32,6 +34,10 @@ compares the even Clifford algebra and the Spin group of the compact coordinate 
   to `b i`.
 * `OrthonormalBasis.negRealCliffordFormIsometryEquiv_symm_apply`: its inverse takes coordinates in
   `b`.
+* `OrthonormalBasis.coe_realEvenCliffordEquiv_apply`: the even frame comparison is
+  `evenEquivEvenNeg` followed by the map induced by the coordinates of `b`.
+* `OrthonormalBasis.realEvenCliffordEquiv_ι`: the even frame comparison sends a bivector `eᵢ eⱼ` to
+  `-c(bᵢ) c(bⱼ)`.
 
 ## References
 
@@ -76,5 +82,33 @@ theorem negRealCliffordFormIsometryEquiv_single (i : Fin n) :
 theorem negRealCliffordFormIsometryEquiv_symm_apply (v : V) (i : Fin n) :
     (b.negRealCliffordFormIsometryEquiv hQ).symm v i = b.repr v i :=
   (congrFun (b.toBasis.equivFun_apply v) i).trans (b.coe_toBasis_repr_apply v i)
+
+open CliffordAlgebra
+
+/-- The comparison of the even Clifford algebras of the positive-definite coordinate form and of
+a form `Q v = -‖v‖²`, along the orthonormal basis `b`. It sends a bivector `eᵢ eⱼ` to
+`-c(bᵢ) c(bⱼ)` (`OrthonormalBasis.realEvenCliffordEquiv_ι`). -/
+def realEvenCliffordEquiv : even (realCliffordForm n 0) ≃ₐ[ℝ] even Q :=
+  (evenEquivEvenNeg (realCliffordForm n 0)).trans
+    (evenEquivOfIsometry (b.negRealCliffordFormIsometryEquiv hQ))
+
+/-- The Clifford value of `OrthonormalBasis.realEvenCliffordEquiv b hQ x` is obtained by applying
+`evenEquivEvenNeg` and then the map induced by the coordinates of `b`. -/
+theorem coe_realEvenCliffordEquiv_apply (x : even (realCliffordForm n 0)) :
+    (b.realEvenCliffordEquiv hQ x : CliffordAlgebra Q) =
+      map (b.negRealCliffordFormIsometryEquiv hQ).toIsometry
+        (evenEquivEvenNeg (realCliffordForm n 0) x) := by
+  rw [realEvenCliffordEquiv, AlgEquiv.trans_apply, coe_evenEquivOfIsometry_apply,
+    equivOfIsometry_apply]
+
+/-- `OrthonormalBasis.realEvenCliffordEquiv` sends a bivector `m n` to `-c(m') c(n')`, where `m'`
+and `n'` are the vectors with coordinates `m` and `n` in the basis `b`. -/
+@[simp]
+theorem realEvenCliffordEquiv_ι (x y : Fin (n + 0) → ℝ) :
+    b.realEvenCliffordEquiv hQ ((even.ι (realCliffordForm n 0)).bilin x y) =
+      -(even.ι Q).bilin (b.negRealCliffordFormIsometryEquiv hQ x)
+        (b.negRealCliffordFormIsometryEquiv hQ y) := by
+  rw [realEvenCliffordEquiv, AlgEquiv.trans_apply, evenEquivEvenNeg_apply, evenToNeg_ι, map_neg,
+    evenEquivOfIsometry_ι]
 
 end OrthonormalBasis
