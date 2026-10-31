@@ -35,6 +35,8 @@ the derivative of a lift is a Lipschitz constant of the circle map for the quoti
   derivative in some interval `[c, M]` with `0 < c`.
 * `AddCircle.exists_lift_inverse`: a lift with positive derivative has an inverse `G`, which is
   again a lift, with derivative `G' y = (F' (G y))⁻¹`.
+* `AddCircle.exists_inverse_of_lift`: the inverse map of a circle map whose lift has derivative
+  in `[c, M]`, `0 < c`, with a lift whose derivative lies in `[M⁻¹, c⁻¹]`.
 * `AddCircle.lipschitzWith_of_lift`: a lift with derivative bounded by `C` in norm gives a
   `C`-Lipschitz map of the circle; in particular a lift with derivative in `[0, M]` gives an
   `M`-Lipschitz map (`AddCircle.lipschitzWith_toNNReal_of_lift`).
@@ -99,6 +101,28 @@ theorem exists_lift_inverse (hF : ∀ x, HasDerivAt F (F' x) x) (hper : ∀ x, F
   · rw [hFG, hper, hFG]
   · exact HasDerivAt.of_local_left_inverse e.symm.continuous.continuousAt (hF _) (hpos _).ne'
       (Filter.Eventually.of_forall hFG)
+
+/-- **The inverse of a circle map with a lift.** Let `φ` have the lift `F`, `φ x = F x` with
+`F (x + T) = F x + T`, and derivative `0 < c ≤ F' ≤ M`. Then `φ` has a left inverse `ψ` with the
+lift `G`, the inverse of `F` (`AddCircle.exists_lift_inverse`). The derivative
+`G' = (F' ∘ G)⁻¹` lies between `M⁻¹` and `c⁻¹`. -/
+theorem exists_inverse_of_lift {φ : AddCircle T → AddCircle T} {c M : ℝ}
+    (hF : ∀ x, HasDerivAt F (F' x) x) (hper : ∀ x, F (x + T) = F x + T)
+    (hφ : ∀ x : ℝ, φ x = F x) (hc : 0 < c) (hcF : ∀ x, c ≤ F' x) (hMF : ∀ x, F' x ≤ M) :
+    ∃ (ψ : AddCircle T → AddCircle T) (G : ℝ → ℝ), Function.LeftInverse ψ φ ∧
+      Function.LeftInverse G F ∧ Function.RightInverse G F ∧ (∀ y, G (y + T) = G y + T) ∧
+      (∀ y : ℝ, ψ y = G y) ∧ (∀ y, HasDerivAt G (F' (G y))⁻¹ y) ∧
+      (∀ y, M⁻¹ ≤ (F' (G y))⁻¹) ∧ ∀ y, (F' (G y))⁻¹ ≤ c⁻¹ := by
+  have hpos (x : ℝ) : 0 < F' x := hc.trans_le (hcF x)
+  have hmono : StrictMono F := strictMono_of_hasDerivAt_pos hF hpos
+  have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
+  obtain ⟨G, hGF, hFG, hperG, hG⟩ := exists_lift_inverse hF hper hpos
+  set e := homeomorphOfLift φ hmono hFc hper hφ
+  have hψφ : Function.LeftInverse e.symm φ := homeomorphOfLift_symm_apply_apply hmono hFc hper hφ
+  refine ⟨e.symm, G, hψφ, hGF, hFG, hperG, fun y ↦ ?_, hG, fun y ↦ inv_anti₀ (hpos _) (hMF _),
+    fun y ↦ inv_anti₀ hc (hcF _)⟩
+  calc e.symm y = e.symm (φ (G y)) := by rw [hφ, hFG y]
+    _ = G y := hψφ _
 
 omit hT in
 /-- **A bound on the derivative of a lift is a Lipschitz constant.** If the lift `F` of `φ`,

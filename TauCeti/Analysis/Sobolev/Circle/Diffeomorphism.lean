@@ -154,13 +154,9 @@ private theorem exists_inclusion_eq_precompEquivOfLift_symm (k : ℕ) (b : Circl
       (precompEquivOfLift hF hper hφ hc hcF hMF).symm (inclusion (Nat.cast_nonneg k) b) := by
   have hpos (x : ℝ) : 0 < F' x := hc.trans_le (hcF x)
   have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
-  obtain ⟨G, hGF, hFG, hperG, hG⟩ := exists_lift_inverse hF hper hpos
   -- The inverse map `ψ` of the circle, with lift `G`.
-  set e := homeomorphOfLift φ (strictMono_of_hasDerivAt_pos hF hpos) hFc hper hφ
-  have hψφ : Function.LeftInverse e.symm φ :=
-    homeomorphOfLift_symm_apply_apply (strictMono_of_hasDerivAt_pos hF hpos) hFc hper hφ
-  have hψ (y : ℝ) : e.symm y = G y := by
-    rw [show ((y : ℝ) : AddCircle T) = φ (G y) by rw [hφ, hFG y], hψφ]
+  obtain ⟨ψ, G, hψφ, hGF, hFG, hperG, hψ, hG, hMG, hcG⟩ :=
+    exists_inverse_of_lift hF hper hφ hc hcF hMF
   -- `G` is smooth since `F` is smooth with nonvanishing derivative, so `(F' ∘ G)⁻¹` is smooth.
   have hFs : ContDiff ℝ ∞ F :=
     contDiff_infty_iff_deriv.2 ⟨fun x ↦ (hF x).differentiableAt,
@@ -174,10 +170,8 @@ private theorem exists_inclusion_eq_precompEquivOfLift_symm (k : ℕ) (b : Circl
       continuous_invFun := continuous_iff_continuousAt.2 fun y ↦ (hG y).continuousAt }
   have hGs : ContDiff ℝ ∞ G := E.contDiff_symm_deriv (fun x ↦ (hpos x).ne') hF hFs
   have hM : 0 < M⁻¹ := inv_pos.2 ((hpos 0).trans_le (hMF 0))
-  rw [precompEquivOfLift_symm_eq hF hper hφ hc hcF hMF hG hperG hψ hM
-    (fun y ↦ inv_anti₀ (hpos _) (hMF _)) (fun y ↦ inv_anti₀ hc (hcF _)) hψφ]
-  exact exists_inclusion_eq_precompEquivOfLift hG hperG hψ hM
-    (fun y ↦ inv_anti₀ (hpos _) (hMF _)) (fun y ↦ inv_anti₀ hc (hcF _))
+  rw [precompEquivOfLift_symm_eq hF hper hφ hc hcF hMF hG hperG hψ hM hMG hcG hψφ]
+  exact exists_inclusion_eq_precompEquivOfLift hG hperG hψ hM hMG hcG
     ((hF'.comp hGs).inv fun _ ↦ (hpos _).ne') k b
 
 /-- **Smooth circle diffeomorphisms act on `H^k`.** Let `φ` be the map of the circle with lift

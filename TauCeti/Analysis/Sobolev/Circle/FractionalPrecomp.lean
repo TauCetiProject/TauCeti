@@ -223,19 +223,9 @@ derivative between `M⁻¹` and `c⁻¹`, so precomposition with it preserves `H
 private theorem exists_inclusion_eq_precompEquivOfLift_symm (b : CircleSobolev s ℂ) :
     ∃ a : CircleSobolev s ℂ, inclusion hs0.le a =
       (precompEquivOfLift hF hper hφ hc hcF hMF).symm (inclusion hs0.le b) := by
-  have hpos (x : ℝ) : 0 < F' x := hc.trans_le (hcF x)
-  have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
-  obtain ⟨G, -, hFG, hperG, hG⟩ := exists_lift_inverse hF hper hpos
   -- The inverse map `ψ` of the circle, with lift `G`.
-  set e := homeomorphOfLift φ (strictMono_of_hasDerivAt_pos hF hpos) hFc hper hφ
-  have hψφ : Function.LeftInverse e.symm φ :=
-    homeomorphOfLift_symm_apply_apply (strictMono_of_hasDerivAt_pos hF hpos) hFc hper hφ
-  have hψ (y : ℝ) : e.symm y = G y :=
-    calc e.symm y = e.symm (φ (G y)) := by rw [hφ, hFG y]
-      _ = G y := hψφ _
-  have hM : 0 < M⁻¹ := inv_pos.2 ((hpos 0).trans_le (hMF 0))
-  have hMG (y : ℝ) : M⁻¹ ≤ (F' (G y))⁻¹ := inv_anti₀ (hpos _) (hMF _)
-  have hcG (y : ℝ) : (F' (G y))⁻¹ ≤ c⁻¹ := inv_anti₀ hc (hcF _)
+  obtain ⟨ψ, G, hψφ, -, -, hperG, hψ, hG, hMG, hcG⟩ := exists_inverse_of_lift hF hper hφ hc hcF hMF
+  have hM : 0 < M⁻¹ := inv_pos.2 (hc.trans_le ((hcF 0).trans (hMF 0)))
   rw [precompEquivOfLift_symm_eq hF hper hφ hc hcF hMF hG hperG hψ hM hMG hcG hψφ]
   exact exists_inclusion_eq_precompEquivOfLift hs0 hs1 hG hperG hψ hM hMG hcG b
 
